@@ -3,11 +3,46 @@
 
 {{ template "chart.versionBadge" . }}{{ template "chart.typeBadge" . }}{{ template "chart.appVersionBadge" . }}
 
-## Additional Information
-
 
 ## Installing the Chart
 
+### Cert-manager integration
+
+Install [cert-manager](https://cert-manager.io/) via [https://artifacthub.io/packages/helm/cert-manager/cert-manager](https://artifacthub.io/packages/helm/cert-manager/cert-manager)
+
+### Required variables:
+
+```yaml
+# -- Global config variables
+global:
+  # -- Override mongodb uri for every plgd-cloud services
+  mongoUri:
+  # -- Override nats uri for every plgd-cloud services
+  natsUri:
+  # -- Global domain
+  domain:
+  # -- CloudID. Used by coap-gateway. It must be unique
+  cloudId:
+  # -- OAuth authority
+  authority:
+  # -- OAuth audience
+  audience:
+  # Global OAuth configuration used by multiple services
+  oauth:
+    # -- OAuth configuration for internal oAuth service client
+    service:
+      clientID:
+      clientSecret:
+      scopes: []
+      tokenURL:
+    device:
+      # -- OAuth configuration for internal oAuth device client
+      clientID:
+      clientSecret:
+      scopes: []
+      tokenURL:
+      redirectURL:
+```
 
 {{ template "chart.requirementsSection" . }}
 

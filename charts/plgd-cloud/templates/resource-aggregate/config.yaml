@@ -79,17 +79,17 @@ stringData:
             {{- include "plgd-cloud.certificateConfig" (list $ $authClientTls $raCert) | indent 10 }}
             useSystemCAPool: {{ .clients.authorizationServer.grpc.tls.useSystemCAPool }}
         oauth:
-          clientID:{{ printf " " }}{{ required "resourceaggregate.clients.authorizationServer.oauth.clientID or global.authorizationServer.oauth.clientID is required " ( .clients.authorizationServer.oauth.clientID  | default $.Values.global.authorizationServer.oauth.clientID ) | quote }}
-          clientSecret:{{ printf " " }}{{ required "resourceaggregate.clients.authorizationServer.oauth.clientSecret or global.authorizationServer.oauth.clientSecret is required " ( .clients.authorizationServer.oauth.clientSecret | default $.Values.global.authorizationServer.oauth.clientSecret ) | quote }}
-          {{- if ( .clients.authorizationServer.oauth.scopes | default $.Values.global.authorizationServer.oauth.scopes ) }}
+          clientID:{{ printf " " }}{{ required "resourceaggregate.clients.authorizationServer.oauth.clientID or global.oauth.service.clientID is required " ( .clients.authorizationServer.oauth.clientID  | default $.Values.global.oauth.service.clientID ) | quote }}
+          clientSecret:{{ printf " " }}{{ required "resourceaggregate.clients.authorizationServer.oauth.clientSecret or global.oauth.service.clientSecret is required " ( .clients.authorizationServer.oauth.clientSecret | default $.Values.global.oauth.service.clientSecret ) | quote }}
+          {{- if ( .clients.authorizationServer.oauth.scopes | default $.Values.global.oauth.service.scopes ) }}
           scopes:
-          {{- range  ( .clients.authorizationServer.oauth.scopes | default $.Values.global.authorizationServer.oauth.scopes ) }}
+          {{- range  ( .clients.authorizationServer.oauth.scopes | default $.Values.global.oauth.service.scopes ) }}
             - {{ . | quote }}
           {{- end }}
           {{- else }}
           scopes: []
           {{- end }}
-          tokenURL:{{ printf " " }}{{ required "resourceaggregate.clients.authorizationServer.oauth.tokenURL or global.authorizationServer.oauth.tokenURL is required " ( .clients.authorizationServer.oauth.tokenURL | default $.Values.global.authorizationServer.oauth.tokenURL ) | quote }}
+          tokenURL:{{ printf " " }}{{ required "resourceaggregate.clients.authorizationServer.oauth.tokenURL or global.oauth.service.tokenURL is required " ( .clients.authorizationServer.oauth.tokenURL | default $.Values.global.oauth.service.tokenURL ) | quote }}
           audience:{{ printf " " }}{{ required "resourceaggregate.clients.authorizationServer.oauth.audience or global.audience is required " ( .clients.authorizationServer.oauth.audience | default $.Values.global.audience ) | quote }}
           verifyServiceTokenFrequency: {{ .clients.authorizationServer.oauth.verifyServiceTokenFrequency }}
           http:

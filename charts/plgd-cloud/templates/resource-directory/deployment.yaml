@@ -52,9 +52,9 @@ spec:
           {{- end }}
           image: {{ include "plgd-cloud.resourcedirectory.image" . | quote }}
           imagePullPolicy: {{ .Values.resourcedirectory.image.pullPolicy }}
-          {{- if .Values.resourcedirectory.command }}
+          {{- if .Values.resourcedirectory.image.command }}
           command:
-          {{- range .Values.resourcedirectory.command  }}
+          {{- range .Values.resourcedirectory.image.command  }}
             - {{ . | quote }}
           {{- end }}
           {{- end}}

@@ -100,10 +100,9 @@ If release name contains chart name it will be used as a full name.
 {{- define "plgd-cloud.createInternalCertByCm" }}
     {{- $natsTls := .Values.coapgateway.clients.eventBus.nats.tls.certFile }}
     {{- $authClientTls := .Values.coapgateway.clients.authorizationServer.grpc.tls.certFile }}
-    {{- $oauthHttpClientTls := .Values.coapgateway.clients.authorizationServer.oauth.http.tls.certFile }}
     {{- $raClientTls := .Values.coapgateway.clients.resourceAggregate.grpc.tls.certFile }}
     {{- $rdClientTls := .Values.coapgateway.clients.resourceDirectory.grpc.tls.certFile }}
-    {{- if and $natsTls $authClientTls $oauthHttpClientTls $raClientTls $rdClientTls }}
+    {{- if and $natsTls $authClientTls $raClientTls $rdClientTls }}
     {{- printf "false" }}
     {{- else }}
     {{- printf "true" }}

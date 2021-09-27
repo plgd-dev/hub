@@ -1,12 +1,5 @@
-# -- Extra deploy. Resolved as template
-extraDeploy:
-
 # -- Global config variables
 global:
-  # -- Override mongodb uri for every plgd-cloud services
-  mongoUri:
-  # -- Override nats uri for every plgd-cloud services
-  natsUri:
   # -- Global domain
   domain:
   # -- CloudID. Used by coap-gateway. It must be unique
@@ -15,22 +8,24 @@ global:
   authority:
   # -- OAuth audience
   audience:
-  # -- OAuth configuration for internal oAuth client
-  authorizationServer:
-    oauth:
+  # Global OAuth configuration used by multiple services
+  oauth:
+    # -- OAuth configuration for internal oAuth service client
+    service:
       clientID:
       clientSecret:
       scopes: []
       tokenURL:
-  # -- OAuth configuration for internal oAuth device client
-  device:
-    oauth:
+    device:
+      # -- OAuth configuration for internal oAuth device client
       clientID:
       clientSecret:
       scopes: []
       tokenURL:
       redirectURL:
 
+# -- Extra deploy. Resolved as template
+extraDeploy:
 
 # -- External nats dependency setup
 nats:
@@ -249,80 +244,89 @@ certmanager:
         size:
 
 resourcedirectory:
-  # Enable resource-directory service
+  # -- Enable resource-directory service
   enabled: true
-  # Name of component. Used in label selectors
+  # -- Name of component. Used in label selectors
   name: resource-directory
-  # Full name to override
+  # -- Full name to override
   fullnameOverride:
-  # Number of replicas
+  # -- Number of replicas
   replicas: 1
-  # Additional labels for resource-directory deployment
+  # -- Additional labels for resource-directory deployment
   deploymentLabels: {}
-  # Additional annotations for resource-directory deployment
+  # -- Additional annotations for resource-directory deployment
   deploymentAnnotations: {}
-  # Pod security context
+  # -- Pod security context
   podSecurityContext: {}
-  # Labels for resource-directory pod
+  # -- Labels for resource-directory pod
   podLabels: {}
-  # Annotations for resource-directory pod
+  # -- Annotations for resource-directory pod
   podAnnotations: {}
   service:
+    # -- resource-directory service type
     type: ClusterIP
-    # Labels for resource-directory service
+    # -- Labels for resource-directory service
     labels: {}
-    # Annotations for resource-directory service
+    # -- Annotations for resource-directory service
     annotations: {}
-  # RBAC configuration
+  # -- RBAC configuration
   rbac:
     # Create RBAC config
     enabled: false
-    # Name of resource-directory SA
+    # -- Name of resource-directory SA
     serviceAccountName: resource-directory
-    # template definition for Role/binding etc..
+    # -- template definition for Role/binding etc..
     roleBindingDefitionTpl:
-  # Security context for pod
+  # -- Security context for pod
   securityContext: {}
-  # Image pull secrets
-  imagePullSecrets: {}
-  # Restart policy for pod
+  # --Restart policy for pod
   restartPolicy: Always
-  # Init containers definition
+  # -- Init containers definition. Resolved as template
   initContainersTpl: {}
   image:
-    # Image registry
+    # -- Image registry
     registry:
-    # Image repository
+    # -- Image repository
     repository: plgd/resource-directory
-    # Image tag.
+    # --Image tag.
     tag:
-    # Image pull policy
+    # -- Image pull policy
     pullPolicy: Always
-    # Image pull secrets
+    # --Image pull secrets
     imagePullSecrets: {}
-  # Liveness probe. resource-directory doesn't have any default liveness probe
+    # -- Container command
+    command:
+  # -- Liveness probe. resource-directory doesn't have any default liveness probe
   livenessProbe: {}
-  # Readiness probe. resource-directory doesn't have aby default readiness probe
+  # -- Readiness probe. resource-directory doesn't have aby default readiness probe
   readinessProbe: {}
-  # Resources limit
+  # -- Resources limit
   resources: {}
-  # Node selector
+  # -- Node selector
   nodeSelector: {}
-  # Affinity definition
+  # -- Affinity definition
   affinity: {}
-  # Toleration definition
+  # -- Toleration definition
   tolerations: {}
-  # Optional extra volumes
+  # -- Optional extra volumes
   extraVolumes: {}
-  # Optional extra volume mounts
+  # -- Optional extra volume mounts
   extraVolumeMounts: {}
+  # -- Service configuration
   config:
+    # -- Service configuration file
     fileName: service.yaml
+    # -- Service configuration volume name
     volume: config
+    # -- Configuration mount path
     mountPath: /config
+  # -- Service and POD port
   port: 9100
+  # -- Log section
   log:
+    # -- Enable extended log messages
     debug: false
+  # -- For complete resource-directory service configuration see [plgd/resource-directory](https://github.com/plgd-dev/cloud/tree/v2/resource-directory)
   apis:
     grpc:
       address:
@@ -351,6 +355,7 @@ resourcedirectory:
           timeout: 10s
           tls:
             useSystemCAPool: false
+  # -- For complete resource-directory service configuration see [plgd/resource-directory](https://github.com/plgd-dev/cloud/tree/v2/resource-directory)
   clients:
     eventBus:
       # number of routines to process events in projection
@@ -416,108 +421,100 @@ resourcedirectory:
             keyFile:
             certFile:
             useSystemCAPool: false
+  # -- For complete resource-directory service configuration see [plgd/resource-directory](https://github.com/plgd-dev/cloud/tree/v2/resource-directory)
   publicConfiguration:
     caPool:
-    deviceAuthorization:
-      clientID: ""
-      scopes: []
-      authority: ""
-      audience: ""
-      redirectURL: ""
-      http:
-        maxIdleConns: 16
-        maxConnsPerHost: 32
-        maxIdleConnsPerHost: 16
-        idleConnTimeout: 30s
-        timeout: 10s
-        tls:
-          caPool:
-          keyFile:
-          certFile:
-          useSystemCAPool: false
-    tokenURL:
-    authorizationURL:
-    ownerClaim:
+    authorizationServer:
+    ownerClaim: "sub"
     signingServerAddress:
     cloudID:
     cloudURL:
-    cloudAuthorizationProvider:
+    cloudAuthorizationProvider: "plgd"
+    defaultCommandTimeToLive: "0s"
 
 resourceaggregate:
-  # Enable resource-aggregate service
+  # -- Enable resource-aggregate service
   enabled: true
-  # Name of component. Used in label selectors
+  # -- Name of component. Used in label selectors
   name: resource-aggregate
-  # Full name to override
+  # -- Full name to override
   fullnameOverride:
-  # Number of replicas
+  # -- Number of replicas
   replicas: 1
-  # Additional labels for resource-aggregate deployment
+  # -- Additional labels for resource-aggregate deployment
   deploymentLabels: {}
-  # Additional annotations for resource-aggregate deployment
+  # -- Additional annotations for resource-aggregate deployment
   deploymentAnnotations: {}
-  # Pod security context
+  # -- Pod security context
   podSecurityContext: {}
-  # Labels for resource-aggregate pod
+  # -- Labels for resource-aggregate pod
   podLabels: {}
-  # Annotations for resource-aggregate pod
+  # -- Annotations for resource-aggregate pod
   podAnnotations: {}
   service:
+    # -- Service type
     type: ClusterIP
-    # Labels for resource-aggregate service
+    # -- Labels for resource-aggregate service
     labels: {}
-    # Annotations for resource-aggregate service
+    # -- Annotations for resource-aggregate service
     annotations: {}
-  # RBAC configuration
+  # -- RBAC configuration
   rbac:
-    # Create RBAC config
+    # -- Create RBAC config
     enabled: false
-    # Name of resource-aggregate SA
+    # -- Name of resource-aggregate SA
     serviceAccountName: resource-aggregate
-    # template definition for Role/binding etc..
+    # -- template definition for Role/binding etc..
     roleBindingDefitionTpl:
-  # Security context for pod
+  # -- Security context for pod
   securityContext: {}
-  # Image pull secrets
+  # -- Image pull secrets
   imagePullSecrets: {}
-  # Restart policy for pod
+  # -- Restart policy for pod
   restartPolicy: Always
-  # Init containers definition
+  # -- Init containers definition. Resolved as template
   initContainersTpl: {}
   image:
-    # Image registry
+    # -- Image registry
     registry:
-    # Image repository
+    # -- Image repository
     repository: plgd/resource-aggregate
-    # Image tag.
+    # -- Image tag.
     tag:
-    # Image pull policy
+    # -- Image pull policy
     pullPolicy: Always
-    # Image pull secrets
+    # -- Image pull secrets
     imagePullSecrets: {}
-  # Liveness probe. resource-aggregate doesn't have any default liveness probe
+  # -- Liveness probe. resource-aggregate doesn't have any default liveness probe
   livenessProbe: {}
-  # Readiness probe. resource-aggregate doesn't have aby default readiness probe
+  # -- Readiness probe. resource-aggregate doesn't have aby default readiness probe
   readinessProbe: {}
-  # Resources limit
+  # -- Resources limit
   resources: {}
-  # Node selector
+  # -- Node selector
   nodeSelector: {}
-  # Affinity definition
+  # -- Affinity definition
   affinity: {}
-  # Toleration definition
+  # -- Toleration definition
   tolerations: {}
-  # Optional extra volumes
+  # -- Optional extra volumes
   extraVolumes: {}
-  # Optional extra volume mounts
+  # -- Optional extra volume mounts
   extraVolumeMounts: {}
+  # -- Service configuration
   config:
+    # -- Service configuration file name
     fileName: service.yaml
+    # -- Volume name
     volume: config
+    # -- Configuration mount path
     mountPath: /config
+  # -- Service and POD port
   port: 9100
   log:
+    # -- Enable extended message log
     debug: false
+# -- For complete resource-aggregate service configuration see [plgd/resource-aggregate](https://github.com/plgd-dev/cloud/tree/v2/resource-aggregate)
   apis:
     grpc:
       enforcementPolicy:
@@ -552,6 +549,7 @@ resourceaggregate:
             keyFile: ""
             certFile: ""
             useSystemCAPool: false
+  # -- For complete resource-aggregate service configuration see [plgd/resource-aggregate](https://github.com/plgd-dev/cloud/tree/v2/resource-aggregate)
   clients:
     eventBus:
       nats:
@@ -619,84 +617,93 @@ resourceaggregate:
             certFile: ""
             useSystemCAPool: false
 
-# CoAP gateway parameters
+# -- CoAP gateway parameters
 coapgateway:
-  # Enable coap-gateway service
+  # -- Enable coap-gateway service
   enabled: true
-  # Name of component. Used in label selectors
+  # -- Name of component. Used in label selectors
   name: coap-gateway
-  # Full name to override
+  # -- Full name to override
   fullnameOverride:
-  # Number of replicas
+  # -- Number of replicas
   replicas: 1
-  # Additional labels for coap-gateway deployment
+  # -- Additional labels for coap-gateway deployment
   deploymentLabels: { }
-  # Additional annotations for coap-gateway deployment
+  # -- Additional annotations for coap-gateway deployment
   deploymentAnnotations: { }
-  # Pod security context
+  # -- Pod security context
   podSecurityContext: { }
-  # Labels for coap-gateway pod
+  # -- Labels for coap-gateway pod
   podLabels: { }
-  # Annotations for coap-gateway pod
+  # -- Annotations for coap-gateway pod
   podAnnotations: { }
   service:
+    # -- Service type
     type: LoadBalancer
-    # Labels for coap-gateway service
+    # -- Labels for coap-gateway service
     labels: { }
-    # Annotations for coap-gateway service
+    # -- Annotations for coap-gateway service
     annotations: { }
-  # RBAC configuration
+  # -- RBAC configuration
   rbac:
-    # Create RBAC config
+    # -- Create RBAC config
     enabled: false
-    # Name of coap-gateway SA
+    # -- Name of coap-gateway SA
     serviceAccountName: coap-gateway
-    # template definition for Role/binding etc..
+    # -- template definition for Role/binding etc..
     roleBindingDefinitionTpl:
-  # Security context for pod
+  # -- Security context for pod
   securityContext: { }
-  # Image pull secrets
+  # -- Image pull secrets
   imagePullSecrets: { }
-  # Restart policy for pod
+  # -- Restart policy for pod
   restartPolicy: Always
-  # Init containers definition
+  # -- Init containers definition
   initContainersTpl: { }
   image:
-    # Image registry
+    # -- Image registry
     registry:
-    # Image repository
+    # -- Image repository
     repository: plgd/coap-gateway
-    # Image tag.
+    # -- Image tag
     tag:
-    # Image pull policy
+    # -- Image pull policy
     pullPolicy: Always
-    # Image pull secrets
+    # -- Image pull secrets
     imagePullSecrets: { }
-  # Liveness probe. coap-gateway doesn't have any default liveness probe
+  # -- Liveness probe. coap-gateway doesn't have any default liveness probe
   livenessProbe: { }
-  # Readiness probe. coap-gateway doesn't have aby default readiness probe
+  # -- Readiness probe. coap-gateway doesn't have aby default readiness probe
   readinessProbe: { }
-  # Resources limit
+  # -- Resources limit
   resources: { }
-  # Node selector
+  # -- Node selector
   nodeSelector: { }
-  # Affinity definition
+  # -- Affinity definition
   affinity: { }
-  # Toleration definition
+  # -- Toleration definition
   tolerations: { }
-  # Optional extra volumes
+  # -- Optional extra volumes
   extraVolumes: { }
-  # Optional extra volume mounts
+  # -- Optional extra volume mounts
   extraVolumeMounts: { }
   config:
+    # -- Service configuration file name
     fileName: service.yaml
+    # -- Volume name
     volume: config
+    # -- Configuration mount path
     mountPath: /config
+  # -- Service and POD port
   port: 5684
   log:
+    # -- Enable extended log messages
     debug: false
+    # -- Dump copp messages
     dumpCoapMessages: true
+  # -- Cloud ID. Can be override via global.cloudId
   cloudId:
+  # -- For complete coap-gateway service configuration see [plgd/coap-gateway](https://github.com/plgd-dev/cloud/tree/v2/coap-gateway)
   apis:
     coap:
       externalAddress: ""
@@ -732,7 +739,7 @@ coapgateway:
             keyFile:
             certFile:
             useSystemCAPool: true
-
+  # -- For complete coap-gateway service configuration see [plgd/coap-gateway](https://github.com/plgd-dev/cloud/tree/v2/coap-gateway)
   clients:
     eventBus:
       nats:
@@ -785,6 +792,7 @@ coapgateway:
           keyFile:
           certFile:
           useSystemCAPool: false
+  # -- For complete coap-gateway service configuration see [plgd/coap-gateway](https://github.com/plgd-dev/cloud/tree/v2/coap-gateway)
   taskQueue:
     goPoolSize: 1600
     size: "2097152"

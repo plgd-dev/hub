@@ -80,17 +80,17 @@ stringData:
             {{- include "plgd-cloud.certificateConfig" (list $ $authClientTls $rdCert ) | indent 10 }}
             useSystemCAPool: {{ .clients.authorizationServer.grpc.tls.useSystemCAPool }}
         oauth:
-          clientID:{{ printf " " }}{{ required "resourcedirectory.clients.authorizationServer.oauth.clientID or global.authorizationServer.oauth.clientID is required " ( .clients.authorizationServer.oauth.clientID  | default $.Values.global.authorizationServer.oauth.clientID ) | quote }}
-          clientSecret:{{ printf " " }}{{ required "resourcedirectory.clients.authorizationServer.oauth.clientSecret or global.authorizationServer.oauth.clientSecret is required " ( .clients.authorizationServer.oauth.clientSecret | default $.Values.global.authorizationServer.oauth.clientSecret ) | quote }}
-          {{- if ( .clients.authorizationServer.oauth.scopes | default $.Values.global.authorizationServer.oauth.scopes ) }}
+          clientID:{{ printf " " }}{{ required "resourcedirectory.clients.authorizationServer.oauth.clientID or global.oauth.service.clientID is required " ( .clients.authorizationServer.oauth.clientID  | default $.Values.global.oauth.service.clientID ) | quote }}
+          clientSecret:{{ printf " " }}{{ required "resourcedirectory.clients.authorizationServer.oauth.clientSecret or global.oauth.service.clientSecret is required " ( .clients.authorizationServer.oauth.clientSecret | default $.Values.global.oauth.service.clientSecret ) | quote }}
+          {{- if ( .clients.authorizationServer.oauth.scopes | default $.Values.global.oauth.service.scopes ) }}
           scopes:
-          {{- range  ( .clients.authorizationServer.oauth.scopes | default $.Values.global.authorizationServer.oauth.scopes ) }}
+          {{- range  ( .clients.authorizationServer.oauth.scopes | default $.Values.global.oauth.service.scopes ) }}
             - {{ . | quote }}
           {{- end }}
           {{- else }}
           scopes: []
           {{- end }}
-          tokenURL:{{ printf " " }}{{ required "resourcedirectory.clients.authorizationServer.oauth.tokenURL or global.authorizationServer.oauth.tokenURL is required " ( .clients.authorizationServer.oauth.tokenURL | default $.Values.global.authorizationServer.oauth.tokenURL ) | quote }}
+          tokenURL:{{ printf " " }}{{ required "resourcedirectory.clients.authorizationServer.oauth.tokenURL or global.oauth.service.tokenURL is required " ( .clients.authorizationServer.oauth.tokenURL | default $.Values.global.oauth.service.tokenURL ) | quote }}
           audience:{{ printf " " }}{{ required "resourcedirectory.clients.authorizationServer.oauth.audience or global.audience is required " ( .clients.authorizationServer.oauth.audience | default $.Values.global.audience ) | quote }}
           verifyServiceTokenFrequency: {{ .clients.authorizationServer.oauth.verifyServiceTokenFrequency }}
           http:
@@ -105,35 +105,12 @@ stringData:
               useSystemCAPool: {{ .clients.authorizationServer.oauth.http.tls.useSystemCAPool }}
     publicConfiguration:
       caPool: {{ .publicConfiguration.caPool | default "/certs/ca.crt" | quote }}
-      deviceAuthorization:
-        clientID:{{ printf " " }}{{ required "resourcedirectory.publicConfiguration.deviceAuthorization.clientID or global.device.oauth.clientID is required " ( .publicConfiguration.deviceAuthorization.clientID | default $.Values.global.device.oauth.clientID  ) | quote }}
-        {{- if ( .publicConfiguration.deviceAuthorization.scopes | default $.Values.global.device.oauth.scopes ) }}
-        scopes:
-        {{- range  ( .publicConfiguration.deviceAuthorization.scopes | default $.Values.global.device.oauth.scopes ) }}
-          - {{ . | quote }}
-        {{- end }}
-        {{- else }}
-        scopes: []
-        {{- end }}
-        authority:{{ printf " " }}{{ required "resourcedirectory.publicConfiguration.deviceAuthorization.authority or global.authority is required " ( .publicConfiguration.deviceAuthorization.authority | default $.Values.global.authority ) | quote }}
-        audience:{{ printf " " }}{{ required "resourcedirectory.publicConfiguration.deviceAuthorization.audience or global.audienceis required " ( .publicConfiguration.deviceAuthorization.audience | default $.Values.global.audience ) | quote }}
-        redirectURL:{{ printf " " }}{{ required "resourcedirectory.publicConfiguration.deviceAuthorization.redirectURL or global.device.oauth.redirectURL is required " ( .publicConfiguration.deviceAuthorization.redirectURL | default $.Values.global.device.oauth.redirectURL ) | quote }}
-        http:
-          maxIdleConns: {{ .publicConfiguration.deviceAuthorization.http.maxIdleConns }}
-          maxConnsPerHost: {{ .publicConfiguration.deviceAuthorization.http.maxConnsPerHost }}
-          maxIdleConnsPerHost: {{ .publicConfiguration.deviceAuthorization.http.maxIdleConnsPerHost }}
-          idleConnTimeout: {{ .publicConfiguration.deviceAuthorization.http.idleConnTimeout }}
-          timeout: {{ .publicConfiguration.deviceAuthorization.http.timeout }}
-          tls:
-            {{- $deviceCfgTls := .publicConfiguration.deviceAuthorization.http.tls }}
-            {{- include "plgd-cloud.certificateConfig" (list $ $deviceCfgTls $rdCert ) | indent 10 }}
-            useSystemCAPool: {{ .publicConfiguration.deviceAuthorization.http.tls.useSystemCAPool }}
-      tokenURL: {{ required "resourcedirectory.publicConfiguration.tokenURL is required" .publicConfiguration.tokenURL | quote }}
-      authorizationURL: {{ required "resourcedirectory.publicConfiguration.authorizationURL is required" .publicConfiguration.authorizationURL | quote }}
-      ownerClaim: {{ .publicConfiguration.ownerClaim | default "sub" | quote }}
+      authorizationServer: {{ required "resourcedirectory.publicConfiguration.authorizationServer is required" .publicConfiguration.authorizationServer  | quote }}
+      ownerClaim: {{ .publicConfiguration.ownerClaim  | quote }}
       signingServerAddress: {{ .publicConfiguration.signingServerAddress | default ( printf "api.%s:443" $.Values.global.domain ) | quote }}
       cloudID: {{ required "resourcedirectory.publicConfiguration.cloudID or coapgateway.cloudId or global.cloudId is required" ( .publicConfiguration.cloudID | default ( $.Values.coapgateway.cloudId | default $.Values.global.cloudId)) | quote }}
       cloudURL: {{ .publicConfiguration.cloudURL | default (printf "coaps+tcp://%s:%v" $.Values.global.domain $.Values.coapgateway.port ) | quote }}
-      cloudAuthorizationProvider: {{ .publicConfiguration.cloudAuthorizationProvider | default "plgd" | quote }}
+      cloudAuthorizationProvider: {{ .publicConfiguration.cloudAuthorizationProvider | quote }}
+      defaultCommandTimeToLive: {{ .publicConfiguration.defaultCommandTimeToLive | quote }}
   {{- end }}
 {{- end }}

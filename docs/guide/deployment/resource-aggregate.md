@@ -201,21 +201,21 @@ Client configurations to internally connect to Authorization Server service.
 
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |
-| `clients.authorizationServer.oauth.clientID` | string | `Client ID to exchange an authorization code for an access token.` | `""` |
-| `clients.authorizationServer.oauth.clientSecret` | string | `Client secret to exchange an authorization code for an access token.` |  `""` |
-| `clients.authorizationServer.oauth.scopes` | string | `Comma separated list of required scopes.` | `""` |
-| `clients.authorizationServer.oauth.tokenURL` | string | `Token endpoint of OAuth provider.` | `""` |
-| `clients.authorizationServer.oauth.audience` | string | `Identifier of the API configured in your OAuth provider.` | `""` |
-| `clients.authorizationServer.oauth.verifyServiceTokenFrequency` | string | `Frequency to verify service token.` | `10s` |
-| `clients.authorizationServer.oauth.http.maxIdleConns` | int | `It controls the maximum number of idle (keep-alive) connections across all hosts. Zero means no limit.` | `16` |
-| `clients.authorizationServer.oauth.http.maxConnsPerHost` | int | `It optionally limits the total number of connections per host, including connections in the dialing, active, and idle states. On limit violation, dials will block. Zero means no limit.` | `32` |
-| `clients.authorizationServer.oauth.http.maxIdleConnsPerHost` | int | `If non-zero, controls the maximum idle (keep-alive) connections to keep per-host. If zero, DefaultMaxIdleConnsPerHost is used.` | `16` |
-| `clients.authorizationServer.oauth.http.idleConnTimeout` | string | `The maximum amount of time an idle (keep-alive) connection will remain idle before closing itself. Zero means no limit.` | `30s` |
-| `clients.authorizationServer.oauth.http.timeout` | string | `A time limit for requests made by this Client. A Timeout of zero means no timeout.` | `10s` |
-| `clients.authorizationServer.oauth.http.tls.caPool` | string | `File path to the root certificate in PEM format which might contain multiple certificates in a single file.` |  `""` |
-| `clients.authorizationServer.oauth.http.tls.keyFile` | string | `File path to private key in PEM format.` | `""` |
-| `clients.authorizationServer.oauth.http.tls.certFile` | string | `File path to certificate in PEM format.` | `""` |
-| `clients.authorizationServer.oauth.http.tls.useSystemCAPool` | bool | `If true, use system certification pool.` | `false` |
+| `clients.oauth.service.clientID` | string | `Client ID to exchange an authorization code for an access token.` | `""` |
+| `clients.oauth.service.clientSecret` | string | `Client secret to exchange an authorization code for an access token.` |  `""` |
+| `clients.oauth.service.scopes` | string | `Comma separated list of required scopes.` | `""` |
+| `clients.oauth.service.tokenURL` | string | `Token endpoint of OAuth provider.` | `""` |
+| `clients.oauth.service.audience` | string | `Identifier of the API configured in your OAuth provider.` | `""` |
+| `clients.oauth.service.verifyServiceTokenFrequency` | string | `Frequency to verify service token.` | `10s` |
+| `clients.oauth.service.http.maxIdleConns` | int | `It controls the maximum number of idle (keep-alive) connections across all hosts. Zero means no limit.` | `16` |
+| `clients.oauth.service.http.maxConnsPerHost` | int | `It optionally limits the total number of connections per host, including connections in the dialing, active, and idle states. On limit violation, dials will block. Zero means no limit.` | `32` |
+| `clients.oauth.service.http.maxIdleConnsPerHost` | int | `If non-zero, controls the maximum idle (keep-alive) connections to keep per-host. If zero, DefaultMaxIdleConnsPerHost is used.` | `16` |
+| `clients.oauth.service.http.idleConnTimeout` | string | `The maximum amount of time an idle (keep-alive) connection will remain idle before closing itself. Zero means no limit.` | `30s` |
+| `clients.oauth.service.http.timeout` | string | `A time limit for requests made by this Client. A Timeout of zero means no timeout.` | `10s` |
+| `clients.oauth.service.http.tls.caPool` | string | `File path to the root certificate in PEM format which might contain multiple certificates in a single file.` |  `""` |
+| `clients.oauth.service.http.tls.keyFile` | string | `File path to private key in PEM format.` | `""` |
+| `clients.oauth.service.http.tls.certFile` | string | `File path to certificate in PEM format.` | `""` |
+| `clients.oauth.service.http.tls.useSystemCAPool` | bool | `If true, use system certification pool.` | `false` |
 
 ::: tip Audience 
 You might have one client, but multiple APIs in the OAuth system. What you want to prevent is to be able to contact all the APIs of your system with one token. This audience allows you to request the token for a specific API. If you configure it to myplgdc2c.api in the Auth0, you have to set it here if you want to also validate it.
