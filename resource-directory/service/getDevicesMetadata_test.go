@@ -28,7 +28,6 @@ func cmpDeviceMetadataUpdated(t *testing.T, want []*events.DeviceMetadataUpdated
 			got[idx].GetStatus().ValidUntil = 0
 		}
 		test.CheckProtobufs(t, want[idx], got[idx], test.RequireToCheckFunc(require.Equal))
-
 	}
 }
 
