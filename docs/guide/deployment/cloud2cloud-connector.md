@@ -167,7 +167,7 @@ docker run -d --network=host \
 | `apis.http.pullDevices.interval` | string | `"Time interval between pulls` | `"5s"` |
 | `apis.http.clientID` | string | `Client ID to exchange an authorization code for an access token.` | `""` |
 | `apis.http.clientSecret` | string | `Client secret to exchange an authorization code for an access token.` | `""` |
-| `apis.http.scopes` | string | `Comma separated list of required scopes.` | `""` |
+| `apis.http.scopes` | string array | `List of required scopes.` | `""` |
 | `apis.http.authorization.authority` | string | `Authority is the address of the token-issuing authentication server. Services will use this URI to find and retrieve the public key that can be used to validate the token’s signature.` | `""` |
 | `apis.http.authorization.audience` | string | `Identifier of the API configured in your OAuth provider.` | `""` |
 | `apis.http.authorization.redirectURL` | string | `External redirect url to acquire authorization code.` | `""` |

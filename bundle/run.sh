@@ -591,13 +591,14 @@ cat /configs/coap-gateway.yaml | yq e "\
   .apis.coap.address = \"${COAP_GATEWAY_UNSECURE_ADDRESS}\" |
   .apis.coap.externalAddress = \"${FQDN}:${COAP_GATEWAY_UNSECURE_PORT}\" |
   .apis.coap.tls.enabled = false |
-  .apis.coap.authorization.authority = \"https://${OAUTH_ENDPOINT}\" |
-  .apis.coap.authorization.clientID = \"${DEVICE_OAUTH_CLIENT_ID}\" |
-  .apis.coap.authorization.clientSecret = \"${DEVICE_OAUTH_CLIENT_SECRET}\" |
-  .apis.coap.authorization.redirectURL = \"${DEVICE_OAUTH_REDIRECT_URL}\" |
-  .apis.coap.authorization.scopes = [ \"${DEVICE_OAUTH_SCOPES}\" ] |
-  .apis.coap.authorization.audience = \"${DEVICE_OAUTH_AUDIENCE}\" |
-  .apis.coap.authorization.http.tls.useSystemCAPool = true |
+  .apis.coap.authorization.providers[0].name = \"plgd\" | 
+  .apis.coap.authorization.providers[0].authority = \"https://${OAUTH_ENDPOINT}\" |
+  .apis.coap.authorization.providers[0].clientID = \"${DEVICE_OAUTH_CLIENT_ID}\" |
+  .apis.coap.authorization.providers[0].clientSecret = \"${DEVICE_OAUTH_CLIENT_SECRET}\" |
+  .apis.coap.authorization.providers[0].redirectURL = \"${DEVICE_OAUTH_REDIRECT_URL}\" |
+  .apis.coap.authorization.providers[0].scopes = [ \"${DEVICE_OAUTH_SCOPES}\" ] |
+  .apis.coap.authorization.providers[0].audience = \"${DEVICE_OAUTH_AUDIENCE}\" |
+  .apis.coap.authorization.providers[0].http.tls.useSystemCAPool = true |
   .clients.eventBus.nats.url = \"${NATS_URL}\" |
   .clients.resourceAggregate.grpc.address = \"${RESOURCE_AGGREGATE_ADDRESS}\" |
   .clients.resourceDirectory.grpc.address = \"${RESOURCE_DIRECTORY_ADDRESS}\" |
@@ -626,13 +627,14 @@ cat /configs/coap-gateway.yaml | yq e "\
   .apis.coap.tls.enabled = true |
   .apis.coap.tls.keyFile = \"${EXTERNAL_CERT_DIR_PATH}/${COAP_GATEWAY_FILE_CERT_KEY_NAME}\" |
   .apis.coap.tls.certFile = \"${EXTERNAL_CERT_DIR_PATH}/${COAP_GATEWAY_FILE_CERT_NAME}\" |
-  .apis.coap.authorization.authority = \"https://${OAUTH_ENDPOINT}\" |
-  .apis.coap.authorization.clientID = \"${DEVICE_OAUTH_CLIENT_ID}\" |
-  .apis.coap.authorization.clientSecret = \"${DEVICE_OAUTH_CLIENT_SECRET}\" |
-  .apis.coap.authorization.redirectURL = \"${DEVICE_OAUTH_REDIRECT_URL}\" |
-  .apis.coap.authorization.scopes = [ \"${DEVICE_OAUTH_SCOPES}\" ] |
-  .apis.coap.authorization.audience = \"${DEVICE_OAUTH_AUDIENCE}\" |
-  .apis.coap.authorization.http.tls.useSystemCAPool = true |
+  .apis.coap.authorization.providers[0].name = \"plgd\" | 
+  .apis.coap.authorization.providers[0].authority = \"https://${OAUTH_ENDPOINT}\" |
+  .apis.coap.authorization.providers[0].clientID = \"${DEVICE_OAUTH_CLIENT_ID}\" |
+  .apis.coap.authorization.providers[0].clientSecret = \"${DEVICE_OAUTH_CLIENT_SECRET}\" |
+  .apis.coap.authorization.providers[0].redirectURL = \"${DEVICE_OAUTH_REDIRECT_URL}\" |
+  .apis.coap.authorization.providers[0].scopes = [ \"${DEVICE_OAUTH_SCOPES}\" ] |
+  .apis.coap.authorization.providers[0].audience = \"${DEVICE_OAUTH_AUDIENCE}\" |
+  .apis.coap.authorization.providers[0].http.tls.useSystemCAPool = true |
   .clients.eventBus.nats.url = \"${NATS_URL}\" |
   .clients.resourceAggregate.grpc.address = \"${RESOURCE_AGGREGATE_ADDRESS}\" |
   .clients.resourceDirectory.grpc.address = \"${RESOURCE_DIRECTORY_ADDRESS}\" |
@@ -694,11 +696,14 @@ cat /configs/http-gateway.yaml | yq e "\
   .apis.http.authorization.authority = \"https://${OAUTH_ENDPOINT}\" |
   .clients.grpcGateway.grpc.address = \"${GRPC_GATEWAY_ADDRESS}\" |
   .ui.enabled = true |
-  .ui.oauthClient.domain = \"${OAUTH_ENDPOINT}\" |
-  .ui.oauthClient.clientID = \"${OAUTH_CLIENT_ID}\" |
-  .ui.oauthClient.audience = \"${OAUTH_AUDIENCE}\" |
-  .ui.oauthClient.scope = \"openid offline_access\" |
-  .ui.oauthClient.httpGatewayAddress =\"https://${FQDN_NGINX_HTTPS}\"
+  .ui.webConfiguration.domain = \"${OAUTH_ENDPOINT}\" |
+  .ui.webConfiguration.httpGatewayAddress =\"https://${FQDN_NGINX_HTTPS}\" |
+  .ui.webConfiguration.webOAuthClient.clientID = \"${OAUTH_CLIENT_ID}\" |
+  .ui.webConfiguration.webOAuthClient.audience = \"${OAUTH_AUDIENCE}\" |
+  .ui.webConfiguration.webOAuthClient.scopes = [ \"openid\", \"offline_access\" ] |
+  .ui.webConfiguration.deviceOAuthClient.clientID = \"${DEVICE_OAUTH_CLIENT_ID}\" |
+  .ui.webConfiguration.deviceOAuthClient.scopes = [ \"${DEVICE_OAUTH_SCOPES}\" ] |
+  .ui.webConfiguration.deviceOAuthClient.audience = \"${DEVICE_OAUTH_AUDIENCE}\"
 " - > /data/http-gateway.yaml
 
 echo "starting http-gateway"

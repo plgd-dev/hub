@@ -114,36 +114,63 @@ func (c *ClientsConfig) Validate() error {
 	return nil
 }
 
-// OAuthClientConfig represents oauth configuration for user interface exposed via getOAuthConfiguration handler
-type OAuthClientConfig struct {
-	Domain             string `json:"domain" yaml:"domain"`
-	ClientID           string `json:"clientID" yaml:"clientID"`
-	Audience           string `json:"audience" yaml:"audience"`
-	Scope              string `json:"scope" yaml:"scope"`
-	HTTPGatewayAddress string `json:"httpGatewayAddress" yaml:"httpGatewayAddress"`
+type BasicOAuthClient struct {
+	ClientID string   `json:"clientID" yaml:"clientID"`
+	Audience string   `json:"audience" yaml:"audience"`
+	Scopes   []string `json:"scopes" yaml:"scopes"`
 }
 
-func (c *OAuthClientConfig) Validate() error {
-	if c.Domain == "" {
-		return fmt.Errorf("domain('%v')", c.Domain)
-	}
+func (c *BasicOAuthClient) Validate() error {
 	if c.ClientID == "" {
-		return fmt.Errorf("clientID('%v')", c.ClientID)
+		return fmt.Errorf("domain('%v')", c.ClientID)
 	}
 	if c.Audience == "" {
 		return fmt.Errorf("audience('%v')", c.Audience)
 	}
+	return nil
+}
+
+type DeviceOAuthClient struct {
+	BasicOAuthClient `yaml:",inline"`
+	ProviderName     string `json:"providerName" yaml:"providerName"`
+}
+
+func (c *DeviceOAuthClient) Validate() error {
+	if c.ClientID == "" {
+		return fmt.Errorf("domain('%v')", c.ClientID)
+	}
+	return nil
+}
+
+// WebConfiguration represents web configuration for user interface exposed via getOAuthConfiguration handler
+type WebConfiguration struct {
+	Domain             string            `json:"domain" yaml:"domain"`
+	HTTPGatewayAddress string            `json:"httpGatewayAddress" yaml:"httpGatewayAddress"`
+	WebOAuthClient     BasicOAuthClient  `json:"webOAuthClient" yaml:"webOAuthClient"`
+	DeviceOAuthClient  DeviceOAuthClient `json:"deviceOAuthClient" yaml:"deviceOAuthClient"`
+}
+
+func (c *WebConfiguration) Validate() error {
+	if c.Domain == "" {
+		return fmt.Errorf("domain('%v')", c.Domain)
+	}
 	if c.HTTPGatewayAddress == "" {
 		return fmt.Errorf("httpGatewayAddress('%v')", c.HTTPGatewayAddress)
+	}
+	if err := c.WebOAuthClient.Validate(); err != nil {
+		return fmt.Errorf("webOAuthClient.%w", err)
+	}
+	if err := c.DeviceOAuthClient.Validate(); err != nil {
+		return fmt.Errorf("deviceOAuthClient.%w", err)
 	}
 	return nil
 }
 
 // UIConfig represents user interface configuration
 type UIConfig struct {
-	Enabled     bool              `json:"enabled" yaml:"enabled"`
-	Directory   string            `json:"directory" yaml:"directory"`
-	OAuthClient OAuthClientConfig `json:"oauthClient" yaml:"oauthClient"`
+	Enabled          bool             `json:"enabled" yaml:"enabled"`
+	Directory        string           `json:"directory" yaml:"directory"`
+	WebConfiguration WebConfiguration `json:"webConfiguration" yaml:"webConfiguration"`
 }
 
 func (c *UIConfig) Validate() error {
@@ -153,8 +180,8 @@ func (c *UIConfig) Validate() error {
 	if c.Directory == "" {
 		return fmt.Errorf("directory('%v')", c.Directory)
 	}
-	if err := c.OAuthClient.Validate(); err != nil {
-		return fmt.Errorf("oauthClient.%w", err)
+	if err := c.WebConfiguration.Validate(); err != nil {
+		return fmt.Errorf("webConfiguration.%w", err)
 	}
 	return nil
 }

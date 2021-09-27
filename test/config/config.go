@@ -171,6 +171,10 @@ func MakeDeviceAuthorization() oauth2.Config {
 	}
 }
 
+func CloudID() string {
+	return os.Getenv("TEST_CLOUD_SID")
+}
+
 func MakeAuthURL() string {
 	return "https://" + OAUTH_SERVER_HOST + uri.Authorize
 }

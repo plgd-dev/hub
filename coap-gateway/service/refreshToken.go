@@ -89,9 +89,19 @@ func refreshTokenPostHandler(req *mux.Message, client *Client) {
 		return
 	}
 
-	token, err := client.server.provider.Refresh(req.Context, refreshToken.RefreshToken)
+	var token *oauth2.Token
+	for _, provider := range client.server.providers {
+		token, err = provider.Refresh(req.Context, refreshToken.RefreshToken)
+		if err == nil {
+			break
+		}
+	}
 	if err != nil {
 		logErrorAndCloseClient(fmt.Errorf("cannot handle refresh token: %w", err), coapCodes.Unauthorized)
+		return
+	}
+	if token == nil {
+		logErrorAndCloseClient(fmt.Errorf("cannot handle refresh token: invalid token"), coapCodes.Unauthorized)
 		return
 	}
 

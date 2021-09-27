@@ -166,10 +166,14 @@ These configurations are for `PLGD Dashboard` as described in [here](https://git
 | ---------- | -------- | -------------- | ------- |
 | `ui.enabled` | string | `Set to true if you would like to run the web UI.` | `false` |
 | `ui.directory` | string | `Path to default web ui built by nodejs` | `"/usr/local/var/www"` |
-| `ui.oauthClient.domain` | string | `Domain address of OAuth Provider.` | `""` |
-| `ui.oauthClient.clientID` | string | `Client ID to exchange an authorization code for an access token.` | `""` |
-| `ui.oauthClient.audience` | string | `Identifier of the API configured in your OAuth provider.` | `""` |
-| `ui.oauthClient.scopes` | string | `Comma separated list of required scopes.` | `""` |
-| `ui.oauthClient.httpGatewayAddress` | string | `External address of Http gateway service.` | `""` |
+| `ui.webConfiguration.domain` | string | `Domain address of OAuth Provider.` | `""` |
+| `ui.webConfiguration.httpGatewayAddress` | string | `External address of Http gateway service.` | `""` |
+| `ui.webConfiguration.webOAuthClient.clientID` | string | `Client ID to exchange an authorization code for an access token.` | `""` |
+| `ui.webConfiguration.webOAuthClient.audience` | string | `Identifier of the API configured in your OAuth provider.` | `""` |
+| `ui.webConfiguration.webOAuthClient.scopes` | string array | `List of required scopes.` | `""` |
+| `ui.webConfiguration.deviceOAuthClient.clientID` | string | `Client ID to get an authorization code for the device.` | `""` |
+| `ui.webConfiguration.deviceOAuthClient.audience` | string | `Identifier of the API configured in your OAuth provider.` | `""` |
+| `ui.webConfiguration.deviceOAuthClient.scopes` | string array | `List of required scopes.` | `""` |
+| `ui.webConfiguration.deviceOAuthClient.providerName` | string | `Name of provider, which needs to be set to cloud resource during cloud provisioning.` | `"plgd"` |
 
 > Note that the string type related to time (i.e. timeout, idleConnTimeout, expirationTime) is decimal numbers, each with optional fraction and a unit suffix, such as "300ms", "1.5h" or "2h45m". Valid time units are "ns", "us", "ms", "s", "m", "h".

@@ -275,7 +275,7 @@ func SetUpServices(ctx context.Context, t *testing.T, servicesConfig SetUpServic
 }
 
 func setAccessForCloud(ctx context.Context, t *testing.T, c *local.Client, deviceID string) {
-	cloudSID := os.Getenv("TEST_CLOUD_SID")
+	cloudSID := config.CloudID()
 	require.NotEmpty(t, cloudSID)
 
 	d, links, err := c.GetRefDevice(ctx, deviceID)
@@ -313,6 +313,8 @@ func setAccessForCloud(ctx context.Context, t *testing.T, c *local.Client, devic
 }
 
 func OnboardDevSimForClient(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, clientId, deviceID, gwHost string, expectedResources []schema.ResourceLink) (string, func()) {
+	cloudSID := config.CloudID()
+	require.NotEmpty(t, cloudSID)
 	client, err := NewSDKClient()
 	require.NoError(t, err)
 	defer func() {
@@ -324,7 +326,7 @@ func OnboardDevSimForClient(ctx context.Context, t *testing.T, c pb.GrpcGatewayC
 	setAccessForCloud(ctx, t, client, deviceID)
 
 	code := oauthTest.GetDeviceAuthorizationCode(t, config.OAUTH_SERVER_HOST, clientId, deviceID)
-	err = client.OnboardDevice(ctx, deviceID, "plgd", "coaps+tcp://"+gwHost, code, "sid")
+	err = client.OnboardDevice(ctx, deviceID, "plgd", "coaps+tcp://"+gwHost, code, cloudSID)
 	require.NoError(t, err)
 
 	if len(expectedResources) > 0 {
