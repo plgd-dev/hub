@@ -77,7 +77,7 @@ export class WebSocketClient {
   // Sends the access token as a first message right after connect
   _sendToken = async () => {
     const accessToken = await security.getAccessTokenSilently()({
-      audience: security.getWebOAuthConfig()?.audience || '',
+      audience: security.getWebOAuthConfig()?.audience,
     })
     this.ws.send(JSON.stringify({ token: accessToken }))
   }

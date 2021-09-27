@@ -66,7 +66,6 @@ const App = ({ config }) => {
           setWellKnownConfigFetched(true)
           setWellKnownConfig(wellKnown)
         } catch (e) {
-          console.log(e)
           setConfigError(
             new Error(
               'Could not retrieve the well-known ocfcloud configuration.'
