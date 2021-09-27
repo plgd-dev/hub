@@ -64,8 +64,8 @@ func (c *HTTPConfig) Validate() error {
 
 type ClientsConfig struct {
 	Eventbus          EventBusConfig          `yaml:"eventBus" json:"eventBus"`
+	GrpcGateway       GrpcGatewayConfig       `yaml:"grpcGateway" json:"grpcGateway"`
 	ResourceAggregate ResourceAggregateConfig `yaml:"resourceAggregate" json:"resourceAggregate"`
-	ResourceDirectory ResourceDirectoryConfig `yaml:"resourceDirectory" json:"resourceDirectory"`
 	Storage           StorageConfig           `yaml:"storage" json:"storage"`
 	Subscription      SubscriptionConfig      `yaml:"subscription" json:"subscription"`
 }
@@ -74,39 +74,17 @@ func (c *ClientsConfig) Validate() error {
 	if err := c.Eventbus.Validate(); err != nil {
 		return fmt.Errorf("eventBus.%w", err)
 	}
+	if err := c.GrpcGateway.Validate(); err != nil {
+		return fmt.Errorf("grpcGateway.%w", err)
+	}
 	if err := c.ResourceAggregate.Validate(); err != nil {
 		return fmt.Errorf("resourceAggregate.%w", err)
-	}
-	if err := c.ResourceDirectory.Validate(); err != nil {
-		return fmt.Errorf("resourceDirectory.%w", err)
 	}
 	if err := c.Storage.Validate(); err != nil {
 		return fmt.Errorf("storage.%w", err)
 	}
 	if err := c.Subscription.Validate(); err != nil {
 		return fmt.Errorf("subscription.%w", err)
-	}
-	return nil
-}
-
-type ResourceAggregateConfig struct {
-	Connection grpcClient.Config `yaml:"grpc" json:"grpc"`
-}
-
-func (c *ResourceAggregateConfig) Validate() error {
-	if err := c.Connection.Validate(); err != nil {
-		return fmt.Errorf("grpc.%w", err)
-	}
-	return nil
-}
-
-type ResourceDirectoryConfig struct {
-	Connection grpcClient.Config `yaml:"grpc" json:"grpc"`
-}
-
-func (c *ResourceDirectoryConfig) Validate() error {
-	if err := c.Connection.Validate(); err != nil {
-		return fmt.Errorf("grpc.%w", err)
 	}
 	return nil
 }
@@ -118,6 +96,28 @@ type EventBusConfig struct {
 func (c *EventBusConfig) Validate() error {
 	if err := c.NATS.Validate(); err != nil {
 		return fmt.Errorf("nats.%w", err)
+	}
+	return nil
+}
+
+type GrpcGatewayConfig struct {
+	Connection grpcClient.Config `yaml:"grpc" json:"grpc"`
+}
+
+func (c *GrpcGatewayConfig) Validate() error {
+	if err := c.Connection.Validate(); err != nil {
+		return fmt.Errorf("grpc.%w", err)
+	}
+	return nil
+}
+
+type ResourceAggregateConfig struct {
+	Connection grpcClient.Config `yaml:"grpc" json:"grpc"`
+}
+
+func (c *ResourceAggregateConfig) Validate() error {
+	if err := c.Connection.Validate(); err != nil {
+		return fmt.Errorf("grpc.%w", err)
 	}
 	return nil
 }

@@ -126,6 +126,21 @@ var authRules = map[string][]kitNetHttp.AuthArgs{
 	},
 }
 
+func newGrpcGatewayClient(config GrpcGatewayConfig, logger log.Logger) (pbGRPC.GrpcGatewayClient, func(), error) {
+	var fl fn.FuncList
+	conn, err := grpcClient.New(config.Connection, logger)
+	if err != nil {
+		return nil, nil, fmt.Errorf("cannot connect to grpc-gateway: %w", err)
+	}
+	fl.AddFunc(func() {
+		if err := conn.Close(); err != nil && !kitNetGrpc.IsContextCanceled(err) {
+			logger.Errorf("error occurs during closing of the connection to grpc-gateway: %w", err)
+		}
+	})
+	client := pbGRPC.NewGrpcGatewayClient(conn.GRPC())
+	return client, fl.ToFunction(), nil
+}
+
 func newResourceSubscriber(config Config, logger log.Logger) (*subscriber.Subscriber, func(), error) {
 	var fl fn.FuncList
 	nats, err := natsClient.New(config.Clients.Eventbus.NATS, logger)
@@ -153,6 +168,21 @@ func newResourceSubscriber(config Config, logger log.Logger) (*subscriber.Subscr
 	fl.AddFunc(resourceSubscriber.Close)
 
 	return resourceSubscriber, fl.ToFunction(), nil
+}
+
+func newResourceAggregateClient(config ResourceAggregateConfig, subscriber *subscriber.Subscriber, logger log.Logger) (*raClient.Client, func(), error) {
+	var fl fn.FuncList
+	conn, err := grpcClient.New(config.Connection, logger)
+	if err != nil {
+		return nil, nil, fmt.Errorf("cannot connect to resource aggregate: %w", err)
+	}
+	fl.AddFunc(func() {
+		if err := conn.Close(); err != nil && !kitNetGrpc.IsContextCanceled(err) {
+			logger.Errorf("error occurs during closing of the connection to resource-aggregate: %w", err)
+		}
+	})
+	client := raClient.New(conn.GRPC(), subscriber)
+	return client, fl.ToFunction(), nil
 }
 
 func newSubscriptionManager(ctx context.Context, cfg Config, gwClient pbGRPC.GrpcGatewayClient, emitEvent emitEventFunc, logger log.Logger) (*SubscriptionManager, func(), error) {
@@ -203,28 +233,12 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Server, error)
 	listener.AddCloseFunc(validator.Close)
 	auth := kitNetHttp.NewInterceptorWithValidator(validator, authRules)
 
-	rdConn, err := grpcClient.New(config.Clients.ResourceDirectory.Connection, logger)
+	gwClient, closeGwClient, err := newGrpcGatewayClient(config.Clients.GrpcGateway, logger)
 	if err != nil {
 		closeListener()
-		return nil, fmt.Errorf("cannot connect to resource directory: %w", err)
+		return nil, fmt.Errorf("cannot create grpc client: %w", err)
 	}
-	listener.AddCloseFunc(func() {
-		if err := rdConn.Close(); err != nil && !kitNetGrpc.IsContextCanceled(err) {
-			logger.Errorf("error occurs during close connection to resource-directory: %v", err)
-		}
-	})
-	rdClient := pbGRPC.NewGrpcGatewayClient(rdConn.GRPC())
-
-	raConn, err := grpcClient.New(config.Clients.ResourceAggregate.Connection, logger)
-	if err != nil {
-		closeListener()
-		return nil, fmt.Errorf("cannot create connection to resource aggregate: %w", err)
-	}
-	listener.AddCloseFunc(func() {
-		if err := raConn.Close(); err != nil && !kitNetGrpc.IsContextCanceled(err) {
-			logger.Errorf("error occurs during close connection to resource aggregate: %w", err)
-		}
-	})
+	listener.AddCloseFunc(closeGwClient)
 
 	subscriber, closeSubscriberFn, err := newResourceSubscriber(config, logger)
 	if err != nil {
@@ -233,7 +247,12 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Server, error)
 	}
 	listener.AddCloseFunc(closeSubscriberFn)
 
-	raClient := raClient.New(raConn.GRPC(), subscriber)
+	raClient, closeRaClient, err := newResourceAggregateClient(config.Clients.ResourceAggregate, subscriber, logger)
+	if err != nil {
+		closeListener()
+		return nil, fmt.Errorf("cannot create resource-aggregate client: %w", err)
+	}
+	listener.AddCloseFunc(closeRaClient)
 
 	emitEvent, closeEmitEventFn, err := createEmitEventFunc(config.Clients.Subscription.HTTP.TLS, config.Clients.Subscription.HTTP.EmitEventTimeout, logger)
 	if err != nil {
@@ -243,7 +262,7 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Server, error)
 	listener.AddCloseFunc(closeEmitEventFn)
 
 	ctx, cancelSubMgrFunc := context.WithCancel(context.Background())
-	subMgr, closeSubMgrFn, err := newSubscriptionManager(ctx, config, rdClient, emitEvent, logger)
+	subMgr, closeSubMgrFn, err := newSubscriptionManager(ctx, config, gwClient, emitEvent, logger)
 	if err != nil {
 		cancelSubMgrFunc()
 		closeListener()
@@ -258,7 +277,7 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Server, error)
 		subMgr.Run()
 	}()
 
-	requestHandler := NewRequestHandler(rdClient, raClient, subMgr, emitEvent)
+	requestHandler := NewRequestHandler(gwClient, raClient, subMgr, emitEvent)
 
 	server := Server{
 		server:           NewHTTP(requestHandler, auth),

@@ -34,7 +34,7 @@ clients:
         keyFile: "/secrets/private/cert.key"
         certFile: "/secrets/public/cert.crt"
         useSystemCAPool: false
-  resourceAggregate:
+  grpcGateway:
     grpc:
       address: ""
       keepAlive:
@@ -46,7 +46,7 @@ clients:
         keyFile: "/secrets/private/cert.key"
         certFile: "/secrets/public/cert.crt"
         useSystemCAPool: false
-  resourceDirectory:
+  resourceAggregate:
     grpc:
       address: ""
       keepAlive:

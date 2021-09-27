@@ -764,8 +764,8 @@ cat /configs/cloud2cloud-gateway.yaml | yq e "\
   .apis.http.authorization.http.tls.useSystemCAPool = true |
   .apis.http.authorization.authority = \"https://${OAUTH_ENDPOINT}\" |
   .clients.eventBus.nats.url = \"${NATS_URL}\" |
+  .clients.grpcGateway.grpc.address = \"${GRPC_GATEWAY_ADDRESS}\" |
   .clients.resourceAggregate.grpc.address = \"${RESOURCE_AGGREGATE_ADDRESS}\" |
-  .clients.resourceDirectory.grpc.address = \"${RESOURCE_DIRECTORY_ADDRESS}\" |
   .clients.storage.mongoDB.uri = \"${MONGODB_URI}\" |
   .clients.subscription.http.tls.useSystemCAPool = true
 " - > /data/cloud2cloud-gateway.yaml
