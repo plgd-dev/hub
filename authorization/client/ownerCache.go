@@ -109,6 +109,9 @@ func (d *ownerSubject) syncDevicesLocked(ctx context.Context, owner string, cach
 	return added, removed, nil
 }
 
+// ErrFunc reports errors
+type ErrFunc = func(err error)
+
 type OwnerCache struct {
 	owners     *kitSync.Map
 	conn       *nats.Conn
