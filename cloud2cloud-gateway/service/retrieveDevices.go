@@ -36,7 +36,7 @@ type Device struct {
 }
 
 func (rh *RequestHandler) GetDevices(ctx context.Context, deviceIdFilter []string) ([]Device, error) {
-	getDevicesClient, err := rh.rdClient.GetDevices(ctx, &pbGRPC.GetDevicesRequest{
+	getDevicesClient, err := rh.gwClient.GetDevices(ctx, &pbGRPC.GetDevicesRequest{
 		DeviceIdFilter: deviceIdFilter,
 	})
 

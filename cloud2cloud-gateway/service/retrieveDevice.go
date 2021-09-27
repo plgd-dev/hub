@@ -31,7 +31,7 @@ func getHref(deviceID, href string) string {
 }
 
 func (rh *RequestHandler) GetResourceLinks(ctx context.Context, deviceIdFilter []string) (map[string]schema.ResourceLinks, error) {
-	client, err := rh.rdClient.GetResourceLinks(ctx, &pbGRPC.GetResourceLinksRequest{
+	client, err := rh.gwClient.GetResourceLinks(ctx, &pbGRPC.GetResourceLinksRequest{
 		DeviceIdFilter: deviceIdFilter,
 	})
 
@@ -106,7 +106,7 @@ func unmarshalContent(c *commands.Content) (interface{}, error) {
 }
 
 func (rh *RequestHandler) RetrieveResources(ctx context.Context, resourceIdFilter []string, deviceIdFilter []string) (map[string][]Representation, error) {
-	client, err := rh.rdClient.GetResources(ctx, &pbGRPC.GetResourcesRequest{
+	client, err := rh.gwClient.GetResources(ctx, &pbGRPC.GetResourcesRequest{
 		DeviceIdFilter:   deviceIdFilter,
 		ResourceIdFilter: resourceIdFilter,
 	})
