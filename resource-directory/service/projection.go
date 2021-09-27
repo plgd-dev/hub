@@ -121,24 +121,28 @@ func (p *Projection) GetDevicesMetadata(ctx context.Context, deviceIDFilter stri
 	return devicesMetadata, nil
 }
 
-func (p *Projection) GetResourcesWithLinks(ctx context.Context, resourceIDFilter []*commands.ResourceId, typeFilter strings.Set) (map[string]map[string]*Resource, error) {
-	// group resource ID filter
+// Group filter first by device ID and then by resource ID
+func getResourceIDMapFilter(resourceIDFilter []*commands.ResourceId) map[string]map[string]bool {
 	resourceIDMapFilter := make(map[string]map[string]bool)
 	for _, resourceID := range resourceIDFilter {
 		if resourceID.GetHref() == "" {
 			resourceIDMapFilter[resourceID.GetDeviceId()] = nil
-		} else {
-			hrefs, present := resourceIDMapFilter[resourceID.GetDeviceId()]
-			if present && hrefs == nil {
-				continue
-			}
-			if !present {
-				resourceIDMapFilter[resourceID.GetDeviceId()] = make(map[string]bool)
-			}
-			resourceIDMapFilter[resourceID.GetDeviceId()][resourceID.GetHref()] = true
+			continue
 		}
+		hrefs, present := resourceIDMapFilter[resourceID.GetDeviceId()]
+		if present && hrefs == nil {
+			continue
+		}
+		if !present {
+			resourceIDMapFilter[resourceID.GetDeviceId()] = make(map[string]bool)
+		}
+		resourceIDMapFilter[resourceID.GetDeviceId()][resourceID.GetHref()] = true
 	}
+	return resourceIDMapFilter
+}
 
+func (p *Projection) GetResourcesWithLinks(ctx context.Context, resourceIDFilter []*commands.ResourceId, typeFilter strings.Set) (map[string]map[string]*Resource, error) {
+	resourceIDMapFilter := getResourceIDMapFilter(resourceIDFilter)
 	resources := make(map[string]map[string]*Resource)
 	models := make([]eventstore.Model, 0, len(resourceIDMapFilter))
 	for deviceID, hrefs := range resourceIDMapFilter {

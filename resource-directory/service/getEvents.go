@@ -229,50 +229,32 @@ func handleDeviceMetadataSnapshotTaken(eu eventstore.EventUnmarshaler) *pb.GetEv
 	}
 }
 
+var eventTypeToEventHandler = map[string]resourceEventHandler{
+	(&events.ResourceLinksPublished{}).EventType():      handleResourceLinksPublished,
+	(&events.ResourceLinksUnpublished{}).EventType():    handleResourceLinksUnpublished,
+	(&events.ResourceLinksSnapshotTaken{}).EventType():  handleResourceLinksSnapshotTaken,
+	(&events.ResourceChanged{}).EventType():             handleResourceChanged,
+	(&events.ResourceUpdatePending{}).EventType():       handleResourceUpdatePending,
+	(&events.ResourceUpdated{}).EventType():             handleResourceUpdated,
+	(&events.ResourceRetrievePending{}).EventType():     handleResourceRetrievePending,
+	(&events.ResourceRetrieved{}).EventType():           handleResourceRetrieved,
+	(&events.ResourceDeletePending{}).EventType():       handleResourceDeletePending,
+	(&events.ResourceDeleted{}).EventType():             handleResourceDeleted,
+	(&events.ResourceCreatePending{}).EventType():       handleResourceCreatePending,
+	(&events.ResourceCreated{}).EventType():             handleResourceCreated,
+	(&events.ResourceStateSnapshotTaken{}).EventType():  handleResourceStateSnapshotTaken,
+	(&events.DeviceMetadataUpdatePending{}).EventType(): handleDeviceMetadataUpdatePending,
+	(&events.DeviceMetadataUpdated{}).EventType():       handleDeviceMetadataUpdated,
+	(&events.DeviceMetadataSnapshotTaken{}).EventType(): handleDeviceMetadataSnapshotTaken,
+}
+
 func handleEvent(eu eventstore.EventUnmarshaler) *pb.GetEventsResponse {
-	log.Debug("handleEvent: EventType %v", eu)
-	var handler resourceEventHandler
-
-	switch eu.EventType() {
-	case (&events.ResourceLinksPublished{}).EventType():
-		handler = handleResourceLinksPublished
-	case (&events.ResourceLinksUnpublished{}).EventType():
-		handler = handleResourceLinksUnpublished
-	case (&events.ResourceLinksSnapshotTaken{}).EventType():
-		handler = handleResourceLinksSnapshotTaken
-	case (&events.ResourceChanged{}).EventType():
-		handler = handleResourceChanged
-	case (&events.ResourceUpdatePending{}).EventType():
-		handler = handleResourceUpdatePending
-	case (&events.ResourceUpdated{}).EventType():
-		handler = handleResourceUpdated
-	case (&events.ResourceRetrievePending{}).EventType():
-		handler = handleResourceRetrievePending
-	case (&events.ResourceRetrieved{}).EventType():
-		handler = handleResourceRetrieved
-	case (&events.ResourceDeletePending{}).EventType():
-		handler = handleResourceDeletePending
-	case (&events.ResourceDeleted{}).EventType():
-		handler = handleResourceDeleted
-	case (&events.ResourceCreatePending{}).EventType():
-		handler = handleResourceCreatePending
-	case (&events.ResourceCreated{}).EventType():
-		handler = handleResourceCreated
-	case (&events.ResourceStateSnapshotTaken{}).EventType():
-		handler = handleResourceStateSnapshotTaken
-	case (&events.DeviceMetadataUpdatePending{}).EventType():
-		handler = handleDeviceMetadataUpdatePending
-	case (&events.DeviceMetadataUpdated{}).EventType():
-		handler = handleDeviceMetadataUpdated
-	case (&events.DeviceMetadataSnapshotTaken{}).EventType():
-		handler = handleDeviceMetadataSnapshotTaken
-	}
-
-	if handler == nil {
+	log.Debugf("handleEvent deviceID=%v eventype%v version=%v", eu.GroupID(), eu.EventType(), eu.Version())
+	handler, ok := eventTypeToEventHandler[eu.EventType()]
+	if !ok {
 		log.Errorf("unhandled event type %v", eu.EventType())
 		return nil
 	}
-
 	return handler(eu)
 }
 
