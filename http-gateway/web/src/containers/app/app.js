@@ -43,12 +43,12 @@ const App = ({ config }) => {
 
   // Set the getAccessTokenSilently method to the security singleton
   security.setAccessTokenSilently(getAccessTokenSilently)
-  security.setDefaultAudience(config.audience)
-  security.setHttpGatewayAddress(config.httpGatewayAddress)
-  security.setDeviceOauthConfig({
-    ...config.deviceOauthClient,
-    domain: config.domain,
-  })
+
+  // Set the auth configurations
+  const { webOAuthClient, deviceOAuthClient, ...generalConfig } = config
+  security.setGeneralConfig(generalConfig)
+  security.setWebOAuthConfig(webOAuthClient)
+  security.setDeviceOAuthConfig(deviceOAuthClient)
 
   useEffect(() => {
     if (
@@ -66,6 +66,7 @@ const App = ({ config }) => {
           setWellKnownConfigFetched(true)
           setWellKnownConfig(wellKnown)
         } catch (e) {
+          console.log(e)
           setConfigError(
             new Error(
               'Could not retrieve the well-known ocfcloud configuration.'

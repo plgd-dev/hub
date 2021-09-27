@@ -11,17 +11,18 @@ import { IntlProvider } from '@/components/intl-provider'
 import { DEVICE_AUTH_CODE_SESSION_KEY } from './constants'
 import reportWebVitals from './reportWebVitals'
 
-fetch('/auth_config.json')
+fetch('/web_configuration.json')
   .then(response => response.json())
   .then(config => {
-    if (
-      !config.clientID ||
-      !config.domain ||
-      !config.audience ||
-      !config.httpGatewayAddress
-    ) {
+    const clientID = config?.webOAuthClient?.clientID
+    const audience = config?.webOAuthClient?.audience
+    const scopes = config?.webOAuthClient?.scopes?.join?.(',') || ''
+    const httpGatewayAddress = config.httpGatewayAddress
+    const domain = config.domain
+
+    if (!clientID || !domain || !audience || !httpGatewayAddress) {
       throw new Error(
-        'clientID, domain, audience and httpGatewayAddress must be set in auth_config.json'
+        'clientID, domain, audience and httpGatewayAddress must be set in webOAuthClient of web_configuration.json'
       )
     }
 
@@ -45,12 +46,12 @@ fetch('/auth_config.json')
         <Provider store={store}>
           <IntlProvider>
             <Auth0Provider
-              domain={config.domain}
-              clientId={config.clientID}
+              domain={domain}
+              clientId={clientID}
               redirectUri={window.location.origin}
               onRedirectCallback={onRedirectCallback}
-              audience={config.audience}
-              scope={config.scope}
+              audience={audience}
+              scope={scopes}
             >
               <App config={config} />
             </Auth0Provider>

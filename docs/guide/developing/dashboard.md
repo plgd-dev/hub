@@ -10,15 +10,23 @@ nodejs
 
 ### Configuration
 
-Configuration for the client can be found in `./http-gateway/web/src/auth_config.json`.
+Configuration for the client can be found in `./http-gateway/web/src/public/web_configuration.json`.
 
 ```json
 {
   "domain": "auth.plgd.cloud",
-  "clientID": "pHdCKhnpgGEtU7KAPcLYCoCAkZ4cYVZg",
-  "audience": "https://try.plgd.cloud",
-  "scope": "",
-  "httpGatewayAddress": "https://api.try.plgd.cloud"
+  "httpGatewayAddress": "https://api.try.plgd.cloud",
+  "webOAuthClient": {
+    "clientID": "pHdCKhnpgGEtU7KAPcLYCoCAkZ4cYVZg",
+    "audience": "https://try.plgd.cloud",
+    "scopes": []
+  },
+  "deviceOAuthClient": {
+    "clientID": "cYN3p6lwNcNlOvvUhz55KvDZLQbJeDr5",
+    "audience": "",
+    "scopes": ["offline_access"],
+    "providerName": "plgd"
+  }
 }
 ```
 

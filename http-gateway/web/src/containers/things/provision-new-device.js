@@ -130,12 +130,14 @@ class _ProvisionNewDevice extends PureComponent {
       )
     }
 
+    const providerName = this.context?.deviceOAuthClient?.providerName || ''
+
     return (
       <>
         <Label title={_(t.authorizationProvider)} inline>
           <div id="auth-code-box">
-            <span>{this.context.deviceOauthClient.providerName}</span>
-            <CopyBox textToCopy={this.context.deviceOauthClient.providerName} />
+            <span>{providerName}</span>
+            <CopyBox textToCopy={providerName} />
           </div>
         </Label>
 

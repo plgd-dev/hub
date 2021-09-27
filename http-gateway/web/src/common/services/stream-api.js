@@ -2,11 +2,11 @@ import { parseStreamedData } from '@/common/utils'
 import { security } from './security'
 
 export const streamApi = async (url, options = {}) => {
-  const { audience, scope, body, ...fetchOptions } = options
-  const defaultAudience = security.getDefaultAudience()
+  const { audience, scopes, body, ...fetchOptions } = options
+  const { audience: defaultAudience } = security.getWebOAuthConfig()
   const accessToken = await security.getAccessTokenSilently()({
     audience: audience || defaultAudience,
-    scope,
+    scope: scopes?.join?.(','),
   })
   const oAuthSettings = {
     ...fetchOptions,
