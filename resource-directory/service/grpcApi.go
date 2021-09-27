@@ -21,10 +21,8 @@ import (
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore"
 	mongodb "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/mongodb"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils/notification"
 
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
 )
 
 // RequestHandler handles incoming requests.
@@ -33,15 +31,9 @@ type RequestHandler struct {
 
 	resourceProjection  *Projection
 	eventStore          eventstore.EventStore
-	subscriptions       *Subscriptions
 	publicConfiguration PublicConfiguration
 	ownerCache          *clientAS.OwnerCache
 	closeFunc           fn.FuncList
-}
-
-// AddCloseFunc adds a function to be called by the Close method.
-func (s *RequestHandler) AddCloseFunc(f func()) {
-	s.closeFunc.AddFunc(f)
 }
 
 func (s *RequestHandler) Close() {
@@ -121,18 +113,7 @@ func NewRequestHandlerFromConfig(ctx context.Context, config Config, publicConfi
 	}
 	closeFunc.AddFunc(resourceSubscriber.Close)
 
-	subscriptions := NewSubscriptions()
-	userDevicesManager := clientAS.NewUserDevicesManager(subscriptions.UserDevicesChanged, authServiceClient,
-		config.Clients.AuthServer.PullFrequency, config.Clients.AuthServer.CacheExpiration,
-		func(err error) { log.Errorf("grpc-gateway: error occurs during receiving devices: %v", err) })
-	subscriptions.userDevicesManager = userDevicesManager
-	closeFunc.AddFunc(userDevicesManager.Close)
-
-	updateNotificationContainer := notification.NewUpdateNotificationContainer()
-	retrieveNotificationContainer := notification.NewRetrieveNotificationContainer()
-	deleteNotificationContainer := notification.NewDeleteNotificationContainer()
-	createNotificationContainer := notification.NewCreateNotificationContainer()
-	mf := NewEventStoreModelFactory(subscriptions, updateNotificationContainer, retrieveNotificationContainer, deleteNotificationContainer, createNotificationContainer)
+	mf := NewEventStoreModelFactory()
 	projUUID, err := uuid.NewRandom()
 	if err != nil {
 		closeFunc.Execute()
@@ -151,7 +132,6 @@ func NewRequestHandlerFromConfig(ctx context.Context, config Config, publicConfi
 	h := NewRequestHandler(
 		resourceProjection,
 		eventstore,
-		subscriptions,
 		publicConfiguration,
 		ownerCache,
 		closeFunc,
@@ -163,7 +143,6 @@ func NewRequestHandlerFromConfig(ctx context.Context, config Config, publicConfi
 func NewRequestHandler(
 	resourceProjection *Projection,
 	eventstore eventstore.EventStore,
-	subscriptions *Subscriptions,
 	publicConfiguration PublicConfiguration,
 	ownerCache *clientAS.OwnerCache,
 	closeFunc fn.FuncList,
@@ -171,29 +150,20 @@ func NewRequestHandler(
 	return &RequestHandler{
 		resourceProjection:  resourceProjection,
 		eventStore:          eventstore,
-		subscriptions:       subscriptions,
 		publicConfiguration: publicConfiguration,
 		ownerCache:          ownerCache,
 		closeFunc:           closeFunc,
 	}
 }
 
-func NewEventStoreModelFactory(subscriptions *Subscriptions, updateNotificationContainer *notification.UpdateNotificationContainer, retrieveNotificationContainer *notification.RetrieveNotificationContainer, deleteNotificationContainer *notification.DeleteNotificationContainer, createNotificationContainer *notification.CreateNotificationContainer) func(context.Context, string, string) (eventstore.Model, error) {
+func NewEventStoreModelFactory() func(context.Context, string, string) (eventstore.Model, error) {
 	return func(ctx context.Context, deviceID, resourceID string) (eventstore.Model, error) {
 		switch resourceID {
 		case commands.MakeLinksResourceUUID(deviceID):
-			return NewResourceLinksProjection(subscriptions), nil
+			return NewResourceLinksProjection(), nil
 		case commands.MakeStatusResourceUUID(deviceID):
-			return NewDeviceMetadataProjection(subscriptions), nil
+			return NewDeviceMetadataProjection(), nil
 		}
-		return NewResourceProjection(subscriptions, updateNotificationContainer, retrieveNotificationContainer, deleteNotificationContainer, createNotificationContainer), nil
+		return NewResourceProjection(), nil
 	}
-}
-
-func (r *RequestHandler) SubscribeToEvents(srv pb.GrpcGateway_SubscribeToEventsServer) error {
-	err := r.subscriptions.SubscribeToEvents(r.resourceProjection, srv)
-	if err != nil {
-		return log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot subscribe to events: %v", err))
-	}
-	return nil
 }

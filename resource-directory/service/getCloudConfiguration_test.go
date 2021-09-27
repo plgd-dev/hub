@@ -5,14 +5,13 @@ import (
 	"crypto/tls"
 	"testing"
 
-	"github.com/stretchr/testify/require"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
-
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	rdTest "github.com/plgd-dev/cloud/resource-directory/test"
 	"github.com/plgd-dev/cloud/test"
 	"github.com/plgd-dev/cloud/test/config"
+	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 )
 
 func TestRequestHandler_GetCloudConfiguration(t *testing.T) {
@@ -29,7 +28,7 @@ func TestRequestHandler_GetCloudConfiguration(t *testing.T) {
 		},
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), TEST_TIMEOUT)
+	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
 	defer cancel()
 
 	tearDown := test.SetUp(ctx, t)

@@ -9,6 +9,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	"github.com/plgd-dev/cloud/grpc-gateway/subscription"
 	"github.com/plgd-dev/cloud/pkg/log"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/cloud/resource-aggregate/events"
@@ -92,10 +93,67 @@ func (rd *ResourceShadow) GetResources(req *pb.GetResourcesRequest, srv pb.GrpcG
 	return nil
 }
 
+func toPendingCommands(resource *Resource, commandFilter subscription.FilterBitmask, now time.Time) []*pb.PendingCommand {
+	if resource.projection == nil {
+		return nil
+	}
+	pendingCmds := make([]*pb.PendingCommand, 0, 32)
+	if subscription.IsFilteredBit(commandFilter, subscription.FilterBitmaskResourceCreatePending) {
+		for _, pendingCmd := range resource.projection.resourceCreatePendings {
+			if pendingCmd.IsExpired(now) {
+				continue
+			}
+			pendingCmds = append(pendingCmds, &pb.PendingCommand{
+				Command: &pb.PendingCommand_ResourceCreatePending{
+					ResourceCreatePending: pendingCmd,
+				},
+			})
+		}
+	}
+	if subscription.IsFilteredBit(commandFilter, subscription.FilterBitmaskResourceRetrievePending) {
+		for _, pendingCmd := range resource.projection.resourceRetrievePendings {
+			if pendingCmd.IsExpired(now) {
+				continue
+			}
+			pendingCmds = append(pendingCmds, &pb.PendingCommand{
+				Command: &pb.PendingCommand_ResourceRetrievePending{
+					ResourceRetrievePending: pendingCmd,
+				},
+			})
+		}
+	}
+	if subscription.IsFilteredBit(commandFilter, subscription.FilterBitmaskResourceUpdatePending) {
+		for _, pendingCmd := range resource.projection.resourceUpdatePendings {
+			if pendingCmd.IsExpired(now) {
+				continue
+			}
+			pendingCmds = append(pendingCmds, &pb.PendingCommand{
+				Command: &pb.PendingCommand_ResourceUpdatePending{
+					ResourceUpdatePending: pendingCmd,
+				},
+			})
+		}
+	}
+	if subscription.IsFilteredBit(commandFilter, subscription.FilterBitmaskResourceDeletePending) {
+		for _, pendingCmd := range resource.projection.resourceDeletePendings {
+			if pendingCmd.IsExpired(now) {
+				continue
+			}
+			pendingCmds = append(pendingCmds, &pb.PendingCommand{
+				Command: &pb.PendingCommand_ResourceDeletePending{
+					ResourceDeletePending: pendingCmd,
+				},
+			})
+		}
+	}
+	return pendingCmds
+}
+
 func (rd *ResourceShadow) GetPendingCommands(req *pb.GetPendingCommandsRequest, srv pb.GrpcGateway_GetPendingCommandsServer) error {
-	filterCmds := filterPendingsCommandsToBitmask(req.GetCommandFilter())
+	filterCmds := subscription.FilterPendingsCommandsToBitmask(req.GetCommandFilter())
 	now := time.Now()
-	if filterCmds&filterBitmaskDeviceMetadataUpdatePending > 0 && len(req.GetResourceIdFilter()) == 0 && len(req.GetTypeFilter()) == 0 {
+	if subscription.IsFilteredBit(filterCmds, subscription.FilterBitmaskDeviceMetadataUpdatePending) &&
+		len(req.GetResourceIdFilter()) == 0 && len(req.GetTypeFilter()) == 0 {
 		deviceIDs := filterDevices(rd.userDeviceIds, req.GetDeviceIdFilter())
 		devicesMetadata, err := rd.projection.GetDevicesMetadata(srv.Context(), deviceIDs)
 		if err != nil {

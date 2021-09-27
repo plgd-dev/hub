@@ -16,7 +16,6 @@ import (
 	natsTest "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/test"
 	mockEvents "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/test"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils/notification"
 	"github.com/plgd-dev/cloud/resource-aggregate/events"
 	"github.com/plgd-dev/cloud/resource-directory/service"
 	"github.com/plgd-dev/cloud/test/config"
@@ -126,15 +125,10 @@ func TestDeviceDirectory_GetDevices(t *testing.T) {
 		resourceSubscriber.Close()
 		naClient.Close()
 	}()
+
 	ctx := kitNetGrpc.CtxWithIncomingToken(context.Background(), "b")
-
-	subscriptions := service.NewSubscriptions()
-	updateNotificationContainer := notification.NewUpdateNotificationContainer()
-	retrieveNotificationContainer := notification.NewRetrieveNotificationContainer()
-	deleteNotificationContainer := notification.NewDeleteNotificationContainer()
-	createNotificationContainer := notification.NewCreateNotificationContainer()
-
-	resourceProjection, err := service.NewProjection(ctx, "test", testCreateResourceDeviceEventstores(), resourceSubscriber, service.NewEventStoreModelFactory(subscriptions, updateNotificationContainer, retrieveNotificationContainer, deleteNotificationContainer, createNotificationContainer), time.Second)
+	mf := service.NewEventStoreModelFactory()
+	resourceProjection, err := service.NewProjection(ctx, "test", testCreateResourceDeviceEventstores(), resourceSubscriber, mf, time.Second)
 	require.NoError(t, err)
 
 	rd := service.NewDeviceDirectory(resourceProjection, []string{

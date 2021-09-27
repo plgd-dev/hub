@@ -14,7 +14,6 @@ import (
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/subscriber"
 	natsTest "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/test"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils/notification"
 	"github.com/plgd-dev/cloud/resource-aggregate/events"
 	"github.com/plgd-dev/cloud/resource-directory/service"
 	"github.com/plgd-dev/cloud/test"
@@ -221,14 +220,8 @@ func TestResourceShadow_GetResources(t *testing.T) {
 		naClient.Close()
 	}()
 	ctx := kitNetGrpc.CtxWithIncomingToken(context.Background(), "b")
-
-	subscriptions := service.NewSubscriptions()
-	updateNotificationContainer := notification.NewUpdateNotificationContainer()
-	retrieveNotificationContainer := notification.NewRetrieveNotificationContainer()
-	deleteNotificationContainer := notification.NewDeleteNotificationContainer()
-	createNotificationContainer := notification.NewCreateNotificationContainer()
-
-	resourceProjection, err := service.NewProjection(ctx, "test", testCreateEventstore(), resourceSubscriber, service.NewEventStoreModelFactory(subscriptions, updateNotificationContainer, retrieveNotificationContainer, deleteNotificationContainer, createNotificationContainer), time.Second)
+	mf := service.NewEventStoreModelFactory()
+	resourceProjection, err := service.NewProjection(ctx, "test", testCreateEventstore(), resourceSubscriber, mf, time.Second)
 	require.NoError(t, err)
 
 	rd := service.NewResourceShadow(resourceProjection, []string{ /*Resource0.DeviceId,*/ Resource1.DeviceId, Resource2.DeviceId})
