@@ -45,7 +45,7 @@ type SubscriptionManager struct {
 	eventsURL           string
 	store               *Store
 	raClient            raService.ResourceAggregateClient
-	asClient            pbIS.IdentityServiceClient
+	isClient            pbIS.IdentityServiceClient
 	cache               *cache.Cache
 	devicesSubscription *DevicesSubscription
 	provider            *oauth2.PlgdProvider
@@ -55,7 +55,7 @@ type SubscriptionManager struct {
 
 func NewSubscriptionManager(
 	EventsURL string,
-	asClient pbIS.IdentityServiceClient,
+	isClient pbIS.IdentityServiceClient,
 	raClient raService.ResourceAggregateClient,
 	store *Store,
 	devicesSubscription *DevicesSubscription,
@@ -67,7 +67,7 @@ func NewSubscriptionManager(
 		eventsURL:           EventsURL,
 		store:               store,
 		raClient:            raClient,
-		asClient:            asClient,
+		isClient:            isClient,
 		devicesSubscription: devicesSubscription,
 		cache:               cache.New(time.Minute*10, time.Minute*5),
 		provider:            provider,

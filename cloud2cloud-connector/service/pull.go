@@ -33,7 +33,7 @@ type RetrieveDeviceWithLinksResponse struct {
 
 type pullDevicesHandler struct {
 	s                   *Store
-	asClient            pbIS.IdentityServiceClient
+	isClient            pbIS.IdentityServiceClient
 	raClient            raService.ResourceAggregateClient
 	devicesSubscription *DevicesSubscription
 	subscriptionManager *SubscriptionManager
@@ -41,8 +41,8 @@ type pullDevicesHandler struct {
 	triggerTask         OnTaskTrigger
 }
 
-func getOwnerDevices(ctx context.Context, asClient pbIS.IdentityServiceClient) (map[string]bool, error) {
-	getDevicesClient, err := asClient.GetDevices(ctx, &pbIS.GetDevicesRequest{})
+func getOwnerDevices(ctx context.Context, isClient pbIS.IdentityServiceClient) (map[string]bool, error) {
+	getDevicesClient, err := isClient.GetDevices(ctx, &pbIS.GetDevicesRequest{})
 	if err != nil {
 		return nil, fmt.Errorf("cannot get owned devices: %w", err)
 	}
@@ -176,7 +176,7 @@ func (p *pullDevicesHandler) deleteDevice(ctx context.Context, userID, deviceID 
 	if err != nil {
 		errors = append(errors, fmt.Errorf("cannot delete device %v from devicesSubscription: %w", deviceID, err))
 	}
-	resp, err := p.asClient.DeleteDevices(ctx, &pbIS.DeleteDevicesRequest{
+	resp, err := p.isClient.DeleteDevices(ctx, &pbIS.DeleteDevicesRequest{
 		DeviceIds: []string{deviceID},
 	})
 	if err != nil {
@@ -199,7 +199,7 @@ func (p *pullDevicesHandler) getDevicesWithResourceLinks(ctx context.Context, li
 	userID := linkedAccount.UserID
 	ctx = kitNetGrpc.CtxWithToken(ctx, linkedAccount.Data.Origin().AccessToken.String())
 	if linkedCloud.SupportedSubscriptionsEvents.NeedPullDevices() {
-		registeredDevices, err := getOwnerDevices(ctx, p.asClient)
+		registeredDevices, err := getOwnerDevices(ctx, p.isClient)
 		if err != nil {
 			return err
 		}
@@ -213,7 +213,7 @@ func (p *pullDevicesHandler) getDevicesWithResourceLinks(ctx context.Context, li
 			}
 
 			if !ok {
-				_, err := p.asClient.AddDevice(ctx, &pbIS.AddDeviceRequest{
+				_, err := p.isClient.AddDevice(ctx, &pbIS.AddDeviceRequest{
 					DeviceId: deviceID,
 				})
 				if err != nil {
@@ -370,7 +370,7 @@ func (p *pullDevicesHandler) pullDevicesFromAccount(ctx context.Context, linkedA
 }
 
 func pullDevices(ctx context.Context, s *Store,
-	asClient pbIS.IdentityServiceClient,
+	isClient pbIS.IdentityServiceClient,
 	raClient raService.ResourceAggregateClient,
 	devicesSubscription *DevicesSubscription,
 	subscriptionManager *SubscriptionManager,
@@ -383,7 +383,7 @@ func pullDevices(ctx context.Context, s *Store,
 		log.Debugf("pulling devices for %v", d.linkedAccount)
 		p := pullDevicesHandler{
 			s:                   s,
-			asClient:            asClient,
+			isClient:            isClient,
 			raClient:            raClient,
 			devicesSubscription: devicesSubscription,
 			subscriptionManager: subscriptionManager,

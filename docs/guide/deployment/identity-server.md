@@ -137,7 +137,7 @@ Plgd cloud uses NATS messaging system as a event bus.
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |
 | `clients.eventBus.nats.url` | string | `URL to nats messaging system.` | `"nats://localhost:4222"` |
-| `clients.eventBus.nats.jetstream `| bool | `If true, events will be published to jetstream.` | `false` |
+| `clients.eventBus.nats.jetstream`| bool | `If true, events will be published to jetstream.` | `false` |
 | `clients.eventBus.nats.tls.caPool` | string | `root certificate the root certificate in PEM format.` |  `""` |
 | `clients.eventBus.nats.tls.keyFile` | string | `File name of private key in PEM format.` | `""` |
 | `clients.eventBus.nats.tls.certFile` | string | `File name of certificate in PEM format.` | `""` |

@@ -46,10 +46,10 @@ func (c *APIsConfig) Validate() error {
 }
 
 type HTTPConfig struct {
-	EventsURL     string            `yaml:"eventsURL" json:"eventsURL"`
-	PullDevices   PullDevicesConfig `yaml:"pullDevices" json:"pullDevices"`
-	Connection    listener.Config   `yaml:",inline" json:",inline"`
-	Authorization oauth2.Config     `yaml:"authorization" json:"authorization"`
+	EventsURL     string              `yaml:"eventsURL" json:"eventsURL"`
+	PullDevices   PullDevicesConfig   `yaml:"pullDevices" json:"pullDevices"`
+	Connection    listener.Config     `yaml:",inline" json:",inline"`
+	Authorization AuthorizationConfig `yaml:"authorization" json:"authorization"`
 }
 
 type PullDevicesConfig struct {
@@ -64,6 +64,18 @@ func (c *PullDevicesConfig) Validate() error {
 	return nil
 }
 
+type AuthorizationConfig struct {
+	OwnerClaim    string `yaml:"ownerClaim" json:"ownerClaim"`
+	oauth2.Config `yaml:",inline" json:",inline"`
+}
+
+func (c *AuthorizationConfig) Validate() error {
+	if c.OwnerClaim == "" {
+		return fmt.Errorf("ownerClaim('%v')", c.OwnerClaim)
+	}
+	return c.Config.Validate()
+}
+
 func (c *HTTPConfig) Validate() error {
 	if c.EventsURL == "" {
 		return fmt.Errorf("eventsURL('%v')", c.EventsURL)
@@ -75,23 +87,23 @@ func (c *HTTPConfig) Validate() error {
 		return err
 	}
 	if err := c.Authorization.Validate(); err != nil {
-		return fmt.Errorf("authorization('%w')", err)
+		return fmt.Errorf("authorization.%w'", err)
 	}
 	return nil
 }
 
 type ClientsConfig struct {
-	AuthServer        AuthorizationServerConfig `yaml:"authorizationServer" json:"authorizationServer"`
-	Eventbus          EventBusConfig            `yaml:"eventBus" json:"eventBus"`
-	GrpcGateway       GrpcGatewayConfig         `yaml:"grpcGateway" json:"grpcGateway"`
-	ResourceAggregate ResourceAggregateConfig   `yaml:"resourceAggregate" json:"resourceAggregate"`
-	Storage           StorageConfig             `yaml:"storage" json:"storage"`
-	Subscription      SubscriptionConfig        `yaml:"subscription" json:"subscription"`
+	IdentityServer    IdentityServerConfig    `yaml:"identityServer" json:"identityServer"`
+	Eventbus          EventBusConfig          `yaml:"eventBus" json:"eventBus"`
+	GrpcGateway       GrpcGatewayConfig       `yaml:"grpcGateway" json:"grpcGateway"`
+	ResourceAggregate ResourceAggregateConfig `yaml:"resourceAggregate" json:"resourceAggregate"`
+	Storage           StorageConfig           `yaml:"storage" json:"storage"`
+	Subscription      SubscriptionConfig      `yaml:"subscription" json:"subscription"`
 }
 
 func (c *ClientsConfig) Validate() error {
-	if err := c.AuthServer.Validate(); err != nil {
-		return fmt.Errorf("authorizationServer.%w", err)
+	if err := c.IdentityServer.Validate(); err != nil {
+		return fmt.Errorf("identityServer.%w", err)
 	}
 	if err := c.Eventbus.Validate(); err != nil {
 		return fmt.Errorf("eventBus.%w", err)
@@ -111,11 +123,11 @@ func (c *ClientsConfig) Validate() error {
 	return nil
 }
 
-type AuthorizationServerConfig struct {
+type IdentityServerConfig struct {
 	Connection grpcClient.Config `yaml:"grpc" json:"grpc"`
 }
 
-func (c *AuthorizationServerConfig) Validate() error {
+func (c *IdentityServerConfig) Validate() error {
 	if err := c.Connection.Validate(); err != nil {
 		return fmt.Errorf("grpc.%w", err)
 	}

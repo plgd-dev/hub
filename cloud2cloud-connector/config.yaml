@@ -18,6 +18,7 @@ apis:
       scopes: []
       authority: ""
       audience: ""
+      ownerClaim: "sub"
       redirectURL: ""
       http:
         maxIdleConns: 16
@@ -31,7 +32,7 @@ apis:
           certFile: "/secrets/public/cert.crt"
           useSystemCAPool: false
 clients:
-  authorizationServer:
+  identityServer:
     grpc:
       address: ""
       keepAlive:

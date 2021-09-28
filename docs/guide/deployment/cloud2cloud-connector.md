@@ -74,6 +74,7 @@ apis:
     authorization:
       authority: "https://auth.example.com/authorize"
       audience: "https://api.example.com"
+      ownerClaim: "sub"
       http:
         tls:
           caPool: "/data/certs/root_ca.crt"
@@ -81,7 +82,7 @@ apis:
           certFile: "/data/certs/http.crt"
 ...
 clients:
-  authorizationServer:
+  identityServer:
     grpc:
       address: "localhost:9081"
       tls:
@@ -170,6 +171,7 @@ docker run -d --network=host \
 | `apis.http.scopes` | string array | `List of required scopes.` | `""` |
 | `apis.http.authorization.authority` | string | `Authority is the address of the token-issuing authentication server. Services will use this URI to find and retrieve the public key that can be used to validate the token’s signature.` | `""` |
 | `apis.http.authorization.audience` | string | `Identifier of the API configured in your OAuth provider.` | `""` |
+| `apis.http.authorization.ownerClaim` | string | | `Claim used to identify owner of the device.` | `"sub"` |
 | `apis.http.authorization.redirectURL` | string | `External redirect url to acquire authorization code.` | `""` |
 | `apis.http.authorization.http.maxIdleConns` | int | `It controls the maximum number of idle (keep-alive) connections across all hosts. Zero means no limit.` | `16` |
 | `apis.http.authorization.http.maxConnsPerHost` | int | `It optionally limits the total number of connections per host, including connections in the dialing, active, and idle states. On limit violation, dials will block. Zero means no limit.` | `32` |
@@ -181,24 +183,24 @@ docker run -d --network=host \
 | `apis.http.authorization.http.tls.certFile` | string | `File path to certificate in PEM format.` | `""` |
 | `apis.http.authorization.http.tls.useSystemCAPool` | bool | `If true, use system certification pool.` | `false` |
 
-### Authorization Server Client
-
-Client configurations to internally connect to Authorization Server service.
-
-| Property | Type | Description | Default |
-| ---------- | -------- | -------------- | ------- |
-| `clients.authorizationServer.grpc.address` | string | `Authorization service address.` | `"127.0.0.1:9100"` |
-| `clients.authorizationServer.grpc.tls.caPool` | string | `File path to the root certificate in PEM format which might contain multiple certificates in a single file.` |  `""` |
-| `clients.authorizationServer.grpc.tls.keyFile` | string | `File path to private key in PEM format.` | `""` |
-| `clients.authorizationServer.grpc.tls.certFile` | string | `File path to certificate in PEM format.` | `""` |
-| `clients.authorizationServer.grpc.tls.useSystemCAPool` | bool | `If true, use system certification pool.` | `false` |
-| `clients.authorizationServer.grpc.keepAlive.time` | string | `After a duration of this time if the client doesn't see any activity it pings the server to see if the transport is still alive.` | `10s` |
-| `clients.authorizationServer.grpc.keepAlive.timeout` | string | `After having pinged for keepalive check, the client waits for a duration of Timeout and if no activity is seen even after that the connection is closed.` | `20s` |
-| `clients.authorizationServer.grpc.keepAlive.permitWithoutStream` | bool | `If true, client sends keepalive pings even with no active RPCs. If false, when there are no active RPCs, Time and Timeout will be ignored and no keepalive pings will be sent.` | `false` |
-
 ::: tip Audience
 You might have one client, but multiple APIs in the OAuth system. What you want to prevent is to be able to contact all the APIs of your system with one token. This audience allows you to request the token for a specific API. If you configure it to myplgdc2c.api in the Auth0, you have to set it here if you want to also validate it.
 :::
+
+### Identity Server Client
+
+Client configurations to internally connect to Identity Server service.
+
+| Property | Type | Description | Default |
+| ---------- | -------- | -------------- | ------- |
+| `clients.identityServer.grpc.address` | string | `Identity service address.` | `"127.0.0.1:9100"` |
+| `clients.identityServer.grpc.tls.caPool` | string | `File path to the root certificate in PEM format which might contain multiple certificates in a single file.` |  `""` |
+| `clients.identityServer.grpc.tls.keyFile` | string | `File path to private key in PEM format.` | `""` |
+| `clients.identityServer.grpc.tls.certFile` | string | `File path to certificate in PEM format.` | `""` |
+| `clients.identityServer.grpc.tls.useSystemCAPool` | bool | `If true, use system certification pool.` | `false` |
+| `clients.identityServer.grpc.keepAlive.time` | string | `After a duration of this time if the client doesn't see any activity it pings the server to see if the transport is still alive.` | `10s` |
+| `clients.identityServer.grpc.keepAlive.timeout` | string | `After having pinged for keepalive check, the client waits for a duration of Timeout and if no activity is seen even after that the connection is closed.` | `20s` |
+| `clients.identityServer.grpc.keepAlive.permitWithoutStream` | bool | `If true, client sends keepalive pings even with no active RPCs. If false, when there are no active RPCs, Time and Timeout will be ignored and no keepalive pings will be sent.` | `false` |
 
 ### Event Bus
 

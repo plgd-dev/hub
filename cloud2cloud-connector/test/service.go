@@ -22,16 +22,19 @@ const (
 	OAUTH_MANAGER_AUDIENCE  = "localhost"
 )
 
-func MakeAuthorizationConfig() oauth2.Config {
-	return oauth2.Config{
-		Authority: "https://" + config.OAUTH_SERVER_HOST,
-		Config: oauth.Config{
-			ClientID:         OAUTH_MANAGER_CLIENT_ID,
-			Audience:         OAUTH_MANAGER_AUDIENCE,
-			RedirectURL:      config.C2C_CONNECTOR_OAUTH_CALLBACK,
-			ClientSecretFile: config.CA_POOL,
+func MakeAuthorizationConfig() service.AuthorizationConfig {
+	return service.AuthorizationConfig{
+		OwnerClaim: config.OWNER_CLAIM,
+		Config: oauth2.Config{
+			Authority: "https://" + config.OAUTH_SERVER_HOST,
+			Config: oauth.Config{
+				ClientID:         OAUTH_MANAGER_CLIENT_ID,
+				Audience:         OAUTH_MANAGER_AUDIENCE,
+				RedirectURL:      config.C2C_CONNECTOR_OAUTH_CALLBACK,
+				ClientSecretFile: config.CA_POOL,
+			},
+			HTTP: config.MakeHttpClientConfig(),
 		},
-		HTTP: config.MakeHttpClientConfig(),
 	}
 }
 
@@ -57,7 +60,7 @@ func MakeConfig(t *testing.T) service.Config {
 	cfg.APIs.HTTP.Connection.TLS.ClientCertificateRequired = false
 	cfg.APIs.HTTP.Authorization = MakeAuthorizationConfig()
 
-	cfg.Clients.AuthServer.Connection = config.MakeGrpcClientConfig(config.IDENTITY_HOST)
+	cfg.Clients.IdentityServer.Connection = config.MakeGrpcClientConfig(config.IDENTITY_HOST)
 	cfg.Clients.Eventbus.NATS = config.MakeSubscriberConfig()
 	cfg.Clients.GrpcGateway.Connection = config.MakeGrpcClientConfig(config.GRPC_HOST)
 	cfg.Clients.ResourceAggregate.Connection = config.MakeGrpcClientConfig(config.RESOURCE_AGGREGATE_HOST)

@@ -86,7 +86,7 @@ func cancelDevicesSubscription(ctx context.Context, linkedAccount store.LinkedAc
 func (s *SubscriptionManager) HandleDevicesRegistered(ctx context.Context, d subscriptionData, devices events.DevicesRegistered, header events.EventHeader) error {
 	var errors []error
 	for _, device := range devices {
-		_, err := s.asClient.AddDevice(ctx, &pbIS.AddDeviceRequest{
+		_, err := s.isClient.AddDevice(ctx, &pbIS.AddDeviceRequest{
 			DeviceId: device.ID,
 		})
 		if err != nil {
@@ -127,7 +127,7 @@ func (s *SubscriptionManager) HandleDevicesUnregistered(ctx context.Context, sub
 			log.Debugf("HandleDevicesUnregistered: cannot remove device %v subscription: not found", device.ID)
 		}
 		s.cache.Delete(correlationID)
-		resp, err := s.asClient.DeleteDevices(ctx, &pbIS.DeleteDevicesRequest{
+		resp, err := s.isClient.DeleteDevices(ctx, &pbIS.DeleteDevicesRequest{
 			DeviceIds: []string{device.ID},
 		})
 		if err != nil {
