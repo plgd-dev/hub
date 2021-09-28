@@ -13,7 +13,7 @@ func (r *RequestHandler) GetDevicesMetadata(req *pb.GetDevicesMetadataRequest, s
 	if err != nil {
 		return kitNetGrpc.ForwardFromError(codes.InvalidArgument, err)
 	}
-	deviceIDs, err := r.GetUserDevices(srv.Context(), owner)
+	deviceIDs, err := r.GetOwnerDevices(srv.Context(), owner)
 	if err != nil {
 		return log.LogAndReturnError(status.Errorf(status.Convert(err).Code(), "cannot retrieve devices metadata: %v", err))
 	}

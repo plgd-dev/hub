@@ -21,9 +21,9 @@ func TestUserDevicesList(t *testing.T) {
 		require.NoError(t, err)
 	}()
 	persistDevice(t, s.service.persistence, newTestDevice())
-	err := s.service.GetUserDevices(newGetUserDevicesRequest(), srv)
+	err := s.service.GetOwnerDevices(newGetOwnerDevicesRequest(), srv)
 	assert.NoError(t, err)
-	r := map[string]*pb.UserDevice{
+	r := map[string]*pb.OwnerDevice{
 		testDeviceID: {
 			DeviceId: testDeviceID,
 		},
@@ -44,10 +44,10 @@ func TestListingMoreDevices(t *testing.T) {
 	d.DeviceID = "anotherDeviceID"
 	persistDevice(t, s.service.persistence, d)
 
-	err := s.service.GetUserDevices(newGetUserDevicesRequest(), srv)
+	err := s.service.GetOwnerDevices(newGetOwnerDevicesRequest(), srv)
 	assert := assert.New(t)
 	assert.NoError(err)
-	r := map[string]*pb.UserDevice{
+	r := map[string]*pb.OwnerDevice{
 		testDeviceID: {
 			DeviceId: testDeviceID,
 		},
@@ -58,30 +58,30 @@ func TestListingMoreDevices(t *testing.T) {
 	assert.Equal(r, srv.resourceValues)
 }
 
-func newGetUserDevicesRequest() *pb.GetUserDevicesRequest {
-	return &pb.GetUserDevicesRequest{}
+func newGetOwnerDevicesRequest() *pb.GetOwnerDevicesRequest {
+	return &pb.GetOwnerDevicesRequest{}
 }
 
-type mockGetUserDevicesServer struct {
-	resourceValues map[string]*pb.UserDevice
+type mockGetOwnerDevicesServer struct {
+	resourceValues map[string]*pb.OwnerDevice
 	ctx            context.Context
 	grpc.ServerStream
 }
 
-func newMockRetrieveResources(ctx context.Context) *mockGetUserDevicesServer {
-	return &mockGetUserDevicesServer{
+func newMockRetrieveResources(ctx context.Context) *mockGetOwnerDevicesServer {
+	return &mockGetOwnerDevicesServer{
 		ctx: ctx,
 	}
 }
 
-func (d *mockGetUserDevicesServer) Send(r *pb.UserDevice) error {
+func (d *mockGetOwnerDevicesServer) Send(r *pb.OwnerDevice) error {
 	if d.resourceValues == nil {
-		d.resourceValues = make(map[string]*pb.UserDevice)
+		d.resourceValues = make(map[string]*pb.OwnerDevice)
 	}
 	d.resourceValues[r.DeviceId] = r
 	return nil
 }
 
-func (d *mockGetUserDevicesServer) Context() context.Context {
+func (d *mockGetOwnerDevicesServer) Context() context.Context {
 	return d.ctx
 }

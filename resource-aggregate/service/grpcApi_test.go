@@ -113,7 +113,7 @@ func TestRequestHandler_PublishResource(t *testing.T) {
 		naClient.Close()
 	}()
 
-	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
+	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetOwnerDevices)
 
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {
@@ -221,7 +221,7 @@ func TestRequestHandler_UnpublishResource(t *testing.T) {
 		naClient.Close()
 	}()
 
-	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
+	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetOwnerDevices)
 
 	pubReq := testMakePublishResourceRequest(deviceID, []string{href})
 	_, err = requestHandler.PublishResourceLinks(kitNetGrpc.CtxWithIncomingOwner(ctx, user0), pubReq)
@@ -296,7 +296,7 @@ func TestRequestHandler_NotifyResourceChanged(t *testing.T) {
 		naClient.Close()
 	}()
 
-	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
+	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetOwnerDevices)
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {
 			response, err := requestHandler.NotifyResourceChanged(ctx, tt.args.request)
@@ -384,7 +384,7 @@ func TestRequestHandler_UpdateResourceContent(t *testing.T) {
 		naClient.Close()
 	}()
 
-	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
+	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetOwnerDevices)
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {
 			if tt.args.request.GetResourceId().GetDeviceId() != "" && tt.args.request.GetResourceId().GetHref() != "" {
@@ -470,7 +470,7 @@ func TestRequestHandler_ConfirmResourceUpdate(t *testing.T) {
 		naClient.Close()
 	}()
 
-	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
+	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetOwnerDevices)
 	_, err = requestHandler.NotifyResourceChanged(ctx, testMakeNotifyResourceChangedRequest(deviceID, resID, 0))
 	require.NoError(t, err)
 	_, err = requestHandler.UpdateResource(ctx, testMakeUpdateResourceRequest(deviceID, resID, "", correlationID, time.Hour))
@@ -553,7 +553,7 @@ func TestRequestHandler_RetrieveResource(t *testing.T) {
 		naClient.Close()
 	}()
 
-	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
+	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetOwnerDevices)
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {
 			if tt.args.request.GetResourceId().GetDeviceId() != "" && tt.args.request.GetResourceId().GetHref() != "" {
@@ -639,7 +639,7 @@ func TestRequestHandler_ConfirmResourceRetrieve(t *testing.T) {
 		naClient.Close()
 	}()
 
-	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
+	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetOwnerDevices)
 	_, err = requestHandler.NotifyResourceChanged(ctx, testMakeNotifyResourceChangedRequest(deviceID, resID, 0))
 	require.NoError(t, err)
 	_, err = requestHandler.RetrieveResource(ctx, testMakeRetrieveResourceRequest(deviceID, resID, correlationID, time.Hour))
@@ -725,7 +725,7 @@ func TestRequestHandler_DeleteResource(t *testing.T) {
 		naClient.Close()
 	}()
 
-	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
+	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetOwnerDevices)
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {
 			if tt.args.request.GetResourceId().GetDeviceId() != "" && tt.args.request.GetResourceId().GetHref() != "" {
@@ -811,7 +811,7 @@ func TestRequestHandler_ConfirmResourceDelete(t *testing.T) {
 		naClient.Close()
 	}()
 
-	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
+	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetOwnerDevices)
 	_, err = requestHandler.NotifyResourceChanged(ctx, testMakeNotifyResourceChangedRequest(deviceID, resID, 0))
 	require.NoError(t, err)
 	_, err = requestHandler.DeleteResource(ctx, testMakeDeleteResourceRequest(deviceID, resID, correlationID, time.Hour))
@@ -897,7 +897,7 @@ func TestRequestHandler_CreateResource(t *testing.T) {
 		naClient.Close()
 	}()
 
-	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
+	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetOwnerDevices)
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {
 			if tt.args.request.GetResourceId().GetDeviceId() != "" && tt.args.request.GetResourceId().GetHref() != "" {
@@ -983,7 +983,7 @@ func TestRequestHandler_ConfirmResourceCreate(t *testing.T) {
 		naClient.Close()
 	}()
 
-	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
+	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetOwnerDevices)
 	_, err = requestHandler.NotifyResourceChanged(ctx, testMakeNotifyResourceChangedRequest(deviceID, resID, 0))
 	require.NoError(t, err)
 	_, err = requestHandler.CreateResource(ctx, testMakeCreateResourceRequest(deviceID, resID, correlationID, time.Hour))
@@ -1006,7 +1006,7 @@ func TestRequestHandler_ConfirmResourceCreate(t *testing.T) {
 	}
 }
 
-func mockGetUserDevices(ctx context.Context, userID string, deviceIDs []string) ([]string, error) {
+func mockGetOwnerDevices(ctx context.Context, userID string, deviceIDs []string) ([]string, error) {
 	ownedDevices, code, err := testListDevicesOfUserFunc(ctx, "0", userID)
 	if err != nil {
 		return nil, status.Errorf(code, "%v", err)

@@ -215,7 +215,7 @@ func TestRequestHandler_CancelPendingMetadataUpdates(t *testing.T) {
 	_, err = ag.UpdateDeviceMetadata(kitNetGrpc.CtxWithIncomingOwner(ctx, userID), testMakeUpdateDeviceMetadataRequest(deviceID, correlationID2, nil, commands.ShadowSynchronization_DISABLED, 0))
 	require.NoError(t, err)
 
-	requestHandler := service.NewRequestHandler(cfg, eventstore, publisher, mockGetUserDevices)
+	requestHandler := service.NewRequestHandler(cfg, eventstore, publisher, mockGetOwnerDevices)
 
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {

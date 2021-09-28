@@ -223,7 +223,7 @@ func TestRequestHandler_UpdateDeviceMetadata(t *testing.T) {
 		naClient.Close()
 	}()
 
-	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
+	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetOwnerDevices)
 
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {

@@ -22,7 +22,7 @@ func hasMatchDeviceID(deviceId string, deviceIdFilter map[string]bool) bool {
 	return false
 }
 
-func sendUserDevices(request *pb.GetUserDevicesRequest, srv pb.AuthorizationService_GetUserDevicesServer, createIter func() persistence.Iterator) error {
+func sendUserDevices(request *pb.GetOwnerDevicesRequest, srv pb.AuthorizationService_GetOwnerDevicesServer, createIter func() persistence.Iterator) error {
 	deviceIdFilter := make(map[string]bool)
 	for _, deviceID := range request.GetDeviceIdsFilter() {
 		deviceIdFilter[deviceID] = true
@@ -41,7 +41,7 @@ func sendUserDevices(request *pb.GetUserDevicesRequest, srv pb.AuthorizationServ
 	}
 
 	for _, deviceID := range ids {
-		err := srv.Send(&pb.UserDevice{DeviceId: deviceID})
+		err := srv.Send(&pb.OwnerDevice{DeviceId: deviceID})
 		if err != nil {
 			return log.LogAndReturnError(status.Errorf(status.Convert(err).Code(), "cannot get user devices: %v", err))
 		}
@@ -49,8 +49,8 @@ func sendUserDevices(request *pb.GetUserDevicesRequest, srv pb.AuthorizationServ
 	return nil
 }
 
-// GetUserDevices returns a list of user's devices if the access token is valid.
-func (s *Service) GetUserDevices(request *pb.GetUserDevicesRequest, srv pb.AuthorizationService_GetUserDevicesServer) error {
+// GetOwnerDevices returns a list of user's devices if the access token is valid.
+func (s *Service) GetOwnerDevices(request *pb.GetOwnerDevicesRequest, srv pb.AuthorizationService_GetOwnerDevicesServer) error {
 	tx := s.persistence.NewTransaction(srv.Context())
 	defer tx.Close()
 

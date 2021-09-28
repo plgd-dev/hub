@@ -42,7 +42,7 @@ type pullDevicesHandler struct {
 }
 
 func getUsersDevices(ctx context.Context, asClient pbAS.AuthorizationServiceClient) (map[string]bool, error) {
-	getUserDevicesClient, err := asClient.GetUserDevices(ctx, &pbAS.GetUserDevicesRequest{})
+	getUserDevicesClient, err := asClient.GetOwnerDevices(ctx, &pbAS.GetOwnerDevicesRequest{})
 	if err != nil {
 		return nil, fmt.Errorf("cannot get users devices: %w", err)
 	}

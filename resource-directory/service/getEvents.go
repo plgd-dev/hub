@@ -330,7 +330,7 @@ func (r *RequestHandler) GetEvents(req *pb.GetEventsRequest, srv pb.GrpcGateway_
 	if err != nil {
 		return log.LogAndReturnError(status.Errorf(codes.Unauthenticated, "cannot get owner: %v", err))
 	}
-	userDeviceIds, err := r.GetUserDevices(srv.Context(), owner)
+	userDeviceIds, err := r.GetOwnerDevices(srv.Context(), owner)
 	if err != nil {
 		return log.LogAndReturnError(status.Errorf(status.Convert(err).Code(), "cannot get owned devices: %v", err))
 	}

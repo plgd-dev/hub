@@ -19,8 +19,6 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-type ErrFunc func(err error)
-
 type ownerSubject struct {
 	handlers      map[uint64]func(e *events.Event)
 	subscription  *nats.Subscription
@@ -169,7 +167,7 @@ func (c *OwnerCache) makeCloseFunc(owner string, id uint64) func() {
 }
 
 func (c *OwnerCache) getOwnerDevices(ctx context.Context, asClient pbAS.AuthorizationServiceClient) ([]string, error) {
-	getUserDevicesClient, err := asClient.GetUserDevices(ctx, &pbAS.GetUserDevicesRequest{})
+	getUserDevicesClient, err := asClient.GetOwnerDevices(ctx, &pbAS.GetOwnerDevicesRequest{})
 	if err != nil {
 		return nil, status.Errorf(status.Convert(err).Code(), "cannot get owners devices: %v", err)
 	}

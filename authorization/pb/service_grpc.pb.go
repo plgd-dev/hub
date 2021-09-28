@@ -18,7 +18,7 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type AuthorizationServiceClient interface {
-	GetUserDevices(ctx context.Context, in *GetUserDevicesRequest, opts ...grpc.CallOption) (AuthorizationService_GetUserDevicesClient, error)
+	GetOwnerDevices(ctx context.Context, in *GetOwnerDevicesRequest, opts ...grpc.CallOption) (AuthorizationService_GetOwnerDevicesClient, error)
 	AddDevice(ctx context.Context, in *AddDeviceRequest, opts ...grpc.CallOption) (*AddDeviceResponse, error)
 	DeleteDevices(ctx context.Context, in *DeleteDevicesRequest, opts ...grpc.CallOption) (*DeleteDevicesResponse, error)
 }
@@ -31,12 +31,12 @@ func NewAuthorizationServiceClient(cc grpc.ClientConnInterface) AuthorizationSer
 	return &authorizationServiceClient{cc}
 }
 
-func (c *authorizationServiceClient) GetUserDevices(ctx context.Context, in *GetUserDevicesRequest, opts ...grpc.CallOption) (AuthorizationService_GetUserDevicesClient, error) {
-	stream, err := c.cc.NewStream(ctx, &AuthorizationService_ServiceDesc.Streams[0], "/ocf.cloud.auth.pb.AuthorizationService/GetUserDevices", opts...)
+func (c *authorizationServiceClient) GetOwnerDevices(ctx context.Context, in *GetOwnerDevicesRequest, opts ...grpc.CallOption) (AuthorizationService_GetOwnerDevicesClient, error) {
+	stream, err := c.cc.NewStream(ctx, &AuthorizationService_ServiceDesc.Streams[0], "/ocf.cloud.auth.pb.AuthorizationService/GetOwnerDevices", opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &authorizationServiceGetUserDevicesClient{stream}
+	x := &authorizationServiceGetOwnerDevicesClient{stream}
 	if err := x.ClientStream.SendMsg(in); err != nil {
 		return nil, err
 	}
@@ -46,17 +46,17 @@ func (c *authorizationServiceClient) GetUserDevices(ctx context.Context, in *Get
 	return x, nil
 }
 
-type AuthorizationService_GetUserDevicesClient interface {
-	Recv() (*UserDevice, error)
+type AuthorizationService_GetOwnerDevicesClient interface {
+	Recv() (*OwnerDevice, error)
 	grpc.ClientStream
 }
 
-type authorizationServiceGetUserDevicesClient struct {
+type authorizationServiceGetOwnerDevicesClient struct {
 	grpc.ClientStream
 }
 
-func (x *authorizationServiceGetUserDevicesClient) Recv() (*UserDevice, error) {
-	m := new(UserDevice)
+func (x *authorizationServiceGetOwnerDevicesClient) Recv() (*OwnerDevice, error) {
+	m := new(OwnerDevice)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -85,7 +85,7 @@ func (c *authorizationServiceClient) DeleteDevices(ctx context.Context, in *Dele
 // All implementations must embed UnimplementedAuthorizationServiceServer
 // for forward compatibility
 type AuthorizationServiceServer interface {
-	GetUserDevices(*GetUserDevicesRequest, AuthorizationService_GetUserDevicesServer) error
+	GetOwnerDevices(*GetOwnerDevicesRequest, AuthorizationService_GetOwnerDevicesServer) error
 	AddDevice(context.Context, *AddDeviceRequest) (*AddDeviceResponse, error)
 	DeleteDevices(context.Context, *DeleteDevicesRequest) (*DeleteDevicesResponse, error)
 	mustEmbedUnimplementedAuthorizationServiceServer()
@@ -95,8 +95,8 @@ type AuthorizationServiceServer interface {
 type UnimplementedAuthorizationServiceServer struct {
 }
 
-func (UnimplementedAuthorizationServiceServer) GetUserDevices(*GetUserDevicesRequest, AuthorizationService_GetUserDevicesServer) error {
-	return status.Errorf(codes.Unimplemented, "method GetUserDevices not implemented")
+func (UnimplementedAuthorizationServiceServer) GetOwnerDevices(*GetOwnerDevicesRequest, AuthorizationService_GetOwnerDevicesServer) error {
+	return status.Errorf(codes.Unimplemented, "method GetOwnerDevices not implemented")
 }
 func (UnimplementedAuthorizationServiceServer) AddDevice(context.Context, *AddDeviceRequest) (*AddDeviceResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AddDevice not implemented")
@@ -117,24 +117,24 @@ func RegisterAuthorizationServiceServer(s grpc.ServiceRegistrar, srv Authorizati
 	s.RegisterService(&AuthorizationService_ServiceDesc, srv)
 }
 
-func _AuthorizationService_GetUserDevices_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(GetUserDevicesRequest)
+func _AuthorizationService_GetOwnerDevices_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(GetOwnerDevicesRequest)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}
-	return srv.(AuthorizationServiceServer).GetUserDevices(m, &authorizationServiceGetUserDevicesServer{stream})
+	return srv.(AuthorizationServiceServer).GetOwnerDevices(m, &authorizationServiceGetOwnerDevicesServer{stream})
 }
 
-type AuthorizationService_GetUserDevicesServer interface {
-	Send(*UserDevice) error
+type AuthorizationService_GetOwnerDevicesServer interface {
+	Send(*OwnerDevice) error
 	grpc.ServerStream
 }
 
-type authorizationServiceGetUserDevicesServer struct {
+type authorizationServiceGetOwnerDevicesServer struct {
 	grpc.ServerStream
 }
 
-func (x *authorizationServiceGetUserDevicesServer) Send(m *UserDevice) error {
+func (x *authorizationServiceGetOwnerDevicesServer) Send(m *OwnerDevice) error {
 	return x.ServerStream.SendMsg(m)
 }
 
@@ -192,8 +192,8 @@ var AuthorizationService_ServiceDesc = grpc.ServiceDesc{
 	},
 	Streams: []grpc.StreamDesc{
 		{
-			StreamName:    "GetUserDevices",
-			Handler:       _AuthorizationService_GetUserDevices_Handler,
+			StreamName:    "GetOwnerDevices",
+			Handler:       _AuthorizationService_GetOwnerDevices_Handler,
 			ServerStreams: true,
 		},
 	},

@@ -41,7 +41,7 @@ func TestRequestHandler_DeleteDevices(t *testing.T) {
 		naClient.Close()
 	}()
 
-	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
+	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetOwnerDevices)
 
 	type args struct {
 		req   *commands.DeleteDevicesRequest
