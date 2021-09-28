@@ -18,7 +18,7 @@ import (
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/cloud/resource-aggregate/events"
 	"github.com/plgd-dev/cloud/test"
-	testCfg "github.com/plgd-dev/cloud/test/config"
+	"github.com/plgd-dev/cloud/test/config"
 	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
 	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/kit/codec/cbor"
@@ -27,11 +27,10 @@ import (
 	"google.golang.org/grpc/credentials"
 )
 
-const TEST_TIMEOUT = time.Second * 30
-
+//gocyclo:ignore
 func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
-	ctx, cancel := context.WithTimeout(context.Background(), TEST_TIMEOUT)
+	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
 	defer cancel()
 
 	tearDown := test.SetUp(ctx, t)
@@ -43,7 +42,7 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 	shutdownHttp := httpgwTest.SetUp(t)
 	defer shutdownHttp()
 
-	conn, err := grpc.Dial(testCfg.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+	conn, err := grpc.Dial(config.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
 	})))
 	require.NoError(t, err)
@@ -60,7 +59,7 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 	d.TLSClientConfig = &tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
 	}
-	wsConn, _, err := d.Dial(fmt.Sprintf("wss://%v/api/v1/ws/events", testCfg.HTTP_GW_HOST), header)
+	wsConn, _, err := d.Dial(fmt.Sprintf("wss://%v/api/v1/ws/events", config.HTTP_GW_HOST), header)
 	require.NoError(t, err)
 
 	send := func(req *pb.SubscribeToEvents) error {
@@ -112,7 +111,7 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 	test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
 	baseSubId := ev.SubscriptionId
 
-	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.GW_HOST, nil)
+	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.GW_HOST, nil)
 
 	ev, err = recv()
 	require.NoError(t, err)

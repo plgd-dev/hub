@@ -22,7 +22,7 @@ import (
 	raService "github.com/plgd-dev/cloud/resource-aggregate/test"
 	rdService "github.com/plgd-dev/cloud/resource-directory/test"
 	"github.com/plgd-dev/cloud/test"
-	testCfg "github.com/plgd-dev/cloud/test/config"
+	"github.com/plgd-dev/cloud/test/config"
 	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
 	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/stretchr/testify/require"
@@ -260,12 +260,12 @@ func TestRequestHandler_GetDevicePendingCommands(t *testing.T) {
 		},
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), TEST_TIMEOUT)
+	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
 	defer cancel()
 
 	test.ClearDB(ctx, t)
 	oauthShutdown := oauthTest.SetUp(t)
-	authShutdown := idService.SetUp(t)
+	idShutdown := idService.SetUp(t)
 	raShutdown := raService.SetUp(t)
 	rdShutdown := rdService.SetUp(t)
 	grpcShutdown := grpcgwService.SetUp(t)
@@ -276,7 +276,7 @@ func TestRequestHandler_GetDevicePendingCommands(t *testing.T) {
 	defer grpcShutdown()
 	defer rdShutdown()
 	defer raShutdown()
-	defer authShutdown()
+	defer idShutdown()
 	defer oauthShutdown()
 
 	shutdownHttp := httpgwTest.SetUp(t)
@@ -285,13 +285,13 @@ func TestRequestHandler_GetDevicePendingCommands(t *testing.T) {
 	token := oauthTest.GetDefaultServiceToken(t)
 	ctx = kitNetGrpc.CtxWithToken(ctx, token)
 
-	conn, err := grpc.Dial(testCfg.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+	conn, err := grpc.Dial(config.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
 	})))
 	require.NoError(t, err)
 	c := pb.NewGrpcGatewayClient(conn)
 
-	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.GW_HOST, test.GetAllBackendResourceLinks())
+	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 
 	secureGWShutdown()

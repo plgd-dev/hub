@@ -11,11 +11,12 @@ import (
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	httpgwTest "github.com/plgd-dev/cloud/http-gateway/test"
 	"github.com/plgd-dev/cloud/http-gateway/uri"
+	"github.com/plgd-dev/cloud/test/config"
 	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
 )
 
 func TestRequestHandler_CancelDeviceMetadataUpdate(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), TEST_TIMEOUT)
+	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
 	defer cancel()
 
 	_, devicePendings, shutdown := initPendingEvents(ctx, t)

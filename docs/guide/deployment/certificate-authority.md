@@ -125,6 +125,7 @@ gRPC API of the Certificate Authority service as defined [here](https://github.c
 | `api.grpc.tls.keyFile` | string | `File path to private key in PEM format.` | `""` |
 | `api.grpc.tls.certFile` | string | `File path to certificate in PEM format.` | `""` |
 | `api.grpc.tls.clientCertificateRequired` | bool | `If true, require client certificate.` | `true` |
+| `api.grpc.authorization.ownerClaim` | string | `Claim used to identify owner of the device.` | `"sub"` |
 | `api.grpc.authorization.authority` | string | `Authority is the address of the token-issuing authentication server. Services will use this URI to find and retrieve the public key that can be used to validate the token’s signature.` | `""` |
 | `api.grpc.authorization.audience` | string | `Identifier of the API configured in your OAuth provider.` | `""` |
 | `api.grpc.authorization.http.maxIdleConns` | int | `It controls the maximum number of idle (keep-alive) connections across all hosts. Zero means no limit.` | `16` |
