@@ -23,7 +23,6 @@ apis:
     authorization:
       authority: ""
       audience: ""
-      ownerClaim: "sub"
       http:
         maxIdleConns: 16
         maxConnsPerHost: 32
