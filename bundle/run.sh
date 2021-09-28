@@ -591,7 +591,7 @@ cat /configs/coap-gateway.yaml | yq e "\
   .apis.coap.address = \"${COAP_GATEWAY_UNSECURE_ADDRESS}\" |
   .apis.coap.externalAddress = \"${FQDN}:${COAP_GATEWAY_UNSECURE_PORT}\" |
   .apis.coap.tls.enabled = false |
-  .apis.coap.authorization.providers[0].name = \"plgd\" | 
+  .apis.coap.authorization.providers[0].name = \"${DEVICE_PROVIDER}\" | 
   .apis.coap.authorization.providers[0].authority = \"https://${OAUTH_ENDPOINT}\" |
   .apis.coap.authorization.providers[0].clientID = \"${DEVICE_OAUTH_CLIENT_ID}\" |
   .apis.coap.authorization.providers[0].clientSecret = \"${DEVICE_OAUTH_CLIENT_SECRET}\" |
@@ -627,7 +627,7 @@ cat /configs/coap-gateway.yaml | yq e "\
   .apis.coap.tls.enabled = true |
   .apis.coap.tls.keyFile = \"${EXTERNAL_CERT_DIR_PATH}/${COAP_GATEWAY_FILE_CERT_KEY_NAME}\" |
   .apis.coap.tls.certFile = \"${EXTERNAL_CERT_DIR_PATH}/${COAP_GATEWAY_FILE_CERT_NAME}\" |
-  .apis.coap.authorization.providers[0].name = \"plgd\" | 
+  .apis.coap.authorization.providers[0].name = \"${DEVICE_PROVIDER}\" | 
   .apis.coap.authorization.providers[0].authority = \"https://${OAUTH_ENDPOINT}\" |
   .apis.coap.authorization.providers[0].clientID = \"${DEVICE_OAUTH_CLIENT_ID}\" |
   .apis.coap.authorization.providers[0].clientSecret = \"${DEVICE_OAUTH_CLIENT_SECRET}\" |
@@ -703,7 +703,8 @@ cat /configs/http-gateway.yaml | yq e "\
   .ui.webConfiguration.webOAuthClient.scopes = [ \"openid\", \"offline_access\" ] |
   .ui.webConfiguration.deviceOAuthClient.clientID = \"${DEVICE_OAUTH_CLIENT_ID}\" |
   .ui.webConfiguration.deviceOAuthClient.scopes = [ \"${DEVICE_OAUTH_SCOPES}\" ] |
-  .ui.webConfiguration.deviceOAuthClient.audience = \"${DEVICE_OAUTH_AUDIENCE}\"
+  .ui.webConfiguration.deviceOAuthClient.audience = \"${DEVICE_OAUTH_AUDIENCE}\" |
+  .ui.webConfiguration.deviceOAuthClient.providerName = \"${DEVICE_PROVIDER}\"
 " - > /data/http-gateway.yaml
 
 echo "starting http-gateway"

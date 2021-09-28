@@ -37,6 +37,7 @@ const TEST_TIMEOUT = time.Second * 30
 const OAUTH_MANAGER_CLIENT_ID = service.ClientTest
 const OAUTH_MANAGER_AUDIENCE = "localhost"
 const HTTP_GW_HOST = "localhost:20010"
+const DEVICE_PROVIDER = "plgd"
 
 var CA_POOL = os.Getenv("LISTEN_FILE_CA_POOL")
 var KEY_FILE = os.Getenv("LISTEN_FILE_CERT_DIR_PATH") + "/" + os.Getenv("LISTEN_FILE_CERT_KEY_NAME")

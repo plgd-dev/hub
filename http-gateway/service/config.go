@@ -122,7 +122,7 @@ type BasicOAuthClient struct {
 
 func (c *BasicOAuthClient) Validate() error {
 	if c.ClientID == "" {
-		return fmt.Errorf("domain('%v')", c.ClientID)
+		return fmt.Errorf("clientID('%v')", c.ClientID)
 	}
 	if c.Audience == "" {
 		return fmt.Errorf("audience('%v')", c.Audience)
@@ -137,7 +137,7 @@ type DeviceOAuthClient struct {
 
 func (c *DeviceOAuthClient) Validate() error {
 	if c.ClientID == "" {
-		return fmt.Errorf("domain('%v')", c.ClientID)
+		return fmt.Errorf("clientID('%v')", c.ClientID)
 	}
 	return nil
 }

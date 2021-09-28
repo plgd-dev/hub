@@ -35,7 +35,7 @@ func MakeConfig(t *testing.T) service.Config {
 	cfg.APIs.COAP.Authorization = service.AuthorizationConfig{
 		Providers: []service.ProvidersConfig{
 			{
-				Name:   "plgd",
+				Name:   config.DEVICE_PROVIDER,
 				Config: config.MakeDeviceAuthorization(),
 			},
 		},
