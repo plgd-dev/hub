@@ -65,16 +65,11 @@ func (c *EventBusConfig) Validate() error {
 }
 
 type StorageConfig struct {
-	OwnerClaim string         `yaml:"ownerClaim" json:"ownerClaim"`
-	MongoDB    mongodb.Config `yaml:"mongoDB" json:"mongoDB"`
+	MongoDB mongodb.Config `yaml:"mongoDB" json:"mongoDB"`
 }
 
 func (c *StorageConfig) Validate() error {
-	if c.OwnerClaim == "" {
-		return fmt.Errorf("ownerClaim('%v')", c.OwnerClaim)
-	}
-	err := c.MongoDB.Validate()
-	if err != nil {
+	if err := c.MongoDB.Validate(); err != nil {
 		return fmt.Errorf("mongoDB.%w", err)
 	}
 	return nil

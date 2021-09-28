@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"google.golang.org/grpc"
-
 	"github.com/plgd-dev/cloud/identity/pb"
 	"github.com/plgd-dev/cloud/identity/persistence"
 	"github.com/plgd-dev/cloud/identity/persistence/mongodb"
@@ -17,6 +15,7 @@ import (
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/client"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/publisher"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
+	"google.golang.org/grpc"
 )
 
 // Provider defines interface for authentication against auth service
@@ -26,7 +25,7 @@ type Persistence = interface {
 	Close(ctx context.Context) error
 }
 
-// Service holds dependencies of the authorization Service.
+// Service holds dependencies of the Identity service.
 type Service struct {
 	pb.UnimplementedIdentityServiceServer
 	persistence Persistence
@@ -65,7 +64,7 @@ func NewServer(ctx context.Context, cfg Config, logger log.Logger, publisher *pu
 		}
 	})
 
-	service := NewService(persistence, publisher, cfg.Clients.Storage.OwnerClaim)
+	service := NewService(persistence, publisher, cfg.APIs.GRPC.Authorization.OwnerClaim)
 
 	pb.RegisterIdentityServiceServer(grpcServer.Server, service)
 
@@ -89,7 +88,7 @@ func New(ctx context.Context, cfg Config, logger log.Logger) (*Server, error) {
 		naClient.Close()
 		return nil, fmt.Errorf("cannot create validator: %w", err)
 	}
-	opts, err := server.MakeDefaultOptions(NewAuth(validator, cfg.Clients.Storage.OwnerClaim), logger)
+	opts, err := server.MakeDefaultOptions(NewAuth(validator, cfg.APIs.GRPC.Authorization.OwnerClaim), logger)
 	if err != nil {
 		validator.Close()
 		naClient.Close()

@@ -1,1 +1,1 @@
-../docs/guide/deployment/authorization-server.md
+../docs/guide/deployment/identity-server.md

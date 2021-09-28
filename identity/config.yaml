@@ -21,6 +21,7 @@ apis:
       certFile: "/secrets/public/cert.crt"
       clientCertificateRequired: true
     authorization:
+      ownerClaim: sub
       authority:
       audience:
       http:
@@ -45,7 +46,6 @@ clients:
         certFile: "/secrets/public/cert.crt"
         useSystemCAPool: false
   storage:
-    ownerClaim: sub
     mongoDB:
       uri: "mongodb://localhost:27017"
       database: "ownersDevices"

@@ -30,9 +30,8 @@ func makeConfig(t *testing.T) Config {
 	cfg.APIs.GRPC.Authorization.OwnerClaim = config.OWNER_CLAIM
 	cfg.APIs.GRPC.Authorization.Config = config.MakeAuthorizationConfig()
 
-	cfg.Clients.Storage.OwnerClaim = "sub"
 	cfg.Clients.Storage.MongoDB.URI = config.MONGODB_URI
-	cfg.Clients.Storage.MongoDB.Database = "ownersDevices"
+	cfg.Clients.Storage.MongoDB.Database = config.IDENTITY_DB
 	cfg.Clients.Storage.MongoDB.TLS.CAPool = config.CA_POOL
 	cfg.Clients.Storage.MongoDB.TLS.CertFile = config.CERT_FILE
 	cfg.Clients.Storage.MongoDB.TLS.KeyFile = config.KEY_FILE

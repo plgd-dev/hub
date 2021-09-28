@@ -19,17 +19,17 @@ func New(t *testing.T, config service.Config) func() {
 	logger, err := log.NewLogger(config.Log)
 	require.NoError(t, err)
 
-	auth, err := service.New(ctx, config, logger)
+	idServer, err := service.New(ctx, config, logger)
 	require.NoError(t, err)
 	var wg sync.WaitGroup
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		_ = auth.Serve()
+		_ = idServer.Serve()
 	}()
 
 	return func() {
-		auth.Shutdown()
+		idServer.Shutdown()
 		wg.Wait()
 	}
 }

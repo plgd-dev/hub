@@ -1,18 +1,18 @@
-# Authorization Server
+# Identity Server
 
-Authorization Server authorizes users and devices interacting with the plgd cloud.
+Identity Server authorizes users and devices interacting with the plgd cloud.
 
 ## Docker Image
 
 ```bash
-docker pull plgd/authorization:latest
+docker pull plgd/identity:latest
 ```
 
 ## Docker Run
 
 ### How to make certificates
 
-Before you run docker image of plgd/authorization, you make sure certificates exists in `.tmp/certs` folder.
+Before you run docker image of plgd/identity, you make sure certificates exists in `.tmp/certs` folder.
 If not exists, you can create certificates from plgd/bundle image by following step only once.
 
 ```bash
@@ -41,15 +41,15 @@ http.crt  http.key  root_ca.crt  root_ca.key
 
 ### How to get configuration file
 
-A configuration template is available on [authorization/config.yaml](https://github.com/plgd-dev/cloud/blob/v2/authorization/config.yaml).
-You can also see `config.yaml` configuration file on the `authorization` folder by downloading `git clone https://github.com/plgd-dev/cloud.git`.
+A configuration template is available on [identity/config.yaml](https://github.com/plgd-dev/cloud/blob/v2/identity/config.yaml).
+You can also see `config.yaml` configuration file on the `identity` folder by downloading `git clone https://github.com/plgd-dev/cloud.git`.
 
 ```bash
-# Copy & paste configuration template from the link and save the file named `authorization.yaml` on the local folder.
-vi authorization.yaml
+# Copy & paste configuration template from the link and save the file named `identity.yaml` on the local folder.
+vi identity.yaml
 
 # Or download configuration template.
-curl https://github.com/plgd-dev/cloud/blob/v2/authorization/config.yaml --output authorization.yaml
+curl https://github.com/plgd-dev/cloud/blob/v2/identity/config.yaml --output identity.yaml
 ```
 
 ### Edit configuration file
@@ -82,14 +82,14 @@ clients:
 
 ### Run docker image
 
-You can run plgd/authorization image using certificates and configuration file on the folder you made certificates.
+You can run plgd/identity image using certificates and configuration file on the folder you made certificates.
 
 ```bash
 docker run -d --network=host \
-  --name=authorization \
+  --name=identity \
   -v $(pwd)/.tmp/certs:/data/certs \
-  -v $(pwd)/authorization.yaml:/data/authorization.yaml \
-  plgd/authorization:latest --config=/data/authorization.yaml
+  -v $(pwd)/identity.yaml:/data/identity.yaml \
+  plgd/identity:latest --config=/data/identity.yaml
 ```
 
 ## YAML Configuration
@@ -102,7 +102,7 @@ docker run -d --network=host \
 
 ### gRPC API
 
-gRPC API of the Authorization Server service as defined [here](https://github.com/plgd-dev/cloud/blob/v2/authorization/pb/service_grpc.pb.go#L19).
+gRPC API of the Identity Server service as defined [here](https://github.com/plgd-dev/cloud/blob/v2/identity/pb/service_grpc.pb.go#L19).
 
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |
@@ -118,6 +118,7 @@ gRPC API of the Authorization Server service as defined [here](https://github.co
 | `api.grpc.tls.keyFile` | string | `File path to private key in PEM format.` | `""` |
 | `api.grpc.tls.certFile` | string | `File path to certificate in PEM format.` | `""` |
 | `api.grpc.tls.clientCertificateRequired` | bool | `If true, require client certificate.` | `true` |
+| `api.grpc.authorization.ownerClaim` | string | `Claim used to identify owner of the device.` | `"sub"` |
 | `api.grpc.authorization.authority` | string | `Authority is the address of the token-issuing authentication server. Services will use this URI to find and retrieve the public key that can be used to validate the token’s signature.` | `""` |
 | `api.grpc.authorization.audience` | string | `Identifier of the API configured in your OAuth provider.` | `""` |
 | `api.grpc.authorization.http.maxIdleConns` | int | `It controls the maximum number of idle (keep-alive) connections across all hosts. Zero means no limit.` | `16` |
@@ -149,7 +150,6 @@ Plgd cloud uses MongoDB database as owner's device store.
 
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |
-| `clients.storage.ownerClaim` | string | `Claim used to identify owner of the device.` | `"sub"` |
 | `clients.storage.mongoDB.uri` | string | `URI to mongo database.` | `"mongodb://localhost:27017"` |
 | `clients.storage.mongoDB.database` | string | `Name of database.` | `"ownersDevices"` |
 | `clients.storage.mongoDB.tls.caPool` | string | `File path to the root certificate in PEM format which might contain multiple certificates in a single file.` |  `""` |

@@ -26,6 +26,7 @@ import (
 )
 
 const IDENTITY_HOST = "localhost:20000"
+const IDENTITY_DB = "ownersDevices"
 const GW_HOST = "localhost:20002"
 const RESOURCE_AGGREGATE_HOST = "localhost:20003"
 const RESOURCE_DIRECTORY_HOST = "localhost:20004"

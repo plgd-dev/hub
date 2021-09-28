@@ -199,7 +199,7 @@ Plgd cloud uses MongoDB database as the owner's device store.
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |
 | `clients.storage.mongoDB.uri` | string | `URI to mongo database.` | `"mongodb://localhost:27017"` |
-| `clients.storage.mongoDB.database` | string | `Name of database.` | `"ownersDevices"` |
+| `clients.storage.mongoDB.database` | string | `Name of database.` | `"cloud2cloudGateway"` |
 | `clients.storage.mongoDB.tls.caPool` | string | `File path to the root certificate in PEM format which might contain multiple certificates in a single file.` |  `""` |
 | `clients.storage.mongoDB.tls.keyFile` | string | `File path to private key in PEM format.` | `""` |
 | `clients.storage.mongoDB.tls.certFile` | string | `File path to certificate in PEM format.` | `""` |

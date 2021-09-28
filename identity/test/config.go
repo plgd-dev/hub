@@ -13,7 +13,6 @@ func MakeConfig(t *testing.T) service.Config {
 
 	cfg.APIs.GRPC = config.MakeGrpcServerConfig(config.IDENTITY_HOST)
 
-	cfg.Clients.Storage.OwnerClaim = config.OWNER_CLAIM
 	cfg.Clients.Storage.MongoDB.URI = config.MONGODB_URI
 	cfg.Clients.Storage.MongoDB.TLS = config.MakeTLSClientConfig()
 	cfg.Clients.Storage.MongoDB.Database = "ownersDevices"
