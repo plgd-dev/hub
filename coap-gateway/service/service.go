@@ -12,10 +12,10 @@ import (
 	"time"
 
 	cache "github.com/patrickmn/go-cache"
-	authClient "github.com/plgd-dev/cloud/authorization/client"
-	pbAS "github.com/plgd-dev/cloud/authorization/pb"
 	"github.com/plgd-dev/cloud/coap-gateway/uri"
 	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"
+	idClient "github.com/plgd-dev/cloud/identity/client"
+	pbIS "github.com/plgd-dev/cloud/identity/pb"
 	"github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	grpcClient "github.com/plgd-dev/cloud/pkg/net/grpc/client"
@@ -47,7 +47,7 @@ type Service struct {
 	BlockWiseTransferSZX    blockwise.SZX
 	natsClient              *natsClient.Client
 	raClient                *raClient.Client
-	asClient                pbAS.AuthorizationServiceClient
+	isClient                pbIS.IdentityServiceClient
 	rdClient                pbGRPC.GrpcGatewayClient
 	expirationClientCache   *cache.Cache
 	tlsDeviceIDCache        *cache.Cache
@@ -63,7 +63,7 @@ type Service struct {
 	providers               map[string]*oauth2.PlgdProvider
 	jwtValidator            *jwt.Validator
 	sigs                    chan os.Signal
-	ownerCache              *authClient.OwnerCache
+	ownerCache              *idClient.OwnerCache
 }
 
 // New creates server.
@@ -137,7 +137,7 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 			logger.Errorf("error occurs during close connection to authorization server: %v", err)
 		}
 	})
-	asClient := pbAS.NewAuthorizationServiceClient(asConn.GRPC())
+	asClient := pbIS.NewIdentityServiceClient(asConn.GRPC())
 
 	rdConn, err := grpcClient.New(config.Clients.ResourceDirectory.Connection, logger)
 	if err != nil {
@@ -254,7 +254,7 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 
 	jwtValidator := jwt.NewValidatorWithKeyCache(keyCache)
 
-	ownerCache := authClient.NewOwnerCache("sub", config.APIs.COAP.OwnerCacheExpiration, nats.GetConn(), asClient, func(err error) {
+	ownerCache := idClient.NewOwnerCache("sub", config.APIs.COAP.OwnerCacheExpiration, nats.GetConn(), asClient, func(err error) {
 		log.Errorf("ownerCache error: %w", err)
 	})
 	nats.AddCloseFunc(ownerCache.Close)
@@ -268,7 +268,7 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 
 		natsClient:            nats,
 		raClient:              raClient,
-		asClient:              asClient,
+		isClient:              asClient,
 		rdClient:              rdClient,
 		expirationClientCache: expirationClientCache,
 		tlsDeviceIDCache:      tlsDeviceIDCache,

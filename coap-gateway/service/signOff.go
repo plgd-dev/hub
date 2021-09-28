@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"net/url"
 
-	"github.com/plgd-dev/cloud/authorization/pb"
 	"github.com/plgd-dev/cloud/coap-gateway/coapconv"
+	"github.com/plgd-dev/cloud/identity/pb"
 	"github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
@@ -141,7 +141,7 @@ func signOffHandler(req *mux.Message, client *Client) {
 	}
 
 	client.unsubscribeFromDeviceEvents()
-	respAS, err := client.server.asClient.DeleteDevices(ctx, &pb.DeleteDevicesRequest{
+	respAS, err := client.server.isClient.DeleteDevices(ctx, &pb.DeleteDevicesRequest{
 		DeviceIds: deviceIds,
 	})
 	if err != nil {

@@ -8,8 +8,8 @@ import (
 	"sync"
 	"syscall"
 
-	clientAS "github.com/plgd-dev/cloud/authorization/client"
-	pbAS "github.com/plgd-dev/cloud/authorization/pb"
+	clientIS "github.com/plgd-dev/cloud/identity/client"
+	pbIS "github.com/plgd-dev/cloud/identity/pb"
 	"github.com/plgd-dev/cloud/pkg/log"
 	"github.com/plgd-dev/cloud/pkg/net/grpc/client"
 	"github.com/plgd-dev/cloud/pkg/net/grpc/server"
@@ -101,7 +101,7 @@ func NewService(ctx context.Context, config Config, logger log.Logger, eventStor
 		}
 	})
 
-	authClient := pbAS.NewAuthorizationServiceClient(asConn.GRPC())
+	authClient := pbIS.NewIdentityServiceClient(asConn.GRPC())
 
 	nats, err := natsClient.New(config.Clients.Eventbus.NATS.Config, logger)
 	if err != nil {
@@ -109,7 +109,7 @@ func NewService(ctx context.Context, config Config, logger log.Logger, eventStor
 	}
 	grpcServer.AddCloseFunc(nats.Close)
 
-	ownerCache := clientAS.NewOwnerCache("sub", config.APIs.GRPC.OwnerCacheExpiration, nats.GetConn(), authClient, func(err error) {
+	ownerCache := clientIS.NewOwnerCache("sub", config.APIs.GRPC.OwnerCacheExpiration, nats.GetConn(), authClient, func(err error) {
 		log.Errorf("ownerCache error: %w", err)
 	})
 	grpcServer.AddCloseFunc(ownerCache.Close)

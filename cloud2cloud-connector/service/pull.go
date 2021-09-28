@@ -10,8 +10,8 @@ import (
 	"sync"
 	"time"
 
-	pbAS "github.com/plgd-dev/cloud/authorization/pb"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/store"
+	pbIS "github.com/plgd-dev/cloud/identity/pb"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/pkg/security/oauth2"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
@@ -33,7 +33,7 @@ type RetrieveDeviceWithLinksResponse struct {
 
 type pullDevicesHandler struct {
 	s                   *Store
-	asClient            pbAS.AuthorizationServiceClient
+	asClient            pbIS.IdentityServiceClient
 	raClient            raService.ResourceAggregateClient
 	devicesSubscription *DevicesSubscription
 	subscriptionManager *SubscriptionManager
@@ -41,8 +41,8 @@ type pullDevicesHandler struct {
 	triggerTask         OnTaskTrigger
 }
 
-func getOwnerDevices(ctx context.Context, asClient pbAS.AuthorizationServiceClient) (map[string]bool, error) {
-	getDevicesClient, err := asClient.GetDevices(ctx, &pbAS.GetDevicesRequest{})
+func getOwnerDevices(ctx context.Context, asClient pbIS.IdentityServiceClient) (map[string]bool, error) {
+	getDevicesClient, err := asClient.GetDevices(ctx, &pbIS.GetDevicesRequest{})
 	if err != nil {
 		return nil, fmt.Errorf("cannot get owned devices: %w", err)
 	}
@@ -176,7 +176,7 @@ func (p *pullDevicesHandler) deleteDevice(ctx context.Context, userID, deviceID 
 	if err != nil {
 		errors = append(errors, fmt.Errorf("cannot delete device %v from devicesSubscription: %w", deviceID, err))
 	}
-	resp, err := p.asClient.DeleteDevices(ctx, &pbAS.DeleteDevicesRequest{
+	resp, err := p.asClient.DeleteDevices(ctx, &pbIS.DeleteDevicesRequest{
 		DeviceIds: []string{deviceID},
 	})
 	if err != nil {
@@ -213,7 +213,7 @@ func (p *pullDevicesHandler) getDevicesWithResourceLinks(ctx context.Context, li
 			}
 
 			if !ok {
-				_, err := p.asClient.AddDevice(ctx, &pbAS.AddDeviceRequest{
+				_, err := p.asClient.AddDevice(ctx, &pbIS.AddDeviceRequest{
 					DeviceId: deviceID,
 				})
 				if err != nil {
@@ -370,7 +370,7 @@ func (p *pullDevicesHandler) pullDevicesFromAccount(ctx context.Context, linkedA
 }
 
 func pullDevices(ctx context.Context, s *Store,
-	asClient pbAS.AuthorizationServiceClient,
+	asClient pbIS.IdentityServiceClient,
 	raClient raService.ResourceAggregateClient,
 	devicesSubscription *DevicesSubscription,
 	subscriptionManager *SubscriptionManager,

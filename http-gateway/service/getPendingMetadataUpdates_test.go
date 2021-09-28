@@ -8,17 +8,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/require"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
-
-	authService "github.com/plgd-dev/cloud/authorization/test"
 	caService "github.com/plgd-dev/cloud/certificate-authority/test"
 	coapgwTest "github.com/plgd-dev/cloud/coap-gateway/test"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	grpcgwService "github.com/plgd-dev/cloud/grpc-gateway/test"
 	httpgwTest "github.com/plgd-dev/cloud/http-gateway/test"
 	"github.com/plgd-dev/cloud/http-gateway/uri"
+	idService "github.com/plgd-dev/cloud/identity/test"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/cloud/resource-aggregate/events"
@@ -28,6 +24,9 @@ import (
 	testCfg "github.com/plgd-dev/cloud/test/config"
 	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
 	"github.com/plgd-dev/go-coap/v2/message"
+	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 )
 
 func TestRequestHandler_GetPendingMetadataUpdates(t *testing.T) {
@@ -71,7 +70,7 @@ func TestRequestHandler_GetPendingMetadataUpdates(t *testing.T) {
 
 	test.ClearDB(ctx, t)
 	oauthShutdown := oauthTest.SetUp(t)
-	authShutdown := authService.SetUp(t)
+	authShutdown := idService.SetUp(t)
 	raShutdown := raService.SetUp(t)
 	rdShutdown := rdService.SetUp(t)
 	grpcShutdown := grpcgwService.SetUp(t)

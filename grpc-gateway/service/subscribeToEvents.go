@@ -6,20 +6,19 @@ import (
 	"io"
 	"sync"
 
-	asClient "github.com/plgd-dev/cloud/authorization/client"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/grpc-gateway/subscription"
+	isClient "github.com/plgd-dev/cloud/identity/client"
 	"github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/subscriber"
-
 	"google.golang.org/grpc/codes"
 )
 
 type subscriptions struct {
 	send                    func(e *pb.Event) error
 	resourceSubscriber      *subscriber.Subscriber
-	ownerCache              *asClient.OwnerCache
+	ownerCache              *isClient.OwnerCache
 	resourceDirectoryClient pb.GrpcGatewayClient
 	subscriptionBufferSize  int
 
@@ -29,7 +28,7 @@ type subscriptions struct {
 func newSubscriptions(
 	resourceDirectoryClient pb.GrpcGatewayClient,
 	resourceSubscriber *subscriber.Subscriber,
-	ownerCache *asClient.OwnerCache,
+	ownerCache *isClient.OwnerCache,
 	subscriptionBufferSize int,
 	send func(e *pb.Event) error) *subscriptions {
 	return &subscriptions{

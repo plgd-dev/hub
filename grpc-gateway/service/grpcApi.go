@@ -4,18 +4,16 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/plgd-dev/cloud/pkg/log"
-
-	asClient "github.com/plgd-dev/cloud/authorization/client"
-	pbAS "github.com/plgd-dev/cloud/authorization/pb"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	isClient "github.com/plgd-dev/cloud/identity/client"
+	pbIS "github.com/plgd-dev/cloud/identity/pb"
+	"github.com/plgd-dev/cloud/pkg/log"
 	"github.com/plgd-dev/cloud/pkg/net/grpc/client"
 	"github.com/plgd-dev/cloud/pkg/net/grpc/server"
 	raClient "github.com/plgd-dev/cloud/resource-aggregate/client"
 	naClient "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/client"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/subscriber"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
-
 	"google.golang.org/grpc"
 )
 
@@ -33,11 +31,11 @@ func (s closeFunc) Close() {
 // RequestHandler handles incoming requests.
 type RequestHandler struct {
 	pb.UnimplementedGrpcGatewayServer
-	authorizationClient     pbAS.AuthorizationServiceClient
+	authorizationClient     pbIS.IdentityServiceClient
 	resourceDirectoryClient pb.GrpcGatewayClient
 	resourceAggregateClient *raClient.Client
 	resourceSubscriber      *subscriber.Subscriber
-	ownerCache              *asClient.OwnerCache
+	ownerCache              *isClient.OwnerCache
 	config                  Config
 	closeFunc               closeFunc
 }
@@ -90,9 +88,9 @@ func NewRequestHandlerFromConfig(ctx context.Context, config Config, logger log.
 			logger.Errorf("error occurs during close connection to authorization server: %w", err)
 		}
 	})
-	authorizationClient := pbAS.NewAuthorizationServiceClient(authorizationConn.GRPC())
+	authorizationClient := pbIS.NewIdentityServiceClient(authorizationConn.GRPC())
 
-	ownerCache := asClient.NewOwnerCache(config.Clients.AuthServer.OwnerClaim, config.APIs.GRPC.OwnerCacheExpiration, natsClient.GetConn(), authorizationClient, func(err error) {
+	ownerCache := isClient.NewOwnerCache(config.Clients.AuthServer.OwnerClaim, config.APIs.GRPC.OwnerCacheExpiration, natsClient.GetConn(), authorizationClient, func(err error) {
 		log.Errorf("error occurs during processing event by ownerCache: %v", err)
 	})
 	closeFunc = append(closeFunc, ownerCache.Close)
@@ -136,11 +134,11 @@ func NewRequestHandlerFromConfig(ctx context.Context, config Config, logger log.
 
 // NewRequestHandler factory for new RequestHandler.
 func NewRequestHandler(
-	authorizationClient pbAS.AuthorizationServiceClient,
+	authorizationClient pbIS.IdentityServiceClient,
 	resourceDirectoryClient pb.GrpcGatewayClient,
 	resourceAggregateClient *raClient.Client,
 	resourceSubscriber *subscriber.Subscriber,
-	ownerCache *asClient.OwnerCache,
+	ownerCache *isClient.OwnerCache,
 	config Config,
 	closeFunc closeFunc,
 ) *RequestHandler {

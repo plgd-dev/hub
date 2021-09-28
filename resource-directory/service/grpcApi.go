@@ -6,9 +6,9 @@ import (
 	"io/ioutil"
 
 	"github.com/google/uuid"
-	clientAS "github.com/plgd-dev/cloud/authorization/client"
-	pbAS "github.com/plgd-dev/cloud/authorization/pb"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	clientIS "github.com/plgd-dev/cloud/identity/client"
+	pbIS "github.com/plgd-dev/cloud/identity/pb"
 	"github.com/plgd-dev/cloud/pkg/fn"
 	"github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
@@ -21,7 +21,6 @@ import (
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore"
 	mongodb "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/mongodb"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
-
 	"google.golang.org/grpc"
 )
 
@@ -32,7 +31,7 @@ type RequestHandler struct {
 	resourceProjection  *Projection
 	eventStore          eventstore.EventStore
 	publicConfiguration PublicConfiguration
-	ownerCache          *clientAS.OwnerCache
+	ownerCache          *clientIS.OwnerCache
 	closeFunc           fn.FuncList
 }
 
@@ -81,7 +80,7 @@ func NewRequestHandlerFromConfig(ctx context.Context, config Config, publicConfi
 			logger.Errorf("error occurs during close connection to authorization server: %w", err)
 		}
 	})
-	authServiceClient := pbAS.NewAuthorizationServiceClient(asConn.GRPC())
+	authServiceClient := pbIS.NewIdentityServiceClient(asConn.GRPC())
 
 	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	if err != nil {
@@ -125,7 +124,7 @@ func NewRequestHandlerFromConfig(ctx context.Context, config Config, publicConfi
 		return nil, fmt.Errorf("cannot create projection over resource aggregate events: %w", err)
 	}
 
-	ownerCache := clientAS.NewOwnerCache("sub", config.APIs.GRPC.OwnerCacheExpiration, natsClient.GetConn(), authServiceClient, func(err error) {
+	ownerCache := clientIS.NewOwnerCache("sub", config.APIs.GRPC.OwnerCacheExpiration, natsClient.GetConn(), authServiceClient, func(err error) {
 		log.Errorf("ownerCache error: %w", err)
 	})
 
@@ -144,7 +143,7 @@ func NewRequestHandler(
 	resourceProjection *Projection,
 	eventstore eventstore.EventStore,
 	publicConfiguration PublicConfiguration,
-	ownerCache *clientAS.OwnerCache,
+	ownerCache *clientIS.OwnerCache,
 	closeFunc fn.FuncList,
 ) *RequestHandler {
 	return &RequestHandler{

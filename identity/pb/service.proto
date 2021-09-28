@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+package ocf.cloud.identity.pb;
+
+import "github.com/plgd-dev/cloud/identity/pb/devices.proto";
+
+option go_package = "github.com/plgd-dev/cloud/identity/pb;pb";
+
+service IdentityService {
+	rpc GetDevices (GetDevicesRequest) returns (stream Device) {}
+
+	rpc AddDevice(AddDeviceRequest) returns (AddDeviceResponse) {}
+	rpc DeleteDevices(DeleteDevicesRequest) returns (DeleteDevicesResponse) {}
+}

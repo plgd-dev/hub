@@ -3,8 +3,8 @@ package service
 import (
 	"context"
 
-	pbAS "github.com/plgd-dev/cloud/authorization/pb"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	pbIS "github.com/plgd-dev/cloud/identity/pb"
 	"github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/pkg/strings"
@@ -49,7 +49,7 @@ func (r *RequestHandler) DeleteDevices(ctx context.Context, req *pb.DeleteDevice
 	}
 
 	// Authorization service
-	cmdAS := pbAS.DeleteDevicesRequest{
+	cmdAS := pbIS.DeleteDevicesRequest{
 		DeviceIds: deviceIds,
 	}
 	respAS, err := r.authorizationClient.DeleteDevices(ctx, &cmdAS)

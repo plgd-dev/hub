@@ -3,8 +3,8 @@ package service
 import (
 	"fmt"
 
-	"github.com/plgd-dev/cloud/authorization/pb"
 	"github.com/plgd-dev/cloud/coap-gateway/coapconv"
+	"github.com/plgd-dev/cloud/identity/pb"
 	"github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/pkg/security/oauth2"
@@ -119,7 +119,7 @@ func signUpPostHandler(r *mux.Message, client *Client) {
 	deviceID := client.ResolveDeviceID(claim, signUp.DeviceID)
 
 	ctx := kitNetGrpc.CtxWithToken(r.Context, token.AccessToken.String())
-	if _, err := client.server.asClient.AddDevice(ctx, &pb.AddDeviceRequest{
+	if _, err := client.server.isClient.AddDevice(ctx, &pb.AddDeviceRequest{
 		DeviceId: deviceID,
 	}); err != nil {
 		logErrorAndCloseClient(fmt.Errorf("cannot sign up: %w", err), coapconv.GrpcErr2CoapCode(err, coapconv.Update))

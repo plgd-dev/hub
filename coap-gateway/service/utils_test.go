@@ -17,11 +17,11 @@ import (
 	"testing"
 	"time"
 
-	authTest "github.com/plgd-dev/cloud/authorization/test"
 	"github.com/plgd-dev/cloud/coap-gateway/service"
 	coapgwTest "github.com/plgd-dev/cloud/coap-gateway/test"
 	"github.com/plgd-dev/cloud/coap-gateway/uri"
 	grpcgwTest "github.com/plgd-dev/cloud/grpc-gateway/test"
+	idTest "github.com/plgd-dev/cloud/identity/test"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	raTest "github.com/plgd-dev/cloud/resource-aggregate/test"
 	rdTest "github.com/plgd-dev/cloud/resource-directory/test"
@@ -341,7 +341,7 @@ func setUp(t *testing.T, coapgwCfgs ...service.Config) func() {
 	defer cancel()
 	test.ClearDB(ctx, t)
 	oauthShutdown := oauthTest.SetUp(t)
-	auShutdown := authTest.SetUp(t)
+	auShutdown := idTest.SetUp(t)
 	raShutdown := raTest.SetUp(t)
 	rdShutdown := rdTest.SetUp(t)
 	grpcShutdown := grpcgwTest.New(t, grpcgwTest.MakeConfig(t))

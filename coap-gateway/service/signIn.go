@@ -7,10 +7,10 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/plgd-dev/cloud/authorization/events"
 	"github.com/plgd-dev/cloud/coap-gateway/coapconv"
 	grpcgwClient "github.com/plgd-dev/cloud/grpc-gateway/client"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	"github.com/plgd-dev/cloud/identity/events"
 	"github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/pkg/strings"

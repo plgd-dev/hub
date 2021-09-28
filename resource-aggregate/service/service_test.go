@@ -4,10 +4,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stretchr/testify/require"
-
-	pbAS "github.com/plgd-dev/cloud/authorization/pb"
-	authService "github.com/plgd-dev/cloud/authorization/test"
+	pbIS "github.com/plgd-dev/cloud/identity/pb"
+	idService "github.com/plgd-dev/cloud/identity/test"
 	"github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/pkg/net/grpc/client"
@@ -15,6 +13,7 @@ import (
 	"github.com/plgd-dev/cloud/resource-aggregate/test"
 	testCfg "github.com/plgd-dev/cloud/test/config"
 	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
+	"github.com/stretchr/testify/require"
 )
 
 func TestPublishUnpublish(t *testing.T) {
@@ -25,7 +24,7 @@ func TestPublishUnpublish(t *testing.T) {
 	oauthShutdown := oauthTest.SetUp(t)
 	defer oauthShutdown()
 
-	authShutdown := authService.SetUp(t)
+	authShutdown := idService.SetUp(t)
 	defer authShutdown()
 
 	raShutdown := test.New(t, config)
@@ -38,7 +37,7 @@ func TestPublishUnpublish(t *testing.T) {
 	defer func() {
 		_ = authConn.Close()
 	}()
-	authClient := pbAS.NewAuthorizationServiceClient(authConn.GRPC())
+	authClient := pbIS.NewIdentityServiceClient(authConn.GRPC())
 
 	raConn, err := client.New(testCfg.MakeGrpcClientConfig(config.APIs.GRPC.Addr), log.Get())
 	require.NoError(t, err)
@@ -49,12 +48,12 @@ func TestPublishUnpublish(t *testing.T) {
 
 	deviceId := "dev0"
 	href := "/oic/p"
-	_, err = authClient.AddDevice(ctx, &pbAS.AddDeviceRequest{
+	_, err = authClient.AddDevice(ctx, &pbIS.AddDeviceRequest{
 		DeviceId: deviceId,
 	})
 	require.NoError(t, err)
 	defer func() {
-		_, err = authClient.DeleteDevices(ctx, &pbAS.DeleteDevicesRequest{
+		_, err = authClient.DeleteDevices(ctx, &pbIS.DeleteDevicesRequest{
 			DeviceIds: []string{deviceId},
 		})
 		require.NoError(t, err)

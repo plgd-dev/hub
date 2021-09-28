@@ -9,10 +9,10 @@ import (
 	"sync"
 	"time"
 
-	pbAS "github.com/plgd-dev/cloud/authorization/pb"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/store/mongodb"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/uri"
 	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"
+	pbIS "github.com/plgd-dev/cloud/identity/pb"
 	"github.com/plgd-dev/cloud/pkg/fn"
 	"github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
@@ -95,7 +95,7 @@ func newAuthInterceptor(ctx context.Context, config validator.Config, oauthCallb
 	return auth, fl.ToFunction(), nil
 }
 
-func newAuthorizationServiceClient(config AuthorizationServerConfig, logger log.Logger) (pbAS.AuthorizationServiceClient, func(), error) {
+func newAuthorizationServiceClient(config AuthorizationServerConfig, logger log.Logger) (pbIS.IdentityServiceClient, func(), error) {
 	asConn, err := grpcClient.New(config.Connection, logger)
 	if err != nil {
 		return nil, nil, fmt.Errorf("cannot create connection to authorization server: %w", err)
@@ -105,7 +105,7 @@ func newAuthorizationServiceClient(config AuthorizationServerConfig, logger log.
 			logger.Errorf("error occurs during close connection to authorization server: %v", err)
 		}
 	}
-	return pbAS.NewAuthorizationServiceClient(asConn.GRPC()), closeAsConn, nil
+	return pbIS.NewIdentityServiceClient(asConn.GRPC()), closeAsConn, nil
 }
 
 func newSubscriber(config natsClient.Config, logger log.Logger) (*subscriber.Subscriber, func(), error) {
@@ -339,7 +339,7 @@ func runDevicePulling(ctx context.Context,
 	provider *oauth2.PlgdProvider,
 	timeout time.Duration,
 	s *Store,
-	asClient pbAS.AuthorizationServiceClient,
+	asClient pbIS.IdentityServiceClient,
 	raClient raService.ResourceAggregateClient,
 	devicesSubscription *DevicesSubscription,
 	subscriptionManager *SubscriptionManager,

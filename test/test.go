@@ -18,7 +18,6 @@ import (
 	"time"
 
 	"github.com/jtacoma/uritemplates"
-	authService "github.com/plgd-dev/cloud/authorization/test"
 	caService "github.com/plgd-dev/cloud/certificate-authority/test"
 	c2cgwService "github.com/plgd-dev/cloud/cloud2cloud-gateway/test"
 	coapgw "github.com/plgd-dev/cloud/coap-gateway/service"
@@ -27,6 +26,7 @@ import (
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	grpcgwConfig "github.com/plgd-dev/cloud/grpc-gateway/service"
 	grpcgwTest "github.com/plgd-dev/cloud/grpc-gateway/test"
+	idService "github.com/plgd-dev/cloud/identity/test"
 	"github.com/plgd-dev/cloud/pkg/fn"
 	"github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
@@ -202,7 +202,7 @@ func SetUp(ctx context.Context, t *testing.T, opts ...SetUpOption) (TearDown fun
 
 	ClearDB(ctx, t)
 	oauthShutdown := oauthTest.SetUp(t)
-	authShutdown := authService.SetUp(t)
+	idShutdown := idService.SetUp(t)
 	raShutdown := raService.SetUp(t)
 	rdShutdown := rdTest.New(t, config.RD)
 	grpcShutdown := grpcgwTest.New(t, config.GRPCGW)
@@ -217,7 +217,7 @@ func SetUp(ctx context.Context, t *testing.T, opts ...SetUpOption) (TearDown fun
 		secureGWShutdown()
 		rdShutdown()
 		raShutdown()
-		authShutdown()
+		idShutdown()
 		oauthShutdown()
 	}
 }
@@ -226,7 +226,7 @@ type SetUpServicesConfig uint16
 
 const (
 	SetUpServicesOAuth SetUpServicesConfig = 1 << iota
-	SetUpServicesAuth
+	SetUpServicesId
 	SetUpServicesCertificateAuthority
 	SetUpServicesCloud2CloudGateway
 	SetUpServicesCoapGateway
@@ -243,9 +243,9 @@ func SetUpServices(ctx context.Context, t *testing.T, servicesConfig SetUpServic
 		oauthShutdown := oauthTest.SetUp(t)
 		tearDown.AddFunc(oauthShutdown)
 	}
-	if servicesConfig&SetUpServicesAuth != 0 {
-		authShutdown := authService.SetUp(t)
-		tearDown.AddFunc(authShutdown)
+	if servicesConfig&SetUpServicesId != 0 {
+		idShutdown := idService.SetUp(t)
+		tearDown.AddFunc(idShutdown)
 	}
 	if servicesConfig&SetUpServicesResourceAggregate != 0 {
 		raShutdown := raService.SetUp(t)
