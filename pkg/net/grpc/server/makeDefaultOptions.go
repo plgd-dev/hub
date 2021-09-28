@@ -64,21 +64,6 @@ func NewAuth(validator kitNetGrpc.Validator, opts ...Option) kitNetGrpc.AuthInte
 			log.Errorf("auth interceptor: %v", err)
 			return ctx, err
 		}
-		if cfg.ownerClaim == "" {
-			return ctx, nil
-		}
-		owner, err := kitNetGrpc.OwnerFromMD(ctx)
-		if err != nil {
-			owner, err = kitNetGrpc.OwnerFromTokenMD(ctx, cfg.ownerClaim)
-			if err == nil {
-				ctx = kitNetGrpc.CtxWithIncomingOwner(ctx, owner)
-			}
-		}
-		if err != nil {
-			log.Errorf("auth cannot get owner: %v", err)
-			return ctx, err
-		}
-		ctx = kitNetGrpc.CtxWithOwner(ctx, owner)
 
 		if token, err := kitNetGrpc.TokenFromMD(ctx); err == nil {
 			ctx = kitNetGrpc.CtxWithToken(ctx, token)

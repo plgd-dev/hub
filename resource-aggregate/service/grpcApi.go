@@ -61,7 +61,7 @@ func (r RequestHandler) isUserDevice(ctx context.Context, owner string, deviceID
 }
 
 func (r RequestHandler) validateAccessToDevice(ctx context.Context, deviceID string) (string, error) {
-	owner, err := kitNetGrpc.OwnerFromMD(ctx)
+	owner, err := kitNetGrpc.OwnerFromTokenMD(ctx, r.config.Clients.AuthServer.OwnerClaim)
 	if err != nil {
 		return "", kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "invalid owner: %v", err)
 	}
@@ -80,7 +80,7 @@ func (r RequestHandler) validateAccessToDevice(ctx context.Context, deviceID str
 // Function iterates over input slice of device IDs and returns owner name, and the intersection
 // of the input device IDs with owned devices.
 func (r RequestHandler) getOwnedDevices(ctx context.Context, deviceIDs []string) (string, []string, error) {
-	owner, err := kitNetGrpc.OwnerFromMD(ctx)
+	owner, err := kitNetGrpc.OwnerFromTokenMD(ctx, r.config.Clients.AuthServer.OwnerClaim)
 	if err != nil {
 		return "", nil, kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "invalid owner: %v", err)
 	}

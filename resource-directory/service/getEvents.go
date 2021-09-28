@@ -326,7 +326,7 @@ func getUserDeviceQueries(userDeviceIds strings.Set) []eventstore.GetEventsQuery
 }
 
 func (r *RequestHandler) GetEvents(req *pb.GetEventsRequest, srv pb.GrpcGateway_GetEventsServer) error {
-	owner, err := kitNetGrpc.OwnerFromMD(srv.Context())
+	owner, err := kitNetGrpc.OwnerFromTokenMD(srv.Context(), r.ownerCache.OwnerClaim())
 	if err != nil {
 		return log.LogAndReturnError(status.Errorf(codes.Unauthenticated, "cannot get owner: %v", err))
 	}

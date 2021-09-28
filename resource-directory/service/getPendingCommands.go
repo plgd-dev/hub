@@ -19,7 +19,7 @@ func (r *RequestHandler) GetOwnerDevices(ctx context.Context, owner string) ([]s
 }
 
 func (r *RequestHandler) GetPendingCommands(req *pb.GetPendingCommandsRequest, srv pb.GrpcGateway_GetPendingCommandsServer) error {
-	owner, err := kitNetGrpc.OwnerFromMD(srv.Context())
+	owner, err := kitNetGrpc.OwnerFromTokenMD(srv.Context(), r.ownerCache.OwnerClaim())
 	if err != nil {
 		return kitNetGrpc.ForwardFromError(codes.InvalidArgument, err)
 	}

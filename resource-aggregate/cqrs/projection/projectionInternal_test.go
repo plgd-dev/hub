@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/google/uuid"
 	"github.com/panjf2000/ants/v2"
 	"github.com/plgd-dev/cloud/pkg/log"
@@ -75,7 +76,9 @@ func TestProjection(t *testing.T) {
 	}()
 
 	ctx := context.Background()
-	ctx = kitNetGrpc.CtxWithIncomingOwner(ctx, "test")
+	ctx = kitNetGrpc.CtxWithIncomingToken(ctx, config.CreateJwtToken(t, jwt.MapClaims{
+		"sub": "test",
+	}))
 
 	store, err := mongodb.New(
 		ctx,

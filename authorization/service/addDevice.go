@@ -17,8 +17,6 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-const serviceOwner = "*"
-
 func (s *Service) publishDevicesRegistered(ctx context.Context, owner, userID string, deviceID []string) error {
 	v := events.Event{
 		Type: &events.Event_DevicesRegistered{

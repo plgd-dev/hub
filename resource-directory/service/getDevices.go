@@ -9,7 +9,7 @@ import (
 )
 
 func (r *RequestHandler) GetDevices(req *pb.GetDevicesRequest, srv pb.GrpcGateway_GetDevicesServer) error {
-	owner, err := kitNetGrpc.OwnerFromMD(srv.Context())
+	owner, err := kitNetGrpc.OwnerFromTokenMD(srv.Context(), r.ownerCache.OwnerClaim())
 	if err != nil {
 		return log.LogAndReturnError(status.Errorf(codes.Unauthenticated, "cannot get devices: %v", err))
 	}

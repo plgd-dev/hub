@@ -5,21 +5,31 @@ import (
 	"sort"
 	"testing"
 
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/plgd-dev/cloud/authorization/pb"
 	"github.com/plgd-dev/cloud/pkg/net/grpc"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
+	"github.com/plgd-dev/cloud/test/config"
 	"github.com/stretchr/testify/require"
 )
-
-const jwtWithSubTestUser = `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0VXNlcklEIn0.6EZJidMCJ5UMwyttpwUNer-GdsBmPH1_ckH8ZU-SRpo`
-const jwtWithSubTestUser2 = `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0VXNlcjIifQ.LfeMsf6VObU3BcT0PmsO_ryDd_V2B712gBdlKed_2no`
 
 func TestService_DeleteDevices(t *testing.T) {
 	const testDevID1 = "testDeviceID1"
 	const testDevID2 = "testDeviceID2"
 	const testDevID3 = "testDeviceID3"
 	const testDevID4 = "testDeviceID4"
-	const testUser2 = "testUser2"
+	jwtWithSubUserId := config.CreateJwtToken(t, jwt.MapClaims{
+		"sub": "userId",
+	})
+	jwtWithSubTestUserID := config.CreateJwtToken(t, jwt.MapClaims{
+		"sub": testUserID,
+	})
+	jwtWithSubAaa := config.CreateJwtToken(t, jwt.MapClaims{
+		"sub": "aaa",
+	})
+	var jwtWithSubTestUser2 = config.CreateJwtToken(t, jwt.MapClaims{
+		"sub": testUser2,
+	})
 	const testUser2DevID1 = "test2DeviceID1"
 	const testUser2DevID2 = "test2DeviceID2"
 	const testUser2DevID3 = "test2DeviceID3"
@@ -68,14 +78,14 @@ func TestService_DeleteDevices(t *testing.T) {
 				request: &pb.DeleteDevicesRequest{
 					DeviceIds: []string{testDevID1},
 				},
-				ctx: kitNetGrpc.CtxWithIncomingToken(context.Background(), jwtWithSubTestUser),
+				ctx: kitNetGrpc.CtxWithIncomingToken(context.Background(), jwtWithSubTestUserID),
 			},
 			want: &pb.DeleteDevicesResponse{DeviceIds: []string{testDevID1}},
 		},
 		{
 			name: "multiple",
 			args: args{
-				ctx: kitNetGrpc.CtxWithIncomingToken(context.Background(), jwtWithSubTestUser),
+				ctx: kitNetGrpc.CtxWithIncomingToken(context.Background(), jwtWithSubTestUserID),
 				request: &pb.DeleteDevicesRequest{
 					DeviceIds: []string{testDevID2, testDevID3},
 				},
@@ -85,7 +95,7 @@ func TestService_DeleteDevices(t *testing.T) {
 		{
 			name: "duplicit",
 			args: args{
-				ctx: kitNetGrpc.CtxWithIncomingToken(context.Background(), jwtWithSubTestUser),
+				ctx: kitNetGrpc.CtxWithIncomingToken(context.Background(), jwtWithSubTestUserID),
 				request: &pb.DeleteDevicesRequest{
 					DeviceIds: []string{testDevID1},
 				},
@@ -98,7 +108,7 @@ func TestService_DeleteDevices(t *testing.T) {
 				request: &pb.DeleteDevicesRequest{
 					DeviceIds: []string{testDevID4, testUser2DevID1},
 				},
-				ctx: kitNetGrpc.CtxWithIncomingToken(context.Background(), jwtWithSubTestUser),
+				ctx: kitNetGrpc.CtxWithIncomingToken(context.Background(), jwtWithSubTestUserID),
 			},
 			want: &pb.DeleteDevicesResponse{DeviceIds: []string{testDevID4}},
 		},

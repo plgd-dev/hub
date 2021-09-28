@@ -9,7 +9,7 @@ import (
 )
 
 func (r *RequestHandler) GetResourceLinks(req *pb.GetResourceLinksRequest, srv pb.GrpcGateway_GetResourceLinksServer) error {
-	owner, err := kitNetGrpc.OwnerFromMD(srv.Context())
+	owner, err := kitNetGrpc.OwnerFromTokenMD(srv.Context(), r.ownerCache.OwnerClaim())
 	if err != nil {
 		return log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Unauthenticated, "cannot get resource links: %v", err))
 	}

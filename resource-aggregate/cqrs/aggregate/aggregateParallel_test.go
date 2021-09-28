@@ -6,6 +6,7 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/google/uuid"
 	"github.com/plgd-dev/cloud/pkg/log"
 	"github.com/plgd-dev/cloud/pkg/net/grpc"
@@ -50,7 +51,10 @@ func cleanUpToSnapshot(ctx context.Context, t *testing.T, store *mongodb.EventSt
 //new 474.906s
 func Test_parallelRequest(t *testing.T) {
 	ctx := context.Background()
-	ctx = grpc.CtxWithIncomingOwner(ctx, "test")
+	token := config.CreateJwtToken(t, jwt.MapClaims{
+		"sub": "test",
+	})
+	ctx = grpc.CtxWithIncomingToken(ctx, token)
 	store := testNewEventstore(ctx, t)
 	defer func() {
 		err := store.Clear(ctx)
@@ -73,13 +77,13 @@ func Test_parallelRequest(t *testing.T) {
 
 	numParallel := 3
 	var wg sync.WaitGroup
-	var anyError atomic.Bool
+	var anyError atomic.Error
 	for i := 0; i < numParallel; i++ {
 		wg.Add(1)
 		go func(id int) {
 			defer wg.Done()
 			for j := 0; j < 100000; j++ {
-				if anyError.Load() {
+				if anyError.Load() != nil {
 					return
 				}
 				commandContentChanged := commands.NotifyResourceChangedRequest{
@@ -96,8 +100,7 @@ func Test_parallelRequest(t *testing.T) {
 				aggr := newAggregate(commandContentChanged.GetResourceId().GetDeviceId(), commandContentChanged.GetResourceId().GetHref())
 				events, err := aggr.HandleCommand(ctx, &commandContentChanged)
 				if err != nil {
-					anyError.Store(true)
-					require.NoError(t, err)
+					anyError.Store(err)
 					return
 				}
 				cleanUpToSnapshot(ctx, t, store, events)
@@ -105,4 +108,6 @@ func Test_parallelRequest(t *testing.T) {
 		}(i)
 	}
 	wg.Wait()
+	err := anyError.Load()
+	require.NoError(t, err)
 }

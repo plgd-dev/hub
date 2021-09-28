@@ -67,18 +67,7 @@ func makeAuthFunc(validator kitNetGrpc.Validator, ownerClaim string) func(ctx co
 			log.Errorf("auth interceptor %v %v: %w", method, token, err)
 			return ctx, err
 		}
-		owner, err := kitNetGrpc.OwnerFromMD(ctx)
-		if err != nil {
-			owner, err = kitNetGrpc.OwnerFromTokenMD(ctx, ownerClaim)
-			if err == nil {
-				ctx = kitNetGrpc.CtxWithIncomingOwner(ctx, owner)
-			}
-		}
-		if err != nil {
-			log.Errorf("auth cannot get owner: %v", err)
-			return ctx, err
-		}
-		return kitNetGrpc.CtxWithOwner(ctx, owner), nil
+		return ctx, err
 	}
 }
 

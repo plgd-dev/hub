@@ -4,8 +4,10 @@ import (
 	"context"
 	"testing"
 
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/plgd-dev/cloud/authorization/pb"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
+	"github.com/plgd-dev/cloud/test/config"
 	"google.golang.org/grpc"
 
 	"github.com/stretchr/testify/assert"
@@ -13,6 +15,9 @@ import (
 )
 
 func TestUserDevicesList(t *testing.T) {
+	jwtWithSubTestUserID := config.CreateJwtToken(t, jwt.MapClaims{
+		"sub": testUserID,
+	})
 	srv := newMockRetrieveResources(kitNetGrpc.CtxWithIncomingToken(context.Background(), jwtWithSubTestUserID))
 	s, shutdown := newTestService(t)
 	defer shutdown()
@@ -32,6 +37,9 @@ func TestUserDevicesList(t *testing.T) {
 }
 
 func TestListingMoreDevices(t *testing.T) {
+	jwtWithSubTestUserID := config.CreateJwtToken(t, jwt.MapClaims{
+		"sub": testUserID,
+	})
 	srv := newMockRetrieveResources(kitNetGrpc.CtxWithIncomingToken(context.Background(), jwtWithSubTestUserID))
 	s, shutdown := newTestService(t)
 	defer shutdown()

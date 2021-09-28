@@ -4,15 +4,20 @@ import (
 	"context"
 	"testing"
 
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/plgd-dev/cloud/authorization/pb"
 	"github.com/plgd-dev/cloud/pkg/net/grpc"
+	"github.com/plgd-dev/cloud/test/config"
 	"github.com/stretchr/testify/require"
 )
 
-const jwtWithSubUserId = `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VySWQifQ.sK7h3M0UhwXqc_vgkjl9MKIR41me7Np2-YUIHOijcSA`
-const jwtWithSubAaa = `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYWEifQ.QDa8-bP8MvjX8I2QQMYVVQ5utSMRMdgHOVoE2hUWlos`
-
 func TestService_AddDevice(t *testing.T) {
+	jwtWithSubAaa := config.CreateJwtToken(t, jwt.MapClaims{
+		"sub": "aaa",
+	})
+	jwtWithSubUserId := config.CreateJwtToken(t, jwt.MapClaims{
+		"sub": "userId",
+	})
 	type args struct {
 		ctx     context.Context
 		request *pb.AddDeviceRequest

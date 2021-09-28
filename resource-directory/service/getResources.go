@@ -9,7 +9,7 @@ import (
 )
 
 func (r *RequestHandler) GetResources(req *pb.GetResourcesRequest, srv pb.GrpcGateway_GetResourcesServer) error {
-	owner, err := kitNetGrpc.OwnerFromMD(srv.Context())
+	owner, err := kitNetGrpc.OwnerFromTokenMD(srv.Context(), r.ownerCache.OwnerClaim())
 	if err != nil {
 		return kitNetGrpc.ForwardFromError(codes.InvalidArgument, err)
 	}
