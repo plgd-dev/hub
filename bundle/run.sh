@@ -12,9 +12,6 @@ export MONGO_PATH="/data/db"
 export NGINX_PATH="/data/nginx"
 export JETSTREAM_PATH="/data/jetstream"
 
-export SERVICE_OWNER_CLAIM=${OWNER_CLAIM}
-export DEVICE_OWNER_CLAIM=${OWNER_CLAIM}
-
 export CERTIFICATE_AUTHORITY_ADDRESS="localhost:${CERTIFICATE_AUTHORITY_PORT}"
 export MOCKED_OAUTH_SERVER_ADDRESS="localhost:${MOCKED_OAUTH_SERVER_PORT}"
 export RESOURCE_AGGREGATE_ADDRESS="localhost:${RESOURCE_AGGREGATE_PORT}"
@@ -476,9 +473,9 @@ done
 cat /configs/identity.yaml | yq e "\
   .apis.grpc.address = \"${IDENTITY_ADDRESS}\" |
   .apis.grpc.authorization.http.tls.useSystemCAPool = true |
+  .apis.grpc.authorization.ownerClaim = \"${OWNER_CLAIM}\" |
   .apis.grpc.authorization.audience = \"${SERVICE_OAUTH_AUDIENCE}\" |
   .apis.grpc.authorization.authority = \"https://${OAUTH_ENDPOINT}\" |
-  .clients.storage.ownerClaim = \"${SERVICE_OWNER_CLAIM}\" |
   .clients.storage.mongoDB.uri = \"${MONGODB_URI}\" |
   .clients.eventBus.nats.url = \"${NATS_URL}\" |
   .clients.eventBus.nats.jetstream = ${JETSTREAM}
@@ -512,13 +509,13 @@ done
 cat /configs/resource-aggregate.yaml | yq e "\
   .apis.grpc.address = \"${RESOURCE_AGGREGATE_ADDRESS}\" |
   .apis.grpc.authorization.http.tls.useSystemCAPool = true |
+  .apis.grpc.authorization.ownerClaim = \"${OWNER_CLAIM}\" |
   .apis.grpc.authorization.audience = \"${SERVICE_OAUTH_AUDIENCE}\" |
   .apis.grpc.authorization.authority = \"https://${OAUTH_ENDPOINT}\" |
   .clients.eventStore.mongoDB.uri = \"${MONGODB_URI}\" |
   .clients.eventBus.nats.url = \"${NATS_URL}\" |
   .clients.eventBus.nats.jetstream = ${JETSTREAM} |
-  .clients.authorizationServer.ownerClaim = \"${SERVICE_OWNER_CLAIM}\" |
-  .clients.authorizationServer.grpc.address = \"${IDENTITY_ADDRESS}\"
+  .clients.identityServer.grpc.address = \"${IDENTITY_ADDRESS}\"
 " - > /data/resource-aggregate.yaml
 
 echo "starting resource-aggregate"
@@ -552,7 +549,7 @@ cat /configs/resource-directory.yaml | yq e "\
   .apis.grpc.authorization.authority = \"https://${OAUTH_ENDPOINT}\" |
   .clients.eventStore.mongoDB.uri = \"${MONGODB_URI}\" |
   .clients.eventBus.nats.url = \"${NATS_URL}\" |
-  .clients.authorizationServer.ownerClaim = \"${SERVICE_OWNER_CLAIM}\" |
+  .clients.authorizationServer.ownerClaim = \"${OWNER_CLAIM}\" |
   .clients.authorizationServer.grpc.address = \"${IDENTITY_ADDRESS}\" |
   .clients.authorizationServer.oauth.clientID = \"${SERVICE_OAUTH_CLIENT_ID}\" |
   .clients.authorizationServer.oauth.clientSecretFile = \"${SERVICE_OAUTH_CLIENT_SECRET}\" |

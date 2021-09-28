@@ -5,7 +5,6 @@ import (
 
 	"github.com/plgd-dev/cloud/coap-gateway/uri"
 	"github.com/plgd-dev/cloud/test/config"
-	testCfg "github.com/plgd-dev/cloud/test/config"
 	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 )
@@ -31,7 +30,7 @@ func TestSignUpPostHandler(t *testing.T) {
 
 	for _, test := range tbl {
 		tf := func(t *testing.T) {
-			co := testCoapDial(t, testCfg.GW_HOST, "")
+			co := testCoapDial(t, config.GW_HOST, "")
 			if co == nil {
 				return
 			}

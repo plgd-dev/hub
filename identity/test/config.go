@@ -15,7 +15,7 @@ func MakeConfig(t *testing.T) service.Config {
 
 	cfg.Clients.Storage.MongoDB.URI = config.MONGODB_URI
 	cfg.Clients.Storage.MongoDB.TLS = config.MakeTLSClientConfig()
-	cfg.Clients.Storage.MongoDB.Database = "ownersDevices"
+	cfg.Clients.Storage.MongoDB.Database = config.IDENTITY_DB
 
 	cfg.Clients.Eventbus.NATS = config.MakePublisherConfig()
 

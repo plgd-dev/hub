@@ -24,20 +24,20 @@ func TestPublishUnpublish(t *testing.T) {
 	oauthShutdown := oauthTest.SetUp(t)
 	defer oauthShutdown()
 
-	authShutdown := idService.SetUp(t)
-	defer authShutdown()
+	idShutdown := idService.SetUp(t)
+	defer idShutdown()
 
 	raShutdown := test.New(t, config)
 	defer raShutdown()
 
 	ctx := kitNetGrpc.CtxWithToken(context.Background(), oauthTest.GetDefaultServiceToken(t))
 
-	authConn, err := client.New(testCfg.MakeGrpcClientConfig(config.Clients.AuthServer.Connection.Addr), log.Get())
+	idConn, err := client.New(testCfg.MakeGrpcClientConfig(config.Clients.IdentityServer.Connection.Addr), log.Get())
 	require.NoError(t, err)
 	defer func() {
-		_ = authConn.Close()
+		_ = idConn.Close()
 	}()
-	authClient := pbIS.NewIdentityServiceClient(authConn.GRPC())
+	idClient := pbIS.NewIdentityServiceClient(idConn.GRPC())
 
 	raConn, err := client.New(testCfg.MakeGrpcClientConfig(config.APIs.GRPC.Addr), log.Get())
 	require.NoError(t, err)
@@ -48,12 +48,12 @@ func TestPublishUnpublish(t *testing.T) {
 
 	deviceId := "dev0"
 	href := "/oic/p"
-	_, err = authClient.AddDevice(ctx, &pbIS.AddDeviceRequest{
+	_, err = idClient.AddDevice(ctx, &pbIS.AddDeviceRequest{
 		DeviceId: deviceId,
 	})
 	require.NoError(t, err)
 	defer func() {
-		_, err = authClient.DeleteDevices(ctx, &pbIS.DeleteDevicesRequest{
+		_, err = idClient.DeleteDevices(ctx, &pbIS.DeleteDevicesRequest{
 			DeviceIds: []string{deviceId},
 		})
 		require.NoError(t, err)

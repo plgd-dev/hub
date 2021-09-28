@@ -95,19 +95,13 @@ clients:
         keyFile: "/data/certs/http.key"
         certFile: "/data/certs/http.crt"
 ...
-  authorizationServer:
+  identityServer:
     grpc:
       address: "localhost:9081"
       tls:
         caPool: "/data/certs/root_ca.crt"
         keyFile: "/data/certs/http.key"
         certFile: "/data/certs/http.crt"
-    oauth:
-      clientID: "412dsFf53Sj6$"
-      clientSecretFile: "/data/secrets/clientid.secret"
-      scopes: "openid"
-      tokenURL: "https://auth.example.com/oauth/token"
-      audience: "https://api.example.com"
 ...
 ```
 
@@ -194,22 +188,21 @@ Plgd cloud uses MongoDB database as a event store.
 | `clients.eventStore.mongoDB.tls.certFile` | string | `File path to certificate in PEM format.` | `""` |
 | `clients.eventStore.mongoDB.tls.useSystemCAPool` | bool | `If true, use system certification pool.` | `false` |
 
-### Authorization Server Client
+### Identity Server Client
 
-Client configurations to internally connect to Authorization Server service.
+Client configurations to internally connect to Identity Server service.
 
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |
-| `clients.authorizationServer.pullFrequency` | string | `Frequency to pull changed user device.` | `15s` |
-| `clients.authorizationServer.cacheExpiration` | string | `Expiration time of cached user device.` | `1m` |
-| `clients.authorizationServer.ownerClaim` | string | `Claim used to identify owner of the device.` | `"sub"` |
-| `clients.authorizationServer.grpc.address` | string | `Authorization service address.` | `"127.0.0.1:9100"` |
-| `clients.authorizationServer.grpc.tls.caPool` | string | `File path to the root certificate in PEM format which might contain multiple certificates in a single file.` |  `""` |
-| `clients.authorizationServer.grpc.tls.keyFile` | string | `File path to private key in PEM format.` | `""` |
-| `clients.authorizationServer.grpc.tls.certFile` | string | `File path to certificate in PEM format.` | `""` |
-| `clients.authorizationServer.grpc.tls.useSystemCAPool` | bool | `If true, use system certification pool.` | `false` |
-| `clients.authorizationServer.grpc.keepAlive.time` | string | `After a duration of this time if the client doesn't see any activity it pings the server to see if the transport is still alive.` | `10s` |
-| `clients.authorizationServer.grpc.keepAlive.timeout` | string | `After having pinged for keepalive check, the client waits for a duration of Timeout and if no activity is seen even after that the connection is closed.` | `20s` |
-| `clients.authorizationServer.grpc.keepAlive.permitWithoutStream` | bool | `If true, client sends keepalive pings even with no active RPCs. If false, when there are no active RPCs, Time and Timeout will be ignored and no keepalive pings will be sent.` | `false` |
+| `clients.identityServer.pullFrequency` | string | `Frequency to pull changed user device.` | `15s` |
+| `clients.identityServer.cacheExpiration` | string | `Expiration time of cached user device.` | `1m` |
+| `clients.identityServer.grpc.address` | string | `Identity service address.` | `"127.0.0.1:9100"` |
+| `clients.identityServer.grpc.tls.caPool` | string | `File path to the root certificate in PEM format which might contain multiple certificates in a single file.` |  `""` |
+| `clients.identityServer.grpc.tls.keyFile` | string | `File path to private key in PEM format.` | `""` |
+| `clients.identityServer.grpc.tls.certFile` | string | `File path to certificate in PEM format.` | `""` |
+| `clients.identityServer.grpc.tls.useSystemCAPool` | bool | `If true, use system certification pool.` | `false` |
+| `clients.identityServer.grpc.keepAlive.time` | string | `After a duration of this time if the client doesn't see any activity it pings the server to see if the transport is still alive.` | `10s` |
+| `clients.identityServer.grpc.keepAlive.timeout` | string | `After having pinged for keepalive check, the client waits for a duration of Timeout and if no activity is seen even after that the connection is closed.` | `20s` |
+| `clients.identityServer.grpc.keepAlive.permitWithoutStream` | bool | `If true, client sends keepalive pings even with no active RPCs. If false, when there are no active RPCs, Time and Timeout will be ignored and no keepalive pings will be sent.` | `false` |
 
 > Note that the string type related to time (i.e. time, timeout, pullFrequency, cacheExpiration) is decimal numbers, each with optional fraction and a unit suffix, such as "300ms", "1.5h" or "2h45m". Valid time units are "ns", "us", "ms", "s", "m", "h".

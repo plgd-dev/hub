@@ -18,8 +18,7 @@ func MakeConfig(t *testing.T) service.Config {
 	cfg.APIs.GRPC.OwnerCacheExpiration = time.Minute
 	cfg.APIs.GRPC.Config = config.MakeGrpcServerConfig(config.RESOURCE_AGGREGATE_HOST)
 
-	cfg.Clients.AuthServer.OwnerClaim = config.OWNER_CLAIM
-	cfg.Clients.AuthServer.Connection = config.MakeGrpcClientConfig(config.IDENTITY_HOST)
+	cfg.Clients.IdentityServer.Connection = config.MakeGrpcClientConfig(config.IDENTITY_HOST)
 
 	cfg.Clients.Eventbus.NATS = config.MakePublisherConfig()
 

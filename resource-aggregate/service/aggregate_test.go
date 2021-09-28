@@ -7,8 +7,6 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
-	"github.com/plgd-dev/go-coap/v2/message"
-
 	"github.com/google/uuid"
 	"github.com/panjf2000/ants/v2"
 	"github.com/plgd-dev/cloud/pkg/log"
@@ -23,6 +21,7 @@ import (
 	"github.com/plgd-dev/cloud/resource-aggregate/service"
 	raTest "github.com/plgd-dev/cloud/resource-aggregate/test"
 	"github.com/plgd-dev/cloud/test/config"
+	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"

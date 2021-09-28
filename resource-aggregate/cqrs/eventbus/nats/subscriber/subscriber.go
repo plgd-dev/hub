@@ -7,9 +7,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/plgd-dev/cloud/pkg/log"
-
 	nats "github.com/nats-io/nats.go"
+	"github.com/plgd-dev/cloud/pkg/log"
 	pkgTime "github.com/plgd-dev/cloud/pkg/time"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus"
 	natsClient "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/client"
