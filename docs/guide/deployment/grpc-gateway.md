@@ -78,7 +78,7 @@ apis:
           certFile: "/data/certs/http.crt"
 ...
 clients:
-  authorizationServer:
+  identityServer:
     grpc:
       address: "localhost:9081"
       tls:
@@ -161,6 +161,7 @@ gRPC API of the gRPC Gateway service as defined [here](https://github.com/plgd-d
 | `api.grpc.tls.keyFile` | string | `File path to private key in PEM format.` | `""` |
 | `api.grpc.tls.certFile` | string | `File path to certificate in PEM format.` | `""` |
 | `api.grpc.tls.clientCertificateRequired` | bool | `If true, require client certificate.` | `true` |
+| `api.grpc.authorization.ownerClaim` | string | `Claim used to identify owner of the device.` | `"sub"` |
 | `api.grpc.authorization.authority` | string | `Authority is the address of the token-issuing authentication server. Services will use this URI to find and retrieve the public key that can be used to validate the token’s signature.` | `""` |
 | `api.grpc.authorization.audience` | string | `Identifier of the API configured in your OAuth provider.` | `""` |
 | `api.grpc.authorization.http.maxIdleConns` | int | `It controls the maximum number of idle (keep-alive) connections across all hosts. Zero means no limit.` | `16` |
@@ -173,21 +174,20 @@ gRPC API of the gRPC Gateway service as defined [here](https://github.com/plgd-d
 | `api.grpc.authorization.http.tls.certFile` | string | `File path to certificate in PEM format.` | `""` |
 | `api.grpc.authorization.http.tls.useSystemCAPool` | bool | `If true, use system certification pool.` | `false` |
 
-### Authorization Server Client
+### Identity Server Client
 
-Client configurations to internally connect to Authorization Server service.
+Client configurations to internally connect to Identity Server service.
 
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |
-| `clients.authorizationServer.ownerClaim` | string | `Claim used to identify owner of the device.` | `"sub"` |
-| `clients.authorizationServer.grpc.address` | string | `Authorization service address.` | `"127.0.0.1:9100"` |
-| `clients.authorizationServer.grpc.tls.caPool` | string | `File path to the root certificate in PEM format which might contain multiple certificates in a single file.` |  `""` |
-| `clients.authorizationServer.grpc.tls.keyFile` | string | `File path to private key in PEM format.` | `""` |
-| `clients.authorizationServer.grpc.tls.certFile` | string | `File path to certificate in PEM format.` | `""` |
-| `clients.authorizationServer.grpc.tls.useSystemCAPool` | bool | `If true, use system certification pool.` | `false` |
-| `clients.authorizationServer.grpc.keepAlive.time` | string | `After a duration of this time if the client doesn't see any activity it pings the server to see if the transport is still alive.` | `10s` |
-| `clients.authorizationServer.grpc.keepAlive.timeout` | string | `After having pinged for keepalive check, the client waits for a duration of Timeout and if no activity is seen even after that the connection is closed.` | `20s` |
-| `clients.authorizationServer.grpc.keepAlive.permitWithoutStream` | bool | `If true, client sends keepalive pings even with no active RPCs. If false, when there are no active RPCs, Time and Timeout will be ignored and no keepalive pings will be sent.` | `false` |
+| `clients.identityServer.grpc.address` | string | `Identity service address.` | `"127.0.0.1:9100"` |
+| `clients.identityServer.grpc.tls.caPool` | string | `File path to the root certificate in PEM format which might contain multiple certificates in a single file.` |  `""` |
+| `clients.identityServer.grpc.tls.keyFile` | string | `File path to private key in PEM format.` | `""` |
+| `clients.identityServer.grpc.tls.certFile` | string | `File path to certificate in PEM format.` | `""` |
+| `clients.identityServer.grpc.tls.useSystemCAPool` | bool | `If true, use system certification pool.` | `false` |
+| `clients.identityServer.grpc.keepAlive.time` | string | `After a duration of this time if the client doesn't see any activity it pings the server to see if the transport is still alive.` | `10s` |
+| `clients.identityServer.grpc.keepAlive.timeout` | string | `After having pinged for keepalive check, the client waits for a duration of Timeout and if no activity is seen even after that the connection is closed.` | `20s` |
+| `clients.identityServer.grpc.keepAlive.permitWithoutStream` | bool | `If true, client sends keepalive pings even with no active RPCs. If false, when there are no active RPCs, Time and Timeout will be ignored and no keepalive pings will be sent.` | `false` |
 
 ### Event Bus
 

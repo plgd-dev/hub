@@ -68,7 +68,19 @@ type Config struct {
 	EnforcementPolicy EnforcementPolicyConfig `yaml:"enforcementPolicy" json:"enforcementPolicy"`
 	KeepAlive         KeepAliveConfig         `yaml:"keepAlive" json:"keepAlive"`
 	TLS               server.Config           `yaml:"tls" json:"tls"`
-	Authorization     validator.Config        `yaml:"authorization" json:"authorization"`
+	Authorization     AuthorizationConfig     `yaml:"authorization" json:"authorization"`
+}
+
+type AuthorizationConfig struct {
+	OwnerClaim       string `yaml:"ownerClaim" json:"ownerClaim"`
+	validator.Config `yaml:",inline" json:",inline"`
+}
+
+func (c *AuthorizationConfig) Validate() error {
+	if c.OwnerClaim == "" {
+		return fmt.Errorf("ownerClaim('%v')", c.OwnerClaim)
+	}
+	return c.Config.Validate()
 }
 
 func (c *Config) Validate() error {

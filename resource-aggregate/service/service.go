@@ -73,7 +73,7 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 
 // New creates new Server with provided store and publisher.
 func NewService(ctx context.Context, config Config, logger log.Logger, eventStore EventStore, publisher cqrsEventBus.Publisher) (*Service, error) {
-	validator, err := validator.New(ctx, config.APIs.GRPC.Authorization, logger)
+	validator, err := validator.New(ctx, config.APIs.GRPC.Authorization.Config, logger)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create validator: %w", err)
 	}

@@ -666,7 +666,7 @@ cat /configs/grpc-gateway.yaml | yq e "\
   .apis.grpc.authorization.audience = \"${SERVICE_OAUTH_AUDIENCE}\" |
   .apis.grpc.authorization.http.tls.useSystemCAPool = true |
   .apis.grpc.authorization.authority = \"https://${OAUTH_ENDPOINT}\" |
-  .clients.authorizationServer.grpc.address = \"${IDENTITY_ADDRESS}\" |
+  .clients.identityServer.grpc.address = \"${IDENTITY_ADDRESS}\" |
   .clients.eventBus.nats.url = \"${NATS_URL}\" |
   .clients.resourceAggregate.grpc.address = \"${RESOURCE_AGGREGATE_ADDRESS}\" |
   .clients.resourceDirectory.grpc.address = \"${RESOURCE_DIRECTORY_ADDRESS}\"

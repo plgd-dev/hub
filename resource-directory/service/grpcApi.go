@@ -127,6 +127,7 @@ func NewRequestHandlerFromConfig(ctx context.Context, config Config, publicConfi
 	ownerCache := clientIS.NewOwnerCache("sub", config.APIs.GRPC.OwnerCacheExpiration, natsClient.GetConn(), authServiceClient, func(err error) {
 		log.Errorf("ownerCache error: %w", err)
 	})
+	closeFunc.AddFunc(ownerCache.Close)
 
 	h := NewRequestHandler(
 		resourceProjection,

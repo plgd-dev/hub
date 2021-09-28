@@ -87,14 +87,14 @@ func newExpirationClientCache() *cache.Cache {
 func newResourceAggregateClient(config ResourceAggregateConfig, resourceSubscriber eventbus.Subscriber, logger log.Logger) (*raClient.Client, func(), error) {
 	raConn, err := grpcClient.New(config.Connection, logger)
 	if err != nil {
-		return nil, nil, fmt.Errorf("cannot create connection to resource aggregate: %w", err)
+		return nil, nil, fmt.Errorf("cannot create connection to resource-aggregate: %w", err)
 	}
 	closeRaConn := func() {
 		if err := raConn.Close(); err != nil {
 			if kitNetGrpc.IsContextCanceled(err) {
 				return
 			}
-			logger.Errorf("error occurs during close connection to resource aggregate: %v", err)
+			logger.Errorf("error occurs during close connection to resource-aggregate: %v", err)
 		}
 	}
 	raClient := raClient.New(raConn.GRPC(), resourceSubscriber)
@@ -111,7 +111,7 @@ func newIdentityServerClient(config IdentityServerConfig, logger log.Logger) (pb
 			if kitNetGrpc.IsContextCanceled(err) {
 				return
 			}
-			logger.Errorf("error occurs during close connection to authorization server: %v", err)
+			logger.Errorf("error occurs during close connection to identity server: %v", err)
 		}
 	}
 	isClient := pbIS.NewIdentityServiceClient(isConn.GRPC())
@@ -121,14 +121,14 @@ func newIdentityServerClient(config IdentityServerConfig, logger log.Logger) (pb
 func newResourceDirectoryClient(config GrpcServerConfig, logger log.Logger) (pbGRPC.GrpcGatewayClient, func(), error) {
 	rdConn, err := grpcClient.New(config.Connection, logger)
 	if err != nil {
-		return nil, nil, fmt.Errorf("cannot create connection to resource directory: %w", err)
+		return nil, nil, fmt.Errorf("cannot create connection to resource-directory: %w", err)
 	}
 	closeRdConn := func() {
 		if err := rdConn.Close(); err != nil {
 			if kitNetGrpc.IsContextCanceled(err) {
 				return
 			}
-			logger.Errorf("error occurs during close connection to resource directory: %v", err)
+			logger.Errorf("error occurs during close connection to resource-directory: %v", err)
 		}
 	}
 	rdClient := pbGRPC.NewGrpcGatewayClient(rdConn.GRPC())
