@@ -274,7 +274,7 @@ func signInPostHandler(req *mux.Message, client *Client, signIn CoapSignInReq) {
 		return
 	}
 
-	if err := jwtClaims.ValidateOwnerClaim(client.server.config.Clients.AuthServer.OwnerClaim, signIn.UserID); err != nil {
+	if err := jwtClaims.ValidateOwnerClaim(client.server.config.APIs.COAP.Authorization.OwnerClaim, signIn.UserID); err != nil {
 		logErrorAndCloseClient(fmt.Errorf("cannot handle sign in: %w", err), coapCodes.InternalServerError)
 		return
 	}
@@ -391,7 +391,7 @@ func signOutPostHandler(req *mux.Message, client *Client, signOut CoapSignInReq)
 		return
 	}
 
-	if err := jwtClaims.ValidateOwnerClaim(client.server.config.Clients.AuthServer.OwnerClaim, signOut.UserID); err != nil {
+	if err := jwtClaims.ValidateOwnerClaim(client.server.config.APIs.COAP.Authorization.OwnerClaim, signOut.UserID); err != nil {
 		logErrorAndCloseClient(fmt.Errorf("cannot handle sign out: %w", err), coapCodes.InternalServerError)
 		return
 	}

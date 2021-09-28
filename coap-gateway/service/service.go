@@ -16,6 +16,7 @@ import (
 	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"
 	idClient "github.com/plgd-dev/cloud/identity/client"
 	pbIS "github.com/plgd-dev/cloud/identity/pb"
+	"github.com/plgd-dev/cloud/pkg/fn"
 	"github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	grpcClient "github.com/plgd-dev/cloud/pkg/net/grpc/client"
@@ -24,6 +25,7 @@ import (
 	"github.com/plgd-dev/cloud/pkg/security/oauth2"
 	"github.com/plgd-dev/cloud/pkg/sync/task/queue"
 	raClient "github.com/plgd-dev/cloud/resource-aggregate/client"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus"
 	natsClient "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/client"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/subscriber"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
@@ -34,7 +36,6 @@ import (
 	"github.com/plgd-dev/go-coap/v2/net/monitor/inactivity"
 	"github.com/plgd-dev/go-coap/v2/tcp"
 	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
-	kitSync "github.com/plgd-dev/kit/sync"
 )
 
 var authCtxKey = "AuthCtx"
@@ -43,27 +44,154 @@ var authCtxKey = "AuthCtx"
 type Service struct {
 	config Config
 
-	KeepaliveOnInactivity   func(cc inactivity.ClientConn)
-	BlockWiseTransferSZX    blockwise.SZX
-	natsClient              *natsClient.Client
-	raClient                *raClient.Client
-	isClient                pbIS.IdentityServiceClient
-	rdClient                pbGRPC.GrpcGatewayClient
-	expirationClientCache   *cache.Cache
-	tlsDeviceIDCache        *cache.Cache
-	coapServer              *tcp.Server
-	listener                tcp.Listener
-	authInterceptor         Interceptor
-	ctx                     context.Context
-	cancel                  context.CancelFunc
-	taskQueue               *queue.Queue
-	userDeviceSubscriptions *kitSync.Map
-	devicesStatusUpdater    *devicesStatusUpdater
-	resourceSubscriber      *subscriber.Subscriber
-	providers               map[string]*oauth2.PlgdProvider
-	jwtValidator            *jwt.Validator
-	sigs                    chan os.Signal
-	ownerCache              *idClient.OwnerCache
+	keepaliveOnInactivity func(cc inactivity.ClientConn)
+	blockWiseTransferSZX  blockwise.SZX
+	natsClient            *natsClient.Client
+	raClient              *raClient.Client
+	isClient              pbIS.IdentityServiceClient
+	rdClient              pbGRPC.GrpcGatewayClient
+	expirationClientCache *cache.Cache
+	tlsDeviceIDCache      *cache.Cache
+	coapServer            *tcp.Server
+	listener              tcp.Listener
+	authInterceptor       Interceptor
+	ctx                   context.Context
+	cancel                context.CancelFunc
+	taskQueue             *queue.Queue
+	devicesStatusUpdater  *devicesStatusUpdater
+	resourceSubscriber    *subscriber.Subscriber
+	providers             map[string]*oauth2.PlgdProvider
+	jwtValidator          *jwt.Validator
+	sigs                  chan os.Signal
+	ownerCache            *idClient.OwnerCache
+}
+
+func newExpirationClientCache() *cache.Cache {
+	expirationClientCache := cache.New(cache.NoExpiration, time.Minute)
+	expirationClientCache.OnEvicted(func(deviceID string, c interface{}) {
+		if c == nil {
+			return
+		}
+		client := c.(*Client)
+		authCtx, err := client.GetAuthorizationContext()
+		if err != nil {
+			if err2 := client.Close(); err2 != nil {
+				log.Errorf("failed to close client connection on token expiration: %w", err2)
+			}
+			log.Debugf("device %v token has been expired", authCtx.GetDeviceID())
+		}
+	})
+	return expirationClientCache
+}
+
+func newResourceAggregateClient(config ResourceAggregateConfig, resourceSubscriber eventbus.Subscriber, logger log.Logger) (*raClient.Client, func(), error) {
+	raConn, err := grpcClient.New(config.Connection, logger)
+	if err != nil {
+		return nil, nil, fmt.Errorf("cannot create connection to resource aggregate: %w", err)
+	}
+	closeRaConn := func() {
+		if err := raConn.Close(); err != nil {
+			if kitNetGrpc.IsContextCanceled(err) {
+				return
+			}
+			logger.Errorf("error occurs during close connection to resource aggregate: %v", err)
+		}
+	}
+	raClient := raClient.New(raConn.GRPC(), resourceSubscriber)
+	return raClient, closeRaConn, nil
+}
+
+func newIdentityServerClient(config IdentityServerConfig, logger log.Logger) (pbIS.IdentityServiceClient, func(), error) {
+	isConn, err := grpcClient.New(config.Connection, logger)
+	if err != nil {
+		return nil, nil, fmt.Errorf("cannot create connection to identity server: %w", err)
+	}
+	closeIsConn := func() {
+		if err := isConn.Close(); err != nil {
+			if kitNetGrpc.IsContextCanceled(err) {
+				return
+			}
+			logger.Errorf("error occurs during close connection to authorization server: %v", err)
+		}
+	}
+	isClient := pbIS.NewIdentityServiceClient(isConn.GRPC())
+	return isClient, closeIsConn, nil
+}
+
+func newResourceDirectoryClient(config GrpcServerConfig, logger log.Logger) (pbGRPC.GrpcGatewayClient, func(), error) {
+	rdConn, err := grpcClient.New(config.Connection, logger)
+	if err != nil {
+		return nil, nil, fmt.Errorf("cannot create connection to resource directory: %w", err)
+	}
+	closeRdConn := func() {
+		if err := rdConn.Close(); err != nil {
+			if kitNetGrpc.IsContextCanceled(err) {
+				return
+			}
+			logger.Errorf("error occurs during close connection to resource directory: %v", err)
+		}
+	}
+	rdClient := pbGRPC.NewGrpcGatewayClient(rdConn.GRPC())
+	return rdClient, closeRdConn, nil
+}
+
+func newTCPListener(config COAPConfig, tlsDeviceIDCache *cache.Cache, logger log.Logger) (tcp.Listener, func(), error) {
+	if !config.TLS.Enabled {
+		listener, err := net.NewTCPListener("tcp", config.Addr)
+		if err != nil {
+			return nil, nil, fmt.Errorf("cannot create tcp listener: %w", err)
+		}
+		closeListener := func() {
+			if err := listener.Close(); err != nil {
+				log.Errorf("failed to close tcp listener: %w", err)
+			}
+		}
+		return listener, closeListener, nil
+	}
+
+	var closeListener fn.FuncList
+	coapsTLS, err := certManagerServer.New(config.TLS.Embedded, logger)
+	if err != nil {
+		return nil, nil, fmt.Errorf("cannot create tls cert manager: %w", err)
+	}
+	closeListener.AddFunc(coapsTLS.Close)
+	tlsCfgForClient := coapsTLS.GetTLSConfig()
+	tlsCfg := tls.Config{
+		GetConfigForClient: MakeGetConfigForClient(tlsCfgForClient, tlsDeviceIDCache),
+	}
+	listener, err := net.NewTLSListener("tcp", config.Addr, &tlsCfg)
+	if err != nil {
+		closeListener.Execute()
+		return nil, nil, fmt.Errorf("cannot create tcp-tls listener: %w", err)
+	}
+	closeListener.AddFunc(func() {
+		if err := listener.Close(); err != nil {
+			log.Errorf("failed to close tcp-tls listener: %w", err)
+		}
+	})
+	return listener, closeListener.ToFunction(), nil
+}
+
+func blockWiseTransferSZXFromString(s string) (blockwise.SZX, error) {
+	switch strings.ToLower(s) {
+	case "16":
+		return blockwise.SZX16, nil
+	case "32":
+		return blockwise.SZX32, nil
+	case "64":
+		return blockwise.SZX64, nil
+	case "128":
+		return blockwise.SZX128, nil
+	case "256":
+		return blockwise.SZX256, nil
+	case "512":
+		return blockwise.SZX512, nil
+	case "1024":
+		return blockwise.SZX1024, nil
+	case "bert":
+		return blockwise.SZXBERT, nil
+	}
+	return blockwise.SZX(0), fmt.Errorf("invalid value %v", s)
 }
 
 // New creates server.
@@ -91,107 +219,36 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 	}
 	nats.AddCloseFunc(resourceSubscriber.Close)
 
+	raClient, closeRaClient, err := newResourceAggregateClient(config.Clients.ResourceAggregate, resourceSubscriber, logger)
+	if err != nil {
+		nats.Close()
+		return nil, fmt.Errorf("cannot create resource-aggregate client: %w", err)
+	}
+	nats.AddCloseFunc(closeRaClient)
+
+	isClient, closeIsClient, err := newIdentityServerClient(config.Clients.IdentityServer, logger)
+	if err != nil {
+		nats.Close()
+		return nil, fmt.Errorf("cannot create identity server client: %w", err)
+	}
+	nats.AddCloseFunc(closeIsClient)
+
+	rdClient, closeRdClient, err := newResourceDirectoryClient(config.Clients.ResourceDirectory, logger)
+	if err != nil {
+		nats.Close()
+		return nil, fmt.Errorf("cannot create resource-directory client: %w", err)
+	}
+	nats.AddCloseFunc(closeRdClient)
+
 	tlsDeviceIDCache := cache.New(config.APIs.COAP.KeepAlive.Timeout, config.APIs.COAP.KeepAlive.Timeout/2)
-	expirationClientCache := cache.New(cache.NoExpiration, time.Minute)
-	expirationClientCache.OnEvicted(func(deviceID string, c interface{}) {
-		if c == nil {
-			return
-		}
-		client := c.(*Client)
-		authCtx, err := client.GetAuthorizationContext()
-		if err != nil {
-			if err2 := client.Close(); err2 != nil {
-				log.Errorf("failed to close client connection on token expiration: %w", err2)
-			}
-			log.Debugf("device %v token has been expired", authCtx.GetDeviceID())
-		}
-	})
-
-	raConn, err := grpcClient.New(config.Clients.ResourceAggregate.Connection, logger)
+	listener, closeListener, err := newTCPListener(config.APIs.COAP, tlsDeviceIDCache, logger)
 	if err != nil {
 		nats.Close()
-		return nil, fmt.Errorf("cannot create connection to resource aggregate: %w", err)
+		return nil, fmt.Errorf("cannot create listener: %w", err)
 	}
-	nats.AddCloseFunc(func() {
-		err := raConn.Close()
-		if err != nil {
-			if kitNetGrpc.IsContextCanceled(err) {
-				return
-			}
-			logger.Errorf("error occurs during close connection to resource aggregate: %v", err)
-		}
-	})
-	raClient := raClient.New(raConn.GRPC(), resourceSubscriber)
+	nats.AddCloseFunc(closeListener)
 
-	asConn, err := grpcClient.New(config.Clients.AuthServer.Connection, logger)
-	if err != nil {
-		nats.Close()
-		return nil, fmt.Errorf("cannot create connection to authorization server: %w", err)
-	}
-	nats.AddCloseFunc(func() {
-		err := asConn.Close()
-		if err != nil {
-			if kitNetGrpc.IsContextCanceled(err) {
-				return
-			}
-			logger.Errorf("error occurs during close connection to authorization server: %v", err)
-		}
-	})
-	asClient := pbIS.NewIdentityServiceClient(asConn.GRPC())
-
-	rdConn, err := grpcClient.New(config.Clients.ResourceDirectory.Connection, logger)
-	if err != nil {
-		nats.Close()
-		return nil, fmt.Errorf("cannot create connection to resource directory: %w", err)
-	}
-	nats.AddCloseFunc(func() {
-		err := rdConn.Close()
-		if err != nil {
-			if kitNetGrpc.IsContextCanceled(err) {
-				return
-			}
-			logger.Errorf("error occurs during close connection to resource directory: %v", err)
-		}
-	})
-	rdClient := pbGRPC.NewGrpcGatewayClient(rdConn.GRPC())
-
-	var listener tcp.Listener
-	if !config.APIs.COAP.TLS.Enabled {
-		l, err := net.NewTCPListener("tcp", config.APIs.COAP.Addr)
-		if err != nil {
-			nats.Close()
-			return nil, fmt.Errorf("cannot create tcp listener: %w", err)
-		}
-		nats.AddCloseFunc(func() {
-			if err := l.Close(); err != nil {
-				log.Errorf("failed to close tcp listener: %w", err)
-			}
-		})
-		listener = l
-	} else {
-		coapsTLS, err := certManagerServer.New(config.APIs.COAP.TLS.Embedded, logger)
-		if err != nil {
-			nats.Close()
-			return nil, fmt.Errorf("cannot create tls cert manager: %w", err)
-		}
-		nats.AddCloseFunc(coapsTLS.Close)
-		tlsCfgForClient := coapsTLS.GetTLSConfig()
-		tlsCfg := tls.Config{
-			GetConfigForClient: MakeGetConfigForClient(tlsCfgForClient, tlsDeviceIDCache),
-		}
-		l, err := net.NewTLSListener("tcp", config.APIs.COAP.Addr, &tlsCfg)
-		if err != nil {
-			nats.Close()
-			return nil, fmt.Errorf("cannot create tcp-tls listener: %w", err)
-		}
-		nats.AddCloseFunc(func() {
-			if err := l.Close(); err != nil {
-				log.Errorf("failed to close tcp-tls listener: %w", err)
-			}
-		})
-		listener = l
-	}
-
+	expirationClientCache := newExpirationClientCache()
 	onInactivity := func(cc inactivity.ClientConn) {
 		client, ok := cc.Context().Value(clientKey).(*Client)
 		if ok {
@@ -207,26 +264,10 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 
 	blockWiseTransferSZX := blockwise.SZX1024
 	if config.APIs.COAP.BlockwiseTransfer.Enabled {
-		switch strings.ToLower(config.APIs.COAP.BlockwiseTransfer.SZX) {
-		case "16":
-			blockWiseTransferSZX = blockwise.SZX16
-		case "32":
-			blockWiseTransferSZX = blockwise.SZX32
-		case "64":
-			blockWiseTransferSZX = blockwise.SZX64
-		case "128":
-			blockWiseTransferSZX = blockwise.SZX128
-		case "256":
-			blockWiseTransferSZX = blockwise.SZX256
-		case "512":
-			blockWiseTransferSZX = blockwise.SZX512
-		case "1024":
-			blockWiseTransferSZX = blockwise.SZX1024
-		case "bert":
-			blockWiseTransferSZX = blockwise.SZXBERT
-		default:
+		blockWiseTransferSZX, err = blockWiseTransferSZXFromString(config.APIs.COAP.BlockwiseTransfer.SZX)
+		if err != nil {
 			nats.Close()
-			return nil, fmt.Errorf("invalid value BlockWiseTransferSZX %v", config.APIs.COAP.BlockwiseTransfer.SZX)
+			return nil, fmt.Errorf("blockWiseTransferSZX error: %w", err)
 		}
 	}
 
@@ -234,7 +275,7 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 	var firstProvider *oauth2.PlgdProvider
 	for _, p := range config.APIs.COAP.Authorization.Providers {
 		provider, err := oauth2.NewPlgdProvider(ctx, p.Config,
-			logger, config.Clients.AuthServer.OwnerClaim)
+			logger, config.APIs.COAP.Authorization.OwnerClaim)
 		if err != nil {
 			nats.Close()
 			return nil, fmt.Errorf("cannot create device provider: %w", err)
@@ -254,7 +295,7 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 
 	jwtValidator := jwt.NewValidatorWithKeyCache(keyCache)
 
-	ownerCache := idClient.NewOwnerCache("sub", config.APIs.COAP.OwnerCacheExpiration, nats.GetConn(), asClient, func(err error) {
+	ownerCache := idClient.NewOwnerCache(config.APIs.COAP.Authorization.OwnerClaim, config.APIs.COAP.OwnerCacheExpiration, nats.GetConn(), isClient, func(err error) {
 		log.Errorf("ownerCache error: %w", err)
 	})
 	nats.AddCloseFunc(ownerCache.Close)
@@ -263,12 +304,12 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 
 	s := Service{
 		config:                config,
-		BlockWiseTransferSZX:  blockWiseTransferSZX,
-		KeepaliveOnInactivity: onInactivity,
+		blockWiseTransferSZX:  blockWiseTransferSZX,
+		keepaliveOnInactivity: onInactivity,
 
 		natsClient:            nats,
 		raClient:              raClient,
-		isClient:              asClient,
+		isClient:              isClient,
 		rdClient:              rdClient,
 		expirationClientCache: expirationClientCache,
 		tlsDeviceIDCache:      tlsDeviceIDCache,
@@ -286,8 +327,7 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 		ctx:    ctx,
 		cancel: cancel,
 
-		userDeviceSubscriptions: kitSync.NewMap(),
-		ownerCache:              ownerCache,
+		ownerCache: ownerCache,
 	}
 
 	if err := s.setupCoapServer(); err != nil {
@@ -452,9 +492,9 @@ func (server *Service) setupCoapServer() error {
 	}
 
 	opts := make([]tcp.ServerOption, 0, 8)
-	opts = append(opts, tcp.WithKeepAlive(1, server.config.APIs.COAP.KeepAlive.Timeout, server.KeepaliveOnInactivity))
+	opts = append(opts, tcp.WithKeepAlive(1, server.config.APIs.COAP.KeepAlive.Timeout, server.keepaliveOnInactivity))
 	opts = append(opts, tcp.WithOnNewClientConn(server.coapConnOnNew))
-	opts = append(opts, tcp.WithBlockwise(server.config.APIs.COAP.BlockwiseTransfer.Enabled, server.BlockWiseTransferSZX, server.config.APIs.COAP.KeepAlive.Timeout))
+	opts = append(opts, tcp.WithBlockwise(server.config.APIs.COAP.BlockwiseTransfer.Enabled, server.blockWiseTransferSZX, server.config.APIs.COAP.KeepAlive.Timeout))
 	opts = append(opts, tcp.WithMux(m))
 	opts = append(opts, tcp.WithContext(server.ctx))
 	opts = append(opts, tcp.WithHeartBeat(server.config.APIs.COAP.GoroutineSocketHeartbeat))

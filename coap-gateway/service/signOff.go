@@ -120,7 +120,7 @@ func signOffHandler(req *mux.Message, client *Client) {
 		return
 	}
 
-	if err := jwtClaims.ValidateOwnerClaim(client.server.config.Clients.AuthServer.OwnerClaim, signOffData.userID); err != nil {
+	if err := jwtClaims.ValidateOwnerClaim(client.server.config.APIs.COAP.Authorization.OwnerClaim, signOffData.userID); err != nil {
 		logErrorAndCloseClient(fmt.Errorf("cannot handle sign off: %v", err), coapCodes.Unauthorized)
 		return
 	}
