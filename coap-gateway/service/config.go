@@ -52,13 +52,38 @@ func (c *APIsConfig) Validate() error {
 	return nil
 }
 
-type AuthorizationConfig struct {
+type ProvidersConfig struct {
+	Name          string `yaml:"name" json:"name"`
 	oauth2.Config `yaml:",inline"`
-	DeviceIDClaim string `yaml:"deviceIdClaim" json:"deviceIdClaim"`
+}
+
+func (c *ProvidersConfig) Validate(firstAuthority string, providerNames map[string]bool) error {
+	if c.Authority != firstAuthority {
+		return fmt.Errorf("authority('%v' != authorization[0].authority('%v'))", c.Authority, firstAuthority)
+	}
+	if _, ok := providerNames[c.Name]; ok {
+		return fmt.Errorf("name('%v' is duplicit)", c.Name)
+	}
+	providerNames[c.Name] = true
+	return c.Config.Validate()
+}
+
+type AuthorizationConfig struct {
+	DeviceIDClaim string            `yaml:"deviceIdClaim" json:"deviceIdClaim"`
+	Providers     []ProvidersConfig `yaml:"providers" json:"providers"`
 }
 
 func (c *AuthorizationConfig) Validate() error {
-	return c.Config.Validate()
+	if len(c.Providers) == 0 {
+		return fmt.Errorf("providers('%v')", c.Providers)
+	}
+	duplicitProviderNames := make(map[string]bool)
+	for i := 0; i < len(c.Providers); i++ {
+		if err := c.Providers[i].Validate(c.Providers[i].Authority, duplicitProviderNames); err != nil {
+			return fmt.Errorf("providers[%v].%w", i, err)
+		}
+	}
+	return nil
 }
 
 type COAPConfig struct {

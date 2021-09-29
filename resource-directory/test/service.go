@@ -32,11 +32,11 @@ func MakeConfig(t *testing.T) service.Config {
 
 	cfg.ExposedCloudConfiguration.CAPool = config.CA_POOL
 	cfg.ExposedCloudConfiguration.AuthorizationServer = "https://" + config.OAUTH_SERVER_HOST
-	cfg.ExposedCloudConfiguration.CloudID = "cloudID"
-	cfg.ExposedCloudConfiguration.CloudAuthorizationProvider = "plgd"
-	cfg.ExposedCloudConfiguration.CloudURL = "CloudUrl"
-	cfg.ExposedCloudConfiguration.OwnerClaim = "JwtClaimOwnerId"
-	cfg.ExposedCloudConfiguration.SigningServerAddress = "SigningServerAddress"
+	cfg.ExposedCloudConfiguration.CloudID = config.CloudID()
+	cfg.ExposedCloudConfiguration.CloudAuthorizationProvider = config.DEVICE_PROVIDER
+	cfg.ExposedCloudConfiguration.CloudURL = config.GW_HOST
+	cfg.ExposedCloudConfiguration.OwnerClaim = config.OWNER_CLAIM
+	cfg.ExposedCloudConfiguration.SigningServerAddress = config.CERTIFICATE_AUTHORITY_HOST
 
 	err := cfg.Validate()
 	require.NoError(t, err)

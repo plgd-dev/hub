@@ -26,6 +26,7 @@ import (
 	raTest "github.com/plgd-dev/cloud/resource-aggregate/test"
 	rdTest "github.com/plgd-dev/cloud/resource-directory/test"
 	test "github.com/plgd-dev/cloud/test"
+	"github.com/plgd-dev/cloud/test/config"
 	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
 	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/go-coap/v2/message/codes"
@@ -97,8 +98,9 @@ func testValidateResp(t *testing.T, test testEl, resp *pool.Message) {
 func testSignUp(t *testing.T, deviceID string, co *tcp.ClientConn) service.CoapSignUpResponse {
 	code := oauthTest.GetDefaultDeviceAuthorizationCode(t, deviceID)
 	signUpReq := service.CoapSignUpRequest{
-		DeviceID:          deviceID,
-		AuthorizationCode: code,
+		DeviceID:              deviceID,
+		AuthorizationCode:     code,
+		AuthorizationProvider: config.DEVICE_PROVIDER,
 	}
 	inputCbor, err := cbor.Encode(signUpReq)
 	require.NoError(t, err)
