@@ -55,10 +55,7 @@ func SetUpCloudWithConnector(t *testing.T) (TearDown func()) {
 	rdCfg.APIs.GRPC.Authorization.Authority = "https://" + OAUTH_HOST
 	rdCfg.Clients.Eventstore.Connection.MongoDB.Database = C2C_CONNECTOR_DB
 	rdCfg.Clients.Eventbus.NATS.URL = C2C_CONNECTOR_NATS_URL
-	rdCfg.Clients.AuthServer.Connection.Addr = IDENTITY_HOST
-	rdCfg.Clients.AuthServer.OAuth.TokenURL = OAUTH_MANAGER_ENDPOINT_TOKENURL
-	rdCfg.Clients.AuthServer.OAuth.ClientID = OAUTH_MANAGER_CLIENT_ID
-	rdCfg.Clients.AuthServer.OAuth.Audience = OAUTH_MANAGER_AUDIENCE
+	rdCfg.Clients.IdentityServer.Connection.Addr = IDENTITY_HOST
 	rdShutdown := rdService.New(t, rdCfg)
 
 	grpcCfg := grpcService.MakeConfig(t)

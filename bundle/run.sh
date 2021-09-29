@@ -81,28 +81,10 @@ export SERVICE_OAUTH_AUDIENCE=${OAUTH_AUDIENCE}
 export DEVICE_OAUTH_AUDIENCE=${OAUTH_AUDIENCE}
 
 export DEVICE_OAUTH_REDIRECT_URL=https://${FQDN}:${NGINX_PORT}/api/v1/oauth/callback
-if [ -z "${OAUTH_ENDPOINT_AUTH_URL}" ]
-then
-  export SERVICE_CLIENT_CONFIGURATION_AUTHCODEURL="https://${FQDN}:${NGINX_PORT}/authorize?client_id=test"
-else
-  export SERVICE_CLIENT_CONFIGURATION_AUTHCODEURL=${OAUTH_ENDPOINT_AUTH_URL}
-fi
-
-if [ -z "${OAUTH_ENDPOINT_TOKEN_URL}" ]
-then
-  export SERVICE_OAUTH_ENDPOINT_TOKEN_URL=https://localhost:${MOCKED_OAUTH_SERVER_PORT}/oauth/token
-else
-  export SERVICE_OAUTH_ENDPOINT_TOKEN_URL=${OAUTH_ENDPOINT_TOKEN_URL}
-fi
 
 if [ -z "${OAUTH_ENDPOINT}" ]
 then
   export OAUTH_ENDPOINT=${DOMAIN}
-fi
-
-if [ -z "${JWKS_URL}" ]
-then
-  export JWKS_URL=https://localhost:${MOCKED_OAUTH_SERVER_PORT}/.well-known/jwks.json
 fi
 
 if [ -z "${OAUTH_CLIENT_ID}" ]
@@ -544,18 +526,13 @@ done
 ## configuration
 cat /configs/resource-directory.yaml | yq e "\
   .apis.grpc.address = \"${RESOURCE_DIRECTORY_ADDRESS}\" |
+  .apis.grpc.authorization.ownerClaim = \"${OWNER_CLAIM}\" |
   .apis.grpc.authorization.audience = \"${SERVICE_OAUTH_AUDIENCE}\" |
   .apis.grpc.authorization.http.tls.useSystemCAPool = true |
   .apis.grpc.authorization.authority = \"https://${OAUTH_ENDPOINT}\" |
   .clients.eventStore.mongoDB.uri = \"${MONGODB_URI}\" |
   .clients.eventBus.nats.url = \"${NATS_URL}\" |
-  .clients.authorizationServer.ownerClaim = \"${OWNER_CLAIM}\" |
-  .clients.authorizationServer.grpc.address = \"${IDENTITY_ADDRESS}\" |
-  .clients.authorizationServer.oauth.clientID = \"${SERVICE_OAUTH_CLIENT_ID}\" |
-  .clients.authorizationServer.oauth.clientSecretFile = \"${SERVICE_OAUTH_CLIENT_SECRET}\" |
-  .clients.authorizationServer.oauth.audience = \"${SERVICE_OAUTH_AUDIENCE}\" |
-  .clients.authorizationServer.oauth.http.tls.useSystemCAPool = true |
-  .clients.authorizationServer.oauth.tokenURL = \"${SERVICE_OAUTH_ENDPOINT_TOKEN_URL}\" |
+  .clients.identityServer.grpc.address = \"${IDENTITY_ADDRESS}\" |
   .publicConfiguration.authorizationServer = \"https://${OAUTH_ENDPOINT}\" |
   .publicConfiguration.cloudID = \"${COAP_GATEWAY_CLOUD_ID}\" |
   .publicConfiguration.cloudURL = \"coaps+tcp://${COAP_GATEWAY_FQDN}:${COAP_GATEWAY_PORT}\" |

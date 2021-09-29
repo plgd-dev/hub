@@ -18,11 +18,9 @@ func MakeConfig(t *testing.T) service.Config {
 	cfg.APIs.GRPC.Config = config.MakeGrpcServerConfig(config.RESOURCE_DIRECTORY_HOST)
 	cfg.APIs.GRPC.OwnerCacheExpiration = time.Minute
 
-	cfg.Clients.AuthServer.CacheExpiration = time.Millisecond * 50
-	cfg.Clients.AuthServer.PullFrequency = time.Millisecond * 200
-	cfg.Clients.AuthServer.OwnerClaim = config.OWNER_CLAIM
-	cfg.Clients.AuthServer.Connection = config.MakeGrpcClientConfig(config.IDENTITY_HOST)
-	cfg.Clients.AuthServer.OAuth = config.MakeOAuthConfig()
+	cfg.Clients.IdentityServer.CacheExpiration = time.Millisecond * 50
+	cfg.Clients.IdentityServer.PullFrequency = time.Millisecond * 200
+	cfg.Clients.IdentityServer.Connection = config.MakeGrpcClientConfig(config.IDENTITY_HOST)
 
 	cfg.Clients.Eventbus.NATS = config.MakeSubscriberConfig()
 	cfg.Clients.Eventbus.GoPoolSize = 16

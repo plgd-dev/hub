@@ -693,8 +693,8 @@ func TestRequestHandler_Issue270(t *testing.T) {
 
 	coapgwCfg := coapgwTest.MakeConfig(t)
 	rdCfg := rdTest.MakeConfig(t)
-	rdCfg.Clients.AuthServer.PullFrequency = time.Second * 15
-	rdCfg.Clients.AuthServer.CacheExpiration = time.Minute
+	rdCfg.Clients.IdentityServer.PullFrequency = time.Second * 15
+	rdCfg.Clients.IdentityServer.CacheExpiration = time.Minute
 
 	grpcgwCfg := grpcgwService.MakeConfig(t)
 

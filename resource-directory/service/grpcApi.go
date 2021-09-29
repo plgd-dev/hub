@@ -11,10 +11,8 @@ import (
 	pbIS "github.com/plgd-dev/cloud/identity/pb"
 	"github.com/plgd-dev/cloud/pkg/fn"
 	"github.com/plgd-dev/cloud/pkg/log"
-	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/pkg/net/grpc/client"
 	"github.com/plgd-dev/cloud/pkg/net/grpc/server"
-	"github.com/plgd-dev/cloud/pkg/security/oauth/manager"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	naClient "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/client"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/subscriber"
@@ -40,7 +38,7 @@ func (s *RequestHandler) Close() {
 }
 
 func AddHandler(ctx context.Context, svr *server.Server, config Config, publicConfiguration PublicConfiguration, logger log.Logger, goroutinePoolGo func(func()) error) error {
-	handler, err := NewRequestHandlerFromConfig(ctx, config, publicConfiguration, logger, goroutinePoolGo)
+	handler, err := newRequestHandlerFromConfig(ctx, config, publicConfiguration, logger, goroutinePoolGo)
 	if err != nil {
 		return err
 	}
@@ -54,7 +52,21 @@ func Register(server *grpc.Server, handler *RequestHandler) {
 	pb.RegisterGrpcGatewayServer(server, handler)
 }
 
-func NewRequestHandlerFromConfig(ctx context.Context, config Config, publicConfiguration PublicConfiguration, logger log.Logger, goroutinePoolGo func(func()) error) (*RequestHandler, error) {
+func newIdentityServiceClient(config IdentityServerConfig, logger log.Logger) (pbIS.IdentityServiceClient, func(), error) {
+	isConn, err := client.New(config.Connection, logger)
+	if err != nil {
+		return nil, nil, fmt.Errorf("cannot connect to identity server: %w", err)
+	}
+	closeIsConn := func() {
+		if err := isConn.Close(); err != nil {
+			logger.Errorf("error occurs during close connection to identity server: %w", err)
+		}
+	}
+	identityServiceClient := pbIS.NewIdentityServiceClient(isConn.GRPC())
+	return identityServiceClient, closeIsConn, nil
+}
+
+func newRequestHandlerFromConfig(ctx context.Context, config Config, publicConfiguration PublicConfiguration, logger log.Logger, goroutinePoolGo func(func()) error) (*RequestHandler, error) {
 	var closeFunc fn.FuncList
 	if publicConfiguration.CAPool != "" {
 		content, err := ioutil.ReadFile(publicConfiguration.CAPool)
@@ -64,23 +76,11 @@ func NewRequestHandlerFromConfig(ctx context.Context, config Config, publicConfi
 		publicConfiguration.cloudCertificateAuthorities = string(content)
 	}
 
-	oauthMgr, err := manager.New(config.Clients.AuthServer.OAuth, logger)
+	isClient, closeIsClient, err := newIdentityServiceClient(config.Clients.IdentityServer, logger)
 	if err != nil {
-		return nil, fmt.Errorf("cannot create oauth manager: %w", err)
+		return nil, fmt.Errorf("cannot create identity server client: %w", err)
 	}
-	closeFunc.AddFunc(oauthMgr.Close)
-
-	asConn, err := client.New(config.Clients.AuthServer.Connection, logger, grpc.WithPerRPCCredentials(kitNetGrpc.NewOAuthAccess(oauthMgr.GetToken)))
-	if err != nil {
-		closeFunc.Execute()
-		return nil, fmt.Errorf("cannot connect to authorization server: %w", err)
-	}
-	closeFunc.AddFunc(func() {
-		if err := asConn.Close(); err != nil {
-			logger.Errorf("error occurs during close connection to authorization server: %w", err)
-		}
-	})
-	authServiceClient := pbIS.NewIdentityServiceClient(asConn.GRPC())
+	closeFunc.AddFunc(closeIsClient)
 
 	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	if err != nil {
@@ -124,10 +124,9 @@ func NewRequestHandlerFromConfig(ctx context.Context, config Config, publicConfi
 		return nil, fmt.Errorf("cannot create projection over resource aggregate events: %w", err)
 	}
 
-	ownerCache := clientIS.NewOwnerCache("sub", config.APIs.GRPC.OwnerCacheExpiration, natsClient.GetConn(), authServiceClient, func(err error) {
+	ownerCache := clientIS.NewOwnerCache("sub", config.APIs.GRPC.OwnerCacheExpiration, natsClient.GetConn(), isClient, func(err error) {
 		log.Errorf("ownerCache error: %w", err)
 	})
-	closeFunc.AddFunc(ownerCache.Close)
 
 	h := NewRequestHandler(
 		resourceProjection,
