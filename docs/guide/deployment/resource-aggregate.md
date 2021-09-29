@@ -104,7 +104,7 @@ clients:
         certFile: "/data/certs/http.crt"
     oauth:
       clientID: "412dsFf53Sj6$"
-      clientSecretFile: "235Jgdf65jsd4Shls"
+      clientSecretFile: "/data/secrets/clientid.secret"
       scopes: "openid"
       tokenURL: "https://auth.example.com/oauth/token"
       audience: "https://api.example.com"
