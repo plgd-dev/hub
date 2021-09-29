@@ -31,29 +31,11 @@ stringData:
           clientCertificateRequired: {{ .apis.coap.tls.clientCertificateRequired }}
           {{- end }}
         authorization:
-          clientID:{{ printf " " }}{{ required "coapgateway.apis.coap.authorization.clientID or global.oauth.device.clientID is required " (  .apis.coap.authorization.clientID | default $.Values.global.oauth.device.clientID  ) | quote }}
-          clientSecret:{{ printf " " }}{{ required "coapgateway.apis.coap.authorization.clientSecret or global.oauth.device.clientSecret is required " ( .apis.coap.authorization.clientSecret | default $.Values.global.oauth.device.clientSecret ) | quote }}
-          {{- if ( $.Values.global.oauth.device.scopes | default .apis.coap.authorization.scopes ) }}
-          scopes:
-          {{- range  ( $.Values.global.oauth.device.scopes | default .apis.coap.authorization.scopes ) }}
-            - {{ . | quote }}
+          deviceIdClaim: {{ .apis.coap.authorization.deviceIdClaim }}
+          providers:
+          {{- with required "At least one oauth providers coapgateway.apis.coap.authorization.providers is required" .apis.coap.authorization.providers }}
+            {{- toYaml . | nindent 12 }}
           {{- end }}
-          {{- else }}
-          scopes: []
-          {{- end }}
-          authority:{{ printf " " }}{{ required "coapgateway.apis.coap.authorization.authority or global.authority is required " ( .apis.coap.authorization.authority | default $.Values.global.authority ) | quote }}
-          audience:{{ printf " " }}{{ required "coapgateway.apis.coap.authorization.audience or global.audienceis required " ( .apis.coap.authorization.audience | default $.Values.global.audience ) | quote }}
-          redirectURL:{{ printf " " }}{{ required "coapgateway.apis.coap.authorization.redirectURL or global.oauth.device.redirectURL is required " ( .apis.coap.authorization.redirectURL | default $.Values.global.oauth.device.redirectURL ) | quote }}
-          http:
-            maxIdleConns: {{ .apis.coap.authorization.http.maxIdleConns }}
-            maxConnsPerHost: {{ .apis.coap.authorization.http.maxConnsPerHost }}
-            maxIdleConnsPerHost: {{ .apis.coap.authorization.http.maxIdleConnsPerHost }}
-            idleConnTimeout: {{ .apis.coap.authorization.http.idleConnTimeout }}
-            timeout: {{ .apis.coap.authorization.http.timeout }}
-            tls:
-              {{- $oauthCoapTls := .apis.coap.authorization.http.tls }}
-              {{- include "plgd-cloud.certificateConfig" (list $ $oauthCoapTls $coapGatewayServiceCert) | indent 12 }}
-              useSystemCAPool: true
     clients:
       eventBus:
         nats:

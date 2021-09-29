@@ -48,19 +48,23 @@ stringData:
     ui:
       enabled: {{ .ui.enabled }}
       directory: {{ .ui.directory | quote }}
-      oauthClient:
-        {{- if .ui.enabled }}
-        domain: {{ required "httpgateway.ui.oauth.domain is required" .ui.oauthClient.domain | quote }}
-        clientID: {{ required "httpgateway.ui.oauth.clientID is required" .ui.oauthClient.clientID | quote }}
-        audience: {{ required "httpgateway.ui.oauth.audience is required" .ui.oauthClient.audience | quote }}
-        scope: {{ required "httpgateway.ui.oauth.scope is required" .ui.oauthClient.scope | quote }}
-        httpGatewayAddress: {{ required "httpgateway.ui.oauth.httpGatewayAddress is required" ( .ui.oauthClient.httpGatewayAddress | default $.Values.global.dnsName ) | quote }}
-        {{- else }}
-        domain: {{ .ui.oauthClient.domain | quote }}
-        clientID: {{ .ui.oauthClient.clientID | quote }}
-        audience: {{ .ui.oauthClient.audience | quote }}
-        scope: {{ .ui.oauthClient.scope | quote }}
-        httpGatewayAddress: {{ .ui.oauthClient.httpGatewayAddress | quote }}
-        {{- end }}
+      webConfiguration:
+        domain:  {{ .ui.webConfiguration.domain | quote }}
+        httpGatewayAddress: {{ .ui.webConfiguration.httpGatewayAddress | quote }}
+        webOAuthClient:
+          clientID: {{ .ui.webConfiguration.webOAuthClient.clientID | quote }}
+          audience: {{ .ui.webConfiguration.webOAuthClient.audience | quote }}
+          scopes:
+            {{- range .ui.webConfiguration.webOAuthClient.scopes }}
+            - {{ . | quote }}
+            {{- end }}
+        deviceOAuthClient:
+          clientID: {{ .ui.webConfiguration.deviceOAuthClient.clientID | quote }}
+          audience: {{ .ui.webConfiguration.deviceOAuthClient.audience | quote }}
+          scopes:
+            {{- range .ui.webConfiguration.deviceOAuthClient.scopes }}
+            - {{ . | quote }}
+            {{- end }}
+          providerName: {{ .ui.webConfiguration.deviceOAuthClient.providerName | quote }}
   {{- end }}
 {{- end }}

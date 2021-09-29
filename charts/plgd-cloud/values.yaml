@@ -16,13 +16,6 @@ global:
       clientSecret:
       scopes: []
       tokenURL:
-    device:
-      # -- OAuth configuration for internal oAuth device client
-      clientID:
-      clientSecret:
-      scopes: []
-      tokenURL:
-      redirectURL:
 
 # -- Extra deploy. Resolved as template
 extraDeploy:
@@ -722,23 +715,8 @@ coapgateway:
         certFile:
         clientCertificateRequired: true
       authorization:
-        clientID:
-        clientSecret:
-        scopes: []
-        authority:
-        audience:
-        redirectURL:
-        http:
-          maxIdleConns: 16
-          maxConnsPerHost: 32
-          maxIdleConnsPerHost: 16
-          idleConnTimeout: 30s
-          timeout: 10s
-          tls:
-            caPool:
-            keyFile:
-            certFile:
-            useSystemCAPool: true
+        deviceIdClaim: ""
+        providers:
   # -- For complete coap-gateway service configuration see [plgd/coap-gateway](https://github.com/plgd-dev/cloud/tree/v2/coap-gateway)
   clients:
     eventBus:
@@ -1072,12 +1050,18 @@ httpgateway:
   ui:
     enabled: false
     directory: "/usr/local/var/www"
-    oauthClient:
+    webConfiguration:
       domain: ""
-      clientID: ""
-      audience: ""
-      scope: ""
       httpGatewayAddress: ""
+      webOAuthClient:
+        clientID: ""
+        audience: ""
+        scopes: []
+      deviceOAuthClient:
+        clientID: ""
+        audience: ""
+        scopes: []
+        providerName: "plgd"
 
 
 grpcgateway:

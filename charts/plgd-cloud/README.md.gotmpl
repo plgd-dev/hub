@@ -35,13 +35,15 @@ global:
       clientSecret:
       scopes: []
       tokenURL:
-    device:
-      # -- OAuth configuration for internal oAuth device client
-      clientID:
-      clientSecret:
-      scopes: []
-      tokenURL:
-      redirectURL:
+
+coapgateway:
+  apis:
+    coap:
+      authorization:
+        deviceIdClaim: ""
+        providers:
+          - clientID: ...
+            clientSecret: ...
 ```
 
 {{ template "chart.requirementsSection" . }}
