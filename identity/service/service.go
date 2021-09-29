@@ -8,9 +8,7 @@ import (
 	"github.com/plgd-dev/cloud/identity/persistence"
 	"github.com/plgd-dev/cloud/identity/persistence/mongodb"
 	"github.com/plgd-dev/cloud/pkg/log"
-	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/pkg/net/grpc/server"
-	"github.com/plgd-dev/cloud/pkg/security/jwt"
 	"github.com/plgd-dev/cloud/pkg/security/jwt/validator"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/client"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/publisher"
@@ -88,7 +86,8 @@ func New(ctx context.Context, cfg Config, logger log.Logger) (*Server, error) {
 		naClient.Close()
 		return nil, fmt.Errorf("cannot create validator: %w", err)
 	}
-	opts, err := server.MakeDefaultOptions(NewAuth(validator, cfg.APIs.GRPC.Authorization.OwnerClaim), logger)
+	interceptor := server.NewAuth(validator, server.WithDisabledTokenForwarding())
+	opts, err := server.MakeDefaultOptions(interceptor, logger)
 	if err != nil {
 		validator.Close()
 		naClient.Close()
@@ -114,18 +113,4 @@ func (s *Server) Serve() error {
 // Shutdown ends serving
 func (s *Server) Shutdown() {
 	s.grpcServer.Close()
-}
-
-func NewAuth(validator kitNetGrpc.Validator, ownerClaim string) kitNetGrpc.AuthInterceptors {
-	interceptor := kitNetGrpc.ValidateJWTWithValidator(validator, func(ctx context.Context, method string) kitNetGrpc.Claims {
-		return jwt.NewScopeClaims()
-	})
-	return kitNetGrpc.MakeAuthInterceptors(func(ctx context.Context, method string) (context.Context, error) {
-		ctx, err := interceptor(ctx, method)
-		if err != nil {
-			log.Errorf("auth interceptor: %v", err)
-			return ctx, err
-		}
-		return ctx, nil
-	})
 }

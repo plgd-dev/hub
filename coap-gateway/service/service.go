@@ -314,7 +314,7 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 		expirationClientCache: expirationClientCache,
 		tlsDeviceIDCache:      tlsDeviceIDCache,
 		listener:              listener,
-		authInterceptor:       NewAuthInterceptor(),
+		authInterceptor:       newAuthInterceptor(),
 		devicesStatusUpdater:  NewDevicesStatusUpdater(ctx, config.Clients.ResourceAggregate.DeviceStatusExpiration),
 
 		sigs: make(chan os.Signal, 1),

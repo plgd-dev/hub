@@ -76,7 +76,7 @@ func newGrpcServer(ctx context.Context, config GRPCConfig, logger log.Logger) (*
 	if err != nil {
 		return nil, fmt.Errorf("cannot create validator: %w", err)
 	}
-	authInterceptor := server.NewAuth(validator, server.WithOwnerClaim(config.Authorization.OwnerClaim))
+	authInterceptor := server.NewAuth(validator)
 	opts, err := server.MakeDefaultOptions(authInterceptor, logger)
 	if err != nil {
 		validator.Close()

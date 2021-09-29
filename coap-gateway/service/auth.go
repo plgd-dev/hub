@@ -17,7 +17,7 @@ import (
 
 type Interceptor = func(ctx context.Context, code codes.Code, path string) (context.Context, error)
 
-func NewAuthInterceptor() Interceptor {
+func newAuthInterceptor() Interceptor {
 	return func(ctx context.Context, code codes.Code, path string) (context.Context, error) {
 		switch path {
 		case uri.RefreshToken, uri.SignUp, uri.SignIn:

@@ -100,7 +100,7 @@ func (d *ownerSubject) syncDevicesLocked(ctx context.Context, owner string, cach
 		return nil, nil, kitNetGrpc.ForwardFromError(codes.InvalidArgument, err)
 	}
 	now := time.Now()
-	devices, err := cache.getOwnerDevices(ctx, cache.asClient)
+	devices, err := cache.getOwnerDevices(ctx, cache.isClient)
 	if err != nil {
 		return nil, nil, kitNetGrpc.ForwardFromError(codes.InvalidArgument, err)
 	}
@@ -117,7 +117,7 @@ type OwnerCache struct {
 	conn       *nats.Conn
 	ownerClaim string
 	errFunc    ErrFunc
-	asClient   pbIS.IdentityServiceClient
+	isClient   pbIS.IdentityServiceClient
 	expiration time.Duration
 	handlerID  uint64
 
@@ -125,13 +125,13 @@ type OwnerCache struct {
 	wg   sync.WaitGroup
 }
 
-func NewOwnerCache(ownerClaim string, expiration time.Duration, conn *nats.Conn, asClient pbIS.IdentityServiceClient, errFunc ErrFunc) *OwnerCache {
+func NewOwnerCache(ownerClaim string, expiration time.Duration, conn *nats.Conn, isClient pbIS.IdentityServiceClient, errFunc ErrFunc) *OwnerCache {
 	c := &OwnerCache{
 		owners:     kitSync.NewMap(),
 		conn:       conn,
 		ownerClaim: ownerClaim,
 		errFunc:    errFunc,
-		asClient:   asClient,
+		isClient:   isClient,
 		expiration: expiration,
 		done:       make(chan struct{}),
 	}
@@ -166,8 +166,8 @@ func (c *OwnerCache) makeCloseFunc(owner string, id uint64) func() {
 	}
 }
 
-func (c *OwnerCache) getOwnerDevices(ctx context.Context, asClient pbIS.IdentityServiceClient) ([]string, error) {
-	getDevicesClient, err := asClient.GetDevices(ctx, &pbIS.GetDevicesRequest{})
+func (c *OwnerCache) getOwnerDevices(ctx context.Context, isClient pbIS.IdentityServiceClient) ([]string, error) {
+	getDevicesClient, err := isClient.GetDevices(ctx, &pbIS.GetDevicesRequest{})
 	if err != nil {
 		return nil, status.Errorf(status.Convert(err).Code(), "cannot get owners devices: %v", err)
 	}
@@ -183,7 +183,7 @@ func (c *OwnerCache) getOwnerDevices(ctx context.Context, asClient pbIS.Identity
 			break
 		}
 		if err != nil {
-			return nil, status.Errorf(status.Convert(err).Code(), "cannot get owners devices: %v", err)
+			return nil, status.Errorf(status.Convert(err).Code(), "cannot receive owners devices: %v", err)
 		}
 		ownerDevices = append(ownerDevices, device.DeviceId)
 	}

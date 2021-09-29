@@ -53,17 +53,21 @@ func Register(server *grpc.Server, handler *RequestHandler) {
 }
 
 func newIdentityServiceClient(config IdentityServerConfig, logger log.Logger) (pbIS.IdentityServiceClient, func(), error) {
+	var closeIsClient fn.FuncList
+
 	isConn, err := client.New(config.Connection, logger)
 	if err != nil {
 		return nil, nil, fmt.Errorf("cannot connect to identity server: %w", err)
 	}
-	closeIsConn := func() {
+
+	closeIsClient.AddFunc(func() {
 		if err := isConn.Close(); err != nil {
 			logger.Errorf("error occurs during close connection to identity server: %w", err)
 		}
-	}
-	identityServiceClient := pbIS.NewIdentityServiceClient(isConn.GRPC())
-	return identityServiceClient, closeIsConn, nil
+	})
+
+	isClient := pbIS.NewIdentityServiceClient(isConn.GRPC())
+	return isClient, closeIsClient.ToFunction(), nil
 }
 
 func newRequestHandlerFromConfig(ctx context.Context, config Config, publicConfiguration PublicConfiguration, logger log.Logger, goroutinePoolGo func(func()) error) (*RequestHandler, error) {

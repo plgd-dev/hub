@@ -15,7 +15,6 @@ import (
 	"github.com/plgd-dev/cloud/pkg/security/certManager/client"
 	"github.com/plgd-dev/cloud/pkg/security/certManager/server"
 	"github.com/plgd-dev/cloud/pkg/security/jwt/validator"
-	"github.com/plgd-dev/cloud/pkg/security/oauth/manager"
 	"github.com/plgd-dev/cloud/pkg/security/oauth2"
 	"github.com/plgd-dev/cloud/pkg/security/oauth2/oauth"
 	natsClient "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/client"
@@ -153,17 +152,6 @@ func MakeAuthorizationConfig() validator.Config {
 		Authority: "https://" + OAUTH_SERVER_HOST,
 		Audience:  "https://" + OAUTH_MANAGER_AUDIENCE,
 		HTTP:      MakeHttpClientConfig(),
-	}
-}
-
-func MakeOAuthConfig() manager.ConfigV2 {
-	return manager.ConfigV2{
-		ClientID:                    OAUTH_MANAGER_CLIENT_ID,
-		ClientSecret:                "secret",
-		Audience:                    OAUTH_MANAGER_AUDIENCE,
-		TokenURL:                    OAUTH_MANAGER_ENDPOINT_TOKENURL,
-		HTTP:                        MakeHttpClientConfig(),
-		VerifyServiceTokenFrequency: time.Second * 10,
 	}
 }
 
