@@ -6,6 +6,7 @@ export PATH="/usr/local/bin:$PATH"
 
 export CERTIFICATES_PATH="/data/certs"
 export OAUTH_KEYS_PATH="/data/oauth/keys"
+export OAUTH_SECRETS_PATH="/data/oauth/secrets"
 export LOGS_PATH="/data/log"
 export MONGO_PATH="/data/db"
 export NGINX_PATH="/data/nginx"
@@ -55,6 +56,8 @@ export SECRETS_DIRECTORY=/data/secrets
 #OAUTH-SEVER KEYS
 export OAUTH_ID_TOKEN_KEY_PATH=${OAUTH_KEYS_PATH}/id-token.pem
 export OAUTH_ACCESS_TOKEN_KEY_PATH=${OAUTH_KEYS_PATH}/access-token.pem
+
+export OAUTH_DEVICE_SECRET_PATH=${OAUTH_SECRETS_PATH}/device.secret
 
 #ENDPOINTS
 export MONGODB_HOST="localhost:$MONGO_PORT"
@@ -112,7 +115,9 @@ then
 else
   export DEVICE_OAUTH_CLIENT_ID=${OAUTH_CLIENT_ID}
 fi
-export DEVICE_OAUTH_CLIENT_SECRET=${OAUTH_CLIENT_SECRET}
+
+mkdir -p ${OAUTH_SECRETS_PATH}
+echo -n ${OAUTH_CLIENT_SECRET} > ${OAUTH_DEVICE_SECRET_PATH}
 
 export COAP_GATEWAY_UNSECURE_FQDN=$FQDN
 export COAP_GATEWAY_FQDN=$FQDN
@@ -549,7 +554,7 @@ cat /configs/resource-directory.yaml | yq e "\
   .clients.authorizationServer.ownerClaim = \"${SERVICE_OWNER_CLAIM}\" |
   .clients.authorizationServer.grpc.address = \"${AUTHORIZATION_ADDRESS}\" |
   .clients.authorizationServer.oauth.clientID = \"${SERVICE_OAUTH_CLIENT_ID}\" |
-  .clients.authorizationServer.oauth.clientSecret = \"${SERVICE_OAUTH_CLIENT_SECRET}\" |
+  .clients.authorizationServer.oauth.clientSecretFile = \"${SERVICE_OAUTH_CLIENT_SECRET}\" |
   .clients.authorizationServer.oauth.audience = \"${SERVICE_OAUTH_AUDIENCE}\" |
   .clients.authorizationServer.oauth.http.tls.useSystemCAPool = true |
   .clients.authorizationServer.oauth.tokenURL = \"${SERVICE_OAUTH_ENDPOINT_TOKEN_URL}\" |
@@ -594,7 +599,7 @@ cat /configs/coap-gateway.yaml | yq e "\
   .apis.coap.authorization.providers[0].name = \"${DEVICE_PROVIDER}\" | 
   .apis.coap.authorization.providers[0].authority = \"https://${OAUTH_ENDPOINT}\" |
   .apis.coap.authorization.providers[0].clientID = \"${DEVICE_OAUTH_CLIENT_ID}\" |
-  .apis.coap.authorization.providers[0].clientSecret = \"${DEVICE_OAUTH_CLIENT_SECRET}\" |
+  .apis.coap.authorization.providers[0].clientSecretFile = \"${OAUTH_DEVICE_SECRET_PATH}\" |
   .apis.coap.authorization.providers[0].redirectURL = \"${DEVICE_OAUTH_REDIRECT_URL}\" |
   .apis.coap.authorization.providers[0].scopes = [ \"${DEVICE_OAUTH_SCOPES}\" ] |
   .apis.coap.authorization.providers[0].audience = \"${DEVICE_OAUTH_AUDIENCE}\" |
@@ -630,7 +635,7 @@ cat /configs/coap-gateway.yaml | yq e "\
   .apis.coap.authorization.providers[0].name = \"${DEVICE_PROVIDER}\" | 
   .apis.coap.authorization.providers[0].authority = \"https://${OAUTH_ENDPOINT}\" |
   .apis.coap.authorization.providers[0].clientID = \"${DEVICE_OAUTH_CLIENT_ID}\" |
-  .apis.coap.authorization.providers[0].clientSecret = \"${DEVICE_OAUTH_CLIENT_SECRET}\" |
+  .apis.coap.authorization.providers[0].clientSecretFile = \"${OAUTH_DEVICE_SECRET_PATH}\" |
   .apis.coap.authorization.providers[0].redirectURL = \"${DEVICE_OAUTH_REDIRECT_URL}\" |
   .apis.coap.authorization.providers[0].scopes = [ \"${DEVICE_OAUTH_SCOPES}\" ] |
   .apis.coap.authorization.providers[0].audience = \"${DEVICE_OAUTH_AUDIENCE}\" |

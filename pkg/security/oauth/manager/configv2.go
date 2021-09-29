@@ -11,7 +11,7 @@ import (
 
 type ConfigV2 struct {
 	ClientID                    string        `yaml:"clientID" json:"clientID"`
-	ClientSecret                string        `yaml:"clientSecret" json:"clientSecret"`
+	ClientSecret                string        `yaml:"clientSecretFile" json:"clientSecretFile"`
 	Scopes                      []string      `yaml:"scopes" json:"scopes"`
 	TokenURL                    string        `yaml:"tokenURL" json:"tokenURL"`
 	Audience                    string        `yaml:"audience" json:"audience"`
@@ -24,7 +24,7 @@ func (c *ConfigV2) Validate() error {
 		return fmt.Errorf("clientID('%v')", c.ClientID)
 	}
 	if c.ClientSecret == "" {
-		return fmt.Errorf("clientSecret('%v')", c.ClientSecret)
+		return fmt.Errorf("clientSecretFile('%v')", c.ClientSecret)
 	}
 	if c.TokenURL == "" {
 		return fmt.Errorf("tokenURL('%v')", c.TokenURL)

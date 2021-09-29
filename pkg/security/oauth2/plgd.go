@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/plgd-dev/cloud/pkg/file"
 	"github.com/plgd-dev/cloud/pkg/log"
 	"github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/pkg/net/http/client"
@@ -16,6 +17,12 @@ func NewPlgdProvider(ctx context.Context, config Config, logger log.Logger, owne
 	config.ResponseMode = "query"
 	config.AccessType = "offline"
 	config.ResponseType = "code"
+
+	clientSecret, err := file.Load(config.ClientSecretFile, make([]byte, 4096))
+	if err != nil {
+		return nil, err
+	}
+
 	httpClient, err := client.New(config.HTTP, logger)
 	if err != nil {
 		return nil, err
@@ -25,7 +32,7 @@ func NewPlgdProvider(ctx context.Context, config Config, logger log.Logger, owne
 		return nil, err
 	}
 
-	oauth2 := config.ToOAuth2(oidcfg.AuthURL, oidcfg.TokenURL)
+	oauth2 := config.ToOAuth2(oidcfg.AuthURL, oidcfg.TokenURL, string(clientSecret))
 
 	return &PlgdProvider{
 		Config:     config,
