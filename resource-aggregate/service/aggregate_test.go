@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/plgd-dev/go-coap/v2/message"
 
 	"github.com/google/uuid"
@@ -21,6 +22,7 @@ import (
 	raEvents "github.com/plgd-dev/cloud/resource-aggregate/events"
 	"github.com/plgd-dev/cloud/resource-aggregate/service"
 	raTest "github.com/plgd-dev/cloud/resource-aggregate/test"
+	"github.com/plgd-dev/cloud/test/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
@@ -103,7 +105,10 @@ func TestAggregateHandle_PublishResourceLinks(t *testing.T) {
 		tfunc := func(t *testing.T) {
 			ag, err := service.NewAggregate(commands.NewResourceID(tt.args.request.GetDeviceId(), commands.ResourceLinksHref), 10, eventstore, service.ResourceLinksFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
 			require.NoError(t, err)
-			events, err := ag.PublishResourceLinks(kitNetGrpc.CtxWithIncomingOwner(ctx, tt.args.userID), tt.args.request)
+			ctx = kitNetGrpc.CtxWithIncomingToken(ctx, config.CreateJwtToken(t, jwt.MapClaims{
+				"sub": tt.args.userID,
+			}))
+			events, err := ag.PublishResourceLinks(ctx, tt.args.request)
 			if tt.wantErr {
 				require.Error(t, err)
 				s, ok := status.FromError(kitNetGrpc.ForwardFromError(codes.Unknown, err))
@@ -147,7 +152,9 @@ func TestAggregateDuplicitPublishResource(t *testing.T) {
 	defer pool.Release()
 
 	cfg := raTest.MakeConfig(t)
-	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "token"), userID)
+	ctx := kitNetGrpc.CtxWithIncomingToken(context.Background(), config.CreateJwtToken(t, jwt.MapClaims{
+		"sub": userID,
+	}))
 	logger, err := log.NewLogger(cfg.Log)
 	require.NoError(t, err)
 	eventstore, err := mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
@@ -196,7 +203,9 @@ func TestAggregateHandleUnpublishResource(t *testing.T) {
 	defer pool.Release()
 
 	cfg := raTest.MakeConfig(t)
-	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
+	ctx := kitNetGrpc.CtxWithIncomingToken(context.Background(), config.CreateJwtToken(t, jwt.MapClaims{
+		"sub": userID,
+	}))
 	logger, err := log.NewLogger(cfg.Log)
 	require.NoError(t, err)
 	eventstore, err := mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
@@ -245,7 +254,9 @@ func TestAggregateHandleUnpublishAllResources(t *testing.T) {
 	defer pool.Release()
 
 	cfg := raTest.MakeConfig(t)
-	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
+	ctx := kitNetGrpc.CtxWithIncomingToken(context.Background(), config.CreateJwtToken(t, jwt.MapClaims{
+		"sub": userID,
+	}))
 	logger, err := log.NewLogger(cfg.Log)
 	require.NoError(t, err)
 	eventstore, err := mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
@@ -301,7 +312,9 @@ func TestAggregateHandleUnpublishResourceSubset(t *testing.T) {
 	defer pool.Release()
 
 	cfg := raTest.MakeConfig(t)
-	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
+	ctx := kitNetGrpc.CtxWithIncomingToken(context.Background(), config.CreateJwtToken(t, jwt.MapClaims{
+		"sub": userID,
+	}))
 	logger, err := log.NewLogger(cfg.Log)
 	require.NoError(t, err)
 	eventstore, err := mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
@@ -609,7 +622,9 @@ func Test_aggregate_HandleNotifyContentChanged(t *testing.T) {
 	}
 
 	cfg := raTest.MakeConfig(t)
-	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
+	ctx := kitNetGrpc.CtxWithIncomingToken(context.Background(), config.CreateJwtToken(t, jwt.MapClaims{
+		"sub": userID,
+	}))
 	logger, err := log.NewLogger(cfg.Log)
 	require.NoError(t, err)
 	eventstore, err := mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
@@ -721,7 +736,9 @@ func Test_aggregate_HandleUpdateResourceContent(t *testing.T) {
 	}
 
 	cfg := raTest.MakeConfig(t)
-	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
+	ctx := kitNetGrpc.CtxWithIncomingToken(context.Background(), config.CreateJwtToken(t, jwt.MapClaims{
+		"sub": userID,
+	}))
 	logger, err := log.NewLogger(cfg.Log)
 	require.NoError(t, err)
 	eventstore, err := mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
@@ -802,7 +819,9 @@ func Test_aggregate_HandleConfirmResourceUpdate(t *testing.T) {
 	}
 
 	cfg := raTest.MakeConfig(t)
-	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
+	ctx := kitNetGrpc.CtxWithIncomingToken(context.Background(), config.CreateJwtToken(t, jwt.MapClaims{
+		"sub": userID,
+	}))
 	logger, err := log.NewLogger(cfg.Log)
 	require.NoError(t, err)
 	eventstore, err := mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
@@ -906,7 +925,9 @@ func Test_aggregate_HandleRetrieveResource(t *testing.T) {
 	}
 
 	cfg := raTest.MakeConfig(t)
-	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
+	ctx := kitNetGrpc.CtxWithIncomingToken(context.Background(), config.CreateJwtToken(t, jwt.MapClaims{
+		"sub": userID,
+	}))
 	logger, err := log.NewLogger(cfg.Log)
 	require.NoError(t, err)
 	eventstore, err := mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
@@ -986,7 +1007,9 @@ func Test_aggregate_HandleNotifyResourceContentResourceProcessed(t *testing.T) {
 	}
 
 	cfg := raTest.MakeConfig(t)
-	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
+	ctx := kitNetGrpc.CtxWithIncomingToken(context.Background(), config.CreateJwtToken(t, jwt.MapClaims{
+		"sub": userID,
+	}))
 	logger, err := log.NewLogger(cfg.Log)
 	require.NoError(t, err)
 	eventstore, err := mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
@@ -1098,7 +1121,9 @@ func Test_aggregate_HandleDeleteResource(t *testing.T) {
 	}
 
 	cfg := raTest.MakeConfig(t)
-	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
+	ctx := kitNetGrpc.CtxWithIncomingToken(context.Background(), config.CreateJwtToken(t, jwt.MapClaims{
+		"sub": userID,
+	}))
 	logger, err := log.NewLogger(cfg.Log)
 	require.NoError(t, err)
 	eventstore, err := mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
@@ -1179,7 +1204,9 @@ func Test_aggregate_HandleConfirmResourceDelete(t *testing.T) {
 	}
 
 	cfg := raTest.MakeConfig(t)
-	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
+	ctx := kitNetGrpc.CtxWithIncomingToken(context.Background(), config.CreateJwtToken(t, jwt.MapClaims{
+		"sub": userID,
+	}))
 	logger, err := log.NewLogger(cfg.Log)
 	require.NoError(t, err)
 	eventstore, err := mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
@@ -1284,7 +1311,9 @@ func Test_aggregate_HandleCreateResource(t *testing.T) {
 	}
 
 	cfg := raTest.MakeConfig(t)
-	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
+	ctx := kitNetGrpc.CtxWithIncomingToken(context.Background(), config.CreateJwtToken(t, jwt.MapClaims{
+		"sub": userID,
+	}))
 	logger, err := log.NewLogger(cfg.Log)
 	require.NoError(t, err)
 	eventstore, err := mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
@@ -1365,7 +1394,9 @@ func Test_aggregate_HandleConfirmResourceCreate(t *testing.T) {
 	}
 
 	cfg := raTest.MakeConfig(t)
-	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
+	ctx := kitNetGrpc.CtxWithIncomingToken(context.Background(), config.CreateJwtToken(t, jwt.MapClaims{
+		"sub": userID,
+	}))
 	logger, err := log.NewLogger(cfg.Log)
 	require.NoError(t, err)
 	eventstore, err := mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))

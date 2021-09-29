@@ -14,7 +14,6 @@ import (
 	"github.com/plgd-dev/cloud/resource-aggregate/service"
 	"github.com/plgd-dev/cloud/resource-aggregate/test"
 	testCfg "github.com/plgd-dev/cloud/test/config"
-	oauthService "github.com/plgd-dev/cloud/test/oauth-server/service"
 	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
 )
 
@@ -50,16 +49,13 @@ func TestPublishUnpublish(t *testing.T) {
 
 	deviceId := "dev0"
 	href := "/oic/p"
-	userId := oauthService.DeviceUserID
 	_, err = authClient.AddDevice(ctx, &pbAS.AddDeviceRequest{
 		DeviceId: deviceId,
-		UserId:   userId,
 	})
 	require.NoError(t, err)
 	defer func() {
 		_, err = authClient.DeleteDevices(ctx, &pbAS.DeleteDevicesRequest{
 			DeviceIds: []string{deviceId},
-			UserId:    userId,
 		})
 		require.NoError(t, err)
 	}()

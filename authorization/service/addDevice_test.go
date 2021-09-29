@@ -4,11 +4,20 @@ import (
 	"context"
 	"testing"
 
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/plgd-dev/cloud/authorization/pb"
+	"github.com/plgd-dev/cloud/pkg/net/grpc"
+	"github.com/plgd-dev/cloud/test/config"
 	"github.com/stretchr/testify/require"
 )
 
 func TestService_AddDevice(t *testing.T) {
+	jwtWithSubAaa := config.CreateJwtToken(t, jwt.MapClaims{
+		"sub": "aaa",
+	})
+	jwtWithSubUserId := config.CreateJwtToken(t, jwt.MapClaims{
+		"sub": "userId",
+	})
 	type args struct {
 		ctx     context.Context
 		request *pb.AddDeviceRequest
@@ -30,19 +39,17 @@ func TestService_AddDevice(t *testing.T) {
 		{
 			name: "invalid deviceId",
 			args: args{
-				ctx: context.Background(),
-				request: &pb.AddDeviceRequest{
-					UserId: "userId",
-				},
+				ctx:     grpc.CtxWithIncomingToken(context.Background(), jwtWithSubUserId),
+				request: &pb.AddDeviceRequest{},
 			},
 			wantErr: true,
 		},
 		{
 			name: "not belongs to user",
 			args: args{
+				ctx: grpc.CtxWithIncomingToken(context.Background(), jwtWithSubAaa),
 				request: &pb.AddDeviceRequest{
 					DeviceId: testDeviceID,
-					UserId:   "aaa",
 				},
 			},
 			wantErr: true,
@@ -50,8 +57,8 @@ func TestService_AddDevice(t *testing.T) {
 		{
 			name: "valid",
 			args: args{
+				ctx: grpc.CtxWithIncomingToken(context.Background(), jwtWithSubUserId),
 				request: &pb.AddDeviceRequest{
-					UserId:   "userId",
 					DeviceId: "deviceId",
 				},
 			},
@@ -60,8 +67,8 @@ func TestService_AddDevice(t *testing.T) {
 		{
 			name: "duplicit",
 			args: args{
+				ctx: grpc.CtxWithIncomingToken(context.Background(), jwtWithSubUserId),
 				request: &pb.AddDeviceRequest{
-					UserId:   "userId",
 					DeviceId: "deviceId",
 				},
 			},
@@ -80,7 +87,7 @@ func TestService_AddDevice(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := s.service.AddDevice(context.Background(), tt.args.request)
+			got, err := s.service.AddDevice(tt.args.ctx, tt.args.request)
 			if tt.wantErr {
 				require.Error(t, err)
 			} else {

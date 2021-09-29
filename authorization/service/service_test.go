@@ -16,9 +16,9 @@ import (
 )
 
 const (
-	testUserID      = "testUserID"
-	testDeviceID    = "testDeviceID"
-	testAccessToken = "testAccessToken"
+	testUserID   = "testUserID"
+	testDeviceID = "testDeviceID"
+	testUser2    = "testUser2"
 )
 
 func makeConfig(t *testing.T) Config {

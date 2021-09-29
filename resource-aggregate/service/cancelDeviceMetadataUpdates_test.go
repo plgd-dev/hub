@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/google/uuid"
 	"github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
@@ -16,6 +17,7 @@ import (
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
 	"github.com/plgd-dev/cloud/resource-aggregate/service"
 	raTest "github.com/plgd-dev/cloud/resource-aggregate/test"
+	"github.com/plgd-dev/cloud/test/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
@@ -68,7 +70,7 @@ func TestAggregateHandle_CancelPendingMetadataUpdates(t *testing.T) {
 	}
 
 	cfg := raTest.MakeConfig(t)
-	ctx := kitNetGrpc.CtxWithIncomingToken(context.Background(), "b")
+	ctx := context.Background()
 	logger, err := log.NewLogger(cfg.Log)
 
 	fmt.Printf("%v\n", cfg.String())
@@ -95,18 +97,27 @@ func TestAggregateHandle_CancelPendingMetadataUpdates(t *testing.T) {
 
 	ag, err := service.NewAggregate(commands.NewResourceID(deviceID, commands.StatusHref), 10, eventstore, service.DeviceMetadataFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
 	require.NoError(t, err)
-	_, err = ag.UpdateDeviceMetadata(kitNetGrpc.CtxWithIncomingOwner(ctx, userID), testMakeUpdateDeviceMetadataRequest(deviceID, correlationID0, nil, commands.ShadowSynchronization_DISABLED, 0))
+	_, err = ag.UpdateDeviceMetadata(kitNetGrpc.CtxWithIncomingToken(context.Background(), config.CreateJwtToken(t, jwt.MapClaims{
+		"sub": userID,
+	})), testMakeUpdateDeviceMetadataRequest(deviceID, correlationID0, nil, commands.ShadowSynchronization_DISABLED, 0))
 	require.NoError(t, err)
-	_, err = ag.UpdateDeviceMetadata(kitNetGrpc.CtxWithIncomingOwner(ctx, userID), testMakeUpdateDeviceMetadataRequest(deviceID, correlationID1, nil, commands.ShadowSynchronization_ENABLED, 0))
+	_, err = ag.UpdateDeviceMetadata(kitNetGrpc.CtxWithIncomingToken(context.Background(), config.CreateJwtToken(t, jwt.MapClaims{
+		"sub": userID,
+	})), testMakeUpdateDeviceMetadataRequest(deviceID, correlationID1, nil, commands.ShadowSynchronization_ENABLED, 0))
 	require.NoError(t, err)
-	_, err = ag.UpdateDeviceMetadata(kitNetGrpc.CtxWithIncomingOwner(ctx, userID), testMakeUpdateDeviceMetadataRequest(deviceID, correlationID2, nil, commands.ShadowSynchronization_DISABLED, 0))
+	_, err = ag.UpdateDeviceMetadata(kitNetGrpc.CtxWithIncomingToken(context.Background(), config.CreateJwtToken(t, jwt.MapClaims{
+		"sub": userID,
+	})), testMakeUpdateDeviceMetadataRequest(deviceID, correlationID2, nil, commands.ShadowSynchronization_DISABLED, 0))
 	require.NoError(t, err)
 
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {
 			ag, err := service.NewAggregate(commands.NewResourceID(tt.args.request.GetDeviceId(), commands.StatusHref), 10, eventstore, service.DeviceMetadataFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
 			require.NoError(t, err)
-			events, err := ag.CancelPendingMetadataUpdates(kitNetGrpc.CtxWithIncomingOwner(ctx, tt.args.userID), tt.args.request)
+			ctx := kitNetGrpc.CtxWithIncomingToken(ctx, config.CreateJwtToken(t, jwt.MapClaims{
+				"sub": tt.args.userID,
+			}))
+			events, err := ag.CancelPendingMetadataUpdates(ctx, tt.args.request)
 			if tt.wantErr {
 				require.Error(t, err)
 				s, ok := status.FromError(kitNetGrpc.ForwardFromError(codes.Unknown, err))
@@ -181,7 +192,7 @@ func TestRequestHandler_CancelPendingMetadataUpdates(t *testing.T) {
 	}
 
 	cfg := raTest.MakeConfig(t)
-	ctx := kitNetGrpc.CtxWithIncomingToken(context.Background(), "b")
+	ctx := context.Background()
 	logger, err := log.NewLogger(cfg.Log)
 
 	fmt.Printf("%v\n", cfg.String())
@@ -208,18 +219,27 @@ func TestRequestHandler_CancelPendingMetadataUpdates(t *testing.T) {
 
 	ag, err := service.NewAggregate(commands.NewResourceID(deviceID, commands.StatusHref), 10, eventstore, service.DeviceMetadataFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
 	require.NoError(t, err)
-	_, err = ag.UpdateDeviceMetadata(kitNetGrpc.CtxWithIncomingOwner(ctx, userID), testMakeUpdateDeviceMetadataRequest(deviceID, correlationID0, nil, commands.ShadowSynchronization_DISABLED, 0))
+	_, err = ag.UpdateDeviceMetadata(kitNetGrpc.CtxWithIncomingToken(ctx, config.CreateJwtToken(t, jwt.MapClaims{
+		"sub": userID,
+	})), testMakeUpdateDeviceMetadataRequest(deviceID, correlationID0, nil, commands.ShadowSynchronization_DISABLED, 0))
 	require.NoError(t, err)
-	_, err = ag.UpdateDeviceMetadata(kitNetGrpc.CtxWithIncomingOwner(ctx, userID), testMakeUpdateDeviceMetadataRequest(deviceID, correlationID1, nil, commands.ShadowSynchronization_ENABLED, 0))
+	_, err = ag.UpdateDeviceMetadata(kitNetGrpc.CtxWithIncomingToken(ctx, config.CreateJwtToken(t, jwt.MapClaims{
+		"sub": userID,
+	})), testMakeUpdateDeviceMetadataRequest(deviceID, correlationID1, nil, commands.ShadowSynchronization_ENABLED, 0))
 	require.NoError(t, err)
-	_, err = ag.UpdateDeviceMetadata(kitNetGrpc.CtxWithIncomingOwner(ctx, userID), testMakeUpdateDeviceMetadataRequest(deviceID, correlationID2, nil, commands.ShadowSynchronization_DISABLED, 0))
+	_, err = ag.UpdateDeviceMetadata(kitNetGrpc.CtxWithIncomingToken(ctx, config.CreateJwtToken(t, jwt.MapClaims{
+		"sub": userID,
+	})), testMakeUpdateDeviceMetadataRequest(deviceID, correlationID2, nil, commands.ShadowSynchronization_DISABLED, 0))
 	require.NoError(t, err)
 
-	requestHandler := service.NewRequestHandler(cfg, eventstore, publisher, mockGetUserDevices)
+	requestHandler := service.NewRequestHandler(cfg, eventstore, publisher, mockGetOwnerDevices)
 
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {
-			want, err := requestHandler.CancelPendingMetadataUpdates(kitNetGrpc.CtxWithIncomingOwner(ctx, tt.args.userID), tt.args.request)
+			ctx := kitNetGrpc.CtxWithIncomingToken(ctx, config.CreateJwtToken(t, jwt.MapClaims{
+				"sub": tt.args.userID,
+			}))
+			want, err := requestHandler.CancelPendingMetadataUpdates(ctx, tt.args.request)
 			if tt.wantErr {
 				require.Error(t, err)
 				s, ok := status.FromError(kitNetGrpc.ForwardFromError(codes.Unknown, err))

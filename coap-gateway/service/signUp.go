@@ -121,7 +121,6 @@ func signUpPostHandler(r *mux.Message, client *Client) {
 	ctx := kitNetGrpc.CtxWithToken(r.Context, token.AccessToken.String())
 	if _, err := client.server.asClient.AddDevice(ctx, &pb.AddDeviceRequest{
 		DeviceId: deviceID,
-		UserId:   token.Owner,
 	}); err != nil {
 		logErrorAndCloseClient(fmt.Errorf("cannot sign up: %w", err), coapconv.GrpcErr2CoapCode(err, coapconv.Update))
 		return

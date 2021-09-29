@@ -2,8 +2,10 @@ package config
 
 import (
 	"os"
+	"testing"
 	"time"
 
+	"github.com/golang-jwt/jwt/v4"
 	c2curi "github.com/plgd-dev/cloud/cloud2cloud-connector/uri"
 	httpUri "github.com/plgd-dev/cloud/http-gateway/uri"
 	grpcClient "github.com/plgd-dev/cloud/pkg/net/grpc/client"
@@ -20,6 +22,7 @@ import (
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/mongodb"
 	"github.com/plgd-dev/cloud/test/oauth-server/service"
 	"github.com/plgd-dev/cloud/test/oauth-server/uri"
+	"github.com/stretchr/testify/require"
 )
 
 const AUTH_HOST = "localhost:20000"
@@ -178,4 +181,14 @@ func CloudID() string {
 
 func MakeAuthURL() string {
 	return "https://" + OAUTH_SERVER_HOST + uri.Authorize
+}
+
+const JWTSecret = "secret"
+
+func CreateJwtToken(t *testing.T, claims jwt.MapClaims) string {
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	// Sign and get the complete encoded token as a string using the secret
+	tokenString, err := token.SignedString([]byte(JWTSecret))
+	require.NoError(t, err)
+	return tokenString
 }

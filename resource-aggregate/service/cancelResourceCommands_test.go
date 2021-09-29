@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/google/uuid"
 	"github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
@@ -16,6 +17,7 @@ import (
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
 	"github.com/plgd-dev/cloud/resource-aggregate/service"
 	raTest "github.com/plgd-dev/cloud/resource-aggregate/test"
+	"github.com/plgd-dev/cloud/test/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
@@ -125,7 +127,9 @@ func TestRequestHandler_CancelPendingCommands(t *testing.T) {
 	}
 
 	cfg := raTest.MakeConfig(t)
-	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
+	ctx := kitNetGrpc.CtxWithIncomingToken(context.Background(), config.CreateJwtToken(t, jwt.MapClaims{
+		"sub": userID,
+	}))
 	logger, err := log.NewLogger(cfg.Log)
 
 	fmt.Printf("%v\n", cfg.String())
@@ -175,7 +179,7 @@ func TestRequestHandler_CancelPendingCommands(t *testing.T) {
 	_, err = ag1.DeleteResource(ctx, testMakeDeleteResourceRequest(deviceID, resID1, correlationID3, 0))
 	require.NoError(t, err)
 
-	requestHandler := service.NewRequestHandler(cfg, eventstore, publisher, mockGetUserDevices)
+	requestHandler := service.NewRequestHandler(cfg, eventstore, publisher, mockGetOwnerDevices)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

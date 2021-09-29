@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/google/uuid"
 	"github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
@@ -17,6 +18,7 @@ import (
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
 	"github.com/plgd-dev/cloud/resource-aggregate/service"
 	raTest "github.com/plgd-dev/cloud/resource-aggregate/test"
+	"github.com/plgd-dev/cloud/test/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
@@ -66,7 +68,7 @@ func TestAggregateHandle_ConfirmDeviceMetadataUpdate(t *testing.T) {
 	}
 
 	cfg := raTest.MakeConfig(t)
-	ctx := kitNetGrpc.CtxWithIncomingToken(context.Background(), "b")
+	ctx := context.Background()
 	logger, err := log.NewLogger(cfg.Log)
 
 	fmt.Printf("%v\n", cfg.String())
@@ -93,14 +95,19 @@ func TestAggregateHandle_ConfirmDeviceMetadataUpdate(t *testing.T) {
 
 	ag, err := service.NewAggregate(commands.NewResourceID(deviceID, commands.StatusHref), 10, eventstore, service.DeviceMetadataFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
 	require.NoError(t, err)
-	_, err = ag.UpdateDeviceMetadata(kitNetGrpc.CtxWithIncomingOwner(ctx, user0), testMakeUpdateDeviceMetadataRequest(deviceID, "", nil, commands.ShadowSynchronization_DISABLED, time.Hour))
+	_, err = ag.UpdateDeviceMetadata(kitNetGrpc.CtxWithIncomingToken(ctx, config.CreateJwtToken(t, jwt.MapClaims{
+		"sub": user0,
+	})), testMakeUpdateDeviceMetadataRequest(deviceID, "", nil, commands.ShadowSynchronization_DISABLED, time.Hour))
 	require.NoError(t, err)
 
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {
 			ag, err := service.NewAggregate(commands.NewResourceID(tt.args.request.GetDeviceId(), commands.StatusHref), 10, eventstore, service.DeviceMetadataFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
 			require.NoError(t, err)
-			events, err := ag.ConfirmDeviceMetadataUpdate(kitNetGrpc.CtxWithIncomingOwner(ctx, tt.args.userID), tt.args.request)
+			ctx := kitNetGrpc.CtxWithIncomingToken(ctx, config.CreateJwtToken(t, jwt.MapClaims{
+				"sub": tt.args.userID,
+			}))
+			events, err := ag.ConfirmDeviceMetadataUpdate(ctx, tt.args.request)
 			if tt.wantErr {
 				require.Error(t, err)
 				s, ok := status.FromError(kitNetGrpc.ForwardFromError(codes.Unknown, err))
@@ -162,8 +169,10 @@ func TestRequestHandler_ConfirmDeviceMetadataUpdate(t *testing.T) {
 		},
 	}
 
+	ctx := kitNetGrpc.CtxWithIncomingToken(context.Background(), config.CreateJwtToken(t, jwt.MapClaims{
+		"sub": user0,
+	}))
 	config := raTest.MakeConfig(t)
-	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), user0)
 	logger, err := log.NewLogger(config.Log)
 	require.NoError(t, err)
 	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
@@ -185,7 +194,7 @@ func TestRequestHandler_ConfirmDeviceMetadataUpdate(t *testing.T) {
 		naClient.Close()
 	}()
 
-	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
+	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetOwnerDevices)
 
 	_, err = requestHandler.UpdateDeviceMetadata(ctx, testMakeUpdateDeviceMetadataRequest(deviceID, "", nil, commands.ShadowSynchronization_DISABLED, time.Hour))
 	require.NoError(t, err)

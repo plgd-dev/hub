@@ -116,7 +116,7 @@ func TestOwnerCache_Subscribe(t *testing.T) {
 	time.Sleep(time.Millisecond * 100)
 
 	for _, d := range devices[:2] {
-		_, err := c.AddDevice(ctx, &pb.AddDeviceRequest{DeviceId: d, UserId: owner})
+		_, err := c.AddDevice(ctx, &pb.AddDeviceRequest{DeviceId: d})
 		require.NoError(t, err)
 	}
 	time.Sleep(time.Millisecond * 100)
@@ -158,7 +158,6 @@ func TestOwnerCache_Subscribe(t *testing.T) {
 
 	deleted, err := c.DeleteDevices(ctx, &pb.DeleteDevicesRequest{
 		DeviceIds: devices[:1],
-		UserId:    owner,
 	})
 	require.NoError(t, err)
 	assert.Equal(t, devices[:1], deleted.DeviceIds)
@@ -183,7 +182,7 @@ func TestOwnerCache_Subscribe(t *testing.T) {
 	require.NoError(t, err)
 	assert.False(t, ok)
 
-	_, err = c.AddDevice(ctx, &pb.AddDeviceRequest{DeviceId: devices[0], UserId: owner})
+	_, err = c.AddDevice(ctx, &pb.AddDeviceRequest{DeviceId: devices[0]})
 	require.NoError(t, err)
 	cacheDevices, err = cache.GetDevices(ctx)
 	require.NoError(t, err)
@@ -217,7 +216,7 @@ func TestOwnerCache_Subscribe(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, devices[:2], cacheDevices)
 
-	_, err = c.AddDevice(ctx, &pb.AddDeviceRequest{DeviceId: devices[2], UserId: owner})
+	_, err = c.AddDevice(ctx, &pb.AddDeviceRequest{DeviceId: devices[2]})
 	require.NoError(t, err)
 	time.Sleep(time.Millisecond * 100)
 	cacheDevices, err = cache.GetDevices(ctx)
@@ -226,7 +225,6 @@ func TestOwnerCache_Subscribe(t *testing.T) {
 
 	_, err = c.DeleteDevices(ctx, &pb.DeleteDevicesRequest{
 		DeviceIds: devices[1:],
-		UserId:    owner,
 	})
 	require.NoError(t, err)
 	time.Sleep(cacheExpiration * 2)

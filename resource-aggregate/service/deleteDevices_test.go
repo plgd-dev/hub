@@ -2,10 +2,10 @@ package service_test
 
 import (
 	"context"
-	"fmt"
 	"sort"
 	"testing"
 
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
@@ -15,6 +15,7 @@ import (
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
 	"github.com/plgd-dev/cloud/resource-aggregate/service"
 	raTest "github.com/plgd-dev/cloud/resource-aggregate/test"
+	"github.com/plgd-dev/cloud/test/config"
 	"github.com/stretchr/testify/require"
 )
 
@@ -22,26 +23,27 @@ func TestRequestHandler_DeleteDevices(t *testing.T) {
 	const deviceID = "dev0"
 	const user0 = "user0"
 
-	config := raTest.MakeConfig(t)
-	fmt.Printf("%v\n", config.String())
-	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), user0)
-	logger, err := log.NewLogger(config.Log)
+	ctx := kitNetGrpc.CtxWithIncomingToken(context.Background(), config.CreateJwtToken(t, jwt.MapClaims{
+		"sub": user0,
+	}))
+	cfg := raTest.MakeConfig(t)
+	logger, err := log.NewLogger(cfg.Log)
 	require.NoError(t, err)
-	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
+	eventstore, err := mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
 		require.NoError(t, err)
 		_ = eventstore.Close(ctx)
 	}()
-	naClient, publisher, err := natsTest.NewClientAndPublisher(config.Clients.Eventbus.NATS, logger, publisher.WithMarshaler(utils.Marshal))
+	naClient, publisher, err := natsTest.NewClientAndPublisher(cfg.Clients.Eventbus.NATS, logger, publisher.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
 		publisher.Close()
 		naClient.Close()
 	}()
 
-	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
+	requestHandler := service.NewRequestHandler(cfg, eventstore, publisher, mockGetOwnerDevices)
 
 	type args struct {
 		req   *commands.DeleteDevicesRequest
@@ -114,7 +116,9 @@ func TestRequestHandler_DeleteDevices(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			deleteDevicesCtx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), tt.args.owner)
+			deleteDevicesCtx := kitNetGrpc.CtxWithIncomingToken(context.Background(), config.CreateJwtToken(t, jwt.MapClaims{
+				"sub": tt.args.owner,
+			}))
 			response, err := requestHandler.DeleteDevices(deleteDevicesCtx, tt.args.req)
 			if tt.wantError {
 				require.Error(t, err)

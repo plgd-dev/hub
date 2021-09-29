@@ -88,7 +88,6 @@ func (s *SubscriptionManager) HandleDevicesRegistered(ctx context.Context, d sub
 	for _, device := range devices {
 		_, err := s.asClient.AddDevice(ctx, &pbAS.AddDeviceRequest{
 			DeviceId: device.ID,
-			UserId:   d.linkedAccount.UserID,
 		})
 		if err != nil {
 			errors = append(errors, err)
@@ -130,7 +129,6 @@ func (s *SubscriptionManager) HandleDevicesUnregistered(ctx context.Context, sub
 		s.cache.Delete(correlationID)
 		resp, err := s.asClient.DeleteDevices(ctx, &pbAS.DeleteDevicesRequest{
 			DeviceIds: []string{device.ID},
-			UserId:    userID,
 		})
 		if err != nil {
 			errors = append(errors, fmt.Errorf("cannot remove device %v from user: %w", device.ID, err))

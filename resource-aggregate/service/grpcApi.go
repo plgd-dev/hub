@@ -16,24 +16,24 @@ import (
 	raEvents "github.com/plgd-dev/cloud/resource-aggregate/events"
 )
 
-type getUserDevicesFunc = func(ctx context.Context, owner string, deviceIDs []string) ([]string, error)
+type getOwnerDevicesFunc = func(ctx context.Context, owner string, deviceIDs []string) ([]string, error)
 
 //RequestHandler for handling incoming request
 type RequestHandler struct {
 	UnimplementedResourceAggregateServer
-	config             Config
-	eventstore         EventStore
-	publisher          eventbus.Publisher
-	getUserDevicesFunc getUserDevicesFunc
+	config              Config
+	eventstore          EventStore
+	publisher           eventbus.Publisher
+	getOwnerDevicesFunc getOwnerDevicesFunc
 }
 
 //NewRequestHandler factory for new RequestHandler
-func NewRequestHandler(config Config, eventstore EventStore, publisher eventbus.Publisher, getUserDevicesFunc getUserDevicesFunc) *RequestHandler {
+func NewRequestHandler(config Config, eventstore EventStore, publisher eventbus.Publisher, getOwnerDevicesFunc getOwnerDevicesFunc) *RequestHandler {
 	return &RequestHandler{
-		config:             config,
-		eventstore:         eventstore,
-		publisher:          publisher,
-		getUserDevicesFunc: getUserDevicesFunc,
+		config:              config,
+		eventstore:          eventstore,
+		publisher:           publisher,
+		getOwnerDevicesFunc: getOwnerDevicesFunc,
 	}
 }
 
@@ -53,7 +53,7 @@ func PublishEvents(ctx context.Context, publisher eventbus.Publisher, deviceId, 
 
 // Check if device with given ID belongs to given owner
 func (r RequestHandler) isUserDevice(ctx context.Context, owner string, deviceID string) (bool, error) {
-	deviceIds, err := r.getUserDevicesFunc(ctx, owner, []string{deviceID})
+	deviceIds, err := r.getOwnerDevicesFunc(ctx, owner, []string{deviceID})
 	if err != nil {
 		return false, err
 	}
@@ -61,7 +61,7 @@ func (r RequestHandler) isUserDevice(ctx context.Context, owner string, deviceID
 }
 
 func (r RequestHandler) validateAccessToDevice(ctx context.Context, deviceID string) (string, error) {
-	owner, err := kitNetGrpc.OwnerFromMD(ctx)
+	owner, err := kitNetGrpc.OwnerFromTokenMD(ctx, r.config.Clients.AuthServer.OwnerClaim)
 	if err != nil {
 		return "", kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "invalid owner: %v", err)
 	}
@@ -80,12 +80,12 @@ func (r RequestHandler) validateAccessToDevice(ctx context.Context, deviceID str
 // Function iterates over input slice of device IDs and returns owner name, and the intersection
 // of the input device IDs with owned devices.
 func (r RequestHandler) getOwnedDevices(ctx context.Context, deviceIDs []string) (string, []string, error) {
-	owner, err := kitNetGrpc.OwnerFromMD(ctx)
+	owner, err := kitNetGrpc.OwnerFromTokenMD(ctx, r.config.Clients.AuthServer.OwnerClaim)
 	if err != nil {
 		return "", nil, kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "invalid owner: %v", err)
 	}
 
-	ownedDevices, err := r.getUserDevicesFunc(ctx, owner, deviceIDs)
+	ownedDevices, err := r.getOwnerDevicesFunc(ctx, owner, deviceIDs)
 	if err != nil {
 		return "", nil, kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "cannot validate: %v", err)
 	}

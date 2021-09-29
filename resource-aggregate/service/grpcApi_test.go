@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/pkg/strings"
@@ -16,6 +17,7 @@ import (
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
 	"github.com/plgd-dev/cloud/resource-aggregate/service"
 	raTest "github.com/plgd-dev/cloud/resource-aggregate/test"
+	"github.com/plgd-dev/cloud/test/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/status"
@@ -90,8 +92,10 @@ func TestRequestHandler_PublishResource(t *testing.T) {
 		},
 	}
 
+	ctx := kitNetGrpc.CtxWithIncomingToken(context.Background(), config.CreateJwtToken(t, jwt.MapClaims{
+		"sub": user0,
+	}))
 	config := raTest.MakeConfig(t)
-	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), user0)
 	logger, err := log.NewLogger(config.Log)
 	require.NoError(t, err)
 	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
@@ -113,7 +117,7 @@ func TestRequestHandler_PublishResource(t *testing.T) {
 		naClient.Close()
 	}()
 
-	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
+	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetOwnerDevices)
 
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {
@@ -198,38 +202,43 @@ func TestRequestHandler_UnpublishResource(t *testing.T) {
 		},
 	}
 
-	config := raTest.MakeConfig(t)
-	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), user0)
-	logger, err := log.NewLogger(config.Log)
+	ctx := kitNetGrpc.CtxWithIncomingToken(context.Background(), config.CreateJwtToken(t, jwt.MapClaims{
+		"sub": user0,
+	}))
+	cfg := raTest.MakeConfig(t)
+	logger, err := log.NewLogger(cfg.Log)
 	require.NoError(t, err)
-	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
+	eventstore, err := mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	err = eventstore.Clear(ctx)
 	require.NoError(t, err)
 	err = eventstore.Close(ctx)
 	assert.NoError(t, err)
-	eventstore, err = mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
+	eventstore, err = mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Close(ctx)
 		assert.NoError(t, err)
 	}()
-	naClient, publisher, err := natsTest.NewClientAndPublisher(config.Clients.Eventbus.NATS, logger, publisher.WithMarshaler(utils.Marshal))
+	naClient, publisher, err := natsTest.NewClientAndPublisher(cfg.Clients.Eventbus.NATS, logger, publisher.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
 		publisher.Close()
 		naClient.Close()
 	}()
 
-	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
+	requestHandler := service.NewRequestHandler(cfg, eventstore, publisher, mockGetOwnerDevices)
 
 	pubReq := testMakePublishResourceRequest(deviceID, []string{href})
-	_, err = requestHandler.PublishResourceLinks(kitNetGrpc.CtxWithIncomingOwner(ctx, user0), pubReq)
+	_, err = requestHandler.PublishResourceLinks(ctx, pubReq)
 	assert.NoError(t, err)
 
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {
-			response, err := requestHandler.UnpublishResourceLinks(kitNetGrpc.CtxWithIncomingOwner(ctx, tt.args.userID), tt.args.request)
+			ctx := kitNetGrpc.CtxWithIncomingToken(context.Background(), config.CreateJwtToken(t, jwt.MapClaims{
+				"sub": tt.args.userID,
+			}))
+			response, err := requestHandler.UnpublishResourceLinks(ctx, tt.args.request)
 			if tt.wantError {
 				assert.Error(t, err)
 			} else {
@@ -273,8 +282,10 @@ func TestRequestHandler_NotifyResourceChanged(t *testing.T) {
 		},
 	}
 
+	ctx := kitNetGrpc.CtxWithIncomingToken(context.Background(), config.CreateJwtToken(t, jwt.MapClaims{
+		"sub": user0,
+	}))
 	config := raTest.MakeConfig(t)
-	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), user0)
 	logger, err := log.NewLogger(config.Log)
 	require.NoError(t, err)
 	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
@@ -296,7 +307,7 @@ func TestRequestHandler_NotifyResourceChanged(t *testing.T) {
 		naClient.Close()
 	}()
 
-	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
+	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetOwnerDevices)
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {
 			response, err := requestHandler.NotifyResourceChanged(ctx, tt.args.request)
@@ -361,8 +372,10 @@ func TestRequestHandler_UpdateResourceContent(t *testing.T) {
 		},
 	}
 
+	ctx := kitNetGrpc.CtxWithIncomingToken(context.Background(), config.CreateJwtToken(t, jwt.MapClaims{
+		"sub": user0,
+	}))
 	config := raTest.MakeConfig(t)
-	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), user0)
 	logger, err := log.NewLogger(config.Log)
 	require.NoError(t, err)
 	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
@@ -384,7 +397,7 @@ func TestRequestHandler_UpdateResourceContent(t *testing.T) {
 		naClient.Close()
 	}()
 
-	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
+	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetOwnerDevices)
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {
 			if tt.args.request.GetResourceId().GetDeviceId() != "" && tt.args.request.GetResourceId().GetHref() != "" {
@@ -447,8 +460,10 @@ func TestRequestHandler_ConfirmResourceUpdate(t *testing.T) {
 		},
 	}
 
+	ctx := kitNetGrpc.CtxWithIncomingToken(context.Background(), config.CreateJwtToken(t, jwt.MapClaims{
+		"sub": user0,
+	}))
 	config := raTest.MakeConfig(t)
-	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), user0)
 	logger, err := log.NewLogger(config.Log)
 	require.NoError(t, err)
 	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
@@ -470,7 +485,7 @@ func TestRequestHandler_ConfirmResourceUpdate(t *testing.T) {
 		naClient.Close()
 	}()
 
-	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
+	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetOwnerDevices)
 	_, err = requestHandler.NotifyResourceChanged(ctx, testMakeNotifyResourceChangedRequest(deviceID, resID, 0))
 	require.NoError(t, err)
 	_, err = requestHandler.UpdateResource(ctx, testMakeUpdateResourceRequest(deviceID, resID, "", correlationID, time.Hour))
@@ -530,8 +545,10 @@ func TestRequestHandler_RetrieveResource(t *testing.T) {
 		},
 	}
 
+	ctx := kitNetGrpc.CtxWithIncomingToken(context.Background(), config.CreateJwtToken(t, jwt.MapClaims{
+		"sub": user0,
+	}))
 	config := raTest.MakeConfig(t)
-	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), user0)
 	logger, err := log.NewLogger(config.Log)
 	require.NoError(t, err)
 	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
@@ -553,7 +570,7 @@ func TestRequestHandler_RetrieveResource(t *testing.T) {
 		naClient.Close()
 	}()
 
-	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
+	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetOwnerDevices)
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {
 			if tt.args.request.GetResourceId().GetDeviceId() != "" && tt.args.request.GetResourceId().GetHref() != "" {
@@ -616,8 +633,10 @@ func TestRequestHandler_ConfirmResourceRetrieve(t *testing.T) {
 		},
 	}
 
+	ctx := kitNetGrpc.CtxWithIncomingToken(context.Background(), config.CreateJwtToken(t, jwt.MapClaims{
+		"sub": user0,
+	}))
 	config := raTest.MakeConfig(t)
-	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), user0)
 	logger, err := log.NewLogger(config.Log)
 	require.NoError(t, err)
 	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
@@ -639,7 +658,7 @@ func TestRequestHandler_ConfirmResourceRetrieve(t *testing.T) {
 		naClient.Close()
 	}()
 
-	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
+	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetOwnerDevices)
 	_, err = requestHandler.NotifyResourceChanged(ctx, testMakeNotifyResourceChangedRequest(deviceID, resID, 0))
 	require.NoError(t, err)
 	_, err = requestHandler.RetrieveResource(ctx, testMakeRetrieveResourceRequest(deviceID, resID, correlationID, time.Hour))
@@ -702,8 +721,10 @@ func TestRequestHandler_DeleteResource(t *testing.T) {
 		},
 	}
 
+	ctx := kitNetGrpc.CtxWithIncomingToken(context.Background(), config.CreateJwtToken(t, jwt.MapClaims{
+		"sub": user0,
+	}))
 	config := raTest.MakeConfig(t)
-	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), user0)
 	logger, err := log.NewLogger(config.Log)
 	require.NoError(t, err)
 	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
@@ -725,7 +746,7 @@ func TestRequestHandler_DeleteResource(t *testing.T) {
 		naClient.Close()
 	}()
 
-	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
+	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetOwnerDevices)
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {
 			if tt.args.request.GetResourceId().GetDeviceId() != "" && tt.args.request.GetResourceId().GetHref() != "" {
@@ -788,8 +809,10 @@ func TestRequestHandler_ConfirmResourceDelete(t *testing.T) {
 		},
 	}
 
+	ctx := kitNetGrpc.CtxWithIncomingToken(context.Background(), config.CreateJwtToken(t, jwt.MapClaims{
+		"sub": user0,
+	}))
 	config := raTest.MakeConfig(t)
-	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), user0)
 	logger, err := log.NewLogger(config.Log)
 	require.NoError(t, err)
 	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
@@ -811,7 +834,7 @@ func TestRequestHandler_ConfirmResourceDelete(t *testing.T) {
 		naClient.Close()
 	}()
 
-	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
+	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetOwnerDevices)
 	_, err = requestHandler.NotifyResourceChanged(ctx, testMakeNotifyResourceChangedRequest(deviceID, resID, 0))
 	require.NoError(t, err)
 	_, err = requestHandler.DeleteResource(ctx, testMakeDeleteResourceRequest(deviceID, resID, correlationID, time.Hour))
@@ -874,8 +897,10 @@ func TestRequestHandler_CreateResource(t *testing.T) {
 		},
 	}
 
+	ctx := kitNetGrpc.CtxWithIncomingToken(context.Background(), config.CreateJwtToken(t, jwt.MapClaims{
+		"sub": user0,
+	}))
 	config := raTest.MakeConfig(t)
-	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), user0)
 	logger, err := log.NewLogger(config.Log)
 	require.NoError(t, err)
 	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
@@ -897,7 +922,7 @@ func TestRequestHandler_CreateResource(t *testing.T) {
 		naClient.Close()
 	}()
 
-	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
+	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetOwnerDevices)
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {
 			if tt.args.request.GetResourceId().GetDeviceId() != "" && tt.args.request.GetResourceId().GetHref() != "" {
@@ -960,8 +985,10 @@ func TestRequestHandler_ConfirmResourceCreate(t *testing.T) {
 		},
 	}
 
+	ctx := kitNetGrpc.CtxWithIncomingToken(context.Background(), config.CreateJwtToken(t, jwt.MapClaims{
+		"sub": user0,
+	}))
 	config := raTest.MakeConfig(t)
-	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), user0)
 	logger, err := log.NewLogger(config.Log)
 	require.NoError(t, err)
 	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
@@ -983,7 +1010,7 @@ func TestRequestHandler_ConfirmResourceCreate(t *testing.T) {
 		naClient.Close()
 	}()
 
-	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
+	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetOwnerDevices)
 	_, err = requestHandler.NotifyResourceChanged(ctx, testMakeNotifyResourceChangedRequest(deviceID, resID, 0))
 	require.NoError(t, err)
 	_, err = requestHandler.CreateResource(ctx, testMakeCreateResourceRequest(deviceID, resID, correlationID, time.Hour))
@@ -1006,8 +1033,8 @@ func TestRequestHandler_ConfirmResourceCreate(t *testing.T) {
 	}
 }
 
-func mockGetUserDevices(ctx context.Context, userID string, deviceIDs []string) ([]string, error) {
-	ownedDevices, code, err := testListDevicesOfUserFunc(ctx, "0", userID)
+func mockGetOwnerDevices(ctx context.Context, owner string, deviceIDs []string) ([]string, error) {
+	ownedDevices, code, err := testListDevicesOfUserFunc(ctx, "0", owner)
 	if err != nil {
 		return nil, status.Errorf(code, "%v", err)
 	}
