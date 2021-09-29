@@ -167,25 +167,25 @@ func (c *OwnerCache) makeCloseFunc(owner string, id uint64) func() {
 }
 
 func (c *OwnerCache) getOwnerDevices(ctx context.Context, asClient pbAS.AuthorizationServiceClient) ([]string, error) {
-	getUserDevicesClient, err := asClient.GetOwnerDevices(ctx, &pbAS.GetOwnerDevicesRequest{})
+	getDevicesClient, err := asClient.GetDevices(ctx, &pbAS.GetDevicesRequest{})
 	if err != nil {
 		return nil, status.Errorf(status.Convert(err).Code(), "cannot get owners devices: %v", err)
 	}
 	defer func() {
-		if err := getUserDevicesClient.CloseSend(); err != nil {
+		if err := getDevicesClient.CloseSend(); err != nil {
 			c.errFunc(fmt.Errorf("cannot close send direction of get owners devices stream: %v", err))
 		}
 	}()
 	ownerDevices := make([]string, 0, 32)
 	for {
-		userDevice, err := getUserDevicesClient.Recv()
+		device, err := getDevicesClient.Recv()
 		if err == io.EOF {
 			break
 		}
 		if err != nil {
 			return nil, status.Errorf(status.Convert(err).Code(), "cannot get owners devices: %v", err)
 		}
-		ownerDevices = append(ownerDevices, userDevice.DeviceId)
+		ownerDevices = append(ownerDevices, device.DeviceId)
 	}
 	return ownerDevices, nil
 }

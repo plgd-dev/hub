@@ -24,11 +24,11 @@ func getUniqueDeviceIds(deviceIds []string) []string {
 	return devices.ToSlice()
 }
 
-func getUserDevices(tx persistence.PersistenceTx, owner string) ([]string, error) {
+func getOwnerDevices(tx persistence.PersistenceTx, owner string) ([]string, error) {
 	it := tx.RetrieveByOwner(owner)
 	defer it.Close()
 	if it.Err() != nil {
-		return nil, fmt.Errorf("failed to obtain user devices: %w", it.Err())
+		return nil, fmt.Errorf("failed to obtain owned devices: %w", it.Err())
 	}
 	var deviceIds []string
 	var d persistence.AuthorizedDevice
@@ -81,7 +81,7 @@ func (s *Service) DeleteDevices(ctx context.Context, request *pb.DeleteDevicesRe
 	var deviceIds []string
 	if len(request.DeviceIds) == 0 {
 		var err error
-		if deviceIds, err = getUserDevices(tx, owner); err != nil {
+		if deviceIds, err = getOwnerDevices(tx, owner); err != nil {
 			return nil, log.LogAndReturnError(status.Errorf(codes.InvalidArgument, "cannot delete devices: %v", err))
 		}
 		if len(deviceIds) == 0 {

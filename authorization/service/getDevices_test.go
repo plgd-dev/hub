@@ -26,9 +26,9 @@ func TestUserDevicesList(t *testing.T) {
 		require.NoError(t, err)
 	}()
 	persistDevice(t, s.service.persistence, newTestDevice())
-	err := s.service.GetOwnerDevices(newGetOwnerDevicesRequest(), srv)
+	err := s.service.GetDevices(newGetDevicesRequest(), srv)
 	assert.NoError(t, err)
-	r := map[string]*pb.OwnerDevice{
+	r := map[string]*pb.Device{
 		testDeviceID: {
 			DeviceId: testDeviceID,
 		},
@@ -52,10 +52,10 @@ func TestListingMoreDevices(t *testing.T) {
 	d.DeviceID = "anotherDeviceID"
 	persistDevice(t, s.service.persistence, d)
 
-	err := s.service.GetOwnerDevices(newGetOwnerDevicesRequest(), srv)
+	err := s.service.GetDevices(newGetDevicesRequest(), srv)
 	assert := assert.New(t)
 	assert.NoError(err)
-	r := map[string]*pb.OwnerDevice{
+	r := map[string]*pb.Device{
 		testDeviceID: {
 			DeviceId: testDeviceID,
 		},
@@ -66,30 +66,30 @@ func TestListingMoreDevices(t *testing.T) {
 	assert.Equal(r, srv.resourceValues)
 }
 
-func newGetOwnerDevicesRequest() *pb.GetOwnerDevicesRequest {
-	return &pb.GetOwnerDevicesRequest{}
+func newGetDevicesRequest() *pb.GetDevicesRequest {
+	return &pb.GetDevicesRequest{}
 }
 
-type mockGetOwnerDevicesServer struct {
-	resourceValues map[string]*pb.OwnerDevice
+type mockGeDevicesServer struct {
+	resourceValues map[string]*pb.Device
 	ctx            context.Context
 	grpc.ServerStream
 }
 
-func newMockRetrieveResources(ctx context.Context) *mockGetOwnerDevicesServer {
-	return &mockGetOwnerDevicesServer{
+func newMockRetrieveResources(ctx context.Context) *mockGeDevicesServer {
+	return &mockGeDevicesServer{
 		ctx: ctx,
 	}
 }
 
-func (d *mockGetOwnerDevicesServer) Send(r *pb.OwnerDevice) error {
+func (d *mockGeDevicesServer) Send(r *pb.Device) error {
 	if d.resourceValues == nil {
-		d.resourceValues = make(map[string]*pb.OwnerDevice)
+		d.resourceValues = make(map[string]*pb.Device)
 	}
 	d.resourceValues[r.DeviceId] = r
 	return nil
 }
 
-func (d *mockGetOwnerDevicesServer) Context() context.Context {
+func (d *mockGeDevicesServer) Context() context.Context {
 	return d.ctx
 }

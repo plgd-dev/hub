@@ -13,7 +13,7 @@ func (r *RequestHandler) GetResources(req *pb.GetResourcesRequest, srv pb.GrpcGa
 	if err != nil {
 		return kitNetGrpc.ForwardFromError(codes.InvalidArgument, err)
 	}
-	deviceIDs, err := r.GetOwnerDevices(srv.Context(), owner)
+	deviceIDs, err := r.getOwnerDevices(srv.Context(), owner)
 	if err != nil {
 		return log.LogAndReturnError(status.Errorf(status.Convert(err).Code(), "cannot get devices contents: %v", err))
 	}

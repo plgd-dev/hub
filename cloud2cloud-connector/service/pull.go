@@ -41,32 +41,32 @@ type pullDevicesHandler struct {
 	triggerTask         OnTaskTrigger
 }
 
-func getUsersDevices(ctx context.Context, asClient pbAS.AuthorizationServiceClient) (map[string]bool, error) {
-	getUserDevicesClient, err := asClient.GetOwnerDevices(ctx, &pbAS.GetOwnerDevicesRequest{})
+func getOwnerDevices(ctx context.Context, asClient pbAS.AuthorizationServiceClient) (map[string]bool, error) {
+	getDevicesClient, err := asClient.GetDevices(ctx, &pbAS.GetDevicesRequest{})
 	if err != nil {
-		return nil, fmt.Errorf("cannot get users devices: %w", err)
+		return nil, fmt.Errorf("cannot get owned devices: %w", err)
 	}
 	defer func() {
-		if err := getUserDevicesClient.CloseSend(); err != nil {
+		if err := getDevicesClient.CloseSend(); err != nil {
 			log.Errorf("failed to close user devices client: %v", err)
 		}
 	}()
-	userDevices := make(map[string]bool)
+	ownerDevices := make(map[string]bool)
 	for {
-		userDevice, err := getUserDevicesClient.Recv()
+		device, err := getDevicesClient.Recv()
 		if err == io.EOF {
 			break
 		}
 		if err != nil {
-			return nil, fmt.Errorf("cannot get users devices: %w", err)
+			return nil, fmt.Errorf("cannot get owned devices: %w", err)
 		}
-		if userDevice == nil {
+		if device == nil {
 			continue
 		}
 
-		userDevices[userDevice.DeviceId] = true
+		ownerDevices[device.DeviceId] = true
 	}
-	return userDevices, nil
+	return ownerDevices, nil
 }
 
 func Get(ctx context.Context, url string, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud, v interface{}) error {
@@ -199,7 +199,7 @@ func (p *pullDevicesHandler) getDevicesWithResourceLinks(ctx context.Context, li
 	userID := linkedAccount.UserID
 	ctx = kitNetGrpc.CtxWithToken(ctx, linkedAccount.Data.Origin().AccessToken.String())
 	if linkedCloud.SupportedSubscriptionsEvents.NeedPullDevices() {
-		registeredDevices, err := getUsersDevices(ctx, p.asClient)
+		registeredDevices, err := getOwnerDevices(ctx, p.asClient)
 		if err != nil {
 			return err
 		}

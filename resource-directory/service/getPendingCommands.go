@@ -10,7 +10,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func (r *RequestHandler) GetOwnerDevices(ctx context.Context, owner string) ([]string, error) {
+func (r *RequestHandler) getOwnerDevices(ctx context.Context, owner string) ([]string, error) {
 	deviceIDs, err := r.ownerCache.GetDevices(ctx)
 	if err != nil {
 		return nil, err
@@ -23,7 +23,7 @@ func (r *RequestHandler) GetPendingCommands(req *pb.GetPendingCommandsRequest, s
 	if err != nil {
 		return kitNetGrpc.ForwardFromError(codes.InvalidArgument, err)
 	}
-	deviceIDs, err := r.GetOwnerDevices(srv.Context(), owner)
+	deviceIDs, err := r.getOwnerDevices(srv.Context(), owner)
 	if err != nil {
 		return log.LogAndReturnError(status.Errorf(status.Convert(err).Code(), "cannot retrieve pending commands: %v", err))
 	}

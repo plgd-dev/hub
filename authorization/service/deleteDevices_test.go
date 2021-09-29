@@ -7,7 +7,6 @@ import (
 
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/plgd-dev/cloud/authorization/pb"
-	"github.com/plgd-dev/cloud/pkg/net/grpc"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/test/config"
 	"github.com/stretchr/testify/require"
@@ -47,7 +46,7 @@ func TestService_DeleteDevices(t *testing.T) {
 		{
 			name: "invalid deviceId",
 			args: args{
-				ctx:     grpc.CtxWithIncomingToken(context.Background(), jwtWithSubUserId),
+				ctx:     kitNetGrpc.CtxWithIncomingToken(context.Background(), jwtWithSubUserId),
 				request: &pb.DeleteDevicesRequest{},
 			},
 			want: &pb.DeleteDevicesResponse{},
@@ -65,7 +64,7 @@ func TestService_DeleteDevices(t *testing.T) {
 		{
 			name: "not belongs to user",
 			args: args{
-				ctx: grpc.CtxWithIncomingToken(context.Background(), jwtWithSubAaa),
+				ctx: kitNetGrpc.CtxWithIncomingToken(context.Background(), jwtWithSubAaa),
 				request: &pb.DeleteDevicesRequest{
 					DeviceIds: []string{testDevID1},
 				},

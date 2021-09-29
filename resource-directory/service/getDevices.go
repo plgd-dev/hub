@@ -13,7 +13,7 @@ func (r *RequestHandler) GetDevices(req *pb.GetDevicesRequest, srv pb.GrpcGatewa
 	if err != nil {
 		return log.LogAndReturnError(status.Errorf(codes.Unauthenticated, "cannot get devices: %v", err))
 	}
-	deviceIDs, err := r.GetOwnerDevices(srv.Context(), owner)
+	deviceIDs, err := r.getOwnerDevices(srv.Context(), owner)
 	if err != nil {
 		return log.LogAndReturnError(status.Errorf(status.Convert(err).Code(), "cannot get devices contents: %v", err))
 	}

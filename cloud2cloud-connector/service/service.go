@@ -12,7 +12,6 @@ import (
 	pbAS "github.com/plgd-dev/cloud/authorization/pb"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/store/mongodb"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/uri"
-	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/pkg/fn"
 	"github.com/plgd-dev/cloud/pkg/log"
@@ -167,7 +166,7 @@ func newGrpcGatewayClient(config GrpcGatewayConfig, logger log.Logger) (pbGRPC.G
 			logger.Errorf("error occurs during closing of the connection to resource-aggregate: %w", err)
 		}
 	})
-	grpcClient := pb.NewGrpcGatewayClient(grpcConn.GRPC())
+	grpcClient := pbGRPC.NewGrpcGatewayClient(grpcConn.GRPC())
 	return grpcClient, fl.ToFunction(), nil
 }
 
