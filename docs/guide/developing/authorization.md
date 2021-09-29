@@ -1,23 +1,22 @@
 # Authorization
 
 ## Using external OAuth Server with bundle
+
 Even though the bundle start core plgd services as processes in a single container, a user has still a possibility to configure most of the services parameters. **For testing purposes**, the external OAuth Server (e.g. [Auth0](https://auth0.com)) can be set up.
 To skip internal mocked OAuth Server and switch to your external one, configure following environment variables:
+
 ```yaml
     OAUTH_AUDIENCE: https://api.example.com
-    OAUTH_ENDPOINT_AUTH_URL: https://auth.example.com/authorize
-    OAUTH_ENDPOINT_TOKEN_URL: https://auth.example.com/oauth/token
     OAUTH_ENDPOINT: auth.example.com
-    JWKS_URL: https://auth.example.com/.well-known/jwks.json
     OAUTH_CLIENT_ID: ij12OJj2J23K8KJs
     OAUTH_CLIENT_SECRET: 654hkja12asd123d
-    SERVICE_OAUTH_CLIENT_ID: 412dsFf53Sj6$
-    SERVICE_OAUTH_CLIENT_SECRET: 235Jgdf65jsd4Shls
     OWNER_CLAIM: sub
 ```
 
 ### How to configure Auth0
+
 Assuming you have an account in the Auth0 OAuth as a service, you need to create 2 Applications and one API. Follow these steps to successfully configure bundle to run against your Auth0 instance.
+
 1. Create new **API** in the APIs section
     a. Use name of your choice
     b. Set a unique API identifier (e.g. `https://api.example.com`)
@@ -39,10 +38,13 @@ Assuming you have an account in the Auth0 OAuth as a service, you need to create
     e. Switch to **Grant Types** and make sure **only** `Client Credentials` grant is enabled
 
 ## Device ownership configuration
+
 Devices are in the authorization service organized by the owner ID retrieved from the JWT token. The plgd API will based on this value identify the user and grant him the permission only to devices he owns. By default, JWT claim `sub` is used as the owner ID. In case you connect the plgd authorization service with the Auth0, each logged-in user can access only his devices. This behaviour can be changed by changing the `OWNER_CLAIM` configuration property and adding custom claim to your Auth0 users.
 
 ### How to use custom claim with Auth0
+
 #### Assign claim to user
+
 1. Go to **Users & Roles**
 1. Find your user and edit his details
 1. Extend the **user_metadata** by a custom claim, e.g.
@@ -53,6 +55,7 @@ Devices are in the authorization service organized by the owner ID retrieved fro
     ```
 
 #### Assign wildcard permission to your service client
+
 1. Go to **Applications**
 1. Edit your **Machine to Machine** application
 1. Open **Advanced Settings**, switch to **Application Metadata** and add entry:
@@ -60,6 +63,7 @@ Devices are in the authorization service organized by the owner ID retrieved fro
     - `Value`: `*`
 
 #### Include custom claim to access token
+
 1. Go to **Rules** and crete new one
 1. Copy paste the function below which uses custom claim `https://plgd.dev/tenant`
     ```js

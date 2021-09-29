@@ -58,12 +58,9 @@ export OAUTH_DEVICE_SECRET_PATH=${OAUTH_SECRETS_PATH}/device.secret
 
 #ENDPOINTS
 export MONGODB_HOST="localhost:$MONGO_PORT"
-export MONGODB_URL="mongodb://$MONGODB_HOST"
 export MONGODB_URI="mongodb://$MONGODB_HOST"
-export MONGO_URI="mongodb://$MONGODB_HOST"
 export NATS_HOST="localhost:$NATS_PORT"
 export NATS_URL="nats://${NATS_HOST}"
-export SERVICE_NATS_URL=${NATS_URL}
 
 export AUTH_SERVER_ADDRESS=${IDENTITY_ADDRESS}
 export FQDN_NGINX_HTTPS=${FQDN}:${NGINX_PORT}
