@@ -60,7 +60,7 @@ type Service struct {
 	userDeviceSubscriptions *kitSync.Map
 	devicesStatusUpdater    *devicesStatusUpdater
 	resourceSubscriber      *subscriber.Subscriber
-	provider                *oauth2.PlgdProvider
+	providers               map[string]*oauth2.PlgdProvider
 	jwtValidator            *jwt.Validator
 	sigs                    chan os.Signal
 	ownerCache              *authClient.OwnerCache
@@ -230,15 +230,27 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 		}
 	}
 
-	provider, err := oauth2.NewPlgdProvider(ctx, config.APIs.COAP.Authorization.Config,
-		logger, config.Clients.AuthServer.OwnerClaim)
-	if err != nil {
-		nats.Close()
-		return nil, fmt.Errorf("cannot create device provider: %w", err)
+	providers := make(map[string]*oauth2.PlgdProvider)
+	var firstProvider *oauth2.PlgdProvider
+	for _, p := range config.APIs.COAP.Authorization.Providers {
+		provider, err := oauth2.NewPlgdProvider(ctx, p.Config,
+			logger, config.Clients.AuthServer.OwnerClaim)
+		if err != nil {
+			nats.Close()
+			return nil, fmt.Errorf("cannot create device provider: %w", err)
+		}
+		nats.AddCloseFunc(provider.Close)
+		providers[p.Name] = provider
+		if firstProvider == nil {
+			firstProvider = provider
+		}
 	}
-	nats.AddCloseFunc(provider.Close)
+	if firstProvider == nil {
+		nats.Close()
+		return nil, fmt.Errorf("device providers are empty")
+	}
 
-	keyCache := jwt.NewKeyCacheWithHttp(provider.OpenID.JWKSURL, provider.HTTPClient.HTTP())
+	keyCache := jwt.NewKeyCacheWithHttp(firstProvider.OpenID.JWKSURL, firstProvider.HTTPClient.HTTP())
 
 	jwtValidator := jwt.NewValidatorWithKeyCache(keyCache)
 
@@ -268,7 +280,7 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 
 		taskQueue:          p,
 		resourceSubscriber: resourceSubscriber,
-		provider:           provider,
+		providers:          providers,
 		jwtValidator:       jwtValidator,
 
 		ctx:    ctx,

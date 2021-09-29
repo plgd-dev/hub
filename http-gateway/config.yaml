@@ -41,9 +41,15 @@ clients:
 ui:
   enabled: false
   directory: "/usr/local/var/www"
-  oauthClient:
+  webConfiguration:
     domain: ""
-    clientID: ""
-    audience: ""
-    scope: ""
     httpGatewayAddress: ""
+    webOAuthClient:
+      clientID: ""
+      audience: ""
+      scopes: []
+    deviceOAuthClient:
+      clientID: ""
+      audience: ""
+      scopes: []
+      providerName: "plgd"

@@ -45,8 +45,8 @@ const (
 	// ocfcloud configuration
 	CloudConfiguration = "/.well-known/cloud-configuration"
 
-	// oauth configuration for ui
-	OAuthConfiguration = "/auth_config.json"
+	// web configuration for ui
+	WebConfiguration = "/web_configuration.json"
 
 	// oauth callback for print response to body
 	OAuthCallback = API + "/oauth/callback"

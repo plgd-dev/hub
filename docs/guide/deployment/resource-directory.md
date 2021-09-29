@@ -220,7 +220,7 @@ Client configurations to internally connect to Authorization Server service.
 | ---------- | -------- | -------------- | ------- |
 | `clients.authorizationServer.oauth.clientID` | string | `Client ID to exchange an authorization code for an access token.` | `""` |
 | `clients.authorizationServer.oauth.clientSecret` | string | `Client secret to exchange an authorization code for an access token.` |  `""` |
-| `clients.authorizationServer.oauth.scopes` | string | `Comma separated list of required scopes.` | `""` |
+| `clients.authorizationServer.oauth.scopes` | string array | `List of required scopes.` | `""` |
 | `clients.authorizationServer.oauth.tokenURL` | string | `Token endpoint of OAuth provider.` | `""` |
 | `clients.authorizationServer.oauth.audience` | string | `Identifier of the API configured in your OAuth provider.` | `""` |
 | `clients.authorizationServer.oauth.verifyServiceTokenFrequency` | string | `Frequency to verify service token.` | `10s` |

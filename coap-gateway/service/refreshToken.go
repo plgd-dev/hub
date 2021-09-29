@@ -1,8 +1,10 @@
 package service
 
 import (
+	"context"
 	"errors"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/plgd-dev/cloud/coap-gateway/coapconv"
@@ -68,6 +70,45 @@ func validUntilToExpiresIn(validUntil time.Time) int64 {
 	return int64(time.Until(validUntil).Seconds())
 }
 
+// the device doesn't provide an authorization provider during refresh token so we need to do try refresh against all providers in parallel
+func refreshAccessToken(ctx context.Context, server *Service, refreshToken string) (*oauth2.Token, error) {
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	var wg sync.WaitGroup
+	var mutex sync.Mutex
+	var token *oauth2.Token
+	var err error
+	for name, p := range server.providers {
+		wg.Add(1)
+		provider := p
+		errSubmit := server.taskQueue.Submit(func() {
+			defer wg.Done()
+			tokenTmp, errTmp := provider.Refresh(ctx, refreshToken)
+			mutex.Lock()
+			defer mutex.Unlock()
+			if token == nil {
+				token = tokenTmp
+			}
+			if err == nil {
+				err = errTmp
+				cancel()
+			}
+		})
+		if errSubmit != nil {
+			log.Errorf("cannot refresh token for provider %v: %w", name, errSubmit)
+		}
+	}
+	wg.Wait()
+	if token != nil {
+		return token, nil
+	}
+	if err == nil {
+		return nil, fmt.Errorf("invalid token")
+	}
+	return nil, err
+}
+
 func refreshTokenPostHandler(req *mux.Message, client *Client) {
 	logErrorAndCloseClient := func(err error, code coapCodes.Code) {
 		client.logAndWriteErrorResponse(err, code, req.Token)
@@ -89,7 +130,7 @@ func refreshTokenPostHandler(req *mux.Message, client *Client) {
 		return
 	}
 
-	token, err := client.server.provider.Refresh(req.Context, refreshToken.RefreshToken)
+	token, err := refreshAccessToken(req.Context, client.server, refreshToken.RefreshToken)
 	if err != nil {
 		logErrorAndCloseClient(fmt.Errorf("cannot handle refresh token: %w", err), coapCodes.Unauthorized)
 		return

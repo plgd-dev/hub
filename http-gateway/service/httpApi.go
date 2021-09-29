@@ -236,7 +236,7 @@ func NewHTTP(requestHandler *RequestHandler, authInterceptor kitHttp.Interceptor
 
 	// serve www directory
 	if requestHandler.config.UI.Enabled {
-		r.HandleFunc(uri.OAuthConfiguration, requestHandler.getOAuthConfiguration).Methods(http.MethodGet)
+		r.HandleFunc(uri.WebConfiguration, requestHandler.getWebConfiguration).Methods(http.MethodGet)
 		fs := http.FileServer(http.Dir(requestHandler.config.UI.Directory))
 		r.PathPrefix("/").Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			c := httptest.NewRecorder()
