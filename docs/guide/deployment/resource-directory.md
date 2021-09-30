@@ -219,7 +219,7 @@ Client configurations to internally connect to Authorization Server service.
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |
 | `clients.authorizationServer.oauth.clientID` | string | `Client ID to exchange an authorization code for an access token.` | `""` |
-| `clients.authorizationServer.oauth.clientSecretFile` | string | `File path to client secret to exchange an authorization code for an access token.` |  `""` |
+| `clients.authorizationServer.oauth.clientSecretFile` | string | `File path to client secret required to exchange an authorization code for an access token.` |  `""` |
 | `clients.authorizationServer.oauth.scopes` | string array | `List of required scopes.` | `""` |
 | `clients.authorizationServer.oauth.tokenURL` | string | `Token endpoint of OAuth provider.` | `""` |
 | `clients.authorizationServer.oauth.audience` | string | `Identifier of the API configured in your OAuth provider.` | `""` |

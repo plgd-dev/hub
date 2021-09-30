@@ -157,7 +157,7 @@ OAuth2.0 Client is used to issuing an authorization code used by the Onboarding 
 | `api.coap.authorization.deviceIdClaim` | string | `Claim used to identify device id of the device. Empty means that JWT doesn't contain it.` | `""` |
 | `api.coap.authorization.providers[].Name` | string | `Provider name, the register request of the device must contain one of the names of providers.` | `""` |
 | `api.coap.authorization.providers[].clientID` | string | `Client ID to exchange an authorization code for an access token.` | `""` |
-| `api.coap.authorization.providers[].clientSecretFile` | string | `File path to client secret to exchange an authorization code for an access token.` |  `""` |
+| `api.coap.authorization.providers[].clientSecretFile` | string | `File path to client secret required to exchange an authorization code for an access token.` |  `""` |
 | `api.coap.authorization.providers[].scopes` | string array | `List of required scopes.` | `""` |
 | `api.coap.authorization.providers[].authority` | string | `Authority is the address of the token-issuing authentication server. Services will use this URI to find and retrieve the public key that can be used to validate the token’s signature.` | `""` |
 | `api.coap.authorization.providers[].audience` | string | `Audience of OAuth provider.` | `""` |
