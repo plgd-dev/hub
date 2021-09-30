@@ -36,30 +36,34 @@ func (a AuthStyle) ToOAuth2() oauth2.AuthStyle {
 
 //TODO cleanup settings AccessType, ResponseType, ResponseMode, AuthStyle - be careful it is used by c2c.
 type Config struct {
-	ClientID     string    `yaml:"clientID" json:"clientID"`
-	ClientSecret string    `yaml:"clientSecret" json:"clientSecret"`
-	Scopes       []string  `yaml:"scopes" json:"scopes"`
-	AuthURL      string    `yaml:"authorizationURL" json:"authorizationURL"`
-	TokenURL     string    `yaml:"tokenURL" json:"tokenURL"`
-	AuthStyle    AuthStyle `yaml:"authStyle" json:"authStyle"`
-	Audience     string    `yaml:"audience" json:"audience"`
-	RedirectURL  string    `yaml:"redirectURL" json:"redirectURL"`
-	AccessType   string    `yaml:"accessType" json:"accessType"`
-	ResponseType string    `yaml:"responseType" json:"responseType"`
-	ResponseMode string    `yaml:"responseMode" json:"responseMode"`
+	ClientID         string    `yaml:"clientID" json:"clientID"`
+	ClientSecretFile string    `yaml:"clientSecretFile" json:"clientSecretFile"`
+	Scopes           []string  `yaml:"scopes" json:"scopes"`
+	AuthURL          string    `yaml:"-" json:"authURL"`
+	TokenURL         string    `yaml:"-" json:"tokenURL"`
+	AuthStyle        AuthStyle `yaml:"authStyle" json:"authStyle"`
+	Audience         string    `yaml:"audience" json:"audience"`
+	RedirectURL      string    `yaml:"redirectURL" json:"redirectURL"`
+	AccessType       string    `yaml:"accessType" json:"accessType"`
+	ResponseType     string    `yaml:"responseType" json:"responseType"`
+	ResponseMode     string    `yaml:"responseMode" json:"responseMode"`
+	ClientSecret     string    `yaml:"-" json:"clientSecret"`
 }
 
 func (c *Config) Validate() error {
 	if c.ClientID == "" {
 		return fmt.Errorf("clientID('%v')", c.ClientID)
 	}
+	if c.ClientSecretFile == "" {
+		return fmt.Errorf("clientSecretFile('%v')", c.ClientSecretFile)
+	}
 	return nil
 }
 
-func (c Config) ToOAuth2(authURL, tokenURL string) oauth2.Config {
+func (c Config) ToOAuth2(authURL, tokenURL, clientSecret string) oauth2.Config {
 	return oauth2.Config{
 		ClientID:     c.ClientID,
-		ClientSecret: c.ClientSecret,
+		ClientSecret: clientSecret,
 		RedirectURL:  c.RedirectURL,
 		Scopes:       c.Scopes,
 		Endpoint: oauth2.Endpoint{
@@ -71,7 +75,7 @@ func (c Config) ToOAuth2(authURL, tokenURL string) oauth2.Config {
 }
 
 func (c Config) ToDefaultOAuth2() oauth2.Config {
-	return c.ToOAuth2(c.AuthURL, c.TokenURL)
+	return c.ToOAuth2(c.AuthURL, c.TokenURL, c.ClientSecret)
 }
 
 func (c Config) AuthCodeURL(csrfToken string) string {
@@ -94,6 +98,6 @@ func (c Config) AuthCodeURL(csrfToken string) string {
 	if responseMode != "" {
 		opts = append(opts, oauth2.SetAuthURLParam("response_mode", responseMode))
 	}
-	auth := c.ToOAuth2(c.AuthURL, c.TokenURL)
+	auth := c.ToOAuth2(c.AuthURL, c.TokenURL, c.ClientSecret)
 	return (&auth).AuthCodeURL(csrfToken, opts...)
 }

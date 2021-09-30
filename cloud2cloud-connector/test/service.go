@@ -26,9 +26,10 @@ func MakeAuthorizationConfig() oauth2.Config {
 	return oauth2.Config{
 		Authority: "https://" + config.OAUTH_SERVER_HOST,
 		Config: oauth.Config{
-			ClientID:    OAUTH_MANAGER_CLIENT_ID,
-			Audience:    OAUTH_MANAGER_AUDIENCE,
-			RedirectURL: config.C2C_CONNECTOR_OAUTH_CALLBACK,
+			ClientID:         OAUTH_MANAGER_CLIENT_ID,
+			Audience:         OAUTH_MANAGER_AUDIENCE,
+			RedirectURL:      config.C2C_CONNECTOR_OAUTH_CALLBACK,
+			ClientSecretFile: config.CA_POOL,
 		},
 		HTTP: config.MakeHttpClientConfig(),
 	}

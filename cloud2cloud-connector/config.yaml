@@ -14,7 +14,7 @@ apis:
       interval: 5s
     authorization:
       clientID: ""
-      clientSecret: ""
+      clientSecretFile: ""
       scopes: []
       authority: ""
       audience: ""

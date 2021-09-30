@@ -167,9 +167,10 @@ func MakeDeviceAuthorization() oauth2.Config {
 	return oauth2.Config{
 		Authority: "https://" + OAUTH_SERVER_HOST,
 		Config: oauth.Config{
-			ClientID:    OAUTH_MANAGER_CLIENT_ID,
-			Audience:    OAUTH_MANAGER_AUDIENCE,
-			RedirectURL: "https://" + HTTP_GW_HOST + httpUri.OAuthCallback,
+			ClientID:         OAUTH_MANAGER_CLIENT_ID,
+			Audience:         OAUTH_MANAGER_AUDIENCE,
+			RedirectURL:      "https://" + HTTP_GW_HOST + httpUri.OAuthCallback,
+			ClientSecretFile: CA_POOL, // any generated file
 		},
 		HTTP: MakeHttpClientConfig(),
 	}
