@@ -6,6 +6,7 @@ import (
 
 	testCfg "github.com/plgd-dev/cloud/test/config"
 	"github.com/plgd-dev/go-coap/v2/tcp"
+	"github.com/plgd-dev/kit/codec/cbor"
 
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/stretchr/testify/assert"
@@ -28,9 +29,10 @@ func Test_resourceDirectoryFind(t *testing.T) {
 		queries []string
 	}
 	tests := []struct {
-		name      string
-		args      args
-		wantsCode coapCodes.Code
+		name         string
+		args         args
+		wantsCode    coapCodes.Code
+		emptyContent bool
 	}{
 		{
 			name:      "without query",
@@ -63,7 +65,8 @@ func Test_resourceDirectoryFind(t *testing.T) {
 			args: args{
 				queries: []string{"di=1234"},
 			},
-			wantsCode: coapCodes.NotFound,
+			wantsCode:    coapCodes.Content,
+			emptyContent: true,
 		},
 	}
 
@@ -81,6 +84,17 @@ func Test_resourceDirectoryFind(t *testing.T) {
 			resp, err := co.Do(req)
 			require.NoError(t, err)
 			assert.Equal(t, tt.wantsCode, resp.Code())
+			if tt.wantsCode != coapCodes.Content {
+				return
+			}
+			var data interface{}
+			err = cbor.ReadFrom(resp.Body(), &data)
+			require.NoError(t, err)
+			if tt.emptyContent {
+				require.Empty(t, data)
+				return
+			}
+			require.NotEmpty(t, data)
 		})
 	}
 }

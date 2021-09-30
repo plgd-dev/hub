@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/plgd-dev/cloud/coap-gateway/coapconv"
+	"github.com/plgd-dev/cloud/coap-gateway/uri"
 	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/pkg/log"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
@@ -15,17 +16,21 @@ import (
 	"github.com/plgd-dev/go-coap/v2/mux"
 )
 
-// URIToDeviceIDHref convert uri to deviceID and href. Expected input "/oic/route/{deviceID}/{Href}".
+// URIToDeviceIDHref convert uri to deviceID and href. Expected input "/api/v1/devices/{deviceID}/{Href}".
 func URIToDeviceIDHref(msg *mux.Message) (deviceID, href string, err error) {
 	wholePath, err := msg.Options.Path()
 	if err != nil {
 		return "", "", fmt.Errorf("cannot parse deviceID, href from uri: %w", err)
 	}
-	path := strings.Split(wholePath, "/")
-	if len(path) < 4 {
-		return "", "", fmt.Errorf("cannot parse deviceID, href from uri")
+	deviceIDHref := strings.TrimPrefix("/"+wholePath, uri.ResourceRoute)
+	if deviceIDHref[0] == '/' {
+		deviceIDHref = deviceIDHref[1:]
 	}
-	return path[2], fixHref(strings.Join(path[3:], "/")), nil
+	r := commands.ResourceIdFromString(deviceIDHref)
+	if r == nil {
+		return "", "", fmt.Errorf("cannot parse deviceID, href from uri %v", wholePath)
+	}
+	return r.GetDeviceId(), r.GetHref(), nil
 }
 
 func getResourceInterface(msg *mux.Message) string {
