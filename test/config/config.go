@@ -7,7 +7,6 @@ import (
 
 	"github.com/golang-jwt/jwt/v4"
 	c2curi "github.com/plgd-dev/cloud/cloud2cloud-connector/uri"
-	httpUri "github.com/plgd-dev/cloud/http-gateway/uri"
 	grpcClient "github.com/plgd-dev/cloud/pkg/net/grpc/client"
 	grpcServer "github.com/plgd-dev/cloud/pkg/net/grpc/server"
 	httpClient "github.com/plgd-dev/cloud/pkg/net/http/client"
@@ -161,7 +160,7 @@ func MakeDeviceAuthorization() oauth2.Config {
 		Config: oauth.Config{
 			ClientID:         OAUTH_MANAGER_CLIENT_ID,
 			Audience:         OAUTH_MANAGER_AUDIENCE,
-			RedirectURL:      "https://" + HTTP_GW_HOST + httpUri.OAuthCallback,
+			RedirectURL:      "cloud.plgd.mobile://login-callback",
 			ClientSecretFile: CA_POOL, // any generated file
 		},
 		HTTP: MakeHttpClientConfig(),

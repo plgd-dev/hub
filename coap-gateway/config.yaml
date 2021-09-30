@@ -29,7 +29,7 @@ apis:
         clientSecretFile: ""
         scopes: []
         audience: ""
-        redirectURL: ""
+        redirectURL: "cloud.plgd.mobile://login-callback"
         authority: ""
         http:
           maxIdleConns: 16

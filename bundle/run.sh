@@ -77,7 +77,10 @@ fi
 export SERVICE_OAUTH_AUDIENCE=${OAUTH_AUDIENCE}
 export DEVICE_OAUTH_AUDIENCE=${OAUTH_AUDIENCE}
 
-export DEVICE_OAUTH_REDIRECT_URL=https://${FQDN}:${NGINX_PORT}/api/v1/oauth/callback
+if [ -z "${DEVICE_OAUTH_REDIRECT_URL}" ]
+then
+  export DEVICE_OAUTH_REDIRECT_URL="cloud.plgd.mobile://login-callback"
+fi
 
 if [ -z "${OAUTH_ENDPOINT}" ]
 then

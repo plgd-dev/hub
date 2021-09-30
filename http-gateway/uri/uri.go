@@ -48,9 +48,6 @@ const (
 	// web configuration for ui
 	WebConfiguration = "/web_configuration.json"
 
-	// oauth callback for print response to body
-	OAuthCallback = API + "/oauth/callback"
-
 	// (GRPC + HTTP) GET /api/v1/devices -> rpc GetDevices
 	// (GRPC + HTTP) DELETE /api/v1/devices -> rpc DeleteDevices
 	Devices = API + "/devices"
