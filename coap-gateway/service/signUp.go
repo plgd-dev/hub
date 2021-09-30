@@ -42,10 +42,10 @@ func (request CoapSignUpRequest) checkOAuthRequest() error {
 }
 
 /// Get data for sign up response
-func getSignUpContent(token *oauth2.Token, validUntil int64, options message.Options) (message.MediaType, []byte, error) {
+func getSignUpContent(token *oauth2.Token, owner string, validUntil int64, options message.Options) (message.MediaType, []byte, error) {
 	resp := CoapSignUpResponse{
 		AccessToken:  token.AccessToken.String(),
-		UserID:       token.Owner,
+		UserID:       owner,
 		RefreshToken: token.RefreshToken,
 		ExpiresIn:    validUntilToExpiresIn(pkgTime.Unix(0, validUntil)),
 		RedirectURI:  "",
@@ -116,6 +116,12 @@ func signUpPostHandler(r *mux.Message, client *Client) {
 		return
 	}
 
+	owner := claim.Owner(client.server.config.APIs.COAP.Authorization.OwnerClaim)
+	if owner == "" {
+		logErrorAndCloseClient(fmt.Errorf("cannot sign up: cannot determine owner"), coapCodes.Unauthorized)
+		return
+	}
+
 	deviceID := client.ResolveDeviceID(claim, signUp.DeviceID)
 
 	ctx := kitNetGrpc.CtxWithToken(r.Context, token.AccessToken.String())
@@ -126,7 +132,7 @@ func signUpPostHandler(r *mux.Message, client *Client) {
 		return
 	}
 
-	accept, out, err := getSignUpContent(token, validUntil, r.Options)
+	accept, out, err := getSignUpContent(token, owner, validUntil, r.Options)
 	if err != nil {
 		logErrorAndCloseClient(fmt.Errorf("cannot handle sign up: %w", err), coapCodes.InternalServerError)
 		return

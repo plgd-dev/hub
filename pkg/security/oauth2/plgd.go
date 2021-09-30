@@ -2,18 +2,16 @@ package oauth2
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/plgd-dev/cloud/pkg/file"
 	"github.com/plgd-dev/cloud/pkg/log"
-	"github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/pkg/net/http/client"
 	"github.com/plgd-dev/cloud/pkg/security/openid"
 	"golang.org/x/oauth2"
 )
 
 // NewPlgdProvider creates OAuth client
-func NewPlgdProvider(ctx context.Context, config Config, logger log.Logger, ownerClaim string) (*PlgdProvider, error) {
+func NewPlgdProvider(ctx context.Context, config Config, logger log.Logger) (*PlgdProvider, error) {
 	config.ResponseMode = "query"
 	config.AccessType = "offline"
 	config.ResponseType = "code"
@@ -38,7 +36,6 @@ func NewPlgdProvider(ctx context.Context, config Config, logger log.Logger, owne
 		Config:     config,
 		OAuth2:     &oauth2,
 		HTTPClient: httpClient,
-		OwnerClaim: ownerClaim,
 		OpenID:     oidcfg,
 	}, nil
 }
@@ -48,7 +45,6 @@ type PlgdProvider struct {
 	Config     Config
 	OAuth2     *oauth2.Config
 	HTTPClient *client.Client
-	OwnerClaim string
 	OpenID     openid.Config
 }
 
@@ -61,16 +57,10 @@ func (p *PlgdProvider) Exchange(ctx context.Context, authorizationCode string) (
 		return nil, err
 	}
 
-	owner, err := grpc.ParseOwnerFromJwtToken(p.OwnerClaim, token.AccessToken)
-	if err != nil {
-		return nil, fmt.Errorf("configured owner claim '%v' is not present in the device token: %w", p.OwnerClaim, err)
-	}
-
 	t := Token{
 		AccessToken:  AccessToken(token.AccessToken),
 		RefreshToken: token.RefreshToken,
 		Expiry:       token.Expiry,
-		Owner:        owner,
 	}
 	return &t, nil
 }
@@ -87,16 +77,10 @@ func (p *PlgdProvider) Refresh(ctx context.Context, refreshToken string) (*Token
 		return nil, err
 	}
 
-	owner, err := grpc.ParseOwnerFromJwtToken(p.OwnerClaim, token.AccessToken)
-	if err != nil {
-		return nil, fmt.Errorf("configured owner claim '%v' is not present in the device token: %w", p.OwnerClaim, err)
-	}
-
 	return &Token{
 		AccessToken:  AccessToken(token.AccessToken),
 		RefreshToken: token.RefreshToken,
 		Expiry:       token.Expiry,
-		Owner:        owner,
 	}, nil
 }
 

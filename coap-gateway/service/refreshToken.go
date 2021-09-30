@@ -148,7 +148,7 @@ func refreshTokenPostHandler(req *mux.Message, client *Client) {
 		return
 	}
 
-	owner := token.Owner
+	owner := claim.Owner(client.server.config.APIs.COAP.Authorization.OwnerClaim)
 	if owner == "" {
 		owner = refreshToken.UserID
 	}
