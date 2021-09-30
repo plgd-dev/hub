@@ -30,7 +30,6 @@ func (rh *RequestHandler) handleLinkedData(ctx context.Context, data provisionCa
 			AccessToken:  oauth2.AccessToken(token.AccessToken),
 			Expiry:       token.Expiry,
 			RefreshToken: token.RefreshToken,
-			Owner:        "",
 		})
 		return data, nil
 	}

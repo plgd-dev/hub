@@ -128,9 +128,12 @@ func newRequestHandlerFromConfig(ctx context.Context, config Config, publicConfi
 		return nil, fmt.Errorf("cannot create projection over resource aggregate events: %w", err)
 	}
 
-	ownerCache := clientIS.NewOwnerCache("sub", config.APIs.GRPC.OwnerCacheExpiration, natsClient.GetConn(), isClient, func(err error) {
-		log.Errorf("ownerCache error: %w", err)
-	})
+	ownerCache := clientIS.NewOwnerCache(config.APIs.GRPC.Authorization.OwnerClaim,
+		config.APIs.GRPC.OwnerCacheExpiration,
+		natsClient.GetConn(),
+		isClient, func(err error) {
+			log.Errorf("ownerCache error: %w", err)
+		})
 
 	h := NewRequestHandler(
 		resourceProjection,

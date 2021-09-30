@@ -50,7 +50,6 @@ type Token struct {
 	AccessToken  AccessToken
 	RefreshToken string
 	Expiry       time.Time
-	Owner        string // can be removed if UserId parameter is removed from AddDevice/DeviceDevices calls
 }
 
 func (o Token) Refresh(ctx context.Context, cfg oauth2.Config) (Token, bool, error) {
