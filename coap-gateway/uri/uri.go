@@ -2,7 +2,10 @@ package uri
 
 // Resource Service URIs.
 const (
-	Base   = "/oic"
+	Api   = "/api"
+	ApiV1 = Api + "/v1"
+	Base  = "/oic"
+
 	Secure = Base + "/sec"
 
 	SignUp            = Secure + "/account"
@@ -10,5 +13,5 @@ const (
 	SignIn            = Secure + "/session"
 	ResourceDirectory = Base + "/rd"
 	ResourceDiscovery = Base + "/res"
-	ResourceRoute     = Base + "/route"
+	ResourceRoute     = ApiV1 + "/devices"
 )

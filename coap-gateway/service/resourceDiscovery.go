@@ -129,10 +129,6 @@ func resourceDirectoryFind(req *mux.Message, client *Client) {
 	}
 
 	coapCode := coapCodes.Content
-	if len(discoveryResp) == 0 {
-		coapCode = coapCodes.NotFound
-	}
-
 	var resp interface{}
 	accept := coapconv.GetAccept(req.Options)
 	switch accept {

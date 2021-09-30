@@ -132,10 +132,9 @@ func main() {
 	accesstoken := flag.String("signIn", "", "accesstoken")
 	di := flag.String("di", "testUtility", "device id")
 	uid := flag.String("uid", "", "user id")
-	href := flag.String("href", "", "href")
+	href := flag.String("href", "/oic/res", "href")
 	resIf := flag.String("if", "", "interface")
-	get := flag.Bool("get", false, "get resource(default)")
-	discover := flag.Bool("discover", true, "discover resources in cloud")
+	get := flag.Bool("get", true, "get resource(default)")
 	discoverRt := flag.String("rt", "", "resource type")
 	observe := flag.Bool("observe", false, "observe resource")
 	update := flag.Bool("update", false, "update resource, content is expected in stdin")
@@ -158,14 +157,14 @@ func main() {
 	var co *coap.ClientConn
 	switch address.GetScheme() {
 	case "coap+tcp":
-		co, err = coap.Dial(address.String())
+		co, err = coap.Dial(address.String(), coap.WithMaxMessageSize(256*1024))
 		if err != nil {
 			log.Fatalf("Error dialing: %v", err)
 		}
 	case "coaps+tcp":
 		co, err = coap.Dial(address.String(), coap.WithTLS(&tls.Config{
 			InsecureSkipVerify: true,
-		}))
+		}), coap.WithMaxMessageSize(256*1024))
 		if err != nil {
 			log.Fatalf("Error dialing: %v", err)
 		}
@@ -258,21 +257,14 @@ func main() {
 			buf := make([]byte, len(v))
 			opts, _, _ = opts.AddString(buf, message.URIQuery, v)
 		}
-		resp, err := co.Get(context.Background(), *href, opts...)
-		if err != nil {
-			log.Fatalf("cannot get resource: %v", err)
-		}
-		decodePayload(resp)
-	case *discover:
-		var opts message.Options
 		if *discoverRt != "" {
 			v := "rt=" + *discoverRt
 			buf := make([]byte, len(v))
 			opts, _, _ = opts.AddString(buf, message.URIQuery, v)
 		}
-		resp, err := co.Get(context.Background(), "/oic/res", opts...)
+		resp, err := co.Get(context.Background(), *href, opts...)
 		if err != nil {
-			log.Fatalf("cannot discover resources: %v", err)
+			log.Fatalf("cannot get resource: %v", err)
 		}
 		decodePayload(resp)
 	default:
