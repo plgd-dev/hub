@@ -693,9 +693,6 @@ func TestRequestHandler_Issue270(t *testing.T) {
 
 	coapgwCfg := coapgwTest.MakeConfig(t)
 	rdCfg := rdTest.MakeConfig(t)
-	rdCfg.Clients.IdentityServer.PullFrequency = time.Second * 15
-	rdCfg.Clients.IdentityServer.CacheExpiration = time.Minute
-
 	grpcgwCfg := grpcgwService.MakeConfig(t)
 
 	tearDown := test.SetUp(ctx, t, test.WithCOAPGWConfig(coapgwCfg), test.WithRDConfig(rdCfg), test.WithGRPCGWConfig(grpcgwCfg))

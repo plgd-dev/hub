@@ -14,7 +14,6 @@ Provides a simple docker cloud image for **testing purpose**.
 
 ### Supported clients
 
-- [iotivity v2+](https://github.com/iotivity/iotivity)
 - [iotivity-lite v2+](https://github.com/iotivity/iotivity-lite)
 
 ### Pull the image
@@ -72,7 +71,7 @@ The onboarding values which should be set to the [coapcloudconf](https://github.
 
 | Attribute | Value |
 | --------- | ------|
-| `apn` | `test` |
+| `apn` | `plgd` |
 | `cis` | `coap+tcp://127.0.0.1:5683` |
 | `sid` | `same as is set in COAP_GATEWAY_CLOUD_ID` |
 | `at` | `test` |
@@ -107,7 +106,7 @@ make CLOUD=1 SECURE=0 cloud_server cloud_client
 
 | Attribute | Value |
 | --------- | ------|
-| `apn` | `test`|
+| `apn` | `plgd`|
 | `cis` | `coaps+tcp://127.0.0.1:5684` |
 | `sid` | `same as is set in COAP_GATEWAY_CLOUD_ID` |
 | `at` | `test` |
@@ -160,7 +159,7 @@ docker exec -it cloud cat /data/certs/root_ca.crt > pki_certs/cloudca.pem
 
 ### Build a COAP client application
 
-To build the client you need to have **golang v1.13+**.
+To build the client you need to have **golang v1.16+**.
 
 ```bash
 cd ./client/coap
@@ -172,7 +171,7 @@ go build
 
 ### Build a GRPC client application
 
-To build the client you need to have **golang v1.13+**.
+To build the client you need to have **golang v1.16+**.
 
 ```bash
 cd ./client/grpc

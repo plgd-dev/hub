@@ -18,8 +18,6 @@ func MakeConfig(t *testing.T) service.Config {
 	cfg.APIs.GRPC.Config = config.MakeGrpcServerConfig(config.RESOURCE_DIRECTORY_HOST)
 	cfg.APIs.GRPC.OwnerCacheExpiration = time.Minute
 
-	cfg.Clients.IdentityServer.CacheExpiration = time.Millisecond * 50
-	cfg.Clients.IdentityServer.PullFrequency = time.Millisecond * 200
 	cfg.Clients.IdentityServer.Connection = config.MakeGrpcClientConfig(config.IDENTITY_HOST)
 
 	cfg.Clients.Eventbus.NATS = config.MakeSubscriberConfig()

@@ -105,18 +105,10 @@ func (c *EventStoreConfig) Validate() error {
 }
 
 type IdentityServerConfig struct {
-	PullFrequency   time.Duration `yaml:"pullFrequency" json:"pullFrequency"`
-	CacheExpiration time.Duration `yaml:"cacheExpiration" json:"cacheExpiration"`
-	Connection      client.Config `yaml:"grpc" json:"grpc"`
+	Connection client.Config `yaml:"grpc" json:"grpc"`
 }
 
 func (c *IdentityServerConfig) Validate() error {
-	if c.PullFrequency <= 0 {
-		return fmt.Errorf("pullFrequency('%v')", c.PullFrequency)
-	}
-	if c.CacheExpiration <= 0 {
-		return fmt.Errorf("cacheExpiration('%v')", c.CacheExpiration)
-	}
 	if err := c.Connection.Validate(); err != nil {
 		return fmt.Errorf("grpc.%w", err)
 	}

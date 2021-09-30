@@ -568,7 +568,7 @@ cat /configs/coap-gateway.yaml | yq e "\
   .apis.coap.address = \"${COAP_GATEWAY_UNSECURE_ADDRESS}\" |
   .apis.coap.externalAddress = \"${FQDN}:${COAP_GATEWAY_UNSECURE_PORT}\" |
   .apis.coap.tls.enabled = false |
-  .apis.coap.authorization.ownerClaim = \"https://${OWNER_CLAIM}\" |
+  .apis.coap.authorization.ownerClaim = \"${OWNER_CLAIM}\" |
   .apis.coap.authorization.providers[0].name = \"${DEVICE_PROVIDER}\" |
   .apis.coap.authorization.providers[0].authority = \"https://${OAUTH_ENDPOINT}\" |
   .apis.coap.authorization.providers[0].clientID = \"${DEVICE_OAUTH_CLIENT_ID}\" |

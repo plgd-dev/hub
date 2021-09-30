@@ -194,8 +194,6 @@ Client configurations to internally connect to Identity Server service.
 
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |
-| `clients.identityServer.pullFrequency` | string | `Frequency to pull changed user device.` | `15s` |
-| `clients.identityServer.cacheExpiration` | string | `Expiration time of cached user device.` | `1m` |
 | `clients.identityServer.grpc.address` | string | `Identity service address.` | `"127.0.0.1:9100"` |
 | `clients.identityServer.grpc.tls.caPool` | string | `File path to the root certificate in PEM format which might contain multiple certificates in a single file.` |  `""` |
 | `clients.identityServer.grpc.tls.keyFile` | string | `File path to private key in PEM format.` | `""` |
@@ -205,4 +203,4 @@ Client configurations to internally connect to Identity Server service.
 | `clients.identityServer.grpc.keepAlive.timeout` | string | `After having pinged for keepalive check, the client waits for a duration of Timeout and if no activity is seen even after that the connection is closed.` | `20s` |
 | `clients.identityServer.grpc.keepAlive.permitWithoutStream` | bool | `If true, client sends keepalive pings even with no active RPCs. If false, when there are no active RPCs, Time and Timeout will be ignored and no keepalive pings will be sent.` | `false` |
 
-> Note that the string type related to time (i.e. time, timeout, pullFrequency, cacheExpiration) is decimal numbers, each with optional fraction and a unit suffix, such as "300ms", "1.5h" or "2h45m". Valid time units are "ns", "us", "ms", "s", "m", "h".
+> Note that the string type related to time (i.e. time, timeout) is decimal numbers, each with optional fraction and a unit suffix, such as "300ms", "1.5h" or "2h45m". Valid time units are "ns", "us", "ms", "s", "m", "h".

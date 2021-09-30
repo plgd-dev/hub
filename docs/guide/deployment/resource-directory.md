@@ -195,8 +195,6 @@ Client configurations to internally connect to Identity Server service.
 
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |
-| `clients.identityServer.pullFrequency` | string | `Frequency to pull changed user device.` | `15s` |
-| `clients.identityServer.cacheExpiration` | string | `Expiration time of cached user device.` | `1m` |
 | `clients.identityServer.grpc.address` | string | `Authorization service address.` | `"127.0.0.1:9100"` |
 | `clients.identityServer.grpc.tls.caPool` | string | `File path to the root certificate in PEM format which might contain multiple certificates in a single file.` |  `""` |
 | `clients.identityServer.grpc.tls.keyFile` | string | `File path to private key in PEM format.` | `""` |

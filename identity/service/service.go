@@ -16,7 +16,6 @@ import (
 	"google.golang.org/grpc"
 )
 
-// Provider defines interface for authentication against auth service
 type Persistence = interface {
 	NewTransaction(ctx context.Context) persistence.PersistenceTx
 	Clear(ctx context.Context) error

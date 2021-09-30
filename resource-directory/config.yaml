@@ -68,9 +68,6 @@ clients:
         certFile: "/secrets/public/cert.crt"
         useSystemCAPool: false
   identityServer:
-    pullFrequency: 15s
-    cacheExpiration: 1m
-    deviceIdClaim: ""
     grpc:
       address: ""
       tls:
@@ -86,6 +83,7 @@ publicConfiguration:
   caPool: "/secrets/public/rootca.crt"
   authorizationServer: ""
   ownerClaim: "sub"
+  deviceIdClaim: ""
   signingServerAddress: ""
   cloudID: ""
   cloudURL: ""
