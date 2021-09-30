@@ -8,8 +8,8 @@ import (
 	"sync"
 	"syscall"
 
-	clientAS "github.com/plgd-dev/cloud/authorization/client"
-	pbAS "github.com/plgd-dev/cloud/authorization/pb"
+	clientIS "github.com/plgd-dev/cloud/identity/client"
+	pbIS "github.com/plgd-dev/cloud/identity/pb"
 	"github.com/plgd-dev/cloud/pkg/log"
 	"github.com/plgd-dev/cloud/pkg/net/grpc/client"
 	"github.com/plgd-dev/cloud/pkg/net/grpc/server"
@@ -71,45 +71,63 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 	return service, nil
 }
 
-// New creates new Server with provided store and publisher.
-func NewService(ctx context.Context, config Config, logger log.Logger, eventStore EventStore, publisher cqrsEventBus.Publisher) (*Service, error) {
-	validator, err := validator.New(ctx, config.APIs.GRPC.Authorization, logger)
+func newGrpcServer(ctx context.Context, config GRPCConfig, logger log.Logger) (*server.Server, error) {
+	validator, err := validator.New(ctx, config.Authorization.Config, logger)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create validator: %w", err)
 	}
-	opts, err := server.MakeDefaultOptions(server.NewAuth(validator, server.WithOwnerClaim(config.Clients.AuthServer.OwnerClaim)), logger)
+	authInterceptor := server.NewAuth(validator)
+	opts, err := server.MakeDefaultOptions(authInterceptor, logger)
 	if err != nil {
 		validator.Close()
 		return nil, fmt.Errorf("cannot create grpc server options: %w", err)
 	}
 
-	grpcServer, err := server.New(config.APIs.GRPC.Config, logger, opts...)
+	grpcServer, err := server.New(config.Config, logger, opts...)
 	if err != nil {
 		validator.Close()
 		return nil, fmt.Errorf("cannot create grpc server: %w", err)
 	}
 	grpcServer.AddCloseFunc(validator.Close)
+	return grpcServer, nil
+}
 
-	asConn, err := client.New(config.Clients.AuthServer.Connection, logger)
+func newIdentityServiceClient(config IdentityServerConfig, logger log.Logger) (pbIS.IdentityServiceClient, func(), error) {
+	isConn, err := client.New(config.Connection, logger)
 	if err != nil {
-		return nil, fmt.Errorf("cannot connect to authorization server: %w", err)
+		return nil, nil, fmt.Errorf("cannot connect to identity server: %w", err)
 	}
-	grpcServer.AddCloseFunc(func() {
-		err := asConn.Close()
-		if err != nil {
-			logger.Errorf("error occurs during close connection to authorization server: %w", err)
+	closeIsConn := func() {
+		if err := isConn.Close(); err != nil {
+			logger.Errorf("error occurs during close connection to identity server: %w", err)
 		}
-	})
+	}
+	isClient := pbIS.NewIdentityServiceClient(isConn.GRPC())
+	return isClient, closeIsConn, nil
+}
 
-	authClient := pbAS.NewAuthorizationServiceClient(asConn.GRPC())
+// New creates new Server with provided store and publisher.
+func NewService(ctx context.Context, config Config, logger log.Logger, eventStore EventStore, publisher cqrsEventBus.Publisher) (*Service, error) {
+	grpcServer, err := newGrpcServer(ctx, config.APIs.GRPC, logger)
+	if err != nil {
+		return nil, err
+	}
+
+	isClient, closeIsClient, err := newIdentityServiceClient(config.Clients.IdentityServer, logger)
+	if err != nil {
+		grpcServer.Close()
+		return nil, fmt.Errorf("cannot create identity service client: %w", err)
+	}
+	grpcServer.AddCloseFunc(closeIsClient)
 
 	nats, err := natsClient.New(config.Clients.Eventbus.NATS.Config, logger)
 	if err != nil {
+		grpcServer.Close()
 		return nil, fmt.Errorf("cannot create nats client: %w", err)
 	}
 	grpcServer.AddCloseFunc(nats.Close)
 
-	ownerCache := clientAS.NewOwnerCache("sub", config.APIs.GRPC.OwnerCacheExpiration, nats.GetConn(), authClient, func(err error) {
+	ownerCache := clientIS.NewOwnerCache(config.APIs.GRPC.Authorization.OwnerClaim, config.APIs.GRPC.OwnerCacheExpiration, nats.GetConn(), isClient, func(err error) {
 		log.Errorf("ownerCache error: %w", err)
 	})
 	grpcServer.AddCloseFunc(ownerCache.Close)

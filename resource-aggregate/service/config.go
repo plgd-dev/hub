@@ -80,15 +80,11 @@ func (c *EventStoreConfig) Validate() error {
 	return c.Connection.Validate()
 }
 
-type AuthorizationServerConfig struct {
-	OwnerClaim string        `yaml:"ownerClaim" json:"ownerClaim"`
+type IdentityServerConfig struct {
 	Connection client.Config `yaml:"grpc" json:"grpc"`
 }
 
-func (c *AuthorizationServerConfig) Validate() error {
-	if c.OwnerClaim == "" {
-		return fmt.Errorf("ownerClaim('%v')", c.OwnerClaim)
-	}
+func (c *IdentityServerConfig) Validate() error {
 	if err := c.Connection.Validate(); err != nil {
 		return fmt.Errorf("grpc.%w", err)
 	}
@@ -96,20 +92,20 @@ func (c *AuthorizationServerConfig) Validate() error {
 }
 
 type ClientsConfig struct {
-	Eventbus   EventBusConfig            `yaml:"eventBus" json:"eventBus"`
-	Eventstore EventStoreConfig          `yaml:"eventStore" json:"eventStore"`
-	AuthServer AuthorizationServerConfig `yaml:"authorizationServer" json:"authorizationServer"`
+	Eventbus       EventBusConfig       `yaml:"eventBus" json:"eventBus"`
+	Eventstore     EventStoreConfig     `yaml:"eventStore" json:"eventStore"`
+	IdentityServer IdentityServerConfig `yaml:"identityServer" json:"identityServer"`
 }
 
 func (c *ClientsConfig) Validate() error {
-	if err := c.AuthServer.Validate(); err != nil {
-		return fmt.Errorf("authorizationServer.%w", err)
-	}
 	if err := c.Eventbus.Validate(); err != nil {
 		return fmt.Errorf("eventbus.%w", err)
 	}
 	if err := c.Eventstore.Validate(); err != nil {
 		return fmt.Errorf("eventstore.%w", err)
+	}
+	if err := c.IdentityServer.Validate(); err != nil {
+		return fmt.Errorf("identityServer.%w", err)
 	}
 	return nil
 }

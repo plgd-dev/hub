@@ -70,10 +70,14 @@ func (c *ProvidersConfig) Validate(firstAuthority string, providerNames map[stri
 
 type AuthorizationConfig struct {
 	DeviceIDClaim string            `yaml:"deviceIdClaim" json:"deviceIdClaim"`
+	OwnerClaim    string            `yaml:"ownerClaim" json:"ownerClaim"`
 	Providers     []ProvidersConfig `yaml:"providers" json:"providers"`
 }
 
 func (c *AuthorizationConfig) Validate() error {
+	if c.OwnerClaim == "" {
+		return fmt.Errorf("ownerClaim('%v')", c.OwnerClaim)
+	}
 	if len(c.Providers) == 0 {
 		return fmt.Errorf("providers('%v')", c.Providers)
 	}
@@ -187,15 +191,11 @@ func (c *EventBusConfig) Validate() error {
 	return nil
 }
 
-type AuthorizationServerConfig struct {
-	OwnerClaim string        `yaml:"ownerClaim" json:"ownerClaim"`
+type IdentityServerConfig struct {
 	Connection client.Config `yaml:"grpc" json:"grpc"`
 }
 
-func (c *AuthorizationServerConfig) Validate() error {
-	if c.OwnerClaim == "" {
-		return fmt.Errorf("ownerClaim('%v')", c.OwnerClaim)
-	}
+func (c *IdentityServerConfig) Validate() error {
 	if err := c.Connection.Validate(); err != nil {
 		return fmt.Errorf("grpc.%w", err)
 	}
@@ -203,15 +203,15 @@ func (c *AuthorizationServerConfig) Validate() error {
 }
 
 type ClientsConfig struct {
-	Eventbus          EventBusConfig            `yaml:"eventBus" json:"eventBus"`
-	AuthServer        AuthorizationServerConfig `yaml:"authorizationServer" json:"authorizationServer"`
-	ResourceAggregate ResourceAggregateConfig   `yaml:"resourceAggregate" json:"resourceAggregate"`
-	ResourceDirectory GrpcServerConfig          `yaml:"resourceDirectory" json:"resourceDirectory"`
+	Eventbus          EventBusConfig          `yaml:"eventBus" json:"eventBus"`
+	IdentityServer    IdentityServerConfig    `yaml:"identityServer" json:"identityServer"`
+	ResourceAggregate ResourceAggregateConfig `yaml:"resourceAggregate" json:"resourceAggregate"`
+	ResourceDirectory GrpcServerConfig        `yaml:"resourceDirectory" json:"resourceDirectory"`
 }
 
 func (c *ClientsConfig) Validate() error {
-	if err := c.AuthServer.Validate(); err != nil {
-		return fmt.Errorf("authorizationServer.%w", err)
+	if err := c.IdentityServer.Validate(); err != nil {
+		return fmt.Errorf("identityServer.%w", err)
 	}
 	if err := c.Eventbus.Validate(); err != nil {
 		return fmt.Errorf("eventbus.%w", err)

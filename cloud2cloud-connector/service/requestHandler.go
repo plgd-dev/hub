@@ -26,6 +26,7 @@ type provisionCacheData struct {
 
 // RequestHandler handles incoming requests
 type RequestHandler struct {
+	ownerClaim     string
 	provider       *pkgOAuth2.PlgdProvider
 	store          *Store
 	provisionCache *cache.Cache
@@ -43,12 +44,14 @@ func logAndWriteErrorResponse(err error, statusCode int, w http.ResponseWriter) 
 }
 
 func NewRequestHandler(
+	ownerClaim string,
 	provider *pkgOAuth2.PlgdProvider,
 	subManager *SubscriptionManager,
 	store *Store,
 	triggerTask OnTaskTrigger,
 ) *RequestHandler {
 	return &RequestHandler{
+		ownerClaim:     ownerClaim,
 		provider:       provider,
 		subManager:     subManager,
 		store:          store,

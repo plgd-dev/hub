@@ -8,9 +8,9 @@ import (
 	"sync"
 	"time"
 
-	authEvents "github.com/plgd-dev/cloud/authorization/events"
 	"github.com/plgd-dev/cloud/coap-gateway/coapconv"
 	grpcClient "github.com/plgd-dev/cloud/grpc-gateway/client"
+	idEvents "github.com/plgd-dev/cloud/identity/events"
 	"github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	pkgJwt "github.com/plgd-dev/cloud/pkg/security/jwt"
@@ -892,7 +892,7 @@ func (c *Client) ValidateToken(ctx context.Context, token string) (pkgJwt.Claims
 	return c.server.ValidateToken(ctx, token)
 }
 
-func (c *Client) subscribeToDeviceEvents(owner string, onEvent func(e *authEvents.Event)) error {
+func (c *Client) subscribeToDeviceEvents(owner string, onEvent func(e *idEvents.Event)) error {
 	close, err := c.server.ownerCache.Subscribe(owner, onEvent)
 	if err != nil {
 		return err

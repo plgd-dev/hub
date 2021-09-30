@@ -12,14 +12,11 @@ export MONGO_PATH="/data/db"
 export NGINX_PATH="/data/nginx"
 export JETSTREAM_PATH="/data/jetstream"
 
-export SERVICE_OWNER_CLAIM=${OWNER_CLAIM}
-export DEVICE_OWNER_CLAIM=${OWNER_CLAIM}
-
 export CERTIFICATE_AUTHORITY_ADDRESS="localhost:${CERTIFICATE_AUTHORITY_PORT}"
 export MOCKED_OAUTH_SERVER_ADDRESS="localhost:${MOCKED_OAUTH_SERVER_PORT}"
 export RESOURCE_AGGREGATE_ADDRESS="localhost:${RESOURCE_AGGREGATE_PORT}"
 export RESOURCE_DIRECTORY_ADDRESS="localhost:${RESOURCE_DIRECTORY_PORT}"
-export AUTHORIZATION_ADDRESS="localhost:${AUTHORIZATION_PORT}"
+export IDENTITY_ADDRESS="localhost:${IDENTITY_PORT}"
 export GRPC_GATEWAY_ADDRESS="localhost:${GRPC_GATEWAY_PORT}"
 export HTTP_GATEWAY_ADDRESS="localhost:${HTTP_GATEWAY_PORT}"
 export CLOUD2CLOUD_GATEWAY_ADDRESS="localhost:${CLOUD2CLOUD_GATEWAY_PORT}"
@@ -61,14 +58,11 @@ export OAUTH_DEVICE_SECRET_PATH=${OAUTH_SECRETS_PATH}/device.secret
 
 #ENDPOINTS
 export MONGODB_HOST="localhost:$MONGO_PORT"
-export MONGODB_URL="mongodb://$MONGODB_HOST"
 export MONGODB_URI="mongodb://$MONGODB_HOST"
-export MONGO_URI="mongodb://$MONGODB_HOST"
 export NATS_HOST="localhost:$NATS_PORT"
 export NATS_URL="nats://${NATS_HOST}"
-export SERVICE_NATS_URL=${NATS_URL}
 
-export AUTH_SERVER_ADDRESS=${AUTHORIZATION_ADDRESS}
+export AUTH_SERVER_ADDRESS=${IDENTITY_ADDRESS}
 export FQDN_NGINX_HTTPS=${FQDN}:${NGINX_PORT}
 export DOMAIN=${FQDN_NGINX_HTTPS}
 if [ "$NGINX_PORT" = "443" ]; then
@@ -84,28 +78,10 @@ export SERVICE_OAUTH_AUDIENCE=${OAUTH_AUDIENCE}
 export DEVICE_OAUTH_AUDIENCE=${OAUTH_AUDIENCE}
 
 export DEVICE_OAUTH_REDIRECT_URL=https://${FQDN}:${NGINX_PORT}/api/v1/oauth/callback
-if [ -z "${OAUTH_ENDPOINT_AUTH_URL}" ]
-then
-  export SERVICE_CLIENT_CONFIGURATION_AUTHCODEURL="https://${FQDN}:${NGINX_PORT}/authorize?client_id=test"
-else
-  export SERVICE_CLIENT_CONFIGURATION_AUTHCODEURL=${OAUTH_ENDPOINT_AUTH_URL}
-fi
-
-if [ -z "${OAUTH_ENDPOINT_TOKEN_URL}" ]
-then
-  export SERVICE_OAUTH_ENDPOINT_TOKEN_URL=https://localhost:${MOCKED_OAUTH_SERVER_PORT}/oauth/token
-else
-  export SERVICE_OAUTH_ENDPOINT_TOKEN_URL=${OAUTH_ENDPOINT_TOKEN_URL}
-fi
 
 if [ -z "${OAUTH_ENDPOINT}" ]
 then
   export OAUTH_ENDPOINT=${DOMAIN}
-fi
-
-if [ -z "${JWKS_URL}" ]
-then
-  export JWKS_URL=https://localhost:${MOCKED_OAUTH_SERVER_PORT}/.well-known/jwks.json
 fi
 
 if [ -z "${OAUTH_CLIENT_ID}" ]
@@ -165,24 +141,24 @@ while read -r line; do
   cp $KEY_FILE ${file}
 done < <(yq e '[.. | select(has("keyFile")) | .keyFile]' /configs/oauth-server.yaml | sort | uniq)
 
-## authorization
+## identity
 while read -r line; do
   file=`echo $line | yq e '.[0]' - `
   mkdir -p `dirname ${file}`
   cp $CA_POOL ${file}
-done < <(yq e '[.. | select(has("caPool")) | .caPool]' /configs/authorization.yaml | sort | uniq)
+done < <(yq e '[.. | select(has("caPool")) | .caPool]' /configs/identity.yaml | sort | uniq)
 ### setup certificates
 while read -r line; do
   file=`echo $line | yq e '.[0]' - `
   mkdir -p `dirname ${file}`
   cp $CERT_FILE ${file}
-done < <(yq e '[.. | select(has("certFile")) | .certFile]' /configs/authorization.yaml | sort | uniq)
+done < <(yq e '[.. | select(has("certFile")) | .certFile]' /configs/identity.yaml | sort | uniq)
 ### setup private keys
 while read -r line; do
   file=`echo $line | yq e '.[0]' - `
   mkdir -p `dirname ${file}`
   cp $KEY_FILE ${file}
-done < <(yq e '[.. | select(has("keyFile")) | .keyFile]' /configs/authorization.yaml | sort | uniq)
+done < <(yq e '[.. | select(has("keyFile")) | .keyFile]' /configs/identity.yaml | sort | uniq)
 
 ## resource-aggregate
 ### setup root-cas
@@ -339,7 +315,6 @@ sed -i "s/REPLACE_HTTP_GATEWAY_PORT/$HTTP_GATEWAY_PORT/g" ${NGINX_PATH}/nginx.co
 sed -i "s/REPLACE_GRPC_GATEWAY_PORT/$GRPC_GATEWAY_PORT/g" ${NGINX_PATH}/nginx.conf
 sed -i "s/REPLACE_MOCKED_OAUTH_SERVER_PORT/$MOCKED_OAUTH_SERVER_PORT/g" ${NGINX_PATH}/nginx.conf
 sed -i "s/REPLACE_CERTIFICATE_AUTHORITY_PORT/$CERTIFICATE_AUTHORITY_PORT/g" ${NGINX_PATH}/nginx.conf
-sed -i "s/REPLACE_AUTHORIZATION_HTTP_PORT/$AUTHORIZATION_HTTP_PORT/g" ${NGINX_PATH}/nginx.conf
 sed -i "s/REPLACE_CLOUD2CLOUD_GATEWAY_PORT/$CLOUD2CLOUD_GATEWAY_PORT/g" ${NGINX_PATH}/nginx.conf
 
 # nats
@@ -472,37 +447,39 @@ while true; do
   sleep 1
 done
 
-# authorization
+# identity
 ## configuration
-cat /configs/authorization.yaml | yq e "\
-  .apis.grpc.address = \"${AUTHORIZATION_ADDRESS}\" |
+cat /configs/identity.yaml | yq e "\
+  .apis.grpc.address = \"${IDENTITY_ADDRESS}\" |
   .apis.grpc.authorization.http.tls.useSystemCAPool = true |
+  .apis.grpc.authorization.ownerClaim = \"${OWNER_CLAIM}\" |
   .apis.grpc.authorization.audience = \"${SERVICE_OAUTH_AUDIENCE}\" |
   .apis.grpc.authorization.authority = \"https://${OAUTH_ENDPOINT}\" |
-  .clients.storage.ownerClaim = \"${SERVICE_OWNER_CLAIM}\" |
   .clients.storage.mongoDB.uri = \"${MONGODB_URI}\" |
   .clients.eventBus.nats.url = \"${NATS_URL}\" |
   .clients.eventBus.nats.jetstream = ${JETSTREAM}
-" - > /data/authorization.yaml
+" - > /data/identity.yaml
 
-echo "starting authorization"
-authorization --config /data/authorization.yaml >$LOGS_PATH/authorization.log 2>&1 &
+echo "starting identity"
+identity --config /data/identity.yaml >$LOGS_PATH/identity.log 2>&1 &
 status=$?
-authorization_pid=$!
+identity_pid=$!
 if [ $status -ne 0 ]; then
-  echo "Failed to start authorization: $status"
+  echo "Failed to start identity: $status"
   sync
-  cat $LOGS_PATH/authorization.log
+  cat $LOGS_PATH/identity.log
   exit $status
 fi
 
 i=0
 while true; do
   i=$((i+1))
-  if openssl s_client -connect ${AUTHORIZATION_ADDRESS} -cert ${INTERNAL_CERT_DIR_PATH}/${DIAL_FILE_CERT_NAME} -key ${INTERNAL_CERT_DIR_PATH}/${DIAL_FILE_CERT_KEY_NAME} <<< "Q" 2>/dev/null > /dev/null; then
+  if openssl s_client -connect ${IDENTITY_ADDRESS} \
+    -cert ${INTERNAL_CERT_DIR_PATH}/${DIAL_FILE_CERT_NAME} \
+    -key ${INTERNAL_CERT_DIR_PATH}/${DIAL_FILE_CERT_KEY_NAME} <<< "Q" 2>/dev/null > /dev/null; then
     break
   fi
-  echo "Try to reconnect to authorization service(${AUTHORIZATION_ADDRESS}) $i"
+  echo "Try to reconnect to identity service(${IDENTITY_ADDRESS}) $i"
   sleep 1
 done
 
@@ -511,13 +488,13 @@ done
 cat /configs/resource-aggregate.yaml | yq e "\
   .apis.grpc.address = \"${RESOURCE_AGGREGATE_ADDRESS}\" |
   .apis.grpc.authorization.http.tls.useSystemCAPool = true |
+  .apis.grpc.authorization.ownerClaim = \"${OWNER_CLAIM}\" |
   .apis.grpc.authorization.audience = \"${SERVICE_OAUTH_AUDIENCE}\" |
   .apis.grpc.authorization.authority = \"https://${OAUTH_ENDPOINT}\" |
   .clients.eventStore.mongoDB.uri = \"${MONGODB_URI}\" |
   .clients.eventBus.nats.url = \"${NATS_URL}\" |
   .clients.eventBus.nats.jetstream = ${JETSTREAM} |
-  .clients.authorizationServer.ownerClaim = \"${SERVICE_OWNER_CLAIM}\" |
-  .clients.authorizationServer.grpc.address = \"${AUTHORIZATION_ADDRESS}\"
+  .clients.identityServer.grpc.address = \"${IDENTITY_ADDRESS}\"
 " - > /data/resource-aggregate.yaml
 
 echo "starting resource-aggregate"
@@ -546,18 +523,13 @@ done
 ## configuration
 cat /configs/resource-directory.yaml | yq e "\
   .apis.grpc.address = \"${RESOURCE_DIRECTORY_ADDRESS}\" |
+  .apis.grpc.authorization.ownerClaim = \"${OWNER_CLAIM}\" |
   .apis.grpc.authorization.audience = \"${SERVICE_OAUTH_AUDIENCE}\" |
   .apis.grpc.authorization.http.tls.useSystemCAPool = true |
   .apis.grpc.authorization.authority = \"https://${OAUTH_ENDPOINT}\" |
   .clients.eventStore.mongoDB.uri = \"${MONGODB_URI}\" |
   .clients.eventBus.nats.url = \"${NATS_URL}\" |
-  .clients.authorizationServer.ownerClaim = \"${SERVICE_OWNER_CLAIM}\" |
-  .clients.authorizationServer.grpc.address = \"${AUTHORIZATION_ADDRESS}\" |
-  .clients.authorizationServer.oauth.clientID = \"${SERVICE_OAUTH_CLIENT_ID}\" |
-  .clients.authorizationServer.oauth.clientSecretFile = \"${SERVICE_OAUTH_CLIENT_SECRET}\" |
-  .clients.authorizationServer.oauth.audience = \"${SERVICE_OAUTH_AUDIENCE}\" |
-  .clients.authorizationServer.oauth.http.tls.useSystemCAPool = true |
-  .clients.authorizationServer.oauth.tokenURL = \"${SERVICE_OAUTH_ENDPOINT_TOKEN_URL}\" |
+  .clients.identityServer.grpc.address = \"${IDENTITY_ADDRESS}\" |
   .publicConfiguration.authorizationServer = \"https://${OAUTH_ENDPOINT}\" |
   .publicConfiguration.cloudID = \"${COAP_GATEWAY_CLOUD_ID}\" |
   .publicConfiguration.cloudURL = \"coaps+tcp://${COAP_GATEWAY_FQDN}:${COAP_GATEWAY_PORT}\" |
@@ -596,7 +568,8 @@ cat /configs/coap-gateway.yaml | yq e "\
   .apis.coap.address = \"${COAP_GATEWAY_UNSECURE_ADDRESS}\" |
   .apis.coap.externalAddress = \"${FQDN}:${COAP_GATEWAY_UNSECURE_PORT}\" |
   .apis.coap.tls.enabled = false |
-  .apis.coap.authorization.providers[0].name = \"${DEVICE_PROVIDER}\" | 
+  .apis.coap.authorization.ownerClaim = \"${OWNER_CLAIM}\" |
+  .apis.coap.authorization.providers[0].name = \"${DEVICE_PROVIDER}\" |
   .apis.coap.authorization.providers[0].authority = \"https://${OAUTH_ENDPOINT}\" |
   .apis.coap.authorization.providers[0].clientID = \"${DEVICE_OAUTH_CLIENT_ID}\" |
   .apis.coap.authorization.providers[0].clientSecretFile = \"${OAUTH_DEVICE_SECRET_PATH}\" |
@@ -605,10 +578,9 @@ cat /configs/coap-gateway.yaml | yq e "\
   .apis.coap.authorization.providers[0].audience = \"${DEVICE_OAUTH_AUDIENCE}\" |
   .apis.coap.authorization.providers[0].http.tls.useSystemCAPool = true |
   .clients.eventBus.nats.url = \"${NATS_URL}\" |
+  .clients.identityServer.grpc.address = \"${IDENTITY_ADDRESS}\" |
   .clients.resourceAggregate.grpc.address = \"${RESOURCE_AGGREGATE_ADDRESS}\" |
-  .clients.resourceDirectory.grpc.address = \"${RESOURCE_DIRECTORY_ADDRESS}\" |
-  .clients.authorizationServer.ownerClaim = \"${OWNER_CLAIM}\" |
-  .clients.authorizationServer.grpc.address = \"${AUTHORIZATION_ADDRESS}\"
+  .clients.resourceDirectory.grpc.address = \"${RESOURCE_DIRECTORY_ADDRESS}\"
 " - > /data/coap-gateway-unsecure.yaml
 
 coap-gateway --config /data/coap-gateway-unsecure.yaml >$LOGS_PATH/coap-gateway-unsecure.log 2>&1 &
@@ -632,7 +604,8 @@ cat /configs/coap-gateway.yaml | yq e "\
   .apis.coap.tls.enabled = true |
   .apis.coap.tls.keyFile = \"${EXTERNAL_CERT_DIR_PATH}/${COAP_GATEWAY_FILE_CERT_KEY_NAME}\" |
   .apis.coap.tls.certFile = \"${EXTERNAL_CERT_DIR_PATH}/${COAP_GATEWAY_FILE_CERT_NAME}\" |
-  .apis.coap.authorization.providers[0].name = \"${DEVICE_PROVIDER}\" | 
+  .apis.coap.authorization.ownerClaim = \"${OWNER_CLAIM}\" |
+  .apis.coap.authorization.providers[0].name = \"${DEVICE_PROVIDER}\" |
   .apis.coap.authorization.providers[0].authority = \"https://${OAUTH_ENDPOINT}\" |
   .apis.coap.authorization.providers[0].clientID = \"${DEVICE_OAUTH_CLIENT_ID}\" |
   .apis.coap.authorization.providers[0].clientSecretFile = \"${OAUTH_DEVICE_SECRET_PATH}\" |
@@ -641,10 +614,9 @@ cat /configs/coap-gateway.yaml | yq e "\
   .apis.coap.authorization.providers[0].audience = \"${DEVICE_OAUTH_AUDIENCE}\" |
   .apis.coap.authorization.providers[0].http.tls.useSystemCAPool = true |
   .clients.eventBus.nats.url = \"${NATS_URL}\" |
+  .clients.identityServer.grpc.address = \"${IDENTITY_ADDRESS}\"
   .clients.resourceAggregate.grpc.address = \"${RESOURCE_AGGREGATE_ADDRESS}\" |
   .clients.resourceDirectory.grpc.address = \"${RESOURCE_DIRECTORY_ADDRESS}\" |
-  .clients.authorizationServer.ownerClaim = \"${OWNER_CLAIM}\" |
-  .clients.authorizationServer.grpc.address = \"${AUTHORIZATION_ADDRESS}\"
 " - > /data/coap-gateway-secure.yaml
 
 coap-gateway --config /data/coap-gateway-secure.yaml >$LOGS_PATH/coap-gateway.log 2>&1 &
@@ -665,7 +637,7 @@ cat /configs/grpc-gateway.yaml | yq e "\
   .apis.grpc.authorization.audience = \"${SERVICE_OAUTH_AUDIENCE}\" |
   .apis.grpc.authorization.http.tls.useSystemCAPool = true |
   .apis.grpc.authorization.authority = \"https://${OAUTH_ENDPOINT}\" |
-  .clients.authorizationServer.grpc.address = \"${AUTHORIZATION_ADDRESS}\" |
+  .clients.identityServer.grpc.address = \"${IDENTITY_ADDRESS}\" |
   .clients.eventBus.nats.url = \"${NATS_URL}\" |
   .clients.resourceAggregate.grpc.address = \"${RESOURCE_AGGREGATE_ADDRESS}\" |
   .clients.resourceDirectory.grpc.address = \"${RESOURCE_DIRECTORY_ADDRESS}\"
@@ -826,11 +798,11 @@ while sleep 10; do
     cat $LOGS_PATH/mongod.log
     exit 1
   fi
-  ps aux |grep $authorization_pid |grep -q -v grep
+  ps aux |grep $identity_pid |grep -q -v grep
   if [ $? -ne 0 ]; then
-    echo "authorization has already exited."
+    echo "identity has already exited."
     sync
-    cat $LOGS_PATH/authorization.log
+    cat $LOGS_PATH/identity.log
     exit 1
   fi
   ps aux |grep $resource_aggregate_pid |grep -q -v grep

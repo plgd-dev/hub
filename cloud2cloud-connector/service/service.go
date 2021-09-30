@@ -9,10 +9,10 @@ import (
 	"sync"
 	"time"
 
-	pbAS "github.com/plgd-dev/cloud/authorization/pb"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/store/mongodb"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/uri"
 	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"
+	pbIS "github.com/plgd-dev/cloud/identity/pb"
 	"github.com/plgd-dev/cloud/pkg/fn"
 	"github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
@@ -95,17 +95,17 @@ func newAuthInterceptor(ctx context.Context, config validator.Config, oauthCallb
 	return auth, fl.ToFunction(), nil
 }
 
-func newAuthorizationServiceClient(config AuthorizationServerConfig, logger log.Logger) (pbAS.AuthorizationServiceClient, func(), error) {
-	asConn, err := grpcClient.New(config.Connection, logger)
+func newIdentityServiceClient(config IdentityServerConfig, logger log.Logger) (pbIS.IdentityServiceClient, func(), error) {
+	isConn, err := grpcClient.New(config.Connection, logger)
 	if err != nil {
-		return nil, nil, fmt.Errorf("cannot create connection to authorization server: %w", err)
+		return nil, nil, fmt.Errorf("cannot create connection to identity server: %w", err)
 	}
-	closeAsConn := func() {
-		if err := asConn.Close(); err != nil && !kitNetGrpc.IsContextCanceled(err) {
-			logger.Errorf("error occurs during close connection to authorization server: %v", err)
+	closeIsConn := func() {
+		if err := isConn.Close(); err != nil && !kitNetGrpc.IsContextCanceled(err) {
+			logger.Errorf("error occurs during close connection to identity server: %v", err)
 		}
 	}
-	return pbAS.NewAuthorizationServiceClient(asConn.GRPC()), closeAsConn, nil
+	return pbIS.NewIdentityServiceClient(isConn.GRPC()), closeIsConn, nil
 }
 
 func newSubscriber(config natsClient.Config, logger log.Logger) (*subscriber.Subscriber, func(), error) {
@@ -245,12 +245,12 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Server, error)
 	taskProcessor := NewTaskProcessor(raClient, config.TaskProcessor.MaxParallel, config.TaskProcessor.CacheSize,
 		config.TaskProcessor.Timeout, config.TaskProcessor.Delay)
 
-	asClient, closeAsClient, err := newAuthorizationServiceClient(config.Clients.AuthServer, logger)
+	isClient, closeIsClient, err := newIdentityServiceClient(config.Clients.IdentityServer, logger)
 	if err != nil {
 		cleanUp.Execute()
-		return nil, fmt.Errorf("cannot create authorization service client: %w", err)
+		return nil, fmt.Errorf("cannot create identity service client: %w", err)
 	}
-	listener.AddCloseFunc(closeAsClient)
+	listener.AddCloseFunc(closeIsClient)
 
 	store, closeStore, err := newStore(ctx, config.Clients.Storage.MongoDB, logger)
 	if err != nil {
@@ -265,19 +265,19 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Server, error)
 		return nil, fmt.Errorf("cannot parse OAuth paths: %w", err)
 	}
 
-	provider, err := oauth2.NewPlgdProvider(ctx, config.APIs.HTTP.Authorization, logger, "sub")
+	provider, err := oauth2.NewPlgdProvider(ctx, config.APIs.HTTP.Authorization.Config, logger, config.APIs.HTTP.Authorization.OwnerClaim)
 	if err != nil {
 		cleanUp.Execute()
 		return nil, fmt.Errorf("cannot create device provider: %w", err)
 	}
 	listener.AddCloseFunc(provider.Close)
 
-	subMgr := NewSubscriptionManager(config.APIs.HTTP.EventsURL, asClient, raClient, store, devicesSubscription,
+	subMgr := NewSubscriptionManager(config.APIs.HTTP.EventsURL, isClient, raClient, store, devicesSubscription,
 		provider, taskProcessor.Trigger, config.Clients.Subscription.HTTP.ResubscribeInterval)
 
-	requestHandler := NewRequestHandler(provider, subMgr, store, taskProcessor.Trigger)
+	requestHandler := NewRequestHandler(config.APIs.HTTP.Authorization.OwnerClaim, provider, subMgr, store, taskProcessor.Trigger)
 
-	auth, closeAuth, err := newAuthInterceptor(ctx, toValidator(config.APIs.HTTP.Authorization), oauthURL.Path, logger)
+	auth, closeAuth, err := newAuthInterceptor(ctx, toValidator(config.APIs.HTTP.Authorization.Config), oauthURL.Path, logger)
 	if err != nil {
 		cleanUp.Execute()
 		return nil, fmt.Errorf("cannot create auth interceptor: %w", err)
@@ -295,7 +295,7 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Server, error)
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			for runDevicePulling(ctx, provider, config.APIs.HTTP.PullDevices.Interval, store, asClient, raClient, devicesSubscription, subMgr, taskProcessor.Trigger) {
+			for runDevicePulling(ctx, provider, config.APIs.HTTP.PullDevices.Interval, store, isClient, raClient, devicesSubscription, subMgr, taskProcessor.Trigger) {
 			}
 		}()
 	}
@@ -339,7 +339,7 @@ func runDevicePulling(ctx context.Context,
 	provider *oauth2.PlgdProvider,
 	timeout time.Duration,
 	s *Store,
-	asClient pbAS.AuthorizationServiceClient,
+	isClient pbIS.IdentityServiceClient,
 	raClient raService.ResourceAggregateClient,
 	devicesSubscription *DevicesSubscription,
 	subscriptionManager *SubscriptionManager,
@@ -347,7 +347,7 @@ func runDevicePulling(ctx context.Context,
 ) bool {
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
-	err := pullDevices(ctx, s, asClient, raClient, devicesSubscription, subscriptionManager, provider, triggerTask)
+	err := pullDevices(ctx, s, isClient, raClient, devicesSubscription, subscriptionManager, provider, triggerTask)
 	if err != nil {
 		log.Errorf("cannot pull devices: %v", err)
 	}

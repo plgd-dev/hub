@@ -15,7 +15,6 @@ import (
 	"github.com/plgd-dev/cloud/pkg/security/certManager/client"
 	"github.com/plgd-dev/cloud/pkg/security/certManager/server"
 	"github.com/plgd-dev/cloud/pkg/security/jwt/validator"
-	"github.com/plgd-dev/cloud/pkg/security/oauth/manager"
 	"github.com/plgd-dev/cloud/pkg/security/oauth2"
 	"github.com/plgd-dev/cloud/pkg/security/oauth2/oauth"
 	natsClient "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/client"
@@ -25,7 +24,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const AUTH_HOST = "localhost:20000"
+const IDENTITY_HOST = "localhost:20000"
+const IDENTITY_DB = "ownersDevices"
 const GW_HOST = "localhost:20002"
 const RESOURCE_AGGREGATE_HOST = "localhost:20003"
 const RESOURCE_DIRECTORY_HOST = "localhost:20004"
@@ -85,9 +85,12 @@ func MakeTLSServerConfig() server.Config {
 
 func MakeGrpcServerConfig(address string) grpcServer.Config {
 	return grpcServer.Config{
-		Addr:          address,
-		TLS:           MakeTLSServerConfig(),
-		Authorization: MakeAuthorizationConfig(),
+		Addr: address,
+		TLS:  MakeTLSServerConfig(),
+		Authorization: grpcServer.AuthorizationConfig{
+			OwnerClaim: OWNER_CLAIM,
+			Config:     MakeAuthorizationConfig(),
+		},
 		EnforcementPolicy: grpcServer.EnforcementPolicyConfig{
 			MinTime:             time.Second * 5,
 			PermitWithoutStream: true,
@@ -149,17 +152,6 @@ func MakeAuthorizationConfig() validator.Config {
 		Authority: "https://" + OAUTH_SERVER_HOST,
 		Audience:  "https://" + OAUTH_MANAGER_AUDIENCE,
 		HTTP:      MakeHttpClientConfig(),
-	}
-}
-
-func MakeOAuthConfig() manager.ConfigV2 {
-	return manager.ConfigV2{
-		ClientID:                    OAUTH_MANAGER_CLIENT_ID,
-		ClientSecret:                "secret",
-		Audience:                    OAUTH_MANAGER_AUDIENCE,
-		TokenURL:                    OAUTH_MANAGER_ENDPOINT_TOKENURL,
-		HTTP:                        MakeHttpClientConfig(),
-		VerifyServiceTokenFrequency: time.Second * 10,
 	}
 }
 

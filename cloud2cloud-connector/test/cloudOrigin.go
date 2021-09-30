@@ -3,9 +3,9 @@ package test
 import (
 	"testing"
 
-	authService "github.com/plgd-dev/cloud/authorization/test"
 	c2curi "github.com/plgd-dev/cloud/cloud2cloud-connector/uri"
 	grpcService "github.com/plgd-dev/cloud/grpc-gateway/test"
+	idService "github.com/plgd-dev/cloud/identity/test"
 	raService "github.com/plgd-dev/cloud/resource-aggregate/test"
 	rdService "github.com/plgd-dev/cloud/resource-directory/test"
 	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	AUTH_HOST               = "localhost:30000"
+	IDENTITY_HOST           = "localhost:30000"
 	RESOURCE_AGGREGATE_HOST = "localhost:30003"
 	RESOURCE_DIRECTORY_HOST = "localhost:30004"
 	C2C_CONNECTOR_HOST      = "localhost:30006"
@@ -35,18 +35,18 @@ func SetUpCloudWithConnector(t *testing.T) (TearDown func()) {
 	oauthCfg.OAuthSigner.Domain = OAUTH_HOST
 	oauthShutdown := oauthTest.New(t, oauthCfg)
 
-	authCfg := authService.MakeConfig(t)
-	authCfg.APIs.GRPC.Addr = AUTH_HOST
-	authCfg.APIs.GRPC.Authorization.Authority = "https://" + OAUTH_HOST
-	authCfg.Clients.Storage.MongoDB.Database = C2C_CONNECTOR_DB
-	authCfg.Clients.Eventbus.NATS.URL = C2C_CONNECTOR_NATS_URL
-	authShutdown := authService.New(t, authCfg)
+	idCfg := idService.MakeConfig(t)
+	idCfg.APIs.GRPC.Addr = IDENTITY_HOST
+	idCfg.APIs.GRPC.Authorization.Authority = "https://" + OAUTH_HOST
+	idCfg.Clients.Storage.MongoDB.Database = C2C_CONNECTOR_DB
+	idCfg.Clients.Eventbus.NATS.URL = C2C_CONNECTOR_NATS_URL
+	idShutdown := idService.New(t, idCfg)
 
 	raCfg := raService.MakeConfig(t)
 	raCfg.APIs.GRPC.Addr = RESOURCE_AGGREGATE_HOST
 	raCfg.APIs.GRPC.Authorization.Authority = "https://" + OAUTH_HOST
 	raCfg.Clients.Eventstore.Connection.MongoDB.Database = C2C_CONNECTOR_DB
-	raCfg.Clients.AuthServer.Connection.Addr = AUTH_HOST
+	raCfg.Clients.IdentityServer.Connection.Addr = IDENTITY_HOST
 	raCfg.Clients.Eventbus.NATS.URL = C2C_CONNECTOR_NATS_URL
 	raShutdown := raService.New(t, raCfg)
 
@@ -55,10 +55,7 @@ func SetUpCloudWithConnector(t *testing.T) (TearDown func()) {
 	rdCfg.APIs.GRPC.Authorization.Authority = "https://" + OAUTH_HOST
 	rdCfg.Clients.Eventstore.Connection.MongoDB.Database = C2C_CONNECTOR_DB
 	rdCfg.Clients.Eventbus.NATS.URL = C2C_CONNECTOR_NATS_URL
-	rdCfg.Clients.AuthServer.Connection.Addr = AUTH_HOST
-	rdCfg.Clients.AuthServer.OAuth.TokenURL = OAUTH_MANAGER_ENDPOINT_TOKENURL
-	rdCfg.Clients.AuthServer.OAuth.ClientID = OAUTH_MANAGER_CLIENT_ID
-	rdCfg.Clients.AuthServer.OAuth.Audience = OAUTH_MANAGER_AUDIENCE
+	rdCfg.Clients.IdentityServer.Connection.Addr = IDENTITY_HOST
 	rdShutdown := rdService.New(t, rdCfg)
 
 	grpcCfg := grpcService.MakeConfig(t)
@@ -77,7 +74,7 @@ func SetUpCloudWithConnector(t *testing.T) (TearDown func()) {
 	c2cConnectorCfg.APIs.HTTP.Authorization.Authority = "https://" + OAUTH_HOST
 	c2cConnectorCfg.APIs.HTTP.Authorization.Config.RedirectURL = C2C_CONNECTOR_OAUTH_CALLBACK
 	c2cConnectorCfg.Clients.Storage.MongoDB.Database = C2C_CONNECTOR_DB
-	c2cConnectorCfg.Clients.AuthServer.Connection.Addr = AUTH_HOST
+	c2cConnectorCfg.Clients.IdentityServer.Connection.Addr = IDENTITY_HOST
 	c2cConnectorCfg.Clients.GrpcGateway.Connection.Addr = GRPC_GATEWAY_HOST
 	c2cConnectorCfg.Clients.ResourceAggregate.Connection.Addr = RESOURCE_AGGREGATE_HOST
 	c2cConnectorCfg.Clients.Eventbus.NATS.URL = C2C_CONNECTOR_NATS_URL
@@ -88,7 +85,7 @@ func SetUpCloudWithConnector(t *testing.T) (TearDown func()) {
 		grpcShutdown()
 		rdShutdown()
 		raShutdown()
-		authShutdown()
+		idShutdown()
 		oauthShutdown()
 	}
 }

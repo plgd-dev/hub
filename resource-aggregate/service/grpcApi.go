@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"google.golang.org/grpc/codes"
-
 	"github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
@@ -14,6 +12,7 @@ import (
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
 	raEvents "github.com/plgd-dev/cloud/resource-aggregate/events"
+	"google.golang.org/grpc/codes"
 )
 
 type getOwnerDevicesFunc = func(ctx context.Context, owner string, deviceIDs []string) ([]string, error)
@@ -61,7 +60,7 @@ func (r RequestHandler) isUserDevice(ctx context.Context, owner string, deviceID
 }
 
 func (r RequestHandler) validateAccessToDevice(ctx context.Context, deviceID string) (string, error) {
-	owner, err := kitNetGrpc.OwnerFromTokenMD(ctx, r.config.Clients.AuthServer.OwnerClaim)
+	owner, err := kitNetGrpc.OwnerFromTokenMD(ctx, r.config.APIs.GRPC.Authorization.OwnerClaim)
 	if err != nil {
 		return "", kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "invalid owner: %v", err)
 	}
@@ -80,7 +79,7 @@ func (r RequestHandler) validateAccessToDevice(ctx context.Context, deviceID str
 // Function iterates over input slice of device IDs and returns owner name, and the intersection
 // of the input device IDs with owned devices.
 func (r RequestHandler) getOwnedDevices(ctx context.Context, deviceIDs []string) (string, []string, error) {
-	owner, err := kitNetGrpc.OwnerFromTokenMD(ctx, r.config.Clients.AuthServer.OwnerClaim)
+	owner, err := kitNetGrpc.OwnerFromTokenMD(ctx, r.config.APIs.GRPC.Authorization.OwnerClaim)
 	if err != nil {
 		return "", nil, kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "invalid owner: %v", err)
 	}

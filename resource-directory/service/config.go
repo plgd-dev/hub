@@ -9,7 +9,6 @@ import (
 	"github.com/plgd-dev/cloud/pkg/log"
 	"github.com/plgd-dev/cloud/pkg/net/grpc/client"
 	"github.com/plgd-dev/cloud/pkg/net/grpc/server"
-	"github.com/plgd-dev/cloud/pkg/security/oauth/manager"
 	pkgTime "github.com/plgd-dev/cloud/pkg/time"
 	natsClient "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/client"
 	eventstoreConfig "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/config"
@@ -60,14 +59,14 @@ func (c *GRPCConfig) Validate() error {
 }
 
 type ClientsConfig struct {
-	Eventbus   EventBusConfig            `yaml:"eventBus" json:"eventBus"`
-	Eventstore EventStoreConfig          `yaml:"eventStore" json:"eventStore"`
-	AuthServer AuthorizationServerConfig `yaml:"authorizationServer" json:"authorizationServer"`
+	Eventbus       EventBusConfig       `yaml:"eventBus" json:"eventBus"`
+	Eventstore     EventStoreConfig     `yaml:"eventStore" json:"eventStore"`
+	IdentityServer IdentityServerConfig `yaml:"identityServer" json:"identityServer"`
 }
 
 func (c *ClientsConfig) Validate() error {
-	if err := c.AuthServer.Validate(); err != nil {
-		return fmt.Errorf("authorizationServer.%w", err)
+	if err := c.IdentityServer.Validate(); err != nil {
+		return fmt.Errorf("identityServer.%w", err)
 	}
 	if err := c.Eventbus.Validate(); err != nil {
 		return fmt.Errorf("eventbus.%w", err)
@@ -105,27 +104,11 @@ func (c *EventStoreConfig) Validate() error {
 	return c.Connection.Validate()
 }
 
-type AuthorizationServerConfig struct {
-	PullFrequency   time.Duration    `yaml:"pullFrequency" json:"pullFrequency"`
-	CacheExpiration time.Duration    `yaml:"cacheExpiration" json:"cacheExpiration"`
-	OwnerClaim      string           `yaml:"ownerClaim" json:"ownerClaim"`
-	Connection      client.Config    `yaml:"grpc" json:"grpc"`
-	OAuth           manager.ConfigV2 `yaml:"oauth" json:"oauth"`
+type IdentityServerConfig struct {
+	Connection client.Config `yaml:"grpc" json:"grpc"`
 }
 
-func (c *AuthorizationServerConfig) Validate() error {
-	if c.PullFrequency <= 0 {
-		return fmt.Errorf("pullFrequency('%v')", c.PullFrequency)
-	}
-	if c.CacheExpiration <= 0 {
-		return fmt.Errorf("cacheExpiration('%v')", c.CacheExpiration)
-	}
-	if c.OwnerClaim == "" {
-		return fmt.Errorf("ownerClaim('%v')", c.OwnerClaim)
-	}
-	if err := c.OAuth.Validate(); err != nil {
-		return fmt.Errorf("oauth.%w", err)
-	}
+func (c *IdentityServerConfig) Validate() error {
 	if err := c.Connection.Validate(); err != nil {
 		return fmt.Errorf("grpc.%w", err)
 	}

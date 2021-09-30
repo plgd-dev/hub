@@ -10,10 +10,10 @@ import (
 	"github.com/plgd-dev/kit/codec/cbor"
 	"github.com/stretchr/testify/require"
 
-	"github.com/plgd-dev/cloud/authorization/client"
-	authpb "github.com/plgd-dev/cloud/authorization/pb"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	subscription "github.com/plgd-dev/cloud/grpc-gateway/subscription"
+	"github.com/plgd-dev/cloud/identity/client"
+	pbIS "github.com/plgd-dev/cloud/identity/pb"
 	"github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	grpcClient "github.com/plgd-dev/cloud/pkg/net/grpc/client"
@@ -231,12 +231,12 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 	}()
 	rac := raservice.NewResourceAggregateClient(raConn.GRPC())
 
-	asConn, err := grpcClient.New(config.MakeGrpcClientConfig(config.AUTH_HOST), log.Get())
+	asConn, err := grpcClient.New(config.MakeGrpcClientConfig(config.IDENTITY_HOST), log.Get())
 	require.NoError(t, err)
 	defer func() {
 		_ = asConn.Close()
 	}()
-	asc := authpb.NewAuthorizationServiceClient(asConn.GRPC())
+	asc := pbIS.NewIdentityServiceClient(asConn.GRPC())
 
 	pool, err := ants.NewPool(1)
 	require.NoError(t, err)

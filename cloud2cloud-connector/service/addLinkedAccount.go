@@ -62,7 +62,7 @@ func (rh *RequestHandler) handleOAuth(w http.ResponseWriter, r *http.Request, li
 }
 
 func (rh *RequestHandler) addLinkedAccount(w http.ResponseWriter, r *http.Request) (int, error) {
-	userID, err := grpc.OwnerFromOutgoingTokenMD(r.Context(), "sub")
+	userID, err := grpc.OwnerFromOutgoingTokenMD(r.Context(), rh.ownerClaim)
 	if err != nil {
 		return http.StatusUnauthorized, fmt.Errorf("cannot get usedID from Authorization header: %w", err)
 	}
@@ -70,7 +70,7 @@ func (rh *RequestHandler) addLinkedAccount(w http.ResponseWriter, r *http.Reques
 	cloudID := vars[cloudIDKey]
 	linkedCloud, ok := rh.store.LoadCloud(cloudID)
 	if !ok {
-		return http.StatusBadRequest, fmt.Errorf("invaid param cloud_id %v: not found", linkedCloud)
+		return http.StatusBadRequest, fmt.Errorf("invalid param cloud_id %v: not found", linkedCloud)
 	}
 	linkedAccount := store.LinkedAccount{
 		LinkedCloudID: cloudID,

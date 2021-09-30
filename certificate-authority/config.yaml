@@ -21,9 +21,9 @@ apis:
       certFile: "/secrets/private/cert.crt"
       clientCertificateRequired: true
     authorization:
+      ownerClaim: "sub"
       authority: ""
       audience: ""
-      ownerClaim: "sub"
       http:
         maxIdleConns: 16
         maxConnsPerHost: 32

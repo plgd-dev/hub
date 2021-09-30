@@ -22,6 +22,7 @@ apis:
       certFile: "/secrets/public/cert.crt"
       clientCertificateRequired: true
     authorization:
+      ownerClaim: sub
       authority: ""
       audience: ""
       http:
@@ -66,11 +67,7 @@ clients:
         keyFile: "/secrets/private/cert.key"
         certFile: "/secrets/public/cert.crt"
         useSystemCAPool: false
-  authorizationServer:
-    pullFrequency: 15s
-    cacheExpiration: 1m
-    ownerClaim: sub
-    deviceIdClaim: ""
+  identityServer:
     grpc:
       address: ""
       tls:
@@ -82,28 +79,11 @@ clients:
         time: 10s
         timeout: 20s
         permitWithoutStream: true
-    oauth:
-      clientID: ""
-      clientSecret: ""
-      scopes: []
-      tokenURL: ""
-      audience: ""
-      verifyServiceTokenFrequency: 10s
-      http:
-        maxIdleConns: 16
-        maxConnsPerHost: 32
-        maxIdleConnsPerHost: 16
-        idleConnTimeout: 30s
-        timeout: 10s
-        tls:
-          caPool: "/secrets/public/rootca.crt"
-          keyFile: "/secrets/private/cert.key"
-          certFile: "/secrets/public/cert.crt"
-          useSystemCAPool: false
 publicConfiguration:
   caPool: "/secrets/public/rootca.crt"
   authorizationServer: ""
   ownerClaim: "sub"
+  deviceIdClaim: ""
   signingServerAddress: ""
   cloudID: ""
   cloudURL: ""

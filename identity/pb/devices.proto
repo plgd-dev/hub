@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package ocf.cloud.identity.pb;
+
+option go_package = "github.com/plgd-dev/cloud/identity/pb;pb";
+
+message GetDevicesRequest {
+    repeated string device_ids_filter = 2;
+}
+
+message Device {
+    string device_id = 1;
+}
+
+message AddDeviceRequest {
+    string device_id = 1;
+}
+
+message AddDeviceResponse {
+}
+
+message DeleteDevicesRequest {
+    repeated string device_ids = 1;
+}
+
+message DeleteDevicesResponse {
+    repeated string device_ids = 1;
+}

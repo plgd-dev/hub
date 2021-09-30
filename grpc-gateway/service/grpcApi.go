@@ -4,42 +4,31 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/plgd-dev/cloud/pkg/log"
-
-	asClient "github.com/plgd-dev/cloud/authorization/client"
-	pbAS "github.com/plgd-dev/cloud/authorization/pb"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	isClient "github.com/plgd-dev/cloud/identity/client"
+	pbIS "github.com/plgd-dev/cloud/identity/pb"
+	"github.com/plgd-dev/cloud/pkg/fn"
+	"github.com/plgd-dev/cloud/pkg/log"
 	"github.com/plgd-dev/cloud/pkg/net/grpc/client"
 	"github.com/plgd-dev/cloud/pkg/net/grpc/server"
 	raClient "github.com/plgd-dev/cloud/resource-aggregate/client"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus"
 	naClient "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/client"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/subscriber"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
-
 	"google.golang.org/grpc"
 )
-
-type closeFunc []func()
-
-func (s closeFunc) Close() {
-	if len(s) == 0 {
-		return
-	}
-	for _, f := range s {
-		f()
-	}
-}
 
 // RequestHandler handles incoming requests.
 type RequestHandler struct {
 	pb.UnimplementedGrpcGatewayServer
-	authorizationClient     pbAS.AuthorizationServiceClient
+	idClient                pbIS.IdentityServiceClient
 	resourceDirectoryClient pb.GrpcGatewayClient
 	resourceAggregateClient *raClient.Client
 	resourceSubscriber      *subscriber.Subscriber
-	ownerCache              *asClient.OwnerCache
+	ownerCache              *isClient.OwnerCache
 	config                  Config
-	closeFunc               closeFunc
+	closeFunc               func()
 }
 
 func AddHandler(ctx context.Context, svr *server.Server, config Config, logger log.Logger, goroutinePoolGo func(func()) error) error {
@@ -57,15 +46,75 @@ func Register(server *grpc.Server, handler *RequestHandler) {
 	pb.RegisterGrpcGatewayServer(server, handler)
 }
 
+func newIdentityServiceClient(config IdentityServerConfig, logger log.Logger) (pbIS.IdentityServiceClient, func(), error) {
+	idConn, err := client.New(config.Connection, logger)
+	if err != nil {
+		return nil, nil, fmt.Errorf("cannot create connection to identity server: %w", err)
+	}
+	closeIdConn := func() {
+		if err := idConn.Close(); err != nil {
+			logger.Errorf("error occurs during close connection to identity server: %w", err)
+		}
+	}
+	idClient := pbIS.NewIdentityServiceClient(idConn.GRPC())
+	return idClient, closeIdConn, nil
+}
+
+func newResourceDirectoryClient(config GrpcServerConfig, logger log.Logger) (pb.GrpcGatewayClient, func(), error) {
+	rdConn, err := client.New(config.Connection, logger)
+	if err != nil {
+		return nil, nil, fmt.Errorf("cannot connect to resource-directory: %w", err)
+	}
+	closeRdConn := func() {
+		if err := rdConn.Close(); err != nil {
+			logger.Errorf("error occurs during close connection to resource-directory: %w", err)
+		}
+	}
+	resourceDirectoryClient := pb.NewGrpcGatewayClient(rdConn.GRPC())
+	return resourceDirectoryClient, closeRdConn, nil
+}
+
+func newResourceAggregateClient(config GrpcServerConfig, resourceSubscriber eventbus.Subscriber, logger log.Logger) (*raClient.Client, func(), error) {
+	raConn, err := client.New(config.Connection, logger)
+	if err != nil {
+		return nil, nil, fmt.Errorf("cannot connect to resource-aggregate: %w", err)
+	}
+	closeRaConn := func() {
+		if err := raConn.Close(); err != nil {
+			logger.Errorf("error occurs during close connection to resource-aggregate: %w", err)
+		}
+	}
+	raClient := raClient.New(raConn.GRPC(), resourceSubscriber)
+	return raClient, closeRaConn, nil
+}
+
 func NewRequestHandlerFromConfig(ctx context.Context, config Config, logger log.Logger, goroutinePoolGo func(func()) error) (*RequestHandler, error) {
-	var closeFunc closeFunc
+	var closeFunc fn.FuncList
+	idClient, closeIdClient, err := newIdentityServiceClient(config.Clients.IdentityServer, logger)
+	if err != nil {
+		closeFunc.Execute()
+		return nil, fmt.Errorf("cannot create identity server client: %w", err)
+	}
+	closeFunc.AddFunc(closeIdClient)
 
 	natsClient, err := naClient.New(config.Clients.Eventbus.NATS, logger)
 	if err != nil {
-		closeFunc.Close()
 		return nil, fmt.Errorf("cannot create nats client: %w", err)
 	}
-	closeFunc = append(closeFunc, natsClient.Close)
+	closeFunc.AddFunc(natsClient.Close)
+
+	ownerCache := isClient.NewOwnerCache(config.APIs.GRPC.Authorization.OwnerClaim, config.APIs.GRPC.OwnerCacheExpiration,
+		natsClient.GetConn(), idClient, func(err error) {
+			log.Errorf("error occurs during processing of event by ownerCache: %v", err)
+		})
+	closeFunc.AddFunc(ownerCache.Close)
+
+	resourceDirectoryClient, closeResourceDirectoryClient, err := newResourceDirectoryClient(config.Clients.ResourceDirectory, logger)
+	if err != nil {
+		closeFunc.Execute()
+		return nil, fmt.Errorf("cannot create resource-directory client: %w", err)
+	}
+	closeFunc.AddFunc(closeResourceDirectoryClient)
 
 	resourceSubscriber, err := subscriber.New(natsClient.GetConn(),
 		config.Clients.Eventbus.NATS.PendingLimits,
@@ -74,78 +123,42 @@ func NewRequestHandlerFromConfig(ctx context.Context, config Config, logger log.
 		subscriber.WithUnmarshaler(utils.Unmarshal),
 	)
 	if err != nil {
-		closeFunc.Close()
+		closeFunc.Execute()
 		return nil, fmt.Errorf("cannot create eventbus subscriber: %w", err)
 	}
-	closeFunc = append(closeFunc, resourceSubscriber.Close)
+	closeFunc.AddFunc(resourceSubscriber.Close)
 
-	authorizationConn, err := client.New(config.Clients.AuthServer.Connection, logger)
+	resourceAggregateClient, closeResourceAggregateClient, err := newResourceAggregateClient(config.Clients.ResourceAggregate, resourceSubscriber,
+		logger)
 	if err != nil {
-		closeFunc.Close()
-		return nil, fmt.Errorf("cannot create connection to authorization server: %w", err)
+		closeFunc.Execute()
+		return nil, fmt.Errorf("cannot create resource-aggregate client: %w", err)
 	}
-	closeFunc = append(closeFunc, func() {
-		err := authorizationConn.Close()
-		if err != nil {
-			logger.Errorf("error occurs during close connection to authorization server: %w", err)
-		}
-	})
-	authorizationClient := pbAS.NewAuthorizationServiceClient(authorizationConn.GRPC())
-
-	ownerCache := asClient.NewOwnerCache(config.Clients.AuthServer.OwnerClaim, config.APIs.GRPC.OwnerCacheExpiration, natsClient.GetConn(), authorizationClient, func(err error) {
-		log.Errorf("error occurs during processing event by ownerCache: %v", err)
-	})
-	closeFunc = append(closeFunc, ownerCache.Close)
-
-	rdConn, err := client.New(config.Clients.ResourceDirectory.Connection, logger)
-	if err != nil {
-		closeFunc.Close()
-		return nil, fmt.Errorf("cannot connect to resource-directory: %w", err)
-	}
-	closeFunc = append(closeFunc, func() {
-		err := rdConn.Close()
-		if err != nil {
-			logger.Errorf("error occurs during close connection to resource-directory: %w", err)
-		}
-	})
-	resourceDirectoryClient := pb.NewGrpcGatewayClient(rdConn.GRPC())
-
-	raConn, err := client.New(config.Clients.ResourceAggregate.Connection, logger)
-	if err != nil {
-		closeFunc.Close()
-		return nil, fmt.Errorf("cannot connect to resource-aggregate: %w", err)
-	}
-	closeFunc = append(closeFunc, func() {
-		err := raConn.Close()
-		if err != nil {
-			logger.Errorf("error occurs during close connection to resource-aggregate: %w", err)
-		}
-	})
-	resourceAggregateClient := raClient.New(raConn.GRPC(), resourceSubscriber)
+	closeFunc.AddFunc(closeResourceAggregateClient)
 
 	return NewRequestHandler(
-		authorizationClient,
+		idClient,
 		resourceDirectoryClient,
 		resourceAggregateClient,
 		resourceSubscriber,
 		ownerCache,
 		config,
-		closeFunc,
+		closeFunc.ToFunction(),
 	), nil
 }
 
 // NewRequestHandler factory for new RequestHandler.
 func NewRequestHandler(
-	authorizationClient pbAS.AuthorizationServiceClient,
+	idClient pbIS.IdentityServiceClient,
 	resourceDirectoryClient pb.GrpcGatewayClient,
 	resourceAggregateClient *raClient.Client,
 	resourceSubscriber *subscriber.Subscriber,
-	ownerCache *asClient.OwnerCache,
+	ownerCache *isClient.OwnerCache,
 	config Config,
-	closeFunc closeFunc,
+	closeFunc func(),
 ) *RequestHandler {
 	return &RequestHandler{
-		authorizationClient:     authorizationClient,
+		idClient:                idClient,
 		resourceDirectoryClient: resourceDirectoryClient,
 		resourceAggregateClient: resourceAggregateClient,
 		resourceSubscriber:      resourceSubscriber,
@@ -156,5 +169,5 @@ func NewRequestHandler(
 }
 
 func (r *RequestHandler) Close() {
-	r.closeFunc.Close()
+	r.closeFunc()
 }

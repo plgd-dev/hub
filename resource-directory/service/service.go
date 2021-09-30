@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/panjf2000/ants/v2"
-
+	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/pkg/net/grpc/server"
@@ -18,11 +18,13 @@ type Service struct {
 }
 
 func New(ctx context.Context, config Config, logger log.Logger) (*Service, error) {
-	validator, err := validator.New(ctx, config.APIs.GRPC.Authorization, logger)
+	validator, err := validator.New(ctx, config.APIs.GRPC.Authorization.Config, logger)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create validator: %w", err)
 	}
-	opts, err := server.MakeDefaultOptions(NewAuth(validator, config.Clients.AuthServer.OwnerClaim), logger)
+	method := "/" + pb.GrpcGateway_ServiceDesc.ServiceName + "/GetCloudConfiguration"
+	interceptor := server.NewAuth(validator, server.WithWhiteListedMethods(method))
+	opts, err := server.MakeDefaultOptions(interceptor, logger)
 	if err != nil {
 		validator.Close()
 		return nil, fmt.Errorf("cannot create grpc server options: %w", err)

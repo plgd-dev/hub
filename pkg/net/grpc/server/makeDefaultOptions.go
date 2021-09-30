@@ -39,14 +39,21 @@ func MakeDefaultOptions(auth kitNetGrpc.AuthInterceptors, logger log.Logger) ([]
 }
 
 type cfg struct {
-	ownerClaim string
+	disableTokenForwarding bool
+	whiteListedMethods     []string
 }
 
 type Option func(*cfg)
 
-func WithOwnerClaim(ownerClaim string) Option {
+func WithDisabledTokenForwarding() Option {
 	return func(c *cfg) {
-		c.ownerClaim = ownerClaim
+		c.disableTokenForwarding = true
+	}
+}
+
+func WithWhiteListedMethods(method ...string) Option {
+	return func(c *cfg) {
+		c.whiteListedMethods = append(c.whiteListedMethods, method...)
 	}
 }
 
@@ -61,14 +68,16 @@ func NewAuth(validator kitNetGrpc.Validator, opts ...Option) kitNetGrpc.AuthInte
 	return kitNetGrpc.MakeAuthInterceptors(func(ctx context.Context, method string) (context.Context, error) {
 		ctx, err := interceptor(ctx, method)
 		if err != nil {
-			log.Errorf("auth interceptor: %v", err)
+			log.Errorf("auth interceptor %v: %w", method, err)
 			return ctx, err
 		}
 
-		if token, err := kitNetGrpc.TokenFromMD(ctx); err == nil {
-			ctx = kitNetGrpc.CtxWithToken(ctx, token)
+		if !cfg.disableTokenForwarding {
+			if token, err := kitNetGrpc.TokenFromMD(ctx); err == nil {
+				ctx = kitNetGrpc.CtxWithToken(ctx, token)
+			}
 		}
 
 		return ctx, nil
-	})
+	}, cfg.whiteListedMethods...)
 }

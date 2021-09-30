@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"net/url"
 
-	"github.com/plgd-dev/cloud/authorization/pb"
 	"github.com/plgd-dev/cloud/coap-gateway/coapconv"
+	"github.com/plgd-dev/cloud/identity/pb"
 	"github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
@@ -120,7 +120,7 @@ func signOffHandler(req *mux.Message, client *Client) {
 		return
 	}
 
-	if err := jwtClaims.ValidateOwnerClaim(client.server.config.Clients.AuthServer.OwnerClaim, signOffData.userID); err != nil {
+	if err := jwtClaims.ValidateOwnerClaim(client.server.config.APIs.COAP.Authorization.OwnerClaim, signOffData.userID); err != nil {
 		logErrorAndCloseClient(fmt.Errorf("cannot handle sign off: %v", err), coapCodes.Unauthorized)
 		return
 	}
@@ -141,14 +141,14 @@ func signOffHandler(req *mux.Message, client *Client) {
 	}
 
 	client.unsubscribeFromDeviceEvents()
-	respAS, err := client.server.asClient.DeleteDevices(ctx, &pb.DeleteDevicesRequest{
+	respIS, err := client.server.isClient.DeleteDevices(ctx, &pb.DeleteDevicesRequest{
 		DeviceIds: deviceIds,
 	})
 	if err != nil {
 		logErrorAndCloseClient(fmt.Errorf("cannot handle sign off: %w", err), coapconv.GrpcErr2CoapCode(err, coapconv.Delete))
 		return
 	}
-	if len(respAS.GetDeviceIds()) != 1 {
+	if len(respIS.GetDeviceIds()) != 1 {
 		logErrorAndCloseClient(fmt.Errorf("cannot handle sign off: cannot remove device %v from user", deviceID), coapCodes.InternalServerError)
 		return
 	}

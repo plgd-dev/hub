@@ -23,6 +23,7 @@ apis:
       certFile: "/secrets/public/cert.crt"
       clientCertificateRequired: true
     authorization:
+      ownerClaim: "sub"
       authority: ""
       audience: ""
       http:
@@ -37,8 +38,7 @@ apis:
           certFile: "/secrets/public/cert.crt"
           useSystemCAPool: false
 clients:
-  authorizationServer:
-    ownerClaim: sub
+  identityServer:
     grpc:
       address: ""
       tls:

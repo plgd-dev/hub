@@ -1,25 +1,29 @@
 # Scalable OCF Cloud Hosting / Testing
+
 Being [plugged.in](https://pluggedin.cloud) provides you a complete set of tools and services to manage your devices at scale. Allowing for the processing of real-time device data and interconnection of your devices and applications based on an interoperable standard. Interconnect, monitor and manage your devices in a cloud native way.
 
-# OCF Cloud Bundle
+## OCF Cloud Bundle
+
 Provides a simple docker cloud image for **testing purpose**.
 
-## Features
+### Features
+
 - [OCF Native Cloud](https://openconnectivity.org/specs/OCF_Device_To_Cloud_Services_Specification_v2.1.0.pdf)
 - OAUTH Athorization code is not verified
 - [GRPC](https://github.com/plgd-dev/cloud/blob/master/grpc-gateway/pb/service.proto)
 
-## Supported clients
-- [iotivity v2+](https://github.com/iotivity/iotivity)
+### Supported clients
+
 - [iotivity-lite v2+](https://github.com/iotivity/iotivity-lite)
 
+### Pull the image
 
-## Pull the image
 ```bash
 docker pull plgd/bundle:vnext
 ```
 
-## Configuration
+### Configuration
+
 Image can be configured via environment variables as argument `-e ENV=VALUE` of command `docker`:
 | ENV variable | Type | Description | Default |
 | --------- | ----------- | ------- | ------- |
@@ -31,47 +35,48 @@ Image can be configured via environment variables as argument `-e ENV=VALUE` of 
 | `COAP_GATEWAY_PORT` | uint16 | exposed public port for coaps-tcp  | `"5684"` |
 | `COAP_GATEWAY_ADDRESS` | string | coaps-tcp listen address | `"0.0.0.0:5684"` |
 | `COAP_GATEWAY_CLOUD_ID` | string | cloud id | `"00000000-0000-0000-0000-000000000001"` |
-| `COAP_GATEWAY_DISABLE_BLOCKWISE_TRANSFER`| bool | disable blockwise transfer | `false` |
-| `COAP_GATEWAY_BLOCKWISE_TRANSFER_SZX` | string | blockwise transfer size | `"1024"` |
-| `COAP_GATEWAY_DISABLE_PEER_TCP_SIGNAL_MESSAGE_CSMS` | bool | ignore tcp control signal message from peer | `"false"`|
 | `COAP_GATEWAY_LOG_MESSAGES` | bool | log received/send messages | false |
-| `COAP_GATEWAY_DISABLE_VERIFY_CLIENTS`| bool | disable verifying coap clients certificates | `true` |
 | `GRPC_GATEWAY_PORT`| uint16 | secure grpc-tcp listen port for localhost | `"9084"` |
 | `HTTP_GATEWAY_PORT`| uint16 | secure grpc-tcp listen port for localhost | `"9086"` |
 | `CERTIFICATE_AUTHORITY_PORT` | uint16 | secure grpc-tcp listen port for localhost | `"9087"` |
 | `OAUTH_SERVER_PORT` | uint16 | secure grpc-tcp listen port for localhost | `"9088"` |
 | `RESOURCE_AGGREGATE_PORT` | uint16 | secure grpc-tcp listen port for localhost | `"9083"` |
 | `RESOURCE_DIRECTORY_PORT` | uint16 | secure grpc-tcp listen port for localhost | `"9082"` |
-| `AUTHORIZATION_PORT` | uint16 | secure grpc-tcp listen port for localhost | `"9081"` |
-| `AUTHORIZATION_HTTP_PORT` | uint16 | secure https listen port for localhost | `"9085"` |
+| `IDENTITY_PORT` | uint16 | secure grpc-tcp listen port for localhost | `"9081"` |
 | `MONGO_PORT` | uint16 | mongo listen port for localhost | `"10000"` |
 | `NATS_PORT` | uint16 | nats listen port for localhost | `"10001"` |
 
-## Run
+### Run
+
 All datas, confgurations and logs are stored under /data directory at the container.
+
 ```bash
 mkdir -p `pwd`/data
 docker run -d --network=host -v `pwd`/data:/data --name=cloud -t plgd/bundle:vnext
 ```
 
-## Access via HTTPS/GRPC
+### Access via HTTPS/GRPC
+
 All http-gateway, oauth-server, grpc-gateway, certificate-authority endpoints are accessible through nginx.
+
 - HTTP - UI: `https://{FQDN}:{NGINX_PORT}` eg: `https://localhost:8443`
 - HTTP - API: `https://{FQDN}:{NGINX_PORT}/api/v1/...` eg: `https://localhost:8443/api/v1/devices`
 - GRPC: `{FQDN}:{NGINX_PORT}` eg: `localhost:8443`
 
-## Device Onboarding
+### Device Onboarding
+
 The onboarding values which should be set to the [coapcloudconf](https://github.com/openconnectivityfoundation/cloud-services/blob/c2c/swagger2.0/oic.r.coapcloudconf.swagger.json) device resource are:
 
-### Unsecured device
+#### Unsecured device
+
 | Attribute | Value |
 | --------- | ------|
-| `apn` | `test` |
+| `apn` | `plgd` |
 | `cis` | `coap+tcp://127.0.0.1:5683` |
 | `sid` | `same as is set in COAP_GATEWAY_CLOUD_ID` |
 | `at` | `test` |
 
-#### Unsecured iotivity-lite sample device example:
+##### Unsecured iotivity-lite sample device example
 
 ```bash
 # Start the cloud container with "unsecured" parameters
@@ -80,7 +85,6 @@ docker run -d --network=host --name=cloud -t plgd/bundle:vnext \
 -e COAP_GATEWAY_UNSECURE_PORT="5683" \
 -e COAP_GATEWAY_UNSECURE_ADDRESS="0.0.0.0:5683" \
 -e "coap+tcp://127.0.0.1:5683"
-
 ```
 
 ```bash
@@ -96,18 +100,19 @@ make CLOUD=1 SECURE=0 cloud_server cloud_client
 
 # Start unsecured client
 ./cloud_client cloud_client test coap+tcp://127.0.0.1:5683 00000000-0000-0000-0000-000000000001 plgd
-
 ```
 
-### Secured device
+#### Secured device
+
 | Attribute | Value |
 | --------- | ------|
-| `apn` | `test`|
+| `apn` | `plgd`|
 | `cis` | `coaps+tcp://127.0.0.1:5684` |
 | `sid` | `same as is set in COAP_GATEWAY_CLOUD_ID` |
 | `at` | `test` |
 
-#### Conditions:
+##### Conditions
+
 - Device must be owned.
 - Cloud CA must be set as TRUST CA with subject COAP_GATEWAY_CLOUD_ID in device.
 - Cloud CA in PEM:
@@ -116,7 +121,7 @@ make CLOUD=1 SECURE=0 cloud_server cloud_client
   ```
 - ACL for Cloud (Subject: COAP_GATEWAY_CLOUD_ID) must be set with full access to all published resources in device.
 
-#### Secured iotivity-lite sample device example:
+##### Secured iotivity-lite sample device example
 
 ```bash
 # Start the cloud container with "secured" parameters
@@ -125,7 +130,6 @@ docker run -d --network=host --name=cloud -t plgd/bundle:vnext \
 -e COAP_GATEWAY_PORT="5684" \
 -e COAP_GATEWAY_ADDRESS="0.0.0.0:5684" \
 -e "coaps+tcp://127.0.0.1:5684"
-
 ```
 
 ```bash
@@ -151,11 +155,12 @@ docker exec -it cloud cat /data/certs/root_ca.crt > pki_certs/cloudca.pem
 ./onboarding_tool
 
 # Then restart device sample and client
-
 ```
 
-## Build a COAP client application
-To build the client you need to have **golang v1.13+**.
+### Build a COAP client application
+
+To build the client you need to have **golang v1.16+**.
+
 ```bash
 cd ./client/coap
 go build
@@ -164,8 +169,10 @@ go build
 ./coap --signUp test --href /oic/res
 ```
 
-## Build a GRPC client application
-To build the client you need to have **golang v1.13+**.
+### Build a GRPC client application
+
+To build the client you need to have **golang v1.16+**.
+
 ```bash
 cd ./client/grpc
 go build
@@ -178,5 +185,6 @@ go build
 ./grpc --getdevices
 ```
 
-## HTTP access
+### HTTP access
+
 [REST API](https://petstore.swagger.io/?url=https://raw.githubusercontent.com/plgd-dev/cloud/master/http-gateway/swagger.yaml)

@@ -304,7 +304,7 @@ title "Delete Devices"
 entity "Client" as Client
 participant "Gateway" as Gateway
 participant "Resource Aggregate" as ResourceAggregate
-participant "Authorization Server" as AuthServer
+participant "Identity Server" as IdentityServer
 control "Event Bus" as Bus
 participant "CoAP Gateway" as CGateway
 entity "OCF Server" as Server
@@ -316,11 +316,11 @@ Gateway -> ResourceAggregate : DeleteDevicesRequest
 activate ResourceAggregate
 ResourceAggregate -> Gateway : DeleteDevicesResponse
 deactivate ResourceAggregate
-Gateway -> AuthServer : DeleteDevicesRequest
-activate AuthServer
-AuthServer -> Gateway : DeleteDevicesResponse
-deactivate AuthServer
-AuthServer --> Bus: DevicesDeleted
+Gateway -> IdentityServer : DeleteDevicesRequest
+activate IdentityServer
+IdentityServer -> Gateway : DeleteDevicesResponse
+deactivate IdentityServer
+IdentityServer --> Bus: DevicesDeleted
 Gateway -> Client: DeleteDevicesResponse
 deactivate Gateway
 deactivate Client

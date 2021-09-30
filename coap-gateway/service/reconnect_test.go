@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	authTest "github.com/plgd-dev/cloud/authorization/test"
 	coapgwTest "github.com/plgd-dev/cloud/coap-gateway/test"
 	"github.com/plgd-dev/cloud/coap-gateway/uri"
+	idTest "github.com/plgd-dev/cloud/identity/test"
 	raTest "github.com/plgd-dev/cloud/resource-aggregate/test"
 	rdTest "github.com/plgd-dev/cloud/resource-directory/test"
 	test "github.com/plgd-dev/cloud/test"
@@ -57,7 +57,7 @@ func TestReconnectNATSAndGrpcGateway(t *testing.T) {
 	defer cancel()
 	test.ClearDB(ctx, t)
 	oauthShutdown := oauthTest.SetUp(t)
-	auShutdown := authTest.SetUp(t)
+	auShutdown := idTest.SetUp(t)
 	raShutdown := raTest.SetUp(t)
 	rdShutdown := rdTest.SetUp(t)
 	coapgwCfg := coapgwTest.MakeConfig(t)

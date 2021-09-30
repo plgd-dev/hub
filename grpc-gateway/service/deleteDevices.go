@@ -3,8 +3,8 @@ package service
 import (
 	"context"
 
-	pbAS "github.com/plgd-dev/cloud/authorization/pb"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	pbIS "github.com/plgd-dev/cloud/identity/pb"
 	"github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/pkg/strings"
@@ -48,24 +48,24 @@ func (r *RequestHandler) DeleteDevices(ctx context.Context, req *pb.DeleteDevice
 		}
 	}
 
-	// Authorization service
-	cmdAS := pbAS.DeleteDevicesRequest{
+	// Identity service
+	cmdAS := pbIS.DeleteDevicesRequest{
 		DeviceIds: deviceIds,
 	}
-	respAS, err := r.authorizationClient.DeleteDevices(ctx, &cmdAS)
+	respIS, err := r.idClient.DeleteDevices(ctx, &cmdAS)
 	if err != nil {
-		return nil, log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot delete devices in Authorization service: %v", err))
+		return nil, log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot delete devices identity service: %v", err))
 	}
 	if !deleteAllOwned {
-		_, notDeleted := partitionDeletedDevices(deviceIds, respAS.GetDeviceIds())
+		_, notDeleted := partitionDeletedDevices(deviceIds, respIS.GetDeviceIds())
 		if len(notDeleted) > 0 {
 			for _, deviceId := range notDeleted {
-				log.Debugf("failed to delete device('%v') in Authorization service", deviceId)
+				log.Debugf("failed to delete device('%v') in identity service", deviceId)
 			}
 		}
 	}
 
 	return &pb.DeleteDevicesResponse{
-		DeviceIds: respAS.GetDeviceIds(),
+		DeviceIds: respIS.GetDeviceIds(),
 	}, nil
 }

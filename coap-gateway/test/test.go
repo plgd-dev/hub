@@ -33,6 +33,7 @@ func MakeConfig(t *testing.T) service.Config {
 	cfg.APIs.COAP.TLS.Embedded.CertFile = os.Getenv("TEST_COAP_GW_CERT_FILE")
 	cfg.APIs.COAP.TLS.Embedded.KeyFile = os.Getenv("TEST_COAP_GW_KEY_FILE")
 	cfg.APIs.COAP.Authorization = service.AuthorizationConfig{
+		OwnerClaim: config.OWNER_CLAIM,
 		Providers: []service.ProvidersConfig{
 			{
 				Name:   config.DEVICE_PROVIDER,
@@ -40,8 +41,7 @@ func MakeConfig(t *testing.T) service.Config {
 			},
 		},
 	}
-	cfg.Clients.AuthServer.OwnerClaim = "sub"
-	cfg.Clients.AuthServer.Connection = config.MakeGrpcClientConfig(config.AUTH_HOST)
+	cfg.Clients.IdentityServer.Connection = config.MakeGrpcClientConfig(config.IDENTITY_HOST)
 	cfg.Clients.ResourceAggregate.Connection = config.MakeGrpcClientConfig(config.RESOURCE_AGGREGATE_HOST)
 	cfg.Clients.ResourceDirectory.Connection = config.MakeGrpcClientConfig(config.RESOURCE_DIRECTORY_HOST)
 	cfg.Clients.Eventbus.NATS = config.MakeSubscriberConfig()

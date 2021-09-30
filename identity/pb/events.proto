@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+package ocf.cloud.identity.pb;
+
+option go_package = "github.com/plgd-dev/cloud/identity/events;events";
+
+// provides who register/unregister the device
+message AuditContext {
+    string user_id = 1;
+}
+
+// devices was registered to owner.
+message DevicesRegistered {
+    string owner = 1; // new owner of devices.
+    repeated string device_ids = 2; // list of device ids added to owner.
+    int64 timestamp = 3; // unix timestamp in nanoseconds of creation event.
+    AuditContext audit_context = 4; // provides who register/unregister the device
+}
+
+// devices was deregistered from owner.
+message DevicesUnregistered {
+    string owner = 1; // owner, which lose devices.
+    repeated string device_ids = 2; // list of device ids deleted from owner.
+    int64 timestamp = 3; // unix timestamp in nanoseconds of creation event.
+    AuditContext audit_context = 4; // provides who register/unregister the device
+}
+
+// nats: owners.{owner}.>
+message Event {
+    oneof type {
+        // nats: owners.{owner}.registered
+        DevicesRegistered devices_registered = 1;
+        // nats: owners.{owner}.unregistered
+        DevicesUnregistered devices_unregistered = 2;
+    };
+}
+

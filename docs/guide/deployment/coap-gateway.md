@@ -80,7 +80,7 @@ clients:
         keyFile: "/data/certs/http.key"
         certFile: "/data/certs/http.crt"
 ...
-  authorizationServer:
+  identityServer:
     grpc:
       address: "localhost:9081"
       tls:
@@ -154,6 +154,7 @@ OAuth2.0 Client is used to issuing an authorization code used by the Onboarding 
 
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |
+| `api.coap.authorization.ownerClaim` | string | `Claim used to identify owner of the device.` | `"sub"` |
 | `api.coap.authorization.deviceIdClaim` | string | `Claim used to identify device id of the device. Empty means that JWT doesn't contain it.` | `""` |
 | `api.coap.authorization.providers[].Name` | string | `Provider name, the register request of the device must contain one of the names of providers.` | `""` |
 | `api.coap.authorization.providers[].clientID` | string | `Client ID to exchange an authorization code for an access token.` | `""` |
@@ -191,25 +192,20 @@ Plgd cloud uses NATS messaging system as an event bus.
 | `clients.eventBus.nats.tls.certFile` | string | `File name of certificate in PEM format.` | `""` |
 | `clients.eventBus.nats.tls.useSystemCAPool` | bool | `If true, use system certification pool.` | `false` |
 
-### Authorization Server Client
+### Identity Server Client
 
-Client configurations to internally connect to Authorization Server service.
+Client configurations to internally connect to Identity Server service.
 
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |
-| `clients.authorizationServer.ownerClaim` | string | `Claim used to identify owner of the device.` | `"sub"` |
-| `clients.authorizationServer.grpc.address` | string | `Authorization service address.` | `"127.0.0.1:9100"` |
-| `clients.authorizationServer.grpc.tls.caPool` | string | `File path to the root certificate in PEM format which might contain multiple certificates in a single file.` |  `""` |
-| `clients.authorizationServer.grpc.tls.keyFile` | string | `File path to private key in PEM format.` | `""` |
-| `clients.authorizationServer.grpc.tls.certFile` | string | `File path to certificate in PEM format.` | `""` |
-| `clients.authorizationServer.grpc.tls.useSystemCAPool` | bool | `If true, use system certification pool.` | `false` |
-| `clients.authorizationServer.grpc.keepAlive.time` | string | `After a duration of this time if the client doesn't see any activity it pings the server to see if the transport is still alive.` | `10s` |
-| `clients.authorizationServer.grpc.keepAlive.timeout` | string | `After having pinged for keepalive check, the client waits for a duration of Timeout and if no activity is seen even after that the connection is closed.` | `20s` |
-| `clients.authorizationServer.grpc.keepAlive.permitWithoutStream` | bool | `If true, client sends keepalive pings even with no active RPCs. If false, when there are no active RPCs, Time and Timeout will be ignored and no keepalive pings will be sent.` | `false` |
-
-::: tip Audience
-You might have one client, but multiple APIs in the OAuth system. What you want to prevent is to be able to contact all the APIs of your system with one token. This audience allows you to request the token for a specific API. If you configure it to myplgdc2c.api in the Auth0, you have to set it here if you want to also validate it.
-:::
+| `clients.identityServer.grpc.address` | string | `Identity service address.` | `"127.0.0.1:9100"` |
+| `clients.identityServer.grpc.tls.caPool` | string | `File path to the root certificate in PEM format which might contain multiple certificates in a single file.` |  `""` |
+| `clients.identityServer.grpc.tls.keyFile` | string | `File path to private key in PEM format.` | `""` |
+| `clients.identityServer.grpc.tls.certFile` | string | `File path to certificate in PEM format.` | `""` |
+| `clients.identityServer.grpc.tls.useSystemCAPool` | bool | `If true, use system certification pool.` | `false` |
+| `clients.identityServer.grpc.keepAlive.time` | string | `After a duration of this time if the client doesn't see any activity it pings the server to see if the transport is still alive.` | `10s` |
+| `clients.identityServer.grpc.keepAlive.timeout` | string | `After having pinged for keepalive check, the client waits for a duration of Timeout and if no activity is seen even after that the connection is closed.` | `20s` |
+| `clients.identityServer.grpc.keepAlive.permitWithoutStream` | bool | `If true, client sends keepalive pings even with no active RPCs. If false, when there are no active RPCs, Time and Timeout will be ignored and no keepalive pings will be sent.` | `false` |
 
 ### Resource Aggregate Client
 
