@@ -93,6 +93,10 @@ else
 fi
 
 mkdir -p ${OAUTH_SECRETS_PATH}
+if [ -z "${OAUTH_CLIENT_SECRET}" ]
+then
+  export OAUTH_CLIENT_SECRET="secret"
+fi
 echo -n ${OAUTH_CLIENT_SECRET} > ${OAUTH_DEVICE_SECRET_PATH}
 
 export COAP_GATEWAY_UNSECURE_FQDN=$FQDN
