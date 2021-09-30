@@ -12,8 +12,8 @@ docker pull plgd/identity:latest
 
 ### How to make certificates
 
-Before you run docker image of plgd/identity, you make sure certificates exists in `.tmp/certs` folder.
-If not exists, you can create certificates from plgd/bundle image by following step only once.
+Before you run the docker image of plgd/cloud2cloud-gateway, make sure that certificates exist in `.tmp/certs` folder.
+If they do not, you can create them from the plgd/bundle image by executing the following step once:
 
 ```bash
 # Create local folder for certificates and run plgd/bundle image to execute shell.
@@ -42,7 +42,7 @@ http.crt  http.key  root_ca.crt  root_ca.key
 ### How to get configuration file
 
 A configuration template is available on [identity/config.yaml](https://github.com/plgd-dev/cloud/blob/v2/identity/config.yaml).
-You can also see `config.yaml` configuration file on the `identity` folder by downloading `git clone https://github.com/plgd-dev/cloud.git`.
+You can also see `config.yaml` configuration file in the `identity` folder by downloading `git clone https://github.com/plgd-dev/cloud.git`.
 
 ```bash
 # Copy & paste configuration template from the link and save the file named `identity.yaml` on the local folder.
@@ -54,10 +54,10 @@ curl https://github.com/plgd-dev/cloud/blob/v2/identity/config.yaml --output ide
 
 ### Edit configuration file
 
-You can edit configuration file including server port, certificates, OAuth provider and so on.
-Read more detail about how to configure OAuth Provider [here](https://github.com/plgd-dev/cloud/blob/v2/docs/guide/developing/authorization.md#how-to-configure-auth0).
+You can edit values in the configuration file such as server port, certificates, OAuth provider and so on.
+Read more details about how to configure the OAuth Provider [here](https://github.com/plgd-dev/cloud/blob/v2/docs/guide/developing/authorization.md#how-to-configure-auth0).
 
-See an example of address, tls and OAuth config on the followings.
+The following example shows configuration of address, clients and the rest of configuration:
 
 ```yaml
 ...
@@ -68,6 +68,15 @@ apis:
       caPool: "/data/certs/root_ca.crt"
       keyFile: "/data/certs/http.key"
       certFile: "/data/certs/http.crt"
+    authorization:
+      ownerClaim: "sub"
+      authority: "https://auth.example.com/authorize"
+      audience: "https://api.example.com"
+      http:
+        tls:
+          caPool: "/data/certs/root_ca.crt"
+          keyFile: "/data/certs/http.key"
+          certFile: "/data/certs/http.crt"
 ...
 clients:
   eventBus:
@@ -78,11 +87,20 @@ clients:
         keyFile: "/data/certs/http.key"
         certFile: "/data/certs/http.crt"
 ...
+  storage:
+    mongoDB:
+      uri: "mongodb://localhost:27017"
+      database: "ownersDevices"
+      tls:
+        caPool: "/data/certs/root_ca.crt"
+        keyFile: "/data/certs/http.key"
+        certFile: "/data/certs/http.crt"
+...
 ```
 
 ### Run docker image
 
-You can run plgd/identity image using certificates and configuration file on the folder you made certificates.
+You can run the plgd/identity image using certificates and configuration file in the folder you made certificates in.
 
 ```bash
 docker run -d --network=host \

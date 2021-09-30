@@ -522,7 +522,7 @@ func (s *Sub) cleanUp(devicesEventsObserver map[string]eventbus.Observer) error 
 	return cleanUpDevicesEventsObservers(devicesEventsObserver)
 }
 
-// Close closes subscription. Be carefull it cause deadlock when you call it from send function.
+// Close closes subscription. Be careful, it will cause a deadlock when you call it from send function.
 func (s *Sub) Close() error {
 	if s.doneCtx.Err() != nil {
 		// is closed

@@ -14,8 +14,8 @@ docker pull plgd/cloud2cloud-connector:latest
 
 ### How to make certificates
 
-Before you run the docker image of plgd/cloud2cloud-gateway, you make sure that certificates exist in `.tmp/certs` folder.
-If they do not exist, you can create certificates from the plgd/bundle image by executing the following step once:
+Before you run the docker image of plgd/cloud2cloud-gateway, make sure that certificates exist in `.tmp/certs` folder.
+If they do not, you can create them from the plgd/bundle image by executing the following step once:
 
 ```bash
 # Create a local folder for certificates and run the plgd/bundle image to execute a shell.
@@ -59,7 +59,7 @@ curl https://github.com/plgd-dev/cloud/blob/v2/cloud2cloud-connector/config.yaml
 You can edit values in the configuration file such as server port, certificates, OAuth provider and so on.
 Read more details about how to configure the OAuth Provider [here](https://github.com/plgd-dev/cloud/blob/v2/docs/guide/developing/authorization.md#how-to-configure-auth0).
 
-The following example shows configuration of address, clients and the rest of configuration.
+The following example shows configuration of address, clients and the rest of configuration:
 
 ```yaml
 ...
