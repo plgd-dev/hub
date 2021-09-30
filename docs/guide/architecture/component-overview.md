@@ -46,6 +46,7 @@ CoAP APIs of the Cloud Service are defined in [OCF Device To Cloud Services Spec
 - GET /api/v1/devices/{deviceID}/{href} - get/observe resource of the cloud device from signed device
 - POST /api/v1/devices/{deviceID}/{href} - update resource of the cloud device from signed device
 - DELETE /api/v1/devices/{deviceID}/{href} - delete resource of the cloud device from signed device
+- POST /api/v1/devices/{deviceID}/{href}?if=oic.if.create - create resource of the cloud device from signed device
 
 ### Operational flow
 Before a device becomes operational and is able to interact with other devices, it needs to be appropriately onboarded. The first step in onboarding the device is to [configure the ownership (see 5.3.3)](https://openconnectivity.org/specs/OCF_Security_Specification_v2.2.1.pdf#page=38) where the legitimate user that owns/purchases the device uses an Onboarding tool (OBT) and using the OBT uses one of the Owner Transfer Methods (OTMs) to establish ownership. Once ownership is established, the OBT [provisions the device (see 5.3.4)](https://openconnectivity.org/specs/OCF_Security_Specification_v2.2.1.pdf#page=39), at the end of which the device can be [provisioned for the plgd.cloud (see 8.1.2.3)](https://openconnectivity.org/specs/OCF_Device_To_Cloud_Services_Specification_v2.2.1.pdf#page=32). After successful provisioning, the device should [establish the TLS connection (see 7.2)](https://openconnectivity.org/specs/OCF_Cloud_Security_Specification_v2.2.1.pdf#page=14) using the certificate based credentials.
