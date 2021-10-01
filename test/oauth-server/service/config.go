@@ -24,6 +24,7 @@ type AllowedGrantType string
 const AllowedGrantType_AUTHORIZATION_CODE AllowedGrantType = "authorization_code"
 const AllowedGrantType_CLIENT_CREDENTIALS AllowedGrantType = "client_credentials"
 const AllowedGrantType_PASSWORD AllowedGrantType = "password"
+const AllowedGrantType_REFRESH_TOKEN AllowedGrantType = "refresh_token"
 
 type AllowedGrantTypes []AllowedGrantType
 
@@ -40,6 +41,7 @@ type Client struct {
 	ID                        string
 	AuthorizationCodeLifetime time.Duration
 	AccessTokenLifetime       time.Duration
+	CodeRestrictionLifetime   time.Duration
 }
 
 func (c *Client) SetDefaults() {
@@ -71,11 +73,19 @@ var clients = ClientsConfig{
 		ID:                        ClientTest,
 		AuthorizationCodeLifetime: time.Minute * 10,
 		AccessTokenLifetime:       time.Hour * 24,
+		CodeRestrictionLifetime:   0,
 	},
 	{
 		ID:                        ClientTestShortExpiration,
 		AuthorizationCodeLifetime: time.Second * 10,
 		AccessTokenLifetime:       time.Second * 10,
+		CodeRestrictionLifetime:   0,
+	},
+	{
+		ID:                        ClientTestRestrictedAuth,
+		AuthorizationCodeLifetime: time.Minute * 10,
+		AccessTokenLifetime:       time.Hour * 24,
+		CodeRestrictionLifetime:   time.Minute,
 	},
 }
 
@@ -115,7 +125,13 @@ type OAuthSignerConfig struct {
 }
 
 const ClientTest = "test"
+
+// Client with short auth code and access token expiration
 const ClientTestShortExpiration = "testShortExpiration"
+
+// Client will return error when the same auth code or refresh token
+// is used repeatedly within a minute of the first use
+const ClientTestRestrictedAuth = "testRestrictedAuth"
 
 func (c *OAuthSignerConfig) Validate() error {
 	if c.IDTokenKeyFile == "" {
