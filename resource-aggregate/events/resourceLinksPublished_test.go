@@ -20,7 +20,7 @@ var testEventResourceLinksPublished events.ResourceLinksPublished = events.Resou
 			Title:                 "Resource1",
 			SupportedContentTypes: []string{"stype1", "stype2"},
 			ValidUntil:            123,
-			Policies: &commands.Policies{
+			Policy: &commands.Policy{
 				BitFlags: 42,
 			},
 			EndpointInformations: []*commands.EndpointInformation{

@@ -44,7 +44,7 @@ func NewResourceID(deviceID, href string) *ResourceId {
 }
 
 func (r *Resource) IsObservable() bool {
-	return r.GetPolicies() != nil && r.GetPolicies().GetBitFlags()&2 != 0
+	return r.GetPolicy() != nil && r.GetPolicy().GetBitFlags()&2 != 0
 }
 
 func NewAuditContext(userID, correlationId string) *AuditContext {

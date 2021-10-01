@@ -26,7 +26,7 @@ func publishResource(ctx context.Context, raClient raService.ResourceAggregateCl
 			Interfaces:            link.Interfaces,
 			DeviceId:              link.DeviceID,
 			Anchor:                link.Anchor,
-			Policies:              &commands.Policies{BitFlags: int32(link.Policy.BitMask)},
+			Policy:                &commands.Policy{BitFlags: int32(link.Policy.BitMask)},
 			Title:                 link.Title,
 			SupportedContentTypes: link.SupportedContentTypes,
 			EndpointInformations:  endpoints,

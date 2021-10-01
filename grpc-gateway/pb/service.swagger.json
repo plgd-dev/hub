@@ -1114,8 +1114,8 @@
           "type": "string",
           "format": "int64"
         },
-        "policies": {
-          "$ref": "#/definitions/pbPolicies"
+        "policy": {
+          "$ref": "#/definitions/pbPolicy"
         },
         "endpointInformations": {
           "type": "array",
@@ -1510,7 +1510,7 @@
         }
       }
     },
-    "pbPolicies": {
+    "pbPolicy": {
       "type": "object",
       "properties": {
         "bitFlags": {

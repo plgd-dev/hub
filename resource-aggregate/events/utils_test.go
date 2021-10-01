@@ -75,7 +75,7 @@ func TestEqualResource(t *testing.T) {
 			Title:                 "title",
 			SupportedContentTypes: []string{"contentType1"},
 			ValidUntil:            42,
-			Policies:              &commands.Policies{BitFlags: 0x42},
+			Policy:                &commands.Policy{BitFlags: 0x42},
 		}
 	}
 
@@ -112,11 +112,11 @@ func TestEqualResource(t *testing.T) {
 	resTimeToLive := createResource()
 	resTimeToLive.ValidUntil = 0
 
-	resPoliciesNil := createResource()
-	resPoliciesNil.Policies = nil
+	resPolicyNil := createResource()
+	resPolicyNil.Policy = nil
 
-	resPolicies2 := createResource()
-	resPolicies2.Policies = &commands.Policies{BitFlags: 0}
+	resPolicy2 := createResource()
+	resPolicy2.Policy = &commands.Policy{BitFlags: 0}
 
 	tests := []struct {
 		name string
@@ -212,26 +212,26 @@ func TestEqualResource(t *testing.T) {
 			want: false,
 		},
 		{
-			name: "Nil Policies",
+			name: "Nil Policy",
 			args: args{
-				res1: &resPoliciesNil,
-				res2: &resPoliciesNil,
+				res1: &resPolicyNil,
+				res2: &resPolicyNil,
 			},
 			want: true,
 		},
 		{
-			name: "Different Policies (1)",
+			name: "Different Policy (1)",
 			args: args{
 				res1: &res,
-				res2: &resPoliciesNil,
+				res2: &resPolicyNil,
 			},
 			want: false,
 		},
 		{
-			name: "Different Policies (2)",
+			name: "Different Policy (2)",
 			args: args{
 				res1: &res,
-				res2: &resPolicies2,
+				res2: &resPolicy2,
 			},
 			want: false,
 		},

@@ -557,7 +557,7 @@ func testNewResource(href string, deviceID string) *commands.Resource {
 		ResourceTypes: []string{"oic.wk.d", "x.org.iotivity.device"},
 		Interfaces:    []string{"oic.if.baseline"},
 		Anchor:        "ocf://" + deviceID + "/oic/p",
-		Policies: &commands.Policies{
+		Policy: &commands.Policy{
 			BitFlags: 1,
 		},
 		Title:                 "device",
