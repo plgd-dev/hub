@@ -92,6 +92,8 @@ func TestRequestHandler_GetDeviceResourceLinks(t *testing.T) {
 					break
 				}
 				require.NoError(t, err)
+				require.NotEmpty(t, v.GetAuditContext())
+				require.NotEmpty(t, v.GetEventMetadata())
 				links = append(links, test.CleanUpResourceLinksPublished(&v))
 			}
 			test.CheckProtobufs(t, tt.want, links, test.RequireToCheckFunc(require.Equal))

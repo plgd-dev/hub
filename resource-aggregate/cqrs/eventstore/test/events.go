@@ -15,13 +15,15 @@ import (
 	"github.com/plgd-dev/cloud/resource-aggregate/events"
 )
 
+var StaticAuditContext = &commands.AuditContext{
+	UserId: "userId",
+}
+
 func MakeResourceLinksPublishedEvent(resources []*commands.Resource, deviceID string, eventMetadata *events.EventMetadata) eventstore.EventUnmarshaler {
 	e := events.ResourceLinksPublished{
-		Resources: resources,
-		DeviceId:  deviceID,
-		AuditContext: &commands.AuditContext{
-			UserId: "userId",
-		},
+		Resources:     resources,
+		DeviceId:      deviceID,
+		AuditContext:  StaticAuditContext,
 		EventMetadata: eventMetadata,
 	}
 	return eventstore.NewLoadedEvent(
@@ -43,11 +45,9 @@ func MakeResourceLinksPublishedEvent(resources []*commands.Resource, deviceID st
 
 func MakeResourceLinksUnpublishedEvent(hrefs []string, deviceID string, eventMetadata *events.EventMetadata) eventstore.EventUnmarshaler {
 	e := events.ResourceLinksUnpublished{
-		Hrefs:    hrefs,
-		DeviceId: deviceID,
-		AuditContext: &commands.AuditContext{
-			UserId: "userId",
-		},
+		Hrefs:         hrefs,
+		DeviceId:      deviceID,
+		AuditContext:  StaticAuditContext,
 		EventMetadata: eventMetadata,
 	}
 	return eventstore.NewLoadedEvent(

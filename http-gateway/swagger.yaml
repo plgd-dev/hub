@@ -1235,7 +1235,7 @@ components:
         validUntil:
           type: string
           format: int64
-        policies:
+        policy:
           type: object
           properties:
             bitFlags:
@@ -1277,7 +1277,7 @@ components:
             title: ''
             supportedContentTypes: []
             validUntil: '0'
-            policies:
+            policy:
               bitFlags: 3
             endpointInformations: []
         deviceId: '4629b3cb-3a6e-477c-5d50-ccb28ad7c349'
@@ -1302,6 +1302,8 @@ components:
           type: string
         eventMetadata:
           $ref: '#/components/schemas/EventMetadata'
+        auditContext:
+          $ref: '#/components/schemas/AuditContext'
     ResourceLinksUnpublished:
       type: object
       properties:

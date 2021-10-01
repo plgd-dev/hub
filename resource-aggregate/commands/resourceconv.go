@@ -27,7 +27,7 @@ func (e EndpointInformations) ToSchema() []schema.Endpoint {
 	return r
 }
 
-func (p *Policies) ToSchema() *schema.Policy {
+func (p *Policy) ToSchema() *schema.Policy {
 	if p == nil {
 		return nil
 	}
@@ -44,7 +44,7 @@ func (l *Resource) ToSchema() schema.ResourceLink {
 		Endpoints:             EndpointInformations(l.GetEndpointInformations()).ToSchema(),
 		Href:                  l.GetHref(),
 		Interfaces:            l.GetInterfaces(),
-		Policy:                l.GetPolicies().ToSchema(),
+		Policy:                l.GetPolicy().ToSchema(),
 		ResourceTypes:         l.GetResourceTypes(),
 		SupportedContentTypes: l.GetSupportedContentTypes(),
 		Title:                 l.GetTitle(),
@@ -73,11 +73,11 @@ func SchemaEndpointsToRAEndpointInformations(ra []schema.Endpoint) []*EndpointIn
 	return r
 }
 
-func SchemaPolicyToRAPolicies(ra *schema.Policy) *Policies {
+func SchemaPolicyToRAPolicy(ra *schema.Policy) *Policy {
 	if ra == nil {
 		return nil
 	}
-	return &Policies{
+	return &Policy{
 		BitFlags: int32(ra.BitMask),
 	}
 }
@@ -92,7 +92,7 @@ func SchemaResourceLinkToResource(link schema.ResourceLink, validUntil time.Time
 		Title:                 link.Title,
 		SupportedContentTypes: link.SupportedContentTypes,
 		ValidUntil:            pkgTime.UnixNano(validUntil),
-		Policies:              SchemaPolicyToRAPolicies(link.Policy),
+		Policy:                SchemaPolicyToRAPolicy(link.Policy),
 		EndpointInformations:  SchemaEndpointsToRAEndpointInformations(link.Endpoints),
 	}
 }
@@ -111,11 +111,11 @@ func SchemaEndpointsToProto(ra []schema.Endpoint) []*EndpointInformation {
 	return r
 }
 
-func SchemaPolicyToProto(ra *schema.Policy) *Policies {
+func SchemaPolicyToProto(ra *schema.Policy) *Policy {
 	if ra == nil {
 		return nil
 	}
-	return &Policies{
+	return &Policy{
 		BitFlags: int32(ra.BitMask),
 	}
 }

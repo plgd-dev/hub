@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	extCodes "github.com/plgd-dev/cloud/grpc-gateway/pb/codes"
+	"github.com/plgd-dev/sdk/schema"
 	"google.golang.org/grpc/codes"
 )
 
@@ -44,7 +45,7 @@ func NewResourceID(deviceID, href string) *ResourceId {
 }
 
 func (r *Resource) IsObservable() bool {
-	return r.GetPolicies() != nil && r.GetPolicies().GetBitFlags()&2 != 0
+	return r.GetPolicy() != nil && r.GetPolicy().GetBitFlags()&int32(schema.Observable) != 0
 }
 
 func NewAuditContext(userID, correlationId string) *AuditContext {

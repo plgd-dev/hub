@@ -138,7 +138,7 @@ var testEventResourceLinksSnapshotTaken events.ResourceLinksSnapshotTaken = even
 			Title:                 "Resource1",
 			SupportedContentTypes: []string{"stype1", "stype2"},
 			ValidUntil:            123,
-			Policies: &commands.Policies{
+			Policy: &commands.Policy{
 				BitFlags: 42,
 			},
 			EndpointInformations: []*commands.EndpointInformation{
@@ -156,6 +156,7 @@ var testEventResourceLinksSnapshotTaken events.ResourceLinksSnapshotTaken = even
 		ConnectionId: "con1",
 		Sequence:     1,
 	},
+	AuditContext: commands.NewAuditContext("userID", ""),
 }
 
 func TestResourceLinksSnapshotTaken_CopyData(t *testing.T) {

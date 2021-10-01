@@ -14,11 +14,11 @@ message Resource {
     string title = 6;
     repeated string supported_content_types = 7;
     int64 valid_until = 8;
-    Policies policies = 98;
-    repeated EndpointInformation endpoint_informations = 99;
+    Policy policy = 9;
+    repeated EndpointInformation endpoint_informations = 10;
 }
 
-message Policies {
+message Policy {
   int32 bit_flags = 1;
 }
 

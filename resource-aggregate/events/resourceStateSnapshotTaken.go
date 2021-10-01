@@ -333,14 +333,7 @@ func (e *ResourceStateSnapshotTaken) HandleEventResourceDeleted(ctx context.Cont
 }
 
 func (e *ResourceStateSnapshotTaken) HandleEventResourceStateSnapshotTaken(ctx context.Context, snapshot *ResourceStateSnapshotTaken) {
-	e.ResourceId = snapshot.GetResourceId()
-	e.LatestResourceChange = snapshot.GetLatestResourceChange()
-	e.EventMetadata = snapshot.GetEventMetadata()
-
-	e.ResourceCreatePendings = snapshot.GetResourceCreatePendings()
-	e.ResourceRetrievePendings = snapshot.GetResourceRetrievePendings()
-	e.ResourceUpdatePendings = snapshot.GetResourceUpdatePendings()
-	e.ResourceDeletePendings = snapshot.GetResourceDeletePendings()
+	e.CopyData(snapshot)
 }
 
 func (e *ResourceStateSnapshotTaken) Handle(ctx context.Context, iter eventstore.Iter) error {

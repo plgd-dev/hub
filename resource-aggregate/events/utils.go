@@ -24,8 +24,8 @@ func EqualResource(x, y *commands.Resource) bool {
 		x.Title == y.Title &&
 		EqualStringSlice(x.SupportedContentTypes, y.SupportedContentTypes) &&
 		x.ValidUntil == y.ValidUntil &&
-		((x.Policies == nil && y.Policies == nil) ||
-			(x.Policies != nil && y.Policies != nil && x.Policies.BitFlags == y.Policies.BitFlags))
+		((x.Policy == nil && y.Policy == nil) ||
+			(x.Policy != nil && y.Policy != nil && x.Policy.BitFlags == y.Policy.BitFlags))
 }
 
 func EqualStringSlice(x, y []string) bool {

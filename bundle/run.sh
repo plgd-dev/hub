@@ -621,9 +621,9 @@ cat /configs/coap-gateway.yaml | yq e "\
   .apis.coap.authorization.providers[0].audience = \"${DEVICE_OAUTH_AUDIENCE}\" |
   .apis.coap.authorization.providers[0].http.tls.useSystemCAPool = true |
   .clients.eventBus.nats.url = \"${NATS_URL}\" |
-  .clients.identityServer.grpc.address = \"${IDENTITY_ADDRESS}\"
+  .clients.identityServer.grpc.address = \"${IDENTITY_ADDRESS}\" |
   .clients.resourceAggregate.grpc.address = \"${RESOURCE_AGGREGATE_ADDRESS}\" |
-  .clients.resourceDirectory.grpc.address = \"${RESOURCE_DIRECTORY_ADDRESS}\" |
+  .clients.resourceDirectory.grpc.address = \"${RESOURCE_DIRECTORY_ADDRESS}\"
 " - > /data/coap-gateway-secure.yaml
 
 coap-gateway --config /data/coap-gateway-secure.yaml >$LOGS_PATH/coap-gateway.log 2>&1 &

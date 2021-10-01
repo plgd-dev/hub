@@ -736,6 +736,7 @@ func CleanUpResourceLinksSnapshotTaken(e *events.ResourceLinksSnapshotTaken) *ev
 
 func CleanUpResourceLinksPublished(e *events.ResourceLinksPublished) *events.ResourceLinksPublished {
 	e.EventMetadata = nil
+	e.AuditContext = nil
 	CleanUpResourcesArray(e.GetResources())
 	return e
 }
