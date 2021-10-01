@@ -191,11 +191,11 @@ func (c *EventBusConfig) Validate() error {
 	return nil
 }
 
-type IdentityServerConfig struct {
+type IdentityStoreConfig struct {
 	Connection client.Config `yaml:"grpc" json:"grpc"`
 }
 
-func (c *IdentityServerConfig) Validate() error {
+func (c *IdentityStoreConfig) Validate() error {
 	if err := c.Connection.Validate(); err != nil {
 		return fmt.Errorf("grpc.%w", err)
 	}
@@ -204,14 +204,14 @@ func (c *IdentityServerConfig) Validate() error {
 
 type ClientsConfig struct {
 	Eventbus          EventBusConfig          `yaml:"eventBus" json:"eventBus"`
-	IdentityServer    IdentityServerConfig    `yaml:"identityServer" json:"identityServer"`
+	IdentityStore     IdentityStoreConfig     `yaml:"identityStore" json:"identityStore"`
 	ResourceAggregate ResourceAggregateConfig `yaml:"resourceAggregate" json:"resourceAggregate"`
 	ResourceDirectory GrpcServerConfig        `yaml:"resourceDirectory" json:"resourceDirectory"`
 }
 
 func (c *ClientsConfig) Validate() error {
-	if err := c.IdentityServer.Validate(); err != nil {
-		return fmt.Errorf("identityServer.%w", err)
+	if err := c.IdentityStore.Validate(); err != nil {
+		return fmt.Errorf("identityStore.%w", err)
 	}
 	if err := c.Eventbus.Validate(); err != nil {
 		return fmt.Errorf("eventbus.%w", err)

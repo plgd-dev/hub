@@ -42,7 +42,7 @@ Image can be configured via environment variables as argument `-e ENV=VALUE` of 
 | `OAUTH_SERVER_PORT` | uint16 | secure grpc-tcp listen port for localhost | `"9088"` |
 | `RESOURCE_AGGREGATE_PORT` | uint16 | secure grpc-tcp listen port for localhost | `"9083"` |
 | `RESOURCE_DIRECTORY_PORT` | uint16 | secure grpc-tcp listen port for localhost | `"9082"` |
-| `IDENTITY_PORT` | uint16 | secure grpc-tcp listen port for localhost | `"9081"` |
+| `IDENTITY_STORE_PORT` | uint16 | secure grpc-tcp listen port for localhost | `"9081"` |
 | `MONGO_PORT` | uint16 | mongo listen port for localhost | `"10000"` |
 | `NATS_PORT` | uint16 | nats listen port for localhost | `"10001"` |
 

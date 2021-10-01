@@ -93,7 +93,7 @@ func (c *HTTPConfig) Validate() error {
 }
 
 type ClientsConfig struct {
-	IdentityServer    IdentityServerConfig    `yaml:"identityServer" json:"identityServer"`
+	IdentityStore     IdentityStoreConfig     `yaml:"identityStore" json:"identityStore"`
 	Eventbus          EventBusConfig          `yaml:"eventBus" json:"eventBus"`
 	GrpcGateway       GrpcGatewayConfig       `yaml:"grpcGateway" json:"grpcGateway"`
 	ResourceAggregate ResourceAggregateConfig `yaml:"resourceAggregate" json:"resourceAggregate"`
@@ -102,8 +102,8 @@ type ClientsConfig struct {
 }
 
 func (c *ClientsConfig) Validate() error {
-	if err := c.IdentityServer.Validate(); err != nil {
-		return fmt.Errorf("identityServer.%w", err)
+	if err := c.IdentityStore.Validate(); err != nil {
+		return fmt.Errorf("identityStore.%w", err)
 	}
 	if err := c.Eventbus.Validate(); err != nil {
 		return fmt.Errorf("eventBus.%w", err)
@@ -123,11 +123,11 @@ func (c *ClientsConfig) Validate() error {
 	return nil
 }
 
-type IdentityServerConfig struct {
+type IdentityStoreConfig struct {
 	Connection grpcClient.Config `yaml:"grpc" json:"grpc"`
 }
 
-func (c *IdentityServerConfig) Validate() error {
+func (c *IdentityStoreConfig) Validate() error {
 	if err := c.Connection.Validate(); err != nil {
 		return fmt.Errorf("grpc.%w", err)
 	}

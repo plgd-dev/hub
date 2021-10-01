@@ -80,11 +80,11 @@ func (c *EventStoreConfig) Validate() error {
 	return c.Connection.Validate()
 }
 
-type IdentityServerConfig struct {
+type IdentityStoreConfig struct {
 	Connection client.Config `yaml:"grpc" json:"grpc"`
 }
 
-func (c *IdentityServerConfig) Validate() error {
+func (c *IdentityStoreConfig) Validate() error {
 	if err := c.Connection.Validate(); err != nil {
 		return fmt.Errorf("grpc.%w", err)
 	}
@@ -92,9 +92,9 @@ func (c *IdentityServerConfig) Validate() error {
 }
 
 type ClientsConfig struct {
-	Eventbus       EventBusConfig       `yaml:"eventBus" json:"eventBus"`
-	Eventstore     EventStoreConfig     `yaml:"eventStore" json:"eventStore"`
-	IdentityServer IdentityServerConfig `yaml:"identityServer" json:"identityServer"`
+	Eventbus      EventBusConfig      `yaml:"eventBus" json:"eventBus"`
+	Eventstore    EventStoreConfig    `yaml:"eventStore" json:"eventStore"`
+	IdentityStore IdentityStoreConfig `yaml:"identityStore" json:"identityStore"`
 }
 
 func (c *ClientsConfig) Validate() error {
@@ -104,8 +104,8 @@ func (c *ClientsConfig) Validate() error {
 	if err := c.Eventstore.Validate(); err != nil {
 		return fmt.Errorf("eventstore.%w", err)
 	}
-	if err := c.IdentityServer.Validate(); err != nil {
-		return fmt.Errorf("identityServer.%w", err)
+	if err := c.IdentityStore.Validate(); err != nil {
+		return fmt.Errorf("identityStore.%w", err)
 	}
 	return nil
 }

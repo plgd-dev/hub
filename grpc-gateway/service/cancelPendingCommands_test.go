@@ -13,7 +13,7 @@ import (
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	grpcgwService "github.com/plgd-dev/cloud/grpc-gateway/test"
 	httpgwTest "github.com/plgd-dev/cloud/http-gateway/test"
-	idService "github.com/plgd-dev/cloud/identity/test"
+	idService "github.com/plgd-dev/cloud/identity-store/test"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	raService "github.com/plgd-dev/cloud/resource-aggregate/test"

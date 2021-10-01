@@ -8,8 +8,8 @@ import (
 	"sync"
 	"syscall"
 
-	clientIS "github.com/plgd-dev/cloud/identity/client"
-	pbIS "github.com/plgd-dev/cloud/identity/pb"
+	clientIS "github.com/plgd-dev/cloud/identity-store/client"
+	pbIS "github.com/plgd-dev/cloud/identity-store/pb"
 	"github.com/plgd-dev/cloud/pkg/log"
 	"github.com/plgd-dev/cloud/pkg/net/grpc/client"
 	"github.com/plgd-dev/cloud/pkg/net/grpc/server"
@@ -92,17 +92,17 @@ func newGrpcServer(ctx context.Context, config GRPCConfig, logger log.Logger) (*
 	return grpcServer, nil
 }
 
-func newIdentityServiceClient(config IdentityServerConfig, logger log.Logger) (pbIS.IdentityServiceClient, func(), error) {
+func newIdentityStoreClient(config IdentityStoreConfig, logger log.Logger) (pbIS.IdentityStoreClient, func(), error) {
 	isConn, err := client.New(config.Connection, logger)
 	if err != nil {
-		return nil, nil, fmt.Errorf("cannot connect to identity server: %w", err)
+		return nil, nil, fmt.Errorf("cannot connect to identity-store: %w", err)
 	}
 	closeIsConn := func() {
 		if err := isConn.Close(); err != nil {
-			logger.Errorf("error occurs during close connection to identity server: %w", err)
+			logger.Errorf("error occurs during close connection to identity-store: %w", err)
 		}
 	}
-	isClient := pbIS.NewIdentityServiceClient(isConn.GRPC())
+	isClient := pbIS.NewIdentityStoreClient(isConn.GRPC())
 	return isClient, closeIsConn, nil
 }
 
@@ -113,10 +113,10 @@ func NewService(ctx context.Context, config Config, logger log.Logger, eventStor
 		return nil, err
 	}
 
-	isClient, closeIsClient, err := newIdentityServiceClient(config.Clients.IdentityServer, logger)
+	isClient, closeIsClient, err := newIdentityStoreClient(config.Clients.IdentityStore, logger)
 	if err != nil {
 		grpcServer.Close()
-		return nil, fmt.Errorf("cannot create identity service client: %w", err)
+		return nil, fmt.Errorf("cannot create identity-store client: %w", err)
 	}
 	grpcServer.AddCloseFunc(closeIsClient)
 

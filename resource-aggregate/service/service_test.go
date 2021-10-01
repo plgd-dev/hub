@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	pbIS "github.com/plgd-dev/cloud/identity/pb"
-	idService "github.com/plgd-dev/cloud/identity/test"
+	pbIS "github.com/plgd-dev/cloud/identity-store/pb"
+	idService "github.com/plgd-dev/cloud/identity-store/test"
 	"github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/pkg/net/grpc/client"
@@ -32,12 +32,12 @@ func TestPublishUnpublish(t *testing.T) {
 
 	ctx := kitNetGrpc.CtxWithToken(context.Background(), oauthTest.GetDefaultServiceToken(t))
 
-	idConn, err := client.New(testCfg.MakeGrpcClientConfig(config.Clients.IdentityServer.Connection.Addr), log.Get())
+	idConn, err := client.New(testCfg.MakeGrpcClientConfig(config.Clients.IdentityStore.Connection.Addr), log.Get())
 	require.NoError(t, err)
 	defer func() {
 		_ = idConn.Close()
 	}()
-	idClient := pbIS.NewIdentityServiceClient(idConn.GRPC())
+	idClient := pbIS.NewIdentityStoreClient(idConn.GRPC())
 
 	raConn, err := client.New(testCfg.MakeGrpcClientConfig(config.APIs.GRPC.Addr), log.Get())
 	require.NoError(t, err)

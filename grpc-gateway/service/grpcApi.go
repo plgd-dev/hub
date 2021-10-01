@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
-	isClient "github.com/plgd-dev/cloud/identity/client"
-	pbIS "github.com/plgd-dev/cloud/identity/pb"
+	isClient "github.com/plgd-dev/cloud/identity-store/client"
+	pbIS "github.com/plgd-dev/cloud/identity-store/pb"
 	"github.com/plgd-dev/cloud/pkg/fn"
 	"github.com/plgd-dev/cloud/pkg/log"
 	"github.com/plgd-dev/cloud/pkg/net/grpc/client"
@@ -22,7 +22,7 @@ import (
 // RequestHandler handles incoming requests.
 type RequestHandler struct {
 	pb.UnimplementedGrpcGatewayServer
-	idClient                pbIS.IdentityServiceClient
+	idClient                pbIS.IdentityStoreClient
 	resourceDirectoryClient pb.GrpcGatewayClient
 	resourceAggregateClient *raClient.Client
 	resourceSubscriber      *subscriber.Subscriber
@@ -46,17 +46,17 @@ func Register(server *grpc.Server, handler *RequestHandler) {
 	pb.RegisterGrpcGatewayServer(server, handler)
 }
 
-func newIdentityServiceClient(config IdentityServerConfig, logger log.Logger) (pbIS.IdentityServiceClient, func(), error) {
+func newIdentityStoreClient(config IdentityStoreConfig, logger log.Logger) (pbIS.IdentityStoreClient, func(), error) {
 	idConn, err := client.New(config.Connection, logger)
 	if err != nil {
-		return nil, nil, fmt.Errorf("cannot create connection to identity server: %w", err)
+		return nil, nil, fmt.Errorf("cannot create connection to identity-store: %w", err)
 	}
 	closeIdConn := func() {
 		if err := idConn.Close(); err != nil {
-			logger.Errorf("error occurs during close connection to identity server: %w", err)
+			logger.Errorf("error occurs during close connection to identity-store: %w", err)
 		}
 	}
-	idClient := pbIS.NewIdentityServiceClient(idConn.GRPC())
+	idClient := pbIS.NewIdentityStoreClient(idConn.GRPC())
 	return idClient, closeIdConn, nil
 }
 
@@ -90,10 +90,10 @@ func newResourceAggregateClient(config GrpcServerConfig, resourceSubscriber even
 
 func NewRequestHandlerFromConfig(ctx context.Context, config Config, logger log.Logger, goroutinePoolGo func(func()) error) (*RequestHandler, error) {
 	var closeFunc fn.FuncList
-	idClient, closeIdClient, err := newIdentityServiceClient(config.Clients.IdentityServer, logger)
+	idClient, closeIdClient, err := newIdentityStoreClient(config.Clients.IdentityStore, logger)
 	if err != nil {
 		closeFunc.Execute()
-		return nil, fmt.Errorf("cannot create identity server client: %w", err)
+		return nil, fmt.Errorf("cannot create identity-store client: %w", err)
 	}
 	closeFunc.AddFunc(closeIdClient)
 
@@ -149,7 +149,7 @@ func NewRequestHandlerFromConfig(ctx context.Context, config Config, logger log.
 
 // NewRequestHandler factory for new RequestHandler.
 func NewRequestHandler(
-	idClient pbIS.IdentityServiceClient,
+	idClient pbIS.IdentityStoreClient,
 	resourceDirectoryClient pb.GrpcGatewayClient,
 	resourceAggregateClient *raClient.Client,
 	resourceSubscriber *subscriber.Subscriber,

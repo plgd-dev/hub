@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/plgd-dev/cloud/coap-gateway/coapconv"
-	"github.com/plgd-dev/cloud/identity/pb"
+	"github.com/plgd-dev/cloud/identity-store/pb"
 	"github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/pkg/security/oauth2"

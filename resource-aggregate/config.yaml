@@ -67,7 +67,7 @@ clients:
         keyFile: "/secrets/private/cert.key"
         certFile: "/secrets/public/cert.crt"
         useSystemCAPool: false
-  identityServer:
+  identityStore:
     grpc:
       address: ""
       tls:

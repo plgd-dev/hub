@@ -26,8 +26,8 @@ ARG service=resource-aggregate
 WORKDIR $root_directory/$service
 RUN go build -ldflags "-linkmode external -extldflags -static" -o /go/bin/$service ./cmd/service
 
-#identity
-ARG service=identity
+#identity-store
+ARG service=identity-store
 WORKDIR $root_directory/$service
 RUN go build -ldflags "-linkmode external -extldflags -static" -o /go/bin/$service ./cmd/service
 
@@ -86,8 +86,8 @@ COPY --from=build /go/bin/resource-directory /usr/local/bin/resource-directory
 COPY --from=cloud-build /go/src/github.com/plgd-dev/cloud/resource-directory/config.yaml /configs/resource-directory.yaml
 COPY --from=build /go/bin/resource-aggregate /usr/local/bin/resource-aggregate
 COPY --from=cloud-build /go/src/github.com/plgd-dev/cloud/resource-aggregate/config.yaml /configs/resource-aggregate.yaml
-COPY --from=build /go/bin/identity /usr/local/bin/identity
-COPY --from=cloud-build /go/src/github.com/plgd-dev/cloud/identity/config.yaml /configs/identity.yaml
+COPY --from=build /go/bin/identity-store /usr/local/bin/identity-store
+COPY --from=cloud-build /go/src/github.com/plgd-dev/cloud/identity-store/config.yaml /configs/identity.yaml
 COPY --from=build /go/bin/certificate-authority /usr/local/bin/certificate-authority
 COPY --from=cloud-build /go/src/github.com/plgd-dev/cloud/certificate-authority/config.yaml /configs/certificate-authority.yaml
 COPY --from=build /go/bin/certificate-generator /usr/local/bin/certificate-generator
@@ -121,7 +121,7 @@ ENV CERTIFICATE_AUTHORITY_PORT=9087
 ENV MOCKED_OAUTH_SERVER_PORT=9088
 ENV RESOURCE_AGGREGATE_PORT=9083
 ENV RESOURCE_DIRECTORY_PORT=9082
-ENV IDENTITY_PORT=9081
+ENV IDENTITY_STORE_PORT=9081
 ENV GRPC_GATEWAY_PORT=9084
 ENV HTTP_GATEWAY_PORT=9086
 ENV CLOUD2CLOUD_GATEWAY_PORT=9085

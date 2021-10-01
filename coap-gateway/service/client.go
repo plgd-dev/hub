@@ -10,7 +10,7 @@ import (
 
 	"github.com/plgd-dev/cloud/coap-gateway/coapconv"
 	grpcClient "github.com/plgd-dev/cloud/grpc-gateway/client"
-	idEvents "github.com/plgd-dev/cloud/identity/events"
+	idEvents "github.com/plgd-dev/cloud/identity-store/events"
 	"github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	pkgJwt "github.com/plgd-dev/cloud/pkg/security/jwt"
