@@ -10,7 +10,7 @@ import (
 
 	coapgwTest "github.com/plgd-dev/cloud/coap-gateway/test"
 	"github.com/plgd-dev/cloud/coap-gateway/uri"
-	idTest "github.com/plgd-dev/cloud/identity/test"
+	idTest "github.com/plgd-dev/cloud/identity-store/test"
 	raTest "github.com/plgd-dev/cloud/resource-aggregate/test"
 	rdTest "github.com/plgd-dev/cloud/resource-directory/test"
 	test "github.com/plgd-dev/cloud/test"

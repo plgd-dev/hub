@@ -41,7 +41,7 @@ func MakeConfig(t *testing.T) service.Config {
 			},
 		},
 	}
-	cfg.Clients.IdentityServer.Connection = config.MakeGrpcClientConfig(config.IDENTITY_HOST)
+	cfg.Clients.IdentityStore.Connection = config.MakeGrpcClientConfig(config.IDENTITY_STORE_HOST)
 	cfg.Clients.ResourceAggregate.Connection = config.MakeGrpcClientConfig(config.RESOURCE_AGGREGATE_HOST)
 	cfg.Clients.ResourceDirectory.Connection = config.MakeGrpcClientConfig(config.RESOURCE_DIRECTORY_HOST)
 	cfg.Clients.Eventbus.NATS = config.MakeSubscriberConfig()

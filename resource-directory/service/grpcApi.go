@@ -7,8 +7,8 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
-	clientIS "github.com/plgd-dev/cloud/identity/client"
-	pbIS "github.com/plgd-dev/cloud/identity/pb"
+	clientIS "github.com/plgd-dev/cloud/identity-store/client"
+	pbIS "github.com/plgd-dev/cloud/identity-store/pb"
 	"github.com/plgd-dev/cloud/pkg/fn"
 	"github.com/plgd-dev/cloud/pkg/log"
 	"github.com/plgd-dev/cloud/pkg/net/grpc/client"
@@ -52,21 +52,21 @@ func Register(server *grpc.Server, handler *RequestHandler) {
 	pb.RegisterGrpcGatewayServer(server, handler)
 }
 
-func newIdentityServiceClient(config IdentityServerConfig, logger log.Logger) (pbIS.IdentityServiceClient, func(), error) {
+func newIdentityStoreClient(config IdentityStoreConfig, logger log.Logger) (pbIS.IdentityStoreClient, func(), error) {
 	var closeIsClient fn.FuncList
 
 	isConn, err := client.New(config.Connection, logger)
 	if err != nil {
-		return nil, nil, fmt.Errorf("cannot connect to identity server: %w", err)
+		return nil, nil, fmt.Errorf("cannot connect to identity-store: %w", err)
 	}
 
 	closeIsClient.AddFunc(func() {
 		if err := isConn.Close(); err != nil {
-			logger.Errorf("error occurs during close connection to identity server: %w", err)
+			logger.Errorf("error occurs during close connection to identity-store: %w", err)
 		}
 	})
 
-	isClient := pbIS.NewIdentityServiceClient(isConn.GRPC())
+	isClient := pbIS.NewIdentityStoreClient(isConn.GRPC())
 	return isClient, closeIsClient.ToFunction(), nil
 }
 
@@ -80,9 +80,9 @@ func newRequestHandlerFromConfig(ctx context.Context, config Config, publicConfi
 		publicConfiguration.cloudCertificateAuthorities = string(content)
 	}
 
-	isClient, closeIsClient, err := newIdentityServiceClient(config.Clients.IdentityServer, logger)
+	isClient, closeIsClient, err := newIdentityStoreClient(config.Clients.IdentityStore, logger)
 	if err != nil {
-		return nil, fmt.Errorf("cannot create identity server client: %w", err)
+		return nil, fmt.Errorf("cannot create identity-store client: %w", err)
 	}
 	closeFunc.AddFunc(closeIsClient)
 

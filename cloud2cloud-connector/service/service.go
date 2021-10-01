@@ -12,7 +12,7 @@ import (
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/store/mongodb"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/uri"
 	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"
-	pbIS "github.com/plgd-dev/cloud/identity/pb"
+	pbIS "github.com/plgd-dev/cloud/identity-store/pb"
 	"github.com/plgd-dev/cloud/pkg/fn"
 	"github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
@@ -95,17 +95,17 @@ func newAuthInterceptor(ctx context.Context, config validator.Config, oauthCallb
 	return auth, fl.ToFunction(), nil
 }
 
-func newIdentityServiceClient(config IdentityServerConfig, logger log.Logger) (pbIS.IdentityServiceClient, func(), error) {
+func newIdentityStoreClient(config IdentityStoreConfig, logger log.Logger) (pbIS.IdentityStoreClient, func(), error) {
 	isConn, err := grpcClient.New(config.Connection, logger)
 	if err != nil {
-		return nil, nil, fmt.Errorf("cannot create connection to identity server: %w", err)
+		return nil, nil, fmt.Errorf("cannot create connection to identity-store: %w", err)
 	}
 	closeIsConn := func() {
 		if err := isConn.Close(); err != nil && !kitNetGrpc.IsContextCanceled(err) {
-			logger.Errorf("error occurs during close connection to identity server: %v", err)
+			logger.Errorf("error occurs during close connection to identity-store: %v", err)
 		}
 	}
-	return pbIS.NewIdentityServiceClient(isConn.GRPC()), closeIsConn, nil
+	return pbIS.NewIdentityStoreClient(isConn.GRPC()), closeIsConn, nil
 }
 
 func newSubscriber(config natsClient.Config, logger log.Logger) (*subscriber.Subscriber, func(), error) {
@@ -245,10 +245,10 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Server, error)
 	taskProcessor := NewTaskProcessor(raClient, config.TaskProcessor.MaxParallel, config.TaskProcessor.CacheSize,
 		config.TaskProcessor.Timeout, config.TaskProcessor.Delay)
 
-	isClient, closeIsClient, err := newIdentityServiceClient(config.Clients.IdentityServer, logger)
+	isClient, closeIsClient, err := newIdentityStoreClient(config.Clients.IdentityStore, logger)
 	if err != nil {
 		cleanUp.Execute()
-		return nil, fmt.Errorf("cannot create identity service client: %w", err)
+		return nil, fmt.Errorf("cannot create identity-store client: %w", err)
 	}
 	listener.AddCloseFunc(closeIsClient)
 
@@ -339,7 +339,7 @@ func runDevicePulling(ctx context.Context,
 	provider *oauth2.PlgdProvider,
 	timeout time.Duration,
 	s *Store,
-	isClient pbIS.IdentityServiceClient,
+	isClient pbIS.IdentityStoreClient,
 	raClient raService.ResourceAggregateClient,
 	devicesSubscription *DevicesSubscription,
 	subscriptionManager *SubscriptionManager,

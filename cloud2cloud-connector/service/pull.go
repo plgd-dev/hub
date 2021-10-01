@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/store"
-	pbIS "github.com/plgd-dev/cloud/identity/pb"
+	pbIS "github.com/plgd-dev/cloud/identity-store/pb"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/pkg/security/oauth2"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
@@ -33,7 +33,7 @@ type RetrieveDeviceWithLinksResponse struct {
 
 type pullDevicesHandler struct {
 	s                   *Store
-	isClient            pbIS.IdentityServiceClient
+	isClient            pbIS.IdentityStoreClient
 	raClient            raService.ResourceAggregateClient
 	devicesSubscription *DevicesSubscription
 	subscriptionManager *SubscriptionManager
@@ -41,7 +41,7 @@ type pullDevicesHandler struct {
 	triggerTask         OnTaskTrigger
 }
 
-func getOwnerDevices(ctx context.Context, isClient pbIS.IdentityServiceClient) (map[string]bool, error) {
+func getOwnerDevices(ctx context.Context, isClient pbIS.IdentityStoreClient) (map[string]bool, error) {
 	getDevicesClient, err := isClient.GetDevices(ctx, &pbIS.GetDevicesRequest{})
 	if err != nil {
 		return nil, fmt.Errorf("cannot get owned devices: %w", err)
@@ -370,7 +370,7 @@ func (p *pullDevicesHandler) pullDevicesFromAccount(ctx context.Context, linkedA
 }
 
 func pullDevices(ctx context.Context, s *Store,
-	isClient pbIS.IdentityServiceClient,
+	isClient pbIS.IdentityStoreClient,
 	raClient raService.ResourceAggregateClient,
 	devicesSubscription *DevicesSubscription,
 	subscriptionManager *SubscriptionManager,

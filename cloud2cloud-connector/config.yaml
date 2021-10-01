@@ -32,7 +32,7 @@ apis:
           certFile: "/secrets/public/cert.crt"
           useSystemCAPool: false
 clients:
-  identityServer:
+  identityStore:
     grpc:
       address: ""
       keepAlive:

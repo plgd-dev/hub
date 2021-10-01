@@ -26,7 +26,7 @@ import (
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	grpcgwConfig "github.com/plgd-dev/cloud/grpc-gateway/service"
 	grpcgwTest "github.com/plgd-dev/cloud/grpc-gateway/test"
-	idService "github.com/plgd-dev/cloud/identity/test"
+	idService "github.com/plgd-dev/cloud/identity-store/test"
 	"github.com/plgd-dev/cloud/pkg/fn"
 	"github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"

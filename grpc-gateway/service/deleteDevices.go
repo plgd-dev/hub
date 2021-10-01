@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
-	pbIS "github.com/plgd-dev/cloud/identity/pb"
+	pbIS "github.com/plgd-dev/cloud/identity-store/pb"
 	"github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/pkg/strings"
@@ -48,19 +48,19 @@ func (r *RequestHandler) DeleteDevices(ctx context.Context, req *pb.DeleteDevice
 		}
 	}
 
-	// Identity service
+	// IdentityStore
 	cmdAS := pbIS.DeleteDevicesRequest{
 		DeviceIds: deviceIds,
 	}
 	respIS, err := r.idClient.DeleteDevices(ctx, &cmdAS)
 	if err != nil {
-		return nil, log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot delete devices identity service: %v", err))
+		return nil, log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot delete devices from identity-store: %v", err))
 	}
 	if !deleteAllOwned {
 		_, notDeleted := partitionDeletedDevices(deviceIds, respIS.GetDeviceIds())
 		if len(notDeleted) > 0 {
 			for _, deviceId := range notDeleted {
-				log.Debugf("failed to delete device('%v') in identity service", deviceId)
+				log.Debugf("failed to delete device('%v') from identity-store", deviceId)
 			}
 		}
 	}

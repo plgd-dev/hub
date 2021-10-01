@@ -16,7 +16,7 @@ import (
 	grpcgwService "github.com/plgd-dev/cloud/grpc-gateway/test"
 	httpgwTest "github.com/plgd-dev/cloud/http-gateway/test"
 	"github.com/plgd-dev/cloud/http-gateway/uri"
-	idService "github.com/plgd-dev/cloud/identity/test"
+	idService "github.com/plgd-dev/cloud/identity-store/test"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/cloud/resource-aggregate/events"

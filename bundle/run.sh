@@ -16,7 +16,7 @@ export CERTIFICATE_AUTHORITY_ADDRESS="localhost:${CERTIFICATE_AUTHORITY_PORT}"
 export MOCKED_OAUTH_SERVER_ADDRESS="localhost:${MOCKED_OAUTH_SERVER_PORT}"
 export RESOURCE_AGGREGATE_ADDRESS="localhost:${RESOURCE_AGGREGATE_PORT}"
 export RESOURCE_DIRECTORY_ADDRESS="localhost:${RESOURCE_DIRECTORY_PORT}"
-export IDENTITY_ADDRESS="localhost:${IDENTITY_PORT}"
+export IDENTITY_STORE_ADDRESS="localhost:${IDENTITY_STORE_PORT}"
 export GRPC_GATEWAY_ADDRESS="localhost:${GRPC_GATEWAY_PORT}"
 export HTTP_GATEWAY_ADDRESS="localhost:${HTTP_GATEWAY_PORT}"
 export CLOUD2CLOUD_GATEWAY_ADDRESS="localhost:${CLOUD2CLOUD_GATEWAY_PORT}"
@@ -62,7 +62,6 @@ export MONGODB_URI="mongodb://$MONGODB_HOST"
 export NATS_HOST="localhost:$NATS_PORT"
 export NATS_URL="nats://${NATS_HOST}"
 
-export AUTH_SERVER_ADDRESS=${IDENTITY_ADDRESS}
 export FQDN_NGINX_HTTPS=${FQDN}:${NGINX_PORT}
 export DOMAIN=${FQDN_NGINX_HTTPS}
 if [ "$NGINX_PORT" = "443" ]; then
@@ -148,24 +147,24 @@ while read -r line; do
   cp $KEY_FILE ${file}
 done < <(yq e '[.. | select(has("keyFile")) | .keyFile]' /configs/oauth-server.yaml | sort | uniq)
 
-## identity
+## identity-store
 while read -r line; do
   file=`echo $line | yq e '.[0]' - `
   mkdir -p `dirname ${file}`
   cp $CA_POOL ${file}
-done < <(yq e '[.. | select(has("caPool")) | .caPool]' /configs/identity.yaml | sort | uniq)
+done < <(yq e '[.. | select(has("caPool")) | .caPool]' /configs/identity-store.yaml | sort | uniq)
 ### setup certificates
 while read -r line; do
   file=`echo $line | yq e '.[0]' - `
   mkdir -p `dirname ${file}`
   cp $CERT_FILE ${file}
-done < <(yq e '[.. | select(has("certFile")) | .certFile]' /configs/identity.yaml | sort | uniq)
+done < <(yq e '[.. | select(has("certFile")) | .certFile]' /configs/identity-store.yaml | sort | uniq)
 ### setup private keys
 while read -r line; do
   file=`echo $line | yq e '.[0]' - `
   mkdir -p `dirname ${file}`
   cp $KEY_FILE ${file}
-done < <(yq e '[.. | select(has("keyFile")) | .keyFile]' /configs/identity.yaml | sort | uniq)
+done < <(yq e '[.. | select(has("keyFile")) | .keyFile]' /configs/identity-store.yaml | sort | uniq)
 
 ## resource-aggregate
 ### setup root-cas
@@ -454,10 +453,10 @@ while true; do
   sleep 1
 done
 
-# identity
+# identity-store
 ## configuration
-cat /configs/identity.yaml | yq e "\
-  .apis.grpc.address = \"${IDENTITY_ADDRESS}\" |
+cat /configs/identity-store.yaml | yq e "\
+  .apis.grpc.address = \"${IDENTITY_STORE_ADDRESS}\" |
   .apis.grpc.authorization.http.tls.useSystemCAPool = true |
   .apis.grpc.authorization.ownerClaim = \"${OWNER_CLAIM}\" |
   .apis.grpc.authorization.audience = \"${SERVICE_OAUTH_AUDIENCE}\" |
@@ -465,28 +464,28 @@ cat /configs/identity.yaml | yq e "\
   .clients.storage.mongoDB.uri = \"${MONGODB_URI}\" |
   .clients.eventBus.nats.url = \"${NATS_URL}\" |
   .clients.eventBus.nats.jetstream = ${JETSTREAM}
-" - > /data/identity.yaml
+" - > /data/identity-store.yaml
 
-echo "starting identity"
-identity --config /data/identity.yaml >$LOGS_PATH/identity.log 2>&1 &
+echo "starting identity-store"
+identity-store --config /data/identity-store.yaml >$LOGS_PATH/identity-store.log 2>&1 &
 status=$?
-identity_pid=$!
+identity_store_pid=$!
 if [ $status -ne 0 ]; then
-  echo "Failed to start identity: $status"
+  echo "Failed to start identity-store: $status"
   sync
-  cat $LOGS_PATH/identity.log
+  cat $LOGS_PATH/identity-store.log
   exit $status
 fi
 
 i=0
 while true; do
   i=$((i+1))
-  if openssl s_client -connect ${IDENTITY_ADDRESS} \
+  if openssl s_client -connect ${IDENTITY_STORE_ADDRESS} \
     -cert ${INTERNAL_CERT_DIR_PATH}/${DIAL_FILE_CERT_NAME} \
     -key ${INTERNAL_CERT_DIR_PATH}/${DIAL_FILE_CERT_KEY_NAME} <<< "Q" 2>/dev/null > /dev/null; then
     break
   fi
-  echo "Try to reconnect to identity service(${IDENTITY_ADDRESS}) $i"
+  echo "Try to reconnect to identity-store(${IDENTITY_STORE_ADDRESS}) $i"
   sleep 1
 done
 
@@ -501,7 +500,7 @@ cat /configs/resource-aggregate.yaml | yq e "\
   .clients.eventStore.mongoDB.uri = \"${MONGODB_URI}\" |
   .clients.eventBus.nats.url = \"${NATS_URL}\" |
   .clients.eventBus.nats.jetstream = ${JETSTREAM} |
-  .clients.identityServer.grpc.address = \"${IDENTITY_ADDRESS}\"
+  .clients.identityStore.grpc.address = \"${IDENTITY_STORE_ADDRESS}\"
 " - > /data/resource-aggregate.yaml
 
 echo "starting resource-aggregate"
@@ -536,7 +535,7 @@ cat /configs/resource-directory.yaml | yq e "\
   .apis.grpc.authorization.authority = \"https://${OAUTH_ENDPOINT}\" |
   .clients.eventStore.mongoDB.uri = \"${MONGODB_URI}\" |
   .clients.eventBus.nats.url = \"${NATS_URL}\" |
-  .clients.identityServer.grpc.address = \"${IDENTITY_ADDRESS}\" |
+  .clients.identityStore.grpc.address = \"${IDENTITY_STORE_ADDRESS}\" |
   .publicConfiguration.authorizationServer = \"https://${OAUTH_ENDPOINT}\" |
   .publicConfiguration.cloudID = \"${COAP_GATEWAY_CLOUD_ID}\" |
   .publicConfiguration.cloudURL = \"coaps+tcp://${COAP_GATEWAY_FQDN}:${COAP_GATEWAY_PORT}\" |
@@ -585,7 +584,7 @@ cat /configs/coap-gateway.yaml | yq e "\
   .apis.coap.authorization.providers[0].audience = \"${DEVICE_OAUTH_AUDIENCE}\" |
   .apis.coap.authorization.providers[0].http.tls.useSystemCAPool = true |
   .clients.eventBus.nats.url = \"${NATS_URL}\" |
-  .clients.identityServer.grpc.address = \"${IDENTITY_ADDRESS}\" |
+  .clients.identityStore.grpc.address = \"${IDENTITY_STORE_ADDRESS}\" |
   .clients.resourceAggregate.grpc.address = \"${RESOURCE_AGGREGATE_ADDRESS}\" |
   .clients.resourceDirectory.grpc.address = \"${RESOURCE_DIRECTORY_ADDRESS}\"
 " - > /data/coap-gateway-unsecure.yaml
@@ -622,7 +621,7 @@ cat /configs/coap-gateway.yaml | yq e "\
   .apis.coap.authorization.providers[0].audience = \"${DEVICE_OAUTH_AUDIENCE}\" |
   .apis.coap.authorization.providers[0].http.tls.useSystemCAPool = true |
   .clients.eventBus.nats.url = \"${NATS_URL}\" |
-  .clients.identityServer.grpc.address = \"${IDENTITY_ADDRESS}\" |
+  .clients.identityStore.grpc.address = \"${IDENTITY_STORE_ADDRESS}\" |
   .clients.resourceAggregate.grpc.address = \"${RESOURCE_AGGREGATE_ADDRESS}\" |
   .clients.resourceDirectory.grpc.address = \"${RESOURCE_DIRECTORY_ADDRESS}\"
 " - > /data/coap-gateway-secure.yaml
@@ -645,7 +644,7 @@ cat /configs/grpc-gateway.yaml | yq e "\
   .apis.grpc.authorization.audience = \"${SERVICE_OAUTH_AUDIENCE}\" |
   .apis.grpc.authorization.http.tls.useSystemCAPool = true |
   .apis.grpc.authorization.authority = \"https://${OAUTH_ENDPOINT}\" |
-  .clients.identityServer.grpc.address = \"${IDENTITY_ADDRESS}\" |
+  .clients.identityStore.grpc.address = \"${IDENTITY_STORE_ADDRESS}\" |
   .clients.eventBus.nats.url = \"${NATS_URL}\" |
   .clients.resourceAggregate.grpc.address = \"${RESOURCE_AGGREGATE_ADDRESS}\" |
   .clients.resourceDirectory.grpc.address = \"${RESOURCE_DIRECTORY_ADDRESS}\"
@@ -806,11 +805,11 @@ while sleep 10; do
     cat $LOGS_PATH/mongod.log
     exit 1
   fi
-  ps aux |grep $identity_pid |grep -q -v grep
+  ps aux |grep $identity_store_pid |grep -q -v grep
   if [ $? -ne 0 ]; then
-    echo "identity has already exited."
+    echo "identity-store has already exited."
     sync
-    cat $LOGS_PATH/identity.log
+    cat $LOGS_PATH/identity-store.log
     exit 1
   fi
   ps aux |grep $resource_aggregate_pid |grep -q -v grep

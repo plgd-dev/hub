@@ -10,7 +10,7 @@ import (
 	"github.com/patrickmn/go-cache"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/events"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/store"
-	pbIS "github.com/plgd-dev/cloud/identity/pb"
+	pbIS "github.com/plgd-dev/cloud/identity-store/pb"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	kitHttp "github.com/plgd-dev/cloud/pkg/net/http"
 	"github.com/plgd-dev/cloud/pkg/security/oauth2"
@@ -45,7 +45,7 @@ type SubscriptionManager struct {
 	eventsURL           string
 	store               *Store
 	raClient            raService.ResourceAggregateClient
-	isClient            pbIS.IdentityServiceClient
+	isClient            pbIS.IdentityStoreClient
 	cache               *cache.Cache
 	devicesSubscription *DevicesSubscription
 	provider            *oauth2.PlgdProvider
@@ -55,7 +55,7 @@ type SubscriptionManager struct {
 
 func NewSubscriptionManager(
 	EventsURL string,
-	isClient pbIS.IdentityServiceClient,
+	isClient pbIS.IdentityStoreClient,
 	raClient raService.ResourceAggregateClient,
 	store *Store,
 	devicesSubscription *DevicesSubscription,

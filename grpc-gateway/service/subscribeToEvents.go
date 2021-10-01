@@ -8,7 +8,7 @@ import (
 
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/grpc-gateway/subscription"
-	isClient "github.com/plgd-dev/cloud/identity/client"
+	isClient "github.com/plgd-dev/cloud/identity-store/client"
 	"github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/subscriber"

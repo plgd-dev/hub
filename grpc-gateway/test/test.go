@@ -19,7 +19,7 @@ func MakeConfig(t *testing.T) service.Config {
 	cfg.APIs.GRPC.SubscriptionBufferSize = 1000
 	cfg.APIs.GRPC.TLS.ClientCertificateRequired = false
 
-	cfg.Clients.IdentityServer.Connection = config.MakeGrpcClientConfig(config.IDENTITY_HOST)
+	cfg.Clients.IdentityStore.Connection = config.MakeGrpcClientConfig(config.IDENTITY_STORE_HOST)
 	cfg.Clients.Eventbus.NATS = config.MakeSubscriberConfig()
 	cfg.Clients.Eventbus.GoPoolSize = 16
 	cfg.Clients.ResourceAggregate.Connection = config.MakeGrpcClientConfig(config.RESOURCE_AGGREGATE_HOST)

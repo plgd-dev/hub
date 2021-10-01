@@ -14,8 +14,8 @@ import (
 	cache "github.com/patrickmn/go-cache"
 	"github.com/plgd-dev/cloud/coap-gateway/uri"
 	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"
-	idClient "github.com/plgd-dev/cloud/identity/client"
-	pbIS "github.com/plgd-dev/cloud/identity/pb"
+	idClient "github.com/plgd-dev/cloud/identity-store/client"
+	pbIS "github.com/plgd-dev/cloud/identity-store/pb"
 	"github.com/plgd-dev/cloud/pkg/fn"
 	"github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
@@ -48,7 +48,7 @@ type Service struct {
 	blockWiseTransferSZX  blockwise.SZX
 	natsClient            *natsClient.Client
 	raClient              *raClient.Client
-	isClient              pbIS.IdentityServiceClient
+	isClient              pbIS.IdentityStoreClient
 	rdClient              pbGRPC.GrpcGatewayClient
 	expirationClientCache *cache.Cache
 	tlsDeviceIDCache      *cache.Cache
@@ -101,20 +101,20 @@ func newResourceAggregateClient(config ResourceAggregateConfig, resourceSubscrib
 	return raClient, closeRaConn, nil
 }
 
-func newIdentityServerClient(config IdentityServerConfig, logger log.Logger) (pbIS.IdentityServiceClient, func(), error) {
+func newIdentityStoreClient(config IdentityStoreConfig, logger log.Logger) (pbIS.IdentityStoreClient, func(), error) {
 	isConn, err := grpcClient.New(config.Connection, logger)
 	if err != nil {
-		return nil, nil, fmt.Errorf("cannot create connection to identity server: %w", err)
+		return nil, nil, fmt.Errorf("cannot create connection to identity-store: %w", err)
 	}
 	closeIsConn := func() {
 		if err := isConn.Close(); err != nil {
 			if kitNetGrpc.IsContextCanceled(err) {
 				return
 			}
-			logger.Errorf("error occurs during close connection to identity server: %v", err)
+			logger.Errorf("error occurs during close connection to identity-store: %v", err)
 		}
 	}
-	isClient := pbIS.NewIdentityServiceClient(isConn.GRPC())
+	isClient := pbIS.NewIdentityStoreClient(isConn.GRPC())
 	return isClient, closeIsConn, nil
 }
 
@@ -260,10 +260,10 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 	}
 	nats.AddCloseFunc(closeRaClient)
 
-	isClient, closeIsClient, err := newIdentityServerClient(config.Clients.IdentityServer, logger)
+	isClient, closeIsClient, err := newIdentityStoreClient(config.Clients.IdentityStore, logger)
 	if err != nil {
 		nats.Close()
-		return nil, fmt.Errorf("cannot create identity server client: %w", err)
+		return nil, fmt.Errorf("cannot create identity-store client: %w", err)
 	}
 	nats.AddCloseFunc(closeIsClient)
 
