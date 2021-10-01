@@ -34,6 +34,7 @@ message ResourceLinksSnapshotTaken {
     string device_id = 1;
     map<string, Resource> resources = 2;
     EventMetadata event_metadata = 3;
+    AuditContext audit_context = 4;
 }
 
 message ResourceChanged {

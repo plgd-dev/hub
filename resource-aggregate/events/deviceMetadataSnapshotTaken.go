@@ -88,9 +88,7 @@ func (e *DeviceMetadataSnapshotTaken) HandleDeviceMetadataUpdated(ctx context.Co
 }
 
 func (e *DeviceMetadataSnapshotTaken) HandleDeviceMetadataSnapshotTaken(ctx context.Context, s *DeviceMetadataSnapshotTaken) {
-	e.DeviceId = s.GetDeviceId()
-	e.DeviceMetadataUpdated = s.GetDeviceMetadataUpdated()
-	e.EventMetadata = s.GetEventMetadata()
+	e.CopyData(s)
 }
 
 func (e *DeviceMetadataSnapshotTaken) HandleDeviceMetadataUpdatePending(ctx context.Context, updatePending *DeviceMetadataUpdatePending) error {

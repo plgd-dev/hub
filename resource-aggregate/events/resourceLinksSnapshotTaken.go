@@ -55,11 +55,13 @@ func (e *ResourceLinksSnapshotTaken) CopyData(event *ResourceLinksSnapshotTaken)
 	e.Resources = event.GetResources()
 	e.DeviceId = event.GetDeviceId()
 	e.EventMetadata = event.GetEventMetadata()
+	e.AuditContext = event.GetAuditContext()
 }
 
 func (e *ResourceLinksSnapshotTaken) CheckInitialized() bool {
 	return e.GetResources() != nil &&
 		e.GetDeviceId() != "" &&
+		e.GetAuditContext() != nil &&
 		e.GetEventMetadata() != nil
 }
 
@@ -94,6 +96,7 @@ func (e *ResourceLinksSnapshotTaken) HandleEventResourceLinksPublished(ctx conte
 	}
 	e.DeviceId = pub.GetDeviceId()
 	e.EventMetadata = pub.GetEventMetadata()
+	e.AuditContext = pub.GetAuditContext()
 	return published, nil
 }
 
@@ -117,13 +120,12 @@ func (e *ResourceLinksSnapshotTaken) HandleEventResourceLinksUnpublished(ctx con
 		}
 	}
 	e.EventMetadata = upub.GetEventMetadata()
+	e.AuditContext = upub.GetAuditContext()
 	return unpublished, nil
 }
 
 func (e *ResourceLinksSnapshotTaken) HandleEventResourceLinksSnapshotTaken(ctx context.Context, s *ResourceLinksSnapshotTaken) {
-	e.Resources = s.GetResources()
-	e.DeviceId = s.GetDeviceId()
-	e.EventMetadata = s.GetEventMetadata()
+	e.CopyData(s)
 }
 
 func (e *ResourceLinksSnapshotTaken) Handle(ctx context.Context, iter eventstore.Iter) error {
@@ -229,6 +231,7 @@ func (e *ResourceLinksSnapshotTaken) TakeSnapshot(version uint64) (eventstore.Ev
 		DeviceId:      e.GetDeviceId(),
 		EventMetadata: MakeEventMeta(e.GetEventMetadata().GetConnectionId(), e.GetEventMetadata().GetSequence(), version),
 		Resources:     resources,
+		AuditContext:  e.GetAuditContext(),
 	}, true
 }
 
@@ -250,5 +253,6 @@ func (e *ResourceLinksSnapshotTaken) ToResourceLinksPublished() *ResourceLinksPu
 		DeviceId:      e.GetDeviceId(),
 		EventMetadata: e.GetEventMetadata(),
 		Resources:     resources,
+		AuditContext:  e.GetAuditContext(),
 	}
 }

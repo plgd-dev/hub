@@ -156,6 +156,7 @@ var testEventResourceLinksSnapshotTaken events.ResourceLinksSnapshotTaken = even
 		ConnectionId: "con1",
 		Sequence:     1,
 	},
+	AuditContext: commands.NewAuditContext("userID", ""),
 }
 
 func TestResourceLinksSnapshotTaken_CopyData(t *testing.T) {

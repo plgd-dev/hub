@@ -1302,6 +1302,8 @@ components:
           type: string
         eventMetadata:
           $ref: '#/components/schemas/EventMetadata'
+        auditContext:
+          $ref: '#/components/schemas/AuditContext'
     ResourceLinksUnpublished:
       type: object
       properties:
