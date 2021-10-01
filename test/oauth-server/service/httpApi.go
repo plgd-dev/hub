@@ -21,12 +21,14 @@ import (
 
 //RequestHandler for handling incoming request
 type RequestHandler struct {
-	config            *Config
-	cache             *cache.Cache
-	idTokenKey        *rsa.PrivateKey
-	idTokenJwkKey     jwk.Key
-	accessTokenKey    interface{}
-	accessTokenJwkKey jwk.Key
+	config             *Config
+	authSession        *cache.Cache
+	authRestriction    *cache.Cache
+	idTokenKey         *rsa.PrivateKey
+	idTokenJwkKey      jwk.Key
+	accessTokenKey     interface{}
+	accessTokenJwkKey  jwk.Key
+	refreshRestriction *cache.Cache
 }
 
 func createJwkKey(privateKey interface{}) (jwk.Key, error) {
@@ -70,12 +72,14 @@ func NewRequestHandler(config *Config, idTokenKey *rsa.PrivateKey, accessTokenKe
 		return nil, fmt.Errorf("cannot create jwk for idToken: %w", err)
 	}
 	return &RequestHandler{
-		config:            config,
-		cache:             cache.New(cache.NoExpiration, time.Second*5),
-		idTokenKey:        idTokenKey,
-		idTokenJwkKey:     idTokenJwkKey,
-		accessTokenJwkKey: accessTokenJwkKey,
-		accessTokenKey:    accessTokenKey,
+		config:             config,
+		authSession:        cache.New(cache.NoExpiration, time.Second*5),
+		authRestriction:    cache.New(cache.NoExpiration, time.Second*5),
+		idTokenKey:         idTokenKey,
+		idTokenJwkKey:      idTokenJwkKey,
+		accessTokenJwkKey:  accessTokenJwkKey,
+		accessTokenKey:     accessTokenKey,
+		refreshRestriction: cache.New(cache.NoExpiration, time.Second*5),
 	}, nil
 }
 

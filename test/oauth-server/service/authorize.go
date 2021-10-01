@@ -35,7 +35,7 @@ func (requestHandler *RequestHandler) authorize(w http.ResponseWriter, r *http.R
 	audience := r.URL.Query().Get(uri.AudienceKey)
 	deviceId := r.URL.Query().Get(uri.DeviceId)
 	code := hex.EncodeToString(b)
-	requestHandler.cache.Set(code, authorizedSession{
+	requestHandler.authSession.Set(code, authorizedSession{
 		nonce:    nonce,
 		audience: audience,
 		deviceID: deviceId,
