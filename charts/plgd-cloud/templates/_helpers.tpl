@@ -23,15 +23,15 @@ If release name contains chart name it will be used as a full name.
 {{- end }}
 {{- end }}
 
-{{- define "plgd-cloud.authorization.fullname" -}}
-{{- if .Values.authorization.fullnameOverride }}
-{{- .Values.authorization.fullnameOverride | trunc 63 | trimSuffix "-" }}
+{{- define "plgd-cloud.identity.fullname" -}}
+{{- if .Values.identity.fullnameOverride }}
+{{- .Values.identity.fullnameOverride | trunc 63 | trimSuffix "-" }}
 {{- else }}
 {{- $name := default .Chart.Name .Values.nameOverride }}
 {{- if contains $name .Release.Name }}
-{{- .Values.authorization.name | trunc 63 | trimSuffix "-" }}
+{{- .Values.identity.name | trunc 63 | trimSuffix "-" }}
 {{- else }}
-{{- printf "%s-%s-%s" .Release.Name $name .Values.authorization.name | trunc 63 | trimSuffix "-" }}
+{{- printf "%s-%s-%s" .Release.Name $name .Values.identity.name | trunc 63 | trimSuffix "-" }}
 {{- end }}
 {{- end }}
 {{- end }}
@@ -196,14 +196,14 @@ app.kubernetes.io/instance: {{ .Release.Name }}
   {{- end }}
 {{- end }}
 
-{{- define "plgd-cloud.authorizationAddress" }}
+{{- define "plgd-cloud.idenityAddress" }}
   {{- $ := index . 0 }}
   {{- $address := index . 1 }}
   {{- if $address }}
   {{- printf "%s" $address }}
   {{- else }}
-  {{- $authorizationServer := include "plgd-cloud.authorization.fullname" $ }}
-  {{- printf "%s.%s.svc.%s:%v" $authorizationServer $.Release.Namespace $.Values.cluster.dns $.Values.authorization.port }}
+  {{- $authorizationServer := include "plgd-cloud.identity.fullname" $ }}
+  {{- printf "%s.%s.svc.%s:%v" $authorizationServer $.Release.Namespace $.Values.cluster.dns $.Values.identity.port }}
   {{- end }}
 {{- end }}
 

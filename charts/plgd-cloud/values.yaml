@@ -4,6 +4,8 @@ global:
   domain:
   # -- CloudID. Used by coap-gateway. It must be unique
   cloudId:
+  # -- OAuth owner Claim
+  ownerClaim: "sub"
   # -- OAuth authority
   authority:
   # -- OAuth audience
@@ -236,6 +238,8 @@ certmanager:
         # -- Certificate key size
         size:
 
+
+
 resourcedirectory:
   # -- Enable resource-directory service
   enabled: true
@@ -336,8 +340,12 @@ resourcedirectory:
         time: 2h
         timeout: 20s
       tls:
+        caPool:
+        keyFile:
+        certFile:
         clientCertificateRequired: true
       authorization:
+        ownerClaim: "sub"
         authority: ""
         audience: ""
         http:
@@ -355,7 +363,6 @@ resourcedirectory:
       goPoolSize: 16
       nats:
         url: ""
-        jetstream: false
         pendingLimits:
           msgLimit: "524288"
           bytesLimit: "67108864"
@@ -381,7 +388,7 @@ resourcedirectory:
           keyFile:
           certFile:
           useSystemCAPool: false
-    authorizationServer:
+    identityServer:
       pullFrequency: 15s
       cacheExpiration: 1m
       ownerClaim: sub
@@ -510,10 +517,11 @@ resourceaggregate:
 # -- For complete resource-aggregate service configuration see [plgd/resource-aggregate](https://github.com/plgd-dev/cloud/tree/v2/resource-aggregate)
   apis:
     grpc:
+      ownerCacheExpiration: 1m
+      address:
       enforcementPolicy:
         minTime: 5s
         permitWithoutStream: true
-      ownerCacheExpiration: 1m
       keepAlive:
         # 0s - means infinity
         maxConnectionIdle: 0s
@@ -524,13 +532,14 @@ resourceaggregate:
         time: 2h
         timeout: 20s
       tls:
-        caPool: ""
-        keyFile: ""
-        certFile: ""
+        caPool:
+        keyFile:
+        certFile:
         clientCertificateRequired: true
       authorization:
-        authority: ""
-        audience: ""
+        ownerClaim:
+        authority:
+        audience:
         http:
           maxIdleConns: 16
           maxConnsPerHost: 32
@@ -538,23 +547,23 @@ resourceaggregate:
           idleConnTimeout: 30s
           timeout: 10s
           tls:
-            caPool: ""
-            keyFile: ""
-            certFile: ""
+            caPool:
+            keyFile:
+            certFile:
             useSystemCAPool: false
   # -- For complete resource-aggregate service configuration see [plgd/resource-aggregate](https://github.com/plgd-dev/cloud/tree/v2/resource-aggregate)
   clients:
     eventBus:
       nats:
-        url: ""
+        url:
         jetstream: false
         pendingLimits:
           msgLimit: 524288
           bytesLimit: 67108864
         tls:
-          caPool: ""
-          keyFile: ""
-          certFile: ""
+          caPool:
+          keyFile:
+          certFile:
           useSystemCAPool: false
     eventStore:
       defaultCommandTTL: 0s
@@ -572,43 +581,22 @@ resourceaggregate:
         # close connection when idle time reach the value.
         maxConnIdleTime: 4m0s
         tls:
-          caPool: ""
-          keyFile: ""
-          certFile: ""
+          caPool:
+          keyFile:
+          certFile:
           useSystemCAPool: false
-    authorizationServer:
-      pullFrequency: 15s
-      cacheExpiration: 1m
-      ownerClaim: sub
+    identityServer:
       grpc:
-        address: ""
+        address:
         tls:
-          caPool: ""
-          keyFile: ""
-          certFile: ""
+          caPool:
+          keyFile:
+          certFile:
           useSystemCAPool: false
         keepAlive:
           time: 10s
           timeout: 20s
           permitWithoutStream: true
-      oauth:
-        clientID: ""
-        clientSecret: ""
-        scopes: []
-        tokenURL: ""
-        audience: ""
-        verifyServiceTokenFrequency: 10s
-        http:
-          maxIdleConns: 16
-          maxConnsPerHost: 32
-          maxIdleConnsPerHost: 16
-          idleConnTimeout: 30s
-          timeout: 10s
-          tls:
-            caPool: ""
-            keyFile: ""
-            certFile: ""
-            useSystemCAPool: false
 
 # -- CoAP gateway parameters
 coapgateway:
@@ -776,24 +764,24 @@ coapgateway:
     size: "2097152"
     maxIdleTime: "10m"
 
-authorization:
-  # -- Enable authorization service
+identity:
+  # -- Enable identity service
   enabled: true
   # -- Name of component. Used in label selectors
-  name: authorization
+  name: identity
   # -- Full name to override
   fullnameOverride:
   # -- Number of replicas
   replicas: 1
-  # -- Additional labels for authorization deployment
+  # -- Additional labels for identity deployment
   deploymentLabels: {}
-  # -- Additional annotations for authorization deployment
+  # -- Additional annotations for identity deployment
   deploymentAnnotations: {}
   # -- Pod security context
   podSecurityContext: {}
-  # -- Labels for authorization pod
+  # -- Labels for identity pod
   podLabels: {}
-  # -- Annotations for authorization pod
+  # -- Annotations for identity pod
   podAnnotations: {}
   # -- Service configuration
   service:
@@ -807,8 +795,8 @@ authorization:
   rbac:
     # -- Enable RBAC setup
     enabled: false
-    # -- Name of authorization SA
-    serviceAccountName: authorization
+    # -- Name of identity SA
+    serviceAccountName: identity
     # -- Template definition for Role/binding etc.. Resolved as template
     roleBindingDefitionTpl:
   # -- Security context for pod
@@ -819,21 +807,21 @@ authorization:
   restartPolicy: Always
   # -- Init containers definition. Resolved as template
   initContainersTpl: {}
-  # -- Authorization service image section
+  # -- Identity service image section
   image:
     # -- Image registry
     registry:
     # -- Image repository
-    repository: plgd/authorization
+    repository: plgd/identity
     # -- Image tag.
     tag:
     # -- Image pull policy
     pullPolicy: IfNotPresent
     # -- Image pull secrets
     imagePullSecrets: {}
-  # -- Liveness probe. authorization doesn't have any default liveness probe
+  # -- Liveness probe. Identity doesn't have any default liveness probe
   livenessProbe: {}
-  # -- Readiness probe. authorization doesn't have aby default readiness probe
+  # -- Readiness probe. Identity doesn't have aby default readiness probe
   readinessProbe: {}
   # -- Resources limit
   resources: {}
@@ -860,7 +848,7 @@ authorization:
   log:
     # -- Enable extended log messages
     debug: false
-  # -- For complete authorization service configuration see [plgd/authorization](https://github.com/plgd-dev/cloud/tree/v2/authorization)
+  # -- For complete identity service configuration see [plgd/identity](https://github.com/plgd-dev/cloud/tree/v2/identity)
   apis:
     grpc:
       address:
@@ -884,6 +872,7 @@ authorization:
       authorization:
         authority:
         audience:
+        ownerClaim: "sub"
         http:
           maxIdleConns: 16
           maxConnsPerHost: 32
@@ -895,7 +884,7 @@ authorization:
             keyFile:
             certFile:
             useSystemCAPool: false
-  # -- For complete authorization service configuration see [plgd/authorization](https://github.com/plgd-dev/cloud/tree/v2/authorization)
+  # -- For complete identity service configuration see [plgd/authorization](https://github.com/plgd-dev/cloud/tree/v2/identity)
   clients:
     eventBus:
       nats:
@@ -904,7 +893,6 @@ authorization:
         tls:
           useSystemCAPool: false
     storage:
-      ownerClaim: sub
       mongoDB:
         uri:
         database: "ownersDevices"
@@ -1014,13 +1002,13 @@ httpgateway:
         caPool:
         keyFile:
         certFile:
-        clientCertificateRequired: true
+        clientCertificateRequired: false
       webSocket:
         streamBodyLimit: 262144
         pingFrequency: 10s
       authorization:
-        authority: ""
-        audience: ""
+        authority:
+        audience:
         http:
           maxIdleConns: 16
           maxConnsPerHost: 32
@@ -1194,8 +1182,7 @@ grpcgateway:
             useSystemCAPool: false
   # -- For complete grpc-gateway service configuration see [plgd/grpc-gateway](https://github.com/plgd-dev/cloud/tree/v2/grpc-gateway)
   clients:
-    authorizationServer:
-      ownerClaim: "sub"
+    identityServer:
       grpc:
         address: ""
         tls:
@@ -1385,9 +1372,9 @@ certificateauthority:
         certFile:
         clientCertificateRequired: true
       authorization:
-        authority: ""
-        audience: ""
-        ownerClaim: "sub"
+        ownerClaim:
+        authority:
+        audience:
         http:
           maxIdleConns: 16
           maxConnsPerHost: 32

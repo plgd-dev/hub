@@ -1,3 +1,0 @@
-{{- if and .Values.authorization.rbac.enabled .Values.authorization.rbac.roleBindingDefitionTpl }}
-{{- tpl .Values.authorization.rbac.roleBindingDefitionTpl $ }}
-{{- end }}

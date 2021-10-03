@@ -1,0 +1,114 @@
+{{- if .Values.identity.enabled }}
+{{- $cert := "/certs" }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "plgd-cloud.identity.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "plgd-cloud.labels" . | nindent 4 }}
+    {{- with .Values.identity.deploymentLabels }}
+    {{- . | toYaml | nindent 4 }}
+    {{- end }}
+  {{- with .Values.identity.deploymentAnnotations }}
+  annotations:
+  {{- . | toYaml | nindent 4 }}
+  {{- end }}
+spec:
+  replicas: {{ .Values.identity.replicas }}
+  selector:
+    matchLabels:
+      {{- include "plgd-cloud.identity.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.identity.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "plgd-cloud.identity.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.identity.securityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if .Values.identity.rbac.enabled }}
+      serviceAccountName: {{ .Values.identity.rbac.serviceAccountName }}
+      {{- end }}
+      {{- with .Values.identity.image.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      restartPolicy: {{ .Values.identity.restartPolicy }}
+      {{- if .Values.identity.initContainersTpl }}
+      initContainers:
+      {{- tpl .Values.identity.initContainersTpl . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ .Values.identity.name }}
+          {{- with .Values.identity.podSecurityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          image: {{ include "plgd-cloud.identity.image" . | quote }}
+          imagePullPolicy: {{ .Values.identity.image.pullPolicy }}
+          {{- if .Values.identity.command }}
+          command:
+          {{- range .Values.identity.command  }}
+            - {{ . | quote }}
+          {{- end }}
+          {{- end}}
+          args:
+            - "--config"
+            - {{  printf "%s/%s" .Values.identity.config.mountPath .Values.identity.config.fileName | quote }}
+          ports:
+            - name: grpc
+              containerPort: {{ .Values.identity.port }}
+              protocol: TCP
+          {{- with .Values.identity.livenessProbe }}
+          livenessProbe:
+          {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.identity.readinessProbe }}
+          readinessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.identity.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - mountPath: {{ .Values.identity.config.mountPath }}
+              name: {{ .Values.identity.config.volume }}
+            {{- if ( include "plgd-cloud.identity.createServiceCertByCm" . ) }}
+            - name: service-crt
+              mountPath: {{ $cert }}
+            {{- end }}
+            {{- with .Values.identity.extraVolumes }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+      volumes:
+        {{- if ( include "plgd-cloud.identity.createServiceCertByCm" . ) }}
+        - name: service-crt
+          secret:
+            secretName: {{ include "plgd-cloud.identity.serviceCertName" . }}
+        {{- end }}
+        - name: {{ .Values.identity.config.volume }}
+          secret:
+            secretName: {{ include "plgd-cloud.identity.configSecretName" . }}
+        {{- with .Values.identity.extraVolumeMounts }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with .Values.identity.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.identity.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.identity.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

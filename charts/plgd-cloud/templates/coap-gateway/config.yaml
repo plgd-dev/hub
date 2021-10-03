@@ -51,7 +51,7 @@ stringData:
         ownerClaim: {{ .clients.authorizationServer.ownerClaim }}
         grpc:
           {{- $authorizationServer := .clients.authorizationServer.grpc.address }}
-          address:{{ printf " " }}{{- include "plgd-cloud.authorizationAddress" (list $ $authorizationServer ) | quote }}
+          address:{{ printf " " }}{{- include "plgd-cloud.idenityAddress" (list $ $authorizationServer ) | quote }}
           keepAlive:
             time: {{ .clients.authorizationServer.grpc.keepAlive.timeout }}
             timeout: {{ .clients.authorizationServer.grpc.keepAlive.timeout }}

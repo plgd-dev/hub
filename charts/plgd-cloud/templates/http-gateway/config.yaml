@@ -21,8 +21,8 @@ stringData:
           streamBodyLimit: {{ .apis.http.webSocket.streamBodyLimit }}
           pingFrequency: {{ .apis.http.webSocket.pingFrequency }}
         authorization:
-          authority:{{ printf " " }}{{ required "httpgateway.apis.http.authorization.authority or global.authority is required " ( $.Values.global.authority | default .apis.http.authorization.authority ) | quote }}
-          audience:{{ printf " " }}{{ required "httpgateway.apis.http.authorization.audience or global.audience is required " ( $.Values.global.audience | default .apis.http.authorization.audience ) | quote }}
+          authority:{{ printf " " }}{{ required "httpgateway.apis.http.authorization.authority or global.authority is required " ( .apis.http.authorization.authority | default $.Values.global.authority ) | quote }}
+          audience:{{ printf " " }}{{ required "httpgateway.apis.http.authorization.audience or global.audience is required " ( .apis.http.authorization.audience | default $.Values.global.audience ) | quote }}
           http:
             maxIdleConns: {{ .apis.http.authorization.http.maxIdleConns }}
             maxConnsPerHost: {{ .apis.http.authorization.http.maxIdleConnsPerHost }}

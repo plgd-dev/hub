@@ -1,0 +1,3 @@
+{{- if and .Values.identity.rbac.enabled .Values.identity.rbac.roleBindingDefitionTpl }}
+{{- tpl .Values.identity.rbac.roleBindingDefitionTpl $ }}
+{{- end }}

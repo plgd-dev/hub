@@ -1,6 +1,6 @@
-{{- $createServiceCert := include "plgd-cloud.authorization.serviceCertName" . }}
-{{- if and $createServiceCert .Values.certmanager.enabled .Values.authorization.enabled }}
-{{- $serviceDns := include "plgd-cloud.authorization.fullname" . }}
+{{- $createServiceCert := include "plgd-cloud.identity.serviceCertName" . }}
+{{- if and $createServiceCert .Values.certmanager.enabled .Values.identity.enabled }}
+{{- $serviceDns := include "plgd-cloud.identity.fullname" . }}
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:

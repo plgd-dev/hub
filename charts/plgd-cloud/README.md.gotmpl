@@ -15,10 +15,6 @@ Install [cert-manager](https://cert-manager.io/) via [https://artifacthub.io/pac
 ```yaml
 # -- Global config variables
 global:
-  # -- Override mongodb uri for every plgd-cloud services
-  mongoUri:
-  # -- Override nats uri for every plgd-cloud services
-  natsUri:
   # -- Global domain
   domain:
   # -- CloudID. Used by coap-gateway. It must be unique
@@ -28,13 +24,11 @@ global:
   # -- OAuth audience
   audience:
   # Global OAuth configuration used by multiple services
-  oauth:
-    # -- OAuth configuration for internal oAuth service client
-    service:
-      clientID:
-      clientSecret:
-      scopes: []
-      tokenURL:
+
+resourcedirectory:
+  publicConfiguration:
+    caPool:
+    authorizationServer:
 
 coapgateway:
   apis:

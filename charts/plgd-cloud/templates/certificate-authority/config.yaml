@@ -28,8 +28,9 @@ stringData:
           {{- include "plgd-cloud.certificateConfig" (list $ $tls $cert ) | indent 8 }}
           clientCertificateRequired: {{ .apis.grpc.tls.clientCertificateRequired }}
         authorization:
-          authority:{{ printf " " }}{{ required "certificateauthority.apis.grpc.authorization.authority or global.authority is required " ( $.Values.global.authority | default .apis.grpc.authorization.authority ) | quote }}
-          audience:{{ printf " " }}{{ required "certificateauthority.apis.grpc.authorization.audience or global.audience is required " ( $.Values.global.audience | default .apis.grpc.authorization.audience ) | quote }}
+          ownerClaim:{{ printf " " }}{{ required "certificateauthority.apis.grpc.authorization.ownerClaim or global.ownerClaim is required " ( .apis.grpc.authorization.ownerClaim | default $.Values.global.ownerClaim ) | quote }}
+          authority:{{ printf " " }}{{ required "certificateauthority.apis.grpc.authorization.authority or global.authority is required " ( .apis.grpc.authorization.authority | default $.Values.global.authority ) | quote }}
+          audience:{{ printf " " }}{{ required "certificateauthority.apis.grpc.authorization.audience or global.audience is required " ( .apis.grpc.authorization.audience | default $.Values.global.audience ) | quote }}
           http:
             maxIdleConns: {{ .apis.grpc.authorization.http.maxIdleConns }}
             maxConnsPerHost: {{ .apis.grpc.authorization.http.maxIdleConnsPerHost }}

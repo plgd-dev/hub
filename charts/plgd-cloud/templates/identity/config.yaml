@@ -1,13 +1,13 @@
-{{- if .Values.authorization.enabled }}
+{{- if .Values.identity.enabled }}
 {{- $cert := "/certs" }}
 apiVersion: v1
 kind: Secret
 metadata:
-  name: {{ include "plgd-cloud.authorization.configSecretName" . }}
+  name: {{ include "plgd-cloud.identity.configSecretName" . }}
   namespace: {{ .Release.Namespace }}
 stringData:
-  {{ .Values.authorization.config.fileName }}: |
-    {{- with .Values.authorization }}
+  {{ .Values.identity.config.fileName }}: |
+    {{- with .Values.identity }}
     log:
       debug: {{ .log.debug }}
     apis:
@@ -29,6 +29,7 @@ stringData:
         authorization:
           authority:{{ printf " " }}{{ .apis.grpc.authorization.authority | default ( printf "https://auth.%s" $.Values.global.domain ) | quote }}
           audience:{{ printf " " }}{{ .apis.grpc.authorization.audience | default ( printf "%s" $.Values.global.domain ) | quote }}
+          ownerClaim: {{ .apis.grpc.authorization.ownerClaim | quote   }}
           http:
             maxIdleConns: {{ .apis.grpc.authorization.http.maxIdleConns }}
             maxConnsPerHost:  {{ .apis.grpc.authorization.http.maxConnsPerHost }}
@@ -49,7 +50,6 @@ stringData:
             {{- include "plgd-cloud.certificateConfig" (list $ $natsTls $cert ) | indent 10 }}
             useSystemCAPool: false
       storage:
-        ownerClaim: {{ .clients.storage.ownerClaim }}
         mongoDB:
           uri: {{- printf " " }}{{- include "plgd-cloud.mongoDBUri" (list $ .clients.storage.mongoDB.uri )  | quote }}
           database: {{ .clients.storage.mongoDB.database }}

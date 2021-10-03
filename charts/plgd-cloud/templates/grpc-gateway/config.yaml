@@ -45,6 +45,7 @@ stringData:
               useSystemCAPool: {{ .apis.grpc.authorization.http.tls.useSystemCAPool }}
     clients:
       eventBus:
+        goPoolSize: {{ .clients.eventBus.goPoolSize }}
         nats:
           url: {{ printf " " }}{{- include "plgd-cloud.natsUri" (list $ .clients.eventBus.nats.url) | quote }}
           pendingLimits:
@@ -54,19 +55,18 @@ stringData:
             {{- $natsTls := .clients.eventBus.nats.tls }}
             {{- include "plgd-cloud.certificateConfig" (list $ $natsTls $grpcCert ) | indent 10 }}
             useSystemCAPool: {{ .clients.eventBus.nats.tls.useSystemCAPool }}
-      authorizationServer:
-        ownerClaim: {{ .clients.authorizationServer.ownerClaim }}
+      identityServer:
         grpc:
-          {{- $authorizationServer := .clients.authorizationServer.grpc.address }}
-          address:{{ printf " " }}{{- include "plgd-cloud.authorizationAddress" (list $ $authorizationServer ) | quote }}
+          {{- $authorizationServer := .clients.identityServer.grpc.address }}
+          address:{{ printf " " }}{{- include "plgd-cloud.idenityAddress" (list $ $authorizationServer ) | quote }}
           keepAlive:
-            time: {{ .clients.authorizationServer.grpc.keepAlive.timeout }}
-            timeout: {{ .clients.authorizationServer.grpc.keepAlive.timeout }}
-            permitWithoutStream: {{ .clients.authorizationServer.grpc.keepAlive.permitWithoutStream }}
+            time: {{ .clients.identityServer.grpc.keepAlive.timeout }}
+            timeout: {{ .clients.identityServer.grpc.keepAlive.timeout }}
+            permitWithoutStream: {{ .clients.identityServer.grpc.keepAlive.permitWithoutStream }}
           tls:
-            {{- $authClientTls := .clients.authorizationServer.grpc.tls }}
+            {{- $authClientTls := .clients.identityServer.grpc.tls }}
             {{- include "plgd-cloud.certificateConfig" (list $ $authClientTls $grpcCert ) | indent 10 }}
-            useSystemCAPool: {{ .clients.authorizationServer.grpc.tls.useSystemCAPool }}
+            useSystemCAPool: {{ .clients.identityServer.grpc.tls.useSystemCAPool }}
       resourceAggregate:
         grpc:
           {{- $resourceAggregate := .clients.resourceAggregate.grpc.address }}
