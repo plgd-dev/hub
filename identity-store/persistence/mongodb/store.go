@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/plgd-dev/cloud/pkg/log"
-
+	mongoCfg "github.com/plgd-dev/cloud/pkg/mongodb"
 	"github.com/plgd-dev/cloud/pkg/security/certManager/client"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -34,7 +34,7 @@ type Store struct {
 }
 
 // NewStore creates a new Store.
-func NewStore(ctx context.Context, cfg Config, logger log.Logger) (*Store, error) {
+func NewStore(ctx context.Context, cfg mongoCfg.Config, logger log.Logger) (*Store, error) {
 	certManager, err := client.New(cfg.TLS, logger)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create cert manager %w", err)

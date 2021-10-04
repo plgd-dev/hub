@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/plgd-dev/cloud/pkg/log"
+	mongoCfg "github.com/plgd-dev/cloud/pkg/mongodb"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/maintenance"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/mongodb"
 	"github.com/plgd-dev/cloud/test/config"
@@ -54,8 +55,10 @@ func TestMaintenance(t *testing.T) {
 	store, err := mongodb.New(
 		ctx,
 		mongodb.Config{
-			URI: "mongodb://localhost:27017",
-			TLS: config.MakeTLSClientConfig(),
+			Embedded: mongoCfg.Config{
+				URI: "mongodb://localhost:27017",
+				TLS: config.MakeTLSClientConfig(),
+			},
 		},
 		logger,
 		mongodb.WithMarshaler(bson.Marshal),

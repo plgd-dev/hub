@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestService_AddDevice(t *testing.T) {
+func TestServiceAddDevice(t *testing.T) {
 	jwtWithSubAaa := config.CreateJwtToken(t, jwt.MapClaims{
 		"sub": "aaa",
 	})

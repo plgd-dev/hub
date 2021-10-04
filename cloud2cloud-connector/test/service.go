@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/service"
-	"github.com/plgd-dev/cloud/cloud2cloud-connector/store/mongodb"
 	"github.com/plgd-dev/cloud/pkg/log"
+	"github.com/plgd-dev/cloud/pkg/mongodb"
 	"github.com/plgd-dev/cloud/pkg/security/oauth2"
 	"github.com/plgd-dev/cloud/pkg/security/oauth2/oauth"
 	"github.com/plgd-dev/cloud/test/config"

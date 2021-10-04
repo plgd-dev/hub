@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"strings"
 
+	mongoCfg "github.com/plgd-dev/cloud/pkg/mongodb"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -20,7 +21,7 @@ type Store struct {
 }
 
 // NewStore creates a new Store.
-func NewStore(ctx context.Context, cfg Config, tls *tls.Config) (*Store, error) {
+func NewStore(ctx context.Context, cfg mongoCfg.Config, tls *tls.Config) (*Store, error) {
 	client, err := mongo.Connect(ctx, options.Client().ApplyURI(cfg.URI).SetTLSConfig(tls))
 	if err != nil {
 		return nil, fmt.Errorf("could not dial database: %w", err)
