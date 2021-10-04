@@ -13,6 +13,25 @@ const Retrieve Operation = 2
 const Update Operation = 3
 const Delete Operation = 4
 
+var grpcErrorCode2CoapCode map[codes.Code]coapCodes.Code = map[codes.Code]coapCodes.Code{
+	codes.Canceled:           coapCodes.ServiceUnavailable,
+	codes.Unknown:            coapCodes.InternalServerError,
+	codes.InvalidArgument:    coapCodes.BadRequest,
+	codes.DeadlineExceeded:   coapCodes.InternalServerError,
+	codes.NotFound:           coapCodes.NotFound,
+	codes.AlreadyExists:      coapCodes.InternalServerError,
+	codes.PermissionDenied:   coapCodes.Forbidden,
+	codes.ResourceExhausted:  coapCodes.InternalServerError,
+	codes.FailedPrecondition: coapCodes.PreconditionFailed,
+	codes.Aborted:            coapCodes.InternalServerError,
+	codes.OutOfRange:         coapCodes.RequestEntityTooLarge,
+	codes.Unimplemented:      coapCodes.NotImplemented,
+	codes.Internal:           coapCodes.InternalServerError,
+	codes.Unavailable:        coapCodes.ServiceUnavailable,
+	codes.DataLoss:           coapCodes.InternalServerError,
+	codes.Unauthenticated:    coapCodes.Unauthorized,
+}
+
 func grpcCode2CoapCode(statusCode codes.Code, operation Operation) coapCodes.Code {
 	switch statusCode {
 	case codes.OK:
@@ -26,38 +45,10 @@ func grpcCode2CoapCode(statusCode codes.Code, operation Operation) coapCodes.Cod
 		case Delete:
 			return coapCodes.Deleted
 		}
-	case codes.Canceled:
-		return coapCodes.ServiceUnavailable
-	case codes.Unknown:
-		return coapCodes.InternalServerError
-	case codes.InvalidArgument:
-		return coapCodes.BadRequest
-	case codes.DeadlineExceeded:
-		return coapCodes.InternalServerError
-	case codes.NotFound:
-		return coapCodes.NotFound
-	case codes.AlreadyExists:
-		return coapCodes.InternalServerError
-	case codes.PermissionDenied:
-		return coapCodes.Forbidden
-	case codes.ResourceExhausted:
-		return coapCodes.InternalServerError
-	case codes.FailedPrecondition:
-		return coapCodes.PreconditionFailed
-	case codes.Aborted:
-		return coapCodes.InternalServerError
-	case codes.OutOfRange:
-		return coapCodes.RequestEntityTooLarge
-	case codes.Unimplemented:
-		return coapCodes.NotImplemented
-	case codes.Internal:
-		return coapCodes.InternalServerError
-	case codes.Unavailable:
-		return coapCodes.ServiceUnavailable
-	case codes.DataLoss:
-		return coapCodes.InternalServerError
-	case codes.Unauthenticated:
-		return coapCodes.Unauthorized
+	default:
+		if err, ok := grpcErrorCode2CoapCode[statusCode]; ok {
+			return err
+		}
 	}
 	return coapCodes.InternalServerError
 }

@@ -194,24 +194,58 @@ func blockWiseTransferSZXFromString(s string) (blockwise.SZX, error) {
 	return blockwise.SZX(0), fmt.Errorf("invalid value %v", s)
 }
 
+func getOnInactivityFn() func(cc inactivity.ClientConn) {
+	return func(cc inactivity.ClientConn) {
+		client, ok := cc.Context().Value(clientKey).(*Client)
+		if ok {
+			deviceID := getDeviceID(client)
+			log.Errorf("DeviceId: %v: keep alive was reached fail limit:: closing connection", deviceID)
+		} else {
+			log.Errorf("keep alive was reached fail limit:: closing connection")
+		}
+		if err := cc.Close(); err != nil {
+			log.Errorf("failed to close connection: %w", err)
+		}
+	}
+}
+
+func newProviders(ctx context.Context, config AuthorizationConfig, logger log.Logger) (map[string]*oauth2.PlgdProvider, *oauth2.PlgdProvider, func(), error) {
+	var closeProviders fn.FuncList
+	var firstProvider *oauth2.PlgdProvider
+	providers := make(map[string]*oauth2.PlgdProvider)
+	for _, p := range config.Providers {
+		provider, err := oauth2.NewPlgdProvider(ctx, p.Config, logger)
+		if err != nil {
+			closeProviders.Execute()
+			return nil, nil, nil, fmt.Errorf("cannot create device provider: %w", err)
+		}
+		closeProviders.AddFunc(provider.Close)
+		providers[p.Name] = provider
+		if firstProvider == nil {
+			firstProvider = provider
+		}
+	}
+	return providers, firstProvider, closeProviders.ToFunction(), nil
+}
+
 // New creates server.
 func New(ctx context.Context, config Config, logger log.Logger) (*Service, error) {
-	p, err := queue.New(config.TaskQueue)
+	queue, err := queue.New(config.TaskQueue)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create job queue %w", err)
 	}
 
 	nats, err := natsClient.New(config.Clients.Eventbus.NATS, logger)
 	if err != nil {
-		p.Release()
+		queue.Release()
 		return nil, fmt.Errorf("cannot create nats client: %w", err)
 	}
-	nats.AddCloseFunc(p.Release)
+	nats.AddCloseFunc(queue.Release)
 
 	resourceSubscriber, err := subscriber.New(nats.GetConn(),
 		config.Clients.Eventbus.NATS.PendingLimits,
 		logger,
-		subscriber.WithGoPool(func(f func()) error { return p.Submit(f) }),
+		subscriber.WithGoPool(func(f func()) error { return queue.Submit(f) }),
 		subscriber.WithUnmarshaler(utils.Unmarshal))
 	if err != nil {
 		nats.Close()
@@ -248,20 +282,6 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 	}
 	nats.AddCloseFunc(closeListener)
 
-	expirationClientCache := newExpirationClientCache()
-	onInactivity := func(cc inactivity.ClientConn) {
-		client, ok := cc.Context().Value(clientKey).(*Client)
-		if ok {
-			deviceID := getDeviceID(client)
-			log.Errorf("DeviceId: %v: keep alive was reached fail limit:: closing connection", deviceID)
-		} else {
-			log.Errorf("keep alive was reached fail limit:: closing connection")
-		}
-		if err := cc.Close(); err != nil {
-			log.Errorf("failed to close connection: %w", err)
-		}
-	}
-
 	blockWiseTransferSZX := blockwise.SZX1024
 	if config.APIs.COAP.BlockwiseTransfer.Enabled {
 		blockWiseTransferSZX, err = blockWiseTransferSZXFromString(config.APIs.COAP.BlockwiseTransfer.SZX)
@@ -271,20 +291,13 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 		}
 	}
 
-	providers := make(map[string]*oauth2.PlgdProvider)
-	var firstProvider *oauth2.PlgdProvider
-	for _, p := range config.APIs.COAP.Authorization.Providers {
-		provider, err := oauth2.NewPlgdProvider(ctx, p.Config, logger)
-		if err != nil {
-			nats.Close()
-			return nil, fmt.Errorf("cannot create device provider: %w", err)
-		}
-		nats.AddCloseFunc(provider.Close)
-		providers[p.Name] = provider
-		if firstProvider == nil {
-			firstProvider = provider
-		}
+	providers, firstProvider, closeProviders, err := newProviders(ctx, config.APIs.COAP.Authorization, logger)
+	if err != nil {
+		nats.Close()
+		return nil, fmt.Errorf("cannot create device providers error: %w", err)
 	}
+	nats.AddCloseFunc(closeProviders)
+
 	if firstProvider == nil {
 		nats.Close()
 		return nil, fmt.Errorf("device providers are empty")
@@ -304,21 +317,21 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 	s := Service{
 		config:                config,
 		blockWiseTransferSZX:  blockWiseTransferSZX,
-		keepaliveOnInactivity: onInactivity,
+		keepaliveOnInactivity: getOnInactivityFn(),
 
 		natsClient:            nats,
 		raClient:              raClient,
 		isClient:              isClient,
 		rdClient:              rdClient,
-		expirationClientCache: expirationClientCache,
+		expirationClientCache: newExpirationClientCache(),
 		tlsDeviceIDCache:      tlsDeviceIDCache,
 		listener:              listener,
 		authInterceptor:       newAuthInterceptor(),
-		devicesStatusUpdater:  NewDevicesStatusUpdater(ctx, config.Clients.ResourceAggregate.DeviceStatusExpiration),
+		devicesStatusUpdater:  newDevicesStatusUpdater(ctx, config.Clients.ResourceAggregate.DeviceStatusExpiration),
 
 		sigs: make(chan os.Signal, 1),
 
-		taskQueue:          p,
+		taskQueue:          queue,
 		resourceSubscriber: resourceSubscriber,
 		providers:          providers,
 		jwtValidator:       jwtValidator,
