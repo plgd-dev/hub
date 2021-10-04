@@ -6,14 +6,16 @@ func OwnerToUUID(owner string) string {
 	return uuid.NewSHA1(uuid.NameSpaceURL, []byte(owner)).String()
 }
 
+const OWNER_PREFIX = "owners"
+
 func GetOwnerSubject(owner string) string {
-	return "owners." + OwnerToUUID(owner) + ".>"
+	return OWNER_PREFIX + "." + OwnerToUUID(owner) + ".>"
 }
 
 func GetDevicesRegisteredSubject(owner string) string {
-	return "owners." + OwnerToUUID(owner) + ".devicesregistered"
+	return OWNER_PREFIX + "." + OwnerToUUID(owner) + ".devicesregistered"
 }
 
 func GetDevicesUnregisteredSubject(owner string) string {
-	return "owners." + OwnerToUUID(owner) + ".devicesunregistered"
+	return OWNER_PREFIX + "." + OwnerToUUID(owner) + ".devicesunregistered"
 }

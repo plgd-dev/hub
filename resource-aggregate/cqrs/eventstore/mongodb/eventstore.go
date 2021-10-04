@@ -110,12 +110,12 @@ func New(ctx context.Context, config Config, logger log.Logger, opts ...Option) 
 	for _, o := range opts {
 		o.apply(&config)
 	}
-	certManager, err := client.New(config.TLS, logger)
+	certManager, err := client.New(config.Embedded.TLS, logger)
 	if err != nil {
 		return nil, fmt.Errorf("could not create cert manager: %w", err)
 	}
 
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI(config.URI).SetMaxPoolSize(config.MaxPoolSize).SetMaxConnIdleTime(config.MaxConnIdleTime).SetTLSConfig(certManager.GetTLSConfig()))
+	client, err := mongo.Connect(ctx, options.Client().ApplyURI(config.Embedded.URI).SetMaxPoolSize(config.MaxPoolSize).SetMaxConnIdleTime(config.MaxConnIdleTime).SetTLSConfig(certManager.GetTLSConfig()))
 	if err != nil {
 		return nil, fmt.Errorf("could not dial database: %w", err)
 	}
@@ -124,7 +124,7 @@ func New(ctx context.Context, config Config, logger log.Logger, opts ...Option) 
 		return nil, fmt.Errorf("could not dial database: %w", err)
 	}
 
-	store, err := newEventStoreWithClient(ctx, client, config.Database, "events", config.BatchSize, config.marshalerFunc, config.unmarshalerFunc, nil)
+	store, err := newEventStoreWithClient(ctx, client, config.Embedded.Database, "events", config.BatchSize, config.marshalerFunc, config.unmarshalerFunc, nil)
 	if err != nil {
 		return nil, err
 	}

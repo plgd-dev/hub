@@ -209,7 +209,9 @@ func (c *OwnerCache) executeOnLockedOwnerSubject(owner string, fn func(*ownerSub
 // Subscribe register onEvents handler and creates a NATS subscription, if it does not exist.
 // To free subscription call the returned close function.
 func (c *OwnerCache) Subscribe(owner string, onEvent func(e *events.Event)) (close func(), err error) {
-	closeFunc := func() {}
+	closeFunc := func() {
+		// Do nothing if no owner subject is found
+	}
 	err = c.executeOnLockedOwnerSubject(owner, func(s *ownerSubject) error {
 		if onEvent != nil {
 			handlerId := atomic.AddUint64(&c.handlerID, 1)

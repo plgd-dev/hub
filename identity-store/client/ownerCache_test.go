@@ -26,7 +26,7 @@ import (
 	"google.golang.org/grpc"
 )
 
-func TestOwnerCache_Subscribe(t *testing.T) {
+func TestOwnerCacheSubscribe(t *testing.T) {
 	test.ClearDB(context.Background(), t)
 
 	devices := []string{"device1", "device2", "device3"}

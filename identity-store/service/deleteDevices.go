@@ -68,6 +68,38 @@ func (s *Service) publishDevicesUnregistered(ctx context.Context, owner, userID 
 	return nil
 }
 
+func getDeviceIds(request *pb.DeleteDevicesRequest, tx persistence.PersistenceTx, owner string) ([]string, error) {
+	var deviceIds []string
+	if len(request.DeviceIds) == 0 {
+		var err error
+		if deviceIds, err = getOwnerDevices(tx, owner); err != nil {
+			return nil, status.Errorf(codes.InvalidArgument, "cannot delete devices: %v", err)
+		}
+		return deviceIds, nil
+	}
+	deviceIds = getUniqueDeviceIds(request.DeviceIds)
+	if len(deviceIds) == 0 {
+		return nil, status.Errorf(codes.InvalidArgument, "cannot delete devices: invalid DeviceIds")
+	}
+	return deviceIds, nil
+}
+
+func deleteDevice(tx persistence.PersistenceTx, deviceId, owner string) (bool, error) {
+	_, ok, err := tx.Retrieve(deviceId, owner)
+	if err != nil {
+		return false, status.Errorf(codes.Internal, "cannot delete device('%v'): %v", deviceId, err.Error())
+	}
+	if !ok {
+		log.Debugf("cannot retrieve device by user('%v')", owner)
+		return false, nil
+	}
+
+	if err = tx.Delete(deviceId, owner); err != nil {
+		return false, status.Errorf(codes.NotFound, "cannot delete device('%v'): not found", deviceId)
+	}
+	return true, nil
+}
+
 // DeleteDevices removes a devices from user.
 func (s *Service) DeleteDevices(ctx context.Context, request *pb.DeleteDevicesRequest) (*pb.DeleteDevicesResponse, error) {
 	tx := s.persistence.NewTransaction(ctx)
@@ -78,38 +110,23 @@ func (s *Service) DeleteDevices(ctx context.Context, request *pb.DeleteDevicesRe
 		return nil, log.LogAndReturnError(grpc.ForwardFromError(codes.InvalidArgument, fmt.Errorf("cannot delete devices: %w", err)))
 	}
 
-	var deviceIds []string
-	if len(request.DeviceIds) == 0 {
-		var err error
-		if deviceIds, err = getOwnerDevices(tx, owner); err != nil {
-			return nil, log.LogAndReturnError(status.Errorf(codes.InvalidArgument, "cannot delete devices: %v", err))
-		}
-		if len(deviceIds) == 0 {
-			return &pb.DeleteDevicesResponse{}, nil
-		}
-	} else {
-		deviceIds = getUniqueDeviceIds(request.DeviceIds)
-		if len(deviceIds) == 0 {
-			return nil, log.LogAndReturnError(status.Errorf(codes.InvalidArgument, "cannot delete devices: invalid DeviceIds"))
-		}
+	deviceIds, err := getDeviceIds(request, tx, owner)
+	if err != nil {
+		return nil, log.LogAndReturnError(err)
+	}
+	if len(deviceIds) == 0 {
+		return &pb.DeleteDevicesResponse{}, nil
 	}
 
 	var deletedDeviceIds []string
 	for _, deviceId := range deviceIds {
-		_, ok, err := tx.Retrieve(deviceId, owner)
+		ok, err := deleteDevice(tx, deviceId, owner)
 		if err != nil {
-			return nil, log.LogAndReturnError(status.Errorf(codes.Internal, "cannot delete device('%v'): %v", deviceId, err.Error()))
+			return nil, log.LogAndReturnError(err)
 		}
 		if !ok {
-			log.Debugf("cannot retrieve device('%v') by user('%v')", deviceId, owner)
 			continue
 		}
-
-		err = tx.Delete(deviceId, owner)
-		if err != nil {
-			return nil, log.LogAndReturnError(status.Errorf(codes.NotFound, "cannot delete device('%v'): not found", deviceId))
-		}
-
 		deletedDeviceIds = append(deletedDeviceIds, deviceId)
 	}
 

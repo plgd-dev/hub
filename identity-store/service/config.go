@@ -3,8 +3,8 @@ package service
 import (
 	"fmt"
 
-	"github.com/plgd-dev/cloud/identity-store/persistence/mongodb"
 	"github.com/plgd-dev/cloud/pkg/log"
+	"github.com/plgd-dev/cloud/pkg/mongodb"
 	"github.com/plgd-dev/cloud/pkg/net/grpc/server"
 	natsClient "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/client"
 	"github.com/plgd-dev/kit/config"

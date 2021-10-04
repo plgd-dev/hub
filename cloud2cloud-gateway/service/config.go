@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/plgd-dev/cloud/cloud2cloud-gateway/store/mongodb"
 	"github.com/plgd-dev/cloud/pkg/config"
 	"github.com/plgd-dev/cloud/pkg/log"
+	"github.com/plgd-dev/cloud/pkg/mongodb"
 	grpcClient "github.com/plgd-dev/cloud/pkg/net/grpc/client"
 	"github.com/plgd-dev/cloud/pkg/net/listener"
 	cmClient "github.com/plgd-dev/cloud/pkg/security/certManager/client"

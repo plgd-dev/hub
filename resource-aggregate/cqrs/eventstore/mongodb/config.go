@@ -1,36 +1,24 @@
 package mongodb
 
 import (
-	"fmt"
 	"time"
 
-	"github.com/plgd-dev/cloud/pkg/security/certManager/client"
+	mongoCfg "github.com/plgd-dev/cloud/pkg/mongodb"
 )
 
 // Config provides Mongo DB configuration options
 type Config struct {
-	URI             string        `yaml:"uri" json:"uri"`
-	Database        string        `yaml:"database" json:"database"`
-	BatchSize       int           `yaml:"batchSize" json:"batchSize"`
-	MaxPoolSize     uint64        `yaml:"maxPoolSize" json:"maxPoolSize"`
-	MaxConnIdleTime time.Duration `yaml:"maxConnIdleTime" json:"maxConnIdleTime"`
-	TLS             client.Config `yaml:"tls" json:"tls"`
+	BatchSize       int             `yaml:"batchSize" json:"batchSize"`
+	MaxPoolSize     uint64          `yaml:"maxPoolSize" json:"maxPoolSize"`
+	MaxConnIdleTime time.Duration   `yaml:"maxConnIdleTime" json:"maxConnIdleTime"`
+	Embedded        mongoCfg.Config `yaml:",inline" json:",inline"`
 
 	marshalerFunc   MarshalerFunc   `yaml:"-"`
 	unmarshalerFunc UnmarshalerFunc `yaml:"-"`
 }
 
 func (c *Config) Validate() error {
-	if c.URI == "" {
-		return fmt.Errorf("uri('%v')", c.URI)
-	}
-	if c.Database == "" {
-		return fmt.Errorf("database('%v')", c.Database)
-	}
-	if err := c.TLS.Validate(); err != nil {
-		return fmt.Errorf("tls.%w", err)
-	}
-	return nil
+	return c.Embedded.Validate()
 }
 
 // Option provides the means to use function call chaining

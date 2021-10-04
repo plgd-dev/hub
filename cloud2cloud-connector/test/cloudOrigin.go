@@ -45,7 +45,7 @@ func SetUpCloudWithConnector(t *testing.T) (TearDown func()) {
 	raCfg := raService.MakeConfig(t)
 	raCfg.APIs.GRPC.Addr = RESOURCE_AGGREGATE_HOST
 	raCfg.APIs.GRPC.Authorization.Authority = "https://" + OAUTH_HOST
-	raCfg.Clients.Eventstore.Connection.MongoDB.Database = C2C_CONNECTOR_DB
+	raCfg.Clients.Eventstore.Connection.MongoDB.Embedded.Database = C2C_CONNECTOR_DB
 	raCfg.Clients.IdentityStore.Connection.Addr = IDENTITY_STORE_HOST
 	raCfg.Clients.Eventbus.NATS.URL = C2C_CONNECTOR_NATS_URL
 	raShutdown := raService.New(t, raCfg)
@@ -53,7 +53,7 @@ func SetUpCloudWithConnector(t *testing.T) (TearDown func()) {
 	rdCfg := rdService.MakeConfig(t)
 	rdCfg.APIs.GRPC.Addr = RESOURCE_DIRECTORY_HOST
 	rdCfg.APIs.GRPC.Authorization.Authority = "https://" + OAUTH_HOST
-	rdCfg.Clients.Eventstore.Connection.MongoDB.Database = C2C_CONNECTOR_DB
+	rdCfg.Clients.Eventstore.Connection.MongoDB.Embedded.Database = C2C_CONNECTOR_DB
 	rdCfg.Clients.Eventbus.NATS.URL = C2C_CONNECTOR_NATS_URL
 	rdCfg.Clients.IdentityStore.Connection.Addr = IDENTITY_STORE_HOST
 	rdShutdown := rdService.New(t, rdCfg)
