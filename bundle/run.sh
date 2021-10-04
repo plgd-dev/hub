@@ -611,6 +611,7 @@ cat /configs/coap-gateway.yaml | yq e "\
   .apis.coap.tls.enabled = true |
   .apis.coap.tls.keyFile = \"${EXTERNAL_CERT_DIR_PATH}/${COAP_GATEWAY_FILE_CERT_KEY_NAME}\" |
   .apis.coap.tls.certFile = \"${EXTERNAL_CERT_DIR_PATH}/${COAP_GATEWAY_FILE_CERT_NAME}\" |
+  .apis.coap.tls.clientCertificateRequired = false |
   .apis.coap.authorization.ownerClaim = \"${OWNER_CLAIM}\" |
   .apis.coap.authorization.providers[0].name = \"${DEVICE_PROVIDER}\" |
   .apis.coap.authorization.providers[0].authority = \"https://${OAUTH_ENDPOINT}\" |
