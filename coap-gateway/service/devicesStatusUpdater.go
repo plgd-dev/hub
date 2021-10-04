@@ -24,7 +24,7 @@ type devicesStatusUpdater struct {
 	devices map[string]*deviceExpires
 }
 
-func NewDevicesStatusUpdater(ctx context.Context, cfg DeviceStatusExpirationConfig) *devicesStatusUpdater {
+func newDevicesStatusUpdater(ctx context.Context, cfg DeviceStatusExpirationConfig) *devicesStatusUpdater {
 	u := devicesStatusUpdater{
 		ctx:     ctx,
 		cfg:     cfg,
