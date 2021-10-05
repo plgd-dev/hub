@@ -115,7 +115,7 @@ func TestAggregateHandle_ConfirmDeviceMetadataUpdate(t *testing.T) {
 				assert.Equal(t, tt.want, s.Code())
 			} else {
 				require.NoError(t, err)
-				err = service.PublishEvents(ctx, publisher, tt.args.request.GetDeviceId(), ag.ResourceID(), events)
+				err = service.PublishEvents(ctx, publisher, tt.args.userID, tt.args.request.GetDeviceId(), ag.ResourceID(), events)
 				assert.NoError(t, err)
 			}
 		}

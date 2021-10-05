@@ -7,14 +7,12 @@ import (
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
 	"github.com/plgd-dev/cloud/resource-aggregate/events"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestDummyForCoverage(t *testing.T) {
 	deviceID := "dev"
 
-	_, err := utils.GetDeviceSubject("a", deviceID)
-	require.NoError(t, err)
+	utils.GetDeviceSubject("a", deviceID)
 	sequence := uint64(1234)
 	version := uint64(5)
 	connId := "c"
