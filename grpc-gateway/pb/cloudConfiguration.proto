@@ -12,12 +12,10 @@ message CloudConfigurationResponse {
     int64 current_time = 1;
     string jwt_owner_claim = 2;
     string jwt_device_id_claim = 3;
-    string signing_server_address  = 4;
-    string cloud_id = 5;
-    string cloud_url  = 6;
-    string cloud_authorization_provider = 7;
-    string cloud_certificate_authorities = 8;
-    string authorization_server = 9;
+    string cloud_id = 4;
+    string cloud_url  = 5;
+    string cloud_certificate_authorities = 6;
+    string authorization_server = 7;
     // exposes default command time to live in nanoseconds for CreateResource, RetrieveResource, UpdateResource, DeleteResource, and UpdateDeviceMetadata commands when it is not set in the request. 0 - means forever.
-    int64 default_command_time_to_live = 10;
+    int64 default_command_time_to_live = 8;
 }

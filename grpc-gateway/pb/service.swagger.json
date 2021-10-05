@@ -1231,16 +1231,10 @@
         "jwtDeviceIdClaim": {
           "type": "string"
         },
-        "signingServerAddress": {
-          "type": "string"
-        },
         "cloudId": {
           "type": "string"
         },
         "cloudUrl": {
-          "type": "string"
-        },
-        "cloudAuthorizationProvider": {
           "type": "string"
         },
         "cloudCertificateAuthorities": {

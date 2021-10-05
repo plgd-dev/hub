@@ -42,7 +42,7 @@ ui:
   enabled: false
   directory: "/usr/local/var/www"
   webConfiguration:
-    domain: ""
+    authority: ""
     httpGatewayAddress: ""
     webOAuthClient:
       clientID: ""

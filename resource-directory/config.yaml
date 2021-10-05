@@ -84,8 +84,6 @@ publicConfiguration:
   authorizationServer: ""
   ownerClaim: "sub"
   deviceIdClaim: ""
-  signingServerAddress: ""
   cloudID: ""
   cloudURL: ""
-  cloudAuthorizationProvider: "plgd"
   defaultCommandTimeToLive: "0s"
