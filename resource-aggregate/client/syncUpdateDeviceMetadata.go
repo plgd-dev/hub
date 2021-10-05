@@ -55,9 +55,9 @@ func (h *updateDeviceMetadataHandler) recv(ctx context.Context) (*events.DeviceM
 }
 
 // SyncUpdateDeviceMetadata sends update device metadata command to resource aggregate and wait for metadata updated event from eventbus.
-func (c *Client) SyncUpdateDeviceMetadata(ctx context.Context, req *commands.UpdateDeviceMetadataRequest) (*events.DeviceMetadataUpdated, error) {
+func (c *Client) SyncUpdateDeviceMetadata(ctx context.Context, owner string, req *commands.UpdateDeviceMetadataRequest) (*events.DeviceMetadataUpdated, error) {
 	h := newUpdateDeviceMetadataHandler(req.GetCorrelationId())
-	subject := utils.GetDeviceMetadataEventSubject(req.GetDeviceId(), (&events.DeviceMetadataUpdated{}).EventType())
+	subject := utils.GetDeviceMetadataEventSubject(owner, req.GetDeviceId(), (&events.DeviceMetadataUpdated{}).EventType())
 	obs, err := c.subscriber.Subscribe(ctx, req.GetCorrelationId(), subject, h)
 	if err != nil {
 		return nil, fmt.Errorf("cannot subscribe to eventbus: %w", err)

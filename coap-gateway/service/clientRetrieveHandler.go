@@ -122,7 +122,7 @@ func clientRetrieveFromDeviceHandler(req *mux.Message, client *Client, deviceID,
 		return nil, err
 	}
 
-	retrievedEvent, err := client.server.raClient.SyncRetrieveResource(req.Context, retrieveCommand)
+	retrievedEvent, err := client.server.raClient.SyncRetrieveResource(req.Context, "*", retrieveCommand)
 	if err != nil {
 		return nil, err
 	}

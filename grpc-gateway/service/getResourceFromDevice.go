@@ -15,7 +15,7 @@ func (r *RequestHandler) GetResourceFromDevice(ctx context.Context, req *pb.GetR
 	if err != nil {
 		return nil, log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot retrieve resource: %v", err))
 	}
-	retrievedEvent, err := r.resourceAggregateClient.SyncRetrieveResource(ctx, retrieveCommand)
+	retrievedEvent, err := r.resourceAggregateClient.SyncRetrieveResource(ctx, "*", retrieveCommand)
 	if err != nil {
 		return nil, log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot retrieve resource: %v", err))
 	}

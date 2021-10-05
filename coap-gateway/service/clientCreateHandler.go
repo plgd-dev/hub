@@ -47,7 +47,7 @@ func clientCreateDeviceHandler(req *mux.Message, client *Client, deviceID, href 
 		return nil, err
 	}
 
-	createdEvent, err := client.server.raClient.SyncCreateResource(req.Context, createCommand)
+	createdEvent, err := client.server.raClient.SyncCreateResource(req.Context, "*", createCommand)
 	if err != nil {
 		return nil, err
 	}

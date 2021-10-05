@@ -48,7 +48,7 @@ func clientDeleteResourceHandler(req *mux.Message, client *Client, deviceID, hre
 		return nil, err
 	}
 
-	deletedCommand, err := client.server.raClient.SyncDeleteResource(req.Context, deleteCommand)
+	deletedCommand, err := client.server.raClient.SyncDeleteResource(req.Context, "*", deleteCommand)
 	if err != nil {
 		return nil, err
 	}

@@ -15,7 +15,7 @@ func (r *RequestHandler) DeleteResource(ctx context.Context, req *pb.DeleteResou
 	if err != nil {
 		return nil, log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot delete resource: %v", err))
 	}
-	deletedEvent, err := r.resourceAggregateClient.SyncDeleteResource(ctx, deleteCommand)
+	deletedEvent, err := r.resourceAggregateClient.SyncDeleteResource(ctx, "*", deleteCommand)
 	if err != nil {
 		return nil, log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot delete resource: %v", err))
 	}

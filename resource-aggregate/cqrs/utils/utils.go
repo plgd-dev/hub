@@ -8,32 +8,55 @@ import (
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus"
 	"github.com/plgd-dev/cloud/resource-aggregate/events"
+
+	isEvents "github.com/plgd-dev/cloud/identity-store/events"
 )
 
-func GetDeviceSubject(deviceID string) []string {
-	return []string{"events." + deviceID + ".>"}
+const DeviceIDKey = "deviceId"
+const ResourceIDKey = "resourceId"
+
+const PlgdOwnersOwnerDevices = isEvents.PlgdOwnersOwner + ".devices"
+const PlgdOwnersOwnerDevicesDevice = PlgdOwnersOwnerDevices + ".{" + DeviceIDKey + "}"
+const PlgdOwnersOwnerDevicesDeviceResourceLinks = PlgdOwnersOwnerDevicesDevice + ".resource-links"
+const PlgdOwnersOwnerDevicesDeviceResourceLinksEvent = PlgdOwnersOwnerDevicesDeviceResourceLinks + ".{" + isEvents.EventTypeKey + "}"
+const PlgdOwnersOwnerDevicesDeviceMetadata = PlgdOwnersOwnerDevicesDevice + ".metadata"
+const PlgdOwnersOwnerDevicesDeviceMetadataEvent = PlgdOwnersOwnerDevicesDeviceMetadata + ".{" + isEvents.EventTypeKey + "}"
+const PlgdOwnersOwnerDevicesDeviceResources = PlgdOwnersOwnerDevicesDevice + ".resources"
+const PlgdOwnersOwnerDevicesDeviceResourcesResource = PlgdOwnersOwnerDevicesDeviceResources + ".{" + ResourceIDKey + "}"
+const PlgdOwnersOwnerDevicesDeviceResourcesResourceEvent = PlgdOwnersOwnerDevicesDeviceResourcesResource + ".{" + isEvents.EventTypeKey + "}"
+
+func WithResourceId(resourceId string) func(values map[string]string) {
+	return func(values map[string]string) {
+		values[ResourceIDKey] = resourceId
+	}
 }
 
-func GetDeviceMetadataEventSubject(deviceID string, eventType string) []string {
-	return []string{"events." + deviceID + ".metadata." + eventType}
+func WithDeviceID(deviceId string) func(values map[string]string) {
+	return func(values map[string]string) {
+		values[ResourceIDKey] = deviceId
+	}
 }
 
-func GetResourceSubject(resourceID *commands.ResourceId) []string {
-	return []string{"events." + resourceID.GetDeviceId() + "." + resourceID.ToUUID() + ".>"}
+func GetDeviceSubject(owner, deviceID string) []string {
+	return []string{isEvents.ToSubject(PlgdOwnersOwnerDevicesDevice, isEvents.WithOwner(owner), WithDeviceID(deviceID)) + ".>"}
 }
 
-func GetResourceEventSubject(resourceID *commands.ResourceId, eventType string) []string {
-	return []string{"events." + resourceID.GetDeviceId() + ".resources." + resourceID.ToUUID() + "." + eventType}
+func GetDeviceMetadataEventSubject(owner, deviceID, eventType string) []string {
+	return []string{isEvents.ToSubject(PlgdOwnersOwnerDevicesDeviceMetadataEvent, isEvents.WithOwner(owner), WithDeviceID(deviceID), isEvents.WithEventType(eventType))}
 }
 
-func GetPublishSubject(event eventbus.Event) []string {
+func GetResourceEventSubject(owner string, resourceID *commands.ResourceId, eventType string) []string {
+	return []string{isEvents.ToSubject(PlgdOwnersOwnerDevicesDeviceResourcesResourceEvent, isEvents.WithOwner(owner), WithDeviceID(resourceID.GetDeviceId()), isEvents.WithEventType(eventType), WithResourceId(resourceID.ToUUID()))}
+}
+
+func GetPublishSubject(owner string, event eventbus.Event) []string {
 	switch event.EventType() {
 	case (&events.ResourceLinksPublished{}).EventType(), (&events.ResourceLinksUnpublished{}).EventType(), (&events.ResourceLinksSnapshotTaken{}).EventType():
-		return []string{"events." + event.GroupID() + ".resource-links." + event.EventType()}
+		return []string{isEvents.ToSubject(PlgdOwnersOwnerDevicesDeviceResourceLinksEvent, isEvents.WithOwner(owner), WithDeviceID(event.GroupID()), isEvents.WithEventType(event.EventType()))}
 	case (&events.DeviceMetadataUpdatePending{}).EventType(), (&events.DeviceMetadataUpdated{}).EventType(), (&events.DeviceMetadataSnapshotTaken{}).EventType():
-		return []string{"events." + event.GroupID() + ".metadata." + event.EventType()}
+		return []string{isEvents.ToSubject(PlgdOwnersOwnerDevicesDeviceMetadataEvent, isEvents.WithOwner(owner), WithDeviceID(event.GroupID()), isEvents.WithEventType(event.EventType()))}
 	}
-	return []string{"events." + event.GroupID() + ".resources." + event.AggregateID() + "." + event.EventType()}
+	return []string{isEvents.ToSubject(PlgdOwnersOwnerDevicesDeviceResourcesResourceEvent, isEvents.WithOwner(owner), WithDeviceID(event.GroupID()), WithResourceId(event.AggregateID()), isEvents.WithEventType(event.EventType()))}
 }
 
 func TimeNowMs() uint64 {
