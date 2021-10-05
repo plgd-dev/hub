@@ -83,7 +83,7 @@ func (c *AuthorizationConfig) Validate() error {
 	}
 	duplicitProviderNames := make(map[string]bool)
 	for i := 0; i < len(c.Providers); i++ {
-		if err := c.Providers[i].Validate(c.Providers[i].Authority, duplicitProviderNames); err != nil {
+		if err := c.Providers[i].Validate(c.Providers[0].Authority, duplicitProviderNames); err != nil {
 			return fmt.Errorf("providers[%v].%w", i, err)
 		}
 	}

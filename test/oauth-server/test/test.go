@@ -159,7 +159,7 @@ func GetDeviceAuthorizationCode(t *testing.T, authServerHost, clientId, deviceID
 		q.Add(uri.DeviceId, deviceID)
 	}
 	u.RawQuery = q.Encode()
-	getReq := NewRequest(http.MethodGet, config.OAUTH_SERVER_HOST, u.String(), nil).Build()
+	getReq := NewRequest(http.MethodGet, authServerHost, u.String(), nil).Build()
 	res := HTTPDo(t, getReq, false)
 	defer func() {
 		_ = res.Body.Close()

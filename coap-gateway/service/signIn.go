@@ -316,6 +316,9 @@ func signInPostHandler(req *mux.Message, client *Client, signIn CoapSignInReq) {
 	} else {
 		client.server.expirationClientCache.Set(deviceID, client, time.Second*time.Duration(expiresIn))
 	}
+
+	client.exchangeCache.Clear()
+
 	client.sendResponse(coapCodes.Changed, req.Token, accept, out)
 
 	// try to register observations to the device for published resources at the cloud.

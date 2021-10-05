@@ -42,7 +42,7 @@ func (request CoapSignUpRequest) checkOAuthRequest() error {
 }
 
 /// Get data for sign up response
-func getSignUpContent(token *oauth2.Token, owner string, validUntil int64, options message.Options) (message.MediaType, []byte, error) {
+func getSignUpContent(token oauth2.Token, owner string, validUntil int64, options message.Options) (message.MediaType, []byte, error) {
 	resp := CoapSignUpResponse{
 		AccessToken:  token.AccessToken.String(),
 		UserID:       owner,
@@ -92,7 +92,7 @@ func signUpPostHandler(r *mux.Message, client *Client) {
 		return
 	}
 
-	token, err := provider.Exchange(r.Context, signUp.AuthorizationCode)
+	token, err := client.exchangeCache.Execute(r.Context, provider, signUp.AuthorizationCode)
 	if err != nil {
 		logErrorAndCloseClient(fmt.Errorf("cannot handle sign up: %w", err), coapCodes.Unauthorized)
 		return

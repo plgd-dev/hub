@@ -104,6 +104,8 @@ type Client struct {
 
 	resourceSubscriptions *kitSync.Map // [token]
 
+	exchangeCache *exchangeCache
+
 	mutex                   sync.Mutex
 	authCtx                 *authorizationContext
 	deviceSubscriber        *grpcClient.DeviceSubscriber
@@ -115,9 +117,10 @@ func newClient(server *Service, client *tcp.ClientConn, tlsDeviceID string) *Cli
 	return &Client{
 		server:                server,
 		coapConn:              client,
+		tlsDeviceID:           tlsDeviceID,
 		observedResources:     make(map[string]map[int64]*observedResource),
 		resourceSubscriptions: kitSync.NewMap(),
-		tlsDeviceID:           tlsDeviceID,
+		exchangeCache:         NewExchangeCache(),
 	}
 }
 
