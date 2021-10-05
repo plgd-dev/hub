@@ -2,9 +2,12 @@ package service_test
 
 import (
 	"testing"
+	"time"
 
+	coapgwTest "github.com/plgd-dev/cloud/coap-gateway/test"
 	"github.com/plgd-dev/cloud/coap-gateway/uri"
-	testCfg "github.com/plgd-dev/cloud/test/config"
+	"github.com/plgd-dev/cloud/test/config"
+	"github.com/plgd-dev/cloud/test/oauth-server/service"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 )
 
@@ -14,13 +17,13 @@ type TestCoapRefreshTokenResponse struct {
 	RefreshToken string `json:"refreshtoken"`
 }
 
-func Test_refreshTokenHandler(t *testing.T) {
+func TestRefreshTokenHandler(t *testing.T) {
 	tbl := []testEl{
 		{"BadRequest0", input{coapCodes.POST, `{}`, nil}, output{coapCodes.BadRequest, `invalid deviceID`, nil}, true},
 		{"BadRequest1", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "refreshtoken": 123}`, nil}, output{coapCodes.BadRequest, `cannot handle refresh token: cbor: cannot unmarshal`, nil}, true},
 		{"BadRequest2", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "refreshtoken": "123"}`, nil}, output{coapCodes.BadRequest, `invalid userId`, nil}, true},
 		{"BadRequest3", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "uid": "` + AuthorizationUserId + `"}`, nil}, output{coapCodes.BadRequest, `invalid refreshToken`, nil}, true},
-		{"Changed1", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "uid":"` + AuthorizationUserId + `", "refreshtoken":"123" }`, nil}, output{coapCodes.Changed, TestCoapRefreshTokenResponse{RefreshToken: AuthorizationRefreshToken}, nil}, false},
+		{"Changed1", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "uid":"` + AuthorizationUserId + `", "refreshtoken":"123"}`, nil}, output{coapCodes.Changed, TestCoapRefreshTokenResponse{RefreshToken: AuthorizationRefreshToken}, nil}, false},
 	}
 
 	shutdown := setUp(t)
@@ -28,7 +31,7 @@ func Test_refreshTokenHandler(t *testing.T) {
 
 	for _, test := range tbl {
 		tf := func(t *testing.T) {
-			co := testCoapDial(t, testCfg.GW_HOST, "")
+			co := testCoapDial(t, config.GW_HOST, "")
 			if co == nil {
 				return
 			}
@@ -38,5 +41,38 @@ func Test_refreshTokenHandler(t *testing.T) {
 			testPostHandler(t, uri.RefreshToken, test, co)
 		}
 		t.Run(test.name, tf)
+	}
+}
+
+type TestCoapRefreshTokenResponseRetry struct {
+	ExpiresIn    int64  `json:"-"`
+	AccessToken  string `json:"-"`
+	RefreshToken string `json:"-"`
+}
+
+func TestRefreshTokenHandlerWithRetry(t *testing.T) {
+	coapgwCfg := coapgwTest.MakeConfig(t)
+	coapgwCfg.APIs.COAP.Authorization.Providers[0].Config.ClientID = service.ClientTestRestrictedAuth
+	shutdown := setUp(t, coapgwCfg)
+	defer shutdown()
+
+	co := testCoapDial(t, config.GW_HOST, "")
+	if co == nil {
+		return
+	}
+	defer func() {
+		_ = co.Close()
+	}()
+
+	testRefreshToken := testEl{
+		name: "Retry",
+		in:   input{coapCodes.POST, `{"di": "` + CertIdentity + `", "uid":"` + AuthorizationUserId + `", "refreshtoken":"123"}`, nil},
+		out:  output{coapCodes.Changed, TestCoapRefreshTokenResponseRetry{}, nil},
+	}
+
+	const retryCount = 3
+	for i := 0; i < retryCount; i++ {
+		testPostHandler(t, uri.RefreshToken, testRefreshToken, co)
+		time.Sleep(time.Second)
 	}
 }
