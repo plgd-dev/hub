@@ -1,21 +1,38 @@
 package events
 
-import "github.com/google/uuid"
+import (
+	"strings"
+
+	"github.com/google/uuid"
+)
 
 func OwnerToUUID(owner string) string {
 	return uuid.NewSHA1(uuid.NameSpaceURL, []byte(owner)).String()
 }
 
-const OWNER_PREFIX = "owners"
-
-func GetOwnerSubject(owner string) string {
-	return OWNER_PREFIX + "." + OwnerToUUID(owner) + ".>"
+func WithOwner(owner string) func(values map[string]string) {
+	return func(values map[string]string) {
+		if owner == "*" {
+			values[OwnerIdKey] = owner
+			return
+		}
+		values[OwnerIdKey] = OwnerToUUID(owner)
+	}
 }
 
-func GetDevicesRegisteredSubject(owner string) string {
-	return OWNER_PREFIX + "." + OwnerToUUID(owner) + ".devicesregistered"
+func WithEventType(eventType string) func(values map[string]string) {
+	return func(values map[string]string) {
+		values[EventTypeKey] = eventType
+	}
 }
 
-func GetDevicesUnregisteredSubject(owner string) string {
-	return OWNER_PREFIX + "." + OwnerToUUID(owner) + ".devicesunregistered"
+func ToSubject(template string, opts ...func(values map[string]string)) string {
+	values := make(map[string]string)
+	for _, o := range opts {
+		o(values)
+	}
+	for key, val := range values {
+		template = strings.ReplaceAll(template, "{"+key+"}", val)
+	}
+	return template
 }

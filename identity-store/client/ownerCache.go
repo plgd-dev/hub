@@ -81,7 +81,7 @@ func (d *ownerSubject) updateDevicesLocked(devices []string) ([]string, []string
 
 func (d *ownerSubject) subscribeLocked(owner string, subscribe func(subj string, cb nats.MsgHandler) (*nats.Subscription, error), handle func(msg *nats.Msg)) error {
 	if d.subscription == nil {
-		sub, err := subscribe(events.GetOwnerSubject(owner), handle)
+		sub, err := subscribe(events.GetRegistrationSubject(owner), handle)
 		if err != nil {
 			return err
 		}

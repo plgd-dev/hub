@@ -147,7 +147,7 @@ type DeviceSubscriber struct {
 
 type RetryFunc = func() (when time.Time, err error)
 
-func NewDeviceSubscriber(getContext func() (context.Context, context.CancelFunc), deviceID string, factoryRetry func() RetryFunc, rdClient pbGRPC.GrpcGatewayClient, resourceSubscriber *subscriber.Subscriber) (*DeviceSubscriber, error) {
+func NewDeviceSubscriber(getContext func() (context.Context, context.CancelFunc), owner, deviceID string, factoryRetry func() RetryFunc, rdClient pbGRPC.GrpcGatewayClient, resourceSubscriber *subscriber.Subscriber) (*DeviceSubscriber, error) {
 	uuid, err := uuid.NewRandom()
 	if err != nil {
 		return nil, err
@@ -165,7 +165,7 @@ func NewDeviceSubscriber(getContext func() (context.Context, context.CancelFunc)
 	ctx, cancel := getContext()
 	defer cancel()
 
-	observer, err := resourceSubscriber.Subscribe(ctx, uuid.String(), utils.GetDeviceSubject(deviceID), &s)
+	observer, err := resourceSubscriber.Subscribe(ctx, uuid.String(), utils.GetDeviceSubject(owner, deviceID), &s)
 	if err != nil {
 		return nil, err
 	}

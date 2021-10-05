@@ -14,7 +14,7 @@ func (r *RequestHandler) UpdateDeviceMetadata(ctx context.Context, req *pb.Updat
 	if err != nil {
 		return nil, log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot update device('%v') metadata: %v", req.GetDeviceId(), err))
 	}
-	metadataUpdated, err := r.resourceAggregateClient.SyncUpdateDeviceMetadata(ctx, updateMetadata)
+	metadataUpdated, err := r.resourceAggregateClient.SyncUpdateDeviceMetadata(ctx, "*", updateMetadata)
 	if err != nil {
 		return nil, log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot update device('%v') metadata: %v", req.GetDeviceId(), err))
 	}

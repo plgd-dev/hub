@@ -358,8 +358,12 @@ func (s *Sub) initOwnerSubscription(ownerCache *client.OwnerCache) ([]string, er
 		_ = s.Close()
 		return nil, err
 	}
+	owner, err := grpc.OwnerFromTokenMD(s.Context(), ownerCache.OwnerClaim())
+	if err != nil {
+		return nil, grpc.ForwardFromError(codes.InvalidArgument, err)
+	}
 
-	devices, err = s.initEventSubscriptions(devices)
+	devices, err = s.initEventSubscriptions(owner, devices)
 	if err != nil {
 		_ = s.Close()
 		return nil, err
@@ -397,14 +401,14 @@ func (s *Sub) filterDevices(devices []string) []string {
 	return filteredDevices
 }
 
-func (s *Sub) initEventSubscriptions(deviceIDs []string) ([]string, error) {
+func (s *Sub) initEventSubscriptions(owner string, deviceIDs []string) ([]string, error) {
 	var errors []error
 	filteredDevices := make([]string, 0, len(deviceIDs))
 	for _, deviceID := range deviceIDs {
 		if _, ok := s.devicesEventsObserver[deviceID]; ok {
 			continue
 		}
-		obs, err := s.eventsSub.Subscribe(s.Context(), deviceID+"."+s.id, utils.GetDeviceSubject(deviceID), s)
+		obs, err := s.eventsSub.Subscribe(s.Context(), deviceID+"."+s.id, utils.GetDeviceSubject(owner, deviceID), s)
 		if err != nil {
 			errors = append(errors, err)
 			continue
@@ -440,7 +444,7 @@ func (s *Sub) sendDevicesRegistered(deviceIDs []string) error {
 
 func (s *Sub) onRegisteredEvent(e *ownerEvents.DevicesRegistered) {
 	devices := s.filterDevices(e.GetDeviceIds())
-	devices, err := s.initEventSubscriptions(devices)
+	devices, err := s.initEventSubscriptions(e.Owner, devices)
 	if err != nil {
 		s.errFunc(err)
 		return

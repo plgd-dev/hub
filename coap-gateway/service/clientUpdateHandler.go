@@ -57,7 +57,7 @@ func clientUpdateDeviceHandler(req *mux.Message, client *Client, deviceID, href 
 		return nil, err
 	}
 
-	updatedEvent, err := client.server.raClient.SyncUpdateResource(req.Context, updateCommand)
+	updatedEvent, err := client.server.raClient.SyncUpdateResource(req.Context, "*", updateCommand)
 	if err != nil {
 		return nil, err
 	}

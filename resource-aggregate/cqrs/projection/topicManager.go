@@ -4,7 +4,7 @@ import (
 	"sync"
 )
 
-type GetTopicsFunc func(string) []string
+type GetTopicsFunc func(string, string) []string
 
 type TopicManager struct {
 	topicsLock sync.Mutex
@@ -24,7 +24,7 @@ func (p *TopicManager) Add(key string) ([]string, bool) {
 	var topics []string
 	p.topicsLock.Lock()
 	defer p.topicsLock.Unlock()
-	for _, t := range p.getTopics(key) {
+	for _, t := range p.getTopics("*", key) {
 		if _, ok := p.topics[t]; ok {
 			p.topics[t]++
 		} else {
@@ -45,7 +45,7 @@ func (p *TopicManager) Remove(key string) ([]string, bool) {
 	var topics []string
 	p.topicsLock.Lock()
 	defer p.topicsLock.Unlock()
-	for _, t := range p.getTopics(key) {
+	for _, t := range p.getTopics("*", key) {
 		if _, ok := p.topics[t]; ok {
 			p.topics[t]--
 			if p.topics[t] <= 0 {

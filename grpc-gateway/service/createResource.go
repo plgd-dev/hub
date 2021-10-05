@@ -16,7 +16,7 @@ func (r *RequestHandler) CreateResource(ctx context.Context, req *pb.CreateResou
 		return nil, log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot create resource: %v", err))
 	}
 
-	createdEvent, err := r.resourceAggregateClient.SyncCreateResource(ctx, createCommand)
+	createdEvent, err := r.resourceAggregateClient.SyncCreateResource(ctx, "*", createCommand)
 	if err != nil {
 		return nil, log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot create resource: %v", err))
 	}

@@ -111,7 +111,7 @@ func (rh *RequestHandler) updateResourceContent(w http.ResponseWriter, r *http.R
 		},
 	}
 
-	updatedEvent, err := rh.raClient.SyncUpdateResource(r.Context(), updateCommand)
+	updatedEvent, err := rh.raClient.SyncUpdateResource(r.Context(), "*", updateCommand)
 	if err != nil {
 		return http.StatusBadRequest, fmt.Errorf("cannot update resource content: %w", err)
 	}

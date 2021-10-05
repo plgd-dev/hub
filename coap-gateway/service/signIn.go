@@ -141,8 +141,8 @@ func getSignInContent(expiresIn int64, options message.Options) (message.MediaTy
 	return accept, out, nil
 }
 
-func setNewDeviceSubscriber(client *Client, deviceID string) error {
-	deviceSubscriber, err := grpcgwClient.NewDeviceSubscriber(client.GetContext, deviceID, func() func() (when time.Time, err error) {
+func setNewDeviceSubscriber(client *Client, owner, deviceID string) error {
+	deviceSubscriber, err := grpcgwClient.NewDeviceSubscriber(client.GetContext, owner, deviceID, func() func() (when time.Time, err error) {
 		var count uint64
 		maxRand := client.server.config.APIs.COAP.KeepAlive.Timeout / 2
 		if maxRand <= 0 {
@@ -196,7 +196,7 @@ func (client *Client) updateAuthorizationContext(deviceId, userId, accessToken s
 	return updateTypeNone
 }
 
-func (client *Client) updateBySignInData(ctx context.Context, upd updateType, deviceId, userId string) error {
+func (client *Client) updateBySignInData(ctx context.Context, upd updateType, deviceId, owner string) error {
 	if upd == updateTypeChanged {
 		client.cancelResourceSubscriptions(true)
 		if err := client.closeDeviceSubscriber(); err != nil {
@@ -211,7 +211,7 @@ func (client *Client) updateBySignInData(ctx context.Context, upd updateType, de
 			return fmt.Errorf("cannot load shadow synchronization for device %v: %w", deviceId, err)
 		}
 
-		if err := setNewDeviceSubscriber(client, deviceId); err != nil {
+		if err := setNewDeviceSubscriber(client, owner, deviceId); err != nil {
 			return fmt.Errorf("cannot set device subscriber: %w", err)
 		}
 	}
@@ -223,16 +223,16 @@ func (client *Client) updateBySignInData(ctx context.Context, upd updateType, de
 	return nil
 }
 
-func subscribeAndValidateDeviceAccess(ctx context.Context, client *Client, userId, deviceId string, subscribe bool) (bool, error) {
+func subscribeAndValidateDeviceAccess(ctx context.Context, client *Client, owner, deviceId string, subscribe bool) (bool, error) {
 	// subscribe to updates before checking cache, so when the device gets removed during sign in
 	// the client will always be closed
 	if subscribe {
-		if err := client.subscribeToDeviceEvents(userId, func(e *events.Event) {
+		if err := client.subscribeToDeviceEvents(owner, func(e *events.Event) {
 			evt := e.GetDevicesUnregistered()
 			if evt == nil {
 				return
 			}
-			if evt.Owner != userId {
+			if evt.Owner != owner {
 				return
 			}
 			if strings.Contains(evt.DeviceIds, deviceId) {
