@@ -539,7 +539,6 @@ cat /configs/resource-directory.yaml | yq e "\
   .publicConfiguration.authorizationServer = \"https://${OAUTH_ENDPOINT}\" |
   .publicConfiguration.cloudID = \"${COAP_GATEWAY_CLOUD_ID}\" |
   .publicConfiguration.cloudURL = \"coaps+tcp://${COAP_GATEWAY_FQDN}:${COAP_GATEWAY_PORT}\" |
-  .publicConfiguration.signingServerAddress = \"${FQDN_NGINX_HTTPS}\" |
   .publicConfiguration.ownerClaim = \"${OWNER_CLAIM}\"
 " - > /data/resource-directory.yaml
 
@@ -680,7 +679,7 @@ cat /configs/http-gateway.yaml | yq e "\
   .apis.http.authorization.authority = \"https://${OAUTH_ENDPOINT}\" |
   .clients.grpcGateway.grpc.address = \"${GRPC_GATEWAY_ADDRESS}\" |
   .ui.enabled = true |
-  .ui.webConfiguration.domain = \"${OAUTH_ENDPOINT}\" |
+  .ui.webConfiguration.authority = \"https://${OAUTH_ENDPOINT}\" |
   .ui.webConfiguration.httpGatewayAddress =\"https://${FQDN_NGINX_HTTPS}\" |
   .ui.webConfiguration.webOAuthClient.clientID = \"${OAUTH_CLIENT_ID}\" |
   .ui.webConfiguration.webOAuthClient.audience = \"${OAUTH_AUDIENCE}\" |

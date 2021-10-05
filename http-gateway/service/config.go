@@ -144,15 +144,15 @@ func (c *DeviceOAuthClient) Validate() error {
 
 // WebConfiguration represents web configuration for user interface exposed via getOAuthConfiguration handler
 type WebConfiguration struct {
-	Domain             string            `json:"domain" yaml:"domain"`
+	Authority          string            `json:"authority" yaml:"authority"`
 	HTTPGatewayAddress string            `json:"httpGatewayAddress" yaml:"httpGatewayAddress"`
 	WebOAuthClient     BasicOAuthClient  `json:"webOAuthClient" yaml:"webOAuthClient"`
 	DeviceOAuthClient  DeviceOAuthClient `json:"deviceOAuthClient" yaml:"deviceOAuthClient"`
 }
 
 func (c *WebConfiguration) Validate() error {
-	if c.Domain == "" {
-		return fmt.Errorf("domain('%v')", c.Domain)
+	if c.Authority == "" {
+		return fmt.Errorf("authority('%v')", c.Authority)
 	}
 	if c.HTTPGatewayAddress == "" {
 		return fmt.Errorf("httpGatewayAddress('%v')", c.HTTPGatewayAddress)

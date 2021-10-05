@@ -116,15 +116,13 @@ func (c *IdentityStoreConfig) Validate() error {
 }
 
 type PublicConfiguration struct {
-	CAPool                     string        `yaml:"caPool" json:"caPool" description:"file path to the root certificate in PEM format"`
-	OwnerClaim                 string        `yaml:"ownerClaim" json:"ownerClaim"`
-	DeviceIDClaim              string        `yaml:"deviceIdClaim" json:"deviceIdClaim"`
-	SigningServerAddress       string        `yaml:"signingServerAddress" json:"signingServerAddress"`
-	CloudID                    string        `yaml:"cloudID" json:"cloudID"`
-	CloudURL                   string        `yaml:"cloudURL" json:"cloudURL"`
-	CloudAuthorizationProvider string        `yaml:"cloudAuthorizationProvider" json:"cloudAuthorizationProvider"`
-	DefaultCommandTimeToLive   time.Duration `yaml:"defaultCommandTimeToLive" json:"defaultCommandTimeToLive"`
-	AuthorizationServer        string        `yaml:"authorizationServer" json:"authorizationServer"`
+	CAPool                   string        `yaml:"caPool" json:"caPool" description:"file path to the root certificate in PEM format"`
+	OwnerClaim               string        `yaml:"ownerClaim" json:"ownerClaim"`
+	DeviceIDClaim            string        `yaml:"deviceIdClaim" json:"deviceIdClaim"`
+	CloudID                  string        `yaml:"cloudID" json:"cloudID"`
+	CloudURL                 string        `yaml:"cloudURL" json:"cloudURL"`
+	DefaultCommandTimeToLive time.Duration `yaml:"defaultCommandTimeToLive" json:"defaultCommandTimeToLive"`
+	AuthorizationServer      string        `yaml:"authorizationServer" json:"authorizationServer"`
 
 	cloudCertificateAuthorities string `yaml:"-"`
 }
@@ -136,17 +134,11 @@ func (c *PublicConfiguration) Validate() error {
 	if c.OwnerClaim == "" {
 		return fmt.Errorf("ownerClaim('%v')", c.OwnerClaim)
 	}
-	if c.SigningServerAddress == "" {
-		return fmt.Errorf("signingServerAddress('%v')", c.SigningServerAddress)
-	}
 	if c.CloudID == "" {
 		return fmt.Errorf("cloudID('%v')", c.CloudID)
 	}
 	if c.CloudURL == "" {
 		return fmt.Errorf("cloudURL('%v')", c.CloudURL)
-	}
-	if c.CloudAuthorizationProvider == "" {
-		return fmt.Errorf("cloudAuthorizationProvider('%v')", c.CloudAuthorizationProvider)
 	}
 	if c.CAPool == "" {
 		return fmt.Errorf("caPool('%v')", c.CAPool)
@@ -161,10 +153,8 @@ func (c PublicConfiguration) ToProto() *pb.CloudConfigurationResponse {
 	return &pb.CloudConfigurationResponse{
 		JwtOwnerClaim:               c.OwnerClaim,
 		JwtDeviceIdClaim:            c.DeviceIDClaim,
-		SigningServerAddress:        c.SigningServerAddress,
 		CloudId:                     c.CloudID,
 		CloudUrl:                    c.CloudURL,
-		CloudAuthorizationProvider:  c.CloudAuthorizationProvider,
 		CloudCertificateAuthorities: c.cloudCertificateAuthorities,
 		DefaultCommandTimeToLive:    int64(c.DefaultCommandTimeToLive),
 		CurrentTime:                 pkgTime.UnixNano(time.Now()),
