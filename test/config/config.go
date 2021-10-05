@@ -7,7 +7,7 @@ import (
 
 	"github.com/golang-jwt/jwt/v4"
 	c2curi "github.com/plgd-dev/cloud/cloud2cloud-connector/uri"
-	mongoCfg "github.com/plgd-dev/cloud/pkg/mongodb"
+	pkgMongo "github.com/plgd-dev/cloud/pkg/mongodb"
 	grpcClient "github.com/plgd-dev/cloud/pkg/net/grpc/client"
 	grpcServer "github.com/plgd-dev/cloud/pkg/net/grpc/server"
 	httpClient "github.com/plgd-dev/cloud/pkg/net/http/client"
@@ -138,7 +138,7 @@ func MakeSubscriberConfig() natsClient.Config {
 
 func MakeEventsStoreMongoDBConfig() mongodb.Config {
 	return mongodb.Config{
-		Embedded: mongoCfg.Config{
+		Embedded: pkgMongo.Config{
 			URI:      MONGODB_URI,
 			Database: "eventStore",
 			TLS:      MakeTLSClientConfig(),

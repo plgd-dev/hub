@@ -15,7 +15,7 @@ import (
 	pbIS "github.com/plgd-dev/cloud/identity-store/pb"
 	"github.com/plgd-dev/cloud/pkg/fn"
 	"github.com/plgd-dev/cloud/pkg/log"
-	mongoCfg "github.com/plgd-dev/cloud/pkg/mongodb"
+	pkgMongo "github.com/plgd-dev/cloud/pkg/mongodb"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	grpcClient "github.com/plgd-dev/cloud/pkg/net/grpc/client"
 	kitNetHttp "github.com/plgd-dev/cloud/pkg/net/http"
@@ -128,7 +128,7 @@ func newSubscriber(config natsClient.Config, logger log.Logger) (*subscriber.Sub
 	return sub, fl.ToFunction(), nil
 }
 
-func newStore(ctx context.Context, config mongoCfg.Config, logger log.Logger) (*Store, func(), error) {
+func newStore(ctx context.Context, config pkgMongo.Config, logger log.Logger) (*Store, func(), error) {
 	var fl fn.FuncList
 	certManager, err := cmClient.New(config.TLS, logger)
 	if err != nil {

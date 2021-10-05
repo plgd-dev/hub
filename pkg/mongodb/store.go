@@ -117,6 +117,11 @@ func (s *Store) Clear(ctx context.Context) error {
 	return nil
 }
 
+// Get mongodb client
+func (s *Store) Client() *mongo.Client {
+	return s.client
+}
+
 // Close closes the database session.
 func (s *Store) Close(ctx context.Context) error {
 	return s.client.Disconnect(ctx)

@@ -122,7 +122,7 @@ func (s *Store) SaveSubscription(ctx context.Context, sub store.Subscription) er
 		return fmt.Errorf("cannot save resource subscription: %w", err)
 	}
 	DBSub := makeDBSub(sub)
-	col := s.client.Database(s.DBName()).Collection(subscriptionsCName)
+	col := s.Collection(subscriptionsCName)
 	if _, err := col.InsertOne(ctx, DBSub); err != nil {
 		return fmt.Errorf("cannot save resource subscription: %w", err)
 	}
@@ -130,8 +130,7 @@ func (s *Store) SaveSubscription(ctx context.Context, sub store.Subscription) er
 }
 
 func (s *Store) IncrementSubscriptionSequenceNumber(ctx context.Context, subscriptionID string) (uint64, error) {
-	col := s.client.Database(s.DBName()).Collection(subscriptionsCName)
-
+	col := s.Collection(subscriptionsCName)
 	res, err := incrementSubscriptionSequenceNumber(ctx, col, subscriptionID)
 	if err != nil {
 		return 0, fmt.Errorf("cannot increment sequence number for subscription: %w", err)
@@ -140,8 +139,7 @@ func (s *Store) IncrementSubscriptionSequenceNumber(ctx context.Context, subscri
 }
 
 func (s *Store) SetInitialized(ctx context.Context, subscriptionID string) error {
-	col := s.client.Database(s.DBName()).Collection(subscriptionsCName)
-
+	col := s.Collection(subscriptionsCName)
 	if subscriptionID == "" {
 		return fmt.Errorf("cannot set initialized: invalid subscriptionId")
 	}
@@ -157,7 +155,8 @@ func (s *Store) SetInitialized(ctx context.Context, subscriptionID string) error
 
 func (s *Store) PopSubscription(ctx context.Context, subscriptionID string) (sub store.Subscription, err error) {
 	var DBSub DBSub
-	res := s.client.Database(s.DBName()).Collection(subscriptionsCName).FindOneAndDelete(ctx, bson.M{"_id": subscriptionID})
+	col := s.Collection(subscriptionsCName)
+	res := col.FindOneAndDelete(ctx, bson.M{"_id": subscriptionID})
 	if res.Err() != nil {
 		return sub, res.Err()
 	}
@@ -172,7 +171,7 @@ func (s *Store) LoadSubscriptions(ctx context.Context, query store.SubscriptionQ
 	var iter *mongo.Cursor
 	var err error
 
-	col := s.client.Database(s.DBName()).Collection(subscriptionsCName)
+	col := s.Collection(subscriptionsCName)
 	switch {
 	case query.SubscriptionID != "":
 		iter, err = col.Find(ctx, bson.M{"_id": query.SubscriptionID})

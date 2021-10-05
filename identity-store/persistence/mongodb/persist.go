@@ -28,7 +28,7 @@ type PersistenceTx struct {
 //  tx := s.persistence.NewTransaction()
 //  defer tx.Close()
 func (p *Store) NewTransaction(ctx context.Context) persistence.PersistenceTx {
-	tx, err := p.client.StartSession()
+	tx, err := p.Client().StartSession()
 	if err == nil {
 		err = tx.StartTransaction()
 		if err != nil {

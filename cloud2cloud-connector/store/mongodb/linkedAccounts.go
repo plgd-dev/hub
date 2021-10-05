@@ -38,7 +38,7 @@ func (s *Store) InsertLinkedAccount(ctx context.Context, sub store.LinkedAccount
 		return fmt.Errorf("cannot insert linked account: %w", err)
 	}
 
-	col := s.client.Database(s.DBName()).Collection(resLinkedAccountCName)
+	col := s.Collection(resLinkedAccountCName)
 
 	if _, err := col.InsertOne(ctx, sub); err != nil {
 		return fmt.Errorf("cannot insert linked account: %w", err)
@@ -52,7 +52,7 @@ func (s *Store) UpdateLinkedAccount(ctx context.Context, sub store.LinkedAccount
 		return fmt.Errorf("cannot update linked account: %w", err)
 	}
 
-	col := s.client.Database(s.DBName()).Collection(resLinkedAccountCName)
+	col := s.Collection(resLinkedAccountCName)
 	res, err := col.UpdateOne(ctx, bson.M{"_id": sub.ID}, bson.M{"$set": sub})
 	if err != nil {
 		return fmt.Errorf("cannot update linked account: %w", err)
@@ -67,7 +67,7 @@ func (s *Store) RemoveLinkedAccount(ctx context.Context, linkedAccountId string)
 	if linkedAccountId == "" {
 		return fmt.Errorf("cannot remove linked account: invalid linkedAccountId")
 	}
-	res, err := s.client.Database(s.DBName()).Collection(resLinkedAccountCName).DeleteOne(ctx, bson.M{"_id": linkedAccountId})
+	res, err := s.Collection(resLinkedAccountCName).DeleteOne(ctx, bson.M{"_id": linkedAccountId})
 	if err != nil {
 		return fmt.Errorf("cannot remove linked account: %w", err)
 	}
@@ -81,7 +81,7 @@ func (s *Store) LoadLinkedAccounts(ctx context.Context, query store.Query, h sto
 	var iter *mongo.Cursor
 	var err error
 
-	col := s.client.Database(s.DBName()).Collection(resLinkedAccountCName)
+	col := s.Collection(resLinkedAccountCName)
 	switch {
 	case query.ID != "":
 		iter, err = col.Find(ctx, bson.M{"_id": query.ID})
