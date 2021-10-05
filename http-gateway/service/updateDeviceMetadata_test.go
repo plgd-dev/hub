@@ -124,7 +124,7 @@ func TestRequestHandler_UpdateDeviceMetadata(t *testing.T) {
 	}()
 	tmp := uuid.New()
 	v := NewContentChangedFilter()
-	obs, err := s.Subscribe(ctx, tmp.String(), utils.GetDeviceSubject(deviceID), v)
+	obs, err := s.Subscribe(ctx, tmp.String(), utils.GetDeviceSubject("*", deviceID), v)
 	require.NoError(t, err)
 	defer func() {
 		_ = obs.Close()

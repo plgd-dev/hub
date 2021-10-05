@@ -86,7 +86,7 @@ func (c *DevicesSubscription) Add(deviceID string, linkedAccount store.LinkedAcc
 	}
 	deviceSubscriber, err := grpcClient.NewDeviceSubscriber(func() (context.Context, context.CancelFunc) {
 		return kitNetGrpc.CtxWithToken(c.ctx, linkedAccount.Data.Origin().AccessToken.String()), func() {}
-	}, deviceID, func() func() (when time.Time, err error) {
+	}, "*", deviceID, func() func() (when time.Time, err error) {
 		var count uint64
 		maxRand := c.reconnectInterval / 2
 		if maxRand <= 0 {
