@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/plgd-dev/cloud/pkg/log"
-	mongoCfg "github.com/plgd-dev/cloud/pkg/mongodb"
+	pkgMongo "github.com/plgd-dev/cloud/pkg/mongodb"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/mongodb"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/test"
 	"github.com/plgd-dev/cloud/test/config"
@@ -18,7 +18,7 @@ func NewTestEventStore(ctx context.Context, logger log.Logger) (*mongodb.EventSt
 	store, err := mongodb.New(
 		ctx,
 		mongodb.Config{
-			Embedded: mongoCfg.Config{
+			Embedded: pkgMongo.Config{
 				URI: "mongodb://localhost:27017",
 				TLS: config.MakeTLSClientConfig(),
 			},

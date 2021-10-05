@@ -39,7 +39,7 @@ func (s *Store) UpdateLinkedCloud(ctx context.Context, sub store.LinkedCloud) er
 		return err
 	}
 
-	col := s.client.Database(s.DBName()).Collection(resLinkedCloudCName)
+	col := s.Collection(resLinkedCloudCName)
 	res, err := col.UpdateOne(ctx, bson.M{"_id": sub.ID}, bson.M{"$set": sub})
 	if err != nil {
 		return fmt.Errorf("cannot save linked cloud: %w", err)
@@ -56,7 +56,7 @@ func (s *Store) InsertLinkedCloud(ctx context.Context, sub store.LinkedCloud) er
 		return err
 	}
 
-	col := s.client.Database(s.DBName()).Collection(resLinkedCloudCName)
+	col := s.Collection(resLinkedCloudCName)
 
 	if _, err := col.InsertOne(ctx, sub); err != nil {
 		return fmt.Errorf("cannot save linked cloud: %w", err)
@@ -69,7 +69,7 @@ func (s *Store) RemoveLinkedCloud(ctx context.Context, linkedCloudId string) err
 		return fmt.Errorf("cannot remove linked cloud: invalid LinkedCloudId")
 	}
 
-	res, err := s.client.Database(s.DBName()).Collection(resLinkedCloudCName).DeleteOne(ctx, bson.M{"_id": linkedCloudId})
+	res, err := s.Collection(resLinkedCloudCName).DeleteOne(ctx, bson.M{"_id": linkedCloudId})
 	if err != nil {
 		return fmt.Errorf("cannot remove linked cloud: %w", err)
 	}
@@ -82,7 +82,7 @@ func (s *Store) RemoveLinkedCloud(ctx context.Context, linkedCloudId string) err
 func (s *Store) LoadLinkedClouds(ctx context.Context, query store.Query, h store.LinkedCloudHandler) error {
 	var iter *mongo.Cursor
 	var err error
-	col := s.client.Database(s.DBName()).Collection(resLinkedCloudCName)
+	col := s.Collection(resLinkedCloudCName)
 	switch {
 	case query.ID != "":
 		iter, err = col.Find(ctx, bson.M{"_id": query.ID})

@@ -9,6 +9,7 @@ import (
 	"github.com/plgd-dev/cloud/identity-store/persistence/mongodb"
 	"github.com/plgd-dev/cloud/pkg/log"
 	"github.com/plgd-dev/cloud/pkg/net/grpc/server"
+	cmClient "github.com/plgd-dev/cloud/pkg/security/certManager/client"
 	"github.com/plgd-dev/cloud/pkg/security/jwt/validator"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/client"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/publisher"
@@ -51,7 +52,13 @@ func NewServer(ctx context.Context, cfg Config, logger log.Logger, publisher *pu
 		return nil, fmt.Errorf("cannot create grpc listener: %w", err)
 	}
 
-	persistence, err := mongodb.NewStore(ctx, cfg.Clients.Storage.MongoDB, logger)
+	certManager, err := cmClient.New(cfg.Clients.Storage.MongoDB.TLS, logger)
+	if err != nil {
+		return nil, fmt.Errorf("cannot create cert manager %w", err)
+	}
+	grpcServer.AddCloseFunc(certManager.Close)
+
+	persistence, err := mongodb.NewStore(ctx, cfg.Clients.Storage.MongoDB, certManager.GetTLSConfig())
 	if err != nil {
 		return nil, fmt.Errorf("cannot create connector to mongo: %w", err)
 	}
