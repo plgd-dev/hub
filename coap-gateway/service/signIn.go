@@ -318,6 +318,7 @@ func signInPostHandler(req *mux.Message, client *Client, signIn CoapSignInReq) {
 	}
 
 	client.exchangeCache.Clear()
+	client.refreshCache.Clear()
 
 	client.sendResponse(coapCodes.Changed, req.Token, accept, out)
 
