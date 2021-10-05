@@ -122,7 +122,7 @@ export const updateThingShadowSynchronizationApi = (
  */
 export const getDeviceAuthCode = deviceId => {
   return new Promise((resolve, reject) => {
-    const { domain } = security.getGeneralConfig()
+    const { authority } = security.getGeneralConfig()
     const { clientID, audience, scopes = [] } = security.getDeviceOAuthConfig()
 
     if (!clientID) {
@@ -135,7 +135,7 @@ export const getDeviceAuthCode = deviceId => {
 
     let timeout = null
     const iframe = document.createElement('iframe')
-    iframe.src = `https://${domain}/authorize?response_type=code&client_id=${clientID}&scope=${scopes}&audience=${
+    iframe.src = `${authority}/authorize?response_type=code&client_id=${clientID}&scope=${scopes}&audience=${
       audience || ''
     }&redirect_uri=${window.location.origin}/things&device_id=${deviceId}`
 

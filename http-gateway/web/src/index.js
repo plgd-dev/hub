@@ -18,11 +18,11 @@ fetch('/web_configuration.json')
     const audience = config?.webOAuthClient?.audience
     const scopes = config?.webOAuthClient?.scopes?.join?.(',') || ''
     const httpGatewayAddress = config.httpGatewayAddress
-    const domain = config.domain
+    const authority = config.authority
 
-    if (!clientID || !domain || !audience || !httpGatewayAddress) {
+    if (!clientID || !authority || !audience || !httpGatewayAddress) {
       throw new Error(
-        'clientID, domain, audience and httpGatewayAddress must be set in webOAuthClient of web_configuration.json'
+        'clientID, authority, audience and httpGatewayAddress must be set in webOAuthClient of web_configuration.json'
       )
     }
 
@@ -46,7 +46,7 @@ fetch('/web_configuration.json')
         <Provider store={store}>
           <IntlProvider>
             <Auth0Provider
-              domain={domain}
+              domain={authority}
               clientId={clientID}
               redirectUri={window.location.origin}
               onRedirectCallback={onRedirectCallback}
