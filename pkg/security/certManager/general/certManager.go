@@ -10,8 +10,8 @@ import (
 	"sync"
 
 	"github.com/fsnotify/fsnotify"
-	"github.com/plgd-dev/cloud/pkg/log"
-	"github.com/plgd-dev/kit/security"
+	"github.com/plgd-dev/cloud/v2/pkg/log"
+	"github.com/plgd-dev/kit/v2/security"
 )
 
 // Config provides configuration of a file based Server Certificate manager

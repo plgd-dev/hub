@@ -4,12 +4,12 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/plgd-dev/cloud/pkg/log"
-	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
-	"github.com/plgd-dev/cloud/resource-aggregate/commands"
-	cqrsAggregate "github.com/plgd-dev/cloud/resource-aggregate/cqrs/aggregate"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore"
-	"github.com/plgd-dev/cloud/resource-aggregate/events"
+	"github.com/plgd-dev/cloud/v2/pkg/log"
+	kitNetGrpc "github.com/plgd-dev/cloud/v2/pkg/net/grpc"
+	"github.com/plgd-dev/cloud/v2/resource-aggregate/commands"
+	cqrsAggregate "github.com/plgd-dev/cloud/v2/resource-aggregate/cqrs/aggregate"
+	"github.com/plgd-dev/cloud/v2/resource-aggregate/cqrs/eventstore"
+	"github.com/plgd-dev/cloud/v2/resource-aggregate/events"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )

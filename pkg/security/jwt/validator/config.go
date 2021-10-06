@@ -3,7 +3,7 @@ package validator
 import (
 	"fmt"
 
-	"github.com/plgd-dev/cloud/pkg/net/http/client"
+	"github.com/plgd-dev/cloud/v2/pkg/net/http/client"
 )
 
 type Config struct {

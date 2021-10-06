@@ -1,7 +1,7 @@
 package store
 
 import (
-	"github.com/plgd-dev/cloud/cloud2cloud-connector/events"
+	"github.com/plgd-dev/cloud/v2/cloud2cloud-connector/events"
 )
 
 type Type string

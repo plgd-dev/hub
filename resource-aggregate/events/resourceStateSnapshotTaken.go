@@ -6,20 +6,20 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/plgd-dev/cloud/pkg/net/grpc"
-	pkgTime "github.com/plgd-dev/cloud/pkg/time"
+	"github.com/plgd-dev/cloud/v2/pkg/net/grpc"
+	pkgTime "github.com/plgd-dev/cloud/v2/pkg/time"
 	"github.com/plgd-dev/go-coap/v2/message"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 
-	"github.com/plgd-dev/cloud/resource-aggregate/commands"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/aggregate"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore"
-	"github.com/plgd-dev/kit/codec/cbor"
-	"github.com/plgd-dev/kit/codec/json"
-	"github.com/plgd-dev/kit/strings"
+	"github.com/plgd-dev/cloud/v2/resource-aggregate/commands"
+	"github.com/plgd-dev/cloud/v2/resource-aggregate/cqrs/aggregate"
+	"github.com/plgd-dev/cloud/v2/resource-aggregate/cqrs/eventstore"
+	"github.com/plgd-dev/kit/v2/codec/cbor"
+	"github.com/plgd-dev/kit/v2/codec/json"
+	"github.com/plgd-dev/kit/v2/strings"
 )
 
 const eventTypeResourceStateSnapshotTaken = "resourcestatesnapshottaken"

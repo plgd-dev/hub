@@ -4,8 +4,8 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/plgd-dev/cloud/resource-aggregate/commands"
-	"github.com/plgd-dev/sdk/schema/maintenance"
+	"github.com/plgd-dev/cloud/v2/resource-aggregate/commands"
+	"github.com/plgd-dev/sdk/v2/schema/maintenance"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )

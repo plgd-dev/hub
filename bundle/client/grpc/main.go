@@ -14,14 +14,14 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 
-	pbGW "github.com/plgd-dev/cloud/grpc-gateway/pb"
-	"github.com/plgd-dev/cloud/pkg/log"
-	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
-	"github.com/plgd-dev/cloud/resource-aggregate/commands"
-	"github.com/plgd-dev/cloud/test/oauth-server/service"
-	"github.com/plgd-dev/cloud/test/oauth-server/uri"
+	pbGW "github.com/plgd-dev/cloud/v2/grpc-gateway/pb"
+	"github.com/plgd-dev/cloud/v2/pkg/log"
+	kitNetGrpc "github.com/plgd-dev/cloud/v2/pkg/net/grpc"
+	"github.com/plgd-dev/cloud/v2/resource-aggregate/commands"
+	"github.com/plgd-dev/cloud/v2/test/oauth-server/service"
+	"github.com/plgd-dev/cloud/v2/test/oauth-server/uri"
 	"github.com/plgd-dev/go-coap/v2/message"
-	"github.com/plgd-dev/kit/codec/json"
+	"github.com/plgd-dev/kit/v2/codec/json"
 )
 
 /*

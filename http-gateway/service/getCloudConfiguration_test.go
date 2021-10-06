@@ -8,12 +8,12 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/plgd-dev/cloud/grpc-gateway/pb"
-	httpgwTest "github.com/plgd-dev/cloud/http-gateway/test"
-	"github.com/plgd-dev/cloud/http-gateway/uri"
-	rdTest "github.com/plgd-dev/cloud/resource-directory/test"
-	"github.com/plgd-dev/cloud/test"
-	"github.com/plgd-dev/cloud/test/config"
+	"github.com/plgd-dev/cloud/v2/grpc-gateway/pb"
+	httpgwTest "github.com/plgd-dev/cloud/v2/http-gateway/test"
+	"github.com/plgd-dev/cloud/v2/http-gateway/uri"
+	rdTest "github.com/plgd-dev/cloud/v2/resource-directory/test"
+	"github.com/plgd-dev/cloud/v2/test"
+	"github.com/plgd-dev/cloud/v2/test/config"
 )
 
 func TestRequestHandler_GetCloudConfiguration(t *testing.T) {

@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/plgd-dev/cloud/cloud2cloud-connector/events"
-	"github.com/plgd-dev/cloud/cloud2cloud-gateway/store"
+	"github.com/plgd-dev/cloud/v2/cloud2cloud-connector/events"
+	"github.com/plgd-dev/cloud/v2/cloud2cloud-gateway/store"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"

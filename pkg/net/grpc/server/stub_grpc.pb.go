@@ -32,7 +32,7 @@ func NewStubServiceClient(cc grpc.ClientConnInterface) StubServiceClient {
 
 func (c *stubServiceClient) TestCall(ctx context.Context, in *TestRequest, opts ...grpc.CallOption) (*TestResponse, error) {
 	out := new(TestResponse)
-	err := c.cc.Invoke(ctx, "/ocf.cloud.test.pb.StubService/TestCall", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/ocf.cloud.test.pb.v2.StubService/TestCall", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -40,7 +40,7 @@ func (c *stubServiceClient) TestCall(ctx context.Context, in *TestRequest, opts 
 }
 
 func (c *stubServiceClient) TestStream(ctx context.Context, opts ...grpc.CallOption) (StubService_TestStreamClient, error) {
-	stream, err := c.cc.NewStream(ctx, &StubService_ServiceDesc.Streams[0], "/ocf.cloud.test.pb.StubService/TestStream", opts...)
+	stream, err := c.cc.NewStream(ctx, &StubService_ServiceDesc.Streams[0], "/ocf.cloud.test.pb.v2.StubService/TestStream", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -112,7 +112,7 @@ func _StubService_TestCall_Handler(srv interface{}, ctx context.Context, dec fun
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/ocf.cloud.test.pb.StubService/TestCall",
+		FullMethod: "/ocf.cloud.test.pb.v2.StubService/TestCall",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(StubServiceServer).TestCall(ctx, req.(*TestRequest))
@@ -150,7 +150,7 @@ func (x *stubServiceTestStreamServer) Recv() (*TestRequest, error) {
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var StubService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "ocf.cloud.test.pb.StubService",
+	ServiceName: "ocf.cloud.test.pb.v2.StubService",
 	HandlerType: (*StubServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{

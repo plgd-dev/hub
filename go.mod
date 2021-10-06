@@ -1,4 +1,4 @@
-module github.com/plgd-dev/cloud
+module github.com/plgd-dev/cloud/v2
 
 go 1.16
 
@@ -20,18 +20,18 @@ require (
 	github.com/nats-io/nats.go v1.12.3
 	github.com/panjf2000/ants/v2 v2.4.6
 	github.com/patrickmn/go-cache v2.1.0+incompatible
-	github.com/plgd-dev/go-coap/v2 v2.4.1-0.20210917095946-231b8cdcfcc3
-	github.com/plgd-dev/kit v0.0.0-20210614190235-99984a49de48
-	github.com/plgd-dev/sdk v0.0.0-20211001103952-c3c8e7a4b89b
+	github.com/plgd-dev/go-coap/v2 v2.4.1-0.20211006194403-5081d8da41f9
+	github.com/plgd-dev/kit/v2 v2.0.0-20211006190727-057b33161b90
+	github.com/plgd-dev/sdk/v2 v2.0.0-20211006195827-30b6744a07e8
 	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.7.0
-	go.mongodb.org/mongo-driver v1.7.2
+	go.mongodb.org/mongo-driver v1.7.3
 	go.uber.org/atomic v1.9.0
 	go.uber.org/zap v1.19.1
-	golang.org/x/net v0.0.0-20210929193557-e81a3d93ecf6
-	golang.org/x/oauth2 v0.0.0-20210819190943-2bc19b11175f
+	golang.org/x/net v0.0.0-20211006190231-62292e806868
+	golang.org/x/oauth2 v0.0.0-20211005180243-6b3c2da341f1
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
-	google.golang.org/genproto v0.0.0-20211001223012-bfb93cce50d9
+	google.golang.org/genproto v0.0.0-20211005153810-c76a74d43a8e
 	google.golang.org/grpc v1.41.0
 	google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.1.0
 	google.golang.org/protobuf v1.27.1

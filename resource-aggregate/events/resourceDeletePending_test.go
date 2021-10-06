@@ -3,8 +3,8 @@ package events_test
 import (
 	"testing"
 
-	commands "github.com/plgd-dev/cloud/resource-aggregate/commands"
-	"github.com/plgd-dev/cloud/resource-aggregate/events"
+	commands "github.com/plgd-dev/cloud/v2/resource-aggregate/commands"
+	"github.com/plgd-dev/cloud/v2/resource-aggregate/events"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
 )

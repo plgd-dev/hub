@@ -1,9 +1,9 @@
 package test
 
 import (
-	"github.com/plgd-dev/cloud/pkg/log"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/client"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/publisher"
+	"github.com/plgd-dev/cloud/v2/pkg/log"
+	"github.com/plgd-dev/cloud/v2/resource-aggregate/cqrs/eventbus/nats/client"
+	"github.com/plgd-dev/cloud/v2/resource-aggregate/cqrs/eventbus/nats/publisher"
 )
 
 func NewClientAndPublisher(config client.ConfigPublisher, logger log.Logger, opts ...publisher.Option) (*client.Client, *publisher.Publisher, error) {

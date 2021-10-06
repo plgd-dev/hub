@@ -32,7 +32,7 @@ func NewIdentityStoreClient(cc grpc.ClientConnInterface) IdentityStoreClient {
 }
 
 func (c *identityStoreClient) GetDevices(ctx context.Context, in *GetDevicesRequest, opts ...grpc.CallOption) (IdentityStore_GetDevicesClient, error) {
-	stream, err := c.cc.NewStream(ctx, &IdentityStore_ServiceDesc.Streams[0], "/ocf.cloud.identitystore.pb.IdentityStore/GetDevices", opts...)
+	stream, err := c.cc.NewStream(ctx, &IdentityStore_ServiceDesc.Streams[0], "/ocf.cloud.identitystore.pb.v2.IdentityStore/GetDevices", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -65,7 +65,7 @@ func (x *identityStoreGetDevicesClient) Recv() (*Device, error) {
 
 func (c *identityStoreClient) AddDevice(ctx context.Context, in *AddDeviceRequest, opts ...grpc.CallOption) (*AddDeviceResponse, error) {
 	out := new(AddDeviceResponse)
-	err := c.cc.Invoke(ctx, "/ocf.cloud.identitystore.pb.IdentityStore/AddDevice", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/ocf.cloud.identitystore.pb.v2.IdentityStore/AddDevice", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -74,7 +74,7 @@ func (c *identityStoreClient) AddDevice(ctx context.Context, in *AddDeviceReques
 
 func (c *identityStoreClient) DeleteDevices(ctx context.Context, in *DeleteDevicesRequest, opts ...grpc.CallOption) (*DeleteDevicesResponse, error) {
 	out := new(DeleteDevicesResponse)
-	err := c.cc.Invoke(ctx, "/ocf.cloud.identitystore.pb.IdentityStore/DeleteDevices", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/ocf.cloud.identitystore.pb.v2.IdentityStore/DeleteDevices", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -148,7 +148,7 @@ func _IdentityStore_AddDevice_Handler(srv interface{}, ctx context.Context, dec 
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/ocf.cloud.identitystore.pb.IdentityStore/AddDevice",
+		FullMethod: "/ocf.cloud.identitystore.pb.v2.IdentityStore/AddDevice",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(IdentityStoreServer).AddDevice(ctx, req.(*AddDeviceRequest))
@@ -166,7 +166,7 @@ func _IdentityStore_DeleteDevices_Handler(srv interface{}, ctx context.Context, 
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/ocf.cloud.identitystore.pb.IdentityStore/DeleteDevices",
+		FullMethod: "/ocf.cloud.identitystore.pb.v2.IdentityStore/DeleteDevices",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(IdentityStoreServer).DeleteDevices(ctx, req.(*DeleteDevicesRequest))
@@ -178,7 +178,7 @@ func _IdentityStore_DeleteDevices_Handler(srv interface{}, ctx context.Context, 
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var IdentityStore_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "ocf.cloud.identitystore.pb.IdentityStore",
+	ServiceName: "ocf.cloud.identitystore.pb.v2.IdentityStore",
 	HandlerType: (*IdentityStoreServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
@@ -197,5 +197,5 @@ var IdentityStore_ServiceDesc = grpc.ServiceDesc{
 			ServerStreams: true,
 		},
 	},
-	Metadata: "github.com/plgd-dev/cloud/identity-store/pb/service.proto",
+	Metadata: "github.com/plgd-dev/cloud/v2/identity-store/pb/service.proto",
 }

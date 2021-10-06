@@ -1,13 +1,13 @@
 syntax = "proto3";
 
-package ocf.cloud.grpcgateway.pb;
+package ocf.cloud.grpcgateway.pb.v2;
 
-import "github.com/plgd-dev/cloud/resource-aggregate/pb/commands.proto";
+import "github.com/plgd-dev/cloud/v2/resource-aggregate/pb/commands.proto";
 
-option go_package = "github.com/plgd-dev/cloud/grpc-gateway/pb;pb";
+option go_package = "github.com/plgd-dev/cloud/v2/grpc-gateway/pb;pb";
 
 message CancelPendingCommandsRequest {
-    ocf.cloud.resourceaggregate.pb.ResourceId resource_id = 1;
+    ocf.cloud.resourceaggregate.pb.v2.ResourceId resource_id = 1;
     repeated string correlation_id_filter = 2; // empty array means all.
 }
 

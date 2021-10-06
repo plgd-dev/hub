@@ -3,16 +3,16 @@ package service
 import (
 	"fmt"
 
-	"github.com/plgd-dev/cloud/coap-gateway/coapconv"
-	"github.com/plgd-dev/cloud/identity-store/pb"
-	"github.com/plgd-dev/cloud/pkg/log"
-	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
-	"github.com/plgd-dev/cloud/pkg/security/oauth2"
-	pkgTime "github.com/plgd-dev/cloud/pkg/time"
+	"github.com/plgd-dev/cloud/v2/coap-gateway/coapconv"
+	"github.com/plgd-dev/cloud/v2/identity-store/pb"
+	"github.com/plgd-dev/cloud/v2/pkg/log"
+	kitNetGrpc "github.com/plgd-dev/cloud/v2/pkg/net/grpc"
+	"github.com/plgd-dev/cloud/v2/pkg/security/oauth2"
+	pkgTime "github.com/plgd-dev/cloud/v2/pkg/time"
 	"github.com/plgd-dev/go-coap/v2/message"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/mux"
-	"github.com/plgd-dev/kit/codec/cbor"
+	"github.com/plgd-dev/kit/v2/codec/cbor"
 )
 
 type CoapSignUpRequest struct {

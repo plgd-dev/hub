@@ -8,11 +8,11 @@ import (
 	"time"
 
 	nats "github.com/nats-io/nats.go"
-	"github.com/plgd-dev/cloud/pkg/log"
-	pkgTime "github.com/plgd-dev/cloud/pkg/time"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus"
-	natsClient "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/client"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/pb"
+	"github.com/plgd-dev/cloud/v2/pkg/log"
+	pkgTime "github.com/plgd-dev/cloud/v2/pkg/time"
+	"github.com/plgd-dev/cloud/v2/resource-aggregate/cqrs/eventbus"
+	natsClient "github.com/plgd-dev/cloud/v2/resource-aggregate/cqrs/eventbus/nats/client"
+	"github.com/plgd-dev/cloud/v2/resource-aggregate/cqrs/eventbus/pb"
 	"google.golang.org/protobuf/proto"
 )
 

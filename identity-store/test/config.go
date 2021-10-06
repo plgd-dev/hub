@@ -3,8 +3,8 @@ package test
 import (
 	"testing"
 
-	"github.com/plgd-dev/cloud/identity-store/service"
-	"github.com/plgd-dev/cloud/test/config"
+	"github.com/plgd-dev/cloud/v2/identity-store/service"
+	"github.com/plgd-dev/cloud/v2/test/config"
 	"github.com/stretchr/testify/require"
 )
 

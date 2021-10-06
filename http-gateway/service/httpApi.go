@@ -10,14 +10,14 @@ import (
 	"strings"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
-	"github.com/plgd-dev/cloud/grpc-gateway/client"
-	"github.com/plgd-dev/cloud/grpc-gateway/pb"
-	"github.com/plgd-dev/cloud/http-gateway/uri"
-	"github.com/plgd-dev/cloud/pkg/log"
-	kitHttp "github.com/plgd-dev/cloud/pkg/net/http"
+	"github.com/plgd-dev/cloud/v2/grpc-gateway/client"
+	"github.com/plgd-dev/cloud/v2/grpc-gateway/pb"
+	"github.com/plgd-dev/cloud/v2/http-gateway/uri"
+	"github.com/plgd-dev/cloud/v2/pkg/log"
+	kitHttp "github.com/plgd-dev/cloud/v2/pkg/net/http"
 
 	//	"github.com/tmc/grpc-websocket-proxy/wsproxy"
-	"github.com/plgd-dev/cloud/http-gateway/grpc-websocket-proxy/wsproxy"
+	"github.com/plgd-dev/cloud/v2/http-gateway/grpc-websocket-proxy/wsproxy"
 
 	router "github.com/gorilla/mux"
 )

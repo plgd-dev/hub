@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/plgd-dev/cloud/pkg/config"
-	"github.com/plgd-dev/cloud/pkg/log"
-	"github.com/plgd-dev/cloud/pkg/net/listener"
+	"github.com/plgd-dev/cloud/v2/pkg/config"
+	"github.com/plgd-dev/cloud/v2/pkg/log"
+	"github.com/plgd-dev/cloud/v2/pkg/net/listener"
 )
 
 type AsymmetricKey struct {

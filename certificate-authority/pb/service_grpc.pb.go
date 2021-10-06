@@ -36,7 +36,7 @@ func NewCertificateAuthorityClient(cc grpc.ClientConnInterface) CertificateAutho
 
 func (c *certificateAuthorityClient) SignIdentityCertificate(ctx context.Context, in *SignCertificateRequest, opts ...grpc.CallOption) (*SignCertificateResponse, error) {
 	out := new(SignCertificateResponse)
-	err := c.cc.Invoke(ctx, "/ocf.cloud.certificateauthority.pb.CertificateAuthority/SignIdentityCertificate", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/ocf.cloud.certificateauthority.pb.v2.CertificateAuthority/SignIdentityCertificate", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -45,7 +45,7 @@ func (c *certificateAuthorityClient) SignIdentityCertificate(ctx context.Context
 
 func (c *certificateAuthorityClient) SignCertificate(ctx context.Context, in *SignCertificateRequest, opts ...grpc.CallOption) (*SignCertificateResponse, error) {
 	out := new(SignCertificateResponse)
-	err := c.cc.Invoke(ctx, "/ocf.cloud.certificateauthority.pb.CertificateAuthority/SignCertificate", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/ocf.cloud.certificateauthority.pb.v2.CertificateAuthority/SignCertificate", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -98,7 +98,7 @@ func _CertificateAuthority_SignIdentityCertificate_Handler(srv interface{}, ctx 
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/ocf.cloud.certificateauthority.pb.CertificateAuthority/SignIdentityCertificate",
+		FullMethod: "/ocf.cloud.certificateauthority.pb.v2.CertificateAuthority/SignIdentityCertificate",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(CertificateAuthorityServer).SignIdentityCertificate(ctx, req.(*SignCertificateRequest))
@@ -116,7 +116,7 @@ func _CertificateAuthority_SignCertificate_Handler(srv interface{}, ctx context.
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/ocf.cloud.certificateauthority.pb.CertificateAuthority/SignCertificate",
+		FullMethod: "/ocf.cloud.certificateauthority.pb.v2.CertificateAuthority/SignCertificate",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(CertificateAuthorityServer).SignCertificate(ctx, req.(*SignCertificateRequest))
@@ -128,7 +128,7 @@ func _CertificateAuthority_SignCertificate_Handler(srv interface{}, ctx context.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var CertificateAuthority_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "ocf.cloud.certificateauthority.pb.CertificateAuthority",
+	ServiceName: "ocf.cloud.certificateauthority.pb.v2.CertificateAuthority",
 	HandlerType: (*CertificateAuthorityServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
@@ -141,5 +141,5 @@ var CertificateAuthority_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "github.com/plgd-dev/cloud/certificate-authority/pb/service.proto",
+	Metadata: "github.com/plgd-dev/cloud/v2/certificate-authority/pb/service.proto",
 }

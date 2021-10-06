@@ -5,9 +5,9 @@ import (
 	"testing"
 
 	"github.com/golang-jwt/jwt/v4"
-	"github.com/plgd-dev/cloud/identity-store/pb"
-	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
-	"github.com/plgd-dev/cloud/test/config"
+	"github.com/plgd-dev/cloud/v2/identity-store/pb"
+	kitNetGrpc "github.com/plgd-dev/cloud/v2/pkg/net/grpc"
+	"github.com/plgd-dev/cloud/v2/test/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"

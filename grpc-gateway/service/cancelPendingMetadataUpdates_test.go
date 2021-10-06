@@ -7,9 +7,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/plgd-dev/cloud/grpc-gateway/pb"
-	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
-	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
+	"github.com/plgd-dev/cloud/v2/grpc-gateway/pb"
+	kitNetGrpc "github.com/plgd-dev/cloud/v2/pkg/net/grpc"
+	oauthTest "github.com/plgd-dev/cloud/v2/test/oauth-server/test"
 )
 
 func TestRequestHandler_CancelPendingMetadataUpdates(t *testing.T) {

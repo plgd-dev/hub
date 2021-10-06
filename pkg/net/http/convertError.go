@@ -5,8 +5,8 @@ import (
 	netHttp "net/http"
 
 	coapStatus "github.com/plgd-dev/go-coap/v2/message/status"
-	"github.com/plgd-dev/kit/coapconv"
-	"github.com/plgd-dev/kit/grpcconv"
+	"github.com/plgd-dev/kit/v2/coapconv"
+	"github.com/plgd-dev/kit/v2/grpcconv"
 	grpcCodes "google.golang.org/grpc/codes"
 	grpcStatus "google.golang.org/grpc/status"
 )

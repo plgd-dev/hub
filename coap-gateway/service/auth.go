@@ -8,11 +8,11 @@ import (
 	"time"
 
 	cache "github.com/patrickmn/go-cache"
-	"github.com/plgd-dev/cloud/coap-gateway/uri"
-	"github.com/plgd-dev/cloud/pkg/net/grpc"
-	pkgJwt "github.com/plgd-dev/cloud/pkg/security/jwt"
+	"github.com/plgd-dev/cloud/v2/coap-gateway/uri"
+	"github.com/plgd-dev/cloud/v2/pkg/net/grpc"
+	pkgJwt "github.com/plgd-dev/cloud/v2/pkg/security/jwt"
 	"github.com/plgd-dev/go-coap/v2/message/codes"
-	"github.com/plgd-dev/sdk/pkg/net/coap"
+	"github.com/plgd-dev/sdk/v2/pkg/net/coap"
 )
 
 type Interceptor = func(ctx context.Context, code codes.Code, path string) (context.Context, error)

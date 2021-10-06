@@ -8,9 +8,9 @@ import (
 	"time"
 
 	"github.com/karrick/tparse/v2"
-	"github.com/plgd-dev/cloud/certificate-authority/pb"
-	"github.com/plgd-dev/cloud/pkg/net/grpc/server"
-	"github.com/plgd-dev/kit/security"
+	"github.com/plgd-dev/cloud/v2/certificate-authority/pb"
+	"github.com/plgd-dev/cloud/v2/pkg/net/grpc/server"
+	"github.com/plgd-dev/kit/v2/security"
 	"google.golang.org/grpc"
 )
 

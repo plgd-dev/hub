@@ -11,10 +11,10 @@ import (
 	"os"
 	"time"
 
-	"github.com/plgd-dev/cloud/pkg/log"
-	"github.com/plgd-dev/kit/security/signer"
-	"github.com/plgd-dev/sdk/local"
-	"github.com/plgd-dev/sdk/local/core"
+	"github.com/plgd-dev/cloud/v2/pkg/log"
+	"github.com/plgd-dev/kit/v2/security/signer"
+	"github.com/plgd-dev/sdk/v2/local"
+	"github.com/plgd-dev/sdk/v2/local/core"
 )
 
 type testSetupSecureClient struct {

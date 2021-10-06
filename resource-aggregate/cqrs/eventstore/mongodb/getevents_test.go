@@ -8,11 +8,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/plgd-dev/cloud/pkg/log"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/mongodb"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/test"
-	"github.com/plgd-dev/kit/strings"
+	"github.com/plgd-dev/cloud/v2/pkg/log"
+	"github.com/plgd-dev/cloud/v2/resource-aggregate/cqrs/eventstore"
+	"github.com/plgd-dev/cloud/v2/resource-aggregate/cqrs/eventstore/mongodb"
+	"github.com/plgd-dev/cloud/v2/resource-aggregate/cqrs/eventstore/test"
+	"github.com/plgd-dev/kit/v2/strings"
 	"github.com/stretchr/testify/require"
 )
 

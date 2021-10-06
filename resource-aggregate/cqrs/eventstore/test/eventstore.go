@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore"
+	"github.com/plgd-dev/cloud/v2/resource-aggregate/cqrs/eventstore"
 )
 
 type MockEventStore struct {

@@ -1,8 +1,8 @@
 syntax = "proto3";
 
-package ocf.cloud.certificateauthority.pb;
+package ocf.cloud.certificateauthority.pb.v2;
 
-option go_package = "github.com/plgd-dev/cloud/certificate-authority/pb;pb";
+option go_package = "github.com/plgd-dev/cloud/v2/certificate-authority/pb;pb";
 
 message SignCertificateRequest {
     bytes certificate_signing_request = 1; // PEM format

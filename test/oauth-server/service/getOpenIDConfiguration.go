@@ -3,9 +3,9 @@ package service
 import (
 	"net/http"
 
-	"github.com/plgd-dev/cloud/pkg/log"
-	"github.com/plgd-dev/cloud/pkg/security/openid"
-	"github.com/plgd-dev/cloud/test/oauth-server/uri"
+	"github.com/plgd-dev/cloud/v2/pkg/log"
+	"github.com/plgd-dev/cloud/v2/pkg/security/openid"
+	"github.com/plgd-dev/cloud/v2/test/oauth-server/uri"
 )
 
 func (requestHandler *RequestHandler) getOpenIDConfiguration(w http.ResponseWriter, r *http.Request) {

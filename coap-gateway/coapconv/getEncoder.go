@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"github.com/plgd-dev/go-coap/v2/message"
-	"github.com/plgd-dev/kit/codec/cbor"
-	"github.com/plgd-dev/kit/codec/json"
+	"github.com/plgd-dev/kit/v2/codec/cbor"
+	"github.com/plgd-dev/kit/v2/codec/json"
 )
 
 type EncodeFunc = func(v interface{}) ([]byte, error)

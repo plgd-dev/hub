@@ -4,11 +4,11 @@ import (
 	"testing"
 	"time"
 
-	coapgwTest "github.com/plgd-dev/cloud/coap-gateway/test"
-	"github.com/plgd-dev/cloud/coap-gateway/uri"
-	"github.com/plgd-dev/cloud/test/config"
-	"github.com/plgd-dev/cloud/test/oauth-server/service"
-	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
+	coapgwTest "github.com/plgd-dev/cloud/v2/coap-gateway/test"
+	"github.com/plgd-dev/cloud/v2/coap-gateway/uri"
+	"github.com/plgd-dev/cloud/v2/test/config"
+	"github.com/plgd-dev/cloud/v2/test/oauth-server/service"
+	oauthTest "github.com/plgd-dev/cloud/v2/test/oauth-server/test"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 )
 

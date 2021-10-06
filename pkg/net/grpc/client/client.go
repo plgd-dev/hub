@@ -3,8 +3,8 @@ package client
 import (
 	"fmt"
 
-	"github.com/plgd-dev/cloud/pkg/log"
-	"github.com/plgd-dev/cloud/pkg/security/certManager/client"
+	"github.com/plgd-dev/cloud/v2/pkg/log"
+	"github.com/plgd-dev/cloud/v2/pkg/security/certManager/client"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/keepalive"

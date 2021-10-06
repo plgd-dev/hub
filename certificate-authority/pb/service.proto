@@ -1,10 +1,10 @@
 syntax = "proto3";
 
-package ocf.cloud.certificateauthority.pb;
+package ocf.cloud.certificateauthority.pb.v2;
 
-import "github.com/plgd-dev/cloud/certificate-authority/pb/cert.proto";
+import "github.com/plgd-dev/cloud/v2/certificate-authority/pb/cert.proto";
 
-option go_package = "github.com/plgd-dev/cloud/certificate-authority/pb;pb";
+option go_package = "github.com/plgd-dev/cloud/v2/certificate-authority/pb;pb";
 
 service CertificateAuthority {
   // SignIdentityCertificate sends a Identity Certificate Signing Request to the certificate authority 

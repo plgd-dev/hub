@@ -8,11 +8,11 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/plgd-dev/cloud/grpc-gateway/pb"
-	httpgwTest "github.com/plgd-dev/cloud/http-gateway/test"
-	"github.com/plgd-dev/cloud/http-gateway/uri"
-	"github.com/plgd-dev/cloud/test/config"
-	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
+	"github.com/plgd-dev/cloud/v2/grpc-gateway/pb"
+	httpgwTest "github.com/plgd-dev/cloud/v2/http-gateway/test"
+	"github.com/plgd-dev/cloud/v2/http-gateway/uri"
+	"github.com/plgd-dev/cloud/v2/test/config"
+	oauthTest "github.com/plgd-dev/cloud/v2/test/oauth-server/test"
 )
 
 func TestRequestHandler_CancelPendingMetadataUpdates(t *testing.T) {

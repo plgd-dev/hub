@@ -12,11 +12,11 @@ import (
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/keepalive"
 
-	"github.com/plgd-dev/cloud/grpc-gateway/pb"
-	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
-	"github.com/plgd-dev/cloud/resource-aggregate/commands"
-	"github.com/plgd-dev/cloud/resource-aggregate/events"
-	"github.com/plgd-dev/kit/strings"
+	"github.com/plgd-dev/cloud/v2/grpc-gateway/pb"
+	kitNetGrpc "github.com/plgd-dev/cloud/v2/pkg/net/grpc"
+	"github.com/plgd-dev/cloud/v2/resource-aggregate/commands"
+	"github.com/plgd-dev/cloud/v2/resource-aggregate/events"
+	"github.com/plgd-dev/kit/v2/strings"
 )
 
 type ApplicationCallback interface {

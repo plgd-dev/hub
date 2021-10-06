@@ -1,10 +1,10 @@
 syntax = "proto3";
 
-package ocf.cloud.grpcgateway.pb;
+package ocf.cloud.grpcgateway.pb.v2;
 
-import "github.com/plgd-dev/cloud/resource-aggregate/pb/events.proto";
+import "github.com/plgd-dev/cloud/v2/resource-aggregate/pb/events.proto";
 
-option go_package = "github.com/plgd-dev/cloud/grpc-gateway/pb;pb";
+option go_package = "github.com/plgd-dev/cloud/v2/grpc-gateway/pb;pb";
 
 message UpdateDeviceMetadataRequest{
     enum ShadowSynchronization {
@@ -17,5 +17,5 @@ message UpdateDeviceMetadataRequest{
 }
 
 message UpdateDeviceMetadataResponse{
-  ocf.cloud.resourceaggregate.pb.DeviceMetadataUpdated data = 1;
+  ocf.cloud.resourceaggregate.pb.v2.DeviceMetadataUpdated data = 1;
 }

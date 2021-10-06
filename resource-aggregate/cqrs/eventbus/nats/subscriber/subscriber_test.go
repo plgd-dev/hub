@@ -9,12 +9,12 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/plgd-dev/cloud/pkg/log"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/publisher"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/subscriber"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/test"
-	"github.com/plgd-dev/cloud/test/config"
+	"github.com/plgd-dev/cloud/v2/pkg/log"
+	"github.com/plgd-dev/cloud/v2/resource-aggregate/cqrs/eventbus"
+	"github.com/plgd-dev/cloud/v2/resource-aggregate/cqrs/eventbus/nats/publisher"
+	"github.com/plgd-dev/cloud/v2/resource-aggregate/cqrs/eventbus/nats/subscriber"
+	"github.com/plgd-dev/cloud/v2/resource-aggregate/cqrs/eventbus/nats/test"
+	"github.com/plgd-dev/cloud/v2/test/config"
 	"github.com/stretchr/testify/require"
 )
 

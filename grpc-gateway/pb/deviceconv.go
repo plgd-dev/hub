@@ -1,7 +1,7 @@
 package pb
 
 import (
-	"github.com/plgd-dev/sdk/schema"
+	"github.com/plgd-dev/sdk/v2/schema"
 )
 
 func (l *LocalizedString) ToSchema() schema.LocalizedString {

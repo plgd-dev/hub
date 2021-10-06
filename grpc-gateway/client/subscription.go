@@ -6,10 +6,10 @@ import (
 	"io"
 	"time"
 
-	"github.com/plgd-dev/cloud/grpc-gateway/pb"
-	grpcSubscription "github.com/plgd-dev/cloud/grpc-gateway/subscription"
-	"github.com/plgd-dev/cloud/resource-aggregate/commands"
-	"github.com/plgd-dev/kit/strings"
+	"github.com/plgd-dev/cloud/v2/grpc-gateway/pb"
+	grpcSubscription "github.com/plgd-dev/cloud/v2/grpc-gateway/subscription"
+	"github.com/plgd-dev/cloud/v2/resource-aggregate/commands"
+	"github.com/plgd-dev/kit/v2/strings"
 	"go.uber.org/atomic"
 )
 

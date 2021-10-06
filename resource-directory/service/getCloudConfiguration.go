@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 
-	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	"github.com/plgd-dev/cloud/v2/grpc-gateway/pb"
 )
 
 func (r *RequestHandler) GetCloudConfiguration(context.Context, *pb.CloudConfigurationRequest) (*pb.CloudConfigurationResponse, error) {

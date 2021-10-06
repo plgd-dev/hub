@@ -5,16 +5,16 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/plgd-dev/cloud/pkg/net/grpc"
-	pkgTime "github.com/plgd-dev/cloud/pkg/time"
+	"github.com/plgd-dev/cloud/v2/pkg/net/grpc"
+	pkgTime "github.com/plgd-dev/cloud/v2/pkg/time"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 
-	"github.com/plgd-dev/cloud/resource-aggregate/commands"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/aggregate"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore"
+	"github.com/plgd-dev/cloud/v2/resource-aggregate/commands"
+	"github.com/plgd-dev/cloud/v2/resource-aggregate/cqrs/aggregate"
+	"github.com/plgd-dev/cloud/v2/resource-aggregate/cqrs/eventstore"
 )
 
 const eventTypeResourceLinksSnapshotTaken = "resourcelinkssnapshottaken"

@@ -6,15 +6,15 @@ import (
 	"net/http"
 	"regexp"
 
-	"github.com/plgd-dev/cloud/pkg/log"
+	"github.com/plgd-dev/cloud/v2/pkg/log"
 
-	"github.com/plgd-dev/cloud/grpc-gateway/client"
-	"github.com/plgd-dev/cloud/grpc-gateway/pb"
-	"github.com/plgd-dev/cloud/http-gateway/uri"
-	grpcClient "github.com/plgd-dev/cloud/pkg/net/grpc/client"
-	kitNetHttp "github.com/plgd-dev/cloud/pkg/net/http"
-	"github.com/plgd-dev/cloud/pkg/net/listener"
-	"github.com/plgd-dev/cloud/pkg/security/jwt/validator"
+	"github.com/plgd-dev/cloud/v2/grpc-gateway/client"
+	"github.com/plgd-dev/cloud/v2/grpc-gateway/pb"
+	"github.com/plgd-dev/cloud/v2/http-gateway/uri"
+	grpcClient "github.com/plgd-dev/cloud/v2/pkg/net/grpc/client"
+	kitNetHttp "github.com/plgd-dev/cloud/v2/pkg/net/http"
+	"github.com/plgd-dev/cloud/v2/pkg/net/listener"
+	"github.com/plgd-dev/cloud/v2/pkg/security/jwt/validator"
 )
 
 //Server handle HTTP request

@@ -9,10 +9,10 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/plgd-dev/cloud/cloud2cloud-connector/events"
-	"github.com/plgd-dev/cloud/cloud2cloud-gateway/store"
-	"github.com/plgd-dev/cloud/pkg/log"
-	cmClient "github.com/plgd-dev/cloud/pkg/security/certManager/client"
+	"github.com/plgd-dev/cloud/v2/cloud2cloud-connector/events"
+	"github.com/plgd-dev/cloud/v2/cloud2cloud-gateway/store"
+	"github.com/plgd-dev/cloud/v2/pkg/log"
+	cmClient "github.com/plgd-dev/cloud/v2/pkg/security/certManager/client"
 )
 
 type incrementSubscriptionSequenceNumberFunc func(ctx context.Context) (uint64, error)

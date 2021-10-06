@@ -6,8 +6,8 @@ import (
 
 	"github.com/google/go-querystring/query"
 	"github.com/gorilla/mux"
-	"github.com/plgd-dev/cloud/grpc-gateway/pb"
-	"github.com/plgd-dev/cloud/http-gateway/uri"
+	"github.com/plgd-dev/cloud/v2/grpc-gateway/pb"
+	"github.com/plgd-dev/cloud/v2/http-gateway/uri"
 )
 
 func (requestHandler *RequestHandler) getPendingMetadataUpdates(w http.ResponseWriter, r *http.Request) {

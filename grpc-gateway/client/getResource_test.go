@@ -5,12 +5,12 @@ import (
 	"testing"
 	"time"
 
-	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
+	kitNetGrpc "github.com/plgd-dev/cloud/v2/pkg/net/grpc"
 
-	"github.com/plgd-dev/cloud/grpc-gateway/client"
-	"github.com/plgd-dev/cloud/test"
-	testCfg "github.com/plgd-dev/cloud/test/config"
-	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
+	"github.com/plgd-dev/cloud/v2/grpc-gateway/client"
+	"github.com/plgd-dev/cloud/v2/test"
+	testCfg "github.com/plgd-dev/cloud/v2/test/config"
+	oauthTest "github.com/plgd-dev/cloud/v2/test/oauth-server/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

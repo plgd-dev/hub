@@ -9,12 +9,12 @@ import (
 	"time"
 
 	nats "github.com/nats-io/nats.go"
-	"github.com/plgd-dev/cloud/identity-store/events"
-	pbIS "github.com/plgd-dev/cloud/identity-store/pb"
-	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
-	"github.com/plgd-dev/cloud/pkg/strings"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
-	kitSync "github.com/plgd-dev/kit/sync"
+	"github.com/plgd-dev/cloud/v2/identity-store/events"
+	pbIS "github.com/plgd-dev/cloud/v2/identity-store/pb"
+	kitNetGrpc "github.com/plgd-dev/cloud/v2/pkg/net/grpc"
+	"github.com/plgd-dev/cloud/v2/pkg/strings"
+	"github.com/plgd-dev/cloud/v2/resource-aggregate/cqrs/utils"
+	kitSync "github.com/plgd-dev/kit/v2/sync"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )

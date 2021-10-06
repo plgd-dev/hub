@@ -4,9 +4,9 @@ import (
 	"context"
 	"testing"
 
-	testCfg "github.com/plgd-dev/cloud/test/config"
+	testCfg "github.com/plgd-dev/cloud/v2/test/config"
 	"github.com/plgd-dev/go-coap/v2/tcp"
-	"github.com/plgd-dev/kit/codec/cbor"
+	"github.com/plgd-dev/kit/v2/codec/cbor"
 
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/stretchr/testify/assert"

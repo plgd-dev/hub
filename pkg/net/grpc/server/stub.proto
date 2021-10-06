@@ -1,8 +1,8 @@
 syntax = "proto3";
 
-package ocf.cloud.test.pb;
+package ocf.cloud.test.pb.v2;
 
-option go_package = "github.com/plgd-dev/cloud/pkg/net/grpc/server";
+option go_package = "github.com/plgd-dev/cloud/v2/pkg/net/grpc/server";
 
 service StubService {
   rpc TestCall(TestRequest) returns (TestResponse) {}

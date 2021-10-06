@@ -1,8 +1,8 @@
 syntax = "proto3";
 
-package ocf.cloud.resourceaggregate.cqrs.aggregate.test;
+package ocf.cloud.resourceaggregate.cqrs.aggregate.test.v2;
 
-option go_package = "github.com/plgd-dev/cloud/resource-aggregate/cqrs/aggregate;aggregate";
+option go_package = "github.com/plgd-dev/cloud/v2/resource-aggregate/cqrs/aggregate;aggregate";
 
 message Publish {
     string device_id = 1;

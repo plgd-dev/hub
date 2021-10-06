@@ -12,14 +12,14 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 
-	"github.com/plgd-dev/cloud/grpc-gateway/pb"
-	httpgwTest "github.com/plgd-dev/cloud/http-gateway/test"
-	"github.com/plgd-dev/cloud/http-gateway/uri"
-	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
-	"github.com/plgd-dev/cloud/resource-aggregate/events"
-	test "github.com/plgd-dev/cloud/test"
-	"github.com/plgd-dev/cloud/test/config"
-	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
+	"github.com/plgd-dev/cloud/v2/grpc-gateway/pb"
+	httpgwTest "github.com/plgd-dev/cloud/v2/http-gateway/test"
+	"github.com/plgd-dev/cloud/v2/http-gateway/uri"
+	kitNetGrpc "github.com/plgd-dev/cloud/v2/pkg/net/grpc"
+	"github.com/plgd-dev/cloud/v2/resource-aggregate/events"
+	test "github.com/plgd-dev/cloud/v2/test"
+	"github.com/plgd-dev/cloud/v2/test/config"
+	oauthTest "github.com/plgd-dev/cloud/v2/test/oauth-server/test"
 )
 
 func TestRequestHandler_GetResourceLinks(t *testing.T) {

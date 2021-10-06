@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/plgd-dev/cloud/pkg/security/certManager/server"
-	"github.com/plgd-dev/cloud/pkg/security/jwt/validator"
+	"github.com/plgd-dev/cloud/v2/pkg/security/certManager/server"
+	"github.com/plgd-dev/cloud/v2/pkg/security/jwt/validator"
 	"google.golang.org/grpc/keepalive"
 )
 

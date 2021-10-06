@@ -6,11 +6,11 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/patrickmn/go-cache"
-	"github.com/plgd-dev/cloud/cloud2cloud-connector/events"
-	"github.com/plgd-dev/cloud/cloud2cloud-connector/store"
-	pbIS "github.com/plgd-dev/cloud/identity-store/pb"
-	"github.com/plgd-dev/cloud/resource-aggregate/commands"
-	"github.com/plgd-dev/kit/log"
+	"github.com/plgd-dev/cloud/v2/cloud2cloud-connector/events"
+	"github.com/plgd-dev/cloud/v2/cloud2cloud-connector/store"
+	pbIS "github.com/plgd-dev/cloud/v2/identity-store/pb"
+	"github.com/plgd-dev/cloud/v2/resource-aggregate/commands"
+	"github.com/plgd-dev/kit/v2/log"
 )
 
 func (s *SubscriptionManager) SubscribeToDevices(ctx context.Context, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud) error {

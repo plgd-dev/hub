@@ -5,10 +5,10 @@ import (
 	"fmt"
 
 	"github.com/panjf2000/ants/v2"
-	"github.com/plgd-dev/cloud/grpc-gateway/pb"
-	"github.com/plgd-dev/cloud/pkg/log"
-	"github.com/plgd-dev/cloud/pkg/net/grpc/server"
-	"github.com/plgd-dev/cloud/pkg/security/jwt/validator"
+	"github.com/plgd-dev/cloud/v2/grpc-gateway/pb"
+	"github.com/plgd-dev/cloud/v2/pkg/log"
+	"github.com/plgd-dev/cloud/v2/pkg/net/grpc/server"
+	"github.com/plgd-dev/cloud/v2/pkg/security/jwt/validator"
 )
 
 type Service struct {

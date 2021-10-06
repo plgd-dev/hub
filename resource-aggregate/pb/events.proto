@@ -1,11 +1,11 @@
 syntax = "proto3";
 
-package ocf.cloud.resourceaggregate.pb;
+package ocf.cloud.resourceaggregate.pb.v2;
 
-import "github.com/plgd-dev/cloud/resource-aggregate/pb/commands.proto";
-import "github.com/plgd-dev/cloud/resource-aggregate/pb/resources.proto";
+import "github.com/plgd-dev/cloud/v2/resource-aggregate/pb/commands.proto";
+import "github.com/plgd-dev/cloud/v2/resource-aggregate/pb/resources.proto";
 
-option go_package = "github.com/plgd-dev/cloud/resource-aggregate/events;events";
+option go_package = "github.com/plgd-dev/cloud/v2/resource-aggregate/events;events";
 
 message EventMetadata {
    uint64 version = 1;

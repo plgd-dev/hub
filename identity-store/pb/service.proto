@@ -1,10 +1,10 @@
 syntax = "proto3";
 
-package ocf.cloud.identitystore.pb;
+package ocf.cloud.identitystore.pb.v2;
 
-import "github.com/plgd-dev/cloud/identity-store/pb/devices.proto";
+import "github.com/plgd-dev/cloud/v2/identity-store/pb/devices.proto";
 
-option go_package = "github.com/plgd-dev/cloud/identity-store/pb;pb";
+option go_package = "github.com/plgd-dev/cloud/v2/identity-store/pb;pb";
 
 service IdentityStore {
 	rpc GetDevices (GetDevicesRequest) returns (stream Device) {}

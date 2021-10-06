@@ -7,8 +7,8 @@ import (
 	"fmt"
 
 	nats "github.com/nats-io/nats.go"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/pb"
+	"github.com/plgd-dev/cloud/v2/resource-aggregate/cqrs/eventbus"
+	"github.com/plgd-dev/cloud/v2/resource-aggregate/cqrs/eventbus/pb"
 	"google.golang.org/protobuf/proto"
 )
 

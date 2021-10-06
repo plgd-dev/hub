@@ -3,9 +3,9 @@ package main
 import (
 	"context"
 
-	"github.com/plgd-dev/cloud/cloud2cloud-connector/service"
-	"github.com/plgd-dev/cloud/pkg/config"
-	"github.com/plgd-dev/cloud/pkg/log"
+	"github.com/plgd-dev/cloud/v2/cloud2cloud-connector/service"
+	"github.com/plgd-dev/cloud/v2/pkg/config"
+	"github.com/plgd-dev/cloud/v2/pkg/log"
 )
 
 func main() {

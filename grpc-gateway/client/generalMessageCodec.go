@@ -6,8 +6,8 @@ import (
 	"io/ioutil"
 
 	"github.com/plgd-dev/go-coap/v2/message"
-	"github.com/plgd-dev/kit/codec/cbor"
-	"github.com/plgd-dev/kit/codec/json"
+	"github.com/plgd-dev/kit/v2/codec/cbor"
+	"github.com/plgd-dev/kit/v2/codec/json"
 )
 
 // GeneralMessageCodec encodes in application/vnd.ocf+cbor and decodes json/coap/text.

@@ -3,9 +3,9 @@ package server
 import (
 	"fmt"
 
-	"github.com/plgd-dev/cloud/pkg/log"
+	"github.com/plgd-dev/cloud/v2/pkg/log"
 
-	"github.com/plgd-dev/cloud/pkg/security/certManager/server"
+	"github.com/plgd-dev/cloud/v2/pkg/security/certManager/server"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )

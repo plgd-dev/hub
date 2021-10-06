@@ -4,9 +4,9 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/plgd-dev/cloud/grpc-gateway/pb"
-	"github.com/plgd-dev/cloud/pkg/log"
-	"github.com/plgd-dev/kit/strings"
+	"github.com/plgd-dev/cloud/v2/grpc-gateway/pb"
+	"github.com/plgd-dev/cloud/v2/pkg/log"
+	"github.com/plgd-dev/kit/v2/strings"
 )
 
 type ResourceDirectory struct {

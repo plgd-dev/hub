@@ -12,10 +12,10 @@ import (
 	"time"
 
 	"github.com/jessevdk/go-flags"
-	"github.com/plgd-dev/cloud/pkg/log"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/maintenance"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/mongodb"
+	"github.com/plgd-dev/cloud/v2/pkg/log"
+	"github.com/plgd-dev/cloud/v2/resource-aggregate/cqrs/eventstore"
+	"github.com/plgd-dev/cloud/v2/resource-aggregate/cqrs/eventstore/maintenance"
+	"github.com/plgd-dev/cloud/v2/resource-aggregate/cqrs/eventstore/mongodb"
 )
 
 // Config represent application arguments

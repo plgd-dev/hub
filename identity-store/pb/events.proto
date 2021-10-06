@@ -1,8 +1,8 @@
 syntax = "proto3";
 
-package ocf.cloud.identitystore.pb;
+package ocf.cloud.identitystore.pb.v2;
 
-option go_package = "github.com/plgd-dev/cloud/identity-store/events;events";
+option go_package = "github.com/plgd-dev/cloud/v2/identity-store/events;events";
 
 // provides who register/unregister the device
 message AuditContext {

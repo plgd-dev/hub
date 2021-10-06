@@ -3,9 +3,9 @@ package main
 import (
 	"context"
 
-	"github.com/plgd-dev/cloud/coap-gateway/service"
-	"github.com/plgd-dev/cloud/pkg/config"
-	"github.com/plgd-dev/cloud/pkg/log"
+	"github.com/plgd-dev/cloud/v2/coap-gateway/service"
+	"github.com/plgd-dev/cloud/v2/pkg/config"
+	"github.com/plgd-dev/cloud/v2/pkg/log"
 )
 
 func main() {

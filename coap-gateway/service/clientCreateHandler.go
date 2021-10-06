@@ -3,8 +3,8 @@ package service
 import (
 	"fmt"
 
-	"github.com/plgd-dev/cloud/coap-gateway/coapconv"
-	"github.com/plgd-dev/cloud/resource-aggregate/commands"
+	"github.com/plgd-dev/cloud/v2/coap-gateway/coapconv"
+	"github.com/plgd-dev/cloud/v2/resource-aggregate/commands"
 	"github.com/plgd-dev/go-coap/v2/message"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/mux"

@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/plgd-dev/cloud/pkg/net/grpc"
-	"github.com/plgd-dev/cloud/pkg/net/grpc/server"
+	"github.com/plgd-dev/cloud/v2/pkg/net/grpc"
+	"github.com/plgd-dev/cloud/v2/pkg/net/grpc/server"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -21,7 +21,7 @@ func TestUnaryInterceptor(t *testing.T) {
 	c := server.StubGrpcClient(svr.Addr())
 	_, err := c.TestCall(context.Background(), &server.TestRequest{})
 	require.Error(t, err)
-	assert.Equal(t, "/ocf.cloud.test.pb.StubService/TestCall", m.Method)
+	assert.Equal(t, "/"+server.StubService_ServiceDesc.ServiceName+"/TestCall", m.Method)
 }
 
 func TestStreamInterceptor(t *testing.T) {
@@ -39,7 +39,7 @@ func TestStreamInterceptor(t *testing.T) {
 	require.NoError(t, err)
 	_, err = s.Recv()
 	require.Error(t, err)
-	assert.Equal(t, "/ocf.cloud.test.pb.StubService/TestStream", m.Method)
+	assert.Equal(t, "/"+server.StubService_ServiceDesc.ServiceName+"/TestStream", m.Method)
 }
 
 type MockInterceptor struct {

@@ -7,15 +7,15 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/plgd-dev/cloud/cloud2cloud-connector/store"
-	grpcClient "github.com/plgd-dev/cloud/grpc-gateway/client"
-	"github.com/plgd-dev/cloud/grpc-gateway/pb"
-	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/subscriber"
-	raEvents "github.com/plgd-dev/cloud/resource-aggregate/events"
-	raService "github.com/plgd-dev/cloud/resource-aggregate/service"
-	"github.com/plgd-dev/kit/log"
-	kitSync "github.com/plgd-dev/kit/sync"
+	"github.com/plgd-dev/cloud/v2/cloud2cloud-connector/store"
+	grpcClient "github.com/plgd-dev/cloud/v2/grpc-gateway/client"
+	"github.com/plgd-dev/cloud/v2/grpc-gateway/pb"
+	kitNetGrpc "github.com/plgd-dev/cloud/v2/pkg/net/grpc"
+	"github.com/plgd-dev/cloud/v2/resource-aggregate/cqrs/eventbus/nats/subscriber"
+	raEvents "github.com/plgd-dev/cloud/v2/resource-aggregate/events"
+	raService "github.com/plgd-dev/cloud/v2/resource-aggregate/service"
+	"github.com/plgd-dev/kit/v2/log"
+	kitSync "github.com/plgd-dev/kit/v2/sync"
 )
 
 type deviceSubscriptionHandlers struct {

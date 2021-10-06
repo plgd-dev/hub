@@ -3,10 +3,10 @@ package oauth2
 import (
 	"context"
 
-	"github.com/plgd-dev/cloud/pkg/file"
-	"github.com/plgd-dev/cloud/pkg/log"
-	"github.com/plgd-dev/cloud/pkg/net/http/client"
-	"github.com/plgd-dev/cloud/pkg/security/openid"
+	"github.com/plgd-dev/cloud/v2/pkg/file"
+	"github.com/plgd-dev/cloud/v2/pkg/log"
+	"github.com/plgd-dev/cloud/v2/pkg/net/http/client"
+	"github.com/plgd-dev/cloud/v2/pkg/security/openid"
 	"golang.org/x/oauth2"
 )
 

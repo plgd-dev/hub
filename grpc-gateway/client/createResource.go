@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/plgd-dev/cloud/grpc-gateway/pb"
-	"github.com/plgd-dev/cloud/resource-aggregate/commands"
+	"github.com/plgd-dev/cloud/v2/grpc-gateway/pb"
+	"github.com/plgd-dev/cloud/v2/resource-aggregate/commands"
 )
 
 // CreateResource requests creation of a new resource on a collection resource on a device.

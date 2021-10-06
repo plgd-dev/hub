@@ -3,7 +3,7 @@ package local
 import (
 	"context"
 
-	"github.com/plgd-dev/cloud/certificate-authority/pb"
+	"github.com/plgd-dev/cloud/v2/certificate-authority/pb"
 )
 
 type IdentityCertificateSigner struct {

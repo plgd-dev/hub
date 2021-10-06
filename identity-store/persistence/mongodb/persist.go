@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/plgd-dev/cloud/identity-store/persistence"
+	"github.com/plgd-dev/cloud/v2/identity-store/persistence"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"

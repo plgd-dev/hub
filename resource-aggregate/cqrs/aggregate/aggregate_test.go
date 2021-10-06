@@ -7,16 +7,16 @@ import (
 	"testing"
 	"time"
 
-	"github.com/plgd-dev/cloud/pkg/log"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/mongodb"
-	"github.com/plgd-dev/cloud/test/config"
+	"github.com/plgd-dev/cloud/v2/pkg/log"
+	"github.com/plgd-dev/cloud/v2/resource-aggregate/cqrs/eventstore"
+	"github.com/plgd-dev/cloud/v2/resource-aggregate/cqrs/eventstore/mongodb"
+	"github.com/plgd-dev/cloud/v2/test/config"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
 )
 
 func (e *Published) Version() uint64          { return e.EventVersion }
-func (e *Published) EventType() string        { return "ocf.cloud.resourceaggregate.pb.Published" }
+func (e *Published) EventType() string        { return "published" }
 func (e *Published) Marshal() ([]byte, error) { return proto.Marshal(e) }
 func (e *Published) Unmarshal(b []byte) error { return proto.Unmarshal(b, e) }
 func (e *Published) AggregateID() string      { return e.DeviceId + e.Href }
@@ -25,7 +25,7 @@ func (e *Published) IsSnapshot() bool         { return false }
 func (e *Published) Timestamp() time.Time     { return time.Unix(0, e.EventTimestamp) }
 
 func (e *Unpublished) Version() uint64          { return e.EventVersion }
-func (e *Unpublished) EventType() string        { return "ocf.cloud.resourceaggregate.pb.Unpublished" }
+func (e *Unpublished) EventType() string        { return "unpublished" }
 func (e *Unpublished) Marshal() ([]byte, error) { return proto.Marshal(e) }
 func (e *Unpublished) Unmarshal(b []byte) error { return proto.Unmarshal(b, e) }
 func (e *Unpublished) AggregateID() string      { return e.DeviceId + e.Href }
@@ -34,7 +34,7 @@ func (e *Unpublished) IsSnapshot() bool         { return false }
 func (e *Unpublished) Timestamp() time.Time     { return time.Unix(0, e.EventTimestamp) }
 
 func (e *Snapshot) Version() uint64          { return e.EventVersion }
-func (e *Snapshot) EventType() string        { return "ocf.cloud.resourceaggregate.pb.Snapshot" }
+func (e *Snapshot) EventType() string        { return "snapshot" }
 func (e *Snapshot) Marshal() ([]byte, error) { return proto.Marshal(e) }
 func (e *Snapshot) Unmarshal(b []byte) error { return proto.Unmarshal(b, e) }
 func (e *Snapshot) AggregateID() string      { return e.DeviceId + e.Href }

@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/plgd-dev/cloud/pkg/log"
-	"github.com/plgd-dev/cloud/pkg/security/oauth2"
-	"github.com/plgd-dev/cloud/pkg/sync/task/queue"
+	"github.com/plgd-dev/cloud/v2/pkg/log"
+	"github.com/plgd-dev/cloud/v2/pkg/security/oauth2"
+	"github.com/plgd-dev/cloud/v2/pkg/sync/task/queue"
 )
 
 // Non-thread safe cache for Refresh operation.

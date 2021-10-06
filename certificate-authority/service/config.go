@@ -5,9 +5,9 @@ import (
 	"time"
 
 	"github.com/karrick/tparse/v2"
-	"github.com/plgd-dev/cloud/pkg/config"
-	"github.com/plgd-dev/cloud/pkg/log"
-	"github.com/plgd-dev/cloud/pkg/net/grpc/server"
+	"github.com/plgd-dev/cloud/v2/pkg/config"
+	"github.com/plgd-dev/cloud/v2/pkg/log"
+	"github.com/plgd-dev/cloud/v2/pkg/net/grpc/server"
 )
 
 type Config struct {
