@@ -35,10 +35,10 @@ func TestRequestHandler_DeleteResource(t *testing.T) {
 		wantErrCode codes.Code
 	}{
 		{
-			name: "/light/2 - MethodNotAllowed",
+			name: "/light/1 - MethodNotAllowed",
 			args: args{
 				req: &pb.DeleteResourceRequest{
-					ResourceId: commands.NewResourceID(deviceID, "/light/2"),
+					ResourceId: commands.NewResourceID(deviceID, "/light/1"),
 				},
 			},
 			wantErr:     true,
@@ -68,7 +68,7 @@ func TestRequestHandler_DeleteResource(t *testing.T) {
 			name: "invalid timeToLive",
 			args: args{
 				req: &pb.DeleteResourceRequest{
-					ResourceId: commands.NewResourceID(deviceID, "/light/2"),
+					ResourceId: commands.NewResourceID(deviceID, "/light/1"),
 					TimeToLive: int64(99 * time.Millisecond),
 				},
 			},

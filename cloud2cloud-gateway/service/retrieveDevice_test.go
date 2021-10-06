@@ -8,12 +8,13 @@ import (
 	"testing"
 
 	"github.com/plgd-dev/go-coap/v2/message"
-
 	"github.com/plgd-dev/hub/cloud2cloud-gateway/uri"
 	"github.com/plgd-dev/hub/grpc-gateway/pb"
 	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
+	"github.com/plgd-dev/hub/pkg/ocf"
 	"github.com/plgd-dev/hub/test"
 	testCfg "github.com/plgd-dev/hub/test/config"
+	testHttp "github.com/plgd-dev/hub/test/http"
 	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -64,62 +65,49 @@ func cleanUp(v interface{}) interface{} {
 	return v
 }
 
+func getResourceRepresentation(deviceID, href string, rt []interface{}, opts map[interface{}]interface{}) map[interface{}]interface{} {
+	res := map[interface{}]interface{}{
+		"di":   deviceID,
+		"href": "/" + deviceID + href,
+		"if":   []interface{}{ocf.OC_IF_RW, ocf.OC_IF_BASELINE},
+		"p": map[interface{}]interface{}{
+			"bm":                 uint64(0x3),
+			"port":               uint64(0x0),
+			"sec":                false,
+			"x.org.iotivity.tcp": uint64(0x0),
+			"x.org.iotivity.tls": uint64(0x0),
+		},
+		"rt": rt,
+	}
+
+	for k, v := range opts {
+		res[k] = v
+	}
+	return res
+}
+
 func getDeviceAllRepresentation(deviceID, deviceName string) interface{} {
 	return cleanUp(map[interface{}]interface{}{
 		"device": map[interface{}]interface{}{
 			"di":   deviceID,
 			"dmn":  []interface{}{},
 			"dmno": "",
-			"if":   []interface{}{"oic.if.r", "oic.if.baseline"},
+			"if":   []interface{}{ocf.OC_IF_R, ocf.OC_IF_BASELINE},
 			"n":    deviceName,
 			"rt":   []interface{}{"oic.d.cloudDevice", "oic.wk.d"},
 		},
 		"links": []interface{}{
-			map[interface{}]interface{}{
-				"di":   deviceID,
-				"href": "/" + deviceID + "/oc/con",
-				"if":   []interface{}{"oic.if.rw", "oic.if.baseline"},
-				"p": map[interface{}]interface{}{
-					"bm": uint64(0x3), "port": uint64(0x0), "sec": false, "x.org.iotivity.tcp": uint64(0x0), "x.org.iotivity.tls": uint64(0x0),
-				},
-				"rt": []interface{}{"oic.wk.con"},
-			},
-			map[interface{}]interface{}{
-				"di":   "" + deviceID + "",
-				"href": "/" + deviceID + "/light/1",
-				"if":   []interface{}{"oic.if.rw", "oic.if.baseline"},
-				"p": map[interface{}]interface{}{
-					"bm": uint64(0x3), "port": uint64(0x0), "sec": false, "x.org.iotivity.tcp": uint64(0x0), "x.org.iotivity.tls": uint64(0x0),
-				},
-				"rt": []interface{}{"core.light"},
-			},
-			map[interface{}]interface{}{
-				"di":   "" + deviceID + "",
-				"href": "/" + deviceID + "/oic/d",
-				"if":   []interface{}{"oic.if.r", "oic.if.baseline"},
-				"p": map[interface{}]interface{}{
-					"bm": uint64(0x3), "port": uint64(0x0), "sec": false, "x.org.iotivity.tcp": uint64(0x0), "x.org.iotivity.tls": uint64(0x0),
-				},
-				"rt": []interface{}{"oic.d.cloudDevice", "oic.wk.d"},
-			},
-			map[interface{}]interface{}{
-				"di":   "" + deviceID + "",
-				"href": "/" + deviceID + "/light/2",
-				"if":   []interface{}{"oic.if.rw", "oic.if.baseline"},
-				"p": map[interface{}]interface{}{
-					"bm": uint64(0x3), "port": uint64(0x0), "sec": false, "x.org.iotivity.tcp": uint64(0x0), "x.org.iotivity.tls": uint64(0x0),
-				},
-				"rt": []interface{}{"core.light"},
-			},
-			map[interface{}]interface{}{
-				"di":   "" + deviceID + "",
-				"href": "/" + deviceID + "/oic/p",
-				"if":   []interface{}{"oic.if.r", "oic.if.baseline"},
-				"p": map[interface{}]interface{}{
-					"bm": uint64(0x3), "port": uint64(0x0), "sec": false, "x.org.iotivity.tcp": uint64(0x0), "x.org.iotivity.tls": uint64(0x0),
-				},
-				"rt": []interface{}{"oic.wk.p"},
-			},
+			getResourceRepresentation(deviceID, "/oc/con", []interface{}{"oic.wk.con"}, nil),
+			getResourceRepresentation(deviceID, "/light/1", []interface{}{"core.light"}, nil),
+			getResourceRepresentation(deviceID, "/oic/d", []interface{}{"oic.d.cloudDevice", "oic.wk.d"}, map[interface{}]interface{}{
+				"if": []interface{}{ocf.OC_IF_R, ocf.OC_IF_BASELINE},
+			}),
+			getResourceRepresentation(deviceID, "/switches", []interface{}{"oic.wk.col"}, map[interface{}]interface{}{
+				"if": []interface{}{ocf.OC_IF_LL, ocf.OC_IF_CREATE, ocf.OC_IF_B, ocf.OC_IF_BASELINE},
+			}),
+			getResourceRepresentation(deviceID, "/oic/p", []interface{}{"oic.wk.p"}, map[interface{}]interface{}{
+				"if": []interface{}{ocf.OC_IF_R, ocf.OC_IF_BASELINE},
+			}),
 		},
 		"status": "online",
 	})
@@ -211,15 +199,15 @@ func TestRequestHandler_RetrieveDevice(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			req := test.NewHTTPRequest(http.MethodGet, tt.args.uri, nil).Accept(tt.args.accept).Build(ctx, t)
-			resp := test.DoHTTPRequest(t, req)
+			req := testHttp.NewHTTPRequest(http.MethodGet, tt.args.uri, nil).Accept(tt.args.accept).Build(ctx, t)
+			resp := testHttp.DoHTTPRequest(t, req)
 			assert.Equal(t, tt.wantCode, resp.StatusCode)
 			defer func() {
 				_ = resp.Body.Close()
 			}()
 			require.Equal(t, tt.wantContentType, resp.Header.Get("Content-Type"))
 			if tt.want != nil {
-				got := test.ReadHTTPResponse(t, resp.Body, tt.wantContentType)
+				got := testHttp.ReadHTTPResponse(t, resp.Body, tt.wantContentType)
 				cleanUp(got)
 				require.Equal(t, tt.want, got)
 			}

@@ -39,10 +39,10 @@ func TestRequestHandler_DeleteResource(t *testing.T) {
 		wantHTTPCode int
 	}{
 		{
-			name: "/light/2 - MethodNotAllowed",
+			name: "/light/1 - MethodNotAllowed",
 			args: args{
 				deviceID:     deviceID,
-				resourceHref: "/light/2",
+				resourceHref: "/light/1",
 				accept:       uri.ApplicationProtoJsonContentType,
 			},
 			wantErr:      true,

@@ -12,6 +12,7 @@ import (
 	c2cConnectorTest "github.com/plgd-dev/hub/cloud2cloud-connector/test"
 	"github.com/plgd-dev/hub/grpc-gateway/pb"
 	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
+	"github.com/plgd-dev/hub/pkg/ocf"
 	"github.com/plgd-dev/hub/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/test"
 	testCfg "github.com/plgd-dev/hub/test/config"
@@ -41,7 +42,7 @@ func testRequestHandlerGetDevices(t *testing.T, events store.Events) {
 			want: []*pb.Device{
 				{
 					Types:      []string{"oic.d.cloudDevice", "oic.wk.d"},
-					Interfaces: []string{"oic.if.r", "oic.if.baseline"},
+					Interfaces: []string{ocf.OC_IF_R, ocf.OC_IF_BASELINE},
 					Id:         deviceID,
 					Name:       test.TestDeviceName,
 					Metadata: &pb.Device_Metadata{

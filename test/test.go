@@ -2,28 +2,18 @@ package test
 
 import (
 	"context"
-	"crypto/tls"
-	"crypto/x509"
-	"encoding/pem"
 	"fmt"
-	"io"
-	"io/ioutil"
-	"net/http"
-	"net/url"
 	"os"
 	"os/exec"
-	"reflect"
 	"sort"
 	"testing"
 	"time"
 
-	"github.com/jtacoma/uritemplates"
 	deviceClient "github.com/plgd-dev/device/client"
 	"github.com/plgd-dev/device/client/core"
 	"github.com/plgd-dev/device/schema"
 	"github.com/plgd-dev/device/schema/acl"
 	"github.com/plgd-dev/device/schema/device"
-	"github.com/plgd-dev/go-coap/v2/message"
 	caService "github.com/plgd-dev/hub/certificate-authority/test"
 	c2cgwService "github.com/plgd-dev/hub/cloud2cloud-gateway/test"
 	coapgw "github.com/plgd-dev/hub/coap-gateway/service"
@@ -35,7 +25,7 @@ import (
 	idService "github.com/plgd-dev/hub/identity-store/test"
 	"github.com/plgd-dev/hub/pkg/fn"
 	"github.com/plgd-dev/hub/pkg/log"
-	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
+	"github.com/plgd-dev/hub/pkg/ocf"
 	cmClient "github.com/plgd-dev/hub/pkg/security/certManager/client"
 	"github.com/plgd-dev/hub/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/resource-aggregate/events"
@@ -44,9 +34,7 @@ import (
 	rdTest "github.com/plgd-dev/hub/resource-directory/test"
 	"github.com/plgd-dev/hub/test/config"
 	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
-	"github.com/plgd-dev/kit/v2/codec/cbor"
 	"github.com/plgd-dev/kit/v2/codec/json"
-	"github.com/plgd-dev/kit/v2/security"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.mongodb.org/mongo-driver/bson"
@@ -62,49 +50,57 @@ var (
 	TestDevsimBackendResources []schema.ResourceLink
 )
 
+const (
+	OCFResourcePlatformHref      = "/oic/p"
+	OCFResourceDeviceHref        = "/oic/d"
+	OCFResourceConfigurationHref = "/oc/con"
+	TestResourceLightHref        = "/light/1"
+	TestResourceSwitchesHref     = "/switches"
+)
+
 func init() {
 	TestDeviceName = "devsim-" + MustGetHostname()
 	TestDevsimResources = []schema.ResourceLink{
 		{
-			Href:          "/oic/p",
-			ResourceTypes: []string{"oic.wk.p"},
-			Interfaces:    []string{"oic.if.r", "oic.if.baseline"},
+			Href:          OCFResourcePlatformHref,
+			ResourceTypes: []string{ocf.OC_RT_P},
+			Interfaces:    []string{ocf.OC_IF_R, ocf.OC_IF_BASELINE},
 			Policy: &schema.Policy{
 				BitMask: 3,
 			},
 		},
 
 		{
-			Href:          "/oic/d",
-			ResourceTypes: []string{"oic.d.cloudDevice", "oic.wk.d"},
-			Interfaces:    []string{"oic.if.r", "oic.if.baseline"},
+			Href:          OCFResourceDeviceHref,
+			ResourceTypes: []string{ocf.OC_RT_DEVICE_CLOUD, ocf.OC_RT_D},
+			Interfaces:    []string{ocf.OC_IF_R, ocf.OC_IF_BASELINE},
 			Policy: &schema.Policy{
 				BitMask: 3,
 			},
 		},
 
 		{
-			Href:          "/oc/con",
-			ResourceTypes: []string{"oic.wk.con"},
-			Interfaces:    []string{"oic.if.rw", "oic.if.baseline"},
+			Href:          OCFResourceConfigurationHref,
+			ResourceTypes: []string{ocf.OC_RT_CON},
+			Interfaces:    []string{ocf.OC_IF_RW, ocf.OC_IF_BASELINE},
 			Policy: &schema.Policy{
 				BitMask: 3,
 			},
 		},
 
 		{
-			Href:          "/light/1",
+			Href:          TestResourceLightHref,
 			ResourceTypes: []string{"core.light"},
-			Interfaces:    []string{"oic.if.rw", "oic.if.baseline"},
+			Interfaces:    []string{ocf.OC_IF_RW, ocf.OC_IF_BASELINE},
 			Policy: &schema.Policy{
 				BitMask: 3,
 			},
 		},
 
 		{
-			Href:          "/light/2",
-			ResourceTypes: []string{"core.light"},
-			Interfaces:    []string{"oic.if.rw", "oic.if.baseline"},
+			Href:          TestResourceSwitchesHref,
+			ResourceTypes: []string{ocf.OC_RT_COL},
+			Interfaces:    []string{ocf.OC_IF_LL, ocf.OC_IF_CREATE, ocf.OC_IF_B, ocf.OC_IF_BASELINE},
 			Policy: &schema.Policy{
 				BitMask: 3,
 			},
@@ -320,7 +316,7 @@ func OnboardDevSimForClient(ctx context.Context, t *testing.T, c pb.GrpcGatewayC
 	defer func() {
 		_ = client.Close(ctx)
 	}()
-	deviceID, err = client.OwnDevice(ctx, deviceID)
+	deviceID, err = client.OwnDevice(ctx, deviceID, deviceClient.WithOTM(deviceClient.OTMType_JustWorks))
 	require.NoError(t, err)
 
 	setAccessForCloud(ctx, t, client, deviceID)
@@ -553,33 +549,6 @@ func waitForDevice(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 	require.NoError(t, err)
 }
 
-func GetRootCertificatePool(t *testing.T) *x509.CertPool {
-	pool := security.NewDefaultCertPool(nil)
-	dat, err := ioutil.ReadFile(os.Getenv("TEST_ROOT_CA_CERT"))
-	require.NoError(t, err)
-	ok := pool.AppendCertsFromPEM(dat)
-	require.True(t, ok)
-	return pool
-}
-
-func GetRootCertificateAuthorities(t *testing.T) []*x509.Certificate {
-	dat, err := ioutil.ReadFile(os.Getenv("TEST_ROOT_CA_CERT"))
-	require.NoError(t, err)
-	r := make([]*x509.Certificate, 0, 4)
-	for {
-		block, rest := pem.Decode(dat)
-		require.NotNil(t, block)
-		certs, err := x509.ParseCertificates(block.Bytes)
-		require.NoError(t, err)
-		r = append(r, certs...)
-		if len(rest) == 0 {
-			break
-		}
-	}
-
-	return r
-}
-
 func MustGetHostname() string {
 	n, err := os.Hostname()
 	if err != nil {
@@ -649,19 +618,6 @@ func FindDeviceByName(ctx context.Context, name string) (deviceID string, _ erro
 		return "", fmt.Errorf("could not find the device named %s: not found", name)
 	}
 	return id, nil
-}
-
-func DecodeCbor(t *testing.T, data []byte) interface{} {
-	var v interface{}
-	err := cbor.Decode(data, &v)
-	require.NoError(t, err)
-	return v
-}
-
-func EncodeToCbor(t *testing.T, v interface{}) []byte {
-	d, err := cbor.Encode(v)
-	require.NoError(t, err)
-	return d
 }
 
 func ResourceLinkToPublishEvent(deviceID, token string, links []schema.ResourceLink) *pb.Event {
@@ -755,113 +711,6 @@ func SortResources(s []*commands.Resource) []*commands.Resource {
 	return v
 }
 
-func NewHTTPRequest(method, url string, body io.Reader) *HTTPRequestBuilder {
-	b := HTTPRequestBuilder{
-		method:      method,
-		body:        body,
-		uri:         url,
-		uriParams:   make(map[string]interface{}),
-		header:      make(map[string]string),
-		queryParams: make(map[string]string),
-	}
-	return &b
-}
-
-type HTTPRequestBuilder struct {
-	method      string
-	body        io.Reader
-	uri         string
-	uriParams   map[string]interface{}
-	header      map[string]string
-	queryParams map[string]string
-}
-
-func (c *HTTPRequestBuilder) AuthToken(token string) *HTTPRequestBuilder {
-	c.header["Authorization"] = fmt.Sprintf("bearer %s", token)
-	return c
-}
-
-func (c *HTTPRequestBuilder) AddQuery(key, value string) *HTTPRequestBuilder {
-	c.queryParams[key] = value
-	return c
-}
-
-func (c *HTTPRequestBuilder) Accept(accept string) *HTTPRequestBuilder {
-	if accept == "" {
-		return c
-	}
-	c.header["Accept"] = accept
-	return c
-}
-
-func (c *HTTPRequestBuilder) Build(ctx context.Context, t *testing.T) *http.Request {
-	tmp, err := uritemplates.Parse(c.uri)
-	require.NoError(t, err)
-	uri, err := tmp.Expand(c.uriParams)
-	require.NoError(t, err)
-	url, err := url.Parse(uri)
-	require.NoError(t, err)
-	query := url.Query()
-
-	token, err := kitNetGrpc.TokenFromOutgoingMD(ctx)
-	if err == nil {
-		c.AuthToken(token)
-	}
-
-	for k, v := range c.queryParams {
-		query.Set(k, v)
-	}
-	url.RawQuery = query.Encode()
-	request, _ := http.NewRequestWithContext(ctx, c.method, url.String(), c.body)
-	for k, v := range c.header {
-		request.Header.Add(k, v)
-	}
-	return request
-}
-
-func DoHTTPRequest(t *testing.T, req *http.Request) *http.Response {
-	trans := http.DefaultTransport.(*http.Transport).Clone()
-	trans.TLSClientConfig = &tls.Config{
-		InsecureSkipVerify: true,
-	}
-	c := http.Client{
-		Transport: trans,
-	}
-	resp, err := c.Do(req)
-	require.NoError(t, err)
-	return resp
-}
-
-func ReadHTTPResponse(t *testing.T, w io.Reader, contentType string) interface{} {
-	var data interface{}
-	readFrom := func(w io.Reader, v interface{}) error {
-		return fmt.Errorf("not supported")
-	}
-	switch contentType {
-	case message.AppJSON.String():
-		readFrom = json.ReadFrom
-	case message.AppCBOR.String(), message.AppOcfCbor.String():
-		readFrom = cbor.ReadFrom
-	case "text/plain":
-		readFrom = func(w io.Reader, v interface{}) error {
-			b, err := ioutil.ReadAll(w)
-			if err != nil {
-				return err
-			}
-			val := reflect.ValueOf(v)
-			if val.Kind() != reflect.Ptr {
-				return fmt.Errorf("some: check must be a pointer")
-			}
-			val.Elem().Set(reflect.ValueOf(string(b)))
-			return nil
-		}
-	}
-	err := readFrom(w, &data)
-	require.NoError(t, err)
-
-	return data
-}
-
 func ProtobufToInterface(t *testing.T, val interface{}) interface{} {
 	expJSON, err := json.Encode(val)
 	require.NoError(t, err)
@@ -897,56 +746,4 @@ func NATSSStart(ctx context.Context, t *testing.T) {
 func NATSSStop(ctx context.Context, t *testing.T) {
 	err := exec.CommandContext(ctx, "docker", "stop", "nats").Run()
 	require.NoError(t, err)
-}
-
-type SortPendingCommand []*pb.PendingCommand
-
-func (a SortPendingCommand) Len() int      { return len(a) }
-func (a SortPendingCommand) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
-func (a SortPendingCommand) Less(i, j int) bool {
-	toKey := func(v *pb.PendingCommand) string {
-		switch {
-		case v.GetResourceCreatePending() != nil:
-			return v.GetResourceCreatePending().GetResourceId().GetDeviceId() + v.GetResourceCreatePending().GetResourceId().GetHref()
-		case v.GetResourceRetrievePending() != nil:
-			return v.GetResourceRetrievePending().GetResourceId().GetDeviceId() + v.GetResourceRetrievePending().GetResourceId().GetHref()
-		case v.GetResourceUpdatePending() != nil:
-			return v.GetResourceUpdatePending().GetResourceId().GetDeviceId() + v.GetResourceUpdatePending().GetResourceId().GetHref()
-		case v.GetResourceDeletePending() != nil:
-			return v.GetResourceDeletePending().GetResourceId().GetDeviceId() + v.GetResourceDeletePending().GetResourceId().GetHref()
-		case v.GetDeviceMetadataUpdatePending() != nil:
-			return v.GetDeviceMetadataUpdatePending().GetDeviceId()
-		}
-		return ""
-	}
-
-	return toKey(a[i]) < toKey(a[j])
-}
-
-func CmpPendingCmds(t *testing.T, want []*pb.PendingCommand, got []*pb.PendingCommand) {
-	require.Len(t, got, len(want))
-
-	sort.Sort(SortPendingCommand(want))
-	sort.Sort(SortPendingCommand(got))
-
-	for idx := range want {
-		switch {
-		case got[idx].GetResourceCreatePending() != nil:
-			got[idx].GetResourceCreatePending().AuditContext.CorrelationId = ""
-			got[idx].GetResourceCreatePending().EventMetadata = nil
-		case got[idx].GetResourceRetrievePending() != nil:
-			got[idx].GetResourceRetrievePending().AuditContext.CorrelationId = ""
-			got[idx].GetResourceRetrievePending().EventMetadata = nil
-		case got[idx].GetResourceUpdatePending() != nil:
-			got[idx].GetResourceUpdatePending().AuditContext.CorrelationId = ""
-			got[idx].GetResourceUpdatePending().EventMetadata = nil
-		case got[idx].GetResourceDeletePending() != nil:
-			got[idx].GetResourceDeletePending().AuditContext.CorrelationId = ""
-			got[idx].GetResourceDeletePending().EventMetadata = nil
-		case got[idx].GetDeviceMetadataUpdatePending() != nil:
-			got[idx].GetDeviceMetadataUpdatePending().AuditContext.CorrelationId = ""
-			got[idx].GetDeviceMetadataUpdatePending().EventMetadata = nil
-		}
-		CheckProtobufs(t, want[idx], got[idx], RequireToCheckFunc(require.Equal))
-	}
 }

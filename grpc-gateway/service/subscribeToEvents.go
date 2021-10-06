@@ -10,7 +10,6 @@ import (
 	"github.com/plgd-dev/hub/grpc-gateway/subscription"
 	"github.com/plgd-dev/hub/pkg/log"
 	"github.com/plgd-dev/hub/pkg/net/grpc"
-	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
 	"google.golang.org/grpc/codes"
 )
 
@@ -135,7 +134,7 @@ func processNextRequest(ctx context.Context, srv pb.GrpcGateway_SubscribeToEvent
 		return false, nil
 	}
 	if err != nil {
-		return false, log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot receive events: %v", err))
+		return false, log.LogAndReturnError(grpc.ForwardErrorf(codes.Internal, "cannot receive events: %v", err))
 	}
 	switch v := req.GetAction().(type) {
 	case (*pb.SubscribeToEvents_CreateSubscription_):

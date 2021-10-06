@@ -392,7 +392,7 @@ func TestRequestHandler_GetDevicePendingCommands(t *testing.T) {
 				require.NoError(t, err)
 				values = append(values, &v)
 			}
-			cmpPendingCmds(t, tt.want, values)
+			test.CmpPendingCmds(t, tt.want, values)
 		})
 	}
 }
