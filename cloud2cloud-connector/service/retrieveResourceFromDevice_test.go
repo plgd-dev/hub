@@ -5,11 +5,13 @@ import (
 	"crypto/tls"
 	"testing"
 
+	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/hub/cloud2cloud-connector/events"
 	"github.com/plgd-dev/hub/cloud2cloud-connector/store"
 	c2cConnectorTest "github.com/plgd-dev/hub/cloud2cloud-connector/test"
 	"github.com/plgd-dev/hub/grpc-gateway/pb"
 	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
+	"github.com/plgd-dev/hub/pkg/ocf"
 	"github.com/plgd-dev/hub/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/test"
 	testCfg "github.com/plgd-dev/hub/test/config"
@@ -34,24 +36,54 @@ func testRequestHandlerGetResourceFromDevice(t *testing.T, events store.Events) 
 		wantErr         bool
 	}{
 		{
-			name: "valid /light/2",
+			name: "valid /light/1",
 			args: args{
 				req: &pb.GetResourceFromDeviceRequest{
-					ResourceId: commands.NewResourceID(deviceID, "/light/2"),
+					ResourceId: commands.NewResourceID(deviceID, test.TestResourceLightHref),
 				},
 			},
-			wantContentType: "application/vnd.ocf+cbor",
-			want:            map[string]interface{}{"name": "Light", "power": uint64(0), "state": false, "if": []interface{}{"oic.if.rw", "oic.if.baseline"}, "rt": []interface{}{"core.light"}},
+			wantContentType: message.AppOcfCbor.String(),
+			want: map[string]interface{}{
+				"name":  "Light",
+				"power": uint64(0),
+				"state": false,
+				"if":    []interface{}{ocf.OC_IF_RW, ocf.OC_IF_BASELINE},
+				"rt":    []interface{}{"core.light"},
+			},
+		},
+		{
+			name: "valid /switches",
+			args: args{
+				req: &pb.GetResourceFromDeviceRequest{
+					ResourceId: commands.NewResourceID(deviceID, test.TestResourceSwitchesHref),
+				},
+			},
+			wantContentType: message.AppOcfCbor.String(),
+			want: map[string]interface{}{
+				"if":                        []interface{}{ocf.OC_IF_LL, ocf.OC_IF_CREATE, ocf.OC_IF_B, ocf.OC_IF_BASELINE},
+				"links":                     []interface{}{},
+				"rt":                        []interface{}{ocf.OC_RT_COL},
+				"rts":                       []interface{}{ocf.OC_RT_RESOURCE_SWITCH},
+				"rts-m":                     []interface{}{ocf.OC_RT_RESOURCE_SWITCH},
+				"x.org.openconnectivity.bl": uint64(94),
+			},
 		},
 		{
 			name: "valid /oic/d",
 			args: args{
 				req: &pb.GetResourceFromDeviceRequest{
-					ResourceId: commands.NewResourceID(deviceID, "/oic/d"),
+					ResourceId: commands.NewResourceID(deviceID, test.OCFResourceDeviceHref),
 				},
 			},
-			wantContentType: "application/vnd.ocf+cbor",
-			want:            map[string]interface{}{"di": deviceID, "dmv": "ocf.res.1.3.0", "icv": "ocf.2.0.5", "n": test.TestDeviceName, "if": []interface{}{"oic.if.r", "oic.if.baseline"}, "rt": []interface{}{"oic.d.cloudDevice", "oic.wk.d"}},
+			wantContentType: message.AppOcfCbor.String(),
+			want: map[string]interface{}{
+				"di":  deviceID,
+				"dmv": "ocf.res.1.3.0",
+				"icv": "ocf.2.0.5",
+				"n":   test.TestDeviceName,
+				"if":  []interface{}{ocf.OC_IF_R, ocf.OC_IF_BASELINE},
+				"rt":  []interface{}{ocf.OC_RT_DEVICE_CLOUD, ocf.OC_RT_D},
+			},
 		},
 		{
 			name: "invalid Href",

@@ -7,10 +7,10 @@ import (
 
 	"github.com/plgd-dev/hub/grpc-gateway/client"
 	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
+	"github.com/plgd-dev/hub/pkg/ocf"
 	"github.com/plgd-dev/hub/test"
 	testCfg "github.com/plgd-dev/hub/test/config"
 	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -71,7 +71,7 @@ func TestClient_UpdateResource(t *testing.T) {
 				data: map[string]interface{}{
 					"n": test.TestDeviceName,
 				},
-				opts: []client.UpdateOption{client.WithInterface("oic.if.baseline")},
+				opts: []client.UpdateOption{client.WithInterface(ocf.OC_IF_BASELINE)},
 			},
 			want: map[interface{}]interface{}{
 				"n": test.TestDeviceName,

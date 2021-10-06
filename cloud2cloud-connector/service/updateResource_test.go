@@ -11,6 +11,7 @@ import (
 	c2cConnectorTest "github.com/plgd-dev/hub/cloud2cloud-connector/test"
 	"github.com/plgd-dev/hub/grpc-gateway/pb"
 	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
+	"github.com/plgd-dev/hub/pkg/ocf"
 	"github.com/plgd-dev/hub/resource-aggregate/commands"
 	raEvents "github.com/plgd-dev/hub/resource-aggregate/events"
 	"github.com/plgd-dev/hub/test"
@@ -57,7 +58,7 @@ func testRequestHandlerUpdateResource(t *testing.T, events store.Events) {
 			name: "valid with interface",
 			args: args{
 				req: &pb.UpdateResourceRequest{
-					ResourceInterface: "oic.if.baseline",
+					ResourceInterface: ocf.OC_IF_BASELINE,
 					ResourceId:        commands.NewResourceID(deviceID, "/light/1"),
 					Content: &pb.Content{
 						ContentType: message.AppOcfCbor.String(),
@@ -79,7 +80,7 @@ func testRequestHandlerUpdateResource(t *testing.T, events store.Events) {
 			name: "revert update",
 			args: args{
 				req: &pb.UpdateResourceRequest{
-					ResourceInterface: "oic.if.baseline",
+					ResourceInterface: ocf.OC_IF_BASELINE,
 					ResourceId:        commands.NewResourceID(deviceID, "/light/1"),
 					Content: &pb.Content{
 						ContentType: message.AppOcfCbor.String(),

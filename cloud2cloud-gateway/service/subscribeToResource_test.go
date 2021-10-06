@@ -19,8 +19,10 @@ import (
 	"github.com/plgd-dev/hub/cloud2cloud-gateway/uri"
 	"github.com/plgd-dev/hub/grpc-gateway/pb"
 	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
+	"github.com/plgd-dev/hub/pkg/ocf"
 	"github.com/plgd-dev/hub/test"
 	testCfg "github.com/plgd-dev/hub/test/config"
+	testHttp "github.com/plgd-dev/hub/test/http"
 	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
 	"github.com/plgd-dev/kit/v2/codec/json"
 	"github.com/stretchr/testify/assert"
@@ -36,7 +38,13 @@ func TestRequestHandler_SubscribeToResource(t *testing.T) {
 	wantContentType := message.AppJSON.String()
 	wantContent := true
 	wantEventType := events.EventType_ResourceChanged
-	wantEventContent := map[interface{}]interface{}{"if": []interface{}{"oic.if.rw", "oic.if.baseline"}, "name": "Light", "power": uint64(0), "rt": []interface{}{"core.light"}, "state": false}
+	wantEventContent := map[interface{}]interface{}{
+		"if":    []interface{}{ocf.OC_IF_RW, ocf.OC_IF_BASELINE},
+		"name":  "Light",
+		"power": uint64(0),
+		"rt":    []interface{}{"core.light"},
+		"state": false,
+	}
 	eventType := events.EventType_ResourceChanged
 	uri := "https://" + testCfg.C2C_GW_HOST + uri.Devices + "/" + deviceID + "/light/1/subscriptions"
 	accept := message.AppJSON.String()
@@ -103,8 +111,8 @@ func TestRequestHandler_SubscribeToResource(t *testing.T) {
 
 	data, err := json.Encode(sub)
 	require.NoError(t, err)
-	req := test.NewHTTPRequest(http.MethodPost, uri, bytes.NewBuffer(data)).AuthToken(token).Accept(accept).Build(ctx, t)
-	resp := test.DoHTTPRequest(t, req)
+	req := testHttp.NewHTTPRequest(http.MethodPost, uri, bytes.NewBuffer(data)).AuthToken(token).Accept(accept).Build(ctx, t)
+	resp := testHttp.DoHTTPRequest(t, req)
 	assert.Equal(t, wantCode, resp.StatusCode)
 	defer func() {
 		_ = resp.Body.Close()
@@ -194,8 +202,8 @@ func TestRequestHandler_SubscribeToResourceTokenTimeout(t *testing.T) {
 	data, err := json.Encode(sub)
 	require.NoError(t, err)
 	accept := message.AppJSON.String()
-	req := test.NewHTTPRequest(http.MethodPost, uri, bytes.NewBuffer(data)).AuthToken(token).Accept(accept).Build(ctx, t)
-	resp := test.DoHTTPRequest(t, req)
+	req := testHttp.NewHTTPRequest(http.MethodPost, uri, bytes.NewBuffer(data)).AuthToken(token).Accept(accept).Build(ctx, t)
+	resp := testHttp.DoHTTPRequest(t, req)
 	assert.Equal(t, http.StatusCreated, resp.StatusCode)
 	defer func() {
 		_ = resp.Body.Close()

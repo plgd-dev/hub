@@ -13,16 +13,14 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/plgd-dev/hub/coap-gateway/coapconv"
-	"github.com/plgd-dev/kit/v2/codec/json"
-
-	"github.com/plgd-dev/kit/v2/net"
-
 	"github.com/plgd-dev/go-coap/v2/message"
 	codes "github.com/plgd-dev/go-coap/v2/message/codes"
 	coap "github.com/plgd-dev/go-coap/v2/tcp"
 	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
+	"github.com/plgd-dev/hub/pkg/ocf"
 	"github.com/plgd-dev/kit/v2/codec/cbor"
+	"github.com/plgd-dev/kit/v2/codec/json"
+	"github.com/plgd-dev/kit/v2/net"
 )
 
 type authReq struct {
@@ -226,7 +224,7 @@ func main() {
 		if err != nil {
 			log.Fatalf("cannot create resource: %v", err)
 		}
-		req.SetOptionString(message.URIQuery, "if="+coapconv.OCFCreateInterface)
+		req.SetOptionString(message.URIQuery, "if="+ocf.OC_IF_CREATE)
 		resp, err := co.Do(req)
 		if err != nil {
 			log.Fatalf("cannot update resource: %v", err)

@@ -5,9 +5,9 @@ import (
 	"testing"
 	"time"
 
-	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
-
 	"github.com/plgd-dev/hub/grpc-gateway/client"
+	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
+	"github.com/plgd-dev/hub/pkg/ocf"
 	"github.com/plgd-dev/hub/test"
 	testCfg "github.com/plgd-dev/hub/test/config"
 	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
@@ -38,12 +38,12 @@ func TestClient_GetResource(t *testing.T) {
 			args: args{
 				token:    oauthTest.GetDefaultServiceToken(t),
 				deviceID: deviceID,
-				href:     "/oc/con",
+				href:     test.OCFResourceConfigurationHref,
 			},
 			want: map[interface{}]interface{}{
 				"n":  test.TestDeviceName,
-				"if": []interface{}{"oic.if.rw", "oic.if.baseline"},
-				"rt": []interface{}{"oic.wk.con"},
+				"if": []interface{}{ocf.OC_IF_RW, ocf.OC_IF_BASELINE},
+				"rt": []interface{}{ocf.OC_RT_CON},
 			},
 		},
 		{
@@ -51,7 +51,7 @@ func TestClient_GetResource(t *testing.T) {
 			args: args{
 				token:    oauthTest.GetDefaultServiceToken(t),
 				deviceID: deviceID,
-				href:     "/oc/con",
+				href:     test.OCFResourceConfigurationHref,
 				opts:     []client.GetOption{client.WithSkipShadow()},
 			},
 			want: map[interface{}]interface{}{
@@ -63,14 +63,14 @@ func TestClient_GetResource(t *testing.T) {
 			args: args{
 				token:    oauthTest.GetDefaultServiceToken(t),
 				deviceID: deviceID,
-				href:     "/oc/con",
-				opts:     []client.GetOption{client.WithInterface("oic.if.baseline")},
+				href:     test.OCFResourceConfigurationHref,
+				opts:     []client.GetOption{client.WithInterface(ocf.OC_IF_BASELINE)},
 			},
 			wantErr: false,
 			want: map[interface{}]interface{}{
 				"n":  test.TestDeviceName,
-				"if": []interface{}{"oic.if.rw", "oic.if.baseline"},
-				"rt": []interface{}{"oic.wk.con"},
+				"if": []interface{}{ocf.OC_IF_RW, ocf.OC_IF_BASELINE},
+				"rt": []interface{}{ocf.OC_RT_CON},
 			},
 		},
 		{
@@ -78,14 +78,14 @@ func TestClient_GetResource(t *testing.T) {
 			args: args{
 				token:    oauthTest.GetDefaultServiceToken(t),
 				deviceID: deviceID,
-				href:     "/oc/con",
-				opts:     []client.GetOption{client.WithSkipShadow(), client.WithInterface("oic.if.baseline")},
+				href:     test.OCFResourceConfigurationHref,
+				opts:     []client.GetOption{client.WithSkipShadow(), client.WithInterface(ocf.OC_IF_BASELINE)},
 			},
 			wantErr: false,
 			want: map[interface{}]interface{}{
 				"n":  test.TestDeviceName,
-				"if": []interface{}{"oic.if.rw", "oic.if.baseline"},
-				"rt": []interface{}{"oic.wk.con"},
+				"if": []interface{}{ocf.OC_IF_RW, ocf.OC_IF_BASELINE},
+				"rt": []interface{}{ocf.OC_RT_CON},
 			},
 		},
 		{

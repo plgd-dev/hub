@@ -3,17 +3,18 @@ package service
 import (
 	"fmt"
 
-	"github.com/plgd-dev/hub/coap-gateway/coapconv"
-	"github.com/plgd-dev/hub/resource-aggregate/commands"
 	"github.com/plgd-dev/go-coap/v2/message"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/mux"
+	"github.com/plgd-dev/hub/coap-gateway/coapconv"
+	"github.com/plgd-dev/hub/pkg/ocf"
+	"github.com/plgd-dev/hub/resource-aggregate/commands"
 )
 
 //handles resource updates and creation
 func clientPostHandler(req *mux.Message, client *Client) {
 	resourceInterface := getResourceInterface(req)
-	if resourceInterface == coapconv.OCFCreateInterface {
+	if resourceInterface == ocf.OC_IF_CREATE {
 		clientCreateHandler(req, client)
 		return
 	}

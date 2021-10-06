@@ -6,13 +6,15 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/hub/cloud2cloud-gateway/uri"
 	"github.com/plgd-dev/hub/grpc-gateway/pb"
 	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
+	"github.com/plgd-dev/hub/pkg/ocf"
 	"github.com/plgd-dev/hub/test"
 	testCfg "github.com/plgd-dev/hub/test/config"
+	testHttp "github.com/plgd-dev/hub/test/http"
 	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
-	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
@@ -41,7 +43,7 @@ func TestRequestHandler_RetrieveResource(t *testing.T) {
 			wantCode:        http.StatusOK,
 			wantContentType: message.AppJSON.String(),
 			want: map[interface{}]interface{}{
-				"if":    []interface{}{"oic.if.rw", "oic.if.baseline"},
+				"if":    []interface{}{ocf.OC_IF_RW, ocf.OC_IF_BASELINE},
 				"name":  "Light",
 				"power": uint64(0),
 				"state": false,
@@ -57,7 +59,7 @@ func TestRequestHandler_RetrieveResource(t *testing.T) {
 			wantCode:        http.StatusOK,
 			wantContentType: message.AppOcfCbor.String(),
 			want: map[interface{}]interface{}{
-				"if":    []interface{}{"oic.if.rw", "oic.if.baseline"},
+				"if":    []interface{}{ocf.OC_IF_RW, ocf.OC_IF_BASELINE},
 				"name":  "Light",
 				"power": uint64(0),
 				"state": false,
@@ -107,15 +109,15 @@ func TestRequestHandler_RetrieveResource(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			req := test.NewHTTPRequest(http.MethodGet, tt.args.uri, nil).Accept(tt.args.accept).Build(ctx, t)
-			resp := test.DoHTTPRequest(t, req)
+			req := testHttp.NewHTTPRequest(http.MethodGet, tt.args.uri, nil).Accept(tt.args.accept).Build(ctx, t)
+			resp := testHttp.DoHTTPRequest(t, req)
 			assert.Equal(t, tt.wantCode, resp.StatusCode)
 			defer func() {
 				_ = resp.Body.Close()
 			}()
 			require.Equal(t, tt.wantContentType, resp.Header.Get("Content-Type"))
 			if tt.want != nil {
-				got := test.ReadHTTPResponse(t, resp.Body, tt.wantContentType)
+				got := testHttp.ReadHTTPResponse(t, resp.Body, tt.wantContentType)
 				require.Equal(t, tt.want, got)
 			}
 		})

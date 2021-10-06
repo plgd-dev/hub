@@ -20,6 +20,20 @@ import (
 	"github.com/plgd-dev/go-coap/v2/message"
 )
 
+func getResourceRetrieved(deviceID, href string) *events.ResourceRetrieved {
+	return &events.ResourceRetrieved{
+		ResourceId: &commands.ResourceId{
+			DeviceId: deviceID,
+			Href:     href,
+		},
+		Content: &commands.Content{
+			CoapContentFormat: int32(message.AppOcfCbor),
+			ContentType:       message.AppOcfCbor.String(),
+		},
+		Status: commands.Status_OK,
+	}
+}
+
 func TestRequestHandler_GetResourceFromDevice(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	type args struct {
@@ -32,44 +46,24 @@ func TestRequestHandler_GetResourceFromDevice(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "valid /light/2",
+			name: "valid /light/1",
 			args: args{
 				req: &pb.GetResourceFromDeviceRequest{
-					ResourceId: commands.NewResourceID(deviceID, "/light/2"),
+					ResourceId: commands.NewResourceID(deviceID, test.TestResourceLightHref),
 					TimeToLive: int64(time.Hour),
 				},
 			},
-			want: &events.ResourceRetrieved{
-				ResourceId: &commands.ResourceId{
-					DeviceId: deviceID,
-					Href:     "/light/2",
-				},
-				Content: &commands.Content{
-					CoapContentFormat: int32(message.AppOcfCbor),
-					ContentType:       message.AppOcfCbor.String(),
-				},
-				Status: commands.Status_OK,
-			},
+			want: getResourceRetrieved(deviceID, test.TestResourceLightHref),
 		},
 		{
 			name: "valid /oic/d",
 			args: args{
 				req: &pb.GetResourceFromDeviceRequest{
-					ResourceId: commands.NewResourceID(deviceID, "/oic/d"),
+					ResourceId: commands.NewResourceID(deviceID, test.OCFResourceDeviceHref),
 					TimeToLive: int64(time.Hour),
 				},
 			},
-			want: &events.ResourceRetrieved{
-				ResourceId: &commands.ResourceId{
-					DeviceId: deviceID,
-					Href:     "/oic/d",
-				},
-				Content: &commands.Content{
-					CoapContentFormat: int32(message.AppOcfCbor),
-					ContentType:       message.AppOcfCbor.String(),
-				},
-				Status: commands.Status_OK,
-			},
+			want: getResourceRetrieved(deviceID, test.OCFResourceDeviceHref),
 		},
 		{
 			name: "invalid Href",
@@ -85,7 +79,7 @@ func TestRequestHandler_GetResourceFromDevice(t *testing.T) {
 			name: "invalid timeToLive",
 			args: args{
 				req: &pb.GetResourceFromDeviceRequest{
-					ResourceId: commands.NewResourceID(deviceID, "/oic/d"),
+					ResourceId: commands.NewResourceID(deviceID, test.OCFResourceDeviceHref),
 					TimeToLive: int64(99 * time.Millisecond),
 				},
 			},
