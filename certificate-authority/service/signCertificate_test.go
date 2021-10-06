@@ -16,7 +16,9 @@ import (
 	"google.golang.org/grpc/credentials"
 )
 
-func TestRequestHandler_SignCertificate(t *testing.T) {
+type ClientSignFunc = func(context.Context, pb.CertificateAuthorityClient, *pb.SignCertificateRequest) (*pb.SignCertificateResponse, error)
+
+func testSigningByFunction(t *testing.T, signFn ClientSignFunc) {
 	type args struct {
 		req *pb.SignCertificateRequest
 	}
@@ -59,7 +61,7 @@ func TestRequestHandler_SignCertificate(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := c.SignCertificate(ctx, tt.args.req)
+			got, err := signFn(ctx, c, tt.args.req)
 			if tt.wantErr {
 				require.Error(t, err)
 				return
@@ -68,6 +70,12 @@ func TestRequestHandler_SignCertificate(t *testing.T) {
 			require.NotEmpty(t, got)
 		})
 	}
+}
+
+func TestRequestHandlerSignCertificate(t *testing.T) {
+	testSigningByFunction(t, func(ctx context.Context, c pb.CertificateAuthorityClient, req *pb.SignCertificateRequest) (*pb.SignCertificateResponse, error) {
+		return c.SignCertificate(ctx, req)
+	})
 }
 
 var (
