@@ -7,6 +7,8 @@ kind: Ingress
 metadata:
   name: {{ $fullname }}
   namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "plgd-cloud.labels" . | nindent 4 }}
   annotations:
     nginx.org/grpc-services: {{ $fullname | quote }}
     nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
@@ -18,10 +20,21 @@ metadata:
 spec:
   tls:
     - hosts:
-        - {{ include "plgd-cloud.httpgateway.domain" . | quote }}
+        - {{ include "plgd-cloud.httpgateway.apiDomain" . | quote }}
+        - {{ include "plgd-cloud.httpgateway.uiDomain" . | quote }}
       secretName: {{ include "plgd-cloud.httpgateway.domainCertName" . | quote }}
   rules:
-  - host: {{ include "plgd-cloud.httpgateway.domain" . | quote }}
+  - host: {{ include "plgd-cloud.httpgateway.uiDomain" . | quote }}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: {{ $fullname }}
+            port:
+              number: {{ $port }}
+  - host: {{ include "plgd-cloud.httpgateway.apiDomain" . | quote }}
     http:
       paths:
       {{- range  .Values.httpgateway.ingress.paths }}

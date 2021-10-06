@@ -27,9 +27,8 @@ stringData:
           {{- include "plgd-cloud.certificateConfig" (list $ $tls $rdCert ) | indent 8 }}
           clientCertificateRequired: {{ .apis.grpc.tls.clientCertificateRequired }}
         authorization:
-          ownerClaim:{{ printf " " }}{{ required "resourcedirectory.apis.grpc.authorization.ownerClaim or global.ownerClaim is required " ( .apis.grpc.authorization.ownerClaim | default $.Values.global.ownerClaim ) | quote }}
-          authority:{{ printf " " }}{{ required "resourcedirectory.apis.grpc.authorization.authority or global.authority is required " ( .apis.grpc.authorization.authority | default $.Values.global.authority ) | quote }}
-          audience:{{ printf " " }}{{ required "resourcedirectory.apis.grpc.authorization.audience or global.audience is required " ( .apis.grpc.authorization.audience | default $.Values.global.audience ) | quote }}
+          {{- $authorization := .apis.grpc.authorization }}
+          {{- include "plgd-cloud.authorizationConfig" (list $ $authorization "resourcedirectory" ) | indent 8 }}
           http:
             maxIdleConns: {{ .apis.grpc.authorization.http.maxIdleConns }}
             maxConnsPerHost: {{ .apis.grpc.authorization.http.maxIdleConnsPerHost }}
@@ -64,29 +63,30 @@ stringData:
             {{- $mongoTls := .clients.eventStore.mongoDB.tls }}
             {{- include "plgd-cloud.certificateConfig" (list $ $natsTls $rdCert ) | indent 10 }}
             useSystemCAPool: {{ .clients.eventStore.mongoDB.tls.useSystemCAPool }}
-      identityServer:
-        pullFrequency: {{ .clients.identityServer.pullFrequency }}
-        cacheExpiration: {{ .clients.identityServer.cacheExpiration }}
-        ownerClaim: {{ .clients.identityServer.ownerClaim }}
+      identityStore:
+        pullFrequency: {{ .clients.identityStore.pullFrequency }}
+        cacheExpiration: {{ .clients.identityStore.cacheExpiration }}
+        ownerClaim: {{ .clients.identityStore.ownerClaim }}
         grpc:
-          {{- $authorizationServer := .clients.identityServer.grpc.address }}
-          address:{{ printf " " }}{{- include "plgd-cloud.idenityAddress" (list $ $authorizationServer ) | quote }}
+          {{- $authorizationServer := .clients.identityStore.grpc.address }}
+          address:{{ printf " " }}{{- include "plgd-cloud.identityStoreAddress" (list $ $authorizationServer ) | quote }}
           keepAlive:
-            time: {{ .clients.identityServer.grpc.keepAlive.timeout }}
-            timeout: {{ .clients.identityServer.grpc.keepAlive.timeout }}
-            permitWithoutStream: {{ .clients.identityServer.grpc.keepAlive.permitWithoutStream }}
+            time: {{ .clients.identityStore.grpc.keepAlive.timeout }}
+            timeout: {{ .clients.identityStore.grpc.keepAlive.timeout }}
+            permitWithoutStream: {{ .clients.identityStore.grpc.keepAlive.permitWithoutStream }}
           tls:
-            {{- $authClientTls := .clients.identityServer.grpc.tls }}
+            {{- $authClientTls := .clients.identityStore.grpc.tls }}
             {{- include "plgd-cloud.certificateConfig" (list $ $authClientTls $rdCert ) | indent 10 }}
-            useSystemCAPool: {{ .clients.identityServer.grpc.tls.useSystemCAPool }}
+            useSystemCAPool: {{ .clients.identityStore.grpc.tls.useSystemCAPool }}
     publicConfiguration:
       caPool: {{ .publicConfiguration.caPool | default "/certs/ca.crt" | quote }}
-      authorizationServer: {{ required "resourcedirectory.publicConfiguration.authorizationServer is required" .publicConfiguration.authorizationServer  | quote }}
+      authorizationServer: {{ required "resourcedirectory.publicConfiguration.authorizationServer or global.authority is required" ( .publicConfiguration.authorizationServer | default $.Values.global.authority ) | quote }}
       ownerClaim: {{ .publicConfiguration.ownerClaim  | default $.Values.global.ownerClaim | quote }}
-      signingServerAddress: {{ .publicConfiguration.signingServerAddress | default ( printf "api.%s:443" $.Values.global.domain ) | quote }}
+      {{- if .publicConfiguration.deviceIdClaim  | default $.Values.global.deviceIdClaim }}
+      deviceIdClaim: {{ .publicConfiguration.deviceIdClaim  | default $.Values.global.deviceIdClaim | quote }}
+      {{- end }}
       cloudID: {{ required "resourcedirectory.publicConfiguration.cloudID or coapgateway.cloudId or global.cloudId is required" ( .publicConfiguration.cloudID | default ( $.Values.coapgateway.cloudId | default $.Values.global.cloudId)) | quote }}
       cloudURL: {{ .publicConfiguration.cloudURL | default (printf "coaps+tcp://%s:%v" $.Values.global.domain $.Values.coapgateway.port ) | quote }}
-      cloudAuthorizationProvider: {{ .publicConfiguration.cloudAuthorizationProvider | quote }}
       defaultCommandTimeToLive: {{ .publicConfiguration.defaultCommandTimeToLive | quote }}
   {{- end }}
 {{- end }}

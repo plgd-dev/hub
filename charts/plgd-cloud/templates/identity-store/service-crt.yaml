@@ -1,6 +1,6 @@
-{{- $createServiceCert := include "plgd-cloud.identity.serviceCertName" . }}
-{{- if and $createServiceCert .Values.certmanager.enabled .Values.identity.enabled }}
-{{- $serviceDns := include "plgd-cloud.identity.fullname" . }}
+{{- $createServiceCert := include "plgd-cloud.identitystore.serviceCertName" . }}
+{{- if and $createServiceCert .Values.certmanager.enabled .Values.identitystore.enabled }}
+{{- $serviceDns := include "plgd-cloud.identitystore.fullname" . }}
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
@@ -25,6 +25,7 @@ spec:
     - server auth
   dnsNames:
     - {{ printf "%s.%s.svc.%s" $serviceDns .Release.Namespace .Values.cluster.dns }}
+    - {{ printf "%s" $serviceDns }}
   duration: {{ .Values.certmanager.internal.cert.duration | default .Values.certmanager.default.cert.duration }}
   renewBefore: {{ .Values.certmanager.internal.cert.renewBefore | default .Values.certmanager.default.cert.renewBefore }}
   issuerRef:

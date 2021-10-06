@@ -23,15 +23,15 @@ If release name contains chart name it will be used as a full name.
 {{- end }}
 {{- end }}
 
-{{- define "plgd-cloud.identity.fullname" -}}
-{{- if .Values.identity.fullnameOverride }}
-{{- .Values.identity.fullnameOverride | trunc 63 | trimSuffix "-" }}
+{{- define "plgd-cloud.identitystore.fullname" -}}
+{{- if .Values.identitystore.fullnameOverride }}
+{{- .Values.identitystore.fullnameOverride | trunc 63 | trimSuffix "-" }}
 {{- else }}
 {{- $name := default .Chart.Name .Values.nameOverride }}
 {{- if contains $name .Release.Name }}
-{{- .Values.identity.name | trunc 63 | trimSuffix "-" }}
+{{- .Values.identitystore.name | trunc 63 | trimSuffix "-" }}
 {{- else }}
-{{- printf "%s-%s-%s" .Release.Name $name .Values.identity.name | trunc 63 | trimSuffix "-" }}
+{{- printf "%s-%s-%s" .Release.Name $name .Values.identitystore.name | trunc 63 | trimSuffix "-" }}
 {{- end }}
 {{- end }}
 {{- end }}
@@ -97,9 +97,19 @@ If release name contains chart name it will be used as a full name.
   {{- end }}
 {{- end }}
 
+{{- define "plgd-cloud.authorizationConfig" }}
+  {{- $ := index . 0 }}
+  {{- $authoriztion := index . 1 }}
+  {{- $prefix := index . 2 }}
+  ownerClaim:{{ printf " " }}{{ required (printf "%s.apis.grpc.authorization.ownerClaim or global.ownerClaim is required " $prefix) ( $authoriztion.ownerClaim | default $.Values.global.ownerClaim ) | quote }}
+  authority:{{ printf " " }}{{ required (printf "%s.apis.grpc.authorization.authority or global.authority is required " $prefix) ( $authoriztion.authority | default $.Values.global.authority ) | quote }}
+  audience:{{ printf " " }}{{ ( $authoriztion.audience | default $.Values.global.audience ) | quote }}
+{{- end }}
+
+
 {{- define "plgd-cloud.createInternalCertByCm" }}
     {{- $natsTls := .Values.coapgateway.clients.eventBus.nats.tls.certFile }}
-    {{- $authClientTls := .Values.coapgateway.clients.authorizationServer.grpc.tls.certFile }}
+    {{- $authClientTls := .Values.coapgateway.clients.identityStore.grpc.tls.certFile }}
     {{- $raClientTls := .Values.coapgateway.clients.resourceAggregate.grpc.tls.certFile }}
     {{- $rdClientTls := .Values.coapgateway.clients.resourceDirectory.grpc.tls.certFile }}
     {{- if and $natsTls $authClientTls $raClientTls $rdClientTls }}
@@ -196,14 +206,14 @@ app.kubernetes.io/instance: {{ .Release.Name }}
   {{- end }}
 {{- end }}
 
-{{- define "plgd-cloud.idenityAddress" }}
+{{- define "plgd-cloud.identityStoreAddress" }}
   {{- $ := index . 0 }}
   {{- $address := index . 1 }}
   {{- if $address }}
   {{- printf "%s" $address }}
   {{- else }}
-  {{- $authorizationServer := include "plgd-cloud.identity.fullname" $ }}
-  {{- printf "%s.%s.svc.%s:%v" $authorizationServer $.Release.Namespace $.Values.cluster.dns $.Values.identity.port }}
+  {{- $authorizationServer := include "plgd-cloud.identitystore.fullname" $ }}
+  {{- printf "%s.%s.svc.%s:%v" $authorizationServer $.Release.Namespace $.Values.cluster.dns $.Values.identitystore.port }}
   {{- end }}
 {{- end }}
 
@@ -248,5 +258,17 @@ app.kubernetes.io/instance: {{ .Release.Name }}
   {{- printf "%s" $address }}
   {{- else }}
   {{- printf "%s%s" $subDomainPrefix $.Values.global.domain }}
+  {{- end }}
+{{- end }}
+
+{{- define  "plgd-cloud.oauthSecretFile" }}
+  {{- $ := index . 0 }}
+  {{- $provider := index . 1 }}
+  {{- if $provider.clientSecret }}
+  {{- printf "/secrets/%s/client-secret" $provider.name }}
+  {{- else if $provider.clientSecretFile }}
+  {{- printf "%s" $provider.clientSecretFile }}
+  {{- else }}
+  {{ required "clientSecret or clientSecretFile for oauth provider is required " ( $provider.clientSecret | default $provider.clientSecretFile ) }}
   {{- end }}
 {{- end }}

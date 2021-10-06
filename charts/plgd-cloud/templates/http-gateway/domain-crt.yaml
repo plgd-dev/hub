@@ -23,7 +23,8 @@ spec:
     - server auth
     - client auth
   dnsNames:
-    - {{ include "plgd-cloud.httpgateway.domain" . | quote }}
+    - {{ include "plgd-cloud.httpgateway.apiDomain" . | quote }}
+    - {{ include "plgd-cloud.httpgateway.uiDomain" . | quote }}
   duration: {{ .Values.certmanager.external.cert.duration | default .Values.certmanager.default.cert.duration }}
   renewBefore: {{ .Values.certmanager.external.cert.renewBefore | default .Values.certmanager.default.cert.renewBefore }}
   issuerRef:

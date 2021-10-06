@@ -28,9 +28,8 @@ stringData:
           {{- include "plgd-cloud.certificateConfig" (list $ $tls $raCert) | indent 8 }}
           clientCertificateRequired: {{ .apis.grpc.tls.clientCertificateRequired }}
         authorization:
-          ownerClaim:{{ printf " " }}{{ required "resourceaggregate.apis.grpc.authorization.ownerClaim or global.ownerClaim is required " ( .apis.grpc.authorization.ownerClaim | default $.Values.global.ownerClaim ) | quote }}
-          authority:{{ printf " " }}{{ required "resourceaggregate.apis.grpc.authorization.authority or global.authority is required " ( .apis.grpc.authorization.authority | default $.Values.global.authority ) | quote }}
-          audience:{{ printf " " }}{{ required "resourceaggregate.apis.grpc.authorization.audience or global.audience is required " ( .apis.grpc.authorization.audience | default $.Values.global.audience ) | quote }}
+          {{- $authorization := .apis.grpc.authorization }}
+          {{- include "plgd-cloud.authorizationConfig" (list $ $authorization "resourceaggregate" ) | indent 8 }}
           http:
             maxIdleConns: {{ .apis.grpc.authorization.http.maxIdleConns }}
             maxConnsPerHost: {{ .apis.grpc.authorization.http.maxIdleConnsPerHost }}
@@ -51,7 +50,7 @@ stringData:
             {{- include "plgd-cloud.certificateConfig" (list $ $natsTls $raCert) | indent 10 }}
             useSystemCAPool: {{ .clients.eventBus.nats.tls.useSystemCAPool }}
       eventStore:
-        defaultCommandTTL: {{ .clients.eventStore.defaultCommandTTL }}
+        defaultCommandTimeToLive: {{ .clients.eventStore.defaultCommandTimeToLive }}
         snapshotThreshold: {{ .clients.eventStore.snapshotThreshold }}
         occMaxRetry: {{ .clients.eventStore.occMaxRetry }}
         mongoDB:
@@ -64,17 +63,17 @@ stringData:
             {{- $mongoTls := .clients.eventStore.mongoDB.tls }}
             {{- include "plgd-cloud.certificateConfig" (list $ $natsTls $raCert) | indent 10 }}
             useSystemCAPool: {{ .clients.eventStore.mongoDB.tls.useSystemCAPool }}
-      identityServer:
+      identityStore:
         grpc:
-          {{- $authorizationServer := .clients.identityServer.grpc.address }}
-          address:{{ printf " " }}{{- include "plgd-cloud.idenityAddress" (list $ $authorizationServer ) | quote }}
+          {{- $authorizationServer := .clients.identityStore.grpc.address }}
+          address:{{ printf " " }}{{- include "plgd-cloud.identityStoreAddress" (list $ $authorizationServer ) | quote }}
           keepAlive:
-            time: {{ .clients.identityServer.grpc.keepAlive.timeout }}
-            timeout: {{ .clients.identityServer.grpc.keepAlive.timeout }}
-            permitWithoutStream: {{ .clients.identityServer.grpc.keepAlive.permitWithoutStream }}
+            time: {{ .clients.identityStore.grpc.keepAlive.timeout }}
+            timeout: {{ .clients.identityStore.grpc.keepAlive.timeout }}
+            permitWithoutStream: {{ .clients.identityStore.grpc.keepAlive.permitWithoutStream }}
           tls:
-            {{- $authClientTls := .clients.identityServer.grpc.tls }}
+            {{- $authClientTls := .clients.identityStore.grpc.tls }}
             {{- include "plgd-cloud.certificateConfig" (list $ $authClientTls $raCert) | indent 10 }}
-            useSystemCAPool: {{ .clients.identityServer.grpc.tls.useSystemCAPool }}
+            useSystemCAPool: {{ .clients.identityStore.grpc.tls.useSystemCAPool }}
   {{- end }}
 {{- end }}

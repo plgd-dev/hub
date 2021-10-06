@@ -7,6 +7,8 @@ kind: Ingress
 metadata:
   name: {{ $fullname }}
   namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "plgd-cloud.labels" . | nindent 4 }}
   annotations:
     nginx.org/grpc-services: {{ $fullname | quote }}
     nginx.ingress.kubernetes.io/backend-protocol: "GRPCS"

@@ -31,8 +31,8 @@ stringData:
           {{- include "plgd-cloud.certificateConfig" (list $ $tls $grpcCert) | indent 8 }}
           clientCertificateRequired: true
         authorization:
-          authority:{{ printf " " }}{{ required "grpcgateway.apis.grpc.authorization.authority or global.authority is required " ( $.Values.global.authority | default .apis.grpc.authorization.authority ) | quote }}
-          audience:{{ printf " " }}{{ required "grpcgateway.apis.grpc.authorization.audience or global.audience is required " ( $.Values.global.audience | default .apis.grpc.authorization.audience ) | quote }}
+          {{- $authorization := .apis.grpc.authorization }}
+          {{- include "plgd-cloud.authorizationConfig" (list $ $authorization "grpcgateway" ) | indent 8 }}
           http:
             maxIdleConns: {{ .apis.grpc.authorization.http.maxIdleConns }}
             maxConnsPerHost: {{ .apis.grpc.authorization.http.maxIdleConnsPerHost }}
@@ -55,18 +55,18 @@ stringData:
             {{- $natsTls := .clients.eventBus.nats.tls }}
             {{- include "plgd-cloud.certificateConfig" (list $ $natsTls $grpcCert ) | indent 10 }}
             useSystemCAPool: {{ .clients.eventBus.nats.tls.useSystemCAPool }}
-      identityServer:
+      identityStore:
         grpc:
-          {{- $authorizationServer := .clients.identityServer.grpc.address }}
-          address:{{ printf " " }}{{- include "plgd-cloud.idenityAddress" (list $ $authorizationServer ) | quote }}
+          {{- $authorizationServer := .clients.identityStore.grpc.address }}
+          address:{{ printf " " }}{{- include "plgd-cloud.identityStoreAddress" (list $ $authorizationServer ) | quote }}
           keepAlive:
-            time: {{ .clients.identityServer.grpc.keepAlive.timeout }}
-            timeout: {{ .clients.identityServer.grpc.keepAlive.timeout }}
-            permitWithoutStream: {{ .clients.identityServer.grpc.keepAlive.permitWithoutStream }}
+            time: {{ .clients.identityStore.grpc.keepAlive.timeout }}
+            timeout: {{ .clients.identityStore.grpc.keepAlive.timeout }}
+            permitWithoutStream: {{ .clients.identityStore.grpc.keepAlive.permitWithoutStream }}
           tls:
-            {{- $authClientTls := .clients.identityServer.grpc.tls }}
+            {{- $authClientTls := .clients.identityStore.grpc.tls }}
             {{- include "plgd-cloud.certificateConfig" (list $ $authClientTls $grpcCert ) | indent 10 }}
-            useSystemCAPool: {{ .clients.identityServer.grpc.tls.useSystemCAPool }}
+            useSystemCAPool: {{ .clients.identityStore.grpc.tls.useSystemCAPool }}
       resourceAggregate:
         grpc:
           {{- $resourceAggregate := .clients.resourceAggregate.grpc.address }}

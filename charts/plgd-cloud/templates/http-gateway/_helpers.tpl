@@ -43,12 +43,19 @@
   {{- printf "%s-domain-crt" $fullName -}}
 {{- end }}
 
-
-{{- define "plgd-cloud.httpgateway.domain" -}}
-  {{- if .Values.httpgateway.domain }}
-    {{- printf "%s" .Values.httpgateway.domain }}
+{{- define "plgd-cloud.httpgateway.apiDomain" -}}
+  {{- if .Values.httpgateway.apiDomain }}
+    {{- printf "%s" .Values.httpgateway.apiDomain }}
   {{- else }}
     {{- printf "api.%s" .Values.global.domain }}
+  {{- end }}
+{{- end }}
+
+{{- define "plgd-cloud.httpgateway.uiDomain" -}}
+  {{- if .Values.httpgateway.uiDomain }}
+    {{- printf "%s" .Values.httpgateway.uiDomain }}
+  {{- else }}
+    {{- printf "%s" .Values.global.domain }}
   {{- end }}
 {{- end }}
 

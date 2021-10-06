@@ -5,6 +5,8 @@ kind: Secret
 metadata:
   name: {{ include "plgd-cloud.coapgateway.configSecretName" . }}
   namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "plgd-cloud.labels" . | nindent 4 }}
 stringData:
   {{ .Values.coapgateway.config.fileName }}: |
     {{- with .Values.coapgateway }}
@@ -17,6 +19,7 @@ stringData:
         externalAddress: {{ .apis.coap.externalAddress  | default (printf "%s:%v" $.Values.global.domain $.Values.coapgateway.port ) | quote }}
         maxMessageSize: {{ .apis.coap.maxMessageSize }}
         ownerCacheExpiration: {{ .apis.coap.ownerCacheExpiration }}
+        subscriptionBufferSize:  {{ .apis.coap.subscriptionBufferSize }}
         goroutineSocketHeartbeat: {{ .apis.coap.goroutineSocketHeartbeat | quote }}
         keepAlive:
           timeout: {{ .apis.coap.keepAlive.timeout }}
@@ -31,10 +34,38 @@ stringData:
           clientCertificateRequired: {{ .apis.coap.tls.clientCertificateRequired }}
           {{- end }}
         authorization:
-          deviceIdClaim: {{ .apis.coap.authorization.deviceIdClaim }}
+          ownerClaim: {{ .apis.coap.authorization.ownerClaim | default $.Values.global.ownerClaim | quote }}
+          {{- if .apis.coap.authorization.deviceIdClaim | default $.Values.global.deviceIdClaim | quote }}
+          deviceIdClaim: {{ .apis.coap.authorization.deviceIdClaim | default $.Values.global.deviceIdClaim | quote }}
+          {{- end }}
           providers:
-          {{- with required "At least one oauth providers coapgateway.apis.coap.authorization.providers is required" .apis.coap.authorization.providers }}
-            {{- toYaml . | nindent 12 }}
+          {{- $providers := required "At least one oauth provider must be specified for coapgateway.apis.coap.authorization.providers or global.oauth.device" ( .apis.coap.authorization.providers | default $.Values.global.oauth.device ) }}
+          {{- range $providers }}
+            - name: {{ required "name for oauth device provider is required" .name | quote }}
+              clientID: {{ required "clientID for oauth device provider is required" .clientID | quote }}
+              clientSecretFile: {{ include "plgd-cloud.oauthSecretFile" (list $ . ) }}
+              {{- if .scopes }}
+              scopes:
+              {{- range  .scopes }}
+                - {{ toYaml . | quote }}
+              {{- end }}
+              {{- else }}
+              scopes: []
+              {{- end }}
+              audience: {{ .audience | default $.Values.global.audience | quote }}
+              redirectURL: {{ required "redirectURL for oauth device provider is required" .redirectURL | quote }}
+              authority: {{ required "authority for oauth device provider or global.authority is required" ( .authority | default $.Values.global.authority ) | quote }}
+              http:
+              {{- $http := .http | default dict }}
+                maxIdleConns: {{ $http.maxIdleConns | default 16 }}
+                maxConnsPerHost: {{ $http.maxConnsPerHost | default 32 }}
+                maxIdleConnsPerHost: {{ $http.maxIdleConnsPerHost | default 16 }}
+                idleConnTimeout: {{ $http.idleConnTimeout | default "30s" }}
+                timeout: {{ $http.timeout | default "10s" }}
+                tls:
+                  {{- $providerTls := $http.tls }}
+                  {{- include "plgd-cloud.certificateConfig" (list $ $providerTls $coapGatewayServiceCert) | indent 16 }}
+                  useSystemCAPool: {{ $providerTls.useSystemCAPool | default true }}
           {{- end }}
     clients:
       eventBus:
@@ -47,19 +78,19 @@ stringData:
             {{- $natsTls := .clients.eventBus.nats.tls }}
             {{- include "plgd-cloud.certificateConfig" (list $ $natsTls $coapGatewayServiceCert) | indent 10 }}
             useSystemCAPool: {{ .clients.eventBus.nats.tls.useSystemCAPool }}
-      authorizationServer:
-        ownerClaim: {{ .clients.authorizationServer.ownerClaim }}
+      identityStore:
+        ownerClaim: {{ .clients.identityStore.ownerClaim | default $.Values.global.ownerClaim | quote }}
         grpc:
-          {{- $authorizationServer := .clients.authorizationServer.grpc.address }}
-          address:{{ printf " " }}{{- include "plgd-cloud.idenityAddress" (list $ $authorizationServer ) | quote }}
+          {{- $authorizationServer := .clients.identityStore.grpc.address }}
+          address:{{ printf " " }}{{- include "plgd-cloud.identityStoreAddress" (list $ $authorizationServer ) | quote }}
           keepAlive:
-            time: {{ .clients.authorizationServer.grpc.keepAlive.timeout }}
-            timeout: {{ .clients.authorizationServer.grpc.keepAlive.timeout }}
-            permitWithoutStream: {{ .clients.authorizationServer.grpc.keepAlive.permitWithoutStream }}
+            time: {{ .clients.identityStore.grpc.keepAlive.time }}
+            timeout: {{ .clients.identityStore.grpc.keepAlive.timeout }}
+            permitWithoutStream: {{ .clients.identityStore.grpc.keepAlive.permitWithoutStream }}
           tls:
-            {{- $authClientTls := .clients.authorizationServer.grpc.tls }}
+            {{- $authClientTls := .clients.identityStore.grpc.tls }}
             {{- include "plgd-cloud.certificateConfig" (list $ $authClientTls $coapGatewayServiceCert ) | indent 10 }}
-            useSystemCAPool: {{ .clients.authorizationServer.grpc.tls.useSystemCAPool }}
+            useSystemCAPool: {{ .clients.identityStore.grpc.tls.useSystemCAPool }}
       resourceAggregate:
         grpc:
           {{- $resourceAggregate := .clients.resourceAggregate.grpc.address }}
@@ -90,6 +121,6 @@ stringData:
     taskQueue:
       goPoolSize: {{ .taskQueue.goPoolSize }}
       size: {{ .taskQueue.size }}
-      maxIdleTime: {{ .taskQueue.maxIdleTime }}
+      maxIdleTime: {{ .taskQueue.maxIdleTime | quote }}
   {{- end }}
 {{- end }}

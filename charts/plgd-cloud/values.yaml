@@ -6,18 +6,19 @@ global:
   cloudId:
   # -- OAuth owner Claim
   ownerClaim: "sub"
+  # -- Device ID claim
+  deviceIdClaim:
   # -- OAuth authority
   authority:
   # -- OAuth audience
-  audience:
+  audience: ""
   # Global OAuth configuration used by multiple services
   oauth:
-    # -- OAuth configuration for internal oAuth service client
-    service:
-      clientID:
-      clientSecret:
-      scopes: []
-      tokenURL:
+   device:
+   web:
+    clientID:
+    audience:
+    scopes: []
 
 # -- Extra deploy. Resolved as template
 extraDeploy:
@@ -345,9 +346,9 @@ resourcedirectory:
         certFile:
         clientCertificateRequired: true
       authorization:
-        ownerClaim: "sub"
-        authority: ""
-        audience: ""
+        ownerClaim:
+        authority:
+        audience:
         http:
           maxIdleConns: 16
           maxConnsPerHost: 32
@@ -355,7 +356,10 @@ resourcedirectory:
           idleConnTimeout: 30s
           timeout: 10s
           tls:
-            useSystemCAPool: false
+            caPool:
+            keyFile:
+            certFile:
+            useSystemCAPool: true
   # -- For complete resource-directory service configuration see [plgd/resource-directory](https://github.com/plgd-dev/cloud/tree/v2/resource-directory)
   clients:
     eventBus:
@@ -388,7 +392,7 @@ resourcedirectory:
           keyFile:
           certFile:
           useSystemCAPool: false
-    identityServer:
+    identityStore:
       pullFrequency: 15s
       cacheExpiration: 1m
       ownerClaim: sub
@@ -425,11 +429,10 @@ resourcedirectory:
   publicConfiguration:
     caPool:
     authorizationServer:
-    ownerClaim: "sub"
-    signingServerAddress:
+    ownerClaim:
+    deviceIdClaim:
     cloudID:
     cloudURL:
-    cloudAuthorizationProvider: "plgd"
     defaultCommandTimeToLive: "0s"
 
 resourceaggregate:
@@ -550,7 +553,7 @@ resourceaggregate:
             caPool:
             keyFile:
             certFile:
-            useSystemCAPool: false
+            useSystemCAPool: true
   # -- For complete resource-aggregate service configuration see [plgd/resource-aggregate](https://github.com/plgd-dev/cloud/tree/v2/resource-aggregate)
   clients:
     eventBus:
@@ -559,14 +562,15 @@ resourceaggregate:
         jetstream: false
         pendingLimits:
           msgLimit: 524288
-          bytesLimit: 67108864
+          bytesLimit: "67108864"
         tls:
           caPool:
           keyFile:
           certFile:
           useSystemCAPool: false
     eventStore:
-      defaultCommandTTL: 0s
+      # replaces time to live in CreateResource, RetrieveResource, UpdateResource, DeleteResource and UpdateDeviceMetadata commands when it is zero value. 0s - means forever.
+      defaultCommandTimeToLive: 0s
       # tries to create the snapshot event after n events
       snapshotThreshold: 16
       # limits number of try to store event
@@ -585,7 +589,7 @@ resourceaggregate:
           keyFile:
           certFile:
           useSystemCAPool: false
-    identityServer:
+    identityStore:
       grpc:
         address:
         tls:
@@ -690,11 +694,12 @@ coapgateway:
       externalAddress: ""
       maxMessageSize: 262144
       ownerCacheExpiration: 1m
+      subscriptionBufferSize: 1000
       goroutineSocketHeartbeat: "4s"
       keepAlive:
         timeout: 20s
       blockwiseTransfer:
-        enabled: true
+        enabled: false
         blockSize: "1024"
       tls:
         enabled: true
@@ -703,7 +708,8 @@ coapgateway:
         certFile:
         clientCertificateRequired: true
       authorization:
-        deviceIdClaim: ""
+        ownerClaim:
+        deviceIdClaim:
         providers:
   # -- For complete coap-gateway service configuration see [plgd/coap-gateway](https://github.com/plgd-dev/cloud/tree/v2/coap-gateway)
   clients:
@@ -718,8 +724,8 @@ coapgateway:
           keyFile:
           certFile:
           useSystemCAPool: false
-    authorizationServer:
-      ownerClaim: "sub"
+    identityStore:
+      ownerClaim:
       grpc:
         address: ""
         keepAlive:
@@ -764,11 +770,11 @@ coapgateway:
     size: "2097152"
     maxIdleTime: "10m"
 
-identity:
+identitystore:
   # -- Enable identity service
   enabled: true
   # -- Name of component. Used in label selectors
-  name: identity
+  name: identity-store
   # -- Full name to override
   fullnameOverride:
   # -- Number of replicas
@@ -796,7 +802,7 @@ identity:
     # -- Enable RBAC setup
     enabled: false
     # -- Name of identity SA
-    serviceAccountName: identity
+    serviceAccountName: identity-store
     # -- Template definition for Role/binding etc.. Resolved as template
     roleBindingDefitionTpl:
   # -- Security context for pod
@@ -812,7 +818,7 @@ identity:
     # -- Image registry
     registry:
     # -- Image repository
-    repository: plgd/identity
+    repository: plgd/identity-store
     # -- Image tag.
     tag:
     # -- Image pull policy
@@ -883,7 +889,7 @@ identity:
             caPool:
             keyFile:
             certFile:
-            useSystemCAPool: false
+            useSystemCAPool: true
   # -- For complete identity service configuration see [plgd/authorization](https://github.com/plgd-dev/cloud/tree/v2/identity)
   clients:
     eventBus:
@@ -970,8 +976,10 @@ httpgateway:
   extraVolumes: {}
   # -- Optional extra volume mounts
   extraVolumeMounts: {}
-  # -- Http-gateway domain. Default: api.{{ global.domain }}
-  domain:
+  # -- Domain for UI Default: {{ global.domain }}
+  uiDomain:
+  # -- Domain for http-gateway API. Default: api.{{ global.domain }}
+  apiDomain:
   ingress:
     # -- Enable ingress
     enabled: true
@@ -1019,7 +1027,7 @@ httpgateway:
             caPool:
             keyFile:
             certFile:
-            useSystemCAPool: false
+            useSystemCAPool: true
   # -- For complete http-gateway service configuration see [plgd/http-gateway](https://github.com/plgd-dev/cloud/tree/v2/http-gateway)
   clients:
     grpcGateway:
@@ -1039,17 +1047,17 @@ httpgateway:
     enabled: false
     directory: "/usr/local/var/www"
     webConfiguration:
-      domain: ""
+      authority: ""
       httpGatewayAddress: ""
       webOAuthClient:
         clientID: ""
         audience: ""
         scopes: []
       deviceOAuthClient:
-        clientID: ""
-        audience: ""
+        clientID:
+        audience:
         scopes: []
-        providerName: "plgd"
+        providerName:
 
 
 grpcgateway:
@@ -1179,10 +1187,10 @@ grpcgateway:
             caPool:
             keyFile:
             certFile:
-            useSystemCAPool: false
+            useSystemCAPool: true
   # -- For complete grpc-gateway service configuration see [plgd/grpc-gateway](https://github.com/plgd-dev/cloud/tree/v2/grpc-gateway)
   clients:
-    identityServer:
+    identityStore:
       grpc:
         address: ""
         tls:
@@ -1201,7 +1209,8 @@ grpcgateway:
         url:
         pendingLimits:
           msgLimit: 524288
-          bytesLimit: 67108864
+          # Current limitation with helm long number
+          bytesLimit: "67108864"
         tls:
           caPool:
           keyFile:
@@ -1385,7 +1394,7 @@ certificateauthority:
             caPool:
             keyFile:
             certFile:
-            useSystemCAPool: false
+            useSystemCAPool: true
   # -- For complete certificate-authority service configuration see [plgd/certificate-authority](https://github.com/plgd-dev/cloud/tree/v2/certificate-authority)
   signer:
     keyFile:

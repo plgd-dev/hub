@@ -22,7 +22,7 @@ stringData:
           pingFrequency: {{ .apis.http.webSocket.pingFrequency }}
         authorization:
           authority:{{ printf " " }}{{ required "httpgateway.apis.http.authorization.authority or global.authority is required " ( .apis.http.authorization.authority | default $.Values.global.authority ) | quote }}
-          audience:{{ printf " " }}{{ required "httpgateway.apis.http.authorization.audience or global.audience is required " ( .apis.http.authorization.audience | default $.Values.global.audience ) | quote }}
+          audience:{{ printf " " }}{{ ( .apis.http.authorization.audience | default $.Values.global.audience ) | quote }}
           http:
             maxIdleConns: {{ .apis.http.authorization.http.maxIdleConns }}
             maxConnsPerHost: {{ .apis.http.authorization.http.maxIdleConnsPerHost }}
@@ -49,22 +49,53 @@ stringData:
       enabled: {{ .ui.enabled }}
       directory: {{ .ui.directory | quote }}
       webConfiguration:
-        domain:  {{ .ui.webConfiguration.domain | quote }}
-        httpGatewayAddress: {{ .ui.webConfiguration.httpGatewayAddress | quote }}
+        authority: {{ .ui.webConfiguration.authority | default $.Values.global.authority | quote }}
+        httpGatewayAddress: {{ .ui.webConfiguration.httpGatewayAddress | default ( printf "https://%s" ( include "plgd-cloud.httpgateway.apiDomain" $)) | quote }}
         webOAuthClient:
-          clientID: {{ .ui.webConfiguration.webOAuthClient.clientID | quote }}
-          audience: {{ .ui.webConfiguration.webOAuthClient.audience | quote }}
+          clientID: {{ required "httpgateway.ui.webConfiguration.webOAuthClient.clientID or global.oauth.web.clientID is required" ( .ui.webConfiguration.webOAuthClient.clientID | default $.Values.global.oauth.web.clientID ) | quote }}
+          audience: {{ .ui.webConfiguration.webOAuthClient.audience | default ( $.Values.global.oauth.web.audience | default $.Values.global.audience ) | quote }}
+          {{- if .ui.webConfiguration.webOAuthClient.scopes | default $.Values.global.oauth.web.scopes }}
           scopes:
-            {{- range .ui.webConfiguration.webOAuthClient.scopes }}
+            {{- range .ui.webConfiguration.webOAuthClient.scopes | default $.Values.global.oauth.web.scopes }}
             - {{ . | quote }}
             {{- end }}
+          {{- else }}
+          scopes: []
+          {{- end }}
         deviceOAuthClient:
-          clientID: {{ .ui.webConfiguration.deviceOAuthClient.clientID | quote }}
-          audience: {{ .ui.webConfiguration.deviceOAuthClient.audience | quote }}
+        {{- $providers := $.Values.coapgateway.apis.coap.authorization.providers | default $.Values.global.oauth.device  }}
+        {{- $included := false }}
+        {{- range $providers }}
+          {{- if and .useInUi (not $included) }}
+          {{- $included = true }}
+          clientID: {{ .clientID | quote }}
+          audience: {{ .audience | default $.Values.global.audience | quote }}
+          {{- if .scopes }}
           scopes:
-            {{- range .ui.webConfiguration.deviceOAuthClient.scopes }}
-            - {{ . | quote }}
-            {{- end }}
-          providerName: {{ .ui.webConfiguration.deviceOAuthClient.providerName | quote }}
+          {{- range  .scopes }}
+            - {{ toYaml . | quote }}
+          {{- end }}
+          {{- else }}
+          scopes: []
+          {{- end }}
+          providerName: {{ .name | quote }}
+          {{- end }}
+        {{- end }}
+        {{- if not $included }}
+        {{- $provider := index ( $.Values.coapgateway.apis.coap.authorization.providers | default $.Values.global.oauth.device) 0 }}
+        {{- with $provider }}
+          clientID: {{ .clientID | quote }}
+          audience: {{ .audience | default $.Values.global.audience | quote }}
+          {{- if .scopes }}
+          scopes:
+          {{- range  .scopes }}
+            - {{ toYaml . | quote }}
+          {{- end }}
+          {{- else }}
+          scopes: []
+          {{- end }}
+          providerName: {{ .name | quote }}
+        {{- end }}
+        {{- end }}
   {{- end }}
 {{- end }}
