@@ -202,6 +202,10 @@ func (s *SubscriptionManager) HandleDevicesOffline(ctx context.Context, d subscr
 	return nil
 }
 
+func decodeError(err error) error {
+	return fmt.Errorf("cannot decode devices event: %w", err)
+}
+
 func (s *SubscriptionManager) HandleDevicesEvent(ctx context.Context, header events.EventHeader, body []byte, d subscriptionData) error {
 	contentReader, err := header.GetContentDecoder()
 	if err != nil {
@@ -213,31 +217,31 @@ func (s *SubscriptionManager) HandleDevicesEvent(ctx context.Context, header eve
 		var devices events.DevicesRegistered
 		err = contentReader(body, &devices)
 		if err != nil {
-			return fmt.Errorf("cannot decode devices event: %w", err)
+			return decodeError(err)
 		}
 		return s.HandleDevicesRegistered(ctx, d, devices, header)
 	case events.EventType_DevicesUnregistered:
 		var devices events.DevicesUnregistered
 		err = contentReader(body, &devices)
 		if err != nil {
-			return fmt.Errorf("cannot decode devices event: %w", err)
+			return decodeError(err)
 		}
 		return s.HandleDevicesUnregistered(ctx, d, header.CorrelationID, devices)
 	case events.EventType_DevicesOnline:
 		var devices events.DevicesOnline
 		err = contentReader(body, &devices)
 		if err != nil {
-			return fmt.Errorf("cannot decode devices event: %w", err)
+			return decodeError(err)
 		}
 		return s.HandleDevicesOnline(ctx, d, header, devices)
 	case events.EventType_DevicesOffline:
 		var devices events.DevicesOffline
 		err = contentReader(body, &devices)
 		if err != nil {
-			return fmt.Errorf("cannot decode devices event: %w", err)
+			return decodeError(err)
 		}
 		return s.HandleDevicesOffline(ctx, d, header, devices)
 	}
 
-	return fmt.Errorf("cannot decode devices: unsupported Event-Type %v", header.EventType)
+	return decodeError(fmt.Errorf("unsupported Event-Type %v", header.EventType))
 }

@@ -22,7 +22,7 @@ import (
 	"google.golang.org/grpc/credentials"
 )
 
-func testRequestHandler_GetDevices(t *testing.T, events store.Events) {
+func testRequestHandlerGetDevices(t *testing.T, events store.Events) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	type args struct {
 		req *pb.GetDevicesRequest
@@ -75,29 +75,29 @@ func testRequestHandler_GetDevices(t *testing.T, events store.Events) {
 			client, err := c.GetDevices(ctx, tt.args.req)
 			if tt.wantErr {
 				require.Error(t, err)
-			} else {
-				require.NoError(t, err)
-				devices := make([]*pb.Device, 0, 1)
-				for {
-					dev, err := client.Recv()
-					if err == io.EOF {
-						break
-					}
-					require.NoError(t, err)
-					assert.NotEmpty(t, dev.ProtocolIndependentId)
-					dev.ProtocolIndependentId = ""
-					if dev.GetMetadata().GetStatus() != nil {
-						dev.GetMetadata().GetStatus().ValidUntil = 0
-					}
-					devices = append(devices, dev)
-				}
-				test.CheckProtobufs(t, tt.want, devices, test.RequireToCheckFunc(require.Equal))
+				return
 			}
+			require.NoError(t, err)
+			devices := make([]*pb.Device, 0, 1)
+			for {
+				dev, err := client.Recv()
+				if err == io.EOF {
+					break
+				}
+				require.NoError(t, err)
+				assert.NotEmpty(t, dev.ProtocolIndependentId)
+				dev.ProtocolIndependentId = ""
+				if dev.GetMetadata().GetStatus() != nil {
+					dev.GetMetadata().GetStatus().ValidUntil = 0
+				}
+				devices = append(devices, dev)
+			}
+			test.CheckProtobufs(t, tt.want, devices, test.RequireToCheckFunc(require.Equal))
 		})
 	}
 }
 
-func TestRequestHandler_GetDevices(t *testing.T) {
+func TestRequestHandlerGetDevices(t *testing.T) {
 	type args struct {
 		events store.Events
 	}
@@ -165,7 +165,7 @@ func TestRequestHandler_GetDevices(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			testRequestHandler_GetDevices(t, tt.args.events)
+			testRequestHandlerGetDevices(t, tt.args.events)
 		})
 	}
 }

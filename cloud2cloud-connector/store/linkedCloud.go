@@ -41,7 +41,7 @@ func (e Events) NeedPullDevice() bool {
 		delete(set, v)
 	}
 	if len(set) != 0 {
-		return true && !e.StaticDeviceEvents
+		return !e.StaticDeviceEvents
 	}
 	return false
 }

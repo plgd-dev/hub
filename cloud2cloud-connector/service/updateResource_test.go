@@ -21,7 +21,7 @@ import (
 	"google.golang.org/grpc/credentials"
 )
 
-func testRequestHandler_UpdateResource(t *testing.T, events store.Events) {
+func testRequestHandlerUpdateResource(t *testing.T, events store.Events) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	type args struct {
 		req *pb.UpdateResourceRequest
@@ -155,7 +155,7 @@ func testRequestHandler_UpdateResource(t *testing.T, events store.Events) {
 	}
 }
 
-func TestRequestHandler_UpdateResource(t *testing.T) {
+func TestRequestHandlerUpdateResource(t *testing.T) {
 	type args struct {
 		events store.Events
 	}
@@ -205,7 +205,7 @@ func TestRequestHandler_UpdateResource(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			testRequestHandler_UpdateResource(t, tt.args.events)
+			testRequestHandlerUpdateResource(t, tt.args.events)
 		})
 	}
 }

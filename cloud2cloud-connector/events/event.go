@@ -42,11 +42,26 @@ type EventHeader struct {
 	ContentEncoding string
 }
 
+func invalidKey(key string) string {
+	return "invalid " + key
+}
+
+func invalidKeyError(key string) error {
+	return fmt.Errorf(invalidKey(key))
+}
+
+func invalidKeyValueError(key string, value interface{}, err error) error {
+	if err == nil {
+		return fmt.Errorf(invalidKey(key)+"(%v)", value)
+	}
+	return fmt.Errorf(invalidKey(key)+"(%v): %w", value, err)
+}
+
 func ParseEventHeader(r *http.Request) (h EventHeader, _ error) {
 	correlationID := r.Header.Get(CorrelationIDKey)
 	subscriptionID := r.Header.Get(SubscriptionIDKey)
 	if subscriptionID == "" {
-		return h, fmt.Errorf("invalid " + SubscriptionIDKey)
+		return h, invalidKeyError(SubscriptionIDKey)
 	}
 	eventType := EventType(r.Header.Get(EventTypeKey))
 	switch eventType {
@@ -55,7 +70,7 @@ func ParseEventHeader(r *http.Request) (h EventHeader, _ error) {
 		EventType_DevicesOnline, EventType_DevicesOffline, EventType_DevicesRegistered, EventType_DevicesUnregistered,
 		EventType_SubscriptionCanceled:
 	default:
-		return h, fmt.Errorf("invalid "+EventTypeKey+"(%v)", eventType)
+		return h, invalidKeyValueError(EventTypeKey, eventType, nil)
 	}
 
 	contentType := r.Header.Get(ContentTypeKey)
@@ -64,34 +79,34 @@ func ParseEventHeader(r *http.Request) (h EventHeader, _ error) {
 		switch eventType {
 		case EventType_SubscriptionCanceled:
 		default:
-			return h, fmt.Errorf("invalid " + ContentTypeKey)
+			return h, invalidKeyError(ContentTypeKey)
 		}
 	case ContentType_JSON:
 	case ContentType_VNDOCFCBOR:
 	default:
-		return h, fmt.Errorf("invalid "+ContentTypeKey+"(%v)", contentType)
+		return h, invalidKeyValueError(ContentTypeKey, contentType, nil)
 	}
 
 	seqNum := r.Header.Get(SequenceNumberKey)
 	if seqNum == "" {
-		return h, fmt.Errorf("invalid " + SequenceNumberKey)
+		return h, invalidKeyError(SequenceNumberKey)
 	}
 	sequenceNumber, err := strconv.ParseUint(seqNum, 10, 64)
 	if err != nil {
-		return h, fmt.Errorf("invalid "+SequenceNumberKey+"(%v): %w", seqNum, err)
+		return h, invalidKeyValueError(SequenceNumberKey, seqNum, err)
 	}
 
 	evTimestamp := r.Header.Get(EventTimestampKey)
 	if evTimestamp == "" {
-		return h, fmt.Errorf("invalid " + EventTimestampKey)
+		return h, invalidKeyError(EventTimestampKey)
 	}
 	eventTimestamp, err := strconv.ParseInt(evTimestamp, 10, 64)
 	if err != nil {
-		return h, fmt.Errorf("invalid "+EventTimestampKey+"(%v): %w", evTimestamp, err)
+		return h, invalidKeyValueError(EventTimestampKey, evTimestamp, err)
 	}
 	eventSignature := r.Header.Get(EventSignatureKey)
 	if eventSignature == "" {
-		return h, fmt.Errorf("invalid " + EventSignatureKey)
+		return h, invalidKeyError(EventSignatureKey)
 	}
 
 	contentEncoding := r.Header.Get(ContentEncodingKey)
@@ -101,7 +116,7 @@ func ParseEventHeader(r *http.Request) (h EventHeader, _ error) {
 	if r.Method == "POST" && v != "" {
 		acceptEncoding = strings.Split(v, ",")
 		if len(acceptEncoding) != 1 {
-			return h, fmt.Errorf("invalid "+AcceptEncodingKey+"(%+v): more than 1", acceptEncoding)
+			return h, invalidKeyValueError(AcceptEncodingKey, acceptEncoding, fmt.Errorf("more than 1"))
 		}
 	}
 

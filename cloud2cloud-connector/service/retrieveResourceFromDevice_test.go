@@ -21,7 +21,7 @@ import (
 	"google.golang.org/grpc/credentials"
 )
 
-func testRequestHandler_GetResourceFromDevice(t *testing.T, events store.Events) {
+func testRequestHandlerGetResourceFromDevice(t *testing.T, events store.Events) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	type args struct {
 		req *pb.GetResourceFromDeviceRequest
@@ -98,7 +98,7 @@ func testRequestHandler_GetResourceFromDevice(t *testing.T, events store.Events)
 	}
 }
 
-func TestRequestHandler_GetResourceFromDevice(t *testing.T) {
+func TestRequestHandlerGetResourceFromDevice(t *testing.T) {
 	type args struct {
 		events store.Events
 	}
@@ -148,7 +148,7 @@ func TestRequestHandler_GetResourceFromDevice(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			testRequestHandler_GetResourceFromDevice(t, tt.args.events)
+			testRequestHandlerGetResourceFromDevice(t, tt.args.events)
 		})
 	}
 }
