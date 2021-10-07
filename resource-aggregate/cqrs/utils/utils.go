@@ -15,7 +15,8 @@ import (
 const DeviceIDKey = "deviceId"
 const ResourceIDKey = "resourceId"
 
-const PlgdOwnersOwnerDevices = isEvents.PlgdOwnersOwner + ".devices"
+const Devices = "devices"
+const PlgdOwnersOwnerDevices = isEvents.PlgdOwnersOwner + "." + Devices
 const PlgdOwnersOwnerDevicesDevice = PlgdOwnersOwnerDevices + ".{" + DeviceIDKey + "}"
 const PlgdOwnersOwnerDevicesDeviceResourceLinks = PlgdOwnersOwnerDevicesDevice + ".resource-links"
 const PlgdOwnersOwnerDevicesDeviceResourceLinksEvent = PlgdOwnersOwnerDevicesDeviceResourceLinks + ".{" + isEvents.EventTypeKey + "}"
@@ -33,7 +34,7 @@ func WithResourceId(resourceId string) func(values map[string]string) {
 
 func WithDeviceID(deviceId string) func(values map[string]string) {
 	return func(values map[string]string) {
-		values[ResourceIDKey] = deviceId
+		values[DeviceIDKey] = deviceId
 	}
 }
 
@@ -94,5 +95,5 @@ func Unmarshal(b []byte, v interface{}) error {
 		}
 		return p.Unmarshal(dst)
 	}
-	return fmt.Errorf("marshal is not supported by %T", v)
+	return fmt.Errorf("unmarshal is not supported by %T", v)
 }

@@ -9,6 +9,10 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/plgd-dev/go-coap/v2/message"
+	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
+	"github.com/plgd-dev/go-coap/v2/mux"
+	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
 	"github.com/plgd-dev/hub/coap-gateway/coapconv"
 	"github.com/plgd-dev/hub/grpc-gateway/pb"
 	"github.com/plgd-dev/hub/grpc-gateway/subscription"
@@ -16,10 +20,6 @@ import (
 	"github.com/plgd-dev/hub/pkg/strings"
 	"github.com/plgd-dev/hub/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/resource-aggregate/events"
-	"github.com/plgd-dev/go-coap/v2/message"
-	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
-	"github.com/plgd-dev/go-coap/v2/mux"
-	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
 )
 
 func clientObserveHandler(req *mux.Message, client *Client, observe uint32) {
@@ -52,6 +52,7 @@ func clientObserveHandler(req *mux.Message, client *Client, observe uint32) {
 }
 
 func SendResourceContentToObserver(client *Client, resourceChanged *events.ResourceChanged, observe uint32, token message.Token) {
+
 	msg := pool.AcquireMessage(client.coapConn.Context())
 	msg.SetCode(coapCodes.Content)
 	msg.SetObserve(observe)
@@ -128,7 +129,13 @@ func (s *resourceSubscription) eventHandler(e *pb.Event) error {
 			s.cancelSubscription(coapconv.StatusToCoapCode(e.GetResourceChanged().GetStatus(), coapconv.Retrieve))
 			return nil
 		}
-		SendResourceContentToObserver(s.client, e.GetResourceChanged(), atomic.AddUint32(&s.seqNum, 1), s.token)
+		seqNum := atomic.AddUint32(&s.seqNum, 1)
+		err := s.client.server.taskQueue.Submit(func() {
+			SendResourceContentToObserver(s.client, e.GetResourceChanged(), seqNum, s.token)
+		})
+		if err != nil {
+			log.Errorf("failed to send event resource /%v%v to observer: %w", s.deviceID, s.href, err)
+		}
 		return nil
 	}
 	return nil
@@ -157,10 +164,16 @@ func (s *resourceSubscription) Init(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	err = s.sub.Init(s.client.server.ownerCache)
+	authCtx, err := s.client.GetAuthorizationContext()
 	if err != nil {
 		return err
 	}
+
+	err = s.sub.Init(authCtx.GetUserID(), s.client.server.subscriptionsCache)
+	if err != nil {
+		return err
+	}
+
 	if d == nil {
 		return nil
 	}
@@ -186,14 +199,14 @@ func newResourceSubscription(req *mux.Message, client *Client, authCtx *authoriz
 		href:     href,
 		seqNum:   2,
 	}
+
 	res := &commands.ResourceId{DeviceId: deviceID, Href: href}
-	sub := subscription.New(req.Context, client.server.resourceSubscriber, r.eventHandler, req.Token.String(), client.server.config.APIs.COAP.SubscriptionBufferSize, func(err error) {
-		log.Errorf("error occurs during processing event for /%v%v by subscription: %w", deviceID, href, err)
-	}, &pb.SubscribeToEvents_CreateSubscription{
+	sub := subscription.New(r.eventHandler, req.Token.String(), &pb.SubscribeToEvents_CreateSubscription{
 		ResourceIdFilter: []string{res.ToString()},
 		EventFilter:      []pb.SubscribeToEvents_CreateSubscription_Event{pb.SubscribeToEvents_CreateSubscription_RESOURCE_CHANGED, pb.SubscribeToEvents_CreateSubscription_UNREGISTERED, pb.SubscribeToEvents_CreateSubscription_RESOURCE_UNPUBLISHED},
 	})
 	r.sub = sub
+
 	return r
 }
 

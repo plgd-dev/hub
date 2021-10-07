@@ -22,6 +22,7 @@ const (
 	FilterBitmaskResourceChanged             FilterBitmask = 1 << 12
 	FilterBitmaskResourcesPublished          FilterBitmask = 1 << 13
 	FilterBitmaskResourcesUnpublished        FilterBitmask = 1 << 14
+	FilterBitmaskMax                         FilterBitmask = 0xffffffff
 )
 
 func IsFilteredBit(filteredEventTypes FilterBitmask, bit FilterBitmask) bool {
@@ -101,7 +102,7 @@ func EventFilterToBitmask(f pb.SubscribeToEvents_CreateSubscription_Event) Filte
 func EventsFilterToBitmask(commandFilter []pb.SubscribeToEvents_CreateSubscription_Event) FilterBitmask {
 	bitmask := FilterBitmask(0)
 	if len(commandFilter) == 0 {
-		bitmask = FilterBitmask(0xffffffff)
+		bitmask = FilterBitmaskMax
 	} else {
 		for _, f := range commandFilter {
 			bitmask |= EventFilterToBitmask(f)

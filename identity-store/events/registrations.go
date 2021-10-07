@@ -1,6 +1,7 @@
 package events
 
-const PlgdOwnersOwnerRegistrations = PlgdOwnersOwner + ".registrations"
+const Registrations = "registrations"
+const PlgdOwnersOwnerRegistrations = PlgdOwnersOwner + "." + Registrations
 const PlgdOwnersOwnerRegistrationsEvent = PlgdOwnersOwnerRegistrations + ".{" + EventTypeKey + "}"
 
 const DevicesRegisteredEvent = "devicesregistered"
