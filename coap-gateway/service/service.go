@@ -12,8 +12,16 @@ import (
 	"time"
 
 	cache "github.com/patrickmn/go-cache"
+	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
+	"github.com/plgd-dev/go-coap/v2/mux"
+	"github.com/plgd-dev/go-coap/v2/net"
+	"github.com/plgd-dev/go-coap/v2/net/blockwise"
+	"github.com/plgd-dev/go-coap/v2/net/monitor/inactivity"
+	"github.com/plgd-dev/go-coap/v2/tcp"
+	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
 	"github.com/plgd-dev/hub/coap-gateway/uri"
 	pbGRPC "github.com/plgd-dev/hub/grpc-gateway/pb"
+	"github.com/plgd-dev/hub/grpc-gateway/subscription"
 	idClient "github.com/plgd-dev/hub/identity-store/client"
 	pbIS "github.com/plgd-dev/hub/identity-store/pb"
 	"github.com/plgd-dev/hub/pkg/fn"
@@ -29,13 +37,6 @@ import (
 	natsClient "github.com/plgd-dev/hub/resource-aggregate/cqrs/eventbus/nats/client"
 	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventbus/nats/subscriber"
 	"github.com/plgd-dev/hub/resource-aggregate/cqrs/utils"
-	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
-	"github.com/plgd-dev/go-coap/v2/mux"
-	"github.com/plgd-dev/go-coap/v2/net"
-	"github.com/plgd-dev/go-coap/v2/net/blockwise"
-	"github.com/plgd-dev/go-coap/v2/net/monitor/inactivity"
-	"github.com/plgd-dev/go-coap/v2/tcp"
-	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
 )
 
 var authCtxKey = "AuthCtx"
@@ -64,6 +65,7 @@ type Service struct {
 	jwtValidator          *jwt.Validator
 	sigs                  chan os.Signal
 	ownerCache            *idClient.OwnerCache
+	subscriptionsCache    *subscription.SubscriptionsCache
 }
 
 func newExpirationClientCache() *cache.Cache {
@@ -312,6 +314,10 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 	})
 	nats.AddCloseFunc(ownerCache.Close)
 
+	subscriptionsCache := subscription.NewSubscriptionsCache(resourceSubscriber.Conn(), func(err error) {
+		log.Errorf("subscriptionsCache error: %w", err)
+	})
+
 	ctx, cancel := context.WithCancel(ctx)
 
 	s := Service{
@@ -339,7 +345,8 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 		ctx:    ctx,
 		cancel: cancel,
 
-		ownerCache: ownerCache,
+		ownerCache:         ownerCache,
+		subscriptionsCache: subscriptionsCache,
 	}
 
 	if err := s.setupCoapServer(); err != nil {
