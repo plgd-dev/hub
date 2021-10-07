@@ -126,3 +126,5 @@ dist
 .tern-port
 
 v2/
+
+charts/plgd-hub/charts/*

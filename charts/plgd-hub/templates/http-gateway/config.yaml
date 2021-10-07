@@ -1,3 +1,6 @@
+{{- if eq (( $.Values.coapgateway.apis.coap.authorization.providers | default $.Values.global.oauth.device) | len ) 0 }}
+{{- fail "At least one coapgateway.apis.coap.authorization.providers or global.oauth.device must be specified " }}
+{{- end }}
 {{- if .Values.httpgateway.enabled }}
 {{- $httpCert := "/certs" }}
 apiVersion: v1

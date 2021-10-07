@@ -19,25 +19,32 @@ global:
   domain:
   # -- CloudID. Used by coap-gateway. It must be unique
   cloudId:
+  # -- OAuth owner Claim
+  ownerClaim: "sub"
+  # -- Optional
+  #deviceIdClaim:
   # -- OAuth authority
   authority:
-  # -- OAuth audience
-  audience:
+  # -- Optional OAuth audience
+  #audience: ""
   # Global OAuth configuration used by multiple services
-
-resourcedirectory:
-  publicConfiguration:
-    caPool:
-    authorizationServer:
-
-coapgateway:
-  apis:
-    coap:
-      authorization:
-        deviceIdClaim: ""
-        providers:
-          - clientID: ...
-            clientSecret: ...
+  oauth:
+   # -- List of OAuth client's configurations
+   device:
+       # -- Name of client
+     - name:
+       # -- Client ID
+       clientID:
+       # -- clientSecret or clientSecretFile
+       clientSecret:
+       clientSecretFile:
+       # -- Redirect URL
+       redirectURL:
+       # -- Use in httpgateway.ui.webConfiguration.deviceOAuthClient configuration. Default first item in list
+       useInUi: true
+   web:
+    # -- ClientID used by Web UI
+    clientID:
 ```
 
 {{ template "chart.requirementsSection" . }}
