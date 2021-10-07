@@ -3,12 +3,7 @@ module github.com/plgd-dev/cloud/v2
 go 1.16
 
 require (
-	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.0.0 // indirect
-	github.com/dsnet/golib/memfile v1.0.0 // indirect
 	github.com/fsnotify/fsnotify v1.5.1
-	github.com/fxamacker/cbor/v2 v2.3.0 // indirect
-	github.com/go-stack/stack v1.8.1 // indirect
-	github.com/goccy/go-json v0.7.9 // indirect
 	github.com/golang-jwt/jwt/v4 v4.1.0
 	github.com/golang/snappy v0.0.4
 	github.com/google/go-querystring v1.1.0
@@ -22,7 +17,6 @@ require (
 	github.com/jtacoma/uritemplates v1.0.0
 	github.com/karrick/tparse/v2 v2.8.2
 	github.com/lestrrat-go/jwx v1.2.7
-	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/nats-io/nats.go v1.12.3
 	github.com/panjf2000/ants/v2 v2.4.6
 	github.com/patrickmn/go-cache v2.1.0+incompatible
@@ -31,19 +25,12 @@ require (
 	github.com/plgd-dev/sdk/v2 v2.0.0-20211006195827-30b6744a07e8
 	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.7.0
-	github.com/ugorji/go v1.2.6 // indirect
-	github.com/youmark/pkcs8 v0.0.0-20201027041543-1326539a0a0a // indirect
 	go.mongodb.org/mongo-driver v1.7.3
 	go.uber.org/atomic v1.9.0
-	go.uber.org/multierr v1.7.0 // indirect
 	go.uber.org/zap v1.19.1
-	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519 // indirect
 	golang.org/x/net v0.0.0-20211006190231-62292e806868
 	golang.org/x/oauth2 v0.0.0-20211005180243-6b3c2da341f1
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
-	golang.org/x/sys v0.0.0-20211006194710-c8a6f5223071 // indirect
-	golang.org/x/text v0.3.7 // indirect
-	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/genproto v0.0.0-20211005153810-c76a74d43a8e
 	google.golang.org/grpc v1.41.0
 	google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.1.0
