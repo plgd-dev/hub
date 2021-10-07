@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
-	"github.com/plgd-dev/cloud/v2/resource-aggregate/events"
+	"github.com/plgd-dev/hub/resource-aggregate/events"
 )
 
 type DeviceResourcesObservationHandler = interface {

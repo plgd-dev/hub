@@ -4,12 +4,12 @@ import (
 	"context"
 	"testing"
 
-	"github.com/plgd-dev/cloud/v2/coap-gateway/service"
-	"github.com/plgd-dev/cloud/v2/pkg/log"
-	"github.com/plgd-dev/cloud/v2/pkg/security/oauth2"
-	"github.com/plgd-dev/cloud/v2/test/config"
-	oauthService "github.com/plgd-dev/cloud/v2/test/oauth-server/service"
-	oauthTest "github.com/plgd-dev/cloud/v2/test/oauth-server/test"
+	"github.com/plgd-dev/hub/coap-gateway/service"
+	"github.com/plgd-dev/hub/pkg/log"
+	"github.com/plgd-dev/hub/pkg/security/oauth2"
+	"github.com/plgd-dev/hub/test/config"
+	oauthService "github.com/plgd-dev/hub/test/oauth-server/service"
+	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
 	"github.com/stretchr/testify/require"
 )
 

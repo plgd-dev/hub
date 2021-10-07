@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/plgd-dev/cloud/v2/pkg/log"
+	"github.com/plgd-dev/hub/pkg/log"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -16,9 +16,9 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/readpref"
 
 	"github.com/patrickmn/go-cache"
-	"github.com/plgd-dev/cloud/v2/pkg/security/certManager/client"
-	pkgTime "github.com/plgd-dev/cloud/v2/pkg/time"
-	"github.com/plgd-dev/cloud/v2/resource-aggregate/cqrs/eventstore"
+	"github.com/plgd-dev/hub/pkg/security/certManager/client"
+	pkgTime "github.com/plgd-dev/hub/pkg/time"
+	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventstore"
 )
 
 const eventCName = "events"

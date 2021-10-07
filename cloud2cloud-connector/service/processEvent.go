@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/plgd-dev/cloud/v2/cloud2cloud-connector/events"
+	"github.com/plgd-dev/hub/cloud2cloud-connector/events"
 )
 
 func (rh *RequestHandler) notifyLinkedAccount(w http.ResponseWriter, r *http.Request) (int, error) {

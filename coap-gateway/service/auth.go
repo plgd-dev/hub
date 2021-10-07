@@ -8,9 +8,9 @@ import (
 	"time"
 
 	cache "github.com/patrickmn/go-cache"
-	"github.com/plgd-dev/cloud/v2/coap-gateway/uri"
-	"github.com/plgd-dev/cloud/v2/pkg/net/grpc"
-	pkgJwt "github.com/plgd-dev/cloud/v2/pkg/security/jwt"
+	"github.com/plgd-dev/hub/coap-gateway/uri"
+	"github.com/plgd-dev/hub/pkg/net/grpc"
+	pkgJwt "github.com/plgd-dev/hub/pkg/security/jwt"
 	"github.com/plgd-dev/device/pkg/net/coap"
 	"github.com/plgd-dev/go-coap/v2/message/codes"
 )

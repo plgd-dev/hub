@@ -4,14 +4,14 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/plgd-dev/cloud/v2/grpc-gateway/pb"
-	"github.com/plgd-dev/cloud/v2/pkg/config"
-	"github.com/plgd-dev/cloud/v2/pkg/log"
-	"github.com/plgd-dev/cloud/v2/pkg/net/grpc/client"
-	"github.com/plgd-dev/cloud/v2/pkg/net/grpc/server"
-	pkgTime "github.com/plgd-dev/cloud/v2/pkg/time"
-	natsClient "github.com/plgd-dev/cloud/v2/resource-aggregate/cqrs/eventbus/nats/client"
-	eventstoreConfig "github.com/plgd-dev/cloud/v2/resource-aggregate/cqrs/eventstore/config"
+	"github.com/plgd-dev/hub/grpc-gateway/pb"
+	"github.com/plgd-dev/hub/pkg/config"
+	"github.com/plgd-dev/hub/pkg/log"
+	"github.com/plgd-dev/hub/pkg/net/grpc/client"
+	"github.com/plgd-dev/hub/pkg/net/grpc/server"
+	pkgTime "github.com/plgd-dev/hub/pkg/time"
+	natsClient "github.com/plgd-dev/hub/resource-aggregate/cqrs/eventbus/nats/client"
+	eventstoreConfig "github.com/plgd-dev/hub/resource-aggregate/cqrs/eventstore/config"
 )
 
 type Config struct {

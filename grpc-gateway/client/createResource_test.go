@@ -6,10 +6,10 @@ import (
 	"testing"
 	"time"
 
-	kitNetGrpc "github.com/plgd-dev/cloud/v2/pkg/net/grpc"
-	"github.com/plgd-dev/cloud/v2/test"
-	testCfg "github.com/plgd-dev/cloud/v2/test/config"
-	oauthTest "github.com/plgd-dev/cloud/v2/test/oauth-server/test"
+	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
+	"github.com/plgd-dev/hub/test"
+	testCfg "github.com/plgd-dev/hub/test/config"
+	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 

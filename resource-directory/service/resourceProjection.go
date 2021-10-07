@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/plgd-dev/cloud/v2/pkg/log"
-	"github.com/plgd-dev/cloud/v2/resource-aggregate/commands"
-	"github.com/plgd-dev/cloud/v2/resource-aggregate/cqrs/eventstore"
-	"github.com/plgd-dev/cloud/v2/resource-aggregate/events"
+	"github.com/plgd-dev/hub/pkg/log"
+	"github.com/plgd-dev/hub/resource-aggregate/commands"
+	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventstore"
+	"github.com/plgd-dev/hub/resource-aggregate/events"
 )
 
 type resourceProjection struct {

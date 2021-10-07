@@ -1,16 +1,16 @@
 {
   "swagger": "2.0",
   "info": {
-    "title": "plgd cloud - HTTP Gateway API",
+    "title": "plgd hub - HTTP Gateway API",
     "version": "1.0",
     "contact": {
       "name": "plgd.dev",
-      "url": "https://github.com/plgd-dev/cloud",
+      "url": "https://github.com/plgd-dev/hub",
       "email": "info@plgd.dev"
     },
     "license": {
       "name": "Apache License 2.0",
-      "url": "https://github.com/plgd-dev/cloud/blob/v2/LICENSE"
+      "url": "https://github.com/plgd-dev/hub/blob/v2/LICENSE"
     }
   },
   "tags": [
@@ -38,7 +38,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/v2CloudConfigurationResponse"
+              "$ref": "#/definitions/pbCloudConfigurationResponse"
             }
           },
           "default": {
@@ -64,13 +64,13 @@
               "type": "object",
               "properties": {
                 "result": {
-                  "$ref": "#/definitions/v2Device"
+                  "$ref": "#/definitions/pbDevice"
                 },
                 "error": {
                   "$ref": "#/definitions/googlerpcStatus"
                 }
               },
-              "title": "Stream result of v2Device"
+              "title": "Stream result of pbDevice"
             }
           },
           "default": {
@@ -127,7 +127,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/cloudgrpcgatewaypbv2DeleteDevicesResponse"
+              "$ref": "#/definitions/grpcgatewaypbDeleteDevicesResponse"
             }
           },
           "default": {
@@ -165,13 +165,13 @@
               "type": "object",
               "properties": {
                 "result": {
-                  "$ref": "#/definitions/v2DeviceMetadataUpdated"
+                  "$ref": "#/definitions/pbDeviceMetadataUpdated"
                 },
                 "error": {
                   "$ref": "#/definitions/googlerpcStatus"
                 }
               },
-              "title": "Stream result of v2DeviceMetadataUpdated"
+              "title": "Stream result of pbDeviceMetadataUpdated"
             }
           },
           "default": {
@@ -216,7 +216,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/cloudgrpcgatewaypbv2UpdateDeviceMetadataResponse"
+              "$ref": "#/definitions/grpcgatewaypbUpdateDeviceMetadataResponse"
             }
           },
           "default": {
@@ -241,7 +241,7 @@
               "type": "object",
               "properties": {
                 "shadowSynchronization": {
-                  "$ref": "#/definitions/v2UpdateDeviceMetadataRequestShadowSynchronization"
+                  "$ref": "#/definitions/pbUpdateDeviceMetadataRequestShadowSynchronization"
                 },
                 "timeToLive": {
                   "type": "string",
@@ -264,7 +264,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/cloudgrpcgatewaypbv2CancelPendingCommandsResponse"
+              "$ref": "#/definitions/grpcgatewaypbCancelPendingCommandsResponse"
             }
           },
           "default": {
@@ -305,7 +305,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/cloudgrpcgatewaypbv2DeleteResourceResponse"
+              "$ref": "#/definitions/grpcgatewaypbDeleteResourceResponse"
             }
           },
           "default": {
@@ -347,7 +347,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/cloudgrpcgatewaypbv2CreateResourceResponse"
+              "$ref": "#/definitions/grpcgatewaypbCreateResourceResponse"
             }
           },
           "default": {
@@ -375,7 +375,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/cloudgrpcgatewaypbv2Content"
+              "$ref": "#/definitions/grpcgatewaypbContent"
             }
           },
           {
@@ -399,7 +399,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/v2GetResourceFromDeviceResponse"
+              "$ref": "#/definitions/pbGetResourceFromDeviceResponse"
             }
           },
           "default": {
@@ -447,7 +447,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/cloudgrpcgatewaypbv2UpdateResourceResponse"
+              "$ref": "#/definitions/grpcgatewaypbUpdateResourceResponse"
             }
           },
           "default": {
@@ -475,7 +475,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/cloudgrpcgatewaypbv2Content"
+              "$ref": "#/definitions/grpcgatewaypbContent"
             }
           },
           {
@@ -508,13 +508,13 @@
               "type": "object",
               "properties": {
                 "result": {
-                  "$ref": "#/definitions/v2GetEventsResponse"
+                  "$ref": "#/definitions/pbGetEventsResponse"
                 },
                 "error": {
                   "$ref": "#/definitions/googlerpcStatus"
                 }
               },
-              "title": "Stream result of v2GetEventsResponse"
+              "title": "Stream result of pbGetEventsResponse"
             }
           },
           "default": {
@@ -571,13 +571,13 @@
               "type": "object",
               "properties": {
                 "result": {
-                  "$ref": "#/definitions/v2PendingCommand"
+                  "$ref": "#/definitions/pbPendingCommand"
                 },
                 "error": {
                   "$ref": "#/definitions/googlerpcStatus"
                 }
               },
-              "title": "Stream result of v2PendingCommand"
+              "title": "Stream result of pbPendingCommand"
             }
           },
           "default": {
@@ -647,7 +647,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/cloudgrpcgatewaypbv2CancelPendingCommandsResponse"
+              "$ref": "#/definitions/grpcgatewaypbCancelPendingCommandsResponse"
             }
           },
           "default": {
@@ -697,13 +697,13 @@
               "type": "object",
               "properties": {
                 "result": {
-                  "$ref": "#/definitions/v2ResourceLinksPublished"
+                  "$ref": "#/definitions/pbResourceLinksPublished"
                 },
                 "error": {
                   "$ref": "#/definitions/googlerpcStatus"
                 }
               },
-              "title": "Stream result of v2ResourceLinksPublished"
+              "title": "Stream result of pbResourceLinksPublished"
             }
           },
           "default": {
@@ -751,13 +751,13 @@
               "type": "object",
               "properties": {
                 "result": {
-                  "$ref": "#/definitions/cloudgrpcgatewaypbv2Resource"
+                  "$ref": "#/definitions/grpcgatewaypbResource"
                 },
                 "error": {
                   "$ref": "#/definitions/googlerpcStatus"
                 }
               },
-              "title": "Stream result of cloudgrpcgatewaypbv2Resource"
+              "title": "Stream result of grpcgatewaypbResource"
             }
           },
           "default": {
@@ -815,13 +815,13 @@
               "type": "object",
               "properties": {
                 "result": {
-                  "$ref": "#/definitions/pbv2Event"
+                  "$ref": "#/definitions/grpcgatewaypbEvent"
                 },
                 "error": {
                   "$ref": "#/definitions/googlerpcStatus"
                 }
               },
-              "title": "Stream result of pbv2Event"
+              "title": "Stream result of grpcgatewaypbEvent"
             }
           },
           "default": {
@@ -838,7 +838,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/v2SubscribeToEvents"
+              "$ref": "#/definitions/pbSubscribeToEvents"
             }
           }
         ],
@@ -853,10 +853,10 @@
       "type": "object",
       "properties": {
         "status": {
-          "$ref": "#/definitions/v2ConnectionStatus"
+          "$ref": "#/definitions/pbConnectionStatus"
         },
         "shadowSynchronization": {
-          "$ref": "#/definitions/pbv2ShadowSynchronization"
+          "$ref": "#/definitions/resourceaggregatepbShadowSynchronization"
         }
       }
     },
@@ -981,7 +981,25 @@
       ],
       "default": "REGISTERED"
     },
-    "cloudgrpcgatewaypbv2CancelPendingCommandsResponse": {
+    "googlerpcStatus": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    },
+    "grpcgatewaypbCancelPendingCommandsResponse": {
       "type": "object",
       "properties": {
         "correlationIds": {
@@ -992,7 +1010,7 @@
         }
       }
     },
-    "cloudgrpcgatewaypbv2Content": {
+    "grpcgatewaypbContent": {
       "type": "object",
       "properties": {
         "contentType": {
@@ -1004,15 +1022,15 @@
         }
       }
     },
-    "cloudgrpcgatewaypbv2CreateResourceResponse": {
+    "grpcgatewaypbCreateResourceResponse": {
       "type": "object",
       "properties": {
         "data": {
-          "$ref": "#/definitions/v2ResourceCreated"
+          "$ref": "#/definitions/pbResourceCreated"
         }
       }
     },
-    "cloudgrpcgatewaypbv2DeleteDevicesResponse": {
+    "grpcgatewaypbDeleteDevicesResponse": {
       "type": "object",
       "properties": {
         "deviceIds": {
@@ -1023,15 +1041,77 @@
         }
       }
     },
-    "cloudgrpcgatewaypbv2DeleteResourceResponse": {
+    "grpcgatewaypbDeleteResourceResponse": {
       "type": "object",
       "properties": {
         "data": {
-          "$ref": "#/definitions/v2ResourceDeleted"
+          "$ref": "#/definitions/pbResourceDeleted"
         }
       }
     },
-    "cloudgrpcgatewaypbv2Resource": {
+    "grpcgatewaypbEvent": {
+      "type": "object",
+      "properties": {
+        "subscriptionId": {
+          "type": "string"
+        },
+        "correlationId": {
+          "type": "string"
+        },
+        "deviceRegistered": {
+          "$ref": "#/definitions/EventDeviceRegistered"
+        },
+        "deviceUnregistered": {
+          "$ref": "#/definitions/EventDeviceUnregistered"
+        },
+        "resourcePublished": {
+          "$ref": "#/definitions/pbResourceLinksPublished"
+        },
+        "resourceUnpublished": {
+          "$ref": "#/definitions/pbResourceLinksUnpublished"
+        },
+        "resourceChanged": {
+          "$ref": "#/definitions/pbResourceChanged"
+        },
+        "operationProcessed": {
+          "$ref": "#/definitions/EventOperationProcessed"
+        },
+        "subscriptionCanceled": {
+          "$ref": "#/definitions/EventSubscriptionCanceled"
+        },
+        "resourceUpdatePending": {
+          "$ref": "#/definitions/pbResourceUpdatePending"
+        },
+        "resourceUpdated": {
+          "$ref": "#/definitions/pbResourceUpdated"
+        },
+        "resourceRetrievePending": {
+          "$ref": "#/definitions/pbResourceRetrievePending"
+        },
+        "resourceRetrieved": {
+          "$ref": "#/definitions/pbResourceRetrieved"
+        },
+        "resourceDeletePending": {
+          "$ref": "#/definitions/pbResourceDeletePending"
+        },
+        "resourceDeleted": {
+          "$ref": "#/definitions/pbResourceDeleted"
+        },
+        "resourceCreatePending": {
+          "$ref": "#/definitions/pbResourceCreatePending"
+        },
+        "resourceCreated": {
+          "$ref": "#/definitions/pbResourceCreated"
+        },
+        "deviceMetadataUpdatePending": {
+          "$ref": "#/definitions/pbDeviceMetadataUpdatePending"
+        },
+        "deviceMetadataUpdated": {
+          "$ref": "#/definitions/pbDeviceMetadataUpdated"
+        }
+      }
+    },
+    "grpcgatewaypbResource": {
       "type": "object",
       "properties": {
         "types": {
@@ -1041,27 +1121,666 @@
           }
         },
         "data": {
-          "$ref": "#/definitions/v2ResourceChanged"
+          "$ref": "#/definitions/pbResourceChanged"
         }
       }
     },
-    "cloudgrpcgatewaypbv2UpdateDeviceMetadataResponse": {
+    "grpcgatewaypbUpdateDeviceMetadataResponse": {
       "type": "object",
       "properties": {
         "data": {
-          "$ref": "#/definitions/v2DeviceMetadataUpdated"
+          "$ref": "#/definitions/pbDeviceMetadataUpdated"
         }
       }
     },
-    "cloudgrpcgatewaypbv2UpdateResourceResponse": {
+    "grpcgatewaypbUpdateResourceResponse": {
       "type": "object",
       "properties": {
         "data": {
-          "$ref": "#/definitions/v2ResourceUpdated"
+          "$ref": "#/definitions/pbResourceUpdated"
         }
       }
     },
-    "cloudresourceaggregatepbv2Content": {
+    "pbAuditContext": {
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string"
+        },
+        "correlationId": {
+          "type": "string"
+        }
+      }
+    },
+    "pbCloudConfigurationResponse": {
+      "type": "object",
+      "properties": {
+        "currentTime": {
+          "type": "string",
+          "format": "int64",
+          "description": "provides a current time of server in nanoseconds."
+        },
+        "jwtOwnerClaim": {
+          "type": "string"
+        },
+        "jwtDeviceIdClaim": {
+          "type": "string"
+        },
+        "cloudId": {
+          "type": "string"
+        },
+        "cloudUrl": {
+          "type": "string"
+        },
+        "cloudCertificateAuthorities": {
+          "type": "string"
+        },
+        "authorizationServer": {
+          "type": "string"
+        },
+        "defaultCommandTimeToLive": {
+          "type": "string",
+          "format": "int64",
+          "description": "exposes default command time to live in nanoseconds for CreateResource, RetrieveResource, UpdateResource, DeleteResource, and UpdateDeviceMetadata commands when it is not set in the request. 0 - means forever."
+        }
+      }
+    },
+    "pbConnectionStatus": {
+      "type": "object",
+      "properties": {
+        "value": {
+          "$ref": "#/definitions/pbConnectionStatusStatus"
+        },
+        "validUntil": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
+    "pbConnectionStatusStatus": {
+      "type": "string",
+      "enum": [
+        "OFFLINE",
+        "ONLINE"
+      ],
+      "default": "OFFLINE"
+    },
+    "pbDevice": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "types": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "name": {
+          "type": "string"
+        },
+        "metadata": {
+          "$ref": "#/definitions/DeviceMetadata"
+        },
+        "manufacturerName": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/pbLocalizedString"
+          }
+        },
+        "modelNumber": {
+          "type": "string"
+        },
+        "interfaces": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "protocolIndependentId": {
+          "type": "string"
+        }
+      }
+    },
+    "pbDeviceMetadataSnapshotTaken": {
+      "type": "object",
+      "properties": {
+        "deviceId": {
+          "type": "string"
+        },
+        "deviceMetadataUpdated": {
+          "$ref": "#/definitions/pbDeviceMetadataUpdated"
+        },
+        "updatePendings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/pbDeviceMetadataUpdatePending"
+          }
+        },
+        "eventMetadata": {
+          "$ref": "#/definitions/pbEventMetadata"
+        }
+      }
+    },
+    "pbDeviceMetadataUpdatePending": {
+      "type": "object",
+      "properties": {
+        "deviceId": {
+          "type": "string"
+        },
+        "shadowSynchronization": {
+          "$ref": "#/definitions/resourceaggregatepbShadowSynchronization"
+        },
+        "auditContext": {
+          "$ref": "#/definitions/pbAuditContext"
+        },
+        "eventMetadata": {
+          "$ref": "#/definitions/pbEventMetadata"
+        },
+        "validUntil": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
+    "pbDeviceMetadataUpdated": {
+      "type": "object",
+      "properties": {
+        "deviceId": {
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/definitions/pbConnectionStatus"
+        },
+        "shadowSynchronization": {
+          "$ref": "#/definitions/resourceaggregatepbShadowSynchronization"
+        },
+        "auditContext": {
+          "$ref": "#/definitions/pbAuditContext"
+        },
+        "eventMetadata": {
+          "$ref": "#/definitions/pbEventMetadata"
+        },
+        "canceled": {
+          "type": "boolean"
+        }
+      }
+    },
+    "pbEndpointInformation": {
+      "type": "object",
+      "properties": {
+        "endpoint": {
+          "type": "string"
+        },
+        "priority": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
+    "pbEventMetadata": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "int64"
+        },
+        "connectionId": {
+          "type": "string"
+        },
+        "sequence": {
+          "type": "string",
+          "format": "uint64"
+        }
+      }
+    },
+    "pbGetDevicesRequestStatus": {
+      "type": "string",
+      "enum": [
+        "ONLINE",
+        "OFFLINE"
+      ],
+      "default": "ONLINE"
+    },
+    "pbGetEventsResponse": {
+      "type": "object",
+      "properties": {
+        "resourceLinksPublished": {
+          "$ref": "#/definitions/pbResourceLinksPublished"
+        },
+        "resourceLinksUnpublished": {
+          "$ref": "#/definitions/pbResourceLinksUnpublished"
+        },
+        "resourceLinksSnapshotTaken": {
+          "$ref": "#/definitions/pbResourceLinksSnapshotTaken"
+        },
+        "resourceChanged": {
+          "$ref": "#/definitions/pbResourceChanged"
+        },
+        "resourceUpdatePending": {
+          "$ref": "#/definitions/pbResourceUpdatePending"
+        },
+        "resourceUpdated": {
+          "$ref": "#/definitions/pbResourceUpdated"
+        },
+        "resourceRetrievePending": {
+          "$ref": "#/definitions/pbResourceRetrievePending"
+        },
+        "resourceRetrieved": {
+          "$ref": "#/definitions/pbResourceRetrieved"
+        },
+        "resourceDeletePending": {
+          "$ref": "#/definitions/pbResourceDeletePending"
+        },
+        "resourceDeleted": {
+          "$ref": "#/definitions/pbResourceDeleted"
+        },
+        "resourceCreatePending": {
+          "$ref": "#/definitions/pbResourceCreatePending"
+        },
+        "resourceCreated": {
+          "$ref": "#/definitions/pbResourceCreated"
+        },
+        "resourceStateSnapshotTaken": {
+          "$ref": "#/definitions/pbResourceStateSnapshotTaken"
+        },
+        "deviceMetadataUpdatePending": {
+          "$ref": "#/definitions/pbDeviceMetadataUpdatePending"
+        },
+        "deviceMetadataUpdated": {
+          "$ref": "#/definitions/pbDeviceMetadataUpdated"
+        },
+        "deviceMetadataSnapshotTaken": {
+          "$ref": "#/definitions/pbDeviceMetadataSnapshotTaken"
+        }
+      }
+    },
+    "pbGetResourceFromDeviceResponse": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "$ref": "#/definitions/pbResourceRetrieved"
+        }
+      }
+    },
+    "pbLocalizedString": {
+      "type": "object",
+      "properties": {
+        "language": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        }
+      }
+    },
+    "pbPendingCommand": {
+      "type": "object",
+      "properties": {
+        "resourceCreatePending": {
+          "$ref": "#/definitions/pbResourceCreatePending"
+        },
+        "resourceRetrievePending": {
+          "$ref": "#/definitions/pbResourceRetrievePending"
+        },
+        "resourceUpdatePending": {
+          "$ref": "#/definitions/pbResourceUpdatePending"
+        },
+        "resourceDeletePending": {
+          "$ref": "#/definitions/pbResourceDeletePending"
+        },
+        "deviceMetadataUpdatePending": {
+          "$ref": "#/definitions/pbDeviceMetadataUpdatePending"
+        }
+      }
+    },
+    "pbPolicy": {
+      "type": "object",
+      "properties": {
+        "bitFlags": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "pbResourceChanged": {
+      "type": "object",
+      "properties": {
+        "resourceId": {
+          "$ref": "#/definitions/pbResourceId"
+        },
+        "content": {
+          "$ref": "#/definitions/resourceaggregatepbContent"
+        },
+        "status": {
+          "$ref": "#/definitions/resourceaggregatepbStatus"
+        },
+        "auditContext": {
+          "$ref": "#/definitions/pbAuditContext"
+        },
+        "eventMetadata": {
+          "$ref": "#/definitions/pbEventMetadata"
+        }
+      }
+    },
+    "pbResourceCreatePending": {
+      "type": "object",
+      "properties": {
+        "resourceId": {
+          "$ref": "#/definitions/pbResourceId"
+        },
+        "content": {
+          "$ref": "#/definitions/resourceaggregatepbContent"
+        },
+        "auditContext": {
+          "$ref": "#/definitions/pbAuditContext"
+        },
+        "eventMetadata": {
+          "$ref": "#/definitions/pbEventMetadata"
+        },
+        "validUntil": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
+    "pbResourceCreated": {
+      "type": "object",
+      "properties": {
+        "resourceId": {
+          "$ref": "#/definitions/pbResourceId"
+        },
+        "status": {
+          "$ref": "#/definitions/resourceaggregatepbStatus"
+        },
+        "content": {
+          "$ref": "#/definitions/resourceaggregatepbContent"
+        },
+        "auditContext": {
+          "$ref": "#/definitions/pbAuditContext"
+        },
+        "eventMetadata": {
+          "$ref": "#/definitions/pbEventMetadata"
+        }
+      }
+    },
+    "pbResourceDeletePending": {
+      "type": "object",
+      "properties": {
+        "resourceId": {
+          "$ref": "#/definitions/pbResourceId"
+        },
+        "auditContext": {
+          "$ref": "#/definitions/pbAuditContext"
+        },
+        "eventMetadata": {
+          "$ref": "#/definitions/pbEventMetadata"
+        },
+        "validUntil": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
+    "pbResourceDeleted": {
+      "type": "object",
+      "properties": {
+        "resourceId": {
+          "$ref": "#/definitions/pbResourceId"
+        },
+        "status": {
+          "$ref": "#/definitions/resourceaggregatepbStatus"
+        },
+        "content": {
+          "$ref": "#/definitions/resourceaggregatepbContent"
+        },
+        "auditContext": {
+          "$ref": "#/definitions/pbAuditContext"
+        },
+        "eventMetadata": {
+          "$ref": "#/definitions/pbEventMetadata"
+        }
+      }
+    },
+    "pbResourceId": {
+      "type": "object",
+      "properties": {
+        "deviceId": {
+          "type": "string"
+        },
+        "href": {
+          "type": "string"
+        }
+      }
+    },
+    "pbResourceLinksPublished": {
+      "type": "object",
+      "properties": {
+        "deviceId": {
+          "type": "string"
+        },
+        "resources": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/resourceaggregatepbResource"
+          }
+        },
+        "auditContext": {
+          "$ref": "#/definitions/pbAuditContext"
+        },
+        "eventMetadata": {
+          "$ref": "#/definitions/pbEventMetadata"
+        }
+      },
+      "title": "https://github.com/openconnectivityfoundation/cloud-services/blob/master/swagger2.0/oic.wk.rd.swagger.json#L173"
+    },
+    "pbResourceLinksSnapshotTaken": {
+      "type": "object",
+      "properties": {
+        "deviceId": {
+          "type": "string"
+        },
+        "resources": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/resourceaggregatepbResource"
+          }
+        },
+        "eventMetadata": {
+          "$ref": "#/definitions/pbEventMetadata"
+        },
+        "auditContext": {
+          "$ref": "#/definitions/pbAuditContext"
+        }
+      }
+    },
+    "pbResourceLinksUnpublished": {
+      "type": "object",
+      "properties": {
+        "deviceId": {
+          "type": "string"
+        },
+        "hrefs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "auditContext": {
+          "$ref": "#/definitions/pbAuditContext"
+        },
+        "eventMetadata": {
+          "$ref": "#/definitions/pbEventMetadata"
+        }
+      },
+      "title": "https://github.com/openconnectivityfoundation/cloud-services/blob/master/swagger2.0/oic.wk.rd.swagger.json #Specification CR needed"
+    },
+    "pbResourceRetrievePending": {
+      "type": "object",
+      "properties": {
+        "resourceId": {
+          "$ref": "#/definitions/pbResourceId"
+        },
+        "resourceInterface": {
+          "type": "string"
+        },
+        "auditContext": {
+          "$ref": "#/definitions/pbAuditContext"
+        },
+        "eventMetadata": {
+          "$ref": "#/definitions/pbEventMetadata"
+        },
+        "validUntil": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
+    "pbResourceRetrieved": {
+      "type": "object",
+      "properties": {
+        "resourceId": {
+          "$ref": "#/definitions/pbResourceId"
+        },
+        "status": {
+          "$ref": "#/definitions/resourceaggregatepbStatus"
+        },
+        "content": {
+          "$ref": "#/definitions/resourceaggregatepbContent"
+        },
+        "auditContext": {
+          "$ref": "#/definitions/pbAuditContext"
+        },
+        "eventMetadata": {
+          "$ref": "#/definitions/pbEventMetadata"
+        }
+      }
+    },
+    "pbResourceStateSnapshotTaken": {
+      "type": "object",
+      "properties": {
+        "resourceId": {
+          "$ref": "#/definitions/pbResourceId"
+        },
+        "latestResourceChange": {
+          "$ref": "#/definitions/pbResourceChanged"
+        },
+        "resourceCreatePendings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/pbResourceCreatePending"
+          }
+        },
+        "resourceRetrievePendings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/pbResourceRetrievePending"
+          }
+        },
+        "resourceUpdatePendings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/pbResourceUpdatePending"
+          }
+        },
+        "resourceDeletePendings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/pbResourceDeletePending"
+          }
+        },
+        "auditContext": {
+          "$ref": "#/definitions/pbAuditContext"
+        },
+        "eventMetadata": {
+          "$ref": "#/definitions/pbEventMetadata"
+        }
+      }
+    },
+    "pbResourceUpdatePending": {
+      "type": "object",
+      "properties": {
+        "resourceId": {
+          "$ref": "#/definitions/pbResourceId"
+        },
+        "resourceInterface": {
+          "type": "string"
+        },
+        "content": {
+          "$ref": "#/definitions/resourceaggregatepbContent"
+        },
+        "auditContext": {
+          "$ref": "#/definitions/pbAuditContext"
+        },
+        "eventMetadata": {
+          "$ref": "#/definitions/pbEventMetadata"
+        },
+        "validUntil": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
+    "pbResourceUpdated": {
+      "type": "object",
+      "properties": {
+        "resourceId": {
+          "$ref": "#/definitions/pbResourceId"
+        },
+        "status": {
+          "$ref": "#/definitions/resourceaggregatepbStatus"
+        },
+        "content": {
+          "$ref": "#/definitions/resourceaggregatepbContent"
+        },
+        "auditContext": {
+          "$ref": "#/definitions/pbAuditContext"
+        },
+        "eventMetadata": {
+          "$ref": "#/definitions/pbEventMetadata"
+        }
+      }
+    },
+    "pbSubscribeToEvents": {
+      "type": "object",
+      "properties": {
+        "createSubscription": {
+          "$ref": "#/definitions/SubscribeToEventsCreateSubscription"
+        },
+        "cancelSubscription": {
+          "$ref": "#/definitions/SubscribeToEventsCancelSubscription"
+        },
+        "correlationId": {
+          "type": "string"
+        }
+      }
+    },
+    "pbUpdateDeviceMetadataRequestShadowSynchronization": {
+      "type": "string",
+      "enum": [
+        "DISABLED",
+        "ENABLED"
+      ],
+      "default": "DISABLED"
+    },
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "typeUrl": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string",
+          "format": "byte"
+        }
+      }
+    },
+    "resourceaggregatepbContent": {
       "type": "object",
       "properties": {
         "data": {
@@ -1077,7 +1796,7 @@
         }
       }
     },
-    "cloudresourceaggregatepbv2Resource": {
+    "resourceaggregatepbResource": {
       "type": "object",
       "properties": {
         "href": {
@@ -1115,98 +1834,18 @@
           "format": "int64"
         },
         "policy": {
-          "$ref": "#/definitions/v2Policy"
+          "$ref": "#/definitions/pbPolicy"
         },
         "endpointInformations": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/v2EndpointInformation"
+            "$ref": "#/definitions/pbEndpointInformation"
           }
         }
       },
       "title": "https://github.com/openconnectivityfoundation/core/blob/master/schemas/oic.links.properties.core-schema.json"
     },
-    "googlerpcStatus": {
-      "type": "object",
-      "properties": {
-        "code": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "message": {
-          "type": "string"
-        },
-        "details": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/protobufAny"
-          }
-        }
-      }
-    },
-    "pbv2Event": {
-      "type": "object",
-      "properties": {
-        "subscriptionId": {
-          "type": "string"
-        },
-        "correlationId": {
-          "type": "string"
-        },
-        "deviceRegistered": {
-          "$ref": "#/definitions/EventDeviceRegistered"
-        },
-        "deviceUnregistered": {
-          "$ref": "#/definitions/EventDeviceUnregistered"
-        },
-        "resourcePublished": {
-          "$ref": "#/definitions/v2ResourceLinksPublished"
-        },
-        "resourceUnpublished": {
-          "$ref": "#/definitions/v2ResourceLinksUnpublished"
-        },
-        "resourceChanged": {
-          "$ref": "#/definitions/v2ResourceChanged"
-        },
-        "operationProcessed": {
-          "$ref": "#/definitions/EventOperationProcessed"
-        },
-        "subscriptionCanceled": {
-          "$ref": "#/definitions/EventSubscriptionCanceled"
-        },
-        "resourceUpdatePending": {
-          "$ref": "#/definitions/v2ResourceUpdatePending"
-        },
-        "resourceUpdated": {
-          "$ref": "#/definitions/v2ResourceUpdated"
-        },
-        "resourceRetrievePending": {
-          "$ref": "#/definitions/v2ResourceRetrievePending"
-        },
-        "resourceRetrieved": {
-          "$ref": "#/definitions/v2ResourceRetrieved"
-        },
-        "resourceDeletePending": {
-          "$ref": "#/definitions/v2ResourceDeletePending"
-        },
-        "resourceDeleted": {
-          "$ref": "#/definitions/v2ResourceDeleted"
-        },
-        "resourceCreatePending": {
-          "$ref": "#/definitions/v2ResourceCreatePending"
-        },
-        "resourceCreated": {
-          "$ref": "#/definitions/v2ResourceCreated"
-        },
-        "deviceMetadataUpdatePending": {
-          "$ref": "#/definitions/v2DeviceMetadataUpdatePending"
-        },
-        "deviceMetadataUpdated": {
-          "$ref": "#/definitions/v2DeviceMetadataUpdated"
-        }
-      }
-    },
-    "pbv2ShadowSynchronization": {
+    "resourceaggregatepbShadowSynchronization": {
       "type": "string",
       "enum": [
         "UNSET",
@@ -1215,7 +1854,7 @@
       ],
       "default": "UNSET"
     },
-    "pbv2Status": {
+    "resourceaggregatepbStatus": {
       "type": "string",
       "enum": [
         "UNKNOWN",
@@ -1233,645 +1872,6 @@
         "CANCELED"
       ],
       "default": "UNKNOWN"
-    },
-    "protobufAny": {
-      "type": "object",
-      "properties": {
-        "typeUrl": {
-          "type": "string"
-        },
-        "value": {
-          "type": "string",
-          "format": "byte"
-        }
-      }
-    },
-    "v2AuditContext": {
-      "type": "object",
-      "properties": {
-        "userId": {
-          "type": "string"
-        },
-        "correlationId": {
-          "type": "string"
-        }
-      }
-    },
-    "v2CloudConfigurationResponse": {
-      "type": "object",
-      "properties": {
-        "currentTime": {
-          "type": "string",
-          "format": "int64",
-          "description": "provides a current time of server in nanoseconds."
-        },
-        "jwtOwnerClaim": {
-          "type": "string"
-        },
-        "jwtDeviceIdClaim": {
-          "type": "string"
-        },
-        "cloudId": {
-          "type": "string"
-        },
-        "cloudUrl": {
-          "type": "string"
-        },
-        "cloudCertificateAuthorities": {
-          "type": "string"
-        },
-        "authorizationServer": {
-          "type": "string"
-        },
-        "defaultCommandTimeToLive": {
-          "type": "string",
-          "format": "int64",
-          "description": "exposes default command time to live in nanoseconds for CreateResource, RetrieveResource, UpdateResource, DeleteResource, and UpdateDeviceMetadata commands when it is not set in the request. 0 - means forever."
-        }
-      }
-    },
-    "v2ConnectionStatus": {
-      "type": "object",
-      "properties": {
-        "value": {
-          "$ref": "#/definitions/v2ConnectionStatusStatus"
-        },
-        "validUntil": {
-          "type": "string",
-          "format": "int64"
-        }
-      }
-    },
-    "v2ConnectionStatusStatus": {
-      "type": "string",
-      "enum": [
-        "OFFLINE",
-        "ONLINE"
-      ],
-      "default": "OFFLINE"
-    },
-    "v2Device": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "string"
-        },
-        "types": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "name": {
-          "type": "string"
-        },
-        "metadata": {
-          "$ref": "#/definitions/DeviceMetadata"
-        },
-        "manufacturerName": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/v2LocalizedString"
-          }
-        },
-        "modelNumber": {
-          "type": "string"
-        },
-        "interfaces": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "protocolIndependentId": {
-          "type": "string"
-        }
-      }
-    },
-    "v2DeviceMetadataSnapshotTaken": {
-      "type": "object",
-      "properties": {
-        "deviceId": {
-          "type": "string"
-        },
-        "deviceMetadataUpdated": {
-          "$ref": "#/definitions/v2DeviceMetadataUpdated"
-        },
-        "updatePendings": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/v2DeviceMetadataUpdatePending"
-          }
-        },
-        "eventMetadata": {
-          "$ref": "#/definitions/v2EventMetadata"
-        }
-      }
-    },
-    "v2DeviceMetadataUpdatePending": {
-      "type": "object",
-      "properties": {
-        "deviceId": {
-          "type": "string"
-        },
-        "shadowSynchronization": {
-          "$ref": "#/definitions/pbv2ShadowSynchronization"
-        },
-        "auditContext": {
-          "$ref": "#/definitions/v2AuditContext"
-        },
-        "eventMetadata": {
-          "$ref": "#/definitions/v2EventMetadata"
-        },
-        "validUntil": {
-          "type": "string",
-          "format": "int64"
-        }
-      }
-    },
-    "v2DeviceMetadataUpdated": {
-      "type": "object",
-      "properties": {
-        "deviceId": {
-          "type": "string"
-        },
-        "status": {
-          "$ref": "#/definitions/v2ConnectionStatus"
-        },
-        "shadowSynchronization": {
-          "$ref": "#/definitions/pbv2ShadowSynchronization"
-        },
-        "auditContext": {
-          "$ref": "#/definitions/v2AuditContext"
-        },
-        "eventMetadata": {
-          "$ref": "#/definitions/v2EventMetadata"
-        },
-        "canceled": {
-          "type": "boolean"
-        }
-      }
-    },
-    "v2EndpointInformation": {
-      "type": "object",
-      "properties": {
-        "endpoint": {
-          "type": "string"
-        },
-        "priority": {
-          "type": "string",
-          "format": "int64"
-        }
-      }
-    },
-    "v2EventMetadata": {
-      "type": "object",
-      "properties": {
-        "version": {
-          "type": "string",
-          "format": "uint64"
-        },
-        "timestamp": {
-          "type": "string",
-          "format": "int64"
-        },
-        "connectionId": {
-          "type": "string"
-        },
-        "sequence": {
-          "type": "string",
-          "format": "uint64"
-        }
-      }
-    },
-    "v2GetDevicesRequestStatus": {
-      "type": "string",
-      "enum": [
-        "ONLINE",
-        "OFFLINE"
-      ],
-      "default": "ONLINE"
-    },
-    "v2GetEventsResponse": {
-      "type": "object",
-      "properties": {
-        "resourceLinksPublished": {
-          "$ref": "#/definitions/v2ResourceLinksPublished"
-        },
-        "resourceLinksUnpublished": {
-          "$ref": "#/definitions/v2ResourceLinksUnpublished"
-        },
-        "resourceLinksSnapshotTaken": {
-          "$ref": "#/definitions/v2ResourceLinksSnapshotTaken"
-        },
-        "resourceChanged": {
-          "$ref": "#/definitions/v2ResourceChanged"
-        },
-        "resourceUpdatePending": {
-          "$ref": "#/definitions/v2ResourceUpdatePending"
-        },
-        "resourceUpdated": {
-          "$ref": "#/definitions/v2ResourceUpdated"
-        },
-        "resourceRetrievePending": {
-          "$ref": "#/definitions/v2ResourceRetrievePending"
-        },
-        "resourceRetrieved": {
-          "$ref": "#/definitions/v2ResourceRetrieved"
-        },
-        "resourceDeletePending": {
-          "$ref": "#/definitions/v2ResourceDeletePending"
-        },
-        "resourceDeleted": {
-          "$ref": "#/definitions/v2ResourceDeleted"
-        },
-        "resourceCreatePending": {
-          "$ref": "#/definitions/v2ResourceCreatePending"
-        },
-        "resourceCreated": {
-          "$ref": "#/definitions/v2ResourceCreated"
-        },
-        "resourceStateSnapshotTaken": {
-          "$ref": "#/definitions/v2ResourceStateSnapshotTaken"
-        },
-        "deviceMetadataUpdatePending": {
-          "$ref": "#/definitions/v2DeviceMetadataUpdatePending"
-        },
-        "deviceMetadataUpdated": {
-          "$ref": "#/definitions/v2DeviceMetadataUpdated"
-        },
-        "deviceMetadataSnapshotTaken": {
-          "$ref": "#/definitions/v2DeviceMetadataSnapshotTaken"
-        }
-      }
-    },
-    "v2GetResourceFromDeviceResponse": {
-      "type": "object",
-      "properties": {
-        "data": {
-          "$ref": "#/definitions/v2ResourceRetrieved"
-        }
-      }
-    },
-    "v2LocalizedString": {
-      "type": "object",
-      "properties": {
-        "language": {
-          "type": "string"
-        },
-        "value": {
-          "type": "string"
-        }
-      }
-    },
-    "v2PendingCommand": {
-      "type": "object",
-      "properties": {
-        "resourceCreatePending": {
-          "$ref": "#/definitions/v2ResourceCreatePending"
-        },
-        "resourceRetrievePending": {
-          "$ref": "#/definitions/v2ResourceRetrievePending"
-        },
-        "resourceUpdatePending": {
-          "$ref": "#/definitions/v2ResourceUpdatePending"
-        },
-        "resourceDeletePending": {
-          "$ref": "#/definitions/v2ResourceDeletePending"
-        },
-        "deviceMetadataUpdatePending": {
-          "$ref": "#/definitions/v2DeviceMetadataUpdatePending"
-        }
-      }
-    },
-    "v2Policy": {
-      "type": "object",
-      "properties": {
-        "bitFlags": {
-          "type": "integer",
-          "format": "int32"
-        }
-      }
-    },
-    "v2ResourceChanged": {
-      "type": "object",
-      "properties": {
-        "resourceId": {
-          "$ref": "#/definitions/v2ResourceId"
-        },
-        "content": {
-          "$ref": "#/definitions/cloudresourceaggregatepbv2Content"
-        },
-        "status": {
-          "$ref": "#/definitions/pbv2Status"
-        },
-        "auditContext": {
-          "$ref": "#/definitions/v2AuditContext"
-        },
-        "eventMetadata": {
-          "$ref": "#/definitions/v2EventMetadata"
-        }
-      }
-    },
-    "v2ResourceCreatePending": {
-      "type": "object",
-      "properties": {
-        "resourceId": {
-          "$ref": "#/definitions/v2ResourceId"
-        },
-        "content": {
-          "$ref": "#/definitions/cloudresourceaggregatepbv2Content"
-        },
-        "auditContext": {
-          "$ref": "#/definitions/v2AuditContext"
-        },
-        "eventMetadata": {
-          "$ref": "#/definitions/v2EventMetadata"
-        },
-        "validUntil": {
-          "type": "string",
-          "format": "int64"
-        }
-      }
-    },
-    "v2ResourceCreated": {
-      "type": "object",
-      "properties": {
-        "resourceId": {
-          "$ref": "#/definitions/v2ResourceId"
-        },
-        "status": {
-          "$ref": "#/definitions/pbv2Status"
-        },
-        "content": {
-          "$ref": "#/definitions/cloudresourceaggregatepbv2Content"
-        },
-        "auditContext": {
-          "$ref": "#/definitions/v2AuditContext"
-        },
-        "eventMetadata": {
-          "$ref": "#/definitions/v2EventMetadata"
-        }
-      }
-    },
-    "v2ResourceDeletePending": {
-      "type": "object",
-      "properties": {
-        "resourceId": {
-          "$ref": "#/definitions/v2ResourceId"
-        },
-        "auditContext": {
-          "$ref": "#/definitions/v2AuditContext"
-        },
-        "eventMetadata": {
-          "$ref": "#/definitions/v2EventMetadata"
-        },
-        "validUntil": {
-          "type": "string",
-          "format": "int64"
-        }
-      }
-    },
-    "v2ResourceDeleted": {
-      "type": "object",
-      "properties": {
-        "resourceId": {
-          "$ref": "#/definitions/v2ResourceId"
-        },
-        "status": {
-          "$ref": "#/definitions/pbv2Status"
-        },
-        "content": {
-          "$ref": "#/definitions/cloudresourceaggregatepbv2Content"
-        },
-        "auditContext": {
-          "$ref": "#/definitions/v2AuditContext"
-        },
-        "eventMetadata": {
-          "$ref": "#/definitions/v2EventMetadata"
-        }
-      }
-    },
-    "v2ResourceId": {
-      "type": "object",
-      "properties": {
-        "deviceId": {
-          "type": "string"
-        },
-        "href": {
-          "type": "string"
-        }
-      }
-    },
-    "v2ResourceLinksPublished": {
-      "type": "object",
-      "properties": {
-        "deviceId": {
-          "type": "string"
-        },
-        "resources": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/cloudresourceaggregatepbv2Resource"
-          }
-        },
-        "auditContext": {
-          "$ref": "#/definitions/v2AuditContext"
-        },
-        "eventMetadata": {
-          "$ref": "#/definitions/v2EventMetadata"
-        }
-      },
-      "title": "https://github.com/openconnectivityfoundation/cloud-services/blob/master/swagger2.0/oic.wk.rd.swagger.json#L173"
-    },
-    "v2ResourceLinksSnapshotTaken": {
-      "type": "object",
-      "properties": {
-        "deviceId": {
-          "type": "string"
-        },
-        "resources": {
-          "type": "object",
-          "additionalProperties": {
-            "$ref": "#/definitions/cloudresourceaggregatepbv2Resource"
-          }
-        },
-        "eventMetadata": {
-          "$ref": "#/definitions/v2EventMetadata"
-        },
-        "auditContext": {
-          "$ref": "#/definitions/v2AuditContext"
-        }
-      }
-    },
-    "v2ResourceLinksUnpublished": {
-      "type": "object",
-      "properties": {
-        "deviceId": {
-          "type": "string"
-        },
-        "hrefs": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "auditContext": {
-          "$ref": "#/definitions/v2AuditContext"
-        },
-        "eventMetadata": {
-          "$ref": "#/definitions/v2EventMetadata"
-        }
-      },
-      "title": "https://github.com/openconnectivityfoundation/cloud-services/blob/master/swagger2.0/oic.wk.rd.swagger.json #Specification CR needed"
-    },
-    "v2ResourceRetrievePending": {
-      "type": "object",
-      "properties": {
-        "resourceId": {
-          "$ref": "#/definitions/v2ResourceId"
-        },
-        "resourceInterface": {
-          "type": "string"
-        },
-        "auditContext": {
-          "$ref": "#/definitions/v2AuditContext"
-        },
-        "eventMetadata": {
-          "$ref": "#/definitions/v2EventMetadata"
-        },
-        "validUntil": {
-          "type": "string",
-          "format": "int64"
-        }
-      }
-    },
-    "v2ResourceRetrieved": {
-      "type": "object",
-      "properties": {
-        "resourceId": {
-          "$ref": "#/definitions/v2ResourceId"
-        },
-        "status": {
-          "$ref": "#/definitions/pbv2Status"
-        },
-        "content": {
-          "$ref": "#/definitions/cloudresourceaggregatepbv2Content"
-        },
-        "auditContext": {
-          "$ref": "#/definitions/v2AuditContext"
-        },
-        "eventMetadata": {
-          "$ref": "#/definitions/v2EventMetadata"
-        }
-      }
-    },
-    "v2ResourceStateSnapshotTaken": {
-      "type": "object",
-      "properties": {
-        "resourceId": {
-          "$ref": "#/definitions/v2ResourceId"
-        },
-        "latestResourceChange": {
-          "$ref": "#/definitions/v2ResourceChanged"
-        },
-        "resourceCreatePendings": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/v2ResourceCreatePending"
-          }
-        },
-        "resourceRetrievePendings": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/v2ResourceRetrievePending"
-          }
-        },
-        "resourceUpdatePendings": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/v2ResourceUpdatePending"
-          }
-        },
-        "resourceDeletePendings": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/v2ResourceDeletePending"
-          }
-        },
-        "auditContext": {
-          "$ref": "#/definitions/v2AuditContext"
-        },
-        "eventMetadata": {
-          "$ref": "#/definitions/v2EventMetadata"
-        }
-      }
-    },
-    "v2ResourceUpdatePending": {
-      "type": "object",
-      "properties": {
-        "resourceId": {
-          "$ref": "#/definitions/v2ResourceId"
-        },
-        "resourceInterface": {
-          "type": "string"
-        },
-        "content": {
-          "$ref": "#/definitions/cloudresourceaggregatepbv2Content"
-        },
-        "auditContext": {
-          "$ref": "#/definitions/v2AuditContext"
-        },
-        "eventMetadata": {
-          "$ref": "#/definitions/v2EventMetadata"
-        },
-        "validUntil": {
-          "type": "string",
-          "format": "int64"
-        }
-      }
-    },
-    "v2ResourceUpdated": {
-      "type": "object",
-      "properties": {
-        "resourceId": {
-          "$ref": "#/definitions/v2ResourceId"
-        },
-        "status": {
-          "$ref": "#/definitions/pbv2Status"
-        },
-        "content": {
-          "$ref": "#/definitions/cloudresourceaggregatepbv2Content"
-        },
-        "auditContext": {
-          "$ref": "#/definitions/v2AuditContext"
-        },
-        "eventMetadata": {
-          "$ref": "#/definitions/v2EventMetadata"
-        }
-      }
-    },
-    "v2SubscribeToEvents": {
-      "type": "object",
-      "properties": {
-        "createSubscription": {
-          "$ref": "#/definitions/SubscribeToEventsCreateSubscription"
-        },
-        "cancelSubscription": {
-          "$ref": "#/definitions/SubscribeToEventsCancelSubscription"
-        },
-        "correlationId": {
-          "type": "string"
-        }
-      }
-    },
-    "v2UpdateDeviceMetadataRequestShadowSynchronization": {
-      "type": "string",
-      "enum": [
-        "DISABLED",
-        "ENABLED"
-      ],
-      "default": "DISABLED"
     }
   }
 }

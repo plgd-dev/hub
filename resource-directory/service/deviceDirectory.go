@@ -6,11 +6,11 @@ import (
 	"github.com/plgd-dev/device/schema"
 	"github.com/plgd-dev/go-coap/v2/message"
 
-	"github.com/plgd-dev/cloud/v2/grpc-gateway/pb"
-	"github.com/plgd-dev/cloud/v2/resource-aggregate/commands"
-	"github.com/plgd-dev/cloud/v2/resource-aggregate/events"
+	"github.com/plgd-dev/hub/grpc-gateway/pb"
+	"github.com/plgd-dev/hub/resource-aggregate/commands"
+	"github.com/plgd-dev/hub/resource-aggregate/events"
 
-	"github.com/plgd-dev/cloud/v2/pkg/log"
+	"github.com/plgd-dev/hub/pkg/log"
 	"github.com/plgd-dev/kit/v2/codec/cbor"
 	"github.com/plgd-dev/kit/v2/codec/json"
 	"github.com/plgd-dev/kit/v2/strings"

@@ -3,9 +3,9 @@ package events_test
 import (
 	"testing"
 
-	commands "github.com/plgd-dev/cloud/v2/resource-aggregate/commands"
-	"github.com/plgd-dev/cloud/v2/resource-aggregate/events"
-	"github.com/plgd-dev/cloud/v2/test"
+	commands "github.com/plgd-dev/hub/resource-aggregate/commands"
+	"github.com/plgd-dev/hub/resource-aggregate/events"
+	"github.com/plgd-dev/hub/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

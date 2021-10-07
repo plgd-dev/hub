@@ -8,8 +8,8 @@ import (
 	"strings"
 
 	"github.com/gorilla/mux"
-	pbGRPC "github.com/plgd-dev/cloud/v2/grpc-gateway/pb"
-	kitNetHttp "github.com/plgd-dev/cloud/v2/pkg/net/http"
+	pbGRPC "github.com/plgd-dev/hub/grpc-gateway/pb"
+	kitNetHttp "github.com/plgd-dev/hub/pkg/net/http"
 	"github.com/plgd-dev/device/schema"
 	"github.com/plgd-dev/kit/v2/log"
 	"google.golang.org/grpc/codes"

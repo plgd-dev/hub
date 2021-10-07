@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/plgd-dev/cloud/v2/cloud2cloud-connector/events"
-	"github.com/plgd-dev/cloud/v2/pkg/security/oauth2/oauth"
+	"github.com/plgd-dev/hub/cloud2cloud-connector/events"
+	"github.com/plgd-dev/hub/pkg/security/oauth2/oauth"
 	"golang.org/x/oauth2"
 )
 

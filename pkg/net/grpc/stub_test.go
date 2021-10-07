@@ -1,11 +1,12 @@
-package server
+package grpc_test
 
 import (
+	"github.com/plgd-dev/hub/pkg/net/grpc/server"
 	"google.golang.org/grpc"
 )
 
-func StubGrpcServer(opts ...grpc.ServerOption) *Server {
-	svr, err := NewServer(":", opts...)
+func StubGrpcServer(opts ...grpc.ServerOption) *server.Server {
+	svr, err := server.NewServer(":", opts...)
 	if err != nil {
 		panic(err)
 	}

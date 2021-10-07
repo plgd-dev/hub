@@ -6,12 +6,12 @@ import (
 	"time"
 
 	cache "github.com/patrickmn/go-cache"
-	"github.com/plgd-dev/cloud/v2/pkg/log"
-	"github.com/plgd-dev/cloud/v2/resource-aggregate/commands"
-	"github.com/plgd-dev/cloud/v2/resource-aggregate/cqrs/eventbus"
-	"github.com/plgd-dev/cloud/v2/resource-aggregate/cqrs/eventstore"
-	projectionRA "github.com/plgd-dev/cloud/v2/resource-aggregate/cqrs/projection"
-	"github.com/plgd-dev/cloud/v2/resource-aggregate/events"
+	"github.com/plgd-dev/hub/pkg/log"
+	"github.com/plgd-dev/hub/resource-aggregate/commands"
+	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventbus"
+	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventstore"
+	projectionRA "github.com/plgd-dev/hub/resource-aggregate/cqrs/projection"
+	"github.com/plgd-dev/hub/resource-aggregate/events"
 	"github.com/plgd-dev/kit/v2/strings"
 )
 

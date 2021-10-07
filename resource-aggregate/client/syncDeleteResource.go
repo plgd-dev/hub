@@ -4,11 +4,11 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/plgd-dev/cloud/v2/pkg/log"
-	"github.com/plgd-dev/cloud/v2/resource-aggregate/commands"
-	"github.com/plgd-dev/cloud/v2/resource-aggregate/cqrs/eventbus"
-	"github.com/plgd-dev/cloud/v2/resource-aggregate/cqrs/utils"
-	"github.com/plgd-dev/cloud/v2/resource-aggregate/events"
+	"github.com/plgd-dev/hub/pkg/log"
+	"github.com/plgd-dev/hub/resource-aggregate/commands"
+	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventbus"
+	"github.com/plgd-dev/hub/resource-aggregate/cqrs/utils"
+	"github.com/plgd-dev/hub/resource-aggregate/events"
 )
 
 type deleteHandler struct {

@@ -3,8 +3,8 @@ package client
 import (
 	"context"
 
-	"github.com/plgd-dev/cloud/v2/grpc-gateway/pb"
-	"github.com/plgd-dev/cloud/v2/resource-aggregate/events"
+	"github.com/plgd-dev/hub/grpc-gateway/pb"
+	"github.com/plgd-dev/hub/resource-aggregate/events"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )

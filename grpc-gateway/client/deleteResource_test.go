@@ -5,14 +5,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/plgd-dev/cloud/v2/grpc-gateway/client"
-	extCodes "github.com/plgd-dev/cloud/v2/grpc-gateway/pb/codes"
-	kitNetGrpc "github.com/plgd-dev/cloud/v2/pkg/net/grpc"
-	"github.com/plgd-dev/cloud/v2/test"
-	testCfg "github.com/plgd-dev/cloud/v2/test/config"
+	"github.com/plgd-dev/hub/grpc-gateway/client"
+	extCodes "github.com/plgd-dev/hub/grpc-gateway/pb/codes"
+	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
+	"github.com/plgd-dev/hub/test"
+	testCfg "github.com/plgd-dev/hub/test/config"
 	"google.golang.org/grpc/codes"
 
-	oauthTest "github.com/plgd-dev/cloud/v2/test/oauth-server/test"
+	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

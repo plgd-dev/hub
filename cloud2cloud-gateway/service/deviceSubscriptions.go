@@ -3,8 +3,8 @@ package service
 import (
 	"context"
 
-	"github.com/plgd-dev/cloud/v2/cloud2cloud-connector/events"
-	raEvents "github.com/plgd-dev/cloud/v2/resource-aggregate/events"
+	"github.com/plgd-dev/hub/cloud2cloud-connector/events"
+	raEvents "github.com/plgd-dev/hub/resource-aggregate/events"
 	"github.com/plgd-dev/device/schema"
 	"github.com/plgd-dev/kit/v2/log"
 )

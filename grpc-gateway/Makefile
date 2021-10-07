@@ -3,7 +3,7 @@ SERVICE_NAME = $(notdir $(CURDIR))
 LATEST_TAG ?= vnext
 VERSION_TAG ?= $(LATEST_TAG)-$(shell git rev-parse --short=7 --verify HEAD)
 GOPATH ?= $(shell go env GOPATH)
-WORKING_DIRECTORY := $(shell pwd | sed -e "s/plgd-dev\/cloud/plgd-dev\/cloud\/v2/g")
+WORKING_DIRECTORY := $(shell pwd)
 
 default: build
 

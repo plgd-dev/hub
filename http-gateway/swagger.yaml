@@ -9,9 +9,9 @@ paths:
     get:
       tags:
         - 'Configuration'
-      summary: 'plgd cloud clients configuration'
+      summary: 'plgd hub clients configuration'
       description: |
-        Basic publicly available configuration required to connect the device to the plgd cloud.
+        Basic publicly available configuration required to connect the device to the plgd hub.
       responses:
         200:
           description: Configuration
@@ -166,7 +166,7 @@ paths:
         - 'Resource Links'
       summary: 'Get resource links'
       description: |
-        Each device publishes links to its resources to the plgd cloud. Authorized user can get all published links in form of a stream, chunk by chunk. Attach your reader and consume link by link. Various filters allows you to be more concrete in links you would like to get. Error response might be returned immediately, but also anytime during the stream reading.
+        Each device publishes links to its resources to the plgd hub. Authorized user can get all published links in form of a stream, chunk by chunk. Attach your reader and consume link by link. Various filters allows you to be more concrete in links you would like to get. Error response might be returned immediately, but also anytime during the stream reading.
       parameters:
         - $ref: '#/components/parameters/deviceIdFilter'
         - $ref: '#/components/parameters/typeFilter'
@@ -283,7 +283,7 @@ paths:
         - 'Resource Links'
       summary: 'Delete a resource'
       description: |
-        Request to delete a resource is an async operation. The device after successful resource deletion unpublishes the resource from the plgd Cloud. This information is published to the WebSocket in form of an `RESOURCE_UNPUBLISHED` event.
+        Request to delete a resource is an async operation. The device after successful resource deletion unpublishes the resource from the plgd hub. This information is published to the WebSocket in form of an `RESOURCE_UNPUBLISHED` event.
       security:
         - oauth2:
           - 'plgd.devices'
@@ -315,7 +315,7 @@ paths:
         - 'Resources'
       summary: 'Get all resources'
       description: |
-        The plgd cloud builds an up to date [Shadow](https%3A%2F%2Fplgd.dev%2Ffeatures%2Fdevice-shadow%2F) for each published resource. This API allows you to retrieve shadow contents of all resources published by all device. Response is sent in form of a stream, chunk by chunk. Error response might be returned immediately, but also anytime during the stream reading.
+        The plgd hub builds an up to date [Shadow](https%3A%2F%2Fplgd.dev%2Ffeatures%2Fdevice-shadow%2F) for each published resource. This API allows you to retrieve shadow contents of all resources published by all device. Response is sent in form of a stream, chunk by chunk. Error response might be returned immediately, but also anytime during the stream reading.
       parameters:
         - $ref: '#/components/parameters/deviceIdFilter'
         - $ref: '#/components/parameters/typeFilter'
@@ -354,7 +354,7 @@ paths:
         - 'Resources'
       summary: 'Retrieve device''s resources'
       description: |
-        The plgd cloud builds an up to date [Shadow](https%3A%2F%2Fplgd.dev%2Ffeatures%2Fdevice-shadow%2F) for each published resource. This API allows you to retrieve shadow contents of all resources published by this device. Response is sent in form of a stream, chunk by chunk. Error response might be returned immediately, but also anytime during the stream reading.
+        The plgd hub builds an up to date [Shadow](https%3A%2F%2Fplgd.dev%2Ffeatures%2Fdevice-shadow%2F) for each published resource. This API allows you to retrieve shadow contents of all resources published by this device. Response is sent in form of a stream, chunk by chunk. Error response might be returned immediately, but also anytime during the stream reading.
       security:
         - oauth2:
           - 'plgd.devices'
@@ -395,7 +395,7 @@ paths:
         - 'Resources'
       summary: 'Retrieve a resource'
       description: |
-        The plgd cloud builds an up to date [Shadow](https%3A%2F%2Fplgd.dev%2Ffeatures%2Fdevice-shadow%2F) for each published resource. Retrieving it's content using this API returnes an eventually consistent shadow content of the resource. There is a possibility to bypass the shadow by setting the query parameter `shadow` to `false` or by setting the interface query parameter, which allows you to set the command expiration.
+        The plgd hub builds an up to date [Shadow](https%3A%2F%2Fplgd.dev%2Ffeatures%2Fdevice-shadow%2F) for each published resource. Retrieving it's content using this API returnes an eventually consistent shadow content of the resource. There is a possibility to bypass the shadow by setting the query parameter `shadow` to `false` or by setting the interface query parameter, which allows you to set the command expiration.
       security:
         - oauth2:
           - 'plgd.devices'
@@ -459,7 +459,7 @@ paths:
         - 'Devices'
       summary: 'Update device metadata'
       description: |
-        Device metadata represent configuration of the relationship between the plgd cloud and the device. It's not configuration of the device itself. [Shadow](https%3A%2F%2Fplgd.dev%2Ffeatures%2Fdevice-shadow%2F) configuration is part of the metadata. By setting this value you control if the shadow for this device is kept up to date or not.
+        Device metadata represent configuration of the relationship between the plgd hub and the device. It's not configuration of the device itself. [Shadow](https%3A%2F%2Fplgd.dev%2Ffeatures%2Fdevice-shadow%2F) configuration is part of the metadata. By setting this value you control if the shadow for this device is kept up to date or not.
       security:
         - oauth2:
           - 'plgd.devices'
@@ -746,7 +746,7 @@ components:
       type: object
       properties:
         deviceOnboardingCodeUrl:
-          description: URL to get an authorization code, required for device registration at the plgd cloud.
+          description: URL to get an authorization code, required for device registration at the plgd hub.
           type: string
         jwtClaimOwnerId:
           description: JWT claim identifying device owner.
@@ -756,7 +756,7 @@ components:
           description: JWT claim identifying device id. Empty means that JWT doesn't contain it.
           type: string
         cloudId:
-          description: Unique ID of the cloud, required for device registration at the plgd cloud.
+          description: Unique ID of the cloud, required for device registration at the plgd hub.
           type: string
           format: uuid
         cloudUrl:

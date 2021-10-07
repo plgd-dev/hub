@@ -5,7 +5,7 @@ import (
 	"crypto/tls"
 	"fmt"
 
-	pkgMongo "github.com/plgd-dev/cloud/v2/pkg/mongodb"
+	pkgMongo "github.com/plgd-dev/hub/pkg/mongodb"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"

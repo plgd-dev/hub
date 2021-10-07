@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/plgd-dev/cloud/v2/pkg/config"
-	"github.com/plgd-dev/cloud/v2/pkg/log"
-	"github.com/plgd-dev/cloud/v2/pkg/net/grpc/client"
-	"github.com/plgd-dev/cloud/v2/pkg/net/grpc/server"
-	natsClient "github.com/plgd-dev/cloud/v2/resource-aggregate/cqrs/eventbus/nats/client"
+	"github.com/plgd-dev/hub/pkg/config"
+	"github.com/plgd-dev/hub/pkg/log"
+	"github.com/plgd-dev/hub/pkg/net/grpc/client"
+	"github.com/plgd-dev/hub/pkg/net/grpc/server"
+	natsClient "github.com/plgd-dev/hub/resource-aggregate/cqrs/eventbus/nats/client"
 )
 
 type Config struct {

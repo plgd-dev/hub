@@ -15,30 +15,30 @@ GROUP_ID := $(shell id -g)
 #$(error MY_FLAG=$(BUILD_TAG)AAA)
 
 SUBDIRS := bundle certificate-authority cloud2cloud-connector cloud2cloud-gateway coap-gateway grpc-gateway resource-aggregate resource-directory http-gateway identity-store test/oauth-server
-.PHONY: $(SUBDIRS) push proto/generate clean build test env mongo nats certificates cloud-build
+.PHONY: $(SUBDIRS) push proto/generate clean build test env mongo nats certificates hub-build
 
 default: build
 
-cloud-build:
+hub-build:
 	docker build \
 		--network=host \
-		--tag cloud-build \
+		--tag hub-build \
 		.
 
-cloud-test:
+hub-test:
 	docker build \
 		--network=host \
-		--tag cloud-test \
+		--tag hub-test \
 		-f Dockerfile.test \
 		.
 
-certificates: cloud-test
+certificates: hub-test
 	mkdir -p $(WORKING_DIRECTORY)/.tmp/certs
 	docker run \
 		--network=host \
 		-v $(WORKING_DIRECTORY)/.tmp/certs:/certs \
 		--user $(USER_ID):$(GROUP_ID) \
-		cloud-test \
+		hub-test \
 		/bin/bash -c "cert-tool --cmd.generateRootCA --outCert=/certs/root_ca.crt --outKey=/certs/root_ca.key --cert.subject.cn=RootCA && cert-tool --cmd.generateCertificate --outCert=/certs/http.crt --outKey=/certs/http.key --cert.subject.cn=localhost --cert.san.domain=localhost --signerCert=/certs/root_ca.crt --signerKey=/certs/root_ca.key && cert-tool --cmd.generateIdentityCertificate=$(CLOUD_SID) --outCert=/certs/coap.crt --outKey=/certs/coap.key --cert.san.domain=localhost --signerCert=/certs/root_ca.crt --signerKey=/certs/root_ca.key"
 	cat $(WORKING_DIRECTORY)/.tmp/certs/http.crt > $(WORKING_DIRECTORY)/.tmp/certs/mongo.key
 	cat $(WORKING_DIRECTORY)/.tmp/certs/http.key >> $(WORKING_DIRECTORY)/.tmp/certs/mongo.key
@@ -106,7 +106,7 @@ define RUN-TESTS-IN-DIRECTORY
 	-e TEST_ROOT_CA_KEY=/certs/root_ca.key \
 	-e TEST_OAUTH_SERVER_ID_TOKEN_PRIVATE_KEY=/privKeys/idTokenKey.pem \
 	-e TEST_OAUTH_SERVER_ACCESS_TOKEN_PRIVATE_KEY=/privKeys/accessTokenKey.pem \
-	cloud-test \
+	hub-test \
 	go test -timeout=45m -race -p 1 -v $(1)... -covermode=atomic -coverprofile=/coverage/`echo $(1) | sed -e "s/[\.\/]//g"`.coverage.txt ; \
 	EXIT_STATUS=$$? ; \
 	if [ $${EXIT_STATUS} -ne 0 ]; then \
@@ -146,7 +146,7 @@ $(test-targets): %: env
 
 .PHONY: $(test-targets)
 
-build: cloud-build $(SUBDIRS)
+build: hub-build $(SUBDIRS)
 
 clean:
 	docker rm -f mongo || true
@@ -159,9 +159,11 @@ clean:
 	sudo rm -rf ./.tmp/privateKeys || true
 
 proto/generate: $(SUBDIRS)
-	protoc -I=. -I=$(GOPATH)/src --go_out=$(GOPATH)/src $(WORKING_DIRECTORY)/pkg/net/grpc/server/stub.proto
-	protoc -I=. -I=$(GOPATH)/src --go-grpc_out=$(GOPATH)/src $(WORKING_DIRECTORY)/pkg/net/grpc/server/stub.proto
-push: cloud-build $(SUBDIRS)
+	protoc -I=. -I=$(GOPATH)/src --go_out=$(GOPATH)/src $(WORKING_DIRECTORY)/pkg/net/grpc/stub.proto
+	protoc -I=. -I=$(GOPATH)/src --go-grpc_out=$(GOPATH)/src $(WORKING_DIRECTORY)/pkg/net/grpc/stub.proto
+	mv $(WORKING_DIRECTORY)/pkg/net/grpc/stub.pb.go $(WORKING_DIRECTORY)/pkg/net/grpc/stub.pb_test.go
+	mv $(WORKING_DIRECTORY)/pkg/net/grpc/stub_grpc.pb.go $(WORKING_DIRECTORY)/pkg/net/grpc/stub_grpc.pb_test.go
+push: hub-build $(SUBDIRS)
 
 $(SUBDIRS):
 	$(MAKE) -C $@ $(MAKECMDGOALS) LATEST_TAG=$(BUILD_TAG)

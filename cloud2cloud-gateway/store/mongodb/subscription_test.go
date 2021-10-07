@@ -4,13 +4,13 @@ import (
 	"context"
 	"testing"
 
-	"github.com/plgd-dev/cloud/v2/cloud2cloud-connector/events"
-	"github.com/plgd-dev/cloud/v2/cloud2cloud-gateway/store"
-	"github.com/plgd-dev/cloud/v2/cloud2cloud-gateway/store/mongodb"
-	"github.com/plgd-dev/cloud/v2/cloud2cloud-gateway/test"
-	"github.com/plgd-dev/cloud/v2/pkg/log"
-	"github.com/plgd-dev/cloud/v2/pkg/security/certManager/client"
-	oauthTest "github.com/plgd-dev/cloud/v2/test/oauth-server/test"
+	"github.com/plgd-dev/hub/cloud2cloud-connector/events"
+	"github.com/plgd-dev/hub/cloud2cloud-gateway/store"
+	"github.com/plgd-dev/hub/cloud2cloud-gateway/store/mongodb"
+	"github.com/plgd-dev/hub/cloud2cloud-gateway/test"
+	"github.com/plgd-dev/hub/pkg/log"
+	"github.com/plgd-dev/hub/pkg/security/certManager/client"
+	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
 	"github.com/stretchr/testify/require"
 )
 

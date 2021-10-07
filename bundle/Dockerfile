@@ -1,5 +1,5 @@
-FROM cloud-build AS build
-ARG root_directory=$GOPATH/src/github.com/plgd-dev/cloud
+FROM hub-build AS build
+ARG root_directory=$GOPATH/src/github.com/plgd-dev/hub
 
 #coap-gateway
 ARG service=coap-gateway
@@ -50,7 +50,7 @@ RUN go build -ldflags "-linkmode external -extldflags -static" -o /go/bin/$servi
 #certificate-generator
 ARG service=kit
 WORKDIR /
-RUN cd $GOPATH/pkg/mod/github.com/plgd-dev/kit* && go build -ldflags "-linkmode external -extldflags -static" -o /go/bin/certificate-generator ./cmd/certificate-generator
+RUN cd $GOPATH/pkg/mod/github.com/plgd-dev/kit/v2* && go build -ldflags "-linkmode external -extldflags -static" -o /go/bin/certificate-generator ./cmd/certificate-generator
 
 #nats
 WORKDIR $root_directory
@@ -65,7 +65,7 @@ RUN unzip ./nats.zip -d ./nats
 RUN cp ./nats/*/nats /go/bin/nats
 
 FROM node:12 AS build-web
-COPY --from=cloud-build /go/src/github.com/plgd-dev/cloud/http-gateway/web /web
+COPY --from=hub-build /go/src/github.com/plgd-dev/hub/http-gateway/web /web
 RUN cd /web && npm install && npm run build
 
 FROM ubuntu:20.04 as service
@@ -77,28 +77,28 @@ RUN echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu focal/mon
 RUN apt update
 RUN apt-get install -y mongodb-org-server mongodb-org
 COPY --from=build /go/bin/coap-gateway /usr/local/bin/coap-gateway
-COPY --from=cloud-build /go/src/github.com/plgd-dev/cloud/coap-gateway/config.yaml /configs/coap-gateway.yaml
+COPY --from=hub-build /go/src/github.com/plgd-dev/hub/coap-gateway/config.yaml /configs/coap-gateway.yaml
 COPY --from=build /go/bin/grpc-gateway /usr/local/bin/grpc-gateway
-COPY --from=cloud-build /go/src/github.com/plgd-dev/cloud/grpc-gateway/config.yaml /configs/grpc-gateway.yaml
+COPY --from=hub-build /go/src/github.com/plgd-dev/hub/grpc-gateway/config.yaml /configs/grpc-gateway.yaml
 COPY --from=build /go/bin/http-gateway /usr/local/bin/http-gateway
-COPY --from=cloud-build /go/src/github.com/plgd-dev/cloud/http-gateway/config.yaml /configs/http-gateway.yaml
+COPY --from=hub-build /go/src/github.com/plgd-dev/hub/http-gateway/config.yaml /configs/http-gateway.yaml
 COPY --from=build /go/bin/resource-directory /usr/local/bin/resource-directory
-COPY --from=cloud-build /go/src/github.com/plgd-dev/cloud/resource-directory/config.yaml /configs/resource-directory.yaml
+COPY --from=hub-build /go/src/github.com/plgd-dev/hub/resource-directory/config.yaml /configs/resource-directory.yaml
 COPY --from=build /go/bin/resource-aggregate /usr/local/bin/resource-aggregate
-COPY --from=cloud-build /go/src/github.com/plgd-dev/cloud/resource-aggregate/config.yaml /configs/resource-aggregate.yaml
+COPY --from=hub-build /go/src/github.com/plgd-dev/hub/resource-aggregate/config.yaml /configs/resource-aggregate.yaml
 COPY --from=build /go/bin/identity-store /usr/local/bin/identity-store
-COPY --from=cloud-build /go/src/github.com/plgd-dev/cloud/identity-store/config.yaml /configs/identity-store.yaml
+COPY --from=hub-build /go/src/github.com/plgd-dev/hub/identity-store/config.yaml /configs/identity-store.yaml
 COPY --from=build /go/bin/certificate-authority /usr/local/bin/certificate-authority
-COPY --from=cloud-build /go/src/github.com/plgd-dev/cloud/certificate-authority/config.yaml /configs/certificate-authority.yaml
+COPY --from=hub-build /go/src/github.com/plgd-dev/hub/certificate-authority/config.yaml /configs/certificate-authority.yaml
 COPY --from=build /go/bin/certificate-generator /usr/local/bin/certificate-generator
 COPY --from=build /go/bin/nats-server /usr/local/bin/nats-server
 COPY --from=build /go/bin/nats /usr/local/bin/nats
-COPY --from=cloud-build /go/src/github.com/plgd-dev/cloud/bundle/jetstream.json /configs/jetstream.json
+COPY --from=hub-build /go/src/github.com/plgd-dev/hub/bundle/jetstream.json /configs/jetstream.json
 COPY --from=build /go/bin/oauth-server /usr/local/bin/oauth-server
-COPY --from=cloud-build /go/src/github.com/plgd-dev/cloud/test/oauth-server/config.yaml /configs/oauth-server.yaml
+COPY --from=hub-build /go/src/github.com/plgd-dev/hub/test/oauth-server/config.yaml /configs/oauth-server.yaml
 COPY --from=build-web /web/build /usr/local/var/www
 COPY --from=build /go/bin/cloud2cloud-gateway /usr/local/bin/cloud2cloud-gateway
-COPY --from=cloud-build /go/src/github.com/plgd-dev/cloud/cloud2cloud-gateway/config.yaml /configs/cloud2cloud-gateway.yaml
+COPY --from=hub-build /go/src/github.com/plgd-dev/hub/cloud2cloud-gateway/config.yaml /configs/cloud2cloud-gateway.yaml
 COPY run.sh /usr/local/bin/run.sh
 COPY nginx /nginx
 

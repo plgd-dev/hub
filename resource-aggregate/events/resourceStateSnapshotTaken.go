@@ -6,17 +6,17 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/plgd-dev/cloud/v2/pkg/net/grpc"
-	pkgTime "github.com/plgd-dev/cloud/v2/pkg/time"
+	"github.com/plgd-dev/hub/pkg/net/grpc"
+	pkgTime "github.com/plgd-dev/hub/pkg/time"
 	"github.com/plgd-dev/go-coap/v2/message"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 
-	"github.com/plgd-dev/cloud/v2/resource-aggregate/commands"
-	"github.com/plgd-dev/cloud/v2/resource-aggregate/cqrs/aggregate"
-	"github.com/plgd-dev/cloud/v2/resource-aggregate/cqrs/eventstore"
+	"github.com/plgd-dev/hub/resource-aggregate/commands"
+	"github.com/plgd-dev/hub/resource-aggregate/cqrs/aggregate"
+	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventstore"
 	"github.com/plgd-dev/kit/v2/codec/cbor"
 	"github.com/plgd-dev/kit/v2/codec/json"
 	"github.com/plgd-dev/kit/v2/strings"

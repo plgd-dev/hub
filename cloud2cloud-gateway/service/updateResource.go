@@ -7,9 +7,9 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
-	"github.com/plgd-dev/cloud/v2/cloud2cloud-connector/events"
-	"github.com/plgd-dev/cloud/v2/resource-aggregate/commands"
-	raEvents "github.com/plgd-dev/cloud/v2/resource-aggregate/events"
+	"github.com/plgd-dev/hub/cloud2cloud-connector/events"
+	"github.com/plgd-dev/hub/resource-aggregate/commands"
+	raEvents "github.com/plgd-dev/hub/resource-aggregate/events"
 	"github.com/plgd-dev/kit/v2/log"
 )
 

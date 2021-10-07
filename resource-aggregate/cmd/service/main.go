@@ -3,9 +3,9 @@ package main
 import (
 	"context"
 
-	"github.com/plgd-dev/cloud/v2/pkg/config"
-	"github.com/plgd-dev/cloud/v2/pkg/log"
-	"github.com/plgd-dev/cloud/v2/resource-aggregate/service"
+	"github.com/plgd-dev/hub/pkg/config"
+	"github.com/plgd-dev/hub/pkg/log"
+	"github.com/plgd-dev/hub/resource-aggregate/service"
 )
 
 func main() {

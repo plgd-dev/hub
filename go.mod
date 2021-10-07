@@ -1,4 +1,4 @@
-module github.com/plgd-dev/cloud/v2
+module github.com/plgd-dev/hub
 
 go 1.16
 

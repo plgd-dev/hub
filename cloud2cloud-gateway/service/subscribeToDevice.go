@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/plgd-dev/cloud/v2/cloud2cloud-connector/events"
-	"github.com/plgd-dev/cloud/v2/cloud2cloud-gateway/store"
+	"github.com/plgd-dev/hub/cloud2cloud-connector/events"
+	"github.com/plgd-dev/hub/cloud2cloud-gateway/store"
 
 	"github.com/plgd-dev/kit/v2/log"
 

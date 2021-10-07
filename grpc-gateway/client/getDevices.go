@@ -3,8 +3,8 @@ package client
 import (
 	"context"
 
-	"github.com/plgd-dev/cloud/v2/grpc-gateway/pb"
-	"github.com/plgd-dev/cloud/v2/resource-aggregate/commands"
+	"github.com/plgd-dev/hub/grpc-gateway/pb"
+	"github.com/plgd-dev/hub/resource-aggregate/commands"
 )
 
 // DeviceDetails describes a device.

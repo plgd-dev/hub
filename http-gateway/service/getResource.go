@@ -7,9 +7,9 @@ import (
 
 	"github.com/google/go-querystring/query"
 	"github.com/gorilla/mux"
-	"github.com/plgd-dev/cloud/v2/http-gateway/uri"
-	kitNetGrpc "github.com/plgd-dev/cloud/v2/pkg/net/grpc"
-	"github.com/plgd-dev/cloud/v2/resource-aggregate/commands"
+	"github.com/plgd-dev/hub/http-gateway/uri"
+	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
+	"github.com/plgd-dev/hub/resource-aggregate/commands"
 	"google.golang.org/grpc/codes"
 )
 

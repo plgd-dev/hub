@@ -1,8 +1,8 @@
 package client
 
 import (
-	"github.com/plgd-dev/cloud/v2/resource-aggregate/cqrs/eventbus"
-	"github.com/plgd-dev/cloud/v2/resource-aggregate/service"
+	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventbus"
+	"github.com/plgd-dev/hub/resource-aggregate/service"
 	"google.golang.org/grpc"
 )
 

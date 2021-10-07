@@ -3,13 +3,13 @@ package test
 import (
 	"testing"
 
-	c2curi "github.com/plgd-dev/cloud/v2/cloud2cloud-connector/uri"
-	grpcService "github.com/plgd-dev/cloud/v2/grpc-gateway/test"
-	idService "github.com/plgd-dev/cloud/v2/identity-store/test"
-	raService "github.com/plgd-dev/cloud/v2/resource-aggregate/test"
-	rdService "github.com/plgd-dev/cloud/v2/resource-directory/test"
-	oauthTest "github.com/plgd-dev/cloud/v2/test/oauth-server/test"
-	"github.com/plgd-dev/cloud/v2/test/oauth-server/uri"
+	c2curi "github.com/plgd-dev/hub/cloud2cloud-connector/uri"
+	grpcService "github.com/plgd-dev/hub/grpc-gateway/test"
+	idService "github.com/plgd-dev/hub/identity-store/test"
+	raService "github.com/plgd-dev/hub/resource-aggregate/test"
+	rdService "github.com/plgd-dev/hub/resource-directory/test"
+	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
+	"github.com/plgd-dev/hub/test/oauth-server/uri"
 )
 
 const (

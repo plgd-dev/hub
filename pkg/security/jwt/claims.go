@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
-	"github.com/plgd-dev/cloud/v2/pkg/strings"
-	pkgTime "github.com/plgd-dev/cloud/v2/pkg/time"
+	"github.com/plgd-dev/hub/pkg/strings"
+	pkgTime "github.com/plgd-dev/hub/pkg/time"
 )
 
 type Claims jwt.MapClaims

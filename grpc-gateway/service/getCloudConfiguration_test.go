@@ -9,10 +9,10 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 
-	"github.com/plgd-dev/cloud/v2/grpc-gateway/pb"
-	rdTest "github.com/plgd-dev/cloud/v2/resource-directory/test"
-	"github.com/plgd-dev/cloud/v2/test"
-	"github.com/plgd-dev/cloud/v2/test/config"
+	"github.com/plgd-dev/hub/grpc-gateway/pb"
+	rdTest "github.com/plgd-dev/hub/resource-directory/test"
+	"github.com/plgd-dev/hub/test"
+	"github.com/plgd-dev/hub/test/config"
 )
 
 func TestRequestHandler_GetCloudConfiguration(t *testing.T) {

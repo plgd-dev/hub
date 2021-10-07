@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
-	exCodes "github.com/plgd-dev/cloud/v2/grpc-gateway/pb/codes"
+	exCodes "github.com/plgd-dev/hub/grpc-gateway/pb/codes"
 	"google.golang.org/grpc/status"
 )
 

@@ -7,13 +7,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/plgd-dev/cloud/v2/cloud2cloud-connector/service"
-	"github.com/plgd-dev/cloud/v2/pkg/log"
-	"github.com/plgd-dev/cloud/v2/pkg/mongodb"
-	"github.com/plgd-dev/cloud/v2/pkg/security/oauth2"
-	"github.com/plgd-dev/cloud/v2/pkg/security/oauth2/oauth"
-	"github.com/plgd-dev/cloud/v2/test/config"
-	oauthService "github.com/plgd-dev/cloud/v2/test/oauth-server/service"
+	"github.com/plgd-dev/hub/cloud2cloud-connector/service"
+	"github.com/plgd-dev/hub/pkg/log"
+	"github.com/plgd-dev/hub/pkg/mongodb"
+	"github.com/plgd-dev/hub/pkg/security/oauth2"
+	"github.com/plgd-dev/hub/pkg/security/oauth2/oauth"
+	"github.com/plgd-dev/hub/test/config"
+	oauthService "github.com/plgd-dev/hub/test/oauth-server/service"
 	"github.com/stretchr/testify/require"
 )
 

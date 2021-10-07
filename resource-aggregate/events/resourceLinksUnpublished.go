@@ -3,8 +3,8 @@ package events
 import (
 	"time"
 
-	pkgTime "github.com/plgd-dev/cloud/v2/pkg/time"
-	"github.com/plgd-dev/cloud/v2/resource-aggregate/commands"
+	pkgTime "github.com/plgd-dev/hub/pkg/time"
+	"github.com/plgd-dev/hub/resource-aggregate/commands"
 	"google.golang.org/protobuf/proto"
 )
 

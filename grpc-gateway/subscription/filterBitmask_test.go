@@ -3,7 +3,7 @@ package subscription
 import (
 	"testing"
 
-	"github.com/plgd-dev/cloud/v2/grpc-gateway/pb"
+	"github.com/plgd-dev/hub/grpc-gateway/pb"
 	"github.com/stretchr/testify/require"
 )
 

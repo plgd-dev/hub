@@ -1,5 +1,5 @@
-FROM cloud-build AS build
-WORKDIR $GOPATH/src/github.com/plgd-dev/cloud/cloud2cloud-connector
+FROM hub-build AS build
+WORKDIR $GOPATH/src/github.com/plgd-dev/hub/cloud2cloud-connector
 RUN go build -o /go/bin/service ./cmd/service
 
 FROM alpine:3.14 as service

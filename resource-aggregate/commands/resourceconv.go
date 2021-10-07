@@ -3,7 +3,7 @@ package commands
 import (
 	"time"
 
-	pkgTime "github.com/plgd-dev/cloud/v2/pkg/time"
+	pkgTime "github.com/plgd-dev/hub/pkg/time"
 	"github.com/plgd-dev/device/schema"
 )
 

@@ -3,7 +3,7 @@ package service
 import (
 	"net/http"
 
-	"github.com/plgd-dev/cloud/v2/pkg/log"
+	"github.com/plgd-dev/hub/pkg/log"
 )
 
 func (requestHandler *RequestHandler) getWebConfiguration(w http.ResponseWriter, r *http.Request) {

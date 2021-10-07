@@ -6,11 +6,11 @@ import (
 	"crypto/x509"
 	"testing"
 
-	"github.com/plgd-dev/cloud/v2/grpc-gateway/client"
-	"github.com/plgd-dev/cloud/v2/pkg/net/grpc/server"
-	"github.com/plgd-dev/cloud/v2/resource-aggregate/commands"
-	"github.com/plgd-dev/cloud/v2/resource-aggregate/events"
-	"github.com/plgd-dev/cloud/v2/test"
+	"github.com/plgd-dev/hub/grpc-gateway/client"
+	"github.com/plgd-dev/hub/pkg/net/grpc/server"
+	"github.com/plgd-dev/hub/resource-aggregate/commands"
+	"github.com/plgd-dev/hub/resource-aggregate/events"
+	"github.com/plgd-dev/hub/test"
 	"github.com/plgd-dev/device/schema"
 	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/kit/v2/codec/cbor"
@@ -18,8 +18,8 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/plgd-dev/cloud/v2/grpc-gateway/pb"
-	testCfg "github.com/plgd-dev/cloud/v2/test/config"
+	"github.com/plgd-dev/hub/grpc-gateway/pb"
+	testCfg "github.com/plgd-dev/hub/test/config"
 )
 
 const (

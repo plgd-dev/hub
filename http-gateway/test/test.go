@@ -14,10 +14,10 @@ import (
 	"time"
 
 	"github.com/jtacoma/uritemplates"
-	"github.com/plgd-dev/cloud/v2/http-gateway/service"
-	"github.com/plgd-dev/cloud/v2/http-gateway/uri"
-	"github.com/plgd-dev/cloud/v2/pkg/log"
-	"github.com/plgd-dev/cloud/v2/test/config"
+	"github.com/plgd-dev/hub/http-gateway/service"
+	"github.com/plgd-dev/hub/http-gateway/uri"
+	"github.com/plgd-dev/hub/pkg/log"
+	"github.com/plgd-dev/hub/test/config"
 	"github.com/stretchr/testify/require"
 )
 

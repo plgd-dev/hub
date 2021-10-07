@@ -11,15 +11,15 @@ import (
 	"github.com/plgd-dev/kit/v2/codec/cbor"
 	"github.com/plgd-dev/kit/v2/codec/json"
 
-	"github.com/plgd-dev/cloud/v2/cloud2cloud-connector/events"
-	"github.com/plgd-dev/cloud/v2/cloud2cloud-gateway/uri"
-	kitNetHttp "github.com/plgd-dev/cloud/v2/pkg/net/http"
-	raClient "github.com/plgd-dev/cloud/v2/resource-aggregate/client"
+	"github.com/plgd-dev/hub/cloud2cloud-connector/events"
+	"github.com/plgd-dev/hub/cloud2cloud-gateway/uri"
+	kitNetHttp "github.com/plgd-dev/hub/pkg/net/http"
+	raClient "github.com/plgd-dev/hub/resource-aggregate/client"
 	"github.com/plgd-dev/kit/v2/log"
 
 	router "github.com/gorilla/mux"
 
-	pbGRPC "github.com/plgd-dev/cloud/v2/grpc-gateway/pb"
+	pbGRPC "github.com/plgd-dev/hub/grpc-gateway/pb"
 )
 
 const HrefKey = "Href"

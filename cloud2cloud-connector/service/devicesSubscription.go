@@ -6,10 +6,10 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/patrickmn/go-cache"
-	"github.com/plgd-dev/cloud/v2/cloud2cloud-connector/events"
-	"github.com/plgd-dev/cloud/v2/cloud2cloud-connector/store"
-	pbIS "github.com/plgd-dev/cloud/v2/identity-store/pb"
-	"github.com/plgd-dev/cloud/v2/resource-aggregate/commands"
+	"github.com/plgd-dev/hub/cloud2cloud-connector/events"
+	"github.com/plgd-dev/hub/cloud2cloud-connector/store"
+	pbIS "github.com/plgd-dev/hub/identity-store/pb"
+	"github.com/plgd-dev/hub/resource-aggregate/commands"
 	"github.com/plgd-dev/kit/v2/log"
 )
 

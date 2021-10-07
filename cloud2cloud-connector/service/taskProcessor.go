@@ -6,8 +6,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/plgd-dev/cloud/v2/cloud2cloud-connector/store"
-	raService "github.com/plgd-dev/cloud/v2/resource-aggregate/service"
+	"github.com/plgd-dev/hub/cloud2cloud-connector/store"
+	raService "github.com/plgd-dev/hub/resource-aggregate/service"
 	"github.com/plgd-dev/kit/v2/log"
 	kitSync "github.com/plgd-dev/kit/v2/sync"
 	"golang.org/x/sync/semaphore"

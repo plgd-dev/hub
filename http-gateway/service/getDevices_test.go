@@ -15,15 +15,15 @@ import (
 	"google.golang.org/grpc/credentials"
 
 	"github.com/google/go-querystring/query"
-	"github.com/plgd-dev/cloud/v2/grpc-gateway/pb"
-	httpgwTest "github.com/plgd-dev/cloud/v2/http-gateway/test"
-	"github.com/plgd-dev/cloud/v2/http-gateway/uri"
-	"github.com/plgd-dev/cloud/v2/pkg/log"
-	kitNetGrpc "github.com/plgd-dev/cloud/v2/pkg/net/grpc"
-	"github.com/plgd-dev/cloud/v2/resource-aggregate/commands"
-	"github.com/plgd-dev/cloud/v2/test"
-	"github.com/plgd-dev/cloud/v2/test/config"
-	oauthTest "github.com/plgd-dev/cloud/v2/test/oauth-server/test"
+	"github.com/plgd-dev/hub/grpc-gateway/pb"
+	httpgwTest "github.com/plgd-dev/hub/http-gateway/test"
+	"github.com/plgd-dev/hub/http-gateway/uri"
+	"github.com/plgd-dev/hub/pkg/log"
+	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
+	"github.com/plgd-dev/hub/resource-aggregate/commands"
+	"github.com/plgd-dev/hub/test"
+	"github.com/plgd-dev/hub/test/config"
+	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
 )
 
 func TestRequestHandler_GetDevices(t *testing.T) {

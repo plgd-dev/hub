@@ -4,7 +4,7 @@ package service
 
 import (
 	context "context"
-	commands "github.com/plgd-dev/cloud/v2/resource-aggregate/commands"
+	commands "github.com/plgd-dev/hub/resource-aggregate/commands"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -47,7 +47,7 @@ func NewResourceAggregateClient(cc grpc.ClientConnInterface) ResourceAggregateCl
 
 func (c *resourceAggregateClient) PublishResourceLinks(ctx context.Context, in *commands.PublishResourceLinksRequest, opts ...grpc.CallOption) (*commands.PublishResourceLinksResponse, error) {
 	out := new(commands.PublishResourceLinksResponse)
-	err := c.cc.Invoke(ctx, "/ocf.cloud.resourceaggregate.pb.v2.ResourceAggregate/PublishResourceLinks", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/resourceaggregate.pb.ResourceAggregate/PublishResourceLinks", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -56,7 +56,7 @@ func (c *resourceAggregateClient) PublishResourceLinks(ctx context.Context, in *
 
 func (c *resourceAggregateClient) UnpublishResourceLinks(ctx context.Context, in *commands.UnpublishResourceLinksRequest, opts ...grpc.CallOption) (*commands.UnpublishResourceLinksResponse, error) {
 	out := new(commands.UnpublishResourceLinksResponse)
-	err := c.cc.Invoke(ctx, "/ocf.cloud.resourceaggregate.pb.v2.ResourceAggregate/UnpublishResourceLinks", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/resourceaggregate.pb.ResourceAggregate/UnpublishResourceLinks", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -65,7 +65,7 @@ func (c *resourceAggregateClient) UnpublishResourceLinks(ctx context.Context, in
 
 func (c *resourceAggregateClient) NotifyResourceChanged(ctx context.Context, in *commands.NotifyResourceChangedRequest, opts ...grpc.CallOption) (*commands.NotifyResourceChangedResponse, error) {
 	out := new(commands.NotifyResourceChangedResponse)
-	err := c.cc.Invoke(ctx, "/ocf.cloud.resourceaggregate.pb.v2.ResourceAggregate/NotifyResourceChanged", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/resourceaggregate.pb.ResourceAggregate/NotifyResourceChanged", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -74,7 +74,7 @@ func (c *resourceAggregateClient) NotifyResourceChanged(ctx context.Context, in 
 
 func (c *resourceAggregateClient) UpdateResource(ctx context.Context, in *commands.UpdateResourceRequest, opts ...grpc.CallOption) (*commands.UpdateResourceResponse, error) {
 	out := new(commands.UpdateResourceResponse)
-	err := c.cc.Invoke(ctx, "/ocf.cloud.resourceaggregate.pb.v2.ResourceAggregate/UpdateResource", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/resourceaggregate.pb.ResourceAggregate/UpdateResource", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -83,7 +83,7 @@ func (c *resourceAggregateClient) UpdateResource(ctx context.Context, in *comman
 
 func (c *resourceAggregateClient) ConfirmResourceUpdate(ctx context.Context, in *commands.ConfirmResourceUpdateRequest, opts ...grpc.CallOption) (*commands.ConfirmResourceUpdateResponse, error) {
 	out := new(commands.ConfirmResourceUpdateResponse)
-	err := c.cc.Invoke(ctx, "/ocf.cloud.resourceaggregate.pb.v2.ResourceAggregate/ConfirmResourceUpdate", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/resourceaggregate.pb.ResourceAggregate/ConfirmResourceUpdate", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -92,7 +92,7 @@ func (c *resourceAggregateClient) ConfirmResourceUpdate(ctx context.Context, in 
 
 func (c *resourceAggregateClient) RetrieveResource(ctx context.Context, in *commands.RetrieveResourceRequest, opts ...grpc.CallOption) (*commands.RetrieveResourceResponse, error) {
 	out := new(commands.RetrieveResourceResponse)
-	err := c.cc.Invoke(ctx, "/ocf.cloud.resourceaggregate.pb.v2.ResourceAggregate/RetrieveResource", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/resourceaggregate.pb.ResourceAggregate/RetrieveResource", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -101,7 +101,7 @@ func (c *resourceAggregateClient) RetrieveResource(ctx context.Context, in *comm
 
 func (c *resourceAggregateClient) ConfirmResourceRetrieve(ctx context.Context, in *commands.ConfirmResourceRetrieveRequest, opts ...grpc.CallOption) (*commands.ConfirmResourceRetrieveResponse, error) {
 	out := new(commands.ConfirmResourceRetrieveResponse)
-	err := c.cc.Invoke(ctx, "/ocf.cloud.resourceaggregate.pb.v2.ResourceAggregate/ConfirmResourceRetrieve", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/resourceaggregate.pb.ResourceAggregate/ConfirmResourceRetrieve", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -110,7 +110,7 @@ func (c *resourceAggregateClient) ConfirmResourceRetrieve(ctx context.Context, i
 
 func (c *resourceAggregateClient) DeleteResource(ctx context.Context, in *commands.DeleteResourceRequest, opts ...grpc.CallOption) (*commands.DeleteResourceResponse, error) {
 	out := new(commands.DeleteResourceResponse)
-	err := c.cc.Invoke(ctx, "/ocf.cloud.resourceaggregate.pb.v2.ResourceAggregate/DeleteResource", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/resourceaggregate.pb.ResourceAggregate/DeleteResource", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -119,7 +119,7 @@ func (c *resourceAggregateClient) DeleteResource(ctx context.Context, in *comman
 
 func (c *resourceAggregateClient) ConfirmResourceDelete(ctx context.Context, in *commands.ConfirmResourceDeleteRequest, opts ...grpc.CallOption) (*commands.ConfirmResourceDeleteResponse, error) {
 	out := new(commands.ConfirmResourceDeleteResponse)
-	err := c.cc.Invoke(ctx, "/ocf.cloud.resourceaggregate.pb.v2.ResourceAggregate/ConfirmResourceDelete", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/resourceaggregate.pb.ResourceAggregate/ConfirmResourceDelete", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -128,7 +128,7 @@ func (c *resourceAggregateClient) ConfirmResourceDelete(ctx context.Context, in 
 
 func (c *resourceAggregateClient) CreateResource(ctx context.Context, in *commands.CreateResourceRequest, opts ...grpc.CallOption) (*commands.CreateResourceResponse, error) {
 	out := new(commands.CreateResourceResponse)
-	err := c.cc.Invoke(ctx, "/ocf.cloud.resourceaggregate.pb.v2.ResourceAggregate/CreateResource", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/resourceaggregate.pb.ResourceAggregate/CreateResource", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -137,7 +137,7 @@ func (c *resourceAggregateClient) CreateResource(ctx context.Context, in *comman
 
 func (c *resourceAggregateClient) ConfirmResourceCreate(ctx context.Context, in *commands.ConfirmResourceCreateRequest, opts ...grpc.CallOption) (*commands.ConfirmResourceCreateResponse, error) {
 	out := new(commands.ConfirmResourceCreateResponse)
-	err := c.cc.Invoke(ctx, "/ocf.cloud.resourceaggregate.pb.v2.ResourceAggregate/ConfirmResourceCreate", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/resourceaggregate.pb.ResourceAggregate/ConfirmResourceCreate", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -146,7 +146,7 @@ func (c *resourceAggregateClient) ConfirmResourceCreate(ctx context.Context, in 
 
 func (c *resourceAggregateClient) UpdateDeviceMetadata(ctx context.Context, in *commands.UpdateDeviceMetadataRequest, opts ...grpc.CallOption) (*commands.UpdateDeviceMetadataResponse, error) {
 	out := new(commands.UpdateDeviceMetadataResponse)
-	err := c.cc.Invoke(ctx, "/ocf.cloud.resourceaggregate.pb.v2.ResourceAggregate/UpdateDeviceMetadata", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/resourceaggregate.pb.ResourceAggregate/UpdateDeviceMetadata", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -155,7 +155,7 @@ func (c *resourceAggregateClient) UpdateDeviceMetadata(ctx context.Context, in *
 
 func (c *resourceAggregateClient) ConfirmDeviceMetadataUpdate(ctx context.Context, in *commands.ConfirmDeviceMetadataUpdateRequest, opts ...grpc.CallOption) (*commands.ConfirmDeviceMetadataUpdateResponse, error) {
 	out := new(commands.ConfirmDeviceMetadataUpdateResponse)
-	err := c.cc.Invoke(ctx, "/ocf.cloud.resourceaggregate.pb.v2.ResourceAggregate/ConfirmDeviceMetadataUpdate", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/resourceaggregate.pb.ResourceAggregate/ConfirmDeviceMetadataUpdate", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -164,7 +164,7 @@ func (c *resourceAggregateClient) ConfirmDeviceMetadataUpdate(ctx context.Contex
 
 func (c *resourceAggregateClient) CancelPendingMetadataUpdates(ctx context.Context, in *commands.CancelPendingMetadataUpdatesRequest, opts ...grpc.CallOption) (*commands.CancelPendingMetadataUpdatesResponse, error) {
 	out := new(commands.CancelPendingMetadataUpdatesResponse)
-	err := c.cc.Invoke(ctx, "/ocf.cloud.resourceaggregate.pb.v2.ResourceAggregate/CancelPendingMetadataUpdates", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/resourceaggregate.pb.ResourceAggregate/CancelPendingMetadataUpdates", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -173,7 +173,7 @@ func (c *resourceAggregateClient) CancelPendingMetadataUpdates(ctx context.Conte
 
 func (c *resourceAggregateClient) CancelPendingCommands(ctx context.Context, in *commands.CancelPendingCommandsRequest, opts ...grpc.CallOption) (*commands.CancelPendingCommandsResponse, error) {
 	out := new(commands.CancelPendingCommandsResponse)
-	err := c.cc.Invoke(ctx, "/ocf.cloud.resourceaggregate.pb.v2.ResourceAggregate/CancelPendingCommands", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/resourceaggregate.pb.ResourceAggregate/CancelPendingCommands", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -182,7 +182,7 @@ func (c *resourceAggregateClient) CancelPendingCommands(ctx context.Context, in 
 
 func (c *resourceAggregateClient) DeleteDevices(ctx context.Context, in *commands.DeleteDevicesRequest, opts ...grpc.CallOption) (*commands.DeleteDevicesResponse, error) {
 	out := new(commands.DeleteDevicesResponse)
-	err := c.cc.Invoke(ctx, "/ocf.cloud.resourceaggregate.pb.v2.ResourceAggregate/DeleteDevices", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/resourceaggregate.pb.ResourceAggregate/DeleteDevices", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -287,7 +287,7 @@ func _ResourceAggregate_PublishResourceLinks_Handler(srv interface{}, ctx contex
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/ocf.cloud.resourceaggregate.pb.v2.ResourceAggregate/PublishResourceLinks",
+		FullMethod: "/resourceaggregate.pb.ResourceAggregate/PublishResourceLinks",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ResourceAggregateServer).PublishResourceLinks(ctx, req.(*commands.PublishResourceLinksRequest))
@@ -305,7 +305,7 @@ func _ResourceAggregate_UnpublishResourceLinks_Handler(srv interface{}, ctx cont
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/ocf.cloud.resourceaggregate.pb.v2.ResourceAggregate/UnpublishResourceLinks",
+		FullMethod: "/resourceaggregate.pb.ResourceAggregate/UnpublishResourceLinks",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ResourceAggregateServer).UnpublishResourceLinks(ctx, req.(*commands.UnpublishResourceLinksRequest))
@@ -323,7 +323,7 @@ func _ResourceAggregate_NotifyResourceChanged_Handler(srv interface{}, ctx conte
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/ocf.cloud.resourceaggregate.pb.v2.ResourceAggregate/NotifyResourceChanged",
+		FullMethod: "/resourceaggregate.pb.ResourceAggregate/NotifyResourceChanged",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ResourceAggregateServer).NotifyResourceChanged(ctx, req.(*commands.NotifyResourceChangedRequest))
@@ -341,7 +341,7 @@ func _ResourceAggregate_UpdateResource_Handler(srv interface{}, ctx context.Cont
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/ocf.cloud.resourceaggregate.pb.v2.ResourceAggregate/UpdateResource",
+		FullMethod: "/resourceaggregate.pb.ResourceAggregate/UpdateResource",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ResourceAggregateServer).UpdateResource(ctx, req.(*commands.UpdateResourceRequest))
@@ -359,7 +359,7 @@ func _ResourceAggregate_ConfirmResourceUpdate_Handler(srv interface{}, ctx conte
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/ocf.cloud.resourceaggregate.pb.v2.ResourceAggregate/ConfirmResourceUpdate",
+		FullMethod: "/resourceaggregate.pb.ResourceAggregate/ConfirmResourceUpdate",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ResourceAggregateServer).ConfirmResourceUpdate(ctx, req.(*commands.ConfirmResourceUpdateRequest))
@@ -377,7 +377,7 @@ func _ResourceAggregate_RetrieveResource_Handler(srv interface{}, ctx context.Co
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/ocf.cloud.resourceaggregate.pb.v2.ResourceAggregate/RetrieveResource",
+		FullMethod: "/resourceaggregate.pb.ResourceAggregate/RetrieveResource",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ResourceAggregateServer).RetrieveResource(ctx, req.(*commands.RetrieveResourceRequest))
@@ -395,7 +395,7 @@ func _ResourceAggregate_ConfirmResourceRetrieve_Handler(srv interface{}, ctx con
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/ocf.cloud.resourceaggregate.pb.v2.ResourceAggregate/ConfirmResourceRetrieve",
+		FullMethod: "/resourceaggregate.pb.ResourceAggregate/ConfirmResourceRetrieve",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ResourceAggregateServer).ConfirmResourceRetrieve(ctx, req.(*commands.ConfirmResourceRetrieveRequest))
@@ -413,7 +413,7 @@ func _ResourceAggregate_DeleteResource_Handler(srv interface{}, ctx context.Cont
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/ocf.cloud.resourceaggregate.pb.v2.ResourceAggregate/DeleteResource",
+		FullMethod: "/resourceaggregate.pb.ResourceAggregate/DeleteResource",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ResourceAggregateServer).DeleteResource(ctx, req.(*commands.DeleteResourceRequest))
@@ -431,7 +431,7 @@ func _ResourceAggregate_ConfirmResourceDelete_Handler(srv interface{}, ctx conte
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/ocf.cloud.resourceaggregate.pb.v2.ResourceAggregate/ConfirmResourceDelete",
+		FullMethod: "/resourceaggregate.pb.ResourceAggregate/ConfirmResourceDelete",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ResourceAggregateServer).ConfirmResourceDelete(ctx, req.(*commands.ConfirmResourceDeleteRequest))
@@ -449,7 +449,7 @@ func _ResourceAggregate_CreateResource_Handler(srv interface{}, ctx context.Cont
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/ocf.cloud.resourceaggregate.pb.v2.ResourceAggregate/CreateResource",
+		FullMethod: "/resourceaggregate.pb.ResourceAggregate/CreateResource",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ResourceAggregateServer).CreateResource(ctx, req.(*commands.CreateResourceRequest))
@@ -467,7 +467,7 @@ func _ResourceAggregate_ConfirmResourceCreate_Handler(srv interface{}, ctx conte
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/ocf.cloud.resourceaggregate.pb.v2.ResourceAggregate/ConfirmResourceCreate",
+		FullMethod: "/resourceaggregate.pb.ResourceAggregate/ConfirmResourceCreate",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ResourceAggregateServer).ConfirmResourceCreate(ctx, req.(*commands.ConfirmResourceCreateRequest))
@@ -485,7 +485,7 @@ func _ResourceAggregate_UpdateDeviceMetadata_Handler(srv interface{}, ctx contex
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/ocf.cloud.resourceaggregate.pb.v2.ResourceAggregate/UpdateDeviceMetadata",
+		FullMethod: "/resourceaggregate.pb.ResourceAggregate/UpdateDeviceMetadata",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ResourceAggregateServer).UpdateDeviceMetadata(ctx, req.(*commands.UpdateDeviceMetadataRequest))
@@ -503,7 +503,7 @@ func _ResourceAggregate_ConfirmDeviceMetadataUpdate_Handler(srv interface{}, ctx
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/ocf.cloud.resourceaggregate.pb.v2.ResourceAggregate/ConfirmDeviceMetadataUpdate",
+		FullMethod: "/resourceaggregate.pb.ResourceAggregate/ConfirmDeviceMetadataUpdate",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ResourceAggregateServer).ConfirmDeviceMetadataUpdate(ctx, req.(*commands.ConfirmDeviceMetadataUpdateRequest))
@@ -521,7 +521,7 @@ func _ResourceAggregate_CancelPendingMetadataUpdates_Handler(srv interface{}, ct
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/ocf.cloud.resourceaggregate.pb.v2.ResourceAggregate/CancelPendingMetadataUpdates",
+		FullMethod: "/resourceaggregate.pb.ResourceAggregate/CancelPendingMetadataUpdates",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ResourceAggregateServer).CancelPendingMetadataUpdates(ctx, req.(*commands.CancelPendingMetadataUpdatesRequest))
@@ -539,7 +539,7 @@ func _ResourceAggregate_CancelPendingCommands_Handler(srv interface{}, ctx conte
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/ocf.cloud.resourceaggregate.pb.v2.ResourceAggregate/CancelPendingCommands",
+		FullMethod: "/resourceaggregate.pb.ResourceAggregate/CancelPendingCommands",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ResourceAggregateServer).CancelPendingCommands(ctx, req.(*commands.CancelPendingCommandsRequest))
@@ -557,7 +557,7 @@ func _ResourceAggregate_DeleteDevices_Handler(srv interface{}, ctx context.Conte
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/ocf.cloud.resourceaggregate.pb.v2.ResourceAggregate/DeleteDevices",
+		FullMethod: "/resourceaggregate.pb.ResourceAggregate/DeleteDevices",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ResourceAggregateServer).DeleteDevices(ctx, req.(*commands.DeleteDevicesRequest))
@@ -569,7 +569,7 @@ func _ResourceAggregate_DeleteDevices_Handler(srv interface{}, ctx context.Conte
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var ResourceAggregate_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "ocf.cloud.resourceaggregate.pb.v2.ResourceAggregate",
+	ServiceName: "resourceaggregate.pb.ResourceAggregate",
 	HandlerType: (*ResourceAggregateServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
@@ -638,5 +638,5 @@ var ResourceAggregate_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "github.com/plgd-dev/cloud/v2/resource-aggregate/pb/service.proto",
+	Metadata: "github.com/plgd-dev/hub/resource-aggregate/pb/service.proto",
 }

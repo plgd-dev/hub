@@ -5,7 +5,7 @@ import (
 
 	"time"
 
-	"github.com/plgd-dev/cloud/v2/pkg/log"
+	"github.com/plgd-dev/hub/pkg/log"
 )
 
 func (requestHandler *RequestHandler) getUserInfo(w http.ResponseWriter, r *http.Request) {

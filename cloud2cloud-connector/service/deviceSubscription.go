@@ -7,10 +7,10 @@ import (
 
 	"github.com/google/uuid"
 	cache "github.com/patrickmn/go-cache"
-	"github.com/plgd-dev/cloud/v2/cloud2cloud-connector/events"
-	"github.com/plgd-dev/cloud/v2/cloud2cloud-connector/store"
-	kitHttp "github.com/plgd-dev/cloud/v2/pkg/net/http"
-	"github.com/plgd-dev/cloud/v2/resource-aggregate/commands"
+	"github.com/plgd-dev/hub/cloud2cloud-connector/events"
+	"github.com/plgd-dev/hub/cloud2cloud-connector/store"
+	kitHttp "github.com/plgd-dev/hub/pkg/net/http"
+	"github.com/plgd-dev/hub/resource-aggregate/commands"
 	"github.com/plgd-dev/kit/v2/log"
 )
 

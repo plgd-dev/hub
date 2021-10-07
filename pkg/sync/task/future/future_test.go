@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/plgd-dev/cloud/v2/test/config"
+	"github.com/plgd-dev/hub/test/config"
 	"github.com/stretchr/testify/require"
 )
 

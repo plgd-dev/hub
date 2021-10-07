@@ -6,7 +6,7 @@ import (
 	"io"
 	"io/ioutil"
 
-	"github.com/plgd-dev/cloud/v2/pkg/log"
+	"github.com/plgd-dev/hub/pkg/log"
 	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
 	"github.com/plgd-dev/kit/v2/codec/cbor"

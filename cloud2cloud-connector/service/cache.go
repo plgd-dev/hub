@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/plgd-dev/cloud/v2/cloud2cloud-connector/store"
+	"github.com/plgd-dev/hub/cloud2cloud-connector/store"
 	kitSync "github.com/plgd-dev/kit/v2/sync"
 )
 

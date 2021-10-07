@@ -3,9 +3,9 @@ package main
 import (
 	"context"
 
-	"github.com/plgd-dev/cloud/v2/http-gateway/service"
-	"github.com/plgd-dev/cloud/v2/pkg/config"
-	"github.com/plgd-dev/cloud/v2/pkg/log"
+	"github.com/plgd-dev/hub/http-gateway/service"
+	"github.com/plgd-dev/hub/pkg/config"
+	"github.com/plgd-dev/hub/pkg/log"
 )
 
 func main() {

@@ -13,7 +13,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/plgd-dev/cloud/v2/coap-gateway/coapconv"
+	"github.com/plgd-dev/hub/coap-gateway/coapconv"
 	"github.com/plgd-dev/kit/v2/codec/json"
 
 	"github.com/plgd-dev/kit/v2/net"

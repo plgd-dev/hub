@@ -13,7 +13,7 @@ export const Footer = memo(() => {
       <div className="left" />
       <div className="right">
         <a
-          href="https://github.com/plgd-dev/cloud/raw/master/http-gateway/swagger.yaml"
+          href="https://github.com/plgd-dev/hub/raw/master/http-gateway/swagger.yaml"
           target="_blank"
           rel="noopener"
         >
@@ -23,7 +23,7 @@ export const Footer = memo(() => {
           {_(t.docs)}
         </a>
         <a
-          href="https://github.com/plgd-dev/cloud"
+          href="https://github.com/plgd-dev/hub"
           target="_blank"
           rel="noopener"
         >

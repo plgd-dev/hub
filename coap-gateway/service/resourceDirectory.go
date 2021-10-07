@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/plgd-dev/cloud/v2/coap-gateway/coapconv"
+	"github.com/plgd-dev/hub/coap-gateway/coapconv"
 	"github.com/plgd-dev/device/schema"
 	"github.com/plgd-dev/go-coap/v2/message"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"

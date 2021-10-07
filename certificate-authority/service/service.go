@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/plgd-dev/cloud/v2/pkg/log"
+	"github.com/plgd-dev/hub/pkg/log"
 
-	"github.com/plgd-dev/cloud/v2/pkg/net/grpc/server"
-	"github.com/plgd-dev/cloud/v2/pkg/security/jwt/validator"
+	"github.com/plgd-dev/hub/pkg/net/grpc/server"
+	"github.com/plgd-dev/hub/pkg/security/jwt/validator"
 )
 
 type Service struct {

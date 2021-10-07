@@ -1,10 +1,10 @@
 syntax = "proto3";
 
-package ocf.cloud.grpcgateway.pb.v2;
+package grpcgateway.pb;
 
-import "github.com/plgd-dev/cloud/v2/resource-aggregate/pb/events.proto";
+import "github.com/plgd-dev/hub/resource-aggregate/pb/events.proto";
 
-option go_package = "github.com/plgd-dev/cloud/v2/grpc-gateway/pb;pb";
+option go_package = "github.com/plgd-dev/hub/grpc-gateway/pb;pb";
 
 message GetEventsRequest {
 	repeated string device_id_filter = 1;
@@ -40,21 +40,21 @@ message GetEventsRequest {
 
 message GetEventsResponse {
 	oneof type {
-		ocf.cloud.resourceaggregate.pb.v2.ResourceLinksPublished resource_links_published = 1;
-		ocf.cloud.resourceaggregate.pb.v2.ResourceLinksUnpublished resource_links_unpublished = 2;
-		ocf.cloud.resourceaggregate.pb.v2.ResourceLinksSnapshotTaken resource_links_snapshot_taken = 3;
-		ocf.cloud.resourceaggregate.pb.v2.ResourceChanged resource_changed = 4;
-		ocf.cloud.resourceaggregate.pb.v2.ResourceUpdatePending resource_update_pending = 5;
-		ocf.cloud.resourceaggregate.pb.v2.ResourceUpdated resource_updated = 6;
-		ocf.cloud.resourceaggregate.pb.v2.ResourceRetrievePending resource_retrieve_pending = 7;
-		ocf.cloud.resourceaggregate.pb.v2.ResourceRetrieved resource_retrieved = 8;
-		ocf.cloud.resourceaggregate.pb.v2.ResourceDeletePending resource_delete_pending = 9;
-		ocf.cloud.resourceaggregate.pb.v2.ResourceDeleted resource_deleted = 10;
-		ocf.cloud.resourceaggregate.pb.v2.ResourceCreatePending resource_create_pending = 11;
-		ocf.cloud.resourceaggregate.pb.v2.ResourceCreated resource_created = 12;
-		ocf.cloud.resourceaggregate.pb.v2.ResourceStateSnapshotTaken resource_state_snapshot_taken = 13;
-		ocf.cloud.resourceaggregate.pb.v2.DeviceMetadataUpdatePending device_metadata_update_pending = 14;
-		ocf.cloud.resourceaggregate.pb.v2.DeviceMetadataUpdated device_metadata_updated = 15;
-		ocf.cloud.resourceaggregate.pb.v2.DeviceMetadataSnapshotTaken device_metadata_snapshot_taken = 16;
+		resourceaggregate.pb.ResourceLinksPublished resource_links_published = 1;
+		resourceaggregate.pb.ResourceLinksUnpublished resource_links_unpublished = 2;
+		resourceaggregate.pb.ResourceLinksSnapshotTaken resource_links_snapshot_taken = 3;
+		resourceaggregate.pb.ResourceChanged resource_changed = 4;
+		resourceaggregate.pb.ResourceUpdatePending resource_update_pending = 5;
+		resourceaggregate.pb.ResourceUpdated resource_updated = 6;
+		resourceaggregate.pb.ResourceRetrievePending resource_retrieve_pending = 7;
+		resourceaggregate.pb.ResourceRetrieved resource_retrieved = 8;
+		resourceaggregate.pb.ResourceDeletePending resource_delete_pending = 9;
+		resourceaggregate.pb.ResourceDeleted resource_deleted = 10;
+		resourceaggregate.pb.ResourceCreatePending resource_create_pending = 11;
+		resourceaggregate.pb.ResourceCreated resource_created = 12;
+		resourceaggregate.pb.ResourceStateSnapshotTaken resource_state_snapshot_taken = 13;
+		resourceaggregate.pb.DeviceMetadataUpdatePending device_metadata_update_pending = 14;
+		resourceaggregate.pb.DeviceMetadataUpdated device_metadata_updated = 15;
+		resourceaggregate.pb.DeviceMetadataSnapshotTaken device_metadata_snapshot_taken = 16;
 	}
 }

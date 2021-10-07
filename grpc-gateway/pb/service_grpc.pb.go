@@ -4,7 +4,7 @@ package pb
 
 import (
 	context "context"
-	events "github.com/plgd-dev/cloud/v2/resource-aggregate/events"
+	events "github.com/plgd-dev/hub/resource-aggregate/events"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -63,7 +63,7 @@ func NewGrpcGatewayClient(cc grpc.ClientConnInterface) GrpcGatewayClient {
 }
 
 func (c *grpcGatewayClient) GetDevices(ctx context.Context, in *GetDevicesRequest, opts ...grpc.CallOption) (GrpcGateway_GetDevicesClient, error) {
-	stream, err := c.cc.NewStream(ctx, &GrpcGateway_ServiceDesc.Streams[0], "/ocf.cloud.grpcgateway.pb.v2.GrpcGateway/GetDevices", opts...)
+	stream, err := c.cc.NewStream(ctx, &GrpcGateway_ServiceDesc.Streams[0], "/grpcgateway.pb.GrpcGateway/GetDevices", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -96,7 +96,7 @@ func (x *grpcGatewayGetDevicesClient) Recv() (*Device, error) {
 
 func (c *grpcGatewayClient) DeleteDevices(ctx context.Context, in *DeleteDevicesRequest, opts ...grpc.CallOption) (*DeleteDevicesResponse, error) {
 	out := new(DeleteDevicesResponse)
-	err := c.cc.Invoke(ctx, "/ocf.cloud.grpcgateway.pb.v2.GrpcGateway/DeleteDevices", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/grpcgateway.pb.GrpcGateway/DeleteDevices", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -104,7 +104,7 @@ func (c *grpcGatewayClient) DeleteDevices(ctx context.Context, in *DeleteDevices
 }
 
 func (c *grpcGatewayClient) GetResourceLinks(ctx context.Context, in *GetResourceLinksRequest, opts ...grpc.CallOption) (GrpcGateway_GetResourceLinksClient, error) {
-	stream, err := c.cc.NewStream(ctx, &GrpcGateway_ServiceDesc.Streams[1], "/ocf.cloud.grpcgateway.pb.v2.GrpcGateway/GetResourceLinks", opts...)
+	stream, err := c.cc.NewStream(ctx, &GrpcGateway_ServiceDesc.Streams[1], "/grpcgateway.pb.GrpcGateway/GetResourceLinks", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -137,7 +137,7 @@ func (x *grpcGatewayGetResourceLinksClient) Recv() (*events.ResourceLinksPublish
 
 func (c *grpcGatewayClient) GetResourceFromDevice(ctx context.Context, in *GetResourceFromDeviceRequest, opts ...grpc.CallOption) (*GetResourceFromDeviceResponse, error) {
 	out := new(GetResourceFromDeviceResponse)
-	err := c.cc.Invoke(ctx, "/ocf.cloud.grpcgateway.pb.v2.GrpcGateway/GetResourceFromDevice", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/grpcgateway.pb.GrpcGateway/GetResourceFromDevice", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -145,7 +145,7 @@ func (c *grpcGatewayClient) GetResourceFromDevice(ctx context.Context, in *GetRe
 }
 
 func (c *grpcGatewayClient) GetResources(ctx context.Context, in *GetResourcesRequest, opts ...grpc.CallOption) (GrpcGateway_GetResourcesClient, error) {
-	stream, err := c.cc.NewStream(ctx, &GrpcGateway_ServiceDesc.Streams[2], "/ocf.cloud.grpcgateway.pb.v2.GrpcGateway/GetResources", opts...)
+	stream, err := c.cc.NewStream(ctx, &GrpcGateway_ServiceDesc.Streams[2], "/grpcgateway.pb.GrpcGateway/GetResources", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -178,7 +178,7 @@ func (x *grpcGatewayGetResourcesClient) Recv() (*Resource, error) {
 
 func (c *grpcGatewayClient) UpdateResource(ctx context.Context, in *UpdateResourceRequest, opts ...grpc.CallOption) (*UpdateResourceResponse, error) {
 	out := new(UpdateResourceResponse)
-	err := c.cc.Invoke(ctx, "/ocf.cloud.grpcgateway.pb.v2.GrpcGateway/UpdateResource", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/grpcgateway.pb.GrpcGateway/UpdateResource", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -186,7 +186,7 @@ func (c *grpcGatewayClient) UpdateResource(ctx context.Context, in *UpdateResour
 }
 
 func (c *grpcGatewayClient) SubscribeToEvents(ctx context.Context, opts ...grpc.CallOption) (GrpcGateway_SubscribeToEventsClient, error) {
-	stream, err := c.cc.NewStream(ctx, &GrpcGateway_ServiceDesc.Streams[3], "/ocf.cloud.grpcgateway.pb.v2.GrpcGateway/SubscribeToEvents", opts...)
+	stream, err := c.cc.NewStream(ctx, &GrpcGateway_ServiceDesc.Streams[3], "/grpcgateway.pb.GrpcGateway/SubscribeToEvents", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -218,7 +218,7 @@ func (x *grpcGatewaySubscribeToEventsClient) Recv() (*Event, error) {
 
 func (c *grpcGatewayClient) GetCloudConfiguration(ctx context.Context, in *CloudConfigurationRequest, opts ...grpc.CallOption) (*CloudConfigurationResponse, error) {
 	out := new(CloudConfigurationResponse)
-	err := c.cc.Invoke(ctx, "/ocf.cloud.grpcgateway.pb.v2.GrpcGateway/GetCloudConfiguration", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/grpcgateway.pb.GrpcGateway/GetCloudConfiguration", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -227,7 +227,7 @@ func (c *grpcGatewayClient) GetCloudConfiguration(ctx context.Context, in *Cloud
 
 func (c *grpcGatewayClient) DeleteResource(ctx context.Context, in *DeleteResourceRequest, opts ...grpc.CallOption) (*DeleteResourceResponse, error) {
 	out := new(DeleteResourceResponse)
-	err := c.cc.Invoke(ctx, "/ocf.cloud.grpcgateway.pb.v2.GrpcGateway/DeleteResource", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/grpcgateway.pb.GrpcGateway/DeleteResource", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -236,7 +236,7 @@ func (c *grpcGatewayClient) DeleteResource(ctx context.Context, in *DeleteResour
 
 func (c *grpcGatewayClient) CreateResource(ctx context.Context, in *CreateResourceRequest, opts ...grpc.CallOption) (*CreateResourceResponse, error) {
 	out := new(CreateResourceResponse)
-	err := c.cc.Invoke(ctx, "/ocf.cloud.grpcgateway.pb.v2.GrpcGateway/CreateResource", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/grpcgateway.pb.GrpcGateway/CreateResource", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -245,7 +245,7 @@ func (c *grpcGatewayClient) CreateResource(ctx context.Context, in *CreateResour
 
 func (c *grpcGatewayClient) UpdateDeviceMetadata(ctx context.Context, in *UpdateDeviceMetadataRequest, opts ...grpc.CallOption) (*UpdateDeviceMetadataResponse, error) {
 	out := new(UpdateDeviceMetadataResponse)
-	err := c.cc.Invoke(ctx, "/ocf.cloud.grpcgateway.pb.v2.GrpcGateway/UpdateDeviceMetadata", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/grpcgateway.pb.GrpcGateway/UpdateDeviceMetadata", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -253,7 +253,7 @@ func (c *grpcGatewayClient) UpdateDeviceMetadata(ctx context.Context, in *Update
 }
 
 func (c *grpcGatewayClient) GetPendingCommands(ctx context.Context, in *GetPendingCommandsRequest, opts ...grpc.CallOption) (GrpcGateway_GetPendingCommandsClient, error) {
-	stream, err := c.cc.NewStream(ctx, &GrpcGateway_ServiceDesc.Streams[4], "/ocf.cloud.grpcgateway.pb.v2.GrpcGateway/GetPendingCommands", opts...)
+	stream, err := c.cc.NewStream(ctx, &GrpcGateway_ServiceDesc.Streams[4], "/grpcgateway.pb.GrpcGateway/GetPendingCommands", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -286,7 +286,7 @@ func (x *grpcGatewayGetPendingCommandsClient) Recv() (*PendingCommand, error) {
 
 func (c *grpcGatewayClient) CancelPendingCommands(ctx context.Context, in *CancelPendingCommandsRequest, opts ...grpc.CallOption) (*CancelPendingCommandsResponse, error) {
 	out := new(CancelPendingCommandsResponse)
-	err := c.cc.Invoke(ctx, "/ocf.cloud.grpcgateway.pb.v2.GrpcGateway/CancelPendingCommands", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/grpcgateway.pb.GrpcGateway/CancelPendingCommands", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -295,7 +295,7 @@ func (c *grpcGatewayClient) CancelPendingCommands(ctx context.Context, in *Cance
 
 func (c *grpcGatewayClient) CancelPendingMetadataUpdates(ctx context.Context, in *CancelPendingMetadataUpdatesRequest, opts ...grpc.CallOption) (*CancelPendingCommandsResponse, error) {
 	out := new(CancelPendingCommandsResponse)
-	err := c.cc.Invoke(ctx, "/ocf.cloud.grpcgateway.pb.v2.GrpcGateway/CancelPendingMetadataUpdates", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/grpcgateway.pb.GrpcGateway/CancelPendingMetadataUpdates", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -303,7 +303,7 @@ func (c *grpcGatewayClient) CancelPendingMetadataUpdates(ctx context.Context, in
 }
 
 func (c *grpcGatewayClient) GetDevicesMetadata(ctx context.Context, in *GetDevicesMetadataRequest, opts ...grpc.CallOption) (GrpcGateway_GetDevicesMetadataClient, error) {
-	stream, err := c.cc.NewStream(ctx, &GrpcGateway_ServiceDesc.Streams[5], "/ocf.cloud.grpcgateway.pb.v2.GrpcGateway/GetDevicesMetadata", opts...)
+	stream, err := c.cc.NewStream(ctx, &GrpcGateway_ServiceDesc.Streams[5], "/grpcgateway.pb.GrpcGateway/GetDevicesMetadata", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -335,7 +335,7 @@ func (x *grpcGatewayGetDevicesMetadataClient) Recv() (*events.DeviceMetadataUpda
 }
 
 func (c *grpcGatewayClient) GetEvents(ctx context.Context, in *GetEventsRequest, opts ...grpc.CallOption) (GrpcGateway_GetEventsClient, error) {
-	stream, err := c.cc.NewStream(ctx, &GrpcGateway_ServiceDesc.Streams[6], "/ocf.cloud.grpcgateway.pb.v2.GrpcGateway/GetEvents", opts...)
+	stream, err := c.cc.NewStream(ctx, &GrpcGateway_ServiceDesc.Streams[6], "/grpcgateway.pb.GrpcGateway/GetEvents", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -502,7 +502,7 @@ func _GrpcGateway_DeleteDevices_Handler(srv interface{}, ctx context.Context, de
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/ocf.cloud.grpcgateway.pb.v2.GrpcGateway/DeleteDevices",
+		FullMethod: "/grpcgateway.pb.GrpcGateway/DeleteDevices",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(GrpcGatewayServer).DeleteDevices(ctx, req.(*DeleteDevicesRequest))
@@ -541,7 +541,7 @@ func _GrpcGateway_GetResourceFromDevice_Handler(srv interface{}, ctx context.Con
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/ocf.cloud.grpcgateway.pb.v2.GrpcGateway/GetResourceFromDevice",
+		FullMethod: "/grpcgateway.pb.GrpcGateway/GetResourceFromDevice",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(GrpcGatewayServer).GetResourceFromDevice(ctx, req.(*GetResourceFromDeviceRequest))
@@ -580,7 +580,7 @@ func _GrpcGateway_UpdateResource_Handler(srv interface{}, ctx context.Context, d
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/ocf.cloud.grpcgateway.pb.v2.GrpcGateway/UpdateResource",
+		FullMethod: "/grpcgateway.pb.GrpcGateway/UpdateResource",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(GrpcGatewayServer).UpdateResource(ctx, req.(*UpdateResourceRequest))
@@ -624,7 +624,7 @@ func _GrpcGateway_GetCloudConfiguration_Handler(srv interface{}, ctx context.Con
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/ocf.cloud.grpcgateway.pb.v2.GrpcGateway/GetCloudConfiguration",
+		FullMethod: "/grpcgateway.pb.GrpcGateway/GetCloudConfiguration",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(GrpcGatewayServer).GetCloudConfiguration(ctx, req.(*CloudConfigurationRequest))
@@ -642,7 +642,7 @@ func _GrpcGateway_DeleteResource_Handler(srv interface{}, ctx context.Context, d
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/ocf.cloud.grpcgateway.pb.v2.GrpcGateway/DeleteResource",
+		FullMethod: "/grpcgateway.pb.GrpcGateway/DeleteResource",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(GrpcGatewayServer).DeleteResource(ctx, req.(*DeleteResourceRequest))
@@ -660,7 +660,7 @@ func _GrpcGateway_CreateResource_Handler(srv interface{}, ctx context.Context, d
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/ocf.cloud.grpcgateway.pb.v2.GrpcGateway/CreateResource",
+		FullMethod: "/grpcgateway.pb.GrpcGateway/CreateResource",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(GrpcGatewayServer).CreateResource(ctx, req.(*CreateResourceRequest))
@@ -678,7 +678,7 @@ func _GrpcGateway_UpdateDeviceMetadata_Handler(srv interface{}, ctx context.Cont
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/ocf.cloud.grpcgateway.pb.v2.GrpcGateway/UpdateDeviceMetadata",
+		FullMethod: "/grpcgateway.pb.GrpcGateway/UpdateDeviceMetadata",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(GrpcGatewayServer).UpdateDeviceMetadata(ctx, req.(*UpdateDeviceMetadataRequest))
@@ -717,7 +717,7 @@ func _GrpcGateway_CancelPendingCommands_Handler(srv interface{}, ctx context.Con
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/ocf.cloud.grpcgateway.pb.v2.GrpcGateway/CancelPendingCommands",
+		FullMethod: "/grpcgateway.pb.GrpcGateway/CancelPendingCommands",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(GrpcGatewayServer).CancelPendingCommands(ctx, req.(*CancelPendingCommandsRequest))
@@ -735,7 +735,7 @@ func _GrpcGateway_CancelPendingMetadataUpdates_Handler(srv interface{}, ctx cont
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/ocf.cloud.grpcgateway.pb.v2.GrpcGateway/CancelPendingMetadataUpdates",
+		FullMethod: "/grpcgateway.pb.GrpcGateway/CancelPendingMetadataUpdates",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(GrpcGatewayServer).CancelPendingMetadataUpdates(ctx, req.(*CancelPendingMetadataUpdatesRequest))
@@ -789,7 +789,7 @@ func (x *grpcGatewayGetEventsServer) Send(m *GetEventsResponse) error {
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var GrpcGateway_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "ocf.cloud.grpcgateway.pb.v2.GrpcGateway",
+	ServiceName: "grpcgateway.pb.GrpcGateway",
 	HandlerType: (*GrpcGatewayServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
@@ -867,5 +867,5 @@ var GrpcGateway_ServiceDesc = grpc.ServiceDesc{
 			ServerStreams: true,
 		},
 	},
-	Metadata: "github.com/plgd-dev/cloud/v2/grpc-gateway/pb/service.proto",
+	Metadata: "github.com/plgd-dev/hub/grpc-gateway/pb/service.proto",
 }

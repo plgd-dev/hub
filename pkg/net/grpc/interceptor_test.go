@@ -4,42 +4,41 @@ import (
 	"context"
 	"testing"
 
-	"github.com/plgd-dev/cloud/v2/pkg/net/grpc"
-	"github.com/plgd-dev/cloud/v2/pkg/net/grpc/server"
+	"github.com/plgd-dev/hub/pkg/net/grpc"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestUnaryInterceptor(t *testing.T) {
 	m := &MockInterceptor{}
-	svr := server.StubGrpcServer(grpc.UnaryServerInterceptorOption(m.Intercept))
+	svr := StubGrpcServer(grpc.UnaryServerInterceptorOption(m.Intercept))
 	defer svr.Close()
 	go func() {
 		_ = svr.Serve()
 	}()
 
-	c := server.StubGrpcClient(svr.Addr())
-	_, err := c.TestCall(context.Background(), &server.TestRequest{})
+	c := StubGrpcClient(svr.Addr())
+	_, err := c.TestCall(context.Background(), &TestRequest{})
 	require.Error(t, err)
-	assert.Equal(t, "/"+server.StubService_ServiceDesc.ServiceName+"/TestCall", m.Method)
+	assert.Equal(t, "/"+StubService_ServiceDesc.ServiceName+"/TestCall", m.Method)
 }
 
 func TestStreamInterceptor(t *testing.T) {
 	m := &MockInterceptor{}
-	svr := server.StubGrpcServer(grpc.StreamServerInterceptorOption(m.Intercept))
+	svr := StubGrpcServer(grpc.StreamServerInterceptorOption(m.Intercept))
 	defer svr.Close()
 	go func() {
 		_ = svr.Serve()
 	}()
 
-	c := server.StubGrpcClient(svr.Addr())
+	c := StubGrpcClient(svr.Addr())
 	s, err := c.TestStream(context.Background())
 	require.NoError(t, err)
-	err = s.Send(&server.TestRequest{})
+	err = s.Send(&TestRequest{})
 	require.NoError(t, err)
 	_, err = s.Recv()
 	require.Error(t, err)
-	assert.Equal(t, "/"+server.StubService_ServiceDesc.ServiceName+"/TestStream", m.Method)
+	assert.Equal(t, "/"+StubService_ServiceDesc.ServiceName+"/TestStream", m.Method)
 }
 
 type MockInterceptor struct {

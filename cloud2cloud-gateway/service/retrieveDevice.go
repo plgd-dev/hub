@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/gorilla/mux"
-	kitNetHttp "github.com/plgd-dev/cloud/v2/pkg/net/http"
+	kitNetHttp "github.com/plgd-dev/hub/pkg/net/http"
 	"github.com/plgd-dev/device/schema"
 	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/kit/v2/codec/cbor"
@@ -17,8 +17,8 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	pbGRPC "github.com/plgd-dev/cloud/v2/grpc-gateway/pb"
-	"github.com/plgd-dev/cloud/v2/resource-aggregate/commands"
+	pbGRPC "github.com/plgd-dev/hub/grpc-gateway/pb"
+	"github.com/plgd-dev/hub/resource-aggregate/commands"
 )
 
 type RetrieveDeviceWithLinksResponse struct {
