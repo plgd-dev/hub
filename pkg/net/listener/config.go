@@ -3,7 +3,7 @@ package listener
 import (
 	"fmt"
 
-	"github.com/plgd-dev/cloud/pkg/security/certManager/server"
+	"github.com/plgd-dev/hub/pkg/security/certManager/server"
 )
 
 type Config struct {

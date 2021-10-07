@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/plgd-dev/cloud/grpc-gateway/service"
-	"github.com/plgd-dev/cloud/pkg/log"
-	"github.com/plgd-dev/cloud/test/config"
+	"github.com/plgd-dev/hub/grpc-gateway/service"
+	"github.com/plgd-dev/hub/pkg/log"
+	"github.com/plgd-dev/hub/test/config"
 	"github.com/stretchr/testify/require"
 )
 

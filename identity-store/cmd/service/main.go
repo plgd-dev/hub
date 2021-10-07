@@ -3,9 +3,9 @@ package main
 import (
 	"context"
 
-	"github.com/plgd-dev/cloud/identity-store/service"
-	"github.com/plgd-dev/cloud/pkg/config"
-	"github.com/plgd-dev/cloud/pkg/log"
+	"github.com/plgd-dev/hub/identity-store/service"
+	"github.com/plgd-dev/hub/pkg/config"
+	"github.com/plgd-dev/hub/pkg/log"
 )
 
 func main() {

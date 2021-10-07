@@ -6,13 +6,13 @@ import (
 	"time"
 
 	cache "github.com/patrickmn/go-cache"
-	"github.com/plgd-dev/cloud/pkg/log"
-	"github.com/plgd-dev/cloud/resource-aggregate/commands"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore"
-	projectionRA "github.com/plgd-dev/cloud/resource-aggregate/cqrs/projection"
-	"github.com/plgd-dev/cloud/resource-aggregate/events"
-	"github.com/plgd-dev/kit/strings"
+	"github.com/plgd-dev/hub/pkg/log"
+	"github.com/plgd-dev/hub/resource-aggregate/commands"
+	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventbus"
+	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventstore"
+	projectionRA "github.com/plgd-dev/hub/resource-aggregate/cqrs/projection"
+	"github.com/plgd-dev/hub/resource-aggregate/events"
+	"github.com/plgd-dev/kit/v2/strings"
 )
 
 // hasMatchingType returns true for matching a resource type.

@@ -3,8 +3,8 @@ package commands
 import (
 	"time"
 
-	pkgTime "github.com/plgd-dev/cloud/pkg/time"
-	"github.com/plgd-dev/sdk/schema"
+	pkgTime "github.com/plgd-dev/hub/pkg/time"
+	"github.com/plgd-dev/device/schema"
 )
 
 func (e *EndpointInformation) ToSchema() schema.Endpoint {

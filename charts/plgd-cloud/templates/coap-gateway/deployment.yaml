@@ -3,10 +3,10 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "plgd-cloud.coapgateway.fullname" . }}
+  name: {{ include "plgd-hub.coapgateway.fullname" . }}
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "plgd-cloud.labels" . | nindent 4 }}
+    {{- include "plgd-hub.labels" . | nindent 4 }}
     {{- with .Values.coapgateway.deploymentLabels }}
     {{- . | toYaml | nindent 4 }}
     {{- end }}
@@ -18,7 +18,7 @@ spec:
   replicas: {{ .Values.resourcedirectory.replicas }}
   selector:
     matchLabels:
-      {{- include "plgd-cloud.coapgateway.selectorLabels" . | nindent 6 }}
+      {{- include "plgd-hub.coapgateway.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       {{- with .Values.coapgateway.podAnnotations }}
@@ -26,7 +26,7 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
-        {{- include "plgd-cloud.coapgateway.selectorLabels" . | nindent 8 }}
+        {{- include "plgd-hub.coapgateway.selectorLabels" . | nindent 8 }}
     spec:
       {{- with .Values.coapgateway.securityContext }}
       securityContext:
@@ -50,7 +50,7 @@ spec:
           securityContext:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-          image: {{ include "plgd-cloud.coapgateway.image" . | quote }}
+          image: {{ include "plgd-hub.coapgateway.image" . | quote }}
           imagePullPolicy: {{ .Values.coapgateway.image.pullPolicy }}
           {{- if .Values.coapgateway.command }}
           command:
@@ -80,7 +80,7 @@ spec:
           volumeMounts:
             - mountPath: {{ .Values.coapgateway.config.mountPath }}
               name: {{ .Values.coapgateway.config.volume }}
-            {{- if ( include "plgd-cloud.coapgateway.createServiceCertByCm" . ) }}
+            {{- if ( include "plgd-hub.coapgateway.createServiceCertByCm" . ) }}
             - name: service-crt
               mountPath: {{ $rdServiceCert }}
             {{- end }}
@@ -97,11 +97,11 @@ spec:
       volumes:
         - name: {{ .Values.resourcedirectory.config.volume }}
           secret:
-            secretName: {{ include "plgd-cloud.coapgateway.configSecretName" . }}
-        {{- if ( include "plgd-cloud.coapgateway.createServiceCertByCm" . ) }}
+            secretName: {{ include "plgd-hub.coapgateway.configSecretName" . }}
+        {{- if ( include "plgd-hub.coapgateway.createServiceCertByCm" . ) }}
         - name: service-crt
           secret:
-            secretName: {{ include "plgd-cloud.coapgateway.serviceCertName" . }}
+            secretName: {{ include "plgd-hub.coapgateway.serviceCertName" . }}
         {{- end }}
         {{- with .Values.coapgateway.extraVolumeMounts }}
         {{- toYaml . | nindent 8 }}

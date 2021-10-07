@@ -10,7 +10,7 @@ Provides a simple docker cloud image for **testing purpose**.
 
 - [OCF Native Cloud](https://openconnectivity.org/specs/OCF_Device_To_Cloud_Services_Specification_v2.1.0.pdf)
 - OAUTH Athorization code is not verified
-- [GRPC](https://github.com/plgd-dev/cloud/blob/master/grpc-gateway/pb/service.proto)
+- [GRPC](https://github.com/plgd-dev/hub/blob/master/grpc-gateway/pb/service.proto)
 
 ### Supported clients
 
@@ -187,4 +187,4 @@ go build
 
 ### HTTP access
 
-[REST API](https://petstore.swagger.io/?url=https://raw.githubusercontent.com/plgd-dev/cloud/master/http-gateway/swagger.yaml)
+[REST API](https://petstore.swagger.io/?url=https://raw.githubusercontent.com/plgd-dev/hub/main/http-gateway/swagger.yaml)

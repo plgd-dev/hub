@@ -8,11 +8,11 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/plgd-dev/cloud/grpc-gateway/pb"
-	httpgwTest "github.com/plgd-dev/cloud/http-gateway/test"
-	"github.com/plgd-dev/cloud/http-gateway/uri"
-	"github.com/plgd-dev/cloud/test/config"
-	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
+	"github.com/plgd-dev/hub/grpc-gateway/pb"
+	httpgwTest "github.com/plgd-dev/hub/http-gateway/test"
+	"github.com/plgd-dev/hub/http-gateway/uri"
+	"github.com/plgd-dev/hub/test/config"
+	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
 )
 
 func TestRequestHandler_CancelDeviceMetadataUpdate(t *testing.T) {

@@ -9,10 +9,10 @@ import (
 	"sync"
 	"time"
 
-	pkgTime "github.com/plgd-dev/cloud/pkg/time"
-	"github.com/plgd-dev/cloud/resource-aggregate/commands"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore"
-	"github.com/plgd-dev/cloud/resource-aggregate/events"
+	pkgTime "github.com/plgd-dev/hub/pkg/time"
+	"github.com/plgd-dev/hub/resource-aggregate/commands"
+	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventstore"
+	"github.com/plgd-dev/hub/resource-aggregate/events"
 )
 
 var StaticAuditContext = &commands.AuditContext{

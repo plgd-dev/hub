@@ -1,5 +1,5 @@
-FROM cloud-build AS build
-WORKDIR $GOPATH/src/github.com/plgd-dev/cloud/certificate-authority
+FROM hub-build AS build
+WORKDIR $GOPATH/src/github.com/plgd-dev/hub/certificate-authority
 RUN go build -o /go/bin/service ./cmd/service
 
 FROM alpine:3.14 as service

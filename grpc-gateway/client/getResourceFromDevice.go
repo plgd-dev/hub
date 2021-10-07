@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	pbGW "github.com/plgd-dev/cloud/grpc-gateway/pb"
-	"github.com/plgd-dev/cloud/resource-aggregate/commands"
+	pbGW "github.com/plgd-dev/hub/grpc-gateway/pb"
+	"github.com/plgd-dev/hub/resource-aggregate/commands"
 )
 
 func (c *Client) getResourceFromDevice(

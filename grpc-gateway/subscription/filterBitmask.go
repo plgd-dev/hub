@@ -1,7 +1,7 @@
 package subscription
 
 import (
-	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	"github.com/plgd-dev/hub/grpc-gateway/pb"
 )
 
 type FilterBitmask uint64

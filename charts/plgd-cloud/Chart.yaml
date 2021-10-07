@@ -1,6 +1,6 @@
 apiVersion: v2
-name: plgd-cloud
-description: A Helm chart for plgd-cloud
+name: plgd-hub
+description: A Helm chart for plgd-hub
 
 type: application
 

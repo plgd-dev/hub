@@ -1,10 +1,10 @@
 syntax = "proto3";
 
-package ocf.cloud.grpcgateway.pb;
+package grpcgateway.pb;
 
-import "github.com/plgd-dev/cloud/resource-aggregate/pb/events.proto";
+import "github.com/plgd-dev/hub/resource-aggregate/pb/events.proto";
 
-option go_package = "github.com/plgd-dev/cloud/grpc-gateway/pb;pb";
+option go_package = "github.com/plgd-dev/hub/grpc-gateway/pb;pb";
 
 message GetPendingCommandsRequest {
     enum Command {
@@ -22,10 +22,10 @@ message GetPendingCommandsRequest {
 
 message PendingCommand {
     oneof command {
-        ocf.cloud.resourceaggregate.pb.ResourceCreatePending resource_create_pending = 1;
-        ocf.cloud.resourceaggregate.pb.ResourceRetrievePending resource_retrieve_pending = 2;
-        ocf.cloud.resourceaggregate.pb.ResourceUpdatePending resource_update_pending = 3;
-        ocf.cloud.resourceaggregate.pb.ResourceDeletePending resource_delete_pending = 4;
-        ocf.cloud.resourceaggregate.pb.DeviceMetadataUpdatePending device_metadata_update_pending = 5;
+        resourceaggregate.pb.ResourceCreatePending resource_create_pending = 1;
+        resourceaggregate.pb.ResourceRetrievePending resource_retrieve_pending = 2;
+        resourceaggregate.pb.ResourceUpdatePending resource_update_pending = 3;
+        resourceaggregate.pb.ResourceDeletePending resource_delete_pending = 4;
+        resourceaggregate.pb.DeviceMetadataUpdatePending device_metadata_update_pending = 5;
     }
 }

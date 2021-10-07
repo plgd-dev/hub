@@ -1,13 +1,13 @@
-{{- $domainCrt := include "plgd-cloud.certificateauthority.domainCertName" . }}
+{{- $domainCrt := include "plgd-hub.certificateauthority.domainCertName" . }}
 {{- if and $domainCrt .Values.certmanager.enabled .Values.certificateauthority.enabled }}
-{{- $serviceDns := include "plgd-cloud.certificateauthority.fullname" . }}
+{{- $serviceDns := include "plgd-hub.certificateauthority.fullname" . }}
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   name: {{ $domainCrt }}
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "plgd-cloud.labels" . | nindent 4 }}
+    {{- include "plgd-hub.labels" . | nindent 4 }}
     {{- with .Values.certmanager.external.labels }}
     {{- . | toYaml | nindent 4 }}
     {{- end }}
@@ -24,7 +24,7 @@ spec:
     - server auth
     - client auth
   dnsNames:
-    - {{ include "plgd-cloud.certificateauthority.domain" . | quote }}
+    - {{ include "plgd-hub.certificateauthority.domain" . | quote }}
   duration: {{ .Values.certmanager.external.cert.duration | default .Values.certmanager.default.cert.duration }}
   renewBefore: {{ .Values.certmanager.external.cert.renewBefore | default .Values.certmanager.default.cert.renewBefore }}
   issuerRef:

@@ -1,10 +1,10 @@
 package service
 
 import (
-	"github.com/plgd-dev/cloud/identity-store/pb"
-	"github.com/plgd-dev/cloud/identity-store/persistence"
-	"github.com/plgd-dev/cloud/pkg/log"
-	"github.com/plgd-dev/cloud/pkg/net/grpc"
+	"github.com/plgd-dev/hub/identity-store/pb"
+	"github.com/plgd-dev/hub/identity-store/persistence"
+	"github.com/plgd-dev/hub/pkg/log"
+	"github.com/plgd-dev/hub/pkg/net/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )

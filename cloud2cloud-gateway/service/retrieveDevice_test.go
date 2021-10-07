@@ -9,12 +9,12 @@ import (
 
 	"github.com/plgd-dev/go-coap/v2/message"
 
-	"github.com/plgd-dev/cloud/cloud2cloud-gateway/uri"
-	"github.com/plgd-dev/cloud/grpc-gateway/pb"
-	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
-	"github.com/plgd-dev/cloud/test"
-	testCfg "github.com/plgd-dev/cloud/test/config"
-	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
+	"github.com/plgd-dev/hub/cloud2cloud-gateway/uri"
+	"github.com/plgd-dev/hub/grpc-gateway/pb"
+	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
+	"github.com/plgd-dev/hub/test"
+	testCfg "github.com/plgd-dev/hub/test/config"
+	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"

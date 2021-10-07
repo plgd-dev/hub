@@ -3,8 +3,8 @@ package file_test
 import (
 	"testing"
 
-	"github.com/plgd-dev/cloud/pkg/file"
-	"github.com/plgd-dev/cloud/test/config"
+	"github.com/plgd-dev/hub/pkg/file"
+	"github.com/plgd-dev/hub/test/config"
 	"github.com/stretchr/testify/require"
 )
 

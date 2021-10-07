@@ -6,10 +6,10 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/patrickmn/go-cache"
-	"github.com/plgd-dev/cloud/cloud2cloud-connector/events"
-	"github.com/plgd-dev/cloud/cloud2cloud-connector/store"
-	kitHttp "github.com/plgd-dev/cloud/pkg/net/http"
-	"github.com/plgd-dev/cloud/resource-aggregate/commands"
+	"github.com/plgd-dev/hub/cloud2cloud-connector/events"
+	"github.com/plgd-dev/hub/cloud2cloud-connector/store"
+	kitHttp "github.com/plgd-dev/hub/pkg/net/http"
+	"github.com/plgd-dev/hub/resource-aggregate/commands"
 	"github.com/plgd-dev/go-coap/v2/message"
 )
 

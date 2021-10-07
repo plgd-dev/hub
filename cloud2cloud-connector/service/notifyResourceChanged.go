@@ -3,9 +3,9 @@ package service
 import (
 	"context"
 
-	kitHttp "github.com/plgd-dev/cloud/pkg/net/http"
-	"github.com/plgd-dev/cloud/resource-aggregate/commands"
-	raService "github.com/plgd-dev/cloud/resource-aggregate/service"
+	kitHttp "github.com/plgd-dev/hub/pkg/net/http"
+	"github.com/plgd-dev/hub/resource-aggregate/commands"
+	raService "github.com/plgd-dev/hub/resource-aggregate/service"
 	"github.com/plgd-dev/go-coap/v2/message"
 )
 

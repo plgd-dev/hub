@@ -3,10 +3,10 @@ package service
 import (
 	"context"
 
-	kitHttp "github.com/plgd-dev/cloud/pkg/net/http"
-	"github.com/plgd-dev/cloud/resource-aggregate/commands"
-	raService "github.com/plgd-dev/cloud/resource-aggregate/service"
-	"github.com/plgd-dev/sdk/schema"
+	kitHttp "github.com/plgd-dev/hub/pkg/net/http"
+	"github.com/plgd-dev/hub/resource-aggregate/commands"
+	raService "github.com/plgd-dev/hub/resource-aggregate/service"
+	"github.com/plgd-dev/device/schema"
 )
 
 func publishResource(ctx context.Context, raClient raService.ResourceAggregateClient, link schema.ResourceLink, cmdMetadata *commands.CommandMetadata) error {

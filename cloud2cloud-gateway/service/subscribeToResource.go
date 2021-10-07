@@ -8,11 +8,11 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
-	"github.com/plgd-dev/cloud/cloud2cloud-connector/events"
-	"github.com/plgd-dev/cloud/cloud2cloud-gateway/store"
-	pkgHttp "github.com/plgd-dev/cloud/pkg/net/http"
-	"github.com/plgd-dev/kit/codec/json"
-	"github.com/plgd-dev/kit/log"
+	"github.com/plgd-dev/hub/cloud2cloud-connector/events"
+	"github.com/plgd-dev/hub/cloud2cloud-gateway/store"
+	pkgHttp "github.com/plgd-dev/hub/pkg/net/http"
+	"github.com/plgd-dev/kit/v2/codec/json"
+	"github.com/plgd-dev/kit/v2/log"
 )
 
 type SubscriptionResponse struct {

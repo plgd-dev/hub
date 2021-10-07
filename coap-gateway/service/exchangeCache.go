@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/plgd-dev/cloud/pkg/security/oauth2"
+	"github.com/plgd-dev/hub/pkg/security/oauth2"
 )
 
 // Non-thread safe cache for Exchange operation.

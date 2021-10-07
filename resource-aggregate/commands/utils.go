@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	extCodes "github.com/plgd-dev/cloud/grpc-gateway/pb/codes"
-	"github.com/plgd-dev/sdk/schema"
+	extCodes "github.com/plgd-dev/hub/grpc-gateway/pb/codes"
+	"github.com/plgd-dev/device/schema"
 	"google.golang.org/grpc/codes"
 )
 

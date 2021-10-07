@@ -4,12 +4,12 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/plgd-dev/cloud/pkg/log"
+	"github.com/plgd-dev/hub/pkg/log"
 
 	"github.com/golang-jwt/jwt/v4"
-	"github.com/plgd-dev/cloud/pkg/net/http/client"
-	jwtValidator "github.com/plgd-dev/cloud/pkg/security/jwt"
-	"github.com/plgd-dev/cloud/pkg/security/openid"
+	"github.com/plgd-dev/hub/pkg/net/http/client"
+	jwtValidator "github.com/plgd-dev/hub/pkg/security/jwt"
+	"github.com/plgd-dev/hub/pkg/security/openid"
 )
 
 // Validator Client.

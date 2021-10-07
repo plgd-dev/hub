@@ -1,15 +1,15 @@
 syntax = "proto3";
 
-package ocf.cloud.grpcgateway.pb;
+package grpcgateway.pb;
 
-import "github.com/plgd-dev/cloud/grpc-gateway/pb/cloudConfiguration.proto";
-import "github.com/plgd-dev/cloud/grpc-gateway/pb/devices.proto";
-import "github.com/plgd-dev/cloud/grpc-gateway/pb/events.proto";
-import "github.com/plgd-dev/cloud/grpc-gateway/pb/getDevicesMetadata.proto";
-import "github.com/plgd-dev/cloud/grpc-gateway/pb/getPendingCommands.proto";
-import "github.com/plgd-dev/cloud/grpc-gateway/pb/cancelCommands.proto";
-import "github.com/plgd-dev/cloud/grpc-gateway/pb/updateDeviceMetadata.proto";
-import "github.com/plgd-dev/cloud/resource-aggregate/pb/events.proto";
+import "github.com/plgd-dev/hub/grpc-gateway/pb/cloudConfiguration.proto";
+import "github.com/plgd-dev/hub/grpc-gateway/pb/devices.proto";
+import "github.com/plgd-dev/hub/grpc-gateway/pb/events.proto";
+import "github.com/plgd-dev/hub/grpc-gateway/pb/getDevicesMetadata.proto";
+import "github.com/plgd-dev/hub/grpc-gateway/pb/getPendingCommands.proto";
+import "github.com/plgd-dev/hub/grpc-gateway/pb/cancelCommands.proto";
+import "github.com/plgd-dev/hub/grpc-gateway/pb/updateDeviceMetadata.proto";
+import "github.com/plgd-dev/hub/resource-aggregate/pb/events.proto";
 
 import "google/api/annotations.proto";
 import "protoc-gen-openapiv2/options/annotations.proto";
@@ -17,17 +17,17 @@ import "protoc-gen-openapiv2/options/annotations.proto";
 
 option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
   info: {
-    title: "plgd cloud - HTTP Gateway API";
+    title: "plgd hub - HTTP Gateway API";
     version: "1.0";
     description: "";
     contact: {
       name: "plgd.dev";
-      url: "https://github.com/plgd-dev/cloud";
+      url: "https://github.com/plgd-dev/hub";
       email: "info@plgd.dev";
     };
     license: {
       name: "Apache License 2.0";
-      url: "https://github.com/plgd-dev/cloud/blob/v2/LICENSE";
+      url: "https://github.com/plgd-dev/hub/blob/v2/LICENSE";
     };
   };
   schemes: [ HTTPS ];
@@ -35,7 +35,7 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
   produces: [ "application/json", "application/protojson" ];
 };
 
-option go_package = "github.com/plgd-dev/cloud/grpc-gateway/pb;pb";
+option go_package = "github.com/plgd-dev/hub/grpc-gateway/pb;pb";
 // https://github.com/googleapis/googleapis/blob/master/google/api/http.proto
 
 service GrpcGateway {
@@ -60,7 +60,7 @@ service GrpcGateway {
   }
 
   // Get resource links of devices.
-  rpc GetResourceLinks(GetResourceLinksRequest) returns (stream ocf.cloud.resourceaggregate.pb.ResourceLinksPublished) {
+  rpc GetResourceLinks(GetResourceLinksRequest) returns (stream resourceaggregate.pb.ResourceLinksPublished) {
     option (google.api.http) = {
       get: "/api/v1/resource-links"
     };
@@ -101,7 +101,7 @@ service GrpcGateway {
 
   // When the client creates a subscription.
   // Subscription doesn't guarantee that all events will be sent to the client. The client is responsible for synchronize events.
-  rpc SubscribeToEvents(stream ocf.cloud.grpcgateway.pb.SubscribeToEvents) returns (stream Event) {
+  rpc SubscribeToEvents(stream grpcgateway.pb.SubscribeToEvents) returns (stream Event) {
     option (google.api.http) = {
       post: "/api/v1/ws/events"
       body: "*"
@@ -185,7 +185,7 @@ service GrpcGateway {
   }
 
   // Gets metadata of the devices. Is contains online/offline or shadown synchronization status.
-  rpc GetDevicesMetadata(GetDevicesMetadataRequest) returns (stream ocf.cloud.resourceaggregate.pb.DeviceMetadataUpdated) {
+  rpc GetDevicesMetadata(GetDevicesMetadataRequest) returns (stream resourceaggregate.pb.DeviceMetadataUpdated) {
     option (google.api.http) = {
       get: "/api/v1/devices-metadata"
     };

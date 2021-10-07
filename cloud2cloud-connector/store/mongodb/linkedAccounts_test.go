@@ -4,9 +4,9 @@ import (
 	"context"
 	"testing"
 
-	"github.com/plgd-dev/cloud/cloud2cloud-connector/store"
-	"github.com/plgd-dev/cloud/cloud2cloud-connector/test"
-	"github.com/plgd-dev/cloud/pkg/security/oauth2"
+	"github.com/plgd-dev/hub/cloud2cloud-connector/store"
+	"github.com/plgd-dev/hub/cloud2cloud-connector/test"
+	"github.com/plgd-dev/hub/pkg/security/oauth2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

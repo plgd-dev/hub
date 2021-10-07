@@ -3,9 +3,9 @@ package utils_test
 import (
 	"testing"
 
-	"github.com/plgd-dev/cloud/resource-aggregate/commands"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
-	"github.com/plgd-dev/cloud/resource-aggregate/events"
+	"github.com/plgd-dev/hub/resource-aggregate/commands"
+	"github.com/plgd-dev/hub/resource-aggregate/cqrs/utils"
+	"github.com/plgd-dev/hub/resource-aggregate/events"
 	"github.com/stretchr/testify/assert"
 )
 

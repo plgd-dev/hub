@@ -5,10 +5,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/plgd-dev/cloud/resource-aggregate/commands"
-	cqrsEventStore "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore"
-	mockEvents "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/test"
-	"github.com/plgd-dev/cloud/resource-aggregate/events"
+	"github.com/plgd-dev/hub/resource-aggregate/commands"
+	cqrsEventStore "github.com/plgd-dev/hub/resource-aggregate/cqrs/eventstore"
+	mockEvents "github.com/plgd-dev/hub/resource-aggregate/cqrs/eventstore/test"
+	"github.com/plgd-dev/hub/resource-aggregate/events"
 	"github.com/stretchr/testify/assert"
 )
 

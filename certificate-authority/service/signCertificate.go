@@ -3,9 +3,9 @@ package service
 import (
 	"context"
 
-	"github.com/plgd-dev/cloud/certificate-authority/pb"
-	"github.com/plgd-dev/cloud/pkg/log"
-	"github.com/plgd-dev/kit/security/signer"
+	"github.com/plgd-dev/hub/certificate-authority/pb"
+	"github.com/plgd-dev/hub/pkg/log"
+	"github.com/plgd-dev/kit/v2/security/signer"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )

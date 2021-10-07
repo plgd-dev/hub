@@ -5,8 +5,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/plgd-dev/cloud/pkg/log"
-	"github.com/plgd-dev/cloud/pkg/security/certManager/client"
+	"github.com/plgd-dev/hub/pkg/log"
+	"github.com/plgd-dev/hub/pkg/security/certManager/client"
 	"github.com/stretchr/testify/require"
 )
 

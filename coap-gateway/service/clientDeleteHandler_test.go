@@ -6,12 +6,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/plgd-dev/cloud/coap-gateway/uri"
-	testCfg "github.com/plgd-dev/cloud/test/config"
+	"github.com/plgd-dev/hub/coap-gateway/uri"
+	testCfg "github.com/plgd-dev/hub/test/config"
 
 	"github.com/plgd-dev/go-coap/v2/tcp"
 
-	"github.com/plgd-dev/cloud/pkg/log"
+	"github.com/plgd-dev/hub/pkg/log"
 
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/stretchr/testify/assert"

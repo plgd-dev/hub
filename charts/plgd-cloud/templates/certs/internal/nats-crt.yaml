@@ -6,7 +6,7 @@ metadata:
   name: {{ .Values.nats.nats.tls.secret.name }}
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "plgd-cloud.labels" . | nindent 4 }}
+    {{- include "plgd-hub.labels" . | nindent 4 }}
 spec:
   secretName: {{ .Values.nats.nats.tls.secret.name }}
   privateKey:

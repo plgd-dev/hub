@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/plgd-dev/cloud/pkg/net/grpc"
+	"github.com/plgd-dev/hub/pkg/net/grpc"
 	"github.com/stretchr/testify/require"
 )
 

@@ -7,7 +7,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/plgd-dev/cloud/pkg/security/jwt"
+	"github.com/plgd-dev/hub/pkg/security/jwt"
 )
 
 type Interceptor = func(ctx context.Context, method, uri string) (context.Context, error)

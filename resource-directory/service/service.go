@@ -5,12 +5,12 @@ import (
 	"fmt"
 
 	"github.com/panjf2000/ants/v2"
-	"github.com/plgd-dev/cloud/grpc-gateway/pb"
-	"github.com/plgd-dev/cloud/pkg/log"
-	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
-	"github.com/plgd-dev/cloud/pkg/net/grpc/server"
-	"github.com/plgd-dev/cloud/pkg/security/jwt"
-	"github.com/plgd-dev/cloud/pkg/security/jwt/validator"
+	"github.com/plgd-dev/hub/grpc-gateway/pb"
+	"github.com/plgd-dev/hub/pkg/log"
+	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
+	"github.com/plgd-dev/hub/pkg/net/grpc/server"
+	"github.com/plgd-dev/hub/pkg/security/jwt"
+	"github.com/plgd-dev/hub/pkg/security/jwt/validator"
 )
 
 type Service struct {
@@ -60,7 +60,7 @@ func makeAuthFunc(validator kitNetGrpc.Validator, ownerClaim string) func(ctx co
 	})
 	return func(ctx context.Context, method string) (context.Context, error) {
 		switch method {
-		case "/ocf.cloud.grpcgateway.pb.GrpcGateway/GetCloudConfiguration":
+		case "/" + pb.GrpcGateway_ServiceDesc.ServiceName + "/GetCloudConfiguration":
 			return ctx, nil
 		}
 		token, _ := kitNetGrpc.TokenFromMD(ctx)

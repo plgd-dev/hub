@@ -1,4 +1,4 @@
-{{- define "plgd-cloud.resourcedirectory.fullname" -}}
+{{- define "plgd-hub.resourcedirectory.fullname" -}}
 {{- if .Values.resourcedirectory.fullnameOverride }}
 {{- .Values.resourcedirectory.fullnameOverride | trunc 63 | trimSuffix "-" }}
 {{- else }}
@@ -11,19 +11,19 @@
 {{- end }}
 {{- end }}
 
-{{- define  "plgd-cloud.resourcedirectory.image" -}}
+{{- define  "plgd-hub.resourcedirectory.image" -}}
     {{- $registryName := .Values.resourcedirectory.image.registry | default "" -}}
     {{- $repositoryName := .Values.resourcedirectory.image.repository -}}
     {{- $tag := .Values.resourcedirectory.image.tag | default .Chart.AppVersion | toString -}}
     {{- printf "%s%s:%s" $registryName $repositoryName  $tag -}}
 {{- end -}}
 
-{{- define  "plgd-cloud.resourcedirectory.configSecretName" -}}
-    {{- $fullName :=  include "plgd-cloud.resourcedirectory.fullname" . -}}
+{{- define  "plgd-hub.resourcedirectory.configSecretName" -}}
+    {{- $fullName :=  include "plgd-hub.resourcedirectory.fullname" . -}}
     {{- printf "%s-cfg" $fullName }}
 {{- end -}}
 
-{{- define "plgd-cloud.resourcedirectory.createServiceCertByCm" }}
+{{- define "plgd-hub.resourcedirectory.createServiceCertByCm" }}
     {{- $serviceTls := .Values.resourcedirectory.apis.grpc.tls.certFile }}
     {{- if $serviceTls }}
     {{- printf "false" }}
@@ -32,17 +32,17 @@
     {{- end }}
 {{- end }}
 
-{{- define "plgd-cloud.resourcedirectory.serviceCertName" -}}
-  {{- $fullName := include "plgd-cloud.resourcedirectory.fullname" . -}}
+{{- define "plgd-hub.resourcedirectory.serviceCertName" -}}
+  {{- $fullName := include "plgd-hub.resourcedirectory.fullname" . -}}
   {{- printf "%s-crt" $fullName -}}
 {{- end }}
 
-{{- define "plgd-cloud.resourcedirectory.selectorLabels" -}}
+{{- define "plgd-hub.resourcedirectory.selectorLabels" -}}
 app.kubernetes.io/name: {{ .Values.resourcedirectory.name }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
-{{- define "plgd-cloud.oauthConfig" }}
+{{- define "plgd-hub.oauthConfig" }}
   {{- $ := index . 0 }}
   {{- $serviceOAuth := index . 1 }}
   {{- $pathPrefix := index . 2 }}
@@ -62,7 +62,7 @@ app.kubernetes.io/instance: {{ .Release.Name }}
   audience:{{ printf " " }}{{ required ( printf "%s.audience is required variable" $pathPrefix ) ( $serviceOAuth.audience | default $.Values.global.oauth.audience ) }}
 {{- end }}
 
-{{- define "plgd-cloud.authorizationConfig" }}
+{{- define "plgd-hub.authorizationConfig" }}
   {{- $ := index . 0 }}
   {{- $serviceOAuth := index . 1 }}
   {{- $pathPrefix := index . 2 }}

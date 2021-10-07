@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/plgd-dev/cloud/pkg/log"
+	"github.com/plgd-dev/hub/pkg/log"
 
-	"github.com/plgd-dev/cloud/pkg/net/listener"
+	"github.com/plgd-dev/hub/pkg/net/listener"
 )
 
 //Server handle HTTP request

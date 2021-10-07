@@ -6,8 +6,8 @@ import (
 
 	"github.com/google/go-querystring/query"
 	"github.com/gorilla/mux"
-	"github.com/plgd-dev/cloud/grpc-gateway/pb"
-	"github.com/plgd-dev/cloud/http-gateway/uri"
+	"github.com/plgd-dev/hub/grpc-gateway/pb"
+	"github.com/plgd-dev/hub/http-gateway/uri"
 )
 
 func (requestHandler *RequestHandler) getDevicePendingCommands(w http.ResponseWriter, r *http.Request) {

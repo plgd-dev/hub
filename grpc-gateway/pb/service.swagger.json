@@ -1,16 +1,16 @@
 {
   "swagger": "2.0",
   "info": {
-    "title": "plgd cloud - HTTP Gateway API",
+    "title": "plgd hub - HTTP Gateway API",
     "version": "1.0",
     "contact": {
       "name": "plgd.dev",
-      "url": "https://github.com/plgd-dev/cloud",
+      "url": "https://github.com/plgd-dev/hub",
       "email": "info@plgd.dev"
     },
     "license": {
       "name": "Apache License 2.0",
-      "url": "https://github.com/plgd-dev/cloud/blob/v2/LICENSE"
+      "url": "https://github.com/plgd-dev/hub/blob/v2/LICENSE"
     }
   },
   "tags": [
@@ -127,7 +127,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/cloudgrpcgatewaypbDeleteDevicesResponse"
+              "$ref": "#/definitions/grpcgatewaypbDeleteDevicesResponse"
             }
           },
           "default": {
@@ -216,7 +216,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/cloudgrpcgatewaypbUpdateDeviceMetadataResponse"
+              "$ref": "#/definitions/grpcgatewaypbUpdateDeviceMetadataResponse"
             }
           },
           "default": {
@@ -264,7 +264,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/cloudgrpcgatewaypbCancelPendingCommandsResponse"
+              "$ref": "#/definitions/grpcgatewaypbCancelPendingCommandsResponse"
             }
           },
           "default": {
@@ -305,7 +305,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/cloudgrpcgatewaypbDeleteResourceResponse"
+              "$ref": "#/definitions/grpcgatewaypbDeleteResourceResponse"
             }
           },
           "default": {
@@ -347,7 +347,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/cloudgrpcgatewaypbCreateResourceResponse"
+              "$ref": "#/definitions/grpcgatewaypbCreateResourceResponse"
             }
           },
           "default": {
@@ -375,7 +375,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/cloudgrpcgatewaypbContent"
+              "$ref": "#/definitions/grpcgatewaypbContent"
             }
           },
           {
@@ -447,7 +447,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/cloudgrpcgatewaypbUpdateResourceResponse"
+              "$ref": "#/definitions/grpcgatewaypbUpdateResourceResponse"
             }
           },
           "default": {
@@ -475,7 +475,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/cloudgrpcgatewaypbContent"
+              "$ref": "#/definitions/grpcgatewaypbContent"
             }
           },
           {
@@ -647,7 +647,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/cloudgrpcgatewaypbCancelPendingCommandsResponse"
+              "$ref": "#/definitions/grpcgatewaypbCancelPendingCommandsResponse"
             }
           },
           "default": {
@@ -751,13 +751,13 @@
               "type": "object",
               "properties": {
                 "result": {
-                  "$ref": "#/definitions/cloudgrpcgatewaypbResource"
+                  "$ref": "#/definitions/grpcgatewaypbResource"
                 },
                 "error": {
                   "$ref": "#/definitions/googlerpcStatus"
                 }
               },
-              "title": "Stream result of cloudgrpcgatewaypbResource"
+              "title": "Stream result of grpcgatewaypbResource"
             }
           },
           "default": {
@@ -981,151 +981,6 @@
       ],
       "default": "REGISTERED"
     },
-    "cloudgrpcgatewaypbCancelPendingCommandsResponse": {
-      "type": "object",
-      "properties": {
-        "correlationIds": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        }
-      }
-    },
-    "cloudgrpcgatewaypbContent": {
-      "type": "object",
-      "properties": {
-        "contentType": {
-          "type": "string"
-        },
-        "data": {
-          "type": "string",
-          "format": "byte"
-        }
-      }
-    },
-    "cloudgrpcgatewaypbCreateResourceResponse": {
-      "type": "object",
-      "properties": {
-        "data": {
-          "$ref": "#/definitions/pbResourceCreated"
-        }
-      }
-    },
-    "cloudgrpcgatewaypbDeleteDevicesResponse": {
-      "type": "object",
-      "properties": {
-        "deviceIds": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        }
-      }
-    },
-    "cloudgrpcgatewaypbDeleteResourceResponse": {
-      "type": "object",
-      "properties": {
-        "data": {
-          "$ref": "#/definitions/pbResourceDeleted"
-        }
-      }
-    },
-    "cloudgrpcgatewaypbResource": {
-      "type": "object",
-      "properties": {
-        "types": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "data": {
-          "$ref": "#/definitions/pbResourceChanged"
-        }
-      }
-    },
-    "cloudgrpcgatewaypbUpdateDeviceMetadataResponse": {
-      "type": "object",
-      "properties": {
-        "data": {
-          "$ref": "#/definitions/pbDeviceMetadataUpdated"
-        }
-      }
-    },
-    "cloudgrpcgatewaypbUpdateResourceResponse": {
-      "type": "object",
-      "properties": {
-        "data": {
-          "$ref": "#/definitions/pbResourceUpdated"
-        }
-      }
-    },
-    "cloudresourceaggregatepbContent": {
-      "type": "object",
-      "properties": {
-        "data": {
-          "type": "string",
-          "format": "byte"
-        },
-        "contentType": {
-          "type": "string"
-        },
-        "coapContentFormat": {
-          "type": "integer",
-          "format": "int32"
-        }
-      }
-    },
-    "cloudresourceaggregatepbResource": {
-      "type": "object",
-      "properties": {
-        "href": {
-          "type": "string"
-        },
-        "deviceId": {
-          "type": "string"
-        },
-        "resourceTypes": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "interfaces": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "anchor": {
-          "type": "string"
-        },
-        "title": {
-          "type": "string"
-        },
-        "supportedContentTypes": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "validUntil": {
-          "type": "string",
-          "format": "int64"
-        },
-        "policy": {
-          "$ref": "#/definitions/pbPolicy"
-        },
-        "endpointInformations": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/pbEndpointInformation"
-          }
-        }
-      },
-      "title": "https://github.com/openconnectivityfoundation/core/blob/master/schemas/oic.links.properties.core-schema.json"
-    },
     "googlerpcStatus": {
       "type": "object",
       "properties": {
@@ -1141,6 +996,56 @@
           "items": {
             "$ref": "#/definitions/protobufAny"
           }
+        }
+      }
+    },
+    "grpcgatewaypbCancelPendingCommandsResponse": {
+      "type": "object",
+      "properties": {
+        "correlationIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "grpcgatewaypbContent": {
+      "type": "object",
+      "properties": {
+        "contentType": {
+          "type": "string"
+        },
+        "data": {
+          "type": "string",
+          "format": "byte"
+        }
+      }
+    },
+    "grpcgatewaypbCreateResourceResponse": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "$ref": "#/definitions/pbResourceCreated"
+        }
+      }
+    },
+    "grpcgatewaypbDeleteDevicesResponse": {
+      "type": "object",
+      "properties": {
+        "deviceIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "grpcgatewaypbDeleteResourceResponse": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "$ref": "#/definitions/pbResourceDeleted"
         }
       }
     },
@@ -1203,6 +1108,36 @@
         },
         "deviceMetadataUpdated": {
           "$ref": "#/definitions/pbDeviceMetadataUpdated"
+        }
+      }
+    },
+    "grpcgatewaypbResource": {
+      "type": "object",
+      "properties": {
+        "types": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "data": {
+          "$ref": "#/definitions/pbResourceChanged"
+        }
+      }
+    },
+    "grpcgatewaypbUpdateDeviceMetadataResponse": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "$ref": "#/definitions/pbDeviceMetadataUpdated"
+        }
+      }
+    },
+    "grpcgatewaypbUpdateResourceResponse": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "$ref": "#/definitions/pbResourceUpdated"
         }
       }
     },
@@ -1520,7 +1455,7 @@
           "$ref": "#/definitions/pbResourceId"
         },
         "content": {
-          "$ref": "#/definitions/cloudresourceaggregatepbContent"
+          "$ref": "#/definitions/resourceaggregatepbContent"
         },
         "status": {
           "$ref": "#/definitions/resourceaggregatepbStatus"
@@ -1540,7 +1475,7 @@
           "$ref": "#/definitions/pbResourceId"
         },
         "content": {
-          "$ref": "#/definitions/cloudresourceaggregatepbContent"
+          "$ref": "#/definitions/resourceaggregatepbContent"
         },
         "auditContext": {
           "$ref": "#/definitions/pbAuditContext"
@@ -1564,7 +1499,7 @@
           "$ref": "#/definitions/resourceaggregatepbStatus"
         },
         "content": {
-          "$ref": "#/definitions/cloudresourceaggregatepbContent"
+          "$ref": "#/definitions/resourceaggregatepbContent"
         },
         "auditContext": {
           "$ref": "#/definitions/pbAuditContext"
@@ -1602,7 +1537,7 @@
           "$ref": "#/definitions/resourceaggregatepbStatus"
         },
         "content": {
-          "$ref": "#/definitions/cloudresourceaggregatepbContent"
+          "$ref": "#/definitions/resourceaggregatepbContent"
         },
         "auditContext": {
           "$ref": "#/definitions/pbAuditContext"
@@ -1632,7 +1567,7 @@
         "resources": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/cloudresourceaggregatepbResource"
+            "$ref": "#/definitions/resourceaggregatepbResource"
           }
         },
         "auditContext": {
@@ -1653,7 +1588,7 @@
         "resources": {
           "type": "object",
           "additionalProperties": {
-            "$ref": "#/definitions/cloudresourceaggregatepbResource"
+            "$ref": "#/definitions/resourceaggregatepbResource"
           }
         },
         "eventMetadata": {
@@ -1716,7 +1651,7 @@
           "$ref": "#/definitions/resourceaggregatepbStatus"
         },
         "content": {
-          "$ref": "#/definitions/cloudresourceaggregatepbContent"
+          "$ref": "#/definitions/resourceaggregatepbContent"
         },
         "auditContext": {
           "$ref": "#/definitions/pbAuditContext"
@@ -1777,7 +1712,7 @@
           "type": "string"
         },
         "content": {
-          "$ref": "#/definitions/cloudresourceaggregatepbContent"
+          "$ref": "#/definitions/resourceaggregatepbContent"
         },
         "auditContext": {
           "$ref": "#/definitions/pbAuditContext"
@@ -1801,7 +1736,7 @@
           "$ref": "#/definitions/resourceaggregatepbStatus"
         },
         "content": {
-          "$ref": "#/definitions/cloudresourceaggregatepbContent"
+          "$ref": "#/definitions/resourceaggregatepbContent"
         },
         "auditContext": {
           "$ref": "#/definitions/pbAuditContext"
@@ -1844,6 +1779,71 @@
           "format": "byte"
         }
       }
+    },
+    "resourceaggregatepbContent": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "string",
+          "format": "byte"
+        },
+        "contentType": {
+          "type": "string"
+        },
+        "coapContentFormat": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "resourceaggregatepbResource": {
+      "type": "object",
+      "properties": {
+        "href": {
+          "type": "string"
+        },
+        "deviceId": {
+          "type": "string"
+        },
+        "resourceTypes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "interfaces": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "anchor": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "supportedContentTypes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "validUntil": {
+          "type": "string",
+          "format": "int64"
+        },
+        "policy": {
+          "$ref": "#/definitions/pbPolicy"
+        },
+        "endpointInformations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/pbEndpointInformation"
+          }
+        }
+      },
+      "title": "https://github.com/openconnectivityfoundation/core/blob/master/schemas/oic.links.properties.core-schema.json"
     },
     "resourceaggregatepbShadowSynchronization": {
       "type": "string",

@@ -1,10 +1,10 @@
 syntax = "proto3";
 
-package ocf.cloud.resourceaggregate.pb;
+package resourceaggregate.pb;
 
-import "github.com/plgd-dev/cloud/resource-aggregate/pb/resources.proto";
+import "github.com/plgd-dev/hub/resource-aggregate/pb/resources.proto";
 
-option go_package = "github.com/plgd-dev/cloud/resource-aggregate/commands;commands";
+option go_package = "github.com/plgd-dev/hub/resource-aggregate/commands;commands";
 
 message CommandMetadata {
     string connection_id = 1;
@@ -503,7 +503,7 @@ message ConfirmDeviceMetadataUpdateResponse {
 // └────────┬─────────┘                       └─────────┘          └──────┘          └──────────┘
 //          │                                      │                  │                   │  ╔════════════════════════════╗
 //          │                                      │                  │                   │  ║OCF Server is disconnected ░║
-//          │                                      │                  │                   │  ║from the plgd cloud         ║
+//          │                                      │                  │                   │  ║from the plgd hub         ║
 //          │                                      │                  │                   │  ╚════════════════════════════╝
 //         ┌┴┐                RetrieveResourceRequest                ┌┴┐                  │
 //         │ │ <─────────────────────────────────────────────────────│ │                  │
@@ -545,7 +545,7 @@ message CancelPendingCommandsResponse{
 // └────────┬─────────┘                         └─────────┘          └──────┘          └──────────┘
 //          │                                        │                  │                   │  ╔════════════════════════════╗
 //          │                                        │                  │                   │  ║OCF Server is disconnected ░║
-//          │                                        │                  │                   │  ║from the plgd cloud         ║
+//          │                                        │                  │                   │  ║from the plgd hub         ║
 //          │                                        │                  │                   │  ╚════════════════════════════╝
 //         ┌┴┐               UpdateDeviceMetadataRequest               ┌┴┐                  │
 //         │ │ <───────────────────────────────────────────────────────│ │                  │

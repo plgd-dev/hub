@@ -5,13 +5,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/plgd-dev/cloud/pkg/config"
-	"github.com/plgd-dev/cloud/pkg/log"
-	"github.com/plgd-dev/cloud/pkg/net/grpc/client"
-	certManagerServer "github.com/plgd-dev/cloud/pkg/security/certManager/server"
-	"github.com/plgd-dev/cloud/pkg/security/oauth2"
-	"github.com/plgd-dev/cloud/pkg/sync/task/queue"
-	natsClient "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/client"
+	"github.com/plgd-dev/hub/pkg/config"
+	"github.com/plgd-dev/hub/pkg/log"
+	"github.com/plgd-dev/hub/pkg/net/grpc/client"
+	certManagerServer "github.com/plgd-dev/hub/pkg/security/certManager/server"
+	"github.com/plgd-dev/hub/pkg/security/oauth2"
+	"github.com/plgd-dev/hub/pkg/sync/task/queue"
+	natsClient "github.com/plgd-dev/hub/resource-aggregate/cqrs/eventbus/nats/client"
 )
 
 //Config represent application configuration

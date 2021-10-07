@@ -3,7 +3,7 @@ package store
 import (
 	"context"
 
-	"github.com/plgd-dev/cloud/pkg/security/oauth2"
+	"github.com/plgd-dev/hub/pkg/security/oauth2"
 )
 
 type LinkedCloudsHandler struct {

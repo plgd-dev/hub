@@ -3,10 +3,10 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "plgd-cloud.resourceaggregate.fullname" . }}
+  name: {{ include "plgd-hub.resourceaggregate.fullname" . }}
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "plgd-cloud.labels" . | nindent 4 }}
+    {{- include "plgd-hub.labels" . | nindent 4 }}
     {{- with .Values.resourceaggregate.deploymentLabels }}
     {{- . | toYaml | nindent 4 }}
     {{- end }}
@@ -18,7 +18,7 @@ spec:
   replicas: {{ .Values.resourceaggregate.replicas }}
   selector:
     matchLabels:
-      {{- include "plgd-cloud.resourceaggregate.selectorLabels" . | nindent 6 }}
+      {{- include "plgd-hub.resourceaggregate.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       {{- with .Values.resourceaggregate.podAnnotations }}
@@ -26,7 +26,7 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
-        {{- include "plgd-cloud.resourceaggregate.selectorLabels" . | nindent 8 }}
+        {{- include "plgd-hub.resourceaggregate.selectorLabels" . | nindent 8 }}
     spec:
       {{- with .Values.resourceaggregate.securityContext }}
       securityContext:
@@ -50,7 +50,7 @@ spec:
           securityContext:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-          image: {{ include "plgd-cloud.resourceaggregate.image" . | quote }}
+          image: {{ include "plgd-hub.resourceaggregate.image" . | quote }}
           imagePullPolicy: {{ .Values.resourcedirectory.image.pullPolicy }}
           {{- if .Values.resourceaggregate.command }}
           command:
@@ -80,7 +80,7 @@ spec:
           volumeMounts:
             - mountPath: {{ .Values.resourceaggregate.config.mountPath }}
               name: {{ .Values.resourceaggregate.config.volume }}
-            {{- if ( include "plgd-cloud.resourceaggregate.createServiceCertByCm" . ) }}
+            {{- if ( include "plgd-hub.resourceaggregate.createServiceCertByCm" . ) }}
             - name: service-crt
               mountPath: {{ $rdServiceCert }}
             {{- end }}
@@ -90,11 +90,11 @@ spec:
       volumes:
         - name: {{ .Values.resourcedirectory.config.volume }}
           secret:
-            secretName: {{ include "plgd-cloud.resourceaggregate.configSecretName" . }}
-        {{- if ( include "plgd-cloud.resourceaggregate.createServiceCertByCm" . ) }}
+            secretName: {{ include "plgd-hub.resourceaggregate.configSecretName" . }}
+        {{- if ( include "plgd-hub.resourceaggregate.createServiceCertByCm" . ) }}
         - name: service-crt
           secret:
-            secretName: {{ include "plgd-cloud.resourceaggregate.serviceCertName" . }}
+            secretName: {{ include "plgd-hub.resourceaggregate.serviceCertName" . }}
         {{- end }}
         {{- with .Values.resourceaggregate.extraVolumeMounts }}
         {{- toYaml . | nindent 8 }}

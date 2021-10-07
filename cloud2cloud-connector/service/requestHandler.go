@@ -8,12 +8,12 @@ import (
 
 	router "github.com/gorilla/mux"
 	"github.com/patrickmn/go-cache"
-	"github.com/plgd-dev/cloud/cloud2cloud-connector/events"
-	"github.com/plgd-dev/cloud/cloud2cloud-connector/store"
-	"github.com/plgd-dev/cloud/cloud2cloud-connector/uri"
-	kitNetHttp "github.com/plgd-dev/cloud/pkg/net/http"
-	pkgOAuth2 "github.com/plgd-dev/cloud/pkg/security/oauth2"
-	"github.com/plgd-dev/kit/log"
+	"github.com/plgd-dev/hub/cloud2cloud-connector/events"
+	"github.com/plgd-dev/hub/cloud2cloud-connector/store"
+	"github.com/plgd-dev/hub/cloud2cloud-connector/uri"
+	kitNetHttp "github.com/plgd-dev/hub/pkg/net/http"
+	pkgOAuth2 "github.com/plgd-dev/hub/pkg/security/oauth2"
+	"github.com/plgd-dev/kit/v2/log"
 )
 
 const cloudIDKey = "CloudId"

@@ -3,11 +3,11 @@ package service
 import (
 	"context"
 
-	"github.com/plgd-dev/cloud/cloud2cloud-connector/events"
-	"github.com/plgd-dev/cloud/grpc-gateway/pb"
-	"github.com/plgd-dev/kit/log"
+	"github.com/plgd-dev/hub/cloud2cloud-connector/events"
+	"github.com/plgd-dev/hub/grpc-gateway/pb"
+	"github.com/plgd-dev/kit/v2/log"
 
-	raEvents "github.com/plgd-dev/cloud/resource-aggregate/events"
+	raEvents "github.com/plgd-dev/hub/resource-aggregate/events"
 )
 
 type devicesSubscriptionHandler struct {

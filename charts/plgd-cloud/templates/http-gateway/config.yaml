@@ -3,7 +3,7 @@
 apiVersion: v1
 kind: Secret
 metadata:
-  name: {{ include "plgd-cloud.httpgateway.configSecretName" . }}
+  name: {{ include "plgd-hub.httpgateway.configSecretName" . }}
   namespace: {{ .Release.Namespace }}
 stringData:
   {{ .Values.httpgateway.config.fileName }}: |
@@ -15,7 +15,7 @@ stringData:
         address: {{  .apis.http.address | default (printf "0.0.0.0:%v" .port) | quote }}
         tls:
           {{- $tls := .apis.http.tls }}
-          {{- include "plgd-cloud.certificateConfig" (list $ $tls $httpCert ) | indent 8 }}
+          {{- include "plgd-hub.certificateConfig" (list $ $tls $httpCert ) | indent 8 }}
           clientCertificateRequired: {{ .apis.http.tls.clientCertificateRequired }}
         webSocket:
           streamBodyLimit: {{ .apis.http.webSocket.streamBodyLimit }}
@@ -31,26 +31,26 @@ stringData:
             timeout: {{ .apis.http.authorization.http.timeout }}
             tls:
               {{- $httpTls := .apis.http.authorization.http.tls }}
-              {{- include "plgd-cloud.certificateConfig" (list $ $httpTls $httpCert ) | indent 12 }}
+              {{- include "plgd-hub.certificateConfig" (list $ $httpTls $httpCert ) | indent 12 }}
               useSystemCAPool: {{ .apis.http.authorization.http.tls.useSystemCAPool }}
     clients:
       grpcGateway:
         grpc:
-          address: {{ printf " " }}{{- include "plgd-cloud.grpcGatewayAddress" (list $ .clients.grpcGateway.grpc.address ) | quote }}
+          address: {{ printf " " }}{{- include "plgd-hub.grpcGatewayAddress" (list $ .clients.grpcGateway.grpc.address ) | quote }}
           keepAlive:
             time: {{ .clients.grpcGateway.grpc.keepAlive.time }}
             timeout: {{ .clients.grpcGateway.grpc.keepAlive.timeout }}
             permitWithoutStream: {{ .clients.grpcGateway.grpc.keepAlive.permitWithoutStream }}
           tls:
             {{- $grpcTls := .clients.grpcGateway.grpc.tls }}
-            {{- include "plgd-cloud.certificateConfig" (list $ $grpcTls $httpCert ) | indent 10 }}
+            {{- include "plgd-hub.certificateConfig" (list $ $grpcTls $httpCert ) | indent 10 }}
             useSystemCAPool: {{ .clients.grpcGateway.grpc.tls.useSystemCAPool }}
     ui:
       enabled: {{ .ui.enabled }}
       directory: {{ .ui.directory | quote }}
       webConfiguration:
         authority: {{ .ui.webConfiguration.authority | default $.Values.global.authority | quote }}
-        httpGatewayAddress: {{ .ui.webConfiguration.httpGatewayAddress | default ( printf "https://%s" ( include "plgd-cloud.httpgateway.apiDomain" $)) | quote }}
+        httpGatewayAddress: {{ .ui.webConfiguration.httpGatewayAddress | default ( printf "https://%s" ( include "plgd-hub.httpgateway.apiDomain" $)) | quote }}
         webOAuthClient:
           clientID: {{ required "httpgateway.ui.webConfiguration.webOAuthClient.clientID or global.oauth.web.clientID is required" ( .ui.webConfiguration.webOAuthClient.clientID | default $.Values.global.oauth.web.clientID ) | quote }}
           audience: {{ .ui.webConfiguration.webOAuthClient.audience | default ( $.Values.global.oauth.web.audience | default $.Values.global.audience ) | quote }}

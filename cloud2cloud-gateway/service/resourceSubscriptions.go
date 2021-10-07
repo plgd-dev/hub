@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/plgd-dev/cloud/cloud2cloud-connector/events"
-	"github.com/plgd-dev/cloud/resource-aggregate/commands"
-	raEvents "github.com/plgd-dev/cloud/resource-aggregate/events"
-	"github.com/plgd-dev/kit/log"
+	"github.com/plgd-dev/hub/cloud2cloud-connector/events"
+	"github.com/plgd-dev/hub/resource-aggregate/commands"
+	raEvents "github.com/plgd-dev/hub/resource-aggregate/events"
+	"github.com/plgd-dev/kit/v2/log"
 )
 
 type resourceSubscriptionHandler struct {

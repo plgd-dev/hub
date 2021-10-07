@@ -13,9 +13,9 @@ import (
 	"github.com/lestrrat-go/jwx/jwk"
 	"github.com/lestrrat-go/jwx/jws"
 	"github.com/lestrrat-go/jwx/jwt"
-	"github.com/plgd-dev/cloud/pkg/log"
-	"github.com/plgd-dev/cloud/test/oauth-server/uri"
-	"github.com/plgd-dev/kit/codec/json"
+	"github.com/plgd-dev/hub/pkg/log"
+	"github.com/plgd-dev/hub/test/oauth-server/uri"
+	"github.com/plgd-dev/kit/v2/codec/json"
 )
 
 var DeviceUserID = "1"

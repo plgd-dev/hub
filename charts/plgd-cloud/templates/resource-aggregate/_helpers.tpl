@@ -1,16 +1,16 @@
-{{- define  "plgd-cloud.resourceaggregate.image" -}}
+{{- define  "plgd-hub.resourceaggregate.image" -}}
     {{- $registryName := .Values.resourceaggregate.image.registry | default "" -}}
     {{- $repositoryName := .Values.resourceaggregate.image.repository -}}
     {{- $tag := .Values.resourceaggregate.image.tag | default .Chart.AppVersion | toString -}}
     {{- printf "%s%s:%s" $registryName $repositoryName  $tag -}}
 {{- end -}}
 
-{{- define  "plgd-cloud.resourceaggregate.configSecretName" -}}
-    {{- $fullName :=  include "plgd-cloud.resourceaggregate.fullname" . -}}
+{{- define  "plgd-hub.resourceaggregate.configSecretName" -}}
+    {{- $fullName :=  include "plgd-hub.resourceaggregate.fullname" . -}}
     {{- printf "%s-cfg" $fullName }}
 {{- end -}}
 
-{{- define "plgd-cloud.resourceaggregate.createServiceCertByCm" }}
+{{- define "plgd-hub.resourceaggregate.createServiceCertByCm" }}
     {{- $serviceTls := .Values.resourceaggregate.apis.grpc.tls.certFile }}
     {{- if $serviceTls }}
     {{- printf "false" }}
@@ -19,12 +19,12 @@
     {{- end }}
 {{- end }}
 
-{{- define "plgd-cloud.resourceaggregate.serviceCertName" -}}
-  {{- $fullName := include "plgd-cloud.resourceaggregate.fullname" . -}}
+{{- define "plgd-hub.resourceaggregate.serviceCertName" -}}
+  {{- $fullName := include "plgd-hub.resourceaggregate.fullname" . -}}
   {{- printf "%s-crt" $fullName -}}
 {{- end }}
 
-{{- define "plgd-cloud.resourceaggregate.selectorLabels" -}}
+{{- define "plgd-hub.resourceaggregate.selectorLabels" -}}
 app.kubernetes.io/name: {{ .Values.resourceaggregate.name }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}

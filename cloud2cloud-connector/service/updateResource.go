@@ -8,15 +8,15 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/plgd-dev/cloud/cloud2cloud-connector/events"
-	"github.com/plgd-dev/cloud/cloud2cloud-connector/store"
-	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
-	kitHttp "github.com/plgd-dev/cloud/pkg/net/http"
-	"github.com/plgd-dev/cloud/resource-aggregate/commands"
-	raEvents "github.com/plgd-dev/cloud/resource-aggregate/events"
-	raService "github.com/plgd-dev/cloud/resource-aggregate/service"
+	"github.com/plgd-dev/hub/cloud2cloud-connector/events"
+	"github.com/plgd-dev/hub/cloud2cloud-connector/store"
+	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
+	kitHttp "github.com/plgd-dev/hub/pkg/net/http"
+	"github.com/plgd-dev/hub/resource-aggregate/commands"
+	raEvents "github.com/plgd-dev/hub/resource-aggregate/events"
+	raService "github.com/plgd-dev/hub/resource-aggregate/service"
 	"github.com/plgd-dev/go-coap/v2/message"
-	"github.com/plgd-dev/kit/log"
+	"github.com/plgd-dev/kit/v2/log"
 )
 
 func makeHTTPEndpoint(url, deviceID, href string) string {

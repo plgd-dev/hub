@@ -8,12 +8,12 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/plgd-dev/cloud/coap-gateway/coapconv"
+	"github.com/plgd-dev/hub/coap-gateway/coapconv"
+	"github.com/plgd-dev/device/schema"
 	"github.com/plgd-dev/go-coap/v2/message"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/mux"
-	"github.com/plgd-dev/kit/codec/cbor"
-	"github.com/plgd-dev/sdk/schema"
+	"github.com/plgd-dev/kit/v2/codec/cbor"
 )
 
 type wkRd struct {

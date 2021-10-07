@@ -5,10 +5,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/plgd-dev/cloud/pkg/log"
-	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
-	pkgTime "github.com/plgd-dev/cloud/pkg/time"
-	"github.com/plgd-dev/cloud/resource-aggregate/commands"
+	"github.com/plgd-dev/hub/pkg/log"
+	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
+	pkgTime "github.com/plgd-dev/hub/pkg/time"
+	"github.com/plgd-dev/hub/resource-aggregate/commands"
 )
 
 type deviceExpires struct {

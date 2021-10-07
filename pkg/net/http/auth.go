@@ -8,8 +8,8 @@ import (
 	"strings"
 
 	extJwt "github.com/golang-jwt/jwt/v4"
-	"github.com/plgd-dev/cloud/pkg/net/grpc"
-	"github.com/plgd-dev/cloud/pkg/security/jwt"
+	"github.com/plgd-dev/hub/pkg/net/grpc"
+	"github.com/plgd-dev/hub/pkg/security/jwt"
 )
 
 type Claims = interface{ Valid() error }

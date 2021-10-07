@@ -3,7 +3,7 @@
 apiVersion: v1
 kind: Secret
 metadata:
-  name: {{ include "plgd-cloud.grpcgateway.configSecretName" . }}
+  name: {{ include "plgd-hub.grpcgateway.configSecretName" . }}
   namespace: {{ .Release.Namespace }}
 stringData:
   {{ .Values.grpcgateway.config.fileName }}: |
@@ -28,11 +28,11 @@ stringData:
           timeout: {{ .apis.grpc.keepAlive.timeout }}
         tls:
           {{- $tls := .apis.grpc.tls }}
-          {{- include "plgd-cloud.certificateConfig" (list $ $tls $grpcCert) | indent 8 }}
+          {{- include "plgd-hub.certificateConfig" (list $ $tls $grpcCert) | indent 8 }}
           clientCertificateRequired: true
         authorization:
           {{- $authorization := .apis.grpc.authorization }}
-          {{- include "plgd-cloud.authorizationConfig" (list $ $authorization "grpcgateway" ) | indent 8 }}
+          {{- include "plgd-hub.authorizationConfig" (list $ $authorization "grpcgateway" ) | indent 8 }}
           http:
             maxIdleConns: {{ .apis.grpc.authorization.http.maxIdleConns }}
             maxConnsPerHost: {{ .apis.grpc.authorization.http.maxIdleConnsPerHost }}
@@ -41,55 +41,55 @@ stringData:
             timeout: {{ .apis.grpc.authorization.http.timeout }}
             tls:
               {{- $grpcTls := .apis.grpc.authorization.http.tls }}
-              {{- include "plgd-cloud.certificateConfig" (list $ $grpcTls $grpcCert ) | indent 12 }}
+              {{- include "plgd-hub.certificateConfig" (list $ $grpcTls $grpcCert ) | indent 12 }}
               useSystemCAPool: {{ .apis.grpc.authorization.http.tls.useSystemCAPool }}
     clients:
       eventBus:
         goPoolSize: {{ .clients.eventBus.goPoolSize }}
         nats:
-          url: {{ printf " " }}{{- include "plgd-cloud.natsUri" (list $ .clients.eventBus.nats.url) | quote }}
+          url: {{ printf " " }}{{- include "plgd-hub.natsUri" (list $ .clients.eventBus.nats.url) | quote }}
           pendingLimits:
             msgLimit: {{ .clients.eventBus.nats.pendingLimits.msgLimit }}
             bytesLimit: {{ printf "%v" .clients.eventBus.nats.pendingLimits.bytesLimit }}
           tls:
             {{- $natsTls := .clients.eventBus.nats.tls }}
-            {{- include "plgd-cloud.certificateConfig" (list $ $natsTls $grpcCert ) | indent 10 }}
+            {{- include "plgd-hub.certificateConfig" (list $ $natsTls $grpcCert ) | indent 10 }}
             useSystemCAPool: {{ .clients.eventBus.nats.tls.useSystemCAPool }}
       identityStore:
         grpc:
           {{- $authorizationServer := .clients.identityStore.grpc.address }}
-          address:{{ printf " " }}{{- include "plgd-cloud.identityStoreAddress" (list $ $authorizationServer ) | quote }}
+          address:{{ printf " " }}{{- include "plgd-hub.identityStoreAddress" (list $ $authorizationServer ) | quote }}
           keepAlive:
             time: {{ .clients.identityStore.grpc.keepAlive.timeout }}
             timeout: {{ .clients.identityStore.grpc.keepAlive.timeout }}
             permitWithoutStream: {{ .clients.identityStore.grpc.keepAlive.permitWithoutStream }}
           tls:
             {{- $authClientTls := .clients.identityStore.grpc.tls }}
-            {{- include "plgd-cloud.certificateConfig" (list $ $authClientTls $grpcCert ) | indent 10 }}
+            {{- include "plgd-hub.certificateConfig" (list $ $authClientTls $grpcCert ) | indent 10 }}
             useSystemCAPool: {{ .clients.identityStore.grpc.tls.useSystemCAPool }}
       resourceAggregate:
         grpc:
           {{- $resourceAggregate := .clients.resourceAggregate.grpc.address }}
-          address:{{ printf " " }}{{- include "plgd-cloud.resourceAggregateAddress" (list $ $resourceAggregate ) | quote }}
+          address:{{ printf " " }}{{- include "plgd-hub.resourceAggregateAddress" (list $ $resourceAggregate ) | quote }}
           keepAlive:
             time: {{ .clients.resourceAggregate.grpc.keepAlive.time }}
             timeout: {{ .clients.resourceAggregate.grpc.keepAlive.timeout }}
             permitWithoutStream: {{ .clients.resourceAggregate.grpc.keepAlive.permitWithoutStream }}
           tls:
             {{- $raClientTls := .clients.resourceAggregate.grpc.tls }}
-            {{- include "plgd-cloud.certificateConfig" (list $ $raClientTls $grpcCert) | indent 10 }}
+            {{- include "plgd-hub.certificateConfig" (list $ $raClientTls $grpcCert) | indent 10 }}
             useSystemCAPool: {{ .clients.resourceAggregate.grpc.tls.useSystemCAPool }}
       resourceDirectory:
         grpc:
           {{- $resourceDirectory := .clients.resourceDirectory.grpc.address }}
-          address:{{ printf " " }}{{- include "plgd-cloud.resourceDirectoryAddress" (list $ $resourceDirectory ) | quote }}
+          address:{{ printf " " }}{{- include "plgd-hub.resourceDirectoryAddress" (list $ $resourceDirectory ) | quote }}
           keepAlive:
             time: {{ .clients.resourceDirectory.grpc.keepAlive.time }}
             timeout: {{ .clients.resourceDirectory.grpc.keepAlive.timeout }}
             permitWithoutStream: {{ .clients.resourceDirectory.grpc.keepAlive.permitWithoutStream }}
           tls:
             {{- $rdClientTls := .clients.resourceDirectory.grpc.tls }}
-            {{- include "plgd-cloud.certificateConfig" (list $ $rdClientTls $grpcCert ) | indent 10 }}
+            {{- include "plgd-hub.certificateConfig" (list $ $rdClientTls $grpcCert ) | indent 10 }}
             useSystemCAPool: {{ .clients.resourceDirectory.grpc.tls.useSystemCAPool }}
   {{- end }}
 {{- end }}

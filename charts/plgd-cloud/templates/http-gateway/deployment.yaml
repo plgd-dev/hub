@@ -3,10 +3,10 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "plgd-cloud.httpgateway.fullname" . }}
+  name: {{ include "plgd-hub.httpgateway.fullname" . }}
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "plgd-cloud.labels" . | nindent 4 }}
+    {{- include "plgd-hub.labels" . | nindent 4 }}
     {{- with .Values.httpgateway.deploymentLabels }}
     {{- . | toYaml | nindent 4 }}
     {{- end }}
@@ -18,7 +18,7 @@ spec:
   replicas: {{ .Values.httpgateway.replicas }}
   selector:
     matchLabels:
-      {{- include "plgd-cloud.httpgateway.selectorLabels" . | nindent 6 }}
+      {{- include "plgd-hub.httpgateway.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       {{- with .Values.httpgateway.podAnnotations }}
@@ -26,7 +26,7 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
-        {{- include "plgd-cloud.httpgateway.selectorLabels" . | nindent 8 }}
+        {{- include "plgd-hub.httpgateway.selectorLabels" . | nindent 8 }}
     spec:
       {{- with .Values.httpgateway.securityContext }}
       securityContext:
@@ -50,7 +50,7 @@ spec:
           securityContext:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-          image: {{ include "plgd-cloud.httpgateway.image" . | quote }}
+          image: {{ include "plgd-hub.httpgateway.image" . | quote }}
           imagePullPolicy: {{ .Values.httpgateway.image.pullPolicy }}
           {{- if .Values.httpgateway.command }}
           command:
@@ -80,7 +80,7 @@ spec:
           volumeMounts:
             - mountPath: {{ .Values.httpgateway.config.mountPath }}
               name: {{ .Values.httpgateway.config.volume }}
-            {{- if ( include "plgd-cloud.httpgateway.createServiceCertByCm" . ) }}
+            {{- if ( include "plgd-hub.httpgateway.createServiceCertByCm" . ) }}
             - name: service-crt
               mountPath: {{ $rdServiceCert }}
             {{- end }}
@@ -90,11 +90,11 @@ spec:
       volumes:
         - name: {{ .Values.httpgateway.config.volume }}
           secret:
-            secretName: {{ include "plgd-cloud.httpgateway.configSecretName" . }}
-        {{- if ( include "plgd-cloud.httpgateway.createServiceCertByCm" . ) }}
+            secretName: {{ include "plgd-hub.httpgateway.configSecretName" . }}
+        {{- if ( include "plgd-hub.httpgateway.createServiceCertByCm" . ) }}
         - name: service-crt
           secret:
-            secretName: {{ include "plgd-cloud.httpgateway.serviceCertName" . }}
+            secretName: {{ include "plgd-hub.httpgateway.serviceCertName" . }}
         {{- end }}
         {{- with .Values.httpgateway.extraVolumeMounts }}
         {{- toYaml . | nindent 8 }}

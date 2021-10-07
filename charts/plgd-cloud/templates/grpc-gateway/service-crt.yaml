@@ -1,14 +1,14 @@
-{{- $createServiceCert := include "plgd-cloud.grpcgateway.serviceCertName" . }}
+{{- $createServiceCert := include "plgd-hub.grpcgateway.serviceCertName" . }}
 {{- if and $createServiceCert .Values.certmanager.enabled .Values.grpcgateway.enabled }}
-{{- $serviceCertName := include "plgd-cloud.grpcgateway.serviceCertName" . }}
-{{- $serviceDns := include "plgd-cloud.grpcgateway.fullname" . }}
+{{- $serviceCertName := include "plgd-hub.grpcgateway.serviceCertName" . }}
+{{- $serviceDns := include "plgd-hub.grpcgateway.fullname" . }}
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   name: {{ $serviceCertName }}
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "plgd-cloud.labels" . | nindent 4 }}
+    {{- include "plgd-hub.labels" . | nindent 4 }}
     {{- with .Values.certmanager.internal.labels }}
     {{- . | toYaml | nindent 4 }}
     {{- end }}

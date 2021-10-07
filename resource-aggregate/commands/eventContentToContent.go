@@ -1,7 +1,7 @@
 package commands
 
 import (
-	extCodes "github.com/plgd-dev/cloud/grpc-gateway/pb/codes"
+	extCodes "github.com/plgd-dev/hub/grpc-gateway/pb/codes"
 	"github.com/plgd-dev/go-coap/v2/message"
 	"google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"

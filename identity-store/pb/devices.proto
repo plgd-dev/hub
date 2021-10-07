@@ -1,8 +1,8 @@
 syntax = "proto3";
 
-package ocf.cloud.identitystore.pb;
+package identitystore.pb;
 
-option go_package = "github.com/plgd-dev/cloud/identity-store/pb;pb";
+option go_package = "github.com/plgd-dev/hub/identity-store/pb;pb";
 
 message GetDevicesRequest {
     repeated string device_ids_filter = 2;

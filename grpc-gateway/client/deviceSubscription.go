@@ -3,7 +3,7 @@ package client
 import (
 	"context"
 
-	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	"github.com/plgd-dev/hub/grpc-gateway/pb"
 )
 
 // DeviceSubscription subscription.

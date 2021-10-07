@@ -1,10 +1,10 @@
 syntax = "proto3";
 
-package ocf.cloud.resourceaggregate.pb;
+package resourceaggregate.pb;
 
-import "github.com/plgd-dev/cloud/resource-aggregate/pb/commands.proto";
+import "github.com/plgd-dev/hub/resource-aggregate/pb/commands.proto";
 
-option go_package = "github.com/plgd-dev/cloud/resource-aggregate/service;service";
+option go_package = "github.com/plgd-dev/hub/resource-aggregate/service;service";
 
 service ResourceAggregate {
   rpc PublishResourceLinks (PublishResourceLinksRequest) returns (PublishResourceLinksResponse) {}

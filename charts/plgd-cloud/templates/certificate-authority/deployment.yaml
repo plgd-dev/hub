@@ -4,10 +4,10 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "plgd-cloud.certificateauthority.fullname" . }}
+  name: {{ include "plgd-hub.certificateauthority.fullname" . }}
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "plgd-cloud.labels" . | nindent 4 }}
+    {{- include "plgd-hub.labels" . | nindent 4 }}
     {{- with .Values.certificateauthority.deploymentLabels }}
     {{- . | toYaml | nindent 4 }}
     {{- end }}
@@ -19,7 +19,7 @@ spec:
   replicas: {{ .Values.resourcedirectory.replicas }}
   selector:
     matchLabels:
-      {{- include "plgd-cloud.certificateauthority.selectorLabels" . | nindent 6 }}
+      {{- include "plgd-hub.certificateauthority.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       {{- with .Values.certificateauthority.podAnnotations }}
@@ -27,7 +27,7 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
-        {{- include "plgd-cloud.certificateauthority.selectorLabels" . | nindent 8 }}
+        {{- include "plgd-hub.certificateauthority.selectorLabels" . | nindent 8 }}
     spec:
       {{- with .Values.certificateauthority.securityContext }}
       securityContext:
@@ -51,7 +51,7 @@ spec:
           securityContext:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-          image: {{ include "plgd-cloud.certificateauthority.image" . | quote }}
+          image: {{ include "plgd-hub.certificateauthority.image" . | quote }}
           imagePullPolicy: {{ .Values.certificateauthority.image.pullPolicy }}
           {{- if .Values.certificateauthority.command }}
           command:
@@ -81,7 +81,7 @@ spec:
           volumeMounts:
             - mountPath: {{ .Values.certificateauthority.config.mountPath }}
               name: {{ .Values.certificateauthority.config.volume }}
-            {{- if ( include "plgd-cloud.certificateauthority.createServiceCertByCm" . ) }}
+            {{- if ( include "plgd-hub.certificateauthority.createServiceCertByCm" . ) }}
             - name: service-crt
               mountPath: {{ $cert }}
             {{- end }}
@@ -95,11 +95,11 @@ spec:
       volumes:
         - name: {{ .Values.resourcedirectory.config.volume }}
           secret:
-            secretName: {{ include "plgd-cloud.certificateauthority.configSecretName" . }}
-        {{- if ( include "plgd-cloud.certificateauthority.createServiceCertByCm" . ) }}
+            secretName: {{ include "plgd-hub.certificateauthority.configSecretName" . }}
+        {{- if ( include "plgd-hub.certificateauthority.createServiceCertByCm" . ) }}
         - name: service-crt
           secret:
-            secretName: {{ include "plgd-cloud.certificateauthority.serviceCertName" . }}
+            secretName: {{ include "plgd-hub.certificateauthority.serviceCertName" . }}
         {{- end }}
         {{- if and ( not $customCaDefined ) .Values.certificateauthority.enabled }}
         - name: {{ .Values.certificateauthority.ca.volume.name }}

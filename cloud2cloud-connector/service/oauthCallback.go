@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	"github.com/google/uuid"
-	"github.com/plgd-dev/cloud/pkg/security/oauth2"
+	"github.com/plgd-dev/hub/pkg/security/oauth2"
 )
 
 func (rh *RequestHandler) handleLinkedData(ctx context.Context, data provisionCacheData, authCode string) (provisionCacheData, error) {

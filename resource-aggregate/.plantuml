@@ -249,7 +249,7 @@ entity "OCF Server" as Server
 
 note right of Server
     OCF Server is disconnected
-    from the plgd cloud
+    from the plgd hub
 end note
 
 Client -> ResourceAggregate : RetrieveResourceRequest
@@ -278,7 +278,7 @@ entity "OCF Server" as Server
 
 note right of Server
     OCF Server is disconnected
-    from the plgd cloud
+    from the plgd hub
 end note
 
 Client -> ResourceAggregate : UpdateDeviceMetadataRequest

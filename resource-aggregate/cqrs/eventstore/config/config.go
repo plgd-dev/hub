@@ -3,7 +3,7 @@ package config
 import (
 	"fmt"
 
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/mongodb"
+	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventstore/mongodb"
 )
 
 type Config struct {

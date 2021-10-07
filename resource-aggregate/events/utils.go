@@ -3,7 +3,7 @@ package events
 import (
 	"time"
 
-	commands "github.com/plgd-dev/cloud/resource-aggregate/commands"
+	commands "github.com/plgd-dev/hub/resource-aggregate/commands"
 )
 
 //MakeEventMeta for creating EventMetadata for event.

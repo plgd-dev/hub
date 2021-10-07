@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	nats "github.com/nats-io/nats.go"
-	"github.com/plgd-dev/cloud/pkg/security/certManager/client"
+	"github.com/plgd-dev/hub/pkg/security/certManager/client"
 )
 
 type PendingLimitsConfig struct {

@@ -6,8 +6,8 @@ import (
 
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
 
-	"github.com/plgd-dev/cloud/pkg/net/grpc"
-	"github.com/plgd-dev/cloud/test"
+	"github.com/plgd-dev/hub/pkg/net/grpc"
+	"github.com/plgd-dev/hub/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/status"

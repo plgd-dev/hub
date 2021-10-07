@@ -5,7 +5,7 @@ metadata:
   name: mongodb-cm-crt
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "plgd-cloud.labels" . | nindent 4 }}
+    {{- include "plgd-hub.labels" . | nindent 4 }}
 spec:
   secretName: mongodb-cm-crt
   privateKey:

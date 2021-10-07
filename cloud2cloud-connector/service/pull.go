@@ -10,15 +10,15 @@ import (
 	"sync"
 	"time"
 
-	"github.com/plgd-dev/cloud/cloud2cloud-connector/store"
-	pbIS "github.com/plgd-dev/cloud/identity-store/pb"
-	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
-	"github.com/plgd-dev/cloud/pkg/security/oauth2"
-	"github.com/plgd-dev/cloud/resource-aggregate/commands"
-	raService "github.com/plgd-dev/cloud/resource-aggregate/service"
-	"github.com/plgd-dev/kit/codec/json"
-	"github.com/plgd-dev/kit/log"
-	"github.com/plgd-dev/sdk/schema"
+	"github.com/plgd-dev/hub/cloud2cloud-connector/store"
+	pbIS "github.com/plgd-dev/hub/identity-store/pb"
+	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
+	"github.com/plgd-dev/hub/pkg/security/oauth2"
+	"github.com/plgd-dev/hub/resource-aggregate/commands"
+	raService "github.com/plgd-dev/hub/resource-aggregate/service"
+	"github.com/plgd-dev/device/schema"
+	"github.com/plgd-dev/kit/v2/codec/json"
+	"github.com/plgd-dev/kit/v2/log"
 )
 
 type Device struct {

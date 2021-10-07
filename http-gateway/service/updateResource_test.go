@@ -12,17 +12,17 @@ import (
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/protobuf/encoding/protojson"
 
-	"github.com/plgd-dev/cloud/grpc-gateway/pb"
-	httpgwTest "github.com/plgd-dev/cloud/http-gateway/test"
-	"github.com/plgd-dev/cloud/http-gateway/uri"
-	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
-	"github.com/plgd-dev/cloud/resource-aggregate/commands"
-	"github.com/plgd-dev/cloud/resource-aggregate/events"
-	"github.com/plgd-dev/cloud/test"
-	"github.com/plgd-dev/cloud/test/config"
-	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
+	"github.com/plgd-dev/hub/grpc-gateway/pb"
+	httpgwTest "github.com/plgd-dev/hub/http-gateway/test"
+	"github.com/plgd-dev/hub/http-gateway/uri"
+	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
+	"github.com/plgd-dev/hub/resource-aggregate/commands"
+	"github.com/plgd-dev/hub/resource-aggregate/events"
+	"github.com/plgd-dev/hub/test"
+	"github.com/plgd-dev/hub/test/config"
+	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
 	"github.com/plgd-dev/go-coap/v2/message"
-	"github.com/plgd-dev/kit/codec/cbor"
+	"github.com/plgd-dev/kit/v2/codec/cbor"
 )
 
 func getContentData(content *pb.Content, desiredContentType string) ([]byte, error) {

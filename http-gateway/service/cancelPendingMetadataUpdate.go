@@ -7,7 +7,7 @@ import (
 	"github.com/google/go-querystring/query"
 	"github.com/gorilla/mux"
 	"github.com/jtacoma/uritemplates"
-	"github.com/plgd-dev/cloud/http-gateway/uri"
+	"github.com/plgd-dev/hub/http-gateway/uri"
 )
 
 func (requestHandler *RequestHandler) cancelPendingMetadataUpdate(w http.ResponseWriter, r *http.Request) {

@@ -9,8 +9,8 @@ import (
 
 	"github.com/gorilla/mux"
 	cache "github.com/patrickmn/go-cache"
-	"github.com/plgd-dev/cloud/cloud2cloud-connector/store"
-	"github.com/plgd-dev/cloud/pkg/net/grpc"
+	"github.com/plgd-dev/hub/cloud2cloud-connector/store"
+	"github.com/plgd-dev/hub/pkg/net/grpc"
 )
 
 type LinkedCloudHandler struct {

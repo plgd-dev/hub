@@ -8,18 +8,18 @@ import (
 	"strings"
 
 	"github.com/plgd-dev/go-coap/v2/message"
-	"github.com/plgd-dev/kit/codec/cbor"
-	"github.com/plgd-dev/kit/codec/json"
+	"github.com/plgd-dev/kit/v2/codec/cbor"
+	"github.com/plgd-dev/kit/v2/codec/json"
 
-	"github.com/plgd-dev/cloud/cloud2cloud-connector/events"
-	"github.com/plgd-dev/cloud/cloud2cloud-gateway/uri"
-	kitNetHttp "github.com/plgd-dev/cloud/pkg/net/http"
-	raClient "github.com/plgd-dev/cloud/resource-aggregate/client"
-	"github.com/plgd-dev/kit/log"
+	"github.com/plgd-dev/hub/cloud2cloud-connector/events"
+	"github.com/plgd-dev/hub/cloud2cloud-gateway/uri"
+	kitNetHttp "github.com/plgd-dev/hub/pkg/net/http"
+	raClient "github.com/plgd-dev/hub/resource-aggregate/client"
+	"github.com/plgd-dev/kit/v2/log"
 
 	router "github.com/gorilla/mux"
 
-	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"
+	pbGRPC "github.com/plgd-dev/hub/grpc-gateway/pb"
 )
 
 const HrefKey = "Href"
