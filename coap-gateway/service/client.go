@@ -16,12 +16,12 @@ import (
 	pkgJwt "github.com/plgd-dev/cloud/v2/pkg/security/jwt"
 	"github.com/plgd-dev/cloud/v2/resource-aggregate/commands"
 	"github.com/plgd-dev/cloud/v2/resource-aggregate/events"
+	"github.com/plgd-dev/device/schema"
 	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/tcp"
 	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
 	kitSync "github.com/plgd-dev/kit/v2/sync"
-	"github.com/plgd-dev/sdk/v2/schema"
 )
 
 const OCFBaselineInterface = "oic.if.baseline"

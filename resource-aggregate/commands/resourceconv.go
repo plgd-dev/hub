@@ -4,7 +4,7 @@ import (
 	"time"
 
 	pkgTime "github.com/plgd-dev/cloud/v2/pkg/time"
-	"github.com/plgd-dev/sdk/v2/schema"
+	"github.com/plgd-dev/device/schema"
 )
 
 func (e *EndpointInformation) ToSchema() schema.Endpoint {

@@ -39,14 +39,14 @@ import (
 	"github.com/plgd-dev/cloud/v2/test/config"
 	"github.com/plgd-dev/cloud/v2/test/oauth-server/service"
 	oauthTest "github.com/plgd-dev/cloud/v2/test/oauth-server/test"
+	deviceClient "github.com/plgd-dev/device/client"
+	"github.com/plgd-dev/device/client/core"
+	"github.com/plgd-dev/device/schema"
+	"github.com/plgd-dev/device/schema/acl"
 	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/kit/v2/codec/cbor"
 	"github.com/plgd-dev/kit/v2/codec/json"
 	"github.com/plgd-dev/kit/v2/security"
-	"github.com/plgd-dev/sdk/v2/local"
-	"github.com/plgd-dev/sdk/v2/local/core"
-	"github.com/plgd-dev/sdk/v2/schema"
-	"github.com/plgd-dev/sdk/v2/schema/acl"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.mongodb.org/mongo-driver/bson"
@@ -274,7 +274,7 @@ func SetUpServices(ctx context.Context, t *testing.T, servicesConfig SetUpServic
 	return tearDown.ToFunction()
 }
 
-func setAccessForCloud(ctx context.Context, t *testing.T, c *local.Client, deviceID string) {
+func setAccessForCloud(ctx context.Context, t *testing.T, c *deviceClient.Client, deviceID string) {
 	cloudSID := config.CloudID()
 	require.NotEmpty(t, cloudSID)
 

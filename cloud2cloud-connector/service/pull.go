@@ -16,9 +16,9 @@ import (
 	"github.com/plgd-dev/cloud/v2/pkg/security/oauth2"
 	"github.com/plgd-dev/cloud/v2/resource-aggregate/commands"
 	raService "github.com/plgd-dev/cloud/v2/resource-aggregate/service"
+	"github.com/plgd-dev/device/schema"
 	"github.com/plgd-dev/kit/v2/codec/json"
 	"github.com/plgd-dev/kit/v2/log"
-	"github.com/plgd-dev/sdk/v2/schema"
 )
 
 type Device struct {

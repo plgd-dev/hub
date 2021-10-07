@@ -17,12 +17,13 @@ require (
 	github.com/jtacoma/uritemplates v1.0.0
 	github.com/karrick/tparse/v2 v2.8.2
 	github.com/lestrrat-go/jwx v1.2.7
+	github.com/nats-io/nats-server/v2 v2.6.1 // indirect
 	github.com/nats-io/nats.go v1.12.3
 	github.com/panjf2000/ants/v2 v2.4.6
 	github.com/patrickmn/go-cache v2.1.0+incompatible
+	github.com/plgd-dev/device v0.0.0-20211007111308-ff0c9349c2b8
 	github.com/plgd-dev/go-coap/v2 v2.4.1-0.20211006194403-5081d8da41f9
 	github.com/plgd-dev/kit/v2 v2.0.0-20211006190727-057b33161b90
-	github.com/plgd-dev/sdk/v2 v2.0.0-20211006195827-30b6744a07e8
 	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.7.0
 	go.mongodb.org/mongo-driver v1.7.3

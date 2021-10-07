@@ -12,9 +12,9 @@ import (
 	"time"
 
 	"github.com/plgd-dev/cloud/v2/pkg/log"
+	"github.com/plgd-dev/device/client"
+	"github.com/plgd-dev/device/client/core"
 	"github.com/plgd-dev/kit/v2/security/signer"
-	"github.com/plgd-dev/sdk/v2/local"
-	"github.com/plgd-dev/sdk/v2/local/core"
 )
 
 type testSetupSecureClient struct {
@@ -44,7 +44,7 @@ func (c *testSetupSecureClient) GetRootCertificateAuthorities() ([]*x509.Certifi
 	return c.ca, nil
 }
 
-func NewSDKClient() (*local.Client, error) {
+func NewSDKClient() (*client.Client, error) {
 	mfgTrustedCABlock, _ := pem.Decode(MfgTrustedCA)
 	if mfgTrustedCABlock == nil {
 		return nil, fmt.Errorf("mfgTrustedCABlock is empty")
@@ -90,16 +90,16 @@ func NewSDKClient() (*local.Client, error) {
 	if err != nil {
 		return nil, fmt.Errorf("cannot X509KeyPair: %w", err)
 	}
-	cfg := local.Config{
+	cfg := client.Config{
 		DisablePeerTCPSignalMessageCSMs: true,
-		DeviceOwnershipSDK: &local.DeviceOwnershipSDKConfig{
+		DeviceOwnershipSDK: &client.DeviceOwnershipSDKConfig{
 			ID:      CertIdentity,
 			Cert:    string(identityIntermediateCA),
 			CertKey: string(identityIntermediateCAKey),
 		},
 	}
 
-	client, err := local.NewClientFromConfig(&cfg, &testSetupSecureClient{
+	client, err := client.NewClientFromConfig(&cfg, &testSetupSecureClient{
 		mfgCA:   mfgCA,
 		mfgCert: mfgCert,
 		ca:      identityTrustedCACert,

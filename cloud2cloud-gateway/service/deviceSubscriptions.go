@@ -5,8 +5,8 @@ import (
 
 	"github.com/plgd-dev/cloud/v2/cloud2cloud-connector/events"
 	raEvents "github.com/plgd-dev/cloud/v2/resource-aggregate/events"
+	"github.com/plgd-dev/device/schema"
 	"github.com/plgd-dev/kit/v2/log"
-	"github.com/plgd-dev/sdk/v2/schema"
 )
 
 type deviceSubscriptionHandler struct {

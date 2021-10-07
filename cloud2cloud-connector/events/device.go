@@ -1,7 +1,7 @@
 package events
 
 import (
-	"github.com/plgd-dev/sdk/v2/schema"
+	"github.com/plgd-dev/device/schema"
 )
 
 type ResourcesPublished []schema.ResourceLink

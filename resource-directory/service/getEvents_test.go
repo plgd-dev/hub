@@ -12,7 +12,7 @@ import (
 	"github.com/plgd-dev/cloud/v2/test"
 	testCfg "github.com/plgd-dev/cloud/v2/test/config"
 	oauthTest "github.com/plgd-dev/cloud/v2/test/oauth-server/test"
-	"github.com/plgd-dev/sdk/v2/schema"
+	"github.com/plgd-dev/device/schema"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"

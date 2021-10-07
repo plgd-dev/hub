@@ -9,11 +9,11 @@ import (
 
 	"github.com/gorilla/mux"
 	kitNetHttp "github.com/plgd-dev/cloud/v2/pkg/net/http"
+	"github.com/plgd-dev/device/schema"
 	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/kit/v2/codec/cbor"
 	"github.com/plgd-dev/kit/v2/codec/json"
 	"github.com/plgd-dev/kit/v2/log"
-	"github.com/plgd-dev/sdk/v2/schema"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 

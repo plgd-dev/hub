@@ -11,10 +11,10 @@ import (
 	pbGRPC "github.com/plgd-dev/cloud/v2/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/v2/pkg/log"
 	"github.com/plgd-dev/cloud/v2/resource-aggregate/commands"
+	"github.com/plgd-dev/device/schema"
 	"github.com/plgd-dev/go-coap/v2/message"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/mux"
-	"github.com/plgd-dev/sdk/v2/schema"
 )
 
 func makeListDevicesCommand(msg *mux.Message) (*pbGRPC.GetResourceLinksRequest, error) {
