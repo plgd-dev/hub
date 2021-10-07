@@ -3,10 +3,10 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "plgd-cloud.grpcgateway.fullname" . }}
+  name: {{ include "plgd-hub.grpcgateway.fullname" . }}
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "plgd-cloud.labels" . | nindent 4 }}
+    {{- include "plgd-hub.labels" . | nindent 4 }}
     {{- with .Values.grpcgateway.deploymentLabels }}
     {{- . | toYaml | nindent 4 }}
     {{- end }}
@@ -18,7 +18,7 @@ spec:
   replicas: {{ .Values.grpcgateway.replicas }}
   selector:
     matchLabels:
-      {{- include "plgd-cloud.grpcgateway.selectorLabels" . | nindent 6 }}
+      {{- include "plgd-hub.grpcgateway.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       {{- with .Values.grpcgateway.podAnnotations }}
@@ -26,7 +26,7 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
-        {{- include "plgd-cloud.grpcgateway.selectorLabels" . | nindent 8 }}
+        {{- include "plgd-hub.grpcgateway.selectorLabels" . | nindent 8 }}
     spec:
       {{- with .Values.grpcgateway.securityContext }}
       securityContext:
@@ -50,7 +50,7 @@ spec:
           securityContext:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-          image: {{ include "plgd-cloud.grpcgateway.image" . | quote }}
+          image: {{ include "plgd-hub.grpcgateway.image" . | quote }}
           imagePullPolicy: {{ .Values.grpcgateway.image.pullPolicy }}
           {{- if .Values.grpcgateway.command }}
           command:
@@ -80,7 +80,7 @@ spec:
           volumeMounts:
             - mountPath: {{ .Values.grpcgateway.config.mountPath }}
               name: {{ .Values.grpcgateway.config.volume }}
-            {{- if ( include "plgd-cloud.grpcgateway.createServiceCertByCm" . ) }}
+            {{- if ( include "plgd-hub.grpcgateway.createServiceCertByCm" . ) }}
             - name: service-crt
               mountPath: {{ $cert }}
             {{- end }}
@@ -90,11 +90,11 @@ spec:
       volumes:
         - name: {{ .Values.grpcgateway.config.volume }}
           secret:
-            secretName: {{ include "plgd-cloud.grpcgateway.configSecretName" . }}
-        {{- if ( include "plgd-cloud.grpcgateway.createServiceCertByCm" . ) }}
+            secretName: {{ include "plgd-hub.grpcgateway.configSecretName" . }}
+        {{- if ( include "plgd-hub.grpcgateway.createServiceCertByCm" . ) }}
         - name: service-crt
           secret:
-            secretName: {{ include "plgd-cloud.grpcgateway.serviceCertName" . }}
+            secretName: {{ include "plgd-hub.grpcgateway.serviceCertName" . }}
         {{- end }}
         {{- with .Values.grpcgateway.extraVolumeMounts }}
         {{- toYaml . | nindent 8 }}

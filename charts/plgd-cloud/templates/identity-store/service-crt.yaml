@@ -1,13 +1,13 @@
-{{- $createServiceCert := include "plgd-cloud.identitystore.serviceCertName" . }}
+{{- $createServiceCert := include "plgd-hub.identitystore.serviceCertName" . }}
 {{- if and $createServiceCert .Values.certmanager.enabled .Values.identitystore.enabled }}
-{{- $serviceDns := include "plgd-cloud.identitystore.fullname" . }}
+{{- $serviceDns := include "plgd-hub.identitystore.fullname" . }}
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   name: {{ $createServiceCert }}
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "plgd-cloud.labels" . | nindent 4 }}
+    {{- include "plgd-hub.labels" . | nindent 4 }}
     {{- with .Values.certmanager.internal.labels }}
     {{- . | toYaml | nindent 4 }}
     {{- end }}

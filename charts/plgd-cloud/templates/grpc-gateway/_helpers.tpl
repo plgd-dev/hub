@@ -1,4 +1,4 @@
-{{- define "plgd-cloud.grpcgateway.fullname" -}}
+{{- define "plgd-hub.grpcgateway.fullname" -}}
 {{- if .Values.grpcgateway.fullnameOverride }}
 {{- .Values.grpcgateway.fullnameOverride | trunc 63 | trimSuffix "-" }}
 {{- else }}
@@ -11,19 +11,19 @@
 {{- end }}
 {{- end }}
 
-{{- define  "plgd-cloud.grpcgateway.image" -}}
+{{- define  "plgd-hub.grpcgateway.image" -}}
     {{- $registryName := .Values.grpcgateway.image.registry | default "" -}}
     {{- $repositoryName := .Values.grpcgateway.image.repository -}}
     {{- $tag := .Values.grpcgateway.image.tag | default .Chart.AppVersion | toString -}}
     {{- printf "%s%s:%s" $registryName $repositoryName  $tag -}}
 {{- end -}}
 
-{{- define  "plgd-cloud.grpcgateway.configSecretName" -}}
-    {{- $fullName :=  include "plgd-cloud.grpcgateway.fullname" . -}}
+{{- define  "plgd-hub.grpcgateway.configSecretName" -}}
+    {{- $fullName :=  include "plgd-hub.grpcgateway.fullname" . -}}
     {{- printf "%s-cfg" $fullName }}
 {{- end -}}
 
-{{- define "plgd-cloud.grpcgateway.createServiceCertByCm" }}
+{{- define "plgd-hub.grpcgateway.createServiceCertByCm" }}
     {{- $serviceTls := .Values.grpcgateway.apis.grpc.tls.certFile }}
     {{- if $serviceTls }}
     {{- printf "false" }}
@@ -32,18 +32,18 @@
     {{- end }}
 {{- end }}
 
-{{- define "plgd-cloud.grpcgateway.serviceCertName" -}}
-  {{- $fullName := include "plgd-cloud.grpcgateway.fullname" . -}}
+{{- define "plgd-hub.grpcgateway.serviceCertName" -}}
+  {{- $fullName := include "plgd-hub.grpcgateway.fullname" . -}}
   {{- printf "%s-crt" $fullName -}}
 {{- end }}
 
-{{- define "plgd-cloud.grpcgateway.domainCertName" -}}
-  {{- $fullName := include "plgd-cloud.grpcgateway.fullname" . -}}
+{{- define "plgd-hub.grpcgateway.domainCertName" -}}
+  {{- $fullName := include "plgd-hub.grpcgateway.fullname" . -}}
   {{- printf "%s-domain-crt" $fullName -}}
 {{- end }}
 
 
-{{- define "plgd-cloud.grpcgateway.domain" -}}
+{{- define "plgd-hub.grpcgateway.domain" -}}
   {{- if .Values.httpgateway.domain }}
     {{- printf "%s" .Values.httpgateway.domain }}
   {{- else }}
@@ -52,13 +52,13 @@
 {{- end }}
 
 
-{{- define "plgd-cloud.grpcgateway.internalDns" -}}
-  {{- $fullName := include "plgd-cloud.grpcgateway.fullname" . -}}
+{{- define "plgd-hub.grpcgateway.internalDns" -}}
+  {{- $fullName := include "plgd-hub.grpcgateway.fullname" . -}}
   {{- printf "%s.%s.svc.cluster.local" $fullName .Release.Namespace }}
 {{- end }}
 
 
-{{- define "plgd-cloud.grpcgateway.selectorLabels" -}}
+{{- define "plgd-hub.grpcgateway.selectorLabels" -}}
 app.kubernetes.io/name: {{ .Values.grpcgateway.name }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}

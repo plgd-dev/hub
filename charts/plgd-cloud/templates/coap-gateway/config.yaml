@@ -3,10 +3,10 @@
 apiVersion: v1
 kind: Secret
 metadata:
-  name: {{ include "plgd-cloud.coapgateway.configSecretName" . }}
+  name: {{ include "plgd-hub.coapgateway.configSecretName" . }}
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "plgd-cloud.labels" . | nindent 4 }}
+    {{- include "plgd-hub.labels" . | nindent 4 }}
 stringData:
   {{ .Values.coapgateway.config.fileName }}: |
     {{- with .Values.coapgateway }}
@@ -30,7 +30,7 @@ stringData:
           enabled: {{ .apis.coap.tls.enabled }}
           {{- if .apis.coap.tls.enabled }}
           {{- $tls := .apis.coap.tls }}
-          {{- include "plgd-cloud.certificateConfig" (list $ $tls $coapGatewayServiceCert) | indent 8 }}
+          {{- include "plgd-hub.certificateConfig" (list $ $tls $coapGatewayServiceCert) | indent 8 }}
           clientCertificateRequired: {{ .apis.coap.tls.clientCertificateRequired }}
           {{- end }}
         authorization:
@@ -43,7 +43,7 @@ stringData:
           {{- range $providers }}
             - name: {{ required "name for oauth device provider is required" .name | quote }}
               clientID: {{ required "clientID for oauth device provider is required" .clientID | quote }}
-              clientSecretFile: {{ include "plgd-cloud.oauthSecretFile" (list $ . ) }}
+              clientSecretFile: {{ include "plgd-hub.oauthSecretFile" (list $ . ) }}
               {{- if .scopes }}
               scopes:
               {{- range  .scopes }}
@@ -64,44 +64,44 @@ stringData:
                 timeout: {{ $http.timeout | default "10s" }}
                 tls:
                   {{- $providerTls := $http.tls }}
-                  {{- include "plgd-cloud.certificateConfig" (list $ $providerTls $coapGatewayServiceCert) | indent 16 }}
+                  {{- include "plgd-hub.certificateConfig" (list $ $providerTls $coapGatewayServiceCert) | indent 16 }}
                   useSystemCAPool: {{ $providerTls.useSystemCAPool | default true }}
           {{- end }}
     clients:
       eventBus:
         nats:
-          url: {{ printf " " }}{{- include "plgd-cloud.natsUri" (list $ .clients.eventBus.nats.url) | quote }}
+          url: {{ printf " " }}{{- include "plgd-hub.natsUri" (list $ .clients.eventBus.nats.url) | quote }}
           pendingLimits:
             msgLimit: {{ .clients.eventBus.nats.pendingLimits.msgLimit }}
             bytesLimit: {{ printf "%v" .clients.eventBus.nats.pendingLimits.bytesLimit }}
           tls:
             {{- $natsTls := .clients.eventBus.nats.tls }}
-            {{- include "plgd-cloud.certificateConfig" (list $ $natsTls $coapGatewayServiceCert) | indent 10 }}
+            {{- include "plgd-hub.certificateConfig" (list $ $natsTls $coapGatewayServiceCert) | indent 10 }}
             useSystemCAPool: {{ .clients.eventBus.nats.tls.useSystemCAPool }}
       identityStore:
         ownerClaim: {{ .clients.identityStore.ownerClaim | default $.Values.global.ownerClaim | quote }}
         grpc:
           {{- $authorizationServer := .clients.identityStore.grpc.address }}
-          address:{{ printf " " }}{{- include "plgd-cloud.identityStoreAddress" (list $ $authorizationServer ) | quote }}
+          address:{{ printf " " }}{{- include "plgd-hub.identityStoreAddress" (list $ $authorizationServer ) | quote }}
           keepAlive:
             time: {{ .clients.identityStore.grpc.keepAlive.time }}
             timeout: {{ .clients.identityStore.grpc.keepAlive.timeout }}
             permitWithoutStream: {{ .clients.identityStore.grpc.keepAlive.permitWithoutStream }}
           tls:
             {{- $authClientTls := .clients.identityStore.grpc.tls }}
-            {{- include "plgd-cloud.certificateConfig" (list $ $authClientTls $coapGatewayServiceCert ) | indent 10 }}
+            {{- include "plgd-hub.certificateConfig" (list $ $authClientTls $coapGatewayServiceCert ) | indent 10 }}
             useSystemCAPool: {{ .clients.identityStore.grpc.tls.useSystemCAPool }}
       resourceAggregate:
         grpc:
           {{- $resourceAggregate := .clients.resourceAggregate.grpc.address }}
-          address:{{ printf " " }}{{- include "plgd-cloud.resourceAggregateAddress" (list $ $resourceAggregate ) | quote }}
+          address:{{ printf " " }}{{- include "plgd-hub.resourceAggregateAddress" (list $ $resourceAggregate ) | quote }}
           keepAlive:
             time: {{ .clients.resourceAggregate.grpc.keepAlive.time }}
             timeout: {{ .clients.resourceAggregate.grpc.keepAlive.timeout }}
             permitWithoutStream: {{ .clients.resourceAggregate.grpc.keepAlive.permitWithoutStream }}
           tls:
             {{- $raClientTls := .clients.resourceAggregate.grpc.tls }}
-            {{- include "plgd-cloud.certificateConfig" (list $ $raClientTls $coapGatewayServiceCert) | indent 10 }}
+            {{- include "plgd-hub.certificateConfig" (list $ $raClientTls $coapGatewayServiceCert) | indent 10 }}
             useSystemCAPool: {{ .clients.resourceAggregate.grpc.tls.useSystemCAPool }}
         deviceStatusExpiration:
           enabled: {{ .clients.resourceAggregate.deviceStatusExpiration.enabled }}
@@ -109,14 +109,14 @@ stringData:
       resourceDirectory:
         grpc:
           {{- $resourceDirectory := .clients.resourceDirectory.grpc.address }}
-          address:{{ printf " " }}{{- include "plgd-cloud.resourceDirectoryAddress" (list $ $resourceDirectory ) | quote }}
+          address:{{ printf " " }}{{- include "plgd-hub.resourceDirectoryAddress" (list $ $resourceDirectory ) | quote }}
           keepAlive:
             time: {{ .clients.resourceDirectory.grpc.keepAlive.time }}
             timeout: {{ .clients.resourceDirectory.grpc.keepAlive.timeout }}
             permitWithoutStream: {{ .clients.resourceDirectory.grpc.keepAlive.permitWithoutStream }}
           tls:
             {{- $rdClientTls := .clients.resourceDirectory.grpc.tls }}
-            {{- include "plgd-cloud.certificateConfig" (list $ $rdClientTls $coapGatewayServiceCert) | indent 10 }}
+            {{- include "plgd-hub.certificateConfig" (list $ $rdClientTls $coapGatewayServiceCert) | indent 10 }}
             useSystemCAPool: {{ .clients.resourceDirectory.grpc.tls.useSystemCAPool }}
     taskQueue:
       goPoolSize: {{ .taskQueue.goPoolSize }}

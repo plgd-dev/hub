@@ -2,10 +2,10 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "plgd-cloud.coapgateway.fullname" . }}
+  name: {{ include "plgd-hub.coapgateway.fullname" . }}
   namespace: {{ .Release.Namespace }}  
   labels:
-    {{- include "plgd-cloud.labels" . | nindent 4 }}
+    {{- include "plgd-hub.labels" . | nindent 4 }}
     {{- with .Values.coapgateway.service.labels }}
     {{- . | toYaml | nindent 4 }}
     {{- end }}
@@ -21,5 +21,5 @@ spec:
       protocol: TCP
       name: grpc
   selector:
-  {{- include "plgd-cloud.coapgateway.selectorLabels" . | nindent 4 }}
+  {{- include "plgd-hub.coapgateway.selectorLabels" . | nindent 4 }}
 {{- end }}

@@ -187,4 +187,4 @@ go build
 
 ### HTTP access
 
-[REST API](https://petstore.swagger.io/?url=https://raw.githubusercontent.com/plgd-dev/cloud/master/http-gateway/swagger.yaml)
+[REST API](https://petstore.swagger.io/?url=https://raw.githubusercontent.com/plgd-dev/hub/main/http-gateway/swagger.yaml)

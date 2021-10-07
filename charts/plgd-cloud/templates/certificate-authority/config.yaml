@@ -3,7 +3,7 @@
 apiVersion: v1
 kind: Secret
 metadata:
-  name: {{ include "plgd-cloud.certificateauthority.configSecretName" . }}
+  name: {{ include "plgd-hub.certificateauthority.configSecretName" . }}
   namespace: {{ .Release.Namespace }}
 stringData:
   {{ .Values.certificateauthority.config.fileName }}: |
@@ -25,11 +25,11 @@ stringData:
           timeout: {{ .apis.grpc.keepAlive.maxConnectionIdle }}
         tls:
           {{- $tls := .apis.grpc.tls }}
-          {{- include "plgd-cloud.certificateConfig" (list $ $tls $cert ) | indent 8 }}
+          {{- include "plgd-hub.certificateConfig" (list $ $tls $cert ) | indent 8 }}
           clientCertificateRequired: {{ .apis.grpc.tls.clientCertificateRequired }}
         authorization:
           {{- $authorization := .apis.grpc.authorization }}
-          {{- include "plgd-cloud.authorizationConfig" (list $ $authorization "certificateauthority" ) | indent 8 }}
+          {{- include "plgd-hub.authorizationConfig" (list $ $authorization "certificateauthority" ) | indent 8 }}
           http:
             maxIdleConns: {{ .apis.grpc.authorization.http.maxIdleConns }}
             maxConnsPerHost: {{ .apis.grpc.authorization.http.maxIdleConnsPerHost }}
@@ -38,7 +38,7 @@ stringData:
             timeout: {{ .apis.grpc.authorization.http.timeout }}
             tls:
               {{- $grpcTls := .apis.grpc.authorization.http.tls }}
-              {{- include "plgd-cloud.certificateConfig" (list $ $grpcTls $cert ) | indent 12 }}
+              {{- include "plgd-hub.certificateConfig" (list $ $grpcTls $cert ) | indent 12 }}
               useSystemCAPool: {{ .apis.grpc.authorization.http.tls.useSystemCAPool }}
     signer:
       certFile: {{ .signer.certFile | default ( printf "%s/%s" $.Values.certificateauthority.ca.volume.mountPath $.Values.certificateauthority.ca.cert ) | quote }}

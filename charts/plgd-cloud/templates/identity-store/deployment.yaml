@@ -3,10 +3,10 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "plgd-cloud.identitystore.fullname" . }}
+  name: {{ include "plgd-hub.identitystore.fullname" . }}
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "plgd-cloud.labels" . | nindent 4 }}
+    {{- include "plgd-hub.labels" . | nindent 4 }}
     {{- with .Values.identitystore.deploymentLabels }}
     {{- . | toYaml | nindent 4 }}
     {{- end }}
@@ -18,7 +18,7 @@ spec:
   replicas: {{ .Values.identitystore.replicas }}
   selector:
     matchLabels:
-      {{- include "plgd-cloud.identitystore.selectorLabels" . | nindent 6 }}
+      {{- include "plgd-hub.identitystore.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       {{- with .Values.identitystore.podAnnotations }}
@@ -26,7 +26,7 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
-        {{- include "plgd-cloud.identitystore.selectorLabels" . | nindent 8 }}
+        {{- include "plgd-hub.identitystore.selectorLabels" . | nindent 8 }}
     spec:
       {{- with .Values.identitystore.securityContext }}
       securityContext:
@@ -50,7 +50,7 @@ spec:
           securityContext:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-          image: {{ include "plgd-cloud.identitystore.image" . | quote }}
+          image: {{ include "plgd-hub.identitystore.image" . | quote }}
           imagePullPolicy: {{ .Values.identitystore.image.pullPolicy }}
           {{- if .Values.identitystore.command }}
           command:
@@ -80,7 +80,7 @@ spec:
           volumeMounts:
             - mountPath: {{ .Values.identitystore.config.mountPath }}
               name: {{ .Values.identitystore.config.volume }}
-            {{- if ( include "plgd-cloud.identitystore.createServiceCertByCm" . ) }}
+            {{- if ( include "plgd-hub.identitystore.createServiceCertByCm" . ) }}
             - name: service-crt
               mountPath: {{ $cert }}
             {{- end }}
@@ -88,14 +88,14 @@ spec:
             {{- toYaml . | nindent 12 }}
             {{- end }}
       volumes:
-        {{- if ( include "plgd-cloud.identitystore.createServiceCertByCm" . ) }}
+        {{- if ( include "plgd-hub.identitystore.createServiceCertByCm" . ) }}
         - name: service-crt
           secret:
-            secretName: {{ include "plgd-cloud.identitystore.serviceCertName" . }}
+            secretName: {{ include "plgd-hub.identitystore.serviceCertName" . }}
         {{- end }}
         - name: {{ .Values.identitystore.config.volume }}
           secret:
-            secretName: {{ include "plgd-cloud.identitystore.configSecretName" . }}
+            secretName: {{ include "plgd-hub.identitystore.configSecretName" . }}
         {{- with .Values.identitystore.extraVolumeMounts }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
