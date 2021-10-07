@@ -1,0 +1,7 @@
+Thank you for installing {{ .Chart.Name }}.
+
+For more information about plgd-hub. Please follow: [plgd.dev](https://plgd.dev/)
+
+coap-gateway domain: {{ printf "%s:%v" ( required "global.domain is required" ( $.Values.coapgateway.apis.coap.externalAddress  | default $.Values.global.domain )) $.Values.coapgateway.port }}
+Web UI domain: {{ printf "https://%s" ( include "plgd-hub.httpgateway.apiDomain" . ) }}
+API domain: {{ printf "https://%s" ( include "plgd-hub.httpgateway.apiDomain" . ) }}
