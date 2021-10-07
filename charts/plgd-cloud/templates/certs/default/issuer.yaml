@@ -1,0 +1,34 @@
+{{- if and .Values.certmanager.enabled .Values.certmanager.default.issuer.enabled }}
+
+{{- $nameInternal := .Values.certmanager.internal.issuer.name }}
+{{- $kindInternal := .Values.certmanager.internal.issuer.kind }}
+{{- $specInternal := .Values.certmanager.internal.issuer.spec }}
+
+{{- $nameCoap := .Values.certmanager.coap.issuer.name }}
+{{- $kindCoap := .Values.certmanager.coap.issuer.kind }}
+{{- $specCoap := .Values.certmanager.coap.issuer.spec }}
+
+{{- $nameExternal := .Values.certmanager.external.issuer.name }}
+{{- $kindExternal := .Values.certmanager.external.issuer.kind }}
+{{- $specExternal := .Values.certmanager.external.issuer.spec }}
+
+{{- $internalIssuer := or ( and $nameInternal $kindInternal ) $specInternal }}
+{{- $coapIssuer := or ( and $nameCoap $kindCoap ) $specCoap }}
+{{- $externalIssuer := or ( and $nameExternal $kindExternal ) $specExternal }}
+
+{{- if not ( and $internalIssuer $coapIssuer $externalIssuer ) }}
+apiVersion: cert-manager.io/v1
+kind: {{ .Values.certmanager.default.issuer.kind  }}
+metadata:
+  name: {{ .Values.certmanager.default.issuer.name  }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "plgd-cloud.labels" . | nindent 4 }}
+  annotations:
+  {{- range $key, $value := .Values.certmanager.default.issuer.annotations }}
+     {{ $key }}: {{ $value | quote }}
+  {{- end }}
+spec:
+{{- .Values.certmanager.default.issuer.spec | toYaml | nindent 2 }}
+{{- end }}
+{{- end }}

@@ -1,0 +1,114 @@
+{{- if .Values.httpgateway.enabled }}
+{{- $rdServiceCert := "/certs" }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "plgd-cloud.httpgateway.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "plgd-cloud.labels" . | nindent 4 }}
+    {{- with .Values.httpgateway.deploymentLabels }}
+    {{- . | toYaml | nindent 4 }}
+    {{- end }}
+  {{- with .Values.httpgateway.deploymentAnnotations }}
+  annotations:
+  {{- . | toYaml | nindent 4 }}
+  {{- end }}
+spec:
+  replicas: {{ .Values.httpgateway.replicas }}
+  selector:
+    matchLabels:
+      {{- include "plgd-cloud.httpgateway.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.httpgateway.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "plgd-cloud.httpgateway.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.httpgateway.securityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if .Values.httpgateway.rbac.enabled }}
+      serviceAccountName: {{ .Values.httpgateway.rbac.serviceAccountName }}
+      {{- end }}
+      {{- with .Values.httpgateway.image.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      restartPolicy: {{ .Values.httpgateway.restartPolicy }}
+      {{- if .Values.httpgateway.initContainersTpl }}
+      initContainers:
+      {{- tpl .Values.httpgateway.initContainersTpl . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ .Values.httpgateway.name }}
+          {{- with .Values.httpgateway.podSecurityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          image: {{ include "plgd-cloud.httpgateway.image" . | quote }}
+          imagePullPolicy: {{ .Values.httpgateway.image.pullPolicy }}
+          {{- if .Values.httpgateway.command }}
+          command:
+          {{- range .Values.httpgateway.command  }}
+            - {{ . | quote }}
+          {{- end }}
+          {{- end}}
+          args:
+            - "--config"
+            - {{  printf "%s/%s" .Values.httpgateway.config.mountPath .Values.httpgateway.config.fileName | quote }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.httpgateway.port }}
+              protocol: TCP
+          {{- with .Values.httpgateway.livenessProbe }}
+          livenessProbe:
+          {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.httpgateway.readinessProbe }}
+          readinessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.httpgateway.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - mountPath: {{ .Values.httpgateway.config.mountPath }}
+              name: {{ .Values.httpgateway.config.volume }}
+            {{- if ( include "plgd-cloud.httpgateway.createServiceCertByCm" . ) }}
+            - name: service-crt
+              mountPath: {{ $rdServiceCert }}
+            {{- end }}
+            {{- with .Values.httpgateway.extraVolumes }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+      volumes:
+        - name: {{ .Values.httpgateway.config.volume }}
+          secret:
+            secretName: {{ include "plgd-cloud.httpgateway.configSecretName" . }}
+        {{- if ( include "plgd-cloud.httpgateway.createServiceCertByCm" . ) }}
+        - name: service-crt
+          secret:
+            secretName: {{ include "plgd-cloud.httpgateway.serviceCertName" . }}
+        {{- end }}
+        {{- with .Values.httpgateway.extraVolumeMounts }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with .Values.httpgateway.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.httpgateway.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.httpgateway.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

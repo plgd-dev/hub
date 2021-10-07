@@ -1,0 +1,38 @@
+{{- if .Values.grpcgateway.enabled }}
+{{- $fullname := include "plgd-cloud.grpcgateway.fullname" . }}
+{{- $domainCrt := include "plgd-cloud.grpcgateway.domainCertName" . }}
+{{- $port := .Values.grpcgateway.port }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ $fullname }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "plgd-cloud.labels" . | nindent 4 }}
+  annotations:
+    nginx.org/grpc-services: {{ $fullname | quote }}
+    nginx.ingress.kubernetes.io/backend-protocol: "GRPCS"
+    ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+  {{- with .Values.grpcgateway.ingress.annotations }}
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  tls:
+    - hosts:
+        - {{ include "plgd-cloud.grpcgateway.domain" . | quote }}
+      secretName: {{ include "plgd-cloud.grpcgateway.domainCertName" . | quote }}
+  rules:
+  - host: {{ include "plgd-cloud.grpcgateway.domain" . | quote }}
+    http:
+      paths:
+      {{- range  .Values.grpcgateway.ingress.paths }}
+      - path: {{ . }}
+        pathType: Prefix
+        backend:
+          service:
+            name: {{ $fullname }}
+            port:
+              number: {{ $port }}
+      {{- end }}
+{{- end }}

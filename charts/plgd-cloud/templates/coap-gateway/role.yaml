@@ -1,0 +1,3 @@
+{{- if and .Values.coapgateway.rbac.enabled .Values.coapgateway.rbac.roleBindingDefinitionTpl }}
+{{- tpl .Values.coapgateway.rbac.roleBindingDefinitionTpl $ }}
+{{- end }}

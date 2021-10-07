@@ -1,0 +1,60 @@
+{{- if .Values.identitystore.enabled }}
+{{- $cert := "/certs" }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ include "plgd-cloud.identitystore.configSecretName" . }}
+  namespace: {{ .Release.Namespace }}
+stringData:
+  {{ .Values.identitystore.config.fileName }}: |
+    {{- with .Values.identitystore }}
+    log:
+      debug: {{ .log.debug }}
+    apis:
+      grpc:
+        address: {{  .apis.grpc.address | default (printf "0.0.0.0:%v" .port ) | quote }}
+        enforcementPolicy:
+          minTime: {{ .apis.grpc.enforcementPolicy.minTime | quote }}
+          permitWithoutStream: {{ .apis.grpc.enforcementPolicy.permitWithoutStream }}
+        keepAlive:
+          maxConnectionIdle: {{ .apis.grpc.keepAlive.maxConnectionIdle }}
+          maxConnectionAge: {{ .apis.grpc.keepAlive.maxConnectionAge }}
+          maxConnectionAgeGrace: {{ .apis.grpc.keepAlive.maxConnectionAgeGrace }}
+          time: {{ .apis.grpc.keepAlive.time }}
+          timeout: {{ .apis.grpc.keepAlive.timeout }}
+        tls:
+          {{- $tls := .apis.grpc.tls }}
+          {{- include "plgd-cloud.certificateConfig" (list $ $tls $cert ) | indent 8 }}
+          clientCertificateRequired: {{ .apis.grpc.tls.clientCertificateRequired }}
+        authorization:
+          {{- $authorization := .apis.grpc.authorization }}
+          {{- include "plgd-cloud.authorizationConfig" (list $ $authorization "identitystore" ) | indent 8 }}
+          http:
+            maxIdleConns: {{ .apis.grpc.authorization.http.maxIdleConns }}
+            maxConnsPerHost:  {{ .apis.grpc.authorization.http.maxConnsPerHost }}
+            maxIdleConnsPerHost:  {{ .apis.grpc.authorization.http.maxIdleConnsPerHost }}
+            idleConnTimeout:  {{ .apis.grpc.authorization.http.idleConnTimeout }}
+            timeout: {{ .apis.grpc.authorization.http.timeout }}
+            tls:
+              {{- $httpTls := .apis.grpc.authorization.http.tls }}
+              {{- include "plgd-cloud.certificateConfig" (list $ $httpTls $cert ) | indent 12 }}
+              useSystemCAPool: {{ .apis.grpc.authorization.http.tls.useSystemCAPool }}
+    clients:
+      eventBus:
+        nats:
+          url:{{- printf " " }}{{- include "plgd-cloud.natsUri" (list $ .clients.eventBus.nats.url )  | quote }}
+          jetstream: {{ .clients.eventBus.nats.jetstream }}
+          tls:
+            {{- $natsTls := .clients.eventBus.nats.tls }}
+            {{- include "plgd-cloud.certificateConfig" (list $ $natsTls $cert ) | indent 10 }}
+            useSystemCAPool: false
+      storage:
+        mongoDB:
+          uri: {{- printf " " }}{{- include "plgd-cloud.mongoDBUri" (list $ .clients.storage.mongoDB.uri )  | quote }}
+          database: {{ .clients.storage.mongoDB.database }}
+          tls:
+            {{- $mongoDbTls := .clients.storage.mongoDB.tls }}
+            {{- include "plgd-cloud.certificateConfig" (list $ $mongoDbTls $cert ) | indent 10 }}
+            useSystemCAPool: {{ .clients.storage.mongoDB.tls.useSystemCAPool }}
+  {{- end }}
+{{- end }}

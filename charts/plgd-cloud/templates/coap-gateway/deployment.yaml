@@ -1,0 +1,128 @@
+{{- if .Values.coapgateway.enabled }}
+{{- $rdServiceCert := "/certs" }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "plgd-cloud.coapgateway.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "plgd-cloud.labels" . | nindent 4 }}
+    {{- with .Values.coapgateway.deploymentLabels }}
+    {{- . | toYaml | nindent 4 }}
+    {{- end }}
+  {{- with .Values.coapgateway.deploymentAnnotations }}
+  annotations:
+  {{- . | toYaml | nindent 4 }}
+  {{- end }}
+spec:
+  replicas: {{ .Values.resourcedirectory.replicas }}
+  selector:
+    matchLabels:
+      {{- include "plgd-cloud.coapgateway.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.coapgateway.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "plgd-cloud.coapgateway.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.coapgateway.securityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if .Values.resourcedirectory.rbac.enabled }}
+      serviceAccountName: {{ .Values.coapgateway.rbac.serviceAccountName }}
+      {{- end }}
+      {{- with .Values.coapgateway.image.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      restartPolicy: {{ .Values.coapgateway.restartPolicy }}
+      {{- if .Values.coapgateway.initContainersTpl }}
+      initContainers:
+      {{- tpl .Values.coapgateway.initContainersTpl . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ .Values.coapgateway.name }}
+          {{- with .Values.coapgateway.podSecurityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          image: {{ include "plgd-cloud.coapgateway.image" . | quote }}
+          imagePullPolicy: {{ .Values.coapgateway.image.pullPolicy }}
+          {{- if .Values.coapgateway.command }}
+          command:
+          {{- range .Values.coapgateway.command  }}
+            - {{ . | quote }}
+          {{- end }}
+          {{- end}}
+          args:
+            - "--config"
+            - {{  printf "%s/%s" .Values.coapgateway.config.mountPath .Values.coapgateway.config.fileName | quote }}
+          ports:
+            - name: grpc
+              containerPort: {{ .Values.coapgateway.port }}
+              protocol: TCP
+          {{- with .Values.coapgateway.livenessProbe }}
+          livenessProbe:
+          {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.coapgateway.readinessProbe }}
+          readinessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.coapgateway.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - mountPath: {{ .Values.coapgateway.config.mountPath }}
+              name: {{ .Values.coapgateway.config.volume }}
+            {{- if ( include "plgd-cloud.coapgateway.createServiceCertByCm" . ) }}
+            - name: service-crt
+              mountPath: {{ $rdServiceCert }}
+            {{- end }}
+            {{- with .Values.coapgateway.extraVolumes }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+            {{- $providers := required "At least one oauth provider must be specified for coapgateway.apis.coap.authorization.providers or global.oauth.device" ( $.Values.coapgateway.apis.coap.authorization.providers | default $.Values.global.oauth.device ) }}
+            {{- range $providers }}
+            {{- if .clientSecret }}
+            - name: {{ printf "%s-oauth" .name }}
+              mountPath: {{ printf "/secrets/%s" .name }}
+            {{- end }}
+            {{- end }}
+      volumes:
+        - name: {{ .Values.resourcedirectory.config.volume }}
+          secret:
+            secretName: {{ include "plgd-cloud.coapgateway.configSecretName" . }}
+        {{- if ( include "plgd-cloud.coapgateway.createServiceCertByCm" . ) }}
+        - name: service-crt
+          secret:
+            secretName: {{ include "plgd-cloud.coapgateway.serviceCertName" . }}
+        {{- end }}
+        {{- with .Values.coapgateway.extraVolumeMounts }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- range $providers }}
+        {{- if .clientSecret }}
+        - name: {{ printf "%s-oauth" .name }}
+          secret:
+            secretName: {{ printf "%s-oauth" .name }}
+        {{- end }}
+        {{- end }}
+      {{- with .Values.coapgateway.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.coapgateway.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.coapgateway.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

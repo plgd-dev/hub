@@ -1,0 +1,124 @@
+{{- if .Values.certificateauthority.enabled }}
+{{- $customCaDefined := and .Values.certificateauthority.signer.keyFile .Values.certificateauthority.signer.certFile }}
+{{- $cert := "/certs" }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "plgd-cloud.certificateauthority.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "plgd-cloud.labels" . | nindent 4 }}
+    {{- with .Values.certificateauthority.deploymentLabels }}
+    {{- . | toYaml | nindent 4 }}
+    {{- end }}
+  {{- with .Values.certificateauthority.deploymentAnnotations }}
+  annotations:
+  {{- . | toYaml | nindent 4 }}
+  {{- end }}
+spec:
+  replicas: {{ .Values.resourcedirectory.replicas }}
+  selector:
+    matchLabels:
+      {{- include "plgd-cloud.certificateauthority.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.certificateauthority.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "plgd-cloud.certificateauthority.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.certificateauthority.securityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if .Values.certificateauthority.rbac.enabled }}
+      serviceAccountName: {{ .Values.certificateauthority.rbac.serviceAccountName }}
+      {{- end }}
+      {{- with .Values.certificateauthority.image.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      restartPolicy: {{ .Values.certificateauthority.restartPolicy }}
+      {{- if .Values.certificateauthority.initContainersTpl }}
+      initContainers:
+      {{- tpl .Values.certificateauthority.initContainersTpl . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ .Values.certificateauthority.name }}
+          {{- with .Values.certificateauthority.podSecurityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          image: {{ include "plgd-cloud.certificateauthority.image" . | quote }}
+          imagePullPolicy: {{ .Values.certificateauthority.image.pullPolicy }}
+          {{- if .Values.certificateauthority.command }}
+          command:
+          {{- range .Values.certificateauthority.command  }}
+            - {{ . | quote }}
+          {{- end }}
+          {{- end}}
+          args:
+            - "--config"
+            - {{  printf "%s/%s" .Values.certificateauthority.config.mountPath .Values.certificateauthority.config.fileName | quote }}
+          ports:
+            - name: grpc
+              containerPort: {{ .Values.certificateauthority.port }}
+              protocol: TCP
+          {{- with .Values.certificateauthority.livenessProbe }}
+          livenessProbe:
+          {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.certificateauthority.readinessProbe }}
+          readinessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.certificateauthority.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - mountPath: {{ .Values.certificateauthority.config.mountPath }}
+              name: {{ .Values.certificateauthority.config.volume }}
+            {{- if ( include "plgd-cloud.certificateauthority.createServiceCertByCm" . ) }}
+            - name: service-crt
+              mountPath: {{ $cert }}
+            {{- end }}
+            {{- if and ( not $customCaDefined ) .Values.certificateauthority.enabled }}
+            - name: {{ .Values.certificateauthority.ca.volume.name }}
+              mountPath: {{ .Values.certificateauthority.ca.volume.mountPath }}
+            {{- end }}
+            {{- with .Values.certificateauthority.extraVolumes }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+      volumes:
+        - name: {{ .Values.resourcedirectory.config.volume }}
+          secret:
+            secretName: {{ include "plgd-cloud.certificateauthority.configSecretName" . }}
+        {{- if ( include "plgd-cloud.certificateauthority.createServiceCertByCm" . ) }}
+        - name: service-crt
+          secret:
+            secretName: {{ include "plgd-cloud.certificateauthority.serviceCertName" . }}
+        {{- end }}
+        {{- if and ( not $customCaDefined ) .Values.certificateauthority.enabled }}
+        - name: {{ .Values.certificateauthority.ca.volume.name }}
+          secret:
+            secretName: {{ .Values.certificateauthority.ca.secret.name | default .Values.certificateauthority.ca.default.secret.name }}
+        {{- end }}
+        {{- with .Values.certificateauthority.extraVolumeMounts }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with .Values.certificateauthority.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.certificateauthority.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.certificateauthority.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

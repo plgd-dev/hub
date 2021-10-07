@@ -1,0 +1,25 @@
+{{- if .Values.grpcgateway.enabled -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "plgd-cloud.grpcgateway.fullname" . }}
+  namespace: {{ .Release.Namespace }}  
+  labels:
+    {{- include "plgd-cloud.labels" . | nindent 4 }}
+    {{- with .Values.grpcgateway.service.labels }}
+    {{- . | toYaml | nindent 4 }}
+    {{- end }}
+  {{- with .Values.grpcgateway.service.annotations }}
+  annotations:
+  {{- . | toYaml | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ .Values.grpcgateway.service.type | default "ClusterIP" }}
+  ports:
+    - port: {{ .Values.grpcgateway.port }}
+      targetPort: grpc
+      protocol: TCP
+      name: grpc
+  selector:
+  {{- include "plgd-cloud.grpcgateway.selectorLabels" . | nindent 4 }}
+{{- end }}

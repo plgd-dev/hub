@@ -1,0 +1,20 @@
+{{- if and .Values.certmanager.enabled .Values.certificateauthority.enabled ( not .Values.certificateauthority.ca.secret.name ) }}
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ .Values.certificateauthority.ca.default.secret.name }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  isCA: true
+  commonName: {{ .Values.certificateauthority.ca.default.commonName }}
+  secretName: {{ .Values.certificateauthority.ca.default.secret.name }}
+  privateKey:
+    algorithm: {{ .Values.certmanager.coap.cert.key.algorithm | default .Values.certmanager.default.cert.key.algorithm }}
+    size: {{ .Values.certmanager.coap.cert.key.size | default .Values.certmanager.default.cert.key.size }}
+  duration: {{ .Values.certificateauthority.ca.default.duration | default .Values.certmanager.default.cert.duration }}
+  renewBefore: {{ .Values.certificateauthority.ca.default.renewBefore | default .Values.certmanager.default.cert.renewBefore }}
+  issuerRef:
+    name: {{ .Values.certmanager.coap.issuer.name | default .Values.certmanager.default.issuer.name }}
+    kind: {{ .Values.certmanager.coap.issuer.kind | default .Values.certmanager.default.issuer.kind }}
+    group: cert-manager.io
+{{- end }}

@@ -1,0 +1,3 @@
+{{- if and .Values.certificateauthority.rbac.enabled .Values.certificateauthority.rbac.roleBindingDefitionTpl }}
+{{- tpl .Values.certificateauthority.rbac.roleBindingDefitionTpl $ }}
+{{- end }}

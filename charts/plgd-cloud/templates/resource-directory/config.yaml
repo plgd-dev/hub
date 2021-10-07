@@ -1,0 +1,92 @@
+{{- if .Values.resourcedirectory.enabled }}
+{{- $rdCert := "/certs" }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ include "plgd-cloud.resourcedirectory.configSecretName" . }}
+  namespace: {{ .Release.Namespace }}
+stringData:
+  {{ .Values.resourcedirectory.config.fileName }}: |
+    {{- with .Values.resourcedirectory }}
+    log:
+      debug: {{ .log.debug }}
+    apis:
+      grpc:
+        address: {{  .apis.grpc.address | default (printf "0.0.0.0:%v" .port) | quote }}
+        enforcementPolicy:
+          minTime: {{ .apis.grpc.enforcementPolicy.minTime | quote }}
+          permitWithoutStream: {{ .apis.grpc.enforcementPolicy.permitWithoutStream }}
+        keepAlive:
+          maxConnectionIdle: {{ .apis.grpc.keepAlive.maxConnectionIdle }}
+          maxConnectionAge: {{ .apis.grpc.keepAlive.maxConnectionAge }}
+          maxConnectionAgeGrace: {{ .apis.grpc.keepAlive.maxConnectionAgeGrace }}
+          time: {{ .apis.grpc.keepAlive.time }}
+          timeout: {{ .apis.grpc.keepAlive.timeout }}
+        tls:
+          {{- $tls := .apis.grpc.tls }}
+          {{- include "plgd-cloud.certificateConfig" (list $ $tls $rdCert ) | indent 8 }}
+          clientCertificateRequired: {{ .apis.grpc.tls.clientCertificateRequired }}
+        authorization:
+          {{- $authorization := .apis.grpc.authorization }}
+          {{- include "plgd-cloud.authorizationConfig" (list $ $authorization "resourcedirectory" ) | indent 8 }}
+          http:
+            maxIdleConns: {{ .apis.grpc.authorization.http.maxIdleConns }}
+            maxConnsPerHost: {{ .apis.grpc.authorization.http.maxIdleConnsPerHost }}
+            maxIdleConnsPerHost: {{ .apis.grpc.authorization.http.maxIdleConnsPerHost }}
+            idleConnTimeout: {{ .apis.grpc.authorization.http.idleConnTimeout }}
+            timeout: {{ .apis.grpc.authorization.http.timeout }}
+            tls:
+              {{- $grpcTls := .apis.grpc.authorization.http.tls }}
+              {{- include "plgd-cloud.certificateConfig" (list $ $grpcTls $rdCert ) | indent 12 }}
+              useSystemCAPool: {{ .apis.grpc.authorization.http.tls.useSystemCAPool }}
+    clients:
+      eventBus:
+        goPoolSize: {{ .clients.eventBus.goPoolSize }}
+        nats:
+          url: {{ printf " " }}{{- include "plgd-cloud.natsUri" (list $ .clients.eventBus.nats.url) | quote }}
+          pendingLimits:
+            msgLimit: {{ printf "%v" .clients.eventBus.nats.pendingLimits.msgLimit }}
+            bytesLimit: {{ printf "%v" .clients.eventBus.nats.pendingLimits.bytesLimit }}
+          tls:
+            {{- $natsTls := .clients.eventBus.nats.tls }}
+            {{- include "plgd-cloud.certificateConfig" (list $ $natsTls $rdCert ) | indent 10 }}
+            useSystemCAPool: {{ .clients.eventBus.nats.tls.useSystemCAPool }}
+      eventStore:
+        cacheExpiration: {{ .clients.eventStore.cacheExpiration }}
+        mongoDB:
+          uri:{{ printf " " }}{{- include "plgd-cloud.mongoDBUri" (list $ .clients.eventStore.mongoDB.uri)  | quote }}
+          database: {{ .clients.eventStore.mongoDB.database }}
+          batchSize: {{ .clients.eventStore.mongoDB.batchSize }}
+          maxPoolSize: {{ .clients.eventStore.mongoDB.maxPoolSize }}
+          maxConnIdleTime: {{ .clients.eventStore.mongoDB.maxConnIdleTime }}
+          tls:
+            {{- $mongoTls := .clients.eventStore.mongoDB.tls }}
+            {{- include "plgd-cloud.certificateConfig" (list $ $natsTls $rdCert ) | indent 10 }}
+            useSystemCAPool: {{ .clients.eventStore.mongoDB.tls.useSystemCAPool }}
+      identityStore:
+        pullFrequency: {{ .clients.identityStore.pullFrequency }}
+        cacheExpiration: {{ .clients.identityStore.cacheExpiration }}
+        ownerClaim: {{ .clients.identityStore.ownerClaim }}
+        grpc:
+          {{- $authorizationServer := .clients.identityStore.grpc.address }}
+          address:{{ printf " " }}{{- include "plgd-cloud.identityStoreAddress" (list $ $authorizationServer ) | quote }}
+          keepAlive:
+            time: {{ .clients.identityStore.grpc.keepAlive.timeout }}
+            timeout: {{ .clients.identityStore.grpc.keepAlive.timeout }}
+            permitWithoutStream: {{ .clients.identityStore.grpc.keepAlive.permitWithoutStream }}
+          tls:
+            {{- $authClientTls := .clients.identityStore.grpc.tls }}
+            {{- include "plgd-cloud.certificateConfig" (list $ $authClientTls $rdCert ) | indent 10 }}
+            useSystemCAPool: {{ .clients.identityStore.grpc.tls.useSystemCAPool }}
+    publicConfiguration:
+      caPool: {{ .publicConfiguration.caPool | default "/certs/ca.crt" | quote }}
+      authorizationServer: {{ required "resourcedirectory.publicConfiguration.authorizationServer or global.authority is required" ( .publicConfiguration.authorizationServer | default $.Values.global.authority ) | quote }}
+      ownerClaim: {{ .publicConfiguration.ownerClaim  | default $.Values.global.ownerClaim | quote }}
+      {{- if .publicConfiguration.deviceIdClaim  | default $.Values.global.deviceIdClaim }}
+      deviceIdClaim: {{ .publicConfiguration.deviceIdClaim  | default $.Values.global.deviceIdClaim | quote }}
+      {{- end }}
+      cloudID: {{ required "resourcedirectory.publicConfiguration.cloudID or coapgateway.cloudId or global.cloudId is required" ( .publicConfiguration.cloudID | default ( $.Values.coapgateway.cloudId | default $.Values.global.cloudId)) | quote }}
+      cloudURL: {{ .publicConfiguration.cloudURL | default (printf "coaps+tcp://%s:%v" $.Values.global.domain $.Values.coapgateway.port ) | quote }}
+      defaultCommandTimeToLive: {{ .publicConfiguration.defaultCommandTimeToLive | quote }}
+  {{- end }}
+{{- end }}
