@@ -10,13 +10,15 @@ import (
 	"sync"
 	"time"
 
+	"github.com/plgd-dev/device/schema"
+	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/hub/cloud2cloud-connector/store"
 	pbIS "github.com/plgd-dev/hub/identity-store/pb"
 	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
+	kitHttp "github.com/plgd-dev/hub/pkg/net/http"
 	"github.com/plgd-dev/hub/pkg/security/oauth2"
 	"github.com/plgd-dev/hub/resource-aggregate/commands"
 	raService "github.com/plgd-dev/hub/resource-aggregate/service"
-	"github.com/plgd-dev/device/schema"
 	"github.com/plgd-dev/kit/v2/codec/json"
 	"github.com/plgd-dev/kit/v2/log"
 )
@@ -188,6 +190,57 @@ func (p *pullDevicesHandler) deleteDevice(ctx context.Context, userID, deviceID 
 	return errors
 }
 
+func (p *pullDevicesHandler) pullDevices(ctx context.Context, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud, devices []RetrieveDeviceWithLinksResponse) (bool, []error) {
+	var errors []error
+	registeredDevices, err := getOwnerDevices(ctx, p.isClient)
+	if err != nil {
+		return false, []error{err}
+	}
+
+	for _, dev := range devices {
+		deviceID := dev.Device.Device.ID
+		err := p.devicesSubscription.Add(deviceID, linkedAccount, linkedCloud)
+		if err != nil {
+			errors = append(errors, fmt.Errorf("cannot add device %v to devicesSubscription: %w", deviceID, err))
+		}
+
+		ok := registeredDevices[deviceID]
+		if !ok {
+			_, err := p.isClient.AddDevice(ctx, &pbIS.AddDeviceRequest{
+				DeviceId: deviceID,
+			})
+			if err != nil {
+				errors = append(errors, fmt.Errorf("cannot addDevice %v: %w", deviceID, err))
+				continue
+			}
+		}
+		delete(registeredDevices, deviceID)
+		_, err = p.raClient.UpdateDeviceMetadata(ctx, &commands.UpdateDeviceMetadataRequest{
+			DeviceId: deviceID,
+			Update: &commands.UpdateDeviceMetadataRequest_Status{
+				Status: &commands.ConnectionStatus{
+					Value: toConnectionStatus(dev.Status),
+				},
+			},
+			CommandMetadata: &commands.CommandMetadata{
+				ConnectionId: linkedAccount.ID,
+				Sequence:     uint64(time.Now().UnixNano()),
+			},
+		})
+		if err != nil {
+			errors = append(errors, fmt.Errorf("cannot update cloud status: %v: %w", deviceID, err))
+		}
+	}
+
+	userID := linkedAccount.UserID
+	for deviceID := range registeredDevices {
+		if err := p.deleteDevice(ctx, deviceID, userID); err != nil {
+			errors = append(errors, err...)
+		}
+	}
+	return true, errors
+}
+
 func (p *pullDevicesHandler) getDevicesWithResourceLinks(ctx context.Context, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud) error {
 	var devices []RetrieveDeviceWithLinksResponse
 	err := Get(ctx, linkedCloud.Endpoint.URL+"/devices", linkedAccount, linkedCloud, &devices)
@@ -196,53 +249,13 @@ func (p *pullDevicesHandler) getDevicesWithResourceLinks(ctx context.Context, li
 	}
 
 	var errors []error
-	userID := linkedAccount.UserID
 	ctx = kitNetGrpc.CtxWithToken(ctx, linkedAccount.Data.Origin().AccessToken.String())
 	if linkedCloud.SupportedSubscriptionsEvents.NeedPullDevices() {
-		registeredDevices, err := getOwnerDevices(ctx, p.isClient)
-		if err != nil {
-			return err
+		ok, pullErrors := p.pullDevices(ctx, linkedAccount, linkedCloud, devices)
+		if !ok {
+			return fmt.Errorf("%+v", errors)
 		}
-
-		for _, dev := range devices {
-			deviceID := dev.Device.Device.ID
-			ok := registeredDevices[deviceID]
-			err := p.devicesSubscription.Add(deviceID, linkedAccount, linkedCloud)
-			if err != nil {
-				errors = append(errors, fmt.Errorf("cannot add device %v to devicesSubscription: %w", deviceID, err))
-			}
-
-			if !ok {
-				_, err := p.isClient.AddDevice(ctx, &pbIS.AddDeviceRequest{
-					DeviceId: deviceID,
-				})
-				if err != nil {
-					errors = append(errors, fmt.Errorf("cannot addDevice %v: %w", deviceID, err))
-					continue
-				}
-			}
-			delete(registeredDevices, deviceID)
-			_, err = p.raClient.UpdateDeviceMetadata(ctx, &commands.UpdateDeviceMetadataRequest{
-				DeviceId: deviceID,
-				Update: &commands.UpdateDeviceMetadataRequest_Status{
-					Status: &commands.ConnectionStatus{
-						Value: toConnectionStatus(dev.Status),
-					},
-				},
-				CommandMetadata: &commands.CommandMetadata{
-					ConnectionId: linkedAccount.ID,
-					Sequence:     uint64(time.Now().UnixNano()),
-				},
-			})
-			if err != nil {
-				errors = append(errors, fmt.Errorf("cannot update cloud status: %v: %w", deviceID, err))
-			}
-		}
-		for deviceID := range registeredDevices {
-			if err := p.deleteDevice(ctx, deviceID, userID); err != nil {
-				errors = append(errors, err...)
-			}
-		}
+		errors = append(errors, pullErrors...)
 	}
 
 	for _, dev := range devices {
@@ -271,6 +284,31 @@ func removeDeviceIDFromHref(href string) string {
 	href = "/" + strings.Join(hrefsp[2:], "/")
 	return href
 }
+func (p *pullDevicesHandler) notifyResourceChanged(ctx context.Context, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud, deviceID string, link Representation) error {
+	link.Href = removeDeviceIDFromHref(link.Href)
+	body, err := json.Encode(link.Representation)
+	if err != nil {
+		return err
+	}
+
+	_, err = p.raClient.NotifyResourceChanged(ctx, &commands.NotifyResourceChangedRequest{
+		ResourceId: commands.NewResourceID(deviceID, kitHttp.CanonicalHref(link.Href)),
+		CommandMetadata: &commands.CommandMetadata{
+			ConnectionId: linkedAccount.ID,
+			Sequence:     uint64(time.Now().UnixNano()),
+		},
+		Content: &commands.Content{
+			Data:              body,
+			ContentType:       message.AppJSON.String(),
+			CoapContentFormat: int32(message.AppJSON),
+		},
+	})
+	log.Debugf("notifyResourceChanged %v%v: %v", deviceID, link.Href, string(body))
+	if err != nil {
+		return fmt.Errorf("cannot notifyResourceChanged %+v: %w", link, err)
+	}
+	return nil
+}
 
 func (p *pullDevicesHandler) getDevicesWithResourceValues(ctx context.Context, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud) error {
 	var devices []RetrieveDeviceContentAllResponse
@@ -280,33 +318,12 @@ func (p *pullDevicesHandler) getDevicesWithResourceValues(ctx context.Context, l
 	}
 
 	var errors []error
-	userID := linkedAccount.UserID
 	ctx = kitNetGrpc.CtxWithToken(ctx, linkedAccount.Data.Origin().AccessToken.String())
 	for _, dev := range devices {
 		deviceID := dev.Device.Device.ID
 		for _, link := range dev.Links {
-			link.Href = removeDeviceIDFromHref(link.Href)
-			body, err := json.Encode(link.Representation)
-			if err != nil {
+			if err := p.notifyResourceChanged(ctx, linkedAccount, linkedCloud, deviceID, link); err != nil {
 				errors = append(errors, err)
-				continue
-			}
-			err = notifyResourceChanged(
-				ctx,
-				p.raClient,
-				deviceID,
-				link.Href,
-				userID,
-				"application/json",
-				body,
-				&commands.CommandMetadata{
-					ConnectionId: linkedAccount.ID,
-					Sequence:     uint64(time.Now().UnixNano()),
-				},
-			)
-			log.Debugf("notifyResourceChanged %v%v: %v", deviceID, link.Href, string(body))
-			if err != nil {
-				errors = append(errors, fmt.Errorf("cannot notifyResourceChanged %+v: %w", link, err))
 			}
 		}
 	}

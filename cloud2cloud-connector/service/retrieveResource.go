@@ -13,7 +13,6 @@ import (
 	"github.com/plgd-dev/hub/resource-aggregate/commands"
 	raEvents "github.com/plgd-dev/hub/resource-aggregate/events"
 	raService "github.com/plgd-dev/hub/resource-aggregate/service"
-	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/kit/v2/log"
 )
 
@@ -59,17 +58,7 @@ func retrieveResource(ctx context.Context, raClient raService.ResourceAggregateC
 	if err != nil {
 		log.Errorf("cannot update resource %v/%v: %w", deviceID, href, err)
 	}
-	coapContentFormat := int32(-1)
-
-	switch contentType {
-	case message.AppCBOR.String():
-		coapContentFormat = int32(message.AppCBOR)
-	case message.AppOcfCbor.String():
-		coapContentFormat = int32(message.AppOcfCbor)
-	case message.AppJSON.String():
-		coapContentFormat = int32(message.AppJSON)
-	}
-
+	coapContentFormat := stringToSupportedMediaType(contentType)
 	ctx = kitNetGrpc.CtxWithToken(ctx, linkedAccount.Data.Origin().AccessToken.String())
 	_, err = raClient.ConfirmResourceRetrieve(ctx, &commands.ConfirmResourceRetrieveRequest{
 		ResourceId:    commands.NewResourceID(deviceID, href),

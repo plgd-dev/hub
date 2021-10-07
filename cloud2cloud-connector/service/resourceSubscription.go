@@ -10,7 +10,6 @@ import (
 	"github.com/plgd-dev/hub/cloud2cloud-connector/store"
 	kitHttp "github.com/plgd-dev/hub/pkg/net/http"
 	"github.com/plgd-dev/hub/resource-aggregate/commands"
-	"github.com/plgd-dev/go-coap/v2/message"
 )
 
 func (s *SubscriptionManager) SubscribeToResource(ctx context.Context, deviceID, href string, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud) error {
@@ -84,16 +83,7 @@ func cancelResourceSubscription(ctx context.Context, linkedAccount store.LinkedA
 }
 
 func (s *SubscriptionManager) HandleResourceChangedEvent(ctx context.Context, subscriptionData subscriptionData, header events.EventHeader, body []byte) error {
-	coapContentFormat := int32(-1)
-	switch header.ContentType {
-	case message.AppCBOR.String():
-		coapContentFormat = int32(message.AppCBOR)
-	case message.AppOcfCbor.String():
-		coapContentFormat = int32(message.AppOcfCbor)
-	case message.AppJSON.String():
-		coapContentFormat = int32(message.AppJSON)
-	}
-
+	coapContentFormat := stringToSupportedMediaType(header.ContentType)
 	_, err := s.raClient.NotifyResourceChanged(ctx, &commands.NotifyResourceChangedRequest{
 		ResourceId: commands.NewResourceID(subscriptionData.subscription.DeviceID, kitHttp.CanonicalHref(subscriptionData.subscription.Href)),
 		CommandMetadata: &commands.CommandMetadata{
