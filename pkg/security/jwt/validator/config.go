@@ -16,9 +16,6 @@ func (c *Config) Validate() error {
 	if c.Authority == "" {
 		return fmt.Errorf("authority('%v')", c.Authority)
 	}
-	if c.Audience == "" {
-		return fmt.Errorf("audience('%v')", c.Audience)
-	}
 	if err := c.HTTP.Validate(); err != nil {
 		return fmt.Errorf("http.%w", err)
 	}
