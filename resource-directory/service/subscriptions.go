@@ -682,7 +682,7 @@ func (s *subscriptions) SubscribeForEvents(resourceProjection *Projection, srv p
 		}
 	}()
 
-	sendChan := make(chan pb.Event, 16)
+	sendChan := make(chan pb.Event, 1024)
 	go func() {
 		defer wg.Done()
 		for {
@@ -705,9 +705,11 @@ func (s *subscriptions) SubscribeForEvents(resourceProjection *Projection, srv p
 		case sendChan <- e:
 			return nil
 		case <-ctx.Done():
-			return fmt.Errorf("cannot send event: stream context returns error: %v", ctx.Err())
+			return fmt.Errorf("cannot send event (%+v) for subscription(%v): stream context returns error: %v", e.GetType(), e.GetSubscriptionId(), ctx.Err())
 		case <-senderCtx.Done():
-			return fmt.Errorf("cannot send event: sender context returns error: %v", ctx.Err())
+			return fmt.Errorf("cannot send event (%+v) for subscription(%v): sender context returns error: %v", e.GetType(), e.GetSubscriptionId(), ctx.Err())
+		default:
+			return fmt.Errorf("cannot send event (%+v) for subscription(%v): buffer it exhausted", e.GetType(), e.GetSubscriptionId())
 		}
 	}
 
