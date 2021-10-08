@@ -8,7 +8,7 @@ name: Golangci-lint
 on:
   pull_request:
     branches:
-      - v2
+      - main
 jobs:
   golangci:
     name: lint
