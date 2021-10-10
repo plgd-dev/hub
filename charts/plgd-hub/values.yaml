@@ -152,7 +152,7 @@ certmanager:
       # -- Annotation for default issuer
       annotations: {}
       # -- Name of default issuer
-      name: selfsigned-issuer
+      name: default-issuer
       # --Kind of default issuer
       kind: Issuer
       # -- Default issuer specification.
@@ -174,6 +174,27 @@ certmanager:
         algorithm: ECDSA
         # -- Key size
         size: 256
+    ca:
+      enabled: true
+      # -- Common name for CA created as default issuer
+      commonName: plgd-ca
+      secret:
+        # -- Name of secret
+        name: plgd-ca
+      issuer:
+        # -- Enable root issuer
+        enabled: true
+        # -- Labels for root issuer
+        labels: {}
+        # -- Annotation for root issuer
+        annotations: {}
+        # -- Name of root issuer
+        name: ca-issuer
+        # --Kind of default issuer
+        kind: Issuer
+        # -- Default issuer specification.
+        spec:
+          selfSigned: {}
   internal:
     # -- Internal issuer. In case you want to create your own issuer for internal certs
     issuer:
@@ -331,6 +352,7 @@ resourcedirectory:
   apis:
     grpc:
       address:
+      ownerCacheExpiration: 1m
       enforcementPolicy:
         minTime: 5s
         permitWithoutStream: true
@@ -1047,7 +1069,7 @@ httpgateway:
           useSystemCAPool: false
   # -- For complete http-gateway service configuration see [plgd/http-gateway](https://github.com/plgd-dev/hub/tree/main/http-gateway)
   ui:
-    enabled: false
+    enabled: true
     directory: "/usr/local/var/www"
     webConfiguration:
       authority: ""
@@ -1334,20 +1356,10 @@ certificateauthority:
     mountPath: /config
   # -- CA section
   ca:
-    # -- Default configuration for cert/key CA used for signing device/identity certificates
-    default:
-      # -- Common name for CA created as default issuer
-      commonName: coap-device-ca
-      secret:
-        # -- Name of secret
-        name: coap-device-ca
-        # -- Duration for default CA
-      duration: 87600h
-      # -- Renew before for default CA
-      renewBefore: 360h
     secret:
-      # -- Custom CA secret name
+      # -- Name of secret
       name:
+        # -- Duration for default CA
     # -- Cert file name
     cert: tls.crt
     # -- Cert key file name

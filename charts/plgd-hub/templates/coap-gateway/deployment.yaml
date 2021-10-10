@@ -90,7 +90,7 @@ spec:
             {{- $providers := required "At least one oauth provider must be specified for coapgateway.apis.coap.authorization.providers or global.oauth.device" ( $.Values.coapgateway.apis.coap.authorization.providers | default $.Values.global.oauth.device ) }}
             {{- range $providers }}
             {{- if .clientSecret }}
-            - name: {{ printf "%s-oauth" .name }}
+            - name: {{ printf "%s-oauth" ( regexReplaceAll "\\W+" .name "-" ) }}
               mountPath: {{ printf "/secrets/%s" .name }}
             {{- end }}
             {{- end }}
@@ -108,7 +108,7 @@ spec:
         {{- end }}
         {{- range $providers }}
         {{- if .clientSecret }}
-        - name: {{ printf "%s-oauth" .name }}
+        - name: {{ printf "%s-oauth" ( regexReplaceAll "\\W+" .name "-" ) }}
           secret:
             secretName: {{ printf "%s-oauth" .name }}
         {{- end }}

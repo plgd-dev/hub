@@ -272,3 +272,26 @@ app.kubernetes.io/instance: {{ .Release.Name }}
   {{ required "clientSecret or clientSecretFile for oauth provider is required " ( $provider.clientSecret | default $provider.clientSecretFile ) }}
   {{- end }}
 {{- end }}
+
+{{- define "plgd-hub.enableDefaultIssuer" }}
+    {{- if and .Values.certmanager.enabled .Values.certmanager.default.issuer.enabled }}
+        {{- $nameInternal := .Values.certmanager.internal.issuer.name }}
+        {{- $kindInternal := .Values.certmanager.internal.issuer.kind }}
+        {{- $specInternal := .Values.certmanager.internal.issuer.spec }}
+
+        {{- $nameCoap := .Values.certmanager.coap.issuer.name }}
+        {{- $kindCoap := .Values.certmanager.coap.issuer.kind }}
+        {{- $specCoap := .Values.certmanager.coap.issuer.spec }}
+
+        {{- $nameExternal := .Values.certmanager.external.issuer.name }}
+        {{- $kindExternal := .Values.certmanager.external.issuer.kind }}
+        {{- $specExternal := .Values.certmanager.external.issuer.spec }}
+
+        {{- $internalIssuer := or ( and $nameInternal $kindInternal ) $specInternal }}
+        {{- $coapIssuer := or ( and $nameCoap $kindCoap ) $specCoap }}
+        {{- $externalIssuer := or ( and $nameExternal $kindExternal ) $specExternal }}
+        {{- printf "%t" ( not ( and $internalIssuer $coapIssuer $externalIssuer )) }}
+    {{- else }}
+        {{- printf "false" }}
+    {{- end }}
+{{- end }}

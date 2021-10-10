@@ -10,6 +10,7 @@ metadata:
   labels:
     {{- include "plgd-hub.labels" . | nindent 4 }}
   annotations:
+    kubernetes.io/ingress.class: "nginx"
     nginx.org/grpc-services: {{ $fullname | quote }}
     nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
     ingress.kubernetes.io/force-ssl-redirect: "true"

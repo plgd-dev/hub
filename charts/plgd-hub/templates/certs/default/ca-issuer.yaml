@@ -1,0 +1,17 @@
+{{- if and ( include "plgd-hub.enableDefaultIssuer" . ) ( $.Values.certmanager.default.ca.issuer.enabled ) }}
+apiVersion: cert-manager.io/v1
+kind: {{ .Values.certmanager.default.ca.issuer.kind  }}
+metadata:
+  name: {{ .Values.certmanager.default.ca.issuer.name  }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "plgd-hub.labels" . | nindent 4 }}
+  {{- if .Values.certmanager.default.ca.issuer.annotations }}
+  annotations:
+  {{- range $key, $value := .Values.certmanager.default.ca.issuer.annotations }}
+     {{ $key }}: {{ $value | quote }}
+  {{- end }}
+  {{- end }}
+spec:
+{{- .Values.certmanager.default.ca.issuer.spec | toYaml | nindent 2 }}
+{{- end }}
