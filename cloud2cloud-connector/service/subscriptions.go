@@ -50,7 +50,6 @@ type SubscriptionManager struct {
 	devicesSubscription *DevicesSubscription
 	provider            *oauth2.PlgdProvider
 	triggerTask         OnTaskTrigger
-	interval            time.Duration
 }
 
 func NewSubscriptionManager(
@@ -61,7 +60,6 @@ func NewSubscriptionManager(
 	devicesSubscription *DevicesSubscription,
 	provider *oauth2.PlgdProvider,
 	triggerTask OnTaskTrigger,
-	interval time.Duration,
 ) *SubscriptionManager {
 	return &SubscriptionManager{
 		eventsURL:           EventsURL,
@@ -72,7 +70,6 @@ func NewSubscriptionManager(
 		cache:               cache.New(time.Minute*10, time.Minute*5),
 		provider:            provider,
 		triggerTask:         triggerTask,
-		interval:            interval,
 	}
 }
 
@@ -151,28 +148,35 @@ func cancelSubscription(ctx context.Context, href string, linkedAccount store.Li
 	return nil
 }
 
-func (s *SubscriptionManager) HandleEvent(ctx context.Context, header events.EventHeader, body []byte) (int, error) {
-	var subData subscriptionData
-	var err error
-	data, ok := s.cache.Get(header.CorrelationID)
+func (s *SubscriptionManager) getSubscriptionData(subscriptionID, correlationID string) (subscriptionData, error) {
+	data, ok := s.cache.Get(correlationID)
 	if ok {
-		subData = data.(subscriptionData)
-		subData.subscription.ID = header.ID
+		subData := data.(subscriptionData)
+		subData.subscription.ID = subscriptionID
 		newSubscription, loaded, err := s.store.LoadOrCreateSubscription(subData.subscription)
-		s.cache.Delete(header.CorrelationID)
+		s.cache.Delete(correlationID)
 		if err != nil {
-			return http.StatusGone, fmt.Errorf("cannot store subscription(CorrelationID: %v, ID: %v) to DB: %w", header.CorrelationID, header.ID, err)
+			return subscriptionData{}, fmt.Errorf("cannot store subscription(CorrelationID: %v, ID: %v) to DB: %w", correlationID, subscriptionID, err)
 		}
-		if loaded && newSubscription.subscription.ID != header.ID {
-			return http.StatusGone, fmt.Errorf("cannot store subscription(CorrelationID: %v, ID: %v) to DB: duplicit subscription(CorrelationID %v, ID: %v)", header.CorrelationID, header.ID, newSubscription.subscription.CorrelationID, newSubscription.subscription.ID)
+		if loaded && newSubscription.subscription.ID != subscriptionID {
+			return subscriptionData{}, fmt.Errorf("cannot store subscription(CorrelationID: %v, ID: %v) to DB: duplicit subscription(CorrelationID %v, ID: %v)",
+				subscriptionID, subscriptionID, newSubscription.subscription.CorrelationID, newSubscription.subscription.ID)
 		}
 		subData.subscription = newSubscription.subscription
-	} else {
-		newSubscription, ok := s.store.LoadSubscription(header.ID)
-		if !ok {
-			return http.StatusGone, fmt.Errorf("cannot load subscription(CorrelationID: %v, ID: %v) from DB: not found", header.CorrelationID, header.ID)
-		}
-		subData = newSubscription
+		return subData, nil
+	}
+	newSubscription, ok := s.store.LoadSubscription(subscriptionID)
+	if !ok {
+		return subscriptionData{}, fmt.Errorf("cannot load subscription(CorrelationID: %v, ID: %v) from DB: not found",
+			correlationID, subscriptionID)
+	}
+	return newSubscription, nil
+}
+
+func (s *SubscriptionManager) HandleEvent(ctx context.Context, header events.EventHeader, body []byte) (int, error) {
+	subData, err := s.getSubscriptionData(header.ID, header.CorrelationID)
+	if err != nil {
+		return http.StatusGone, err
 	}
 
 	// verify event signature
@@ -248,7 +252,7 @@ type subscriptionData struct {
 	subscription  Subscription
 }
 
-func (s *SubscriptionManager) Run(ctx context.Context) {
+func (s *SubscriptionManager) Run(ctx context.Context, interval time.Duration) {
 	for {
 		for _, task := range s.store.DumpTasks() {
 			s.triggerTask(task)
@@ -262,7 +266,7 @@ func (s *SubscriptionManager) Run(ctx context.Context) {
 		select {
 		case <-ctx.Done():
 			return
-		case <-time.After(s.interval):
+		case <-time.After(interval):
 		}
 	}
 }

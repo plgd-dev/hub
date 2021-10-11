@@ -386,27 +386,11 @@ func (p *pullDevicesHandler) pullDevicesFromAccount(ctx context.Context, linkedA
 	return nil
 }
 
-func pullDevices(ctx context.Context, s *Store,
-	isClient pbIS.IdentityStoreClient,
-	raClient raService.ResourceAggregateClient,
-	devicesSubscription *DevicesSubscription,
-	subscriptionManager *SubscriptionManager,
-	provider *oauth2.PlgdProvider,
-	triggerTask OnTaskTrigger) error {
-
-	data := s.DumpLinkedAccounts()
+func (p *pullDevicesHandler) pullLinkedAccountsDevices(ctx context.Context) error {
+	data := p.s.DumpLinkedAccounts()
 	var wg sync.WaitGroup
 	for _, d := range data {
 		log.Debugf("pulling devices for %v", d.linkedAccount)
-		p := pullDevicesHandler{
-			s:                   s,
-			isClient:            isClient,
-			raClient:            raClient,
-			devicesSubscription: devicesSubscription,
-			subscriptionManager: subscriptionManager,
-			provider:            provider,
-			triggerTask:         triggerTask,
-		}
 		wg.Add(1)
 		go func(linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud) {
 			defer wg.Done()
@@ -419,4 +403,15 @@ func pullDevices(ctx context.Context, s *Store,
 
 	wg.Wait()
 	return nil
+}
+
+func (p *pullDevicesHandler) runDevicePulling(ctx context.Context, timeout time.Duration) bool {
+	ctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+	err := p.pullLinkedAccountsDevices(ctx)
+	if err != nil {
+		log.Errorf("cannot pull devices: %v", err)
+	}
+	<-ctx.Done()
+	return ctx.Err() != context.Canceled
 }

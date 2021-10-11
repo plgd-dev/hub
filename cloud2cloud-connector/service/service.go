@@ -274,7 +274,7 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Server, error)
 	listener.AddCloseFunc(provider.Close)
 
 	subMgr := NewSubscriptionManager(config.APIs.HTTP.EventsURL, isClient, raClient, store, devicesSubscription,
-		provider, taskProcessor.Trigger, config.Clients.Subscription.HTTP.ResubscribeInterval)
+		provider, taskProcessor.Trigger)
 
 	requestHandler := NewRequestHandler(config.APIs.HTTP.Authorization.OwnerClaim, provider, subMgr, store, taskProcessor.Trigger)
 
@@ -293,28 +293,19 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Server, error)
 
 	var wg sync.WaitGroup
 	if !config.APIs.HTTP.PullDevices.Disabled {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			for runDevicePulling(ctx, provider, config.APIs.HTTP.PullDevices.Interval, store, isClient, raClient, devicesSubscription, subMgr, taskProcessor.Trigger) {
-			}
-		}()
-	}
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		if err := taskProcessor.Run(ctx, subMgr); err != nil {
-			if !kitNetGrpc.IsContextCanceled(err) {
-				log.Errorf("failed to process subscriptionManager tasks: %w", err)
-			}
+		pdh := &pullDevicesHandler{
+			s:                   store,
+			isClient:            isClient,
+			raClient:            raClient,
+			devicesSubscription: devicesSubscription,
+			subscriptionManager: subMgr,
+			provider:            provider,
+			triggerTask:         taskProcessor.Trigger,
 		}
-	}()
-
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		subMgr.Run(ctx)
-	}()
+		runDevicePulling(ctx, pdh, config.APIs.HTTP.PullDevices.Interval, &wg)
+	}
+	runTaskProcessor(ctx, taskProcessor, subMgr, &wg)
+	runSubscriptionManager(ctx, subMgr, config.Clients.Subscription.HTTP.ResubscribeInterval, &wg)
 
 	return &Server{
 		server:   server,
@@ -336,22 +327,31 @@ func (s *Server) Shutdown() error {
 	return s.server.Shutdown(context.Background())
 }
 
-func runDevicePulling(ctx context.Context,
-	provider *oauth2.PlgdProvider,
-	timeout time.Duration,
-	s *Store,
-	isClient pbIS.IdentityStoreClient,
-	raClient raService.ResourceAggregateClient,
-	devicesSubscription *DevicesSubscription,
-	subscriptionManager *SubscriptionManager,
-	triggerTask OnTaskTrigger,
-) bool {
-	ctx, cancel := context.WithTimeout(ctx, timeout)
-	defer cancel()
-	err := pullDevices(ctx, s, isClient, raClient, devicesSubscription, subscriptionManager, provider, triggerTask)
-	if err != nil {
-		log.Errorf("cannot pull devices: %v", err)
-	}
-	<-ctx.Done()
-	return ctx.Err() != context.Canceled
+func runDevicePulling(ctx context.Context, pdh *pullDevicesHandler, timeout time.Duration, wg *sync.WaitGroup) {
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		for pdh.runDevicePulling(ctx, timeout) {
+		}
+	}()
+}
+
+func runTaskProcessor(ctx context.Context, taskProcessor *TaskProcessor, subMgr *SubscriptionManager, wg *sync.WaitGroup) {
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		if err := taskProcessor.Run(ctx, subMgr); err != nil {
+			if !kitNetGrpc.IsContextCanceled(err) {
+				log.Errorf("failed to process subscriptionManager tasks: %w", err)
+			}
+		}
+	}()
+}
+
+func runSubscriptionManager(ctx context.Context, subMgr *SubscriptionManager, interval time.Duration, wg *sync.WaitGroup) {
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		subMgr.Run(ctx, interval)
+	}()
 }

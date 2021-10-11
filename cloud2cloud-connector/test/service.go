@@ -26,7 +26,7 @@ func MakeAuthorizationConfig() service.AuthorizationConfig {
 	return service.AuthorizationConfig{
 		OwnerClaim: config.OWNER_CLAIM,
 		Config: oauth2.Config{
-			Authority: "https://" + config.OAUTH_SERVER_HOST,
+			Authority: HTTPS_SCHEME + config.OAUTH_SERVER_HOST,
 			Config: oauth.Config{
 				ClientID:         OAUTH_MANAGER_CLIENT_ID,
 				Audience:         OAUTH_MANAGER_AUDIENCE,
