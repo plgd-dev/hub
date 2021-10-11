@@ -59,10 +59,6 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Server, error)
 		},
 		{
 			Method: http.MethodGet,
-			URI:    regexp.MustCompile(regexp.QuoteMeta("/api/v1/clientConfiguration")),
-		},
-		{
-			Method: http.MethodGet,
 			URI:    regexp.MustCompile(regexp.QuoteMeta(uri.CloudConfiguration)),
 		},
 	}
