@@ -6,14 +6,17 @@ import (
 	"testing"
 	"time"
 
+	"github.com/plgd-dev/device/schema"
+	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/hub/grpc-gateway/pb"
+	"github.com/plgd-dev/hub/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
+	"github.com/plgd-dev/hub/pkg/ocf"
 	"github.com/plgd-dev/hub/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/resource-aggregate/events"
 	"github.com/plgd-dev/hub/test"
-	testCfg "github.com/plgd-dev/hub/test/config"
+	"github.com/plgd-dev/hub/test/config"
 	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
-	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
@@ -22,29 +25,53 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func TestRequestHandler_CreateResource(t *testing.T) {
+func makeCreateResourceRequest(t *testing.T, deviceID, href string, data map[string]interface{}, ttl int64) *pb.CreateResourceRequest {
+	return &pb.CreateResourceRequest{
+		ResourceId: commands.NewResourceID(deviceID, href),
+		Content: &pb.Content{
+			ContentType: message.AppOcfCbor.String(),
+			Data:        test.EncodeToCbor(t, data),
+		},
+		TimeToLive: ttl,
+	}
+}
+
+func makeCreateLightResourceResponseData(id string) map[string]interface{} {
+	return map[string]interface{}{
+		"href": test.TestResourceSwitchesInstanceHref(id),
+		"if":   []interface{}{ocf.OC_IF_A, ocf.OC_IF_BASELINE},
+		"rt":   []interface{}{ocf.OC_RT_RESOURCE_SWITCH},
+		"rep": map[string]interface{}{
+			"rt":    []interface{}{ocf.OC_RT_RESOURCE_SWITCH},
+			"if":    []interface{}{ocf.OC_IF_A, ocf.OC_IF_BASELINE},
+			"value": false,
+		},
+		"p": map[string]interface{}{
+			"bm": uint64(schema.Discoverable | schema.Observable),
+		},
+	}
+}
+
+func TestRequestHandlerCreateResource(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	type args struct {
-		req *pb.CreateResourceRequest
+		href string
+		data map[string]interface{}
+		ttl  int64
 	}
 	tests := []struct {
 		name        string
 		args        args
-		want        *events.ResourceCreated
+		wantData    map[string]interface{}
 		wantErr     bool
 		wantErrCode codes.Code
 	}{
 		{
 			name: "invalid Href",
 			args: args{
-				req: &pb.CreateResourceRequest{
-					ResourceId: commands.NewResourceID(deviceID, "/unknown"),
-					Content: &pb.Content{
-						ContentType: message.AppOcfCbor.String(),
-						Data: test.EncodeToCbor(t, map[string]interface{}{
-							"power": 1,
-						}),
-					},
+				href: "/unknown",
+				data: map[string]interface{}{
+					"power": 1,
 				},
 			},
 			wantErr:     true,
@@ -53,14 +80,9 @@ func TestRequestHandler_CreateResource(t *testing.T) {
 		{
 			name: "/oic/d - PermissionDenied",
 			args: args{
-				req: &pb.CreateResourceRequest{
-					ResourceId: commands.NewResourceID(deviceID, "/oic/d"),
-					Content: &pb.Content{
-						ContentType: message.AppOcfCbor.String(),
-						Data: test.EncodeToCbor(t, map[string]interface{}{
-							"power": 1,
-						}),
-					},
+				href: test.OCFResourceDeviceHref,
+				data: map[string]interface{}{
+					"power": 1,
 				},
 			},
 			wantErr:     true,
@@ -69,51 +91,111 @@ func TestRequestHandler_CreateResource(t *testing.T) {
 		{
 			name: "invalid timeToLive",
 			args: args{
-				req: &pb.CreateResourceRequest{
-					ResourceId: commands.NewResourceID(deviceID, "/oic/d"),
-					Content: &pb.Content{
-						ContentType: message.AppOcfCbor.String(),
-						Data: test.EncodeToCbor(t, map[string]interface{}{
-							"power": 1,
-						}),
+				href: test.OCFResourceDeviceHref,
+				data: map[string]interface{}{
+					"power": 1,
+				},
+				ttl: int64(99 * time.Millisecond),
+			},
+			wantErr:     true,
+			wantErrCode: codes.InvalidArgument,
+		},
+		{
+			name: "missing if",
+			args: args{
+				href: test.TestResourceSwitchesHref,
+				data: map[string]interface{}{
+					"rt": []interface{}{ocf.OC_RT_RESOURCE_SWITCH},
+					"rep": map[string]interface{}{
+						"value": false,
 					},
-					TimeToLive: int64(99 * time.Millisecond),
 				},
 			},
 			wantErr:     true,
 			wantErrCode: codes.InvalidArgument,
 		},
+		{
+			name: "missing rt",
+			args: args{
+				href: test.TestResourceSwitchesHref,
+				data: map[string]interface{}{
+					"if": []interface{}{ocf.OC_IF_A, ocf.OC_IF_BASELINE},
+					"rep": map[string]interface{}{
+						"value": false,
+					},
+				},
+			},
+			wantErr:     true,
+			wantErrCode: codes.InvalidArgument,
+		},
+		{
+			name: "missing rep",
+			args: args{
+				href: test.TestResourceSwitchesHref,
+				data: map[string]interface{}{
+					"if": []interface{}{ocf.OC_IF_A, ocf.OC_IF_BASELINE},
+					"rt": []interface{}{ocf.OC_RT_RESOURCE_SWITCH},
+				},
+			},
+			wantErr:     true,
+			wantErrCode: codes.InvalidArgument,
+		},
+		{
+			name: "create /switches/1",
+			args: args{
+				href: test.TestResourceSwitchesHref,
+				data: test.MakeSwitchResourceDefaultData(),
+			},
+			wantData: makeCreateLightResourceResponseData("1"),
+		},
+		{
+			name: "create /switches/2",
+			args: args{
+				href: test.TestResourceSwitchesHref,
+				data: test.MakeSwitchResourceDefaultData(),
+			},
+			wantData: makeCreateLightResourceResponseData("2"),
+		},
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), testCfg.TEST_TIMEOUT)
+	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
 	defer cancel()
 
 	tearDown := test.SetUp(ctx, t)
 	defer tearDown()
+	log.Setup(log.Config{Debug: true})
 	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultServiceToken(t))
 
-	conn, err := grpc.Dial(testCfg.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+	conn, err := grpc.Dial(config.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
 	})))
 	require.NoError(t, err)
 	c := pb.NewGrpcGatewayClient(conn)
 
-	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.GW_HOST, test.GetAllBackendResourceLinks())
+	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := c.CreateResource(ctx, tt.args.req)
+			req := makeCreateResourceRequest(t, deviceID, tt.args.href, tt.args.data, tt.args.ttl)
+			got, err := c.CreateResource(ctx, req)
 			if tt.wantErr {
 				require.Error(t, err)
 				assert.Equal(t, tt.wantErrCode.String(), status.Convert(err).Code().String())
-			} else {
-				require.NoError(t, err)
-				require.NotEmpty(t, got.GetData())
-				got.GetData().EventMetadata = nil
-				got.GetData().AuditContext = nil
-				test.CheckProtobufs(t, tt.want, got.GetData(), test.RequireToCheckFunc(require.Equal))
+				return
 			}
+			require.NoError(t, err)
+
+			resp := &events.ResourceCreated{
+				ResourceId: commands.NewResourceID(deviceID, tt.args.href),
+				Content: &commands.Content{
+					CoapContentFormat: int32(message.AppOcfCbor),
+					ContentType:       message.AppOcfCbor.String(),
+					Data:              test.EncodeToCbor(t, tt.wantData),
+				},
+				Status: commands.Status_CREATED,
+			}
+			test.CmpResourceCreated(t, resp, got.GetData())
 		})
 	}
 }

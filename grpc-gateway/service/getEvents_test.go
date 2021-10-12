@@ -126,10 +126,9 @@ func TestRequestHandler_GetEvents(t *testing.T) {
 				if tt.wantErr {
 					require.Error(t, err)
 					return
-				} else {
-					require.NoError(t, err)
-					values = append(values, value)
 				}
+				require.NoError(t, err)
+				values = append(values, value)
 			}
 
 			require.Len(t, values, tt.wantLen)
