@@ -60,7 +60,7 @@ const App = ({ config }) => {
       const fetchWellKnownConfig = async () => {
         try {
           const { data: wellKnown } = await fetchApi(
-            `${config.httpGatewayAddress}/.well-known/cloud-configuration`
+            `${config.httpGatewayAddress}/.well-known/hub-configuration`
           )
 
           setWellKnownConfigFetched(true)

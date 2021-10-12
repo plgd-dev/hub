@@ -6,13 +6,13 @@ import (
 	"crypto/x509"
 	"testing"
 
+	"github.com/plgd-dev/device/schema"
+	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/hub/grpc-gateway/client"
 	"github.com/plgd-dev/hub/pkg/net/grpc/server"
 	"github.com/plgd-dev/hub/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/resource-aggregate/events"
 	"github.com/plgd-dev/hub/test"
-	"github.com/plgd-dev/device/schema"
-	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/kit/v2/codec/cbor"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
@@ -62,8 +62,8 @@ type gatewayHandler struct {
 	deviceName string
 }
 
-func (h *gatewayHandler) GetCloudConfiguration(context.Context, *pb.CloudConfigurationRequest) (*pb.CloudConfigurationResponse, error) {
-	return &pb.CloudConfigurationResponse{
+func (h *gatewayHandler) GetHubConfiguration(context.Context, *pb.HubConfigurationRequest) (*pb.HubConfigurationResponse, error) {
+	return &pb.HubConfigurationResponse{
 		CloudId: "abc",
 	}, nil
 }

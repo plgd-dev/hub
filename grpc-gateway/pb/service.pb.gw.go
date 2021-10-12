@@ -399,20 +399,20 @@ func request_GrpcGateway_SubscribeToEvents_0(ctx context.Context, marshaler runt
 	return stream, metadata, nil
 }
 
-func request_GrpcGateway_GetCloudConfiguration_0(ctx context.Context, marshaler runtime.Marshaler, client GrpcGatewayClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq CloudConfigurationRequest
+func request_GrpcGateway_GetHubConfiguration_0(ctx context.Context, marshaler runtime.Marshaler, client GrpcGatewayClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq HubConfigurationRequest
 	var metadata runtime.ServerMetadata
 
-	msg, err := client.GetCloudConfiguration(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	msg, err := client.GetHubConfiguration(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 
 }
 
-func local_request_GrpcGateway_GetCloudConfiguration_0(ctx context.Context, marshaler runtime.Marshaler, server GrpcGatewayServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq CloudConfigurationRequest
+func local_request_GrpcGateway_GetHubConfiguration_0(ctx context.Context, marshaler runtime.Marshaler, server GrpcGatewayServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq HubConfigurationRequest
 	var metadata runtime.ServerMetadata
 
-	msg, err := server.GetCloudConfiguration(ctx, &protoReq)
+	msg, err := server.GetHubConfiguration(ctx, &protoReq)
 	return msg, metadata, err
 
 }
@@ -974,18 +974,18 @@ func RegisterGrpcGatewayHandlerServer(ctx context.Context, mux *runtime.ServeMux
 		return
 	})
 
-	mux.Handle("GET", pattern_GrpcGateway_GetCloudConfiguration_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_GrpcGateway_GetHubConfiguration_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/grpcgateway.pb.GrpcGateway/GetCloudConfiguration", runtime.WithHTTPPathPattern("/.well-known/cloud-configuration"))
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/grpcgateway.pb.GrpcGateway/GetHubConfiguration", runtime.WithHTTPPathPattern("/.well-known/hub-configuration"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := local_request_GrpcGateway_GetCloudConfiguration_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_GrpcGateway_GetHubConfiguration_0(rctx, inboundMarshaler, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
@@ -993,7 +993,7 @@ func RegisterGrpcGatewayHandlerServer(ctx context.Context, mux *runtime.ServeMux
 			return
 		}
 
-		forward_GrpcGateway_GetCloudConfiguration_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_GrpcGateway_GetHubConfiguration_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -1314,23 +1314,23 @@ func RegisterGrpcGatewayHandlerClient(ctx context.Context, mux *runtime.ServeMux
 
 	})
 
-	mux.Handle("GET", pattern_GrpcGateway_GetCloudConfiguration_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_GrpcGateway_GetHubConfiguration_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/grpcgateway.pb.GrpcGateway/GetCloudConfiguration", runtime.WithHTTPPathPattern("/.well-known/cloud-configuration"))
+		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/grpcgateway.pb.GrpcGateway/GetHubConfiguration", runtime.WithHTTPPathPattern("/.well-known/hub-configuration"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_GrpcGateway_GetCloudConfiguration_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_GrpcGateway_GetHubConfiguration_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_GrpcGateway_GetCloudConfiguration_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_GrpcGateway_GetHubConfiguration_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -1512,7 +1512,7 @@ var (
 
 	pattern_GrpcGateway_SubscribeToEvents_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"api", "v1", "ws", "events"}, ""))
 
-	pattern_GrpcGateway_GetCloudConfiguration_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{".well-known", "cloud-configuration"}, ""))
+	pattern_GrpcGateway_GetHubConfiguration_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{".well-known", "hub-configuration"}, ""))
 
 	pattern_GrpcGateway_DeleteResource_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 2, 4, 3, 0, 4, 1, 5, 5}, []string{"api", "v1", "devices", "resource_id.device_id", "resource-links", "resource_id.href"}, ""))
 
@@ -1546,7 +1546,7 @@ var (
 
 	forward_GrpcGateway_SubscribeToEvents_0 = runtime.ForwardResponseStream
 
-	forward_GrpcGateway_GetCloudConfiguration_0 = runtime.ForwardResponseMessage
+	forward_GrpcGateway_GetHubConfiguration_0 = runtime.ForwardResponseMessage
 
 	forward_GrpcGateway_DeleteResource_0 = runtime.ForwardResponseMessage
 

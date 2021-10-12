@@ -6,6 +6,6 @@ import (
 	"github.com/plgd-dev/hub/grpc-gateway/pb"
 )
 
-func (r *RequestHandler) GetCloudConfiguration(context.Context, *pb.CloudConfigurationRequest) (*pb.CloudConfigurationResponse, error) {
+func (r *RequestHandler) GetHubConfiguration(context.Context, *pb.HubConfigurationRequest) (*pb.HubConfigurationResponse, error) {
 	return r.publicConfiguration.ToProto(), nil
 }

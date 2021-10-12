@@ -27,13 +27,13 @@ func getAccept(r *http.Request) string {
 	return r.URL.Query().Get(uri.AcceptQueryKey)
 }
 
-func (requestHandler *RequestHandler) getCloudConfiguration(w http.ResponseWriter, r *http.Request) {
+func (requestHandler *RequestHandler) getHubConfiguration(w http.ResponseWriter, r *http.Request) {
 	accept := getAccept(r)
 	if accept == uri.ApplicationProtoJsonContentType {
 		requestHandler.mux.ServeHTTP(w, r)
 		return
 	}
-	resp, err := requestHandler.client.GrpcGatewayClient().GetCloudConfiguration(r.Context(), &pb.CloudConfigurationRequest{})
+	resp, err := requestHandler.client.GrpcGatewayClient().GetHubConfiguration(r.Context(), &pb.HubConfigurationRequest{})
 	if err != nil {
 		writeError(w, fmt.Errorf("cannot get cloud configuration: %w", err))
 		return

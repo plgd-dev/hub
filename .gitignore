@@ -128,3 +128,5 @@ dist
 v2/
 
 charts/plgd-hub/charts/*
+bundle/client/grpc/grpc
+bundle/client/coap/coap
