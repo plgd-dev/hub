@@ -29,7 +29,7 @@ func MakeConfig(t *testing.T) service.Config {
 	cfg.ExposedHubConfiguration.CAPool = config.CA_POOL
 	cfg.ExposedHubConfiguration.AuthorizationServer = "https://" + config.OAUTH_SERVER_HOST
 	cfg.ExposedHubConfiguration.CloudID = config.CloudID()
-	cfg.ExposedHubConfiguration.CloudURL = config.GW_HOST
+	cfg.ExposedHubConfiguration.CoapGateway = config.GW_HOST
 	cfg.ExposedHubConfiguration.OwnerClaim = config.OWNER_CLAIM
 
 	err := cfg.Validate()

@@ -85,5 +85,5 @@ publicConfiguration:
   ownerClaim: "sub"
   deviceIdClaim: ""
   cloudID: ""
-  cloudURL: ""
+  coapGateway: ""
   defaultCommandTimeToLive: "0s"

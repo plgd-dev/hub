@@ -538,7 +538,7 @@ cat /configs/resource-directory.yaml | yq e "\
   .clients.identityStore.grpc.address = \"${IDENTITY_STORE_ADDRESS}\" |
   .publicConfiguration.authorizationServer = \"https://${OAUTH_ENDPOINT}\" |
   .publicConfiguration.cloudID = \"${COAP_GATEWAY_CLOUD_ID}\" |
-  .publicConfiguration.cloudURL = \"coaps+tcp://${COAP_GATEWAY_FQDN}:${COAP_GATEWAY_PORT}\" |
+  .publicConfiguration.coapGateway = \"coaps+tcp://${COAP_GATEWAY_FQDN}:${COAP_GATEWAY_PORT}\" |
   .publicConfiguration.ownerClaim = \"${OWNER_CLAIM}\"
 " - > /data/resource-directory.yaml
 

@@ -62,8 +62,8 @@ func TestRequestHandler_GetHubConfiguration(t *testing.T) {
 				return
 			}
 			require.NoError(t, err)
-			require.NotEmpty(t, got.CloudCertificateAuthorities)
-			got.CloudCertificateAuthorities = ""
+			require.NotEmpty(t, got.CertificateAuthorities)
+			got.CertificateAuthorities = ""
 			require.NotEqual(t, int64(0), got.CurrentTime)
 			got.CurrentTime = 0
 			test.CheckProtobufs(t, tt.want, &got, test.RequireToCheckFunc(require.Equal))

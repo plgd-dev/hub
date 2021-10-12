@@ -441,7 +441,7 @@ global:
 | resourcedirectory.podLabels | object | `{}` | Labels for resource-directory pod |
 | resourcedirectory.podSecurityContext | object | `{}` | Pod security context |
 | resourcedirectory.port | int | `9100` | Service and POD port |
-| resourcedirectory.publicConfiguration | object | `{"authorizationServer":null,"caPool":null,"cloudID":null,"cloudURL":null,"defaultCommandTimeToLive":"0s","deviceIdClaim":null,"ownerClaim":null}` | For complete resource-directory service configuration see [plgd/resource-directory](https://github.com/plgd-dev/hub/tree/main/resource-directory) |
+| resourcedirectory.publicConfiguration | object | `{"authorizationServer":null,"caPool":null,"cloudID":null,"coapGateway":null,"defaultCommandTimeToLive":"0s","deviceIdClaim":null,"ownerClaim":null}` | For complete resource-directory service configuration see [plgd/resource-directory](https://github.com/plgd-dev/hub/tree/main/resource-directory) |
 | resourcedirectory.rbac | object | `{"enabled":false,"roleBindingDefitionTpl":null,"serviceAccountName":"resource-directory"}` | RBAC configuration |
 | resourcedirectory.rbac.roleBindingDefitionTpl | string | `nil` | template definition for Role/binding etc.. |
 | resourcedirectory.rbac.serviceAccountName | string | `"resource-directory"` | Name of resource-directory SA |

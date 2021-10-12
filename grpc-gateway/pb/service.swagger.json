@@ -1389,13 +1389,13 @@
         "jwtDeviceIdClaim": {
           "type": "string"
         },
-        "cloudId": {
+        "id": {
           "type": "string"
         },
-        "cloudUrl": {
+        "coapGateway": {
           "type": "string"
         },
-        "cloudCertificateAuthorities": {
+        "certificateAuthorities": {
           "type": "string"
         },
         "authorizationServer": {

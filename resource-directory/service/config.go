@@ -120,7 +120,7 @@ type PublicConfiguration struct {
 	OwnerClaim               string        `yaml:"ownerClaim" json:"ownerClaim"`
 	DeviceIDClaim            string        `yaml:"deviceIdClaim" json:"deviceIdClaim"`
 	CloudID                  string        `yaml:"cloudID" json:"cloudID"`
-	CloudURL                 string        `yaml:"cloudURL" json:"cloudURL"`
+	CoapGateway              string        `yaml:"coapGateway" json:"coapGateway"`
 	DefaultCommandTimeToLive time.Duration `yaml:"defaultCommandTimeToLive" json:"defaultCommandTimeToLive"`
 	AuthorizationServer      string        `yaml:"authorizationServer" json:"authorizationServer"`
 
@@ -137,8 +137,8 @@ func (c *PublicConfiguration) Validate() error {
 	if c.CloudID == "" {
 		return fmt.Errorf("cloudID('%v')", c.CloudID)
 	}
-	if c.CloudURL == "" {
-		return fmt.Errorf("cloudURL('%v')", c.CloudURL)
+	if c.CoapGateway == "" {
+		return fmt.Errorf("coapGateway('%v')", c.CoapGateway)
 	}
 	if c.CAPool == "" {
 		return fmt.Errorf("caPool('%v')", c.CAPool)
@@ -151,14 +151,14 @@ func (c *PublicConfiguration) Validate() error {
 
 func (c PublicConfiguration) ToProto() *pb.HubConfigurationResponse {
 	return &pb.HubConfigurationResponse{
-		JwtOwnerClaim:               c.OwnerClaim,
-		JwtDeviceIdClaim:            c.DeviceIDClaim,
-		CloudId:                     c.CloudID,
-		CloudUrl:                    c.CloudURL,
-		CloudCertificateAuthorities: c.cloudCertificateAuthorities,
-		DefaultCommandTimeToLive:    int64(c.DefaultCommandTimeToLive),
-		CurrentTime:                 pkgTime.UnixNano(time.Now()),
-		AuthorizationServer:         c.AuthorizationServer,
+		JwtOwnerClaim:            c.OwnerClaim,
+		JwtDeviceIdClaim:         c.DeviceIDClaim,
+		Id:                       c.CloudID,
+		CoapGateway:              c.CoapGateway,
+		CertificateAuthorities:   c.cloudCertificateAuthorities,
+		DefaultCommandTimeToLive: int64(c.DefaultCommandTimeToLive),
+		CurrentTime:              pkgTime.UnixNano(time.Now()),
+		AuthorizationServer:      c.AuthorizationServer,
 	}
 }
 
