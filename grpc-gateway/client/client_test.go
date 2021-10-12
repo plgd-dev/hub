@@ -64,7 +64,7 @@ type gatewayHandler struct {
 
 func (h *gatewayHandler) GetHubConfiguration(context.Context, *pb.HubConfigurationRequest) (*pb.HubConfigurationResponse, error) {
 	return &pb.HubConfigurationResponse{
-		CloudId: "abc",
+		Id: "abc",
 	}, nil
 }
 

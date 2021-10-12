@@ -435,7 +435,7 @@ resourcedirectory:
     ownerClaim:
     deviceIdClaim:
     cloudID:
-    cloudURL:
+    coapGateway:
     defaultCommandTimeToLive: "0s"
 
 resourceaggregate:
