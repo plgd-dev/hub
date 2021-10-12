@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package grpcgateway.pb;
 
-import "github.com/plgd-dev/hub/grpc-gateway/pb/cloudConfiguration.proto";
+import "github.com/plgd-dev/hub/grpc-gateway/pb/hubConfiguration.proto";
 import "github.com/plgd-dev/hub/grpc-gateway/pb/devices.proto";
 import "github.com/plgd-dev/hub/grpc-gateway/pb/events.proto";
 import "github.com/plgd-dev/hub/grpc-gateway/pb/getDevicesMetadata.proto";
@@ -113,9 +113,9 @@ service GrpcGateway {
   }
 
   // Get cloud configuration
-  rpc GetCloudConfiguration(CloudConfigurationRequest) returns (CloudConfigurationResponse) {
+  rpc GetHubConfiguration(HubConfigurationRequest) returns (HubConfigurationResponse) {
     option (google.api.http) = {
-      get: "/.well-known/cloud-configuration"
+      get: "/.well-known/hub-configuration"
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: [ "Cloud" ]

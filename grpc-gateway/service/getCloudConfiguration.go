@@ -9,8 +9,8 @@ import (
 	"google.golang.org/grpc/codes"
 )
 
-func (r *RequestHandler) GetCloudConfiguration(ctx context.Context, req *pb.CloudConfigurationRequest) (*pb.CloudConfigurationResponse, error) {
-	ret, err := r.resourceDirectoryClient.GetCloudConfiguration(ctx, req)
+func (r *RequestHandler) GetHubConfiguration(ctx context.Context, req *pb.HubConfigurationRequest) (*pb.HubConfigurationResponse, error) {
+	ret, err := r.resourceDirectoryClient.GetHubConfiguration(ctx, req)
 	if err != nil {
 		return ret, log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot get client configuration: %v", err))
 	}

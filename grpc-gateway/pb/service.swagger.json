@@ -30,15 +30,15 @@
     "application/protojson"
   ],
   "paths": {
-    "/.well-known/cloud-configuration": {
+    "/.well-known/hub-configuration": {
       "get": {
         "summary": "Get cloud configuration",
-        "operationId": "GrpcGateway_GetCloudConfiguration",
+        "operationId": "GrpcGateway_GetHubConfiguration",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/pbCloudConfigurationResponse"
+              "$ref": "#/definitions/pbHubConfigurationResponse"
             }
           },
           "default": {
@@ -1152,39 +1152,6 @@
         }
       }
     },
-    "pbCloudConfigurationResponse": {
-      "type": "object",
-      "properties": {
-        "currentTime": {
-          "type": "string",
-          "format": "int64",
-          "description": "provides a current time of server in nanoseconds."
-        },
-        "jwtOwnerClaim": {
-          "type": "string"
-        },
-        "jwtDeviceIdClaim": {
-          "type": "string"
-        },
-        "cloudId": {
-          "type": "string"
-        },
-        "cloudUrl": {
-          "type": "string"
-        },
-        "cloudCertificateAuthorities": {
-          "type": "string"
-        },
-        "authorizationServer": {
-          "type": "string"
-        },
-        "defaultCommandTimeToLive": {
-          "type": "string",
-          "format": "int64",
-          "description": "exposes default command time to live in nanoseconds for CreateResource, RetrieveResource, UpdateResource, DeleteResource, and UpdateDeviceMetadata commands when it is not set in the request. 0 - means forever."
-        }
-      }
-    },
     "pbConnectionStatus": {
       "type": "object",
       "properties": {
@@ -1405,6 +1372,39 @@
       "properties": {
         "data": {
           "$ref": "#/definitions/pbResourceRetrieved"
+        }
+      }
+    },
+    "pbHubConfigurationResponse": {
+      "type": "object",
+      "properties": {
+        "currentTime": {
+          "type": "string",
+          "format": "int64",
+          "description": "provides a current time of server in nanoseconds."
+        },
+        "jwtOwnerClaim": {
+          "type": "string"
+        },
+        "jwtDeviceIdClaim": {
+          "type": "string"
+        },
+        "cloudId": {
+          "type": "string"
+        },
+        "cloudUrl": {
+          "type": "string"
+        },
+        "cloudCertificateAuthorities": {
+          "type": "string"
+        },
+        "authorizationServer": {
+          "type": "string"
+        },
+        "defaultCommandTimeToLive": {
+          "type": "string",
+          "format": "int64",
+          "description": "exposes default command time to live in nanoseconds for CreateResource, RetrieveResource, UpdateResource, DeleteResource, and UpdateDeviceMetadata commands when it is not set in the request. 0 - means forever."
         }
       }
     },

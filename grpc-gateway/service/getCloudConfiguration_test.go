@@ -15,13 +15,13 @@ import (
 	"github.com/plgd-dev/hub/test/config"
 )
 
-func TestRequestHandler_GetCloudConfiguration(t *testing.T) {
-	expected := rdTest.MakeConfig(t).ExposedCloudConfiguration.ToProto()
+func TestRequestHandler_GetHubConfiguration(t *testing.T) {
+	expected := rdTest.MakeConfig(t).ExposedHubConfiguration.ToProto()
 	expected.CurrentTime = 0
 	tests := []struct {
 		name    string
 		wantErr bool
-		want    *pb.CloudConfigurationResponse
+		want    *pb.HubConfigurationResponse
 	}{
 		{
 			name: "valid",
@@ -44,7 +44,7 @@ func TestRequestHandler_GetCloudConfiguration(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ctxWithoutToken := context.Background()
-			got, err := c.GetCloudConfiguration(ctxWithoutToken, &pb.CloudConfigurationRequest{})
+			got, err := c.GetHubConfiguration(ctxWithoutToken, &pb.HubConfigurationRequest{})
 			if tt.wantErr {
 				require.Error(t, err)
 			} else {

@@ -5,7 +5,7 @@ info:
 servers:
   - url: 'https://try.plgd.cloud'
 paths:
-  '/.well-known/cloud-configuration':
+  '/.well-known/hub-configuration':
     get:
       tags:
         - 'Configuration'
@@ -18,7 +18,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CloudConfiguration'
+                $ref: '#/components/schemas/HubConfiguration'
     post:
       tags:
         - 'Configuration'
@@ -742,7 +742,7 @@ components:
         code:
           description: Device onboarding code
           type: string
-    CloudConfiguration:
+    HubConfiguration:
       type: object
       properties:
         deviceOnboardingCodeUrl:

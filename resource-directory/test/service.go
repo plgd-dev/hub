@@ -26,11 +26,11 @@ func MakeConfig(t *testing.T) service.Config {
 	cfg.Clients.Eventstore.Connection.MongoDB = config.MakeEventsStoreMongoDBConfig()
 	cfg.Clients.Eventstore.ProjectionCacheExpiration = time.Second * 60
 
-	cfg.ExposedCloudConfiguration.CAPool = config.CA_POOL
-	cfg.ExposedCloudConfiguration.AuthorizationServer = "https://" + config.OAUTH_SERVER_HOST
-	cfg.ExposedCloudConfiguration.CloudID = config.CloudID()
-	cfg.ExposedCloudConfiguration.CloudURL = config.GW_HOST
-	cfg.ExposedCloudConfiguration.OwnerClaim = config.OWNER_CLAIM
+	cfg.ExposedHubConfiguration.CAPool = config.CA_POOL
+	cfg.ExposedHubConfiguration.AuthorizationServer = "https://" + config.OAUTH_SERVER_HOST
+	cfg.ExposedHubConfiguration.CloudID = config.CloudID()
+	cfg.ExposedHubConfiguration.CloudURL = config.GW_HOST
+	cfg.ExposedHubConfiguration.OwnerClaim = config.OWNER_CLAIM
 
 	err := cfg.Validate()
 	require.NoError(t, err)

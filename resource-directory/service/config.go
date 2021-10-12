@@ -15,10 +15,10 @@ import (
 )
 
 type Config struct {
-	Log                       log.Config          `yaml:"log" json:"log"`
-	APIs                      APIsConfig          `yaml:"apis" json:"apis"`
-	Clients                   ClientsConfig       `yaml:"clients" json:"clients"`
-	ExposedCloudConfiguration PublicConfiguration `yaml:"publicConfiguration" json:"publicConfiguration"`
+	Log                     log.Config          `yaml:"log" json:"log"`
+	APIs                    APIsConfig          `yaml:"apis" json:"apis"`
+	Clients                 ClientsConfig       `yaml:"clients" json:"clients"`
+	ExposedHubConfiguration PublicConfiguration `yaml:"publicConfiguration" json:"publicConfiguration"`
 }
 
 func (c *Config) Validate() error {
@@ -28,7 +28,7 @@ func (c *Config) Validate() error {
 	if err := c.Clients.Validate(); err != nil {
 		return fmt.Errorf("clients.%w", err)
 	}
-	if err := c.ExposedCloudConfiguration.Validate(); err != nil {
+	if err := c.ExposedHubConfiguration.Validate(); err != nil {
 		return fmt.Errorf("publicConfiguration.%w", err)
 	}
 	return nil
@@ -149,8 +149,8 @@ func (c *PublicConfiguration) Validate() error {
 	return nil
 }
 
-func (c PublicConfiguration) ToProto() *pb.CloudConfigurationResponse {
-	return &pb.CloudConfigurationResponse{
+func (c PublicConfiguration) ToProto() *pb.HubConfigurationResponse {
+	return &pb.HubConfigurationResponse{
 		JwtOwnerClaim:               c.OwnerClaim,
 		JwtDeviceIdClaim:            c.DeviceIDClaim,
 		CloudId:                     c.CloudID,

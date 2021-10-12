@@ -4,10 +4,10 @@ package grpcgateway.pb;
 
 option go_package = "github.com/plgd-dev/hub/grpc-gateway/pb;pb";
 
-message CloudConfigurationRequest {
+message HubConfigurationRequest {
 }
 
-message CloudConfigurationResponse {
+message HubConfigurationResponse {
     // provides a current time of server in nanoseconds.
     int64 current_time = 1;
     string jwt_owner_claim = 2;

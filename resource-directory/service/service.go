@@ -22,7 +22,7 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 	if err != nil {
 		return nil, fmt.Errorf("cannot create validator: %w", err)
 	}
-	method := "/" + pb.GrpcGateway_ServiceDesc.ServiceName + "/GetCloudConfiguration"
+	method := "/" + pb.GrpcGateway_ServiceDesc.ServiceName + "/GetHubConfiguration"
 	interceptor := server.NewAuth(validator, server.WithWhiteListedMethods(method))
 	opts, err := server.MakeDefaultOptions(interceptor, logger)
 	if err != nil {
@@ -44,7 +44,7 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 	}
 	server.AddCloseFunc(pool.Release)
 
-	if err := AddHandler(ctx, server, config, config.ExposedCloudConfiguration, logger, pool.Submit); err != nil {
+	if err := AddHandler(ctx, server, config, config.ExposedHubConfiguration, logger, pool.Submit); err != nil {
 		server.Close()
 		return nil, err
 	}
@@ -60,7 +60,7 @@ func makeAuthFunc(validator kitNetGrpc.Validator, ownerClaim string) func(ctx co
 	})
 	return func(ctx context.Context, method string) (context.Context, error) {
 		switch method {
-		case "/" + pb.GrpcGateway_ServiceDesc.ServiceName + "/GetCloudConfiguration":
+		case "/" + pb.GrpcGateway_ServiceDesc.ServiceName + "/GetHubConfiguration":
 			return ctx, nil
 		}
 		token, _ := kitNetGrpc.TokenFromMD(ctx)
