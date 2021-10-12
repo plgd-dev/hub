@@ -10,19 +10,22 @@ import (
 	"google.golang.org/grpc/codes"
 )
 
+func logAndReturnCreateResourceError(err error) error {
+	return log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot create resource: %v", err))
+}
+
 func (r *RequestHandler) CreateResource(ctx context.Context, req *pb.CreateResourceRequest) (*pb.CreateResourceResponse, error) {
 	createCommand, err := req.ToRACommand(ctx)
 	if err != nil {
-		return nil, log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot create resource: %v", err))
+		return nil, logAndReturnCreateResourceError(err)
 	}
 
 	createdEvent, err := r.resourceAggregateClient.SyncCreateResource(ctx, "*", createCommand)
 	if err != nil {
-		return nil, log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot create resource: %v", err))
+		return nil, logAndReturnCreateResourceError(err)
 	}
-	err = commands.CheckEventContent(createdEvent)
-	if err != nil {
-		return nil, log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot create resource: %v", err))
+	if err = commands.CheckEventContent(createdEvent); err != nil {
+		return nil, logAndReturnCreateResourceError(err)
 	}
 	return &pb.CreateResourceResponse{Data: createdEvent}, nil
 }

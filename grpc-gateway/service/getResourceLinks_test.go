@@ -5,10 +5,7 @@ import (
 	"crypto/tls"
 	"io"
 	"testing"
-
-	"github.com/stretchr/testify/require"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
+	"time"
 
 	"github.com/plgd-dev/hub/grpc-gateway/pb"
 	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
@@ -16,10 +13,34 @@ import (
 	test "github.com/plgd-dev/hub/test"
 	testCfg "github.com/plgd-dev/hub/test/config"
 	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
+	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 )
 
-func TestRequestHandler_GetResourceLinks(t *testing.T) {
+func TestRequestHandlerGetResourceLinks(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
+
+	ctx, cancel := context.WithTimeout(context.Background(), testCfg.TEST_TIMEOUT)
+	defer cancel()
+
+	tearDown := test.SetUp(ctx, t)
+	defer tearDown()
+	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultServiceToken(t))
+
+	conn, err := grpc.Dial(testCfg.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+		RootCAs: test.GetRootCertificatePool(t),
+	})))
+	require.NoError(t, err)
+	c := pb.NewGrpcGatewayClient(conn)
+
+	resourceLinks := test.GetAllBackendResourceLinks()
+	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.GW_HOST, resourceLinks)
+	defer shutdownDevSim()
+
+	resourceLinks = append(resourceLinks, test.AddDeviceSwitchResources(ctx, t, deviceID, c, "1", "2", "3")...)
+	time.Sleep(200 * time.Millisecond)
+
 	type args struct {
 		req *pb.GetResourceLinksRequest
 	}
@@ -38,48 +59,32 @@ func TestRequestHandler_GetResourceLinks(t *testing.T) {
 			want: []*events.ResourceLinksPublished{
 				{
 					DeviceId:  deviceID,
-					Resources: test.ResourceLinksToResources(deviceID, test.GetAllBackendResourceLinks()),
+					Resources: test.ResourceLinksToResources(deviceID, resourceLinks),
 				},
 			},
 		},
 	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), testCfg.TEST_TIMEOUT)
-	defer cancel()
-
-	tearDown := test.SetUp(ctx, t)
-	defer tearDown()
-	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultServiceToken(t))
-
-	conn, err := grpc.Dial(testCfg.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
-		RootCAs: test.GetRootCertificatePool(t),
-	})))
-	require.NoError(t, err)
-	c := pb.NewGrpcGatewayClient(conn)
-
-	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.GW_HOST, test.GetAllBackendResourceLinks())
-	defer shutdownDevSim()
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			client, err := c.GetResourceLinks(ctx, tt.args.req)
 			if tt.wantErr {
 				require.Error(t, err)
-			} else {
-				require.NoError(t, err)
-				links := make([]*events.ResourceLinksPublished, 0, 1)
-				for {
-					link, err := client.Recv()
-					if err == io.EOF {
-						break
-					}
-					require.NoError(t, err)
-					require.NotEmpty(t, link.GetAuditContext())
-					require.NotEmpty(t, link.GetEventMetadata())
-					links = append(links, test.CleanUpResourceLinksPublished(link))
-				}
-				test.CheckProtobufs(t, tt.want, links, test.RequireToCheckFunc(require.Equal))
+				return
 			}
+			require.NoError(t, err)
+			links := make([]*events.ResourceLinksPublished, 0, 1)
+			for {
+				link, err := client.Recv()
+				if err == io.EOF {
+					break
+				}
+				require.NoError(t, err)
+				require.NotEmpty(t, link.GetAuditContext())
+				require.NotEmpty(t, link.GetEventMetadata())
+				links = append(links, test.CleanUpResourceLinksPublished(link))
+			}
+			test.CheckProtobufs(t, tt.want, links, test.RequireToCheckFunc(require.Equal))
 		})
 	}
 }

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"sort"
 	"testing"
 	"time"
 
@@ -14,32 +13,16 @@ import (
 	"github.com/plgd-dev/device/schema"
 	"github.com/plgd-dev/device/schema/acl"
 	"github.com/plgd-dev/device/schema/device"
-	caService "github.com/plgd-dev/hub/certificate-authority/test"
-	c2cgwService "github.com/plgd-dev/hub/cloud2cloud-gateway/test"
-	coapgw "github.com/plgd-dev/hub/coap-gateway/service"
-	coapgwTest "github.com/plgd-dev/hub/coap-gateway/test"
+	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/hub/grpc-gateway/client"
 	"github.com/plgd-dev/hub/grpc-gateway/pb"
-	grpcgwConfig "github.com/plgd-dev/hub/grpc-gateway/service"
-	grpcgwTest "github.com/plgd-dev/hub/grpc-gateway/test"
-	idService "github.com/plgd-dev/hub/identity-store/test"
-	"github.com/plgd-dev/hub/pkg/fn"
-	"github.com/plgd-dev/hub/pkg/log"
 	"github.com/plgd-dev/hub/pkg/ocf"
-	cmClient "github.com/plgd-dev/hub/pkg/security/certManager/client"
 	"github.com/plgd-dev/hub/resource-aggregate/commands"
-	"github.com/plgd-dev/hub/resource-aggregate/events"
-	raService "github.com/plgd-dev/hub/resource-aggregate/test"
-	rdService "github.com/plgd-dev/hub/resource-directory/service"
-	rdTest "github.com/plgd-dev/hub/resource-directory/test"
 	"github.com/plgd-dev/hub/test/config"
 	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
 	"github.com/plgd-dev/kit/v2/codec/json"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.uber.org/atomic"
 )
 
@@ -57,6 +40,10 @@ const (
 	TestResourceLightHref        = "/light/1"
 	TestResourceSwitchesHref     = "/switches"
 )
+
+func TestResourceSwitchesInstanceHref(id string) string {
+	return TestResourceSwitchesHref + "/" + id
+}
 
 func init() {
 	TestDeviceName = "devsim-" + MustGetHostname()
@@ -106,168 +93,91 @@ func init() {
 			},
 		},
 	}
-
 }
 
-func FindResourceLink(href string) schema.ResourceLink {
-	for _, l := range TestDevsimResources {
-		if l.Href == href {
-			return l
+func DefaultSwitchResourceLink(id string) schema.ResourceLink {
+	return schema.ResourceLink{
+		Href:          TestResourceSwitchesInstanceHref(id),
+		ResourceTypes: []string{ocf.OC_RT_RESOURCE_SWITCH},
+		Interfaces:    []string{ocf.OC_IF_A, ocf.OC_IF_BASELINE},
+		Policy: &schema.Policy{
+			BitMask: schema.BitMask(schema.Discoverable | schema.Observable),
+		},
+	}
+}
+
+func MakeSwitchResourceData(overrides map[string]interface{}) map[string]interface{} {
+	data := MakeSwitchResourceDefaultData()
+	for k, v := range overrides {
+		data[k] = v
+	}
+	return data
+}
+
+func MakeSwitchResourceDefaultData() map[string]interface{} {
+	s := DefaultSwitchResourceLink("")
+	return map[string]interface{}{
+		"if": s.Interfaces,
+		"rt": s.ResourceTypes,
+		"rep": map[string]interface{}{
+			"value": false,
+		},
+		"p": map[string]interface{}{
+			"bm": uint64(s.Policy.BitMask),
+		},
+	}
+}
+
+func AddDeviceSwitchResources(ctx context.Context, t *testing.T, deviceID string, c pb.GrpcGatewayClient, resourceIDs ...string) []schema.ResourceLink {
+	toStringArray := func(v interface{}) []string {
+		var result []string
+		arr, ok := v.([]interface{})
+		require.True(t, ok)
+		for _, val := range arr {
+			str, ok := val.(string)
+			require.True(t, ok)
+			result = append(result, str)
 		}
+		return result
 	}
-	for _, l := range TestDevsimBackendResources {
-		if l.Href == href {
-			return l
+
+	links := make([]schema.ResourceLink, 0, len(resourceIDs))
+	for _, resourceID := range resourceIDs {
+		req := &pb.CreateResourceRequest{
+			ResourceId: commands.NewResourceID(deviceID, TestResourceSwitchesHref),
+			Content: &pb.Content{
+				ContentType: message.AppOcfCbor.String(),
+				Data:        EncodeToCbor(t, MakeSwitchResourceDefaultData()),
+			},
 		}
-	}
-	panic(fmt.Sprintf("resource %v: not found", href))
-}
-
-func ClearDB(ctx context.Context, t *testing.T) {
-	logger, err := log.NewLogger(log.Config{Debug: true})
-	require.NoError(t, err)
-	tlsConfig := config.MakeTLSClientConfig()
-	certManager, err := cmClient.New(tlsConfig, logger)
-	require.NoError(t, err)
-	defer certManager.Close()
-
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI("mongodb://localhost:27017").SetTLSConfig(certManager.GetTLSConfig()))
-	require.NoError(t, err)
-	dbs, err := client.ListDatabaseNames(ctx, bson.M{})
-	if mongo.ErrNilDocument == err {
-		return
-	}
-	require.NoError(t, err)
-	for _, db := range dbs {
-		if db == "admin" {
-			continue
-		}
-		err = client.Database(db).Drop(ctx)
+		resp, err := c.CreateResource(ctx, req)
 		require.NoError(t, err)
-	}
-	err = client.Disconnect(ctx)
-	require.NoError(t, err)
-	/*
-		var jsmCfg mongodb.Config
-		err = envconfig.Process("", &jsmCfg)
 
-		assert.NoError(t, err)
-		eventstore, err := mongodb.NewEventStore(jsmCfg, nil, mongodb.WithTLS(tlsConfig))
-		require.NoError(t, err)
-		err = eventstore.Clear(ctx)
-		require.NoError(t, err)
-	*/
-}
+		respData, ok := DecodeCbor(t, resp.GetData().GetContent().GetData()).(map[interface{}]interface{})
+		require.True(t, ok)
 
-type Config struct {
-	COAPGW coapgw.Config
-	RD     rdService.Config
-	GRPCGW grpcgwConfig.Config
-}
+		href, ok := respData["href"].(string)
+		require.True(t, ok)
+		require.Equal(t, TestResourceSwitchesInstanceHref(resourceID), href)
 
-func WithCOAPGWConfig(coapgwCfg coapgw.Config) SetUpOption {
-	return func(cfg *Config) {
-		cfg.COAPGW = coapgwCfg
-	}
-}
+		resourceTypes := toStringArray(respData["rt"])
+		interfaces := toStringArray(respData["if"])
 
-func WithRDConfig(rd rdService.Config) SetUpOption {
-	return func(cfg *Config) {
-		cfg.RD = rd
-	}
-}
+		policy, ok := respData["p"].(map[interface{}]interface{})
+		require.True(t, ok)
+		bitmask, ok := policy["bm"].(uint64)
+		require.True(t, ok)
 
-func WithGRPCGWConfig(grpcCfg grpcgwConfig.Config) SetUpOption {
-	return func(cfg *Config) {
-		cfg.GRPCGW = grpcCfg
+		links = append(links, schema.ResourceLink{
+			Href:          href,
+			ResourceTypes: resourceTypes,
+			Interfaces:    interfaces,
+			Policy: &schema.Policy{
+				BitMask: schema.BitMask(bitmask),
+			},
+		})
 	}
-}
-
-type SetUpOption = func(cfg *Config)
-
-func SetUp(ctx context.Context, t *testing.T, opts ...SetUpOption) (TearDown func()) {
-	config := Config{
-		COAPGW: coapgwTest.MakeConfig(t),
-		RD:     rdTest.MakeConfig(t),
-		GRPCGW: grpcgwTest.MakeConfig(t),
-	}
-
-	for _, o := range opts {
-		o(&config)
-	}
-
-	ClearDB(ctx, t)
-	oauthShutdown := oauthTest.SetUp(t)
-	idShutdown := idService.SetUp(t)
-	raShutdown := raService.SetUp(t)
-	rdShutdown := rdTest.New(t, config.RD)
-	grpcShutdown := grpcgwTest.New(t, config.GRPCGW)
-	c2cgwShutdown := c2cgwService.SetUp(t)
-	caShutdown := caService.SetUp(t)
-	secureGWShutdown := coapgwTest.New(t, config.COAPGW)
-
-	return func() {
-		caShutdown()
-		c2cgwShutdown()
-		grpcShutdown()
-		secureGWShutdown()
-		rdShutdown()
-		raShutdown()
-		idShutdown()
-		oauthShutdown()
-	}
-}
-
-type SetUpServicesConfig uint16
-
-const (
-	SetUpServicesOAuth SetUpServicesConfig = 1 << iota
-	SetUpServicesId
-	SetUpServicesCertificateAuthority
-	SetUpServicesCloud2CloudGateway
-	SetUpServicesCoapGateway
-	SetUpServicesGrpcGateway
-	SetUpServicesResourceAggregate
-	SetUpServicesResourceDirectory
-)
-
-func SetUpServices(ctx context.Context, t *testing.T, servicesConfig SetUpServicesConfig) func() {
-	var tearDown fn.FuncList
-
-	ClearDB(ctx, t)
-	if servicesConfig&SetUpServicesOAuth != 0 {
-		oauthShutdown := oauthTest.SetUp(t)
-		tearDown.AddFunc(oauthShutdown)
-	}
-	if servicesConfig&SetUpServicesId != 0 {
-		idShutdown := idService.SetUp(t)
-		tearDown.AddFunc(idShutdown)
-	}
-	if servicesConfig&SetUpServicesResourceAggregate != 0 {
-		raShutdown := raService.SetUp(t)
-		tearDown.AddFunc(raShutdown)
-	}
-	if servicesConfig&SetUpServicesResourceDirectory != 0 {
-		rdShutdown := rdTest.SetUp(t)
-		tearDown.AddFunc(rdShutdown)
-	}
-	if servicesConfig&SetUpServicesGrpcGateway != 0 {
-		grpcShutdown := grpcgwTest.SetUp(t)
-		tearDown.AddFunc(grpcShutdown)
-	}
-	if servicesConfig&SetUpServicesCloud2CloudGateway != 0 {
-		c2cgwShutdown := c2cgwService.SetUp(t)
-		tearDown.AddFunc(c2cgwShutdown)
-	}
-	if servicesConfig&SetUpServicesCertificateAuthority != 0 {
-		caShutdown := caService.SetUp(t)
-		tearDown.AddFunc(caShutdown)
-	}
-	if servicesConfig&SetUpServicesCoapGateway != 0 {
-		secureGWShutdown := coapgwTest.SetUp(t)
-		tearDown.AddFunc(secureGWShutdown)
-	}
-	return tearDown.ToFunction()
+	return links
 }
 
 func setAccessForCloud(ctx context.Context, t *testing.T, c *deviceClient.Client, deviceID string) {
@@ -620,95 +530,8 @@ func FindDeviceByName(ctx context.Context, name string) (deviceID string, _ erro
 	return id, nil
 }
 
-func ResourceLinkToPublishEvent(deviceID, token string, links []schema.ResourceLink) *pb.Event {
-	out := make([]*commands.Resource, 0, 32)
-	for _, l := range links {
-		link := commands.SchemaResourceLinkToResource(l, time.Time{})
-		link.DeviceId = deviceID
-		out = append(out, link)
-	}
-	return &pb.Event{
-		Type: &pb.Event_ResourcePublished{
-			ResourcePublished: &events.ResourceLinksPublished{
-				DeviceId:  deviceID,
-				Resources: out,
-			},
-		},
-		CorrelationId: token,
-	}
-}
-
-func ResourceLinkToResourceChangedEvent(deviceID string, l schema.ResourceLink) *pb.Event {
-	return &pb.Event{
-		Type: &pb.Event_ResourceChanged{
-			ResourceChanged: &events.ResourceChanged{
-				ResourceId: &commands.ResourceId{
-					DeviceId: deviceID,
-					Href:     l.Href,
-				},
-				Status: commands.Status_OK,
-			},
-		},
-	}
-}
-
-func ResourceLinksToExpectedResourceChangedEvents(deviceID string, links []schema.ResourceLink) map[string]*pb.Event {
-	e := make(map[string]*pb.Event)
-	for _, l := range links {
-		e[deviceID+l.Href] = ResourceLinkToResourceChangedEvent(deviceID, l)
-	}
-	return e
-}
-
 func GetAllBackendResourceLinks() []schema.ResourceLink {
 	return append(TestDevsimResources, TestDevsimBackendResources...)
-}
-
-func ResourceLinksToResources(deviceID string, s []schema.ResourceLink) []*commands.Resource {
-	r := make([]*commands.Resource, 0, len(s))
-	for _, l := range s {
-		l.DeviceID = deviceID
-		r = append(r, commands.SchemaResourceLinkToResource(l, time.Time{}))
-	}
-	CleanUpResourcesArray(r)
-	return r
-}
-
-func CleanUpResourcesArray(resources []*commands.Resource) []*commands.Resource {
-	for _, r := range resources {
-		r.ValidUntil = 0
-	}
-	SortResources(resources)
-	return resources
-}
-
-func CleanUpResourceLinksSnapshotTaken(e *events.ResourceLinksSnapshotTaken) *events.ResourceLinksSnapshotTaken {
-	e.EventMetadata = nil
-	for _, r := range e.GetResources() {
-		r.ValidUntil = 0
-	}
-	return e
-}
-
-func CleanUpResourceLinksPublished(e *events.ResourceLinksPublished) *events.ResourceLinksPublished {
-	e.EventMetadata = nil
-	e.AuditContext = nil
-	CleanUpResourcesArray(e.GetResources())
-	return e
-}
-
-type SortResourcesByHref []*commands.Resource
-
-func (a SortResourcesByHref) Len() int      { return len(a) }
-func (a SortResourcesByHref) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
-func (a SortResourcesByHref) Less(i, j int) bool {
-	return a[i].GetHref() < a[j].GetHref()
-}
-
-func SortResources(s []*commands.Resource) []*commands.Resource {
-	v := SortResourcesByHref(s)
-	sort.Sort(v)
-	return v
 }
 
 func ProtobufToInterface(t *testing.T, val interface{}) interface{} {

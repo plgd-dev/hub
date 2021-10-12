@@ -18,7 +18,7 @@ import (
 	"github.com/plgd-dev/kit/v2/codec/json"
 )
 
-var DeviceUserID = "1"
+const DeviceUserID = "1"
 
 const (
 	TokenScopeKey    = "scope"
