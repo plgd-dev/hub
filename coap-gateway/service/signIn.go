@@ -7,6 +7,9 @@ import (
 	"math/rand"
 	"time"
 
+	"github.com/plgd-dev/go-coap/v2/message"
+	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
+	"github.com/plgd-dev/go-coap/v2/mux"
 	"github.com/plgd-dev/hub/coap-gateway/coapconv"
 	grpcgwClient "github.com/plgd-dev/hub/grpc-gateway/client"
 	"github.com/plgd-dev/hub/grpc-gateway/pb"
@@ -15,9 +18,6 @@ import (
 	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
 	"github.com/plgd-dev/hub/pkg/strings"
 	"github.com/plgd-dev/hub/resource-aggregate/commands"
-	"github.com/plgd-dev/go-coap/v2/message"
-	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
-	"github.com/plgd-dev/go-coap/v2/mux"
 	"github.com/plgd-dev/kit/v2/codec/cbor"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -336,7 +336,7 @@ func signInPostHandler(req *mux.Message, client *Client, signIn CoapSignInReq) {
 }
 
 func updateDeviceMetadata(req *mux.Message, client *Client) error {
-	oldAuthCtx := client.CleanUp()
+	oldAuthCtx := client.CleanUp(true)
 	if oldAuthCtx.GetDeviceID() != "" {
 		ctx := kitNetGrpc.CtxWithToken(req.Context, oldAuthCtx.GetAccessToken())
 		client.server.expirationClientCache.Set(oldAuthCtx.GetDeviceID(), nil, time.Millisecond)
