@@ -119,7 +119,7 @@ type PublicConfiguration struct {
 	CAPool                   string        `yaml:"caPool" json:"caPool" description:"file path to the root certificate in PEM format"`
 	OwnerClaim               string        `yaml:"ownerClaim" json:"ownerClaim"`
 	DeviceIDClaim            string        `yaml:"deviceIdClaim" json:"deviceIdClaim"`
-	CloudID                  string        `yaml:"cloudID" json:"cloudID"`
+	HubID                    string        `yaml:"hubId" json:"hubId"`
 	CoapGateway              string        `yaml:"coapGateway" json:"coapGateway"`
 	DefaultCommandTimeToLive time.Duration `yaml:"defaultCommandTimeToLive" json:"defaultCommandTimeToLive"`
 	AuthorizationServer      string        `yaml:"authorizationServer" json:"authorizationServer"`
@@ -134,8 +134,8 @@ func (c *PublicConfiguration) Validate() error {
 	if c.OwnerClaim == "" {
 		return fmt.Errorf("ownerClaim('%v')", c.OwnerClaim)
 	}
-	if c.CloudID == "" {
-		return fmt.Errorf("cloudID('%v')", c.CloudID)
+	if c.HubID == "" {
+		return fmt.Errorf("hubId('%v')", c.HubID)
 	}
 	if c.CoapGateway == "" {
 		return fmt.Errorf("coapGateway('%v')", c.CoapGateway)
@@ -153,7 +153,7 @@ func (c PublicConfiguration) ToProto() *pb.HubConfigurationResponse {
 	return &pb.HubConfigurationResponse{
 		JwtOwnerClaim:            c.OwnerClaim,
 		JwtDeviceIdClaim:         c.DeviceIDClaim,
-		Id:                       c.CloudID,
+		Id:                       c.HubID,
 		CoapGateway:              c.CoapGateway,
 		CertificateAuthorities:   c.cloudCertificateAuthorities,
 		DefaultCommandTimeToLive: int64(c.DefaultCommandTimeToLive),

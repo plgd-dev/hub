@@ -85,7 +85,7 @@ stringData:
       {{- if .publicConfiguration.deviceIdClaim  | default $.Values.global.deviceIdClaim }}
       deviceIdClaim: {{ .publicConfiguration.deviceIdClaim  | default $.Values.global.deviceIdClaim | quote }}
       {{- end }}
-      cloudID: {{ required "resourcedirectory.publicConfiguration.cloudID or coapgateway.cloudId or global.cloudId is required" ( .publicConfiguration.cloudID | default ( $.Values.coapgateway.cloudId | default $.Values.global.cloudId)) | quote }}
+      hubId: {{ required "resourcedirectory.publicConfiguration.hubId or coapgateway.hubId or global.hubId is required" ( .publicConfiguration.hubId | default ( $.Values.coapgateway.hubId | default $.Values.global.hubId)) | quote }}
       coapGateway: {{ .publicConfiguration.coapGateway | default (printf "coaps+tcp://%s:%v" $.Values.global.domain $.Values.coapgateway.port ) | quote }}
       defaultCommandTimeToLive: {{ .publicConfiguration.defaultCommandTimeToLive | quote }}
   {{- end }}

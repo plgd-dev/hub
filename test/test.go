@@ -18,6 +18,11 @@ import (
 	"time"
 
 	"github.com/jtacoma/uritemplates"
+	deviceClient "github.com/plgd-dev/device/client"
+	"github.com/plgd-dev/device/client/core"
+	"github.com/plgd-dev/device/schema"
+	"github.com/plgd-dev/device/schema/acl"
+	"github.com/plgd-dev/go-coap/v2/message"
 	caService "github.com/plgd-dev/hub/certificate-authority/test"
 	c2cgwService "github.com/plgd-dev/hub/cloud2cloud-gateway/test"
 	coapgw "github.com/plgd-dev/hub/coap-gateway/service"
@@ -39,11 +44,6 @@ import (
 	"github.com/plgd-dev/hub/test/config"
 	"github.com/plgd-dev/hub/test/oauth-server/service"
 	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
-	deviceClient "github.com/plgd-dev/device/client"
-	"github.com/plgd-dev/device/client/core"
-	"github.com/plgd-dev/device/schema"
-	"github.com/plgd-dev/device/schema/acl"
-	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/kit/v2/codec/cbor"
 	"github.com/plgd-dev/kit/v2/codec/json"
 	"github.com/plgd-dev/kit/v2/security"
@@ -275,7 +275,7 @@ func SetUpServices(ctx context.Context, t *testing.T, servicesConfig SetUpServic
 }
 
 func setAccessForCloud(ctx context.Context, t *testing.T, c *deviceClient.Client, deviceID string) {
-	cloudSID := config.CloudID()
+	cloudSID := config.HubID()
 	require.NotEmpty(t, cloudSID)
 
 	d, links, err := c.GetRefDevice(ctx, deviceID)
@@ -313,7 +313,7 @@ func setAccessForCloud(ctx context.Context, t *testing.T, c *deviceClient.Client
 }
 
 func OnboardDevSimForClient(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, clientId, deviceID, gwHost string, expectedResources []schema.ResourceLink) (string, func()) {
-	cloudSID := config.CloudID()
+	cloudSID := config.HubID()
 	require.NotEmpty(t, cloudSID)
 	client, err := NewSDKClient()
 	require.NoError(t, err)

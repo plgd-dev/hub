@@ -3,7 +3,7 @@ global:
   # -- Global domain
   domain:
   # -- CloudID. Used by coap-gateway. It must be unique
-  cloudId:
+  hubId:
   # -- OAuth owner Claim
   ownerClaim: "sub"
   # -- Device ID claim
@@ -434,7 +434,7 @@ resourcedirectory:
     authorizationServer:
     ownerClaim:
     deviceIdClaim:
-    cloudID:
+    hubId:
     coapGateway:
     defaultCommandTimeToLive: "0s"
 
@@ -689,8 +689,8 @@ coapgateway:
     debug: false
     # -- Dump copp messages
     dumpCoapMessages: true
-  # -- Cloud ID. Can be override via global.cloudId
-  cloudId:
+  # -- Hub ID. Can be override via global.hubId
+  hubId:
   # -- For complete coap-gateway service configuration see [plgd/coap-gateway](https://github.com/plgd-dev/hub/tree/main/coap-gateway)
   apis:
     coap:
