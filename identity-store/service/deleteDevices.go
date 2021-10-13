@@ -61,7 +61,8 @@ func (s *Service) publishDevicesUnregistered(ctx context.Context, owner, userID 
 		return err
 	}
 
-	err = s.publisher.Flush(ctx)
+	// timeout si driven by flusherTimeout.
+	err = s.publisher.Flush(context.Background())
 	if err != nil {
 		return err
 	}

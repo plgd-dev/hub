@@ -4,12 +4,11 @@ import (
 	"testing"
 	"time"
 
+	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	coapgwTest "github.com/plgd-dev/hub/coap-gateway/test"
 	"github.com/plgd-dev/hub/coap-gateway/uri"
 	"github.com/plgd-dev/hub/test/config"
-	"github.com/plgd-dev/hub/test/oauth-server/service"
 	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
-	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 )
 
 type TestCoapSignUpResponse struct {
@@ -56,7 +55,7 @@ type TestCoapSignUpResponseRetry struct {
 
 func TestSignUpPostHandlerWithRetry(t *testing.T) {
 	coapgwCfg := coapgwTest.MakeConfig(t)
-	coapgwCfg.APIs.COAP.Authorization.Providers[0].Config.ClientID = service.ClientTestRestrictedAuth
+	coapgwCfg.APIs.COAP.Authorization.Providers[0].Config.ClientID = oauthTest.ClientTestRestrictedAuth
 	shutdown := setUp(t, coapgwCfg)
 	defer shutdown()
 	codeEl := oauthTest.GetDefaultDeviceAuthorizationCode(t, "")

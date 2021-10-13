@@ -19,7 +19,6 @@ import (
 	"github.com/plgd-dev/hub/pkg/security/oauth2/oauth"
 	natsClient "github.com/plgd-dev/hub/resource-aggregate/cqrs/eventbus/nats/client"
 	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventstore/mongodb"
-	"github.com/plgd-dev/hub/test/oauth-server/service"
 	"github.com/plgd-dev/hub/test/oauth-server/uri"
 	"github.com/stretchr/testify/require"
 )
@@ -37,7 +36,7 @@ const C2C_GW_HOST = "localhost:20007"
 const C2C_GW_DB = "cloud2cloudGateway"
 const OAUTH_SERVER_HOST = "localhost:20009"
 const TEST_TIMEOUT = time.Second * 30
-const OAUTH_MANAGER_CLIENT_ID = service.ClientTest
+const OAUTH_MANAGER_CLIENT_ID = "test"
 const OAUTH_MANAGER_AUDIENCE = "localhost"
 const HTTP_GW_HOST = "localhost:20010"
 const DEVICE_PROVIDER = "plgd"
@@ -119,8 +118,9 @@ func MakeHttpClientConfig() httpClient.Config {
 func MakePublisherConfig() natsClient.ConfigPublisher {
 	return natsClient.ConfigPublisher{
 		Config: natsClient.Config{
-			URL: NATS_URL,
-			TLS: MakeTLSClientConfig(),
+			URL:            NATS_URL,
+			TLS:            MakeTLSClientConfig(),
+			FlusherTimeout: time.Second * 30,
 		},
 	}
 }

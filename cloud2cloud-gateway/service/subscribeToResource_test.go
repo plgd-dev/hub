@@ -13,6 +13,7 @@ import (
 	"time"
 
 	router "github.com/gorilla/mux"
+	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/hub/cloud2cloud-connector/events"
 	c2cTest "github.com/plgd-dev/hub/cloud2cloud-gateway/test"
 	"github.com/plgd-dev/hub/cloud2cloud-gateway/uri"
@@ -20,9 +21,7 @@ import (
 	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
 	"github.com/plgd-dev/hub/test"
 	testCfg "github.com/plgd-dev/hub/test/config"
-	oauthService "github.com/plgd-dev/hub/test/oauth-server/service"
 	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
-	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/kit/v2/codec/json"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -132,7 +131,7 @@ func TestRequestHandler_SubscribeToResourceTokenTimeout(t *testing.T) {
 	defer tearDown()
 	c2cgwShutdown := c2cTest.SetUp(t)
 
-	token := oauthTest.GetServiceToken(t, testCfg.OAUTH_SERVER_HOST, oauthService.ClientTestShortExpiration)
+	token := oauthTest.GetServiceToken(t, testCfg.OAUTH_SERVER_HOST, oauthTest.ClientTestShortExpiration)
 	ctx = kitNetGrpc.CtxWithToken(ctx, token)
 
 	conn, err := grpc.Dial(testCfg.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
@@ -145,7 +144,7 @@ func TestRequestHandler_SubscribeToResourceTokenTimeout(t *testing.T) {
 	}()
 
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
-	_, shutdownDevSim := test.OnboardDevSimForClient(ctx, t, c, oauthService.ClientTestShortExpiration, deviceID, testCfg.GW_HOST, test.GetAllBackendResourceLinks())
+	_, shutdownDevSim := test.OnboardDevSimForClient(ctx, t, c, oauthTest.ClientTestShortExpiration, deviceID, testCfg.GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 
 	eventsServer, cleanUpEventsServer := c2cTest.NewTestListener(t)

@@ -36,6 +36,7 @@ Image can be configured via environment variables as argument `-e ENV=VALUE` of 
 | `COAP_GATEWAY_ADDRESS` | string | coaps-tcp listen address | `"0.0.0.0:5684"` |
 | `COAP_GATEWAY_CLOUD_ID` | string | cloud id | `"00000000-0000-0000-0000-000000000001"` |
 | `COAP_GATEWAY_LOG_MESSAGES` | bool | log received/send messages | false |
+| `MOCK_OAUTH_SERVER_ACCESS_TOKEN_LIFETIME` | string | define access token lifetime. 0s means forever.| `"0s"` |
 | `GRPC_GATEWAY_PORT`| uint16 | secure grpc-tcp listen port for localhost | `"9084"` |
 | `HTTP_GATEWAY_PORT`| uint16 | secure grpc-tcp listen port for localhost | `"9086"` |
 | `CERTIFICATE_AUTHORITY_PORT` | uint16 | secure grpc-tcp listen port for localhost | `"9087"` |

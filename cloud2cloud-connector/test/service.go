@@ -13,12 +13,12 @@ import (
 	"github.com/plgd-dev/hub/pkg/security/oauth2"
 	"github.com/plgd-dev/hub/pkg/security/oauth2/oauth"
 	"github.com/plgd-dev/hub/test/config"
-	oauthService "github.com/plgd-dev/hub/test/oauth-server/service"
+	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
 	"github.com/stretchr/testify/require"
 )
 
 const (
-	OAUTH_MANAGER_CLIENT_ID = oauthService.ClientTest
+	OAUTH_MANAGER_CLIENT_ID = oauthTest.ClientTest
 	OAUTH_MANAGER_AUDIENCE  = "localhost"
 )
 

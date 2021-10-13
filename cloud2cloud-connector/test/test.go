@@ -26,7 +26,6 @@ import (
 	"github.com/plgd-dev/hub/pkg/security/oauth2/oauth"
 	"github.com/plgd-dev/hub/test"
 	testCfg "github.com/plgd-dev/hub/test/config"
-	oauthService "github.com/plgd-dev/hub/test/oauth-server/service"
 	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
 	"github.com/plgd-dev/kit/v2/codec/json"
 	"github.com/stretchr/testify/require"
@@ -71,7 +70,7 @@ func SetUpClouds(ctx context.Context, t *testing.T, deviceID string, supportedEv
 			RootCAs: rootCAs,
 		},
 		OAuth: oauth.Config{
-			ClientID:     oauthService.ClientTest,
+			ClientID:     oauthTest.ClientTest,
 			Audience:     testCfg.C2C_GW_HOST,
 			ClientSecret: "testClientSecret",
 			AuthURL:      testCfg.OAUTH_MANAGER_ENDPOINT_AUTHURL,
@@ -82,7 +81,7 @@ func SetUpClouds(ctx context.Context, t *testing.T, deviceID string, supportedEv
 	data, err := json.Encode(linkedCloud)
 	require.NoError(t, err)
 
-	token := oauthTest.GetServiceToken(t, OAUTH_HOST, oauthService.ClientTest)
+	token := oauthTest.GetServiceToken(t, OAUTH_HOST, oauthTest.ClientTest)
 	req := test.NewHTTPRequest(http.MethodPost, HTTPS_SCHEME+C2C_CONNECTOR_HOST+uri.LinkedClouds, bytes.NewBuffer(data)).AuthToken(token).Build(ctx, t)
 	resp := test.DoHTTPRequest(t, req)
 	require.Equal(t, http.StatusOK, resp.StatusCode)

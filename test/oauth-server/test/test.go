@@ -11,6 +11,7 @@ import (
 	"os"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/plgd-dev/kit/v2/codec/json"
 
@@ -22,6 +23,15 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const ClientTest = "test"
+
+// Client with short auth code and access token expiration
+const ClientTestShortExpiration = "testShortExpiration"
+
+// Client will return error when the same auth code or refresh token
+// is used repeatedly within a minute of the first use
+const ClientTestRestrictedAuth = "testRestrictedAuth"
+
 func MakeConfig(t *testing.T) service.Config {
 	var cfg service.Config
 	cfg.APIs.HTTP = config.MakeListenerConfig(config.OAUTH_SERVER_HOST)
@@ -30,6 +40,26 @@ func MakeConfig(t *testing.T) service.Config {
 	cfg.OAuthSigner.IDTokenKeyFile = os.Getenv("TEST_OAUTH_SERVER_ID_TOKEN_PRIVATE_KEY")
 	cfg.OAuthSigner.AccessTokenKeyFile = os.Getenv("TEST_OAUTH_SERVER_ACCESS_TOKEN_PRIVATE_KEY")
 	cfg.OAuthSigner.Domain = config.OAUTH_SERVER_HOST
+	cfg.OAuthSigner.Clients = service.ClientsConfig{
+		{
+			ID:                        config.OAUTH_MANAGER_CLIENT_ID,
+			AuthorizationCodeLifetime: time.Minute * 10,
+			AccessTokenLifetime:       0,
+			CodeRestrictionLifetime:   0,
+		},
+		{
+			ID:                        ClientTestShortExpiration,
+			AuthorizationCodeLifetime: time.Second * 10,
+			AccessTokenLifetime:       time.Second * 10,
+			CodeRestrictionLifetime:   0,
+		},
+		{
+			ID:                        ClientTestRestrictedAuth,
+			AuthorizationCodeLifetime: time.Minute * 10,
+			AccessTokenLifetime:       time.Hour * 24,
+			CodeRestrictionLifetime:   time.Minute,
+		},
+	}
 
 	err := cfg.Validate()
 	require.NoError(t, err)
@@ -146,7 +176,7 @@ func GetServiceToken(t *testing.T, authServerHost, clientId string) string {
 }
 
 func GetDefaultServiceToken(t *testing.T) string {
-	return GetServiceToken(t, config.OAUTH_SERVER_HOST, service.ClientTest)
+	return GetServiceToken(t, config.OAUTH_SERVER_HOST, ClientTest)
 }
 
 func GetDeviceAuthorizationCode(t *testing.T, authServerHost, clientId, deviceID string) string {
@@ -175,5 +205,5 @@ func GetDeviceAuthorizationCode(t *testing.T, authServerHost, clientId, deviceID
 }
 
 func GetDefaultDeviceAuthorizationCode(t *testing.T, deviceID string) string {
-	return GetDeviceAuthorizationCode(t, config.OAUTH_SERVER_HOST, service.ClientTest, deviceID)
+	return GetDeviceAuthorizationCode(t, config.OAUTH_SERVER_HOST, ClientTest, deviceID)
 }

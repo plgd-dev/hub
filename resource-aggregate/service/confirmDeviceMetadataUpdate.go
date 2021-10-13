@@ -57,7 +57,7 @@ func (r RequestHandler) ConfirmDeviceMetadataUpdate(ctx context.Context, request
 		return nil, log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot confirm device('%v') metadata update: %v", request.GetDeviceId(), err))
 	}
 
-	err = PublishEvents(ctx, r.publisher, owner, aggregate.DeviceID(), aggregate.ResourceID(), events)
+	err = PublishEvents(r.publisher, owner, aggregate.DeviceID(), aggregate.ResourceID(), events)
 	if err != nil {
 		log.Errorf("cannot publish device('%v') metadata events: %w", request.GetDeviceId(), err)
 	}
