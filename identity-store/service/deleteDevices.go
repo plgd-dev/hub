@@ -38,7 +38,7 @@ func getOwnerDevices(tx persistence.PersistenceTx, owner string) ([]string, erro
 	return deviceIds, nil
 }
 
-func (s *Service) publishDevicesUnregistered(ctx context.Context, owner, userID string, deviceIDs []string) error {
+func (s *Service) publishDevicesUnregistered(owner, userID string, deviceIDs []string) error {
 	v := events.Event{
 		Type: &events.Event_DevicesUnregistered{
 			DevicesUnregistered: &events.DevicesUnregistered{
@@ -56,7 +56,7 @@ func (s *Service) publishDevicesUnregistered(ctx context.Context, owner, userID 
 		return err
 	}
 
-	err = s.publisher.PublishData(ctx, events.GetDevicesUnregisteredSubject(owner), data)
+	err = s.publisher.PublishData(events.GetDevicesUnregisteredSubject(owner), data)
 	if err != nil {
 		return err
 	}
@@ -131,7 +131,7 @@ func (s *Service) DeleteDevices(ctx context.Context, request *pb.DeleteDevicesRe
 		deletedDeviceIds = append(deletedDeviceIds, deviceId)
 	}
 
-	if err := s.publishDevicesUnregistered(ctx, owner, userID, deletedDeviceIds); err != nil {
+	if err := s.publishDevicesUnregistered(owner, userID, deletedDeviceIds); err != nil {
 		log.Errorf("cannot publish devices unregistered event with devices('%v') and owner('%v'): %w", deletedDeviceIds, owner, err)
 	}
 

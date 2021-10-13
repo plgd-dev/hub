@@ -120,7 +120,7 @@ func (p *Publisher) Publish(ctx context.Context, topics []string, groupId, aggre
 
 	var errors []error
 	for _, t := range topics {
-		err := p.PublishData(ctx, t, eData)
+		err := p.PublishData(t, eData)
 		if err != nil {
 			errors = append(errors, err)
 		}
@@ -138,7 +138,7 @@ func (p *Publisher) Publish(ctx context.Context, topics []string, groupId, aggre
 	return nil
 }
 
-func (p *Publisher) PublishData(ctx context.Context, subj string, data []byte) error {
+func (p *Publisher) PublishData(subj string, data []byte) error {
 	return p.publish(subj, data)
 }
 
