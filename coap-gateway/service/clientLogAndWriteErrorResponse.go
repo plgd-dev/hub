@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/plgd-dev/hub/pkg/log"
 	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
+	"github.com/plgd-dev/hub/pkg/log"
 )
 
 func isTempError(err error) bool {
@@ -17,7 +17,7 @@ func isTempError(err error) bool {
 	case strings.Contains(err.Error(), "connect: connection refused"),
 		strings.Contains(err.Error(), "i/o timeout"),
 		strings.Contains(err.Error(), "TLS handshake timeout"),
-		strings.Contains(err.Error(), `http2: client connection force closed via ClientConn.Close`),
+		strings.Contains(err.Error(), `http2:`), // any error at http2 protocol is considered as temporary error
 		strings.Contains(err.Error(), `write: broken pipe`),
 		strings.Contains(err.Error(), context.DeadlineExceeded.Error()),
 		strings.Contains(err.Error(), context.Canceled.Error()):
