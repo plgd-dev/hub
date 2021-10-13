@@ -48,13 +48,14 @@ export const handleEmitUpdatedCommandEvents = eventData => {
   const updatedCommand = eventData?.[commandType] || null
 
   if (updatedCommand) {
-    const { auditContext, resourceId, status } = updatedCommand
+    const { auditContext, resourceId, deviceId, status, canceled } =
+      updatedCommand
     // Emit update pending command event
     Emitter.emit(UPDATE_PENDING_COMMANDS_WS_KEY, {
       correlationId: auditContext?.correlationId,
-      deviceId: resourceId?.deviceId,
+      deviceId: resourceId?.deviceId || deviceId,
       href: resourceId?.href,
-      status: status,
+      status: canceled ? pendingCommandStatuses.CANCELED : status,
     })
   }
 }
@@ -69,8 +70,9 @@ export const updatePendingCommandsDataStatus = (
     const commandType = Object.keys(command)[0]
 
     if (
-      command[commandType].resourceId.href === href &&
-      command[commandType].resourceId.deviceId === deviceId &&
+      command[commandType]?.resourceId?.href === href &&
+      (command[commandType]?.resourceId?.deviceId === deviceId ||
+        command[commandType]?.deviceId === deviceId) &&
       command[commandType].auditContext.correlationId === correlationId
     ) {
       return {
@@ -89,9 +91,7 @@ export const updatePendingCommandsDataStatus = (
 export const hasCommandExpired = (validUntil, currentTime) => {
   if (validUntil === '0') return false
 
-  const validUntilMs = time(validUntil)
-    .from('ns')
-    .to('ms').value
+  const validUntilMs = time(validUntil).from('ns').to('ms').value
 
   return validUntilMs < currentTime
 }

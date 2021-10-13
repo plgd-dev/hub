@@ -157,12 +157,13 @@ export const PendingCommandsList = ({ onLoading, embedded, deviceId }) => {
             const {
               original: {
                 auditContext: { correlationId },
-                resourceId: { deviceId, href },
+                resourceId: { href } = {},
                 content,
               },
             } = row
+            const rowDeviceId = row?.original?.resourceId?.deviceId || row?.original?.deviceId
 
-            if (!content) {
+            if (!content && !href) {
               return <span className="no-wrap-text">{_(t[value])}</span>
             }
 
@@ -171,7 +172,7 @@ export const PendingCommandsList = ({ onLoading, embedded, deviceId }) => {
                 className="no-wrap-text link"
                 onClick={() =>
                   onViewClick({
-                    deviceId,
+                    deviceId: rowDeviceId,
                     href,
                     correlationId,
                     content,
@@ -189,7 +190,7 @@ export const PendingCommandsList = ({ onLoading, embedded, deviceId }) => {
           accessor: 'resourceId.href',
           disableSortBy: true,
           Cell: ({ value }) => {
-            return <span className="no-wrap-text">{value}</span>
+            return <span className="no-wrap-text">{value || '-'}</span>
           },
         },
         {
@@ -257,11 +258,13 @@ export const PendingCommandsList = ({ onLoading, embedded, deviceId }) => {
             const {
               original: {
                 auditContext: { correlationId },
-                resourceId: { deviceId, href },
+                resourceId: { href } = {},
                 status,
                 validUntil,
               },
             } = row
+
+            const rowDeviceId = row?.original?.resourceId?.deviceId || row?.original?.deviceId
 
             if (status || hasCommandExpired(validUntil, currentTime)) {
               return <div className="no-action" />
@@ -270,7 +273,9 @@ export const PendingCommandsList = ({ onLoading, embedded, deviceId }) => {
             return (
               <div
                 className="dropdown action-button"
-                onClick={() => onCancelClick({ deviceId, href, correlationId })}
+                onClick={() =>
+                  onCancelClick({ deviceId: rowDeviceId, href, correlationId })
+                }
                 title={_(t.cancel)}
               >
                 <button className="dropdown-toggle btn btn-empty">
@@ -289,8 +294,12 @@ export const PendingCommandsList = ({ onLoading, embedded, deviceId }) => {
           Header: _(t.deviceId),
           accessor: 'resourceId.deviceId',
           disableSortBy: true,
-          Cell: ({ value }) => {
-            return <span className="no-wrap-text">{value}</span>
+          Cell: ({ row }) => {
+            return (
+              <span className="no-wrap-text">
+                {row?.original?.resourceId?.deviceId || row?.original?.deviceId}
+              </span>
+            )
           },
         })
       }
