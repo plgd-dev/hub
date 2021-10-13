@@ -2,7 +2,7 @@
 global:
   # -- Global domain
   domain:
-  # -- CloudID. Used by coap-gateway. It must be unique
+  # -- Hub ID. Used by coap-gateway. It must be unique
   hubId:
   # -- OAuth owner Claim
   ownerClaim: "sub"

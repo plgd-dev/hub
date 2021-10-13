@@ -759,7 +759,7 @@ components:
           description: Unique ID of the cloud, required for device registration at the plgd hub.
           type: string
           format: uuid
-        cloudUrl:
+        coapGateway:
           description: URL of the device endpoint - plgd CoAP Gateway where the device connects.
           type: string
         cloudCertificateAuthorities:
@@ -781,7 +781,7 @@ components:
         jwtClaimOwnerId: 'sub'
         signingServerAddress: 'api.try.plgd.cloud:443'
         hubId: 'adebc667-1f2b-41e3-bf5c-6d6eabc68cc6'
-        cloudUrl: 'coaps+tcp://try.plgd.cloud:5684'
+        coapGateway: 'coaps+tcp://try.plgd.cloud:5684'
         cloudAuthorizationProvider: 'plgd'
         currentTime: 1629728394151716523
         defaultCommandTimeToLive: 0

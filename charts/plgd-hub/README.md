@@ -17,7 +17,7 @@ Install [cert-manager](https://cert-manager.io/) via [https://artifacthub.io/pac
 global:
   # -- Global domain
   domain:
-  # -- CloudID. Used by coap-gateway. It must be unique
+  # -- Hub ID. Used by coap-gateway. It must be unique
   hubId:
   # -- OAuth owner Claim
   ownerClaim: "sub"
@@ -207,7 +207,7 @@ global:
 | global | object | `{"audience":"","authority":null,"hubId":null,"deviceIdClaim":null,"domain":null,"oauth":{"device":[],"web":{"clientID":null}},"ownerClaim":"sub"}` | Global config variables |
 | global.audience | string | `""` | OAuth audience |
 | global.authority | string | `nil` | OAuth authority |
-| global.hubId | string | `nil` | CloudID. Used by coap-gateway. It must be unique |
+| global.hubId | string | `nil` | Hub ID. Used by coap-gateway. It must be unique |
 | global.deviceIdClaim | string | `nil` | Device ID claim |
 | global.domain | string | `nil` | Global domain |
 | global.ownerClaim | string | `"sub"` | OAuth owner Claim |
