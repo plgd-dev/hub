@@ -89,7 +89,7 @@ global:
 | certificateauthority.imagePullSecrets | string | `nil` | Image pull secrets |
 | certificateauthority.ingress.annotations | object | `{}` | Ingress annotations |
 | certificateauthority.ingress.enabled | bool | `true` | Enable ingress |
-| certificateauthority.ingress.paths | list | `["/ocf.cloud.certificateauthority.pb.CertificateAuthority"]` | Paths |
+| certificateauthority.ingress.paths | list | `["/certificateauthority.pb.CertificateAuthority"]` | Paths |
 | certificateauthority.initContainersTpl | string | `nil` | Init containers definition |
 | certificateauthority.livenessProbe | string | `nil` | Liveness probe. certificate-authority doesn't have any default liveness probe |
 | certificateauthority.log.debug | bool | `false` | Enable extended debug messages |
@@ -233,7 +233,7 @@ global:
 | grpcgateway.imagePullSecrets | object | `{}` | Image pull secrets |
 | grpcgateway.ingress.annotations | object | `{}` | Ingress annotations |
 | grpcgateway.ingress.enabled | bool | `true` | Enable ingress |
-| grpcgateway.ingress.paths | list | `["/ocf.cloud.grpcgateway.pb.GrpcGateway"]` | Default ingress paths |
+| grpcgateway.ingress.paths | list | `["/grpcgateway.pb.GrpcGateway"]` | Default ingress paths |
 | grpcgateway.initContainersTpl | object | `{}` | Init containers definition |
 | grpcgateway.livenessProbe | object | `{}` | Liveness probe. grpc-gateway doesn't have any default liveness probe |
 | grpcgateway.log.debug | bool | `false` | Enable extended log messages |

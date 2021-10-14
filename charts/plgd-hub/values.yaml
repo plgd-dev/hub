@@ -1141,7 +1141,7 @@ grpcgateway:
     annotations: {}
     # -- Default ingress paths
     paths:
-      - /ocf.cloud.grpcgateway.pb.GrpcGateway
+      - /grpcgateway.pb.GrpcGateway
   # -- Service yaml configuration section
   config:
     # -- Service configuration file name
@@ -1323,7 +1323,7 @@ certificateauthority:
     annotations: {}
     # -- Paths
     paths:
-      - /ocf.cloud.certificateauthority.pb.CertificateAuthority
+      - /certificateauthority.pb.CertificateAuthority
   # -- Service configuration
   config:
     # -- File name for config file
