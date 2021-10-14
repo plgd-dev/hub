@@ -20,7 +20,7 @@ type authorizedSession struct {
 
 func (requestHandler *RequestHandler) authorize(w http.ResponseWriter, r *http.Request) {
 	clientID := r.URL.Query().Get(uri.ClientIDKey)
-	clientCfg := clients.Find(clientID)
+	clientCfg := requestHandler.config.OAuthSigner.Clients.Find(clientID)
 	if clientCfg == nil {
 		writeError(w, fmt.Errorf("unknown client_id(%v)", clientID), http.StatusBadRequest)
 		return

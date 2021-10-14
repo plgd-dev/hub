@@ -8,7 +8,6 @@ import (
 	"github.com/plgd-dev/hub/pkg/log"
 	"github.com/plgd-dev/hub/pkg/security/oauth2"
 	"github.com/plgd-dev/hub/test/config"
-	oauthService "github.com/plgd-dev/hub/test/oauth-server/service"
 	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
 	"github.com/stretchr/testify/require"
 )
@@ -21,7 +20,7 @@ func TestExchangeCacheExecute(t *testing.T) {
 	defer oauthShutdown()
 
 	cfg := config.MakeDeviceAuthorization()
-	cfg.ClientID = oauthService.ClientTestRestrictedAuth
+	cfg.ClientID = oauthTest.ClientTestRestrictedAuth
 	provider, err := oauth2.NewPlgdProvider(context.Background(), cfg, logger)
 	require.NoError(t, err)
 

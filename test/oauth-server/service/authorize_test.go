@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/plgd-dev/hub/test/config"
-	"github.com/plgd-dev/hub/test/oauth-server/service"
 	"github.com/plgd-dev/hub/test/oauth-server/test"
 	"github.com/plgd-dev/hub/test/oauth-server/uri"
 	"github.com/plgd-dev/kit/v2/codec/json"
@@ -16,8 +15,8 @@ import (
 func TestRequestHandler_authorize(t *testing.T) {
 	webTearDown := test.SetUp(t)
 	defer webTearDown()
-	getAuthorize(t, service.ClientTest, "nonse", "https://localhost:3000", "", http.StatusTemporaryRedirect)
-	getAuthorize(t, service.ClientTest, "", "", "", http.StatusOK)
+	getAuthorize(t, test.ClientTest, "nonse", "https://localhost:3000", "", http.StatusTemporaryRedirect)
+	getAuthorize(t, test.ClientTest, "", "", "", http.StatusOK)
 }
 
 func getAuthorize(t *testing.T, clientID, nonce, redirectURI, deviceID string, statusCode int) string {

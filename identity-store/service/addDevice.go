@@ -17,7 +17,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func (s *Service) publishDevicesRegistered(ctx context.Context, owner, userID string, deviceID []string) error {
+func (s *Service) publishDevicesRegistered(owner, userID string, deviceID []string) error {
 	v := events.Event{
 		Type: &events.Event_DevicesRegistered{
 			DevicesRegistered: &events.DevicesRegistered{
@@ -35,12 +35,13 @@ func (s *Service) publishDevicesRegistered(ctx context.Context, owner, userID st
 		return err
 	}
 
-	err = s.publisher.PublishData(ctx, events.GetDevicesRegisteredSubject(owner), data)
+	err = s.publisher.PublishData(events.GetDevicesRegisteredSubject(owner), data)
 	if err != nil {
 		return err
 	}
 
-	err = s.publisher.Flush(ctx)
+	// timeout si driven by flusherTimeout.
+	err = s.publisher.Flush(context.Background())
 	if err != nil {
 		return err
 	}
@@ -101,7 +102,7 @@ func (s *Service) AddDevice(ctx context.Context, request *pb.AddDeviceRequest) (
 		return nil, log.LogAndReturnError(status.Errorf(codes.Internal, "cannot add device up: %v", err.Error()))
 	}
 
-	err = s.publishDevicesRegistered(ctx, owner, userID, []string{request.DeviceId})
+	err = s.publishDevicesRegistered(owner, userID, []string{request.DeviceId})
 	if err != nil {
 		log.Errorf("cannot publish devices registered event with device('%v') and owner('%v'): %w", request.DeviceId, owner, err)
 	}

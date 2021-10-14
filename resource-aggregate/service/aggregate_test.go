@@ -9,6 +9,7 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/google/uuid"
 	"github.com/panjf2000/ants/v2"
+	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/hub/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
 	"github.com/plgd-dev/hub/resource-aggregate/commands"
@@ -21,7 +22,6 @@ import (
 	"github.com/plgd-dev/hub/resource-aggregate/service"
 	raTest "github.com/plgd-dev/hub/resource-aggregate/test"
 	"github.com/plgd-dev/hub/test/config"
-	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
@@ -115,7 +115,7 @@ func TestAggregateHandle_PublishResourceLinks(t *testing.T) {
 				assert.Equal(t, tt.want, s.Code())
 			} else {
 				require.NoError(t, err)
-				err = service.PublishEvents(ctx, publisher, tt.args.userID, tt.args.request.GetDeviceId(), ag.ResourceID(), events)
+				err = service.PublishEvents(publisher, tt.args.userID, tt.args.request.GetDeviceId(), ag.ResourceID(), events)
 				assert.NoError(t, err)
 			}
 		}
@@ -136,7 +136,7 @@ func testHandlePublishResource(t *testing.T, ctx context.Context, publisher *pub
 		assert.Equal(t, expStatusCode, s.Code())
 	} else {
 		require.NoError(t, err)
-		err = service.PublishEvents(ctx, publisher, userID, deviceID, ag.ResourceID(), events)
+		err = service.PublishEvents(publisher, userID, deviceID, ag.ResourceID(), events)
 		assert.NoError(t, err)
 	}
 }
@@ -235,7 +235,7 @@ func TestAggregateHandleUnpublishResource(t *testing.T) {
 	events, err := ag.UnpublishResourceLinks(ctx, pc)
 	assert.NoError(t, err)
 
-	err = service.PublishEvents(ctx, publisher, userID, deviceID, ag.ResourceID(), events)
+	err = service.PublishEvents(publisher, userID, deviceID, ag.ResourceID(), events)
 	assert.NoError(t, err)
 
 	_, err = ag.UnpublishResourceLinks(ctx, pc)
@@ -291,7 +291,7 @@ func TestAggregateHandleUnpublishAllResources(t *testing.T) {
 	assert.Equal(t, 3, len(unpublishedResourceLinks))
 	assert.Contains(t, unpublishedResourceLinks, resourceID1, resourceID2, resourceID3)
 
-	err = service.PublishEvents(ctx, publisher, userID, deviceID, ag.ResourceID(), events)
+	err = service.PublishEvents(publisher, userID, deviceID, ag.ResourceID(), events)
 	assert.NoError(t, err)
 
 	events, err = ag.UnpublishResourceLinks(ctx, pc)
@@ -345,7 +345,7 @@ func TestAggregateHandleUnpublishResourceSubset(t *testing.T) {
 	assert.Equal(t, 1, len(events))
 	assert.Equal(t, []string{resourceID1, resourceID3}, (events[0].(*raEvents.ResourceLinksUnpublished)).Hrefs)
 
-	err = service.PublishEvents(ctx, publisher, userID, deviceID, ag.ResourceID(), events)
+	err = service.PublishEvents(publisher, userID, deviceID, ag.ResourceID(), events)
 	assert.NoError(t, err)
 
 	pc = testMakeUnpublishResourceRequest(deviceID, []string{resourceID1, resourceID4, resourceID4})

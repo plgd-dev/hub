@@ -9,14 +9,13 @@ import (
 	"github.com/plgd-dev/hub/pkg/security/oauth2"
 	"github.com/plgd-dev/hub/pkg/sync/task/queue"
 	"github.com/plgd-dev/hub/test/config"
-	oauthService "github.com/plgd-dev/hub/test/oauth-server/service"
 	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
 	"github.com/stretchr/testify/require"
 )
 
 func getProvider(t *testing.T, logger log.Logger) *oauth2.PlgdProvider {
 	cfg := config.MakeDeviceAuthorization()
-	cfg.ClientID = oauthService.ClientTestRestrictedAuth
+	cfg.ClientID = oauthTest.ClientTestRestrictedAuth
 	provider, err := oauth2.NewPlgdProvider(context.Background(), cfg, logger)
 	require.NoError(t, err)
 	return provider
@@ -31,7 +30,7 @@ func TestRefreshCacheExecute(t *testing.T) {
 
 	provider1 := getProvider(t, logger)
 	defer provider1.Close()
-	code := oauthTest.GetDeviceAuthorizationCode(t, config.OAUTH_SERVER_HOST, oauthService.ClientTestRestrictedAuth, "")
+	code := oauthTest.GetDeviceAuthorizationCode(t, config.OAUTH_SERVER_HOST, oauthTest.ClientTestRestrictedAuth, "")
 	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
 	defer cancel()
 	token1, err := provider1.Exchange(ctx, code)
@@ -43,7 +42,7 @@ func TestRefreshCacheExecute(t *testing.T) {
 	_, err = provider1.Refresh(ctx, token1.RefreshToken)
 	require.Error(t, err)
 
-	code = oauthTest.GetDeviceAuthorizationCode(t, config.OAUTH_SERVER_HOST, oauthService.ClientTestRestrictedAuth, "")
+	code = oauthTest.GetDeviceAuthorizationCode(t, config.OAUTH_SERVER_HOST, oauthTest.ClientTestRestrictedAuth, "")
 	token2, err := provider1.Exchange(ctx, code)
 	require.NoError(t, err)
 	require.NotEmpty(t, token2.RefreshToken)
@@ -65,7 +64,7 @@ func TestRefreshCacheExecute(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	code = oauthTest.GetDeviceAuthorizationCode(t, config.OAUTH_SERVER_HOST, oauthService.ClientTestRestrictedAuth, "")
+	code = oauthTest.GetDeviceAuthorizationCode(t, config.OAUTH_SERVER_HOST, oauthTest.ClientTestRestrictedAuth, "")
 	token3, err := provider2.Exchange(ctx, code)
 	require.NoError(t, err)
 	require.NotEqual(t, token3.RefreshToken, token1.RefreshToken)
@@ -81,7 +80,7 @@ func TestRefreshCacheExecute(t *testing.T) {
 	_, err = rc.Execute(ctx, providers, taskQueue, token3.RefreshToken)
 	require.Error(t, err)
 
-	code = oauthTest.GetDeviceAuthorizationCode(t, config.OAUTH_SERVER_HOST, oauthService.ClientTestRestrictedAuth, "")
+	code = oauthTest.GetDeviceAuthorizationCode(t, config.OAUTH_SERVER_HOST, oauthTest.ClientTestRestrictedAuth, "")
 	token6, err := provider3.Exchange(ctx, code)
 	require.NoError(t, err)
 	require.NotEqual(t, token6.RefreshToken, token1.RefreshToken)

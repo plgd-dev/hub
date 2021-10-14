@@ -12,3 +12,8 @@ oauthSigner:
   idTokenKeyFile: "/secrets/private/idToken.key"
   accessTokenKeyFile: "/secrets/private/accessToken.key"
   domain: ""
+  clients:
+  - id: "test"
+    authorizationCodeLifetime: "10m"
+    accessTokenLifetime: "0s"
+    codeRestrictionLifetime: "0s"

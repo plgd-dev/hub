@@ -2,6 +2,7 @@ package client
 
 import (
 	"fmt"
+	"time"
 
 	nats "github.com/nats-io/nats.go"
 	"github.com/plgd-dev/hub/pkg/security/certManager/client"
@@ -23,10 +24,11 @@ func (c *PendingLimitsConfig) Validate() error {
 }
 
 type Config struct {
-	URL           string              `yaml:"url" json:"url"`
-	TLS           client.Config       `yaml:"tls" json:"tls"`
-	PendingLimits PendingLimitsConfig `yaml:"pendingLimits" json:"pendingLimits"`
-	Options       []nats.Option       `yaml:"-" json:"-"`
+	URL            string              `yaml:"url" json:"url"`
+	FlusherTimeout time.Duration       `yaml:"flusherTimeout" json:"flusherTimeout"`
+	PendingLimits  PendingLimitsConfig `yaml:"pendingLimits" json:"pendingLimits"`
+	TLS            client.Config       `yaml:"tls" json:"tls"`
+	Options        []nats.Option       `yaml:"-" json:"-"`
 }
 
 type ConfigPublisher struct {
@@ -50,6 +52,9 @@ func (c *Config) Validate() error {
 func (c *ConfigPublisher) Validate() error {
 	if c.URL == "" {
 		return fmt.Errorf("url('%v')", c.URL)
+	}
+	if c.FlusherTimeout <= 0 {
+		return fmt.Errorf("flusherTimeout('%v')", c.FlusherTimeout)
 	}
 	if err := c.TLS.Validate(); err != nil {
 		return fmt.Errorf("tls.%w", err)

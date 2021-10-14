@@ -53,8 +53,12 @@ func TestFutureGetMultithreaded(t *testing.T) {
 	defer cancel()
 	const val = "test"
 
+	var wg sync.WaitGroup
+	defer wg.Wait()
 	for i := 0; i < 3; i++ {
+		wg.Add(1)
 		go func() {
+			defer wg.Done()
 			value, err := fut.Get(ctx)
 			require.NoError(t, err)
 			require.Equal(t, val, value.(string))

@@ -18,7 +18,7 @@ func New(config Config, logger log.Logger) (*Client, error) {
 	if err != nil {
 		return nil, fmt.Errorf("cannot create cert manager: %w", err)
 	}
-	config.Options = append(config.Options, nats.Secure(certManager.GetTLSConfig()), nats.MaxReconnects(-1))
+	config.Options = append(config.Options, nats.Secure(certManager.GetTLSConfig()), nats.MaxReconnects(-1), nats.FlusherTimeout(config.FlusherTimeout))
 
 	conn, err := nats.Connect(config.URL, config.Options...)
 	if err != nil {
