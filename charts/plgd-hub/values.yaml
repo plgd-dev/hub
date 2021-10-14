@@ -2,8 +2,8 @@
 global:
   # -- Global domain
   domain:
-  # -- CloudID. Used by coap-gateway. It must be unique
-  cloudId:
+  # -- Hub ID. Used by coap-gateway. It must be unique
+  hubId:
   # -- OAuth owner Claim
   ownerClaim: "sub"
   # -- Device ID claim
@@ -434,7 +434,7 @@ resourcedirectory:
     authorizationServer:
     ownerClaim:
     deviceIdClaim:
-    cloudID:
+    hubId:
     coapGateway:
     defaultCommandTimeToLive: "0s"
 
@@ -689,8 +689,8 @@ coapgateway:
     debug: false
     # -- Dump copp messages
     dumpCoapMessages: true
-  # -- Cloud ID. Can be override via global.cloudId
-  cloudId:
+  # -- Hub ID. Can be override via global.hubId
+  hubId:
   # -- For complete coap-gateway service configuration see [plgd/coap-gateway](https://github.com/plgd-dev/hub/tree/main/coap-gateway)
   apis:
     coap:
@@ -1141,7 +1141,7 @@ grpcgateway:
     annotations: {}
     # -- Default ingress paths
     paths:
-      - /ocf.cloud.grpcgateway.pb.GrpcGateway
+      - /grpcgateway.pb.GrpcGateway
   # -- Service yaml configuration section
   config:
     # -- Service configuration file name
@@ -1323,7 +1323,7 @@ certificateauthority:
     annotations: {}
     # -- Paths
     paths:
-      - /ocf.cloud.certificateauthority.pb.CertificateAuthority
+      - /certificateauthority.pb.CertificateAuthority
   # -- Service configuration
   config:
     # -- File name for config file

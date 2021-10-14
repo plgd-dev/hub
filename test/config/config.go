@@ -170,7 +170,7 @@ func MakeDeviceAuthorization() oauth2.Config {
 	}
 }
 
-func CloudID() string {
+func HubID() string {
 	return os.Getenv("TEST_CLOUD_SID")
 }
 

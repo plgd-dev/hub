@@ -34,7 +34,7 @@ Image can be configured via environment variables as argument `-e ENV=VALUE` of 
 | `COAP_GATEWAY_UNSECURE_ADDRESS` | string | coap-tcp listen address | `"0.0.0.0:5683"` |
 | `COAP_GATEWAY_PORT` | uint16 | exposed public port for coaps-tcp  | `"5684"` |
 | `COAP_GATEWAY_ADDRESS` | string | coaps-tcp listen address | `"0.0.0.0:5684"` |
-| `COAP_GATEWAY_CLOUD_ID` | string | cloud id | `"00000000-0000-0000-0000-000000000001"` |
+| `COAP_GATEWAY_HUB_ID` | string | hub id | `"00000000-0000-0000-0000-000000000001"` |
 | `COAP_GATEWAY_LOG_MESSAGES` | bool | log received/send messages | false |
 | `GRPC_GATEWAY_PORT`| uint16 | secure grpc-tcp listen port for localhost | `"9084"` |
 | `HTTP_GATEWAY_PORT`| uint16 | secure grpc-tcp listen port for localhost | `"9086"` |
