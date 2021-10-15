@@ -55,7 +55,7 @@ export const handleEmitUpdatedCommandEvents = eventData => {
       correlationId: auditContext?.correlationId,
       deviceId: resourceId?.deviceId || deviceId,
       href: resourceId?.href,
-      status: canceled ? pendingCommandStatuses.CANCELED : status,
+      status: typeof canceled === 'boolean' ? (canceled ? CANCELED : OK) : status,
     })
   }
 }
