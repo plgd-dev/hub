@@ -12,11 +12,15 @@ import (
 	"github.com/plgd-dev/device/client/core"
 	"github.com/plgd-dev/device/schema"
 	"github.com/plgd-dev/device/schema/acl"
+	"github.com/plgd-dev/device/schema/collection"
+	"github.com/plgd-dev/device/schema/configuration"
 	"github.com/plgd-dev/device/schema/device"
+	"github.com/plgd-dev/device/schema/interfaces"
+	"github.com/plgd-dev/device/schema/platform"
+	"github.com/plgd-dev/device/test/resource/types"
 	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/hub/grpc-gateway/client"
 	"github.com/plgd-dev/hub/grpc-gateway/pb"
-	"github.com/plgd-dev/hub/pkg/ocf"
 	"github.com/plgd-dev/hub/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/test/config"
 	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
@@ -34,12 +38,12 @@ var (
 )
 
 const (
-	OCFResourcePlatformHref      = "/oic/p"
-	OCFResourceDeviceHref        = "/oic/d"
-	OCFResourceConfigurationHref = "/oc/con"
-	TestResourceLightHref        = "/light/1"
-	TestResourceSwitchesHref     = "/switches"
+	TestResourceSwitchesHref = "/switches"
 )
+
+func TestResourceLightInstanceHref(id string) string {
+	return "/light/" + id
+}
 
 func TestResourceSwitchesInstanceHref(id string) string {
 	return TestResourceSwitchesHref + "/" + id
@@ -49,36 +53,36 @@ func init() {
 	TestDeviceName = "devsim-" + MustGetHostname()
 	TestDevsimResources = []schema.ResourceLink{
 		{
-			Href:          OCFResourcePlatformHref,
-			ResourceTypes: []string{ocf.OC_RT_P},
-			Interfaces:    []string{ocf.OC_IF_R, ocf.OC_IF_BASELINE},
+			Href:          platform.ResourceURI,
+			ResourceTypes: []string{platform.ResourceType},
+			Interfaces:    []string{interfaces.OC_IF_R, interfaces.OC_IF_BASELINE},
 			Policy: &schema.Policy{
 				BitMask: 3,
 			},
 		},
 
 		{
-			Href:          OCFResourceDeviceHref,
-			ResourceTypes: []string{ocf.OC_RT_DEVICE_CLOUD, ocf.OC_RT_D},
-			Interfaces:    []string{ocf.OC_IF_R, ocf.OC_IF_BASELINE},
+			Href:          device.ResourceURI,
+			ResourceTypes: []string{types.DEVICE_CLOUD, device.ResourceType},
+			Interfaces:    []string{interfaces.OC_IF_R, interfaces.OC_IF_BASELINE},
 			Policy: &schema.Policy{
 				BitMask: 3,
 			},
 		},
 
 		{
-			Href:          OCFResourceConfigurationHref,
-			ResourceTypes: []string{ocf.OC_RT_CON},
-			Interfaces:    []string{ocf.OC_IF_RW, ocf.OC_IF_BASELINE},
+			Href:          configuration.ResourceURI,
+			ResourceTypes: []string{configuration.ResourceType},
+			Interfaces:    []string{interfaces.OC_IF_RW, interfaces.OC_IF_BASELINE},
 			Policy: &schema.Policy{
 				BitMask: 3,
 			},
 		},
 
 		{
-			Href:          TestResourceLightHref,
-			ResourceTypes: []string{"core.light"},
-			Interfaces:    []string{ocf.OC_IF_RW, ocf.OC_IF_BASELINE},
+			Href:          TestResourceLightInstanceHref("1"),
+			ResourceTypes: []string{types.CORE_LIGHT},
+			Interfaces:    []string{interfaces.OC_IF_RW, interfaces.OC_IF_BASELINE},
 			Policy: &schema.Policy{
 				BitMask: 3,
 			},
@@ -86,8 +90,8 @@ func init() {
 
 		{
 			Href:          TestResourceSwitchesHref,
-			ResourceTypes: []string{ocf.OC_RT_COL},
-			Interfaces:    []string{ocf.OC_IF_LL, ocf.OC_IF_CREATE, ocf.OC_IF_B, ocf.OC_IF_BASELINE},
+			ResourceTypes: []string{collection.ResourceType},
+			Interfaces:    []string{interfaces.OC_IF_LL, interfaces.OC_IF_CREATE, interfaces.OC_IF_B, interfaces.OC_IF_BASELINE},
 			Policy: &schema.Policy{
 				BitMask: 3,
 			},
@@ -98,8 +102,8 @@ func init() {
 func DefaultSwitchResourceLink(id string) schema.ResourceLink {
 	return schema.ResourceLink{
 		Href:          TestResourceSwitchesInstanceHref(id),
-		ResourceTypes: []string{ocf.OC_RT_RESOURCE_SWITCH},
-		Interfaces:    []string{ocf.OC_IF_A, ocf.OC_IF_BASELINE},
+		ResourceTypes: []string{types.BINARY_SWITCH},
+		Interfaces:    []string{interfaces.OC_IF_A, interfaces.OC_IF_BASELINE},
 		Policy: &schema.Policy{
 			BitMask: schema.BitMask(schema.Discoverable | schema.Observable),
 		},
@@ -197,7 +201,7 @@ func setAccessForCloud(ctx context.Context, t *testing.T, c *deviceClient.Client
 		_ = p.Close(ctx)
 	}()
 
-	link, err := core.GetResourceLink(links, "/oic/sec/acl2")
+	link, err := core.GetResourceLink(links, acl.ResourceURI)
 	require.NoError(t, err)
 
 	setAcl := acl.UpdateRequest{
@@ -491,7 +495,7 @@ func (h *findDeviceIDByNameHandler) Handle(ctx context.Context, dev *core.Device
 		err := dev.Close(ctx)
 		h.Error(err)
 	}()
-	l, ok := deviceLinks.GetResourceLink("/oic/d")
+	l, ok := deviceLinks.GetResourceLink(device.ResourceURI)
 	if !ok {
 		return
 	}

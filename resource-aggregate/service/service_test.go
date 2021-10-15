@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/plgd-dev/device/schema/platform"
 	pbIS "github.com/plgd-dev/hub/identity-store/pb"
 	idService "github.com/plgd-dev/hub/identity-store/test"
 	"github.com/plgd-dev/hub/pkg/log"
@@ -47,7 +48,7 @@ func TestPublishUnpublish(t *testing.T) {
 	raClient := service.NewResourceAggregateClient(raConn.GRPC())
 
 	deviceId := "dev0"
-	href := "/oic/p"
+	href := platform.ResourceURI
 	_, err = idClient.AddDevice(ctx, &pbIS.AddDeviceRequest{
 		DeviceId: deviceId,
 	})

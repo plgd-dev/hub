@@ -93,7 +93,7 @@ func check(t *testing.T, ev *pb.Event, expectedEvent *pb.Event) {
 func checkAndValidateUpdate(ctx context.Context, t *testing.T, rac raservice.ResourceAggregateClient, s *subscription.Sub, recvChan <-chan *pb.Event, correlationID string, deviceID string, value uint64) {
 	updCorrelationID := "updCorrelationID"
 	_, err := rac.UpdateResource(ctx, &commands.UpdateResourceRequest{
-		ResourceId: commands.NewResourceID(deviceID, test.TestResourceLightHref),
+		ResourceId: commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
 		Content: &commands.Content{
 			ContentType: message.AppOcfCbor.String(),
 			Data: func() []byte {
@@ -116,7 +116,7 @@ func checkAndValidateUpdate(ctx context.Context, t *testing.T, rac raservice.Res
 		SubscriptionId: s.Id(),
 		Type: &pb.Event_ResourceUpdatePending{
 			ResourceUpdatePending: &events.ResourceUpdatePending{
-				ResourceId: commands.NewResourceID(deviceID, test.TestResourceLightHref),
+				ResourceId: commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
 				Content: &commands.Content{
 					ContentType: message.AppOcfCbor.String(),
 					Data: func() []byte {
@@ -140,7 +140,7 @@ func checkAndValidateUpdate(ctx context.Context, t *testing.T, rac raservice.Res
 				SubscriptionId: s.Id(),
 				Type: &pb.Event_ResourceUpdated{
 					ResourceUpdated: &events.ResourceUpdated{
-						ResourceId: commands.NewResourceID(deviceID, test.TestResourceLightHref),
+						ResourceId: commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
 						Content: &commands.Content{
 							CoapContentFormat: -1,
 						},
@@ -171,7 +171,7 @@ func checkAndValidateUpdate(ctx context.Context, t *testing.T, rac raservice.Res
 func checkAndValidateRetrieve(ctx context.Context, t *testing.T, rac raservice.ResourceAggregateClient, s *subscription.Sub, recvChan <-chan *pb.Event, correlationID string, deviceID string) {
 	retrieveCorrelationID := "retrieveCorrelationID"
 	_, err := rac.RetrieveResource(ctx, &commands.RetrieveResourceRequest{
-		ResourceId:    commands.NewResourceID(deviceID, test.TestResourceLightHref),
+		ResourceId:    commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
 		CorrelationId: retrieveCorrelationID,
 		CommandMetadata: &commands.CommandMetadata{
 			ConnectionId: "test",
@@ -183,7 +183,7 @@ func checkAndValidateRetrieve(ctx context.Context, t *testing.T, rac raservice.R
 		SubscriptionId: s.Id(),
 		Type: &pb.Event_ResourceRetrievePending{
 			ResourceRetrievePending: &events.ResourceRetrievePending{
-				ResourceId: commands.NewResourceID(deviceID, test.TestResourceLightHref),
+				ResourceId: commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
 			},
 		},
 		CorrelationId: correlationID,
@@ -192,7 +192,7 @@ func checkAndValidateRetrieve(ctx context.Context, t *testing.T, rac raservice.R
 		SubscriptionId: s.Id(),
 		Type: &pb.Event_ResourceRetrieved{
 			ResourceRetrieved: &events.ResourceRetrieved{
-				ResourceId: commands.NewResourceID(deviceID, test.TestResourceLightHref),
+				ResourceId: commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
 				Content: &commands.Content{
 					CoapContentFormat: int32(message.AppOcfCbor),
 					ContentType:       message.AppOcfCbor.String(),

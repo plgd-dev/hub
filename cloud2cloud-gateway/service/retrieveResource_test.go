@@ -6,11 +6,12 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/plgd-dev/device/schema/interfaces"
+	"github.com/plgd-dev/device/test/resource/types"
 	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/hub/cloud2cloud-gateway/uri"
 	"github.com/plgd-dev/hub/grpc-gateway/pb"
 	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
-	"github.com/plgd-dev/hub/pkg/ocf"
 	"github.com/plgd-dev/hub/test"
 	testCfg "github.com/plgd-dev/hub/test/config"
 	testHttp "github.com/plgd-dev/hub/test/http"
@@ -35,35 +36,35 @@ func TestRequestHandler_RetrieveResource(t *testing.T) {
 		want            interface{}
 	}{
 		{
-			name: "JSON: " + uri.Devices + "/" + deviceID + "/light/1",
+			name: "JSON: " + uri.Devices + "/" + deviceID + test.TestResourceLightInstanceHref("1"),
 			args: args{
-				uri:    "https://" + testCfg.C2C_GW_HOST + uri.Devices + "/" + deviceID + "/light/1",
+				uri:    "https://" + testCfg.C2C_GW_HOST + uri.Devices + "/" + deviceID + test.TestResourceLightInstanceHref("1"),
 				accept: message.AppJSON.String(),
 			},
 			wantCode:        http.StatusOK,
 			wantContentType: message.AppJSON.String(),
 			want: map[interface{}]interface{}{
-				"if":    []interface{}{ocf.OC_IF_RW, ocf.OC_IF_BASELINE},
+				"if":    []interface{}{interfaces.OC_IF_RW, interfaces.OC_IF_BASELINE},
 				"name":  "Light",
 				"power": uint64(0),
 				"state": false,
-				"rt":    []interface{}{"core.light"},
+				"rt":    []interface{}{types.CORE_LIGHT},
 			},
 		},
 		{
-			name: "CBOR: " + uri.Devices + "/" + deviceID + "/light/1",
+			name: "CBOR: " + uri.Devices + "/" + deviceID + test.TestResourceLightInstanceHref("1"),
 			args: args{
-				uri:    "https://" + testCfg.C2C_GW_HOST + uri.Devices + "/" + deviceID + "/light/1",
+				uri:    "https://" + testCfg.C2C_GW_HOST + uri.Devices + "/" + deviceID + test.TestResourceLightInstanceHref("1"),
 				accept: message.AppOcfCbor.String(),
 			},
 			wantCode:        http.StatusOK,
 			wantContentType: message.AppOcfCbor.String(),
 			want: map[interface{}]interface{}{
-				"if":    []interface{}{ocf.OC_IF_RW, ocf.OC_IF_BASELINE},
+				"if":    []interface{}{interfaces.OC_IF_RW, interfaces.OC_IF_BASELINE},
 				"name":  "Light",
 				"power": uint64(0),
 				"state": false,
-				"rt":    []interface{}{"core.light"},
+				"rt":    []interface{}{types.CORE_LIGHT},
 			},
 		},
 		{
@@ -79,7 +80,7 @@ func TestRequestHandler_RetrieveResource(t *testing.T) {
 		{
 			name: "invalidAccept",
 			args: args{
-				uri:    "https://" + testCfg.C2C_GW_HOST + uri.Devices + "/" + deviceID + "/light/1",
+				uri:    "https://" + testCfg.C2C_GW_HOST + uri.Devices + "/" + deviceID + test.TestResourceLightInstanceHref("1"),
 				accept: "application/invalid",
 			},
 			wantCode:        http.StatusBadRequest,

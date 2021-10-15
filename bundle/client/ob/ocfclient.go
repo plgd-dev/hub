@@ -110,7 +110,7 @@ func (c *OcfClient) SetAccessForCloud(ctx context.Context, deviceID string) erro
 		_ = p.Close(ctx)
 	}()
 
-	link, err := core.GetResourceLink(links, "/oic/sec/acl2")
+	link, err := core.GetResourceLink(links, acl.ResourceURI)
 	if err != nil {
 		return err
 	}

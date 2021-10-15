@@ -6,10 +6,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/plgd-dev/device/schema/device"
+	"github.com/plgd-dev/device/schema/interfaces"
 	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/hub/grpc-gateway/pb"
 	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
-	"github.com/plgd-dev/hub/pkg/ocf"
 	"github.com/plgd-dev/hub/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/resource-aggregate/events"
 	"github.com/plgd-dev/hub/test"
@@ -58,7 +59,7 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 			name: "invalid timeToLive",
 			args: args{
 				req: &pb.UpdateResourceRequest{
-					ResourceId: commands.NewResourceID(deviceID, test.TestResourceLightHref),
+					ResourceId: commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
 					TimeToLive: int64(99 * time.Millisecond),
 					Content: &pb.Content{
 						ContentType: message.AppOcfCbor.String(),
@@ -74,7 +75,7 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 			name: "invalid update RO-resource",
 			args: args{
 				req: &pb.UpdateResourceRequest{
-					ResourceId: commands.NewResourceID(deviceID, test.OCFResourceDeviceHref),
+					ResourceId: commands.NewResourceID(deviceID, device.ResourceURI),
 					Content: &pb.Content{
 						ContentType: message.AppOcfCbor.String(),
 						Data: test.EncodeToCbor(t, map[string]interface{}{
@@ -104,7 +105,7 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 			name: "valid",
 			args: args{
 				req: &pb.UpdateResourceRequest{
-					ResourceId: commands.NewResourceID(deviceID, test.TestResourceLightHref),
+					ResourceId: commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
 					Content: &pb.Content{
 						ContentType: message.AppOcfCbor.String(),
 						Data: test.EncodeToCbor(t, map[string]interface{}{
@@ -113,14 +114,14 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 					},
 				},
 			},
-			want: resourceUpdated(deviceID, test.TestResourceLightHref),
+			want: resourceUpdated(deviceID, test.TestResourceLightInstanceHref("1")),
 		},
 		{
 			name: "valid with interface",
 			args: args{
 				req: &pb.UpdateResourceRequest{
-					ResourceInterface: ocf.OC_IF_BASELINE,
-					ResourceId:        commands.NewResourceID(deviceID, test.TestResourceLightHref),
+					ResourceInterface: interfaces.OC_IF_BASELINE,
+					ResourceId:        commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
 					Content: &pb.Content{
 						ContentType: message.AppOcfCbor.String(),
 						Data: test.EncodeToCbor(t, map[string]interface{}{
@@ -129,14 +130,14 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 					},
 				},
 			},
-			want: resourceUpdated(deviceID, test.TestResourceLightHref),
+			want: resourceUpdated(deviceID, test.TestResourceLightInstanceHref("1")),
 		},
 		{
 			name: "revert update",
 			args: args{
 				req: &pb.UpdateResourceRequest{
-					ResourceInterface: ocf.OC_IF_BASELINE,
-					ResourceId:        commands.NewResourceID(deviceID, test.TestResourceLightHref),
+					ResourceInterface: interfaces.OC_IF_BASELINE,
+					ResourceId:        commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
 					Content: &pb.Content{
 						ContentType: message.AppOcfCbor.String(),
 						Data: test.EncodeToCbor(t, map[string]interface{}{
@@ -145,7 +146,7 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 					},
 				},
 			},
-			want: resourceUpdated(deviceID, test.TestResourceLightHref),
+			want: resourceUpdated(deviceID, test.TestResourceLightInstanceHref("1")),
 		},
 		{
 			name: "update /switches/1",

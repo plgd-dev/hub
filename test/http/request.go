@@ -19,6 +19,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const HTTPS_SCHEME = "https://"
+
 type HTTPRequestBuilder struct {
 	method      string
 	body        io.Reader

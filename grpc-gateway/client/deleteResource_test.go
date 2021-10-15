@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/plgd-dev/device/schema/device"
 	"github.com/plgd-dev/hub/grpc-gateway/client"
 	extCodes "github.com/plgd-dev/hub/grpc-gateway/pb/codes"
 	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
@@ -53,7 +54,7 @@ func TestClient_DeleteResource(t *testing.T) {
 			args: args{
 				token:    oauthTest.GetDefaultServiceToken(t),
 				deviceID: deviceID,
-				href:     "/oic/d",
+				href:     device.ResourceURI,
 			},
 			wantErr:     true,
 			wantErrCode: codes.PermissionDenied,

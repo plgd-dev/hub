@@ -9,12 +9,12 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
+	"github.com/plgd-dev/device/schema/interfaces"
 	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/mux"
 	"github.com/plgd-dev/go-coap/v2/tcp"
 	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
-	"github.com/plgd-dev/hub/pkg/ocf"
 	"github.com/plgd-dev/hub/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/resource-aggregate/events"
 )
@@ -326,7 +326,7 @@ func NewCoapResourceCreateRequest(ctx context.Context, event *events.ResourceCre
 	if err != nil {
 		return nil, err
 	}
-	req.AddOptionString(message.URIQuery, "if="+ocf.OC_IF_CREATE)
+	req.AddOptionString(message.URIQuery, "if="+interfaces.OC_IF_CREATE)
 
 	return req, nil
 }

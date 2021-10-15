@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/plgd-dev/device/schema/device"
 	"github.com/plgd-dev/hub/grpc-gateway/pb"
 	exCodes "github.com/plgd-dev/hub/grpc-gateway/pb/codes"
 	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
@@ -37,7 +38,7 @@ func TestRequestHandlerDeleteResource(t *testing.T) {
 		{
 			name: "/light/1 - MethodNotAllowed",
 			args: args{
-				href: test.TestResourceLightHref,
+				href: test.TestResourceLightInstanceHref("1"),
 			},
 			wantErr:     true,
 			wantErrCode: codes.Code(exCodes.MethodNotAllowed),
@@ -53,7 +54,7 @@ func TestRequestHandlerDeleteResource(t *testing.T) {
 		{
 			name: "/oic/d - PermissionDenied",
 			args: args{
-				href: test.OCFResourceDeviceHref,
+				href: device.ResourceURI,
 			},
 			wantErr:     true,
 			wantErrCode: codes.PermissionDenied,
@@ -61,7 +62,7 @@ func TestRequestHandlerDeleteResource(t *testing.T) {
 		{
 			name: "invalid timeToLive",
 			args: args{
-				href: test.TestResourceLightHref,
+				href: test.TestResourceLightInstanceHref("1"),
 				ttl:  int64(99 * time.Millisecond),
 			},
 			wantErr:     true,

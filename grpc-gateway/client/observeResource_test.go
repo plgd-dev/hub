@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/plgd-dev/device/schema/configuration"
 	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
 	"github.com/plgd-dev/hub/test"
 	testCfg "github.com/plgd-dev/hub/test/config"
@@ -32,7 +33,7 @@ func TestObservingResource(t *testing.T) {
 	defer shutdownDevSim()
 
 	h := makeTestObservationHandler()
-	id, err := c.ObserveResource(ctx, deviceID, "/oc/con", h)
+	id, err := c.ObserveResource(ctx, deviceID, configuration.ResourceURI, h)
 	require.NoError(t, err)
 	defer func() {
 		err := c.StopObservingResource(ctx, id)
@@ -40,7 +41,7 @@ func TestObservingResource(t *testing.T) {
 	}()
 
 	name := "observe simulator"
-	err = c.UpdateResource(ctx, deviceID, "/oc/con", map[string]interface{}{"n": name}, nil)
+	err = c.UpdateResource(ctx, deviceID, configuration.ResourceURI, map[string]interface{}{"n": name}, nil)
 	require.NoError(t, err)
 
 	var d OcCon
@@ -53,7 +54,7 @@ func TestObservingResource(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, name, d.Name)
 
-	err = c.UpdateResource(ctx, deviceID, "/oc/con", map[string]interface{}{"n": test.TestDeviceName}, nil)
+	err = c.UpdateResource(ctx, deviceID, configuration.ResourceURI, map[string]interface{}{"n": test.TestDeviceName}, nil)
 	assert.NoError(t, err)
 }
 

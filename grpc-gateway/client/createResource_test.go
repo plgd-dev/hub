@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/plgd-dev/device/schema/device"
 	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
 	"github.com/plgd-dev/hub/test"
 	testCfg "github.com/plgd-dev/hub/test/config"
@@ -41,7 +42,7 @@ func TestClient_CreateResource(t *testing.T) {
 			args: args{
 				token:    oauthTest.GetDefaultServiceToken(t),
 				deviceID: deviceID,
-				href:     "/oic/d",
+				href:     device.ResourceURI,
 				data: map[string]interface{}{
 					"n": "devsim - valid update value",
 				},

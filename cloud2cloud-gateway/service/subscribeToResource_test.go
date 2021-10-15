@@ -13,13 +13,14 @@ import (
 	"time"
 
 	router "github.com/gorilla/mux"
+	"github.com/plgd-dev/device/schema/interfaces"
+	"github.com/plgd-dev/device/test/resource/types"
 	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/hub/cloud2cloud-connector/events"
 	c2cTest "github.com/plgd-dev/hub/cloud2cloud-gateway/test"
 	"github.com/plgd-dev/hub/cloud2cloud-gateway/uri"
 	"github.com/plgd-dev/hub/grpc-gateway/pb"
 	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
-	"github.com/plgd-dev/hub/pkg/ocf"
 	"github.com/plgd-dev/hub/test"
 	testCfg "github.com/plgd-dev/hub/test/config"
 	testHttp "github.com/plgd-dev/hub/test/http"
@@ -39,10 +40,10 @@ func TestRequestHandler_SubscribeToResource(t *testing.T) {
 	wantContent := true
 	wantEventType := events.EventType_ResourceChanged
 	wantEventContent := map[interface{}]interface{}{
-		"if":    []interface{}{ocf.OC_IF_RW, ocf.OC_IF_BASELINE},
+		"if":    []interface{}{interfaces.OC_IF_RW, interfaces.OC_IF_BASELINE},
 		"name":  "Light",
 		"power": uint64(0),
-		"rt":    []interface{}{"core.light"},
+		"rt":    []interface{}{types.CORE_LIGHT},
 		"state": false,
 	}
 	eventType := events.EventType_ResourceChanged
