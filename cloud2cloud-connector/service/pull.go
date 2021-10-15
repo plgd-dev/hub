@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/plgd-dev/device/schema"
+	"github.com/plgd-dev/device/schema/device"
 	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/hub/cloud2cloud-connector/store"
 	pbIS "github.com/plgd-dev/hub/identity-store/pb"
@@ -24,7 +25,7 @@ import (
 )
 
 type Device struct {
-	Device schema.Device `json:"device"`
+	Device device.Device `json:"device"`
 	Status string        `json:"status"`
 }
 

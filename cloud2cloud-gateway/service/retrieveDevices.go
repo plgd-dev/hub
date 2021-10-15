@@ -8,9 +8,9 @@ import (
 	"strings"
 
 	"github.com/gorilla/mux"
+	"github.com/plgd-dev/device/schema/device"
 	pbGRPC "github.com/plgd-dev/hub/grpc-gateway/pb"
 	kitNetHttp "github.com/plgd-dev/hub/pkg/net/http"
-	"github.com/plgd-dev/device/schema"
 	"github.com/plgd-dev/kit/v2/log"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -31,7 +31,7 @@ func toStatus(isOnline bool) Status {
 type responseWriterEncoderFunc func(w http.ResponseWriter, v interface{}, status int) error
 
 type Device struct {
-	Device schema.Device `json:"device"`
+	Device device.Device `json:"device"`
 	Status Status        `json:"status"`
 }
 
