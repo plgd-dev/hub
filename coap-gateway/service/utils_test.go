@@ -362,7 +362,7 @@ func setUp(t *testing.T, coapgwCfgs ...service.Config) func() {
 
 var (
 	AuthorizationUserId       = "1"
-	AuthorizationRefreshToken = "123"
+	AuthorizationRefreshToken = "refresh-token"
 
 	CertIdentity      = "b5a2a42e-b285-42f1-a36b-034c8fc8efd5"
 	TestAResourceHref = "/a"
