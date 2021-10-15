@@ -36,10 +36,32 @@ import { messages as t } from './pending-commands-i18n'
 
 import './pending-commands.scss'
 
+const DateTooltip = ({ value }) => {
+  const { formatDate, formatTime } = useIntl()
+  const date = new Date(time(value).from('ns').to('ms').value)
+  const visibleDate = `${formatDate(date, dateFormat)} ${formatTime(
+    date,
+    timeFormat
+  )}`
+  const tooltipDate = `${formatDate(date, dateFormat)} ${formatTime(
+    date,
+    timeFormatLong
+  )}`
+
+  return (
+    <OverlayTrigger
+      placement="top"
+      overlay={<Tooltip className="plgd-tooltip">{tooltipDate}</Tooltip>}
+    >
+      <span className="no-wrap-text tooltiped-text">{visibleDate}</span>
+    </OverlayTrigger>
+  )
+}
+
 // This component contains also all the modals and websocket connections, used for
 // interacting with pending commands because it is reused on three different places.
 export const PendingCommandsList = ({ onLoading, embedded, deviceId }) => {
-  const { formatMessage: _, formatDate, formatTime } = useIntl()
+  const { formatMessage: _ } = useIntl()
   const [currentTime, setCurrentTime] = useState(Date.now())
 
   const { data, loading, error } = usePendingCommandsList(deviceId)
@@ -153,30 +175,7 @@ export const PendingCommandsList = ({ onLoading, embedded, deviceId }) => {
           Header: _(t.created),
           accessor: 'eventMetadata.timestamp',
           disableSortBy: true,
-          Cell: ({ value }) => {
-            const date = new Date(time(value).from('ns').to('ms').value)
-            const visibleDate = `${formatDate(date, dateFormat)} ${formatTime(
-              date,
-              timeFormat
-            )}`
-            const tooltipDate = `${formatDate(date, dateFormat)} ${formatTime(
-              date,
-              timeFormatLong
-            )}`
-
-            return (
-              <OverlayTrigger
-                placement="top"
-                overlay={
-                  <Tooltip className="plgd-tooltip">{tooltipDate}</Tooltip>
-                }
-              >
-                <span className="no-wrap-text tooltiped-text">
-                  {visibleDate}
-                </span>
-              </OverlayTrigger>
-            )
-          },
+          Cell: ({ value }) => <DateTooltip value={value} />,
         },
         {
           Header: _(t.type),
@@ -190,7 +189,8 @@ export const PendingCommandsList = ({ onLoading, embedded, deviceId }) => {
                 content,
               },
             } = row
-            const rowDeviceId = row?.original?.resourceId?.deviceId || row?.original?.deviceId
+            const rowDeviceId =
+              row?.original?.resourceId?.deviceId || row?.original?.deviceId
 
             if (!content && !href) {
               return <span className="no-wrap-text">{_(t[value])}</span>
@@ -255,28 +255,7 @@ export const PendingCommandsList = ({ onLoading, embedded, deviceId }) => {
           Cell: ({ value }) => {
             if (value === '0') return _(t.forever)
 
-            const date = new Date(time(value).from('ns').to('ms').value)
-            const visibleDate = `${formatDate(date, dateFormat)} ${formatTime(
-              date,
-              timeFormat
-            )}`
-            const tooltipDate = `${formatDate(date, dateFormat)} ${formatTime(
-              date,
-              timeFormatLong
-            )}`
-
-            return (
-              <OverlayTrigger
-                placement="top"
-                overlay={
-                  <Tooltip className="plgd-tooltip">{tooltipDate}</Tooltip>
-                }
-              >
-                <span className="no-wrap-text tooltiped-text">
-                  {visibleDate}
-                </span>
-              </OverlayTrigger>
-            )
+            return <DateTooltip value={value} />
           },
         },
         {
@@ -293,7 +272,8 @@ export const PendingCommandsList = ({ onLoading, embedded, deviceId }) => {
               },
             } = row
 
-            const rowDeviceId = row?.original?.resourceId?.deviceId || row?.original?.deviceId
+            const rowDeviceId =
+              row?.original?.resourceId?.deviceId || row?.original?.deviceId
 
             if (status || hasCommandExpired(validUntil, currentTime)) {
               return <div className="no-action" />
