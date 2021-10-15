@@ -150,6 +150,35 @@ export const PendingCommandsList = ({ onLoading, embedded, deviceId }) => {
     () => {
       const cols = [
         {
+          Header: _(t.created),
+          accessor: 'eventMetadata.timestamp',
+          disableSortBy: true,
+          Cell: ({ value }) => {
+            const date = new Date(time(value).from('ns').to('ms').value)
+            const visibleDate = `${formatDate(date, dateFormat)} ${formatTime(
+              date,
+              timeFormat
+            )}`
+            const tooltipDate = `${formatDate(date, dateFormat)} ${formatTime(
+              date,
+              timeFormatLong
+            )}`
+
+            return (
+              <OverlayTrigger
+                placement="top"
+                overlay={
+                  <Tooltip className="plgd-tooltip">{tooltipDate}</Tooltip>
+                }
+              >
+                <span className="no-wrap-text tooltiped-text">
+                  {visibleDate}
+                </span>
+              </OverlayTrigger>
+            )
+          },
+        },
+        {
           Header: _(t.type),
           accessor: 'commandType',
           disableSortBy: true,
@@ -290,7 +319,7 @@ export const PendingCommandsList = ({ onLoading, embedded, deviceId }) => {
 
       // Only show device id column when not on the device details
       if (!deviceId) {
-        cols.splice(1, 0, {
+        cols.splice(2, 0, {
           Header: _(t.deviceId),
           accessor: 'resourceId.deviceId',
           disableSortBy: true,
@@ -316,8 +345,8 @@ export const PendingCommandsList = ({ onLoading, embedded, deviceId }) => {
         data={data || []}
         defaultSortBy={[
           {
-            id: 'validUntil',
-            desc: false,
+            id: 'eventMetadata.timestamp',
+            desc: true,
           },
         ]}
         autoFillEmptyRows

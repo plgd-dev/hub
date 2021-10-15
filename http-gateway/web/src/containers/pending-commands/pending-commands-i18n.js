@@ -45,6 +45,10 @@ export const messages = defineMessages({
     id: 'pendingCommands.validUntil',
     defaultMessage: 'Valid until',
   },
+  created: {
+    id: 'pendingCommands.created',
+    defaultMessage: 'Created',
+  },
   details: {
     id: 'pendingCommands.details',
     defaultMessage: 'Details',
