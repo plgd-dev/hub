@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import PropTypes from 'prop-types'
 import { useIntl } from 'react-intl'
-import { time } from 'units-converter'
 import OverlayTrigger from 'react-bootstrap/OverlayTrigger'
 import Tooltip from 'react-bootstrap/Tooltip'
 import { toast } from 'react-toastify'
@@ -14,15 +13,13 @@ import { getApiErrorMessage } from '@/common/utils'
 import { WebSocketEventClient, eventFilters } from '@/common/services'
 
 import { PendingCommandDetailsModal } from './_pending-command-details-modal'
+import { DateTooltip } from './_date-tooltip'
 import {
   PENDING_COMMANDS_DEFAULT_PAGE_SIZE,
   EMBEDDED_PENDING_COMMANDS_DEFAULT_PAGE_SIZE,
   PENDING_COMMANDS_LIST_REFRESH_INTERVAL_MS,
   NEW_PENDING_COMMAND_WS_KEY,
   UPDATE_PENDING_COMMANDS_WS_KEY,
-  dateFormat,
-  timeFormat,
-  timeFormatLong,
 } from './constants'
 import {
   getPendingCommandStatusColorAndLabel,
@@ -35,28 +32,6 @@ import { cancelPendingCommandApi } from './rest'
 import { messages as t } from './pending-commands-i18n'
 
 import './pending-commands.scss'
-
-const DateTooltip = ({ value }) => {
-  const { formatDate, formatTime } = useIntl()
-  const date = new Date(time(value).from('ns').to('ms').value)
-  const visibleDate = `${formatDate(date, dateFormat)} ${formatTime(
-    date,
-    timeFormat
-  )}`
-  const tooltipDate = `${formatDate(date, dateFormat)} ${formatTime(
-    date,
-    timeFormatLong
-  )}`
-
-  return (
-    <OverlayTrigger
-      placement="top"
-      overlay={<Tooltip className="plgd-tooltip">{tooltipDate}</Tooltip>}
-    >
-      <span className="no-wrap-text tooltiped-text">{visibleDate}</span>
-    </OverlayTrigger>
-  )
-}
 
 // This component contains also all the modals and websocket connections, used for
 // interacting with pending commands because it is reused on three different places.
