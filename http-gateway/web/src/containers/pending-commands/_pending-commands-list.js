@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import PropTypes from 'prop-types'
 import { useIntl } from 'react-intl'
-import { time } from 'units-converter'
 import OverlayTrigger from 'react-bootstrap/OverlayTrigger'
 import Tooltip from 'react-bootstrap/Tooltip'
 import { toast } from 'react-toastify'
@@ -14,15 +13,13 @@ import { getApiErrorMessage } from '@/common/utils'
 import { WebSocketEventClient, eventFilters } from '@/common/services'
 
 import { PendingCommandDetailsModal } from './_pending-command-details-modal'
+import { DateTooltip } from './_date-tooltip'
 import {
   PENDING_COMMANDS_DEFAULT_PAGE_SIZE,
   EMBEDDED_PENDING_COMMANDS_DEFAULT_PAGE_SIZE,
   PENDING_COMMANDS_LIST_REFRESH_INTERVAL_MS,
   NEW_PENDING_COMMAND_WS_KEY,
   UPDATE_PENDING_COMMANDS_WS_KEY,
-  dateFormat,
-  timeFormat,
-  timeFormatLong,
 } from './constants'
 import {
   getPendingCommandStatusColorAndLabel,
@@ -39,7 +36,7 @@ import './pending-commands.scss'
 // This component contains also all the modals and websocket connections, used for
 // interacting with pending commands because it is reused on three different places.
 export const PendingCommandsList = ({ onLoading, embedded, deviceId }) => {
-  const { formatMessage: _, formatDate, formatTime } = useIntl()
+  const { formatMessage: _ } = useIntl()
   const [currentTime, setCurrentTime] = useState(Date.now())
 
   const { data, loading, error } = usePendingCommandsList(deviceId)
@@ -150,6 +147,12 @@ export const PendingCommandsList = ({ onLoading, embedded, deviceId }) => {
     () => {
       const cols = [
         {
+          Header: _(t.created),
+          accessor: 'eventMetadata.timestamp',
+          disableSortBy: true,
+          Cell: ({ value }) => <DateTooltip value={value} />,
+        },
+        {
           Header: _(t.type),
           accessor: 'commandType',
           disableSortBy: true,
@@ -161,7 +164,8 @@ export const PendingCommandsList = ({ onLoading, embedded, deviceId }) => {
                 content,
               },
             } = row
-            const rowDeviceId = row?.original?.resourceId?.deviceId || row?.original?.deviceId
+            const rowDeviceId =
+              row?.original?.resourceId?.deviceId || row?.original?.deviceId
 
             if (!content && !href) {
               return <span className="no-wrap-text">{_(t[value])}</span>
@@ -226,28 +230,7 @@ export const PendingCommandsList = ({ onLoading, embedded, deviceId }) => {
           Cell: ({ value }) => {
             if (value === '0') return _(t.forever)
 
-            const date = new Date(time(value).from('ns').to('ms').value)
-            const visibleDate = `${formatDate(date, dateFormat)} ${formatTime(
-              date,
-              timeFormat
-            )}`
-            const tooltipDate = `${formatDate(date, dateFormat)} ${formatTime(
-              date,
-              timeFormatLong
-            )}`
-
-            return (
-              <OverlayTrigger
-                placement="top"
-                overlay={
-                  <Tooltip className="plgd-tooltip">{tooltipDate}</Tooltip>
-                }
-              >
-                <span className="no-wrap-text tooltiped-text">
-                  {visibleDate}
-                </span>
-              </OverlayTrigger>
-            )
+            return <DateTooltip value={value} />
           },
         },
         {
@@ -264,7 +247,8 @@ export const PendingCommandsList = ({ onLoading, embedded, deviceId }) => {
               },
             } = row
 
-            const rowDeviceId = row?.original?.resourceId?.deviceId || row?.original?.deviceId
+            const rowDeviceId =
+              row?.original?.resourceId?.deviceId || row?.original?.deviceId
 
             if (status || hasCommandExpired(validUntil, currentTime)) {
               return <div className="no-action" />
@@ -290,7 +274,7 @@ export const PendingCommandsList = ({ onLoading, embedded, deviceId }) => {
 
       // Only show device id column when not on the device details
       if (!deviceId) {
-        cols.splice(1, 0, {
+        cols.splice(2, 0, {
           Header: _(t.deviceId),
           accessor: 'resourceId.deviceId',
           disableSortBy: true,
@@ -316,8 +300,8 @@ export const PendingCommandsList = ({ onLoading, embedded, deviceId }) => {
         data={data || []}
         defaultSortBy={[
           {
-            id: 'validUntil',
-            desc: false,
+            id: 'eventMetadata.timestamp',
+            desc: true,
           },
         ]}
         autoFillEmptyRows
