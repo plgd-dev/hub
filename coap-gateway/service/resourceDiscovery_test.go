@@ -4,8 +4,9 @@ import (
 	"context"
 	"testing"
 
-	testCfg "github.com/plgd-dev/hub/test/config"
+	"github.com/plgd-dev/device/schema/resources"
 	"github.com/plgd-dev/go-coap/v2/tcp"
+	testCfg "github.com/plgd-dev/hub/test/config"
 	"github.com/plgd-dev/kit/v2/codec/cbor"
 
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
@@ -76,7 +77,7 @@ func Test_resourceDirectoryFind(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx, cancel := context.WithTimeout(context.Background(), TestExchangeTimeout)
 			defer cancel()
-			req, err := tcp.NewGetRequest(ctx, "/oic/res")
+			req, err := tcp.NewGetRequest(ctx, resources.ResourceURI)
 			require.NoError(t, err)
 			for _, q := range tt.args.queries {
 				req.AddQuery(q)

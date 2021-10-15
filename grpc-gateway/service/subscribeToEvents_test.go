@@ -9,6 +9,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/plgd-dev/device/schema/device"
+	"github.com/plgd-dev/device/schema/platform"
 	"github.com/plgd-dev/go-coap/v2/message"
 	caService "github.com/plgd-dev/hub/certificate-authority/test"
 	coapgwTest "github.com/plgd-dev/hub/coap-gateway/test"
@@ -353,7 +355,7 @@ func TestRequestHandlerSubscribeForPendingCommands(t *testing.T) {
 			args: args{
 				req: &pb.SubscribeToEvents_CreateSubscription{
 					ResourceIdFilter: []string{
-						commands.NewResourceID(deviceID, test.TestResourceLightHref).ToString(),
+						commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")).ToString(),
 					},
 					EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
 						pb.SubscribeToEvents_CreateSubscription_RESOURCE_CREATE_PENDING,
@@ -367,7 +369,7 @@ func TestRequestHandlerSubscribeForPendingCommands(t *testing.T) {
 			want: []*pb.PendingCommand{
 				{
 					Command: &pb.PendingCommand_ResourceUpdatePending{
-						ResourceUpdatePending: resourceUpdatePending(t, deviceID, test.TestResourceLightHref, map[string]interface{}{
+						ResourceUpdatePending: resourceUpdatePending(t, deviceID, test.TestResourceLightInstanceHref("1"), map[string]interface{}{
 							"power": 1,
 						}),
 					},
@@ -405,7 +407,7 @@ func TestRequestHandlerSubscribeForPendingCommands(t *testing.T) {
 						ResourceRetrievePending: &events.ResourceRetrievePending{
 							ResourceId: &commands.ResourceId{
 								DeviceId: deviceID,
-								Href:     test.OCFResourcePlatformHref,
+								Href:     platform.ResourceURI,
 							},
 							AuditContext: commands.NewAuditContext(service.DeviceUserID, ""),
 						},
@@ -413,7 +415,7 @@ func TestRequestHandlerSubscribeForPendingCommands(t *testing.T) {
 				},
 				{
 					Command: &pb.PendingCommand_ResourceCreatePending{
-						ResourceCreatePending: resourceCreatePending(t, deviceID, test.OCFResourceDeviceHref,
+						ResourceCreatePending: resourceCreatePending(t, deviceID, device.ResourceURI,
 							map[string]interface{}{
 								"power": 1,
 							}),
@@ -424,7 +426,7 @@ func TestRequestHandlerSubscribeForPendingCommands(t *testing.T) {
 						ResourceDeletePending: &events.ResourceDeletePending{
 							ResourceId: &commands.ResourceId{
 								DeviceId: deviceID,
-								Href:     test.OCFResourceDeviceHref,
+								Href:     device.ResourceURI,
 							},
 							AuditContext: commands.NewAuditContext(service.DeviceUserID, ""),
 						},
@@ -432,7 +434,7 @@ func TestRequestHandlerSubscribeForPendingCommands(t *testing.T) {
 				},
 				{
 					Command: &pb.PendingCommand_ResourceUpdatePending{
-						ResourceUpdatePending: resourceUpdatePending(t, deviceID, test.TestResourceLightHref, map[string]interface{}{
+						ResourceUpdatePending: resourceUpdatePending(t, deviceID, test.TestResourceLightInstanceHref("1"), map[string]interface{}{
 							"power": 1,
 						}),
 					},
@@ -454,7 +456,7 @@ func TestRequestHandlerSubscribeForPendingCommands(t *testing.T) {
 						ResourceRetrievePending: &events.ResourceRetrievePending{
 							ResourceId: &commands.ResourceId{
 								DeviceId: deviceID,
-								Href:     test.OCFResourcePlatformHref,
+								Href:     platform.ResourceURI,
 							},
 							AuditContext: commands.NewAuditContext(service.DeviceUserID, ""),
 						},
@@ -474,7 +476,7 @@ func TestRequestHandlerSubscribeForPendingCommands(t *testing.T) {
 			want: []*pb.PendingCommand{
 				{
 					Command: &pb.PendingCommand_ResourceCreatePending{
-						ResourceCreatePending: resourceCreatePending(t, deviceID, test.OCFResourceDeviceHref,
+						ResourceCreatePending: resourceCreatePending(t, deviceID, device.ResourceURI,
 							map[string]interface{}{
 								"power": 1,
 							}),
@@ -498,7 +500,7 @@ func TestRequestHandlerSubscribeForPendingCommands(t *testing.T) {
 						ResourceDeletePending: &events.ResourceDeletePending{
 							ResourceId: &commands.ResourceId{
 								DeviceId: deviceID,
-								Href:     test.OCFResourceDeviceHref,
+								Href:     device.ResourceURI,
 							},
 							AuditContext: commands.NewAuditContext(service.DeviceUserID, ""),
 						},
@@ -518,7 +520,7 @@ func TestRequestHandlerSubscribeForPendingCommands(t *testing.T) {
 			want: []*pb.PendingCommand{
 				{
 					Command: &pb.PendingCommand_ResourceUpdatePending{
-						ResourceUpdatePending: resourceUpdatePending(t, deviceID, test.TestResourceLightHref, map[string]interface{}{
+						ResourceUpdatePending: resourceUpdatePending(t, deviceID, test.TestResourceLightInstanceHref("1"), map[string]interface{}{
 							"power": 1,
 						}),
 					},
@@ -589,7 +591,7 @@ func TestRequestHandlerSubscribeForPendingCommands(t *testing.T) {
 		ctx, cancel := context.WithTimeout(ctx, time.Second)
 		defer cancel()
 		_, err := c.CreateResource(ctx, &pb.CreateResourceRequest{
-			ResourceId: commands.NewResourceID(deviceID, test.OCFResourceDeviceHref),
+			ResourceId: commands.NewResourceID(deviceID, device.ResourceURI),
 			Content: &pb.Content{
 				ContentType: message.AppOcfCbor.String(),
 				Data: test.EncodeToCbor(t, map[string]interface{}{
@@ -607,7 +609,7 @@ func TestRequestHandlerSubscribeForPendingCommands(t *testing.T) {
 		ctx, cancel := context.WithTimeout(ctx, time.Second)
 		defer cancel()
 		_, err := c.GetResourceFromDevice(ctx, &pb.GetResourceFromDeviceRequest{
-			ResourceId: commands.NewResourceID(deviceID, test.OCFResourcePlatformHref),
+			ResourceId: commands.NewResourceID(deviceID, platform.ResourceURI),
 			TimeToLive: int64(timeToLive),
 		})
 		require.Error(t, err)
@@ -619,7 +621,7 @@ func TestRequestHandlerSubscribeForPendingCommands(t *testing.T) {
 		ctx, cancel := context.WithTimeout(ctx, time.Second)
 		defer cancel()
 		_, err := c.UpdateResource(ctx, &pb.UpdateResourceRequest{
-			ResourceId: commands.NewResourceID(deviceID, test.TestResourceLightHref),
+			ResourceId: commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
 			Content: &pb.Content{
 				ContentType: message.AppOcfCbor.String(),
 				Data: test.EncodeToCbor(t, map[string]interface{}{
@@ -637,7 +639,7 @@ func TestRequestHandlerSubscribeForPendingCommands(t *testing.T) {
 		ctx, cancel := context.WithTimeout(ctx, time.Second)
 		defer cancel()
 		_, err := c.DeleteResource(ctx, &pb.DeleteResourceRequest{
-			ResourceId: commands.NewResourceID(deviceID, test.OCFResourceDeviceHref),
+			ResourceId: commands.NewResourceID(deviceID, device.ResourceURI),
 			TimeToLive: int64(timeToLive),
 		})
 		require.Error(t, err)

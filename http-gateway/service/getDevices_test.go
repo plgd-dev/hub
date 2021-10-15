@@ -15,6 +15,9 @@ import (
 	"google.golang.org/grpc/credentials"
 
 	"github.com/google/go-querystring/query"
+	"github.com/plgd-dev/device/schema/device"
+	"github.com/plgd-dev/device/schema/interfaces"
+	"github.com/plgd-dev/device/test/resource/types"
 	"github.com/plgd-dev/hub/grpc-gateway/pb"
 	httpgwTest "github.com/plgd-dev/hub/http-gateway/test"
 	"github.com/plgd-dev/hub/http-gateway/uri"
@@ -44,8 +47,8 @@ func TestRequestHandler_GetDevices(t *testing.T) {
 			},
 			want: []*pb.Device{
 				{
-					Types:      []string{"oic.d.cloudDevice", "oic.wk.d"},
-					Interfaces: []string{"oic.if.r", "oic.if.baseline"},
+					Types:      []string{types.DEVICE_CLOUD, device.ResourceType},
+					Interfaces: []string{interfaces.OC_IF_R, interfaces.OC_IF_BASELINE},
 					Id:         deviceID,
 					Name:       test.TestDeviceName,
 					Metadata: &pb.Device_Metadata{

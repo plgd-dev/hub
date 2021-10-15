@@ -67,7 +67,7 @@ type updateChecker struct {
 // update light resource and check received events
 func (u *updateChecker) checkUpdateLightResource(t *testing.T, ctx context.Context, power uint64) {
 	_, err := u.c.UpdateResource(ctx, &pb.UpdateResourceRequest{
-		ResourceId: commands.NewResourceID(u.deviceID, test.TestResourceLightHref),
+		ResourceId: commands.NewResourceID(u.deviceID, test.TestResourceLightInstanceHref("1")),
 		Content: &pb.Content{
 			ContentType: message.AppOcfCbor.String(),
 			Data: test.EncodeToCbor(t, map[interface{}]interface{}{
@@ -87,7 +87,7 @@ func (u *updateChecker) checkUpdateLightResource(t *testing.T, ctx context.Conte
 				SubscriptionId: u.subUpdatedID,
 				Type: &pb.Event_ResourceUpdatePending{
 					ResourceUpdatePending: &events.ResourceUpdatePending{
-						ResourceId: commands.NewResourceID(u.deviceID, test.TestResourceLightHref),
+						ResourceId: commands.NewResourceID(u.deviceID, test.TestResourceLightInstanceHref("1")),
 						Content: &commands.Content{
 							ContentType:       message.AppOcfCbor.String(),
 							CoapContentFormat: -1,
@@ -108,7 +108,7 @@ func (u *updateChecker) checkUpdateLightResource(t *testing.T, ctx context.Conte
 				SubscriptionId: u.subUpdatedID,
 				Type: &pb.Event_ResourceUpdated{
 					ResourceUpdated: &events.ResourceUpdated{
-						ResourceId:    commands.NewResourceID(u.deviceID, test.TestResourceLightHref),
+						ResourceId:    commands.NewResourceID(u.deviceID, test.TestResourceLightInstanceHref("1")),
 						Status:        commands.Status_OK,
 						Content:       ev.GetResourceUpdated().GetContent(),
 						AuditContext:  commands.NewAuditContext(ev.GetResourceUpdated().GetAuditContext().GetUserId(), updCorrelationID),
@@ -128,7 +128,7 @@ func (u *updateChecker) checkUpdateLightResource(t *testing.T, ctx context.Conte
 				SubscriptionId: u.baseSubId,
 				Type: &pb.Event_ResourceChanged{
 					ResourceChanged: &events.ResourceChanged{
-						ResourceId: commands.NewResourceID(u.deviceID, test.TestResourceLightHref),
+						ResourceId: commands.NewResourceID(u.deviceID, test.TestResourceLightInstanceHref("1")),
 						Content: &commands.Content{
 							CoapContentFormat: int32(message.AppOcfCbor),
 							ContentType:       message.AppOcfCbor.String(),
@@ -210,7 +210,7 @@ func TestRequestHandlerSubscribeToEvents(t *testing.T) {
 					pb.SubscribeToEvents_CreateSubscription_UNREGISTERED,
 					pb.SubscribeToEvents_CreateSubscription_RESOURCE_CHANGED,
 				},
-				ResourceIdFilter: []string{commands.NewResourceID(deviceID, test.TestResourceLightHref).ToString()},
+				ResourceIdFilter: []string{commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")).ToString()},
 			},
 		},
 	})
@@ -262,7 +262,7 @@ func TestRequestHandlerSubscribeToEvents(t *testing.T) {
 		SubscriptionId: baseSubId,
 		Type: &pb.Event_ResourceChanged{
 			ResourceChanged: &events.ResourceChanged{
-				ResourceId: commands.NewResourceID(deviceID, test.TestResourceLightHref),
+				ResourceId: commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
 				Content: &commands.Content{
 					CoapContentFormat: int32(message.AppOcfCbor),
 					ContentType:       message.AppOcfCbor.String(),
@@ -350,7 +350,7 @@ func TestRequestHandlerSubscribeToEvents(t *testing.T) {
 	subReceivedID := ev.SubscriptionId
 
 	_, err = c.GetResourceFromDevice(ctx, &pb.GetResourceFromDeviceRequest{
-		ResourceId: commands.NewResourceID(deviceID, test.TestResourceLightHref),
+		ResourceId: commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
 	})
 	require.NoError(t, err)
 	ev, err = recv()
@@ -359,7 +359,7 @@ func TestRequestHandlerSubscribeToEvents(t *testing.T) {
 		SubscriptionId: subReceivedID,
 		Type: &pb.Event_ResourceRetrievePending{
 			ResourceRetrievePending: &events.ResourceRetrievePending{
-				ResourceId:    commands.NewResourceID(deviceID, test.TestResourceLightHref),
+				ResourceId:    commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
 				AuditContext:  ev.GetResourceRetrievePending().GetAuditContext(),
 				EventMetadata: ev.GetResourceRetrievePending().GetEventMetadata(),
 			},
@@ -375,7 +375,7 @@ func TestRequestHandlerSubscribeToEvents(t *testing.T) {
 		SubscriptionId: subReceivedID,
 		Type: &pb.Event_ResourceRetrieved{
 			ResourceRetrieved: &events.ResourceRetrieved{
-				ResourceId: commands.NewResourceID(deviceID, test.TestResourceLightHref),
+				ResourceId: commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
 				Content: &commands.Content{
 					ContentType:       message.AppOcfCbor.String(),
 					CoapContentFormat: int32(message.AppOcfCbor),

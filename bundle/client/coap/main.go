@@ -13,11 +13,14 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/plgd-dev/device/schema/account"
+	"github.com/plgd-dev/device/schema/interfaces"
+	"github.com/plgd-dev/device/schema/resources"
+	"github.com/plgd-dev/device/schema/session"
 	"github.com/plgd-dev/go-coap/v2/message"
 	codes "github.com/plgd-dev/go-coap/v2/message/codes"
 	coap "github.com/plgd-dev/go-coap/v2/tcp"
 	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
-	"github.com/plgd-dev/hub/pkg/ocf"
 	"github.com/plgd-dev/kit/v2/codec/cbor"
 	"github.com/plgd-dev/kit/v2/codec/json"
 	"github.com/plgd-dev/kit/v2/net"
@@ -43,7 +46,7 @@ func signUp(co *coap.ClientConn, authreq authReq) authResp {
 		log.Fatalf("cannt encode signup req: %v", err)
 	}
 
-	resp, err := co.Post(context.Background(), "/oic/sec/account", message.AppCBOR, bytes.NewReader(bw.Bytes()))
+	resp, err := co.Post(context.Background(), account.ResourceURI, message.AppCBOR, bytes.NewReader(bw.Bytes()))
 	if err != nil {
 		log.Fatalf("error sending request to signup: %v", err)
 	}
@@ -69,7 +72,7 @@ func signIn(co *coap.ClientConn, authresp authResp) {
 		log.Fatalf("cannt encode signin req: %v", err)
 	}
 
-	resp, err := co.Post(context.Background(), "/oic/sec/session", message.AppCBOR, bytes.NewReader(bw.Bytes()))
+	resp, err := co.Post(context.Background(), session.ResourceURI, message.AppCBOR, bytes.NewReader(bw.Bytes()))
 	if err != nil {
 		log.Fatalf("error sending request to signin: %v", err)
 	}
@@ -130,7 +133,7 @@ func main() {
 	accesstoken := flag.String("signIn", "", "accesstoken")
 	di := flag.String("di", "testUtility", "device id")
 	uid := flag.String("uid", "", "user id")
-	href := flag.String("href", "/oic/res", "href")
+	href := flag.String("href", resources.ResourceURI, "href")
 	resIf := flag.String("if", "", "interface")
 	get := flag.Bool("get", true, "get resource(default)")
 	discoverRt := flag.String("rt", "", "resource type")
@@ -224,7 +227,7 @@ func main() {
 		if err != nil {
 			log.Fatalf("cannot create resource: %v", err)
 		}
-		req.SetOptionString(message.URIQuery, "if="+ocf.OC_IF_CREATE)
+		req.SetOptionString(message.URIQuery, "if="+interfaces.OC_IF_CREATE)
 		resp, err := co.Do(req)
 		if err != nil {
 			log.Fatalf("cannot update resource: %v", err)

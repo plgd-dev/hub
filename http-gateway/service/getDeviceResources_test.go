@@ -7,12 +7,17 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/plgd-dev/device/schema/collection"
+	"github.com/plgd-dev/device/schema/configuration"
+	"github.com/plgd-dev/device/schema/device"
+	"github.com/plgd-dev/device/schema/interfaces"
+	"github.com/plgd-dev/device/schema/platform"
+	"github.com/plgd-dev/device/test/resource/types"
 	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/hub/grpc-gateway/pb"
 	httpgwTest "github.com/plgd-dev/hub/http-gateway/test"
 	"github.com/plgd-dev/hub/http-gateway/uri"
 	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
-	"github.com/plgd-dev/hub/pkg/ocf"
 	"github.com/plgd-dev/hub/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/resource-aggregate/events"
 	"github.com/plgd-dev/hub/test"
@@ -39,26 +44,26 @@ func getResourceChanged(t *testing.T, deviceID, href string, data map[string]int
 }
 
 func getPlatformResourceChanged(t *testing.T, deviceID string) *events.ResourceChanged {
-	return getResourceChanged(t, deviceID, test.OCFResourcePlatformHref,
+	return getResourceChanged(t, deviceID, platform.ResourceURI,
 		map[string]interface{}{
 			"mnmn": "ocfcloud.com",
 			//"pi":   "d9b71824-78f7-4f26-540b-d86eab696937",
-			"if": []interface{}{ocf.OC_IF_R, ocf.OC_IF_BASELINE},
-			"rt": []interface{}{ocf.OC_RT_P},
+			"if": []interface{}{interfaces.OC_IF_R, interfaces.OC_IF_BASELINE},
+			"rt": []interface{}{platform.ResourceType},
 		},
 	)
 }
 
 func getCloudDeviceResourceChanged(t *testing.T, deviceID string) *events.ResourceChanged {
-	return getResourceChanged(t, deviceID, test.OCFResourceDeviceHref,
+	return getResourceChanged(t, deviceID, device.ResourceURI,
 		map[string]interface{}{
 			"n":   test.TestDeviceName,
 			"di":  deviceID,
 			"dmv": "ocf.res.1.3.0",
 			"icv": "ocf.2.0.5",
 			// "piid": "1dcb14bd-5167-4122-6c2f-71741543fdc3",
-			"if": []interface{}{ocf.OC_IF_R, ocf.OC_IF_BASELINE},
-			"rt": []interface{}{ocf.OC_RT_DEVICE_CLOUD, ocf.OC_RT_D},
+			"if": []interface{}{interfaces.OC_IF_R, interfaces.OC_IF_BASELINE},
+			"rt": []interface{}{types.DEVICE_CLOUD, device.ResourceType},
 		},
 	)
 }
@@ -84,46 +89,46 @@ func TestRequestHandler_GetDeviceResources(t *testing.T) {
 			},
 			want: []*pb.Resource{
 				{
-					Types: []string{"core.light"},
-					Data: getResourceChanged(t, deviceID, test.TestResourceLightHref,
+					Types: []string{types.CORE_LIGHT},
+					Data: getResourceChanged(t, deviceID, test.TestResourceLightInstanceHref("1"),
 						map[string]interface{}{
 							"state": false,
 							"power": uint64(0),
 							"name":  "Light",
-							"if":    []interface{}{ocf.OC_IF_RW, ocf.OC_IF_BASELINE},
-							"rt":    []interface{}{"core.light"},
+							"if":    []interface{}{interfaces.OC_IF_RW, interfaces.OC_IF_BASELINE},
+							"rt":    []interface{}{types.CORE_LIGHT},
 						},
 					),
 				},
 				{
-					Types: []string{ocf.OC_RT_COL},
+					Types: []string{collection.ResourceType},
 					Data: getResourceChanged(t, deviceID, test.TestResourceSwitchesHref,
 						map[string]interface{}{
 							"links":                     []interface{}{},
-							"if":                        []interface{}{ocf.OC_IF_LL, ocf.OC_IF_CREATE, ocf.OC_IF_B, ocf.OC_IF_BASELINE},
-							"rt":                        []interface{}{ocf.OC_RT_COL},
-							"rts":                       []interface{}{ocf.OC_RT_RESOURCE_SWITCH},
-							"rts-m":                     []interface{}{ocf.OC_RT_RESOURCE_SWITCH},
+							"if":                        []interface{}{interfaces.OC_IF_LL, interfaces.OC_IF_CREATE, interfaces.OC_IF_B, interfaces.OC_IF_BASELINE},
+							"rt":                        []interface{}{collection.ResourceType},
+							"rts":                       []interface{}{types.BINARY_SWITCH},
+							"rts-m":                     []interface{}{types.BINARY_SWITCH},
 							"x.org.openconnectivity.bl": uint64(94),
 						},
 					),
 				},
 				{
-					Types: []string{ocf.OC_RT_CON},
-					Data: getResourceChanged(t, deviceID, test.OCFResourceConfigurationHref,
+					Types: []string{configuration.ResourceType},
+					Data: getResourceChanged(t, deviceID, configuration.ResourceURI,
 						map[string]interface{}{
 							"n":  test.TestDeviceName,
-							"if": []interface{}{ocf.OC_IF_RW, ocf.OC_IF_BASELINE},
-							"rt": []interface{}{ocf.OC_RT_CON},
+							"if": []interface{}{interfaces.OC_IF_RW, interfaces.OC_IF_BASELINE},
+							"rt": []interface{}{configuration.ResourceType},
 						},
 					),
 				},
 				{
-					Types: []string{ocf.OC_RT_P},
+					Types: []string{platform.ResourceType},
 					Data:  getPlatformResourceChanged(t, deviceID),
 				},
 				{
-					Types: []string{ocf.OC_RT_DEVICE_CLOUD, ocf.OC_RT_D},
+					Types: []string{types.DEVICE_CLOUD, device.ResourceType},
 					Data:  getCloudDeviceResourceChanged(t, deviceID),
 				},
 			},
@@ -132,16 +137,16 @@ func TestRequestHandler_GetDeviceResources(t *testing.T) {
 			name: "get oic.wk.d and oic.wk.p of " + deviceID,
 			args: args{
 				deviceID:   deviceID,
-				typeFilter: []string{ocf.OC_RT_D, ocf.OC_RT_P},
+				typeFilter: []string{device.ResourceType, platform.ResourceType},
 				accept:     uri.ApplicationProtoJsonContentType,
 			},
 			want: []*pb.Resource{
 				{
-					Types: []string{ocf.OC_RT_P},
+					Types: []string{platform.ResourceType},
 					Data:  getPlatformResourceChanged(t, deviceID),
 				},
 				{
-					Types: []string{ocf.OC_RT_DEVICE_CLOUD, ocf.OC_RT_D},
+					Types: []string{types.DEVICE_CLOUD, device.ResourceType},
 					Data:  getCloudDeviceResourceChanged(t, deviceID),
 				},
 			},

@@ -7,10 +7,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/plgd-dev/device/schema/interfaces"
+	"github.com/plgd-dev/device/test/resource/types"
 	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/hub/grpc-gateway/pb"
 	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
-	"github.com/plgd-dev/hub/pkg/ocf"
 	"github.com/plgd-dev/hub/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/resource-aggregate/events"
 	"github.com/plgd-dev/hub/test"
@@ -107,19 +108,19 @@ func TestRequestHandlerGetResources(t *testing.T) {
 			args: args{
 				req: &pb.GetResourcesRequest{
 					ResourceIdFilter: []string{
-						commands.NewResourceID(deviceID, test.TestResourceLightHref).ToString(),
+						commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")).ToString(),
 					},
 				},
 			},
 			want: []*pb.Resource{
 				{
-					Types: []string{"core.light"},
-					Data: getResourceChangedData(t, deviceID, test.TestResourceLightHref, map[string]interface{}{
+					Types: []string{types.CORE_LIGHT},
+					Data: getResourceChangedData(t, deviceID, test.TestResourceLightInstanceHref("1"), map[string]interface{}{
 						"state": false,
 						"power": uint64(0),
 						"name":  "Light",
-						"if":    []interface{}{ocf.OC_IF_RW, ocf.OC_IF_BASELINE},
-						"rt":    []interface{}{"core.light"},
+						"if":    []interface{}{interfaces.OC_IF_RW, interfaces.OC_IF_BASELINE},
+						"rt":    []interface{}{types.CORE_LIGHT},
 					}),
 				},
 			},
@@ -128,15 +129,15 @@ func TestRequestHandlerGetResources(t *testing.T) {
 			name: "valid typeFilter",
 			args: args{
 				req: &pb.GetResourcesRequest{
-					TypeFilter: []string{ocf.OC_RT_RESOURCE_SWITCH},
+					TypeFilter: []string{types.BINARY_SWITCH},
 				},
 			},
 			want: []*pb.Resource{
 				{
-					Types: []string{ocf.OC_RT_RESOURCE_SWITCH},
+					Types: []string{types.BINARY_SWITCH},
 					Data: getResourceChangedData(t, deviceID, test.TestResourceSwitchesInstanceHref(switchId), map[string]interface{}{
-						"if":    []interface{}{ocf.OC_IF_A, ocf.OC_IF_BASELINE},
-						"rt":    []interface{}{ocf.OC_RT_RESOURCE_SWITCH},
+						"if":    []interface{}{interfaces.OC_IF_A, interfaces.OC_IF_BASELINE},
+						"rt":    []interface{}{types.BINARY_SWITCH},
 						"value": false,
 					}),
 				},

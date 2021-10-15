@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/plgd-dev/go-coap/v2/message"
 	caService "github.com/plgd-dev/hub/certificate-authority/test"
 	coapgwTest "github.com/plgd-dev/hub/coap-gateway/test"
 	"github.com/plgd-dev/hub/grpc-gateway/pb"
@@ -23,7 +24,6 @@ import (
 	"github.com/plgd-dev/hub/test"
 	"github.com/plgd-dev/hub/test/config"
 	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
-	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -82,7 +82,7 @@ func initPendingEvents(ctx context.Context, t *testing.T) ([]resourcePendingEven
 		ctx, cancel := context.WithTimeout(ctx, time.Second)
 		defer cancel()
 		_, err := c.CreateResource(ctx, &pb.CreateResourceRequest{
-			ResourceId: commands.NewResourceID(deviceID, "/light/1"),
+			ResourceId: commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
 			Content: &pb.Content{
 				ContentType: message.AppOcfCbor.String(),
 				Data: test.EncodeToCbor(t, map[string]interface{}{
@@ -97,7 +97,7 @@ func initPendingEvents(ctx context.Context, t *testing.T) ([]resourcePendingEven
 		ctx, cancel := context.WithTimeout(ctx, time.Second)
 		defer cancel()
 		_, err := c.GetResourceFromDevice(ctx, &pb.GetResourceFromDeviceRequest{
-			ResourceId: commands.NewResourceID(deviceID, "/light/1"),
+			ResourceId: commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
 		})
 		require.Error(t, err)
 	}
@@ -106,7 +106,7 @@ func initPendingEvents(ctx context.Context, t *testing.T) ([]resourcePendingEven
 		ctx, cancel := context.WithTimeout(ctx, time.Second)
 		defer cancel()
 		_, err := c.UpdateResource(ctx, &pb.UpdateResourceRequest{
-			ResourceId: commands.NewResourceID(deviceID, "/light/1"),
+			ResourceId: commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
 			Content: &pb.Content{
 				ContentType: message.AppOcfCbor.String(),
 				Data: test.EncodeToCbor(t, map[string]interface{}{
@@ -121,7 +121,7 @@ func initPendingEvents(ctx context.Context, t *testing.T) ([]resourcePendingEven
 		ctx, cancel := context.WithTimeout(ctx, time.Second)
 		defer cancel()
 		_, err := c.DeleteResource(ctx, &pb.DeleteResourceRequest{
-			ResourceId: commands.NewResourceID(deviceID, "/light/1"),
+			ResourceId: commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
 		})
 		require.Error(t, err)
 	}

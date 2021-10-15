@@ -11,6 +11,9 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 
+	"github.com/plgd-dev/device/schema/interfaces"
+	"github.com/plgd-dev/device/test/resource/types"
+	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/hub/grpc-gateway/pb"
 	httpgwTest "github.com/plgd-dev/hub/http-gateway/test"
 	"github.com/plgd-dev/hub/http-gateway/uri"
@@ -20,7 +23,6 @@ import (
 	"github.com/plgd-dev/hub/test"
 	"github.com/plgd-dev/hub/test/config"
 	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
-	"github.com/plgd-dev/go-coap/v2/message"
 )
 
 func NewBool(v bool) *bool {
@@ -62,12 +64,12 @@ func TestRequestHandler_GetResource(t *testing.T) {
 			name: "json: get from resource shadow",
 			args: args{
 				deviceID:     deviceID,
-				resourceHref: "/light/1",
+				resourceHref: test.TestResourceLightInstanceHref("1"),
 			},
 			want: &events.ResourceRetrieved{
 				ResourceId: &commands.ResourceId{
 					DeviceId: deviceID,
-					Href:     "/light/1",
+					Href:     test.TestResourceLightInstanceHref("1"),
 				},
 				Content: &commands.Content{}, // content is encoded as json
 				Status:  commands.Status_OK,
@@ -77,13 +79,13 @@ func TestRequestHandler_GetResource(t *testing.T) {
 			name: "jsonpb: get from resource shadow",
 			args: args{
 				deviceID:     deviceID,
-				resourceHref: "/light/1",
+				resourceHref: test.TestResourceLightInstanceHref("1"),
 				accept:       uri.ApplicationProtoJsonContentType,
 			},
 			want: &events.ResourceRetrieved{
 				ResourceId: &commands.ResourceId{
 					DeviceId: deviceID,
-					Href:     "/light/1",
+					Href:     test.TestResourceLightInstanceHref("1"),
 				},
 				Content: &commands.Content{
 					CoapContentFormat: int32(message.AppOcfCbor),
@@ -92,8 +94,8 @@ func TestRequestHandler_GetResource(t *testing.T) {
 						"state": false,
 						"power": uint64(0),
 						"name":  "Light",
-						"if":    []interface{}{"oic.if.rw", "oic.if.baseline"},
-						"rt":    []interface{}{"core.light"},
+						"if":    []interface{}{interfaces.OC_IF_RW, interfaces.OC_IF_BASELINE},
+						"rt":    []interface{}{types.CORE_LIGHT},
 					}),
 				},
 				Status: commands.Status_OK,
@@ -103,14 +105,14 @@ func TestRequestHandler_GetResource(t *testing.T) {
 			name: "jsonpb: get from device with interface",
 			args: args{
 				deviceID:          deviceID,
-				resourceHref:      "/light/1",
-				resourceInterface: "oic.if.baseline",
+				resourceHref:      test.TestResourceLightInstanceHref("1"),
+				resourceInterface: interfaces.OC_IF_BASELINE,
 				accept:            uri.ApplicationProtoJsonContentType,
 			},
 			want: &events.ResourceRetrieved{
 				ResourceId: &commands.ResourceId{
 					DeviceId: deviceID,
-					Href:     "/light/1",
+					Href:     test.TestResourceLightInstanceHref("1"),
 				},
 				Content: &commands.Content{
 					CoapContentFormat: int32(message.AppOcfCbor),
@@ -119,8 +121,8 @@ func TestRequestHandler_GetResource(t *testing.T) {
 						"state": false,
 						"power": uint64(0),
 						"name":  "Light",
-						"if":    []interface{}{"oic.if.rw", "oic.if.baseline"},
-						"rt":    []interface{}{"core.light"},
+						"if":    []interface{}{interfaces.OC_IF_RW, interfaces.OC_IF_BASELINE},
+						"rt":    []interface{}{types.CORE_LIGHT},
 					}),
 				},
 				Status: commands.Status_OK,
@@ -130,14 +132,14 @@ func TestRequestHandler_GetResource(t *testing.T) {
 			name: "jsonpb: get from device with disabled shadow",
 			args: args{
 				deviceID:     deviceID,
-				resourceHref: "/light/1",
+				resourceHref: test.TestResourceLightInstanceHref("1"),
 				shadow:       NewBool(false),
 				accept:       uri.ApplicationProtoJsonContentType,
 			},
 			want: &events.ResourceRetrieved{
 				ResourceId: &commands.ResourceId{
 					DeviceId: deviceID,
-					Href:     "/light/1",
+					Href:     test.TestResourceLightInstanceHref("1"),
 				},
 				Content: &commands.Content{
 					CoapContentFormat: int32(message.AppOcfCbor),

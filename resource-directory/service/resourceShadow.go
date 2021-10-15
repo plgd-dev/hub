@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/plgd-dev/device/schema/device"
 	"github.com/plgd-dev/kit/v2/strings"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -221,7 +222,7 @@ func (rd *ResourceShadow) GetDevicesMetadata(req *pb.GetDevicesMetadataRequest, 
 	deviceIDs := filterDevices(rd.userDeviceIds, req.DeviceIdFilter)
 	resourceIdFilter := make([]*commands.ResourceId, 0, 64)
 	for deviceID := range deviceIDs {
-		resourceIdFilter = append(resourceIdFilter, commands.NewResourceID(deviceID, "/oic/d"), commands.NewResourceID(deviceID, commands.StatusHref))
+		resourceIdFilter = append(resourceIdFilter, commands.NewResourceID(deviceID, device.ResourceURI), commands.NewResourceID(deviceID, commands.StatusHref))
 	}
 
 	resources, err := rd.projection.GetResourcesWithLinks(srv.Context(), resourceIdFilter, nil)

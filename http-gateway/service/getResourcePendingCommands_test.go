@@ -9,6 +9,9 @@ import (
 	"time"
 
 	"github.com/google/go-querystring/query"
+	"github.com/plgd-dev/device/schema/device"
+	"github.com/plgd-dev/device/schema/platform"
+	"github.com/plgd-dev/go-coap/v2/message"
 	caService "github.com/plgd-dev/hub/certificate-authority/test"
 	coapgwTest "github.com/plgd-dev/hub/coap-gateway/test"
 	"github.com/plgd-dev/hub/grpc-gateway/pb"
@@ -23,8 +26,8 @@ import (
 	rdService "github.com/plgd-dev/hub/resource-directory/test"
 	"github.com/plgd-dev/hub/test"
 	"github.com/plgd-dev/hub/test/config"
+	"github.com/plgd-dev/hub/test/oauth-server/service"
 	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
-	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -45,10 +48,10 @@ func TestRequestHandler_GetResourcePendingCommands(t *testing.T) {
 		want    []*pb.PendingCommand
 	}{
 		{
-			name: "retrieve " + deviceID + "/oic/d",
+			name: "retrieve " + deviceID + device.ResourceURI,
 			args: args{
 				deviceID: deviceID,
-				href:     "/oic/d",
+				href:     device.ResourceURI,
 				accept:   uri.ApplicationProtoJsonContentType,
 			},
 			want: []*pb.PendingCommand{
@@ -57,7 +60,7 @@ func TestRequestHandler_GetResourcePendingCommands(t *testing.T) {
 						ResourceCreatePending: &events.ResourceCreatePending{
 							ResourceId: &commands.ResourceId{
 								DeviceId: deviceID,
-								Href:     "/oic/d",
+								Href:     device.ResourceURI,
 							},
 							Content: &commands.Content{
 								ContentType:       message.AppOcfCbor.String(),
@@ -66,7 +69,7 @@ func TestRequestHandler_GetResourcePendingCommands(t *testing.T) {
 									"power": 1,
 								}),
 							},
-							AuditContext: commands.NewAuditContext("1", ""),
+							AuditContext: commands.NewAuditContext(service.DeviceUserID, ""),
 						},
 					},
 				},
@@ -75,9 +78,9 @@ func TestRequestHandler_GetResourcePendingCommands(t *testing.T) {
 						ResourceDeletePending: &events.ResourceDeletePending{
 							ResourceId: &commands.ResourceId{
 								DeviceId: deviceID,
-								Href:     "/oic/d",
+								Href:     device.ResourceURI,
 							},
-							AuditContext: commands.NewAuditContext("1", ""),
+							AuditContext: commands.NewAuditContext(service.DeviceUserID, ""),
 						},
 					},
 				},
@@ -87,7 +90,7 @@ func TestRequestHandler_GetResourcePendingCommands(t *testing.T) {
 			name: "filter create commands",
 			args: args{
 				deviceID:      deviceID,
-				href:          "/oic/d",
+				href:          device.ResourceURI,
 				commandFilter: []pb.GetPendingCommandsRequest_Command{pb.GetPendingCommandsRequest_RESOURCE_CREATE},
 				accept:        uri.ApplicationProtoJsonContentType,
 			},
@@ -97,7 +100,7 @@ func TestRequestHandler_GetResourcePendingCommands(t *testing.T) {
 						ResourceCreatePending: &events.ResourceCreatePending{
 							ResourceId: &commands.ResourceId{
 								DeviceId: deviceID,
-								Href:     "/oic/d",
+								Href:     device.ResourceURI,
 							},
 							Content: &commands.Content{
 								ContentType:       message.AppOcfCbor.String(),
@@ -106,7 +109,7 @@ func TestRequestHandler_GetResourcePendingCommands(t *testing.T) {
 									"power": 1,
 								}),
 							},
-							AuditContext: commands.NewAuditContext("1", ""),
+							AuditContext: commands.NewAuditContext(service.DeviceUserID, ""),
 						},
 					},
 				},
@@ -116,7 +119,7 @@ func TestRequestHandler_GetResourcePendingCommands(t *testing.T) {
 			name: "filter delete commands",
 			args: args{
 				deviceID:      deviceID,
-				href:          "/oic/d",
+				href:          device.ResourceURI,
 				commandFilter: []pb.GetPendingCommandsRequest_Command{pb.GetPendingCommandsRequest_RESOURCE_DELETE},
 				accept:        uri.ApplicationProtoJsonContentType,
 			},
@@ -126,9 +129,9 @@ func TestRequestHandler_GetResourcePendingCommands(t *testing.T) {
 						ResourceDeletePending: &events.ResourceDeletePending{
 							ResourceId: &commands.ResourceId{
 								DeviceId: deviceID,
-								Href:     "/oic/d",
+								Href:     device.ResourceURI,
 							},
-							AuditContext: commands.NewAuditContext("1", ""),
+							AuditContext: commands.NewAuditContext(service.DeviceUserID, ""),
 						},
 					},
 				},
@@ -176,7 +179,7 @@ func TestRequestHandler_GetResourcePendingCommands(t *testing.T) {
 		ctx, cancel := context.WithTimeout(ctx, time.Second)
 		defer cancel()
 		_, err := c.CreateResource(ctx, &pb.CreateResourceRequest{
-			ResourceId: commands.NewResourceID(deviceID, "/oic/d"),
+			ResourceId: commands.NewResourceID(deviceID, device.ResourceURI),
 			Content: &pb.Content{
 				ContentType: message.AppOcfCbor.String(),
 				Data: test.EncodeToCbor(t, map[string]interface{}{
@@ -191,7 +194,7 @@ func TestRequestHandler_GetResourcePendingCommands(t *testing.T) {
 		ctx, cancel := context.WithTimeout(ctx, time.Second)
 		defer cancel()
 		_, err := c.GetResourceFromDevice(ctx, &pb.GetResourceFromDeviceRequest{
-			ResourceId: commands.NewResourceID(deviceID, "/oic/p"),
+			ResourceId: commands.NewResourceID(deviceID, platform.ResourceURI),
 		})
 		require.Error(t, err)
 	}
@@ -200,7 +203,7 @@ func TestRequestHandler_GetResourcePendingCommands(t *testing.T) {
 		ctx, cancel := context.WithTimeout(ctx, time.Second)
 		defer cancel()
 		_, err := c.UpdateResource(ctx, &pb.UpdateResourceRequest{
-			ResourceId: commands.NewResourceID(deviceID, "/light/1"),
+			ResourceId: commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
 			Content: &pb.Content{
 				ContentType: message.AppOcfCbor.String(),
 				Data: test.EncodeToCbor(t, map[string]interface{}{
@@ -215,7 +218,7 @@ func TestRequestHandler_GetResourcePendingCommands(t *testing.T) {
 		ctx, cancel := context.WithTimeout(ctx, time.Second)
 		defer cancel()
 		_, err := c.DeleteResource(ctx, &pb.DeleteResourceRequest{
-			ResourceId: commands.NewResourceID(deviceID, "/oic/d"),
+			ResourceId: commands.NewResourceID(deviceID, device.ResourceURI),
 		})
 		require.Error(t, err)
 	}

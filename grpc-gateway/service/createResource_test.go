@@ -7,11 +7,13 @@ import (
 	"time"
 
 	"github.com/plgd-dev/device/schema"
+	"github.com/plgd-dev/device/schema/device"
+	"github.com/plgd-dev/device/schema/interfaces"
+	"github.com/plgd-dev/device/test/resource/types"
 	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/hub/grpc-gateway/pb"
 	"github.com/plgd-dev/hub/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
-	"github.com/plgd-dev/hub/pkg/ocf"
 	"github.com/plgd-dev/hub/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/resource-aggregate/events"
 	"github.com/plgd-dev/hub/test"
@@ -39,11 +41,11 @@ func makeCreateResourceRequest(t *testing.T, deviceID, href string, data map[str
 func makeCreateLightResourceResponseData(id string) map[string]interface{} {
 	return map[string]interface{}{
 		"href": test.TestResourceSwitchesInstanceHref(id),
-		"if":   []interface{}{ocf.OC_IF_A, ocf.OC_IF_BASELINE},
-		"rt":   []interface{}{ocf.OC_RT_RESOURCE_SWITCH},
+		"if":   []interface{}{interfaces.OC_IF_A, interfaces.OC_IF_BASELINE},
+		"rt":   []interface{}{types.BINARY_SWITCH},
 		"rep": map[string]interface{}{
-			"rt":    []interface{}{ocf.OC_RT_RESOURCE_SWITCH},
-			"if":    []interface{}{ocf.OC_IF_A, ocf.OC_IF_BASELINE},
+			"rt":    []interface{}{types.BINARY_SWITCH},
+			"if":    []interface{}{interfaces.OC_IF_A, interfaces.OC_IF_BASELINE},
 			"value": false,
 		},
 		"p": map[string]interface{}{
@@ -80,7 +82,7 @@ func TestRequestHandlerCreateResource(t *testing.T) {
 		{
 			name: "/oic/d - PermissionDenied",
 			args: args{
-				href: test.OCFResourceDeviceHref,
+				href: device.ResourceURI,
 				data: map[string]interface{}{
 					"power": 1,
 				},
@@ -91,7 +93,7 @@ func TestRequestHandlerCreateResource(t *testing.T) {
 		{
 			name: "invalid timeToLive",
 			args: args{
-				href: test.OCFResourceDeviceHref,
+				href: device.ResourceURI,
 				data: map[string]interface{}{
 					"power": 1,
 				},
@@ -105,7 +107,7 @@ func TestRequestHandlerCreateResource(t *testing.T) {
 			args: args{
 				href: test.TestResourceSwitchesHref,
 				data: map[string]interface{}{
-					"rt": []interface{}{ocf.OC_RT_RESOURCE_SWITCH},
+					"rt": []interface{}{types.BINARY_SWITCH},
 					"rep": map[string]interface{}{
 						"value": false,
 					},
@@ -119,7 +121,7 @@ func TestRequestHandlerCreateResource(t *testing.T) {
 			args: args{
 				href: test.TestResourceSwitchesHref,
 				data: map[string]interface{}{
-					"if": []interface{}{ocf.OC_IF_A, ocf.OC_IF_BASELINE},
+					"if": []interface{}{interfaces.OC_IF_A, interfaces.OC_IF_BASELINE},
 					"rep": map[string]interface{}{
 						"value": false,
 					},
@@ -133,8 +135,8 @@ func TestRequestHandlerCreateResource(t *testing.T) {
 			args: args{
 				href: test.TestResourceSwitchesHref,
 				data: map[string]interface{}{
-					"if": []interface{}{ocf.OC_IF_A, ocf.OC_IF_BASELINE},
-					"rt": []interface{}{ocf.OC_RT_RESOURCE_SWITCH},
+					"if": []interface{}{interfaces.OC_IF_A, interfaces.OC_IF_BASELINE},
+					"rt": []interface{}{types.BINARY_SWITCH},
 				},
 			},
 			wantErr:     true,

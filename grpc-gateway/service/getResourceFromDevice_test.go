@@ -7,10 +7,12 @@ import (
 	"time"
 
 	"github.com/plgd-dev/device/schema"
+	"github.com/plgd-dev/device/schema/device"
+	"github.com/plgd-dev/device/schema/interfaces"
+	"github.com/plgd-dev/device/test/resource/types"
 	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/hub/grpc-gateway/pb"
 	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
-	"github.com/plgd-dev/hub/pkg/ocf"
 	"github.com/plgd-dev/hub/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/resource-aggregate/events"
 	"github.com/plgd-dev/hub/test"
@@ -62,7 +64,7 @@ func TestRequestHandlerGetResourceFromDevice(t *testing.T) {
 			name: "invalid timeToLive",
 			args: args{
 				req: &pb.GetResourceFromDeviceRequest{
-					ResourceId: commands.NewResourceID(deviceID, test.OCFResourceDeviceHref),
+					ResourceId: commands.NewResourceID(deviceID, device.ResourceURI),
 					TimeToLive: int64(99 * time.Millisecond),
 				},
 			},
@@ -72,11 +74,11 @@ func TestRequestHandlerGetResourceFromDevice(t *testing.T) {
 			name: "valid /light/1",
 			args: args{
 				req: &pb.GetResourceFromDeviceRequest{
-					ResourceId: commands.NewResourceID(deviceID, test.TestResourceLightHref),
+					ResourceId: commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
 					TimeToLive: int64(time.Hour),
 				},
 			},
-			want: getResourceRetrieved(t, deviceID, test.TestResourceLightHref, map[string]interface{}{
+			want: getResourceRetrieved(t, deviceID, test.TestResourceLightInstanceHref("1"), map[string]interface{}{
 				"name":  "Light",
 				"power": uint64(0),
 				"state": false,
@@ -86,11 +88,11 @@ func TestRequestHandlerGetResourceFromDevice(t *testing.T) {
 			name: "valid /oic/d",
 			args: args{
 				req: &pb.GetResourceFromDeviceRequest{
-					ResourceId: commands.NewResourceID(deviceID, test.OCFResourceDeviceHref),
+					ResourceId: commands.NewResourceID(deviceID, device.ResourceURI),
 					TimeToLive: int64(time.Hour),
 				},
 			},
-			want: getResourceRetrieved(t, deviceID, test.OCFResourceDeviceHref, map[string]interface{}{
+			want: getResourceRetrieved(t, deviceID, device.ResourceURI, map[string]interface{}{
 				"n":   test.TestDeviceName,
 				"di":  deviceID,
 				"dmv": "ocf.res.1.3.0",
@@ -108,8 +110,8 @@ func TestRequestHandlerGetResourceFromDevice(t *testing.T) {
 			want: getResourceRetrieved(t, deviceID, test.TestResourceSwitchesHref, []map[string]interface{}{
 				{
 					"href": test.TestResourceSwitchesInstanceHref(switchID),
-					"if":   []interface{}{ocf.OC_IF_A, ocf.OC_IF_BASELINE},
-					"rt":   []interface{}{ocf.OC_RT_RESOURCE_SWITCH},
+					"if":   []interface{}{interfaces.OC_IF_A, interfaces.OC_IF_BASELINE},
+					"rt":   []interface{}{types.BINARY_SWITCH},
 					"rel":  []interface{}{"hosts"},
 					"p": map[string]interface{}{
 						"bm": uint64(schema.Discoverable | schema.Observable),
