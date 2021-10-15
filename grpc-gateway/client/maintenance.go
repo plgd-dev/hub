@@ -4,8 +4,8 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/plgd-dev/hub/resource-aggregate/commands"
 	"github.com/plgd-dev/device/schema/maintenance"
+	"github.com/plgd-dev/hub/resource-aggregate/commands"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -52,11 +52,11 @@ func (c *Client) updateMaintenanceResource(
 	deviceID string,
 	req maintenance.MaintenanceUpdateRequest,
 ) (ret error) {
-	it := c.GetResourceLinksIterator(ctx, []string{deviceID}, maintenance.MaintenanceResourceType)
+	it := c.GetResourceLinksIterator(ctx, []string{deviceID}, maintenance.ResourceType)
 	defer it.Close()
 	var v commands.Resource
 	if !it.Next(&v) {
-		return status.Errorf(codes.NotFound, "cannot find maintenance resource(%v)", maintenance.MaintenanceResourceType)
+		return status.Errorf(codes.NotFound, "cannot find maintenance resource(%v)", maintenance.ResourceType)
 	}
 	var resp maintenance.Maintenance
 	err := c.UpdateResource(ctx, v.GetDeviceId(), v.GetHref(), req, &resp)

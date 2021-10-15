@@ -22,6 +22,7 @@ import (
 	"github.com/plgd-dev/device/client/core"
 	"github.com/plgd-dev/device/schema"
 	"github.com/plgd-dev/device/schema/acl"
+	"github.com/plgd-dev/device/schema/device"
 	"github.com/plgd-dev/go-coap/v2/message"
 	caService "github.com/plgd-dev/hub/certificate-authority/test"
 	c2cgwService "github.com/plgd-dev/hub/cloud2cloud-gateway/test"
@@ -606,17 +607,17 @@ type findDeviceIDByNameHandler struct {
 	cancel context.CancelFunc
 }
 
-func (h *findDeviceIDByNameHandler) Handle(ctx context.Context, device *core.Device, deviceLinks schema.ResourceLinks) {
+func (h *findDeviceIDByNameHandler) Handle(ctx context.Context, dev *core.Device, deviceLinks schema.ResourceLinks) {
 	defer func() {
-		err := device.Close(ctx)
+		err := dev.Close(ctx)
 		h.Error(err)
 	}()
 	l, ok := deviceLinks.GetResourceLink("/oic/d")
 	if !ok {
 		return
 	}
-	var d schema.Device
-	err := device.GetResource(ctx, l, &d)
+	var d device.Device
+	err := dev.GetResource(ctx, l, &d)
 	if err != nil {
 		return
 	}

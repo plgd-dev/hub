@@ -1,11 +1,11 @@
 package pb
 
 import (
-	"github.com/plgd-dev/device/schema"
+	"github.com/plgd-dev/device/schema/device"
 )
 
-func (l *LocalizedString) ToSchema() schema.LocalizedString {
-	return schema.LocalizedString{
+func (l *LocalizedString) ToSchema() device.LocalizedString {
+	return device.LocalizedString{
 		Language: l.GetLanguage(),
 		Value:    l.GetValue(),
 	}
@@ -13,16 +13,16 @@ func (l *LocalizedString) ToSchema() schema.LocalizedString {
 
 type LocalizedStrings []*LocalizedString
 
-func (s LocalizedStrings) ToSchema() []schema.LocalizedString {
-	l := make([]schema.LocalizedString, 0, len(s))
+func (s LocalizedStrings) ToSchema() []device.LocalizedString {
+	l := make([]device.LocalizedString, 0, len(s))
 	for _, m := range s {
 		l = append(l, m.ToSchema())
 	}
 	return l
 }
 
-func (d *Device) ToSchema() schema.Device {
-	return schema.Device{
+func (d *Device) ToSchema() device.Device {
+	return device.Device{
 		ID:                    d.GetId(),
 		ResourceTypes:         d.GetTypes(),
 		Interfaces:            d.GetInterfaces(),
@@ -33,14 +33,14 @@ func (d *Device) ToSchema() schema.Device {
 	}
 }
 
-func SchemaLocalizedStringToProto(s schema.LocalizedString) *LocalizedString {
+func SchemaLocalizedStringToProto(s device.LocalizedString) *LocalizedString {
 	return &LocalizedString{
 		Language: s.Language,
 		Value:    s.Value,
 	}
 }
 
-func SchemaLocalizedStringsToProto(s []schema.LocalizedString) []*LocalizedString {
+func SchemaLocalizedStringsToProto(s []device.LocalizedString) []*LocalizedString {
 	if s == nil {
 		return nil
 	}
@@ -51,7 +51,7 @@ func SchemaLocalizedStringsToProto(s []schema.LocalizedString) []*LocalizedStrin
 	return l
 }
 
-func SchemaDeviceToProto(d *schema.Device) *Device {
+func SchemaDeviceToProto(d *device.Device) *Device {
 	if d == nil {
 		return nil
 	}
