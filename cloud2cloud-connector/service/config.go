@@ -167,17 +167,6 @@ func (c *ResourceAggregateConfig) Validate() error {
 	return nil
 }
 
-type ResourceDirectoryConfig struct {
-	Connection grpcClient.Config `yaml:"grpc" json:"grpc"`
-}
-
-func (c *ResourceDirectoryConfig) Validate() error {
-	if err := c.Connection.Validate(); err != nil {
-		return fmt.Errorf("grpc.%w", err)
-	}
-	return nil
-}
-
 type StorageConfig struct {
 	MongoDB mongodb.Config `yaml:"mongoDB" json:"mongoDB"`
 }

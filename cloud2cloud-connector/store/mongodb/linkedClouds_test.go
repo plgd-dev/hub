@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestStore_UpdateLinkedCloud(t *testing.T) {
+func TestStoreUpdateLinkedCloud(t *testing.T) {
 	type args struct {
 		sub store.LinkedCloud
 	}
@@ -21,7 +21,7 @@ func TestStore_UpdateLinkedCloud(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "not found",
+			name: "invalid ID",
 			args: args{
 				sub: store.LinkedCloud{
 					ID:   "testIDnotFound",
@@ -93,7 +93,7 @@ func TestStore_UpdateLinkedCloud(t *testing.T) {
 	}
 }
 
-func TestStore_RemoveLinkedCloud(t *testing.T) {
+func TestStoreRemoveLinkedCloud(t *testing.T) {
 	type args struct {
 		LinkedCloudId string
 	}
@@ -103,7 +103,7 @@ func TestStore_RemoveLinkedCloud(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "not found",
+			name: "invalid cloudId",
 			args: args{
 				LinkedCloudId: "notFound",
 			},
@@ -165,7 +165,7 @@ func (h *testLinkedCloudHandler) Handle(ctx context.Context, iter store.LinkedCl
 	return iter.Err()
 }
 
-func TestStore_LoadLinkedClouds(t *testing.T) {
+func TestStoreLoadLinkedClouds(t *testing.T) {
 	lcs := []store.LinkedCloud{
 		{
 			ID:   "testID",
