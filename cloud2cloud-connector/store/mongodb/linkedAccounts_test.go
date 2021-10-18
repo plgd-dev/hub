@@ -67,7 +67,7 @@ func TestStoreUpdateLinkedAccount(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "not found",
+			name: "invalid ID",
 			args: args{
 				sub: store.LinkedAccount{
 					ID:            "testID1",
@@ -129,7 +129,7 @@ func TestStoreRemoveLinkedAccount(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "not found",
+			name: "invalid accountId",
 			args: args{
 				linkedAccountId: "testNotFound",
 			},
