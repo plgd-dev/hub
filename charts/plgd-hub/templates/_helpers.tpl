@@ -102,9 +102,28 @@ If release name contains chart name it will be used as a full name.
   {{- $authoriztion := index . 1 }}
   {{- $prefix := index . 2 }}
   ownerClaim:{{ printf " " }}{{ required (printf "%s.apis.grpc.authorization.ownerClaim or global.ownerClaim is required " $prefix) ( $authoriztion.ownerClaim | default $.Values.global.ownerClaim ) | quote }}
+  {{- if not $.Values.mockoauthserver.enabled }}
   authority:{{ printf " " }}{{ required (printf "%s.apis.grpc.authorization.authority or global.authority is required " $prefix) ( $authoriztion.authority | default $.Values.global.authority ) | quote }}
   audience:{{ printf " " }}{{ ( $authoriztion.audience | default $.Values.global.audience ) | quote }}
+  {{- else }}
+  authority:{{ printf " " }}{{ include "plgd-hub.mockoauthserver.uri" $ }}
+  audience:{{ printf " " }}{{ printf "" | quote }}
+  {{- end }}
 {{- end }}
+
+{{- define "plgd-hub.baseAthorizationConfig" }}
+  {{- $ := index . 0 }}
+  {{- $authoriztion := index . 1 }}
+  {{- $prefix := index . 2 }}
+  {{- if not $.Values.mockoauthserver.enabled }}
+  authority:{{ printf " " }}{{ required (printf "%s.apis.grpc.authorization.authority or global.authority is required " $prefix) ( $authoriztion.authority | default $.Values.global.authority ) | quote }}
+  audience:{{ printf " " }}{{ ( $authoriztion.audience | default $.Values.global.audience ) | quote }}
+  {{- else }}
+  authority:{{ printf " " }}{{ include "plgd-hub.mockoauthserver.uri" $ }}
+  audience:{{ printf " " }}{{ printf "" | quote }}
+  {{- end }}
+{{- end }}
+
 
 
 {{- define "plgd-hub.createInternalCertByCm" }}

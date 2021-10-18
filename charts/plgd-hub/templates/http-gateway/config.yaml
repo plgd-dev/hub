@@ -1,6 +1,7 @@
-{{- if .Values.httpgateway.enabled }}
+{{- if and (not $.Values.mockoauthserver.enabled) .Values.httpgateway.enabled }}
 {{- if eq (( $.Values.coapgateway.apis.coap.authorization.providers | default $.Values.global.oauth.device) | len ) 0 }}
 {{- fail "At least one coapgateway.apis.coap.authorization.providers or global.oauth.device must be specified " }}
+{{- end }}
 {{- end }}
 {{- $httpCert := "/certs" }}
 apiVersion: v1
@@ -24,8 +25,13 @@ stringData:
           streamBodyLimit: {{ .apis.http.webSocket.streamBodyLimit }}
           pingFrequency: {{ .apis.http.webSocket.pingFrequency }}
         authorization:
+          {{- if not $.Values.mockoauthserver.enabled }}
           authority:{{ printf " " }}{{ required "httpgateway.apis.http.authorization.authority or global.authority is required " ( .apis.http.authorization.authority | default $.Values.global.authority ) | quote }}
           audience:{{ printf " " }}{{ ( .apis.http.authorization.audience | default $.Values.global.audience ) | quote }}
+          {{- else }}
+          authority:{{ printf " " }}{{ include "plgd-hub.mockoauthserver.uri" $ }}
+          audience:{{ printf " " }}{{ printf "" | quote }}
+          {{- end }}
           http:
             maxIdleConns: {{ .apis.http.authorization.http.maxIdleConns }}
             maxConnsPerHost: {{ .apis.http.authorization.http.maxIdleConnsPerHost }}
@@ -52,8 +58,13 @@ stringData:
       enabled: {{ .ui.enabled }}
       directory: {{ .ui.directory | quote }}
       webConfiguration:
+        {{- if not $.Values.mockoauthserver.enabled }}
         authority: {{ .ui.webConfiguration.authority | default $.Values.global.authority | quote }}
+        {{- else }}
+        authority:{{ printf " " }}{{ include "plgd-hub.mockoauthserver.uri" $ }}
+        {{- end }}
         httpGatewayAddress: {{ .ui.webConfiguration.httpGatewayAddress | default ( printf "https://%s" ( include "plgd-hub.httpgateway.apiDomain" $)) | quote }}
+        {{- if not $.Values.mockoauthserver.enabled }}
         webOAuthClient:
           clientID: {{ required "httpgateway.ui.webConfiguration.webOAuthClient.clientID or global.oauth.web.clientID is required" ( .ui.webConfiguration.webOAuthClient.clientID | default $.Values.global.oauth.web.clientID ) | quote }}
           audience: {{ .ui.webConfiguration.webOAuthClient.audience | default ( $.Values.global.oauth.web.audience | default $.Values.global.audience ) | quote }}
@@ -65,8 +76,18 @@ stringData:
           {{- else }}
           scopes: []
           {{- end }}
+        {{- else }}
+        webOAuthClient:
+          {{- $client := index $.Values.mockoauthserver.oauth 1 }}
+          clientID: {{ $client.clientID | quote }}
+          audience: {{ include "plgd-hub.mockoauthserver.ingressDomain" $ | quote }}
+          scopes: []
+        {{- end }}
         deviceOAuthClient:
         {{- $providers := $.Values.coapgateway.apis.coap.authorization.providers | default $.Values.global.oauth.device  }}
+        {{- if $.Values.mockoauthserver.enabled }}
+        {{- $providers = $.Values.mockoauthserver.oauth }}
+        {{- end }}
         {{- $included := false }}
         {{- range $providers }}
           {{- if and .useInUi (not $included) }}
@@ -85,7 +106,11 @@ stringData:
           {{- end }}
         {{- end }}
         {{- if not $included }}
-        {{- $provider := index ( $.Values.coapgateway.apis.coap.authorization.providers | default $.Values.global.oauth.device) 0 }}
+        {{- $provider := index $.Values.mockoauthserver.oauth 0 }}
+        {{- if not $.Values.mockoauthserver.enabled }}
+        {{- $provider = index ( $.Values.coapgateway.apis.coap.authorization.providers | default $.Values.global.oauth.device) 0 }}
+        {{- else }}
+        {{- end }}
         {{- with $provider }}
           clientID: {{ .clientID | quote }}
           audience: {{ .audience | default $.Values.global.audience | quote }}
@@ -100,5 +125,4 @@ stringData:
           providerName: {{ .name | quote }}
         {{- end }}
         {{- end }}
-  {{- end }}
 {{- end }}

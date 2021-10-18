@@ -2,8 +2,8 @@
 global:
   # -- Global domain
   domain:
-  # -- CloudID. Used by coap-gateway. It must be unique
-  cloudId:
+  # -- hubId. Used by coap-gateway. It must be unique
+  hubId:
   # -- OAuth owner Claim
   ownerClaim: "sub"
   # -- Device ID claim
@@ -456,8 +456,8 @@ resourcedirectory:
     authorizationServer:
     ownerClaim:
     deviceIdClaim:
-    cloudID:
-    cloudURL:
+    hubId:
+    coapGateway:
     defaultCommandTimeToLive: "0s"
 
 resourceaggregate:
@@ -585,6 +585,7 @@ resourceaggregate:
       nats:
         url:
         jetstream: false
+        flusherTimeout: 30s
         pendingLimits:
           msgLimit: 524288
           bytesLimit: "67108864"
@@ -711,8 +712,8 @@ coapgateway:
     debug: false
     # -- Dump copp messages
     dumpCoapMessages: true
-  # -- Cloud ID. Can be override via global.cloudId
-  cloudId:
+  # -- Hub ID. Can be override via global.hubId
+  hubId:
   # -- For complete coap-gateway service configuration see [plgd/coap-gateway](https://github.com/plgd-dev/hub/tree/main/coap-gateway)
   apis:
     coap:
@@ -921,6 +922,7 @@ identitystore:
       nats:
         url: ""
         jetstream: false
+        flusherTimeout: 30s
         tls:
           useSystemCAPool: false
     storage:
@@ -1345,7 +1347,7 @@ certificateauthority:
     annotations: {}
     # -- Paths
     paths:
-      - /ocf.cloud.certificateauthority.pb.CertificateAuthority
+      - /certificateauthority.pb.CertificateAuthority/SignIdentityCertificate
   # -- Service configuration
   config:
     # -- File name for config file
@@ -1394,7 +1396,7 @@ certificateauthority:
         caPool:
         keyFile:
         certFile:
-        clientCertificateRequired: true
+        clientCertificateRequired: false
       authorization:
         ownerClaim:
         authority:
@@ -1416,3 +1418,113 @@ certificateauthority:
     certFile:
     validFrom: "now-1h"
     expiresIn: "87600h"
+
+
+mockoauthserver:
+  oauth:
+    - name: "plgd.mobile"
+      clientID: "test"
+      clientSecret: "test"
+      redirectURL: "cloud.plgd.mobile://login-callback"
+    - name: "plgd.web"
+      clientID: "test"
+      clientSecret: "test"
+      redirectURL: "{{ printf \"https://%s\" ( include \"plgd-hub.mockoauthserver.ingressDomain\" . ) }}/things"
+
+  # -- Enable mock-oauth-server service
+  enabled: false
+  # -- Name of component. Used in label selectors
+  name: mock-oauth-server
+  # -- Full name to override
+  fullnameOverride:
+  # -- Number of replicas
+  replicas: 1
+  # -- Additional labels for mock-oauth-server deployment
+  deploymentLabels: {}
+  # -- Additional annotations for mock-oauth-server deployment
+  deploymentAnnotations: {}
+  # -- Pod security context
+  podSecurityContext: {}
+  # -- Labels for http-gateway pod
+  podLabels: {}
+  # -- Annotations for mock-oauth-server pod
+  podAnnotations: {}
+  service:
+    type: ClusterIP
+    # -- Labels for mock-oauth-server service
+    labels: {}
+    # -- Annotations for mock-oauth-server service
+    annotations: {}
+  securityContext: {}
+  # -- Image pull secrets
+  imagePullSecrets: {}
+  # -- Restart policy for pod
+  restartPolicy: Always
+  image:
+    # -- Image registry
+    registry:
+    # -- Image repository
+    repository: plgd/mock-oauth-server
+    # -- Image tag.
+    tag:
+    # -- Image pull policy
+    pullPolicy: Always
+    # -- Image pull secrets
+    imagePullSecrets: {}
+  # -- Liveness probe. mock-oauth-server doesn't have any default liveness probe
+  livenessProbe: {}
+  # -- Readiness probe. mock-oauth-server doesn't have aby default readiness probe
+  readinessProbe: {}
+  # -- Resources limit
+  resources: {}
+  # -- Node selector
+  nodeSelector: {}
+  # -- Affinity definition
+  affinity: {}
+  # -- Toleration definition
+  tolerations: {}
+  # -- Optional extra volumes
+  extraVolumes: {}
+  # -- Optional extra volume mounts
+  extraVolumeMounts: {}
+  # -- Domain for   apiDomain: Default: auth.{{ global.domain }}
+  domain:
+  ingress:
+    # -- Enable ingress
+    enabled: true
+    # -- Ingress annotation
+    annotations: {}
+    # -- Ingress path
+    paths:
+      - /
+  # -- mock-oauth-server service yaml config section
+  config:
+    # -- Name of configuration file
+    fileName: service.yaml
+    # -- Volume for configuration file
+    volume: config
+    # -- Mount path
+    mountPath: /config
+  # -- Port for service and POD
+  port: 9100
+  log:
+    # -- Enable extended debug messages
+    debug: false
+  # -- For complete mock-oauth-server service configuration see [plgd/oauth-server](https://github.com/plgd-dev/hub/tree/main/test/oauth-server)
+  apis:
+    http:
+      address:
+      tls:
+        caPool:
+        keyFile:
+        certFile:
+        clientCertificateRequired: false
+  oauthSigner:
+    idTokenKeyFile: "/keys/idToken.key"
+    accessTokenKeyFile: "/keys/accessToken.key"
+    domain:
+    clients:
+      id: "test"
+      authorizationCodeLifetime: "10m"
+      accessTokenLifetime: "0s"
+      codeRestrictionLifetime: "0s"

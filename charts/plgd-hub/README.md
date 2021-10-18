@@ -2,7 +2,7 @@
 
 A Helm chart for plgd-hub
 
-![Version: 0.0.1](https://img.shields.io/badge/Version-0.0.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v2next](https://img.shields.io/badge/AppVersion-v2next-informational?style=flat-square)
+![Version: 0.0.1](https://img.shields.io/badge/Version-0.0.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: vnext](https://img.shields.io/badge/AppVersion-vnext-informational?style=flat-square)
 
 ## Installing the Chart
 
@@ -17,8 +17,8 @@ Install [cert-manager](https://cert-manager.io/) via [https://artifacthub.io/pac
 global:
   # -- Global domain
   domain:
-  # -- CloudID. Used by coap-gateway. It must be unique
-  cloudId:
+  # -- HubID. Used by coap-gateway. It must be unique
+  hubId:
   # -- OAuth owner Claim
   ownerClaim: "sub"
   # -- Optional
@@ -31,14 +31,14 @@ global:
   oauth:
    # -- List of OAuth client's configurations
    device:
-       # -- Name of client
+       # -- Name of provider
      - name:
        # -- Client ID
        clientID:
-       # -- One of clientSecret of clientSecret file
+       # -- clientSecret or clientSecretFile
        clientSecret:
        clientSecretFile:
-       # -- Redirect URL
+       # -- Redirect URL. In case you are using mobile app, redirectURL should be in format cloud.plgd.mobile://login-callback
        redirectURL:
        # -- Use in httpgateway.ui.webConfiguration.deviceOAuthClient configuration. Default first item in list
        useInUi: true
@@ -46,6 +46,21 @@ global:
     # -- ClientID used by Web UI
     clientID:
 ```
+
+### Setup with OAuth Mock server:
+
+```
+# -- Global config variables
+global:
+  # -- Global domain
+  domain: "domain.com"
+  # -- CloudID. Used by coap-gateway. It must be unique
+  hubId: 1c10a3b6-287c-11ec-ac2d-13054959c274
+mockoauthserver:
+  enabled: true
+```
+
+> This configuration should be applied only to test environment !!!
 
 ## Requirements
 
@@ -59,15 +74,11 @@ global:
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
 | certificateauthority.affinity | string | `nil` | Affinity definition |
-| certificateauthority.apis | object | `{"grpc":{"address":null,"authorization":{"audience":null,"authority":null,"http":{"idleConnTimeout":"30s","maxConnsPerHost":32,"maxIdleConns":16,"maxIdleConnsPerHost":16,"timeout":"10s","tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":true}},"ownerClaim":null},"enforcementPolicy":{"minTime":"5s","permitWithoutStream":true},"keepAlive":{"maxConnectionAge":"0s","maxConnectionAgeGrace":"0s","maxConnectionIdle":"0s","time":"2h","timeout":"20s"},"tls":{"caPool":null,"certFile":null,"clientCertificateRequired":true,"keyFile":null}}}` | For complete certificate-authority service configuration see [plgd/certificate-authority](https://github.com/plgd-dev/hub/tree/main/certificate-authority) |
-| certificateauthority.ca | object | `{"cert":"tls.crt","default":{"commonName":"coap-device-ca","duration":"87600h","renewBefore":"360h","secret":{"name":"coap-device-ca"}},"key":"tls.key","secret":{"name":null},"volume":{"mountPath":"/certs/coap-device-ca","name":"coap-device-ca"}}` | CA section |
+| certificateauthority.apis | object | `{"grpc":{"address":null,"authorization":{"audience":null,"authority":null,"http":{"idleConnTimeout":"30s","maxConnsPerHost":32,"maxIdleConns":16,"maxIdleConnsPerHost":16,"timeout":"10s","tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":true}},"ownerClaim":null},"enforcementPolicy":{"minTime":"5s","permitWithoutStream":true},"keepAlive":{"maxConnectionAge":"0s","maxConnectionAgeGrace":"0s","maxConnectionIdle":"0s","time":"2h","timeout":"20s"},"tls":{"caPool":null,"certFile":null,"clientCertificateRequired":false,"keyFile":null}}}` | For complete certificate-authority service configuration see [plgd/certificate-authority](https://github.com/plgd-dev/hub/tree/main/certificate-authority) |
+| certificateauthority.ca | object | `{"cert":"tls.crt","key":"tls.key","secret":{"name":null},"volume":{"mountPath":"/certs/coap-device-ca","name":"coap-device-ca"}}` | CA section |
 | certificateauthority.ca.cert | string | `"tls.crt"` | Cert file name |
-| certificateauthority.ca.default | object | `{"commonName":"coap-device-ca","duration":"87600h","renewBefore":"360h","secret":{"name":"coap-device-ca"}}` | Default configuration for cert/key CA used for signing device/identity certificates |
-| certificateauthority.ca.default.commonName | string | `"coap-device-ca"` | Common name for CA created as default issuer |
-| certificateauthority.ca.default.renewBefore | string | `"360h"` | Renew before for default CA |
-| certificateauthority.ca.default.secret.name | string | `"coap-device-ca"` | Name of secret |
 | certificateauthority.ca.key | string | `"tls.key"` | Cert key file name |
-| certificateauthority.ca.secret.name | string | `nil` | Custom CA secret name |
+| certificateauthority.ca.secret.name | string | `nil` | Name of secret |
 | certificateauthority.ca.volume.mountPath | string | `"/certs/coap-device-ca"` | CA certificate mount path |
 | certificateauthority.ca.volume.name | string | `"coap-device-ca"` | CA certificate volume name |
 | certificateauthority.config | object | `{"fileName":"service.yaml","mountPath":"/config","volume":"config"}` | Service configuration |
@@ -89,7 +100,7 @@ global:
 | certificateauthority.imagePullSecrets | string | `nil` | Image pull secrets |
 | certificateauthority.ingress.annotations | object | `{}` | Ingress annotations |
 | certificateauthority.ingress.enabled | bool | `true` | Enable ingress |
-| certificateauthority.ingress.paths | list | `["/ocf.cloud.certificateauthority.pb.CertificateAuthority"]` | Paths |
+| certificateauthority.ingress.paths | list | `["/certificateauthority.pb.CertificateAuthority/SignIdentityCertificate"]` | Paths |
 | certificateauthority.initContainersTpl | string | `nil` | Init containers definition |
 | certificateauthority.livenessProbe | string | `nil` | Liveness probe. certificate-authority doesn't have any default liveness probe |
 | certificateauthority.log.debug | bool | `false` | Enable extended debug messages |
@@ -113,7 +124,7 @@ global:
 | certificateauthority.service.type | string | `"ClusterIP"` | Service type |
 | certificateauthority.signer | object | `{"certFile":null,"expiresIn":"87600h","keyFile":null,"validFrom":"now-1h"}` | For complete certificate-authority service configuration see [plgd/certificate-authority](https://github.com/plgd-dev/hub/tree/main/certificate-authority) |
 | certificateauthority.tolerations | string | `nil` | Toleration definition |
-| certmanager | object | `{"coap":{"cert":{"duration":null,"key":{"algorithm":null,"size":null},"renewBefore":null},"issuer":{"annotations":{},"kind":null,"labels":{},"name":null,"spec":null}},"default":{"cert":{"annotations":{},"duration":"8760h","key":{"algorithm":"ECDSA","size":256},"labels":{},"renewBefore":"360h"},"issuer":{"annotations":{},"enabled":true,"kind":"Issuer","labels":{},"name":"selfsigned-issuer","spec":{"selfSigned":{}}}},"enabled":true,"external":{"cert":{"duration":null,"key":{"algorithm":null,"size":null},"renewBefore":null},"issuer":{"annotations":{},"kind":null,"labels":{},"name":null,"spec":null}},"internal":{"cert":{"duration":null,"key":{"algorithm":null,"size":null},"renewBefore":null},"issuer":{"annotations":{},"kind":null,"labels":{},"name":null,"spec":null}}}` | Cert-manager integration section |
+| certmanager | object | `{"coap":{"cert":{"duration":null,"key":{"algorithm":null,"size":null},"renewBefore":null},"issuer":{"annotations":{},"kind":null,"labels":{},"name":null,"spec":null}},"default":{"ca":{"commonName":"plgd-ca","enabled":true,"issuer":{"annotations":{},"enabled":true,"kind":"Issuer","labels":{},"name":"ca-issuer","spec":{"selfSigned":{}}},"secret":{"name":"plgd-ca"}},"cert":{"annotations":{},"duration":"8760h","key":{"algorithm":"ECDSA","size":256},"labels":{},"renewBefore":"360h"},"issuer":{"annotations":{},"enabled":true,"kind":"Issuer","labels":{},"name":"default-issuer","spec":{"selfSigned":{}}}},"enabled":true,"external":{"cert":{"duration":null,"key":{"algorithm":null,"size":null},"renewBefore":null},"issuer":{"annotations":{},"kind":null,"labels":{},"name":null,"spec":null}},"internal":{"cert":{"duration":null,"key":{"algorithm":null,"size":null},"renewBefore":null},"issuer":{"annotations":{},"kind":null,"labels":{},"name":null,"spec":null}}}` | Cert-manager integration section |
 | certmanager.coap.cert.duration | string | `nil` | Certificate duration |
 | certmanager.coap.cert.key.algorithm | string | `nil` | Certificate key algorithm |
 | certmanager.coap.cert.key.size | string | `nil` | Certificate key size |
@@ -123,7 +134,14 @@ global:
 | certmanager.coap.issuer.labels | object | `{}` | Labels |
 | certmanager.coap.issuer.name | string | `nil` | Name |
 | certmanager.coap.issuer.spec | string | `nil` | cert-manager issuer spec |
-| certmanager.default | object | `{"cert":{"annotations":{},"duration":"8760h","key":{"algorithm":"ECDSA","size":256},"labels":{},"renewBefore":"360h"},"issuer":{"annotations":{},"enabled":true,"kind":"Issuer","labels":{},"name":"selfsigned-issuer","spec":{"selfSigned":{}}}}` | Default cert-manager section |
+| certmanager.default | object | `{"ca":{"commonName":"plgd-ca","enabled":true,"issuer":{"annotations":{},"enabled":true,"kind":"Issuer","labels":{},"name":"ca-issuer","spec":{"selfSigned":{}}},"secret":{"name":"plgd-ca"}},"cert":{"annotations":{},"duration":"8760h","key":{"algorithm":"ECDSA","size":256},"labels":{},"renewBefore":"360h"},"issuer":{"annotations":{},"enabled":true,"kind":"Issuer","labels":{},"name":"default-issuer","spec":{"selfSigned":{}}}}` | Default cert-manager section |
+| certmanager.default.ca.commonName | string | `"plgd-ca"` | Common name for CA created as default issuer |
+| certmanager.default.ca.issuer.annotations | object | `{}` | Annotation for root issuer |
+| certmanager.default.ca.issuer.enabled | bool | `true` | Enable root issuer |
+| certmanager.default.ca.issuer.labels | object | `{}` | Labels for root issuer |
+| certmanager.default.ca.issuer.name | string | `"ca-issuer"` | Name of root issuer |
+| certmanager.default.ca.issuer.spec | object | `{"selfSigned":{}}` | Default issuer specification. |
+| certmanager.default.ca.secret.name | string | `"plgd-ca"` | Name of secret |
 | certmanager.default.cert | object | `{"annotations":{},"duration":"8760h","key":{"algorithm":"ECDSA","size":256},"labels":{},"renewBefore":"360h"}` | Default certificate specification |
 | certmanager.default.cert.annotations | object | `{}` | Certificate annotations |
 | certmanager.default.cert.duration | string | `"8760h"` | Certificate duration |
@@ -132,11 +150,11 @@ global:
 | certmanager.default.cert.key.size | int | `256` | Key size |
 | certmanager.default.cert.labels | object | `{}` | Certificate labels |
 | certmanager.default.cert.renewBefore | string | `"360h"` | Certificate renew before |
-| certmanager.default.issuer | object | `{"annotations":{},"enabled":true,"kind":"Issuer","labels":{},"name":"selfsigned-issuer","spec":{"selfSigned":{}}}` | Default cert-manager issuer |
+| certmanager.default.issuer | object | `{"annotations":{},"enabled":true,"kind":"Issuer","labels":{},"name":"default-issuer","spec":{"selfSigned":{}}}` | Default cert-manager issuer |
 | certmanager.default.issuer.annotations | object | `{}` | Annotation for default issuer |
 | certmanager.default.issuer.enabled | bool | `true` | Enable Default issuer |
 | certmanager.default.issuer.labels | object | `{}` | Labels for default issuer |
-| certmanager.default.issuer.name | string | `"selfsigned-issuer"` | Name of default issuer |
+| certmanager.default.issuer.name | string | `"default-issuer"` | Name of default issuer |
 | certmanager.default.issuer.spec | object | `{"selfSigned":{}}` | Default issuer specification. |
 | certmanager.enabled | bool | `true` | Enable cert-manager integration |
 | certmanager.external.cert.duration | string | `nil` | Certificate duration |
@@ -159,11 +177,10 @@ global:
 | certmanager.internal.issuer.name | string | `nil` | Name |
 | certmanager.internal.issuer.spec | string | `nil` | cert-manager issuer spec |
 | cluster.dns | string | `"cluster.local"` | Cluster internal DNS prefix |
-| coapgateway | object | `{"affinity":{},"apis":{"coap":{"authorization":{"deviceIdClaim":null,"ownerClaim":null,"providers":null},"blockwiseTransfer":{"blockSize":"1024","enabled":false},"externalAddress":"","goroutineSocketHeartbeat":"4s","keepAlive":{"timeout":"20s"},"maxMessageSize":262144,"ownerCacheExpiration":"1m","subscriptionBufferSize":1000,"tls":{"caPool":null,"certFile":null,"clientCertificateRequired":true,"enabled":true,"keyFile":null}}},"clients":{"eventBus":{"nats":{"pendingLimits":{"bytesLimit":"67108864","msgLimit":"524288"},"tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false},"url":""}},"identityStore":{"grpc":{"address":"","keepAlive":{"permitWithoutStream":true,"time":"10s","timeout":"20s"},"tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false}},"ownerClaim":null},"resourceAggregate":{"deviceStatusExpiration":{"enabled":false,"expiresIn":"0s"},"grpc":{"address":"","keepAlive":{"permitWithoutStream":true,"time":"10s","timeout":"20s"},"tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false}}},"resourceDirectory":{"grpc":{"address":"","keepAlive":{"permitWithoutStream":true,"time":"10s","timeout":"20s"},"tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false}}}},"cloudId":null,"config":{"fileName":"service.yaml","mountPath":"/config","volume":"config"},"deploymentAnnotations":{},"deploymentLabels":{},"enabled":true,"extraVolumeMounts":{},"extraVolumes":{},"fullnameOverride":null,"image":{"imagePullSecrets":{},"pullPolicy":"Always","registry":null,"repository":"plgd/coap-gateway","tag":null},"imagePullSecrets":{},"initContainersTpl":{},"livenessProbe":{},"log":{"debug":false,"dumpCoapMessages":true},"name":"coap-gateway","nodeSelector":{},"podAnnotations":{},"podLabels":{},"podSecurityContext":{},"port":5684,"rbac":{"enabled":false,"roleBindingDefinitionTpl":null,"serviceAccountName":"coap-gateway"},"readinessProbe":{},"replicas":1,"resources":{},"restartPolicy":"Always","securityContext":{},"service":{"annotations":{},"labels":{},"type":"LoadBalancer"},"taskQueue":{"goPoolSize":1600,"maxIdleTime":"10m","size":"2097152"},"tolerations":{}}` | CoAP gateway parameters |
+| coapgateway | object | `{"affinity":{},"apis":{"coap":{"authorization":{"deviceIdClaim":null,"ownerClaim":null,"providers":null},"blockwiseTransfer":{"blockSize":"1024","enabled":false},"externalAddress":"","goroutineSocketHeartbeat":"4s","keepAlive":{"timeout":"20s"},"maxMessageSize":262144,"ownerCacheExpiration":"1m","subscriptionBufferSize":1000,"tls":{"caPool":null,"certFile":null,"clientCertificateRequired":true,"enabled":true,"keyFile":null}}},"clients":{"eventBus":{"nats":{"pendingLimits":{"bytesLimit":"67108864","msgLimit":"524288"},"tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false},"url":""}},"identityStore":{"grpc":{"address":"","keepAlive":{"permitWithoutStream":true,"time":"10s","timeout":"20s"},"tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false}},"ownerClaim":null},"resourceAggregate":{"deviceStatusExpiration":{"enabled":false,"expiresIn":"0s"},"grpc":{"address":"","keepAlive":{"permitWithoutStream":true,"time":"10s","timeout":"20s"},"tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false}}},"resourceDirectory":{"grpc":{"address":"","keepAlive":{"permitWithoutStream":true,"time":"10s","timeout":"20s"},"tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false}}}},"config":{"fileName":"service.yaml","mountPath":"/config","volume":"config"},"deploymentAnnotations":{},"deploymentLabels":{},"enabled":true,"extraVolumeMounts":{},"extraVolumes":{},"fullnameOverride":null,"hubId":null,"image":{"imagePullSecrets":{},"pullPolicy":"Always","registry":null,"repository":"plgd/coap-gateway","tag":null},"imagePullSecrets":{},"initContainersTpl":{},"livenessProbe":{},"log":{"debug":false,"dumpCoapMessages":true},"name":"coap-gateway","nodeSelector":{},"podAnnotations":{},"podLabels":{},"podSecurityContext":{},"port":5684,"rbac":{"enabled":false,"roleBindingDefinitionTpl":null,"serviceAccountName":"coap-gateway"},"readinessProbe":{},"replicas":1,"resources":{},"restartPolicy":"Always","securityContext":{},"service":{"annotations":{},"labels":{},"type":"LoadBalancer"},"taskQueue":{"goPoolSize":1600,"maxIdleTime":"10m","size":"2097152"},"tolerations":{}}` | CoAP gateway parameters |
 | coapgateway.affinity | object | `{}` | Affinity definition |
 | coapgateway.apis | object | `{"coap":{"authorization":{"deviceIdClaim":null,"ownerClaim":null,"providers":null},"blockwiseTransfer":{"blockSize":"1024","enabled":false},"externalAddress":"","goroutineSocketHeartbeat":"4s","keepAlive":{"timeout":"20s"},"maxMessageSize":262144,"ownerCacheExpiration":"1m","subscriptionBufferSize":1000,"tls":{"caPool":null,"certFile":null,"clientCertificateRequired":true,"enabled":true,"keyFile":null}}}` | For complete coap-gateway service configuration see [plgd/coap-gateway](https://github.com/plgd-dev/hub/tree/main/coap-gateway) |
 | coapgateway.clients | object | `{"eventBus":{"nats":{"pendingLimits":{"bytesLimit":"67108864","msgLimit":"524288"},"tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false},"url":""}},"identityStore":{"grpc":{"address":"","keepAlive":{"permitWithoutStream":true,"time":"10s","timeout":"20s"},"tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false}},"ownerClaim":null},"resourceAggregate":{"deviceStatusExpiration":{"enabled":false,"expiresIn":"0s"},"grpc":{"address":"","keepAlive":{"permitWithoutStream":true,"time":"10s","timeout":"20s"},"tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false}}},"resourceDirectory":{"grpc":{"address":"","keepAlive":{"permitWithoutStream":true,"time":"10s","timeout":"20s"},"tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false}}}}` | For complete coap-gateway service configuration see [plgd/coap-gateway](https://github.com/plgd-dev/hub/tree/main/coap-gateway) |
-| coapgateway.cloudId | string | `nil` | Cloud ID. Can be override via global.cloudId |
 | coapgateway.config.fileName | string | `"service.yaml"` | Service configuration file name |
 | coapgateway.config.mountPath | string | `"/config"` | Configuration mount path |
 | coapgateway.config.volume | string | `"config"` | Volume name |
@@ -173,6 +190,7 @@ global:
 | coapgateway.extraVolumeMounts | object | `{}` | Optional extra volume mounts |
 | coapgateway.extraVolumes | object | `{}` | Optional extra volumes |
 | coapgateway.fullnameOverride | string | `nil` | Full name to override |
+| coapgateway.hubId | string | `nil` | Hub ID. Can be override via global.hubId |
 | coapgateway.image.imagePullSecrets | object | `{}` | Image pull secrets |
 | coapgateway.image.pullPolicy | string | `"Always"` | Image pull policy |
 | coapgateway.image.registry | string | `nil` | Image registry |
@@ -204,12 +222,12 @@ global:
 | coapgateway.taskQueue | object | `{"goPoolSize":1600,"maxIdleTime":"10m","size":"2097152"}` | For complete coap-gateway service configuration see [plgd/coap-gateway](https://github.com/plgd-dev/hub/tree/main/coap-gateway) |
 | coapgateway.tolerations | object | `{}` | Toleration definition |
 | extraDeploy | string | `nil` | Extra deploy. Resolved as template |
-| global | object | `{"audience":"","authority":null,"cloudId":null,"deviceIdClaim":null,"domain":null,"oauth":{"device":[],"web":{"clientID":null}},"ownerClaim":"sub"}` | Global config variables |
+| global | object | `{"audience":"","authority":null,"deviceIdClaim":null,"domain":null,"hubId":null,"oauth":{"device":[],"web":{"clientID":null}},"ownerClaim":"sub"}` | Global config variables |
 | global.audience | string | `""` | OAuth audience |
 | global.authority | string | `nil` | OAuth authority |
-| global.cloudId | string | `nil` | CloudID. Used by coap-gateway. It must be unique |
 | global.deviceIdClaim | string | `nil` | Device ID claim |
 | global.domain | string | `nil` | Global domain |
+| global.hubId | string | `nil` | hubId. Used by coap-gateway. It must be unique |
 | global.ownerClaim | string | `"sub"` | OAuth owner Claim |
 | grpcgateway.affinity | object | `{}` | Affinity definition |
 | grpcgateway.apis | object | `{"grpc":{"address":null,"authorization":{"audience":"","authority":"","http":{"idleConnTimeout":"30s","maxConnsPerHost":32,"maxIdleConns":16,"maxIdleConnsPerHost":16,"timeout":"10s","tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":true}}},"enforcementPolicy":{"minTime":"5s","permitWithoutStream":true},"keepAlive":{"maxConnectionAge":"0s","maxConnectionAgeGrace":"0s","maxConnectionIdle":"0s","time":"2h","timeout":"20s"},"ownerCacheExpiration":"1m","tls":{"caPool":null,"certFile":null,"clientCertificateRequired":true,"keyFile":null}}}` | For complete grpc-gateway service configuration see [plgd/grpc-gateway](https://github.com/plgd-dev/hub/tree/main/grpc-gateway) |
@@ -300,11 +318,11 @@ global:
 | httpgateway.service.labels | object | `{}` | Labels for http-gateway service |
 | httpgateway.service.type | string | `"ClusterIP"` |  |
 | httpgateway.tolerations | object | `{}` | Toleration definition |
-| httpgateway.ui | object | `{"directory":"/usr/local/var/www","enabled":false,"webConfiguration":{"authority":"","deviceOAuthClient":{"audience":null,"clientID":null,"providerName":null,"scopes":[]},"httpGatewayAddress":"","webOAuthClient":{"audience":"","clientID":"","scopes":[]}}}` | For complete http-gateway service configuration see [plgd/http-gateway](https://github.com/plgd-dev/hub/tree/main/http-gateway) |
+| httpgateway.ui | object | `{"directory":"/usr/local/var/www","enabled":true,"webConfiguration":{"authority":"","deviceOAuthClient":{"audience":null,"clientID":null,"providerName":null,"scopes":[]},"httpGatewayAddress":"","webOAuthClient":{"audience":"","clientID":"","scopes":[]}}}` | For complete http-gateway service configuration see [plgd/http-gateway](https://github.com/plgd-dev/hub/tree/main/http-gateway) |
 | httpgateway.uiDomain | string | `nil` | Domain for UI Default: {{ global.domain }} |
 | identitystore.affinity | object | `{}` | Affinity definition |
 | identitystore.apis | object | `{"grpc":{"address":null,"authorization":{"audience":null,"authority":null,"http":{"idleConnTimeout":"30s","maxConnsPerHost":32,"maxIdleConns":16,"maxIdleConnsPerHost":16,"timeout":"10s","tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":true}},"ownerClaim":"sub"},"enforcementPolicy":{"minTime":"5s","permitWithoutStream":true},"keepAlive":{"maxConnectionAge":"0s","maxConnectionAgeGrace":"0s","maxConnectionIdle":"0s","time":"2h","timeout":"20s"},"tls":{"caPool":null,"certFile":null,"clientCertificateRequired":true,"keyFile":null}}}` | For complete identity service configuration see [plgd/identity](https://github.com/plgd-dev/hub/tree/main/identity) |
-| identitystore.clients | object | `{"eventBus":{"nats":{"jetstream":false,"tls":{"useSystemCAPool":false},"url":""}},"storage":{"mongoDB":{"database":"ownersDevices","tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false},"uri":null}}}` | For complete identity service configuration see [plgd/authorization](https://github.com/plgd-dev/hub/tree/main/identity) |
+| identitystore.clients | object | `{"eventBus":{"nats":{"flusherTimeout":"30s","jetstream":false,"tls":{"useSystemCAPool":false},"url":""}},"storage":{"mongoDB":{"database":"ownersDevices","tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false},"uri":null}}}` | For complete identity service configuration see [plgd/authorization](https://github.com/plgd-dev/hub/tree/main/identity) |
 | identitystore.config | object | `{"fileName":"service.yaml","mountPath":"/config","volume":"config"}` | yaml configuration |
 | identitystore.config.fileName | string | `"service.yaml"` | File name |
 | identitystore.config.mountPath | string | `"/config"` | Service configuration mount path |
@@ -345,6 +363,60 @@ global:
 | identitystore.service.labels | object | `{}` | Service labels |
 | identitystore.service.type | string | `"ClusterIP"` | Service type |
 | identitystore.tolerations | object | `{}` | Toleration definition |
+| mockoauthserver.affinity | object | `{}` | Affinity definition |
+| mockoauthserver.apis | object | `{"http":{"address":null,"tls":{"caPool":null,"certFile":null,"clientCertificateRequired":false,"keyFile":null}}}` | For complete mock-oauth-server service configuration see [plgd/oauth-server](https://github.com/plgd-dev/hub/tree/main/test/oauth-server) |
+| mockoauthserver.config | object | `{"fileName":"service.yaml","mountPath":"/config","volume":"config"}` | mock-oauth-server service yaml config section |
+| mockoauthserver.config.fileName | string | `"service.yaml"` | Name of configuration file |
+| mockoauthserver.config.mountPath | string | `"/config"` | Mount path |
+| mockoauthserver.config.volume | string | `"config"` | Volume for configuration file |
+| mockoauthserver.deploymentAnnotations | object | `{}` | Additional annotations for mock-oauth-server deployment |
+| mockoauthserver.deploymentLabels | object | `{}` | Additional labels for mock-oauth-server deployment |
+| mockoauthserver.domain | string | `nil` | Domain for   apiDomain: Default: auth.{{ global.domain }} |
+| mockoauthserver.enabled | bool | `false` | Enable mock-oauth-server service |
+| mockoauthserver.extraVolumeMounts | object | `{}` | Optional extra volume mounts |
+| mockoauthserver.extraVolumes | object | `{}` | Optional extra volumes |
+| mockoauthserver.fullnameOverride | string | `nil` | Full name to override |
+| mockoauthserver.image.imagePullSecrets | object | `{}` | Image pull secrets |
+| mockoauthserver.image.pullPolicy | string | `"Always"` | Image pull policy |
+| mockoauthserver.image.registry | string | `nil` | Image registry |
+| mockoauthserver.image.repository | string | `"plgd/mock-oauth-server"` | Image repository |
+| mockoauthserver.image.tag | string | `nil` | Image tag. |
+| mockoauthserver.imagePullSecrets | object | `{}` | Image pull secrets |
+| mockoauthserver.ingress.annotations | object | `{}` | Ingress annotation |
+| mockoauthserver.ingress.enabled | bool | `true` | Enable ingress |
+| mockoauthserver.ingress.paths | list | `["/"]` | Ingress path |
+| mockoauthserver.livenessProbe | object | `{}` | Liveness probe. mock-oauth-server doesn't have any default liveness probe |
+| mockoauthserver.log.debug | bool | `false` | Enable extended debug messages |
+| mockoauthserver.name | string | `"mock-oauth-server"` | Name of component. Used in label selectors |
+| mockoauthserver.nodeSelector | object | `{}` | Node selector |
+| mockoauthserver.oauthSigner.accessTokenKeyFile | string | `"/keys/accessToken.key"` |  |
+| mockoauthserver.oauthSigner.clients.accessTokenLifetime | string | `"0s"` |  |
+| mockoauthserver.oauthSigner.clients.authorizationCodeLifetime | string | `"10m"` |  |
+| mockoauthserver.oauthSigner.clients.codeRestrictionLifetime | string | `"0s"` |  |
+| mockoauthserver.oauthSigner.clients.id | string | `"test"` |  |
+| mockoauthserver.oauthSigner.domain | string | `nil` |  |
+| mockoauthserver.oauthSigner.idTokenKeyFile | string | `"/keys/idToken.key"` |  |
+| mockoauthserver.oauth[0].clientID | string | `"test"` |  |
+| mockoauthserver.oauth[0].clientSecret | string | `"test"` |  |
+| mockoauthserver.oauth[0].name | string | `"plgd.mobile"` |  |
+| mockoauthserver.oauth[0].redirectURL | string | `"cloud.plgd.mobile://login-callback"` |  |
+| mockoauthserver.oauth[1].clientID | string | `"test"` |  |
+| mockoauthserver.oauth[1].clientSecret | string | `"test"` |  |
+| mockoauthserver.oauth[1].name | string | `"plgd.web"` |  |
+| mockoauthserver.oauth[1].redirectURL | string | `"{{ printf \"https://%s\" ( include \"plgd-hub.mockoauthserver.ingressDomain\" . ) }}/things"` |  |
+| mockoauthserver.podAnnotations | object | `{}` | Annotations for mock-oauth-server pod |
+| mockoauthserver.podLabels | object | `{}` | Labels for http-gateway pod |
+| mockoauthserver.podSecurityContext | object | `{}` | Pod security context |
+| mockoauthserver.port | int | `9100` | Port for service and POD |
+| mockoauthserver.readinessProbe | object | `{}` | Readiness probe. mock-oauth-server doesn't have aby default readiness probe |
+| mockoauthserver.replicas | int | `1` | Number of replicas |
+| mockoauthserver.resources | object | `{}` | Resources limit |
+| mockoauthserver.restartPolicy | string | `"Always"` | Restart policy for pod |
+| mockoauthserver.securityContext | object | `{}` |  |
+| mockoauthserver.service.annotations | object | `{}` | Annotations for mock-oauth-server service |
+| mockoauthserver.service.labels | object | `{}` | Labels for mock-oauth-server service |
+| mockoauthserver.service.type | string | `"ClusterIP"` |  |
+| mockoauthserver.tolerations | object | `{}` | Toleration definition |
 | mongodb | object | `{"arbiter":{"enabled":false},"architecture":"replicaset","auth":{"enabled":false},"customLivenessProbe":{"exec":{"command":["mongo","--disableImplicitSessions","--tls","--tlsCertificateKeyFile=/certs/cert.pem","--tlsCAFile=/certs/ca.pem","--eval","db.adminCommand('ping')"]},"failureThreshold":6,"initialDelaySeconds":30,"periodSeconds":10,"successThreshold":1,"timeoutSeconds":5},"customReadinessProbe":{"exec":{"command":["bash","-ec","TLS_OPTIONS='--tls --tlsCertificateKeyFile=/certs/cert.pem --tlsCAFile=/certs/ca.pem'\nmongo --disableImplicitSessions $TLS_OPTIONS --eval 'db.hello().isWritablePrimary || db.hello().secondary' | grep -q 'true'\n"]},"failureThreshold":6,"initialDelaySeconds":5,"periodSeconds":10,"successThreshold":1,"timeoutSeconds":5},"enabled":true,"extraEnvVars":[{"name":"MONGODB_EXTRA_FLAGS","value":"--tlsMode=requireTLS --tlsCertificateKeyFile=/certs/cert.pem --tlsCAFile=/certs/ca.pem"},{"name":"MONGODB_CLIENT_EXTRA_FLAGS","value":"--tls --tlsCertificateKeyFile=/certs/cert.pem --tlsCAFile=/certs/ca.pem"}],"extraVolumeMounts":[{"mountPath":"/certs","name":"mongodb-crt"}],"extraVolumes":[{"emptyDir":{},"name":"mongodb-crt"},{"name":"mongodb-cm-crt","secret":{"secretName":"mongodb-cm-crt"}}],"fullnameOverride":"mongodb","image":{"debug":true,"net":{"port":27017}},"initContainers":[{"command":["sh","-c","/bin/bash <<'EOF'\ncat /tmp/certs/tls.crt >> /certs/cert.pem\ncat /tmp/certs/tls.key >> /certs/cert.pem\ncp /tmp/certs/ca.crt  /certs/ca.pem\nEOF\n"],"image":"docker.io/bitnami/nginx:1.19.10-debian-10-r63","imagePullPolicy":"IfNotPresent","name":"convert-cm-crt","volumeMounts":[{"mountPath":"/certs","name":"mongodb-crt"},{"mountPath":"/tmp/certs","name":"mongodb-cm-crt"}]}],"livenessProbe":{"enabled":false},"persistence":{"enabled":true},"readinessProbe":{"enabled":false},"replicaCount":3,"replicaSetName":"rs0","tls":{"enabled":false}}` | External mongodb-replica dependency setup |
 | nats | object | `{"cluster":{"enabled":false,"noAdvertise":false},"enabled":true,"leafnodes":{"enabled":false,"noAdvertise":false},"nats":{"tls":{"ca":"ca.crt","cert":"tls.crt","key":"tls.key","secret":{"name":"nats-service-crt"},"verify":true}},"natsbox":{"enabled":false}}` | External nats dependency setup |
 | resourceaggregate.affinity | object | `{}` | Affinity definition |
@@ -373,7 +445,7 @@ global:
 | resourceaggregate.apis.grpc.tls.certFile | string | `nil` |  |
 | resourceaggregate.apis.grpc.tls.clientCertificateRequired | bool | `true` |  |
 | resourceaggregate.apis.grpc.tls.keyFile | string | `nil` |  |
-| resourceaggregate.clients | object | `{"eventBus":{"nats":{"jetstream":false,"pendingLimits":{"bytesLimit":"67108864","msgLimit":524288},"tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false},"url":null}},"eventStore":{"defaultCommandTimeToLive":"0s","mongoDB":{"batchSize":128,"database":"eventStore","maxConnIdleTime":"4m0s","maxPoolSize":16,"tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false},"uri":null},"occMaxRetry":8,"snapshotThreshold":16},"identityStore":{"grpc":{"address":null,"keepAlive":{"permitWithoutStream":true,"time":"10s","timeout":"20s"},"tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false}}}}` | For complete resource-aggregate service configuration see [plgd/resource-aggregate](https://github.com/plgd-dev/hub/tree/main/resource-aggregate) |
+| resourceaggregate.clients | object | `{"eventBus":{"nats":{"flusherTimeout":"30s","jetstream":false,"pendingLimits":{"bytesLimit":"67108864","msgLimit":524288},"tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false},"url":null}},"eventStore":{"defaultCommandTimeToLive":"0s","mongoDB":{"batchSize":128,"database":"eventStore","maxConnIdleTime":"4m0s","maxPoolSize":16,"tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false},"uri":null},"occMaxRetry":8,"snapshotThreshold":16},"identityStore":{"grpc":{"address":null,"keepAlive":{"permitWithoutStream":true,"time":"10s","timeout":"20s"},"tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false}}}}` | For complete resource-aggregate service configuration see [plgd/resource-aggregate](https://github.com/plgd-dev/hub/tree/main/resource-aggregate) |
 | resourceaggregate.config | object | `{"fileName":"service.yaml","mountPath":"/config","volume":"config"}` | Service configuration |
 | resourceaggregate.config.fileName | string | `"service.yaml"` | Service configuration file name |
 | resourceaggregate.config.mountPath | string | `"/config"` | Configuration mount path |
@@ -413,7 +485,7 @@ global:
 | resourceaggregate.service.type | string | `"ClusterIP"` | Service type |
 | resourceaggregate.tolerations | object | `{}` | Toleration definition |
 | resourcedirectory.affinity | object | `{}` | Affinity definition |
-| resourcedirectory.apis | object | `{"grpc":{"address":null,"authorization":{"audience":null,"authority":null,"http":{"idleConnTimeout":"30s","maxConnsPerHost":32,"maxIdleConns":16,"maxIdleConnsPerHost":16,"timeout":"10s","tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":true}},"ownerClaim":null},"enforcementPolicy":{"minTime":"5s","permitWithoutStream":true},"keepAlive":{"maxConnectionAge":"0s","maxConnectionAgeGrace":"0s","maxConnectionIdle":"0s","time":"2h","timeout":"20s"},"tls":{"caPool":null,"certFile":null,"clientCertificateRequired":true,"keyFile":null}}}` | For complete resource-directory service configuration see [plgd/resource-directory](https://github.com/plgd-dev/hub/tree/main/resource-directory) |
+| resourcedirectory.apis | object | `{"grpc":{"address":null,"authorization":{"audience":null,"authority":null,"http":{"idleConnTimeout":"30s","maxConnsPerHost":32,"maxIdleConns":16,"maxIdleConnsPerHost":16,"timeout":"10s","tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":true}},"ownerClaim":null},"enforcementPolicy":{"minTime":"5s","permitWithoutStream":true},"keepAlive":{"maxConnectionAge":"0s","maxConnectionAgeGrace":"0s","maxConnectionIdle":"0s","time":"2h","timeout":"20s"},"ownerCacheExpiration":"1m","tls":{"caPool":null,"certFile":null,"clientCertificateRequired":true,"keyFile":null}}}` | For complete resource-directory service configuration see [plgd/resource-directory](https://github.com/plgd-dev/hub/tree/main/resource-directory) |
 | resourcedirectory.clients | object | `{"eventBus":{"goPoolSize":16,"nats":{"pendingLimits":{"bytesLimit":"67108864","msgLimit":"524288"},"tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false},"url":""}},"eventStore":{"cacheExpiration":"20m","mongoDB":{"batchSize":128,"database":"eventStore","maxConnIdleTime":"4m0s","maxPoolSize":16,"tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false},"uri":""}},"identityStore":{"cacheExpiration":"1m","grpc":{"address":"","keepAlive":{"permitWithoutStream":true,"time":"10s","timeout":"20s"},"tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false}},"oauth":{"audience":"","clientID":null,"clientSecret":null,"http":{"idleConnTimeout":"30s","maxConnsPerHost":32,"maxIdleConns":16,"maxIdleConnsPerHost":16,"timeout":"10s","tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false}},"scopes":[],"tokenURL":"","verifyServiceTokenFrequency":"10s"},"ownerClaim":"sub","pullFrequency":"15s"}}` | For complete resource-directory service configuration see [plgd/resource-directory](https://github.com/plgd-dev/hub/tree/main/resource-directory) |
 | resourcedirectory.config | object | `{"fileName":"service.yaml","mountPath":"/config","volume":"config"}` | Service configuration |
 | resourcedirectory.config.fileName | string | `"service.yaml"` | Service configuration file |
@@ -441,7 +513,7 @@ global:
 | resourcedirectory.podLabels | object | `{}` | Labels for resource-directory pod |
 | resourcedirectory.podSecurityContext | object | `{}` | Pod security context |
 | resourcedirectory.port | int | `9100` | Service and POD port |
-| resourcedirectory.publicConfiguration | object | `{"authorizationServer":null,"caPool":null,"cloudID":null,"cloudURL":null,"defaultCommandTimeToLive":"0s","deviceIdClaim":null,"ownerClaim":null}` | For complete resource-directory service configuration see [plgd/resource-directory](https://github.com/plgd-dev/hub/tree/main/resource-directory) |
+| resourcedirectory.publicConfiguration | object | `{"authorizationServer":null,"caPool":null,"coapGateway":null,"defaultCommandTimeToLive":"0s","deviceIdClaim":null,"hubId":null,"ownerClaim":null}` | For complete resource-directory service configuration see [plgd/resource-directory](https://github.com/plgd-dev/hub/tree/main/resource-directory) |
 | resourcedirectory.rbac | object | `{"enabled":false,"roleBindingDefitionTpl":null,"serviceAccountName":"resource-directory"}` | RBAC configuration |
 | resourcedirectory.rbac.roleBindingDefitionTpl | string | `nil` | template definition for Role/binding etc.. |
 | resourcedirectory.rbac.serviceAccountName | string | `"resource-directory"` | Name of resource-directory SA |

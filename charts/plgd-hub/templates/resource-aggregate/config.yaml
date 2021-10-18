@@ -44,6 +44,7 @@ stringData:
       eventBus:
         nats:
           url:{{ printf " " }}{{- include "plgd-hub.natsUri" (list $ .clients.eventBus.nats.url) | quote }}
+          flusherTimeout: {{ .clients.eventBus.nats.flusherTimeout | quote }}
           jetstream: {{ .clients.eventBus.nats.jetstream }}
           tls:
             {{- $natsTls := .clients.eventBus.nats.tls }}

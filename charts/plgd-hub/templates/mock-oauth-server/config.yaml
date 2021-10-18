@@ -1,0 +1,30 @@
+{{- if .Values.mockoauthserver.enabled }}
+{{- $httpCert := "/certs" }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ include "plgd-hub.mockoauthserver.configSecretName" . }}
+  namespace: {{ .Release.Namespace }}
+stringData:
+  {{ .Values.mockoauthserver.config.fileName }}: |
+    {{- with .Values.mockoauthserver }}
+    log:
+      debug: {{ .log.debug }}
+    apis:
+      http:
+        address: {{  .apis.http.address | default (printf "0.0.0.0:%v" .port) | quote }}
+        tls:
+          {{- $tls := .apis.http.tls }}
+          {{- include "plgd-hub.certificateConfig" (list $ $tls $httpCert ) | indent 8 }}
+          clientCertificateRequired: {{ .apis.http.tls.clientCertificateRequired }}
+    oauthSigner:
+      idTokenKeyFile: {{ .oauthSigner.idTokenKeyFile | quote }}
+      accessTokenKeyFile: {{ .oauthSigner.accessTokenKeyFile | quote }}
+      domain: {{ .oauthSigner.domain | default $.Values.global.domain | quote }}
+      clients:
+        - id: {{ .oauthSigner.clients.id | quote }}
+          authorizationCodeLifetime:  {{ .oauthSigner.clients.authorizationCodeLifetime | quote }}
+          accessTokenLifetime:  {{ .oauthSigner.clients.accessTokenLifetime | quote }}
+          codeRestrictionLifetime:  {{ .oauthSigner.clients.codeRestrictionLifetime | quote }}
+{{- end }}
+{{- end }}

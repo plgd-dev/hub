@@ -1,0 +1,130 @@
+{{- if .Values.mockoauthserver.enabled }}
+{{- $rdServiceCert := "/certs" }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "plgd-hub.mockoauthserver.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "plgd-hub.labels" . | nindent 4 }}
+    {{- with .Values.mockoauthserver.deploymentLabels }}
+    {{- . | toYaml | nindent 4 }}
+    {{- end }}
+  {{- with .Values.mockoauthserver.deploymentAnnotations }}
+  annotations:
+  {{- . | toYaml | nindent 4 }}
+  {{- end }}
+spec:
+  replicas: {{ .Values.mockoauthserver.replicas }}
+  selector:
+    matchLabels:
+      {{- include "plgd-hub.mockoauthserver.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.mockoauthserver.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "plgd-hub.mockoauthserver.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.mockoauthserver.securityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.mockoauthserver.image.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      restartPolicy: {{ .Values.mockoauthserver.restartPolicy }}
+      initContainers:
+        - name: init-sign-keys
+          image: docker.io/bitnami/nginx:1.19.10-debian-10-r63
+          imagePullPolicy: IfNotPresent
+          command:
+            - sh
+            - -c
+            - |
+              /bin/bash <<'EOF'
+              if [ ! -f "{{ $.Values.mockoauthserver.oauthSigner.idTokenKeyFile }}" ]; then
+                  openssl genrsa -out {{ $.Values.mockoauthserver.oauthSigner.idTokenKeyFile }} 4096
+              fi
+              if [ ! -f "{{ $.Values.mockoauthserver.oauthSigner.accessTokenKeyFile }}" ]; then
+                  openssl ecparam -name prime256v1 -genkey -noout -out {{ $.Values.mockoauthserver.oauthSigner.accessTokenKeyFile }}
+              fi
+              EOF
+          volumeMounts:
+            - mountPath: /keys
+              name: keys
+      containers:
+        - name: {{ .Values.mockoauthserver.name }}
+          {{- with .Values.mockoauthserver.podSecurityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          image: {{ include "plgd-hub.mockoauthserver.image" . | quote }}
+          imagePullPolicy: {{ .Values.httpgateway.image.pullPolicy }}
+          {{- if .Values.mockoauthserver.command }}
+          command:
+          {{- range .Values.mockoauthserver.command  }}
+            - {{ . | quote }}
+          {{- end }}
+          {{- end}}
+          args:
+            - "--config"
+            - {{  printf "%s/%s" .Values.mockoauthserver.config.mountPath .Values.mockoauthserver.config.fileName | quote }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.mockoauthserver.port }}
+              protocol: TCP
+          {{- with .Values.mockoauthserver.livenessProbe }}
+          livenessProbe:
+          {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.mockoauthserver.readinessProbe }}
+          readinessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.mockoauthserver.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - mountPath: {{ .Values.mockoauthserver.config.mountPath }}
+              name: {{ .Values.mockoauthserver.config.volume }}
+            {{- if ( include "plgd-hub.mockoauthserver.createServiceCertByCm" . ) }}
+            - name: service-crt
+              mountPath: {{ $rdServiceCert }}
+            {{- end }}
+            {{- with .Values.mockoauthserver.extraVolumes }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+            - name: keys
+              mountPath: /keys
+      volumes:
+        - name: keys
+          emptyDir: {}
+        - name: {{ .Values.mockoauthserver.config.volume }}
+          secret:
+            secretName: {{ include "plgd-hub.mockoauthserver.configSecretName" . }}
+        {{- if ( include "plgd-hub.mockoauthserver.createServiceCertByCm" . ) }}
+        - name: service-crt
+          secret:
+            secretName: {{ include "plgd-hub.mockoauthserver.serviceCertName" . }}
+        {{- end }}
+        {{- with .Values.mockoauthserver.extraVolumeMounts }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with .Values.mockoauthserver.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.mockoauthserver.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.mockoauthserver.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

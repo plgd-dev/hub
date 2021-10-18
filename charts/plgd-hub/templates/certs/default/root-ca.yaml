@@ -11,6 +11,9 @@ spec:
   privateKey:
     algorithm: {{ .Values.certmanager.default.cert.key.algorithm}}
     size: {{ .Values.certmanager.default.cert.key.size }}
+  usages:
+    - "signing"
+    - "crl sign"
   duration: {{ .Values.certmanager.default.cert.duration }}
   renewBefore: {{ .Values.certmanager.default.cert.renewBefore }}
   issuerRef:
