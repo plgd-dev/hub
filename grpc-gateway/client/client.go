@@ -16,7 +16,6 @@ import (
 	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
 	"github.com/plgd-dev/hub/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/resource-aggregate/events"
-	"github.com/plgd-dev/kit/v2/strings"
 )
 
 type ApplicationCallback interface {
@@ -152,46 +151,6 @@ func (c *Client) GetResourceLinksViaCallback(ctx context.Context, deviceIDs, res
 			break
 		}
 		callback(&v)
-	}
-	return it.Err
-}
-
-type TypeCallback struct {
-	Type     string
-	Callback func(*pb.Resource)
-}
-
-func MakeTypeCallback(resourceType string, callback func(*pb.Resource)) TypeCallback {
-	return TypeCallback{Type: resourceType, Callback: callback}
-}
-
-// GetResourcesByType gets contents of resources by resource types. JWT token must be stored in context for grpc call.
-func (c *Client) GetResourcesByType(
-	ctx context.Context,
-	deviceIDs []string,
-	typeCallbacks ...TypeCallback,
-) error {
-	tc := make(map[string]func(*pb.Resource), len(typeCallbacks))
-	resourceTypes := make([]string, 0, len(typeCallbacks))
-	for _, c := range typeCallbacks {
-		tc[c.Type] = c.Callback
-		resourceTypes = append(resourceTypes, c.Type)
-	}
-
-	it := c.GetResourcesIterator(ctx, nil, deviceIDs, resourceTypes...)
-	defer it.Close()
-
-	for {
-		var v pb.Resource
-		if !it.Next(&v) {
-			break
-		}
-		for _, rt := range resourceTypes {
-			if strings.SliceContains(v.Types, rt) {
-				tc[rt](&v)
-				break
-			}
-		}
 	}
 	return it.Err
 }
