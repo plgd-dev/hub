@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/plgd-dev/device/app"
@@ -24,13 +25,13 @@ type OcfClient struct {
 func (c *OcfClient) Initialize(ctx context.Context, grpcClient pb.GrpcGatewayClient, caClient capb.CertificateAuthorityClient) error {
 	hubConfiguration, err := grpcClient.GetHubConfiguration(ctx, &pb.HubConfigurationRequest{})
 	if err != nil {
-		return err
+		return fmt.Errorf("cannot get hub configuration: %w", err)
 	}
 	appCallback, err := app.NewApp(&app.AppConfig{
 		RootCA: hubConfiguration.GetCertificateAuthorities(),
 	})
 	if err != nil {
-		return err
+		return fmt.Errorf("cannot create app callback: %w", err)
 	}
 
 	signer := signer.NewIdentityCertificateSigner(caClient)
@@ -48,12 +49,12 @@ func (c *OcfClient) Initialize(ctx context.Context, grpcClient pb.GrpcGatewayCli
 	}, appCallback, nil, func(err error) {})
 
 	if err != nil {
-		return err
+		return fmt.Errorf("cannot create client: %w", err)
 	}
 
 	err = localClient.Initialization(ctx)
 	if err != nil {
-		return err
+		return fmt.Errorf("cannot initialize client: %w", err)
 	}
 
 	c.localClient = localClient

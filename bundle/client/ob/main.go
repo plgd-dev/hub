@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/plgd-dev/device/client"
+	"github.com/plgd-dev/device/schema/device"
 	capb "github.com/plgd-dev/hub/certificate-authority/pb"
 	"github.com/plgd-dev/hub/grpc-gateway/pb"
 	grpcCloud "github.com/plgd-dev/hub/pkg/net/grpc"
@@ -89,6 +90,7 @@ func main() {
 	accessToken := flag.String("accessToken", "", "accessToken")
 	authCode := flag.String("authCode", "test", "authCode")
 	deviceID := flag.String("deviceId", "", "deviceId")
+	discoverDevices := flag.Bool("discoverDevices", false, "discoverDevices")
 	discoverTimeout := flag.Duration("discoverTimeout", time.Second, "discoverTimeout")
 	apn := flag.String("authorizationProvider", "plgd", "authorizationProvider")
 	flag.Parse()
@@ -138,8 +140,16 @@ func main() {
 
 	for _, d := range devices {
 		if d.IsSecured && d.OwnershipStatus == client.OwnershipStatus_ReadyToBeOwned {
-			ownAndOnboard(ctx, c, d.ID, *apn, *authCode)
-			return
+			if !*discoverDevices {
+				ownAndOnboard(ctx, c, d.ID, *apn, *authCode)
+				return
+			}
+			if d.Details == nil {
+				continue
+			}
+			if v, ok := d.Details.(*device.Device); ok {
+				fmt.Printf("%v(%v)\n", v.Name, v.ID)
+			}
 		}
 	}
 
