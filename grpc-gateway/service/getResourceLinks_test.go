@@ -7,12 +7,16 @@ import (
 	"testing"
 	"time"
 
+	"github.com/plgd-dev/device/schema/configuration"
+	"github.com/plgd-dev/device/schema/device"
+	"github.com/plgd-dev/device/schema/platform"
 	"github.com/plgd-dev/hub/grpc-gateway/pb"
 	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
 	"github.com/plgd-dev/hub/resource-aggregate/events"
 	test "github.com/plgd-dev/hub/test"
 	testCfg "github.com/plgd-dev/hub/test/config"
 	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
+	"github.com/plgd-dev/hub/test/service"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -24,7 +28,7 @@ func TestRequestHandlerGetResourceLinks(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), testCfg.TEST_TIMEOUT)
 	defer cancel()
 
-	tearDown := test.SetUp(ctx, t)
+	tearDown := service.SetUp(ctx, t)
 	defer tearDown()
 	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultServiceToken(t))
 
@@ -45,21 +49,69 @@ func TestRequestHandlerGetResourceLinks(t *testing.T) {
 		req *pb.GetResourceLinksRequest
 	}
 	tests := []struct {
-		name    string
-		args    args
-		wantErr bool
-		want    []*events.ResourceLinksPublished
+		name string
+		args args
+		want []*events.ResourceLinksPublished
 	}{
 		{
 			name: "valid",
 			args: args{
 				req: &pb.GetResourceLinksRequest{},
 			},
-			wantErr: false,
 			want: []*events.ResourceLinksPublished{
 				{
 					DeviceId:  deviceID,
 					Resources: test.ResourceLinksToResources(deviceID, resourceLinks),
+				},
+			},
+		},
+		{
+			name: "invalid deviceFilter",
+			args: args{
+				req: &pb.GetResourceLinksRequest{
+					DeviceIdFilter: []string{"unknown"},
+				},
+			},
+			want: []*events.ResourceLinksPublished{},
+		},
+		{
+			name: "valid deviceFilter",
+			args: args{
+				req: &pb.GetResourceLinksRequest{
+					DeviceIdFilter: []string{deviceID},
+				},
+			},
+			want: []*events.ResourceLinksPublished{
+				{
+					DeviceId:  deviceID,
+					Resources: test.ResourceLinksToResources(deviceID, resourceLinks),
+				},
+			},
+		},
+		{
+			name: "invalid typefilter",
+			args: args{
+				req: &pb.GetResourceLinksRequest{
+					TypeFilter: []string{"unknown"},
+				},
+			},
+			want: []*events.ResourceLinksPublished{
+				{
+					DeviceId: deviceID,
+				},
+			},
+		},
+		{
+			name: "valid typefilter",
+			args: args{
+				req: &pb.GetResourceLinksRequest{
+					TypeFilter: []string{platform.ResourceType, device.ResourceType, configuration.ResourceType},
+				},
+			},
+			want: []*events.ResourceLinksPublished{
+				{
+					DeviceId:  deviceID,
+					Resources: test.ResourceLinksToResources(deviceID, resourceLinks[0:3]),
 				},
 			},
 		},
@@ -68,10 +120,6 @@ func TestRequestHandlerGetResourceLinks(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			client, err := c.GetResourceLinks(ctx, tt.args.req)
-			if tt.wantErr {
-				require.Error(t, err)
-				return
-			}
 			require.NoError(t, err)
 			links := make([]*events.ResourceLinksPublished, 0, 1)
 			for {

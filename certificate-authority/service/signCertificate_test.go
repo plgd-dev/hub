@@ -11,6 +11,7 @@ import (
 	"github.com/plgd-dev/hub/test"
 	testCfg "github.com/plgd-dev/hub/test/config"
 	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
+	"github.com/plgd-dev/hub/test/service"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -49,7 +50,7 @@ func testSigningByFunction(t *testing.T, signFn ClientSignFunc) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	defer cancel()
 
-	tearDown := test.SetUp(ctx, t)
+	tearDown := service.SetUp(ctx, t)
 	defer tearDown()
 	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultServiceToken(t))
 

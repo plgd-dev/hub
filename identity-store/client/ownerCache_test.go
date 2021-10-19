@@ -17,9 +17,9 @@ import (
 	"github.com/plgd-dev/hub/pkg/net/grpc/client"
 	clientCertManager "github.com/plgd-dev/hub/pkg/security/certManager/client"
 	natsTest "github.com/plgd-dev/hub/resource-aggregate/cqrs/eventbus/nats/test"
-	"github.com/plgd-dev/hub/test"
 	"github.com/plgd-dev/hub/test/config"
 	oauthService "github.com/plgd-dev/hub/test/oauth-server/test"
+	"github.com/plgd-dev/hub/test/service"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/oauth2"
@@ -27,7 +27,7 @@ import (
 )
 
 func TestOwnerCacheSubscribe(t *testing.T) {
-	test.ClearDB(context.Background(), t)
+	service.ClearDB(context.Background(), t)
 
 	devices := []string{"device1", "device2", "device3"}
 	cfg := idService.MakeConfig(t)

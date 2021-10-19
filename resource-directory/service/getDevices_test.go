@@ -16,6 +16,7 @@ import (
 	"github.com/plgd-dev/hub/test"
 	testCfg "github.com/plgd-dev/hub/test/config"
 	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
+	"github.com/plgd-dev/hub/test/service"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
@@ -57,7 +58,7 @@ func TestRequestHandler_GetDevices(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), testCfg.TEST_TIMEOUT)
 	defer cancel()
 
-	tearDown := test.SetUp(ctx, t)
+	tearDown := service.SetUp(ctx, t)
 	defer tearDown()
 	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultServiceToken(t))
 

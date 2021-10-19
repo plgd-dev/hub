@@ -9,6 +9,7 @@ import (
 	rdTest "github.com/plgd-dev/hub/resource-directory/test"
 	"github.com/plgd-dev/hub/test"
 	"github.com/plgd-dev/hub/test/config"
+	"github.com/plgd-dev/hub/test/service"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -31,7 +32,7 @@ func TestRequestHandler_GetHubConfiguration(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
 	defer cancel()
 
-	tearDown := test.SetUp(ctx, t)
+	tearDown := service.SetUp(ctx, t)
 	defer tearDown()
 
 	conn, err := grpc.Dial(config.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{

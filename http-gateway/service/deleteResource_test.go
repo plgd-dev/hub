@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"net/http"
 	"testing"
+	"time"
 
 	"github.com/plgd-dev/device/schema/device"
 	"github.com/plgd-dev/hub/grpc-gateway/pb"
@@ -16,6 +17,8 @@ import (
 	"github.com/plgd-dev/hub/test"
 	"github.com/plgd-dev/hub/test/config"
 	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
+	pbTest "github.com/plgd-dev/hub/test/pb"
+	"github.com/plgd-dev/hub/test/service"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
@@ -24,12 +27,12 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func TestRequestHandler_DeleteResource(t *testing.T) {
+func TestRequestHandlerDeleteResource(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	type args struct {
-		deviceID     string
-		resourceHref string
-		accept       string
+		accept string
+		href   string
+		ttl    time.Duration
 	}
 	tests := []struct {
 		name         string
@@ -42,9 +45,8 @@ func TestRequestHandler_DeleteResource(t *testing.T) {
 		{
 			name: "/light/1 - MethodNotAllowed",
 			args: args{
-				deviceID:     deviceID,
-				resourceHref: test.TestResourceLightInstanceHref("1"),
-				accept:       uri.ApplicationProtoJsonContentType,
+				accept: uri.ApplicationProtoJsonContentType,
+				href:   test.TestResourceLightInstanceHref("1"),
 			},
 			wantErr:      true,
 			wantErrCode:  exCodes.MethodNotAllowed,
@@ -53,9 +55,8 @@ func TestRequestHandler_DeleteResource(t *testing.T) {
 		{
 			name: "invalid Href",
 			args: args{
-				deviceID:     deviceID,
-				resourceHref: "/unknown",
-				accept:       uri.ApplicationProtoJsonContentType,
+				accept: uri.ApplicationProtoJsonContentType,
+				href:   "/unknown",
 			},
 			wantErr:      true,
 			wantErrCode:  exCodes.Code(codes.NotFound),
@@ -64,20 +65,48 @@ func TestRequestHandler_DeleteResource(t *testing.T) {
 		{
 			name: "/oic/d - PermissionDenied",
 			args: args{
-				deviceID:     deviceID,
-				resourceHref: device.ResourceURI,
-				accept:       uri.ApplicationProtoJsonContentType,
+				accept: uri.ApplicationProtoJsonContentType,
+				href:   device.ResourceURI,
 			},
 			wantErr:      true,
 			wantErrCode:  exCodes.Code(codes.PermissionDenied),
 			wantHTTPCode: http.StatusForbidden,
+		},
+		{
+			name: "invalid timeToLive",
+			args: args{
+				accept: uri.ApplicationProtoJsonContentType,
+				href:   test.TestResourceLightInstanceHref("1"),
+				ttl:    99 * time.Millisecond,
+			},
+			wantErr:      true,
+			wantErrCode:  exCodes.Code(codes.InvalidArgument),
+			wantHTTPCode: http.StatusBadRequest,
+		},
+		{
+			name: "not found - delete /switches/-1",
+			args: args{
+				accept: uri.ApplicationProtoJsonContentType,
+				href:   test.TestResourceSwitchesInstanceHref("-1"),
+			},
+			wantErr:      true,
+			wantErrCode:  exCodes.Code(codes.NotFound),
+			wantHTTPCode: http.StatusNotFound,
+		},
+		{
+			name: "delete /switches/1",
+			args: args{
+				accept: uri.ApplicationProtoJsonContentType,
+				href:   test.TestResourceSwitchesInstanceHref("1"),
+			},
+			wantHTTPCode: http.StatusOK,
 		},
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
 	defer cancel()
 
-	tearDown := test.SetUp(ctx, t)
+	tearDown := service.SetUp(ctx, t)
 	defer tearDown()
 
 	shutdownHttp := httpgwTest.SetUp(t)
@@ -93,36 +122,28 @@ func TestRequestHandler_DeleteResource(t *testing.T) {
 	c := pb.NewGrpcGatewayClient(conn)
 	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
+	test.AddDeviceSwitchResources(ctx, t, deviceID, c, "1", "2", "3")
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			request := httpgwTest.NewRequest(http.MethodDelete, uri.DeviceResourceLink, nil).DeviceId(tt.args.deviceID).ResourceHref(tt.args.resourceHref).AuthToken(token).Accept(tt.args.accept).Build()
-			trans := http.DefaultTransport.(*http.Transport).Clone()
-			trans.TLSClientConfig = &tls.Config{
-				InsecureSkipVerify: true,
-			}
-			c := http.Client{
-				Transport: trans,
-			}
-			resp, err := c.Do(request)
-			require.NoError(t, err)
+			rb := httpgwTest.NewRequest(http.MethodDelete, uri.DeviceResourceLink, nil).AuthToken(token).Accept(tt.args.accept)
+			rb.DeviceId(deviceID).ResourceHref(tt.args.href).AddTimeToLive(tt.args.ttl)
+			resp := httpgwTest.HTTPDo(t, rb.Build())
 			defer func() {
 				_ = resp.Body.Close()
 			}()
-
 			assert.Equal(t, tt.wantHTTPCode, resp.StatusCode)
 
-			var got events.ResourceDeleted
+			var got pb.DeleteResourceResponse
 			err = Unmarshal(resp.StatusCode, resp.Body, &got)
 			if tt.wantErr {
 				require.Error(t, err)
 				assert.Equal(t, tt.wantErrCode.String(), exCodes.Code(status.Convert(err).Code()).String())
-			} else {
-				require.NoError(t, err)
-				got.EventMetadata = nil
-				got.AuditContext = nil
-				test.CheckProtobufs(t, tt.want, &got, test.RequireToCheckFunc(require.Equal))
+				return
 			}
+			require.NoError(t, err)
+			want := pbTest.MakeResourceDeleted(t, deviceID, tt.args.href)
+			pbTest.CmpResourceDeleted(t, want, got.GetData())
 		})
 	}
 }

@@ -24,6 +24,8 @@ import (
 	testCfg "github.com/plgd-dev/hub/test/config"
 	"github.com/plgd-dev/hub/test/oauth-server/service"
 	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
+	pbTest "github.com/plgd-dev/hub/test/pb"
+	testService "github.com/plgd-dev/hub/test/service"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -312,7 +314,7 @@ func TestRequestHandler_GetPendingCommands(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), testCfg.TEST_TIMEOUT)
 	defer cancel()
 
-	test.ClearDB(ctx, t)
+	testService.ClearDB(ctx, t)
 	oauthShutdown := oauthTest.SetUp(t)
 	authShutdown := idService.SetUp(t)
 	raShutdown := raService.SetUp(t)
@@ -430,7 +432,7 @@ func TestRequestHandler_GetPendingCommands(t *testing.T) {
 					require.NoError(t, err)
 					values = append(values, value)
 				}
-				test.CmpPendingCmds(t, tt.want, values)
+				pbTest.CmpPendingCmds(t, tt.want, values)
 			}
 		})
 	}

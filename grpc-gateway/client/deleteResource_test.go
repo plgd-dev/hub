@@ -11,18 +11,18 @@ import (
 	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
 	"github.com/plgd-dev/hub/test"
 	testCfg "github.com/plgd-dev/hub/test/config"
-	"google.golang.org/grpc/codes"
-
 	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
+	"github.com/plgd-dev/hub/test/service"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc/codes"
 )
 
 func TestClient_DeleteResource(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), TestTimeout)
 	defer cancel()
 
-	tearDown := test.SetUp(ctx, t)
+	tearDown := service.SetUp(ctx, t)
 	defer tearDown()
 
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)

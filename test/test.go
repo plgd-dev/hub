@@ -100,6 +100,16 @@ func init() {
 	}
 }
 
+func FilterResourceLink(filter func(schema.ResourceLink) bool, links []schema.ResourceLink) []schema.ResourceLink {
+	var l []schema.ResourceLink
+	for _, link := range links {
+		if filter(link) {
+			l = append(l, link)
+		}
+	}
+	return l
+}
+
 func DefaultSwitchResourceLink(id string) schema.ResourceLink {
 	return schema.ResourceLink{
 		Href:          TestResourceSwitchesInstanceHref(id),

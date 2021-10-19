@@ -6,7 +6,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/plgd-dev/device/schema"
 	"github.com/plgd-dev/device/schema/device"
 	"github.com/plgd-dev/device/schema/interfaces"
 	"github.com/plgd-dev/device/test/resource/types"
@@ -15,10 +14,11 @@ import (
 	"github.com/plgd-dev/hub/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
 	"github.com/plgd-dev/hub/resource-aggregate/commands"
-	"github.com/plgd-dev/hub/resource-aggregate/events"
 	"github.com/plgd-dev/hub/test"
 	"github.com/plgd-dev/hub/test/config"
 	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
+	pbTest "github.com/plgd-dev/hub/test/pb"
+	"github.com/plgd-dev/hub/test/service"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
@@ -35,22 +35,6 @@ func makeCreateResourceRequest(t *testing.T, deviceID, href string, data map[str
 			Data:        test.EncodeToCbor(t, data),
 		},
 		TimeToLive: ttl,
-	}
-}
-
-func makeCreateLightResourceResponseData(id string) map[string]interface{} {
-	return map[string]interface{}{
-		"href": test.TestResourceSwitchesInstanceHref(id),
-		"if":   []interface{}{interfaces.OC_IF_A, interfaces.OC_IF_BASELINE},
-		"rt":   []interface{}{types.BINARY_SWITCH},
-		"rep": map[string]interface{}{
-			"rt":    []interface{}{types.BINARY_SWITCH},
-			"if":    []interface{}{interfaces.OC_IF_A, interfaces.OC_IF_BASELINE},
-			"value": false,
-		},
-		"p": map[string]interface{}{
-			"bm": uint64(schema.Discoverable | schema.Observable),
-		},
 	}
 }
 
@@ -148,7 +132,7 @@ func TestRequestHandlerCreateResource(t *testing.T) {
 				href: test.TestResourceSwitchesHref,
 				data: test.MakeSwitchResourceDefaultData(),
 			},
-			wantData: makeCreateLightResourceResponseData("1"),
+			wantData: pbTest.MakeCreateLightResourceResponseData("1"),
 		},
 		{
 			name: "create /switches/2",
@@ -156,14 +140,14 @@ func TestRequestHandlerCreateResource(t *testing.T) {
 				href: test.TestResourceSwitchesHref,
 				data: test.MakeSwitchResourceDefaultData(),
 			},
-			wantData: makeCreateLightResourceResponseData("2"),
+			wantData: pbTest.MakeCreateLightResourceResponseData("2"),
 		},
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
 	defer cancel()
 
-	tearDown := test.SetUp(ctx, t)
+	tearDown := service.SetUp(ctx, t)
 	defer tearDown()
 	log.Setup(log.Config{Debug: true})
 	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultServiceToken(t))
@@ -187,17 +171,8 @@ func TestRequestHandlerCreateResource(t *testing.T) {
 				return
 			}
 			require.NoError(t, err)
-
-			resp := &events.ResourceCreated{
-				ResourceId: commands.NewResourceID(deviceID, tt.args.href),
-				Content: &commands.Content{
-					CoapContentFormat: int32(message.AppOcfCbor),
-					ContentType:       message.AppOcfCbor.String(),
-					Data:              test.EncodeToCbor(t, tt.wantData),
-				},
-				Status: commands.Status_CREATED,
-			}
-			test.CmpResourceCreated(t, resp, got.GetData())
+			resp := pbTest.MakeResourceCreated(t, deviceID, tt.args.href, tt.wantData)
+			pbTest.CmpResourceCreated(t, resp, got.GetData())
 		})
 	}
 }

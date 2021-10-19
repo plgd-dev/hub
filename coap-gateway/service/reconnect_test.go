@@ -8,6 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/plgd-dev/go-coap/v2/message"
+	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	coapgwTest "github.com/plgd-dev/hub/coap-gateway/test"
 	"github.com/plgd-dev/hub/coap-gateway/uri"
 	idTest "github.com/plgd-dev/hub/identity-store/test"
@@ -16,8 +18,7 @@ import (
 	test "github.com/plgd-dev/hub/test"
 	testCfg "github.com/plgd-dev/hub/test/config"
 	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
-	"github.com/plgd-dev/go-coap/v2/message"
-	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
+	testService "github.com/plgd-dev/hub/test/service"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -55,7 +56,7 @@ func TestReconnectNATS(t *testing.T) {
 func TestReconnectNATSAndGrpcGateway(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), TestExchangeTimeout)
 	defer cancel()
-	test.ClearDB(ctx, t)
+	testService.ClearDB(ctx, t)
 	oauthShutdown := oauthTest.SetUp(t)
 	auShutdown := idTest.SetUp(t)
 	raShutdown := raTest.SetUp(t)

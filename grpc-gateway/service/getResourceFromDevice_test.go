@@ -10,7 +10,6 @@ import (
 	"github.com/plgd-dev/device/schema/device"
 	"github.com/plgd-dev/device/schema/interfaces"
 	"github.com/plgd-dev/device/test/resource/types"
-	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/hub/grpc-gateway/pb"
 	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
 	"github.com/plgd-dev/hub/resource-aggregate/commands"
@@ -18,25 +17,12 @@ import (
 	"github.com/plgd-dev/hub/test"
 	"github.com/plgd-dev/hub/test/config"
 	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
+	pbTest "github.com/plgd-dev/hub/test/pb"
+	"github.com/plgd-dev/hub/test/service"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )
-
-func getResourceRetrieved(t *testing.T, deviceID, href string, data interface{}) *events.ResourceRetrieved {
-	return &events.ResourceRetrieved{
-		ResourceId: &commands.ResourceId{
-			DeviceId: deviceID,
-			Href:     href,
-		},
-		Content: &commands.Content{
-			CoapContentFormat: int32(message.AppOcfCbor),
-			ContentType:       message.AppOcfCbor.String(),
-			Data:              test.EncodeToCbor(t, data),
-		},
-		Status: commands.Status_OK,
-	}
-}
 
 func TestRequestHandlerGetResourceFromDevice(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
@@ -78,7 +64,7 @@ func TestRequestHandlerGetResourceFromDevice(t *testing.T) {
 					TimeToLive: int64(time.Hour),
 				},
 			},
-			want: getResourceRetrieved(t, deviceID, test.TestResourceLightInstanceHref("1"), map[string]interface{}{
+			want: pbTest.MakeResourceRetrieved(t, deviceID, test.TestResourceLightInstanceHref("1"), map[string]interface{}{
 				"name":  "Light",
 				"power": uint64(0),
 				"state": false,
@@ -92,7 +78,7 @@ func TestRequestHandlerGetResourceFromDevice(t *testing.T) {
 					TimeToLive: int64(time.Hour),
 				},
 			},
-			want: getResourceRetrieved(t, deviceID, device.ResourceURI, map[string]interface{}{
+			want: pbTest.MakeResourceRetrieved(t, deviceID, device.ResourceURI, map[string]interface{}{
 				"n":   test.TestDeviceName,
 				"di":  deviceID,
 				"dmv": "ocf.res.1.3.0",
@@ -107,7 +93,7 @@ func TestRequestHandlerGetResourceFromDevice(t *testing.T) {
 					TimeToLive: int64(time.Hour),
 				},
 			},
-			want: getResourceRetrieved(t, deviceID, test.TestResourceSwitchesHref, []map[string]interface{}{
+			want: pbTest.MakeResourceRetrieved(t, deviceID, test.TestResourceSwitchesHref, []map[string]interface{}{
 				{
 					"href": test.TestResourceSwitchesInstanceHref(switchID),
 					"if":   []interface{}{interfaces.OC_IF_A, interfaces.OC_IF_BASELINE},
@@ -128,7 +114,7 @@ func TestRequestHandlerGetResourceFromDevice(t *testing.T) {
 					TimeToLive: int64(time.Hour),
 				},
 			},
-			want: getResourceRetrieved(t, deviceID, test.TestResourceSwitchesInstanceHref(switchID), map[string]interface{}{
+			want: pbTest.MakeResourceRetrieved(t, deviceID, test.TestResourceSwitchesInstanceHref(switchID), map[string]interface{}{
 				"value": false,
 			}),
 		},
@@ -137,7 +123,7 @@ func TestRequestHandlerGetResourceFromDevice(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
 	defer cancel()
 
-	tearDown := test.SetUp(ctx, t)
+	tearDown := service.SetUp(ctx, t)
 	defer tearDown()
 	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultServiceToken(t))
 
@@ -159,7 +145,7 @@ func TestRequestHandlerGetResourceFromDevice(t *testing.T) {
 				return
 			}
 			require.NoError(t, err)
-			test.CmpResourceRetrieved(t, tt.want, got.GetData())
+			pbTest.CmpResourceRetrieved(t, tt.want, got.GetData())
 		})
 	}
 }

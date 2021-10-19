@@ -29,6 +29,8 @@ import (
 	"github.com/plgd-dev/hub/test/config"
 	"github.com/plgd-dev/hub/test/oauth-server/service"
 	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
+	pbTest "github.com/plgd-dev/hub/test/pb"
+	serviceTest "github.com/plgd-dev/hub/test/service"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
@@ -96,7 +98,7 @@ func TestRequestHandlerSubscribeToEvents(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
 	defer cancel()
 
-	tearDown := test.SetUp(ctx, t)
+	tearDown := serviceTest.SetUp(ctx, t)
 	defer tearDown()
 	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultServiceToken(t))
 
@@ -226,7 +228,7 @@ func TestRequestHandlerSubscribeToEvents(t *testing.T) {
 					Type:          operationProcessedOK(),
 					CorrelationId: "testToken3",
 				},
-				test.ResourceLinkToPublishEvent(deviceID, "testToken3", resourceLinks),
+				pbTest.ResourceLinkToPublishEvent(deviceID, "testToken3", resourceLinks),
 			},
 		},
 	}
@@ -252,7 +254,7 @@ func TestRequestHandlerSubscribeToEvents(t *testing.T) {
 					require.NoError(t, err)
 					events = append(events, ev)
 				}
-				test.CmpEvents(t, tt.want, events)
+				pbTest.CmpEvents(t, tt.want, events)
 			}()
 			err = client.Send(tt.args.sub)
 			require.NoError(t, err)
@@ -266,7 +268,7 @@ func TestRequestHandlerSubscribeForCreateEvents(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
 	defer cancel()
 
-	tearDown := test.SetUp(ctx, t)
+	tearDown := serviceTest.SetUp(ctx, t)
 	defer tearDown()
 	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultServiceToken(t))
 
@@ -310,7 +312,7 @@ func TestRequestHandlerSubscribeForCreateEvents(t *testing.T) {
 
 	ev, err = client.Recv()
 	require.NoError(t, err)
-	test.CmpEventResourceCreatePending(t, &pb.Event{
+	pbTest.CmpEventResourceCreatePending(t, &pb.Event{
 		SubscriptionId: ev.SubscriptionId,
 		CorrelationId:  "testToken",
 		Type: &pb.Event_ResourceCreatePending{
@@ -330,7 +332,7 @@ func TestRequestHandlerSubscribeForCreateEvents(t *testing.T) {
 
 	ev, err = client.Recv()
 	require.NoError(t, err)
-	test.CmpEventResourceCreated(t, &pb.Event{
+	pbTest.CmpEventResourceCreated(t, &pb.Event{
 		SubscriptionId: ev.SubscriptionId,
 		CorrelationId:  "testToken",
 		Type: &pb.Event_ResourceCreated{
@@ -555,7 +557,7 @@ func TestRequestHandlerSubscribeForPendingCommands(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
 	defer cancel()
 
-	test.ClearDB(ctx, t)
+	serviceTest.ClearDB(ctx, t)
 	oauthShutdown := oauthTest.SetUp(t)
 	authShutdown := idService.SetUp(t)
 	raShutdown := raService.SetUp(t)
@@ -702,7 +704,7 @@ func TestRequestHandlerSubscribeForPendingCommands(t *testing.T) {
 					values = append(values, &pb.PendingCommand{Command: &pb.PendingCommand_DeviceMetadataUpdatePending{DeviceMetadataUpdatePending: ev.GetDeviceMetadataUpdatePending()}})
 				}
 			}
-			test.CmpPendingCmds(t, tt.want, values)
+			pbTest.CmpPendingCmds(t, tt.want, values)
 			err = client.Send(&pb.SubscribeToEvents{
 				CorrelationId: correlationID,
 				Action: &pb.SubscribeToEvents_CancelSubscription_{
@@ -747,7 +749,7 @@ func TestRequestHandlerIssue270(t *testing.T) {
 	rdCfg := rdTest.MakeConfig(t)
 	grpcgwCfg := grpcgwService.MakeConfig(t)
 
-	tearDown := test.SetUp(ctx, t, test.WithCOAPGWConfig(coapgwCfg), test.WithRDConfig(rdCfg), test.WithGRPCGWConfig(grpcgwCfg))
+	tearDown := serviceTest.SetUp(ctx, t, serviceTest.WithCOAPGWConfig(coapgwCfg), serviceTest.WithRDConfig(rdCfg), serviceTest.WithGRPCGWConfig(grpcgwCfg))
 	defer tearDown()
 	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultServiceToken(t))
 
@@ -817,7 +819,7 @@ func TestRequestHandlerIssue270(t *testing.T) {
 
 	ev, err = client.Recv()
 	require.NoError(t, err)
-	test.CmpEventDeviceMetadataUpdated(t, &pb.Event{
+	pbTest.CmpEventDeviceMetadataUpdated(t, &pb.Event{
 		SubscriptionId: ev.SubscriptionId,
 		Type: &pb.Event_DeviceMetadataUpdated{
 			DeviceMetadataUpdated: &events.DeviceMetadataUpdated{

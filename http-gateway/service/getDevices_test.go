@@ -3,18 +3,12 @@ package service_test
 import (
 	"context"
 	"crypto/tls"
-	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
-
-	"github.com/google/go-querystring/query"
 	"github.com/plgd-dev/device/schema/device"
 	"github.com/plgd-dev/device/schema/interfaces"
 	"github.com/plgd-dev/device/test/resource/types"
@@ -27,53 +21,91 @@ import (
 	"github.com/plgd-dev/hub/test"
 	"github.com/plgd-dev/hub/test/config"
 	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
+	pbTest "github.com/plgd-dev/hub/test/pb"
+	"github.com/plgd-dev/hub/test/service"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 )
 
-func TestRequestHandler_GetDevices(t *testing.T) {
+func makeDefaultDevice(deviceID string) *pb.Device {
+	return &pb.Device{
+		Types:      []string{types.DEVICE_CLOUD, device.ResourceType},
+		Interfaces: []string{interfaces.OC_IF_R, interfaces.OC_IF_BASELINE},
+		Id:         deviceID,
+		Name:       test.TestDeviceName,
+		Metadata: &pb.Device_Metadata{
+			Status: &commands.ConnectionStatus{
+				Value: commands.ConnectionStatus_ONLINE,
+			},
+		},
+	}
+}
+
+func TestRequestHandlerGetDevices(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	type args struct {
-		req *pb.GetDevicesRequest
+		accept         string
+		typeFilter     []string
+		statusFilter   []pb.GetDevicesRequest_Status
+		deviceIdFilter []string
 	}
 	tests := []struct {
-		name    string
-		args    args
-		wantErr bool
-		want    []*pb.Device
+		name string
+		args args
+		want []*pb.Device
 	}{
 		{
 			name: "all devices",
 			args: args{
-				req: &pb.GetDevicesRequest{},
+				accept: uri.ApplicationProtoJsonContentType,
 			},
-			want: []*pb.Device{
-				{
-					Types:      []string{types.DEVICE_CLOUD, device.ResourceType},
-					Interfaces: []string{interfaces.OC_IF_R, interfaces.OC_IF_BASELINE},
-					Id:         deviceID,
-					Name:       test.TestDeviceName,
-					Metadata: &pb.Device_Metadata{
-						Status: &commands.ConnectionStatus{
-							Value: commands.ConnectionStatus_ONLINE,
-						},
-					},
-				},
-			},
+			want: []*pb.Device{makeDefaultDevice(deviceID)},
 		},
 		{
 			name: "offline devices",
 			args: args{
-				req: &pb.GetDevicesRequest{
-					StatusFilter: []pb.GetDevicesRequest_Status{pb.GetDevicesRequest_OFFLINE},
-				},
+				accept:       uri.ApplicationProtoJsonContentType,
+				statusFilter: []pb.GetDevicesRequest_Status{pb.GetDevicesRequest_OFFLINE},
 			},
-			want: []*pb.Device{},
+		},
+		{
+			name: "invalid device id",
+			args: args{
+				accept:         uri.ApplicationProtoJsonContentType,
+				deviceIdFilter: []string{"invalid"},
+			},
+		},
+		{
+			name: "single device",
+			args: args{
+				accept:         uri.ApplicationProtoJsonContentType,
+				deviceIdFilter: []string{deviceID},
+			},
+			want: []*pb.Device{makeDefaultDevice(deviceID)},
+		},
+		{
+			name: "invalid device type",
+			args: args{
+				accept:     uri.ApplicationProtoJsonContentType,
+				typeFilter: []string{"invalid"},
+			},
+		},
+		{
+			name: "cloud device type",
+			args: args{
+				accept:     uri.ApplicationProtoJsonContentType,
+				typeFilter: []string{types.DEVICE_CLOUD},
+			},
+			want: []*pb.Device{makeDefaultDevice(deviceID)},
 		},
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Hour)
 	defer cancel()
 
-	tearDown := test.SetUp(ctx, t)
+	tearDown := service.SetUp(ctx, t)
 	defer tearDown()
 
 	shutdownHttp := httpgwTest.SetUp(t)
@@ -92,60 +124,35 @@ func TestRequestHandler_GetDevices(t *testing.T) {
 	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 
+	toStringSlice := func(s []pb.GetDevicesRequest_Status) []string {
+		var sf []string
+		for _, v := range s {
+			sf = append(sf, strconv.FormatInt(int64(v), 10))
+		}
+		return sf
+	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			type Options struct {
-				TypeFilter     []string                      `url:"typeFilter,omitempty"`
-				StatusFilter   []pb.GetDevicesRequest_Status `url:"status,omitempty"`
-				DeviceIdFilter []string                      `url:"deviceIdFilter,omitempty"`
-			}
-			opt := Options{
-				TypeFilter:     tt.args.req.TypeFilter,
-				StatusFilter:   tt.args.req.StatusFilter,
-				DeviceIdFilter: tt.args.req.DeviceIdFilter,
-			}
-			v, err := query.Values(opt)
-			require.NoError(t, err)
-			url := fmt.Sprintf("https://%v/"+uri.Devices+"/", config.HTTP_GW_HOST)
-			val := v.Encode()
-			if val != "" {
-				url = url + "?" + val
-			}
-
-			request, err := http.NewRequest(http.MethodGet, url, nil)
-			require.NoError(t, err)
-			request.Header.Add("Authorization", fmt.Sprintf("bearer %s", token))
-			trans := http.DefaultTransport.(*http.Transport).Clone()
-			trans.TLSClientConfig = &tls.Config{
-				InsecureSkipVerify: true,
-			}
-			c := http.Client{
-				Transport: trans,
-			}
-			resp, err := c.Do(request)
-			require.NoError(t, err)
+			rb := httpgwTest.NewRequest(http.MethodGet, uri.Devices, nil).Accept(tt.args.accept).AuthToken(token)
+			rb.AddTypeFilter(tt.args.typeFilter).AddStatusFilter(toStringSlice(tt.args.statusFilter)).AddDeviceIdFilter(tt.args.deviceIdFilter)
+			resp := httpgwTest.HTTPDo(t, rb.Build())
 			defer func() {
 				_ = resp.Body.Close()
 			}()
 
-			devices := make([]*pb.Device, 0, 1)
+			var devices []*pb.Device
 			for {
 				var dev pb.Device
 				err = Unmarshal(resp.StatusCode, resp.Body, &dev)
 				if err == io.EOF {
 					break
 				}
-				if tt.wantErr {
-					require.Error(t, err)
-					return
-				}
 				require.NoError(t, err)
 				assert.NotEmpty(t, dev.ProtocolIndependentId)
-				dev.ProtocolIndependentId = ""
-				dev.Metadata.Status.ValidUntil = 0
 				devices = append(devices, &dev)
 			}
-			test.CheckProtobufs(t, tt.want, devices, test.RequireToCheckFunc(require.Equal))
+			pbTest.CmpDeviceValues(t, tt.want, devices)
 		})
 	}
 }

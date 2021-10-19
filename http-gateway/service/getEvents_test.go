@@ -16,6 +16,8 @@ import (
 	"github.com/plgd-dev/hub/test/config"
 	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
 	pbTest "github.com/plgd-dev/hub/test/pb"
+	"github.com/plgd-dev/hub/test/service"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -39,12 +41,12 @@ func getAllEvents(t *testing.T, client pb.GrpcGatewayClient, ctx context.Context
 	return events
 }
 
-func TestRequestHandler_getEvents(t *testing.T) {
+func TestRequestHandlerGetEvents(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
 	defer cancel()
 
-	tearDown := test.SetUp(ctx, t)
+	tearDown := service.SetUp(ctx, t)
 	defer tearDown()
 
 	shutdownHttp := httpgwTest.SetUp(t)
@@ -73,18 +75,19 @@ func TestRequestHandler_getEvents(t *testing.T) {
 		timestamp time.Time
 	}
 	tests := []struct {
-		name    string
-		args    args
-		wantErr bool
-		wantLen int
+		name         string
+		args         args
+		wantErr      bool
+		wantLen      int
+		wantHTTPCode int
 	}{
 		{
 			name: "All events",
 			args: args{
 				accept: uri.ApplicationProtoJsonContentType,
 			},
-			wantErr: false,
-			wantLen: len(allEvents),
+			wantLen:      len(allEvents),
+			wantHTTPCode: http.StatusOK,
 		},
 		{
 			name: "Timestamp filter (No events)",
@@ -92,8 +95,7 @@ func TestRequestHandler_getEvents(t *testing.T) {
 				accept:    uri.ApplicationProtoJsonContentType,
 				timestamp: time.Now(),
 			},
-			wantErr: false,
-			wantLen: 0,
+			wantHTTPCode: http.StatusOK,
 		},
 		{
 			name: "Timestamp filter (All events)",
@@ -101,8 +103,8 @@ func TestRequestHandler_getEvents(t *testing.T) {
 				accept:    uri.ApplicationProtoJsonContentType,
 				timestamp: beforeOnBoard,
 			},
-			wantErr: false,
-			wantLen: len(allEvents),
+			wantLen:      len(allEvents),
+			wantHTTPCode: http.StatusOK,
 		},
 		{
 			name: "Device filter (Invalid device)",
@@ -110,7 +112,8 @@ func TestRequestHandler_getEvents(t *testing.T) {
 				accept:   uri.ApplicationProtoJsonContentType,
 				deviceId: "test",
 			},
-			wantErr: true,
+			wantErr:      true,
+			wantHTTPCode: http.StatusInternalServerError,
 		},
 		{
 			name: "Device filter (All devices)",
@@ -119,8 +122,8 @@ func TestRequestHandler_getEvents(t *testing.T) {
 				deviceId:  deviceID,
 				timestamp: beforeOnBoard,
 			},
-			wantErr: false,
-			wantLen: len(allEvents),
+			wantLen:      len(allEvents),
+			wantHTTPCode: http.StatusOK,
 		},
 		{
 			name: "Resource filter (Invalid href)",
@@ -129,7 +132,8 @@ func TestRequestHandler_getEvents(t *testing.T) {
 				deviceId: deviceID,
 				href:     "test",
 			},
-			wantErr: true,
+			wantErr:      true,
+			wantHTTPCode: http.StatusOK,
 		},
 		{
 			name: "Resource filter (First resource)",
@@ -138,36 +142,30 @@ func TestRequestHandler_getEvents(t *testing.T) {
 				deviceId: deviceID,
 				href:     test.GetAllBackendResourceLinks()[0].Href,
 			},
-			wantErr: false,
-			wantLen: 1,
+			wantLen:      1,
+			wantHTTPCode: http.StatusOK,
 		},
+	}
+
+	getURL := func(deviceID, href string) string {
+		if deviceID != "" {
+			if href != "" {
+				return uri.AliasResourceEvents
+			}
+			return uri.AliasDeviceEvents
+		}
+		return uri.Events
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			url := uri.Events
-			if tt.args.deviceId != "" {
-				if tt.args.href != "" {
-					url = uri.AliasResourceEvents
-				} else {
-					url = uri.AliasDeviceEvents
-				}
-			}
-			request_builder := httpgwTest.NewRequest(http.MethodGet, url, nil).AuthToken(token)
-			request_builder.Accept(tt.args.accept).DeviceId(tt.args.deviceId).ResourceHref(tt.args.href).Timestamp(tt.args.timestamp)
-			request := request_builder.Build()
-			trans := http.DefaultTransport.(*http.Transport).Clone()
-			trans.TLSClientConfig = &tls.Config{
-				InsecureSkipVerify: true,
-			}
-			c := http.Client{
-				Transport: trans,
-			}
-			resp, err := c.Do(request)
-			require.NoError(t, err)
+			rb := httpgwTest.NewRequest(http.MethodGet, getURL(tt.args.deviceId, tt.args.href), nil).AuthToken(token).Accept(tt.args.accept)
+			rb.DeviceId(tt.args.deviceId).ResourceHref(tt.args.href).Timestamp(tt.args.timestamp)
+			resp := httpgwTest.HTTPDo(t, rb.Build())
 			defer func() {
 				_ = resp.Body.Close()
 			}()
+			assert.Equal(t, tt.wantHTTPCode, resp.StatusCode)
 
 			values := make([]*pb.GetEventsResponse, 0, 1)
 			for {
@@ -179,10 +177,9 @@ func TestRequestHandler_getEvents(t *testing.T) {
 				if tt.wantErr {
 					require.Error(t, err)
 					return
-				} else {
-					require.NoError(t, err)
-					values = append(values, &value)
 				}
+				require.NoError(t, err)
+				values = append(values, &value)
 			}
 			require.Len(t, values, tt.wantLen)
 			pbTest.CheckGetEventsResponse(t, deviceID, values)

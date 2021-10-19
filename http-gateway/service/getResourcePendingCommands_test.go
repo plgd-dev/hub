@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/go-querystring/query"
 	"github.com/plgd-dev/device/schema/device"
 	"github.com/plgd-dev/device/schema/platform"
 	"github.com/plgd-dev/go-coap/v2/message"
@@ -28,12 +27,14 @@ import (
 	"github.com/plgd-dev/hub/test/config"
 	"github.com/plgd-dev/hub/test/oauth-server/service"
 	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
+	pbTest "github.com/plgd-dev/hub/test/pb"
+	testService "github.com/plgd-dev/hub/test/service"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )
 
-func TestRequestHandler_GetResourcePendingCommands(t *testing.T) {
+func TestRequestHandlerGetResourcePendingCommands(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	type args struct {
 		deviceID      string
@@ -57,20 +58,10 @@ func TestRequestHandler_GetResourcePendingCommands(t *testing.T) {
 			want: []*pb.PendingCommand{
 				{
 					Command: &pb.PendingCommand_ResourceCreatePending{
-						ResourceCreatePending: &events.ResourceCreatePending{
-							ResourceId: &commands.ResourceId{
-								DeviceId: deviceID,
-								Href:     device.ResourceURI,
-							},
-							Content: &commands.Content{
-								ContentType:       message.AppOcfCbor.String(),
-								CoapContentFormat: -1,
-								Data: test.EncodeToCbor(t, map[string]interface{}{
-									"power": 1,
-								}),
-							},
-							AuditContext: commands.NewAuditContext(service.DeviceUserID, ""),
-						},
+						ResourceCreatePending: pbTest.MakeResourceCreatePending(t, deviceID, device.ResourceURI,
+							map[string]interface{}{
+								"power": 1,
+							}),
 					},
 				},
 				{
@@ -97,20 +88,10 @@ func TestRequestHandler_GetResourcePendingCommands(t *testing.T) {
 			want: []*pb.PendingCommand{
 				{
 					Command: &pb.PendingCommand_ResourceCreatePending{
-						ResourceCreatePending: &events.ResourceCreatePending{
-							ResourceId: &commands.ResourceId{
-								DeviceId: deviceID,
-								Href:     device.ResourceURI,
-							},
-							Content: &commands.Content{
-								ContentType:       message.AppOcfCbor.String(),
-								CoapContentFormat: -1,
-								Data: test.EncodeToCbor(t, map[string]interface{}{
-									"power": 1,
-								}),
-							},
-							AuditContext: commands.NewAuditContext(service.DeviceUserID, ""),
-						},
+						ResourceCreatePending: pbTest.MakeResourceCreatePending(t, deviceID, device.ResourceURI,
+							map[string]interface{}{
+								"power": 1,
+							}),
 					},
 				},
 			},
@@ -142,7 +123,7 @@ func TestRequestHandler_GetResourcePendingCommands(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
 	defer cancel()
 
-	test.ClearDB(ctx, t)
+	testService.ClearDB(ctx, t)
 	oauthShutdown := oauthTest.SetUp(t)
 	idShutdown := idService.SetUp(t)
 	raShutdown := raService.SetUp(t)
@@ -236,24 +217,9 @@ func TestRequestHandler_GetResourcePendingCommands(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			type Options struct {
-				CommandFilter []pb.GetPendingCommandsRequest_Command `url:"commandFilter,omitempty"`
-			}
-			opt := Options{
-				CommandFilter: tt.args.commandFilter,
-			}
-			v, err := query.Values(opt)
-			require.NoError(t, err)
-			request := httpgwTest.NewRequest(http.MethodGet, uri.AliasResourcePendingCommands, nil).AuthToken(token).Accept(tt.args.accept).DeviceId(tt.args.deviceID).ResourceHref(tt.args.href).SetQuery(v.Encode()).Build()
-			trans := http.DefaultTransport.(*http.Transport).Clone()
-			trans.TLSClientConfig = &tls.Config{
-				InsecureSkipVerify: true,
-			}
-			c := http.Client{
-				Transport: trans,
-			}
-			resp, err := c.Do(request)
-			require.NoError(t, err)
+			rb := httpgwTest.NewRequest(http.MethodGet, uri.AliasResourcePendingCommands, nil).AuthToken(token).Accept(tt.args.accept)
+			rb.DeviceId(tt.args.deviceID).ResourceHref(tt.args.href).AddCommandsFilter(httpgwTest.ToCommandsFilter(tt.args.commandFilter))
+			resp := httpgwTest.HTTPDo(t, rb.Build())
 			defer func() {
 				_ = resp.Body.Close()
 			}()
@@ -268,7 +234,7 @@ func TestRequestHandler_GetResourcePendingCommands(t *testing.T) {
 				require.NoError(t, err)
 				values = append(values, &v)
 			}
-			test.CmpPendingCmds(t, tt.want, values)
+			pbTest.CmpPendingCmds(t, tt.want, values)
 		})
 	}
 }

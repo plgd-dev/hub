@@ -7,13 +7,8 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/stretchr/testify/require"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
-
 	"github.com/plgd-dev/device/schema/interfaces"
 	"github.com/plgd-dev/device/test/resource/types"
-	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/hub/grpc-gateway/pb"
 	httpgwTest "github.com/plgd-dev/hub/http-gateway/test"
 	"github.com/plgd-dev/hub/http-gateway/uri"
@@ -23,42 +18,30 @@ import (
 	"github.com/plgd-dev/hub/test"
 	"github.com/plgd-dev/hub/test/config"
 	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
+	pbTest "github.com/plgd-dev/hub/test/pb"
+	"github.com/plgd-dev/hub/test/service"
+	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 )
 
-func NewBool(v bool) *bool {
+func newBool(v bool) *bool {
 	return &v
 }
 
-func cmpResourceRetrieved(t *testing.T, want, got *events.ResourceRetrieved) {
-	dataWant := want.GetContent().GetData()
-	datagot := got.GetContent().GetData()
-	want.Content.Data = nil
-	got.Content.Data = nil
-	test.CheckProtobufs(t, want, got, test.RequireToCheckFunc(require.Equal))
-
-	if len(dataWant) > 0 {
-		w := test.DecodeCbor(t, dataWant)
-		g := test.DecodeCbor(t, datagot)
-		require.Equal(t, w, g)
-	} else {
-		require.Equal(t, len(dataWant), len(datagot))
-	}
-}
-
-func TestRequestHandler_GetResource(t *testing.T) {
+func TestRequestHandlerGetResource(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	type args struct {
+		accept            string
 		deviceID          string
 		resourceHref      string
-		shadow            *bool
 		resourceInterface string
-		accept            string
+		shadow            *bool
 	}
 	tests := []struct {
-		name    string
-		args    args
-		wantErr bool
-		want    *events.ResourceRetrieved
+		name string
+		args args
+		want *events.ResourceRetrieved
 	}{
 		{
 			name: "json: get from resource shadow",
@@ -78,87 +61,54 @@ func TestRequestHandler_GetResource(t *testing.T) {
 		{
 			name: "jsonpb: get from resource shadow",
 			args: args{
+				accept:       uri.ApplicationProtoJsonContentType,
 				deviceID:     deviceID,
 				resourceHref: test.TestResourceLightInstanceHref("1"),
-				accept:       uri.ApplicationProtoJsonContentType,
 			},
-			want: &events.ResourceRetrieved{
-				ResourceId: &commands.ResourceId{
-					DeviceId: deviceID,
-					Href:     test.TestResourceLightInstanceHref("1"),
-				},
-				Content: &commands.Content{
-					CoapContentFormat: int32(message.AppOcfCbor),
-					ContentType:       message.AppOcfCbor.String(),
-					Data: test.EncodeToCbor(t, map[string]interface{}{
-						"state": false,
-						"power": uint64(0),
-						"name":  "Light",
-						"if":    []interface{}{interfaces.OC_IF_RW, interfaces.OC_IF_BASELINE},
-						"rt":    []interface{}{types.CORE_LIGHT},
-					}),
-				},
-				Status: commands.Status_OK,
-			},
+			want: pbTest.MakeResourceRetrieved(t, deviceID, test.TestResourceLightInstanceHref("1"), map[string]interface{}{
+				"state": false,
+				"power": uint64(0),
+				"name":  "Light",
+				"if":    []interface{}{interfaces.OC_IF_RW, interfaces.OC_IF_BASELINE},
+				"rt":    []interface{}{types.CORE_LIGHT},
+			}),
 		},
 		{
 			name: "jsonpb: get from device with interface",
 			args: args{
+				accept:            uri.ApplicationProtoJsonContentType,
 				deviceID:          deviceID,
 				resourceHref:      test.TestResourceLightInstanceHref("1"),
 				resourceInterface: interfaces.OC_IF_BASELINE,
-				accept:            uri.ApplicationProtoJsonContentType,
 			},
-			want: &events.ResourceRetrieved{
-				ResourceId: &commands.ResourceId{
-					DeviceId: deviceID,
-					Href:     test.TestResourceLightInstanceHref("1"),
-				},
-				Content: &commands.Content{
-					CoapContentFormat: int32(message.AppOcfCbor),
-					ContentType:       message.AppOcfCbor.String(),
-					Data: test.EncodeToCbor(t, map[string]interface{}{
-						"state": false,
-						"power": uint64(0),
-						"name":  "Light",
-						"if":    []interface{}{interfaces.OC_IF_RW, interfaces.OC_IF_BASELINE},
-						"rt":    []interface{}{types.CORE_LIGHT},
-					}),
-				},
-				Status: commands.Status_OK,
-			},
+			want: pbTest.MakeResourceRetrieved(t, deviceID, test.TestResourceLightInstanceHref("1"), map[string]interface{}{
+				"state": false,
+				"power": uint64(0),
+				"name":  "Light",
+				"if":    []interface{}{interfaces.OC_IF_RW, interfaces.OC_IF_BASELINE},
+				"rt":    []interface{}{types.CORE_LIGHT},
+			}),
 		},
 		{
 			name: "jsonpb: get from device with disabled shadow",
 			args: args{
+				accept:       uri.ApplicationProtoJsonContentType,
 				deviceID:     deviceID,
 				resourceHref: test.TestResourceLightInstanceHref("1"),
-				shadow:       NewBool(false),
-				accept:       uri.ApplicationProtoJsonContentType,
+				shadow:       newBool(false),
 			},
-			want: &events.ResourceRetrieved{
-				ResourceId: &commands.ResourceId{
-					DeviceId: deviceID,
-					Href:     test.TestResourceLightInstanceHref("1"),
-				},
-				Content: &commands.Content{
-					CoapContentFormat: int32(message.AppOcfCbor),
-					ContentType:       message.AppOcfCbor.String(),
-					Data: test.EncodeToCbor(t, map[string]interface{}{
-						"state": false,
-						"power": uint64(0),
-						"name":  "Light",
-					}),
-				},
-				Status: commands.Status_OK,
-			},
+			want: pbTest.MakeResourceRetrieved(t, deviceID, test.TestResourceLightInstanceHref("1"), map[string]interface{}{
+				"state": false,
+				"power": uint64(0),
+				"name":  "Light",
+			}),
 		},
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
 	defer cancel()
 
-	tearDown := test.SetUp(ctx, t)
+	tearDown := service.SetUp(ctx, t)
 	defer tearDown()
 
 	shutdownHttp := httpgwTest.SetUp(t)
@@ -178,20 +128,12 @@ func TestRequestHandler_GetResource(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			req := httpgwTest.NewRequest(http.MethodGet, uri.AliasDeviceResource, nil).DeviceId(tt.args.deviceID).ResourceHref(tt.args.resourceHref).ResourceInterface(tt.args.resourceInterface).AuthToken(token).Accept(tt.args.accept)
+			rb := httpgwTest.NewRequest(http.MethodGet, uri.AliasDeviceResource, nil).AuthToken(token).Accept(tt.args.accept)
+			rb.DeviceId(tt.args.deviceID).ResourceHref(tt.args.resourceHref).ResourceInterface(tt.args.resourceInterface)
 			if tt.args.shadow != nil {
-				req.Shadow(*tt.args.shadow)
+				rb.Shadow(*tt.args.shadow)
 			}
-			request := req.Build()
-			trans := http.DefaultTransport.(*http.Transport).Clone()
-			trans.TLSClientConfig = &tls.Config{
-				InsecureSkipVerify: true,
-			}
-			c := http.Client{
-				Transport: trans,
-			}
-			resp, err := c.Do(request)
-			require.NoError(t, err)
+			resp := httpgwTest.HTTPDo(t, rb.Build())
 			defer func() {
 				_ = resp.Body.Close()
 			}()
@@ -203,17 +145,12 @@ func TestRequestHandler_GetResource(t *testing.T) {
 				if err == io.EOF {
 					break
 				}
-				if tt.wantErr {
-					require.Error(t, err)
-					return
-				}
 				require.NoError(t, err)
 				require.NotEmpty(t, value.GetData())
-				value.GetData().AuditContext = nil
-				value.GetData().EventMetadata = nil
 				values = append(values, value.GetData())
 			}
-			cmpResourceRetrieved(t, tt.want, values[0])
+			require.Len(t, values, 1)
+			pbTest.CmpResourceRetrieved(t, tt.want, values[0])
 		})
 	}
 }

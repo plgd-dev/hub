@@ -23,6 +23,7 @@ import (
 	testCfg "github.com/plgd-dev/hub/test/config"
 	testHttp "github.com/plgd-dev/hub/test/http"
 	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
+	"github.com/plgd-dev/hub/test/service"
 	"github.com/plgd-dev/kit/v2/codec/json"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -47,7 +48,7 @@ func TestRequestHandler_SubscribeToDevices(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), testCfg.TEST_TIMEOUT)
 	defer cancel()
 
-	tearDown := test.SetUp(ctx, t)
+	tearDown := service.SetUp(ctx, t)
 	defer tearDown()
 
 	token := oauthTest.GetDefaultServiceToken(t)
@@ -137,7 +138,7 @@ func TestRequestHandler_SubscribeToDevicesOffline(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), testCfg.TEST_TIMEOUT)
 	defer cancel()
 
-	tearDown := test.SetUp(ctx, t)
+	tearDown := service.SetUp(ctx, t)
 	defer tearDown()
 	coapgwCfg := coapgwTest.MakeConfig(t)
 	coapgwCfg.Log.Embedded.Debug = true
