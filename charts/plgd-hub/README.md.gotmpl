@@ -17,7 +17,7 @@ Install [cert-manager](https://cert-manager.io/) via [https://artifacthub.io/pac
 global:
   # -- Global domain
   domain:
-  # -- Hub ID. Used by coap-gateway. It must be unique
+  # -- HubID. Used by coap-gateway. It must be unique
   hubId:
   # -- OAuth owner Claim
   ownerClaim: "sub"
@@ -31,14 +31,14 @@ global:
   oauth:
    # -- List of OAuth client's configurations
    device:
-       # -- Name of client
+       # -- Name of provider
      - name:
        # -- Client ID
        clientID:
        # -- clientSecret or clientSecretFile
        clientSecret:
-       clientSecretFile:
-       # -- Redirect URL
+       #clientSecretFile:
+       # -- Redirect URL. In case you are using mobile app, redirectURL should be in format cloud.plgd.mobile://login-callback
        redirectURL:
        # -- Use in httpgateway.ui.webConfiguration.deviceOAuthClient configuration. Default first item in list
        useInUi: true
@@ -47,8 +47,35 @@ global:
     clientID:
 ```
 
+### Setup with OAuth Mock server:
+
+```
+# -- Global config variables
+global:
+  # -- Global domain
+  domain: "domain.com"
+  # -- CloudID. Used by coap-gateway. It must be unique
+  hubId: 1c10a3b6-287c-11ec-ac2d-13054959c274
+mockoauthserver:
+  enabled: true
+```
+
+### NodePort for coap-gateway
+
+In case you install plgd-hub into [microk8s.io/](https://microk8s.io/), it's required to enable also
+nodePort for coap-gateway. For enable nodePort for coap-gateway add config below:
+
+```
+coapgateway:
+  service:
+    nodePort: 5684
+```
+
+> This configuration should be applied only to test environment !!!
+
 {{ template "chart.requirementsSection" . }}
 
 {{ template "chart.valuesSection" . }}
 
 {{ template "helm-docs.versionFooter" . }}
+
