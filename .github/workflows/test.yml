@@ -2,9 +2,13 @@
 
 name: Test
 
-# Controls when the action will run. Triggers the workflow on push or pull request
-# events but only for the master branch
+# Controls when the action will run. Triggers the workflow push is only on main branch and PR on any branch.
 on:
+  push:
+    branches:
+      - main
+    tags:
+      - '*'
   pull_request:
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
@@ -34,3 +38,7 @@ jobs:
       # Runs a single command using the runners shell
       - name: Run a test
         run: make test
+
+      - name: Publish the coverage for main branch
+        if: ${{ github.ref == 'refs/heads/main' }}
+        run: bash <(curl -s https://codecov.io/bash)
