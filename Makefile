@@ -19,12 +19,6 @@ SUBDIRS := bundle certificate-authority cloud2cloud-connector cloud2cloud-gatewa
 
 default: build
 
-hub-build:
-	docker build \
-		--network=host \
-		--tag hub-build \
-		.
-
 hub-test:
 	docker build \
 		--network=host \
@@ -153,7 +147,7 @@ $(test-targets): %: env
 
 .PHONY: $(test-targets)
 
-build: hub-build $(SUBDIRS)
+build: $(SUBDIRS)
 
 clean:
 	docker rm -f mongo || true

@@ -1,6 +1,0 @@
-.git
-.github
-.gitignore
-.travis.yml
-Makefile
-vendor

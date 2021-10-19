@@ -1,1 +1,0 @@
-../docs/guide/deployment/cloud2cloud-gateway.md

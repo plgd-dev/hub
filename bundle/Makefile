@@ -6,11 +6,12 @@ VERSION_TAG ?= $(LATEST_TAG)-$(shell git rev-parse --short=7 --verify HEAD)
 default: build
 
 define build-docker-image
-	docker build \
+	cd .. && docker build \
 		--network=host \
 		--tag plgd/$(SERVICE_NAME):$(VERSION_TAG) \
 		--tag plgd/$(SERVICE_NAME):$(LATEST_TAG) \
 		--target $(1) \
+		-f $(SERVICE_NAME)/Dockerfile \
 		.
 endef
 
