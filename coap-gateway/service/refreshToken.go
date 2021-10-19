@@ -5,13 +5,14 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/plgd-dev/hub/coap-gateway/coapconv"
-	"github.com/plgd-dev/hub/pkg/log"
-	"github.com/plgd-dev/hub/pkg/security/oauth2"
-	pkgTime "github.com/plgd-dev/hub/pkg/time"
 	"github.com/plgd-dev/go-coap/v2/message"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/mux"
+	"github.com/plgd-dev/hub/coap-gateway/coapconv"
+	"github.com/plgd-dev/hub/pkg/log"
+	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
+	"github.com/plgd-dev/hub/pkg/security/oauth2"
+	pkgTime "github.com/plgd-dev/hub/pkg/time"
 	"github.com/plgd-dev/kit/v2/codec/cbor"
 )
 
@@ -69,6 +70,7 @@ func validUntilToExpiresIn(validUntil time.Time) int64 {
 }
 
 func refreshTokenPostHandler(req *mux.Message, client *Client) {
+	const fmtErr = "cannot handle refresh token for %v: %w"
 	logErrorAndCloseClient := func(err error, code coapCodes.Code) {
 		client.logAndWriteErrorResponse(err, code, req.Token)
 		if err := client.Close(); err != nil {
@@ -79,31 +81,42 @@ func refreshTokenPostHandler(req *mux.Message, client *Client) {
 	var refreshToken CoapRefreshTokenReq
 	err := cbor.ReadFrom(req.Body, &refreshToken)
 	if err != nil {
-		logErrorAndCloseClient(fmt.Errorf("cannot handle refresh token: %w", err), coapCodes.BadRequest)
+		logErrorAndCloseClient(fmt.Errorf(fmtErr, "unknown", err), coapCodes.BadRequest)
 		return
 	}
 
 	err = validateRefreshToken(refreshToken)
 	if err != nil {
-		logErrorAndCloseClient(fmt.Errorf("cannot handle refresh token: %w", err), coapCodes.BadRequest)
+		logErrorAndCloseClient(fmt.Errorf(fmtErr, refreshToken.DeviceID, err), coapCodes.BadRequest)
 		return
 	}
 
 	token, err := client.refreshCache.Execute(req.Context, client.server.providers, client.server.taskQueue, refreshToken.RefreshToken)
 	if err != nil {
-		logErrorAndCloseClient(fmt.Errorf("cannot handle refresh token: %w", err), coapCodes.Unauthorized)
+		logErrorAndCloseClient(fmt.Errorf(fmtErr, refreshToken.DeviceID, err), coapCodes.Unauthorized)
 		return
 	}
 
 	claim, err := client.ValidateToken(req.Context, token.AccessToken.String())
 	if err != nil {
-		logErrorAndCloseClient(fmt.Errorf("cannot handle refresh token: %w", err), coapCodes.Unauthorized)
+		logErrorAndCloseClient(fmt.Errorf(fmtErr, refreshToken.DeviceID, err), coapCodes.Unauthorized)
 		return
 	}
 
 	err = client.server.VerifyDeviceID(client.tlsDeviceID, claim)
 	if err != nil {
-		logErrorAndCloseClient(fmt.Errorf("cannot handle refresh token: %w", err), coapCodes.Unauthorized)
+		logErrorAndCloseClient(fmt.Errorf(fmtErr, refreshToken.DeviceID, err), coapCodes.Unauthorized)
+		return
+	}
+	deviceID := client.ResolveDeviceID(claim, refreshToken.DeviceID)
+	ctx := kitNetGrpc.CtxWithIncomingToken(kitNetGrpc.CtxWithToken(req.Context, token.AccessToken.String()), token.AccessToken.String())
+	ok, err := client.server.ownerCache.OwnsDevice(ctx, deviceID)
+	if err != nil {
+		logErrorAndCloseClient(fmt.Errorf(fmtErr, deviceID, fmt.Errorf("cannot check owning: %w", err)), coapCodes.Unauthorized)
+		return
+	}
+	if !ok {
+		logErrorAndCloseClient(fmt.Errorf(fmtErr, deviceID, fmt.Errorf("device is not registered")), coapCodes.Unauthorized)
 		return
 	}
 
@@ -112,22 +125,22 @@ func refreshTokenPostHandler(req *mux.Message, client *Client) {
 		owner = refreshToken.UserID
 	}
 	if owner == "" {
-		logErrorAndCloseClient(fmt.Errorf("cannot refresh token: cannot determine owner"), coapCodes.Unauthorized)
+		logErrorAndCloseClient(fmt.Errorf(fmtErr, deviceID, fmt.Errorf("cannot determine owner")), coapCodes.Unauthorized)
 		return
 	}
 
 	expire, ok := ValidUntil(token.Expiry)
 	if !ok {
-		logErrorAndCloseClient(fmt.Errorf("cannot handle refresh token: expired access token"), coapCodes.InternalServerError)
+		logErrorAndCloseClient(fmt.Errorf(fmtErr, deviceID, fmt.Errorf("expired access token")), coapCodes.InternalServerError)
 		return
 	}
 
 	validUntil := pkgTime.Unix(0, expire)
-	deviceID := client.ResolveDeviceID(claim, refreshToken.DeviceID)
+
 	expiresIn := validUntilToExpiresIn(validUntil)
 	accept, out, err := getRefreshTokenContent(token, expiresIn, req.Options)
 	if err != nil {
-		logErrorAndCloseClient(fmt.Errorf("cannot handle refresh token for %v: %w", deviceID, err), coapCodes.InternalServerError)
+		logErrorAndCloseClient(fmt.Errorf(fmtErr, deviceID, err), coapCodes.InternalServerError)
 		return
 	}
 

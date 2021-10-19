@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"time"
 
 	nats "github.com/nats-io/nats.go"
 	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventbus"
@@ -17,10 +18,11 @@ type MarshalerFunc = func(v interface{}) ([]byte, error)
 
 // Publisher implements a eventbus.Publisher interface.
 type Publisher struct {
-	dataMarshaler MarshalerFunc
-	conn          *nats.Conn
-	closeFunc     []func()
-	publish       func(subj string, data []byte) error
+	dataMarshaler  MarshalerFunc
+	conn           *nats.Conn
+	closeFunc      []func()
+	publish        func(subj string, data []byte) error
+	flusherTimeout time.Duration
 }
 
 func (p *Publisher) AddCloseFunc(f func()) {
@@ -28,7 +30,8 @@ func (p *Publisher) AddCloseFunc(f func()) {
 }
 
 type options struct {
-	dataMarshaler MarshalerFunc
+	dataMarshaler  MarshalerFunc
+	flusherTimeout time.Duration
 }
 
 type Option interface {
@@ -49,10 +52,27 @@ func WithMarshaler(dataMarshaler MarshalerFunc) MarshalerOpt {
 	}
 }
 
+type FlusherTimeoutOpt struct {
+	flusherTimeout time.Duration
+}
+
+func (o FlusherTimeoutOpt) apply(opts *options) {
+	if o.flusherTimeout > 0 {
+		opts.flusherTimeout = o.flusherTimeout
+	}
+}
+
+func WithFlusherTimeout(flusherTimeout time.Duration) FlusherTimeoutOpt {
+	return FlusherTimeoutOpt{
+		flusherTimeout: flusherTimeout,
+	}
+}
+
 // Create publisher with existing NATS connection and proto marshaller
 func New(conn *nats.Conn, jetstream bool, opts ...Option) (*Publisher, error) {
 	cfg := options{
-		dataMarshaler: json.Marshal,
+		dataMarshaler:  json.Marshal,
+		flusherTimeout: time.Second * 10,
 	}
 	for _, o := range opts {
 		o.apply(&cfg)
@@ -71,9 +91,10 @@ func New(conn *nats.Conn, jetstream bool, opts ...Option) (*Publisher, error) {
 	}
 
 	return &Publisher{
-		dataMarshaler: cfg.dataMarshaler,
-		conn:          conn,
-		publish:       publish,
+		dataMarshaler:  cfg.dataMarshaler,
+		conn:           conn,
+		publish:        publish,
+		flusherTimeout: cfg.flusherTimeout,
 	}, nil
 }
 
@@ -99,7 +120,7 @@ func (p *Publisher) Publish(ctx context.Context, topics []string, groupId, aggre
 
 	var errors []error
 	for _, t := range topics {
-		err := p.PublishData(ctx, t, eData)
+		err := p.PublishData(t, eData)
 		if err != nil {
 			errors = append(errors, err)
 		}
@@ -117,12 +138,19 @@ func (p *Publisher) Publish(ctx context.Context, topics []string, groupId, aggre
 	return nil
 }
 
-func (p *Publisher) PublishData(ctx context.Context, subj string, data []byte) error {
+func (p *Publisher) PublishData(subj string, data []byte) error {
 	return p.publish(subj, data)
 }
 
 func (p *Publisher) Flush(ctx context.Context) error {
-	return p.conn.Flush()
+	flushCtx := ctx
+	_, ok := ctx.Deadline()
+	if !ok {
+		ctx, cancel := context.WithTimeout(ctx, p.flusherTimeout)
+		defer cancel()
+		flushCtx = ctx
+	}
+	return p.conn.FlushWithContext(flushCtx)
 }
 
 func (p *Publisher) Close() {

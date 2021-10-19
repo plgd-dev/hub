@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/plgd-dev/device/schema/device"
 	"github.com/plgd-dev/hub/grpc-gateway/pb"
 	exCodes "github.com/plgd-dev/hub/grpc-gateway/pb/codes"
 	httpgwTest "github.com/plgd-dev/hub/http-gateway/test"
@@ -39,10 +40,10 @@ func TestRequestHandler_DeleteResource(t *testing.T) {
 		wantHTTPCode int
 	}{
 		{
-			name: "/light/2 - MethodNotAllowed",
+			name: "/light/1 - MethodNotAllowed",
 			args: args{
 				deviceID:     deviceID,
-				resourceHref: "/light/2",
+				resourceHref: test.TestResourceLightInstanceHref("1"),
 				accept:       uri.ApplicationProtoJsonContentType,
 			},
 			wantErr:      true,
@@ -64,7 +65,7 @@ func TestRequestHandler_DeleteResource(t *testing.T) {
 			name: "/oic/d - PermissionDenied",
 			args: args{
 				deviceID:     deviceID,
-				resourceHref: "/oic/d",
+				resourceHref: device.ResourceURI,
 				accept:       uri.ApplicationProtoJsonContentType,
 			},
 			wantErr:      true,

@@ -125,7 +125,7 @@ func TestAggregateHandle_CancelPendingMetadataUpdates(t *testing.T) {
 				assert.Equal(t, tt.wantCode, s.Code())
 			} else {
 				require.NoError(t, err)
-				err = service.PublishEvents(ctx, publisher, tt.args.userID, tt.args.request.GetDeviceId(), ag.ResourceID(), events)
+				err = service.PublishEvents(publisher, tt.args.userID, tt.args.request.GetDeviceId(), ag.ResourceID(), events)
 				assert.NoError(t, err)
 			}
 		}

@@ -49,14 +49,3 @@ func (s *DeviceSubscription) Cancel() (wait func(), err error) {
 func (s *DeviceSubscription) ID() string {
 	return s.id
 }
-
-func ToDeviceSubscription(v interface{}, ok bool) (*DeviceSubscription, bool) {
-	if !ok {
-		return nil, false
-	}
-	if v == nil {
-		return nil, false
-	}
-	s, ok := v.(*DeviceSubscription)
-	return s, ok
-}

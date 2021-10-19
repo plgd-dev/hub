@@ -32,8 +32,9 @@ func TestPublisher(t *testing.T) {
 
 	naPubClient, publisher, err := test.NewClientAndPublisher(client.ConfigPublisher{
 		Config: client.Config{
-			URL: "nats://localhost:4222",
-			TLS: config.MakeTLSClientConfig(),
+			URL:            "nats://localhost:4222",
+			TLS:            config.MakeTLSClientConfig(),
+			FlusherTimeout: time.Second * 30,
 		},
 	}, logger, publisher.WithMarshaler(json.Marshal))
 	assert.NoError(t, err)
@@ -82,8 +83,9 @@ func TestPublisherJetStream(t *testing.T) {
 	}()
 	naPubClient, publisher, err := test.NewClientAndPublisher(client.ConfigPublisher{
 		Config: client.Config{
-			URL: "nats://localhost:4222",
-			TLS: config.MakeTLSClientConfig(),
+			URL:            "nats://localhost:4222",
+			TLS:            config.MakeTLSClientConfig(),
+			FlusherTimeout: time.Second * 30,
 		},
 		JetStream: true,
 	}, logger, publisher.WithMarshaler(json.Marshal))

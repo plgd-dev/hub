@@ -8,36 +8,28 @@ import (
 
 	"github.com/plgd-dev/hub/grpc-gateway/pb"
 	"github.com/plgd-dev/hub/grpc-gateway/subscription"
-	isClient "github.com/plgd-dev/hub/identity-store/client"
 	"github.com/plgd-dev/hub/pkg/log"
-	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventbus/nats/subscriber"
+	"github.com/plgd-dev/hub/pkg/net/grpc"
 	"google.golang.org/grpc/codes"
 )
 
 type subscriptions struct {
-	send                    func(e *pb.Event) error
-	resourceSubscriber      *subscriber.Subscriber
-	ownerCache              *isClient.OwnerCache
-	resourceDirectoryClient pb.GrpcGatewayClient
-	subscriptionBufferSize  int
+	owner              string
+	send               func(e *pb.Event) error
+	subscriptionsCache *subscription.SubscriptionsCache
 
 	subs map[string]*subscription.Sub
 }
 
 func newSubscriptions(
-	resourceDirectoryClient pb.GrpcGatewayClient,
-	resourceSubscriber *subscriber.Subscriber,
-	ownerCache *isClient.OwnerCache,
-	subscriptionBufferSize int,
+	owner string,
+	subscriptionsCache *subscription.SubscriptionsCache,
 	send func(e *pb.Event) error) *subscriptions {
 	return &subscriptions{
-		subs:                    make(map[string]*subscription.Sub),
-		send:                    send,
-		resourceDirectoryClient: resourceDirectoryClient,
-		resourceSubscriber:      resourceSubscriber,
-		ownerCache:              ownerCache,
-		subscriptionBufferSize:  subscriptionBufferSize,
+		owner:              owner,
+		subs:               make(map[string]*subscription.Sub),
+		send:               send,
+		subscriptionsCache: subscriptionsCache,
 	}
 }
 
@@ -50,10 +42,8 @@ func (s *subscriptions) close() {
 	}
 }
 
-func (s *subscriptions) createSubscription(ctx context.Context, req *pb.SubscribeToEvents) error {
-	sub := subscription.New(ctx, s.resourceSubscriber, s.send, req.GetCorrelationId(), s.subscriptionBufferSize, func(err error) {
-		log.Errorf("error occurs during processing event by subscription: %v", err)
-	}, req.GetCreateSubscription())
+func (s *subscriptions) createSubscription(req *pb.SubscribeToEvents) error {
+	sub := subscription.New(s.send, req.GetCorrelationId(), req.GetCreateSubscription())
 	err := s.send(&pb.Event{
 		SubscriptionId: sub.Id(),
 		CorrelationId:  req.GetCorrelationId(),
@@ -68,7 +58,7 @@ func (s *subscriptions) createSubscription(ctx context.Context, req *pb.Subscrib
 	if err != nil {
 		return err
 	}
-	err = sub.Init(s.ownerCache)
+	err = sub.Init(s.owner, s.subscriptionsCache)
 	if err != nil {
 		_ = s.send(&pb.Event{
 			SubscriptionId: sub.Id(),
@@ -138,68 +128,110 @@ func (s *subscriptions) cancelSubscription(ctx context.Context, req *pb.Subscrib
 	return err
 }
 
+func processNextRequest(ctx context.Context, srv pb.GrpcGateway_SubscribeToEventsServer, subs *subscriptions, send func(e *pb.Event) error) (bool, error) {
+	req, err := srv.Recv()
+	if err == io.EOF {
+		return false, nil
+	}
+	if err != nil {
+		return false, log.LogAndReturnError(grpc.ForwardErrorf(codes.Internal, "cannot receive events: %v", err))
+	}
+	switch v := req.GetAction().(type) {
+	case (*pb.SubscribeToEvents_CreateSubscription_):
+		err := subs.createSubscription(req)
+		if err != nil {
+			log.Errorf("cannot create subscription: %w", err)
+		}
+	case (*pb.SubscribeToEvents_CancelSubscription_):
+		err := subs.cancelSubscription(ctx, req)
+		if err != nil {
+			log.Errorf("cannot cancel subscription: %w", err)
+		}
+	case nil:
+		err := fmt.Errorf("invalid action('%T')", v)
+		_ = send(&pb.Event{
+			CorrelationId: req.GetCorrelationId(),
+			Type: &pb.Event_OperationProcessed_{
+				OperationProcessed: &pb.Event_OperationProcessed{
+					ErrorStatus: &pb.Event_OperationProcessed_ErrorStatus{
+						Code:    pb.Event_OperationProcessed_ErrorStatus_ERROR,
+						Message: err.Error(),
+					},
+				},
+			},
+		})
+		log.Errorf("%w", err)
+	default:
+		err := fmt.Errorf("unknown action %T", v)
+		_ = send(&pb.Event{
+			CorrelationId: req.GetCorrelationId(),
+			Type: &pb.Event_OperationProcessed_{
+				OperationProcessed: &pb.Event_OperationProcessed{
+					ErrorStatus: &pb.Event_OperationProcessed_ErrorStatus{
+						Code:    pb.Event_OperationProcessed_ErrorStatus_ERROR,
+						Message: err.Error(),
+					},
+				},
+			},
+		})
+		log.Errorf("%w", err)
+	}
+	return true, nil
+}
+
 func (r *RequestHandler) SubscribeToEvents(srv pb.GrpcGateway_SubscribeToEventsServer) (errRet error) {
+
+	var wg sync.WaitGroup
+	wg.Add(1)
+	defer wg.Wait()
+
 	ctx, cancel := context.WithCancel(srv.Context())
 	defer cancel()
 
-	var sendMutex sync.Mutex
+	// sending event to grpc client
+	sendChan := make(chan *pb.Event, r.config.APIs.GRPC.SubscriptionBufferSize)
+	go func() {
+		defer wg.Done()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case e := <-sendChan:
+				if err := srv.Send(e); err != nil {
+					log.Errorf("cannot send event('%v'): %w", e, err)
+					return
+				}
+			}
+		}
+	}()
+
+	// sending event go grpc goroutine
 	send := func(e *pb.Event) error {
-		sendMutex.Lock()
-		defer sendMutex.Unlock()
-		return srv.Send(e)
+		select {
+		case <-srv.Context().Done():
+			return nil
+		case sendChan <- e:
+		default:
+			return fmt.Errorf("event('%v') was dropped because client is exhausted", e)
+		}
+		return nil
 	}
 
-	subs := newSubscriptions(r.resourceDirectoryClient, r.resourceSubscriber, r.ownerCache, r.config.APIs.GRPC.SubscriptionBufferSize, send)
+	owner, err := grpc.OwnerFromTokenMD(ctx, r.ownerCache.OwnerClaim())
+	if err != nil {
+		return err
+	}
+
+	subs := newSubscriptions(owner, r.subscriptionsCache, send)
 	defer subs.close()
 
 	for {
-		req, err := srv.Recv()
-		if err == io.EOF {
-			break
-		}
+		ok, err := processNextRequest(ctx, srv, subs, send)
 		if err != nil {
-			return log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot receive events: %v", err))
+			return err
 		}
-		switch v := req.GetAction().(type) {
-		case (*pb.SubscribeToEvents_CreateSubscription_):
-			err := subs.createSubscription(ctx, req)
-			if err != nil {
-				log.Errorf("cannot create subscription: %w", err)
-			}
-		case (*pb.SubscribeToEvents_CancelSubscription_):
-			err := subs.cancelSubscription(ctx, req)
-			if err != nil {
-				log.Errorf("cannot cancel subscription: %w", err)
-			}
-		case nil:
-			err := fmt.Errorf("invalid action('%T')", v)
-			_ = send(&pb.Event{
-				CorrelationId: req.GetCorrelationId(),
-				Type: &pb.Event_OperationProcessed_{
-					OperationProcessed: &pb.Event_OperationProcessed{
-						ErrorStatus: &pb.Event_OperationProcessed_ErrorStatus{
-							Code:    pb.Event_OperationProcessed_ErrorStatus_ERROR,
-							Message: err.Error(),
-						},
-					},
-				},
-			})
-			log.Errorf("%w", err)
-		default:
-			err := fmt.Errorf("unknown action %T", v)
-			_ = send(&pb.Event{
-				CorrelationId: req.GetCorrelationId(),
-				Type: &pb.Event_OperationProcessed_{
-					OperationProcessed: &pb.Event_OperationProcessed{
-						ErrorStatus: &pb.Event_OperationProcessed_ErrorStatus{
-							Code:    pb.Event_OperationProcessed_ErrorStatus_ERROR,
-							Message: err.Error(),
-						},
-					},
-				},
-			})
-			log.Errorf("%w", err)
+		if !ok {
+			return nil
 		}
 	}
-	return nil
 }

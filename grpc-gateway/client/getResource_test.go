@@ -5,9 +5,10 @@ import (
 	"testing"
 	"time"
 
-	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
-
+	"github.com/plgd-dev/device/schema/configuration"
+	"github.com/plgd-dev/device/schema/interfaces"
 	"github.com/plgd-dev/hub/grpc-gateway/client"
+	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
 	"github.com/plgd-dev/hub/test"
 	testCfg "github.com/plgd-dev/hub/test/config"
 	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
@@ -38,12 +39,12 @@ func TestClient_GetResource(t *testing.T) {
 			args: args{
 				token:    oauthTest.GetDefaultServiceToken(t),
 				deviceID: deviceID,
-				href:     "/oc/con",
+				href:     configuration.ResourceURI,
 			},
 			want: map[interface{}]interface{}{
 				"n":  test.TestDeviceName,
-				"if": []interface{}{"oic.if.rw", "oic.if.baseline"},
-				"rt": []interface{}{"oic.wk.con"},
+				"if": []interface{}{interfaces.OC_IF_RW, interfaces.OC_IF_BASELINE},
+				"rt": []interface{}{configuration.ResourceType},
 			},
 		},
 		{
@@ -51,7 +52,7 @@ func TestClient_GetResource(t *testing.T) {
 			args: args{
 				token:    oauthTest.GetDefaultServiceToken(t),
 				deviceID: deviceID,
-				href:     "/oc/con",
+				href:     configuration.ResourceURI,
 				opts:     []client.GetOption{client.WithSkipShadow()},
 			},
 			want: map[interface{}]interface{}{
@@ -63,14 +64,14 @@ func TestClient_GetResource(t *testing.T) {
 			args: args{
 				token:    oauthTest.GetDefaultServiceToken(t),
 				deviceID: deviceID,
-				href:     "/oc/con",
-				opts:     []client.GetOption{client.WithInterface("oic.if.baseline")},
+				href:     configuration.ResourceURI,
+				opts:     []client.GetOption{client.WithInterface(interfaces.OC_IF_BASELINE)},
 			},
 			wantErr: false,
 			want: map[interface{}]interface{}{
 				"n":  test.TestDeviceName,
-				"if": []interface{}{"oic.if.rw", "oic.if.baseline"},
-				"rt": []interface{}{"oic.wk.con"},
+				"if": []interface{}{interfaces.OC_IF_RW, interfaces.OC_IF_BASELINE},
+				"rt": []interface{}{configuration.ResourceType},
 			},
 		},
 		{
@@ -78,14 +79,14 @@ func TestClient_GetResource(t *testing.T) {
 			args: args{
 				token:    oauthTest.GetDefaultServiceToken(t),
 				deviceID: deviceID,
-				href:     "/oc/con",
-				opts:     []client.GetOption{client.WithSkipShadow(), client.WithInterface("oic.if.baseline")},
+				href:     configuration.ResourceURI,
+				opts:     []client.GetOption{client.WithSkipShadow(), client.WithInterface(interfaces.OC_IF_BASELINE)},
 			},
 			wantErr: false,
 			want: map[interface{}]interface{}{
 				"n":  test.TestDeviceName,
-				"if": []interface{}{"oic.if.rw", "oic.if.baseline"},
-				"rt": []interface{}{"oic.wk.con"},
+				"if": []interface{}{interfaces.OC_IF_RW, interfaces.OC_IF_BASELINE},
+				"rt": []interface{}{configuration.ResourceType},
 			},
 		},
 		{

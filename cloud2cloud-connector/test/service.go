@@ -13,12 +13,13 @@ import (
 	"github.com/plgd-dev/hub/pkg/security/oauth2"
 	"github.com/plgd-dev/hub/pkg/security/oauth2/oauth"
 	"github.com/plgd-dev/hub/test/config"
-	oauthService "github.com/plgd-dev/hub/test/oauth-server/service"
+	"github.com/plgd-dev/hub/test/http"
+	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
 	"github.com/stretchr/testify/require"
 )
 
 const (
-	OAUTH_MANAGER_CLIENT_ID = oauthService.ClientTest
+	OAUTH_MANAGER_CLIENT_ID = oauthTest.ClientTest
 	OAUTH_MANAGER_AUDIENCE  = "localhost"
 )
 
@@ -26,7 +27,7 @@ func MakeAuthorizationConfig() service.AuthorizationConfig {
 	return service.AuthorizationConfig{
 		OwnerClaim: config.OWNER_CLAIM,
 		Config: oauth2.Config{
-			Authority: "https://" + config.OAUTH_SERVER_HOST,
+			Authority: http.HTTPS_SCHEME + config.OAUTH_SERVER_HOST,
 			Config: oauth.Config{
 				ClientID:         OAUTH_MANAGER_CLIENT_ID,
 				Audience:         OAUTH_MANAGER_AUDIENCE,

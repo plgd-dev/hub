@@ -5,6 +5,9 @@ import (
 	"crypto/tls"
 	"testing"
 
+	"github.com/plgd-dev/device/schema/device"
+	"github.com/plgd-dev/device/schema/interfaces"
+	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/hub/cloud2cloud-connector/events"
 	"github.com/plgd-dev/hub/cloud2cloud-connector/store"
 	c2cConnectorTest "github.com/plgd-dev/hub/cloud2cloud-connector/test"
@@ -15,13 +18,12 @@ import (
 	"github.com/plgd-dev/hub/test"
 	testCfg "github.com/plgd-dev/hub/test/config"
 	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
-	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )
 
-func testRequestHandler_UpdateResource(t *testing.T, events store.Events) {
+func testRequestHandlerUpdateResource(t *testing.T, events store.Events) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	type args struct {
 		req *pb.UpdateResourceRequest
@@ -36,7 +38,7 @@ func testRequestHandler_UpdateResource(t *testing.T, events store.Events) {
 			name: "valid",
 			args: args{
 				req: &pb.UpdateResourceRequest{
-					ResourceId: commands.NewResourceID(deviceID, "/light/1"),
+					ResourceId: commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
 					Content: &pb.Content{
 						ContentType: message.AppOcfCbor.String(),
 						Data: test.EncodeToCbor(t, map[string]interface{}{
@@ -46,7 +48,7 @@ func testRequestHandler_UpdateResource(t *testing.T, events store.Events) {
 				},
 			},
 			want: &raEvents.ResourceUpdated{
-				ResourceId: commands.NewResourceID(deviceID, "/light/1"),
+				ResourceId: commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
 				Content: &commands.Content{
 					CoapContentFormat: -1,
 				},
@@ -57,8 +59,8 @@ func testRequestHandler_UpdateResource(t *testing.T, events store.Events) {
 			name: "valid with interface",
 			args: args{
 				req: &pb.UpdateResourceRequest{
-					ResourceInterface: "oic.if.baseline",
-					ResourceId:        commands.NewResourceID(deviceID, "/light/1"),
+					ResourceInterface: interfaces.OC_IF_BASELINE,
+					ResourceId:        commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
 					Content: &pb.Content{
 						ContentType: message.AppOcfCbor.String(),
 						Data: test.EncodeToCbor(t, map[string]interface{}{
@@ -68,7 +70,7 @@ func testRequestHandler_UpdateResource(t *testing.T, events store.Events) {
 				},
 			},
 			want: &raEvents.ResourceUpdated{
-				ResourceId: commands.NewResourceID(deviceID, "/light/1"),
+				ResourceId: commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
 				Content: &commands.Content{
 					CoapContentFormat: -1,
 				},
@@ -79,8 +81,8 @@ func testRequestHandler_UpdateResource(t *testing.T, events store.Events) {
 			name: "revert update",
 			args: args{
 				req: &pb.UpdateResourceRequest{
-					ResourceInterface: "oic.if.baseline",
-					ResourceId:        commands.NewResourceID(deviceID, "/light/1"),
+					ResourceInterface: interfaces.OC_IF_BASELINE,
+					ResourceId:        commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
 					Content: &pb.Content{
 						ContentType: message.AppOcfCbor.String(),
 						Data: test.EncodeToCbor(t, map[string]interface{}{
@@ -90,7 +92,7 @@ func testRequestHandler_UpdateResource(t *testing.T, events store.Events) {
 				},
 			},
 			want: &raEvents.ResourceUpdated{
-				ResourceId: commands.NewResourceID(deviceID, "/light/1"),
+				ResourceId: commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
 				Content: &commands.Content{
 					CoapContentFormat: -1,
 				},
@@ -101,7 +103,7 @@ func testRequestHandler_UpdateResource(t *testing.T, events store.Events) {
 			name: "update RO-resource",
 			args: args{
 				req: &pb.UpdateResourceRequest{
-					ResourceId: commands.NewResourceID(deviceID, "/oic/d"),
+					ResourceId: commands.NewResourceID(deviceID, device.ResourceURI),
 					Content: &pb.Content{
 						ContentType: message.AppOcfCbor.String(),
 						Data: test.EncodeToCbor(t, map[string]interface{}{
@@ -155,7 +157,7 @@ func testRequestHandler_UpdateResource(t *testing.T, events store.Events) {
 	}
 }
 
-func TestRequestHandler_UpdateResource(t *testing.T) {
+func TestRequestHandlerUpdateResource(t *testing.T) {
 	type args struct {
 		events store.Events
 	}
@@ -205,7 +207,7 @@ func TestRequestHandler_UpdateResource(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			testRequestHandler_UpdateResource(t, tt.args.events)
+			testRequestHandlerUpdateResource(t, tt.args.events)
 		})
 	}
 }

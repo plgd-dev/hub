@@ -38,16 +38,10 @@ func (gt AllowedGrantTypes) IsAllowed(v AllowedGrantType) bool {
 }
 
 type Client struct {
-	ID                        string
-	AuthorizationCodeLifetime time.Duration
-	AccessTokenLifetime       time.Duration
-	CodeRestrictionLifetime   time.Duration
-}
-
-func (c *Client) SetDefaults() {
-	if c.AuthorizationCodeLifetime <= 0 {
-		c.AuthorizationCodeLifetime = time.Minute * 10
-	}
+	ID                        string        `yaml:"id"`
+	AuthorizationCodeLifetime time.Duration `yaml:"authorizationCodeLifetime"`
+	AccessTokenLifetime       time.Duration `yaml:"accessTokenLifetime"`
+	CodeRestrictionLifetime   time.Duration `yaml:"codeRestrictionLifetime"`
 }
 
 func (c *Client) Validate() error {
@@ -66,27 +60,6 @@ func (c ClientsConfig) Find(id string) *Client {
 		}
 	}
 	return nil
-}
-
-var clients = ClientsConfig{
-	{
-		ID:                        ClientTest,
-		AuthorizationCodeLifetime: time.Minute * 10,
-		AccessTokenLifetime:       time.Hour * 24,
-		CodeRestrictionLifetime:   0,
-	},
-	{
-		ID:                        ClientTestShortExpiration,
-		AuthorizationCodeLifetime: time.Second * 10,
-		AccessTokenLifetime:       time.Second * 10,
-		CodeRestrictionLifetime:   0,
-	},
-	{
-		ID:                        ClientTestRestrictedAuth,
-		AuthorizationCodeLifetime: time.Minute * 10,
-		AccessTokenLifetime:       time.Hour * 24,
-		CodeRestrictionLifetime:   time.Minute,
-	},
 }
 
 // Config represents application configuration
@@ -119,19 +92,11 @@ func (c *APIsConfig) Validate() error {
 }
 
 type OAuthSignerConfig struct {
-	IDTokenKeyFile     string `yaml:"idTokenKeyFile" json:"idTokenKeyFile"`
-	AccessTokenKeyFile string `yaml:"accessTokenKeyFile" json:"accessTokenKeyFile"`
-	Domain             string `yaml:"domain" json:"domain"`
+	IDTokenKeyFile     string        `yaml:"idTokenKeyFile" json:"idTokenKeyFile"`
+	AccessTokenKeyFile string        `yaml:"accessTokenKeyFile" json:"accessTokenKeyFile"`
+	Domain             string        `yaml:"domain" json:"domain"`
+	Clients            ClientsConfig `yaml:"clients" json:"clients"`
 }
-
-const ClientTest = "test"
-
-// Client with short auth code and access token expiration
-const ClientTestShortExpiration = "testShortExpiration"
-
-// Client will return error when the same auth code or refresh token
-// is used repeatedly within a minute of the first use
-const ClientTestRestrictedAuth = "testRestrictedAuth"
 
 func (c *OAuthSignerConfig) Validate() error {
 	if c.IDTokenKeyFile == "" {
@@ -142,6 +107,9 @@ func (c *OAuthSignerConfig) Validate() error {
 	}
 	if c.Domain == "" {
 		return fmt.Errorf("domain('%v')", c.Domain)
+	}
+	if len(c.Clients) == 0 {
+		return fmt.Errorf("clients('%v')", c.Clients)
 	}
 	return nil
 }

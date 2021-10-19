@@ -8,6 +8,12 @@ import (
 	"sync"
 	"time"
 
+	"github.com/plgd-dev/device/schema"
+	"github.com/plgd-dev/device/schema/interfaces"
+	"github.com/plgd-dev/go-coap/v2/message"
+	"github.com/plgd-dev/go-coap/v2/message/codes"
+	"github.com/plgd-dev/go-coap/v2/tcp"
+	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
 	"github.com/plgd-dev/hub/coap-gateway/coapconv"
 	grpcClient "github.com/plgd-dev/hub/grpc-gateway/client"
 	idEvents "github.com/plgd-dev/hub/identity-store/events"
@@ -16,15 +22,8 @@ import (
 	pkgJwt "github.com/plgd-dev/hub/pkg/security/jwt"
 	"github.com/plgd-dev/hub/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/resource-aggregate/events"
-	"github.com/plgd-dev/device/schema"
-	"github.com/plgd-dev/go-coap/v2/message"
-	"github.com/plgd-dev/go-coap/v2/message/codes"
-	"github.com/plgd-dev/go-coap/v2/tcp"
-	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
 	kitSync "github.com/plgd-dev/kit/v2/sync"
 )
-
-const OCFBaselineInterface = "oic.if.baseline"
 
 type observedResource struct {
 	href string
@@ -190,7 +189,7 @@ func (client *Client) observeResource(ctx context.Context, resourceID *commands.
 func (client *Client) getResourceContent(ctx context.Context, deviceID, href string) {
 	resp, err := client.coapConn.Get(ctx, href, message.Option{
 		ID:    message.URIQuery,
-		Value: []byte("if=" + OCFBaselineInterface),
+		Value: []byte("if=" + interfaces.OC_IF_BASELINE),
 	})
 	if err != nil {
 		log.Errorf("cannot get resource /%v%v content: %w", deviceID, href, err)
@@ -242,7 +241,7 @@ func (client *Client) addObservedResourceLocked(ctx context.Context, deviceID st
 			}
 		}, message.Option{
 			ID:    message.URIQuery,
-			Value: []byte("if=" + OCFBaselineInterface),
+			Value: []byte("if=" + interfaces.OC_IF_BASELINE),
 		})
 		if err != nil {
 			log.Errorf("cannot observe resource /%v%v: %w", deviceID, obsRes.href, err)
@@ -411,7 +410,7 @@ func (client *Client) closeDeviceSubscriber() error {
 	return nil
 }
 
-func (client *Client) CleanUp() *authorizationContext {
+func (client *Client) CleanUp(resetAuthContext bool) *authorizationContext {
 	authCtx, _ := client.GetAuthorizationContext()
 	log.Debugf("cleanUp client %v for device %v", client.coapConn.RemoteAddr(), authCtx.GetDeviceID())
 
@@ -423,14 +422,18 @@ func (client *Client) CleanUp() *authorizationContext {
 	}
 	client.unsubscribeFromDeviceEvents()
 
-	return client.SetAuthorizationContext(nil)
+	if resetAuthContext {
+		return client.SetAuthorizationContext(nil)
+	}
+	// we cannot reset authorizationContext need token (eg signOff)
+	return authCtx
 }
 
 // OnClose action when coap connection was closed.
 func (client *Client) OnClose() {
 	authCtx, _ := client.GetAuthorizationContext()
 	log.Debugf("close client %v for device %v", client.coapConn.RemoteAddr(), authCtx.GetDeviceID())
-	oldAuthCtx := client.CleanUp()
+	oldAuthCtx := client.CleanUp(false)
 
 	if oldAuthCtx.GetDeviceID() != "" {
 		client.server.expirationClientCache.Set(oldAuthCtx.GetDeviceID(), nil, time.Millisecond)

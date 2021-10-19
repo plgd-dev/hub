@@ -18,7 +18,7 @@ import (
 	"github.com/plgd-dev/kit/v2/codec/json"
 )
 
-var DeviceUserID = "1"
+const DeviceUserID = "1"
 
 const (
 	TokenScopeKey    = "scope"
@@ -40,8 +40,10 @@ func makeAccessToken(clientID, host, deviceID string, issuedAt, expires time.Tim
 	if err := token.Set(jwt.IssuedAtKey, issuedAt); err != nil {
 		return nil, fmt.Errorf("failed to set %v: %w", jwt.IssuedAtKey, err)
 	}
-	if err := token.Set(jwt.ExpirationKey, expires); err != nil {
-		return nil, fmt.Errorf("failed to set %v: %w", jwt.ExpirationKey, err)
+	if !expires.IsZero() {
+		if err := token.Set(jwt.ExpirationKey, expires); err != nil {
+			return nil, fmt.Errorf("failed to set %v: %w", jwt.ExpirationKey, err)
+		}
 	}
 	if err := token.Set(TokenScopeKey, []string{"openid", "r:deviceinformation:*", "r:resources:*", "w:resources:*", "w:subscriptions:*"}); err != nil {
 		return nil, fmt.Errorf("failed to set %v: %w", TokenScopeKey, err)
@@ -81,7 +83,10 @@ func makeJWTPayload(key interface{}, jwkKey jwk.Key, data []byte) ([]byte, error
 
 func generateAccessToken(clientID string, lifeTime time.Duration, host, deviceID string, key interface{}, jwkKey jwk.Key) (string, time.Time, error) {
 	now := time.Now()
-	expires := now.Add(lifeTime)
+	var expires time.Time
+	if lifeTime > 0 {
+		expires = now.Add(lifeTime)
+	}
 	token, err := makeAccessToken(clientID, host, deviceID, now, expires)
 	if err != nil {
 		return "", time.Time{}, fmt.Errorf("failed to make token: %w", err)
@@ -111,6 +116,10 @@ func makeIDToken(clientID string, host, nonce string, issuedAt, expires time.Tim
 	if err := token.Set(jwt.IssuedAtKey, issuedAt); err != nil {
 		return nil, fmt.Errorf("failed to set %v: %w", jwt.IssuedAtKey, err)
 	}
+	if expires.IsZero() {
+		// itToken for UI must contains exp
+		expires = time.Now().Add(time.Hour * 24 * 365 * 10)
+	}
 	if err := token.Set(jwt.ExpirationKey, expires); err != nil {
 		return nil, fmt.Errorf("failed to set %v: %w", jwt.ExpirationKey, err)
 	}
@@ -135,7 +144,10 @@ func makeIDToken(clientID string, host, nonce string, issuedAt, expires time.Tim
 
 func generateIDToken(clientID string, lifeTime time.Duration, host, nonce string, key *rsa.PrivateKey, jwkKey jwk.Key) (string, error) {
 	now := time.Now()
-	expires := now.Add(lifeTime)
+	var expires time.Time
+	if lifeTime > 0 {
+		expires = now.Add(lifeTime)
+	}
 	token, err := makeIDToken(clientID, host, nonce, now, expires)
 	if err != nil {
 		return "", fmt.Errorf("failed to make token: %w", err)
@@ -283,12 +295,15 @@ func (requestHandler *RequestHandler) getAccessToken(tokenReq tokenRequest, clie
 			requestHandler.accessTokenJwkKey)
 	}
 	accessToken := clientCfg.ID
-	accessTokenExpires := time.Now().Add(clientCfg.AccessTokenLifetime)
+	var accessTokenExpires time.Time
+	if clientCfg.AccessTokenLifetime > 0 {
+		accessTokenExpires = time.Now().Add(clientCfg.AccessTokenLifetime)
+	}
 	return accessToken, accessTokenExpires, nil
 }
 
 func (requestHandler *RequestHandler) processResponse(w http.ResponseWriter, tokenReq tokenRequest) {
-	clientCfg := clients.Find(tokenReq.ClientID)
+	clientCfg := requestHandler.config.OAuthSigner.Clients.Find(tokenReq.ClientID)
 	if clientCfg == nil {
 		writeError(w, fmt.Errorf("client(%v) not found", tokenReq.ClientID), http.StatusBadRequest)
 		return
@@ -332,10 +347,12 @@ func (requestHandler *RequestHandler) processResponse(w http.ResponseWriter, tok
 	resp := map[string]interface{}{
 		"access_token":  accessToken,
 		"id_token":      idToken,
-		"expires_in":    int64(time.Until(accessTokenExpires).Seconds()),
 		"scope":         "openid profile email",
 		"token_type":    "Bearer",
 		"refresh_token": refreshToken,
+	}
+	if !accessTokenExpires.IsZero() {
+		resp["expires_in"] = int64(time.Until(accessTokenExpires).Seconds())
 	}
 
 	if err = jsonResponseWriter(w, resp); err != nil {

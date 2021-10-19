@@ -13,7 +13,7 @@ export NGINX_PATH="/data/nginx"
 export JETSTREAM_PATH="/data/jetstream"
 
 export CERTIFICATE_AUTHORITY_ADDRESS="localhost:${CERTIFICATE_AUTHORITY_PORT}"
-export MOCKED_OAUTH_SERVER_ADDRESS="localhost:${MOCKED_OAUTH_SERVER_PORT}"
+export MOCK_OAUTH_SERVER_ADDRESS="localhost:${MOCK_OAUTH_SERVER_PORT}"
 export RESOURCE_AGGREGATE_ADDRESS="localhost:${RESOURCE_AGGREGATE_PORT}"
 export RESOURCE_DIRECTORY_ADDRESS="localhost:${RESOURCE_DIRECTORY_PORT}"
 export IDENTITY_STORE_ADDRESS="localhost:${IDENTITY_STORE_PORT}"
@@ -123,7 +123,7 @@ certificate-generator --cmd.generateRootCA --outCert=$CA_POOL_CERT_PATH --outKey
 echo "generating GRPC internal cert"
 certificate-generator --cmd.generateCertificate --outCert=$DIAL_FILE_CERT_DIR_PATH/$DIAL_FILE_CERT_NAME --outKey=$DIAL_FILE_CERT_DIR_PATH/$DIAL_FILE_CERT_KEY_NAME --cert.subject.cn="localhost" --cert.san.domain="localhost" --cert.san.ip="0.0.0.0" --cert.san.ip="127.0.0.1" $fqdnSAN --signerCert=$CA_POOL_CERT_PATH --signerKey=$CA_POOL_CERT_KEY_PATH
 echo "generating COAP-GW cert"
-certificate-generator --cmd.generateIdentityCertificate=$COAP_GATEWAY_CLOUD_ID --outCert=$EXTERNAL_CERT_DIR_PATH/$COAP_GATEWAY_FILE_CERT_NAME --outKey=$EXTERNAL_CERT_DIR_PATH/$COAP_GATEWAY_FILE_CERT_KEY_NAME --cert.san.domain=$COAP_GATEWAY_FQDN --signerCert=$CA_POOL_CERT_PATH --signerKey=$CA_POOL_CERT_KEY_PATH
+certificate-generator --cmd.generateIdentityCertificate=$COAP_GATEWAY_HUB_ID --outCert=$EXTERNAL_CERT_DIR_PATH/$COAP_GATEWAY_FILE_CERT_NAME --outKey=$EXTERNAL_CERT_DIR_PATH/$COAP_GATEWAY_FILE_CERT_KEY_NAME --cert.san.domain=$COAP_GATEWAY_FQDN --signerCert=$CA_POOL_CERT_PATH --signerKey=$CA_POOL_CERT_KEY_PATH
 echo "generating NGINX cert"
 certificate-generator --cmd.generateCertificate --outCert=$EXTERNAL_CERT_DIR_PATH/$DIAL_FILE_CERT_NAME --outKey=$EXTERNAL_CERT_DIR_PATH/$DIAL_FILE_CERT_KEY_NAME --cert.subject.cn="localhost" --cert.san.domain="localhost" --cert.san.ip="0.0.0.0" --cert.san.ip="127.0.0.1" $fqdnSAN --signerCert=$CA_POOL_CERT_PATH --signerKey=$CA_POOL_CERT_KEY_PATH
 
@@ -319,7 +319,7 @@ cp /nginx/nginx.conf.template ${NGINX_PATH}/nginx.conf
 sed -i "s/REPLACE_NGINX_PORT/$NGINX_PORT/g" ${NGINX_PATH}/nginx.conf
 sed -i "s/REPLACE_HTTP_GATEWAY_PORT/$HTTP_GATEWAY_PORT/g" ${NGINX_PATH}/nginx.conf
 sed -i "s/REPLACE_GRPC_GATEWAY_PORT/$GRPC_GATEWAY_PORT/g" ${NGINX_PATH}/nginx.conf
-sed -i "s/REPLACE_MOCKED_OAUTH_SERVER_PORT/$MOCKED_OAUTH_SERVER_PORT/g" ${NGINX_PATH}/nginx.conf
+sed -i "s/REPLACE_MOCK_OAUTH_SERVER_PORT/$MOCK_OAUTH_SERVER_PORT/g" ${NGINX_PATH}/nginx.conf
 sed -i "s/REPLACE_CERTIFICATE_AUTHORITY_PORT/$CERTIFICATE_AUTHORITY_PORT/g" ${NGINX_PATH}/nginx.conf
 sed -i "s/REPLACE_CLOUD2CLOUD_GATEWAY_PORT/$CLOUD2CLOUD_GATEWAY_PORT/g" ${NGINX_PATH}/nginx.conf
 
@@ -427,10 +427,12 @@ echo "starting oauth-server"
 
 ## setup cfg
 cat /configs/oauth-server.yaml | yq e "\
-  .apis.http.address = \"${MOCKED_OAUTH_SERVER_ADDRESS}\" |
+  .apis.http.address = \"${MOCK_OAUTH_SERVER_ADDRESS}\" |
   .oauthSigner.idTokenKeyFile = \"${OAUTH_ID_TOKEN_KEY_PATH}\" |
   .oauthSigner.accessTokenKeyFile = \"${OAUTH_ACCESS_TOKEN_KEY_PATH}\" |
-  .oauthSigner.domain = \"${DOMAIN}\"
+  .oauthSigner.domain = \"${DOMAIN}\" |
+  .oauthSigner.clients[0].id = \"${OAUTH_CLIENT_ID}\" |
+  .oauthSigner.clients[0].accessTokenLifetime= \"${MOCK_OAUTH_SERVER_ACCESS_TOKEN_LIFETIME}\"
 " - > /data/oauth-server.yaml
 
 oauth-server --config /data/oauth-server.yaml >$LOGS_PATH/oauth-server.log 2>&1 &
@@ -446,10 +448,10 @@ fi
 i=0
 while true; do
   i=$((i+1))
-  if openssl s_client -connect ${MOCKED_OAUTH_SERVER_ADDRESS} -cert ${INTERNAL_CERT_DIR_PATH}/${DIAL_FILE_CERT_NAME} -key ${INTERNAL_CERT_DIR_PATH}/${DIAL_FILE_CERT_KEY_NAME} <<< "Q" 2>/dev/null > /dev/null; then
+  if openssl s_client -connect ${MOCK_OAUTH_SERVER_ADDRESS} -cert ${INTERNAL_CERT_DIR_PATH}/${DIAL_FILE_CERT_NAME} -key ${INTERNAL_CERT_DIR_PATH}/${DIAL_FILE_CERT_KEY_NAME} <<< "Q" 2>/dev/null > /dev/null; then
     break
   fi
-  echo "Try to reconnect to oauth-server(${MOCKED_OAUTH_SERVER_ADDRESS}) $i"
+  echo "Try to reconnect to oauth-server(${MOCK_OAUTH_SERVER_ADDRESS}) $i"
   sleep 1
 done
 
@@ -537,8 +539,8 @@ cat /configs/resource-directory.yaml | yq e "\
   .clients.eventBus.nats.url = \"${NATS_URL}\" |
   .clients.identityStore.grpc.address = \"${IDENTITY_STORE_ADDRESS}\" |
   .publicConfiguration.authorizationServer = \"https://${OAUTH_ENDPOINT}\" |
-  .publicConfiguration.cloudID = \"${COAP_GATEWAY_CLOUD_ID}\" |
-  .publicConfiguration.cloudURL = \"coaps+tcp://${COAP_GATEWAY_FQDN}:${COAP_GATEWAY_PORT}\" |
+  .publicConfiguration.hubId = \"${COAP_GATEWAY_HUB_ID}\" |
+  .publicConfiguration.coapGateway = \"coaps+tcp://${COAP_GATEWAY_FQDN}:${COAP_GATEWAY_PORT}\" |
   .publicConfiguration.ownerClaim = \"${OWNER_CLAIM}\"
 " - > /data/resource-directory.yaml
 

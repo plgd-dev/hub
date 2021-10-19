@@ -40,6 +40,7 @@ clients:
     nats:
       url: ""
       jetstream: false
+      flusherTimeout: 30s
       tls:
         caPool: "/secrets/public/rootca.crt"
         keyFile: "/secrets/private/cert.key"

@@ -3,7 +3,7 @@ package service
 import (
 	"fmt"
 
-	"github.com/plgd-dev/device/schema"
+	"github.com/plgd-dev/device/schema/device"
 	"github.com/plgd-dev/go-coap/v2/message"
 
 	"github.com/plgd-dev/hub/grpc-gateway/pb"
@@ -73,7 +73,7 @@ func decodeContent(content *commands.Content, v interface{}) error {
 
 type Device struct {
 	ID       string
-	Resource *schema.Device
+	Resource *device.Device
 	Metadata *pb.Device_Metadata
 }
 
@@ -90,8 +90,8 @@ func (d Device) ToProto() *pb.Device {
 
 func updateDevice(dev *Device, resource *Resource) error {
 	switch {
-	case resource.Resource.GetHref() == "/oic/d":
-		var devContent schema.Device
+	case resource.Resource.GetHref() == device.ResourceURI:
+		var devContent device.Device
 		err := decodeContent(resource.GetContent(), &devContent)
 		if err != nil {
 			return err
@@ -173,7 +173,7 @@ func (dd *DeviceDirectory) GetDevices(req *pb.GetDevicesRequest, srv pb.GrpcGate
 
 	resourceIdFilter := make([]*commands.ResourceId, 0, 64)
 	for deviceID := range deviceIDs {
-		resourceIdFilter = append(resourceIdFilter, commands.NewResourceID(deviceID, "/oic/d"), commands.NewResourceID(deviceID, commands.StatusHref))
+		resourceIdFilter = append(resourceIdFilter, commands.NewResourceID(deviceID, device.ResourceURI), commands.NewResourceID(deviceID, commands.StatusHref))
 	}
 
 	resources, err := dd.projection.GetResourcesWithLinks(srv.Context(), resourceIdFilter, nil)

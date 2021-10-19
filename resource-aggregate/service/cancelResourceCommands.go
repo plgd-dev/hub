@@ -57,7 +57,7 @@ func (r RequestHandler) CancelPendingCommands(ctx context.Context, request *comm
 		return nil, log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "cannot cancel resource('%v') command: %v", request.GetResourceId().ToString(), err))
 	}
 
-	err = PublishEvents(ctx, r.publisher, owner, aggregate.DeviceID(), aggregate.ResourceID(), cancelEvents)
+	err = PublishEvents(r.publisher, owner, aggregate.DeviceID(), aggregate.ResourceID(), cancelEvents)
 	if err != nil {
 		log.Errorf("cannot publish resource('%v') events: %w", request.GetResourceId().ToString(), err)
 	}

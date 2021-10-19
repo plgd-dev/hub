@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/plgd-dev/hub/grpc-gateway/pb"
+	"github.com/plgd-dev/hub/grpc-gateway/subscription"
 	isClient "github.com/plgd-dev/hub/identity-store/client"
 	pbIS "github.com/plgd-dev/hub/identity-store/pb"
 	"github.com/plgd-dev/hub/pkg/fn"
@@ -27,6 +28,7 @@ type RequestHandler struct {
 	resourceAggregateClient *raClient.Client
 	resourceSubscriber      *subscriber.Subscriber
 	ownerCache              *isClient.OwnerCache
+	subscriptionsCache      *subscription.SubscriptionsCache
 	config                  Config
 	closeFunc               func()
 }
@@ -136,36 +138,20 @@ func NewRequestHandlerFromConfig(ctx context.Context, config Config, logger log.
 	}
 	closeFunc.AddFunc(closeResourceAggregateClient)
 
-	return NewRequestHandler(
-		idClient,
-		resourceDirectoryClient,
-		resourceAggregateClient,
-		resourceSubscriber,
-		ownerCache,
-		config,
-		closeFunc.ToFunction(),
-	), nil
-}
+	subscriptionsCache := subscription.NewSubscriptionsCache(natsClient.GetConn(), func(err error) {
+		log.Errorf("error occurs during processing of event by subscriptionCache: %v", err)
+	})
 
-// NewRequestHandler factory for new RequestHandler.
-func NewRequestHandler(
-	idClient pbIS.IdentityStoreClient,
-	resourceDirectoryClient pb.GrpcGatewayClient,
-	resourceAggregateClient *raClient.Client,
-	resourceSubscriber *subscriber.Subscriber,
-	ownerCache *isClient.OwnerCache,
-	config Config,
-	closeFunc func(),
-) *RequestHandler {
 	return &RequestHandler{
 		idClient:                idClient,
 		resourceDirectoryClient: resourceDirectoryClient,
 		resourceAggregateClient: resourceAggregateClient,
 		resourceSubscriber:      resourceSubscriber,
 		ownerCache:              ownerCache,
+		subscriptionsCache:      subscriptionsCache,
 		config:                  config,
-		closeFunc:               closeFunc,
-	}
+		closeFunc:               closeFunc.ToFunction(),
+	}, nil
 }
 
 func (r *RequestHandler) Close() {

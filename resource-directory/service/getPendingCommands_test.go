@@ -7,6 +7,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/plgd-dev/device/schema/device"
+	"github.com/plgd-dev/device/schema/platform"
+	"github.com/plgd-dev/go-coap/v2/message"
 	caService "github.com/plgd-dev/hub/certificate-authority/test"
 	coapgwTest "github.com/plgd-dev/hub/coap-gateway/test"
 	"github.com/plgd-dev/hub/grpc-gateway/pb"
@@ -19,8 +22,8 @@ import (
 	rdService "github.com/plgd-dev/hub/resource-directory/test"
 	"github.com/plgd-dev/hub/test"
 	testCfg "github.com/plgd-dev/hub/test/config"
+	"github.com/plgd-dev/hub/test/oauth-server/service"
 	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
-	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -42,7 +45,7 @@ func TestRequestHandler_GetPendingCommands(t *testing.T) {
 			args: args{
 				req: &pb.GetPendingCommandsRequest{
 					ResourceIdFilter: []string{
-						commands.NewResourceID(deviceID, "/light/1").ToString(),
+						commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")).ToString(),
 					},
 				},
 			},
@@ -52,7 +55,7 @@ func TestRequestHandler_GetPendingCommands(t *testing.T) {
 						ResourceUpdatePending: &events.ResourceUpdatePending{
 							ResourceId: &commands.ResourceId{
 								DeviceId: deviceID,
-								Href:     "/light/1",
+								Href:     test.TestResourceLightInstanceHref("1"),
 							},
 							Content: &commands.Content{
 								ContentType:       message.AppOcfCbor.String(),
@@ -61,7 +64,7 @@ func TestRequestHandler_GetPendingCommands(t *testing.T) {
 									"power": 1,
 								}),
 							},
-							AuditContext: commands.NewAuditContext("1", ""),
+							AuditContext: commands.NewAuditContext(service.DeviceUserID, ""),
 						},
 					},
 				},
@@ -82,7 +85,7 @@ func TestRequestHandler_GetPendingCommands(t *testing.T) {
 							UpdatePending: &events.DeviceMetadataUpdatePending_ShadowSynchronization{
 								ShadowSynchronization: commands.ShadowSynchronization_DISABLED,
 							},
-							AuditContext: commands.NewAuditContext("1", ""),
+							AuditContext: commands.NewAuditContext(service.DeviceUserID, ""),
 						},
 					},
 				},
@@ -91,9 +94,9 @@ func TestRequestHandler_GetPendingCommands(t *testing.T) {
 						ResourceRetrievePending: &events.ResourceRetrievePending{
 							ResourceId: &commands.ResourceId{
 								DeviceId: deviceID,
-								Href:     "/oic/p",
+								Href:     platform.ResourceURI,
 							},
-							AuditContext: commands.NewAuditContext("1", ""),
+							AuditContext: commands.NewAuditContext(service.DeviceUserID, ""),
 						},
 					},
 				},
@@ -102,7 +105,7 @@ func TestRequestHandler_GetPendingCommands(t *testing.T) {
 						ResourceCreatePending: &events.ResourceCreatePending{
 							ResourceId: &commands.ResourceId{
 								DeviceId: deviceID,
-								Href:     "/oic/d",
+								Href:     device.ResourceURI,
 							},
 							Content: &commands.Content{
 								ContentType:       message.AppOcfCbor.String(),
@@ -111,7 +114,7 @@ func TestRequestHandler_GetPendingCommands(t *testing.T) {
 									"power": 1,
 								}),
 							},
-							AuditContext: commands.NewAuditContext("1", ""),
+							AuditContext: commands.NewAuditContext(service.DeviceUserID, ""),
 						},
 					},
 				},
@@ -120,9 +123,9 @@ func TestRequestHandler_GetPendingCommands(t *testing.T) {
 						ResourceDeletePending: &events.ResourceDeletePending{
 							ResourceId: &commands.ResourceId{
 								DeviceId: deviceID,
-								Href:     "/oic/d",
+								Href:     device.ResourceURI,
 							},
-							AuditContext: commands.NewAuditContext("1", ""),
+							AuditContext: commands.NewAuditContext(service.DeviceUserID, ""),
 						},
 					},
 				},
@@ -131,7 +134,7 @@ func TestRequestHandler_GetPendingCommands(t *testing.T) {
 						ResourceUpdatePending: &events.ResourceUpdatePending{
 							ResourceId: &commands.ResourceId{
 								DeviceId: deviceID,
-								Href:     "/light/1",
+								Href:     test.TestResourceLightInstanceHref("1"),
 							},
 							Content: &commands.Content{
 								ContentType:       message.AppOcfCbor.String(),
@@ -140,7 +143,7 @@ func TestRequestHandler_GetPendingCommands(t *testing.T) {
 									"power": 1,
 								}),
 							},
-							AuditContext: commands.NewAuditContext("1", ""),
+							AuditContext: commands.NewAuditContext(service.DeviceUserID, ""),
 						},
 					},
 				},
@@ -159,9 +162,9 @@ func TestRequestHandler_GetPendingCommands(t *testing.T) {
 						ResourceRetrievePending: &events.ResourceRetrievePending{
 							ResourceId: &commands.ResourceId{
 								DeviceId: deviceID,
-								Href:     "/oic/p",
+								Href:     platform.ResourceURI,
 							},
-							AuditContext: commands.NewAuditContext("1", ""),
+							AuditContext: commands.NewAuditContext(service.DeviceUserID, ""),
 						},
 					},
 				},
@@ -180,7 +183,7 @@ func TestRequestHandler_GetPendingCommands(t *testing.T) {
 						ResourceCreatePending: &events.ResourceCreatePending{
 							ResourceId: &commands.ResourceId{
 								DeviceId: deviceID,
-								Href:     "/oic/d",
+								Href:     device.ResourceURI,
 							},
 							Content: &commands.Content{
 								ContentType:       message.AppOcfCbor.String(),
@@ -189,7 +192,7 @@ func TestRequestHandler_GetPendingCommands(t *testing.T) {
 									"power": 1,
 								}),
 							},
-							AuditContext: commands.NewAuditContext("1", ""),
+							AuditContext: commands.NewAuditContext(service.DeviceUserID, ""),
 						},
 					},
 				},
@@ -208,9 +211,9 @@ func TestRequestHandler_GetPendingCommands(t *testing.T) {
 						ResourceDeletePending: &events.ResourceDeletePending{
 							ResourceId: &commands.ResourceId{
 								DeviceId: deviceID,
-								Href:     "/oic/d",
+								Href:     device.ResourceURI,
 							},
-							AuditContext: commands.NewAuditContext("1", ""),
+							AuditContext: commands.NewAuditContext(service.DeviceUserID, ""),
 						},
 					},
 				},
@@ -229,7 +232,7 @@ func TestRequestHandler_GetPendingCommands(t *testing.T) {
 						ResourceUpdatePending: &events.ResourceUpdatePending{
 							ResourceId: &commands.ResourceId{
 								DeviceId: deviceID,
-								Href:     "/light/1",
+								Href:     test.TestResourceLightInstanceHref("1"),
 							},
 							Content: &commands.Content{
 								ContentType:       message.AppOcfCbor.String(),
@@ -238,7 +241,7 @@ func TestRequestHandler_GetPendingCommands(t *testing.T) {
 									"power": 1,
 								}),
 							},
-							AuditContext: commands.NewAuditContext("1", ""),
+							AuditContext: commands.NewAuditContext(service.DeviceUserID, ""),
 						},
 					},
 				},
@@ -248,7 +251,7 @@ func TestRequestHandler_GetPendingCommands(t *testing.T) {
 			name: "filter by type",
 			args: args{
 				req: &pb.GetPendingCommandsRequest{
-					TypeFilter: []string{"oic.wk.d"},
+					TypeFilter: []string{device.ResourceType},
 				},
 			},
 			want: []*pb.PendingCommand{
@@ -257,7 +260,7 @@ func TestRequestHandler_GetPendingCommands(t *testing.T) {
 						ResourceCreatePending: &events.ResourceCreatePending{
 							ResourceId: &commands.ResourceId{
 								DeviceId: deviceID,
-								Href:     "/oic/d",
+								Href:     device.ResourceURI,
 							},
 							Content: &commands.Content{
 								ContentType:       message.AppOcfCbor.String(),
@@ -266,7 +269,7 @@ func TestRequestHandler_GetPendingCommands(t *testing.T) {
 									"power": 1,
 								}),
 							},
-							AuditContext: commands.NewAuditContext("1", ""),
+							AuditContext: commands.NewAuditContext(service.DeviceUserID, ""),
 						},
 					},
 				},
@@ -275,9 +278,9 @@ func TestRequestHandler_GetPendingCommands(t *testing.T) {
 						ResourceDeletePending: &events.ResourceDeletePending{
 							ResourceId: &commands.ResourceId{
 								DeviceId: deviceID,
-								Href:     "/oic/d",
+								Href:     device.ResourceURI,
 							},
-							AuditContext: commands.NewAuditContext("1", ""),
+							AuditContext: commands.NewAuditContext(service.DeviceUserID, ""),
 						},
 					},
 				},
@@ -298,7 +301,7 @@ func TestRequestHandler_GetPendingCommands(t *testing.T) {
 							UpdatePending: &events.DeviceMetadataUpdatePending_ShadowSynchronization{
 								ShadowSynchronization: commands.ShadowSynchronization_DISABLED,
 							},
-							AuditContext: commands.NewAuditContext("1", ""),
+							AuditContext: commands.NewAuditContext(service.DeviceUserID, ""),
 						},
 					},
 				},
@@ -342,7 +345,7 @@ func TestRequestHandler_GetPendingCommands(t *testing.T) {
 		ctx, cancel := context.WithTimeout(ctx, time.Second)
 		defer cancel()
 		_, err := c.CreateResource(ctx, &pb.CreateResourceRequest{
-			ResourceId: commands.NewResourceID(deviceID, "/oic/d"),
+			ResourceId: commands.NewResourceID(deviceID, device.ResourceURI),
 			Content: &pb.Content{
 				ContentType: message.AppOcfCbor.String(),
 				Data: test.EncodeToCbor(t, map[string]interface{}{
@@ -360,7 +363,7 @@ func TestRequestHandler_GetPendingCommands(t *testing.T) {
 		ctx, cancel := context.WithTimeout(ctx, time.Second)
 		defer cancel()
 		_, err := c.GetResourceFromDevice(ctx, &pb.GetResourceFromDeviceRequest{
-			ResourceId: commands.NewResourceID(deviceID, "/oic/p"),
+			ResourceId: commands.NewResourceID(deviceID, platform.ResourceURI),
 			TimeToLive: int64(timeToLive),
 		})
 		require.Error(t, err)
@@ -372,7 +375,7 @@ func TestRequestHandler_GetPendingCommands(t *testing.T) {
 		ctx, cancel := context.WithTimeout(ctx, time.Second)
 		defer cancel()
 		_, err := c.UpdateResource(ctx, &pb.UpdateResourceRequest{
-			ResourceId: commands.NewResourceID(deviceID, "/light/1"),
+			ResourceId: commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
 			Content: &pb.Content{
 				ContentType: message.AppOcfCbor.String(),
 				Data: test.EncodeToCbor(t, map[string]interface{}{
@@ -390,7 +393,7 @@ func TestRequestHandler_GetPendingCommands(t *testing.T) {
 		ctx, cancel := context.WithTimeout(ctx, time.Second)
 		defer cancel()
 		_, err := c.DeleteResource(ctx, &pb.DeleteResourceRequest{
-			ResourceId: commands.NewResourceID(deviceID, "/oic/d"),
+			ResourceId: commands.NewResourceID(deviceID, device.ResourceURI),
 			TimeToLive: int64(timeToLive),
 		})
 		require.Error(t, err)

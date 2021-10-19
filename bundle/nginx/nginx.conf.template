@@ -24,7 +24,7 @@ http {
     ssl_certificate_key /data/certs/external/endpoint.key;
     proxy_ssl_name localhost;
     location ~ ^(/authorize|/oauth/token|/.well-known/jwks.json|/.well-known/openid-configuration|/v2/logout|/authorize/userinfo) {
-      set $upstream_oauth_server https://127.0.0.1:REPLACE_MOCKED_OAUTH_SERVER_PORT;
+      set $upstream_oauth_server https://127.0.0.1:REPLACE_MOCK_OAUTH_SERVER_PORT;
       proxy_pass                     $upstream_oauth_server;
       proxy_ssl_certificate           /data/certs/internal/endpoint.crt;
       proxy_ssl_certificate_key       /data/certs/internal/endpoint.key;
@@ -37,7 +37,7 @@ http {
       proxy_set_header   X-Forwarded-Host $host;
       proxy_set_header Host $host;
     }
-    location ~ ^(/ocf.cloud.certificateauthority.pb.CertificateAuthority) {
+    location ~ ^(/certificateauthority.pb.CertificateAuthority) {
       set $upstream_grpc_gateway grpcs://127.0.0.1:REPLACE_CERTIFICATE_AUTHORITY_PORT;
       grpc_pass                      $upstream_grpc_gateway;
       grpc_ssl_certificate           /data/certs/internal/endpoint.crt;
@@ -50,7 +50,7 @@ http {
       proxy_ssl_trusted_certificate   /data/certs/root_ca.crt;
       proxy_ssl_verify                on;
     }
-    location ~ ^(/ocf.cloud) {
+    location ~ ^(/grpcgateway.pb.GrpcGateway) {
       set $upstream_grpc_gateway grpcs://127.0.0.1:REPLACE_GRPC_GATEWAY_PORT;
       grpc_pass                      $upstream_grpc_gateway;
       grpc_ssl_certificate           /data/certs/internal/endpoint.crt;
@@ -78,7 +78,7 @@ http {
       proxy_set_header Connection $connection_upgrade;
       proxy_set_header Host $host;
     }
-    location ~ ^(/|/api/v1/devices|/api/v1/ws/devices|/.well-known/cloud-configuration|/auth_config.json) {
+    location ~ ^(/|/api/v1/devices|/api/v1/ws/devices|/.well-known/hub-configuration|/auth_config.json) {
       set $upstream_http_gateway https://127.0.0.1:REPLACE_HTTP_GATEWAY_PORT;
       proxy_pass                     $upstream_http_gateway;
       proxy_ssl_certificate           /data/certs/internal/endpoint.crt;

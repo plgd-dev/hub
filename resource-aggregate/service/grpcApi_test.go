@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
+	"github.com/plgd-dev/device/schema/interfaces"
 	"github.com/plgd-dev/hub/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
 	"github.com/plgd-dev/hub/pkg/strings"
@@ -354,7 +355,7 @@ func TestRequestHandler_UpdateResourceContent(t *testing.T) {
 		},
 		{
 			name: "valid with interface",
-			args: args{request: testMakeUpdateResourceRequest(deviceID, resID, "oic.if.baseline", "456", time.Hour)},
+			args: args{request: testMakeUpdateResourceRequest(deviceID, resID, interfaces.OC_IF_BASELINE, "456", time.Hour)},
 			want: &commands.UpdateResourceResponse{
 				AuditContext: &commands.AuditContext{
 					UserId:        user0,

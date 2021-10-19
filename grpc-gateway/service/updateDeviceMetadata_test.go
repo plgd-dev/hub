@@ -7,11 +7,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
-
+	"github.com/plgd-dev/device/schema/interfaces"
+	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/hub/grpc-gateway/pb"
 	"github.com/plgd-dev/hub/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
@@ -24,7 +21,10 @@ import (
 	"github.com/plgd-dev/hub/test"
 	testCfg "github.com/plgd-dev/hub/test/config"
 	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
-	"github.com/plgd-dev/go-coap/v2/message"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 )
 
 type contentChangedFilter struct {
@@ -112,8 +112,8 @@ func TestRequestHandler_UpdateDeviceMetadata(t *testing.T) {
 	require.Equal(t, commands.ShadowSynchronization_DISABLED, ev.GetData().GetShadowSynchronization())
 
 	_, err = c.UpdateResource(ctx, &pb.UpdateResourceRequest{
-		ResourceInterface: "oic.if.baseline",
-		ResourceId:        commands.NewResourceID(deviceID, "/light/1"),
+		ResourceInterface: interfaces.OC_IF_BASELINE,
+		ResourceId:        commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
 		Content: &pb.Content{
 			ContentType: message.AppOcfCbor.String(),
 			Data: test.EncodeToCbor(t, map[string]interface{}{
@@ -123,8 +123,8 @@ func TestRequestHandler_UpdateDeviceMetadata(t *testing.T) {
 	})
 	require.NoError(t, err)
 	_, err = c.UpdateResource(ctx, &pb.UpdateResourceRequest{
-		ResourceInterface: "oic.if.baseline",
-		ResourceId:        commands.NewResourceID(deviceID, "/light/1"),
+		ResourceInterface: interfaces.OC_IF_BASELINE,
+		ResourceId:        commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
 		Content: &pb.Content{
 			ContentType: message.AppOcfCbor.String(),
 			Data: test.EncodeToCbor(t, map[string]interface{}{
@@ -146,8 +146,8 @@ func TestRequestHandler_UpdateDeviceMetadata(t *testing.T) {
 	require.Equal(t, commands.ShadowSynchronization_ENABLED, ev.GetData().GetShadowSynchronization())
 
 	_, err = c.UpdateResource(ctx, &pb.UpdateResourceRequest{
-		ResourceInterface: "oic.if.baseline",
-		ResourceId:        commands.NewResourceID(deviceID, "/light/1"),
+		ResourceInterface: interfaces.OC_IF_BASELINE,
+		ResourceId:        commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
 		Content: &pb.Content{
 			ContentType: message.AppOcfCbor.String(),
 			Data: test.EncodeToCbor(t, map[string]interface{}{
@@ -157,8 +157,8 @@ func TestRequestHandler_UpdateDeviceMetadata(t *testing.T) {
 	})
 	require.NoError(t, err)
 	_, err = c.UpdateResource(ctx, &pb.UpdateResourceRequest{
-		ResourceInterface: "oic.if.baseline",
-		ResourceId:        commands.NewResourceID(deviceID, "/light/1"),
+		ResourceInterface: interfaces.OC_IF_BASELINE,
+		ResourceId:        commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
 		Content: &pb.Content{
 			ContentType: message.AppOcfCbor.String(),
 			Data: test.EncodeToCbor(t, map[string]interface{}{
@@ -170,5 +170,4 @@ func TestRequestHandler_UpdateDeviceMetadata(t *testing.T) {
 
 	evResourceChanged = v.WaitForResourceChanged(time.Second)
 	require.NotEmpty(t, evResourceChanged)
-
 }

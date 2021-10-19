@@ -13,6 +13,9 @@ import (
 	"time"
 
 	router "github.com/gorilla/mux"
+	"github.com/plgd-dev/device/schema/interfaces"
+	"github.com/plgd-dev/device/test/resource/types"
+	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/hub/cloud2cloud-connector/events"
 	c2cTest "github.com/plgd-dev/hub/cloud2cloud-gateway/test"
 	"github.com/plgd-dev/hub/cloud2cloud-gateway/uri"
@@ -20,9 +23,8 @@ import (
 	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
 	"github.com/plgd-dev/hub/test"
 	testCfg "github.com/plgd-dev/hub/test/config"
-	oauthService "github.com/plgd-dev/hub/test/oauth-server/service"
+	testHttp "github.com/plgd-dev/hub/test/http"
 	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
-	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/kit/v2/codec/json"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -37,7 +39,13 @@ func TestRequestHandler_SubscribeToResource(t *testing.T) {
 	wantContentType := message.AppJSON.String()
 	wantContent := true
 	wantEventType := events.EventType_ResourceChanged
-	wantEventContent := map[interface{}]interface{}{"if": []interface{}{"oic.if.rw", "oic.if.baseline"}, "name": "Light", "power": uint64(0), "rt": []interface{}{"core.light"}, "state": false}
+	wantEventContent := map[interface{}]interface{}{
+		"if":    []interface{}{interfaces.OC_IF_RW, interfaces.OC_IF_BASELINE},
+		"name":  "Light",
+		"power": uint64(0),
+		"rt":    []interface{}{types.CORE_LIGHT},
+		"state": false,
+	}
 	eventType := events.EventType_ResourceChanged
 	uri := "https://" + testCfg.C2C_GW_HOST + uri.Devices + "/" + deviceID + "/light/1/subscriptions"
 	accept := message.AppJSON.String()
@@ -104,8 +112,8 @@ func TestRequestHandler_SubscribeToResource(t *testing.T) {
 
 	data, err := json.Encode(sub)
 	require.NoError(t, err)
-	req := test.NewHTTPRequest(http.MethodPost, uri, bytes.NewBuffer(data)).AuthToken(token).Accept(accept).Build(ctx, t)
-	resp := test.DoHTTPRequest(t, req)
+	req := testHttp.NewHTTPRequest(http.MethodPost, uri, bytes.NewBuffer(data)).AuthToken(token).Accept(accept).Build(ctx, t)
+	resp := testHttp.DoHTTPRequest(t, req)
 	assert.Equal(t, wantCode, resp.StatusCode)
 	defer func() {
 		_ = resp.Body.Close()
@@ -132,7 +140,7 @@ func TestRequestHandler_SubscribeToResourceTokenTimeout(t *testing.T) {
 	defer tearDown()
 	c2cgwShutdown := c2cTest.SetUp(t)
 
-	token := oauthTest.GetServiceToken(t, testCfg.OAUTH_SERVER_HOST, oauthService.ClientTestShortExpiration)
+	token := oauthTest.GetServiceToken(t, testCfg.OAUTH_SERVER_HOST, oauthTest.ClientTestShortExpiration)
 	ctx = kitNetGrpc.CtxWithToken(ctx, token)
 
 	conn, err := grpc.Dial(testCfg.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
@@ -145,7 +153,7 @@ func TestRequestHandler_SubscribeToResourceTokenTimeout(t *testing.T) {
 	}()
 
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
-	_, shutdownDevSim := test.OnboardDevSimForClient(ctx, t, c, oauthService.ClientTestShortExpiration, deviceID, testCfg.GW_HOST, test.GetAllBackendResourceLinks())
+	_, shutdownDevSim := test.OnboardDevSimForClient(ctx, t, c, oauthTest.ClientTestShortExpiration, deviceID, testCfg.GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 
 	eventsServer, cleanUpEventsServer := c2cTest.NewTestListener(t)
@@ -195,8 +203,8 @@ func TestRequestHandler_SubscribeToResourceTokenTimeout(t *testing.T) {
 	data, err := json.Encode(sub)
 	require.NoError(t, err)
 	accept := message.AppJSON.String()
-	req := test.NewHTTPRequest(http.MethodPost, uri, bytes.NewBuffer(data)).AuthToken(token).Accept(accept).Build(ctx, t)
-	resp := test.DoHTTPRequest(t, req)
+	req := testHttp.NewHTTPRequest(http.MethodPost, uri, bytes.NewBuffer(data)).AuthToken(token).Accept(accept).Build(ctx, t)
+	resp := testHttp.DoHTTPRequest(t, req)
 	assert.Equal(t, http.StatusCreated, resp.StatusCode)
 	defer func() {
 		_ = resp.Body.Close()

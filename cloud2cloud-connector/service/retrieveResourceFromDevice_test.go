@@ -5,6 +5,11 @@ import (
 	"crypto/tls"
 	"testing"
 
+	"github.com/plgd-dev/device/schema/collection"
+	"github.com/plgd-dev/device/schema/device"
+	"github.com/plgd-dev/device/schema/interfaces"
+	"github.com/plgd-dev/device/test/resource/types"
+	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/hub/cloud2cloud-connector/events"
 	"github.com/plgd-dev/hub/cloud2cloud-connector/store"
 	c2cConnectorTest "github.com/plgd-dev/hub/cloud2cloud-connector/test"
@@ -21,7 +26,7 @@ import (
 	"google.golang.org/grpc/credentials"
 )
 
-func testRequestHandler_GetResourceFromDevice(t *testing.T, events store.Events) {
+func testRequestHandlerGetResourceFromDevice(t *testing.T, events store.Events) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	type args struct {
 		req *pb.GetResourceFromDeviceRequest
@@ -34,24 +39,54 @@ func testRequestHandler_GetResourceFromDevice(t *testing.T, events store.Events)
 		wantErr         bool
 	}{
 		{
-			name: "valid /light/2",
+			name: "valid /light/1",
 			args: args{
 				req: &pb.GetResourceFromDeviceRequest{
-					ResourceId: commands.NewResourceID(deviceID, "/light/2"),
+					ResourceId: commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
 				},
 			},
-			wantContentType: "application/vnd.ocf+cbor",
-			want:            map[string]interface{}{"name": "Light", "power": uint64(0), "state": false, "if": []interface{}{"oic.if.rw", "oic.if.baseline"}, "rt": []interface{}{"core.light"}},
+			wantContentType: message.AppOcfCbor.String(),
+			want: map[string]interface{}{
+				"name":  "Light",
+				"power": uint64(0),
+				"state": false,
+				"if":    []interface{}{interfaces.OC_IF_RW, interfaces.OC_IF_BASELINE},
+				"rt":    []interface{}{types.CORE_LIGHT},
+			},
+		},
+		{
+			name: "valid /switches",
+			args: args{
+				req: &pb.GetResourceFromDeviceRequest{
+					ResourceId: commands.NewResourceID(deviceID, test.TestResourceSwitchesHref),
+				},
+			},
+			wantContentType: message.AppOcfCbor.String(),
+			want: map[string]interface{}{
+				"if":                        []interface{}{interfaces.OC_IF_LL, interfaces.OC_IF_CREATE, interfaces.OC_IF_B, interfaces.OC_IF_BASELINE},
+				"links":                     []interface{}{},
+				"rt":                        []interface{}{collection.ResourceType},
+				"rts":                       []interface{}{types.BINARY_SWITCH},
+				"rts-m":                     []interface{}{types.BINARY_SWITCH},
+				"x.org.openconnectivity.bl": uint64(94),
+			},
 		},
 		{
 			name: "valid /oic/d",
 			args: args{
 				req: &pb.GetResourceFromDeviceRequest{
-					ResourceId: commands.NewResourceID(deviceID, "/oic/d"),
+					ResourceId: commands.NewResourceID(deviceID, device.ResourceURI),
 				},
 			},
-			wantContentType: "application/vnd.ocf+cbor",
-			want:            map[string]interface{}{"di": deviceID, "dmv": "ocf.res.1.3.0", "icv": "ocf.2.0.5", "n": test.TestDeviceName, "if": []interface{}{"oic.if.r", "oic.if.baseline"}, "rt": []interface{}{"oic.d.cloudDevice", "oic.wk.d"}},
+			wantContentType: message.AppOcfCbor.String(),
+			want: map[string]interface{}{
+				"di":  deviceID,
+				"dmv": "ocf.res.1.3.0",
+				"icv": "ocf.2.0.5",
+				"n":   test.TestDeviceName,
+				"if":  []interface{}{interfaces.OC_IF_R, interfaces.OC_IF_BASELINE},
+				"rt":  []interface{}{types.DEVICE_CLOUD, device.ResourceType},
+			},
 		},
 		{
 			name: "invalid Href",
@@ -98,7 +133,7 @@ func testRequestHandler_GetResourceFromDevice(t *testing.T, events store.Events)
 	}
 }
 
-func TestRequestHandler_GetResourceFromDevice(t *testing.T) {
+func TestRequestHandlerGetResourceFromDevice(t *testing.T) {
 	type args struct {
 		events store.Events
 	}
@@ -148,7 +183,7 @@ func TestRequestHandler_GetResourceFromDevice(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			testRequestHandler_GetResourceFromDevice(t, tt.args.events)
+			testRequestHandlerGetResourceFromDevice(t, tt.args.events)
 		})
 	}
 }

@@ -84,6 +84,6 @@ publicConfiguration:
   authorizationServer: ""
   ownerClaim: "sub"
   deviceIdClaim: ""
-  cloudID: ""
-  cloudURL: ""
+  hubId: ""
+  coapGateway: ""
   defaultCommandTimeToLive: "0s"

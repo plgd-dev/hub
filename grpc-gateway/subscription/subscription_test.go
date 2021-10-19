@@ -3,18 +3,13 @@ package subscription_test
 import (
 	"context"
 	"testing"
-	"time"
 
 	"github.com/panjf2000/ants/v2"
 	"github.com/plgd-dev/go-coap/v2/message"
-	"github.com/plgd-dev/kit/v2/codec/cbor"
-	"github.com/stretchr/testify/require"
-
 	"github.com/plgd-dev/hub/grpc-gateway/pb"
 	subscription "github.com/plgd-dev/hub/grpc-gateway/subscription"
-	"github.com/plgd-dev/hub/identity-store/client"
-	pbIS "github.com/plgd-dev/hub/identity-store/pb"
 	"github.com/plgd-dev/hub/pkg/log"
+	"github.com/plgd-dev/hub/pkg/net/grpc"
 	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
 	grpcClient "github.com/plgd-dev/hub/pkg/net/grpc/client"
 	"github.com/plgd-dev/hub/resource-aggregate/commands"
@@ -26,6 +21,8 @@ import (
 	"github.com/plgd-dev/hub/test"
 	"github.com/plgd-dev/hub/test/config"
 	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
+	"github.com/plgd-dev/kit/v2/codec/cbor"
+	"github.com/stretchr/testify/require"
 )
 
 func waitForEvent(ctx context.Context, t *testing.T, recvChan <-chan *pb.Event) *pb.Event {
@@ -96,7 +93,7 @@ func check(t *testing.T, ev *pb.Event, expectedEvent *pb.Event) {
 func checkAndValidateUpdate(ctx context.Context, t *testing.T, rac raservice.ResourceAggregateClient, s *subscription.Sub, recvChan <-chan *pb.Event, correlationID string, deviceID string, value uint64) {
 	updCorrelationID := "updCorrelationID"
 	_, err := rac.UpdateResource(ctx, &commands.UpdateResourceRequest{
-		ResourceId: commands.NewResourceID(deviceID, "/light/2"),
+		ResourceId: commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
 		Content: &commands.Content{
 			ContentType: message.AppOcfCbor.String(),
 			Data: func() []byte {
@@ -119,7 +116,7 @@ func checkAndValidateUpdate(ctx context.Context, t *testing.T, rac raservice.Res
 		SubscriptionId: s.Id(),
 		Type: &pb.Event_ResourceUpdatePending{
 			ResourceUpdatePending: &events.ResourceUpdatePending{
-				ResourceId: commands.NewResourceID(deviceID, "/light/2"),
+				ResourceId: commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
 				Content: &commands.Content{
 					ContentType: message.AppOcfCbor.String(),
 					Data: func() []byte {
@@ -143,7 +140,7 @@ func checkAndValidateUpdate(ctx context.Context, t *testing.T, rac raservice.Res
 				SubscriptionId: s.Id(),
 				Type: &pb.Event_ResourceUpdated{
 					ResourceUpdated: &events.ResourceUpdated{
-						ResourceId: commands.NewResourceID(deviceID, "/light/2"),
+						ResourceId: commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
 						Content: &commands.Content{
 							CoapContentFormat: -1,
 						},
@@ -174,7 +171,7 @@ func checkAndValidateUpdate(ctx context.Context, t *testing.T, rac raservice.Res
 func checkAndValidateRetrieve(ctx context.Context, t *testing.T, rac raservice.ResourceAggregateClient, s *subscription.Sub, recvChan <-chan *pb.Event, correlationID string, deviceID string) {
 	retrieveCorrelationID := "retrieveCorrelationID"
 	_, err := rac.RetrieveResource(ctx, &commands.RetrieveResourceRequest{
-		ResourceId:    commands.NewResourceID(deviceID, "/light/2"),
+		ResourceId:    commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
 		CorrelationId: retrieveCorrelationID,
 		CommandMetadata: &commands.CommandMetadata{
 			ConnectionId: "test",
@@ -186,7 +183,7 @@ func checkAndValidateRetrieve(ctx context.Context, t *testing.T, rac raservice.R
 		SubscriptionId: s.Id(),
 		Type: &pb.Event_ResourceRetrievePending{
 			ResourceRetrievePending: &events.ResourceRetrievePending{
-				ResourceId: commands.NewResourceID(deviceID, "/light/2"),
+				ResourceId: commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
 			},
 		},
 		CorrelationId: correlationID,
@@ -195,7 +192,7 @@ func checkAndValidateRetrieve(ctx context.Context, t *testing.T, rac raservice.R
 		SubscriptionId: s.Id(),
 		Type: &pb.Event_ResourceRetrieved{
 			ResourceRetrieved: &events.ResourceRetrieved{
-				ResourceId: commands.NewResourceID(deviceID, "/light/2"),
+				ResourceId: commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
 				Content: &commands.Content{
 					CoapContentFormat: int32(message.AppOcfCbor),
 					ContentType:       message.AppOcfCbor.String(),
@@ -231,13 +228,6 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 	}()
 	rac := raservice.NewResourceAggregateClient(raConn.GRPC())
 
-	asConn, err := grpcClient.New(config.MakeGrpcClientConfig(config.IDENTITY_STORE_HOST), log.Get())
-	require.NoError(t, err)
-	defer func() {
-		_ = asConn.Close()
-	}()
-	asc := pbIS.NewIdentityStoreClient(asConn.GRPC())
-
 	pool, err := ants.NewPool(1)
 	require.NoError(t, err)
 	natsConn, resourceSubscriber, err := natsTest.NewClientAndSubscriber(config.MakeSubscriberConfig(), log.Get(), subscriber.WithGoPool(pool.Submit), subscriber.WithUnmarshaler(utils.Unmarshal))
@@ -246,19 +236,20 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 	defer resourceSubscriber.Close()
 
 	ownerClaim := "sub"
-
-	ownerCache := client.NewOwnerCache(ownerClaim, time.Minute, resourceSubscriber.Conn(), asc, func(err error) { t.Log(err) })
+	owner, err := grpc.OwnerFromTokenMD(ctx, ownerClaim)
+	require.NoError(t, err)
+	subCache := subscription.NewSubscriptionsCache(resourceSubscriber.Conn(), func(err error) { t.Log(err) })
 	correlationID := "testToken"
 	recvChan := make(chan *pb.Event, 1)
 
-	s := subscription.New(ctx, resourceSubscriber, func(e *pb.Event) error {
+	s := subscription.New(func(e *pb.Event) error {
 		select {
 		case recvChan <- e:
 		case <-ctx.Done():
 		}
 		return nil
-	}, correlationID, 10, func(err error) { t.Log(err) }, &pb.SubscribeToEvents_CreateSubscription{})
-	err = s.Init(ownerCache)
+	}, correlationID, &pb.SubscribeToEvents_CreateSubscription{})
+	err = s.Init(owner, subCache)
 	require.NoError(t, err)
 	defer func() {
 		err := s.Close()

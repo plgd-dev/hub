@@ -43,7 +43,7 @@ const (
 	APIWS string = API + "/ws"
 
 	// ocfcloud configuration
-	CloudConfiguration = "/.well-known/cloud-configuration"
+	HubConfiguration = "/.well-known/hub-configuration"
 
 	// web configuration for ui
 	WebConfiguration = "/web_configuration.json"

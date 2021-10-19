@@ -184,6 +184,7 @@ func TestOwnerCacheSubscribe(t *testing.T) {
 
 	_, err = c.AddDevice(ctx, &pb.AddDeviceRequest{DeviceId: devices[0]})
 	require.NoError(t, err)
+	time.Sleep(time.Millisecond * 100)
 	cacheDevices, err = cache.GetDevices(ctx)
 	require.NoError(t, err)
 	assert.Equal(t, devices[:2], cacheDevices)

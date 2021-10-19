@@ -5,7 +5,7 @@ info:
 servers:
   - url: 'https://try.plgd.cloud'
 paths:
-  '/.well-known/cloud-configuration':
+  '/.well-known/hub-configuration':
     get:
       tags:
         - 'Configuration'
@@ -18,7 +18,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CloudConfiguration'
+                $ref: '#/components/schemas/HubConfiguration'
     post:
       tags:
         - 'Configuration'
@@ -742,7 +742,7 @@ components:
         code:
           description: Device onboarding code
           type: string
-    CloudConfiguration:
+    HubConfiguration:
       type: object
       properties:
         deviceOnboardingCodeUrl:
@@ -755,11 +755,11 @@ components:
         jwtDeviceIdClaim:
           description: JWT claim identifying device id. Empty means that JWT doesn't contain it.
           type: string
-        cloudId:
+        hubId:
           description: Unique ID of the cloud, required for device registration at the plgd hub.
           type: string
           format: uuid
-        cloudUrl:
+        coapGateway:
           description: URL of the device endpoint - plgd CoAP Gateway where the device connects.
           type: string
         cloudCertificateAuthorities:
@@ -780,8 +780,8 @@ components:
         deviceOnboardingCodeUrl: 'https://auth.plgd.cloud/authorize?audience=http://try.plgd.cloud/'
         jwtClaimOwnerId: 'sub'
         signingServerAddress: 'api.try.plgd.cloud:443'
-        cloudId: 'adebc667-1f2b-41e3-bf5c-6d6eabc68cc6'
-        cloudUrl: 'coaps+tcp://try.plgd.cloud:5684'
+        hubId: 'adebc667-1f2b-41e3-bf5c-6d6eabc68cc6'
+        coapGateway: 'coaps+tcp://try.plgd.cloud:5684'
         cloudAuthorizationProvider: 'plgd'
         currentTime: 1629728394151716523
         defaultCommandTimeToLive: 0

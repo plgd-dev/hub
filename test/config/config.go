@@ -19,28 +19,29 @@ import (
 	"github.com/plgd-dev/hub/pkg/security/oauth2/oauth"
 	natsClient "github.com/plgd-dev/hub/resource-aggregate/cqrs/eventbus/nats/client"
 	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventstore/mongodb"
-	"github.com/plgd-dev/hub/test/oauth-server/service"
 	"github.com/plgd-dev/hub/test/oauth-server/uri"
 	"github.com/stretchr/testify/require"
 )
 
-const IDENTITY_STORE_HOST = "localhost:20000"
-const IDENTITY_STORE_DB = "ownersDevices"
-const GW_HOST = "localhost:20002"
-const RESOURCE_AGGREGATE_HOST = "localhost:20003"
-const RESOURCE_DIRECTORY_HOST = "localhost:20004"
-const CERTIFICATE_AUTHORITY_HOST = "localhost:20011"
-const GRPC_HOST = "localhost:20005"
-const C2C_CONNECTOR_HOST = "localhost:20006"
-const C2C_CONNECTOR_DB = "cloud2cloudConnector"
-const C2C_GW_HOST = "localhost:20007"
-const C2C_GW_DB = "cloud2cloudGateway"
-const OAUTH_SERVER_HOST = "localhost:20009"
-const TEST_TIMEOUT = time.Second * 30
-const OAUTH_MANAGER_CLIENT_ID = service.ClientTest
-const OAUTH_MANAGER_AUDIENCE = "localhost"
-const HTTP_GW_HOST = "localhost:20010"
-const DEVICE_PROVIDER = "plgd"
+const (
+	IDENTITY_STORE_HOST        = "localhost:20000"
+	IDENTITY_STORE_DB          = "ownersDevices"
+	GW_HOST                    = "localhost:20002"
+	RESOURCE_AGGREGATE_HOST    = "localhost:20003"
+	RESOURCE_DIRECTORY_HOST    = "localhost:20004"
+	CERTIFICATE_AUTHORITY_HOST = "localhost:20011"
+	GRPC_HOST                  = "localhost:20005"
+	C2C_CONNECTOR_HOST         = "localhost:20006"
+	C2C_CONNECTOR_DB           = "cloud2cloudConnector"
+	C2C_GW_HOST                = "localhost:20007"
+	C2C_GW_DB                  = "cloud2cloudGateway"
+	OAUTH_SERVER_HOST          = "localhost:20009"
+	TEST_TIMEOUT               = time.Second * 30
+	OAUTH_MANAGER_CLIENT_ID    = "test"
+	OAUTH_MANAGER_AUDIENCE     = "localhost"
+	HTTP_GW_HOST               = "localhost:20010"
+	DEVICE_PROVIDER            = "plgd"
+)
 
 var CA_POOL = os.Getenv("LISTEN_FILE_CA_POOL")
 var KEY_FILE = os.Getenv("LISTEN_FILE_CERT_DIR_PATH") + "/" + os.Getenv("LISTEN_FILE_CERT_KEY_NAME")
@@ -119,8 +120,9 @@ func MakeHttpClientConfig() httpClient.Config {
 func MakePublisherConfig() natsClient.ConfigPublisher {
 	return natsClient.ConfigPublisher{
 		Config: natsClient.Config{
-			URL: NATS_URL,
-			TLS: MakeTLSClientConfig(),
+			URL:            NATS_URL,
+			TLS:            MakeTLSClientConfig(),
+			FlusherTimeout: time.Second * 30,
 		},
 	}
 }
@@ -170,7 +172,7 @@ func MakeDeviceAuthorization() oauth2.Config {
 	}
 }
 
-func CloudID() string {
+func HubID() string {
 	return os.Getenv("TEST_CLOUD_SID")
 }
 

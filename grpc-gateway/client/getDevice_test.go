@@ -5,6 +5,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/plgd-dev/device/schema/device"
+	"github.com/plgd-dev/device/schema/interfaces"
+	"github.com/plgd-dev/device/test/resource/types"
 	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
 	"github.com/plgd-dev/hub/resource-aggregate/commands"
 
@@ -32,13 +35,13 @@ func NewTestDeviceSimulator(deviceID, deviceName string, withResources bool) cli
 		Device: &pb.Device{
 			Id:    deviceID,
 			Name:  deviceName,
-			Types: []string{"oic.d.cloudDevice", "oic.wk.d"},
+			Types: []string{types.DEVICE_CLOUD, device.ResourceType},
 			Metadata: &pb.Device_Metadata{
 				Status: &commands.ConnectionStatus{
 					Value: commands.ConnectionStatus_ONLINE,
 				},
 			},
-			Interfaces: []string{"oic.if.r", "oic.if.baseline"},
+			Interfaces: []string{interfaces.OC_IF_R, interfaces.OC_IF_BASELINE},
 		},
 		Resources: resources,
 	}

@@ -17,7 +17,7 @@ Install [cert-manager](https://cert-manager.io/) via [https://artifacthub.io/pac
 global:
   # -- Global domain
   domain:
-  # -- HubID. Used by coap-gateway. It must be unique
+  # -- Hub ID. Used by coap-gateway. It must be unique
   hubId:
   # -- OAuth owner Claim
   ownerClaim: "sub"
@@ -31,14 +31,14 @@ global:
   oauth:
    # -- List of OAuth client's configurations
    device:
-       # -- Name of provider
+       # -- Name of client
      - name:
        # -- Client ID
        clientID:
        # -- clientSecret or clientSecretFile
        clientSecret:
        clientSecretFile:
-       # -- Redirect URL. In case you are using mobile app, redirectURL should be in format cloud.plgd.mobile://login-callback
+       # -- Redirect URL
        redirectURL:
        # -- Use in httpgateway.ui.webConfiguration.deviceOAuthClient configuration. Default first item in list
        useInUi: true
@@ -46,21 +46,6 @@ global:
     # -- ClientID used by Web UI
     clientID:
 ```
-
-### Setup with OAuth Mock server:
-
-```
-# -- Global config variables
-global:
-  # -- Global domain
-  domain: "domain.com"
-  # -- CloudID. Used by coap-gateway. It must be unique
-  hubId: 1c10a3b6-287c-11ec-ac2d-13054959c274
-mockoauthserver:
-  enabled: true
-```
-
-> This configuration should be applied only to test environment !!!
 
 ## Requirements
 
@@ -177,7 +162,7 @@ mockoauthserver:
 | certmanager.internal.issuer.name | string | `nil` | Name |
 | certmanager.internal.issuer.spec | string | `nil` | cert-manager issuer spec |
 | cluster.dns | string | `"cluster.local"` | Cluster internal DNS prefix |
-| coapgateway | object | `{"affinity":{},"apis":{"coap":{"authorization":{"deviceIdClaim":null,"ownerClaim":null,"providers":null},"blockwiseTransfer":{"blockSize":"1024","enabled":false},"externalAddress":"","goroutineSocketHeartbeat":"4s","keepAlive":{"timeout":"20s"},"maxMessageSize":262144,"ownerCacheExpiration":"1m","subscriptionBufferSize":1000,"tls":{"caPool":null,"certFile":null,"clientCertificateRequired":true,"enabled":true,"keyFile":null}}},"clients":{"eventBus":{"nats":{"pendingLimits":{"bytesLimit":"67108864","msgLimit":"524288"},"tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false},"url":""}},"identityStore":{"grpc":{"address":"","keepAlive":{"permitWithoutStream":true,"time":"10s","timeout":"20s"},"tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false}},"ownerClaim":null},"resourceAggregate":{"deviceStatusExpiration":{"enabled":false,"expiresIn":"0s"},"grpc":{"address":"","keepAlive":{"permitWithoutStream":true,"time":"10s","timeout":"20s"},"tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false}}},"resourceDirectory":{"grpc":{"address":"","keepAlive":{"permitWithoutStream":true,"time":"10s","timeout":"20s"},"tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false}}}},"config":{"fileName":"service.yaml","mountPath":"/config","volume":"config"},"deploymentAnnotations":{},"deploymentLabels":{},"enabled":true,"extraVolumeMounts":{},"extraVolumes":{},"fullnameOverride":null,"hubId":null,"image":{"imagePullSecrets":{},"pullPolicy":"Always","registry":null,"repository":"plgd/coap-gateway","tag":null},"imagePullSecrets":{},"initContainersTpl":{},"livenessProbe":{},"log":{"debug":false,"dumpCoapMessages":true},"name":"coap-gateway","nodeSelector":{},"podAnnotations":{},"podLabels":{},"podSecurityContext":{},"port":5684,"rbac":{"enabled":false,"roleBindingDefinitionTpl":null,"serviceAccountName":"coap-gateway"},"readinessProbe":{},"replicas":1,"resources":{},"restartPolicy":"Always","securityContext":{},"service":{"annotations":{},"labels":{},"type":"LoadBalancer"},"taskQueue":{"goPoolSize":1600,"maxIdleTime":"10m","size":"2097152"},"tolerations":{}}` | CoAP gateway parameters |
+| coapgateway | object | `{"affinity":{},"apis":{"coap":{"authorization":{"deviceIdClaim":null,"ownerClaim":null,"providers":null},"blockwiseTransfer":{"blockSize":"1024","enabled":false},"externalAddress":"","goroutineSocketHeartbeat":"4s","keepAlive":{"timeout":"20s"},"maxMessageSize":262144,"ownerCacheExpiration":"1m","subscriptionBufferSize":1000,"tls":{"caPool":null,"certFile":null,"clientCertificateRequired":true,"enabled":true,"keyFile":null}}},"clients":{"eventBus":{"nats":{"pendingLimits":{"bytesLimit":"67108864","msgLimit":"524288"},"tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false},"url":""}},"identityStore":{"grpc":{"address":"","keepAlive":{"permitWithoutStream":true,"time":"10s","timeout":"20s"},"tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false}},"ownerClaim":null},"resourceAggregate":{"deviceStatusExpiration":{"enabled":false,"expiresIn":"0s"},"grpc":{"address":"","keepAlive":{"permitWithoutStream":true,"time":"10s","timeout":"20s"},"tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false}}},"resourceDirectory":{"grpc":{"address":"","keepAlive":{"permitWithoutStream":true,"time":"10s","timeout":"20s"},"tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false}}}},"config":{"fileName":"service.yaml","mountPath":"/config","volume":"config"},"deploymentAnnotations":{},"deploymentLabels":{},"enabled":true,"extraVolumeMounts":{},"extraVolumes":{},"fullnameOverride":null,"hubId":null,"image":{"imagePullSecrets":{},"pullPolicy":"Always","registry":null,"repository":"plgd/coap-gateway","tag":null},"imagePullSecrets":{},"initContainersTpl":{},"livenessProbe":{},"log":{"debug":false,"dumpCoapMessages":true},"name":"coap-gateway","nodeSelector":{},"podAnnotations":{},"podLabels":{},"podSecurityContext":{},"port":5684,"rbac":{"enabled":false,"roleBindingDefinitionTpl":null,"serviceAccountName":"coap-gateway"},"readinessProbe":{},"replicas":1,"resources":{},"restartPolicy":"Always","securityContext":{},"service":{"annotations":{},"labels":{},"nodePort":null,"type":"LoadBalancer"},"taskQueue":{"goPoolSize":1600,"maxIdleTime":"10m","size":"2097152"},"tolerations":{}}` | CoAP gateway parameters |
 | coapgateway.affinity | object | `{}` | Affinity definition |
 | coapgateway.apis | object | `{"coap":{"authorization":{"deviceIdClaim":null,"ownerClaim":null,"providers":null},"blockwiseTransfer":{"blockSize":"1024","enabled":false},"externalAddress":"","goroutineSocketHeartbeat":"4s","keepAlive":{"timeout":"20s"},"maxMessageSize":262144,"ownerCacheExpiration":"1m","subscriptionBufferSize":1000,"tls":{"caPool":null,"certFile":null,"clientCertificateRequired":true,"enabled":true,"keyFile":null}}}` | For complete coap-gateway service configuration see [plgd/coap-gateway](https://github.com/plgd-dev/hub/tree/main/coap-gateway) |
 | coapgateway.clients | object | `{"eventBus":{"nats":{"pendingLimits":{"bytesLimit":"67108864","msgLimit":"524288"},"tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false},"url":""}},"identityStore":{"grpc":{"address":"","keepAlive":{"permitWithoutStream":true,"time":"10s","timeout":"20s"},"tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false}},"ownerClaim":null},"resourceAggregate":{"deviceStatusExpiration":{"enabled":false,"expiresIn":"0s"},"grpc":{"address":"","keepAlive":{"permitWithoutStream":true,"time":"10s","timeout":"20s"},"tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false}}},"resourceDirectory":{"grpc":{"address":"","keepAlive":{"permitWithoutStream":true,"time":"10s","timeout":"20s"},"tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false}}}}` | For complete coap-gateway service configuration see [plgd/coap-gateway](https://github.com/plgd-dev/hub/tree/main/coap-gateway) |
@@ -218,19 +203,21 @@ mockoauthserver:
 | coapgateway.securityContext | object | `{}` | Security context for pod |
 | coapgateway.service.annotations | object | `{}` | Annotations for coap-gateway service |
 | coapgateway.service.labels | object | `{}` | Labels for coap-gateway service |
+| coapgateway.service.nodePort | string | `nil` | Use nodePort if specified |
 | coapgateway.service.type | string | `"LoadBalancer"` | Service type |
 | coapgateway.taskQueue | object | `{"goPoolSize":1600,"maxIdleTime":"10m","size":"2097152"}` | For complete coap-gateway service configuration see [plgd/coap-gateway](https://github.com/plgd-dev/hub/tree/main/coap-gateway) |
 | coapgateway.tolerations | object | `{}` | Toleration definition |
 | extraDeploy | string | `nil` | Extra deploy. Resolved as template |
-| global | object | `{"audience":"","authority":null,"deviceIdClaim":null,"domain":null,"hubId":null,"oauth":{"device":[],"web":{"clientID":null}},"ownerClaim":"sub"}` | Global config variables |
+| global | object | `{"audience":"","authority":null,"deviceIdClaim":null,"domain":null,"enableWildCartCert":true,"hubId":null,"oauth":{"device":[],"web":{"clientID":null}},"ownerClaim":"sub"}` | Global config variables |
 | global.audience | string | `""` | OAuth audience |
 | global.authority | string | `nil` | OAuth authority |
 | global.deviceIdClaim | string | `nil` | Device ID claim |
 | global.domain | string | `nil` | Global domain |
+| global.enableWildCartCert | bool | `true` | Enable *.{{ global.domain }} for all external domain |
 | global.hubId | string | `nil` | hubId. Used by coap-gateway. It must be unique |
 | global.ownerClaim | string | `"sub"` | OAuth owner Claim |
 | grpcgateway.affinity | object | `{}` | Affinity definition |
-| grpcgateway.apis | object | `{"grpc":{"address":null,"authorization":{"audience":"","authority":"","http":{"idleConnTimeout":"30s","maxConnsPerHost":32,"maxIdleConns":16,"maxIdleConnsPerHost":16,"timeout":"10s","tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":true}}},"enforcementPolicy":{"minTime":"5s","permitWithoutStream":true},"keepAlive":{"maxConnectionAge":"0s","maxConnectionAgeGrace":"0s","maxConnectionIdle":"0s","time":"2h","timeout":"20s"},"ownerCacheExpiration":"1m","tls":{"caPool":null,"certFile":null,"clientCertificateRequired":true,"keyFile":null}}}` | For complete grpc-gateway service configuration see [plgd/grpc-gateway](https://github.com/plgd-dev/hub/tree/main/grpc-gateway) |
+| grpcgateway.apis | object | `{"grpc":{"address":null,"authorization":{"audience":"","authority":"","http":{"idleConnTimeout":"30s","maxConnsPerHost":32,"maxIdleConns":16,"maxIdleConnsPerHost":16,"timeout":"10s","tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":true}}},"enforcementPolicy":{"minTime":"5s","permitWithoutStream":true},"keepAlive":{"maxConnectionAge":"0s","maxConnectionAgeGrace":"0s","maxConnectionIdle":"0s","time":"2h","timeout":"20s"},"ownerCacheExpiration":"1m","tls":{"caPool":null,"certFile":null,"clientCertificateRequired":false,"keyFile":null}}}` | For complete grpc-gateway service configuration see [plgd/grpc-gateway](https://github.com/plgd-dev/hub/tree/main/grpc-gateway) |
 | grpcgateway.clients | object | `{"eventBus":{"goPoolSize":16,"nats":{"pendingLimits":{"bytesLimit":"67108864","msgLimit":524288},"tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false},"url":null}},"identityStore":{"grpc":{"address":"","keepAlive":{"permitWithoutStream":true,"time":"10s","timeout":"20s"},"tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false}}},"resourceAggregate":{"grpc":{"address":"","keepAlive":{"permitWithoutStream":true,"time":"10s","timeout":"20s"},"tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false}}},"resourceDirectory":{"grpc":{"address":"","keepAlive":{"permitWithoutStream":true,"time":"10s","timeout":"20s"},"tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false}}}}` | For complete grpc-gateway service configuration see [plgd/grpc-gateway](https://github.com/plgd-dev/hub/tree/main/grpc-gateway) |
 | grpcgateway.config | object | `{"fileName":"service.yaml","mountPath":"/config","volume":"config"}` | Service yaml configuration section |
 | grpcgateway.config.fileName | string | `"service.yaml"` | Service configuration file name |
@@ -251,7 +238,7 @@ mockoauthserver:
 | grpcgateway.imagePullSecrets | object | `{}` | Image pull secrets |
 | grpcgateway.ingress.annotations | object | `{}` | Ingress annotations |
 | grpcgateway.ingress.enabled | bool | `true` | Enable ingress |
-| grpcgateway.ingress.paths | list | `["/ocf.cloud.grpcgateway.pb.GrpcGateway"]` | Default ingress paths |
+| grpcgateway.ingress.paths | list | `["/grpcgateway.pb.GrpcGateway"]` | Default ingress paths |
 | grpcgateway.initContainersTpl | object | `{}` | Init containers definition |
 | grpcgateway.livenessProbe | object | `{}` | Liveness probe. grpc-gateway doesn't have any default liveness probe |
 | grpcgateway.log.debug | bool | `false` | Enable extended log messages |
@@ -382,9 +369,10 @@ mockoauthserver:
 | mockoauthserver.image.repository | string | `"plgd/mock-oauth-server"` | Image repository |
 | mockoauthserver.image.tag | string | `nil` | Image tag. |
 | mockoauthserver.imagePullSecrets | object | `{}` | Image pull secrets |
+| mockoauthserver.ingress.allowHeaders | string | `"Authortity,Method,Path,Scheme,Accept,Accept-Encoding,Accept-Language,Content-Type,auth0-client,Origin,Refer,Sec-Fetch-Dest,Sec-Fetch-Mode,Sec-Fetch-Site,Authorization,DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range"` |  |
 | mockoauthserver.ingress.annotations | object | `{}` | Ingress annotation |
 | mockoauthserver.ingress.enabled | bool | `true` | Enable ingress |
-| mockoauthserver.ingress.paths | list | `["/"]` | Ingress path |
+| mockoauthserver.ingress.paths | list | `["/authorize","/oauth/token","/.well-known","/jwks.json","/.well-known/openid-configuration","/v2/logout","/authorize/userinfo"]` | Ingress path |
 | mockoauthserver.livenessProbe | object | `{}` | Liveness probe. mock-oauth-server doesn't have any default liveness probe |
 | mockoauthserver.log.debug | bool | `false` | Enable extended debug messages |
 | mockoauthserver.name | string | `"mock-oauth-server"` | Name of component. Used in label selectors |

@@ -11,40 +11,52 @@ import (
 	"github.com/plgd-dev/kit/v2/log"
 )
 
+func cancelLinkedAccountDevicesSubscription(ctx context.Context, cloud store.LinkedCloud, linkedAccount *LinkedAccountData, wg *sync.WaitGroup) {
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		err := cancelDevicesSubscription(ctx, linkedAccount.linkedAccount, cloud, linkedAccount.subscription.ID)
+		if err != nil {
+			log.Error(err)
+		}
+	}()
+}
+
+func cancelLinkedAccountDeviceSubscription(ctx context.Context, cloud store.LinkedCloud, linkedAccount *LinkedAccountData, device *DeviceData, wg *sync.WaitGroup) {
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		err := cancelDeviceSubscription(ctx, linkedAccount.linkedAccount, cloud, device.subscription.DeviceID, device.subscription.ID)
+		if err != nil {
+			log.Error(err)
+		}
+	}()
+}
+
+func cancelLinkedAccountResourceSubscription(ctx context.Context, cloud store.LinkedCloud, linkedAccount *LinkedAccountData, resource *ResourceData, wg *sync.WaitGroup) {
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		if err := cancelResourceSubscription(ctx, linkedAccount.linkedAccount, cloud, resource.subscription.DeviceID, resource.subscription.Href, resource.subscription.ID); err != nil {
+			log.Error(err)
+		}
+	}()
+}
+
 func cancelLinkedAccountSubscription(ctx context.Context, cloud store.LinkedCloud, linkedAccount *LinkedAccountData) {
 	var wg sync.WaitGroup
 	if linkedAccount.isSubscribed {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			err := cancelDevicesSubscription(ctx, linkedAccount.linkedAccount, cloud, linkedAccount.subscription.ID)
-			if err != nil {
-				log.Error(err)
-			}
-		}()
+		cancelLinkedAccountDevicesSubscription(ctx, cloud, linkedAccount, &wg)
 	}
 	linkedAccount.devices.Range(func(_, deviceI interface{}) bool {
 		device := deviceI.(*DeviceData)
 		if device.isSubscribed {
-			wg.Add(1)
-			go func() {
-				defer wg.Done()
-				err := cancelDeviceSubscription(ctx, linkedAccount.linkedAccount, cloud, device.subscription.DeviceID, device.subscription.ID)
-				if err != nil {
-					log.Error(err)
-				}
-			}()
+			cancelLinkedAccountDeviceSubscription(ctx, cloud, linkedAccount, device, &wg)
 		}
 		device.resources.Range(func(_, resourceI interface{}) bool {
 			resource := resourceI.(*ResourceData)
 			if resource.isSubscribed {
-				wg.Add(1)
-				go func() {
-					defer wg.Done()
-					if err := cancelResourceSubscription(ctx, linkedAccount.linkedAccount, cloud, resource.subscription.DeviceID, resource.subscription.Href, resource.subscription.ID); err != nil {
-						log.Error(err)
-					}
-				}()
+				cancelLinkedAccountResourceSubscription(ctx, cloud, linkedAccount, resource, &wg)
 			}
 			return true
 		})

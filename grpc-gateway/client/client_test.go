@@ -6,20 +6,19 @@ import (
 	"crypto/x509"
 	"testing"
 
+	"github.com/plgd-dev/device/schema/device"
+	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/hub/grpc-gateway/client"
+	"github.com/plgd-dev/hub/grpc-gateway/pb"
 	"github.com/plgd-dev/hub/pkg/net/grpc/server"
 	"github.com/plgd-dev/hub/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/resource-aggregate/events"
 	"github.com/plgd-dev/hub/test"
-	"github.com/plgd-dev/device/schema"
-	"github.com/plgd-dev/go-coap/v2/message"
+	"github.com/plgd-dev/hub/test/config"
 	"github.com/plgd-dev/kit/v2/codec/cbor"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-
-	"github.com/plgd-dev/hub/grpc-gateway/pb"
-	testCfg "github.com/plgd-dev/hub/test/config"
 )
 
 const (
@@ -28,7 +27,7 @@ const (
 )
 
 var ClientTestCfg = client.Config{
-	GatewayAddress: testCfg.GRPC_HOST,
+	GatewayAddress: config.GRPC_HOST,
 }
 
 func NewTestClient(t *testing.T) *client.Client {
@@ -62,9 +61,9 @@ type gatewayHandler struct {
 	deviceName string
 }
 
-func (h *gatewayHandler) GetCloudConfiguration(context.Context, *pb.CloudConfigurationRequest) (*pb.CloudConfigurationResponse, error) {
-	return &pb.CloudConfigurationResponse{
-		CloudId: "abc",
+func (h *gatewayHandler) GetHubConfiguration(context.Context, *pb.HubConfigurationRequest) (*pb.HubConfigurationResponse, error) {
+	return &pb.HubConfigurationResponse{
+		Id: "abc",
 	}, nil
 }
 
@@ -91,7 +90,7 @@ func (h *gatewayHandler) GetResourceLinks(req *pb.GetResourceLinksRequest, srv p
 		DeviceId: h.deviceID,
 		Resources: []*commands.Resource{
 			{
-				Href: "excluded", ResourceTypes: []string{schema.DeviceResourceType}, DeviceId: h.deviceID,
+				Href: "excluded", ResourceTypes: []string{device.ResourceType}, DeviceId: h.deviceID,
 			},
 			{
 				Href: TestHref, ResourceTypes: []string{"x.com.test.type"}, DeviceId: h.deviceID,
@@ -105,7 +104,7 @@ func (h *gatewayHandler) GetResourceLinks(req *pb.GetResourceLinksRequest, srv p
 }
 
 func (h *gatewayHandler) GetResources(req *pb.GetResourcesRequest, srv pb.GrpcGateway_GetResourcesServer) error {
-	err := sendResourceValue(srv, h.deviceID, schema.DeviceResourceType, schema.Device{
+	err := sendResourceValue(srv, h.deviceID, device.ResourceType, device.Device{
 		ID:   h.deviceID,
 		Name: h.deviceName,
 	})

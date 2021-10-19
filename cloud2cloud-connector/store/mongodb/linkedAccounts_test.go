@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestStore_InsertLinkedAccount(t *testing.T) {
+func TestStoreInsertLinkedAccount(t *testing.T) {
 	testToken := oauth2.Token{
 		AccessToken:  "testAccessToken",
 		RefreshToken: "testRefreshToken",
@@ -53,7 +53,7 @@ func TestStore_InsertLinkedAccount(t *testing.T) {
 	}
 }
 
-func TestStore_UpdateLinkedAccount(t *testing.T) {
+func TestStoreUpdateLinkedAccount(t *testing.T) {
 	type args struct {
 		sub store.LinkedAccount
 	}
@@ -67,7 +67,7 @@ func TestStore_UpdateLinkedAccount(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "not found",
+			name: "invalid ID",
 			args: args{
 				sub: store.LinkedAccount{
 					ID:            "testID1",
@@ -115,7 +115,7 @@ func TestStore_UpdateLinkedAccount(t *testing.T) {
 	}
 }
 
-func TestStore_RemoveLinkedAccount(t *testing.T) {
+func TestStoreRemoveLinkedAccount(t *testing.T) {
 	testToken := oauth2.Token{
 		AccessToken:  "testAccessToken",
 		RefreshToken: "testRefreshToken",
@@ -129,7 +129,7 @@ func TestStore_RemoveLinkedAccount(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "not found",
+			name: "invalid accountId",
 			args: args{
 				linkedAccountId: "testNotFound",
 			},
@@ -182,7 +182,7 @@ func (h *testLinkedAccountHandler) Handle(ctx context.Context, iter store.Linked
 	return iter.Err()
 }
 
-func TestStore_LoadLinkedAccounts(t *testing.T) {
+func TestStoreLoadLinkedAccounts(t *testing.T) {
 	testToken := oauth2.Token{
 		AccessToken:  "testAccessToken",
 		RefreshToken: "testRefreshToken",

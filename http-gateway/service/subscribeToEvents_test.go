@@ -11,6 +11,7 @@ import (
 
 	"github.com/gorilla/websocket"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/hub/grpc-gateway/pb"
 	httpgwTest "github.com/plgd-dev/hub/http-gateway/test"
 	"github.com/plgd-dev/hub/http-gateway/uri"
@@ -20,15 +21,135 @@ import (
 	"github.com/plgd-dev/hub/test"
 	"github.com/plgd-dev/hub/test/config"
 	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
-	"github.com/plgd-dev/go-coap/v2/message"
-	"github.com/plgd-dev/kit/v2/codec/cbor"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )
 
-//gocyclo:ignore
-func TestRequestHandler_SubscribeToEvents(t *testing.T) {
+func isDeviceMetadataUpdatedOnlineEvent(ev *pb.Event, deviceID string) bool {
+	return ev.GetDeviceMetadataUpdated() != nil &&
+		ev.GetDeviceMetadataUpdated().GetDeviceId() == deviceID &&
+		ev.GetDeviceMetadataUpdated().GetStatus().GetValue() == commands.ConnectionStatus_ONLINE
+}
+
+func checkDeviceMetadataUpdatedOnlineEvent(t *testing.T, ev *pb.Event, deviceID, baseSubId string) {
+	if ev.GetDeviceMetadataUpdated() != nil {
+		ev.GetDeviceMetadataUpdated().EventMetadata = nil
+		ev.GetDeviceMetadataUpdated().AuditContext = nil
+		if ev.GetDeviceMetadataUpdated().GetStatus() != nil {
+			ev.GetDeviceMetadataUpdated().GetStatus().ValidUntil = 0
+		}
+	}
+	expectedEvent := &pb.Event{
+		SubscriptionId: baseSubId,
+		Type: &pb.Event_DeviceMetadataUpdated{
+			DeviceMetadataUpdated: &events.DeviceMetadataUpdated{
+				DeviceId: deviceID,
+				Status: &commands.ConnectionStatus{
+					Value: commands.ConnectionStatus_ONLINE,
+				},
+			},
+		},
+		CorrelationId: "testToken",
+	}
+	test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
+}
+
+type updateChecker struct {
+	c            pb.GrpcGatewayClient
+	deviceID     string
+	baseSubId    string
+	subUpdatedID string
+
+	recv func() (*pb.Event, error)
+}
+
+// update light resource and check received events
+func (u *updateChecker) checkUpdateLightResource(t *testing.T, ctx context.Context, power uint64) {
+	_, err := u.c.UpdateResource(ctx, &pb.UpdateResourceRequest{
+		ResourceId: commands.NewResourceID(u.deviceID, test.TestResourceLightInstanceHref("1")),
+		Content: &pb.Content{
+			ContentType: message.AppOcfCbor.String(),
+			Data: test.EncodeToCbor(t, map[interface{}]interface{}{
+				"power": power,
+			}),
+		},
+	})
+	require.NoError(t, err)
+
+	var updCorrelationID string
+	for i := 0; i < 3; i++ {
+		ev, err := u.recv()
+		require.NoError(t, err)
+		switch {
+		case ev.GetResourceUpdatePending() != nil:
+			expectedEvent := &pb.Event{
+				SubscriptionId: u.subUpdatedID,
+				Type: &pb.Event_ResourceUpdatePending{
+					ResourceUpdatePending: &events.ResourceUpdatePending{
+						ResourceId: commands.NewResourceID(u.deviceID, test.TestResourceLightInstanceHref("1")),
+						Content: &commands.Content{
+							ContentType:       message.AppOcfCbor.String(),
+							CoapContentFormat: -1,
+							Data: test.EncodeToCbor(t, map[interface{}]interface{}{
+								"power": power,
+							}),
+						},
+						AuditContext:  ev.GetResourceUpdatePending().GetAuditContext(),
+						EventMetadata: ev.GetResourceUpdatePending().GetEventMetadata(),
+					},
+				},
+				CorrelationId: "updatePending + resourceUpdated",
+			}
+			test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
+			updCorrelationID = ev.GetResourceUpdatePending().GetAuditContext().GetCorrelationId()
+		case ev.GetResourceUpdated() != nil:
+			expectedEvent := &pb.Event{
+				SubscriptionId: u.subUpdatedID,
+				Type: &pb.Event_ResourceUpdated{
+					ResourceUpdated: &events.ResourceUpdated{
+						ResourceId:    commands.NewResourceID(u.deviceID, test.TestResourceLightInstanceHref("1")),
+						Status:        commands.Status_OK,
+						Content:       ev.GetResourceUpdated().GetContent(),
+						AuditContext:  commands.NewAuditContext(ev.GetResourceUpdated().GetAuditContext().GetUserId(), updCorrelationID),
+						EventMetadata: ev.GetResourceUpdated().GetEventMetadata(),
+					},
+				},
+				CorrelationId: "updatePending + resourceUpdated",
+			}
+			test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
+		case ev.GetResourceChanged() != nil:
+			expData := map[interface{}]interface{}{
+				"state": false,
+				"power": power,
+				"name":  "Light",
+			}
+			expectedEvent := &pb.Event{
+				SubscriptionId: u.baseSubId,
+				Type: &pb.Event_ResourceChanged{
+					ResourceChanged: &events.ResourceChanged{
+						ResourceId: commands.NewResourceID(u.deviceID, test.TestResourceLightInstanceHref("1")),
+						Content: &commands.Content{
+							CoapContentFormat: int32(message.AppOcfCbor),
+							ContentType:       message.AppOcfCbor.String(),
+							Data:              nil,
+						},
+						Status:        commands.Status_OK,
+						AuditContext:  ev.GetResourceChanged().GetAuditContext(),
+						EventMetadata: ev.GetResourceChanged().GetEventMetadata(),
+					},
+				},
+				CorrelationId: "testToken",
+			}
+			data := test.DecodeCbor(t, ev.GetResourceChanged().GetContent().GetData())
+			require.Equal(t, expData, data)
+			ev.GetResourceChanged().GetContent().Data = nil
+			test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
+		}
+	}
+}
+
+func TestRequestHandlerSubscribeToEvents(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
 	defer cancel()
@@ -89,7 +210,7 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 					pb.SubscribeToEvents_CreateSubscription_UNREGISTERED,
 					pb.SubscribeToEvents_CreateSubscription_RESOURCE_CHANGED,
 				},
-				ResourceIdFilter: []string{commands.NewResourceID(deviceID, "/light/2").ToString()},
+				ResourceIdFilter: []string{commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")).ToString()},
 			},
 		},
 	})
@@ -129,31 +250,11 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 	for {
 		ev, err = recv()
 		require.NoError(t, err)
-		if ev.GetDeviceMetadataUpdated() != nil && ev.GetDeviceMetadataUpdated().GetDeviceId() == deviceID && ev.GetDeviceMetadataUpdated().GetStatus().GetValue() == commands.ConnectionStatus_ONLINE {
+		if isDeviceMetadataUpdatedOnlineEvent(ev, deviceID) {
 			break
 		}
-		continue
 	}
-	if ev.GetDeviceMetadataUpdated() != nil {
-		ev.GetDeviceMetadataUpdated().EventMetadata = nil
-		ev.GetDeviceMetadataUpdated().AuditContext = nil
-		if ev.GetDeviceMetadataUpdated().GetStatus() != nil {
-			ev.GetDeviceMetadataUpdated().GetStatus().ValidUntil = 0
-		}
-	}
-	expectedEvent = &pb.Event{
-		SubscriptionId: baseSubId,
-		Type: &pb.Event_DeviceMetadataUpdated{
-			DeviceMetadataUpdated: &events.DeviceMetadataUpdated{
-				DeviceId: deviceID,
-				Status: &commands.ConnectionStatus{
-					Value: commands.ConnectionStatus_ONLINE,
-				},
-			},
-		},
-		CorrelationId: "testToken",
-	}
-	test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
+	checkDeviceMetadataUpdatedOnlineEvent(t, ev, deviceID, baseSubId)
 
 	ev, err = recv()
 	require.NoError(t, err)
@@ -161,7 +262,7 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 		SubscriptionId: baseSubId,
 		Type: &pb.Event_ResourceChanged{
 			ResourceChanged: &events.ResourceChanged{
-				ResourceId: commands.NewResourceID(deviceID, "/light/2"),
+				ResourceId: commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
 				Content: &commands.Content{
 					CoapContentFormat: int32(message.AppOcfCbor),
 					ContentType:       message.AppOcfCbor.String(),
@@ -186,7 +287,8 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 			CreateSubscription: &pb.SubscribeToEvents_CreateSubscription{
 				DeviceIdFilter: []string{deviceID},
 				EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
-					pb.SubscribeToEvents_CreateSubscription_RESOURCE_UPDATE_PENDING, pb.SubscribeToEvents_CreateSubscription_RESOURCE_UPDATED,
+					pb.SubscribeToEvents_CreateSubscription_RESOURCE_UPDATE_PENDING,
+					pb.SubscribeToEvents_CreateSubscription_RESOURCE_UPDATED,
 				},
 			},
 		},
@@ -207,172 +309,16 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 		CorrelationId: "updatePending + resourceUpdated",
 	}
 	test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
-	subUpdatedID := ev.SubscriptionId
 
-	_, err = c.UpdateResource(ctx, &pb.UpdateResourceRequest{
-		ResourceId: commands.NewResourceID(deviceID, "/light/2"),
-		Content: &pb.Content{
-			ContentType: message.AppOcfCbor.String(),
-			Data: func() []byte {
-				v := map[string]interface{}{
-					"power": 99,
-				}
-				d, err := cbor.Encode(v)
-				require.NoError(t, err)
-				return d
-			}(),
-		},
-	})
-	require.NoError(t, err)
-
-	var updCorrelationID string
-	for i := 0; i < 3; i++ {
-		ev, err = recv()
-		require.NoError(t, err)
-		switch {
-		case ev.GetResourceUpdatePending() != nil:
-			expectedEvent = &pb.Event{
-				SubscriptionId: subUpdatedID,
-				Type: &pb.Event_ResourceUpdatePending{
-					ResourceUpdatePending: &events.ResourceUpdatePending{
-						ResourceId: commands.NewResourceID(deviceID, "/light/2"),
-						Content: &commands.Content{
-							ContentType:       message.AppOcfCbor.String(),
-							CoapContentFormat: -1,
-							Data: func() []byte {
-								v := map[string]interface{}{
-									"power": 99,
-								}
-								d, err := cbor.Encode(v)
-								require.NoError(t, err)
-								return d
-							}(),
-						},
-						AuditContext:  ev.GetResourceUpdatePending().GetAuditContext(),
-						EventMetadata: ev.GetResourceUpdatePending().GetEventMetadata(),
-					},
-				},
-				CorrelationId: "updatePending + resourceUpdated",
-			}
-			test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
-			updCorrelationID = ev.GetResourceUpdatePending().GetAuditContext().GetCorrelationId()
-		case ev.GetResourceUpdated() != nil:
-			expectedEvent = &pb.Event{
-				SubscriptionId: subUpdatedID,
-				Type: &pb.Event_ResourceUpdated{
-					ResourceUpdated: &events.ResourceUpdated{
-						ResourceId:    commands.NewResourceID(deviceID, "/light/2"),
-						Status:        commands.Status_OK,
-						Content:       ev.GetResourceUpdated().GetContent(),
-						AuditContext:  commands.NewAuditContext(ev.GetResourceUpdated().GetAuditContext().GetUserId(), updCorrelationID),
-						EventMetadata: ev.GetResourceUpdated().GetEventMetadata(),
-					},
-				},
-				CorrelationId: "updatePending + resourceUpdated",
-			}
-			test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
-		case ev.GetResourceChanged() != nil:
-			expectedEvent = &pb.Event{
-				SubscriptionId: baseSubId,
-				Type: &pb.Event_ResourceChanged{
-					ResourceChanged: &events.ResourceChanged{
-						ResourceId: commands.NewResourceID(deviceID, "/light/2"),
-						Content: &commands.Content{
-							CoapContentFormat: int32(message.AppOcfCbor),
-							ContentType:       message.AppOcfCbor.String(),
-							Data:              []byte("\277estate\364epower\030cdnameeLight\377"),
-						},
-						Status:        commands.Status_OK,
-						AuditContext:  ev.GetResourceChanged().GetAuditContext(),
-						EventMetadata: ev.GetResourceChanged().GetEventMetadata(),
-					},
-				},
-				CorrelationId: "testToken",
-			}
-			test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
-		}
+	updChecker := &updateChecker{
+		c:            c,
+		deviceID:     deviceID,
+		baseSubId:    baseSubId,
+		subUpdatedID: ev.SubscriptionId,
+		recv:         recv,
 	}
-	_, err = c.UpdateResource(ctx, &pb.UpdateResourceRequest{
-		ResourceId: commands.NewResourceID(deviceID, "/light/2"),
-		Content: &pb.Content{
-			ContentType: message.AppOcfCbor.String(),
-			Data: func() []byte {
-				v := map[string]interface{}{
-					"power": 0,
-				}
-				d, err := cbor.Encode(v)
-				require.NoError(t, err)
-				return d
-			}(),
-		},
-	})
-	require.NoError(t, err)
-	for i := 0; i < 3; i++ {
-		ev, err = recv()
-		require.NoError(t, err)
-		switch {
-		case ev.GetResourceUpdatePending() != nil:
-			expectedEvent = &pb.Event{
-				SubscriptionId: subUpdatedID,
-				Type: &pb.Event_ResourceUpdatePending{
-					ResourceUpdatePending: &events.ResourceUpdatePending{
-						ResourceId: commands.NewResourceID(deviceID, "/light/2"),
-						Content: &commands.Content{
-							ContentType:       message.AppOcfCbor.String(),
-							CoapContentFormat: -1,
-							Data: func() []byte {
-								v := map[string]interface{}{
-									"power": 0,
-								}
-								d, err := cbor.Encode(v)
-								require.NoError(t, err)
-								return d
-							}(),
-						},
-						AuditContext:  ev.GetResourceUpdatePending().GetAuditContext(),
-						EventMetadata: ev.GetResourceUpdatePending().GetEventMetadata(),
-					},
-				},
-				CorrelationId: "updatePending + resourceUpdated",
-			}
-			test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
-			updCorrelationID = ev.GetResourceUpdatePending().GetAuditContext().GetCorrelationId()
-		case ev.GetResourceUpdated() != nil:
-			expectedEvent = &pb.Event{
-				SubscriptionId: subUpdatedID,
-				Type: &pb.Event_ResourceUpdated{
-					ResourceUpdated: &events.ResourceUpdated{
-						ResourceId:    commands.NewResourceID(deviceID, "/light/2"),
-						Status:        commands.Status_OK,
-						Content:       ev.GetResourceUpdated().GetContent(),
-						AuditContext:  commands.NewAuditContext(ev.GetResourceUpdated().GetAuditContext().GetUserId(), updCorrelationID),
-						EventMetadata: ev.GetResourceUpdated().GetEventMetadata(),
-					},
-				},
-				CorrelationId: "updatePending + resourceUpdated",
-			}
-			test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
-		case ev.GetResourceChanged() != nil:
-			expectedEvent = &pb.Event{
-				SubscriptionId: baseSubId,
-				Type: &pb.Event_ResourceChanged{
-					ResourceChanged: &events.ResourceChanged{
-						ResourceId: commands.NewResourceID(deviceID, "/light/2"),
-						Content: &commands.Content{
-							CoapContentFormat: int32(message.AppOcfCbor),
-							ContentType:       message.AppOcfCbor.String(),
-							Data:              []byte("\277estate\364epower\000dnameeLight\377"),
-						},
-						Status:        commands.Status_OK,
-						AuditContext:  ev.GetResourceChanged().GetAuditContext(),
-						EventMetadata: ev.GetResourceChanged().GetEventMetadata(),
-					},
-				},
-				CorrelationId: "testToken",
-			}
-			test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
-		}
-	}
+	updChecker.checkUpdateLightResource(t, ctx, 99)
+	updChecker.checkUpdateLightResource(t, ctx, 0)
 
 	err = send(&pb.SubscribeToEvents{
 		CorrelationId: "receivePending + resourceReceived",
@@ -404,7 +350,7 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 	subReceivedID := ev.SubscriptionId
 
 	_, err = c.GetResourceFromDevice(ctx, &pb.GetResourceFromDeviceRequest{
-		ResourceId: commands.NewResourceID(deviceID, "/light/2"),
+		ResourceId: commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
 	})
 	require.NoError(t, err)
 	ev, err = recv()
@@ -413,7 +359,7 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 		SubscriptionId: subReceivedID,
 		Type: &pb.Event_ResourceRetrievePending{
 			ResourceRetrievePending: &events.ResourceRetrievePending{
-				ResourceId:    commands.NewResourceID(deviceID, "/light/2"),
+				ResourceId:    commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
 				AuditContext:  ev.GetResourceRetrievePending().GetAuditContext(),
 				EventMetadata: ev.GetResourceRetrievePending().GetEventMetadata(),
 			},
@@ -429,7 +375,7 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 		SubscriptionId: subReceivedID,
 		Type: &pb.Event_ResourceRetrieved{
 			ResourceRetrieved: &events.ResourceRetrieved{
-				ResourceId: commands.NewResourceID(deviceID, "/light/2"),
+				ResourceId: commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
 				Content: &commands.Content{
 					ContentType:       message.AppOcfCbor.String(),
 					CoapContentFormat: int32(message.AppOcfCbor),

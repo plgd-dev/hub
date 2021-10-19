@@ -14,13 +14,14 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 
+	"github.com/plgd-dev/go-coap/v2/message"
 	pbGW "github.com/plgd-dev/hub/grpc-gateway/pb"
 	"github.com/plgd-dev/hub/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
 	"github.com/plgd-dev/hub/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/test/oauth-server/service"
+	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
 	"github.com/plgd-dev/hub/test/oauth-server/uri"
-	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/kit/v2/codec/json"
 )
 
@@ -72,7 +73,7 @@ func decodePayload(resp *pbGW.Content) {
 func getServiceToken(authAddr string, tls *tls.Config) (string, error) {
 	reqBody := map[string]string{
 		"grant_type":    string(service.AllowedGrantType_CLIENT_CREDENTIALS),
-		uri.ClientIDKey: service.ClientTest,
+		uri.ClientIDKey: oauthTest.ClientTest,
 		uri.AudienceKey: "test",
 	}
 	d, err := json.Encode(reqBody)

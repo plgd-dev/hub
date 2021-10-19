@@ -11,6 +11,9 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 
+	"github.com/plgd-dev/device/schema/device"
+	"github.com/plgd-dev/device/schema/interfaces"
+	"github.com/plgd-dev/device/test/resource/types"
 	"github.com/plgd-dev/hub/grpc-gateway/pb"
 	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
 	"github.com/plgd-dev/hub/resource-aggregate/commands"
@@ -37,8 +40,8 @@ func TestRequestHandler_GetDevices(t *testing.T) {
 			},
 			want: []*pb.Device{
 				{
-					Types:      []string{"oic.d.cloudDevice", "oic.wk.d"},
-					Interfaces: []string{"oic.if.r", "oic.if.baseline"},
+					Types:      []string{types.DEVICE_CLOUD, device.ResourceType},
+					Interfaces: []string{interfaces.OC_IF_R, interfaces.OC_IF_BASELINE},
 					Id:         deviceID,
 					Name:       test.TestDeviceName,
 					Metadata: &pb.Device_Metadata{
@@ -72,22 +75,22 @@ func TestRequestHandler_GetDevices(t *testing.T) {
 			client, err := c.GetDevices(ctx, tt.args.req)
 			if tt.wantErr {
 				require.Error(t, err)
-			} else {
-				require.NoError(t, err)
-				devices := make([]*pb.Device, 0, 1)
-				for {
-					dev, err := client.Recv()
-					if err == io.EOF {
-						break
-					}
-					require.NoError(t, err)
-					assert.NotEmpty(t, dev.ProtocolIndependentId)
-					dev.ProtocolIndependentId = ""
-					dev.Metadata.Status.ValidUntil = 0
-					devices = append(devices, dev)
-				}
-				test.CheckProtobufs(t, tt.want, devices, test.RequireToCheckFunc(require.Equal))
+				return
 			}
+			require.NoError(t, err)
+			devices := make([]*pb.Device, 0, 1)
+			for {
+				dev, err := client.Recv()
+				if err == io.EOF {
+					break
+				}
+				require.NoError(t, err)
+				assert.NotEmpty(t, dev.ProtocolIndependentId)
+				dev.ProtocolIndependentId = ""
+				dev.Metadata.Status.ValidUntil = 0
+				devices = append(devices, dev)
+			}
+			test.CheckProtobufs(t, tt.want, devices, test.RequireToCheckFunc(require.Equal))
 		})
 	}
 }

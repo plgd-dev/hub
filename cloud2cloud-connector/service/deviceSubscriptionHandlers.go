@@ -18,6 +18,8 @@ import (
 	kitSync "github.com/plgd-dev/kit/v2/sync"
 )
 
+const NOT_SUPPORTED_ERR = "not supported"
+
 type deviceSubscriptionHandlers struct {
 	onResourceUpdatePending   func(ctx context.Context, val *raEvents.ResourceUpdatePending) error
 	onResourceRetrievePending func(ctx context.Context, val *raEvents.ResourceRetrievePending) error
@@ -38,15 +40,15 @@ func (h deviceSubscriptionHandlers) RetrieveResource(ctx context.Context, event 
 }
 
 func (h deviceSubscriptionHandlers) DeleteResource(ctx context.Context, event *raEvents.ResourceDeletePending) error {
-	return fmt.Errorf("not supported")
+	return fmt.Errorf(NOT_SUPPORTED_ERR)
 }
 
 func (h deviceSubscriptionHandlers) CreateResource(ctx context.Context, event *raEvents.ResourceCreatePending) error {
-	return fmt.Errorf("not supported")
+	return fmt.Errorf(NOT_SUPPORTED_ERR)
 }
 
 func (h deviceSubscriptionHandlers) UpdateDeviceMetadata(ctx context.Context, event *raEvents.DeviceMetadataUpdatePending) error {
-	return fmt.Errorf("not supported")
+	return fmt.Errorf(NOT_SUPPORTED_ERR)
 }
 
 func (h deviceSubscriptionHandlers) OnDeviceSubscriberReconnectError(err error) {
@@ -85,7 +87,9 @@ func (c *DevicesSubscription) Add(deviceID string, linkedAccount store.LinkedAcc
 		return nil
 	}
 	deviceSubscriber, err := grpcClient.NewDeviceSubscriber(func() (context.Context, context.CancelFunc) {
-		return kitNetGrpc.CtxWithToken(c.ctx, linkedAccount.Data.Origin().AccessToken.String()), func() {}
+		return kitNetGrpc.CtxWithToken(c.ctx, linkedAccount.Data.Origin().AccessToken.String()), func() {
+			// no-op
+		}
 	}, "*", deviceID, func() func() (when time.Time, err error) {
 		var count uint64
 		maxRand := c.reconnectInterval / 2

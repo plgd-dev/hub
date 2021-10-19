@@ -20,7 +20,7 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 	if err != nil {
 		return nil, fmt.Errorf("cannot create validator: %w", err)
 	}
-	method := "/" + pb.GrpcGateway_ServiceDesc.ServiceName + "/GetCloudConfiguration"
+	method := "/" + pb.GrpcGateway_ServiceDesc.ServiceName + "/GetHubConfiguration"
 	interceptor := server.NewAuth(validator, server.WithWhiteListedMethods(method))
 	opts, err := server.MakeDefaultOptions(interceptor, logger)
 	if err != nil {

@@ -12,6 +12,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 
+	"github.com/plgd-dev/device/schema/device"
 	"github.com/plgd-dev/hub/grpc-gateway/pb"
 	httpgwTest "github.com/plgd-dev/hub/http-gateway/test"
 	"github.com/plgd-dev/hub/http-gateway/uri"
@@ -81,7 +82,7 @@ func TestRequestHandler_GetDevicesMetadata(t *testing.T) {
 			name: "filter one device by type",
 			args: args{
 				req: &pb.GetDevicesMetadataRequest{
-					TypeFilter: []string{"oic.wk.d"},
+					TypeFilter: []string{device.ResourceType},
 				},
 			},
 			want: []*events.DeviceMetadataUpdated{
