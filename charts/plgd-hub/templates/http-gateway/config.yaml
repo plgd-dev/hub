@@ -106,7 +106,7 @@ stringData:
           {{- end }}
         {{- end }}
         {{- if not $included }}
-        {{- $provider := index $.Values.mockoauthserver.oauth 0 }}
+        {{- $provider := index $.Values.mockoauthserver.oauth 1 }}
         {{- if not $.Values.mockoauthserver.enabled }}
         {{- $provider = index ( $.Values.coapgateway.apis.coap.authorization.providers | default $.Values.global.oauth.device) 0 }}
         {{- else }}

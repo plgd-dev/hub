@@ -49,7 +49,11 @@ spec:
   tls:
     - hosts:
         - {{ include "plgd-hub.mockoauthserver.ingressDomain" . | quote }}
+      {{- if $.Values.global.enableWildCartCert }}
+      secretName: {{ include "plgd-hub.wildCardCertName" . | quote }}
+      {{- else }}
       secretName: {{ include "plgd-hub.mockoauthserver.domainCertName" . | quote }}
+      {{- end }}
   rules:
   - host: {{ include "plgd-hub.mockoauthserver.ingressDomain" . | quote }}
     http:

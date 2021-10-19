@@ -23,7 +23,11 @@ spec:
     - hosts:
         - {{ include "plgd-hub.httpgateway.apiDomain" . | quote }}
         - {{ include "plgd-hub.httpgateway.uiDomain" . | quote }}
+      {{- if $.Values.global.enableWildCartCert }}
+      secretName: {{ include "plgd-hub.wildCardCertName" . | quote }}
+      {{- else }}
       secretName: {{ include "plgd-hub.httpgateway.domainCertName" . | quote }}
+      {{- end }}
   rules:
   - host: {{ include "plgd-hub.httpgateway.uiDomain" . | quote }}
     http:

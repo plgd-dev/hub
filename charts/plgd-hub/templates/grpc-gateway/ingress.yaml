@@ -22,7 +22,11 @@ spec:
   tls:
     - hosts:
         - {{ include "plgd-hub.grpcgateway.domain" . | quote }}
+      {{- if $.Values.global.enableWildCartCert }}
+      secretName: {{ include "plgd-hub.wildCardCertName" . | quote }}
+      {{- else }}
       secretName: {{ include "plgd-hub.grpcgateway.domainCertName" . | quote }}
+      {{- end }}
   rules:
   - host: {{ include "plgd-hub.grpcgateway.domain" . | quote }}
     http:

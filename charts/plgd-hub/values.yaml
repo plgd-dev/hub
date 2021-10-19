@@ -12,6 +12,8 @@ global:
   authority:
   # -- OAuth audience
   audience: ""
+  # -- Enable *.{{ global.domain }} for all external domain
+  enableWildCartCert: true
   # Global OAuth configuration used by multiple services
   oauth:
    device: []
@@ -651,6 +653,8 @@ coapgateway:
   service:
     # -- Service type
     type: LoadBalancer
+    # -- Use nodePort if specified
+    nodePort:
     # -- Labels for coap-gateway service
     labels: { }
     # -- Annotations for coap-gateway service

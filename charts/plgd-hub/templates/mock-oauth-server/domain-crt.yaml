@@ -1,5 +1,5 @@
 {{- $createServiceCert := include "plgd-hub.mockoauthserver.domainCertName" . }}
-{{- if and $createServiceCert .Values.certmanager.enabled .Values.mockoauthserver.enabled }}
+{{- if and $createServiceCert .Values.certmanager.enabled .Values.mockoauthserver.enabled (not $.Values.global.enableWildCartCert ) }}
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:

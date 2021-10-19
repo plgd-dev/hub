@@ -314,3 +314,12 @@ app.kubernetes.io/instance: {{ .Release.Name }}
         {{- printf "false" }}
     {{- end }}
 {{- end }}
+
+{{- define "plgd-hub.wildCardCertDomain" -}}
+    {{- printf "*.%s" .Values.global.domain }}
+{{- end }}
+
+{{- define "plgd-hub.wildCardCertName" -}}
+  {{- $fullName := include "plgd-hub.fullname" . -}}
+  {{- printf "%s-wildcard-crt" $fullName -}}
+{{- end }}
