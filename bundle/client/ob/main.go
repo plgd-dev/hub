@@ -7,7 +7,9 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/plgd-dev/device/client"
@@ -87,19 +89,31 @@ func ownAndOnboard(ctx context.Context, c *OcfClient, deviceID, apn, authCode st
 
 func main() {
 	addr := flag.String("addr", "localhost:443", "address")
-	accessToken := flag.String("accessToken", "", "accessToken")
-	authCode := flag.String("authCode", "test", "authCode")
-	deviceID := flag.String("deviceId", "", "deviceId")
-	discoverDevices := flag.Bool("discoverDevices", false, "discoverDevices")
-	discoverTimeout := flag.Duration("discoverTimeout", time.Second, "discoverTimeout")
-	apn := flag.String("authorizationProvider", "plgd", "authorizationProvider")
+	authAddr := flag.String("authAddr", "", "auth address to get access token from mock oauth server")
+	accessToken := flag.String("accessToken", "", "use directly access token without contacting mock oauth server")
+	authCode := flag.String("authCode", "test", "use authorization code for registration device to the cloud")
+	deviceID := flag.String("deviceId", "", "onboard the device")
+	listDevices := flag.Bool("listDevices", false, "list devices which can be onboard to the cloud")
+	discoverDuration := flag.Duration("discoverDuration", time.Second, "discover devices for X seconds")
+	apn := flag.String("authorizationProvider", "plgd", "use authorization provider for registration device to the cloud")
 	flag.Parse()
 
+	if *authAddr == "" {
+		*authAddr = *addr
+	}
 	if *accessToken == "" {
 		var err error
-		*accessToken, err = getServiceToken(*addr)
+		*accessToken, err = getServiceToken(*authAddr)
 		if err != nil {
-			log.Fatalf("cannot get access token")
+			log.Fatalf("cannot get access token: %v", err)
+		}
+	}
+
+	// check if port is part of address, otherwise append ":443"
+	_, _, err := net.SplitHostPort(*addr)
+	if err != nil {
+		if strings.Contains(err.Error(), "missing port in address") {
+			*addr = *addr + ":443"
 		}
 	}
 
@@ -117,12 +131,17 @@ func main() {
 	grpcClient := pb.NewGrpcGatewayClient(grpcConn)
 
 	caClient := capb.NewCertificateAuthorityClient(grpcConn)
-	ctx, cancel := context.WithTimeout(context.Background(), *discoverTimeout+60*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), *discoverDuration+60*time.Second)
 	defer cancel()
 	ctx = grpcCloud.CtxWithToken(ctx, *accessToken)
 
+	hubConfiguration, err := grpcClient.GetHubConfiguration(ctx, &pb.HubConfigurationRequest{})
+	if err != nil {
+		log.Fatalf("cannot get hub configuration: %v", err)
+	}
+
 	c := new(OcfClient)
-	err = c.Initialize(ctx, grpcClient, caClient)
+	err = c.Initialize(ctx, hubConfiguration, caClient)
 	if err != nil {
 		log.Fatalf("cannot initialize ocf client: %v", err)
 	}
@@ -132,25 +151,29 @@ func main() {
 		return
 	}
 
-	devices, err := c.Discover(ctx, *discoverTimeout)
+	devices, err := c.Discover(ctx, *discoverDuration)
 	if err != nil {
 		log.Fatalf("cannot device devices: %v", err)
 	}
-	fmt.Printf("found %v devices with discover timeout %v\n", len(devices), *discoverTimeout)
-
+	filteredDevices := make([]client.DeviceDetails, 0, len(devices))
 	for _, d := range devices {
 		if d.IsSecured && d.OwnershipStatus == client.OwnershipStatus_ReadyToBeOwned {
-			if !*discoverDevices {
-				ownAndOnboard(ctx, c, d.ID, *apn, *authCode)
-				return
-			}
-			if d.Details == nil {
-				continue
-			}
-			if v, ok := d.Details.(*device.Device); ok {
-				fmt.Printf("%v(%v)\n", v.Name, v.ID)
-			}
+			filteredDevices = append(filteredDevices, d)
 		}
 	}
-
+	fmt.Printf("found %v ready to be owned devices with discover duration %v\n", len(filteredDevices), *discoverDuration)
+	for _, d := range filteredDevices {
+		if !*listDevices {
+			ownAndOnboard(ctx, c, d.ID, *apn, *authCode)
+			return
+		}
+		name := "unknown"
+		id := d.ID
+		if d.Details != nil {
+			if v, ok := d.Details.(*device.Device); ok {
+				name = v.Name
+			}
+		}
+		fmt.Printf("%v(%v)\n", name, id)
+	}
 }

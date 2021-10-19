@@ -12,7 +12,6 @@ import (
 	capb "github.com/plgd-dev/hub/certificate-authority/pb"
 	"github.com/plgd-dev/hub/certificate-authority/signer"
 	"github.com/plgd-dev/hub/grpc-gateway/pb"
-	"github.com/plgd-dev/kit/v2/codec/json"
 	"github.com/plgd-dev/kit/v2/security"
 )
 
@@ -22,11 +21,7 @@ type OcfClient struct {
 }
 
 // Initialize creates and initializes new local client
-func (c *OcfClient) Initialize(ctx context.Context, grpcClient pb.GrpcGatewayClient, caClient capb.CertificateAuthorityClient) error {
-	hubConfiguration, err := grpcClient.GetHubConfiguration(ctx, &pb.HubConfigurationRequest{})
-	if err != nil {
-		return fmt.Errorf("cannot get hub configuration: %w", err)
-	}
+func (c *OcfClient) Initialize(ctx context.Context, hubConfiguration *pb.HubConfigurationResponse, caClient capb.CertificateAuthorityClient) error {
 	appCallback, err := app.NewApp(&app.AppConfig{
 		RootCA: hubConfiguration.GetCertificateAuthorities(),
 	})
@@ -37,9 +32,8 @@ func (c *OcfClient) Initialize(ctx context.Context, grpcClient pb.GrpcGatewayCli
 	signer := signer.NewIdentityCertificateSigner(caClient)
 
 	localClient, err := client.NewClientFromConfig(&client.Config{
-		DisablePeerTCPSignalMessageCSMs:   true,
-		KeepAliveConnectionTimeoutSeconds: 10,
-		ObserverPollingIntervalSeconds:    1,
+		KeepAliveConnectionTimeoutSeconds: 30,
+		ObserverPollingIntervalSeconds:    15,
 		DeviceCacheExpirationSeconds:      3600,
 		MaxMessageSize:                    512 * 1024,
 		DeviceOwnershipBackend: &client.DeviceOwnershipBackendConfig{
@@ -71,21 +65,6 @@ func (c *OcfClient) Discover(ctx context.Context, timeout time.Duration) (map[st
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 	return c.localClient.GetDevices(ctx)
-}
-
-// GetResource retrieves, encodes and returns resource representation of specified resource
-func (c *OcfClient) GetResource(ctx context.Context, deviceID, resourceHref string) (string, error) {
-	var data interface{}
-	err := c.localClient.GetResource(ctx, deviceID, resourceHref, &data)
-	if err != nil || data == nil {
-		return "", err
-	}
-
-	dataJSON, err := json.Encode(data)
-	if err != nil {
-		return "", err
-	}
-	return string(dataJSON), nil
 }
 
 // OwnDevice transfers the ownersip of the device to user represented by the token

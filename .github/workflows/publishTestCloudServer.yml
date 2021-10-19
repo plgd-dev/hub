@@ -9,7 +9,6 @@ on:
   push:
     branches:
       - main
-      - jkralik/feature/test-hub
     tags:
       - '*'
 
@@ -54,5 +53,5 @@ jobs:
         with:
           context: ./test/cloud-server
           push: true
-          tags: ${{ steps.meta.outputs.tags }},${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
