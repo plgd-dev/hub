@@ -17,6 +17,9 @@ spec:
   type: {{ .Values.coapgateway.service.type | default "ClusterIP" }}
   ports:
     - port: {{ .Values.coapgateway.port }}
+      {{- if $.Values.coapgateway.service.nodePort }}
+      nodePort: {{ $.Values.coapgateway.service.nodePort }}
+      {{- end }}
       targetPort: grpc
       protocol: TCP
       name: grpc

@@ -1,10 +1,9 @@
-{{- $domainCrt := include "plgd-hub.certificateauthority.domainCertName" . }}
-{{- if and $domainCrt .Values.certmanager.enabled .Values.certificateauthority.enabled (not $.Values.global.enableWildCartCert ) }}
-{{- $serviceDns := include "plgd-hub.certificateauthority.fullname" . }}
+{{- $createServiceCert := include "plgd-hub.mockoauthserver.domainCertName" . }}
+{{- if and $createServiceCert .Values.certmanager.enabled .Values.mockoauthserver.enabled (not $.Values.global.enableWildCartCert ) }}
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: {{ $domainCrt }}
+  name: {{ $createServiceCert }}
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "plgd-hub.labels" . | nindent 4 }}
@@ -16,7 +15,7 @@ metadata:
   {{- . | toYaml | nindent 4 }}
   {{- end }}
 spec:
-  secretName: {{ $domainCrt }}
+  secretName: {{ $createServiceCert }}
   privateKey:
     algorithm: {{ .Values.certmanager.external.cert.key.algorithm | default .Values.certmanager.default.cert.key.algorithm }}
     size: {{ .Values.certmanager.external.cert.key.size | default .Values.certmanager.default.cert.key.size }}
@@ -24,7 +23,7 @@ spec:
     - server auth
     - client auth
   dnsNames:
-    - {{ include "plgd-hub.certificateauthority.domain" . | quote }}
+    - {{ include "plgd-hub.mockoauthserver.ingressDomain" . | quote }}
   duration: {{ .Values.certmanager.external.cert.duration | default .Values.certmanager.default.cert.duration }}
   renewBefore: {{ .Values.certmanager.external.cert.renewBefore | default .Values.certmanager.default.cert.renewBefore }}
   issuerRef:

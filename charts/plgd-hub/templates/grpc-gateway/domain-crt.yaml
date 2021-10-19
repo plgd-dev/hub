@@ -1,5 +1,5 @@
 {{- $createServiceCert := include "plgd-hub.grpcgateway.domainCertName" . }}
-{{- if and $createServiceCert .Values.certmanager.enabled .Values.grpcgateway.enabled }}
+{{- if and $createServiceCert .Values.certmanager.enabled .Values.grpcgateway.enabled (not $.Values.global.enableWildCartCert ) }}
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:

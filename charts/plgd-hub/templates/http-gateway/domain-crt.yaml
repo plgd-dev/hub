@@ -1,5 +1,5 @@
 {{- $createServiceCert := include "plgd-hub.httpgateway.domainCertName" . }}
-{{- if and $createServiceCert .Values.certmanager.enabled .Values.httpgateway.enabled }}
+{{- if and $createServiceCert .Values.certmanager.enabled .Values.httpgateway.enabled (not $.Values.global.enableWildCartCert ) }}
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
