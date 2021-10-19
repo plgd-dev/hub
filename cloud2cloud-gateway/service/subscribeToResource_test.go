@@ -25,6 +25,7 @@ import (
 	testCfg "github.com/plgd-dev/hub/test/config"
 	testHttp "github.com/plgd-dev/hub/test/http"
 	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
+	"github.com/plgd-dev/hub/test/service"
 	"github.com/plgd-dev/kit/v2/codec/json"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -53,7 +54,7 @@ func TestRequestHandler_SubscribeToResource(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), testCfg.TEST_TIMEOUT)
 	defer cancel()
 
-	tearDown := test.SetUp(ctx, t)
+	tearDown := service.SetUp(ctx, t)
 	defer tearDown()
 
 	token := oauthTest.GetDefaultServiceToken(t)
@@ -133,10 +134,10 @@ func TestRequestHandler_SubscribeToResourceTokenTimeout(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), testCfg.TEST_TIMEOUT)
 	defer cancel()
 
-	services := test.SetUpServicesOAuth | test.SetUpServicesId | test.SetUpServicesCertificateAuthority |
-		test.SetUpServicesResourceAggregate | test.SetUpServicesResourceDirectory | test.SetUpServicesGrpcGateway |
-		test.SetUpServicesCoapGateway
-	tearDown := test.SetUpServices(ctx, t, services)
+	services := service.SetUpServicesOAuth | service.SetUpServicesId | service.SetUpServicesCertificateAuthority |
+		service.SetUpServicesResourceAggregate | service.SetUpServicesResourceDirectory | service.SetUpServicesGrpcGateway |
+		service.SetUpServicesCoapGateway
+	tearDown := service.SetUpServices(ctx, t, services)
 	defer tearDown()
 	c2cgwShutdown := c2cTest.SetUp(t)
 

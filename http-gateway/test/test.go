@@ -2,26 +2,20 @@ package test
 
 import (
 	"context"
-	"crypto/tls"
 	"fmt"
-	"io"
-	"net/http"
-	"net/url"
-	"sort"
-	"strings"
 	"sync"
 	"testing"
 	"time"
 
-	"github.com/jtacoma/uritemplates"
+	"github.com/plgd-dev/hub/grpc-gateway/pb"
 	"github.com/plgd-dev/hub/http-gateway/service"
 	"github.com/plgd-dev/hub/http-gateway/uri"
 	"github.com/plgd-dev/hub/pkg/log"
 	"github.com/plgd-dev/hub/test/config"
+	"github.com/plgd-dev/kit/v2/codec/cbor"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/encoding/protojson"
 )
-
-const TestTimeout = 20 * time.Second
 
 func MakeConfig(t *testing.T) service.Config {
 	var cfg service.Config
@@ -65,202 +59,17 @@ func New(t *testing.T, cfg service.Config) func() {
 	}
 }
 
-func NewRequest(method, url string, body io.Reader) *requestBuilder {
-	b := requestBuilder{
-		method:      method,
-		body:        body,
-		uri:         fmt.Sprintf("https://%v%v", config.HTTP_GW_HOST, url),
-		uriParams:   make(map[string]interface{}),
-		header:      make(map[string]string),
-		queryParams: make(map[string][]string),
-	}
-	return &b
-}
-
-type requestBuilder struct {
-	method       string
-	body         io.Reader
-	uri          string
-	uriParams    map[string]interface{}
-	header       map[string]string
-	queryParams  map[string][]string
-	resourceHref string
-	query        string
-}
-
-func (c *requestBuilder) DeviceId(deviceID string) *requestBuilder {
-	c.uriParams[uri.DeviceIDKey] = deviceID
-	return c
-}
-
-func (c *requestBuilder) Shadow(v bool) *requestBuilder {
-	c.AddQuery(uri.ShadowQueryKey, fmt.Sprintf("%v", v))
-	return c
-}
-
-func (c *requestBuilder) Timestamp(v time.Time) *requestBuilder {
-	if v.IsZero() {
-		return c
-	}
-	c.AddQuery(uri.TimestampFilterQueryKey, fmt.Sprintf("%v", v.UnixNano()))
-	return c
-}
-
-func (c *requestBuilder) ResourceInterface(v string) *requestBuilder {
-	if v == "" {
-		return c
-	}
-	c.AddQuery(uri.ResourceInterfaceQueryKey, v)
-	return c
-}
-
-func (c *requestBuilder) ResourceHref(resourceHref string) *requestBuilder {
-	if len(resourceHref) > 0 && resourceHref[0] == '/' {
-		resourceHref = resourceHref[1:]
-	}
-	c.resourceHref = resourceHref
-	return c
-}
-
-func (c *requestBuilder) AuthToken(token string) *requestBuilder {
-	c.header["Authorization"] = fmt.Sprintf("bearer %s", token)
-	return c
-}
-
-func (c *requestBuilder) Accept(accept string) *requestBuilder {
-	if accept == "" {
-		return c
-	}
-	c.header["Accept"] = accept
-	return c
-}
-
-func (c *requestBuilder) ContentType(contentType string) *requestBuilder {
-	if contentType == "" {
-		return c
-	}
-	c.header[uri.ContentTypeHeaderKey] = contentType
-	return c
-}
-
-func (c *requestBuilder) AddQuery(key string, value ...string) *requestBuilder {
-	c.queryParams[key] = append(c.queryParams[key], value...)
-	return c
-}
-
-func (c *requestBuilder) AddTypeFilter(typeFilter []string) *requestBuilder {
-	if len(typeFilter) == 0 {
-		return c
-	}
-	c.AddQuery(uri.TypeFilterQueryKey, typeFilter...)
-	return c
-}
-
-func (c *requestBuilder) AddCorrelantionIdFilter(correlantionId []string) *requestBuilder {
-	if len(correlantionId) == 0 {
-		return c
-	}
-	c.AddQuery(uri.CorrelationIdFilterQueryKey, correlantionId...)
-	return c
-}
-
-func (c *requestBuilder) AddCommandsFilter(commandFilter []string) *requestBuilder {
-	if len(commandFilter) == 0 {
-		return c
-	}
-	c.AddQuery(uri.CommandFilterQueryKey, commandFilter...)
-	return c
-}
-
-func (c *requestBuilder) SetQuery(value string) *requestBuilder {
-	c.query = value
-	return c
-}
-
-func (c *requestBuilder) Build() *http.Request {
-	uri := strings.Replace(c.uri, "{"+uri.ResourceHrefKey+"}", c.resourceHref, -1)
-
-	tmp, _ := uritemplates.Parse(uri)
-	uri, _ = tmp.Expand(c.uriParams)
-	url, _ := url.Parse(uri)
-	query := url.Query()
-	for k, vals := range c.queryParams {
-		for _, v := range vals {
-			query.Add(k, v)
+func GetContentData(content *pb.Content, desiredContentType string) ([]byte, error) {
+	if desiredContentType == uri.ApplicationProtoJsonContentType {
+		data, err := protojson.Marshal(content)
+		if err != nil {
+			return nil, err
 		}
+		return data, err
 	}
-	if c.query != "" {
-		url.RawQuery = c.query
-	} else {
-		url.RawQuery = query.Encode()
+	v, err := cbor.ToJSON(content.GetData())
+	if err != nil {
+		return nil, err
 	}
-	fmt.Printf("URL %v\n", url.String())
-	request, _ := http.NewRequest(c.method, url.String(), c.body)
-	for k, v := range c.header {
-		request.Header.Add(k, v)
-	}
-	return request
-}
-
-func HTTPDo(t *testing.T, req *http.Request) *http.Response {
-	trans := http.DefaultTransport.(*http.Transport).Clone()
-	trans.TLSClientConfig = &tls.Config{
-		InsecureSkipVerify: true,
-	}
-
-	c := http.Client{
-		Transport: trans,
-	}
-	resp, err := c.Do(req)
-	require.NoError(t, err)
-	return resp
-}
-
-type SortLinksByHref []interface{}
-
-func (a SortLinksByHref) Len() int      { return len(a) }
-func (a SortLinksByHref) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
-func (a SortLinksByHref) Less(i, j int) bool {
-	e1 := a[i].(map[interface{}]interface{})
-	e2 := a[j].(map[interface{}]interface{})
-	return e1["href"].(string) < e2["href"].(string)
-}
-
-func SortLinks(s []interface{}) []interface{} {
-	v := SortLinksByHref(s)
-	sort.Sort(v)
-	return v
-}
-
-func CleanUpDeviceRepresentation(v interface{}) interface{} {
-	d, ok := v.(map[interface{}]interface{})
-	if !ok {
-		return v
-	}
-	device, ok := d["device"].(map[interface{}]interface{})
-	if ok {
-		delete(device, "piid")
-	}
-	metadata, ok := d["metadata"].(map[interface{}]interface{})
-	if ok {
-		connectionStatus, ok := metadata["connectionStatus"].(map[interface{}]interface{})
-		if ok {
-			delete(connectionStatus, "validUntil")
-		}
-	}
-	links, ok := d["links"].([]interface{})
-	if !ok {
-		return v
-	}
-	links = SortLinks(links)
-	for _, l := range links {
-		li, ok := l.(map[interface{}]interface{})
-		if !ok {
-			continue
-		}
-		delete(li, "ins")
-		delete(li, "id")
-	}
-	d["links"] = links
-	return d
+	return []byte(v), err
 }

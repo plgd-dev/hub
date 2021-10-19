@@ -28,6 +28,7 @@ import (
 	testCfg "github.com/plgd-dev/hub/test/config"
 	testHttp "github.com/plgd-dev/hub/test/http"
 	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
+	"github.com/plgd-dev/hub/test/service"
 	"github.com/plgd-dev/kit/v2/codec/json"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
@@ -44,7 +45,7 @@ func countOpenFiles() int64 {
 }
 
 func SetUpClouds(ctx context.Context, t *testing.T, deviceID string, supportedEvents store.Events) func() {
-	cloud1 := test.SetUp(ctx, t)
+	cloud1 := service.SetUp(ctx, t)
 	cloud2 := SetUpCloudWithConnector(t)
 	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultServiceToken(t))
 

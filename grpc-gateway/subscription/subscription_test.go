@@ -21,6 +21,8 @@ import (
 	"github.com/plgd-dev/hub/test"
 	"github.com/plgd-dev/hub/test/config"
 	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
+	pbTest "github.com/plgd-dev/hub/test/pb"
+	"github.com/plgd-dev/hub/test/service"
 	"github.com/plgd-dev/kit/v2/codec/cbor"
 	"github.com/stretchr/testify/require"
 )
@@ -209,7 +211,7 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
 	defer cancel()
 
-	tearDown := test.SetUp(ctx, t)
+	tearDown := service.SetUp(ctx, t)
 	defer tearDown()
 	token := oauthTest.GetDefaultServiceToken(t)
 	ctx = kitNetGrpc.CtxWithIncomingToken(kitNetGrpc.CtxWithToken(ctx, token), token)
@@ -279,7 +281,7 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 		},
 		CorrelationId: correlationID,
 	})
-	check(t, waitForEvent(ctx, t, recvChan), test.ResourceLinkToPublishEvent(deviceID, correlationID, test.GetAllBackendResourceLinks()))
+	check(t, waitForEvent(ctx, t, recvChan), pbTest.ResourceLinkToPublishEvent(deviceID, correlationID, test.GetAllBackendResourceLinks()))
 
 	for range test.GetAllBackendResourceLinks() {
 		check(t, waitForEvent(ctx, t, recvChan), &pb.Event{

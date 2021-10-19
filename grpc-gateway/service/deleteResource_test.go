@@ -11,10 +11,11 @@ import (
 	exCodes "github.com/plgd-dev/hub/grpc-gateway/pb/codes"
 	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
 	"github.com/plgd-dev/hub/resource-aggregate/commands"
-	"github.com/plgd-dev/hub/resource-aggregate/events"
 	"github.com/plgd-dev/hub/test"
 	"github.com/plgd-dev/hub/test/config"
 	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
+	pbTest "github.com/plgd-dev/hub/test/pb"
+	"github.com/plgd-dev/hub/test/service"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
@@ -87,7 +88,7 @@ func TestRequestHandlerDeleteResource(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
 	defer cancel()
 
-	tearDown := test.SetUp(ctx, t)
+	tearDown := service.SetUp(ctx, t)
 	defer tearDown()
 	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultServiceToken(t))
 
@@ -114,14 +115,8 @@ func TestRequestHandlerDeleteResource(t *testing.T) {
 			}
 			require.NoError(t, err)
 
-			resp := &events.ResourceDeleted{
-				ResourceId: commands.NewResourceID(deviceID, tt.args.href),
-				Content: &commands.Content{
-					CoapContentFormat: int32(-1),
-				},
-				Status: commands.Status_OK,
-			}
-			test.CmpResourceDeleted(t, resp, got.GetData())
+			want := pbTest.MakeResourceDeleted(t, deviceID, tt.args.href)
+			pbTest.CmpResourceDeleted(t, want, got.GetData())
 		})
 	}
 }

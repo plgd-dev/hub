@@ -9,33 +9,18 @@ import (
 
 	"github.com/plgd-dev/device/schema/interfaces"
 	"github.com/plgd-dev/device/test/resource/types"
-	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/hub/grpc-gateway/pb"
 	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
 	"github.com/plgd-dev/hub/resource-aggregate/commands"
-	"github.com/plgd-dev/hub/resource-aggregate/events"
 	"github.com/plgd-dev/hub/test"
 	"github.com/plgd-dev/hub/test/config"
 	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
+	pbTest "github.com/plgd-dev/hub/test/pb"
+	"github.com/plgd-dev/hub/test/service"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )
-
-func getResourceChangedData(t *testing.T, deviceID, href string, data interface{}) *events.ResourceChanged {
-	return &events.ResourceChanged{
-		ResourceId: &commands.ResourceId{
-			DeviceId: deviceID,
-			Href:     href,
-		},
-		Content: &commands.Content{
-			CoapContentFormat: int32(message.AppOcfCbor),
-			ContentType:       message.AppOcfCbor.String(),
-			Data:              test.EncodeToCbor(t, data),
-		},
-		Status: commands.Status_OK,
-	}
-}
 
 func TestRequestHandlerGetResources(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
@@ -43,7 +28,7 @@ func TestRequestHandlerGetResources(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
 	defer cancel()
 
-	tearDown := test.SetUp(ctx, t)
+	tearDown := service.SetUp(ctx, t)
 	defer tearDown()
 	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultServiceToken(t))
 
@@ -100,7 +85,7 @@ func TestRequestHandlerGetResources(t *testing.T) {
 					DeviceIdFilter: []string{deviceID},
 				},
 			},
-			cmpFn: test.CmpResourceValuesBasic,
+			cmpFn: pbTest.CmpResourceValuesBasic,
 			want:  test.ResourceLinksToResources2(deviceID, resourceLinks),
 		},
 		{
@@ -115,7 +100,7 @@ func TestRequestHandlerGetResources(t *testing.T) {
 			want: []*pb.Resource{
 				{
 					Types: []string{types.CORE_LIGHT},
-					Data: getResourceChangedData(t, deviceID, test.TestResourceLightInstanceHref("1"), map[string]interface{}{
+					Data: pbTest.MakeResourceChanged(t, deviceID, test.TestResourceLightInstanceHref("1"), map[string]interface{}{
 						"state": false,
 						"power": uint64(0),
 						"name":  "Light",
@@ -135,7 +120,7 @@ func TestRequestHandlerGetResources(t *testing.T) {
 			want: []*pb.Resource{
 				{
 					Types: []string{types.BINARY_SWITCH},
-					Data: getResourceChangedData(t, deviceID, test.TestResourceSwitchesInstanceHref(switchId), map[string]interface{}{
+					Data: pbTest.MakeResourceChanged(t, deviceID, test.TestResourceSwitchesInstanceHref(switchId), map[string]interface{}{
 						"if":    []interface{}{interfaces.OC_IF_A, interfaces.OC_IF_BASELINE},
 						"rt":    []interface{}{types.BINARY_SWITCH},
 						"value": false,
@@ -162,7 +147,7 @@ func TestRequestHandlerGetResources(t *testing.T) {
 				tt.cmpFn(t, tt.want, values)
 				return
 			}
-			test.CmpResourceValues(t, tt.want, values)
+			pbTest.CmpResourceValues(t, tt.want, values)
 		})
 	}
 }

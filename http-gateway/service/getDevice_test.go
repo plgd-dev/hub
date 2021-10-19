@@ -8,11 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
-
 	"github.com/plgd-dev/device/schema/device"
 	"github.com/plgd-dev/device/schema/interfaces"
 	"github.com/plgd-dev/device/test/resource/types"
@@ -25,18 +20,25 @@ import (
 	"github.com/plgd-dev/hub/test"
 	"github.com/plgd-dev/hub/test/config"
 	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
+	pbTest "github.com/plgd-dev/hub/test/pb"
+	"github.com/plgd-dev/hub/test/service"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 )
 
-func TestRequestHandler_GetDevice(t *testing.T) {
+func TestRequestHandlerGetDevice(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	type args struct {
 		deviceID string
 	}
 	tests := []struct {
-		name    string
-		args    args
-		wantErr bool
-		want    []*pb.Device
+		name         string
+		args         args
+		wantErr      bool
+		want         []*pb.Device
+		wantHTTPCode int
 	}{
 		{
 			name: "valid",
@@ -56,20 +58,22 @@ func TestRequestHandler_GetDevice(t *testing.T) {
 					},
 				},
 			},
+			wantHTTPCode: http.StatusOK,
 		},
 		{
 			name: "notFound",
 			args: args{
 				deviceID: "notFound",
 			},
-			wantErr: true,
+			wantErr:      true,
+			wantHTTPCode: http.StatusNotFound,
 		},
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Hour)
 	defer cancel()
 
-	tearDown := test.SetUp(ctx, t)
+	tearDown := service.SetUp(ctx, t)
 	defer tearDown()
 
 	shutdownHttp := httpgwTest.SetUp(t)
@@ -91,18 +95,11 @@ func TestRequestHandler_GetDevice(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			request := httpgwTest.NewRequest(http.MethodGet, uri.AliasDevice+"/", nil).DeviceId(tt.args.deviceID).AuthToken(token).Build()
-			trans := http.DefaultTransport.(*http.Transport).Clone()
-			trans.TLSClientConfig = &tls.Config{
-				InsecureSkipVerify: true,
-			}
-			c := http.Client{
-				Transport: trans,
-			}
-			resp, err := c.Do(request)
-			require.NoError(t, err)
+			resp := httpgwTest.HTTPDo(t, request)
 			defer func() {
 				_ = resp.Body.Close()
 			}()
+			assert.Equal(t, tt.wantHTTPCode, resp.StatusCode)
 
 			devices := make([]*pb.Device, 0, 1)
 			for {
@@ -117,11 +114,9 @@ func TestRequestHandler_GetDevice(t *testing.T) {
 				}
 				require.NoError(t, err)
 				assert.NotEmpty(t, dev.ProtocolIndependentId)
-				dev.ProtocolIndependentId = ""
-				dev.Metadata.Status.ValidUntil = 0
 				devices = append(devices, &dev)
 			}
-			test.CheckProtobufs(t, tt.want, devices, test.RequireToCheckFunc(require.Equal))
+			pbTest.CmpDeviceValues(t, tt.want, devices)
 		})
 	}
 }

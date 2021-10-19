@@ -11,10 +11,12 @@ func (c *FuncList) AddFunc(f func()) {
 }
 
 // Return a function that executions all added functions
+//
+// Functions are executed in reverse order they were added.
 func (c *FuncList) ToFunction() func() {
 	return func() {
-		for _, f := range c.f {
-			f()
+		for i := range c.f {
+			c.f[len(c.f)-1-i]()
 		}
 	}
 }

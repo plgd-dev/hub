@@ -6,11 +6,7 @@ import (
 	"crypto/tls"
 	"net/http"
 	"testing"
-
-	"github.com/stretchr/testify/require"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
-	"google.golang.org/protobuf/encoding/protojson"
+	"time"
 
 	"github.com/plgd-dev/device/schema/device"
 	"github.com/plgd-dev/device/schema/interfaces"
@@ -24,205 +20,162 @@ import (
 	"github.com/plgd-dev/hub/test"
 	"github.com/plgd-dev/hub/test/config"
 	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
-	"github.com/plgd-dev/kit/v2/codec/cbor"
+	pbTest "github.com/plgd-dev/hub/test/pb"
+	"github.com/plgd-dev/hub/test/service"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 )
 
-func getContentData(content *pb.Content, desiredContentType string) ([]byte, error) {
-	var data []byte
-	var err error
-	if desiredContentType == uri.ApplicationProtoJsonContentType {
-		data, err = protojson.Marshal(content)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		v, err := cbor.ToJSON(content.GetData())
-		if err != nil {
-			return nil, err
-		}
-		data = []byte(v)
-	}
-	return data, err
-}
-
-func updateResource(ctx context.Context, req *pb.UpdateResourceRequest, token, accept, contentType string) (*events.ResourceUpdated, error) {
-
-	data, err := getContentData(req.GetContent(), contentType)
-	if err != nil {
-		return nil, err
-	}
-
-	request := httpgwTest.NewRequest(http.MethodPut, uri.AliasDeviceResource, bytes.NewReader([]byte(data))).DeviceId(req.GetResourceId().GetDeviceId()).ResourceHref(req.GetResourceId().GetHref()).AuthToken(token).Accept(accept).ResourceInterface(req.GetResourceInterface()).ContentType(contentType).Build()
-	trans := http.DefaultTransport.(*http.Transport).Clone()
-	trans.TLSClientConfig = &tls.Config{
-		InsecureSkipVerify: true,
-	}
-	c := http.Client{
-		Transport: trans,
-	}
-	resp, err := c.Do(request)
-	if err != nil {
-		return nil, err
-	}
-	defer func() {
-		_ = resp.Body.Close()
-	}()
-
-	var got pb.UpdateResourceResponse
-	err = Unmarshal(resp.StatusCode, resp.Body, &got)
-	if err != nil {
-		return nil, err
-	}
-	return got.GetData(), nil
-}
-
-func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
+func TestRequestHandlerUpdateResourcesValues(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
+	switchID := "1"
 	type args struct {
-		req         *pb.UpdateResourceRequest
-		accept      string
-		contentType string
+		accept            string
+		contentType       string
+		deviceID          string
+		resourceHref      string
+		resourceInterface string
+		resourceData      interface{}
+		ttl               time.Duration
 	}
 	tests := []struct {
-		name    string
-		args    args
-		want    *events.ResourceUpdated
-		wantErr bool
+		name         string
+		args         args
+		want         *events.ResourceUpdated
+		wantErr      bool
+		wantHTTPCode int
 	}{
-
 		{
-			name: uri.ApplicationProtoJsonContentType,
+			name: "invalid href",
 			args: args{
-				req: &pb.UpdateResourceRequest{
-					ResourceId: commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
-					Content: &pb.Content{
-						ContentType: message.AppOcfCbor.String(),
-						Data: test.EncodeToCbor(t, map[string]interface{}{
-							"power": 1,
-						}),
-					},
-				},
-				accept:      uri.ApplicationProtoJsonContentType,
-				contentType: uri.ApplicationProtoJsonContentType,
+				accept:       uri.ApplicationProtoJsonContentType,
+				deviceID:     deviceID,
+				resourceHref: "/unknown",
 			},
-			want: &events.ResourceUpdated{
-				ResourceId: &commands.ResourceId{
-					DeviceId: deviceID,
-					Href:     test.TestResourceLightInstanceHref("1"),
-				},
-				Content: &commands.Content{
-					CoapContentFormat: -1,
-				},
-				Status: commands.Status_OK,
-			},
+			wantErr:      true,
+			wantHTTPCode: http.StatusNotFound,
 		},
 		{
-			name: message.AppJSON.String(),
+			name: "invalid timeToLive",
 			args: args{
-				req: &pb.UpdateResourceRequest{
-					ResourceId: commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
-					Content: &pb.Content{
-						ContentType: message.AppOcfCbor.String(),
-						Data: test.EncodeToCbor(t, map[string]interface{}{
-							"power": 102,
-						}),
-					},
-				},
-				accept:      uri.ApplicationProtoJsonContentType,
-				contentType: message.AppJSON.String(),
+				accept:       uri.ApplicationProtoJsonContentType,
+				deviceID:     deviceID,
+				resourceHref: test.TestResourceLightInstanceHref("1"),
+				ttl:          99 * time.Millisecond,
 			},
-			want: &events.ResourceUpdated{
-				ResourceId: &commands.ResourceId{
-					DeviceId: deviceID,
-					Href:     test.TestResourceLightInstanceHref("1"),
-				},
-				Content: &commands.Content{
-					CoapContentFormat: -1,
-				},
-				Status: commands.Status_OK,
+			wantErr:      true,
+			wantHTTPCode: http.StatusBadRequest,
+		},
+		{
+			name: "invalid update RO-resource",
+			args: args{
+				accept:       uri.ApplicationProtoJsonContentType,
+				deviceID:     deviceID,
+				resourceHref: device.ResourceURI,
 			},
+			wantErr:      true,
+			wantHTTPCode: http.StatusForbidden,
+		},
+		{
+			name: "invalid update collection /switches",
+			args: args{
+				accept:       uri.ApplicationProtoJsonContentType,
+				deviceID:     deviceID,
+				resourceHref: test.TestResourceSwitchesHref,
+			},
+			wantErr:      true,
+			wantHTTPCode: http.StatusForbidden,
+		},
+		{
+			name: "valid - " + uri.ApplicationProtoJsonContentType,
+			args: args{
+				accept:       uri.ApplicationProtoJsonContentType,
+				contentType:  uri.ApplicationProtoJsonContentType,
+				deviceID:     deviceID,
+				resourceHref: test.TestResourceLightInstanceHref("1"),
+				resourceData: map[string]interface{}{
+					"power": 1,
+				},
+			},
+			want:         pbTest.MakeResourceUpdated(deviceID, test.TestResourceLightInstanceHref("1")),
+			wantHTTPCode: http.StatusOK,
+		},
+		{
+			name: "valid - " + message.AppJSON.String(),
+			args: args{
+				accept:       uri.ApplicationProtoJsonContentType,
+				contentType:  message.AppJSON.String(),
+				deviceID:     deviceID,
+				resourceHref: test.TestResourceLightInstanceHref("1"),
+				resourceData: map[string]interface{}{
+					"power": 102,
+				},
+			},
+			want:         pbTest.MakeResourceUpdated(deviceID, test.TestResourceLightInstanceHref("1")),
+			wantHTTPCode: http.StatusOK,
 		},
 		{
 			name: "valid with interface",
 			args: args{
-				req: &pb.UpdateResourceRequest{
-					ResourceInterface: interfaces.OC_IF_BASELINE,
-					ResourceId:        commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
-					Content: &pb.Content{
-						ContentType: message.AppOcfCbor.String(),
-						Data: test.EncodeToCbor(t, map[string]interface{}{
-							"power": 2,
-						}),
-					},
+				accept:       uri.ApplicationProtoJsonContentType,
+				deviceID:     deviceID,
+				resourceHref: test.TestResourceLightInstanceHref("1"),
+				resourceData: map[string]interface{}{
+					"power": 2,
 				},
-				accept: uri.ApplicationProtoJsonContentType,
+				resourceInterface: interfaces.OC_IF_BASELINE,
 			},
-			want: &events.ResourceUpdated{
-				ResourceId: &commands.ResourceId{
-					DeviceId: deviceID,
-					Href:     test.TestResourceLightInstanceHref("1"),
-				},
-				Content: &commands.Content{
-					CoapContentFormat: -1,
-				},
-				Status: commands.Status_OK,
-			},
+			want:         pbTest.MakeResourceUpdated(deviceID, test.TestResourceLightInstanceHref("1")),
+			wantHTTPCode: http.StatusOK,
 		},
 		{
 			name: "revert update",
 			args: args{
-				req: &pb.UpdateResourceRequest{
-					ResourceInterface: interfaces.OC_IF_BASELINE,
-					ResourceId:        commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
-					Content: &pb.Content{
-						ContentType: message.AppOcfCbor.String(),
-						Data: test.EncodeToCbor(t, map[string]interface{}{
-							"power": 0,
-						}),
-					},
+				accept:       uri.ApplicationProtoJsonContentType,
+				deviceID:     deviceID,
+				resourceHref: test.TestResourceLightInstanceHref("1"),
+				resourceData: map[string]interface{}{
+					"power": 0,
 				},
-				accept: uri.ApplicationProtoJsonContentType,
+				resourceInterface: interfaces.OC_IF_BASELINE,
+			},
+			want:         pbTest.MakeResourceUpdated(deviceID, test.TestResourceLightInstanceHref("1")),
+			wantHTTPCode: http.StatusOK,
+		},
+		{
+			name: "update /switches/1",
+			args: args{
+				accept:       uri.ApplicationProtoJsonContentType,
+				deviceID:     deviceID,
+				resourceHref: test.TestResourceSwitchesInstanceHref(switchID),
+				resourceData: map[string]interface{}{
+					"value": true,
+				},
 			},
 			want: &events.ResourceUpdated{
-				ResourceId: commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
+				ResourceId: &commands.ResourceId{
+					DeviceId: deviceID,
+					Href:     test.TestResourceSwitchesInstanceHref(switchID),
+				},
 				Content: &commands.Content{
-					CoapContentFormat: -1,
+					CoapContentFormat: int32(message.AppOcfCbor),
+					ContentType:       message.AppOcfCbor.String(),
+					Data: test.EncodeToCbor(t, map[string]interface{}{
+						"value": true,
+					}),
 				},
 				Status: commands.Status_OK,
 			},
-		},
-		{
-			name: "update RO-resource",
-			args: args{
-				req: &pb.UpdateResourceRequest{
-					ResourceId: commands.NewResourceID(deviceID, device.ResourceURI),
-					Content: &pb.Content{
-						ContentType: message.AppOcfCbor.String(),
-						Data: test.EncodeToCbor(t, map[string]interface{}{
-							"di": "abc",
-						}),
-					},
-				},
-				accept: uri.ApplicationProtoJsonContentType,
-			},
-			wantErr: true,
-		},
-		{
-			name: "invalid Href",
-			args: args{
-				req: &pb.UpdateResourceRequest{
-					ResourceId: commands.NewResourceID(deviceID, "/unknown"),
-				},
-				accept: uri.ApplicationProtoJsonContentType,
-			},
-			wantErr: true,
+			wantHTTPCode: http.StatusOK,
 		},
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
 	defer cancel()
 
-	tearDown := test.SetUp(ctx, t)
+	tearDown := service.SetUp(ctx, t)
 	defer tearDown()
 
 	shutdownHttp := httpgwTest.SetUp(t)
@@ -240,17 +193,33 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 
+	test.AddDeviceSwitchResources(ctx, t, deviceID, c, switchID)
+	time.Sleep(200 * time.Millisecond)
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := updateResource(ctx, tt.args.req, token, tt.args.accept, tt.args.contentType)
+			data, err := httpgwTest.GetContentData(&pb.Content{
+				Data:        test.EncodeToCbor(t, tt.args.resourceData),
+				ContentType: message.AppOcfCbor.String(),
+			}, tt.args.contentType)
+			require.NoError(t, err)
+			rb := httpgwTest.NewRequest(http.MethodPut, uri.AliasDeviceResource, bytes.NewReader([]byte(data))).AuthToken(token).Accept(tt.args.accept)
+			rb.DeviceId(tt.args.deviceID).ResourceHref(tt.args.resourceHref).ResourceInterface(tt.args.resourceInterface).ContentType(tt.args.contentType)
+			rb.AddTimeToLive(tt.args.ttl)
+			resp := httpgwTest.HTTPDo(t, rb.Build())
+			defer func() {
+				_ = resp.Body.Close()
+			}()
+			assert.Equal(t, tt.wantHTTPCode, resp.StatusCode)
+
+			var got pb.UpdateResourceResponse
+			err = Unmarshal(resp.StatusCode, resp.Body, &got)
 			if tt.wantErr {
 				require.Error(t, err)
 				return
 			}
 			require.NoError(t, err)
-			got.AuditContext = nil
-			got.EventMetadata = nil
-			test.CheckProtobufs(t, tt.want, &got, test.RequireToCheckFunc(require.Equal))
+			pbTest.CmpResourceUpdated(t, tt.want, got.GetData())
 		})
 	}
 }

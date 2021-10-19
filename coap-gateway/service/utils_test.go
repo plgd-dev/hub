@@ -29,9 +29,9 @@ import (
 	"github.com/plgd-dev/hub/resource-aggregate/commands"
 	raTest "github.com/plgd-dev/hub/resource-aggregate/test"
 	rdTest "github.com/plgd-dev/hub/resource-directory/test"
-	test "github.com/plgd-dev/hub/test"
 	"github.com/plgd-dev/hub/test/config"
 	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
+	testService "github.com/plgd-dev/hub/test/service"
 	"github.com/plgd-dev/kit/v2/codec/cbor"
 	"github.com/plgd-dev/kit/v2/codec/json"
 	"github.com/plgd-dev/kit/v2/security"
@@ -339,7 +339,7 @@ func testCoapDial(t *testing.T, host, deviceID string, withoutTLS ...bool) *tcp.
 func setUp(t *testing.T, coapgwCfgs ...service.Config) func() {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
-	test.ClearDB(ctx, t)
+	testService.ClearDB(ctx, t)
 	oauthShutdown := oauthTest.SetUp(t)
 	auShutdown := idTest.SetUp(t)
 	raShutdown := raTest.SetUp(t)

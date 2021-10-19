@@ -23,6 +23,8 @@ import (
 	"github.com/plgd-dev/hub/test"
 	"github.com/plgd-dev/hub/test/config"
 	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
+	pbTest "github.com/plgd-dev/hub/test/pb"
+	"github.com/plgd-dev/hub/test/service"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -68,7 +70,7 @@ func getCloudDeviceResourceChanged(t *testing.T, deviceID string) *events.Resour
 	)
 }
 
-func TestRequestHandler_GetDeviceResources(t *testing.T) {
+func TestRequestHandlerGetDeviceResources(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	type args struct {
 		deviceID   string
@@ -164,7 +166,7 @@ func TestRequestHandler_GetDeviceResources(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
 	defer cancel()
 
-	tearDown := test.SetUp(ctx, t)
+	tearDown := service.SetUp(ctx, t)
 	defer tearDown()
 
 	shutdownHttp := httpgwTest.SetUp(t)
@@ -184,16 +186,9 @@ func TestRequestHandler_GetDeviceResources(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			request := httpgwTest.NewRequest(http.MethodGet, uri.AliasDeviceResources, nil).DeviceId(tt.args.deviceID).Accept(tt.args.accept).AddTypeFilter(tt.args.typeFilter).AuthToken(token).Build()
-			trans := http.DefaultTransport.(*http.Transport).Clone()
-			trans.TLSClientConfig = &tls.Config{
-				InsecureSkipVerify: true,
-			}
-			c := http.Client{
-				Transport: trans,
-			}
-			resp, err := c.Do(request)
-			require.NoError(t, err)
+			rb := httpgwTest.NewRequest(http.MethodGet, uri.AliasDeviceResources, nil).Accept(tt.args.accept).AuthToken(token)
+			rb.DeviceId(tt.args.deviceID).AddTypeFilter(tt.args.typeFilter)
+			resp := httpgwTest.HTTPDo(t, rb.Build())
 			defer func() {
 				_ = resp.Body.Close()
 			}()
@@ -210,11 +205,9 @@ func TestRequestHandler_GetDeviceResources(t *testing.T) {
 					return
 				}
 				require.NoError(t, err)
-				value.Data.AuditContext = nil
-				value.Data.EventMetadata = nil
 				values = append(values, &value)
 			}
-			cmpResourceValues(t, tt.want, values)
+			pbTest.CmpResourceValues(t, tt.want, values)
 		})
 	}
 }

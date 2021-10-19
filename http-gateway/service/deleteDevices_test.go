@@ -13,17 +13,19 @@ import (
 	"github.com/plgd-dev/hub/test"
 	"github.com/plgd-dev/hub/test/config"
 	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
+	"github.com/plgd-dev/hub/test/service"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )
 
-func TestRequestHandler_deleteDevices(t *testing.T) {
+func TestRequestHandlerDeleteDevices(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
 	defer cancel()
 
-	tearDown := test.SetUp(ctx, t)
+	tearDown := service.SetUp(ctx, t)
 	defer tearDown()
 
 	shutdownHttp := httpgwTest.SetUp(t)
@@ -45,10 +47,10 @@ func TestRequestHandler_deleteDevices(t *testing.T) {
 		deviceID string
 	}
 	tests := []struct {
-		name    string
-		args    args
-		wantErr bool
-		want    *pb.DeleteDevicesResponse
+		name         string
+		args         args
+		want         *pb.DeleteDevicesResponse
+		wantHTTPCode int
 	}{
 		{
 			name: "not found",
@@ -58,6 +60,7 @@ func TestRequestHandler_deleteDevices(t *testing.T) {
 			want: &pb.DeleteDevicesResponse{
 				DeviceIds: nil,
 			},
+			wantHTTPCode: http.StatusOK,
 		},
 		{
 			name: "all owned",
@@ -67,6 +70,7 @@ func TestRequestHandler_deleteDevices(t *testing.T) {
 			want: &pb.DeleteDevicesResponse{
 				DeviceIds: []string{deviceID},
 			},
+			wantHTTPCode: http.StatusOK,
 		},
 	}
 
@@ -76,31 +80,16 @@ func TestRequestHandler_deleteDevices(t *testing.T) {
 			if len(tt.args.deviceID) != 0 {
 				url = uri.AliasDevice + "/"
 			}
-			request_builder := httpgwTest.NewRequest(http.MethodDelete, url, nil).AuthToken(token)
-			request_builder.DeviceId(tt.args.deviceID)
-			request := request_builder.Build()
-			trans := http.DefaultTransport.(*http.Transport).Clone()
-			trans.TLSClientConfig = &tls.Config{
-				InsecureSkipVerify: true,
-			}
-			c := http.Client{
-				Transport: trans,
-			}
-			resp, err := c.Do(request)
-			require.NoError(t, err)
+			req := httpgwTest.NewRequest(http.MethodDelete, url, nil).AuthToken(token).DeviceId(tt.args.deviceID).Build()
+			resp := httpgwTest.HTTPDo(t, req)
 			defer func() {
 				_ = resp.Body.Close()
 			}()
+			assert.Equal(t, tt.wantHTTPCode, resp.StatusCode)
 
 			var got pb.DeleteDevicesResponse
 			err = Unmarshal(resp.StatusCode, resp.Body, &got)
-			if tt.wantErr {
-				require.Error(t, err)
-				return
-			} else {
-				require.NoError(t, err)
-			}
-
+			require.NoError(t, err)
 			require.Equal(t, tt.want.DeviceIds, got.DeviceIds)
 		})
 	}

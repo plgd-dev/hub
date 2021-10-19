@@ -27,6 +27,8 @@ import (
 	"github.com/plgd-dev/hub/test/config"
 	"github.com/plgd-dev/hub/test/oauth-server/service"
 	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
+	pbTest "github.com/plgd-dev/hub/test/pb"
+	testService "github.com/plgd-dev/hub/test/service"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -35,22 +37,19 @@ import (
 func TestRequestHandler_GetPendingMetadataUpdates(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	type args struct {
-		req    *pb.GetPendingCommandsRequest
-		accept string
+		accept         string
+		deviceIdFilter string
 	}
 	tests := []struct {
-		name    string
-		args    args
-		wantErr bool
-		want    []*pb.PendingCommand
+		name string
+		args args
+		want []*pb.PendingCommand
 	}{
 		{
 			name: "get pending metadata updates",
 			args: args{
-				req: &pb.GetPendingCommandsRequest{
-					DeviceIdFilter: []string{deviceID},
-				},
-				accept: uri.ApplicationProtoJsonContentType,
+				accept:         uri.ApplicationProtoJsonContentType,
+				deviceIdFilter: deviceID,
 			},
 			want: []*pb.PendingCommand{
 				{
@@ -71,7 +70,7 @@ func TestRequestHandler_GetPendingMetadataUpdates(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
 	defer cancel()
 
-	test.ClearDB(ctx, t)
+	testService.ClearDB(ctx, t)
 	oauthShutdown := oauthTest.SetUp(t)
 	idShutdown := idService.SetUp(t)
 	raShutdown := raService.SetUp(t)
@@ -165,16 +164,9 @@ func TestRequestHandler_GetPendingMetadataUpdates(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			request := httpgwTest.NewRequest(http.MethodGet, uri.AliasDevicePendingMetadataUpdates, nil).AuthToken(token).Accept(tt.args.accept).DeviceId(tt.args.req.GetDeviceIdFilter()[0]).Build()
-			trans := http.DefaultTransport.(*http.Transport).Clone()
-			trans.TLSClientConfig = &tls.Config{
-				InsecureSkipVerify: true,
-			}
-			c := http.Client{
-				Transport: trans,
-			}
-			resp, err := c.Do(request)
-			require.NoError(t, err)
+			rb := httpgwTest.NewRequest(http.MethodGet, uri.AliasDevicePendingMetadataUpdates, nil).AuthToken(token).Accept(tt.args.accept)
+			rb.DeviceId(tt.args.deviceIdFilter)
+			resp := httpgwTest.HTTPDo(t, rb.Build())
 			defer func() {
 				_ = resp.Body.Close()
 			}()
@@ -190,7 +182,7 @@ func TestRequestHandler_GetPendingMetadataUpdates(t *testing.T) {
 				require.NoError(t, err)
 				values = append(values, &v)
 			}
-			test.CmpPendingCmds(t, tt.want, values)
+			pbTest.CmpPendingCmds(t, tt.want, values)
 		})
 	}
 }
