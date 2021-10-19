@@ -1165,7 +1165,7 @@ grpcgateway:
     annotations: {}
     # -- Default ingress paths
     paths:
-      - /ocf.cloud.grpcgateway.pb.GrpcGateway
+      - /grpcgateway.pb.GrpcGateway
   # -- Service yaml configuration section
   config:
     # -- Service configuration file name
@@ -1200,7 +1200,7 @@ grpcgateway:
         caPool:
         keyFile:
         certFile:
-        clientCertificateRequired: true
+        clientCertificateRequired: false
       authorization:
         authority: ""
         audience: ""
@@ -1496,7 +1496,14 @@ mockoauthserver:
     annotations: {}
     # -- Ingress path
     paths:
-      - /
+      - /authorize
+      - /oauth/token
+      - /.well-known
+      - /jwks.json
+      - /.well-known/openid-configuration
+      - /v2/logout
+      - /authorize/userinfo
+    allowHeaders: "Authortity,Method,Path,Scheme,Accept,Accept-Encoding,Accept-Language,Content-Type,auth0-client,Origin,Refer,Sec-Fetch-Dest,Sec-Fetch-Mode,Sec-Fetch-Site,Authorization,DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range"
   # -- mock-oauth-server service yaml config section
   config:
     # -- Name of configuration file

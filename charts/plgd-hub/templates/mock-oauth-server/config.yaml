@@ -20,7 +20,7 @@ stringData:
     oauthSigner:
       idTokenKeyFile: {{ .oauthSigner.idTokenKeyFile | quote }}
       accessTokenKeyFile: {{ .oauthSigner.accessTokenKeyFile | quote }}
-      domain: {{ .oauthSigner.domain | default $.Values.global.domain | quote }}
+      domain: {{ include "plgd-hub.mockoauthserver.ingressDomain" $ }}
       clients:
         - id: {{ .oauthSigner.clients.id | quote }}
           authorizationCodeLifetime:  {{ .oauthSigner.clients.authorizationCodeLifetime | quote }}

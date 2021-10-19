@@ -29,7 +29,7 @@ stringData:
         tls:
           {{- $tls := .apis.grpc.tls }}
           {{- include "plgd-hub.certificateConfig" (list $ $tls $grpcCert) | indent 8 }}
-          clientCertificateRequired: true
+          clientCertificateRequired: {{ .apis.grpc.tls.clientCertificateRequired }}
         authorization:
           {{- $authorization := .apis.grpc.authorization }}
           {{- include "plgd-hub.authorizationConfig" (list $ $authorization "grpcgateway" ) | indent 8 }}

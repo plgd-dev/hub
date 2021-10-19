@@ -47,7 +47,7 @@
   {{- if .Values.mockoauthserver.domain }}
     {{- printf "https://%s" .Values.mockoauthserver.domain }}
   {{- else }}
-    {{- printf "https://auth.%s" .Values.global.domain }}
+    {{- printf "https://%s" .Values.global.domain }}
   {{- end }}
 {{- end }}
 
@@ -56,12 +56,12 @@
   {{- if .Values.mockoauthserver.domain }}
     {{- printf "%s" .Values.mockoauthserver.domain }}
   {{- else }}
-    {{- printf "auth.%s" .Values.global.domain }}
+    {{- printf "%s" .Values.global.domain }}
   {{- end }}
 {{- end }}
 
 {{- define "plgd-hub.mockoauthserver.selectorLabels" -}}
-app.kubernetes.io/name: {{ .Values.httpgateway.name }}
+app.kubernetes.io/name: {{ .Values.mockoauthserver.name }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
