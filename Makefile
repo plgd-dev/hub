@@ -82,11 +82,13 @@ env: clean certificates nats mongo privateKeys
 	if [ "${TRAVIS_OS_NAME}" == "linux" ]; then \
 		sudo sh -c 'echo 0 > /proc/sys/net/ipv6/conf/all/disable_ipv6'; \
 	fi
+	mkdir -p $(WORKING_DIRECTORY)/.tmp/devsim
 	docker run \
 		-d \
 		--privileged \
 		--name=devsim \
 		--network=host \
+		-v $(WORKING_DIRECTORY)/.tmp/devsim:/tmp \
 		ghcr.io/iotivity/iotivity-lite/cloud-server-debug:latest \
 		devsim-$(SIMULATOR_NAME_SUFFIX)
 
@@ -158,6 +160,7 @@ clean:
 	docker rm -f nats || true
 	docker rm -f nats-cloud-connector || true
 	docker rm -f devsim || true
+	sudo rm -rf ./.tmp/devsim
 	sudo rm -rf ./.tmp/certs || true
 	sudo rm -rf ./.tmp/mongo || true
 	sudo rm -rf ./.tmp/home || true

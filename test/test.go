@@ -22,6 +22,7 @@ import (
 	"github.com/plgd-dev/hub/grpc-gateway/client"
 	"github.com/plgd-dev/hub/grpc-gateway/pb"
 	"github.com/plgd-dev/hub/resource-aggregate/commands"
+	"github.com/plgd-dev/hub/resource-aggregate/events"
 	"github.com/plgd-dev/hub/test/config"
 	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
 	"github.com/plgd-dev/kit/v2/codec/json"
@@ -225,22 +226,52 @@ func setAccessForCloud(ctx context.Context, t *testing.T, c *deviceClient.Client
 func OnboardDevSimForClient(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, clientId, deviceID, gwHost string, expectedResources []schema.ResourceLink) (string, func()) {
 	cloudSID := config.HubID()
 	require.NotEmpty(t, cloudSID)
-	client, err := NewSDKClient()
+	devClient, err := NewSDKClient()
 	require.NoError(t, err)
 	defer func() {
-		_ = client.Close(ctx)
+		_ = devClient.Close(ctx)
 	}()
-	deviceID, err = client.OwnDevice(ctx, deviceID, deviceClient.WithOTM(deviceClient.OTMType_JustWorks))
+	deviceID, err = devClient.OwnDevice(ctx, deviceID, deviceClient.WithOTM(deviceClient.OTMType_JustWorks))
 	require.NoError(t, err)
 
-	setAccessForCloud(ctx, t, client, deviceID)
+	setAccessForCloud(ctx, t, devClient, deviceID)
 
 	code := oauthTest.GetDeviceAuthorizationCode(t, config.OAUTH_SERVER_HOST, clientId, deviceID)
-	err = client.OnboardDevice(ctx, deviceID, config.DEVICE_PROVIDER, "coaps+tcp://"+gwHost, code, cloudSID)
-	require.NoError(t, err)
 
+	onboard := func() {
+		err = devClient.OnboardDevice(ctx, deviceID, config.DEVICE_PROVIDER, "coaps+tcp://"+gwHost, code, cloudSID)
+		require.NoError(t, err)
+	}
 	if len(expectedResources) > 0 {
-		waitForDevice(ctx, t, c, deviceID, expectedResources)
+		subClient, err := client.New(c).GrpcGatewayClient().SubscribeToEvents(ctx)
+		require.NoError(t, err)
+		err = subClient.Send(&pb.SubscribeToEvents{
+			CorrelationId: "allEvents",
+			Action: &pb.SubscribeToEvents_CreateSubscription_{
+				CreateSubscription: &pb.SubscribeToEvents_CreateSubscription{},
+			},
+		})
+		require.NoError(t, err)
+		ev, err := subClient.Recv()
+		require.NoError(t, err)
+		expectedEvent := &pb.Event{
+			SubscriptionId: ev.SubscriptionId,
+			CorrelationId:  "allEvents",
+			Type: &pb.Event_OperationProcessed_{
+				OperationProcessed: &pb.Event_OperationProcessed{
+					ErrorStatus: &pb.Event_OperationProcessed_ErrorStatus{
+						Code: pb.Event_OperationProcessed_ErrorStatus_OK,
+					},
+				},
+			},
+		}
+		CheckProtobufs(t, expectedEvent, ev, RequireToCheckFunc(require.Equal))
+		onboard()
+		waitForDevice(ctx, t, subClient, deviceID, ev.GetSubscriptionId(), ev.GetCorrelationId(), expectedResources)
+		err = subClient.CloseSend()
+		require.NoError(t, err)
+	} else {
+		onboard()
 	}
 
 	return deviceID, func() {
@@ -258,209 +289,109 @@ func OnboardDevSim(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 	return OnboardDevSimForClient(ctx, t, c, config.OAUTH_MANAGER_CLIENT_ID, deviceID, gwHost, expectedResources)
 }
 
-func waitForDevice(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, deviceID string, expectedResources []schema.ResourceLink) {
-	client, err := client.New(c).SubscribeToEventsWithCurrentState(ctx, time.Second)
-	require.NoError(t, err)
-
-	err = client.Send(&pb.SubscribeToEvents{
-		CorrelationId: "testToken0",
-		Action: &pb.SubscribeToEvents_CreateSubscription_{
-			CreateSubscription: &pb.SubscribeToEvents_CreateSubscription{
-				EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
-					pb.SubscribeToEvents_CreateSubscription_DEVICE_METADATA_UPDATED,
-				},
-			},
-		},
-	})
-	require.NoError(t, err)
-	ev, err := client.Recv()
-	require.NoError(t, err)
-	expectedEvent := &pb.Event{
-		SubscriptionId: ev.SubscriptionId,
-		CorrelationId:  "testToken0",
-		Type: &pb.Event_OperationProcessed_{
-			OperationProcessed: &pb.Event_OperationProcessed{
-				ErrorStatus: &pb.Event_OperationProcessed_ErrorStatus{
-					Code: pb.Event_OperationProcessed_ErrorStatus_OK,
-				},
-			},
-		},
-	}
-	CheckProtobufs(t, expectedEvent, ev, RequireToCheckFunc(require.Equal))
-
-	for {
-		ev, err = client.Recv()
-		require.NoError(t, err)
-		var endLoop bool
-
-		if ev.GetDeviceMetadataUpdated().GetDeviceId() == deviceID && ev.GetDeviceMetadataUpdated().GetStatus().IsOnline() {
-			endLoop = true
+func waitForDevice(ctx context.Context, t *testing.T, client pb.GrpcGateway_SubscribeToEventsClient, deviceID, subID, correlationID string, expectedResources []schema.ResourceLink) {
+	getID := func(ev *pb.Event) string {
+		switch v := ev.GetType().(type) {
+		case *pb.Event_DeviceRegistered_:
+			return fmt.Sprintf("%T", ev.GetType())
+		case *pb.Event_DeviceMetadataUpdated:
+			return fmt.Sprintf("%T", ev.GetType())
+		case *pb.Event_ResourcePublished:
+			return fmt.Sprintf("%T", ev.GetType())
+		case *pb.Event_ResourceChanged:
+			return fmt.Sprintf("%T:%v", ev.GetType(), v.ResourceChanged.GetResourceId().ToString())
 		}
-		if endLoop {
-			break
+		return ""
+	}
+
+	cleanUpEvent := func(ev *pb.Event) {
+		switch val := ev.GetType().(type) {
+		case *pb.Event_DeviceMetadataUpdated:
+			require.NotEmpty(t, val.DeviceMetadataUpdated.GetAuditContext().GetUserId())
+			val.DeviceMetadataUpdated.AuditContext = nil
+			require.NotZero(t, val.DeviceMetadataUpdated.GetEventMetadata().GetTimestamp())
+			val.DeviceMetadataUpdated.EventMetadata = nil
+		case *pb.Event_ResourcePublished:
+			require.NotEmpty(t, val.ResourcePublished.GetAuditContext().GetUserId())
+			val.ResourcePublished.AuditContext = nil
+			require.NotZero(t, val.ResourcePublished.GetEventMetadata().GetTimestamp())
+			val.ResourcePublished.EventMetadata = nil
+			val.ResourcePublished.Resources = CleanUpResourcesArray(val.ResourcePublished.GetResources())
+		case *pb.Event_ResourceChanged:
+			require.NotEmpty(t, val.ResourceChanged.GetAuditContext().GetUserId())
+			val.ResourceChanged.AuditContext = nil
+			require.NotZero(t, val.ResourceChanged.GetEventMetadata().GetTimestamp())
+			val.ResourceChanged.EventMetadata = nil
+			require.NotEmpty(t, val.ResourceChanged.GetContent().GetData())
+			val.ResourceChanged.Content = nil
 		}
 	}
 
-	err = client.Send(&pb.SubscribeToEvents{
-		CorrelationId: "testToken1",
-		Action: &pb.SubscribeToEvents_CreateSubscription_{
-			CreateSubscription: &pb.SubscribeToEvents_CreateSubscription{
-				DeviceIdFilter: []string{deviceID},
-				EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
-					pb.SubscribeToEvents_CreateSubscription_RESOURCE_PUBLISHED,
+	expectedEvents := map[string]*pb.Event{
+		getID(&pb.Event{Type: &pb.Event_DeviceRegistered_{}}): {
+			SubscriptionId: subID,
+			CorrelationId:  correlationID,
+			Type: &pb.Event_DeviceRegistered_{
+				DeviceRegistered: &pb.Event_DeviceRegistered{
+					DeviceIds: []string{deviceID},
 				},
 			},
 		},
-	})
-	require.NoError(t, err)
-	ev, err = client.Recv()
-	require.NoError(t, err)
-	expectedEvent = &pb.Event{
-		CorrelationId: "testToken1",
-		Type: &pb.Event_OperationProcessed_{
-			OperationProcessed: &pb.Event_OperationProcessed{
-				ErrorStatus: &pb.Event_OperationProcessed_ErrorStatus{
-					Code: pb.Event_OperationProcessed_ErrorStatus_OK,
-				},
-			},
-		},
-	}
-	expectedEvent.SubscriptionId = ev.SubscriptionId
-	CheckProtobufs(t, expectedEvent, ev, RequireToCheckFunc(require.Equal))
-	subOnPublishedID := ev.SubscriptionId
-
-	expectedLinks := make(map[string]*commands.Resource)
-	for _, link := range ResourceLinksToResources(deviceID, expectedResources) {
-		expectedLinks[link.GetHref()] = link
-	}
-
-	for {
-		ev, err = client.Recv()
-		require.NoError(t, err)
-		ev.SubscriptionId = ""
-
-		for _, l := range ev.GetResourcePublished().GetResources() {
-			expLink := expectedLinks[l.GetHref()]
-			l.ValidUntil = 0
-			CheckProtobufs(t, expLink, l, RequireToCheckFunc(require.Equal))
-			delete(expectedLinks, l.GetHref())
-		}
-		if len(expectedLinks) == 0 {
-			break
-		}
-	}
-
-	err = client.Send(&pb.SubscribeToEvents{
-		CorrelationId: "testToken3",
-		Action: &pb.SubscribeToEvents_CancelSubscription_{
-			CancelSubscription: &pb.SubscribeToEvents_CancelSubscription{
-				SubscriptionId: subOnPublishedID,
-			},
-		},
-	})
-	require.NoError(t, err)
-
-	ev, err = client.Recv()
-	require.NoError(t, err)
-	expectedEvent = &pb.Event{
-		SubscriptionId: ev.SubscriptionId,
-		CorrelationId:  "testToken3",
-		Type: &pb.Event_SubscriptionCanceled_{
-			SubscriptionCanceled: &pb.Event_SubscriptionCanceled{},
-		},
-	}
-	CheckProtobufs(t, expectedEvent, ev, RequireToCheckFunc(require.Equal))
-
-	ev, err = client.Recv()
-	require.NoError(t, err)
-	expectedEvent = &pb.Event{
-		SubscriptionId: ev.SubscriptionId,
-		CorrelationId:  "testToken3",
-		Type: &pb.Event_OperationProcessed_{
-			OperationProcessed: &pb.Event_OperationProcessed{
-				ErrorStatus: &pb.Event_OperationProcessed_ErrorStatus{
-					Code: pb.Event_OperationProcessed_ErrorStatus_OK,
-				},
-			},
-		},
-	}
-	CheckProtobufs(t, expectedEvent, ev, RequireToCheckFunc(require.Equal))
-
-	expectedEvents := ResourceLinksToExpectedResourceChangedEvents(deviceID, expectedResources)
-	for _, e := range expectedEvents {
-		err = client.Send(&pb.SubscribeToEvents{
-			CorrelationId: "testToken3",
-			Action: &pb.SubscribeToEvents_CreateSubscription_{
-				CreateSubscription: &pb.SubscribeToEvents_CreateSubscription{
-					ResourceIdFilter: []string{
-						e.GetResourceChanged().GetResourceId().ToString(),
-					},
-					EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
-						pb.SubscribeToEvents_CreateSubscription_RESOURCE_CHANGED,
+		getID(&pb.Event{Type: &pb.Event_DeviceMetadataUpdated{}}): {
+			SubscriptionId: subID,
+			CorrelationId:  correlationID,
+			Type: &pb.Event_DeviceMetadataUpdated{
+				DeviceMetadataUpdated: &events.DeviceMetadataUpdated{
+					DeviceId: deviceID,
+					Status: &commands.ConnectionStatus{
+						Value: commands.ConnectionStatus_ONLINE,
 					},
 				},
 			},
-		})
-		require.NoError(t, err)
+		},
+		getID(&pb.Event{Type: &pb.Event_ResourcePublished{}}): {
+			SubscriptionId: subID,
+			CorrelationId:  correlationID,
+			Type: &pb.Event_ResourcePublished{
+				ResourcePublished: &events.ResourceLinksPublished{
+					DeviceId:  deviceID,
+					Resources: ResourceLinksToResources(deviceID, expectedResources),
+				},
+			},
+		},
+	}
+	for _, r := range expectedResources {
+		expectedEvents[getID(&pb.Event{Type: &pb.Event_ResourceChanged{
+			ResourceChanged: &events.ResourceChanged{
+				ResourceId: commands.NewResourceID(deviceID, r.Href),
+			},
+		}})] = &pb.Event{
+			SubscriptionId: subID,
+			CorrelationId:  correlationID,
+			Type: &pb.Event_ResourceChanged{
+				ResourceChanged: &events.ResourceChanged{
+					ResourceId: commands.NewResourceID(deviceID, r.Href),
+					Status:     commands.Status_OK,
+				},
+			},
+		}
+	}
+
+	for {
 		ev, err := client.Recv()
 		require.NoError(t, err)
-		expectedEvent := &pb.Event{
-			SubscriptionId: ev.SubscriptionId,
-			CorrelationId:  "testToken3",
-			Type: &pb.Event_OperationProcessed_{
-				OperationProcessed: &pb.Event_OperationProcessed{
-					ErrorStatus: &pb.Event_OperationProcessed_ErrorStatus{
-						Code: pb.Event_OperationProcessed_ErrorStatus_OK,
-					},
-				},
-			},
+
+		expectedEvent, ok := expectedEvents[getID(ev)]
+		if !ok {
+			require.NoError(t, fmt.Errorf("unexpected event %+v", ev))
 		}
+		cleanUpEvent(ev)
 		CheckProtobufs(t, expectedEvent, ev, RequireToCheckFunc(require.Equal))
-
-		ev, err = client.Recv()
-		require.NoError(t, err)
-		require.Equal(t, e.GetResourceChanged().GetResourceId(), ev.GetResourceChanged().GetResourceId())
-		require.Equal(t, e.GetResourceChanged().GetStatus(), ev.GetResourceChanged().GetStatus())
-
-		err = client.Send(&pb.SubscribeToEvents{
-			CorrelationId: "testToken4",
-			Action: &pb.SubscribeToEvents_CancelSubscription_{
-				CancelSubscription: &pb.SubscribeToEvents_CancelSubscription{
-					SubscriptionId: ev.GetSubscriptionId(),
-				},
-			},
-		})
-		require.NoError(t, err)
-
-		ev, err = client.Recv()
-		require.NoError(t, err)
-		expectedEvent = &pb.Event{
-			SubscriptionId: ev.SubscriptionId,
-			CorrelationId:  "testToken4",
-			Type: &pb.Event_SubscriptionCanceled_{
-				SubscriptionCanceled: &pb.Event_SubscriptionCanceled{},
-			},
+		delete(expectedEvents, getID(ev))
+		if len(expectedEvents) == 0 {
+			return
 		}
-		CheckProtobufs(t, expectedEvent, ev, RequireToCheckFunc(require.Equal))
-
-		ev, err = client.Recv()
-		require.NoError(t, err)
-		expectedEvent = &pb.Event{
-			SubscriptionId: ev.SubscriptionId,
-			CorrelationId:  "testToken4",
-			Type: &pb.Event_OperationProcessed_{
-				OperationProcessed: &pb.Event_OperationProcessed{
-					ErrorStatus: &pb.Event_OperationProcessed_ErrorStatus{
-						Code: pb.Event_OperationProcessed_ErrorStatus_OK,
-					},
-				},
-			},
-		}
-		CheckProtobufs(t, expectedEvent, ev, RequireToCheckFunc(require.Equal))
 	}
-
-	err = client.CloseSend()
-	require.NoError(t, err)
 }
 
 func MustGetHostname() string {
