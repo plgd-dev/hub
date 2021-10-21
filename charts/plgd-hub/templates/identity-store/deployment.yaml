@@ -94,8 +94,8 @@ spec:
             secretName: {{ include "plgd-hub.identitystore.serviceCertName" . }}
         {{- end }}
         - name: {{ .Values.identitystore.config.volume }}
-          secret:
-            secretName: {{ include "plgd-hub.identitystore.configSecretName" . }}
+          configMap:
+            name: {{ include "plgd-hub.identitystore.configName" . }}
         {{- with .Values.identitystore.extraVolumeMounts }}
         {{- toYaml . | nindent 8 }}
         {{- end }}

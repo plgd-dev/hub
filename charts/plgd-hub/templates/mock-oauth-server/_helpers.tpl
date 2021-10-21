@@ -18,7 +18,7 @@
     {{- printf "%s%s:%s" $registryName $repositoryName  $tag -}}
 {{- end -}}
 
-{{- define  "plgd-hub.mockoauthserver.configSecretName" -}}
+{{- define  "plgd-hub.mockoauthserver.configName" -}}
     {{- $fullName :=  include "plgd-hub.mockoauthserver.fullname" . -}}
     {{- printf "%s-cfg" $fullName }}
 {{- end -}}

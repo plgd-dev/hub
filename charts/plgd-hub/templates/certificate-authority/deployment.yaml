@@ -94,8 +94,8 @@ spec:
             {{- end }}
       volumes:
         - name: {{ .Values.resourcedirectory.config.volume }}
-          secret:
-            secretName: {{ include "plgd-hub.certificateauthority.configSecretName" . }}
+          configMap:
+            name: {{ include "plgd-hub.certificateauthority.configName" . }}
         {{- if ( include "plgd-hub.certificateauthority.createServiceCertByCm" . ) }}
         - name: service-crt
           secret:

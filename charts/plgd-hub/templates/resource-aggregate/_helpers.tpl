@@ -5,7 +5,7 @@
     {{- printf "%s%s:%s" $registryName $repositoryName  $tag -}}
 {{- end -}}
 
-{{- define  "plgd-hub.resourceaggregate.configSecretName" -}}
+{{- define  "plgd-hub.resourceaggregate.configName" -}}
     {{- $fullName :=  include "plgd-hub.resourceaggregate.fullname" . -}}
     {{- printf "%s-cfg" $fullName }}
 {{- end -}}

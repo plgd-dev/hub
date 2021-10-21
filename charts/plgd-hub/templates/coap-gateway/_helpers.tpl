@@ -18,7 +18,7 @@
     {{- printf "%s%s:%s" $registryName $repositoryName  $tag -}}
 {{- end -}}
 
-{{- define  "plgd-hub.coapgateway.configSecretName" -}}
+{{- define  "plgd-hub.coapgateway.configName" -}}
     {{- $fullName :=  include "plgd-hub.coapgateway.fullname" . -}}
     {{- printf "%s-cfg" $fullName }}
 {{- end -}}

@@ -1,11 +1,11 @@
 {{- if .Values.grpcgateway.enabled }}
 {{- $grpcCert := "/certs" }}
 apiVersion: v1
-kind: Secret
+kind: ConfigMap
 metadata:
-  name: {{ include "plgd-hub.grpcgateway.configSecretName" . }}
+  name: {{ include "plgd-hub.grpcgateway.configName" . }}
   namespace: {{ .Release.Namespace }}
-stringData:
+data:
   {{ .Values.grpcgateway.config.fileName }}: |
     {{- with .Values.grpcgateway }}
     log:

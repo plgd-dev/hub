@@ -1,11 +1,11 @@
 {{- if .Values.mockoauthserver.enabled }}
 {{- $httpCert := "/certs" }}
 apiVersion: v1
-kind: Secret
+kind: ConfigMap
 metadata:
-  name: {{ include "plgd-hub.mockoauthserver.configSecretName" . }}
+  name: {{ include "plgd-hub.mockoauthserver.configName" . }}
   namespace: {{ .Release.Namespace }}
-stringData:
+data:
   {{ .Values.mockoauthserver.config.fileName }}: |
     {{- with .Values.mockoauthserver }}
     log:

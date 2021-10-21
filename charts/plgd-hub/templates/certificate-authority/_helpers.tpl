@@ -18,7 +18,7 @@
     {{- printf "%s%s:%s" $registryName $repositoryName  $tag -}}
 {{- end -}}
 
-{{- define  "plgd-hub.certificateauthority.configSecretName" -}}
+{{- define  "plgd-hub.certificateauthority.configName" -}}
     {{- $fullName :=  include "plgd-hub.certificateauthority.fullname" . -}}
     {{- printf "%s-cfg" $fullName }}
 {{- end -}}

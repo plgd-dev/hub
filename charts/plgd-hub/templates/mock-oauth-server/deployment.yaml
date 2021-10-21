@@ -105,8 +105,8 @@ spec:
         - name: keys
           emptyDir: {}
         - name: {{ .Values.mockoauthserver.config.volume }}
-          secret:
-            secretName: {{ include "plgd-hub.mockoauthserver.configSecretName" . }}
+          configMap:
+            name: {{ include "plgd-hub.mockoauthserver.configName" . }}
         {{- if ( include "plgd-hub.mockoauthserver.createServiceCertByCm" . ) }}
         - name: service-crt
           secret:
