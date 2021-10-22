@@ -58,18 +58,3 @@ func CleanUpResourcesArray(resources []*commands.Resource) []*commands.Resource 
 	SortResources(resources)
 	return resources
 }
-
-func CleanUpResourceLinksSnapshotTaken(e *events.ResourceLinksSnapshotTaken) *events.ResourceLinksSnapshotTaken {
-	e.EventMetadata = nil
-	for _, r := range e.GetResources() {
-		r.ValidUntil = 0
-	}
-	return e
-}
-
-func CleanUpResourceLinksPublished(e *events.ResourceLinksPublished) *events.ResourceLinksPublished {
-	e.EventMetadata = nil
-	e.AuditContext = nil
-	CleanUpResourcesArray(e.GetResources())
-	return e
-}

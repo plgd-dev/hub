@@ -37,62 +37,6 @@ import (
 	"google.golang.org/grpc/credentials"
 )
 
-func operationProcessedOK() *pb.Event_OperationProcessed_ {
-	return &pb.Event_OperationProcessed_{
-		OperationProcessed: &pb.Event_OperationProcessed{
-			ErrorStatus: &pb.Event_OperationProcessed_ErrorStatus{
-				Code: pb.Event_OperationProcessed_ErrorStatus_OK,
-			},
-		},
-	}
-}
-
-func resourceCreatePending(t *testing.T, deviceID, href string, data interface{}) *events.ResourceCreatePending {
-	return &events.ResourceCreatePending{
-		ResourceId: &commands.ResourceId{
-			DeviceId: deviceID,
-			Href:     href,
-		},
-		Content: &commands.Content{
-			ContentType:       message.AppOcfCbor.String(),
-			CoapContentFormat: -1,
-			Data:              test.EncodeToCbor(t, data),
-		},
-		AuditContext: commands.NewAuditContext(service.DeviceUserID, ""),
-	}
-}
-
-func resourceCreated(t *testing.T, deviceID, href string, data interface{}) *events.ResourceCreated {
-	return &events.ResourceCreated{
-		ResourceId: &commands.ResourceId{
-			DeviceId: deviceID,
-			Href:     href,
-		},
-		Status: commands.Status_CREATED,
-		Content: &commands.Content{
-			ContentType:       message.AppOcfCbor.String(),
-			CoapContentFormat: int32(message.AppOcfCbor),
-			Data:              test.EncodeToCbor(t, data),
-		},
-		AuditContext: commands.NewAuditContext(service.DeviceUserID, ""),
-	}
-}
-
-func resourceUpdatePending(t *testing.T, deviceID, href string, data interface{}) *events.ResourceUpdatePending {
-	return &events.ResourceUpdatePending{
-		ResourceId: &commands.ResourceId{
-			DeviceId: deviceID,
-			Href:     href,
-		},
-		Content: &commands.Content{
-			ContentType:       message.AppOcfCbor.String(),
-			CoapContentFormat: -1,
-			Data:              test.EncodeToCbor(t, data),
-		},
-		AuditContext: commands.NewAuditContext(service.DeviceUserID, ""),
-	}
-}
-
 func TestRequestHandlerSubscribeToEvents(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
@@ -162,7 +106,7 @@ func TestRequestHandlerSubscribeToEvents(t *testing.T) {
 			},
 			want: []*pb.Event{
 				{
-					Type:          operationProcessedOK(),
+					Type:          pbTest.OperationProcessedOK(),
 					CorrelationId: "testToken1",
 				},
 				{
@@ -191,7 +135,7 @@ func TestRequestHandlerSubscribeToEvents(t *testing.T) {
 			},
 			want: []*pb.Event{
 				{
-					Type:          operationProcessedOK(),
+					Type:          pbTest.OperationProcessedOK(),
 					CorrelationId: "testToken2",
 				},
 				{
@@ -201,6 +145,7 @@ func TestRequestHandlerSubscribeToEvents(t *testing.T) {
 							Status: &commands.ConnectionStatus{
 								Value: commands.ConnectionStatus_ONLINE,
 							},
+							AuditContext: commands.NewAuditContext(service.DeviceUserID, ""),
 						},
 					},
 					CorrelationId: "testToken2",
@@ -225,7 +170,7 @@ func TestRequestHandlerSubscribeToEvents(t *testing.T) {
 			},
 			want: []*pb.Event{
 				{
-					Type:          operationProcessedOK(),
+					Type:          pbTest.OperationProcessedOK(),
 					CorrelationId: "testToken3",
 				},
 				pbTest.ResourceLinkToPublishEvent(deviceID, "testToken3", resourceLinks),
@@ -301,7 +246,7 @@ func TestRequestHandlerSubscribeForCreateEvents(t *testing.T) {
 	require.NoError(t, err)
 	expectedEvent := &pb.Event{
 		SubscriptionId: ev.SubscriptionId,
-		Type:           operationProcessedOK(),
+		Type:           pbTest.OperationProcessedOK(),
 		CorrelationId:  "testToken",
 	}
 	test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
@@ -312,11 +257,11 @@ func TestRequestHandlerSubscribeForCreateEvents(t *testing.T) {
 
 	ev, err = client.Recv()
 	require.NoError(t, err)
-	pbTest.CmpEventResourceCreatePending(t, &pb.Event{
+	pbTest.CmpEvent(t, &pb.Event{
 		SubscriptionId: ev.SubscriptionId,
 		CorrelationId:  "testToken",
 		Type: &pb.Event_ResourceCreatePending{
-			ResourceCreatePending: resourceCreatePending(t, deviceID, test.TestResourceSwitchesHref, lightData),
+			ResourceCreatePending: pbTest.MakeResourceCreatePending(t, deviceID, test.TestResourceSwitchesHref, lightData),
 		},
 	}, ev)
 
@@ -332,11 +277,11 @@ func TestRequestHandlerSubscribeForCreateEvents(t *testing.T) {
 
 	ev, err = client.Recv()
 	require.NoError(t, err)
-	pbTest.CmpEventResourceCreated(t, &pb.Event{
+	pbTest.CmpEvent(t, &pb.Event{
 		SubscriptionId: ev.SubscriptionId,
 		CorrelationId:  "testToken",
 		Type: &pb.Event_ResourceCreated{
-			ResourceCreated: resourceCreated(t, deviceID, test.TestResourceSwitchesHref, lightData),
+			ResourceCreated: pbTest.MakeResourceCreated(t, deviceID, test.TestResourceSwitchesHref, lightData),
 		},
 	}, ev)
 }
@@ -371,9 +316,10 @@ func TestRequestHandlerSubscribeForPendingCommands(t *testing.T) {
 			want: []*pb.PendingCommand{
 				{
 					Command: &pb.PendingCommand_ResourceUpdatePending{
-						ResourceUpdatePending: resourceUpdatePending(t, deviceID, test.TestResourceLightInstanceHref("1"), map[string]interface{}{
-							"power": 1,
-						}),
+						ResourceUpdatePending: pbTest.MakeResourceUpdatePending(t, deviceID, test.TestResourceLightInstanceHref("1"),
+							map[string]interface{}{
+								"power": 1,
+							}),
 					},
 				},
 			},
@@ -417,7 +363,7 @@ func TestRequestHandlerSubscribeForPendingCommands(t *testing.T) {
 				},
 				{
 					Command: &pb.PendingCommand_ResourceCreatePending{
-						ResourceCreatePending: resourceCreatePending(t, deviceID, device.ResourceURI,
+						ResourceCreatePending: pbTest.MakeResourceCreatePending(t, deviceID, device.ResourceURI,
 							map[string]interface{}{
 								"power": 1,
 							}),
@@ -436,9 +382,10 @@ func TestRequestHandlerSubscribeForPendingCommands(t *testing.T) {
 				},
 				{
 					Command: &pb.PendingCommand_ResourceUpdatePending{
-						ResourceUpdatePending: resourceUpdatePending(t, deviceID, test.TestResourceLightInstanceHref("1"), map[string]interface{}{
-							"power": 1,
-						}),
+						ResourceUpdatePending: pbTest.MakeResourceUpdatePending(t, deviceID, test.TestResourceLightInstanceHref("1"),
+							map[string]interface{}{
+								"power": 1,
+							}),
 					},
 				},
 			},
@@ -478,7 +425,7 @@ func TestRequestHandlerSubscribeForPendingCommands(t *testing.T) {
 			want: []*pb.PendingCommand{
 				{
 					Command: &pb.PendingCommand_ResourceCreatePending{
-						ResourceCreatePending: resourceCreatePending(t, deviceID, device.ResourceURI,
+						ResourceCreatePending: pbTest.MakeResourceCreatePending(t, deviceID, device.ResourceURI,
 							map[string]interface{}{
 								"power": 1,
 							}),
@@ -522,9 +469,10 @@ func TestRequestHandlerSubscribeForPendingCommands(t *testing.T) {
 			want: []*pb.PendingCommand{
 				{
 					Command: &pb.PendingCommand_ResourceUpdatePending{
-						ResourceUpdatePending: resourceUpdatePending(t, deviceID, test.TestResourceLightInstanceHref("1"), map[string]interface{}{
-							"power": 1,
-						}),
+						ResourceUpdatePending: pbTest.MakeResourceUpdatePending(t, deviceID, test.TestResourceLightInstanceHref("1"),
+							map[string]interface{}{
+								"power": 1,
+							}),
 					},
 				},
 			},
@@ -679,7 +627,7 @@ func TestRequestHandlerSubscribeForPendingCommands(t *testing.T) {
 			require.NoError(t, err)
 			expectedEvent := &pb.Event{
 				SubscriptionId: ev.SubscriptionId,
-				Type:           operationProcessedOK(),
+				Type:           pbTest.OperationProcessedOK(),
 				CorrelationId:  correlationID,
 			}
 			test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
@@ -732,7 +680,7 @@ func TestRequestHandlerSubscribeForPendingCommands(t *testing.T) {
 			require.NoError(t, err)
 			expectedEvent = &pb.Event{
 				SubscriptionId: subscriptionId,
-				Type:           operationProcessedOK(),
+				Type:           pbTest.OperationProcessedOK(),
 				CorrelationId:  correlationID,
 			}
 			test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
@@ -781,7 +729,7 @@ func TestRequestHandlerIssue270(t *testing.T) {
 	require.NoError(t, err)
 	expectedEvent := &pb.Event{
 		SubscriptionId: ev.SubscriptionId,
-		Type:           operationProcessedOK(),
+		Type:           pbTest.OperationProcessedOK(),
 		CorrelationId:  "testToken",
 	}
 	fmt.Printf("SUBSCRIPTION ID: %v\n", ev.SubscriptionId)
@@ -819,7 +767,7 @@ func TestRequestHandlerIssue270(t *testing.T) {
 
 	ev, err = client.Recv()
 	require.NoError(t, err)
-	pbTest.CmpEventDeviceMetadataUpdated(t, &pb.Event{
+	pbTest.CmpEvent(t, &pb.Event{
 		SubscriptionId: ev.SubscriptionId,
 		Type: &pb.Event_DeviceMetadataUpdated{
 			DeviceMetadataUpdated: &events.DeviceMetadataUpdated{
@@ -827,6 +775,7 @@ func TestRequestHandlerIssue270(t *testing.T) {
 				Status: &commands.ConnectionStatus{
 					Value: commands.ConnectionStatus_ONLINE,
 				},
+				AuditContext: commands.NewAuditContext(service.DeviceUserID, ""),
 			},
 		},
 		CorrelationId: "testToken",

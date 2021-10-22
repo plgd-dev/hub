@@ -13,12 +13,10 @@ import (
 	"github.com/plgd-dev/device/schema/interfaces"
 	"github.com/plgd-dev/device/schema/platform"
 	"github.com/plgd-dev/device/test/resource/types"
-	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/hub/grpc-gateway/pb"
 	httpgwTest "github.com/plgd-dev/hub/http-gateway/test"
 	"github.com/plgd-dev/hub/http-gateway/uri"
 	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
-	"github.com/plgd-dev/hub/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/resource-aggregate/events"
 	"github.com/plgd-dev/hub/test"
 	"github.com/plgd-dev/hub/test/config"
@@ -30,23 +28,8 @@ import (
 	"google.golang.org/grpc/credentials"
 )
 
-func getResourceChanged(t *testing.T, deviceID, href string, data map[string]interface{}) *events.ResourceChanged {
-	return &events.ResourceChanged{
-		ResourceId: &commands.ResourceId{
-			DeviceId: deviceID,
-			Href:     href,
-		},
-		Content: &commands.Content{
-			CoapContentFormat: int32(message.AppOcfCbor),
-			ContentType:       message.AppOcfCbor.String(),
-			Data:              test.EncodeToCbor(t, data),
-		},
-		Status: commands.Status_OK,
-	}
-}
-
-func getPlatformResourceChanged(t *testing.T, deviceID string) *events.ResourceChanged {
-	return getResourceChanged(t, deviceID, platform.ResourceURI,
+func makePlatformResourceChanged(t *testing.T, deviceID string) *events.ResourceChanged {
+	return pbTest.MakeResourceChanged(t, deviceID, platform.ResourceURI,
 		map[string]interface{}{
 			"mnmn": "ocfcloud.com",
 			//"pi":   "d9b71824-78f7-4f26-540b-d86eab696937",
@@ -56,8 +39,8 @@ func getPlatformResourceChanged(t *testing.T, deviceID string) *events.ResourceC
 	)
 }
 
-func getCloudDeviceResourceChanged(t *testing.T, deviceID string) *events.ResourceChanged {
-	return getResourceChanged(t, deviceID, device.ResourceURI,
+func makeCloudDeviceResourceChanged(t *testing.T, deviceID string) *events.ResourceChanged {
+	return pbTest.MakeResourceChanged(t, deviceID, device.ResourceURI,
 		map[string]interface{}{
 			"n":   test.TestDeviceName,
 			"di":  deviceID,
@@ -92,7 +75,7 @@ func TestRequestHandlerGetDeviceResources(t *testing.T) {
 			want: []*pb.Resource{
 				{
 					Types: []string{types.CORE_LIGHT},
-					Data: getResourceChanged(t, deviceID, test.TestResourceLightInstanceHref("1"),
+					Data: pbTest.MakeResourceChanged(t, deviceID, test.TestResourceLightInstanceHref("1"),
 						map[string]interface{}{
 							"state": false,
 							"power": uint64(0),
@@ -104,7 +87,7 @@ func TestRequestHandlerGetDeviceResources(t *testing.T) {
 				},
 				{
 					Types: []string{collection.ResourceType},
-					Data: getResourceChanged(t, deviceID, test.TestResourceSwitchesHref,
+					Data: pbTest.MakeResourceChanged(t, deviceID, test.TestResourceSwitchesHref,
 						map[string]interface{}{
 							"links":                     []interface{}{},
 							"if":                        []interface{}{interfaces.OC_IF_LL, interfaces.OC_IF_CREATE, interfaces.OC_IF_B, interfaces.OC_IF_BASELINE},
@@ -117,7 +100,7 @@ func TestRequestHandlerGetDeviceResources(t *testing.T) {
 				},
 				{
 					Types: []string{configuration.ResourceType},
-					Data: getResourceChanged(t, deviceID, configuration.ResourceURI,
+					Data: pbTest.MakeResourceChanged(t, deviceID, configuration.ResourceURI,
 						map[string]interface{}{
 							"n":  test.TestDeviceName,
 							"if": []interface{}{interfaces.OC_IF_RW, interfaces.OC_IF_BASELINE},
@@ -127,11 +110,11 @@ func TestRequestHandlerGetDeviceResources(t *testing.T) {
 				},
 				{
 					Types: []string{platform.ResourceType},
-					Data:  getPlatformResourceChanged(t, deviceID),
+					Data:  makePlatformResourceChanged(t, deviceID),
 				},
 				{
 					Types: []string{types.DEVICE_CLOUD, device.ResourceType},
-					Data:  getCloudDeviceResourceChanged(t, deviceID),
+					Data:  makeCloudDeviceResourceChanged(t, deviceID),
 				},
 			},
 		},
@@ -145,11 +128,11 @@ func TestRequestHandlerGetDeviceResources(t *testing.T) {
 			want: []*pb.Resource{
 				{
 					Types: []string{platform.ResourceType},
-					Data:  getPlatformResourceChanged(t, deviceID),
+					Data:  makePlatformResourceChanged(t, deviceID),
 				},
 				{
 					Types: []string{types.DEVICE_CLOUD, device.ResourceType},
-					Data:  getCloudDeviceResourceChanged(t, deviceID),
+					Data:  makeCloudDeviceResourceChanged(t, deviceID),
 				},
 			},
 		},

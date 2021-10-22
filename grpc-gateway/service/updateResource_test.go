@@ -15,6 +15,7 @@ import (
 	"github.com/plgd-dev/hub/resource-aggregate/events"
 	"github.com/plgd-dev/hub/test"
 	testCfg "github.com/plgd-dev/hub/test/config"
+	oauthService "github.com/plgd-dev/hub/test/oauth-server/service"
 	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
 	pbTest "github.com/plgd-dev/hub/test/pb"
 	"github.com/plgd-dev/hub/test/service"
@@ -162,7 +163,8 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 						"value": true,
 					}),
 				},
-				Status: commands.Status_OK,
+				Status:       commands.Status_OK,
+				AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, ""),
 			},
 		},
 	}

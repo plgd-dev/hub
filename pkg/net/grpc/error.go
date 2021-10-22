@@ -23,6 +23,16 @@ func IsContextCanceled(err error) bool {
 	return false
 }
 
+func IsContextDeadlineExceeded(err error) bool {
+	if errors.Is(err, context.DeadlineExceeded) {
+		return true
+	}
+	if grpcErr, ok := err.(grpcErr); ok {
+		return grpcErr.GRPCStatus().Code() == codes.DeadlineExceeded
+	}
+	return false
+}
+
 // ForwardFromError tries to unwrap err as GRPCStatus() and forward original code and details.
 func ForwardFromError(code codes.Code, err error) error {
 	return ForwardErrorf(code, "%v", err)

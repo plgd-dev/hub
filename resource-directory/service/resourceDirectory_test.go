@@ -18,11 +18,10 @@ import (
 	"github.com/plgd-dev/hub/resource-directory/service"
 	"github.com/plgd-dev/hub/test"
 	"github.com/plgd-dev/hub/test/config"
+	pbTest "github.com/plgd-dev/hub/test/pb"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 func TestResourceDirectory_GetResourceLinks(t *testing.T) {
@@ -30,11 +29,9 @@ func TestResourceDirectory_GetResourceLinks(t *testing.T) {
 		request *pb.GetResourceLinksRequest
 	}
 	tests := []struct {
-		name     string
-		args     args
-		want     map[string]*events.ResourceLinksPublished
-		wantCode codes.Code
-		wantErr  bool
+		name string
+		args args
+		want map[string]*events.ResourceLinksPublished
 	}{
 		{
 			name: "list one device - filter by device Id",
@@ -50,6 +47,7 @@ func TestResourceDirectory_GetResourceLinks(t *testing.T) {
 						Resource1.Resource,
 						Resource3.Resource,
 					},
+					AuditContext: commands.NewAuditContext("userId", ""),
 				},
 			},
 		},
@@ -80,12 +78,7 @@ func TestResourceDirectory_GetResourceLinks(t *testing.T) {
 		fn := func(t *testing.T) {
 			var s testGrpcGateway_GetResourceLinksServer
 			err := rd.GetResourceLinks(tt.args.request, &s)
-			if tt.wantErr {
-				assert.Error(t, err)
-			} else {
-				assert.NoError(t, err)
-			}
-			assert.Equal(t, tt.wantCode, status.Convert(err).Code())
+			require.NoError(t, err)
 			test.CheckProtobufs(t, tt.want, s.got, test.AssertToCheckFunc(assert.Equal))
 		}
 		t.Run(tt.name, fn)
@@ -130,6 +123,6 @@ func (s *testGrpcGateway_GetResourceLinksServer) Send(d *events.ResourceLinksPub
 	if s.got == nil {
 		s.got = make(map[string]*events.ResourceLinksPublished)
 	}
-	s.got[d.DeviceId] = test.CleanUpResourceLinksPublished(d)
+	s.got[d.DeviceId] = pbTest.CleanUpResourceLinksPublished(d)
 	return nil
 }
