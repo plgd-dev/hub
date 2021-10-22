@@ -18,12 +18,19 @@ import (
 type incrementSubscriptionSequenceNumberFunc func(ctx context.Context) (uint64, error)
 type emitEventFunc func(ctx context.Context, eventType events.EventType, s store.Subscription, incrementSubscriptionSequenceNumber incrementSubscriptionSequenceNumberFunc, rep interface{}) (remove bool, err error)
 
-func makeEmitEventRequest(ctx context.Context, eventType events.EventType, s store.Subscription, seqNum uint64, rep interface{}) (*netHttp.Request, error) {
-	encoder, contentType, err := getEncoder(s.Accept)
+func makeEmitEventRequestBody(accept []string, rep interface{}) ([]byte, string, error) {
+	encoder, contentType, err := getEncoder(accept)
 	if err != nil {
-		return nil, fmt.Errorf("cannot get encoder: %w", err)
+		return nil, "", fmt.Errorf("cannot get encoder: %w", err)
 	}
+	body, err := encoder(rep)
+	if err != nil {
+		return nil, "", fmt.Errorf("cannot encode data to body: %w", err)
+	}
+	return body, contentType, nil
+}
 
+func makeEmitEventRequest(ctx context.Context, eventType events.EventType, s store.Subscription, seqNum uint64, rep interface{}) (*netHttp.Request, error) {
 	r, w := io.Pipe()
 	req, err := netHttp.NewRequestWithContext(ctx, netHttp.MethodPost, s.URL, r)
 	if err != nil {
@@ -35,24 +42,27 @@ func makeEmitEventRequest(ctx context.Context, eventType events.EventType, s sto
 	req.Header.Set(events.SequenceNumberKey, strconv.FormatUint(seqNum, 10))
 	req.Header.Set(events.CorrelationIDKey, s.CorrelationID)
 	req.Header.Set(events.EventTimestampKey, strconv.FormatInt(timestamp.Unix(), 10))
+
 	var body []byte
 	if rep != nil {
-		body, err = encoder(rep)
+		var contentType string
+		body, contentType, err = makeEmitEventRequestBody(s.Accept, rep)
 		if err != nil {
-			return nil, fmt.Errorf("cannot encode data to body: %w", err)
+			return nil, fmt.Errorf("cannot create post request body: %w", err)
 		}
 		req.Header.Set(events.ContentTypeKey, contentType)
+	}
+
+	if len(body) > 0 {
 		go func() {
 			defer func() {
 				if err := w.Close(); err != nil {
 					log.Errorf("failed to close write pipe: %w", err)
 				}
 			}()
-			if len(body) > 0 {
-				_, err := w.Write(body)
-				if err != nil {
-					log.Errorf("cannot write data to client: %w", err)
-				}
+			_, err := w.Write(body)
+			if err != nil {
+				log.Errorf("cannot write data to client: %w", err)
 			}
 		}()
 	} else {
@@ -60,6 +70,7 @@ func makeEmitEventRequest(ctx context.Context, eventType events.EventType, s sto
 			log.Errorf("failed to close write pipe: %w", err)
 		}
 	}
+
 	req.Header.Set(events.EventSignatureKey, events.CalculateEventSignature(
 		s.SigningSecret,
 		req.Header.Get(events.ContentTypeKey),
