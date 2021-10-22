@@ -119,7 +119,7 @@ func getDeviceAllRepresentation(deviceID, deviceName string) interface{} {
 	})
 }
 
-func TestRequestHandler_RetrieveDevice(t *testing.T) {
+func TestRequestHandlerRetrieveDevice(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	type args struct {
 		uri    string

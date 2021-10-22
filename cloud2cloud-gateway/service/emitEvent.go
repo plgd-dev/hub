@@ -18,6 +18,63 @@ import (
 type incrementSubscriptionSequenceNumberFunc func(ctx context.Context) (uint64, error)
 type emitEventFunc func(ctx context.Context, eventType events.EventType, s store.Subscription, incrementSubscriptionSequenceNumber incrementSubscriptionSequenceNumberFunc, rep interface{}) (remove bool, err error)
 
+func makeEmitEventRequest(ctx context.Context, eventType events.EventType, s store.Subscription, seqNum uint64, rep interface{}) (*netHttp.Request, error) {
+	encoder, contentType, err := getEncoder(s.Accept)
+	if err != nil {
+		return nil, fmt.Errorf("cannot get encoder: %w", err)
+	}
+
+	r, w := io.Pipe()
+	req, err := netHttp.NewRequestWithContext(ctx, netHttp.MethodPost, s.URL, r)
+	if err != nil {
+		return nil, fmt.Errorf("cannot create post request: %w", err)
+	}
+	timestamp := time.Now()
+	req.Header.Set(events.EventTypeKey, string(eventType))
+	req.Header.Set(events.SubscriptionIDKey, s.ID)
+	req.Header.Set(events.SequenceNumberKey, strconv.FormatUint(seqNum, 10))
+	req.Header.Set(events.CorrelationIDKey, s.CorrelationID)
+	req.Header.Set(events.EventTimestampKey, strconv.FormatInt(timestamp.Unix(), 10))
+	var body []byte
+	if rep != nil {
+		body, err = encoder(rep)
+		if err != nil {
+			return nil, fmt.Errorf("cannot encode data to body: %w", err)
+		}
+		req.Header.Set(events.ContentTypeKey, contentType)
+		go func() {
+			defer func() {
+				if err := w.Close(); err != nil {
+					log.Errorf("failed to close write pipe: %w", err)
+				}
+			}()
+			if len(body) > 0 {
+				_, err := w.Write(body)
+				if err != nil {
+					log.Errorf("cannot write data to client: %w", err)
+				}
+			}
+		}()
+	} else {
+		if err := w.Close(); err != nil {
+			log.Errorf("failed to close write pipe: %w", err)
+		}
+	}
+	req.Header.Set(events.EventSignatureKey, events.CalculateEventSignature(
+		s.SigningSecret,
+		req.Header.Get(events.ContentTypeKey),
+		eventType,
+		req.Header.Get(events.SubscriptionIDKey),
+		seqNum,
+		timestamp,
+		body,
+	))
+	req.Header.Set("Connection", "close")
+	req.Close = true
+
+	return req, nil
+}
+
 func createEmitEventFunc(cfg cmClient.Config, timeout time.Duration, logger log.Logger) (emitEventFunc, func(), error) {
 	certManager, err := cmClient.New(cfg, logger)
 	if err != nil {
@@ -35,63 +92,16 @@ func createEmitEventFunc(cfg cmClient.Config, timeout time.Duration, logger log.
 		log.Debugf("emitEvent: %v: %+v", eventType, s)
 		ctx, cancel := context.WithTimeout(ctx, timeout)
 		defer cancel()
-		encoder, contentType, err := getEncoder(s.Accept)
-		if err != nil {
-			return false, fmt.Errorf("cannot get encoder: %w", err)
-		}
+
 		seqNum, err := incrementSubscriptionSequenceNumber(ctx)
 		if err != nil {
 			return false, fmt.Errorf("cannot increment sequence number: %w", err)
 		}
 
-		r, w := io.Pipe()
-
-		req, err := netHttp.NewRequestWithContext(ctx, netHttp.MethodPost, s.URL, r)
+		req, err := makeEmitEventRequest(ctx, eventType, s, seqNum, rep)
 		if err != nil {
-			return false, fmt.Errorf("cannot create post request: %w", err)
+			return false, fmt.Errorf("cannot create request: %w", err)
 		}
-		timestamp := time.Now()
-		req.Header.Set(events.EventTypeKey, string(eventType))
-		req.Header.Set(events.SubscriptionIDKey, s.ID)
-		req.Header.Set(events.SequenceNumberKey, strconv.FormatUint(seqNum, 10))
-		req.Header.Set(events.CorrelationIDKey, s.CorrelationID)
-		req.Header.Set(events.EventTimestampKey, strconv.FormatInt(timestamp.Unix(), 10))
-		var body []byte
-		if rep != nil {
-			body, err = encoder(rep)
-			if err != nil {
-				return false, fmt.Errorf("cannot encode data to body: %w", err)
-			}
-			req.Header.Set(events.ContentTypeKey, contentType)
-			go func() {
-				defer func() {
-					if err := w.Close(); err != nil {
-						log.Errorf("failed to close write pipe: %w", err)
-					}
-				}()
-				if len(body) > 0 {
-					_, err := w.Write(body)
-					if err != nil {
-						log.Errorf("cannot write data to client: %w", err)
-					}
-				}
-			}()
-		} else {
-			if err := w.Close(); err != nil {
-				log.Errorf("failed to close write pipe: %w", err)
-			}
-		}
-		req.Header.Set(events.EventSignatureKey, events.CalculateEventSignature(
-			s.SigningSecret,
-			req.Header.Get(events.ContentTypeKey),
-			eventType,
-			req.Header.Get(events.SubscriptionIDKey),
-			seqNum,
-			timestamp,
-			body,
-		))
-		req.Header.Set("Connection", "close")
-		req.Close = true
 
 		resp, err := client.Do(req)
 		if err != nil {

@@ -53,13 +53,10 @@ func (s *SubscriptionData) Store(sub Subscription) {
 	s.sub = sub
 }
 
-func (s *SubscriptionData) getEventsToEmitForDevicesSubscription(ctx context.Context) ([]events.EventType, error) {
-	sendEmptyOffline := true
-	sendEmptyOnline := true
-	anyDevice := false
+func (s *SubscriptionData) detectDevicesState(ctx context.Context) (hasDevice, hasOnline, hasOffline bool, err error) {
 	client, err := s.gwClient.GetDevicesMetadata(ctx, &pb.GetDevicesMetadataRequest{})
 	if err != nil {
-		return nil, err
+		return false, false, false, err
 	}
 	for {
 		d, err := client.Recv()
@@ -70,26 +67,34 @@ func (s *SubscriptionData) getEventsToEmitForDevicesSubscription(ctx context.Con
 			break
 		}
 		if err != nil {
-			return nil, err
+			return false, false, false, err
 		}
-		anyDevice = true
+		hasDevice = true
 		if d.GetStatus().IsOnline() {
-			sendEmptyOnline = false
+			hasOnline = true
 		} else {
-			sendEmptyOffline = false
+			hasOffline = true
 		}
 	}
+	return hasDevice, hasOnline, hasOffline, nil
+}
+
+func (s *SubscriptionData) getEventsToEmitForDevicesSubscription(ctx context.Context) ([]events.EventType, error) {
+	hasDev, hasOnlineDev, hasOfflineDev, err := s.detectDevicesState(ctx)
+	if err != nil {
+		return nil, err
+	}
 	var eventTypes []events.EventType
-	if s.data.EventTypes.Has(events.EventType_DevicesRegistered) && !anyDevice {
+	if s.data.EventTypes.Has(events.EventType_DevicesRegistered) && !hasDev {
 		eventTypes = append(eventTypes, events.EventType_DevicesRegistered)
 	}
 	if s.data.EventTypes.Has(events.EventType_DevicesUnregistered) {
 		eventTypes = append(eventTypes, events.EventType_DevicesUnregistered)
 	}
-	if s.data.EventTypes.Has(events.EventType_DevicesOnline) && sendEmptyOnline {
+	if s.data.EventTypes.Has(events.EventType_DevicesOnline) && !hasOnlineDev {
 		eventTypes = append(eventTypes, events.EventType_DevicesOnline)
 	}
-	if s.data.EventTypes.Has(events.EventType_DevicesOffline) && sendEmptyOffline {
+	if s.data.EventTypes.Has(events.EventType_DevicesOffline) && !hasOfflineDev {
 		eventTypes = append(eventTypes, events.EventType_DevicesOffline)
 	}
 	return eventTypes, nil

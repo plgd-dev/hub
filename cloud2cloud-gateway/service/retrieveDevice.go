@@ -8,9 +8,9 @@ import (
 	"strings"
 
 	"github.com/gorilla/mux"
-	kitNetHttp "github.com/plgd-dev/hub/pkg/net/http"
 	"github.com/plgd-dev/device/schema"
 	"github.com/plgd-dev/go-coap/v2/message"
+	kitNetHttp "github.com/plgd-dev/hub/pkg/net/http"
 	"github.com/plgd-dev/kit/v2/codec/cbor"
 	"github.com/plgd-dev/kit/v2/codec/json"
 	"github.com/plgd-dev/kit/v2/log"
@@ -162,7 +162,7 @@ func (rh *RequestHandler) RetrieveDeviceWithLinks(ctx context.Context, w http.Re
 	}
 	resourceLink, err := rh.GetResourceLinks(ctx, []string{deviceID})
 	if err != nil {
-		return kitNetHttp.ErrToStatusWithDef(err, http.StatusForbidden), fmt.Errorf("cannot retrieve device(%v) [base]: %w", deviceID, err)
+		return kitNetHttp.ErrToStatusWithDef(err, http.StatusForbidden), fmt.Errorf("cannot retrieve device links(%v) [base]: %w", deviceID, err)
 	}
 
 	resp := RetrieveDeviceWithLinksResponse{
@@ -189,7 +189,7 @@ func (rh *RequestHandler) RetrieveDeviceWithRepresentations(ctx context.Context,
 	}
 	allResources, err := rh.RetrieveResources(ctx, nil, []string{deviceID})
 	if err != nil {
-		return kitNetHttp.ErrToStatusWithDef(err, http.StatusForbidden), fmt.Errorf("cannot retrieve device(%v) [all]: %w", deviceID, err)
+		return kitNetHttp.ErrToStatusWithDef(err, http.StatusForbidden), fmt.Errorf("cannot retrieve device links(%v) [all]: %w", deviceID, err)
 	}
 
 	resp := RetrieveDeviceContentAllResponse{
