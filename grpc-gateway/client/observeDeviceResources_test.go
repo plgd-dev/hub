@@ -47,7 +47,7 @@ func TestObserveDeviceResources(t *testing.T) {
 		pub, ok := res.(*events.ResourceLinksPublished)
 		require.True(t, ok)
 		exp := pbTest.ResourceLinkToPublishEvent(deviceID, "", test.GetAllBackendResourceLinks())
-		test.CheckProtobufs(t, test.CleanUpResourceLinksPublished(exp.GetResourcePublished()), test.CleanUpResourceLinksPublished(pub), test.RequireToCheckFunc(require.Equal))
+		test.CheckProtobufs(t, pbTest.CleanUpResourceLinksPublished(exp.GetResourcePublished()), pbTest.CleanUpResourceLinksPublished(pub), test.RequireToCheckFunc(require.Equal))
 	case <-time.After(TestTimeout):
 		t.Error("timeout")
 	}

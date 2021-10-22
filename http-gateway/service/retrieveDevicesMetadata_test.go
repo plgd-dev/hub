@@ -7,10 +7,6 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/stretchr/testify/require"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
-
 	"github.com/plgd-dev/device/schema/device"
 	"github.com/plgd-dev/hub/grpc-gateway/pb"
 	httpgwTest "github.com/plgd-dev/hub/http-gateway/test"
@@ -20,9 +16,13 @@ import (
 	"github.com/plgd-dev/hub/resource-aggregate/events"
 	"github.com/plgd-dev/hub/test"
 	"github.com/plgd-dev/hub/test/config"
+	oauthService "github.com/plgd-dev/hub/test/oauth-server/service"
 	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
 	pbTest "github.com/plgd-dev/hub/test/pb"
 	"github.com/plgd-dev/hub/test/service"
+	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 )
 
 func TestRequestHandlerGetDevicesMetadata(t *testing.T) {
@@ -45,6 +45,7 @@ func TestRequestHandlerGetDevicesMetadata(t *testing.T) {
 					Status: &commands.ConnectionStatus{
 						Value: commands.ConnectionStatus_ONLINE,
 					},
+					AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, ""),
 				},
 			},
 		},
@@ -59,6 +60,7 @@ func TestRequestHandlerGetDevicesMetadata(t *testing.T) {
 					Status: &commands.ConnectionStatus{
 						Value: commands.ConnectionStatus_ONLINE,
 					},
+					AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, ""),
 				},
 			},
 		},
@@ -73,6 +75,7 @@ func TestRequestHandlerGetDevicesMetadata(t *testing.T) {
 					Status: &commands.ConnectionStatus{
 						Value: commands.ConnectionStatus_ONLINE,
 					},
+					AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, ""),
 				},
 			},
 		},
@@ -133,7 +136,7 @@ func TestRequestHandlerGetDevicesMetadata(t *testing.T) {
 				require.NoError(t, err)
 				values = append(values, &value)
 			}
-			pbTest.CmpDeviceMetadataUpdated(t, tt.want, values)
+			pbTest.CmpDeviceMetadataUpdatedSlice(t, tt.want, values)
 		})
 	}
 }

@@ -12,10 +12,13 @@ import (
 	httpgwTest "github.com/plgd-dev/hub/http-gateway/test"
 	"github.com/plgd-dev/hub/http-gateway/uri"
 	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
+	"github.com/plgd-dev/hub/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/resource-aggregate/events"
 	test "github.com/plgd-dev/hub/test"
 	"github.com/plgd-dev/hub/test/config"
+	oauthService "github.com/plgd-dev/hub/test/oauth-server/service"
 	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
+	pbTest "github.com/plgd-dev/hub/test/pb"
 	"github.com/plgd-dev/hub/test/service"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
@@ -65,8 +68,9 @@ func TestRequestHandlerGetDeviceResourceLinks(t *testing.T) {
 			wantErr: false,
 			want: []*events.ResourceLinksPublished{
 				{
-					DeviceId:  deviceID,
-					Resources: test.ResourceLinksToResources(deviceID, resourceLinks),
+					DeviceId:     deviceID,
+					Resources:    test.ResourceLinksToResources(deviceID, resourceLinks),
+					AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, ""),
 				},
 			},
 		},
@@ -90,7 +94,7 @@ func TestRequestHandlerGetDeviceResourceLinks(t *testing.T) {
 				require.NoError(t, err)
 				require.NotEmpty(t, v.GetAuditContext())
 				require.NotEmpty(t, v.GetEventMetadata())
-				links = append(links, test.CleanUpResourceLinksPublished(&v))
+				links = append(links, pbTest.CleanUpResourceLinksPublished(&v))
 			}
 			test.CheckProtobufs(t, tt.want, links, test.RequireToCheckFunc(require.Equal))
 		})

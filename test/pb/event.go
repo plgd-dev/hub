@@ -1,6 +1,7 @@
 package pb
 
 import (
+	"fmt"
 	"reflect"
 	"testing"
 	"time"
@@ -10,8 +11,19 @@ import (
 	"github.com/plgd-dev/hub/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/resource-aggregate/events"
 	"github.com/plgd-dev/hub/test"
+	oauthService "github.com/plgd-dev/hub/test/oauth-server/service"
 	"github.com/stretchr/testify/require"
 )
+
+func OperationProcessedOK() *pb.Event_OperationProcessed_ {
+	return &pb.Event_OperationProcessed_{
+		OperationProcessed: &pb.Event_OperationProcessed{
+			ErrorStatus: &pb.Event_OperationProcessed_ErrorStatus{
+				Code: pb.Event_OperationProcessed_ErrorStatus_OK,
+			},
+		},
+	}
+}
 
 func ResourceLinkToPublishEvent(deviceID, token string, links []schema.ResourceLink) *pb.Event {
 	out := make([]*commands.Resource, 0, 32)
@@ -23,39 +35,175 @@ func ResourceLinkToPublishEvent(deviceID, token string, links []schema.ResourceL
 	return &pb.Event{
 		Type: &pb.Event_ResourcePublished{
 			ResourcePublished: &events.ResourceLinksPublished{
-				DeviceId:  deviceID,
-				Resources: out,
+				DeviceId:     deviceID,
+				Resources:    out,
+				AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, ""),
 			},
 		},
 		CorrelationId: token,
 	}
 }
 
+func GetEventType(ev *pb.Event) string {
+	return fmt.Sprintf("%T", ev.GetType())
+}
+
+func GetEventID(ev *pb.Event) string {
+	switch v := ev.GetType().(type) {
+	case *pb.Event_DeviceRegistered_:
+		return fmt.Sprintf("%T", ev.GetType())
+	case *pb.Event_DeviceUnregistered_:
+		return fmt.Sprintf("%T", ev.GetType())
+	case *pb.Event_ResourcePublished:
+		return fmt.Sprintf("%T:%v", ev.GetType(), v.ResourcePublished.GetDeviceId())
+	case *pb.Event_ResourceUnpublished:
+		return fmt.Sprintf("%T:%v", ev.GetType(), v.ResourceUnpublished.GetDeviceId())
+	case *pb.Event_ResourceChanged:
+		return fmt.Sprintf("%T:%v", ev.GetType(), v.ResourceChanged.GetResourceId().ToString())
+	case *pb.Event_OperationProcessed_:
+		return fmt.Sprintf("%T", ev.GetType())
+	case *pb.Event_SubscriptionCanceled_:
+		return fmt.Sprintf("%T", ev.GetType())
+	case *pb.Event_ResourceUpdatePending:
+		return fmt.Sprintf("%T:%v", ev.GetType(), v.ResourceUpdatePending.GetResourceId().ToString())
+	case *pb.Event_ResourceUpdated:
+		return fmt.Sprintf("%T:%v", ev.GetType(), v.ResourceUpdated.GetResourceId().ToString())
+	case *pb.Event_ResourceRetrievePending:
+		return fmt.Sprintf("%T:%v", ev.GetType(), v.ResourceRetrievePending.GetResourceId().ToString())
+	case *pb.Event_ResourceRetrieved:
+		return fmt.Sprintf("%T:%v", ev.GetType(), v.ResourceRetrieved.GetResourceId().ToString())
+	case *pb.Event_ResourceDeletePending:
+		return fmt.Sprintf("%T:%v", ev.GetType(), v.ResourceDeletePending.GetResourceId().ToString())
+	case *pb.Event_ResourceDeleted:
+		return fmt.Sprintf("%T:%v", ev.GetType(), v.ResourceDeleted.GetResourceId().ToString())
+	case *pb.Event_ResourceCreatePending:
+		return fmt.Sprintf("%T:%v", ev.GetType(), v.ResourceCreatePending.GetResourceId().ToString())
+	case *pb.Event_ResourceCreated:
+		return fmt.Sprintf("%T:%v", ev.GetType(), v.ResourceCreated.GetResourceId().ToString())
+	case *pb.Event_DeviceMetadataUpdatePending:
+		return fmt.Sprintf("%T:%v", ev.GetType(), v.DeviceMetadataUpdatePending.GetDeviceId())
+	case *pb.Event_DeviceMetadataUpdated:
+		return fmt.Sprintf("%T:%v", ev.GetType(), v.DeviceMetadataUpdated.GetDeviceId())
+	}
+	return ""
+}
+
+// Remove fields with unpredictable values
+func CleanUpEvent(t *testing.T, ev *pb.Event) {
+	noop := func(ev *pb.Event) {
+		// nothing to do
+	}
+
+	typeName := func(v interface{}) string {
+		return reflect.TypeOf(v).String()
+	}
+
+	cleanupHandlerFn := map[string]func(ev *pb.Event){
+		typeName(&pb.Event_DeviceRegistered_{}):   noop,
+		typeName(&pb.Event_DeviceUnregistered_{}): noop,
+		typeName(&pb.Event_ResourcePublished{}): func(ev *pb.Event) {
+			CleanUpResourceLinksPublished(ev.GetResourcePublished())
+		},
+		typeName(&pb.Event_ResourceUnpublished{}): func(ev *pb.Event) {
+			CleanUpResourceLinksUnpublished(ev.GetResourceUnpublished())
+		},
+		typeName(&pb.Event_ResourceChanged{}): func(ev *pb.Event) {
+			CleanUpResourceChanged(ev.GetResourceChanged())
+		},
+		typeName(&pb.Event_OperationProcessed_{}):   noop,
+		typeName(&pb.Event_SubscriptionCanceled_{}): noop,
+		typeName(&pb.Event_ResourceUpdatePending{}): func(ev *pb.Event) {
+			CleanUpResourceUpdatePending(ev.GetResourceUpdatePending())
+		},
+		typeName(&pb.Event_ResourceUpdated{}): func(ev *pb.Event) {
+			CleanUpResourceUpdated(ev.GetResourceUpdated())
+		},
+		typeName(&pb.Event_ResourceRetrievePending{}): func(ev *pb.Event) {
+			CleanUpResourceRetrievePending(ev.GetResourceRetrievePending())
+		},
+		typeName(&pb.Event_ResourceRetrieved{}): func(ev *pb.Event) {
+			CleanUpResourceRetrieved(ev.GetResourceRetrieved())
+		},
+		typeName(&pb.Event_ResourceDeletePending{}): func(ev *pb.Event) {
+			CleanUpResourceDeletePending(ev.GetResourceDeletePending())
+		},
+		typeName(&pb.Event_ResourceDeleted{}): func(ev *pb.Event) {
+			CleanResourceDeleted(ev.GetResourceDeleted())
+		},
+		typeName(&pb.Event_ResourceCreatePending{}): func(ev *pb.Event) {
+			CleanUpResourceCreatePending(ev.GetResourceCreatePending())
+		},
+		typeName(&pb.Event_ResourceCreated{}): func(ev *pb.Event) {
+			CleanUpResourceCreated(ev.GetResourceCreated())
+		},
+		typeName(&pb.Event_DeviceMetadataUpdatePending{}): func(ev *pb.Event) {
+			CleanUpDeviceMetadataUpdatePending(ev.GetDeviceMetadataUpdatePending())
+		},
+		typeName(&pb.Event_DeviceMetadataUpdated{}): func(ev *pb.Event) {
+			CleanUpDeviceMetadataUpdated(ev.GetDeviceMetadataUpdated())
+		},
+	}
+
+	handler, ok := cleanupHandlerFn[GetEventType(ev)]
+	require.True(t, ok)
+
+	handler(ev)
+}
+
+func CmpEvent(t *testing.T, expected, got *pb.Event) {
+	require.Equal(t, GetEventType(expected), GetEventType(got))
+
+	type cmpFn = func(t *testing.T, e, g *pb.Event)
+
+	typeName := func(v interface{}) string {
+		return reflect.TypeOf(v).String()
+	}
+
+	cmpFnMap := map[string]cmpFn{
+		typeName(&pb.Event_ResourceChanged{}): func(t *testing.T, e, g *pb.Event) {
+			CmpResourceChanged(t, e.GetResourceChanged(), g.GetResourceChanged())
+		},
+		typeName(&pb.Event_ResourceUpdatePending{}): func(t *testing.T, e, g *pb.Event) {
+			CmpResourceUpdatePending(t, e.GetResourceUpdatePending(), g.GetResourceUpdatePending())
+		},
+		typeName(&pb.Event_ResourceUpdated{}): func(t *testing.T, e, g *pb.Event) {
+			CmpResourceUpdated(t, e.GetResourceUpdated(), g.GetResourceUpdated())
+		},
+		typeName(&pb.Event_ResourceRetrieved{}): func(t *testing.T, e, g *pb.Event) {
+			CmpResourceRetrieved(t, e.GetResourceRetrieved(), g.GetResourceRetrieved())
+		},
+		typeName(&pb.Event_ResourceDeleted{}): func(t *testing.T, e, g *pb.Event) {
+			CmpResourceDeleted(t, e.GetResourceDeleted(), g.GetResourceDeleted())
+		},
+		typeName(&pb.Event_ResourceCreatePending{}): func(t *testing.T, e, g *pb.Event) {
+			CmpResourceCreatePending(t, e.GetResourceCreatePending(), g.GetResourceCreatePending())
+		},
+		typeName(&pb.Event_ResourceCreated{}): func(t *testing.T, e, g *pb.Event) {
+			CmpResourceCreated(t, e.GetResourceCreated(), g.GetResourceCreated())
+		},
+	}
+
+	cmp, ok := cmpFnMap[GetEventType(expected)]
+	if !ok {
+		cmp = func(t *testing.T, e, g *pb.Event) {
+			CleanUpEvent(t, e)
+			CleanUpEvent(t, g)
+			test.CheckProtobufs(t, e, g, test.RequireToCheckFunc(require.Equal))
+		}
+	}
+
+	cmp(t, expected, got)
+}
+
 func CmpEvents(t *testing.T, expected, got []*pb.Event) {
 	require.Len(t, got, len(expected))
-	cleanUpResourceLinksPublished := func(ev *pb.Event) {
-		if ev.GetResourcePublished() != nil {
-			test.CleanUpResourceLinksPublished(ev.GetResourcePublished())
-		}
-	}
-	cleanUpDeviceMetadata := func(ev *pb.Event) {
-		if ev.GetDeviceMetadataUpdated() != nil {
-			ev.GetDeviceMetadataUpdated().EventMetadata = nil
-			ev.GetDeviceMetadataUpdated().AuditContext = nil
-			if ev.GetDeviceMetadataUpdated().GetStatus() != nil {
-				ev.GetDeviceMetadataUpdated().GetStatus().ValidUntil = 0
-			}
-		}
-	}
 
 	// normalize
 	for i := range expected {
 		expected[i].SubscriptionId = ""
 		got[i].SubscriptionId = ""
-		cleanUpResourceLinksPublished(expected[i])
-		cleanUpResourceLinksPublished(got[i])
-		cleanUpDeviceMetadata(expected[i])
-		cleanUpDeviceMetadata(got[i])
+		CleanUpEvent(t, expected[i])
+		CleanUpEvent(t, got[i])
 	}
 
 	// compare
@@ -65,81 +213,6 @@ func CmpEvents(t *testing.T, expected, got []*pb.Event) {
 	for _, expectedV := range expected {
 		test.CheckProtobufs(t, got, expectedV, test.RequireToCheckFunc(require.Contains))
 	}
-}
-
-func CmpEventResourceCreatePending(t *testing.T, expected, got *pb.Event) {
-	require.NotNil(t, expected.GetResourceCreatePending())
-	e := expected.GetResourceCreatePending()
-	require.NotNil(t, got.GetResourceCreatePending())
-	g := got.GetResourceCreatePending()
-
-	cleanupAuditContext := func(ev *events.ResourceCreatePending) {
-		if ev.GetAuditContext() != nil {
-			ev.GetAuditContext().CorrelationId = ""
-		}
-	}
-	cleanupAuditContext(e)
-	cleanupAuditContext(g)
-
-	e.EventMetadata = nil
-	g.EventMetadata = nil
-
-	expectedData := test.DecodeCbor(t, e.GetContent().GetData())
-	gotData := test.DecodeCbor(t, g.GetContent().GetData())
-	require.Equal(t, expectedData, gotData)
-	e.GetContent().Data = nil
-	g.GetContent().Data = nil
-
-	test.CheckProtobufs(t, expected, got, test.RequireToCheckFunc(require.Equal))
-}
-
-func CmpEventResourceCreated(t *testing.T, expected, got *pb.Event) {
-	require.NotNil(t, expected.GetResourceCreated())
-	e := expected.GetResourceCreated()
-	require.NotNil(t, got.GetResourceCreated())
-	g := got.GetResourceCreated()
-
-	cleanupAuditContext := func(ev *events.ResourceCreated) {
-		if ev.GetAuditContext() != nil {
-			ev.GetAuditContext().CorrelationId = ""
-		}
-	}
-	cleanupAuditContext(e)
-	cleanupAuditContext(g)
-
-	e.EventMetadata = nil
-	g.EventMetadata = nil
-
-	expectedData, ok := test.DecodeCbor(t, e.GetContent().GetData()).(map[interface{}]interface{})
-	require.True(t, ok)
-	gotData, ok := test.DecodeCbor(t, g.GetContent().GetData()).(map[interface{}]interface{})
-	require.True(t, ok)
-	delete(expectedData, "ins")
-	delete(gotData, "ins")
-	require.Equal(t, expectedData, gotData)
-	e.GetContent().Data = nil
-	g.GetContent().Data = nil
-
-	test.CheckProtobufs(t, expected, got, test.RequireToCheckFunc(require.Equal))
-}
-
-func CmpEventDeviceMetadataUpdated(t *testing.T, expected, got *pb.Event) {
-	require.NotNil(t, expected.GetDeviceMetadataUpdated())
-	e := expected.GetDeviceMetadataUpdated()
-	require.NotNil(t, got.GetDeviceMetadataUpdated())
-	g := got.GetDeviceMetadataUpdated()
-
-	cleanup := func(ev *events.DeviceMetadataUpdated) {
-		ev.EventMetadata = nil
-		ev.AuditContext = nil
-		if ev.GetStatus() != nil {
-			ev.GetStatus().ValidUntil = 0
-		}
-	}
-	cleanup(e)
-	cleanup(g)
-
-	test.CheckProtobufs(t, expected, got, test.RequireToCheckFunc(require.Equal))
 }
 
 func GetWrappedEvent(value *pb.GetEventsResponse) interface{} {

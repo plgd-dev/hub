@@ -20,7 +20,9 @@ import (
 	"github.com/plgd-dev/hub/resource-aggregate/events"
 	"github.com/plgd-dev/hub/test"
 	"github.com/plgd-dev/hub/test/config"
+	oauthService "github.com/plgd-dev/hub/test/oauth-server/service"
 	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
+	pbTest "github.com/plgd-dev/hub/test/pb"
 	"github.com/plgd-dev/hub/test/service"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
@@ -34,13 +36,6 @@ func isDeviceMetadataUpdatedOnlineEvent(ev *pb.Event, deviceID string) bool {
 }
 
 func checkDeviceMetadataUpdatedOnlineEvent(t *testing.T, ev *pb.Event, deviceID, baseSubId string) {
-	if ev.GetDeviceMetadataUpdated() != nil {
-		ev.GetDeviceMetadataUpdated().EventMetadata = nil
-		ev.GetDeviceMetadataUpdated().AuditContext = nil
-		if ev.GetDeviceMetadataUpdated().GetStatus() != nil {
-			ev.GetDeviceMetadataUpdated().GetStatus().ValidUntil = 0
-		}
-	}
 	expectedEvent := &pb.Event{
 		SubscriptionId: baseSubId,
 		Type: &pb.Event_DeviceMetadataUpdated{
@@ -49,11 +44,12 @@ func checkDeviceMetadataUpdatedOnlineEvent(t *testing.T, ev *pb.Event, deviceID,
 				Status: &commands.ConnectionStatus{
 					Value: commands.ConnectionStatus_ONLINE,
 				},
+				AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, ""),
 			},
 		},
 		CorrelationId: "testToken",
 	}
-	test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
+	pbTest.CmpEvent(t, expectedEvent, ev)
 }
 
 type updateChecker struct {

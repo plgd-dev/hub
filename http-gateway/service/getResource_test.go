@@ -17,6 +17,7 @@ import (
 	"github.com/plgd-dev/hub/resource-aggregate/events"
 	"github.com/plgd-dev/hub/test"
 	"github.com/plgd-dev/hub/test/config"
+	oauthService "github.com/plgd-dev/hub/test/oauth-server/service"
 	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
 	pbTest "github.com/plgd-dev/hub/test/pb"
 	"github.com/plgd-dev/hub/test/service"
@@ -54,8 +55,9 @@ func TestRequestHandlerGetResource(t *testing.T) {
 					DeviceId: deviceID,
 					Href:     test.TestResourceLightInstanceHref("1"),
 				},
-				Content: &commands.Content{}, // content is encoded as json
-				Status:  commands.Status_OK,
+				Status:       commands.Status_OK,
+				Content:      &commands.Content{}, // content is encoded as json
+				AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, ""),
 			},
 		},
 		{

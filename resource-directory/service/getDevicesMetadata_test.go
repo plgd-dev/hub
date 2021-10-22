@@ -6,10 +6,6 @@ import (
 	"io"
 	"testing"
 
-	"github.com/stretchr/testify/require"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
-
 	"github.com/plgd-dev/device/schema/device"
 	"github.com/plgd-dev/hub/grpc-gateway/pb"
 	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
@@ -17,23 +13,16 @@ import (
 	"github.com/plgd-dev/hub/resource-aggregate/events"
 	"github.com/plgd-dev/hub/test"
 	testCfg "github.com/plgd-dev/hub/test/config"
+	oauthService "github.com/plgd-dev/hub/test/oauth-server/service"
 	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
+	pbTest "github.com/plgd-dev/hub/test/pb"
 	"github.com/plgd-dev/hub/test/service"
+	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 )
 
-func cmpDeviceMetadataUpdated(t *testing.T, want []*events.DeviceMetadataUpdated, got []*events.DeviceMetadataUpdated) {
-	require.Len(t, got, len(want))
-	for idx := range want {
-		got[idx].EventMetadata = nil
-		got[idx].AuditContext = nil
-		if got[idx].GetStatus() != nil {
-			got[idx].GetStatus().ValidUntil = 0
-		}
-		test.CheckProtobufs(t, want[idx], got[idx], test.RequireToCheckFunc(require.Equal))
-	}
-}
-
-func TestRequestHandler_GetDevicesMetadata(t *testing.T) {
+func TestRequestHandlerGetDevicesMetadata(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	type args struct {
 		req *pb.GetDevicesMetadataRequest
@@ -55,6 +44,7 @@ func TestRequestHandler_GetDevicesMetadata(t *testing.T) {
 					Status: &commands.ConnectionStatus{
 						Value: commands.ConnectionStatus_ONLINE,
 					},
+					AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, ""),
 				},
 			},
 		},
@@ -71,6 +61,7 @@ func TestRequestHandler_GetDevicesMetadata(t *testing.T) {
 					Status: &commands.ConnectionStatus{
 						Value: commands.ConnectionStatus_ONLINE,
 					},
+					AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, ""),
 				},
 			},
 		},
@@ -87,6 +78,7 @@ func TestRequestHandler_GetDevicesMetadata(t *testing.T) {
 					Status: &commands.ConnectionStatus{
 						Value: commands.ConnectionStatus_ONLINE,
 					},
+					AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, ""),
 				},
 			},
 		},
@@ -130,7 +122,7 @@ func TestRequestHandler_GetDevicesMetadata(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			client, err := c.GetDevicesMetadata(ctx, tt.args.req)
 			require.NoError(t, err)
-			values := make([]*events.DeviceMetadataUpdated, 0, 1)
+			var values []*events.DeviceMetadataUpdated
 			for {
 				value, err := client.Recv()
 				if err == io.EOF {
@@ -139,12 +131,11 @@ func TestRequestHandler_GetDevicesMetadata(t *testing.T) {
 				if tt.wantErr {
 					require.Error(t, err)
 					return
-				} else {
-					require.NoError(t, err)
-					values = append(values, value)
 				}
+				require.NoError(t, err)
+				values = append(values, value)
 			}
-			cmpDeviceMetadataUpdated(t, tt.want, values)
+			pbTest.CmpDeviceMetadataUpdatedSlice(t, tt.want, values)
 		})
 	}
 }

@@ -24,20 +24,28 @@ func CmpDeviceValues(t *testing.T, expected, got []*pbGrpc.Device) {
 	test.CheckProtobufs(t, expected, got, test.RequireToCheckFunc(require.Equal))
 }
 
-func CmpDeviceMetadataUpdated(t *testing.T, expected, got []*events.DeviceMetadataUpdated) {
-	require.Len(t, got, len(expected))
-
-	cleanUp := func(evt *events.DeviceMetadataUpdated) {
-		evt.EventMetadata = nil
-		evt.AuditContext = nil
-		if evt.GetStatus() != nil {
-			evt.GetStatus().ValidUntil = 0
-		}
+func CleanUpDeviceMetadataUpdated(e *events.DeviceMetadataUpdated) *events.DeviceMetadataUpdated {
+	if e.GetAuditContext() != nil {
+		e.GetAuditContext().CorrelationId = ""
 	}
+	e.EventMetadata = nil
+	if e.GetStatus() != nil {
+		e.GetStatus().ValidUntil = 0
+	}
+	return e
+}
 
+func CmpDeviceMetadataUpdated(t *testing.T, expected, got *events.DeviceMetadataUpdated) {
+	CleanUpDeviceMetadataUpdated(expected)
+	CleanUpDeviceMetadataUpdated(got)
+	test.CheckProtobufs(t, expected, got, test.RequireToCheckFunc(require.Equal))
+}
+
+func CmpDeviceMetadataUpdatedSlice(t *testing.T, expected, got []*events.DeviceMetadataUpdated) {
+	require.Len(t, got, len(expected))
 	for idx := range expected {
-		cleanUp(expected[idx])
-		cleanUp(got[idx])
+		CleanUpDeviceMetadataUpdated(expected[idx])
+		CleanUpDeviceMetadataUpdated(got[idx])
 	}
 	test.CheckProtobufs(t, expected, got, test.RequireToCheckFunc(require.Equal))
 }

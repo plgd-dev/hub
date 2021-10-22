@@ -17,7 +17,9 @@ import (
 	raEvents "github.com/plgd-dev/hub/resource-aggregate/events"
 	"github.com/plgd-dev/hub/test"
 	testCfg "github.com/plgd-dev/hub/test/config"
+	oauthService "github.com/plgd-dev/hub/test/oauth-server/service"
 	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
+	pbTest "github.com/plgd-dev/hub/test/pb"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -52,7 +54,8 @@ func testRequestHandlerUpdateResource(t *testing.T, events store.Events) {
 				Content: &commands.Content{
 					CoapContentFormat: -1,
 				},
-				Status: commands.Status_OK,
+				Status:       commands.Status_OK,
+				AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, ""),
 			},
 		},
 		{
@@ -74,7 +77,8 @@ func testRequestHandlerUpdateResource(t *testing.T, events store.Events) {
 				Content: &commands.Content{
 					CoapContentFormat: -1,
 				},
-				Status: commands.Status_OK,
+				Status:       commands.Status_OK,
+				AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, ""),
 			},
 		},
 		{
@@ -96,7 +100,8 @@ func testRequestHandlerUpdateResource(t *testing.T, events store.Events) {
 				Content: &commands.Content{
 					CoapContentFormat: -1,
 				},
-				Status: commands.Status_OK,
+				Status:       commands.Status_OK,
+				AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, ""),
 			},
 		},
 		{
@@ -146,13 +151,10 @@ func testRequestHandlerUpdateResource(t *testing.T, events store.Events) {
 			got, err := c.UpdateResource(ctx, tt.args.req)
 			if tt.wantErr {
 				require.Error(t, err)
-			} else {
-				require.NoError(t, err)
-				require.NotEmpty(t, got.GetData())
-				got.GetData().AuditContext = nil
-				got.GetData().EventMetadata = nil
-				test.CheckProtobufs(t, tt.want, got.GetData(), test.RequireToCheckFunc(require.Equal))
+				return
 			}
+			require.NoError(t, err)
+			pbTest.CmpResourceUpdated(t, tt.want, got.GetData())
 		})
 	}
 }

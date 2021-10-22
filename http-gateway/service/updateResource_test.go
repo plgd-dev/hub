@@ -19,6 +19,7 @@ import (
 	"github.com/plgd-dev/hub/resource-aggregate/events"
 	"github.com/plgd-dev/hub/test"
 	"github.com/plgd-dev/hub/test/config"
+	oauthService "github.com/plgd-dev/hub/test/oauth-server/service"
 	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
 	pbTest "github.com/plgd-dev/hub/test/pb"
 	"github.com/plgd-dev/hub/test/service"
@@ -159,6 +160,7 @@ func TestRequestHandlerUpdateResourcesValues(t *testing.T) {
 					DeviceId: deviceID,
 					Href:     test.TestResourceSwitchesInstanceHref(switchID),
 				},
+				Status: commands.Status_OK,
 				Content: &commands.Content{
 					CoapContentFormat: int32(message.AppOcfCbor),
 					ContentType:       message.AppOcfCbor.String(),
@@ -166,7 +168,7 @@ func TestRequestHandlerUpdateResourcesValues(t *testing.T) {
 						"value": true,
 					}),
 				},
-				Status: commands.Status_OK,
+				AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, ""),
 			},
 			wantHTTPCode: http.StatusOK,
 		},

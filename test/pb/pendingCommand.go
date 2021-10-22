@@ -219,20 +219,15 @@ func CmpPendingCmds(t *testing.T, want []*pb.PendingCommand, got []*pb.PendingCo
 	for idx := range want {
 		switch {
 		case got[idx].GetResourceCreatePending() != nil:
-			got[idx].GetResourceCreatePending().AuditContext.CorrelationId = ""
-			got[idx].GetResourceCreatePending().EventMetadata = nil
+			CleanUpResourceCreatePending(got[idx].GetResourceCreatePending())
 		case got[idx].GetResourceRetrievePending() != nil:
-			got[idx].GetResourceRetrievePending().AuditContext.CorrelationId = ""
-			got[idx].GetResourceRetrievePending().EventMetadata = nil
+			CleanUpResourceRetrievePending(got[idx].GetResourceRetrievePending())
 		case got[idx].GetResourceUpdatePending() != nil:
-			got[idx].GetResourceUpdatePending().AuditContext.CorrelationId = ""
-			got[idx].GetResourceUpdatePending().EventMetadata = nil
+			CleanUpResourceUpdatePending(got[idx].GetResourceUpdatePending())
 		case got[idx].GetResourceDeletePending() != nil:
-			got[idx].GetResourceDeletePending().AuditContext.CorrelationId = ""
-			got[idx].GetResourceDeletePending().EventMetadata = nil
+			CleanUpResourceDeletePending(got[idx].GetResourceDeletePending())
 		case got[idx].GetDeviceMetadataUpdatePending() != nil:
-			got[idx].GetDeviceMetadataUpdatePending().AuditContext.CorrelationId = ""
-			got[idx].GetDeviceMetadataUpdatePending().EventMetadata = nil
+			CleanUpDeviceMetadataUpdatePending(got[idx].GetDeviceMetadataUpdatePending())
 		}
 		test.CheckProtobufs(t, want[idx], got[idx], test.RequireToCheckFunc(require.Equal))
 	}
@@ -242,6 +237,29 @@ func CmpCancelPendingCmdResponses(t *testing.T, want *pb.CancelPendingCommandsRe
 	sort.Strings(want.CorrelationIds)
 	sort.Strings(got.CorrelationIds)
 	require.Equal(t, want.CorrelationIds, got.CorrelationIds)
+}
+
+func CleanUpResourceCreatePending(e *events.ResourceCreatePending) *events.ResourceCreatePending {
+	if e.GetAuditContext() != nil {
+		e.GetAuditContext().CorrelationId = ""
+	}
+	e.EventMetadata = nil
+	return e
+}
+
+func CmpResourceCreatePending(t *testing.T, expected, got *events.ResourceCreatePending) {
+	require.NotNil(t, expected)
+	e := CleanUpResourceCreatePending(expected)
+	require.NotNil(t, got)
+	g := CleanUpResourceCreatePending(got)
+
+	expectedData := test.DecodeCbor(t, e.GetContent().GetData())
+	gotData := test.DecodeCbor(t, g.GetContent().GetData())
+	require.Equal(t, expectedData, gotData)
+	e.GetContent().Data = nil
+	g.GetContent().Data = nil
+
+	test.CheckProtobufs(t, expected, got, test.RequireToCheckFunc(require.Equal))
 }
 
 func MakeResourceCreatePending(t *testing.T, deviceID, href string, data interface{}) *events.ResourceCreatePending {
@@ -259,6 +277,29 @@ func MakeResourceCreatePending(t *testing.T, deviceID, href string, data interfa
 	}
 }
 
+func CleanUpResourceUpdatePending(e *events.ResourceUpdatePending) *events.ResourceUpdatePending {
+	if e.GetAuditContext() != nil {
+		e.GetAuditContext().CorrelationId = ""
+	}
+	e.EventMetadata = nil
+	return e
+}
+
+func CmpResourceUpdatePending(t *testing.T, expected, got *events.ResourceUpdatePending) {
+	require.NotNil(t, expected)
+	e := CleanUpResourceUpdatePending(expected)
+	require.NotNil(t, got)
+	g := CleanUpResourceUpdatePending(got)
+
+	expectedData := test.DecodeCbor(t, e.GetContent().GetData())
+	gotData := test.DecodeCbor(t, g.GetContent().GetData())
+	require.Equal(t, expectedData, gotData)
+	e.GetContent().Data = nil
+	g.GetContent().Data = nil
+
+	test.CheckProtobufs(t, expected, got, test.RequireToCheckFunc(require.Equal))
+}
+
 func MakeResourceUpdatePending(t *testing.T, deviceID, href string, data interface{}) *events.ResourceUpdatePending {
 	return &events.ResourceUpdatePending{
 		ResourceId: &commands.ResourceId{
@@ -272,4 +313,28 @@ func MakeResourceUpdatePending(t *testing.T, deviceID, href string, data interfa
 		},
 		AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, ""),
 	}
+}
+
+func CleanUpResourceRetrievePending(e *events.ResourceRetrievePending) *events.ResourceRetrievePending {
+	if e.GetAuditContext() != nil {
+		e.GetAuditContext().CorrelationId = ""
+	}
+	e.EventMetadata = nil
+	return e
+}
+
+func CleanUpResourceDeletePending(e *events.ResourceDeletePending) *events.ResourceDeletePending {
+	if e.GetAuditContext() != nil {
+		e.GetAuditContext().CorrelationId = ""
+	}
+	e.EventMetadata = nil
+	return e
+}
+
+func CleanUpDeviceMetadataUpdatePending(e *events.DeviceMetadataUpdatePending) *events.DeviceMetadataUpdatePending {
+	if e.GetAuditContext() != nil {
+		e.GetAuditContext().CorrelationId = ""
+	}
+	e.EventMetadata = nil
+	return e
 }
