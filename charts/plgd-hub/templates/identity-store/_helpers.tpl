@@ -5,7 +5,7 @@
     {{- printf "%s%s:%s" $registryName $repositoryName  $tag -}}
 {{- end -}}
 
-{{- define  "plgd-hub.identitystore.configSecretName" -}}
+{{- define  "plgd-hub.identitystore.configName" -}}
     {{- $fullName :=  include "plgd-hub.identitystore.fullname" . -}}
     {{- printf "%s-cfg" $fullName }}
 {{- end -}}

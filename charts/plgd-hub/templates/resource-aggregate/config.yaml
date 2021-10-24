@@ -1,11 +1,11 @@
 {{- if .Values.resourceaggregate.enabled }}
 {{- $raCert := "/certs" }}
 apiVersion: v1
-kind: Secret
+kind: ConfigMap
 metadata:
-  name: {{ include "plgd-hub.resourceaggregate.configSecretName" . }}
+  name: {{ include "plgd-hub.resourceaggregate.configName" . }}
   namespace: {{ .Release.Namespace }}
-stringData:
+data:
   {{ .Values.coapgateway.config.fileName }}: |
     {{- with .Values.resourceaggregate }}
     log:

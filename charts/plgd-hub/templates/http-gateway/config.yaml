@@ -5,11 +5,11 @@
 {{- end }}
 {{- $httpCert := "/certs" }}
 apiVersion: v1
-kind: Secret
+kind: ConfigMap
 metadata:
-  name: {{ include "plgd-hub.httpgateway.configSecretName" . }}
+  name: {{ include "plgd-hub.httpgateway.configName" . }}
   namespace: {{ .Release.Namespace }}
-stringData:
+data:
   {{ .Values.httpgateway.config.fileName }}: |
     {{- with .Values.httpgateway }}
     log:

@@ -1,11 +1,11 @@
 {{- if .Values.identitystore.enabled }}
 {{- $cert := "/certs" }}
 apiVersion: v1
-kind: Secret
+kind: ConfigMap
 metadata:
-  name: {{ include "plgd-hub.identitystore.configSecretName" . }}
+  name: {{ include "plgd-hub.identitystore.configName" . }}
   namespace: {{ .Release.Namespace }}
-stringData:
+data:
   {{ .Values.identitystore.config.fileName }}: |
     {{- with .Values.identitystore }}
     log:

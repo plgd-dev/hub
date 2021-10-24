@@ -1,13 +1,13 @@
 {{- if .Values.coapgateway.enabled }}
 {{- $coapGatewayServiceCert := "/certs" }}
 apiVersion: v1
-kind: Secret
+kind: ConfigMap
 metadata:
-  name: {{ include "plgd-hub.coapgateway.configSecretName" . }}
+  name: {{ include "plgd-hub.coapgateway.configName" . }}
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "plgd-hub.labels" . | nindent 4 }}
-stringData:
+data:
   {{ .Values.coapgateway.config.fileName }}: |
     {{- with .Values.coapgateway }}
     log:

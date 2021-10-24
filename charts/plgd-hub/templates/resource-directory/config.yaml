@@ -1,11 +1,11 @@
 {{- if .Values.resourcedirectory.enabled }}
 {{- $rdCert := "/certs" }}
 apiVersion: v1
-kind: Secret
+kind: ConfigMap
 metadata:
-  name: {{ include "plgd-hub.resourcedirectory.configSecretName" . }}
+  name: {{ include "plgd-hub.resourcedirectory.configName" . }}
   namespace: {{ .Release.Namespace }}
-stringData:
+data:
   {{ .Values.resourcedirectory.config.fileName }}: |
     {{- with .Values.resourcedirectory }}
     log:

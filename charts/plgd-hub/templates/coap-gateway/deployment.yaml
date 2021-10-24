@@ -99,8 +99,8 @@ spec:
             {{- end }}
       volumes:
         - name: {{ .Values.resourcedirectory.config.volume }}
-          secret:
-            secretName: {{ include "plgd-hub.coapgateway.configSecretName" . }}
+          configMap:
+            name: {{ include "plgd-hub.coapgateway.configName" . }}
         {{- if ( include "plgd-hub.coapgateway.createServiceCertByCm" . ) }}
         - name: service-crt
           secret:
