@@ -23,7 +23,7 @@ import (
 	"google.golang.org/grpc/credentials"
 )
 
-func TestRequestHandler_RetrieveResource(t *testing.T) {
+func TestRequestHandlerRetrieveResource(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	type args struct {
 		uri    string
@@ -39,7 +39,7 @@ func TestRequestHandler_RetrieveResource(t *testing.T) {
 		{
 			name: "JSON: " + uri.Devices + "/" + deviceID + test.TestResourceLightInstanceHref("1"),
 			args: args{
-				uri:    "https://" + testCfg.C2C_GW_HOST + uri.Devices + "/" + deviceID + test.TestResourceLightInstanceHref("1"),
+				uri:    testHttp.HTTPS_SCHEME + testCfg.C2C_GW_HOST + uri.Devices + "/" + deviceID + test.TestResourceLightInstanceHref("1"),
 				accept: message.AppJSON.String(),
 			},
 			wantCode:        http.StatusOK,
@@ -55,7 +55,7 @@ func TestRequestHandler_RetrieveResource(t *testing.T) {
 		{
 			name: "CBOR: " + uri.Devices + "/" + deviceID + test.TestResourceLightInstanceHref("1"),
 			args: args{
-				uri:    "https://" + testCfg.C2C_GW_HOST + uri.Devices + "/" + deviceID + test.TestResourceLightInstanceHref("1"),
+				uri:    testHttp.HTTPS_SCHEME + testCfg.C2C_GW_HOST + uri.Devices + "/" + deviceID + test.TestResourceLightInstanceHref("1"),
 				accept: message.AppOcfCbor.String(),
 			},
 			wantCode:        http.StatusOK,
@@ -71,7 +71,7 @@ func TestRequestHandler_RetrieveResource(t *testing.T) {
 		{
 			name: "notFound",
 			args: args{
-				uri:    "https://" + testCfg.C2C_GW_HOST + uri.Devices + "/" + deviceID + "/notFound",
+				uri:    testHttp.HTTPS_SCHEME + testCfg.C2C_GW_HOST + uri.Devices + "/" + deviceID + "/notFound",
 				accept: message.AppJSON.String(),
 			},
 			wantCode:        http.StatusNotFound,
@@ -81,7 +81,7 @@ func TestRequestHandler_RetrieveResource(t *testing.T) {
 		{
 			name: "invalidAccept",
 			args: args{
-				uri:    "https://" + testCfg.C2C_GW_HOST + uri.Devices + "/" + deviceID + test.TestResourceLightInstanceHref("1"),
+				uri:    testHttp.HTTPS_SCHEME + testCfg.C2C_GW_HOST + uri.Devices + "/" + deviceID + test.TestResourceLightInstanceHref("1"),
 				accept: "application/invalid",
 			},
 			wantCode:        http.StatusBadRequest,

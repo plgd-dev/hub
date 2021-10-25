@@ -31,7 +31,7 @@ import (
 	"google.golang.org/grpc/credentials"
 )
 
-func TestRequestHandler_SubscribeToDevices(t *testing.T) {
+func TestRequestHandlerSubscribeToDevices(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 
 	wantCode := http.StatusCreated
@@ -68,6 +68,7 @@ func TestRequestHandler_SubscribeToDevices(t *testing.T) {
 	eventsServer, cleanUpEventsServer := c2cTest.NewTestListener(t)
 	defer cleanUpEventsServer()
 
+	const eventsURI = "/events"
 	var wg sync.WaitGroup
 	wg.Add(1)
 	defer wg.Wait()
@@ -75,7 +76,7 @@ func TestRequestHandler_SubscribeToDevices(t *testing.T) {
 		defer wg.Done()
 		r := router.NewRouter()
 		r.StrictSlash(true)
-		r.HandleFunc("/events", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		r.HandleFunc(eventsURI, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			h, err := events.ParseEventHeader(r)
 			assert.NoError(t, err)
 			defer func() {
@@ -99,7 +100,7 @@ func TestRequestHandler_SubscribeToDevices(t *testing.T) {
 	require.NoError(t, err)
 
 	sub := events.SubscriptionRequest{
-		URL:           "https://localhost:" + port + "/events",
+		URL:           "https://localhost:" + port + eventsURI,
 		EventTypes:    events.EventTypes{eventType},
 		SigningSecret: "a",
 	}
@@ -123,7 +124,7 @@ func TestRequestHandler_SubscribeToDevices(t *testing.T) {
 	}
 }
 
-func TestRequestHandler_SubscribeToDevicesOffline(t *testing.T) {
+func TestRequestHandlerSubscribeToDevicesOffline(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 
 	wantCode := http.StatusCreated
@@ -161,6 +162,7 @@ func TestRequestHandler_SubscribeToDevicesOffline(t *testing.T) {
 	eventsServer, cleanUpEventsServer := c2cTest.NewTestListener(t)
 	defer cleanUpEventsServer()
 
+	const eventsURI = "/events"
 	var wg sync.WaitGroup
 	wg.Add(1)
 	defer wg.Wait()
@@ -168,7 +170,7 @@ func TestRequestHandler_SubscribeToDevicesOffline(t *testing.T) {
 		defer wg.Done()
 		r := router.NewRouter()
 		r.StrictSlash(true)
-		r.HandleFunc("/events", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		r.HandleFunc(eventsURI, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			h, err := events.ParseEventHeader(r)
 			assert.NoError(t, err)
 			defer func() {
@@ -192,7 +194,7 @@ func TestRequestHandler_SubscribeToDevicesOffline(t *testing.T) {
 	require.NoError(t, err)
 
 	sub := events.SubscriptionRequest{
-		URL:           "https://localhost:" + port + "/events",
+		URL:           "https://localhost:" + port + eventsURI,
 		EventTypes:    events.EventTypes{eventType},
 		SigningSecret: "a",
 	}

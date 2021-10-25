@@ -34,7 +34,7 @@ import (
 	"google.golang.org/grpc/credentials"
 )
 
-func TestRequestHandler_SubscribeToResource(t *testing.T) {
+func TestRequestHandlerSubscribeToResource(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	wantCode := http.StatusCreated
 	wantContentType := message.AppJSON.String()
@@ -74,6 +74,7 @@ func TestRequestHandler_SubscribeToResource(t *testing.T) {
 	eventsServer, cleanUpEventsServer := c2cTest.NewTestListener(t)
 	defer cleanUpEventsServer()
 
+	const eventsURI = "/events"
 	var wg sync.WaitGroup
 	wg.Add(1)
 	defer wg.Wait()
@@ -81,7 +82,7 @@ func TestRequestHandler_SubscribeToResource(t *testing.T) {
 		defer wg.Done()
 		r := router.NewRouter()
 		r.StrictSlash(true)
-		r.HandleFunc("/events", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		r.HandleFunc(eventsURI, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			h, err := events.ParseEventHeader(r)
 			assert.NoError(t, err)
 			defer func() {
@@ -105,7 +106,7 @@ func TestRequestHandler_SubscribeToResource(t *testing.T) {
 	require.NoError(t, err)
 
 	sub := events.SubscriptionRequest{
-		URL:           "https://localhost:" + port + "/events",
+		URL:           "https://localhost:" + port + eventsURI,
 		EventTypes:    events.EventTypes{eventType},
 		SigningSecret: "a",
 	}
@@ -130,7 +131,7 @@ func TestRequestHandler_SubscribeToResource(t *testing.T) {
 	}
 }
 
-func TestRequestHandler_SubscribeToResourceTokenTimeout(t *testing.T) {
+func TestRequestHandlerSubscribeToResourceTokenTimeout(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), testCfg.TEST_TIMEOUT)
 	defer cancel()
 
@@ -160,6 +161,7 @@ func TestRequestHandler_SubscribeToResourceTokenTimeout(t *testing.T) {
 	eventsServer, cleanUpEventsServer := c2cTest.NewTestListener(t)
 	defer cleanUpEventsServer()
 
+	const eventsURI = "/events"
 	var cancelled, subscribed atomic.Bool
 	var wg sync.WaitGroup
 	wg.Add(1)
@@ -167,7 +169,7 @@ func TestRequestHandler_SubscribeToResourceTokenTimeout(t *testing.T) {
 		defer wg.Done()
 		r := router.NewRouter()
 		r.StrictSlash(true)
-		r.HandleFunc("/events", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		r.HandleFunc(eventsURI, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			h, err := events.ParseEventHeader(r)
 			assert.NoError(t, err)
 			defer func() {
@@ -195,7 +197,7 @@ func TestRequestHandler_SubscribeToResourceTokenTimeout(t *testing.T) {
 	require.NoError(t, err)
 
 	sub := events.SubscriptionRequest{
-		URL:           "https://localhost:" + port + "/events",
+		URL:           "https://localhost:" + port + eventsURI,
 		EventTypes:    events.EventTypes{events.EventType_ResourceChanged},
 		SigningSecret: "a",
 	}
