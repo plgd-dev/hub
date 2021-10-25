@@ -1,6 +1,7 @@
 package events
 
 import (
+	"bytes"
 	"time"
 
 	pkgTime "github.com/plgd-dev/hub/pkg/time"
@@ -56,4 +57,22 @@ func (e *ResourceChanged) CheckInitialized() bool {
 		e.GetAuditContext() != nil &&
 		e.GetEventMetadata() != nil &&
 		e.GetStatus() != commands.Status(0)
+}
+
+func (rc *ResourceChanged) Equal(changed *ResourceChanged) bool {
+	if rc.GetStatus() != changed.GetStatus() {
+		return false
+	}
+
+	if rc.GetContent().GetCoapContentFormat() != changed.GetContent().GetCoapContentFormat() ||
+		rc.GetContent().GetContentType() != changed.GetContent().GetContentType() ||
+		!bytes.Equal(rc.GetContent().GetData(), changed.GetContent().GetData()) {
+		return false
+	}
+
+	if rc.GetAuditContext().GetUserId() != changed.GetAuditContext().GetUserId() {
+		return false
+	}
+
+	return true
 }

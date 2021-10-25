@@ -534,7 +534,7 @@ func testMakeConfirmResourceRetrieveRequest(deviceID, href, correlationID string
 	return &r
 }
 
-func testMakeConfirmResourceDeleteRequest(deviceID, href, correlationID string) *commands.ConfirmResourceDeleteRequest {
+func testMakeConfirmResourceDeleteRequest(deviceID, href, correlationID string, status commands.Status) *commands.ConfirmResourceDeleteRequest {
 	r := commands.ConfirmResourceDeleteRequest{
 		ResourceId: &commands.ResourceId{
 			DeviceId: deviceID,
@@ -544,7 +544,7 @@ func testMakeConfirmResourceDeleteRequest(deviceID, href, correlationID string) 
 		Content: &commands.Content{
 			Data: []byte("hello world"),
 		},
-		Status: commands.Status_OK,
+		Status: status,
 		CommandMetadata: &commands.CommandMetadata{
 			ConnectionId: uuid.Must(uuid.NewRandom()).String(),
 			Sequence:     0,
@@ -1197,7 +1197,7 @@ func Test_aggregate_HandleConfirmResourceDelete(t *testing.T) {
 		{
 			name: "valid",
 			args: args{
-				testMakeConfirmResourceDeleteRequest(deviceID, resourceID, "123"),
+				testMakeConfirmResourceDeleteRequest(deviceID, resourceID, "123", commands.Status_OK),
 			},
 			wantEvents:     true,
 			wantStatusCode: codes.OK,

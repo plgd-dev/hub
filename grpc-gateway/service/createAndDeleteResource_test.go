@@ -267,8 +267,7 @@ func TestCreateAndDeleteResource(t *testing.T) {
 	subClient, subID := subscribeToAllEvents(t, ctx, c, correlationID)
 	const switchID = "1"
 
-	// TODO
-	for i := 0; i < 1; i++ {
+	for i := 0; i < 5; i++ {
 		createSwitchResource(t, ctx, c, deviceID, switchID)
 		expectedCreateEvents := createSwitchResourceExpectedEvents(t, deviceID, subID, correlationID, switchID)
 		validateEvents(t, subClient, expectedCreateEvents)

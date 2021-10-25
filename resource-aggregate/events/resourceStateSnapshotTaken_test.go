@@ -5,11 +5,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/hub/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventstore"
 	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventstore/test"
 	"github.com/plgd-dev/hub/resource-aggregate/events"
-	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
@@ -178,7 +178,7 @@ func TestEqual(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := events.Equal(tt.args.current, tt.args.changed)
+			got := tt.args.current.Equal(tt.args.changed)
 			assert.Equal(t, tt.want, got)
 		})
 	}
