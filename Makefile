@@ -86,29 +86,40 @@ env: clean certificates nats mongo privateKeys
 		ghcr.io/iotivity/iotivity-lite/cloud-server-debug:latest \
 		devsim-$(SIMULATOR_NAME_SUFFIX)
 
+define RUN-DOCKER
+	docker run \
+		--rm \
+		--network=host \
+		-v $(WORKING_DIRECTORY)/.tmp/certs:/certs \
+		-v $(WORKING_DIRECTORY)/.tmp/coverage:/coverage \
+		-v $(WORKING_DIRECTORY)/.tmp/report:/report \
+		-v $(WORKING_DIRECTORY)/.tmp/privKeys:/privKeys \
+		-v /var/run/docker.sock:/var/run/docker.sock \
+		-e LISTEN_FILE_CA_POOL=/certs/root_ca.crt \
+		-e LISTEN_FILE_CERT_DIR_PATH=/certs \
+		-e LISTEN_FILE_CERT_NAME=http.crt \
+		-e LISTEN_FILE_CERT_KEY_NAME=http.key \
+		-e TEST_COAP_GW_CERT_FILE=/certs/coap.crt \
+		-e TEST_COAP_GW_KEY_FILE=/certs/coap.key \
+		-e TEST_CLOUD_SID=$(CLOUD_SID) \
+		-e TEST_ROOT_CA_CERT=/certs/root_ca.crt \
+		-e TEST_ROOT_CA_KEY=/certs/root_ca.key \
+		-e TEST_OAUTH_SERVER_ID_TOKEN_PRIVATE_KEY=/privKeys/idTokenKey.pem \
+		-e TEST_OAUTH_SERVER_ACCESS_TOKEN_PRIVATE_KEY=/privKeys/accessTokenKey.pem \
+		hub-test \
+		$(1) ;
+endef
+
 define RUN-TESTS-IN-DIRECTORY
 	echo "Executing tests from $(1) directory"; \
 	START_TIME=$$(date +%s); \
-	docker run \
-	--rm \
-	--network=host \
-	-v $(WORKING_DIRECTORY)/.tmp/certs:/certs \
-	-v $(WORKING_DIRECTORY)/.tmp/coverage:/coverage \
-	-v $(WORKING_DIRECTORY)/.tmp/privKeys:/privKeys \
-	-v /var/run/docker.sock:/var/run/docker.sock \
-	-e LISTEN_FILE_CA_POOL=/certs/root_ca.crt \
-	-e LISTEN_FILE_CERT_DIR_PATH=/certs \
-	-e LISTEN_FILE_CERT_NAME=http.crt \
-	-e LISTEN_FILE_CERT_KEY_NAME=http.key \
-	-e TEST_COAP_GW_CERT_FILE=/certs/coap.crt \
-	-e TEST_COAP_GW_KEY_FILE=/certs/coap.key \
-	-e TEST_CLOUD_SID=$(CLOUD_SID) \
-	-e TEST_ROOT_CA_CERT=/certs/root_ca.crt \
-	-e TEST_ROOT_CA_KEY=/certs/root_ca.key \
-	-e TEST_OAUTH_SERVER_ID_TOKEN_PRIVATE_KEY=/privKeys/idTokenKey.pem \
-	-e TEST_OAUTH_SERVER_ACCESS_TOKEN_PRIVATE_KEY=/privKeys/accessTokenKey.pem \
-	hub-test \
-	go test -timeout=45m -race -p 1 -v $(1)... -covermode=atomic -coverprofile=/coverage/`echo $(1) | sed -e "s/[\.\/]//g"`.coverage.txt ; \
+	COVERAGE_FILE=/coverage/$$(echo $(1) | sed -e "s/[\.\/]//g").coverage.txt ; \
+	JSON_REPORT_FILE=$(WORKING_DIRECTORY)/.tmp/report/$$(echo $(1) | sed -e "s/[\.\/]//g").report.json ; \
+	if [ -n "$${JSON_REPORT}" ]; then \
+		$(call RUN-DOCKER, go test -timeout=45m -race -p 1 -v $(1)... -covermode=atomic -coverprofile=$${COVERAGE_FILE} -json > "$${JSON_REPORT_FILE}") \
+	else \
+		$(call RUN-DOCKER, go test -timeout=45m -race -p 1 -v $(1)... -covermode=atomic -coverprofile=$${COVERAGE_FILE}) \
+	fi ; \
 	EXIT_STATUS=$$? ; \
 	if [ $${EXIT_STATUS} -ne 0 ]; then \
 		exit $${EXIT_STATUS}; \
@@ -125,6 +136,7 @@ DIRECTORIES:=$(shell ls -d ./*/)
 test: env
 	@mkdir -p $(WORKING_DIRECTORY)/.tmp/home
 	@mkdir -p $(WORKING_DIRECTORY)/.tmp/home/certificate-authority
+	@mkdir -p $(WORKING_DIRECTORY)/.tmp/report
 	@for DIRECTORY in $(DIRECTORIES); do \
 		if ! go list -f '{{.GoFiles}}' $$DIRECTORY... 2>/dev/null | grep go > /dev/null 2>&1; then \
 			echo "No golang files detected, directory $${DIRECTORY} skipped"; \
@@ -138,6 +150,7 @@ test-targets := $(addprefix test-,$(patsubst ./%/,%,$(DIRECTORIES)))
 $(test-targets): %: env
 	@mkdir -p $(WORKING_DIRECTORY)/.tmp/home
 	@mkdir -p $(WORKING_DIRECTORY)/.tmp/home/certificate-authority
+	@mkdir -p $(WORKING_DIRECTORY)/.tmp/report
 	@readonly TARGET_DIRECTORY=$(patsubst test-%,./%/,$@) ; \
 	if ! go list -f '{{.GoFiles}}' $$TARGET_DIRECTORY... 2>/dev/null | grep go > /dev/null 2>&1; then \
 		echo "No golang files detected, directory $$TARGET_DIRECTORY skipped"; \
@@ -159,6 +172,8 @@ clean:
 	sudo rm -rf ./.tmp/mongo || true
 	sudo rm -rf ./.tmp/home || true
 	sudo rm -rf ./.tmp/privateKeys || true
+	sudo rm -rf ./.tmp/coverage || true
+	sudo rm -rf ./.tmp/report || true
 
 proto/generate: $(SUBDIRS)
 	protoc -I=. -I=$(GOPATH)/src --go_out=$(GOPATH)/src $(WORKING_DIRECTORY)/pkg/net/grpc/stub.proto
