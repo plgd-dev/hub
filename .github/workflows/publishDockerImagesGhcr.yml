@@ -101,6 +101,7 @@ jobs:
             type=raw,enable=${{ startsWith(steps.vars.outputs.branch, env.VNEXT_BRANCH) }},value=vnext
             type=ref,event=tag
             type=ref,event=pr
+            type=sha,enable=${{ startsWith(steps.vars.outputs.branch, env.VNEXT_BRANCH) }},prefix=vnext-,format=short
 
       - name: Build and push docker image
         uses: docker/build-push-action@v2
