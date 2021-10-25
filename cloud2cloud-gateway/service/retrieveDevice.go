@@ -155,14 +155,18 @@ func (rh *RequestHandler) RetrieveResources(ctx context.Context, resourceIdFilte
 	return allResources, nil
 }
 
+func retrieveDeviceError(deviceID, tag string, err error) error {
+	return fmt.Errorf("cannot retrieve device(%v) [%v]: %w", deviceID, tag, err)
+}
+
 func (rh *RequestHandler) RetrieveDeviceWithLinks(ctx context.Context, w http.ResponseWriter, deviceID string, encoder responseWriterEncoderFunc) (int, error) {
 	devices, err := rh.GetDevices(ctx, []string{deviceID})
 	if err != nil {
-		return kitNetHttp.ErrToStatusWithDef(err, http.StatusForbidden), fmt.Errorf("cannot retrieve device(%v) [base]: %w", deviceID, err)
+		return kitNetHttp.ErrToStatusWithDef(err, http.StatusForbidden), retrieveDeviceError(deviceID, "base", err)
 	}
 	resourceLink, err := rh.GetResourceLinks(ctx, []string{deviceID})
 	if err != nil {
-		return kitNetHttp.ErrToStatusWithDef(err, http.StatusForbidden), fmt.Errorf("cannot retrieve device links(%v) [base]: %w", deviceID, err)
+		return kitNetHttp.ErrToStatusWithDef(err, http.StatusForbidden), retrieveDeviceError(deviceID, "base", fmt.Errorf("cannot retrieve device links: %w", err))
 	}
 
 	resp := RetrieveDeviceWithLinksResponse{
@@ -172,7 +176,7 @@ func (rh *RequestHandler) RetrieveDeviceWithLinks(ctx context.Context, w http.Re
 
 	err = encoder(w, resp, http.StatusOK)
 	if err != nil {
-		return http.StatusBadRequest, fmt.Errorf("cannot retrieve devices(%v) [base]: %w", deviceID, err)
+		return http.StatusBadRequest, retrieveDeviceError(deviceID, "base", fmt.Errorf("cannot encode response: %w", err))
 	}
 	return http.StatusOK, nil
 }
@@ -185,11 +189,11 @@ type RetrieveDeviceContentAllResponse struct {
 func (rh *RequestHandler) RetrieveDeviceWithRepresentations(ctx context.Context, w http.ResponseWriter, deviceID string, encoder responseWriterEncoderFunc) (int, error) {
 	devices, err := rh.GetDevices(ctx, []string{deviceID})
 	if err != nil {
-		return kitNetHttp.ErrToStatusWithDef(err, http.StatusForbidden), fmt.Errorf("cannot retrieve device(%v) [base]: %w", deviceID, err)
+		return kitNetHttp.ErrToStatusWithDef(err, http.StatusForbidden), retrieveDeviceError(deviceID, "base", err)
 	}
 	allResources, err := rh.RetrieveResources(ctx, nil, []string{deviceID})
 	if err != nil {
-		return kitNetHttp.ErrToStatusWithDef(err, http.StatusForbidden), fmt.Errorf("cannot retrieve device links(%v) [all]: %w", deviceID, err)
+		return kitNetHttp.ErrToStatusWithDef(err, http.StatusForbidden), retrieveDeviceError(deviceID, "all", fmt.Errorf("cannot retrieve device links: %w", err))
 	}
 
 	resp := RetrieveDeviceContentAllResponse{
@@ -199,7 +203,7 @@ func (rh *RequestHandler) RetrieveDeviceWithRepresentations(ctx context.Context,
 
 	err = encoder(w, resp, http.StatusOK)
 	if err != nil {
-		return http.StatusBadRequest, fmt.Errorf("cannot retrieve devices(%v) [all]: %w", deviceID, err)
+		return http.StatusBadRequest, retrieveDeviceError(deviceID, "all", fmt.Errorf("cannot encode response: %w", err))
 	}
 	return http.StatusOK, nil
 }
