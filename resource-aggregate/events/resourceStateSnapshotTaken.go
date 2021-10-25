@@ -1,14 +1,13 @@
 package events
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"time"
 
+	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/hub/pkg/net/grpc"
 	pkgTime "github.com/plgd-dev/hub/pkg/time"
-	"github.com/plgd-dev/go-coap/v2/message"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -273,9 +272,6 @@ func (e *ResourceStateSnapshotTaken) HandleEventResourceRetrieved(ctx context.Co
 }
 
 func (e *ResourceStateSnapshotTaken) ValidateSequence(eventMetadata *EventMetadata) bool {
-	if e.GetLatestResourceChange() == nil {
-		return true
-	}
 	if e.GetLatestResourceChange().GetEventMetadata().GetConnectionId() != eventMetadata.GetConnectionId() {
 		return true
 	}
@@ -285,27 +281,9 @@ func (e *ResourceStateSnapshotTaken) ValidateSequence(eventMetadata *EventMetada
 	return false
 }
 
-func Equal(current, changed *ResourceChanged) bool {
-	if current.GetStatus() != changed.GetStatus() {
-		return false
-	}
-
-	if current.GetContent().GetCoapContentFormat() != changed.GetContent().GetCoapContentFormat() ||
-		current.GetContent().GetContentType() != changed.GetContent().GetContentType() ||
-		!bytes.Equal(current.GetContent().GetData(), changed.GetContent().GetData()) {
-		return false
-	}
-
-	if current.GetAuditContext().GetUserId() != changed.GetAuditContext().GetUserId() {
-		return false
-	}
-
-	return true
-}
-
 func (e *ResourceStateSnapshotTaken) HandleEventResourceChanged(ctx context.Context, changed *ResourceChanged) (bool, error) {
-	if e.ValidateSequence(changed.GetEventMetadata()) &&
-		(e.LatestResourceChange == nil || !Equal(e.LatestResourceChange, changed)) {
+	if e.GetLatestResourceChange() == nil ||
+		(e.ValidateSequence(changed.GetEventMetadata()) && !e.GetLatestResourceChange().Equal(changed)) {
 		e.ResourceId = changed.GetResourceId()
 		e.EventMetadata = changed.GetEventMetadata()
 		e.LatestResourceChange = changed
@@ -315,19 +293,27 @@ func (e *ResourceStateSnapshotTaken) HandleEventResourceChanged(ctx context.Cont
 }
 
 func (e *ResourceStateSnapshotTaken) HandleEventResourceDeleted(ctx context.Context, deleted *ResourceDeleted) error {
-	index := -1
-	for i, event := range e.GetResourceDeletePendings() {
-		if event.GetAuditContext().GetCorrelationId() == deleted.GetAuditContext().GetCorrelationId() {
-			index = i
-			break
+	if deleted.GetStatus() == commands.Status_OK || deleted.GetStatus() == commands.Status_ACCEPTED {
+		e.LatestResourceChange = nil
+		e.ResourceCreatePendings = nil
+		e.ResourceRetrievePendings = nil
+		e.ResourceDeletePendings = nil
+		e.ResourceUpdatePendings = nil
+	} else {
+		index := -1
+		for i, event := range e.GetResourceDeletePendings() {
+			if event.GetAuditContext().GetCorrelationId() == deleted.GetAuditContext().GetCorrelationId() {
+				index = i
+				break
+			}
 		}
-	}
-	if index < 0 {
-		return status.Errorf(codes.InvalidArgument, "cannot find resource delete pending event with correlationId('%v')", deleted.GetAuditContext().GetCorrelationId())
+		if index < 0 {
+			return status.Errorf(codes.InvalidArgument, "cannot find resource delete pending event with correlationId('%v')", deleted.GetAuditContext().GetCorrelationId())
+		}
+		e.ResourceDeletePendings = append(e.ResourceDeletePendings[:index], e.ResourceDeletePendings[index+1:]...)
 	}
 	e.ResourceId = deleted.GetResourceId()
 	e.EventMetadata = deleted.GetEventMetadata()
-	e.ResourceDeletePendings = append(e.ResourceDeletePendings[:index], e.ResourceDeletePendings[index+1:]...)
 	e.AuditContext = deleted.GetAuditContext()
 	return nil
 }

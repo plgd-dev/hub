@@ -788,7 +788,7 @@ func TestRequestHandler_ConfirmResourceDelete(t *testing.T) {
 	}{
 		{
 			name: "valid",
-			args: args{request: testMakeConfirmResourceDeleteRequest(deviceID, resID, correlationID)},
+			args: args{request: testMakeConfirmResourceDeleteRequest(deviceID, resID, correlationID, commands.Status_OK)},
 			want: &commands.ConfirmResourceDeleteResponse{
 				AuditContext: &commands.AuditContext{
 					UserId:        user0,
@@ -798,7 +798,7 @@ func TestRequestHandler_ConfirmResourceDelete(t *testing.T) {
 		},
 		{
 			name:      "error-not-found-correlationID",
-			args:      args{request: testMakeConfirmResourceDeleteRequest(deviceID, resID, correlationID)},
+			args:      args{request: testMakeConfirmResourceDeleteRequest(deviceID, resID, correlationID, commands.Status_FORBIDDEN)},
 			wantError: true,
 		},
 		{
