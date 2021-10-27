@@ -16,7 +16,7 @@ global:
   enableWildCartCert: true
   # Global OAuth configuration used by multiple services
   oauth:
-#   device: []
+   device: []
 #     - name:
 #       clientID:
 #       clientSecret:
