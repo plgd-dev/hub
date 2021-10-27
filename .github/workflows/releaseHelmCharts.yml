@@ -18,6 +18,7 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           charts_url: https://charts.plgd.dev
+          repository: https://github.com/plgd-dev/hub/
           owner: plgd.dev
           branch: gh-pages
           helm_version: "3.7.1"
