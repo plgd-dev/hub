@@ -15,7 +15,7 @@ global:
   # -- Enable *.{{ global.domain }} for all external domain
   enableWildCartCert: true
   # Global OAuth configuration used by multiple services
-#  oauth:
+  oauth:
 #   device: []
 #     - name:
 #       clientID:
