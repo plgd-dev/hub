@@ -25,7 +25,6 @@ global:
    web:
     clientID:
 
-
 # -- Extra deploy. Resolved as template
 extraDeploy:
 

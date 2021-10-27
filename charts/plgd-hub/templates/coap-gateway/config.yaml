@@ -46,8 +46,7 @@ data:
           providers:
           {{- $providers := $.Values.mockoauthserver.oauth }}
           {{- if not $.Values.mockoauthserver.enabled }}
-          {{- required "At least one coapgateway.apis.coap.authorization.providers or global.oauth.device must be specified " ( .apis.coap.authorization.providers | default $.Values.global.oauth.device ) }}
-          {{- end }}
+          {{- $providers = required "At least one oauth provider must be specified for coapgateway.apis.coap.authorization.providers or global.oauth.device" ( .apis.coap.authorization.providers | default $.Values.global.oauth.device ) }}          {{- end }}
           {{- range $providers }}
             - name: {{ required "name for oauth device provider is required" .name | quote }}
               clientID: {{ required "clientID for oauth device provider is required" .clientID | quote }}

@@ -1,8 +1,6 @@
 name: Release Helm Charts
 on:
   push:
-    branches:
-      - ondrejtomcik/feature/helm-registry
     tags:
       - '*'
 
@@ -13,8 +11,6 @@ jobs:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 0
-      - name: Basic variable usage
-        run: echo ${GITHUB_REF}
       - name: Publish Helm chart
         uses: stefanprodan/helm-gh-pages@master
         with:
