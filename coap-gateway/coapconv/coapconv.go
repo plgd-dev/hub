@@ -190,15 +190,24 @@ func NewConfirmResourceUpdateRequest(resourceID *commands.ResourceId, correlatio
 	}
 }
 
-func NewDeleteResourceRequest(resourceID *commands.ResourceId, req *mux.Message, connectionID string) (*commands.DeleteResourceRequest, error) {
+func createCorrelationID() (string, error) {
 	correlationUUID, err := uuid.NewRandom()
 	if err != nil {
-		return nil, fmt.Errorf("cannot create correlationID: %w", err)
+		return "", fmt.Errorf("cannot create correlationID: %w", err)
 	}
+	return correlationUUID.String(), nil
+}
+
+func NewDeleteResourceRequest(resourceID *commands.ResourceId, req *mux.Message, connectionID string) (*commands.DeleteResourceRequest, error) {
+	correlationID, err := createCorrelationID()
+	if err != nil {
+		return nil, err
+	}
+
 	metadata := NewCommandMetadata(req.SequenceNumber, connectionID)
 	return &commands.DeleteResourceRequest{
 		ResourceId:      resourceID,
-		CorrelationId:   correlationUUID.String(),
+		CorrelationId:   correlationID,
 		CommandMetadata: metadata,
 	}, nil
 }
@@ -229,9 +238,9 @@ func NewNotifyResourceChangedRequest(resourceID *commands.ResourceId, connection
 }
 
 func NewUpdateResourceRequest(resourceID *commands.ResourceId, req *mux.Message, connectionID string) (*commands.UpdateResourceRequest, error) {
-	correlationUUID, err := uuid.NewRandom()
+	correlationID, err := createCorrelationID()
 	if err != nil {
-		return nil, fmt.Errorf("cannot create correlationID: %w", err)
+		return nil, err
 	}
 
 	content := NewContent(req.Options, req.Body)
@@ -255,14 +264,14 @@ func NewUpdateResourceRequest(resourceID *commands.ResourceId, req *mux.Message,
 		},
 		ResourceInterface: resourceInterface,
 		CommandMetadata:   metadata,
-		CorrelationId:     correlationUUID.String(),
+		CorrelationId:     correlationID,
 	}, nil
 }
 
 func NewRetrieveResourceRequest(resourceID *commands.ResourceId, req *mux.Message, connectionID string) (*commands.RetrieveResourceRequest, error) {
-	correlationUUID, err := uuid.NewRandom()
+	correlationID, err := createCorrelationID()
 	if err != nil {
-		return nil, fmt.Errorf("cannot create correlationID: %w", err)
+		return nil, err
 	}
 	metadata := NewCommandMetadata(req.SequenceNumber, connectionID)
 	var resourceInterface string
@@ -277,16 +286,16 @@ func NewRetrieveResourceRequest(resourceID *commands.ResourceId, req *mux.Messag
 	}
 	return &commands.RetrieveResourceRequest{
 		ResourceId:        resourceID,
-		CorrelationId:     correlationUUID.String(),
+		CorrelationId:     correlationID,
 		ResourceInterface: resourceInterface,
 		CommandMetadata:   metadata,
 	}, nil
 }
 
 func NewCreateResourceRequest(resourceID *commands.ResourceId, req *mux.Message, connectionID string) (*commands.CreateResourceRequest, error) {
-	correlationUUID, err := uuid.NewRandom()
+	correlationID, err := createCorrelationID()
 	if err != nil {
-		return nil, fmt.Errorf("cannot create correlationID: %w", err)
+		return nil, err
 	}
 
 	content := NewContent(req.Options, req.Body)
@@ -294,7 +303,7 @@ func NewCreateResourceRequest(resourceID *commands.ResourceId, req *mux.Message,
 
 	return &commands.CreateResourceRequest{
 		ResourceId:      resourceID,
-		CorrelationId:   correlationUUID.String(),
+		CorrelationId:   correlationID,
 		Content:         content,
 		CommandMetadata: metadata,
 	}, nil

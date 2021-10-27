@@ -142,20 +142,27 @@ func getSignInContent(expiresIn int64, options message.Options) (message.MediaTy
 }
 
 func setNewDeviceSubscriber(client *Client, owner, deviceID string) error {
-	deviceSubscriber, err := grpcgwClient.NewDeviceSubscriber(client.GetContext, owner, deviceID, func() func() (when time.Time, err error) {
-		var count uint64
-		maxRand := client.server.config.APIs.COAP.KeepAlive.Timeout / 2
-		if maxRand <= 0 {
-			maxRand = time.Second * 10
+	getContext := func() (context.Context, context.CancelFunc) {
+		return client.GetContext(), func() {
+			// no-op
 		}
-		return func() (when time.Time, err error) {
-			count++
-			r := rand.Int63n(int64(maxRand) / 2)
-			next := time.Now().Add(client.server.config.APIs.COAP.KeepAlive.Timeout + time.Duration(r))
-			log.Debugf("next iteration %v of retrying reconnect to grpc-client for deviceID %v will be at %v", count, deviceID, next)
-			return next, nil
-		}
-	}, client.server.rdClient, client.server.resourceSubscriber)
+	}
+
+	deviceSubscriber, err := grpcgwClient.NewDeviceSubscriber(getContext, owner, deviceID,
+		func() func() (when time.Time, err error) {
+			var count uint64
+			maxRand := client.server.config.APIs.COAP.KeepAlive.Timeout / 2
+			if maxRand <= 0 {
+				maxRand = time.Second * 10
+			}
+			return func() (when time.Time, err error) {
+				count++
+				r := rand.Int63n(int64(maxRand) / 2)
+				next := time.Now().Add(client.server.config.APIs.COAP.KeepAlive.Timeout + time.Duration(r))
+				log.Debugf("next iteration %v of retrying reconnect to grpc-client for deviceID %v will be at %v", count, deviceID, next)
+				return next, nil
+			}
+		}, client.server.rdClient, client.server.resourceSubscriber)
 	if err != nil {
 		return fmt.Errorf("cannot create device subscription for device %v: %w", deviceID, err)
 	}
@@ -223,29 +230,50 @@ func (client *Client) updateBySignInData(ctx context.Context, upd updateType, de
 	return nil
 }
 
+func subscribeToDeviceEvents(ctx context.Context, client *Client, owner, deviceId string) error {
+	if err := client.subscribeToDeviceEvents(owner, func(e *events.Event) {
+		evt := e.GetDevicesUnregistered()
+		if evt == nil {
+			return
+		}
+		if evt.Owner != owner {
+			return
+		}
+		if !strings.Contains(evt.DeviceIds, deviceId) {
+			return
+		}
+		if err := client.Close(); err != nil {
+			log.Errorf("sign in error: cannot close client: %w", err)
+		}
+	}); err != nil {
+		return fmt.Errorf("cannot subscribe to device events: %w", err)
+	}
+	return nil
+}
+
 func subscribeAndValidateDeviceAccess(ctx context.Context, client *Client, owner, deviceId string, subscribe bool) (bool, error) {
 	// subscribe to updates before checking cache, so when the device gets removed during sign in
 	// the client will always be closed
 	if subscribe {
-		if err := client.subscribeToDeviceEvents(owner, func(e *events.Event) {
-			evt := e.GetDevicesUnregistered()
-			if evt == nil {
-				return
-			}
-			if evt.Owner != owner {
-				return
-			}
-			if strings.Contains(evt.DeviceIds, deviceId) {
-				if err := client.Close(); err != nil {
-					log.Errorf("sign in error: cannot close client: %w", err)
-				}
-			}
-		}); err != nil {
-			return false, fmt.Errorf("cannot subscribe to device events: %w", err)
+		if err := subscribeToDeviceEvents(ctx, client, owner, deviceId); err != nil {
+			return false, err
 		}
 	}
 
 	return client.server.ownerCache.OwnsDevice(ctx, deviceId)
+}
+
+func observePublishedResources(ctx context.Context, client *Client, deviceID string) {
+	if err := client.server.taskQueue.Submit(func() {
+		client.observedResourcesLock.Lock()
+		defer client.observedResourcesLock.Unlock()
+		if client.shadowSynchronization == commands.ShadowSynchronization_DISABLED {
+			return
+		}
+		client.registerObservationsForPublishedResourcesLocked(ctx, deviceID)
+	}); err != nil {
+		log.Errorf("sign in error: failed to register resource observations for device %v: %w", deviceID, err)
+	}
 }
 
 // https://github.com/openconnectivityfoundation/security/blob/master/swagger2.0/oic.sec.session.swagger.json
@@ -323,16 +351,7 @@ func signInPostHandler(req *mux.Message, client *Client, signIn CoapSignInReq) {
 	client.sendResponse(coapCodes.Changed, req.Token, accept, out)
 
 	// try to register observations to the device for published resources at the cloud.
-	if err := client.server.taskQueue.Submit(func() {
-		client.observedResourcesLock.Lock()
-		defer client.observedResourcesLock.Unlock()
-		if client.shadowSynchronization == commands.ShadowSynchronization_DISABLED {
-			return
-		}
-		client.registerObservationsForPublishedResourcesLocked(ctx, deviceID)
-	}); err != nil {
-		log.Errorf("sign in error: failed to register resource observations for device %v: %w", deviceID, err)
-	}
+	observePublishedResources(ctx, client, deviceID)
 }
 
 func updateDeviceMetadata(req *mux.Message, client *Client) error {

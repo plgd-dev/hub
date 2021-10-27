@@ -373,6 +373,11 @@ func validateCommand(s mux.ResponseWriter, req *mux.Message, server *Service, fn
 	if !ok || client == nil {
 		client = newClient(server, s.Client().ClientConn().(*tcp.ClientConn), "")
 	}
+	closeClient := func(c *Client) {
+		if err := c.Close(); err != nil {
+			log.Errorf("cannot handle command: %w", err)
+		}
+	}
 	err := server.taskQueue.Submit(func() {
 		switch req.Code {
 		case coapCodes.POST, coapCodes.DELETE, coapCodes.PUT, coapCodes.GET:
@@ -380,9 +385,7 @@ func validateCommand(s mux.ResponseWriter, req *mux.Message, server *Service, fn
 		case coapCodes.Empty:
 			if !ok {
 				client.logAndWriteErrorResponse(fmt.Errorf("cannot handle command: client not found"), coapCodes.InternalServerError, req.Token)
-				if err := client.Close(); err != nil {
-					log.Errorf("cannot handle command: %w", err)
-				}
+				closeClient(client)
 				return
 			}
 			clientResetHandler(req, client)
@@ -392,9 +395,9 @@ func validateCommand(s mux.ResponseWriter, req *mux.Message, server *Service, fn
 			tmp, err := pool.ConvertFrom(req.Message)
 			if err != nil {
 				log.Errorf("DeviceId: %v: cannot convert dropped notification: %w", deviceID, err)
-			} else {
-				decodeMsgToDebug(client, tmp, "DROPPED-NOTIFICATION")
+				return
 			}
+			decodeMsgToDebug(client, tmp, "DROPPED-NOTIFICATION")
 		default:
 			deviceID := getDeviceID(client)
 			log.Errorf("DeviceId: %v: received invalid code: CoapCode(%v)", deviceID, req.Code)
@@ -402,9 +405,7 @@ func validateCommand(s mux.ResponseWriter, req *mux.Message, server *Service, fn
 	})
 	if err != nil {
 		deviceID := getDeviceID(client)
-		if err2 := client.Close(); err2 != nil {
-			log.Errorf("cannot handle command: %w", err2)
-		}
+		closeClient(client)
 		log.Errorf("DeviceId: %v: cannot handle request %v by task queue: %w", deviceID, req.String(), err)
 	}
 }
@@ -477,6 +478,10 @@ func (server *Service) authMiddleware(next mux.Handler) mux.Handler {
 	})
 }
 
+func setHandlerError(uri string, err error) error {
+	return fmt.Errorf("failed to set %v handler: %w", uri, err)
+}
+
 //setupCoapServer setup coap server
 func (server *Service) setupCoapServer() error {
 	m := mux.NewRouter()
@@ -487,27 +492,27 @@ func (server *Service) setupCoapServer() error {
 	if err := m.Handle(uri.ResourceDirectory, mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
 		validateCommand(w, r, server, resourceDirectoryHandler)
 	})); err != nil {
-		return fmt.Errorf("failed to set %v handler: %w", uri.ResourceDirectory, err)
+		return setHandlerError(uri.ResourceDirectory, err)
 	}
 	if err := m.Handle(uri.SignUp, mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
 		validateCommand(w, r, server, signUpHandler)
 	})); err != nil {
-		return fmt.Errorf("failed to set %v handler: %w", uri.SignUp, err)
+		return setHandlerError(uri.SignUp, err)
 	}
 	if err := m.Handle(uri.SignIn, mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
 		validateCommand(w, r, server, signInHandler)
 	})); err != nil {
-		return fmt.Errorf("failed to set %v handler: %w", uri.SignIn, err)
+		return setHandlerError(uri.SignIn, err)
 	}
 	if err := m.Handle(uri.ResourceDiscovery, mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
 		validateCommand(w, r, server, resourceDiscoveryHandler)
 	})); err != nil {
-		return fmt.Errorf("failed to set %v handler: %w", uri.ResourceDiscovery, err)
+		return setHandlerError(uri.ResourceDiscovery, err)
 	}
 	if err := m.Handle(uri.RefreshToken, mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
 		validateCommand(w, r, server, refreshTokenHandler)
 	})); err != nil {
-		return fmt.Errorf("failed to set %v handler: %w", uri.RefreshToken, err)
+		return setHandlerError(uri.RefreshToken, err)
 	}
 
 	opts := make([]tcp.ServerOption, 0, 8)

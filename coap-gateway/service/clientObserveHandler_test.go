@@ -7,23 +7,22 @@ import (
 	"testing"
 	"time"
 
+	"github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/tcp"
 	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
-
 	"github.com/plgd-dev/hub/coap-gateway/uri"
 	"github.com/plgd-dev/hub/grpc-gateway/pb"
 	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
 	test "github.com/plgd-dev/hub/test"
 	testCfg "github.com/plgd-dev/hub/test/config"
 	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
-	"github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 )
 
-func Test_clientObserveHandler(t *testing.T) {
+func TestClientObserveHandler(t *testing.T) {
 	shutdown := setUp(t)
 	defer shutdown()
 
@@ -35,6 +34,7 @@ func Test_clientObserveHandler(t *testing.T) {
 		_ = co.Close()
 	}()
 
+	const invalidResPath = uri.ResourceRoute + "/dev0/res0"
 	type args struct {
 		path    string
 		observe uint32
@@ -48,7 +48,7 @@ func Test_clientObserveHandler(t *testing.T) {
 		{
 			name: "invalid observe",
 			args: args{
-				path:    uri.ResourceRoute + "/dev0/res0",
+				path:    invalidResPath,
 				observe: 123,
 				token:   nil,
 			},
@@ -57,7 +57,7 @@ func Test_clientObserveHandler(t *testing.T) {
 		{
 			name: "observe - not exist resource",
 			args: args{
-				path:    uri.ResourceRoute + "/dev0/res0",
+				path:    invalidResPath,
 				observe: 0,
 				token:   nil,
 			},
@@ -67,7 +67,7 @@ func Test_clientObserveHandler(t *testing.T) {
 		{
 			name: "unobserve - not exist resource",
 			args: args{
-				path:    uri.ResourceRoute + "/dev0/res0",
+				path:    invalidResPath,
 				observe: 1,
 				token:   nil,
 			},
@@ -113,7 +113,7 @@ func Test_clientObserveHandler(t *testing.T) {
 	}
 }
 
-func Test_clientObserveHandler_closeObservation(t *testing.T) {
+func TestClientObserveHandlerCloseObservation(t *testing.T) {
 	shutdown := setUp(t)
 	defer shutdown()
 

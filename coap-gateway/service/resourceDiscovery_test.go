@@ -5,16 +5,15 @@ import (
 	"testing"
 
 	"github.com/plgd-dev/device/schema/resources"
+	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/tcp"
 	testCfg "github.com/plgd-dev/hub/test/config"
 	"github.com/plgd-dev/kit/v2/codec/cbor"
-
-	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func Test_resourceDirectoryFind(t *testing.T) {
+func TestResourceDirectoryFind(t *testing.T) {
 	shutdown := setUp(t)
 	defer shutdown()
 

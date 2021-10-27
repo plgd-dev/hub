@@ -5,20 +5,17 @@ import (
 	"testing"
 	"time"
 
-	"github.com/plgd-dev/hub/coap-gateway/uri"
-	testCfg "github.com/plgd-dev/hub/test/config"
 	"github.com/plgd-dev/go-coap/v2/message"
-
-	"github.com/plgd-dev/go-coap/v2/tcp"
-
-	"github.com/plgd-dev/hub/pkg/log"
-
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
+	"github.com/plgd-dev/go-coap/v2/tcp"
+	"github.com/plgd-dev/hub/coap-gateway/uri"
+	"github.com/plgd-dev/hub/pkg/log"
+	testCfg "github.com/plgd-dev/hub/test/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func Test_clientRetrieveHandler(t *testing.T) {
+func TestClientRetrieveHandler(t *testing.T) {
 	shutdown := setUp(t)
 	defer shutdown()
 
