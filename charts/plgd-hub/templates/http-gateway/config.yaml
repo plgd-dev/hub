@@ -1,8 +1,3 @@
-{{- if and (not $.Values.mockoauthserver.enabled) .Values.httpgateway.enabled }}
-{{- if eq (( $.Values.coapgateway.apis.coap.authorization.providers | default $.Values.global.oauth.device) | len ) 0 }}
-{{- fail "At least one coapgateway.apis.coap.authorization.providers or global.oauth.device must be specified " }}
-{{- end }}
-{{- end }}
 {{- $httpCert := "/certs" }}
 apiVersion: v1
 kind: ConfigMap
@@ -84,14 +79,12 @@ data:
           scopes: []
         {{- end }}
         deviceOAuthClient:
-        {{- $providers = $.Values.mockoauthserver.oauth }}
+        {{- $providers := $.Values.mockoauthserver.oauth }}
         {{- if not $.Values.mockoauthserver.enabled }}
-        {{- $providers = required "At least one oauth provider must be specified for coapgateway.apis.coap.authorization.providers or global.oauth.device" ( .apis.coap.authorization.providers | default $.Values.global.oauth.device ) }}
+        {{- $providers = required "At least one oauth provider must be specified for coapgateway.apis.coap.authorization.providers or global.oauth.device" ( $.Values.coapgateway.apis.coap.authorization.providers | default $.Values.global.oauth.device ) }}
         {{- end }}
-        {{- $included := false }}
         {{- range $providers }}
-          {{- if and .useInUi (not $included) }}
-          {{- $included = true }}
+          {{- if .useInUi }}
           clientID: {{ .clientID | quote }}
           audience: {{ .audience | default $.Values.global.audience | quote }}
           {{- if .scopes }}
@@ -104,25 +97,5 @@ data:
           {{- end }}
           providerName: {{ .name | quote }}
           {{- end }}
-        {{- end }}
-        {{- if not $included }}
-        {{- $provider := index $.Values.mockoauthserver.oauth 1 }}
-        {{- if not $.Values.mockoauthserver.enabled }}
-        {{- $provider = index ( $.Values.coapgateway.apis.coap.authorization.providers | default $.Values.global.oauth.device) 0 }}
-        {{- else }}
-        {{- end }}
-        {{- with $provider }}
-          clientID: {{ .clientID | quote }}
-          audience: {{ .audience | default $.Values.global.audience | quote }}
-          {{- if .scopes }}
-          scopes:
-          {{- range  .scopes }}
-            - {{ toYaml . | quote }}
-          {{- end }}
-          {{- else }}
-          scopes: []
-          {{- end }}
-          providerName: {{ .name | quote }}
-        {{- end }}
         {{- end }}
 {{- end }}
