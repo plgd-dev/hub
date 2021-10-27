@@ -1,6 +1,3 @@
-# -- Use mock oauth server by default 
-mockoauthserver:
-  enabled: true
 # -- Global config variables
 global:
   # -- Global domain
@@ -27,6 +24,10 @@ global:
 #       useInUi: true
    web:
     clientID:
+
+# -- Use mock oauth server by default 
+mockoauthserver:
+  enabled: true
 
 # -- Extra deploy. Resolved as template
 extraDeploy:

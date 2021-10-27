@@ -84,9 +84,9 @@ data:
           scopes: []
         {{- end }}
         deviceOAuthClient:
-        {{- $providers := $.Values.coapgateway.apis.coap.authorization.providers | default $.Values.global.oauth.device  }}
-        {{- if $.Values.mockoauthserver.enabled }}
         {{- $providers = $.Values.mockoauthserver.oauth }}
+        {{- if not $.Values.mockoauthserver.enabled }}
+        {{- $providers = required "At least one oauth provider must be specified for coapgateway.apis.coap.authorization.providers or global.oauth.device" ( .apis.coap.authorization.providers | default $.Values.global.oauth.device ) }}
         {{- end }}
         {{- $included := false }}
         {{- range $providers }}
