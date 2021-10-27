@@ -20,5 +20,4 @@ jobs:
           charts_url: https://charts.plgd.dev
           owner: plgd.dev
           branch: gh-pages
-          helm_version: v3.7.1
           app_version: $GITHUB_REF
