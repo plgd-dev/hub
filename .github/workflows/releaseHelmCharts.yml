@@ -13,10 +13,12 @@ jobs:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 0
+      - name: Basic variable usage
+        run: echo ${GITHUB_REF}
       - name: Publish Helm chart
         uses: stefanprodan/helm-gh-pages@master
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           charts_url: https://charts.plgd.dev
           helm_version: "3.7.1"
-          app_version: "${{ env.GITHUB_REF }}"
+          app_version: ${GITHUB_REF}
