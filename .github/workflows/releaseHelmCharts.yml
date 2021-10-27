@@ -1,0 +1,23 @@
+name: Release Helm Charts
+on:
+  push:
+    branches:
+      - ondrejtomcik/feature/helm-registry
+    tags:
+      - '*'
+
+jobs:
+  release-charts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Publish Helm chart
+        uses: stefanprodan/helm-gh-pages@1.4.1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          charts_url: https://charts.plgd.dev
+          owner: plgd.dev
+          branch: gh-pages
+          app_version: $GITHUB_REF
