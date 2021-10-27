@@ -87,7 +87,7 @@ func (s signOffData) validateSignOffData() error {
 // https://github.com/openconnectivityfoundation/security/blob/master/swagger2.0/oic.sec.account.swagger.json
 func signOffHandler(req *mux.Message, client *Client) {
 	logErrorAndCloseClient := func(err error, code coapCodes.Code) {
-		client.logAndWriteErrorResponse(err, code, req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign off: %w", err), code, req.Token)
 		if err := client.Close(); err != nil {
 			log.Errorf("sign off error: %w", err)
 		}
@@ -98,30 +98,30 @@ func signOffHandler(req *mux.Message, client *Client) {
 
 	signOffData, err := getSignOffDataFromQuery(req)
 	if err != nil {
-		logErrorAndCloseClient(fmt.Errorf("cannot handle sign off: %w", err), coapCodes.BadOption)
+		logErrorAndCloseClient(err, coapCodes.BadOption)
 		return
 	}
 
 	signOffData = signOffData.updateSignOffDataFromAuthContext(client)
 	if err = signOffData.validateSignOffData(); err != nil {
-		logErrorAndCloseClient(fmt.Errorf("cannot handle sign off: %w", err), coapCodes.BadRequest)
+		logErrorAndCloseClient(err, coapCodes.BadRequest)
 		return
 	}
 
 	jwtClaims, err := client.ValidateToken(req.Context, signOffData.accessToken)
 	if err != nil {
-		logErrorAndCloseClient(fmt.Errorf("cannot handle sign off: %v", err), coapCodes.Unauthorized)
+		logErrorAndCloseClient(err, coapCodes.Unauthorized)
 		return
 	}
 
 	err = client.server.VerifyDeviceID(client.tlsDeviceID, jwtClaims)
 	if err != nil {
-		logErrorAndCloseClient(fmt.Errorf("cannot handle sign off: %w", err), coapCodes.Unauthorized)
+		logErrorAndCloseClient(err, coapCodes.Unauthorized)
 		return
 	}
 
 	if err := jwtClaims.ValidateOwnerClaim(client.server.config.APIs.COAP.Authorization.OwnerClaim, signOffData.userID); err != nil {
-		logErrorAndCloseClient(fmt.Errorf("cannot handle sign off: %v", err), coapCodes.Unauthorized)
+		logErrorAndCloseClient(err, coapCodes.Unauthorized)
 		return
 	}
 
@@ -133,7 +133,7 @@ func signOffHandler(req *mux.Message, client *Client) {
 		DeviceIds: deviceIds,
 	})
 	if err != nil {
-		logErrorAndCloseClient(fmt.Errorf("cannot handle sign off: %w", err), coapconv.GrpcErr2CoapCode(err, coapconv.Delete))
+		logErrorAndCloseClient(err, coapconv.GrpcErr2CoapCode(err, coapconv.Delete))
 		return
 	}
 	if len(respRA.GetDeviceIds()) != 1 {
@@ -145,11 +145,11 @@ func signOffHandler(req *mux.Message, client *Client) {
 		DeviceIds: deviceIds,
 	})
 	if err != nil {
-		logErrorAndCloseClient(fmt.Errorf("cannot handle sign off: %w", err), coapconv.GrpcErr2CoapCode(err, coapconv.Delete))
+		logErrorAndCloseClient(err, coapconv.GrpcErr2CoapCode(err, coapconv.Delete))
 		return
 	}
 	if len(respIS.GetDeviceIds()) != 1 {
-		logErrorAndCloseClient(fmt.Errorf("cannot handle sign off: cannot remove device %v from user", deviceID), coapCodes.InternalServerError)
+		logErrorAndCloseClient(fmt.Errorf("cannot remove device %v from user", deviceID), coapCodes.InternalServerError)
 		return
 	}
 

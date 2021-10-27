@@ -186,11 +186,10 @@ func (client *Client) observeResource(ctx context.Context, resourceID *commands.
 	client.addObservedResourceLocked(ctx, deviceID, observable, &obsRes)
 }
 
-func logCannotGetResourceError(deviceID, href string, err error) {
-	log.Errorf("cannot get resource /%v%v content: %w", deviceID, href, err)
-}
-
 func (client *Client) getResourceContent(ctx context.Context, deviceID, href string) {
+	logCannotGetResourceError := func(deviceID, href string, err error) {
+		log.Errorf("cannot get resource /%v%v content: %w", deviceID, href, err)
+	}
 	resp, err := client.coapConn.Get(ctx, href, message.Option{
 		ID:    message.URIQuery,
 		Value: []byte("if=" + interfaces.OC_IF_BASELINE),
@@ -219,16 +218,16 @@ func (client *Client) getResourceContent(ctx context.Context, deviceID, href str
 	}
 }
 
-func logCannotObserverResourceError(deviceID, href string, err error) {
-	log.Errorf("cannot observe resource /%v%v: %w", deviceID, href, err)
-}
-
 func (client *Client) addObservedResourceLocked(ctx context.Context, deviceID string, isObservable bool, obsRes *observedResource) {
 	if obsRes.href == commands.StatusHref {
 		return
 	}
 	if !isObservable {
 		client.getResourceContent(ctx, deviceID, obsRes.href)
+		return
+	}
+	logCannotObserverResourceError := func(deviceID, href string, err error) {
+		log.Errorf("cannot observe resource /%v%v: %w", deviceID, href, err)
 	}
 	obs, err := client.coapConn.Observe(ctx, obsRes.href, func(req *pool.Message) {
 		req.Hijack()

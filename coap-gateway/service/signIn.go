@@ -279,37 +279,37 @@ func observePublishedResources(ctx context.Context, client *Client, deviceID str
 // https://github.com/openconnectivityfoundation/security/blob/master/swagger2.0/oic.sec.session.swagger.json
 func signInPostHandler(req *mux.Message, client *Client, signIn CoapSignInReq) {
 	logErrorAndCloseClient := func(err error, code coapCodes.Code) {
-		client.logAndWriteErrorResponse(err, code, req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign in: %w", err), code, req.Token)
 		if err := client.Close(); err != nil {
 			log.Errorf("sign in error: %w", err)
 		}
 	}
 
 	if err := signIn.checkOAuthRequest(); err != nil {
-		logErrorAndCloseClient(fmt.Errorf("cannot handle sign in: %w", err), coapCodes.BadRequest)
+		logErrorAndCloseClient(err, coapCodes.BadRequest)
 		return
 	}
 
 	jwtClaims, err := client.ValidateToken(req.Context, signIn.AccessToken)
 	if err != nil {
-		logErrorAndCloseClient(fmt.Errorf("cannot handle sign in: %w", err), coapCodes.InternalServerError)
+		logErrorAndCloseClient(err, coapCodes.InternalServerError)
 		return
 	}
 
 	err = client.server.VerifyDeviceID(client.tlsDeviceID, jwtClaims)
 	if err != nil {
-		logErrorAndCloseClient(fmt.Errorf("cannot handle sign in: %w", err), coapCodes.Unauthorized)
+		logErrorAndCloseClient(err, coapCodes.Unauthorized)
 		return
 	}
 
 	if err := jwtClaims.ValidateOwnerClaim(client.server.config.APIs.COAP.Authorization.OwnerClaim, signIn.UserID); err != nil {
-		logErrorAndCloseClient(fmt.Errorf("cannot handle sign in: %w", err), coapCodes.InternalServerError)
+		logErrorAndCloseClient(err, coapCodes.InternalServerError)
 		return
 	}
 
 	validUntil, err := jwtClaims.ExpiresAt()
 	if err != nil {
-		logErrorAndCloseClient(fmt.Errorf("cannot handle sign in: %w", err), coapCodes.InternalServerError)
+		logErrorAndCloseClient(err, coapCodes.InternalServerError)
 		return
 	}
 	deviceID := client.ResolveDeviceID(jwtClaims, signIn.DeviceID)
@@ -319,23 +319,23 @@ func signInPostHandler(req *mux.Message, client *Client, signIn CoapSignInReq) {
 	ctx := kitNetGrpc.CtxWithToken(kitNetGrpc.CtxWithIncomingToken(req.Context, signIn.AccessToken), signIn.AccessToken)
 	valid, err := subscribeAndValidateDeviceAccess(ctx, client, signIn.UserID, deviceID, upd != updateTypeNone)
 	if err != nil {
-		logErrorAndCloseClient(fmt.Errorf("cannot handle sign in: %w", err), coapCodes.InternalServerError)
+		logErrorAndCloseClient(err, coapCodes.InternalServerError)
 		return
 	}
 	if !valid {
-		logErrorAndCloseClient(fmt.Errorf("cannot handle sign in: access to device('%s') denied", deviceID), coapCodes.Unauthorized)
+		logErrorAndCloseClient(fmt.Errorf("access to device('%s') denied", deviceID), coapCodes.Unauthorized)
 		return
 	}
 
 	expiresIn := validUntilToExpiresIn(validUntil)
 	accept, out, err := getSignInContent(expiresIn, req.Options)
 	if err != nil {
-		logErrorAndCloseClient(fmt.Errorf("cannot handle sign in: %w", err), coapCodes.InternalServerError)
+		logErrorAndCloseClient(err, coapCodes.InternalServerError)
 		return
 	}
 
 	if err := client.updateBySignInData(ctx, upd, deviceID, signIn.UserID); err != nil {
-		logErrorAndCloseClient(fmt.Errorf("cannot handle sign in: %w", err), coapCodes.InternalServerError)
+		logErrorAndCloseClient(err, coapCodes.InternalServerError)
 		return
 	}
 
@@ -382,7 +382,7 @@ func updateDeviceMetadata(req *mux.Message, client *Client) error {
 
 func signOutPostHandler(req *mux.Message, client *Client, signOut CoapSignInReq) {
 	logErrorAndCloseClient := func(err error, code coapCodes.Code) {
-		client.logAndWriteErrorResponse(err, code, req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign out: %w", err), code, req.Token)
 		if err := client.Close(); err != nil {
 			log.Errorf("sign out error: %w", err)
 		}
@@ -391,36 +391,36 @@ func signOutPostHandler(req *mux.Message, client *Client, signOut CoapSignInReq)
 	if signOut.DeviceID == "" || signOut.UserID == "" || signOut.AccessToken == "" {
 		authCurrentCtx, err := client.GetAuthorizationContext()
 		if err != nil {
-			logErrorAndCloseClient(fmt.Errorf("cannot handle sign out: %w", err), coapCodes.InternalServerError)
+			logErrorAndCloseClient(err, coapCodes.InternalServerError)
 			return
 		}
 		signOut = signOut.updateOAUthRequestIfEmpty(authCurrentCtx.DeviceID, authCurrentCtx.UserID, authCurrentCtx.AccessToken)
 	}
 
 	if err := signOut.checkOAuthRequest(); err != nil {
-		logErrorAndCloseClient(fmt.Errorf("cannot handle sign out: %w", err), coapCodes.BadRequest)
+		logErrorAndCloseClient(err, coapCodes.BadRequest)
 		return
 	}
 
 	jwtClaims, err := client.ValidateToken(req.Context, signOut.AccessToken)
 	if err != nil {
-		logErrorAndCloseClient(fmt.Errorf("cannot handle sign out: %w", err), coapCodes.InternalServerError)
+		logErrorAndCloseClient(err, coapCodes.InternalServerError)
 		return
 	}
 
 	err = client.server.VerifyDeviceID(client.tlsDeviceID, jwtClaims)
 	if err != nil {
-		logErrorAndCloseClient(fmt.Errorf("cannot handle sign in: %w", err), coapCodes.Unauthorized)
+		logErrorAndCloseClient(err, coapCodes.Unauthorized)
 		return
 	}
 
 	if err := jwtClaims.ValidateOwnerClaim(client.server.config.APIs.COAP.Authorization.OwnerClaim, signOut.UserID); err != nil {
-		logErrorAndCloseClient(fmt.Errorf("cannot handle sign out: %w", err), coapCodes.InternalServerError)
+		logErrorAndCloseClient(err, coapCodes.InternalServerError)
 		return
 	}
 
 	if err := updateDeviceMetadata(req, client); err != nil {
-		logErrorAndCloseClient(fmt.Errorf("cannot handle sign out: %w", err), coapconv.GrpcErr2CoapCode(err, coapconv.Update))
+		logErrorAndCloseClient(err, coapconv.GrpcErr2CoapCode(err, coapconv.Update))
 		return
 	}
 

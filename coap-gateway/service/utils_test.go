@@ -58,38 +58,39 @@ type testEl struct {
 func testValidateResp(t *testing.T, test testEl, resp *pool.Message) {
 	require.Equal(t, test.out.code, resp.Code())
 	bodySize, _ := resp.BodySize()
-	if bodySize > 0 || test.out.payload != nil {
-		body, err := ioutil.ReadAll(resp.Body())
-		require.NoError(t, err)
-		if contentType, err := resp.ContentFormat(); err == nil {
-			switch contentType {
-			case message.AppCBOR, message.AppOcfCbor:
-				n := reflect.New(reflect.TypeOf(test.out.payload)).Interface()
-				err := cbor.Decode(body, n)
-				require.NoError(t, err)
-				if !assert.Equal(t, test.out.payload, reflect.ValueOf(n).Elem().Interface()) {
-					t.Fatal()
-				}
-			default:
-				t.Fatalf("Output payload %v is invalid, expected %v", body, test.out.payload)
-			}
-		} else {
-			// https://tools.ietf.org/html/rfc7252#section-5.5.2
-			if v, ok := test.out.payload.(string); ok {
-				require.Contains(t, string(body), v)
-			} else {
-				t.Fatalf("Output payload %v is invalid, expected %v", body, test.out.payload)
-			}
-		}
-
-		if len(test.out.queries) > 0 {
-			queries, err := resp.Options().Queries()
+	if bodySize == 0 && test.out.payload == nil {
+		return
+	}
+	body, err := ioutil.ReadAll(resp.Body())
+	require.NoError(t, err)
+	if contentType, err := resp.ContentFormat(); err == nil {
+		switch contentType {
+		case message.AppCBOR, message.AppOcfCbor:
+			n := reflect.New(reflect.TypeOf(test.out.payload)).Interface()
+			err := cbor.Decode(body, n)
 			require.NoError(t, err)
-			require.Len(t, queries, len(test.out.queries))
-			for idx := range queries {
-				if queries[idx] != test.out.queries[idx] {
-					t.Fatalf("Invalid query %v, expected %v", queries[idx], test.out.queries[idx])
-				}
+			if !assert.Equal(t, test.out.payload, reflect.ValueOf(n).Elem().Interface()) {
+				t.Fatal()
+			}
+		default:
+			t.Fatalf("Output payload %v is invalid, expected %v", body, test.out.payload)
+		}
+	} else {
+		// https://tools.ietf.org/html/rfc7252#section-5.5.2
+		if v, ok := test.out.payload.(string); ok {
+			require.Contains(t, string(body), v)
+		} else {
+			t.Fatalf("Output payload %v is invalid, expected %v", body, test.out.payload)
+		}
+	}
+
+	if len(test.out.queries) > 0 {
+		queries, err := resp.Options().Queries()
+		require.NoError(t, err)
+		require.Len(t, queries, len(test.out.queries))
+		for idx := range queries {
+			if queries[idx] != test.out.queries[idx] {
+				t.Fatalf("Invalid query %v, expected %v", queries[idx], test.out.queries[idx])
 			}
 		}
 	}
@@ -257,7 +258,6 @@ func testCoapDial(t *testing.T, host, deviceID string, withoutTLS ...bool) *tcp.
 	var tlsConfig *tls.Config
 
 	if len(withoutTLS) == 0 {
-
 		priv, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 		require.NoError(t, err)
 		signerCert, err := security.LoadX509(os.Getenv("TEST_ROOT_CA_CERT"))
@@ -320,15 +320,16 @@ func testCoapDial(t *testing.T, host, deviceID string, withoutTLS ...bool) *tcp.
 	}
 	conn, err := tcp.Dial(host, tcp.WithTLS(tlsConfig), tcp.WithHandlerFunc(func(w *tcp.ResponseWriter, r *pool.Message) {
 		var err error
+		resp := []byte("hello world")
 		switch r.Code() {
 		case codes.POST:
-			err = w.SetResponse(codes.Changed, message.TextPlain, bytes.NewReader([]byte("hello world")))
+			err = w.SetResponse(codes.Changed, message.TextPlain, bytes.NewReader(resp))
 		case codes.GET:
-			err = w.SetResponse(codes.Content, message.TextPlain, bytes.NewReader([]byte("hello world")))
+			err = w.SetResponse(codes.Content, message.TextPlain, bytes.NewReader(resp))
 		case codes.PUT:
-			err = w.SetResponse(codes.Created, message.TextPlain, bytes.NewReader([]byte("hello world")))
+			err = w.SetResponse(codes.Created, message.TextPlain, bytes.NewReader(resp))
 		case codes.DELETE:
-			err = w.SetResponse(codes.Deleted, message.TextPlain, bytes.NewReader([]byte("hello world")))
+			err = w.SetResponse(codes.Deleted, message.TextPlain, bytes.NewReader(resp))
 		}
 		require.NoError(t, err)
 	}))
