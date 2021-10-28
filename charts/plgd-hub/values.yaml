@@ -309,9 +309,9 @@ resourcedirectory:
   initContainersTpl: {}
   image:
     # -- Image registry
-    registry:
+    registry: ghcr.io/
     # -- Image repository
-    repository: plgd/resource-directory
+    repository: plgd-dev/hub/resource-directory
     # --Image tag.
     tag:
     # -- Image pull policy
@@ -506,9 +506,9 @@ resourceaggregate:
   initContainersTpl: {}
   image:
     # -- Image registry
-    registry:
+    registry: ghcr.io/
     # -- Image repository
-    repository: plgd/resource-aggregate
+    repository: plgd-dev/hub/resource-aggregate
     # -- Image tag.
     tag:
     # -- Image pull policy
@@ -677,9 +677,9 @@ coapgateway:
   initContainersTpl: { }
   image:
     # -- Image registry
-    registry:
+    registry: ghcr.io/
     # -- Image repository
-    repository: plgd/coap-gateway
+    repository: plgd-dev/hub/coap-gateway
     # -- Image tag
     tag:
     # -- Image pull policy
@@ -846,9 +846,9 @@ identitystore:
   # -- Identity service image section
   image:
     # -- Image registry
-    registry:
+    registry: ghcr.io/
     # -- Image repository
-    repository: plgd/identity-store
+    repository: plgd-dev/hub/identity-store
     # -- Image tag.
     tag:
     # -- Image pull policy
@@ -982,9 +982,9 @@ httpgateway:
   initContainersTpl: {}
   image:
     # -- Image registry
-    registry:
+    registry: ghcr.io/
     # -- Image repository
-    repository: plgd/http-gateway
+    repository: plgd-dev/hub/http-gateway
     # -- Image tag.
     tag:
     # -- Image pull policy
@@ -1135,9 +1135,9 @@ grpcgateway:
   initContainersTpl: {}
   image:
     # -- Image registry
-    registry:
+    registry: ghcr.io/
     # -- Image repository
-    repository: plgd/grpc-gateway
+    repository: plgd-dev/hub/grpc-gateway
     # -- Image tag.
     tag:
     # -- Image pull policy
@@ -1317,9 +1317,9 @@ certificateauthority:
   initContainersTpl:
   image:
     # -- Image registry
-    registry:
+    registry: ghcr.io/
     # -- Image repository
-    repository: plgd/certificate-authority
+    repository: plgd-dev/hub/certificate-authority
     # -- Image tag.
     tag:
     # -- Image pull policy
@@ -1467,9 +1467,9 @@ mockoauthserver:
   restartPolicy: Always
   image:
     # -- Image registry
-    registry:
+    registry: ghcr.io/
     # -- Image repository
-    repository: plgd/mock-oauth-server
+    repository: plgd-dev/hub/mock-oauth-server
     # -- Image tag.
     tag:
     # -- Image pull policy
