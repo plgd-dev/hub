@@ -1434,7 +1434,8 @@ mockoauthserver:
       clientID: "test"
       clientSecret: "test"
       redirectURL: "{{ printf \"https://%s\" ( include \"plgd-hub.mockoauthserver.ingressDomain\" . ) }}/things"
-
+      useInUi: true
+      
   # -- Enable mock-oauth-server service
   enabled: false
   # -- Name of component. Used in label selectors

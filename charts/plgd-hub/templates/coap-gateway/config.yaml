@@ -1,4 +1,9 @@
 {{- if .Values.coapgateway.enabled }}
+{{- if (not $.Values.mockoauthserver.enabled)}}
+{{- if eq (( $.Values.coapgateway.apis.coap.authorization.providers | default $.Values.global.oauth.device) | len ) 0 }}
+{{- fail "At least one oauth provider must be specified for coapgateway.apis.coap.authorization.providers or global.oauth.device" }}
+{{- end }}
+{{- end }}
 {{- $coapGatewayServiceCert := "/certs" }}
 apiVersion: v1
 kind: ConfigMap
