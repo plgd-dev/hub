@@ -17,4 +17,5 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           charts_url: https://charts.plgd.dev
           helm_version: "3.7.1"
-          app_version: ${{ github.ref }}
+          app_version: "${{ github.ref }}"
+          chart_version: "${{ github.ref }}"
