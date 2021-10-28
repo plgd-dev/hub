@@ -3,8 +3,6 @@ on:
   push:
     tags:
       - '*'
-    branches:
-      - ondrejtomcik/bugfix/helm-version-from-tag
 
 jobs:
   release-charts:
@@ -15,7 +13,7 @@ jobs:
           fetch-depth: 0
       - name: Get the version
         id: get_version
-        run: echo ::set-output name=VERSION::${GITHUB_REF#refs/heads/ondrejtomcik/}
+        run: echo ::set-output name=VERSION::${GITHUB_REF#refs/tags/v}
       - name: Publish Helm chart
         uses: stefanprodan/helm-gh-pages@master
         with:
