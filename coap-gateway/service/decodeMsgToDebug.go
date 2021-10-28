@@ -6,9 +6,9 @@ import (
 	"io"
 	"io/ioutil"
 
-	"github.com/plgd-dev/hub/pkg/log"
 	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
+	"github.com/plgd-dev/hub/pkg/log"
 	"github.com/plgd-dev/kit/v2/codec/cbor"
 )
 
@@ -35,6 +35,28 @@ func readBody(r io.ReadSeeker) []byte {
 	return body
 }
 
+func writeBody(mt message.MediaType, body []byte) string {
+	if body == nil {
+		return "body is EMPTY"
+	}
+	switch mt {
+	case message.AppCBOR, message.AppOcfCbor:
+		s, err := cbor.ToJSON(body)
+		if err != nil {
+			log.Errorf("cannot encode %v to JSON: %w", body, err)
+		}
+		return fmt.Sprintf("CBOR:\n%v", s)
+	case message.TextPlain:
+		return fmt.Sprintf("TXT:\n%v", string(body))
+	case message.AppJSON:
+		return fmt.Sprintf("JSON:\n%v", string(body))
+	case message.AppXML:
+		return fmt.Sprintf("XML:\n%v", string(body))
+	default:
+		return fmt.Sprintf("RAW(%v):\n%v", mt, body)
+	}
+}
+
 func decodeMsgToDebug(client *Client, resp *pool.Message, tag string) {
 	if !client.server.config.Log.DumpCoapMessages {
 		return
@@ -56,26 +78,7 @@ func decodeMsgToDebug(client *Client, resp *pool.Message, tag string) {
 	body := readBody(resp.Body())
 	if mt, err := resp.Options().ContentFormat(); err == nil {
 		fmt.Fprintf(buf, "ContentFormat: %v\n", mt)
-		if body != nil {
-			switch mt {
-			case message.AppCBOR, message.AppOcfCbor:
-				s, err := cbor.ToJSON(body)
-				if err != nil {
-					log.Errorf("cannot encode %v to JSON: %w", body, err)
-				}
-				fmt.Fprintf(buf, "CBOR:\n%v", s)
-			case message.TextPlain:
-				fmt.Fprintf(buf, "TXT:\n%v", string(body))
-			case message.AppJSON:
-				fmt.Fprintf(buf, "JSON:\n%v", string(body))
-			case message.AppXML:
-				fmt.Fprintf(buf, "XML:\n%v", string(body))
-			default:
-				fmt.Fprintf(buf, "RAW(%v):\n%v", mt, body)
-			}
-		} else {
-			fmt.Fprintf(buf, "body is EMPTY")
-		}
+		fmt.Fprint(buf, writeBody(mt, body))
 	} else {
 		if len(body) == 0 {
 			fmt.Fprintf(buf, "body is EMPTY")

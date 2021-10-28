@@ -18,7 +18,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func Test_clientCreateHandler(t *testing.T) {
+func TestClientCreateHandler(t *testing.T) {
 	coapgwCfg := coapgwTest.MakeConfig(t)
 	coapgwCfg.APIs.COAP.TLS.Enabled = false
 	shutdown := setUp(t, coapgwCfg)

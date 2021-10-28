@@ -142,20 +142,27 @@ func getSignInContent(expiresIn int64, options message.Options) (message.MediaTy
 }
 
 func setNewDeviceSubscriber(client *Client, owner, deviceID string) error {
-	deviceSubscriber, err := grpcgwClient.NewDeviceSubscriber(client.GetContext, owner, deviceID, func() func() (when time.Time, err error) {
-		var count uint64
-		maxRand := client.server.config.APIs.COAP.KeepAlive.Timeout / 2
-		if maxRand <= 0 {
-			maxRand = time.Second * 10
+	getContext := func() (context.Context, context.CancelFunc) {
+		return client.GetContext(), func() {
+			// no-op
 		}
-		return func() (when time.Time, err error) {
-			count++
-			r := rand.Int63n(int64(maxRand) / 2)
-			next := time.Now().Add(client.server.config.APIs.COAP.KeepAlive.Timeout + time.Duration(r))
-			log.Debugf("next iteration %v of retrying reconnect to grpc-client for deviceID %v will be at %v", count, deviceID, next)
-			return next, nil
-		}
-	}, client.server.rdClient, client.server.resourceSubscriber)
+	}
+
+	deviceSubscriber, err := grpcgwClient.NewDeviceSubscriber(getContext, owner, deviceID,
+		func() func() (when time.Time, err error) {
+			var count uint64
+			maxRand := client.server.config.APIs.COAP.KeepAlive.Timeout / 2
+			if maxRand <= 0 {
+				maxRand = time.Second * 10
+			}
+			return func() (when time.Time, err error) {
+				count++
+				r := rand.Int63n(int64(maxRand) / 2)
+				next := time.Now().Add(client.server.config.APIs.COAP.KeepAlive.Timeout + time.Duration(r))
+				log.Debugf("next iteration %v of retrying reconnect to grpc-client for deviceID %v will be at %v", count, deviceID, next)
+				return next, nil
+			}
+		}, client.server.rdClient, client.server.resourceSubscriber)
 	if err != nil {
 		return fmt.Errorf("cannot create device subscription for device %v: %w", deviceID, err)
 	}
@@ -223,65 +230,86 @@ func (client *Client) updateBySignInData(ctx context.Context, upd updateType, de
 	return nil
 }
 
+func subscribeToDeviceEvents(ctx context.Context, client *Client, owner, deviceId string) error {
+	if err := client.subscribeToDeviceEvents(owner, func(e *events.Event) {
+		evt := e.GetDevicesUnregistered()
+		if evt == nil {
+			return
+		}
+		if evt.Owner != owner {
+			return
+		}
+		if !strings.Contains(evt.DeviceIds, deviceId) {
+			return
+		}
+		if err := client.Close(); err != nil {
+			log.Errorf("sign in error: cannot close client: %w", err)
+		}
+	}); err != nil {
+		return fmt.Errorf("cannot subscribe to device events: %w", err)
+	}
+	return nil
+}
+
 func subscribeAndValidateDeviceAccess(ctx context.Context, client *Client, owner, deviceId string, subscribe bool) (bool, error) {
 	// subscribe to updates before checking cache, so when the device gets removed during sign in
 	// the client will always be closed
 	if subscribe {
-		if err := client.subscribeToDeviceEvents(owner, func(e *events.Event) {
-			evt := e.GetDevicesUnregistered()
-			if evt == nil {
-				return
-			}
-			if evt.Owner != owner {
-				return
-			}
-			if strings.Contains(evt.DeviceIds, deviceId) {
-				if err := client.Close(); err != nil {
-					log.Errorf("sign in error: cannot close client: %w", err)
-				}
-			}
-		}); err != nil {
-			return false, fmt.Errorf("cannot subscribe to device events: %w", err)
+		if err := subscribeToDeviceEvents(ctx, client, owner, deviceId); err != nil {
+			return false, err
 		}
 	}
 
 	return client.server.ownerCache.OwnsDevice(ctx, deviceId)
 }
 
+func observePublishedResources(ctx context.Context, client *Client, deviceID string) {
+	if err := client.server.taskQueue.Submit(func() {
+		client.observedResourcesLock.Lock()
+		defer client.observedResourcesLock.Unlock()
+		if client.shadowSynchronization == commands.ShadowSynchronization_DISABLED {
+			return
+		}
+		client.registerObservationsForPublishedResourcesLocked(ctx, deviceID)
+	}); err != nil {
+		log.Errorf("sign in error: failed to register resource observations for device %v: %w", deviceID, err)
+	}
+}
+
 // https://github.com/openconnectivityfoundation/security/blob/master/swagger2.0/oic.sec.session.swagger.json
 func signInPostHandler(req *mux.Message, client *Client, signIn CoapSignInReq) {
 	logErrorAndCloseClient := func(err error, code coapCodes.Code) {
-		client.logAndWriteErrorResponse(err, code, req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign in: %w", err), code, req.Token)
 		if err := client.Close(); err != nil {
 			log.Errorf("sign in error: %w", err)
 		}
 	}
 
 	if err := signIn.checkOAuthRequest(); err != nil {
-		logErrorAndCloseClient(fmt.Errorf("cannot handle sign in: %w", err), coapCodes.BadRequest)
+		logErrorAndCloseClient(err, coapCodes.BadRequest)
 		return
 	}
 
 	jwtClaims, err := client.ValidateToken(req.Context, signIn.AccessToken)
 	if err != nil {
-		logErrorAndCloseClient(fmt.Errorf("cannot handle sign in: %w", err), coapCodes.InternalServerError)
+		logErrorAndCloseClient(err, coapCodes.InternalServerError)
 		return
 	}
 
 	err = client.server.VerifyDeviceID(client.tlsDeviceID, jwtClaims)
 	if err != nil {
-		logErrorAndCloseClient(fmt.Errorf("cannot handle sign in: %w", err), coapCodes.Unauthorized)
+		logErrorAndCloseClient(err, coapCodes.Unauthorized)
 		return
 	}
 
 	if err := jwtClaims.ValidateOwnerClaim(client.server.config.APIs.COAP.Authorization.OwnerClaim, signIn.UserID); err != nil {
-		logErrorAndCloseClient(fmt.Errorf("cannot handle sign in: %w", err), coapCodes.InternalServerError)
+		logErrorAndCloseClient(err, coapCodes.InternalServerError)
 		return
 	}
 
 	validUntil, err := jwtClaims.ExpiresAt()
 	if err != nil {
-		logErrorAndCloseClient(fmt.Errorf("cannot handle sign in: %w", err), coapCodes.InternalServerError)
+		logErrorAndCloseClient(err, coapCodes.InternalServerError)
 		return
 	}
 	deviceID := client.ResolveDeviceID(jwtClaims, signIn.DeviceID)
@@ -291,23 +319,23 @@ func signInPostHandler(req *mux.Message, client *Client, signIn CoapSignInReq) {
 	ctx := kitNetGrpc.CtxWithToken(kitNetGrpc.CtxWithIncomingToken(req.Context, signIn.AccessToken), signIn.AccessToken)
 	valid, err := subscribeAndValidateDeviceAccess(ctx, client, signIn.UserID, deviceID, upd != updateTypeNone)
 	if err != nil {
-		logErrorAndCloseClient(fmt.Errorf("cannot handle sign in: %w", err), coapCodes.InternalServerError)
+		logErrorAndCloseClient(err, coapCodes.InternalServerError)
 		return
 	}
 	if !valid {
-		logErrorAndCloseClient(fmt.Errorf("cannot handle sign in: access to device('%s') denied", deviceID), coapCodes.Unauthorized)
+		logErrorAndCloseClient(fmt.Errorf("access to device('%s') denied", deviceID), coapCodes.Unauthorized)
 		return
 	}
 
 	expiresIn := validUntilToExpiresIn(validUntil)
 	accept, out, err := getSignInContent(expiresIn, req.Options)
 	if err != nil {
-		logErrorAndCloseClient(fmt.Errorf("cannot handle sign in: %w", err), coapCodes.InternalServerError)
+		logErrorAndCloseClient(err, coapCodes.InternalServerError)
 		return
 	}
 
 	if err := client.updateBySignInData(ctx, upd, deviceID, signIn.UserID); err != nil {
-		logErrorAndCloseClient(fmt.Errorf("cannot handle sign in: %w", err), coapCodes.InternalServerError)
+		logErrorAndCloseClient(err, coapCodes.InternalServerError)
 		return
 	}
 
@@ -323,16 +351,7 @@ func signInPostHandler(req *mux.Message, client *Client, signIn CoapSignInReq) {
 	client.sendResponse(coapCodes.Changed, req.Token, accept, out)
 
 	// try to register observations to the device for published resources at the cloud.
-	if err := client.server.taskQueue.Submit(func() {
-		client.observedResourcesLock.Lock()
-		defer client.observedResourcesLock.Unlock()
-		if client.shadowSynchronization == commands.ShadowSynchronization_DISABLED {
-			return
-		}
-		client.registerObservationsForPublishedResourcesLocked(ctx, deviceID)
-	}); err != nil {
-		log.Errorf("sign in error: failed to register resource observations for device %v: %w", deviceID, err)
-	}
+	observePublishedResources(ctx, client, deviceID)
 }
 
 func updateDeviceMetadata(req *mux.Message, client *Client) error {
@@ -363,7 +382,7 @@ func updateDeviceMetadata(req *mux.Message, client *Client) error {
 
 func signOutPostHandler(req *mux.Message, client *Client, signOut CoapSignInReq) {
 	logErrorAndCloseClient := func(err error, code coapCodes.Code) {
-		client.logAndWriteErrorResponse(err, code, req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign out: %w", err), code, req.Token)
 		if err := client.Close(); err != nil {
 			log.Errorf("sign out error: %w", err)
 		}
@@ -372,36 +391,36 @@ func signOutPostHandler(req *mux.Message, client *Client, signOut CoapSignInReq)
 	if signOut.DeviceID == "" || signOut.UserID == "" || signOut.AccessToken == "" {
 		authCurrentCtx, err := client.GetAuthorizationContext()
 		if err != nil {
-			logErrorAndCloseClient(fmt.Errorf("cannot handle sign out: %w", err), coapCodes.InternalServerError)
+			logErrorAndCloseClient(err, coapCodes.InternalServerError)
 			return
 		}
 		signOut = signOut.updateOAUthRequestIfEmpty(authCurrentCtx.DeviceID, authCurrentCtx.UserID, authCurrentCtx.AccessToken)
 	}
 
 	if err := signOut.checkOAuthRequest(); err != nil {
-		logErrorAndCloseClient(fmt.Errorf("cannot handle sign out: %w", err), coapCodes.BadRequest)
+		logErrorAndCloseClient(err, coapCodes.BadRequest)
 		return
 	}
 
 	jwtClaims, err := client.ValidateToken(req.Context, signOut.AccessToken)
 	if err != nil {
-		logErrorAndCloseClient(fmt.Errorf("cannot handle sign out: %w", err), coapCodes.InternalServerError)
+		logErrorAndCloseClient(err, coapCodes.InternalServerError)
 		return
 	}
 
 	err = client.server.VerifyDeviceID(client.tlsDeviceID, jwtClaims)
 	if err != nil {
-		logErrorAndCloseClient(fmt.Errorf("cannot handle sign in: %w", err), coapCodes.Unauthorized)
+		logErrorAndCloseClient(err, coapCodes.Unauthorized)
 		return
 	}
 
 	if err := jwtClaims.ValidateOwnerClaim(client.server.config.APIs.COAP.Authorization.OwnerClaim, signOut.UserID); err != nil {
-		logErrorAndCloseClient(fmt.Errorf("cannot handle sign out: %w", err), coapCodes.InternalServerError)
+		logErrorAndCloseClient(err, coapCodes.InternalServerError)
 		return
 	}
 
 	if err := updateDeviceMetadata(req, client); err != nil {
-		logErrorAndCloseClient(fmt.Errorf("cannot handle sign out: %w", err), coapconv.GrpcErr2CoapCode(err, coapconv.Update))
+		logErrorAndCloseClient(err, coapconv.GrpcErr2CoapCode(err, coapconv.Update))
 		return
 	}
 

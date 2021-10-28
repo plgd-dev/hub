@@ -69,6 +69,26 @@ func validUntilToExpiresIn(validUntil time.Time) int64 {
 	return int64(time.Until(validUntil).Seconds())
 }
 
+func updateClient(client *Client, deviceID, owner, accessToken string, validUntil time.Time) {
+	if _, err := client.GetAuthorizationContext(); err != nil {
+		return
+	}
+	authCtx := authorizationContext{
+		DeviceID:    deviceID,
+		UserID:      owner,
+		AccessToken: accessToken,
+		Expire:      validUntil,
+	}
+	client.SetAuthorizationContext(&authCtx)
+
+	if validUntil.IsZero() {
+		client.server.expirationClientCache.Set(deviceID, nil, time.Millisecond)
+	} else {
+		expiresIn := validUntilToExpiresIn(validUntil)
+		client.server.expirationClientCache.Set(deviceID, client, time.Second*time.Duration(expiresIn))
+	}
+}
+
 func refreshTokenPostHandler(req *mux.Message, client *Client) {
 	const fmtErr = "cannot handle refresh token for %v: %w"
 	logErrorAndCloseClient := func(err error, code coapCodes.Code) {
@@ -144,21 +164,7 @@ func refreshTokenPostHandler(req *mux.Message, client *Client) {
 		return
 	}
 
-	if _, err := client.GetAuthorizationContext(); err == nil {
-		authCtx := authorizationContext{
-			DeviceID:    deviceID,
-			UserID:      owner,
-			AccessToken: token.AccessToken.String(),
-			Expire:      validUntil,
-		}
-		client.SetAuthorizationContext(&authCtx)
-
-		if validUntil.IsZero() {
-			client.server.expirationClientCache.Set(deviceID, nil, time.Millisecond)
-		} else {
-			client.server.expirationClientCache.Set(deviceID, client, time.Second*time.Duration(expiresIn))
-		}
-	}
+	updateClient(client, deviceID, owner, token.AccessToken.String(), validUntil)
 
 	client.sendResponse(coapCodes.Changed, req.Token, accept, out)
 }

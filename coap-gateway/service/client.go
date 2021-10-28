@@ -187,12 +187,15 @@ func (client *Client) observeResource(ctx context.Context, resourceID *commands.
 }
 
 func (client *Client) getResourceContent(ctx context.Context, deviceID, href string) {
+	logCannotGetResourceError := func(deviceID, href string, err error) {
+		log.Errorf("cannot get resource /%v%v content: %w", deviceID, href, err)
+	}
 	resp, err := client.coapConn.Get(ctx, href, message.Option{
 		ID:    message.URIQuery,
 		Value: []byte("if=" + interfaces.OC_IF_BASELINE),
 	})
 	if err != nil {
-		log.Errorf("cannot get resource /%v%v content: %w", deviceID, href, err)
+		logCannotGetResourceError(deviceID, href, err)
 		return
 	}
 	err = client.server.taskQueue.Submit(func() {
@@ -200,7 +203,7 @@ func (client *Client) getResourceContent(ctx context.Context, deviceID, href str
 		err := client.notifyContentChanged(deviceID, href, resp)
 		if err != nil {
 			// cloud is unsynchronized against device. To recover cloud state, client need to reconnect to cloud.
-			log.Errorf("cannot get resource /%v%v content: %w", deviceID, href, err)
+			logCannotGetResourceError(deviceID, href, err)
 			if err := client.Close(); err != nil {
 				log.Errorf("failed to close client connection on get resource /%v%v: %w", deviceID, href, err)
 			}
@@ -210,7 +213,7 @@ func (client *Client) getResourceContent(ctx context.Context, deviceID, href str
 		}
 	})
 	if err != nil {
-		log.Errorf("cannot get resource /%v%v content: %w", deviceID, href, err)
+		logCannotGetResourceError(deviceID, href, err)
 		return
 	}
 }
@@ -219,38 +222,41 @@ func (client *Client) addObservedResourceLocked(ctx context.Context, deviceID st
 	if obsRes.href == commands.StatusHref {
 		return
 	}
-	if isObservable {
-		obs, err := client.coapConn.Observe(ctx, obsRes.href, func(req *pool.Message) {
-			req.Hijack()
-			err2 := client.server.taskQueue.Submit(func() {
-				err := client.notifyContentChanged(deviceID, obsRes.href, req)
-				defer pool.ReleaseMessage(req)
-				if err != nil {
-					// cloud is unsynchronized against device. To recover cloud state, client need to reconnect to cloud.
-					log.Errorf("cannot observe resource /%v%v: %w", deviceID, obsRes.href, err)
-					if err := client.Close(); err != nil {
-						log.Errorf("failed to close client connection on observe resource /%v%v: %w", deviceID, obsRes.href, err)
-					}
-				}
-				if req.Code() == codes.NotFound {
-					client.unpublishResourceLinks(client.getUserAuthorizedContext(req.Context()), []string{obsRes.href})
-				}
-			})
-			if err2 != nil {
-				log.Errorf("cannot observe resource /%v%v: %w", deviceID, obsRes.href, err2)
-			}
-		}, message.Option{
-			ID:    message.URIQuery,
-			Value: []byte("if=" + interfaces.OC_IF_BASELINE),
-		})
-		if err != nil {
-			log.Errorf("cannot observe resource /%v%v: %w", deviceID, obsRes.href, err)
-		} else {
-			obsRes.SetObservation(obs)
-		}
-	} else {
+	if !isObservable {
 		client.getResourceContent(ctx, deviceID, obsRes.href)
+		return
 	}
+	logCannotObserverResourceError := func(deviceID, href string, err error) {
+		log.Errorf("cannot observe resource /%v%v: %w", deviceID, href, err)
+	}
+	obs, err := client.coapConn.Observe(ctx, obsRes.href, func(req *pool.Message) {
+		req.Hijack()
+		err2 := client.server.taskQueue.Submit(func() {
+			err := client.notifyContentChanged(deviceID, obsRes.href, req)
+			defer pool.ReleaseMessage(req)
+			if err != nil {
+				// cloud is unsynchronized against device. To recover cloud state, client need to reconnect to cloud.
+				logCannotObserverResourceError(deviceID, obsRes.href, err)
+				if err := client.Close(); err != nil {
+					log.Errorf("failed to close client connection on observe resource /%v%v: %w", deviceID, obsRes.href, err)
+				}
+			}
+			if req.Code() == codes.NotFound {
+				client.unpublishResourceLinks(client.getUserAuthorizedContext(req.Context()), []string{obsRes.href})
+			}
+		})
+		if err2 != nil {
+			logCannotObserverResourceError(deviceID, obsRes.href, err2)
+		}
+	}, message.Option{
+		ID:    message.URIQuery,
+		Value: []byte("if=" + interfaces.OC_IF_BASELINE),
+	})
+	if err != nil {
+		logCannotObserverResourceError(deviceID, obsRes.href, err)
+		return
+	}
+	obsRes.SetObservation(obs)
 }
 
 func (client *Client) getTrackedResources(deviceID string, instanceIDs []int64) []commands.ResourceId {
@@ -838,12 +844,12 @@ func (client *Client) OnDeviceSubscriberReconnectError(err error) {
 	}
 }
 
-func (client *Client) GetContext() (context.Context, context.CancelFunc) {
+func (client *Client) GetContext() context.Context {
 	authCtx, err := client.GetAuthorizationContext()
 	if err != nil {
-		return client.Context(), func() {}
+		return client.Context()
 	}
-	return authCtx.ToContext(client.Context()), func() {}
+	return authCtx.ToContext(client.Context())
 }
 
 func (client *Client) setShadowSynchronization(ctx context.Context, deviceID string, shadowSynchronization commands.ShadowSynchronization) commands.ShadowSynchronization {
@@ -912,7 +918,9 @@ func (c *Client) subscribeToDeviceEvents(owner string, onEvent func(e *idEvents.
 }
 
 func (c *Client) unsubscribeFromDeviceEvents() {
-	close := func() {}
+	close := func() {
+		// default no-op
+	}
 	c.mutex.Lock()
 	if c.closeEventSubscriptions != nil {
 		close = c.closeEventSubscriptions
