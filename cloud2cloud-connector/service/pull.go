@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/plgd-dev/device/schema"
+	"github.com/plgd-dev/device/schema/device"
 	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/hub/cloud2cloud-connector/store"
 	pbIS "github.com/plgd-dev/hub/identity-store/pb"
@@ -24,7 +25,7 @@ import (
 )
 
 type Device struct {
-	Device schema.Device `json:"device"`
+	Device device.Device `json:"device"`
 	Status string        `json:"status"`
 }
 
@@ -104,7 +105,8 @@ func Get(ctx context.Context, url string, linkedAccount store.LinkedAccount, lin
 	return nil
 }
 
-func publishDeviceResources(ctx context.Context, raClient raService.ResourceAggregateClient, deviceID string, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud, subscriptionManager *SubscriptionManager, dev RetrieveDeviceWithLinksResponse, triggerTask OnTaskTrigger) error {
+func publishDeviceResources(ctx context.Context, raClient raService.ResourceAggregateClient, deviceID string, linkedAccount store.LinkedAccount,
+	linkedCloud store.LinkedCloud, dev RetrieveDeviceWithLinksResponse, triggerTask OnTaskTrigger) error {
 	var errors []error
 	ctx = kitNetGrpc.CtxWithToken(ctx, linkedAccount.Data.Origin().AccessToken.String())
 	for _, link := range dev.Links {
@@ -156,8 +158,7 @@ func (p *pullDevicesHandler) triggerTaskForDevice(ctx context.Context, linkedAcc
 	}
 
 	if linkedCloud.SupportedSubscriptionsEvents.NeedPullDevice() {
-		return publishDeviceResources(ctx, p.raClient, deviceID, linkedAccount, linkedCloud, p.subscriptionManager,
-			dev, p.triggerTask)
+		return publishDeviceResources(ctx, p.raClient, deviceID, linkedAccount, linkedCloud, dev, p.triggerTask)
 	}
 
 	if _, ok := p.s.LoadDeviceSubscription(linkedCloud.ID, linkedAccount.ID, deviceID); ok {

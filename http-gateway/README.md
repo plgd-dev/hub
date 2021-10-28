@@ -1,1 +1,0 @@
-../docs/guide/deployment/http-gateway.md

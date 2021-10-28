@@ -1,0 +1,70 @@
+{{- if .Values.mockoauthserver.enabled }}
+{{- $fullname := include "plgd-hub.mockoauthserver.fullname" . }}
+{{- $domainCrt := include "plgd-hub.mockoauthserver.domainCertName" . }}
+{{- $port := .Values.mockoauthserver.port }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ $fullname }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "plgd-hub.labels" . | nindent 4 }}
+  annotations:
+{{/*    kubernetes.io/ingress.class: "nginx"*/}}
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+    ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      more_set_headers "Host $host";
+      more_set_headers "X-Forwarded-Host $host";
+      more_set_headers "X-Forwarded-Proto $scheme";
+      set $cors "true";
+      if ($request_method = 'OPTIONS') {
+        set $cors "${cors}options";
+      }
+      if ($cors = "trueoptions") {
+        add_header 'Access-Control-Allow-Origin' "$http_origin";
+        add_header 'Access-Control-Allow-Credentials' 'true';
+        add_header 'Access-Control-Allow-Methods' 'GET, PUT, POST, DELETE, PATCH, OPTIONS';
+        add_header 'Access-Control-Allow-Headers' '{{ .Values.mockoauthserver.ingress.allowHeaders }}';
+        add_header 'Access-Control-Expose-Headers' 'Content-Length,Content-Range';
+        add_header 'Access-Control-Max-Age' 1728000;
+        add_header 'Content-Type' 'text/plain charset=UTF-8';
+        add_header 'Content-Length' 0;
+        return 204;
+      }
+      if ($request_method = 'POST') {
+      add_header 'Access-Control-Allow-Credentials' 'true';
+      }
+      if ($request_method = 'PUT') {
+      add_header 'Access-Control-Allow-Credentials' 'true';
+      }
+      if ($request_method = 'GET') {
+          add_header 'Access-Control-Allow-Credentials' 'true';
+      }
+  {{- with .Values.mockoauthserver.ingress.annotations }}
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  tls:
+    - hosts:
+        - {{ include "plgd-hub.mockoauthserver.ingressDomain" . | quote }}
+      {{- if $.Values.global.enableWildCartCert }}
+      secretName: {{ include "plgd-hub.wildCardCertName" . | quote }}
+      {{- else }}
+      secretName: {{ include "plgd-hub.mockoauthserver.domainCertName" . | quote }}
+      {{- end }}
+  rules:
+  - host: {{ include "plgd-hub.mockoauthserver.ingressDomain" . | quote }}
+    http:
+      paths:
+      {{- range  .Values.mockoauthserver.ingress.paths }}
+      - path: {{ . }}
+        pathType: Prefix
+        backend:
+          service:
+            name: {{ $fullname }}
+            port:
+              number: {{ $port }}
+      {{- end }}
+{{- end }}

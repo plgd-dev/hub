@@ -94,8 +94,8 @@ spec:
             {{- end }}
       volumes:
         - name: {{ .Values.resourcedirectory.config.volume }}
-          secret:
-            secretName: {{ include "plgd-hub.certificateauthority.configSecretName" . }}
+          configMap:
+            name: {{ include "plgd-hub.certificateauthority.configName" . }}
         {{- if ( include "plgd-hub.certificateauthority.createServiceCertByCm" . ) }}
         - name: service-crt
           secret:
@@ -104,7 +104,7 @@ spec:
         {{- if and ( not $customCaDefined ) .Values.certificateauthority.enabled }}
         - name: {{ .Values.certificateauthority.ca.volume.name }}
           secret:
-            secretName: {{ .Values.certificateauthority.ca.secret.name | default .Values.certificateauthority.ca.default.secret.name }}
+            secretName: {{ .Values.certificateauthority.ca.secret.name | default $.Values.certmanager.default.ca.secret.name }}
         {{- end }}
         {{- with .Values.certificateauthority.extraVolumeMounts }}
         {{- toYaml . | nindent 8 }}

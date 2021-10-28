@@ -8,6 +8,8 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/panjf2000/ants/v2"
+	"github.com/plgd-dev/device/schema/device"
+	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/hub/grpc-gateway/pb"
 	"github.com/plgd-dev/hub/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
@@ -19,7 +21,6 @@ import (
 	"github.com/plgd-dev/hub/resource-aggregate/events"
 	"github.com/plgd-dev/hub/resource-directory/service"
 	"github.com/plgd-dev/hub/test/config"
-	"github.com/plgd-dev/go-coap/v2/message"
 	cbor "github.com/plgd-dev/kit/v2/codec/cbor"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
@@ -200,7 +201,7 @@ func testMakeDeviceResouceProtobuf(deviceId string, types []string, isOnline boo
 	}
 }
 
-var deviceResourceTypes = []string{"oic.wk.d", "x.test.d"}
+var deviceResourceTypes = []string{device.ResourceType, "x.test.d"}
 
 func testMakeDeviceResourceContent(deviceId string) *commands.Content {
 	dr := testMakeDeviceResouceProtobuf(deviceId, deviceResourceTypes, false).ToSchema()
@@ -218,7 +219,7 @@ func testMakeDeviceResourceContent(deviceId string) *commands.Content {
 
 func makeTestDeviceResourceContent(deviceId string) ResourceContent {
 	return ResourceContent{
-		Resource: testMakeDeviceResource(deviceId, "/oic/d", []string{"oic.wk.d", "x.test.d"}),
+		Resource: testMakeDeviceResource(deviceId, device.ResourceURI, []string{device.ResourceType, "x.test.d"}),
 		Content:  testMakeDeviceResourceContent(deviceId),
 	}
 }

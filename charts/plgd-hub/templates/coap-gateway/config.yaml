@@ -1,13 +1,18 @@
 {{- if .Values.coapgateway.enabled }}
+{{- if (not $.Values.mockoauthserver.enabled)}}
+{{- if eq (( $.Values.coapgateway.apis.coap.authorization.providers | default $.Values.global.oauth.device) | len ) 0 }}
+{{- fail "At least one oauth provider must be specified for coapgateway.apis.coap.authorization.providers or global.oauth.device" }}
+{{- end }}
+{{- end }}
 {{- $coapGatewayServiceCert := "/certs" }}
 apiVersion: v1
-kind: Secret
+kind: ConfigMap
 metadata:
-  name: {{ include "plgd-hub.coapgateway.configSecretName" . }}
+  name: {{ include "plgd-hub.coapgateway.configName" . }}
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "plgd-hub.labels" . | nindent 4 }}
-stringData:
+data:
   {{ .Values.coapgateway.config.fileName }}: |
     {{- with .Values.coapgateway }}
     log:
@@ -39,7 +44,10 @@ stringData:
           deviceIdClaim: {{ .apis.coap.authorization.deviceIdClaim | default $.Values.global.deviceIdClaim | quote }}
           {{- end }}
           providers:
-          {{- $providers := required "At least one oauth provider must be specified for coapgateway.apis.coap.authorization.providers or global.oauth.device" ( .apis.coap.authorization.providers | default $.Values.global.oauth.device ) }}
+          {{- $providers := $.Values.mockoauthserver.oauth }}
+          {{- if not $.Values.mockoauthserver.enabled }}
+          {{- $providers = required "At least one oauth provider must be specified for coapgateway.apis.coap.authorization.providers or global.oauth.device" ( .apis.coap.authorization.providers | default $.Values.global.oauth.device ) }}
+          {{- end }}
           {{- range $providers }}
             - name: {{ required "name for oauth device provider is required" .name | quote }}
               clientID: {{ required "clientID for oauth device provider is required" .clientID | quote }}
@@ -53,8 +61,12 @@ stringData:
               scopes: []
               {{- end }}
               audience: {{ .audience | default $.Values.global.audience | quote }}
-              redirectURL: {{ required "redirectURL for oauth device provider is required" .redirectURL | quote }}
+              redirectURL: {{ tpl ( required "redirectURL for oauth device provider is required" .redirectURL ) $ | quote }}
+              {{- if not $.Values.mockoauthserver.enabled}}
               authority: {{ required "authority for oauth device provider or global.authority is required" ( .authority | default $.Values.global.authority ) | quote }}
+              {{- else }}
+              authority: {{ include "plgd-hub.mockoauthserver.uri" $ | quote }}
+              {{- end }}
               http:
               {{- $http := .http | default dict }}
                 maxIdleConns: {{ $http.maxIdleConns | default 16 }}

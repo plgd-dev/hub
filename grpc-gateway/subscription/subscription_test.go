@@ -9,7 +9,6 @@ import (
 	"github.com/plgd-dev/hub/grpc-gateway/pb"
 	subscription "github.com/plgd-dev/hub/grpc-gateway/subscription"
 	"github.com/plgd-dev/hub/pkg/log"
-	"github.com/plgd-dev/hub/pkg/net/grpc"
 	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
 	grpcClient "github.com/plgd-dev/hub/pkg/net/grpc/client"
 	"github.com/plgd-dev/hub/resource-aggregate/commands"
@@ -20,7 +19,10 @@ import (
 	raservice "github.com/plgd-dev/hub/resource-aggregate/service"
 	"github.com/plgd-dev/hub/test"
 	"github.com/plgd-dev/hub/test/config"
+	oauthService "github.com/plgd-dev/hub/test/oauth-server/service"
 	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
+	pbTest "github.com/plgd-dev/hub/test/pb"
+	"github.com/plgd-dev/hub/test/service"
 	"github.com/plgd-dev/kit/v2/codec/cbor"
 	"github.com/stretchr/testify/require"
 )
@@ -37,25 +39,19 @@ func waitForEvent(ctx context.Context, t *testing.T, recvChan <-chan *pb.Event) 
 
 func check(t *testing.T, ev *pb.Event, expectedEvent *pb.Event) {
 	if ev.GetResourcePublished() != nil {
-		test.CleanUpResourceLinksPublished(ev.GetResourcePublished())
-		ev.GetResourcePublished().AuditContext = nil
+		pbTest.CleanUpResourceLinksPublished(ev.GetResourcePublished())
 	}
 	if expectedEvent.GetResourcePublished() != nil {
 		expectedEvent.SubscriptionId = ev.SubscriptionId
-		test.CleanUpResourceLinksPublished(expectedEvent.GetResourcePublished())
+		pbTest.CleanUpResourceLinksPublished(expectedEvent.GetResourcePublished())
 	}
 	if ev.GetDeviceMetadataUpdated() != nil {
-		ev.GetDeviceMetadataUpdated().EventMetadata = nil
-		ev.GetDeviceMetadataUpdated().AuditContext = nil
-		if ev.GetDeviceMetadataUpdated().GetStatus() != nil {
-			ev.GetDeviceMetadataUpdated().GetStatus().ValidUntil = 0
-		}
+		pbTest.CleanUpDeviceMetadataUpdated(ev.GetDeviceMetadataUpdated())
 	}
 	if ev.GetResourceChanged() != nil {
 		require.NotEmpty(t, ev.GetResourceChanged().GetEventMetadata())
-		ev.GetResourceChanged().EventMetadata = nil
 		require.NotEmpty(t, ev.GetResourceChanged().GetAuditContext())
-		ev.GetResourceChanged().AuditContext = nil
+		pbTest.CleanUpResourceChanged(ev.GetResourceChanged())
 		require.NotEmpty(t, ev.GetResourceChanged().GetResourceId().GetHref())
 		ev.GetResourceChanged().GetResourceId().Href = ""
 		require.NotEmpty(t, ev.GetResourceChanged().GetContent().GetData())
@@ -63,27 +59,23 @@ func check(t *testing.T, ev *pb.Event, expectedEvent *pb.Event) {
 	}
 	if ev.GetResourceUpdatePending() != nil {
 		require.NotEmpty(t, ev.GetResourceUpdatePending().GetEventMetadata())
-		ev.GetResourceUpdatePending().EventMetadata = nil
 		require.NotEmpty(t, ev.GetResourceUpdatePending().GetAuditContext())
-		ev.GetResourceUpdatePending().AuditContext = nil
+		pbTest.CleanUpResourceUpdatePending(ev.GetResourceUpdatePending())
 	}
 	if ev.GetResourceUpdated() != nil {
 		require.NotEmpty(t, ev.GetResourceUpdated().GetEventMetadata())
-		ev.GetResourceUpdated().EventMetadata = nil
 		require.NotEmpty(t, ev.GetResourceUpdated().GetAuditContext())
-		ev.GetResourceUpdated().AuditContext = nil
+		pbTest.CleanUpResourceUpdated(ev.GetResourceUpdated())
 	}
 	if ev.GetResourceRetrievePending() != nil {
 		require.NotEmpty(t, ev.GetResourceRetrievePending().GetEventMetadata())
-		ev.GetResourceRetrievePending().EventMetadata = nil
 		require.NotEmpty(t, ev.GetResourceRetrievePending().GetAuditContext())
-		ev.GetResourceRetrievePending().AuditContext = nil
+		pbTest.CleanUpResourceRetrievePending(ev.GetResourceRetrievePending())
 	}
 	if ev.GetResourceRetrieved() != nil {
 		require.NotEmpty(t, ev.GetResourceRetrieved().GetEventMetadata())
-		ev.GetResourceRetrieved().EventMetadata = nil
 		require.NotEmpty(t, ev.GetResourceRetrieved().GetAuditContext())
-		ev.GetResourceRetrieved().AuditContext = nil
+		pbTest.CleanUpResourceRetrieved(ev.GetResourceRetrieved())
 		require.NotEmpty(t, ev.GetResourceRetrieved().GetContent().GetData())
 		ev.GetResourceRetrieved().GetContent().Data = nil
 	}
@@ -93,7 +85,7 @@ func check(t *testing.T, ev *pb.Event, expectedEvent *pb.Event) {
 func checkAndValidateUpdate(ctx context.Context, t *testing.T, rac raservice.ResourceAggregateClient, s *subscription.Sub, recvChan <-chan *pb.Event, correlationID string, deviceID string, value uint64) {
 	updCorrelationID := "updCorrelationID"
 	_, err := rac.UpdateResource(ctx, &commands.UpdateResourceRequest{
-		ResourceId: commands.NewResourceID(deviceID, "/light/2"),
+		ResourceId: commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
 		Content: &commands.Content{
 			ContentType: message.AppOcfCbor.String(),
 			Data: func() []byte {
@@ -116,7 +108,7 @@ func checkAndValidateUpdate(ctx context.Context, t *testing.T, rac raservice.Res
 		SubscriptionId: s.Id(),
 		Type: &pb.Event_ResourceUpdatePending{
 			ResourceUpdatePending: &events.ResourceUpdatePending{
-				ResourceId: commands.NewResourceID(deviceID, "/light/2"),
+				ResourceId: commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
 				Content: &commands.Content{
 					ContentType: message.AppOcfCbor.String(),
 					Data: func() []byte {
@@ -128,6 +120,7 @@ func checkAndValidateUpdate(ctx context.Context, t *testing.T, rac raservice.Res
 						return d
 					}(),
 				},
+				AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, ""),
 			},
 		},
 		CorrelationId: correlationID,
@@ -140,11 +133,12 @@ func checkAndValidateUpdate(ctx context.Context, t *testing.T, rac raservice.Res
 				SubscriptionId: s.Id(),
 				Type: &pb.Event_ResourceUpdated{
 					ResourceUpdated: &events.ResourceUpdated{
-						ResourceId: commands.NewResourceID(deviceID, "/light/2"),
+						ResourceId: commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
 						Content: &commands.Content{
 							CoapContentFormat: -1,
 						},
-						Status: commands.Status_OK,
+						Status:       commands.Status_OK,
+						AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, ""),
 					},
 				},
 				CorrelationId: correlationID,
@@ -159,7 +153,8 @@ func checkAndValidateUpdate(ctx context.Context, t *testing.T, rac raservice.Res
 							ContentType:       message.AppOcfCbor.String(),
 							CoapContentFormat: 10000,
 						},
-						Status: commands.Status_OK,
+						Status:       commands.Status_OK,
+						AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, ""),
 					},
 				},
 				CorrelationId: correlationID,
@@ -171,7 +166,7 @@ func checkAndValidateUpdate(ctx context.Context, t *testing.T, rac raservice.Res
 func checkAndValidateRetrieve(ctx context.Context, t *testing.T, rac raservice.ResourceAggregateClient, s *subscription.Sub, recvChan <-chan *pb.Event, correlationID string, deviceID string) {
 	retrieveCorrelationID := "retrieveCorrelationID"
 	_, err := rac.RetrieveResource(ctx, &commands.RetrieveResourceRequest{
-		ResourceId:    commands.NewResourceID(deviceID, "/light/2"),
+		ResourceId:    commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
 		CorrelationId: retrieveCorrelationID,
 		CommandMetadata: &commands.CommandMetadata{
 			ConnectionId: "test",
@@ -183,7 +178,8 @@ func checkAndValidateRetrieve(ctx context.Context, t *testing.T, rac raservice.R
 		SubscriptionId: s.Id(),
 		Type: &pb.Event_ResourceRetrievePending{
 			ResourceRetrievePending: &events.ResourceRetrievePending{
-				ResourceId: commands.NewResourceID(deviceID, "/light/2"),
+				ResourceId:   commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
+				AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, ""),
 			},
 		},
 		CorrelationId: correlationID,
@@ -192,24 +188,25 @@ func checkAndValidateRetrieve(ctx context.Context, t *testing.T, rac raservice.R
 		SubscriptionId: s.Id(),
 		Type: &pb.Event_ResourceRetrieved{
 			ResourceRetrieved: &events.ResourceRetrieved{
-				ResourceId: commands.NewResourceID(deviceID, "/light/2"),
+				ResourceId: commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
 				Content: &commands.Content{
 					CoapContentFormat: int32(message.AppOcfCbor),
 					ContentType:       message.AppOcfCbor.String(),
 				},
-				Status: commands.Status_OK,
+				Status:       commands.Status_OK,
+				AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, ""),
 			},
 		},
 		CorrelationId: correlationID,
 	})
 }
 
-func TestRequestHandler_SubscribeToEvents(t *testing.T) {
+func TestRequestHandlerSubscribeToEvents(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
 	defer cancel()
 
-	tearDown := test.SetUp(ctx, t)
+	tearDown := service.SetUp(ctx, t)
 	defer tearDown()
 	token := oauthTest.GetDefaultServiceToken(t)
 	ctx = kitNetGrpc.CtxWithIncomingToken(kitNetGrpc.CtxWithToken(ctx, token), token)
@@ -236,7 +233,7 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 	defer resourceSubscriber.Close()
 
 	ownerClaim := "sub"
-	owner, err := grpc.OwnerFromTokenMD(ctx, ownerClaim)
+	owner, err := kitNetGrpc.OwnerFromTokenMD(ctx, ownerClaim)
 	require.NoError(t, err)
 	subCache := subscription.NewSubscriptionsCache(resourceSubscriber.Conn(), func(err error) { t.Log(err) })
 	correlationID := "testToken"
@@ -275,11 +272,12 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 				Status: &commands.ConnectionStatus{
 					Value: commands.ConnectionStatus_ONLINE,
 				},
+				AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, ""),
 			},
 		},
 		CorrelationId: correlationID,
 	})
-	check(t, waitForEvent(ctx, t, recvChan), test.ResourceLinkToPublishEvent(deviceID, correlationID, test.GetAllBackendResourceLinks()))
+	check(t, waitForEvent(ctx, t, recvChan), pbTest.ResourceLinkToPublishEvent(deviceID, correlationID, test.GetAllBackendResourceLinks()))
 
 	for range test.GetAllBackendResourceLinks() {
 		check(t, waitForEvent(ctx, t, recvChan), &pb.Event{
@@ -291,7 +289,8 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 						CoapContentFormat: int32(message.AppOcfCbor),
 						ContentType:       message.AppOcfCbor.String(),
 					},
-					Status: commands.Status_OK,
+					Status:       commands.Status_OK,
+					AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, ""),
 				},
 			},
 			CorrelationId: correlationID,
@@ -317,6 +316,7 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 						Status: &commands.ConnectionStatus{
 							Value: commands.ConnectionStatus_OFFLINE,
 						},
+						AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, ""),
 					},
 				},
 				CorrelationId: correlationID,
@@ -336,5 +336,4 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 			require.NoError(t, err)
 		}
 	}
-
 }

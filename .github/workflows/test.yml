@@ -2,9 +2,13 @@
 
 name: Test
 
-# Controls when the action will run. Triggers the workflow on push or pull request
-# events but only for the master branch
+# Controls when the action will run. Triggers the workflow push is only on main branch and PR on any branch.
 on:
+  push:
+    branches:
+      - main
+    tags:
+      - "*"
   pull_request:
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
@@ -18,19 +22,30 @@ jobs:
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0 # Shallow clones should be disabled for a better relevancy of analysis
 
       - name: Setup kernel for multicast messages, increase read buffer to 8MB
         run: sudo sysctl -w net.core.rmem_max=8388608
-      
+
       - name: Get file limit
         run: sudo sysctl fs.file-max
 
       - name: Get hard ulimits
         run: ulimit -a
-    
+
       - name: Get soft ulimits open files
         run: ulimit -S
 
-      # Runs a single command using the runners shell
       - name: Run a test
         run: make test
+
+      - name: Publish the coverage for main branch
+        if: ${{ github.ref == 'refs/heads/main' }}
+        run: bash <(curl -s https://codecov.io/bash)
+
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

@@ -1,1 +1,0 @@
-../docs/guide/deployment/resource-aggregate.md

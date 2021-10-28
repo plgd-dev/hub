@@ -9,3 +9,7 @@ Dockerfile.test
 README.md
 LICENSE
 renovate.json
+charts
+bundle/client/grpc/grpc
+bundle/client/coap/coap
+bundle/client/ob/ob

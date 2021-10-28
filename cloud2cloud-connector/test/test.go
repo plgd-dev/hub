@@ -26,7 +26,9 @@ import (
 	"github.com/plgd-dev/hub/pkg/security/oauth2/oauth"
 	"github.com/plgd-dev/hub/test"
 	testCfg "github.com/plgd-dev/hub/test/config"
+	testHttp "github.com/plgd-dev/hub/test/http"
 	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
+	"github.com/plgd-dev/hub/test/service"
 	"github.com/plgd-dev/kit/v2/codec/json"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
@@ -43,7 +45,7 @@ func countOpenFiles() int64 {
 }
 
 func SetUpClouds(ctx context.Context, t *testing.T, deviceID string, supportedEvents store.Events) func() {
-	cloud1 := test.SetUp(ctx, t)
+	cloud1 := service.SetUp(ctx, t)
 	cloud2 := SetUpCloudWithConnector(t)
 	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultServiceToken(t))
 
@@ -66,7 +68,7 @@ func SetUpClouds(ctx context.Context, t *testing.T, deviceID string, supportedEv
 	linkedCloud := store.LinkedCloud{
 		Name: t.Name(),
 		Endpoint: store.Endpoint{
-			URL:     HTTPS_SCHEME + testCfg.C2C_GW_HOST + c2cGwUri.Version,
+			URL:     testHttp.HTTPS_SCHEME + testCfg.C2C_GW_HOST + c2cGwUri.Version,
 			RootCAs: rootCAs,
 		},
 		OAuth: oauth.Config{
@@ -82,8 +84,8 @@ func SetUpClouds(ctx context.Context, t *testing.T, deviceID string, supportedEv
 	require.NoError(t, err)
 
 	token := oauthTest.GetServiceToken(t, OAUTH_HOST, oauthTest.ClientTest)
-	req := test.NewHTTPRequest(http.MethodPost, HTTPS_SCHEME+C2C_CONNECTOR_HOST+uri.LinkedClouds, bytes.NewBuffer(data)).AuthToken(token).Build(ctx, t)
-	resp := test.DoHTTPRequest(t, req)
+	req := testHttp.NewHTTPRequest(http.MethodPost, testHttp.HTTPS_SCHEME+C2C_CONNECTOR_HOST+uri.LinkedClouds, bytes.NewBuffer(data)).AuthToken(token).Build(ctx, t)
+	resp := testHttp.DoHTTPRequest(t, req)
 	require.Equal(t, http.StatusOK, resp.StatusCode)
 	defer func(r *http.Response) {
 		_ = r.Body.Close()
@@ -91,8 +93,8 @@ func SetUpClouds(ctx context.Context, t *testing.T, deviceID string, supportedEv
 	var linkCloud store.LinkedCloud
 	err = json.ReadFrom(resp.Body, &linkCloud)
 	require.NoError(t, err)
-	req = test.NewHTTPRequest(http.MethodGet, HTTPS_SCHEME+C2C_CONNECTOR_HOST+uri.Version+"/clouds/"+linkCloud.ID+"/accounts", nil).AuthToken(token).Build(ctx, t)
-	resp = test.DoHTTPRequest(t, req)
+	req = testHttp.NewHTTPRequest(http.MethodGet, testHttp.HTTPS_SCHEME+C2C_CONNECTOR_HOST+uri.Version+"/clouds/"+linkCloud.ID+"/accounts", nil).AuthToken(token).Build(ctx, t)
+	resp = testHttp.DoHTTPRequest(t, req)
 	require.Equal(t, http.StatusOK, resp.StatusCode)
 	defer func(r *http.Response) {
 		_ = r.Body.Close()
@@ -101,8 +103,8 @@ func SetUpClouds(ctx context.Context, t *testing.T, deviceID string, supportedEv
 	// for pulling
 	time.Sleep(time.Second * 10)
 
-	req = test.NewHTTPRequest(http.MethodGet, HTTPS_SCHEME+C2C_CONNECTOR_HOST+uri.Version+"/clouds", nil).AuthToken(token).Build(ctx, t)
-	resp = test.DoHTTPRequest(t, req)
+	req = testHttp.NewHTTPRequest(http.MethodGet, testHttp.HTTPS_SCHEME+C2C_CONNECTOR_HOST+uri.Version+"/clouds", nil).AuthToken(token).Build(ctx, t)
+	resp = testHttp.DoHTTPRequest(t, req)
 	defer func(r *http.Response) {
 		_ = r.Body.Close()
 	}(resp)
@@ -111,8 +113,8 @@ func SetUpClouds(ctx context.Context, t *testing.T, deviceID string, supportedEv
 	fmt.Println(string(b))
 
 	return func() {
-		req := test.NewHTTPRequest(http.MethodDelete, HTTPS_SCHEME+C2C_CONNECTOR_HOST+uri.Version+"/clouds/"+linkCloud.ID, nil).AuthToken(token).Build(ctx, t)
-		resp := test.DoHTTPRequest(t, req)
+		req := testHttp.NewHTTPRequest(http.MethodDelete, testHttp.HTTPS_SCHEME+C2C_CONNECTOR_HOST+uri.Version+"/clouds/"+linkCloud.ID, nil).AuthToken(token).Build(ctx, t)
+		resp := testHttp.DoHTTPRequest(t, req)
 		defer func(r *http.Response) {
 			_ = r.Body.Close()
 		}(resp)

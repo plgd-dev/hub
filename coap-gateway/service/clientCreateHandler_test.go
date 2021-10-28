@@ -7,13 +7,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/plgd-dev/hub/coap-gateway/coapconv"
-	coapgwTest "github.com/plgd-dev/hub/coap-gateway/test"
-	"github.com/plgd-dev/hub/coap-gateway/uri"
-	testCfg "github.com/plgd-dev/hub/test/config"
+	"github.com/plgd-dev/device/schema/interfaces"
 	"github.com/plgd-dev/go-coap/v2/message"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/tcp"
+	coapgwTest "github.com/plgd-dev/hub/coap-gateway/test"
+	"github.com/plgd-dev/hub/coap-gateway/uri"
+	testCfg "github.com/plgd-dev/hub/test/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -84,7 +84,7 @@ func Test_clientCreateHandler(t *testing.T) {
 			}
 			req, err := tcp.NewPostRequest(ctx, tt.args.href, tt.args.contentFormat, body)
 			require.NoError(t, err)
-			req.SetOptionString(message.URIQuery, "if="+coapconv.OCFCreateInterface)
+			req.SetOptionString(message.URIQuery, "if="+interfaces.OC_IF_CREATE)
 			resp, err := co.Do(req)
 			require.NoError(t, err)
 			assert.Equal(t, tt.wantsCode.String(), resp.Code().String())

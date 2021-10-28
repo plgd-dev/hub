@@ -9,11 +9,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/stretchr/testify/require"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
-	"google.golang.org/protobuf/encoding/protojson"
-
+	"github.com/plgd-dev/device/schema/interfaces"
+	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/hub/grpc-gateway/pb"
 	httpgwTest "github.com/plgd-dev/hub/http-gateway/test"
 	"github.com/plgd-dev/hub/http-gateway/uri"
@@ -28,7 +25,11 @@ import (
 	"github.com/plgd-dev/hub/test"
 	"github.com/plgd-dev/hub/test/config"
 	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
-	"github.com/plgd-dev/go-coap/v2/message"
+	"github.com/plgd-dev/hub/test/service"
+	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 type contentChangedFilter struct {
@@ -90,13 +91,34 @@ func (f *contentChangedFilter) WaitForDeviceMetadataUpdated(t time.Duration) *ev
 	}
 }
 
-func TestRequestHandler_UpdateDeviceMetadata(t *testing.T) {
+func updateResource(t *testing.T, ctx context.Context, req *pb.UpdateResourceRequest, token, accept, contentType string) (*events.ResourceUpdated, error) {
+	data, err := httpgwTest.GetContentData(req.GetContent(), contentType)
+	if err != nil {
+		return nil, err
+	}
+
+	rb := httpgwTest.NewRequest(http.MethodPut, uri.AliasDeviceResource, bytes.NewReader([]byte(data))).AuthToken(token).Accept(accept).ContentType(contentType)
+	rb.DeviceId(req.GetResourceId().GetDeviceId()).ResourceHref(req.GetResourceId().GetHref()).ResourceInterface(req.GetResourceInterface())
+	resp := httpgwTest.HTTPDo(t, rb.Build())
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+
+	var got pb.UpdateResourceResponse
+	err = Unmarshal(resp.StatusCode, resp.Body, &got)
+	if err != nil {
+		return nil, err
+	}
+	return got.GetData(), nil
+}
+
+func TestRequestHandlerUpdateDeviceMetadata(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 
 	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
 	defer cancel()
 
-	tearDown := test.SetUp(ctx, t)
+	tearDown := service.SetUp(ctx, t)
 	defer tearDown()
 
 	shutdownHttp := httpgwTest.SetUp(t)
@@ -134,16 +156,8 @@ func TestRequestHandler_UpdateDeviceMetadata(t *testing.T) {
 		data, err := protojson.Marshal(in)
 		require.NoError(t, err)
 
-		request := httpgwTest.NewRequest(http.MethodPut, uri.DeviceMetadata, bytes.NewReader(data)).AuthToken(token).DeviceId(deviceID).Build()
-		trans := http.DefaultTransport.(*http.Transport).Clone()
-		trans.TLSClientConfig = &tls.Config{
-			InsecureSkipVerify: true,
-		}
-		c := http.Client{
-			Transport: trans,
-		}
-		resp, err := c.Do(request)
-		require.NoError(t, err)
+		rb := httpgwTest.NewRequest(http.MethodPut, uri.DeviceMetadata, bytes.NewReader(data)).AuthToken(token).DeviceId(deviceID)
+		resp := httpgwTest.HTTPDo(t, rb.Build())
 		defer func() {
 			_ = resp.Body.Close()
 		}()
@@ -166,9 +180,9 @@ func TestRequestHandler_UpdateDeviceMetadata(t *testing.T) {
 	require.NotEmpty(t, ev)
 	require.Equal(t, commands.ShadowSynchronization_DISABLED, ev.GetShadowSynchronization())
 
-	_, err = updateResource(ctx, &pb.UpdateResourceRequest{
-		ResourceInterface: "oic.if.baseline",
-		ResourceId:        commands.NewResourceID(deviceID, "/light/1"),
+	_, err = updateResource(t, ctx, &pb.UpdateResourceRequest{
+		ResourceInterface: interfaces.OC_IF_BASELINE,
+		ResourceId:        commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
 		Content: &pb.Content{
 			ContentType: message.AppOcfCbor.String(),
 			Data: test.EncodeToCbor(t, map[string]interface{}{
@@ -177,9 +191,9 @@ func TestRequestHandler_UpdateDeviceMetadata(t *testing.T) {
 		},
 	}, token, uri.ApplicationProtoJsonContentType, uri.ApplicationProtoJsonContentType)
 	require.NoError(t, err)
-	_, err = updateResource(ctx, &pb.UpdateResourceRequest{
-		ResourceInterface: "oic.if.baseline",
-		ResourceId:        commands.NewResourceID(deviceID, "/light/1"),
+	_, err = updateResource(t, ctx, &pb.UpdateResourceRequest{
+		ResourceInterface: interfaces.OC_IF_BASELINE,
+		ResourceId:        commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
 		Content: &pb.Content{
 			ContentType: message.AppOcfCbor.String(),
 			Data: test.EncodeToCbor(t, map[string]interface{}{
@@ -202,9 +216,9 @@ func TestRequestHandler_UpdateDeviceMetadata(t *testing.T) {
 	require.NotEmpty(t, ev)
 	require.Equal(t, commands.ShadowSynchronization_ENABLED, ev.GetShadowSynchronization())
 
-	_, err = updateResource(ctx, &pb.UpdateResourceRequest{
-		ResourceInterface: "oic.if.baseline",
-		ResourceId:        commands.NewResourceID(deviceID, "/light/1"),
+	_, err = updateResource(t, ctx, &pb.UpdateResourceRequest{
+		ResourceInterface: interfaces.OC_IF_BASELINE,
+		ResourceId:        commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
 		Content: &pb.Content{
 			ContentType: message.AppOcfCbor.String(),
 			Data: test.EncodeToCbor(t, map[string]interface{}{
@@ -213,9 +227,9 @@ func TestRequestHandler_UpdateDeviceMetadata(t *testing.T) {
 		},
 	}, token, uri.ApplicationProtoJsonContentType, uri.ApplicationProtoJsonContentType)
 	require.NoError(t, err)
-	_, err = updateResource(ctx, &pb.UpdateResourceRequest{
-		ResourceInterface: "oic.if.baseline",
-		ResourceId:        commands.NewResourceID(deviceID, "/light/1"),
+	_, err = updateResource(t, ctx, &pb.UpdateResourceRequest{
+		ResourceInterface: interfaces.OC_IF_BASELINE,
+		ResourceId:        commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
 		Content: &pb.Content{
 			ContentType: message.AppOcfCbor.String(),
 			Data: test.EncodeToCbor(t, map[string]interface{}{
@@ -227,5 +241,4 @@ func TestRequestHandler_UpdateDeviceMetadata(t *testing.T) {
 
 	evResourceChanged = v.WaitForResourceChanged(time.Second)
 	require.NotEmpty(t, evResourceChanged)
-
 }

@@ -6,6 +6,9 @@ import (
 	"io"
 	"testing"
 
+	"github.com/plgd-dev/device/schema/device"
+	"github.com/plgd-dev/device/schema/interfaces"
+	"github.com/plgd-dev/device/test/resource/types"
 	"github.com/plgd-dev/hub/grpc-gateway/pb"
 	"github.com/plgd-dev/hub/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
@@ -13,6 +16,7 @@ import (
 	"github.com/plgd-dev/hub/test"
 	testCfg "github.com/plgd-dev/hub/test/config"
 	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
+	"github.com/plgd-dev/hub/test/service"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
@@ -37,8 +41,8 @@ func TestRequestHandler_GetDevices(t *testing.T) {
 			},
 			want: []*pb.Device{
 				{
-					Types:      []string{"oic.d.cloudDevice", "oic.wk.d"},
-					Interfaces: []string{"oic.if.r", "oic.if.baseline"},
+					Types:      []string{types.DEVICE_CLOUD, device.ResourceType},
+					Interfaces: []string{interfaces.OC_IF_R, interfaces.OC_IF_BASELINE},
 					Id:         deviceID,
 					Name:       test.TestDeviceName,
 					Metadata: &pb.Device_Metadata{
@@ -54,7 +58,7 @@ func TestRequestHandler_GetDevices(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), testCfg.TEST_TIMEOUT)
 	defer cancel()
 
-	tearDown := test.SetUp(ctx, t)
+	tearDown := service.SetUp(ctx, t)
 	defer tearDown()
 	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultServiceToken(t))
 

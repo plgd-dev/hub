@@ -18,7 +18,7 @@ import (
 	"github.com/plgd-dev/kit/v2/codec/json"
 )
 
-var DeviceUserID = "1"
+const DeviceUserID = "1"
 
 const (
 	TokenScopeKey    = "scope"
@@ -345,14 +345,14 @@ func (requestHandler *RequestHandler) processResponse(w http.ResponseWriter, tok
 	}
 
 	resp := map[string]interface{}{
-		"access_token": accessToken,
-		"id_token":     idToken,
-		"scope":        "openid profile email",
-		"token_type":   "Bearer",
+		"access_token":  accessToken,
+		"id_token":      idToken,
+		"scope":         "openid profile email",
+		"token_type":    "Bearer",
+		"refresh_token": refreshToken,
 	}
 	if !accessTokenExpires.IsZero() {
 		resp["expires_in"] = int64(time.Until(accessTokenExpires).Seconds())
-		resp["refresh_token"] = refreshToken
 	}
 
 	if err = jsonResponseWriter(w, resp); err != nil {

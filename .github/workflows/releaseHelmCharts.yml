@@ -1,0 +1,21 @@
+name: Release Helm Charts
+on:
+  push:
+    tags:
+      - '*'
+
+jobs:
+  release-charts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Publish Helm chart
+        uses: stefanprodan/helm-gh-pages@master
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          charts_url: https://charts.plgd.dev
+          helm_version: "3.7.1"
+          app_version: "${{ github.ref }}"
+          chart_version: "${{ github.ref }}"

@@ -1,11 +1,11 @@
 {{- if .Values.identitystore.enabled }}
 {{- $cert := "/certs" }}
 apiVersion: v1
-kind: Secret
+kind: ConfigMap
 metadata:
-  name: {{ include "plgd-hub.identitystore.configSecretName" . }}
+  name: {{ include "plgd-hub.identitystore.configName" . }}
   namespace: {{ .Release.Namespace }}
-stringData:
+data:
   {{ .Values.identitystore.config.fileName }}: |
     {{- with .Values.identitystore }}
     log:
@@ -44,6 +44,7 @@ stringData:
         nats:
           url:{{- printf " " }}{{- include "plgd-hub.natsUri" (list $ .clients.eventBus.nats.url )  | quote }}
           jetstream: {{ .clients.eventBus.nats.jetstream }}
+          flusherTimeout: {{ .clients.eventBus.nats.flusherTimeout | quote }}
           tls:
             {{- $natsTls := .clients.eventBus.nats.tls }}
             {{- include "plgd-hub.certificateConfig" (list $ $natsTls $cert ) | indent 10 }}

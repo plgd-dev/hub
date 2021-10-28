@@ -5,18 +5,18 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/require"
-
 	"github.com/plgd-dev/hub/grpc-gateway/pb"
 	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
 	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
+	pbTest "github.com/plgd-dev/hub/test/pb"
+	"github.com/stretchr/testify/require"
 )
 
-func TestRequestHandler_CancelPendingMetadataUpdates(t *testing.T) {
+func TestRequestHandlerCancelPendingMetadataUpdates(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
 	defer cancel()
 
-	client, _, devicePendings, shutdown := initPendingEvents(ctx, t)
+	client, _, devicePendings, shutdown := pbTest.InitPendingEvents(ctx, t)
 	defer shutdown()
 
 	require.Equal(t, len(devicePendings), 2)
@@ -75,7 +75,7 @@ func TestRequestHandler_CancelPendingMetadataUpdates(t *testing.T) {
 				return
 			}
 			require.NoError(t, err)
-			cmpCancel(t, tt.want, resp)
+			pbTest.CmpCancelPendingCmdResponses(t, tt.want, resp)
 		})
 	}
 }

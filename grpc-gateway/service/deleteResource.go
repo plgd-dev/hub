@@ -10,18 +10,21 @@ import (
 	"google.golang.org/grpc/codes"
 )
 
+func logAndReturnDeleteResourceError(err error) error {
+	return log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot delete resource: %v", err))
+}
+
 func (r *RequestHandler) DeleteResource(ctx context.Context, req *pb.DeleteResourceRequest) (*pb.DeleteResourceResponse, error) {
 	deleteCommand, err := req.ToRACommand(ctx)
 	if err != nil {
-		return nil, log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot delete resource: %v", err))
+		return nil, logAndReturnDeleteResourceError(err)
 	}
 	deletedEvent, err := r.resourceAggregateClient.SyncDeleteResource(ctx, "*", deleteCommand)
 	if err != nil {
-		return nil, log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot delete resource: %v", err))
+		return nil, logAndReturnDeleteResourceError(err)
 	}
-	err = commands.CheckEventContent(deletedEvent)
-	if err != nil {
-		return nil, log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot delete resource: %v", err))
+	if err = commands.CheckEventContent(deletedEvent); err != nil {
+		return nil, logAndReturnDeleteResourceError(err)
 	}
 	return &pb.DeleteResourceResponse{Data: deletedEvent}, err
 }

@@ -548,14 +548,3 @@ func (s *DeviceSubscriptions) runRecv() {
 		s.handleEvent(ev)
 	}
 }
-
-func ToDeviceSubscriptions(v interface{}, ok bool) (*DeviceSubscriptions, bool) {
-	if !ok {
-		return nil, false
-	}
-	if v == nil {
-		return nil, false
-	}
-	s, ok := v.(*DeviceSubscriptions)
-	return s, ok
-}

@@ -21,8 +21,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 func TestResourceShadow_GetResources(t *testing.T) {
@@ -30,11 +28,9 @@ func TestResourceShadow_GetResources(t *testing.T) {
 		req *pb.GetResourcesRequest
 	}
 	tests := []struct {
-		name           string
-		args           args
-		wantStatusCode codes.Code
-		wantErr        bool
-		want           map[string]*pb.Resource
+		name string
+		args args
+		want map[string]*pb.Resource
 	}{
 
 		{
@@ -44,8 +40,6 @@ func TestResourceShadow_GetResources(t *testing.T) {
 					DeviceIdFilter: []string{Resource0.DeviceId},
 				},
 			},
-			wantStatusCode: codes.OK,
-			wantErr:        false,
 		},
 
 		{
@@ -231,13 +225,7 @@ func TestResourceShadow_GetResources(t *testing.T) {
 			fmt.Println(tt.name)
 			var s testGrpcGateway_GetResourcesServer
 			err := rd.GetResources(tt.args.req, &s)
-
-			if tt.wantErr {
-				assert.Error(t, err)
-			} else {
-				assert.NoError(t, err)
-			}
-			assert.Equal(t, tt.wantStatusCode, status.Convert(err).Code())
+			assert.NoError(t, err)
 			test.CheckProtobufs(t, tt.want, s.got, test.AssertToCheckFunc(assert.Equal))
 		})
 	}

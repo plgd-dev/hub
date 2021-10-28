@@ -102,9 +102,28 @@ If release name contains chart name it will be used as a full name.
   {{- $authoriztion := index . 1 }}
   {{- $prefix := index . 2 }}
   ownerClaim:{{ printf " " }}{{ required (printf "%s.apis.grpc.authorization.ownerClaim or global.ownerClaim is required " $prefix) ( $authoriztion.ownerClaim | default $.Values.global.ownerClaim ) | quote }}
+  {{- if not $.Values.mockoauthserver.enabled }}
   authority:{{ printf " " }}{{ required (printf "%s.apis.grpc.authorization.authority or global.authority is required " $prefix) ( $authoriztion.authority | default $.Values.global.authority ) | quote }}
   audience:{{ printf " " }}{{ ( $authoriztion.audience | default $.Values.global.audience ) | quote }}
+  {{- else }}
+  authority:{{ printf " " }}{{ include "plgd-hub.mockoauthserver.uri" $ }}
+  audience:{{ printf " " }}{{ printf "" | quote }}
+  {{- end }}
 {{- end }}
+
+{{- define "plgd-hub.baseAthorizationConfig" }}
+  {{- $ := index . 0 }}
+  {{- $authoriztion := index . 1 }}
+  {{- $prefix := index . 2 }}
+  {{- if not $.Values.mockoauthserver.enabled }}
+  authority:{{ printf " " }}{{ required (printf "%s.apis.grpc.authorization.authority or global.authority is required " $prefix) ( $authoriztion.authority | default $.Values.global.authority ) | quote }}
+  audience:{{ printf " " }}{{ ( $authoriztion.audience | default $.Values.global.audience ) | quote }}
+  {{- else }}
+  authority:{{ printf " " }}{{ include "plgd-hub.mockoauthserver.uri" $ }}
+  audience:{{ printf " " }}{{ printf "" | quote }}
+  {{- end }}
+{{- end }}
+
 
 
 {{- define "plgd-hub.createInternalCertByCm" }}
@@ -271,4 +290,36 @@ app.kubernetes.io/instance: {{ .Release.Name }}
   {{- else }}
   {{ required "clientSecret or clientSecretFile for oauth provider is required " ( $provider.clientSecret | default $provider.clientSecretFile ) }}
   {{- end }}
+{{- end }}
+
+{{- define "plgd-hub.enableDefaultIssuer" }}
+    {{- if and .Values.certmanager.enabled .Values.certmanager.default.issuer.enabled }}
+        {{- $nameInternal := .Values.certmanager.internal.issuer.name }}
+        {{- $kindInternal := .Values.certmanager.internal.issuer.kind }}
+        {{- $specInternal := .Values.certmanager.internal.issuer.spec }}
+
+        {{- $nameCoap := .Values.certmanager.coap.issuer.name }}
+        {{- $kindCoap := .Values.certmanager.coap.issuer.kind }}
+        {{- $specCoap := .Values.certmanager.coap.issuer.spec }}
+
+        {{- $nameExternal := .Values.certmanager.external.issuer.name }}
+        {{- $kindExternal := .Values.certmanager.external.issuer.kind }}
+        {{- $specExternal := .Values.certmanager.external.issuer.spec }}
+
+        {{- $internalIssuer := or ( and $nameInternal $kindInternal ) $specInternal }}
+        {{- $coapIssuer := or ( and $nameCoap $kindCoap ) $specCoap }}
+        {{- $externalIssuer := or ( and $nameExternal $kindExternal ) $specExternal }}
+        {{- printf "%t" ( not ( and $internalIssuer $coapIssuer $externalIssuer )) }}
+    {{- else }}
+        {{- printf "false" }}
+    {{- end }}
+{{- end }}
+
+{{- define "plgd-hub.wildCardCertDomain" -}}
+    {{- printf "*.%s" .Values.global.domain }}
+{{- end }}
+
+{{- define "plgd-hub.wildCardCertName" -}}
+  {{- $fullName := include "plgd-hub.fullname" . -}}
+  {{- printf "%s-wildcard-crt" $fullName -}}
 {{- end }}

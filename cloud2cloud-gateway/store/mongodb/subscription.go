@@ -71,6 +71,36 @@ func makeDBSub(sub store.Subscription) DBSub {
 	}
 }
 
+func validateDevicesSubscription(sub store.Subscription) error {
+	if sub.DeviceID != "" {
+		return fmt.Errorf("invalid DeviceID for devices subscription type")
+	}
+	if sub.Href != "" {
+		return fmt.Errorf("invalid Href for devices subscription type")
+	}
+	return nil
+}
+
+func validateDeviceSubscription(sub store.Subscription) error {
+	if sub.DeviceID == "" {
+		return fmt.Errorf("invalid DeviceID for device subscription type")
+	}
+	if sub.Href != "" {
+		return fmt.Errorf("invalid Href for device subscription type")
+	}
+	return nil
+}
+
+func validateResourceSubscription(sub store.Subscription) error {
+	if sub.DeviceID == "" {
+		return fmt.Errorf("invalid DeviceID for resource subscription type")
+	}
+	if sub.Href == "" {
+		return fmt.Errorf("invalid Href for resource subscription type")
+	}
+	return nil
+}
+
 func validateSubscription(sub store.Subscription) error {
 	if sub.ID == "" {
 		return fmt.Errorf("invalid ID")
@@ -90,31 +120,14 @@ func validateSubscription(sub store.Subscription) error {
 
 	switch sub.Type {
 	case store.Type_Devices:
-		if sub.DeviceID != "" {
-			return fmt.Errorf("invalid DeviceID for devices subscription type")
-		}
-		if sub.Href != "" {
-			return fmt.Errorf("invalid Href for devices subscription type")
-		}
+		return validateDevicesSubscription(sub)
 	case store.Type_Device:
-		if sub.DeviceID == "" {
-			return fmt.Errorf("invalid DeviceID for device subscription type")
-		}
-		if sub.Href != "" {
-			return fmt.Errorf("invalid Href for device subscription type")
-		}
+		return validateDeviceSubscription(sub)
 	case store.Type_Resource:
-		if sub.DeviceID == "" {
-			return fmt.Errorf("invalid DeviceID for resource subscription type")
-		}
-		if sub.Href == "" {
-			return fmt.Errorf("invalid Href for resource subscription type")
-		}
+		return validateResourceSubscription(sub)
 	default:
 		return fmt.Errorf("not supported Type %v", sub.Type)
 	}
-
-	return nil
 }
 
 func (s *Store) SaveSubscription(ctx context.Context, sub store.Subscription) error {

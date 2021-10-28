@@ -1,11 +1,11 @@
 {{- if .Values.resourceaggregate.enabled }}
 {{- $raCert := "/certs" }}
 apiVersion: v1
-kind: Secret
+kind: ConfigMap
 metadata:
-  name: {{ include "plgd-hub.resourceaggregate.configSecretName" . }}
+  name: {{ include "plgd-hub.resourceaggregate.configName" . }}
   namespace: {{ .Release.Namespace }}
-stringData:
+data:
   {{ .Values.coapgateway.config.fileName }}: |
     {{- with .Values.resourceaggregate }}
     log:
@@ -44,6 +44,7 @@ stringData:
       eventBus:
         nats:
           url:{{ printf " " }}{{- include "plgd-hub.natsUri" (list $ .clients.eventBus.nats.url) | quote }}
+          flusherTimeout: {{ .clients.eventBus.nats.flusherTimeout | quote }}
           jetstream: {{ .clients.eventBus.nats.jetstream }}
           tls:
             {{- $natsTls := .clients.eventBus.nats.tls }}

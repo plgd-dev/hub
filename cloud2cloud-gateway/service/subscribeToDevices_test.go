@@ -12,6 +12,7 @@ import (
 	"testing"
 
 	router "github.com/gorilla/mux"
+	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/hub/cloud2cloud-connector/events"
 	c2cTest "github.com/plgd-dev/hub/cloud2cloud-gateway/test"
 	"github.com/plgd-dev/hub/cloud2cloud-gateway/uri"
@@ -20,8 +21,9 @@ import (
 	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
 	"github.com/plgd-dev/hub/test"
 	testCfg "github.com/plgd-dev/hub/test/config"
+	testHttp "github.com/plgd-dev/hub/test/http"
 	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
-	"github.com/plgd-dev/go-coap/v2/message"
+	"github.com/plgd-dev/hub/test/service"
 	"github.com/plgd-dev/kit/v2/codec/json"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -29,7 +31,7 @@ import (
 	"google.golang.org/grpc/credentials"
 )
 
-func TestRequestHandler_SubscribeToDevices(t *testing.T) {
+func TestRequestHandlerSubscribeToDevices(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 
 	wantCode := http.StatusCreated
@@ -46,7 +48,7 @@ func TestRequestHandler_SubscribeToDevices(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), testCfg.TEST_TIMEOUT)
 	defer cancel()
 
-	tearDown := test.SetUp(ctx, t)
+	tearDown := service.SetUp(ctx, t)
 	defer tearDown()
 
 	token := oauthTest.GetDefaultServiceToken(t)
@@ -66,6 +68,7 @@ func TestRequestHandler_SubscribeToDevices(t *testing.T) {
 	eventsServer, cleanUpEventsServer := c2cTest.NewTestListener(t)
 	defer cleanUpEventsServer()
 
+	const eventsURI = "/events"
 	var wg sync.WaitGroup
 	wg.Add(1)
 	defer wg.Wait()
@@ -73,7 +76,7 @@ func TestRequestHandler_SubscribeToDevices(t *testing.T) {
 		defer wg.Done()
 		r := router.NewRouter()
 		r.StrictSlash(true)
-		r.HandleFunc("/events", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		r.HandleFunc(eventsURI, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			h, err := events.ParseEventHeader(r)
 			assert.NoError(t, err)
 			defer func() {
@@ -97,15 +100,15 @@ func TestRequestHandler_SubscribeToDevices(t *testing.T) {
 	require.NoError(t, err)
 
 	sub := events.SubscriptionRequest{
-		URL:           "https://localhost:" + port + "/events",
+		URL:           "https://localhost:" + port + eventsURI,
 		EventTypes:    events.EventTypes{eventType},
 		SigningSecret: "a",
 	}
 
 	data, err := json.Encode(sub)
 	require.NoError(t, err)
-	req := test.NewHTTPRequest(http.MethodPost, uri, bytes.NewBuffer(data)).AuthToken(token).Accept(accept).Build(ctx, t)
-	resp := test.DoHTTPRequest(t, req)
+	req := testHttp.NewHTTPRequest(http.MethodPost, uri, bytes.NewBuffer(data)).AuthToken(token).Accept(accept).Build(ctx, t)
+	resp := testHttp.DoHTTPRequest(t, req)
 	assert.Equal(t, wantCode, resp.StatusCode)
 	defer func() {
 		_ = resp.Body.Close()
@@ -121,7 +124,7 @@ func TestRequestHandler_SubscribeToDevices(t *testing.T) {
 	}
 }
 
-func TestRequestHandler_SubscribeToDevicesOffline(t *testing.T) {
+func TestRequestHandlerSubscribeToDevicesOffline(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 
 	wantCode := http.StatusCreated
@@ -136,7 +139,7 @@ func TestRequestHandler_SubscribeToDevicesOffline(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), testCfg.TEST_TIMEOUT)
 	defer cancel()
 
-	tearDown := test.SetUp(ctx, t)
+	tearDown := service.SetUp(ctx, t)
 	defer tearDown()
 	coapgwCfg := coapgwTest.MakeConfig(t)
 	coapgwCfg.Log.Embedded.Debug = true
@@ -159,6 +162,7 @@ func TestRequestHandler_SubscribeToDevicesOffline(t *testing.T) {
 	eventsServer, cleanUpEventsServer := c2cTest.NewTestListener(t)
 	defer cleanUpEventsServer()
 
+	const eventsURI = "/events"
 	var wg sync.WaitGroup
 	wg.Add(1)
 	defer wg.Wait()
@@ -166,7 +170,7 @@ func TestRequestHandler_SubscribeToDevicesOffline(t *testing.T) {
 		defer wg.Done()
 		r := router.NewRouter()
 		r.StrictSlash(true)
-		r.HandleFunc("/events", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		r.HandleFunc(eventsURI, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			h, err := events.ParseEventHeader(r)
 			assert.NoError(t, err)
 			defer func() {
@@ -190,15 +194,15 @@ func TestRequestHandler_SubscribeToDevicesOffline(t *testing.T) {
 	require.NoError(t, err)
 
 	sub := events.SubscriptionRequest{
-		URL:           "https://localhost:" + port + "/events",
+		URL:           "https://localhost:" + port + eventsURI,
 		EventTypes:    events.EventTypes{eventType},
 		SigningSecret: "a",
 	}
 
 	data, err := json.Encode(sub)
 	require.NoError(t, err)
-	req := test.NewHTTPRequest(http.MethodPost, uri, bytes.NewBuffer(data)).AuthToken(oauthTest.GetDefaultServiceToken(t)).Accept(accept).Build(ctx, t)
-	resp := test.DoHTTPRequest(t, req)
+	req := testHttp.NewHTTPRequest(http.MethodPost, uri, bytes.NewBuffer(data)).AuthToken(oauthTest.GetDefaultServiceToken(t)).Accept(accept).Build(ctx, t)
+	resp := testHttp.DoHTTPRequest(t, req)
 	assert.Equal(t, wantCode, resp.StatusCode)
 	defer func() {
 		_ = resp.Body.Close()

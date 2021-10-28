@@ -1,5 +1,5 @@
 {{- $domainCrt := include "plgd-hub.certificateauthority.domainCertName" . }}
-{{- if and $domainCrt .Values.certmanager.enabled .Values.certificateauthority.enabled }}
+{{- if and $domainCrt .Values.certmanager.enabled .Values.certificateauthority.enabled (not $.Values.global.enableWildCartCert ) }}
 {{- $serviceDns := include "plgd-hub.certificateauthority.fullname" . }}
 apiVersion: cert-manager.io/v1
 kind: Certificate

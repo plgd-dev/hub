@@ -58,7 +58,7 @@ func (h *TaskProcessor) Trigger(task Task) {
 	h.tasksChan <- task
 }
 
-func (h *TaskProcessor) pullDevice(ctx context.Context, e Task, subscriptionManager *SubscriptionManager) error {
+func (h *TaskProcessor) pullDevice(ctx context.Context, e Task) error {
 	key := getKey(e.linkedAccount.UserID, e.deviceID)
 	_, loaded := h.pulledDevices.LoadOrStore(key, e)
 	if loaded {
@@ -70,12 +70,39 @@ func (h *TaskProcessor) pullDevice(ctx context.Context, e Task, subscriptionMana
 		h.pulledDevices.Delete(key)
 		return fmt.Errorf("cannot pull device %v for linked linkedAccount(%v): %w", e.deviceID, e.linkedAccount, err)
 	}
-	err = publishDeviceResources(ctx, h.raClient, e.deviceID, e.linkedAccount, e.linkedCloud, subscriptionManager, device, h.Trigger)
+	err = publishDeviceResources(ctx, h.raClient, e.deviceID, e.linkedAccount, e.linkedCloud, device, h.Trigger)
 	if err != nil {
 		h.pulledDevices.Delete(key)
 		return fmt.Errorf("cannot publish device %v resources for linkedAccount(%v): %w", e.deviceID, e.linkedAccount, err)
 	}
 	return nil
+}
+
+func (h *TaskProcessor) handleTask(e Task, subscriptionManager *SubscriptionManager) {
+	ctx, cancel := context.WithTimeout(context.Background(), h.timeout)
+	defer cancel()
+	switch e.taskType {
+	case TaskType_PullDevice:
+		err := h.pullDevice(ctx, e)
+		if err != nil {
+			log.Errorf("cannot run task pull device: %v", err)
+		}
+	case TaskType_SubscribeToResource:
+		err := subscriptionManager.SubscribeToResource(ctx, e.deviceID, e.href, e.linkedAccount, e.linkedCloud)
+		if err != nil {
+			log.Errorf("cannot run task subscribe to resource: %v", err)
+		}
+	case TaskType_SubscribeToDevice:
+		err := subscriptionManager.SubscribeToDevice(ctx, e.deviceID, e.linkedAccount, e.linkedCloud)
+		if err != nil {
+			log.Errorf("cannot run task subscribe to device: %v", err)
+		}
+	case TaskType_SubscribeToDevices:
+		err := subscriptionManager.SubscribeToDevices(ctx, e.linkedAccount, e.linkedCloud)
+		if err != nil {
+			log.Errorf("cannot run task subscribe to devices: %v", err)
+		}
+	}
 }
 
 func (h *TaskProcessor) runTask(ctx context.Context, e Task, subscriptionManager *SubscriptionManager) error {
@@ -90,30 +117,7 @@ func (h *TaskProcessor) runTask(ctx context.Context, e Task, subscriptionManager
 		if h.delay > 0 {
 			time.Sleep(h.delay)
 		}
-		ctx, cancel := context.WithTimeout(context.Background(), h.timeout)
-		defer cancel()
-		switch e.taskType {
-		case TaskType_PullDevice:
-			err := h.pullDevice(ctx, e, subscriptionManager)
-			if err != nil {
-				log.Errorf("cannot run task pull device: %v", err)
-			}
-		case TaskType_SubscribeToResource:
-			err := subscriptionManager.SubscribeToResource(ctx, e.deviceID, e.href, e.linkedAccount, e.linkedCloud)
-			if err != nil {
-				log.Errorf("cannot run task subscribe to resource: %v", err)
-			}
-		case TaskType_SubscribeToDevice:
-			err := subscriptionManager.SubscribeToDevice(ctx, e.deviceID, e.linkedAccount, e.linkedCloud)
-			if err != nil {
-				log.Errorf("cannot run task subscribe to device: %v", err)
-			}
-		case TaskType_SubscribeToDevices:
-			err := subscriptionManager.SubscribeToDevices(ctx, e.linkedAccount, e.linkedCloud)
-			if err != nil {
-				log.Errorf("cannot run task subscribe to devices: %v", err)
-			}
-		}
+		h.handleTask(e, subscriptionManager)
 	}()
 	return nil
 }

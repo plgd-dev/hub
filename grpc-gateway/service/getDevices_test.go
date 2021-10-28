@@ -6,29 +6,32 @@ import (
 	"io"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
-
+	"github.com/plgd-dev/device/schema/device"
+	"github.com/plgd-dev/device/schema/interfaces"
+	"github.com/plgd-dev/device/test/resource/types"
 	"github.com/plgd-dev/hub/grpc-gateway/pb"
 	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
 	"github.com/plgd-dev/hub/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/test"
 	testCfg "github.com/plgd-dev/hub/test/config"
 	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
+	pbTest "github.com/plgd-dev/hub/test/pb"
+	"github.com/plgd-dev/hub/test/service"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 )
 
-func TestRequestHandler_GetDevices(t *testing.T) {
+func TestRequestHandlerGetDevices(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	type args struct {
 		req *pb.GetDevicesRequest
 	}
 	tests := []struct {
-		name    string
-		args    args
-		wantErr bool
-		want    []*pb.Device
+		name string
+		args args
+		want []*pb.Device
 	}{
 		{
 			name: "valid",
@@ -37,8 +40,8 @@ func TestRequestHandler_GetDevices(t *testing.T) {
 			},
 			want: []*pb.Device{
 				{
-					Types:      []string{"oic.d.cloudDevice", "oic.wk.d"},
-					Interfaces: []string{"oic.if.r", "oic.if.baseline"},
+					Types:      []string{types.DEVICE_CLOUD, device.ResourceType},
+					Interfaces: []string{interfaces.OC_IF_R, interfaces.OC_IF_BASELINE},
 					Id:         deviceID,
 					Name:       test.TestDeviceName,
 					Metadata: &pb.Device_Metadata{
@@ -54,7 +57,7 @@ func TestRequestHandler_GetDevices(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), testCfg.TEST_TIMEOUT)
 	defer cancel()
 
-	tearDown := test.SetUp(ctx, t)
+	tearDown := service.SetUp(ctx, t)
 	defer tearDown()
 	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultServiceToken(t))
 
@@ -70,24 +73,18 @@ func TestRequestHandler_GetDevices(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			client, err := c.GetDevices(ctx, tt.args.req)
-			if tt.wantErr {
-				require.Error(t, err)
-			} else {
-				require.NoError(t, err)
-				devices := make([]*pb.Device, 0, 1)
-				for {
-					dev, err := client.Recv()
-					if err == io.EOF {
-						break
-					}
-					require.NoError(t, err)
-					assert.NotEmpty(t, dev.ProtocolIndependentId)
-					dev.ProtocolIndependentId = ""
-					dev.Metadata.Status.ValidUntil = 0
-					devices = append(devices, dev)
+			require.NoError(t, err)
+			devices := make([]*pb.Device, 0, 1)
+			for {
+				dev, err := client.Recv()
+				if err == io.EOF {
+					break
 				}
-				test.CheckProtobufs(t, tt.want, devices, test.RequireToCheckFunc(require.Equal))
+				require.NoError(t, err)
+				assert.NotEmpty(t, dev.ProtocolIndependentId)
+				devices = append(devices, dev)
 			}
+			pbTest.CmpDeviceValues(t, tt.want, devices)
 		})
 	}
 }

@@ -18,7 +18,7 @@
     {{- printf "%s%s:%s" $registryName $repositoryName  $tag -}}
 {{- end -}}
 
-{{- define  "plgd-hub.grpcgateway.configSecretName" -}}
+{{- define  "plgd-hub.grpcgateway.configName" -}}
     {{- $fullName :=  include "plgd-hub.grpcgateway.fullname" . -}}
     {{- printf "%s-cfg" $fullName }}
 {{- end -}}

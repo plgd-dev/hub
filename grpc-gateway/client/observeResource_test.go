@@ -5,10 +5,12 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/plgd-dev/device/schema/configuration"
 	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
 	"github.com/plgd-dev/hub/test"
 	testCfg "github.com/plgd-dev/hub/test/config"
 	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
+	"github.com/plgd-dev/hub/test/service"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -19,7 +21,7 @@ func TestObservingResource(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	ctx, cancel := context.WithTimeout(context.Background(), TestTimeout)
 	defer cancel()
-	tearDown := test.SetUp(ctx, t)
+	tearDown := service.SetUp(ctx, t)
 	defer tearDown()
 	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultServiceToken(t))
 
@@ -32,7 +34,7 @@ func TestObservingResource(t *testing.T) {
 	defer shutdownDevSim()
 
 	h := makeTestObservationHandler()
-	id, err := c.ObserveResource(ctx, deviceID, "/oc/con", h)
+	id, err := c.ObserveResource(ctx, deviceID, configuration.ResourceURI, h)
 	require.NoError(t, err)
 	defer func() {
 		err := c.StopObservingResource(ctx, id)
@@ -40,7 +42,7 @@ func TestObservingResource(t *testing.T) {
 	}()
 
 	name := "observe simulator"
-	err = c.UpdateResource(ctx, deviceID, "/oc/con", map[string]interface{}{"n": name}, nil)
+	err = c.UpdateResource(ctx, deviceID, configuration.ResourceURI, map[string]interface{}{"n": name}, nil)
 	require.NoError(t, err)
 
 	var d OcCon
@@ -53,7 +55,7 @@ func TestObservingResource(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, name, d.Name)
 
-	err = c.UpdateResource(ctx, deviceID, "/oc/con", map[string]interface{}{"n": test.TestDeviceName}, nil)
+	err = c.UpdateResource(ctx, deviceID, configuration.ResourceURI, map[string]interface{}{"n": test.TestDeviceName}, nil)
 	assert.NoError(t, err)
 }
 

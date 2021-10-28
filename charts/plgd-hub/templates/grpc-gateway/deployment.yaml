@@ -89,8 +89,8 @@ spec:
             {{- end }}
       volumes:
         - name: {{ .Values.grpcgateway.config.volume }}
-          secret:
-            secretName: {{ include "plgd-hub.grpcgateway.configSecretName" . }}
+          configMap:
+            name: {{ include "plgd-hub.grpcgateway.configName" . }}
         {{- if ( include "plgd-hub.grpcgateway.createServiceCertByCm" . ) }}
         - name: service-crt
           secret:

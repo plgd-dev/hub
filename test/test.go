@@ -2,55 +2,32 @@ package test
 
 import (
 	"context"
-	"crypto/tls"
-	"crypto/x509"
-	"encoding/pem"
 	"fmt"
-	"io"
-	"io/ioutil"
-	"net/http"
-	"net/url"
 	"os"
 	"os/exec"
-	"reflect"
-	"sort"
 	"testing"
 	"time"
 
-	"github.com/jtacoma/uritemplates"
 	deviceClient "github.com/plgd-dev/device/client"
 	"github.com/plgd-dev/device/client/core"
 	"github.com/plgd-dev/device/schema"
 	"github.com/plgd-dev/device/schema/acl"
+	"github.com/plgd-dev/device/schema/collection"
+	"github.com/plgd-dev/device/schema/configuration"
+	"github.com/plgd-dev/device/schema/device"
+	"github.com/plgd-dev/device/schema/interfaces"
+	"github.com/plgd-dev/device/schema/platform"
+	"github.com/plgd-dev/device/test/resource/types"
 	"github.com/plgd-dev/go-coap/v2/message"
-	caService "github.com/plgd-dev/hub/certificate-authority/test"
-	c2cgwService "github.com/plgd-dev/hub/cloud2cloud-gateway/test"
-	coapgw "github.com/plgd-dev/hub/coap-gateway/service"
-	coapgwTest "github.com/plgd-dev/hub/coap-gateway/test"
 	"github.com/plgd-dev/hub/grpc-gateway/client"
 	"github.com/plgd-dev/hub/grpc-gateway/pb"
-	grpcgwConfig "github.com/plgd-dev/hub/grpc-gateway/service"
-	grpcgwTest "github.com/plgd-dev/hub/grpc-gateway/test"
-	idService "github.com/plgd-dev/hub/identity-store/test"
-	"github.com/plgd-dev/hub/pkg/fn"
-	"github.com/plgd-dev/hub/pkg/log"
-	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
-	cmClient "github.com/plgd-dev/hub/pkg/security/certManager/client"
 	"github.com/plgd-dev/hub/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/resource-aggregate/events"
-	raService "github.com/plgd-dev/hub/resource-aggregate/test"
-	rdService "github.com/plgd-dev/hub/resource-directory/service"
-	rdTest "github.com/plgd-dev/hub/resource-directory/test"
 	"github.com/plgd-dev/hub/test/config"
 	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
-	"github.com/plgd-dev/kit/v2/codec/cbor"
 	"github.com/plgd-dev/kit/v2/codec/json"
-	"github.com/plgd-dev/kit/v2/security"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.uber.org/atomic"
 )
 
@@ -61,216 +38,161 @@ var (
 	TestDevsimBackendResources []schema.ResourceLink
 )
 
+const (
+	TestResourceSwitchesHref = "/switches"
+)
+
+func TestResourceLightInstanceHref(id string) string {
+	return "/light/" + id
+}
+
+func TestResourceSwitchesInstanceHref(id string) string {
+	return TestResourceSwitchesHref + "/" + id
+}
+
 func init() {
 	TestDeviceName = "devsim-" + MustGetHostname()
 	TestDevsimResources = []schema.ResourceLink{
 		{
-			Href:          "/oic/p",
-			ResourceTypes: []string{"oic.wk.p"},
-			Interfaces:    []string{"oic.if.r", "oic.if.baseline"},
+			Href:          platform.ResourceURI,
+			ResourceTypes: []string{platform.ResourceType},
+			Interfaces:    []string{interfaces.OC_IF_R, interfaces.OC_IF_BASELINE},
 			Policy: &schema.Policy{
 				BitMask: 3,
 			},
 		},
 
 		{
-			Href:          "/oic/d",
-			ResourceTypes: []string{"oic.d.cloudDevice", "oic.wk.d"},
-			Interfaces:    []string{"oic.if.r", "oic.if.baseline"},
+			Href:          device.ResourceURI,
+			ResourceTypes: []string{types.DEVICE_CLOUD, device.ResourceType},
+			Interfaces:    []string{interfaces.OC_IF_R, interfaces.OC_IF_BASELINE},
 			Policy: &schema.Policy{
 				BitMask: 3,
 			},
 		},
 
 		{
-			Href:          "/oc/con",
-			ResourceTypes: []string{"oic.wk.con"},
-			Interfaces:    []string{"oic.if.rw", "oic.if.baseline"},
+			Href:          configuration.ResourceURI,
+			ResourceTypes: []string{configuration.ResourceType},
+			Interfaces:    []string{interfaces.OC_IF_RW, interfaces.OC_IF_BASELINE},
 			Policy: &schema.Policy{
 				BitMask: 3,
 			},
 		},
 
 		{
-			Href:          "/light/1",
-			ResourceTypes: []string{"core.light"},
-			Interfaces:    []string{"oic.if.rw", "oic.if.baseline"},
+			Href:          TestResourceLightInstanceHref("1"),
+			ResourceTypes: []string{types.CORE_LIGHT},
+			Interfaces:    []string{interfaces.OC_IF_RW, interfaces.OC_IF_BASELINE},
 			Policy: &schema.Policy{
 				BitMask: 3,
 			},
 		},
 
 		{
-			Href:          "/light/2",
-			ResourceTypes: []string{"core.light"},
-			Interfaces:    []string{"oic.if.rw", "oic.if.baseline"},
+			Href:          TestResourceSwitchesHref,
+			ResourceTypes: []string{collection.ResourceType},
+			Interfaces:    []string{interfaces.OC_IF_LL, interfaces.OC_IF_CREATE, interfaces.OC_IF_B, interfaces.OC_IF_BASELINE},
 			Policy: &schema.Policy{
 				BitMask: 3,
 			},
 		},
 	}
-
 }
 
-func FindResourceLink(href string) schema.ResourceLink {
-	for _, l := range TestDevsimResources {
-		if l.Href == href {
-			return l
+func FilterResourceLink(filter func(schema.ResourceLink) bool, links []schema.ResourceLink) []schema.ResourceLink {
+	var l []schema.ResourceLink
+	for _, link := range links {
+		if filter(link) {
+			l = append(l, link)
 		}
 	}
-	for _, l := range TestDevsimBackendResources {
-		if l.Href == href {
-			return l
+	return l
+}
+
+func DefaultSwitchResourceLink(id string) schema.ResourceLink {
+	return schema.ResourceLink{
+		Href:          TestResourceSwitchesInstanceHref(id),
+		ResourceTypes: []string{types.BINARY_SWITCH},
+		Interfaces:    []string{interfaces.OC_IF_A, interfaces.OC_IF_BASELINE},
+		Policy: &schema.Policy{
+			BitMask: schema.BitMask(schema.Discoverable | schema.Observable),
+		},
+	}
+}
+
+func MakeSwitchResourceData(overrides map[string]interface{}) map[string]interface{} {
+	data := MakeSwitchResourceDefaultData()
+	for k, v := range overrides {
+		data[k] = v
+	}
+	return data
+}
+
+func MakeSwitchResourceDefaultData() map[string]interface{} {
+	s := DefaultSwitchResourceLink("")
+	return map[string]interface{}{
+		"if": s.Interfaces,
+		"rt": s.ResourceTypes,
+		"rep": map[string]interface{}{
+			"value": false,
+		},
+		"p": map[string]interface{}{
+			"bm": uint64(s.Policy.BitMask),
+		},
+	}
+}
+
+func AddDeviceSwitchResources(ctx context.Context, t *testing.T, deviceID string, c pb.GrpcGatewayClient, resourceIDs ...string) []schema.ResourceLink {
+	toStringArray := func(v interface{}) []string {
+		var result []string
+		arr, ok := v.([]interface{})
+		require.True(t, ok)
+		for _, val := range arr {
+			str, ok := val.(string)
+			require.True(t, ok)
+			result = append(result, str)
 		}
+		return result
 	}
-	panic(fmt.Sprintf("resource %v: not found", href))
-}
 
-func ClearDB(ctx context.Context, t *testing.T) {
-	logger, err := log.NewLogger(log.Config{Debug: true})
-	require.NoError(t, err)
-	tlsConfig := config.MakeTLSClientConfig()
-	certManager, err := cmClient.New(tlsConfig, logger)
-	require.NoError(t, err)
-	defer certManager.Close()
-
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI("mongodb://localhost:27017").SetTLSConfig(certManager.GetTLSConfig()))
-	require.NoError(t, err)
-	dbs, err := client.ListDatabaseNames(ctx, bson.M{})
-	if mongo.ErrNilDocument == err {
-		return
-	}
-	require.NoError(t, err)
-	for _, db := range dbs {
-		if db == "admin" {
-			continue
+	links := make([]schema.ResourceLink, 0, len(resourceIDs))
+	for _, resourceID := range resourceIDs {
+		req := &pb.CreateResourceRequest{
+			ResourceId: commands.NewResourceID(deviceID, TestResourceSwitchesHref),
+			Content: &pb.Content{
+				ContentType: message.AppOcfCbor.String(),
+				Data:        EncodeToCbor(t, MakeSwitchResourceDefaultData()),
+			},
 		}
-		err = client.Database(db).Drop(ctx)
+		resp, err := c.CreateResource(ctx, req)
 		require.NoError(t, err)
-	}
-	err = client.Disconnect(ctx)
-	require.NoError(t, err)
-	/*
-		var jsmCfg mongodb.Config
-		err = envconfig.Process("", &jsmCfg)
 
-		assert.NoError(t, err)
-		eventstore, err := mongodb.NewEventStore(jsmCfg, nil, mongodb.WithTLS(tlsConfig))
-		require.NoError(t, err)
-		err = eventstore.Clear(ctx)
-		require.NoError(t, err)
-	*/
-}
+		respData, ok := DecodeCbor(t, resp.GetData().GetContent().GetData()).(map[interface{}]interface{})
+		require.True(t, ok)
 
-type Config struct {
-	COAPGW coapgw.Config
-	RD     rdService.Config
-	GRPCGW grpcgwConfig.Config
-}
+		href, ok := respData["href"].(string)
+		require.True(t, ok)
+		require.Equal(t, TestResourceSwitchesInstanceHref(resourceID), href)
 
-func WithCOAPGWConfig(coapgwCfg coapgw.Config) SetUpOption {
-	return func(cfg *Config) {
-		cfg.COAPGW = coapgwCfg
-	}
-}
+		resourceTypes := toStringArray(respData["rt"])
+		interfaces := toStringArray(respData["if"])
 
-func WithRDConfig(rd rdService.Config) SetUpOption {
-	return func(cfg *Config) {
-		cfg.RD = rd
-	}
-}
+		policy, ok := respData["p"].(map[interface{}]interface{})
+		require.True(t, ok)
+		bitmask, ok := policy["bm"].(uint64)
+		require.True(t, ok)
 
-func WithGRPCGWConfig(grpcCfg grpcgwConfig.Config) SetUpOption {
-	return func(cfg *Config) {
-		cfg.GRPCGW = grpcCfg
+		links = append(links, schema.ResourceLink{
+			Href:          href,
+			ResourceTypes: resourceTypes,
+			Interfaces:    interfaces,
+			Policy: &schema.Policy{
+				BitMask: schema.BitMask(bitmask),
+			},
+		})
 	}
-}
-
-type SetUpOption = func(cfg *Config)
-
-func SetUp(ctx context.Context, t *testing.T, opts ...SetUpOption) (TearDown func()) {
-	config := Config{
-		COAPGW: coapgwTest.MakeConfig(t),
-		RD:     rdTest.MakeConfig(t),
-		GRPCGW: grpcgwTest.MakeConfig(t),
-	}
-
-	for _, o := range opts {
-		o(&config)
-	}
-
-	ClearDB(ctx, t)
-	oauthShutdown := oauthTest.SetUp(t)
-	idShutdown := idService.SetUp(t)
-	raShutdown := raService.SetUp(t)
-	rdShutdown := rdTest.New(t, config.RD)
-	grpcShutdown := grpcgwTest.New(t, config.GRPCGW)
-	c2cgwShutdown := c2cgwService.SetUp(t)
-	caShutdown := caService.SetUp(t)
-	secureGWShutdown := coapgwTest.New(t, config.COAPGW)
-
-	return func() {
-		caShutdown()
-		c2cgwShutdown()
-		grpcShutdown()
-		secureGWShutdown()
-		rdShutdown()
-		raShutdown()
-		idShutdown()
-		oauthShutdown()
-	}
-}
-
-type SetUpServicesConfig uint16
-
-const (
-	SetUpServicesOAuth SetUpServicesConfig = 1 << iota
-	SetUpServicesId
-	SetUpServicesCertificateAuthority
-	SetUpServicesCloud2CloudGateway
-	SetUpServicesCoapGateway
-	SetUpServicesGrpcGateway
-	SetUpServicesResourceAggregate
-	SetUpServicesResourceDirectory
-)
-
-func SetUpServices(ctx context.Context, t *testing.T, servicesConfig SetUpServicesConfig) func() {
-	var tearDown fn.FuncList
-
-	ClearDB(ctx, t)
-	if servicesConfig&SetUpServicesOAuth != 0 {
-		oauthShutdown := oauthTest.SetUp(t)
-		tearDown.AddFunc(oauthShutdown)
-	}
-	if servicesConfig&SetUpServicesId != 0 {
-		idShutdown := idService.SetUp(t)
-		tearDown.AddFunc(idShutdown)
-	}
-	if servicesConfig&SetUpServicesResourceAggregate != 0 {
-		raShutdown := raService.SetUp(t)
-		tearDown.AddFunc(raShutdown)
-	}
-	if servicesConfig&SetUpServicesResourceDirectory != 0 {
-		rdShutdown := rdTest.SetUp(t)
-		tearDown.AddFunc(rdShutdown)
-	}
-	if servicesConfig&SetUpServicesGrpcGateway != 0 {
-		grpcShutdown := grpcgwTest.SetUp(t)
-		tearDown.AddFunc(grpcShutdown)
-	}
-	if servicesConfig&SetUpServicesCloud2CloudGateway != 0 {
-		c2cgwShutdown := c2cgwService.SetUp(t)
-		tearDown.AddFunc(c2cgwShutdown)
-	}
-	if servicesConfig&SetUpServicesCertificateAuthority != 0 {
-		caShutdown := caService.SetUp(t)
-		tearDown.AddFunc(caShutdown)
-	}
-	if servicesConfig&SetUpServicesCoapGateway != 0 {
-		secureGWShutdown := coapgwTest.SetUp(t)
-		tearDown.AddFunc(secureGWShutdown)
-	}
-	return tearDown.ToFunction()
+	return links
 }
 
 func setAccessForCloud(ctx context.Context, t *testing.T, c *deviceClient.Client, deviceID string) {
@@ -290,7 +212,7 @@ func setAccessForCloud(ctx context.Context, t *testing.T, c *deviceClient.Client
 		_ = p.Close(ctx)
 	}()
 
-	link, err := core.GetResourceLink(links, "/oic/sec/acl2")
+	link, err := core.GetResourceLink(links, acl.ResourceURI)
 	require.NoError(t, err)
 
 	setAcl := acl.UpdateRequest{
@@ -314,22 +236,52 @@ func setAccessForCloud(ctx context.Context, t *testing.T, c *deviceClient.Client
 func OnboardDevSimForClient(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, clientId, deviceID, gwHost string, expectedResources []schema.ResourceLink) (string, func()) {
 	cloudSID := config.HubID()
 	require.NotEmpty(t, cloudSID)
-	client, err := NewSDKClient()
+	devClient, err := NewSDKClient()
 	require.NoError(t, err)
 	defer func() {
-		_ = client.Close(ctx)
+		_ = devClient.Close(ctx)
 	}()
-	deviceID, err = client.OwnDevice(ctx, deviceID)
+	deviceID, err = devClient.OwnDevice(ctx, deviceID, deviceClient.WithOTM(deviceClient.OTMType_JustWorks))
 	require.NoError(t, err)
 
-	setAccessForCloud(ctx, t, client, deviceID)
+	setAccessForCloud(ctx, t, devClient, deviceID)
 
 	code := oauthTest.GetDeviceAuthorizationCode(t, config.OAUTH_SERVER_HOST, clientId, deviceID)
-	err = client.OnboardDevice(ctx, deviceID, config.DEVICE_PROVIDER, "coaps+tcp://"+gwHost, code, cloudSID)
-	require.NoError(t, err)
 
+	onboard := func() {
+		err = devClient.OnboardDevice(ctx, deviceID, config.DEVICE_PROVIDER, "coaps+tcp://"+gwHost, code, cloudSID)
+		require.NoError(t, err)
+	}
 	if len(expectedResources) > 0 {
-		waitForDevice(ctx, t, c, deviceID, expectedResources)
+		subClient, err := client.New(c).GrpcGatewayClient().SubscribeToEvents(ctx)
+		require.NoError(t, err)
+		err = subClient.Send(&pb.SubscribeToEvents{
+			CorrelationId: "allEvents",
+			Action: &pb.SubscribeToEvents_CreateSubscription_{
+				CreateSubscription: &pb.SubscribeToEvents_CreateSubscription{},
+			},
+		})
+		require.NoError(t, err)
+		ev, err := subClient.Recv()
+		require.NoError(t, err)
+		expectedEvent := &pb.Event{
+			SubscriptionId: ev.SubscriptionId,
+			CorrelationId:  "allEvents",
+			Type: &pb.Event_OperationProcessed_{
+				OperationProcessed: &pb.Event_OperationProcessed{
+					ErrorStatus: &pb.Event_OperationProcessed_ErrorStatus{
+						Code: pb.Event_OperationProcessed_ErrorStatus_OK,
+					},
+				},
+			},
+		}
+		CheckProtobufs(t, expectedEvent, ev, RequireToCheckFunc(require.Equal))
+		onboard()
+		waitForDevice(ctx, t, subClient, deviceID, ev.GetSubscriptionId(), ev.GetCorrelationId(), expectedResources)
+		err = subClient.CloseSend()
+		require.NoError(t, err)
+	} else {
+		onboard()
 	}
 
 	return deviceID, func() {
@@ -347,236 +299,109 @@ func OnboardDevSim(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 	return OnboardDevSimForClient(ctx, t, c, config.OAUTH_MANAGER_CLIENT_ID, deviceID, gwHost, expectedResources)
 }
 
-func waitForDevice(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, deviceID string, expectedResources []schema.ResourceLink) {
-	client, err := client.New(c).SubscribeToEventsWithCurrentState(ctx, time.Second)
-	require.NoError(t, err)
-
-	err = client.Send(&pb.SubscribeToEvents{
-		CorrelationId: "testToken0",
-		Action: &pb.SubscribeToEvents_CreateSubscription_{
-			CreateSubscription: &pb.SubscribeToEvents_CreateSubscription{
-				EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
-					pb.SubscribeToEvents_CreateSubscription_DEVICE_METADATA_UPDATED,
-				},
-			},
-		},
-	})
-	require.NoError(t, err)
-	ev, err := client.Recv()
-	require.NoError(t, err)
-	expectedEvent := &pb.Event{
-		SubscriptionId: ev.SubscriptionId,
-		CorrelationId:  "testToken0",
-		Type: &pb.Event_OperationProcessed_{
-			OperationProcessed: &pb.Event_OperationProcessed{
-				ErrorStatus: &pb.Event_OperationProcessed_ErrorStatus{
-					Code: pb.Event_OperationProcessed_ErrorStatus_OK,
-				},
-			},
-		},
-	}
-	CheckProtobufs(t, expectedEvent, ev, RequireToCheckFunc(require.Equal))
-
-	for {
-		ev, err = client.Recv()
-		require.NoError(t, err)
-		var endLoop bool
-
-		if ev.GetDeviceMetadataUpdated().GetDeviceId() == deviceID && ev.GetDeviceMetadataUpdated().GetStatus().IsOnline() {
-			endLoop = true
+func waitForDevice(ctx context.Context, t *testing.T, client pb.GrpcGateway_SubscribeToEventsClient, deviceID, subID, correlationID string, expectedResources []schema.ResourceLink) {
+	getID := func(ev *pb.Event) string {
+		switch v := ev.GetType().(type) {
+		case *pb.Event_DeviceRegistered_:
+			return fmt.Sprintf("%T", ev.GetType())
+		case *pb.Event_DeviceMetadataUpdated:
+			return fmt.Sprintf("%T", ev.GetType())
+		case *pb.Event_ResourcePublished:
+			return fmt.Sprintf("%T", ev.GetType())
+		case *pb.Event_ResourceChanged:
+			return fmt.Sprintf("%T:%v", ev.GetType(), v.ResourceChanged.GetResourceId().ToString())
 		}
-		if endLoop {
-			break
+		return ""
+	}
+
+	cleanUpEvent := func(ev *pb.Event) {
+		switch val := ev.GetType().(type) {
+		case *pb.Event_DeviceMetadataUpdated:
+			require.NotEmpty(t, val.DeviceMetadataUpdated.GetAuditContext().GetUserId())
+			val.DeviceMetadataUpdated.AuditContext = nil
+			require.NotZero(t, val.DeviceMetadataUpdated.GetEventMetadata().GetTimestamp())
+			val.DeviceMetadataUpdated.EventMetadata = nil
+		case *pb.Event_ResourcePublished:
+			require.NotEmpty(t, val.ResourcePublished.GetAuditContext().GetUserId())
+			val.ResourcePublished.AuditContext = nil
+			require.NotZero(t, val.ResourcePublished.GetEventMetadata().GetTimestamp())
+			val.ResourcePublished.EventMetadata = nil
+			val.ResourcePublished.Resources = CleanUpResourcesArray(val.ResourcePublished.GetResources())
+		case *pb.Event_ResourceChanged:
+			require.NotEmpty(t, val.ResourceChanged.GetAuditContext().GetUserId())
+			val.ResourceChanged.AuditContext = nil
+			require.NotZero(t, val.ResourceChanged.GetEventMetadata().GetTimestamp())
+			val.ResourceChanged.EventMetadata = nil
+			require.NotEmpty(t, val.ResourceChanged.GetContent().GetData())
+			val.ResourceChanged.Content = nil
 		}
 	}
 
-	err = client.Send(&pb.SubscribeToEvents{
-		CorrelationId: "testToken1",
-		Action: &pb.SubscribeToEvents_CreateSubscription_{
-			CreateSubscription: &pb.SubscribeToEvents_CreateSubscription{
-				DeviceIdFilter: []string{deviceID},
-				EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
-					pb.SubscribeToEvents_CreateSubscription_RESOURCE_PUBLISHED,
+	expectedEvents := map[string]*pb.Event{
+		getID(&pb.Event{Type: &pb.Event_DeviceRegistered_{}}): {
+			SubscriptionId: subID,
+			CorrelationId:  correlationID,
+			Type: &pb.Event_DeviceRegistered_{
+				DeviceRegistered: &pb.Event_DeviceRegistered{
+					DeviceIds: []string{deviceID},
 				},
 			},
 		},
-	})
-	require.NoError(t, err)
-	ev, err = client.Recv()
-	require.NoError(t, err)
-	expectedEvent = &pb.Event{
-		CorrelationId: "testToken1",
-		Type: &pb.Event_OperationProcessed_{
-			OperationProcessed: &pb.Event_OperationProcessed{
-				ErrorStatus: &pb.Event_OperationProcessed_ErrorStatus{
-					Code: pb.Event_OperationProcessed_ErrorStatus_OK,
-				},
-			},
-		},
-	}
-	expectedEvent.SubscriptionId = ev.SubscriptionId
-	CheckProtobufs(t, expectedEvent, ev, RequireToCheckFunc(require.Equal))
-	subOnPublishedID := ev.SubscriptionId
-
-	expectedLinks := make(map[string]*commands.Resource)
-	for _, link := range ResourceLinksToResources(deviceID, expectedResources) {
-		expectedLinks[link.GetHref()] = link
-	}
-
-	for {
-		ev, err = client.Recv()
-		require.NoError(t, err)
-		ev.SubscriptionId = ""
-
-		for _, l := range ev.GetResourcePublished().GetResources() {
-			expLink := expectedLinks[l.GetHref()]
-			l.ValidUntil = 0
-			CheckProtobufs(t, expLink, l, RequireToCheckFunc(require.Equal))
-			delete(expectedLinks, l.GetHref())
-		}
-		if len(expectedLinks) == 0 {
-			break
-		}
-	}
-
-	err = client.Send(&pb.SubscribeToEvents{
-		CorrelationId: "testToken3",
-		Action: &pb.SubscribeToEvents_CancelSubscription_{
-			CancelSubscription: &pb.SubscribeToEvents_CancelSubscription{
-				SubscriptionId: subOnPublishedID,
-			},
-		},
-	})
-	require.NoError(t, err)
-
-	ev, err = client.Recv()
-	require.NoError(t, err)
-	expectedEvent = &pb.Event{
-		SubscriptionId: ev.SubscriptionId,
-		CorrelationId:  "testToken3",
-		Type: &pb.Event_SubscriptionCanceled_{
-			SubscriptionCanceled: &pb.Event_SubscriptionCanceled{},
-		},
-	}
-	CheckProtobufs(t, expectedEvent, ev, RequireToCheckFunc(require.Equal))
-
-	ev, err = client.Recv()
-	require.NoError(t, err)
-	expectedEvent = &pb.Event{
-		SubscriptionId: ev.SubscriptionId,
-		CorrelationId:  "testToken3",
-		Type: &pb.Event_OperationProcessed_{
-			OperationProcessed: &pb.Event_OperationProcessed{
-				ErrorStatus: &pb.Event_OperationProcessed_ErrorStatus{
-					Code: pb.Event_OperationProcessed_ErrorStatus_OK,
-				},
-			},
-		},
-	}
-	CheckProtobufs(t, expectedEvent, ev, RequireToCheckFunc(require.Equal))
-
-	expectedEvents := ResourceLinksToExpectedResourceChangedEvents(deviceID, expectedResources)
-	for _, e := range expectedEvents {
-		err = client.Send(&pb.SubscribeToEvents{
-			CorrelationId: "testToken3",
-			Action: &pb.SubscribeToEvents_CreateSubscription_{
-				CreateSubscription: &pb.SubscribeToEvents_CreateSubscription{
-					ResourceIdFilter: []string{
-						e.GetResourceChanged().GetResourceId().ToString(),
-					},
-					EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
-						pb.SubscribeToEvents_CreateSubscription_RESOURCE_CHANGED,
+		getID(&pb.Event{Type: &pb.Event_DeviceMetadataUpdated{}}): {
+			SubscriptionId: subID,
+			CorrelationId:  correlationID,
+			Type: &pb.Event_DeviceMetadataUpdated{
+				DeviceMetadataUpdated: &events.DeviceMetadataUpdated{
+					DeviceId: deviceID,
+					Status: &commands.ConnectionStatus{
+						Value: commands.ConnectionStatus_ONLINE,
 					},
 				},
 			},
-		})
-		require.NoError(t, err)
+		},
+		getID(&pb.Event{Type: &pb.Event_ResourcePublished{}}): {
+			SubscriptionId: subID,
+			CorrelationId:  correlationID,
+			Type: &pb.Event_ResourcePublished{
+				ResourcePublished: &events.ResourceLinksPublished{
+					DeviceId:  deviceID,
+					Resources: ResourceLinksToResources(deviceID, expectedResources),
+				},
+			},
+		},
+	}
+	for _, r := range expectedResources {
+		expectedEvents[getID(&pb.Event{Type: &pb.Event_ResourceChanged{
+			ResourceChanged: &events.ResourceChanged{
+				ResourceId: commands.NewResourceID(deviceID, r.Href),
+			},
+		}})] = &pb.Event{
+			SubscriptionId: subID,
+			CorrelationId:  correlationID,
+			Type: &pb.Event_ResourceChanged{
+				ResourceChanged: &events.ResourceChanged{
+					ResourceId: commands.NewResourceID(deviceID, r.Href),
+					Status:     commands.Status_OK,
+				},
+			},
+		}
+	}
+
+	for {
 		ev, err := client.Recv()
 		require.NoError(t, err)
-		expectedEvent := &pb.Event{
-			SubscriptionId: ev.SubscriptionId,
-			CorrelationId:  "testToken3",
-			Type: &pb.Event_OperationProcessed_{
-				OperationProcessed: &pb.Event_OperationProcessed{
-					ErrorStatus: &pb.Event_OperationProcessed_ErrorStatus{
-						Code: pb.Event_OperationProcessed_ErrorStatus_OK,
-					},
-				},
-			},
+
+		expectedEvent, ok := expectedEvents[getID(ev)]
+		if !ok {
+			require.NoError(t, fmt.Errorf("unexpected event %+v", ev))
 		}
+		cleanUpEvent(ev)
 		CheckProtobufs(t, expectedEvent, ev, RequireToCheckFunc(require.Equal))
-
-		ev, err = client.Recv()
-		require.NoError(t, err)
-		require.Equal(t, e.GetResourceChanged().GetResourceId(), ev.GetResourceChanged().GetResourceId())
-		require.Equal(t, e.GetResourceChanged().GetStatus(), ev.GetResourceChanged().GetStatus())
-
-		err = client.Send(&pb.SubscribeToEvents{
-			CorrelationId: "testToken4",
-			Action: &pb.SubscribeToEvents_CancelSubscription_{
-				CancelSubscription: &pb.SubscribeToEvents_CancelSubscription{
-					SubscriptionId: ev.GetSubscriptionId(),
-				},
-			},
-		})
-		require.NoError(t, err)
-
-		ev, err = client.Recv()
-		require.NoError(t, err)
-		expectedEvent = &pb.Event{
-			SubscriptionId: ev.SubscriptionId,
-			CorrelationId:  "testToken4",
-			Type: &pb.Event_SubscriptionCanceled_{
-				SubscriptionCanceled: &pb.Event_SubscriptionCanceled{},
-			},
-		}
-		CheckProtobufs(t, expectedEvent, ev, RequireToCheckFunc(require.Equal))
-
-		ev, err = client.Recv()
-		require.NoError(t, err)
-		expectedEvent = &pb.Event{
-			SubscriptionId: ev.SubscriptionId,
-			CorrelationId:  "testToken4",
-			Type: &pb.Event_OperationProcessed_{
-				OperationProcessed: &pb.Event_OperationProcessed{
-					ErrorStatus: &pb.Event_OperationProcessed_ErrorStatus{
-						Code: pb.Event_OperationProcessed_ErrorStatus_OK,
-					},
-				},
-			},
-		}
-		CheckProtobufs(t, expectedEvent, ev, RequireToCheckFunc(require.Equal))
-	}
-
-	err = client.CloseSend()
-	require.NoError(t, err)
-}
-
-func GetRootCertificatePool(t *testing.T) *x509.CertPool {
-	pool := security.NewDefaultCertPool(nil)
-	dat, err := ioutil.ReadFile(os.Getenv("TEST_ROOT_CA_CERT"))
-	require.NoError(t, err)
-	ok := pool.AppendCertsFromPEM(dat)
-	require.True(t, ok)
-	return pool
-}
-
-func GetRootCertificateAuthorities(t *testing.T) []*x509.Certificate {
-	dat, err := ioutil.ReadFile(os.Getenv("TEST_ROOT_CA_CERT"))
-	require.NoError(t, err)
-	r := make([]*x509.Certificate, 0, 4)
-	for {
-		block, rest := pem.Decode(dat)
-		require.NotNil(t, block)
-		certs, err := x509.ParseCertificates(block.Bytes)
-		require.NoError(t, err)
-		r = append(r, certs...)
-		if len(rest) == 0 {
-			break
+		delete(expectedEvents, getID(ev))
+		if len(expectedEvents) == 0 {
+			return
 		}
 	}
-
-	return r
 }
 
 func MustGetHostname() string {
@@ -606,17 +431,17 @@ type findDeviceIDByNameHandler struct {
 	cancel context.CancelFunc
 }
 
-func (h *findDeviceIDByNameHandler) Handle(ctx context.Context, device *core.Device, deviceLinks schema.ResourceLinks) {
+func (h *findDeviceIDByNameHandler) Handle(ctx context.Context, dev *core.Device, deviceLinks schema.ResourceLinks) {
 	defer func() {
-		err := device.Close(ctx)
+		err := dev.Close(ctx)
 		h.Error(err)
 	}()
-	l, ok := deviceLinks.GetResourceLink("/oic/d")
+	l, ok := deviceLinks.GetResourceLink(device.ResourceURI)
 	if !ok {
 		return
 	}
-	var d schema.Device
-	err := device.GetResource(ctx, l, &d)
+	var d device.Device
+	err := dev.GetResource(ctx, l, &d)
 	if err != nil {
 		return
 	}
@@ -650,215 +475,8 @@ func FindDeviceByName(ctx context.Context, name string) (deviceID string, _ erro
 	return id, nil
 }
 
-func DecodeCbor(t *testing.T, data []byte) interface{} {
-	var v interface{}
-	err := cbor.Decode(data, &v)
-	require.NoError(t, err)
-	return v
-}
-
-func EncodeToCbor(t *testing.T, v interface{}) []byte {
-	d, err := cbor.Encode(v)
-	require.NoError(t, err)
-	return d
-}
-
-func ResourceLinkToPublishEvent(deviceID, token string, links []schema.ResourceLink) *pb.Event {
-	out := make([]*commands.Resource, 0, 32)
-	for _, l := range links {
-		link := commands.SchemaResourceLinkToResource(l, time.Time{})
-		link.DeviceId = deviceID
-		out = append(out, link)
-	}
-	return &pb.Event{
-		Type: &pb.Event_ResourcePublished{
-			ResourcePublished: &events.ResourceLinksPublished{
-				DeviceId:  deviceID,
-				Resources: out,
-			},
-		},
-		CorrelationId: token,
-	}
-}
-
-func ResourceLinkToResourceChangedEvent(deviceID string, l schema.ResourceLink) *pb.Event {
-	return &pb.Event{
-		Type: &pb.Event_ResourceChanged{
-			ResourceChanged: &events.ResourceChanged{
-				ResourceId: &commands.ResourceId{
-					DeviceId: deviceID,
-					Href:     l.Href,
-				},
-				Status: commands.Status_OK,
-			},
-		},
-	}
-}
-
-func ResourceLinksToExpectedResourceChangedEvents(deviceID string, links []schema.ResourceLink) map[string]*pb.Event {
-	e := make(map[string]*pb.Event)
-	for _, l := range links {
-		e[deviceID+l.Href] = ResourceLinkToResourceChangedEvent(deviceID, l)
-	}
-	return e
-}
-
 func GetAllBackendResourceLinks() []schema.ResourceLink {
 	return append(TestDevsimResources, TestDevsimBackendResources...)
-}
-
-func ResourceLinksToResources(deviceID string, s []schema.ResourceLink) []*commands.Resource {
-	r := make([]*commands.Resource, 0, len(s))
-	for _, l := range s {
-		l.DeviceID = deviceID
-		r = append(r, commands.SchemaResourceLinkToResource(l, time.Time{}))
-	}
-	CleanUpResourcesArray(r)
-	return r
-}
-
-func CleanUpResourcesArray(resources []*commands.Resource) []*commands.Resource {
-	for _, r := range resources {
-		r.ValidUntil = 0
-	}
-	SortResources(resources)
-	return resources
-}
-
-func CleanUpResourceLinksSnapshotTaken(e *events.ResourceLinksSnapshotTaken) *events.ResourceLinksSnapshotTaken {
-	e.EventMetadata = nil
-	for _, r := range e.GetResources() {
-		r.ValidUntil = 0
-	}
-	return e
-}
-
-func CleanUpResourceLinksPublished(e *events.ResourceLinksPublished) *events.ResourceLinksPublished {
-	e.EventMetadata = nil
-	e.AuditContext = nil
-	CleanUpResourcesArray(e.GetResources())
-	return e
-}
-
-type SortResourcesByHref []*commands.Resource
-
-func (a SortResourcesByHref) Len() int      { return len(a) }
-func (a SortResourcesByHref) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
-func (a SortResourcesByHref) Less(i, j int) bool {
-	return a[i].GetHref() < a[j].GetHref()
-}
-
-func SortResources(s []*commands.Resource) []*commands.Resource {
-	v := SortResourcesByHref(s)
-	sort.Sort(v)
-	return v
-}
-
-func NewHTTPRequest(method, url string, body io.Reader) *HTTPRequestBuilder {
-	b := HTTPRequestBuilder{
-		method:      method,
-		body:        body,
-		uri:         url,
-		uriParams:   make(map[string]interface{}),
-		header:      make(map[string]string),
-		queryParams: make(map[string]string),
-	}
-	return &b
-}
-
-type HTTPRequestBuilder struct {
-	method      string
-	body        io.Reader
-	uri         string
-	uriParams   map[string]interface{}
-	header      map[string]string
-	queryParams map[string]string
-}
-
-func (c *HTTPRequestBuilder) AuthToken(token string) *HTTPRequestBuilder {
-	c.header["Authorization"] = fmt.Sprintf("bearer %s", token)
-	return c
-}
-
-func (c *HTTPRequestBuilder) AddQuery(key, value string) *HTTPRequestBuilder {
-	c.queryParams[key] = value
-	return c
-}
-
-func (c *HTTPRequestBuilder) Accept(accept string) *HTTPRequestBuilder {
-	if accept == "" {
-		return c
-	}
-	c.header["Accept"] = accept
-	return c
-}
-
-func (c *HTTPRequestBuilder) Build(ctx context.Context, t *testing.T) *http.Request {
-	tmp, err := uritemplates.Parse(c.uri)
-	require.NoError(t, err)
-	uri, err := tmp.Expand(c.uriParams)
-	require.NoError(t, err)
-	url, err := url.Parse(uri)
-	require.NoError(t, err)
-	query := url.Query()
-
-	token, err := kitNetGrpc.TokenFromOutgoingMD(ctx)
-	if err == nil {
-		c.AuthToken(token)
-	}
-
-	for k, v := range c.queryParams {
-		query.Set(k, v)
-	}
-	url.RawQuery = query.Encode()
-	request, _ := http.NewRequestWithContext(ctx, c.method, url.String(), c.body)
-	for k, v := range c.header {
-		request.Header.Add(k, v)
-	}
-	return request
-}
-
-func DoHTTPRequest(t *testing.T, req *http.Request) *http.Response {
-	trans := http.DefaultTransport.(*http.Transport).Clone()
-	trans.TLSClientConfig = &tls.Config{
-		InsecureSkipVerify: true,
-	}
-	c := http.Client{
-		Transport: trans,
-	}
-	resp, err := c.Do(req)
-	require.NoError(t, err)
-	return resp
-}
-
-func ReadHTTPResponse(t *testing.T, w io.Reader, contentType string) interface{} {
-	var data interface{}
-	readFrom := func(w io.Reader, v interface{}) error {
-		return fmt.Errorf("not supported")
-	}
-	switch contentType {
-	case message.AppJSON.String():
-		readFrom = json.ReadFrom
-	case message.AppCBOR.String(), message.AppOcfCbor.String():
-		readFrom = cbor.ReadFrom
-	case "text/plain":
-		readFrom = func(w io.Reader, v interface{}) error {
-			b, err := ioutil.ReadAll(w)
-			if err != nil {
-				return err
-			}
-			val := reflect.ValueOf(v)
-			if val.Kind() != reflect.Ptr {
-				return fmt.Errorf("some: check must be a pointer")
-			}
-			val.Elem().Set(reflect.ValueOf(string(b)))
-			return nil
-		}
-	}
-	err := readFrom(w, &data)
-	require.NoError(t, err)
-
-	return data
 }
 
 func ProtobufToInterface(t *testing.T, val interface{}) interface{} {
@@ -896,56 +514,4 @@ func NATSSStart(ctx context.Context, t *testing.T) {
 func NATSSStop(ctx context.Context, t *testing.T) {
 	err := exec.CommandContext(ctx, "docker", "stop", "nats").Run()
 	require.NoError(t, err)
-}
-
-type SortPendingCommand []*pb.PendingCommand
-
-func (a SortPendingCommand) Len() int      { return len(a) }
-func (a SortPendingCommand) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
-func (a SortPendingCommand) Less(i, j int) bool {
-	toKey := func(v *pb.PendingCommand) string {
-		switch {
-		case v.GetResourceCreatePending() != nil:
-			return v.GetResourceCreatePending().GetResourceId().GetDeviceId() + v.GetResourceCreatePending().GetResourceId().GetHref()
-		case v.GetResourceRetrievePending() != nil:
-			return v.GetResourceRetrievePending().GetResourceId().GetDeviceId() + v.GetResourceRetrievePending().GetResourceId().GetHref()
-		case v.GetResourceUpdatePending() != nil:
-			return v.GetResourceUpdatePending().GetResourceId().GetDeviceId() + v.GetResourceUpdatePending().GetResourceId().GetHref()
-		case v.GetResourceDeletePending() != nil:
-			return v.GetResourceDeletePending().GetResourceId().GetDeviceId() + v.GetResourceDeletePending().GetResourceId().GetHref()
-		case v.GetDeviceMetadataUpdatePending() != nil:
-			return v.GetDeviceMetadataUpdatePending().GetDeviceId()
-		}
-		return ""
-	}
-
-	return toKey(a[i]) < toKey(a[j])
-}
-
-func CmpPendingCmds(t *testing.T, want []*pb.PendingCommand, got []*pb.PendingCommand) {
-	require.Len(t, got, len(want))
-
-	sort.Sort(SortPendingCommand(want))
-	sort.Sort(SortPendingCommand(got))
-
-	for idx := range want {
-		switch {
-		case got[idx].GetResourceCreatePending() != nil:
-			got[idx].GetResourceCreatePending().AuditContext.CorrelationId = ""
-			got[idx].GetResourceCreatePending().EventMetadata = nil
-		case got[idx].GetResourceRetrievePending() != nil:
-			got[idx].GetResourceRetrievePending().AuditContext.CorrelationId = ""
-			got[idx].GetResourceRetrievePending().EventMetadata = nil
-		case got[idx].GetResourceUpdatePending() != nil:
-			got[idx].GetResourceUpdatePending().AuditContext.CorrelationId = ""
-			got[idx].GetResourceUpdatePending().EventMetadata = nil
-		case got[idx].GetResourceDeletePending() != nil:
-			got[idx].GetResourceDeletePending().AuditContext.CorrelationId = ""
-			got[idx].GetResourceDeletePending().EventMetadata = nil
-		case got[idx].GetDeviceMetadataUpdatePending() != nil:
-			got[idx].GetDeviceMetadataUpdatePending().AuditContext.CorrelationId = ""
-			got[idx].GetDeviceMetadataUpdatePending().EventMetadata = nil
-		}
-		CheckProtobufs(t, want[idx], got[idx], RequireToCheckFunc(require.Equal))
-	}
 }

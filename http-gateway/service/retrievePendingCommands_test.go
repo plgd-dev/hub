@@ -5,11 +5,12 @@ import (
 	"crypto/tls"
 	"io"
 	"net/http"
-	"sort"
 	"testing"
 	"time"
 
-	"github.com/google/go-querystring/query"
+	"github.com/plgd-dev/device/schema/device"
+	"github.com/plgd-dev/device/schema/platform"
+	"github.com/plgd-dev/go-coap/v2/message"
 	caService "github.com/plgd-dev/hub/certificate-authority/test"
 	coapgwTest "github.com/plgd-dev/hub/coap-gateway/test"
 	"github.com/plgd-dev/hub/grpc-gateway/pb"
@@ -24,70 +25,23 @@ import (
 	rdService "github.com/plgd-dev/hub/resource-directory/test"
 	"github.com/plgd-dev/hub/test"
 	"github.com/plgd-dev/hub/test/config"
+	"github.com/plgd-dev/hub/test/oauth-server/service"
 	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
-	"github.com/plgd-dev/go-coap/v2/message"
+	pbTest "github.com/plgd-dev/hub/test/pb"
+	testService "github.com/plgd-dev/hub/test/service"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )
 
-type sortPendingCommand []*pb.PendingCommand
-
-func (a sortPendingCommand) Len() int      { return len(a) }
-func (a sortPendingCommand) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
-func (a sortPendingCommand) Less(i, j int) bool {
-	toKey := func(v *pb.PendingCommand) string {
-		switch {
-		case v.GetResourceCreatePending() != nil:
-			return v.GetResourceCreatePending().GetResourceId().GetDeviceId() + v.GetResourceCreatePending().GetResourceId().GetHref()
-		case v.GetResourceRetrievePending() != nil:
-			return v.GetResourceRetrievePending().GetResourceId().GetDeviceId() + v.GetResourceRetrievePending().GetResourceId().GetHref()
-		case v.GetResourceUpdatePending() != nil:
-			return v.GetResourceUpdatePending().GetResourceId().GetDeviceId() + v.GetResourceUpdatePending().GetResourceId().GetHref()
-		case v.GetResourceDeletePending() != nil:
-			return v.GetResourceDeletePending().GetResourceId().GetDeviceId() + v.GetResourceDeletePending().GetResourceId().GetHref()
-		case v.GetDeviceMetadataUpdatePending() != nil:
-			return v.GetDeviceMetadataUpdatePending().GetDeviceId()
-		}
-		return ""
-	}
-
-	return toKey(a[i]) < toKey(a[j])
-}
-
-func cmpPendingCmds(t *testing.T, want []*pb.PendingCommand, got []*pb.PendingCommand) {
-	require.Len(t, got, len(want))
-
-	sort.Sort(sortPendingCommand(want))
-	sort.Sort(sortPendingCommand(got))
-
-	for idx := range want {
-		switch {
-		case got[idx].GetResourceCreatePending() != nil:
-			got[idx].GetResourceCreatePending().AuditContext.CorrelationId = ""
-			got[idx].GetResourceCreatePending().EventMetadata = nil
-		case got[idx].GetResourceRetrievePending() != nil:
-			got[idx].GetResourceRetrievePending().AuditContext.CorrelationId = ""
-			got[idx].GetResourceRetrievePending().EventMetadata = nil
-		case got[idx].GetResourceUpdatePending() != nil:
-			got[idx].GetResourceUpdatePending().AuditContext.CorrelationId = ""
-			got[idx].GetResourceUpdatePending().EventMetadata = nil
-		case got[idx].GetResourceDeletePending() != nil:
-			got[idx].GetResourceDeletePending().AuditContext.CorrelationId = ""
-			got[idx].GetResourceDeletePending().EventMetadata = nil
-		case got[idx].GetDeviceMetadataUpdatePending() != nil:
-			got[idx].GetDeviceMetadataUpdatePending().AuditContext.CorrelationId = ""
-			got[idx].GetDeviceMetadataUpdatePending().EventMetadata = nil
-		}
-		test.CheckProtobufs(t, want[idx], got[idx], test.RequireToCheckFunc(require.Equal))
-	}
-}
-
-func TestRequestHandler_GetPendingCommands(t *testing.T) {
+func TestRequestHandlerGetPendingCommands(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	type args struct {
-		req    *pb.GetPendingCommandsRequest
-		accept string
+		accept           string
+		typeFilter       []string
+		resourceIdFilter []string
+		deviceIdFilter   []string
+		commandFilter    []pb.GetPendingCommandsRequest_Command
 	}
 	tests := []struct {
 		name    string
@@ -98,30 +52,18 @@ func TestRequestHandler_GetPendingCommands(t *testing.T) {
 		{
 			name: "retrieve by resourceIdFilter",
 			args: args{
-				req: &pb.GetPendingCommandsRequest{
-					ResourceIdFilter: []string{
-						commands.NewResourceID(deviceID, "/light/1").ToString(),
-					},
-				},
 				accept: uri.ApplicationProtoJsonContentType,
+				resourceIdFilter: []string{
+					commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")).ToString(),
+				},
 			},
 			want: []*pb.PendingCommand{
 				{
 					Command: &pb.PendingCommand_ResourceUpdatePending{
-						ResourceUpdatePending: &events.ResourceUpdatePending{
-							ResourceId: &commands.ResourceId{
-								DeviceId: deviceID,
-								Href:     "/light/1",
-							},
-							Content: &commands.Content{
-								ContentType:       message.AppOcfCbor.String(),
-								CoapContentFormat: -1,
-								Data: test.EncodeToCbor(t, map[string]interface{}{
-									"power": 1,
-								}),
-							},
-							AuditContext: commands.NewAuditContext("1", ""),
-						},
+						ResourceUpdatePending: pbTest.MakeResourceUpdatePending(t, deviceID, test.TestResourceLightInstanceHref("1"),
+							map[string]interface{}{
+								"power": 1,
+							}),
 					},
 				},
 			},
@@ -129,10 +71,8 @@ func TestRequestHandler_GetPendingCommands(t *testing.T) {
 		{
 			name: "retrieve by deviceIdFilter",
 			args: args{
-				req: &pb.GetPendingCommandsRequest{
-					DeviceIdFilter: []string{deviceID},
-				},
-				accept: uri.ApplicationProtoJsonContentType,
+				accept:         uri.ApplicationProtoJsonContentType,
+				deviceIdFilter: []string{deviceID},
 			},
 			want: []*pb.PendingCommand{
 				{
@@ -142,7 +82,7 @@ func TestRequestHandler_GetPendingCommands(t *testing.T) {
 							UpdatePending: &events.DeviceMetadataUpdatePending_ShadowSynchronization{
 								ShadowSynchronization: commands.ShadowSynchronization_DISABLED,
 							},
-							AuditContext: commands.NewAuditContext("1", ""),
+							AuditContext: commands.NewAuditContext(service.DeviceUserID, ""),
 						},
 					},
 				},
@@ -151,28 +91,18 @@ func TestRequestHandler_GetPendingCommands(t *testing.T) {
 						ResourceRetrievePending: &events.ResourceRetrievePending{
 							ResourceId: &commands.ResourceId{
 								DeviceId: deviceID,
-								Href:     "/oic/p",
+								Href:     platform.ResourceURI,
 							},
-							AuditContext: commands.NewAuditContext("1", ""),
+							AuditContext: commands.NewAuditContext(service.DeviceUserID, ""),
 						},
 					},
 				},
 				{
 					Command: &pb.PendingCommand_ResourceCreatePending{
-						ResourceCreatePending: &events.ResourceCreatePending{
-							ResourceId: &commands.ResourceId{
-								DeviceId: deviceID,
-								Href:     "/oic/d",
-							},
-							Content: &commands.Content{
-								ContentType:       message.AppOcfCbor.String(),
-								CoapContentFormat: -1,
-								Data: test.EncodeToCbor(t, map[string]interface{}{
-									"power": 1,
-								}),
-							},
-							AuditContext: commands.NewAuditContext("1", ""),
-						},
+						ResourceCreatePending: pbTest.MakeResourceCreatePending(t, deviceID, device.ResourceURI,
+							map[string]interface{}{
+								"power": 1,
+							}),
 					},
 				},
 				{
@@ -180,28 +110,18 @@ func TestRequestHandler_GetPendingCommands(t *testing.T) {
 						ResourceDeletePending: &events.ResourceDeletePending{
 							ResourceId: &commands.ResourceId{
 								DeviceId: deviceID,
-								Href:     "/oic/d",
+								Href:     device.ResourceURI,
 							},
-							AuditContext: commands.NewAuditContext("1", ""),
+							AuditContext: commands.NewAuditContext(service.DeviceUserID, ""),
 						},
 					},
 				},
 				{
 					Command: &pb.PendingCommand_ResourceUpdatePending{
-						ResourceUpdatePending: &events.ResourceUpdatePending{
-							ResourceId: &commands.ResourceId{
-								DeviceId: deviceID,
-								Href:     "/light/1",
-							},
-							Content: &commands.Content{
-								ContentType:       message.AppOcfCbor.String(),
-								CoapContentFormat: -1,
-								Data: test.EncodeToCbor(t, map[string]interface{}{
-									"power": 1,
-								}),
-							},
-							AuditContext: commands.NewAuditContext("1", ""),
-						},
+						ResourceUpdatePending: pbTest.MakeResourceUpdatePending(t, deviceID, test.TestResourceLightInstanceHref("1"),
+							map[string]interface{}{
+								"power": 1,
+							}),
 					},
 				},
 			},
@@ -209,10 +129,8 @@ func TestRequestHandler_GetPendingCommands(t *testing.T) {
 		{
 			name: "filter retrieve commands",
 			args: args{
-				req: &pb.GetPendingCommandsRequest{
-					CommandFilter: []pb.GetPendingCommandsRequest_Command{pb.GetPendingCommandsRequest_RESOURCE_RETRIEVE},
-				},
-				accept: uri.ApplicationProtoJsonContentType,
+				accept:        uri.ApplicationProtoJsonContentType,
+				commandFilter: []pb.GetPendingCommandsRequest_Command{pb.GetPendingCommandsRequest_RESOURCE_RETRIEVE},
 			},
 			want: []*pb.PendingCommand{
 				{
@@ -220,9 +138,9 @@ func TestRequestHandler_GetPendingCommands(t *testing.T) {
 						ResourceRetrievePending: &events.ResourceRetrievePending{
 							ResourceId: &commands.ResourceId{
 								DeviceId: deviceID,
-								Href:     "/oic/p",
+								Href:     platform.ResourceURI,
 							},
-							AuditContext: commands.NewAuditContext("1", ""),
+							AuditContext: commands.NewAuditContext(service.DeviceUserID, ""),
 						},
 					},
 				},
@@ -231,28 +149,16 @@ func TestRequestHandler_GetPendingCommands(t *testing.T) {
 		{
 			name: "filter create commands",
 			args: args{
-				req: &pb.GetPendingCommandsRequest{
-					CommandFilter: []pb.GetPendingCommandsRequest_Command{pb.GetPendingCommandsRequest_RESOURCE_CREATE},
-				},
-				accept: uri.ApplicationProtoJsonContentType,
+				accept:        uri.ApplicationProtoJsonContentType,
+				commandFilter: []pb.GetPendingCommandsRequest_Command{pb.GetPendingCommandsRequest_RESOURCE_CREATE},
 			},
 			want: []*pb.PendingCommand{
 				{
 					Command: &pb.PendingCommand_ResourceCreatePending{
-						ResourceCreatePending: &events.ResourceCreatePending{
-							ResourceId: &commands.ResourceId{
-								DeviceId: deviceID,
-								Href:     "/oic/d",
-							},
-							Content: &commands.Content{
-								ContentType:       message.AppOcfCbor.String(),
-								CoapContentFormat: -1,
-								Data: test.EncodeToCbor(t, map[string]interface{}{
-									"power": 1,
-								}),
-							},
-							AuditContext: commands.NewAuditContext("1", ""),
-						},
+						ResourceCreatePending: pbTest.MakeResourceCreatePending(t, deviceID, device.ResourceURI,
+							map[string]interface{}{
+								"power": 1,
+							}),
 					},
 				},
 			},
@@ -260,10 +166,8 @@ func TestRequestHandler_GetPendingCommands(t *testing.T) {
 		{
 			name: "filter delete commands",
 			args: args{
-				req: &pb.GetPendingCommandsRequest{
-					CommandFilter: []pb.GetPendingCommandsRequest_Command{pb.GetPendingCommandsRequest_RESOURCE_DELETE},
-				},
-				accept: uri.ApplicationProtoJsonContentType,
+				accept:        uri.ApplicationProtoJsonContentType,
+				commandFilter: []pb.GetPendingCommandsRequest_Command{pb.GetPendingCommandsRequest_RESOURCE_DELETE},
 			},
 			want: []*pb.PendingCommand{
 				{
@@ -271,9 +175,9 @@ func TestRequestHandler_GetPendingCommands(t *testing.T) {
 						ResourceDeletePending: &events.ResourceDeletePending{
 							ResourceId: &commands.ResourceId{
 								DeviceId: deviceID,
-								Href:     "/oic/d",
+								Href:     device.ResourceURI,
 							},
-							AuditContext: commands.NewAuditContext("1", ""),
+							AuditContext: commands.NewAuditContext(service.DeviceUserID, ""),
 						},
 					},
 				},
@@ -282,28 +186,16 @@ func TestRequestHandler_GetPendingCommands(t *testing.T) {
 		{
 			name: "filter update commands",
 			args: args{
-				req: &pb.GetPendingCommandsRequest{
-					CommandFilter: []pb.GetPendingCommandsRequest_Command{pb.GetPendingCommandsRequest_RESOURCE_UPDATE},
-				},
-				accept: uri.ApplicationProtoJsonContentType,
+				accept:        uri.ApplicationProtoJsonContentType,
+				commandFilter: []pb.GetPendingCommandsRequest_Command{pb.GetPendingCommandsRequest_RESOURCE_UPDATE},
 			},
 			want: []*pb.PendingCommand{
 				{
 					Command: &pb.PendingCommand_ResourceUpdatePending{
-						ResourceUpdatePending: &events.ResourceUpdatePending{
-							ResourceId: &commands.ResourceId{
-								DeviceId: deviceID,
-								Href:     "/light/1",
-							},
-							Content: &commands.Content{
-								ContentType:       message.AppOcfCbor.String(),
-								CoapContentFormat: -1,
-								Data: test.EncodeToCbor(t, map[string]interface{}{
-									"power": 1,
-								}),
-							},
-							AuditContext: commands.NewAuditContext("1", ""),
-						},
+						ResourceUpdatePending: pbTest.MakeResourceUpdatePending(t, deviceID, test.TestResourceLightInstanceHref("1"),
+							map[string]interface{}{
+								"power": 1,
+							}),
 					},
 				},
 			},
@@ -311,28 +203,16 @@ func TestRequestHandler_GetPendingCommands(t *testing.T) {
 		{
 			name: "filter by type",
 			args: args{
-				req: &pb.GetPendingCommandsRequest{
-					TypeFilter: []string{"oic.wk.d"},
-				},
-				accept: uri.ApplicationProtoJsonContentType,
+				accept:     uri.ApplicationProtoJsonContentType,
+				typeFilter: []string{device.ResourceType},
 			},
 			want: []*pb.PendingCommand{
 				{
 					Command: &pb.PendingCommand_ResourceCreatePending{
-						ResourceCreatePending: &events.ResourceCreatePending{
-							ResourceId: &commands.ResourceId{
-								DeviceId: deviceID,
-								Href:     "/oic/d",
-							},
-							Content: &commands.Content{
-								ContentType:       message.AppOcfCbor.String(),
-								CoapContentFormat: -1,
-								Data: test.EncodeToCbor(t, map[string]interface{}{
-									"power": 1,
-								}),
-							},
-							AuditContext: commands.NewAuditContext("1", ""),
-						},
+						ResourceCreatePending: pbTest.MakeResourceCreatePending(t, deviceID, device.ResourceURI,
+							map[string]interface{}{
+								"power": 1,
+							}),
 					},
 				},
 				{
@@ -340,9 +220,9 @@ func TestRequestHandler_GetPendingCommands(t *testing.T) {
 						ResourceDeletePending: &events.ResourceDeletePending{
 							ResourceId: &commands.ResourceId{
 								DeviceId: deviceID,
-								Href:     "/oic/d",
+								Href:     device.ResourceURI,
 							},
-							AuditContext: commands.NewAuditContext("1", ""),
+							AuditContext: commands.NewAuditContext(service.DeviceUserID, ""),
 						},
 					},
 				},
@@ -351,10 +231,8 @@ func TestRequestHandler_GetPendingCommands(t *testing.T) {
 		{
 			name: "filter device metadata update",
 			args: args{
-				req: &pb.GetPendingCommandsRequest{
-					CommandFilter: []pb.GetPendingCommandsRequest_Command{pb.GetPendingCommandsRequest_DEVICE_METADATA_UPDATE},
-				},
-				accept: uri.ApplicationProtoJsonContentType,
+				accept:        uri.ApplicationProtoJsonContentType,
+				commandFilter: []pb.GetPendingCommandsRequest_Command{pb.GetPendingCommandsRequest_DEVICE_METADATA_UPDATE},
 			},
 			want: []*pb.PendingCommand{
 				{
@@ -364,7 +242,7 @@ func TestRequestHandler_GetPendingCommands(t *testing.T) {
 							UpdatePending: &events.DeviceMetadataUpdatePending_ShadowSynchronization{
 								ShadowSynchronization: commands.ShadowSynchronization_DISABLED,
 							},
-							AuditContext: commands.NewAuditContext("1", ""),
+							AuditContext: commands.NewAuditContext(service.DeviceUserID, ""),
 						},
 					},
 				},
@@ -375,7 +253,7 @@ func TestRequestHandler_GetPendingCommands(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
 	defer cancel()
 
-	test.ClearDB(ctx, t)
+	testService.ClearDB(ctx, t)
 	oauthShutdown := oauthTest.SetUp(t)
 	idShutdown := idService.SetUp(t)
 	raShutdown := raService.SetUp(t)
@@ -412,7 +290,7 @@ func TestRequestHandler_GetPendingCommands(t *testing.T) {
 		ctx, cancel := context.WithTimeout(ctx, time.Second)
 		defer cancel()
 		_, err := c.CreateResource(ctx, &pb.CreateResourceRequest{
-			ResourceId: commands.NewResourceID(deviceID, "/oic/d"),
+			ResourceId: commands.NewResourceID(deviceID, device.ResourceURI),
 			Content: &pb.Content{
 				ContentType: message.AppOcfCbor.String(),
 				Data: test.EncodeToCbor(t, map[string]interface{}{
@@ -427,7 +305,7 @@ func TestRequestHandler_GetPendingCommands(t *testing.T) {
 		ctx, cancel := context.WithTimeout(ctx, time.Second)
 		defer cancel()
 		_, err := c.GetResourceFromDevice(ctx, &pb.GetResourceFromDeviceRequest{
-			ResourceId: commands.NewResourceID(deviceID, "/oic/p"),
+			ResourceId: commands.NewResourceID(deviceID, platform.ResourceURI),
 		})
 		require.Error(t, err)
 	}
@@ -436,7 +314,7 @@ func TestRequestHandler_GetPendingCommands(t *testing.T) {
 		ctx, cancel := context.WithTimeout(ctx, time.Second)
 		defer cancel()
 		_, err := c.UpdateResource(ctx, &pb.UpdateResourceRequest{
-			ResourceId: commands.NewResourceID(deviceID, "/light/1"),
+			ResourceId: commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
 			Content: &pb.Content{
 				ContentType: message.AppOcfCbor.String(),
 				Data: test.EncodeToCbor(t, map[string]interface{}{
@@ -451,7 +329,7 @@ func TestRequestHandler_GetPendingCommands(t *testing.T) {
 		ctx, cancel := context.WithTimeout(ctx, time.Second)
 		defer cancel()
 		_, err := c.DeleteResource(ctx, &pb.DeleteResourceRequest{
-			ResourceId: commands.NewResourceID(deviceID, "/oic/d"),
+			ResourceId: commands.NewResourceID(deviceID, device.ResourceURI),
 		})
 		require.Error(t, err)
 	}
@@ -469,30 +347,10 @@ func TestRequestHandler_GetPendingCommands(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			type Options struct {
-				TypeFilter       []string                               `url:"typeFilter,omitempty"`
-				ResourceIdFilter []string                               `url:"resourceIdFilter,omitempty"`
-				DeviceIdFilter   []string                               `url:"deviceIdFilter,omitempty"`
-				CommandFilter    []pb.GetPendingCommandsRequest_Command `url:"commandFilter,omitempty"`
-			}
-			opt := Options{
-				TypeFilter:       tt.args.req.TypeFilter,
-				ResourceIdFilter: tt.args.req.ResourceIdFilter,
-				DeviceIdFilter:   tt.args.req.DeviceIdFilter,
-				CommandFilter:    tt.args.req.CommandFilter,
-			}
-			v, err := query.Values(opt)
-			require.NoError(t, err)
-			request := httpgwTest.NewRequest(http.MethodGet, uri.PendingCommands, nil).AuthToken(token).Accept(tt.args.accept).SetQuery(v.Encode()).Build()
-			trans := http.DefaultTransport.(*http.Transport).Clone()
-			trans.TLSClientConfig = &tls.Config{
-				InsecureSkipVerify: true,
-			}
-			c := http.Client{
-				Transport: trans,
-			}
-			resp, err := c.Do(request)
-			require.NoError(t, err)
+			rb := httpgwTest.NewRequest(http.MethodGet, uri.PendingCommands, nil).AuthToken(token).Accept(tt.args.accept)
+			rb.AddTypeFilter(tt.args.typeFilter).AddResourceIdFilter(tt.args.resourceIdFilter).AddDeviceIdFilter(tt.args.deviceIdFilter)
+			rb.AddCommandsFilter(httpgwTest.ToCommandsFilter(tt.args.commandFilter))
+			resp := httpgwTest.HTTPDo(t, rb.Build())
 			defer func() {
 				_ = resp.Body.Close()
 			}()
@@ -507,7 +365,7 @@ func TestRequestHandler_GetPendingCommands(t *testing.T) {
 				require.NoError(t, err)
 				values = append(values, &v)
 			}
-			cmpPendingCmds(t, tt.want, values)
+			pbTest.CmpPendingCmds(t, tt.want, values)
 		})
 	}
 }

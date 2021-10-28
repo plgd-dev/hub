@@ -8,11 +8,14 @@ WORKING_DIRECTORY := $(shell pwd)
 default: build
 
 define build-docker-image
-	docker build \
+	cd .. && docker build \
 		--network=host \
+		--build-arg DIRECTORY=$(SERVICE_NAME) \
+		--build-arg NAME=$(SERVICE_NAME) \
 		--tag plgd/$(SERVICE_NAME):$(VERSION_TAG) \
 		--tag plgd/$(SERVICE_NAME):$(LATEST_TAG) \
 		--target $(1) \
+		-f tools/docker/Dockerfile \
 		.
 endef
 

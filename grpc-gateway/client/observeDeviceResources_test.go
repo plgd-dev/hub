@@ -11,6 +11,8 @@ import (
 	test "github.com/plgd-dev/hub/test"
 	testCfg "github.com/plgd-dev/hub/test/config"
 	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
+	pbTest "github.com/plgd-dev/hub/test/pb"
+	"github.com/plgd-dev/hub/test/service"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -19,7 +21,7 @@ func TestObserveDeviceResources(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	ctx, cancel := context.WithTimeout(context.Background(), TestTimeout)
 	defer cancel()
-	tearDown := test.SetUp(ctx, t)
+	tearDown := service.SetUp(ctx, t)
 	defer tearDown()
 	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultServiceToken(t))
 
@@ -44,8 +46,8 @@ func TestObserveDeviceResources(t *testing.T) {
 		t.Logf("res %+v\n", res)
 		pub, ok := res.(*events.ResourceLinksPublished)
 		require.True(t, ok)
-		exp := test.ResourceLinkToPublishEvent(deviceID, "", test.GetAllBackendResourceLinks())
-		test.CheckProtobufs(t, test.CleanUpResourceLinksPublished(exp.GetResourcePublished()), test.CleanUpResourceLinksPublished(pub), test.RequireToCheckFunc(require.Equal))
+		exp := pbTest.ResourceLinkToPublishEvent(deviceID, "", test.GetAllBackendResourceLinks())
+		test.CheckProtobufs(t, pbTest.CleanUpResourceLinksPublished(exp.GetResourcePublished()), pbTest.CleanUpResourceLinksPublished(pub), test.RequireToCheckFunc(require.Equal))
 	case <-time.After(TestTimeout):
 		t.Error("timeout")
 	}

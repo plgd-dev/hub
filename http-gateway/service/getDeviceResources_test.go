@@ -7,23 +7,53 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/stretchr/testify/require"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
-
+	"github.com/plgd-dev/device/schema/collection"
+	"github.com/plgd-dev/device/schema/configuration"
+	"github.com/plgd-dev/device/schema/device"
+	"github.com/plgd-dev/device/schema/interfaces"
+	"github.com/plgd-dev/device/schema/platform"
+	"github.com/plgd-dev/device/test/resource/types"
 	"github.com/plgd-dev/hub/grpc-gateway/pb"
 	httpgwTest "github.com/plgd-dev/hub/http-gateway/test"
 	"github.com/plgd-dev/hub/http-gateway/uri"
 	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
-	"github.com/plgd-dev/hub/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/resource-aggregate/events"
 	"github.com/plgd-dev/hub/test"
 	"github.com/plgd-dev/hub/test/config"
 	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
-	"github.com/plgd-dev/go-coap/v2/message"
+	pbTest "github.com/plgd-dev/hub/test/pb"
+	"github.com/plgd-dev/hub/test/service"
+	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 )
 
-func TestRequestHandler_GetDeviceResources(t *testing.T) {
+func makePlatformResourceChanged(t *testing.T, deviceID string) *events.ResourceChanged {
+	return pbTest.MakeResourceChanged(t, deviceID, platform.ResourceURI,
+		map[string]interface{}{
+			"mnmn": "ocfcloud.com",
+			//"pi":   "d9b71824-78f7-4f26-540b-d86eab696937",
+			"if": []interface{}{interfaces.OC_IF_R, interfaces.OC_IF_BASELINE},
+			"rt": []interface{}{platform.ResourceType},
+		},
+	)
+}
+
+func makeCloudDeviceResourceChanged(t *testing.T, deviceID string) *events.ResourceChanged {
+	return pbTest.MakeResourceChanged(t, deviceID, device.ResourceURI,
+		map[string]interface{}{
+			"n":   test.TestDeviceName,
+			"di":  deviceID,
+			"dmv": "ocf.res.1.3.0",
+			"icv": "ocf.2.0.5",
+			// "piid": "1dcb14bd-5167-4122-6c2f-71741543fdc3",
+			"if": []interface{}{interfaces.OC_IF_R, interfaces.OC_IF_BASELINE},
+			"rt": []interface{}{types.DEVICE_CLOUD, device.ResourceType},
+		},
+	)
+}
+
+func TestRequestHandlerGetDeviceResources(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	type args struct {
 		deviceID   string
@@ -44,108 +74,47 @@ func TestRequestHandler_GetDeviceResources(t *testing.T) {
 			},
 			want: []*pb.Resource{
 				{
-					Types: []string{"core.light"},
-					Data: &events.ResourceChanged{
-						ResourceId: &commands.ResourceId{
-							DeviceId: deviceID,
-							Href:     "/light/1",
+					Types: []string{types.CORE_LIGHT},
+					Data: pbTest.MakeResourceChanged(t, deviceID, test.TestResourceLightInstanceHref("1"),
+						map[string]interface{}{
+							"state": false,
+							"power": uint64(0),
+							"name":  "Light",
+							"if":    []interface{}{interfaces.OC_IF_RW, interfaces.OC_IF_BASELINE},
+							"rt":    []interface{}{types.CORE_LIGHT},
 						},
-						Content: &commands.Content{
-							CoapContentFormat: int32(message.AppOcfCbor),
-							ContentType:       message.AppOcfCbor.String(),
-							Data: test.EncodeToCbor(t, map[string]interface{}{
-								"state": false,
-								"power": uint64(0),
-								"name":  "Light",
-								"if":    []interface{}{"oic.if.rw", "oic.if.baseline"},
-								"rt":    []interface{}{"core.light"},
-							}),
-						},
-						Status: commands.Status_OK,
-					},
+					),
 				},
 				{
-					Types: []string{"core.light"},
-					Data: &events.ResourceChanged{
-						ResourceId: &commands.ResourceId{
-							DeviceId: deviceID,
-							Href:     "/light/2",
+					Types: []string{collection.ResourceType},
+					Data: pbTest.MakeResourceChanged(t, deviceID, test.TestResourceSwitchesHref,
+						map[string]interface{}{
+							"links":                     []interface{}{},
+							"if":                        []interface{}{interfaces.OC_IF_LL, interfaces.OC_IF_CREATE, interfaces.OC_IF_B, interfaces.OC_IF_BASELINE},
+							"rt":                        []interface{}{collection.ResourceType},
+							"rts":                       []interface{}{types.BINARY_SWITCH},
+							"rts-m":                     []interface{}{types.BINARY_SWITCH},
+							"x.org.openconnectivity.bl": uint64(94),
 						},
-						Content: &commands.Content{
-							CoapContentFormat: int32(message.AppOcfCbor),
-							ContentType:       message.AppOcfCbor.String(),
-							Data: test.EncodeToCbor(t, map[string]interface{}{
-								"state": false,
-								"power": uint64(0),
-								"name":  "Light",
-								"if":    []interface{}{"oic.if.rw", "oic.if.baseline"},
-								"rt":    []interface{}{"core.light"},
-							}),
-						},
-						Status: commands.Status_OK,
-					},
+					),
 				},
 				{
-					Types: []string{"oic.wk.con"},
-					Data: &events.ResourceChanged{
-						ResourceId: &commands.ResourceId{
-							DeviceId: deviceID,
-							Href:     "/oc/con",
+					Types: []string{configuration.ResourceType},
+					Data: pbTest.MakeResourceChanged(t, deviceID, configuration.ResourceURI,
+						map[string]interface{}{
+							"n":  test.TestDeviceName,
+							"if": []interface{}{interfaces.OC_IF_RW, interfaces.OC_IF_BASELINE},
+							"rt": []interface{}{configuration.ResourceType},
 						},
-						Content: &commands.Content{
-							CoapContentFormat: int32(message.AppOcfCbor),
-							ContentType:       message.AppOcfCbor.String(),
-							Data: test.EncodeToCbor(t, map[string]interface{}{
-								"n":  test.TestDeviceName,
-								"if": []interface{}{"oic.if.rw", "oic.if.baseline"},
-								"rt": []interface{}{"oic.wk.con"},
-							}),
-						},
-						Status: commands.Status_OK,
-					},
+					),
 				},
 				{
-					Types: []string{"oic.wk.p"},
-					Data: &events.ResourceChanged{
-						ResourceId: &commands.ResourceId{
-							DeviceId: deviceID,
-							Href:     "/oic/p",
-						},
-						Content: &commands.Content{
-							CoapContentFormat: int32(message.AppOcfCbor),
-							ContentType:       message.AppOcfCbor.String(),
-							Data: test.EncodeToCbor(t, map[string]interface{}{
-								"mnmn": "ocfcloud.com",
-								//"pi":   "d9b71824-78f7-4f26-540b-d86eab696937",
-								"if": []interface{}{"oic.if.r", "oic.if.baseline"},
-								"rt": []interface{}{"oic.wk.p"},
-							}),
-						},
-						Status: commands.Status_OK,
-					},
+					Types: []string{platform.ResourceType},
+					Data:  makePlatformResourceChanged(t, deviceID),
 				},
 				{
-					Types: []string{"oic.d.cloudDevice", "oic.wk.d"},
-					Data: &events.ResourceChanged{
-						ResourceId: &commands.ResourceId{
-							DeviceId: deviceID,
-							Href:     "/oic/d",
-						},
-						Content: &commands.Content{
-							CoapContentFormat: int32(message.AppOcfCbor),
-							ContentType:       message.AppOcfCbor.String(),
-							Data: test.EncodeToCbor(t, map[string]interface{}{
-								"n":   test.TestDeviceName,
-								"di":  deviceID,
-								"dmv": "ocf.res.1.3.0",
-								"icv": "ocf.2.0.5",
-								// "piid": "1dcb14bd-5167-4122-6c2f-71741543fdc3",
-								"if": []interface{}{"oic.if.r", "oic.if.baseline"},
-								"rt": []interface{}{"oic.d.cloudDevice", "oic.wk.d"},
-							}),
-						},
-						Status: commands.Status_OK,
-					},
+					Types: []string{types.DEVICE_CLOUD, device.ResourceType},
+					Data:  makeCloudDeviceResourceChanged(t, deviceID),
 				},
 			},
 		},
@@ -153,52 +122,17 @@ func TestRequestHandler_GetDeviceResources(t *testing.T) {
 			name: "get oic.wk.d and oic.wk.p of " + deviceID,
 			args: args{
 				deviceID:   deviceID,
-				typeFilter: []string{"oic.wk.d", "oic.wk.p"},
+				typeFilter: []string{device.ResourceType, platform.ResourceType},
 				accept:     uri.ApplicationProtoJsonContentType,
 			},
 			want: []*pb.Resource{
 				{
-					Types: []string{"oic.wk.p"},
-					Data: &events.ResourceChanged{
-						ResourceId: &commands.ResourceId{
-							DeviceId: deviceID,
-							Href:     "/oic/p",
-						},
-						Content: &commands.Content{
-							CoapContentFormat: int32(message.AppOcfCbor),
-							ContentType:       message.AppOcfCbor.String(),
-							Data: test.EncodeToCbor(t, map[string]interface{}{
-								"mnmn": "ocfcloud.com",
-								//"pi":   "d9b71824-78f7-4f26-540b-d86eab696937",
-								"if": []interface{}{"oic.if.r", "oic.if.baseline"},
-								"rt": []interface{}{"oic.wk.p"},
-							}),
-						},
-						Status: commands.Status_OK,
-					},
+					Types: []string{platform.ResourceType},
+					Data:  makePlatformResourceChanged(t, deviceID),
 				},
 				{
-					Types: []string{"oic.d.cloudDevice", "oic.wk.d"},
-					Data: &events.ResourceChanged{
-						ResourceId: &commands.ResourceId{
-							DeviceId: deviceID,
-							Href:     "/oic/d",
-						},
-						Content: &commands.Content{
-							CoapContentFormat: int32(message.AppOcfCbor),
-							ContentType:       message.AppOcfCbor.String(),
-							Data: test.EncodeToCbor(t, map[string]interface{}{
-								"n":   test.TestDeviceName,
-								"di":  deviceID,
-								"dmv": "ocf.res.1.3.0",
-								"icv": "ocf.2.0.5",
-								// "piid": "1dcb14bd-5167-4122-6c2f-71741543fdc3",
-								"if": []interface{}{"oic.if.r", "oic.if.baseline"},
-								"rt": []interface{}{"oic.d.cloudDevice", "oic.wk.d"},
-							}),
-						},
-						Status: commands.Status_OK,
-					},
+					Types: []string{types.DEVICE_CLOUD, device.ResourceType},
+					Data:  makeCloudDeviceResourceChanged(t, deviceID),
 				},
 			},
 		},
@@ -215,7 +149,7 @@ func TestRequestHandler_GetDeviceResources(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
 	defer cancel()
 
-	tearDown := test.SetUp(ctx, t)
+	tearDown := service.SetUp(ctx, t)
 	defer tearDown()
 
 	shutdownHttp := httpgwTest.SetUp(t)
@@ -235,16 +169,9 @@ func TestRequestHandler_GetDeviceResources(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			request := httpgwTest.NewRequest(http.MethodGet, uri.AliasDeviceResources, nil).DeviceId(tt.args.deviceID).Accept(tt.args.accept).AddTypeFilter(tt.args.typeFilter).AuthToken(token).Build()
-			trans := http.DefaultTransport.(*http.Transport).Clone()
-			trans.TLSClientConfig = &tls.Config{
-				InsecureSkipVerify: true,
-			}
-			c := http.Client{
-				Transport: trans,
-			}
-			resp, err := c.Do(request)
-			require.NoError(t, err)
+			rb := httpgwTest.NewRequest(http.MethodGet, uri.AliasDeviceResources, nil).Accept(tt.args.accept).AuthToken(token)
+			rb.DeviceId(tt.args.deviceID).AddTypeFilter(tt.args.typeFilter)
+			resp := httpgwTest.HTTPDo(t, rb.Build())
 			defer func() {
 				_ = resp.Body.Close()
 			}()
@@ -261,11 +188,9 @@ func TestRequestHandler_GetDeviceResources(t *testing.T) {
 					return
 				}
 				require.NoError(t, err)
-				value.Data.AuditContext = nil
-				value.Data.EventMetadata = nil
 				values = append(values, &value)
 			}
-			cmpResourceValues(t, tt.want, values)
+			pbTest.CmpResourceValues(t, tt.want, values)
 		})
 	}
 }

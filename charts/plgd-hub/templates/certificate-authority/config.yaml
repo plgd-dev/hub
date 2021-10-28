@@ -1,11 +1,11 @@
 {{- if .Values.certificateauthority.enabled }}
 {{- $cert := "/certs" }}
 apiVersion: v1
-kind: Secret
+kind: ConfigMap
 metadata:
-  name: {{ include "plgd-hub.certificateauthority.configSecretName" . }}
+  name: {{ include "plgd-hub.certificateauthority.configName" . }}
   namespace: {{ .Release.Namespace }}
-stringData:
+data:
   {{ .Values.certificateauthority.config.fileName }}: |
     {{- with .Values.certificateauthority }}
     apis:

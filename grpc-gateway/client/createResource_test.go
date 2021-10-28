@@ -6,22 +6,23 @@ import (
 	"testing"
 	"time"
 
+	"github.com/plgd-dev/device/schema/device"
 	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
 	"github.com/plgd-dev/hub/test"
 	testCfg "github.com/plgd-dev/hub/test/config"
 	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
-
+	"github.com/plgd-dev/hub/test/service"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 func TestClient_CreateResource(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	ctx, cancel := context.WithTimeout(context.Background(), TestTimeout)
 	defer cancel()
-	tearDown := test.SetUp(ctx, t)
+	tearDown := service.SetUp(ctx, t)
 	defer tearDown()
 	type args struct {
 		token    string
@@ -41,7 +42,7 @@ func TestClient_CreateResource(t *testing.T) {
 			args: args{
 				token:    oauthTest.GetDefaultServiceToken(t),
 				deviceID: deviceID,
-				href:     "/oic/d",
+				href:     device.ResourceURI,
 				data: map[string]interface{}{
 					"n": "devsim - valid update value",
 				},

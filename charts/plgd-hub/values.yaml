@@ -2,7 +2,7 @@
 global:
   # -- Global domain
   domain:
-  # -- Hub ID. Used by coap-gateway. It must be unique
+  # -- hubId. Used by coap-gateway. It must be unique
   hubId:
   # -- OAuth owner Claim
   ownerClaim: "sub"
@@ -12,6 +12,8 @@ global:
   authority:
   # -- OAuth audience
   audience: ""
+  # -- Enable *.{{ global.domain }} for all external domain
+  enableWildCartCert: true
   # Global OAuth configuration used by multiple services
   oauth:
    device: []
@@ -152,7 +154,7 @@ certmanager:
       # -- Annotation for default issuer
       annotations: {}
       # -- Name of default issuer
-      name: selfsigned-issuer
+      name: default-issuer
       # --Kind of default issuer
       kind: Issuer
       # -- Default issuer specification.
@@ -174,6 +176,27 @@ certmanager:
         algorithm: ECDSA
         # -- Key size
         size: 256
+    ca:
+      enabled: true
+      # -- Common name for CA created as default issuer
+      commonName: plgd-ca
+      secret:
+        # -- Name of secret
+        name: plgd-ca
+      issuer:
+        # -- Enable root issuer
+        enabled: true
+        # -- Labels for root issuer
+        labels: {}
+        # -- Annotation for root issuer
+        annotations: {}
+        # -- Name of root issuer
+        name: ca-issuer
+        # --Kind of default issuer
+        kind: Issuer
+        # -- Default issuer specification.
+        spec:
+          selfSigned: {}
   internal:
     # -- Internal issuer. In case you want to create your own issuer for internal certs
     issuer:
@@ -331,6 +354,7 @@ resourcedirectory:
   apis:
     grpc:
       address:
+      ownerCacheExpiration: 1m
       enforcementPolicy:
         minTime: 5s
         permitWithoutStream: true
@@ -563,6 +587,7 @@ resourceaggregate:
       nats:
         url:
         jetstream: false
+        flusherTimeout: 30s
         pendingLimits:
           msgLimit: 524288
           bytesLimit: "67108864"
@@ -628,6 +653,8 @@ coapgateway:
   service:
     # -- Service type
     type: LoadBalancer
+    # -- Use nodePort if specified
+    nodePort:
     # -- Labels for coap-gateway service
     labels: { }
     # -- Annotations for coap-gateway service
@@ -899,6 +926,7 @@ identitystore:
       nats:
         url: ""
         jetstream: false
+        flusherTimeout: 30s
         tls:
           useSystemCAPool: false
     storage:
@@ -1047,7 +1075,7 @@ httpgateway:
           useSystemCAPool: false
   # -- For complete http-gateway service configuration see [plgd/http-gateway](https://github.com/plgd-dev/hub/tree/main/http-gateway)
   ui:
-    enabled: false
+    enabled: true
     directory: "/usr/local/var/www"
     webConfiguration:
       authority: ""
@@ -1176,7 +1204,7 @@ grpcgateway:
         caPool:
         keyFile:
         certFile:
-        clientCertificateRequired: true
+        clientCertificateRequired: false
       authorization:
         authority: ""
         audience: ""
@@ -1323,7 +1351,7 @@ certificateauthority:
     annotations: {}
     # -- Paths
     paths:
-      - /certificateauthority.pb.CertificateAuthority
+      - /certificateauthority.pb.CertificateAuthority/SignIdentityCertificate
   # -- Service configuration
   config:
     # -- File name for config file
@@ -1334,20 +1362,10 @@ certificateauthority:
     mountPath: /config
   # -- CA section
   ca:
-    # -- Default configuration for cert/key CA used for signing device/identity certificates
-    default:
-      # -- Common name for CA created as default issuer
-      commonName: coap-device-ca
-      secret:
-        # -- Name of secret
-        name: coap-device-ca
-        # -- Duration for default CA
-      duration: 87600h
-      # -- Renew before for default CA
-      renewBefore: 360h
     secret:
-      # -- Custom CA secret name
+      # -- Name of secret
       name:
+        # -- Duration for default CA
     # -- Cert file name
     cert: tls.crt
     # -- Cert key file name
@@ -1382,7 +1400,7 @@ certificateauthority:
         caPool:
         keyFile:
         certFile:
-        clientCertificateRequired: true
+        clientCertificateRequired: false
       authorization:
         ownerClaim:
         authority:
@@ -1404,3 +1422,121 @@ certificateauthority:
     certFile:
     validFrom: "now-1h"
     expiresIn: "87600h"
+
+
+mockoauthserver:
+  oauth:
+    - name: "plgd.mobile"
+      clientID: "test"
+      clientSecret: "test"
+      redirectURL: "cloud.plgd.mobile://login-callback"
+    - name: "plgd.web"
+      clientID: "test"
+      clientSecret: "test"
+      redirectURL: "{{ printf \"https://%s\" ( include \"plgd-hub.mockoauthserver.ingressDomain\" . ) }}/things"
+      useInUi: true
+      
+  # -- Enable mock-oauth-server service
+  enabled: false
+  # -- Name of component. Used in label selectors
+  name: mock-oauth-server
+  # -- Full name to override
+  fullnameOverride:
+  # -- Number of replicas
+  replicas: 1
+  # -- Additional labels for mock-oauth-server deployment
+  deploymentLabels: {}
+  # -- Additional annotations for mock-oauth-server deployment
+  deploymentAnnotations: {}
+  # -- Pod security context
+  podSecurityContext: {}
+  # -- Labels for http-gateway pod
+  podLabels: {}
+  # -- Annotations for mock-oauth-server pod
+  podAnnotations: {}
+  service:
+    type: ClusterIP
+    # -- Labels for mock-oauth-server service
+    labels: {}
+    # -- Annotations for mock-oauth-server service
+    annotations: {}
+  securityContext: {}
+  # -- Image pull secrets
+  imagePullSecrets: {}
+  # -- Restart policy for pod
+  restartPolicy: Always
+  image:
+    # -- Image registry
+    registry:
+    # -- Image repository
+    repository: plgd/mock-oauth-server
+    # -- Image tag.
+    tag:
+    # -- Image pull policy
+    pullPolicy: Always
+    # -- Image pull secrets
+    imagePullSecrets: {}
+  # -- Liveness probe. mock-oauth-server doesn't have any default liveness probe
+  livenessProbe: {}
+  # -- Readiness probe. mock-oauth-server doesn't have aby default readiness probe
+  readinessProbe: {}
+  # -- Resources limit
+  resources: {}
+  # -- Node selector
+  nodeSelector: {}
+  # -- Affinity definition
+  affinity: {}
+  # -- Toleration definition
+  tolerations: {}
+  # -- Optional extra volumes
+  extraVolumes: {}
+  # -- Optional extra volume mounts
+  extraVolumeMounts: {}
+  # -- Domain for   apiDomain: Default: auth.{{ global.domain }}
+  domain:
+  ingress:
+    # -- Enable ingress
+    enabled: true
+    # -- Ingress annotation
+    annotations: {}
+    # -- Ingress path
+    paths:
+      - /authorize
+      - /oauth/token
+      - /.well-known
+      - /jwks.json
+      - /.well-known/openid-configuration
+      - /v2/logout
+      - /authorize/userinfo
+    allowHeaders: "Authortity,Method,Path,Scheme,Accept,Accept-Encoding,Accept-Language,Content-Type,auth0-client,Origin,Refer,Sec-Fetch-Dest,Sec-Fetch-Mode,Sec-Fetch-Site,Authorization,DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range"
+  # -- mock-oauth-server service yaml config section
+  config:
+    # -- Name of configuration file
+    fileName: service.yaml
+    # -- Volume for configuration file
+    volume: config
+    # -- Mount path
+    mountPath: /config
+  # -- Port for service and POD
+  port: 9100
+  log:
+    # -- Enable extended debug messages
+    debug: false
+  # -- For complete mock-oauth-server service configuration see [plgd/oauth-server](https://github.com/plgd-dev/hub/tree/main/test/oauth-server)
+  apis:
+    http:
+      address:
+      tls:
+        caPool:
+        keyFile:
+        certFile:
+        clientCertificateRequired: false
+  oauthSigner:
+    idTokenKeyFile: "/keys/idToken.key"
+    accessTokenKeyFile: "/keys/accessToken.key"
+    domain:
+    clients:
+      id: "test"
+      authorizationCodeLifetime: "10m"
+      accessTokenLifetime: "0s"
+      codeRestrictionLifetime: "0s"

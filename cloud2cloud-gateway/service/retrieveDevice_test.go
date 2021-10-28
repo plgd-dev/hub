@@ -7,14 +7,21 @@ import (
 	"sort"
 	"testing"
 
+	"github.com/plgd-dev/device/schema/collection"
+	"github.com/plgd-dev/device/schema/configuration"
+	"github.com/plgd-dev/device/schema/device"
+	"github.com/plgd-dev/device/schema/interfaces"
+	"github.com/plgd-dev/device/schema/platform"
+	"github.com/plgd-dev/device/test/resource/types"
 	"github.com/plgd-dev/go-coap/v2/message"
-
 	"github.com/plgd-dev/hub/cloud2cloud-gateway/uri"
 	"github.com/plgd-dev/hub/grpc-gateway/pb"
 	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
 	"github.com/plgd-dev/hub/test"
 	testCfg "github.com/plgd-dev/hub/test/config"
+	testHttp "github.com/plgd-dev/hub/test/http"
 	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
+	"github.com/plgd-dev/hub/test/service"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
@@ -64,68 +71,55 @@ func cleanUp(v interface{}) interface{} {
 	return v
 }
 
+func getResourceRepresentation(deviceID, href string, rt []interface{}, opts map[interface{}]interface{}) map[interface{}]interface{} {
+	res := map[interface{}]interface{}{
+		"di":   deviceID,
+		"href": "/" + deviceID + href,
+		"if":   []interface{}{interfaces.OC_IF_RW, interfaces.OC_IF_BASELINE},
+		"p": map[interface{}]interface{}{
+			"bm":                 uint64(0x3),
+			"port":               uint64(0x0),
+			"sec":                false,
+			"x.org.iotivity.tcp": uint64(0x0),
+			"x.org.iotivity.tls": uint64(0x0),
+		},
+		"rt": rt,
+	}
+
+	for k, v := range opts {
+		res[k] = v
+	}
+	return res
+}
+
 func getDeviceAllRepresentation(deviceID, deviceName string) interface{} {
 	return cleanUp(map[interface{}]interface{}{
 		"device": map[interface{}]interface{}{
 			"di":   deviceID,
 			"dmn":  []interface{}{},
 			"dmno": "",
-			"if":   []interface{}{"oic.if.r", "oic.if.baseline"},
+			"if":   []interface{}{interfaces.OC_IF_R, interfaces.OC_IF_BASELINE},
 			"n":    deviceName,
-			"rt":   []interface{}{"oic.d.cloudDevice", "oic.wk.d"},
+			"rt":   []interface{}{types.DEVICE_CLOUD, device.ResourceType},
 		},
 		"links": []interface{}{
-			map[interface{}]interface{}{
-				"di":   deviceID,
-				"href": "/" + deviceID + "/oc/con",
-				"if":   []interface{}{"oic.if.rw", "oic.if.baseline"},
-				"p": map[interface{}]interface{}{
-					"bm": uint64(0x3), "port": uint64(0x0), "sec": false, "x.org.iotivity.tcp": uint64(0x0), "x.org.iotivity.tls": uint64(0x0),
-				},
-				"rt": []interface{}{"oic.wk.con"},
-			},
-			map[interface{}]interface{}{
-				"di":   "" + deviceID + "",
-				"href": "/" + deviceID + "/light/1",
-				"if":   []interface{}{"oic.if.rw", "oic.if.baseline"},
-				"p": map[interface{}]interface{}{
-					"bm": uint64(0x3), "port": uint64(0x0), "sec": false, "x.org.iotivity.tcp": uint64(0x0), "x.org.iotivity.tls": uint64(0x0),
-				},
-				"rt": []interface{}{"core.light"},
-			},
-			map[interface{}]interface{}{
-				"di":   "" + deviceID + "",
-				"href": "/" + deviceID + "/oic/d",
-				"if":   []interface{}{"oic.if.r", "oic.if.baseline"},
-				"p": map[interface{}]interface{}{
-					"bm": uint64(0x3), "port": uint64(0x0), "sec": false, "x.org.iotivity.tcp": uint64(0x0), "x.org.iotivity.tls": uint64(0x0),
-				},
-				"rt": []interface{}{"oic.d.cloudDevice", "oic.wk.d"},
-			},
-			map[interface{}]interface{}{
-				"di":   "" + deviceID + "",
-				"href": "/" + deviceID + "/light/2",
-				"if":   []interface{}{"oic.if.rw", "oic.if.baseline"},
-				"p": map[interface{}]interface{}{
-					"bm": uint64(0x3), "port": uint64(0x0), "sec": false, "x.org.iotivity.tcp": uint64(0x0), "x.org.iotivity.tls": uint64(0x0),
-				},
-				"rt": []interface{}{"core.light"},
-			},
-			map[interface{}]interface{}{
-				"di":   "" + deviceID + "",
-				"href": "/" + deviceID + "/oic/p",
-				"if":   []interface{}{"oic.if.r", "oic.if.baseline"},
-				"p": map[interface{}]interface{}{
-					"bm": uint64(0x3), "port": uint64(0x0), "sec": false, "x.org.iotivity.tcp": uint64(0x0), "x.org.iotivity.tls": uint64(0x0),
-				},
-				"rt": []interface{}{"oic.wk.p"},
-			},
+			getResourceRepresentation(deviceID, configuration.ResourceURI, []interface{}{configuration.ResourceType}, nil),
+			getResourceRepresentation(deviceID, test.TestResourceLightInstanceHref("1"), []interface{}{types.CORE_LIGHT}, nil),
+			getResourceRepresentation(deviceID, device.ResourceURI, []interface{}{types.DEVICE_CLOUD, device.ResourceType}, map[interface{}]interface{}{
+				"if": []interface{}{interfaces.OC_IF_R, interfaces.OC_IF_BASELINE},
+			}),
+			getResourceRepresentation(deviceID, test.TestResourceSwitchesHref, []interface{}{collection.ResourceType}, map[interface{}]interface{}{
+				"if": []interface{}{interfaces.OC_IF_LL, interfaces.OC_IF_CREATE, interfaces.OC_IF_B, interfaces.OC_IF_BASELINE},
+			}),
+			getResourceRepresentation(deviceID, platform.ResourceURI, []interface{}{platform.ResourceType}, map[interface{}]interface{}{
+				"if": []interface{}{interfaces.OC_IF_R, interfaces.OC_IF_BASELINE},
+			}),
 		},
 		"status": "online",
 	})
 }
 
-func TestRequestHandler_RetrieveDevice(t *testing.T) {
+func TestRequestHandlerRetrieveDevice(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	type args struct {
 		uri    string
@@ -141,7 +135,7 @@ func TestRequestHandler_RetrieveDevice(t *testing.T) {
 		{
 			name: "JSON: " + uri.Devices + "/" + deviceID,
 			args: args{
-				uri:    "https://" + testCfg.C2C_GW_HOST + uri.Devices + "/" + deviceID,
+				uri:    testHttp.HTTPS_SCHEME + testCfg.C2C_GW_HOST + uri.Devices + "/" + deviceID,
 				accept: message.AppJSON.String(),
 			},
 			wantCode:        http.StatusOK,
@@ -151,7 +145,7 @@ func TestRequestHandler_RetrieveDevice(t *testing.T) {
 		{
 			name: "CBOR: " + uri.Devices + "/" + deviceID,
 			args: args{
-				uri:    "https://" + testCfg.C2C_GW_HOST + uri.Devices + "/" + deviceID,
+				uri:    testHttp.HTTPS_SCHEME + testCfg.C2C_GW_HOST + uri.Devices + "/" + deviceID,
 				accept: message.AppOcfCbor.String(),
 			},
 			wantCode:        http.StatusOK,
@@ -161,7 +155,7 @@ func TestRequestHandler_RetrieveDevice(t *testing.T) {
 		{
 			name: "notFound",
 			args: args{
-				uri:    "https://" + testCfg.C2C_GW_HOST + uri.Devices + "/" + DeviceIDNotFound,
+				uri:    testHttp.HTTPS_SCHEME + testCfg.C2C_GW_HOST + uri.Devices + "/" + DeviceIDNotFound,
 				accept: message.AppJSON.String(),
 			},
 			wantCode:        http.StatusNotFound,
@@ -171,7 +165,7 @@ func TestRequestHandler_RetrieveDevice(t *testing.T) {
 		{
 			name: "invalidAccept",
 			args: args{
-				uri:    "https://" + testCfg.C2C_GW_HOST + uri.Devices + "/" + deviceID,
+				uri:    testHttp.HTTPS_SCHEME + testCfg.C2C_GW_HOST + uri.Devices + "/" + deviceID,
 				accept: "application/invalid",
 			},
 			wantCode:        http.StatusBadRequest,
@@ -181,7 +175,7 @@ func TestRequestHandler_RetrieveDevice(t *testing.T) {
 		{
 			name: "JSON: " + uri.Devices + "//" + deviceID + "/",
 			args: args{
-				uri:    "https://" + testCfg.C2C_GW_HOST + uri.Devices + "//" + deviceID + "/",
+				uri:    testHttp.HTTPS_SCHEME + testCfg.C2C_GW_HOST + uri.Devices + "//" + deviceID + "/",
 				accept: message.AppJSON.String(),
 			},
 			wantCode:        http.StatusOK,
@@ -193,7 +187,7 @@ func TestRequestHandler_RetrieveDevice(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), testCfg.TEST_TIMEOUT)
 	defer cancel()
 
-	tearDown := test.SetUp(ctx, t)
+	tearDown := service.SetUp(ctx, t)
 	defer tearDown()
 
 	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultServiceToken(t))
@@ -211,15 +205,15 @@ func TestRequestHandler_RetrieveDevice(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			req := test.NewHTTPRequest(http.MethodGet, tt.args.uri, nil).Accept(tt.args.accept).Build(ctx, t)
-			resp := test.DoHTTPRequest(t, req)
+			req := testHttp.NewHTTPRequest(http.MethodGet, tt.args.uri, nil).Accept(tt.args.accept).Build(ctx, t)
+			resp := testHttp.DoHTTPRequest(t, req)
 			assert.Equal(t, tt.wantCode, resp.StatusCode)
 			defer func() {
 				_ = resp.Body.Close()
 			}()
 			require.Equal(t, tt.wantContentType, resp.Header.Get("Content-Type"))
 			if tt.want != nil {
-				got := test.ReadHTTPResponse(t, resp.Body, tt.wantContentType)
+				got := testHttp.ReadHTTPResponse(t, resp.Body, tt.wantContentType)
 				cleanUp(got)
 				require.Equal(t, tt.want, got)
 			}

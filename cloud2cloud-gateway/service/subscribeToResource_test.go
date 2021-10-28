@@ -13,6 +13,8 @@ import (
 	"time"
 
 	router "github.com/gorilla/mux"
+	"github.com/plgd-dev/device/schema/interfaces"
+	"github.com/plgd-dev/device/test/resource/types"
 	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/hub/cloud2cloud-connector/events"
 	c2cTest "github.com/plgd-dev/hub/cloud2cloud-gateway/test"
@@ -21,7 +23,9 @@ import (
 	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
 	"github.com/plgd-dev/hub/test"
 	testCfg "github.com/plgd-dev/hub/test/config"
+	testHttp "github.com/plgd-dev/hub/test/http"
 	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
+	"github.com/plgd-dev/hub/test/service"
 	"github.com/plgd-dev/kit/v2/codec/json"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -30,13 +34,19 @@ import (
 	"google.golang.org/grpc/credentials"
 )
 
-func TestRequestHandler_SubscribeToResource(t *testing.T) {
+func TestRequestHandlerSubscribeToResource(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	wantCode := http.StatusCreated
 	wantContentType := message.AppJSON.String()
 	wantContent := true
 	wantEventType := events.EventType_ResourceChanged
-	wantEventContent := map[interface{}]interface{}{"if": []interface{}{"oic.if.rw", "oic.if.baseline"}, "name": "Light", "power": uint64(0), "rt": []interface{}{"core.light"}, "state": false}
+	wantEventContent := map[interface{}]interface{}{
+		"if":    []interface{}{interfaces.OC_IF_RW, interfaces.OC_IF_BASELINE},
+		"name":  "Light",
+		"power": uint64(0),
+		"rt":    []interface{}{types.CORE_LIGHT},
+		"state": false,
+	}
 	eventType := events.EventType_ResourceChanged
 	uri := "https://" + testCfg.C2C_GW_HOST + uri.Devices + "/" + deviceID + "/light/1/subscriptions"
 	accept := message.AppJSON.String()
@@ -44,7 +54,7 @@ func TestRequestHandler_SubscribeToResource(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), testCfg.TEST_TIMEOUT)
 	defer cancel()
 
-	tearDown := test.SetUp(ctx, t)
+	tearDown := service.SetUp(ctx, t)
 	defer tearDown()
 
 	token := oauthTest.GetDefaultServiceToken(t)
@@ -64,6 +74,7 @@ func TestRequestHandler_SubscribeToResource(t *testing.T) {
 	eventsServer, cleanUpEventsServer := c2cTest.NewTestListener(t)
 	defer cleanUpEventsServer()
 
+	const eventsURI = "/events"
 	var wg sync.WaitGroup
 	wg.Add(1)
 	defer wg.Wait()
@@ -71,7 +82,7 @@ func TestRequestHandler_SubscribeToResource(t *testing.T) {
 		defer wg.Done()
 		r := router.NewRouter()
 		r.StrictSlash(true)
-		r.HandleFunc("/events", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		r.HandleFunc(eventsURI, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			h, err := events.ParseEventHeader(r)
 			assert.NoError(t, err)
 			defer func() {
@@ -95,7 +106,7 @@ func TestRequestHandler_SubscribeToResource(t *testing.T) {
 	require.NoError(t, err)
 
 	sub := events.SubscriptionRequest{
-		URL:           "https://localhost:" + port + "/events",
+		URL:           "https://localhost:" + port + eventsURI,
 		EventTypes:    events.EventTypes{eventType},
 		SigningSecret: "a",
 	}
@@ -103,8 +114,8 @@ func TestRequestHandler_SubscribeToResource(t *testing.T) {
 
 	data, err := json.Encode(sub)
 	require.NoError(t, err)
-	req := test.NewHTTPRequest(http.MethodPost, uri, bytes.NewBuffer(data)).AuthToken(token).Accept(accept).Build(ctx, t)
-	resp := test.DoHTTPRequest(t, req)
+	req := testHttp.NewHTTPRequest(http.MethodPost, uri, bytes.NewBuffer(data)).AuthToken(token).Accept(accept).Build(ctx, t)
+	resp := testHttp.DoHTTPRequest(t, req)
 	assert.Equal(t, wantCode, resp.StatusCode)
 	defer func() {
 		_ = resp.Body.Close()
@@ -120,14 +131,14 @@ func TestRequestHandler_SubscribeToResource(t *testing.T) {
 	}
 }
 
-func TestRequestHandler_SubscribeToResourceTokenTimeout(t *testing.T) {
+func TestRequestHandlerSubscribeToResourceTokenTimeout(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), testCfg.TEST_TIMEOUT)
 	defer cancel()
 
-	services := test.SetUpServicesOAuth | test.SetUpServicesId | test.SetUpServicesCertificateAuthority |
-		test.SetUpServicesResourceAggregate | test.SetUpServicesResourceDirectory | test.SetUpServicesGrpcGateway |
-		test.SetUpServicesCoapGateway
-	tearDown := test.SetUpServices(ctx, t, services)
+	services := service.SetUpServicesOAuth | service.SetUpServicesId | service.SetUpServicesCertificateAuthority |
+		service.SetUpServicesResourceAggregate | service.SetUpServicesResourceDirectory | service.SetUpServicesGrpcGateway |
+		service.SetUpServicesCoapGateway
+	tearDown := service.SetUpServices(ctx, t, services)
 	defer tearDown()
 	c2cgwShutdown := c2cTest.SetUp(t)
 
@@ -150,6 +161,7 @@ func TestRequestHandler_SubscribeToResourceTokenTimeout(t *testing.T) {
 	eventsServer, cleanUpEventsServer := c2cTest.NewTestListener(t)
 	defer cleanUpEventsServer()
 
+	const eventsURI = "/events"
 	var cancelled, subscribed atomic.Bool
 	var wg sync.WaitGroup
 	wg.Add(1)
@@ -157,7 +169,7 @@ func TestRequestHandler_SubscribeToResourceTokenTimeout(t *testing.T) {
 		defer wg.Done()
 		r := router.NewRouter()
 		r.StrictSlash(true)
-		r.HandleFunc("/events", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		r.HandleFunc(eventsURI, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			h, err := events.ParseEventHeader(r)
 			assert.NoError(t, err)
 			defer func() {
@@ -185,7 +197,7 @@ func TestRequestHandler_SubscribeToResourceTokenTimeout(t *testing.T) {
 	require.NoError(t, err)
 
 	sub := events.SubscriptionRequest{
-		URL:           "https://localhost:" + port + "/events",
+		URL:           "https://localhost:" + port + eventsURI,
 		EventTypes:    events.EventTypes{events.EventType_ResourceChanged},
 		SigningSecret: "a",
 	}
@@ -194,8 +206,8 @@ func TestRequestHandler_SubscribeToResourceTokenTimeout(t *testing.T) {
 	data, err := json.Encode(sub)
 	require.NoError(t, err)
 	accept := message.AppJSON.String()
-	req := test.NewHTTPRequest(http.MethodPost, uri, bytes.NewBuffer(data)).AuthToken(token).Accept(accept).Build(ctx, t)
-	resp := test.DoHTTPRequest(t, req)
+	req := testHttp.NewHTTPRequest(http.MethodPost, uri, bytes.NewBuffer(data)).AuthToken(token).Accept(accept).Build(ctx, t)
+	resp := testHttp.DoHTTPRequest(t, req)
 	assert.Equal(t, http.StatusCreated, resp.StatusCode)
 	defer func() {
 		_ = resp.Body.Close()

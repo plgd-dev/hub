@@ -1,0 +1,118 @@
+# This workflow uses actions that are not certified by GitHub.
+# They are provided by a third-party and are governed by
+# separate terms of service, privacy policy, and support
+# documentation.
+
+name: Create and publish a docker images to github
+
+on:
+  workflow_run:
+    workflows:
+      - "Test"
+    branches:
+      - main
+    types:
+      - completed
+  push:
+    tags:
+      - "*"
+
+env:
+  REGISTRY: ghcr.io
+  VNEXT_BRANCH: main
+
+jobs:
+  build-and-publish-image:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - name: resource-aggregate
+            directory: resource-aggregate
+            file: tools/docker/Dockerfile
+          - name: resource-directory
+            directory: resource-directory
+            file: tools/docker/Dockerfile
+          - name: coap-gateway
+            directory: coap-gateway
+            file: tools/docker/Dockerfile
+          - name: cloud2cloud-connector
+            directory: cloud2cloud-connector
+            file: tools/docker/Dockerfile
+          - name: cloud2cloud-gateway
+            directory: cloud2cloud-gateway
+            file: tools/docker/Dockerfile
+          - name: certificate-authority
+            directory: certificate-authority
+            file: tools/docker/Dockerfile
+          - name: grpc-gateway
+            directory: grpc-gateway
+            file: tools/docker/Dockerfile
+          - name: http-gateway
+            directory: http-gateway
+            file: tools/docker/Dockerfile
+          - name: identity-store
+            directory: identity-store
+            file: tools/docker/Dockerfile
+          - name: mock-oauth-server
+            directory: test/oauth-server
+            file: tools/docker/Dockerfile
+          - name: bundle
+            directory: bundle
+            file: bundle/Dockerfile
+          - name: test-cloud-server
+            directory: test/cloud-server
+            file: test/cloud-server/Dockerfile
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v1
+
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v1
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v1
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set vars.branch
+        id: vars
+        run: BRANCH=${GITHUB_REF#refs/*/} && echo ${BRANCH} && echo "::set-output name=branch::${BRANCH}"
+
+      - name: Extract metadata (tags, labels) for docker image
+        id: meta
+        uses: docker/metadata-action@v3
+        with:
+          images: ${{ env.REGISTRY }}/${{ github.repository }}/${{ matrix.name }}
+          tags: |
+            type=schedule
+            type=ref,event=branch
+            type=raw,enable=${{ startsWith(steps.vars.outputs.branch, env.VNEXT_BRANCH) }},value=vnext
+            type=ref,event=tag
+            type=ref,event=pr
+            type=sha,enable=${{ startsWith(steps.vars.outputs.branch, env.VNEXT_BRANCH) }},prefix=vnext-,format=short
+
+      - name: Build and push docker image
+        uses: docker/build-push-action@v2
+        with:
+          context: ./
+          platforms: linux/amd64,linux/arm64
+          builder: ${{ steps.buildx.outputs.name }}
+          build-args: |
+            DIRECTORY=${{ matrix.directory }}
+            NAME=${{ matrix.name }}
+          file: ${{ matrix.file }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}

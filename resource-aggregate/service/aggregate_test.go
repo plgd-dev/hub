@@ -9,6 +9,9 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/google/uuid"
 	"github.com/panjf2000/ants/v2"
+	"github.com/plgd-dev/device/schema/device"
+	"github.com/plgd-dev/device/schema/interfaces"
+	"github.com/plgd-dev/device/schema/platform"
 	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/hub/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
@@ -47,7 +50,7 @@ func TestAggregateHandle_PublishResourceLinks(t *testing.T) {
 		{
 			name: "valid",
 			args: args{
-				request: testMakePublishResourceRequest("dev0", []string{"/oic/p"}),
+				request: testMakePublishResourceRequest("dev0", []string{platform.ResourceURI}),
 				userID:  "user0",
 			},
 			want:    codes.OK,
@@ -56,7 +59,7 @@ func TestAggregateHandle_PublishResourceLinks(t *testing.T) {
 		{
 			name: "valid multiple",
 			args: args{
-				request: testMakePublishResourceRequest("dev0", []string{"/oic/p", "/oic/d"}),
+				request: testMakePublishResourceRequest("dev0", []string{platform.ResourceURI, device.ResourceURI}),
 				userID:  "user0",
 			},
 			want:    codes.OK,
@@ -65,7 +68,7 @@ func TestAggregateHandle_PublishResourceLinks(t *testing.T) {
 		{
 			name: "duplicit",
 			args: args{
-				request: testMakePublishResourceRequest("dev0", []string{"/oic/p"}),
+				request: testMakePublishResourceRequest("dev0", []string{platform.ResourceURI}),
 				userID:  "user0",
 			},
 			want:    codes.OK,
@@ -194,7 +197,7 @@ func TestAggregateDuplicitPublishResource(t *testing.T) {
 
 func TestAggregateHandleUnpublishResource(t *testing.T) {
 	deviceID := "dev0"
-	resourceID := "/oic/p"
+	resourceID := platform.ResourceURI
 	userID := "user0"
 
 	pool, err := ants.NewPool(16)
@@ -531,7 +534,7 @@ func testMakeConfirmResourceRetrieveRequest(deviceID, href, correlationID string
 	return &r
 }
 
-func testMakeConfirmResourceDeleteRequest(deviceID, href, correlationID string) *commands.ConfirmResourceDeleteRequest {
+func testMakeConfirmResourceDeleteRequest(deviceID, href, correlationID string, status commands.Status) *commands.ConfirmResourceDeleteRequest {
 	r := commands.ConfirmResourceDeleteRequest{
 		ResourceId: &commands.ResourceId{
 			DeviceId: deviceID,
@@ -541,7 +544,7 @@ func testMakeConfirmResourceDeleteRequest(deviceID, href, correlationID string) 
 		Content: &commands.Content{
 			Data: []byte("hello world"),
 		},
-		Status: commands.Status_OK,
+		Status: status,
 		CommandMetadata: &commands.CommandMetadata{
 			ConnectionId: uuid.Must(uuid.NewRandom()).String(),
 			Sequence:     0,
@@ -554,9 +557,9 @@ func testNewResource(href string, deviceID string) *commands.Resource {
 	return &commands.Resource{
 		Href:          href,
 		DeviceId:      deviceID,
-		ResourceTypes: []string{"oic.wk.d", "x.org.iotivity.device"},
-		Interfaces:    []string{"oic.if.baseline"},
-		Anchor:        "ocf://" + deviceID + "/oic/p",
+		ResourceTypes: []string{device.ResourceType, "x.org.iotivity.device"},
+		Interfaces:    []string{interfaces.OC_IF_BASELINE},
+		Anchor:        "ocf://" + deviceID + platform.ResourceURI,
 		Policy: &commands.Policy{
 			BitFlags: 1,
 		},
@@ -567,7 +570,7 @@ func testNewResource(href string, deviceID string) *commands.Resource {
 
 func Test_aggregate_HandleNotifyContentChanged(t *testing.T) {
 	deviceID := "dev0"
-	resourceID := "/oic/p"
+	resourceID := platform.ResourceURI
 	userID := "user0"
 
 	type args struct {
@@ -670,7 +673,7 @@ func Test_aggregate_HandleNotifyContentChanged(t *testing.T) {
 
 func Test_aggregate_HandleUpdateResourceContent(t *testing.T) {
 	deviceID := "dev0"
-	resourceID := "/oic/p"
+	resourceID := platform.ResourceURI
 	userID := "user0"
 
 	type args struct {
@@ -717,7 +720,7 @@ func Test_aggregate_HandleUpdateResourceContent(t *testing.T) {
 		{
 			name: "valid with resource interface",
 			args: args{
-				req: testMakeUpdateResourceRequest(deviceID, resourceID, "oic.if.baseline", "456", time.Minute),
+				req: testMakeUpdateResourceRequest(deviceID, resourceID, interfaces.OC_IF_BASELINE, "456", time.Minute),
 			},
 			wantEvents:     true,
 			wantStatusCode: codes.OK,
@@ -782,7 +785,7 @@ func Test_aggregate_HandleUpdateResourceContent(t *testing.T) {
 
 func Test_aggregate_HandleConfirmResourceUpdate(t *testing.T) {
 	deviceID := "dev0"
-	resourceID := "/oic/p"
+	resourceID := platform.ResourceURI
 	userID := "user0"
 
 	type args struct {
@@ -868,7 +871,7 @@ func Test_aggregate_HandleConfirmResourceUpdate(t *testing.T) {
 
 func Test_aggregate_HandleRetrieveResource(t *testing.T) {
 	deviceID := "dev0"
-	resourceID := "/oic/p"
+	resourceID := platform.ResourceURI
 	userID := "user0"
 
 	type args struct {
@@ -970,7 +973,7 @@ func Test_aggregate_HandleRetrieveResource(t *testing.T) {
 
 func Test_aggregate_HandleNotifyResourceContentResourceProcessed(t *testing.T) {
 	deviceID := "dev0"
-	resourceID := "/oic/p"
+	resourceID := platform.ResourceURI
 	userID := "user0"
 
 	type args struct {
@@ -1063,7 +1066,7 @@ func testListDevicesOfUserFunc(ctx context.Context, correlationID, userID string
 
 func Test_aggregate_HandleDeleteResource(t *testing.T) {
 	deviceID := "dev0"
-	resourceID := "/oic/p"
+	resourceID := platform.ResourceURI
 	userID := "user0"
 
 	type args struct {
@@ -1166,7 +1169,7 @@ func Test_aggregate_HandleDeleteResource(t *testing.T) {
 
 func Test_aggregate_HandleConfirmResourceDelete(t *testing.T) {
 	deviceID := "dev0"
-	resourceID := "/oic/p"
+	resourceID := platform.ResourceURI
 	userID := "user0"
 
 	type args struct {
@@ -1194,7 +1197,7 @@ func Test_aggregate_HandleConfirmResourceDelete(t *testing.T) {
 		{
 			name: "valid",
 			args: args{
-				testMakeConfirmResourceDeleteRequest(deviceID, resourceID, "123"),
+				testMakeConfirmResourceDeleteRequest(deviceID, resourceID, "123", commands.Status_OK),
 			},
 			wantEvents:     true,
 			wantStatusCode: codes.OK,
@@ -1254,7 +1257,7 @@ func Test_aggregate_HandleConfirmResourceDelete(t *testing.T) {
 
 func Test_aggregate_HandleCreateResource(t *testing.T) {
 	deviceID := "dev0"
-	resourceID := "/oic/p"
+	resourceID := platform.ResourceURI
 	userID := "user0"
 
 	type args struct {
@@ -1356,7 +1359,7 @@ func Test_aggregate_HandleCreateResource(t *testing.T) {
 
 func Test_aggregate_HandleConfirmResourceCreate(t *testing.T) {
 	deviceID := "dev0"
-	resourceID := "/oic/p"
+	resourceID := platform.ResourceURI
 	userID := "user0"
 
 	type args struct {

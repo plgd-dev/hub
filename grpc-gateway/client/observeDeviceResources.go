@@ -65,12 +65,3 @@ func (c *Client) stopObservingDeviceResources(observationID string) (wait func()
 	}
 	return s.Cancel()
 }
-
-func (c *Client) StopObservingDeviceResources(ctx context.Context, observationID string) error {
-	wait, err := c.stopObservingDeviceResources(observationID)
-	if err != nil {
-		return err
-	}
-	wait()
-	return nil
-}

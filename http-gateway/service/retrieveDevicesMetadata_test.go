@@ -7,11 +7,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/google/go-querystring/query"
-	"github.com/stretchr/testify/require"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
-
+	"github.com/plgd-dev/device/schema/device"
 	"github.com/plgd-dev/hub/grpc-gateway/pb"
 	httpgwTest "github.com/plgd-dev/hub/http-gateway/test"
 	"github.com/plgd-dev/hub/http-gateway/uri"
@@ -20,53 +16,43 @@ import (
 	"github.com/plgd-dev/hub/resource-aggregate/events"
 	"github.com/plgd-dev/hub/test"
 	"github.com/plgd-dev/hub/test/config"
+	oauthService "github.com/plgd-dev/hub/test/oauth-server/service"
 	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
+	pbTest "github.com/plgd-dev/hub/test/pb"
+	"github.com/plgd-dev/hub/test/service"
+	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 )
 
-func cmpDeviceMetadataUpdated(t *testing.T, want []*events.DeviceMetadataUpdated, got []*events.DeviceMetadataUpdated) {
-	require.Len(t, got, len(want))
-	for idx := range want {
-		got[idx].EventMetadata = nil
-		got[idx].AuditContext = nil
-		if got[idx].GetStatus() != nil {
-			got[idx].GetStatus().ValidUntil = 0
-		}
-		test.CheckProtobufs(t, want[idx], got[idx], test.RequireToCheckFunc(require.Equal))
-
-	}
-}
-
-func TestRequestHandler_GetDevicesMetadata(t *testing.T) {
+func TestRequestHandlerGetDevicesMetadata(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	type args struct {
-		req *pb.GetDevicesMetadataRequest
+		typeFilter     []string
+		deviceIdFilter []string
 	}
 	tests := []struct {
-		name    string
-		args    args
-		want    []*events.DeviceMetadataUpdated
-		wantErr bool
+		name string
+		args args
+		want []*events.DeviceMetadataUpdated
 	}{
 		{
 			name: "all",
-			args: args{
-				req: &pb.GetDevicesMetadataRequest{},
-			},
+			args: args{},
 			want: []*events.DeviceMetadataUpdated{
 				{
 					DeviceId: deviceID,
 					Status: &commands.ConnectionStatus{
 						Value: commands.ConnectionStatus_ONLINE,
 					},
+					AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, ""),
 				},
 			},
 		},
 		{
 			name: "filter one device",
 			args: args{
-				req: &pb.GetDevicesMetadataRequest{
-					DeviceIdFilter: []string{deviceID},
-				},
+				deviceIdFilter: []string{deviceID},
 			},
 			want: []*events.DeviceMetadataUpdated{
 				{
@@ -74,15 +60,14 @@ func TestRequestHandler_GetDevicesMetadata(t *testing.T) {
 					Status: &commands.ConnectionStatus{
 						Value: commands.ConnectionStatus_ONLINE,
 					},
+					AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, ""),
 				},
 			},
 		},
 		{
 			name: "filter one device by type",
 			args: args{
-				req: &pb.GetDevicesMetadataRequest{
-					TypeFilter: []string{"oic.wk.d"},
-				},
+				typeFilter: []string{device.ResourceType},
 			},
 			want: []*events.DeviceMetadataUpdated{
 				{
@@ -90,33 +75,28 @@ func TestRequestHandler_GetDevicesMetadata(t *testing.T) {
 					Status: &commands.ConnectionStatus{
 						Value: commands.ConnectionStatus_ONLINE,
 					},
+					AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, ""),
 				},
 			},
 		},
 		{
 			name: "invalid deviceID",
 			args: args{
-				req: &pb.GetDevicesMetadataRequest{
-					DeviceIdFilter: []string{"abc"},
-				},
+				deviceIdFilter: []string{"abc"},
 			},
-			wantErr: true,
 		},
 		{
 			name: "unknown type",
 			args: args{
-				req: &pb.GetDevicesMetadataRequest{
-					TypeFilter: []string{"unknown"},
-				},
+				typeFilter: []string{"unknown"},
 			},
-			wantErr: true,
 		},
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
 	defer cancel()
 
-	tearDown := test.SetUp(ctx, t)
+	tearDown := service.SetUp(ctx, t)
 	defer tearDown()
 
 	shutdownHttp := httpgwTest.SetUp(t)
@@ -139,45 +119,24 @@ func TestRequestHandler_GetDevicesMetadata(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			type Options struct {
-				TypeFilter     []string `url:"typeFilter,omitempty"`
-				DeviceIdFilter []string `url:"deviceIdFilter,omitempty"`
-			}
-			opt := Options{
-				TypeFilter:     tt.args.req.TypeFilter,
-				DeviceIdFilter: tt.args.req.DeviceIdFilter,
-			}
-			v, err := query.Values(opt)
-			require.NoError(t, err)
-			request := httpgwTest.NewRequest(http.MethodGet, uri.DevicesMetadata, nil).AuthToken(token).SetQuery(v.Encode()).Build()
-			trans := http.DefaultTransport.(*http.Transport).Clone()
-			trans.TLSClientConfig = &tls.Config{
-				InsecureSkipVerify: true,
-			}
-			c := http.Client{
-				Transport: trans,
-			}
-			resp, err := c.Do(request)
-			require.NoError(t, err)
+			rb := httpgwTest.NewRequest(http.MethodGet, uri.DevicesMetadata, nil).AuthToken(token)
+			rb.AddTypeFilter(tt.args.typeFilter).AddDeviceIdFilter(tt.args.deviceIdFilter)
+			resp := httpgwTest.HTTPDo(t, rb.Build())
 			defer func() {
 				_ = resp.Body.Close()
 			}()
 
-			values := make([]*events.DeviceMetadataUpdated, 0, 1)
+			var values []*events.DeviceMetadataUpdated
 			for {
 				var value events.DeviceMetadataUpdated
 				err = Unmarshal(resp.StatusCode, resp.Body, &value)
 				if err == io.EOF {
 					break
 				}
-				if tt.wantErr {
-					require.Error(t, err)
-					return
-				}
 				require.NoError(t, err)
 				values = append(values, &value)
 			}
-			cmpDeviceMetadataUpdated(t, tt.want, values)
+			pbTest.CmpDeviceMetadataUpdatedSlice(t, tt.want, values)
 		})
 	}
 }

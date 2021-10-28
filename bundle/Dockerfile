@@ -1,4 +1,9 @@
-FROM hub-build AS build
+FROM golang:1.16.4-alpine AS build
+RUN apk add --no-cache curl git build-base
+WORKDIR $GOPATH/src/github.com/plgd-dev/hub
+COPY go.mod go.sum ./
+RUN go mod download
+COPY . .
 ARG root_directory=$GOPATH/src/github.com/plgd-dev/hub
 
 #coap-gateway
@@ -54,53 +59,62 @@ RUN cd $GOPATH/pkg/mod/github.com/plgd-dev/kit/v2* && go build -ldflags "-linkmo
 
 #nats
 WORKDIR $root_directory
-RUN curl -L https://github.com/nats-io/nats-server/releases/download/v2.3.1/nats-server-v2.3.1-linux-amd64.zip -o ./nats-server.zip
+RUN apkArch="$(apk --print-arch)"; \
+    case "$apkArch" in \
+        armhf) ARCH='arm' ;; \
+        aarch64) ARCH='arm64' ;; \
+        x86) ARCH='386' ;; \
+        x86_64) ARCH='amd64' ;; \
+        *) echo >&2 "error: unsupported architecture: $apkArch"; exit 1 ;; \
+    esac; \
+    curl -L https://github.com/nats-io/nats-server/releases/download/v2.3.1/nats-server-v2.3.1-linux-${ARCH}.zip -o ./nats-server.zip ; \
+    curl -L https://github.com/nats-io/natscli/releases/download/0.0.24/nats-0.0.24-linux-${ARCH}.zip -o ./nats.zip
 RUN mkdir -p ./nats-server
 RUN unzip ./nats-server.zip -d ./nats-server
 RUN cp ./nats-server/*/nats-server /go/bin/nats-server
 
-RUN curl -L https://github.com/nats-io/natscli/releases/download/0.0.24/nats-0.0.24-linux-amd64.zip -o ./nats.zip
 RUN mkdir -p ./nats
 RUN unzip ./nats.zip -d ./nats
 RUN cp ./nats/*/nats /go/bin/nats
 
 FROM node:12 AS build-web
-COPY --from=hub-build /go/src/github.com/plgd-dev/hub/http-gateway/web /web
+COPY --from=build /go/src/github.com/plgd-dev/hub/http-gateway/web /web
 RUN cd /web && npm install && npm run build
 
 FROM ubuntu:20.04 as service
 RUN apt update
 RUN apt install -y wget gnupg iproute2 systemctl openssl nginx ca-certificates netcat
 RUN wget -qO - https://www.mongodb.org/static/pgp/server-4.4.asc | apt-key add -
-RUN wget https://github.com/mikefarah/yq/releases/download/v4.6.3/yq_linux_amd64 -O /usr/bin/yq && chmod +x /usr/bin/yq
-RUN echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu focal/mongodb-org/4.4 multiverse" | tee /etc/apt/sources.list.d/mongodb-org-4.4.list
+RUN ARCH="$(dpkg --print-architecture)" ; \
+    wget https://github.com/mikefarah/yq/releases/download/v4.6.3/yq_linux_${ARCH} -O /usr/bin/yq && chmod +x /usr/bin/yq ; \
+    echo "deb [ arch=${ARCH} ] https://repo.mongodb.org/apt/ubuntu focal/mongodb-org/4.4 multiverse" | tee /etc/apt/sources.list.d/mongodb-org-4.4.list
 RUN apt update
 RUN apt-get install -y mongodb-org-server mongodb-org
 COPY --from=build /go/bin/coap-gateway /usr/local/bin/coap-gateway
-COPY --from=hub-build /go/src/github.com/plgd-dev/hub/coap-gateway/config.yaml /configs/coap-gateway.yaml
+COPY --from=build /go/src/github.com/plgd-dev/hub/coap-gateway/config.yaml /configs/coap-gateway.yaml
 COPY --from=build /go/bin/grpc-gateway /usr/local/bin/grpc-gateway
-COPY --from=hub-build /go/src/github.com/plgd-dev/hub/grpc-gateway/config.yaml /configs/grpc-gateway.yaml
+COPY --from=build /go/src/github.com/plgd-dev/hub/grpc-gateway/config.yaml /configs/grpc-gateway.yaml
 COPY --from=build /go/bin/http-gateway /usr/local/bin/http-gateway
-COPY --from=hub-build /go/src/github.com/plgd-dev/hub/http-gateway/config.yaml /configs/http-gateway.yaml
+COPY --from=build /go/src/github.com/plgd-dev/hub/http-gateway/config.yaml /configs/http-gateway.yaml
 COPY --from=build /go/bin/resource-directory /usr/local/bin/resource-directory
-COPY --from=hub-build /go/src/github.com/plgd-dev/hub/resource-directory/config.yaml /configs/resource-directory.yaml
+COPY --from=build /go/src/github.com/plgd-dev/hub/resource-directory/config.yaml /configs/resource-directory.yaml
 COPY --from=build /go/bin/resource-aggregate /usr/local/bin/resource-aggregate
-COPY --from=hub-build /go/src/github.com/plgd-dev/hub/resource-aggregate/config.yaml /configs/resource-aggregate.yaml
+COPY --from=build /go/src/github.com/plgd-dev/hub/resource-aggregate/config.yaml /configs/resource-aggregate.yaml
 COPY --from=build /go/bin/identity-store /usr/local/bin/identity-store
-COPY --from=hub-build /go/src/github.com/plgd-dev/hub/identity-store/config.yaml /configs/identity-store.yaml
+COPY --from=build /go/src/github.com/plgd-dev/hub/identity-store/config.yaml /configs/identity-store.yaml
 COPY --from=build /go/bin/certificate-authority /usr/local/bin/certificate-authority
-COPY --from=hub-build /go/src/github.com/plgd-dev/hub/certificate-authority/config.yaml /configs/certificate-authority.yaml
+COPY --from=build /go/src/github.com/plgd-dev/hub/certificate-authority/config.yaml /configs/certificate-authority.yaml
 COPY --from=build /go/bin/certificate-generator /usr/local/bin/certificate-generator
 COPY --from=build /go/bin/nats-server /usr/local/bin/nats-server
 COPY --from=build /go/bin/nats /usr/local/bin/nats
-COPY --from=hub-build /go/src/github.com/plgd-dev/hub/bundle/jetstream.json /configs/jetstream.json
+COPY --from=build /go/src/github.com/plgd-dev/hub/bundle/jetstream.json /configs/jetstream.json
 COPY --from=build /go/bin/oauth-server /usr/local/bin/oauth-server
-COPY --from=hub-build /go/src/github.com/plgd-dev/hub/test/oauth-server/config.yaml /configs/oauth-server.yaml
+COPY --from=build /go/src/github.com/plgd-dev/hub/test/oauth-server/config.yaml /configs/oauth-server.yaml
 COPY --from=build-web /web/build /usr/local/var/www
 COPY --from=build /go/bin/cloud2cloud-gateway /usr/local/bin/cloud2cloud-gateway
-COPY --from=hub-build /go/src/github.com/plgd-dev/hub/cloud2cloud-gateway/config.yaml /configs/cloud2cloud-gateway.yaml
-COPY run.sh /usr/local/bin/run.sh
-COPY nginx /nginx
+COPY --from=build /go/src/github.com/plgd-dev/hub/cloud2cloud-gateway/config.yaml /configs/cloud2cloud-gateway.yaml
+COPY --from=build /go/src/github.com/plgd-dev/hub/bundle/run.sh /usr/local/bin/run.sh
+COPY --from=build /go/src/github.com/plgd-dev/hub/bundle/nginx /nginx
 
 # global
 ENV FQDN="localhost"

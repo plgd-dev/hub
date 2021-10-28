@@ -10,6 +10,7 @@ metadata:
   labels:
     {{- include "plgd-hub.labels" . | nindent 4 }}
   annotations:
+{{/*    kubernetes.io/ingress.class: "nginx"*/}}
     nginx.org/grpc-services: {{ $fullname | quote }}
     nginx.ingress.kubernetes.io/backend-protocol: "GRPCS"
     ingress.kubernetes.io/force-ssl-redirect: "true"
@@ -21,7 +22,11 @@ spec:
   tls:
     - hosts:
         - {{ include "plgd-hub.grpcgateway.domain" . | quote }}
+      {{- if $.Values.global.enableWildCartCert }}
+      secretName: {{ include "plgd-hub.wildCardCertName" . | quote }}
+      {{- else }}
       secretName: {{ include "plgd-hub.grpcgateway.domainCertName" . | quote }}
+      {{- end }}
   rules:
   - host: {{ include "plgd-hub.grpcgateway.domain" . | quote }}
     http:

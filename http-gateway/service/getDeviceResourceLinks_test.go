@@ -8,22 +8,49 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/require"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
-
 	"github.com/plgd-dev/hub/grpc-gateway/pb"
 	httpgwTest "github.com/plgd-dev/hub/http-gateway/test"
 	"github.com/plgd-dev/hub/http-gateway/uri"
 	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
+	"github.com/plgd-dev/hub/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/resource-aggregate/events"
 	test "github.com/plgd-dev/hub/test"
 	"github.com/plgd-dev/hub/test/config"
+	oauthService "github.com/plgd-dev/hub/test/oauth-server/service"
 	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
+	pbTest "github.com/plgd-dev/hub/test/pb"
+	"github.com/plgd-dev/hub/test/service"
+	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 )
 
-func TestRequestHandler_GetDeviceResourceLinks(t *testing.T) {
+func TestRequestHandlerGetDeviceResourceLinks(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*20)
+	defer cancel()
+
+	tearDown := service.SetUp(ctx, t)
+	defer tearDown()
+	token := oauthTest.GetDefaultServiceToken(t)
+	ctx = kitNetGrpc.CtxWithToken(ctx, token)
+
+	conn, err := grpc.Dial(config.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+		RootCAs: test.GetRootCertificatePool(t),
+	})))
+	require.NoError(t, err)
+	c := pb.NewGrpcGatewayClient(conn)
+
+	resourceLinks := test.GetAllBackendResourceLinks()
+	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.GW_HOST, resourceLinks)
+	defer shutdownDevSim()
+	resourceLinks = append(resourceLinks, test.AddDeviceSwitchResources(ctx, t, deviceID, c, "1", "2", "3")...)
+	time.Sleep(200 * time.Millisecond)
+
+	shutdownHttp := httpgwTest.SetUp(t)
+	defer shutdownHttp()
+
 	type args struct {
 		deviceID string
 	}
@@ -41,45 +68,18 @@ func TestRequestHandler_GetDeviceResourceLinks(t *testing.T) {
 			wantErr: false,
 			want: []*events.ResourceLinksPublished{
 				{
-					DeviceId:  deviceID,
-					Resources: test.ResourceLinksToResources(deviceID, test.GetAllBackendResourceLinks()),
+					DeviceId:     deviceID,
+					Resources:    test.ResourceLinksToResources(deviceID, resourceLinks),
+					AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, ""),
 				},
 			},
 		},
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*20)
-	defer cancel()
-
-	tearDown := test.SetUp(ctx, t)
-	defer tearDown()
-	token := oauthTest.GetDefaultServiceToken(t)
-	ctx = kitNetGrpc.CtxWithToken(ctx, token)
-
-	conn, err := grpc.Dial(config.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
-		RootCAs: test.GetRootCertificatePool(t),
-	})))
-	require.NoError(t, err)
-	c := pb.NewGrpcGatewayClient(conn)
-
-	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.GW_HOST, test.GetAllBackendResourceLinks())
-	defer shutdownDevSim()
-
-	shutdownHttp := httpgwTest.SetUp(t)
-	defer shutdownHttp()
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			request := httpgwTest.NewRequest(http.MethodGet, uri.AliasDeviceResourceLinks+"/", nil).DeviceId(deviceID).AuthToken(token).Build()
-			trans := http.DefaultTransport.(*http.Transport).Clone()
-			trans.TLSClientConfig = &tls.Config{
-				InsecureSkipVerify: true,
-			}
-			c := http.Client{
-				Transport: trans,
-			}
-			resp, err := c.Do(request)
-			require.NoError(t, err)
+			resp := httpgwTest.HTTPDo(t, request)
 			defer func() {
 				_ = resp.Body.Close()
 			}()
@@ -94,7 +94,7 @@ func TestRequestHandler_GetDeviceResourceLinks(t *testing.T) {
 				require.NoError(t, err)
 				require.NotEmpty(t, v.GetAuditContext())
 				require.NotEmpty(t, v.GetEventMetadata())
-				links = append(links, test.CleanUpResourceLinksPublished(&v))
+				links = append(links, pbTest.CleanUpResourceLinksPublished(&v))
 			}
 			test.CheckProtobufs(t, tt.want, links, test.RequireToCheckFunc(require.Equal))
 		})

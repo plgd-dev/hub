@@ -18,7 +18,7 @@
     {{- printf "%s%s:%s" $registryName $repositoryName  $tag -}}
 {{- end -}}
 
-{{- define  "plgd-hub.httpgateway.configSecretName" -}}
+{{- define  "plgd-hub.httpgateway.configName" -}}
     {{- $fullName :=  include "plgd-hub.httpgateway.fullname" . -}}
     {{- printf "%s-cfg" $fullName }}
 {{- end -}}
