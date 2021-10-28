@@ -13,11 +13,14 @@ jobs:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 0
+      - name: Get the version
+        id: get_version
+        run: echo ::set-output name=VERSION::${GITHUB_REF#refs/tags/v}
       - name: Publish Helm chart
         uses: stefanprodan/helm-gh-pages@master
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           charts_url: https://charts.plgd.dev
           helm_version: "3.7.1"
-          app_version: "${{ github.ref:1 }}"
-          chart_version: "${{ github.ref:1 }}"
+          app_version: "${{ steps.get_version.outputs.VERSION }}"
+          chart_version: "${{ steps.get_version.outputs.VERSION }}"
