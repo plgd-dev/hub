@@ -1,7 +1,9 @@
+import chunk from 'lodash/chunk'
+
 import { fetchApi, security } from '@/common/services'
 import { DEVICE_AUTH_CODE_SESSION_KEY } from '@/constants'
 
-import { thingsApiEndpoints } from './constants'
+import { thingsApiEndpoints, DEVICE_DELETE_CHUNK_SIZE } from './constants'
 import { interfaceGetParam } from './utils'
 
 /**
@@ -21,15 +23,23 @@ export const getThingApi = deviceId =>
  * @param {*} params deviceIds
  * @param {*} data
  */
-export const deleteThingsApi = deviceIds =>
-  fetchApi(
-    `${security.getGeneralConfig().httpGatewayAddress}${
-      thingsApiEndpoints.THINGS
-    }?${deviceIds.map(id => `deviceIdFilter=${id}`).join('&')}`,
-    {
-      method: 'DELETE',
-    }
+export const deleteThingsApi = deviceIds => {
+  // We split the fetch into multiple chunks due to the URL being too long for the browser to handle
+  const chunks = chunk(deviceIds, DEVICE_DELETE_CHUNK_SIZE)
+
+  return Promise.all(
+    chunks.map(ids =>
+      fetchApi(
+        `${security.getGeneralConfig().httpGatewayAddress}${
+          thingsApiEndpoints.THINGS
+        }?${ids.map(id => `deviceIdFilter=${id}`).join('&')}`,
+        {
+          method: 'DELETE',
+        }
+      )
+    )
   )
+}
 
 /**
  * Get things RESOURCES Rest Api endpoint
@@ -128,7 +138,7 @@ export const getDeviceAuthCode = deviceId => {
     if (!clientID) {
       return reject(
         new Error(
-          'clientID is missing from the deviceOauthClient configuration'
+          'clientID is missing from the deviceOAuthClient configuration'
         )
       )
     }

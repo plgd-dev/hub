@@ -372,12 +372,10 @@ export const messages = defineMessages({
   enterDeviceId: {
     id: 'things.enterDeviceId',
     defaultMessage: 'Enter the device ID',
-
   },
   getCode: {
     id: 'things.getCode',
     defaultMessage: 'Get the Code',
-
   },
   back: {
     id: 'things.back',
@@ -386,7 +384,6 @@ export const messages = defineMessages({
   provisionNewDevice: {
     id: 'things.provisionNewDevice',
     defaultMessage: 'Provision a new device',
-
   },
   deviceAuthCodeError: {
     id: 'things.deviceAuthCodeError',
@@ -399,5 +396,17 @@ export const messages = defineMessages({
   authorizationProvider: {
     id: 'things.authorizationProvider',
     defaultMessage: 'Authorization Provider',
+  },
+  deviceEndpoint: {
+    id: 'things.deviceEndpoint',
+    defaultMessage: 'Device Endpoint',
+  },
+  hubId: {
+    id: 'things.hubId',
+    defaultMessage: 'Hub ID',
+  },
+  certificateAuthorities: {
+    id: 'things.certificateAuthorities',
+    defaultMessage: 'Certificate Authorities',
   },
 })

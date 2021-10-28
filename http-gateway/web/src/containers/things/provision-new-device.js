@@ -130,10 +130,36 @@ class _ProvisionNewDevice extends PureComponent {
       )
     }
 
+    const {
+      coapGateway: deviceEndpoint,
+      id: hubId,
+      certificateAuthorities,
+    } = this.context?.wellKnownConfig || {}
     const providerName = this.context?.deviceOAuthClient?.providerName
 
     return (
       <>
+        <Label title={_(t.hubId)} inline>
+          <div id="auth-code-box">
+            <span>{hubId || '-'}</span>
+            {hubId && <CopyBox textToCopy={hubId} />}
+          </div>
+        </Label>
+
+        <Label title={_(t.deviceEndpoint)} inline>
+          <div id="auth-code-box">
+            <span>{deviceEndpoint || '-'}</span>
+            {deviceEndpoint && <CopyBox textToCopy={deviceEndpoint} />}
+          </div>
+        </Label>
+
+        <Label title={_(t.authorizationCode)} inline>
+          <div id="auth-code-box">
+            <span>{code}</span>
+            <CopyBox textToCopy={code} />
+          </div>
+        </Label>
+
         <Label title={_(t.authorizationProvider)} inline>
           <div id="auth-code-box">
             <span>{providerName || '-'}</span>
@@ -141,10 +167,12 @@ class _ProvisionNewDevice extends PureComponent {
           </div>
         </Label>
 
-        <Label title={_(t.authorizationCode)} inline className="m-b-10">
+        <Label title={_(t.certificateAuthorities)} inline className="m-b-10">
           <div id="auth-code-box">
-            <span>{code}</span>
-            <CopyBox textToCopy={code} />
+            <span>...</span>
+            {certificateAuthorities && (
+              <CopyBox textToCopy={certificateAuthorities} />
+            )}
           </div>
         </Label>
       </>
@@ -164,6 +192,11 @@ class _ProvisionNewDevice extends PureComponent {
     const {
       intl: { formatMessage: _ },
     } = this.props
+    const deviceOAuthClient = this.context?.deviceOAuthClient
+
+    if (!deviceOAuthClient?.providerName || !deviceOAuthClient?.clientID) {
+      return null
+    }
 
     return (
       <>
