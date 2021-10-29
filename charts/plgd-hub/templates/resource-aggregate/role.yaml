@@ -1,3 +1,0 @@
-{{- if and .Values.resourceaggregate.rbac.enabled .Values.resourceaggregate.rbac.roleBindingDefitionTpl }}
-{{- tpl .Values.resourceaggregate.rbac.roleBindingDefitionTpl $ }}
-{{- end }}

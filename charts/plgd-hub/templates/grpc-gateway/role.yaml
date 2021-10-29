@@ -1,3 +1,0 @@
-{{- if and .Values.grpcgateway.rbac.enabled .Values.grpcgateway.rbac.roleBindingDefitionTpl }}
-{{- tpl .Values.grpcgateway.rbac.roleBindingDefitionTpl $ }}
-{{- end }}

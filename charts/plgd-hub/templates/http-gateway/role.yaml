@@ -1,3 +1,0 @@
-{{- if and .Values.httpgateway.rbac.enabled .Values.httpgateway.rbac.roleBindingDefitionTpl }}
-{{- tpl .Values.httpgateway.rbac.roleBindingDefitionTpl $ }}
-{{- end }}

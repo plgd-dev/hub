@@ -1,3 +1,0 @@
-{{- if and .Values.identitystore.rbac.enabled .Values.identitystore.rbac.roleBindingDefitionTpl }}
-{{- tpl .Values.identitystore.rbac.roleBindingDefitionTpl $ }}
-{{- end }}
