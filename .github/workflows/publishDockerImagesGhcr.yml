@@ -99,8 +99,9 @@ jobs:
             type=schedule
             type=ref,event=branch
             type=raw,enable=${{ startsWith(steps.vars.outputs.branch, env.VNEXT_BRANCH) }},value=vnext
-            type=ref,event=tag
-            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
             type=sha,enable=${{ startsWith(steps.vars.outputs.branch, env.VNEXT_BRANCH) }},prefix=vnext-,format=short
 
       - name: Build and push docker image
