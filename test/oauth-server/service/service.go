@@ -7,7 +7,6 @@ import (
 	"net/http"
 
 	"github.com/plgd-dev/hub/pkg/log"
-
 	"github.com/plgd-dev/hub/pkg/net/listener"
 )
 

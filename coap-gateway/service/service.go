@@ -19,6 +19,7 @@ import (
 	"github.com/plgd-dev/go-coap/v2/net/monitor/inactivity"
 	"github.com/plgd-dev/go-coap/v2/tcp"
 	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
+	"github.com/plgd-dev/hub/coap-gateway/service/message"
 	"github.com/plgd-dev/hub/coap-gateway/uri"
 	pbGRPC "github.com/plgd-dev/hub/grpc-gateway/pb"
 	"github.com/plgd-dev/hub/grpc-gateway/subscription"
@@ -356,6 +357,13 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 	return &s, nil
 }
 
+func decodeMsgToDebug(client *Client, resp *pool.Message, tag string) {
+	if !client.server.config.Log.DumpCoapMessages {
+		return
+	}
+	message.DecodeMsgToDebug(getDeviceID(client), resp, tag)
+}
+
 func getDeviceID(client *Client) string {
 	deviceID := "unknown"
 	if client != nil {
@@ -478,12 +486,11 @@ func (server *Service) authMiddleware(next mux.Handler) mux.Handler {
 	})
 }
 
-func setHandlerError(uri string, err error) error {
-	return fmt.Errorf("failed to set %v handler: %w", uri, err)
-}
-
 //setupCoapServer setup coap server
 func (server *Service) setupCoapServer() error {
+	setHandlerError := func(uri string, err error) error {
+		return fmt.Errorf("failed to set %v handler: %w", uri, err)
+	}
 	m := mux.NewRouter()
 	m.Use(server.loggingMiddleware, server.authMiddleware)
 	m.DefaultHandle(mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {

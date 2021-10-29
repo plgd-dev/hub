@@ -12,7 +12,7 @@ func (client *Client) logAndWriteErrorResponse(err error, code codes.Code, token
 	defer cleanUp()
 	err = client.coapConn.WriteMessage(msg)
 	if err != nil {
-		log.Errorf("cannot send error to %v: %w", getDeviceID(client), err)
+		log.Errorf("cannot send error to %v: %w", client.GetDeviceID(), err)
 	}
 	decodeMsgToDebug(client, msg, "SEND-ERROR")
 }

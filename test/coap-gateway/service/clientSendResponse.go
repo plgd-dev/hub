@@ -14,7 +14,7 @@ func (client *Client) sendResponse(code coapCodes.Code, token message.Token, con
 	err := client.coapConn.WriteMessage(msg)
 	if err != nil {
 		if !kitNetGrpc.IsContextCanceled(err) {
-			log.Errorf("cannot send reply to %v: %w", getDeviceID(client), err)
+			log.Errorf("cannot send reply to %v: %w", client.GetDeviceID(), err)
 		}
 	}
 	decodeMsgToDebug(client, msg, "SEND-RESPONSE")
