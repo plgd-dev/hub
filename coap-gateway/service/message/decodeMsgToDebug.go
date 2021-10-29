@@ -1,4 +1,4 @@
-package service
+package message
 
 import (
 	"bytes"
@@ -57,16 +57,13 @@ func writeBody(mt message.MediaType, body []byte) string {
 	}
 }
 
-func decodeMsgToDebug(client *Client, resp *pool.Message, tag string) {
-	if !client.server.config.Log.DumpCoapMessages {
-		return
-	}
+func DecodeMsgToDebug(deviceID string, resp *pool.Message, tag string) {
 	buf := bytes.NewBuffer(make([]byte, 0, 2048))
 	path, _ := resp.Options().Path()
 	queries, _ := resp.Options().Queries()
 
 	fmt.Fprintf(buf, "\n-------------------%v------------------\n", tag)
-	fmt.Fprintf(buf, "DeviceId: %v\n", getDeviceID(client))
+	fmt.Fprintf(buf, "DeviceId: %v\n", deviceID)
 	fmt.Fprintf(buf, "Token: %v\n", resp.Token())
 	fmt.Fprintf(buf, "Path: %v\n", path)
 	fmt.Fprintf(buf, "Code: %v\n", resp.Code())
