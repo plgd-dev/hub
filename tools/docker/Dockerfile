@@ -13,5 +13,6 @@ FROM alpine:3.14 as service
 ARG NAME
 RUN apk add --no-cache ca-certificates
 COPY --from=build /go/bin/$NAME /usr/local/bin/$NAME
+COPY tools/docker/run.sh /usr/local/bin/run.sh
 ENV BINARY=$NAME
-ENTRYPOINT /usr/local/bin/$BINARY
+ENTRYPOINT [ "/usr/local/bin/run.sh" ]
