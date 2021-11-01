@@ -10,7 +10,7 @@ CoAP Gateway: {{ printf "coap+tcp://%s:%v" ( required "global.domain is required
 {{- end }}
 {{- if $.Values.httpgateway.enabled }}
 HTTP Gateway - UI: {{ printf "https://%s" ( include "plgd-hub.httpgateway.uiDomain" . ) }}
-http-gateway - API: {{ printf "https://%s" ( include "plgd-hub.httpgateway.apiDomain" . ) }}
+HTTP Gateway - API: {{ printf "https://%s" ( include "plgd-hub.httpgateway.apiDomain" . ) }}
 {{- end }}
 {{- if $.Values.mockoauthserver.enabled }}
 ------- Mock OAuth server enabled !!!!! ------------------
