@@ -45,19 +45,6 @@ global:
     clientID:
 ```
 
-### NodePort for CoAP Gateway
-
-In case you install plgd-hub into [microk8s.io/](https://microk8s.io/), it's required to enable also
-nodePort for coap-gateway. For enable nodePort for coap-gateway add config below:
-
-```
-coapgateway:
-  service:
-    nodePort: 5684
-```
-
-> This configuration should be applied only to test environment !!!
-
 ## Requirements
 
 | Repository | Name | Version |
