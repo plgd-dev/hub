@@ -7,7 +7,7 @@ COPY . .
 WORKDIR $GOPATH/src/github.com/plgd-dev/hub/http-gateway
 RUN go build -o /go/bin/http-gateway ./cmd/service
 
-FROM node:12 AS build-web
+FROM node:17 AS build-web
 COPY http-gateway/web /web
 RUN cd /web && npm install && npm run build
 
