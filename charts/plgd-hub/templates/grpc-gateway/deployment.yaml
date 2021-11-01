@@ -78,8 +78,8 @@ spec:
             {{- toYaml . | nindent 12 }}
           {{- end }}
           volumeMounts:
-            - mountPath: {{ .Values.grpcgateway.config.mountPath }}
-              name: {{ .Values.grpcgateway.config.volume }}
+            - name: {{ .Values.grpcgateway.config.volume }}
+              mountPath: {{ .Values.grpcgateway.config.mountPath }}
             {{- if ( include "plgd-hub.grpcgateway.createServiceCertByCm" . ) }}
             - name: service-crt
               mountPath: {{ $cert }}

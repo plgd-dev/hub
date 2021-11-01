@@ -79,8 +79,8 @@ spec:
             {{- toYaml . | nindent 12 }}
           {{- end }}
           volumeMounts:
-            - mountPath: {{ .Values.certificateauthority.config.mountPath }}
-              name: {{ .Values.certificateauthority.config.volume }}
+            - name: {{ .Values.certificateauthority.config.volume }}
+              mountPath: {{ .Values.certificateauthority.config.mountPath }}
             {{- if ( include "plgd-hub.certificateauthority.createServiceCertByCm" . ) }}
             - name: service-crt
               mountPath: {{ $cert }}

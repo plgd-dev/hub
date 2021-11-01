@@ -78,8 +78,8 @@ spec:
             {{- toYaml . | nindent 12 }}
           {{- end }}
           volumeMounts:
-            - mountPath: {{ .Values.coapgateway.config.mountPath }}
-              name: {{ .Values.coapgateway.config.volume }}
+            - name: {{ .Values.coapgateway.config.volume }}
+              mountPath: {{ .Values.coapgateway.config.mountPath }}
             {{- if ( include "plgd-hub.coapgateway.createServiceCertByCm" . ) }}
             - name: service-crt
               mountPath: {{ $rdServiceCert }}

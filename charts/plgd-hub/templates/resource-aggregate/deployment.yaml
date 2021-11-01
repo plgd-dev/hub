@@ -78,8 +78,8 @@ spec:
             {{- toYaml . | nindent 12 }}
           {{- end }}
           volumeMounts:
-            - mountPath: {{ .Values.resourceaggregate.config.mountPath }}
-              name: {{ .Values.resourceaggregate.config.volume }}
+            - name: {{ .Values.resourceaggregate.config.volume }}
+              mountPath: {{ .Values.resourceaggregate.config.mountPath }}
             {{- if ( include "plgd-hub.resourceaggregate.createServiceCertByCm" . ) }}
             - name: service-crt
               mountPath: {{ $rdServiceCert }}
