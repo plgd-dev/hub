@@ -50,7 +50,7 @@ jobs:
             file: tools/docker/Dockerfile
           - name: http-gateway
             directory: http-gateway
-            file: tools/docker/Dockerfile
+            file: http-gateway/Dockerfile
           - name: identity-store
             directory: identity-store
             file: tools/docker/Dockerfile
