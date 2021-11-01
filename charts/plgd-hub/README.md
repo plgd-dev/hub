@@ -38,6 +38,10 @@ global:
        # -- clientSecret or clientSecretFile
        clientSecret:
        #clientSecretFile:
+       # -- OAuth2.0 Scopes
+       scopes: []
+       # -- OAuth2.0 token audience
+       audience:
        # -- Redirect URL. In case you are using mobile app, redirectURL should be in format cloud.plgd.mobile://login-callback
        redirectURL:
        # -- Use in httpgateway.ui.webConfiguration.deviceOAuthClient configuration. Default first item in list
@@ -45,6 +49,8 @@ global:
    web:
     # -- ClientID used by Web UI
     clientID:
+    # -- OAuth2.0 token audience
+    audience:
 ```
 
 ### Setup with OAuth Mock server:

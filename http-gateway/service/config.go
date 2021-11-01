@@ -124,9 +124,6 @@ func (c *BasicOAuthClient) Validate() error {
 	if c.ClientID == "" {
 		return fmt.Errorf("clientID('%v')", c.ClientID)
 	}
-	if c.Audience == "" {
-		return fmt.Errorf("audience('%v')", c.Audience)
-	}
 	return nil
 }
 

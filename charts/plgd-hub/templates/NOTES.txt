@@ -1,22 +1,25 @@
 {{ .Chart.Description }}
 
-For more information about plgd-hub, follow: https://github.com/plgd-dev/hub/
+For more information about plgd hub, follow: https://github.com/plgd-dev/hub/
+If you would like to chat with us, join gitter: https://gitter.im/ocfcloud/Lobby
 
 PARAMETERS:
 ----------------------------------------------------------
 {{- if $.Values.coapgateway.enabled }}
-coap-gateway uri: {{ printf "coap+tcp://%s:%v" ( required "global.domain is required" ( $.Values.coapgateway.apis.coap.externalAddress  | default $.Values.global.domain )) $.Values.coapgateway.port }}
+CoAP Gateway: {{ printf "coap+tcp://%s:%v" ( required "global.domain is required" ( $.Values.coapgateway.apis.coap.externalAddress  | default $.Values.global.domain )) $.Values.coapgateway.port }}
 {{- end }}
 {{- if $.Values.httpgateway.enabled }}
-Web UI uri: {{ printf "https://%s" ( include "plgd-hub.httpgateway.uiDomain" . ) }}
-http-gateway uri: {{ printf "https://%s" ( include "plgd-hub.httpgateway.apiDomain" . ) }}
+HTTP Gateway - UI: {{ printf "https://%s" ( include "plgd-hub.httpgateway.uiDomain" . ) }}
+http-gateway - API: {{ printf "https://%s" ( include "plgd-hub.httpgateway.apiDomain" . ) }}
 {{- end }}
 {{- if $.Values.mockoauthserver.enabled }}
 ------- Mock OAuth server enabled !!!!! ------------------
-You enabled mocked version of OAuth Server used only for test/development purpose. Use with extra care. Could not
-be used for production environment !!!
-Mock OAuth server: {{ include "plgd-hub.mockoauthserver.uri" . }}
+You enabled mocked version of the OAuth Server used only for test/development purposes. Use with extra care.
+Do not use in production !!!
+Mock OAuth Server: {{ include "plgd-hub.mockoauthserver.uri" . }}
 ----------------------------------------------------------
 {{- else }}
 OAuth server: {{ $.Values.global.authority }}
 {{- end }}
+
+Thank you for using plgd hub!

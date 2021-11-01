@@ -90,8 +90,8 @@ spec:
             {{- toYaml . | nindent 12 }}
           {{- end }}
           volumeMounts:
-            - mountPath: {{ .Values.mockoauthserver.config.mountPath }}
-              name: {{ .Values.mockoauthserver.config.volume }}
+            - name: {{ .Values.mockoauthserver.config.volume }}
+              mountPath: {{ .Values.mockoauthserver.config.mountPath }}
             {{- if ( include "plgd-hub.mockoauthserver.createServiceCertByCm" . ) }}
             - name: service-crt
               mountPath: {{ $rdServiceCert }}

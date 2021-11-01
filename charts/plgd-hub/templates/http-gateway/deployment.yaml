@@ -78,8 +78,8 @@ spec:
             {{- toYaml . | nindent 12 }}
           {{- end }}
           volumeMounts:
-            - mountPath: {{ .Values.httpgateway.config.mountPath }}
-              name: {{ .Values.httpgateway.config.volume }}
+            - name: {{ .Values.httpgateway.config.volume }}
+              mountPath: {{ .Values.httpgateway.config.mountPath }}
             {{- if ( include "plgd-hub.httpgateway.createServiceCertByCm" . ) }}
             - name: service-crt
               mountPath: {{ $rdServiceCert }}
