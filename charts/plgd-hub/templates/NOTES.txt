@@ -6,6 +6,9 @@ If you would like to chat with us, join gitter: https://gitter.im/ocfcloud/Lobby
 PARAMETERS:
 ----------------------------------------------------------
 {{- if $.Values.coapgateway.enabled }}
+{{- if $.Values.coapgateway.apis.coap.tls.enabled }}
+CoAP Gateway: {{ printf "coaps+tcp://%s:%v" ( required "global.domain is required" ( $.Values.coapgateway.apis.coap.externalAddress  | default $.Values.global.domain )) $.Values.coapgateway.port }}
+{{- else }}
 CoAP Gateway: {{ printf "coap+tcp://%s:%v" ( required "global.domain is required" ( $.Values.coapgateway.apis.coap.externalAddress  | default $.Values.global.domain )) $.Values.coapgateway.port }}
 {{- end }}
 {{- if $.Values.httpgateway.enabled }}
