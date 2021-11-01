@@ -16,7 +16,7 @@ require (
 	github.com/json-iterator/go v1.1.12
 	github.com/jtacoma/uritemplates v1.0.0
 	github.com/karrick/tparse/v2 v2.8.2
-	github.com/lestrrat-go/jwx v1.2.7
+	github.com/lestrrat-go/jwx v1.2.9
 	github.com/nats-io/nats-server/v2 v2.6.1 // indirect
 	github.com/nats-io/nats.go v1.12.3
 	github.com/panjf2000/ants/v2 v2.4.6
