@@ -1,14 +1,8 @@
-# plgd-hub
+# Helm Chart for plgd hub
 
-A Helm chart for plgd-hub
+## Getting Started
 
-![Version: 0.0.1](https://img.shields.io/badge/Version-0.0.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: vnext](https://img.shields.io/badge/AppVersion-vnext-informational?style=flat-square)
-
-## Installing the Chart
-
-### Cert-manager integration
-
-Install [cert-manager](https://cert-manager.io/) via [https://artifacthub.io/packages/helm/cert-manager/cert-manager](https://artifacthub.io/packages/helm/cert-manager/cert-manager)
+More information are available in our [docs](https://plgd.dev/deployment/k8s/).
 
 ### Required variables:
 
@@ -25,8 +19,10 @@ global:
   #deviceIdClaim:
   # -- OAuth authority
   authority:
-  # -- Optional OAuth audience
-  #audience: ""
+  # -- OAuth audience
+  audience: ""
+  # -- Enable *.{{ global.domain }} for all external domain
+  enableWildCartCert: true
   # Global OAuth configuration used by multiple services
   oauth:
    # -- List of OAuth client's configurations
@@ -38,10 +34,8 @@ global:
        # -- clientSecret or clientSecretFile
        clientSecret:
        #clientSecretFile:
-       # -- OAuth2.0 Scopes
+       # -- OAuth Scopes
        scopes: []
-       # -- OAuth2.0 token audience
-       audience:
        # -- Redirect URL. In case you are using mobile app, redirectURL should be in format cloud.plgd.mobile://login-callback
        redirectURL:
        # -- Use in httpgateway.ui.webConfiguration.deviceOAuthClient configuration. Default first item in list
@@ -49,35 +43,7 @@ global:
    web:
     # -- ClientID used by Web UI
     clientID:
-    # -- OAuth2.0 token audience
-    audience:
 ```
-
-### Setup with OAuth Mock server:
-
-```
-# -- Global config variables
-global:
-  # -- Global domain
-  domain: "domain.com"
-  # -- CloudID. Used by coap-gateway. It must be unique
-  hubId: 1c10a3b6-287c-11ec-ac2d-13054959c274
-mockoauthserver:
-  enabled: true
-```
-
-### NodePort for coap-gateway
-
-In case you install plgd-hub into [microk8s.io/](https://microk8s.io/), it's required to enable also
-nodePort for coap-gateway. For enable nodePort for coap-gateway add config below:
-
-```
-coapgateway:
-  service:
-    nodePort: 5684
-```
-
-> This configuration should be applied only to test environment !!!
 
 ## Requirements
 

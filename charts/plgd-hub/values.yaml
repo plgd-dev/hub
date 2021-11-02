@@ -21,7 +21,6 @@ global:
 #       clientID:
 #       clientSecret:
 #       scopes: []
-#       audience:
 #       redirectURL:
 #       useInUi: true
    web:
