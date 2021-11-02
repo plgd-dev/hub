@@ -133,17 +133,32 @@ endef
 
 DIRECTORIES:=$(shell ls -d ./*/)
 
+define RUN-TESTS
+	echo "Executing tests"; \
+	START_TIME=$$(date +%s); \
+	COVERAGE_FILE=/coverage/hub.coverage.txt ; \
+	JSON_REPORT_FILE=$(WORKING_DIRECTORY)/.tmp/report/hub.report.json ; \
+	if [ -n "$${JSON_REPORT}" ]; then \
+		$(call RUN-DOCKER, go test -timeout=45m -race -p 1 -v ./... -coverpkg=./... -covermode=atomic -coverprofile=$${COVERAGE_FILE} -json > "$${JSON_REPORT_FILE}") \
+	else \
+		$(call RUN-DOCKER, go test -timeout=45m -race -p 1 -v ./... -coverpkg=./... -covermode=atomic -coverprofile=$${COVERAGE_FILE}) \
+	fi ; \
+	EXIT_STATUS=$$? ; \
+	if [ $${EXIT_STATUS} -ne 0 ]; then \
+		exit $${EXIT_STATUS}; \
+	fi ; \
+	STOP_TIME=$$(date +%s) ; \
+	EXECUTION_TIME=$$((STOP_TIME-START_TIME)) ; \
+	echo "" ; \
+	echo "Execution time: $${EXECUTION_TIME} seconds" ; \
+	echo "" ;
+endef
+
 test: env
 	@mkdir -p $(WORKING_DIRECTORY)/.tmp/home
 	@mkdir -p $(WORKING_DIRECTORY)/.tmp/home/certificate-authority
 	@mkdir -p $(WORKING_DIRECTORY)/.tmp/report
-	@for DIRECTORY in $(DIRECTORIES); do \
-		if ! go list -f '{{.GoFiles}}' $$DIRECTORY... 2>/dev/null | grep go > /dev/null 2>&1; then \
-			echo "No golang files detected, directory $${DIRECTORY} skipped"; \
-			continue ; \
-		fi ; \
-		$(call RUN-TESTS-IN-DIRECTORY,$$DIRECTORY) \
-	done
+	@$(call RUN-TESTS)
 
 test-targets := $(addprefix test-,$(patsubst ./%/,%,$(DIRECTORIES)))
 
