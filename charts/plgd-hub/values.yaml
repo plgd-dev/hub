@@ -854,7 +854,7 @@ identitystore:
     # -- Image tag.
     tag:
     # -- Image pull policy
-    pullPolicy: IfNotPresent
+    pullPolicy: Always
     # -- Image pull secrets
     imagePullSecrets: {}
   # -- Liveness probe. Identity doesn't have any default liveness probe
