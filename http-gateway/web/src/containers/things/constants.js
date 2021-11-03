@@ -70,6 +70,10 @@ export const MINIMAL_TTL_VALUE_MS = 100
 
 export const NO_DEVICE_NAME = '<no-name>'
 
+// Maximum amount of deviceIds filled into one delete request.
+// (if ther is more deviceIds then the provided number, it creates more chunks of a maximum of this number)
+export const DEVICE_DELETE_CHUNK_SIZE = 50
+
 // Websocket keys
 export const THINGS_WS_KEY = 'things'
 export const STATUS_WS_KEY = 'status'
