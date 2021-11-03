@@ -168,9 +168,9 @@ certmanager:
       # -- Certificate annotations
       annotations: {}
       # -- Certificate duration
-      duration: 8760h
+      duration: 8760h0m0s
       # -- Certificate renew before
-      renewBefore: 360h
+      renewBefore: 360h0m0s
       # -- Certificate key spec
       key:
         # -- Algorithm
