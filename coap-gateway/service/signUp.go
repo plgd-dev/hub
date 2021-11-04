@@ -98,7 +98,7 @@ func signUpPostHandler(r *mux.Message, client *Client) {
 		return
 	}
 	if token.RefreshToken == "" {
-		logErrorAndCloseClient(fmt.Errorf("cannot handle sign up: exchange returns empty refresh token"), coapCodes.Unauthorized)
+		logErrorAndCloseClient(fmt.Errorf("cannot handle sign up: exchange didn't return a refresh token"), coapCodes.Unauthorized)
 		return
 	}
 
