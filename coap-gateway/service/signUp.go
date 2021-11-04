@@ -3,15 +3,15 @@ package service
 import (
 	"fmt"
 
+	"github.com/plgd-dev/go-coap/v2/message"
+	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
+	"github.com/plgd-dev/go-coap/v2/mux"
 	"github.com/plgd-dev/hub/coap-gateway/coapconv"
 	"github.com/plgd-dev/hub/identity-store/pb"
 	"github.com/plgd-dev/hub/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
 	"github.com/plgd-dev/hub/pkg/security/oauth2"
 	pkgTime "github.com/plgd-dev/hub/pkg/time"
-	"github.com/plgd-dev/go-coap/v2/message"
-	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
-	"github.com/plgd-dev/go-coap/v2/mux"
 	"github.com/plgd-dev/kit/v2/codec/cbor"
 )
 
@@ -95,6 +95,10 @@ func signUpPostHandler(r *mux.Message, client *Client) {
 	token, err := client.exchangeCache.Execute(r.Context, provider, signUp.AuthorizationCode)
 	if err != nil {
 		logErrorAndCloseClient(fmt.Errorf("cannot handle sign up: %w", err), coapCodes.Unauthorized)
+		return
+	}
+	if token.RefreshToken == "" {
+		logErrorAndCloseClient(fmt.Errorf("cannot handle sign up: exchange didn't return a refresh token"), coapCodes.Unauthorized)
 		return
 	}
 
