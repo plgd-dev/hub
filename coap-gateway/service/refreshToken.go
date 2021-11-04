@@ -118,7 +118,7 @@ func refreshTokenPostHandler(req *mux.Message, client *Client) {
 	}
 
 	if token.RefreshToken == "" {
-		logErrorAndCloseClient(fmt.Errorf(fmtErr, refreshToken.DeviceID, fmt.Errorf("refresh returns empty refresh token")), coapCodes.Unauthorized)
+		logErrorAndCloseClient(fmt.Errorf(fmtErr, refreshToken.DeviceID, fmt.Errorf("refresh didn't return a refresh token")), coapCodes.Unauthorized)
 		return
 	}
 
