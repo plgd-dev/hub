@@ -11,6 +11,7 @@ CoAP Gateway: {{ printf "coaps+tcp://%s:%v" ( required "global.domain is require
 {{- else }}
 CoAP Gateway: {{ printf "coap+tcp://%s:%v" ( required "global.domain is required" ( $.Values.coapgateway.apis.coap.externalAddress  | default $.Values.global.domain )) $.Values.coapgateway.port }}
 {{- end }}
+{{- end }}
 {{- if $.Values.httpgateway.enabled }}
 HTTP Gateway - UI: {{ printf "https://%s" ( include "plgd-hub.httpgateway.uiDomain" . ) }}
 HTTP Gateway - API: {{ printf "https://%s" ( include "plgd-hub.httpgateway.apiDomain" . ) }}
