@@ -15,7 +15,7 @@ GROUP_ID := $(shell id -g)
 #$(error MY_FLAG=$(BUILD_TAG)AAA)
 
 SUBDIRS := bundle certificate-authority cloud2cloud-connector cloud2cloud-gateway coap-gateway grpc-gateway resource-aggregate resource-directory http-gateway identity-store test/oauth-server
-.PHONY: $(SUBDIRS) push proto/generate clean build test env mongo nats certificates hub-build
+.PHONY: $(SUBDIRS) push proto/generate clean build test env mongo nats certificates hub-build http-gateway-www
 
 default: build
 
@@ -72,7 +72,11 @@ mongo: certificates
 		-v $(WORKING_DIRECTORY)/.tmp/certs:/certs --user $(USER_ID):$(GROUP_ID) \
 		mongo --tlsMode requireTLS --tlsCAFile /certs/root_ca.crt --tlsCertificateKeyFile /certs/mongo.key
 
-env: clean certificates nats mongo privateKeys
+http-gateway-www:
+	@mkdir -p $(WORKING_DIRECTORY)/.tmp/usr/local/www
+	@cp -r $(WORKING_DIRECTORY)/http-gateway/web/public/* $(WORKING_DIRECTORY)/.tmp/usr/local/www/
+
+env: clean certificates nats mongo privateKeys http-gateway-www
 	if [ "${TRAVIS_OS_NAME}" == "linux" ]; then \
 		sudo sh -c 'echo 0 > /proc/sys/net/ipv6/conf/all/disable_ipv6'; \
 	fi
@@ -94,6 +98,7 @@ define RUN-DOCKER
 		-v $(WORKING_DIRECTORY)/.tmp/coverage:/coverage \
 		-v $(WORKING_DIRECTORY)/.tmp/report:/report \
 		-v $(WORKING_DIRECTORY)/.tmp/privKeys:/privKeys \
+		-v $(WORKING_DIRECTORY)/.tmp/usr/local/www:/usr/local/www \
 		-v /var/run/docker.sock:/var/run/docker.sock \
 		-e LISTEN_FILE_CA_POOL=/certs/root_ca.crt \
 		-e LISTEN_FILE_CERT_DIR_PATH=/certs \
@@ -106,6 +111,7 @@ define RUN-DOCKER
 		-e TEST_ROOT_CA_KEY=/certs/root_ca.key \
 		-e TEST_OAUTH_SERVER_ID_TOKEN_PRIVATE_KEY=/privKeys/idTokenKey.pem \
 		-e TEST_OAUTH_SERVER_ACCESS_TOKEN_PRIVATE_KEY=/privKeys/accessTokenKey.pem \
+		-e TEST_HTTP_GW_WWW_ROOT=/usr/local/www \
 		hub-test \
 		$(1) ;
 endef
@@ -189,6 +195,7 @@ clean:
 	sudo rm -rf ./.tmp/privateKeys || true
 	sudo rm -rf ./.tmp/coverage || true
 	sudo rm -rf ./.tmp/report || true
+	sudo rm -rf ./.tmp/usr || true
 
 proto/generate: $(SUBDIRS)
 	protoc -I=. -I=$(GOPATH)/src --go_out=$(GOPATH)/src $(WORKING_DIRECTORY)/pkg/net/grpc/stub.proto
