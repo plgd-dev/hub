@@ -17,7 +17,6 @@ type AsymmetricKey struct {
 type AccessTokenType string
 
 const AccessTokenType_JWT AccessTokenType = "jwt"
-const AccessTokenType_REFERENCE AccessTokenType = "reference"
 
 type AllowedGrantType string
 
@@ -25,17 +24,6 @@ const AllowedGrantType_AUTHORIZATION_CODE AllowedGrantType = "authorization_code
 const AllowedGrantType_CLIENT_CREDENTIALS AllowedGrantType = "client_credentials"
 const AllowedGrantType_PASSWORD AllowedGrantType = "password"
 const AllowedGrantType_REFRESH_TOKEN AllowedGrantType = "refresh_token"
-
-type AllowedGrantTypes []AllowedGrantType
-
-func (gt AllowedGrantTypes) IsAllowed(v AllowedGrantType) bool {
-	for _, t := range gt {
-		if v == t {
-			return true
-		}
-	}
-	return false
-}
 
 type Client struct {
 	ID                        string        `yaml:"id"`

@@ -125,17 +125,6 @@ func newClient(server *Service, client *tcp.ClientConn, tlsDeviceID string) *Cli
 	}
 }
 
-func ToClient(v interface{}, ok bool) (*Client, bool) {
-	if !ok {
-		return nil, false
-	}
-	if v == nil {
-		return nil, false
-	}
-	c, ok := v.(*Client)
-	return c, ok
-}
-
 func (client *Client) remoteAddrString() string {
 	return client.coapConn.RemoteAddr().String()
 }
