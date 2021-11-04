@@ -9,7 +9,6 @@ import (
 	"github.com/plgd-dev/hub/pkg/net/grpc/client"
 	"github.com/plgd-dev/hub/pkg/net/listener"
 	"github.com/plgd-dev/hub/pkg/security/jwt/validator"
-	natsClient "github.com/plgd-dev/hub/resource-aggregate/cqrs/eventbus/nats/client"
 )
 
 type Config struct {
@@ -86,21 +85,6 @@ type GrpcServerConfig struct {
 func (c *GrpcServerConfig) Validate() error {
 	if err := c.Connection.Validate(); err != nil {
 		return fmt.Errorf("grpc.%w", err)
-	}
-	return nil
-}
-
-type EventBusConfig struct {
-	GoPoolSize int               `yaml:"goPoolSize" json:"goPoolSize"`
-	NATS       natsClient.Config `yaml:"nats" json:"nats"`
-}
-
-func (c *EventBusConfig) Validate() error {
-	if c.GoPoolSize <= 0 {
-		return fmt.Errorf("goPoolSize.%v", c.GoPoolSize)
-	}
-	if err := c.NATS.Validate(); err != nil {
-		return fmt.Errorf("nats.%w", err)
 	}
 	return nil
 }
