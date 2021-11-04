@@ -34,7 +34,7 @@ import (
 	"google.golang.org/grpc/credentials"
 )
 
-func TestRequestHandler_GetPendingMetadataUpdates(t *testing.T) {
+func TestRequestHandlerGetPendingMetadataUpdates(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	type args struct {
 		accept         string

@@ -8,6 +8,6 @@ import (
 
 func (requestHandler *RequestHandler) getWebConfiguration(w http.ResponseWriter, r *http.Request) {
 	if err := jsonResponseWriter(w, requestHandler.config.UI.WebConfiguration); err != nil {
-		log.Errorf("failed to write response: %v", err)
+		log.Errorf("failed to write response: %w", err)
 	}
 }

@@ -3,6 +3,7 @@ package test
 import (
 	"context"
 	"fmt"
+	"os"
 	"sync"
 	"testing"
 	"time"
@@ -17,7 +18,27 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 )
 
-func MakeConfig(t *testing.T) service.Config {
+func MakeWebConfigurationConfig() service.WebConfiguration {
+	return service.WebConfiguration{
+		Authority:          "https://" + config.OAUTH_SERVER_HOST,
+		HTTPGatewayAddress: "https://" + config.HTTP_GW_HOST,
+		WebOAuthClient: service.BasicOAuthClient{
+			ClientID: config.OAUTH_MANAGER_CLIENT_ID,
+			Audience: config.OAUTH_MANAGER_AUDIENCE,
+			Scopes:   []string{"openid", "offline_access"},
+		},
+		DeviceOAuthClient: service.DeviceOAuthClient{
+			BasicOAuthClient: service.BasicOAuthClient{
+				ClientID: config.OAUTH_MANAGER_CLIENT_ID,
+				Audience: config.OAUTH_MANAGER_AUDIENCE,
+				Scopes:   []string{"profile", "openid", "offline_access"},
+			},
+			ProviderName: config.DEVICE_PROVIDER,
+		},
+	}
+}
+
+func MakeConfig(t *testing.T, enableUI bool) service.Config {
 	var cfg service.Config
 	cfg.APIs.HTTP.Authorization = config.MakeAuthorizationConfig()
 	cfg.APIs.HTTP.Connection = config.MakeListenerConfig(config.HTTP_GW_HOST)
@@ -26,6 +47,12 @@ func MakeConfig(t *testing.T) service.Config {
 	cfg.APIs.HTTP.WebSocket.PingFrequency = 10 * time.Second
 
 	cfg.Clients.GrpcGateway.Connection = config.MakeGrpcClientConfig(config.GRPC_HOST)
+
+	if enableUI {
+		cfg.UI.Enabled = true
+		cfg.UI.Directory = os.Getenv("TEST_HTTP_GW_WWW_ROOT")
+		cfg.UI.WebConfiguration = MakeWebConfigurationConfig()
+	}
 
 	err := cfg.Validate()
 	require.NoError(t, err)
@@ -36,7 +63,7 @@ func MakeConfig(t *testing.T) service.Config {
 }
 
 func SetUp(t *testing.T) (TearDown func()) {
-	return New(t, MakeConfig(t))
+	return New(t, MakeConfig(t, false))
 }
 
 func New(t *testing.T, cfg service.Config) func() {

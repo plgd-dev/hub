@@ -15,7 +15,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestRequestHandler_GetHubConfiguration(t *testing.T) {
+func TestRequestHandlerGetHubConfiguration(t *testing.T) {
 	expected := rdTest.MakeConfig(t).ExposedHubConfiguration.ToProto()
 	expected.CurrentTime = 0
 	tests := []struct {
