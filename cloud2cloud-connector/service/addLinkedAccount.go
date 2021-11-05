@@ -55,12 +55,22 @@ func (rh *RequestHandler) handleOAuth(w http.ResponseWriter, r *http.Request, li
 	if loaded {
 		return http.StatusInternalServerError, fmt.Errorf("cannot store key - collision")
 	}
-	oauthCfg := linkedCloud.OAuth
-	if oauthCfg.RedirectURL == "" {
-		oauthCfg.RedirectURL = rh.provider.Config.RedirectURL
+
+	if !linkedAccount.Data.HasOrigin() {
+		url := rh.provider.Config.AuthCodeURL(t)
+		http.Redirect(w, r, url, http.StatusTemporaryRedirect)
+		return http.StatusOK, nil
 	}
-	url := oauthCfg.AuthCodeURL(t)
-	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
+
+	if !linkedAccount.Data.HasTarget() {
+		oauthCfg := linkedCloud.OAuth
+		if oauthCfg.RedirectURL == "" {
+			oauthCfg.RedirectURL = rh.provider.Config.RedirectURL
+		}
+		url := oauthCfg.AuthCodeURL(t)
+		http.Redirect(w, r, url, http.StatusTemporaryRedirect)
+		return http.StatusOK, nil
+	}
 	return http.StatusOK, nil
 }
 
