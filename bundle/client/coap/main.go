@@ -91,7 +91,6 @@ func signIn(co *coap.ClientConn, authresp authResp) {
 	if resp.Code() != codes.Changed {
 		log.Fatalf("error get coap code for sigin: %v", resp.Code())
 	}
-
 }
 
 func toJSON(v interface{}) string {
@@ -273,7 +272,6 @@ func main() {
 	update := flag.Bool("update", false, "update resource, content is expected in stdin")
 	delete := flag.Bool("delete", false, "delete resource")
 	create := flag.Bool("create", false, "create resource, content is expected in stdin")
-
 	contentFormat := flag.Int("contentFormat", int(message.AppJSON), "contentFormat for update resource")
 
 	flag.Parse()
