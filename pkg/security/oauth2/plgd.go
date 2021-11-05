@@ -20,6 +20,7 @@ func NewPlgdProvider(ctx context.Context, config Config, logger log.Logger) (*Pl
 	if err != nil {
 		return nil, err
 	}
+	config.ClientSecret = string(clientSecret)
 
 	httpClient, err := client.New(config.HTTP, logger)
 	if err != nil {
@@ -30,7 +31,9 @@ func NewPlgdProvider(ctx context.Context, config Config, logger log.Logger) (*Pl
 		return nil, err
 	}
 
-	oauth2 := config.ToOAuth2(oidcfg.AuthURL, oidcfg.TokenURL, string(clientSecret))
+	config.AuthURL = oidcfg.AuthURL
+	config.TokenURL = oidcfg.TokenURL
+	oauth2 := config.ToOAuth2(config.AuthURL, config.TokenURL, config.ClientSecret)
 
 	return &PlgdProvider{
 		Config:     config,
