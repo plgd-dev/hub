@@ -136,51 +136,55 @@ func (s *ResourceSubscription) ID() string {
 	return s.subscriptionID
 }
 
-func (s *ResourceSubscription) runRecv() {
-	cancelAndHandleError := func(err error) {
-		errors := make([]error, 0, 2)
-		if err != nil {
-			errors = append(errors, err)
-		}
-		if _, err := s.Cancel(); err != nil {
-			errors = append(errors, fmt.Errorf("failed to cancel resource subscription: %w", err))
-		}
-		if len(errors) > 0 {
-			s.closeErrorHandler.Error(fmt.Errorf("%+v", errors))
-		}
+func (s *ResourceSubscription) cancelAndHandleError(err error) {
+	errors := make([]error, 0, 2)
+	if err != nil {
+		errors = append(errors, err)
 	}
+	if _, err := s.Cancel(); err != nil {
+		errors = append(errors, fmt.Errorf("failed to cancel resource subscription: %w", err))
+	}
+	if len(errors) > 0 {
+		s.closeErrorHandler.Error(fmt.Errorf("%+v", errors))
+	}
+}
 
+func (s *ResourceSubscription) handleCancel(cancel *pb.Event_SubscriptionCanceled) {
+	reason := cancel.GetReason()
+	if reason == "" {
+		s.closeErrorHandler.OnClose()
+		return
+	}
+	s.closeErrorHandler.Error(fmt.Errorf(reason))
+}
+
+func (s *ResourceSubscription) runRecv() {
 	for {
 		ev, err := s.client.Recv()
 		if err == io.EOF {
-			cancelAndHandleError(nil)
+			s.cancelAndHandleError(nil)
 			s.closeErrorHandler.OnClose()
 			return
 		}
 		if err != nil {
-			cancelAndHandleError(err)
+			s.cancelAndHandleError(err)
 			return
 		}
 		cancel := ev.GetSubscriptionCanceled()
 		if cancel != nil {
-			cancelAndHandleError(nil)
-			reason := cancel.GetReason()
-			if reason == "" {
-				s.closeErrorHandler.OnClose()
-				return
-			}
-			s.closeErrorHandler.Error(fmt.Errorf(reason))
+			s.cancelAndHandleError(nil)
+			s.handleCancel(cancel)
 			return
 		}
 
-		if ct := ev.GetResourceChanged(); ct != nil {
-			err = s.resourceContentChangedHandler.HandleResourceContentChanged(s.client.Context(), ct)
-			if err != nil {
-				cancelAndHandleError(err)
-				return
-			}
-		} else {
-			cancelAndHandleError(fmt.Errorf("unknown event occurs %T on recv resource events: %+v", ev, ev))
+		ct := ev.GetResourceChanged()
+		if ct == nil {
+			s.cancelAndHandleError(fmt.Errorf("unknown event occurs %T on recv resource events: %+v", ev, ev))
+			return
+		}
+		err = s.resourceContentChangedHandler.HandleResourceContentChanged(s.client.Context(), ct)
+		if err != nil {
+			s.cancelAndHandleError(err)
 			return
 		}
 	}

@@ -148,44 +148,48 @@ func (s *DevicesSubscription) handleEvent(e *pb.Event) error {
 	return fmt.Errorf("unknown event occurs %T on recv devices events: %+v", e, e)
 }
 
-func (s *DevicesSubscription) runRecv() {
-	cancelAndHandlerError := func(err error) {
-		errors := make([]error, 0, 2)
-		if err != nil {
-			errors = append(errors, err)
-		}
-		if _, err := s.Cancel(); err != nil {
-			errors = append(errors, fmt.Errorf("failed to cancel device subscription: %w", err))
-		}
-		if len(errors) > 0 {
-			s.closeErrorHandler.Error(fmt.Errorf("%+v", errors))
-		}
+func (s *DevicesSubscription) cancelAndHandlerError(err error) {
+	errors := make([]error, 0, 2)
+	if err != nil {
+		errors = append(errors, err)
 	}
+	if _, err := s.Cancel(); err != nil {
+		errors = append(errors, fmt.Errorf("failed to cancel device subscription: %w", err))
+	}
+	if len(errors) > 0 {
+		s.closeErrorHandler.Error(fmt.Errorf("%+v", errors))
+	}
+}
 
+func (s *DevicesSubscription) handleCancel(cancel *pb.Event_SubscriptionCanceled) {
+	reason := cancel.GetReason()
+	if reason == "" {
+		s.closeErrorHandler.OnClose()
+		return
+	}
+	s.closeErrorHandler.Error(fmt.Errorf(reason))
+}
+
+func (s *DevicesSubscription) runRecv() {
 	for {
 		ev, err := s.client.Recv()
 		if err == io.EOF {
-			cancelAndHandlerError(nil)
+			s.cancelAndHandlerError(nil)
 			s.closeErrorHandler.OnClose()
 			return
 		}
 		if err != nil {
-			cancelAndHandlerError(err)
+			s.cancelAndHandlerError(err)
 			return
 		}
 		cancel := ev.GetSubscriptionCanceled()
 		if cancel != nil {
-			reason := cancel.GetReason()
-			if reason == "" {
-				s.closeErrorHandler.OnClose()
-				return
-			}
-			s.closeErrorHandler.Error(fmt.Errorf(reason))
+			s.handleCancel(cancel)
 			return
 		}
 
 		if err := s.handleEvent(ev); err != nil {
-			cancelAndHandlerError(err)
+			s.cancelAndHandlerError(err)
 			return
 		}
 	}

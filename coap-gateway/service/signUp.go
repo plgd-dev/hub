@@ -66,7 +66,7 @@ func getSignUpContent(token oauth2.Token, owner string, validUntil int64, option
 // https://github.com/openconnectivityfoundation/security/blob/master/swagger2.0/oic.sec.account.swagger.json
 func signUpPostHandler(r *mux.Message, client *Client) {
 	logErrorAndCloseClient := func(err error, code coapCodes.Code) {
-		client.logAndWriteErrorResponse(err, code, r.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign up: %w", err), code, r.Token)
 		if err := client.Close(); err != nil {
 			log.Errorf("sign up error: %w", err)
 		}
@@ -74,7 +74,7 @@ func signUpPostHandler(r *mux.Message, client *Client) {
 
 	var signUp CoapSignUpRequest
 	if err := cbor.ReadFrom(r.Body, &signUp); err != nil {
-		logErrorAndCloseClient(fmt.Errorf("cannot handle sign up: %w", err), coapCodes.BadRequest)
+		logErrorAndCloseClient(err, coapCodes.BadRequest)
 		return
 	}
 
@@ -82,47 +82,47 @@ func signUpPostHandler(r *mux.Message, client *Client) {
 		signUp.AuthorizationCode = signUp.AuthorizationCodeLegacy
 	}
 	if err := signUp.checkOAuthRequest(); err != nil {
-		logErrorAndCloseClient(fmt.Errorf("cannot handle sign up: %w", err), coapCodes.BadRequest)
+		logErrorAndCloseClient(err, coapCodes.BadRequest)
 		return
 	}
 
 	provider, ok := client.server.providers[signUp.AuthorizationProvider]
 	if !ok {
-		logErrorAndCloseClient(fmt.Errorf("cannot handle sign up: unknown authorization provider('%v')", signUp.AuthorizationProvider), coapCodes.Unauthorized)
+		logErrorAndCloseClient(fmt.Errorf("unknown authorization provider('%v')", signUp.AuthorizationProvider), coapCodes.Unauthorized)
 		return
 	}
 
 	token, err := client.exchangeCache.Execute(r.Context, provider, signUp.AuthorizationCode)
 	if err != nil {
-		logErrorAndCloseClient(fmt.Errorf("cannot handle sign up: %w", err), coapCodes.Unauthorized)
+		logErrorAndCloseClient(err, coapCodes.Unauthorized)
 		return
 	}
 	if token.RefreshToken == "" {
-		logErrorAndCloseClient(fmt.Errorf("cannot handle sign up: exchange didn't return a refresh token"), coapCodes.Unauthorized)
+		logErrorAndCloseClient(fmt.Errorf("exchange didn't return a refresh token"), coapCodes.Unauthorized)
 		return
 	}
 
 	claim, err := client.ValidateToken(r.Context, token.AccessToken.String())
 	if err != nil {
-		logErrorAndCloseClient(fmt.Errorf("cannot handle sign up: %w", err), coapCodes.Unauthorized)
+		logErrorAndCloseClient(err, coapCodes.Unauthorized)
 		return
 	}
 
 	err = client.server.VerifyDeviceID(client.tlsDeviceID, claim)
 	if err != nil {
-		logErrorAndCloseClient(fmt.Errorf("cannot handle sign up: %w", err), coapCodes.Unauthorized)
+		logErrorAndCloseClient(err, coapCodes.Unauthorized)
 		return
 	}
 
 	validUntil, ok := ValidUntil(token.Expiry)
 	if !ok {
-		logErrorAndCloseClient(fmt.Errorf("cannot sign up: expired access token"), coapCodes.Unauthorized)
+		logErrorAndCloseClient(fmt.Errorf("expired access token"), coapCodes.Unauthorized)
 		return
 	}
 
 	owner := claim.Owner(client.server.config.APIs.COAP.Authorization.OwnerClaim)
 	if owner == "" {
-		logErrorAndCloseClient(fmt.Errorf("cannot sign up: cannot determine owner"), coapCodes.Unauthorized)
+		logErrorAndCloseClient(fmt.Errorf("cannot determine owner"), coapCodes.Unauthorized)
 		return
 	}
 
@@ -132,13 +132,13 @@ func signUpPostHandler(r *mux.Message, client *Client) {
 	if _, err := client.server.isClient.AddDevice(ctx, &pb.AddDeviceRequest{
 		DeviceId: deviceID,
 	}); err != nil {
-		logErrorAndCloseClient(fmt.Errorf("cannot sign up: %w", err), coapconv.GrpcErr2CoapCode(err, coapconv.Update))
+		logErrorAndCloseClient(err, coapconv.GrpcErr2CoapCode(err, coapconv.Update))
 		return
 	}
 
 	accept, out, err := getSignUpContent(token, owner, validUntil, r.Options)
 	if err != nil {
-		logErrorAndCloseClient(fmt.Errorf("cannot handle sign up: %w", err), coapCodes.InternalServerError)
+		logErrorAndCloseClient(err, coapCodes.InternalServerError)
 		return
 	}
 
