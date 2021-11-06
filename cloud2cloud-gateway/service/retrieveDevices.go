@@ -70,14 +70,18 @@ func (rh *RequestHandler) GetDevices(ctx context.Context, deviceIdFilter []strin
 	return devices, nil
 }
 
+func retrieveDevicesError(tag string, err error) error {
+	return fmt.Errorf("cannot retrieve all devices[%s]: %w", tag, err)
+}
+
 func (rh *RequestHandler) RetrieveDevicesBase(ctx context.Context, w http.ResponseWriter, encoder responseWriterEncoderFunc) (int, error) {
 	devices, err := rh.GetDevices(ctx, nil)
 	if err != nil {
-		return kitNetHttp.ErrToStatusWithDef(err, http.StatusForbidden), fmt.Errorf("cannot retrieve all devices[base]: %w", err)
+		return kitNetHttp.ErrToStatusWithDef(err, http.StatusForbidden), retrieveDevicesError("base", err)
 	}
 	resourceLink, err := rh.GetResourceLinks(ctx, nil)
 	if err != nil {
-		return kitNetHttp.ErrToStatusWithDef(err, http.StatusForbidden), fmt.Errorf("cannot retrieve all devices[base]: %w", err)
+		return kitNetHttp.ErrToStatusWithDef(err, http.StatusForbidden), retrieveDevicesError("base", err)
 	}
 
 	resp := make([]RetrieveDeviceWithLinksResponse, 0, 32)
@@ -93,7 +97,7 @@ func (rh *RequestHandler) RetrieveDevicesBase(ctx context.Context, w http.Respon
 
 	err = encoder(w, resp, http.StatusOK)
 	if err != nil {
-		return http.StatusBadRequest, fmt.Errorf("cannot retrieve all devices[base]: %w", err)
+		return http.StatusBadRequest, retrieveDevicesError("base", err)
 	}
 	return http.StatusOK, nil
 }
@@ -101,11 +105,11 @@ func (rh *RequestHandler) RetrieveDevicesBase(ctx context.Context, w http.Respon
 func (rh *RequestHandler) RetrieveDevicesAll(ctx context.Context, w http.ResponseWriter, encoder responseWriterEncoderFunc) (int, error) {
 	devices, err := rh.GetDevices(ctx, nil)
 	if err != nil {
-		return kitNetHttp.ErrToStatusWithDef(err, http.StatusForbidden), fmt.Errorf("cannot retrieve all devices[base]: %w", err)
+		return kitNetHttp.ErrToStatusWithDef(err, http.StatusForbidden), retrieveDevicesError("all", err)
 	}
 	reps, err := rh.RetrieveResources(ctx, nil, nil)
 	if err != nil {
-		return kitNetHttp.ErrToStatusWithDef(err, http.StatusForbidden), fmt.Errorf("cannot retrieve all devices[base]: %w", err)
+		return kitNetHttp.ErrToStatusWithDef(err, http.StatusForbidden), retrieveDevicesError("all", err)
 	}
 
 	resp := make([]RetrieveDeviceContentAllResponse, 0, 32)
@@ -121,7 +125,7 @@ func (rh *RequestHandler) RetrieveDevicesAll(ctx context.Context, w http.Respons
 
 	err = encoder(w, resp, http.StatusOK)
 	if err != nil {
-		return http.StatusBadRequest, fmt.Errorf("cannot retrieve all devices[base]: %w", err)
+		return http.StatusBadRequest, retrieveDevicesError("all", err)
 	}
 	return http.StatusOK, nil
 }
