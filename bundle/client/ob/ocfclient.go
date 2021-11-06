@@ -12,6 +12,7 @@ import (
 	capb "github.com/plgd-dev/hub/certificate-authority/pb"
 	"github.com/plgd-dev/hub/certificate-authority/signer"
 	"github.com/plgd-dev/hub/grpc-gateway/pb"
+	"github.com/plgd-dev/hub/pkg/log"
 	"github.com/plgd-dev/kit/v2/security"
 )
 
@@ -40,7 +41,9 @@ func (c *OcfClient) Initialize(ctx context.Context, hubConfiguration *pb.HubConf
 			JWTClaimOwnerID: hubConfiguration.GetJwtOwnerClaim(),
 			Sign:            signer.Sign,
 		},
-	}, appCallback, nil, func(err error) {})
+	}, appCallback, nil, func(err error) {
+		log.Error(err)
+	})
 
 	if err != nil {
 		return fmt.Errorf("cannot create client: %w", err)
