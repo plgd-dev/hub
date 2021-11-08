@@ -100,7 +100,7 @@ func createEmitEventFunc(cfg cmClient.Config, timeout time.Duration, logger log.
 		Transport: trans,
 	}
 	emitFunc := func(ctx context.Context, eventType events.EventType, s store.Subscription, incrementSubscriptionSequenceNumber incrementSubscriptionSequenceNumberFunc, rep interface{}) (remove bool, err error) {
-		log.Debugf("emitEvent: %v: %+v", eventType, s)
+		log.Debugf("emitEvent: %v: %+v\n", eventType, s)
 		ctx, cancel := context.WithTimeout(ctx, timeout)
 		defer cancel()
 
