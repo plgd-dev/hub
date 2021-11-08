@@ -19,8 +19,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const HTTPS_SCHEME = "https://"
-
 type HTTPRequestBuilder struct {
 	method      string
 	body        io.Reader
@@ -57,6 +55,16 @@ func (c *HTTPRequestBuilder) Accept(accept string) *HTTPRequestBuilder {
 		return c
 	}
 	c.header["Accept"] = accept
+	return c
+}
+
+func (c *HTTPRequestBuilder) DeviceId(deviceID string) *HTTPRequestBuilder {
+	c.uriParams[DeviceIDKey] = deviceID
+	return c
+}
+
+func (c *HTTPRequestBuilder) SubscriptionID(subscriptionID string) *HTTPRequestBuilder {
+	c.uriParams[SubscriptionIDKey] = subscriptionID
 	return c
 }
 

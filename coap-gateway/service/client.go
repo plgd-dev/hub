@@ -303,7 +303,7 @@ func (client *Client) cancelResourcesObservations(ctx context.Context, hrefs []s
 	observartions := client.popTrackedObservation(hrefs)
 	for _, obs := range observartions {
 		if err := obs.Cancel(ctx); err != nil {
-			log.Errorf("cannot cancel resource observation: %w", err)
+			log.Debugf("cannot cancel resource observation: %w", err)
 		}
 	}
 }

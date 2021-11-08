@@ -339,7 +339,7 @@ type closeEventHandler struct {
 }
 
 func (h *closeEventHandler) OnClose() {
-	log.Errorf("subscription %+v was closed", h.data.Data())
+	log.Debugf("subscription %+v was closed", h.data.Data())
 	h.data.Store(nil)
 }
 

@@ -750,6 +750,7 @@ done
 # cloud2cloud-gateway
 ## configuration
 cat /configs/cloud2cloud-gateway.yaml | yq e "\
+  .log.debug = ${LOG_DEBUG} |
   .apis.http.address = \"${CLOUD2CLOUD_GATEWAY_ADDRESS}\" |
   .apis.http.authorization.audience = \"${SERVICE_OAUTH_AUDIENCE}\" |
   .apis.http.authorization.http.tls.useSystemCAPool = true |
