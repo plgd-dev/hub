@@ -89,6 +89,7 @@ env: clean certificates nats mongo privateKeys http-gateway-www
 		-v $(WORKING_DIRECTORY)/.tmp/devsim:/tmp \
 		ghcr.io/iotivity/iotivity-lite/cloud-server-debug:master \
 		devsim-$(SIMULATOR_NAME_SUFFIX)
+# TODO switch back to ghcr.io/iotivity/iotivity-lite/cloud-server-debug:latest
 
 define RUN-DOCKER
 	docker run \
