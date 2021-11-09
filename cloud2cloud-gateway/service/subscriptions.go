@@ -204,32 +204,36 @@ func (s *SubscriptionData) getEventHandlerForDevicesSubscription(emitEvent emitE
 			h: &devsHandler,
 		}
 	default:
-		return nil, fmt.Errorf("createDevicesSubscription: unsupported subscription event types %+v", s.data.EventTypes)
+		return nil, fmt.Errorf("unsupported subscription event types %+v", s.data.EventTypes)
 	}
 	return eventHandler, nil
 }
 
 func (s *SubscriptionData) createDevicesSubscription(ctx context.Context, emitEvent emitEventFunc, closeEventHandler *closeEventHandler) (Subscription, error) {
+	createSubDevicesError := func(err error) error {
+		return fmt.Errorf("createDevicesSubscription: %w", err)
+	}
+
 	if !s.data.Initialized {
 		eventTypes, err := s.getEventsToEmitForDevicesSubscription(ctx)
 		if err != nil {
-			return nil, err
+			return nil, createSubDevicesError(err)
 		}
 
 		for _, e := range eventTypes {
 			_, err := emitEvent(ctx, e, s.Data(), s.IncrementSequenceNumber, makeDevicesRepresentation([]string{}))
 			if err != nil {
-				return nil, err
+				return nil, createSubDevicesError(err)
 			}
 		}
 
 		if err = s.SetInitialized(ctx); err != nil {
-			return nil, err
+			return nil, createSubDevicesError(err)
 		}
 	}
 	eventHandler, err := s.getEventHandlerForDevicesSubscription(emitEvent)
 	if err != nil {
-		return nil, err
+		return nil, createSubDevicesError(err)
 	}
 	return client.NewDevicesSubscription(ctx, closeEventHandler, eventHandler, s.gwClient)
 }
@@ -249,11 +253,12 @@ func (s *SubscriptionData) createResourceSubscription(ctx context.Context, emitE
 	return client.NewResourceSubscription(ctx, commands.NewResourceID(s.data.DeviceID, s.data.Href), closeEventHandler, eventHandler, s.gwClient)
 }
 
-func (s *SubscriptionData) createDeviceSubscription(ctx context.Context, emitEvent emitEventFunc, closeEventHandler *closeEventHandler) (Subscription, error) {
+func (s *SubscriptionData) getEventHandlerForDeviceSubscription(emitEvent emitEventFunc) (interface{}, error) {
 	devHandler := deviceSubscriptionHandler{
 		subData:   s,
 		emitEvent: emitEvent,
 	}
+
 	var eventHandler interface{}
 	switch {
 	case s.data.EventTypes.Has(events.EventType_ResourcesPublished) && s.data.EventTypes.Has(events.EventType_ResourcesUnpublished):
@@ -267,7 +272,67 @@ func (s *SubscriptionData) createDeviceSubscription(ctx context.Context, emitEve
 			h: &devHandler,
 		}
 	default:
-		return nil, fmt.Errorf("createDeviceSubscription: unsupported subscription eventypes %+v", s.data.EventTypes)
+		return nil, fmt.Errorf("unsupported subscription eventypes %+v", s.data.EventTypes)
+	}
+	return eventHandler, nil
+}
+
+func (s *SubscriptionData) hasPublishedDevice(ctx context.Context) (bool, error) {
+	client, err := s.gwClient.GetResourceLinks(ctx, &pb.GetResourceLinksRequest{DeviceIdFilter: []string{s.data.DeviceID}})
+	if err != nil {
+		return false, err
+	}
+	_, err = client.Recv()
+	if err == io.EOF || status.Convert(err).Code() == codes.NotFound {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
+func (s *SubscriptionData) getEventsToEmitForDeviceSubscription(ctx context.Context) ([]events.EventType, error) {
+	hasPublishedDev, err := s.hasPublishedDevice(ctx)
+	if err != nil {
+		return nil, err
+	}
+	var eventTypes []events.EventType
+	if s.data.EventTypes.Has(events.EventType_ResourcesPublished) && !hasPublishedDev {
+		eventTypes = append(eventTypes, events.EventType_ResourcesPublished)
+	}
+	if s.data.EventTypes.Has(events.EventType_ResourcesUnpublished) {
+		eventTypes = append(eventTypes, events.EventType_ResourcesUnpublished)
+	}
+	return eventTypes, nil
+}
+
+func (s *SubscriptionData) createDeviceSubscription(ctx context.Context, emitEvent emitEventFunc, closeEventHandler *closeEventHandler) (Subscription, error) {
+	createSubDeviceError := func(err error) error {
+		return fmt.Errorf("createDeviceSubscription: %w", err)
+	}
+
+	if !s.data.Initialized {
+		eventTypes, err := s.getEventsToEmitForDeviceSubscription(ctx)
+		if err != nil {
+			return nil, createSubDeviceError(err)
+		}
+
+		for _, e := range eventTypes {
+			_, err := emitEvent(ctx, e, s.Data(), s.IncrementSequenceNumber, makeDevicesRepresentation([]string{}))
+			if err != nil {
+				return nil, createSubDeviceError(err)
+			}
+		}
+
+		if err := s.SetInitialized(ctx); err != nil {
+			return nil, createSubDeviceError(err)
+		}
+	}
+
+	eventHandler, err := s.getEventHandlerForDeviceSubscription(emitEvent)
+	if err != nil {
+		return nil, createSubDeviceError(err)
 	}
 	return client.NewDeviceSubscription(ctx, s.data.DeviceID, closeEventHandler, eventHandler, s.gwClient)
 }
