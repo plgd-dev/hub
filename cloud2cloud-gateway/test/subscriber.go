@@ -10,7 +10,6 @@ import (
 	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/hub/cloud2cloud-connector/events"
 	"github.com/plgd-dev/hub/cloud2cloud-gateway/uri"
-	testCfg "github.com/plgd-dev/hub/test/config"
 	testHttp "github.com/plgd-dev/hub/test/http"
 	"github.com/plgd-dev/kit/v2/codec/json"
 	"github.com/stretchr/testify/assert"
@@ -30,10 +29,6 @@ func NewC2CSubscriber(port, eventsURI string) *C2CSubscriber {
 	}
 }
 
-func getFullURI(uri string) string {
-	return testHttp.HTTPS_SCHEME + testCfg.C2C_GW_HOST + uri
-}
-
 func (c *C2CSubscriber) Subscribe(t *testing.T, ctx context.Context, token, deviceID string, eventTypes events.EventTypes) string {
 	sub := events.SubscriptionRequest{
 		URL:           "https://localhost:" + c.port + c.eventsURI,
@@ -43,7 +38,7 @@ func (c *C2CSubscriber) Subscribe(t *testing.T, ctx context.Context, token, devi
 	reqData, err := json.Encode(sub)
 	require.NoError(t, err)
 
-	uri := getFullURI(uri.DeviceSubscriptions)
+	uri := C2CURI(uri.DeviceSubscriptions)
 	accept := message.AppJSON.String()
 	rb := testHttp.NewHTTPRequest(http.MethodPost, uri, bytes.NewBuffer(reqData)).AuthToken(token).Accept(accept).DeviceId(deviceID)
 	req := rb.Build(ctx, t)
@@ -71,7 +66,7 @@ func (c *C2CSubscriber) Subscribe(t *testing.T, ctx context.Context, token, devi
 }
 
 func (c *C2CSubscriber) Unsubscribe(t *testing.T, ctx context.Context, token, deviceID, subID string) {
-	uri := getFullURI(uri.DeviceSubscription)
+	uri := C2CURI(uri.DeviceSubscription)
 	rb := testHttp.NewHTTPRequest(http.MethodDelete, uri, nil).AuthToken(token).DeviceId(deviceID).SubscriptionID(subID)
 	req := rb.Build(ctx, t)
 	fmt.Printf("%v\n", req.URL.String())
