@@ -4,12 +4,10 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/gorilla/mux"
 	"github.com/plgd-dev/hub/cloud2cloud-connector/events"
 	"github.com/plgd-dev/hub/cloud2cloud-gateway/store"
-
 	"github.com/plgd-dev/kit/v2/log"
-
-	"github.com/gorilla/mux"
 )
 
 func (rh *RequestHandler) subscribeToDevice(w http.ResponseWriter, r *http.Request) (int, error) {
