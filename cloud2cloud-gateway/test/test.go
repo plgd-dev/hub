@@ -14,6 +14,7 @@ import (
 	"github.com/plgd-dev/hub/pkg/mongodb"
 	"github.com/plgd-dev/hub/pkg/security/certManager/server"
 	"github.com/plgd-dev/hub/test/config"
+	testHttp "github.com/plgd-dev/hub/test/http"
 	"github.com/stretchr/testify/require"
 )
 
@@ -77,6 +78,10 @@ func New(t *testing.T, cfg service.Config) func() {
 		_ = s.Shutdown()
 		wg.Wait()
 	}
+}
+
+func C2CURI(uri string) string {
+	return testHttp.HTTPS_SCHEME + config.C2C_GW_HOST + uri
 }
 
 func NewTestListener(t *testing.T) (net.Listener, func()) {

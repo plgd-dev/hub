@@ -6,6 +6,7 @@ import (
 	"net"
 	"net/http"
 	"testing"
+	"time"
 
 	router "github.com/gorilla/mux"
 	"github.com/plgd-dev/device/schema"
@@ -29,14 +30,28 @@ type Event struct {
 	data   interface{}
 }
 
-type EventChan = chan Event
-
 func (e *Event) GetHeader() events.EventHeader {
 	return e.header
 }
 
 func (e *Event) GetData() interface{} {
 	return e.data
+}
+
+type EventChan = chan Event
+
+func WaitForEvents(ch EventChan, timeout time.Duration) []Event {
+	var events []Event
+	stop := false
+	for !stop {
+		select {
+		case ev := <-ch:
+			events = append(events, ev)
+		case <-time.After(timeout):
+			stop = true
+		}
+	}
+	return events
 }
 
 func DecodeEvent(t *testing.T, etype events.EventType, data []byte) interface{} {
