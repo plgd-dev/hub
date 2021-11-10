@@ -32,6 +32,9 @@ const ClientTestShortExpiration = "testShortExpiration"
 // is used repeatedly within a minute of the first use
 const ClientTestRestrictedAuth = "testRestrictedAuth"
 
+// Client with expired access token
+const ClientTestExpired = "testExpired"
+
 func MakeConfig(t *testing.T) service.Config {
 	var cfg service.Config
 	cfg.APIs.HTTP = config.MakeListenerConfig(config.OAUTH_SERVER_HOST)
@@ -58,6 +61,12 @@ func MakeConfig(t *testing.T) service.Config {
 			AuthorizationCodeLifetime: time.Minute * 10,
 			AccessTokenLifetime:       time.Hour * 24,
 			CodeRestrictionLifetime:   time.Minute,
+		},
+		{
+			ID:                        ClientTestExpired,
+			AuthorizationCodeLifetime: time.Second * 10,
+			AccessTokenLifetime:       -1 * time.Second,
+			CodeRestrictionLifetime:   0,
 		},
 	}
 

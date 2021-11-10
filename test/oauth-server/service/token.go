@@ -84,7 +84,7 @@ func makeJWTPayload(key interface{}, jwkKey jwk.Key, data []byte) ([]byte, error
 func generateAccessToken(clientID string, lifeTime time.Duration, host, deviceID string, key interface{}, jwkKey jwk.Key) (string, time.Time, error) {
 	now := time.Now()
 	var expires time.Time
-	if lifeTime > 0 {
+	if lifeTime != 0 {
 		expires = now.Add(lifeTime)
 	}
 	token, err := makeAccessToken(clientID, host, deviceID, now, expires)
@@ -296,7 +296,7 @@ func (requestHandler *RequestHandler) getAccessToken(tokenReq tokenRequest, clie
 	}
 	accessToken := clientCfg.ID
 	var accessTokenExpires time.Time
-	if clientCfg.AccessTokenLifetime > 0 {
+	if clientCfg.AccessTokenLifetime != 0 {
 		accessTokenExpires = time.Now().Add(clientCfg.AccessTokenLifetime)
 	}
 	return accessToken, accessTokenExpires, nil

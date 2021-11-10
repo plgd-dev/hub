@@ -65,7 +65,7 @@ func (rh *RequestHandler) makeSubscription(w http.ResponseWriter, r *http.Reques
 func (rh *RequestHandler) subscribeToResource(w http.ResponseWriter, r *http.Request) (int, error) {
 	routeVars := mux.Vars(r)
 	deviceID := routeVars[deviceIDKey]
-	href := routeVars[HrefKey]
+	href := routeVars[hrefKey]
 
 	s, code, err := rh.makeSubscription(w, r, store.Type_Resource, []events.EventType{events.EventType_ResourceChanged})
 	if err != nil {

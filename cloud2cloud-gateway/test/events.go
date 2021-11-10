@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"net"
 	"net/http"
+	"sync"
 	"testing"
 	"time"
 
@@ -23,6 +24,7 @@ type EventsServer struct {
 	uri      string
 	listener net.Listener
 	cleanUp  func()
+	wg       sync.WaitGroup
 }
 
 type Event struct {
@@ -63,6 +65,22 @@ func DecodeEvent(t *testing.T, etype events.EventType, data []byte) interface{} 
 		err := json.Decode(data, &links)
 		assert.NoError(t, err)
 		return links
+	case events.EventType_ResourceChanged:
+		var content map[interface{}]interface{}
+		err := json.Decode(data, &content)
+		assert.NoError(t, err)
+		return content
+	case events.EventType_DevicesRegistered:
+		fallthrough
+	case events.EventType_DevicesUnregistered:
+		fallthrough
+	case events.EventType_DevicesOnline:
+		fallthrough
+	case events.EventType_DevicesOffline:
+		var devices []map[string]string
+		err := json.Decode(data, &devices)
+		assert.NoError(t, err)
+		return devices
 	}
 
 	return nil
@@ -98,8 +116,10 @@ func (s *EventsServer) GetPort(t *testing.T) string {
 }
 
 func (s *EventsServer) Run(t *testing.T) EventChan {
-	dataChan := make(EventChan, 1)
+	dataChan := make(EventChan, 8)
+	s.wg.Add(1)
 	go func() {
+		defer s.wg.Done()
 		r := router.NewRouter()
 		r.StrictSlash(true)
 		r.HandleFunc(s.uri, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -127,4 +147,8 @@ func (s *EventsServer) Close(t *testing.T) {
 	err := s.listener.Close()
 	require.NoError(t, err)
 	s.cleanUp()
+}
+
+func (s *EventsServer) WaitForClose() {
+	s.wg.Wait()
 }

@@ -62,8 +62,8 @@ func TestRequestHandlerSubscribeToDevicePublishedOnly(t *testing.T) {
 	defer eventsServer.Close(t)
 	dataChan := eventsServer.Run(t)
 
-	subscriber := c2cTest.NewC2CSubscriber(eventsServer.GetPort(t), eventsURI)
-	subID := subscriber.Subscribe(t, ctx, token, deviceID, c2cEvents.EventTypes{c2cEvents.EventType_ResourcesPublished})
+	subscriber := c2cTest.NewC2CSubscriber(eventsServer.GetPort(t), eventsURI, c2cTest.SubscriptionType_Device)
+	subID := subscriber.Subscribe(t, ctx, token, deviceID, "", c2cEvents.EventTypes{c2cEvents.EventType_ResourcesPublished})
 
 	ev := <-dataChan
 	publishedResources := test.ResourceLinksToResources(deviceID, test.TestDevsimResources)
@@ -73,10 +73,10 @@ func TestRequestHandlerSubscribeToDevicePublishedOnly(t *testing.T) {
 	test.CheckProtobufs(t, publishedResources, resources, test.RequireToCheckFunc(require.Equal))
 
 	// no additional messages should be received
-	events := c2cTest.WaitForEvents(dataChan, 5*time.Second)
+	events := c2cTest.WaitForEvents(dataChan, 3*time.Second)
 	require.Empty(t, events)
 
-	subscriber.Unsubscribe(t, ctx, token, deviceID, subID)
+	subscriber.Unsubscribe(t, ctx, token, deviceID, "", subID)
 	ev = <-dataChan
 	assert.Equal(t, c2cEvents.EventType_SubscriptionCanceled, ev.GetHeader().EventType)
 }
@@ -107,10 +107,11 @@ func TestRequestHandlerSubscribeToDevice(t *testing.T) {
 	defer eventsServer.Close(t)
 	dataChan := eventsServer.Run(t)
 
-	subscriber := c2cTest.NewC2CSubscriber(eventsServer.GetPort(t), eventsURI)
-	subID := subscriber.Subscribe(t, ctx, token, deviceID, c2cEvents.EventTypes{c2cEvents.EventType_ResourcesPublished, c2cEvents.EventType_ResourcesUnpublished})
+	subscriber := c2cTest.NewC2CSubscriber(eventsServer.GetPort(t), eventsURI, c2cTest.SubscriptionType_Device)
+	subID := subscriber.Subscribe(t, ctx, token, deviceID, "", c2cEvents.EventTypes{c2cEvents.EventType_ResourcesPublished,
+		c2cEvents.EventType_ResourcesUnpublished})
 
-	events := c2cTest.WaitForEvents(dataChan, time.Second*5)
+	events := c2cTest.WaitForEvents(dataChan, 3*time.Second)
 	// we should always receive one Published event and one Unpublished event
 	require.Len(t, events, 2)
 	for _, ev := range events {
@@ -135,7 +136,7 @@ func TestRequestHandlerSubscribeToDevice(t *testing.T) {
 	switchIDs := []string{switchID1, switchID2, switchID3}
 	switchResources := test.AddDeviceSwitchResources(ctx, t, deviceID, c, switchIDs...)
 	publishedSwitches := test.ResourceLinksToResources(deviceID, switchResources)
-	events = c2cTest.WaitForEvents(dataChan, time.Second*5)
+	events = c2cTest.WaitForEvents(dataChan, 3*time.Second)
 	require.Len(t, events, len(switchIDs))
 	var links schema.ResourceLinks
 	for _, ev := range events {
@@ -165,10 +166,10 @@ func TestRequestHandlerSubscribeToDevice(t *testing.T) {
 	test.CheckProtobufs(t, unpublishedSwitches, resources, test.RequireToCheckFunc(require.Equal))
 
 	// no additional messages should be received
-	events = c2cTest.WaitForEvents(dataChan, 5*time.Second)
+	events = c2cTest.WaitForEvents(dataChan, 3*time.Second)
 	require.Empty(t, events)
 
-	subscriber.Unsubscribe(t, ctx, token, deviceID, subID)
+	subscriber.Unsubscribe(t, ctx, token, deviceID, "", subID)
 	ev = <-dataChan
 	assert.Equal(t, c2cEvents.EventType_SubscriptionCanceled, ev.GetHeader().EventType)
 }

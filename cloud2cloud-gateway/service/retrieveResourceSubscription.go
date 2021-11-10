@@ -10,7 +10,7 @@ import (
 func (rh *RequestHandler) retrieveSubscription(w http.ResponseWriter, r *http.Request) (int, error) {
 	routeVars := mux.Vars(r)
 	subscriptionID := routeVars[subscriptionIDKey]
-
+	// TODO - verify sub.Href vs routeVars[href]
 	_, ok := rh.subMgr.Load(subscriptionID)
 	if !ok {
 		return http.StatusNotFound, fmt.Errorf("not found")
