@@ -20,16 +20,38 @@ import (
 type C2CSubscriber struct {
 	port      string
 	eventsURI string
+	subType   SubscriptionType
 }
 
-func NewC2CSubscriber(port, eventsURI string) *C2CSubscriber {
+type SubscriptionType int
+
+const (
+	SubscriptionType_Devices SubscriptionType = iota
+	SubscriptionType_Device
+	SubscriptionType_Resource
+)
+
+func NewC2CSubscriber(port, eventsURI string, subType SubscriptionType) *C2CSubscriber {
 	return &C2CSubscriber{
 		port:      port,
 		eventsURI: eventsURI,
+		subType:   subType,
 	}
 }
 
-func (c *C2CSubscriber) Subscribe(t *testing.T, ctx context.Context, token, deviceID string, eventTypes events.EventTypes) string {
+func (c *C2CSubscriber) subscriptionURI() string {
+	switch c.subType {
+	case SubscriptionType_Devices:
+		return C2CURI(uri.DevicesSubscriptions)
+	case SubscriptionType_Device:
+		return C2CURI(uri.DeviceSubscriptions)
+	case SubscriptionType_Resource:
+		return C2CURI(uri.ResourceSubscriptions)
+	}
+	return ""
+}
+
+func (c *C2CSubscriber) Subscribe(t *testing.T, ctx context.Context, token, deviceID, href string, eventTypes events.EventTypes) string {
 	sub := events.SubscriptionRequest{
 		URL:           "https://localhost:" + c.port + c.eventsURI,
 		EventTypes:    eventTypes,
@@ -38,9 +60,11 @@ func (c *C2CSubscriber) Subscribe(t *testing.T, ctx context.Context, token, devi
 	reqData, err := json.Encode(sub)
 	require.NoError(t, err)
 
-	uri := C2CURI(uri.DeviceSubscriptions)
+	uri := c.subscriptionURI()
+	require.NotEmpty(t, uri)
 	accept := message.AppJSON.String()
-	rb := testHttp.NewHTTPRequest(http.MethodPost, uri, bytes.NewBuffer(reqData)).AuthToken(token).Accept(accept).DeviceId(deviceID)
+	rb := testHttp.NewHTTPRequest(http.MethodPost, uri, bytes.NewBuffer(reqData)).AuthToken(token).Accept(accept)
+	rb.DeviceId(deviceID).ResourceHref(href)
 	req := rb.Build(ctx, t)
 	fmt.Printf("%v\n", req.URL.String())
 	resp := testHttp.DoHTTPRequest(t, req)
@@ -65,9 +89,23 @@ func (c *C2CSubscriber) Subscribe(t *testing.T, ctx context.Context, token, devi
 	return subID
 }
 
-func (c *C2CSubscriber) Unsubscribe(t *testing.T, ctx context.Context, token, deviceID, subID string) {
-	uri := C2CURI(uri.DeviceSubscription)
-	rb := testHttp.NewHTTPRequest(http.MethodDelete, uri, nil).AuthToken(token).DeviceId(deviceID).SubscriptionID(subID)
+func (c *C2CSubscriber) unsubscriptionURI() string {
+	switch c.subType {
+	case SubscriptionType_Devices:
+		return C2CURI(uri.DevicesSubscription)
+	case SubscriptionType_Device:
+		return C2CURI(uri.DeviceSubscription)
+	case SubscriptionType_Resource:
+		return C2CURI(uri.ResourceSubscription)
+	}
+	return ""
+}
+
+func (c *C2CSubscriber) Unsubscribe(t *testing.T, ctx context.Context, token, deviceID, href, subID string) {
+	uri := c.unsubscriptionURI()
+	require.NotEmpty(t, uri)
+	rb := testHttp.NewHTTPRequest(http.MethodDelete, uri, nil).AuthToken(token)
+	rb.DeviceId(deviceID).ResourceHref(href).SubscriptionID(subID)
 	req := rb.Build(ctx, t)
 	fmt.Printf("%v\n", req.URL.String())
 	resp := testHttp.DoHTTPRequest(t, req)

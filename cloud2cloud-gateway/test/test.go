@@ -9,10 +9,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/plgd-dev/hub/cloud2cloud-gateway/service"
 	"github.com/plgd-dev/hub/pkg/log"
 	"github.com/plgd-dev/hub/pkg/mongodb"
 	"github.com/plgd-dev/hub/pkg/security/certManager/server"
+	pkgStrings "github.com/plgd-dev/hub/pkg/strings"
 	"github.com/plgd-dev/hub/test/config"
 	testHttp "github.com/plgd-dev/hub/test/http"
 	"github.com/stretchr/testify/require"
@@ -82,6 +84,17 @@ func New(t *testing.T, cfg service.Config) func() {
 
 func C2CURI(uri string) string {
 	return testHttp.HTTPS_SCHEME + config.C2C_GW_HOST + uri
+}
+
+func GetUniqueSubscriptionID(subIDS ...string) string {
+	id := uuid.NewString()
+	for {
+		if !pkgStrings.Contains(subIDS, id) {
+			break
+		}
+		id = uuid.NewString()
+	}
+	return id
 }
 
 func NewTestListener(t *testing.T) (net.Listener, func()) {

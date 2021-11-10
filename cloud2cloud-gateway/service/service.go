@@ -54,6 +54,12 @@ var authRules = map[string][]kitNetHttp.AuthArgs{
 			},
 		},
 		{
+			URI: regexp.MustCompile(`[\/]+api[\/]+v1[\/]+devices[\/]+subscriptions[\/]+[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}[\/]*$`),
+			Scopes: []*regexp.Regexp{
+				regexp.MustCompile(`r:.*`),
+			},
+		},
+		{
 			URI: regexp.MustCompile(`[\/]+api[\/]+v1[\/]+devices[\/]+[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}[\/]*$`),
 			Scopes: []*regexp.Regexp{
 				regexp.MustCompile(`r:.*`),

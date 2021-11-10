@@ -35,7 +35,7 @@ func newTestStore(t *testing.T) (*mongodb.Store, func()) {
 	}
 }
 
-func TestStore_SaveSubscription(t *testing.T) {
+func TestStoreSaveSubscription(t *testing.T) {
 	oauthShutdown := oauthTest.SetUp(t)
 	defer oauthShutdown()
 	token := oauthTest.GetDefaultServiceToken(t)
@@ -132,14 +132,14 @@ func TestStore_SaveSubscription(t *testing.T) {
 			err := s.SaveSubscription(ctx, tt.args.sub)
 			if tt.wantErr {
 				require.Error(t, err)
-			} else {
-				require.NoError(t, err)
+				return
 			}
+			require.NoError(t, err)
 		})
 	}
 }
 
-func TestStore_IncrementSubscriptionSequenceNumber(t *testing.T) {
+func TestStoreIncrementSubscriptionSequenceNumber(t *testing.T) {
 	oauthShutdown := oauthTest.SetUp(t)
 	defer oauthShutdown()
 	token := oauthTest.GetDefaultServiceToken(t)
@@ -202,15 +202,15 @@ func TestStore_IncrementSubscriptionSequenceNumber(t *testing.T) {
 			got, err := s.IncrementSubscriptionSequenceNumber(ctx, tt.args.subscriptionID)
 			if tt.wantErr {
 				require.Error(t, err)
-			} else {
-				require.NoError(t, err)
-				require.Equal(t, tt.want, got)
+				return
 			}
+			require.NoError(t, err)
+			require.Equal(t, tt.want, got)
 		})
 	}
 }
 
-func TestStore_PopSubscription(t *testing.T) {
+func TestStorePopSubscription(t *testing.T) {
 	oauthShutdown := oauthTest.SetUp(t)
 	defer oauthShutdown()
 	token := oauthTest.GetDefaultServiceToken(t)
@@ -266,10 +266,10 @@ func TestStore_PopSubscription(t *testing.T) {
 			gotSub, err := s.PopSubscription(ctx, tt.args.subscriptionID)
 			if tt.wantErr {
 				require.Error(t, err)
-			} else {
-				require.NoError(t, err)
-				require.Equal(t, tt.wantSub, gotSub)
+				return
 			}
+			require.NoError(t, err)
+			require.Equal(t, tt.wantSub, gotSub)
 		})
 	}
 }
@@ -289,7 +289,7 @@ func (h *testResourceHandler) Handle(ctx context.Context, iter store.Subscriptio
 	return iter.Err()
 }
 
-func TestStore_LoadSubscriptions(t *testing.T) {
+func TestStoreLoadSubscriptions(t *testing.T) {
 	oauthShutdown := oauthTest.SetUp(t)
 	defer oauthShutdown()
 	token := oauthTest.GetDefaultServiceToken(t)
@@ -370,10 +370,10 @@ func TestStore_LoadSubscriptions(t *testing.T) {
 			err = s.LoadSubscriptions(ctx, tt.args.query, &h)
 			if tt.wantErr {
 				require.Error(t, err)
-			} else {
-				require.NoError(t, err)
-				require.Equal(t, tt.want, h.data)
+				return
 			}
+			require.NoError(t, err)
+			require.Equal(t, tt.want, h.data)
 		})
 	}
 }

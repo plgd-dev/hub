@@ -15,7 +15,7 @@ import (
 	"github.com/plgd-dev/hub/grpc-gateway/pb"
 	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
 	"github.com/plgd-dev/hub/test"
-	testCfg "github.com/plgd-dev/hub/test/config"
+	"github.com/plgd-dev/hub/test/config"
 	testHttp "github.com/plgd-dev/hub/test/http"
 	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
 	"github.com/plgd-dev/hub/test/service"
@@ -27,7 +27,7 @@ import (
 
 func TestRequestHandlerRetrieveDeviceSubscription(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
-	ctx, cancel := context.WithTimeout(context.Background(), testCfg.TEST_TIMEOUT)
+	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
 	defer cancel()
 
 	tearDown := service.SetUp(ctx, t)
@@ -36,7 +36,7 @@ func TestRequestHandlerRetrieveDeviceSubscription(t *testing.T) {
 	token := oauthTest.GetDefaultServiceToken(t)
 	ctx = kitNetGrpc.CtxWithToken(ctx, token)
 
-	conn, err := grpc.Dial(testCfg.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+	conn, err := grpc.Dial(config.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
 	})))
 	require.NoError(t, err)
@@ -44,7 +44,7 @@ func TestRequestHandlerRetrieveDeviceSubscription(t *testing.T) {
 	defer func() {
 		_ = conn.Close()
 	}()
-	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.GW_HOST, test.GetAllBackendResourceLinks())
+	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 
 	const eventsURI = "/events"
@@ -52,17 +52,19 @@ func TestRequestHandlerRetrieveDeviceSubscription(t *testing.T) {
 	defer eventsServer.Close(t)
 	dataChan := eventsServer.Run(t)
 
-	subscriber := c2cTest.NewC2CSubscriber(eventsServer.GetPort(t), eventsURI)
-	subID := subscriber.Subscribe(t, ctx, token, deviceID, c2cEvents.EventTypes{c2cEvents.EventType_ResourcesPublished, c2cEvents.EventType_ResourcesUnpublished})
+	subscriber := c2cTest.NewC2CSubscriber(eventsServer.GetPort(t), eventsURI, c2cTest.SubscriptionType_Device)
+	subID := subscriber.Subscribe(t, ctx, token, deviceID, "", c2cEvents.EventTypes{c2cEvents.EventType_ResourcesPublished,
+		c2cEvents.EventType_ResourcesUnpublished})
 	require.NotEmpty(t, subID)
 
-	events := c2cTest.WaitForEvents(dataChan, time.Second*5)
+	events := c2cTest.WaitForEvents(dataChan, 3*time.Second)
 	require.NotEmpty(t, events)
 
 	const textPlain = "text/plain"
 	type args struct {
 		deviceID string
 		subID    string
+		token    string
 	}
 	tests := []struct {
 		name            string
@@ -72,10 +74,32 @@ func TestRequestHandlerRetrieveDeviceSubscription(t *testing.T) {
 		want            interface{}
 	}{
 		{
+			name: "missing token",
+			args: args{
+				deviceID: deviceID,
+				subID:    subID,
+			},
+			wantCode:        http.StatusUnauthorized,
+			wantContentType: textPlain,
+			want:            "invalid token: could not parse token: token contains an invalid number of segments",
+		},
+		{
+			name: "expired token",
+			args: args{
+				deviceID: deviceID,
+				subID:    subID,
+				token:    oauthTest.GetServiceToken(t, config.OAUTH_SERVER_HOST, oauthTest.ClientTestExpired),
+			},
+			wantCode:        http.StatusUnauthorized,
+			wantContentType: textPlain,
+			want:            "invalid token: could not parse token: token is expired",
+		},
+		{
 			name: "invalid deviceID",
 			args: args{
 				deviceID: "invalidDeviceID",
 				subID:    subID,
+				token:    token,
 			},
 			wantCode:        http.StatusUnauthorized,
 			wantContentType: textPlain,
@@ -86,6 +110,7 @@ func TestRequestHandlerRetrieveDeviceSubscription(t *testing.T) {
 			args: args{
 				deviceID: deviceID,
 				subID:    "invalidSubID",
+				token:    token,
 			},
 			wantCode:        http.StatusNotFound,
 			wantContentType: textPlain,
@@ -96,6 +121,7 @@ func TestRequestHandlerRetrieveDeviceSubscription(t *testing.T) {
 			args: args{
 				deviceID: deviceID,
 				subID:    subID,
+				token:    token,
 			},
 			wantCode:        http.StatusOK,
 			wantContentType: message.AppJSON.String(),
@@ -107,7 +133,7 @@ func TestRequestHandlerRetrieveDeviceSubscription(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			rb := testHttp.NewHTTPRequest(http.MethodGet, c2cTest.C2CURI(uri.DeviceSubscription), nil)
+			rb := testHttp.NewHTTPRequest(http.MethodGet, c2cTest.C2CURI(uri.DeviceSubscription), nil).AuthToken(tt.args.token)
 			rb.DeviceId(tt.args.deviceID).SubscriptionID(tt.args.subID)
 			resp := testHttp.DoHTTPRequest(t, rb.Build(ctx, t))
 			assert.Equal(t, tt.wantCode, resp.StatusCode)
@@ -124,7 +150,7 @@ func TestRequestHandlerRetrieveDeviceSubscription(t *testing.T) {
 		})
 	}
 
-	subscriber.Unsubscribe(t, ctx, token, deviceID, subID)
+	subscriber.Unsubscribe(t, ctx, token, deviceID, "", subID)
 	ev := <-dataChan
 	assert.Equal(t, c2cEvents.EventType_SubscriptionCanceled, ev.GetHeader().EventType)
 }

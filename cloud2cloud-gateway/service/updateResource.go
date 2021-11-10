@@ -90,7 +90,7 @@ func (rh *RequestHandler) updateResourceContent(w http.ResponseWriter, r *http.R
 
 	routeVars := mux.Vars(r)
 	deviceID := routeVars[deviceIDKey]
-	href := routeVars[HrefKey]
+	href := routeVars[hrefKey]
 
 	buffer := bytes.NewBuffer(make([]byte, 0, 1024))
 	_, err = buffer.ReadFrom(r.Body)

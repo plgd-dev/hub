@@ -22,7 +22,7 @@ import (
 	pbGRPC "github.com/plgd-dev/hub/grpc-gateway/pb"
 )
 
-const HrefKey = "Href"
+const hrefKey = "Href"
 const subscriptionIDKey = "subscriptionID"
 const deviceIDKey = "deviceID"
 
@@ -152,7 +152,7 @@ func resourceSubscriptionMatcher(r *http.Request, rm *router.RouteMatch) bool {
 			rm.Vars = make(map[string]string)
 		}
 		rm.Vars[deviceIDKey] = paths[0]
-		rm.Vars[HrefKey] = makeHref(paths[1 : len(paths)-2])
+		rm.Vars[hrefKey] = makeHref(paths[1 : len(paths)-2])
 		rm.Vars[subscriptionIDKey] = paths[len(paths)-1]
 		return true
 	}
@@ -166,7 +166,7 @@ func resourceMatcher(r *http.Request, rm *router.RouteMatch) bool {
 			rm.Vars = make(map[string]string)
 		}
 		rm.Vars[deviceIDKey] = paths[0]
-		rm.Vars[HrefKey] = makeHref(paths[1:])
+		rm.Vars[hrefKey] = makeHref(paths[1:])
 		return true
 	}
 	return false
@@ -209,7 +209,7 @@ func NewHTTP(requestHandler *RequestHandler, authInterceptor kitNetHttp.Intercep
 				rm.Vars = make(map[string]string)
 			}
 			rm.Vars[deviceIDKey] = paths[0]
-			rm.Vars[HrefKey] = makeHref(paths[1 : len(paths)-1])
+			rm.Vars[hrefKey] = makeHref(paths[1 : len(paths)-1])
 			return true
 		}
 		return false
