@@ -114,16 +114,19 @@ func cancelSubscription(ctx context.Context, emitEvent emitEventFunc, sub store.
 	return err
 }
 
-func (s *SubscriptionManager) PullOut(ctx context.Context, ID string) (store.Subscription, error) {
+func (s *SubscriptionManager) PullOut(ctx context.Context, ID, href string) (store.Subscription, error) {
 	subDataRaw, ok := s.subscriptions.PullOut(ID)
 	if !ok {
 		return store.Subscription{}, fmt.Errorf("not found")
+	}
+	subData := subDataRaw.(*SubscriptionData)
+	if href != "" && subData.data.Href != href {
+		return store.Subscription{}, fmt.Errorf("invalid resource(%v) for subscription", href)
 	}
 	sub, err := s.store.PopSubscription(ctx, ID)
 	if err != nil {
 		return store.Subscription{}, err
 	}
-	subData := subDataRaw.(*SubscriptionData)
 	subscription := subData.Subscription()
 	if subscription != nil {
 		wait, err := subscription.Cancel()

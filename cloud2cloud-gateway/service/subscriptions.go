@@ -337,7 +337,7 @@ func (s *SubscriptionData) createDeviceSubscription(ctx context.Context, emitEve
 	return client.NewDeviceSubscription(ctx, s.data.DeviceID, closeEventHandler, eventHandler, s.gwClient)
 }
 
-func (s *SubscriptionData) Connect(ctx context.Context, emitEvent emitEventFunc, deleteSub func(ctx context.Context, subID string) (store.Subscription, error)) error {
+func (s *SubscriptionData) Connect(ctx context.Context, emitEvent emitEventFunc, deleteSub func(ctx context.Context, subID, href string) (store.Subscription, error)) error {
 	if s.Subscription() != nil {
 		return fmt.Errorf("is already connected")
 	}
@@ -363,7 +363,7 @@ func (s *SubscriptionData) Connect(ctx context.Context, emitEvent emitEventFunc,
 	sub, err := createSubscriptionFunc(ctx, emitEvent, &h)
 	if err != nil {
 		if status.Convert(err).Code() == codes.Unauthenticated {
-			subToCancel, errSub := deleteSub(ctx, s.data.ID)
+			subToCancel, errSub := deleteSub(ctx, s.data.ID, "")
 			if errSub == nil {
 				if err2 := cancelSubscription(ctx, emitEvent, subToCancel); err2 != nil {
 					log.Errorf("cannot cancel subscription %v: %w", subToCancel.ID, err2)
@@ -395,7 +395,7 @@ func (s *SubscriptionData) SetInitialized(ctx context.Context) error {
 type closeEventHandler struct {
 	ctx       context.Context
 	emitEvent emitEventFunc
-	deleteSub func(ctx context.Context, subID string) (store.Subscription, error)
+	deleteSub func(ctx context.Context, subID, href string) (store.Subscription, error)
 	data      *SubscriptionData
 }
 
@@ -411,7 +411,7 @@ func (h *closeEventHandler) Error(err error) {
 		return
 	}
 	if !strings.Contains(err.Error(), "transport is closing") {
-		sub, errSub := h.deleteSub(h.ctx, data.ID)
+		sub, errSub := h.deleteSub(h.ctx, data.ID, "")
 		if errSub == nil {
 			if err2 := cancelSubscription(h.ctx, h.emitEvent, sub); err2 != nil {
 				log.Errorf("cannot cancel subscription %v: %w", sub.ID, err2)

@@ -10,10 +10,15 @@ import (
 func (rh *RequestHandler) retrieveSubscription(w http.ResponseWriter, r *http.Request) (int, error) {
 	routeVars := mux.Vars(r)
 	subscriptionID := routeVars[subscriptionIDKey]
-	// TODO - verify sub.Href vs routeVars[href]
-	_, ok := rh.subMgr.Load(subscriptionID)
+	href := routeVars[hrefKey]
+
+	sub, ok := rh.subMgr.Load(subscriptionID)
 	if !ok {
 		return http.StatusNotFound, fmt.Errorf("not found")
+	}
+
+	if href != "" && sub.Href != href {
+		return http.StatusBadRequest, fmt.Errorf("invalid resource(%v) for subscription", href)
 	}
 
 	err := jsonResponseWriterEncoder(w, SubscriptionResponse{
