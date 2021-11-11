@@ -57,7 +57,7 @@ func TestRequestHandlerRetrieveResourceSubscription(t *testing.T) {
 	subID := subscriber.Subscribe(t, ctx, token, deviceID, resourceHref, c2cEvents.EventTypes{c2cEvents.EventType_ResourceChanged})
 	require.NotEmpty(t, subID)
 
-	events := c2cTest.WaitForEvents(dataChan, time.Second*5)
+	events := c2cTest.WaitForEvents(dataChan, 3*time.Second)
 	require.NotEmpty(t, events)
 
 	const textPlain = "text/plain"
@@ -115,10 +115,11 @@ func TestRequestHandlerRetrieveResourceSubscription(t *testing.T) {
 				deviceID:     deviceID,
 				resourceHref: "/invalidHref",
 				subID:        subID,
+				token:        token,
 			},
-			wantCode:        http.StatusOK,
+			wantCode:        http.StatusBadRequest,
 			wantContentType: textPlain,
-			want:            "cannot retrieve resource subscription: not found",
+			want:            "cannot retrieve resource subscription: invalid resource(/invalidHref)",
 		},
 		{
 			name: "invalid subID",
@@ -157,7 +158,7 @@ func TestRequestHandlerRetrieveResourceSubscription(t *testing.T) {
 			defer func() {
 				_ = resp.Body.Close()
 			}()
-			require.Equal(t, tt.wantContentType, resp.Header.Get("Content-Type"))
+			assert.Equal(t, tt.wantContentType, resp.Header.Get("Content-Type"))
 			got := testHttp.ReadHTTPResponse(t, resp.Body, tt.wantContentType)
 			if tt.wantContentType == textPlain {
 				require.Contains(t, got, tt.want)
