@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"fmt"
-	"io"
 	"math/rand"
 	"time"
 
@@ -12,15 +11,12 @@ import (
 	"github.com/plgd-dev/go-coap/v2/mux"
 	"github.com/plgd-dev/hub/coap-gateway/coapconv"
 	grpcgwClient "github.com/plgd-dev/hub/grpc-gateway/client"
-	"github.com/plgd-dev/hub/grpc-gateway/pb"
 	"github.com/plgd-dev/hub/identity-store/events"
 	"github.com/plgd-dev/hub/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
 	"github.com/plgd-dev/hub/pkg/strings"
 	"github.com/plgd-dev/hub/resource-aggregate/commands"
 	"github.com/plgd-dev/kit/v2/codec/cbor"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 type CoapSignInReq struct {
@@ -60,66 +56,6 @@ func (request CoapSignInReq) updateOAUthRequestIfEmpty(deviceID, userID, accessT
 		request.AccessToken = accessToken
 	}
 	return request
-}
-
-func (client *Client) registerObservationsForPublishedResourcesLocked(ctx context.Context, deviceID string) {
-	getResourceLinksClient, err := client.server.rdClient.GetResourceLinks(ctx, &pb.GetResourceLinksRequest{
-		DeviceIdFilter: []string{deviceID},
-	})
-	if err != nil {
-		if status.Convert(err).Code() == codes.NotFound {
-			return
-		}
-		log.Errorf("signIn: cannot get resource links for the device %v: %w", deviceID, err)
-		return
-	}
-	resources := make([]*commands.Resource, 0, 8)
-	for {
-		m, err := getResourceLinksClient.Recv()
-		if err == io.EOF {
-			break
-		}
-		if status.Convert(err).Code() == codes.NotFound {
-			return
-		}
-		if err != nil {
-			log.Errorf("signIn: cannot receive link for the device %v: %w", deviceID, err)
-			return
-		}
-		resources = append(resources, m.GetResources()...)
-
-	}
-	client.observeResourcesLocked(ctx, resources)
-}
-
-func (client *Client) loadShadowSynchronization(ctx context.Context, deviceID string) error {
-	deviceMetadataClient, err := client.server.rdClient.GetDevicesMetadata(ctx, &pb.GetDevicesMetadataRequest{
-		DeviceIdFilter: []string{deviceID},
-	})
-	if err != nil {
-		if status.Convert(err).Code() == codes.NotFound {
-			return nil
-		}
-		return fmt.Errorf("cannot get device(%v) metdata: %v", deviceID, err)
-	}
-	shadowSynchronization := commands.ShadowSynchronization_UNSET
-	for {
-		m, err := deviceMetadataClient.Recv()
-		if err == io.EOF {
-			break
-		}
-		if status.Convert(err).Code() == codes.NotFound {
-			return nil
-		}
-		if err != nil {
-			return fmt.Errorf("cannot get device(%v) metdata: %v", deviceID, err)
-		}
-		shadowSynchronization = m.GetShadowSynchronization()
-	}
-	client.observedResourcesLock.Lock()
-	defer client.observedResourcesLock.Unlock()
-	client.shadowSynchronization = shadowSynchronization
-	return nil
 }
 
 /// Get data for sign in response
@@ -209,12 +145,12 @@ func (client *Client) updateBySignInData(ctx context.Context, upd updateType, de
 		if err := client.closeDeviceSubscriber(); err != nil {
 			log.Errorf("failed to close previous device connection: %w", err)
 		}
-		client.cleanObservedResources()
+		client.resourceObserver.CleanObservedResources(client.Context())
 		client.unsubscribeFromDeviceEvents()
 	}
 
 	if upd != updateTypeNone {
-		if err := client.loadShadowSynchronization(ctx, deviceId); err != nil {
+		if err := client.resourceObserver.LoadShadowSynchronization(ctx, deviceId); err != nil {
 			return fmt.Errorf("cannot load shadow synchronization for device %v: %w", deviceId, err)
 		}
 
@@ -265,12 +201,7 @@ func subscribeAndValidateDeviceAccess(ctx context.Context, client *Client, owner
 
 func observePublishedResources(ctx context.Context, client *Client, deviceID string) {
 	if err := client.server.taskQueue.Submit(func() {
-		client.observedResourcesLock.Lock()
-		defer client.observedResourcesLock.Unlock()
-		if client.shadowSynchronization == commands.ShadowSynchronization_DISABLED {
-			return
-		}
-		client.registerObservationsForPublishedResourcesLocked(ctx, deviceID)
+		client.resourceObserver.RegisterObservationsForPublishedResource(ctx, deviceID)
 	}); err != nil {
 		log.Errorf("sign in error: failed to register resource observations for device %v: %w", deviceID, err)
 	}

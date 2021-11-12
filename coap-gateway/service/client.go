@@ -15,6 +15,7 @@ import (
 	"github.com/plgd-dev/go-coap/v2/tcp"
 	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
 	"github.com/plgd-dev/hub/coap-gateway/coapconv"
+	"github.com/plgd-dev/hub/coap-gateway/observation"
 	grpcClient "github.com/plgd-dev/hub/grpc-gateway/client"
 	idEvents "github.com/plgd-dev/hub/identity-store/events"
 	"github.com/plgd-dev/hub/pkg/log"
@@ -24,27 +25,6 @@ import (
 	"github.com/plgd-dev/hub/resource-aggregate/events"
 	kitSync "github.com/plgd-dev/kit/v2/sync"
 )
-
-type observedResource struct {
-	href string
-
-	mutex       sync.Mutex
-	observation *tcp.Observation
-}
-
-func (r *observedResource) SetObservation(o *tcp.Observation) {
-	r.mutex.Lock()
-	defer r.mutex.Unlock()
-	r.observation = o
-}
-
-func (r *observedResource) PopObservation() *tcp.Observation {
-	r.mutex.Lock()
-	defer r.mutex.Unlock()
-	o := r.observation
-	r.observation = nil
-	return o
-}
 
 type authorizationContext struct {
 	DeviceID    string
@@ -97,10 +77,7 @@ type Client struct {
 	coapConn    *tcp.ClientConn
 	tlsDeviceID string
 
-	observedResources     map[string]map[int64]*observedResource // [deviceID][instanceID]
-	observedResourcesLock sync.Mutex
-	shadowSynchronization commands.ShadowSynchronization
-
+	resourceObserver      *observation.ResourceObserver
 	resourceSubscriptions *kitSync.Map // [token]
 
 	exchangeCache *exchangeCache
@@ -114,15 +91,17 @@ type Client struct {
 
 //newClient create and initialize client
 func newClient(server *Service, client *tcp.ClientConn, tlsDeviceID string) *Client {
-	return &Client{
+	c := &Client{
 		server:                server,
 		coapConn:              client,
 		tlsDeviceID:           tlsDeviceID,
-		observedResources:     make(map[string]map[int64]*observedResource),
 		resourceSubscriptions: kitSync.NewMap(),
 		exchangeCache:         NewExchangeCache(),
 		refreshCache:          NewRefreshCache(),
 	}
+
+	c.resourceObserver = observation.NewResourceObserver(server.rdClient, c.onAddObservedResource)
+	return c
 }
 
 func (client *Client) remoteAddrString() string {
@@ -145,34 +124,6 @@ func (client *Client) cancelResourceSubscription(token string) (bool, error) {
 		return false, err
 	}
 	return true, nil
-}
-func (client *Client) observeResourcesLocked(ctx context.Context, resources []*commands.Resource) {
-	for _, resource := range resources {
-		client.observeResource(ctx, resource.GetResourceID(), resource.IsObservable())
-	}
-}
-
-func (client *Client) observeResources(ctx context.Context, resources []*commands.Resource) {
-	client.observedResourcesLock.Lock()
-	defer client.observedResourcesLock.Unlock()
-
-	client.observeResourcesLocked(ctx, resources)
-}
-
-func (client *Client) observeResource(ctx context.Context, resourceID *commands.ResourceId, observable bool) {
-	log.Debugf("observation of resource %v requested", resourceID)
-	instanceID := getInstanceID(resourceID.GetHref())
-	deviceID := resourceID.GetDeviceId()
-	href := resourceID.GetHref()
-	if _, ok := client.observedResources[deviceID]; !ok {
-		client.observedResources[deviceID] = make(map[int64]*observedResource)
-	}
-	if _, ok := client.observedResources[deviceID][instanceID]; ok {
-		return
-	}
-	obsRes := observedResource{href: href}
-	client.observedResources[deviceID][instanceID] = &obsRes
-	client.addObservedResourceLocked(ctx, deviceID, observable, &obsRes)
 }
 
 func (client *Client) getResourceContent(ctx context.Context, deviceID, href string) {
@@ -207,105 +158,45 @@ func (client *Client) getResourceContent(ctx context.Context, deviceID, href str
 	}
 }
 
-func (client *Client) addObservedResourceLocked(ctx context.Context, deviceID string, isObservable bool, obsRes *observedResource) {
-	if obsRes.href == commands.StatusHref {
+func (client *Client) onAddObservedResource(ctx context.Context, deviceID string, instanceID int64, obsRes *observation.ObservedResource) {
+	if obsRes.Href() == commands.StatusHref {
 		return
 	}
-	if !isObservable {
-		client.getResourceContent(ctx, deviceID, obsRes.href)
+	if !obsRes.Observable() {
+		client.getResourceContent(ctx, deviceID, obsRes.Href())
 		return
 	}
 	logCannotObserverResourceError := func(deviceID, href string, err error) {
 		log.Errorf("cannot observe resource /%v%v: %w", deviceID, href, err)
 	}
-	obs, err := client.coapConn.Observe(ctx, obsRes.href, func(req *pool.Message) {
+	obs, err := client.coapConn.Observe(ctx, obsRes.Href(), func(req *pool.Message) {
 		req.Hijack()
 		err2 := client.server.taskQueue.Submit(func() {
-			err := client.notifyContentChanged(deviceID, obsRes.href, req)
+			err := client.notifyContentChanged(deviceID, obsRes.Href(), req)
 			defer pool.ReleaseMessage(req)
 			if err != nil {
 				// cloud is unsynchronized against device. To recover cloud state, client need to reconnect to cloud.
-				logCannotObserverResourceError(deviceID, obsRes.href, err)
+				logCannotObserverResourceError(deviceID, obsRes.Href(), err)
 				if err := client.Close(); err != nil {
-					log.Errorf("failed to close client connection on observe resource /%v%v: %w", deviceID, obsRes.href, err)
+					log.Errorf("failed to close client connection on observe resource /%v%v: %w", deviceID, obsRes.Href(), err)
 				}
 			}
 			if req.Code() == codes.NotFound {
-				client.unpublishResourceLinks(client.getUserAuthorizedContext(req.Context()), []string{obsRes.href})
+				client.unpublishResourceLinks(client.getUserAuthorizedContext(req.Context()), []string{obsRes.Href()})
 			}
 		})
 		if err2 != nil {
-			logCannotObserverResourceError(deviceID, obsRes.href, err2)
+			logCannotObserverResourceError(deviceID, obsRes.Href(), err2)
 		}
 	}, message.Option{
 		ID:    message.URIQuery,
 		Value: []byte("if=" + interfaces.OC_IF_BASELINE),
 	})
 	if err != nil {
-		logCannotObserverResourceError(deviceID, obsRes.href, err)
+		logCannotObserverResourceError(deviceID, obsRes.Href(), err)
 		return
 	}
 	obsRes.SetObservation(obs)
-}
-
-func (client *Client) getTrackedResources(deviceID string, instanceIDs []int64) []commands.ResourceId {
-	client.observedResourcesLock.Lock()
-	defer client.observedResourcesLock.Unlock()
-
-	getAllDeviceIDMatches := len(instanceIDs) == 0
-	matches := make([]commands.ResourceId, 0, 16)
-
-	if deviceResourcesMap, ok := client.observedResources[deviceID]; ok {
-		if getAllDeviceIDMatches {
-			for _, value := range deviceResourcesMap {
-				matches = append(matches, commands.ResourceId{
-					DeviceId: deviceID,
-					Href:     value.href,
-				})
-			}
-		} else {
-			for _, instanceID := range instanceIDs {
-				if resource, ok := deviceResourcesMap[instanceID]; ok {
-					matches = append(matches, commands.ResourceId{
-						DeviceId: deviceID,
-						Href:     resource.href,
-					})
-				}
-			}
-		}
-	}
-
-	return matches
-}
-
-func (client *Client) removeResourceLocked(deviceID string, instanceID int64) {
-	if device, ok := client.observedResources[deviceID]; ok {
-		delete(device, instanceID)
-		if len(client.observedResources[deviceID]) == 0 {
-			delete(client.observedResources, deviceID)
-		}
-	}
-}
-
-func (client *Client) popObservation(deviceID string, instanceID int64) *tcp.Observation {
-	log.Debugf("remove published resource ocf://%v/%v", deviceID, instanceID)
-
-	if device, ok := client.observedResources[deviceID]; ok {
-		if res, ok := device[instanceID]; ok {
-			return res.PopObservation()
-		}
-	}
-
-	return nil
-}
-
-func (client *Client) cancelResourcesObservations(ctx context.Context, hrefs []string) {
-	observartions := client.popTrackedObservation(hrefs)
-	for _, obs := range observartions {
-		if err := obs.Cancel(ctx); err != nil {
-			log.Debugf("cannot cancel resource observation: %w", err)
-		}
-	}
 }
 
 // Close closes coap connection
@@ -315,62 +206,6 @@ func (client *Client) Close() error {
 		return fmt.Errorf("cannot close client: %w", err)
 	}
 	return nil
-}
-
-func (client *Client) popTrackedObservation(hrefs []string) []*tcp.Observation {
-	observartions := make([]*tcp.Observation, 0, 32)
-
-	client.observedResourcesLock.Lock()
-	defer client.observedResourcesLock.Unlock()
-
-	for _, href := range hrefs {
-		var instanceID int64
-		var deviceID string
-		for devID, devs := range client.observedResources {
-			for insID, r := range devs {
-				if r.href == href {
-					instanceID = insID
-					deviceID = devID
-					break
-				}
-			}
-		}
-
-		obs := client.popObservation(deviceID, instanceID)
-		if obs != nil {
-			observartions = append(observartions, obs)
-		}
-		client.removeResourceLocked(deviceID, instanceID)
-		log.Debugf("canceling observation on resource %v", deviceID+href)
-	}
-	return observartions
-}
-
-func (client *Client) popObservedResourcesLocked() map[string]map[int64]*observedResource {
-	observartions := client.observedResources
-	client.observedResources = make(map[string]map[int64]*observedResource)
-	return observartions
-}
-
-// cleanObservedResourcesLocked remove all device pbRA observation requested by cloud.
-func (client *Client) cleanObservedResourcesLocked() {
-	for _, resources := range client.popObservedResourcesLocked() {
-		for k, obs := range resources {
-			v := obs.PopObservation()
-			if v != nil {
-				if err := v.Cancel(client.coapConn.Context()); err != nil {
-					log.Errorf("cannot cancel resource('%v') observation: %w", k, err)
-				}
-			}
-		}
-	}
-}
-
-// cleanObservedResources remove all device pbRA observation requested by cloud under lock.
-func (client *Client) cleanObservedResources() {
-	client.observedResourcesLock.Lock()
-	defer client.observedResourcesLock.Unlock()
-	client.cleanObservedResourcesLocked()
 }
 
 func (client *Client) cancelResourceSubscriptions(wantWait bool) {
@@ -410,7 +245,7 @@ func (client *Client) CleanUp(resetAuthContext bool) *authorizationContext {
 	log.Debugf("cleanUp client %v for device %v", client.coapConn.RemoteAddr(), authCtx.GetDeviceID())
 
 	client.server.devicesStatusUpdater.Remove(client)
-	client.cleanObservedResources()
+	client.resourceObserver.CleanObservedResources(client.Context())
 	client.cancelResourceSubscriptions(false)
 	if err := client.closeDeviceSubscriber(); err != nil {
 		log.Errorf("cleanUp error: failed to close device %v connection: %w", authCtx.GetDeviceID(), err)
@@ -752,7 +587,7 @@ func (client *Client) unpublishResourceLinks(ctx context.Context, hrefs []string
 		return
 	}
 
-	client.cancelResourcesObservations(ctx, resp.UnpublishedHrefs)
+	client.resourceObserver.CancelResourcesObservations(ctx, resp.UnpublishedHrefs)
 }
 
 func (client *Client) sendErrorConfirmResourceCreate(ctx context.Context, resourceID *commands.ResourceId, userID, correlationID string, code codes.Code, errToSend error) {
@@ -841,23 +676,6 @@ func (client *Client) GetContext() context.Context {
 	return authCtx.ToContext(client.Context())
 }
 
-func (client *Client) setShadowSynchronization(ctx context.Context, deviceID string, shadowSynchronization commands.ShadowSynchronization) commands.ShadowSynchronization {
-	client.observedResourcesLock.Lock()
-	defer client.observedResourcesLock.Unlock()
-	if client.shadowSynchronization == shadowSynchronization {
-		return client.shadowSynchronization
-	}
-	previous := client.shadowSynchronization
-
-	client.shadowSynchronization = shadowSynchronization
-	if shadowSynchronization == commands.ShadowSynchronization_DISABLED {
-		client.cleanObservedResourcesLocked()
-	} else {
-		client.registerObservationsForPublishedResourcesLocked(ctx, deviceID)
-	}
-	return previous
-}
-
 func (client *Client) UpdateDeviceMetadata(ctx context.Context, event *events.DeviceMetadataUpdatePending) error {
 	authCtx, err := client.GetAuthorizationContext()
 	if err != nil {
@@ -872,7 +690,7 @@ func (client *Client) UpdateDeviceMetadata(ctx context.Context, event *events.De
 	}
 	sendConfirmCtx := authCtx.ToContext(ctx)
 
-	previous := client.setShadowSynchronization(sendConfirmCtx, event.GetDeviceId(), event.GetShadowSynchronization())
+	previous := client.resourceObserver.SetShadowSynchronization(sendConfirmCtx, event.GetDeviceId(), event.GetShadowSynchronization())
 	_, err = client.server.raClient.ConfirmDeviceMetadataUpdate(sendConfirmCtx, &commands.ConfirmDeviceMetadataUpdateRequest{
 		DeviceId:      event.GetDeviceId(),
 		CorrelationId: event.GetAuditContext().GetCorrelationId(),
@@ -886,7 +704,7 @@ func (client *Client) UpdateDeviceMetadata(ctx context.Context, event *events.De
 		Status: commands.Status_OK,
 	})
 	if err != nil && !errors.Is(err, context.Canceled) {
-		client.setShadowSynchronization(sendConfirmCtx, event.GetDeviceId(), previous)
+		client.resourceObserver.SetShadowSynchronization(sendConfirmCtx, event.GetDeviceId(), previous)
 	}
 	return err
 }
