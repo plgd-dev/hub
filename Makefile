@@ -14,7 +14,7 @@ GROUP_ID := $(shell id -g)
 
 #$(error MY_FLAG=$(BUILD_TAG)AAA)
 
-SUBDIRS := bundle certificate-authority cloud2cloud-connector cloud2cloud-gateway coap-gateway grpc-gateway resource-aggregate resource-directory http-gateway identity-store test/oauth-server
+SUBDIRS := bundle certificate-authority cloud2cloud-connector cloud2cloud-gateway coap-gateway grpc-gateway resource-aggregate resource-directory http-gateway identity-store test/oauth-server tools/cert-tool
 .PHONY: $(SUBDIRS) push proto/generate clean build test env mongo nats certificates hub-build http-gateway-www
 
 default: build

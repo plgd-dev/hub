@@ -63,6 +63,9 @@ jobs:
           - name: test-cloud-server
             directory: test/cloud-server
             file: test/cloud-server/Dockerfile
+          - name: cert-tool
+            directory: tools/cert-tool
+            file: tools/cert-tool/Dockerfile
 
     permissions:
       contents: read
