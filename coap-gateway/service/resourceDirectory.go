@@ -8,11 +8,12 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/plgd-dev/hub/coap-gateway/coapconv"
 	"github.com/plgd-dev/device/schema"
 	"github.com/plgd-dev/go-coap/v2/message"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/mux"
+	"github.com/plgd-dev/hub/coap-gateway/coapconv"
+	"github.com/plgd-dev/hub/coap-gateway/resource"
 	"github.com/plgd-dev/kit/v2/codec/cbor"
 )
 
@@ -88,7 +89,7 @@ func resourceDirectoryPublishHandler(req *mux.Message, client *Client) {
 	for i, link := range w.Links {
 		w.Links[i].DeviceID = w.DeviceID
 		w.Links[i].Href = fixHref(link.Href)
-		w.Links[i].InstanceID = getInstanceID(link.Href)
+		w.Links[i].InstanceID = resource.GetInstanceID(link.Href)
 	}
 
 	publishedResources, err := client.publishResourceLinks(req.Context, w.Links, w.DeviceID, int32(w.TimeToLive), client.remoteAddrString(), req.SequenceNumber)
@@ -98,7 +99,7 @@ func resourceDirectoryPublishHandler(req *mux.Message, client *Client) {
 	}
 
 	if err := client.server.taskQueue.Submit(func() {
-		client.observeResources(req.Context, publishedResources)
+		client.resourceObserver.AddResources(req.Context, publishedResources)
 	}); err != nil {
 		client.logAndWriteErrorResponse(fmt.Errorf("unable to observe published resources for device %v: %w", authCtx.GetDeviceID(), err), coapCodes.InternalServerError, req.Token)
 		return
@@ -163,7 +164,7 @@ func resourceDirectoryUnpublishHandler(req *mux.Message, client *Client) {
 		return
 	}
 
-	resources := client.getTrackedResources(deviceID, inss)
+	resources := client.resourceObserver.GetTrackedResources(deviceID, inss)
 	if len(resources) == 0 {
 		client.logAndWriteErrorResponse(fmt.Errorf("cannot find observed resources using query %v which shall be unpublished from device %v", queries, authCtx.GetDeviceID()), coapCodes.BadRequest, req.Token)
 		return
