@@ -1423,6 +1423,7 @@ certificateauthority:
     certFile:
     validFrom: "now-1h"
     expiresIn: "87600h"
+    hubId:
 
 
 mockoauthserver:

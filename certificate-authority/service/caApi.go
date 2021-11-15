@@ -26,9 +26,10 @@ type RequestHandler struct {
 	ValidFor    time.Duration
 	Certificate []*x509.Certificate
 	PrivateKey  crypto.PrivateKey
+	Config      Config
 }
 
-func AddHandler(svr *server.Server, cfg SignerConfig) error {
+func AddHandler(svr *server.Server, cfg Config) error {
 	handler, err := NewRequestHandlerFromConfig(cfg)
 	if err != nil {
 		return fmt.Errorf("could not create plgd-dev/certificate-authority: %w", err)
@@ -42,20 +43,20 @@ func Register(server *grpc.Server, handler *RequestHandler) {
 	pb.RegisterCertificateAuthorityServer(server, handler)
 }
 
-func NewRequestHandlerFromConfig(cfg SignerConfig) (*RequestHandler, error) {
-	chainCerts, err := security.LoadX509(cfg.CertFile)
+func NewRequestHandlerFromConfig(cfg Config) (*RequestHandler, error) {
+	chainCerts, err := security.LoadX509(cfg.Signer.CertFile)
 	if err != nil {
 		return nil, err
 	}
-	privateKey, err := security.LoadX509PrivateKey(cfg.KeyFile)
+	privateKey, err := security.LoadX509PrivateKey(cfg.Signer.KeyFile)
 	if err != nil {
 		return nil, err
 	}
 
 	return NewRequestHandler(func() time.Time {
-		t, _ := tparse.ParseNow(time.RFC3339, cfg.ValidFrom)
+		t, _ := tparse.ParseNow(time.RFC3339, cfg.Signer.ValidFrom)
 		return t
-	}, cfg.ExpiresIn, chainCerts, privateKey), nil
+	}, cfg.Signer.ExpiresIn, chainCerts, privateKey, cfg), nil
 }
 
 // NewRequestHandler factory for new RequestHandler.
@@ -63,11 +64,14 @@ func NewRequestHandler(
 	ValidFrom func() time.Time,
 	ValidFor time.Duration,
 	Certificate []*x509.Certificate,
-	PrivateKey crypto.PrivateKey) *RequestHandler {
+	PrivateKey crypto.PrivateKey,
+	cfg Config,
+) *RequestHandler {
 	return &RequestHandler{
 		ValidFrom:   ValidFrom,
 		ValidFor:    ValidFor,
 		Certificate: Certificate,
 		PrivateKey:  PrivateKey,
+		Config:      cfg,
 	}
 }
