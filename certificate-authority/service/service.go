@@ -32,7 +32,7 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 	}
 	server.AddCloseFunc(validator.Close)
 
-	err = AddHandler(server, config.Signer)
+	err = AddHandler(server, config)
 	if err != nil {
 		server.Close()
 		return nil, err

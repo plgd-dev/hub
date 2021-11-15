@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/plgd-dev/hub/certificate-authority/pb"
 	"github.com/plgd-dev/hub/pkg/log"
@@ -10,7 +11,22 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+func (r *RequestHandler) validateRequest(ctx context.Context, csr []byte) error {
+	infoData, err := getInfoData(ctx, csr)
+	if err != nil {
+		return fmt.Errorf("cannot get info data for csr=%v: %v", string(csr), err)
+	}
+	if infoData.CertificateCommonNameID == r.Config.Signer.HubID {
+		return fmt.Errorf("csr=%v common name contains same value as hub id(%v)", string(csr), r.Config.Signer.HubID)
+	}
+	return nil
+}
+
 func (r *RequestHandler) SignCertificate(ctx context.Context, req *pb.SignCertificateRequest) (*pb.SignCertificateResponse, error) {
+	err := r.validateRequest(ctx, req.GetCertificateSigningRequest())
+	if err != nil {
+		return nil, log.LogAndReturnError(status.Errorf(codes.InvalidArgument, "cannot sign certificate: %v", err))
+	}
 
 	notBefore := r.ValidFrom()
 	notAfter := notBefore.Add(r.ValidFor)

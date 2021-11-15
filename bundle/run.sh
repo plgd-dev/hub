@@ -723,6 +723,7 @@ cat /configs/certificate-authority.yaml | yq e "\
   .apis.grpc.authorization.http.tls.useSystemCAPool = true |
   .apis.grpc.authorization.authority = \"https://${OAUTH_ENDPOINT}\" |
   .apis.grpc.authorization.ownerClaim = \"${OWNER_CLAIM}\" |
+  .signer.hubId = \"${COAP_GATEWAY_HUB_ID}\" |
   .signer.keyFile = \"${CA_POOL_CERT_KEY_PATH}\" |
   .signer.certFile = \"${CA_POOL_CERT_PATH}\"
 " - > /data/certificate-authority.yaml

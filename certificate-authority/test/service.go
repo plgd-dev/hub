@@ -21,6 +21,7 @@ func MakeConfig(t *testing.T) service.Config {
 	cfg.Signer.CertFile = os.Getenv("TEST_ROOT_CA_CERT")
 	cfg.Signer.ValidFrom = "now-1h"
 	cfg.Signer.ExpiresIn = time.Hour
+	cfg.Signer.HubID = config.HubID()
 
 	err := cfg.Validate()
 	require.NoError(t, err)
