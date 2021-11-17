@@ -10,6 +10,7 @@ import (
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/mux"
 	"github.com/plgd-dev/hub/coap-gateway/coapconv"
+	"github.com/plgd-dev/hub/coap-gateway/service/observation"
 	grpcgwClient "github.com/plgd-dev/hub/grpc-gateway/client"
 	"github.com/plgd-dev/hub/identity-store/events"
 	"github.com/plgd-dev/hub/pkg/log"
@@ -113,6 +114,20 @@ func setNewDeviceSubscriber(client *Client, owner, deviceID string) error {
 	return nil
 }
 
+func setNewDeviceObserver(client *Client, ctx context.Context, deviceID string) error {
+	deviceObserver, err := observation.NewDeviceObserver(ctx, deviceID, client.coapConn, client.server.rdClient,
+		client.onObserveResource, client.onGetResourceContent)
+	if err != nil {
+		return fmt.Errorf("cannot create observer for device %v: %w", deviceID, err)
+	}
+
+	oldDeviceObserver := client.replaceDeviceObserver(deviceObserver)
+	if err := cleanDeviceObserver(ctx, oldDeviceObserver); err != nil {
+		log.Errorf("failed to close replaced device observer: %w", err)
+	}
+	return nil
+}
+
 type updateType int
 
 const (
@@ -145,15 +160,13 @@ func (client *Client) updateBySignInData(ctx context.Context, upd updateType, de
 		if err := client.closeDeviceSubscriber(); err != nil {
 			log.Errorf("failed to close previous device connection: %w", err)
 		}
-		client.resourceObserver.CleanObservedResources(client.Context())
+		if err := client.closeDeviceObserver(client.Context()); err != nil {
+			log.Errorf("failed to close previous device observer: %w", err)
+		}
 		client.unsubscribeFromDeviceEvents()
 	}
 
 	if upd != updateTypeNone {
-		if err := client.resourceObserver.LoadShadowSynchronization(ctx, deviceId); err != nil {
-			return fmt.Errorf("cannot load shadow synchronization for device %v: %w", deviceId, err)
-		}
-
 		if err := setNewDeviceSubscriber(client, owner, deviceId); err != nil {
 			return fmt.Errorf("cannot set device subscriber: %w", err)
 		}
@@ -199,11 +212,17 @@ func subscribeAndValidateDeviceAccess(ctx context.Context, client *Client, owner
 	return client.server.ownerCache.OwnsDevice(ctx, deviceId)
 }
 
-func observePublishedResources(ctx context.Context, client *Client, deviceID string) {
+func logSignInError(err error) {
+	log.Errorf("sign in error: %w", err)
+}
+
+func tryObserveResources(ctx context.Context, client *Client, deviceID string) {
 	if err := client.server.taskQueue.Submit(func() {
-		client.resourceObserver.RegisterObservationsForPublishedResource(ctx, deviceID)
+		if err := setNewDeviceObserver(client, ctx, deviceID); err != nil {
+			logSignInError(err)
+		}
 	}); err != nil {
-		log.Errorf("sign in error: failed to register resource observations for device %v: %w", deviceID, err)
+		logSignInError(fmt.Errorf("failed to register resource observations for device %v: %w", deviceID, err))
 	}
 }
 
@@ -212,7 +231,7 @@ func signInPostHandler(req *mux.Message, client *Client, signIn CoapSignInReq) {
 	logErrorAndCloseClient := func(err error, code coapCodes.Code) {
 		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign in: %w", err), code, req.Token)
 		if err := client.Close(); err != nil {
-			log.Errorf("sign in error: %w", err)
+			logSignInError(err)
 		}
 	}
 
@@ -282,7 +301,7 @@ func signInPostHandler(req *mux.Message, client *Client, signIn CoapSignInReq) {
 	client.sendResponse(coapCodes.Changed, req.Token, accept, out)
 
 	// try to register observations to the device for published resources at the cloud.
-	observePublishedResources(ctx, client, deviceID)
+	tryObserveResources(ctx, client, deviceID)
 }
 
 func updateDeviceMetadata(req *mux.Message, client *Client) error {

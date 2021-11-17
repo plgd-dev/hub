@@ -26,9 +26,9 @@ func signUpPostHandler(r *mux.Message, client *Client) {
 		return
 	}
 
-	client.setDeviceID(signUp.DeviceID)
+	client.SetDeviceID(signUp.DeviceID)
 
-	resp, err := client.server.handler.SignUp(signUp)
+	resp, err := client.handler.SignUp(signUp)
 	if err != nil {
 		logErrorAndCloseClient(err, coapCodes.InternalServerError)
 		return
@@ -58,6 +58,6 @@ func signUpHandler(r *mux.Message, client *Client) {
 	case coapCodes.DELETE:
 		signOffHandler(r, client)
 	default:
-		client.logAndWriteErrorResponse(fmt.Errorf("forbidden request from %v", client.remoteAddrString()), coapCodes.Forbidden, r.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("forbidden request from %v", client.RemoteAddrString()), coapCodes.Forbidden, r.Token)
 	}
 }

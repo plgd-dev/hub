@@ -4,16 +4,17 @@ import (
 	"fmt"
 
 	"github.com/plgd-dev/device/schema/interfaces"
-	"github.com/plgd-dev/go-coap/v2/message"
+	coapMessage "github.com/plgd-dev/go-coap/v2/message"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/mux"
 	"github.com/plgd-dev/hub/coap-gateway/coapconv"
+	"github.com/plgd-dev/hub/coap-gateway/service/message"
 	"github.com/plgd-dev/hub/resource-aggregate/commands"
 )
 
 //handles resource updates and creation
 func clientPostHandler(req *mux.Message, client *Client) {
-	resourceInterface := getResourceInterface(req)
+	resourceInterface := message.GetResourceInterface(req)
 	if resourceInterface == interfaces.OC_IF_CREATE {
 		clientCreateHandler(req, client)
 		return
@@ -27,7 +28,7 @@ func clientUpdateHandler(req *mux.Message, client *Client) {
 		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot handle update resource: %w", authCtx.GetDeviceID(), err), coapCodes.Unauthorized, req.Token)
 		return
 	}
-	deviceID, href, err := URIToDeviceIDHref(req)
+	deviceID, href, err := message.URIToDeviceIDHref(req)
 	if err != nil {
 		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot handle update resource: %w", authCtx.GetDeviceID(), err), coapCodes.BadRequest, req.Token)
 		return
@@ -41,7 +42,7 @@ func clientUpdateHandler(req *mux.Message, client *Client) {
 		return
 	}
 	if content == nil || len(content.Data) == 0 {
-		client.sendResponse(code, req.Token, message.TextPlain, nil)
+		client.sendResponse(code, req.Token, coapMessage.TextPlain, nil)
 		return
 	}
 	mediaType, err := coapconv.MakeMediaType(-1, content.ContentType)
