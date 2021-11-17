@@ -22,6 +22,8 @@ import (
 )
 
 const (
+	observeKey      = "Observe"
+	retrieveKey     = "Retrieve"
 	signUpKey       = "SignUp"
 	signOffKey      = "SignOff"
 	signInKey       = "SignIn"
@@ -35,6 +37,16 @@ const (
 
 type republishHandler struct {
 	callCounter map[string]int
+}
+
+func (r *republishHandler) RetrieveResource(deviceID, href string) error {
+	r.callCounter[observeKey]++
+	return nil
+}
+
+func (r *republishHandler) ObserveResource(deviceID, href string, observe uint32) error {
+	r.callCounter[retrieveKey]++
+	return nil
 }
 
 func (r *republishHandler) SignUp(coapgwService.CoapSignUpRequest) (coapgwService.CoapSignUpResponse, error) {
@@ -95,10 +107,13 @@ func TestRepublishAfterRefresh(t *testing.T) {
 	tearDown := service.SetUpServices(ctx, t, services)
 	defer tearDown()
 
-	h := &republishHandler{
-		callCounter: make(map[string]int),
+	makeHandler := func(s *coapgwTestService.Service, opts ...coapgwTestService.Option) coapgwTestService.ServiceHandler {
+		return &republishHandler{
+			callCounter: make(map[string]int),
+		}
 	}
-	coapShutdown := coapgwTest.SetUp(t, h, func() {
+	validateHandler := func(handler coapgwTestService.ServiceHandler) {
+		h := handler.(*republishHandler)
 		log.Debugf("%+v", h.callCounter)
 		signInCount, ok := h.callCounter[signInKey]
 		require.True(t, ok)
@@ -109,7 +124,9 @@ func TestRepublishAfterRefresh(t *testing.T) {
 		publishCount, ok := h.callCounter[publishKey]
 		require.True(t, ok)
 		require.Equal(t, 1, publishCount)
-	})
+	}
+
+	coapShutdown := coapgwTest.SetUp(t, makeHandler, validateHandler)
 	defer coapShutdown()
 
 	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultServiceToken(t))

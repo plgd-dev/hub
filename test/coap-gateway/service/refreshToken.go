@@ -6,7 +6,7 @@ import (
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/mux"
 	"github.com/plgd-dev/hub/coap-gateway/coapconv"
-	"github.com/plgd-dev/hub/coap-gateway/service"
+	coapgwService "github.com/plgd-dev/hub/coap-gateway/service"
 	"github.com/plgd-dev/hub/pkg/log"
 	"github.com/plgd-dev/kit/v2/codec/cbor"
 )
@@ -19,14 +19,14 @@ func refreshTokenPostHandler(req *mux.Message, client *Client) {
 		}
 	}
 
-	var r service.CoapRefreshTokenReq
+	var r coapgwService.CoapRefreshTokenReq
 	err := cbor.ReadFrom(req.Body, &r)
 	if err != nil {
 		logErrorAndCloseClient(err, coapCodes.BadRequest)
 		return
 	}
 
-	resp, err := client.server.handler.RefreshToken(r)
+	resp, err := client.handler.RefreshToken(r)
 	if err != nil {
 		logErrorAndCloseClient(err, coapCodes.InternalServerError)
 		return
@@ -55,5 +55,5 @@ func refreshTokenHandler(req *mux.Message, client *Client) {
 		refreshTokenPostHandler(req, client)
 		return
 	}
-	client.logAndWriteErrorResponse(fmt.Errorf("forbidden request from %v", client.remoteAddrString()), coapCodes.Forbidden, req.Token)
+	client.logAndWriteErrorResponse(fmt.Errorf("forbidden request from %v", client.RemoteAddrString()), coapCodes.Forbidden, req.Token)
 }

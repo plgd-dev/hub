@@ -13,8 +13,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-type VerifyFn = func()
-
 func MakeConfig(t *testing.T) service.Config {
 	var cfg service.Config
 	cfg.Log.Config.Debug = true
@@ -35,16 +33,16 @@ func MakeConfig(t *testing.T) service.Config {
 	return cfg
 }
 
-func SetUp(t *testing.T, handler service.ServiceHandler, verifyOnClose VerifyFn) (TearDown func()) {
-	return New(t, MakeConfig(t), handler, verifyOnClose)
+func SetUp(t *testing.T, makeHandler service.MakeServiceHandler, verifyOnClose service.VerifyServiceHandler) (TearDown func()) {
+	return New(t, MakeConfig(t), makeHandler, verifyOnClose)
 }
 
-func New(t *testing.T, cfg service.Config, handler service.ServiceHandler, verifyOnClose VerifyFn) func() {
+func New(t *testing.T, cfg service.Config, makeHandler service.MakeServiceHandler, verifyOnClose service.VerifyServiceHandler) func() {
 	ctx := context.Background()
 	logger, err := log.NewLogger(cfg.Log.Config)
 	require.NoError(t, err)
 
-	s, err := service.New(ctx, cfg, logger, handler)
+	s, err := service.New(ctx, cfg, logger, makeHandler)
 	require.NoError(t, err)
 
 	var wg sync.WaitGroup
@@ -56,8 +54,11 @@ func New(t *testing.T, cfg service.Config, handler service.ServiceHandler, verif
 	return func() {
 		_ = s.Close()
 		wg.Wait()
-		if verifyOnClose != nil {
-			verifyOnClose()
+		if verifyOnClose == nil {
+			return
+		}
+		for _, c := range s.GetClients() {
+			verifyOnClose(c.GetServiceHandler())
 		}
 	}
 }

@@ -6,15 +6,15 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/plgd-dev/device/schema"
+	"github.com/plgd-dev/go-coap/v2/message"
+	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
+	"github.com/plgd-dev/go-coap/v2/mux"
 	"github.com/plgd-dev/hub/coap-gateway/coapconv"
 	"github.com/plgd-dev/hub/coap-gateway/uri"
 	pbGRPC "github.com/plgd-dev/hub/grpc-gateway/pb"
 	"github.com/plgd-dev/hub/pkg/log"
 	"github.com/plgd-dev/hub/resource-aggregate/commands"
-	"github.com/plgd-dev/device/schema"
-	"github.com/plgd-dev/go-coap/v2/message"
-	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
-	"github.com/plgd-dev/go-coap/v2/mux"
 )
 
 func makeListDevicesCommand(msg *mux.Message) (*pbGRPC.GetResourceLinksRequest, error) {

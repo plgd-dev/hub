@@ -3,11 +3,12 @@ package service
 import (
 	"fmt"
 
-	"github.com/plgd-dev/hub/coap-gateway/coapconv"
-	"github.com/plgd-dev/hub/resource-aggregate/commands"
-	"github.com/plgd-dev/go-coap/v2/message"
+	coapMessage "github.com/plgd-dev/go-coap/v2/message"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/mux"
+	"github.com/plgd-dev/hub/coap-gateway/coapconv"
+	"github.com/plgd-dev/hub/coap-gateway/service/message"
+	"github.com/plgd-dev/hub/resource-aggregate/commands"
 )
 
 func clientDeleteHandler(req *mux.Message, client *Client) {
@@ -16,7 +17,7 @@ func clientDeleteHandler(req *mux.Message, client *Client) {
 		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot handle delete resource: %w", authCtx.GetDeviceID(), err), coapCodes.Unauthorized, req.Token)
 		return
 	}
-	deviceID, href, err := URIToDeviceIDHref(req)
+	deviceID, href, err := message.URIToDeviceIDHref(req)
 	if err != nil {
 		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot handle delete resource: %w", authCtx.GetDeviceID(), err), coapCodes.BadRequest, req.Token)
 		return
@@ -31,7 +32,7 @@ func clientDeleteHandler(req *mux.Message, client *Client) {
 	}
 
 	if content == nil || len(content.Data) == 0 {
-		client.sendResponse(code, req.Token, message.TextPlain, nil)
+		client.sendResponse(code, req.Token, coapMessage.TextPlain, nil)
 		return
 	}
 	mediaType, err := coapconv.MakeMediaType(-1, content.ContentType)

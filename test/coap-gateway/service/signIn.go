@@ -20,7 +20,7 @@ func signInPostHandler(req *mux.Message, client *Client, signIn coapgwService.Co
 		}
 	}
 
-	resp, err := client.server.handler.SignIn(signIn)
+	resp, err := client.handler.SignIn(signIn)
 	if err != nil {
 		logErrorAndCloseClient(err, coapCodes.InternalServerError)
 		return
@@ -60,5 +60,5 @@ func signInHandler(req *mux.Message, client *Client) {
 		}
 		return
 	}
-	client.logAndWriteErrorResponse(fmt.Errorf("forbidden request from %v", client.remoteAddrString()), coapCodes.Forbidden, req.Token)
+	client.logAndWriteErrorResponse(fmt.Errorf("forbidden request from %v", client.RemoteAddrString()), coapCodes.Forbidden, req.Token)
 }

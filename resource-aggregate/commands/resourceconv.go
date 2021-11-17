@@ -3,8 +3,8 @@ package commands
 import (
 	"time"
 
-	pkgTime "github.com/plgd-dev/hub/pkg/time"
 	"github.com/plgd-dev/device/schema"
+	pkgTime "github.com/plgd-dev/hub/pkg/time"
 )
 
 func (e *EndpointInformation) ToSchema() schema.Endpoint {
@@ -94,6 +94,13 @@ func SchemaResourceLinkToResource(link schema.ResourceLink, validUntil time.Time
 		ValidUntil:            pkgTime.UnixNano(validUntil),
 		Policy:                SchemaPolicyToRAPolicy(link.Policy),
 		EndpointInformations:  SchemaEndpointsToRAEndpointInformations(link.Endpoints),
+	}
+}
+
+func SchemaResourceLinkToResourceId(link schema.ResourceLink) *ResourceId {
+	return &ResourceId{
+		Href:     link.Href,
+		DeviceId: link.DeviceID,
 	}
 }
 

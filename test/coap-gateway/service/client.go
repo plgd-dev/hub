@@ -12,27 +12,37 @@ import (
 type Client struct {
 	server   *Service
 	coapConn *tcp.ClientConn
+	handler  ServiceHandler
 
 	deviceID string
 }
 
 // newClient creates and initializes client
-func newClient(server *Service, client *tcp.ClientConn) *Client {
+func newClient(server *Service, client *tcp.ClientConn, handler ServiceHandler) *Client {
 	return &Client{
 		server:   server,
 		coapConn: client,
+		handler:  handler,
 	}
+}
+
+func (client *Client) GetCoapConnection() *tcp.ClientConn {
+	return client.coapConn
+}
+
+func (client *Client) GetServiceHandler() ServiceHandler {
+	return client.handler
 }
 
 func (client *Client) GetDeviceID() string {
 	return client.deviceID
 }
 
-func (client *Client) setDeviceID(deviceId string) {
+func (client *Client) SetDeviceID(deviceId string) {
 	client.deviceID = deviceId
 }
 
-func (client *Client) remoteAddrString() string {
+func (client *Client) RemoteAddrString() string {
 	return client.coapConn.RemoteAddr().String()
 }
 

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"strings"
 	"sync"
 	"syscall"
 
@@ -24,15 +25,16 @@ import (
 
 // Service is a configuration of coap-gateway
 type Service struct {
-	config     Config
-	coapServer *tcp.Server
-	listener   tcp.Listener
-	closeFn    func()
-	ctx        context.Context
-	cancel     context.CancelFunc
-	sigs       chan os.Signal
-	taskQueue  *queue.Queue
-	handler    ServiceHandler
+	config      Config
+	coapServer  *tcp.Server
+	listener    tcp.Listener
+	closeFn     func()
+	ctx         context.Context
+	cancel      context.CancelFunc
+	sigs        chan os.Signal
+	taskQueue   *queue.Queue
+	makeHandler MakeServiceHandler
+	clients     []*Client
 }
 
 func newTCPListener(config COAPConfig, logger log.Logger) (tcp.Listener, func(), error) {
@@ -69,7 +71,7 @@ func newTCPListener(config COAPConfig, logger log.Logger) (tcp.Listener, func(),
 }
 
 // New creates server.
-func New(ctx context.Context, config Config, logger log.Logger, handler ServiceHandler) (*Service, error) {
+func New(ctx context.Context, config Config, logger log.Logger, makeHandler MakeServiceHandler) (*Service, error) {
 	queue, err := queue.New(config.TaskQueue)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create job queue %w", err)
@@ -85,14 +87,14 @@ func New(ctx context.Context, config Config, logger log.Logger, handler ServiceH
 	ctx, cancel := context.WithCancel(ctx)
 
 	s := Service{
-		config:    config,
-		listener:  listener,
-		closeFn:   closeFn.ToFunction(),
-		ctx:       ctx,
-		cancel:    cancel,
-		sigs:      make(chan os.Signal, 1),
-		taskQueue: queue,
-		handler:   handler,
+		config:      config,
+		listener:    listener,
+		closeFn:     closeFn.ToFunction(),
+		ctx:         ctx,
+		cancel:      cancel,
+		sigs:        make(chan os.Signal, 1),
+		taskQueue:   queue,
+		makeHandler: makeHandler,
 	}
 
 	if err := s.setupCoapServer(); err != nil {
@@ -111,19 +113,20 @@ func decodeMsgToDebug(client *Client, resp *pool.Message, tag string) {
 
 const clientKey = "client"
 
-func (server *Service) coapConnOnNew(coapConn *tcp.ClientConn, tlscon *tls.Conn) {
-	client := newClient(server, coapConn)
+func (s *Service) coapConnOnNew(coapConn *tcp.ClientConn, tlscon *tls.Conn) {
+	client := newClient(s, coapConn, s.makeHandler(s, WithCoapConnectionOpt(coapConn)))
 	coapConn.SetContextValue(clientKey, client)
 	coapConn.AddOnClose(func() {
 		client.OnClose()
 	})
+	s.clients = append(s.clients, client)
 }
 
 func (server *Service) loggingMiddleware(next mux.Handler) mux.Handler {
 	return mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
 		client, ok := w.Client().Context().Value(clientKey).(*Client)
 		if !ok {
-			client = newClient(server, w.Client().ClientConn().(*tcp.ClientConn))
+			client = newClient(server, w.Client().ClientConn().(*tcp.ClientConn), nil)
 		}
 		tmp, err := pool.ConvertFrom(r.Message)
 		if err != nil {
@@ -138,14 +141,14 @@ func (server *Service) loggingMiddleware(next mux.Handler) mux.Handler {
 func validateCommand(s mux.ResponseWriter, req *mux.Message, server *Service, fnc func(req *mux.Message, client *Client)) {
 	client, ok := s.Client().Context().Value(clientKey).(*Client)
 	if !ok || client == nil {
-		client = newClient(server, s.Client().ClientConn().(*tcp.ClientConn))
+		client = newClient(server, s.Client().ClientConn().(*tcp.ClientConn), nil)
 	}
 	closeClient := func(c *Client) {
 		if err := c.Close(); err != nil {
 			log.Errorf("cannot handle command: %w", err)
 		}
 	}
-	err := server.taskQueue.Submit(func() {
+	err := server.Submit(func() {
 		switch req.Code {
 		case coapCodes.POST, coapCodes.DELETE, coapCodes.PUT, coapCodes.GET:
 			fnc(req, client)
@@ -175,7 +178,12 @@ func validateCommand(s mux.ResponseWriter, req *mux.Message, server *Service, fn
 
 func defaultHandler(req *mux.Message, client *Client) {
 	path, _ := req.Options.Path()
-	client.logAndWriteErrorResponse(fmt.Errorf("unknown path %v", path), coapCodes.NotFound, req.Token)
+	switch {
+	case strings.HasPrefix("/"+path, coapgwUri.ResourceRoute):
+		resourceHandler(req, client)
+	default:
+		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: unknown path %v", client.GetDeviceID(), path), coapCodes.NotFound, req.Token)
+	}
 }
 
 func (server *Service) setupCoapServer() error {
@@ -254,6 +262,14 @@ func (server *Service) serveWithHandlingSignal() error {
 	wg.Wait()
 
 	return err
+}
+
+func (s *Service) Submit(task func()) error {
+	return s.taskQueue.Submit(task)
+}
+
+func (s *Service) GetClients() []*Client {
+	return s.clients
 }
 
 // Shutdown turn off server.

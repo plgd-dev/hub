@@ -34,6 +34,15 @@ func ResourceLinksToResources(deviceID string, s []schema.ResourceLink) []*comma
 	return r
 }
 
+func ResourceLinksToResourceIds(deviceID string, s []schema.ResourceLink) []*commands.ResourceId {
+	r := make([]*commands.ResourceId, 0, len(s))
+	for _, l := range s {
+		l.DeviceID = deviceID
+		r = append(r, commands.SchemaResourceLinkToResourceId(l))
+	}
+	return r
+}
+
 func ResourceLinksToResources2(deviceID string, s []schema.ResourceLink) []*pb.Resource {
 	r := make([]*pb.Resource, 0, len(s))
 	for _, l := range s {

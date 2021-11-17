@@ -1,12 +1,15 @@
 package service
 
 import (
+	"context"
 	"errors"
 	"fmt"
+	"io"
 	"net/url"
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/plgd-dev/device/schema"
 	"github.com/plgd-dev/go-coap/v2/message"
@@ -14,6 +17,9 @@ import (
 	"github.com/plgd-dev/go-coap/v2/mux"
 	"github.com/plgd-dev/hub/coap-gateway/coapconv"
 	"github.com/plgd-dev/hub/coap-gateway/resource"
+	"github.com/plgd-dev/hub/pkg/log"
+	"github.com/plgd-dev/hub/resource-aggregate/commands"
+	raService "github.com/plgd-dev/hub/resource-aggregate/service"
 	"github.com/plgd-dev/kit/v2/codec/cbor"
 )
 
@@ -62,8 +68,75 @@ func validatePublish(w wkRd) error {
 	if w.TimeToLive < 0 && w.TimeToLiveLegacy < 0 {
 		return errors.New("invalid TimeToLive")
 	}
-
 	return nil
+}
+
+func ParsePublishedResources(data io.ReadSeeker, deviceID string) (wkRd, error) {
+	w := makeWkRd()
+	err := cbor.ReadFrom(data, &w)
+	if err != nil {
+		return wkRd{}, fmt.Errorf("cannot read publish request body received from device %v: %w", deviceID, err)
+	}
+
+	if err := validatePublish(w); err != nil {
+		return wkRd{}, fmt.Errorf("invalid publish request received from device %v: %w", deviceID, err)
+	}
+
+	w = fixTimeToLive(w)
+	for i, link := range w.Links {
+		w.Links[i].DeviceID = w.DeviceID
+		w.Links[i].Href = fixHref(link.Href)
+		w.Links[i].InstanceID = resource.GetInstanceID(link.Href)
+	}
+	return w, nil
+}
+
+func PublishResourceLinks(ctx context.Context, raClient raService.ResourceAggregateClient, links schema.ResourceLinks, deviceID string, ttl int32, connectionID string, sequence uint64) ([]*commands.Resource, error) {
+	var validUntil time.Time
+	if ttl > 0 {
+		validUntil = time.Now().Add(time.Second * time.Duration(ttl))
+	}
+
+	resources := commands.SchemaResourceLinksToResources(links, validUntil)
+	request := commands.PublishResourceLinksRequest{
+		Resources: resources,
+		DeviceId:  deviceID,
+		CommandMetadata: &commands.CommandMetadata{
+			Sequence:     sequence,
+			ConnectionId: connectionID,
+		},
+	}
+	resp, err := raClient.PublishResourceLinks(ctx, &request)
+	if err != nil {
+		return nil, fmt.Errorf("error occurred during resource links publish %w", err)
+	}
+
+	return resp.GetPublishedResources(), nil
+}
+
+func observeResources(ctx context.Context, client *Client, w wkRd, sequenceNumber uint64) (coapCodes.Code, error) {
+	publishedResources, err := PublishResourceLinks(ctx, client.server.raClient, w.Links, w.DeviceID, int32(w.TimeToLive), client.remoteAddrString(), sequenceNumber)
+	if err != nil {
+		return coapCodes.BadRequest, fmt.Errorf("unable to publish resources for device %v: %w", w.DeviceID, err)
+	}
+
+	observeError := func(deviceID string, err error) error {
+		return fmt.Errorf("unable to observe published resources for device %v: %w", deviceID, err)
+	}
+	if err := client.server.taskQueue.Submit(func() {
+		obs, errObs := client.getDeviceObserver(ctx)
+		if errObs != nil {
+			log.Error(observeError(w.DeviceID, errObs))
+			return
+		}
+		if errObs := obs.AddPublishedResources(ctx, publishedResources); errObs != nil {
+			log.Error(observeError(w.DeviceID, errObs))
+			return
+		}
+	}); err != nil {
+		return coapCodes.InternalServerError, observeError(w.DeviceID, err)
+	}
+	return 0, nil
 }
 
 func resourceDirectoryPublishHandler(req *mux.Message, client *Client) {
@@ -73,35 +146,14 @@ func resourceDirectoryPublishHandler(req *mux.Message, client *Client) {
 		return
 	}
 
-	w := makeWkRd()
-	err = cbor.ReadFrom(req.Body, &w)
+	w, err := ParsePublishedResources(req.Body, authCtx.GetDeviceID())
 	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("cannot read publish request body received from device %v: %w", authCtx.GetDeviceID(), err), coapCodes.BadRequest, req.Token)
+		client.logAndWriteErrorResponse(err, coapCodes.BadRequest, req.Token)
 		return
 	}
 
-	if err := validatePublish(w); err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("invalid publish request received from device %v: %w", authCtx.GetDeviceID(), err), coapCodes.BadRequest, req.Token)
-		return
-	}
-
-	w = fixTimeToLive(w)
-	for i, link := range w.Links {
-		w.Links[i].DeviceID = w.DeviceID
-		w.Links[i].Href = fixHref(link.Href)
-		w.Links[i].InstanceID = resource.GetInstanceID(link.Href)
-	}
-
-	publishedResources, err := client.publishResourceLinks(req.Context, w.Links, w.DeviceID, int32(w.TimeToLive), client.remoteAddrString(), req.SequenceNumber)
-	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("unable to publish resources for device %v: %w", w.DeviceID, err), coapCodes.BadRequest, req.Token)
-		return
-	}
-
-	if err := client.server.taskQueue.Submit(func() {
-		client.resourceObserver.AddResources(req.Context, publishedResources)
-	}); err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("unable to observe published resources for device %v: %w", authCtx.GetDeviceID(), err), coapCodes.InternalServerError, req.Token)
+	if errCode, err := observeResources(req.Context, client, w, req.SequenceNumber); err != nil {
+		client.logAndWriteErrorResponse(err, errCode, req.Token)
 		return
 	}
 
@@ -164,7 +216,17 @@ func resourceDirectoryUnpublishHandler(req *mux.Message, client *Client) {
 		return
 	}
 
-	resources := client.resourceObserver.GetTrackedResources(deviceID, inss)
+	deviceObserver, err := client.getDeviceObserver(req.Context)
+	if err != nil {
+		client.logAndWriteErrorResponse(fmt.Errorf("unable to get device %v observer: %w", authCtx.GetDeviceID(), err), coapCodes.BadRequest, req.Token)
+		return
+	}
+
+	resources, err := deviceObserver.GetResources(deviceID, inss)
+	if err != nil {
+		client.logAndWriteErrorResponse(fmt.Errorf("cannot find observed resources for device %v: %w", authCtx.GetDeviceID(), err), coapCodes.BadRequest, req.Token)
+		return
+	}
 	if len(resources) == 0 {
 		client.logAndWriteErrorResponse(fmt.Errorf("cannot find observed resources using query %v which shall be unpublished from device %v", queries, authCtx.GetDeviceID()), coapCodes.BadRequest, req.Token)
 		return
