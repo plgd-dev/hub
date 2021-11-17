@@ -584,6 +584,11 @@ cat /configs/coap-gateway.yaml | yq e "\
   .apis.coap.authorization.providers[0].scopes = [ \"${DEVICE_OAUTH_SCOPES}\" ] |
   .apis.coap.authorization.providers[0].audience = \"${DEVICE_OAUTH_AUDIENCE}\" |
   .apis.coap.authorization.providers[0].http.tls.useSystemCAPool = true |
+  .apis.coap.authorization.providers[1].name = \"plgd.mobile\" |
+  .apis.coap.authorization.providers[1].authority = \"https://${OAUTH_ENDPOINT}\" |
+  .apis.coap.authorization.providers[1].clientID = \"${DEVICE_OAUTH_CLIENT_ID}\" |
+  .apis.coap.authorization.providers[1].clientSecretFile = \"${OAUTH_DEVICE_SECRET_PATH}\" |
+  .apis.coap.authorization.providers[1].http.tls.useSystemCAPool = true |
   .clients.eventBus.nats.url = \"${NATS_URL}\" |
   .clients.identityStore.grpc.address = \"${IDENTITY_STORE_ADDRESS}\" |
   .clients.resourceAggregate.grpc.address = \"${RESOURCE_AGGREGATE_ADDRESS}\" |
@@ -621,6 +626,11 @@ cat /configs/coap-gateway.yaml | yq e "\
   .apis.coap.authorization.providers[0].scopes = [ \"${DEVICE_OAUTH_SCOPES}\" ] |
   .apis.coap.authorization.providers[0].audience = \"${DEVICE_OAUTH_AUDIENCE}\" |
   .apis.coap.authorization.providers[0].http.tls.useSystemCAPool = true |
+  .apis.coap.authorization.providers[1].name = \"plgd.mobile\" |
+  .apis.coap.authorization.providers[1].authority = \"https://${OAUTH_ENDPOINT}\" |
+  .apis.coap.authorization.providers[1].clientID = \"${DEVICE_OAUTH_CLIENT_ID}\" |
+  .apis.coap.authorization.providers[1].clientSecretFile = \"${OAUTH_DEVICE_SECRET_PATH}\" |
+  .apis.coap.authorization.providers[1].http.tls.useSystemCAPool = true |
   .clients.eventBus.nats.url = \"${NATS_URL}\" |
   .clients.identityStore.grpc.address = \"${IDENTITY_STORE_ADDRESS}\" |
   .clients.resourceAggregate.grpc.address = \"${RESOURCE_AGGREGATE_ADDRESS}\" |
