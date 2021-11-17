@@ -16,9 +16,10 @@ import (
 )
 
 type PublishRequest struct {
-	DeviceID   string               `json:"di"`
-	Links      schema.ResourceLinks `json:"links"`
-	TimeToLive int                  `json:"ttl"`
+	DeviceID       string               `json:"di"`
+	Links          schema.ResourceLinks `json:"links"`
+	TimeToLive     int                  `json:"ttl"`
+	SequenceNumber uint64               `json:"-"`
 }
 
 type UnpublishRequest struct {
@@ -55,8 +56,9 @@ func resourceDirectoryPublishHandler(req *mux.Message, client *Client) {
 		p.Links[i].DeviceID = p.DeviceID
 		p.Links[i].Href = fixHref(link.Href)
 	}
+	p.SequenceNumber = req.SequenceNumber
 
-	if err := client.server.handler.PublishResources(p); err != nil {
+	if err := client.handler.PublishResources(p); err != nil {
 		client.logAndWriteErrorResponse(err, coapCodes.InternalServerError, req.Token)
 		return
 	}
@@ -116,7 +118,7 @@ func resourceDirectoryUnpublishHandler(req *mux.Message, client *Client) {
 		return
 	}
 
-	err = client.server.handler.UnpublishResources(r)
+	err = client.handler.UnpublishResources(r)
 	if err != nil {
 		client.logAndWriteErrorResponse(err, coapCodes.InternalServerError, req.Token)
 		return
@@ -133,6 +135,6 @@ func resourceDirectoryHandler(req *mux.Message, client *Client) {
 	case coapCodes.DELETE:
 		resourceDirectoryUnpublishHandler(req, client)
 	default:
-		client.logAndWriteErrorResponse(fmt.Errorf("forbidden request from %v", client.remoteAddrString()), coapCodes.Forbidden, req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("forbidden request from %v", client.RemoteAddrString()), coapCodes.Forbidden, req.Token)
 	}
 }

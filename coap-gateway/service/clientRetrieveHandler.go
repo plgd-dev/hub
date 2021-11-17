@@ -4,44 +4,16 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"strings"
 
+	coapMessage "github.com/plgd-dev/go-coap/v2/message"
+	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
+	"github.com/plgd-dev/go-coap/v2/mux"
 	"github.com/plgd-dev/hub/coap-gateway/coapconv"
-	"github.com/plgd-dev/hub/coap-gateway/uri"
+	"github.com/plgd-dev/hub/coap-gateway/service/message"
 	pbGRPC "github.com/plgd-dev/hub/grpc-gateway/pb"
 	"github.com/plgd-dev/hub/pkg/log"
 	"github.com/plgd-dev/hub/resource-aggregate/commands"
-	"github.com/plgd-dev/go-coap/v2/message"
-	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
-	"github.com/plgd-dev/go-coap/v2/mux"
 )
-
-// URIToDeviceIDHref convert uri to deviceID and href. Expected input "/api/v1/devices/{deviceID}/{Href}".
-func URIToDeviceIDHref(msg *mux.Message) (deviceID, href string, err error) {
-	wholePath, err := msg.Options.Path()
-	if err != nil {
-		return "", "", fmt.Errorf("cannot parse deviceID, href from uri: %w", err)
-	}
-	deviceIDHref := strings.TrimPrefix("/"+wholePath, uri.ResourceRoute)
-	if deviceIDHref[0] == '/' {
-		deviceIDHref = deviceIDHref[1:]
-	}
-	r := commands.ResourceIdFromString(deviceIDHref)
-	if r == nil {
-		return "", "", fmt.Errorf("cannot parse deviceID, href from uri %v", wholePath)
-	}
-	return r.GetDeviceId(), r.GetHref(), nil
-}
-
-func getResourceInterface(msg *mux.Message) string {
-	queries, _ := msg.Options.Queries()
-	for _, query := range queries {
-		if strings.HasPrefix(query, "if=") {
-			return strings.TrimLeft(query, "if=")
-		}
-	}
-	return ""
-}
 
 func clientRetrieveHandler(req *mux.Message, client *Client) {
 	authCtx, err := client.GetAuthorizationContext()
@@ -50,7 +22,7 @@ func clientRetrieveHandler(req *mux.Message, client *Client) {
 		return
 	}
 
-	deviceID, href, err := URIToDeviceIDHref(req)
+	deviceID, href, err := message.URIToDeviceIDHref(req)
 	if err != nil {
 		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot handle retrieve resource: %w", authCtx.GetDeviceID(), err), coapCodes.BadRequest, req.Token)
 		return
@@ -58,7 +30,7 @@ func clientRetrieveHandler(req *mux.Message, client *Client) {
 
 	var content *commands.Content
 	var code coapCodes.Code
-	resourceInterface := getResourceInterface(req)
+	resourceInterface := message.GetResourceInterface(req)
 	if resourceInterface == "" {
 		content, code, err = clientRetrieveFromResourceShadowHandler(req.Context, client, deviceID, href)
 		if err != nil {
@@ -76,7 +48,7 @@ func clientRetrieveHandler(req *mux.Message, client *Client) {
 	}
 
 	if content == nil || len(content.Data) == 0 {
-		client.sendResponse(code, req.Token, message.TextPlain, nil)
+		client.sendResponse(code, req.Token, coapMessage.TextPlain, nil)
 		return
 	}
 	mediaType, err := coapconv.MakeMediaType(-1, content.ContentType)

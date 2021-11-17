@@ -19,7 +19,7 @@ func signOffHandler(req *mux.Message, client *Client) {
 		}
 	}
 
-	if err := client.server.handler.SignOff(); err != nil {
+	if err := client.handler.SignOff(); err != nil {
 		logErrorAndCloseClient(err, coapCodes.InternalServerError)
 		return
 	}

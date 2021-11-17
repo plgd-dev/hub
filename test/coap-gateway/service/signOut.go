@@ -20,7 +20,7 @@ func signOutPostHandler(req *mux.Message, client *Client, signOut coapgwService.
 		}
 	}
 
-	if err := client.server.handler.SignOut(signOut); err != nil {
+	if err := client.handler.SignOut(signOut); err != nil {
 		logErrorAndCloseClient(err, coapCodes.InternalServerError)
 		return
 	}

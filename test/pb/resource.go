@@ -16,18 +16,25 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-type sortResourcesByHref []*pb.Resource
+type sortResourcesIdsByHref []*commands.ResourceId
 
-func (a sortResourcesByHref) Len() int      { return len(a) }
-func (a sortResourcesByHref) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
-func (a sortResourcesByHref) Less(i, j int) bool {
-	return a[i].GetData().GetResourceId().GetHref() < a[j].GetData().GetResourceId().GetHref()
+func (a sortResourcesIdsByHref) Len() int      { return len(a) }
+func (a sortResourcesIdsByHref) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
+func (a sortResourcesIdsByHref) Less(i, j int) bool {
+	return a[i].GetHref() < a[j].GetHref()
 }
 
-func sortResources(s []*pb.Resource) []*pb.Resource {
-	v := sortResourcesByHref(s)
+func sortResourceIds(s []*commands.ResourceId) []*commands.ResourceId {
+	v := sortResourcesIdsByHref(s)
 	sort.Sort(v)
 	return v
+}
+
+func CmpResourceIds(t *testing.T, expected, got []*commands.ResourceId) {
+	require.Len(t, got, len(expected))
+	expectedSorted := sortResourceIds(expected)
+	gotSorted := sortResourceIds(got)
+	test.CheckProtobufs(t, expectedSorted, gotSorted, test.RequireToCheckFunc(require.Equal))
 }
 
 func MakeCreateLightResourceResponseData(id string) map[string]interface{} {
@@ -285,6 +292,20 @@ func CmpResourceUpdated(t *testing.T, expected, got *events.ResourceUpdated) {
 	CleanUpResourceUpdated(expected)
 	CleanUpResourceUpdated(got)
 	test.CheckProtobufs(t, expected, got, test.RequireToCheckFunc(require.Equal))
+}
+
+type sortResourcesByHref []*pb.Resource
+
+func (a sortResourcesByHref) Len() int      { return len(a) }
+func (a sortResourcesByHref) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
+func (a sortResourcesByHref) Less(i, j int) bool {
+	return a[i].GetData().GetResourceId().GetHref() < a[j].GetData().GetResourceId().GetHref()
+}
+
+func sortResources(s []*pb.Resource) []*pb.Resource {
+	v := sortResourcesByHref(s)
+	sort.Sort(v)
+	return v
 }
 
 func CmpResourceValues(t *testing.T, expected, got []*pb.Resource) {

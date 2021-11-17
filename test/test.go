@@ -32,7 +32,8 @@ import (
 )
 
 var (
-	TestDeviceName string
+	TestDeviceName                     string
+	TestDeviceNameWithOicResObservable string
 
 	TestDevsimResources        []schema.ResourceLink
 	TestDevsimBackendResources []schema.ResourceLink
@@ -52,6 +53,7 @@ func TestResourceSwitchesInstanceHref(id string) string {
 
 func init() {
 	TestDeviceName = "devsim-" + MustGetHostname()
+	TestDeviceNameWithOicResObservable = "devsim-resobs-" + MustGetHostname()
 	TestDevsimResources = []schema.ResourceLink{
 		{
 			Href:          platform.ResourceURI,
