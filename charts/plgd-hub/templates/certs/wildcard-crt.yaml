@@ -22,6 +22,7 @@ spec:
   usages:
     - server auth
     - client auth
+  commonName: {{ include "plgd-hub.wildCardCertDomain" . | quote }}
   dnsNames:
     - {{ include "plgd-hub.httpgateway.uiDomain" . | quote }}
     - {{ include "plgd-hub.httpgateway.apiDomain" . | quote }}
