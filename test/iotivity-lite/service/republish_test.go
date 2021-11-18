@@ -1,5 +1,8 @@
 package service_test
 
+/*
+TODO: uncomment when https://github.com/iotivity/iotivity-lite/pull/147 is merged
+
 import (
 	"context"
 	"crypto/tls"
@@ -130,3 +133,4 @@ func TestRepublishAfterRefresh(t *testing.T) {
 		time.Sleep(time.Second)
 	}
 }
+*/
