@@ -588,6 +588,7 @@ cat /configs/coap-gateway.yaml | yq e "\
   .apis.coap.authorization.providers[1].authority = \"https://${OAUTH_ENDPOINT}\" |
   .apis.coap.authorization.providers[1].clientID = \"${DEVICE_OAUTH_CLIENT_ID}\" |
   .apis.coap.authorization.providers[1].clientSecretFile = \"${OAUTH_DEVICE_SECRET_PATH}\" |
+  .apis.coap.authorization.providers[1].redirectURL = \"cloud.plgd.mobile://login-callback\" |
   .apis.coap.authorization.providers[1].http.tls.useSystemCAPool = true |
   .clients.eventBus.nats.url = \"${NATS_URL}\" |
   .clients.identityStore.grpc.address = \"${IDENTITY_STORE_ADDRESS}\" |
@@ -630,6 +631,7 @@ cat /configs/coap-gateway.yaml | yq e "\
   .apis.coap.authorization.providers[1].authority = \"https://${OAUTH_ENDPOINT}\" |
   .apis.coap.authorization.providers[1].clientID = \"${DEVICE_OAUTH_CLIENT_ID}\" |
   .apis.coap.authorization.providers[1].clientSecretFile = \"${OAUTH_DEVICE_SECRET_PATH}\" |
+  .apis.coap.authorization.providers[1].redirectURL = \"cloud.plgd.mobile://login-callback\" |
   .apis.coap.authorization.providers[1].http.tls.useSystemCAPool = true |
   .clients.eventBus.nats.url = \"${NATS_URL}\" |
   .clients.identityStore.grpc.address = \"${IDENTITY_STORE_ADDRESS}\" |
