@@ -65,7 +65,7 @@ nats: certificates
 mongo: certificates
 	mkdir -p $(WORKING_DIRECTORY)/.tmp/mongo
 	docker run \
-	    -d \
+		-d \
 		--network=host \
 		--name=mongo \
 		-v $(WORKING_DIRECTORY)/.tmp/mongo:/data/db \
@@ -76,22 +76,44 @@ http-gateway-www:
 	@mkdir -p $(WORKING_DIRECTORY)/.tmp/usr/local/www
 	@cp -r $(WORKING_DIRECTORY)/http-gateway/web/public/* $(WORKING_DIRECTORY)/.tmp/usr/local/www/
 
-SIMULATOR_DOCKER_IMAGE := ghcr.io/iotivity/iotivity-lite/cloud-server-debug:master
+# standard device
+DEVICE_SIMULATOR_NAME := devsim
+DEVICE_SIMULATOR_IMG := ghcr.io/iotivity/iotivity-lite/cloud-server-debug:master
+# device with /oic/res observable
+DEVICE_SIMULATOR_RES_OBSERVABLE_NAME := devsim-resobs
+DEVICE_SIMULATOR_RES_OBSERVABLE_IMG := ghcr.io/iotivity/iotivity-lite/cloud-server-discovery-resource-observable-debug:master
+
+# Pull latest device simulator with given name and run it
+#
+# Parameters:
+#   $(1): name, used for:
+#          - name of working directory for the device simulator (.tmp/$(1))
+#          - name of the docker container
+#          - name of the simulator ("$(1)-$(SIMULATOR_NAME_SUFFIX)")
+define RUN-DOCKER-DEVICE
+	mkdir -p "$(WORKING_DIRECTORY)/.tmp/$(1)" ; \
+	docker pull $(2) ; \
+	docker run \
+		-d \
+		--privileged \
+		--name=$(1) \
+		--network=host \
+		-v $(WORKING_DIRECTORY)/.tmp/$(1):/tmp \
+		$(2) \
+		$(1)-$(SIMULATOR_NAME_SUFFIX)
+endef
+
+define CLEAN-DOCKER-DEVICE
+	docker rm -f $(1) || true
+	sudo rm -rf $(WORKING_DIRECTORY)/.tmp/$(1) || true
+endef
 
 env: clean certificates nats mongo privateKeys http-gateway-www
 	if [ "${TRAVIS_OS_NAME}" == "linux" ]; then \
 		sudo sh -c 'echo 0 > /proc/sys/net/ipv6/conf/all/disable_ipv6'; \
 	fi
-	mkdir -p "$(WORKING_DIRECTORY)/.tmp/devsim" ; \
-	docker pull $(SIMULATOR_DOCKER_IMAGE) ; \
-	docker run \
-		-d \
-		--privileged \
-		--name=devsim \
-		--network=host \
-		-v $(WORKING_DIRECTORY)/.tmp/devsim:/tmp \
-		$(SIMULATOR_DOCKER_IMAGE) \
-		devsim-$(SIMULATOR_NAME_SUFFIX)
+	$(call RUN-DOCKER-DEVICE,$(DEVICE_SIMULATOR_NAME),$(DEVICE_SIMULATOR_IMG))
+	$(call RUN-DOCKER-DEVICE,$(DEVICE_SIMULATOR_RES_OBSERVABLE_NAME),$(DEVICE_SIMULATOR_RES_OBSERVABLE_IMG))
 
 define RUN-DOCKER
 	docker run \
@@ -190,8 +212,8 @@ clean:
 	docker rm -f mongo || true
 	docker rm -f nats || true
 	docker rm -f nats-cloud-connector || true
-	docker rm -f devsim || true
-	sudo rm -rf ./.tmp/devsim
+	$(call CLEAN-DOCKER-DEVICE,$(DEVICE_SIMULATOR_NAME))
+	$(call CLEAN-DOCKER-DEVICE,$(DEVICE_SIMULATOR_RES_OBSERVABLE_NAME))
 	sudo rm -rf ./.tmp/certs || true
 	sudo rm -rf ./.tmp/mongo || true
 	sudo rm -rf ./.tmp/home || true
