@@ -29,7 +29,7 @@ type CoapRefreshTokenResp struct {
 }
 
 /// Get data for sign in response
-func getRefreshTokenContent(token oauth2.Token, expiresIn int64, options message.Options) (message.MediaType, []byte, error) {
+func getRefreshTokenContent(token *oauth2.Token, expiresIn int64, options message.Options) (message.MediaType, []byte, error) {
 	coapResp := CoapRefreshTokenResp{
 		RefreshToken: token.RefreshToken,
 		AccessToken:  token.AccessToken.String(),

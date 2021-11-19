@@ -2,6 +2,7 @@ package service_test
 
 import (
 	"context"
+	"sync"
 	"testing"
 
 	"github.com/plgd-dev/hub/coap-gateway/service"
@@ -70,11 +71,33 @@ func TestRefreshCacheExecute(t *testing.T) {
 	require.NotEqual(t, token3.RefreshToken, token1.RefreshToken)
 	require.NotEqual(t, token3.RefreshToken, token2.RefreshToken)
 	rc := service.NewRefreshCache()
-	token4, err := rc.Execute(ctx, providers, taskQueue, token3.RefreshToken)
-	require.NoError(t, err)
-	token5, err := rc.Execute(ctx, providers, taskQueue, token3.RefreshToken)
-	require.NoError(t, err)
-	require.Equal(t, token4, token5)
+	results := []struct {
+		token *oauth2.Token
+		err   error
+	}{
+		{},
+		{},
+		{},
+		{},
+		{},
+		{},
+		{},
+		{},
+	}
+	var wg sync.WaitGroup
+	for i := range results {
+		wg.Add(1)
+		go func(idx int) {
+			defer wg.Done()
+			results[idx].token, results[idx].err = rc.Execute(ctx, providers, taskQueue, token3.RefreshToken)
+		}(i)
+	}
+	wg.Wait()
+	for _, r := range results {
+		require.NoError(t, r.err)
+		require.NotEmpty(t, r.token)
+		require.Equal(t, results[0].token, r.token)
+	}
 
 	rc.Clear()
 	_, err = rc.Execute(ctx, providers, taskQueue, token3.RefreshToken)
@@ -88,5 +111,5 @@ func TestRefreshCacheExecute(t *testing.T) {
 	require.NotEqual(t, token6.RefreshToken, token3.RefreshToken)
 	token7, err := rc.Execute(ctx, providers, taskQueue, token6.RefreshToken)
 	require.NoError(t, err)
-	require.NotEqual(t, token4, token7)
+	require.NotEqual(t, results[0].token, token7)
 }

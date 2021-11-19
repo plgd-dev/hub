@@ -42,7 +42,7 @@ func (request CoapSignUpRequest) checkOAuthRequest() error {
 }
 
 /// Get data for sign up response
-func getSignUpContent(token oauth2.Token, owner string, validUntil int64, options message.Options) (message.MediaType, []byte, error) {
+func getSignUpContent(token *oauth2.Token, owner string, validUntil int64, options message.Options) (message.MediaType, []byte, error) {
 	resp := CoapSignUpResponse{
 		AccessToken:  token.AccessToken.String(),
 		UserID:       owner,
