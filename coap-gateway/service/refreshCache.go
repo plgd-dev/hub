@@ -7,10 +7,11 @@ import (
 
 	"github.com/plgd-dev/hub/pkg/log"
 	"github.com/plgd-dev/hub/pkg/security/oauth2"
+	"github.com/plgd-dev/hub/pkg/sync/task/future"
 	"github.com/plgd-dev/hub/pkg/sync/task/queue"
 )
 
-// Non-thread safe cache for Refresh operation.
+// Thread safe cache for Refresh operation.
 //
 // Refresh takes a refreshToken and returns access token. Cache keeps track of
 // the last (refreshToken, oauth2.token) pair and if the authorization code for next Refresh
@@ -18,14 +19,15 @@ import (
 // is returned instead.
 type refreshCache struct {
 	refreshToken string
-	token        oauth2.Token
+	token        *future.Future
+	mutex        sync.Mutex
 }
 
 func NewRefreshCache() *refreshCache {
 	return &refreshCache{}
 }
 
-func refresh(ctx context.Context, providers map[string]*oauth2.PlgdProvider, queue *queue.Queue, refreshToken string) (oauth2.Token, error) {
+func refresh(ctx context.Context, providers map[string]*oauth2.PlgdProvider, queue *queue.Queue, refreshToken string) (*oauth2.Token, error) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 	var wg sync.WaitGroup
@@ -57,36 +59,55 @@ func refresh(ctx context.Context, providers map[string]*oauth2.PlgdProvider, que
 	wg.Wait()
 
 	if token != nil {
-		return *token, nil
+		return token, nil
 	}
 
 	if err != nil {
-		return oauth2.Token{}, err
+		return nil, err
 	}
 
-	return oauth2.Token{}, fmt.Errorf("invalid token")
+	return nil, fmt.Errorf("invalid token")
 }
 
-func (r *refreshCache) Execute(ctx context.Context, providers map[string]*oauth2.PlgdProvider, queue *queue.Queue, refreshToken string) (oauth2.Token, error) {
-	if refreshToken == "" {
-		return oauth2.Token{}, fmt.Errorf("invalid refreshToken")
+func (r *refreshCache) getFutureToken(refreshToken string) (*future.Future, future.SetFunc) {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+	if r.token == nil || r.refreshToken != refreshToken {
+		f, set := future.New()
+		r.token = f
+		r.refreshToken = refreshToken
+		return f, set
 	}
-
-	if refreshToken == r.refreshToken {
-		return r.token, nil
-	}
-
-	token, err := refresh(ctx, providers, queue, refreshToken)
-	if err != nil {
-		return oauth2.Token{}, err
-	}
-
-	r.refreshToken = refreshToken
-	r.token = token
 	return r.token, nil
 }
 
+func (r *refreshCache) Execute(ctx context.Context, providers map[string]*oauth2.PlgdProvider, queue *queue.Queue, refreshToken string) (*oauth2.Token, error) {
+	if refreshToken == "" {
+		return nil, fmt.Errorf("invalid refreshToken")
+	}
+
+	f, set := r.getFutureToken(refreshToken)
+
+	if set == nil {
+		v, err := f.Get(ctx)
+		if err != nil {
+			return nil, err
+		}
+		return v.(*oauth2.Token), nil
+	}
+
+	token, err := refresh(ctx, providers, queue, refreshToken)
+	set(token, err)
+	if err != nil {
+		return nil, err
+	}
+
+	return token, nil
+}
+
 func (r *refreshCache) Clear() {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
 	r.refreshToken = ""
-	r.token = oauth2.Token{}
+	r.token = nil
 }

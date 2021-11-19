@@ -2,6 +2,7 @@ package service_test
 
 import (
 	"context"
+	"sync"
 	"testing"
 
 	"github.com/plgd-dev/hub/coap-gateway/service"
@@ -36,11 +37,33 @@ func TestExchangeCacheExecute(t *testing.T) {
 	code = oauthTest.GetDefaultDeviceAuthorizationCode(t, "")
 	// token cache prevents multiple requests with the same auth code being sent to the oauth server
 	ec := service.NewExchangeCache()
-	token1, err := ec.Execute(ctx, provider, code)
-	require.NoError(t, err)
-	token2, err := ec.Execute(ctx, provider, code)
-	require.NoError(t, err)
-	require.Equal(t, token1, token2)
+	results := []struct {
+		token *oauth2.Token
+		err   error
+	}{
+		{},
+		{},
+		{},
+		{},
+		{},
+		{},
+		{},
+		{},
+	}
+	var wg sync.WaitGroup
+	for i := range results {
+		wg.Add(1)
+		go func(idx int) {
+			defer wg.Done()
+			results[idx].token, results[idx].err = ec.Execute(ctx, provider, code)
+		}(i)
+	}
+	wg.Wait()
+	for _, r := range results {
+		require.NoError(t, r.err)
+		require.NotEmpty(t, r.token)
+		require.Equal(t, results[0].token, r.token)
+	}
 
 	// remove code from token cache, code will be send to the auth server and should return an error
 	ec.Clear()
@@ -51,5 +74,5 @@ func TestExchangeCacheExecute(t *testing.T) {
 	code = oauthTest.GetDefaultDeviceAuthorizationCode(t, "")
 	token3, err := ec.Execute(ctx, provider, code)
 	require.NoError(t, err)
-	require.NotEqual(t, token1, token3)
+	require.NotEqual(t, results[0].token, token3)
 }
