@@ -30,6 +30,7 @@ type Client struct {
 	AuthorizationCodeLifetime time.Duration `yaml:"authorizationCodeLifetime"`
 	AccessTokenLifetime       time.Duration `yaml:"accessTokenLifetime"`
 	CodeRestrictionLifetime   time.Duration `yaml:"codeRestrictionLifetime"`
+	ConsentScreenEnabled      bool          `yaml:"consentScreenEnabled"`
 }
 
 func (c *Client) Validate() error {

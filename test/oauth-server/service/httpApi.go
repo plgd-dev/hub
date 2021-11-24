@@ -127,5 +127,9 @@ func NewHTTP(requestHandler *RequestHandler) *http.Server {
 	r.HandleFunc(uri.UserInfo, requestHandler.getUserInfo).Methods(http.MethodGet)
 	r.HandleFunc(uri.LogOut, requestHandler.logOut)
 
+	r.HandleFunc(uri.UnauthorizedResponse, func(w http.ResponseWriter, r *http.Request) {
+		writeError(w, fmt.Errorf("unauthorized"), http.StatusUnauthorized)
+	})
+
 	return &http.Server{Handler: r}
 }

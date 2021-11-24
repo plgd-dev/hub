@@ -1,6 +1,6 @@
 package service_test
 
-import (
+import (	
 	"net/http"
 	"net/url"
 	"testing"
@@ -15,11 +15,11 @@ import (
 func TestRequestHandler_authorize(t *testing.T) {
 	webTearDown := test.SetUp(t)
 	defer webTearDown()
-	getAuthorize(t, test.ClientTest, "nonse", "https://localhost:3000", "", http.StatusTemporaryRedirect)
-	getAuthorize(t, test.ClientTest, "", "", "", http.StatusOK)
+	getAuthorize(t, test.ClientTest, "nonse", "https://localhost:3000", "", "", http.StatusTemporaryRedirect)
+	getAuthorize(t, test.ClientTest, "", "", "", "", http.StatusOK)
 }
 
-func getAuthorize(t *testing.T, clientID, nonce, redirectURI, deviceID string, statusCode int) string {
+func getAuthorize(t *testing.T, clientID, nonce, redirectURI, deviceID, scope string, statusCode int) string {
 	u, err := url.Parse(uri.Authorize)
 	require.NoError(t, err)
 	q, err := url.ParseQuery(u.RawQuery)
@@ -35,6 +35,10 @@ func getAuthorize(t *testing.T, clientID, nonce, redirectURI, deviceID string, s
 	if deviceID != "" {
 		q.Add(uri.DeviceId, deviceID)
 	}
+	if scope != "" {
+		q.Add(uri.ScopeKey, scope)
+	}
+
 	u.RawQuery = q.Encode()
 	getReq := test.NewRequest(http.MethodGet, config.OAUTH_SERVER_HOST, u.String(), nil).Build()
 	res := test.HTTPDo(t, getReq, false)

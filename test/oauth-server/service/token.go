@@ -29,7 +29,7 @@ const (
 	TokenDeviceID    = "https://plgd.dev/deviceId"
 )
 
-func makeAccessToken(clientID, host, deviceID string, issuedAt, expires time.Time) (jwt.Token, error) {
+func makeAccessToken(clientID, host, deviceID, scopes string, issuedAt, expires time.Time) (jwt.Token, error) {
 	token := jwt.New()
 
 	if err := token.Set(jwt.SubjectKey, DeviceUserID); err != nil {
@@ -46,7 +46,7 @@ func makeAccessToken(clientID, host, deviceID string, issuedAt, expires time.Tim
 			return nil, fmt.Errorf("failed to set %v: %w", jwt.ExpirationKey, err)
 		}
 	}
-	if err := token.Set(TokenScopeKey, []string{"openid", "r:deviceinformation:*", "r:resources:*", "w:resources:*", "w:subscriptions:*"}); err != nil {
+	if err := token.Set(TokenScopeKey, scopes); err != nil {
 		return nil, fmt.Errorf("failed to set %v: %w", TokenScopeKey, err)
 	}
 	if err := token.Set(uri.ClientIDKey, clientID); err != nil {
@@ -82,13 +82,13 @@ func makeJWTPayload(key interface{}, jwkKey jwk.Key, data []byte) ([]byte, error
 	return payload, nil
 }
 
-func generateAccessToken(clientID string, lifeTime time.Duration, host, deviceID string, key interface{}, jwkKey jwk.Key) (string, time.Time, error) {
+func generateAccessToken(clientID string, lifeTime time.Duration, host, deviceID, scopes string, key interface{}, jwkKey jwk.Key) (string, time.Time, error) {
 	now := time.Now()
 	var expires time.Time
 	if lifeTime != 0 {
 		expires = now.Add(lifeTime)
 	}
-	token, err := makeAccessToken(clientID, host, deviceID, now, expires)
+	token, err := makeAccessToken(clientID, host, deviceID, scopes, now, expires)
 	if err != nil {
 		return "", time.Time{}, fmt.Errorf("failed to make token: %w", err)
 	}
@@ -290,9 +290,9 @@ func (requestHandler *RequestHandler) getAuthorizedSession(tokenReq tokenRequest
 	return authSession
 }
 
-func (requestHandler *RequestHandler) getAccessToken(tokenReq tokenRequest, clientCfg *Client, deviceID string) (string, time.Time, error) {
+func (requestHandler *RequestHandler) getAccessToken(tokenReq tokenRequest, clientCfg *Client, deviceID, scopes string) (string, time.Time, error) {
 	if tokenReq.tokenType == AccessTokenType_JWT {
-		return generateAccessToken(clientCfg.ID, clientCfg.AccessTokenLifetime, tokenReq.host, deviceID, requestHandler.accessTokenKey,
+		return generateAccessToken(clientCfg.ID, clientCfg.AccessTokenLifetime, tokenReq.host, deviceID, scopes, requestHandler.accessTokenKey,
 			requestHandler.accessTokenJwkKey)
 	}
 	accessToken := clientCfg.ID
@@ -339,7 +339,7 @@ func (requestHandler *RequestHandler) processResponse(w http.ResponseWriter, tok
 		}
 	}
 
-	accessToken, accessTokenExpires, err := requestHandler.getAccessToken(tokenReq, clientCfg, authSession.deviceID)
+	accessToken, accessTokenExpires, err := requestHandler.getAccessToken(tokenReq, clientCfg, authSession.deviceID, authSession.scopes)
 	if err != nil {
 		writeError(w, err, http.StatusInternalServerError)
 		return
@@ -348,7 +348,7 @@ func (requestHandler *RequestHandler) processResponse(w http.ResponseWriter, tok
 	resp := map[string]interface{}{
 		"access_token":  accessToken,
 		"id_token":      idToken,
-		"scope":         "openid profile email",
+		"scope":         authSession.scopes,
 		"token_type":    "Bearer",
 		"refresh_token": refreshToken,
 	}
