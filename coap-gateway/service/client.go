@@ -121,6 +121,13 @@ func (client *Client) cancelResourceSubscription(token string) (bool, error) {
 	return true, nil
 }
 
+// Callback executed when the Get response is received in the deviceObserver.
+//
+// This function is executed in the coap connection-goroutine, any operation on the connection (read, write, ...)
+// will cause a deadlock . To avoid this problem the operation must be executed inside the taskQueue.
+//
+// The received notification is released by this function at the correct moment and must not be released
+// by the caller.
 func (client *Client) onGetResourceContent(ctx context.Context, deviceID, href string, notification *pool.Message) error {
 	cannotGetResourceContentError := func(deviceID, href string, err error) error {
 		return fmt.Errorf("cannot get resource /%v%v content: %w", deviceID, href, err)
@@ -147,6 +154,13 @@ func (client *Client) onGetResourceContent(ctx context.Context, deviceID, href s
 	return nil
 }
 
+// Callback executed when the Observe notification is received in the deviceObserver.
+//
+// This function is executed in the coap connection-goroutine, any operation on the connection (read, write, ...)
+// will cause a deadlock . To avoid this problem the operation must be executed inside the taskQueue.
+//
+// The received notification is released by this function at the correct moment and must not be released
+// by the caller.
 func (client *Client) onObserveResource(ctx context.Context, deviceID, href string, notification *pool.Message) error {
 	cannotObserResourceError := func(err error) error {
 		return fmt.Errorf("cannot handle resource observation: %w", err)
@@ -531,10 +545,7 @@ func (client *Client) unpublishResourceLinks(ctx context.Context, hrefs []string
 		logUnpublishError(err)
 		return
 	}
-	if err := observer.RemovePublishedResources(ctx, resp.UnpublishedHrefs); err != nil {
-		logUnpublishError(err)
-		return
-	}
+	observer.RemovePublishedResources(ctx, resp.UnpublishedHrefs)
 }
 
 func (client *Client) sendErrorConfirmResourceCreate(ctx context.Context, resourceID *commands.ResourceId, userID, correlationID string, code codes.Code, errToSend error) {
@@ -637,7 +648,6 @@ func (client *Client) UpdateDeviceMetadata(ctx context.Context, event *events.De
 	}
 	sendConfirmCtx := authCtx.ToContext(ctx)
 
-	// previous, errObs := client.resourceObserver.SetShadowSynchronization(sendConfirmCtx, event.GetShadowSynchronization())
 	previous, errObs := client.replaceDeviceObserverWithDeviceShadow(sendConfirmCtx, event.GetShadowSynchronization())
 	if errObs != nil {
 		log.Errorf("update device('%v') metadata error: %w", event.GetDeviceId(), errObs)
@@ -655,7 +665,6 @@ func (client *Client) UpdateDeviceMetadata(ctx context.Context, event *events.De
 		Status: commands.Status_OK,
 	})
 	if err != nil && !errors.Is(err, context.Canceled) {
-		// _, errObs := client.resourceObserver.SetShadowSynchronization(sendConfirmCtx, previous)
 		_, errObs := client.replaceDeviceObserverWithDeviceShadow(sendConfirmCtx, previous)
 		if errObs != nil {
 			log.Errorf("update device('%v') metadata error: %w", event.GetDeviceId(), errObs)

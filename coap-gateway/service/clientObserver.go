@@ -10,6 +10,9 @@ import (
 	"github.com/plgd-dev/hub/resource-aggregate/commands"
 )
 
+// Obtain deviceObserver from the client.
+//
+// The function might block and wait for the deviceObserver to be initialized.
 func (client *Client) getDeviceObserver(ctx context.Context) (*observation.DeviceObserver, error) {
 	getError := func(err error) error {
 		return fmt.Errorf("cannot get device observer: %w", err)
@@ -34,20 +37,16 @@ func (client *Client) getDeviceObserver(ctx context.Context) (*observation.Devic
 	return deviceObserver, nil
 }
 
-func (client *Client) replaceDeviceObserver(deviceObserver *observation.DeviceObserver) *future.Future {
-	var newDeviceObserverFut *future.Future
-	if deviceObserver != nil {
-		var setDeviceObserver future.SetFunc
-		newDeviceObserverFut, setDeviceObserver = future.New()
-		setDeviceObserver(deviceObserver, nil)
-	}
+// Replace deviceObserver instance in the client.
+func (client *Client) replaceDeviceObserver(deviceObserverFuture *future.Future) *future.Future {
 	client.mutex.Lock()
 	defer client.mutex.Unlock()
 	prevDeviceObserver := client.deviceObserver
-	client.deviceObserver = newDeviceObserverFut
+	client.deviceObserver = deviceObserverFuture
 	return prevDeviceObserver
 }
 
+// Replace deviceObserver instance in the client if Device Shadow setting was changed for the device.
 func (client *Client) replaceDeviceObserverWithDeviceShadow(ctx context.Context, shadow commands.ShadowSynchronization) (commands.ShadowSynchronization, error) {
 	obs, err := client.getDeviceObserver(ctx)
 	if err != nil {
@@ -55,37 +54,56 @@ func (client *Client) replaceDeviceObserverWithDeviceShadow(ctx context.Context,
 	}
 	prevShadow := obs.GetShadowSynchronization()
 	deviceID := obs.GetDeviceID()
+	observationType := obs.GetObservationType()
 	if prevShadow == shadow {
 		return prevShadow, nil
 	}
-	deviceObserver, err := observation.NewDeviceObserver(ctx, deviceID, client.coapConn, client.server.rdClient,
-		client.onObserveResource, client.onGetResourceContent)
-	if err != nil {
-		return commands.ShadowSynchronization_UNSET, fmt.Errorf("cannot create observer for device %v: %w", deviceID, err)
-	}
-	oldDeviceObserver := client.replaceDeviceObserver(deviceObserver)
+	deviceObserverFuture, setDeviceObserver := future.New()
+	oldDeviceObserver := client.replaceDeviceObserver(deviceObserverFuture)
 	if err := cleanDeviceObserver(ctx, oldDeviceObserver); err != nil {
 		log.Errorf("failed to close replaced device observer: %w", err)
 	}
+
+	deviceObserver, err := observation.NewDeviceObserver(ctx, deviceID, client.coapConn, client.server.rdClient,
+		observation.MakeResourcesObserverCallbacks(client.onObserveResource, client.onGetResourceContent),
+		observation.WithShadowSynchronization(shadow), observation.WithObservationType(observationType))
+	if err != nil {
+		setDeviceObserver(nil, err)
+		return commands.ShadowSynchronization_UNSET, fmt.Errorf("cannot create observer for device %v: %w", deviceID, err)
+	}
+	setDeviceObserver(deviceObserver, nil)
 	return prevShadow, nil
 }
 
-func cleanDeviceObserver(ctx context.Context, devObsFut *future.Future) error {
+func toDeviceObserver(ctx context.Context, devObsFut *future.Future) (*observation.DeviceObserver, error) {
 	if devObsFut == nil {
-		return nil
+		return nil, nil
 	}
 	v, err := devObsFut.Get(ctx)
 	if err != nil {
-		return fmt.Errorf("cannot close device observer: %w", err)
+		return nil, err
 	}
 	deviceObserver, ok := v.(*observation.DeviceObserver)
 	if !ok {
-		return fmt.Errorf("cannot close device observer: invalid future value")
+		return nil, fmt.Errorf("invalid future value")
+	}
+	return deviceObserver, nil
+}
+
+// Clean observations in the given deviceObserver instance.
+func cleanDeviceObserver(ctx context.Context, devObsFut *future.Future) error {
+	deviceObserver, err := toDeviceObserver(ctx, devObsFut)
+	if err != nil {
+		return fmt.Errorf("cannot clean device observer: %w", err)
+	}
+	if deviceObserver == nil {
+		return nil
 	}
 	deviceObserver.Clean(ctx)
 	return nil
 }
 
+// Replace the deviceObserver instance in the client with nil and clean up the previous deviceObserver instance.
 func (client *Client) closeDeviceObserver(ctx context.Context) error {
 	deviceObserverFut := client.replaceDeviceObserver(nil)
 	return cleanDeviceObserver(ctx, deviceObserverFut)

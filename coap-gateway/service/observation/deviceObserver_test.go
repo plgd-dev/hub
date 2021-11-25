@@ -40,7 +40,8 @@ type deviceObserverFactory struct {
 
 func (f deviceObserverFactory) makeDeviceObserver(ctx context.Context, coapConn *tcp.ClientConn, onObserveResource observation.OnObserveResource,
 	onGetResourceContent observation.OnGetResourceContent) (*observation.DeviceObserver, error) {
-	return observation.NewDeviceObserver(ctx, f.deviceID, coapConn, f.rdClient, onObserveResource, onGetResourceContent)
+	return observation.NewDeviceObserver(ctx, f.deviceID, coapConn, f.rdClient,
+		observation.ResourcesObserverCallbacks{onObserveResource, onGetResourceContent})
 }
 
 type observerHandler struct {
@@ -71,32 +72,32 @@ func (h *observerHandler) getDeviceObserver(ctx context.Context) *observation.De
 	return v.(*observation.DeviceObserver)
 }
 
-func (h *observerHandler) replaceDeviceObserver(ctx context.Context) {
-	newObs, setDeviceObserver := future.New()
-
+func (h *observerHandler) replaceDeviceObserver(deviceObserverFuture *future.Future) *future.Future {
 	var prevObs *future.Future
 	h.deviceObserverLock.Lock()
+	defer h.deviceObserverLock.Unlock()
 	prevObs = h.deviceObserver
-	h.deviceObserver = newObs
-	h.deviceObserverLock.Unlock()
-
-	if prevObs != nil {
-		v, err := prevObs.Get(ctx)
-		require.NoError(h.t, err)
-		obs := v.(*observation.DeviceObserver)
-		obs.Clean(ctx)
-	}
-
-	deviceObserver, err := h.deviceObserverFactory.makeDeviceObserver(h.ctx, h.coapConn, h.OnObserveResource, h.OnGetResourceContent)
-	require.NoError(h.t, err)
-	setDeviceObserver(deviceObserver, nil)
+	h.deviceObserver = deviceObserverFuture
+	return prevObs
 }
 
 func (h *observerHandler) SignIn(req coapgwService.CoapSignInReq) (coapgwService.CoapSignInResp, error) {
 	resp, err := h.DefaultObserverHandler.SignIn(req)
 	require.NoError(h.t, err)
+
+	newDeviceObserver, setDeviceObserver := future.New()
+	prevDeviceObserver := h.replaceDeviceObserver(newDeviceObserver)
+
 	err = h.service.Submit(func() {
-		h.replaceDeviceObserver(h.ctx)
+		if prevDeviceObserver != nil {
+			v, err := prevDeviceObserver.Get(h.ctx)
+			require.NoError(h.t, err)
+			obs := v.(*observation.DeviceObserver)
+			obs.Clean(h.ctx)
+		}
+		deviceObserver, err := h.deviceObserverFactory.makeDeviceObserver(h.ctx, h.coapConn, h.OnObserveResource, h.OnGetResourceContent)
+		require.NoError(h.t, err)
+		setDeviceObserver(deviceObserver, nil)
 	})
 	require.NoError(h.t, err)
 	return resp, nil
@@ -131,7 +132,6 @@ func (h *observerHandler) PublishResources(req coapgwTestService.PublishRequest)
 func (h *observerHandler) OnObserveResource(ctx context.Context, deviceID, resourceHref string, notification *pool.Message) error {
 	err := h.DefaultObserverHandler.OnObserveResource(ctx, deviceID, resourceHref, notification)
 	require.NoError(h.t, err)
-
 	if !h.done.Load() {
 		h.observedResourceChan <- commands.NewResourceID(deviceID, resourceHref)
 	}
@@ -166,8 +166,7 @@ func TestDeviceObserverRegisterForPublishedResources(t *testing.T) {
 	for _, resID := range test.ResourceLinksToResourceIds(deviceID, test.TestDevsimResources) {
 		expectedObserved.Add(resID.ToString())
 	}
-	expectedRetrieved := strings.MakeSet(commands.NewResourceID(deviceID, resources.ResourceURI).ToString())
-	runTestDeviceObserverRegister(t, deviceID, expectedObserved, expectedRetrieved, validateData)
+	runTestDeviceObserverRegister(t, deviceID, expectedObserved, nil, validateData)
 }
 
 func TestDeviceObserverRegisterForDiscoveryResource(t *testing.T) {
@@ -250,6 +249,9 @@ func runTestDeviceObserverRegister(t *testing.T, deviceID string, expectedObserv
 	defer shutdownDevSim()
 
 	done := false
+	isDone := func() bool {
+		return len(expectedRetrieved) == 0 && len(expectedObserved) == 0
+	}
 	// give time to wait for data
 	ctxWait, waitCancel := context.WithTimeout(context.Background(), time.Second*10)
 	closeWaitChans := func() {
@@ -267,6 +269,7 @@ func runTestDeviceObserverRegister(t *testing.T, deviceID string, expectedObserv
 				break
 			}
 			delete(expectedRetrieved, res.ToString())
+			done = isDone()
 		case res := <-observeChan:
 			if expectedObserved == nil || !expectedObserved.HasOneOf(res.ToString()) {
 				assert.Failf(t, "unexpected observed resource", "resource (%v)", res.ToString())
@@ -275,7 +278,9 @@ func runTestDeviceObserverRegister(t *testing.T, deviceID string, expectedObserv
 				break
 			}
 			delete(expectedObserved, res.ToString())
+			done = isDone()
 		case <-ctxWait.Done():
+			log.Debugf("waiting timeouted")
 			done = true
 		}
 	}

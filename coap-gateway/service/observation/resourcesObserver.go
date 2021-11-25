@@ -17,6 +17,18 @@ import (
 type OnObserveResource = func(ctx context.Context, deviceID, resourceHref string, notification *pool.Message) error
 type OnGetResourceContent = func(ctx context.Context, deviceID, resourceHref string, notification *pool.Message) error
 
+type ResourcesObserverCallbacks struct {
+	OnObserveResource    OnObserveResource
+	OnGetResourceContent OnGetResourceContent
+}
+
+func MakeResourcesObserverCallbacks(OnObserveResource OnObserveResource, OnGetResourceContent OnGetResourceContent) ResourcesObserverCallbacks {
+	return ResourcesObserverCallbacks{
+		OnObserveResource:    OnObserveResource,
+		OnGetResourceContent: OnGetResourceContent,
+	}
+}
+
 // ResourcesObserver is a thread-safe type that handles observation of resources belonging to
 // a single device.
 //
@@ -29,81 +41,72 @@ type OnGetResourceContent = func(ctx context.Context, deviceID, resourceHref str
 //   the content of the resource and the response is handled by the onGetResourceContent
 //   callback.
 type resourcesObserver struct {
-	lock                 sync.Mutex
-	deviceID             string
-	resources            map[int64]*observedResource // [instanceID]
-	coapConn             *tcp.ClientConn
-	onObserveResource    OnObserveResource
-	onGetResourceContent OnGetResourceContent
+	lock      sync.Mutex
+	deviceID  string
+	resources map[int64]*observedResource // [instanceID]
+	coapConn  *tcp.ClientConn
+	callbacks ResourcesObserverCallbacks
 }
 
 // Create new Resource Observer.
 //
 // All arguments (coapConn, onObserveResource and onGetResourceContent) must be non-nil,
 // otherwise the function will panic.
-func newResourcesObserver(deviceID string, coapConn *tcp.ClientConn, onObserveResource OnObserveResource, onGetResourceContent OnGetResourceContent) *resourcesObserver {
+func newResourcesObserver(deviceID string, coapConn *tcp.ClientConn, callbacks ResourcesObserverCallbacks) *resourcesObserver {
 	fatalCannotCreate := func(err error) {
 		log.Fatal("cannot create resource observer: %v", err)
 	}
 	if deviceID == "" {
-		fatalCannotCreate(fmt.Errorf("empty deviceID"))
+		fatalCannotCreate(emptyDeviceIDError())
 	}
 	if coapConn == nil {
 		fatalCannotCreate(fmt.Errorf("invalid coap-gateway connection"))
 	}
-	if onObserveResource == nil {
+	if callbacks.OnObserveResource == nil {
 		fatalCannotCreate(fmt.Errorf("invalid onObserveResource callback"))
 	}
-	if onGetResourceContent == nil {
+	if callbacks.OnGetResourceContent == nil {
 		fatalCannotCreate(fmt.Errorf("invalid onGetResourceContent callback"))
 	}
 	return &resourcesObserver{
-		deviceID:             deviceID,
-		resources:            make(map[int64]*observedResource),
-		coapConn:             coapConn,
-		onObserveResource:    onObserveResource,
-		onGetResourceContent: onGetResourceContent,
+		deviceID:  deviceID,
+		resources: make(map[int64]*observedResource),
+		coapConn:  coapConn,
+		callbacks: callbacks,
 	}
 }
 
 // Add resource to observer with given interface and wait for initialization message.
-func (o *resourcesObserver) addAndWaitForResource(ctx context.Context, res *commands.Resource, obsInterface string) (bool, error) {
+func (o *resourcesObserver) addResource(ctx context.Context, res *commands.Resource, obsInterface string) error {
 	o.lock.Lock()
 	defer o.lock.Unlock()
-	obs, err := o.addResourceLocked(ctx, res, obsInterface)
-	if err != nil {
-		return false, err
-	}
-	opened, err := obs.IsOpened(ctx)
-	if err != nil {
-		return false, err
-	}
-	return opened, nil
+	err := o.addResourceLocked(ctx, res, obsInterface)
+	return err
 }
 
-func (o *resourcesObserver) addResourceLocked(ctx context.Context, res *commands.Resource, obsInterface string) (*observedResource, error) {
+func (o *resourcesObserver) addResourceLocked(ctx context.Context, res *commands.Resource, obsInterface string) error {
 	resID := res.GetResourceID()
 	log.Debugf("observation of resource(%v) requested", resID)
 	addObservationError := func(err error) error {
 		return fmt.Errorf("cannot add resource observation: %w", err)
 	}
 	if o.deviceID == "" {
-		return nil, addObservationError(fmt.Errorf("empty deviceID"))
+		return addObservationError(emptyDeviceIDError())
 	}
 	instanceID := resource.GetInstanceID(resID.GetHref())
 	if o.deviceID != resID.GetDeviceId() {
-		return nil, addObservationError(fmt.Errorf("invalid deviceID(%v)", resID.GetDeviceId()))
+		return addObservationError(fmt.Errorf("invalid deviceID(%v)", resID.GetDeviceId()))
 	}
 	href := resID.GetHref()
-	if obsRes, ok := o.resources[instanceID]; ok {
-		return obsRes, nil
+	if _, ok := o.resources[instanceID]; ok {
+		return nil
 	}
 	obsRes := NewObservedResource(href, obsInterface)
 	if err := o.handleResourceLocked(ctx, obsRes, res.IsObservable()); err != nil {
-		return nil, addObservationError(err)
+		return addObservationError(err)
 	}
 	o.resources[instanceID] = obsRes
-	return obsRes, nil
+	return nil
 }
 
 // Handle given resource.
@@ -133,8 +136,17 @@ func (o *resourcesObserver) observeResourceLocked(ctx context.Context, obsRes *o
 		return fmt.Errorf("cannot observe resource /%v%v: %w", deviceID, href, err)
 	}
 	if o.deviceID == "" {
-		return nil, cannotObserveResourceError(o.deviceID, obsRes.Href(), fmt.Errorf("empty deviceID"))
+		return nil, cannotObserveResourceError(o.deviceID, obsRes.Href(), emptyDeviceIDError())
 	}
+
+	var opts []message.Option
+	if obsRes.Interface() != "" {
+		opts = append(opts, message.Option{
+			ID:    message.URIQuery,
+			Value: []byte("if=" + obsRes.Interface()),
+		})
+	}
+
 	initialized := false
 	obs, err := o.coapConn.Observe(ctx, obsRes.Href(), func(msg *pool.Message) {
 		if !initialized {
@@ -144,30 +156,20 @@ func (o *resourcesObserver) observeResourceLocked(ctx context.Context, obsRes *o
 				log.Debugf("href: %v not observable err: %v", obsRes.Href(), errObs)
 				observable = false
 			}
-			obsRes.SetOpened(observable)
 			if !observable {
-				// TODO: not necessary when go-coap is updated
-				o.cancelResourcesObservations(ctx, []string{obsRes.href})
-
-				// fallback to get for non-observable resource
-				if errGet := o.onGetResourceContent(ctx, o.deviceID, obsRes.Href(), msg); errGet != nil {
-					log.Errorf("cannot get resource /%v%v content: %w", o.deviceID, obsRes.Href(), errGet)
-				}
 				return
 			}
 		}
-		if err2 := o.onObserveResource(ctx, o.deviceID, obsRes.Href(), msg); err2 != nil {
+		if err2 := o.callbacks.OnObserveResource(ctx, o.deviceID, obsRes.Href(), msg); err2 != nil {
 			log.Error(cannotObserveResourceError(o.deviceID, obsRes.Href(), err2))
 			return
 		}
-	},
-		// TODO: remove for OC_IF_BASELINE
-		message.Option{
-			ID:    message.URIQuery,
-			Value: []byte("if=" + obsRes.Interface()),
-		})
+	}, opts...)
 	if err != nil {
 		return nil, cannotObserveResourceError(o.deviceID, obsRes.Href(), err)
+	}
+	if obs.Canceled() {
+		return nil, cannotObserveResourceError(o.deviceID, obsRes.Href(), fmt.Errorf("resource not observable"))
 	}
 	return obs, nil
 }
@@ -178,19 +180,22 @@ func (o *resourcesObserver) getResourceContentLocked(ctx context.Context, href s
 		return fmt.Errorf("cannot get resource /%v%v content: %w", deviceID, href, err)
 	}
 	if o.deviceID == "" {
-		return cannotGetResourceError(o.deviceID, href, fmt.Errorf("empty deviceID"))
+		return cannotGetResourceError(o.deviceID, href, emptyDeviceIDError())
 	}
-	resp, err := o.coapConn.Get(ctx, href,
-		// TODO: remove for OC_IF_BASELINE
-		message.Option{
-			ID:    message.URIQuery,
-			Value: []byte("if=" + interfaces.OC_IF_BASELINE),
-		})
-	defer pool.ReleaseMessage(resp)
+	// TODO: remove the OC_IF_BASELINE message.Option and update tests
+	resp, err := o.coapConn.Get(ctx, href, message.Option{
+		ID:    message.URIQuery,
+		Value: []byte("if=" + interfaces.OC_IF_BASELINE),
+	})
+	defer func() {
+		if !resp.IsHijacked() {
+			pool.ReleaseMessage(resp)
+		}
+	}()
 	if err != nil {
 		return cannotGetResourceError(o.deviceID, href, err)
 	}
-	if err := o.onGetResourceContent(ctx, o.deviceID, href, resp); err != nil {
+	if err := o.callbacks.OnGetResourceContent(ctx, o.deviceID, href, resp); err != nil {
 		return cannotGetResourceError(o.deviceID, href, err)
 	}
 	return nil
@@ -206,7 +211,7 @@ func (o *resourcesObserver) addResources(ctx context.Context, resources []*comma
 func (o *resourcesObserver) addResourcesLocked(ctx context.Context, resources []*commands.Resource) error {
 	var errors []error
 	for _, resource := range resources {
-		_, err := o.addResourceLocked(ctx, resource, interfaces.OC_IF_BASELINE)
+		err := o.addResourceLocked(ctx, resource, interfaces.OC_IF_BASELINE)
 		if err != nil {
 			errors = append(errors, err)
 		}
@@ -299,26 +304,12 @@ func (o *resourcesObserver) popObservationLocked(ctx context.Context, instanceID
 		r = res
 	}
 	if r != nil {
-		opened, err := r.IsOpened(ctx)
-		if err != nil {
-			log.Errorf("cannot get resource('/%v%v') observation state: %w", o.deviceID, r.Href(), err)
-			opened = true
-		}
-		obs := r.PopObservation()
-		if !opened {
-			log.Debugf("skipping canceling of closed resource('/%v%v') observation", o.deviceID, r.Href())
-			return nil
-		}
-		return obs
+		return r.PopObservation()
 	}
-
 	return nil
 }
 
 func (o *resourcesObserver) removeResourceLocked(instanceID int64) {
-	if obs, ok := o.resources[instanceID]; ok {
-		obs.SetOpened(false)
-	}
 	delete(o.resources, instanceID)
 }
 
@@ -332,16 +323,7 @@ func (o *resourcesObserver) CleanObservedResources(ctx context.Context) {
 func (o *resourcesObserver) cleanObservedResourcesLocked(ctx context.Context) {
 	observedResources := o.popObservedResourcesLocked()
 	for _, obs := range observedResources {
-		opened, err := obs.IsOpened(ctx)
-		if err != nil {
-			log.Errorf("cannot get resource('/%v%v') observation state: %w", o.deviceID, obs.Href(), err)
-			opened = true
-		}
 		if v := obs.PopObservation(); v != nil {
-			if !opened {
-				log.Debugf("skipping canceling of closed resource('/%v%v') observation", o.deviceID, obs.Href())
-				continue
-			}
 			if err := v.Cancel(ctx); err != nil {
 				log.Errorf("cannot cancel resource('/%v%v') observation: %w", o.deviceID, obs.Href(), err)
 			}
