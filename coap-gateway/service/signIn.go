@@ -16,6 +16,7 @@ import (
 	"github.com/plgd-dev/hub/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
 	"github.com/plgd-dev/hub/pkg/strings"
+	"github.com/plgd-dev/hub/pkg/sync/task/future"
 	"github.com/plgd-dev/hub/resource-aggregate/commands"
 	"github.com/plgd-dev/kit/v2/codec/cbor"
 )
@@ -114,20 +115,6 @@ func setNewDeviceSubscriber(client *Client, owner, deviceID string) error {
 	return nil
 }
 
-func setNewDeviceObserver(client *Client, ctx context.Context, deviceID string) error {
-	deviceObserver, err := observation.NewDeviceObserver(ctx, deviceID, client.coapConn, client.server.rdClient,
-		client.onObserveResource, client.onGetResourceContent)
-	if err != nil {
-		return fmt.Errorf("cannot create observer for device %v: %w", deviceID, err)
-	}
-
-	oldDeviceObserver := client.replaceDeviceObserver(deviceObserver)
-	if err := cleanDeviceObserver(ctx, oldDeviceObserver); err != nil {
-		log.Errorf("failed to close replaced device observer: %w", err)
-	}
-	return nil
-}
-
 type updateType int
 
 const (
@@ -216,13 +203,38 @@ func logSignInError(err error) {
 	log.Errorf("sign in error: %w", err)
 }
 
-func tryObserveResources(ctx context.Context, client *Client, deviceID string) {
-	if err := client.server.taskQueue.Submit(func() {
-		if err := setNewDeviceObserver(client, ctx, deviceID); err != nil {
-			logSignInError(err)
+func setNewDeviceObserver(ctx context.Context, client *Client, deviceID string, resetObservationType bool) {
+	newDeviceObserverFut, setDeviceObserver := future.New()
+	oldDeviceObserverFut := client.replaceDeviceObserver(newDeviceObserverFut)
+
+	createDeviceObserver := func() {
+		observationType := observation.ObservationType_Detect
+		oldDeviceObserver, err := toDeviceObserver(ctx, oldDeviceObserverFut)
+		if err != nil {
+			log.Errorf("failed to get replaced device observer: %w", err)
 		}
-	}); err != nil {
+		if err == nil && oldDeviceObserver != nil {
+			// if the device didn't change we can skip detection and force the previous observation type
+			if !resetObservationType {
+				observationType = oldDeviceObserver.GetObservationType()
+			}
+			oldDeviceObserver.Clean(ctx)
+		}
+
+		deviceObserver, err := observation.NewDeviceObserver(ctx, deviceID, client.coapConn, client.server.rdClient,
+			observation.MakeResourcesObserverCallbacks(client.onObserveResource, client.onGetResourceContent),
+			observation.WithObservationType(observationType))
+		if err != nil {
+			logSignInError(fmt.Errorf("cannot create observer for device %v: %w", deviceID, err))
+			setDeviceObserver(nil, err)
+			return
+		}
+		setDeviceObserver(deviceObserver, nil)
+	}
+
+	if err := client.server.taskQueue.Submit(createDeviceObserver); err != nil {
 		logSignInError(fmt.Errorf("failed to register resource observations for device %v: %w", deviceID, err))
+		setDeviceObserver(nil, err)
 	}
 }
 
@@ -300,8 +312,8 @@ func signInPostHandler(req *mux.Message, client *Client, signIn CoapSignInReq) {
 
 	client.sendResponse(coapCodes.Changed, req.Token, accept, out)
 
-	// try to register observations to the device for published resources at the cloud.
-	tryObserveResources(ctx, client, deviceID)
+	// try to register observations to the device at the cloud.
+	setNewDeviceObserver(ctx, client, deviceID, upd == updateTypeChanged)
 }
 
 func updateDeviceMetadata(req *mux.Message, client *Client) error {

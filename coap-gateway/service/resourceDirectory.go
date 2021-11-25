@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/plgd-dev/device/schema"
-	"github.com/plgd-dev/go-coap/v2/message"
+	coapMessage "github.com/plgd-dev/go-coap/v2/message"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/mux"
 	"github.com/plgd-dev/hub/coap-gateway/coapconv"
@@ -224,7 +224,7 @@ func resourceDirectoryUnpublishHandler(req *mux.Message, client *Client) {
 
 	resources, err := deviceObserver.GetResources(deviceID, inss)
 	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("cannot find observed resources for device %v: %w", authCtx.GetDeviceID(), err), coapCodes.BadRequest, req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("cannot find observed resources using query %v: %w", authCtx.GetDeviceID(), err), coapCodes.BadRequest, req.Token)
 		return
 	}
 	if len(resources) == 0 {
@@ -238,7 +238,7 @@ func resourceDirectoryUnpublishHandler(req *mux.Message, client *Client) {
 	}
 
 	client.unpublishResourceLinks(req.Context, hrefs)
-	client.sendResponse(coapCodes.Deleted, req.Token, message.TextPlain, nil)
+	client.sendResponse(coapCodes.Deleted, req.Token, coapMessage.TextPlain, nil)
 }
 
 type resourceDirectorySelector struct {
