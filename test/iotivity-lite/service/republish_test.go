@@ -36,21 +36,28 @@ const (
 )
 
 type republishHandler struct {
+	coapgwTest.DefaultObserverHandler
 	callCounter map[string]int
 }
 
 func (r *republishHandler) RetrieveResource(deviceID, href string) error {
+	err := r.DefaultObserverHandler.RetrieveResource(deviceID, href)
 	r.callCounter[observeKey]++
-	return nil
+	return err
 }
 
 func (r *republishHandler) ObserveResource(deviceID, href string, observe uint32) error {
+	err := r.DefaultObserverHandler.ObserveResource(deviceID, href, observe)
 	r.callCounter[retrieveKey]++
-	return nil
+	return err
 }
 
-func (r *republishHandler) SignUp(coapgwService.CoapSignUpRequest) (coapgwService.CoapSignUpResponse, error) {
+func (r *republishHandler) SignUp(req coapgwService.CoapSignUpRequest) (coapgwService.CoapSignUpResponse, error) {
+	resp, err := r.DefaultObserverHandler.SignUp(req)
 	r.callCounter[signUpKey]++
+	if err != nil {
+		return resp, err
+	}
 	return coapgwService.CoapSignUpResponse{
 		AccessToken:  "access-token",
 		UserID:       "1",
@@ -61,30 +68,38 @@ func (r *republishHandler) SignUp(coapgwService.CoapSignUpRequest) (coapgwServic
 }
 
 func (r *republishHandler) SignOff() error {
+	err := r.DefaultObserverHandler.SignOff()
 	r.callCounter[signOffKey]++
-	return nil
+	return err
 }
 
 func (r *republishHandler) SignIn(req coapgwService.CoapSignInReq) (coapgwService.CoapSignInResp, error) {
+	resp, err := r.DefaultObserverHandler.SignIn(req)
 	r.callCounter[signInKey]++
+	if err != nil {
+		return resp, err
+	}
 	return coapgwService.CoapSignInResp{
 		ExpiresIn: int64(accessTokenLifetime.Seconds()),
 	}, nil
 }
 
 func (r *republishHandler) SignOut(req coapgwService.CoapSignInReq) error {
+	err := r.DefaultObserverHandler.SignOut(req)
 	r.callCounter[signOutKey]++
-	return nil
+	return err
 }
 
 func (r *republishHandler) PublishResources(req coapgwTestService.PublishRequest) error {
+	err := r.DefaultObserverHandler.PublishResources(req)
 	r.callCounter[publishKey]++
-	return nil
+	return err
 }
 
 func (r *republishHandler) UnpublishResources(req coapgwTestService.UnpublishRequest) error {
+	err := r.DefaultObserverHandler.UnpublishResources(req)
 	r.callCounter[unpublishKey]++
-	return nil
+	return err
 }
 
 func (r *republishHandler) RefreshToken(req coapgwService.CoapRefreshTokenReq) (coapgwService.CoapRefreshTokenResp, error) {
@@ -137,7 +152,7 @@ func TestRepublishAfterRefresh(t *testing.T) {
 	require.NoError(t, err)
 	c := pb.NewGrpcGatewayClient(conn)
 
-	log.Setup(log.Config{Debug: true})
+	// log.Setup(log.Config{Debug: true})
 	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.GW_HOST, nil)
 	defer shutdownDevSim()
 
