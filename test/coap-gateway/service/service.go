@@ -212,7 +212,6 @@ func (server *Service) setupCoapServer() error {
 	opts = append(opts, tcp.WithOnNewClientConn(server.coapConnOnNew))
 	opts = append(opts, tcp.WithMux(m))
 	opts = append(opts, tcp.WithContext(server.ctx))
-	opts = append(opts, tcp.WithHeartBeat(server.config.APIs.COAP.GoroutineSocketHeartbeat))
 	opts = append(opts, tcp.WithErrors(func(e error) {
 		log.Errorf("plgd/test-coap: %w", e)
 	}))

@@ -528,7 +528,6 @@ func (server *Service) setupCoapServer() error {
 	opts = append(opts, tcp.WithBlockwise(server.config.APIs.COAP.BlockwiseTransfer.Enabled, server.blockWiseTransferSZX, server.config.APIs.COAP.KeepAlive.Timeout))
 	opts = append(opts, tcp.WithMux(m))
 	opts = append(opts, tcp.WithContext(server.ctx))
-	opts = append(opts, tcp.WithHeartBeat(server.config.APIs.COAP.GoroutineSocketHeartbeat))
 	opts = append(opts, tcp.WithMaxMessageSize(server.config.APIs.COAP.MaxMessageSize))
 	opts = append(opts, tcp.WithErrors(func(e error) {
 		log.Errorf("plgd/go-coap: %w", e)
