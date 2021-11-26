@@ -117,6 +117,9 @@ func TestRequestHandlerGetDevices(t *testing.T) {
 	conn, err := grpc.Dial(config.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
 	})))
+	defer func() {
+		_ = conn.Close()
+	}()
 	require.NoError(t, err)
 	c := pb.NewGrpcGatewayClient(conn)
 

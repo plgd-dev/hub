@@ -249,6 +249,7 @@ func (server *Service) serveWithHandlingSignal() error {
 		defer wg.Done()
 		err = server.coapServer.Serve(server.listener)
 		server.cancel()
+		server.closeFn()
 	}(server)
 
 	signal.Notify(server.sigs,

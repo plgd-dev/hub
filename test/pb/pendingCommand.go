@@ -96,6 +96,9 @@ func InitPendingEvents(ctx context.Context, t *testing.T) (pb.GrpcGatewayClient,
 		RootCAs: test.GetRootCertificatePool(t),
 	})))
 	require.NoError(t, err)
+	closeFunc.AddFunc(func() {
+		_ = conn.Close
+	})
 	c := pb.NewGrpcGatewayClient(conn)
 
 	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.GW_HOST, test.GetAllBackendResourceLinks())
