@@ -50,6 +50,9 @@ func TestRequestHandlerSubscribeToEvents(t *testing.T) {
 		RootCAs: test.GetRootCertificatePool(t),
 	})))
 	require.NoError(t, err)
+	defer func() {
+		_ = conn.Close()
+	}()
 	c := pb.NewGrpcGatewayClient(conn)
 
 	resourceLinks := test.GetAllBackendResourceLinks()
@@ -221,6 +224,9 @@ func TestRequestHandlerSubscribeForCreateEvents(t *testing.T) {
 		RootCAs: test.GetRootCertificatePool(t),
 	})))
 	require.NoError(t, err)
+	defer func() {
+		_ = conn.Close()
+	}()
 	c := pb.NewGrpcGatewayClient(conn)
 
 	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.GW_HOST, test.GetAllBackendResourceLinks())
@@ -527,6 +533,9 @@ func TestRequestHandlerSubscribeForPendingCommands(t *testing.T) {
 		RootCAs: test.GetRootCertificatePool(t),
 	})))
 	require.NoError(t, err)
+	defer func() {
+		_ = conn.Close()
+	}()
 	c := pb.NewGrpcGatewayClient(conn)
 
 	client, err := client.New(c).SubscribeToEventsWithCurrentState(ctx, time.Minute)

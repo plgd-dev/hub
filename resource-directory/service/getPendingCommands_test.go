@@ -336,6 +336,9 @@ func TestRequestHandler_GetPendingCommands(t *testing.T) {
 		RootCAs: test.GetRootCertificatePool(t),
 	})))
 	require.NoError(t, err)
+	defer func() {
+		_ = conn.Close()
+	}()
 	c := pb.NewGrpcGatewayClient(conn)
 
 	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.GW_HOST, test.GetAllBackendResourceLinks())
