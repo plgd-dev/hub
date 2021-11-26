@@ -21,16 +21,8 @@ func NewDeviceMetadataProjection() eventstore.Model {
 func (p *deviceMetadataProjection) Clone() *deviceMetadataProjection {
 	p.lock.Lock()
 	defer p.lock.Unlock()
-
-	data := &events.DeviceMetadataSnapshotTaken{
-		DeviceId:              p.data.GetDeviceId(),
-		DeviceMetadataUpdated: p.data.GetDeviceMetadataUpdated(),
-		UpdatePendings:        p.data.GetUpdatePendings(),
-		EventMetadata:         p.data.GetEventMetadata(),
-	}
-
 	return &deviceMetadataProjection{
-		data: data,
+		data: p.data.Clone(),
 	}
 }
 
@@ -54,9 +46,6 @@ func (p *deviceMetadataProjection) Handle(ctx context.Context, iter eventstore.I
 				EventMetadata: events.MakeEventMeta("", 0, eu.Version()),
 			}
 		}
-		// BUG: this is a data race with func (p *Projection) GetDevicesMetadata because Clone doesn't make a deep copy,
-		// and instead returns new object with pointers
-		// TODO: rework fun (p *deviceMetadataProjection) Clone() to make a deep copy
 		p.data.GetEventMetadata().Version = eu.Version()
 		switch eu.EventType() {
 		case (&events.DeviceMetadataSnapshotTaken{}).EventType():

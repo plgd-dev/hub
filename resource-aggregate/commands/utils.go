@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	extCodes "github.com/plgd-dev/hub/grpc-gateway/pb/codes"
 	"github.com/plgd-dev/device/schema"
+	extCodes "github.com/plgd-dev/hub/grpc-gateway/pb/codes"
 	"google.golang.org/grpc/codes"
 )
 
@@ -46,13 +46,6 @@ func NewResourceID(deviceID, href string) *ResourceId {
 
 func (r *Resource) IsObservable() bool {
 	return r.GetPolicy() != nil && r.GetPolicy().GetBitFlags()&int32(schema.Observable) != 0
-}
-
-func NewAuditContext(userID, correlationId string) *AuditContext {
-	return &AuditContext{
-		UserId:        userID,
-		CorrelationId: correlationId,
-	}
 }
 
 var http2status = map[int]Status{
