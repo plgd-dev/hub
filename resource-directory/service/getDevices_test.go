@@ -10,7 +10,6 @@ import (
 	"github.com/plgd-dev/device/schema/interfaces"
 	"github.com/plgd-dev/device/test/resource/types"
 	"github.com/plgd-dev/hub/grpc-gateway/pb"
-	"github.com/plgd-dev/hub/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
 	"github.com/plgd-dev/hub/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/test"
@@ -66,9 +65,12 @@ func TestRequestHandler_GetDevices(t *testing.T) {
 		RootCAs: test.GetRootCertificatePool(t),
 	})))
 	require.NoError(t, err)
+	defer func() {
+		_ = conn.Close()
+	}()
 	c := pb.NewGrpcGatewayClient(conn)
 
-	log.Setup(log.Config{Debug: true})
+	// log.Setup(log.Config{Debug: true})
 	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 

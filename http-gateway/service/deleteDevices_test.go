@@ -38,6 +38,9 @@ func TestRequestHandlerDeleteDevices(t *testing.T) {
 		RootCAs: test.GetRootCertificatePool(t),
 	})))
 	require.NoError(t, err)
+	defer func() {
+		_ = conn.Close()
+	}()
 	c := pb.NewGrpcGatewayClient(conn)
 
 	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.GW_HOST, test.GetAllBackendResourceLinks())

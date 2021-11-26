@@ -54,6 +54,9 @@ func (p *deviceMetadataProjection) Handle(ctx context.Context, iter eventstore.I
 				EventMetadata: events.MakeEventMeta("", 0, eu.Version()),
 			}
 		}
+		// BUG: this is a data race with func (p *Projection) GetDevicesMetadata because Clone doesn't make a deep copy,
+		// and instead returns new object with pointers
+		// TODO: rework fun (p *deviceMetadataProjection) Clone() to make a deep copy
 		p.data.GetEventMetadata().Version = eu.Version()
 		switch eu.EventType() {
 		case (&events.DeviceMetadataSnapshotTaken{}).EventType():

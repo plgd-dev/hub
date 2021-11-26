@@ -59,6 +59,9 @@ func TestRequestHandlerGetEvents(t *testing.T) {
 		RootCAs: test.GetRootCertificatePool(t),
 	})))
 	require.NoError(t, err)
+	defer func() {
+		_ = conn.Close()
+	}()
 	c := pb.NewGrpcGatewayClient(conn)
 
 	beforeOnBoard := time.Now()

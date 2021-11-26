@@ -73,6 +73,9 @@ func TestIsResourceObservable(t *testing.T) {
 		RootCAs: test.GetRootCertificatePool(t),
 	})))
 	require.NoError(t, err)
+	defer func() {
+		_ = grpcConn.Close()
+	}()
 	grpcClient := pb.NewGrpcGatewayClient(grpcConn)
 
 	_, shutdownDevSim := test.OnboardDevSim(ctx, t, grpcClient, deviceID, config.GW_HOST, nil)
