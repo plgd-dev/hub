@@ -10,13 +10,16 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/plgd-dev/device/schema/interfaces"
+	"github.com/plgd-dev/device/schema/resources"
 	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/mux"
 	"github.com/plgd-dev/go-coap/v2/tcp"
 	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
+	"github.com/plgd-dev/hub/pkg/log"
 	"github.com/plgd-dev/hub/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/resource-aggregate/events"
+	"github.com/plgd-dev/kit/v2/codec/cbor"
 )
 
 func StatusToCoapCode(status commands.Status, operation Operation) codes.Code {
@@ -139,22 +142,33 @@ func NewCoapResourceDeleteRequest(ctx context.Context, event *events.ResourceDel
 }
 
 func NewContent(opts message.Options, body io.Reader) *commands.Content {
-	contentTypeString := ""
-	coapContentFormat := int32(-1)
-	mt, err := opts.ContentFormat()
-	if err == nil {
-		contentTypeString = mt.String()
-		coapContentFormat = int32(mt)
-	}
-	var data []byte
-	if body != nil {
-		data, _ = ioutil.ReadAll(body)
-	}
+	data, coapContentFormat := GetContentData(opts, body)
+
 	return &commands.Content{
-		ContentType:       contentTypeString,
+		ContentType:       getContentFormatString(coapContentFormat),
 		CoapContentFormat: coapContentFormat,
 		Data:              data,
 	}
+}
+
+func GetContentData(opts message.Options, body io.Reader) (data []byte, contentFormat int32) {
+	contentFormat = int32(-1)
+	mt, err := opts.ContentFormat()
+	if err == nil {
+		contentFormat = int32(mt)
+	}
+	if body != nil {
+		data, _ = ioutil.ReadAll(body)
+	}
+	return data, contentFormat
+}
+
+func getContentFormatString(coapContentFormat int32) string {
+	if coapContentFormat != -1 {
+		mt := message.MediaType(coapContentFormat)
+		return mt.String()
+	}
+	return ""
 }
 
 func NewCommandMetadata(sequenceNumber uint64, connectionID string) *commands.CommandMetadata {
@@ -235,6 +249,56 @@ func NewNotifyResourceChangedRequest(resourceID *commands.ResourceId, connection
 		CommandMetadata: metadata,
 		Status:          CoapCodeToStatus(req.Code()),
 	}
+}
+
+func NewNotifyResourceChangedRequests(deviceID, connectionID string, req *pool.Message) ([]*commands.NotifyResourceChangedRequest, error) {
+	data, contentFormat := GetContentData(req.Options(), req.Body())
+	metadata := NewCommandMetadata(req.Sequence(), connectionID)
+
+	discoveryError := func(err error) error {
+		return fmt.Errorf("failed to parse discovery resource: %w", err)
+	}
+	var rs resources.BatchResourceDiscovery
+	switch contentFormat {
+	case int32(message.AppOcfCbor), int32(message.AppCBOR):
+		if err := cbor.Decode(data, &rs); err != nil {
+			return nil, discoveryError(err)
+		}
+	default:
+		return nil, discoveryError(fmt.Errorf("invalid format(%v)", contentFormat))
+	}
+
+	// inaccessible resources have empty content and should be skipped
+	isEmpty := func(resource resources.BatchRepresentation) bool {
+		log.Debugf("resource: %+v", resource)
+		if len(resource.Content) == 2 {
+			var v map[interface{}]interface{}
+			if err := cbor.Decode(resource.Content, &v); err == nil && len(v) == 0 {
+				return true
+			}
+		}
+		return false
+	}
+
+	var requests []*commands.NotifyResourceChangedRequest
+	for _, r := range rs {
+		if isEmpty(r) {
+			log.Debugf("skipping inaccessible resource(%v)", r.Href())
+			continue
+		}
+
+		requests = append(requests, &commands.NotifyResourceChangedRequest{
+			ResourceId: commands.NewResourceID(deviceID, r.Href()),
+			Content: &commands.Content{
+				ContentType:       getContentFormatString(contentFormat),
+				CoapContentFormat: contentFormat,
+				Data:              r.Content,
+			},
+			CommandMetadata: metadata,
+			Status:          CoapCodeToStatus(req.Code()),
+		})
+	}
+	return requests, nil
 }
 
 func NewUpdateResourceRequest(resourceID *commands.ResourceId, req *mux.Message, connectionID string) (*commands.UpdateResourceRequest, error) {

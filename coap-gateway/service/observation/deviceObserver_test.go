@@ -129,7 +129,7 @@ func (h *observerHandler) PublishResources(req coapgwTestService.PublishRequest)
 	return nil
 }
 
-func (h *observerHandler) OnObserveResource(ctx context.Context, deviceID, resourceHref string, notification *pool.Message) error {
+func (h *observerHandler) OnObserveResource(ctx context.Context, deviceID, resourceHref string, batch bool, notification *pool.Message) error {
 	err := h.DefaultObserverHandler.OnObserveResource(ctx, deviceID, resourceHref, notification)
 	require.NoError(h.t, err)
 	if !h.done.Load() {
