@@ -14,7 +14,7 @@ import (
 	"github.com/plgd-dev/hub/resource-aggregate/commands"
 )
 
-type OnObserveResource = func(ctx context.Context, deviceID, resourceHref string, notification *pool.Message) error
+type OnObserveResource = func(ctx context.Context, deviceID, resourceHref string, batch bool, notification *pool.Message) error
 type OnGetResourceContent = func(ctx context.Context, deviceID, resourceHref string, notification *pool.Message) error
 
 type ResourcesObserverCallbacks struct {
@@ -160,7 +160,7 @@ func (o *resourcesObserver) observeResourceLocked(ctx context.Context, obsRes *o
 				return
 			}
 		}
-		if err2 := o.callbacks.OnObserveResource(ctx, o.deviceID, obsRes.Href(), msg); err2 != nil {
+		if err2 := o.callbacks.OnObserveResource(ctx, o.deviceID, obsRes.Href(), obsRes.resInterface == interfaces.OC_IF_B, msg); err2 != nil {
 			log.Error(cannotObserveResourceError(o.deviceID, obsRes.Href(), err2))
 			return
 		}
