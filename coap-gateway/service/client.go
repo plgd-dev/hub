@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/plgd-dev/device/schema/resources"
 	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/tcp"
@@ -135,7 +136,7 @@ func (client *Client) onGetResourceContent(ctx context.Context, deviceID, href s
 	notification.Hijack()
 	err := client.server.taskQueue.Submit(func() {
 		defer pool.ReleaseMessage(notification)
-		err2 := client.notifyContentChanged(deviceID, href, notification)
+		err2 := client.notifyContentChanged(deviceID, href, false, notification)
 		if err2 != nil {
 			// cloud is unsynchronized against device. To recover cloud state, client need to reconnect to cloud.
 			log.Error(cannotGetResourceContentError(deviceID, href, err2))
@@ -161,14 +162,14 @@ func (client *Client) onGetResourceContent(ctx context.Context, deviceID, href s
 //
 // The received notification is released by this function at the correct moment and must not be released
 // by the caller.
-func (client *Client) onObserveResource(ctx context.Context, deviceID, href string, notification *pool.Message) error {
+func (client *Client) onObserveResource(ctx context.Context, deviceID, href string, batch bool, notification *pool.Message) error {
 	cannotObserResourceError := func(err error) error {
 		return fmt.Errorf("cannot handle resource observation: %w", err)
 	}
 	notification.Hijack()
 	err := client.server.taskQueue.Submit(func() {
 		defer pool.ReleaseMessage(notification)
-		err2 := client.notifyContentChanged(deviceID, href, notification)
+		err2 := client.notifyContentChanged(deviceID, href, batch, notification)
 		if err2 != nil {
 			// cloud is unsynchronized against device. To recover cloud state, client need to reconnect to cloud.
 			log.Error(cannotObserResourceError(err2))
@@ -277,18 +278,32 @@ func (client *Client) GetAuthorizationContext() (*authorizationContext, error) {
 	return client.authCtx, client.authCtx.IsValid()
 }
 
-func (client *Client) notifyContentChanged(deviceID string, href string, notification *pool.Message) error {
+func (client *Client) notifyContentChanged(deviceID, href string, batch bool, notification *pool.Message) error {
+	notifyError := func(deviceID, href string, err error) error {
+		return fmt.Errorf("cannot notify resource /%v%v content changed: %w", deviceID, href, err)
+	}
 	authCtx, err := client.GetAuthorizationContext()
 	if err != nil {
-		return fmt.Errorf("cannot notify resource /%v%v content changed: %w", deviceID, href, err)
+		return notifyError(deviceID, href, err)
 	}
 	decodeMsgToDebug(client, notification, "RECEIVED-NOTIFICATION")
 
+	var requests []*commands.NotifyResourceChangedRequest
+	if batch && href == resources.ResourceURI {
+		requests, err = coapconv.NewNotifyResourceChangedRequests(deviceID, client.remoteAddrString(), notification)
+		if err != nil {
+			return notifyError(deviceID, href, err)
+		}
+	} else {
+		requests = []*commands.NotifyResourceChangedRequest{coapconv.NewNotifyResourceChangedRequest(commands.NewResourceID(deviceID, href), client.remoteAddrString(), notification)}
+	}
+
 	ctx := kitNetGrpc.CtxWithToken(client.Context(), authCtx.GetAccessToken())
-	request := coapconv.NewNotifyResourceChangedRequest(commands.NewResourceID(deviceID, href), client.remoteAddrString(), notification)
-	_, err = client.server.raClient.NotifyResourceChanged(ctx, request)
-	if err != nil {
-		return fmt.Errorf("cannot notify resource /%v%v content changed: %w", deviceID, href, err)
+	for _, request := range requests {
+		_, err = client.server.raClient.NotifyResourceChanged(ctx, request)
+		if err != nil {
+			return notifyError(request.GetResourceId().GetDeviceId(), request.GetResourceId().GetHref(), err)
+		}
 	}
 	return nil
 }
