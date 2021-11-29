@@ -13,6 +13,7 @@ import (
 	"github.com/plgd-dev/hub/resource-aggregate/events"
 	"github.com/plgd-dev/hub/test"
 	"github.com/plgd-dev/hub/test/oauth-server/service"
+	"github.com/plgd-dev/hub/test/pb/baseline"
 	"github.com/stretchr/testify/require"
 )
 
@@ -53,21 +54,26 @@ func MakeCreateLightResourceResponseData(id string) map[string]interface{} {
 	}
 }
 
-func MakeResourceCreated(t *testing.T, deviceID, href string, data map[string]interface{}) *events.ResourceCreated {
+func MakeResourceCreated(t *testing.T, deviceID, href, correlationId string, data map[string]interface{}) *events.ResourceCreated {
 	return &events.ResourceCreated{
 		ResourceId: commands.NewResourceID(deviceID, href),
 		Status:     commands.Status_CREATED,
 		Content: &commands.Content{
 			CoapContentFormat: int32(message.AppOcfCbor),
 			ContentType:       message.AppOcfCbor.String(),
-			Data:              test.EncodeToCbor(t, data),
+			Data: func() []byte {
+				if data == nil {
+					return nil
+				}
+				return test.EncodeToCbor(t, data)
+			}(),
 		},
-		AuditContext: commands.NewAuditContext(service.DeviceUserID, ""),
+		AuditContext: commands.NewAuditContext(service.DeviceUserID, correlationId),
 	}
 }
 
-func CleanUpResourceCreated(e *events.ResourceCreated) *events.ResourceCreated {
-	if e.GetAuditContext() != nil {
+func CleanUpResourceCreated(e *events.ResourceCreated, resetCorrelationId bool) *events.ResourceCreated {
+	if e.GetAuditContext() != nil && resetCorrelationId {
 		e.GetAuditContext().CorrelationId = ""
 	}
 	e.EventMetadata = nil
@@ -93,61 +99,69 @@ func CmpResourceCreated(t *testing.T, expected, got *events.ResourceCreated) {
 		expected.GetContent().Data = nil
 	}
 
-	CleanUpResourceCreated(expected)
-	CleanUpResourceCreated(got)
+	resetCorrelationId := expected.GetAuditContext().GetCorrelationId() == ""
+	CleanUpResourceCreated(expected, resetCorrelationId)
+	CleanUpResourceCreated(got, resetCorrelationId)
 
 	test.CheckProtobufs(t, expected, got, test.RequireToCheckFunc(require.Equal))
 }
 
-func CleanUpResourceChanged(e *events.ResourceChanged) *events.ResourceChanged {
-	if e.GetAuditContext() != nil {
+func CleanUpResourceChanged(e *events.ResourceChanged, resetCorrelationId bool) *events.ResourceChanged {
+	if e.GetAuditContext() != nil && resetCorrelationId {
 		e.GetAuditContext().CorrelationId = ""
 	}
 	e.EventMetadata = nil
 	return e
 }
 
-func CmpResourceChanged(t *testing.T, expected, got *events.ResourceChanged) {
+func CmpResourceChangedData(t *testing.T, expected, got []byte) {
+	cleanUp := func(v interface{}) {
+		data := v.(map[interface{}]interface{})
+		delete(data, "ins")
+		delete(data, "eps")
+		delete(data, "pi")
+		delete(data, "piid")
+	}
+
+	if gotData, ok := test.DecodeCbor(t, got).([]interface{}); ok {
+		expectedData := test.DecodeCbor(t, expected).([]interface{})
+		for _, v := range gotData {
+			cleanUp(v)
+		}
+		require.Equal(t, expectedData, gotData)
+		return
+	}
+
+	gotData := test.DecodeCbor(t, got)
+	cleanUp(gotData)
+	expectedData := test.DecodeCbor(t, expected)
+	cleanUp(expectedData)
+	require.Equal(t, expectedData, gotData)
+}
+
+func CmpResourceChanged(t *testing.T, expected, got *events.ResourceChanged, cmpInterface string) {
 	require.NotEmpty(t, expected)
 	require.NotEmpty(t, got)
 
 	if expected.GetContent().GetData() != nil && got.GetContent().GetData() != nil {
-		cleanUpLinks := func(data map[interface{}]interface{}) {
-			if data == nil {
-				return
-			}
-			links, ok := data["links"].([]interface{})
-			if !ok {
-				return
-			}
-			for i := range links {
-				link, ok := links[i].(map[interface{}]interface{})
-				if !ok {
-					continue
-				}
-				delete(link, "eps")
-				delete(link, "ins")
-			}
+		cmpFn := CmpResourceChangedData
+		if cmpInterface == interfaces.OC_IF_BASELINE {
+			cmpFn = baseline.CmpResourceChangedData
 		}
+		cmpFn(t, expected.GetContent().GetData(), got.GetContent().GetData())
 
-		gotData, ok := test.DecodeCbor(t, got.GetContent().GetData()).(map[interface{}]interface{})
-		require.True(t, ok)
-		expectedData, ok := test.DecodeCbor(t, expected.GetContent().GetData()).(map[interface{}]interface{})
-		require.True(t, ok)
-		cleanUpLinks(expectedData)
-		cleanUpLinks(gotData)
-		require.Equal(t, expectedData, gotData)
 		got.GetContent().Data = nil
 		expected.GetContent().Data = nil
 	}
 
-	CleanUpResourceChanged(expected)
-	CleanUpResourceChanged(got)
+	resetCorrelationId := expected.GetAuditContext().GetCorrelationId() == ""
+	CleanUpResourceChanged(expected, resetCorrelationId)
+	CleanUpResourceChanged(got, resetCorrelationId)
 
 	test.CheckProtobufs(t, expected, got, test.RequireToCheckFunc(require.Equal))
 }
 
-func MakeResourceChanged(t *testing.T, deviceID, href string, data interface{}) *events.ResourceChanged {
+func MakeResourceChanged(t *testing.T, deviceID, href, correlationId string, data interface{}) *events.ResourceChanged {
 	return &events.ResourceChanged{
 		ResourceId: &commands.ResourceId{
 			DeviceId: deviceID,
@@ -157,25 +171,30 @@ func MakeResourceChanged(t *testing.T, deviceID, href string, data interface{}) 
 		Content: &commands.Content{
 			CoapContentFormat: int32(message.AppOcfCbor),
 			ContentType:       message.AppOcfCbor.String(),
-			Data:              test.EncodeToCbor(t, data),
+			Data: func() []byte {
+				if data == nil {
+					return nil
+				}
+				return test.EncodeToCbor(t, data)
+			}(),
 		},
-		AuditContext: commands.NewAuditContext(service.DeviceUserID, ""),
+		AuditContext: commands.NewAuditContext(service.DeviceUserID, correlationId),
 	}
 }
 
-func MakeResourceDeleted(t *testing.T, deviceID, href string) *events.ResourceDeleted {
+func MakeResourceDeleted(t *testing.T, deviceID, href, correlationId string) *events.ResourceDeleted {
 	return &events.ResourceDeleted{
 		ResourceId: commands.NewResourceID(deviceID, href),
 		Status:     commands.Status_OK,
 		Content: &commands.Content{
 			CoapContentFormat: int32(-1),
 		},
-		AuditContext: commands.NewAuditContext(service.DeviceUserID, ""),
+		AuditContext: commands.NewAuditContext(service.DeviceUserID, correlationId),
 	}
 }
 
-func CleanResourceDeleted(e *events.ResourceDeleted) *events.ResourceDeleted {
-	if e.GetAuditContext() != nil {
+func CleanResourceDeleted(e *events.ResourceDeleted, resetCorrelationId bool) *events.ResourceDeleted {
+	if e.GetAuditContext() != nil && resetCorrelationId {
 		e.GetAuditContext().CorrelationId = ""
 	}
 	e.EventMetadata = nil
@@ -185,12 +204,13 @@ func CleanResourceDeleted(e *events.ResourceDeleted) *events.ResourceDeleted {
 func CmpResourceDeleted(t *testing.T, expected, got *events.ResourceDeleted) {
 	require.NotEmpty(t, expected)
 	require.NotEmpty(t, got)
-	CleanResourceDeleted(expected)
-	CleanResourceDeleted(got)
+	resetCorrelationId := expected.GetAuditContext().GetCorrelationId() == ""
+	CleanResourceDeleted(expected, resetCorrelationId)
+	CleanResourceDeleted(got, resetCorrelationId)
 	test.CheckProtobufs(t, expected, got, test.RequireToCheckFunc(require.Equal))
 }
 
-func MakeResourceRetrieved(t *testing.T, deviceID, href string, data interface{}) *events.ResourceRetrieved {
+func MakeResourceRetrieved(t *testing.T, deviceID, href, correlationId string, data interface{}) *events.ResourceRetrieved {
 	return &events.ResourceRetrieved{
 		ResourceId: &commands.ResourceId{
 			DeviceId: deviceID,
@@ -200,14 +220,19 @@ func MakeResourceRetrieved(t *testing.T, deviceID, href string, data interface{}
 		Content: &commands.Content{
 			CoapContentFormat: int32(message.AppOcfCbor),
 			ContentType:       message.AppOcfCbor.String(),
-			Data:              test.EncodeToCbor(t, data),
+			Data: func() []byte {
+				if data == nil {
+					return nil
+				}
+				return test.EncodeToCbor(t, data)
+			}(),
 		},
-		AuditContext: commands.NewAuditContext(service.DeviceUserID, ""),
+		AuditContext: commands.NewAuditContext(service.DeviceUserID, correlationId),
 	}
 }
 
-func CleanUpResourceRetrieved(e *events.ResourceRetrieved) *events.ResourceRetrieved {
-	if e.GetAuditContext() != nil {
+func CleanUpResourceRetrieved(e *events.ResourceRetrieved, resetCorrelationId bool) *events.ResourceRetrieved {
+	if e.GetAuditContext() != nil && resetCorrelationId {
 		e.GetAuditContext().CorrelationId = ""
 	}
 	e.EventMetadata = nil
@@ -222,6 +247,7 @@ func getResourceRetrievedData(t *testing.T, d *events.ResourceRetrieved) map[str
 		res, ok := v.(map[interface{}]interface{})
 		require.True(t, ok)
 		href, _ := res["href"].(string)
+		delete(res, "eps")
 		delete(res, "ins")
 		delete(res, "piid")
 		resData[href] = res
@@ -252,12 +278,13 @@ func CmpResourceRetrieved(t *testing.T, expected, got *events.ResourceRetrieved)
 		got.GetContent().Data = nil
 		expected.GetContent().Data = nil
 	}
-	CleanUpResourceRetrieved(expected)
-	CleanUpResourceRetrieved(got)
+	resetCorrelationId := expected.GetAuditContext().GetCorrelationId() == ""
+	CleanUpResourceRetrieved(expected, resetCorrelationId)
+	CleanUpResourceRetrieved(got, resetCorrelationId)
 	test.CheckProtobufs(t, expected, got, test.RequireToCheckFunc(require.Equal))
 }
 
-func MakeResourceUpdated(deviceID, href string) *events.ResourceUpdated {
+func MakeResourceUpdated(deviceID, href, correlationId string) *events.ResourceUpdated {
 	return &events.ResourceUpdated{
 		ResourceId: &commands.ResourceId{
 			DeviceId: deviceID,
@@ -267,12 +294,12 @@ func MakeResourceUpdated(deviceID, href string) *events.ResourceUpdated {
 		Content: &commands.Content{
 			CoapContentFormat: -1,
 		},
-		AuditContext: commands.NewAuditContext(service.DeviceUserID, ""),
+		AuditContext: commands.NewAuditContext(service.DeviceUserID, correlationId),
 	}
 }
 
-func CleanUpResourceUpdated(e *events.ResourceUpdated) *events.ResourceUpdated {
-	if e.GetAuditContext() != nil {
+func CleanUpResourceUpdated(e *events.ResourceUpdated, resetCorrelationId bool) *events.ResourceUpdated {
+	if e.GetAuditContext() != nil && resetCorrelationId {
 		e.GetAuditContext().CorrelationId = ""
 	}
 	e.EventMetadata = nil
@@ -289,8 +316,9 @@ func CmpResourceUpdated(t *testing.T, expected, got *events.ResourceUpdated) {
 		expected.GetContent().Data = nil
 		require.Equal(t, expectedData, gotData)
 	}
-	CleanUpResourceUpdated(expected)
-	CleanUpResourceUpdated(got)
+	resetCorrelationId := expected.GetAuditContext().GetCorrelationId() == ""
+	CleanUpResourceUpdated(expected, resetCorrelationId)
+	CleanUpResourceUpdated(got, resetCorrelationId)
 	test.CheckProtobufs(t, expected, got, test.RequireToCheckFunc(require.Equal))
 }
 
@@ -309,11 +337,24 @@ func sortResources(s []*pb.Resource) []*pb.Resource {
 }
 
 func CmpResourceValues(t *testing.T, expected, got []*pb.Resource) {
+	cleanUpData := func(d map[interface{}]interface{}) {
+		delete(d, "eps")
+		delete(d, "ins")
+		delete(d, "pi")
+		delete(d, "piid")
+	}
+
 	getData := func(t *testing.T, res *pb.Resource) interface{} {
 		d := test.DecodeCbor(t, res.GetData().GetContent().GetData())
 		if m, ok := d.(map[interface{}]interface{}); ok {
-			delete(m, "pi")
-			delete(m, "piid")
+			cleanUpData(m)
+			return d
+		}
+		if a, ok := d.([]interface{}); ok {
+			for _, m := range a {
+				cleanUpData(m.(map[interface{}]interface{}))
+			}
+			return d
 		}
 		return d
 	}
@@ -330,8 +371,9 @@ func CmpResourceValues(t *testing.T, expected, got []*pb.Resource) {
 		dataGot := getData(t, g)
 		g.Data.Content.Data = nil
 		require.Equal(t, dataExpected, dataGot)
-		CleanUpResourceChanged(e.GetData())
-		CleanUpResourceChanged(g.GetData())
+		resetCorrelationId := e.GetData().GetAuditContext().GetCorrelationId() == ""
+		CleanUpResourceChanged(e.GetData(), resetCorrelationId)
+		CleanUpResourceChanged(g.GetData(), resetCorrelationId)
 		test.CheckProtobufs(t, e, g, test.RequireToCheckFunc(require.Equal))
 	}
 }
@@ -364,8 +406,8 @@ func CleanUpResourceLinksSnapshotTaken(e *events.ResourceLinksSnapshotTaken) *ev
 	return e
 }
 
-func CleanUpResourceLinksPublished(e *events.ResourceLinksPublished) *events.ResourceLinksPublished {
-	if e.GetAuditContext() != nil {
+func CleanUpResourceLinksPublished(e *events.ResourceLinksPublished, resetCorrelationId bool) *events.ResourceLinksPublished {
+	if e.GetAuditContext() != nil && resetCorrelationId {
 		e.GetAuditContext().CorrelationId = ""
 	}
 	e.EventMetadata = nil
@@ -373,8 +415,8 @@ func CleanUpResourceLinksPublished(e *events.ResourceLinksPublished) *events.Res
 	return e
 }
 
-func CleanUpResourceLinksUnpublished(e *events.ResourceLinksUnpublished) *events.ResourceLinksUnpublished {
-	if e.GetAuditContext() != nil {
+func CleanUpResourceLinksUnpublished(e *events.ResourceLinksUnpublished, resetCorrelationId bool) *events.ResourceLinksUnpublished {
+	if e.GetAuditContext() != nil && resetCorrelationId {
 		e.GetAuditContext().CorrelationId = ""
 	}
 	e.EventMetadata = nil

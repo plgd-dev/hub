@@ -67,13 +67,12 @@ func TestRequestHandlerGetResource(t *testing.T) {
 				deviceID:     deviceID,
 				resourceHref: test.TestResourceLightInstanceHref("1"),
 			},
-			want: pbTest.MakeResourceRetrieved(t, deviceID, test.TestResourceLightInstanceHref("1"), map[string]interface{}{
-				"state": false,
-				"power": uint64(0),
-				"name":  "Light",
-				"if":    []interface{}{interfaces.OC_IF_RW, interfaces.OC_IF_BASELINE},
-				"rt":    []interface{}{types.CORE_LIGHT},
-			}),
+			want: pbTest.MakeResourceRetrieved(t, deviceID, test.TestResourceLightInstanceHref("1"), "",
+				map[string]interface{}{
+					"state": false,
+					"power": uint64(0),
+					"name":  "Light",
+				}),
 		},
 		{
 			name: "jsonpb: get from device with interface",
@@ -83,13 +82,15 @@ func TestRequestHandlerGetResource(t *testing.T) {
 				resourceHref:      test.TestResourceLightInstanceHref("1"),
 				resourceInterface: interfaces.OC_IF_BASELINE,
 			},
-			want: pbTest.MakeResourceRetrieved(t, deviceID, test.TestResourceLightInstanceHref("1"), map[string]interface{}{
-				"state": false,
-				"power": uint64(0),
-				"name":  "Light",
-				"if":    []interface{}{interfaces.OC_IF_RW, interfaces.OC_IF_BASELINE},
-				"rt":    []interface{}{types.CORE_LIGHT},
-			}),
+			want: pbTest.MakeResourceRetrieved(t, deviceID, test.TestResourceLightInstanceHref("1"), "",
+				map[string]interface{}{
+					"state": false,
+					"power": uint64(0),
+					"name":  "Light",
+					"if":    []interface{}{interfaces.OC_IF_RW, interfaces.OC_IF_BASELINE},
+					"rt":    []interface{}{types.CORE_LIGHT},
+				},
+			),
 		},
 		{
 			name: "jsonpb: get from device with disabled shadow",
@@ -99,11 +100,13 @@ func TestRequestHandlerGetResource(t *testing.T) {
 				resourceHref: test.TestResourceLightInstanceHref("1"),
 				shadow:       newBool(false),
 			},
-			want: pbTest.MakeResourceRetrieved(t, deviceID, test.TestResourceLightInstanceHref("1"), map[string]interface{}{
-				"state": false,
-				"power": uint64(0),
-				"name":  "Light",
-			}),
+			want: pbTest.MakeResourceRetrieved(t, deviceID, test.TestResourceLightInstanceHref("1"), "",
+				map[string]interface{}{
+					"state": false,
+					"power": uint64(0),
+					"name":  "Light",
+				},
+			),
 		},
 	}
 

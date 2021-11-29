@@ -100,7 +100,7 @@ func TestRequestHandlerUpdateResourcesValues(t *testing.T) {
 					"power": 1,
 				},
 			},
-			want:         pbTest.MakeResourceUpdated(deviceID, test.TestResourceLightInstanceHref("1")),
+			want:         pbTest.MakeResourceUpdated(deviceID, test.TestResourceLightInstanceHref("1"), ""),
 			wantHTTPCode: http.StatusOK,
 		},
 		{
@@ -114,7 +114,7 @@ func TestRequestHandlerUpdateResourcesValues(t *testing.T) {
 					"power": 102,
 				},
 			},
-			want:         pbTest.MakeResourceUpdated(deviceID, test.TestResourceLightInstanceHref("1")),
+			want:         pbTest.MakeResourceUpdated(deviceID, test.TestResourceLightInstanceHref("1"), ""),
 			wantHTTPCode: http.StatusOK,
 		},
 		{
@@ -128,7 +128,7 @@ func TestRequestHandlerUpdateResourcesValues(t *testing.T) {
 				},
 				resourceInterface: interfaces.OC_IF_BASELINE,
 			},
-			want:         pbTest.MakeResourceUpdated(deviceID, test.TestResourceLightInstanceHref("1")),
+			want:         pbTest.MakeResourceUpdated(deviceID, test.TestResourceLightInstanceHref("1"), ""),
 			wantHTTPCode: http.StatusOK,
 		},
 		{
@@ -142,7 +142,7 @@ func TestRequestHandlerUpdateResourcesValues(t *testing.T) {
 				},
 				resourceInterface: interfaces.OC_IF_BASELINE,
 			},
-			want:         pbTest.MakeResourceUpdated(deviceID, test.TestResourceLightInstanceHref("1")),
+			want:         pbTest.MakeResourceUpdated(deviceID, test.TestResourceLightInstanceHref("1"), ""),
 			wantHTTPCode: http.StatusOK,
 		},
 		{

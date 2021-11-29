@@ -267,9 +267,9 @@ func TestRequestHandlerSubscribeForCreateEvents(t *testing.T) {
 		SubscriptionId: ev.SubscriptionId,
 		CorrelationId:  "testToken",
 		Type: &pb.Event_ResourceCreatePending{
-			ResourceCreatePending: pbTest.MakeResourceCreatePending(t, deviceID, test.TestResourceSwitchesHref, lightData),
+			ResourceCreatePending: pbTest.MakeResourceCreatePending(t, deviceID, test.TestResourceSwitchesHref, "", lightData),
 		},
-	}, ev)
+	}, ev, "")
 
 	lightLink := test.DefaultSwitchResourceLink(switchId)
 	lightData = test.MakeSwitchResourceData(map[string]interface{}{
@@ -287,9 +287,9 @@ func TestRequestHandlerSubscribeForCreateEvents(t *testing.T) {
 		SubscriptionId: ev.SubscriptionId,
 		CorrelationId:  "testToken",
 		Type: &pb.Event_ResourceCreated{
-			ResourceCreated: pbTest.MakeResourceCreated(t, deviceID, test.TestResourceSwitchesHref, lightData),
+			ResourceCreated: pbTest.MakeResourceCreated(t, deviceID, test.TestResourceSwitchesHref, "", lightData),
 		},
-	}, ev)
+	}, ev, "")
 }
 
 func TestRequestHandlerSubscribeForPendingCommands(t *testing.T) {
@@ -322,7 +322,7 @@ func TestRequestHandlerSubscribeForPendingCommands(t *testing.T) {
 			want: []*pb.PendingCommand{
 				{
 					Command: &pb.PendingCommand_ResourceUpdatePending{
-						ResourceUpdatePending: pbTest.MakeResourceUpdatePending(t, deviceID, test.TestResourceLightInstanceHref("1"),
+						ResourceUpdatePending: pbTest.MakeResourceUpdatePending(t, deviceID, test.TestResourceLightInstanceHref("1"), "",
 							map[string]interface{}{
 								"power": 1,
 							}),
@@ -369,7 +369,7 @@ func TestRequestHandlerSubscribeForPendingCommands(t *testing.T) {
 				},
 				{
 					Command: &pb.PendingCommand_ResourceCreatePending{
-						ResourceCreatePending: pbTest.MakeResourceCreatePending(t, deviceID, device.ResourceURI,
+						ResourceCreatePending: pbTest.MakeResourceCreatePending(t, deviceID, device.ResourceURI, "",
 							map[string]interface{}{
 								"power": 1,
 							}),
@@ -388,7 +388,7 @@ func TestRequestHandlerSubscribeForPendingCommands(t *testing.T) {
 				},
 				{
 					Command: &pb.PendingCommand_ResourceUpdatePending{
-						ResourceUpdatePending: pbTest.MakeResourceUpdatePending(t, deviceID, test.TestResourceLightInstanceHref("1"),
+						ResourceUpdatePending: pbTest.MakeResourceUpdatePending(t, deviceID, test.TestResourceLightInstanceHref("1"), "",
 							map[string]interface{}{
 								"power": 1,
 							}),
@@ -431,7 +431,7 @@ func TestRequestHandlerSubscribeForPendingCommands(t *testing.T) {
 			want: []*pb.PendingCommand{
 				{
 					Command: &pb.PendingCommand_ResourceCreatePending{
-						ResourceCreatePending: pbTest.MakeResourceCreatePending(t, deviceID, device.ResourceURI,
+						ResourceCreatePending: pbTest.MakeResourceCreatePending(t, deviceID, device.ResourceURI, "",
 							map[string]interface{}{
 								"power": 1,
 							}),
@@ -475,7 +475,7 @@ func TestRequestHandlerSubscribeForPendingCommands(t *testing.T) {
 			want: []*pb.PendingCommand{
 				{
 					Command: &pb.PendingCommand_ResourceUpdatePending{
-						ResourceUpdatePending: pbTest.MakeResourceUpdatePending(t, deviceID, test.TestResourceLightInstanceHref("1"),
+						ResourceUpdatePending: pbTest.MakeResourceUpdatePending(t, deviceID, test.TestResourceLightInstanceHref("1"), "",
 							map[string]interface{}{
 								"power": 1,
 							}),
@@ -788,7 +788,7 @@ func TestRequestHandlerIssue270(t *testing.T) {
 			},
 		},
 		CorrelationId: "testToken",
-	}, ev)
+	}, ev, "")
 
 	shutdownDevSim()
 	run := true

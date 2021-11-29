@@ -140,7 +140,7 @@ func TestRequestHandlerGetResourceLinks(t *testing.T) {
 				require.NoError(t, err)
 				require.NotEmpty(t, link.GetAuditContext())
 				require.NotEmpty(t, link.GetEventMetadata())
-				links = append(links, pbTest.CleanUpResourceLinksPublished(link))
+				links = append(links, pbTest.CleanUpResourceLinksPublished(link, true))
 			}
 			test.CheckProtobufs(t, tt.want, links, test.RequireToCheckFunc(require.Equal))
 		})

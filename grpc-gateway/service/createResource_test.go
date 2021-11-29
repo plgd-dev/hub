@@ -11,7 +11,6 @@ import (
 	"github.com/plgd-dev/device/test/resource/types"
 	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/hub/grpc-gateway/pb"
-	"github.com/plgd-dev/hub/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
 	"github.com/plgd-dev/hub/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/test"
@@ -149,7 +148,7 @@ func TestRequestHandlerCreateResource(t *testing.T) {
 
 	tearDown := service.SetUp(ctx, t)
 	defer tearDown()
-	log.Setup(log.Config{Debug: true})
+	// log.Setup(log.Config{Debug: true})
 	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultServiceToken(t))
 
 	conn, err := grpc.Dial(config.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
@@ -174,7 +173,7 @@ func TestRequestHandlerCreateResource(t *testing.T) {
 				return
 			}
 			require.NoError(t, err)
-			resp := pbTest.MakeResourceCreated(t, deviceID, tt.args.href, tt.wantData)
+			resp := pbTest.MakeResourceCreated(t, deviceID, tt.args.href, "", tt.wantData)
 			pbTest.CmpResourceCreated(t, resp, got.GetData())
 		})
 	}

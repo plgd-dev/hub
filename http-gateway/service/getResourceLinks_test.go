@@ -124,7 +124,7 @@ func TestRequestHandlerGetResourceLinks(t *testing.T) {
 					break
 				}
 				require.NoError(t, err)
-				links = append(links, pbTest.CleanUpResourceLinksPublished(&v))
+				links = append(links, pbTest.CleanUpResourceLinksPublished(&v, true))
 			}
 			test.CheckProtobufs(t, tt.want, links, test.RequireToCheckFunc(require.Equal))
 		})
@@ -226,7 +226,7 @@ func TestRequestHandlerGetResourceLinksDevice(t *testing.T) {
 					break
 				}
 				require.NoError(t, err)
-				links = append(links, pbTest.CleanUpResourceLinksPublished(&v))
+				links = append(links, pbTest.CleanUpResourceLinksPublished(&v, true))
 			}
 			test.CheckProtobufs(t, tt.want, links, test.RequireToCheckFunc(require.Equal))
 		})
