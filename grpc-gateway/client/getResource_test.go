@@ -43,9 +43,7 @@ func TestClient_GetResource(t *testing.T) {
 				href:     configuration.ResourceURI,
 			},
 			want: map[interface{}]interface{}{
-				"n":  test.TestDeviceName,
-				"if": []interface{}{interfaces.OC_IF_RW, interfaces.OC_IF_BASELINE},
-				"rt": []interface{}{configuration.ResourceType},
+				"n": test.TestDeviceName,
 			},
 		},
 		{

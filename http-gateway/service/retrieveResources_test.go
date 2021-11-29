@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/plgd-dev/device/schema/interfaces"
 	"github.com/plgd-dev/device/test/resource/types"
 	"github.com/plgd-dev/hub/grpc-gateway/pb"
 	httpgwTest "github.com/plgd-dev/hub/http-gateway/test"
@@ -108,13 +107,13 @@ func TestRequestHandlerGetResources(t *testing.T) {
 			want: []*pb.Resource{
 				{
 					Types: []string{types.CORE_LIGHT},
-					Data: pbTest.MakeResourceChanged(t, deviceID, test.TestResourceLightInstanceHref("1"), map[string]interface{}{
-						"state": false,
-						"power": uint64(0),
-						"name":  "Light",
-						"if":    []interface{}{interfaces.OC_IF_RW, interfaces.OC_IF_BASELINE},
-						"rt":    []interface{}{types.CORE_LIGHT},
-					}),
+					Data: pbTest.MakeResourceChanged(t, deviceID, test.TestResourceLightInstanceHref("1"), "",
+						map[string]interface{}{
+							"state": false,
+							"power": uint64(0),
+							"name":  "Light",
+						},
+					),
 				},
 			},
 		},
@@ -127,11 +126,11 @@ func TestRequestHandlerGetResources(t *testing.T) {
 			want: []*pb.Resource{
 				{
 					Types: []string{types.BINARY_SWITCH},
-					Data: pbTest.MakeResourceChanged(t, deviceID, test.TestResourceSwitchesInstanceHref(switchId), map[string]interface{}{
-						"if":    []interface{}{interfaces.OC_IF_A, interfaces.OC_IF_BASELINE},
-						"rt":    []interface{}{types.BINARY_SWITCH},
-						"value": false,
-					}),
+					Data: pbTest.MakeResourceChanged(t, deviceID, test.TestResourceSwitchesInstanceHref(switchId), "",
+						map[string]interface{}{
+							"value": false,
+						},
+					),
 				},
 			},
 		},

@@ -6,8 +6,6 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/plgd-dev/device/schema/interfaces"
-	"github.com/plgd-dev/device/test/resource/types"
 	"github.com/plgd-dev/go-coap/v2/message"
 	c2cTest "github.com/plgd-dev/hub/cloud2cloud-gateway/test"
 	"github.com/plgd-dev/hub/cloud2cloud-gateway/uri"
@@ -111,11 +109,9 @@ func TestRequestHandlerRetrieveResource(t *testing.T) {
 			wantCode:        http.StatusOK,
 			wantContentType: message.AppJSON.String(),
 			want: map[interface{}]interface{}{
-				"if":    []interface{}{interfaces.OC_IF_RW, interfaces.OC_IF_BASELINE},
 				"name":  "Light",
 				"power": uint64(0),
 				"state": false,
-				"rt":    []interface{}{types.CORE_LIGHT},
 			},
 		},
 		{
@@ -128,12 +124,32 @@ func TestRequestHandlerRetrieveResource(t *testing.T) {
 			wantCode:        http.StatusOK,
 			wantContentType: message.AppOcfCbor.String(),
 			want: map[interface{}]interface{}{
-				"if":    []interface{}{interfaces.OC_IF_RW, interfaces.OC_IF_BASELINE},
 				"name":  "Light",
 				"power": uint64(0),
 				"state": false,
-				"rt":    []interface{}{types.CORE_LIGHT},
 			},
+		},
+		{
+			name: "JSON: " + uri.Devices + "/" + deviceID + test.TestResourceSwitchesHref,
+			args: args{
+				accept:       message.AppJSON.String(),
+				token:        token,
+				resourceHref: test.TestResourceSwitchesHref,
+			},
+			wantCode:        http.StatusOK,
+			wantContentType: message.AppJSON.String(),
+			want:            []interface{}{},
+		},
+		{
+			name: "CBOR: " + uri.Devices + "/" + deviceID + test.TestResourceSwitchesHref,
+			args: args{
+				accept:       message.AppOcfCbor.String(),
+				token:        token,
+				resourceHref: test.TestResourceSwitchesHref,
+			},
+			wantCode:        http.StatusOK,
+			wantContentType: message.AppOcfCbor.String(),
+			want:            []interface{}{},
 		},
 	}
 

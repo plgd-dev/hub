@@ -60,7 +60,7 @@ func TestRequestHandlerGetPendingCommands(t *testing.T) {
 			want: []*pb.PendingCommand{
 				{
 					Command: &pb.PendingCommand_ResourceUpdatePending{
-						ResourceUpdatePending: pbTest.MakeResourceUpdatePending(t, deviceID, test.TestResourceLightInstanceHref("1"),
+						ResourceUpdatePending: pbTest.MakeResourceUpdatePending(t, deviceID, test.TestResourceLightInstanceHref("1"), "",
 							map[string]interface{}{
 								"power": 1,
 							}),
@@ -99,7 +99,7 @@ func TestRequestHandlerGetPendingCommands(t *testing.T) {
 				},
 				{
 					Command: &pb.PendingCommand_ResourceCreatePending{
-						ResourceCreatePending: pbTest.MakeResourceCreatePending(t, deviceID, device.ResourceURI,
+						ResourceCreatePending: pbTest.MakeResourceCreatePending(t, deviceID, device.ResourceURI, "",
 							map[string]interface{}{
 								"power": 1,
 							}),
@@ -118,7 +118,7 @@ func TestRequestHandlerGetPendingCommands(t *testing.T) {
 				},
 				{
 					Command: &pb.PendingCommand_ResourceUpdatePending{
-						ResourceUpdatePending: pbTest.MakeResourceUpdatePending(t, deviceID, test.TestResourceLightInstanceHref("1"),
+						ResourceUpdatePending: pbTest.MakeResourceUpdatePending(t, deviceID, test.TestResourceLightInstanceHref("1"), "",
 							map[string]interface{}{
 								"power": 1,
 							}),
@@ -155,7 +155,7 @@ func TestRequestHandlerGetPendingCommands(t *testing.T) {
 			want: []*pb.PendingCommand{
 				{
 					Command: &pb.PendingCommand_ResourceCreatePending{
-						ResourceCreatePending: pbTest.MakeResourceCreatePending(t, deviceID, device.ResourceURI,
+						ResourceCreatePending: pbTest.MakeResourceCreatePending(t, deviceID, device.ResourceURI, "",
 							map[string]interface{}{
 								"power": 1,
 							}),
@@ -192,7 +192,7 @@ func TestRequestHandlerGetPendingCommands(t *testing.T) {
 			want: []*pb.PendingCommand{
 				{
 					Command: &pb.PendingCommand_ResourceUpdatePending{
-						ResourceUpdatePending: pbTest.MakeResourceUpdatePending(t, deviceID, test.TestResourceLightInstanceHref("1"),
+						ResourceUpdatePending: pbTest.MakeResourceUpdatePending(t, deviceID, test.TestResourceLightInstanceHref("1"), "",
 							map[string]interface{}{
 								"power": 1,
 							}),
@@ -209,7 +209,7 @@ func TestRequestHandlerGetPendingCommands(t *testing.T) {
 			want: []*pb.PendingCommand{
 				{
 					Command: &pb.PendingCommand_ResourceCreatePending{
-						ResourceCreatePending: pbTest.MakeResourceCreatePending(t, deviceID, device.ResourceURI,
+						ResourceCreatePending: pbTest.MakeResourceCreatePending(t, deviceID, device.ResourceURI, "",
 							map[string]interface{}{
 								"power": 1,
 							}),

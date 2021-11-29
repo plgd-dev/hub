@@ -178,11 +178,7 @@ func (o *resourcesObserver) getResourceContentLocked(ctx context.Context, href s
 	if o.deviceID == "" {
 		return cannotGetResourceError(o.deviceID, href, emptyDeviceIDError())
 	}
-	// TODO: remove the OC_IF_BASELINE message.Option and update tests
-	resp, err := o.coapConn.Get(ctx, href, message.Option{
-		ID:    message.URIQuery,
-		Value: []byte("if=" + interfaces.OC_IF_BASELINE),
-	})
+	resp, err := o.coapConn.Get(ctx, href)
 	defer func() {
 		if !resp.IsHijacked() {
 			pool.ReleaseMessage(resp)
@@ -207,7 +203,7 @@ func (o *resourcesObserver) addResources(ctx context.Context, resources []*comma
 func (o *resourcesObserver) addResourcesLocked(ctx context.Context, resources []*commands.Resource) error {
 	var errors []error
 	for _, resource := range resources {
-		err := o.addResourceLocked(ctx, resource, interfaces.OC_IF_BASELINE)
+		err := o.addResourceLocked(ctx, resource, "")
 		if err != nil {
 			errors = append(errors, err)
 		}

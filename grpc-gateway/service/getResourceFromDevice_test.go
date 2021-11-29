@@ -64,11 +64,13 @@ func TestRequestHandlerGetResourceFromDevice(t *testing.T) {
 					TimeToLive: int64(time.Hour),
 				},
 			},
-			want: pbTest.MakeResourceRetrieved(t, deviceID, test.TestResourceLightInstanceHref("1"), map[string]interface{}{
-				"name":  "Light",
-				"power": uint64(0),
-				"state": false,
-			}),
+			want: pbTest.MakeResourceRetrieved(t, deviceID, test.TestResourceLightInstanceHref("1"), "",
+				map[string]interface{}{
+					"name":  "Light",
+					"power": uint64(0),
+					"state": false,
+				},
+			),
 		},
 		{
 			name: "valid /oic/d",
@@ -78,12 +80,14 @@ func TestRequestHandlerGetResourceFromDevice(t *testing.T) {
 					TimeToLive: int64(time.Hour),
 				},
 			},
-			want: pbTest.MakeResourceRetrieved(t, deviceID, device.ResourceURI, map[string]interface{}{
-				"n":   test.TestDeviceName,
-				"di":  deviceID,
-				"dmv": "ocf.res.1.3.0",
-				"icv": "ocf.2.0.5",
-			}),
+			want: pbTest.MakeResourceRetrieved(t, deviceID, device.ResourceURI, "",
+				map[string]interface{}{
+					"n":   test.TestDeviceName,
+					"di":  deviceID,
+					"dmv": "ocf.res.1.3.0",
+					"icv": "ocf.2.0.5",
+				},
+			),
 		},
 		{
 			name: "valid /switches",
@@ -93,18 +97,20 @@ func TestRequestHandlerGetResourceFromDevice(t *testing.T) {
 					TimeToLive: int64(time.Hour),
 				},
 			},
-			want: pbTest.MakeResourceRetrieved(t, deviceID, test.TestResourceSwitchesHref, []map[string]interface{}{
-				{
-					"href": test.TestResourceSwitchesInstanceHref(switchID),
-					"if":   []interface{}{interfaces.OC_IF_A, interfaces.OC_IF_BASELINE},
-					"rt":   []interface{}{types.BINARY_SWITCH},
-					"rel":  []interface{}{"hosts"},
-					"p": map[string]interface{}{
-						"bm": uint64(schema.Discoverable | schema.Observable),
+			want: pbTest.MakeResourceRetrieved(t, deviceID, test.TestResourceSwitchesHref, "",
+				[]map[string]interface{}{
+					{
+						"href": test.TestResourceSwitchesInstanceHref(switchID),
+						"if":   []interface{}{interfaces.OC_IF_A, interfaces.OC_IF_BASELINE},
+						"rt":   []interface{}{types.BINARY_SWITCH},
+						"rel":  []interface{}{"hosts"},
+						"p": map[string]interface{}{
+							"bm": uint64(schema.Discoverable | schema.Observable),
+						},
+						"eps": []interface{}{},
 					},
-					"eps": []interface{}{},
 				},
-			}),
+			),
 		},
 		{
 			name: "valid /switches/1",
@@ -114,9 +120,11 @@ func TestRequestHandlerGetResourceFromDevice(t *testing.T) {
 					TimeToLive: int64(time.Hour),
 				},
 			},
-			want: pbTest.MakeResourceRetrieved(t, deviceID, test.TestResourceSwitchesInstanceHref(switchID), map[string]interface{}{
-				"value": false,
-			}),
+			want: pbTest.MakeResourceRetrieved(t, deviceID, test.TestResourceSwitchesInstanceHref(switchID), "",
+				map[string]interface{}{
+					"value": false,
+				},
+			),
 		},
 	}
 

@@ -32,6 +32,7 @@ func TestRequestHandlerRetrieveResourceSubscription(t *testing.T) {
 
 	tearDown := service.SetUp(ctx, t)
 	defer tearDown()
+	// log.Setup(log.Config{Debug: true})
 
 	token := oauthTest.GetDefaultServiceToken(t)
 	ctx = kitNetGrpc.CtxWithToken(ctx, token)
@@ -46,6 +47,8 @@ func TestRequestHandlerRetrieveResourceSubscription(t *testing.T) {
 	}()
 	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
+	const switchID = "1"
+	test.AddDeviceSwitchResources(ctx, t, deviceID, c, switchID)
 
 	const eventsURI = "/events"
 	eventsServer := c2cTest.NewEventsServer(t, eventsURI)

@@ -7,6 +7,7 @@ import (
 	"sort"
 	"testing"
 
+	"github.com/plgd-dev/device/schema"
 	"github.com/plgd-dev/device/schema/collection"
 	"github.com/plgd-dev/device/schema/configuration"
 	"github.com/plgd-dev/device/schema/device"
@@ -46,7 +47,14 @@ func sortLinks(s []interface{}) []interface{} {
 	return v
 }
 
-func cleanUpRepresentation(v interface{}) interface{} {
+func cleanUpResourceData(v interface{}) interface{} {
+	cleanUpRep := func(rep map[interface{}]interface{}) {
+		delete(rep, "pi")
+		delete(rep, "piid")
+		delete(rep, "eps")
+		delete(rep, "ins")
+	}
+
 	d, ok := v.(map[interface{}]interface{})
 	if !ok {
 		return v
@@ -68,17 +76,27 @@ func cleanUpRepresentation(v interface{}) interface{} {
 		delete(li, "ins")
 
 		rep, ok := li["rep"].(map[interface{}]interface{})
+		if ok {
+			cleanUpRep(rep)
+			continue
+		}
+
+		repArr, ok := li["rep"].([]interface{})
 		if !ok {
 			continue
 		}
-		delete(rep, "pi")
-		delete(rep, "piid")
+		for _, repItem := range repArr {
+			rep, ok := repItem.(map[interface{}]interface{})
+			if ok {
+				cleanUpRep(rep)
+			}
+		}
 	}
 	d["links"] = links
 	return v
 }
 
-func getResourceBaseRepresentation(deviceID, href string, rt []interface{}, opts map[interface{}]interface{}) map[interface{}]interface{} {
+func getResourceBaseData(deviceID, href string, rt []interface{}, opts map[interface{}]interface{}) map[interface{}]interface{} {
 	res := map[interface{}]interface{}{
 		"di":   deviceID,
 		"href": "/" + deviceID + href,
@@ -99,23 +117,14 @@ func getResourceBaseRepresentation(deviceID, href string, rt []interface{}, opts
 	return res
 }
 
-func getResourceAllRepresentation(deviceID, href string, rt []interface{}, opts map[interface{}]interface{}) map[interface{}]interface{} {
-	rep := map[interface{}]interface{}{
-		"if": []interface{}{interfaces.OC_IF_RW, interfaces.OC_IF_BASELINE},
-		"rt": rt,
-	}
-
-	for k, v := range opts {
-		rep[k] = v
-	}
-
+func getResourceAllData(deviceID, href string, rep interface{}) map[interface{}]interface{} {
 	return map[interface{}]interface{}{
 		"href": "/" + deviceID + href,
 		"rep":  rep,
 	}
 }
 
-func getDeviceRepresentation(deviceID, deviceName string) map[interface{}]interface{} {
+func getDeviceData(deviceID, deviceName string) map[interface{}]interface{} {
 	return map[interface{}]interface{}{
 		"di":   deviceID,
 		"dmn":  []interface{}{},
@@ -126,63 +135,77 @@ func getDeviceRepresentation(deviceID, deviceName string) map[interface{}]interf
 	}
 }
 
-func getDevicesBaseRepresentation(deviceID, deviceName string) interface{} {
-	return cleanUpRepresentation(map[interface{}]interface{}{
-		"device": getDeviceRepresentation(deviceID, deviceName),
+func getDevicesBaseRepresentation(deviceID, deviceName, switchID string) interface{} {
+	return cleanUpResourceData(map[interface{}]interface{}{
+		"device": getDeviceData(deviceID, deviceName),
 		"links": []interface{}{
-			getResourceBaseRepresentation(deviceID, configuration.ResourceURI, []interface{}{configuration.ResourceType}, nil),
-			getResourceBaseRepresentation(deviceID, test.TestResourceLightInstanceHref("1"), []interface{}{types.CORE_LIGHT}, nil),
-			getResourceBaseRepresentation(deviceID, device.ResourceURI, []interface{}{types.DEVICE_CLOUD, device.ResourceType},
+			getResourceBaseData(deviceID, configuration.ResourceURI, []interface{}{configuration.ResourceType}, nil),
+			getResourceBaseData(deviceID, test.TestResourceLightInstanceHref("1"), []interface{}{types.CORE_LIGHT}, nil),
+			getResourceBaseData(deviceID, device.ResourceURI, []interface{}{types.DEVICE_CLOUD, device.ResourceType},
 				map[interface{}]interface{}{
 					"if": []interface{}{interfaces.OC_IF_R, interfaces.OC_IF_BASELINE},
 				}),
-			getResourceBaseRepresentation(deviceID, test.TestResourceSwitchesHref, []interface{}{collection.ResourceType},
+			getResourceBaseData(deviceID, test.TestResourceSwitchesHref, []interface{}{collection.ResourceType},
 				map[interface{}]interface{}{
 					"if": []interface{}{interfaces.OC_IF_LL, interfaces.OC_IF_CREATE, interfaces.OC_IF_B, interfaces.OC_IF_BASELINE},
 				}),
-			getResourceBaseRepresentation(deviceID, platform.ResourceURI, []interface{}{platform.ResourceType},
+			getResourceBaseData(deviceID, platform.ResourceURI, []interface{}{platform.ResourceType},
 				map[interface{}]interface{}{
 					"if": []interface{}{interfaces.OC_IF_R, interfaces.OC_IF_BASELINE},
+				}),
+			getResourceBaseData(deviceID, test.TestResourceSwitchesInstanceHref(switchID), []interface{}{types.BINARY_SWITCH},
+				map[interface{}]interface{}{
+					"if": []interface{}{interfaces.OC_IF_A, interfaces.OC_IF_BASELINE},
 				}),
 		},
 		"status": "online",
 	})
 }
 
-func getDevicesAllRepresentation(deviceID, deviceName string) interface{} {
-	return cleanUpRepresentation(map[interface{}]interface{}{
-		"device": getDeviceRepresentation(deviceID, deviceName),
+func getDevicesAllRepresentation(deviceID, deviceName, switchID string) interface{} {
+	return cleanUpResourceData(map[interface{}]interface{}{
+		"device": getDeviceData(deviceID, deviceName),
 		"links": []interface{}{
-			getResourceAllRepresentation(deviceID, configuration.ResourceURI, []interface{}{configuration.ResourceType},
+			getResourceAllData(deviceID, configuration.ResourceURI,
 				map[interface{}]interface{}{
 					"n": deviceName,
 				}),
-			getResourceAllRepresentation(deviceID, device.ResourceURI, []interface{}{types.DEVICE_CLOUD, device.ResourceType},
+			getResourceAllData(deviceID, device.ResourceURI,
 				map[interface{}]interface{}{
 					"di":  deviceID,
-					"if":  []interface{}{interfaces.OC_IF_R, interfaces.OC_IF_BASELINE},
 					"dmv": "ocf.res.1.3.0",
 					"icv": "ocf.2.0.5",
 					"n":   deviceName,
 				}),
-			getResourceAllRepresentation(deviceID, platform.ResourceURI, []interface{}{platform.ResourceType},
+			getResourceAllData(deviceID, platform.ResourceURI,
 				map[interface{}]interface{}{
-					"if":   []interface{}{interfaces.OC_IF_R, interfaces.OC_IF_BASELINE},
 					"mnmn": "ocfcloud.com",
 				}),
-			getResourceAllRepresentation(deviceID, test.TestResourceLightInstanceHref("1"), []interface{}{types.CORE_LIGHT},
+			getResourceAllData(deviceID, test.TestResourceLightInstanceHref("1"),
 				map[interface{}]interface{}{
 					"name":  "Light",
 					"power": uint64(0),
 					"state": false,
 				}),
-			getResourceAllRepresentation(deviceID, test.TestResourceSwitchesHref, []interface{}{collection.ResourceType},
+			getResourceAllData(deviceID, test.TestResourceSwitchesHref,
+				[]interface{}{
+					map[interface{}]interface{}{
+						"href": test.TestResourceSwitchesInstanceHref(switchID),
+						"if":   []interface{}{interfaces.OC_IF_A, interfaces.OC_IF_BASELINE},
+						"p": map[interface{}]interface{}{
+							"bm": uint64(schema.Discoverable | schema.Observable),
+						},
+						"rel": []interface{}{
+							"hosts",
+						},
+						"rt": []interface{}{
+							types.BINARY_SWITCH,
+						},
+					},
+				}),
+			getResourceAllData(deviceID, test.TestResourceSwitchesInstanceHref(switchID),
 				map[interface{}]interface{}{
-					"if":                        []interface{}{interfaces.OC_IF_LL, interfaces.OC_IF_CREATE, interfaces.OC_IF_B, interfaces.OC_IF_BASELINE},
-					"links":                     []interface{}{},
-					"rts":                       []interface{}{"oic.r.switch.binary"},
-					"rts-m":                     []interface{}{"oic.r.switch.binary"},
-					"x.org.openconnectivity.bl": uint64(94),
+					"value": false,
 				}),
 		},
 		"status": "online",
@@ -212,6 +235,8 @@ func TestRequestHandlerRetrieveDevice(t *testing.T) {
 	}()
 	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
+	const switchID = "1"
+	test.AddDeviceSwitchResources(ctx, t, deviceID, c, switchID)
 
 	const textPlain = "text/plain"
 	type args struct {
@@ -289,7 +314,7 @@ func TestRequestHandlerRetrieveDevice(t *testing.T) {
 			},
 			wantCode:        http.StatusOK,
 			wantContentType: message.AppJSON.String(),
-			want:            getDevicesBaseRepresentation(deviceID, test.TestDeviceName),
+			want:            getDevicesBaseRepresentation(deviceID, test.TestDeviceName, switchID),
 		},
 		{
 			name: "CBOR: " + uri.Devices + "/" + deviceID,
@@ -300,7 +325,7 @@ func TestRequestHandlerRetrieveDevice(t *testing.T) {
 			},
 			wantCode:        http.StatusOK,
 			wantContentType: message.AppOcfCbor.String(),
-			want:            getDevicesBaseRepresentation(deviceID, test.TestDeviceName),
+			want:            getDevicesBaseRepresentation(deviceID, test.TestDeviceName, switchID),
 		},
 		{
 			name: "JSON: " + uri.Devices + "//" + deviceID + "/",
@@ -311,7 +336,7 @@ func TestRequestHandlerRetrieveDevice(t *testing.T) {
 			},
 			wantCode:        http.StatusOK,
 			wantContentType: message.AppJSON.String(),
-			want:            getDevicesBaseRepresentation(deviceID, test.TestDeviceName),
+			want:            getDevicesBaseRepresentation(deviceID, test.TestDeviceName, switchID),
 		},
 		{
 			name: "JSON: " + uri.Devices + "/" + deviceID + "?" + c2cService.ContentQuery + "=" + c2cService.ContentQueryAllValue,
@@ -323,7 +348,7 @@ func TestRequestHandlerRetrieveDevice(t *testing.T) {
 			},
 			wantCode:        http.StatusOK,
 			wantContentType: message.AppJSON.String(),
-			want:            getDevicesAllRepresentation(deviceID, test.TestDeviceName),
+			want:            getDevicesAllRepresentation(deviceID, test.TestDeviceName, switchID),
 		},
 	}
 
@@ -345,7 +370,7 @@ func TestRequestHandlerRetrieveDevice(t *testing.T) {
 				require.Contains(t, got, tt.want)
 				return
 			}
-			require.Equal(t, tt.want, cleanUpRepresentation(got))
+			require.Equal(t, tt.want, cleanUpResourceData(got))
 		})
 	}
 }
