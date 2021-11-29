@@ -44,7 +44,7 @@ func countOpenFiles() int64 {
 	return int64(len(lines) - 1)
 }
 
-func SetUpClouds(ctx context.Context, t *testing.T, deviceID string, supportedEvents store.Events) func() {
+func SetUpClouds(ctx context.Context, t *testing.T, deviceID string, supportedEvents store.Events, switchIDs ...string) func() {
 	cloud1 := service.SetUp(ctx, t)
 	cloud2 := SetUpCloudWithConnector(t)
 	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultServiceToken(t))
@@ -55,6 +55,9 @@ func SetUpClouds(ctx context.Context, t *testing.T, deviceID string, supportedEv
 	require.NoError(t, err)
 	c1 := pb.NewGrpcGatewayClient(cloud1Conn)
 	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c1, deviceID, testCfg.GW_HOST, test.GetAllBackendResourceLinks())
+	if len(switchIDs) > 0 {
+		test.AddDeviceSwitchResources(ctx, t, deviceID, c1, switchIDs...)
+	}
 
 	rootCAs := make([]string, 0, 1)
 	certs := test.GetRootCertificateAuthorities(t)

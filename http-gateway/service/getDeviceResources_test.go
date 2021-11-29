@@ -6,7 +6,9 @@ import (
 	"io"
 	"net/http"
 	"testing"
+	"time"
 
+	"github.com/plgd-dev/device/schema"
 	"github.com/plgd-dev/device/schema/collection"
 	"github.com/plgd-dev/device/schema/configuration"
 	"github.com/plgd-dev/device/schema/device"
@@ -29,32 +31,27 @@ import (
 )
 
 func makePlatformResourceChanged(t *testing.T, deviceID string) *events.ResourceChanged {
-	return pbTest.MakeResourceChanged(t, deviceID, platform.ResourceURI,
+	return pbTest.MakeResourceChanged(t, deviceID, platform.ResourceURI, "",
 		map[string]interface{}{
 			"mnmn": "ocfcloud.com",
-			//"pi":   "d9b71824-78f7-4f26-540b-d86eab696937",
-			"if": []interface{}{interfaces.OC_IF_R, interfaces.OC_IF_BASELINE},
-			"rt": []interface{}{platform.ResourceType},
 		},
 	)
 }
 
 func makeCloudDeviceResourceChanged(t *testing.T, deviceID string) *events.ResourceChanged {
-	return pbTest.MakeResourceChanged(t, deviceID, device.ResourceURI,
+	return pbTest.MakeResourceChanged(t, deviceID, device.ResourceURI, "",
 		map[string]interface{}{
 			"n":   test.TestDeviceName,
 			"di":  deviceID,
 			"dmv": "ocf.res.1.3.0",
 			"icv": "ocf.2.0.5",
-			// "piid": "1dcb14bd-5167-4122-6c2f-71741543fdc3",
-			"if": []interface{}{interfaces.OC_IF_R, interfaces.OC_IF_BASELINE},
-			"rt": []interface{}{types.DEVICE_CLOUD, device.ResourceType},
 		},
 	)
 }
 
 func TestRequestHandlerGetDeviceResources(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
+	const switchID = "1"
 	type args struct {
 		deviceID   string
 		typeFilter []string
@@ -75,36 +72,42 @@ func TestRequestHandlerGetDeviceResources(t *testing.T) {
 			want: []*pb.Resource{
 				{
 					Types: []string{types.CORE_LIGHT},
-					Data: pbTest.MakeResourceChanged(t, deviceID, test.TestResourceLightInstanceHref("1"),
+					Data: pbTest.MakeResourceChanged(t, deviceID, test.TestResourceLightInstanceHref("1"), "",
 						map[string]interface{}{
 							"state": false,
 							"power": uint64(0),
 							"name":  "Light",
-							"if":    []interface{}{interfaces.OC_IF_RW, interfaces.OC_IF_BASELINE},
-							"rt":    []interface{}{types.CORE_LIGHT},
 						},
 					),
 				},
 				{
 					Types: []string{collection.ResourceType},
-					Data: pbTest.MakeResourceChanged(t, deviceID, test.TestResourceSwitchesHref,
-						map[string]interface{}{
-							"links":                     []interface{}{},
-							"if":                        []interface{}{interfaces.OC_IF_LL, interfaces.OC_IF_CREATE, interfaces.OC_IF_B, interfaces.OC_IF_BASELINE},
-							"rt":                        []interface{}{collection.ResourceType},
-							"rts":                       []interface{}{types.BINARY_SWITCH},
-							"rts-m":                     []interface{}{types.BINARY_SWITCH},
-							"x.org.openconnectivity.bl": uint64(94),
+					Data: pbTest.MakeResourceChanged(t, deviceID, test.TestResourceSwitchesHref, "",
+						[]interface{}{
+							map[string]interface{}{
+								"href": test.TestResourceSwitchesInstanceHref(switchID),
+								"if":   []string{interfaces.OC_IF_A, interfaces.OC_IF_BASELINE},
+								"p": map[string]interface{}{
+									"bm": uint64(schema.Discoverable | schema.Observable),
+								},
+								"rel": []interface{}{"hosts"},
+								"rt":  []interface{}{types.BINARY_SWITCH},
+							},
 						},
 					),
 				},
 				{
-					Types: []string{configuration.ResourceType},
-					Data: pbTest.MakeResourceChanged(t, deviceID, configuration.ResourceURI,
+					Types: []string{types.BINARY_SWITCH},
+					Data: pbTest.MakeResourceChanged(t, deviceID, test.TestResourceSwitchesInstanceHref(switchID), "",
 						map[string]interface{}{
-							"n":  test.TestDeviceName,
-							"if": []interface{}{interfaces.OC_IF_RW, interfaces.OC_IF_BASELINE},
-							"rt": []interface{}{configuration.ResourceType},
+							"value": false,
+						}),
+				},
+				{
+					Types: []string{configuration.ResourceType},
+					Data: pbTest.MakeResourceChanged(t, deviceID, configuration.ResourceURI, "",
+						map[string]interface{}{
+							"n": test.TestDeviceName,
 						},
 					),
 				},
@@ -169,6 +172,8 @@ func TestRequestHandlerGetDeviceResources(t *testing.T) {
 
 	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
+	test.AddDeviceSwitchResources(ctx, t, deviceID, c, switchID)
+	time.Sleep(time.Millisecond * 200)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

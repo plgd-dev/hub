@@ -14,7 +14,6 @@ import (
 	"github.com/plgd-dev/hub/grpc-gateway/pb"
 	httpgwTest "github.com/plgd-dev/hub/http-gateway/test"
 	"github.com/plgd-dev/hub/http-gateway/uri"
-	"github.com/plgd-dev/hub/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
 	"github.com/plgd-dev/hub/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/test"
@@ -91,7 +90,7 @@ func TestRequestHandlerGetDevice(t *testing.T) {
 	}()
 	c := pb.NewGrpcGatewayClient(conn)
 
-	log.Setup(log.Config{Debug: true})
+	// log.Setup(log.Config{Debug: true})
 	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 

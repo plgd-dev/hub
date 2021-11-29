@@ -104,7 +104,7 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 					},
 				},
 			},
-			want: pbTest.MakeResourceUpdated(deviceID, test.TestResourceLightInstanceHref("1")),
+			want: pbTest.MakeResourceUpdated(deviceID, test.TestResourceLightInstanceHref("1"), ""),
 		},
 		{
 			name: "valid with interface",
@@ -120,7 +120,7 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 					},
 				},
 			},
-			want: pbTest.MakeResourceUpdated(deviceID, test.TestResourceLightInstanceHref("1")),
+			want: pbTest.MakeResourceUpdated(deviceID, test.TestResourceLightInstanceHref("1"), ""),
 		},
 		{
 			name: "revert update",
@@ -136,7 +136,7 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 					},
 				},
 			},
-			want: pbTest.MakeResourceUpdated(deviceID, test.TestResourceLightInstanceHref("1")),
+			want: pbTest.MakeResourceUpdated(deviceID, test.TestResourceLightInstanceHref("1"), ""),
 		},
 		{
 			name: "update /switches/1",

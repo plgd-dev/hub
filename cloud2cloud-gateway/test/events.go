@@ -66,8 +66,13 @@ func DecodeEvent(t *testing.T, etype events.EventType, data []byte) interface{} 
 		assert.NoError(t, err)
 		return links
 	case events.EventType_ResourceChanged:
+		var colContent []map[interface{}]interface{}
+		err := json.Decode(data, &colContent)
+		if err == nil {
+			return colContent
+		}
 		var content map[interface{}]interface{}
-		err := json.Decode(data, &content)
+		err = json.Decode(data, &content)
 		assert.NoError(t, err)
 		return content
 	case events.EventType_DevicesRegistered:

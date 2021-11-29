@@ -6,8 +6,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/plgd-dev/device/schema/interfaces"
-	"github.com/plgd-dev/device/test/resource/types"
 	c2cEvents "github.com/plgd-dev/hub/cloud2cloud-connector/events"
 	c2cTest "github.com/plgd-dev/hub/cloud2cloud-gateway/test"
 	"github.com/plgd-dev/hub/grpc-gateway/pb"
@@ -29,6 +27,7 @@ func TestRequestHandlerSubscribeToResource(t *testing.T) {
 
 	tearDown := service.SetUp(ctx, t)
 	defer tearDown()
+	// log.Setup(log.Config{Debug: true})
 
 	token := oauthTest.GetDefaultServiceToken(t)
 	ctx = kitNetGrpc.CtxWithToken(ctx, token)
@@ -57,10 +56,8 @@ func TestRequestHandlerSubscribeToResource(t *testing.T) {
 	require.Len(t, events, 1)
 	assert.Equal(t, c2cEvents.EventType_ResourceChanged, events[0].GetHeader().EventType)
 	wantEventContent := map[interface{}]interface{}{
-		"if":    []interface{}{interfaces.OC_IF_RW, interfaces.OC_IF_BASELINE},
 		"name":  "Light",
 		"power": uint64(0),
-		"rt":    []interface{}{types.CORE_LIGHT},
 		"state": false,
 	}
 	assert.Equal(t, wantEventContent, events[0].GetData())

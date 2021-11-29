@@ -102,45 +102,45 @@ func CleanUpEvent(t *testing.T, ev *pb.Event) {
 		typeName(&pb.Event_DeviceRegistered_{}):   noop,
 		typeName(&pb.Event_DeviceUnregistered_{}): noop,
 		typeName(&pb.Event_ResourcePublished{}): func(ev *pb.Event) {
-			CleanUpResourceLinksPublished(ev.GetResourcePublished())
+			CleanUpResourceLinksPublished(ev.GetResourcePublished(), false)
 		},
 		typeName(&pb.Event_ResourceUnpublished{}): func(ev *pb.Event) {
-			CleanUpResourceLinksUnpublished(ev.GetResourceUnpublished())
+			CleanUpResourceLinksUnpublished(ev.GetResourceUnpublished(), false)
 		},
 		typeName(&pb.Event_ResourceChanged{}): func(ev *pb.Event) {
-			CleanUpResourceChanged(ev.GetResourceChanged())
+			CleanUpResourceChanged(ev.GetResourceChanged(), false)
 		},
 		typeName(&pb.Event_OperationProcessed_{}):   noop,
 		typeName(&pb.Event_SubscriptionCanceled_{}): noop,
 		typeName(&pb.Event_ResourceUpdatePending{}): func(ev *pb.Event) {
-			CleanUpResourceUpdatePending(ev.GetResourceUpdatePending())
+			CleanUpResourceUpdatePending(ev.GetResourceUpdatePending(), false)
 		},
 		typeName(&pb.Event_ResourceUpdated{}): func(ev *pb.Event) {
-			CleanUpResourceUpdated(ev.GetResourceUpdated())
+			CleanUpResourceUpdated(ev.GetResourceUpdated(), false)
 		},
 		typeName(&pb.Event_ResourceRetrievePending{}): func(ev *pb.Event) {
-			CleanUpResourceRetrievePending(ev.GetResourceRetrievePending())
+			CleanUpResourceRetrievePending(ev.GetResourceRetrievePending(), false)
 		},
 		typeName(&pb.Event_ResourceRetrieved{}): func(ev *pb.Event) {
-			CleanUpResourceRetrieved(ev.GetResourceRetrieved())
+			CleanUpResourceRetrieved(ev.GetResourceRetrieved(), false)
 		},
 		typeName(&pb.Event_ResourceDeletePending{}): func(ev *pb.Event) {
-			CleanUpResourceDeletePending(ev.GetResourceDeletePending())
+			CleanUpResourceDeletePending(ev.GetResourceDeletePending(), false)
 		},
 		typeName(&pb.Event_ResourceDeleted{}): func(ev *pb.Event) {
-			CleanResourceDeleted(ev.GetResourceDeleted())
+			CleanResourceDeleted(ev.GetResourceDeleted(), false)
 		},
 		typeName(&pb.Event_ResourceCreatePending{}): func(ev *pb.Event) {
-			CleanUpResourceCreatePending(ev.GetResourceCreatePending())
+			CleanUpResourceCreatePending(ev.GetResourceCreatePending(), false)
 		},
 		typeName(&pb.Event_ResourceCreated{}): func(ev *pb.Event) {
-			CleanUpResourceCreated(ev.GetResourceCreated())
+			CleanUpResourceCreated(ev.GetResourceCreated(), false)
 		},
 		typeName(&pb.Event_DeviceMetadataUpdatePending{}): func(ev *pb.Event) {
-			CleanUpDeviceMetadataUpdatePending(ev.GetDeviceMetadataUpdatePending())
+			CleanUpDeviceMetadataUpdatePending(ev.GetDeviceMetadataUpdatePending(), false)
 		},
 		typeName(&pb.Event_DeviceMetadataUpdated{}): func(ev *pb.Event) {
-			CleanUpDeviceMetadataUpdated(ev.GetDeviceMetadataUpdated())
+			CleanUpDeviceMetadataUpdated(ev.GetDeviceMetadataUpdated(), false)
 		},
 	}
 
@@ -150,7 +150,7 @@ func CleanUpEvent(t *testing.T, ev *pb.Event) {
 	handler(ev)
 }
 
-func CmpEvent(t *testing.T, expected, got *pb.Event) {
+func CmpEvent(t *testing.T, expected, got *pb.Event, cmpInterface string) {
 	require.Equal(t, GetEventType(expected), GetEventType(got))
 
 	type cmpFn = func(t *testing.T, e, g *pb.Event)
@@ -161,7 +161,7 @@ func CmpEvent(t *testing.T, expected, got *pb.Event) {
 
 	cmpFnMap := map[string]cmpFn{
 		typeName(&pb.Event_ResourceChanged{}): func(t *testing.T, e, g *pb.Event) {
-			CmpResourceChanged(t, e.GetResourceChanged(), g.GetResourceChanged())
+			CmpResourceChanged(t, e.GetResourceChanged(), g.GetResourceChanged(), cmpInterface)
 		},
 		typeName(&pb.Event_ResourceUpdatePending{}): func(t *testing.T, e, g *pb.Event) {
 			CmpResourceUpdatePending(t, e.GetResourceUpdatePending(), g.GetResourceUpdatePending())
@@ -171,6 +171,9 @@ func CmpEvent(t *testing.T, expected, got *pb.Event) {
 		},
 		typeName(&pb.Event_ResourceRetrieved{}): func(t *testing.T, e, g *pb.Event) {
 			CmpResourceRetrieved(t, e.GetResourceRetrieved(), g.GetResourceRetrieved())
+		},
+		typeName(&pb.Event_ResourceDeletePending{}): func(t *testing.T, e, g *pb.Event) {
+			CmpResourceDeletePending(t, e.GetResourceDeletePending(), g.GetResourceDeletePending())
 		},
 		typeName(&pb.Event_ResourceDeleted{}): func(t *testing.T, e, g *pb.Event) {
 			CmpResourceDeleted(t, e.GetResourceDeleted(), g.GetResourceDeleted())
