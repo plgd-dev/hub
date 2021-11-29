@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	gstrings "strings"
+
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/plgd-dev/hub/pkg/strings"
 	pkgTime "github.com/plgd-dev/hub/pkg/time"
@@ -69,7 +71,11 @@ func (u Claims) ValidateOwnerClaim(ownerClaim string, userID string) error {
 }
 
 func (c Claims) Scope() []string {
-	return strings.ToSlice(c[ClaimScope])
+	s := strings.ToSlice(c[ClaimScope])
+	if len(s) == 1 {
+		return gstrings.Split(s[0], " ")
+	}
+	return s
 }
 
 func (c Claims) Owner(ownerClaim string) string {

@@ -23,5 +23,5 @@ const (
 	JWKs                 = "/.well-known/jwks.json"
 	OpenIDConfiguration  = "/.well-known/openid-configuration"
 	LogOut               = "/v2/logout"
-	UnauthorizedResponse = "/authorize/unauthorized"
+	UnauthorizedResponse = Authorize + "/unauthorized"
 )

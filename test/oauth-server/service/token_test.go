@@ -62,7 +62,7 @@ func TestRequestHandler_getDeviceToken(t *testing.T) {
 	require.NotEmpty(t, accessToken[service.TokenDeviceID])
 }
 
-func TestRequestHandler_getTokenWithDefaultScopes(t *testing.T) {
+func TestRequestHandlerGetTokenWithDefaultScopes(t *testing.T) {
 	webTearDown := test.SetUp(t)
 	defer webTearDown()
 
@@ -79,7 +79,7 @@ func TestRequestHandler_getTokenWithDefaultScopes(t *testing.T) {
 	require.Equal(t, "openid profile email", accessToken[service.TokenScopeKey])
 }
 
-func TestRequestHandler_getTokenWithCuscomScopes(t *testing.T) {
+func TestRequestHandlerGetTokenWithCuscomScopes(t *testing.T) {
 	webTearDown := test.SetUp(t)
 	defer webTearDown()
 

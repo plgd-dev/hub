@@ -48,6 +48,30 @@ func TestAudienceOfTwo(t *testing.T) {
 	require.Equal(t, []string{"test1", "test2"}, c.Audience())
 }
 
+func TestScopeSpaceSeparatedString(t *testing.T) {
+	c := testClaims()
+	c[ClaimScope] = "test1 test2"
+	require.Equal(t, []string{"test1", "test2"}, c.Scope())
+}
+
+func TestScopeSpaceSeparatedArrayItem(t *testing.T) {
+	c := testClaims()
+	c[ClaimScope] = []string{"test1 test2"}
+	require.Equal(t, []string{"test1", "test2"}, c.Scope())
+}
+
+func TestScopeOneArrayItem(t *testing.T) {
+	c := testClaims()
+	c[ClaimScope] = []string{"test1"}
+	require.Equal(t, []string{"test1"}, c.Scope())
+}
+
+func TestScopeTwoArrayItems(t *testing.T) {
+	c := testClaims()
+	c[ClaimScope] = []string{"test1", "test2"}
+	require.Equal(t, []string{"test1", "test2"}, c.Scope())
+}
+
 var now = time.Now()
 
 func testClaims() Claims {
