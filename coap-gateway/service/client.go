@@ -290,7 +290,7 @@ func (client *Client) notifyContentChanged(deviceID, href string, batch bool, no
 
 	var requests []*commands.NotifyResourceChangedRequest
 	if batch && href == resources.ResourceURI {
-		requests, err = coapconv.NewNotifyResourceChangedRequests(deviceID, client.remoteAddrString(), notification)
+		requests, err = coapconv.NewNotifyResourceChangedRequestsFromBatchResourceDiscovery(deviceID, client.remoteAddrString(), notification)
 		if err != nil {
 			return notifyError(deviceID, href, err)
 		}
