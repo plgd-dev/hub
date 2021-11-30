@@ -17,6 +17,7 @@ import (
 	"github.com/plgd-dev/device/schema/device"
 	"github.com/plgd-dev/device/schema/interfaces"
 	"github.com/plgd-dev/device/schema/platform"
+	"github.com/plgd-dev/device/schema/resources"
 	"github.com/plgd-dev/device/test/resource/types"
 	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/hub/grpc-gateway/client"
@@ -475,6 +476,20 @@ func FindDeviceByName(ctx context.Context, name string) (deviceID string, _ erro
 		return "", fmt.Errorf("could not find the device named %s: not found", name)
 	}
 	return id, nil
+}
+
+func ResourceIsObservable(ctx context.Context, t *testing.T, deviceID, href, resourceType string) bool {
+	devClient, err := NewSDKClient()
+	require.NoError(t, err)
+	defer func() {
+		_ = devClient.Close(ctx)
+	}()
+
+	var resp schema.ResourceLinks
+	err = devClient.GetResource(ctx, deviceID, resources.ResourceURI, &resp, deviceClient.WithResourceTypes(resources.ResourceType))
+	require.NoError(t, err)
+
+	return len(resp) == 1 && resp[0].Policy.BitMask.Has(schema.Observable)
 }
 
 func GetAllBackendResourceLinks() []schema.ResourceLink {
