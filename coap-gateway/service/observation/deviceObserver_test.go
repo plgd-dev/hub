@@ -149,6 +149,13 @@ func (h *observerHandler) OnGetResourceContent(ctx context.Context, deviceID, re
 
 func TestDeviceObserverRegisterForPublishedResources(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
+	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
+	defer cancel()
+	discoveryObservable := test.ResourceIsObservable(ctx, t, deviceID, resources.ResourceURI, resources.ResourceType)
+	if discoveryObservable {
+		t.Logf("skipping test for device with %v observable", resources.ResourceURI)
+		return
+	}
 	validateData := func(ctx context.Context, oh *observerHandler) {
 		obs := oh.getDeviceObserver(ctx)
 		require.Equal(t, observation.ObservationType_PerResource, obs.GetObservationType())
@@ -166,11 +173,18 @@ func TestDeviceObserverRegisterForPublishedResources(t *testing.T) {
 	for _, resID := range test.ResourceLinksToResourceIds(deviceID, test.TestDevsimResources) {
 		expectedObserved.Add(resID.ToString())
 	}
-	runTestDeviceObserverRegister(t, deviceID, expectedObserved, nil, validateData)
+	runTestDeviceObserverRegister(ctx, t, deviceID, expectedObserved, nil, validateData)
 }
 
 func TestDeviceObserverRegisterForDiscoveryResource(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceNameWithOicResObservable)
+	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
+	defer cancel()
+	discoveryObservable := test.ResourceIsObservable(ctx, t, deviceID, resources.ResourceURI, resources.ResourceURI)
+	if !discoveryObservable {
+		t.Logf("skipping test for device with %v non-observable", resources.ResourceURI)
+		return
+	}
 	validateData := func(ctx context.Context, oh *observerHandler) {
 		obs := oh.getDeviceObserver(ctx)
 		require.Equal(t, observation.ObservationType_PerDevice, obs.GetObservationType())
@@ -185,15 +199,12 @@ func TestDeviceObserverRegisterForDiscoveryResource(t *testing.T) {
 	}
 
 	expectedObserved := strings.MakeSet(commands.NewResourceID(deviceID, resources.ResourceURI).ToString())
-	runTestDeviceObserverRegister(t, deviceID, expectedObserved, nil, validateData)
+	runTestDeviceObserverRegister(ctx, t, deviceID, expectedObserved, nil, validateData)
 }
 
 type verifyHandlerFn = func(context.Context, *observerHandler)
 
-func runTestDeviceObserverRegister(t *testing.T, deviceID string, expectedObserved, expectedRetrieved strings.Set, verifyHandler verifyHandlerFn) {
-	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
-	defer cancel()
-
+func runTestDeviceObserverRegister(ctx context.Context, t *testing.T, deviceID string, expectedObserved, expectedRetrieved strings.Set, verifyHandler verifyHandlerFn) {
 	const services = service.SetUpServicesOAuth | service.SetUpServicesId | service.SetUpServicesResourceDirectory |
 		service.SetUpServicesGrpcGateway | service.SetUpServicesResourceAggregate
 	tearDown := service.SetUpServices(ctx, t, services)
