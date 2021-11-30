@@ -6,10 +6,10 @@ import (
 	"sync"
 
 	"github.com/plgd-dev/device/schema/interfaces"
+	"github.com/plgd-dev/device/schema/resources"
 	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/go-coap/v2/tcp"
 	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
-	"github.com/plgd-dev/hub/coap-gateway/resource"
 	"github.com/plgd-dev/hub/pkg/log"
 	"github.com/plgd-dev/hub/resource-aggregate/commands"
 )
@@ -43,7 +43,7 @@ func MakeResourcesObserverCallbacks(OnObserveResource OnObserveResource, OnGetRe
 type resourcesObserver struct {
 	lock      sync.Mutex
 	deviceID  string
-	resources map[int64]*observedResource // [instanceID]
+	resources observedResources
 	coapConn  *tcp.ClientConn
 	callbacks ResourcesObserverCallbacks
 }
@@ -70,7 +70,7 @@ func newResourcesObserver(deviceID string, coapConn *tcp.ClientConn, callbacks R
 	}
 	return &resourcesObserver{
 		deviceID:  deviceID,
-		resources: make(map[int64]*observedResource),
+		resources: make(observedResources, 0, 1),
 		coapConn:  coapConn,
 		callbacks: callbacks,
 	}
@@ -93,19 +93,18 @@ func (o *resourcesObserver) addResourceLocked(ctx context.Context, res *commands
 	if o.deviceID == "" {
 		return addObservationError(emptyDeviceIDError())
 	}
-	instanceID := resource.GetInstanceID(resID.GetHref())
 	if o.deviceID != resID.GetDeviceId() {
 		return addObservationError(fmt.Errorf("invalid deviceID(%v)", resID.GetDeviceId()))
 	}
 	href := resID.GetHref()
-	if _, ok := o.resources[instanceID]; ok {
+	if o.resources.containsResourceWithHref(href) {
 		return nil
 	}
 	obsRes := NewObservedResource(href, obsInterface)
 	if err := o.handleResourceLocked(ctx, obsRes, res.IsObservable()); err != nil {
 		return addObservationError(err)
 	}
-	o.resources[instanceID] = obsRes
+	o.resources = o.resources.insert(obsRes)
 	return nil
 }
 
@@ -147,20 +146,17 @@ func (o *resourcesObserver) observeResourceLocked(ctx context.Context, obsRes *o
 		})
 	}
 
-	initialized := false
+	batchObservation := obsRes.resInterface == interfaces.OC_IF_B
+	returnIfNonObservable := batchObservation && obsRes.Href() == resources.ResourceURI
 	obs, err := o.coapConn.Observe(ctx, obsRes.Href(), func(msg *pool.Message) {
-		if !initialized {
-			initialized = true
-			observable := true
+		if returnIfNonObservable {
 			if _, errObs := msg.Observe(); errObs != nil {
 				log.Debugf("href: %v not observable err: %v", obsRes.Href(), errObs)
-				observable = false
-			}
-			if !observable {
 				return
 			}
 		}
-		if err2 := o.callbacks.OnObserveResource(ctx, o.deviceID, obsRes.Href(), obsRes.resInterface == interfaces.OC_IF_B, msg); err2 != nil {
+
+		if err2 := o.callbacks.OnObserveResource(ctx, o.deviceID, obsRes.Href(), batchObservation, msg); err2 != nil {
 			log.Error(cannotObserveResourceError(o.deviceID, obsRes.Href(), err2))
 			return
 		}
@@ -249,10 +245,10 @@ func (o *resourcesObserver) getResources(instanceIDs []int64) []*commands.Resour
 	}
 
 	for instanceID := range uniqueInstanceIDs {
-		if resource, ok := o.resources[instanceID]; ok {
+		if i := o.resources.searchByInstanceID(instanceID); i < len(o.resources) && o.resources[i].InstanceID() == instanceID {
 			matches = append(matches, &commands.ResourceId{
 				DeviceId: o.deviceID,
-				Href:     resource.Href(),
+				Href:     o.resources[i].Href(),
 			})
 		}
 	}
@@ -273,44 +269,20 @@ func (o *resourcesObserver) popTrackedObservations(ctx context.Context, hrefs []
 	observations := make([]*tcp.Observation, 0, 32)
 	o.lock.Lock()
 	defer o.lock.Unlock()
-	for _, href := range hrefs {
-		var instanceID int64
-		found := false
-		for insID, r := range o.resources {
-			if r.Href() == href {
-				found = true
-				instanceID = insID
-				break
-			}
-		}
-		if !found {
-			log.Errorf("no observed resource with given href(%v) found", href)
+	newResources, delResources := o.resources.removeByHref(hrefs...)
+	if len(delResources) == 0 {
+		return nil
+	}
+	for _, res := range delResources {
+		obs := res.PopObservation()
+		if obs == nil {
 			continue
 		}
-		obs := o.popObservationLocked(ctx, instanceID)
-		if obs != nil {
-			observations = append(observations, obs)
-			log.Debugf("canceling observation on resource(/%v%v)", o.deviceID, href)
-		}
-		o.removeResourceLocked(instanceID)
+		log.Debugf("canceling observation on resource(/%v%v)", o.deviceID, res.Href())
+		observations = append(observations, obs)
 	}
+	o.resources = newResources
 	return observations
-}
-
-func (o *resourcesObserver) popObservationLocked(ctx context.Context, instanceID int64) *tcp.Observation {
-	log.Debugf("remove published resource ocf://%v/%v", o.deviceID, instanceID)
-	var r *observedResource
-	if res, ok := o.resources[instanceID]; ok {
-		r = res
-	}
-	if r != nil {
-		return r.PopObservation()
-	}
-	return nil
-}
-
-func (o *resourcesObserver) removeResourceLocked(instanceID int64) {
-	delete(o.resources, instanceID)
 }
 
 // Remove all observations.
@@ -331,8 +303,8 @@ func (o *resourcesObserver) cleanObservedResourcesLocked(ctx context.Context) {
 	}
 }
 
-func (o *resourcesObserver) popObservedResourcesLocked() map[int64]*observedResource {
+func (o *resourcesObserver) popObservedResourcesLocked() observedResources {
 	observations := o.resources
-	o.resources = make(map[int64]*observedResource)
+	o.resources = make(observedResources, 0, 1)
 	return observations
 }

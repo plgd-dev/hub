@@ -251,7 +251,7 @@ func NewNotifyResourceChangedRequest(resourceID *commands.ResourceId, connection
 	}
 }
 
-func NewNotifyResourceChangedRequests(deviceID, connectionID string, req *pool.Message) ([]*commands.NotifyResourceChangedRequest, error) {
+func NewNotifyResourceChangedRequestsFromBatchResourceDiscovery(deviceID, connectionID string, req *pool.Message) ([]*commands.NotifyResourceChangedRequest, error) {
 	data, contentFormat := GetContentData(req.Options(), req.Body())
 	metadata := NewCommandMetadata(req.Sequence(), connectionID)
 
@@ -270,7 +270,6 @@ func NewNotifyResourceChangedRequests(deviceID, connectionID string, req *pool.M
 
 	// inaccessible resources have empty content and should be skipped
 	isEmpty := func(resource resources.BatchRepresentation) bool {
-		log.Debugf("resource: %+v", resource)
 		if len(resource.Content) == 2 {
 			var v map[interface{}]interface{}
 			if err := cbor.Decode(resource.Content, &v); err == nil && len(v) == 0 {
@@ -280,7 +279,7 @@ func NewNotifyResourceChangedRequests(deviceID, connectionID string, req *pool.M
 		return false
 	}
 
-	var requests []*commands.NotifyResourceChangedRequest
+	requests := make([]*commands.NotifyResourceChangedRequest, 0, len(rs))
 	for _, r := range rs {
 		if isEmpty(r) {
 			log.Debugf("skipping inaccessible resource(%v)", r.Href())
