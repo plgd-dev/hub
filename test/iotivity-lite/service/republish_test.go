@@ -1,19 +1,17 @@
 package service_test
 
-/*
-TODO: uncomment when https://github.com/iotivity/iotivity-lite/pull/147 is merged
-
 import (
 	"context"
 	"crypto/tls"
 	"testing"
 	"time"
 
+	coapgwService "github.com/plgd-dev/hub/coap-gateway/service"
 	"github.com/plgd-dev/hub/grpc-gateway/pb"
 	"github.com/plgd-dev/hub/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
 	"github.com/plgd-dev/hub/test"
-	coapgwService "github.com/plgd-dev/hub/test/coap-gateway/service"
+	coapgwTestService "github.com/plgd-dev/hub/test/coap-gateway/service"
 	coapgwTest "github.com/plgd-dev/hub/test/coap-gateway/test"
 	"github.com/plgd-dev/hub/test/config"
 	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
@@ -67,12 +65,12 @@ func (r *republishHandler) SignOut(req coapgwService.CoapSignInReq) error {
 	return nil
 }
 
-func (r *republishHandler) PublishResources(req coapgwService.PublishRequest) error {
+func (r *republishHandler) PublishResources(req coapgwTestService.PublishRequest) error {
 	r.callCounter[publishKey]++
 	return nil
 }
 
-func (r *republishHandler) UnpublishResources(req coapgwService.UnpublishRequest) error {
+func (r *republishHandler) UnpublishResources(req coapgwTestService.UnpublishRequest) error {
 	r.callCounter[unpublishKey]++
 	return nil
 }
@@ -133,4 +131,3 @@ func TestRepublishAfterRefresh(t *testing.T) {
 		time.Sleep(time.Second)
 	}
 }
-*/

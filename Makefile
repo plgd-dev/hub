@@ -76,20 +76,22 @@ http-gateway-www:
 	@mkdir -p $(WORKING_DIRECTORY)/.tmp/usr/local/www
 	@cp -r $(WORKING_DIRECTORY)/http-gateway/web/public/* $(WORKING_DIRECTORY)/.tmp/usr/local/www/
 
+SIMULATOR_DOCKER_IMAGE := ghcr.io/iotivity/iotivity-lite/cloud-server-debug:master
+
 env: clean certificates nats mongo privateKeys http-gateway-www
 	if [ "${TRAVIS_OS_NAME}" == "linux" ]; then \
 		sudo sh -c 'echo 0 > /proc/sys/net/ipv6/conf/all/disable_ipv6'; \
 	fi
-	mkdir -p $(WORKING_DIRECTORY)/.tmp/devsim
+	mkdir -p "$(WORKING_DIRECTORY)/.tmp/devsim" ; \
+	docker pull $(SIMULATOR_DOCKER_IMAGE) ; \
 	docker run \
 		-d \
 		--privileged \
 		--name=devsim \
 		--network=host \
 		-v $(WORKING_DIRECTORY)/.tmp/devsim:/tmp \
-		ghcr.io/iotivity/iotivity-lite/cloud-server-debug:master \
+		$(SIMULATOR_DOCKER_IMAGE) \
 		devsim-$(SIMULATOR_NAME_SUFFIX)
-# TODO switch back to ghcr.io/iotivity/iotivity-lite/cloud-server-debug:latest
 
 define RUN-DOCKER
 	docker run \

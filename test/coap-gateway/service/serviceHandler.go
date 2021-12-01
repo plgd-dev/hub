@@ -11,5 +11,5 @@ type ServiceHandler interface {
 	SignOut(req coapgwService.CoapSignInReq) error
 	PublishResources(req PublishRequest) error
 	UnpublishResources(req UnpublishRequest) error
-	RefreshToken(req CoapRefreshTokenReq) (CoapRefreshTokenResp, error)
+	RefreshToken(req coapgwService.CoapRefreshTokenReq) (coapgwService.CoapRefreshTokenResp, error)
 }
