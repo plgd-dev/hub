@@ -159,12 +159,7 @@ func TestDeviceObserverRegisterForPublishedResources(t *testing.T) {
 	validateData := func(ctx context.Context, oh *observerHandler) {
 		obs := oh.getDeviceObserver(ctx)
 		require.Equal(t, observation.ObservationType_PerResource, obs.GetObservationType())
-		_, err := obs.GetResources("invalidDeviceID", nil)
-		require.Error(t, err)
-		res, err := obs.GetResources(deviceID, []int64{12345})
-		require.NoError(t, err)
-		require.Empty(t, res)
-		res, err = obs.GetResources(deviceID, nil)
+		res, err := obs.GetResources()
 		require.NoError(t, err)
 		pbTest.CmpResourceIds(t, test.ResourceLinksToResourceIds(deviceID, test.TestDevsimResources), res)
 	}
@@ -188,12 +183,7 @@ func TestDeviceObserverRegisterForDiscoveryResource(t *testing.T) {
 	validateData := func(ctx context.Context, oh *observerHandler) {
 		obs := oh.getDeviceObserver(ctx)
 		require.Equal(t, observation.ObservationType_PerDevice, obs.GetObservationType())
-		_, err := obs.GetResources("invalidDeviceID", nil)
-		require.Error(t, err)
-		res, err := obs.GetResources(deviceID, []int64{12345})
-		require.NoError(t, err)
-		require.Empty(t, res)
-		res, err = obs.GetResources(deviceID, nil)
+		res, err := obs.GetResources()
 		require.NoError(t, err)
 		pbTest.CmpResourceIds(t, []*commands.ResourceId{{DeviceId: deviceID, Href: resources.ResourceURI}}, res)
 	}

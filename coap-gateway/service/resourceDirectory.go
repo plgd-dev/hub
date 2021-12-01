@@ -120,10 +120,19 @@ func observeResources(ctx context.Context, client *Client, w wkRd, sequenceNumbe
 		return coapCodes.BadRequest, fmt.Errorf("unable to publish resources for device %v: %w", w.DeviceID, err)
 	}
 
+	toHrefs := func(rs []*commands.Resource) []string {
+		r := make([]string, len(rs))
+		for i := range rs {
+			r[i] = rs[i].GetHref()
+		}
+		return r
+	}
+
 	observeError := func(deviceID string, err error) error {
 		return fmt.Errorf("unable to observe published resources for device %v: %w", deviceID, err)
 	}
 	if err := client.server.taskQueue.Submit(func() {
+		client.publishedResources.Add(toHrefs(publishedResources)...)
 		obs, errObs := client.getDeviceObserver(ctx)
 		if errObs != nil {
 			log.Error(observeError(w.DeviceID, errObs))
@@ -215,29 +224,18 @@ func resourceDirectoryUnpublishHandler(req *mux.Message, client *Client) {
 		client.logAndWriteErrorResponse(fmt.Errorf("unable to parse unpublish request query string from device %v: %w", authCtx.GetDeviceID(), err), coapCodes.BadRequest, req.Token)
 		return
 	}
-
-	deviceObserver, err := client.getDeviceObserver(req.Context)
-	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("unable to get device %v observer: %w", authCtx.GetDeviceID(), err), coapCodes.BadRequest, req.Token)
+	if deviceID != authCtx.GetDeviceID() {
+		client.logAndWriteErrorResponse(fmt.Errorf("unable to parse unpublish request query string from device %v: invalid deviceID", authCtx.GetDeviceID()), coapCodes.BadRequest, req.Token)
 		return
 	}
 
-	resources, err := deviceObserver.GetResources(deviceID, inss)
-	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("cannot find observed resources using query %v: %w", authCtx.GetDeviceID(), err), coapCodes.BadRequest, req.Token)
-		return
-	}
+	resources := client.publishedResources.Get(inss)
 	if len(resources) == 0 {
 		client.logAndWriteErrorResponse(fmt.Errorf("cannot find observed resources using query %v which shall be unpublished from device %v", queries, authCtx.GetDeviceID()), coapCodes.BadRequest, req.Token)
 		return
 	}
 
-	hrefs := make([]string, 0, len(resources))
-	for idx := range resources {
-		hrefs = append(hrefs, resources[idx].Href)
-	}
-
-	client.unpublishResourceLinks(req.Context, hrefs)
+	client.unpublishResourceLinks(req.Context, resources)
 	client.sendResponse(coapCodes.Deleted, req.Token, coapMessage.TextPlain, nil)
 }
 

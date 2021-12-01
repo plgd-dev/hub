@@ -143,10 +143,6 @@ func emptyDeviceIDError() error {
 	return fmt.Errorf("empty deviceID")
 }
 
-func invalidDeviceIDError() error {
-	return fmt.Errorf("invalid deviceID")
-}
-
 func isDiscoveryResourceObservable(ctx context.Context, coapConn *tcp.ClientConn) (bool, error) {
 	return IsResourceObservable(ctx, coapConn, resources.ResourceURI, resources.ResourceType)
 }
@@ -168,7 +164,7 @@ func loadShadowSynchronization(ctx context.Context, rdClient pb.GrpcGatewayClien
 		return fmt.Errorf("cannot get device(%v) metadata: %w", deviceID, err)
 	}
 	if deviceID == "" {
-		return commands.ShadowSynchronization_UNSET, metadataError(invalidDeviceIDError())
+		return commands.ShadowSynchronization_UNSET, metadataError(fmt.Errorf("invalid deviceID"))
 	}
 	deviceMetadataClient, err := rdClient.GetDevicesMetadata(ctx, &pb.GetDevicesMetadataRequest{
 		DeviceIdFilter: []string{deviceID},
@@ -241,12 +237,9 @@ func (d *DeviceObserver) GetShadowSynchronization() commands.ShadowSynchronizati
 }
 
 // Get list of observed resources for device.
-func (d *DeviceObserver) GetResources(deviceID string, instanceIDs []int64) ([]*commands.ResourceId, error) {
+func (d *DeviceObserver) GetResources() ([]*commands.ResourceId, error) {
 	getResourcesError := func(err error) error {
 		return fmt.Errorf("cannot get observed resources: %w", err)
-	}
-	if deviceID != d.deviceID {
-		return nil, getResourcesError(invalidDeviceIDError())
 	}
 	if d.shadowSynchronization == commands.ShadowSynchronization_DISABLED {
 		return nil, nil
@@ -254,7 +247,7 @@ func (d *DeviceObserver) GetResources(deviceID string, instanceIDs []int64) ([]*
 	if d.resourcesObserver == nil {
 		return nil, getResourcesError(fmt.Errorf("resources observer is nil"))
 	}
-	return d.resourcesObserver.getResources(instanceIDs), nil
+	return d.resourcesObserver.getResources(), nil
 }
 
 // Remove all observations.
