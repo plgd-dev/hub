@@ -97,7 +97,7 @@ func (o *resourcesObserver) addResourceLocked(ctx context.Context, res *commands
 		return addObservationError(fmt.Errorf("invalid deviceID(%v)", resID.GetDeviceId()))
 	}
 	href := resID.GetHref()
-	if o.resources.containsResourceWithHref(href) {
+	if o.resources.contains(href) {
 		return nil
 	}
 	obsRes := NewObservedResource(href, obsInterface)
@@ -216,37 +216,15 @@ func (o *resourcesObserver) addResourcesLocked(ctx context.Context, resources []
 }
 
 // Get list of observable and non-observable resources added to resourcesObserver.
-//
-// Empty instanceIDs parameter is ignored and function will return all resources. Otherwise only
-// resources with instanceID value contained in the instanceIDs array are returned.
-func (o *resourcesObserver) getResources(instanceIDs []int64) []*commands.ResourceId {
-	getAllDeviceIDMatches := len(instanceIDs) == 0
-
-	uniqueInstanceIDs := make(map[int64]struct{})
-	for _, v := range instanceIDs {
-		uniqueInstanceIDs[v] = struct{}{}
-	}
-
+func (o *resourcesObserver) getResources() []*commands.ResourceId {
 	matches := make([]*commands.ResourceId, 0, 16)
 	o.lock.Lock()
 	defer o.lock.Unlock()
-	if getAllDeviceIDMatches {
-		for _, value := range o.resources {
-			matches = append(matches, &commands.ResourceId{
-				DeviceId: o.deviceID,
-				Href:     value.Href(),
-			})
-		}
-		return matches
-	}
-
-	for instanceID := range uniqueInstanceIDs {
-		if i := o.resources.searchByInstanceID(instanceID); i < len(o.resources) && o.resources[i].InstanceID() == instanceID {
-			matches = append(matches, &commands.ResourceId{
-				DeviceId: o.deviceID,
-				Href:     o.resources[i].Href(),
-			})
-		}
+	for _, value := range o.resources {
+		matches = append(matches, &commands.ResourceId{
+			DeviceId: o.deviceID,
+			Href:     value.Href(),
+		})
 	}
 	return matches
 }

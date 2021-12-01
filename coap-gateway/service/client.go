@@ -76,6 +76,7 @@ type Client struct {
 	coapConn    *tcp.ClientConn
 	tlsDeviceID string
 
+	publishedResources    publishedResources
 	resourceSubscriptions *kitSync.Map // [token]
 
 	exchangeCache *exchangeCache
@@ -554,6 +555,7 @@ func (client *Client) unpublishResourceLinks(ctx context.Context, hrefs []string
 		logUnpublishError(err)
 		return
 	}
+	client.publishedResources.Remove(hrefs...)
 
 	observer, err := client.getDeviceObserver(ctx)
 	if err != nil {

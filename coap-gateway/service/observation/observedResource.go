@@ -5,7 +5,6 @@ import (
 	"sync"
 
 	"github.com/plgd-dev/go-coap/v2/tcp"
-	"github.com/plgd-dev/hub/coap-gateway/resource"
 	"github.com/plgd-dev/hub/pkg/log"
 )
 
@@ -33,10 +32,6 @@ func (r *observedResource) Href() string {
 	return r.href
 }
 
-func (r *observedResource) InstanceID() int64 {
-	return resource.GetInstanceID(r.Href())
-}
-
 func (r *observedResource) Interface() string {
 	return r.resInterface
 }
@@ -57,25 +52,20 @@ func (r *observedResource) PopObservation() *tcp.Observation {
 
 type observedResources []*observedResource
 
-func (o observedResources) containsResourceWithHref(href string) bool {
-	i := o.searchByHref(href)
+func (o observedResources) contains(href string) bool {
+	i := o.search(href)
 	return i < len(o) && o[i].Href() == href
 }
 
-func (o observedResources) searchByHref(href string) int {
-	insID := resource.GetInstanceID(href)
-	return o.searchByInstanceID(insID)
-}
-
-func (o observedResources) searchByInstanceID(instanceID int64) int {
+func (o observedResources) search(href string) int {
 	return sort.Search(len(o), func(i int) bool {
-		return o[i].InstanceID() >= instanceID
+		return o[i].Href() >= href
 	})
 }
 
 func (o observedResources) insert(rs ...*observedResource) observedResources {
 	for _, v := range rs {
-		i := o.searchByInstanceID(v.InstanceID())
+		i := o.search(v.Href())
 		if i < len(o) && o[i].Equals(v) {
 			continue
 		}
@@ -89,7 +79,7 @@ func (o observedResources) insert(rs ...*observedResource) observedResources {
 func (o observedResources) removeByHref(hrefs ...string) (new, removed observedResources) {
 	removed = make(observedResources, 0, len(hrefs))
 	for _, h := range hrefs {
-		i := o.searchByHref(h)
+		i := o.search(h)
 		if i >= len(o) || o[i].Href() != h {
 			log.Debugf("href(%v) not found", h)
 			continue
