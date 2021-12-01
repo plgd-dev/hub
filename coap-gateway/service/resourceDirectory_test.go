@@ -4,24 +4,22 @@ import (
 	"context"
 	"testing"
 
-	"github.com/plgd-dev/hub/coap-gateway/uri"
-	testCfg "github.com/plgd-dev/hub/test/config"
 	"github.com/plgd-dev/go-coap/v2/message"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/tcp"
+	"github.com/plgd-dev/hub/coap-gateway/uri"
+	testCfg "github.com/plgd-dev/hub/test/config"
 	"github.com/stretchr/testify/require"
 )
 
 type TestResource struct {
-	DeviceID string `json:"di"`
-	//Eps interface{} `json:"eps"`
-	Href       string   `json:"href"`
-	ID         string   `json:"id"`
-	Interfaces []string `json:"if"`
-	InstanceID uint64   `json:"-"`
-	//P             interface{} `json:"p"`
-	ResourceTypes []string `json:"rt"`
-	Type          []string `json:"type"`
+	DeviceID      string   `json:"di,omitempty"`
+	Href          string   `json:"href"`
+	ID            string   `json:"id,omitempty"`
+	Interfaces    []string `json:"if,omitempty"`
+	InstanceID    uint64   `json:"-"`
+	ResourceTypes []string `json:"rt,omitempty"`
+	Type          []string `json:"type,omitempty"`
 }
 
 type TestWkRD struct {
