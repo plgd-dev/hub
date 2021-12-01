@@ -6,21 +6,10 @@ import (
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/mux"
 	"github.com/plgd-dev/hub/coap-gateway/coapconv"
+	"github.com/plgd-dev/hub/coap-gateway/service"
 	"github.com/plgd-dev/hub/pkg/log"
 	"github.com/plgd-dev/kit/v2/codec/cbor"
 )
-
-type CoapRefreshTokenReq struct {
-	DeviceID     string `json:"di"`
-	UserID       string `json:"uid"`
-	RefreshToken string `json:"refreshtoken"`
-}
-
-type CoapRefreshTokenResp struct {
-	ExpiresIn    int64  `json:"expiresin"`
-	AccessToken  string `json:"accesstoken"`
-	RefreshToken string `json:"refreshtoken"`
-}
 
 func refreshTokenPostHandler(req *mux.Message, client *Client) {
 	logErrorAndCloseClient := func(err error, code coapCodes.Code) {
@@ -30,7 +19,7 @@ func refreshTokenPostHandler(req *mux.Message, client *Client) {
 		}
 	}
 
-	var r CoapRefreshTokenReq
+	var r service.CoapRefreshTokenReq
 	err := cbor.ReadFrom(req.Body, &r)
 	if err != nil {
 		logErrorAndCloseClient(err, coapCodes.BadRequest)
