@@ -36,10 +36,6 @@ func (c Config) Validate() error {
 	return nil
 }
 
-func (c *Config) SetDefaults() {
-	c.ClientCertificateRequired = true
-}
-
 // CertManager holds certificates from filesystem watched for changes
 type CertManager struct {
 	config Config
@@ -200,41 +196,45 @@ func (a *CertManager) setCAPool(capool *x509.CertPool) {
 	a.tlsCAPool = capool
 }
 
+func (a *CertManager) handleWatchedEvent(event fsnotify.Event) {
+	var updateCert, updateKey, updateCAs bool
+	switch event.Op {
+	case fsnotify.Create, fsnotify.Write, fsnotify.Rename:
+		if strings.Contains(event.Name, a.config.KeyFile) {
+			updateKey = true
+		}
+
+		if strings.Contains(event.Name, a.config.CertFile) {
+			updateCert = true
+		}
+
+		if strings.Contains(event.Name, a.config.CAPool) {
+			updateCAs = true
+		}
+	}
+	if updateCert && updateKey {
+		err := a.loadCerts()
+		if err != nil {
+			a.logger.Error(err.Error())
+		}
+	}
+	if updateCAs {
+		err := a.loadCAs()
+		if err != nil {
+			a.logger.Error(err.Error())
+		}
+	}
+}
+
 func (a *CertManager) watchFiles() {
 	defer a.doneWg.Done()
 	for {
-		var updateCert, updateKey, updateCAs bool
 		select {
 		case <-a.done:
 			return
 			// watch for events
 		case event := <-a.watcher.Events:
-			switch event.Op {
-			case fsnotify.Create, fsnotify.Write, fsnotify.Rename:
-				if strings.Contains(event.Name, a.config.KeyFile) {
-					updateKey = true
-				}
-
-				if strings.Contains(event.Name, a.config.CertFile) {
-					updateCert = true
-				}
-
-				if strings.Contains(event.Name, a.config.CAPool) {
-					updateCAs = true
-				}
-			}
-		}
-		if updateCert && updateKey {
-			err := a.loadCerts()
-			if err != nil {
-				a.logger.Error(err.Error())
-			}
-		}
-		if updateCAs {
-			err := a.loadCAs()
-			if err != nil {
-				a.logger.Error(err.Error())
-			}
+			a.handleWatchedEvent(event)
 		}
 	}
 }

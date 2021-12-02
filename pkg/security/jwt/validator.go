@@ -12,6 +12,8 @@ type Validator struct {
 	keys *KeyCache
 }
 
+var errMissingToken = fmt.Errorf("missing token")
+
 func NewValidatorWithKeyCache(keyCache *KeyCache) *Validator {
 	return &Validator{keys: keyCache}
 }
@@ -20,24 +22,28 @@ func NewValidator(jwksURL string, tls *tls.Config) *Validator {
 	return &Validator{keys: NewKeyCache(jwksURL, tls)}
 }
 
+func errParseToken(err error) error {
+	return fmt.Errorf("could not parse token: %w", err)
+}
+
 func (v *Validator) Parse(token string) (jwt.MapClaims, error) {
 	if token == "" {
-		return nil, fmt.Errorf("missing token")
+		return nil, errMissingToken
 	}
 	t, err := jwt.Parse(token, v.keys.GetOrFetchKey)
 	if t == nil {
-		return nil, fmt.Errorf("could not parse token: %w", err)
+		return nil, errParseToken(err)
 	}
 	c := t.Claims.(jwt.MapClaims)
 	if err != nil {
-		return c, fmt.Errorf("could not parse token: %w", err)
+		return c, errParseToken(err)
 	}
 	return c, nil
 }
 
 func (v *Validator) ParseWithContext(ctx context.Context, token string) (jwt.MapClaims, error) {
 	if token == "" {
-		return nil, fmt.Errorf("missing token")
+		return nil, errMissingToken
 	}
 
 	jwtKeyfunc := func(token *jwt.Token) (interface{}, error) {
@@ -46,7 +52,7 @@ func (v *Validator) ParseWithContext(ctx context.Context, token string) (jwt.Map
 
 	t, err := jwt.Parse(token, jwtKeyfunc)
 	if err != nil {
-		return nil, fmt.Errorf("could not parse token: %w", err)
+		return nil, errParseToken(err)
 	}
 	c, ok := t.Claims.(jwt.MapClaims)
 	if !ok {
@@ -58,26 +64,12 @@ func (v *Validator) ParseWithContext(ctx context.Context, token string) (jwt.Map
 
 func (v *Validator) ParseWithClaims(token string, claims jwt.Claims) error {
 	if token == "" {
-		return fmt.Errorf("missing token")
+		return errMissingToken
 	}
 
 	_, err := jwt.ParseWithClaims(token, claims, v.keys.GetOrFetchKey)
 	if err != nil {
-		return fmt.Errorf("could not parse token: %w", err)
-	}
-	return nil
-}
-
-func (v *Validator) ParseWithContextClaims(ctx context.Context, token string, claims jwt.Claims) error {
-	if token == "" {
-		return fmt.Errorf("missing token")
-	}
-	jwtKeyfunc := func(token *jwt.Token) (interface{}, error) {
-		return v.keys.GetOrFetchKeyWithContext(ctx, token)
-	}
-	_, err := jwt.ParseWithClaims(token, claims, jwtKeyfunc)
-	if err != nil {
-		return fmt.Errorf("could not parse token: %w", err)
+		return errParseToken(err)
 	}
 	return nil
 }

@@ -29,9 +29,6 @@ func (c Config) Validate() error {
 	return nil
 }
 
-func (c *Config) SetDefaults() {
-}
-
 // CertManager holds certificates from filesystem watched for changes
 type CertManager struct {
 	c *general.CertManager
