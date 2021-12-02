@@ -16,7 +16,9 @@ import (
 )
 
 func TestRequestHandlerGetHubConfiguration(t *testing.T) {
-	expected := rdTest.MakeConfig(t).ExposedHubConfiguration.ToProto()
+	rdCfg := rdTest.MakeConfig(t)
+	rdCfg.ExposedHubConfiguration.AuthorizationServer = "https://" + config.OAUTH_SERVER_HOST + "?escape=test&test=escape"
+	expected := rdCfg.ExposedHubConfiguration.ToProto()
 	expected.CurrentTime = 0
 	tests := []struct {
 		name string
@@ -31,7 +33,7 @@ func TestRequestHandlerGetHubConfiguration(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
 	defer cancel()
 
-	tearDown := service.SetUp(ctx, t)
+	tearDown := service.SetUp(ctx, t, service.WithRDConfig(rdCfg))
 	defer tearDown()
 
 	shutdownHttp := httpgwTest.SetUp(t)

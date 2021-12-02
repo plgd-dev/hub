@@ -97,6 +97,30 @@ func copyEvent(dst, src *pb.Event) {
 	dst.Type = src.GetType()
 }
 
+func (c *GrpcGateway_SubscribeToEventsClient) handleRecvEventOperationProcessed(event *pb.Event) {
+	ev := event.GetOperationProcessed()
+	s, ok := c.newSubs.LoadAndDelete(event.GetCorrelationId())
+	if !ok {
+		if _, ok := c.removeSubs.LoadAndDelete(event.GetSubscriptionId()); ok {
+			c.subs.Delete(event.GetSubscriptionId())
+		}
+		return
+	}
+	if ev.GetErrorStatus().GetCode() != pb.Event_OperationProcessed_ErrorStatus_OK {
+		return
+	}
+	sub := s.(*Sub)
+	err := sub.Init(event.GetSubscriptionId())
+	if err != nil {
+		ev.ErrorStatus = &pb.Event_OperationProcessed_ErrorStatus{
+			Code:    pb.Event_OperationProcessed_ErrorStatus_ERROR,
+			Message: err.Error(),
+		}
+		return
+	}
+	c.subs.Store(event.GetSubscriptionId(), sub)
+}
+
 // RecvMsg blocks until it receives a message into m or the stream is
 // done. It returns io.EOF when the stream completes successfully. On
 // any other error, the stream is aborted and the error contains the RPC
@@ -126,47 +150,27 @@ func (c *GrpcGateway_SubscribeToEventsClient) RecvMsg(m interface{}) error {
 		timeDiff := time.Since(start)
 		eventOrig := m.(*pb.Event)
 		copyEvent(eventOrig, event)
-		switch ev := event.GetType().(type) {
+		switch event.GetType().(type) {
 		case *pb.Event_OperationProcessed_:
-			s, ok := c.newSubs.LoadAndDelete(event.GetCorrelationId())
-			if ok {
-				if ev.OperationProcessed.GetErrorStatus().GetCode() != pb.Event_OperationProcessed_ErrorStatus_OK {
-					return nil
-				}
-				sub := s.(*Sub)
-				err := sub.Init(event.GetSubscriptionId())
-				if err != nil {
-					ev.OperationProcessed.ErrorStatus = &pb.Event_OperationProcessed_ErrorStatus{
-						Code:    pb.Event_OperationProcessed_ErrorStatus_ERROR,
-						Message: err.Error(),
-					}
-					return nil
-				}
-				c.subs.Store(event.GetSubscriptionId(), sub)
-				return nil
-			} else {
-				if _, ok := c.removeSubs.LoadAndDelete(event.GetSubscriptionId()); ok {
-					c.subs.Delete(event.GetSubscriptionId())
-				}
-				return nil
-			}
+			c.handleRecvEventOperationProcessed(event)
+			return nil
 		case *pb.Event_SubscriptionCanceled_:
 			c.subs.Delete(event.GetSubscriptionId())
 			return nil
 		default:
 			s, ok := c.subs.Load(event.GetSubscriptionId())
-			if ok {
-				sub := s.(*Sub)
-				if timeDiff > time.Second {
-					sub.DropDeduplicateEvents()
-				}
-				err := sub.ProcessEvent(event)
-				if err != nil {
-					return err
-				}
-				continue
+			if !ok {
+				return nil
 			}
-			return nil
+			sub := s.(*Sub)
+			if timeDiff > time.Second {
+				sub.DropDeduplicateEvents()
+			}
+			err := sub.ProcessEvent(event)
+			if err != nil {
+				return err
+			}
+			continue
 		}
 	}
 }

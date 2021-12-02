@@ -15,6 +15,10 @@ func (requestHandler *RequestHandler) cancelPendingMetadataUpdate(w http.Respons
 	deviceID := vars[uri.DeviceIDKey]
 	correlationID := vars[uri.CorrelationIDKey]
 
+	cannotCancelError := func(err error) error {
+		return fmt.Errorf("cannot cancel device('%v') metadata update: %w", deviceID, err)
+	}
+
 	type Options struct {
 		CorrelationId string `url:"correlationIdFilter"`
 	}
@@ -23,19 +27,19 @@ func (requestHandler *RequestHandler) cancelPendingMetadataUpdate(w http.Respons
 	}
 	q, err := query.Values(opt)
 	if err != nil {
-		writeError(w, fmt.Errorf("cannot cancel device('%v') metadata update: %w", deviceID, err))
+		writeError(w, cannotCancelError(err))
 		return
 	}
 	tmp, err := uritemplates.Parse(uri.AliasDevicePendingMetadataUpdates)
 	if err != nil {
-		writeError(w, fmt.Errorf("cannot cancel device('%v') metadata update: %w", deviceID, err))
+		writeError(w, cannotCancelError(err))
 		return
 	}
 	urlPath, err := tmp.Expand(map[string]interface{}{
 		uri.DeviceIDKey: deviceID,
 	})
 	if err != nil {
-		writeError(w, fmt.Errorf("cannot cancel device('%v') metadata update: %w", deviceID, err))
+		writeError(w, cannotCancelError(err))
 		return
 	}
 	r.URL.Path = urlPath
