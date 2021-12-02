@@ -33,7 +33,7 @@ func TestRequestHandlerRetrieveDeviceSubscription(t *testing.T) {
 	tearDown := service.SetUp(ctx, t)
 	defer tearDown()
 
-	token := oauthTest.GetDefaultServiceToken(t)
+	token := oauthTest.GetDefaultAccessToken(t)
 	ctx = kitNetGrpc.CtxWithToken(ctx, token)
 
 	conn, err := grpc.Dial(config.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
@@ -88,7 +88,7 @@ func TestRequestHandlerRetrieveDeviceSubscription(t *testing.T) {
 			args: args{
 				deviceID: deviceID,
 				subID:    subID,
-				token:    oauthTest.GetServiceToken(t, config.OAUTH_SERVER_HOST, oauthTest.ClientTestExpired),
+				token:    oauthTest.GetAccessToken(t, config.OAUTH_SERVER_HOST, oauthTest.ClientTestExpired),
 			},
 			wantCode:        http.StatusUnauthorized,
 			wantContentType: textPlain,

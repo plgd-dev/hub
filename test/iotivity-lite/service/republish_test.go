@@ -130,7 +130,7 @@ func TestRepublishAfterRefresh(t *testing.T) {
 	coapShutdown := coapgwTest.SetUp(t, makeHandler, validateHandler)
 	defer coapShutdown()
 
-	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultServiceToken(t))
+	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
 
 	conn, err := grpc.Dial(config.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),

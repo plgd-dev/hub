@@ -23,7 +23,7 @@ func TestObserveDeviceResourcesPublish(t *testing.T) {
 	defer cancel()
 	tearDown := service.SetUp(ctx, t)
 	defer tearDown()
-	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultServiceToken(t))
+	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
 
 	c := NewTestClient(t)
 	defer func() {

@@ -44,7 +44,7 @@ func TestRequestHandlerSubscribeToEvents(t *testing.T) {
 
 	tearDown := serviceTest.SetUp(ctx, t)
 	defer tearDown()
-	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultServiceToken(t))
+	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
 
 	conn, err := grpc.Dial(config.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
@@ -218,7 +218,7 @@ func TestRequestHandlerSubscribeForCreateEvents(t *testing.T) {
 
 	tearDown := serviceTest.SetUp(ctx, t)
 	defer tearDown()
-	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultServiceToken(t))
+	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
 
 	conn, err := grpc.Dial(config.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
@@ -527,7 +527,7 @@ func TestRequestHandlerSubscribeForPendingCommands(t *testing.T) {
 	defer authShutdown()
 	defer oauthShutdown()
 
-	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultServiceToken(t))
+	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
 
 	conn, err := grpc.Dial(config.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
@@ -708,7 +708,7 @@ func TestRequestHandlerIssue270(t *testing.T) {
 
 	tearDown := serviceTest.SetUp(ctx, t, serviceTest.WithCOAPGWConfig(coapgwCfg), serviceTest.WithRDConfig(rdCfg), serviceTest.WithGRPCGWConfig(grpcgwCfg))
 	defer tearDown()
-	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultServiceToken(t))
+	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
 
 	rdConn, err := grpcClient.New(config.MakeGrpcClientConfig(config.GRPC_HOST), log.Get())
 	require.NoError(t, err)

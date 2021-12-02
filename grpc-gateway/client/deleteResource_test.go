@@ -42,7 +42,7 @@ func TestClient_DeleteResource(t *testing.T) {
 		{
 			name: "/ligh/1 - method not allowd",
 			args: args{
-				token:    oauthTest.GetDefaultServiceToken(t),
+				token:    oauthTest.GetDefaultAccessToken(t),
 				deviceID: deviceID,
 				href:     "/ligh/1",
 			},
@@ -52,7 +52,7 @@ func TestClient_DeleteResource(t *testing.T) {
 		{
 			name: "/ligh/1 - permission denied",
 			args: args{
-				token:    oauthTest.GetDefaultServiceToken(t),
+				token:    oauthTest.GetDefaultAccessToken(t),
 				deviceID: deviceID,
 				href:     device.ResourceURI,
 			},
@@ -62,7 +62,7 @@ func TestClient_DeleteResource(t *testing.T) {
 		{
 			name: "invalid href",
 			args: args{
-				token:    oauthTest.GetDefaultServiceToken(t),
+				token:    oauthTest.GetDefaultAccessToken(t),
 				deviceID: deviceID,
 				href:     "/invalid/href",
 			},
@@ -71,7 +71,7 @@ func TestClient_DeleteResource(t *testing.T) {
 		},
 	}
 
-	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultServiceToken(t))
+	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
 
 	c := NewTestClient(t)
 	defer func() {

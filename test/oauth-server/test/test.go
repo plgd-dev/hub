@@ -161,11 +161,12 @@ func HTTPDo(t *testing.T, req *http.Request, followRedirect bool) *http.Response
 	return resp
 }
 
-func GetServiceToken(t *testing.T, authServerHost, clientId string) string {
+func GetAccessToken(t *testing.T, authServerHost, clientId string) string {
+	code := GetAuthorizationCode(t, authServerHost, clientId, "", "r:* w:*")
 	reqBody := map[string]string{
-		"grant_type":    string(service.AllowedGrantType_CLIENT_CREDENTIALS),
-		uri.ClientIDKey: clientId,
-		"audience":      "localhost",
+		uri.GrantTypeKey: string(service.AllowedGrantType_AUTHORIZATION_CODE),
+		uri.ClientIDKey:  clientId,
+		uri.CodeKey:      code,
 	}
 	d, err := json.Encode(reqBody)
 	require.NoError(t, err)
@@ -184,11 +185,11 @@ func GetServiceToken(t *testing.T, authServerHost, clientId string) string {
 	return token
 }
 
-func GetDefaultServiceToken(t *testing.T) string {
-	return GetServiceToken(t, config.OAUTH_SERVER_HOST, ClientTest)
+func GetDefaultAccessToken(t *testing.T) string {
+	return GetAccessToken(t, config.OAUTH_SERVER_HOST, ClientTest)
 }
 
-func GetDeviceAuthorizationCode(t *testing.T, authServerHost, clientId, deviceID string) string {
+func GetAuthorizationCode(t *testing.T, authServerHost, clientId, deviceID, scopes string) string {
 	u, err := url.Parse(uri.Authorize)
 	require.NoError(t, err)
 	q, err := url.ParseQuery(u.RawQuery)
@@ -196,6 +197,9 @@ func GetDeviceAuthorizationCode(t *testing.T, authServerHost, clientId, deviceID
 	q.Add(uri.ClientIDKey, clientId)
 	if deviceID != "" {
 		q.Add(uri.DeviceId, deviceID)
+	}
+	if scopes != "" {
+		q.Add(uri.ScopeKey, scopes)
 	}
 	u.RawQuery = q.Encode()
 	getReq := NewRequest(http.MethodGet, authServerHost, u.String(), nil).Build()
@@ -214,5 +218,5 @@ func GetDeviceAuthorizationCode(t *testing.T, authServerHost, clientId, deviceID
 }
 
 func GetDefaultDeviceAuthorizationCode(t *testing.T, deviceID string) string {
-	return GetDeviceAuthorizationCode(t, config.OAUTH_SERVER_HOST, ClientTest, deviceID)
+	return GetAuthorizationCode(t, config.OAUTH_SERVER_HOST, ClientTest, deviceID, "")
 }

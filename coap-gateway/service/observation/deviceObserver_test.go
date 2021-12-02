@@ -201,7 +201,7 @@ func runTestDeviceObserverRegister(ctx context.Context, t *testing.T, deviceID s
 	defer tearDown()
 	// log.Setup(log.Config{Debug: true})
 
-	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultServiceToken(t))
+	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
 
 	rdConn, err := grpcClient.New(config.MakeGrpcClientConfig(config.RESOURCE_DIRECTORY_HOST), log.Get())
 	require.NoError(t, err)

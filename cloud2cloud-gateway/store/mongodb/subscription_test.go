@@ -38,7 +38,7 @@ func newTestStore(t *testing.T) (*mongodb.Store, func()) {
 func TestStoreSaveSubscription(t *testing.T) {
 	oauthShutdown := oauthTest.SetUp(t)
 	defer oauthShutdown()
-	token := oauthTest.GetDefaultServiceToken(t)
+	token := oauthTest.GetDefaultAccessToken(t)
 
 	type args struct {
 		sub store.Subscription
@@ -142,7 +142,7 @@ func TestStoreSaveSubscription(t *testing.T) {
 func TestStoreIncrementSubscriptionSequenceNumber(t *testing.T) {
 	oauthShutdown := oauthTest.SetUp(t)
 	defer oauthShutdown()
-	token := oauthTest.GetDefaultServiceToken(t)
+	token := oauthTest.GetDefaultAccessToken(t)
 
 	sub := store.Subscription{
 		ID:             "id",
@@ -213,7 +213,7 @@ func TestStoreIncrementSubscriptionSequenceNumber(t *testing.T) {
 func TestStorePopSubscription(t *testing.T) {
 	oauthShutdown := oauthTest.SetUp(t)
 	defer oauthShutdown()
-	token := oauthTest.GetDefaultServiceToken(t)
+	token := oauthTest.GetDefaultAccessToken(t)
 
 	sub := store.Subscription{
 		ID:             "id1",
@@ -292,7 +292,7 @@ func (h *testResourceHandler) Handle(ctx context.Context, iter store.Subscriptio
 func TestStoreLoadSubscriptions(t *testing.T) {
 	oauthShutdown := oauthTest.SetUp(t)
 	defer oauthShutdown()
-	token := oauthTest.GetDefaultServiceToken(t)
+	token := oauthTest.GetDefaultAccessToken(t)
 
 	sub := store.Subscription{
 		ID:             "id",

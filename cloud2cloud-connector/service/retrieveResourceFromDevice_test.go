@@ -103,7 +103,7 @@ func testRequestHandlerGetResourceFromDevice(t *testing.T, events store.Events) 
 
 	tearDown := c2cConnectorTest.SetUpClouds(ctx, t, deviceID, events, switchID)
 	defer tearDown()
-	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultServiceToken(t))
+	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
 
 	conn, err := grpc.Dial(c2cConnectorTest.GRPC_GATEWAY_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),

@@ -39,7 +39,7 @@ func TestOwnerCacheSubscribe(t *testing.T) {
 	shutdown := idService.New(t, cfg)
 	defer shutdown()
 
-	token := oauthService.GetDefaultServiceToken(t)
+	token := oauthService.GetDefaultAccessToken(t)
 
 	conn, err := client.New(client.Config{
 		Addr: cfg.APIs.GRPC.Addr,

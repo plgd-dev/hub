@@ -33,7 +33,7 @@ func TestRequestHandlerGetDeviceResourceLinks(t *testing.T) {
 
 	tearDown := service.SetUp(ctx, t)
 	defer tearDown()
-	token := oauthTest.GetDefaultServiceToken(t)
+	token := oauthTest.GetDefaultAccessToken(t)
 	ctx = kitNetGrpc.CtxWithToken(ctx, token)
 
 	conn, err := grpc.Dial(config.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{

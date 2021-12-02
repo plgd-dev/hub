@@ -45,7 +45,7 @@ func TestClient_GetDevices(t *testing.T) {
 		{
 			name: "valid",
 			args: args{
-				token: oauthTest.GetDefaultServiceToken(t),
+				token: oauthTest.GetDefaultAccessToken(t),
 			},
 			want: map[string]client.DeviceDetails{
 				deviceID: NewTestDeviceSimulator(deviceID, test.TestDeviceName, false),
@@ -54,14 +54,14 @@ func TestClient_GetDevices(t *testing.T) {
 		{
 			name: "not-found",
 			args: args{
-				token: oauthTest.GetDefaultServiceToken(t),
+				token: oauthTest.GetDefaultAccessToken(t),
 				opts:  []client.GetDevicesOption{client.WithResourceTypes("not-found")},
 			},
 			wantErr: false,
 		},
 	}
 
-	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultServiceToken(t))
+	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
 
 	c := NewTestClient(t)
 	defer func() {

@@ -39,7 +39,7 @@ func TestClient_UpdateResource(t *testing.T) {
 		{
 			name: "valid - update value",
 			args: args{
-				token:    oauthTest.GetDefaultServiceToken(t),
+				token:    oauthTest.GetDefaultAccessToken(t),
 				deviceID: deviceID,
 				href:     configuration.ResourceURI,
 				data: map[string]interface{}{
@@ -53,7 +53,7 @@ func TestClient_UpdateResource(t *testing.T) {
 		{
 			name: "valid - revert update",
 			args: args{
-				token:    oauthTest.GetDefaultServiceToken(t),
+				token:    oauthTest.GetDefaultAccessToken(t),
 				deviceID: deviceID,
 				href:     configuration.ResourceURI,
 				data: map[string]interface{}{
@@ -67,7 +67,7 @@ func TestClient_UpdateResource(t *testing.T) {
 		{
 			name: "valid with resourceInterface",
 			args: args{
-				token:    oauthTest.GetDefaultServiceToken(t),
+				token:    oauthTest.GetDefaultAccessToken(t),
 				deviceID: deviceID,
 				href:     configuration.ResourceURI,
 				data: map[string]interface{}{
@@ -82,7 +82,7 @@ func TestClient_UpdateResource(t *testing.T) {
 		{
 			name: "invalid href",
 			args: args{
-				token:    oauthTest.GetDefaultServiceToken(t),
+				token:    oauthTest.GetDefaultAccessToken(t),
 				deviceID: deviceID,
 				href:     "/invalid/href",
 				data: map[string]interface{}{
@@ -93,7 +93,7 @@ func TestClient_UpdateResource(t *testing.T) {
 		},
 	}
 
-	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultServiceToken(t))
+	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
 
 	c := NewTestClient(t)
 	defer func() {

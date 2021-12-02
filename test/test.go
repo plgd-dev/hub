@@ -250,7 +250,7 @@ func OnboardDevSimForClient(ctx context.Context, t *testing.T, c pb.GrpcGatewayC
 
 	setAccessForCloud(ctx, t, devClient, deviceID)
 
-	code := oauthTest.GetDeviceAuthorizationCode(t, config.OAUTH_SERVER_HOST, clientId, deviceID)
+	code := oauthTest.GetAuthorizationCode(t, config.OAUTH_SERVER_HOST, clientId, deviceID, "")
 
 	onboard := func() {
 		err = devClient.OnboardDevice(ctx, deviceID, config.DEVICE_PROVIDER, "coaps+tcp://"+gwHost, code, cloudSID)

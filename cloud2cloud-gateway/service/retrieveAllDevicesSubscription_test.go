@@ -42,7 +42,7 @@ func TestRequestHandlerRetrieveDevicesSubscription(t *testing.T) {
 		_ = conn.Close()
 	}()
 
-	token := oauthTest.GetDefaultServiceToken(t)
+	token := oauthTest.GetDefaultAccessToken(t)
 	ctx = kitNetGrpc.CtxWithToken(ctx, token)
 
 	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.GW_HOST, test.GetAllBackendResourceLinks())
@@ -86,7 +86,7 @@ func TestRequestHandlerRetrieveDevicesSubscription(t *testing.T) {
 			name: "expired token",
 			args: args{
 				subID: subID,
-				token: oauthTest.GetServiceToken(t, config.OAUTH_SERVER_HOST, oauthTest.ClientTestExpired),
+				token: oauthTest.GetAccessToken(t, config.OAUTH_SERVER_HOST, oauthTest.ClientTestExpired),
 			},
 			wantCode:        http.StatusUnauthorized,
 			wantContentType: textPlain,

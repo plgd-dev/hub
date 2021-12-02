@@ -47,7 +47,7 @@ func countOpenFiles() int64 {
 func SetUpClouds(ctx context.Context, t *testing.T, deviceID string, supportedEvents store.Events, switchIDs ...string) func() {
 	cloud1 := service.SetUp(ctx, t)
 	cloud2 := SetUpCloudWithConnector(t)
-	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultServiceToken(t))
+	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
 
 	cloud1Conn, err := grpc.Dial(testCfg.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
@@ -80,13 +80,14 @@ func SetUpClouds(ctx context.Context, t *testing.T, deviceID string, supportedEv
 			ClientSecret: "testClientSecret",
 			AuthURL:      testCfg.OAUTH_MANAGER_ENDPOINT_AUTHURL,
 			TokenURL:     testCfg.OAUTH_MANAGER_ENDPOINT_TOKENURL,
+			Scopes:       []string{"r:*", "w:*"},
 		},
 		SupportedSubscriptionsEvents: supportedEvents,
 	}
 	data, err := json.Encode(linkedCloud)
 	require.NoError(t, err)
 
-	token := oauthTest.GetServiceToken(t, OAUTH_HOST, oauthTest.ClientTest)
+	token := oauthTest.GetAccessToken(t, OAUTH_HOST, oauthTest.ClientTest)
 	req := testHttp.NewHTTPRequest(http.MethodPost, testHttp.HTTPS_SCHEME+C2C_CONNECTOR_HOST+uri.LinkedClouds, bytes.NewBuffer(data)).AuthToken(token).Build(ctx, t)
 	resp := testHttp.DoHTTPRequest(t, req)
 	require.Equal(t, http.StatusOK, resp.StatusCode)

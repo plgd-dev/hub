@@ -51,7 +51,7 @@ func TestRequestHandlerSubscribeToDevices(t *testing.T) {
 	tearDown := service.SetUp(ctx, t)
 	defer tearDown()
 
-	token := oauthTest.GetDefaultServiceToken(t)
+	token := oauthTest.GetDefaultAccessToken(t)
 	ctx = kitNetGrpc.CtxWithToken(ctx, token)
 
 	conn, err := grpc.Dial(testCfg.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
@@ -146,7 +146,7 @@ func TestRequestHandlerSubscribeToDevicesOffline(t *testing.T) {
 	coapgwCfg.Log.DumpCoapMessages = true
 	coapgwCfg.APIs.COAP.Addr = "localhost:45684"
 	gwShutdown := coapgwTest.New(t, coapgwCfg)
-	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultServiceToken(t))
+	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
 
 	conn, err := grpc.Dial(testCfg.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
@@ -201,7 +201,7 @@ func TestRequestHandlerSubscribeToDevicesOffline(t *testing.T) {
 
 	data, err := json.Encode(sub)
 	require.NoError(t, err)
-	req := testHttp.NewHTTPRequest(http.MethodPost, uri, bytes.NewBuffer(data)).AuthToken(oauthTest.GetDefaultServiceToken(t)).Accept(accept).Build(ctx, t)
+	req := testHttp.NewHTTPRequest(http.MethodPost, uri, bytes.NewBuffer(data)).AuthToken(oauthTest.GetDefaultAccessToken(t)).Accept(accept).Build(ctx, t)
 	resp := testHttp.DoHTTPRequest(t, req)
 	assert.Equal(t, wantCode, resp.StatusCode)
 	defer func() {

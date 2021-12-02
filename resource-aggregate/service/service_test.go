@@ -31,7 +31,7 @@ func TestPublishUnpublish(t *testing.T) {
 	raShutdown := test.New(t, config)
 	defer raShutdown()
 
-	ctx := kitNetGrpc.CtxWithToken(context.Background(), oauthTest.GetDefaultServiceToken(t))
+	ctx := kitNetGrpc.CtxWithToken(context.Background(), oauthTest.GetDefaultAccessToken(t))
 
 	idConn, err := client.New(testCfg.MakeGrpcClientConfig(config.Clients.IdentityStore.Connection.Addr), log.Get())
 	require.NoError(t, err)
