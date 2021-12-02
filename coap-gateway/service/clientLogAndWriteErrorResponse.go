@@ -8,7 +8,7 @@ import (
 )
 
 func (client *Client) logAndWriteErrorResponse(err error, code codes.Code, token message.Token) {
-	msg, cleanUp := coapgwMessage.LogAndGetErrorResponse(client.coapConn.Context(), code, token, err)
+	msg, cleanUp := coapgwMessage.LogAndGetErrorResponse(client.coapConn.Context(), client.server.messagePool, code, token, err)
 	defer cleanUp()
 	err = client.coapConn.WriteMessage(msg)
 	if err != nil {

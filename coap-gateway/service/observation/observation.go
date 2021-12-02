@@ -9,7 +9,6 @@ import (
 	coapMessage "github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/tcp"
-	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
 	"github.com/plgd-dev/hub/coap-gateway/service/message"
 	"github.com/plgd-dev/kit/v2/codec/cbor"
 )
@@ -28,7 +27,7 @@ func IsResourceObservable(ctx context.Context, coapConn *tcp.ClientConn, resourc
 	if err != nil {
 		return false, err
 	}
-	defer pool.ReleaseMessage(msg)
+	defer coapConn.ReleaseMessage(msg)
 
 	if msg.Code() != codes.Content {
 		return false, fmt.Errorf("invalid response code %v", msg.Code())

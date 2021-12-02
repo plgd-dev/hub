@@ -8,7 +8,7 @@ apis:
     maxMessageSize: 262144
     ownerCacheExpiration: 1m
     subscriptionBufferSize: 1000
-    goroutineSocketHeartbeat: "4s"
+    messagePoolSize: 1000
     keepAlive:
       timeout: 20s
     blockwiseTransfer:

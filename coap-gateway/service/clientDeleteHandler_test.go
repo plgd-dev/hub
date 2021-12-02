@@ -8,6 +8,7 @@ import (
 
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/tcp"
+	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
 	"github.com/plgd-dev/hub/coap-gateway/uri"
 	testCfg "github.com/plgd-dev/hub/test/config"
 	"github.com/stretchr/testify/assert"
@@ -74,7 +75,7 @@ func TestClientDeleteHandler(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx, cancel := context.WithTimeout(context.Background(), TestExchangeTimeout)
 			defer cancel()
-			req, err := tcp.NewDeleteRequest(ctx, tt.args.path)
+			req, err := tcp.NewDeleteRequest(ctx, pool.New(0, 0), tt.args.path)
 			require.NoError(t, err)
 			resp, err := co.Do(req)
 			require.NoError(t, err)

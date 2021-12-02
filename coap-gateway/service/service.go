@@ -11,12 +11,13 @@ import (
 	"syscall"
 	"time"
 
-	cache "github.com/patrickmn/go-cache"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/mux"
 	"github.com/plgd-dev/go-coap/v2/net"
 	"github.com/plgd-dev/go-coap/v2/net/blockwise"
 	"github.com/plgd-dev/go-coap/v2/net/monitor/inactivity"
+	"github.com/plgd-dev/go-coap/v2/pkg/cache"
+	"github.com/plgd-dev/go-coap/v2/pkg/runner/periodic"
 	"github.com/plgd-dev/go-coap/v2/tcp"
 	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
 	"github.com/plgd-dev/hub/coap-gateway/service/message"
@@ -67,15 +68,16 @@ type Service struct {
 	sigs                  chan os.Signal
 	ownerCache            *idClient.OwnerCache
 	subscriptionsCache    *subscription.SubscriptionsCache
+	messagePool           *pool.Pool
 }
 
-func newExpirationClientCache() *cache.Cache {
-	expirationClientCache := cache.New(cache.NoExpiration, time.Minute)
-	expirationClientCache.OnEvicted(func(deviceID string, c interface{}) {
-		if c == nil {
+func setExpirationClientCache(c *cache.Cache, deviceID string, client *Client, validUntil time.Time) {
+	c.Delete(deviceID)
+	c.LoadOrStore(deviceID, cache.NewElement(client, validUntil, func(cl interface{}) {
+		if cl == nil {
 			return
 		}
-		client := c.(*Client)
+		client := cl.(*Client)
 		authCtx, err := client.GetAuthorizationContext()
 		if err != nil {
 			if err2 := client.Close(); err2 != nil {
@@ -83,6 +85,15 @@ func newExpirationClientCache() *cache.Cache {
 			}
 			log.Debugf("device %v token has been expired", authCtx.GetDeviceID())
 		}
+	}))
+}
+
+func newExpirationClientCache(ctx context.Context) *cache.Cache {
+	expirationClientCache := cache.NewCache()
+	add := periodic.New(ctx.Done(), time.Minute)
+	add(func(now time.Time) bool {
+		expirationClientCache.CheckExpirations(now)
+		return true
 	})
 	return expirationClientCache
 }
@@ -160,7 +171,7 @@ func newTCPListener(config COAPConfig, tlsDeviceIDCache *cache.Cache, logger log
 	closeListener.AddFunc(coapsTLS.Close)
 	tlsCfgForClient := coapsTLS.GetTLSConfig()
 	tlsCfg := tls.Config{
-		GetConfigForClient: MakeGetConfigForClient(tlsCfgForClient, tlsDeviceIDCache),
+		GetConfigForClient: MakeGetConfigForClient(tlsCfgForClient, config.KeepAlive.Timeout, tlsDeviceIDCache),
 	}
 	listener, err := net.NewTLSListener("tcp", config.Addr, &tlsCfg)
 	if err != nil {
@@ -277,7 +288,13 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 	}
 	nats.AddCloseFunc(closeRdClient)
 
-	tlsDeviceIDCache := cache.New(config.APIs.COAP.KeepAlive.Timeout, config.APIs.COAP.KeepAlive.Timeout/2)
+	tlsDeviceIDCache := cache.NewCache()
+	add := periodic.New(ctx.Done(), config.APIs.COAP.KeepAlive.Timeout/2)
+	add(func(now time.Time) bool {
+		tlsDeviceIDCache.CheckExpirations(now)
+		return true
+	})
+
 	listener, closeListener, err := newTCPListener(config.APIs.COAP, tlsDeviceIDCache, logger)
 	if err != nil {
 		nats.Close()
@@ -330,7 +347,7 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 		raClient:              raClient,
 		isClient:              isClient,
 		rdClient:              rdClient,
-		expirationClientCache: newExpirationClientCache(),
+		expirationClientCache: newExpirationClientCache(ctx),
 		tlsDeviceIDCache:      tlsDeviceIDCache,
 		listener:              listener,
 		authInterceptor:       newAuthInterceptor(),
@@ -348,6 +365,7 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 
 		ownerCache:         ownerCache,
 		subscriptionsCache: subscriptionsCache,
+		messagePool:        pool.New(uint32(config.APIs.COAP.MessagePoolSize), 1024),
 	}
 
 	if err := s.setupCoapServer(); err != nil {
@@ -400,7 +418,7 @@ func validateCommand(s mux.ResponseWriter, req *mux.Message, server *Service, fn
 		case coapCodes.Content:
 			// Unregistered observer at a peer send us a notification
 			deviceID := getDeviceID(client)
-			tmp, err := pool.ConvertFrom(req.Message)
+			tmp, err := server.messagePool.ConvertFrom(req.Message)
 			if err != nil {
 				log.Errorf("DeviceId: %v: cannot convert dropped notification: %w", deviceID, err)
 				return
@@ -434,9 +452,9 @@ const clientKey = "client"
 
 func (server *Service) coapConnOnNew(coapConn *tcp.ClientConn, tlscon *tls.Conn) {
 	var tlsDeviceID string
-	v, ok := server.tlsDeviceIDCache.Get(coapConn.RemoteAddr().String())
-	if ok {
-		tlsDeviceID = v.(string)
+	v := server.tlsDeviceIDCache.Load(coapConn.RemoteAddr().String())
+	if v != nil {
+		tlsDeviceID = v.Data().(string)
 	}
 	client := newClient(server, coapConn, tlsDeviceID)
 	coapConn.SetContextValue(clientKey, client)
@@ -451,7 +469,7 @@ func (server *Service) loggingMiddleware(next mux.Handler) mux.Handler {
 		if !ok {
 			client = newClient(server, w.Client().ClientConn().(*tcp.ClientConn), "")
 		}
-		tmp, err := pool.ConvertFrom(r.Message)
+		tmp, err := server.messagePool.ConvertFrom(r.Message)
 		if err != nil {
 			client.logAndWriteErrorResponse(fmt.Errorf("cannot convert from mux.Message: %w", err), coapCodes.InternalServerError, r.Token)
 			return
@@ -528,7 +546,6 @@ func (server *Service) setupCoapServer() error {
 	opts = append(opts, tcp.WithBlockwise(server.config.APIs.COAP.BlockwiseTransfer.Enabled, server.blockWiseTransferSZX, server.config.APIs.COAP.KeepAlive.Timeout))
 	opts = append(opts, tcp.WithMux(m))
 	opts = append(opts, tcp.WithContext(server.ctx))
-	opts = append(opts, tcp.WithHeartBeat(server.config.APIs.COAP.GoroutineSocketHeartbeat))
 	opts = append(opts, tcp.WithMaxMessageSize(server.config.APIs.COAP.MaxMessageSize))
 	opts = append(opts, tcp.WithErrors(func(e error) {
 		log.Errorf("plgd/go-coap: %w", e)
@@ -576,7 +593,7 @@ func (server *Service) serveWithHandlingSignal() error {
 	server.coapServer.Stop()
 	wg.Wait()
 
-	server.tlsDeviceIDCache.Flush()
+	server.tlsDeviceIDCache.PullOutAll()
 
 	return err
 }

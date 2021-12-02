@@ -136,7 +136,7 @@ func (client *Client) onGetResourceContent(ctx context.Context, deviceID, href s
 	}
 	notification.Hijack()
 	err := client.server.taskQueue.Submit(func() {
-		defer pool.ReleaseMessage(notification)
+		defer client.server.messagePool.ReleaseMessage(notification)
 		err2 := client.notifyContentChanged(deviceID, href, false, notification)
 		if err2 != nil {
 			// cloud is unsynchronized against device. To recover cloud state, client need to reconnect to cloud.
@@ -150,7 +150,7 @@ func (client *Client) onGetResourceContent(ctx context.Context, deviceID, href s
 		}
 	})
 	if err != nil {
-		defer pool.ReleaseMessage(notification)
+		defer client.server.messagePool.ReleaseMessage(notification)
 		return cannotGetResourceContentError(deviceID, href, err)
 	}
 	return nil
@@ -169,7 +169,7 @@ func (client *Client) onObserveResource(ctx context.Context, deviceID, href stri
 	}
 	notification.Hijack()
 	err := client.server.taskQueue.Submit(func() {
-		defer pool.ReleaseMessage(notification)
+		defer client.server.messagePool.ReleaseMessage(notification)
 		err2 := client.notifyContentChanged(deviceID, href, batch, notification)
 		if err2 != nil {
 			// cloud is unsynchronized against device. To recover cloud state, client need to reconnect to cloud.
@@ -183,7 +183,7 @@ func (client *Client) onObserveResource(ctx context.Context, deviceID, href stri
 		}
 	})
 	if err != nil {
-		defer pool.ReleaseMessage(notification)
+		defer client.server.messagePool.ReleaseMessage(notification)
 		return cannotObserResourceError(err)
 	}
 	return nil
@@ -242,7 +242,7 @@ func (client *Client) OnClose() {
 	oldAuthCtx := client.CleanUp(false)
 
 	if oldAuthCtx.GetDeviceID() != "" {
-		client.server.expirationClientCache.Set(oldAuthCtx.GetDeviceID(), nil, time.Millisecond)
+		client.server.expirationClientCache.Delete(oldAuthCtx.GetDeviceID())
 		ctx, cancel := context.WithTimeout(context.Background(), client.server.config.APIs.COAP.KeepAlive.Timeout)
 		defer cancel()
 		_, err := client.server.raClient.UpdateDeviceMetadata(kitNetGrpc.CtxWithToken(ctx, oldAuthCtx.GetAccessToken()), &commands.UpdateDeviceMetadataRequest{
@@ -310,8 +310,8 @@ func (client *Client) notifyContentChanged(deviceID, href string, batch bool, no
 }
 
 func (client *Client) sendErrorConfirmResourceUpdate(ctx context.Context, deviceID, href, userID, correlationID string, code codes.Code, errToSend error) {
-	resp := pool.AcquireMessage(ctx)
-	defer pool.ReleaseMessage(resp)
+	resp := client.server.messagePool.AcquireMessage(ctx)
+	defer client.server.messagePool.ReleaseMessage(resp)
 	resp.SetContentFormat(message.TextPlain)
 	resp.SetBody(bytes.NewReader([]byte(errToSend.Error())))
 	resp.SetCode(code)
@@ -334,10 +334,10 @@ func (client *Client) UpdateResource(ctx context.Context, event *events.Resource
 	sendConfirmCtx := authCtx.ToContext(ctx)
 
 	if event.GetResourceId().GetHref() == commands.StatusHref {
-		msg := pool.AcquireMessage(ctx)
+		msg := client.server.messagePool.AcquireMessage(ctx)
 		msg.SetCode(codes.MethodNotAllowed)
 		msg.SetSequence(client.coapConn.Sequence())
-		defer pool.ReleaseMessage(msg)
+		defer client.server.messagePool.ReleaseMessage(msg)
 		request := coapconv.NewConfirmResourceUpdateRequest(event.GetResourceId(), event.GetAuditContext().GetCorrelationId(), client.remoteAddrString(), msg)
 		_, err = client.server.raClient.ConfirmResourceUpdate(sendConfirmCtx, request)
 		if err != nil {
@@ -348,12 +348,12 @@ func (client *Client) UpdateResource(ctx context.Context, event *events.Resource
 
 	coapCtx, cancel := context.WithTimeout(ctx, client.server.config.APIs.COAP.KeepAlive.Timeout)
 	defer cancel()
-	req, err := coapconv.NewCoapResourceUpdateRequest(coapCtx, event)
+	req, err := coapconv.NewCoapResourceUpdateRequest(coapCtx, client.server.messagePool, event)
 	if err != nil {
 		client.sendErrorConfirmResourceUpdate(sendConfirmCtx, event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), authCtx.GetUserID(), event.GetAuditContext().GetCorrelationId(), codes.BadRequest, err)
 		return err
 	}
-	defer pool.ReleaseMessage(req)
+	defer client.server.messagePool.ReleaseMessage(req)
 
 	decodeMsgToDebug(client, req, "RESOURCE-UPDATE-REQUEST")
 
@@ -362,7 +362,7 @@ func (client *Client) UpdateResource(ctx context.Context, event *events.Resource
 		client.sendErrorConfirmResourceUpdate(sendConfirmCtx, event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), authCtx.GetUserID(), event.GetAuditContext().GetCorrelationId(), codes.ServiceUnavailable, err)
 		return err
 	}
-	defer pool.ReleaseMessage(resp)
+	defer client.server.messagePool.ReleaseMessage(resp)
 
 	decodeMsgToDebug(client, resp, "RESOURCE-UPDATE-RESPONSE")
 
@@ -380,8 +380,8 @@ func (client *Client) UpdateResource(ctx context.Context, event *events.Resource
 }
 
 func (client *Client) sendErrorConfirmResourceRetrieve(ctx context.Context, deviceID, href, userID, correlationID string, code codes.Code, errToSend error) {
-	resp := pool.AcquireMessage(ctx)
-	defer pool.ReleaseMessage(resp)
+	resp := client.server.messagePool.AcquireMessage(ctx)
+	defer client.server.messagePool.ReleaseMessage(resp)
 	resp.SetContentFormat(message.TextPlain)
 	resp.SetBody(bytes.NewReader([]byte(errToSend.Error())))
 	resp.SetCode(code)
@@ -404,10 +404,10 @@ func (client *Client) RetrieveResource(ctx context.Context, event *events.Resour
 	sendConfirmCtx := authCtx.ToContext(ctx)
 
 	if event.GetResourceId().GetHref() == commands.StatusHref {
-		msg := pool.AcquireMessage(ctx)
+		msg := client.server.messagePool.AcquireMessage(ctx)
 		msg.SetCode(codes.Content)
 		msg.SetSequence(client.coapConn.Sequence())
-		defer pool.ReleaseMessage(msg)
+		defer client.server.messagePool.ReleaseMessage(msg)
 
 		request := coapconv.NewConfirmResourceRetrieveRequest(event.GetResourceId(), event.GetAuditContext().GetCorrelationId(), client.remoteAddrString(), msg)
 		_, err = client.server.raClient.ConfirmResourceRetrieve(sendConfirmCtx, request)
@@ -419,12 +419,12 @@ func (client *Client) RetrieveResource(ctx context.Context, event *events.Resour
 
 	coapCtx, cancel := context.WithTimeout(ctx, client.server.config.APIs.COAP.KeepAlive.Timeout)
 	defer cancel()
-	req, err := coapconv.NewCoapResourceRetrieveRequest(coapCtx, event)
+	req, err := coapconv.NewCoapResourceRetrieveRequest(coapCtx, client.server.messagePool, event)
 	if err != nil {
 		client.sendErrorConfirmResourceRetrieve(sendConfirmCtx, event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), authCtx.GetUserID(), event.GetAuditContext().GetCorrelationId(), codes.BadRequest, err)
 		return err
 	}
-	defer pool.ReleaseMessage(req)
+	defer client.server.messagePool.ReleaseMessage(req)
 
 	decodeMsgToDebug(client, req, "RESOURCE-RETRIEVE-REQUEST")
 
@@ -433,7 +433,7 @@ func (client *Client) RetrieveResource(ctx context.Context, event *events.Resour
 		client.sendErrorConfirmResourceRetrieve(sendConfirmCtx, event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), authCtx.GetUserID(), event.GetAuditContext().GetCorrelationId(), codes.ServiceUnavailable, err)
 		return err
 	}
-	defer pool.ReleaseMessage(resp)
+	defer client.server.messagePool.ReleaseMessage(resp)
 
 	decodeMsgToDebug(client, resp, "RESOURCE-RETRIEVE-RESPONSE")
 
@@ -451,8 +451,8 @@ func (client *Client) RetrieveResource(ctx context.Context, event *events.Resour
 }
 
 func (client *Client) sendErrorConfirmResourceDelete(ctx context.Context, deviceID, href, userID, correlationID string, code codes.Code, errToSend error) {
-	resp := pool.AcquireMessage(ctx)
-	defer pool.ReleaseMessage(resp)
+	resp := client.server.messagePool.AcquireMessage(ctx)
+	defer client.server.messagePool.ReleaseMessage(resp)
 	resp.SetContentFormat(message.TextPlain)
 	resp.SetBody(bytes.NewReader([]byte(errToSend.Error())))
 	resp.SetCode(code)
@@ -475,10 +475,10 @@ func (client *Client) DeleteResource(ctx context.Context, event *events.Resource
 	sendConfirmCtx := authCtx.ToContext(ctx)
 
 	if event.GetResourceId().GetHref() == commands.StatusHref {
-		msg := pool.AcquireMessage(ctx)
+		msg := client.server.messagePool.AcquireMessage(ctx)
 		msg.SetCode(codes.Forbidden)
 		msg.SetSequence(client.coapConn.Sequence())
-		defer pool.ReleaseMessage(msg)
+		defer client.server.messagePool.ReleaseMessage(msg)
 
 		request := coapconv.NewConfirmResourceDeleteRequest(event.GetResourceId(), event.GetAuditContext().GetCorrelationId(), client.remoteAddrString(), msg)
 		_, err = client.server.raClient.ConfirmResourceDelete(sendConfirmCtx, request)
@@ -490,12 +490,12 @@ func (client *Client) DeleteResource(ctx context.Context, event *events.Resource
 
 	coapCtx, cancel := context.WithTimeout(ctx, client.server.config.APIs.COAP.KeepAlive.Timeout)
 	defer cancel()
-	req, err := coapconv.NewCoapResourceDeleteRequest(coapCtx, event)
+	req, err := coapconv.NewCoapResourceDeleteRequest(coapCtx, client.server.messagePool, event)
 	if err != nil {
 		client.sendErrorConfirmResourceDelete(sendConfirmCtx, event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), authCtx.GetUserID(), event.GetAuditContext().GetCorrelationId(), codes.BadRequest, err)
 		return err
 	}
-	defer pool.ReleaseMessage(req)
+	defer client.server.messagePool.ReleaseMessage(req)
 
 	decodeMsgToDebug(client, req, "RESOURCE-DELETE-REQUEST")
 
@@ -504,7 +504,7 @@ func (client *Client) DeleteResource(ctx context.Context, event *events.Resource
 		client.sendErrorConfirmResourceDelete(sendConfirmCtx, event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), authCtx.GetUserID(), event.GetAuditContext().GetCorrelationId(), codes.ServiceUnavailable, err)
 		return err
 	}
-	defer pool.ReleaseMessage(resp)
+	defer client.server.messagePool.ReleaseMessage(resp)
 
 	decodeMsgToDebug(client, resp, "RESOURCE-DELETE-RESPONSE")
 
@@ -566,8 +566,8 @@ func (client *Client) unpublishResourceLinks(ctx context.Context, hrefs []string
 }
 
 func (client *Client) sendErrorConfirmResourceCreate(ctx context.Context, resourceID *commands.ResourceId, userID, correlationID string, code codes.Code, errToSend error) {
-	resp := pool.AcquireMessage(ctx)
-	defer pool.ReleaseMessage(resp)
+	resp := client.server.messagePool.AcquireMessage(ctx)
+	defer client.server.messagePool.ReleaseMessage(resp)
 	resp.SetContentFormat(message.TextPlain)
 	resp.SetBody(bytes.NewReader([]byte(errToSend.Error())))
 	resp.SetCode(code)
@@ -589,10 +589,10 @@ func (client *Client) CreateResource(ctx context.Context, event *events.Resource
 	}
 	sendConfirmCtx := authCtx.ToContext(ctx)
 	if event.GetResourceId().GetHref() == commands.StatusHref {
-		msg := pool.AcquireMessage(ctx)
+		msg := client.server.messagePool.AcquireMessage(ctx)
 		msg.SetCode(codes.Forbidden)
 		msg.SetSequence(client.coapConn.Sequence())
-		defer pool.ReleaseMessage(msg)
+		defer client.server.messagePool.ReleaseMessage(msg)
 		request := coapconv.NewConfirmResourceCreateRequest(event.GetResourceId(), event.GetAuditContext().GetCorrelationId(), client.remoteAddrString(), msg)
 		_, err = client.server.raClient.ConfirmResourceCreate(sendConfirmCtx, request)
 		if err != nil {
@@ -603,12 +603,12 @@ func (client *Client) CreateResource(ctx context.Context, event *events.Resource
 
 	coapCtx, cancel := context.WithTimeout(ctx, client.server.config.APIs.COAP.KeepAlive.Timeout)
 	defer cancel()
-	req, err := coapconv.NewCoapResourceCreateRequest(coapCtx, event)
+	req, err := coapconv.NewCoapResourceCreateRequest(coapCtx, client.server.messagePool, event)
 	if err != nil {
 		client.sendErrorConfirmResourceCreate(sendConfirmCtx, event.GetResourceId(), authCtx.GetUserID(), event.GetAuditContext().GetCorrelationId(), codes.BadRequest, err)
 		return err
 	}
-	defer pool.ReleaseMessage(req)
+	defer client.server.messagePool.ReleaseMessage(req)
 
 	decodeMsgToDebug(client, req, "RESOURCE-CREATE-REQUEST")
 
@@ -617,7 +617,7 @@ func (client *Client) CreateResource(ctx context.Context, event *events.Resource
 		client.sendErrorConfirmResourceCreate(sendConfirmCtx, event.GetResourceId(), authCtx.GetUserID(), event.GetAuditContext().GetCorrelationId(), codes.ServiceUnavailable, err)
 		return err
 	}
-	defer pool.ReleaseMessage(resp)
+	defer client.server.messagePool.ReleaseMessage(resp)
 
 	decodeMsgToDebug(client, resp, "RESOURCE-CREATE-RESPONSE")
 

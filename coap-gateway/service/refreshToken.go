@@ -82,10 +82,10 @@ func updateClient(client *Client, deviceID, owner, accessToken string, validUnti
 	client.SetAuthorizationContext(&authCtx)
 
 	if validUntil.IsZero() {
-		client.server.expirationClientCache.Set(deviceID, nil, time.Millisecond)
+		client.server.expirationClientCache.Delete(deviceID)
 	} else {
 		expiresIn := validUntilToExpiresIn(validUntil)
-		client.server.expirationClientCache.Set(deviceID, client, time.Second*time.Duration(expiresIn))
+		setExpirationClientCache(client.server.expirationClientCache, deviceID, client, time.Now().Add(time.Second*time.Duration(expiresIn)))
 	}
 }
 

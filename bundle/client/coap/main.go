@@ -207,7 +207,7 @@ func createResource(co *coap.ClientConn, href string, contentFormat int) {
 	if err != nil {
 		createError(err)
 	}
-	req, err := coap.NewPostRequest(context.Background(), href, message.MediaType(contentFormat), os.Stdin)
+	req, err := coap.NewPostRequest(context.Background(), pool.New(0, 0), href, message.MediaType(contentFormat), os.Stdin)
 	if err != nil {
 		createError(err)
 	}

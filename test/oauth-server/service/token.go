@@ -13,6 +13,7 @@ import (
 	"github.com/lestrrat-go/jwx/jwk"
 	"github.com/lestrrat-go/jwx/jws"
 	"github.com/lestrrat-go/jwx/jwt"
+	"github.com/plgd-dev/go-coap/v2/pkg/cache"
 	"github.com/plgd-dev/hub/pkg/log"
 	"github.com/plgd-dev/hub/test/oauth-server/uri"
 	"github.com/plgd-dev/kit/v2/codec/json"
@@ -263,28 +264,28 @@ func (requestHandler *RequestHandler) postToken(w http.ResponseWriter, r *http.R
 
 func (requestHandler *RequestHandler) handleRestriction(tokenReq tokenRequest, restrictionLifetime time.Duration) error {
 	if tokenReq.GrantType == string(AllowedGrantType_AUTHORIZATION_CODE) {
-		_, ok := requestHandler.authRestriction.Get(tokenReq.Code)
-		if ok {
+		v := requestHandler.authRestriction.Load(tokenReq.Code)
+		if v != nil {
 			return fmt.Errorf("auth code(%v) reused", tokenReq.Code)
 		}
-		requestHandler.authRestriction.Set(tokenReq.Code, struct{}{}, restrictionLifetime)
+		requestHandler.authRestriction.LoadOrStore(tokenReq.Code, cache.NewElement(struct{}{}, time.Now().Add(restrictionLifetime), nil))
 	}
 	if tokenReq.GrantType == string(AllowedGrantType_REFRESH_TOKEN) {
-		_, ok := requestHandler.refreshRestriction.Get(tokenReq.RefreshToken)
-		if ok {
+		v := requestHandler.refreshRestriction.Load(tokenReq.RefreshToken)
+		if v != nil {
 			return fmt.Errorf("refreshToken(%v) reused", tokenReq.RefreshToken)
 		}
-		requestHandler.refreshRestriction.Set(tokenReq.RefreshToken, struct{}{}, restrictionLifetime)
+		requestHandler.refreshRestriction.LoadOrStore(tokenReq.RefreshToken, cache.NewElement(struct{}{}, time.Now().Add(restrictionLifetime), nil))
 	}
 	return nil
 }
 
 func (requestHandler *RequestHandler) getAuthorizedSession(tokenReq tokenRequest) authorizedSession {
 	var authSession authorizedSession
-	authSessionI, ok := requestHandler.authSession.Get(tokenReq.Code)
+	v := requestHandler.authSession.Load(tokenReq.Code)
 	requestHandler.authSession.Delete(tokenReq.Code)
-	if ok {
-		authSession = authSessionI.(authorizedSession)
+	if v != nil {
+		authSession = v.Data().(authorizedSession)
 	}
 	return authSession
 }

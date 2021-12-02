@@ -9,7 +9,7 @@ import (
 )
 
 func (client *Client) sendResponse(code coapCodes.Code, token message.Token, contentFormat message.MediaType, payload []byte) {
-	msg, cleanUp := coapgwMessage.GetResponse(client.coapConn.Context(), code, token, contentFormat, payload)
+	msg, cleanUp := coapgwMessage.GetResponse(client.coapConn.Context(), client.server.messagePool, code, token, contentFormat, payload)
 	defer cleanUp()
 	err := client.coapConn.WriteMessage(msg)
 	if err != nil {

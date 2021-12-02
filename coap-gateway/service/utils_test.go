@@ -108,8 +108,8 @@ func testSignUp(t *testing.T, deviceID string, co *tcp.ClientConn) service.CoapS
 
 	ctx, cancel := context.WithTimeout(co.Context(), TestExchangeTimeout)
 	defer cancel()
-	req := pool.AcquireMessage(ctx)
-	defer pool.ReleaseMessage(req)
+	req := co.AcquireMessage(ctx)
+	defer co.ReleaseMessage(req)
 	token, err := message.GetToken()
 	require.NoError(t, err)
 	req.SetCode(codes.POST)
@@ -120,7 +120,7 @@ func testSignUp(t *testing.T, deviceID string, co *tcp.ClientConn) service.CoapS
 
 	resp, err := co.Do(req)
 	require.NoError(t, err)
-	defer pool.ReleaseMessage(resp)
+	defer co.ReleaseMessage(resp)
 
 	require.Equal(t, codes.Changed, resp.Code())
 	var signUpResp service.CoapSignUpResponse
@@ -142,8 +142,8 @@ func runSignIn(t *testing.T, deviceID string, r service.CoapSignUpResponse, co *
 
 	ctx, cancel := context.WithTimeout(co.Context(), TestExchangeTimeout)
 	defer cancel()
-	req := pool.AcquireMessage(ctx)
-	defer pool.ReleaseMessage(req)
+	req := co.AcquireMessage(ctx)
+	defer co.ReleaseMessage(req)
 	token, err := message.GetToken()
 	require.NoError(t, err)
 	req.SetCode(codes.POST)
@@ -154,7 +154,7 @@ func runSignIn(t *testing.T, deviceID string, r service.CoapSignUpResponse, co *
 
 	resp, err := co.Do(req)
 	require.NoError(t, err)
-	defer pool.ReleaseMessage(resp)
+	defer co.ReleaseMessage(resp)
 
 	var signInResp service.CoapSignInResp
 	if resp.Code() == codes.Changed {
@@ -188,8 +188,8 @@ func testPostHandler(t *testing.T, path string, test testEl, co *tcp.ClientConn)
 
 	ctx, cancel := context.WithTimeout(co.Context(), TestExchangeTimeout)
 	defer cancel()
-	req := pool.AcquireMessage(ctx)
-	defer pool.ReleaseMessage(req)
+	req := co.AcquireMessage(ctx)
+	defer co.ReleaseMessage(req)
 	token, err := message.GetToken()
 	require.NoError(t, err)
 	req.SetCode(test.in.code)
@@ -209,7 +209,7 @@ func testPostHandler(t *testing.T, path string, test testEl, co *tcp.ClientConn)
 		}
 		require.NoError(t, err)
 	}
-	defer pool.ReleaseMessage(resp)
+	defer co.ReleaseMessage(resp)
 	testValidateResp(t, test, resp)
 }
 

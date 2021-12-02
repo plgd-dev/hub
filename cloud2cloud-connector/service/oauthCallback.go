@@ -41,13 +41,13 @@ func (rh *RequestHandler) oAuthCallback(w http.ResponseWriter, r *http.Request) 
 	authCode := r.FormValue("code")
 	state := r.FormValue("state")
 
-	cacheData, ok := rh.provisionCache.Get(state)
-	if !ok {
+	cacheData := rh.provisionCache.Load(state)
+	if cacheData == nil {
 		return http.StatusBadRequest, fmt.Errorf("invalid/expired OAuth state")
 	}
 	rh.provisionCache.Delete(state)
 
-	data, ok := cacheData.(provisionCacheData)
+	data, ok := cacheData.Data().(provisionCacheData)
 	if !ok {
 		return http.StatusBadRequest, fmt.Errorf("invalid/expired OAuth state")
 	}

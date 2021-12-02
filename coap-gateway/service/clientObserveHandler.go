@@ -12,7 +12,6 @@ import (
 	coapMessage "github.com/plgd-dev/go-coap/v2/message"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/mux"
-	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
 	"github.com/plgd-dev/hub/coap-gateway/coapconv"
 	"github.com/plgd-dev/hub/coap-gateway/service/message"
 	"github.com/plgd-dev/hub/grpc-gateway/pb"
@@ -53,7 +52,7 @@ func clientObserveHandler(req *mux.Message, client *Client, observe uint32) {
 }
 
 func SendResourceContentToObserver(client *Client, resourceChanged *events.ResourceChanged, observe uint32, token coapMessage.Token) {
-	msg := pool.AcquireMessage(client.coapConn.Context())
+	msg := client.server.messagePool.AcquireMessage(client.coapConn.Context())
 	msg.SetCode(coapCodes.Content)
 	msg.SetObserve(observe)
 	msg.SetToken(token)

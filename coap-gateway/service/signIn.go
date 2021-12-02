@@ -302,9 +302,9 @@ func signInPostHandler(req *mux.Message, client *Client, signIn CoapSignInReq) {
 	}
 
 	if validUntil.IsZero() {
-		client.server.expirationClientCache.Set(deviceID, nil, time.Millisecond)
+		client.server.expirationClientCache.Delete(deviceID)
 	} else {
-		client.server.expirationClientCache.Set(deviceID, client, time.Second*time.Duration(expiresIn))
+		setExpirationClientCache(client.server.expirationClientCache, deviceID, client, time.Now().Add(time.Second*time.Duration(expiresIn)))
 	}
 
 	client.exchangeCache.Clear()
@@ -320,7 +320,7 @@ func updateDeviceMetadata(req *mux.Message, client *Client) error {
 	oldAuthCtx := client.CleanUp(true)
 	if oldAuthCtx.GetDeviceID() != "" {
 		ctx := kitNetGrpc.CtxWithToken(req.Context, oldAuthCtx.GetAccessToken())
-		client.server.expirationClientCache.Set(oldAuthCtx.GetDeviceID(), nil, time.Millisecond)
+		client.server.expirationClientCache.Delete(oldAuthCtx.GetDeviceID())
 
 		_, err := client.server.raClient.UpdateDeviceMetadata(ctx, &commands.UpdateDeviceMetadataRequest{
 			DeviceId: oldAuthCtx.GetDeviceID(),

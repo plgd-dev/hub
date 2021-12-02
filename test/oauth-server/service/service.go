@@ -38,7 +38,7 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 		return nil, fmt.Errorf("cannot load private accessTokenKeyFile(%v): %v", config.OAuthSigner.AccessTokenKeyFile, err)
 	}
 
-	requestHandler, err := NewRequestHandler(&config, idTokenPrivateKey, accessTokenPrivateKeyI)
+	requestHandler, err := NewRequestHandler(ctx, &config, idTokenPrivateKey, accessTokenPrivateKeyI)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create request handler: %w", err)
 	}

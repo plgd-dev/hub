@@ -15,7 +15,8 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
 
-	"github.com/patrickmn/go-cache"
+	"github.com/plgd-dev/go-coap/v2/pkg/cache"
+	"github.com/plgd-dev/go-coap/v2/pkg/runner/periodic"
 	"github.com/plgd-dev/hub/pkg/security/certManager/client"
 	pkgTime "github.com/plgd-dev/hub/pkg/time"
 	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventstore"
@@ -160,6 +161,12 @@ func newEventStoreWithClient(ctx context.Context, client *mongo.Client, dbPrefix
 	if LogDebugfFunc == nil {
 		LogDebugfFunc = func(fmt string, args ...interface{}) {}
 	}
+	ensuredIndexes := cache.NewCache()
+	add := periodic.New(ctx.Done(), time.Hour/2)
+	add(func(now time.Time) bool {
+		ensuredIndexes.CheckExpirations(now)
+		return true
+	})
 
 	s := &EventStore{
 		client:          client,
@@ -169,7 +176,7 @@ func newEventStoreWithClient(ctx context.Context, client *mongo.Client, dbPrefix
 		dataUnmarshaler: eventUnmarshaler,
 		batchSize:       batchSize,
 		LogDebugfFunc:   LogDebugfFunc,
-		ensuredIndexes:  cache.New(time.Hour, time.Hour),
+		ensuredIndexes:  ensuredIndexes,
 	}
 
 	colAv := s.client.Database(s.DBName()).Collection(maintenanceCName)
@@ -196,8 +203,8 @@ func newEventStoreWithClient(ctx context.Context, client *mongo.Client, dbPrefix
 }
 
 func (s *EventStore) ensureIndex(ctx context.Context, col *mongo.Collection, indexes ...bson.D) error {
-	_, ok := s.ensuredIndexes.Get(col.Name())
-	if ok {
+	v := s.ensuredIndexes.Load(col.Name())
+	if v != nil {
 		return nil
 	}
 	for _, keys := range indexes {
@@ -216,7 +223,7 @@ func (s *EventStore) ensureIndex(ctx context.Context, col *mongo.Collection, ind
 			return fmt.Errorf("cannot ensure indexes for eventstore: %w", err)
 		}
 	}
-	s.ensuredIndexes.SetDefault(col.Name(), true)
+	s.ensuredIndexes.LoadOrStore(col.Name(), cache.NewElement(true, time.Now().Add(time.Hour), nil))
 	return nil
 }
 
@@ -305,7 +312,7 @@ func (s *EventStore) ClearCollections(ctx context.Context) error {
 
 // Close closes the database session.
 func (s *EventStore) Close(ctx context.Context) error {
-	s.ensuredIndexes.Flush()
+	s.ensuredIndexes.PullOutAll()
 	err := s.client.Disconnect(ctx)
 	for _, f := range s.closeFunc {
 		f()

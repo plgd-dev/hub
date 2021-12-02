@@ -128,7 +128,7 @@ func (server *Service) loggingMiddleware(next mux.Handler) mux.Handler {
 		if !ok {
 			client = newClient(server, w.Client().ClientConn().(*tcp.ClientConn), nil)
 		}
-		tmp, err := pool.ConvertFrom(r.Message)
+		tmp, err := pool.New(0, 0).ConvertFrom(r.Message)
 		if err != nil {
 			client.logAndWriteErrorResponse(fmt.Errorf("cannot convert from mux.Message: %w", err), coapCodes.InternalServerError, r.Token)
 			return
@@ -160,7 +160,7 @@ func validateCommand(s mux.ResponseWriter, req *mux.Message, server *Service, fn
 			}
 		case coapCodes.Content:
 			// Unregistered observer at a peer send us a notification
-			tmp, err := pool.ConvertFrom(req.Message)
+			tmp, err := pool.New(0, 0).ConvertFrom(req.Message)
 			if err != nil {
 				log.Errorf("cannot convert dropped notification: %w", err)
 				return
@@ -220,7 +220,6 @@ func (server *Service) setupCoapServer() error {
 	opts = append(opts, tcp.WithOnNewClientConn(server.coapConnOnNew))
 	opts = append(opts, tcp.WithMux(m))
 	opts = append(opts, tcp.WithContext(server.ctx))
-	opts = append(opts, tcp.WithHeartBeat(server.config.APIs.COAP.GoroutineSocketHeartbeat))
 	opts = append(opts, tcp.WithErrors(func(e error) {
 		log.Errorf("plgd/test-coap: %w", e)
 	}))

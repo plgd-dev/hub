@@ -91,16 +91,16 @@ func (c *AuthorizationConfig) Validate() error {
 }
 
 type COAPConfig struct {
-	Addr                     string                  `yaml:"address" json:"address"`
-	ExternalAddress          string                  `yaml:"externalAddress" json:"externalAddress"`
-	MaxMessageSize           int                     `yaml:"maxMessageSize" json:"maxMessageSize"`
-	OwnerCacheExpiration     time.Duration           `yaml:"ownerCacheExpiration" json:"ownerCacheExpiration"`
-	SubscriptionBufferSize   int                     `yaml:"subscriptionBufferSize" json:"subscriptionBufferSize"`
-	GoroutineSocketHeartbeat time.Duration           `yaml:"goroutineSocketHeartbeat" json:"goroutineSocketHeartbeat"`
-	KeepAlive                KeepAlive               `yaml:"keepAlive" json:"keepAlive"`
-	BlockwiseTransfer        BlockwiseTransferConfig `yaml:"blockwiseTransfer" json:"blockwiseTransfer"`
-	TLS                      TLSConfig               `yaml:"tls" json:"tls"`
-	Authorization            AuthorizationConfig     `yaml:"authorization" json:"authorization"`
+	Addr                   string                  `yaml:"address" json:"address"`
+	ExternalAddress        string                  `yaml:"externalAddress" json:"externalAddress"`
+	MaxMessageSize         int                     `yaml:"maxMessageSize" json:"maxMessageSize"`
+	OwnerCacheExpiration   time.Duration           `yaml:"ownerCacheExpiration" json:"ownerCacheExpiration"`
+	SubscriptionBufferSize int                     `yaml:"subscriptionBufferSize" json:"subscriptionBufferSize"`
+	MessagePoolSize        int                     `yaml:"messagePoolSize" json:"messagePoolSize"`
+	KeepAlive              KeepAlive               `yaml:"keepAlive" json:"keepAlive"`
+	BlockwiseTransfer      BlockwiseTransferConfig `yaml:"blockwiseTransfer" json:"blockwiseTransfer"`
+	TLS                    TLSConfig               `yaml:"tls" json:"tls"`
+	Authorization          AuthorizationConfig     `yaml:"authorization" json:"authorization"`
 }
 
 func (c *COAPConfig) Validate() error {
@@ -116,8 +116,8 @@ func (c *COAPConfig) Validate() error {
 	if c.OwnerCacheExpiration <= 0 {
 		return fmt.Errorf("ownerCacheExpiration('%v')", c.OwnerCacheExpiration)
 	}
-	if c.GoroutineSocketHeartbeat <= 0 {
-		return fmt.Errorf("goroutineSocketHeartbeat('%v')", c.GoroutineSocketHeartbeat)
+	if c.MessagePoolSize < 0 {
+		return fmt.Errorf("messagePoolSize('%v')", c.MessagePoolSize)
 	}
 	if c.SubscriptionBufferSize < 0 {
 		return fmt.Errorf("subscriptionBufferSize('%v')", c.SubscriptionBufferSize)
