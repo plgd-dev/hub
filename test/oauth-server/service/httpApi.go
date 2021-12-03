@@ -80,6 +80,7 @@ func NewRequestHandler(ctx context.Context, config *Config, idTokenKey *rsa.Priv
 	add(func(now time.Time) bool {
 		authSession.CheckExpirations(now)
 		authRestriction.CheckExpirations(now)
+		refreshRestriction.CheckExpirations(now)
 		return true
 	})
 
