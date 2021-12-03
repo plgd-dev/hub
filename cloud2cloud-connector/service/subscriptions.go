@@ -75,10 +75,9 @@ func NewSubscriptionManager(
 		raClient:            raClient,
 		isClient:            isClient,
 		devicesSubscription: devicesSubscription,
-		// cache:               cache.New(time.Minute*10, time.Minute*5),
-		cache:       cache,
-		provider:    provider,
-		triggerTask: triggerTask,
+		cache:               cache,
+		provider:            provider,
+		triggerTask:         triggerTask,
 	}
 }
 

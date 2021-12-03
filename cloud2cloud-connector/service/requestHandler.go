@@ -58,11 +58,10 @@ func NewRequestHandler(
 		return true
 	})
 	return &RequestHandler{
-		ownerClaim: ownerClaim,
-		provider:   provider,
-		subManager: subManager,
-		store:      store,
-		//provisionCache: cache.New(5*time.Minute, 10*time.Minute),
+		ownerClaim:     ownerClaim,
+		provider:       provider,
+		subManager:     subManager,
+		store:          store,
 		provisionCache: cache,
 		triggerTask:    triggerTask,
 	}

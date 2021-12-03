@@ -40,9 +40,9 @@ func (s *SubscriptionManager) SubscribeToDevices(ctx context.Context, linkedAcco
 		linkedCloud:   linkedCloud,
 		subscription:  sub,
 	}
-	_, loaded := s.cache.LoadOrStore(correlationID, cache.NewElement(data, time.Now().Add(time.Minute*10), nil))
+	_, loaded := s.cache.LoadOrStore(correlationID, cache.NewElement(data, time.Now().Add(CacheExpiration), nil))
 	if loaded {
-		return fmt.Errorf("cannot cache subscription for start subscriptions: subscription with %v already exist", correlationID)
+		return fmt.Errorf("cannot cache subscription for start subscriptions: subscription with %v already exists", correlationID)
 	}
 	sub.ID, err = s.subscribeToDevices(ctx, linkedAccount, linkedCloud, correlationID, signingSecret)
 	if err != nil {

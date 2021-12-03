@@ -19,6 +19,8 @@ type LinkedCloudHandler struct {
 	set         bool
 }
 
+const CacheExpiration = time.Minute * 10
+
 func (h *LinkedCloudHandler) Handle(ctx context.Context, iter store.LinkedCloudIter) (err error) {
 	var s store.LinkedCloud
 	if iter.Next(ctx, &s) {
@@ -49,7 +51,7 @@ func (rh *RequestHandler) handleOAuth(w http.ResponseWriter, r *http.Request, li
 	_, loaded := rh.provisionCache.LoadOrStore(t, cache.NewElement(provisionCacheData{
 		linkedAccount: linkedAccount,
 		linkedCloud:   linkedCloud,
-	}, time.Now().Add(time.Minute*10), nil))
+	}, time.Now().Add(CacheExpiration), nil))
 	if loaded {
 		return http.StatusInternalServerError, fmt.Errorf("cannot store key - collision")
 	}
