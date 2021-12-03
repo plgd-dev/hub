@@ -20,7 +20,7 @@ require (
 	github.com/nats-io/nats.go v1.13.1-0.20211018182449-f2416a8b1483
 	github.com/panjf2000/ants/v2 v2.4.6
 	github.com/plgd-dev/device v0.0.0-20211201161522-bbc0f18d1b26
-	github.com/plgd-dev/go-coap/v2 v2.4.1-0.20211201143953-6d44f84bf0f4
+	github.com/plgd-dev/go-coap/v2 v2.4.1-0.20211203082302-368f19bee2ba
 	github.com/plgd-dev/kit/v2 v2.0.0-20211006190727-057b33161b90
 	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.7.0
