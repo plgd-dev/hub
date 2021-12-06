@@ -13,7 +13,12 @@ oauthSigner:
   accessTokenKeyFile: "/secrets/private/accessToken.key"
   domain: ""
   clients:
-  - id: "test"
-    authorizationCodeLifetime: "10m"
-    accessTokenLifetime: "0s"
-    codeRestrictionLifetime: "0s"
+    - id: "test"
+      authorizationCodeLifetime: "10m"
+      accessTokenLifetime: "0s"
+      codeRestrictionLifetime: "0s"
+    - id: "testC2C"
+      authorizationCodeLifetime: "10m"
+      accessTokenLifetime: "0s"
+      codeRestrictionLifetime: "0s"
+      consentScreenEnabled: true

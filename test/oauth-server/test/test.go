@@ -23,17 +23,18 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const ClientTest = "test"
-
-// Client with short auth code and access token expiration
-const ClientTestShortExpiration = "testShortExpiration"
-
-// Client will return error when the same auth code or refresh token
-// is used repeatedly within a minute of the first use
-const ClientTestRestrictedAuth = "testRestrictedAuth"
-
-// Client with expired access token
-const ClientTestExpired = "testExpired"
+const (
+	ClientTest = "test"
+	// Client with short auth code and access token expiration
+	ClientTestShortExpiration = "testShortExpiration"
+	// Client will return error when the same auth code or refresh token
+	// is used repeatedly within a minute of the first use
+	ClientTestRestrictedAuth = "testRestrictedAuth"
+	// Client with expired access token
+	ClientTestExpired = "testExpired"
+	// Client for C2C testing
+	ClientTestC2C = "testC2C"
+)
 
 func MakeConfig(t *testing.T) service.Config {
 	var cfg service.Config
@@ -67,6 +68,13 @@ func MakeConfig(t *testing.T) service.Config {
 			AuthorizationCodeLifetime: time.Second * 10,
 			AccessTokenLifetime:       -1 * time.Second,
 			CodeRestrictionLifetime:   0,
+		},
+		{
+			ID:                        ClientTestC2C,
+			AuthorizationCodeLifetime: time.Minute * 10,
+			AccessTokenLifetime:       0,
+			CodeRestrictionLifetime:   0,
+			ConsentScreenEnabled:      true,
 		},
 	}
 

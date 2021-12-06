@@ -129,7 +129,7 @@ func writeConsentScreen(w http.ResponseWriter, scopes string, redirectUrl *url.U
 	<!DOCTYPE html>
 	<html>
 		<head>
-			<title>Conset Screen</title>
+			<title>Consent Screen</title>
 		</head>
 		<body>
 			<center>
