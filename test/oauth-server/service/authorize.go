@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"time"
 
+	"github.com/plgd-dev/go-coap/v2/pkg/cache"
 	"github.com/plgd-dev/hub/pkg/log"
 	"github.com/plgd-dev/hub/test/oauth-server/uri"
 	"github.com/plgd-dev/kit/v2/codec/json"
@@ -35,11 +37,11 @@ func (requestHandler *RequestHandler) authorize(w http.ResponseWriter, r *http.R
 	audience := r.URL.Query().Get(uri.AudienceKey)
 	deviceId := r.URL.Query().Get(uri.DeviceId)
 	code := hex.EncodeToString(b)
-	requestHandler.authSession.Set(code, authorizedSession{
+	requestHandler.authSession.LoadOrStore(code, cache.NewElement(authorizedSession{
 		nonce:    nonce,
 		audience: audience,
 		deviceID: deviceId,
-	}, clientCfg.AuthorizationCodeLifetime)
+	}, time.Now().Add(clientCfg.AuthorizationCodeLifetime), nil))
 	responseMode := r.URL.Query().Get(uri.ResponseMode)
 	state := r.URL.Query().Get(uri.StateKey)
 	switch responseMode {

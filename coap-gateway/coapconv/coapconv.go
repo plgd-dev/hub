@@ -100,7 +100,7 @@ func MakeMediaType(coapContentFormat int32, contentType string) (message.MediaTy
 	}
 }
 
-func NewCoapResourceUpdateRequest(ctx context.Context, event *events.ResourceUpdatePending) (*pool.Message, error) {
+func NewCoapResourceUpdateRequest(ctx context.Context, messagePool *pool.Pool, event *events.ResourceUpdatePending) (*pool.Message, error) {
 	mediaType, err := MakeMediaType(-1, event.GetContent().GetContentType())
 	if err != nil {
 		return nil, fmt.Errorf("invalid content type for update content: %w", err)
@@ -109,7 +109,7 @@ func NewCoapResourceUpdateRequest(ctx context.Context, event *events.ResourceUpd
 		return nil, fmt.Errorf("invalid content for update content")
 	}
 
-	req, err := tcp.NewPostRequest(ctx, event.GetResourceId().GetHref(), mediaType, bytes.NewReader(event.GetContent().GetData()))
+	req, err := tcp.NewPostRequest(ctx, messagePool, event.GetResourceId().GetHref(), mediaType, bytes.NewReader(event.GetContent().GetData()))
 	if err != nil {
 		return nil, err
 	}
@@ -120,8 +120,8 @@ func NewCoapResourceUpdateRequest(ctx context.Context, event *events.ResourceUpd
 	return req, nil
 }
 
-func NewCoapResourceRetrieveRequest(ctx context.Context, event *events.ResourceRetrievePending) (*pool.Message, error) {
-	req, err := tcp.NewGetRequest(ctx, event.GetResourceId().GetHref())
+func NewCoapResourceRetrieveRequest(ctx context.Context, messagePool *pool.Pool, event *events.ResourceRetrievePending) (*pool.Message, error) {
+	req, err := tcp.NewGetRequest(ctx, messagePool, event.GetResourceId().GetHref())
 	if err != nil {
 		return nil, err
 	}
@@ -132,8 +132,8 @@ func NewCoapResourceRetrieveRequest(ctx context.Context, event *events.ResourceR
 	return req, nil
 }
 
-func NewCoapResourceDeleteRequest(ctx context.Context, event *events.ResourceDeletePending) (*pool.Message, error) {
-	req, err := tcp.NewDeleteRequest(ctx, event.GetResourceId().GetHref())
+func NewCoapResourceDeleteRequest(ctx context.Context, messagePool *pool.Pool, event *events.ResourceDeletePending) (*pool.Message, error) {
+	req, err := tcp.NewDeleteRequest(ctx, messagePool, event.GetResourceId().GetHref())
 	if err != nil {
 		return nil, err
 	}
@@ -385,7 +385,7 @@ func NewConfirmResourceCreateRequest(resourceID *commands.ResourceId, correlatio
 	}
 }
 
-func NewCoapResourceCreateRequest(ctx context.Context, event *events.ResourceCreatePending) (*pool.Message, error) {
+func NewCoapResourceCreateRequest(ctx context.Context, messagePool *pool.Pool, event *events.ResourceCreatePending) (*pool.Message, error) {
 	mediaType, err := MakeMediaType(-1, event.GetContent().GetContentType())
 	if err != nil {
 		return nil, fmt.Errorf("invalid content type for create content: %w", err)
@@ -394,7 +394,7 @@ func NewCoapResourceCreateRequest(ctx context.Context, event *events.ResourceCre
 		return nil, fmt.Errorf("invalid content for create content")
 	}
 
-	req, err := tcp.NewPostRequest(ctx, event.GetResourceId().GetHref(), mediaType, bytes.NewReader(event.GetContent().GetData()))
+	req, err := tcp.NewPostRequest(ctx, messagePool, event.GetResourceId().GetHref(), mediaType, bytes.NewReader(event.GetContent().GetData()))
 	if err != nil {
 		return nil, err
 	}

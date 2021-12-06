@@ -100,7 +100,7 @@ func TestClientObserveHandler(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx, cancel := context.WithTimeout(context.Background(), TestExchangeTimeout)
 			defer cancel()
-			req, err := tcp.NewGetRequest(ctx, tt.args.path)
+			req, err := tcp.NewGetRequest(ctx, pool.New(0, 0), tt.args.path)
 			require.NoError(t, err)
 			req.SetObserve(tt.args.observe)
 			if tt.args.token != nil {

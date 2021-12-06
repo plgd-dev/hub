@@ -7,12 +7,12 @@ import (
 	"fmt"
 	"time"
 
-	cache "github.com/patrickmn/go-cache"
+	"github.com/plgd-dev/device/pkg/net/coap"
+	"github.com/plgd-dev/go-coap/v2/message/codes"
+	"github.com/plgd-dev/go-coap/v2/pkg/cache"
 	"github.com/plgd-dev/hub/coap-gateway/uri"
 	"github.com/plgd-dev/hub/pkg/net/grpc"
 	pkgJwt "github.com/plgd-dev/hub/pkg/security/jwt"
-	"github.com/plgd-dev/device/pkg/net/coap"
-	"github.com/plgd-dev/go-coap/v2/message/codes"
 )
 
 type Interceptor = func(ctx context.Context, code codes.Code, path string) (context.Context, error)
@@ -107,7 +107,7 @@ func verifyChain(chain []*x509.Certificate, capool *x509.CertPool) (string, erro
 	return coap.GetDeviceIDFromIndetityCertificate(certificate)
 }
 
-func MakeGetConfigForClient(tlsCfg *tls.Config, deviceIdCache *cache.Cache) func(chi *tls.ClientHelloInfo) (*tls.Config, error) {
+func MakeGetConfigForClient(tlsCfg *tls.Config, expiresIn time.Duration, deviceIdCache *cache.Cache) func(chi *tls.ClientHelloInfo) (*tls.Config, error) {
 	return func(chi *tls.ClientHelloInfo) (*tls.Config, error) {
 		return &tls.Config{
 			GetCertificate: tlsCfg.GetCertificate,
@@ -119,7 +119,8 @@ func MakeGetConfigForClient(tlsCfg *tls.Config, deviceIdCache *cache.Cache) func
 				for _, chain := range verifiedChains {
 					deviceID, err := verifyChain(chain, tlsCfg.ClientCAs)
 					if err == nil {
-						deviceIdCache.SetDefault(chi.Conn.RemoteAddr().String(), deviceID)
+						deviceIdCache.Delete(chi.Conn.RemoteAddr().String())
+						deviceIdCache.LoadOrStore(chi.Conn.RemoteAddr().String(), cache.NewElement(deviceID, time.Now().Add(expiresIn), nil))
 						return nil
 					}
 					errors = append(errors, err)

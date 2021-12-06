@@ -12,8 +12,8 @@ import (
 	"github.com/plgd-dev/hub/pkg/log"
 )
 
-func GetResponse(ctx context.Context, code codes.Code, token message.Token, contentFormat message.MediaType, payload []byte) (*pool.Message, func()) {
-	msg := pool.AcquireMessage(ctx)
+func GetResponse(ctx context.Context, messagePool *pool.Pool, code codes.Code, token message.Token, contentFormat message.MediaType, payload []byte) (*pool.Message, func()) {
+	msg := messagePool.AcquireMessage(ctx)
 	msg.SetCode(code)
 	msg.SetToken(token)
 	if len(payload) > 0 {
@@ -21,7 +21,7 @@ func GetResponse(ctx context.Context, code codes.Code, token message.Token, cont
 		msg.SetBody(bytes.NewReader(payload))
 	}
 	return msg, func() {
-		pool.ReleaseMessage(msg)
+		messagePool.ReleaseMessage(msg)
 	}
 }
 
@@ -39,18 +39,18 @@ func isTempError(err error) bool {
 	return false
 }
 
-func GetErrorResponse(ctx context.Context, code codes.Code, token message.Token, err error) (*pool.Message, func()) {
-	msg := pool.AcquireMessage(ctx)
+func GetErrorResponse(ctx context.Context, messagePool *pool.Pool, code codes.Code, token message.Token, err error) (*pool.Message, func()) {
+	msg := messagePool.AcquireMessage(ctx)
 	msg.SetCode(code)
 	msg.SetToken(token)
 	// Don't set content format for diagnostic message: https://tools.ietf.org/html/rfc7252#section-5.5.2
 	msg.SetBody(bytes.NewReader([]byte(err.Error())))
 	return msg, func() {
-		pool.ReleaseMessage(msg)
+		messagePool.ReleaseMessage(msg)
 	}
 }
 
-func LogAndGetErrorResponse(ctx context.Context, code codes.Code, token message.Token, err error) (*pool.Message, func()) {
+func LogAndGetErrorResponse(ctx context.Context, messagePool *pool.Pool, code codes.Code, token message.Token, err error) (*pool.Message, func()) {
 	if isTempError(err) {
 		code = codes.ServiceUnavailable
 		err = fmt.Errorf("temporary error: %w", err)
@@ -58,5 +58,5 @@ func LogAndGetErrorResponse(ctx context.Context, code codes.Code, token message.
 	if err != nil {
 		log.Errorf("%w", err)
 	}
-	return GetErrorResponse(ctx, code, token, err)
+	return GetErrorResponse(ctx, messagePool, code, token, err)
 }

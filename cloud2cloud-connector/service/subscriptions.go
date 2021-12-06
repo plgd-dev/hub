@@ -7,7 +7,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/patrickmn/go-cache"
+	"github.com/plgd-dev/go-coap/v2/pkg/cache"
+	"github.com/plgd-dev/go-coap/v2/pkg/runner/periodic"
 	"github.com/plgd-dev/hub/cloud2cloud-connector/events"
 	"github.com/plgd-dev/hub/cloud2cloud-connector/store"
 	pbIS "github.com/plgd-dev/hub/identity-store/pb"
@@ -61,13 +62,20 @@ func NewSubscriptionManager(
 	provider *oauth2.PlgdProvider,
 	triggerTask OnTaskTrigger,
 ) *SubscriptionManager {
+	cache := cache.NewCache()
+	add := periodic.New(devicesSubscription.ctx.Done(), time.Minute*5)
+	add(func(now time.Time) bool {
+		cache.CheckExpirations(now)
+		return true
+	})
+
 	return &SubscriptionManager{
 		eventsURL:           EventsURL,
 		store:               store,
 		raClient:            raClient,
 		isClient:            isClient,
 		devicesSubscription: devicesSubscription,
-		cache:               cache.New(time.Minute*10, time.Minute*5),
+		cache:               cache,
 		provider:            provider,
 		triggerTask:         triggerTask,
 	}
@@ -149,9 +157,9 @@ func cancelSubscription(ctx context.Context, href string, linkedAccount store.Li
 }
 
 func (s *SubscriptionManager) getSubscriptionData(subscriptionID, correlationID string) (subscriptionData, error) {
-	data, ok := s.cache.Get(correlationID)
-	if ok {
-		subData := data.(subscriptionData)
+	data := s.cache.Load(correlationID)
+	if data != nil {
+		subData := data.Data().(subscriptionData)
 		subData.subscription.ID = subscriptionID
 		newSubscription, loaded, err := s.store.LoadOrCreateSubscription(subData.subscription)
 		s.cache.Delete(correlationID)

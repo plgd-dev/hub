@@ -6,9 +6,10 @@ import (
 	"encoding/base64"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/gorilla/mux"
-	cache "github.com/patrickmn/go-cache"
+	cache "github.com/plgd-dev/go-coap/v2/pkg/cache"
 	"github.com/plgd-dev/hub/cloud2cloud-connector/store"
 	"github.com/plgd-dev/hub/pkg/net/grpc"
 )
@@ -17,6 +18,8 @@ type LinkedCloudHandler struct {
 	linkedCloud store.LinkedCloud
 	set         bool
 }
+
+const CacheExpiration = time.Minute * 10
 
 func (h *LinkedCloudHandler) Handle(ctx context.Context, iter store.LinkedCloudIter) (err error) {
 	var s store.LinkedCloud
@@ -45,11 +48,11 @@ func (rh *RequestHandler) handleOAuth(w http.ResponseWriter, r *http.Request, li
 	if err != nil {
 		return http.StatusInternalServerError, fmt.Errorf("cannot generate token")
 	}
-	err = rh.provisionCache.Add(t, provisionCacheData{
+	_, loaded := rh.provisionCache.LoadOrStore(t, cache.NewElement(provisionCacheData{
 		linkedAccount: linkedAccount,
 		linkedCloud:   linkedCloud,
-	}, cache.DefaultExpiration)
-	if err != nil {
+	}, time.Now().Add(CacheExpiration), nil))
+	if loaded {
 		return http.StatusInternalServerError, fmt.Errorf("cannot store key - collision")
 	}
 	oauthCfg := linkedCloud.OAuth

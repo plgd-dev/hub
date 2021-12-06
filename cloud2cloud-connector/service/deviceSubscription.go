@@ -4,9 +4,10 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
-	cache "github.com/patrickmn/go-cache"
+	cache "github.com/plgd-dev/go-coap/v2/pkg/cache"
 	"github.com/plgd-dev/hub/cloud2cloud-connector/events"
 	"github.com/plgd-dev/hub/cloud2cloud-connector/store"
 	kitHttp "github.com/plgd-dev/hub/pkg/net/http"
@@ -40,9 +41,9 @@ func (s *SubscriptionManager) SubscribeToDevice(ctx context.Context, deviceID st
 		linkedCloud:   linkedCloud,
 		subscription:  sub,
 	}
-	err = s.cache.Add(correlationID, data, cache.DefaultExpiration)
-	if err != nil {
-		return fmt.Errorf("cannot cache subscription for device subscriptions: %w", err)
+	_, loaded := s.cache.LoadOrStore(correlationID, cache.NewElement(data, time.Now().Add(CacheExpiration), nil))
+	if loaded {
+		return fmt.Errorf("cannot cache subscription for device subscriptions: subscription with %v already exists", correlationID)
 	}
 	sub.ID, err = s.subscribeToDevice(ctx, linkedAccount, linkedCloud, correlationID, signingSecret, deviceID)
 	if err != nil {

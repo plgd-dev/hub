@@ -11,6 +11,7 @@ import (
 	"github.com/plgd-dev/go-coap/v2/message"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/tcp"
+	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
 	coapgwTest "github.com/plgd-dev/hub/coap-gateway/test"
 	"github.com/plgd-dev/hub/coap-gateway/uri"
 	testCfg "github.com/plgd-dev/hub/test/config"
@@ -82,7 +83,7 @@ func TestClientCreateHandler(t *testing.T) {
 			if len(tt.args.payload) > 0 {
 				body = bytes.NewReader(tt.args.payload)
 			}
-			req, err := tcp.NewPostRequest(ctx, tt.args.href, tt.args.contentFormat, body)
+			req, err := tcp.NewPostRequest(ctx, pool.New(0, 0), tt.args.href, tt.args.contentFormat, body)
 			require.NoError(t, err)
 			req.SetOptionString(message.URIQuery, "if="+interfaces.OC_IF_CREATE)
 			resp, err := co.Do(req)

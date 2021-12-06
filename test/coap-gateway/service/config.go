@@ -2,7 +2,6 @@ package service
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/plgd-dev/hub/pkg/config"
 	"github.com/plgd-dev/hub/pkg/log"
@@ -44,17 +43,13 @@ func (c *APIsConfig) Validate() error {
 }
 
 type COAPConfig struct {
-	Addr                     string        `yaml:"address" json:"address"`
-	GoroutineSocketHeartbeat time.Duration `yaml:"goroutineSocketHeartbeat" json:"goroutineSocketHeartbeat"`
-	TLS                      TLSConfig     `yaml:"tls" json:"tls"`
+	Addr string    `yaml:"address" json:"address"`
+	TLS  TLSConfig `yaml:"tls" json:"tls"`
 }
 
 func (c *COAPConfig) Validate() error {
 	if c.Addr == "" {
 		return fmt.Errorf("address('%v')", c.Addr)
-	}
-	if c.GoroutineSocketHeartbeat <= 0 {
-		return fmt.Errorf("goroutineSocketHeartbeat('%v')", c.GoroutineSocketHeartbeat)
 	}
 	if err := c.TLS.Validate(); err != nil {
 		return fmt.Errorf("tls.%w", err)

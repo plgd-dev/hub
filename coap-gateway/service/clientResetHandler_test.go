@@ -69,13 +69,14 @@ func TestClientResetHandler(t *testing.T) {
 
 	testPrepareDevice(t, co)
 	time.Sleep(time.Second)
+	messagePool := pool.New(0, 0)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.args.code == codes.Empty {
 				ctx, cancel := context.WithTimeout(context.Background(), TestExchangeTimeout)
 				defer cancel()
-				msg := pool.AcquireMessage(ctx)
+				msg := messagePool.AcquireMessage(ctx)
 				msg.SetCode(tt.args.code)
 				msg.SetToken(tt.args.token)
 				err := co.WriteMessage(msg)
@@ -83,7 +84,7 @@ func TestClientResetHandler(t *testing.T) {
 			} else {
 				ctx, cancel := context.WithTimeout(context.Background(), TestExchangeTimeout)
 				defer cancel()
-				msg := pool.AcquireMessage(ctx)
+				msg := messagePool.AcquireMessage(ctx)
 				msg.SetCode(tt.args.code)
 				msg.SetToken(tt.args.token)
 				msg.SetPath(tt.args.path)

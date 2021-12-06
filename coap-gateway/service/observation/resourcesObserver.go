@@ -181,7 +181,7 @@ func (o *resourcesObserver) getResourceContentLocked(ctx context.Context, href s
 	resp, err := o.coapConn.Get(ctx, href)
 	defer func() {
 		if !resp.IsHijacked() {
-			pool.ReleaseMessage(resp)
+			o.coapConn.ReleaseMessage(resp)
 		}
 	}()
 	if err != nil {

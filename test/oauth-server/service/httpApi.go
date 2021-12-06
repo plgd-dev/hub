@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"crypto/ecdsa"
 	"crypto/rsa"
 	"crypto/x509"
@@ -12,7 +13,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/lestrrat-go/jwx/jwa"
 	"github.com/lestrrat-go/jwx/jwk"
-	"github.com/patrickmn/go-cache"
+	"github.com/plgd-dev/go-coap/v2/pkg/cache"
+	"github.com/plgd-dev/go-coap/v2/pkg/runner/periodic"
 	"github.com/plgd-dev/hub/pkg/log"
 	"github.com/plgd-dev/hub/test/oauth-server/uri"
 
@@ -62,7 +64,7 @@ func createJwkKey(privateKey interface{}) (jwk.Key, error) {
 }
 
 //NewRequestHandler factory for new RequestHandler
-func NewRequestHandler(config *Config, idTokenKey *rsa.PrivateKey, accessTokenKey interface{}) (*RequestHandler, error) {
+func NewRequestHandler(ctx context.Context, config *Config, idTokenKey *rsa.PrivateKey, accessTokenKey interface{}) (*RequestHandler, error) {
 	idTokenJwkKey, err := createJwkKey(idTokenKey)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create jwk for idToken: %w", err)
@@ -71,15 +73,26 @@ func NewRequestHandler(config *Config, idTokenKey *rsa.PrivateKey, accessTokenKe
 	if err != nil {
 		return nil, fmt.Errorf("cannot create jwk for idToken: %w", err)
 	}
+	authSession := cache.NewCache()
+	authRestriction := cache.NewCache()
+	refreshRestriction := cache.NewCache()
+	add := periodic.New(ctx.Done(), time.Second*5)
+	add(func(now time.Time) bool {
+		authSession.CheckExpirations(now)
+		authRestriction.CheckExpirations(now)
+		refreshRestriction.CheckExpirations(now)
+		return true
+	})
+
 	return &RequestHandler{
 		config:             config,
-		authSession:        cache.New(cache.NoExpiration, time.Second*5),
-		authRestriction:    cache.New(cache.NoExpiration, time.Second*5),
+		authSession:        authSession,
+		authRestriction:    authRestriction,
 		idTokenKey:         idTokenKey,
 		idTokenJwkKey:      idTokenJwkKey,
 		accessTokenJwkKey:  accessTokenJwkKey,
 		accessTokenKey:     accessTokenKey,
-		refreshRestriction: cache.New(cache.NoExpiration, time.Second*5),
+		refreshRestriction: refreshRestriction,
 	}, nil
 }
 

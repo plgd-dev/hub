@@ -152,7 +152,7 @@ make CLOUD=1 SECURE=1 PKI=1 OSCORE=0 cloud_server cloud_client
 
 ### Build a COAP client application
 
-To build the client you need to have **golang v1.16+**.
+To build the client you need to have **golang v1.17+**.
 
 ```bash
 cd ./client/coap
@@ -164,7 +164,7 @@ go build
 
 ### Build a GRPC client application
 
-To build the client you need to have **golang v1.16+**.
+To build the client you need to have **golang v1.17+**.
 
 ```bash
 cd ./client/grpc

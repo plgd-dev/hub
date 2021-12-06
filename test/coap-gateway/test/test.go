@@ -5,7 +5,6 @@ import (
 	"os"
 	"sync"
 	"testing"
-	"time"
 
 	"github.com/plgd-dev/hub/pkg/log"
 	"github.com/plgd-dev/hub/test/coap-gateway/service"
@@ -18,7 +17,6 @@ func MakeConfig(t *testing.T) service.Config {
 	cfg.Log.Config.Debug = true
 	cfg.Log.DumpCoapMessages = true
 	cfg.APIs.COAP.Addr = config.GW_HOST
-	cfg.APIs.COAP.GoroutineSocketHeartbeat = time.Millisecond * 300
 	cfg.APIs.COAP.TLS.Config = config.MakeTLSServerConfig()
 	cfg.APIs.COAP.TLS.Config.ClientCertificateRequired = false
 	cfg.APIs.COAP.TLS.Config.CertFile = os.Getenv("TEST_COAP_GW_CERT_FILE")
