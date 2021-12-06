@@ -130,7 +130,7 @@ func testSignUp(t *testing.T, deviceID string, co *tcp.ClientConn) service.CoapS
 	return signUpResp
 }
 
-func runSignIn(t *testing.T, deviceID string, r service.CoapSignUpResponse, co *tcp.ClientConn) (*service.CoapSignInResp, codes.Code) {
+func doSignIn(t *testing.T, deviceID string, r service.CoapSignUpResponse, co *tcp.ClientConn) (*pool.Message, error) {
 	signInReq := service.CoapSignInReq{
 		DeviceID:    deviceID,
 		UserID:      r.UserID,
@@ -152,7 +152,11 @@ func runSignIn(t *testing.T, deviceID string, r service.CoapSignUpResponse, co *
 	req.SetContentFormat(message.AppOcfCbor)
 	req.SetBody(bytes.NewReader(inputCbor))
 
-	resp, err := co.Do(req)
+	return co.Do(req)
+}
+
+func runSignIn(t *testing.T, deviceID string, r service.CoapSignUpResponse, co *tcp.ClientConn) (*service.CoapSignInResp, codes.Code) {
+	resp, err := doSignIn(t, deviceID, r, co)
 	require.NoError(t, err)
 	defer co.ReleaseMessage(resp)
 

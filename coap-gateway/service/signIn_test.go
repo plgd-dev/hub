@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/hub/coap-gateway/service"
 	coapgwTest "github.com/plgd-dev/hub/coap-gateway/test"
 	"github.com/plgd-dev/hub/coap-gateway/uri"
@@ -17,7 +18,6 @@ import (
 	testCfg "github.com/plgd-dev/hub/test/config"
 	oauthService "github.com/plgd-dev/hub/test/oauth-server/service"
 	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
-	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -101,8 +101,12 @@ func TestSignInDeviceSubscriptionHandler(t *testing.T) {
 	require.True(t, cancelCtx.Err() == context.Canceled)
 
 	co1 := testCoapDial(t, testCfg.GW_HOST, "")
-	_, code := runSignIn(t, CertIdentity, signUpResp, co1)
-	require.Equal(t, coapCodes.Unauthorized, code)
+	resp, err := doSignIn(t, CertIdentity, signUpResp, co1)
+	if err != nil {
+		require.Contains(t, err.Error(), "context canceled")
+		return
+	}
+	require.Equal(t, coapCodes.Unauthorized, resp.Code())
 	_ = co1.Close()
 }
 
