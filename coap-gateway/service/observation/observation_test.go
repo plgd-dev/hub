@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/plgd-dev/device/schema/device"
+	"github.com/plgd-dev/device/schema/interfaces"
 	"github.com/plgd-dev/device/schema/resources"
 	"github.com/plgd-dev/go-coap/v2/tcp"
 	coapgwService "github.com/plgd-dev/hub/coap-gateway/service"
@@ -38,7 +39,7 @@ func (h *observerHandlerWithCoap) SignIn(req coapgwService.CoapSignInReq) (coapg
 	return resp, nil
 }
 
-func TestIsResourceObservable(t *testing.T) {
+func TestIsResourceObservableWithInterface(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
 	defer cancel()
@@ -92,8 +93,9 @@ func TestIsResourceObservable(t *testing.T) {
 		return "resource (" + href + ") "
 	}
 	type args struct {
-		resourceHref string
-		resourceType string
+		resourceHref     string
+		resourceType     string
+		observeInterface string
 	}
 	tests := []struct {
 		name    string
@@ -154,11 +156,30 @@ func TestIsResourceObservable(t *testing.T) {
 			},
 			wantErr: true,
 		},
+		{
+			name: testResourceName(device.ResourceURI) + "with observeInterface",
+			args: args{
+				resourceHref:     device.ResourceURI,
+				resourceType:     device.ResourceType,
+				observeInterface: interfaces.OC_IF_BASELINE,
+			},
+			want: true,
+		},
+		{
+			name: testResourceName(device.ResourceURI) + "with not supported observeInterface",
+			args: args{
+				resourceHref:     device.ResourceURI,
+				resourceType:     device.ResourceType,
+				observeInterface: interfaces.OC_IF_B,
+			},
+			want: false,
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			observable, err := observation.IsResourceObservable(ctx, handler.coapConn, tt.args.resourceHref, tt.args.resourceType)
+			observable, err := observation.IsResourceObservableWithInterface(ctx, handler.coapConn, tt.args.resourceHref,
+				tt.args.resourceType, tt.args.observeInterface)
 			if tt.wantErr {
 				require.Error(t, err)
 				return

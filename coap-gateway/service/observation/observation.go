@@ -10,11 +10,12 @@ import (
 	"github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/tcp"
 	"github.com/plgd-dev/hub/coap-gateway/service/message"
+	pkgStrings "github.com/plgd-dev/hub/pkg/strings"
 	"github.com/plgd-dev/kit/v2/codec/cbor"
 )
 
-// Query /oic/res resource to determine whether resource with given href is observable
-func IsResourceObservable(ctx context.Context, coapConn *tcp.ClientConn, resourceHref, resourceType string) (bool, error) {
+// Query /oic/res resource to determine whether resource with given href is observable and supports given interface.
+func IsResourceObservableWithInterface(ctx context.Context, coapConn *tcp.ClientConn, resourceHref, resourceType, observeInterface string) (bool, error) {
 	var opts []coapMessage.Option
 	if resourceType != "" {
 		opts = append(opts, coapMessage.Option{
@@ -50,5 +51,10 @@ func IsResourceObservable(ctx context.Context, coapConn *tcp.ClientConn, resourc
 		return false, fmt.Errorf("resourceLink for href(%v) not found", resourceHref)
 	}
 
-	return res.Policy.BitMask.Has(schema.Observable), nil
+	observable := res.Policy.BitMask.Has(schema.Observable)
+	if observeInterface == "" || !observable {
+		return observable, nil
+	}
+
+	return pkgStrings.Contains(res.Interfaces, observeInterface), nil
 }
