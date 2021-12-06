@@ -22,6 +22,7 @@ import (
 	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/hub/grpc-gateway/client"
 	"github.com/plgd-dev/hub/grpc-gateway/pb"
+	pkgStrings "github.com/plgd-dev/hub/pkg/strings"
 	"github.com/plgd-dev/hub/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/resource-aggregate/events"
 	"github.com/plgd-dev/hub/test/config"
@@ -478,7 +479,7 @@ func FindDeviceByName(ctx context.Context, name string) (deviceID string, _ erro
 	return id, nil
 }
 
-func ResourceIsObservable(ctx context.Context, t *testing.T, deviceID, href, resourceType string) bool {
+func CheckResource(ctx context.Context, t *testing.T, deviceID, href, resourceType string, checkFn func(schema.ResourceLink) bool) bool {
 	devClient, err := NewSDKClient()
 	require.NoError(t, err)
 	defer func() {
@@ -489,7 +490,14 @@ func ResourceIsObservable(ctx context.Context, t *testing.T, deviceID, href, res
 	err = devClient.GetResource(ctx, deviceID, resources.ResourceURI, &resp, deviceClient.WithResourceTypes(resources.ResourceType))
 	require.NoError(t, err)
 
-	return len(resp) == 1 && resp[0].Policy.BitMask.Has(schema.Observable)
+	return len(resp) == 1 && checkFn(resp[0])
+}
+
+func ResourceIsBatchObservable(ctx context.Context, t *testing.T, deviceID, href, resourceType string) bool {
+	return CheckResource(ctx, t, deviceID, href, resourceType, func(rl schema.ResourceLink) bool {
+		return rl.Policy.BitMask.Has(schema.Observable) &&
+			pkgStrings.Contains(rl.Interfaces, interfaces.OC_IF_B)
+	})
 }
 
 func GetAllBackendResourceLinks() []schema.ResourceLink {

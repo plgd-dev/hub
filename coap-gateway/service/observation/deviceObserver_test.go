@@ -151,7 +151,7 @@ func TestDeviceObserverRegisterForPublishedResources(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
 	defer cancel()
-	discoveryObservable := test.ResourceIsObservable(ctx, t, deviceID, resources.ResourceURI, resources.ResourceType)
+	discoveryObservable := test.ResourceIsBatchObservable(ctx, t, deviceID, resources.ResourceURI, resources.ResourceType)
 	if discoveryObservable {
 		t.Logf("skipping test for device with %v observable", resources.ResourceURI)
 		return
@@ -175,7 +175,7 @@ func TestDeviceObserverRegisterForDiscoveryResource(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceNameWithOicResObservable)
 	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
 	defer cancel()
-	discoveryObservable := test.ResourceIsObservable(ctx, t, deviceID, resources.ResourceURI, resources.ResourceURI)
+	discoveryObservable := test.ResourceIsBatchObservable(ctx, t, deviceID, resources.ResourceURI, resources.ResourceURI)
 	if !discoveryObservable {
 		t.Logf("skipping test for device with %v non-observable", resources.ResourceURI)
 		return

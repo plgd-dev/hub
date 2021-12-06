@@ -144,7 +144,7 @@ func emptyDeviceIDError() error {
 }
 
 func isDiscoveryResourceObservable(ctx context.Context, coapConn *tcp.ClientConn) (bool, error) {
-	return IsResourceObservable(ctx, coapConn, resources.ResourceURI, resources.ResourceType)
+	return IsResourceObservableWithInterface(ctx, coapConn, resources.ResourceURI, resources.ResourceType, interfaces.OC_IF_B)
 }
 
 func detectObservationType(ctx context.Context, coapConn *tcp.ClientConn) (ObservationType, error) {
