@@ -44,3 +44,8 @@ jobs:
           export PATH=${PATH}:`go env GOPATH`/bin
           go install github.com/client9/misspell/cmd/misspell@latest
           find . -type f -exec misspell {} \;
+
+      - name: Install and run aligncheck
+        run: |
+          go get -u gitlab.com/opennota/check/cmd/aligncheck@latest
+          aligncheck ./... || echo "aligncheck detected inefficiently packed structs"
