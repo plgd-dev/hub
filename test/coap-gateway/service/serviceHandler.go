@@ -36,8 +36,6 @@ type MakeServiceHandler = func(service *Service, opts ...Option) ServiceHandler
 type VerifyServiceHandler = func(ServiceHandler)
 
 type ServiceHandler interface {
-	RetrieveResource(deviceID, href string) error
-	ObserveResource(deviceID, href string, observe uint32) error
 	SignUp(req coapgwService.CoapSignUpRequest) (coapgwService.CoapSignUpResponse, error)
 	SignOff() error
 	SignIn(req coapgwService.CoapSignInReq) (coapgwService.CoapSignInResp, error)
