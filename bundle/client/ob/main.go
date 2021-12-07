@@ -162,6 +162,7 @@ func main() {
 	listDevices := flag.Bool("listDevices", false, "list devices which can be onboard to the cloud")
 	discoverDuration := flag.Duration("discoverDuration", time.Second, "discover devices for X seconds")
 	apn := flag.String("authorizationProvider", "plgd", "use authorization provider for registration device to the cloud")
+	maxNum := flag.Int("maxNum", 1, "maximum number of devices which will be onboarded")
 	flag.Parse()
 
 	if *authAddr == "" {
@@ -200,10 +201,14 @@ func main() {
 		return d.IsSecured && d.OwnershipStatus == client.OwnershipStatus_ReadyToBeOwned
 	})
 	fmt.Printf("found %v ready to be owned devices with discover duration %v\n", len(filteredDevices), *discoverDuration)
-	for _, d := range filteredDevices {
+	for idx, d := range filteredDevices {
 		if !*listDevices {
 			ownAndOnboard(ctx, c, d.ID, *apn, *authCode)
-			return
+			if idx == *maxNum-1 {
+				return
+			} else {
+				continue
+			}
 		}
 		id := d.ID
 		name := getDeviceName(d.Details)

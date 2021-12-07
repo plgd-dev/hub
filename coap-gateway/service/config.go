@@ -93,7 +93,7 @@ func (c *AuthorizationConfig) Validate() error {
 type COAPConfig struct {
 	Addr                   string                  `yaml:"address" json:"address"`
 	ExternalAddress        string                  `yaml:"externalAddress" json:"externalAddress"`
-	MaxMessageSize         int                     `yaml:"maxMessageSize" json:"maxMessageSize"`
+	MaxMessageSize         uint32                  `yaml:"maxMessageSize" json:"maxMessageSize"`
 	OwnerCacheExpiration   time.Duration           `yaml:"ownerCacheExpiration" json:"ownerCacheExpiration"`
 	SubscriptionBufferSize int                     `yaml:"subscriptionBufferSize" json:"subscriptionBufferSize"`
 	MessagePoolSize        int                     `yaml:"messagePoolSize" json:"messagePoolSize"`
