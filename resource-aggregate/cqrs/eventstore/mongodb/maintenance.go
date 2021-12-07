@@ -16,6 +16,7 @@ const maintenanceCName = "maintenance"
 
 func makeDbAggregateVersion(task maintenance.Task) bson.M {
 	return bson.M{
+		groupIDKey:     task.GroupID,
 		aggregateIDKey: task.AggregateID,
 		versionKey:     task.Version,
 		idKey:          getID(task),
@@ -28,8 +29,11 @@ func getID(task maintenance.Task) string {
 
 // Insert stores (or updates) the information about the latest snapshot version per aggregate into the DB
 func (s *EventStore) Insert(ctx context.Context, task maintenance.Task) error {
+	if task.GroupID == "" {
+		return errors.New("could not insert record - group ID cannot be empty")
+	}
 	if task.AggregateID == "" {
-		return errors.New("could not insert record - aggregate ID and/or version cannot be empty")
+		return errors.New("could not insert record - aggregate ID cannot be empty")
 	}
 
 	record := makeDbAggregateVersion(task)
@@ -80,6 +84,7 @@ func (i *dbAggregateVersionIterator) Next(ctx context.Context, task *maintenance
 		return false
 	}
 
+	task.GroupID = dbRecord[groupIDKey].(string)
 	task.AggregateID = dbRecord[aggregateIDKey].(string)
 	version := dbRecord[versionKey].(int64)
 	task.Version = uint64(version)

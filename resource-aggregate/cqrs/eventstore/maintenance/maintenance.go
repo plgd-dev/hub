@@ -13,6 +13,7 @@ type EventStore interface {
 
 // Task used to target a specific db record
 type Task struct {
+	GroupID     string
 	AggregateID string
 	Version     uint64
 }
