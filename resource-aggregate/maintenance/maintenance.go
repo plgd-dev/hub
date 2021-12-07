@@ -43,7 +43,7 @@ func newRecordHandler() *recordHandler {
 func (eh *recordHandler) SetElement(task maintenance.Task) {
 	eh.lock.Lock()
 	defer eh.lock.Unlock()
-	eh.tasks = append(eh.tasks, maintenance.Task{AggregateID: task.AggregateID, Version: task.Version})
+	eh.tasks = append(eh.tasks, maintenance.Task{GroupID: task.GroupID, AggregateID: task.AggregateID, Version: task.Version})
 }
 
 func (eh *recordHandler) Handle(ctx context.Context, iter maintenance.Iter) error {
@@ -181,7 +181,7 @@ func performMaintenanceWithEventStore(ctx context.Context, config Config, eventS
 	}
 	versionQueries := []eventstore.VersionQuery{}
 	for _, task := range handler.tasks {
-		versionQueries = append(versionQueries, eventstore.VersionQuery{AggregateID: task.AggregateID, Version: task.Version})
+		versionQueries = append(versionQueries, eventstore.VersionQuery{GroupID: task.GroupID, AggregateID: task.AggregateID, Version: task.Version})
 	}
 
 	log.Info("backing up the events")

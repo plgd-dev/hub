@@ -31,8 +31,9 @@ func (eh *mockRecordHandler) SetElement(aggregateID string, task maintenance.Tas
 	eh.lock.Lock()
 	defer eh.lock.Unlock()
 	if aggregate, ok = eh.tasks[aggregateID]; !ok {
-		eh.tasks[aggregateID] = maintenance.Task{AggregateID: task.AggregateID, Version: task.Version}
+		eh.tasks[aggregateID] = maintenance.Task{GroupID: task.GroupID, AggregateID: task.AggregateID, Version: task.Version}
 	}
+	aggregate.GroupID = task.GroupID
 	aggregate.AggregateID = task.AggregateID
 	aggregate.Version = task.Version
 }
@@ -73,24 +74,30 @@ func TestMaintenance(t *testing.T) {
 		_ = store.Close(ctx)
 	}()
 
-	aggregateID1 := "aggregateID1"
+	const groupID = "groupID1"
+	const aggregateID1 = "aggregateID1"
 	tasksToSave := []maintenance.Task{
 		{
+			GroupID:     groupID,
 			AggregateID: aggregateID1,
 		},
 		{
+			GroupID:     groupID,
 			AggregateID: aggregateID1,
 			Version:     1,
 		},
 		{
+			GroupID:     groupID,
 			AggregateID: aggregateID1,
 			Version:     2,
 		},
 		{
+			GroupID:     groupID,
 			AggregateID: aggregateID1,
 			Version:     3,
 		},
 		{
+			GroupID:     groupID,
 			AggregateID: aggregateID1,
 			Version:     4,
 		},
@@ -98,6 +105,14 @@ func TestMaintenance(t *testing.T) {
 
 	t.Log("insert maintenance record without body")
 	err = store.Insert(ctx, maintenance.Task{})
+	require.Error(t, err)
+
+	t.Log("insert maintenance record without GroupID")
+	err = store.Insert(ctx, maintenance.Task{AggregateID: aggregateID1})
+	require.Error(t, err)
+
+	t.Log("insert maintenance record without AggregateID")
+	err = store.Insert(ctx, maintenance.Task{GroupID: groupID})
 	require.Error(t, err)
 
 	t.Log("insert maintenance record")
