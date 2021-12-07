@@ -34,16 +34,6 @@ func (h *DefaultObserverHandler) SetDeviceID(deviceID string) {
 	h.deviceID = deviceID
 }
 
-func (h *DefaultObserverHandler) RetrieveResource(deviceID, href string) error {
-	log.Debugf("RetrieveResource %v%v", deviceID, href)
-	return nil
-}
-
-func (h *DefaultObserverHandler) ObserveResource(deviceID, href string, observe uint32) error {
-	log.Debugf("ObserveResource %v%v observe:%v", deviceID, href, observe)
-	return nil
-}
-
 func (h *DefaultObserverHandler) SignUp(req coapgwService.CoapSignUpRequest) (coapgwService.CoapSignUpResponse, error) {
 	log.Debugf("SignUp: %v", req)
 	h.SetDeviceID(req.DeviceID)

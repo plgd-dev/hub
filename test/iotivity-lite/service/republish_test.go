@@ -22,8 +22,6 @@ import (
 )
 
 const (
-	observeKey      = "Observe"
-	retrieveKey     = "Retrieve"
 	signUpKey       = "SignUp"
 	signOffKey      = "SignOff"
 	signInKey       = "SignIn"
@@ -38,18 +36,6 @@ const (
 type republishHandler struct {
 	coapgwTest.DefaultObserverHandler
 	callCounter map[string]int
-}
-
-func (r *republishHandler) RetrieveResource(deviceID, href string) error {
-	err := r.DefaultObserverHandler.RetrieveResource(deviceID, href)
-	r.callCounter[observeKey]++
-	return err
-}
-
-func (r *republishHandler) ObserveResource(deviceID, href string, observe uint32) error {
-	err := r.DefaultObserverHandler.ObserveResource(deviceID, href, observe)
-	r.callCounter[retrieveKey]++
-	return err
 }
 
 func (r *republishHandler) SignUp(req coapgwService.CoapSignUpRequest) (coapgwService.CoapSignUpResponse, error) {
@@ -150,7 +136,7 @@ func TestRepublishAfterRefresh(t *testing.T) {
 		RootCAs: test.GetRootCertificatePool(t),
 	})))
 	require.NoError(t, err)
-		defer func() {
+	defer func() {
 		_ = conn.Close()
 	}()
 	c := pb.NewGrpcGatewayClient(conn)

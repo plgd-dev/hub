@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
-	"strings"
 	"sync"
 	"syscall"
 
@@ -178,12 +177,7 @@ func validateCommand(s mux.ResponseWriter, req *mux.Message, server *Service, fn
 
 func defaultHandler(req *mux.Message, client *Client) {
 	path, _ := req.Options.Path()
-	switch {
-	case strings.HasPrefix("/"+path, coapgwUri.ResourceRoute):
-		resourceHandler(req, client)
-	default:
-		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: unknown path %v", client.GetDeviceID(), path), coapCodes.NotFound, req.Token)
-	}
+	client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: unknown path %v", client.GetDeviceID(), path), coapCodes.NotFound, req.Token)
 }
 
 func (server *Service) setupCoapServer() error {

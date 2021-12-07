@@ -104,29 +104,6 @@ func SchemaResourceLinkToResourceId(link schema.ResourceLink) *ResourceId {
 	}
 }
 
-func SchemaEndpointsToProto(ra []schema.Endpoint) []*EndpointInformation {
-	if ra == nil {
-		return nil
-	}
-	r := make([]*EndpointInformation, 0, len(ra))
-	for _, e := range ra {
-		r = append(r, &EndpointInformation{
-			Endpoint: e.URI,
-			Priority: int64(e.Priority),
-		})
-	}
-	return r
-}
-
-func SchemaPolicyToProto(ra *schema.Policy) *Policy {
-	if ra == nil {
-		return nil
-	}
-	return &Policy{
-		BitFlags: int32(ra.BitMask),
-	}
-}
-
 func SchemaResourceLinksToResources(links schema.ResourceLinks, validUntil time.Time) []*Resource {
 	var resources = make([]*Resource, 0, len(links))
 	for _, link := range links {
