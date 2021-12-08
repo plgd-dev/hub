@@ -26,9 +26,9 @@ message ResourceLinksPublished {
 message ResourceLinksUnpublished {
     string device_id = 1;
     repeated string hrefs = 2;
-    repeated int64 instance_ids = 3;
-    AuditContext audit_context = 4;
-    EventMetadata event_metadata = 5;
+    AuditContext audit_context = 3;
+    EventMetadata event_metadata = 4;
+    repeated int64 instance_ids = 5;
 }
 
 message ResourceLinksSnapshotTaken {

@@ -563,7 +563,7 @@ func (client *Client) unpublishResourceLinks(ctx context.Context, hrefs []string
 	observer, err := client.getDeviceObserver(ctx)
 	if err != nil {
 		logUnpublishError(err)
-		return nil
+		return resp.UnpublishedHrefs
 	}
 	observer.RemovePublishedResources(ctx, resp.UnpublishedHrefs)
 	return resp.UnpublishedHrefs
