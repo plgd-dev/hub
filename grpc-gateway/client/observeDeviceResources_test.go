@@ -17,7 +17,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestObserveDeviceResources(t *testing.T) {
+func TestObserveDeviceResourcesPublish(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	ctx, cancel := context.WithTimeout(context.Background(), TestTimeout)
 	defer cancel()

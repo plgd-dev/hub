@@ -333,6 +333,16 @@ func CleanUpResourceRetrievePending(e *events.ResourceRetrievePending, resetCorr
 	return e
 }
 
+func MakeResourceRetrievePending(deviceID, href, correlationId string) *events.ResourceRetrievePending {
+	return &events.ResourceRetrievePending{
+		ResourceId: &commands.ResourceId{
+			DeviceId: deviceID,
+			Href:     href,
+		},
+		AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, correlationId),
+	}
+}
+
 func CleanUpResourceDeletePending(e *events.ResourceDeletePending, resetCorrelationId bool) *events.ResourceDeletePending {
 	if e.GetAuditContext() != nil && resetCorrelationId {
 		e.GetAuditContext().CorrelationId = ""
@@ -348,6 +358,13 @@ func CmpResourceDeletePending(t *testing.T, expected, got *events.ResourceDelete
 	require.NotNil(t, got)
 	CleanUpResourceDeletePending(got, resetCorrelationId)
 	test.CheckProtobufs(t, expected, got, test.RequireToCheckFunc(require.Equal))
+}
+
+func MakeResourceDeletePending(deviceID, href, correlationId string) *events.ResourceDeletePending {
+	return &events.ResourceDeletePending{
+		ResourceId:   &commands.ResourceId{DeviceId: deviceID, Href: href},
+		AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, correlationId),
+	}
 }
 
 func CleanUpDeviceMetadataUpdatePending(e *events.DeviceMetadataUpdatePending, resetCorrelationId bool) *events.DeviceMetadataUpdatePending {
