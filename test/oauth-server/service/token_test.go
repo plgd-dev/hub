@@ -20,7 +20,7 @@ func TestRequestHandler_getUItoken(t *testing.T) {
 	webTearDown := test.SetUp(t)
 	defer webTearDown()
 
-	code := getAuthorize(t, test.ClientTest, "https://localhost:3000", "nonse", "", "", http.StatusTemporaryRedirect)
+	code := getAuthorize(t, test.ClientTest, "https://localhost:3000", "nonse", "", "", http.StatusFound)
 	token := getToken(t, test.ClientTest, "localhost", code, service.AllowedGrantType_AUTHORIZATION_CODE, http.StatusOK)
 
 	validator := jwt.NewValidator(fmt.Sprintf("https://%s%s", config.OAUTH_SERVER_HOST, uri.JWKs), &tls.Config{
@@ -50,7 +50,7 @@ func TestRequestHandler_getDeviceToken(t *testing.T) {
 	webTearDown := test.SetUp(t)
 	defer webTearDown()
 
-	code := getAuthorize(t, test.ClientTest, "", "https://localhost:3000", "abc", "", http.StatusTemporaryRedirect)
+	code := getAuthorize(t, test.ClientTest, "", "https://localhost:3000", "abc", "", http.StatusFound)
 	token := getToken(t, test.ClientTest, "", code, service.AllowedGrantType_AUTHORIZATION_CODE, http.StatusOK)
 
 	require.NotEmpty(t, token["access_token"])
@@ -66,24 +66,24 @@ func TestRequestHandlerGetTokenWithDefaultScopes(t *testing.T) {
 	webTearDown := test.SetUp(t)
 	defer webTearDown()
 
-	code := getAuthorize(t, test.ClientTest, "", "https://localhost:3000", "", "", http.StatusTemporaryRedirect)
+	code := getAuthorize(t, test.ClientTest, "", "https://localhost:3000", "", "", http.StatusFound)
 	token := getToken(t, test.ClientTest, "", code, service.AllowedGrantType_AUTHORIZATION_CODE, http.StatusOK)
 
 	require.NotEmpty(t, token["access_token"])
-	require.Equal(t, token["scope"], "openid profile email")
+	require.Equal(t, token["scope"], service.DefaultScope)
 	validator := jwt.NewValidator(fmt.Sprintf("https://%s%s", config.OAUTH_SERVER_HOST, uri.JWKs), &tls.Config{
 		InsecureSkipVerify: true,
 	})
 	accessToken, err := validator.Parse(token["access_token"])
 	require.NoError(t, err)
-	require.Equal(t, "openid profile email", accessToken[service.TokenScopeKey])
+	require.Equal(t, service.DefaultScope, accessToken[service.TokenScopeKey])
 }
 
 func TestRequestHandlerGetTokenWithCuscomScopes(t *testing.T) {
 	webTearDown := test.SetUp(t)
 	defer webTearDown()
 
-	code := getAuthorize(t, test.ClientTest, "", "https://localhost:3000", "", "r:* w:*", http.StatusTemporaryRedirect)
+	code := getAuthorize(t, test.ClientTest, "", "https://localhost:3000", "", "r:* w:*", http.StatusFound)
 	token := getToken(t, test.ClientTest, "", code, service.AllowedGrantType_AUTHORIZATION_CODE, http.StatusOK)
 
 	require.NotEmpty(t, token["access_token"])

@@ -20,6 +20,7 @@ import (
 )
 
 const DeviceUserID = "1"
+const DefaultScope = "openid profile email offline_access r:* w:*"
 
 const (
 	TokenScopeKey    = "scope"
@@ -186,6 +187,7 @@ type tokenRequest struct {
 	ClientID     string `json:"client_id"`
 	CodeVerifier string `json:"code_verifier"`
 	GrantType    string `json:"grant_type"`
+	RedirectURI  string `json:"redirect_uri"`
 	//	AuthorizationCode string `json:"authorization_code"`
 	Code         string `json:"code"`
 	Username     string `json:"username"`
@@ -209,6 +211,7 @@ func (requestHandler *RequestHandler) getToken(w http.ResponseWriter, r *http.Re
 			return
 		}
 	}
+
 	requestHandler.processResponse(w, tokenRequest{
 		ClientID:  clientID,
 		GrantType: string(AllowedGrantType_CLIENT_CREDENTIALS),
@@ -224,7 +227,6 @@ func (requestHandler *RequestHandler) getDomain() string {
 }
 
 func (requestHandler *RequestHandler) postToken(w http.ResponseWriter, r *http.Request) {
-
 	tokenReq := tokenRequest{
 		host:      requestHandler.getDomain(),
 		tokenType: AccessTokenType_JWT,
@@ -238,6 +240,7 @@ func (requestHandler *RequestHandler) postToken(w http.ResponseWriter, r *http.R
 		}
 		tokenReq.GrantType = r.PostFormValue(uri.GrantTypeKey)
 		tokenReq.ClientID = r.PostFormValue(uri.ClientIDKey)
+		tokenReq.RedirectURI = r.PostFormValue(uri.RedirectURIKey)
 		tokenReq.Code = r.PostFormValue(uri.CodeKey)
 		tokenReq.Username = r.PostFormValue(uri.UsernameKey)
 		tokenReq.Password = r.PostFormValue(uri.PasswordKey)
@@ -262,32 +265,13 @@ func (requestHandler *RequestHandler) postToken(w http.ResponseWriter, r *http.R
 	requestHandler.processResponse(w, tokenReq)
 }
 
-func (requestHandler *RequestHandler) handleRestriction(tokenReq tokenRequest, restrictionLifetime time.Duration) error {
-	if tokenReq.GrantType == string(AllowedGrantType_AUTHORIZATION_CODE) {
-		v := requestHandler.authRestriction.Load(tokenReq.Code)
-		if v != nil {
-			return fmt.Errorf("auth code(%v) reused", tokenReq.Code)
-		}
-		requestHandler.authRestriction.LoadOrStore(tokenReq.Code, cache.NewElement(struct{}{}, time.Now().Add(restrictionLifetime), nil))
-	}
-	if tokenReq.GrantType == string(AllowedGrantType_REFRESH_TOKEN) {
-		v := requestHandler.refreshRestriction.Load(tokenReq.RefreshToken)
-		if v != nil {
-			return fmt.Errorf("refreshToken(%v) reused", tokenReq.RefreshToken)
-		}
-		requestHandler.refreshRestriction.LoadOrStore(tokenReq.RefreshToken, cache.NewElement(struct{}{}, time.Now().Add(restrictionLifetime), nil))
-	}
-	return nil
-}
-
-func (requestHandler *RequestHandler) getAuthorizedSession(tokenReq tokenRequest) authorizedSession {
-	var authSession authorizedSession
+func (requestHandler *RequestHandler) getAuthorizedSession(tokenReq tokenRequest) (authorizedSession, bool) {
 	v := requestHandler.authSession.Load(tokenReq.Code)
 	requestHandler.authSession.Delete(tokenReq.Code)
 	if v != nil {
-		authSession = v.Data().(authorizedSession)
+		return v.Data().(authorizedSession), true
 	}
-	return authSession
+	return authorizedSession{}, false
 }
 
 func (requestHandler *RequestHandler) getAccessToken(tokenReq tokenRequest, clientCfg *Client, deviceID, scopes string) (string, time.Time, error) {
@@ -309,21 +293,64 @@ func (requestHandler *RequestHandler) processResponse(w http.ResponseWriter, tok
 		writeError(w, fmt.Errorf("client(%v) not found", tokenReq.ClientID), http.StatusBadRequest)
 		return
 	}
-	var err error
-	refreshToken := "refresh-token"
-	if clientCfg.CodeRestrictionLifetime != 0 {
-		if err := requestHandler.handleRestriction(tokenReq, clientCfg.CodeRestrictionLifetime); err != nil {
-			writeError(w, err, http.StatusBadRequest)
-			return
-		}
 
+	if clientCfg.ClientSecret != "" && clientCfg.ClientSecret != tokenReq.Password {
+		writeError(w, fmt.Errorf("invalid client secret"), http.StatusBadRequest)
+		return
+	}
+
+	if clientCfg.SupportedRedirectURI != "" && clientCfg.SupportedRedirectURI != tokenReq.RedirectURI {
+		writeError(w, fmt.Errorf("invalid redirect uri(%v)", tokenReq.RedirectURI), http.StatusBadRequest)
+		return
+	}
+
+	var err error
+	if clientCfg.CodeRestrictionLifetime != 0 {
+		if tokenReq.GrantType == string(AllowedGrantType_AUTHORIZATION_CODE) {
+			v := requestHandler.authRestriction.Load(tokenReq.Code)
+			if v != nil {
+				writeError(w, fmt.Errorf("auth code(%v) reused", tokenReq.Code), http.StatusBadRequest)
+				return
+			}
+			requestHandler.authRestriction.LoadOrStore(tokenReq.Code, cache.NewElement(struct{}{}, time.Now().Add(clientCfg.CodeRestrictionLifetime), nil))
+		}
+	}
+
+	refreshToken := "refresh-token"
+	if clientCfg.RefreshTokenRestrictionLifetime != 0 {
+		if tokenReq.GrantType == string(AllowedGrantType_REFRESH_TOKEN) {
+			v := requestHandler.refreshRestriction.Load(tokenReq.RefreshToken)
+			if v != nil {
+				writeError(w, fmt.Errorf("refresh token(%v) reused", tokenReq.RefreshToken), http.StatusBadRequest)
+				return
+			}
+			requestHandler.refreshRestriction.LoadOrStore(tokenReq.RefreshToken, cache.NewElement(struct{}{}, time.Now().Add(clientCfg.RefreshTokenRestrictionLifetime), nil))
+		}
 		if refreshToken, err = generateRefreshToken(); err != nil {
 			writeError(w, err, http.StatusInternalServerError)
 			return
 		}
+	} else {
+		if tokenReq.GrantType == string(AllowedGrantType_REFRESH_TOKEN) {
+			if tokenReq.RefreshToken != refreshToken {
+				writeError(w, fmt.Errorf("invalid refresh token(%v)", tokenReq.RefreshToken), http.StatusBadRequest)
+				return
+			}
+		}
 	}
 
-	authSession := requestHandler.getAuthorizedSession(tokenReq)
+	var authSession authorizedSession
+	if tokenReq.GrantType == string(AllowedGrantType_AUTHORIZATION_CODE) {
+		var found bool
+		authSession, found = requestHandler.getAuthorizedSession(tokenReq)
+		log.Infof("found %v, require %v", found, clientCfg.RequireIssuedAuthorizationCode)
+		if !found && clientCfg.RequireIssuedAuthorizationCode {
+			log.Infof("found %v, require %v writing error", found, clientCfg.RequireIssuedAuthorizationCode)
+			writeError(w, fmt.Errorf("invalid authorization code(%v)", tokenReq.Code), http.StatusBadRequest)
+			return
+		}
+	}
+
 	if authSession.audience != "" && tokenReq.Audience == "" {
 		tokenReq.Audience = authSession.audience
 		tokenReq.tokenType = AccessTokenType_JWT
@@ -339,7 +366,12 @@ func (requestHandler *RequestHandler) processResponse(w http.ResponseWriter, tok
 		}
 	}
 
-	accessToken, accessTokenExpires, err := requestHandler.getAccessToken(tokenReq, clientCfg, authSession.deviceID, authSession.scopes)
+	scopes := authSession.scope
+	if tokenReq.GrantType == string(AllowedGrantType_REFRESH_TOKEN) {
+		scopes = DefaultScope
+	}
+
+	accessToken, accessTokenExpires, err := requestHandler.getAccessToken(tokenReq, clientCfg, authSession.deviceID, scopes)
 	if err != nil {
 		writeError(w, err, http.StatusInternalServerError)
 		return
@@ -348,7 +380,7 @@ func (requestHandler *RequestHandler) processResponse(w http.ResponseWriter, tok
 	resp := map[string]interface{}{
 		"access_token":  accessToken,
 		"id_token":      idToken,
-		"scope":         authSession.scopes,
+		"scope":         scopes,
 		"token_type":    "Bearer",
 		"refresh_token": refreshToken,
 	}

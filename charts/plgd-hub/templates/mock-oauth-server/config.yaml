@@ -26,5 +26,6 @@ data:
           authorizationCodeLifetime:  {{ .oauthSigner.clients.authorizationCodeLifetime | quote }}
           accessTokenLifetime:  {{ .oauthSigner.clients.accessTokenLifetime | quote }}
           codeRestrictionLifetime:  {{ .oauthSigner.clients.codeRestrictionLifetime | quote }}
+          refreshTokenRestrictionLifetime:  {{ .oauthSigner.clients.refreshTokenRestrictionLifetime | quote }}
 {{- end }}
 {{- end }}

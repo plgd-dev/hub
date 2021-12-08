@@ -1,6 +1,6 @@
 package service_test
 
-import (	
+import (
 	"net/http"
 	"net/url"
 	"testing"
@@ -15,7 +15,7 @@ import (
 func TestRequestHandler_authorize(t *testing.T) {
 	webTearDown := test.SetUp(t)
 	defer webTearDown()
-	getAuthorize(t, test.ClientTest, "nonse", "https://localhost:3000", "", "", http.StatusTemporaryRedirect)
+	getAuthorize(t, test.ClientTest, "nonse", "https://localhost:3000", "", "", http.StatusFound)
 	getAuthorize(t, test.ClientTest, "", "", "", "", http.StatusOK)
 }
 
@@ -46,7 +46,7 @@ func getAuthorize(t *testing.T, clientID, nonce, redirectURI, deviceID, scope st
 		_ = res.Body.Close()
 	}()
 	require.Equal(t, statusCode, res.StatusCode)
-	if res.StatusCode == http.StatusTemporaryRedirect {
+	if res.StatusCode == http.StatusFound {
 		loc, err := res.Location()
 		require.NoError(t, err)
 		code := loc.Query().Get(uri.CodeKey)

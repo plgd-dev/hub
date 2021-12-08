@@ -17,8 +17,19 @@ oauthSigner:
       authorizationCodeLifetime: "10m"
       accessTokenLifetime: "0s"
       codeRestrictionLifetime: "0s"
+      refreshTokenRestrictionLifetime: "0s"
     - id: "testC2C"
-      authorizationCodeLifetime: "10m"
-      accessTokenLifetime: "0s"
-      codeRestrictionLifetime: "0s"
+      secret: "testC2CSecret"
+      authorizationCodeLifetime: "5m"
+      accessTokenLifetime: "720m"
+      codeRestrictionLifetime: "5m"
+      refreshTokenRestrictionLifetime: "0s"
       consentScreenEnabled: true
+      requireIssuedAuthorizationCode: true
+      supportedScope:
+        - "r:*"
+        - "w:*"
+        - "offline_access"
+      supportedResponseType: "code"
+      supportedRecirectUri: "https://localhost:8080/callback"
+      

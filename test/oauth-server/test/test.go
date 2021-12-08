@@ -34,6 +34,8 @@ const (
 	ClientTestExpired = "testExpired"
 	// Client for C2C testing
 	ClientTestC2C = "testC2C"
+	// Valid refresh token if refresh token restriction policy not configured
+	ValidRefreshToken = "refresh-token"
 )
 
 func MakeConfig(t *testing.T) service.Config {
@@ -46,35 +48,40 @@ func MakeConfig(t *testing.T) service.Config {
 	cfg.OAuthSigner.Domain = config.OAUTH_SERVER_HOST
 	cfg.OAuthSigner.Clients = service.ClientsConfig{
 		{
-			ID:                        config.OAUTH_MANAGER_CLIENT_ID,
-			AuthorizationCodeLifetime: time.Minute * 10,
-			AccessTokenLifetime:       0,
-			CodeRestrictionLifetime:   0,
+			ID:                              config.OAUTH_MANAGER_CLIENT_ID,
+			AuthorizationCodeLifetime:       time.Minute * 10,
+			AccessTokenLifetime:             0,
+			CodeRestrictionLifetime:         0,
+			RefreshTokenRestrictionLifetime: 0,
 		},
 		{
-			ID:                        ClientTestShortExpiration,
-			AuthorizationCodeLifetime: time.Second * 10,
-			AccessTokenLifetime:       time.Second * 10,
-			CodeRestrictionLifetime:   0,
+			ID:                              ClientTestShortExpiration,
+			AuthorizationCodeLifetime:       time.Second * 10,
+			AccessTokenLifetime:             time.Second * 10,
+			CodeRestrictionLifetime:         0,
+			RefreshTokenRestrictionLifetime: 0,
 		},
 		{
-			ID:                        ClientTestRestrictedAuth,
-			AuthorizationCodeLifetime: time.Minute * 10,
-			AccessTokenLifetime:       time.Hour * 24,
-			CodeRestrictionLifetime:   time.Minute,
+			ID:                              ClientTestRestrictedAuth,
+			AuthorizationCodeLifetime:       time.Minute * 10,
+			AccessTokenLifetime:             time.Hour * 24,
+			CodeRestrictionLifetime:         time.Minute,
+			RefreshTokenRestrictionLifetime: time.Minute,
 		},
 		{
-			ID:                        ClientTestExpired,
-			AuthorizationCodeLifetime: time.Second * 10,
-			AccessTokenLifetime:       -1 * time.Second,
-			CodeRestrictionLifetime:   0,
+			ID:                              ClientTestExpired,
+			AuthorizationCodeLifetime:       time.Second * 10,
+			AccessTokenLifetime:             -1 * time.Second,
+			CodeRestrictionLifetime:         0,
+			RefreshTokenRestrictionLifetime: 0,
 		},
 		{
-			ID:                        ClientTestC2C,
-			AuthorizationCodeLifetime: time.Minute * 10,
-			AccessTokenLifetime:       0,
-			CodeRestrictionLifetime:   0,
-			ConsentScreenEnabled:      true,
+			ID:                              ClientTestC2C,
+			AuthorizationCodeLifetime:       time.Minute * 10,
+			AccessTokenLifetime:             0,
+			CodeRestrictionLifetime:         0,
+			RefreshTokenRestrictionLifetime: 0,
+			ConsentScreenEnabled:            true,
 		},
 	}
 

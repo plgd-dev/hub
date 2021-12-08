@@ -26,11 +26,17 @@ const AllowedGrantType_PASSWORD AllowedGrantType = "password"
 const AllowedGrantType_REFRESH_TOKEN AllowedGrantType = "refresh_token"
 
 type Client struct {
-	ID                        string        `yaml:"id"`
-	AuthorizationCodeLifetime time.Duration `yaml:"authorizationCodeLifetime"`
-	AccessTokenLifetime       time.Duration `yaml:"accessTokenLifetime"`
-	CodeRestrictionLifetime   time.Duration `yaml:"codeRestrictionLifetime"`
-	ConsentScreenEnabled      bool          `yaml:"consentScreenEnabled"`
+	ID                              string        `yaml:"id"`
+	ClientSecret                    string        `yaml:"secret"`
+	AuthorizationCodeLifetime       time.Duration `yaml:"authorizationCodeLifetime"`
+	AccessTokenLifetime             time.Duration `yaml:"accessTokenLifetime"`
+	CodeRestrictionLifetime         time.Duration `yaml:"codeRestrictionLifetime"`
+	RefreshTokenRestrictionLifetime time.Duration `yaml:"refreshTokenRestrictionLifetime"`
+	ConsentScreenEnabled            bool          `yaml:"consentScreenEnabled"`
+	RequireIssuedAuthorizationCode  bool          `yaml:"requireIssuedAuthorizationCode"`
+	SupportedScope                  []string      `yaml:"supportedScope"`
+	SupportedResponseType           string        `yaml:"supportedResponseType"`
+	SupportedRedirectURI            string        `yaml:"supportedRecirectUri"`
 }
 
 func (c *Client) Validate() error {

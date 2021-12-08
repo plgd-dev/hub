@@ -11,6 +11,7 @@ import (
 
 	"github.com/plgd-dev/go-coap/v2/pkg/cache"
 	"github.com/plgd-dev/hub/pkg/log"
+	pkgStrings "github.com/plgd-dev/hub/pkg/strings"
 	"github.com/plgd-dev/hub/test/oauth-server/uri"
 	"github.com/plgd-dev/kit/v2/codec/json"
 )
@@ -19,7 +20,7 @@ type authorizedSession struct {
 	nonce    string
 	audience string
 	deviceID string
-	scopes   string
+	scope   string
 }
 
 func (requestHandler *RequestHandler) authorize(w http.ResponseWriter, r *http.Request) {
@@ -35,31 +36,37 @@ func (requestHandler *RequestHandler) authorize(w http.ResponseWriter, r *http.R
 		writeError(w, err, http.StatusInternalServerError)
 		return
 	}
+
+	responseType := r.URL.Query().Get(uri.ResponseType)
+	responseMode := r.URL.Query().Get(uri.ResponseMode)
+	state := r.URL.Query().Get(uri.StateKey)
 	nonce := r.URL.Query().Get(uri.NonceKey)
 	audience := r.URL.Query().Get(uri.AudienceKey)
 	deviceId := r.URL.Query().Get(uri.DeviceId)
 	code := hex.EncodeToString(b)
-	scopes := "openid profile email"
+	scope := DefaultScope
+	redirectURI := r.URL.Query().Get(uri.RedirectURIKey)
 	if r.URL.Query().Get(uri.ScopeKey) != "" {
-		scopes = strings.Join(r.URL.Query()[uri.ScopeKey], " ")
+		scope = strings.Join(r.URL.Query()[uri.ScopeKey], " ")
 	}
+
+	if !(requestHandler.verifySupportedQueryParams(w, r, clientCfg, responseType, scope, redirectURI)) {
+		return
+	}
+
 	requestHandler.authSession.LoadOrStore(code, cache.NewElement(authorizedSession{
 		nonce:    nonce,
 		audience: audience,
 		deviceID: deviceId,
-		scopes:   scopes,
+		scope:   scope,
 	}, time.Now().Add(clientCfg.AuthorizationCodeLifetime), nil))
-	responseMode := r.URL.Query().Get(uri.ResponseMode)
-	state := r.URL.Query().Get(uri.StateKey)
 
 	if responseMode == "web_message" {
 		writeWebMessage(w, code, state, requestHandler.getDomain())
 		return
 	}
 
-	// redirect url flow
-	ru := r.URL.Query().Get(uri.RedirectURIKey)
-	if ru == "" {
+	if redirectURI == "" {
 		// tests require returned code even with invalid redirect url
 		resp := map[string]interface{}{
 			"code": code,
@@ -69,25 +76,70 @@ func (requestHandler *RequestHandler) authorize(w http.ResponseWriter, r *http.R
 		}
 		return
 	}
-
-	u, err := url.Parse(string(ru))
+	successRedirectURI, err := buildRedirectURI(redirectURI, string(state), code, "")
 	if err != nil {
 		writeError(w, err, http.StatusBadRequest)
 		return
+	}
+	if clientCfg.ConsentScreenEnabled {
+		writeConsentScreen(w, redirectURI, scope, string(state), code)
+		return
+	}
+	http.Redirect(w, r, successRedirectURI, http.StatusFound)
+}
+
+func (requestHandler *RequestHandler) verifySupportedQueryParams(w http.ResponseWriter, r *http.Request, clientCfg *Client, responseType, scope, redirectURI string) bool {
+	if clientCfg.SupportedRedirectURI != "" && clientCfg.SupportedRedirectURI != redirectURI {
+		writeError(w, fmt.Errorf("invalid redirect uri(%v)", redirectURI), http.StatusBadRequest)
+		return false
+	}
+	if clientCfg.SupportedResponseType != "" && clientCfg.SupportedResponseType != responseType {
+		redirectURI, err := buildRedirectURI(redirectURI, "", "", "invalid response type")
+		if err != nil {
+			writeError(w, err, http.StatusBadRequest)
+			return false
+		}
+		http.Redirect(w, r, redirectURI, http.StatusFound)
+		return false
+	}
+	if clientCfg.SupportedScope != nil {
+		tScope := strings.Split(scope, " ")
+		refScope := pkgStrings.MakeSortedSlice(clientCfg.SupportedScope)
+		if !(pkgStrings.MakeSortedSlice(tScope).IsSubslice(refScope)) {
+			redirectURI, err := buildRedirectURI(redirectURI, "", "", "invalid scope")
+			if err != nil {
+				writeError(w, err, http.StatusBadRequest)
+				return false
+			}
+			http.Redirect(w, r, redirectURI, http.StatusFound)
+			return false
+		}
+	}
+
+	return true
+}
+
+func buildRedirectURI(redirectURI, state, code, errMsg string) (string, error) {
+	u, err := url.Parse(string(redirectURI))
+	if err != nil {
+		return "", err
 	}
 	q, err := url.ParseQuery(u.RawQuery)
 	if err != nil {
-		writeError(w, err, http.StatusBadRequest)
-		return
+		return "", err
 	}
-	q.Add("state", string(state))
-	q.Add("code", code)
+	if state != "" {
+		q.Add("state", string(state))
+	}
+	if code != "" {
+		q.Add("code", code)
+	}
+	if errMsg != "" {
+		q.Add("error", errMsg)
+	}
 	u.RawQuery = q.Encode()
 
-	if clientCfg.ConsentScreenEnabled {
-		writeConsentScreen(w, scopes, u)
-	}
-	http.Redirect(w, r, u.String(), http.StatusTemporaryRedirect)
+	return u.String(), nil
 }
 
 func writeWebMessage(w http.ResponseWriter, code, state, domain string) {
@@ -124,7 +176,7 @@ func writeWebMessage(w http.ResponseWriter, code, state, domain string) {
 	}
 }
 
-func writeConsentScreen(w http.ResponseWriter, scopes string, redirectUrl *url.URL) {
+func writeConsentScreen(w http.ResponseWriter, redirectURI, scope, state, code string) {
 	body := `
 	<!DOCTYPE html>
 	<html>
@@ -134,12 +186,16 @@ func writeConsentScreen(w http.ResponseWriter, scopes string, redirectUrl *url.U
 		<body>
 			<center>
 				</br></br></br>
-				<p>Hello! The OAuth Client is requesting access to scopes: <b>'` + scopes + `'</b></p>
-				<form action="` + redirectUrl.String() + `">
+				<p>Hello! The OAuth Client is requesting access to scope: <b>'` + scope + `'</b></p>
+				<form action="` + redirectURI + `">
+					<input type="hidden" name="state" value="` + string(state) + `" /> 
+					<input type="hidden" name="code" value="` + code + `" /> 
 					<input style="background-color: lime; font-size: 16px" type="submit" value="ACCEPT" />
 				</form>
 				</br>
-				<form action="` + uri.UnauthorizedResponse + `">
+				<form action="` + redirectURI + `">
+					<input type="hidden" name="state" value="` + string(state) + `" /> 
+					<input type="hidden" name="error" value="access_denied" /> 
 					<input style="background-color: tomato; font-size: 16px" type="submit" value="DECLINE" />
 				</form>
 			</center>
@@ -149,6 +205,6 @@ func writeConsentScreen(w http.ResponseWriter, scopes string, redirectUrl *url.U
 	w.WriteHeader(http.StatusOK)
 	w.Header().Set(contentTypeHeaderKey, "text/html;charset=UTF-8")
 	if _, err := w.Write([]byte(body)); err != nil {
-		log.Errorf("failed to write response body: %v", err)
+		writeError(w, err, http.StatusBadRequest)
 	}
 }
