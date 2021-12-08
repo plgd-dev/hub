@@ -44,6 +44,73 @@ func ResourceLinkToPublishEvent(deviceID, token string, links []schema.ResourceL
 	}
 }
 
+var makeEventFromDataFn = map[string]func(e interface{}) *pb.Event{
+	getTypeName(&pb.Event_DeviceRegistered{}): func(e interface{}) *pb.Event {
+		return &pb.Event{Type: &pb.Event_DeviceRegistered_{DeviceRegistered: e.(*pb.Event_DeviceRegistered)}}
+	},
+	getTypeName(&pb.Event_DeviceRegistered{}): func(e interface{}) *pb.Event {
+		return &pb.Event{Type: &pb.Event_DeviceUnregistered_{DeviceUnregistered: e.(*pb.Event_DeviceUnregistered)}}
+	},
+	getTypeName(&events.ResourceLinksPublished{}): func(e interface{}) *pb.Event {
+		return &pb.Event{Type: &pb.Event_ResourcePublished{ResourcePublished: e.(*events.ResourceLinksPublished)}}
+	},
+	getTypeName(&events.ResourceLinksUnpublished{}): func(e interface{}) *pb.Event {
+		return &pb.Event{Type: &pb.Event_ResourceUnpublished{ResourceUnpublished: e.(*events.ResourceLinksUnpublished)}}
+	},
+	getTypeName(&events.ResourceChanged{}): func(e interface{}) *pb.Event {
+		return &pb.Event{Type: &pb.Event_ResourceChanged{ResourceChanged: e.(*events.ResourceChanged)}}
+	},
+	getTypeName(&pb.Event_OperationProcessed{}): func(e interface{}) *pb.Event {
+		return &pb.Event{Type: &pb.Event_OperationProcessed_{OperationProcessed: e.(*pb.Event_OperationProcessed)}}
+	},
+	getTypeName(&pb.Event_SubscriptionCanceled{}): func(e interface{}) *pb.Event {
+		return &pb.Event{Type: &pb.Event_SubscriptionCanceled_{SubscriptionCanceled: e.(*pb.Event_SubscriptionCanceled)}}
+	},
+	getTypeName(&events.ResourceUpdatePending{}): func(e interface{}) *pb.Event {
+		return &pb.Event{Type: &pb.Event_ResourceUpdatePending{ResourceUpdatePending: e.(*events.ResourceUpdatePending)}}
+	},
+	getTypeName(&events.ResourceUpdated{}): func(e interface{}) *pb.Event {
+		return &pb.Event{Type: &pb.Event_ResourceUpdated{ResourceUpdated: e.(*events.ResourceUpdated)}}
+	},
+	getTypeName(&events.ResourceRetrievePending{}): func(e interface{}) *pb.Event {
+		return &pb.Event{Type: &pb.Event_ResourceRetrievePending{ResourceRetrievePending: e.(*events.ResourceRetrievePending)}}
+	},
+	getTypeName(&events.ResourceRetrieved{}): func(e interface{}) *pb.Event {
+		return &pb.Event{Type: &pb.Event_ResourceRetrieved{ResourceRetrieved: e.(*events.ResourceRetrieved)}}
+	},
+	getTypeName(&events.ResourceDeletePending{}): func(e interface{}) *pb.Event {
+		return &pb.Event{Type: &pb.Event_ResourceDeletePending{ResourceDeletePending: e.(*events.ResourceDeletePending)}}
+	},
+	getTypeName(&events.ResourceDeleted{}): func(e interface{}) *pb.Event {
+		return &pb.Event{Type: &pb.Event_ResourceDeleted{ResourceDeleted: e.(*events.ResourceDeleted)}}
+	},
+	getTypeName(&events.ResourceCreatePending{}): func(e interface{}) *pb.Event {
+		return &pb.Event{Type: &pb.Event_ResourceCreatePending{ResourceCreatePending: e.(*events.ResourceCreatePending)}}
+	},
+	getTypeName(&events.ResourceCreated{}): func(e interface{}) *pb.Event {
+		return &pb.Event{Type: &pb.Event_ResourceCreated{ResourceCreated: e.(*events.ResourceCreated)}}
+	},
+	getTypeName(&events.DeviceMetadataUpdatePending{}): func(e interface{}) *pb.Event {
+		return &pb.Event{Type: &pb.Event_DeviceMetadataUpdatePending{DeviceMetadataUpdatePending: e.(*events.DeviceMetadataUpdatePending)}}
+	},
+	getTypeName(&events.DeviceMetadataUpdated{}): func(e interface{}) *pb.Event {
+		return &pb.Event{Type: &pb.Event_DeviceMetadataUpdated{DeviceMetadataUpdated: e.(*events.DeviceMetadataUpdated)}}
+	},
+}
+
+func getTypeName(v interface{}) string {
+	return reflect.TypeOf(v).String()
+}
+
+// Try to create a *pb.Event which wraps the given data (data must be castable to one of pb.isEvent_Type types)
+func ToEvent(data interface{}) *pb.Event {
+	makeEvent, ok := makeEventFromDataFn[getTypeName(data)]
+	if !ok {
+		return nil
+	}
+	return makeEvent(data)
+}
+
 func GetEventType(ev *pb.Event) string {
 	return fmt.Sprintf("%T", ev.GetType())
 }
@@ -88,114 +155,106 @@ func GetEventID(ev *pb.Event) string {
 	return ""
 }
 
+var cleanupEventFn = map[string]func(ev *pb.Event){
+	getTypeName(&pb.Event_DeviceRegistered_{}): func(ev *pb.Event) {
+		// nothing to do
+	},
+	getTypeName(&pb.Event_DeviceUnregistered_{}): func(ev *pb.Event) {
+		// nothing to do
+	},
+	getTypeName(&pb.Event_ResourcePublished{}): func(ev *pb.Event) {
+		CleanUpResourceLinksPublished(ev.GetResourcePublished(), false)
+	},
+	getTypeName(&pb.Event_ResourceUnpublished{}): func(ev *pb.Event) {
+		CleanUpResourceLinksUnpublished(ev.GetResourceUnpublished(), false)
+	},
+	getTypeName(&pb.Event_ResourceChanged{}): func(ev *pb.Event) {
+		CleanUpResourceChanged(ev.GetResourceChanged(), false)
+	},
+	getTypeName(&pb.Event_OperationProcessed_{}): func(ev *pb.Event) {
+		// nothing to do
+	},
+	getTypeName(&pb.Event_SubscriptionCanceled_{}): func(ev *pb.Event) {
+		// nothing to do
+	},
+	getTypeName(&pb.Event_ResourceUpdatePending{}): func(ev *pb.Event) {
+		CleanUpResourceUpdatePending(ev.GetResourceUpdatePending(), false)
+	},
+	getTypeName(&pb.Event_ResourceUpdated{}): func(ev *pb.Event) {
+		CleanUpResourceUpdated(ev.GetResourceUpdated(), false)
+	},
+	getTypeName(&pb.Event_ResourceRetrievePending{}): func(ev *pb.Event) {
+		CleanUpResourceRetrievePending(ev.GetResourceRetrievePending(), false)
+	},
+	getTypeName(&pb.Event_ResourceRetrieved{}): func(ev *pb.Event) {
+		CleanUpResourceRetrieved(ev.GetResourceRetrieved(), false)
+	},
+	getTypeName(&pb.Event_ResourceDeletePending{}): func(ev *pb.Event) {
+		CleanUpResourceDeletePending(ev.GetResourceDeletePending(), false)
+	},
+	getTypeName(&pb.Event_ResourceDeleted{}): func(ev *pb.Event) {
+		CleanResourceDeleted(ev.GetResourceDeleted(), false)
+	},
+	getTypeName(&pb.Event_ResourceCreatePending{}): func(ev *pb.Event) {
+		CleanUpResourceCreatePending(ev.GetResourceCreatePending(), false)
+	},
+	getTypeName(&pb.Event_ResourceCreated{}): func(ev *pb.Event) {
+		CleanUpResourceCreated(ev.GetResourceCreated(), false)
+	},
+	getTypeName(&pb.Event_DeviceMetadataUpdatePending{}): func(ev *pb.Event) {
+		CleanUpDeviceMetadataUpdatePending(ev.GetDeviceMetadataUpdatePending(), false)
+	},
+	getTypeName(&pb.Event_DeviceMetadataUpdated{}): func(ev *pb.Event) {
+		CleanUpDeviceMetadataUpdated(ev.GetDeviceMetadataUpdated(), false)
+	},
+}
+
 // Remove fields with unpredictable values
 func CleanUpEvent(t *testing.T, ev *pb.Event) {
-	noop := func(ev *pb.Event) {
-		// nothing to do
-	}
-
-	typeName := func(v interface{}) string {
-		return reflect.TypeOf(v).String()
-	}
-
-	cleanupHandlerFn := map[string]func(ev *pb.Event){
-		typeName(&pb.Event_DeviceRegistered_{}):   noop,
-		typeName(&pb.Event_DeviceUnregistered_{}): noop,
-		typeName(&pb.Event_ResourcePublished{}): func(ev *pb.Event) {
-			CleanUpResourceLinksPublished(ev.GetResourcePublished(), false)
-		},
-		typeName(&pb.Event_ResourceUnpublished{}): func(ev *pb.Event) {
-			CleanUpResourceLinksUnpublished(ev.GetResourceUnpublished(), false)
-		},
-		typeName(&pb.Event_ResourceChanged{}): func(ev *pb.Event) {
-			CleanUpResourceChanged(ev.GetResourceChanged(), false)
-		},
-		typeName(&pb.Event_OperationProcessed_{}):   noop,
-		typeName(&pb.Event_SubscriptionCanceled_{}): noop,
-		typeName(&pb.Event_ResourceUpdatePending{}): func(ev *pb.Event) {
-			CleanUpResourceUpdatePending(ev.GetResourceUpdatePending(), false)
-		},
-		typeName(&pb.Event_ResourceUpdated{}): func(ev *pb.Event) {
-			CleanUpResourceUpdated(ev.GetResourceUpdated(), false)
-		},
-		typeName(&pb.Event_ResourceRetrievePending{}): func(ev *pb.Event) {
-			CleanUpResourceRetrievePending(ev.GetResourceRetrievePending(), false)
-		},
-		typeName(&pb.Event_ResourceRetrieved{}): func(ev *pb.Event) {
-			CleanUpResourceRetrieved(ev.GetResourceRetrieved(), false)
-		},
-		typeName(&pb.Event_ResourceDeletePending{}): func(ev *pb.Event) {
-			CleanUpResourceDeletePending(ev.GetResourceDeletePending(), false)
-		},
-		typeName(&pb.Event_ResourceDeleted{}): func(ev *pb.Event) {
-			CleanResourceDeleted(ev.GetResourceDeleted(), false)
-		},
-		typeName(&pb.Event_ResourceCreatePending{}): func(ev *pb.Event) {
-			CleanUpResourceCreatePending(ev.GetResourceCreatePending(), false)
-		},
-		typeName(&pb.Event_ResourceCreated{}): func(ev *pb.Event) {
-			CleanUpResourceCreated(ev.GetResourceCreated(), false)
-		},
-		typeName(&pb.Event_DeviceMetadataUpdatePending{}): func(ev *pb.Event) {
-			CleanUpDeviceMetadataUpdatePending(ev.GetDeviceMetadataUpdatePending(), false)
-		},
-		typeName(&pb.Event_DeviceMetadataUpdated{}): func(ev *pb.Event) {
-			CleanUpDeviceMetadataUpdated(ev.GetDeviceMetadataUpdated(), false)
-		},
-	}
-
-	handler, ok := cleanupHandlerFn[GetEventType(ev)]
+	handler, ok := cleanupEventFn[GetEventType(ev)]
 	require.True(t, ok)
-
 	handler(ev)
+}
+
+var compareEventFn = map[string]func(t *testing.T, e, g *pb.Event, cmpInterface string){
+	getTypeName(&pb.Event_ResourceChanged{}): func(t *testing.T, e, g *pb.Event, cmpInterface string) {
+		CmpResourceChanged(t, e.GetResourceChanged(), g.GetResourceChanged(), cmpInterface)
+	},
+	getTypeName(&pb.Event_ResourceUpdatePending{}): func(t *testing.T, e, g *pb.Event, cmpInterface string) {
+		CmpResourceUpdatePending(t, e.GetResourceUpdatePending(), g.GetResourceUpdatePending())
+	},
+	getTypeName(&pb.Event_ResourceUpdated{}): func(t *testing.T, e, g *pb.Event, cmpInterface string) {
+		CmpResourceUpdated(t, e.GetResourceUpdated(), g.GetResourceUpdated())
+	},
+	getTypeName(&pb.Event_ResourceRetrieved{}): func(t *testing.T, e, g *pb.Event, cmpInterface string) {
+		CmpResourceRetrieved(t, e.GetResourceRetrieved(), g.GetResourceRetrieved())
+	},
+	getTypeName(&pb.Event_ResourceDeletePending{}): func(t *testing.T, e, g *pb.Event, cmpInterface string) {
+		CmpResourceDeletePending(t, e.GetResourceDeletePending(), g.GetResourceDeletePending())
+	},
+	getTypeName(&pb.Event_ResourceDeleted{}): func(t *testing.T, e, g *pb.Event, cmpInterface string) {
+		CmpResourceDeleted(t, e.GetResourceDeleted(), g.GetResourceDeleted())
+	},
+	getTypeName(&pb.Event_ResourceCreatePending{}): func(t *testing.T, e, g *pb.Event, cmpInterface string) {
+		CmpResourceCreatePending(t, e.GetResourceCreatePending(), g.GetResourceCreatePending())
+	},
+	getTypeName(&pb.Event_ResourceCreated{}): func(t *testing.T, e, g *pb.Event, cmpInterface string) {
+		CmpResourceCreated(t, e.GetResourceCreated(), g.GetResourceCreated())
+	},
 }
 
 func CmpEvent(t *testing.T, expected, got *pb.Event, cmpInterface string) {
 	require.Equal(t, GetEventType(expected), GetEventType(got))
-
-	type cmpFn = func(t *testing.T, e, g *pb.Event)
-
-	typeName := func(v interface{}) string {
-		return reflect.TypeOf(v).String()
-	}
-
-	cmpFnMap := map[string]cmpFn{
-		typeName(&pb.Event_ResourceChanged{}): func(t *testing.T, e, g *pb.Event) {
-			CmpResourceChanged(t, e.GetResourceChanged(), g.GetResourceChanged(), cmpInterface)
-		},
-		typeName(&pb.Event_ResourceUpdatePending{}): func(t *testing.T, e, g *pb.Event) {
-			CmpResourceUpdatePending(t, e.GetResourceUpdatePending(), g.GetResourceUpdatePending())
-		},
-		typeName(&pb.Event_ResourceUpdated{}): func(t *testing.T, e, g *pb.Event) {
-			CmpResourceUpdated(t, e.GetResourceUpdated(), g.GetResourceUpdated())
-		},
-		typeName(&pb.Event_ResourceRetrieved{}): func(t *testing.T, e, g *pb.Event) {
-			CmpResourceRetrieved(t, e.GetResourceRetrieved(), g.GetResourceRetrieved())
-		},
-		typeName(&pb.Event_ResourceDeletePending{}): func(t *testing.T, e, g *pb.Event) {
-			CmpResourceDeletePending(t, e.GetResourceDeletePending(), g.GetResourceDeletePending())
-		},
-		typeName(&pb.Event_ResourceDeleted{}): func(t *testing.T, e, g *pb.Event) {
-			CmpResourceDeleted(t, e.GetResourceDeleted(), g.GetResourceDeleted())
-		},
-		typeName(&pb.Event_ResourceCreatePending{}): func(t *testing.T, e, g *pb.Event) {
-			CmpResourceCreatePending(t, e.GetResourceCreatePending(), g.GetResourceCreatePending())
-		},
-		typeName(&pb.Event_ResourceCreated{}): func(t *testing.T, e, g *pb.Event) {
-			CmpResourceCreated(t, e.GetResourceCreated(), g.GetResourceCreated())
-		},
-	}
-
-	cmp, ok := cmpFnMap[GetEventType(expected)]
+	cmp, ok := compareEventFn[GetEventType(expected)]
 	if !ok {
-		cmp = func(t *testing.T, e, g *pb.Event) {
+		cmp = func(t *testing.T, e, g *pb.Event, cmpInterface string) {
 			CleanUpEvent(t, e)
 			CleanUpEvent(t, g)
 			test.CheckProtobufs(t, e, g, test.RequireToCheckFunc(require.Equal))
 		}
 	}
 
-	cmp(t, expected, got)
+	cmp(t, expected, got, cmpInterface)
 }
 
 func CmpEvents(t *testing.T, expected, got []*pb.Event) {
@@ -218,56 +277,66 @@ func CmpEvents(t *testing.T, expected, got []*pb.Event) {
 	}
 }
 
-func GetWrappedEvent(value *pb.GetEventsResponse) interface{} {
-	if event := value.GetDeviceMetadataSnapshotTaken(); event != nil {
-		return event
+var getWrappedEventFromEventResponseFn = map[string]func(v *pb.GetEventsResponse) interface{}{
+	getTypeName(&pb.GetEventsResponse_ResourceLinksPublished{}): func(v *pb.GetEventsResponse) interface{} {
+		return v.GetResourceLinksPublished()
+	},
+	getTypeName(&pb.GetEventsResponse_ResourceLinksUnpublished{}): func(v *pb.GetEventsResponse) interface{} {
+		return v.GetResourceLinksUnpublished()
+	},
+	getTypeName(&pb.GetEventsResponse_ResourceLinksSnapshotTaken{}): func(v *pb.GetEventsResponse) interface{} {
+		return v.GetResourceLinksSnapshotTaken()
+	},
+	getTypeName(&pb.GetEventsResponse_ResourceChanged{}): func(v *pb.GetEventsResponse) interface{} {
+		return v.GetResourceChanged()
+	},
+	getTypeName(&pb.GetEventsResponse_ResourceUpdatePending{}): func(v *pb.GetEventsResponse) interface{} {
+		return v.GetResourceUpdatePending()
+	},
+	getTypeName(&pb.GetEventsResponse_ResourceUpdated{}): func(v *pb.GetEventsResponse) interface{} {
+		return v.GetResourceUpdated()
+	},
+	getTypeName(&pb.GetEventsResponse_ResourceRetrievePending{}): func(v *pb.GetEventsResponse) interface{} {
+		return v.GetResourceRetrievePending()
+	},
+	getTypeName(&pb.GetEventsResponse_ResourceRetrieved{}): func(v *pb.GetEventsResponse) interface{} {
+		return v.GetResourceRetrieved()
+	},
+	getTypeName(&pb.GetEventsResponse_ResourceDeletePending{}): func(v *pb.GetEventsResponse) interface{} {
+		return v.GetResourceDeletePending()
+	},
+	getTypeName(&pb.GetEventsResponse_ResourceDeleted{}): func(v *pb.GetEventsResponse) interface{} {
+		return v.GetResourceDeleted()
+	},
+	getTypeName(&pb.GetEventsResponse_ResourceCreatePending{}): func(v *pb.GetEventsResponse) interface{} {
+		return v.GetResourceCreatePending()
+	},
+	getTypeName(&pb.GetEventsResponse_ResourceCreated{}): func(v *pb.GetEventsResponse) interface{} {
+		return v.GetResourceCreated()
+	},
+	getTypeName(&pb.GetEventsResponse_ResourceStateSnapshotTaken{}): func(v *pb.GetEventsResponse) interface{} {
+		return v.GetResourceStateSnapshotTaken()
+	},
+	getTypeName(&pb.GetEventsResponse_DeviceMetadataUpdatePending{}): func(v *pb.GetEventsResponse) interface{} {
+		return v.GetDeviceMetadataUpdatePending()
+	},
+	getTypeName(&pb.GetEventsResponse_DeviceMetadataUpdated{}): func(v *pb.GetEventsResponse) interface{} {
+		return v.GetDeviceMetadataUpdated()
+	},
+	getTypeName(&pb.GetEventsResponse_DeviceMetadataSnapshotTaken{}): func(v *pb.GetEventsResponse) interface{} {
+		return v.GetDeviceMetadataSnapshotTaken()
+	},
+}
+
+func GetWrappedEvent(v *pb.GetEventsResponse) interface{} {
+	getWrappedEventType := func(r *pb.GetEventsResponse) string {
+		return fmt.Sprintf("%T", r.GetType())
 	}
-	if event := value.GetDeviceMetadataUpdatePending(); event != nil {
-		return event
+	getWrappedEventFn, ok := getWrappedEventFromEventResponseFn[getWrappedEventType(v)]
+	if !ok {
+		return nil
 	}
-	if event := value.GetDeviceMetadataUpdated(); event != nil {
-		return event
-	}
-	if event := value.GetResourceChanged(); event != nil {
-		return event
-	}
-	if event := value.GetResourceCreatePending(); event != nil {
-		return event
-	}
-	if event := value.GetResourceCreated(); event != nil {
-		return event
-	}
-	if event := value.GetResourceDeletePending(); event != nil {
-		return event
-	}
-	if event := value.GetResourceDeleted(); event != nil {
-		return event
-	}
-	if event := value.GetResourceLinksPublished(); event != nil {
-		return event
-	}
-	if event := value.GetResourceLinksSnapshotTaken(); event != nil {
-		return event
-	}
-	if event := value.GetResourceLinksUnpublished(); event != nil {
-		return event
-	}
-	if event := value.GetResourceRetrievePending(); event != nil {
-		return event
-	}
-	if event := value.GetResourceRetrieved(); event != nil {
-		return event
-	}
-	if event := value.GetResourceStateSnapshotTaken(); event != nil {
-		return event
-	}
-	if event := value.GetResourceUpdatePending(); event != nil {
-		return event
-	}
-	if event := value.GetResourceUpdated(); event != nil {
-		return event
-	}
-	return nil
+	return getWrappedEventFn(v)
 }
 
 func CheckGetEventsResponse(t *testing.T, deviceId string, got []*pb.GetEventsResponse) {

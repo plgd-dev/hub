@@ -38,7 +38,7 @@ func CmpResourceIds(t *testing.T, expected, got []*commands.ResourceId) {
 	test.CheckProtobufs(t, expectedSorted, gotSorted, test.RequireToCheckFunc(require.Equal))
 }
 
-func MakeCreateLightResourceResponseData(id string) map[string]interface{} {
+func MakeCreateSwitchResourceResponseData(id string) map[string]interface{} {
 	return map[string]interface{}{
 		"href": test.TestResourceSwitchesInstanceHref(id),
 		"if":   []interface{}{interfaces.OC_IF_A, interfaces.OC_IF_BASELINE},
@@ -249,6 +249,7 @@ func getResourceRetrievedData(t *testing.T, d *events.ResourceRetrieved) map[str
 		href, _ := res["href"].(string)
 		delete(res, "eps")
 		delete(res, "ins")
+		delete(res, "pi")
 		delete(res, "piid")
 		resData[href] = res
 	}
@@ -274,7 +275,7 @@ func CmpResourceRetrieved(t *testing.T, expected, got *events.ResourceRetrieved)
 		require.NotEmpty(t, gotData)
 		expectedData := getResourceRetrievedData(t, expected)
 		require.NotEmpty(t, expectedData)
-		require.Equal(t, gotData, expectedData)
+		require.Equal(t, expectedData, gotData)
 		got.GetContent().Data = nil
 		expected.GetContent().Data = nil
 	}

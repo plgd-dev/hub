@@ -55,7 +55,7 @@ func createSwitchResource(t *testing.T, ctx context.Context, c pb.GrpcGatewayCli
 		},
 	})
 	require.NoError(t, err)
-	switchData := pbTest.MakeCreateLightResourceResponseData(switchID)
+	switchData := pbTest.MakeCreateSwitchResourceResponseData(switchID)
 	want := pbTest.MakeResourceCreated(t, deviceID, test.TestResourceSwitchesHref, "", switchData)
 	pbTest.CmpResourceCreated(t, want, got.GetData())
 }

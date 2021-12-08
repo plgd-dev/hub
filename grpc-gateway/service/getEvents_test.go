@@ -38,7 +38,7 @@ func getAllEvents(t *testing.T, client pb.GrpcGatewayClient, ctx context.Context
 	return events
 }
 
-func TestRequestHandler_GetEvents(t *testing.T) {
+func TestRequestHandlerGetEvents(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 
 	ctx, cancel := context.WithTimeout(context.Background(), testCfg.TEST_TIMEOUT)

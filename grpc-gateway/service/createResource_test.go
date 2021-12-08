@@ -131,7 +131,7 @@ func TestRequestHandlerCreateResource(t *testing.T) {
 				href: test.TestResourceSwitchesHref,
 				data: test.MakeSwitchResourceDefaultData(),
 			},
-			wantData: pbTest.MakeCreateLightResourceResponseData("1"),
+			wantData: pbTest.MakeCreateSwitchResourceResponseData("1"),
 		},
 		{
 			name: "create /switches/2",
@@ -139,7 +139,7 @@ func TestRequestHandlerCreateResource(t *testing.T) {
 				href: test.TestResourceSwitchesHref,
 				data: test.MakeSwitchResourceDefaultData(),
 			},
-			wantData: pbTest.MakeCreateLightResourceResponseData("2"),
+			wantData: pbTest.MakeCreateSwitchResourceResponseData("2"),
 		},
 	}
 
