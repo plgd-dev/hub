@@ -5,16 +5,15 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/plgd-dev/hub/coap-gateway/resource"
 	"github.com/plgd-dev/hub/pkg/net/grpc"
 	pkgTime "github.com/plgd-dev/hub/pkg/time"
-
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/proto"
-
 	"github.com/plgd-dev/hub/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/resource-aggregate/cqrs/aggregate"
 	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventstore"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 )
 
 const eventTypeResourceLinksSnapshotTaken = "resourcelinkssnapshottaken"
@@ -100,25 +99,49 @@ func (e *ResourceLinksSnapshotTaken) HandleEventResourceLinksPublished(ctx conte
 	return published, nil
 }
 
-func (e *ResourceLinksSnapshotTaken) HandleEventResourceLinksUnpublished(ctx context.Context, upub *ResourceLinksUnpublished) ([]string, error) {
-	var unpublished []string
-	if len(upub.GetHrefs()) == 0 {
-		unpublished = make([]string, 0, len(e.GetResources()))
+func (e *ResourceLinksSnapshotTaken) unpublishResourceLinksAndUpdateCache(upub *ResourceLinksUnpublished) []string {
+	if len(e.GetResources()) == 0 {
+		return nil
+	}
+
+	if len(upub.GetHrefs()) == 0 && len(upub.GetInstanceIds()) == 0 {
+		unpublished := make([]string, 0, len(e.GetResources()))
 		for href := range e.GetResources() {
 			unpublished = append(unpublished, href)
 		}
 		e.Resources = make(map[string]*commands.Resource)
-	} else {
-		unpublished = make([]string, 0, len(upub.GetHrefs()))
-		if len(e.GetResources()) > 0 {
-			for _, href := range upub.GetHrefs() {
-				if _, present := e.GetResources()[href]; present {
-					unpublished = append(unpublished, href)
-					delete(e.GetResources(), href)
-				}
-			}
+		return unpublished
+	}
+
+	unpublished := make([]string, 0, len(upub.GetHrefs())+len(upub.GetInstanceIds()))
+	for _, href := range upub.GetHrefs() {
+		if _, present := e.GetResources()[href]; present {
+			unpublished = append(unpublished, href)
+			delete(e.GetResources(), href)
 		}
 	}
+
+	if len(upub.GetInstanceIds()) == 0 {
+		return unpublished
+	}
+
+	instanceIDToHref := map[int64]string{}
+	for href := range e.GetResources() {
+		instanceIDToHref[resource.GetInstanceID(href)] = href
+	}
+
+	for _, insID := range upub.GetInstanceIds() {
+		if href, present := instanceIDToHref[insID]; present {
+			unpublished = append(unpublished, href)
+			delete(e.GetResources(), href)
+		}
+	}
+
+	return unpublished
+}
+
+func (e *ResourceLinksSnapshotTaken) HandleEventResourceLinksUnpublished(ctx context.Context, upub *ResourceLinksUnpublished) ([]string, error) {
+	unpublished := e.unpublishResourceLinksAndUpdateCache(upub)
 	e.EventMetadata = upub.GetEventMetadata()
 	e.AuditContext = upub.GetAuditContext()
 	return unpublished, nil
@@ -201,8 +224,9 @@ func (e *ResourceLinksSnapshotTaken) HandleCommand(ctx context.Context, cmd aggr
 		em := MakeEventMeta(req.GetCommandMetadata().GetConnectionId(), req.GetCommandMetadata().GetSequence(), newVersion)
 		ac := commands.NewAuditContext(userID, "")
 		rlu := ResourceLinksUnpublished{
-			Hrefs:         req.GetHrefs(),
 			DeviceId:      req.GetDeviceId(),
+			Hrefs:         req.GetHrefs(),
+			InstanceIds:   req.GetInstanceIds(),
 			AuditContext:  ac,
 			EventMetadata: em,
 		}

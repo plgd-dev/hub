@@ -1611,6 +1611,13 @@
             "type": "string"
           }
         },
+        "instanceIds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "int64"
+          }
+        },
         "auditContext": {
           "$ref": "#/definitions/pbAuditContext"
         },

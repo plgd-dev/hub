@@ -76,7 +76,6 @@ type Client struct {
 	coapConn    *tcp.ClientConn
 	tlsDeviceID string
 
-	publishedResources    publishedResources
 	resourceSubscriptions *kitSync.Map // [token]
 
 	exchangeCache *exchangeCache
@@ -146,7 +145,7 @@ func (client *Client) onGetResourceContent(ctx context.Context, deviceID, href s
 			}
 		}
 		if notification.Code() == codes.NotFound {
-			client.unpublishResourceLinks(client.getUserAuthorizedContext(ctx), []string{href})
+			client.unpublishResourceLinks(client.getUserAuthorizedContext(ctx), []string{href}, nil)
 		}
 	})
 	if err != nil {
@@ -179,7 +178,7 @@ func (client *Client) onObserveResource(ctx context.Context, deviceID, href stri
 			}
 		}
 		if notification.Code() == codes.NotFound {
-			client.unpublishResourceLinks(client.getUserAuthorizedContext(notification.Context()), []string{href})
+			client.unpublishResourceLinks(client.getUserAuthorizedContext(notification.Context()), []string{href}, nil)
 		}
 	})
 	if err != nil {
@@ -367,7 +366,7 @@ func (client *Client) UpdateResource(ctx context.Context, event *events.Resource
 	decodeMsgToDebug(client, resp, "RESOURCE-UPDATE-RESPONSE")
 
 	if resp.Code() == codes.NotFound {
-		client.unpublishResourceLinks(client.getUserAuthorizedContext(ctx), []string{event.GetResourceId().GetHref()})
+		client.unpublishResourceLinks(client.getUserAuthorizedContext(ctx), []string{event.GetResourceId().GetHref()}, nil)
 	}
 
 	request := coapconv.NewConfirmResourceUpdateRequest(event.GetResourceId(), event.GetAuditContext().GetCorrelationId(), client.remoteAddrString(), resp)
@@ -438,7 +437,7 @@ func (client *Client) RetrieveResource(ctx context.Context, event *events.Resour
 	decodeMsgToDebug(client, resp, "RESOURCE-RETRIEVE-RESPONSE")
 
 	if resp.Code() == codes.NotFound {
-		client.unpublishResourceLinks(client.getUserAuthorizedContext(ctx), []string{event.GetResourceId().GetHref()})
+		client.unpublishResourceLinks(client.getUserAuthorizedContext(ctx), []string{event.GetResourceId().GetHref()}, nil)
 	}
 
 	request := coapconv.NewConfirmResourceRetrieveRequest(event.GetResourceId(), event.GetAuditContext().GetCorrelationId(), client.remoteAddrString(), resp)
@@ -509,7 +508,7 @@ func (client *Client) DeleteResource(ctx context.Context, event *events.Resource
 	decodeMsgToDebug(client, resp, "RESOURCE-DELETE-RESPONSE")
 
 	if resp.Code() == codes.NotFound {
-		client.unpublishResourceLinks(client.getUserAuthorizedContext(ctx), []string{event.GetResourceId().GetHref()})
+		client.unpublishResourceLinks(client.getUserAuthorizedContext(ctx), []string{event.GetResourceId().GetHref()}, nil)
 	}
 
 	request := coapconv.NewConfirmResourceDeleteRequest(event.GetResourceId(), event.GetAuditContext().GetCorrelationId(), client.remoteAddrString(), resp)
@@ -531,19 +530,20 @@ func (client *Client) getUserAuthorizedContext(ctx context.Context) context.Cont
 	return authCtx.ToContext(ctx)
 }
 
-func (client *Client) unpublishResourceLinks(ctx context.Context, hrefs []string) {
+func (client *Client) unpublishResourceLinks(ctx context.Context, hrefs []string, instanceIDs []int64) []string {
 	authCtx, err := client.GetAuthorizationContext()
 	if err != nil {
 		log.Errorf("unable to load authorization context during resource links publish for device: %w", err)
-		return
+		return nil
 	}
 
 	logUnpublishError := func(err error) {
 		log.Errorf("error occurred during resource links unpublish for device %v: %w", authCtx.GetDeviceID(), err)
 	}
 	resp, err := client.server.raClient.UnpublishResourceLinks(ctx, &commands.UnpublishResourceLinksRequest{
-		Hrefs:    hrefs,
-		DeviceId: authCtx.GetDeviceID(),
+		Hrefs:       hrefs,
+		InstanceIds: instanceIDs,
+		DeviceId:    authCtx.GetDeviceID(),
 		CommandMetadata: &commands.CommandMetadata{
 			ConnectionId: client.remoteAddrString(),
 			Sequence:     client.coapConn.Sequence(),
@@ -553,16 +553,20 @@ func (client *Client) unpublishResourceLinks(ctx context.Context, hrefs []string
 		// unpublish resource is not critical -> resource can be still accessible
 		// next resource update will return 'not found' what triggers a publish again
 		logUnpublishError(err)
-		return
+		return nil
 	}
-	client.publishedResources.Remove(hrefs...)
+
+	if len(resp.UnpublishedHrefs) == 0 {
+		return nil
+	}
 
 	observer, err := client.getDeviceObserver(ctx)
 	if err != nil {
 		logUnpublishError(err)
-		return
+		return nil
 	}
 	observer.RemovePublishedResources(ctx, resp.UnpublishedHrefs)
+	return resp.UnpublishedHrefs
 }
 
 func (client *Client) sendErrorConfirmResourceCreate(ctx context.Context, resourceID *commands.ResourceId, userID, correlationID string, code codes.Code, errToSend error) {
@@ -622,7 +626,7 @@ func (client *Client) CreateResource(ctx context.Context, event *events.Resource
 	decodeMsgToDebug(client, resp, "RESOURCE-CREATE-RESPONSE")
 
 	if resp.Code() == codes.NotFound {
-		client.unpublishResourceLinks(client.getUserAuthorizedContext(ctx), []string{event.GetResourceId().GetHref()})
+		client.unpublishResourceLinks(client.getUserAuthorizedContext(ctx), []string{event.GetResourceId().GetHref()}, nil)
 	}
 
 	request := coapconv.NewConfirmResourceCreateRequest(event.GetResourceId(), event.GetAuditContext().GetCorrelationId(), client.remoteAddrString(), resp)

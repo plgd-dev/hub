@@ -65,8 +65,9 @@ message PublishResourceLinksResponse {
 // https://github.com/openconnectivityfoundation/cloud-services/blob/master/swagger2.0/oic.wk.rd.swagger.json #Specification CR needed
 message UnpublishResourceLinksRequest {
     repeated string hrefs = 1;
-    string device_id = 2;
-    CommandMetadata command_metadata = 3;
+    repeated int64 instance_ids = 2; // used by device when sending unpublish request to RD
+    string device_id = 3;
+    CommandMetadata command_metadata = 4;
 }
 
 message UnpublishResourceLinksResponse {
