@@ -28,7 +28,6 @@ message ResourceLinksUnpublished {
     repeated string hrefs = 2;
     AuditContext audit_context = 3;
     EventMetadata event_metadata = 4;
-    repeated int64 instance_ids = 5;
 }
 
 message ResourceLinksSnapshotTaken {

@@ -1616,13 +1616,6 @@
         },
         "eventMetadata": {
           "$ref": "#/definitions/pbEventMetadata"
-        },
-        "instanceIds": {
-          "type": "array",
-          "items": {
-            "type": "string",
-            "format": "int64"
-          }
         }
       },
       "title": "https://github.com/openconnectivityfoundation/cloud-services/blob/master/swagger2.0/oic.wk.rd.swagger.json #Specification CR needed"

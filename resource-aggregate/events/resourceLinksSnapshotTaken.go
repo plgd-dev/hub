@@ -99,12 +99,12 @@ func (e *ResourceLinksSnapshotTaken) HandleEventResourceLinksPublished(ctx conte
 	return published, nil
 }
 
-func (e *ResourceLinksSnapshotTaken) unpublishResourceLinksAndUpdateCache(upub *ResourceLinksUnpublished) []string {
+func (e *ResourceLinksSnapshotTaken) unpublishResourceLinksAndUpdateCache(instanceIDs []int64, upub *ResourceLinksUnpublished) []string {
 	if len(e.GetResources()) == 0 {
 		return nil
 	}
 
-	if len(upub.GetHrefs()) == 0 && len(upub.GetInstanceIds()) == 0 {
+	if len(upub.GetHrefs()) == 0 && len(instanceIDs) == 0 {
 		unpublished := make([]string, 0, len(e.GetResources()))
 		for href := range e.GetResources() {
 			unpublished = append(unpublished, href)
@@ -113,7 +113,7 @@ func (e *ResourceLinksSnapshotTaken) unpublishResourceLinksAndUpdateCache(upub *
 		return unpublished
 	}
 
-	unpublished := make([]string, 0, len(upub.GetHrefs())+len(upub.GetInstanceIds()))
+	unpublished := make([]string, 0, len(upub.GetHrefs())+len(instanceIDs))
 	for _, href := range upub.GetHrefs() {
 		if _, present := e.GetResources()[href]; present {
 			unpublished = append(unpublished, href)
@@ -121,7 +121,7 @@ func (e *ResourceLinksSnapshotTaken) unpublishResourceLinksAndUpdateCache(upub *
 		}
 	}
 
-	if len(upub.GetInstanceIds()) == 0 {
+	if len(instanceIDs) == 0 {
 		return unpublished
 	}
 
@@ -130,7 +130,7 @@ func (e *ResourceLinksSnapshotTaken) unpublishResourceLinksAndUpdateCache(upub *
 		instanceIDToHref[resource.GetInstanceID(href)] = href
 	}
 
-	for _, insID := range upub.GetInstanceIds() {
+	for _, insID := range instanceIDs {
 		if href, present := instanceIDToHref[insID]; present {
 			unpublished = append(unpublished, href)
 			delete(e.GetResources(), href)
@@ -140,8 +140,8 @@ func (e *ResourceLinksSnapshotTaken) unpublishResourceLinksAndUpdateCache(upub *
 	return unpublished
 }
 
-func (e *ResourceLinksSnapshotTaken) HandleEventResourceLinksUnpublished(ctx context.Context, upub *ResourceLinksUnpublished) ([]string, error) {
-	unpublished := e.unpublishResourceLinksAndUpdateCache(upub)
+func (e *ResourceLinksSnapshotTaken) HandleEventResourceLinksUnpublished(ctx context.Context, instanceIDs []int64, upub *ResourceLinksUnpublished) ([]string, error) {
+	unpublished := e.unpublishResourceLinksAndUpdateCache(instanceIDs, upub)
 	e.EventMetadata = upub.GetEventMetadata()
 	e.AuditContext = upub.GetAuditContext()
 	return unpublished, nil
@@ -178,7 +178,7 @@ func (e *ResourceLinksSnapshotTaken) Handle(ctx context.Context, iter eventstore
 			if err := eu.Unmarshal(&s); err != nil {
 				return status.Errorf(codes.Internal, "%v", err)
 			}
-			_, _ = e.HandleEventResourceLinksUnpublished(ctx, &s)
+			_, _ = e.HandleEventResourceLinksUnpublished(ctx, nil, &s)
 		}
 	}
 	return iter.Err()
@@ -226,11 +226,10 @@ func (e *ResourceLinksSnapshotTaken) HandleCommand(ctx context.Context, cmd aggr
 		rlu := ResourceLinksUnpublished{
 			DeviceId:      req.GetDeviceId(),
 			Hrefs:         req.GetHrefs(),
-			InstanceIds:   req.GetInstanceIds(),
 			AuditContext:  ac,
 			EventMetadata: em,
 		}
-		unpublished, err := e.HandleEventResourceLinksUnpublished(ctx, &rlu)
+		unpublished, err := e.HandleEventResourceLinksUnpublished(ctx, req.GetInstanceIds(), &rlu)
 		if err != nil {
 			return nil, err
 		}
