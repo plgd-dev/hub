@@ -20,7 +20,7 @@ type authorizedSession struct {
 	nonce    string
 	audience string
 	deviceID string
-	scope   string
+	scope    string
 }
 
 func (requestHandler *RequestHandler) authorize(w http.ResponseWriter, r *http.Request) {
@@ -50,7 +50,13 @@ func (requestHandler *RequestHandler) authorize(w http.ResponseWriter, r *http.R
 		scope = strings.Join(r.URL.Query()[uri.ScopeKey], " ")
 	}
 
-	if !(requestHandler.verifySupportedQueryParams(w, r, clientCfg, responseType, scope, redirectURI)) {
+	redirectURIwithErr, err := requestHandler.validateAuthorizeRequest(clientCfg, responseType, scope, redirectURI)
+	if err != nil {
+		writeError(w, err, http.StatusBadRequest)
+		return
+	}
+	if redirectURIwithErr != "" {
+		http.Redirect(w, r, redirectURIwithErr, http.StatusFound)
 		return
 	}
 
@@ -58,7 +64,7 @@ func (requestHandler *RequestHandler) authorize(w http.ResponseWriter, r *http.R
 		nonce:    nonce,
 		audience: audience,
 		deviceID: deviceId,
-		scope:   scope,
+		scope:    scope,
 	}, time.Now().Add(clientCfg.AuthorizationCodeLifetime), nil))
 
 	if responseMode == "web_message" {
@@ -69,7 +75,7 @@ func (requestHandler *RequestHandler) authorize(w http.ResponseWriter, r *http.R
 	if redirectURI == "" {
 		// tests require returned code even with invalid redirect url
 		resp := map[string]interface{}{
-			"code": code,
+			uri.CodeKey: code,
 		}
 		if err = jsonResponseWriter(w, resp); err != nil {
 			log.Errorf("failed to write response: %v", err)
@@ -88,35 +94,29 @@ func (requestHandler *RequestHandler) authorize(w http.ResponseWriter, r *http.R
 	http.Redirect(w, r, successRedirectURI, http.StatusFound)
 }
 
-func (requestHandler *RequestHandler) verifySupportedQueryParams(w http.ResponseWriter, r *http.Request, clientCfg *Client, responseType, scope, redirectURI string) bool {
-	if clientCfg.SupportedRedirectURI != "" && clientCfg.SupportedRedirectURI != redirectURI {
-		writeError(w, fmt.Errorf("invalid redirect uri(%v)", redirectURI), http.StatusBadRequest)
-		return false
+func (requestHandler *RequestHandler) validateAuthorizeRequest(clientCfg *Client, responseType, scope, redirectURI string) (newRedirectURI string, err error) {
+	if clientCfg.RequiredRedirectURI != "" && clientCfg.RequiredRedirectURI != redirectURI {
+		return "", fmt.Errorf("invalid redirect uri(%v)", redirectURI)
 	}
-	if clientCfg.SupportedResponseType != "" && clientCfg.SupportedResponseType != responseType {
+	if clientCfg.RequiredResponseType != "" && clientCfg.RequiredResponseType != responseType {
 		redirectURI, err := buildRedirectURI(redirectURI, "", "", "invalid response type")
 		if err != nil {
-			writeError(w, err, http.StatusBadRequest)
-			return false
+			return "", err
 		}
-		http.Redirect(w, r, redirectURI, http.StatusFound)
-		return false
+		return redirectURI, nil
 	}
-	if clientCfg.SupportedScope != nil {
+	if clientCfg.RequiredScope != nil {
 		tScope := strings.Split(scope, " ")
-		refScope := pkgStrings.MakeSortedSlice(clientCfg.SupportedScope)
+		refScope := pkgStrings.MakeSortedSlice(clientCfg.RequiredScope)
 		if !(pkgStrings.MakeSortedSlice(tScope).IsSubslice(refScope)) {
 			redirectURI, err := buildRedirectURI(redirectURI, "", "", "invalid scope")
 			if err != nil {
-				writeError(w, err, http.StatusBadRequest)
-				return false
+				return "", err
 			}
-			http.Redirect(w, r, redirectURI, http.StatusFound)
-			return false
+			return redirectURI, nil
 		}
 	}
-
-	return true
+	return "", nil
 }
 
 func buildRedirectURI(redirectURI, state, code, errMsg string) (string, error) {
@@ -129,13 +129,13 @@ func buildRedirectURI(redirectURI, state, code, errMsg string) (string, error) {
 		return "", err
 	}
 	if state != "" {
-		q.Add("state", string(state))
+		q.Add(uri.StateKey, string(state))
 	}
 	if code != "" {
-		q.Add("code", code)
+		q.Add(uri.CodeKey, code)
 	}
 	if errMsg != "" {
-		q.Add("error", errMsg)
+		q.Add(uri.ErrorMessageKey, errMsg)
 	}
 	u.RawQuery = q.Encode()
 
@@ -144,8 +144,8 @@ func buildRedirectURI(redirectURI, state, code, errMsg string) (string, error) {
 
 func writeWebMessage(w http.ResponseWriter, code, state, domain string) {
 	v := map[string]string{
-		"code":  code,
-		"state": state,
+		uri.CodeKey:  code,
+		uri.StateKey: state,
 	}
 	json, err := json.Encode(v)
 	if err != nil {

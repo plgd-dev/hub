@@ -26,10 +26,10 @@ oauthSigner:
       refreshTokenRestrictionLifetime: "0s"
       consentScreenEnabled: true
       requireIssuedAuthorizationCode: true
-      supportedScope:
+      requiredScope:
         - "r:*"
         - "w:*"
         - "offline_access"
-      supportedResponseType: "code"
-      supportedRecirectUri: "https://localhost:8080/callback"
+      requiredResponseType: "code"
+      requiredRedirectURI: "https://localhost:8080/callback"
       

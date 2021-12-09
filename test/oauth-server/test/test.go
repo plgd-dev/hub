@@ -34,6 +34,10 @@ const (
 	ClientTestExpired = "testExpired"
 	// Client for C2C testing
 	ClientTestC2C = "testC2C"
+	// Client with configured required params used to verify the authorization and token request query params
+	ClientTestRequiredParams = "requiredParams"
+	// Secret for client with configured required params
+	ClientTestRequiredParamsSecret = "requiredParamsSecret"
 	// Valid refresh token if refresh token restriction policy not configured
 	ValidRefreshToken = "refresh-token"
 )
@@ -82,6 +86,27 @@ func MakeConfig(t *testing.T) service.Config {
 			CodeRestrictionLifetime:         0,
 			RefreshTokenRestrictionLifetime: 0,
 			ConsentScreenEnabled:            true,
+		},
+		{
+			ID:                              ClientTestC2C,
+			AuthorizationCodeLifetime:       time.Minute * 10,
+			AccessTokenLifetime:             0,
+			CodeRestrictionLifetime:         0,
+			RefreshTokenRestrictionLifetime: 0,
+			ConsentScreenEnabled:            true,
+		},
+		{
+			ID:                              ClientTestRequiredParams,
+			ClientSecret:                    ClientTestRequiredParamsSecret,
+			AuthorizationCodeLifetime:       time.Minute * 10,
+			AccessTokenLifetime:             time.Minute * 10,
+			CodeRestrictionLifetime:         time.Minute * 10,
+			RefreshTokenRestrictionLifetime: time.Minute * 10,
+			ConsentScreenEnabled:            false,
+			RequireIssuedAuthorizationCode:  true,
+			RequiredScope:                   []string{"offline_access", "r:*"},
+			RequiredResponseType:            "code",
+			RequiredRedirectURI:             "http://localhost:7777",
 		},
 	}
 

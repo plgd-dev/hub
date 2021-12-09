@@ -199,29 +199,6 @@ type tokenRequest struct {
 	tokenType AccessTokenType
 }
 
-// used by acquire service token
-func (requestHandler *RequestHandler) getToken(w http.ResponseWriter, r *http.Request) {
-	clientID := r.URL.Query().Get(uri.ClientIDKey)
-	audience := r.URL.Query().Get(uri.AudienceKey)
-	var ok bool
-	if clientID == "" {
-		clientID, _, ok = r.BasicAuth()
-		if !ok {
-			writeError(w, fmt.Errorf("authorization header is not set"), http.StatusBadRequest)
-			return
-		}
-	}
-
-	requestHandler.processResponse(w, tokenRequest{
-		ClientID:  clientID,
-		GrantType: string(AllowedGrantType_CLIENT_CREDENTIALS),
-		Audience:  audience,
-
-		host:      r.Host,
-		tokenType: AccessTokenType_JWT,
-	})
-}
-
 func (requestHandler *RequestHandler) getDomain() string {
 	return "https://" + requestHandler.config.OAuthSigner.Domain
 }
@@ -287,55 +264,56 @@ func (requestHandler *RequestHandler) getAccessToken(tokenReq tokenRequest, clie
 	return accessToken, accessTokenExpires, nil
 }
 
-func (requestHandler *RequestHandler) processResponse(w http.ResponseWriter, tokenReq tokenRequest) {
-	clientCfg := requestHandler.config.OAuthSigner.Clients.Find(tokenReq.ClientID)
+func (requestHandler *RequestHandler) validateTokenRequest(clientCfg *Client, tokenReq tokenRequest) error {
 	if clientCfg == nil {
-		writeError(w, fmt.Errorf("client(%v) not found", tokenReq.ClientID), http.StatusBadRequest)
-		return
+		return fmt.Errorf("client(%v) not found", tokenReq.ClientID)
 	}
-
 	if clientCfg.ClientSecret != "" && clientCfg.ClientSecret != tokenReq.Password {
-		writeError(w, fmt.Errorf("invalid client secret"), http.StatusBadRequest)
-		return
+		return fmt.Errorf("invalid client secret")
 	}
-
-	if clientCfg.SupportedRedirectURI != "" && clientCfg.SupportedRedirectURI != tokenReq.RedirectURI {
-		writeError(w, fmt.Errorf("invalid redirect uri(%v)", tokenReq.RedirectURI), http.StatusBadRequest)
-		return
+	if clientCfg.RequiredRedirectURI != "" && clientCfg.RequiredRedirectURI != tokenReq.RedirectURI {
+		return fmt.Errorf("invalid redirect uri(%v)", tokenReq.RedirectURI)
 	}
-
-	var err error
 	if clientCfg.CodeRestrictionLifetime != 0 {
 		if tokenReq.GrantType == string(AllowedGrantType_AUTHORIZATION_CODE) {
 			v := requestHandler.authRestriction.Load(tokenReq.Code)
 			if v != nil {
-				writeError(w, fmt.Errorf("auth code(%v) reused", tokenReq.Code), http.StatusBadRequest)
-				return
+				return fmt.Errorf("auth code(%v) reused", tokenReq.Code)
 			}
 			requestHandler.authRestriction.LoadOrStore(tokenReq.Code, cache.NewElement(struct{}{}, time.Now().Add(clientCfg.CodeRestrictionLifetime), nil))
 		}
 	}
-
-	refreshToken := "refresh-token"
 	if clientCfg.RefreshTokenRestrictionLifetime != 0 {
 		if tokenReq.GrantType == string(AllowedGrantType_REFRESH_TOKEN) {
 			v := requestHandler.refreshRestriction.Load(tokenReq.RefreshToken)
 			if v != nil {
-				writeError(w, fmt.Errorf("refresh token(%v) reused", tokenReq.RefreshToken), http.StatusBadRequest)
-				return
+				return fmt.Errorf("refresh token(%v) reused", tokenReq.RefreshToken)
 			}
 			requestHandler.refreshRestriction.LoadOrStore(tokenReq.RefreshToken, cache.NewElement(struct{}{}, time.Now().Add(clientCfg.RefreshTokenRestrictionLifetime), nil))
 		}
+	} else {
+		if tokenReq.GrantType == string(AllowedGrantType_REFRESH_TOKEN) {
+			if tokenReq.RefreshToken != "refresh-token" {
+				return fmt.Errorf("invalid refresh token(%v)", tokenReq.RefreshToken)
+			}
+		}
+	}
+	return nil
+}
+
+func (requestHandler *RequestHandler) processResponse(w http.ResponseWriter, tokenReq tokenRequest) {
+	clientCfg := requestHandler.config.OAuthSigner.Clients.Find(tokenReq.ClientID)
+	if err := requestHandler.validateTokenRequest(clientCfg, tokenReq); err != nil {
+		writeError(w, err, http.StatusBadRequest)
+		return
+	}
+
+	var err error
+	refreshToken := "refresh-token"
+	if clientCfg.RefreshTokenRestrictionLifetime != 0 {
 		if refreshToken, err = generateRefreshToken(); err != nil {
 			writeError(w, err, http.StatusInternalServerError)
 			return
-		}
-	} else {
-		if tokenReq.GrantType == string(AllowedGrantType_REFRESH_TOKEN) {
-			if tokenReq.RefreshToken != refreshToken {
-				writeError(w, fmt.Errorf("invalid refresh token(%v)", tokenReq.RefreshToken), http.StatusBadRequest)
-				return
-			}
 		}
 	}
 
