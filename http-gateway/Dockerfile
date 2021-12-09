@@ -12,7 +12,7 @@ FROM node:12 AS build-web
 COPY http-gateway/web /web
 RUN cd /web && npm install && npm run build
 
-FROM alpine:3.14 as service
+FROM alpine:3.15 as service
 RUN apk add --no-cache ca-certificates
 COPY --from=build-web /web/build /usr/local/var/www
 COPY --from=build /go/bin/http-gateway /usr/local/bin/http-gateway

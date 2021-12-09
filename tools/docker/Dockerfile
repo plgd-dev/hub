@@ -10,7 +10,7 @@ RUN ( cd /usr/local/go && patch -p1 < $GOPATH/src/github.com/plgd-dev/hub/tools/
 WORKDIR $GOPATH/src/github.com/plgd-dev/hub/$DIRECTORY
 RUN go build -o /go/bin/$NAME ./cmd/service
 
-FROM alpine:3.14 as service
+FROM alpine:3.15 as service
 ARG NAME
 RUN apk add --no-cache ca-certificates
 COPY --from=build /go/bin/$NAME /usr/local/bin/$NAME
