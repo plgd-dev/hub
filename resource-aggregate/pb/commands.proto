@@ -67,6 +67,7 @@ message UnpublishResourceLinksRequest {
     repeated string hrefs = 1;
     string device_id = 2;
     CommandMetadata command_metadata = 3;
+    repeated int64 instance_ids = 4; // used by device when sending unpublish request to RD
 }
 
 message UnpublishResourceLinksResponse {

@@ -71,7 +71,7 @@ func (rlp *resourceLinksProjection) Handle(ctx context.Context, iter eventstore.
 			if err := eu.Unmarshal(&e); err != nil {
 				return err
 			}
-			if _, err := rlp.snapshot.HandleEventResourceLinksUnpublished(ctx, &e); err != nil {
+			if _, err := rlp.snapshot.HandleEventResourceLinksUnpublished(ctx, nil, &e); err != nil {
 				return err
 			}
 		}
