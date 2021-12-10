@@ -66,7 +66,7 @@ func TestObserveDeviceResourcesRetrieve(t *testing.T) {
 	defer cancel()
 	tearDown := service.SetUp(ctx, t)
 	defer tearDown()
-	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultServiceToken(t))
+	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
 
 	raConn, err := grpcClient.New(config.MakeGrpcClientConfig(config.RESOURCE_AGGREGATE_HOST), log.Get())
 	require.NoError(t, err)
@@ -154,7 +154,7 @@ func TestObserveDeviceResourcesUpdate(t *testing.T) {
 	defer cancel()
 	tearDown := service.SetUp(ctx, t)
 	defer tearDown()
-	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultServiceToken(t))
+	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
 
 	raConn, err := grpcClient.New(config.MakeGrpcClientConfig(config.RESOURCE_AGGREGATE_HOST), log.Get())
 	require.NoError(t, err)
@@ -276,7 +276,7 @@ func TestObserveDeviceResourcesCreateAndDelete(t *testing.T) {
 	defer cancel()
 	tearDown := service.SetUp(ctx, t)
 	defer tearDown()
-	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultServiceToken(t))
+	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
 
 	raConn, err := grpcClient.New(config.MakeGrpcClientConfig(config.RESOURCE_AGGREGATE_HOST), log.Get())
 	require.NoError(t, err)
