@@ -185,7 +185,7 @@ func main() {
 		_ = grpcConn.Close()
 	}()
 
-	ctx, cancel := context.WithTimeout(context.Background(), *discoverDuration+60*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), *discoverDuration+15*time.Second*(time.Duration(*maxNum+1)))
 	defer cancel()
 	ctx = grpcCloud.CtxWithToken(ctx, *accessToken)
 
