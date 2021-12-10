@@ -596,14 +596,16 @@ cat /configs/coap-gateway.yaml | yq e "\
   .clients.resourceDirectory.grpc.address = \"${RESOURCE_DIRECTORY_ADDRESS}\"
 " - > /data/coap-gateway-unsecure.yaml
 
-coap-gateway --config /data/coap-gateway-unsecure.yaml >$LOGS_PATH/coap-gateway-unsecure.log 2>&1 &
-status=$?
-coap_gw_unsecure_pid=$!
-if [ $status -ne 0 ]; then
-  echo "Failed to start coap-gateway-unsecure: $status"
-  sync
-  cat $LOGS_PATH/coap-gateway-unsecure.log
-  exit $status
+if [ "${COAP_GATEWAY_UNSECURE_ENABLED}" = "true" ]; then
+  coap-gateway --config /data/coap-gateway-unsecure.yaml >$LOGS_PATH/coap-gateway-unsecure.log 2>&1 &
+  status=$?
+  coap_gw_unsecure_pid=$!
+  if [ $status -ne 0 ]; then
+    echo "Failed to start coap-gateway-unsecure: $status"
+    sync
+    cat $LOGS_PATH/coap-gateway-unsecure.log
+    exit $status
+  fi
 fi
 
 # coap-gateway-secure
@@ -841,12 +843,14 @@ while sleep 10; do
     cat $LOGS_PATH/resource-directory.log
     exit 1
   fi
-  ps aux |grep $coap_gw_unsecure_pid |grep -q -v grep
-  if [ $? -ne 0 ]; then
-    echo "coap-gateway-unsecure has already exited."
-    sync
-    cat $LOGS_PATH/coap-gateway-unsecure.log
-    exit 1
+  if  [ ! -z "${coap_gw_unsecure_pid}" ]; then
+    ps aux |grep $coap_gw_unsecure_pid |grep -q -v grep
+    if [ $? -ne 0 ]; then
+      echo "coap-gateway-unsecure has already exited."
+      sync
+      cat $LOGS_PATH/coap-gateway-unsecure.log
+      exit 1
+    fi
   fi
   ps aux |grep $coap_gw_pid |grep -q -v grep
   if [ $? -ne 0 ]; then
