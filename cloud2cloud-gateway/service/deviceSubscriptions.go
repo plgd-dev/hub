@@ -3,15 +3,28 @@ package service
 import (
 	"context"
 
+	"github.com/plgd-dev/device/schema"
 	"github.com/plgd-dev/hub/cloud2cloud-connector/events"
 	raEvents "github.com/plgd-dev/hub/resource-aggregate/events"
-	"github.com/plgd-dev/device/schema"
 	"github.com/plgd-dev/kit/v2/log"
 )
 
 type deviceSubscriptionHandler struct {
 	subData   *SubscriptionData
 	emitEvent emitEventFunc
+}
+
+// TODO:
+// - switch to schema.ResourceLink
+// - currently CTT5.3.2 test cases expects that every resource link in ResourceUnpublished notification
+// has href, rt, if fields (even if empty)
+// - this should be clarification in the OCF specification and then either the test case or
+// schema.ResourceLink should be modified to follow the specification
+type resourceLink struct {
+	DeviceID      string   `json:"di,omitempty"`
+	Href          string   `json:"href"`
+	ResourceTypes []string `json:"rt"`
+	Interfaces    []string `json:"if"`
 }
 
 func fixResourceLink(r schema.ResourceLink) schema.ResourceLink {
@@ -21,7 +34,7 @@ func fixResourceLink(r schema.ResourceLink) schema.ResourceLink {
 }
 
 func (h *deviceSubscriptionHandler) HandleResourcePublished(ctx context.Context, val *raEvents.ResourceLinksPublished) error {
-	toSend := make([]schema.ResourceLink, 0, 32)
+	toSend := make([]schema.ResourceLink, 0, len(val.GetResources()))
 	for _, l := range val.GetResources() {
 		toSend = append(toSend, fixResourceLink(l.ToSchema()))
 	}
@@ -39,12 +52,12 @@ func (h *deviceSubscriptionHandler) HandleResourcePublished(ctx context.Context,
 }
 
 func (h *deviceSubscriptionHandler) HandleResourceUnpublished(ctx context.Context, val *raEvents.ResourceLinksUnpublished) error {
-	toSend := make([]schema.ResourceLink, 0, 32)
+	toSend := make([]resourceLink, 0, len(val.GetHrefs()))
 	for _, l := range val.GetHrefs() {
-		toSend = append(toSend, fixResourceLink(schema.ResourceLink{
+		toSend = append(toSend, resourceLink{
 			DeviceID: val.GetDeviceId(),
-			Href:     l,
-		}))
+			Href:     getHref(val.GetDeviceId(), l),
+		})
 	}
 	if len(toSend) == 0 && len(val.GetHrefs()) > 0 {
 		return nil
