@@ -207,39 +207,6 @@ func TestGetRequestHandlerGetTokenWithInvalidClient(t *testing.T) {
 	getTokenUsingGet(t, "", false, http.StatusBadRequest)
 }
 
-// func TestRequestHandlerGetTokenWithFormContentType(t *testing.T) {
-// 	reqBody := map[string]string{
-// 		uri.GrantTypeKey:   string(grantType),
-// 		uri.ClientIDKey:    clientID,
-// 		uri.CodeKey:        code,
-// 		uri.AudienceKey:    audience,
-// 		uri.RedirectURIKey: redirectURI,
-// 	}
-// 	if refreshToken != "" {
-// 		reqBody[uri.RefreshTokenKey] = refreshToken
-// 	}
-
-// 	d, err := json.Encode(reqBody)
-// 	require.NoError(t, err)
-
-// 	getReq := test.NewRequest(http.MethodPost, config.OAUTH_SERVER_HOST, uri.Token, bytes.NewReader(d)).Build()
-// 	getReq.SetBasicAuth(clientID, clientSecret)
-// 	res := test.HTTPDo(t, getReq, false)
-// 	defer func() {
-// 		_ = res.Body.Close()
-// 	}()
-// 	require.Equal(t, statusCode, res.StatusCode)
-// 	if res.StatusCode == http.StatusOK {
-// 		var body map[string]string
-// 		err := json.ReadFrom(res.Body, &body)
-// 		require.NoError(t, err)
-// 		accessToken := body["access_token"]
-// 		require.NotEmpty(t, accessToken)
-// 		return body
-// 	}
-// 	return nil
-// }
-
 func getTokenUsingGet(t *testing.T, clientID string, useBasicAuth bool, statusCode int) string {
 	u, err := url.Parse(uri.Token)
 	require.NoError(t, err)

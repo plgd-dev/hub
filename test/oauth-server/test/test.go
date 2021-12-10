@@ -88,14 +88,6 @@ func MakeConfig(t *testing.T) service.Config {
 			ConsentScreenEnabled:            true,
 		},
 		{
-			ID:                              ClientTestC2C,
-			AuthorizationCodeLifetime:       time.Minute * 10,
-			AccessTokenLifetime:             0,
-			CodeRestrictionLifetime:         0,
-			RefreshTokenRestrictionLifetime: 0,
-			ConsentScreenEnabled:            true,
-		},
-		{
 			ID:                              ClientTestRequiredParams,
 			ClientSecret:                    ClientTestRequiredParamsSecret,
 			AuthorizationCodeLifetime:       time.Minute * 10,

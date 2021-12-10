@@ -145,6 +145,9 @@ func makeIDToken(clientID string, host, nonce string, issuedAt, expires time.Tim
 }
 
 func generateIDToken(clientID string, lifeTime time.Duration, host, nonce string, key *rsa.PrivateKey, jwkKey jwk.Key) (string, error) {
+	if nonce == "" {
+		return "", nil
+	}
 	now := time.Now()
 	var expires time.Time
 	if lifeTime > 0 {
@@ -168,7 +171,10 @@ func generateIDToken(clientID string, lifeTime time.Duration, host, nonce string
 	return string(payload), nil
 }
 
-func generateRefreshToken() (string, error) {
+func generateRefreshToken(clientCfg *Client) (string, error) {
+	if clientCfg.RefreshTokenRestrictionLifetime == 0 {
+		return "refresh-token", nil
+	}
 	b := make([]byte, 16)
 	if _, err := rand.Read(b); err != nil {
 		return "", err
@@ -279,28 +285,25 @@ func (requestHandler *RequestHandler) validateTokenRequest(clientCfg *Client, to
 	if clientCfg.RequiredRedirectURI != "" && clientCfg.RequiredRedirectURI != tokenReq.RedirectURI {
 		return fmt.Errorf("invalid redirect uri(%v)", tokenReq.RedirectURI)
 	}
-	if clientCfg.CodeRestrictionLifetime != 0 {
-		if tokenReq.GrantType == string(AllowedGrantType_AUTHORIZATION_CODE) {
-			v := requestHandler.authRestriction.Load(tokenReq.Code)
-			if v != nil {
-				return fmt.Errorf("auth code(%v) reused", tokenReq.Code)
-			}
-			requestHandler.authRestriction.LoadOrStore(tokenReq.Code, cache.NewElement(struct{}{}, time.Now().Add(clientCfg.CodeRestrictionLifetime), nil))
+	if clientCfg.CodeRestrictionLifetime != 0 && tokenReq.GrantType == string(AllowedGrantType_AUTHORIZATION_CODE) {
+		v := requestHandler.authRestriction.Load(tokenReq.Code)
+		if v != nil {
+			return fmt.Errorf("auth code(%v) reused", tokenReq.Code)
 		}
+		requestHandler.authRestriction.LoadOrStore(tokenReq.Code, cache.NewElement(struct{}{}, time.Now().Add(clientCfg.CodeRestrictionLifetime), nil))
 	}
-	if clientCfg.RefreshTokenRestrictionLifetime != 0 {
-		if tokenReq.GrantType == string(AllowedGrantType_REFRESH_TOKEN) {
+
+	if tokenReq.GrantType == string(AllowedGrantType_REFRESH_TOKEN) {
+		if clientCfg.RefreshTokenRestrictionLifetime != 0 {
 			v := requestHandler.refreshRestriction.Load(tokenReq.RefreshToken)
 			if v != nil {
 				return fmt.Errorf("refresh token(%v) reused", tokenReq.RefreshToken)
 			}
 			requestHandler.refreshRestriction.LoadOrStore(tokenReq.RefreshToken, cache.NewElement(struct{}{}, time.Now().Add(clientCfg.RefreshTokenRestrictionLifetime), nil))
+			return nil
 		}
-	} else {
-		if tokenReq.GrantType == string(AllowedGrantType_REFRESH_TOKEN) {
-			if tokenReq.RefreshToken != "refresh-token" {
-				return fmt.Errorf("invalid refresh token(%v)", tokenReq.RefreshToken)
-			}
+		if tokenReq.RefreshToken != "refresh-token" {
+			return fmt.Errorf("invalid refresh token(%v)", tokenReq.RefreshToken)
 		}
 	}
 	return nil
@@ -313,22 +316,17 @@ func (requestHandler *RequestHandler) processResponse(w http.ResponseWriter, tok
 		return
 	}
 
-	var err error
-	refreshToken := "refresh-token"
-	if clientCfg.RefreshTokenRestrictionLifetime != 0 {
-		if refreshToken, err = generateRefreshToken(); err != nil {
-			writeError(w, err, http.StatusInternalServerError)
-			return
-		}
+	refreshToken, err := generateRefreshToken(clientCfg)
+	if err != nil {
+		writeError(w, err, http.StatusInternalServerError)
+		return
 	}
 
 	var authSession authorizedSession
 	if tokenReq.GrantType == string(AllowedGrantType_AUTHORIZATION_CODE) {
 		var found bool
 		authSession, found = requestHandler.getAuthorizedSession(tokenReq)
-		log.Infof("found %v, require %v", found, clientCfg.RequireIssuedAuthorizationCode)
 		if !found && clientCfg.RequireIssuedAuthorizationCode {
-			log.Infof("found %v, require %v writing error", found, clientCfg.RequireIssuedAuthorizationCode)
 			writeError(w, fmt.Errorf("invalid authorization code(%v)", tokenReq.Code), http.StatusBadRequest)
 			return
 		}
@@ -339,14 +337,11 @@ func (requestHandler *RequestHandler) processResponse(w http.ResponseWriter, tok
 		tokenReq.tokenType = AccessTokenType_JWT
 	}
 
-	var idToken string
-	if authSession.nonce != "" {
-		idToken, err = generateIDToken(tokenReq.ClientID, clientCfg.AccessTokenLifetime, tokenReq.host, authSession.nonce,
-			requestHandler.idTokenKey, requestHandler.idTokenJwkKey)
-		if err != nil {
-			writeError(w, err, http.StatusInternalServerError)
-			return
-		}
+	idToken, err := generateIDToken(tokenReq.ClientID, clientCfg.AccessTokenLifetime, tokenReq.host, authSession.nonce,
+		requestHandler.idTokenKey, requestHandler.idTokenJwkKey)
+	if err != nil {
+		writeError(w, err, http.StatusInternalServerError)
+		return
 	}
 
 	scopes := authSession.scope
