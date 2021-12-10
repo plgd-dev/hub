@@ -199,6 +199,28 @@ type tokenRequest struct {
 	tokenType AccessTokenType
 }
 
+// used by acquire service token
+func (requestHandler *RequestHandler) getToken(w http.ResponseWriter, r *http.Request) {
+	clientID := r.URL.Query().Get(uri.ClientIDKey)
+	audience := r.URL.Query().Get(uri.AudienceKey)
+	var ok bool
+	if clientID == "" {
+		clientID, _, ok = r.BasicAuth()
+		if !ok {
+			writeError(w, fmt.Errorf("authorization header is not set"), http.StatusBadRequest)
+			return
+		}
+	}
+	requestHandler.processResponse(w, tokenRequest{
+		ClientID:  clientID,
+		GrantType: string(AllowedGrantType_CLIENT_CREDENTIALS),
+		Audience:  audience,
+
+		host:      r.Host,
+		tokenType: AccessTokenType_JWT,
+	})
+}
+
 func (requestHandler *RequestHandler) getDomain() string {
 	return "https://" + requestHandler.config.OAuthSigner.Domain
 }
@@ -235,10 +257,6 @@ func (requestHandler *RequestHandler) postToken(w http.ResponseWriter, r *http.R
 		tokenReq.ClientID = clientID
 		tokenReq.Password = password
 	}
-
-	if tokenReq.Audience != "" {
-		tokenReq.tokenType = AccessTokenType_JWT
-	}
 	requestHandler.processResponse(w, tokenReq)
 }
 
@@ -249,19 +267,6 @@ func (requestHandler *RequestHandler) getAuthorizedSession(tokenReq tokenRequest
 		return v.Data().(authorizedSession), true
 	}
 	return authorizedSession{}, false
-}
-
-func (requestHandler *RequestHandler) getAccessToken(tokenReq tokenRequest, clientCfg *Client, deviceID, scopes string) (string, time.Time, error) {
-	if tokenReq.tokenType == AccessTokenType_JWT {
-		return generateAccessToken(clientCfg.ID, clientCfg.AccessTokenLifetime, tokenReq.host, deviceID, scopes, requestHandler.accessTokenKey,
-			requestHandler.accessTokenJwkKey)
-	}
-	accessToken := clientCfg.ID
-	var accessTokenExpires time.Time
-	if clientCfg.AccessTokenLifetime != 0 {
-		accessTokenExpires = time.Now().Add(clientCfg.AccessTokenLifetime)
-	}
-	return accessToken, accessTokenExpires, nil
 }
 
 func (requestHandler *RequestHandler) validateTokenRequest(clientCfg *Client, tokenReq tokenRequest) error {
@@ -349,7 +354,7 @@ func (requestHandler *RequestHandler) processResponse(w http.ResponseWriter, tok
 		scopes = DefaultScope
 	}
 
-	accessToken, accessTokenExpires, err := requestHandler.getAccessToken(tokenReq, clientCfg, authSession.deviceID, scopes)
+	accessToken, accessTokenExpires, err := generateAccessToken(clientCfg.ID, clientCfg.AccessTokenLifetime, tokenReq.host, authSession.deviceID, scopes, requestHandler.accessTokenKey, requestHandler.accessTokenJwkKey)
 	if err != nil {
 		writeError(w, err, http.StatusInternalServerError)
 		return

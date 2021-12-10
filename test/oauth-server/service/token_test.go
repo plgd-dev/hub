@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"net/http"
+	"net/url"
 	"testing"
 
 	"github.com/plgd-dev/hub/pkg/security/jwt"
@@ -175,6 +176,99 @@ func TestRequestHandlerGetTokenWithValidRefreshToken(t *testing.T) {
 	require.Equal(t, service.DefaultScope, accessToken[service.TokenScopeKey])
 }
 
+func TestGetRequestHandlerGetTokenWithValidClient(t *testing.T) {
+	webTearDown := test.SetUp(t)
+	defer webTearDown()
+
+	accessToken := getTokenUsingGet(t, test.ClientTest, false, http.StatusOK)
+	validator := jwt.NewValidator(fmt.Sprintf("https://%s%s", config.OAUTH_SERVER_HOST, uri.JWKs), &tls.Config{
+		InsecureSkipVerify: true,
+	})
+	_, err := validator.Parse(accessToken)
+	require.NoError(t, err)
+}
+
+func TestGetRequestHandlerGetTokenWithValidClientBasicAuth(t *testing.T) {
+	webTearDown := test.SetUp(t)
+	defer webTearDown()
+
+	accessToken := getTokenUsingGet(t, test.ClientTest, true, http.StatusOK)
+	validator := jwt.NewValidator(fmt.Sprintf("https://%s%s", config.OAUTH_SERVER_HOST, uri.JWKs), &tls.Config{
+		InsecureSkipVerify: true,
+	})
+	_, err := validator.Parse(accessToken)
+	require.NoError(t, err)
+}
+
+func TestGetRequestHandlerGetTokenWithInvalidClient(t *testing.T) {
+	webTearDown := test.SetUp(t)
+	defer webTearDown()
+
+	getTokenUsingGet(t, "", false, http.StatusBadRequest)
+}
+
+// func TestRequestHandlerGetTokenWithFormContentType(t *testing.T) {
+// 	reqBody := map[string]string{
+// 		uri.GrantTypeKey:   string(grantType),
+// 		uri.ClientIDKey:    clientID,
+// 		uri.CodeKey:        code,
+// 		uri.AudienceKey:    audience,
+// 		uri.RedirectURIKey: redirectURI,
+// 	}
+// 	if refreshToken != "" {
+// 		reqBody[uri.RefreshTokenKey] = refreshToken
+// 	}
+
+// 	d, err := json.Encode(reqBody)
+// 	require.NoError(t, err)
+
+// 	getReq := test.NewRequest(http.MethodPost, config.OAUTH_SERVER_HOST, uri.Token, bytes.NewReader(d)).Build()
+// 	getReq.SetBasicAuth(clientID, clientSecret)
+// 	res := test.HTTPDo(t, getReq, false)
+// 	defer func() {
+// 		_ = res.Body.Close()
+// 	}()
+// 	require.Equal(t, statusCode, res.StatusCode)
+// 	if res.StatusCode == http.StatusOK {
+// 		var body map[string]string
+// 		err := json.ReadFrom(res.Body, &body)
+// 		require.NoError(t, err)
+// 		accessToken := body["access_token"]
+// 		require.NotEmpty(t, accessToken)
+// 		return body
+// 	}
+// 	return nil
+// }
+
+func getTokenUsingGet(t *testing.T, clientID string, useBasicAuth bool, statusCode int) string {
+	u, err := url.Parse(uri.Token)
+	require.NoError(t, err)
+	q, err := url.ParseQuery(u.RawQuery)
+	require.NoError(t, err)
+	q.Add(uri.ClientIDKey, clientID)
+
+	u.RawQuery = q.Encode()
+	getReq := test.NewRequest(http.MethodGet, config.OAUTH_SERVER_HOST, u.String(), nil).Build()
+	if useBasicAuth {
+		getReq.SetBasicAuth(clientID, "")
+	}
+	res := test.HTTPDo(t, getReq, false)
+	defer func() {
+		_ = res.Body.Close()
+	}()
+	require.Equal(t, statusCode, res.StatusCode)
+	if res.StatusCode == http.StatusOK {
+		require.Equal(t, http.StatusOK, res.StatusCode)
+		var body map[string]string
+		err = json.ReadFrom(res.Body, &body)
+		require.NoError(t, err)
+		accessToken := body["access_token"]
+		require.NotEmpty(t, accessToken)
+		return accessToken
+	}
+	return ""
+}
+
 func getToken(t *testing.T, clientID, clientSecret, audience, redirectURI, code, refreshToken string, grantType service.AllowedGrantType, statusCode int) map[string]string {
 	reqBody := map[string]string{
 		uri.GrantTypeKey:   string(grantType),
@@ -201,10 +295,9 @@ func getToken(t *testing.T, clientID, clientSecret, audience, redirectURI, code,
 		var body map[string]string
 		err := json.ReadFrom(res.Body, &body)
 		require.NoError(t, err)
-		code := body["access_token"]
-		require.NotEmpty(t, code)
+		accessToken := body["access_token"]
+		require.NotEmpty(t, accessToken)
 		return body
 	}
-
 	return nil
 }
