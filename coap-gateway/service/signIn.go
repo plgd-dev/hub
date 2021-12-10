@@ -145,7 +145,7 @@ func (client *Client) updateBySignInData(ctx context.Context, upd updateType, de
 	if upd == updateTypeChanged {
 		client.cancelResourceSubscriptions(true)
 		if err := client.closeDeviceSubscriber(); err != nil {
-			log.Errorf("failed to close previous device connection: %w", err)
+			log.Errorf("failed to close previous device subscription: %w", err)
 		}
 		if err := client.closeDeviceObserver(client.Context()); err != nil {
 			log.Errorf("failed to close previous device observer: %w", err)

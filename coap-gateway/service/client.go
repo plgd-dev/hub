@@ -223,7 +223,7 @@ func (client *Client) CleanUp(resetAuthContext bool) *authorizationContext {
 	}
 	client.cancelResourceSubscriptions(false)
 	if err := client.closeDeviceSubscriber(); err != nil {
-		log.Errorf("cleanUp error: failed to close device %v connection: %w", authCtx.GetDeviceID(), err)
+		log.Errorf("cleanUp error: failed to close device %v subscription: %w", authCtx.GetDeviceID(), err)
 	}
 	client.unsubscribeFromDeviceEvents()
 
@@ -644,6 +644,16 @@ func (client *Client) OnDeviceSubscriberReconnectError(err error) {
 	log.Errorf("cannot reconnect device %v subscriber to resource directory or eventbus - closing the device connection: %w", deviceID, err)
 	if err := client.Close(); err != nil {
 		log.Errorf("failed to close device %v connection : %w", deviceID, err)
+	}
+	logCloseDeviceSubscriberError := func(err error) {
+		log.Errorf("failed to close device %v subscription: %w", auth.GetDeviceID(), err)
+	}
+	if err := client.server.taskQueue.Submit(func() {
+		if errSub := client.closeDeviceSubscriber(); err != nil {
+			logCloseDeviceSubscriberError(errSub)
+		}
+	}); err != nil {
+		logCloseDeviceSubscriberError(err)
 	}
 }
 
