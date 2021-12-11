@@ -120,7 +120,7 @@ func TestRequestHandlerSubscribeToEvents(t *testing.T) {
 	tearDown := service.SetUp(ctx, t)
 	defer tearDown()
 
-	token := oauthTest.GetDefaultServiceToken(t)
+	token := oauthTest.GetDefaultAccessToken(t)
 	ctx = kitNetGrpc.CtxWithToken(ctx, token)
 
 	shutdownHttp := httpgwTest.SetUp(t)

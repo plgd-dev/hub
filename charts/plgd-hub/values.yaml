@@ -1542,3 +1542,4 @@ mockoauthserver:
       authorizationCodeLifetime: "10m"
       accessTokenLifetime: "0s"
       codeRestrictionLifetime: "0s"
+      refreshTokenRestrictionLifetime: "0s"

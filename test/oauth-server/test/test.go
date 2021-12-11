@@ -23,17 +23,24 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const ClientTest = "test"
-
-// Client with short auth code and access token expiration
-const ClientTestShortExpiration = "testShortExpiration"
-
-// Client will return error when the same auth code or refresh token
-// is used repeatedly within a minute of the first use
-const ClientTestRestrictedAuth = "testRestrictedAuth"
-
-// Client with expired access token
-const ClientTestExpired = "testExpired"
+const (
+	ClientTest = "test"
+	// Client with short auth code and access token expiration
+	ClientTestShortExpiration = "testShortExpiration"
+	// Client will return error when the same auth code or refresh token
+	// is used repeatedly within a minute of the first use
+	ClientTestRestrictedAuth = "testRestrictedAuth"
+	// Client with expired access token
+	ClientTestExpired = "testExpired"
+	// Client for C2C testing
+	ClientTestC2C = "testC2C"
+	// Client with configured required params used to verify the authorization and token request query params
+	ClientTestRequiredParams = "requiredParams"
+	// Secret for client with configured required params
+	ClientTestRequiredParamsSecret = "requiredParamsSecret"
+	// Valid refresh token if refresh token restriction policy not configured
+	ValidRefreshToken = "refresh-token"
+)
 
 func MakeConfig(t *testing.T) service.Config {
 	var cfg service.Config
@@ -45,28 +52,53 @@ func MakeConfig(t *testing.T) service.Config {
 	cfg.OAuthSigner.Domain = config.OAUTH_SERVER_HOST
 	cfg.OAuthSigner.Clients = service.ClientsConfig{
 		{
-			ID:                        config.OAUTH_MANAGER_CLIENT_ID,
-			AuthorizationCodeLifetime: time.Minute * 10,
-			AccessTokenLifetime:       0,
-			CodeRestrictionLifetime:   0,
+			ID:                              config.OAUTH_MANAGER_CLIENT_ID,
+			AuthorizationCodeLifetime:       time.Minute * 10,
+			AccessTokenLifetime:             0,
+			CodeRestrictionLifetime:         0,
+			RefreshTokenRestrictionLifetime: 0,
 		},
 		{
-			ID:                        ClientTestShortExpiration,
-			AuthorizationCodeLifetime: time.Second * 10,
-			AccessTokenLifetime:       time.Second * 10,
-			CodeRestrictionLifetime:   0,
+			ID:                              ClientTestShortExpiration,
+			AuthorizationCodeLifetime:       time.Second * 10,
+			AccessTokenLifetime:             time.Second * 10,
+			CodeRestrictionLifetime:         0,
+			RefreshTokenRestrictionLifetime: 0,
 		},
 		{
-			ID:                        ClientTestRestrictedAuth,
-			AuthorizationCodeLifetime: time.Minute * 10,
-			AccessTokenLifetime:       time.Hour * 24,
-			CodeRestrictionLifetime:   time.Minute,
+			ID:                              ClientTestRestrictedAuth,
+			AuthorizationCodeLifetime:       time.Minute * 10,
+			AccessTokenLifetime:             time.Hour * 24,
+			CodeRestrictionLifetime:         time.Minute,
+			RefreshTokenRestrictionLifetime: time.Minute,
 		},
 		{
-			ID:                        ClientTestExpired,
-			AuthorizationCodeLifetime: time.Second * 10,
-			AccessTokenLifetime:       -1 * time.Second,
-			CodeRestrictionLifetime:   0,
+			ID:                              ClientTestExpired,
+			AuthorizationCodeLifetime:       time.Second * 10,
+			AccessTokenLifetime:             -1 * time.Second,
+			CodeRestrictionLifetime:         0,
+			RefreshTokenRestrictionLifetime: 0,
+		},
+		{
+			ID:                              ClientTestC2C,
+			AuthorizationCodeLifetime:       time.Minute * 10,
+			AccessTokenLifetime:             0,
+			CodeRestrictionLifetime:         0,
+			RefreshTokenRestrictionLifetime: 0,
+			ConsentScreenEnabled:            true,
+		},
+		{
+			ID:                              ClientTestRequiredParams,
+			ClientSecret:                    ClientTestRequiredParamsSecret,
+			AuthorizationCodeLifetime:       time.Minute * 10,
+			AccessTokenLifetime:             time.Minute * 10,
+			CodeRestrictionLifetime:         time.Minute * 10,
+			RefreshTokenRestrictionLifetime: time.Minute * 10,
+			ConsentScreenEnabled:            false,
+			RequireIssuedAuthorizationCode:  true,
+			RequiredScope:                   []string{"offline_access", "r:*"},
+			RequiredResponseType:            "code",
+			RequiredRedirectURI:             "http://localhost:7777",
 		},
 	}
 
@@ -161,11 +193,12 @@ func HTTPDo(t *testing.T, req *http.Request, followRedirect bool) *http.Response
 	return resp
 }
 
-func GetServiceToken(t *testing.T, authServerHost, clientId string) string {
+func GetAccessToken(t *testing.T, authServerHost, clientId string) string {
+	code := GetAuthorizationCode(t, authServerHost, clientId, "", "r:* w:*")
 	reqBody := map[string]string{
-		"grant_type":    string(service.AllowedGrantType_CLIENT_CREDENTIALS),
-		uri.ClientIDKey: clientId,
-		"audience":      "localhost",
+		uri.GrantTypeKey: string(service.AllowedGrantType_AUTHORIZATION_CODE),
+		uri.ClientIDKey:  clientId,
+		uri.CodeKey:      code,
 	}
 	d, err := json.Encode(reqBody)
 	require.NoError(t, err)
@@ -184,11 +217,11 @@ func GetServiceToken(t *testing.T, authServerHost, clientId string) string {
 	return token
 }
 
-func GetDefaultServiceToken(t *testing.T) string {
-	return GetServiceToken(t, config.OAUTH_SERVER_HOST, ClientTest)
+func GetDefaultAccessToken(t *testing.T) string {
+	return GetAccessToken(t, config.OAUTH_SERVER_HOST, ClientTest)
 }
 
-func GetDeviceAuthorizationCode(t *testing.T, authServerHost, clientId, deviceID string) string {
+func GetAuthorizationCode(t *testing.T, authServerHost, clientId, deviceID, scopes string) string {
 	u, err := url.Parse(uri.Authorize)
 	require.NoError(t, err)
 	q, err := url.ParseQuery(u.RawQuery)
@@ -196,6 +229,9 @@ func GetDeviceAuthorizationCode(t *testing.T, authServerHost, clientId, deviceID
 	q.Add(uri.ClientIDKey, clientId)
 	if deviceID != "" {
 		q.Add(uri.DeviceId, deviceID)
+	}
+	if scopes != "" {
+		q.Add(uri.ScopeKey, scopes)
 	}
 	u.RawQuery = q.Encode()
 	getReq := NewRequest(http.MethodGet, authServerHost, u.String(), nil).Build()
@@ -214,5 +250,5 @@ func GetDeviceAuthorizationCode(t *testing.T, authServerHost, clientId, deviceID
 }
 
 func GetDefaultDeviceAuthorizationCode(t *testing.T, deviceID string) string {
-	return GetDeviceAuthorizationCode(t, config.OAUTH_SERVER_HOST, ClientTest, deviceID)
+	return GetAuthorizationCode(t, config.OAUTH_SERVER_HOST, ClientTest, deviceID, "")
 }

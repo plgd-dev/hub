@@ -65,7 +65,7 @@ func TestRequestHandlerCancelPendingMetadataUpdates(t *testing.T) {
 		},
 	}
 
-	token := oauthTest.GetDefaultServiceToken(t)
+	token := oauthTest.GetDefaultAccessToken(t)
 	ctx = kitNetGrpc.CtxWithToken(ctx, token)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

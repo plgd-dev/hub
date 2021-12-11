@@ -50,7 +50,7 @@ func TestIsResourceObservableWithInterface(t *testing.T) {
 	defer tearDown()
 	// log.Setup(log.Config{Debug: true})
 
-	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultServiceToken(t))
+	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
 
 	handlerFuture, setHandler := future.New()
 	makeHandler := func(service *coapgwTestService.Service, opts ...coapgwTestService.Option) coapgwTestService.ServiceHandler {

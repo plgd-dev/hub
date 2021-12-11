@@ -29,7 +29,7 @@ func TestRequestHandlerSubscribeToResource(t *testing.T) {
 	defer tearDown()
 	// log.Setup(log.Config{Debug: true})
 
-	token := oauthTest.GetDefaultServiceToken(t)
+	token := oauthTest.GetDefaultAccessToken(t)
 	ctx = kitNetGrpc.CtxWithToken(ctx, token)
 
 	conn, err := grpc.Dial(testCfg.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
@@ -88,7 +88,7 @@ func TestRequestHandlerSubscribeToResourceTokenTimeout(t *testing.T) {
 		_ = conn.Close()
 	}()
 
-	token := oauthTest.GetServiceToken(t, testCfg.OAUTH_SERVER_HOST, oauthTest.ClientTestShortExpiration)
+	token := oauthTest.GetAccessToken(t, testCfg.OAUTH_SERVER_HOST, oauthTest.ClientTestShortExpiration)
 	ctx = kitNetGrpc.CtxWithToken(ctx, token)
 
 	_, shutdownDevSim := test.OnboardDevSimForClient(ctx, t, c, oauthTest.ClientTestShortExpiration, deviceID, testCfg.GW_HOST,

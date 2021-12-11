@@ -9,6 +9,7 @@ import (
 	"github.com/plgd-dev/hub/coap-gateway/service/message"
 	"github.com/plgd-dev/hub/pkg/log"
 	coapgwTestService "github.com/plgd-dev/hub/test/coap-gateway/service"
+	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
 )
 
 // Default test observer handler
@@ -40,7 +41,7 @@ func (h *DefaultObserverHandler) SignUp(req coapgwService.CoapSignUpRequest) (co
 	return coapgwService.CoapSignUpResponse{
 		AccessToken:  "access-token",
 		UserID:       "1",
-		RefreshToken: "refresh-token",
+		RefreshToken: oauthTest.ValidRefreshToken,
 		ExpiresIn:    int64(h.accessTokenLifetime.Seconds()),
 		RedirectURI:  "",
 	}, nil
@@ -76,7 +77,7 @@ func (h *DefaultObserverHandler) UnpublishResources(req coapgwTestService.Unpubl
 func (h *DefaultObserverHandler) RefreshToken(req coapgwService.CoapRefreshTokenReq) (coapgwService.CoapRefreshTokenResp, error) {
 	log.Debugf("RefreshToken: %v", req)
 	return coapgwService.CoapRefreshTokenResp{
-		RefreshToken: "refresh-token",
+		RefreshToken: oauthTest.ValidRefreshToken,
 		AccessToken:  "access-token",
 		ExpiresIn:    int64(h.accessTokenLifetime.Seconds()),
 	}, nil

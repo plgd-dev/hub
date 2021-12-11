@@ -379,6 +379,7 @@ global:
 | mockoauthserver.oauthSigner.clients.accessTokenLifetime | string | `"0s"` |  |
 | mockoauthserver.oauthSigner.clients.authorizationCodeLifetime | string | `"10m"` |  |
 | mockoauthserver.oauthSigner.clients.codeRestrictionLifetime | string | `"0s"` |  |
+| mockoauthserver.oauthSigner.clients.refreshTokenRestrictionLifetime | string | `"0s"` |  |
 | mockoauthserver.oauthSigner.clients.id | string | `"test"` |  |
 | mockoauthserver.oauthSigner.domain | string | `nil` |  |
 | mockoauthserver.oauthSigner.idTokenKeyFile | string | `"/keys/idToken.key"` |  |

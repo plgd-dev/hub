@@ -65,7 +65,7 @@ func TestSignInDeviceSubscriptionHandler(t *testing.T) {
 	shutdown := setUp(t)
 	defer shutdown()
 
-	ctx := kitNetGrpc.CtxWithToken(context.Background(), oauthTest.GetDefaultServiceToken(t))
+	ctx := kitNetGrpc.CtxWithToken(context.Background(), oauthTest.GetDefaultAccessToken(t))
 	conn, err := grpc.Dial(testCfg.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
 	})))
@@ -165,7 +165,7 @@ func TestSignInWithMTLSAndDeviceIdClaim(t *testing.T) {
 		_ = co.Close()
 	}
 
-	tokenWithoutDeviceID := oauthTest.GetDefaultServiceToken(t)
+	tokenWithoutDeviceID := oauthTest.GetDefaultAccessToken(t)
 
 	req := testEl{"OK", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "uid":"` + signUpResp.UserID + `", "accesstoken":"` + signUpResp.AccessToken + `", "login": true }`, nil}, output{coapCodes.Changed, TestCoapSignInResponse{}, nil}, false}
 	check(CertIdentity, req)

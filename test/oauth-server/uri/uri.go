@@ -6,6 +6,7 @@ const (
 	ClientIDKey     = "client_id"
 	NonceKey        = "nonce"
 	CodeKey         = "code"
+	ScopeKey        = "scope"
 	ReturnToKey     = "returnTo"
 	Auth0ClientKey  = "auth0Client"
 	GrantTypeKey    = "grant_type"
@@ -13,8 +14,10 @@ const (
 	PasswordKey     = "password"
 	AudienceKey     = "audience"
 	RefreshTokenKey = "refresh_token"
+	ErrorMessageKey = "error"
 	DeviceId        = "deviceId"
 	ResponseMode    = "response_mode"
+	ResponseType    = "response_type"
 
 	Token               = "/oauth/token"
 	Authorize           = "/authorize"

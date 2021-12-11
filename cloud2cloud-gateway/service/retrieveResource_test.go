@@ -31,7 +31,7 @@ func TestRequestHandlerRetrieveResource(t *testing.T) {
 	tearDown := service.SetUp(ctx, t)
 	defer tearDown()
 
-	token := oauthTest.GetDefaultServiceToken(t)
+	token := oauthTest.GetDefaultAccessToken(t)
 	ctx = kitNetGrpc.CtxWithToken(ctx, token)
 
 	conn, err := grpc.Dial(config.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
@@ -70,7 +70,7 @@ func TestRequestHandlerRetrieveResource(t *testing.T) {
 		{
 			name: "expired token",
 			args: args{
-				token:        oauthTest.GetServiceToken(t, config.OAUTH_SERVER_HOST, oauthTest.ClientTestExpired),
+				token:        oauthTest.GetAccessToken(t, config.OAUTH_SERVER_HOST, oauthTest.ClientTestExpired),
 				resourceHref: test.TestResourceSwitchesHref,
 			},
 			wantCode:        http.StatusUnauthorized,

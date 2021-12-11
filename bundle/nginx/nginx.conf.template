@@ -23,7 +23,7 @@ http {
     ssl_certificate     /data/certs/external/endpoint.crt;
     ssl_certificate_key /data/certs/external/endpoint.key;
     proxy_ssl_name localhost;
-    location ~ ^(/authorize|/oauth/token|/.well-known/jwks.json|/.well-known/openid-configuration|/v2/logout|/authorize/userinfo) {
+    location ~ ^(/authorize|/oauth/token|/.well-known/jwks.json|/.well-known/openid-configuration|/v2/logout|/authorize/userinfo|/authorize/unauthorized) {
       set $upstream_oauth_server https://127.0.0.1:REPLACE_MOCK_OAUTH_SERVER_PORT;
       proxy_pass                     $upstream_oauth_server;
       proxy_ssl_certificate           /data/certs/internal/endpoint.crt;

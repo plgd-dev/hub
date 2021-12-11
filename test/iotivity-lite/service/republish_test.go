@@ -47,7 +47,7 @@ func (r *republishHandler) SignUp(req coapgwService.CoapSignUpRequest) (coapgwSe
 	return coapgwService.CoapSignUpResponse{
 		AccessToken:  "access-token",
 		UserID:       "1",
-		RefreshToken: "refresh-token",
+		RefreshToken: oauthTest.ValidRefreshToken,
 		ExpiresIn:    int64(accessTokenLifetime.Seconds()),
 		RedirectURI:  "",
 	}, nil
@@ -91,7 +91,7 @@ func (r *republishHandler) UnpublishResources(req coapgwTestService.UnpublishReq
 func (r *republishHandler) RefreshToken(req coapgwService.CoapRefreshTokenReq) (coapgwService.CoapRefreshTokenResp, error) {
 	r.callCounter[refreshTokenKey]++
 	return coapgwService.CoapRefreshTokenResp{
-		RefreshToken: "refresh-token",
+		RefreshToken: oauthTest.ValidRefreshToken,
 		AccessToken:  "access-token",
 		ExpiresIn:    int64(accessTokenLifetime.Seconds()),
 	}, nil
@@ -130,7 +130,7 @@ func TestRepublishAfterRefresh(t *testing.T) {
 	coapShutdown := coapgwTest.SetUp(t, makeHandler, validateHandler)
 	defer coapShutdown()
 
-	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultServiceToken(t))
+	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
 
 	conn, err := grpc.Dial(config.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),

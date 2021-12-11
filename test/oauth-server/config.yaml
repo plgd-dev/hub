@@ -13,7 +13,23 @@ oauthSigner:
   accessTokenKeyFile: "/secrets/private/accessToken.key"
   domain: ""
   clients:
-  - id: "test"
-    authorizationCodeLifetime: "10m"
-    accessTokenLifetime: "0s"
-    codeRestrictionLifetime: "0s"
+    - id: "test"
+      authorizationCodeLifetime: "10m"
+      accessTokenLifetime: "0s"
+      codeRestrictionLifetime: "0s"
+      refreshTokenRestrictionLifetime: "0s"
+    - id: "testC2C"
+      secret: "testC2CSecret"
+      authorizationCodeLifetime: "5m"
+      accessTokenLifetime: "720m"
+      codeRestrictionLifetime: "5m"
+      refreshTokenRestrictionLifetime: "0s"
+      consentScreenEnabled: true
+      requireIssuedAuthorizationCode: true
+      requiredScope:
+        - "r:*"
+        - "w:*"
+        - "offline_access"
+      requiredResponseType: "code"
+      requiredRedirectURI: "https://localhost:8080/callback"
+      

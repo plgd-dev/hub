@@ -85,7 +85,7 @@ func TestRequestHandlerCancelPendingCommands(t *testing.T) {
 		},
 	}
 
-	token := oauthTest.GetDefaultServiceToken(t)
+	token := oauthTest.GetDefaultAccessToken(t)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			rb := httpgwTest.NewRequest(http.MethodDelete, uri.AliasResourcePendingCommands, nil).AuthToken(token).Accept(tt.args.accept)
@@ -150,7 +150,7 @@ func TestRequestHandlerCancelResourceCommand(t *testing.T) {
 		},
 	}
 
-	token := oauthTest.GetDefaultServiceToken(t)
+	token := oauthTest.GetDefaultAccessToken(t)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			rb := httpgwTest.NewRequest(http.MethodDelete, uri.AliasResourcePendingCommands+"/"+tt.args.correlationId, nil).AuthToken(token).Accept(tt.args.accept)

@@ -38,7 +38,7 @@ func TestClient_GetResource(t *testing.T) {
 		{
 			name: "valid",
 			args: args{
-				token:    oauthTest.GetDefaultServiceToken(t),
+				token:    oauthTest.GetDefaultAccessToken(t),
 				deviceID: deviceID,
 				href:     configuration.ResourceURI,
 			},
@@ -49,7 +49,7 @@ func TestClient_GetResource(t *testing.T) {
 		{
 			name: "valid with skip shadow",
 			args: args{
-				token:    oauthTest.GetDefaultServiceToken(t),
+				token:    oauthTest.GetDefaultAccessToken(t),
 				deviceID: deviceID,
 				href:     configuration.ResourceURI,
 				opts:     []client.GetOption{client.WithSkipShadow()},
@@ -61,7 +61,7 @@ func TestClient_GetResource(t *testing.T) {
 		{
 			name: "valid with interface",
 			args: args{
-				token:    oauthTest.GetDefaultServiceToken(t),
+				token:    oauthTest.GetDefaultAccessToken(t),
 				deviceID: deviceID,
 				href:     configuration.ResourceURI,
 				opts:     []client.GetOption{client.WithInterface(interfaces.OC_IF_BASELINE)},
@@ -76,7 +76,7 @@ func TestClient_GetResource(t *testing.T) {
 		{
 			name: "valid with interface and skip shadow",
 			args: args{
-				token:    oauthTest.GetDefaultServiceToken(t),
+				token:    oauthTest.GetDefaultAccessToken(t),
 				deviceID: deviceID,
 				href:     configuration.ResourceURI,
 				opts:     []client.GetOption{client.WithSkipShadow(), client.WithInterface(interfaces.OC_IF_BASELINE)},
@@ -91,7 +91,7 @@ func TestClient_GetResource(t *testing.T) {
 		{
 			name: "invalid href",
 			args: args{
-				token:    oauthTest.GetDefaultServiceToken(t),
+				token:    oauthTest.GetDefaultAccessToken(t),
 				deviceID: deviceID,
 				href:     "/invalid/href",
 			},
@@ -99,7 +99,7 @@ func TestClient_GetResource(t *testing.T) {
 		},
 	}
 
-	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultServiceToken(t))
+	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
 
 	c := NewTestClient(t)
 	defer func() {
