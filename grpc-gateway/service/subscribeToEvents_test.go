@@ -258,7 +258,7 @@ func TestRequestHandlerSubscribeForCreateEvents(t *testing.T) {
 	test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
 
 	const switchId = "1"
-	lightData := test.MakeSwitchResourceDefaultData()
+	switchData := test.MakeSwitchResourceDefaultData()
 	test.AddDeviceSwitchResources(ctx, t, deviceID, c, switchId)
 
 	ev, err = client.Recv()
@@ -267,16 +267,17 @@ func TestRequestHandlerSubscribeForCreateEvents(t *testing.T) {
 		SubscriptionId: ev.SubscriptionId,
 		CorrelationId:  "testToken",
 		Type: &pb.Event_ResourceCreatePending{
-			ResourceCreatePending: pbTest.MakeResourceCreatePending(t, deviceID, test.TestResourceSwitchesHref, "", lightData),
+			ResourceCreatePending: pbTest.MakeResourceCreatePending(t, deviceID, test.TestResourceSwitchesHref, "",
+				switchData),
 		},
 	}, ev, "")
 
-	lightLink := test.DefaultSwitchResourceLink(switchId)
-	lightData = test.MakeSwitchResourceData(map[string]interface{}{
-		"href": lightLink.Href,
+	switchLink := test.DefaultSwitchResourceLink("", switchId)
+	switchData = test.MakeSwitchResourceData(map[string]interface{}{
+		"href": switchLink.Href,
 		"rep": map[string]interface{}{
-			"if":    lightLink.Interfaces,
-			"rt":    lightLink.ResourceTypes,
+			"if":    switchLink.Interfaces,
+			"rt":    switchLink.ResourceTypes,
 			"value": false,
 		},
 	})
@@ -287,7 +288,7 @@ func TestRequestHandlerSubscribeForCreateEvents(t *testing.T) {
 		SubscriptionId: ev.SubscriptionId,
 		CorrelationId:  "testToken",
 		Type: &pb.Event_ResourceCreated{
-			ResourceCreated: pbTest.MakeResourceCreated(t, deviceID, test.TestResourceSwitchesHref, "", lightData),
+			ResourceCreated: pbTest.MakeResourceCreated(t, deviceID, test.TestResourceSwitchesHref, "", switchData),
 		},
 	}, ev, "")
 }

@@ -24,7 +24,7 @@ import (
 	"google.golang.org/grpc/credentials"
 )
 
-func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
+func TestRequestHandlerUpdateResourcesValues(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	switchID := "1"
 	type args struct {
@@ -104,7 +104,7 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 					},
 				},
 			},
-			want: pbTest.MakeResourceUpdated(deviceID, test.TestResourceLightInstanceHref("1"), ""),
+			want: pbTest.MakeResourceUpdated(t, deviceID, test.TestResourceLightInstanceHref("1"), "", nil),
 		},
 		{
 			name: "valid with interface",
@@ -120,7 +120,7 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 					},
 				},
 			},
-			want: pbTest.MakeResourceUpdated(deviceID, test.TestResourceLightInstanceHref("1"), ""),
+			want: pbTest.MakeResourceUpdated(t, deviceID, test.TestResourceLightInstanceHref("1"), "", nil),
 		},
 		{
 			name: "revert update",
@@ -136,7 +136,7 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 					},
 				},
 			},
-			want: pbTest.MakeResourceUpdated(deviceID, test.TestResourceLightInstanceHref("1"), ""),
+			want: pbTest.MakeResourceUpdated(t, deviceID, test.TestResourceLightInstanceHref("1"), "", nil),
 		},
 		{
 			name: "update /switches/1",

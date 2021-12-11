@@ -99,7 +99,7 @@ func checkAndValidateUpdate(ctx context.Context, t *testing.T, rac raservice.Res
 			check(t, ev, &pb.Event{
 				SubscriptionId: s.Id(),
 				Type: &pb.Event_ResourceUpdated{
-					ResourceUpdated: pbTest.MakeResourceUpdated(deviceID, test.TestResourceLightInstanceHref("1"), updCorrelationID),
+					ResourceUpdated: pbTest.MakeResourceUpdated(t, deviceID, test.TestResourceLightInstanceHref("1"), updCorrelationID, nil),
 				},
 				CorrelationId: correlationID,
 			})
@@ -281,7 +281,7 @@ func TestRequestHandlerSubscribeToEvents(t *testing.T) {
 	check(t, waitForEvent(ctx, t, recvChan), &pb.Event{
 		SubscriptionId: s.Id(),
 		Type: &pb.Event_DeviceMetadataUpdated{
-			DeviceMetadataUpdated: pbTest.MakeDeviceMetadataUpdated(deviceID, ""),
+			DeviceMetadataUpdated: pbTest.MakeDeviceMetadataUpdated(deviceID, commands.ShadowSynchronization_UNSET, ""),
 		},
 		CorrelationId: correlationID,
 	})

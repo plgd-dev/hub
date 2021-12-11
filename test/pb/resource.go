@@ -285,16 +285,25 @@ func CmpResourceRetrieved(t *testing.T, expected, got *events.ResourceRetrieved)
 	test.CheckProtobufs(t, expected, got, test.RequireToCheckFunc(require.Equal))
 }
 
-func MakeResourceUpdated(deviceID, href, correlationId string) *events.ResourceUpdated {
+func MakeResourceUpdated(t *testing.T, deviceID, href, correlationId string, data interface{}) *events.ResourceUpdated {
 	return &events.ResourceUpdated{
 		ResourceId: &commands.ResourceId{
 			DeviceId: deviceID,
 			Href:     href,
 		},
 		Status: commands.Status_OK,
-		Content: &commands.Content{
-			CoapContentFormat: -1,
-		},
+		Content: func() *commands.Content {
+			if data == nil {
+				return &commands.Content{
+					CoapContentFormat: -1,
+				}
+			}
+			return &commands.Content{
+				CoapContentFormat: int32(message.AppOcfCbor),
+				ContentType:       message.AppOcfCbor.String(),
+				Data:              test.EncodeToCbor(t, data),
+			}
+		}(),
 		AuditContext: commands.NewAuditContext(service.DeviceUserID, correlationId),
 	}
 }
@@ -416,6 +425,14 @@ func CleanUpResourceLinksPublished(e *events.ResourceLinksPublished, resetCorrel
 	return e
 }
 
+func MakeResourceLinksPublished(deviceID string, resources []*commands.Resource, correlationId string) *events.ResourceLinksPublished {
+	return &events.ResourceLinksPublished{
+		DeviceId:     deviceID,
+		Resources:    resources,
+		AuditContext: commands.NewAuditContext(service.DeviceUserID, correlationId),
+	}
+}
+
 func CleanUpResourceLinksUnpublished(e *events.ResourceLinksUnpublished, resetCorrelationId bool) *events.ResourceLinksUnpublished {
 	if e.GetAuditContext() != nil && resetCorrelationId {
 		e.GetAuditContext().CorrelationId = ""
@@ -423,4 +440,12 @@ func CleanUpResourceLinksUnpublished(e *events.ResourceLinksUnpublished, resetCo
 	e.EventMetadata = nil
 	sort.Strings(e.GetHrefs())
 	return e
+}
+
+func MakeResourceLinksUnpublished(deviceID string, resources []string, correlationId string) *events.ResourceLinksUnpublished {
+	return &events.ResourceLinksUnpublished{
+		DeviceId:     deviceID,
+		Hrefs:        resources,
+		AuditContext: commands.NewAuditContext(service.DeviceUserID, correlationId),
+	}
 }

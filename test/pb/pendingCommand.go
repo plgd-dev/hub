@@ -333,6 +333,15 @@ func CleanUpResourceRetrievePending(e *events.ResourceRetrievePending, resetCorr
 	return e
 }
 
+func CmpResourceRetrievePending(t *testing.T, expected, got *events.ResourceRetrievePending) {
+	require.NotNil(t, expected)
+	resetCorrelationId := expected.GetAuditContext().GetCorrelationId() == ""
+	CleanUpResourceRetrievePending(expected, resetCorrelationId)
+	require.NotNil(t, got)
+	CleanUpResourceRetrievePending(got, resetCorrelationId)
+	test.CheckProtobufs(t, expected, got, test.RequireToCheckFunc(require.Equal))
+}
+
 func MakeResourceRetrievePending(deviceID, href, correlationId string) *events.ResourceRetrievePending {
 	return &events.ResourceRetrievePending{
 		ResourceId: &commands.ResourceId{
@@ -373,4 +382,23 @@ func CleanUpDeviceMetadataUpdatePending(e *events.DeviceMetadataUpdatePending, r
 	}
 	e.EventMetadata = nil
 	return e
+}
+
+func CmpDeviceMetadataUpdatePending(t *testing.T, expected, got *events.DeviceMetadataUpdatePending) {
+	require.NotNil(t, expected)
+	resetCorrelationId := expected.GetAuditContext().GetCorrelationId() == ""
+	CleanUpDeviceMetadataUpdatePending(expected, resetCorrelationId)
+	require.NotNil(t, got)
+	CleanUpDeviceMetadataUpdatePending(got, resetCorrelationId)
+	test.CheckProtobufs(t, expected, got, test.RequireToCheckFunc(require.Equal))
+}
+
+func MakeDeviceMetadataUpdatePending(deviceID string, shadowSynchronization commands.ShadowSynchronization, correlationId string) *events.DeviceMetadataUpdatePending {
+	return &events.DeviceMetadataUpdatePending{
+		DeviceId: deviceID,
+		UpdatePending: &events.DeviceMetadataUpdatePending_ShadowSynchronization{
+			ShadowSynchronization: shadowSynchronization,
+		},
+		AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, correlationId),
+	}
 }

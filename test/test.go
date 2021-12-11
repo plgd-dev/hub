@@ -114,8 +114,9 @@ func FilterResourceLink(filter func(schema.ResourceLink) bool, links []schema.Re
 	return l
 }
 
-func DefaultSwitchResourceLink(id string) schema.ResourceLink {
+func DefaultSwitchResourceLink(deviceID, id string) schema.ResourceLink {
 	return schema.ResourceLink{
+		DeviceID:      deviceID,
 		Href:          TestResourceSwitchesInstanceHref(id),
 		ResourceTypes: []string{types.BINARY_SWITCH},
 		Interfaces:    []string{interfaces.OC_IF_A, interfaces.OC_IF_BASELINE},
@@ -134,7 +135,7 @@ func MakeSwitchResourceData(overrides map[string]interface{}) map[string]interfa
 }
 
 func MakeSwitchResourceDefaultData() map[string]interface{} {
-	s := DefaultSwitchResourceLink("")
+	s := DefaultSwitchResourceLink("", "")
 	return map[string]interface{}{
 		"if": s.Interfaces,
 		"rt": s.ResourceTypes,

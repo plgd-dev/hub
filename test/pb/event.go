@@ -226,6 +226,9 @@ var compareEventFn = map[string]func(t *testing.T, e, g *pb.Event, cmpInterface 
 	getTypeName(&pb.Event_ResourceUpdated{}): func(t *testing.T, e, g *pb.Event, cmpInterface string) {
 		CmpResourceUpdated(t, e.GetResourceUpdated(), g.GetResourceUpdated())
 	},
+	getTypeName(&pb.Event_ResourceRetrievePending{}): func(t *testing.T, e, g *pb.Event, cmpInterface string) {
+		CmpResourceRetrievePending(t, e.GetResourceRetrievePending(), g.GetResourceRetrievePending())
+	},
 	getTypeName(&pb.Event_ResourceRetrieved{}): func(t *testing.T, e, g *pb.Event, cmpInterface string) {
 		CmpResourceRetrieved(t, e.GetResourceRetrieved(), g.GetResourceRetrieved())
 	},
@@ -240,6 +243,12 @@ var compareEventFn = map[string]func(t *testing.T, e, g *pb.Event, cmpInterface 
 	},
 	getTypeName(&pb.Event_ResourceCreated{}): func(t *testing.T, e, g *pb.Event, cmpInterface string) {
 		CmpResourceCreated(t, e.GetResourceCreated(), g.GetResourceCreated())
+	},
+	getTypeName(&pb.Event_DeviceMetadataUpdatePending{}): func(t *testing.T, e, g *pb.Event, cmpInterface string) {
+		CmpDeviceMetadataUpdatePending(t, e.GetDeviceMetadataUpdatePending(), g.GetDeviceMetadataUpdatePending())
+	},
+	getTypeName(&pb.Event_DeviceMetadataUpdated{}): func(t *testing.T, e, g *pb.Event, cmpInterface string) {
+		CmpDeviceMetadataUpdated(t, e.GetDeviceMetadataUpdated(), g.GetDeviceMetadataUpdated())
 	},
 }
 
