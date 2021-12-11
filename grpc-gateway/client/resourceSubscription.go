@@ -13,26 +13,6 @@ import (
 	"github.com/plgd-dev/hub/resource-aggregate/events"
 )
 
-type CloseErrorHandler struct {
-	onClose func()
-	onError func(err error)
-}
-
-func (s *CloseErrorHandler) OnClose() {
-	s.onClose()
-}
-
-func (s *CloseErrorHandler) Error(err error) {
-	s.onError(err)
-}
-
-func NewCloseErrorHandler(onClose func(), onError func(err error)) *CloseErrorHandler {
-	return &CloseErrorHandler{
-		onClose: onClose,
-		onError: onError,
-	}
-}
-
 // SubscriptionHandler handler of events.
 type SubscriptionHandler = interface {
 	OnClose()

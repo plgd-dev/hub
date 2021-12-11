@@ -37,7 +37,7 @@ func checkDeviceMetadataUpdatedOnlineEvent(t *testing.T, ev *pb.Event, deviceID,
 	expectedEvent := &pb.Event{
 		SubscriptionId: baseSubId,
 		Type: &pb.Event_DeviceMetadataUpdated{
-			DeviceMetadataUpdated: pbTest.MakeDeviceMetadataUpdated(deviceID, ""),
+			DeviceMetadataUpdated: pbTest.MakeDeviceMetadataUpdated(deviceID, commands.ShadowSynchronization_UNSET, ""),
 		},
 		CorrelationId: "testToken",
 	}
@@ -88,7 +88,7 @@ func (u *updateChecker) checkUpdateLightResource(t *testing.T, ctx context.Conte
 			expectedEvent := &pb.Event{
 				SubscriptionId: u.subUpdatedID,
 				Type: &pb.Event_ResourceUpdated{
-					ResourceUpdated: pbTest.MakeResourceUpdated(u.deviceID, test.TestResourceLightInstanceHref("1"), updCorrelationID),
+					ResourceUpdated: pbTest.MakeResourceUpdated(t, u.deviceID, test.TestResourceLightInstanceHref("1"), updCorrelationID, nil),
 				},
 				CorrelationId: "updatePending + resourceUpdated",
 			}

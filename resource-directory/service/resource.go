@@ -26,10 +26,3 @@ func (r *Resource) GetContent() *commands.Content {
 	}
 	return r.GetResourceChanged().GetContent()
 }
-
-func (r *Resource) GetStatus() commands.Status {
-	if r.projection == nil {
-		return commands.Status_UNAVAILABLE
-	}
-	return r.GetResourceChanged().GetStatus()
-}

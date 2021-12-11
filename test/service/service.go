@@ -14,7 +14,8 @@ import (
 	"github.com/plgd-dev/hub/pkg/fn"
 	"github.com/plgd-dev/hub/pkg/log"
 	cmClient "github.com/plgd-dev/hub/pkg/security/certManager/client"
-	raService "github.com/plgd-dev/hub/resource-aggregate/test"
+	raService "github.com/plgd-dev/hub/resource-aggregate/service"
+	raTest "github.com/plgd-dev/hub/resource-aggregate/test"
 	rdService "github.com/plgd-dev/hub/resource-directory/service"
 	rdTest "github.com/plgd-dev/hub/resource-directory/test"
 	"github.com/plgd-dev/hub/test/config"
@@ -55,6 +56,7 @@ type Config struct {
 	COAPGW coapgw.Config
 	RD     rdService.Config
 	GRPCGW grpcgwConfig.Config
+	RA     raService.Config
 }
 
 func WithCOAPGWConfig(coapgwCfg coapgw.Config) SetUpOption {
@@ -75,6 +77,12 @@ func WithGRPCGWConfig(grpcCfg grpcgwConfig.Config) SetUpOption {
 	}
 }
 
+func WithRAConfig(ra raService.Config) SetUpOption {
+	return func(cfg *Config) {
+		cfg.RA = ra
+	}
+}
+
 type SetUpOption = func(cfg *Config)
 
 func SetUp(ctx context.Context, t *testing.T, opts ...SetUpOption) (TearDown func()) {
@@ -82,6 +90,7 @@ func SetUp(ctx context.Context, t *testing.T, opts ...SetUpOption) (TearDown fun
 		COAPGW: coapgwTest.MakeConfig(t),
 		RD:     rdTest.MakeConfig(t),
 		GRPCGW: grpcgwTest.MakeConfig(t),
+		RA:     raTest.MakeConfig(t),
 	}
 
 	for _, o := range opts {
@@ -91,7 +100,7 @@ func SetUp(ctx context.Context, t *testing.T, opts ...SetUpOption) (TearDown fun
 	ClearDB(ctx, t)
 	oauthShutdown := oauthTest.SetUp(t)
 	idShutdown := idService.SetUp(t)
-	raShutdown := raService.SetUp(t)
+	raShutdown := raTest.New(t, config.RA)
 	rdShutdown := rdTest.New(t, config.RD)
 	grpcShutdown := grpcgwTest.New(t, config.GRPCGW)
 	c2cgwShutdown := c2cgwService.SetUp(t)
@@ -136,7 +145,7 @@ func SetUpServices(ctx context.Context, t *testing.T, servicesConfig SetUpServic
 		tearDown.AddFunc(idShutdown)
 	}
 	if servicesConfig&SetUpServicesResourceAggregate != 0 {
-		raShutdown := raService.SetUp(t)
+		raShutdown := raTest.SetUp(t)
 		tearDown.AddFunc(raShutdown)
 	}
 	if servicesConfig&SetUpServicesResourceDirectory != 0 {

@@ -27,7 +27,7 @@ func (p *deviceMetadataProjection) Clone() *deviceMetadataProjection {
 }
 
 func (p *deviceMetadataProjection) EventType() string {
-	s := &events.ResourceLinksSnapshotTaken{}
+	s := &events.DeviceMetadataSnapshotTaken{}
 	return s.EventType()
 }
 

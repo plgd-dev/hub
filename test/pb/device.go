@@ -26,13 +26,14 @@ func CmpDeviceValues(t *testing.T, expected, got []*pbGrpc.Device) {
 	test.CheckProtobufs(t, expected, got, test.RequireToCheckFunc(require.Equal))
 }
 
-func MakeDeviceMetadataUpdated(deviceID, correlationId string) *events.DeviceMetadataUpdated {
+func MakeDeviceMetadataUpdated(deviceID string, shadowSynchronization commands.ShadowSynchronization, correlationId string) *events.DeviceMetadataUpdated {
 	return &events.DeviceMetadataUpdated{
 		DeviceId: deviceID,
 		Status: &commands.ConnectionStatus{
 			Value: commands.ConnectionStatus_ONLINE,
 		},
-		AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, correlationId),
+		ShadowSynchronization: shadowSynchronization,
+		AuditContext:          commands.NewAuditContext(oauthService.DeviceUserID, correlationId),
 	}
 }
 
