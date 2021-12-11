@@ -285,6 +285,10 @@ func (requestHandler *RequestHandler) validateTokenRequest(clientCfg *Client, to
 	if clientCfg.RequiredRedirectURI != "" && clientCfg.RequiredRedirectURI != tokenReq.RedirectURI {
 		return fmt.Errorf("invalid redirect uri(%v)", tokenReq.RedirectURI)
 	}
+	return nil
+}
+
+func (requestHandler *RequestHandler) validateRestrictions(clientCfg *Client, tokenReq tokenRequest) error {
 	if clientCfg.CodeRestrictionLifetime != 0 && tokenReq.GrantType == string(AllowedGrantType_AUTHORIZATION_CODE) {
 		v := requestHandler.authRestriction.Load(tokenReq.Code)
 		if v != nil {
@@ -315,6 +319,10 @@ func (requestHandler *RequestHandler) processResponse(w http.ResponseWriter, tok
 		writeError(w, err, http.StatusBadRequest)
 		return
 	}
+	if err := requestHandler.validateRestrictions(clientCfg, tokenReq); err != nil {
+		writeError(w, err, http.StatusBadRequest)
+		return
+	}
 
 	refreshToken, err := generateRefreshToken(clientCfg)
 	if err != nil {
@@ -337,8 +345,7 @@ func (requestHandler *RequestHandler) processResponse(w http.ResponseWriter, tok
 		tokenReq.tokenType = AccessTokenType_JWT
 	}
 
-	idToken, err := generateIDToken(tokenReq.ClientID, clientCfg.AccessTokenLifetime, tokenReq.host, authSession.nonce,
-		requestHandler.idTokenKey, requestHandler.idTokenJwkKey)
+	idToken, err := generateIDToken(tokenReq.ClientID, clientCfg.AccessTokenLifetime, tokenReq.host, authSession.nonce, requestHandler.idTokenKey, requestHandler.idTokenJwkKey)
 	if err != nil {
 		writeError(w, err, http.StatusInternalServerError)
 		return
