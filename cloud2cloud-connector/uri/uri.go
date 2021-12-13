@@ -18,5 +18,5 @@ const (
 	Events string = Version + "/events"
 
 	// GET
-	//OAuthCallback = is loaded from configuration
+	OAuthCallback string = Version + "/oauthCallback"
 )

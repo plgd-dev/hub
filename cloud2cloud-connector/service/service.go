@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"net/url"
 	"regexp"
 	"sync"
 	"time"
@@ -45,7 +44,7 @@ func toValidator(c oauth2.Config) validator.Config {
 	}
 }
 
-func newAuthInterceptor(ctx context.Context, config validator.Config, oauthCallbackPath string, logger log.Logger) (kitNetHttp.Interceptor, func(), error) {
+func newAuthInterceptor(ctx context.Context, config validator.Config, logger log.Logger) (kitNetHttp.Interceptor, func(), error) {
 	var fl fn.FuncList
 
 	validator, err := validator.New(ctx, config, logger)
@@ -80,11 +79,11 @@ func newAuthInterceptor(ctx context.Context, config validator.Config, oauthCallb
 	whiteList := []kitNetHttp.RequestMatcher{
 		{
 			Method: http.MethodGet,
-			URI:    regexp.MustCompile(regexp.QuoteMeta(oauthCallbackPath)),
+			URI:    regexp.MustCompile(regexp.QuoteMeta(uri.OAuthCallback)),
 		},
 		{
 			Method: http.MethodPost,
-			URI:    regexp.MustCompile(regexp.QuoteMeta(oauthCallbackPath)),
+			URI:    regexp.MustCompile(regexp.QuoteMeta(uri.OAuthCallback)),
 		},
 		{
 			Method: http.MethodPost,
@@ -206,14 +205,6 @@ func newDevicesSubscription(ctx context.Context, config Config, raClient raServi
 	return devicesSubscription, fl.ToFunction(), nil
 }
 
-func parseOAuthPaths(oauthCallback string) (*url.URL, error) {
-	oauthURL, err := url.Parse(oauthCallback)
-	if err != nil {
-		return nil, fmt.Errorf("cannot parse oauth url: %w", err)
-	}
-	return oauthURL, nil
-}
-
 // New parses configuration and creates new Server with provided store and bus
 func New(ctx context.Context, config Config, logger log.Logger) (*Server, error) {
 	listener, err := listener.New(config.APIs.HTTP.Connection, logger)
@@ -260,12 +251,6 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Server, error)
 	}
 	listener.AddCloseFunc(closeStore)
 
-	oauthURL, err := parseOAuthPaths(config.APIs.HTTP.Authorization.RedirectURL)
-	if err != nil {
-		cleanUp.Execute()
-		return nil, fmt.Errorf("cannot parse OAuth paths: %w", err)
-	}
-
 	provider, err := oauth2.NewPlgdProvider(ctx, config.APIs.HTTP.Authorization.Config, logger)
 	if err != nil {
 		cleanUp.Execute()
@@ -278,7 +263,7 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Server, error)
 
 	requestHandler := NewRequestHandler(config.APIs.HTTP.Authorization.OwnerClaim, provider, subMgr, store, taskProcessor.Trigger)
 
-	auth, closeAuth, err := newAuthInterceptor(ctx, toValidator(config.APIs.HTTP.Authorization.Config), oauthURL.Path, logger)
+	auth, closeAuth, err := newAuthInterceptor(ctx, toValidator(config.APIs.HTTP.Authorization.Config), logger)
 	if err != nil {
 		cleanUp.Execute()
 		return nil, fmt.Errorf("cannot create auth interceptor: %w", err)

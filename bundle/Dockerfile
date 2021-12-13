@@ -52,6 +52,11 @@ ARG service=cloud2cloud-gateway
 WORKDIR $root_directory/$service
 RUN go build -ldflags "-linkmode external -extldflags -static" -o /go/bin/$service ./cmd/service
 
+#cloud2cloud-connector
+ARG service=cloud2cloud-connector
+WORKDIR $root_directory/$service
+RUN go build -ldflags "-linkmode external -extldflags -static" -o /go/bin/$service ./cmd/service
+
 
 #certificate-generator
 ARG service=kit
@@ -114,6 +119,8 @@ COPY --from=build /go/src/github.com/plgd-dev/hub/test/oauth-server/config.yaml 
 COPY --from=build-web /web/build /usr/local/var/www
 COPY --from=build /go/bin/cloud2cloud-gateway /usr/local/bin/cloud2cloud-gateway
 COPY --from=build /go/src/github.com/plgd-dev/hub/cloud2cloud-gateway/config.yaml /configs/cloud2cloud-gateway.yaml
+COPY --from=build /go/bin/cloud2cloud-connector /usr/local/bin/cloud2cloud-connector
+COPY --from=build /go/src/github.com/plgd-dev/hub/cloud2cloud-connector/config.yaml /configs/cloud2cloud-connector.yaml
 COPY --from=build /go/src/github.com/plgd-dev/hub/bundle/run.sh /usr/local/bin/run.sh
 COPY --from=build /go/src/github.com/plgd-dev/hub/bundle/nginx /nginx
 
@@ -141,6 +148,7 @@ ENV IDENTITY_STORE_PORT=9081
 ENV GRPC_GATEWAY_PORT=9084
 ENV HTTP_GATEWAY_PORT=9086
 ENV CLOUD2CLOUD_GATEWAY_PORT=9085
+ENV CLOUD2CLOUD_CONNECTOR_PORT=9089
 ENV MONGO_PORT=10000
 ENV NATS_PORT=10001
 

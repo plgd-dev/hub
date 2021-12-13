@@ -53,7 +53,7 @@ var OWNER_CLAIM = "sub"
 var OAUTH_MANAGER_ENDPOINT_AUTHURL = "https://" + OAUTH_SERVER_HOST + uri.Authorize
 var OAUTH_MANAGER_ENDPOINT_TOKENURL = "https://" + OAUTH_SERVER_HOST + uri.Token
 var C2C_CONNECTOR_EVENTS_URL = "https://" + C2C_CONNECTOR_HOST + c2curi.Events
-var C2C_CONNECTOR_OAUTH_CALLBACK = "https://" + C2C_CONNECTOR_HOST + "/oauthCbk"
+var C2C_CONNECTOR_OAUTH_CALLBACK = "https://" + C2C_CONNECTOR_HOST + c2curi.OAuthCallback
 
 func MakeTLSClientConfig() client.Config {
 	return client.Config{

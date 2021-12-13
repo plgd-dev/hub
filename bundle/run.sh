@@ -20,6 +20,7 @@ export IDENTITY_STORE_ADDRESS="localhost:${IDENTITY_STORE_PORT}"
 export GRPC_GATEWAY_ADDRESS="localhost:${GRPC_GATEWAY_PORT}"
 export HTTP_GATEWAY_ADDRESS="localhost:${HTTP_GATEWAY_PORT}"
 export CLOUD2CLOUD_GATEWAY_ADDRESS="localhost:${CLOUD2CLOUD_GATEWAY_PORT}"
+export CLOUD2CLOUD_CONNECTOR_ADDRESS="localhost:${CLOUD2CLOUD_CONNECTOR_PORT}"
 
 export INTERNAL_CERT_DIR_PATH="$CERTIFICATES_PATH/internal"
 export GRPC_INTERNAL_CERT_NAME="endpoint.crt"
@@ -306,6 +307,27 @@ while read -r line; do
   cp $KEY_FILE ${file}
 done < <(yq e '[.. | select(has("keyFile")) | .keyFile]' /configs/cloud2cloud-gateway.yaml | sort | uniq)
 
+## cloud2cloud-connector
+### setup root-cas
+while read -r line; do
+  file=`echo $line | yq e '.[0]' - `
+  mkdir -p `dirname ${file}`
+  cp $CA_POOL ${file}
+done < <(yq e '[.. | select(has("caPool")) | .caPool]' /configs/cloud2cloud-connector.yaml | sort | uniq)
+### setup certificates
+while read -r line; do
+  file=`echo $line | yq e '.[0]' - `
+  mkdir -p `dirname ${file}`
+  cp $CERT_FILE ${file}
+done < <(yq e '[.. | select(has("certFile")) | .certFile]' /configs/cloud2cloud-connector.yaml | sort | uniq)
+### setup private keys
+while read -r line; do
+  file=`echo $line | yq e '.[0]' - `
+  mkdir -p `dirname ${file}`
+  cp $KEY_FILE ${file}
+done < <(yq e '[.. | select(has("keyFile")) | .keyFile]' /configs/cloud2cloud-connector.yaml | sort | uniq)
+
+
 
 mkdir -p ${OAUTH_KEYS_PATH}
 openssl genrsa -out ${OAUTH_ID_TOKEN_KEY_PATH} 4096
@@ -322,6 +344,7 @@ sed -i "s/REPLACE_GRPC_GATEWAY_PORT/$GRPC_GATEWAY_PORT/g" ${NGINX_PATH}/nginx.co
 sed -i "s/REPLACE_MOCK_OAUTH_SERVER_PORT/$MOCK_OAUTH_SERVER_PORT/g" ${NGINX_PATH}/nginx.conf
 sed -i "s/REPLACE_CERTIFICATE_AUTHORITY_PORT/$CERTIFICATE_AUTHORITY_PORT/g" ${NGINX_PATH}/nginx.conf
 sed -i "s/REPLACE_CLOUD2CLOUD_GATEWAY_PORT/$CLOUD2CLOUD_GATEWAY_PORT/g" ${NGINX_PATH}/nginx.conf
+sed -i "s/REPLACE_CLOUD2CLOUD_CONNECTOR_PORT/$CLOUD2CLOUD_CONNECTOR_PORT/g" ${NGINX_PATH}/nginx.conf
 
 # nats
 echo "starting nats-server"
@@ -788,7 +811,7 @@ if [ $status -ne 0 ]; then
   exit $status
 fi
 
-# waiting for http-gateway. Without wait, sometimes auth service didn't connect.
+# waiting for cloud2cloud-gateway. Without wait, sometimes auth service didn't connect.
 i=0
 while true; do
   i=$((i+1))
@@ -798,6 +821,51 @@ while true; do
   echo "Try to reconnect to cloud2cloud-gateway(${CLOUD2CLOUD_GATEWAY_ADDRESS}) $i"
   sleep 1
 done
+
+# cloud2cloud-connector
+## configuration
+cat /configs/cloud2cloud-connector.yaml | yq e "\
+  .log.debug = ${LOG_DEBUG} |
+  .apis.http.address = \"${CLOUD2CLOUD_CONNECTOR_ADDRESS}\" |
+  .apis.http.authorization.audience = \"${SERVICE_OAUTH_AUDIENCE}\" |
+  .apis.http.authorization.http.tls.useSystemCAPool = true |
+  .apis.http.authorization.authority = \"https://${OAUTH_ENDPOINT}\" |
+  .apis.http.eventsURL = \"https://${DOMAIN}/c2c/connector/api/v1/events\" |
+  .apis.http.authorization.clientID = \"${DEVICE_OAUTH_CLIENT_ID}\" |
+  .apis.http.authorization.clientSecretFile = \"${OAUTH_DEVICE_SECRET_PATH}\" |
+  .apis.http.authorization.scopes = [ \"${DEVICE_OAUTH_SCOPES}\" ] |
+  .apis.http.authorization.audience = \"${DEVICE_OAUTH_AUDIENCE}\" |
+  .apis.http.authorization.redirectURL = \"https://${DOMAIN}/c2c/connector/api/v1/oauthCallback\" |
+  .apis.http.authorization.http.tls.useSystemCAPool = true |
+  .clients.identityStore.grpc.address = \"${IDENTITY_STORE_ADDRESS}\" |
+  .clients.eventBus.nats.url = \"${NATS_URL}\" |
+  .clients.grpcGateway.grpc.address = \"${GRPC_GATEWAY_ADDRESS}\" |
+  .clients.resourceAggregate.grpc.address = \"${RESOURCE_AGGREGATE_ADDRESS}\" |
+  .clients.storage.mongoDB.uri = \"${MONGODB_URI}\"
+" - > /data/cloud2cloud-connector.yaml
+
+echo "starting cloud2cloud-connector"
+cloud2cloud-connector --config=/data/cloud2cloud-connector.yaml >$LOGS_PATH/cloud2cloud-connector.log 2>&1 &
+status=$?
+cloud2cloud_connector_pid=$!
+if [ $status -ne 0 ]; then
+  echo "Failed to start cloud2cloud-connector: $status"
+  sync
+  cat $LOGS_PATH/cloud2cloud-connector.log
+  exit $status
+fi
+
+# waiting for cloud2cloud-connector. Without wait, sometimes auth service didn't connect.
+i=0
+while true; do
+  i=$((i+1))
+  if openssl s_client -connect ${CLOUD2CLOUD_CONNECTOR_ADDRESS} -cert ${INTERNAL_CERT_DIR_PATH}/${DIAL_FILE_CERT_NAME} -key ${INTERNAL_CERT_DIR_PATH}/${DIAL_FILE_CERT_KEY_NAME} <<< "Q" 2>/dev/null > /dev/null; then
+    break
+  fi
+  echo "Try to reconnect to cloud2cloud-connector(${CLOUD2CLOUD_CONNECTOR_ADDRESS}) $i"
+  sleep 1
+done
+
 
 
 echo "Open browser at https://${DOMAIN}"
@@ -899,6 +967,13 @@ while sleep 10; do
     echo "cloud2cloud-gateway has already exited."
     sync
     cat $LOGS_PATH/cloud2cloud-gateway.log
+   exit 1
+  fi
+  ps aux |grep $cloud2cloud_connector_pid |grep -q -v grep
+  if [ $? -ne 0 ]; then
+    echo "cloud2cloud_connector has already exited."
+    sync
+    cat $LOGS_PATH/cloud2cloud_connector.log
    exit 1
   fi
 done
