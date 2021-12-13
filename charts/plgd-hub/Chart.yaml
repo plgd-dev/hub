@@ -11,7 +11,7 @@ appVersion: vnext
 
 dependencies:
   - name: "nats"
-    version: "0.8.2"
+    version: "0.10.0"
     repository: "https://nats-io.github.io/k8s/helm/charts/"
     condition: nats.enabled
   - name: "mongodb"
