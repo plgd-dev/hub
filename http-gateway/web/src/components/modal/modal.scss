@@ -1,3 +1,4 @@
+@use 'sass:math';
 @import '@/common/styles/colors.scss';
 @import '@/common/styles/sizes.scss';
 
@@ -22,10 +23,10 @@ $padding: 25px;
 .modal-dialog {
   width: 600px;
   max-width: 600px;
-  left: $left_panel_expanded / 2;
+  left: math.div($left_panel_expanded, 2);
 
   &.collapsed {
-    left: $left_panel_collapsed / 2;
+    left: math.div($left_panel_collapsed, 2);
   }
 
   .modal-content {

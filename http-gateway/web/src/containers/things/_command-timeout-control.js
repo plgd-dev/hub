@@ -136,7 +136,8 @@ export const CommanTimeoutControl = ({
           styles={{
             control: ({ ...css }) => ({
               ...css,
-              minWidth: '90px !important',
+              width: '100px',
+              minWidth: '100px !important',
               borderTopLeftRadius: '0 !important',
               borderBottomLeftRadius: '0 !important',
             }),
