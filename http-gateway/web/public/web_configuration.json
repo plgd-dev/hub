@@ -1,15 +1,15 @@
 {
-  "authority": "https://auth.plgd.cloud",
-  "httpGatewayAddress": "https://api.try.plgd.cloud",
+  "domain": "",
+  "httpGatewayAddress": "",
   "webOAuthClient": {
-    "clientID": "LXZ9OhKWWRYqf12W0B5OXduqt02q0zjS",
-    "audience": "https://try.plgd.cloud",
+    "clientID": "",
+    "audience": "",
     "scopes": []
   },
   "deviceOAuthClient": {
-    "clientID": "cYN3p6lwNcNlOvvUhz55KvDZLQbJeDr5",
-    "audience": "https://try.plgd.cloud",
-    "scopes": ["offline_access"],
-    "providerName": "plgd"
+    "clientID": "",
+    "audience": "",
+    "scopes": [],
+    "providerName": ""
   }
 }
