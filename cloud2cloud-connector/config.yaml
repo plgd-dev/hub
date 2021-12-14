@@ -67,7 +67,7 @@ clients:
         keyFile: "/secrets/private/cert.key"
         certFile: "/secrets/public/cert.crt"
         useSystemCAPool: false
-  resourceDirectory:
+  resourceAggregate:
     grpc:
       address: ""
       keepAlive:
@@ -96,4 +96,4 @@ taskProcessor:
   cacheSize: 2048
   timeout: "5s"
   maxParallel: 128
-  delay: ""
+  delay: "0s"

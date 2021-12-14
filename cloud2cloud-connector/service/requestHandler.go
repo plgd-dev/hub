@@ -89,26 +89,22 @@ func NewHTTP(requestHandler *RequestHandler, authInterceptor kitNetHttp.Intercep
 	}))
 
 	// health check
-	r.HandleFunc("/", healthCheck).Methods("GET")
+	r.HandleFunc("/", healthCheck).Methods(http.MethodGet)
 
 	// retrieve all linked clouds
-	r.HandleFunc(uri.LinkedClouds, requestHandler.RetrieveLinkedClouds).Methods("GET")
+	r.HandleFunc(uri.LinkedClouds, requestHandler.RetrieveLinkedClouds).Methods(http.MethodGet)
 	// add linked cloud
-	r.HandleFunc(uri.LinkedClouds, requestHandler.AddLinkedCloud).Methods("POST")
+	r.HandleFunc(uri.LinkedClouds, requestHandler.AddLinkedCloud).Methods(http.MethodPost)
 	// delete linked cloud
-	r.HandleFunc(uri.LinkedCloud, requestHandler.DeleteLinkedCloud).Methods("DELETE")
+	r.HandleFunc(uri.LinkedCloud, requestHandler.DeleteLinkedCloud).Methods(http.MethodDelete)
 	// add linked account
-	r.HandleFunc(uri.LinkedAccounts, requestHandler.AddLinkedAccount).Methods("GET")
+	r.HandleFunc(uri.LinkedAccounts, requestHandler.AddLinkedAccount).Methods(http.MethodGet)
 	// delete linked cloud
-	r.HandleFunc(uri.LinkedAccount, requestHandler.DeleteLinkedAccount).Methods("DELETE")
+	r.HandleFunc(uri.LinkedAccount, requestHandler.DeleteLinkedAccount).Methods(http.MethodDelete)
 	// notify linked cloud
-	r.HandleFunc(uri.Events, requestHandler.ProcessEvent).Methods("POST")
+	r.HandleFunc(uri.Events, requestHandler.ProcessEvent).Methods(http.MethodPost)
 
-	oauthURL, err := parseOAuthPaths(requestHandler.provider.Config.RedirectURL)
-	if err != nil {
-		return nil, err
-	}
-	r.HandleFunc(oauthURL.Path, requestHandler.OAuthCallback).Methods("GET")
+	r.HandleFunc(uri.OAuthCallback, requestHandler.OAuthCallback).Methods(http.MethodGet, http.MethodPost)
 
 	return &http.Server{Handler: r}, nil
 }
