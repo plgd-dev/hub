@@ -95,7 +95,7 @@ paths:
       security:
       - c2c_connector_auth:
         - empty
-  /{oauthCallback}:
+  /api/v1/oauthCallback:
     get:
       tags:
         - Accounts
