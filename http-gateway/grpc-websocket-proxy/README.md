@@ -9,7 +9,7 @@ On the wire this uses newline-delimited json encoding of the messages.
 Usage:
 ```diff
 	mux := runtime.NewServeMux()
-	opts := []grpc.DialOption{grpc.WithInsecure()}
+	opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
 	if err := echoserver.RegisterEchoServiceHandlerFromEndpoint(ctx, mux, *grpcAddr, opts); err != nil {
 		return err
 	}
