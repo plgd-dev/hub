@@ -80,7 +80,7 @@ func TestRequestHandlerGetEventsStateSnapshot(t *testing.T) {
 		require.NoError(t, err)
 	}
 	require.NoError(t, err)
-	time.Sleep(time.Millisecond * 200)
+	time.Sleep(time.Second)
 
 	client, err := c.GetEvents(ctx, &pb.GetEventsRequest{
 		DeviceIdFilter:  []string{deviceID},
