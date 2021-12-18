@@ -117,7 +117,7 @@ certificate-generator --cmd.generateCertificate --outCert=$EXTERNAL_CERT_DIR_PAT
 
 echo "ROOT_CERT_PATH=${ROOT_CERT_PATH} CA_POOL=${CA_POOL}"
 cat ${ROOT_CERT_PATH} > ${CA_POOL}
-if [ -f ${CA_POOL_CUSTOM_PATH} ]; then 
+if [ -f ${CA_POOL_CUSTOM_PATH} ]; then
 echo "CA_POOL_CUSTOM_PATH=${CA_POOL_CUSTOM_PATH} CA_POOL=${CA_POOL}"
   cat ${CA_POOL_CUSTOM_PATH} >> ${CA_POOL}
 fi
@@ -556,7 +556,7 @@ cat /configs/resource-directory.yaml | yq e "\
   .clients.eventBus.nats.url = \"${NATS_URL}\" |
   .clients.identityStore.grpc.address = \"${IDENTITY_STORE_ADDRESS}\" |
   .publicConfiguration.authorizationServer = \"https://${OAUTH_ENDPOINT}\" |
-  .publicConfiguration.hubId = \"${COAP_GATEWAY_HUB_ID}\" |
+  .publicConfiguration.hubID = \"${COAP_GATEWAY_HUB_ID}\" |
   .publicConfiguration.coapGateway = \"coaps+tcp://${COAP_GATEWAY_FQDN}:${COAP_GATEWAY_PORT}\" |
   .publicConfiguration.ownerClaim = \"${OWNER_CLAIM}\"
 " - > /data/resource-directory.yaml
@@ -754,7 +754,7 @@ cat /configs/certificate-authority.yaml | yq e "\
   .apis.grpc.authorization.http.tls.useSystemCAPool = true |
   .apis.grpc.authorization.authority = \"https://${OAUTH_ENDPOINT}\" |
   .apis.grpc.authorization.ownerClaim = \"${OWNER_CLAIM}\" |
-  .signer.hubId = \"${COAP_GATEWAY_HUB_ID}\" |
+  .signer.hubID = \"${COAP_GATEWAY_HUB_ID}\" |
   .signer.keyFile = \"${ROOT_KEY_PATH}\" |
   .signer.certFile = \"${ROOT_CERT_PATH}\"
 " - > /data/certificate-authority.yaml

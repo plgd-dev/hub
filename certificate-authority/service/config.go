@@ -43,7 +43,7 @@ type SignerConfig struct {
 	CertFile  string        `yaml:"certFile" json:"certFile" description:"file name of CA certificate in PEM format"`
 	ValidFrom string        `yaml:"validFrom" json:"validFrom" description:"format https://github.com/karrick/tparse"`
 	ExpiresIn time.Duration `yaml:"expiresIn" json:"expiresIn"`
-	HubID     string        `yaml:"hubId" json:"hubId"`
+	HubID     string        `yaml:"hubID" json:"hubId"`
 }
 
 func (c *SignerConfig) Validate() error {
@@ -61,7 +61,7 @@ func (c *SignerConfig) Validate() error {
 		return fmt.Errorf("validFrom('%v')", c.ValidFrom)
 	}
 	if c.HubID == "" {
-		return fmt.Errorf("hubId('%v')", c.HubID)
+		return fmt.Errorf("hubID('%v')", c.HubID)
 	}
 	return nil
 }

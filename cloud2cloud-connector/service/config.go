@@ -46,7 +46,7 @@ func (c *APIsConfig) Validate() error {
 }
 
 type HTTPConfig struct {
-	EventsURL     string              `yaml:"eventsURL" json:"eventsURL"`
+	EventsURL     string              `yaml:"eventsURL" json:"eventsUrl"`
 	PullDevices   PullDevicesConfig   `yaml:"pullDevices" json:"pullDevices"`
 	Connection    listener.Config     `yaml:",inline" json:",inline"`
 	Authorization AuthorizationConfig `yaml:"authorization" json:"authorization"`
@@ -168,7 +168,7 @@ func (c *ResourceAggregateConfig) Validate() error {
 }
 
 type StorageConfig struct {
-	MongoDB mongodb.Config `yaml:"mongoDB" json:"mongoDB"`
+	MongoDB mongodb.Config `yaml:"mongoDB" json:"mongoDb"`
 }
 
 func (c *StorageConfig) Validate() error {
