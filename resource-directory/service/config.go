@@ -119,7 +119,7 @@ type PublicConfiguration struct {
 	CAPool                   string        `yaml:"caPool" json:"caPool" description:"file path to the root certificate in PEM format"`
 	OwnerClaim               string        `yaml:"ownerClaim" json:"ownerClaim"`
 	DeviceIDClaim            string        `yaml:"deviceIdClaim" json:"deviceIdClaim"`
-	HubID                    string        `yaml:"hubId" json:"hubId"`
+	HubID                    string        `yaml:"hubID" json:"hubId"`
 	CoapGateway              string        `yaml:"coapGateway" json:"coapGateway"`
 	DefaultCommandTimeToLive time.Duration `yaml:"defaultCommandTimeToLive" json:"defaultCommandTimeToLive"`
 	AuthorizationServer      string        `yaml:"authorizationServer" json:"authorizationServer"`
@@ -135,7 +135,7 @@ func (c *PublicConfiguration) Validate() error {
 		return fmt.Errorf("ownerClaim('%v')", c.OwnerClaim)
 	}
 	if c.HubID == "" {
-		return fmt.Errorf("hubId('%v')", c.HubID)
+		return fmt.Errorf("hubID('%v')", c.HubID)
 	}
 	if c.CoapGateway == "" {
 		return fmt.Errorf("coapGateway('%v')", c.CoapGateway)

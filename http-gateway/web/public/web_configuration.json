@@ -1,13 +1,13 @@
 {
   "domain": "",
   "httpGatewayAddress": "",
-  "webOAuthClient": {
-    "clientID": "",
+  "webOauthClient": {
+    "clientId": "",
     "audience": "",
     "scopes": []
   },
-  "deviceOAuthClient": {
-    "clientID": "",
+  "deviceOauthClient": {
+    "clientId": "",
     "audience": "",
     "scopes": [],
     "providerName": ""
