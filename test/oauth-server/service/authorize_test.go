@@ -44,13 +44,13 @@ func getAuthorize(t *testing.T, clientID, nonce, redirectURI, deviceID, scope, r
 		q.Add(uri.NonceKey, nonce)
 	}
 	if deviceID != "" {
-		q.Add(uri.DeviceId, deviceID)
+		q.Add(uri.DeviceIDKey, deviceID)
 	}
 	if scope != "" {
 		q.Add(uri.ScopeKey, scope)
 	}
 	if responseType != "" {
-		q.Add(uri.ResponseType, responseType)
+		q.Add(uri.ResponseTypeKey, responseType)
 	}
 
 	u.RawQuery = q.Encode()

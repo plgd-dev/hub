@@ -193,11 +193,11 @@ func HTTPDo(t *testing.T, req *http.Request, followRedirect bool) *http.Response
 	return resp
 }
 
-func GetAccessToken(t *testing.T, authServerHost, clientId string) string {
-	code := GetAuthorizationCode(t, authServerHost, clientId, "", "r:* w:*")
+func GetAccessToken(t *testing.T, authServerHost, clientID string) string {
+	code := GetAuthorizationCode(t, authServerHost, clientID, "", "r:* w:*")
 	reqBody := map[string]string{
 		uri.GrantTypeKey: string(service.AllowedGrantType_AUTHORIZATION_CODE),
-		uri.ClientIDKey:  clientId,
+		uri.ClientIDKey:  clientID,
 		uri.CodeKey:      code,
 	}
 	d, err := json.Encode(reqBody)
@@ -221,14 +221,14 @@ func GetDefaultAccessToken(t *testing.T) string {
 	return GetAccessToken(t, config.OAUTH_SERVER_HOST, ClientTest)
 }
 
-func GetAuthorizationCode(t *testing.T, authServerHost, clientId, deviceID, scopes string) string {
+func GetAuthorizationCode(t *testing.T, authServerHost, clientID, deviceID, scopes string) string {
 	u, err := url.Parse(uri.Authorize)
 	require.NoError(t, err)
 	q, err := url.ParseQuery(u.RawQuery)
 	require.NoError(t, err)
-	q.Add(uri.ClientIDKey, clientId)
+	q.Add(uri.ClientIDKey, clientID)
 	if deviceID != "" {
-		q.Add(uri.DeviceId, deviceID)
+		q.Add(uri.DeviceIDKey, deviceID)
 	}
 	if scopes != "" {
 		q.Add(uri.ScopeKey, scopes)

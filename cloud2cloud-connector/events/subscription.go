@@ -36,7 +36,7 @@ func (e EventTypes) Has(ev EventType) bool {
 }
 
 type SubscriptionRequest struct {
-	URL           string      `json:"eventsUrl"`
+	EventsURL     string      `json:"eventsUrl"`
 	EventTypes    []EventType `json:"eventTypes"`
 	SigningSecret string      `json:"signingSecret"`
 }

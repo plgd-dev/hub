@@ -26,7 +26,7 @@ func TestRequestHandlerCancelDeviceMetadataUpdate(t *testing.T) {
 
 	type args struct {
 		deviceID      string
-		correlationId string
+		correlationID string
 		accept        string
 	}
 	tests := []struct {
@@ -40,7 +40,7 @@ func TestRequestHandlerCancelDeviceMetadataUpdate(t *testing.T) {
 			name: "cancel one pending",
 			args: args{
 				deviceID:      devicePendings[0].DeviceID,
-				correlationId: devicePendings[0].CorrelationID,
+				correlationID: devicePendings[0].CorrelationID,
 				accept:        uri.ApplicationProtoJsonContentType,
 			},
 			want: &pb.CancelPendingCommandsResponse{
@@ -52,7 +52,7 @@ func TestRequestHandlerCancelDeviceMetadataUpdate(t *testing.T) {
 			name: "duplicate cancel event",
 			args: args{
 				deviceID:      devicePendings[0].DeviceID,
-				correlationId: devicePendings[0].CorrelationID,
+				correlationID: devicePendings[0].CorrelationID,
 				accept:        uri.ApplicationProtoJsonContentType,
 			},
 			wantErr:      true,
@@ -63,7 +63,7 @@ func TestRequestHandlerCancelDeviceMetadataUpdate(t *testing.T) {
 	token := oauthTest.GetDefaultAccessToken(t)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			rb := httpgwTest.NewRequest(http.MethodDelete, uri.AliasDevicePendingMetadataUpdates+"/"+tt.args.correlationId, nil).AuthToken(token).Accept(tt.args.accept)
+			rb := httpgwTest.NewRequest(http.MethodDelete, uri.AliasDevicePendingMetadataUpdates+"/"+tt.args.correlationID, nil).AuthToken(token).Accept(tt.args.accept)
 			rb.DeviceId(tt.args.deviceID)
 			v, code, err := doPendingCommand(t, rb.Build())
 			assert.Equal(t, tt.wantHTTPCode, code)

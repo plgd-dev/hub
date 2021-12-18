@@ -65,7 +65,7 @@ func (c *EventBusConfig) Validate() error {
 }
 
 type StorageConfig struct {
-	MongoDB mongodb.Config `yaml:"mongoDB" json:"mongoDB"`
+	MongoDB mongodb.Config `yaml:"mongoDB" json:"mongoDb"`
 }
 
 func (c *StorageConfig) Validate() error {

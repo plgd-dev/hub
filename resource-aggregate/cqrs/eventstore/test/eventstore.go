@@ -48,8 +48,8 @@ func (s *MockEventStore) LoadUpToVersion(ctx context.Context, queries []eventsto
 	return errors.New("not supported")
 }
 
-func makeModelId(groupId, aggregateId string) string {
-	return groupId + "." + aggregateId
+func makeModelId(groupID, aggregateID string) string {
+	return groupID + "." + aggregateID
 }
 
 func (s *MockEventStore) allModels(queriesInt map[string]eventstore.VersionQuery) map[string]eventstore.VersionQuery {
@@ -137,27 +137,20 @@ func (i *iter) Err() error {
 	return nil
 }
 
-func (s *MockEventStore) GetInstanceId(ctx context.Context, groupId, aggregateId string) (int64, error) {
-	return -1, errors.New("not supported")
-}
-func (s *MockEventStore) RemoveInstanceId(ctx context.Context, instanceId int64) error {
-	return errors.New("not supported")
-}
-
 func NewMockEventStore() *MockEventStore {
 	return &MockEventStore{make(map[string]map[string][]eventstore.EventUnmarshaler)}
 }
 
-func (e *MockEventStore) Append(groupId, aggregateId string, ev eventstore.EventUnmarshaler) {
+func (e *MockEventStore) Append(groupID, aggregateID string, ev eventstore.EventUnmarshaler) {
 	var m map[string][]eventstore.EventUnmarshaler
 	var ok bool
-	if m, ok = e.events[groupId]; !ok {
+	if m, ok = e.events[groupID]; !ok {
 		m = make(map[string][]eventstore.EventUnmarshaler)
-		e.events[groupId] = m
+		e.events[groupID] = m
 	}
 	var r []eventstore.EventUnmarshaler
-	if r, ok = m[aggregateId]; !ok {
+	if r, ok = m[aggregateID]; !ok {
 		r = make([]eventstore.EventUnmarshaler, 0, 10)
 	}
-	m[aggregateId] = append(r, ev)
+	m[aggregateID] = append(r, ev)
 }

@@ -73,7 +73,7 @@ func TestRequestHandlerGetEvents(t *testing.T) {
 
 	type args struct {
 		accept    string
-		deviceId  string
+		deviceID  string
 		href      string
 		timestamp time.Time
 	}
@@ -113,7 +113,7 @@ func TestRequestHandlerGetEvents(t *testing.T) {
 			name: "Device filter (Invalid device)",
 			args: args{
 				accept:   uri.ApplicationProtoJsonContentType,
-				deviceId: "test",
+				deviceID: "test",
 			},
 			wantErr:      true,
 			wantHTTPCode: http.StatusInternalServerError,
@@ -122,7 +122,7 @@ func TestRequestHandlerGetEvents(t *testing.T) {
 			name: "Device filter (All devices)",
 			args: args{
 				accept:    uri.ApplicationProtoJsonContentType,
-				deviceId:  deviceID,
+				deviceID:  deviceID,
 				timestamp: beforeOnBoard,
 			},
 			wantLen:      len(allEvents),
@@ -132,7 +132,7 @@ func TestRequestHandlerGetEvents(t *testing.T) {
 			name: "Resource filter (Invalid href)",
 			args: args{
 				accept:   uri.ApplicationProtoJsonContentType,
-				deviceId: deviceID,
+				deviceID: deviceID,
 				href:     "test",
 			},
 			wantErr:      true,
@@ -142,7 +142,7 @@ func TestRequestHandlerGetEvents(t *testing.T) {
 			name: "Resource filter (First resource)",
 			args: args{
 				accept:   uri.ApplicationProtoJsonContentType,
-				deviceId: deviceID,
+				deviceID: deviceID,
 				href:     test.GetAllBackendResourceLinks()[0].Href,
 			},
 			wantLen:      1,
@@ -162,8 +162,8 @@ func TestRequestHandlerGetEvents(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			rb := httpgwTest.NewRequest(http.MethodGet, getURL(tt.args.deviceId, tt.args.href), nil).AuthToken(token).Accept(tt.args.accept)
-			rb.DeviceId(tt.args.deviceId).ResourceHref(tt.args.href).Timestamp(tt.args.timestamp)
+			rb := httpgwTest.NewRequest(http.MethodGet, getURL(tt.args.deviceID, tt.args.href), nil).AuthToken(token).Accept(tt.args.accept)
+			rb.DeviceId(tt.args.deviceID).ResourceHref(tt.args.href).Timestamp(tt.args.timestamp)
 			resp := httpgwTest.HTTPDo(t, rb.Build())
 			defer func() {
 				_ = resp.Body.Close()

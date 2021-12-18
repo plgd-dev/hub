@@ -461,17 +461,17 @@ func NewMockEventHandler() *MockEventHandler {
 	return &MockEventHandler{events: make(map[string]map[string][]eventstore.Event)}
 }
 
-func (eh *MockEventHandler) SetElement(groupId, aggregateId string, e MockEvent) {
+func (eh *MockEventHandler) SetElement(groupID, aggregateID string, e MockEvent) {
 	var device map[string][]eventstore.Event
 	var ok bool
 
 	eh.lock.Lock()
 	defer eh.lock.Unlock()
-	if device, ok = eh.events[groupId]; !ok {
+	if device, ok = eh.events[groupID]; !ok {
 		device = make(map[string][]eventstore.Event)
-		eh.events[groupId] = device
+		eh.events[groupID] = device
 	}
-	device[aggregateId] = append(device[aggregateId], e)
+	device[aggregateID] = append(device[aggregateID], e)
 }
 
 func (eh *MockEventHandler) Contains(event eventstore.Event) bool {

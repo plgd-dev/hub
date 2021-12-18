@@ -20,14 +20,14 @@ func (requestHandler *RequestHandler) CancelPendingCommands(w http.ResponseWrite
 	type Options struct {
 		DeviceID      string   `url:"resourceId.deviceId"`
 		Href          string   `url:"resourceId.href"`
-		CorrelationId []string `url:"correlationIdFilter,omitempty"`
+		correlationID []string `url:"correlationIdFilter,omitempty"`
 	}
 	opt := Options{
 		DeviceID: deviceID,
 		Href:     href,
 	}
 	if correlationID != "" {
-		opt.CorrelationId = append(opt.CorrelationId, correlationID)
+		opt.correlationID = append(opt.correlationID, correlationID)
 	}
 	q, err := query.Values(opt)
 	if err != nil {

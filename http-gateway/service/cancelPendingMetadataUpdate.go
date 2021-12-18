@@ -20,10 +20,10 @@ func (requestHandler *RequestHandler) cancelPendingMetadataUpdate(w http.Respons
 	}
 
 	type Options struct {
-		CorrelationId string `url:"correlationIdFilter"`
+		CorrelationID string `url:"correlationIdFilter"`
 	}
 	opt := Options{
-		CorrelationId: correlationID,
+		CorrelationID: correlationID,
 	}
 	q, err := query.Values(opt)
 	if err != nil {

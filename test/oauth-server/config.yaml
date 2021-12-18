@@ -32,4 +32,3 @@ oauthSigner:
         - "offline_access"
       requiredResponseType: "code"
       requiredRedirectURI: "https://localhost:8080/callback"
-      

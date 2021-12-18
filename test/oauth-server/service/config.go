@@ -34,9 +34,9 @@ type Client struct {
 	RefreshTokenRestrictionLifetime time.Duration `yaml:"refreshTokenRestrictionLifetime"`
 	ConsentScreenEnabled            bool          `yaml:"consentScreenEnabled"`
 	RequireIssuedAuthorizationCode  bool          `yaml:"requireIssuedAuthorizationCode"`
-	RequiredScope                  []string      `yaml:"requiredScope"`
-	RequiredResponseType           string        `yaml:"requiredResponseType"`
-	RequiredRedirectURI            string        `yaml:"requiredRedirectURI"`
+	RequiredScope                   []string      `yaml:"requiredScope"`
+	RequiredResponseType            string        `yaml:"requiredResponseType"`
+	RequiredRedirectURI             string        `yaml:"requiredRedirectURI"`
 }
 
 func (c *Client) Validate() error {

@@ -20,7 +20,7 @@ type Config struct {
 	KeyFile                   string `yaml:"keyFile" json:"keyFile" description:"file name of private key in PEM format"`
 	CertFile                  string `yaml:"certFile" json:"certFile" description:"file name of certificate in PEM format"`
 	ClientCertificateRequired bool   `yaml:"clientCertificateRequired" json:"clientCertificateRequired" description:"require client certificate"`
-	UseSystemCAPool           bool   `yaml:"useSystemCAPool" json:"useSystemCAPool" description:"use system certification pool"`
+	UseSystemCAPool           bool   `yaml:"useSystemCAPool" json:"useSystemCaPool" description:"use system certification pool"`
 }
 
 func (c Config) Validate() error {

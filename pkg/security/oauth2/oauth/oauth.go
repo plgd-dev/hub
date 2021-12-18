@@ -12,16 +12,16 @@ const (
 	// AuthStyleAutoDetect means to auto-detect which authentication
 	// style the provider wants by trying both ways and caching
 	// the successful way for the future.
-	AuthStyleAutoDetect AuthStyle = "AutoDetect"
+	AuthStyleAutoDetect AuthStyle = "autoDetect"
 
 	// AuthStyleInParams sends the "client_id" and "client_secret"
 	// in the POST body as application/x-www-form-urlencoded parameters.
-	AuthStyleInParams AuthStyle = "InParams"
+	AuthStyleInParams AuthStyle = "inParams"
 
 	// AuthStyleInHeader sends the client_id and client_password
 	// using HTTP Basic Authorization. This is an optional style
 	// described in the OAuth2 RFC 6749 section 2.3.1.
-	AuthStyleInHeader AuthStyle = "InHeader"
+	AuthStyleInHeader AuthStyle = "inHeader"
 )
 
 func (a AuthStyle) ToOAuth2() oauth2.AuthStyle {
@@ -36,14 +36,14 @@ func (a AuthStyle) ToOAuth2() oauth2.AuthStyle {
 
 //TODO cleanup settings AccessType, ResponseType, ResponseMode, AuthStyle - be careful it is used by c2c.
 type Config struct {
-	ClientID         string    `yaml:"clientID" json:"clientID"`
+	ClientID         string    `yaml:"clientID" json:"clientId"`
 	ClientSecretFile string    `yaml:"clientSecretFile" json:"clientSecretFile"`
 	Scopes           []string  `yaml:"scopes" json:"scopes"`
-	AuthURL          string    `yaml:"-" json:"authURL"`
-	TokenURL         string    `yaml:"-" json:"tokenURL"`
+	AuthURL          string    `yaml:"-" json:"authUrl"`
+	TokenURL         string    `yaml:"-" json:"tokenUrl"`
 	AuthStyle        AuthStyle `yaml:"authStyle" json:"authStyle"`
 	Audience         string    `yaml:"audience" json:"audience"`
-	RedirectURL      string    `yaml:"redirectURL" json:"redirectURL"`
+	RedirectURL      string    `yaml:"redirectURL" json:"redirectUrl"`
 	AccessType       string    `yaml:"accessType" json:"accessType"`
 	ResponseType     string    `yaml:"responseType" json:"responseType"`
 	ResponseMode     string    `yaml:"responseMode" json:"responseMode"`

@@ -15,9 +15,9 @@ const (
 	AudienceKey     = "audience"
 	RefreshTokenKey = "refresh_token"
 	ErrorMessageKey = "error"
-	DeviceId        = "deviceId"
-	ResponseMode    = "response_mode"
-	ResponseType    = "response_type"
+	DeviceIDKey     = "deviceId"
+	ResponseModeKey = "response_mode"
+	ResponseTypeKey = "response_type"
 
 	Token               = "/oauth/token"
 	Authorize           = "/authorize"

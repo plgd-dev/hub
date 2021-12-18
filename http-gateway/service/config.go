@@ -99,9 +99,9 @@ func (c *ClientsConfig) Validate() error {
 }
 
 type BasicOAuthClient struct {
-	ClientID string   `json:"clientID" yaml:"clientID"`
-	Audience string   `json:"audience" yaml:"audience"`
-	Scopes   []string `json:"scopes" yaml:"scopes"`
+	ClientID string   `yaml:"clientID" json:"clientId"`
+	Audience string   `yaml:"audience" json:"audience"`
+	Scopes   []string `yaml:"scopes" json:"scopes"`
 }
 
 func (c *BasicOAuthClient) Validate() error {
@@ -125,10 +125,10 @@ func (c *DeviceOAuthClient) Validate() error {
 
 // WebConfiguration represents web configuration for user interface exposed via getOAuthConfiguration handler
 type WebConfiguration struct {
-	Authority          string            `json:"authority" yaml:"authority"`
-	HTTPGatewayAddress string            `json:"httpGatewayAddress" yaml:"httpGatewayAddress"`
-	WebOAuthClient     BasicOAuthClient  `json:"webOAuthClient" yaml:"webOAuthClient"`
-	DeviceOAuthClient  DeviceOAuthClient `json:"deviceOAuthClient" yaml:"deviceOAuthClient"`
+	Authority          string            `yaml:"authority" json:"authority"`
+	HTTPGatewayAddress string            `yaml:"httpGatewayAddress" json:"httpGatewayAddress"`
+	WebOAuthClient     BasicOAuthClient  `yaml:"webOAuthClient" json:"webOauthClient"`
+	DeviceOAuthClient  DeviceOAuthClient `yaml:"deviceOAuthClient" json:"deviceOauthClient"`
 }
 
 func (c *WebConfiguration) Validate() error {

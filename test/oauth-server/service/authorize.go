@@ -37,12 +37,12 @@ func (requestHandler *RequestHandler) authorize(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	responseType := r.URL.Query().Get(uri.ResponseType)
-	responseMode := r.URL.Query().Get(uri.ResponseMode)
+	responseType := r.URL.Query().Get(uri.ResponseTypeKey)
+	responseMode := r.URL.Query().Get(uri.ResponseModeKey)
 	state := r.URL.Query().Get(uri.StateKey)
 	nonce := r.URL.Query().Get(uri.NonceKey)
 	audience := r.URL.Query().Get(uri.AudienceKey)
-	deviceId := r.URL.Query().Get(uri.DeviceId)
+	deviceId := r.URL.Query().Get(uri.DeviceIDKey)
 	code := hex.EncodeToString(b)
 	scope := DefaultScope
 	redirectURI := r.URL.Query().Get(uri.RedirectURIKey)
@@ -188,14 +188,14 @@ func writeConsentScreen(w http.ResponseWriter, redirectURI, scope, state, code s
 				</br></br></br>
 				<p>Hello! The OAuth Client is requesting access to scope: <b>'` + scope + `'</b></p>
 				<form action="` + redirectURI + `">
-					<input type="hidden" name="state" value="` + string(state) + `" /> 
-					<input type="hidden" name="code" value="` + code + `" /> 
+					<input type="hidden" name="state" value="` + string(state) + `" />
+					<input type="hidden" name="code" value="` + code + `" />
 					<input style="background-color: lime; font-size: 16px" type="submit" value="ACCEPT" />
 				</form>
 				</br>
 				<form action="` + redirectURI + `">
-					<input type="hidden" name="state" value="` + string(state) + `" /> 
-					<input type="hidden" name="error" value="access_denied" /> 
+					<input type="hidden" name="state" value="` + string(state) + `" />
+					<input type="hidden" name="error" value="access_denied" />
 					<input style="background-color: tomato; font-size: 16px" type="submit" value="DECLINE" />
 				</form>
 			</center>
