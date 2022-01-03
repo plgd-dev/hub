@@ -25,7 +25,7 @@ data:
         maxMessageSize: {{ .apis.coap.maxMessageSize }}
         ownerCacheExpiration: {{ .apis.coap.ownerCacheExpiration }}
         subscriptionBufferSize:  {{ .apis.coap.subscriptionBufferSize }}
-        messagePoolSize: {{ .apis.coap.messagePoolSize | quote }}
+        messagePoolSize: {{ .apis.coap.messagePoolSize }}
         keepAlive:
           timeout: {{ .apis.coap.keepAlive.timeout }}
         blockwiseTransfer:
