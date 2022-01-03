@@ -45,10 +45,10 @@ const App = ({ config }) => {
   security.setAccessTokenSilently(getAccessTokenSilently)
 
   // Set the auth configurations
-  const { webOAuthClient, deviceOAuthClient, ...generalConfig } = config
+  const { webOauthClient, deviceOauthClient, ...generalConfig } = config
   security.setGeneralConfig(generalConfig)
-  security.setWebOAuthConfig(webOAuthClient)
-  security.setDeviceOAuthConfig(deviceOAuthClient)
+  security.setWebOAuthConfig(webOauthClient)
+  security.setDeviceOAuthConfig(deviceOauthClient)
 
   useEffect(() => {
     if (

@@ -14,15 +14,15 @@ import reportWebVitals from './reportWebVitals'
 fetch('/web_configuration.json')
   .then(response => response.json())
   .then(config => {
-    const clientID = config?.webOAuthClient?.clientID
-    const audience = config?.webOAuthClient?.audience
-    const scopes = config?.webOAuthClient?.scopes?.join?.(',') || ''
+    const clientId = config?.webOauthClient?.clientId
+    const audience = config?.webOauthClient?.audience
+    const scopes = config?.webOauthClient?.scopes?.join?.(',') || ''
     const httpGatewayAddress = config.httpGatewayAddress
     const authority = config.authority
 
-    if (!clientID || !authority || !audience || !httpGatewayAddress) {
+    if (!clientId || !authority || !audience || !httpGatewayAddress) {
       throw new Error(
-        'clientID, authority, audience and httpGatewayAddress must be set in webOAuthClient of web_configuration.json'
+        'clientId, authority, audience and httpGatewayAddress must be set in webOauthClient of web_configuration.json'
       )
     }
 
@@ -47,7 +47,7 @@ fetch('/web_configuration.json')
           <IntlProvider>
             <Auth0Provider
               domain={authority}
-              clientId={clientID}
+              clientId={clientId}
               redirectUri={window.location.origin}
               onRedirectCallback={onRedirectCallback}
               audience={audience}
