@@ -133,19 +133,19 @@ export const updateThingShadowSynchronizationApi = (
 export const getDeviceAuthCode = deviceId => {
   return new Promise((resolve, reject) => {
     const { authority } = security.getGeneralConfig()
-    const { clientID, audience, scopes = [] } = security.getDeviceOAuthConfig()
+    const { clientId, audience, scopes = [] } = security.getDeviceOAuthConfig()
 
-    if (!clientID) {
+    if (!clientId) {
       return reject(
         new Error(
-          'clientID is missing from the deviceOAuthClient configuration'
+          'clientId is missing from the deviceOauthClient configuration'
         )
       )
     }
 
     let timeout = null
     const iframe = document.createElement('iframe')
-    iframe.src = `${authority}/authorize?response_type=code&client_id=${clientID}&scope=${scopes}&audience=${
+    iframe.src = `${authority}/authorize?response_type=code&client_id=${clientId}&scope=${scopes}&audience=${
       audience || ''
     }&redirect_uri=${window.location.origin}/things&device_id=${deviceId}`
 

@@ -135,7 +135,7 @@ class _ProvisionNewDevice extends PureComponent {
       id: hubId,
       certificateAuthorities,
     } = this.context?.wellKnownConfig || {}
-    const providerName = this.context?.deviceOAuthClient?.providerName
+    const providerName = this.context?.deviceOauthClient?.providerName
 
     return (
       <>
@@ -192,9 +192,9 @@ class _ProvisionNewDevice extends PureComponent {
     const {
       intl: { formatMessage: _ },
     } = this.props
-    const deviceOAuthClient = this.context?.deviceOAuthClient
+    const deviceOauthClient = this.context?.deviceOauthClient
 
-    if (!deviceOAuthClient?.providerName || !deviceOAuthClient?.clientID) {
+    if (!deviceOauthClient?.providerName || !deviceOauthClient?.clientId) {
       return null
     }
 
