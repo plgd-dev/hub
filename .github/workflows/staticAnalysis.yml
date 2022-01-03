@@ -49,3 +49,6 @@ jobs:
         run: |
           go get -u gitlab.com/opennota/check/cmd/aligncheck@latest
           aligncheck ./... || echo "aligncheck detected inefficiently packed structs"
+
+      - name: Check yaml field names format
+        run: tools/validate/validateYaml.py || echo "invalid yaml field name(s) detected"
