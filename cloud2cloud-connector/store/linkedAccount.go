@@ -74,7 +74,7 @@ func (d LinkedAccountData) Target() oauth2.Token {
 }
 
 type LinkedAccount struct {
-	ID            string `json:"Id" bson:"_id"`
+	ID            string `bson:"_id"`
 	LinkedCloudID string `bson:"linkedcloudid"`
 	UserID        string
 	Data          LinkedAccountData
