@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/plgd-dev/go-coap/v2/tcp"
-	"github.com/plgd-dev/hub/pkg/log"
+	"github.com/plgd-dev/hub/v2/pkg/log"
 )
 
 // Client a setup of connection

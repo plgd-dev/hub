@@ -3,10 +3,10 @@ package service
 import (
 	"fmt"
 
-	"github.com/plgd-dev/hub/pkg/config"
-	"github.com/plgd-dev/hub/pkg/log"
-	certManagerServer "github.com/plgd-dev/hub/pkg/security/certManager/server"
-	"github.com/plgd-dev/hub/pkg/sync/task/queue"
+	"github.com/plgd-dev/hub/v2/pkg/config"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	certManagerServer "github.com/plgd-dev/hub/v2/pkg/security/certManager/server"
+	"github.com/plgd-dev/hub/v2/pkg/sync/task/queue"
 )
 
 type Config struct {

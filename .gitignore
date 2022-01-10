@@ -7,6 +7,7 @@
 debug
 .tmp/
 authsvc.db
+v2/
 
 # Test binary, build with `go test -c`
 *.test

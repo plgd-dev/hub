@@ -4,7 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 
-	pkgMongo "github.com/plgd-dev/hub/pkg/mongodb"
+	pkgMongo "github.com/plgd-dev/hub/v2/pkg/mongodb"
 	"go.mongodb.org/mongo-driver/bson"
 )
 

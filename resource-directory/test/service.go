@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/plgd-dev/hub/pkg/log"
-	"github.com/plgd-dev/hub/resource-directory/service"
-	"github.com/plgd-dev/hub/test/config"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	"github.com/plgd-dev/hub/v2/resource-directory/service"
+	"github.com/plgd-dev/hub/v2/test/config"
 
 	"github.com/stretchr/testify/require"
 )

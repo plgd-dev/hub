@@ -5,11 +5,11 @@ import (
 	"time"
 
 	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
-	coapgwService "github.com/plgd-dev/hub/coap-gateway/service"
-	"github.com/plgd-dev/hub/coap-gateway/service/message"
-	"github.com/plgd-dev/hub/pkg/log"
-	coapgwTestService "github.com/plgd-dev/hub/test/coap-gateway/service"
-	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
+	coapgwService "github.com/plgd-dev/hub/v2/coap-gateway/service"
+	"github.com/plgd-dev/hub/v2/coap-gateway/service/message"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	coapgwTestService "github.com/plgd-dev/hub/v2/test/coap-gateway/service"
+	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 )
 
 // Default test observer handler

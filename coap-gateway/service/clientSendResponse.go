@@ -3,9 +3,9 @@ package service
 import (
 	"github.com/plgd-dev/go-coap/v2/message"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
-	coapgwMessage "github.com/plgd-dev/hub/coap-gateway/service/message"
-	"github.com/plgd-dev/hub/pkg/log"
-	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
+	coapgwMessage "github.com/plgd-dev/hub/v2/coap-gateway/service/message"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 )
 
 func (client *Client) sendResponse(code coapCodes.Code, token message.Token, contentFormat message.MediaType, payload []byte) {

@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/plgd-dev/device/schema"
-	pkgTime "github.com/plgd-dev/hub/pkg/time"
+	pkgTime "github.com/plgd-dev/hub/v2/pkg/time"
 )
 
 func (e *EndpointInformation) ToSchema() schema.Endpoint {

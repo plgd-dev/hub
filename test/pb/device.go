@@ -3,11 +3,11 @@ package pb
 import (
 	"testing"
 
-	pbGrpc "github.com/plgd-dev/hub/grpc-gateway/pb"
-	"github.com/plgd-dev/hub/resource-aggregate/commands"
-	"github.com/plgd-dev/hub/resource-aggregate/events"
-	"github.com/plgd-dev/hub/test"
-	oauthService "github.com/plgd-dev/hub/test/oauth-server/service"
+	pbGrpc "github.com/plgd-dev/hub/v2/grpc-gateway/pb"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
+	"github.com/plgd-dev/hub/v2/test"
+	oauthService "github.com/plgd-dev/hub/v2/test/oauth-server/service"
 	"github.com/stretchr/testify/require"
 )
 

@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package grpcgateway.pb;
 
-option go_package = "github.com/plgd-dev/hub/grpc-gateway/pb;pb";
+option go_package = "github.com/plgd-dev/hub/v2/grpc-gateway/pb;pb";
 
 message GetDevicesMetadataRequest{
     repeated string device_id_filter = 1;

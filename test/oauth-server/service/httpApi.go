@@ -15,8 +15,8 @@ import (
 	"github.com/lestrrat-go/jwx/jwk"
 	"github.com/plgd-dev/go-coap/v2/pkg/cache"
 	"github.com/plgd-dev/go-coap/v2/pkg/runner/periodic"
-	"github.com/plgd-dev/hub/pkg/log"
-	"github.com/plgd-dev/hub/test/oauth-server/uri"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	"github.com/plgd-dev/hub/v2/test/oauth-server/uri"
 
 	router "github.com/gorilla/mux"
 )

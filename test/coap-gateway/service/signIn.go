@@ -5,9 +5,9 @@ import (
 
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/mux"
-	"github.com/plgd-dev/hub/coap-gateway/coapconv"
-	coapgwService "github.com/plgd-dev/hub/coap-gateway/service"
-	"github.com/plgd-dev/hub/pkg/log"
+	"github.com/plgd-dev/hub/v2/coap-gateway/coapconv"
+	coapgwService "github.com/plgd-dev/hub/v2/coap-gateway/service"
+	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/kit/v2/codec/cbor"
 )
 

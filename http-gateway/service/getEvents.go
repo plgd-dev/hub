@@ -6,8 +6,8 @@ import (
 
 	"github.com/google/go-querystring/query"
 	"github.com/gorilla/mux"
-	"github.com/plgd-dev/hub/http-gateway/uri"
-	"github.com/plgd-dev/hub/resource-aggregate/commands"
+	"github.com/plgd-dev/hub/v2/http-gateway/uri"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )

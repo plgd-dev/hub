@@ -7,8 +7,8 @@ import (
 	gstrings "strings"
 
 	"github.com/golang-jwt/jwt/v4"
-	"github.com/plgd-dev/hub/pkg/strings"
-	pkgTime "github.com/plgd-dev/hub/pkg/time"
+	"github.com/plgd-dev/hub/v2/pkg/strings"
+	pkgTime "github.com/plgd-dev/hub/v2/pkg/time"
 )
 
 type Claims jwt.MapClaims

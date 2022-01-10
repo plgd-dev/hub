@@ -9,11 +9,11 @@ import (
 	"os"
 	"testing"
 
-	httpgwService "github.com/plgd-dev/hub/http-gateway/service"
-	httpgwTest "github.com/plgd-dev/hub/http-gateway/test"
-	"github.com/plgd-dev/hub/http-gateway/uri"
-	"github.com/plgd-dev/hub/test/config"
-	"github.com/plgd-dev/hub/test/service"
+	httpgwService "github.com/plgd-dev/hub/v2/http-gateway/service"
+	httpgwTest "github.com/plgd-dev/hub/v2/http-gateway/test"
+	"github.com/plgd-dev/hub/v2/http-gateway/uri"
+	"github.com/plgd-dev/hub/v2/test/config"
+	"github.com/plgd-dev/hub/v2/test/service"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

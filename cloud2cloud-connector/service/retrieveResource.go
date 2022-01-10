@@ -7,12 +7,12 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/plgd-dev/hub/cloud2cloud-connector/events"
-	"github.com/plgd-dev/hub/cloud2cloud-connector/store"
-	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
-	"github.com/plgd-dev/hub/resource-aggregate/commands"
-	raEvents "github.com/plgd-dev/hub/resource-aggregate/events"
-	raService "github.com/plgd-dev/hub/resource-aggregate/service"
+	"github.com/plgd-dev/hub/v2/cloud2cloud-connector/events"
+	"github.com/plgd-dev/hub/v2/cloud2cloud-connector/store"
+	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
+	raEvents "github.com/plgd-dev/hub/v2/resource-aggregate/events"
+	raService "github.com/plgd-dev/hub/v2/resource-aggregate/service"
 	"github.com/plgd-dev/kit/v2/log"
 )
 

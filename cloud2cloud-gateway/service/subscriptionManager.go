@@ -6,11 +6,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/plgd-dev/hub/cloud2cloud-connector/events"
-	"github.com/plgd-dev/hub/cloud2cloud-gateway/store"
-	"github.com/plgd-dev/hub/grpc-gateway/pb"
-	"github.com/plgd-dev/hub/pkg/log"
-	"github.com/plgd-dev/hub/pkg/net/grpc"
+	"github.com/plgd-dev/hub/v2/cloud2cloud-connector/events"
+	"github.com/plgd-dev/hub/v2/cloud2cloud-gateway/store"
+	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	"github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	kitSync "github.com/plgd-dev/kit/v2/sync"
 )
 

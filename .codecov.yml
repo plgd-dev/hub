@@ -1,6 +1,7 @@
 ignore:
   - "bundle"
   - "charts"
+  - "v2"
   - "http-gateway/grpc-websocket"
   - "http-gateway/web"
   - "**/main.go"

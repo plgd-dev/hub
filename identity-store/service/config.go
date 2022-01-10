@@ -3,10 +3,10 @@ package service
 import (
 	"fmt"
 
-	"github.com/plgd-dev/hub/pkg/log"
-	"github.com/plgd-dev/hub/pkg/mongodb"
-	"github.com/plgd-dev/hub/pkg/net/grpc/server"
-	natsClient "github.com/plgd-dev/hub/resource-aggregate/cqrs/eventbus/nats/client"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	"github.com/plgd-dev/hub/v2/pkg/mongodb"
+	"github.com/plgd-dev/hub/v2/pkg/net/grpc/server"
+	natsClient "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/client"
 	"github.com/plgd-dev/kit/v2/config"
 )
 

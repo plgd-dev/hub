@@ -4,7 +4,7 @@ package resourceaggregate.pb;
 
 import "github.com/plgd-dev/hub/resource-aggregate/pb/resources.proto";
 
-option go_package = "github.com/plgd-dev/hub/resource-aggregate/commands;commands";
+option go_package = "github.com/plgd-dev/hub/v2/resource-aggregate/commands;commands";
 
 message CommandMetadata {
     string connection_id = 1;

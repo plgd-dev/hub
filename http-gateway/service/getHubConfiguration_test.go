@@ -5,13 +5,13 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/plgd-dev/hub/grpc-gateway/pb"
-	httpgwTest "github.com/plgd-dev/hub/http-gateway/test"
-	"github.com/plgd-dev/hub/http-gateway/uri"
-	rdTest "github.com/plgd-dev/hub/resource-directory/test"
-	"github.com/plgd-dev/hub/test/config"
-	pbTest "github.com/plgd-dev/hub/test/pb"
-	"github.com/plgd-dev/hub/test/service"
+	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
+	httpgwTest "github.com/plgd-dev/hub/v2/http-gateway/test"
+	"github.com/plgd-dev/hub/v2/http-gateway/uri"
+	rdTest "github.com/plgd-dev/hub/v2/resource-directory/test"
+	"github.com/plgd-dev/hub/v2/test/config"
+	pbTest "github.com/plgd-dev/hub/v2/test/pb"
+	"github.com/plgd-dev/hub/v2/test/service"
 	"github.com/stretchr/testify/require"
 )
 

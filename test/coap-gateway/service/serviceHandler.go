@@ -2,7 +2,7 @@ package service
 
 import (
 	"github.com/plgd-dev/go-coap/v2/tcp"
-	coapgwService "github.com/plgd-dev/hub/coap-gateway/service"
+	coapgwService "github.com/plgd-dev/hub/v2/coap-gateway/service"
 )
 
 type ServiceHandlerConfig struct {

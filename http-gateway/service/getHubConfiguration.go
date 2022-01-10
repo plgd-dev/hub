@@ -8,9 +8,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/plgd-dev/hub/grpc-gateway/pb"
-	"github.com/plgd-dev/hub/http-gateway/uri"
-	"github.com/plgd-dev/hub/pkg/log"
+	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
+	"github.com/plgd-dev/hub/v2/http-gateway/uri"
+	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/kit/v2/codec/json"
 	"google.golang.org/protobuf/encoding/protojson"
 )

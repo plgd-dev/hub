@@ -9,11 +9,11 @@ import (
 	router "github.com/gorilla/mux"
 	"github.com/plgd-dev/go-coap/v2/pkg/cache"
 	"github.com/plgd-dev/go-coap/v2/pkg/runner/periodic"
-	"github.com/plgd-dev/hub/cloud2cloud-connector/events"
-	"github.com/plgd-dev/hub/cloud2cloud-connector/store"
-	"github.com/plgd-dev/hub/cloud2cloud-connector/uri"
-	kitNetHttp "github.com/plgd-dev/hub/pkg/net/http"
-	pkgOAuth2 "github.com/plgd-dev/hub/pkg/security/oauth2"
+	"github.com/plgd-dev/hub/v2/cloud2cloud-connector/events"
+	"github.com/plgd-dev/hub/v2/cloud2cloud-connector/store"
+	"github.com/plgd-dev/hub/v2/cloud2cloud-connector/uri"
+	kitNetHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
+	pkgOAuth2 "github.com/plgd-dev/hub/v2/pkg/security/oauth2"
 	"github.com/plgd-dev/kit/v2/log"
 )
 

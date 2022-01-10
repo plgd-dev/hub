@@ -5,12 +5,12 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/plgd-dev/hub/grpc-gateway/pb"
-	httpgwTest "github.com/plgd-dev/hub/http-gateway/test"
-	"github.com/plgd-dev/hub/http-gateway/uri"
-	"github.com/plgd-dev/hub/test/config"
-	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
-	pbTest "github.com/plgd-dev/hub/test/pb"
+	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
+	httpgwTest "github.com/plgd-dev/hub/v2/http-gateway/test"
+	"github.com/plgd-dev/hub/v2/http-gateway/uri"
+	"github.com/plgd-dev/hub/v2/test/config"
+	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
+	pbTest "github.com/plgd-dev/hub/v2/test/pb"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

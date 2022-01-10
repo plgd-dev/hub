@@ -1,4 +1,4 @@
-module github.com/plgd-dev/hub
+module github.com/plgd-dev/hub/v2
 
 go 1.17
 

@@ -3,8 +3,8 @@ package main
 import (
 	"os"
 
-	"github.com/plgd-dev/hub/pkg/log"
-	"github.com/plgd-dev/hub/resource-aggregate/maintenance"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/maintenance"
 )
 
 func main() {

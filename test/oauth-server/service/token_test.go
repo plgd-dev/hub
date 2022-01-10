@@ -8,11 +8,11 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/plgd-dev/hub/pkg/security/jwt"
-	"github.com/plgd-dev/hub/test/config"
-	"github.com/plgd-dev/hub/test/oauth-server/service"
-	"github.com/plgd-dev/hub/test/oauth-server/test"
-	"github.com/plgd-dev/hub/test/oauth-server/uri"
+	"github.com/plgd-dev/hub/v2/pkg/security/jwt"
+	"github.com/plgd-dev/hub/v2/test/config"
+	"github.com/plgd-dev/hub/v2/test/oauth-server/service"
+	"github.com/plgd-dev/hub/v2/test/oauth-server/test"
+	"github.com/plgd-dev/hub/v2/test/oauth-server/uri"
 	"github.com/plgd-dev/kit/v2/codec/json"
 	"github.com/stretchr/testify/require"
 )

@@ -5,7 +5,7 @@ package grpcgateway.pb;
 import "github.com/plgd-dev/hub/resource-aggregate/pb/commands.proto";
 import "github.com/plgd-dev/hub/resource-aggregate/pb/events.proto";
 
-option go_package = "github.com/plgd-dev/hub/grpc-gateway/pb;pb";
+option go_package = "github.com/plgd-dev/hub/v2/grpc-gateway/pb;pb";
 
 message GetDevicesRequest {
   enum Status {

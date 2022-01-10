@@ -7,9 +7,9 @@ import (
 	coapMessage "github.com/plgd-dev/go-coap/v2/message"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/mux"
-	"github.com/plgd-dev/hub/coap-gateway/coapconv"
-	"github.com/plgd-dev/hub/coap-gateway/service/message"
-	"github.com/plgd-dev/hub/resource-aggregate/commands"
+	"github.com/plgd-dev/hub/v2/coap-gateway/coapconv"
+	"github.com/plgd-dev/hub/v2/coap-gateway/service/message"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 )
 
 //handles resource updates and creation

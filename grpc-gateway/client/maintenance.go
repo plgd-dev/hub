@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/plgd-dev/device/schema/maintenance"
-	"github.com/plgd-dev/hub/resource-aggregate/commands"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )

@@ -5,7 +5,7 @@ import (
 	"sync"
 
 	"github.com/plgd-dev/go-coap/v2/tcp"
-	"github.com/plgd-dev/hub/pkg/log"
+	"github.com/plgd-dev/hub/v2/pkg/log"
 )
 
 // Thread-safe wrapper with additional data for *tcp.Observation.

@@ -3,7 +3,7 @@ package mongodb
 import (
 	"time"
 
-	pkgMongo "github.com/plgd-dev/hub/pkg/mongodb"
+	pkgMongo "github.com/plgd-dev/hub/v2/pkg/mongodb"
 )
 
 // Config provides Mongo DB configuration options

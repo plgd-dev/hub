@@ -29,5 +29,8 @@
     "go.testTimeout": "600s",
     "go.buildFlags": [
         // "-mod=vendor",
-    ]
+    ],
+    "files.watcherExclude": {
+        "**/plgd-dev/hub/v2/**": true
+    }
 }

@@ -1,8 +1,8 @@
 package commands
 
 import (
-	extCodes "github.com/plgd-dev/hub/grpc-gateway/pb/codes"
 	"github.com/plgd-dev/go-coap/v2/message"
+	extCodes "github.com/plgd-dev/hub/v2/grpc-gateway/pb/codes"
 	"google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
 	"google.golang.org/protobuf/runtime/protoiface"

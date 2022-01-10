@@ -10,15 +10,15 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/plgd-dev/device/schema"
 	"github.com/plgd-dev/go-coap/v2/message"
-	kitNetHttp "github.com/plgd-dev/hub/pkg/net/http"
+	kitNetHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
 	"github.com/plgd-dev/kit/v2/codec/cbor"
 	"github.com/plgd-dev/kit/v2/codec/json"
 	"github.com/plgd-dev/kit/v2/log"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	pbGRPC "github.com/plgd-dev/hub/grpc-gateway/pb"
-	"github.com/plgd-dev/hub/resource-aggregate/commands"
+	pbGRPC "github.com/plgd-dev/hub/v2/grpc-gateway/pb"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 )
 
 type RetrieveDeviceWithLinksResponse struct {

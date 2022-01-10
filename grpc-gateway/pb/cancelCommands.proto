@@ -4,7 +4,7 @@ package grpcgateway.pb;
 
 import "github.com/plgd-dev/hub/resource-aggregate/pb/commands.proto";
 
-option go_package = "github.com/plgd-dev/hub/grpc-gateway/pb;pb";
+option go_package = "github.com/plgd-dev/hub/v2/grpc-gateway/pb;pb";
 
 message CancelPendingCommandsRequest {
     resourceaggregate.pb.ResourceId resource_id = 1;

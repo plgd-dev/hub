@@ -5,8 +5,8 @@ import (
 	"strings"
 
 	"github.com/plgd-dev/go-coap/v2/mux"
-	"github.com/plgd-dev/hub/coap-gateway/uri"
-	"github.com/plgd-dev/hub/resource-aggregate/commands"
+	"github.com/plgd-dev/hub/v2/coap-gateway/uri"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 )
 
 // URIToDeviceIDHref convert uri to deviceID and href. Expected input "/api/v1/devices/{deviceID}/{Href}".
