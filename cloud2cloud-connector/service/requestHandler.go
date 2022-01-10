@@ -12,9 +12,9 @@ import (
 	"github.com/plgd-dev/hub/v2/cloud2cloud-connector/events"
 	"github.com/plgd-dev/hub/v2/cloud2cloud-connector/store"
 	"github.com/plgd-dev/hub/v2/cloud2cloud-connector/uri"
+	"github.com/plgd-dev/hub/v2/pkg/log"
 	kitNetHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
 	pkgOAuth2 "github.com/plgd-dev/hub/v2/pkg/security/oauth2"
-	"github.com/plgd-dev/kit/v2/log"
 )
 
 const cloudIDKey = "CloudId"

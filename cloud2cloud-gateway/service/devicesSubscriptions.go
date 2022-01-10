@@ -5,8 +5,7 @@ import (
 
 	"github.com/plgd-dev/hub/v2/cloud2cloud-connector/events"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
-	"github.com/plgd-dev/kit/v2/log"
-
+	"github.com/plgd-dev/hub/v2/pkg/log"
 	raEvents "github.com/plgd-dev/hub/v2/resource-aggregate/events"
 )
 
