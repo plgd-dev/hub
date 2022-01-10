@@ -5,9 +5,8 @@ import (
 	"net/http"
 
 	"github.com/plgd-dev/hub/v2/cloud2cloud-connector/events"
-	"github.com/plgd-dev/kit/v2/log"
-
 	"github.com/plgd-dev/hub/v2/cloud2cloud-gateway/store"
+	"github.com/plgd-dev/hub/v2/pkg/log"
 )
 
 func (rh *RequestHandler) subscribeToDevices(w http.ResponseWriter, r *http.Request) (int, error) {

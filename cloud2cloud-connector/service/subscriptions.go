@@ -12,12 +12,12 @@ import (
 	"github.com/plgd-dev/hub/v2/cloud2cloud-connector/events"
 	"github.com/plgd-dev/hub/v2/cloud2cloud-connector/store"
 	pbIS "github.com/plgd-dev/hub/v2/identity-store/pb"
+	"github.com/plgd-dev/hub/v2/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	kitHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
 	"github.com/plgd-dev/hub/v2/pkg/security/oauth2"
 	raService "github.com/plgd-dev/hub/v2/resource-aggregate/service"
 	"github.com/plgd-dev/kit/v2/codec/json"
-	"github.com/plgd-dev/kit/v2/log"
 )
 
 const AuthorizationHeader string = "Authorization"
@@ -115,7 +115,7 @@ func subscribe(ctx context.Context, href, correlationID string, reqBody events.S
 	}
 	defer func() {
 		if err := httpResp.Body.Close(); err != nil {
-			log.Errorf("failed to close response body stream: %v")
+			log.Errorf("failed to close response body stream: %w", err)
 		}
 	}()
 	if httpResp.StatusCode != http.StatusOK && httpResp.StatusCode != http.StatusCreated {
@@ -147,7 +147,7 @@ func cancelSubscription(ctx context.Context, href string, linkedAccount store.Li
 	}
 	defer func() {
 		if err := httpResp.Body.Close(); err != nil {
-			log.Errorf("failed to close response body stream: %v")
+			log.Errorf("failed to close response body stream: %w", err)
 		}
 	}()
 	if httpResp.StatusCode != http.StatusOK && httpResp.StatusCode != http.StatusAccepted {

@@ -7,19 +7,16 @@ import (
 	"net/url"
 	"strings"
 
+	router "github.com/gorilla/mux"
 	"github.com/plgd-dev/go-coap/v2/message"
-	"github.com/plgd-dev/kit/v2/codec/cbor"
-	"github.com/plgd-dev/kit/v2/codec/json"
-
 	"github.com/plgd-dev/hub/v2/cloud2cloud-connector/events"
 	"github.com/plgd-dev/hub/v2/cloud2cloud-gateway/uri"
+	pbGRPC "github.com/plgd-dev/hub/v2/grpc-gateway/pb"
+	"github.com/plgd-dev/hub/v2/pkg/log"
 	kitNetHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
 	raClient "github.com/plgd-dev/hub/v2/resource-aggregate/client"
-	"github.com/plgd-dev/kit/v2/log"
-
-	router "github.com/gorilla/mux"
-
-	pbGRPC "github.com/plgd-dev/hub/v2/grpc-gateway/pb"
+	"github.com/plgd-dev/kit/v2/codec/cbor"
+	"github.com/plgd-dev/kit/v2/codec/json"
 )
 
 const hrefKey = "Href"

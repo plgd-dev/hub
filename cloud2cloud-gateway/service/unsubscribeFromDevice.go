@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"github.com/plgd-dev/kit/v2/log"
+	"github.com/plgd-dev/hub/v2/pkg/log"
 )
 
 func (rh *RequestHandler) unsubscribe(w http.ResponseWriter, r *http.Request) (int, error) {

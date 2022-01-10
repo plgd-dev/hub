@@ -8,7 +8,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/plgd-dev/hub/v2/cloud2cloud-connector/store"
-	"github.com/plgd-dev/kit/v2/log"
+	"github.com/plgd-dev/hub/v2/pkg/log"
 )
 
 func cancelLinkedAccountDevicesSubscription(ctx context.Context, cloud store.LinkedCloud, linkedAccount *LinkedAccountData, wg *sync.WaitGroup) {

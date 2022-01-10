@@ -10,11 +10,11 @@ import (
 	"github.com/plgd-dev/hub/v2/cloud2cloud-connector/store"
 	grpcClient "github.com/plgd-dev/hub/v2/grpc-gateway/client"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
+	"github.com/plgd-dev/hub/v2/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/subscriber"
 	raEvents "github.com/plgd-dev/hub/v2/resource-aggregate/events"
 	raService "github.com/plgd-dev/hub/v2/resource-aggregate/service"
-	"github.com/plgd-dev/kit/v2/log"
 	kitSync "github.com/plgd-dev/kit/v2/sync"
 )
 

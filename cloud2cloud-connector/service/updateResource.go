@@ -10,12 +10,12 @@ import (
 
 	"github.com/plgd-dev/hub/v2/cloud2cloud-connector/events"
 	"github.com/plgd-dev/hub/v2/cloud2cloud-connector/store"
+	"github.com/plgd-dev/hub/v2/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	kitHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	raEvents "github.com/plgd-dev/hub/v2/resource-aggregate/events"
 	raService "github.com/plgd-dev/hub/v2/resource-aggregate/service"
-	"github.com/plgd-dev/kit/v2/log"
 )
 
 func makeHTTPEndpoint(url, deviceID, href string) string {
@@ -53,7 +53,7 @@ func updateDeviceResource(ctx context.Context, deviceID, href, contentType strin
 	}
 	defer func() {
 		if err := httpResp.Body.Close(); err != nil {
-			log.Errorf("failed to close response body stream: %v")
+			log.Errorf("failed to close response body stream: %w", err)
 		}
 	}()
 	if httpResp.StatusCode != http.StatusOK {
