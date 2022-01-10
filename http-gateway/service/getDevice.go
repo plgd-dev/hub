@@ -10,8 +10,8 @@ import (
 	"github.com/google/go-querystring/query"
 	"github.com/gorilla/mux"
 	jsoniter "github.com/json-iterator/go"
-	"github.com/plgd-dev/hub/http-gateway/uri"
-	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
+	"github.com/plgd-dev/hub/v2/http-gateway/uri"
+	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"google.golang.org/grpc/codes"
 )
 

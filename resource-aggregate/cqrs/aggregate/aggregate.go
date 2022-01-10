@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventstore"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore"
 )
 
 // Command user defined command that will handled in AggregateModel.HandleCommand

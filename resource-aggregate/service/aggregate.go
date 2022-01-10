@@ -4,11 +4,11 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/plgd-dev/hub/pkg/log"
-	"github.com/plgd-dev/hub/resource-aggregate/commands"
-	cqrsAggregate "github.com/plgd-dev/hub/resource-aggregate/cqrs/aggregate"
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventstore"
-	raEvents "github.com/plgd-dev/hub/resource-aggregate/events"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
+	cqrsAggregate "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/aggregate"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore"
+	raEvents "github.com/plgd-dev/hub/v2/resource-aggregate/events"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )

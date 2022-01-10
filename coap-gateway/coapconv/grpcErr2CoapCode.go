@@ -1,8 +1,8 @@
 package coapconv
 
 import (
-	pkgGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
+	pkgGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"google.golang.org/grpc/codes"
 )
 

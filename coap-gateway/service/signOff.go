@@ -8,11 +8,11 @@ import (
 	"github.com/plgd-dev/go-coap/v2/message"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/mux"
-	"github.com/plgd-dev/hub/coap-gateway/coapconv"
-	"github.com/plgd-dev/hub/identity-store/pb"
-	"github.com/plgd-dev/hub/pkg/log"
-	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
-	"github.com/plgd-dev/hub/resource-aggregate/commands"
+	"github.com/plgd-dev/hub/v2/coap-gateway/coapconv"
+	"github.com/plgd-dev/hub/v2/identity-store/pb"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 )
 
 var (

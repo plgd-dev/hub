@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/plgd-dev/hub/certificate-authority/pb"
+	"github.com/plgd-dev/hub/v2/certificate-authority/pb"
 )
 
 func TestRequestHandlerSignIdentityCertificate(t *testing.T) {

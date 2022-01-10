@@ -5,10 +5,10 @@ import (
 	"fmt"
 	netHttp "net/http"
 
-	"github.com/plgd-dev/hub/pkg/log"
-	"github.com/plgd-dev/hub/pkg/net/http"
 	"github.com/plgd-dev/go-coap/v2/message"
 	coapStatus "github.com/plgd-dev/go-coap/v2/message/status"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	"github.com/plgd-dev/hub/v2/pkg/net/http"
 	"github.com/plgd-dev/kit/v2/coapconv"
 	"google.golang.org/genproto/googleapis/rpc/status"
 	grpcCodes "google.golang.org/grpc/codes"

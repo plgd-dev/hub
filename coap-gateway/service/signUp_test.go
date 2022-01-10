@@ -5,10 +5,10 @@ import (
 	"time"
 
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
-	coapgwTest "github.com/plgd-dev/hub/coap-gateway/test"
-	"github.com/plgd-dev/hub/coap-gateway/uri"
-	"github.com/plgd-dev/hub/test/config"
-	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
+	coapgwTest "github.com/plgd-dev/hub/v2/coap-gateway/test"
+	"github.com/plgd-dev/hub/v2/coap-gateway/uri"
+	"github.com/plgd-dev/hub/v2/test/config"
+	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 )
 
 type TestCoapSignUpResponse struct {

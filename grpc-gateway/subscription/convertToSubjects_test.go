@@ -4,10 +4,10 @@ import (
 	"sort"
 	"testing"
 
-	isEvents "github.com/plgd-dev/hub/identity-store/events"
-	"github.com/plgd-dev/hub/resource-aggregate/commands"
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/utils"
-	"github.com/plgd-dev/hub/resource-aggregate/events"
+	isEvents "github.com/plgd-dev/hub/v2/identity-store/events"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/utils"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 	kitStrings "github.com/plgd-dev/kit/v2/strings"
 	"github.com/stretchr/testify/require"
 )

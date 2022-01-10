@@ -8,8 +8,8 @@ import (
 	"time"
 
 	nats "github.com/nats-io/nats.go"
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventbus"
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventbus/pb"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/pb"
 	"google.golang.org/protobuf/proto"
 )
 

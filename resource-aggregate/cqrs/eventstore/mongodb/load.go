@@ -11,8 +11,8 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 
-	pkgTime "github.com/plgd-dev/hub/pkg/time"
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventstore"
+	pkgTime "github.com/plgd-dev/hub/v2/pkg/time"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore"
 )
 
 type iterator struct {

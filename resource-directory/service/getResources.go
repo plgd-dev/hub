@@ -1,9 +1,9 @@
 package service
 
 import (
-	"github.com/plgd-dev/hub/grpc-gateway/pb"
-	"github.com/plgd-dev/hub/pkg/log"
-	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
+	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )

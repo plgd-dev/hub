@@ -4,9 +4,9 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
-	"github.com/plgd-dev/hub/grpc-gateway/pb"
-	"github.com/plgd-dev/hub/pkg/fn"
-	"github.com/plgd-dev/hub/resource-aggregate/commands"
+	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
+	"github.com/plgd-dev/hub/v2/pkg/fn"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"github.com/plgd-dev/kit/v2/strings"
 	"go.uber.org/atomic"
 )

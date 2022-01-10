@@ -3,7 +3,7 @@ package baseline
 import (
 	"testing"
 
-	"github.com/plgd-dev/hub/test"
+	"github.com/plgd-dev/hub/v2/test"
 	"github.com/stretchr/testify/require"
 )
 

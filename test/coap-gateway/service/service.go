@@ -14,12 +14,12 @@ import (
 	"github.com/plgd-dev/go-coap/v2/net"
 	"github.com/plgd-dev/go-coap/v2/tcp"
 	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
-	"github.com/plgd-dev/hub/coap-gateway/service/message"
-	coapgwUri "github.com/plgd-dev/hub/coap-gateway/uri"
-	"github.com/plgd-dev/hub/pkg/fn"
-	"github.com/plgd-dev/hub/pkg/log"
-	certManagerServer "github.com/plgd-dev/hub/pkg/security/certManager/server"
-	"github.com/plgd-dev/hub/pkg/sync/task/queue"
+	"github.com/plgd-dev/hub/v2/coap-gateway/service/message"
+	coapgwUri "github.com/plgd-dev/hub/v2/coap-gateway/uri"
+	"github.com/plgd-dev/hub/v2/pkg/fn"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	certManagerServer "github.com/plgd-dev/hub/v2/pkg/security/certManager/server"
+	"github.com/plgd-dev/hub/v2/pkg/sync/task/queue"
 )
 
 // Service is a configuration of coap-gateway

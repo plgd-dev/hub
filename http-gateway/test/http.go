@@ -12,8 +12,8 @@ import (
 	"time"
 
 	"github.com/jtacoma/uritemplates"
-	"github.com/plgd-dev/hub/http-gateway/uri"
-	"github.com/plgd-dev/hub/test/config"
+	"github.com/plgd-dev/hub/v2/http-gateway/uri"
+	"github.com/plgd-dev/hub/v2/test/config"
 	"github.com/stretchr/testify/require"
 )
 

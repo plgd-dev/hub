@@ -1,7 +1,7 @@
 package grpc_test
 
 import (
-	"github.com/plgd-dev/hub/pkg/net/grpc/server"
+	"github.com/plgd-dev/hub/v2/pkg/net/grpc/server"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )

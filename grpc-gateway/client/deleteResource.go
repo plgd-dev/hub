@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/plgd-dev/hub/grpc-gateway/pb"
-	"github.com/plgd-dev/hub/resource-aggregate/commands"
+	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 )
 
 // DeleteResource invokes DELETE command within the resource aggregate, which transparently forwards the request to the device.

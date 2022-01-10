@@ -6,10 +6,10 @@ import (
 	"io"
 	"sync"
 
-	"github.com/plgd-dev/hub/grpc-gateway/pb"
-	"github.com/plgd-dev/hub/grpc-gateway/subscription"
-	"github.com/plgd-dev/hub/pkg/log"
-	"github.com/plgd-dev/hub/pkg/net/grpc"
+	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
+	"github.com/plgd-dev/hub/v2/grpc-gateway/subscription"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	"github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"google.golang.org/grpc/codes"
 )
 

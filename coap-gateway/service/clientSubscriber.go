@@ -1,6 +1,6 @@
 package service
 
-import grpcClient "github.com/plgd-dev/hub/grpc-gateway/client"
+import grpcClient "github.com/plgd-dev/hub/v2/grpc-gateway/client"
 
 // Replace deviceSubscriber instance in the client.
 func (client *Client) replaceDeviceSubscriber(deviceSubscriber *grpcClient.DeviceSubscriber) *grpcClient.DeviceSubscriber {

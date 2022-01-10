@@ -10,13 +10,13 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/plgd-dev/hub/cloud2cloud-gateway/service"
-	"github.com/plgd-dev/hub/pkg/log"
-	"github.com/plgd-dev/hub/pkg/mongodb"
-	"github.com/plgd-dev/hub/pkg/security/certManager/server"
-	pkgStrings "github.com/plgd-dev/hub/pkg/strings"
-	"github.com/plgd-dev/hub/test/config"
-	testHttp "github.com/plgd-dev/hub/test/http"
+	"github.com/plgd-dev/hub/v2/cloud2cloud-gateway/service"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	"github.com/plgd-dev/hub/v2/pkg/mongodb"
+	"github.com/plgd-dev/hub/v2/pkg/security/certManager/server"
+	pkgStrings "github.com/plgd-dev/hub/v2/pkg/strings"
+	"github.com/plgd-dev/hub/v2/test/config"
+	testHttp "github.com/plgd-dev/hub/v2/test/http"
 	"github.com/stretchr/testify/require"
 )
 

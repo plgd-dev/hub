@@ -8,12 +8,12 @@ import (
 	"github.com/plgd-dev/device/schema/interfaces"
 	"github.com/plgd-dev/device/test/resource/types"
 	"github.com/plgd-dev/go-coap/v2/message"
-	"github.com/plgd-dev/hub/grpc-gateway/pb"
-	"github.com/plgd-dev/hub/resource-aggregate/commands"
-	"github.com/plgd-dev/hub/resource-aggregate/events"
-	"github.com/plgd-dev/hub/test"
-	"github.com/plgd-dev/hub/test/oauth-server/service"
-	"github.com/plgd-dev/hub/test/pb/baseline"
+	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
+	"github.com/plgd-dev/hub/v2/test"
+	"github.com/plgd-dev/hub/v2/test/oauth-server/service"
+	"github.com/plgd-dev/hub/v2/test/pb/baseline"
 	"github.com/stretchr/testify/require"
 )
 

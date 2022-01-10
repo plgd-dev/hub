@@ -8,12 +8,12 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/plgd-dev/hub/pkg/log"
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventbus/nats/publisher"
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventbus/nats/subscriber"
-	natsTest "github.com/plgd-dev/hub/resource-aggregate/cqrs/eventbus/nats/test"
-	"github.com/plgd-dev/hub/test"
-	"github.com/plgd-dev/hub/test/config"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/publisher"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/subscriber"
+	natsTest "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/test"
+	"github.com/plgd-dev/hub/v2/test"
+	"github.com/plgd-dev/hub/v2/test/config"
 	"github.com/stretchr/testify/require"
 )
 

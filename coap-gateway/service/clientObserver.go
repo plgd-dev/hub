@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/plgd-dev/hub/coap-gateway/service/observation"
-	"github.com/plgd-dev/hub/pkg/log"
-	"github.com/plgd-dev/hub/pkg/sync/task/future"
-	"github.com/plgd-dev/hub/resource-aggregate/commands"
+	"github.com/plgd-dev/hub/v2/coap-gateway/service/observation"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	"github.com/plgd-dev/hub/v2/pkg/sync/task/future"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 )
 
 // Obtain deviceObserver from the client.

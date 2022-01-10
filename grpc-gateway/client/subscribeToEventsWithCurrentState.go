@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/plgd-dev/hub/grpc-gateway/pb"
+	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 )

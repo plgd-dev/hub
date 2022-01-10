@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/plgd-dev/hub/pkg/config"
-	"github.com/plgd-dev/hub/pkg/log"
-	"github.com/plgd-dev/hub/pkg/net/listener"
+	"github.com/plgd-dev/hub/v2/pkg/config"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	"github.com/plgd-dev/hub/v2/pkg/net/listener"
 )
 
 type AsymmetricKey struct {
@@ -34,9 +34,9 @@ type Client struct {
 	RefreshTokenRestrictionLifetime time.Duration `yaml:"refreshTokenRestrictionLifetime"`
 	ConsentScreenEnabled            bool          `yaml:"consentScreenEnabled"`
 	RequireIssuedAuthorizationCode  bool          `yaml:"requireIssuedAuthorizationCode"`
-	RequiredScope                  []string      `yaml:"requiredScope"`
-	RequiredResponseType           string        `yaml:"requiredResponseType"`
-	RequiredRedirectURI            string        `yaml:"requiredRedirectURI"`
+	RequiredScope                   []string      `yaml:"requiredScope"`
+	RequiredResponseType            string        `yaml:"requiredResponseType"`
+	RequiredRedirectURI             string        `yaml:"requiredRedirectURI"`
 }
 
 func (c *Client) Validate() error {

@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/plgd-dev/hub/pkg/security/oauth2"
-	"github.com/plgd-dev/hub/pkg/sync/task/future"
+	"github.com/plgd-dev/hub/v2/pkg/security/oauth2"
+	"github.com/plgd-dev/hub/v2/pkg/sync/task/future"
 )
 
 // Thread safe cache for Exchange operation.

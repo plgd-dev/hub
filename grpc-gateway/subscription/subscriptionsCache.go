@@ -7,11 +7,11 @@ import (
 	"sync/atomic"
 
 	nats "github.com/nats-io/nats.go"
-	"github.com/plgd-dev/hub/grpc-gateway/pb"
-	isEvents "github.com/plgd-dev/hub/identity-store/events"
-	eventbusPb "github.com/plgd-dev/hub/resource-aggregate/cqrs/eventbus/pb"
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/utils"
-	"github.com/plgd-dev/hub/resource-aggregate/events"
+	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
+	isEvents "github.com/plgd-dev/hub/v2/identity-store/events"
+	eventbusPb "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/pb"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/utils"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 	kitSync "github.com/plgd-dev/kit/v2/sync"
 	"google.golang.org/protobuf/proto"
 )

@@ -16,9 +16,9 @@ import (
 	"github.com/plgd-dev/go-coap/v2/mux"
 	"github.com/plgd-dev/go-coap/v2/tcp"
 	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
-	"github.com/plgd-dev/hub/pkg/log"
-	"github.com/plgd-dev/hub/resource-aggregate/commands"
-	"github.com/plgd-dev/hub/resource-aggregate/events"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 	"github.com/plgd-dev/kit/v2/codec/cbor"
 )
 

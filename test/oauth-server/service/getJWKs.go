@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/lestrrat-go/jwx/jwk"
-	"github.com/plgd-dev/hub/pkg/log"
+	"github.com/plgd-dev/hub/v2/pkg/log"
 )
 
 func (requestHandler *RequestHandler) getJWKs(w http.ResponseWriter, r *http.Request) {

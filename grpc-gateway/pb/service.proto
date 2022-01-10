@@ -35,7 +35,7 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
   produces: [ "application/json", "application/protojson" ];
 };
 
-option go_package = "github.com/plgd-dev/hub/grpc-gateway/pb;pb";
+option go_package = "github.com/plgd-dev/hub/v2/grpc-gateway/pb;pb";
 // https://github.com/googleapis/googleapis/blob/master/google/api/http.proto
 
 service GrpcGateway {

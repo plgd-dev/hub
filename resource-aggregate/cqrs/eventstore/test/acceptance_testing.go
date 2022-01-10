@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventstore"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore"
 	"github.com/stretchr/testify/require"
 )
 

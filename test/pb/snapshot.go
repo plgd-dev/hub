@@ -3,8 +3,8 @@ package pb
 import (
 	"testing"
 
-	"github.com/plgd-dev/hub/resource-aggregate/events"
-	"github.com/plgd-dev/hub/test"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
+	"github.com/plgd-dev/hub/v2/test"
 	"github.com/stretchr/testify/require"
 )
 

@@ -6,8 +6,8 @@ import (
 	"net/http"
 
 	"github.com/google/uuid"
-	"github.com/plgd-dev/hub/cloud2cloud-connector/events"
-	"github.com/plgd-dev/hub/cloud2cloud-connector/store"
+	"github.com/plgd-dev/hub/v2/cloud2cloud-connector/events"
+	"github.com/plgd-dev/hub/v2/cloud2cloud-connector/store"
 	"github.com/plgd-dev/kit/v2/codec/json"
 )
 

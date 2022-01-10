@@ -9,8 +9,8 @@ import (
 	coapMessage "github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/tcp"
-	"github.com/plgd-dev/hub/coap-gateway/service/message"
-	pkgStrings "github.com/plgd-dev/hub/pkg/strings"
+	"github.com/plgd-dev/hub/v2/coap-gateway/service/message"
+	pkgStrings "github.com/plgd-dev/hub/v2/pkg/strings"
 	"github.com/plgd-dev/kit/v2/codec/cbor"
 )
 

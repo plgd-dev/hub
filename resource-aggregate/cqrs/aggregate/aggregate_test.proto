@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package ocf.cloud.resourceaggregate.cqrs.aggregate.test.v2;
 
-option go_package = "github.com/plgd-dev/hub/resource-aggregate/cqrs/aggregate;aggregate";
+option go_package = "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/aggregate;aggregate";
 
 message Publish {
     string device_id = 1;

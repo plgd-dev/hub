@@ -3,7 +3,7 @@ package test
 import (
 	"strconv"
 
-	"github.com/plgd-dev/hub/grpc-gateway/pb"
+	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 )
 
 func ToCommandsFilter(s []pb.GetPendingCommandsRequest_Command) []string {

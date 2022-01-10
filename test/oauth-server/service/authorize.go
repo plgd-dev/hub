@@ -10,9 +10,9 @@ import (
 	"time"
 
 	"github.com/plgd-dev/go-coap/v2/pkg/cache"
-	"github.com/plgd-dev/hub/pkg/log"
-	pkgStrings "github.com/plgd-dev/hub/pkg/strings"
-	"github.com/plgd-dev/hub/test/oauth-server/uri"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	pkgStrings "github.com/plgd-dev/hub/v2/pkg/strings"
+	"github.com/plgd-dev/hub/v2/test/oauth-server/uri"
 	"github.com/plgd-dev/kit/v2/codec/json"
 )
 

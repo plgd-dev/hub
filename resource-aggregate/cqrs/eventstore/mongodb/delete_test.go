@@ -5,10 +5,10 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/plgd-dev/hub/pkg/log"
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventstore"
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventstore/mongodb"
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventstore/test"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore/mongodb"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

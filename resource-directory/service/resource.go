@@ -1,8 +1,8 @@
 package service
 
 import (
-	"github.com/plgd-dev/hub/resource-aggregate/commands"
-	"github.com/plgd-dev/hub/resource-aggregate/events"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 )
 
 type Resource struct {

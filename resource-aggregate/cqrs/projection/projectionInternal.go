@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventbus"
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventstore"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore"
 )
 
 // Projection project events to user defined model from evenstore and update it by events from subscriber.

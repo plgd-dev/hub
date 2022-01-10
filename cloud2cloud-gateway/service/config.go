@@ -4,15 +4,15 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/plgd-dev/hub/pkg/config"
-	"github.com/plgd-dev/hub/pkg/log"
-	"github.com/plgd-dev/hub/pkg/mongodb"
-	grpcClient "github.com/plgd-dev/hub/pkg/net/grpc/client"
-	"github.com/plgd-dev/hub/pkg/net/listener"
-	cmClient "github.com/plgd-dev/hub/pkg/security/certManager/client"
-	"github.com/plgd-dev/hub/pkg/security/jwt/validator"
-	"github.com/plgd-dev/hub/pkg/sync/task/queue"
-	natsClient "github.com/plgd-dev/hub/resource-aggregate/cqrs/eventbus/nats/client"
+	"github.com/plgd-dev/hub/v2/pkg/config"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	"github.com/plgd-dev/hub/v2/pkg/mongodb"
+	grpcClient "github.com/plgd-dev/hub/v2/pkg/net/grpc/client"
+	"github.com/plgd-dev/hub/v2/pkg/net/listener"
+	cmClient "github.com/plgd-dev/hub/v2/pkg/security/certManager/client"
+	"github.com/plgd-dev/hub/v2/pkg/security/jwt/validator"
+	"github.com/plgd-dev/hub/v2/pkg/sync/task/queue"
+	natsClient "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/client"
 )
 
 // Config represents application configuration

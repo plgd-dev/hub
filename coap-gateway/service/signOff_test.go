@@ -3,9 +3,9 @@ package service_test
 import (
 	"testing"
 
-	"github.com/plgd-dev/hub/coap-gateway/uri"
-	testCfg "github.com/plgd-dev/hub/test/config"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
+	"github.com/plgd-dev/hub/v2/coap-gateway/uri"
+	testCfg "github.com/plgd-dev/hub/v2/test/config"
 	"github.com/stretchr/testify/require"
 )
 

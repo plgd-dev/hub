@@ -5,7 +5,7 @@ import (
 	"crypto/tls"
 	"fmt"
 
-	pkgMongo "github.com/plgd-dev/hub/pkg/mongodb"
+	pkgMongo "github.com/plgd-dev/hub/v2/pkg/mongodb"
 )
 
 type Store struct {

@@ -7,7 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/plgd-dev/device/schema"
-	extCodes "github.com/plgd-dev/hub/grpc-gateway/pb/codes"
+	extCodes "github.com/plgd-dev/hub/v2/grpc-gateway/pb/codes"
 	"google.golang.org/grpc/codes"
 )
 

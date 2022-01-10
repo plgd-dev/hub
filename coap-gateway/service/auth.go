@@ -10,9 +10,9 @@ import (
 	"github.com/plgd-dev/device/pkg/net/coap"
 	"github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/pkg/cache"
-	"github.com/plgd-dev/hub/coap-gateway/uri"
-	"github.com/plgd-dev/hub/pkg/net/grpc"
-	pkgJwt "github.com/plgd-dev/hub/pkg/security/jwt"
+	"github.com/plgd-dev/hub/v2/coap-gateway/uri"
+	"github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	pkgJwt "github.com/plgd-dev/hub/v2/pkg/security/jwt"
 )
 
 type Interceptor = func(ctx context.Context, code codes.Code, path string) (context.Context, error)

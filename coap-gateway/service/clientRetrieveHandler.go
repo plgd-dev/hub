@@ -8,11 +8,11 @@ import (
 	coapMessage "github.com/plgd-dev/go-coap/v2/message"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/mux"
-	"github.com/plgd-dev/hub/coap-gateway/coapconv"
-	"github.com/plgd-dev/hub/coap-gateway/service/message"
-	pbGRPC "github.com/plgd-dev/hub/grpc-gateway/pb"
-	"github.com/plgd-dev/hub/pkg/log"
-	"github.com/plgd-dev/hub/resource-aggregate/commands"
+	"github.com/plgd-dev/hub/v2/coap-gateway/coapconv"
+	"github.com/plgd-dev/hub/v2/coap-gateway/service/message"
+	pbGRPC "github.com/plgd-dev/hub/v2/grpc-gateway/pb"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 )
 
 func clientRetrieveHandler(req *mux.Message, client *Client) {

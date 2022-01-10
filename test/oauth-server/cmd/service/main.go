@@ -3,9 +3,9 @@ package main
 import (
 	"context"
 
-	"github.com/plgd-dev/hub/pkg/config"
-	"github.com/plgd-dev/hub/pkg/log"
-	"github.com/plgd-dev/hub/test/oauth-server/service"
+	"github.com/plgd-dev/hub/v2/pkg/config"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	"github.com/plgd-dev/hub/v2/test/oauth-server/service"
 )
 
 func main() {

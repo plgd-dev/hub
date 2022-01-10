@@ -9,9 +9,9 @@ import (
 
 	"github.com/plgd-dev/go-coap/v2/message"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
-	coapgwTest "github.com/plgd-dev/hub/coap-gateway/test"
-	"github.com/plgd-dev/hub/coap-gateway/uri"
-	testCfg "github.com/plgd-dev/hub/test/config"
+	coapgwTest "github.com/plgd-dev/hub/v2/coap-gateway/test"
+	"github.com/plgd-dev/hub/v2/coap-gateway/uri"
+	testCfg "github.com/plgd-dev/hub/v2/test/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

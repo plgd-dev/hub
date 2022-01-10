@@ -3,6 +3,7 @@
 .gitignore
 .travis.yml
 .tmp
+v2
 Makefile
 Dockerfile
 Dockerfile.test

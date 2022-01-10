@@ -8,9 +8,9 @@ import (
 	"testing"
 
 	"github.com/plgd-dev/go-coap/v2/message"
-	"github.com/plgd-dev/hub/cloud2cloud-connector/events"
-	"github.com/plgd-dev/hub/cloud2cloud-gateway/uri"
-	testHttp "github.com/plgd-dev/hub/test/http"
+	"github.com/plgd-dev/hub/v2/cloud2cloud-connector/events"
+	"github.com/plgd-dev/hub/v2/cloud2cloud-gateway/uri"
+	testHttp "github.com/plgd-dev/hub/v2/test/http"
 	"github.com/plgd-dev/kit/v2/codec/json"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

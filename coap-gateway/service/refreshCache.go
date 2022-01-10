@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/plgd-dev/hub/pkg/log"
-	"github.com/plgd-dev/hub/pkg/security/oauth2"
-	"github.com/plgd-dev/hub/pkg/sync/task/future"
-	"github.com/plgd-dev/hub/pkg/sync/task/queue"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	"github.com/plgd-dev/hub/v2/pkg/security/oauth2"
+	"github.com/plgd-dev/hub/v2/pkg/sync/task/future"
+	"github.com/plgd-dev/hub/v2/pkg/sync/task/queue"
 )
 
 // Thread safe cache for Refresh operation.

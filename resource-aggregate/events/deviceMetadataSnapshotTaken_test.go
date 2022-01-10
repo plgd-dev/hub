@@ -5,10 +5,10 @@ import (
 	"testing"
 	"time"
 
-	commands "github.com/plgd-dev/hub/resource-aggregate/commands"
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventstore"
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventstore/test"
-	"github.com/plgd-dev/hub/resource-aggregate/events"
+	commands "github.com/plgd-dev/hub/v2/resource-aggregate/commands"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore/test"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
 )

@@ -5,8 +5,8 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/plgd-dev/hub/identity-store/service"
-	"github.com/plgd-dev/hub/pkg/log"
+	"github.com/plgd-dev/hub/v2/identity-store/service"
+	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/stretchr/testify/require"
 )
 
