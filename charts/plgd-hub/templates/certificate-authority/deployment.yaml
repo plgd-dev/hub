@@ -16,7 +16,7 @@ metadata:
   {{- . | toYaml | nindent 4 }}
   {{- end }}
 spec:
-  replicas: {{ .Values.resourcedirectory.replicas }}
+  replicas: {{ .Values.certificateauthority.replicas }}
   selector:
     matchLabels:
       {{- include "plgd-hub.certificateauthority.selectorLabels" . | nindent 6 }}
