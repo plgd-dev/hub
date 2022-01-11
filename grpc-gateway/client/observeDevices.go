@@ -2,7 +2,6 @@ package client
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/google/uuid"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
@@ -77,9 +76,9 @@ func (c *Client) ObserveDevices(ctx context.Context, handler DevicesObservationH
 	sub, err := c.NewDevicesSubscription(ctx, &devicesObservation{
 		h: handler,
 		removeSubscription: func() {
-			if _, err := c.stopObservingDevices(ID.String()); err != nil {
-				handler.Error(fmt.Errorf("failed to stop device('%v') observation: %w", ID.String(), err))
-			}
+			// we can ignore err during removeSubscription, if err != nil then some other
+			// part of code already removed the subscription
+			_, _ = c.stopObservingDevices(ID.String())
 		},
 	})
 	if err != nil {
