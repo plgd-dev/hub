@@ -33,11 +33,8 @@ func NewPlgdProvider(ctx context.Context, config Config, logger log.Logger) (*Pl
 
 	config.AuthURL = oidcfg.AuthURL
 	config.TokenURL = oidcfg.TokenURL
-	oauth2 := config.ToOAuth2(config.AuthURL, config.TokenURL, config.ClientSecret)
-
 	return &PlgdProvider{
 		Config:     config,
-		OAuth2:     &oauth2,
 		HTTPClient: httpClient,
 		OpenID:     oidcfg,
 	}, nil
@@ -46,7 +43,6 @@ func NewPlgdProvider(ctx context.Context, config Config, logger log.Logger) (*Pl
 // PlgdProvider configuration with new http client
 type PlgdProvider struct {
 	Config     Config
-	OAuth2     *oauth2.Config
 	HTTPClient *client.Client
 	OpenID     openid.Config
 }
@@ -55,7 +51,8 @@ type PlgdProvider struct {
 func (p *PlgdProvider) Exchange(ctx context.Context, authorizationCode string) (*Token, error) {
 	ctx = context.WithValue(ctx, oauth2.HTTPClient, p.HTTPClient.HTTP())
 
-	token, err := p.OAuth2.Exchange(ctx, authorizationCode)
+	oauth := p.Config.ToDefaultOAuth2()
+	token, err := oauth.Exchange(ctx, authorizationCode)
 	if err != nil {
 		return nil, err
 	}
@@ -73,8 +70,9 @@ func (p *PlgdProvider) Refresh(ctx context.Context, refreshToken string) (*Token
 	restoredToken := &oauth2.Token{
 		RefreshToken: refreshToken,
 	}
+	oauth := p.Config.ToDefaultOAuth2()
 	ctx = context.WithValue(ctx, oauth2.HTTPClient, p.HTTPClient.HTTP())
-	tokenSource := p.OAuth2.TokenSource(ctx, restoredToken)
+	tokenSource := oauth.TokenSource(ctx, restoredToken)
 	token, err := tokenSource.Token()
 	if err != nil {
 		return nil, err

@@ -79,25 +79,24 @@ func (c Config) ToDefaultOAuth2() oauth2.Config {
 }
 
 func (c Config) AuthCodeURL(csrfToken string) string {
-	aud := c.Audience
-	accessType := c.AccessType
-	responseType := c.ResponseType
-	responseMode := c.ResponseMode
-
 	opts := make([]oauth2.AuthCodeOption, 0, 2)
 
+	accessType := c.AccessType
 	if accessType != "" {
 		opts = append(opts, oauth2.SetAuthURLParam("access_type", accessType))
 	}
+	aud := c.Audience
 	if aud != "" {
 		opts = append(opts, oauth2.SetAuthURLParam("audience", aud))
 	}
+	responseType := c.ResponseType
 	if responseType != "" {
 		opts = append(opts, oauth2.SetAuthURLParam("response_type", responseType))
 	}
+	responseMode := c.ResponseMode
 	if responseMode != "" {
 		opts = append(opts, oauth2.SetAuthURLParam("response_mode", responseMode))
 	}
-	auth := c.ToOAuth2(c.AuthURL, c.TokenURL, c.ClientSecret)
+	auth := c.ToDefaultOAuth2()
 	return (&auth).AuthCodeURL(csrfToken, opts...)
 }
