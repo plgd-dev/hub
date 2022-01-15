@@ -42,7 +42,7 @@
     "@formatjs/cli": "^4.5.0",
     "babel-plugin-formatjs": "^10.3.12",
     "react-hot-loader": "^4.13.0",
-    "shelljs": "^0.8.4"
+    "shelljs": "^0.8.5"
   },
   "scripts": {
     "start": "npm run generate-language-files && craco start",
