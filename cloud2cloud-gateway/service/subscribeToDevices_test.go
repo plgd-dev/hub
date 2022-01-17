@@ -100,7 +100,7 @@ func TestRequestHandlerSubscribeToDevices(t *testing.T) {
 	require.NoError(t, err)
 
 	sub := events.SubscriptionRequest{
-		URL:           "https://localhost:" + port + eventsURI,
+		EventsURL:     "https://localhost:" + port + eventsURI,
 		EventTypes:    events.EventTypes{eventType},
 		SigningSecret: "a",
 	}
@@ -194,7 +194,7 @@ func TestRequestHandlerSubscribeToDevicesOffline(t *testing.T) {
 	require.NoError(t, err)
 
 	sub := events.SubscriptionRequest{
-		URL:           "https://localhost:" + port + eventsURI,
+		EventsURL:     "https://localhost:" + port + eventsURI,
 		EventTypes:    events.EventTypes{eventType},
 		SigningSecret: "a",
 	}

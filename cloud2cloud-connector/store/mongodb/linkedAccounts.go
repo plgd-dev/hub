@@ -63,11 +63,11 @@ func (s *Store) UpdateLinkedAccount(ctx context.Context, sub store.LinkedAccount
 	return nil
 }
 
-func (s *Store) RemoveLinkedAccount(ctx context.Context, linkedAccountId string) error {
-	if linkedAccountId == "" {
-		return fmt.Errorf("cannot remove linked account: invalid linkedAccountId")
+func (s *Store) RemoveLinkedAccount(ctx context.Context, linkedAccountID string) error {
+	if linkedAccountID == "" {
+		return fmt.Errorf("cannot remove linked account: invalid linkedAccountID")
 	}
-	res, err := s.Collection(resLinkedAccountCName).DeleteOne(ctx, bson.M{"_id": linkedAccountId})
+	res, err := s.Collection(resLinkedAccountCName).DeleteOne(ctx, bson.M{"_id": linkedAccountID})
 	if err != nil {
 		return fmt.Errorf("cannot remove linked account: %w", err)
 	}

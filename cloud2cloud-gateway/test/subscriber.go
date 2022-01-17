@@ -53,7 +53,7 @@ func (c *C2CSubscriber) subscriptionURI() string {
 
 func (c *C2CSubscriber) Subscribe(t *testing.T, ctx context.Context, token, deviceID, href string, eventTypes events.EventTypes) string {
 	sub := events.SubscriptionRequest{
-		URL:           "https://localhost:" + c.port + c.eventsURI,
+		EventsURL:     "https://localhost:" + c.port + c.eventsURI,
 		EventTypes:    eventTypes,
 		SigningSecret: "a",
 	}

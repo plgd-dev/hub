@@ -281,29 +281,29 @@ func (p *resourceEvent) Handle(ctx context.Context, iter eventstore.Iter) error 
 	return iter.Err()
 }
 
-func getDeviceQueries(deviceIdFilter []string, userDeviceIds strings.Set) []eventstore.GetEventsQuery {
+func getDeviceQueries(deviceIDFilter []string, userDeviceIDs strings.Set) []eventstore.GetEventsQuery {
 	var queries []eventstore.GetEventsQuery
-	for _, deviceId := range deviceIdFilter {
-		if _, ok := userDeviceIds[deviceId]; !ok {
-			log.Debugf("permission denied, device with id %v skipped", deviceId)
+	for _, deviceID := range deviceIDFilter {
+		if _, ok := userDeviceIDs[deviceID]; !ok {
+			log.Debugf("permission denied, device with id %v skipped", deviceID)
 			continue
 		}
 		queries = append(queries, eventstore.GetEventsQuery{
-			GroupID: deviceId,
+			GroupID: deviceID,
 		})
 	}
 	return queries
 }
 
-func getResourceQueries(resourceFilter []string, userDeviceIds strings.Set) []eventstore.GetEventsQuery {
+func getResourceQueries(resourceFilter []string, userDeviceIDs strings.Set) []eventstore.GetEventsQuery {
 	var queries []eventstore.GetEventsQuery
-	for _, resourceId := range resourceFilter {
-		res := commands.ResourceIdFromString(resourceId)
+	for _, resourceID := range resourceFilter {
+		res := commands.ResourceIdFromString(resourceID)
 		if res == nil {
 			log.Errorf("invalid resourceIdFilter value %v", resourceFilter)
 			continue
 		}
-		if !userDeviceIds.HasOneOf(res.GetDeviceId()) {
+		if !userDeviceIDs.HasOneOf(res.GetDeviceId()) {
 			log.Debugf("permission denied, resource belonging to device %v skipped", res.GetDeviceId())
 			continue
 		}
@@ -330,25 +330,25 @@ func (r *RequestHandler) GetEvents(req *pb.GetEventsRequest, srv pb.GrpcGateway_
 	if err != nil {
 		return log.LogAndReturnError(status.Errorf(codes.Unauthenticated, "cannot get owner: %v", err))
 	}
-	userDeviceIds, err := r.getOwnerDevices(srv.Context(), owner)
+	userDeviceIDs, err := r.getOwnerDevices(srv.Context(), owner)
 	if err != nil {
 		return log.LogAndReturnError(status.Errorf(status.Convert(err).Code(), "cannot get owned devices: %v", err))
 	}
-	if len(userDeviceIds) == 0 {
+	if len(userDeviceIDs) == 0 {
 		log.Debugf("No devices found for user %v", owner)
 		return nil
 	}
-	mapUserDeviceIds := make(strings.Set)
-	for _, userDeviceId := range userDeviceIds {
-		mapUserDeviceIds[userDeviceId] = struct{}{}
+	mapUserDeviceIDs := make(strings.Set)
+	for _, userDeviceID := range userDeviceIDs {
+		mapUserDeviceIDs[userDeviceID] = struct{}{}
 	}
 
 	var queries []eventstore.GetEventsQuery
 	if len(req.DeviceIdFilter) == 0 && len(req.ResourceIdFilter) == 0 {
-		queries = getUserDeviceQueries(mapUserDeviceIds)
+		queries = getUserDeviceQueries(mapUserDeviceIDs)
 	} else {
-		queries = getDeviceQueries(req.DeviceIdFilter, mapUserDeviceIds)
-		queries = append(queries, getResourceQueries(req.ResourceIdFilter, mapUserDeviceIds)...)
+		queries = getDeviceQueries(req.DeviceIdFilter, mapUserDeviceIDs)
+		queries = append(queries, getResourceQueries(req.ResourceIdFilter, mapUserDeviceIDs)...)
 	}
 
 	err = r.eventStore.GetEvents(srv.Context(), queries, req.TimestampFilter, &resourceEvent{srv: srv})

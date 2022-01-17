@@ -1,9 +1,9 @@
 package commands
 
-func NewAuditContext(userID, correlationId string) *AuditContext {
+func NewAuditContext(userID, correlationID string) *AuditContext {
 	return &AuditContext{
 		UserId:        userID,
-		CorrelationId: correlationId,
+		CorrelationId: correlationID,
 	}
 }
 

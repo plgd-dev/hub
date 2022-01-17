@@ -43,8 +43,8 @@ func TestRequestHandlerGetResources(t *testing.T) {
 	resourceLinks := test.GetAllBackendResourceLinks()
 	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.GW_HOST, resourceLinks)
 	defer shutdownDevSim()
-	const switchId = "1"
-	resourceLinks = append(resourceLinks, test.AddDeviceSwitchResources(ctx, t, deviceID, c, switchId)...)
+	const switchID = "1"
+	resourceLinks = append(resourceLinks, test.AddDeviceSwitchResources(ctx, t, deviceID, c, switchID)...)
 	time.Sleep(200 * time.Millisecond)
 
 	type args struct {
@@ -121,7 +121,7 @@ func TestRequestHandlerGetResources(t *testing.T) {
 			want: []*pb.Resource{
 				{
 					Types: []string{types.BINARY_SWITCH},
-					Data: pbTest.MakeResourceChanged(t, deviceID, test.TestResourceSwitchesInstanceHref(switchId), "",
+					Data: pbTest.MakeResourceChanged(t, deviceID, test.TestResourceSwitchesInstanceHref(switchID), "",
 						map[string]interface{}{
 							"value": false,
 						}),

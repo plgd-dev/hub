@@ -17,7 +17,7 @@ const (
 	ClaimExpiresAt = "exp"
 	ClaimScope     = "scope"
 	ClaimAudience  = "aud"
-	ClaimId        = "jti"
+	ClaimID        = "jti"
 	ClaimIssuer    = "iss"
 	ClaimSubject   = "sub"
 	ClaimIssuedAt  = "iat"
@@ -108,7 +108,7 @@ func (c Claims) Audience() []string {
 }
 
 func (c Claims) ID() string {
-	s, _ := strings.ToString(c[ClaimId])
+	s, _ := strings.ToString(c[ClaimID])
 	return s
 }
 

@@ -38,8 +38,8 @@ func (client *Client) GetDeviceID() string {
 	return client.deviceID
 }
 
-func (client *Client) SetDeviceID(deviceId string) {
-	client.deviceID = deviceId
+func (client *Client) SetDeviceID(deviceID string) {
+	client.deviceID = deviceID
 }
 
 func (client *Client) RemoteAddrString() string {

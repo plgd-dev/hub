@@ -74,7 +74,7 @@ func (rh *RequestHandler) oAuthCallback(w http.ResponseWriter, r *http.Request) 
 	if err != nil {
 		return http.StatusBadRequest, fmt.Errorf("cannot store linked account %+v: %w", newData.linkedAccount, err)
 	}
-	if newData.linkedCloud.SupportedSubscriptionsEvents.NeedPullDevices() {
+	if newData.linkedCloud.SupportedSubscriptionEvents.NeedPullDevices() {
 		return http.StatusOK, nil
 	}
 	rh.triggerTask(Task{

@@ -123,10 +123,10 @@ const (
 	updateTypeChanged updateType = 2
 )
 
-func (client *Client) updateAuthorizationContext(deviceId, userId, accessToken string, validUntil time.Time) updateType {
+func (client *Client) updateAuthorizationContext(deviceID, userID, accessToken string, validUntil time.Time) updateType {
 	authCtx := authorizationContext{
-		DeviceID:    deviceId,
-		UserID:      userId,
+		DeviceID:    deviceID,
+		UserID:      userID,
 		AccessToken: accessToken,
 		Expire:      validUntil,
 	}
@@ -135,7 +135,7 @@ func (client *Client) updateAuthorizationContext(deviceId, userId, accessToken s
 	if oldAuthCtx.GetDeviceID() == "" {
 		return updateTypeNew
 	}
-	if oldAuthCtx.GetDeviceID() != deviceId || oldAuthCtx.GetUserID() != userId {
+	if oldAuthCtx.GetDeviceID() != deviceID || oldAuthCtx.GetUserID() != userID {
 		return updateTypeChanged
 	}
 	return updateTypeNone
@@ -166,7 +166,7 @@ func (client *Client) updateBySignInData(ctx context.Context, upd updateType, de
 	return nil
 }
 
-func subscribeToDeviceEvents(ctx context.Context, client *Client, owner, deviceId string) error {
+func subscribeToDeviceEvents(ctx context.Context, client *Client, owner, deviceID string) error {
 	if err := client.subscribeToDeviceEvents(owner, func(e *events.Event) {
 		evt := e.GetDevicesUnregistered()
 		if evt == nil {
@@ -175,7 +175,7 @@ func subscribeToDeviceEvents(ctx context.Context, client *Client, owner, deviceI
 		if evt.Owner != owner {
 			return
 		}
-		if !strings.Contains(evt.DeviceIds, deviceId) {
+		if !strings.Contains(evt.DeviceIds, deviceID) {
 			return
 		}
 		if err := client.Close(); err != nil {
@@ -187,16 +187,16 @@ func subscribeToDeviceEvents(ctx context.Context, client *Client, owner, deviceI
 	return nil
 }
 
-func subscribeAndValidateDeviceAccess(ctx context.Context, client *Client, owner, deviceId string, subscribe bool) (bool, error) {
+func subscribeAndValidateDeviceAccess(ctx context.Context, client *Client, owner, deviceID string, subscribe bool) (bool, error) {
 	// subscribe to updates before checking cache, so when the device gets removed during sign in
 	// the client will always be closed
 	if subscribe {
-		if err := subscribeToDeviceEvents(ctx, client, owner, deviceId); err != nil {
+		if err := subscribeToDeviceEvents(ctx, client, owner, deviceID); err != nil {
 			return false, err
 		}
 	}
 
-	return client.server.ownerCache.OwnsDevice(ctx, deviceId)
+	return client.server.ownerCache.OwnsDevice(ctx, deviceID)
 }
 
 func logSignInError(err error) {
@@ -336,7 +336,7 @@ func updateDeviceMetadata(req *mux.Message, client *Client) error {
 		})
 		if err != nil {
 			// Device will be still reported as online and it can fix his state by next calls online, offline commands.
-			return fmt.Errorf("DeviceId %v: cannot update cloud device status: %w", oldAuthCtx.GetDeviceID(), err)
+			return fmt.Errorf("deviceID %v: cannot update cloud device status: %w", oldAuthCtx.GetDeviceID(), err)
 		}
 	}
 	return nil

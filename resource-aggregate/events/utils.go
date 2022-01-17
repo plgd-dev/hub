@@ -7,9 +7,9 @@ import (
 )
 
 //MakeEventMeta for creating EventMetadata for event.
-func MakeEventMeta(connectionId string, sequence, version uint64) *EventMetadata {
+func MakeEventMeta(connectionID string, sequence, version uint64) *EventMetadata {
 	return &EventMetadata{
-		ConnectionId: connectionId,
+		ConnectionId: connectionID,
 		Sequence:     sequence,
 		Version:      version,
 		Timestamp:    time.Now().UnixNano(),

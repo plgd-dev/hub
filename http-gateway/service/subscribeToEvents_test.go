@@ -33,9 +33,9 @@ func isDeviceMetadataUpdatedOnlineEvent(ev *pb.Event, deviceID string) bool {
 		ev.GetDeviceMetadataUpdated().GetStatus().GetValue() == commands.ConnectionStatus_ONLINE
 }
 
-func checkDeviceMetadataUpdatedOnlineEvent(t *testing.T, ev *pb.Event, deviceID, baseSubId string) {
+func checkDeviceMetadataUpdatedOnlineEvent(t *testing.T, ev *pb.Event, deviceID, baseSubID string) {
 	expectedEvent := &pb.Event{
-		SubscriptionId: baseSubId,
+		SubscriptionId: baseSubID,
 		Type: &pb.Event_DeviceMetadataUpdated{
 			DeviceMetadataUpdated: pbTest.MakeDeviceMetadataUpdated(deviceID, commands.ShadowSynchronization_UNSET, ""),
 		},
@@ -47,7 +47,7 @@ func checkDeviceMetadataUpdatedOnlineEvent(t *testing.T, ev *pb.Event, deviceID,
 type updateChecker struct {
 	c            pb.GrpcGatewayClient
 	deviceID     string
-	baseSubId    string
+	baseSubID    string
 	subUpdatedID string
 
 	recv func() (*pb.Event, error)
@@ -95,7 +95,7 @@ func (u *updateChecker) checkUpdateLightResource(t *testing.T, ctx context.Conte
 			pbTest.CmpEvent(t, expectedEvent, ev, "")
 		case ev.GetResourceChanged() != nil:
 			expectedEvent := &pb.Event{
-				SubscriptionId: u.baseSubId,
+				SubscriptionId: u.baseSubID,
 				Type: &pb.Event_ResourceChanged{
 					ResourceChanged: pbTest.MakeResourceChanged(t, u.deviceID, test.TestResourceLightInstanceHref("1"),
 						ev.GetResourceChanged().GetAuditContext().GetCorrelationId(),
@@ -196,14 +196,14 @@ func TestRequestHandlerSubscribeToEvents(t *testing.T) {
 		CorrelationId: "testToken",
 	}
 	pbTest.CmpEvent(t, expectedEvent, ev, "")
-	baseSubId := ev.SubscriptionId
+	baseSubID := ev.SubscriptionId
 
 	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.GW_HOST, nil)
 
 	ev, err = recv()
 	require.NoError(t, err)
 	expectedEvent = &pb.Event{
-		SubscriptionId: baseSubId,
+		SubscriptionId: baseSubID,
 		Type: &pb.Event_DeviceRegistered_{
 			DeviceRegistered: &pb.Event_DeviceRegistered{
 				DeviceIds: []string{deviceID},
@@ -220,12 +220,12 @@ func TestRequestHandlerSubscribeToEvents(t *testing.T) {
 			break
 		}
 	}
-	checkDeviceMetadataUpdatedOnlineEvent(t, ev, deviceID, baseSubId)
+	checkDeviceMetadataUpdatedOnlineEvent(t, ev, deviceID, baseSubID)
 
 	ev, err = recv()
 	require.NoError(t, err)
 	expectedEvent = &pb.Event{
-		SubscriptionId: baseSubId,
+		SubscriptionId: baseSubID,
 		Type: &pb.Event_ResourceChanged{
 			ResourceChanged: pbTest.MakeResourceChanged(t, deviceID, test.TestResourceLightInstanceHref("1"),
 				ev.GetResourceChanged().GetAuditContext().GetCorrelationId(),
@@ -271,7 +271,7 @@ func TestRequestHandlerSubscribeToEvents(t *testing.T) {
 	updChecker := &updateChecker{
 		c:            c,
 		deviceID:     deviceID,
-		baseSubId:    baseSubId,
+		baseSubID:    baseSubID,
 		subUpdatedID: ev.SubscriptionId,
 		recv:         recv,
 	}

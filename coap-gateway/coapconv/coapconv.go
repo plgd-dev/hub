@@ -178,26 +178,26 @@ func NewCommandMetadata(sequenceNumber uint64, connectionID string) *commands.Co
 	}
 }
 
-func NewConfirmResourceRetrieveRequest(resourceID *commands.ResourceId, correlationId string, connectionID string, req *pool.Message) *commands.ConfirmResourceRetrieveRequest {
+func NewConfirmResourceRetrieveRequest(resourceID *commands.ResourceId, correlationID, connectionID string, req *pool.Message) *commands.ConfirmResourceRetrieveRequest {
 	content := NewContent(req.Options(), req.Body())
 	metadata := NewCommandMetadata(req.Sequence(), connectionID)
 
 	return &commands.ConfirmResourceRetrieveRequest{
 		ResourceId:      resourceID,
-		CorrelationId:   correlationId,
+		CorrelationId:   correlationID,
 		Status:          CoapCodeToStatus(req.Code()),
 		Content:         content,
 		CommandMetadata: metadata,
 	}
 }
 
-func NewConfirmResourceUpdateRequest(resourceID *commands.ResourceId, correlationId string, connectionID string, req *pool.Message) *commands.ConfirmResourceUpdateRequest {
+func NewConfirmResourceUpdateRequest(resourceID *commands.ResourceId, correlationID, connectionID string, req *pool.Message) *commands.ConfirmResourceUpdateRequest {
 	content := NewContent(req.Options(), req.Body())
 	metadata := NewCommandMetadata(req.Sequence(), connectionID)
 
 	return &commands.ConfirmResourceUpdateRequest{
 		ResourceId:      resourceID,
-		CorrelationId:   correlationId,
+		CorrelationId:   correlationID,
 		Status:          CoapCodeToStatus(req.Code()),
 		Content:         content,
 		CommandMetadata: metadata,
@@ -226,13 +226,13 @@ func NewDeleteResourceRequest(resourceID *commands.ResourceId, req *mux.Message,
 	}, nil
 }
 
-func NewConfirmResourceDeleteRequest(resourceID *commands.ResourceId, correlationId string, connectionID string, req *pool.Message) *commands.ConfirmResourceDeleteRequest {
+func NewConfirmResourceDeleteRequest(resourceID *commands.ResourceId, correlationID, connectionID string, req *pool.Message) *commands.ConfirmResourceDeleteRequest {
 	content := NewContent(req.Options(), req.Body())
 	metadata := NewCommandMetadata(req.Sequence(), connectionID)
 
 	return &commands.ConfirmResourceDeleteRequest{
 		ResourceId:      resourceID,
-		CorrelationId:   correlationId,
+		CorrelationId:   correlationID,
 		Status:          CoapCodeToStatus(req.Code()),
 		Content:         content,
 		CommandMetadata: metadata,
@@ -372,13 +372,13 @@ func NewCreateResourceRequest(resourceID *commands.ResourceId, req *mux.Message,
 	}, nil
 }
 
-func NewConfirmResourceCreateRequest(resourceID *commands.ResourceId, correlationId string, connectionID string, req *pool.Message) *commands.ConfirmResourceCreateRequest {
+func NewConfirmResourceCreateRequest(resourceID *commands.ResourceId, correlationID, connectionID string, req *pool.Message) *commands.ConfirmResourceCreateRequest {
 	content := NewContent(req.Options(), req.Body())
 	metadata := NewCommandMetadata(req.Sequence(), connectionID)
 
 	return &commands.ConfirmResourceCreateRequest{
 		ResourceId:      resourceID,
-		CorrelationId:   correlationId,
+		CorrelationId:   correlationID,
 		Status:          CoapCodeToStatus(req.Code()),
 		Content:         content,
 		CommandMetadata: metadata,

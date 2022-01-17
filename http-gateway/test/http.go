@@ -132,11 +132,11 @@ func (c *requestBuilder) AddTypeFilter(typeFilter []string) *requestBuilder {
 	return c
 }
 
-func (c *requestBuilder) AddCorrelantionIdFilter(correlantionId []string) *requestBuilder {
-	if len(correlantionId) == 0 {
+func (c *requestBuilder) AddCorrelationIdFilter(correlationID []string) *requestBuilder {
+	if len(correlationID) == 0 {
 		return c
 	}
-	c.AddQuery(uri.CorrelationIdFilterQueryKey, correlantionId...)
+	c.AddQuery(uri.CorrelationIdFilterQueryKey, correlationID...)
 	return c
 }
 

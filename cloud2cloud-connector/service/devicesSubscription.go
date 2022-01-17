@@ -63,7 +63,7 @@ func (s *SubscriptionManager) SubscribeToDevices(ctx context.Context, linkedAcco
 
 func (s *SubscriptionManager) subscribeToDevices(ctx context.Context, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud, correlationID, signingSecret string) (string, error) {
 	resp, err := subscribe(ctx, "/devices/subscriptions", correlationID, events.SubscriptionRequest{
-		URL: s.eventsURL,
+		EventsURL: s.eventsURL,
 		EventTypes: []events.EventType{
 			events.EventType_DevicesRegistered, events.EventType_DevicesUnregistered,
 			events.EventType_DevicesOnline, events.EventType_DevicesOffline,
@@ -73,7 +73,7 @@ func (s *SubscriptionManager) subscribeToDevices(ctx context.Context, linkedAcco
 	if err != nil {
 		return "", err
 	}
-	return resp.SubscriptionId, nil
+	return resp.SubscriptionID, nil
 }
 
 func cancelDevicesSubscription(ctx context.Context, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud, subscriptionID string) error {
@@ -94,7 +94,7 @@ func (s *SubscriptionManager) HandleDevicesRegistered(ctx context.Context, d sub
 			errors = append(errors, err)
 			continue
 		}
-		if d.linkedCloud.SupportedSubscriptionsEvents.StaticDeviceEvents {
+		if d.linkedCloud.SupportedSubscriptionEvents.StaticDeviceEvents {
 			s.triggerTask(Task{
 				taskType:      TaskType_PullDevice,
 				linkedAccount: d.linkedAccount,
@@ -103,7 +103,7 @@ func (s *SubscriptionManager) HandleDevicesRegistered(ctx context.Context, d sub
 			})
 			continue
 		}
-		if d.linkedCloud.SupportedSubscriptionsEvents.NeedPullDevice() {
+		if d.linkedCloud.SupportedSubscriptionEvents.NeedPullDevice() {
 			continue
 		}
 		s.triggerTask(Task{

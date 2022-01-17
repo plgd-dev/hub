@@ -116,7 +116,7 @@ func (i *iterator) Next(ctx context.Context) (eventstore.EventUnmarshaler, bool)
 		i.err = fmt.Errorf("invalid data, '%v' of event %v is not an int64", timestampKey, i.idx)
 		return nil, false
 	}
-	i.logDebugfFunc("mongodb.iterator.next: GroupId %v: AggregateId %v: Version %v, EvenType %v, Timestamp %v",
+	i.logDebugfFunc("mongodb.iterator.next: GroupID %v: AggregateID %v: Version %v, EvenType %v, Timestamp %v",
 		i.groupID, i.aggregateID, version, eventType, timestamp)
 	data, ok := ev[dataKey].(primitive.Binary)
 	if !ok {

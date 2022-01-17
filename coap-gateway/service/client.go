@@ -258,7 +258,7 @@ func (client *Client) OnClose() {
 		})
 		if err != nil {
 			// Device will be still reported as online and it can fix his state by next calls online, offline commands.
-			log.Errorf("DeviceId %v: cannot handle sign out: cannot update cloud device status: %w", oldAuthCtx.GetDeviceID(), err)
+			log.Errorf("DeviceID %v: cannot handle sign out: cannot update cloud device status: %w", oldAuthCtx.GetDeviceID(), err)
 		}
 	}
 }

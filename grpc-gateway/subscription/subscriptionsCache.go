@@ -380,11 +380,11 @@ func (c *SubscriptionsCache) Subscribe(subject string, onEvent SendEventWithType
 	}
 	err = c.executeOnLockedeventSubject(subject, func(s *eventSubject) error {
 		if onEvent != nil {
-			handlerId := atomic.AddUint64(&c.handlerID, 1)
-			for !s.AddHandlerLocked(handlerId, onEvent) {
-				handlerId = atomic.AddUint64(&c.handlerID, 1)
+			handlerID := atomic.AddUint64(&c.handlerID, 1)
+			for !s.AddHandlerLocked(handlerID, onEvent) {
+				handlerID = atomic.AddUint64(&c.handlerID, 1)
 			}
-			closeFunc = c.makeCloseFunc(subject, handlerId)
+			closeFunc = c.makeCloseFunc(subject, handlerID)
 		}
 		if s.subscription == nil {
 			err := s.subscribeLocked(subject, c.conn.Subscribe, func(msg *nats.Msg) {

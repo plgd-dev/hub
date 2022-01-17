@@ -15,10 +15,10 @@ func (requestHandler *RequestHandler) getPendingMetadataUpdates(w http.ResponseW
 	deviceID := vars[uri.DeviceIDKey]
 
 	type options struct {
-		DeviceIdFilter []string `url:"deviceIdFilter"`
+		DeviceIDFilter []string `url:"deviceIdFilter"`
 	}
 	opt := options{
-		DeviceIdFilter: []string{deviceID},
+		DeviceIDFilter: []string{deviceID},
 	}
 	q, err := query.Values(opt)
 	if err != nil {

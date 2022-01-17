@@ -59,8 +59,8 @@ func TestRequestHandlerSubscribeToEvents(t *testing.T) {
 	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.GW_HOST, resourceLinks)
 	defer shutdownDevSim()
 
-	const switchId = "1"
-	resourceLinks = append(resourceLinks, test.AddDeviceSwitchResources(ctx, t, deviceID, c, switchId)...)
+	const switchID = "1"
+	resourceLinks = append(resourceLinks, test.AddDeviceSwitchResources(ctx, t, deviceID, c, switchID)...)
 	time.Sleep(200 * time.Millisecond)
 
 	type args struct {
@@ -257,9 +257,9 @@ func TestRequestHandlerSubscribeForCreateEvents(t *testing.T) {
 	}
 	test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
 
-	const switchId = "1"
+	const switchID = "1"
 	switchData := test.MakeSwitchResourceDefaultData()
-	test.AddDeviceSwitchResources(ctx, t, deviceID, c, switchId)
+	test.AddDeviceSwitchResources(ctx, t, deviceID, c, switchID)
 
 	ev, err = client.Recv()
 	require.NoError(t, err)
@@ -272,7 +272,7 @@ func TestRequestHandlerSubscribeForCreateEvents(t *testing.T) {
 		},
 	}, ev, "")
 
-	switchLink := test.DefaultSwitchResourceLink("", switchId)
+	switchLink := test.DefaultSwitchResourceLink("", switchID)
 	switchData = test.MakeSwitchResourceData(map[string]interface{}{
 		"href": switchLink.Href,
 		"rep": map[string]interface{}{
@@ -641,8 +641,8 @@ func TestRequestHandlerSubscribeForPendingCommands(t *testing.T) {
 				CorrelationId:  correlationID,
 			}
 			test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
-			subscriptionId := ev.SubscriptionId
-			fmt.Printf("sub %v\n", subscriptionId)
+			subscriptionID := ev.SubscriptionId
+			fmt.Printf("sub %v\n", subscriptionID)
 
 			values := make([]*pb.PendingCommand, 0, 1)
 			for len(values) < len(tt.want) {
@@ -667,7 +667,7 @@ func TestRequestHandlerSubscribeForPendingCommands(t *testing.T) {
 				CorrelationId: correlationID,
 				Action: &pb.SubscribeToEvents_CancelSubscription_{
 					CancelSubscription: &pb.SubscribeToEvents_CancelSubscription{
-						SubscriptionId: subscriptionId,
+						SubscriptionId: subscriptionID,
 					},
 				},
 			})
@@ -677,7 +677,7 @@ func TestRequestHandlerSubscribeForPendingCommands(t *testing.T) {
 			ev, err = client.Recv()
 			require.NoError(t, err)
 			expectedEvent = &pb.Event{
-				SubscriptionId: subscriptionId,
+				SubscriptionId: subscriptionID,
 				Type: &pb.Event_SubscriptionCanceled_{
 					SubscriptionCanceled: &pb.Event_SubscriptionCanceled{},
 				},
@@ -689,7 +689,7 @@ func TestRequestHandlerSubscribeForPendingCommands(t *testing.T) {
 			ev, err = client.Recv()
 			require.NoError(t, err)
 			expectedEvent = &pb.Event{
-				SubscriptionId: subscriptionId,
+				SubscriptionId: subscriptionID,
 				Type:           pbTest.OperationProcessedOK(),
 				CorrelationId:  correlationID,
 			}

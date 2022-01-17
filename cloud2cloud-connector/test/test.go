@@ -82,7 +82,7 @@ func SetUpClouds(ctx context.Context, t *testing.T, deviceID string, supportedEv
 			TokenURL:     testCfg.OAUTH_MANAGER_ENDPOINT_TOKENURL,
 			Scopes:       []string{"r:*", "w:*"},
 		},
-		SupportedSubscriptionsEvents: supportedEvents,
+		SupportedSubscriptionEvents: supportedEvents,
 	}
 	data, err := json.Encode(linkedCloud)
 	require.NoError(t, err)

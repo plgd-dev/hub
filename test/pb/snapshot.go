@@ -8,8 +8,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func CleanUpResourceStateSnapshotTaken(e *events.ResourceStateSnapshotTaken, resetCorrelationId bool) *events.ResourceStateSnapshotTaken {
-	if e.GetAuditContext() != nil && resetCorrelationId {
+func CleanUpResourceStateSnapshotTaken(e *events.ResourceStateSnapshotTaken, resetCorrelationID bool) *events.ResourceStateSnapshotTaken {
+	if e.GetAuditContext() != nil && resetCorrelationID {
 		e.GetAuditContext().CorrelationId = ""
 	}
 	e.EventMetadata = nil
@@ -52,9 +52,9 @@ func CmpResourceStateSnapshotTaken(t *testing.T, expected, got *events.ResourceS
 	got.ResourceDeletePendings = nil
 	expected.ResourceDeletePendings = nil
 
-	resetCorrelationId := expected.GetAuditContext().GetCorrelationId() == ""
-	CleanUpResourceStateSnapshotTaken(expected, resetCorrelationId)
-	CleanUpResourceStateSnapshotTaken(got, resetCorrelationId)
+	resetCorrelationID := expected.GetAuditContext().GetCorrelationId() == ""
+	CleanUpResourceStateSnapshotTaken(expected, resetCorrelationID)
+	CleanUpResourceStateSnapshotTaken(got, resetCorrelationID)
 
 	test.CheckProtobufs(t, expected, got, test.RequireToCheckFunc(require.Equal))
 }

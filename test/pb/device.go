@@ -26,19 +26,19 @@ func CmpDeviceValues(t *testing.T, expected, got []*pbGrpc.Device) {
 	test.CheckProtobufs(t, expected, got, test.RequireToCheckFunc(require.Equal))
 }
 
-func MakeDeviceMetadataUpdated(deviceID string, shadowSynchronization commands.ShadowSynchronization, correlationId string) *events.DeviceMetadataUpdated {
+func MakeDeviceMetadataUpdated(deviceID string, shadowSynchronization commands.ShadowSynchronization, correlationID string) *events.DeviceMetadataUpdated {
 	return &events.DeviceMetadataUpdated{
 		DeviceId: deviceID,
 		Status: &commands.ConnectionStatus{
 			Value: commands.ConnectionStatus_ONLINE,
 		},
 		ShadowSynchronization: shadowSynchronization,
-		AuditContext:          commands.NewAuditContext(oauthService.DeviceUserID, correlationId),
+		AuditContext:          commands.NewAuditContext(oauthService.DeviceUserID, correlationID),
 	}
 }
 
-func CleanUpDeviceMetadataUpdated(e *events.DeviceMetadataUpdated, resetCorrelationId bool) *events.DeviceMetadataUpdated {
-	if e.GetAuditContext() != nil && resetCorrelationId {
+func CleanUpDeviceMetadataUpdated(e *events.DeviceMetadataUpdated, resetCorrelationID bool) *events.DeviceMetadataUpdated {
+	if e.GetAuditContext() != nil && resetCorrelationID {
 		e.GetAuditContext().CorrelationId = ""
 	}
 	e.EventMetadata = nil
@@ -49,18 +49,18 @@ func CleanUpDeviceMetadataUpdated(e *events.DeviceMetadataUpdated, resetCorrelat
 }
 
 func CmpDeviceMetadataUpdated(t *testing.T, expected, got *events.DeviceMetadataUpdated) {
-	resetCorrelationId := expected.GetAuditContext().GetCorrelationId() == ""
-	CleanUpDeviceMetadataUpdated(expected, resetCorrelationId)
-	CleanUpDeviceMetadataUpdated(got, resetCorrelationId)
+	resetCorrelationID := expected.GetAuditContext().GetCorrelationId() == ""
+	CleanUpDeviceMetadataUpdated(expected, resetCorrelationID)
+	CleanUpDeviceMetadataUpdated(got, resetCorrelationID)
 	test.CheckProtobufs(t, expected, got, test.RequireToCheckFunc(require.Equal))
 }
 
 func CmpDeviceMetadataUpdatedSlice(t *testing.T, expected, got []*events.DeviceMetadataUpdated) {
 	require.Len(t, got, len(expected))
 	for idx := range expected {
-		resetCorrelationId := expected[idx].GetAuditContext().GetCorrelationId() == ""
-		CleanUpDeviceMetadataUpdated(expected[idx], resetCorrelationId)
-		CleanUpDeviceMetadataUpdated(got[idx], resetCorrelationId)
+		resetCorrelationID := expected[idx].GetAuditContext().GetCorrelationId() == ""
+		CleanUpDeviceMetadataUpdated(expected[idx], resetCorrelationID)
+		CleanUpDeviceMetadataUpdated(got[idx], resetCorrelationID)
 	}
 	test.CheckProtobufs(t, expected, got, test.RequireToCheckFunc(require.Equal))
 }

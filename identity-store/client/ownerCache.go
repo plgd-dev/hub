@@ -214,11 +214,11 @@ func (c *OwnerCache) Subscribe(owner string, onEvent func(e *events.Event)) (clo
 	}
 	err = c.executeOnLockedOwnerSubject(owner, func(s *ownerSubject) error {
 		if onEvent != nil {
-			handlerId := atomic.AddUint64(&c.handlerID, 1)
-			for !s.AddHandlerLocked(handlerId, onEvent) {
-				handlerId = atomic.AddUint64(&c.handlerID, 1)
+			handlerID := atomic.AddUint64(&c.handlerID, 1)
+			for !s.AddHandlerLocked(handlerID, onEvent) {
+				handlerID = atomic.AddUint64(&c.handlerID, 1)
 			}
-			closeFunc = c.makeCloseFunc(owner, handlerId)
+			closeFunc = c.makeCloseFunc(owner, handlerID)
 		}
 		if s.subscription == nil {
 			err := s.subscribeLocked(owner, c.conn.Subscribe, func(msg *nats.Msg) {

@@ -68,7 +68,7 @@ func (s *SubscriptionManager) SubscribeToDevice(ctx context.Context, deviceID st
 
 func (s *SubscriptionManager) subscribeToDevice(ctx context.Context, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud, correlationID, signingSecret, deviceID string) (string, error) {
 	resp, err := subscribe(ctx, "/devices/"+deviceID+"/subscriptions", correlationID, events.SubscriptionRequest{
-		URL: s.eventsURL,
+		EventsURL: s.eventsURL,
 		EventTypes: []events.EventType{
 			events.EventType_ResourcesPublished,
 			events.EventType_ResourcesUnpublished,
@@ -78,7 +78,7 @@ func (s *SubscriptionManager) subscribeToDevice(ctx context.Context, linkedAccou
 	if err != nil {
 		return "", fmt.Errorf("cannot subscribe to device %v for %v: %w", deviceID, linkedAccount.ID, err)
 	}
-	return resp.SubscriptionId, nil
+	return resp.SubscriptionID, nil
 }
 
 func cancelDeviceSubscription(ctx context.Context, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud, deviceID, subscriptionID string) error {
@@ -132,7 +132,7 @@ func (s *SubscriptionManager) HandleResourcesPublished(ctx context.Context, d su
 			errors = append(errors, fmt.Errorf("cannot publish resource: %w", err))
 			continue
 		}
-		if d.linkedCloud.SupportedSubscriptionsEvents.NeedPullResources() {
+		if d.linkedCloud.SupportedSubscriptionEvents.NeedPullResources() {
 			continue
 		}
 		s.triggerTask(Task{

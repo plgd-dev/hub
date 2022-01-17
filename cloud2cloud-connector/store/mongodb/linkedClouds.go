@@ -64,12 +64,12 @@ func (s *Store) InsertLinkedCloud(ctx context.Context, sub store.LinkedCloud) er
 	return nil
 }
 
-func (s *Store) RemoveLinkedCloud(ctx context.Context, linkedCloudId string) error {
-	if linkedCloudId == "" {
+func (s *Store) RemoveLinkedCloud(ctx context.Context, linkedCloudID string) error {
+	if linkedCloudID == "" {
 		return fmt.Errorf("cannot remove linked cloud: invalid LinkedCloudId")
 	}
 
-	res, err := s.Collection(resLinkedCloudCName).DeleteOne(ctx, bson.M{"_id": linkedCloudId})
+	res, err := s.Collection(resLinkedCloudCName).DeleteOne(ctx, bson.M{"_id": linkedCloudID})
 	if err != nil {
 		return fmt.Errorf("cannot remove linked cloud: %w", err)
 	}
