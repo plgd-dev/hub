@@ -2,6 +2,7 @@ package events
 
 type EventType string
 
+// https://github.com/openconnectivityfoundation/cloud-services/blob/master/swagger2.0/oic.r.cloudapiforcloudservices.swagger.json#/definitions/EventType
 const (
 	// resource
 	EventType_ResourceChanged EventType = "resource_contentchanged"
@@ -35,12 +36,16 @@ func (e EventTypes) Has(ev EventType) bool {
 	return false
 }
 
+// https://github.com/openconnectivityfoundation/cloud-services/blob/master/swagger2.0/oic.r.cloudapiforcloudservices.swagger.json#/definitions/SubscribeRequestDevices
+// https://github.com/openconnectivityfoundation/cloud-services/blob/master/swagger2.0/oic.r.cloudapiforcloudservices.swagger.json#/definitions/SubscribeRequestDevice
+// https://github.com/openconnectivityfoundation/cloud-services/blob/master/swagger2.0/oic.r.cloudapiforcloudservices.swagger.json#/definitions/SubscribeRequestResources
 type SubscriptionRequest struct {
 	EventsURL     string      `json:"eventsUrl"`
 	EventTypes    []EventType `json:"eventTypes"`
 	SigningSecret string      `json:"signingSecret"`
 }
 
+// https://github.com/openconnectivityfoundation/cloud-services/blob/master/swagger2.0/oic.r.cloudapiforcloudservices.swagger.json#/definitions/SubscribeResponse
 type SubscriptionResponse struct {
 	SubscriptionID string `json:"subscriptionId"`
 }

@@ -101,10 +101,10 @@ paths:
         - Accounts
       summary: Used for get authorization code for linked account
       parameters:
-        - $ref: "#/components/parameters/oauthCallback"
+        - $ref: "#/components/parameters/{oauthCallback}"
       responses:
         200:
-          description: redirect to get autorization code
+          description: redirect to get authorization code
   /api/v1/events:
     $ref: "https://raw.githubusercontent.com/openconnectivityfoundation/core-extensions/ocfcloud-openapi/swagger2.0/oic.r.cloudopenapi.swagger.json#/paths/%2F%7BeventsUrl%7D"
 components:
