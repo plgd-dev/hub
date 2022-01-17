@@ -61,6 +61,7 @@ type Endpoint struct {
 	UseSystemCAs       bool     `json:"useSystemCas"`
 }
 
+// https://github.com/plgd-dev/hub/blob/main/cloud2cloud-connector/swagger.yaml#/components/schemas/LinkedCloud
 type LinkedCloud struct {
 	ID                          string       `json:"id" bson:"_id"`
 	Name                        string       `json:"name"`

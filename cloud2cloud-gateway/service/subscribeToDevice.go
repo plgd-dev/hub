@@ -26,7 +26,7 @@ func (rh *RequestHandler) subscribeToDevice(w http.ResponseWriter, r *http.Reque
 	if err != nil {
 		return http.StatusBadRequest, fmt.Errorf("cannot store subscription: %w", err)
 	}
-	err = jsonResponseWriterEncoder(w, SubscriptionResponse{
+	err = jsonResponseWriterEncoder(w, events.SubscriptionResponse{
 		SubscriptionID: s.ID,
 	}, http.StatusCreated)
 	if err != nil {

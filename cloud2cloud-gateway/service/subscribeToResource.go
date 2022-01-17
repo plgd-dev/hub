@@ -15,10 +15,6 @@ import (
 	"github.com/plgd-dev/kit/v2/codec/json"
 )
 
-type SubscriptionResponse struct {
-	SubscriptionID string `json:"subscriptionId"`
-}
-
 func (rh *RequestHandler) makeSubscription(w http.ResponseWriter, r *http.Request, typ store.Type, validEventTypes []events.EventType) (store.Subscription, int, error) {
 	var res store.Subscription
 	var req events.SubscriptionRequest
@@ -77,7 +73,7 @@ func (rh *RequestHandler) subscribeToResource(w http.ResponseWriter, r *http.Req
 	if err != nil {
 		return http.StatusBadRequest, fmt.Errorf("cannot store subscription: %w", err)
 	}
-	err = jsonResponseWriterEncoder(w, SubscriptionResponse{
+	err = jsonResponseWriterEncoder(w, events.SubscriptionResponse{
 		SubscriptionID: s.ID,
 	}, http.StatusCreated)
 	if err != nil {

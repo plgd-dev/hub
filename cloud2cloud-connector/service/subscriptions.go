@@ -54,7 +54,7 @@ type SubscriptionManager struct {
 }
 
 func NewSubscriptionManager(
-	EventsURL string,
+	eventsURL string,
 	isClient pbIS.IdentityStoreClient,
 	raClient raService.ResourceAggregateClient,
 	store *Store,
@@ -70,7 +70,7 @@ func NewSubscriptionManager(
 	})
 
 	return &SubscriptionManager{
-		eventsURL:           EventsURL,
+		eventsURL:           eventsURL,
 		store:               store,
 		raClient:            raClient,
 		isClient:            isClient,

@@ -189,7 +189,6 @@ func (requestHandler *RequestHandler) tokenOptions(w http.ResponseWriter, r *htt
 }
 
 type tokenRequest struct {
-	// RedirectURI  string `json:"redirect_uri"`
 	ClientID     string `json:"client_id"`
 	CodeVerifier string `json:"code_verifier"`
 	GrantType    string `json:"grant_type"`

@@ -11,20 +11,22 @@ import (
 	"time"
 
 	"github.com/plgd-dev/go-coap/v2/message"
-
 	"github.com/plgd-dev/kit/v2/codec/cbor"
 	"github.com/plgd-dev/kit/v2/codec/json"
 )
 
-const CorrelationIDKey = "Correlation-ID"
-const SubscriptionIDKey = "Subscription-ID"
-const ContentTypeKey = "Content-Type"
-const AcceptKey = "Accept"
-const EventTypeKey = "Event-Type"
-const SequenceNumberKey = "Sequence-Number"
-const EventTimestampKey = "Event-Timestamp"
-const EventSignatureKey = "Event-Signature"
-const AcceptEncodingKey = "Accept-Encoding"
+// https://github.com/openconnectivityfoundation/cloud-services/blob/master/swagger2.0/oic.r.cloudapiforcloudservices.swagger.json
+const (
+	CorrelationIDKey  = "Correlation-ID"
+	SubscriptionIDKey = "Subscription-ID"
+	ContentTypeKey    = "Content-Type"
+	AcceptKey         = "Accept"
+	EventTypeKey      = "Event-Type"
+	SequenceNumberKey = "Sequence-Number"
+	EventTimestampKey = "Event-Timestamp"
+	EventSignatureKey = "Event-Signature"
+	AcceptEncodingKey = "Accept-Encoding"
+)
 const ContentEncodingKey = "Content-Encoding"
 
 var ContentType_JSON = message.AppJSON.String()

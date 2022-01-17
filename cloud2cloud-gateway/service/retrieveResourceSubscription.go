@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/plgd-dev/hub/v2/cloud2cloud-connector/events"
 )
 
 func (rh *RequestHandler) retrieveSubscription(w http.ResponseWriter, r *http.Request) (int, error) {
@@ -21,7 +22,7 @@ func (rh *RequestHandler) retrieveSubscription(w http.ResponseWriter, r *http.Re
 		return http.StatusBadRequest, fmt.Errorf("invalid resource(%v) for subscription", href)
 	}
 
-	err := jsonResponseWriterEncoder(w, SubscriptionResponse{
+	err := jsonResponseWriterEncoder(w, events.SubscriptionResponse{
 		SubscriptionID: subscriptionID,
 	}, http.StatusOK)
 	if err != nil {

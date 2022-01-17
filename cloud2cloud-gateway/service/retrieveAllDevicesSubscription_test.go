@@ -9,7 +9,6 @@ import (
 
 	"github.com/plgd-dev/go-coap/v2/message"
 	c2cEvents "github.com/plgd-dev/hub/v2/cloud2cloud-connector/events"
-	c2cService "github.com/plgd-dev/hub/v2/cloud2cloud-gateway/service"
 	c2cTest "github.com/plgd-dev/hub/v2/cloud2cloud-gateway/test"
 	"github.com/plgd-dev/hub/v2/cloud2cloud-gateway/uri"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
@@ -121,7 +120,7 @@ func TestRequestHandlerRetrieveDevicesSubscription(t *testing.T) {
 			wantCode:        http.StatusOK,
 			wantContentType: message.AppJSON.String(),
 			want: map[interface{}]interface{}{
-				test.FieldJsonTag(c2cService.SubscriptionResponse{}, "SubscriptionID"): subID,
+				test.FieldJsonTag(c2cEvents.SubscriptionResponse{}, "SubscriptionID"): subID,
 			},
 		},
 	}
