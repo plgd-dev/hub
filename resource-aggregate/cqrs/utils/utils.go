@@ -26,15 +26,15 @@ const PlgdOwnersOwnerDevicesDeviceResources = PlgdOwnersOwnerDevicesDevice + ".r
 const PlgdOwnersOwnerDevicesDeviceResourcesResource = PlgdOwnersOwnerDevicesDeviceResources + ".{" + ResourceIDKey + "}"
 const PlgdOwnersOwnerDevicesDeviceResourcesResourceEvent = PlgdOwnersOwnerDevicesDeviceResourcesResource + ".{" + isEvents.EventTypeKey + "}"
 
-func WithResourceId(resourceId string) func(values map[string]string) {
+func WithResourceId(resourceID string) func(values map[string]string) {
 	return func(values map[string]string) {
-		values[ResourceIDKey] = resourceId
+		values[ResourceIDKey] = resourceID
 	}
 }
 
-func WithDeviceID(deviceId string) func(values map[string]string) {
+func WithDeviceID(deviceID string) func(values map[string]string) {
 	return func(values map[string]string) {
-		values[DeviceIDKey] = deviceId
+		values[DeviceIDKey] = deviceID
 	}
 }
 

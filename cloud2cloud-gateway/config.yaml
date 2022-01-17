@@ -65,7 +65,7 @@ clients:
       tls:
         caPool: "/secrets/public/rootca.crt"
         keyFile: "/secrets/private/cert.key"
-        certFile:  "/secrets/public/cert.crt"
+        certFile: "/secrets/public/cert.crt"
         useSystemCAPool: false
   subscription:
     http:

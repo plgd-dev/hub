@@ -53,8 +53,8 @@ func TestSubscriberReconnect(t *testing.T) {
 
 	AggregateID1 := "aggregateID1"
 	aggregateID1Path := Path{
-		AggregateId: AggregateID1,
-		GroupId:     "deviceId",
+		AggregateID: AggregateID1,
+		GroupID:     "deviceId",
 	}
 
 	eventsToPublish := []mockEvent{
@@ -69,7 +69,7 @@ func TestSubscriberReconnect(t *testing.T) {
 		},
 	}
 
-	err = pub.Publish(ctx, topics[0:1], aggregateID1Path.GroupId, aggregateID1Path.AggregateId, eventsToPublish[0])
+	err = pub.Publish(ctx, topics[0:1], aggregateID1Path.GroupID, aggregateID1Path.AggregateID, eventsToPublish[0])
 	require.NoError(t, err)
 
 	event0, err := m0.waitForEvent(timeout)
@@ -97,7 +97,7 @@ func TestSubscriberReconnect(t *testing.T) {
 		pub1.Close()
 		naClient1.Close()
 	}()
-	err = pub1.Publish(ctx, topics[0:1], aggregateID1Path.GroupId, aggregateID1Path.AggregateId, eventsToPublish[1])
+	err = pub1.Publish(ctx, topics[0:1], aggregateID1Path.GroupID, aggregateID1Path.AggregateID, eventsToPublish[1])
 	require.NoError(t, err)
 	event0, err = m0.waitForEvent(timeout)
 	require.NoError(t, err)

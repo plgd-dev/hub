@@ -62,11 +62,11 @@ type Endpoint struct {
 }
 
 type LinkedCloud struct {
-	ID                           string       `json:"Id" bson:"_id"`
-	Name                         string       `json:"Name"`
-	OAuth                        oauth.Config `json:"OAuth"`
-	SupportedSubscriptionsEvents Events       `json:"SupportedSubscriptionEvents"`
-	Endpoint                     Endpoint     `json:"Endpoint"`
+	ID                          string       `json:"Id" bson:"_id"`
+	Name                        string       `json:"Name"`
+	OAuth                       oauth.Config `json:"OAuth"`
+	SupportedSubscriptionEvents Events       `json:"SupportedSubscriptionEvents"`
+	Endpoint                    Endpoint     `json:"Endpoint"`
 }
 
 func (l LinkedCloud) GetHTTPClient() *http.Client {

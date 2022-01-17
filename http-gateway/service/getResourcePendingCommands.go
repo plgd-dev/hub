@@ -18,10 +18,10 @@ func (requestHandler *RequestHandler) getResourcePendingCommands(w http.Response
 	resourceID := commands.NewResourceID(deviceID, href).ToString()
 
 	type Options struct {
-		ResourceIdFilter []string `url:"resourceIdFilter"`
+		ResourceIDFilter []string `url:"resourceIdFilter"`
 	}
 	opt := Options{
-		ResourceIdFilter: []string{resourceID},
+		ResourceIDFilter: []string{resourceID},
 	}
 	q, err := query.Values(opt)
 	if err != nil {

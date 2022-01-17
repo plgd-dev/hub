@@ -36,11 +36,11 @@ func NewRequestHandler(config Config, eventstore EventStore, publisher eventbus.
 	}
 }
 
-func PublishEvents(publisher eventbus.Publisher, owner, deviceId, resourceId string, events []eventbus.Event) error {
+func PublishEvents(publisher eventbus.Publisher, owner, deviceID, resourceID string, events []eventbus.Event) error {
 	var errors []error
 	for _, event := range events {
 		// timeout si driven by flusherTimeout.
-		err := publisher.Publish(context.Background(), utils.GetPublishSubject(owner, event), deviceId, resourceId, event)
+		err := publisher.Publish(context.Background(), utils.GetPublishSubject(owner, event), deviceID, resourceID, event)
 		if err != nil {
 			errors = append(errors, err)
 		}

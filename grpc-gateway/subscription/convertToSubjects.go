@@ -64,12 +64,12 @@ func ConvertToSubjects(owner string, filterDeviceIDs kitStrings.Set, filterResou
 	for _, rawTemplate := range rawTemplates {
 		switch {
 		case len(filterResourceIDs) > 0:
-			for resId := range filterResourceIDs {
-				intTemplates[isEvents.ToSubject(rawTemplate, isEvents.WithOwner(owner), utils.WithDeviceID("*"), utils.WithResourceId(resId))] = true
+			for resID := range filterResourceIDs {
+				intTemplates[isEvents.ToSubject(rawTemplate, isEvents.WithOwner(owner), utils.WithDeviceID("*"), utils.WithResourceId(resID))] = true
 			}
 		case len(filterDeviceIDs) > 0:
-			for devId := range filterDeviceIDs {
-				intTemplates[isEvents.ToSubject(rawTemplate, isEvents.WithOwner(owner), utils.WithDeviceID(devId), utils.WithResourceId("*"))] = true
+			for devID := range filterDeviceIDs {
+				intTemplates[isEvents.ToSubject(rawTemplate, isEvents.WithOwner(owner), utils.WithDeviceID(devID), utils.WithResourceId("*"))] = true
 			}
 		default:
 			intTemplates[isEvents.ToSubject(rawTemplate, isEvents.WithOwner(owner), utils.WithDeviceID("*"), utils.WithResourceId("*"))] = true

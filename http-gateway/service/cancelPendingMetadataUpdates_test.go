@@ -75,7 +75,7 @@ func TestRequestHandlerCancelPendingMetadataUpdates(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			rb := httpgwTest.NewRequest(http.MethodDelete, uri.AliasDevicePendingMetadataUpdates, nil).AuthToken(token).Accept(tt.args.accept)
-			rb.DeviceId(tt.args.deviceID).AddCorrelantionIdFilter(tt.args.correlationIdFilter)
+			rb.DeviceId(tt.args.deviceID).AddCorrelationIdFilter(tt.args.correlationIdFilter)
 			v, code, err := doPendingCommand(t, rb.Build())
 			assert.Equal(t, tt.wantHTTPCode, code)
 			if tt.wantErr {

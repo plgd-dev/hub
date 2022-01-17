@@ -17,7 +17,7 @@ func TestServiceDeleteDevices(t *testing.T) {
 	const testDevID2 = "testDeviceID2"
 	const testDevID3 = "testDeviceID3"
 	const testDevID4 = "testDeviceID4"
-	jwtWithSubUserId := config.CreateJwtToken(t, jwt.MapClaims{
+	jwtWithSubUserID := config.CreateJwtToken(t, jwt.MapClaims{
 		"sub": "userId",
 	})
 	jwtWithSubTestUserID := config.CreateJwtToken(t, jwt.MapClaims{
@@ -46,7 +46,7 @@ func TestServiceDeleteDevices(t *testing.T) {
 		{
 			name: "invalid deviceId",
 			args: args{
-				ctx:     kitNetGrpc.CtxWithIncomingToken(context.Background(), jwtWithSubUserId),
+				ctx:     kitNetGrpc.CtxWithIncomingToken(context.Background(), jwtWithSubUserID),
 				request: &pb.DeleteDevicesRequest{},
 			},
 			want: &pb.DeleteDevicesResponse{},

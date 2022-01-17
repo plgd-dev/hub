@@ -164,19 +164,19 @@ func (c ResourceContent) ToResourceIDString() string {
 	return c.GetResourceID().ToString()
 }
 
-func testMakeDeviceResource(deviceId string, href string, types []string) *commands.Resource {
+func testMakeDeviceResource(deviceID, href string, types []string) *commands.Resource {
 	return &commands.Resource{
-		DeviceId:      deviceId,
+		DeviceId:      deviceID,
 		Href:          href,
 		ResourceTypes: types,
 	}
 }
 
-func testMakeDeviceResouceProtobuf(deviceId string, types []string, isOnline bool) *pb.Device {
+func testMakeDeviceResouceProtobuf(deviceID string, types []string, isOnline bool) *pb.Device {
 	return &pb.Device{
-		Id:    deviceId,
+		Id:    deviceID,
 		Types: types,
-		Name:  "Name." + deviceId,
+		Name:  "Name." + deviceID,
 		ManufacturerName: []*pb.LocalizedString{
 			{
 				Language: "en",
@@ -187,7 +187,7 @@ func testMakeDeviceResouceProtobuf(deviceId string, types []string, isOnline boo
 				Value:    "testovaci prostriedok pre zariadenie",
 			},
 		},
-		ModelNumber: "ModelNumber." + deviceId,
+		ModelNumber: "ModelNumber." + deviceID,
 		Metadata: &pb.Device_Metadata{
 			Status: &commands.ConnectionStatus{
 				Value: func() commands.ConnectionStatus_Status {
@@ -203,8 +203,8 @@ func testMakeDeviceResouceProtobuf(deviceId string, types []string, isOnline boo
 
 var deviceResourceTypes = []string{device.ResourceType, "x.test.d"}
 
-func testMakeDeviceResourceContent(deviceId string) *commands.Content {
-	dr := testMakeDeviceResouceProtobuf(deviceId, deviceResourceTypes, false).ToSchema()
+func testMakeDeviceResourceContent(deviceID string) *commands.Content {
+	dr := testMakeDeviceResouceProtobuf(deviceID, deviceResourceTypes, false).ToSchema()
 
 	d, err := cbor.Encode(dr)
 	if err != nil {
@@ -217,20 +217,20 @@ func testMakeDeviceResourceContent(deviceId string) *commands.Content {
 	}
 }
 
-func makeTestDeviceResourceContent(deviceId string) ResourceContent {
+func makeTestDeviceResourceContent(deviceID string) ResourceContent {
 	return ResourceContent{
-		Resource: testMakeDeviceResource(deviceId, device.ResourceURI, []string{device.ResourceType, "x.test.d"}),
-		Content:  testMakeDeviceResourceContent(deviceId),
+		Resource: testMakeDeviceResource(deviceID, device.ResourceURI, []string{device.ResourceType, "x.test.d"}),
+		Content:  testMakeDeviceResourceContent(deviceID),
 	}
 }
 
-func makeTestDeviceConnectionStatus(deviceId string, online bool) *events.DeviceMetadataUpdated {
+func makeTestDeviceConnectionStatus(deviceID string, online bool) *events.DeviceMetadataUpdated {
 	v := commands.ConnectionStatus_OFFLINE
 	if online {
 		v = commands.ConnectionStatus_ONLINE
 	}
 	return &events.DeviceMetadataUpdated{
-		DeviceId: deviceId,
+		DeviceId: deviceID,
 		Status: &commands.ConnectionStatus{
 			Value: v,
 		},

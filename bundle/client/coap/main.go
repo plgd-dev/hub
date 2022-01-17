@@ -63,14 +63,14 @@ func signUp(co *coap.ClientConn, authreq authReq) authResp {
 	return authresp
 }
 
-func signUpWithAuthCode(co *coap.ClientConn, authCode, deviceId string) (accessToken, uid string) {
+func signUpWithAuthCode(co *coap.ClientConn, authCode, deviceID string) (accessToken, uid string) {
 	authreq := authReq{
 		Accesstoken:  authCode,
-		DeviceID:     deviceId,
+		DeviceID:     deviceID,
 		AuthProvider: "plgd",
 	}
 	authresp := signUp(co, authreq)
-	authresp.DeviceID = deviceId
+	authresp.DeviceID = deviceID
 	authresp.Login = true
 	return authresp.Accesstoken, authresp.UID
 }

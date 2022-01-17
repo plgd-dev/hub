@@ -47,24 +47,24 @@ func TestPublishUnpublish(t *testing.T) {
 	}()
 	raClient := service.NewResourceAggregateClient(raConn.GRPC())
 
-	deviceId := "dev0"
+	deviceID := "dev0"
 	href := platform.ResourceURI
 	_, err = idClient.AddDevice(ctx, &pbIS.AddDeviceRequest{
-		DeviceId: deviceId,
+		DeviceId: deviceID,
 	})
 	require.NoError(t, err)
 	defer func() {
 		_, err = idClient.DeleteDevices(ctx, &pbIS.DeleteDevicesRequest{
-			DeviceIds: []string{deviceId},
+			DeviceIds: []string{deviceID},
 		})
 		require.NoError(t, err)
 	}()
 
-	pubReq := testMakePublishResourceRequest(deviceId, []string{href})
+	pubReq := testMakePublishResourceRequest(deviceID, []string{href})
 	_, err = raClient.PublishResourceLinks(ctx, pubReq)
 	require.NoError(t, err)
 
-	unpubReq := testMakeUnpublishResourceRequest(deviceId, []string{href})
+	unpubReq := testMakeUnpublishResourceRequest(deviceID, []string{href})
 	_, err = raClient.UnpublishResourceLinks(ctx, unpubReq)
 	require.NoError(t, err)
 }

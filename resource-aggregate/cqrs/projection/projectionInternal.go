@@ -18,7 +18,7 @@ type projection struct {
 	cancel     context.CancelFunc
 
 	subscriber     eventbus.Subscriber
-	subscriptionId string
+	subscriptionID string
 
 	//mutable part
 	lock     sync.Mutex
@@ -26,7 +26,7 @@ type projection struct {
 }
 
 // NewProjection creates projection.
-func newProjection(ctx context.Context, store eventstore.EventStore, subscriptionId string, subscriber eventbus.Subscriber, factoryModel eventstore.FactoryModelFunc, LogDebugfFunc eventstore.LogDebugfFunc) (*projection, error) {
+func newProjection(ctx context.Context, store eventstore.EventStore, subscriptionID string, subscriber eventbus.Subscriber, factoryModel eventstore.FactoryModelFunc, LogDebugfFunc eventstore.LogDebugfFunc) (*projection, error) {
 	if store == nil {
 		return nil, errors.New("invalid handle of event store")
 	}
@@ -38,7 +38,7 @@ func newProjection(ctx context.Context, store eventstore.EventStore, subscriptio
 		ctx:            projCtx,
 		cancel:         projCancel,
 		subscriber:     subscriber,
-		subscriptionId: subscriptionId,
+		subscriptionID: subscriptionID,
 	}
 
 	return &rd, nil
@@ -71,7 +71,7 @@ func (p *projection) SubscribeTo(topics []string) error {
 		if p.subscriber == nil {
 			return fmt.Errorf("projection doesn't support subscribe to topics")
 		}
-		observer, err := p.subscriber.Subscribe(p.ctx, p.subscriptionId, topics, p)
+		observer, err := p.subscriber.Subscribe(p.ctx, p.subscriptionID, topics, p)
 		if err != nil {
 			return fmt.Errorf("projection cannot subscribe to topics: %w", err)
 		}

@@ -89,7 +89,7 @@ func TestRequestHandlerCancelPendingCommands(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			rb := httpgwTest.NewRequest(http.MethodDelete, uri.AliasResourcePendingCommands, nil).AuthToken(token).Accept(tt.args.accept)
-			rb.DeviceId(tt.args.deviceID).ResourceHref(tt.args.href).AddCorrelantionIdFilter(tt.args.correlationIdFilter)
+			rb.DeviceId(tt.args.deviceID).ResourceHref(tt.args.href).AddCorrelationIdFilter(tt.args.correlationIdFilter)
 			v, code, err := doPendingCommand(t, rb.Build())
 			assert.Equal(t, tt.wantHTTPCode, code)
 			if tt.wantErr {
@@ -114,7 +114,7 @@ func TestRequestHandlerCancelResourceCommand(t *testing.T) {
 	type args struct {
 		deviceID      string
 		href          string
-		correlationId string
+		correlationID string
 		accept        string
 	}
 	tests := []struct {
@@ -129,7 +129,7 @@ func TestRequestHandlerCancelResourceCommand(t *testing.T) {
 			args: args{
 				deviceID:      resourcePendings[0].ResourceId.GetDeviceId(),
 				href:          resourcePendings[0].ResourceId.GetHref(),
-				correlationId: resourcePendings[0].CorrelationID,
+				correlationID: resourcePendings[0].CorrelationID,
 				accept:        uri.ApplicationProtoJsonContentType,
 			},
 			want: &pb.CancelPendingCommandsResponse{
@@ -142,7 +142,7 @@ func TestRequestHandlerCancelResourceCommand(t *testing.T) {
 			args: args{
 				deviceID:      resourcePendings[0].ResourceId.GetDeviceId(),
 				href:          resourcePendings[0].ResourceId.GetHref(),
-				correlationId: resourcePendings[0].CorrelationID,
+				correlationID: resourcePendings[0].CorrelationID,
 				accept:        uri.ApplicationProtoJsonContentType,
 			},
 			wantErr:      true,
@@ -153,7 +153,7 @@ func TestRequestHandlerCancelResourceCommand(t *testing.T) {
 	token := oauthTest.GetDefaultAccessToken(t)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			rb := httpgwTest.NewRequest(http.MethodDelete, uri.AliasResourcePendingCommands+"/"+tt.args.correlationId, nil).AuthToken(token).Accept(tt.args.accept)
+			rb := httpgwTest.NewRequest(http.MethodDelete, uri.AliasResourcePendingCommands+"/"+tt.args.correlationID, nil).AuthToken(token).Accept(tt.args.accept)
 			rb.DeviceId(tt.args.deviceID).ResourceHref(tt.args.href)
 			v, code, err := doPendingCommand(t, rb.Build())
 			assert.Equal(t, tt.wantHTTPCode, code)

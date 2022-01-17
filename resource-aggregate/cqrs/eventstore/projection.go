@@ -32,7 +32,7 @@ func (am *aggregateModel) Update(e EventUnmarshaler) (ignore bool, reload bool) 
 	am.lock.Lock()
 	defer am.lock.Unlock()
 
-	am.LogDebugfFunc("projection.aggregateModel.Update: am.GroupId %v: AggregateId %v: Version %v, hasSnapshot %v", am.groupID, am.aggregateID, am.version, am.hasSnapshot)
+	am.LogDebugfFunc("projection.aggregateModel.Update: am.GroupID %v: AggregateID %v: Version %v, hasSnapshot %v", am.groupID, am.aggregateID, am.version, am.hasSnapshot)
 
 	switch {
 	case e.Version() == 0 || e.IsSnapshot():
@@ -142,7 +142,7 @@ func (i *iterator) Next(ctx context.Context) (EventUnmarshaler, bool) {
 		tmp := i.firstEvent
 		i.firstEvent = nil
 		ignore, reload := i.model.Update(tmp)
-		i.model.LogDebugfFunc("projection.iterator.next: GroupId %v: AggregateId %v: Version %v, EvenType %v, ignore %v reload %v", tmp.GroupID, tmp.AggregateID, tmp.Version, tmp.EventType, ignore, reload)
+		i.model.LogDebugfFunc("projection.iterator.next: GroupID %v: AggregateID %v: Version %v, EvenType %v, ignore %v reload %v", tmp.GroupID, tmp.AggregateID, tmp.Version, tmp.EventType, ignore, reload)
 		if reload {
 			snapshot, nextAggregateEvent := i.RewindToSnapshot(ctx)
 			if snapshot == nil {
@@ -166,7 +166,7 @@ func (i *iterator) Next(ctx context.Context) (EventUnmarshaler, bool) {
 
 	e, ok := i.RewindIgnore(ctx)
 	if ok {
-		i.model.LogDebugfFunc("projection.iterator.next: GroupId %v: AggregateId %v: Version %v, EvenType %v", e.GroupID, e.AggregateID, e.Version, e.EventType)
+		i.model.LogDebugfFunc("projection.iterator.next: GroupID %v: AggregateID %v: Version %v, EvenType %v", e.GroupID, e.AggregateID, e.Version, e.EventType)
 	}
 	return e, ok
 }
@@ -191,7 +191,7 @@ func (p *Projection) getModel(ctx context.Context, groupID, aggregateID string) 
 		if err != nil {
 			return nil, fmt.Errorf("cannot create model: %w", err)
 		}
-		p.LogDebugfFunc("projection.Projection.getModel: GroupId %v: AggregateId %v: new model", groupID, aggregateID)
+		p.LogDebugfFunc("projection.Projection.getModel: GroupID %v: AggregateID %v: new model", groupID, aggregateID)
 		apm = &aggregateModel{groupID: groupID, aggregateID: aggregateID, model: model, LogDebugfFunc: p.LogDebugfFunc}
 		mapApm[aggregateID] = apm
 	}
@@ -206,7 +206,7 @@ func (p *Projection) handle(ctx context.Context, iter Iter) (reloadQueries []Ver
 	ie := e
 	reloadQueries = make([]VersionQuery, 0, 32)
 	for ie != nil {
-		p.LogDebugfFunc("projection.iterator.handle: GroupId %v: AggregateId %v: Version %v, EvenType %v", ie.GroupID(), ie.AggregateID(), ie.Version(), ie.EventType())
+		p.LogDebugfFunc("projection.iterator.handle: GroupID %v: AggregateID %v: Version %v, EvenType %v", ie.GroupID(), ie.AggregateID(), ie.Version(), ie.EventType())
 		am, err := p.getModel(ctx, ie.GroupID(), ie.AggregateID())
 		if err != nil {
 			return nil, fmt.Errorf("cannot handle projection: %w", err)

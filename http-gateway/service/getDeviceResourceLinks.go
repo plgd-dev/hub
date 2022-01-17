@@ -17,10 +17,10 @@ func (requestHandler *RequestHandler) getDeviceResourceLinks(w http.ResponseWrit
 	vars := mux.Vars(r)
 	deviceID := vars[uri.DeviceIDKey]
 	type Options struct {
-		DeviceIdFilter []string `url:"deviceIdFilter"`
+		DeviceIDFilter []string `url:"deviceIdFilter"`
 	}
 	opt := Options{
-		DeviceIdFilter: []string{deviceID},
+		DeviceIDFilter: []string{deviceID},
 	}
 	q, err := query.Values(opt)
 	if err != nil {

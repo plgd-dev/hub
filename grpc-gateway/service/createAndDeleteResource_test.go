@@ -25,11 +25,11 @@ import (
 	"google.golang.org/grpc/credentials"
 )
 
-func subscribeToAllEvents(t *testing.T, ctx context.Context, c pb.GrpcGatewayClient, correlationId string) (pb.GrpcGateway_SubscribeToEventsClient, string) {
+func subscribeToAllEvents(t *testing.T, ctx context.Context, c pb.GrpcGatewayClient, correlationID string) (pb.GrpcGateway_SubscribeToEventsClient, string) {
 	subClient, err := client.New(c).GrpcGatewayClient().SubscribeToEvents(ctx)
 	require.NoError(t, err)
 	err = subClient.Send(&pb.SubscribeToEvents{
-		CorrelationId: correlationId,
+		CorrelationId: correlationID,
 		Action: &pb.SubscribeToEvents_CreateSubscription_{
 			CreateSubscription: &pb.SubscribeToEvents_CreateSubscription{},
 		},
@@ -39,7 +39,7 @@ func subscribeToAllEvents(t *testing.T, ctx context.Context, c pb.GrpcGatewayCli
 	require.NoError(t, err)
 	expectedEvent := &pb.Event{
 		SubscriptionId: ev.GetSubscriptionId(),
-		CorrelationId:  correlationId,
+		CorrelationId:  correlationID,
 		Type:           pbTest.OperationProcessedOK(),
 	}
 	test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
@@ -214,13 +214,13 @@ func validateEvents(t *testing.T, subClient pb.GrpcGateway_SubscribeToEventsClie
 		}
 		require.NoError(t, err)
 
-		eventId := pbTest.GetEventID(ev)
-		expected, ok := expectedEvents[eventId]
+		eventID := pbTest.GetEventID(ev)
+		expected, ok := expectedEvents[eventID]
 		if !ok {
 			require.Failf(t, "unexpected event", "invalid event: %+v", ev)
 		}
 		pbTest.CmpEvent(t, expected, ev, "")
-		delete(expectedEvents, eventId)
+		delete(expectedEvents, eventID)
 		if len(expectedEvents) == 0 {
 			break
 		}

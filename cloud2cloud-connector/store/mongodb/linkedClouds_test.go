@@ -95,7 +95,7 @@ func TestStoreUpdateLinkedCloud(t *testing.T) {
 
 func TestStoreRemoveLinkedCloud(t *testing.T) {
 	type args struct {
-		LinkedCloudId string
+		LinkedCloudID string
 	}
 	tests := []struct {
 		name    string
@@ -105,7 +105,7 @@ func TestStoreRemoveLinkedCloud(t *testing.T) {
 		{
 			name: "invalid cloudId",
 			args: args{
-				LinkedCloudId: "notFound",
+				LinkedCloudID: "notFound",
 			},
 			wantErr: true,
 		},
@@ -113,7 +113,7 @@ func TestStoreRemoveLinkedCloud(t *testing.T) {
 		{
 			name: "valid",
 			args: args{
-				LinkedCloudId: "testID",
+				LinkedCloudID: "testID",
 			},
 		},
 	}
@@ -140,7 +140,7 @@ func TestStoreRemoveLinkedCloud(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := s.RemoveLinkedCloud(ctx, tt.args.LinkedCloudId)
+			err := s.RemoveLinkedCloud(ctx, tt.args.LinkedCloudID)
 			if tt.wantErr {
 				assert.Error(t, err)
 			} else {
@@ -243,10 +243,10 @@ func TestStoreLoadLinkedClouds(t *testing.T) {
 			err := s.LoadLinkedClouds(ctx, tt.args.query, &h)
 			if tt.wantErr {
 				assert.Error(t, err)
-			} else {
-				assert.NoError(t, err)
-				assert.Equal(t, tt.want, h.lcs)
+				return
 			}
+			assert.NoError(t, err)
+			assert.Equal(t, tt.want, h.lcs)
 		})
 	}
 }

@@ -158,10 +158,10 @@ func checkAndValidateRetrieve(ctx context.Context, t *testing.T, rac raservice.R
 	})
 }
 
-func getResourceChangedEvents(t *testing.T, deviceID, correlationID, subscriptionId string) map[string]*pb.Event {
+func getResourceChangedEvents(t *testing.T, deviceID, correlationID, subscriptionID string) map[string]*pb.Event {
 	return map[string]*pb.Event{
 		device.ResourceURI: {
-			SubscriptionId: subscriptionId,
+			SubscriptionId: subscriptionID,
 			Type: &pb.Event_ResourceChanged{
 				ResourceChanged: pbTest.MakeResourceChanged(t, deviceID, device.ResourceURI, "", map[string]interface{}{
 					"di":  deviceID,
@@ -173,7 +173,7 @@ func getResourceChangedEvents(t *testing.T, deviceID, correlationID, subscriptio
 			CorrelationId: correlationID,
 		},
 		platform.ResourceURI: {
-			SubscriptionId: subscriptionId,
+			SubscriptionId: subscriptionID,
 			Type: &pb.Event_ResourceChanged{
 				ResourceChanged: pbTest.MakeResourceChanged(t, deviceID, platform.ResourceURI, "", map[string]interface{}{
 					"mnmn": "ocfcloud.com",
@@ -182,7 +182,7 @@ func getResourceChangedEvents(t *testing.T, deviceID, correlationID, subscriptio
 			CorrelationId: correlationID,
 		},
 		configuration.ResourceURI: {
-			SubscriptionId: subscriptionId,
+			SubscriptionId: subscriptionID,
 			Type: &pb.Event_ResourceChanged{
 				ResourceChanged: pbTest.MakeResourceChanged(t, deviceID, configuration.ResourceURI, "", map[string]interface{}{
 					"n": test.TestDeviceName,
@@ -191,7 +191,7 @@ func getResourceChangedEvents(t *testing.T, deviceID, correlationID, subscriptio
 			CorrelationId: correlationID,
 		},
 		test.TestResourceLightInstanceHref("1"): {
-			SubscriptionId: subscriptionId,
+			SubscriptionId: subscriptionID,
 			Type: &pb.Event_ResourceChanged{
 				ResourceChanged: pbTest.MakeResourceChanged(t, deviceID, test.TestResourceLightInstanceHref("1"), "",
 					map[string]interface{}{
@@ -204,7 +204,7 @@ func getResourceChangedEvents(t *testing.T, deviceID, correlationID, subscriptio
 			CorrelationId: correlationID,
 		},
 		test.TestResourceSwitchesHref: {
-			SubscriptionId: subscriptionId,
+			SubscriptionId: subscriptionID,
 			Type: &pb.Event_ResourceChanged{
 				ResourceChanged: pbTest.MakeResourceChanged(t, deviceID, test.TestResourceSwitchesHref, "",
 					[]interface{}{},

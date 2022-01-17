@@ -27,7 +27,7 @@ func (rh *RequestHandler) makeSubscription(w http.ResponseWriter, r *http.Reques
 		return res, http.StatusBadRequest, fmt.Errorf("cannot decode request body: %w", err)
 	}
 
-	_, err = url.Parse(req.URL)
+	_, err = url.Parse(req.EventsURL)
 	if err != nil {
 		return res, http.StatusBadRequest, fmt.Errorf("invalid eventsurl(%w)", err)
 	}
@@ -51,7 +51,7 @@ func (rh *RequestHandler) makeSubscription(w http.ResponseWriter, r *http.Reques
 	}
 	res.ID = uuid.Must(uuid.NewRandom()).String()
 	res.EventTypes = eventTypes
-	res.URL = req.URL
+	res.URL = req.EventsURL
 	res.CorrelationID = r.Header.Get(events.CorrelationIDKey)
 	res.Accept = strings.Split(r.Header.Get(events.AcceptKey), ",")
 	res.SigningSecret = req.SigningSecret
@@ -59,7 +59,6 @@ func (rh *RequestHandler) makeSubscription(w http.ResponseWriter, r *http.Reques
 	res.AccessToken = token
 
 	return res, http.StatusOK, nil
-
 }
 
 func (rh *RequestHandler) subscribeToResource(w http.ResponseWriter, r *http.Request) (int, error) {

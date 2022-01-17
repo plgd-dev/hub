@@ -136,7 +136,7 @@ func TestRequestHandlerGetEvents(t *testing.T) {
 			}
 
 			require.Len(t, values, tt.wantLen)
-			pbTest.CheckGetEventsResponse(t, deviceID, values)
+			pbTest.CheckGetEventsResponse(t, values)
 		})
 	}
 }

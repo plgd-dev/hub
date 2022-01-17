@@ -366,15 +366,15 @@ func setUp(t *testing.T, coapgwCfgs ...service.Config) func() {
 }
 
 var (
-	AuthorizationUserId       = "1"
+	AuthorizationUserID       = "1"
 	AuthorizationRefreshToken = oauthTest.ValidRefreshToken
 
 	CertIdentity      = "b5a2a42e-b285-42f1-a36b-034c8fc8efd5"
 	TestAResourceHref = "/a"
-	TestAResourceId   = (&commands.ResourceId{DeviceId: CertIdentity, Href: TestAResourceHref}).ToUUID()
+	TestAResourceID   = (&commands.ResourceId{DeviceId: CertIdentity, Href: TestAResourceHref}).ToUUID()
 	TestAResourceType = "x.a"
 	TestBResourceHref = "/b"
-	TestBResourceId   = (&commands.ResourceId{DeviceId: CertIdentity, Href: TestBResourceHref}).ToUUID()
+	TestBResourceID   = (&commands.ResourceId{DeviceId: CertIdentity, Href: TestBResourceHref}).ToUUID()
 	TestBResourceType = "x.b"
 
 	TestExchangeTimeout = time.Second * 15

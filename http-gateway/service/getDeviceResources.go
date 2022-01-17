@@ -14,10 +14,10 @@ func (requestHandler *RequestHandler) getDeviceResources(w http.ResponseWriter, 
 	deviceID := vars[uri.DeviceIDKey]
 
 	type Options struct {
-		DeviceIdFilter []string `url:"deviceIdFilter"`
+		DeviceIDFilter []string `url:"deviceIdFilter"`
 	}
 	opt := Options{
-		DeviceIdFilter: []string{deviceID},
+		DeviceIDFilter: []string{deviceID},
 	}
 	q, err := query.Values(opt)
 	if err != nil {

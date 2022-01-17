@@ -15,10 +15,10 @@ import (
 
 func (requestHandler *RequestHandler) getResourceFromShadow(w http.ResponseWriter, r *http.Request, resourceID string) {
 	type Options struct {
-		ResourceIdFilter []string `url:"resourceIdFilter"`
+		ResourceIDFilter []string `url:"resourceIdFilter"`
 	}
 	opt := Options{
-		ResourceIdFilter: []string{resourceID},
+		ResourceIDFilter: []string{resourceID},
 	}
 	v, err := query.Values(opt)
 	if err != nil {

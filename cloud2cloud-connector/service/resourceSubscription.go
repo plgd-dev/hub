@@ -65,14 +65,14 @@ func (s *SubscriptionManager) SubscribeToResource(ctx context.Context, deviceID,
 
 func (s *SubscriptionManager) subscribeToResource(ctx context.Context, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud, correlationID, signingSecret, deviceID, href string) (string, error) {
 	resp, err := subscribe(ctx, "/devices/"+deviceID+href+"/subscriptions", correlationID, events.SubscriptionRequest{
-		URL:           s.eventsURL,
+		EventsURL:     s.eventsURL,
 		EventTypes:    []events.EventType{events.EventType_ResourceChanged},
 		SigningSecret: signingSecret,
 	}, linkedAccount, linkedCloud)
 	if err != nil {
 		return "", fmt.Errorf("cannot subscribe to device %v for %v: %w", deviceID, linkedAccount.ID, err)
 	}
-	return resp.SubscriptionId, nil
+	return resp.SubscriptionID, nil
 }
 
 func cancelResourceSubscription(ctx context.Context, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud, deviceID, href, subscriptionID string) error {

@@ -69,7 +69,7 @@ func (s *Service) publishDevicesUnregistered(owner, userID string, deviceIDs []s
 	return nil
 }
 
-func getDeviceIds(request *pb.DeleteDevicesRequest, tx persistence.PersistenceTx, owner string) ([]string, error) {
+func getDeviceIDs(request *pb.DeleteDevicesRequest, tx persistence.PersistenceTx, owner string) ([]string, error) {
 	var deviceIds []string
 	if len(request.DeviceIds) == 0 {
 		var err error
@@ -111,31 +111,31 @@ func (s *Service) DeleteDevices(ctx context.Context, request *pb.DeleteDevicesRe
 		return nil, log.LogAndReturnError(grpc.ForwardFromError(codes.InvalidArgument, fmt.Errorf("cannot delete devices: %w", err)))
 	}
 
-	deviceIds, err := getDeviceIds(request, tx, owner)
+	deviceIDs, err := getDeviceIDs(request, tx, owner)
 	if err != nil {
 		return nil, log.LogAndReturnError(err)
 	}
-	if len(deviceIds) == 0 {
+	if len(deviceIDs) == 0 {
 		return &pb.DeleteDevicesResponse{}, nil
 	}
 
-	var deletedDeviceIds []string
-	for _, deviceId := range deviceIds {
-		ok, err := deleteDevice(tx, deviceId, owner)
+	var deletedDeviceIDs []string
+	for _, deviceID := range deviceIDs {
+		ok, err := deleteDevice(tx, deviceID, owner)
 		if err != nil {
 			return nil, log.LogAndReturnError(err)
 		}
 		if !ok {
 			continue
 		}
-		deletedDeviceIds = append(deletedDeviceIds, deviceId)
+		deletedDeviceIDs = append(deletedDeviceIDs, deviceID)
 	}
 
-	if err := s.publishDevicesUnregistered(owner, userID, deletedDeviceIds); err != nil {
-		log.Errorf("cannot publish devices unregistered event with devices('%v') and owner('%v'): %w", deletedDeviceIds, owner, err)
+	if err := s.publishDevicesUnregistered(owner, userID, deletedDeviceIDs); err != nil {
+		log.Errorf("cannot publish devices unregistered event with devices('%v') and owner('%v'): %w", deletedDeviceIDs, owner, err)
 	}
 
 	return &pb.DeleteDevicesResponse{
-		DeviceIds: deletedDeviceIds,
+		DeviceIds: deletedDeviceIDs,
 	}, nil
 }

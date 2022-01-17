@@ -98,7 +98,7 @@ func (s *EventStore) saveEvent(ctx context.Context, col *mongo.Collection, event
 //   1) AggregateID, GroupID and EventType are not empty
 //   2) Version for each event is by 1 greater than the version of the previous event
 //   3) Only the first event can be a snapshot
-//   4) All events have the same AggregateId and GroupID
+//   4) All events have the same AggregateID and GroupID
 //   5) Timestamps are non-zero
 //   6) Timestamps are non-decreasing
 func checkBeforeSave(events ...eventstore.Event) error {

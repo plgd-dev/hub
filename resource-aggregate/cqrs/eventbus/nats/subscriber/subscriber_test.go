@@ -132,10 +132,10 @@ func testWaitForAnyEvent(timeout time.Duration, eh1 *mockEventHandler, eh2 *mock
 	}
 }
 
-func testNewSubscription(t *testing.T, ctx context.Context, subscriber eventbus.Subscriber, subscriptionId string, publishTopics []string) (*mockEventHandler, eventbus.Observer) {
+func testNewSubscription(t *testing.T, ctx context.Context, subscriber eventbus.Subscriber, subscriptionID string, publishTopics []string) (*mockEventHandler, eventbus.Observer) {
 	t.Log("Subscribe to testNewSubscription")
 	m := newMockEventHandler()
-	ob, err := subscriber.Subscribe(ctx, subscriptionId, publishTopics, m)
+	ob, err := subscriber.Subscribe(ctx, subscriptionID, publishTopics, m)
 	require.NoError(t, err)
 	require.NotNil(t, ob)
 	if ob == nil {
@@ -159,8 +159,8 @@ func testNewSubscription(t *testing.T, ctx context.Context, subscriber eventbus.
 //
 
 type Path struct {
-	AggregateId string
-	GroupId     string
+	AggregateID string
+	GroupID     string
 }
 
 func acceptanceTest(t *testing.T, ctx context.Context, timeout time.Duration, publishTopics, subscribeTopics []string, publisher eventbus.Publisher, subscriber eventbus.Subscriber) {
@@ -169,8 +169,8 @@ func acceptanceTest(t *testing.T, ctx context.Context, timeout time.Duration, pu
 	AggregateID2 := "aggregateID2"
 
 	aggregateID1Path := Path{
-		AggregateId: AggregateID1,
-		GroupId:     "deviceId",
+		AggregateID: AggregateID1,
+		GroupID:     "deviceId",
 	}
 	/*
 		aggregateID2Path := protoEvent.Path{
@@ -222,14 +222,14 @@ func acceptanceTest(t *testing.T, ctx context.Context, timeout time.Duration, pu
 	require.Equal(t, 2, len(publishTopics))
 
 	t.Log("Without subscription")
-	err := publisher.Publish(ctx, publishTopics[0:1], aggregateID1Path.GroupId, aggregateID1Path.AggregateId, eventsToPublish[0])
+	err := publisher.Publish(ctx, publishTopics[0:1], aggregateID1Path.GroupID, aggregateID1Path.AggregateID, eventsToPublish[0])
 	require.NoError(t, err)
 
 	// Add handlers and observers.
 	t.Log("Subscribe to first topic")
 	m0, ob0 := testNewSubscription(t, ctx, subscriber, "sub-0", subscribeTopics[0:1])
 
-	err = publisher.Publish(ctx, publishTopics[0:1], aggregateID1Path.GroupId, aggregateID1Path.AggregateId, eventsToPublish[1])
+	err = publisher.Publish(ctx, publishTopics[0:1], aggregateID1Path.GroupID, aggregateID1Path.AggregateID, eventsToPublish[1])
 	require.NoError(t, err)
 
 	event0, err := m0.waitForEvent(timeout)
@@ -260,7 +260,7 @@ func acceptanceTest(t *testing.T, ctx context.Context, timeout time.Duration, pu
 		require.NoError(t, err)
 	}()
 
-	err = publisher.Publish(ctx, publishTopics, aggregateID1Path.GroupId, aggregateID1Path.AggregateId, eventsToPublish[2])
+	err = publisher.Publish(ctx, publishTopics, aggregateID1Path.GroupID, aggregateID1Path.AggregateID, eventsToPublish[2])
 	require.NoError(t, err)
 
 	event1, err := m1.waitForEvent(timeout)
@@ -280,7 +280,7 @@ func acceptanceTest(t *testing.T, ctx context.Context, timeout time.Duration, pu
 	err = ob4.SetTopics(ctx, publishTopics)
 	require.NoError(t, err)
 
-	err = publisher.Publish(ctx, []string{topic}, aggregateID1Path.GroupId, aggregateID1Path.AggregateId, eventsToPublish[3])
+	err = publisher.Publish(ctx, []string{topic}, aggregateID1Path.GroupID, aggregateID1Path.AggregateID, eventsToPublish[3])
 	require.NoError(t, err)
 
 	event4, err := m4.waitForEvent(timeout)

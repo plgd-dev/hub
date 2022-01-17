@@ -57,7 +57,7 @@ func (ep *GoroutinePoolHandler) run(ctx context.Context, p *eventsProcessor) err
 
 // Handle pushes event to queue and process the queue by goroutine pool.
 func (ep *GoroutinePoolHandler) Handle(ctx context.Context, iter Iter) (err error) {
-	lastId := ""
+	lastID := ""
 	events := make([]EventUnmarshaler, 0, 128)
 	for {
 		eu, ok := iter.Next(ctx)
@@ -65,7 +65,7 @@ func (ep *GoroutinePoolHandler) Handle(ctx context.Context, iter Iter) (err erro
 			break
 		}
 		id := eventToName(eu)
-		if lastId != "" && id != lastId || len(events) >= 128 {
+		if lastID != "" && id != lastID || len(events) >= 128 {
 			ed := ep.getEventsData(id)
 			spawnGo := ed.push(events)
 			if spawnGo {
@@ -76,7 +76,7 @@ func (ep *GoroutinePoolHandler) Handle(ctx context.Context, iter Iter) (err erro
 			}
 			events = make([]EventUnmarshaler, 0, 128)
 		}
-		lastId = id
+		lastID = id
 		events = append(events, eu)
 	}
 	if len(events) > 0 {

@@ -29,16 +29,16 @@ func (requestHandler *RequestHandler) getEvents(w http.ResponseWriter, r *http.R
 	href := vars[uri.ResourceHrefKey]
 	resourceID := commands.NewResourceID(deviceID, href).ToString()
 	type Options struct {
-		DeviceIdFilter   []string `url:"deviceIdFilter,omitempty"`
-		ResourceIdFilter []string `url:"resourceIdFilter,omitempty"`
+		DeviceIDFilter   []string `url:"deviceIdFilter,omitempty"`
+		ResourceIDFilter []string `url:"resourceIdFilter,omitempty"`
 		TimestampFilter  int64    `url:"timestampFilter,omitempty"`
 	}
 	opt := Options{}
 	if resourceID != "" {
-		opt.ResourceIdFilter = append(opt.ResourceIdFilter, resourceID)
+		opt.ResourceIDFilter = append(opt.ResourceIDFilter, resourceID)
 	} else {
 		if deviceID != "" {
-			opt.DeviceIdFilter = append(opt.DeviceIdFilter, deviceID)
+			opt.DeviceIDFilter = append(opt.DeviceIDFilter, deviceID)
 		}
 	}
 	if timestamp != 0 {

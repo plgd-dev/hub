@@ -15,10 +15,10 @@ func (requestHandler *RequestHandler) deleteDevice(w http.ResponseWriter, r *htt
 	vars := mux.Vars(r)
 	deviceID := vars[uri.DeviceIDKey]
 	type Options struct {
-		DeviceIdFilter []string `url:"deviceIdFilter"`
+		DeviceIDFilter []string `url:"deviceIdFilter"`
 	}
 	opt := Options{
-		DeviceIdFilter: []string{deviceID},
+		DeviceIDFilter: []string{deviceID},
 	}
 	v, err := query.Values(opt)
 	if err != nil {

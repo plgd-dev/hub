@@ -30,12 +30,12 @@ type LinkedCloudHandler interface {
 type Store interface {
 	UpdateLinkedCloud(ctx context.Context, sub LinkedCloud) error
 	InsertLinkedCloud(ctx context.Context, sub LinkedCloud) error
-	RemoveLinkedCloud(ctx context.Context, ConfigId string) error
+	RemoveLinkedCloud(ctx context.Context, ConfigID string) error
 	LoadLinkedClouds(ctx context.Context, query Query, h LinkedCloudHandler) error
 
 	UpdateLinkedAccount(ctx context.Context, sub LinkedAccount) error
 	InsertLinkedAccount(ctx context.Context, sub LinkedAccount) error
-	RemoveLinkedAccount(ctx context.Context, LinkedAccountId string) error
+	RemoveLinkedAccount(ctx context.Context, LinkedAccountID string) error
 	LoadLinkedAccounts(ctx context.Context, query Query, h LinkedAccountHandler) error
 
 	Close(ctx context.Context) error

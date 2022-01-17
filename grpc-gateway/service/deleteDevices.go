@@ -28,39 +28,39 @@ func partitionDeletedDevices(expected, actual []string) ([]string, []string) {
 
 func (r *RequestHandler) DeleteDevices(ctx context.Context, req *pb.DeleteDevicesRequest) (*pb.DeleteDevicesResponse, error) {
 	// get unique non-empty ids
-	deviceIds, _ := strings.Split(strings.Unique(req.DeviceIdFilter), func(s string) bool {
+	deviceIDs, _ := strings.Split(strings.Unique(req.DeviceIdFilter), func(s string) bool {
 		return s != ""
 	})
 
-	deleteAllOwned := len(deviceIds) == 0
+	deleteAllOwned := len(deviceIDs) == 0
 	// ResourceAggregate
-	cmdRA := commands.DeleteDevicesRequest{DeviceIds: deviceIds}
+	cmdRA := commands.DeleteDevicesRequest{DeviceIds: deviceIDs}
 	respRA, err := r.resourceAggregateClient.DeleteDevices(ctx, &cmdRA)
 	if err != nil {
 		return nil, log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot delete devices from ResourceAggregate: %v", err))
 	}
 	if !deleteAllOwned {
-		_, notDeleted := partitionDeletedDevices(deviceIds, respRA.GetDeviceIds())
+		_, notDeleted := partitionDeletedDevices(deviceIDs, respRA.GetDeviceIds())
 		if len(notDeleted) > 0 {
-			for _, deviceId := range notDeleted {
-				log.Debugf("failed to delete device('%v') in ResourceAggregate", deviceId)
+			for _, deviceID := range notDeleted {
+				log.Debugf("failed to delete device('%v') in ResourceAggregate", deviceID)
 			}
 		}
 	}
 
 	// IdentityStore
 	cmdAS := pbIS.DeleteDevicesRequest{
-		DeviceIds: deviceIds,
+		DeviceIds: deviceIDs,
 	}
 	respIS, err := r.idClient.DeleteDevices(ctx, &cmdAS)
 	if err != nil {
 		return nil, log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot delete devices from identity-store: %v", err))
 	}
 	if !deleteAllOwned {
-		_, notDeleted := partitionDeletedDevices(deviceIds, respIS.GetDeviceIds())
+		_, notDeleted := partitionDeletedDevices(deviceIDs, respIS.GetDeviceIds())
 		if len(notDeleted) > 0 {
-			for _, deviceId := range notDeleted {
-				log.Debugf("failed to delete device('%v') from identity-store", deviceId)
+			for _, deviceID := range notDeleted {
+				log.Debugf("failed to delete device('%v') from identity-store", deviceID)
 			}
 		}
 	}

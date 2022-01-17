@@ -6,7 +6,7 @@ import (
 
 // Publisher publish event to topics
 type Publisher interface {
-	Publish(ctx context.Context, topics []string, groupId, aggregateId string, event Event) error
+	Publish(ctx context.Context, topics []string, groupID, aggregateID string, event Event) error
 }
 
 // Subscriber creates observation over topics. When subscriptionID is same among more Subscribers events are balanced among them.

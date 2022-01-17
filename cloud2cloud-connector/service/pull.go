@@ -121,7 +121,7 @@ func publishDeviceResources(ctx context.Context, raClient raService.ResourceAggr
 			errors = append(errors, fmt.Errorf("cannot publish resource %+v: %w", link, err))
 			continue
 		}
-		if linkedCloud.SupportedSubscriptionsEvents.NeedPullResources() {
+		if linkedCloud.SupportedSubscriptionEvents.NeedPullResources() {
 			continue
 		}
 		triggerTask(Task{
@@ -147,7 +147,7 @@ func toConnectionStatus(status string) commands.ConnectionStatus_Status {
 
 func (p *pullDevicesHandler) triggerTaskForDevice(ctx context.Context, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud, dev RetrieveDeviceWithLinksResponse) error {
 	deviceID := dev.Device.Device.ID
-	if linkedCloud.SupportedSubscriptionsEvents.StaticDeviceEvents {
+	if linkedCloud.SupportedSubscriptionEvents.StaticDeviceEvents {
 		p.triggerTask(Task{
 			taskType:      TaskType_PullDevice,
 			linkedAccount: linkedAccount,
@@ -157,7 +157,7 @@ func (p *pullDevicesHandler) triggerTaskForDevice(ctx context.Context, linkedAcc
 		return nil
 	}
 
-	if linkedCloud.SupportedSubscriptionsEvents.NeedPullDevice() {
+	if linkedCloud.SupportedSubscriptionEvents.NeedPullDevice() {
 		return publishDeviceResources(ctx, p.raClient, deviceID, linkedAccount, linkedCloud, dev, p.triggerTask)
 	}
 
@@ -251,7 +251,7 @@ func (p *pullDevicesHandler) getDevicesWithResourceLinks(ctx context.Context, li
 
 	var errors []error
 	ctx = kitNetGrpc.CtxWithToken(ctx, linkedAccount.Data.Origin().AccessToken.String())
-	if linkedCloud.SupportedSubscriptionsEvents.NeedPullDevices() {
+	if linkedCloud.SupportedSubscriptionEvents.NeedPullDevices() {
 		ok, pullErrors := p.pullDevices(ctx, linkedAccount, linkedCloud, devices)
 		if !ok {
 			return fmt.Errorf("%+v", errors)
@@ -369,13 +369,13 @@ func (p *pullDevicesHandler) pullDevicesFromAccount(ctx context.Context, linkedA
 		return err
 	}
 	var errors []error
-	if linkedCloud.SupportedSubscriptionsEvents.NeedPullDevices() || linkedCloud.SupportedSubscriptionsEvents.NeedPullDevice() {
+	if linkedCloud.SupportedSubscriptionEvents.NeedPullDevices() || linkedCloud.SupportedSubscriptionEvents.NeedPullDevice() {
 		err = p.getDevicesWithResourceLinks(ctx, linkedAccount, linkedCloud)
 		if err != nil {
 			errors = append(errors, err)
 		}
 	}
-	if linkedCloud.SupportedSubscriptionsEvents.NeedPullResources() {
+	if linkedCloud.SupportedSubscriptionEvents.NeedPullResources() {
 		err = p.getDevicesWithResourceValues(ctx, linkedAccount, linkedCloud)
 		if err != nil {
 			errors = append(errors, err)

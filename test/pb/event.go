@@ -348,7 +348,7 @@ func GetWrappedEvent(v *pb.GetEventsResponse) interface{} {
 	return getWrappedEventFn(v)
 }
 
-func CheckGetEventsResponse(t *testing.T, deviceId string, got []*pb.GetEventsResponse) {
+func CheckGetEventsResponse(t *testing.T, got []*pb.GetEventsResponse) {
 	for _, value := range got {
 		event := GetWrappedEvent(value)
 		r := reflect.ValueOf(event)

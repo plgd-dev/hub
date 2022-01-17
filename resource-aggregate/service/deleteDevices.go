@@ -12,13 +12,13 @@ import (
 )
 
 func getUniqueDeviceIdsFromDeleteRequest(request *commands.DeleteDevicesRequest) []string {
-	deviceIds := make(strings.Set)
-	for _, deviceId := range request.DeviceIds {
-		if deviceId != "" {
-			deviceIds.Add(deviceId)
+	deviceIDs := make(strings.Set)
+	for _, deviceID := range request.DeviceIds {
+		if deviceID != "" {
+			deviceIDs.Add(deviceID)
 		}
 	}
-	return deviceIds.ToSlice()
+	return deviceIDs.ToSlice()
 }
 
 // Delete documents from events database for devices selected by query

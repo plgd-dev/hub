@@ -139,7 +139,7 @@ func TestResourceShadow_GetResources(t *testing.T) {
 		},
 
 		{
-			name: "filter by device Id and type",
+			name: "filter by device ID and type",
 			args: args{
 				req: &pb.GetResourcesRequest{
 					DeviceIdFilter: []string{Resource1.DeviceId},
