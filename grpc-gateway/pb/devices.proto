@@ -34,7 +34,7 @@ message GetResourceLinksRequest {
 message GetResourceFromDeviceRequest {
   resourceaggregate.pb.ResourceId resource_id = 1;
   string resource_interface = 2;
-  int64 timeToLive = 3;  // command validity in nanoseconds. 0 means forever and minimal value is 100000000 (100ms).
+  int64 time_to_live = 3;  // command validity in nanoseconds. 0 means forever and minimal value is 100000000 (100ms).
 }
 
 message GetResourceFromDeviceResponse {
@@ -55,7 +55,7 @@ message Resource {
 message UpdateResourceRequest {
   resourceaggregate.pb.ResourceId resource_id = 1;
   string resource_interface = 3;
-  int64 timeToLive = 4;  // command validity in nanoseconds. 0 means forever and minimal value is 100000000 (100ms).
+  int64 time_to_live = 4;  // command validity in nanoseconds. 0 means forever and minimal value is 100000000 (100ms).
   Content content = 2;
 }
 
@@ -171,7 +171,7 @@ message Content {
 
 message DeleteResourceRequest {
   resourceaggregate.pb.ResourceId resource_id = 1;
-  int64 timeToLive = 2;  // command validity in nanoseconds. 0 means forever and minimal value is 100000000 (100ms).
+  int64 time_to_live = 2;  // command validity in nanoseconds. 0 means forever and minimal value is 100000000 (100ms).
 }
 
 message DeleteResourceResponse {
@@ -181,7 +181,7 @@ message DeleteResourceResponse {
 message CreateResourceRequest {
   resourceaggregate.pb.ResourceId resource_id = 1;
   Content content = 2;
-  int64 timeToLive = 3;  // command validity in nanoseconds. 0 means forever and minimal value is 100000000 (100ms).
+  int64 time_to_live = 3;  // command validity in nanoseconds. 0 means forever and minimal value is 100000000 (100ms).
 }
 
 message CreateResourceResponse {
