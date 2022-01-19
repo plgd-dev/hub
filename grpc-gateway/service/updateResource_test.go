@@ -3,9 +3,11 @@ package service_test
 import (
 	"context"
 	"crypto/tls"
+	"io"
 	"testing"
 	"time"
 
+	"github.com/plgd-dev/device/schema/configuration"
 	"github.com/plgd-dev/device/schema/device"
 	"github.com/plgd-dev/device/schema/interfaces"
 	"github.com/plgd-dev/go-coap/v2/message"
@@ -14,11 +16,12 @@ import (
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 	"github.com/plgd-dev/hub/v2/test"
-	testCfg "github.com/plgd-dev/hub/v2/test/config"
+	"github.com/plgd-dev/hub/v2/test/config"
 	oauthService "github.com/plgd-dev/hub/v2/test/oauth-server/service"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	pbTest "github.com/plgd-dev/hub/v2/test/pb"
 	"github.com/plgd-dev/hub/v2/test/service"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -169,14 +172,14 @@ func TestRequestHandlerUpdateResourcesValues(t *testing.T) {
 		},
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), testCfg.TEST_TIMEOUT)
+	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
 	defer cancel()
 
 	tearDown := service.SetUp(ctx, t)
 	defer tearDown()
 	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
 
-	conn, err := grpc.Dial(testCfg.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+	conn, err := grpc.Dial(config.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
 	})))
 	require.NoError(t, err)
@@ -185,7 +188,7 @@ func TestRequestHandlerUpdateResourcesValues(t *testing.T) {
 	}()
 	c := pb.NewGrpcGatewayClient(conn)
 
-	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.GW_HOST, test.GetAllBackendResourceLinks())
+	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 
 	test.AddDeviceSwitchResources(ctx, t, deviceID, c, switchID)
@@ -202,4 +205,70 @@ func TestRequestHandlerUpdateResourcesValues(t *testing.T) {
 			pbTest.CmpResourceUpdated(t, tt.want, got.GetData())
 		})
 	}
+}
+
+// Iotivity-lite - oic/d piid issue with notification (#40)
+// https://github.com/iotivity/iotivity-lite/issues/40
+//
+// After updating the device name using /oc/con resource the piid
+// field disappears from the /oic/d resource.
+func TestRequestHandlerGetAfterUpdateResource(t *testing.T) {
+	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
+
+	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
+	defer cancel()
+
+	tearDown := service.SetUp(ctx, t)
+	defer tearDown()
+	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
+
+	conn, err := grpc.Dial(config.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+		RootCAs: test.GetRootCertificatePool(t),
+	})))
+	require.NoError(t, err)
+	defer func() {
+		_ = conn.Close()
+	}()
+	c := pb.NewGrpcGatewayClient(conn)
+
+	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.GW_HOST, test.GetAllBackendResourceLinks())
+	defer shutdownDevSim()
+
+	getData := func(devID string) map[string]interface{} {
+		resources := make(map[string]interface{})
+		client, err := c.GetResources(ctx, &pb.GetResourcesRequest{
+			DeviceIdFilter: []string{devID},
+		})
+		assert.NoError(t, err)
+		for {
+			value, err := client.Recv()
+			if err == io.EOF {
+				break
+			}
+			require.NoError(t, err)
+			resources[value.GetData().GetResourceId().ToString()] = test.DecodeCbor(t, value.GetData().GetContent().GetData())
+		}
+		return resources
+	}
+
+	startData := getData(deviceID)
+	updateName := func(name string) {
+		_, err := c.UpdateResource(ctx, &pb.UpdateResourceRequest{
+			ResourceId: commands.NewResourceID(deviceID, configuration.ResourceURI),
+			Content: &pb.Content{
+				ContentType: message.AppOcfCbor.String(),
+				Data: test.EncodeToCbor(t, map[string]interface{}{
+					"n": name,
+				}),
+			},
+		})
+		require.NoError(t, err)
+		time.Sleep(time.Millisecond * 200)
+	}
+	updateName("update simulator")
+	// revert name
+	updateName(test.TestDeviceName)
+
+	endData := getData(deviceID)
+	require.Equal(t, startData, endData)
 }

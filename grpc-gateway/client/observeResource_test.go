@@ -75,6 +75,10 @@ func (h *testObservationHandler) Handle(ctx context.Context, body DecodeFunc) {
 	h.res <- body
 }
 
-func (h *testObservationHandler) Error(err error) { fmt.Println(err) }
+func (h *testObservationHandler) Error(err error) {
+	fmt.Println(err)
+}
 
-func (h *testObservationHandler) OnClose() { fmt.Println("Observation was closed") }
+func (h *testObservationHandler) OnClose() {
+	fmt.Println("Observation was closed")
+}

@@ -17,7 +17,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestClient_UpdateResource(t *testing.T) {
+func TestClientUpdateResource(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	ctx, cancel := context.WithTimeout(context.Background(), TestTimeout)
 	defer cancel()
@@ -117,4 +117,49 @@ func TestClient_UpdateResource(t *testing.T) {
 			require.Equal(t, tt.want, got)
 		})
 	}
+}
+
+// Iotivity-lite - oic/d piid issue with notification (#40)
+// https://github.com/iotivity/iotivity-lite/issues/40
+//
+// After updating the device name using /oc/con resource the piid
+// field disappears from the /oic/d resource.
+func TestUpdateConfigurationName(t *testing.T) {
+	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
+	ctx, cancel := context.WithTimeout(context.Background(), TestTimeout)
+	defer cancel()
+	tearDown := service.SetUp(ctx, t)
+	defer tearDown()
+	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
+
+	c := NewTestClient(t)
+	defer func() {
+		err := c.Close(context.Background())
+		assert.NoError(t, err)
+	}()
+	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c.GrpcGatewayClient(), deviceID, testCfg.GW_HOST, test.GetAllBackendResourceLinks())
+	defer shutdownDevSim()
+
+	getData := func(devID string) map[string]interface{} {
+		resourceData := make(map[string]interface{})
+		for _, link := range test.GetAllBackendResourceLinks() {
+			var got interface{}
+			err := c.GetResource(ctx, devID, link.Href, &got)
+			assert.NoError(t, err)
+			resourceData[link.Href] = got
+		}
+		return resourceData
+	}
+
+	startData := getData(deviceID)
+
+	name := "update simulator"
+	err := c.UpdateResource(ctx, deviceID, configuration.ResourceURI, map[string]interface{}{"n": name}, nil)
+	require.NoError(t, err)
+	// revert name
+	err = c.UpdateResource(ctx, deviceID, configuration.ResourceURI, map[string]interface{}{"n": test.TestDeviceName}, nil)
+	assert.NoError(t, err)
+
+	endData := getData(deviceID)
+	require.Equal(t, startData, endData)
 }
