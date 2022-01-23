@@ -63,7 +63,6 @@ func TestRequestHandlerGetEventsStateSnapshot(t *testing.T) {
 	resources := test.GetAllBackendResourceLinks()
 	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.GW_HOST, resources)
 	defer shutdownDevSim()
-	time.Sleep(time.Millisecond * 200)
 
 	lightHref := test.TestResourceLightInstanceHref("1")
 	timestampFilter := time.Now().UnixNano()
@@ -80,7 +79,7 @@ func TestRequestHandlerGetEventsStateSnapshot(t *testing.T) {
 		require.NoError(t, err)
 	}
 	require.NoError(t, err)
-	time.Sleep(time.Second)
+	time.Sleep(time.Second * 5)
 
 	client, err := c.GetEvents(ctx, &pb.GetEventsRequest{
 		DeviceIdFilter:  []string{deviceID},
