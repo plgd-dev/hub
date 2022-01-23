@@ -16,7 +16,7 @@ require (
 	github.com/json-iterator/go v1.1.12
 	github.com/jtacoma/uritemplates v1.0.0
 	github.com/karrick/tparse/v2 v2.8.2
-	github.com/lestrrat-go/jwx v1.2.17
+	github.com/lestrrat-go/jwx v1.2.18
 	github.com/nats-io/nats.go v1.13.1-0.20211018182449-f2416a8b1483
 	github.com/panjf2000/ants/v2 v2.4.7
 	github.com/plgd-dev/device v1.0.0
@@ -30,7 +30,6 @@ require (
 	golang.org/x/net v0.0.0-20220114011407-0dd24b26b47d
 	golang.org/x/oauth2 v0.0.0-20211104180415-d3ed0bb246c8
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
-	google.golang.org/api v0.65.0
 	google.golang.org/genproto v0.0.0-20220114231437-d2e6a121cae0
 	google.golang.org/grpc v1.43.0
 	google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.2.0
@@ -45,11 +44,9 @@ require (
 	github.com/dsnet/golib/memfile v1.0.0 // indirect
 	github.com/fxamacker/cbor/v2 v2.4.0 // indirect
 	github.com/go-stack/stack v1.8.1 // indirect
-	github.com/goccy/go-json v0.9.3 // indirect
+	github.com/goccy/go-json v0.9.4 // indirect
 	github.com/golang/glog v1.0.0 // indirect
-	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
-	github.com/googleapis/gax-go/v2 v2.1.1 // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.0.0-rc.2 // indirect
 	github.com/kelseyhightower/envconfig v1.4.0 // indirect
 	github.com/klauspost/compress v1.14.1 // indirect
@@ -75,7 +72,6 @@ require (
 	github.com/xdg-go/scram v1.1.0 // indirect
 	github.com/xdg-go/stringprep v1.0.2 // indirect
 	github.com/youmark/pkcs8 v0.0.0-20201027041543-1326539a0a0a // indirect
-	go.opencensus.io v0.23.0 // indirect
 	go.uber.org/multierr v1.7.0 // indirect
 	golang.org/x/crypto v0.0.0-20220112180741-5e0467b6c7ce // indirect
 	golang.org/x/sys v0.0.0-20220114195835-da31bd327af9 // indirect
