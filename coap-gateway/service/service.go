@@ -228,7 +228,7 @@ func newProviders(ctx context.Context, config AuthorizationConfig, logger log.Lo
 	var firstProvider *oauth2.PlgdProvider
 	providers := make(map[string]*oauth2.PlgdProvider)
 	for _, p := range config.Providers {
-		provider, err := oauth2.NewPlgdProvider(ctx, p.Config, logger)
+		provider, err := oauth2.NewPlgdProvider(ctx, p.Config, logger, config.OwnerClaim, config.DeviceIDClaim)
 		if err != nil {
 			closeProviders.Execute()
 			return nil, nil, nil, fmt.Errorf("cannot create device provider: %w", err)
@@ -323,7 +323,7 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 		return nil, fmt.Errorf("device providers are empty")
 	}
 
-	keyCache := jwt.NewKeyCacheWithHttp(firstProvider.OpenID.JWKSURL, firstProvider.HTTPClient.HTTP())
+	keyCache := jwt.NewKeyCacheWithHttp(firstProvider.OpenID.JWKSURL, firstProvider.HTTP())
 
 	jwtValidator := jwt.NewValidatorWithKeyCache(keyCache)
 

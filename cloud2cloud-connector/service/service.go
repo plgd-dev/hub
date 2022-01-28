@@ -251,7 +251,7 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Server, error)
 	}
 	listener.AddCloseFunc(closeStore)
 
-	provider, err := oauth2.NewPlgdProvider(ctx, config.APIs.HTTP.Authorization.Config, logger)
+	provider, err := oauth2.NewPlgdProvider(ctx, config.APIs.HTTP.Authorization.Config, logger, "", "")
 	if err != nil {
 		cleanUp.Execute()
 		return nil, fmt.Errorf("cannot create device provider: %w", err)

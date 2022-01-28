@@ -7,6 +7,7 @@ import (
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	coapgwTest "github.com/plgd-dev/hub/v2/coap-gateway/test"
 	"github.com/plgd-dev/hub/v2/coap-gateway/uri"
+	"github.com/plgd-dev/hub/v2/pkg/security/oauth2/oauth"
 	"github.com/plgd-dev/hub/v2/test/config"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 )
@@ -78,5 +79,33 @@ func TestSignUpPostHandlerWithRetry(t *testing.T) {
 	for i := 0; i < retryCount; i++ {
 		testPostHandler(t, uri.SignUp, testSignUp, co)
 		time.Sleep(time.Second)
+	}
+}
+
+func TestSignUpClientCredentialPostHandler(t *testing.T) {
+	coapgwCfg := coapgwTest.MakeConfig(t)
+	coapgwCfg.APIs.COAP.Authorization.Providers[0].GrantType = oauth.ClientCredentials
+	shutdown := setUp(t, coapgwCfg)
+	defer shutdown()
+	codeEl := oauthTest.GetDefaultAccessToken(t)
+
+	tbl := []testEl{
+		{"BadRequest (invalid)", input{coapCodes.POST, `{}`, nil}, output{coapCodes.BadRequest, `invalid device id`, nil}, true},
+		{"BadRequest (invalid access token)", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "accesstoken": 123}`, nil}, output{coapCodes.BadRequest, `cannot handle sign up: cbor: cannot unmarshal positive`, nil}, true},
+		{"Changed", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "accesstoken":"` + codeEl + `", "authprovider": "` + config.DEVICE_PROVIDER + `"}`, nil}, output{coapCodes.Changed, TestCoapSignUpResponseRetry{UserID: "1"}, nil}, false},
+	}
+
+	for _, test := range tbl {
+		tf := func(t *testing.T) {
+			co := testCoapDial(t, config.GW_HOST, "")
+			if co == nil {
+				return
+			}
+			defer func() {
+				_ = co.Close()
+			}()
+			testPostHandler(t, uri.SignUp, test, co)
+		}
+		t.Run(test.name, tf)
 	}
 }
