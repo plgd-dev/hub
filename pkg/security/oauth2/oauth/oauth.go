@@ -2,11 +2,14 @@ package oauth
 
 import (
 	"fmt"
+	"net/url"
 
 	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/clientcredentials"
 )
 
 type AuthStyle string
+type GrantType string
 
 const (
 	// AuthStyleAutoDetect means to auto-detect which authentication
@@ -22,6 +25,9 @@ const (
 	// using HTTP Basic Authorization. This is an optional style
 	// described in the OAuth2 RFC 6749 section 2.3.1.
 	AuthStyleInHeader AuthStyle = "inHeader"
+
+	ClientCredentials GrantType = "clientCredentials"
+	AuthorizationCode GrantType = "authorizationCode"
 )
 
 func (a AuthStyle) ToOAuth2() oauth2.AuthStyle {
@@ -48,6 +54,7 @@ type Config struct {
 	ResponseType     string    `yaml:"responseType" json:"responseType"`
 	ResponseMode     string    `yaml:"responseMode" json:"responseMode"`
 	ClientSecret     string    `yaml:"-" json:"clientSecret"`
+	GrantType        GrantType `yaml:"grantType" json:"grantType"`
 }
 
 func (c *Config) Validate() error {
@@ -56,6 +63,13 @@ func (c *Config) Validate() error {
 	}
 	if c.ClientSecretFile == "" {
 		return fmt.Errorf("clientSecretFile('%v')", c.ClientSecretFile)
+	}
+	switch c.GrantType {
+	case ClientCredentials, AuthorizationCode:
+	case GrantType(""):
+		c.GrantType = AuthorizationCode
+	default:
+		return fmt.Errorf("grantType('%v' - only one of [ %v, %v ] is supported)", c.GrantType, AuthorizationCode, ClientCredentials)
 	}
 	return nil
 }
@@ -99,4 +113,22 @@ func (c Config) AuthCodeURL(csrfToken string) string {
 	}
 	auth := c.ToDefaultOAuth2()
 	return (&auth).AuthCodeURL(csrfToken, opts...)
+}
+
+func (c Config) ToClientCredentials(tokenURL, clientSecret string) clientcredentials.Config {
+	v := make(url.Values)
+	if c.Audience != "" {
+		v.Set("audience", c.Audience)
+	}
+	return clientcredentials.Config{
+		ClientID:       c.ClientID,
+		ClientSecret:   clientSecret,
+		Scopes:         c.Scopes,
+		TokenURL:       tokenURL,
+		EndpointParams: v,
+	}
+}
+
+func (c Config) ToDefaultClientCredentials() clientcredentials.Config {
+	return c.ToClientCredentials(c.TokenURL, c.ClientSecret)
 }

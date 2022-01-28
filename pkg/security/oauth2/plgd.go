@@ -2,16 +2,24 @@ package oauth2
 
 import (
 	"context"
+	"net/http"
 
 	"github.com/plgd-dev/hub/v2/pkg/file"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/pkg/net/http/client"
+	"github.com/plgd-dev/hub/v2/pkg/security/oauth2/oauth"
 	"github.com/plgd-dev/hub/v2/pkg/security/openid"
-	"golang.org/x/oauth2"
 )
 
+type provider interface {
+	Exchange(ctx context.Context, authorizationCode string) (*Token, error)
+	Refresh(ctx context.Context, refreshToken string) (*Token, error)
+	HTTP() *http.Client
+	Close()
+}
+
 // NewPlgdProvider creates OAuth client
-func NewPlgdProvider(ctx context.Context, config Config, logger log.Logger) (*PlgdProvider, error) {
+func NewPlgdProvider(ctx context.Context, config Config, logger log.Logger, ownerClaim, deviceIDClaim string) (*PlgdProvider, error) {
 	config.ResponseMode = "query"
 	config.AccessType = "offline"
 	config.ResponseType = "code"
@@ -33,58 +41,23 @@ func NewPlgdProvider(ctx context.Context, config Config, logger log.Logger) (*Pl
 
 	config.AuthURL = oidcfg.AuthURL
 	config.TokenURL = oidcfg.TokenURL
+	var provider provider
+	if config.GrantType == oauth.ClientCredentials {
+		provider = NewClientCredentialsPlgdProvider(config, httpClient, oidcfg.JWKSURL, ownerClaim, deviceIDClaim)
+	} else {
+		provider = NewAuthCodePlgdProvider(config, httpClient)
+	}
+
 	return &PlgdProvider{
-		Config:     config,
-		HTTPClient: httpClient,
-		OpenID:     oidcfg,
+		Config:   config,
+		provider: provider,
+		OpenID:   oidcfg,
 	}, nil
 }
 
 // PlgdProvider configuration with new http client
 type PlgdProvider struct {
-	Config     Config
-	HTTPClient *client.Client
-	OpenID     openid.Config
-}
-
-// Exchange Auth Code for Access Token via OAuth
-func (p *PlgdProvider) Exchange(ctx context.Context, authorizationCode string) (*Token, error) {
-	ctx = context.WithValue(ctx, oauth2.HTTPClient, p.HTTPClient.HTTP())
-
-	oauth := p.Config.ToDefaultOAuth2()
-	token, err := oauth.Exchange(ctx, authorizationCode)
-	if err != nil {
-		return nil, err
-	}
-
-	t := Token{
-		AccessToken:  AccessToken(token.AccessToken),
-		RefreshToken: token.RefreshToken,
-		Expiry:       token.Expiry,
-	}
-	return &t, nil
-}
-
-// Refresh gets new Access Token via OAuth.
-func (p *PlgdProvider) Refresh(ctx context.Context, refreshToken string) (*Token, error) {
-	restoredToken := &oauth2.Token{
-		RefreshToken: refreshToken,
-	}
-	oauth := p.Config.ToDefaultOAuth2()
-	ctx = context.WithValue(ctx, oauth2.HTTPClient, p.HTTPClient.HTTP())
-	tokenSource := oauth.TokenSource(ctx, restoredToken)
-	token, err := tokenSource.Token()
-	if err != nil {
-		return nil, err
-	}
-
-	return &Token{
-		AccessToken:  AccessToken(token.AccessToken),
-		RefreshToken: token.RefreshToken,
-		Expiry:       token.Expiry,
-	}, nil
-}
-
-func (p *PlgdProvider) Close() {
-	p.HTTPClient.Close()
+	Config Config
+	provider
+	OpenID openid.Config
 }

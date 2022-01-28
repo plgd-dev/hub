@@ -31,6 +31,7 @@ apis:
           audience: ""
           redirectURL: "https://localhost/things"
           authority: ""
+          grantType: ""
           http:
             maxIdleConns: 16
             maxConnsPerHost: 32
@@ -49,6 +50,7 @@ apis:
           audience: ""
           redirectURL: "cloud.plgd.mobile://login-callback"
           authority: ""
+          grantType: ""
           http:
             maxIdleConns: 16
             maxConnsPerHost: 32

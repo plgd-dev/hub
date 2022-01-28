@@ -17,7 +17,7 @@ import (
 func getProvider(t *testing.T, logger log.Logger) *oauth2.PlgdProvider {
 	cfg := config.MakeDeviceAuthorization()
 	cfg.ClientID = oauthTest.ClientTestRestrictedAuth
-	provider, err := oauth2.NewPlgdProvider(context.Background(), cfg, logger)
+	provider, err := oauth2.NewPlgdProvider(context.Background(), cfg, logger, "", "")
 	require.NoError(t, err)
 	return provider
 }
