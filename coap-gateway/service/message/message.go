@@ -15,7 +15,7 @@ func URIToDeviceIDHref(msg *mux.Message) (deviceID, href string, err error) {
 	if err != nil {
 		return "", "", fmt.Errorf("cannot parse deviceID, href from uri: %w", err)
 	}
-	deviceIDHref := strings.TrimPrefix("/"+wholePath, uri.ResourceRoute)
+	deviceIDHref := strings.TrimPrefix(wholePath, uri.ResourceRoute)
 	if deviceIDHref[0] == '/' {
 		deviceIDHref = deviceIDHref[1:]
 	}
