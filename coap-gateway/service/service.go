@@ -440,7 +440,7 @@ func defaultHandler(req *mux.Message, client *Client) {
 	path, _ := req.Options.Path()
 
 	switch {
-	case strings.HasPrefix("/"+path, uri.ResourceRoute):
+	case strings.HasPrefix(path, uri.ResourceRoute):
 		resourceRouteHandler(req, client)
 	default:
 		deviceID := getDeviceID(client)
@@ -494,7 +494,7 @@ func (server *Service) authMiddleware(next mux.Handler) mux.Handler {
 				log.Errorf("coap server error: %w", err)
 			}
 		}
-		ctx, err := server.authInterceptor(ctx, r.Code, "/"+path)
+		ctx, err := server.authInterceptor(ctx, r.Code, path)
 		if err != nil {
 			logErrorAndCloseClient(fmt.Errorf("cannot handle request to path '%v': %w", path, err), coapCodes.Unauthorized)
 			return
