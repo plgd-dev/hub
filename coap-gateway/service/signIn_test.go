@@ -150,8 +150,7 @@ func TestSignInWithMTLSAndDeviceIdClaim(t *testing.T) {
 		co := testCoapDial(t, testCfg.GW_HOST, deviceID)
 		require.NotEmpty(t, co)
 		signUpResp := testSignUp(t, deviceID, co)
-		err := co.Close()
-		require.NoError(t, err)
+		_ = co.Close()
 		return signUpResp
 	}
 
