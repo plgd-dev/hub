@@ -153,12 +153,17 @@ func TestUpdateConfigurationName(t *testing.T) {
 
 	startData := getData(deviceID)
 
-	name := "update simulator"
-	err := c.UpdateResource(ctx, deviceID, configuration.ResourceURI, map[string]interface{}{"n": name}, nil)
-	require.NoError(t, err)
+	updateName := func(name string) {
+		err := c.UpdateResource(ctx, deviceID, configuration.ResourceURI, map[string]interface{}{
+			"n": name,
+		}, nil)
+		require.NoError(t, err)
+		time.Sleep(time.Millisecond * 200)
+	}
+
+	updateName("update simulator")
 	// revert name
-	err = c.UpdateResource(ctx, deviceID, configuration.ResourceURI, map[string]interface{}{"n": test.TestDeviceName}, nil)
-	assert.NoError(t, err)
+	updateName(test.TestDeviceName)
 
 	endData := getData(deviceID)
 	require.Equal(t, startData, endData)
