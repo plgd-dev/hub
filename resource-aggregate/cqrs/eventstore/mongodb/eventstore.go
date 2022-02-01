@@ -13,10 +13,10 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"go.mongodb.org/mongo-driver/mongo/readpref"
 
 	"github.com/plgd-dev/go-coap/v2/pkg/cache"
 	"github.com/plgd-dev/go-coap/v2/pkg/runner/periodic"
+	pkgMongo "github.com/plgd-dev/hub/v2/pkg/mongodb"
 	"github.com/plgd-dev/hub/v2/pkg/security/certManager/client"
 	pkgTime "github.com/plgd-dev/hub/v2/pkg/time"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore"
@@ -94,7 +94,6 @@ type EventStore struct {
 	LogDebugfFunc   LogDebugfFunc
 	dbPrefix        string
 	colPrefix       string
-	batchSize       int
 	dataMarshaler   MarshalerFunc
 	dataUnmarshaler UnmarshalerFunc
 	ensuredIndexes  *cache.Cache
@@ -115,17 +114,12 @@ func New(ctx context.Context, config Config, logger log.Logger, opts ...Option) 
 	if err != nil {
 		return nil, fmt.Errorf("could not create cert manager: %w", err)
 	}
-
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI(config.Embedded.URI).SetMaxPoolSize(config.MaxPoolSize).SetMaxConnIdleTime(config.MaxConnIdleTime).SetTLSConfig(certManager.GetTLSConfig()))
+	mgoStore, err := pkgMongo.NewStore(ctx, config.Embedded, certManager.GetTLSConfig())
 	if err != nil {
-		return nil, fmt.Errorf("could not dial database: %w", err)
+		return nil, err
 	}
-	err = client.Ping(ctx, readpref.Primary())
-	if err != nil {
-		return nil, fmt.Errorf("could not dial database: %w", err)
-	}
-
-	store, err := newEventStoreWithClient(ctx, client, config.Embedded.Database, "events", config.BatchSize, config.marshalerFunc, config.unmarshalerFunc, nil)
+	client := mgoStore.Client()
+	store, err := newEventStoreWithClient(ctx, client, config.Embedded.Database, "events", config.marshalerFunc, config.unmarshalerFunc, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -134,7 +128,7 @@ func New(ctx context.Context, config Config, logger log.Logger, opts ...Option) 
 }
 
 // NewEventStoreWithClient creates a new EventStore with a session.
-func newEventStoreWithClient(ctx context.Context, client *mongo.Client, dbPrefix string, colPrefix string, batchSize int, eventMarshaler MarshalerFunc, eventUnmarshaler UnmarshalerFunc, LogDebugfFunc LogDebugfFunc) (*EventStore, error) {
+func newEventStoreWithClient(ctx context.Context, client *mongo.Client, dbPrefix string, colPrefix string, eventMarshaler MarshalerFunc, eventUnmarshaler UnmarshalerFunc, LogDebugfFunc LogDebugfFunc) (*EventStore, error) {
 	if client == nil {
 		return nil, errors.New("invalid client")
 	}
@@ -154,10 +148,6 @@ func newEventStoreWithClient(ctx context.Context, client *mongo.Client, dbPrefix
 		colPrefix = "events"
 	}
 
-	if batchSize < 1 {
-		batchSize = 128
-	}
-
 	if LogDebugfFunc == nil {
 		LogDebugfFunc = func(fmt string, args ...interface{}) {}
 	}
@@ -174,7 +164,6 @@ func newEventStoreWithClient(ctx context.Context, client *mongo.Client, dbPrefix
 		colPrefix:       colPrefix,
 		dataMarshaler:   eventMarshaler,
 		dataUnmarshaler: eventUnmarshaler,
-		batchSize:       batchSize,
 		LogDebugfFunc:   LogDebugfFunc,
 		ensuredIndexes:  ensuredIndexes,
 	}

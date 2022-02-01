@@ -2,14 +2,17 @@ package mongodb
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/plgd-dev/hub/v2/pkg/security/certManager/client"
 )
 
 type Config struct {
-	URI      string        `yaml:"uri" json:"uri"`
-	Database string        `yaml:"database" json:"database"`
-	TLS      client.Config `yaml:"tls" json:"tls"`
+	URI             string        `yaml:"uri" json:"uri"`
+	Database        string        `yaml:"database" json:"database"`
+	MaxPoolSize     uint64        `yaml:"maxPoolSize" json:"maxPoolSize"`
+	MaxConnIdleTime time.Duration `yaml:"maxConnIdleTime" json:"maxConnIdleTime"`
+	TLS             client.Config `yaml:"tls" json:"tls"`
 }
 
 func (c *Config) Validate() error {

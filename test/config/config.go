@@ -141,13 +141,12 @@ func MakeSubscriberConfig() natsClient.Config {
 func MakeEventsStoreMongoDBConfig() mongodb.Config {
 	return mongodb.Config{
 		Embedded: pkgMongo.Config{
-			URI:      MONGODB_URI,
-			Database: "eventStore",
-			TLS:      MakeTLSClientConfig(),
+			MaxPoolSize:     16,
+			MaxConnIdleTime: 4 * time.Minute,
+			URI:             MONGODB_URI,
+			Database:        "eventStore",
+			TLS:             MakeTLSClientConfig(),
 		},
-		BatchSize:       16,
-		MaxPoolSize:     16,
-		MaxConnIdleTime: 4 * time.Minute,
 	}
 }
 

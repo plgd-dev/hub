@@ -934,6 +934,10 @@ identitystore:
       mongoDB:
         uri:
         database: "ownersDevices"
+        # limits number of connections.
+        maxPoolSize: 16
+        # close connection when idle time reach the value.
+        maxConnIdleTime: 4m0s
         tls:
           caPool:
           keyFile:

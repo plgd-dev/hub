@@ -1,17 +1,12 @@
 package mongodb
 
 import (
-	"time"
-
 	pkgMongo "github.com/plgd-dev/hub/v2/pkg/mongodb"
 )
 
 // Config provides Mongo DB configuration options
 type Config struct {
-	BatchSize       int             `yaml:"batchSize" json:"batchSize"`
-	MaxPoolSize     uint64          `yaml:"maxPoolSize" json:"maxPoolSize"`
-	MaxConnIdleTime time.Duration   `yaml:"maxConnIdleTime" json:"maxConnIdleTime"`
-	Embedded        pkgMongo.Config `yaml:",inline" json:",inline"`
+	Embedded pkgMongo.Config `yaml:",inline" json:",inline"`
 
 	marshalerFunc   MarshalerFunc   `yaml:"-"`
 	unmarshalerFunc UnmarshalerFunc `yaml:"-"`
