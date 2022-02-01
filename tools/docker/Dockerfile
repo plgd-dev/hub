@@ -1,4 +1,4 @@
-FROM golang:1.17.5-alpine AS build
+FROM golang:1.17.6-alpine AS build
 ARG DIRECTORY
 ARG NAME
 RUN apk add --no-cache curl git build-base
