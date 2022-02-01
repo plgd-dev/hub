@@ -57,8 +57,6 @@ clients:
     mongoDB:
       uri:
       database: eventStore
-      # limits number of queries in one find request.
-      batchSize: 128
       # limits number of connections.
       maxPoolSize: 16
       # close connection when idle time reach the value.

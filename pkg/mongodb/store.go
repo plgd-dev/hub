@@ -24,7 +24,7 @@ type Store struct {
 
 // NewStore creates a new Store.
 func NewStore(ctx context.Context, cfg Config, tls *tls.Config) (*Store, error) {
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI(cfg.URI).SetTLSConfig(tls))
+	client, err := mongo.Connect(ctx, options.Client().SetMaxPoolSize(cfg.MaxPoolSize).SetMaxConnIdleTime(cfg.MaxConnIdleTime).ApplyURI(cfg.URI).SetTLSConfig(tls))
 	if err != nil {
 		return nil, fmt.Errorf("failed to dial database: %w", err)
 	}

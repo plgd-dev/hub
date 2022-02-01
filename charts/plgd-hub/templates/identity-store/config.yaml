@@ -53,6 +53,8 @@ data:
         mongoDB:
           uri: {{- printf " " }}{{- include "plgd-hub.mongoDBUri" (list $ .clients.storage.mongoDB.uri )  | quote }}
           database: {{ .clients.storage.mongoDB.database }}
+          maxPoolSize: {{ .clients.storage.mongoDB.maxPoolSize }}
+          maxConnIdleTime: {{ .clients.storage.mongoDB.maxConnIdleTime }}
           tls:
             {{- $mongoDbTls := .clients.storage.mongoDB.tls }}
             {{- include "plgd-hub.certificateConfig" (list $ $mongoDbTls $cert ) | indent 10 }}

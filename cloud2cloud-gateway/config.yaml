@@ -62,6 +62,10 @@ clients:
     mongoDB:
       uri: "mongodb://localhost:27017"
       database: "cloud2cloudGateway"
+      # limits number of connections.
+      maxPoolSize: 16
+      # close connection when idle time reach the value.
+      maxConnIdleTime: 4m0s
       tls:
         caPool: "/secrets/public/rootca.crt"
         keyFile: "/secrets/private/cert.key"
