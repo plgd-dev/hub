@@ -69,7 +69,7 @@ func (c *ProvidersConfig) Validate(firstAuthority string, providerNames map[stri
 }
 
 type AuthorizationConfig struct {
-	DeviceIDClaim string            `yaml:"deviceIdClaim" json:"deviceIdClaim"`
+	DeviceIDClaim string            `yaml:"deviceIDClaim" json:"deviceIdClaim"`
 	OwnerClaim    string            `yaml:"ownerClaim" json:"ownerClaim"`
 	Providers     []ProvidersConfig `yaml:"providers" json:"providers"`
 }

@@ -118,7 +118,7 @@ func (c *IdentityStoreConfig) Validate() error {
 type PublicConfiguration struct {
 	CAPool                   string        `yaml:"caPool" json:"caPool" description:"file path to the root certificate in PEM format"`
 	OwnerClaim               string        `yaml:"ownerClaim" json:"ownerClaim"`
-	DeviceIDClaim            string        `yaml:"deviceIdClaim" json:"deviceIdClaim"`
+	DeviceIDClaim            string        `yaml:"deviceIDClaim" json:"deviceIdClaim"`
 	HubID                    string        `yaml:"hubID" json:"hubId"`
 	CoapGateway              string        `yaml:"coapGateway" json:"coapGateway"`
 	DefaultCommandTimeToLive time.Duration `yaml:"defaultCommandTimeToLive" json:"defaultCommandTimeToLive"`

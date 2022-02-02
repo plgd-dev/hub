@@ -88,7 +88,7 @@ data:
       {{- end }}
       ownerClaim: {{ .publicConfiguration.ownerClaim  | default $.Values.global.ownerClaim | quote }}
       {{- if .publicConfiguration.deviceIdClaim  | default $.Values.global.deviceIdClaim }}
-      deviceIdClaim: {{ .publicConfiguration.deviceIdClaim  | default $.Values.global.deviceIdClaim | quote }}
+      deviceIDClaim: {{ .publicConfiguration.deviceIdClaim  | default $.Values.global.deviceIdClaim | quote }}
       {{- end }}
       hubID: {{ required "resourcedirectory.publicConfiguration.hubId or coapgateway.hubId or global.hubId is required" ( .publicConfiguration.hubId | default ( $.Values.coapgateway.hubId | default $.Values.global.hubId)) | quote }}
       coapGateway: {{ .publicConfiguration.coapGateway | default (printf "coaps+tcp://%s:%v" $.Values.global.domain $.Values.coapgateway.port ) | quote }}

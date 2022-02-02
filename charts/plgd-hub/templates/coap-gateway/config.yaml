@@ -41,7 +41,7 @@ data:
         authorization:
           ownerClaim: {{ .apis.coap.authorization.ownerClaim | default $.Values.global.ownerClaim | quote }}
           {{- if .apis.coap.authorization.deviceIdClaim | default $.Values.global.deviceIdClaim | quote }}
-          deviceIdClaim: {{ .apis.coap.authorization.deviceIdClaim | default $.Values.global.deviceIdClaim | quote }}
+          deviceIDClaim: {{ .apis.coap.authorization.deviceIdClaim | default $.Values.global.deviceIdClaim | quote }}
           {{- end }}
           providers:
           {{- $providers := $.Values.mockoauthserver.oauth }}
