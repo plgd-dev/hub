@@ -81,7 +81,7 @@ publicConfiguration:
   caPool: "/secrets/public/rootca.crt"
   authorizationServer: ""
   ownerClaim: "sub"
-  deviceIdClaim: ""
+  deviceIDClaim: ""
   hubID: ""
   coapGateway: ""
   defaultCommandTimeToLive: "0s"

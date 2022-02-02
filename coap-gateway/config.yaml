@@ -22,7 +22,7 @@ apis:
       clientCertificateRequired: true
     authorization:
       ownerClaim: "sub"
-      deviceIdClaim: ""
+      deviceIDClaim: ""
       providers:
         - name: "plgd.web"
           clientID: ""
