@@ -307,12 +307,13 @@ github.com/pion/udp v0.1.1/go.mod h1:6AFo+CMdKQm7UiA0eUPA8/eVCTx8jBIITLZHc9DWX5M
 github.com/pkg/errors v0.8.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
 github.com/pkg/errors v0.9.1 h1:FEBLx1zS214owpjy7qsBeixbURkuhQAwrK5UwLGTwt4=
 github.com/pkg/errors v0.9.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
-github.com/plgd-dev/device v1.1.0 h1:pQypYPjoKLDoHpRoSd1U+bkLWh4bTJMRj/uTQocKx1I=
-github.com/plgd-dev/device v1.1.0/go.mod h1:9LT9n6YLvyl9USSHoBE8ZwuERD4yRiv6++x2Pm9faRg=
+github.com/plgd-dev/device v1.1.1-0.20220201194341-13db9d33afec h1:yAFUVono/MoPJ/6n8Ql+eqno9cT4FpHauAZuTBOOidk=
+github.com/plgd-dev/device v1.1.1-0.20220201194341-13db9d33afec/go.mod h1:9LT9n6YLvyl9USSHoBE8ZwuERD4yRiv6++x2Pm9faRg=
 github.com/plgd-dev/go-coap/v2 v2.0.4-0.20200819112225-8eb712b901bc/go.mod h1:+tCi9Q78H/orWRtpVWyBgrr4vKFo2zYtbbxUllerBp4=
 github.com/plgd-dev/go-coap/v2 v2.4.1-0.20210517130748-95c37ac8e1fa/go.mod h1:rA7fc7ar+B/qa+Q0hRqv7yj/EMtIlmo1l7vkQGSrHPU=
-github.com/plgd-dev/go-coap/v2 v2.5.0 h1:tIwA7yuwc3Ruk2rhpaFvrQ1rpkOlEye9HASyPzA5UeU=
 github.com/plgd-dev/go-coap/v2 v2.5.0/go.mod h1:OjaqTKVyRUlK4FOM47tyz/pM76aqXjRqAmQteCAny4w=
+github.com/plgd-dev/go-coap/v2 v2.5.1-0.20220202152015-d741687e6a37 h1:nUeyMJuAvvd2FVQYI5E1CB81xlu7yAO5MWG3jZgys/k=
+github.com/plgd-dev/go-coap/v2 v2.5.1-0.20220202152015-d741687e6a37/go.mod h1:Y7uzq6Ko4gc7lPuXTz5TyDowtfFHjkkB01pE3BtwxWM=
 github.com/plgd-dev/kit v0.0.0-20200819113605-d5fcf3e94f63 h1:cI6kESUBU1KUHtufZepEkaTsSkLN2kE6xz+Ec5V17q0=
 github.com/plgd-dev/kit v0.0.0-20200819113605-d5fcf3e94f63/go.mod h1:Yl9zisyXfPdtP9hTWlJqjJYXmgU/jtSDKttz9/CeD90=
 github.com/plgd-dev/kit/v2 v2.0.0-20211006190727-057b33161b90 h1:TC1HJ/UbyflJFPvaOdGmNZ5TeFGex1/dyr9urNGLy7M=
@@ -406,8 +407,8 @@ golang.org/x/crypto v0.0.0-20210421170649-83a5a9bb288b/go.mod h1:T9bdIzuCu7OtxOm
 golang.org/x/crypto v0.0.0-20210616213533-5ff15b29337e/go.mod h1:GvvjBRRGRdwPK5ydBHafDWAxML/pGHZbMvKqRZ5+Abc=
 golang.org/x/crypto v0.0.0-20211215153901-e495a2d5b3d3/go.mod h1:IxCIyHEi3zRg3s0A5j5BB6A9Jmi73HwBIUl50j+osU4=
 golang.org/x/crypto v0.0.0-20220112180741-5e0467b6c7ce/go.mod h1:IxCIyHEi3zRg3s0A5j5BB6A9Jmi73HwBIUl50j+osU4=
-golang.org/x/crypto v0.0.0-20220128200615-198e4374d7ed h1:YoWVYYAfvQ4ddHv3OKmIvX7NCAhFGTj62VP2l2kfBbA=
-golang.org/x/crypto v0.0.0-20220128200615-198e4374d7ed/go.mod h1:IxCIyHEi3zRg3s0A5j5BB6A9Jmi73HwBIUl50j+osU4=
+golang.org/x/crypto v0.0.0-20220131195533-30dcbda58838 h1:71vQrMauZZhcTVK6KdYM+rklehEEwb3E+ZhaE5jrPrE=
+golang.org/x/crypto v0.0.0-20220131195533-30dcbda58838/go.mod h1:IxCIyHEi3zRg3s0A5j5BB6A9Jmi73HwBIUl50j+osU4=
 golang.org/x/exp v0.0.0-20190121172915-509febef88a4/go.mod h1:CJ0aWSM057203Lf6IL+f9T1iT9GByDxfZKAQTCR3kQA=
 golang.org/x/exp v0.0.0-20190306152737-a1d7652674e8/go.mod h1:CJ0aWSM057203Lf6IL+f9T1iT9GByDxfZKAQTCR3kQA=
 golang.org/x/exp v0.0.0-20190510132918-efd6b22b2522/go.mod h1:ZjyILWgesfNpC6sMxTJOJm9Kp84zZh5NQWvqDGG3Qr8=
