@@ -9,6 +9,7 @@ import (
 
 	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
+	"github.com/plgd-dev/hub/v2/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
@@ -35,6 +36,7 @@ func waitForEvents(t *testing.T, client pb.GrpcGateway_GetEventsClient) []interf
 		require.NoError(t, err)
 		event := pbTest.GetWrappedEvent(value)
 		require.NotNil(t, event)
+		log.Infof("received event(%T)", event)
 		events = append(events, event)
 	}
 	return events
@@ -77,9 +79,10 @@ func TestRequestHandlerGetEventsStateSnapshot(t *testing.T) {
 			},
 		})
 		require.NoError(t, err)
+		time.Sleep(time.Millisecond * 500)
 	}
 	require.NoError(t, err)
-	time.Sleep(time.Second * 5)
+	time.Sleep(time.Second * 4)
 
 	client, err := c.GetEvents(ctx, &pb.GetEventsRequest{
 		DeviceIdFilter:  []string{deviceID},

@@ -104,7 +104,7 @@ func verifyChain(chain []*x509.Certificate, capool *x509.CertPool) (string, erro
 	if !ekuHasServer {
 		return "", fmt.Errorf("not contains ExtKeyUsageServerAuth")
 	}
-	return coap.GetDeviceIDFromIndetityCertificate(certificate)
+	return coap.GetDeviceIDFromIdentityCertificate(certificate)
 }
 
 func MakeGetConfigForClient(tlsCfg *tls.Config, expiresIn time.Duration, deviceIdCache *cache.Cache) func(chi *tls.ClientHelloInfo) (*tls.Config, error) {
