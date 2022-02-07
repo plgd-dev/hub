@@ -57,7 +57,7 @@ func validatePublish(w wkRd) error {
 	if len(w.Links) == 0 {
 		return errors.New("empty links")
 	}
-	if w.TimeToLive <= 0 && w.TimeToLiveLegacy <= 0 {
+	if w.TimeToLive < 0 && w.TimeToLiveLegacy < 0 {
 		return errors.New("invalid TimeToLive")
 	}
 
@@ -67,7 +67,10 @@ func validatePublish(w wkRd) error {
 func resourceDirectoryPublishHandler(s mux.ResponseWriter, req *mux.Message, client *Client) {
 	authCtx := client.loadAuthorizationContext()
 
-	var w wkRd
+	w := wkRd{
+		TimeToLive:       -1,
+		TimeToLiveLegacy: -1,
+	}
 	err := cbor.ReadFrom(req.Body, &w)
 	if err != nil {
 		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot publish resource: %w", authCtx.DeviceId, err), coapCodes.BadRequest, req.Token)
