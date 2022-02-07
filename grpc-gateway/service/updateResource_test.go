@@ -15,6 +15,7 @@ import (
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
+	raTest "github.com/plgd-dev/hub/v2/resource-aggregate/test"
 	"github.com/plgd-dev/hub/v2/test"
 	"github.com/plgd-dev/hub/v2/test/config"
 	oauthService "github.com/plgd-dev/hub/v2/test/oauth-server/service"
@@ -271,4 +272,70 @@ func TestRequestHandlerGetAfterUpdateResource(t *testing.T) {
 
 	endData := getData(deviceID)
 	require.Equal(t, startData, endData)
+}
+
+func TestRequestHandlerRunMultipleUpdateResource(t *testing.T) {
+	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
+	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
+	defer cancel()
+
+	raCfg := raTest.MakeConfig(t)
+	raCfg.Clients.Eventstore.SnapshotThreshold = 5
+	tearDown := service.SetUp(ctx, t, service.WithRAConfig(raCfg))
+	defer tearDown()
+	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
+
+	conn, err := grpc.Dial(config.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+		RootCAs: test.GetRootCertificatePool(t),
+	})))
+	require.NoError(t, err)
+	defer func() {
+		_ = conn.Close()
+	}()
+	c := pb.NewGrpcGatewayClient(conn)
+
+	resources := test.GetAllBackendResourceLinks()
+	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.GW_HOST, resources)
+	defer shutdownDevSim()
+
+	for i := 0; i < 10; i++ {
+		t.Logf("TestRequestHandlerMultipleUpdateResource:run %v\n", i)
+		lightHref := test.TestResourceLightInstanceHref("1")
+		for i := 1; i >= 0; i-- {
+			_, err = c.UpdateResource(ctx, &pb.UpdateResourceRequest{
+				ResourceId: commands.NewResourceID(deviceID, lightHref),
+				Content: &pb.Content{
+					ContentType: message.AppOcfCbor.String(),
+					Data: test.EncodeToCbor(t, map[string]interface{}{
+						"power": i,
+					}),
+				},
+			})
+			require.NoError(t, err)
+		}
+		require.NoError(t, err)
+		time.Sleep(time.Second)
+
+		makeLightData := func(power int) map[string]interface{} {
+			return map[string]interface{}{
+				"name":  "Light",
+				"power": uint64(power),
+				"state": false,
+			}
+		}
+
+		getResClient, err := c.GetResources(ctx, &pb.GetResourcesRequest{ResourceIdFilter: []string{commands.NewResourceID(deviceID, lightHref).ToString()}})
+		require.NoError(t, err)
+		var resourceChanged *events.ResourceChanged
+		for {
+			res, err := getResClient.Recv()
+			if err == io.EOF {
+				break
+			}
+			require.NoError(t, err)
+			require.Empty(t, resourceChanged)
+			resourceChanged = res.GetData()
+		}
+		pbTest.CmpResourceChanged(t, pbTest.MakeResourceChanged(t, deviceID, lightHref, "", makeLightData(0)), resourceChanged, "")
+	}
 }
