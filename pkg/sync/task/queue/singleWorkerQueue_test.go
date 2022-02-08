@@ -130,7 +130,7 @@ func TestQueue_SubmitForOneWorker(t *testing.T) {
 				return
 			}
 			require.NoError(t, err)
-			time.Sleep(time.Second)
+			time.Sleep(time.Second * 3)
 			require.Equal(t, tt.want, result.copy())
 		})
 	}

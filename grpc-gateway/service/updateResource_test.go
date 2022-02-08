@@ -276,7 +276,8 @@ func TestRequestHandlerGetAfterUpdateResource(t *testing.T) {
 
 func TestRequestHandlerRunMultipleUpdateResource(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
-	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
+	numIteration := 200
+	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT+(time.Second*3*time.Duration(numIteration)))
 	defer cancel()
 
 	raCfg := raTest.MakeConfig(t)
@@ -298,44 +299,53 @@ func TestRequestHandlerRunMultipleUpdateResource(t *testing.T) {
 	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.GW_HOST, resources)
 	defer shutdownDevSim()
 
-	for i := 0; i < 10; i++ {
-		t.Logf("TestRequestHandlerMultipleUpdateResource:run %v\n", i)
-		lightHref := test.TestResourceLightInstanceHref("1")
-		for i := 1; i >= 0; i-- {
-			_, err = c.UpdateResource(ctx, &pb.UpdateResourceRequest{
-				ResourceId: commands.NewResourceID(deviceID, lightHref),
-				Content: &pb.Content{
-					ContentType: message.AppOcfCbor.String(),
-					Data: test.EncodeToCbor(t, map[string]interface{}{
-						"power": i,
-					}),
+	for i := 0; i < numIteration; i++ {
+		func() {
+			t.Logf("TestRequestHandlerMultipleUpdateResource:run %v\n", i)
+			lightHref := test.TestResourceLightInstanceHref("1")
+			ctx, cancel := context.WithTimeout(ctx, time.Second*3)
+			defer cancel()
+			subClient, err := c.SubscribeToEvents(ctx)
+			require.NoError(t, err)
+			defer func() {
+				err = subClient.CloseSend()
+				require.NoError(t, err)
+			}()
+
+			err = subClient.Send(&pb.SubscribeToEvents{Action: &pb.SubscribeToEvents_CreateSubscription_{
+				CreateSubscription: &pb.SubscribeToEvents_CreateSubscription{
+					EventFilter:      []pb.SubscribeToEvents_CreateSubscription_Event{pb.SubscribeToEvents_CreateSubscription_RESOURCE_CHANGED},
+					ResourceIdFilter: []string{commands.NewResourceID(deviceID, lightHref).ToString()},
 				},
-			})
+			}})
 			require.NoError(t, err)
-		}
-		require.NoError(t, err)
-		time.Sleep(time.Second)
-
-		makeLightData := func(power int) map[string]interface{} {
-			return map[string]interface{}{
-				"name":  "Light",
-				"power": uint64(power),
-				"state": false,
-			}
-		}
-
-		getResClient, err := c.GetResources(ctx, &pb.GetResourcesRequest{ResourceIdFilter: []string{commands.NewResourceID(deviceID, lightHref).ToString()}})
-		require.NoError(t, err)
-		var resourceChanged *events.ResourceChanged
-		for {
-			res, err := getResClient.Recv()
-			if err == io.EOF {
-				break
-			}
+			ev, err := subClient.Recv()
 			require.NoError(t, err)
-			require.Empty(t, resourceChanged)
-			resourceChanged = res.GetData()
-		}
-		pbTest.CmpResourceChanged(t, pbTest.MakeResourceChanged(t, deviceID, lightHref, "", makeLightData(0)), resourceChanged, "")
+			require.Equal(t, ev.GetOperationProcessed().GetErrorStatus().GetCode(), pb.Event_OperationProcessed_ErrorStatus_OK)
+			for j := 1; j >= 0; j-- {
+				_, err = c.UpdateResource(ctx, &pb.UpdateResourceRequest{
+					ResourceId: commands.NewResourceID(deviceID, lightHref),
+					Content: &pb.Content{
+						ContentType: message.AppOcfCbor.String(),
+						Data: test.EncodeToCbor(t, map[string]interface{}{
+							"power": j,
+						}),
+					},
+				})
+				require.NoError(t, err)
+			}
+			makeLightData := func(power int) map[string]interface{} {
+				return map[string]interface{}{
+					"name":  "Light",
+					"power": uint64(power),
+					"state": false,
+				}
+			}
+			for j := 1; j >= 0; j-- {
+				ev, err = subClient.Recv()
+				require.NoError(t, err)
+				pbTest.CmpResourceChanged(t, pbTest.MakeResourceChanged(t, deviceID, lightHref, "", makeLightData(j)), ev.GetResourceChanged(), "")
+			}
+		}()
 	}
 }
