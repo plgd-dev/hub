@@ -48,7 +48,7 @@ func (eh *mockRecordHandler) Handle(ctx context.Context, iter maintenance.Iter) 
 }
 
 func TestMaintenance(t *testing.T) {
-	logger, err := log.NewLogger(log.Config{})
+	logger, err := log.NewLogger(log.MakeDefaultConfig())
 	require.NoError(t, err)
 
 	ctx := context.Background()

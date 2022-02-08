@@ -24,7 +24,7 @@ func TestSubscriber(t *testing.T) {
 
 	timeout := time.Second * 30
 
-	logger, err := log.NewLogger(log.Config{})
+	logger, err := log.NewLogger(log.MakeDefaultConfig())
 	require.NoError(t, err)
 
 	naPubClient, publisher, err := test.NewClientAndPublisher(config.MakePublisherConfig(), logger, publisher.WithMarshaler(json.Marshal))

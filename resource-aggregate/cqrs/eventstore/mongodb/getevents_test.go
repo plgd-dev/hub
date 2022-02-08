@@ -85,7 +85,7 @@ type runGetEventsConfig struct {
 }
 
 func runGetEvents(t *testing.T, cfg runGetEventsConfig) {
-	logger, err := log.NewLogger(log.Config{})
+	logger, err := log.NewLogger(log.MakeDefaultConfig())
 	require.NoError(t, err)
 
 	ctx := context.Background()

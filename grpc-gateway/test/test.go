@@ -14,6 +14,9 @@ import (
 
 func MakeConfig(t *testing.T) service.Config {
 	var cfg service.Config
+
+	cfg.Log = log.MakeDefaultConfig()
+
 	cfg.APIs.GRPC.Config = config.MakeGrpcServerConfig(config.GRPC_HOST)
 	cfg.APIs.GRPC.OwnerCacheExpiration = time.Minute
 	cfg.APIs.GRPC.SubscriptionBufferSize = 1000

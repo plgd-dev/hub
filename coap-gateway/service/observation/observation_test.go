@@ -48,7 +48,6 @@ func TestIsResourceObservableWithInterface(t *testing.T) {
 		service.SetUpServicesGrpcGateway
 	tearDown := service.SetUpServices(ctx, t, services)
 	defer tearDown()
-	// log.Setup(log.Config{Debug: true})
 
 	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
 

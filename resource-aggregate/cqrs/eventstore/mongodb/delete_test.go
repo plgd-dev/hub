@@ -50,7 +50,7 @@ func addEventsForDeleteToDB(t *testing.T, ctx context.Context, store *mongodb.Ev
 }
 
 func TestEventStore_Delete(t *testing.T) {
-	logger, err := log.NewLogger(log.Config{})
+	logger, err := log.NewLogger(log.MakeDefaultConfig())
 	require.NoError(t, err)
 
 	ctx := context.Background()

@@ -14,7 +14,7 @@ import (
 )
 
 func TestExchangeCacheExecute(t *testing.T) {
-	logger, err := log.NewLogger(log.Config{})
+	logger, err := log.NewLogger(log.MakeDefaultConfig())
 	require.NoError(t, err)
 
 	oauthShutdown := oauthTest.SetUp(t)

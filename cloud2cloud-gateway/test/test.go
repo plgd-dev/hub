@@ -33,7 +33,7 @@ func MakeStorageConfig() service.StorageConfig {
 func MakeConfig(t *testing.T) service.Config {
 	var cfg service.Config
 
-	cfg.Log.Debug = true
+	cfg.Log = log.MakeDefaultConfig()
 
 	cfg.APIs.HTTP.Connection = config.MakeListenerConfig(config.C2C_GW_HOST)
 	cfg.APIs.HTTP.Connection.TLS.ClientCertificateRequired = false

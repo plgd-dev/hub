@@ -23,7 +23,7 @@ func getProvider(t *testing.T, logger log.Logger) *oauth2.PlgdProvider {
 }
 
 func TestRefreshCacheExecute(t *testing.T) {
-	logger, err := log.NewLogger(log.Config{})
+	logger, err := log.NewLogger(log.MakeDefaultConfig())
 	require.NoError(t, err)
 
 	oauthShutdown := oauthTest.SetUp(t)

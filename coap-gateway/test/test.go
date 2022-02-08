@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"sync"
 	"testing"
@@ -16,6 +17,8 @@ import (
 func MakeConfig(t *testing.T) service.Config {
 	var cfg service.Config
 	cfg.Log.DumpCoapMessages = true
+	cfg.Log.Embedded = log.MakeDefaultConfig()
+
 	cfg.TaskQueue.GoPoolSize = 1600
 	cfg.TaskQueue.Size = 2 * 1024 * 1024
 	cfg.APIs.COAP.Addr = config.GW_HOST
@@ -48,6 +51,8 @@ func MakeConfig(t *testing.T) service.Config {
 
 	err := cfg.Validate()
 	require.NoError(t, err)
+
+	fmt.Printf("config %v\n", cfg.String())
 
 	return cfg
 }

@@ -23,6 +23,8 @@ func MakeConfig(t *testing.T) service.Config {
 	cfg.Signer.ExpiresIn = time.Hour * 2
 	cfg.Signer.HubID = config.HubID()
 
+	cfg.Log = log.MakeDefaultConfig()
+
 	err := cfg.Validate()
 	require.NoError(t, err)
 

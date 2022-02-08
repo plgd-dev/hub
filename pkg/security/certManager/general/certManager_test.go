@@ -69,7 +69,7 @@ func TestNew(t *testing.T) {
 
 	config := createTmpCertFiles(t, caFile.Name(), crtFile.Name(), keyFile.Name())
 
-	logger, err := log.NewLogger(log.Config{})
+	logger, err := log.NewLogger(log.MakeDefaultConfig())
 	require.NoError(t, err)
 	//cert manager
 	mng, err := general.New(config, logger)

@@ -199,7 +199,7 @@ func TestResourceShadow_GetResources(t *testing.T) {
 			},
 		},
 	}
-	logger, err := log.NewLogger(log.Config{})
+	logger, err := log.NewLogger(log.MakeDefaultConfig())
 	require.NoError(t, err)
 	pool, err := ants.NewPool(1)
 	require.NoError(t, err)

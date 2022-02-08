@@ -199,7 +199,6 @@ func runTestDeviceObserverRegister(ctx context.Context, t *testing.T, deviceID s
 		service.SetUpServicesGrpcGateway | service.SetUpServicesResourceAggregate
 	tearDown := service.SetUpServices(ctx, t, services)
 	defer tearDown()
-	// log.Setup(log.Config{Debug: true})
 
 	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
 

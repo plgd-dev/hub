@@ -21,7 +21,7 @@ import (
 )
 
 func testNewEventstore(ctx context.Context, t *testing.T) *mongodb.EventStore {
-	logger, err := log.NewLogger(log.Config{})
+	logger, err := log.NewLogger(log.MakeDefaultConfig())
 	require.NoError(t, err)
 	cfg := config.MakeEventsStoreMongoDBConfig()
 	store, err := mongodb.New(

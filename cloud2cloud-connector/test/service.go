@@ -52,7 +52,7 @@ func MakeStorageConfig() service.StorageConfig {
 func MakeConfig(t *testing.T) service.Config {
 	var cfg service.Config
 
-	cfg.Log.Debug = true
+	cfg.Log = log.MakeDefaultConfig()
 
 	cfg.APIs.HTTP.EventsURL = config.C2C_CONNECTOR_EVENTS_URL
 	cfg.APIs.HTTP.PullDevices.Disabled = false

@@ -27,7 +27,7 @@ func TestPublisher(t *testing.T) {
 	timeout := time.Second * 30
 	waitForSubscription := time.Millisecond * 100
 
-	logger, err := log.NewLogger(log.Config{})
+	logger, err := log.NewLogger(log.MakeDefaultConfig())
 	require.NoError(t, err)
 
 	naPubClient, publisher, err := test.NewClientAndPublisher(client.ConfigPublisher{
@@ -64,7 +64,7 @@ func TestPublisherJetStream(t *testing.T) {
 	timeout := time.Second * 30
 	waitForSubscription := time.Millisecond * 100
 
-	logger, err := log.NewLogger(log.Config{})
+	logger, err := log.NewLogger(log.MakeDefaultConfig())
 	require.NoError(t, err)
 
 	cfg := config.MakeTLSClientConfig()
