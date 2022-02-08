@@ -15,6 +15,7 @@ import (
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
+	raTest "github.com/plgd-dev/hub/v2/resource-aggregate/test"
 	"github.com/plgd-dev/hub/v2/test"
 	"github.com/plgd-dev/hub/v2/test/config"
 	oauthService "github.com/plgd-dev/hub/v2/test/oauth-server/service"
@@ -271,4 +272,80 @@ func TestRequestHandlerGetAfterUpdateResource(t *testing.T) {
 
 	endData := getData(deviceID)
 	require.Equal(t, startData, endData)
+}
+
+func TestRequestHandlerRunMultipleUpdateResource(t *testing.T) {
+	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
+	numIteration := 200
+	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT+(time.Second*3*time.Duration(numIteration)))
+	defer cancel()
+
+	raCfg := raTest.MakeConfig(t)
+	raCfg.Clients.Eventstore.SnapshotThreshold = 5
+	tearDown := service.SetUp(ctx, t, service.WithRAConfig(raCfg))
+	defer tearDown()
+	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
+
+	conn, err := grpc.Dial(config.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+		RootCAs: test.GetRootCertificatePool(t),
+	})))
+	require.NoError(t, err)
+	defer func() {
+		_ = conn.Close()
+	}()
+	c := pb.NewGrpcGatewayClient(conn)
+
+	resources := test.GetAllBackendResourceLinks()
+	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.GW_HOST, resources)
+	defer shutdownDevSim()
+
+	for i := 0; i < numIteration; i++ {
+		func() {
+			t.Logf("TestRequestHandlerMultipleUpdateResource:run %v\n", i)
+			lightHref := test.TestResourceLightInstanceHref("1")
+			ctx, cancel := context.WithTimeout(ctx, time.Second*3)
+			defer cancel()
+			subClient, err := c.SubscribeToEvents(ctx)
+			require.NoError(t, err)
+			defer func() {
+				err = subClient.CloseSend()
+				require.NoError(t, err)
+			}()
+
+			err = subClient.Send(&pb.SubscribeToEvents{Action: &pb.SubscribeToEvents_CreateSubscription_{
+				CreateSubscription: &pb.SubscribeToEvents_CreateSubscription{
+					EventFilter:      []pb.SubscribeToEvents_CreateSubscription_Event{pb.SubscribeToEvents_CreateSubscription_RESOURCE_CHANGED},
+					ResourceIdFilter: []string{commands.NewResourceID(deviceID, lightHref).ToString()},
+				},
+			}})
+			require.NoError(t, err)
+			ev, err := subClient.Recv()
+			require.NoError(t, err)
+			require.Equal(t, ev.GetOperationProcessed().GetErrorStatus().GetCode(), pb.Event_OperationProcessed_ErrorStatus_OK)
+			for j := 1; j >= 0; j-- {
+				_, err = c.UpdateResource(ctx, &pb.UpdateResourceRequest{
+					ResourceId: commands.NewResourceID(deviceID, lightHref),
+					Content: &pb.Content{
+						ContentType: message.AppOcfCbor.String(),
+						Data: test.EncodeToCbor(t, map[string]interface{}{
+							"power": j,
+						}),
+					},
+				})
+				require.NoError(t, err)
+			}
+			makeLightData := func(power int) map[string]interface{} {
+				return map[string]interface{}{
+					"name":  "Light",
+					"power": uint64(power),
+					"state": false,
+				}
+			}
+			for j := 1; j >= 0; j-- {
+				ev, err = subClient.Recv()
+				require.NoError(t, err)
+				pbTest.CmpResourceChanged(t, pbTest.MakeResourceChanged(t, deviceID, lightHref, "", makeLightData(j)), ev.GetResourceChanged(), "")
+			}
+		}()
+	}
 }

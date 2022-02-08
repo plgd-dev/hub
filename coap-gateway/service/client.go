@@ -14,6 +14,7 @@ import (
 	"github.com/plgd-dev/go-coap/v2/tcp"
 	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
 	"github.com/plgd-dev/hub/v2/coap-gateway/coapconv"
+	"github.com/plgd-dev/hub/v2/coap-gateway/resource"
 	grpcClient "github.com/plgd-dev/hub/v2/grpc-gateway/client"
 	idEvents "github.com/plgd-dev/hub/v2/identity-store/events"
 	"github.com/plgd-dev/hub/v2/pkg/log"
@@ -167,7 +168,7 @@ func (client *Client) onObserveResource(ctx context.Context, deviceID, href stri
 		return fmt.Errorf("cannot handle resource observation: %w", err)
 	}
 	notification.Hijack()
-	err := client.server.taskQueue.Submit(func() {
+	err := client.server.taskQueue.SubmitForOneWorker(resource.GetInstanceID(deviceID+href), func() {
 		defer client.server.messagePool.ReleaseMessage(notification)
 		err2 := client.notifyContentChanged(deviceID, href, batch, notification)
 		if err2 != nil {
