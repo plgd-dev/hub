@@ -2,6 +2,7 @@ package log
 
 import (
 	"fmt"
+	"os"
 	"sync/atomic"
 	"time"
 
@@ -128,16 +129,6 @@ type Config struct {
 	// "console", as well as any third-party encodings registered via
 	// RegisterEncoder.
 	Encoding string `json:"encoding" yaml:"encoding"`
-	// OutputPaths is a list of URLs or file paths to write logging output to.
-	// See Open for details.
-	OutputPaths []string `json:"outputPaths" yaml:"outputPaths"`
-	// ErrorOutputPaths is a list of URLs to write internal logger errors to.
-	// The default is standard error.
-	//
-	// Note that this setting only affects internal errors; for sample code that
-	// sends error-level logs to a different location from info- and debug-level
-	// logs, see the package-level AdvancedConfiguration example.
-	ErrorOutputPaths []string `json:"errorOutputPaths" yaml:"errorOutputPaths"`
 
 	// An EncoderConfig allows users to configure the concrete encoders supplied by
 	// zapcore.
@@ -151,8 +142,6 @@ func MakeDefaultConfig() Config {
 		Level:             zap.NewAtomicLevelAt(zap.InfoLevel),
 		Encoding:          "json",
 		DisableStacktrace: true,
-		OutputPaths:       []string{"stdout"},
-		ErrorOutputPaths:  []string{"stderr"},
 		EncoderConfig: EncoderConfig{
 			EncodeTime: TimeEncoderWrapper{
 				TimeEncoder: RFC3339NanoTimeEncoder{},
@@ -198,30 +187,55 @@ func Set(logger Logger) {
 
 // NewLogger creates logger
 func NewLogger(config Config) (Logger, error) {
-	var cfg zap.Config
+	var encoderConfig zapcore.EncoderConfig
 	if config.Debug {
-		cfg = zap.NewDevelopmentConfig()
-		cfg.Encoding = config.Encoding
-		cfg.Level = config.Level
-		cfg.OutputPaths = config.OutputPaths
-		cfg.ErrorOutputPaths = config.ErrorOutputPaths
-		cfg.EncoderConfig.EncodeTime = config.EncoderConfig.EncodeTime.TimeEncoder.Encode
-		cfg.DisableCaller = true
-		cfg.DisableStacktrace = config.DisableStacktrace
+		encoderConfig = zap.NewDevelopmentEncoderConfig()
+		encoderConfig.EncodeTime = config.EncoderConfig.EncodeTime.TimeEncoder.Encode
 	} else {
-		cfg = zap.NewProductionConfig()
-		cfg.Encoding = config.Encoding
-		cfg.Level = config.Level
-		cfg.OutputPaths = config.OutputPaths
-		cfg.ErrorOutputPaths = config.ErrorOutputPaths
-		cfg.EncoderConfig.EncodeTime = config.EncoderConfig.EncodeTime.TimeEncoder.Encode
-		cfg.DisableCaller = true
-		cfg.DisableStacktrace = config.DisableStacktrace
+		encoderConfig = zap.NewDevelopmentEncoderConfig()
+		encoderConfig.EncodeTime = config.EncoderConfig.EncodeTime.TimeEncoder.Encode
 	}
-	logger, err := cfg.Build()
-	if err != nil {
-		return nil, err
+	// First, define our level-handling logic.
+	highPriority := zap.LevelEnablerFunc(func(lvl zapcore.Level) bool {
+		if lvl < config.Level.Level() {
+			return false
+		}
+		return lvl >= zapcore.ErrorLevel
+	})
+	lowPriority := zap.LevelEnablerFunc(func(lvl zapcore.Level) bool {
+		if lvl < config.Level.Level() {
+			return false
+		}
+		return lvl < zapcore.ErrorLevel
+	})
+
+	// High-priority output should also go to standard error, and low-priority
+	// output should also go to standard out.
+	consoleDebugging := zapcore.Lock(os.Stdout)
+	consoleErrors := zapcore.Lock(os.Stderr)
+
+	// Optimize the Kafka output for machine consumption and the console output
+	// for human operators.
+	var encoder zapcore.Encoder
+	if config.Encoding == "json" {
+		encoder = zapcore.NewJSONEncoder(encoderConfig)
+	} else {
+		encoder = zapcore.NewConsoleEncoder(encoderConfig)
 	}
+
+	// Join the outputs, encoders, and level-handling functions into
+	// zapcore.Cores, then tee the four cores together.
+	core := zapcore.NewTee(
+		zapcore.NewCore(encoder, consoleErrors, highPriority),
+		zapcore.NewCore(encoder, consoleDebugging, lowPriority),
+	)
+	opts := make([]zap.Option, 0, 16)
+	if !config.DisableStacktrace {
+		opts = append(opts, zap.AddStacktrace(zap.NewAtomicLevelAt(zap.ErrorLevel)))
+	}
+
+	// From a zapcore.Core, it's easy to construct a Logger.
+	logger := zap.New(core, opts...)
 	return logger.Sugar(), nil
 }
 
