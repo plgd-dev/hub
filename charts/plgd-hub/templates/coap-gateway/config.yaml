@@ -52,6 +52,9 @@ data:
             - name: {{ required "name for oauth device provider is required" .name | quote }}
               clientID: {{ required "clientID for oauth device provider is required" .clientID | quote }}
               clientSecretFile: {{ include "plgd-hub.oauthSecretFile" (list $ . ) }}
+              {{- if .grantType }}
+              grantType: {{ .grantType }}
+              {{- end }}
               {{- if .scopes }}
               scopes:
               {{- range  .scopes }}
