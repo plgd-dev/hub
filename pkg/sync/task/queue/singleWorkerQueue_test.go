@@ -1,11 +1,10 @@
-package queue_test
+package queue
 
 import (
 	"sync"
 	"testing"
 	"time"
 
-	"github.com/plgd-dev/hub/v2/pkg/sync/task/queue"
 	"github.com/stretchr/testify/require"
 )
 
@@ -34,11 +33,11 @@ func (a *testArray) copy() []int {
 	return b
 }
 
-func TestQueue_SubmitForOneWorker(t *testing.T) {
+func TestQueueSubmitForOneWorker(t *testing.T) {
 	var result testArray
 
 	type args struct {
-		cfg            queue.Config
+		cfg            Config
 		key            interface{}
 		preSharedTasks []func()
 		tasks          []func()
@@ -53,7 +52,7 @@ func TestQueue_SubmitForOneWorker(t *testing.T) {
 		{
 			name: "ok",
 			args: args{
-				cfg: queue.Config{
+				cfg: Config{
 					GoPoolSize:  100,
 					Size:        100,
 					MaxIdleTime: time.Millisecond * 100,
@@ -70,7 +69,7 @@ func TestQueue_SubmitForOneWorker(t *testing.T) {
 		{
 			name: "ok - separate tasks",
 			args: args{
-				cfg: queue.Config{
+				cfg: Config{
 					GoPoolSize:  100,
 					Size:        100,
 					MaxIdleTime: time.Millisecond * 100,
@@ -88,7 +87,7 @@ func TestQueue_SubmitForOneWorker(t *testing.T) {
 		{
 			name: "fail - separate tasks",
 			args: args{
-				cfg: queue.Config{
+				cfg: Config{
 					GoPoolSize:  1,
 					Size:        1,
 					MaxIdleTime: time.Millisecond * 100,
@@ -108,11 +107,11 @@ func TestQueue_SubmitForOneWorker(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			q, err := queue.New(tt.args.cfg)
+			q, err := New(tt.args.cfg)
 			require.NoError(t, err)
 			defer q.Release()
 			if len(tt.args.preSharedTasks) > 0 {
-				err := q.Submit(tt.args.preSharedTasks...)
+				err := q.appendQueue(tt.args.preSharedTasks)
 				require.NoError(t, err)
 			}
 			if tt.args.separateTasks {
