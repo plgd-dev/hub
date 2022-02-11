@@ -20,7 +20,6 @@ import (
 	"github.com/plgd-dev/go-coap/v2/pkg/runner/periodic"
 	"github.com/plgd-dev/go-coap/v2/tcp"
 	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
-	"github.com/plgd-dev/hub/v2/coap-gateway/service/message"
 	"github.com/plgd-dev/hub/v2/coap-gateway/uri"
 	pbGRPC "github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/subscription"
@@ -375,10 +374,6 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 	return &s, nil
 }
 
-func decodeMsgToDebug(client *Client, resp *pool.Message, tag string) {
-	message.DecodeMsgToDebug(getDeviceID(client), resp, tag)
-}
-
 func getDeviceID(client *Client) string {
 	deviceID := "unknown"
 	if client != nil {
@@ -389,6 +384,14 @@ func getDeviceID(client *Client) string {
 		}
 	}
 	return deviceID
+}
+
+func onUnprocessedRequest(client *Client, req *mux.Message) {
+	errMsg := "request from client was dropped"
+	if req.Code == coapCodes.Content {
+		errMsg = "notification from client was dropped"
+	}
+	client.ErrorfRequest(req, errMsg)
 }
 
 func validateCommand(s mux.ResponseWriter, req *mux.Message, server *Service, fnc func(req *mux.Message, client *Client)) {
@@ -412,24 +415,13 @@ func validateCommand(s mux.ResponseWriter, req *mux.Message, server *Service, fn
 				return
 			}
 			clientResetHandler(req, client)
-		case coapCodes.Content:
-			// Unregistered observer at a peer send us a notification
-			deviceID := getDeviceID(client)
-			tmp, err := server.messagePool.ConvertFrom(req.Message)
-			if err != nil {
-				log.Errorf("DeviceId: %v: cannot convert dropped notification: %w", deviceID, err)
-				return
-			}
-			decodeMsgToDebug(client, tmp, "DROPPED-NOTIFICATION")
 		default:
-			deviceID := getDeviceID(client)
-			log.Errorf("DeviceId: %v: received invalid code: CoapCode(%v)", deviceID, req.Code)
+			onUnprocessedRequest(client, req)
 		}
 	})
 	if err != nil {
-		deviceID := getDeviceID(client)
+		client.ErrorfRequest(req, "cannot handle request by task queue: %w", err)
 		closeClient(client)
-		log.Errorf("DeviceId: %v: cannot handle request %v by task queue: %w", deviceID, req.String(), err)
 	}
 }
 
@@ -457,22 +449,6 @@ func (server *Service) coapConnOnNew(coapConn *tcp.ClientConn, tlscon *tls.Conn)
 	coapConn.SetContextValue(clientKey, client)
 	coapConn.AddOnClose(func() {
 		client.OnClose()
-	})
-}
-
-func (server *Service) loggingMiddleware(next mux.Handler) mux.Handler {
-	return mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
-		client, ok := w.Client().Context().Value(clientKey).(*Client)
-		if !ok {
-			client = newClient(server, w.Client().ClientConn().(*tcp.ClientConn), "")
-		}
-		tmp, err := server.messagePool.ConvertFrom(r.Message)
-		if err != nil {
-			client.logAndWriteErrorResponse(nil, fmt.Errorf("cannot convert from mux.Message: %w", err), coapCodes.InternalServerError, r.Token)
-			return
-		}
-		decodeMsgToDebug(client, tmp, "RECEIVED-COMMAND")
-		next.ServeCOAP(w, r)
 	})
 }
 
@@ -507,7 +483,7 @@ func (server *Service) setupCoapServer() error {
 		return fmt.Errorf("failed to set %v handler: %w", uri, err)
 	}
 	m := mux.NewRouter()
-	m.Use(server.loggingMiddleware, server.authMiddleware)
+	m.Use(server.authMiddleware)
 	m.DefaultHandle(mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
 		validateCommand(w, r, server, defaultHandler)
 	}))

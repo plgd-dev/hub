@@ -69,7 +69,7 @@ func SendResourceContentToObserver(client *Client, resourceChanged *events.Resou
 	if err != nil {
 		log.Errorf("cannot send observe notification to %v: %w", client.remoteAddrString(), err)
 	}
-	decodeMsgToDebug(client, msg, "SEND-NOTIFICATION")
+	client.logNotificationToClient(resourceChanged.GetResourceId().GetHref(), msg)
 }
 
 type resourceSubscription struct {

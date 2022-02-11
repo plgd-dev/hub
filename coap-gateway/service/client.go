@@ -298,7 +298,7 @@ func (client *Client) notifyContentChanged(deviceID, href string, batch bool, no
 	if err != nil {
 		return notifyError(deviceID, href, err)
 	}
-	client.logNotificationFromDevice(href, notification)
+	client.logNotificationFromClient(href, notification)
 
 	var requests []*commands.NotifyResourceChangedRequest
 	if batch && href == resources.ResourceURI {
@@ -326,6 +326,7 @@ func (client *Client) sendErrorConfirmResourceUpdate(ctx context.Context, device
 	resp.SetContentFormat(message.TextPlain)
 	resp.SetBody(bytes.NewReader([]byte(errToSend.Error())))
 	resp.SetCode(code)
+
 	request := coapconv.NewConfirmResourceUpdateRequest(commands.NewResourceID(deviceID, href), correlationID, client.remoteAddrString(), resp)
 	_, err := client.server.raClient.ConfirmResourceUpdate(ctx, request)
 	if err != nil {
@@ -366,16 +367,13 @@ func (client *Client) UpdateResource(ctx context.Context, event *events.Resource
 	}
 	defer client.server.messagePool.ReleaseMessage(req)
 
-	decodeMsgToDebug(client, req, "RESOURCE-UPDATE-REQUEST")
-
 	resp, err := client.coapConn.Do(req)
+	client.logServiceRequest(req, resp)
 	if err != nil {
 		client.sendErrorConfirmResourceUpdate(sendConfirmCtx, event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), authCtx.GetUserID(), event.GetAuditContext().GetCorrelationId(), codes.ServiceUnavailable, err)
 		return err
 	}
 	defer client.server.messagePool.ReleaseMessage(resp)
-
-	decodeMsgToDebug(client, resp, "RESOURCE-UPDATE-RESPONSE")
 
 	if resp.Code() == codes.NotFound {
 		client.unpublishResourceLinks(client.getUserAuthorizedContext(ctx), []string{event.GetResourceId().GetHref()}, nil)
@@ -437,16 +435,13 @@ func (client *Client) RetrieveResource(ctx context.Context, event *events.Resour
 	}
 	defer client.server.messagePool.ReleaseMessage(req)
 
-	decodeMsgToDebug(client, req, "RESOURCE-RETRIEVE-REQUEST")
-
 	resp, err := client.coapConn.Do(req)
+	client.logServiceRequest(req, resp)
 	if err != nil {
 		client.sendErrorConfirmResourceRetrieve(sendConfirmCtx, event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), authCtx.GetUserID(), event.GetAuditContext().GetCorrelationId(), codes.ServiceUnavailable, err)
 		return err
 	}
 	defer client.server.messagePool.ReleaseMessage(resp)
-
-	decodeMsgToDebug(client, resp, "RESOURCE-RETRIEVE-RESPONSE")
 
 	if resp.Code() == codes.NotFound {
 		client.unpublishResourceLinks(client.getUserAuthorizedContext(ctx), []string{event.GetResourceId().GetHref()}, nil)
@@ -508,16 +503,13 @@ func (client *Client) DeleteResource(ctx context.Context, event *events.Resource
 	}
 	defer client.server.messagePool.ReleaseMessage(req)
 
-	decodeMsgToDebug(client, req, "RESOURCE-DELETE-REQUEST")
-
 	resp, err := client.coapConn.Do(req)
+	client.logServiceRequest(req, resp)
 	if err != nil {
 		client.sendErrorConfirmResourceDelete(sendConfirmCtx, event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), authCtx.GetUserID(), event.GetAuditContext().GetCorrelationId(), codes.ServiceUnavailable, err)
 		return err
 	}
 	defer client.server.messagePool.ReleaseMessage(resp)
-
-	decodeMsgToDebug(client, resp, "RESOURCE-DELETE-RESPONSE")
 
 	if resp.Code() == codes.NotFound {
 		client.unpublishResourceLinks(client.getUserAuthorizedContext(ctx), []string{event.GetResourceId().GetHref()}, nil)
@@ -626,16 +618,13 @@ func (client *Client) CreateResource(ctx context.Context, event *events.Resource
 	}
 	defer client.server.messagePool.ReleaseMessage(req)
 
-	decodeMsgToDebug(client, req, "RESOURCE-CREATE-REQUEST")
-
 	resp, err := client.coapConn.Do(req)
+	client.logServiceRequest(req, resp)
 	if err != nil {
 		client.sendErrorConfirmResourceCreate(sendConfirmCtx, event.GetResourceId(), authCtx.GetUserID(), event.GetAuditContext().GetCorrelationId(), codes.ServiceUnavailable, err)
 		return err
 	}
 	defer client.server.messagePool.ReleaseMessage(resp)
-
-	decodeMsgToDebug(client, resp, "RESOURCE-CREATE-RESPONSE")
 
 	if resp.Code() == codes.NotFound {
 		client.unpublishResourceLinks(client.getUserAuthorizedContext(ctx), []string{event.GetResourceId().GetHref()}, nil)

@@ -10,7 +10,7 @@ import (
 type JsonCoapMessage struct {
 	Code          string      `json:"code"`
 	Path          string      `json:"path,omitempty"`
-	Token         string      `json:"token"`
+	Token         string      `json:"token,omitempty"`
 	Queries       []string    `json:"queries,omitempty"`
 	Observe       *uint32     `json:"observe,omitempty"`
 	ContentFormat string      `json:"contentFormat,omitempty"`
@@ -44,7 +44,7 @@ func decodeBody(mt message.MediaType, body []byte) interface{} {
 	}
 }
 
-func ToJson(m *pool.Message, withBody bool) JsonCoapMessage {
+func ToJson(m *pool.Message, withBody, withToken bool) JsonCoapMessage {
 	path, err := m.Path()
 	if err != nil {
 		path = ""
@@ -58,7 +58,6 @@ func ToJson(m *pool.Message, withBody bool) JsonCoapMessage {
 	if err == nil {
 		obs = &o
 	}
-	var contentFormat string
 	var body interface{}
 	var data []byte
 	if withBody {
@@ -66,20 +65,22 @@ func ToJson(m *pool.Message, withBody bool) JsonCoapMessage {
 	}
 	ct, err := m.ContentFormat()
 	if err == nil {
-		contentFormat = ct.String()
 		body = decodeBody(ct, data)
 	} else if len(data) > 0 {
 		body = string(data)
 	}
+	var token string
+	if withToken {
+		token = m.Token().String()
+	}
 
 	msg := JsonCoapMessage{
-		Code:          m.Code().String(),
-		Path:          path,
-		Token:         m.Token().String(),
-		Queries:       queries,
-		Observe:       obs,
-		ContentFormat: contentFormat,
-		Body:          body,
+		Code:    m.Code().String(),
+		Path:    path,
+		Token:   token,
+		Queries: queries,
+		Observe: obs,
+		Body:    body,
 	}
 	return msg
 }

@@ -17,7 +17,7 @@ func (client *Client) sendCoapResponse(req *mux.Message, msg *pool.Message) {
 			log.Errorf("cannot send reply to %v: %w", getDeviceID(client), err)
 		}
 	}
-	client.logDeviceRequest(req, msg)
+	client.logClientRequest(req, msg)
 }
 
 func (client *Client) sendResponse(req *mux.Message, code coapCodes.Code, token message.Token, contentFormat message.MediaType, payload []byte) {
