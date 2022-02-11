@@ -48,7 +48,7 @@ func resourceDirectoryPublishHandler(req *mux.Message, client *Client) {
 	p := makePublishRequest()
 	err := cbor.ReadFrom(req.Body, &p)
 	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("cannot read publish request body received: %w", err), coapCodes.BadRequest, req.Token)
+		client.logAndWriteErrorResponse(req, fmt.Errorf("cannot read publish request body received: %w", err), coapCodes.BadRequest, req.Token)
 		return
 	}
 
@@ -66,12 +66,12 @@ func resourceDirectoryPublishHandler(req *mux.Message, client *Client) {
 	accept := coapconv.GetAccept(req.Options)
 	encode, err := coapconv.GetEncoder(accept)
 	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("unable to get encoder for accepted type %v: %w", accept, err), coapCodes.InternalServerError, req.Token)
+		client.logAndWriteErrorResponse(req, fmt.Errorf("unable to get encoder for accepted type %v: %w", accept, err), coapCodes.InternalServerError, req.Token)
 		return
 	}
 	out, err := encode(p)
 	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("unable to encode publish response: %w", err), coapCodes.InternalServerError, req.Token)
+		client.logAndWriteErrorResponse(req, fmt.Errorf("unable to encode publish response: %w", err), coapCodes.InternalServerError, req.Token)
 		return
 	}
 
@@ -108,13 +108,13 @@ func parseUnpublishRequestFromQuery(queries []string) (UnpublishRequest, error) 
 func resourceDirectoryUnpublishHandler(req *mux.Message, client *Client) {
 	queries, err := req.Options.Queries()
 	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("cannot query string from unpublish request from device %v: %w", client.GetDeviceID(), err), coapCodes.BadRequest, req.Token)
+		client.logAndWriteErrorResponse(req, fmt.Errorf("cannot query string from unpublish request from device %v: %w", client.GetDeviceID(), err), coapCodes.BadRequest, req.Token)
 		return
 	}
 
 	r, err := parseUnpublishRequestFromQuery(queries)
 	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("unable to parse unpublish request query string from device %v: %w", client.GetDeviceID(), err), coapCodes.BadRequest, req.Token)
+		client.logAndWriteErrorResponse(req, fmt.Errorf("unable to parse unpublish request query string from device %v: %w", client.GetDeviceID(), err), coapCodes.BadRequest, req.Token)
 		return
 	}
 
@@ -135,6 +135,6 @@ func resourceDirectoryHandler(req *mux.Message, client *Client) {
 	case coapCodes.DELETE:
 		resourceDirectoryUnpublishHandler(req, client)
 	default:
-		client.logAndWriteErrorResponse(fmt.Errorf("forbidden request from %v", client.RemoteAddrString()), coapCodes.Forbidden, req.Token)
+		client.logAndWriteErrorResponse(req, fmt.Errorf("forbidden request from %v", client.RemoteAddrString()), coapCodes.Forbidden, req.Token)
 	}
 }

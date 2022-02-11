@@ -3,16 +3,15 @@ package service
 import (
 	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/go-coap/v2/message/codes"
+	"github.com/plgd-dev/go-coap/v2/mux"
 	coapgwMessage "github.com/plgd-dev/hub/v2/coap-gateway/service/message"
-	"github.com/plgd-dev/hub/v2/pkg/log"
 )
 
-func (client *Client) logAndWriteErrorResponse(err error, code codes.Code, token message.Token) {
+func (client *Client) logAndWriteErrorResponse(req *mux.Message, err error, code codes.Code, token message.Token) {
+	if err != nil {
+		client.Errorf("%w", err)
+	}
 	msg, cleanUp := coapgwMessage.LogAndGetErrorResponse(client.coapConn.Context(), client.server.messagePool, code, token, err)
 	defer cleanUp()
-	err = client.coapConn.WriteMessage(msg)
-	if err != nil {
-		log.Errorf("cannot send error to %v: %w", getDeviceID(client), err)
-	}
-	decodeMsgToDebug(client, msg, "SEND-ERROR")
+	client.sendCoapResponse(req, msg)
 }

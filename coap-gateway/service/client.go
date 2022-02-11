@@ -298,7 +298,7 @@ func (client *Client) notifyContentChanged(deviceID, href string, batch bool, no
 	if err != nil {
 		return notifyError(deviceID, href, err)
 	}
-	decodeMsgToDebug(client, notification, "RECEIVED-NOTIFICATION")
+	client.logNotificationFromDevice(href, notification)
 
 	var requests []*commands.NotifyResourceChangedRequest
 	if batch && href == resources.ResourceURI {

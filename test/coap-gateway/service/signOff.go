@@ -13,7 +13,7 @@ import (
 // https://github.com/openconnectivityfoundation/security/blob/master/swagger2.0/oic.sec.account.swagger.json
 func signOffHandler(req *mux.Message, client *Client) {
 	logErrorAndCloseClient := func(err error, code coapCodes.Code) {
-		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign off: %w", err), code, req.Token)
+		client.logAndWriteErrorResponse(req, fmt.Errorf("cannot handle sign off: %w", err), code, req.Token)
 		if err := client.Close(); err != nil {
 			log.Errorf("sign off error: %w", err)
 		}

@@ -18,13 +18,13 @@ import (
 func clientRetrieveHandler(req *mux.Message, client *Client) {
 	authCtx, err := client.GetAuthorizationContext()
 	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot handle retrieve resource: %w", authCtx.GetDeviceID(), err), coapCodes.Unauthorized, req.Token)
+		client.logAndWriteErrorResponse(req, fmt.Errorf("DeviceId: %v: cannot handle retrieve resource: %w", authCtx.GetDeviceID(), err), coapCodes.Unauthorized, req.Token)
 		return
 	}
 
 	deviceID, href, err := message.URIToDeviceIDHref(req)
 	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot handle retrieve resource: %w", authCtx.GetDeviceID(), err), coapCodes.BadRequest, req.Token)
+		client.logAndWriteErrorResponse(req, fmt.Errorf("DeviceId: %v: cannot handle retrieve resource: %w", authCtx.GetDeviceID(), err), coapCodes.BadRequest, req.Token)
 		return
 	}
 
@@ -34,7 +34,7 @@ func clientRetrieveHandler(req *mux.Message, client *Client) {
 	if resourceInterface == "" {
 		content, code, err = clientRetrieveFromResourceShadowHandler(req.Context, client, deviceID, href)
 		if err != nil {
-			client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot retrieve resource /%v%v from resource shadow: %w", authCtx.GetDeviceID(), deviceID, href, err), code, req.Token)
+			client.logAndWriteErrorResponse(req, fmt.Errorf("DeviceId: %v: cannot retrieve resource /%v%v from resource shadow: %w", authCtx.GetDeviceID(), deviceID, href, err), code, req.Token)
 			return
 		}
 	} else {
@@ -42,7 +42,7 @@ func clientRetrieveHandler(req *mux.Message, client *Client) {
 		content, err = clientRetrieveFromDeviceHandler(req, client, deviceID, href)
 		if err != nil {
 			code = coapconv.GrpcErr2CoapCode(err, coapconv.Retrieve)
-			client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot retrieve resource /%v%v from device: %w", authCtx.GetDeviceID(), deviceID, href, err), code, req.Token)
+			client.logAndWriteErrorResponse(req, fmt.Errorf("DeviceId: %v: cannot retrieve resource /%v%v from device: %w", authCtx.GetDeviceID(), deviceID, href, err), code, req.Token)
 			return
 		}
 	}
@@ -53,7 +53,7 @@ func clientRetrieveHandler(req *mux.Message, client *Client) {
 	}
 	mediaType, err := coapconv.MakeMediaType(-1, content.ContentType)
 	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot retrieve resource /%v%v: %w", authCtx.GetDeviceID(), deviceID, href, err), code, req.Token)
+		client.logAndWriteErrorResponse(req, fmt.Errorf("DeviceId: %v: cannot retrieve resource /%v%v: %w", authCtx.GetDeviceID(), deviceID, href, err), code, req.Token)
 		return
 	}
 	client.sendResponse(req, code, req.Token, mediaType, content.Data)

@@ -14,7 +14,7 @@ import (
 // https://github.com/openconnectivityfoundation/security/blob/master/swagger2.0/oic.sec.account.swagger.json
 func signUpPostHandler(r *mux.Message, client *Client) {
 	logErrorAndCloseClient := func(err error, code coapCodes.Code) {
-		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign up: %w", err), code, r.Token)
+		client.logAndWriteErrorResponse(req, fmt.Errorf("cannot handle sign up: %w", err), code, r.Token)
 		if err := client.Close(); err != nil {
 			log.Errorf("sign up error: %w", err)
 		}
@@ -58,6 +58,6 @@ func signUpHandler(r *mux.Message, client *Client) {
 	case coapCodes.DELETE:
 		signOffHandler(r, client)
 	default:
-		client.logAndWriteErrorResponse(fmt.Errorf("forbidden request from %v", client.RemoteAddrString()), coapCodes.Forbidden, r.Token)
+		client.logAndWriteErrorResponse(req, fmt.Errorf("forbidden request from %v", client.RemoteAddrString()), coapCodes.Forbidden, r.Token)
 	}
 }

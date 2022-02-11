@@ -1,13 +1,19 @@
 package log
 
 import (
+	"context"
+	"errors"
 	"fmt"
+	"io"
 	"os"
 	"sync/atomic"
 	"time"
 
+	"github.com/ugorji/go/codec"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 var log atomic.Value
@@ -174,6 +180,7 @@ type Logger interface {
 	Fatalf(template string, args ...interface{})
 	With(args ...interface{}) Logger
 	Unwrap() interface{}
+	LogAndReturnError(err error) error
 }
 
 // Set logger for global log fuctions
@@ -195,6 +202,39 @@ func (l *wrapSuggarLogger) Unwrap() interface{} {
 	return l.SugaredLogger
 }
 
+// Errorf uses fmt.Sprintf to log a templated message.
+func (l *wrapSuggarLogger) Errorf(template string, args ...interface{}) {
+	err := fmt.Errorf(template, args...)
+	_ = l.LogAndReturnError(err)
+}
+
+type grpcErr interface {
+	GRPCStatus() *status.Status
+}
+
+func (l *wrapSuggarLogger) LogAndReturnError(err error) error {
+	if err == nil {
+		return err
+	}
+	if errors.Is(err, io.EOF) {
+		l.SugaredLogger.Debugf("%v", err)
+		return err
+	}
+	var grpcErr grpcErr
+	if errors.As(err, &grpcErr) {
+		if grpcErr.GRPCStatus().Code() == codes.Canceled {
+			l.SugaredLogger.Debugf("%v", err)
+			return err
+		}
+	}
+	if errors.Is(err, context.Canceled) {
+		l.SugaredLogger.Debugf("%v", err)
+		return err
+	}
+	l.SugaredLogger.Error(err)
+	return err
+}
+
 // NewLogger creates logger
 func NewLogger(config Config) Logger {
 	var encoderConfig zapcore.EncoderConfig
@@ -204,6 +244,11 @@ func NewLogger(config Config) Logger {
 	} else {
 		encoderConfig = zap.NewDevelopmentEncoderConfig()
 		encoderConfig.EncodeTime = config.EncoderConfig.EncodeTime.TimeEncoder.Encode
+	}
+	encoderConfig.NewReflectedEncoder = func(w io.Writer) zapcore.ReflectedEncoder {
+		var h codec.JsonHandle
+		h.BasicHandle.Canonical = true
+		return codec.NewEncoder(w, &h)
 	}
 	// First, define our level-handling logic.
 	highPriority := zap.LevelEnablerFunc(func(lvl zapcore.Level) bool {
@@ -295,8 +340,7 @@ func Warnf(template string, args ...interface{}) {
 
 // Errorf uses fmt.Sprintf to log a templated message.
 func Errorf(template string, args ...interface{}) {
-	err := fmt.Errorf(template, args...)
-	_ = LogAndReturnError(err)
+	Get().Errorf(template, args...)
 }
 
 // Fatalf uses fmt.Sprintf to log a templated message, then calls os.Exit.

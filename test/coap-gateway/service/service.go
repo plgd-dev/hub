@@ -129,7 +129,7 @@ func (server *Service) loggingMiddleware(next mux.Handler) mux.Handler {
 		}
 		tmp, err := pool.New(0, 0).ConvertFrom(r.Message)
 		if err != nil {
-			client.logAndWriteErrorResponse(fmt.Errorf("cannot convert from mux.Message: %w", err), coapCodes.InternalServerError, r.Token)
+			client.logAndWriteErrorResponse(req, fmt.Errorf("cannot convert from mux.Message: %w", err), coapCodes.InternalServerError, r.Token)
 			return
 		}
 		decodeMsgToDebug(client, tmp, "RECEIVED-COMMAND")
@@ -153,7 +153,7 @@ func validateCommand(s mux.ResponseWriter, req *mux.Message, server *Service, fn
 			fnc(req, client)
 		case coapCodes.Empty:
 			if !ok {
-				client.logAndWriteErrorResponse(fmt.Errorf("cannot handle command: client not found"), coapCodes.InternalServerError, req.Token)
+				client.logAndWriteErrorResponse(req, fmt.Errorf("cannot handle command: client not found"), coapCodes.InternalServerError, req.Token)
 				closeClient(client)
 				return
 			}
@@ -177,7 +177,7 @@ func validateCommand(s mux.ResponseWriter, req *mux.Message, server *Service, fn
 
 func defaultHandler(req *mux.Message, client *Client) {
 	path, _ := req.Options.Path()
-	client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: unknown path %v", client.GetDeviceID(), path), coapCodes.NotFound, req.Token)
+	client.logAndWriteErrorResponse(req, fmt.Errorf("DeviceId: %v: unknown path %v", client.GetDeviceID(), path), coapCodes.NotFound, req.Token)
 }
 
 func (server *Service) setupCoapServer() error {

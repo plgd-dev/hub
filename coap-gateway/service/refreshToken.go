@@ -92,7 +92,7 @@ func updateClient(client *Client, deviceID, owner, accessToken string, validUnti
 func refreshTokenPostHandler(req *mux.Message, client *Client) {
 	const fmtErr = "cannot handle refresh token for %v: %w"
 	logErrorAndCloseClient := func(err error, code coapCodes.Code) {
-		client.logAndWriteErrorResponse(err, code, req.Token)
+		client.logAndWriteErrorResponse(req, err, code, req.Token)
 		if err := client.Close(); err != nil {
 			log.Errorf("refresh token error: %w", err)
 		}
@@ -181,6 +181,6 @@ func refreshTokenHandler(req *mux.Message, client *Client) {
 	case coapCodes.POST:
 		refreshTokenPostHandler(req, client)
 	default:
-		client.logAndWriteErrorResponse(fmt.Errorf("forbidden request from %v", client.remoteAddrString()), coapCodes.Forbidden, req.Token)
+		client.logAndWriteErrorResponse(req, fmt.Errorf("forbidden request from %v", client.remoteAddrString()), coapCodes.Forbidden, req.Token)
 	}
 }

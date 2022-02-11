@@ -10,13 +10,21 @@ import (
 func (client *Client) getLogger() log.Logger {
 	logger := log.Get()
 	if deviceID := client.deviceID(); deviceID != "" {
-		logger = log.Get().With("deviceId", deviceID)
+		logger = logger.With("deviceId", deviceID)
 	}
 	return logger
 }
 
 func (client *Client) Errorf(fmt string, args ...interface{}) {
 	client.getLogger().Errorf(fmt, args...)
+}
+
+func (client *Client) Debugf(fmt string, args ...interface{}) {
+	client.getLogger().Debugf(fmt, args...)
+}
+
+func (client *Client) Infof(fmt string, args ...interface{}) {
+	client.getLogger().Infof(fmt, args...)
 }
 
 func (client *Client) logDeviceRequest(req *mux.Message, resp *pool.Message) {
@@ -33,4 +41,16 @@ func (client *Client) logDeviceRequest(req *mux.Message, resp *pool.Message) {
 		logger = logger.With("resp", rsp)
 	}
 	logger.Info("client request")
+}
+
+func (client *Client) logNotificationFromDevice(path string, notification *pool.Message) {
+	logger := client.getLogger()
+	if path != "" {
+		logger = logger.With("path", path)
+	}
+	if notification != nil {
+		rsp := coapgwMessage.ToJson(notification, client.server.config.Log.DumpBody)
+		logger = logger.With("notification", rsp)
+	}
+	logger.Info("notification from client")
 }

@@ -241,7 +241,7 @@ func setNewDeviceObserver(ctx context.Context, client *Client, deviceID string, 
 // https://github.com/openconnectivityfoundation/security/blob/master/swagger2.0/oic.sec.session.swagger.json
 func signInPostHandler(req *mux.Message, client *Client, signIn CoapSignInReq) {
 	logErrorAndCloseClient := func(err error, code coapCodes.Code) {
-		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign in: %w", err), code, req.Token)
+		client.logAndWriteErrorResponse(req, fmt.Errorf("cannot handle sign in: %w", err), code, req.Token)
 		if err := client.Close(); err != nil {
 			logSignInError(err)
 		}
@@ -344,7 +344,7 @@ func updateDeviceMetadata(req *mux.Message, client *Client) error {
 
 func signOutPostHandler(req *mux.Message, client *Client, signOut CoapSignInReq) {
 	logErrorAndCloseClient := func(err error, code coapCodes.Code) {
-		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign out: %w", err), code, req.Token)
+		client.logAndWriteErrorResponse(req, fmt.Errorf("cannot handle sign out: %w", err), code, req.Token)
 		if err := client.Close(); err != nil {
 			log.Errorf("sign out error: %w", err)
 		}
@@ -397,7 +397,7 @@ func signInHandler(req *mux.Message, client *Client) {
 		var signIn CoapSignInReq
 		err := cbor.ReadFrom(req.Body, &signIn)
 		if err != nil {
-			client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign in: %w", err), coapCodes.BadRequest, req.Token)
+			client.logAndWriteErrorResponse(req, fmt.Errorf("cannot handle sign in: %w", err), coapCodes.BadRequest, req.Token)
 			return
 		}
 		switch signIn.Login {
@@ -407,6 +407,6 @@ func signInHandler(req *mux.Message, client *Client) {
 			signOutPostHandler(req, client, signIn)
 		}
 	default:
-		client.logAndWriteErrorResponse(fmt.Errorf("forbidden request from %v", client.remoteAddrString()), coapCodes.Forbidden, req.Token)
+		client.logAndWriteErrorResponse(req, fmt.Errorf("forbidden request from %v", client.remoteAddrString()), coapCodes.Forbidden, req.Token)
 	}
 }

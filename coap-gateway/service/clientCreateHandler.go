@@ -14,12 +14,12 @@ import (
 func clientCreateHandler(req *mux.Message, client *Client) {
 	authCtx, err := client.GetAuthorizationContext()
 	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot handle create resource: %w", authCtx.GetDeviceID(), err), coapCodes.Unauthorized, req.Token)
+		client.logAndWriteErrorResponse(req, fmt.Errorf("DeviceId: %v: cannot handle create resource: %w", authCtx.GetDeviceID(), err), coapCodes.Unauthorized, req.Token)
 		return
 	}
 	deviceID, href, err := message.URIToDeviceIDHref(req)
 	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot handle create resource: %w", authCtx.GetDeviceID(), err), coapCodes.BadRequest, req.Token)
+		client.logAndWriteErrorResponse(req, fmt.Errorf("DeviceId: %v: cannot handle create resource: %w", authCtx.GetDeviceID(), err), coapCodes.BadRequest, req.Token)
 		return
 	}
 
@@ -27,7 +27,7 @@ func clientCreateHandler(req *mux.Message, client *Client) {
 	content, err := clientCreateDeviceHandler(req, client, deviceID, href)
 	if err != nil {
 		code = coapconv.GrpcErr2CoapCode(err, coapconv.Create)
-		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot handle create resource /%v%v: %w", authCtx.GetDeviceID(), deviceID, href, err), code, req.Token)
+		client.logAndWriteErrorResponse(req, fmt.Errorf("DeviceId: %v: cannot handle create resource /%v%v: %w", authCtx.GetDeviceID(), deviceID, href, err), code, req.Token)
 		return
 	}
 	if content == nil || len(content.Data) == 0 {
@@ -36,7 +36,7 @@ func clientCreateHandler(req *mux.Message, client *Client) {
 	}
 	mediaType, err := coapconv.MakeMediaType(-1, content.ContentType)
 	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot encode response for create resource /%v%v: %w", authCtx.GetDeviceID(), deviceID, href, err), coapCodes.BadRequest, req.Token)
+		client.logAndWriteErrorResponse(req, fmt.Errorf("DeviceId: %v: cannot encode response for create resource /%v%v: %w", authCtx.GetDeviceID(), deviceID, href, err), coapCodes.BadRequest, req.Token)
 		return
 	}
 	client.sendResponse(req, code, req.Token, mediaType, content.Data)

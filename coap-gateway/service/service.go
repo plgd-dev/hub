@@ -407,7 +407,7 @@ func validateCommand(s mux.ResponseWriter, req *mux.Message, server *Service, fn
 			fnc(req, client)
 		case coapCodes.Empty:
 			if !ok {
-				client.logAndWriteErrorResponse(fmt.Errorf("cannot handle command: client not found"), coapCodes.InternalServerError, req.Token)
+				client.logAndWriteErrorResponse(req, fmt.Errorf("cannot handle command: client not found"), coapCodes.InternalServerError, req.Token)
 				closeClient(client)
 				return
 			}
@@ -441,7 +441,7 @@ func defaultHandler(req *mux.Message, client *Client) {
 		resourceRouteHandler(req, client)
 	default:
 		deviceID := getDeviceID(client)
-		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: unknown path %v", deviceID, path), coapCodes.NotFound, req.Token)
+		client.logAndWriteErrorResponse(req, fmt.Errorf("DeviceId: %v: unknown path %v", deviceID, path), coapCodes.NotFound, req.Token)
 	}
 }
 
@@ -468,7 +468,7 @@ func (server *Service) loggingMiddleware(next mux.Handler) mux.Handler {
 		}
 		tmp, err := server.messagePool.ConvertFrom(r.Message)
 		if err != nil {
-			client.logAndWriteErrorResponse(fmt.Errorf("cannot convert from mux.Message: %w", err), coapCodes.InternalServerError, r.Token)
+			client.logAndWriteErrorResponse(nil, fmt.Errorf("cannot convert from mux.Message: %w", err), coapCodes.InternalServerError, r.Token)
 			return
 		}
 		decodeMsgToDebug(client, tmp, "RECEIVED-COMMAND")
@@ -486,7 +486,7 @@ func (server *Service) authMiddleware(next mux.Handler) mux.Handler {
 		ctx := context.WithValue(r.Context, &authCtxKey, authCtx)
 		path, _ := r.Options.Path()
 		logErrorAndCloseClient := func(err error, code coapCodes.Code) {
-			client.logAndWriteErrorResponse(err, code, r.Token)
+			client.logAndWriteErrorResponse(r, err, code, r.Token)
 			if err := client.Close(); err != nil {
 				log.Errorf("coap server error: %w", err)
 			}

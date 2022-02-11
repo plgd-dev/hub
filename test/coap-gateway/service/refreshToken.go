@@ -13,7 +13,7 @@ import (
 
 func refreshTokenPostHandler(req *mux.Message, client *Client) {
 	logErrorAndCloseClient := func(err error, code coapCodes.Code) {
-		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle refresh token: %w", err), code, req.Token)
+		client.logAndWriteErrorResponse(req, fmt.Errorf("cannot handle refresh token: %w", err), code, req.Token)
 		if err := client.Close(); err != nil {
 			log.Errorf("refresh token error: %w", err)
 		}
@@ -55,5 +55,5 @@ func refreshTokenHandler(req *mux.Message, client *Client) {
 		refreshTokenPostHandler(req, client)
 		return
 	}
-	client.logAndWriteErrorResponse(fmt.Errorf("forbidden request from %v", client.RemoteAddrString()), coapCodes.Forbidden, req.Token)
+	client.logAndWriteErrorResponse(req, fmt.Errorf("forbidden request from %v", client.RemoteAddrString()), coapCodes.Forbidden, req.Token)
 }
