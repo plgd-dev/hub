@@ -151,20 +151,14 @@ func MakeDefaultConfig() Config {
 }
 
 func init() {
-	config := zap.NewProductionConfig()
-	logger, err := config.Build()
-	if err != nil {
-		panic("Unable to create logger")
-	}
-	Set(logger.Sugar())
+	Setup(MakeDefaultConfig())
 }
 
 // Setup changes log configuration for the application.
 // Call ASAP in main after parse args/env.
 func Setup(config Config) {
-	if err := Build(config); err != nil {
-		panic(err)
-	}
+	logger := NewLogger(config)
+	Set(logger)
 }
 
 type Logger interface {
@@ -178,6 +172,8 @@ type Logger interface {
 	Warnf(template string, args ...interface{})
 	Errorf(template string, args ...interface{})
 	Fatalf(template string, args ...interface{})
+	With(args ...interface{}) Logger
+	Unwrap() interface{}
 }
 
 // Set logger for global log fuctions
@@ -185,8 +181,22 @@ func Set(logger Logger) {
 	log.Store(logger)
 }
 
+type wrapSuggarLogger struct {
+	*zap.SugaredLogger
+}
+
+func (l *wrapSuggarLogger) With(args ...interface{}) Logger {
+	return &wrapSuggarLogger{
+		SugaredLogger: l.SugaredLogger.With(args...),
+	}
+}
+
+func (l *wrapSuggarLogger) Unwrap() interface{} {
+	return l.SugaredLogger
+}
+
 // NewLogger creates logger
-func NewLogger(config Config) (Logger, error) {
+func NewLogger(config Config) Logger {
 	var encoderConfig zapcore.EncoderConfig
 	if config.Debug {
 		encoderConfig = zap.NewDevelopmentEncoderConfig()
@@ -236,17 +246,7 @@ func NewLogger(config Config) (Logger, error) {
 
 	// From a zapcore.Core, it's easy to construct a Logger.
 	logger := zap.New(core, opts...)
-	return logger.Sugar(), nil
-}
-
-// Build is a panic-free version of Setup.
-func Build(config Config) error {
-	logger, err := NewLogger(config)
-	if err != nil {
-		return fmt.Errorf("logger creation failed: %w", err)
-	}
-	Set(logger)
-	return nil
+	return &wrapSuggarLogger{SugaredLogger: logger.Sugar()}
 }
 
 func Get() Logger {

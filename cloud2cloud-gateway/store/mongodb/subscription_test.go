@@ -17,8 +17,7 @@ import (
 func newTestStore(t *testing.T) (*mongodb.Store, func()) {
 	cfg := test.MakeConfig(t)
 
-	logger, err := log.NewLogger(cfg.Log)
-	require.NoError(t, err)
+	logger := log.NewLogger(cfg.Log)
 
 	certManager, err := client.New(cfg.Clients.Storage.MongoDB.TLS, logger)
 	require.NoError(t, err)

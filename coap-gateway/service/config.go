@@ -37,8 +37,8 @@ func (c *Config) Validate() error {
 
 //Config represent application configuration
 type LogConfig struct {
-	Embedded         log.Config `yaml:",inline" json:",inline"`
-	DumpCoapMessages bool       `yaml:"dumpCoapMessages" json:"dumpCoapMessages"`
+	log.Config `yaml:",inline""`
+	DumpBody   bool `yaml:"dumpBody" json:"dumpBody"`
 }
 
 type APIsConfig struct {

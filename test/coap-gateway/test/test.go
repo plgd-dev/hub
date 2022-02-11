@@ -37,8 +37,7 @@ func SetUp(t *testing.T, makeHandler service.MakeServiceHandler, verifyOnClose s
 
 func New(t *testing.T, cfg service.Config, makeHandler service.MakeServiceHandler, verifyOnClose service.VerifyServiceHandler) func() {
 	ctx := context.Background()
-	logger, err := log.NewLogger(cfg.Log.Config)
-	require.NoError(t, err)
+	logger := log.NewLogger(cfg.Log.Config)
 
 	s, err := service.New(ctx, cfg, logger, makeHandler)
 	require.NoError(t, err)

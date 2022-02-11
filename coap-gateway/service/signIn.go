@@ -310,7 +310,7 @@ func signInPostHandler(req *mux.Message, client *Client, signIn CoapSignInReq) {
 	client.exchangeCache.Clear()
 	client.refreshCache.Clear()
 
-	client.sendResponse(coapCodes.Changed, req.Token, accept, out)
+	client.sendResponse(req, coapCodes.Changed, req.Token, accept, out)
 
 	// try to register observations to the device at the cloud.
 	setNewDeviceObserver(ctx, client, deviceID, upd == updateTypeChanged)
@@ -386,7 +386,7 @@ func signOutPostHandler(req *mux.Message, client *Client, signOut CoapSignInReq)
 		return
 	}
 
-	client.sendResponse(coapCodes.Changed, req.Token, message.AppOcfCbor, []byte{0xA0}) // empty object
+	client.sendResponse(req, coapCodes.Changed, req.Token, message.AppOcfCbor, []byte{0xA0}) // empty object
 }
 
 // Sign-in

@@ -87,8 +87,7 @@ func SetUp(t *testing.T) (TearDown func()) {
 }
 
 func New(t *testing.T, cfg service.Config) func() {
-	logger, err := log.NewLogger(cfg.Log)
-	require.NoError(t, err)
+	logger := log.NewLogger(cfg.Log)
 
 	s, err := service.New(context.Background(), cfg, logger)
 	require.NoError(t, err)

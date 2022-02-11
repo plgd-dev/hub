@@ -153,7 +153,7 @@ func resourceDirectoryFind(req *mux.Message, client *Client) {
 		return
 	}
 
-	client.sendResponse(coapCode, req.Token, accept, out)
+	client.sendResponse(req, coapCode, req.Token, accept, out)
 }
 
 func resourceDiscoveryHandler(req *mux.Message, client *Client) {

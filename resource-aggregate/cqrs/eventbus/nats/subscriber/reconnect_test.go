@@ -22,8 +22,7 @@ func TestSubscriberReconnect(t *testing.T) {
 
 	timeout := time.Second * 30
 
-	logger, err := log.NewLogger(log.MakeDefaultConfig())
-	require.NoError(t, err)
+	logger := log.NewLogger(log.MakeDefaultConfig())
 
 	naPubClient, pub, err := natsTest.NewClientAndPublisher(config.MakePublisherConfig(), logger, publisher.WithMarshaler(json.Marshal))
 	require.NoError(t, err)

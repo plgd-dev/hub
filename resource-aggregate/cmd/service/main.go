@@ -14,10 +14,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("cannot load config: %v", err)
 	}
-	logger, err := log.NewLogger(cfg.Log)
-	if err != nil {
-		log.Fatalf("cannot create logger: %v", err)
-	}
+	logger := log.NewLogger(cfg.Log)
 	log.Set(logger)
 	log.Infof("config: %v", cfg.String())
 	s, err := service.New(context.Background(), cfg, logger)

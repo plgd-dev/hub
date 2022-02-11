@@ -376,9 +376,6 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 }
 
 func decodeMsgToDebug(client *Client, resp *pool.Message, tag string) {
-	if !client.server.config.Log.DumpCoapMessages {
-		return
-	}
 	message.DecodeMsgToDebug(getDeviceID(client), resp, tag)
 }
 

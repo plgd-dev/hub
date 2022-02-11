@@ -24,12 +24,12 @@ import (
 func TestClientCreateHandler(t *testing.T) {
 	coapgwCfg := coapgwTest.MakeConfig(t)
 	coapgwCfg.APIs.COAP.TLS.Enabled = false
-	coapgwCfg.Log.DumpCoapMessages = true
-	coapgwCfg.Log.Embedded.Level = zap.NewAtomicLevelAt(zap.DebugLevel)
+	coapgwCfg.Log.DumpBody = true
+	coapgwCfg.Log.Level = zap.NewAtomicLevelAt(zap.DebugLevel)
 	shutdown := setUp(t, coapgwCfg)
 	defer shutdown()
 
-	log.Setup(coapgwCfg.Log.Embedded)
+	log.Setup(coapgwCfg.Log.Config)
 
 	co := testCoapDial(t, testCfg.GW_HOST, "", true)
 	if co == nil {

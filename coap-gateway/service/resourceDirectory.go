@@ -169,7 +169,7 @@ func resourceDirectoryPublishHandler(req *mux.Message, client *Client) {
 		return
 	}
 
-	client.sendResponse(coapCodes.Changed, req.Token, accept, out)
+	client.sendResponse(req, coapCodes.Changed, req.Token, accept, out)
 }
 
 func parseUnpublishQueryString(queries []string) (deviceID string, instanceIDs []int64, err error) {
@@ -225,7 +225,7 @@ func resourceDirectoryUnpublishHandler(req *mux.Message, client *Client) {
 		client.logAndWriteErrorResponse(fmt.Errorf("cannot find observed resources using query %v which shall be unpublished from device %v", queries, authCtx.GetDeviceID()), coapCodes.BadRequest, req.Token)
 		return
 	}
-	client.sendResponse(coapCodes.Deleted, req.Token, coapMessage.TextPlain, nil)
+	client.sendResponse(req, coapCodes.Deleted, req.Token, coapMessage.TextPlain, nil)
 }
 
 type resourceDirectorySelector struct {
@@ -247,7 +247,7 @@ func resourceDirectoryGetSelector(req *mux.Message, client *Client) {
 		return
 	}
 
-	client.sendResponse(coapCodes.Content, req.Token, accept, out)
+	client.sendResponse(req, coapCodes.Content, req.Token, accept, out)
 }
 
 func resourceDirectoryHandler(req *mux.Message, client *Client) {

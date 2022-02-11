@@ -142,7 +142,7 @@ func signUpPostHandler(r *mux.Message, client *Client) {
 		return
 	}
 
-	client.sendResponse(coapCodes.Changed, r.Token, accept, out)
+	client.sendResponse(r, coapCodes.Changed, r.Token, accept, out)
 }
 
 // Sign-up

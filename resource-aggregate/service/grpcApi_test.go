@@ -97,8 +97,7 @@ func TestRequestHandler_PublishResource(t *testing.T) {
 		"sub": user0,
 	}))
 	config := raTest.MakeConfig(t)
-	logger, err := log.NewLogger(config.Log)
-	require.NoError(t, err)
+	logger := log.NewLogger(config.Log)
 	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	err = eventstore.Clear(ctx)
@@ -207,8 +206,7 @@ func TestRequestHandler_UnpublishResource(t *testing.T) {
 		"sub": user0,
 	}))
 	cfg := raTest.MakeConfig(t)
-	logger, err := log.NewLogger(cfg.Log)
-	require.NoError(t, err)
+	logger := log.NewLogger(cfg.Log)
 	eventstore, err := mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	err = eventstore.Clear(ctx)
@@ -287,8 +285,7 @@ func TestRequestHandler_NotifyResourceChanged(t *testing.T) {
 		"sub": user0,
 	}))
 	config := raTest.MakeConfig(t)
-	logger, err := log.NewLogger(config.Log)
-	require.NoError(t, err)
+	logger := log.NewLogger(config.Log)
 	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	err = eventstore.Clear(ctx)
@@ -377,8 +374,7 @@ func TestRequestHandler_UpdateResourceContent(t *testing.T) {
 		"sub": user0,
 	}))
 	config := raTest.MakeConfig(t)
-	logger, err := log.NewLogger(config.Log)
-	require.NoError(t, err)
+	logger := log.NewLogger(config.Log)
 	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	err = eventstore.Clear(ctx)
@@ -465,8 +461,7 @@ func TestRequestHandler_ConfirmResourceUpdate(t *testing.T) {
 		"sub": user0,
 	}))
 	config := raTest.MakeConfig(t)
-	logger, err := log.NewLogger(config.Log)
-	require.NoError(t, err)
+	logger := log.NewLogger(config.Log)
 	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	err = eventstore.Clear(ctx)
@@ -550,8 +545,7 @@ func TestRequestHandler_RetrieveResource(t *testing.T) {
 		"sub": user0,
 	}))
 	config := raTest.MakeConfig(t)
-	logger, err := log.NewLogger(config.Log)
-	require.NoError(t, err)
+	logger := log.NewLogger(config.Log)
 	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	err = eventstore.Clear(ctx)
@@ -638,8 +632,7 @@ func TestRequestHandler_ConfirmResourceRetrieve(t *testing.T) {
 		"sub": user0,
 	}))
 	config := raTest.MakeConfig(t)
-	logger, err := log.NewLogger(config.Log)
-	require.NoError(t, err)
+	logger := log.NewLogger(config.Log)
 	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	err = eventstore.Clear(ctx)
@@ -726,8 +719,7 @@ func TestRequestHandler_DeleteResource(t *testing.T) {
 		"sub": user0,
 	}))
 	config := raTest.MakeConfig(t)
-	logger, err := log.NewLogger(config.Log)
-	require.NoError(t, err)
+	logger := log.NewLogger(config.Log)
 	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	err = eventstore.Clear(ctx)
@@ -814,8 +806,7 @@ func TestRequestHandler_ConfirmResourceDelete(t *testing.T) {
 		"sub": user0,
 	}))
 	config := raTest.MakeConfig(t)
-	logger, err := log.NewLogger(config.Log)
-	require.NoError(t, err)
+	logger := log.NewLogger(config.Log)
 	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	err = eventstore.Clear(ctx)
@@ -902,8 +893,7 @@ func TestRequestHandler_CreateResource(t *testing.T) {
 		"sub": user0,
 	}))
 	config := raTest.MakeConfig(t)
-	logger, err := log.NewLogger(config.Log)
-	require.NoError(t, err)
+	logger := log.NewLogger(config.Log)
 	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	err = eventstore.Clear(ctx)
@@ -990,8 +980,7 @@ func TestRequestHandler_ConfirmResourceCreate(t *testing.T) {
 		"sub": user0,
 	}))
 	config := raTest.MakeConfig(t)
-	logger, err := log.NewLogger(config.Log)
-	require.NoError(t, err)
+	logger := log.NewLogger(config.Log)
 	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	err = eventstore.Clear(ctx)

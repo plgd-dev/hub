@@ -101,6 +101,17 @@ func newClient(server *Service, coapConn *tcp.ClientConn, tlsDeviceID string) *C
 	}
 }
 
+func (client *Client) deviceID() string {
+	if client.tlsDeviceID != "" {
+		return client.tlsDeviceID
+	}
+	a, err := client.GetAuthorizationContext()
+	if err == nil {
+		return a.GetDeviceID()
+	}
+	return ""
+}
+
 func (client *Client) remoteAddrString() string {
 	return client.coapConn.RemoteAddr().String()
 }

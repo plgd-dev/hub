@@ -27,8 +27,7 @@ func TestRequestHandler_DeleteDevices(t *testing.T) {
 		"sub": user0,
 	}))
 	cfg := raTest.MakeConfig(t)
-	logger, err := log.NewLogger(cfg.Log)
-	require.NoError(t, err)
+	logger := log.NewLogger(cfg.Log)
 	eventstore, err := mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {

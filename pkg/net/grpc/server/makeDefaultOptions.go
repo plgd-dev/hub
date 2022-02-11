@@ -17,7 +17,7 @@ import (
 func MakeDefaultOptions(auth kitNetGrpc.AuthInterceptors, logger log.Logger) ([]grpc.ServerOption, error) {
 	streamInterceptors := []grpc.StreamServerInterceptor{}
 	unaryInterceptors := []grpc.UnaryServerInterceptor{}
-	zapLogger, ok := logger.(*zap.SugaredLogger)
+	zapLogger, ok := logger.Unwrap().(*zap.SugaredLogger)
 	if ok && zapLogger.Desugar().Core().Enabled(zapcore.DebugLevel) {
 		streamInterceptors = append(streamInterceptors, grpc_ctxtags.StreamServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
 			grpc_zap.StreamServerInterceptor(zapLogger.Desugar()))

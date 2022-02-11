@@ -63,8 +63,7 @@ func SetUp(t *testing.T) (TearDown func()) {
 }
 
 func New(t *testing.T, cfg service.Config) func() {
-	logger, err := log.NewLogger(cfg.Log)
-	require.NoError(t, err)
+	logger := log.NewLogger(cfg.Log)
 
 	s, err := service.New(context.Background(), cfg, logger)
 	require.NoError(t, err)
@@ -99,8 +98,7 @@ func GetUniqueSubscriptionID(subIDS ...string) string {
 
 func NewTestListener(t *testing.T) (net.Listener, func()) {
 	loggerCfg := log.Config{Debug: true}
-	logger, err := log.NewLogger(loggerCfg)
-	require.NoError(t, err)
+	logger := log.NewLogger(loggerCfg)
 
 	listenCfg := config.MakeListenerConfig("localhost:")
 	listenCfg.TLS.ClientCertificateRequired = false

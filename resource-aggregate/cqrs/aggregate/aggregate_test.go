@@ -125,8 +125,7 @@ func (eh *mockEventHandler) Handle(ctx context.Context, iter eventstore.Iter) er
 }
 
 func testNewEventstore(ctx context.Context, t *testing.T) *mongodb.EventStore {
-	logger, err := log.NewLogger(log.MakeDefaultConfig())
-	require.NoError(t, err)
+	logger := log.NewLogger(log.MakeDefaultConfig())
 	store, err := mongodb.New(
 		ctx,
 		config.MakeEventsStoreMongoDBConfig(),

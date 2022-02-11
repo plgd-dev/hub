@@ -3,12 +3,13 @@ package service
 import (
 	"github.com/plgd-dev/go-coap/v2/message"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
+	"github.com/plgd-dev/go-coap/v2/mux"
 	coapgwMessage "github.com/plgd-dev/hub/v2/coap-gateway/service/message"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 )
 
-func (client *Client) sendResponse(code coapCodes.Code, token message.Token, contentFormat message.MediaType, payload []byte) {
+func (client *Client) sendResponse(req *mux.Message, code coapCodes.Code, token message.Token, contentFormat message.MediaType, payload []byte) {
 	msg, cleanUp := coapgwMessage.GetResponse(client.coapConn.Context(), client.server.messagePool, code, token, contentFormat, payload)
 	defer cleanUp()
 	err := client.coapConn.WriteMessage(msg)
@@ -17,5 +18,5 @@ func (client *Client) sendResponse(code coapCodes.Code, token message.Token, con
 			log.Errorf("cannot send reply to %v: %w", getDeviceID(client), err)
 		}
 	}
-	decodeMsgToDebug(client, msg, "SEND-RESPONSE")
+	client.logDeviceRequest(req, msg)
 }

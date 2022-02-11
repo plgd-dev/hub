@@ -154,5 +154,5 @@ func signOffHandler(req *mux.Message, client *Client) {
 	}
 
 	client.CleanUp(true)
-	client.sendResponse(coapCodes.Deleted, req.Token, message.TextPlain, nil)
+	client.sendResponse(req, coapCodes.Deleted, req.Token, message.TextPlain, nil)
 }

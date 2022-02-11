@@ -31,7 +31,7 @@ func clientCreateHandler(req *mux.Message, client *Client) {
 		return
 	}
 	if content == nil || len(content.Data) == 0 {
-		client.sendResponse(code, req.Token, coapMessage.TextPlain, nil)
+		client.sendResponse(req, code, req.Token, coapMessage.TextPlain, nil)
 		return
 	}
 	mediaType, err := coapconv.MakeMediaType(-1, content.ContentType)
@@ -39,7 +39,7 @@ func clientCreateHandler(req *mux.Message, client *Client) {
 		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot encode response for create resource /%v%v: %w", authCtx.GetDeviceID(), deviceID, href, err), coapCodes.BadRequest, req.Token)
 		return
 	}
-	client.sendResponse(code, req.Token, mediaType, content.Data)
+	client.sendResponse(req, code, req.Token, mediaType, content.Data)
 }
 
 func clientCreateDeviceHandler(req *mux.Message, client *Client, deviceID, href string) (*commands.Content, error) {

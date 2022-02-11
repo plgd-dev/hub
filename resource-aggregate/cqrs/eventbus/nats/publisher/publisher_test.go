@@ -27,8 +27,7 @@ func TestPublisher(t *testing.T) {
 	timeout := time.Second * 30
 	waitForSubscription := time.Millisecond * 100
 
-	logger, err := log.NewLogger(log.MakeDefaultConfig())
-	require.NoError(t, err)
+	logger := log.NewLogger(log.MakeDefaultConfig())
 
 	naPubClient, publisher, err := test.NewClientAndPublisher(client.ConfigPublisher{
 		Config: client.Config{
@@ -64,8 +63,7 @@ func TestPublisherJetStream(t *testing.T) {
 	timeout := time.Second * 30
 	waitForSubscription := time.Millisecond * 100
 
-	logger, err := log.NewLogger(log.MakeDefaultConfig())
-	require.NoError(t, err)
+	logger := log.NewLogger(log.MakeDefaultConfig())
 
 	cfg := config.MakeTLSClientConfig()
 	conn, err := nats.Connect("nats://localhost:4222", nats.ClientCert(cfg.CertFile, cfg.KeyFile), nats.RootCAs(cfg.CAPool))

@@ -32,7 +32,7 @@ func clientDeleteHandler(req *mux.Message, client *Client) {
 	}
 
 	if content == nil || len(content.Data) == 0 {
-		client.sendResponse(code, req.Token, coapMessage.TextPlain, nil)
+		client.sendResponse(req, code, req.Token, coapMessage.TextPlain, nil)
 		return
 	}
 	mediaType, err := coapconv.MakeMediaType(-1, content.ContentType)
@@ -40,7 +40,7 @@ func clientDeleteHandler(req *mux.Message, client *Client) {
 		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot delete resource /%v%v: %w", authCtx.GetDeviceID(), deviceID, href, err), coapCodes.BadRequest, req.Token)
 		return
 	}
-	client.sendResponse(code, req.Token, mediaType, content.Data)
+	client.sendResponse(req, code, req.Token, mediaType, content.Data)
 }
 
 func clientDeleteResourceHandler(req *mux.Message, client *Client, deviceID, href, userID string) (*commands.Content, error) {

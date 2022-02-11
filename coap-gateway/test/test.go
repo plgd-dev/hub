@@ -16,8 +16,7 @@ import (
 
 func MakeConfig(t *testing.T) service.Config {
 	var cfg service.Config
-	cfg.Log.DumpCoapMessages = true
-	cfg.Log.Embedded = log.MakeDefaultConfig()
+	cfg.Log.Config = log.MakeDefaultConfig()
 
 	cfg.TaskQueue.GoPoolSize = 1600
 	cfg.TaskQueue.Size = 2 * 1024 * 1024
@@ -64,8 +63,7 @@ func SetUp(t *testing.T) (TearDown func()) {
 // New creates test coap-gateway.
 func New(t *testing.T, cfg service.Config) func() {
 	ctx := context.Background()
-	logger, err := log.NewLogger(cfg.Log.Embedded)
-	require.NoError(t, err)
+	logger := log.NewLogger(cfg.Log.Config)
 
 	s, err := service.New(ctx, cfg, logger)
 	require.NoError(t, err)

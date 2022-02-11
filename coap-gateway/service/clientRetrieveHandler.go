@@ -48,7 +48,7 @@ func clientRetrieveHandler(req *mux.Message, client *Client) {
 	}
 
 	if content == nil || len(content.Data) == 0 {
-		client.sendResponse(code, req.Token, coapMessage.TextPlain, nil)
+		client.sendResponse(req, code, req.Token, coapMessage.TextPlain, nil)
 		return
 	}
 	mediaType, err := coapconv.MakeMediaType(-1, content.ContentType)
@@ -56,7 +56,7 @@ func clientRetrieveHandler(req *mux.Message, client *Client) {
 		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot retrieve resource /%v%v: %w", authCtx.GetDeviceID(), deviceID, href, err), code, req.Token)
 		return
 	}
-	client.sendResponse(code, req.Token, mediaType, content.Data)
+	client.sendResponse(req, code, req.Token, mediaType, content.Data)
 }
 
 func clientRetrieveFromResourceShadowHandler(ctx context.Context, client *Client, deviceID, href string) (*commands.Content, coapCodes.Code, error) {

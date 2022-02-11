@@ -171,7 +171,7 @@ func refreshTokenPostHandler(req *mux.Message, client *Client) {
 
 	updateClient(client, deviceID, owner, token.AccessToken.String(), validUntil)
 
-	client.sendResponse(coapCodes.Changed, req.Token, accept, out)
+	client.sendResponse(req, coapCodes.Changed, req.Token, accept, out)
 }
 
 // RefreshToken

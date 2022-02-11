@@ -47,9 +47,7 @@ func makeConfig(t *testing.T) Config {
 func newTestService(t *testing.T) (*Server, func()) {
 	cfg := makeConfig(t)
 
-	logger, err := log.NewLogger(cfg.Log)
-	require.NoError(t, err)
-
+	logger := log.NewLogger(cfg.Log)
 	naClient, publisher, err := test.NewClientAndPublisher(cfg.Clients.Eventbus.NATS, logger)
 	require.NoError(t, err)
 

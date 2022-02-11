@@ -81,11 +81,10 @@ func TestAggregateHandle_UpdateDeviceMetadata(t *testing.T) {
 
 	cfg := raTest.MakeConfig(t)
 	ctx := context.Background()
-	logger, err := log.NewLogger(cfg.Log)
+	logger := log.NewLogger(cfg.Log)
 
 	fmt.Printf("%v\n", cfg.String())
 
-	require.NoError(t, err)
 	eventstore, err := mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	err = eventstore.Clear(ctx)
@@ -209,8 +208,7 @@ func TestRequestHandler_UpdateDeviceMetadata(t *testing.T) {
 		"sub": user0,
 	}))
 	config := raTest.MakeConfig(t)
-	logger, err := log.NewLogger(config.Log)
-	require.NoError(t, err)
+	logger := log.NewLogger(config.Log)
 	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	err = eventstore.Clear(ctx)

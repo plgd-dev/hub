@@ -48,8 +48,7 @@ func TestProjection(t *testing.T) {
 	waitForSubscription := time.Second * 1
 
 	topics := []string{"test_projection_topic0_" + uuid.Must(uuid.NewRandom()).String(), "test_projection_topic1_" + uuid.Must(uuid.NewRandom()).String()}
-	logger, err := log.NewLogger(log.MakeDefaultConfig())
-	require.NoError(t, err)
+	logger := log.NewLogger(log.MakeDefaultConfig())
 
 	naPubClient, publisher, err := natsTest.NewClientAndPublisher(config.MakePublisherConfig(), logger, publisher.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
