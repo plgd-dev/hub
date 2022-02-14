@@ -14,7 +14,7 @@ import (
 // https://github.com/openconnectivityfoundation/security/blob/master/swagger2.0/oic.sec.session.swagger.json
 func signInPostHandler(req *mux.Message, client *Client, signIn coapgwService.CoapSignInReq) {
 	logErrorAndCloseClient := func(err error, code coapCodes.Code) {
-		client.logAndWriteErrorResponse(req, fmt.Errorf("cannot handle sign in: %w", err), code, req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign in: %w", err), code, req.Token)
 		if err := client.Close(); err != nil {
 			log.Errorf("sign in error: %w", err)
 		}
@@ -50,7 +50,7 @@ func signInHandler(req *mux.Message, client *Client) {
 		var r coapgwService.CoapSignInReq
 		err := cbor.ReadFrom(req.Body, &r)
 		if err != nil {
-			client.logAndWriteErrorResponse(req, fmt.Errorf("cannot handle sign in: %w", err), coapCodes.BadRequest, req.Token)
+			client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign in: %w", err), coapCodes.BadRequest, req.Token)
 			return
 		}
 		if r.Login {
@@ -60,5 +60,5 @@ func signInHandler(req *mux.Message, client *Client) {
 		}
 		return
 	}
-	client.logAndWriteErrorResponse(req, fmt.Errorf("forbidden request from %v", client.RemoteAddrString()), coapCodes.Forbidden, req.Token)
+	client.logAndWriteErrorResponse(fmt.Errorf("forbidden request from %v", client.RemoteAddrString()), coapCodes.Forbidden, req.Token)
 }

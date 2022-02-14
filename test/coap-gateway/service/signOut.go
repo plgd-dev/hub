@@ -14,7 +14,7 @@ import (
 // https://github.com/openconnectivityfoundation/security/blob/master/swagger2.0/oic.sec.session.swagger.json
 func signOutPostHandler(req *mux.Message, client *Client, signOut coapgwService.CoapSignInReq) {
 	logErrorAndCloseClient := func(err error, code coapCodes.Code) {
-		client.logAndWriteErrorResponse(req, fmt.Errorf("cannot handle sign out: %w", err), code, req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign out: %w", err), code, req.Token)
 		if err := client.Close(); err != nil {
 			log.Errorf("sign out error: %w", err)
 		}
