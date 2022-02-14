@@ -88,7 +88,7 @@ func TestRefreshCacheExecute(t *testing.T) {
 		wg.Add(1)
 		go func(idx int) {
 			defer wg.Done()
-			results[idx].token, results[idx].err = rc.Execute(ctx, providers, taskQueue, token3.RefreshToken)
+			results[idx].token, results[idx].err = rc.Execute(ctx, providers, taskQueue, token3.RefreshToken, log.Get())
 		}(i)
 	}
 	wg.Wait()
@@ -99,7 +99,7 @@ func TestRefreshCacheExecute(t *testing.T) {
 	}
 
 	rc.Clear()
-	_, err = rc.Execute(ctx, providers, taskQueue, token3.RefreshToken)
+	_, err = rc.Execute(ctx, providers, taskQueue, token3.RefreshToken, log.Get())
 	require.Error(t, err)
 
 	code = oauthTest.GetAuthorizationCode(t, config.OAUTH_SERVER_HOST, oauthTest.ClientTestRestrictedAuth, "", "")
@@ -108,7 +108,7 @@ func TestRefreshCacheExecute(t *testing.T) {
 	require.NotEqual(t, token6.RefreshToken, token1.RefreshToken)
 	require.NotEqual(t, token6.RefreshToken, token2.RefreshToken)
 	require.NotEqual(t, token6.RefreshToken, token3.RefreshToken)
-	token7, err := rc.Execute(ctx, providers, taskQueue, token6.RefreshToken)
+	token7, err := rc.Execute(ctx, providers, taskQueue, token6.RefreshToken, log.Get())
 	require.NoError(t, err)
 	require.NotEqual(t, results[0].token, token7)
 }

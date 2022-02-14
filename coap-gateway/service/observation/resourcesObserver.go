@@ -44,15 +44,16 @@ type resourcesObserver struct {
 	lock      sync.Mutex
 	deviceID  string
 	resources observedResources
-	coapConn  *tcp.ClientConn
+	coapConn  ClientConn
 	callbacks ResourcesObserverCallbacks
+	logger    log.Logger
 }
 
 // Create new Resource Observer.
 //
 // All arguments (coapConn, onObserveResource and onGetResourceContent) must be non-nil,
 // otherwise the function will panic.
-func newResourcesObserver(deviceID string, coapConn *tcp.ClientConn, callbacks ResourcesObserverCallbacks) *resourcesObserver {
+func newResourcesObserver(deviceID string, coapConn ClientConn, callbacks ResourcesObserverCallbacks, logger log.Logger) *resourcesObserver {
 	fatalCannotCreate := func(err error) {
 		log.Fatal("cannot create resource observer: %v", err)
 	}
@@ -73,6 +74,7 @@ func newResourcesObserver(deviceID string, coapConn *tcp.ClientConn, callbacks R
 		resources: make(observedResources, 0, 1),
 		coapConn:  coapConn,
 		callbacks: callbacks,
+		logger:    logger,
 	}
 }
 
@@ -86,7 +88,7 @@ func (o *resourcesObserver) addResource(ctx context.Context, res *commands.Resou
 
 func (o *resourcesObserver) addResourceLocked(ctx context.Context, res *commands.Resource, obsInterface string) error {
 	resID := res.GetResourceID()
-	log.Debugf("observation of resource(%v) requested", resID)
+	o.logger.Debugf("observation of resource(%v) requested", resID)
 	addObservationError := func(err error) error {
 		return fmt.Errorf("cannot add resource observation: %w", err)
 	}
@@ -114,7 +116,7 @@ func (o *resourcesObserver) addResourceLocked(ctx context.Context, res *commands
 // their content.
 func (o *resourcesObserver) handleResourceLocked(ctx context.Context, obsRes *observedResource, isObservable bool) error {
 	if obsRes.Href() == commands.StatusHref {
-		log.Debugf("observation of resource /%v%v skipped", o.deviceID, obsRes.Href())
+		o.logger.Debugf("observation of resource /%v%v skipped", o.deviceID, obsRes.Href())
 		return nil
 	}
 
@@ -148,16 +150,17 @@ func (o *resourcesObserver) observeResourceLocked(ctx context.Context, obsRes *o
 
 	batchObservation := obsRes.resInterface == interfaces.OC_IF_B
 	returnIfNonObservable := batchObservation && obsRes.Href() == resources.ResourceURI
+
 	obs, err := o.coapConn.Observe(ctx, obsRes.Href(), func(msg *pool.Message) {
 		if returnIfNonObservable {
 			if _, errObs := msg.Observe(); errObs != nil {
-				log.Debugf("href: %v not observable err: %v", obsRes.Href(), errObs)
+				o.logger.Debugf("href: %v not observable err: %v", obsRes.Href(), errObs)
 				return
 			}
 		}
 
 		if err2 := o.callbacks.OnObserveResource(ctx, o.deviceID, obsRes.Href(), batchObservation, msg); err2 != nil {
-			log.Error(cannotObserveResourceError(o.deviceID, obsRes.Href(), err2))
+			_ = o.logger.LogAndReturnError(cannotObserveResourceError(o.deviceID, obsRes.Href(), err2))
 			return
 		}
 	}, opts...)
@@ -234,7 +237,7 @@ func (o *resourcesObserver) cancelResourcesObservations(ctx context.Context, hre
 	observations := o.popTrackedObservations(ctx, hrefs)
 	for _, obs := range observations {
 		if err := obs.Cancel(ctx); err != nil {
-			log.Debugf("cannot cancel resource observation: %w", err)
+			o.logger.Debugf("cannot cancel resource observation: %w", err)
 		}
 	}
 }
@@ -252,7 +255,7 @@ func (o *resourcesObserver) popTrackedObservations(ctx context.Context, hrefs []
 		if obs == nil {
 			continue
 		}
-		log.Debugf("canceling observation on resource(/%v%v)", o.deviceID, res.Href())
+		o.logger.Debugf("canceling observation on resource(/%v%v)", o.deviceID, res.Href())
 		observations = append(observations, obs)
 	}
 	o.resources = newResources
@@ -271,7 +274,7 @@ func (o *resourcesObserver) cleanObservedResourcesLocked(ctx context.Context) {
 	for _, obs := range observedResources {
 		if v := obs.PopObservation(); v != nil {
 			if err := v.Cancel(ctx); err != nil {
-				log.Errorf("cannot cancel resource('/%v%v') observation: %w", o.deviceID, obs.Href(), err)
+				o.logger.Errorf("cannot cancel resource('/%v%v') observation: %w", o.deviceID, obs.Href(), err)
 			}
 		}
 	}

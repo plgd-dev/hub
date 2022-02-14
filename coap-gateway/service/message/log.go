@@ -1,6 +1,9 @@
 package message
 
 import (
+	"io"
+	"io/ioutil"
+
 	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
 	"github.com/plgd-dev/kit/v2/codec/cbor"
@@ -17,30 +20,53 @@ type JsonCoapMessage struct {
 	Body          interface{} `json:"body,omitempty"`
 }
 
-func decodeBody(mt message.MediaType, body []byte) interface{} {
-	if body == nil {
+func readBody(r io.ReadSeeker) []byte {
+	if r == nil {
+		return nil
+	}
+	v, err := r.Seek(0, io.SeekCurrent)
+	if err != nil {
+		return nil
+	}
+	_, err = r.Seek(0, io.SeekStart)
+	if err != nil {
+		return nil
+	}
+	body, err := ioutil.ReadAll(r)
+	if err != nil {
+		return nil
+	}
+	_, _ = r.Seek(v, io.SeekStart)
+	if len(body) == 0 {
+		return nil
+	}
+	return body
+}
+
+func decodeData(mt message.MediaType, data []byte) interface{} {
+	if len(data) == 0 {
 		return nil
 	}
 	var res interface{}
 	switch mt {
 	case message.AppCBOR, message.AppOcfCbor:
-		err := cbor.Decode(body, &res)
+		err := cbor.Decode(data, &res)
 		if err != nil {
 			return nil
 		}
 		return res
 	case message.TextPlain:
-		return string(body)
+		return string(data)
 	case message.AppJSON:
-		err := json.Decode(body, &res)
+		err := json.Decode(data, &res)
 		if err != nil {
 			return nil
 		}
 		return res
 	case message.AppXML:
-		return string(body)
+		return string(data)
 	default:
-		return string(body)
+		return string(data)
 	}
 }
 
@@ -65,7 +91,7 @@ func ToJson(m *pool.Message, withBody, withToken bool) JsonCoapMessage {
 	}
 	ct, err := m.ContentFormat()
 	if err == nil {
-		body = decodeBody(ct, data)
+		body = decodeData(ct, data)
 	} else if len(data) > 0 {
 		body = string(data)
 	}

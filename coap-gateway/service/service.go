@@ -68,6 +68,7 @@ type Service struct {
 	ownerCache            *idClient.OwnerCache
 	subscriptionsCache    *subscription.SubscriptionsCache
 	messagePool           *pool.Pool
+	logger                log.Logger
 }
 
 func setExpirationClientCache(c *cache.Cache, deviceID string, client *Client, validUntil time.Time) {
@@ -77,12 +78,12 @@ func setExpirationClientCache(c *cache.Cache, deviceID string, client *Client, v
 			return
 		}
 		client := cl.(*Client)
-		authCtx, err := client.GetAuthorizationContext()
+		_, err := client.GetAuthorizationContext()
 		if err != nil {
 			if err2 := client.Close(); err2 != nil {
-				log.Errorf("failed to close client connection on token expiration: %w", err2)
+				client.Errorf("failed to close client connection on token expiration: %w", err2)
 			}
-			log.Debugf("device %v token has been expired", authCtx.GetDeviceID())
+			client.Debugf("token has been expired")
 		}
 	}))
 }
@@ -156,7 +157,7 @@ func newTCPListener(config COAPConfig, tlsDeviceIDCache *cache.Cache, logger log
 		}
 		closeListener := func() {
 			if err := listener.Close(); err != nil {
-				log.Errorf("failed to close tcp listener: %w", err)
+				logger.Errorf("failed to close tcp listener: %w", err)
 			}
 		}
 		return listener, closeListener, nil
@@ -179,7 +180,7 @@ func newTCPListener(config COAPConfig, tlsDeviceIDCache *cache.Cache, logger log
 	}
 	closeListener.AddFunc(func() {
 		if err := listener.Close(); err != nil {
-			log.Errorf("failed to close tcp-tls listener: %w", err)
+			logger.Errorf("failed to close tcp-tls listener: %w", err)
 		}
 	})
 	return listener, closeListener.ToFunction(), nil
@@ -207,17 +208,17 @@ func blockWiseTransferSZXFromString(s string) (blockwise.SZX, error) {
 	return blockwise.SZX(0), fmt.Errorf("invalid value %v", s)
 }
 
-func getOnInactivityFn() func(cc inactivity.ClientConn) {
+func getOnInactivityFn(logger log.Logger) func(cc inactivity.ClientConn) {
 	return func(cc inactivity.ClientConn) {
 		client, ok := cc.Context().Value(clientKey).(*Client)
 		if ok {
 			deviceID := getDeviceID(client)
-			log.Errorf("DeviceId: %v: keep alive was reached fail limit:: closing connection", deviceID)
+			client.Errorf("DeviceId: %v: keep alive was reached fail limit:: closing connection", deviceID)
 		} else {
-			log.Errorf("keep alive was reached fail limit:: closing connection")
+			logger.Errorf("keep alive was reached fail limit:: closing connection")
 		}
 		if err := cc.Close(); err != nil {
-			log.Errorf("failed to close connection: %w", err)
+			logger.Errorf("failed to close connection: %w", err)
 		}
 	}
 }
@@ -243,6 +244,7 @@ func newProviders(ctx context.Context, config AuthorizationConfig, logger log.Lo
 
 // New creates server.
 func New(ctx context.Context, config Config, logger log.Logger) (*Service, error) {
+	logger = logger.With(logServiceKey, "coap-gateway")
 	queue, err := queue.New(config.TaskQueue)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create job queue %w", err)
@@ -327,12 +329,12 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 	jwtValidator := jwt.NewValidatorWithKeyCache(keyCache)
 
 	ownerCache := idClient.NewOwnerCache(config.APIs.COAP.Authorization.OwnerClaim, config.APIs.COAP.OwnerCacheExpiration, nats.GetConn(), isClient, func(err error) {
-		log.Errorf("ownerCache error: %w", err)
+		logger.Errorf("ownerCache error: %w", err)
 	})
 	nats.AddCloseFunc(ownerCache.Close)
 
 	subscriptionsCache := subscription.NewSubscriptionsCache(resourceSubscriber.Conn(), func(err error) {
-		log.Errorf("subscriptionsCache error: %w", err)
+		logger.Errorf("subscriptionsCache error: %w", err)
 	})
 
 	ctx, cancel := context.WithCancel(ctx)
@@ -340,7 +342,7 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 	s := Service{
 		config:                config,
 		blockWiseTransferSZX:  blockWiseTransferSZX,
-		keepaliveOnInactivity: getOnInactivityFn(),
+		keepaliveOnInactivity: getOnInactivityFn(logger),
 
 		natsClient:            nats,
 		raClient:              raClient,
@@ -350,7 +352,7 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 		tlsDeviceIDCache:      tlsDeviceIDCache,
 		listener:              listener,
 		authInterceptor:       newAuthInterceptor(),
-		devicesStatusUpdater:  newDevicesStatusUpdater(ctx, config.Clients.ResourceAggregate.DeviceStatusExpiration),
+		devicesStatusUpdater:  newDevicesStatusUpdater(ctx, config.Clients.ResourceAggregate.DeviceStatusExpiration, logger),
 
 		sigs: make(chan os.Signal, 1),
 
@@ -365,6 +367,7 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 		ownerCache:         ownerCache,
 		subscriptionsCache: subscriptionsCache,
 		messagePool:        pool.New(uint32(config.APIs.COAP.MessagePoolSize), 1024),
+		logger:             logger,
 	}
 
 	if err := s.setupCoapServer(); err != nil {
@@ -401,7 +404,7 @@ func validateCommand(s mux.ResponseWriter, req *mux.Message, server *Service, fn
 	}
 	closeClient := func(c *Client) {
 		if err := c.Close(); err != nil {
-			log.Errorf("cannot handle command: %w", err)
+			c.Errorf("cannot handle command: %w", err)
 		}
 	}
 	err := server.taskQueue.Submit(func() {
@@ -454,6 +457,7 @@ func (server *Service) coapConnOnNew(coapConn *tcp.ClientConn, tlscon *tls.Conn)
 
 func (server *Service) authMiddleware(next mux.Handler) mux.Handler {
 	return mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
+		t := time.Now()
 		client, ok := w.Client().Context().Value(clientKey).(*Client)
 		if !ok {
 			client = newClient(server, w.Client().ClientConn().(*tcp.ClientConn), "")
@@ -461,18 +465,19 @@ func (server *Service) authMiddleware(next mux.Handler) mux.Handler {
 		authCtx, _ := client.GetAuthorizationContext()
 		ctx := context.WithValue(r.Context, &authCtxKey, authCtx)
 		path, _ := r.Options.Path()
-		logErrorAndCloseClient := func(err error, code coapCodes.Code) {
-			client.logAndWriteErrorResponse(r, err, code, r.Token)
-			if err := client.Close(); err != nil {
-				log.Errorf("coap server error: %w", err)
-			}
-		}
 		ctx, err := server.authInterceptor(ctx, r.Code, path)
+		if ctx == nil {
+			ctx = r.Context
+		}
+		r.Context = context.WithValue(ctx, &logStartTimeKey, t)
 		if err != nil {
-			logErrorAndCloseClient(fmt.Errorf("cannot handle request to path '%v': %w", path, err), coapCodes.Unauthorized)
+			err = fmt.Errorf("cannot handle request to path '%v': %w", path, err)
+			client.logAndWriteErrorResponse(r, err, coapCodes.Unauthorized, r.Token)
+			if err := client.Close(); err != nil {
+				client.Errorf("coap server error: %w", err)
+			}
 			return
 		}
-		r.Context = ctx
 		next.ServeCOAP(w, r)
 	})
 }
@@ -521,7 +526,7 @@ func (server *Service) setupCoapServer() error {
 	opts = append(opts, tcp.WithContext(server.ctx))
 	opts = append(opts, tcp.WithMaxMessageSize(server.config.APIs.COAP.MaxMessageSize))
 	opts = append(opts, tcp.WithErrors(func(e error) {
-		log.Errorf("plgd/go-coap: %w", e)
+		server.logger.Errorf("plgd/go-coap: %w", e)
 	}))
 	opts = append(opts, tcp.WithGoPool(func(f func()) error {
 		// we call directly function in connection-goroutine because

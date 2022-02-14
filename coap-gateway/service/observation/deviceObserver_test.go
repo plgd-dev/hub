@@ -283,7 +283,7 @@ func runTestDeviceObserverRegister(ctx context.Context, t *testing.T, deviceID s
 			delete(expectedObserved, res.ToString())
 			done = isDone()
 		case <-ctxWait.Done():
-			log.Debugf("waiting timeouted")
+			t.Log("waiting timeouted")
 			done = true
 		}
 	}

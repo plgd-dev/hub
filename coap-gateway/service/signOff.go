@@ -10,7 +10,6 @@ import (
 	"github.com/plgd-dev/go-coap/v2/mux"
 	"github.com/plgd-dev/hub/v2/coap-gateway/coapconv"
 	"github.com/plgd-dev/hub/v2/identity-store/pb"
-	"github.com/plgd-dev/hub/v2/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 )
@@ -54,7 +53,7 @@ func getSignOffDataFromQuery(req *mux.Message) (signOffData, error) {
 func (s signOffData) updateSignOffDataFromAuthContext(client *Client) signOffData {
 	authCurrentCtx, err := client.GetAuthorizationContext()
 	if err != nil {
-		log.Debugf("auth context not available: %w", err)
+		client.Debugf("auth context not available: %w", err)
 		return s
 	}
 
@@ -89,7 +88,7 @@ func signOffHandler(req *mux.Message, client *Client) {
 	logErrorAndCloseClient := func(err error, code coapCodes.Code) {
 		client.logAndWriteErrorResponse(req, fmt.Errorf("cannot handle sign off: %w", err), code, req.Token)
 		if err := client.Close(); err != nil {
-			log.Errorf("sign off error: %w", err)
+			client.Errorf("sign off error: %w", err)
 		}
 	}
 
@@ -137,7 +136,7 @@ func signOffHandler(req *mux.Message, client *Client) {
 		return
 	}
 	if len(respRA.GetDeviceIds()) != 1 {
-		log.Errorf("sign off error: failed to remove documents for device('%v') from eventstore", deviceID)
+		client.Errorf("sign off error: failed to remove documents for device('%v') from eventstore", deviceID)
 	}
 
 	client.unsubscribeFromDeviceEvents()

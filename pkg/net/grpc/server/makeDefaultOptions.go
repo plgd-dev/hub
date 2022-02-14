@@ -2,6 +2,7 @@ package server
 
 import (
 	context "context"
+	"time"
 
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpc_zap "github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
@@ -10,7 +11,6 @@ import (
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"github.com/plgd-dev/hub/v2/pkg/security/jwt"
 	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 	"google.golang.org/grpc"
 )
 
@@ -18,11 +18,11 @@ func MakeDefaultOptions(auth kitNetGrpc.AuthInterceptors, logger log.Logger) ([]
 	streamInterceptors := []grpc.StreamServerInterceptor{}
 	unaryInterceptors := []grpc.UnaryServerInterceptor{}
 	zapLogger, ok := logger.Unwrap().(*zap.SugaredLogger)
-	if ok && zapLogger.Desugar().Core().Enabled(zapcore.DebugLevel) {
+	if ok {
 		streamInterceptors = append(streamInterceptors, grpc_ctxtags.StreamServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
-			grpc_zap.StreamServerInterceptor(zapLogger.Desugar()))
+			grpc_zap.StreamServerInterceptor(zapLogger.Desugar(), grpc_zap.WithTimestampFormat(time.RFC3339Nano)))
 		unaryInterceptors = append(unaryInterceptors, grpc_ctxtags.UnaryServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
-			grpc_zap.UnaryServerInterceptor(zapLogger.Desugar()))
+			grpc_zap.UnaryServerInterceptor(zapLogger.Desugar(), grpc_zap.WithTimestampFormat(time.RFC3339Nano)))
 	}
 	streamInterceptors = append(streamInterceptors, auth.Stream())
 	unaryInterceptors = append(unaryInterceptors, auth.Unary())

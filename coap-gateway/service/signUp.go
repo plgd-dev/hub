@@ -8,7 +8,6 @@ import (
 	"github.com/plgd-dev/go-coap/v2/mux"
 	"github.com/plgd-dev/hub/v2/coap-gateway/coapconv"
 	"github.com/plgd-dev/hub/v2/identity-store/pb"
-	"github.com/plgd-dev/hub/v2/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"github.com/plgd-dev/hub/v2/pkg/security/oauth2"
 	pkgTime "github.com/plgd-dev/hub/v2/pkg/time"
@@ -68,7 +67,7 @@ func signUpPostHandler(r *mux.Message, client *Client) {
 	logErrorAndCloseClient := func(err error, code coapCodes.Code) {
 		client.logAndWriteErrorResponse(r, fmt.Errorf("cannot handle sign up: %w", err), code, r.Token)
 		if err := client.Close(); err != nil {
-			log.Errorf("sign up error: %w", err)
+			client.Errorf("sign up error: %w", err)
 		}
 	}
 

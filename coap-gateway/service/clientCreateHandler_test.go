@@ -24,8 +24,8 @@ import (
 func TestClientCreateHandler(t *testing.T) {
 	coapgwCfg := coapgwTest.MakeConfig(t)
 	coapgwCfg.APIs.COAP.TLS.Enabled = false
-	coapgwCfg.Log.DumpBody = false
-	coapgwCfg.Log.Level = zap.NewAtomicLevelAt(zap.InfoLevel)
+	coapgwCfg.Log.DumpBody = true
+	coapgwCfg.Log.Level = zap.NewAtomicLevelAt(zap.DebugLevel)
 	shutdown := setUp(t, coapgwCfg)
 	defer shutdown()
 

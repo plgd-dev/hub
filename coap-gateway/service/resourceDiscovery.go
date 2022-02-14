@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io"
 	"net/url"
-	"time"
 
 	"github.com/plgd-dev/device/schema"
 	"github.com/plgd-dev/go-coap/v2/message"
@@ -13,7 +12,6 @@ import (
 	"github.com/plgd-dev/hub/v2/coap-gateway/coapconv"
 	"github.com/plgd-dev/hub/v2/coap-gateway/uri"
 	pbGRPC "github.com/plgd-dev/hub/v2/grpc-gateway/pb"
-	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 )
 
@@ -99,11 +97,6 @@ func makeDiscoveryResp(isTLSListener bool, serverAddr string, getResourceLinksCl
 }
 
 func resourceDirectoryFind(req *mux.Message, client *Client) {
-	t := time.Now()
-	defer func() {
-		log.Debugf("resourceDirectoryFind takes %v", time.Since(t))
-	}()
-
 	authCtx, err := client.GetAuthorizationContext()
 	if err != nil {
 		client.logAndWriteErrorResponse(req, fmt.Errorf("DeviceId: %v: cannot handle resource discovery: %w", authCtx.GetDeviceID(), err), coapCodes.Unauthorized, req.Token)

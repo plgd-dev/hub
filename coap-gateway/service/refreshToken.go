@@ -9,7 +9,6 @@ import (
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/mux"
 	"github.com/plgd-dev/hub/v2/coap-gateway/coapconv"
-	"github.com/plgd-dev/hub/v2/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"github.com/plgd-dev/hub/v2/pkg/security/oauth2"
 	pkgTime "github.com/plgd-dev/hub/v2/pkg/time"
@@ -94,7 +93,7 @@ func refreshTokenPostHandler(req *mux.Message, client *Client) {
 	logErrorAndCloseClient := func(err error, code coapCodes.Code) {
 		client.logAndWriteErrorResponse(req, err, code, req.Token)
 		if err := client.Close(); err != nil {
-			log.Errorf("refresh token error: %w", err)
+			client.Errorf("refresh token error: %w", err)
 		}
 	}
 
@@ -111,7 +110,7 @@ func refreshTokenPostHandler(req *mux.Message, client *Client) {
 		return
 	}
 
-	token, err := client.refreshCache.Execute(req.Context, client.server.providers, client.server.taskQueue, refreshToken.RefreshToken)
+	token, err := client.refreshCache.Execute(req.Context, client.server.providers, client.server.taskQueue, refreshToken.RefreshToken, client.getLogger())
 	if err != nil {
 		logErrorAndCloseClient(fmt.Errorf(fmtErr, refreshToken.DeviceID, err), coapCodes.Unauthorized)
 		return

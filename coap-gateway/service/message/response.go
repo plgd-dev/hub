@@ -3,13 +3,11 @@ package message
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"strings"
 
 	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
-	"github.com/plgd-dev/hub/v2/pkg/log"
 )
 
 func GetResponse(ctx context.Context, messagePool *pool.Pool, code codes.Code, token message.Token, contentFormat message.MediaType, payload []byte) (*pool.Message, func()) {
@@ -25,7 +23,7 @@ func GetResponse(ctx context.Context, messagePool *pool.Pool, code codes.Code, t
 	}
 }
 
-func isTempError(err error) bool {
+func IsTempError(err error) bool {
 	switch {
 	case strings.Contains(err.Error(), "connect: connection refused"),
 		strings.Contains(err.Error(), "i/o timeout"),
@@ -48,15 +46,4 @@ func GetErrorResponse(ctx context.Context, messagePool *pool.Pool, code codes.Co
 	return msg, func() {
 		messagePool.ReleaseMessage(msg)
 	}
-}
-
-func LogAndGetErrorResponse(ctx context.Context, messagePool *pool.Pool, code codes.Code, token message.Token, err error) (*pool.Message, func()) {
-	if isTempError(err) {
-		code = codes.ServiceUnavailable
-		err = fmt.Errorf("temporary error: %w", err)
-	}
-	if err != nil {
-		log.Errorf("%w", err)
-	}
-	return GetErrorResponse(ctx, messagePool, code, token, err)
 }

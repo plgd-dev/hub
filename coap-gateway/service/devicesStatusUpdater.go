@@ -17,18 +17,20 @@ type deviceExpires struct {
 }
 
 type devicesStatusUpdater struct {
-	ctx context.Context
-	cfg DeviceStatusExpirationConfig
+	ctx    context.Context
+	cfg    DeviceStatusExpirationConfig
+	logger log.Logger
 
 	mutex   sync.Mutex
 	devices map[string]*deviceExpires
 }
 
-func newDevicesStatusUpdater(ctx context.Context, cfg DeviceStatusExpirationConfig) *devicesStatusUpdater {
+func newDevicesStatusUpdater(ctx context.Context, cfg DeviceStatusExpirationConfig, logger log.Logger) *devicesStatusUpdater {
 	u := devicesStatusUpdater{
 		ctx:     ctx,
 		cfg:     cfg,
 		devices: make(map[string]*deviceExpires),
+		logger:  logger,
 	}
 	if cfg.Enabled {
 		go u.run()
@@ -113,12 +115,12 @@ func (u *devicesStatusUpdater) run() {
 			for _, d := range u.getDevicesToUpdate(now) {
 				expires, err := u.updateOnlineStatus(d.client, time.Now().Add(u.cfg.ExpiresIn))
 				if err != nil {
-					log.Errorf("cannot update device(%v) status to online: %w", getDeviceID(d.client), err)
+					u.logger.Errorf("cannot update device(%v) status to online: %w", getDeviceID(d.client), err)
 				} else {
 					d.expires = expires
 				}
 			}
-			log.Debugf("update devices statuses to online takes: %v", time.Since(now))
+			u.logger.Debugf("update devices statuses to online takes: %v", time.Since(now))
 		}
 	}
 }

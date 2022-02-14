@@ -8,7 +8,9 @@ import (
 	"github.com/plgd-dev/device/schema"
 	"github.com/plgd-dev/device/schema/interfaces"
 	"github.com/plgd-dev/device/schema/resources"
+	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/go-coap/v2/tcp"
+	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
@@ -31,12 +33,20 @@ type DeviceObserver struct {
 	shadowSynchronization commands.ShadowSynchronization
 	rdClient              pb.GrpcGatewayClient
 	resourcesObserver     *resourcesObserver
+	logger                log.Logger
 }
 
 type DeviceObserverConfig struct {
 	observationType          ObservationType
 	shadowSynchronization    commands.ShadowSynchronization
 	shadowSynchronizationSet bool
+	logger                   log.Logger
+}
+
+type ClientConn interface {
+	Get(ctx context.Context, path string, opts ...message.Option) (*pool.Message, error)
+	Observe(ctx context.Context, path string, observeFunc func(req *pool.Message), opts ...message.Option) (*tcp.Observation, error)
+	ReleaseMessage(m *pool.Message)
 }
 
 type Option interface {
@@ -74,8 +84,22 @@ func WithShadowSynchronization(shadowSynchronization commands.ShadowSynchronizat
 	}
 }
 
+// Set logger option
+type LoggerOpt struct {
+	logger log.Logger
+}
+
+func WithLogger(logger log.Logger) LoggerOpt {
+	return LoggerOpt{
+		logger: logger,
+	}
+}
+func (o LoggerOpt) Apply(opts *DeviceObserverConfig) {
+	opts.logger = o.logger
+}
+
 // Create new deviceObserver with given settings
-func NewDeviceObserver(ctx context.Context, deviceID string, coapConn *tcp.ClientConn, rdClient pb.GrpcGatewayClient, callbacks ResourcesObserverCallbacks, opts ...Option) (*DeviceObserver, error) {
+func NewDeviceObserver(ctx context.Context, deviceID string, coapConn ClientConn, rdClient pb.GrpcGatewayClient, callbacks ResourcesObserverCallbacks, opts ...Option) (*DeviceObserver, error) {
 	createError := func(err error) error {
 		return fmt.Errorf("cannot create device observer: %w", err)
 	}
@@ -83,7 +107,9 @@ func NewDeviceObserver(ctx context.Context, deviceID string, coapConn *tcp.Clien
 		return nil, createError(emptyDeviceIDError())
 	}
 
-	var cfg DeviceObserverConfig
+	cfg := DeviceObserverConfig{
+		logger: log.Get(),
+	}
 	for _, o := range opts {
 		o.Apply(&cfg)
 	}
@@ -107,13 +133,13 @@ func NewDeviceObserver(ctx context.Context, deviceID string, coapConn *tcp.Clien
 	if cfg.observationType == ObservationType_Detect {
 		cfg.observationType, err = detectObservationType(ctx, coapConn)
 		if err != nil {
-			log.Error(err)
+			cfg.logger.Errorf("%w", err)
 			cfg.observationType = ObservationType_PerDevice
 		}
 	}
 
 	if cfg.observationType == ObservationType_PerDevice {
-		resourcesObserver, err := createDiscoveryResourceObserver(ctx, deviceID, coapConn, callbacks)
+		resourcesObserver, err := createDiscoveryResourceObserver(ctx, deviceID, coapConn, callbacks, cfg.logger)
 		if err == nil {
 			return &DeviceObserver{
 				deviceID:              deviceID,
@@ -123,10 +149,10 @@ func NewDeviceObserver(ctx context.Context, deviceID string, coapConn *tcp.Clien
 				resourcesObserver:     resourcesObserver,
 			}, nil
 		}
-		log.Debugf("NewDeviceObserverWithResourceShadow: failed to create /oic/res observation for device(%v): %v", deviceID, err)
+		cfg.logger.Debugf("NewDeviceObserverWithResourceShadow: failed to create /oic/res observation for device(%v): %v", deviceID, err)
 	}
 
-	resourcesObserver, err := createPublishedResourcesObserver(ctx, rdClient, deviceID, coapConn, callbacks)
+	resourcesObserver, err := createPublishedResourcesObserver(ctx, rdClient, deviceID, coapConn, callbacks, cfg.logger)
 	if err != nil {
 		return nil, createError(err)
 	}
@@ -136,6 +162,7 @@ func NewDeviceObserver(ctx context.Context, deviceID string, coapConn *tcp.Clien
 		shadowSynchronization: cfg.shadowSynchronization,
 		rdClient:              rdClient,
 		resourcesObserver:     resourcesObserver,
+		logger:                cfg.logger,
 	}, nil
 }
 
@@ -143,11 +170,11 @@ func emptyDeviceIDError() error {
 	return fmt.Errorf("empty deviceID")
 }
 
-func isDiscoveryResourceObservable(ctx context.Context, coapConn *tcp.ClientConn) (bool, error) {
+func isDiscoveryResourceObservable(ctx context.Context, coapConn ClientConn) (bool, error) {
 	return IsResourceObservableWithInterface(ctx, coapConn, resources.ResourceURI, resources.ResourceType, interfaces.OC_IF_B)
 }
 
-func detectObservationType(ctx context.Context, coapConn *tcp.ClientConn) (ObservationType, error) {
+func detectObservationType(ctx context.Context, coapConn ClientConn) (ObservationType, error) {
 	ok, err := isDiscoveryResourceObservable(ctx, coapConn)
 	if err != nil {
 		return ObservationType_PerDevice, fmt.Errorf("cannot determine whether /oic/res is observable: %w", err)
@@ -193,8 +220,8 @@ func loadShadowSynchronization(ctx context.Context, rdClient pb.GrpcGatewayClien
 }
 
 // Create observer with a single observation for /oic/res resource.
-func createDiscoveryResourceObserver(ctx context.Context, deviceID string, coapConn *tcp.ClientConn, callbacks ResourcesObserverCallbacks) (*resourcesObserver, error) {
-	resourcesObserver := newResourcesObserver(deviceID, coapConn, callbacks)
+func createDiscoveryResourceObserver(ctx context.Context, deviceID string, coapConn ClientConn, callbacks ResourcesObserverCallbacks, logger log.Logger) (*resourcesObserver, error) {
+	resourcesObserver := newResourcesObserver(deviceID, coapConn, callbacks, logger)
 	err := resourcesObserver.addResource(ctx, &commands.Resource{
 		DeviceId: resourcesObserver.deviceID,
 		Href:     resources.ResourceURI,
@@ -208,8 +235,8 @@ func createDiscoveryResourceObserver(ctx context.Context, deviceID string, coapC
 }
 
 // Create observer with a single observations for all published resources.
-func createPublishedResourcesObserver(ctx context.Context, rdClient pb.GrpcGatewayClient, deviceID string, coapConn *tcp.ClientConn, callbacks ResourcesObserverCallbacks) (*resourcesObserver, error) {
-	resourcesObserver := newResourcesObserver(deviceID, coapConn, callbacks)
+func createPublishedResourcesObserver(ctx context.Context, rdClient pb.GrpcGatewayClient, deviceID string, coapConn ClientConn, callbacks ResourcesObserverCallbacks, logger log.Logger) (*resourcesObserver, error) {
+	resourcesObserver := newResourcesObserver(deviceID, coapConn, callbacks, logger)
 
 	published, err := getPublishedResources(ctx, rdClient, deviceID)
 	if err != nil {
@@ -299,11 +326,11 @@ func getPublishedResources(ctx context.Context, rdClient pb.GrpcGatewayClient, d
 // function try to add the given resources to active observations.
 func (d *DeviceObserver) AddPublishedResources(ctx context.Context, resources []*commands.Resource) error {
 	if d.shadowSynchronization == commands.ShadowSynchronization_DISABLED {
-		log.Debugf("add published resources skipped: device shadow disabled")
+		d.logger.Debugf("add published resources skipped: device shadow disabled")
 		return nil
 	}
 	if d.observationType == ObservationType_PerDevice {
-		log.Debugf("add published resources skipped: /oic/res observation active")
+		d.logger.Debugf("add published resources skipped: /oic/res observation active")
 		return nil
 	}
 	return d.resourcesObserver.addResources(ctx, resources)
@@ -316,11 +343,11 @@ func (d *DeviceObserver) AddPublishedResources(ctx context.Context, resources []
 // function try to cancel the observations of given resources.
 func (d *DeviceObserver) RemovePublishedResources(ctx context.Context, resourceHrefs []string) {
 	if d.shadowSynchronization == commands.ShadowSynchronization_DISABLED {
-		log.Debugf("remove published resources skipped: device shadow disabled")
+		d.logger.Debugf("remove published resources skipped: device shadow disabled")
 		return
 	}
 	if d.observationType == ObservationType_PerDevice {
-		log.Debugf("remove published resources skipped: /oic/res observation active")
+		d.logger.Debugf("remove published resources skipped: /oic/res observation active")
 		return
 	}
 	d.resourcesObserver.cancelResourcesObservations(ctx, resourceHrefs)

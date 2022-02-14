@@ -17,7 +17,6 @@ import (
 	"github.com/plgd-dev/go-coap/v2/mux"
 	"github.com/plgd-dev/hub/v2/coap-gateway/coapconv"
 	"github.com/plgd-dev/hub/v2/coap-gateway/resource"
-	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	raService "github.com/plgd-dev/hub/v2/resource-aggregate/service"
 	"github.com/plgd-dev/kit/v2/codec/cbor"
@@ -126,11 +125,11 @@ func observeResources(ctx context.Context, client *Client, w wkRd, sequenceNumbe
 	if err := client.server.taskQueue.Submit(func() {
 		obs, errObs := client.getDeviceObserver(ctx)
 		if errObs != nil {
-			log.Error(observeError(w.DeviceID, errObs))
+			client.Errorf("%w", observeError(w.DeviceID, errObs))
 			return
 		}
 		if errObs := obs.AddPublishedResources(ctx, publishedResources); errObs != nil {
-			log.Error(observeError(w.DeviceID, errObs))
+			client.Errorf("%w", observeError(w.DeviceID, errObs))
 			return
 		}
 	}); err != nil {

@@ -5,7 +5,6 @@ import (
 	"sync"
 
 	"github.com/plgd-dev/go-coap/v2/tcp"
-	"github.com/plgd-dev/hub/v2/pkg/log"
 )
 
 // Thread-safe wrapper with additional data for *tcp.Observation.
@@ -81,7 +80,6 @@ func (o observedResources) removeByHref(hrefs ...string) (new, removed observedR
 	for _, h := range hrefs {
 		i := o.search(h)
 		if i >= len(o) || o[i].Href() != h {
-			log.Debugf("href(%v) not found", h)
 			continue
 		}
 		removed = append(removed, o[i])

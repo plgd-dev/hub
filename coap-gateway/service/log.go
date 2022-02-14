@@ -1,17 +1,44 @@
 package service
 
 import (
+	"time"
+
+	"github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/mux"
 	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
 	coapgwMessage "github.com/plgd-dev/hub/v2/coap-gateway/service/message"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 )
 
-const logRequestKey = "req"
-const logResponseKey = "resp"
+const logServiceKey = "coap.service"
+const logRequestKey = "coap.request"
+const logRequestDeadlineKey = "coap.request.deadline"
+const logResponseKey = "coap.response"
+const logDurationKey = "coap.time_ms"
+const logRequestToClientKey = "request to client"
+const logCorrelationIDKey = "correlationId"
+
+var logStartTimeKey = "coap.start_time"
+
+func durationToMilliseconds(duration time.Duration) float32 {
+	return float32(duration.Nanoseconds()/1000) / 1000
+}
+
+func logToLevel(respCode codes.Code, logger log.Logger) func(args ...interface{}) {
+	switch respCode {
+	case codes.Created, codes.Deleted, codes.Valid, codes.Changed, codes.Continue, codes.Content, codes.NotFound:
+		return logger.Debug
+	case codes.GatewayTimeout, codes.Forbidden, codes.Abort, codes.ServiceUnavailable, codes.PreconditionFailed, codes.MethodNotAllowed, codes.NotAcceptable, codes.BadOption, codes.Unauthorized, codes.BadRequest, codes.RequestEntityIncomplete, codes.RequestEntityTooLarge, codes.UnsupportedMediaType:
+		return logger.Warn
+	case codes.NotImplemented, codes.InternalServerError, codes.BadGateway, codes.ProxyingNotSupported:
+		return logger.Error
+	default:
+		return logger.Error
+	}
+}
 
 func (client *Client) getLogger() log.Logger {
-	logger := log.Get()
+	logger := client.server.logger
 	if deviceID := client.deviceID(); deviceID != "" {
 		logger = logger.With("deviceId", deviceID)
 	}
@@ -30,8 +57,17 @@ func (client *Client) Infof(fmt string, args ...interface{}) {
 	client.getLogger().Infof(fmt, args...)
 }
 
-func (client *Client) logRequest(msg string, req *pool.Message, resp *pool.Message) {
+func (client *Client) logWithRequestResponse(req *pool.Message, resp *pool.Message) log.Logger {
 	logger := client.getLogger()
+	startTime, ok := req.Context().Value(&logStartTimeKey).(time.Time)
+	if ok {
+		logger = logger.With(logStartTimeKey, startTime, logDurationKey, durationToMilliseconds(time.Since(startTime)))
+	}
+	deadline, ok := req.Context().Deadline()
+	if ok {
+		logger = logger.With(logRequestDeadlineKey, deadline)
+	}
+
 	if req != nil {
 		rq := coapgwMessage.ToJson(req, client.server.config.Log.DumpBody, resp == nil)
 		logger = logger.With(logRequestKey, rq)
@@ -40,11 +76,26 @@ func (client *Client) logRequest(msg string, req *pool.Message, resp *pool.Messa
 		rsp := coapgwMessage.ToJson(resp, client.server.config.Log.DumpBody, req == nil)
 		logger = logger.With(logResponseKey, rsp)
 	}
-	logger.Info(msg)
+	return logger
+}
+
+func (client *Client) logRequest(msg string, req *pool.Message, resp *pool.Message) {
+	logger := client.logWithRequestResponse(req, resp)
+	if resp != nil {
+		logToLevel(resp.Code(), logger)(msg)
+		return
+	}
+	logger.Debug(msg)
 }
 
 func (client *Client) ErrorfRequest(req *mux.Message, fmt string, args ...interface{}) {
 	logger := client.getLogger()
+	if req.Context != nil {
+		deadline, ok := req.Context.Deadline()
+		if ok {
+			logger = logger.With(logRequestDeadlineKey, deadline)
+		}
+	}
 	if req != nil {
 		tmp, err := client.server.messagePool.ConvertFrom(req.Message)
 		if err == nil {
@@ -66,10 +117,6 @@ func (client *Client) logClientRequest(req *mux.Message, resp *pool.Message) {
 	client.logRequest("request from client", rq, resp)
 }
 
-func (client *Client) logServiceRequest(req *pool.Message, resp *pool.Message) {
-	client.logRequest("request to client", req, resp)
-}
-
 func (client *Client) logNotification(logMsg, path string, notification *pool.Message) {
 	logger := client.getLogger()
 	if path != "" {
@@ -79,7 +126,7 @@ func (client *Client) logNotification(logMsg, path string, notification *pool.Me
 		rsp := coapgwMessage.ToJson(notification, client.server.config.Log.DumpBody, true)
 		logger = logger.With("notification", rsp)
 	}
-	logger.Info(logMsg)
+	logToLevel(notification.Code(), logger)(logMsg)
 }
 
 func (client *Client) logNotificationToClient(path string, notification *pool.Message) {

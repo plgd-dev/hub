@@ -13,7 +13,6 @@ import (
 	"github.com/plgd-dev/hub/v2/coap-gateway/service/observation"
 	grpcgwClient "github.com/plgd-dev/hub/v2/grpc-gateway/client"
 	"github.com/plgd-dev/hub/v2/identity-store/events"
-	"github.com/plgd-dev/hub/v2/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"github.com/plgd-dev/hub/v2/pkg/strings"
 	"github.com/plgd-dev/hub/v2/pkg/sync/task/future"
@@ -97,7 +96,7 @@ func setNewDeviceSubscriber(client *Client, owner, deviceID string) error {
 				count++
 				r := rand.Int63n(int64(maxRand) / 2)
 				next := time.Now().Add(client.server.config.APIs.COAP.KeepAlive.Timeout + time.Duration(r))
-				log.Debugf("next iteration %v of retrying reconnect to grpc-client for deviceID %v will be at %v", count, deviceID, next)
+				client.Debugf("next iteration %v of retrying reconnect to grpc-client will be at %v", count, next)
 				return next, nil
 			}
 		}, client.server.rdClient, client.server.resourceSubscriber)
@@ -107,7 +106,7 @@ func setNewDeviceSubscriber(client *Client, owner, deviceID string) error {
 	oldDeviceSubscriber := client.replaceDeviceSubscriber(deviceSubscriber)
 	if oldDeviceSubscriber != nil {
 		if err = oldDeviceSubscriber.Close(); err != nil {
-			log.Errorf("failed to close replaced device subscriber: %v", err)
+			client.Errorf("failed to close replaced device subscriber: %v", err)
 		}
 	}
 	h := grpcgwClient.NewDeviceSubscriptionHandlers(client)
@@ -145,10 +144,10 @@ func (client *Client) updateBySignInData(ctx context.Context, upd updateType, de
 	if upd == updateTypeChanged {
 		client.cancelResourceSubscriptions(true)
 		if err := client.closeDeviceSubscriber(); err != nil {
-			log.Errorf("failed to close previous device subscription: %w", err)
+			client.Errorf("failed to close previous device subscription: %w", err)
 		}
 		if err := client.closeDeviceObserver(client.Context()); err != nil {
-			log.Errorf("failed to close previous device observer: %w", err)
+			client.Errorf("failed to close previous device observer: %w", err)
 		}
 		client.unsubscribeFromDeviceEvents()
 	}
@@ -179,7 +178,7 @@ func subscribeToDeviceEvents(ctx context.Context, client *Client, owner, deviceI
 			return
 		}
 		if err := client.Close(); err != nil {
-			log.Errorf("sign in error: cannot close client: %w", err)
+			client.Errorf("sign in error: cannot close client: %w", err)
 		}
 	}); err != nil {
 		return fmt.Errorf("cannot subscribe to device events: %w", err)
@@ -199,8 +198,8 @@ func subscribeAndValidateDeviceAccess(ctx context.Context, client *Client, owner
 	return client.server.ownerCache.OwnsDevice(ctx, deviceID)
 }
 
-func logSignInError(err error) {
-	log.Errorf("sign in error: %w", err)
+func logSignInError(err error) error {
+	return fmt.Errorf("sign in error: %w", err)
 }
 
 func setNewDeviceObserver(ctx context.Context, client *Client, deviceID string, resetObservationType bool) {
@@ -211,7 +210,7 @@ func setNewDeviceObserver(ctx context.Context, client *Client, deviceID string, 
 		observationType := observation.ObservationType_Detect
 		oldDeviceObserver, err := toDeviceObserver(ctx, oldDeviceObserverFut)
 		if err != nil {
-			log.Errorf("failed to get replaced device observer: %w", err)
+			client.Errorf("failed to get replaced device observer: %w", err)
 		}
 		if err == nil && oldDeviceObserver != nil {
 			// if the device didn't change we can skip detection and force the previous observation type
@@ -221,11 +220,12 @@ func setNewDeviceObserver(ctx context.Context, client *Client, deviceID string, 
 			oldDeviceObserver.Clean(ctx)
 		}
 
-		deviceObserver, err := observation.NewDeviceObserver(ctx, deviceID, client.coapConn, client.server.rdClient,
+		deviceObserver, err := observation.NewDeviceObserver(ctx, deviceID, client, client.server.rdClient,
 			observation.MakeResourcesObserverCallbacks(client.onObserveResource, client.onGetResourceContent),
-			observation.WithObservationType(observationType))
+			observation.WithObservationType(observationType),
+			observation.WithLogger(client.getLogger()))
 		if err != nil {
-			logSignInError(fmt.Errorf("cannot create observer for device %v: %w", deviceID, err))
+			client.Errorf("%w", logSignInError(fmt.Errorf("cannot create observer for device %v: %w", deviceID, err)))
 			setDeviceObserver(nil, err)
 			return
 		}
@@ -233,7 +233,7 @@ func setNewDeviceObserver(ctx context.Context, client *Client, deviceID string, 
 	}
 
 	if err := client.server.taskQueue.Submit(createDeviceObserver); err != nil {
-		logSignInError(fmt.Errorf("failed to register resource observations for device %v: %w", deviceID, err))
+		client.Errorf("%w", logSignInError(fmt.Errorf("failed to register resource observations for device %v: %w", deviceID, err)))
 		setDeviceObserver(nil, err)
 	}
 }
@@ -243,7 +243,7 @@ func signInPostHandler(req *mux.Message, client *Client, signIn CoapSignInReq) {
 	logErrorAndCloseClient := func(err error, code coapCodes.Code) {
 		client.logAndWriteErrorResponse(req, fmt.Errorf("cannot handle sign in: %w", err), code, req.Token)
 		if err := client.Close(); err != nil {
-			logSignInError(err)
+			client.Errorf("%w", logSignInError(err))
 		}
 	}
 
@@ -336,7 +336,7 @@ func updateDeviceMetadata(req *mux.Message, client *Client) error {
 		})
 		if err != nil {
 			// Device will be still reported as online and it can fix his state by next calls online, offline commands.
-			return fmt.Errorf("deviceID %v: cannot update cloud device status: %w", oldAuthCtx.GetDeviceID(), err)
+			return fmt.Errorf("cannot update cloud device status: %w", err)
 		}
 	}
 	return nil
@@ -346,7 +346,7 @@ func signOutPostHandler(req *mux.Message, client *Client, signOut CoapSignInReq)
 	logErrorAndCloseClient := func(err error, code coapCodes.Code) {
 		client.logAndWriteErrorResponse(req, fmt.Errorf("cannot handle sign out: %w", err), code, req.Token)
 		if err := client.Close(); err != nil {
-			log.Errorf("sign out error: %w", err)
+			client.Errorf("sign out error: %w", err)
 		}
 	}
 

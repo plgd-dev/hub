@@ -8,14 +8,12 @@ import (
 	"github.com/plgd-dev/device/schema/resources"
 	coapMessage "github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/go-coap/v2/message/codes"
-	"github.com/plgd-dev/go-coap/v2/tcp"
-	"github.com/plgd-dev/hub/v2/coap-gateway/service/message"
 	pkgStrings "github.com/plgd-dev/hub/v2/pkg/strings"
 	"github.com/plgd-dev/kit/v2/codec/cbor"
 )
 
 // Query /oic/res resource to determine whether resource with given href is observable and supports given interface.
-func IsResourceObservableWithInterface(ctx context.Context, coapConn *tcp.ClientConn, resourceHref, resourceType, observeInterface string) (bool, error) {
+func IsResourceObservableWithInterface(ctx context.Context, coapConn ClientConn, resourceHref, resourceType, observeInterface string) (bool, error) {
 	var opts []coapMessage.Option
 	if resourceType != "" {
 		opts = append(opts, coapMessage.Option{
@@ -23,7 +21,6 @@ func IsResourceObservableWithInterface(ctx context.Context, coapConn *tcp.Client
 			Value: []byte("rt=" + resourceType),
 		})
 	}
-
 	msg, err := coapConn.Get(ctx, resources.ResourceURI, opts...)
 	if err != nil {
 		return false, err
@@ -34,7 +31,6 @@ func IsResourceObservableWithInterface(ctx context.Context, coapConn *tcp.Client
 		return false, fmt.Errorf("invalid response code %v", msg.Code())
 	}
 
-	message.DecodeMsgToDebug("", msg, "RECEIVED-GET-OIC-RES")
 	data := msg.Body()
 	if data == nil {
 		return false, fmt.Errorf("empty response")

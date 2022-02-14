@@ -11,7 +11,6 @@ import (
 	"github.com/plgd-dev/hub/v2/coap-gateway/coapconv"
 	"github.com/plgd-dev/hub/v2/coap-gateway/service/message"
 	pbGRPC "github.com/plgd-dev/hub/v2/grpc-gateway/pb"
-	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 )
 
@@ -70,7 +69,7 @@ func clientRetrieveFromResourceShadowHandler(ctx context.Context, client *Client
 	}
 	defer func() {
 		if err := RetrieveResourcesClient.CloseSend(); err != nil {
-			log.Errorf("failed to close retrieve devices client: %w", err)
+			client.Errorf("failed to close retrieve devices client: %w", err)
 		}
 	}()
 	for {
