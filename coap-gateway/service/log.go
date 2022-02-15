@@ -59,16 +59,15 @@ func (client *Client) Infof(fmt string, args ...interface{}) {
 
 func (client *Client) logWithRequestResponse(req *pool.Message, resp *pool.Message) log.Logger {
 	logger := client.getLogger()
-	startTime, ok := req.Context().Value(&logStartTimeKey).(time.Time)
-	if ok {
-		logger = logger.With(logStartTimeKey, startTime, logDurationKey, durationToMilliseconds(time.Since(startTime)))
-	}
-	deadline, ok := req.Context().Deadline()
-	if ok {
-		logger = logger.With(logRequestDeadlineKey, deadline)
-	}
-
 	if req != nil {
+		startTime, ok := req.Context().Value(&logStartTimeKey).(time.Time)
+		if ok {
+			logger = logger.With(logStartTimeKey, startTime, logDurationKey, durationToMilliseconds(time.Since(startTime)))
+		}
+		deadline, ok := req.Context().Deadline()
+		if ok {
+			logger = logger.With(logRequestDeadlineKey, deadline)
+		}
 		rq := coapgwMessage.ToJson(req, client.server.config.Log.DumpBody, resp == nil)
 		logger = logger.With(logRequestKey, rq)
 	}

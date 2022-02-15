@@ -147,6 +147,7 @@ func NewDeviceObserver(ctx context.Context, deviceID string, coapConn ClientConn
 				shadowSynchronization: cfg.shadowSynchronization,
 				rdClient:              rdClient,
 				resourcesObserver:     resourcesObserver,
+				logger:                cfg.logger,
 			}, nil
 		}
 		cfg.logger.Debugf("NewDeviceObserverWithResourceShadow: failed to create /oic/res observation for device(%v): %v", deviceID, err)

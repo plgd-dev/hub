@@ -121,7 +121,6 @@ type EncoderConfig struct {
 
 // Config configuration for setup logging.
 type Config struct {
-	// Deprecated: replaced by level
 	Debug bool `yaml:"debug" json:"debug" description:"enable debug logs"`
 	// Level is the minimum enabled logging level. Note that this is a dynamic
 	// level, so calling Config.Level.SetLevel will atomically change the log
@@ -237,13 +236,14 @@ func (l *wrapSuggarLogger) LogAndReturnError(err error) error {
 
 // NewLogger creates logger
 func NewLogger(config Config) Logger {
-	var encoderConfig zapcore.EncoderConfig
-	if config.Debug {
-		encoderConfig = zap.NewDevelopmentEncoderConfig()
-		encoderConfig.EncodeTime = config.EncoderConfig.EncodeTime.TimeEncoder.Encode
+	encoderConfig := zap.NewDevelopmentEncoderConfig()
+	if config.EncoderConfig.EncodeTime.TimeEncoder == nil {
+		encoderConfig.EncodeTime = zapcore.RFC3339NanoTimeEncoder
 	} else {
-		encoderConfig = zap.NewDevelopmentEncoderConfig()
 		encoderConfig.EncodeTime = config.EncoderConfig.EncodeTime.TimeEncoder.Encode
+	}
+	if config.Debug {
+		config.Level = zap.NewAtomicLevelAt(zap.DebugLevel)
 	}
 	encoderConfig.NewReflectedEncoder = func(w io.Writer) zapcore.ReflectedEncoder {
 		var h codec.JsonHandle
