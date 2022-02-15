@@ -25,6 +25,7 @@ func GetResponse(ctx context.Context, messagePool *pool.Pool, code codes.Code, t
 
 func IsTempError(err error) bool {
 	switch {
+	// TODO: We could optimize this by using error.Is to avoid string comparison.
 	case strings.Contains(err.Error(), "connect: connection refused"),
 		strings.Contains(err.Error(), "i/o timeout"),
 		strings.Contains(err.Error(), "TLS handshake timeout"),
