@@ -29,7 +29,7 @@ func TestPublishUnpublish(t *testing.T) {
 	idShutdown := idService.SetUp(t)
 	defer idShutdown()
 	cfg := log.MakeDefaultConfig()
-	cfg.Level = zap.NewAtomicLevelAt(zap.DebugLevel)
+	cfg.Level = zap.DebugLevel
 	log.Setup(cfg)
 	raShutdown := test.New(t, config)
 	defer raShutdown()
@@ -63,7 +63,7 @@ func TestPublishUnpublish(t *testing.T) {
 		require.NoError(t, err)
 	}()
 
-	cfg.Level = zap.NewAtomicLevelAt(zap.DebugLevel)
+	cfg.Level = zap.DebugLevel
 	log.Setup(cfg)
 	pubReq := testMakePublishResourceRequest(deviceID, []string{href})
 	_, err = raClient.PublishResourceLinks(ctx, pubReq)

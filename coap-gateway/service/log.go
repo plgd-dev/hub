@@ -16,7 +16,10 @@ const logRequestDeadlineKey = "coap.request.deadline"
 const logResponseKey = "coap.response"
 const logDurationKey = "coap.time_ms"
 const logRequestToClientKey = "request to client"
-const logCorrelationIDKey = "correlationId"
+const logCorrelationIDKey = "plgd.correlationId"
+const logDeviceIDKey = "plgd.deviceId"
+const logPathKey = "href"
+const logNotificationKey = "coap.notification"
 
 var logStartTimeKey = "coap.start_time"
 
@@ -40,7 +43,7 @@ func logToLevel(respCode codes.Code, logger log.Logger) func(args ...interface{}
 func (client *Client) getLogger() log.Logger {
 	logger := client.server.logger
 	if deviceID := client.deviceID(); deviceID != "" {
-		logger = logger.With("deviceId", deviceID)
+		logger = logger.With(logDeviceIDKey, deviceID)
 	}
 	return logger
 }
@@ -119,11 +122,11 @@ func (client *Client) logClientRequest(req *mux.Message, resp *pool.Message) {
 func (client *Client) logNotification(logMsg, path string, notification *pool.Message) {
 	logger := client.getLogger()
 	if path != "" {
-		logger = logger.With("path", path)
+		logger = logger.With(logPathKey, path)
 	}
 	if notification != nil {
 		rsp := coapgwMessage.ToJson(notification, client.server.config.Log.DumpBody, true)
-		logger = logger.With("notification", rsp)
+		logger = logger.With(logNotificationKey, rsp)
 	}
 	logToLevel(notification.Code(), logger)(logMsg)
 }

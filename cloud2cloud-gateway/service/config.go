@@ -24,6 +24,9 @@ type Config struct {
 }
 
 func (c *Config) Validate() error {
+	if err := c.Log.Validate(); err != nil {
+		return fmt.Errorf("log.%w", err)
+	}
 	if err := c.APIs.Validate(); err != nil {
 		return fmt.Errorf("apis.%w", err)
 	}

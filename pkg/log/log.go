@@ -119,17 +119,26 @@ type EncoderConfig struct {
 	EncodeTime TimeEncoderWrapper `json:"timeEncoder" yaml:"timeEncoder"`
 }
 
+type StacktraceConfig struct {
+	Enabled bool          `yaml:"enabled" json:"enabled" description:"enable stacktrace"`
+	Level   zapcore.Level `json:"level" yaml:"level" description:"from level"`
+}
+
+func (c *StacktraceConfig) Validate() error {
+	if c.Level < zapcore.DebugLevel || c.Level > zap.FatalLevel {
+		return fmt.Errorf("level('%v')", c.Level)
+	}
+	return nil
+}
+
 // Config configuration for setup logging.
 type Config struct {
 	Debug bool `yaml:"debug" json:"debug" description:"enable debug logs"`
 	// Level is the minimum enabled logging level. Note that this is a dynamic
 	// level, so calling Config.Level.SetLevel will atomically change the log
 	// level of all loggers descended from this config.
-	Level zap.AtomicLevel `json:"level" yaml:"level"`
-	// DisableStacktrace completely disables automatic stacktrace capturing. By
-	// default, stacktraces are captured for WarnLevel and above logs in
-	// development and ErrorLevel and above in production.
-	DisableStacktrace bool `json:"disableStacktrace" yaml:"disableStacktrace"`
+	Level      zapcore.Level    `json:"level" yaml:"level"`
+	Stacktrace StacktraceConfig `json:"stacktrace" yaml:"stacktrace"`
 	// Encoding sets the logger's encoding. Valid values are "json" and
 	// "console", as well as any third-party encodings registered via
 	// RegisterEncoder.
@@ -141,12 +150,25 @@ type Config struct {
 	//zap.Config    `yaml:",inline"`
 }
 
+func (c *Config) Validate() error {
+	if c.Level < zapcore.DebugLevel || c.Level > zap.FatalLevel {
+		return fmt.Errorf("level('%v')", c.Level)
+	}
+	if err := c.Stacktrace.Validate(); err != nil {
+		return fmt.Errorf("stacktrace.%w", err)
+	}
+	return nil
+}
+
 func MakeDefaultConfig() Config {
 	return Config{
-		Debug:             false,
-		Level:             zap.NewAtomicLevelAt(zap.InfoLevel),
-		Encoding:          "json",
-		DisableStacktrace: true,
+		Debug:    false,
+		Level:    zap.InfoLevel,
+		Encoding: "json",
+		Stacktrace: StacktraceConfig{
+			Enabled: false,
+			Level:   zap.WarnLevel,
+		},
 		EncoderConfig: EncoderConfig{
 			EncodeTime: TimeEncoderWrapper{
 				TimeEncoder: RFC3339NanoTimeEncoder{},
@@ -237,14 +259,14 @@ func (l *wrapSuggarLogger) LogAndReturnError(err error) error {
 // NewLogger creates logger
 func NewLogger(config Config) Logger {
 	encoderConfig := zap.NewDevelopmentEncoderConfig()
-	if config.EncoderConfig.EncodeTime.TimeEncoder == nil {
-		encoderConfig.EncodeTime = zapcore.RFC3339NanoTimeEncoder
-	} else {
+	encoderConfig.EncodeTime = zapcore.RFC3339NanoTimeEncoder
+	if config.EncoderConfig.EncodeTime.TimeEncoder != nil {
 		encoderConfig.EncodeTime = config.EncoderConfig.EncodeTime.TimeEncoder.Encode
 	}
 	if config.Debug {
-		config.Level = zap.NewAtomicLevelAt(zap.DebugLevel)
+		config.Level = zap.DebugLevel
 	}
+
 	encoderConfig.NewReflectedEncoder = func(w io.Writer) zapcore.ReflectedEncoder {
 		var h codec.JsonHandle
 		h.BasicHandle.Canonical = true
@@ -252,13 +274,13 @@ func NewLogger(config Config) Logger {
 	}
 	// First, define our level-handling logic.
 	highPriority := zap.LevelEnablerFunc(func(lvl zapcore.Level) bool {
-		if lvl < config.Level.Level() {
+		if lvl < config.Level {
 			return false
 		}
 		return lvl >= zapcore.ErrorLevel
 	})
 	lowPriority := zap.LevelEnablerFunc(func(lvl zapcore.Level) bool {
-		if lvl < config.Level.Level() {
+		if lvl < config.Level {
 			return false
 		}
 		return lvl < zapcore.ErrorLevel
@@ -285,8 +307,8 @@ func NewLogger(config Config) Logger {
 		zapcore.NewCore(encoder, consoleDebugging, lowPriority),
 	)
 	opts := make([]zap.Option, 0, 16)
-	if !config.DisableStacktrace {
-		opts = append(opts, zap.AddStacktrace(zap.NewAtomicLevelAt(zap.ErrorLevel)))
+	if config.Stacktrace.Enabled {
+		opts = append(opts, zap.AddStacktrace(zap.NewAtomicLevelAt(zap.WarnLevel)))
 	}
 
 	// From a zapcore.Core, it's easy to construct a Logger.
