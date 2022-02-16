@@ -3,7 +3,6 @@ package server
 import (
 	context "context"
 	"strings"
-	"time"
 
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpc_zap "github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
@@ -133,10 +132,14 @@ func MakeDefaultOptions(auth kitNetGrpc.AuthInterceptors, logger log.Logger) ([]
 	unaryInterceptors := []grpc.UnaryServerInterceptor{}
 	zapLogger, ok := logger.Unwrap().(*zap.SugaredLogger)
 	if ok {
+		cfg := logger.Config()
+		if cfg.EncoderConfig.EncodeTime.TimeEncoder == nil {
+			cfg.EncoderConfig.EncodeTime = log.MakeDefaultConfig().EncoderConfig.EncodeTime
+		}
 		streamInterceptors = append(streamInterceptors, grpc_ctxtags.StreamServerInterceptor(grpc_ctxtags.WithFieldExtractor(CodeGenRequestFieldExtractor)),
-			grpc_zap.StreamServerInterceptor(zapLogger.Desugar(), grpc_zap.WithTimestampFormat(time.RFC3339Nano), grpc_zap.WithLevels(DefaultCodeToLevel), grpc_zap.WithMessageProducer(DefaultMessageProducer)))
+			grpc_zap.StreamServerInterceptor(zapLogger.Desugar(), grpc_zap.WithTimestampFormat(cfg.EncoderConfig.EncodeTime.TimeEncoder.TimeString()), grpc_zap.WithLevels(DefaultCodeToLevel), grpc_zap.WithMessageProducer(DefaultMessageProducer)))
 		unaryInterceptors = append(unaryInterceptors, grpc_ctxtags.UnaryServerInterceptor(grpc_ctxtags.WithFieldExtractor(CodeGenRequestFieldExtractor)),
-			grpc_zap.UnaryServerInterceptor(zapLogger.Desugar(), grpc_zap.WithTimestampFormat(time.RFC3339Nano), grpc_zap.WithLevels(DefaultCodeToLevel), grpc_zap.WithMessageProducer(DefaultMessageProducer)))
+			grpc_zap.UnaryServerInterceptor(zapLogger.Desugar(), grpc_zap.WithTimestampFormat(cfg.EncoderConfig.EncodeTime.TimeEncoder.TimeString()), grpc_zap.WithLevels(DefaultCodeToLevel), grpc_zap.WithMessageProducer(DefaultMessageProducer)))
 	}
 	streamInterceptors = append(streamInterceptors, auth.Stream())
 	unaryInterceptors = append(unaryInterceptors, auth.Unary())

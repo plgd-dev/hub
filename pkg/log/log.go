@@ -29,11 +29,19 @@ func (e RFC3339NanoTimeEncoder) String() string {
 	return "rfc3339nano"
 }
 
+func (e RFC3339NanoTimeEncoder) TimeString() string {
+	return time.RFC3339Nano
+}
+
 type RFC3339TimeEncoder struct {
 }
 
 func (e RFC3339TimeEncoder) String() string {
 	return "rfc3339"
+}
+
+func (e RFC3339TimeEncoder) TimeString() string {
+	return time.RFC3339
 }
 
 func (e RFC3339TimeEncoder) Encode(t time.Time, enc zapcore.PrimitiveArrayEncoder) {
@@ -45,6 +53,10 @@ type ISO8601TimeEncoder struct {
 
 func (e ISO8601TimeEncoder) String() string {
 	return "iso8601"
+}
+
+func (e ISO8601TimeEncoder) TimeString() string {
+	return "2006-01-02T15:04:05.000Z0700"
 }
 
 func (e ISO8601TimeEncoder) Encode(t time.Time, enc zapcore.PrimitiveArrayEncoder) {
@@ -62,6 +74,10 @@ func (e EpochMillisTimeEncoder) String() string {
 	return "millis"
 }
 
+func (e EpochMillisTimeEncoder) TimeString() string {
+	return time.StampMilli
+}
+
 type EpochNanosTimeEncoder struct {
 }
 
@@ -71,6 +87,10 @@ func (e EpochNanosTimeEncoder) Encode(t time.Time, enc zapcore.PrimitiveArrayEnc
 
 func (e EpochNanosTimeEncoder) String() string {
 	return "nanos"
+}
+
+func (e EpochNanosTimeEncoder) TimeString() string {
+	return time.StampNano
 }
 
 type EpochTimeEncoder struct {
@@ -84,9 +104,14 @@ func (e EpochTimeEncoder) String() string {
 	return ""
 }
 
+func (e EpochTimeEncoder) TimeString() string {
+	return time.Stamp
+}
+
 type TimeEncoder interface {
 	Encode(time.Time, zapcore.PrimitiveArrayEncoder)
 	String() string
+	TimeString() string
 }
 
 type TimeEncoderWrapper struct {
@@ -202,6 +227,7 @@ type Logger interface {
 	With(args ...interface{}) Logger
 	Unwrap() interface{}
 	LogAndReturnError(err error) error
+	Config() Config
 }
 
 // Set logger for global log fuctions
@@ -211,6 +237,11 @@ func Set(logger Logger) {
 
 type wrapSuggarLogger struct {
 	*zap.SugaredLogger
+	config Config
+}
+
+func (l *wrapSuggarLogger) Config() Config {
+	return l.config
 }
 
 func (l *wrapSuggarLogger) With(args ...interface{}) Logger {
@@ -259,10 +290,10 @@ func (l *wrapSuggarLogger) LogAndReturnError(err error) error {
 // NewLogger creates logger
 func NewLogger(config Config) Logger {
 	encoderConfig := zap.NewDevelopmentEncoderConfig()
-	encoderConfig.EncodeTime = zapcore.RFC3339NanoTimeEncoder
-	if config.EncoderConfig.EncodeTime.TimeEncoder != nil {
-		encoderConfig.EncodeTime = config.EncoderConfig.EncodeTime.TimeEncoder.Encode
+	if config.EncoderConfig.EncodeTime.TimeEncoder == nil {
+		config.EncoderConfig.EncodeTime = MakeDefaultConfig().EncoderConfig.EncodeTime
 	}
+	encoderConfig.EncodeTime = config.EncoderConfig.EncodeTime.TimeEncoder.Encode
 	if config.Debug {
 		config.Level = zap.DebugLevel
 	}
