@@ -81,7 +81,11 @@ func CodeGenRequestFieldExtractor(fullMethod string, req interface{}) map[string
 	if r, ok := req.(interface {
 		GetCommandFilter() []pb.GetPendingCommandsRequest_Command
 	}); ok && len(r.GetCommandFilter()) > 0 {
-		m[log.CommandFilterKey] = r.GetCommandFilter()
+		commandFiler := make([]string, 0, len(r.GetCommandFilter()))
+		for _, f := range r.GetCommandFilter() {
+			commandFiler = append(commandFiler, f.String())
+		}
+		m[log.CommandFilterKey] = commandFiler
 	}
 	if r, ok := req.(interface{ GetResourceIdFilter() []string }); ok && len(r.GetResourceIdFilter()) > 0 {
 		m[log.ResourceIDFilterKey] = r.GetResourceIdFilter()
