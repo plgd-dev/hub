@@ -139,7 +139,7 @@ type Config struct {
 	// level of all loggers descended from this config.
 	Level      zapcore.Level    `json:"level" yaml:"level"`
 	Stacktrace StacktraceConfig `json:"stacktrace" yaml:"stacktrace"`
-	// Encoding sets the logger's encoding. Valid values are "json" and
+	// Encoding sets the logger's encoding. Valid values are "json" (default) and
 	// "console", as well as any third-party encodings registered via
 	// RegisterEncoder.
 	Encoding string `json:"encoding" yaml:"encoding"`
@@ -163,7 +163,7 @@ func (c *Config) Validate() error {
 func MakeDefaultConfig() Config {
 	return Config{
 		Debug:    false,
-		Level:    zap.DebugLevel,
+		Level:    zap.InfoLevel,
 		Encoding: "json",
 		Stacktrace: StacktraceConfig{
 			Enabled: false,

@@ -1,5 +1,12 @@
 log:
-  debug: false
+  debug: false # deprecated, use level
+  level: info
+  stacktrace:
+      enabled: false
+      level: warn
+  encoding: json
+  encoderConfig:
+      timeEncoder: rfc3339nano
 apis:
   http:
     address: "0.0.0.0:9100"

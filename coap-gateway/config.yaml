@@ -1,6 +1,13 @@
 log:
-  debug: false
-  dumpCoapMessages: true
+  debug: false # deprecated, use level
+  level: info
+  stacktrace:
+      enabled: false
+      level: warn
+  encoding: json
+  encoderConfig:
+      timeEncoder: rfc3339nano
+  dumpBody: false
 apis:
   coap:
     address: "0.0.0.0:5684"

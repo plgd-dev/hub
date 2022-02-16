@@ -14,7 +14,6 @@ import (
 	"time"
 
 	"github.com/plgd-dev/kit/v2/codec/json"
-	"go.uber.org/zap/zapcore"
 
 	"github.com/jtacoma/uritemplates"
 	"github.com/plgd-dev/hub/v2/pkg/log"
@@ -47,7 +46,6 @@ func MakeConfig(t *testing.T) service.Config {
 	var cfg service.Config
 
 	cfg.Log = log.MakeDefaultConfig()
-	cfg.Log.Level = zapcore.DebugLevel
 
 	cfg.APIs.HTTP = config.MakeListenerConfig(config.OAUTH_SERVER_HOST)
 	cfg.APIs.HTTP.TLS.ClientCertificateRequired = false
