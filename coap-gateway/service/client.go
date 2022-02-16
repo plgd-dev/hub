@@ -17,7 +17,9 @@ import (
 	"github.com/plgd-dev/hub/v2/coap-gateway/resource"
 	grpcClient "github.com/plgd-dev/hub/v2/grpc-gateway/client"
 	idEvents "github.com/plgd-dev/hub/v2/identity-store/events"
+	"github.com/plgd-dev/hub/v2/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	"github.com/plgd-dev/hub/v2/pkg/security/jwt"
 	pkgJwt "github.com/plgd-dev/hub/v2/pkg/security/jwt"
 	"github.com/plgd-dev/hub/v2/pkg/sync/task/future"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
@@ -30,6 +32,7 @@ type authorizationContext struct {
 	AccessToken string
 	UserID      string
 	Expire      time.Time
+	JWTClaims   jwt.Claims
 }
 
 func (a *authorizationContext) GetUserID() string {
@@ -51,6 +54,13 @@ func (a *authorizationContext) GetAccessToken() string {
 		return a.AccessToken
 	}
 	return ""
+}
+
+func (a *authorizationContext) GetJWTClaims() jwt.Claims {
+	if a != nil {
+		return a.JWTClaims
+	}
+	return make(jwt.Claims)
 }
 
 func (a *authorizationContext) IsValid() error {
@@ -127,7 +137,7 @@ func (client *Client) Observe(ctx context.Context, path string, observeFunc func
 	t := time.Now()
 	obs, err := client.coapConn.ObserveRequest(req, observeFunc)
 	logger := client.logWithRequestResponse(req, nil)
-	logger.With(logStartTimeKey, t, logDurationKey, durationToMilliseconds(time.Since(t)))
+	logger.With(logStartTimeKey, t, logDurationKey, log.DurationToMilliseconds(time.Since(t)))
 	if err != nil {
 		_ = logger.LogAndReturnError(fmt.Errorf(logRequestToClientKey+": %w", err))
 	} else {
@@ -144,7 +154,7 @@ func (client *Client) Do(req *pool.Message, correlationID string) (*pool.Message
 	t := time.Now()
 	resp, err := client.coapConn.Do(req)
 	logger := client.logWithRequestResponse(req, resp)
-	logger.With(logStartTimeKey, t, logDurationKey, durationToMilliseconds(time.Since(t)))
+	logger.With(logStartTimeKey, t, logDurationKey, log.DurationToMilliseconds(time.Since(t)))
 
 	if correlationID != "" {
 		logger = client.logWithRequestResponse(req, resp).With(logCorrelationIDKey, correlationID)
@@ -272,8 +282,6 @@ func (client *Client) cancelResourceSubscriptions(wantWait bool) {
 
 func (client *Client) CleanUp(resetAuthContext bool) *authorizationContext {
 	authCtx, _ := client.GetAuthorizationContext()
-	client.Debugf("cleanUp client %v for device %v", client.coapConn.RemoteAddr(), authCtx.GetDeviceID())
-
 	client.server.devicesStatusUpdater.Remove(client)
 	if err := client.closeDeviceObserver(client.Context()); err != nil {
 		client.Errorf("cleanUp error: failed to close observer for device %v: %w", authCtx.GetDeviceID(), err)
@@ -294,7 +302,7 @@ func (client *Client) CleanUp(resetAuthContext bool) *authorizationContext {
 // OnClose action when coap connection was closed.
 func (client *Client) OnClose() {
 	authCtx, _ := client.GetAuthorizationContext()
-	client.Debugf("close client %v for device %v", client.coapConn.RemoteAddr(), authCtx.GetDeviceID())
+	client.Debugf("close device connection")
 	oldAuthCtx := client.CleanUp(false)
 
 	if oldAuthCtx.GetDeviceID() != "" {
@@ -321,7 +329,6 @@ func (client *Client) OnClose() {
 }
 
 func (client *Client) SetAuthorizationContext(authCtx *authorizationContext) (oldDeviceID *authorizationContext) {
-	client.Debugf("Authorization context replaced for client %v, device %v, user %v", client.coapConn.RemoteAddr(), authCtx.GetDeviceID(), authCtx.GetUserID())
 	client.mutex.Lock()
 	defer client.mutex.Unlock()
 	oldAuthContext := client.authCtx

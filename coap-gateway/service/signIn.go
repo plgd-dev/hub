@@ -14,6 +14,7 @@ import (
 	grpcgwClient "github.com/plgd-dev/hub/v2/grpc-gateway/client"
 	"github.com/plgd-dev/hub/v2/identity-store/events"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	"github.com/plgd-dev/hub/v2/pkg/security/jwt"
 	"github.com/plgd-dev/hub/v2/pkg/strings"
 	"github.com/plgd-dev/hub/v2/pkg/sync/task/future"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
@@ -122,12 +123,13 @@ const (
 	updateTypeChanged updateType = 2
 )
 
-func (client *Client) updateAuthorizationContext(deviceID, userID, accessToken string, validUntil time.Time) updateType {
+func (client *Client) updateAuthorizationContext(deviceID, userID, accessToken string, validUntil time.Time, jwtClaims jwt.Claims) updateType {
 	authCtx := authorizationContext{
 		DeviceID:    deviceID,
 		UserID:      userID,
 		AccessToken: accessToken,
 		Expire:      validUntil,
+		JWTClaims:   jwtClaims,
 	}
 	oldAuthCtx := client.SetAuthorizationContext(&authCtx)
 
@@ -276,7 +278,7 @@ func signInPostHandler(req *mux.Message, client *Client, signIn CoapSignInReq) {
 	}
 	deviceID := client.ResolveDeviceID(jwtClaims, signIn.DeviceID)
 
-	upd := client.updateAuthorizationContext(deviceID, signIn.UserID, signIn.AccessToken, validUntil)
+	upd := client.updateAuthorizationContext(deviceID, signIn.UserID, signIn.AccessToken, validUntil, jwtClaims)
 
 	ctx := kitNetGrpc.CtxWithToken(kitNetGrpc.CtxWithIncomingToken(req.Context, signIn.AccessToken), signIn.AccessToken)
 	valid, err := subscribeAndValidateDeviceAccess(ctx, client, signIn.UserID, deviceID, upd != updateTypeNone)

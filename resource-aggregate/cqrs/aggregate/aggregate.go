@@ -132,7 +132,7 @@ func (ah *aggrModel) Handle(ctx context.Context, iter eventstore.Iter) error {
 	return err
 }
 
-func handleRetry(ctx context.Context, retryFunc RetryFunc) error {
+func HandleRetry(ctx context.Context, retryFunc RetryFunc) error {
 	when, err := retryFunc()
 	if err != nil {
 		return fmt.Errorf("cannot retry: %w", err)
@@ -146,7 +146,7 @@ func handleRetry(ctx context.Context, retryFunc RetryFunc) error {
 	return nil
 }
 
-func newAggrModel(ctx context.Context, groupID, aggregateID string, store eventstore.EventStore, logDebugfFunc eventstore.LogDebugfFunc, model AggregateModel) (*aggrModel, error) {
+func NewAggrModel(ctx context.Context, groupID, aggregateID string, store eventstore.EventStore, logDebugfFunc eventstore.LogDebugfFunc, model AggregateModel) (*aggrModel, error) {
 	amodel := &aggrModel{model: model}
 	ep := eventstore.NewProjection(store, func(ctx context.Context, groupID, aggregateID string) (eventstore.Model, error) { return amodel, nil }, logDebugfFunc)
 	err := ep.Project(ctx, []eventstore.SnapshotQuery{
@@ -162,7 +162,11 @@ func newAggrModel(ctx context.Context, groupID, aggregateID string, store events
 	return amodel, nil
 }
 
-func (a *Aggregate) handleCommandWithAggrModel(ctx context.Context, cmd Command, amodel *aggrModel) (events []eventstore.Event, concurrencyExcpetion bool, err error) {
+func (a *Aggregate) FactoryModel(ctx context.Context) (AggregateModel, error) {
+	return a.factoryModel(ctx)
+}
+
+func (a *Aggregate) HandleCommandWithAggrModel(ctx context.Context, cmd Command, amodel *aggrModel) (events []eventstore.Event, concurrencyExcpetion bool, err error) {
 	newVersion := amodel.lastVersion
 	if amodel.numEvents > 0 || amodel.lastVersion > 0 {
 		//increase version for event only when some events has been processed
@@ -244,7 +248,7 @@ func (a *Aggregate) HandleCommand(ctx context.Context, cmd Command) ([]eventstor
 	firstIteration := true
 	for {
 		if !firstIteration {
-			err := handleRetry(ctx, a.retryFunc)
+			err := HandleRetry(ctx, a.retryFunc)
 			if err != nil {
 				return nil, fmt.Errorf("aggregate model cannot handle command: %w", err)
 			}
@@ -256,12 +260,12 @@ func (a *Aggregate) HandleCommand(ctx context.Context, cmd Command) ([]eventstor
 			return nil, fmt.Errorf("aggregate model cannot handle command: %w", err)
 		}
 
-		amodel, err := newAggrModel(ctx, a.groupID, a.aggregateID, a.store, a.LogDebugfFunc, model)
+		amodel, err := NewAggrModel(ctx, a.groupID, a.aggregateID, a.store, a.LogDebugfFunc, model)
 		if err != nil {
 			return nil, fmt.Errorf("aggregate model cannot handle command: %w", err)
 		}
 
-		events, concurrencyException, err := a.handleCommandWithAggrModel(ctx, cmd, amodel)
+		events, concurrencyException, err := a.HandleCommandWithAggrModel(ctx, cmd, amodel)
 		if err != nil {
 			return nil, fmt.Errorf("aggregate model cannot handle command: %w", err)
 		}

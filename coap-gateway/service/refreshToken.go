@@ -10,6 +10,7 @@ import (
 	"github.com/plgd-dev/go-coap/v2/mux"
 	"github.com/plgd-dev/hub/v2/coap-gateway/coapconv"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	"github.com/plgd-dev/hub/v2/pkg/security/jwt"
 	"github.com/plgd-dev/hub/v2/pkg/security/oauth2"
 	pkgTime "github.com/plgd-dev/hub/v2/pkg/time"
 	"github.com/plgd-dev/kit/v2/codec/cbor"
@@ -68,7 +69,7 @@ func validUntilToExpiresIn(validUntil time.Time) int64 {
 	return int64(time.Until(validUntil).Seconds())
 }
 
-func updateClient(client *Client, deviceID, owner, accessToken string, validUntil time.Time) {
+func updateClient(client *Client, deviceID, owner, accessToken string, validUntil time.Time, jwtClaims jwt.Claims) {
 	if _, err := client.GetAuthorizationContext(); err != nil {
 		return
 	}
@@ -77,6 +78,7 @@ func updateClient(client *Client, deviceID, owner, accessToken string, validUnti
 		UserID:      owner,
 		AccessToken: accessToken,
 		Expire:      validUntil,
+		JWTClaims:   jwtClaims,
 	}
 	client.SetAuthorizationContext(&authCtx)
 
@@ -168,7 +170,7 @@ func refreshTokenPostHandler(req *mux.Message, client *Client) {
 		return
 	}
 
-	updateClient(client, deviceID, owner, token.AccessToken.String(), validUntil)
+	updateClient(client, deviceID, owner, token.AccessToken.String(), validUntil, claim)
 
 	client.sendResponse(req, coapCodes.Changed, req.Token, accept, out)
 }

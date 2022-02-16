@@ -14,9 +14,6 @@ func (client *Client) logAndWriteErrorResponse(req *mux.Message, err error, code
 		code = codes.ServiceUnavailable
 		err = fmt.Errorf("temporary error: %w", err)
 	}
-	if err != nil {
-		client.Errorf("%w", err)
-	}
 	msg, cleanUp := coapgwMessage.GetErrorResponse(client.coapConn.Context(), client.server.messagePool, code, token, err)
 	defer cleanUp()
 	client.sendCoapResponse(req, msg)

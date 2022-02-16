@@ -88,7 +88,6 @@ func (o *resourcesObserver) addResource(ctx context.Context, res *commands.Resou
 
 func (o *resourcesObserver) addResourceLocked(ctx context.Context, res *commands.Resource, obsInterface string) error {
 	resID := res.GetResourceID()
-	o.logger.Debugf("observation of resource(%v) requested", resID)
 	addObservationError := func(err error) error {
 		return fmt.Errorf("cannot add resource observation: %w", err)
 	}
@@ -116,7 +115,6 @@ func (o *resourcesObserver) addResourceLocked(ctx context.Context, res *commands
 // their content.
 func (o *resourcesObserver) handleResourceLocked(ctx context.Context, obsRes *observedResource, isObservable bool) error {
 	if obsRes.Href() == commands.StatusHref {
-		o.logger.Debugf("observation of resource /%v%v skipped", o.deviceID, obsRes.Href())
 		return nil
 	}
 

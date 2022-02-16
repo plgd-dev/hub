@@ -2,14 +2,18 @@ package server
 
 import (
 	context "context"
+	"strings"
 	"time"
 
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpc_zap "github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
+	"github.com/grpc-ecosystem/go-grpc-middleware/logging/zap/ctxzap"
 	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
+	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"github.com/plgd-dev/hub/v2/pkg/security/jwt"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"google.golang.org/grpc"
@@ -58,15 +62,81 @@ func DefaultCodeToLevel(code codes.Code) zapcore.Level {
 	}
 }
 
+// CodeGenRequestFieldExtractor is a function that relies on code-generated functions that export log fields from requests.
+// These are usually coming from a protoc-plugin that generates additional information based on custom field options.
+func CodeGenRequestFieldExtractor(fullMethod string, req interface{}) map[string]interface{} {
+	m := grpc_ctxtags.CodeGenRequestFieldExtractor(fullMethod, req)
+	if m == nil {
+		m = make(map[string]interface{})
+	}
+	if d, ok := req.(interface{ GetDeviceId() string }); ok {
+		m[log.DeviceIDKey] = d.GetDeviceId()
+	}
+	if r, ok := req.(interface{ GetResourceId() *commands.ResourceId }); ok {
+		m[log.DeviceIDKey] = r.GetResourceId().GetDeviceId()
+		m[log.ResourceHrefKey] = r.GetResourceId().GetHref()
+	}
+	if r, ok := req.(interface{ GetCorrelationId() string }); ok {
+		m[log.CorrelationIDKey] = r.GetCorrelationId()
+	}
+
+	if sub, ok := req.(*pb.SubscribeToEvents); ok {
+		switch sub.GetAction().(type) {
+		case *pb.SubscribeToEvents_CreateSubscription_:
+			m[log.SubActionKey] = "createSubscription"
+		case *pb.SubscribeToEvents_CancelSubscription_:
+			m[log.SubActionKey] = "cancelSubscription"
+		}
+		m[log.SubDeviceIDsKey] = sub.GetCreateSubscription().GetDeviceIdFilter()
+		m[log.SubDeviceIDsKey] = sub.GetCreateSubscription().GetDeviceIdFilter()
+		m[log.SubEventsKey] = sub.GetCreateSubscription().GetEventFilter()
+		m[log.SubResourceIDsKey] = sub.GetCreateSubscription().GetResourceIdFilter()
+		m[log.CorrelationIDKey] = sub.GetCorrelationId()
+	}
+
+	if len(m) > 0 {
+		return m
+	}
+	return nil
+}
+
+// DefaultMessageProducer writes the default message
+func DefaultMessageProducer(ctx context.Context, msg string, level zapcore.Level, code codes.Code, err error, duration zapcore.Field) {
+	// re-extract logger from newCtx, as it may have extra fields that changed in the holder.
+	fields := []zapcore.Field{
+		zap.Error(err),
+		zap.String("grpc.code", code.String()),
+		duration,
+	}
+	if sub, err := kitNetGrpc.OwnerFromTokenMD(ctx, "sub"); err != nil {
+		fields = append(fields, zap.String(log.JWTSubKey, sub))
+	}
+	tags := grpc_ctxtags.Extract(ctx)
+	newTags := grpc_ctxtags.NewTags()
+	for k, v := range tags.Values() {
+		if !strings.HasPrefix(k, "grpc.request.plgd") {
+			newTags.Set(k, v)
+			continue
+		}
+		newTags.Set(strings.TrimPrefix(k, "grpc.request."), v)
+	}
+	ctx = grpc_ctxtags.SetInContext(ctx, newTags)
+	ctxzap.Extract(ctx).Check(level, msg).Write(fields...)
+}
+
+type GetDeviceIDPb interface {
+	GetDeviceId() string
+}
+
 func MakeDefaultOptions(auth kitNetGrpc.AuthInterceptors, logger log.Logger) ([]grpc.ServerOption, error) {
 	streamInterceptors := []grpc.StreamServerInterceptor{}
 	unaryInterceptors := []grpc.UnaryServerInterceptor{}
 	zapLogger, ok := logger.Unwrap().(*zap.SugaredLogger)
 	if ok {
-		streamInterceptors = append(streamInterceptors, grpc_ctxtags.StreamServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
-			grpc_zap.StreamServerInterceptor(zapLogger.Desugar(), grpc_zap.WithTimestampFormat(time.RFC3339Nano), grpc_zap.WithLevels(DefaultCodeToLevel)))
-		unaryInterceptors = append(unaryInterceptors, grpc_ctxtags.UnaryServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
-			grpc_zap.UnaryServerInterceptor(zapLogger.Desugar(), grpc_zap.WithTimestampFormat(time.RFC3339Nano), grpc_zap.WithLevels(DefaultCodeToLevel)))
+		streamInterceptors = append(streamInterceptors, grpc_ctxtags.StreamServerInterceptor(grpc_ctxtags.WithFieldExtractor(CodeGenRequestFieldExtractor)),
+			grpc_zap.StreamServerInterceptor(zapLogger.Desugar(), grpc_zap.WithTimestampFormat(time.RFC3339Nano), grpc_zap.WithLevels(DefaultCodeToLevel), grpc_zap.WithMessageProducer(DefaultMessageProducer)))
+		unaryInterceptors = append(unaryInterceptors, grpc_ctxtags.UnaryServerInterceptor(grpc_ctxtags.WithFieldExtractor(CodeGenRequestFieldExtractor)),
+			grpc_zap.UnaryServerInterceptor(zapLogger.Desugar(), grpc_zap.WithTimestampFormat(time.RFC3339Nano), grpc_zap.WithLevels(DefaultCodeToLevel), grpc_zap.WithMessageProducer(DefaultMessageProducer)))
 	}
 	streamInterceptors = append(streamInterceptors, auth.Stream())
 	unaryInterceptors = append(unaryInterceptors, auth.Unary())

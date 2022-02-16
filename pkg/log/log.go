@@ -163,7 +163,7 @@ func (c *Config) Validate() error {
 func MakeDefaultConfig() Config {
 	return Config{
 		Debug:    false,
-		Level:    zap.InfoLevel,
+		Level:    zap.DebugLevel,
 		Encoding: "json",
 		Stacktrace: StacktraceConfig{
 			Enabled: false,
@@ -294,10 +294,10 @@ func NewLogger(config Config) Logger {
 	// Optimize the Kafka output for machine consumption and the console output
 	// for human operators.
 	var encoder zapcore.Encoder
-	if config.Encoding == "json" {
-		encoder = zapcore.NewJSONEncoder(encoderConfig)
-	} else {
+	if config.Encoding == "console" {
 		encoder = zapcore.NewConsoleEncoder(encoderConfig)
+	} else {
+		encoder = zapcore.NewJSONEncoder(encoderConfig)
 	}
 
 	// Join the outputs, encoders, and level-handling functions into

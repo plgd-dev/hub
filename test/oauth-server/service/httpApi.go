@@ -7,7 +7,6 @@ import (
 	"crypto/x509"
 	"fmt"
 	"net/http"
-	"net/http/httputil"
 	"time"
 
 	"github.com/google/uuid"
@@ -16,6 +15,7 @@ import (
 	"github.com/plgd-dev/go-coap/v2/pkg/cache"
 	"github.com/plgd-dev/go-coap/v2/pkg/runner/periodic"
 	"github.com/plgd-dev/hub/v2/pkg/log"
+	kitHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
 	"github.com/plgd-dev/hub/v2/test/oauth-server/uri"
 
 	router "github.com/gorilla/mux"
@@ -96,24 +96,10 @@ func NewRequestHandler(ctx context.Context, config *Config, idTokenKey *rsa.Priv
 	}, nil
 }
 
-func loggingMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		data, err := httputil.DumpRequest(r, false)
-		if err != nil {
-			log.Infof("Request: %v %v", r.Method, r.RequestURI)
-		} else {
-			log.Infof("Request: %v", string(data))
-		}
-
-		// Call the next handler, which can be another middleware in the chain, or the final handler.
-		next.ServeHTTP(w, r)
-	})
-}
-
 // NewHTTP returns HTTP server
 func NewHTTP(requestHandler *RequestHandler) *http.Server {
 	r := router.NewRouter()
-	r.Use(loggingMiddleware)
+	r.Use(kitHttp.CreateLoggingMiddleware(kitHttp.WithLogger(log.Get().With(log.ServiceKey("http"), "oauth-server"))))
 	r.StrictSlash(true)
 
 	// get JWKs

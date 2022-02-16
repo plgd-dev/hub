@@ -10,22 +10,19 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/log"
 )
 
-const logServiceKey = "coap.service"
 const logRequestKey = "coap.request"
 const logRequestDeadlineKey = "coap.request.deadline"
 const logResponseKey = "coap.response"
-const logDurationKey = "coap.time_ms"
 const logRequestToClientKey = "request to client"
-const logCorrelationIDKey = "plgd.correlationId"
-const logDeviceIDKey = "plgd.deviceId"
-const logPathKey = "href"
+
 const logNotificationKey = "coap.notification"
 
-var logStartTimeKey = "coap.start_time"
-
-func durationToMilliseconds(duration time.Duration) float32 {
-	return float32(duration.Nanoseconds()/1000) / 1000
-}
+var logCorrelationIDKey = log.CorrelationIDKey
+var logDeviceIDKey = log.DeviceIDKey
+var logDurationKey = log.DurationKey("coap")
+var logServiceKey = log.ServiceKey("coap")
+var logPathKey = log.HrefKey("coap")
+var logStartTimeKey = log.StartTimeKey("coap")
 
 func logToLevel(respCode codes.Code, logger log.Logger) func(args ...interface{}) {
 	switch respCode {
@@ -44,6 +41,9 @@ func (client *Client) getLogger() log.Logger {
 	logger := client.server.logger
 	if deviceID := client.deviceID(); deviceID != "" {
 		logger = logger.With(logDeviceIDKey, deviceID)
+	}
+	if v, err := client.GetAuthorizationContext(); err != nil && v.GetJWTClaims().Subject() != "" {
+		logger = logger.With(log.JWTSubKey, v.GetJWTClaims().Subject())
 	}
 	return logger
 }
@@ -65,14 +65,13 @@ func (client *Client) logWithRequestResponse(req *pool.Message, resp *pool.Messa
 	if req != nil {
 		startTime, ok := req.Context().Value(&logStartTimeKey).(time.Time)
 		if ok {
-			logger = logger.With(logStartTimeKey, startTime, logDurationKey, durationToMilliseconds(time.Since(startTime)))
+			logger = logger.With(logStartTimeKey, startTime, logDurationKey, log.DurationToMilliseconds(time.Since(startTime)))
 		}
 		deadline, ok := req.Context().Deadline()
 		if ok {
 			logger = logger.With(logRequestDeadlineKey, deadline)
 		}
-		rq := coapgwMessage.ToJson(req, client.server.config.Log.DumpBody, resp == nil)
-		logger = logger.With(logRequestKey, rq)
+		logger = client.reqToLogger(req, logger, resp == nil)
 	}
 	if resp != nil {
 		rsp := coapgwMessage.ToJson(resp, client.server.config.Log.DumpBody, req == nil)
@@ -90,6 +89,15 @@ func (client *Client) logRequest(msg string, req *pool.Message, resp *pool.Messa
 	logger.Debug(msg)
 }
 
+func (client *Client) reqToLogger(req *pool.Message, logger log.Logger, withToken bool) log.Logger {
+	rq := coapgwMessage.ToJson(req, client.server.config.Log.DumpBody, withToken)
+	if rq.Path != "" {
+		logger = logger.With(logPathKey, rq.Path)
+		rq.Path = ""
+	}
+	return logger.With(logRequestKey, rq)
+}
+
 func (client *Client) ErrorfRequest(req *mux.Message, fmt string, args ...interface{}) {
 	logger := client.getLogger()
 	if req.Context != nil {
@@ -101,8 +109,7 @@ func (client *Client) ErrorfRequest(req *mux.Message, fmt string, args ...interf
 	if req != nil {
 		tmp, err := client.server.messagePool.ConvertFrom(req.Message)
 		if err == nil {
-			rq := coapgwMessage.ToJson(tmp, client.server.config.Log.DumpBody, true)
-			logger = logger.With(logRequestKey, rq)
+			logger = client.reqToLogger(tmp, logger, true)
 		}
 	}
 	logger.Errorf(fmt, args...)

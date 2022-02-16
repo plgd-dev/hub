@@ -46,8 +46,6 @@ func cleanUpToSnapshot(ctx context.Context, t *testing.T, store *mongodb.EventSt
 	}
 }
 
-//old 452.969s
-//new 474.906s
 func Test_parallelRequest(t *testing.T) {
 	ctx := context.Background()
 	token := config.CreateJwtToken(t, jwt.MapClaims{
@@ -81,7 +79,7 @@ func Test_parallelRequest(t *testing.T) {
 		wg.Add(1)
 		go func(id int) {
 			defer wg.Done()
-			for j := 0; j < 100000; j++ {
+			for j := 0; j < 1000; j++ {
 				if anyError.Load() != nil {
 					return
 				}
