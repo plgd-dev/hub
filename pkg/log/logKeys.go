@@ -6,10 +6,12 @@ var CorrelationIDKey = "plgd.correlationId"
 var DeviceIDKey = "plgd.deviceId"
 var ResourceHrefKey = "plgd.resource.href"
 var JWTSubKey = "jwt.sub"
+var CommandFilterKey = "plgd.commandFilter"
+var DeviceIDFilterKey = "plgd.deviceIdFilter"
+var ResourceIDFilterKey = "plgd.resourceIdFilter"
+var TypeFilterKey = "plgd.typeFilter"
+var EventFilterKey = "plgd.eventFilter"
 var SubActionKey = "plgd.sub.action"
-var SubEventsKey = "plgd.sub.events"
-var SubDeviceIDsKey = "plgd.sub.deviceIds"
-var SubResourceIDsKey = "plgd.sub.resourceIds"
 
 func DurationToMilliseconds(duration time.Duration) float32 {
 	return float32(duration.Nanoseconds()/1000) / 1000

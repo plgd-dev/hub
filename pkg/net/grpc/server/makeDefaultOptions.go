@@ -78,6 +78,20 @@ func CodeGenRequestFieldExtractor(fullMethod string, req interface{}) map[string
 	if r, ok := req.(interface{ GetCorrelationId() string }); ok {
 		m[log.CorrelationIDKey] = r.GetCorrelationId()
 	}
+	if r, ok := req.(interface {
+		GetCommandFilter() []pb.GetPendingCommandsRequest_Command
+	}); ok && len(r.GetCommandFilter()) > 0 {
+		m[log.CommandFilterKey] = r.GetCommandFilter()
+	}
+	if r, ok := req.(interface{ GetResourceIdFilter() []string }); ok && len(r.GetResourceIdFilter()) > 0 {
+		m[log.ResourceIDFilterKey] = r.GetResourceIdFilter()
+	}
+	if r, ok := req.(interface{ GetDeviceIdFilter() []string }); ok && len(r.GetDeviceIdFilter()) > 0 {
+		m[log.DeviceIDFilterKey] = r.GetDeviceIdFilter()
+	}
+	if r, ok := req.(interface{ GetTypeFilter() []string }); ok && len(r.GetTypeFilter()) > 0 {
+		m[log.TypeFilterKey] = r.GetTypeFilter()
+	}
 
 	if sub, ok := req.(*pb.SubscribeToEvents); ok {
 		switch sub.GetAction().(type) {
@@ -86,10 +100,9 @@ func CodeGenRequestFieldExtractor(fullMethod string, req interface{}) map[string
 		case *pb.SubscribeToEvents_CancelSubscription_:
 			m[log.SubActionKey] = "cancelSubscription"
 		}
-		m[log.SubDeviceIDsKey] = sub.GetCreateSubscription().GetDeviceIdFilter()
-		m[log.SubDeviceIDsKey] = sub.GetCreateSubscription().GetDeviceIdFilter()
-		m[log.SubEventsKey] = sub.GetCreateSubscription().GetEventFilter()
-		m[log.SubResourceIDsKey] = sub.GetCreateSubscription().GetResourceIdFilter()
+		m[log.DeviceIDFilterKey] = sub.GetCreateSubscription().GetDeviceIdFilter()
+		m[log.ResourceIDFilterKey] = sub.GetCreateSubscription().GetResourceIdFilter()
+		m[log.EventFilterKey] = sub.GetCreateSubscription().GetEventFilter()
 		m[log.CorrelationIDKey] = sub.GetCorrelationId()
 	}
 

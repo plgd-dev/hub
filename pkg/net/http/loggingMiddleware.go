@@ -38,6 +38,13 @@ func (w *statusWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 	return writer.Hijack()
 }
 
+func (w *statusWriter) Flush() {
+	f, ok := w.ResponseWriter.(interface{ Flush() })
+	if ok {
+		f.Flush()
+	}
+}
+
 // DefaultCodeToLevel is the default implementation of gRPC return codes and interceptor log level for server side.
 func DefaultCodeToLevel(code int, logger log.Logger) func(args ...interface{}) {
 	switch code {
