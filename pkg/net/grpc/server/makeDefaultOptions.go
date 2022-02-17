@@ -132,7 +132,7 @@ func DefaultMessageProducer(ctx context.Context, msg string, level zapcore.Level
 		zap.String("grpc.code", code.String()),
 		duration,
 	}
-	if sub, err := kitNetGrpc.OwnerFromTokenMD(ctx, "sub"); err != nil {
+	if sub, err := kitNetGrpc.OwnerFromTokenMD(ctx, "sub"); err == nil {
 		fields = append(fields, zap.String(log.JWTSubKey, sub))
 	}
 	tags := grpc_ctxtags.Extract(ctx)

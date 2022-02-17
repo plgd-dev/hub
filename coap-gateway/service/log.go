@@ -42,7 +42,7 @@ func (client *Client) getLogger() log.Logger {
 	if deviceID := client.deviceID(); deviceID != "" {
 		logger = logger.With(logDeviceIDKey, deviceID)
 	}
-	if v, err := client.GetAuthorizationContext(); err != nil && v.GetJWTClaims().Subject() != "" {
+	if v, err := client.GetAuthorizationContext(); err == nil && v.GetJWTClaims().Subject() != "" {
 		logger = logger.With(log.JWTSubKey, v.GetJWTClaims().Subject())
 	}
 	return logger
@@ -58,6 +58,17 @@ func (client *Client) Debugf(fmt string, args ...interface{}) {
 
 func (client *Client) Infof(fmt string, args ...interface{}) {
 	client.getLogger().Infof(fmt, args...)
+}
+
+func (client *Client) logWithMuxRequestResponse(req *mux.Message, resp *pool.Message) log.Logger {
+	var rq *pool.Message
+	if req != nil {
+		tmp, err := client.server.messagePool.ConvertFrom(req.Message)
+		if err == nil {
+			rq = tmp
+		}
+	}
+	return client.logWithRequestResponse(rq, resp)
 }
 
 func (client *Client) logWithRequestResponse(req *pool.Message, resp *pool.Message) log.Logger {
@@ -99,20 +110,7 @@ func (client *Client) reqToLogger(req *pool.Message, logger log.Logger, withToke
 }
 
 func (client *Client) ErrorfRequest(req *mux.Message, fmt string, args ...interface{}) {
-	logger := client.getLogger()
-	if req.Context != nil {
-		deadline, ok := req.Context.Deadline()
-		if ok {
-			logger = logger.With(logRequestDeadlineKey, deadline)
-		}
-	}
-	if req != nil {
-		tmp, err := client.server.messagePool.ConvertFrom(req.Message)
-		if err == nil {
-			logger = client.reqToLogger(tmp, logger, true)
-		}
-	}
-	logger.Errorf(fmt, args...)
+	client.logWithMuxRequestResponse(req, nil).Errorf(fmt, args...)
 }
 
 func (client *Client) logClientRequest(req *mux.Message, resp *pool.Message) {

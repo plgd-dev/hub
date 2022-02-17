@@ -166,7 +166,7 @@ func CreateLoggingMiddleware(opts ...LogOpt) func(next http.Handler) http.Handle
 
 			var sub string
 			logger := cfg.logger
-			if claims, err := jwt.ParseToken(token); err != nil {
+			if claims, err := jwt.ParseToken(token); err == nil {
 				sub = claims.Subject()
 				logger.With(log.JWTSubKey, sub)
 			}
