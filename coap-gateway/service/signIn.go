@@ -200,7 +200,7 @@ func subscribeAndValidateDeviceAccess(ctx context.Context, client *Client, owner
 	return client.server.ownerCache.OwnsDevice(ctx, deviceID)
 }
 
-func logSignInError(err error) error {
+func signInError(err error) error {
 	return fmt.Errorf("sign in error: %w", err)
 }
 
@@ -227,7 +227,7 @@ func setNewDeviceObserver(ctx context.Context, client *Client, deviceID string, 
 			observation.WithObservationType(observationType),
 			observation.WithLogger(client.getLogger()))
 		if err != nil {
-			client.Errorf("%w", logSignInError(fmt.Errorf("cannot create observer for device %v: %w", deviceID, err)))
+			client.Errorf("%w", signInError(fmt.Errorf("cannot create observer for device %v: %w", deviceID, err)))
 			setDeviceObserver(nil, err)
 			return
 		}
@@ -235,7 +235,7 @@ func setNewDeviceObserver(ctx context.Context, client *Client, deviceID string, 
 	}
 
 	if err := client.server.taskQueue.Submit(createDeviceObserver); err != nil {
-		client.Errorf("%w", logSignInError(fmt.Errorf("failed to register resource observations for device %v: %w", deviceID, err)))
+		client.Errorf("%w", signInError(fmt.Errorf("failed to register resource observations for device %v: %w", deviceID, err)))
 		setDeviceObserver(nil, err)
 	}
 }
@@ -245,7 +245,7 @@ func signInPostHandler(req *mux.Message, client *Client, signIn CoapSignInReq) {
 	logErrorAndCloseClient := func(err error, code coapCodes.Code) {
 		client.logAndWriteErrorResponse(req, fmt.Errorf("cannot handle sign in: %w", err), code, req.Token)
 		if err := client.Close(); err != nil {
-			client.Errorf("%w", logSignInError(err))
+			client.Errorf("%w", signInError(err))
 		}
 	}
 
