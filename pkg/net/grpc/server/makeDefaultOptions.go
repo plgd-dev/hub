@@ -19,55 +19,36 @@ import (
 	"google.golang.org/grpc/codes"
 )
 
-// DefaultCodeToLevel is the default implementation of gRPC return codes and interceptor log level for server side.
-func DefaultCodeToLevel(code codes.Code) zapcore.Level {
-	switch code {
-	case codes.OK:
-		return zap.DebugLevel
-	case codes.Canceled:
-		return zap.DebugLevel
-	case codes.Unknown:
-		return zap.ErrorLevel
-	case codes.InvalidArgument:
-		return zap.DebugLevel
-	case codes.DeadlineExceeded:
-		return zap.WarnLevel
-	case codes.NotFound:
-		return zap.DebugLevel
-	case codes.AlreadyExists:
-		return zap.DebugLevel
-	case codes.PermissionDenied:
-		return zap.WarnLevel
-	case codes.Unauthenticated:
-		return zap.DebugLevel // unauthenticated requests can happen
-	case codes.ResourceExhausted:
-		return zap.WarnLevel
-	case codes.FailedPrecondition:
-		return zap.WarnLevel
-	case codes.Aborted:
-		return zap.WarnLevel
-	case codes.OutOfRange:
-		return zap.WarnLevel
-	case codes.Unimplemented:
-		return zap.ErrorLevel
-	case codes.Internal:
-		return zap.ErrorLevel
-	case codes.Unavailable:
-		return zap.WarnLevel
-	case codes.DataLoss:
-		return zap.ErrorLevel
-	default:
-		return zap.ErrorLevel
-	}
+var defaultCodeToLevel = map[codes.Code]zapcore.Level{
+	codes.OK:                 zap.DebugLevel,
+	codes.Canceled:           zap.DebugLevel,
+	codes.Unknown:            zap.ErrorLevel,
+	codes.InvalidArgument:    zap.DebugLevel,
+	codes.DeadlineExceeded:   zap.WarnLevel,
+	codes.NotFound:           zap.DebugLevel,
+	codes.AlreadyExists:      zap.DebugLevel,
+	codes.PermissionDenied:   zap.WarnLevel,
+	codes.Unauthenticated:    zap.DebugLevel,
+	codes.ResourceExhausted:  zap.WarnLevel,
+	codes.FailedPrecondition: zap.WarnLevel,
+	codes.Aborted:            zap.WarnLevel,
+	codes.OutOfRange:         zap.WarnLevel,
+	codes.Unimplemented:      zap.ErrorLevel,
+	codes.Internal:           zap.ErrorLevel,
+	codes.Unavailable:        zap.WarnLevel,
+	codes.DataLoss:           zap.ErrorLevel,
 }
 
-// CodeGenRequestFieldExtractor is a function that relies on code-generated functions that export log fields from requests.
-// These are usually coming from a protoc-plugin that generates additional information based on custom field options.
-func CodeGenRequestFieldExtractor(fullMethod string, req interface{}) map[string]interface{} {
-	m := grpc_ctxtags.CodeGenRequestFieldExtractor(fullMethod, req)
-	if m == nil {
-		m = make(map[string]interface{})
+// DefaultCodeToLevel is the default implementation of gRPC return codes and interceptor log level for server side.
+func DefaultCodeToLevel(code codes.Code) zapcore.Level {
+	lvl, ok := defaultCodeToLevel[code]
+	if ok {
+		return lvl
 	}
+	return zap.ErrorLevel
+}
+
+func setLogBasicLables(m map[string]interface{}, req interface{}) {
 	if d, ok := req.(interface{ GetDeviceId() string }); ok {
 		m[log.DeviceIDKey] = d.GetDeviceId()
 	}
@@ -77,6 +58,12 @@ func CodeGenRequestFieldExtractor(fullMethod string, req interface{}) map[string
 	}
 	if r, ok := req.(interface{ GetCorrelationId() string }); ok {
 		m[log.CorrelationIDKey] = r.GetCorrelationId()
+	}
+}
+
+func setLogFiltersLables(m map[string]interface{}, req interface{}) {
+	if req == nil {
+		return
 	}
 	if r, ok := req.(interface {
 		GetCommandFilter() []pb.GetPendingCommandsRequest_Command
@@ -96,18 +83,39 @@ func CodeGenRequestFieldExtractor(fullMethod string, req interface{}) map[string
 	if r, ok := req.(interface{ GetTypeFilter() []string }); ok && len(r.GetTypeFilter()) > 0 {
 		m[log.TypeFilterKey] = r.GetTypeFilter()
 	}
+}
 
-	if sub, ok := req.(*pb.SubscribeToEvents); ok {
-		switch sub.GetAction().(type) {
-		case *pb.SubscribeToEvents_CreateSubscription_:
-			m[log.SubActionKey] = "createSubscription"
-		case *pb.SubscribeToEvents_CancelSubscription_:
-			m[log.SubActionKey] = "cancelSubscription"
+func setLogSubscriptionLabels(m map[string]interface{}, sub *pb.SubscribeToEvents) {
+	switch sub.GetAction().(type) {
+	case *pb.SubscribeToEvents_CreateSubscription_:
+		m[log.SubActionKey] = "createSubscription"
+	case *pb.SubscribeToEvents_CancelSubscription_:
+		m[log.SubActionKey] = "cancelSubscription"
+	}
+	setLogFiltersLables(m, sub.GetCreateSubscription())
+	if len(sub.GetCreateSubscription().GetEventFilter()) > 0 {
+		eventFilter := make([]string, 0, len(sub.GetCreateSubscription().GetEventFilter()))
+		for _, e := range sub.GetCreateSubscription().GetEventFilter() {
+			eventFilter = append(eventFilter, e.String())
 		}
-		m[log.DeviceIDFilterKey] = sub.GetCreateSubscription().GetDeviceIdFilter()
-		m[log.ResourceIDFilterKey] = sub.GetCreateSubscription().GetResourceIdFilter()
-		m[log.EventFilterKey] = sub.GetCreateSubscription().GetEventFilter()
+		m[log.EventFilterKey] = eventFilter
+	}
+	if sub.GetCorrelationId() != "" {
 		m[log.CorrelationIDKey] = sub.GetCorrelationId()
+	}
+}
+
+// CodeGenRequestFieldExtractor is a function that relies on code-generated functions that export log fields from requests.
+// These are usually coming from a protoc-plugin that generates additional information based on custom field options.
+func CodeGenRequestFieldExtractor(fullMethod string, req interface{}) map[string]interface{} {
+	m := grpc_ctxtags.CodeGenRequestFieldExtractor(fullMethod, req)
+	if m == nil {
+		m = make(map[string]interface{})
+	}
+	setLogBasicLables(m, req)
+	setLogFiltersLables(m, req)
+	if sub, ok := req.(*pb.SubscribeToEvents); ok {
+		setLogSubscriptionLabels(m, sub)
 	}
 
 	if len(m) > 0 {
