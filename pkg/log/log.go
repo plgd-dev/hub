@@ -188,7 +188,7 @@ func (c *Config) Validate() error {
 func MakeDefaultConfig() Config {
 	return Config{
 		Debug:    false,
-		Level:    zap.DebugLevel,
+		Level:    zap.InfoLevel,
 		Encoding: "json",
 		Stacktrace: StacktraceConfig{
 			Enabled: false,
