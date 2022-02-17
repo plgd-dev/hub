@@ -40,44 +40,50 @@ func (e *Snapshot) GroupID() string          { return e.DeviceId }
 func (e *Snapshot) IsSnapshot() bool         { return true }
 func (e *Snapshot) Timestamp() time.Time     { return time.Unix(0, e.EventTimestamp) }
 
+func (e *Snapshot) handleEvent(eu eventstore.EventUnmarshaler) error {
+	if eu.EventType() == "" {
+		return errors.New("cannot determine type of event")
+	}
+	switch eu.EventType() {
+	case (&Snapshot{}).EventType():
+		var s Snapshot
+		if err := eu.Unmarshal(&s); err != nil {
+			return err
+		}
+		e.DeviceId = s.GetDeviceId()
+		e.Href = s.GetHref()
+		e.EventVersion = s.GetEventVersion()
+		e.IsPublished = s.GetIsPublished()
+	case (&Published{}).EventType():
+		var s Published
+		if err := eu.Unmarshal(&s); err != nil {
+			return err
+		}
+		e.DeviceId = s.GetDeviceId()
+		e.Href = s.GetHref()
+		e.EventVersion = s.GetEventVersion()
+		e.IsPublished = true
+	case (&Unpublished{}).EventType():
+		var s Unpublished
+		if err := eu.Unmarshal(&s); err != nil {
+			return err
+		}
+		e.DeviceId = s.GetDeviceId()
+		e.Href = s.GetHref()
+		e.EventVersion = s.GetEventVersion()
+		e.IsPublished = false
+	}
+	return nil
+}
+
 func (e *Snapshot) Handle(ctx context.Context, iter eventstore.Iter) error {
 	for {
 		eu, ok := iter.Next(ctx)
 		if !ok {
 			break
 		}
-
-		if eu.EventType() == "" {
-			return errors.New("cannot determine type of event")
-		}
-		switch eu.EventType() {
-		case (&Snapshot{}).EventType():
-			var s Snapshot
-			if err := eu.Unmarshal(&s); err != nil {
-				return err
-			}
-			e.DeviceId = s.GetDeviceId()
-			e.Href = s.GetHref()
-			e.EventVersion = s.GetEventVersion()
-			e.IsPublished = s.GetIsPublished()
-		case (&Published{}).EventType():
-			var s Published
-			if err := eu.Unmarshal(&s); err != nil {
-				return err
-			}
-			e.DeviceId = s.GetDeviceId()
-			e.Href = s.GetHref()
-			e.EventVersion = s.GetEventVersion()
-			e.IsPublished = true
-		case (&Unpublished{}).EventType():
-			var s Unpublished
-			if err := eu.Unmarshal(&s); err != nil {
-				return err
-			}
-			e.DeviceId = s.GetDeviceId()
-			e.Href = s.GetHref()
-			e.EventVersion = s.GetEventVersion()
-			e.IsPublished = false
+		if err := e.handleEvent(eu); err != nil {
+			return err
 		}
 	}
 	return nil
