@@ -85,8 +85,12 @@ func (client *Client) logWithRequestResponse(req *pool.Message, resp *pool.Messa
 		logger = client.reqToLogger(req, logger, resp == nil)
 	}
 	if resp != nil {
-		rsp := coapgwMessage.ToJson(resp, client.server.config.Log.DumpBody, req == nil)
-		logger = logger.With(logResponseKey, rsp)
+		rsp, logger1 := client.msgToLogger(resp, logger, req == nil)
+		if rsp.IsEmpty() {
+			logger = logger1
+		} else {
+			logger = logger1.With(logResponseKey, rsp)
+		}
 	}
 	return logger
 }
@@ -100,11 +104,25 @@ func (client *Client) logRequest(msg string, req *pool.Message, resp *pool.Messa
 	logger.Debug(msg)
 }
 
-func (client *Client) reqToLogger(req *pool.Message, logger log.Logger, withToken bool) log.Logger {
+func (client *Client) msgToLogger(req *pool.Message, logger log.Logger, withToken bool) (coapgwMessage.JsonCoapMessage, log.Logger) {
 	rq := coapgwMessage.ToJson(req, client.server.config.Log.DumpBody, withToken)
 	if rq.Path != "" {
 		logger = logger.With(logPathKey, rq.Path)
 		rq.Path = ""
+	}
+	if req.Code() >= codes.GET && req.Code() <= codes.DELETE {
+		logger = logger.With("coap.method", rq.Code)
+	} else {
+		logger = logger.With("coap.code", rq.Code)
+	}
+	rq.Code = ""
+	return rq, logger
+}
+
+func (client *Client) reqToLogger(req *pool.Message, logger log.Logger, withToken bool) log.Logger {
+	rq, logger := client.msgToLogger(req, logger, withToken)
+	if rq.IsEmpty() {
+		return logger
 	}
 	return logger.With(logRequestKey, rq)
 }
@@ -130,8 +148,12 @@ func (client *Client) logNotification(logMsg, path string, notification *pool.Me
 		logger = logger.With(logPathKey, path)
 	}
 	if notification != nil {
-		rsp := coapgwMessage.ToJson(notification, client.server.config.Log.DumpBody, true)
-		logger = logger.With(logNotificationKey, rsp)
+		rsp, logger1 := client.msgToLogger(notification, logger, true)
+		if rsp.IsEmpty() {
+			logger = logger1
+		} else {
+			logger = logger1.With(logNotificationKey, rsp)
+		}
 	}
 	logToLevel(notification.Code(), logger)(logMsg)
 }

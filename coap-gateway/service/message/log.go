@@ -11,13 +11,17 @@ import (
 )
 
 type JsonCoapMessage struct {
-	Code          string      `json:"code"`
+	Code          string      `json:"code,omitempty"`
 	Path          string      `json:"path,omitempty"`
 	Token         string      `json:"token,omitempty"`
 	Queries       []string    `json:"queries,omitempty"`
 	Observe       *uint32     `json:"observe,omitempty"`
 	ContentFormat string      `json:"contentFormat,omitempty"`
 	Body          interface{} `json:"body,omitempty"`
+}
+
+func (c JsonCoapMessage) IsEmpty() bool {
+	return c.Code == "" && c.Path == "" && c.Token == "" && len(c.Queries) == 0 && c.Observe == nil && c.ContentFormat == "" && c.Body == nil
 }
 
 func readBody(r io.ReadSeeker) []byte {

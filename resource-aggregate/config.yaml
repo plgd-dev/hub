@@ -1,5 +1,4 @@
 log:
-  debug: false # deprecated, use level
   level: info
   stacktrace:
       enabled: false
