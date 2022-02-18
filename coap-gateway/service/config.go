@@ -40,8 +40,8 @@ func (c *Config) Validate() error {
 
 //Config represent application configuration
 type LogConfig struct {
-	log.Config `yaml:",inline"`
 	DumpBody   bool `yaml:"dumpBody" json:"dumpBody"`
+	log.Config `yaml:",inline"`
 }
 
 type APIsConfig struct {

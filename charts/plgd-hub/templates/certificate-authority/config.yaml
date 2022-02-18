@@ -10,10 +10,10 @@ data:
     {{- with .Values.certificateauthority }}
     log:
       level: {{ .log.level }}
+      encoding: {{ .log.encoding }}
       stacktrace:
         enabled: {{ .log.stacktrace.enabled }}
         level: {{ .log.stacktrace.level }}
-      encoding: {{ .log.encoding }}
       encoderConfig:
         timeEncoder: {{ .log.encoderConfig.timeEncoder }}
     apis:

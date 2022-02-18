@@ -1,12 +1,12 @@
 log:
-  level: info
-  stacktrace:
-      enabled: false
-      level: warn
-  encoding: json
-  encoderConfig:
-      timeEncoder: rfc3339nano
   dumpBody: false
+  level: info
+  encoding: json
+  stacktrace:
+    enabled: false
+    level: warn
+  encoderConfig:
+    timeEncoder: rfc3339nano
 apis:
   coap:
     address: "0.0.0.0:5684"
