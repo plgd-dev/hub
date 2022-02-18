@@ -9,11 +9,7 @@ data:
   {{ .Values.coapgateway.config.fileName }}: |
     {{- with .Values.resourceaggregate }}
     log:
-      {{- if .log.debug }}
-      level: debug
-      {{- else }}
       level: {{ .log.level }}
-      {{- end }}
       stacktrace:
         enabled: {{ .log.stacktrace.enabled }}
         level: {{ .log.stacktrace.level }}

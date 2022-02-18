@@ -9,11 +9,7 @@ data:
   {{ .Values.mockoauthserver.config.fileName }}: |
     {{- with .Values.mockoauthserver }}
     log:
-      {{- if .log.debug }}
-      level: debug
-      {{- else }}
       level: {{ .log.level }}
-      {{- end }}
       stacktrace:
         enabled: {{ .log.stacktrace.enabled }}
         level: {{ .log.stacktrace.level }}

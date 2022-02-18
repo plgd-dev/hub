@@ -8,11 +8,7 @@ data:
   {{ .Values.httpgateway.config.fileName }}: |
     {{- with .Values.httpgateway }}
     log:
-      {{- if .log.debug }}
-      level: debug
-      {{- else }}
       level: {{ .log.level }}
-      {{- end }}
       stacktrace:
         enabled: {{ .log.stacktrace.enabled }}
         level: {{ .log.stacktrace.level }}

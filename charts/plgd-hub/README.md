@@ -82,7 +82,6 @@ global:
 | certificateauthority.ingress.paths | list | `["/certificateauthority.pb.CertificateAuthority/SignIdentityCertificate"]` | Paths |
 | certificateauthority.initContainersTpl | string | `nil` | Init containers definition |
 | certificateauthority.livenessProbe | string | `nil` | Liveness probe. certificate-authority doesn't have any default liveness probe |
-| certificateauthority.log.debug | bool | `false` | Enable extended log messages (deprecated) |
 | certificateauthority.log.encoderConfig.timeEncoder | string | `"rfc3339nano"` | Time format for logs. The supported values are: "rfc3339nano", "rfc3339" |
 | certificateauthority.log.encoding | string | `"json"` | The supported values are: "json", "console" |
 | certificateauthority.log.level | string | `"info"` | Logging enabled from level  |
@@ -163,7 +162,7 @@ global:
 | certmanager.internal.issuer.name | string | `nil` | Name |
 | certmanager.internal.issuer.spec | string | `nil` | cert-manager issuer spec |
 | cluster.dns | string | `"cluster.local"` | Cluster internal DNS prefix |
-| coapgateway | object | `{"affinity":{},"apis":{"coap":{"authorization":{"deviceIdClaim":null,"ownerClaim":null,"providers":null},"blockwiseTransfer":{"blockSize":"1024","enabled":false},"externalAddress":"","keepAlive":{"timeout":"20s"},"maxMessageSize":262144,"messagePoolSize":1000,"ownerCacheExpiration":"1m","subscriptionBufferSize":1000,"tls":{"caPool":null,"certFile":null,"clientCertificateRequired":true,"enabled":true,"keyFile":null}}},"clients":{"eventBus":{"nats":{"pendingLimits":{"bytesLimit":"67108864","msgLimit":"524288"},"tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false},"url":""}},"identityStore":{"grpc":{"address":"","keepAlive":{"permitWithoutStream":true,"time":"10s","timeout":"20s"},"tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false}},"ownerClaim":null},"resourceAggregate":{"deviceStatusExpiration":{"enabled":false,"expiresIn":"0s"},"grpc":{"address":"","keepAlive":{"permitWithoutStream":true,"time":"10s","timeout":"20s"},"tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false}}},"resourceDirectory":{"grpc":{"address":"","keepAlive":{"permitWithoutStream":true,"time":"10s","timeout":"20s"},"tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false}}}},"config":{"fileName":"service.yaml","mountPath":"/config","volume":"config"},"deploymentAnnotations":{},"deploymentLabels":{},"enabled":true,"extraVolumeMounts":{},"extraVolumes":{},"fullnameOverride":null,"hubId":null,"image":{"imagePullSecrets":{},"pullPolicy":"Always","registry":"ghcr.io/","repository":"plgd-dev/hub/coap-gateway","tag":null},"imagePullSecrets":{},"initContainersTpl":{},"livenessProbe":{},"log":{"debug":false,"dumpCoapMessages":true,"encoderConfig":{"timeEncoder":"rfc3339nano"},"encoding":"json","level":"info","stacktrace":{"enabled":false,"level":"warn"}},"name":"coap-gateway","nodeSelector":{},"podAnnotations":{},"podLabels":{},"podSecurityContext":{},"port":5684,"rbac":{"enabled":false,"roleBindingDefinitionTpl":null,"serviceAccountName":"coap-gateway"},"readinessProbe":{},"replicas":1,"resources":{},"restartPolicy":"Always","securityContext":{},"service":{"annotations":{},"labels":{},"nodePort":null,"type":"LoadBalancer"},"taskQueue":{"goPoolSize":1600,"maxIdleTime":"10m","size":"2097152"},"tolerations":{}}` | CoAP gateway parameters |
+| coapgateway | object | `{"affinity":{},"apis":{"coap":{"authorization":{"deviceIdClaim":null,"ownerClaim":null,"providers":null},"blockwiseTransfer":{"blockSize":"1024","enabled":false},"externalAddress":"","keepAlive":{"timeout":"20s"},"maxMessageSize":262144,"messagePoolSize":1000,"ownerCacheExpiration":"1m","subscriptionBufferSize":1000,"tls":{"caPool":null,"certFile":null,"clientCertificateRequired":true,"enabled":true,"keyFile":null}}},"clients":{"eventBus":{"nats":{"pendingLimits":{"bytesLimit":"67108864","msgLimit":"524288"},"tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false},"url":""}},"identityStore":{"grpc":{"address":"","keepAlive":{"permitWithoutStream":true,"time":"10s","timeout":"20s"},"tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false}},"ownerClaim":null},"resourceAggregate":{"deviceStatusExpiration":{"enabled":false,"expiresIn":"0s"},"grpc":{"address":"","keepAlive":{"permitWithoutStream":true,"time":"10s","timeout":"20s"},"tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false}}},"resourceDirectory":{"grpc":{"address":"","keepAlive":{"permitWithoutStream":true,"time":"10s","timeout":"20s"},"tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false}}}},"config":{"fileName":"service.yaml","mountPath":"/config","volume":"config"},"deploymentAnnotations":{},"deploymentLabels":{},"enabled":true,"extraVolumeMounts":{},"extraVolumes":{},"fullnameOverride":null,"hubId":null,"image":{"imagePullSecrets":{},"pullPolicy":"Always","registry":"ghcr.io/","repository":"plgd-dev/hub/coap-gateway","tag":null},"imagePullSecrets":{},"initContainersTpl":{},"livenessProbe":{},"log":{"dumpBody":false,"encoderConfig":{"timeEncoder":"rfc3339nano"},"encoding":"json","level":"info","stacktrace":{"enabled":false,"level":"warn"}},"name":"coap-gateway","nodeSelector":{},"podAnnotations":{},"podLabels":{},"podSecurityContext":{},"port":5684,"rbac":{"enabled":false,"roleBindingDefinitionTpl":null,"serviceAccountName":"coap-gateway"},"readinessProbe":{},"replicas":1,"resources":{},"restartPolicy":"Always","securityContext":{},"service":{"annotations":{},"labels":{},"nodePort":null,"type":"LoadBalancer"},"taskQueue":{"goPoolSize":1600,"maxIdleTime":"10m","size":"2097152"},"tolerations":{}}` | CoAP gateway parameters |
 | coapgateway.affinity | object | `{}` | Affinity definition |
 | coapgateway.apis | object | `{"coap":{"authorization":{"deviceIdClaim":null,"ownerClaim":null,"providers":null},"blockwiseTransfer":{"blockSize":"1024","enabled":false},"externalAddress":"","keepAlive":{"timeout":"20s"},"maxMessageSize":262144,"messagePoolSize":1000,"ownerCacheExpiration":"1m","subscriptionBufferSize":1000,"tls":{"caPool":null,"certFile":null,"clientCertificateRequired":true,"enabled":true,"keyFile":null}}}` | For complete coap-gateway service configuration see [plgd/coap-gateway](https://github.com/plgd-dev/hub/tree/main/coap-gateway) |
 | coapgateway.clients | object | `{"eventBus":{"nats":{"pendingLimits":{"bytesLimit":"67108864","msgLimit":"524288"},"tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false},"url":""}},"identityStore":{"grpc":{"address":"","keepAlive":{"permitWithoutStream":true,"time":"10s","timeout":"20s"},"tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false}},"ownerClaim":null},"resourceAggregate":{"deviceStatusExpiration":{"enabled":false,"expiresIn":"0s"},"grpc":{"address":"","keepAlive":{"permitWithoutStream":true,"time":"10s","timeout":"20s"},"tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false}}},"resourceDirectory":{"grpc":{"address":"","keepAlive":{"permitWithoutStream":true,"time":"10s","timeout":"20s"},"tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false}}}}` | For complete coap-gateway service configuration see [plgd/coap-gateway](https://github.com/plgd-dev/hub/tree/main/coap-gateway) |
@@ -185,8 +184,7 @@ global:
 | coapgateway.imagePullSecrets | object | `{}` | Image pull secrets |
 | coapgateway.initContainersTpl | object | `{}` | Init containers definition |
 | coapgateway.livenessProbe | object | `{}` | Liveness probe. coap-gateway doesn't have any default liveness probe |
-| coapgateway.log.debug | bool | `false` | Enable extended log messages (deprecated) |
-| coapgateway.log.dumpCoapMessages | bool | `true` | Dump coap messages |
+| coapgateway.log.dumpBody | bool | `false` | Dump coap messages |
 | coapgateway.log.encoderConfig.timeEncoder | string | `"rfc3339nano"` | Time format for logs. The supported values are: "rfc3339nano", "rfc3339" |
 | coapgateway.log.encoding | string | `"json"` | The supported values are: "json", "console" |
 | coapgateway.log.level | string | `"info"` | Logging enabled from level  |
@@ -247,7 +245,6 @@ global:
 | grpcgateway.ingress.paths | list | `["/grpcgateway.pb.GrpcGateway"]` | Default ingress paths |
 | grpcgateway.initContainersTpl | object | `{}` | Init containers definition |
 | grpcgateway.livenessProbe | object | `{}` | Liveness probe. grpc-gateway doesn't have any default liveness probe |
-| grpcgateway.log.debug | bool | `false` | Enable extended log messages (deprecated) |
 | grpcgateway.log.encoderConfig.timeEncoder | string | `"rfc3339nano"` | Time format for logs. The supported values are: "rfc3339nano", "rfc3339" |
 | grpcgateway.log.encoding | string | `"json"` | The supported values are: "json", "console" |
 | grpcgateway.log.level | string | `"info"` | Logging enabled from level  |
@@ -296,7 +293,6 @@ global:
 | httpgateway.ingress.paths | list | `["/api","/.well-known/"]` | Ingress path |
 | httpgateway.initContainersTpl | object | `{}` | Init containers definition. Render as template |
 | httpgateway.livenessProbe | object | `{}` | Liveness probe. http-gateway doesn't have any default liveness probe |
-| httpgateway.log.debug | bool | `false` | Enable extended log messages (deprecated) |
 | httpgateway.log.encoderConfig.timeEncoder | string | `"rfc3339nano"` | Time format for logs. The supported values are: "rfc3339nano", "rfc3339" |
 | httpgateway.log.encoding | string | `"json"` | The supported values are: "json", "console" |
 | httpgateway.log.level | string | `"info"` | Logging enabled from level  |
@@ -345,7 +341,6 @@ global:
 | identitystore.imagePullSecrets | object | `{}` | Image pull secrets |
 | identitystore.initContainersTpl | object | `{}` | Init containers definition. Resolved as template |
 | identitystore.livenessProbe | object | `{}` | Liveness probe. Identity doesn't have any default liveness probe |
-| identitystore.log.debug | bool | `false` | Enable extended log messages (deprecated) |
 | identitystore.log.encoderConfig.timeEncoder | string | `"rfc3339nano"` | Time format for logs. The supported values are: "rfc3339nano", "rfc3339" |
 | identitystore.log.encoding | string | `"json"` | The supported values are: "json", "console" |
 | identitystore.log.level | string | `"info"` | Logging enabled from level  |
@@ -395,7 +390,6 @@ global:
 | mockoauthserver.ingress.enabled | bool | `true` | Enable ingress |
 | mockoauthserver.ingress.paths | list | `["/authorize","/oauth/token","/.well-known","/jwks.json","/.well-known/openid-configuration","/v2/logout","/authorize/userinfo"]` | Ingress path |
 | mockoauthserver.livenessProbe | object | `{}` | Liveness probe. mock-oauth-server doesn't have any default liveness probe |
-| mockoauthserver.log.debug | bool | `false` | Enable extended log messages (deprecated) |
 | mockoauthserver.log.encoderConfig.timeEncoder | string | `"rfc3339nano"` | Time format for logs. The supported values are: "rfc3339nano", "rfc3339" |
 | mockoauthserver.log.encoding | string | `"json"` | The supported values are: "json", "console" |
 | mockoauthserver.log.level | string | `"info"` | Logging enabled from level  |
@@ -480,7 +474,6 @@ global:
 | resourceaggregate.imagePullSecrets | object | `{}` | Image pull secrets |
 | resourceaggregate.initContainersTpl | object | `{}` | Init containers definition. Resolved as template |
 | resourceaggregate.livenessProbe | object | `{}` | Liveness probe. resource-aggregate doesn't have any default liveness probe |
-| resourceaggregate.log.debug | bool | `false` | Enable extended log messages (deprecated) |
 | resourceaggregate.log.encoderConfig.timeEncoder | string | `"rfc3339nano"` | Time format for logs. The supported values are: "rfc3339nano", "rfc3339" |
 | resourceaggregate.log.encoding | string | `"json"` | The supported values are: "json", "console" |
 | resourceaggregate.log.level | string | `"info"` | Logging enabled from level  |
@@ -526,8 +519,7 @@ global:
 | resourcedirectory.image.tag | string | `nil` | Image tag. |
 | resourcedirectory.initContainersTpl | object | `{}` | Init containers definition. Resolved as template |
 | resourcedirectory.livenessProbe | object | `{}` | Liveness probe. resource-directory doesn't have any default liveness probe |
-| resourcedirectory.log | object | `{"debug":false,"encoderConfig":{"timeEncoder":"rfc3339nano"},"encoding":"json","level":"info","stacktrace":{"enabled":false,"level":"warn"}}` | Log section |
-| resourcedirectory.log.debug | bool | `false` | Enable extended log messages (deprecated) |
+| resourcedirectory.log | object | `{"encoderConfig":{"timeEncoder":"rfc3339nano"},"encoding":"json","level":"info","stacktrace":{"enabled":false,"level":"warn"}}` | Log section |
 | resourcedirectory.log.encoderConfig.timeEncoder | string | `"rfc3339nano"` | Time format for logs. The supported values are: "rfc3339nano", "rfc3339" |
 | resourcedirectory.log.encoding | string | `"json"` | The supported values are: "json", "console" |
 | resourcedirectory.log.level | string | `"info"` | Logging enabled from level  |

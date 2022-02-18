@@ -349,8 +349,6 @@ resourcedirectory:
   port: 9100
   # -- Log section
   log:
-    # -- Enable extended log messages (deprecated)
-    debug: false
     # -- Logging enabled from level 
     level: info
     # -- The supported values are: "json", "console"
@@ -555,8 +553,6 @@ resourceaggregate:
   # -- Service and POD port
   port: 9100
   log:
-    # -- Enable extended log messages (deprecated)
-    debug: false
     # -- Logging enabled from level 
     level: info
     # -- The supported values are: "json", "console"
@@ -738,9 +734,7 @@ coapgateway:
   port: 5684
   log:
     # -- Dump coap messages
-    dumpCoapMessages: true
-    # -- Enable extended log messages (deprecated)
-    debug: false
+    dumpBody: false
     # -- Logging enabled from level 
     level: info
     # -- The supported values are: "json", "console"
@@ -919,8 +913,6 @@ identitystore:
     # -- Service configuration mount path
     mountPath: /config
   log:
-    # -- Enable extended log messages (deprecated)
-    debug: false
     # -- Logging enabled from level 
     level: info
     # -- The supported values are: "json", "console"
@@ -1084,8 +1076,6 @@ httpgateway:
   # -- Port for service and POD
   port: 9100
   log:
-    # -- Enable extended log messages (deprecated)
-    debug: false
     # -- Logging enabled from level 
     level: info
     # -- The supported values are: "json", "console"
@@ -1246,8 +1236,6 @@ grpcgateway:
   # -- Service and POD port
   port: 9100
   log:
-    # -- Enable extended log messages (deprecated)
-    debug: false
     # -- Logging enabled from level 
     level: info
     # -- The supported values are: "json", "console"
@@ -1455,8 +1443,6 @@ certificateauthority:
   # -- Service and POD port
   port: 9100
   log:
-    # -- Enable extended log messages (deprecated)
-    debug: false
     # -- Logging enabled from level 
     level: info
     # -- The supported values are: "json", "console"
@@ -1610,8 +1596,6 @@ mockoauthserver:
   # -- Port for service and POD
   port: 9100
   log:
-    # -- Enable extended log messages (deprecated)
-    debug: false
     # -- Logging enabled from level 
     level: info
     # -- The supported values are: "json", "console"
