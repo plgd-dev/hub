@@ -67,14 +67,6 @@ func NewRequestHandler(
 	}
 }
 
-func loggingMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		log.Infof("%v %v %+v", r.Method, r.RequestURI, r.Header)
-		// Call the next handler, which can be another middleware in the chain, or the final handler.
-		next.ServeHTTP(w, r)
-	})
-}
-
 func healthCheck(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
@@ -83,7 +75,7 @@ func healthCheck(w http.ResponseWriter, r *http.Request) {
 func NewHTTP(requestHandler *RequestHandler, authInterceptor kitNetHttp.Interceptor) (*http.Server, error) {
 	r := router.NewRouter()
 	r.StrictSlash(true)
-	r.Use(loggingMiddleware)
+	r.Use(kitNetHttp.CreateLoggingMiddleware(kitNetHttp.WithLogger(log.Get().With(log.ServiceKey("http"), "cloud2cloud-connector"))))
 	r.Use(kitNetHttp.CreateAuthMiddleware(authInterceptor, func(ctx context.Context, w http.ResponseWriter, r *http.Request, err error) {
 		logAndWriteErrorResponse(fmt.Errorf("cannot process request on %v: %w", r.RequestURI, err), http.StatusUnauthorized, w)
 	}))
