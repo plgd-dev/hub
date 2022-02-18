@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 	"sync/atomic"
 	"time"
 
@@ -270,16 +271,36 @@ func (l *wrapSuggarLogger) LogAndReturnError(err error) error {
 		l.SugaredLogger.Debugf("%v", err)
 		return err
 	}
+	if errors.Is(err, io.ErrClosedPipe) {
+		l.SugaredLogger.Debugf("%v", err)
+		return err
+	}
+	if errors.Is(err, context.Canceled) {
+		l.SugaredLogger.Debugf("%v", err)
+		return err
+	}
+	if errors.Is(err, context.DeadlineExceeded) {
+		l.SugaredLogger.Warnf("%v", err)
+		return err
+	}
+	if strings.Contains(err.Error(), `write: broken pipe`) {
+		l.SugaredLogger.Debugf("%v", err)
+		return err
+	}
+	if strings.Contains(err.Error(), `use of closed network connection`) {
+		l.SugaredLogger.Debugf("%v", err)
+		return err
+	}
 	var grpcErr grpcErr
 	if errors.As(err, &grpcErr) {
 		if grpcErr.GRPCStatus().Code() == codes.Canceled {
 			l.SugaredLogger.Debugf("%v", err)
 			return err
 		}
-	}
-	if errors.Is(err, context.Canceled) {
-		l.SugaredLogger.Debugf("%v", err)
-		return err
+		if grpcErr.GRPCStatus().Code() == codes.DeadlineExceeded {
+			l.SugaredLogger.Warnf("%v", err)
+			return err
+		}
 	}
 	l.SugaredLogger.Error(err)
 	return err
