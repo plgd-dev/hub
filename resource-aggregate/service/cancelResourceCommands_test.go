@@ -2,7 +2,6 @@ package service_test
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/golang-jwt/jwt/v4"
@@ -131,8 +130,6 @@ func TestRequestHandler_CancelPendingCommands(t *testing.T) {
 		"sub": userID,
 	}))
 	logger := log.NewLogger(cfg.Log)
-
-	fmt.Printf("%v\n", cfg.String())
 
 	eventstore, err := mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)

@@ -3,7 +3,6 @@ package test
 import (
 	"context"
 	"crypto/tls"
-	"fmt"
 	"net"
 	"sync"
 	"testing"
@@ -54,7 +53,6 @@ func MakeConfig(t *testing.T) service.Config {
 	err := cfg.Validate()
 	require.NoError(t, err)
 
-	fmt.Printf("cfg\n%v\n", cfg.String())
 	return cfg
 }
 

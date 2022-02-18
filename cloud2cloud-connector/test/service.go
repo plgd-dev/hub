@@ -2,7 +2,6 @@ package test
 
 import (
 	"context"
-	"fmt"
 	"sync"
 	"testing"
 	"time"
@@ -82,7 +81,6 @@ func MakeConfig(t *testing.T) service.Config {
 
 func SetUp(t *testing.T) (TearDown func()) {
 	cfg := MakeConfig(t)
-	fmt.Printf("cfg\n%v\n", cfg.String())
 	return New(t, cfg)
 }
 

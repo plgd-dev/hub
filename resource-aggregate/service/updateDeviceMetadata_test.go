@@ -2,7 +2,6 @@ package service_test
 
 import (
 	"context"
-	"fmt"
 	"testing"
 	"time"
 
@@ -82,8 +81,6 @@ func TestAggregateHandle_UpdateDeviceMetadata(t *testing.T) {
 	cfg := raTest.MakeConfig(t)
 	ctx := context.Background()
 	logger := log.NewLogger(cfg.Log)
-
-	fmt.Printf("%v\n", cfg.String())
 
 	eventstore, err := mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
