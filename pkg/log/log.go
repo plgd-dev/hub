@@ -158,7 +158,6 @@ func (c *StacktraceConfig) Validate() error {
 
 // Config configuration for setup logging.
 type Config struct {
-	Debug bool `yaml:"debug" json:"debug" description:"enable debug logs"`
 	// Level is the minimum enabled logging level. Note that this is a dynamic
 	// level, so calling Config.Level.SetLevel will atomically change the log
 	// level of all loggers descended from this config.
@@ -187,7 +186,6 @@ func (c *Config) Validate() error {
 
 func MakeDefaultConfig() Config {
 	return Config{
-		Debug:    false,
 		Level:    zap.InfoLevel,
 		Encoding: "json",
 		Stacktrace: StacktraceConfig{
@@ -294,9 +292,6 @@ func NewLogger(config Config) Logger {
 		config.EncoderConfig.EncodeTime = MakeDefaultConfig().EncoderConfig.EncodeTime
 	}
 	encoderConfig.EncodeTime = config.EncoderConfig.EncodeTime.TimeEncoder.Encode
-	if config.Debug {
-		config.Level = zap.DebugLevel
-	}
 
 	encoderConfig.NewReflectedEncoder = func(w io.Writer) zapcore.ReflectedEncoder {
 		var h codec.JsonHandle

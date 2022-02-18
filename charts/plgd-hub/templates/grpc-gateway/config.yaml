@@ -9,7 +9,17 @@ data:
   {{ .Values.grpcgateway.config.fileName }}: |
     {{- with .Values.grpcgateway }}
     log:
-      debug: {{ .log.debug }}
+      {{- if .log.debug }}
+      level: debug
+      {{- else }}
+      level: {{ .log.level }}
+      {{- end }}
+      stacktrace:
+        enabled: {{ .log.stacktrace.enabled }}
+        level: {{ .log.stacktrace.level }}
+      encoding: {{ .log.encoding }}
+      encoderConfig:
+        timeEncoder: {{ .log.encoderConfig.timeEncoder }}
     apis:
       grpc:
         address: {{ printf "0.0.0.0:%v" .port | quote }}

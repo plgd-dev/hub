@@ -16,8 +16,18 @@ data:
   {{ .Values.coapgateway.config.fileName }}: |
     {{- with .Values.coapgateway }}
     log:
-      debug: {{ .log.debug }}
-      dumpCoapMessages: {{ .log.dumpCoapMessages }}
+      {{- if .log.debug }}
+      level: debug
+      {{- else }}
+      level: {{ .log.level }}
+      {{- end }}
+      stacktrace:
+        enabled: {{ .log.stacktrace.enabled }}
+        level: {{ .log.stacktrace.level }}
+      encoding: {{ .log.encoding }}
+      encoderConfig:
+        timeEncoder: {{ .log.encoderConfig.timeEncoder }}
+      dumpBody: {{ .log.dumpCoapMessages }}
     apis:
       coap:
         address: {{ printf "0.0.0.0:%v" .port | quote }}

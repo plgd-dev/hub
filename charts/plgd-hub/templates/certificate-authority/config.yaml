@@ -8,6 +8,18 @@ metadata:
 data:
   {{ .Values.certificateauthority.config.fileName }}: |
     {{- with .Values.certificateauthority }}
+    log:
+      {{- if .log.debug }}
+      level: debug
+      {{- else }}
+      level: {{ .log.level }}
+      {{- end }}
+      stacktrace:
+        enabled: {{ .log.stacktrace.enabled }}
+        level: {{ .log.stacktrace.level }}
+      encoding: {{ .log.encoding }}
+      encoderConfig:
+        timeEncoder: {{ .log.encoderConfig.timeEncoder }}
     apis:
       grpc:
         address: {{  .apis.grpc.address | default (printf "0.0.0.0:%v" .port) | quote }}

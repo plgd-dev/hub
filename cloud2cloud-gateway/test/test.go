@@ -97,7 +97,7 @@ func GetUniqueSubscriptionID(subIDS ...string) string {
 }
 
 func NewTestListener(t *testing.T) (net.Listener, func()) {
-	loggerCfg := log.Config{Debug: true}
+	loggerCfg := log.MakeDefaultConfig()
 	logger := log.NewLogger(loggerCfg)
 
 	listenCfg := config.MakeListenerConfig("localhost:")

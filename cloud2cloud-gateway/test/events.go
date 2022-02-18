@@ -92,7 +92,7 @@ func DecodeEvent(t *testing.T, etype events.EventType, data []byte) interface{} 
 }
 
 func NewEventsServer(t *testing.T, uri string) *EventsServer {
-	loggerCfg := log.Config{Debug: true}
+	loggerCfg := log.MakeDefaultConfig()
 	logger := log.NewLogger(loggerCfg)
 
 	listenCfg := config.MakeListenerConfig("localhost:")

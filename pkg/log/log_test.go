@@ -11,16 +11,13 @@ import (
 func TestNew(t *testing.T) {
 	const testStr = "test"
 
-	config := Config{Debug: false}
+	config := MakeDefaultConfig()
 	Setup(config)
 
 	assert.NotPanics(t, func() { Debug(testStr) })
 	assert.NotPanics(t, func() { Info(testStr) })
 	assert.NotPanics(t, func() { Warn(testStr) })
 	assert.NotPanics(t, func() { Error(testStr) })
-
-	config.Debug = true
-	Setup(config)
 
 	assert.NotPanics(t, func() { Debugf(testStr) })
 	assert.NotPanics(t, func() { Infof(testStr) })

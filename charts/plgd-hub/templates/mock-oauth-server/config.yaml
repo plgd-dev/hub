@@ -9,7 +9,17 @@ data:
   {{ .Values.mockoauthserver.config.fileName }}: |
     {{- with .Values.mockoauthserver }}
     log:
-      debug: {{ .log.debug }}
+      {{- if .log.debug }}
+      level: debug
+      {{- else }}
+      level: {{ .log.level }}
+      {{- end }}
+      stacktrace:
+        enabled: {{ .log.stacktrace.enabled }}
+        level: {{ .log.stacktrace.level }}
+      encoding: {{ .log.encoding }}
+      encoderConfig:
+        timeEncoder: {{ .log.encoderConfig.timeEncoder }}
     apis:
       http:
         address: {{  .apis.http.address | default (printf "0.0.0.0:%v" .port) | quote }}
