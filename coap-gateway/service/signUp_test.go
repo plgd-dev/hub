@@ -10,6 +10,7 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/security/oauth2/oauth"
 	"github.com/plgd-dev/hub/v2/test/config"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
+	"github.com/stretchr/testify/require"
 )
 
 type TestCoapSignUpResponse struct {
@@ -85,6 +86,8 @@ func TestSignUpPostHandlerWithRetry(t *testing.T) {
 func TestSignUpClientCredentialPostHandler(t *testing.T) {
 	coapgwCfg := coapgwTest.MakeConfig(t)
 	coapgwCfg.APIs.COAP.Authorization.Providers[0].GrantType = oauth.ClientCredentials
+	err := coapgwCfg.Validate()
+	require.Error(t, err)
 	shutdown := setUp(t, coapgwCfg)
 	defer shutdown()
 	codeEl := oauthTest.GetDefaultAccessToken(t)

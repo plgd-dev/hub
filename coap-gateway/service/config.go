@@ -10,6 +10,7 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/net/grpc/client"
 	certManagerServer "github.com/plgd-dev/hub/v2/pkg/security/certManager/server"
 	"github.com/plgd-dev/hub/v2/pkg/security/oauth2"
+	"github.com/plgd-dev/hub/v2/pkg/security/oauth2/oauth"
 	"github.com/plgd-dev/hub/v2/pkg/sync/task/queue"
 	natsClient "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/client"
 )
@@ -83,6 +84,9 @@ func (c *AuthorizationConfig) Validate() error {
 	}
 	duplicitProviderNames := make(map[string]bool)
 	for i := 0; i < len(c.Providers); i++ {
+		if c.Providers[i].GrantType == oauth.ClientCredentials && c.OwnerClaim == "sub" {
+			return fmt.Errorf("providers[%v].grantType('%v') - %w", i, c.Providers[i].GrantType, fmt.Errorf("invalid combination with apis.coap.authorization.ownerClaim('%v')", c.OwnerClaim))
+		}
 		if err := c.Providers[i].Validate(c.Providers[0].Authority, duplicitProviderNames); err != nil {
 			return fmt.Errorf("providers[%v].%w", i, err)
 		}
