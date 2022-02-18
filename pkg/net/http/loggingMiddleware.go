@@ -58,6 +58,7 @@ func toError(logger log.Logger) func(args ...interface{}) {
 }
 
 var defaultCodeToLevel = map[int]func(logger log.Logger) func(args ...interface{}){
+	0:                                        toDebug, // websocket returns https status code with 0
 	http.StatusContinue:                      toDebug,
 	http.StatusSwitchingProtocols:            toDebug,
 	http.StatusProcessing:                    toDebug,
