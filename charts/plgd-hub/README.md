@@ -82,12 +82,12 @@ global:
 | certificateauthority.ingress.paths | list | `["/certificateauthority.pb.CertificateAuthority/SignIdentityCertificate"]` | Paths |
 | certificateauthority.initContainersTpl | string | `nil` | Init containers definition |
 | certificateauthority.livenessProbe | string | `nil` | Liveness probe. certificate-authority doesn't have any default liveness probe |
-| certificateauthority.log.debug | bool | `false` | Enable extended debug messages |
-| certificateauthority.log.encoderConfig.timeEncoder | string | `"rfc3339nano"` |  |
-| certificateauthority.log.encoding | string | `"json"` |  |
-| certificateauthority.log.level | string | `"info"` |  |
-| certificateauthority.log.stacktrace.enabled | bool | `false` |  |
-| certificateauthority.log.stacktrace.level | string | `"warn"` |  |
+| certificateauthority.log.debug | bool | `false` | Enable extended log messages (deprecated) |
+| certificateauthority.log.encoderConfig.timeEncoder | string | `"rfc3339nano"` | Time format for logs. The supported values are: "rfc3339nano", "rfc3339" |
+| certificateauthority.log.encoding | string | `"json"` | The supported values are: "json", "console" |
+| certificateauthority.log.level | string | `"info"` | Logging enabled from level  |
+| certificateauthority.log.stacktrace.enabled | bool | `false` | Log stacktrace |
+| certificateauthority.log.stacktrace.level | string | `"warn"` | Stacktrace from level |
 | certificateauthority.name | string | `"certificate-authority"` | Name of component. Used in label selectors |
 | certificateauthority.nodeSelector | string | `nil` | Node selector |
 | certificateauthority.podAnnotations | object | `{}` | Annotations for certificate-authority pod |
@@ -185,8 +185,13 @@ global:
 | coapgateway.imagePullSecrets | object | `{}` | Image pull secrets |
 | coapgateway.initContainersTpl | object | `{}` | Init containers definition |
 | coapgateway.livenessProbe | object | `{}` | Liveness probe. coap-gateway doesn't have any default liveness probe |
-| coapgateway.log.debug | bool | `false` | Enable extended log messages |
+| coapgateway.log.debug | bool | `false` | Enable extended log messages (deprecated) |
 | coapgateway.log.dumpCoapMessages | bool | `true` | Dump coap messages |
+| coapgateway.log.encoderConfig.timeEncoder | string | `"rfc3339nano"` | Time format for logs. The supported values are: "rfc3339nano", "rfc3339" |
+| coapgateway.log.encoding | string | `"json"` | The supported values are: "json", "console" |
+| coapgateway.log.level | string | `"info"` | Logging enabled from level  |
+| coapgateway.log.stacktrace.enabled | bool | `false` | Log stacktrace |
+| coapgateway.log.stacktrace.level | string | `"warn"` | Stacktrace from level |
 | coapgateway.name | string | `"coap-gateway"` | Name of component. Used in label selectors |
 | coapgateway.nodeSelector | object | `{}` | Node selector |
 | coapgateway.podAnnotations | object | `{}` | Annotations for coap-gateway pod |
@@ -242,12 +247,12 @@ global:
 | grpcgateway.ingress.paths | list | `["/grpcgateway.pb.GrpcGateway"]` | Default ingress paths |
 | grpcgateway.initContainersTpl | object | `{}` | Init containers definition |
 | grpcgateway.livenessProbe | object | `{}` | Liveness probe. grpc-gateway doesn't have any default liveness probe |
-| grpcgateway.log.debug | bool | `false` | Enable extended log messages |
-| grpcgateway.log.encoderConfig.timeEncoder | string | `"rfc3339nano"` |  |
-| grpcgateway.log.encoding | string | `"json"` |  |
-| grpcgateway.log.level | string | `"info"` |  |
-| grpcgateway.log.stacktrace.enabled | bool | `false` |  |
-| grpcgateway.log.stacktrace.level | string | `"warn"` |  |
+| grpcgateway.log.debug | bool | `false` | Enable extended log messages (deprecated) |
+| grpcgateway.log.encoderConfig.timeEncoder | string | `"rfc3339nano"` | Time format for logs. The supported values are: "rfc3339nano", "rfc3339" |
+| grpcgateway.log.encoding | string | `"json"` | The supported values are: "json", "console" |
+| grpcgateway.log.level | string | `"info"` | Logging enabled from level  |
+| grpcgateway.log.stacktrace.enabled | bool | `false` | Log stacktrace |
+| grpcgateway.log.stacktrace.level | string | `"warn"` | Stacktrace from level |
 | grpcgateway.name | string | `"grpc-gateway"` | Name of component. Used in label selectors |
 | grpcgateway.nodeSelector | object | `{}` | Node selector |
 | grpcgateway.podAnnotations | object | `{}` | Annotations for grpc-gateway pod |
@@ -291,12 +296,12 @@ global:
 | httpgateway.ingress.paths | list | `["/api","/.well-known/"]` | Ingress path |
 | httpgateway.initContainersTpl | object | `{}` | Init containers definition. Render as template |
 | httpgateway.livenessProbe | object | `{}` | Liveness probe. http-gateway doesn't have any default liveness probe |
-| httpgateway.log.debug | bool | `false` | Enable extended debug messages |
-| httpgateway.log.encoderConfig.timeEncoder | string | `"rfc3339nano"` |  |
-| httpgateway.log.encoding | string | `"json"` |  |
-| httpgateway.log.level | string | `"info"` |  |
-| httpgateway.log.stacktrace.enabled | bool | `false` |  |
-| httpgateway.log.stacktrace.level | string | `"warn"` |  |
+| httpgateway.log.debug | bool | `false` | Enable extended log messages (deprecated) |
+| httpgateway.log.encoderConfig.timeEncoder | string | `"rfc3339nano"` | Time format for logs. The supported values are: "rfc3339nano", "rfc3339" |
+| httpgateway.log.encoding | string | `"json"` | The supported values are: "json", "console" |
+| httpgateway.log.level | string | `"info"` | Logging enabled from level  |
+| httpgateway.log.stacktrace.enabled | bool | `false` | Log stacktrace |
+| httpgateway.log.stacktrace.level | string | `"warn"` | Stacktrace from level |
 | httpgateway.name | string | `"http-gateway"` | Name of component. Used in label selectors |
 | httpgateway.nodeSelector | object | `{}` | Node selector |
 | httpgateway.podAnnotations | object | `{}` | Annotations for http-gateway pod |
@@ -340,12 +345,12 @@ global:
 | identitystore.imagePullSecrets | object | `{}` | Image pull secrets |
 | identitystore.initContainersTpl | object | `{}` | Init containers definition. Resolved as template |
 | identitystore.livenessProbe | object | `{}` | Liveness probe. Identity doesn't have any default liveness probe |
-| identitystore.log.debug | bool | `false` | Enable extended log messages |
-| identitystore.log.encoderConfig.timeEncoder | string | `"rfc3339nano"` |  |
-| identitystore.log.encoding | string | `"json"` |  |
-| identitystore.log.level | string | `"info"` |  |
-| identitystore.log.stacktrace.enabled | bool | `false` |  |
-| identitystore.log.stacktrace.level | string | `"warn"` |  |
+| identitystore.log.debug | bool | `false` | Enable extended log messages (deprecated) |
+| identitystore.log.encoderConfig.timeEncoder | string | `"rfc3339nano"` | Time format for logs. The supported values are: "rfc3339nano", "rfc3339" |
+| identitystore.log.encoding | string | `"json"` | The supported values are: "json", "console" |
+| identitystore.log.level | string | `"info"` | Logging enabled from level  |
+| identitystore.log.stacktrace.enabled | bool | `false` | Log stacktrace |
+| identitystore.log.stacktrace.level | string | `"warn"` | Stacktrace from level |
 | identitystore.name | string | `"identity-store"` | Name of component. Used in label selectors |
 | identitystore.nodeSelector | object | `{}` | Node selector |
 | identitystore.podAnnotations | object | `{}` | Annotations for identity pod |
@@ -390,12 +395,12 @@ global:
 | mockoauthserver.ingress.enabled | bool | `true` | Enable ingress |
 | mockoauthserver.ingress.paths | list | `["/authorize","/oauth/token","/.well-known","/jwks.json","/.well-known/openid-configuration","/v2/logout","/authorize/userinfo"]` | Ingress path |
 | mockoauthserver.livenessProbe | object | `{}` | Liveness probe. mock-oauth-server doesn't have any default liveness probe |
-| mockoauthserver.log.debug | bool | `false` | Enable extended debug messages |
-| mockoauthserver.log.encoderConfig.timeEncoder | string | `"rfc3339nano"` |  |
-| mockoauthserver.log.encoding | string | `"json"` |  |
-| mockoauthserver.log.level | string | `"info"` |  |
-| mockoauthserver.log.stacktrace.enabled | bool | `false` |  |
-| mockoauthserver.log.stacktrace.level | string | `"warn"` |  |
+| mockoauthserver.log.debug | bool | `false` | Enable extended log messages (deprecated) |
+| mockoauthserver.log.encoderConfig.timeEncoder | string | `"rfc3339nano"` | Time format for logs. The supported values are: "rfc3339nano", "rfc3339" |
+| mockoauthserver.log.encoding | string | `"json"` | The supported values are: "json", "console" |
+| mockoauthserver.log.level | string | `"info"` | Logging enabled from level  |
+| mockoauthserver.log.stacktrace.enabled | bool | `false` | Log stacktrace |
+| mockoauthserver.log.stacktrace.level | string | `"warn"` | Stacktrace from level |
 | mockoauthserver.name | string | `"mock-oauth-server"` | Name of component. Used in label selectors |
 | mockoauthserver.nodeSelector | object | `{}` | Node selector |
 | mockoauthserver.oauthSigner.accessTokenKeyFile | string | `"/keys/accessToken.key"` |  |
@@ -475,12 +480,12 @@ global:
 | resourceaggregate.imagePullSecrets | object | `{}` | Image pull secrets |
 | resourceaggregate.initContainersTpl | object | `{}` | Init containers definition. Resolved as template |
 | resourceaggregate.livenessProbe | object | `{}` | Liveness probe. resource-aggregate doesn't have any default liveness probe |
-| resourceaggregate.log.debug | bool | `false` | Enable extended message log |
-| resourceaggregate.log.encoderConfig.timeEncoder | string | `"rfc3339nano"` |  |
-| resourceaggregate.log.encoding | string | `"json"` |  |
-| resourceaggregate.log.level | string | `"info"` |  |
-| resourceaggregate.log.stacktrace.enabled | bool | `false` |  |
-| resourceaggregate.log.stacktrace.level | string | `"warn"` |  |
+| resourceaggregate.log.debug | bool | `false` | Enable extended log messages (deprecated) |
+| resourceaggregate.log.encoderConfig.timeEncoder | string | `"rfc3339nano"` | Time format for logs. The supported values are: "rfc3339nano", "rfc3339" |
+| resourceaggregate.log.encoding | string | `"json"` | The supported values are: "json", "console" |
+| resourceaggregate.log.level | string | `"info"` | Logging enabled from level  |
+| resourceaggregate.log.stacktrace.enabled | bool | `false` | Log stacktrace |
+| resourceaggregate.log.stacktrace.level | string | `"warn"` | Stacktrace from level |
 | resourceaggregate.name | string | `"resource-aggregate"` | Name of component. Used in label selectors |
 | resourceaggregate.nodeSelector | object | `{}` | Node selector |
 | resourceaggregate.podAnnotations | object | `{}` | Annotations for resource-aggregate pod |
@@ -522,7 +527,12 @@ global:
 | resourcedirectory.initContainersTpl | object | `{}` | Init containers definition. Resolved as template |
 | resourcedirectory.livenessProbe | object | `{}` | Liveness probe. resource-directory doesn't have any default liveness probe |
 | resourcedirectory.log | object | `{"debug":false,"encoderConfig":{"timeEncoder":"rfc3339nano"},"encoding":"json","level":"info","stacktrace":{"enabled":false,"level":"warn"}}` | Log section |
-| resourcedirectory.log.debug | bool | `false` | Enable extended log messages |
+| resourcedirectory.log.debug | bool | `false` | Enable extended log messages (deprecated) |
+| resourcedirectory.log.encoderConfig.timeEncoder | string | `"rfc3339nano"` | Time format for logs. The supported values are: "rfc3339nano", "rfc3339" |
+| resourcedirectory.log.encoding | string | `"json"` | The supported values are: "json", "console" |
+| resourcedirectory.log.level | string | `"info"` | Logging enabled from level  |
+| resourcedirectory.log.stacktrace.enabled | bool | `false` | Log stacktrace |
+| resourcedirectory.log.stacktrace.level | string | `"warn"` | Stacktrace from level |
 | resourcedirectory.name | string | `"resource-directory"` | Name of component. Used in label selectors |
 | resourcedirectory.nodeSelector | object | `{}` | Node selector |
 | resourcedirectory.podAnnotations | object | `{}` | Annotations for resource-directory pod |
