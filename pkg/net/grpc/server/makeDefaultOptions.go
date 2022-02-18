@@ -48,7 +48,7 @@ func DefaultCodeToLevel(code codes.Code) zapcore.Level {
 	return zap.ErrorLevel
 }
 
-func setLogBasicLables(m map[string]interface{}, req interface{}) {
+func setLogBasicLabels(m map[string]interface{}, req interface{}) {
 	if d, ok := req.(interface{ GetDeviceId() string }); ok && d.GetDeviceId() != "" {
 		m[log.DeviceIDKey] = d.GetDeviceId()
 	}
@@ -65,7 +65,7 @@ func setLogBasicLables(m map[string]interface{}, req interface{}) {
 	}
 }
 
-func setLogFiltersLables(m map[string]interface{}, req interface{}) {
+func setLogFilterLabels(m map[string]interface{}, req interface{}) {
 	if req == nil {
 		return
 	}
@@ -96,7 +96,7 @@ func setLogSubscriptionLabels(m map[string]interface{}, sub *pb.SubscribeToEvent
 	case *pb.SubscribeToEvents_CancelSubscription_:
 		m[log.SubActionKey] = "cancelSubscription"
 	}
-	setLogFiltersLables(m, sub.GetCreateSubscription())
+	setLogFilterLabels(m, sub.GetCreateSubscription())
 	if len(sub.GetCreateSubscription().GetEventFilter()) > 0 {
 		eventFilter := make([]string, 0, len(sub.GetCreateSubscription().GetEventFilter()))
 		for _, e := range sub.GetCreateSubscription().GetEventFilter() {
@@ -116,8 +116,8 @@ func CodeGenRequestFieldExtractor(fullMethod string, req interface{}) map[string
 	if m == nil {
 		m = make(map[string]interface{})
 	}
-	setLogBasicLables(m, req)
-	setLogFiltersLables(m, req)
+	setLogBasicLabels(m, req)
+	setLogFilterLabels(m, req)
 	if sub, ok := req.(*pb.SubscribeToEvents); ok {
 		setLogSubscriptionLabels(m, sub)
 	}
