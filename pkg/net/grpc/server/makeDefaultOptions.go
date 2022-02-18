@@ -49,14 +49,18 @@ func DefaultCodeToLevel(code codes.Code) zapcore.Level {
 }
 
 func setLogBasicLables(m map[string]interface{}, req interface{}) {
-	if d, ok := req.(interface{ GetDeviceId() string }); ok {
+	if d, ok := req.(interface{ GetDeviceId() string }); ok && d.GetDeviceId() != "" {
 		m[log.DeviceIDKey] = d.GetDeviceId()
 	}
 	if r, ok := req.(interface{ GetResourceId() *commands.ResourceId }); ok {
-		m[log.DeviceIDKey] = r.GetResourceId().GetDeviceId()
-		m[log.ResourceHrefKey] = r.GetResourceId().GetHref()
+		if r.GetResourceId().GetDeviceId() != "" {
+			m[log.DeviceIDKey] = r.GetResourceId().GetDeviceId()
+		}
+		if r.GetResourceId().GetHref() != "" {
+			m[log.ResourceHrefKey] = r.GetResourceId().GetHref()
+		}
 	}
-	if r, ok := req.(interface{ GetCorrelationId() string }); ok {
+	if r, ok := req.(interface{ GetCorrelationId() string }); ok && r.GetCorrelationId() != "" {
 		m[log.CorrelationIDKey] = r.GetCorrelationId()
 	}
 }
