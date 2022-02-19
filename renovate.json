@@ -6,6 +6,12 @@
   "postUpdateOptions": [
     "gomodTidy"
   ],
+  "docker": {
+    "reviewers": [
+      "jkralik",
+      "Danielius1922"
+    ]
+  },
   "golang": {
     "reviewers": [
       "jkralik",
@@ -25,6 +31,19 @@
       ],
       "schedule": [
         "on the first day of the month"
+      ]
+    },
+    {
+      "matchManagers": [
+        "helm-requirements",
+        "helm-values",
+        "helmfile",
+        "helmsman",
+        "helmv3",
+        "kubernetes"
+      ],
+      "reviewers": [
+        "ondrejtomcik"
       ]
     }
   ]
