@@ -33,10 +33,6 @@ func TestNew(t *testing.T) {
 	}
 
 	assert.Equal(t, float32(1000), DurationToMilliseconds(time.Second))
-	assert.Equal(t, ".time_ms", DurationKey(""))
-	assert.Equal(t, ".start_time", StartTimeKey(""))
-	assert.Equal(t, ".service", ServiceKey(""))
-	assert.Equal(t, ".href", HrefKey(""))
 	assert.Error(t, LogAndReturnError(fmt.Errorf(testStr)))
 
 	cfg := MakeDefaultConfig()

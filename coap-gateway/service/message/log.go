@@ -12,7 +12,7 @@ import (
 
 type JsonCoapMessage struct {
 	Code          string      `json:"code,omitempty"`
-	Path          string      `json:"path,omitempty"`
+	Path          string      `json:"href,omitempty"`
 	Token         string      `json:"token,omitempty"`
 	Queries       []string    `json:"queries,omitempty"`
 	Observe       *uint32     `json:"observe,omitempty"`

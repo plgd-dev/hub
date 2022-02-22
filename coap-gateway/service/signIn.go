@@ -222,7 +222,7 @@ func setNewDeviceObserver(ctx context.Context, client *Client, deviceID string, 
 			oldDeviceObserver.Clean(ctx)
 		}
 
-		deviceObserver, err := observation.NewDeviceObserver(ctx, deviceID, client, client.server.rdClient,
+		deviceObserver, err := observation.NewDeviceObserver(client.Context(), deviceID, client, client,
 			observation.MakeResourcesObserverCallbacks(client.onObserveResource, client.onGetResourceContent),
 			observation.WithObservationType(observationType),
 			observation.WithLogger(client.getLogger()))

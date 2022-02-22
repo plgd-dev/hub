@@ -244,7 +244,6 @@ func newProviders(ctx context.Context, config AuthorizationConfig, logger log.Lo
 
 // New creates server.
 func New(ctx context.Context, config Config, logger log.Logger) (*Service, error) {
-	logger = logger.With(logServiceKey, "coap-gateway")
 	queue, err := queue.New(config.TaskQueue)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create job queue %w", err)
@@ -469,7 +468,7 @@ func (server *Service) authMiddleware(next mux.Handler) mux.Handler {
 		if ctx == nil {
 			ctx = r.Context
 		}
-		r.Context = context.WithValue(ctx, &logStartTimeKey, t)
+		r.Context = context.WithValue(ctx, &log.StartTimeKey, t)
 		if err != nil {
 			err = fmt.Errorf("cannot handle request to path '%v': %w", path, err)
 			client.logAndWriteErrorResponse(r, err, coapCodes.Unauthorized, r.Token)

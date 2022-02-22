@@ -75,7 +75,7 @@ func healthCheck(w http.ResponseWriter, r *http.Request) {
 func NewHTTP(requestHandler *RequestHandler, authInterceptor kitNetHttp.Interceptor) (*http.Server, error) {
 	r := router.NewRouter()
 	r.StrictSlash(true)
-	r.Use(kitNetHttp.CreateLoggingMiddleware(kitNetHttp.WithLogger(log.Get().With(log.ServiceKey("http"), "cloud2cloud-connector"))))
+	r.Use(kitNetHttp.CreateLoggingMiddleware())
 	r.Use(kitNetHttp.CreateAuthMiddleware(authInterceptor, func(ctx context.Context, w http.ResponseWriter, r *http.Request, err error) {
 		logAndWriteErrorResponse(fmt.Errorf("cannot process request on %v: %w", r.RequestURI, err), http.StatusUnauthorized, w)
 	}))

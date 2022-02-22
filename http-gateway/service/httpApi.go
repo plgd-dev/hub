@@ -164,7 +164,7 @@ func resourceEventsMatcher(r *http.Request, rm *router.RouteMatch) bool {
 // NewHTTP returns HTTP server
 func NewHTTP(requestHandler *RequestHandler, authInterceptor kitHttp.Interceptor) (*http.Server, error) {
 	r0 := router.NewRouter()
-	r0.Use(kitHttp.CreateLoggingMiddleware(kitHttp.WithLogger(log.Get().With(log.ServiceKey("http"), "http-gateway"))))
+	r0.Use(kitHttp.CreateLoggingMiddleware())
 	r0.Use(kitHttp.CreateAuthMiddleware(authInterceptor, func(ctx context.Context, w http.ResponseWriter, r *http.Request, err error) {
 		writeError(w, fmt.Errorf("cannot access to %v: %w", r.RequestURI, err))
 	}))

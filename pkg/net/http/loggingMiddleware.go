@@ -6,10 +6,12 @@ import (
 	"net"
 	"net/http"
 	netHttp "net/http"
+	"strings"
 	"time"
 
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/pkg/security/jwt"
+	"go.uber.org/zap/zapcore"
 )
 
 type statusWriter struct {
@@ -45,16 +47,27 @@ func (w *statusWriter) Flush() {
 	}
 }
 
+var toNil = func(args ...interface{}) {}
+
 func toDebug(logger log.Logger) func(args ...interface{}) {
-	return logger.Debug
+	if logger.Check(zapcore.DebugLevel) {
+		return logger.Debug
+	}
+	return nil
 }
 
 func toWarn(logger log.Logger) func(args ...interface{}) {
-	return logger.Warn
+	if logger.Check(zapcore.WarnLevel) {
+		return logger.Warn
+	}
+	return nil
 }
 
 func toError(logger log.Logger) func(args ...interface{}) {
-	return logger.Error
+	if logger.Check(zapcore.ErrorLevel) {
+		return logger.Error
+	}
+	return nil
 }
 
 var defaultCodeToLevel = map[int]func(logger log.Logger) func(args ...interface{}){
@@ -127,9 +140,22 @@ var defaultCodeToLevel = map[int]func(logger log.Logger) func(args ...interface{
 func DefaultCodeToLevel(code int, logger log.Logger) func(args ...interface{}) {
 	targerLvl, ok := defaultCodeToLevel[code]
 	if ok {
-		return targerLvl(logger)
+		v := targerLvl(logger)
+		if v == nil {
+			return toNil
+		}
+		return v
 	}
 	return logger.Error
+}
+
+// DefaultCodeToLevel is the default implementation of gRPC return codes and interceptor log level for server side.
+func WantToLog(code int, logger log.Logger) bool {
+	targerLvl, ok := defaultCodeToLevel[code]
+	if ok {
+		return targerLvl(logger) != nil
+	}
+	return true
 }
 
 type cfg struct {
@@ -145,9 +171,22 @@ func WithLogger(logger log.Logger) LogOpt {
 	}
 }
 
-var logDurationKey = log.DurationKey("http")
-var logStartTimeKey = log.StartTimeKey("http")
-var logHrefKey = log.HrefKey("http")
+var logDurationKey = log.DurationMSKey
+var logStartTimeKey = log.StartTimeKey
+
+type jwtMember struct {
+	Sub string `json:"sub,omitempty"`
+}
+
+type request struct {
+	Href   string     `json:"href,omitempty"`
+	JWT    *jwtMember `json:"jwt,omitempty"`
+	Method string     `json:"method,omitempty"`
+}
+
+type response struct {
+	Code int `json:"code,omitempty"`
+}
 
 func CreateLoggingMiddleware(opts ...LogOpt) func(next http.Handler) http.Handler {
 	cfg := cfg{
@@ -159,19 +198,35 @@ func CreateLoggingMiddleware(opts ...LogOpt) func(next http.Handler) http.Handle
 	return func(next http.Handler) http.Handler {
 		return netHttp.HandlerFunc(func(w netHttp.ResponseWriter, r *netHttp.Request) {
 			start := time.Now()
-			token := r.Header.Get("Authorization")
+			bearer := r.Header.Get("Authorization")
 			sw := statusWriter{ResponseWriter: w}
 
 			next.ServeHTTP(&sw, r)
 			duration := time.Since(start)
-
-			var sub string
 			logger := cfg.logger
-			if claims, err := jwt.ParseToken(token); err == nil {
-				sub = claims.Subject()
-				logger.With(log.JWTSubKey, sub)
+			if !WantToLog(sw.status, logger) {
+				return
 			}
-			logger = logger.With(logDurationKey, log.DurationToMilliseconds(duration), "http.method", r.Method, "http.code", sw.status, logStartTimeKey, start, logHrefKey, r.RequestURI)
+			req := &request{
+				Method: r.Method,
+				Href:   r.RequestURI,
+			}
+			token := strings.SplitN(bearer, " ", 2)
+			if len(token) == 2 && strings.ToLower(token[0]) == "bearer" {
+				if claims, err := jwt.ParseToken(token[1]); err == nil {
+					req.JWT = &jwtMember{
+						Sub: claims.Subject(),
+					}
+				}
+			}
+			resp := &response{
+				Code: sw.status,
+			}
+
+			logger = logger.With(logDurationKey, log.DurationToMilliseconds(duration), log.RequestKey, req, log.ResponseKey, resp, logStartTimeKey, start, log.ProtocolKey, "HTTP")
+			if deadline, ok := r.Context().Deadline(); ok {
+				logger = logger.With(log.DeadlineKey, deadline)
+			}
 			doLog := DefaultCodeToLevel(sw.status, logger)
 			doLog("finished unary call with status code ", sw.status)
 		})

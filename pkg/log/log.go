@@ -226,6 +226,7 @@ type Logger interface {
 	Unwrap() interface{}
 	LogAndReturnError(err error) error
 	Config() Config
+	Check(lvl zapcore.Level) bool
 }
 
 // Set logger for global log fuctions
@@ -240,6 +241,10 @@ type wrapSuggarLogger struct {
 
 func (l *wrapSuggarLogger) Config() Config {
 	return l.config
+}
+
+func (l *wrapSuggarLogger) Check(lvl zapcore.Level) bool {
+	return l.SugaredLogger.Desugar().Core().Enabled(lvl)
 }
 
 func (l *wrapSuggarLogger) With(args ...interface{}) Logger {

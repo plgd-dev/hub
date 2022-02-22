@@ -16,6 +16,7 @@ import (
 	"github.com/plgd-dev/hub/v2/coap-gateway/coapconv"
 	"github.com/plgd-dev/hub/v2/coap-gateway/resource"
 	grpcClient "github.com/plgd-dev/hub/v2/grpc-gateway/client"
+	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	idEvents "github.com/plgd-dev/hub/v2/identity-store/events"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
@@ -25,6 +26,7 @@ import (
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 	kitSync "github.com/plgd-dev/kit/v2/sync"
+	"google.golang.org/grpc"
 )
 
 type authorizationContext struct {
@@ -136,12 +138,16 @@ func (client *Client) Observe(ctx context.Context, path string, observeFunc func
 	}
 	t := time.Now()
 	obs, err := client.coapConn.ObserveRequest(req, observeFunc)
-	logger := client.logWithRequestResponse(req, nil)
-	logger.With(logStartTimeKey, t, logDurationKey, log.DurationToMilliseconds(time.Since(t)))
+	logger := client.getLogger()
+	if err == nil && !WantToLog(codes.Content, logger) {
+		return obs, err
+	}
+	logger = logger.With(log.StartTimeKey, t, log.DurationMSKey, log.DurationToMilliseconds(time.Since(t)))
+	logger = client.logWithRequestResponse(logger, req, nil)
 	if err != nil {
-		_ = logger.LogAndReturnError(fmt.Errorf(logRequestToClientKey+": %w", err))
-	} else {
-		logToLevel(codes.Content, logger)(logRequestToClientKey)
+		_ = logger.LogAndReturnError(fmt.Errorf("create observation to the device fails with error: %w", err))
+	} else if WantToLog(codes.Content, logger) {
+		DefaultCodeToLevel(codes.Content, logger)("finished creating observation to the device")
 	}
 	return obs, err
 }
@@ -153,18 +159,39 @@ func (client *Client) ReleaseMessage(m *pool.Message) {
 func (client *Client) Do(req *pool.Message, correlationID string) (*pool.Message, error) {
 	t := time.Now()
 	resp, err := client.coapConn.Do(req)
-	logger := client.logWithRequestResponse(req, resp)
-	logger.With(logStartTimeKey, t, logDurationKey, log.DurationToMilliseconds(time.Since(t)))
-
+	logger := client.getLogger()
+	if err == nil && resp != nil && !WantToLog(resp.Code(), logger) {
+		return resp, err
+	}
+	logger = logger.With(log.StartTimeKey, t, log.DurationMSKey, log.DurationToMilliseconds(time.Since(t)))
+	logger = client.logWithRequestResponse(logger, req, resp)
 	if correlationID != "" {
-		logger = client.logWithRequestResponse(req, resp).With(logCorrelationIDKey, correlationID)
+		logger = logger.With(log.CorrelationIDKey, correlationID)
 	}
 	if err != nil {
-		_ = logger.LogAndReturnError(fmt.Errorf(logRequestToClientKey+": %w", err))
-	} else {
-		logToLevel(resp.Code(), logger)(logRequestToClientKey)
+		_ = logger.LogAndReturnError(fmt.Errorf("finished unary call to the device with error: %w", err))
+	} else if WantToLog(resp.Code(), logger) {
+		DefaultCodeToLevel(resp.Code(), logger)(fmt.Sprintf("finished unary call to the device with code %v", resp.Code()))
 	}
 	return resp, err
+}
+
+func (client *Client) GetDevicesMetadata(ctx context.Context, in *pb.GetDevicesMetadataRequest, opts ...grpc.CallOption) (pb.GrpcGateway_GetDevicesMetadataClient, error) {
+	authCtx, err := client.GetAuthorizationContext()
+	if err != nil {
+		return nil, err
+	}
+	ctx = kitNetGrpc.CtxWithToken(ctx, authCtx.GetAccessToken())
+	return client.server.rdClient.GetDevicesMetadata(ctx, in, opts...)
+}
+
+func (client *Client) GetResourceLinks(ctx context.Context, in *pb.GetResourceLinksRequest, opts ...grpc.CallOption) (pb.GrpcGateway_GetResourceLinksClient, error) {
+	authCtx, err := client.GetAuthorizationContext()
+	if err != nil {
+		return nil, err
+	}
+	ctx = kitNetGrpc.CtxWithToken(ctx, authCtx.GetAccessToken())
+	return client.server.rdClient.GetResourceLinks(ctx, in, opts...)
 }
 
 func (client *Client) remoteAddrString() string {

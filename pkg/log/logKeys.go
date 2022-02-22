@@ -2,33 +2,47 @@ package log
 
 import "time"
 
-var CorrelationIDKey = "plgd.correlationId"
-var DeviceIDKey = "plgd.deviceId"
-var ResourceHrefKey = "plgd.resource.href"
+var CorrelationIDKey = "correlationId"
+var DeviceIDKey = "deviceId"
+var ResourceHrefKey = "href"
 var JWTSubKey = "jwt.sub"
-var CommandFilterKey = "plgd.commandFilter"
-var DeviceIDFilterKey = "plgd.deviceIdFilter"
-var ResourceIDFilterKey = "plgd.resourceIdFilter"
-var TypeFilterKey = "plgd.typeFilter"
-var EventFilterKey = "plgd.eventFilter"
-var SubActionKey = "plgd.sub.action"
+var CommandFilterKey = "commandFilter"
+var DeviceIDFilterKey = "deviceIdFilter"
+var ResourceIDFilterKey = "resourceIdFilter"
+var TypeFilterKey = "typeFilter"
+var EventFilterKey = "eventFilter"
+var SubActionKey = "subscriptionAction"
+var PlgdKey = "plgd"
+var JWTKey = "jwt"
+var SubKey = "sub"
+var RequestKey = "request"
+var ResponseKey = "response"
+var StartTimeKey = "startTime"
+var DeadlineKey = "deadline"
+var MethodKey = "method"
+var ProtocolKey = "protocol"
+var BodyKey = "body"
+var DurationMSKey = "durationMs"
 
 func DurationToMilliseconds(duration time.Duration) float32 {
 	return float32(duration.Nanoseconds()/1000) / 1000
 }
 
-func DurationKey(protocol string) string {
-	return protocol + ".time_ms"
-}
-
-func StartTimeKey(protocol string) string {
-	return protocol + ".start_time"
-}
-
-func ServiceKey(protocol string) string {
-	return protocol + ".service"
-}
-
-func HrefKey(protocol string) string {
-	return protocol + ".href"
+func SetLogValue(m map[string]interface{}, key string, val interface{}) {
+	if val == nil {
+		return
+	}
+	if v, ok := val.(string); ok && v == "" {
+		return
+	}
+	if v, ok := val.([]string); ok && len(v) == 0 {
+		return
+	}
+	if v, ok := val.(map[string]interface{}); ok && len(v) == 0 {
+		return
+	}
+	if v, ok := val.(map[interface{}]interface{}); ok && len(v) == 0 {
+		return
+	}
+	m[key] = val
 }

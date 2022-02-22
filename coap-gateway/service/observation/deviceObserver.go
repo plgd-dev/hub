@@ -14,11 +14,17 @@ import (
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
 type ObservationType int
+
+type GrpcGatewayClient interface {
+	GetDevicesMetadata(ctx context.Context, in *pb.GetDevicesMetadataRequest, opts ...grpc.CallOption) (pb.GrpcGateway_GetDevicesMetadataClient, error)
+	GetResourceLinks(ctx context.Context, in *pb.GetResourceLinksRequest, opts ...grpc.CallOption) (pb.GrpcGateway_GetResourceLinksClient, error)
+}
 
 const (
 	ObservationType_Detect      ObservationType = 0 // default, detect if /oic/res is observable using GET method, if not fallback to per resource observations
@@ -31,7 +37,7 @@ type DeviceObserver struct {
 	deviceID              string
 	observationType       ObservationType
 	shadowSynchronization commands.ShadowSynchronization
-	rdClient              pb.GrpcGatewayClient
+	rdClient              GrpcGatewayClient
 	resourcesObserver     *resourcesObserver
 	logger                log.Logger
 }
@@ -99,7 +105,7 @@ func (o LoggerOpt) Apply(opts *DeviceObserverConfig) {
 }
 
 // Create new deviceObserver with given settings
-func NewDeviceObserver(ctx context.Context, deviceID string, coapConn ClientConn, rdClient pb.GrpcGatewayClient, callbacks ResourcesObserverCallbacks, opts ...Option) (*DeviceObserver, error) {
+func NewDeviceObserver(ctx context.Context, deviceID string, coapConn ClientConn, rdClient GrpcGatewayClient, callbacks ResourcesObserverCallbacks, opts ...Option) (*DeviceObserver, error) {
 	createError := func(err error) error {
 		return fmt.Errorf("cannot create device observer: %w", err)
 	}
@@ -187,7 +193,7 @@ func detectObservationType(ctx context.Context, coapConn ClientConn) (Observatio
 }
 
 // Retrieve device metadata and get ShadowSynchronization value.
-func loadShadowSynchronization(ctx context.Context, rdClient pb.GrpcGatewayClient, deviceID string) (commands.ShadowSynchronization, error) {
+func loadShadowSynchronization(ctx context.Context, rdClient GrpcGatewayClient, deviceID string) (commands.ShadowSynchronization, error) {
 	metadataError := func(err error) error {
 		return fmt.Errorf("cannot get device(%v) metadata: %w", deviceID, err)
 	}
@@ -236,7 +242,7 @@ func createDiscoveryResourceObserver(ctx context.Context, deviceID string, coapC
 }
 
 // Create observer with a single observations for all published resources.
-func createPublishedResourcesObserver(ctx context.Context, rdClient pb.GrpcGatewayClient, deviceID string, coapConn ClientConn, callbacks ResourcesObserverCallbacks, logger log.Logger) (*resourcesObserver, error) {
+func createPublishedResourcesObserver(ctx context.Context, rdClient GrpcGatewayClient, deviceID string, coapConn ClientConn, callbacks ResourcesObserverCallbacks, logger log.Logger) (*resourcesObserver, error) {
 	resourcesObserver := newResourcesObserver(deviceID, coapConn, callbacks, logger)
 
 	published, err := getPublishedResources(ctx, rdClient, deviceID)
@@ -287,7 +293,7 @@ func (d *DeviceObserver) Clean(ctx context.Context) {
 }
 
 // Retrieve resources published for device.
-func getPublishedResources(ctx context.Context, rdClient pb.GrpcGatewayClient, deviceID string) ([]*commands.Resource, error) {
+func getPublishedResources(ctx context.Context, rdClient GrpcGatewayClient, deviceID string) ([]*commands.Resource, error) {
 	resourceLinksError := func(err error) error {
 		return fmt.Errorf("cannot get resource links for device(%v): %w", deviceID, err)
 	}

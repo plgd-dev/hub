@@ -1,6 +1,7 @@
 package service
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/plgd-dev/go-coap/v2/message/codes"
@@ -8,130 +9,176 @@ import (
 	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
 	coapgwMessage "github.com/plgd-dev/hub/v2/coap-gateway/service/message"
 	"github.com/plgd-dev/hub/v2/pkg/log"
+	"go.uber.org/zap/zapcore"
 )
 
-const logRequestKey = "coap.request"
-const logRequestDeadlineKey = "coap.request.deadline"
-const logResponseKey = "coap.response"
-const logRequestToClientKey = "request to client"
+const logNotificationKey = "notification"
 
-const logNotificationKey = "coap.notification"
+var toNil = func(args ...interface{}) {}
 
-var logCorrelationIDKey = log.CorrelationIDKey
-var logDeviceIDKey = log.DeviceIDKey
-var logDurationKey = log.DurationKey("coap")
-var logServiceKey = log.ServiceKey("coap")
-var logPathKey = log.HrefKey("coap")
-var logStartTimeKey = log.StartTimeKey("coap")
-
-func logToLevel(respCode codes.Code, logger log.Logger) func(args ...interface{}) {
-	switch respCode {
-	case codes.Created, codes.Deleted, codes.Valid, codes.Changed, codes.Continue, codes.Content, codes.NotFound:
+func toDebug(logger log.Logger) func(args ...interface{}) {
+	if logger.Check(zapcore.DebugLevel) {
 		return logger.Debug
-	case codes.GatewayTimeout, codes.Forbidden, codes.Abort, codes.ServiceUnavailable, codes.PreconditionFailed, codes.MethodNotAllowed, codes.NotAcceptable, codes.BadOption, codes.Unauthorized, codes.BadRequest, codes.RequestEntityIncomplete, codes.RequestEntityTooLarge, codes.UnsupportedMediaType:
+	}
+	return nil
+}
+
+func toWarn(logger log.Logger) func(args ...interface{}) {
+	if logger.Check(zapcore.WarnLevel) {
 		return logger.Warn
-	case codes.NotImplemented, codes.InternalServerError, codes.BadGateway, codes.ProxyingNotSupported:
-		return logger.Error
-	default:
+	}
+	return nil
+}
+
+func toError(logger log.Logger) func(args ...interface{}) {
+	if logger.Check(zapcore.ErrorLevel) {
 		return logger.Error
 	}
+	return nil
+}
+
+var defaultCodeToLevel = map[codes.Code]func(logger log.Logger) func(args ...interface{}){
+	codes.Created:  toDebug,
+	codes.Deleted:  toDebug,
+	codes.Valid:    toDebug,
+	codes.Changed:  toDebug,
+	codes.Continue: toDebug,
+	codes.Content:  toDebug,
+	codes.NotFound: toDebug,
+
+	codes.GatewayTimeout:          toWarn,
+	codes.Forbidden:               toWarn,
+	codes.Abort:                   toWarn,
+	codes.ServiceUnavailable:      toWarn,
+	codes.PreconditionFailed:      toWarn,
+	codes.MethodNotAllowed:        toWarn,
+	codes.NotAcceptable:           toWarn,
+	codes.BadOption:               toWarn,
+	codes.Unauthorized:            toWarn,
+	codes.BadRequest:              toWarn,
+	codes.RequestEntityIncomplete: toWarn,
+	codes.RequestEntityTooLarge:   toWarn,
+	codes.UnsupportedMediaType:    toWarn,
+
+	codes.NotImplemented:       toError,
+	codes.InternalServerError:  toError,
+	codes.BadGateway:           toError,
+	codes.ProxyingNotSupported: toError,
+}
+
+// DefaultCodeToLevel is the default implementation of gRPC return codes and interceptor log level for server side.
+func DefaultCodeToLevel(code codes.Code, logger log.Logger) func(args ...interface{}) {
+	targerLvl, ok := defaultCodeToLevel[code]
+	if ok {
+		v := targerLvl(logger)
+		if v == nil {
+			return toNil
+		}
+		return v
+	}
+	return logger.Error
+}
+
+func WantToLog(code codes.Code, logger log.Logger) bool {
+	targerLvl, ok := defaultCodeToLevel[code]
+	if ok {
+		return targerLvl(logger) != nil
+	}
+	return true
 }
 
 func (client *Client) getLogger() log.Logger {
 	logger := client.server.logger
-	if deviceID := client.deviceID(); deviceID != "" {
-		logger = logger.With(logDeviceIDKey, deviceID)
-	}
-	if v, err := client.GetAuthorizationContext(); err == nil && v.GetJWTClaims().Subject() != "" {
-		logger = logger.With(log.JWTSubKey, v.GetJWTClaims().Subject())
-	}
 	return logger
 }
 
 func (client *Client) Errorf(fmt string, args ...interface{}) {
-	client.getLogger().Errorf(fmt, args...)
+	logger := client.getLogger()
+	deviceID := client.deviceID()
+	if deviceID != "" {
+		logger = logger.With(log.DeviceIDKey, deviceID)
+	}
+	logger.Errorf(fmt, args...)
 }
 
 func (client *Client) Debugf(fmt string, args ...interface{}) {
-	client.getLogger().Debugf(fmt, args...)
+	logger := client.getLogger()
+	deviceID := client.deviceID()
+	if deviceID != "" {
+		logger = logger.With(log.DeviceIDKey, deviceID)
+	}
+	logger.Debugf(fmt, args...)
 }
 
 func (client *Client) Infof(fmt string, args ...interface{}) {
-	client.getLogger().Infof(fmt, args...)
-}
-
-func (client *Client) logWithMuxRequestResponse(req *mux.Message, resp *pool.Message) log.Logger {
-	var rq *pool.Message
-	if req != nil {
-		tmp, err := client.server.messagePool.ConvertFrom(req.Message)
-		if err == nil {
-			rq = tmp
-		}
-	}
-	return client.logWithRequestResponse(rq, resp)
-}
-
-func (client *Client) logWithRequestResponse(req *pool.Message, resp *pool.Message) log.Logger {
 	logger := client.getLogger()
+	deviceID := client.deviceID()
+	if deviceID != "" {
+		logger = logger.With(log.DeviceIDKey, deviceID)
+	}
+	logger.Infof(fmt, args...)
+}
+
+type jwtMember struct {
+	Sub string `json:"sub,omitempty"`
+}
+
+type logCoapMessage struct {
+	DeviceID string     `json:"deviceId,omitempty"`
+	JWT      *jwtMember `json:"jwt,omitempty"`
+	Method   string     `json:"method,omitempty"`
+	coapgwMessage.JsonCoapMessage
+}
+
+func (client *Client) logWithRequestResponse(logger log.Logger, req *pool.Message, resp *pool.Message) log.Logger {
 	if req != nil {
-		startTime, ok := req.Context().Value(&logStartTimeKey).(time.Time)
+		startTime, ok := req.Context().Value(&log.StartTimeKey).(time.Time)
 		if ok {
-			logger = logger.With(logStartTimeKey, startTime, logDurationKey, log.DurationToMilliseconds(time.Since(startTime)))
+			logger = logger.With(log.StartTimeKey, startTime, log.DurationMSKey, log.DurationToMilliseconds(time.Since(startTime)))
 		}
 		deadline, ok := req.Context().Deadline()
 		if ok {
-			logger = logger.With(logRequestDeadlineKey, deadline)
+			logger = logger.With(log.DeadlineKey, deadline)
 		}
-		logger = client.reqToLogger(req, logger, resp == nil)
+		logMsg := client.msgToLogCoapMessage(req, logger, resp == nil)
+		logger = logger.With(log.RequestKey, logMsg)
 	}
 	if resp != nil {
-		rsp, logger1 := client.msgToLogger(resp, logger, req == nil)
-		if rsp.IsEmpty() {
-			logger = logger1
-		} else {
-			logger = logger1.With(logResponseKey, rsp)
+		logMsg := client.msgToLogCoapMessage(resp, logger, req == nil)
+		if req != nil {
+			logMsg.DeviceID = ""
+			logMsg.JWT = nil
 		}
+		logger = logger.With(log.ResponseKey, logMsg)
 	}
-	return logger
+	return logger.With(log.ProtocolKey, "COAP")
 }
 
-func (client *Client) logRequest(msg string, req *pool.Message, resp *pool.Message) {
-	logger := client.logWithRequestResponse(req, resp)
-	if resp != nil {
-		logToLevel(resp.Code(), logger)(msg)
-		return
-	}
-	logger.Debug(msg)
-}
-
-func (client *Client) msgToLogger(req *pool.Message, logger log.Logger, withToken bool) (coapgwMessage.JsonCoapMessage, log.Logger) {
+func (client *Client) msgToLogCoapMessage(req *pool.Message, logger log.Logger, withToken bool) logCoapMessage {
 	rq := coapgwMessage.ToJson(req, client.server.config.Log.DumpBody, withToken)
-	if rq.Path != "" {
-		logger = logger.With(logPathKey, rq.Path)
-		rq.Path = ""
+	deviceID := client.deviceID()
+	var sub string
+	if v, err := client.GetAuthorizationContext(); err == nil {
+		sub = v.GetJWTClaims().Subject()
+	}
+	dumpReq := logCoapMessage{
+		DeviceID:        deviceID,
+		JsonCoapMessage: rq,
+	}
+	if sub != "" {
+		dumpReq.JWT = &jwtMember{
+			Sub: sub,
+		}
 	}
 	if req.Code() >= codes.GET && req.Code() <= codes.DELETE {
-		logger = logger.With("coap.method", rq.Code)
-	} else {
-		logger = logger.With("coap.code", rq.Code)
+		dumpReq.Method = rq.Code
+		dumpReq.Code = ""
 	}
-	rq.Code = ""
-	return rq, logger
-}
-
-func (client *Client) reqToLogger(req *pool.Message, logger log.Logger, withToken bool) log.Logger {
-	rq, logger := client.msgToLogger(req, logger, withToken)
-	if rq.IsEmpty() {
-		return logger
-	}
-	return logger.With(logRequestKey, rq)
+	return dumpReq
 }
 
 func (client *Client) ErrorfRequest(req *mux.Message, fmt string, args ...interface{}) {
-	client.logWithMuxRequestResponse(req, nil).Errorf(fmt, args...)
-}
-
-func (client *Client) logClientRequest(req *mux.Message, resp *pool.Message) {
+	logger := client.getLogger()
 	var rq *pool.Message
 	if req != nil {
 		tmp, err := client.server.messagePool.ConvertFrom(req.Message)
@@ -139,29 +186,59 @@ func (client *Client) logClientRequest(req *mux.Message, resp *pool.Message) {
 			rq = tmp
 		}
 	}
-	client.logRequest("request from client", rq, resp)
+	logger = client.logWithRequestResponse(logger, rq, nil)
+	logger.Errorf(fmt, args...)
+}
+
+func (client *Client) logClientRequest(req *mux.Message, resp *pool.Message) {
+	logger := client.getLogger()
+	if resp != nil && !WantToLog(resp.Code(), logger) {
+		return
+	}
+	var rq *pool.Message
+	if req != nil {
+		tmp, err := client.server.messagePool.ConvertFrom(req.Message)
+		if err == nil {
+			rq = tmp
+		}
+	}
+	logger = client.logWithRequestResponse(logger, rq, resp)
+	if resp != nil {
+		msg := fmt.Sprintf("finished unary call from the device with code %v", resp.Code())
+		if _, err := rq.Observe(); err == nil {
+			msg = fmt.Sprintf("finished observe call from the device with code %v", resp.Code())
+		}
+		DefaultCodeToLevel(resp.Code(), logger)(msg)
+		return
+	}
+	logger.Debug("finished unary call from the device")
 }
 
 func (client *Client) logNotification(logMsg, path string, notification *pool.Message) {
 	logger := client.getLogger()
-	if path != "" {
-		logger = logger.With(logPathKey, path)
+	if notification != nil && !WantToLog(notification.Code(), logger) {
+		return
 	}
 	if notification != nil {
-		rsp, logger1 := client.msgToLogger(notification, logger, true)
-		if rsp.IsEmpty() {
-			logger = logger1
-		} else {
-			logger = logger1.With(logNotificationKey, rsp)
-		}
+		rsp := client.msgToLogCoapMessage(notification, logger, true)
+		rsp.Path = path
+		logger = logger.With(logNotificationKey, rsp)
 	}
-	logToLevel(notification.Code(), logger)(logMsg)
+	DefaultCodeToLevel(notification.Code(), logger.With(log.ProtocolKey, "COAP"))(logMsg)
 }
 
 func (client *Client) logNotificationToClient(path string, notification *pool.Message) {
-	client.logNotification("notification to client", path, notification)
+	code := "unknown"
+	if notification != nil {
+		code = notification.Code().String()
+	}
+	client.logNotification(fmt.Sprintf("notification to the device was send with code %v", code), path, notification)
 }
 
 func (client *Client) logNotificationFromClient(path string, notification *pool.Message) {
-	client.logNotification("notification from client", path, notification)
+	code := "unknown"
+	if notification != nil {
+		code = notification.Code().String()
+	}
+	client.logNotification(fmt.Sprintf("notification from the device was received with code %v", code), path, notification)
 }

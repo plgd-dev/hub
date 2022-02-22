@@ -63,7 +63,7 @@ func (client *Client) replaceDeviceObserverWithDeviceShadow(ctx context.Context,
 		client.Errorf("failed to close replaced device observer: %w", err)
 	}
 
-	deviceObserver, err := observation.NewDeviceObserver(ctx, deviceID, client, client.server.rdClient,
+	deviceObserver, err := observation.NewDeviceObserver(client.Context(), deviceID, client, client,
 		observation.MakeResourcesObserverCallbacks(client.onObserveResource, client.onGetResourceContent),
 		observation.WithShadowSynchronization(shadow), observation.WithObservationType(observationType),
 		observation.WithLogger(client.getLogger()),
