@@ -14,7 +14,9 @@ import (
 
 const logNotificationKey = "notification"
 
-var toNil = func(args ...interface{}) {}
+var toNil = func(args ...interface{}) {
+	// Do nothing because we don't want to log anything
+}
 
 func toDebug(logger log.Logger) func(args ...interface{}) {
 	if logger.Check(zapcore.DebugLevel) {

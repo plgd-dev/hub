@@ -22,6 +22,7 @@ import (
 )
 
 const grpcPrefixKey = "grpc"
+const requestKey = "request"
 
 var defaultCodeToLevel = map[codes.Code]zapcore.Level{
 	codes.OK:                 zap.DebugLevel,
@@ -130,50 +131,54 @@ func CodeGenRequestFieldExtractor(fullMethod string, req interface{}) map[string
 	return nil
 }
 
+func defaultMessageProducer(ctx context.Context, ctxLogger context.Context, msg string, level zapcore.Level, code codes.Code, err error, duration zapcore.Field) {
+	req := make(map[string]interface{})
+	resp := make(map[string]interface{})
+	resp["code"] = code.String()
+	if err != nil {
+		resp["error"] = err.Error()
+	}
+
+	if sub, err := kitNetGrpc.OwnerFromTokenMD(ctx, "sub"); err == nil {
+		req[log.JWTKey] = map[string]string{
+			log.SubKey: sub,
+		}
+	}
+	tags := grpc_ctxtags.Extract(ctx)
+	newTags := grpc_ctxtags.NewTags()
+	newTags.Set(log.DurationMSKey, math.Float32frombits(uint32(duration.Integer)))
+	newTags.Set(log.ProtocolKey, "GRPC")
+	for k, v := range tags.Values() {
+		if strings.HasPrefix(k, grpcPrefixKey+"."+requestKey+"."+log.StartTimeKey) {
+			newTags.Set(log.StartTimeKey, v)
+			continue
+		}
+		if strings.HasPrefix(k, grpcPrefixKey+"."+requestKey+"."+log.DeviceIDKey) {
+			newTags.Set(log.DeviceIDKey, v)
+			continue
+		}
+		if strings.HasPrefix(k, grpcPrefixKey+"."+requestKey+".") {
+			req[strings.TrimPrefix(k, grpcPrefixKey+"."+requestKey+".")] = v
+		}
+	}
+	if len(req) > 0 {
+		newTags.Set(log.RequestKey, req)
+	}
+	if len(resp) > 0 {
+		newTags.Set(log.ResponseKey, resp)
+	}
+	if deadline, ok := ctx.Deadline(); ok {
+		newTags.Set(log.DeadlineKey, deadline)
+	}
+	ctx = grpc_ctxtags.SetInContext(ctxLogger, newTags)
+
+	ctxzap.Extract(ctx).Check(level, msg).Write()
+}
+
 func MakeDefaultMessageProducer(logger *zap.Logger) func(ctx context.Context, msg string, level zapcore.Level, code codes.Code, err error, duration zapcore.Field) {
 	ctxLogger := ctxzap.ToContext(context.Background(), logger)
 	return func(ctx context.Context, msg string, level zapcore.Level, code codes.Code, err error, duration zapcore.Field) {
-		req := make(map[string]interface{})
-		resp := make(map[string]interface{})
-		resp["code"] = code.String()
-		if err != nil {
-			resp["error"] = err.Error()
-		}
-
-		if sub, err := kitNetGrpc.OwnerFromTokenMD(ctx, "sub"); err == nil {
-			req[log.JWTKey] = map[string]string{
-				log.SubKey: sub,
-			}
-		}
-		tags := grpc_ctxtags.Extract(ctx)
-		newTags := grpc_ctxtags.NewTags()
-		newTags.Set(log.DurationMSKey, math.Float32frombits(uint32(duration.Integer)))
-		newTags.Set(log.ProtocolKey, "GRPC")
-		for k, v := range tags.Values() {
-			if strings.HasPrefix(k, grpcPrefixKey+".request."+log.StartTimeKey) {
-				newTags.Set(log.StartTimeKey, v)
-				continue
-			}
-			if strings.HasPrefix(k, grpcPrefixKey+".request."+log.DeviceIDKey) {
-				newTags.Set(log.DeviceIDKey, v)
-				continue
-			}
-			if strings.HasPrefix(k, grpcPrefixKey+".request.") {
-				req[strings.TrimPrefix(k, grpcPrefixKey+".request.")] = v
-			}
-		}
-		if len(req) > 0 {
-			newTags.Set(log.RequestKey, req)
-		}
-		if len(resp) > 0 {
-			newTags.Set(log.ResponseKey, resp)
-		}
-		if deadline, ok := ctx.Deadline(); ok {
-			newTags.Set(log.DeadlineKey, deadline)
-		}
-		ctx = grpc_ctxtags.SetInContext(ctxLogger, newTags)
-
-		ctxzap.Extract(ctx).Check(level, msg).Write()
+		defaultMessageProducer(ctx, ctxLogger, msg, level, code, err, duration)
 	}
 }
 
