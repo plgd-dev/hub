@@ -84,8 +84,7 @@ func TestRequestHandler_UpdateDeviceMetadata(t *testing.T) {
 	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 
-	logger, err := log.NewLogger(log.Config{})
-	require.NoError(t, err)
+	logger := log.NewLogger(log.MakeDefaultConfig())
 	naClient, s, err := natsTest.NewClientAndSubscriber(testCfg.MakeSubscriberConfig(), logger, subscriber.WithUnmarshaler(utils.Unmarshal))
 	require.NoError(t, err)
 	defer func() {

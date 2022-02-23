@@ -27,8 +27,8 @@ import (
 )
 
 func ClearDB(ctx context.Context, t *testing.T) {
-	logger, err := log.NewLogger(log.Config{Debug: true})
-	require.NoError(t, err)
+	logCfg := log.MakeDefaultConfig()
+	logger := log.NewLogger(logCfg)
 	tlsConfig := config.MakeTLSClientConfig()
 	certManager, err := cmClient.New(tlsConfig, logger)
 	require.NoError(t, err)

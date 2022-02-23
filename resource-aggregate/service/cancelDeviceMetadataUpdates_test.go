@@ -2,7 +2,6 @@ package service_test
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/golang-jwt/jwt/v4"
@@ -71,11 +70,8 @@ func TestAggregateHandle_CancelPendingMetadataUpdates(t *testing.T) {
 
 	cfg := raTest.MakeConfig(t)
 	ctx := context.Background()
-	logger, err := log.NewLogger(cfg.Log)
+	logger := log.NewLogger(cfg.Log)
 
-	fmt.Printf("%v\n", cfg.String())
-
-	require.NoError(t, err)
 	eventstore, err := mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	err = eventstore.Clear(ctx)
@@ -193,11 +189,8 @@ func TestRequestHandler_CancelPendingMetadataUpdates(t *testing.T) {
 
 	cfg := raTest.MakeConfig(t)
 	ctx := context.Background()
-	logger, err := log.NewLogger(cfg.Log)
+	logger := log.NewLogger(cfg.Log)
 
-	fmt.Printf("%v\n", cfg.String())
-
-	require.NoError(t, err)
 	eventstore, err := mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	err = eventstore.Clear(ctx)

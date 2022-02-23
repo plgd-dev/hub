@@ -15,6 +15,7 @@ import (
 	testCfg "github.com/plgd-dev/hub/v2/test/config"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
 )
 
 func TestPublishUnpublish(t *testing.T) {
@@ -27,7 +28,9 @@ func TestPublishUnpublish(t *testing.T) {
 
 	idShutdown := idService.SetUp(t)
 	defer idShutdown()
-
+	cfg := log.MakeDefaultConfig()
+	cfg.Level = zap.DebugLevel
+	log.Setup(cfg)
 	raShutdown := test.New(t, config)
 	defer raShutdown()
 
@@ -60,6 +63,8 @@ func TestPublishUnpublish(t *testing.T) {
 		require.NoError(t, err)
 	}()
 
+	cfg.Level = zap.DebugLevel
+	log.Setup(cfg)
 	pubReq := testMakePublishResourceRequest(deviceID, []string{href})
 	_, err = raClient.PublishResourceLinks(ctx, pubReq)
 	require.NoError(t, err)

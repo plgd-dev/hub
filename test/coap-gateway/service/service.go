@@ -107,7 +107,8 @@ func decodeMsgToDebug(client *Client, resp *pool.Message, tag string) {
 	if !client.server.config.Log.DumpCoapMessages {
 		return
 	}
-	message.DecodeMsgToDebug(client.GetDeviceID(), resp, tag)
+	msg := message.ToJson(resp, true, true)
+	log.Get().With("msg", msg).Debug(tag)
 }
 
 const clientKey = "client"

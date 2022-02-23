@@ -8,7 +8,13 @@ data:
   {{ .Values.httpgateway.config.fileName }}: |
     {{- with .Values.httpgateway }}
     log:
-      debug: {{ .log.debug }}
+      level: {{ .log.level }}
+      encoding: {{ .log.encoding }}
+      stacktrace:
+        enabled: {{ .log.stacktrace.enabled }}
+        level: {{ .log.stacktrace.level }}
+      encoderConfig:
+        timeEncoder: {{ .log.encoderConfig.timeEncoder }}
     apis:
       http:
         address: {{  .apis.http.address | default (printf "0.0.0.0:%v" .port) | quote }}

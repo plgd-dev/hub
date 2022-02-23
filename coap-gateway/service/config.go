@@ -23,6 +23,9 @@ type Config struct {
 }
 
 func (c *Config) Validate() error {
+	if err := c.Log.Validate(); err != nil {
+		return fmt.Errorf("log.%w", err)
+	}
 	if err := c.APIs.Validate(); err != nil {
 		return fmt.Errorf("apis.%w", err)
 	}
@@ -37,8 +40,8 @@ func (c *Config) Validate() error {
 
 //Config represent application configuration
 type LogConfig struct {
-	Embedded         log.Config `yaml:",inline" json:",inline"`
-	DumpCoapMessages bool       `yaml:"dumpCoapMessages" json:"dumpCoapMessages"`
+	DumpBody   bool `yaml:"dumpBody" json:"dumpBody"`
+	log.Config `yaml:",inline"`
 }
 
 type APIsConfig struct {

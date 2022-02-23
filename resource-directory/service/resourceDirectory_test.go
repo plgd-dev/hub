@@ -52,8 +52,7 @@ func TestResourceDirectory_GetResourceLinks(t *testing.T) {
 			},
 		},
 	}
-	logger, err := log.NewLogger(log.Config{})
-	require.NoError(t, err)
+	logger := log.NewLogger(log.MakeDefaultConfig())
 	pool, err := ants.NewPool(1)
 	require.NoError(t, err)
 	naClient, resourceSubscriber, err := natsTest.NewClientAndSubscriber(config.MakeSubscriberConfig(),

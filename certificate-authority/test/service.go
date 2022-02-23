@@ -23,6 +23,8 @@ func MakeConfig(t *testing.T) service.Config {
 	cfg.Signer.ExpiresIn = time.Hour * 2
 	cfg.Signer.HubID = config.HubID()
 
+	cfg.Log = log.MakeDefaultConfig()
+
 	err := cfg.Validate()
 	require.NoError(t, err)
 
@@ -35,8 +37,7 @@ func SetUp(t *testing.T) (TearDown func()) {
 
 func New(t *testing.T, cfg service.Config) func() {
 	ctx := context.Background()
-	logger, err := log.NewLogger(cfg.Log)
-	require.NoError(t, err)
+	logger := log.NewLogger(cfg.Log)
 
 	s, err := service.New(ctx, cfg, logger)
 	require.NoError(t, err)

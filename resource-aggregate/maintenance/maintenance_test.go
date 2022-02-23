@@ -116,8 +116,7 @@ func getTaskToSave(groupID, aggregateID string, version uint64) maintenance.Task
 }
 
 func TestPerformMaintenance(t *testing.T) {
-	logger, err := log.NewLogger(log.Config{})
-	require.NoError(t, err)
+	logger := log.NewLogger(log.MakeDefaultConfig())
 
 	config := Config{
 		NumAggregates: 77,

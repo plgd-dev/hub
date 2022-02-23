@@ -70,6 +70,11 @@ then
   export DEVICE_OAUTH_REDIRECT_URL="cloud.plgd.mobile://login-callback"
 fi
 
+export LOG_LEVEL="info"
+if [ "${LOG_DEBUG}" = "true" ]; then
+export LOG_LEVEL="debug"
+fi
+
 if [ -z "${OAUTH_ENDPOINT}" ]
 then
   export OAUTH_ENDPOINT=${DOMAIN}
@@ -444,6 +449,7 @@ echo "starting oauth-server"
 
 ## setup cfg
 cat /configs/oauth-server.yaml | yq e "\
+  .log.level = \"${LOG_LEVEL}\" |
   .apis.http.address = \"${MOCK_OAUTH_SERVER_ADDRESS}\" |
   .oauthSigner.idTokenKeyFile = \"${OAUTH_ID_TOKEN_KEY_PATH}\" |
   .oauthSigner.accessTokenKeyFile = \"${OAUTH_ACCESS_TOKEN_KEY_PATH}\" |
@@ -475,6 +481,7 @@ done
 # identity-store
 ## configuration
 cat /configs/identity-store.yaml | yq e "\
+  .log.level = \"${LOG_LEVEL}\" |
   .apis.grpc.address = \"${IDENTITY_STORE_ADDRESS}\" |
   .apis.grpc.authorization.http.tls.useSystemCAPool = true |
   .apis.grpc.authorization.ownerClaim = \"${OWNER_CLAIM}\" |
@@ -511,6 +518,7 @@ done
 # resource-aggregate
 ## configuration
 cat /configs/resource-aggregate.yaml | yq e "\
+  .log.level = \"${LOG_LEVEL}\" |
   .apis.grpc.address = \"${RESOURCE_AGGREGATE_ADDRESS}\" |
   .apis.grpc.authorization.http.tls.useSystemCAPool = true |
   .apis.grpc.authorization.ownerClaim = \"${OWNER_CLAIM}\" |
@@ -547,6 +555,7 @@ done
 # resource-directory
 ## configuration
 cat /configs/resource-directory.yaml | yq e "\
+  .log.level = \"${LOG_LEVEL}\" |
   .apis.grpc.address = \"${RESOURCE_DIRECTORY_ADDRESS}\" |
   .apis.grpc.authorization.ownerClaim = \"${OWNER_CLAIM}\" |
   .apis.grpc.authorization.audience = \"${SERVICE_OAUTH_AUDIENCE}\" |
@@ -587,8 +596,8 @@ done
 echo "starting coap-gateway-unsecure"
 ## configuration
 cat /configs/coap-gateway.yaml | yq e "\
-  .log.debug = ${LOG_DEBUG} |
-  .log.dumpCoapMessages = ${COAP_GATEWAY_LOG_MESSAGES} |
+  .log.level = \"${LOG_LEVEL}\" |
+  .log.dumpBody = ${COAP_GATEWAY_LOG_MESSAGES} |
   .apis.coap.address = \"${COAP_GATEWAY_UNSECURE_ADDRESS}\" |
   .apis.coap.externalAddress = \"${FQDN}:${COAP_GATEWAY_UNSECURE_PORT}\" |
   .apis.coap.tls.enabled = false |
@@ -629,8 +638,8 @@ fi
 echo "starting coap-gateway-secure"
 ### setup cfgs from env
 cat /configs/coap-gateway.yaml | yq e "\
-  .log.debug = ${LOG_DEBUG} |
-  .log.dumpCoapMessages =  ${COAP_GATEWAY_LOG_MESSAGES} |
+  .log.level = \"${LOG_LEVEL}\" |
+  .log.dumpBody =  ${COAP_GATEWAY_LOG_MESSAGES} |
   .apis.coap.address = \"${COAP_GATEWAY_ADDRESS}\" |
   .apis.coap.externalAddress = \"${FQDN}:${COAP_GATEWAY_PORT}\" |
   .apis.coap.tls.enabled = true |
@@ -672,6 +681,7 @@ fi
 echo "starting grpc-gateway"
 ## configuration
 cat /configs/grpc-gateway.yaml | yq e "\
+  .log.level = \"${LOG_LEVEL}\" |
   .apis.grpc.address = \"${GRPC_GATEWAY_ADDRESS}\" |
   .apis.grpc.authorization.audience = \"${SERVICE_OAUTH_AUDIENCE}\" |
   .apis.grpc.authorization.http.tls.useSystemCAPool = true |
@@ -706,6 +716,7 @@ done
 # http-gateway
 ## configuration
 cat /configs/http-gateway.yaml | yq e "\
+  .log.level = \"${LOG_LEVEL}\" |
   .apis.http.address = \"${HTTP_GATEWAY_ADDRESS}\" |
   .apis.http.authorization.audience = \"${SERVICE_OAUTH_AUDIENCE}\" |
   .apis.http.authorization.http.tls.useSystemCAPool = true |
@@ -749,6 +760,7 @@ done
 echo "starting certificate-authority"
 ## configuration
 cat /configs/certificate-authority.yaml | yq e "\
+  .log.level = \"${LOG_LEVEL}\" |
   .apis.grpc.address = \"${CERTIFICATE_AUTHORITY_ADDRESS}\" |
   .apis.grpc.authorization.audience = \"${SERVICE_OAUTH_AUDIENCE}\" |
   .apis.grpc.authorization.http.tls.useSystemCAPool = true |
@@ -782,7 +794,7 @@ done
 # cloud2cloud-gateway
 ## configuration
 cat /configs/cloud2cloud-gateway.yaml | yq e "\
-  .log.debug = ${LOG_DEBUG} |
+  .log.level = \"${LOG_LEVEL}\" |
   .apis.http.address = \"${CLOUD2CLOUD_GATEWAY_ADDRESS}\" |
   .apis.http.authorization.audience = \"${SERVICE_OAUTH_AUDIENCE}\" |
   .apis.http.authorization.http.tls.useSystemCAPool = true |
@@ -819,7 +831,7 @@ done
 # cloud2cloud-connector
 ## configuration
 cat /configs/cloud2cloud-connector.yaml | yq e "\
-  .log.debug = ${LOG_DEBUG} |
+  .log.level = \"${LOG_LEVEL}\" |
   .apis.http.address = \"${CLOUD2CLOUD_CONNECTOR_ADDRESS}\" |
   .apis.http.authorization.audience = \"${SERVICE_OAUTH_AUDIENCE}\" |
   .apis.http.authorization.http.tls.useSystemCAPool = true |

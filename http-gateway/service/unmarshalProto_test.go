@@ -29,6 +29,7 @@ func UnmarshalError(data []byte) error {
 func Unmarshal(code int, input io.Reader, v protoreflect.ProtoMessage) error {
 	var data json.RawMessage
 	err := json.NewDecoder(input).Decode(&data)
+
 	if err != nil {
 		return err
 	}

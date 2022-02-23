@@ -142,8 +142,7 @@ func TestRequestHandlerSubscribeToDevicesOffline(t *testing.T) {
 	tearDown := service.SetUp(ctx, t)
 	defer tearDown()
 	coapgwCfg := coapgwTest.MakeConfig(t)
-	coapgwCfg.Log.Embedded.Debug = true
-	coapgwCfg.Log.DumpCoapMessages = true
+	coapgwCfg.Log.DumpBody = true
 	coapgwCfg.APIs.COAP.Addr = "localhost:45684"
 	gwShutdown := coapgwTest.New(t, coapgwCfg)
 	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))

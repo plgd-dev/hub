@@ -2,7 +2,6 @@ package test
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"sync"
 	"testing"
@@ -40,6 +39,9 @@ func MakeWebConfigurationConfig() service.WebConfiguration {
 
 func MakeConfig(t *testing.T, enableUI bool) service.Config {
 	var cfg service.Config
+
+	cfg.Log = log.MakeDefaultConfig()
+
 	cfg.APIs.HTTP.Authorization = config.MakeAuthorizationConfig()
 	cfg.APIs.HTTP.Connection = config.MakeListenerConfig(config.HTTP_GW_HOST)
 	cfg.APIs.HTTP.Connection.TLS.ClientCertificateRequired = false
@@ -57,8 +59,6 @@ func MakeConfig(t *testing.T, enableUI bool) service.Config {
 	err := cfg.Validate()
 	require.NoError(t, err)
 
-	fmt.Printf("cfg\n%v\n", cfg.String())
-
 	return cfg
 }
 
@@ -68,9 +68,7 @@ func SetUp(t *testing.T) (TearDown func()) {
 
 func New(t *testing.T, cfg service.Config) func() {
 	ctx := context.Background()
-	logger, err := log.NewLogger(cfg.Log)
-	require.NoError(t, err)
-
+	logger := log.NewLogger(cfg.Log)
 	s, err := service.New(ctx, cfg, logger)
 	require.NoError(t, err)
 

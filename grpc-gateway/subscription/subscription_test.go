@@ -222,7 +222,7 @@ func TestRequestHandlerSubscribeToEvents(t *testing.T) {
 
 	tearDown := service.SetUp(ctx, t)
 	defer tearDown()
-	// log.Setup(log.Config{Debug: true})
+
 	token := oauthTest.GetDefaultAccessToken(t)
 	ctx = kitNetGrpc.CtxWithIncomingToken(kitNetGrpc.CtxWithToken(ctx, token), token)
 

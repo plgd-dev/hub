@@ -18,6 +18,9 @@ type Config struct {
 }
 
 func (c *Config) Validate() error {
+	if err := c.Log.Validate(); err != nil {
+		return fmt.Errorf("log.%w", err)
+	}
 	if err := c.Clients.Validate(); err != nil {
 		return fmt.Errorf("clients.%w", err)
 	}

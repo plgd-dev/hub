@@ -62,8 +62,7 @@ func TestReconnectNATSAndGrpcGateway(t *testing.T) {
 	raShutdown := raTest.SetUp(t)
 	rdShutdown := rdTest.SetUp(t)
 	coapgwCfg := coapgwTest.MakeConfig(t)
-	coapgwCfg.Log.Embedded.Debug = true
-	coapgwCfg.Log.DumpCoapMessages = true
+	coapgwCfg.Log.DumpBody = true
 	gwShutdown := coapgwTest.New(t, coapgwCfg)
 	defer func() {
 		gwShutdown()

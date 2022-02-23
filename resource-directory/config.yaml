@@ -1,5 +1,11 @@
 log:
-  debug: false
+  level: info
+  encoding: json
+  stacktrace:
+    enabled: false
+    level: warn
+  encoderConfig:
+    timeEncoder: rfc3339nano
 apis:
   grpc:
     address: "0.0.0.0:9100"

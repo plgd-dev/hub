@@ -9,8 +9,8 @@ import (
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/mux"
 	"github.com/plgd-dev/hub/v2/coap-gateway/coapconv"
-	"github.com/plgd-dev/hub/v2/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	"github.com/plgd-dev/hub/v2/pkg/security/jwt"
 	"github.com/plgd-dev/hub/v2/pkg/security/oauth2"
 	pkgTime "github.com/plgd-dev/hub/v2/pkg/time"
 	"github.com/plgd-dev/kit/v2/codec/cbor"
@@ -69,7 +69,7 @@ func validUntilToExpiresIn(validUntil time.Time) int64 {
 	return int64(time.Until(validUntil).Seconds())
 }
 
-func updateClient(client *Client, deviceID, owner, accessToken string, validUntil time.Time) {
+func updateClient(client *Client, deviceID, owner, accessToken string, validUntil time.Time, jwtClaims jwt.Claims) {
 	if _, err := client.GetAuthorizationContext(); err != nil {
 		return
 	}
@@ -78,6 +78,7 @@ func updateClient(client *Client, deviceID, owner, accessToken string, validUnti
 		UserID:      owner,
 		AccessToken: accessToken,
 		Expire:      validUntil,
+		JWTClaims:   jwtClaims,
 	}
 	client.SetAuthorizationContext(&authCtx)
 
@@ -92,9 +93,9 @@ func updateClient(client *Client, deviceID, owner, accessToken string, validUnti
 func refreshTokenPostHandler(req *mux.Message, client *Client) {
 	const fmtErr = "cannot handle refresh token for %v: %w"
 	logErrorAndCloseClient := func(err error, code coapCodes.Code) {
-		client.logAndWriteErrorResponse(err, code, req.Token)
+		client.logAndWriteErrorResponse(req, err, code, req.Token)
 		if err := client.Close(); err != nil {
-			log.Errorf("refresh token error: %w", err)
+			client.Errorf("refresh token error: %w", err)
 		}
 	}
 
@@ -111,7 +112,7 @@ func refreshTokenPostHandler(req *mux.Message, client *Client) {
 		return
 	}
 
-	token, err := client.refreshCache.Execute(req.Context, client.server.providers, client.server.taskQueue, refreshToken.RefreshToken)
+	token, err := client.refreshCache.Execute(req.Context, client.server.providers, client.server.taskQueue, refreshToken.RefreshToken, client.getLogger())
 	if err != nil {
 		logErrorAndCloseClient(fmt.Errorf(fmtErr, refreshToken.DeviceID, err), coapCodes.Unauthorized)
 		return
@@ -169,9 +170,9 @@ func refreshTokenPostHandler(req *mux.Message, client *Client) {
 		return
 	}
 
-	updateClient(client, deviceID, owner, token.AccessToken.String(), validUntil)
+	updateClient(client, deviceID, owner, token.AccessToken.String(), validUntil, claim)
 
-	client.sendResponse(coapCodes.Changed, req.Token, accept, out)
+	client.sendResponse(req, coapCodes.Changed, req.Token, accept, out)
 }
 
 // RefreshToken
@@ -181,6 +182,6 @@ func refreshTokenHandler(req *mux.Message, client *Client) {
 	case coapCodes.POST:
 		refreshTokenPostHandler(req, client)
 	default:
-		client.logAndWriteErrorResponse(fmt.Errorf("forbidden request from %v", client.remoteAddrString()), coapCodes.Forbidden, req.Token)
+		client.logAndWriteErrorResponse(req, fmt.Errorf("forbidden request from %v", client.remoteAddrString()), coapCodes.Forbidden, req.Token)
 	}
 }

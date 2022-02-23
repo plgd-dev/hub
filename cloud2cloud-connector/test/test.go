@@ -138,8 +138,7 @@ func SetUpClouds(ctx context.Context, t *testing.T, deviceID string, supportedEv
 func NewMongoStore(t *testing.T) (*mongodb.Store, func()) {
 	cfg := MakeConfig(t)
 
-	logger, err := log.NewLogger(cfg.Log)
-	require.NoError(t, err)
+	logger := log.NewLogger(cfg.Log)
 
 	certManager, err := cmClient.New(cfg.Clients.Storage.MongoDB.TLS, logger)
 	require.NoError(t, err)

@@ -2,7 +2,6 @@ package service_test
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/golang-jwt/jwt/v4"
@@ -130,11 +129,8 @@ func TestRequestHandler_CancelPendingCommands(t *testing.T) {
 	ctx := kitNetGrpc.CtxWithIncomingToken(context.Background(), config.CreateJwtToken(t, jwt.MapClaims{
 		"sub": userID,
 	}))
-	logger, err := log.NewLogger(cfg.Log)
+	logger := log.NewLogger(cfg.Log)
 
-	fmt.Printf("%v\n", cfg.String())
-
-	require.NoError(t, err)
 	eventstore, err := mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	err = eventstore.Clear(ctx)

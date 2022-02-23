@@ -3,7 +3,7 @@ package config
 import (
 	"fmt"
 
-	yaml "gopkg.in/yaml.v2"
+	yaml "gopkg.in/yaml.v3"
 )
 
 // Parse parse bytes to config

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io"
 	"net/url"
-	"time"
 
 	"github.com/plgd-dev/device/schema"
 	"github.com/plgd-dev/go-coap/v2/message"
@@ -13,7 +12,6 @@ import (
 	"github.com/plgd-dev/hub/v2/coap-gateway/coapconv"
 	"github.com/plgd-dev/hub/v2/coap-gateway/uri"
 	pbGRPC "github.com/plgd-dev/hub/v2/grpc-gateway/pb"
-	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 )
 
@@ -99,32 +97,27 @@ func makeDiscoveryResp(isTLSListener bool, serverAddr string, getResourceLinksCl
 }
 
 func resourceDirectoryFind(req *mux.Message, client *Client) {
-	t := time.Now()
-	defer func() {
-		log.Debugf("resourceDirectoryFind takes %v", time.Since(t))
-	}()
-
 	authCtx, err := client.GetAuthorizationContext()
 	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot handle resource discovery: %w", authCtx.GetDeviceID(), err), coapCodes.Unauthorized, req.Token)
+		client.logAndWriteErrorResponse(req, fmt.Errorf("DeviceId: %v: cannot handle resource discovery: %w", authCtx.GetDeviceID(), err), coapCodes.Unauthorized, req.Token)
 		return
 	}
 
 	request, err := makeListDevicesCommand(req)
 	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot handle resource discovery: %w", authCtx.GetDeviceID(), err), coapCodes.BadRequest, req.Token)
+		client.logAndWriteErrorResponse(req, fmt.Errorf("DeviceId: %v: cannot handle resource discovery: %w", authCtx.GetDeviceID(), err), coapCodes.BadRequest, req.Token)
 		return
 	}
 
 	getResourceLinksClient, err := client.server.rdClient.GetResourceLinks(req.Context, request)
 	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: handle resource discovery: %w", authCtx.GetDeviceID(), err), coapconv.GrpcErr2CoapCode(err, coapconv.Retrieve), req.Token)
+		client.logAndWriteErrorResponse(req, fmt.Errorf("DeviceId: %v: handle resource discovery: %w", authCtx.GetDeviceID(), err), coapconv.GrpcErr2CoapCode(err, coapconv.Retrieve), req.Token)
 		return
 	}
 
 	discoveryResp, err := makeDiscoveryResp(client.server.tlsEnabled(), client.server.config.APIs.COAP.ExternalAddress, getResourceLinksClient)
 	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: handle resource discovery: %w", authCtx.GetDeviceID(), err), coapconv.GrpcErr2CoapCode(err, coapconv.Retrieve), req.Token)
+		client.logAndWriteErrorResponse(req, fmt.Errorf("DeviceId: %v: handle resource discovery: %w", authCtx.GetDeviceID(), err), coapconv.GrpcErr2CoapCode(err, coapconv.Retrieve), req.Token)
 		return
 	}
 
@@ -144,16 +137,16 @@ func resourceDirectoryFind(req *mux.Message, client *Client) {
 
 	encode, err := coapconv.GetEncoder(accept)
 	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot marshal discovery response: %w", authCtx.GetDeviceID(), err), coapCodes.InternalServerError, req.Token)
+		client.logAndWriteErrorResponse(req, fmt.Errorf("DeviceId: %v: cannot marshal discovery response: %w", authCtx.GetDeviceID(), err), coapCodes.InternalServerError, req.Token)
 		return
 	}
 	out, err := encode(resp)
 	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot marshal discovery response: %w", authCtx.GetDeviceID(), err), coapCodes.InternalServerError, req.Token)
+		client.logAndWriteErrorResponse(req, fmt.Errorf("DeviceId: %v: cannot marshal discovery response: %w", authCtx.GetDeviceID(), err), coapCodes.InternalServerError, req.Token)
 		return
 	}
 
-	client.sendResponse(coapCode, req.Token, accept, out)
+	client.sendResponse(req, coapCode, req.Token, accept, out)
 }
 
 func resourceDiscoveryHandler(req *mux.Message, client *Client) {
@@ -161,6 +154,6 @@ func resourceDiscoveryHandler(req *mux.Message, client *Client) {
 	case coapCodes.GET:
 		resourceDirectoryFind(req, client)
 	default:
-		client.logAndWriteErrorResponse(fmt.Errorf("forbidden request from %v", client.remoteAddrString()), coapCodes.Forbidden, req.Token)
+		client.logAndWriteErrorResponse(req, fmt.Errorf("forbidden request from %v", client.remoteAddrString()), coapCodes.Forbidden, req.Token)
 	}
 }

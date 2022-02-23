@@ -25,12 +25,12 @@ func clientPostHandler(req *mux.Message, client *Client) {
 func clientUpdateHandler(req *mux.Message, client *Client) {
 	authCtx, err := client.GetAuthorizationContext()
 	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot handle update resource: %w", authCtx.GetDeviceID(), err), coapCodes.Unauthorized, req.Token)
+		client.logAndWriteErrorResponse(req, fmt.Errorf("DeviceId: %v: cannot handle update resource: %w", authCtx.GetDeviceID(), err), coapCodes.Unauthorized, req.Token)
 		return
 	}
 	deviceID, href, err := message.URIToDeviceIDHref(req)
 	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot handle update resource: %w", authCtx.GetDeviceID(), err), coapCodes.BadRequest, req.Token)
+		client.logAndWriteErrorResponse(req, fmt.Errorf("DeviceId: %v: cannot handle update resource: %w", authCtx.GetDeviceID(), err), coapCodes.BadRequest, req.Token)
 		return
 	}
 
@@ -38,19 +38,19 @@ func clientUpdateHandler(req *mux.Message, client *Client) {
 	content, err := clientUpdateDeviceHandler(req, client, deviceID, href)
 	if err != nil {
 		code = coapconv.GrpcErr2CoapCode(err, coapconv.Update)
-		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot handle update resource /%v%v: %w", authCtx.GetDeviceID(), deviceID, href, err), code, req.Token)
+		client.logAndWriteErrorResponse(req, fmt.Errorf("DeviceId: %v: cannot handle update resource /%v%v: %w", authCtx.GetDeviceID(), deviceID, href, err), code, req.Token)
 		return
 	}
 	if content == nil || len(content.Data) == 0 {
-		client.sendResponse(code, req.Token, coapMessage.TextPlain, nil)
+		client.sendResponse(req, code, req.Token, coapMessage.TextPlain, nil)
 		return
 	}
 	mediaType, err := coapconv.MakeMediaType(-1, content.ContentType)
 	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot encode response for update resource /%v%v: %w", authCtx.GetDeviceID(), deviceID, href, err), code, req.Token)
+		client.logAndWriteErrorResponse(req, fmt.Errorf("DeviceId: %v: cannot encode response for update resource /%v%v: %w", authCtx.GetDeviceID(), deviceID, href, err), code, req.Token)
 		return
 	}
-	client.sendResponse(code, req.Token, mediaType, content.Data)
+	client.sendResponse(req, code, req.Token, mediaType, content.Data)
 }
 
 func clientUpdateDeviceHandler(req *mux.Message, client *Client, deviceID, href string) (*commands.Content, error) {

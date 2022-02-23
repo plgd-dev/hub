@@ -349,8 +349,18 @@ resourcedirectory:
   port: 9100
   # -- Log section
   log:
-    # -- Enable extended log messages
-    debug: false
+    # -- Logging enabled from level 
+    level: info
+    # -- The supported values are: "json", "console"
+    encoding: json
+    stacktrace:
+        # -- Log stacktrace
+        enabled: false
+        # -- Stacktrace from level
+        level: warn
+    encoderConfig:
+        # -- Time format for logs. The supported values are: "rfc3339nano", "rfc3339"
+        timeEncoder: rfc3339nano
   # -- For complete resource-directory service configuration see [plgd/resource-directory](https://github.com/plgd-dev/hub/tree/main/resource-directory)
   apis:
     grpc:
@@ -543,8 +553,18 @@ resourceaggregate:
   # -- Service and POD port
   port: 9100
   log:
-    # -- Enable extended message log
-    debug: false
+    # -- Logging enabled from level 
+    level: info
+    # -- The supported values are: "json", "console"
+    encoding: json
+    stacktrace:
+        # -- Log stacktrace
+        enabled: false
+        # -- Stacktrace from level
+        level: warn
+    encoderConfig:
+        # -- Time format for logs. The supported values are: "rfc3339nano", "rfc3339"
+        timeEncoder: rfc3339nano
 # -- For complete resource-aggregate service configuration see [plgd/resource-aggregate](https://github.com/plgd-dev/hub/tree/main/resource-aggregate)
   apis:
     grpc:
@@ -713,10 +733,20 @@ coapgateway:
   # -- Service and POD port
   port: 5684
   log:
-    # -- Enable extended log messages
-    debug: false
-    # -- Dump copp messages
-    dumpCoapMessages: true
+    # -- Dump coap messages
+    dumpBody: false
+    # -- Logging enabled from level 
+    level: info
+    # -- The supported values are: "json", "console"
+    encoding: json
+    stacktrace:
+        # -- Log stacktrace
+        enabled: false
+        # -- Stacktrace from level
+        level: warn
+    encoderConfig:
+        # -- Time format for logs. The supported values are: "rfc3339nano", "rfc3339"
+        timeEncoder: rfc3339nano
   # -- Hub ID. Can be override via global.hubId
   hubId:
   # -- For complete coap-gateway service configuration see [plgd/coap-gateway](https://github.com/plgd-dev/hub/tree/main/coap-gateway)
@@ -883,8 +913,18 @@ identitystore:
     # -- Service configuration mount path
     mountPath: /config
   log:
-    # -- Enable extended log messages
-    debug: false
+    # -- Logging enabled from level 
+    level: info
+    # -- The supported values are: "json", "console"
+    encoding: json
+    stacktrace:
+        # -- Log stacktrace
+        enabled: false
+        # -- Stacktrace from level
+        level: warn
+    encoderConfig:
+        # -- Time format for logs. The supported values are: "rfc3339nano", "rfc3339"
+        timeEncoder: rfc3339nano
   # -- For complete identity service configuration see [plgd/identity](https://github.com/plgd-dev/hub/tree/main/identity)
   apis:
     grpc:
@@ -1036,8 +1076,18 @@ httpgateway:
   # -- Port for service and POD
   port: 9100
   log:
-    # -- Enable extended debug messages
-    debug: false
+    # -- Logging enabled from level 
+    level: info
+    # -- The supported values are: "json", "console"
+    encoding: json
+    stacktrace:
+        # -- Log stacktrace
+        enabled: false
+        # -- Stacktrace from level
+        level: warn
+    encoderConfig:
+        # -- Time format for logs. The supported values are: "rfc3339nano", "rfc3339"
+        timeEncoder: rfc3339nano
   # -- For complete http-gateway service configuration see [plgd/http-gateway](https://github.com/plgd-dev/hub/tree/main/http-gateway)
   apis:
     http:
@@ -1186,8 +1236,18 @@ grpcgateway:
   # -- Service and POD port
   port: 9100
   log:
-    # -- Enable extended log messages
-    debug: false
+    # -- Logging enabled from level 
+    level: info
+    # -- The supported values are: "json", "console"
+    encoding: json
+    stacktrace:
+        # -- Log stacktrace
+        enabled: false
+        # -- Stacktrace from level
+        level: warn
+    encoderConfig:
+        # -- Time format for logs. The supported values are: "rfc3339nano", "rfc3339"
+        timeEncoder: rfc3339nano
   # -- For complete grpc-gateway service configuration see [plgd/grpc-gateway](https://github.com/plgd-dev/hub/tree/main/grpc-gateway)
   apis:
     grpc:
@@ -1383,8 +1443,18 @@ certificateauthority:
   # -- Service and POD port
   port: 9100
   log:
-    # -- Enable extended debug messages
-    debug: false
+    # -- Logging enabled from level 
+    level: info
+    # -- The supported values are: "json", "console"
+    encoding: json
+    stacktrace:
+        # -- Log stacktrace
+        enabled: false
+        # -- Stacktrace from level
+        level: warn
+    encoderConfig:
+        # -- Time format for logs. The supported values are: "rfc3339nano", "rfc3339"
+        timeEncoder: rfc3339nano
   # -- For complete certificate-authority service configuration see [plgd/certificate-authority](https://github.com/plgd-dev/hub/tree/main/certificate-authority)
   apis:
     grpc:
@@ -1526,8 +1596,18 @@ mockoauthserver:
   # -- Port for service and POD
   port: 9100
   log:
-    # -- Enable extended debug messages
-    debug: false
+    # -- Logging enabled from level 
+    level: info
+    # -- The supported values are: "json", "console"
+    encoding: json
+    stacktrace:
+        # -- Log stacktrace
+        enabled: false
+        # -- Stacktrace from level
+        level: warn
+    encoderConfig:
+        # -- Time format for logs. The supported values are: "rfc3339nano", "rfc3339"
+        timeEncoder: rfc3339nano
   # -- For complete mock-oauth-server service configuration see [plgd/oauth-server](https://github.com/plgd-dev/hub/tree/main/test/oauth-server)
   apis:
     http:

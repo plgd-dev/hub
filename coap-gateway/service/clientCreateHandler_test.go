@@ -14,16 +14,22 @@ import (
 	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
 	coapgwTest "github.com/plgd-dev/hub/v2/coap-gateway/test"
 	"github.com/plgd-dev/hub/v2/coap-gateway/uri"
+	"github.com/plgd-dev/hub/v2/pkg/log"
 	testCfg "github.com/plgd-dev/hub/v2/test/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
 )
 
 func TestClientCreateHandler(t *testing.T) {
 	coapgwCfg := coapgwTest.MakeConfig(t)
 	coapgwCfg.APIs.COAP.TLS.Enabled = false
+	coapgwCfg.Log.DumpBody = true
+	coapgwCfg.Log.Level = zap.DebugLevel
 	shutdown := setUp(t, coapgwCfg)
 	defer shutdown()
+
+	log.Setup(coapgwCfg.Log.Config)
 
 	co := testCoapDial(t, testCfg.GW_HOST, "", true)
 	if co == nil {

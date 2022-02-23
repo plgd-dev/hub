@@ -9,7 +9,13 @@ data:
   {{ .Values.coapgateway.config.fileName }}: |
     {{- with .Values.resourceaggregate }}
     log:
-      debug: {{ .log.debug }}
+      level: {{ .log.level }}
+      encoding: {{ .log.encoding }}
+      stacktrace:
+        enabled: {{ .log.stacktrace.enabled }}
+        level: {{ .log.stacktrace.level }}
+      encoderConfig:
+        timeEncoder: {{ .log.encoderConfig.timeEncoder }}
     apis:
       grpc:
         address: {{ printf "0.0.0.0:%v" .port | quote }}

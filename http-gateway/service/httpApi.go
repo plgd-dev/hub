@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"net/http/httputil"
 	"net/url"
 	"strings"
 
@@ -40,20 +39,6 @@ func NewRequestHandler(config *Config, client *client.Client) *RequestHandler {
 			runtime.WithMarshalerOption(runtime.MIMEWildcard, newJsonMarshaler()),
 		),
 	}
-}
-
-func loggingMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		data, err := httputil.DumpRequest(r, false)
-		if err != nil {
-			log.Infof("Request: %v %v", r.Method, r.RequestURI)
-		} else {
-			log.Infof("Request: %v", string(data))
-		}
-
-		// Call the next handler, which can be another middleware in the chain, or the final handler.
-		next.ServeHTTP(w, r)
-	})
 }
 
 func makeQueryCaseInsensitive(next http.Handler) http.Handler {
@@ -179,7 +164,7 @@ func resourceEventsMatcher(r *http.Request, rm *router.RouteMatch) bool {
 // NewHTTP returns HTTP server
 func NewHTTP(requestHandler *RequestHandler, authInterceptor kitHttp.Interceptor) (*http.Server, error) {
 	r0 := router.NewRouter()
-	r0.Use(loggingMiddleware)
+	r0.Use(kitHttp.CreateLoggingMiddleware())
 	r0.Use(kitHttp.CreateAuthMiddleware(authInterceptor, func(ctx context.Context, w http.ResponseWriter, r *http.Request, err error) {
 		writeError(w, fmt.Errorf("cannot access to %v: %w", r.RequestURI, err))
 	}))

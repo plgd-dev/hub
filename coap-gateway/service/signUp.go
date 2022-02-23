@@ -8,7 +8,6 @@ import (
 	"github.com/plgd-dev/go-coap/v2/mux"
 	"github.com/plgd-dev/hub/v2/coap-gateway/coapconv"
 	"github.com/plgd-dev/hub/v2/identity-store/pb"
-	"github.com/plgd-dev/hub/v2/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"github.com/plgd-dev/hub/v2/pkg/security/oauth2"
 	pkgTime "github.com/plgd-dev/hub/v2/pkg/time"
@@ -66,9 +65,9 @@ func getSignUpContent(token *oauth2.Token, owner string, validUntil int64, optio
 // https://github.com/openconnectivityfoundation/security/blob/master/swagger2.0/oic.sec.account.swagger.json
 func signUpPostHandler(r *mux.Message, client *Client) {
 	logErrorAndCloseClient := func(err error, code coapCodes.Code) {
-		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign up: %w", err), code, r.Token)
+		client.logAndWriteErrorResponse(r, fmt.Errorf("cannot handle sign up: %w", err), code, r.Token)
 		if err := client.Close(); err != nil {
-			log.Errorf("sign up error: %w", err)
+			client.Errorf("sign up error: %w", err)
 		}
 	}
 
@@ -142,7 +141,7 @@ func signUpPostHandler(r *mux.Message, client *Client) {
 		return
 	}
 
-	client.sendResponse(coapCodes.Changed, r.Token, accept, out)
+	client.sendResponse(r, coapCodes.Changed, r.Token, accept, out)
 }
 
 // Sign-up
@@ -154,6 +153,6 @@ func signUpHandler(r *mux.Message, client *Client) {
 	case coapCodes.DELETE:
 		signOffHandler(r, client)
 	default:
-		client.logAndWriteErrorResponse(fmt.Errorf("forbidden request from %v", client.remoteAddrString()), coapCodes.Forbidden, r.Token)
+		client.logAndWriteErrorResponse(r, fmt.Errorf("forbidden request from %v", client.remoteAddrString()), coapCodes.Forbidden, r.Token)
 	}
 }

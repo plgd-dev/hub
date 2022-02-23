@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/plgd-dev/hub/v2/coap-gateway/service/observation"
-	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/pkg/sync/task/future"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 )
@@ -61,12 +60,14 @@ func (client *Client) replaceDeviceObserverWithDeviceShadow(ctx context.Context,
 	deviceObserverFuture, setDeviceObserver := future.New()
 	oldDeviceObserver := client.replaceDeviceObserver(deviceObserverFuture)
 	if err := cleanDeviceObserver(ctx, oldDeviceObserver); err != nil {
-		log.Errorf("failed to close replaced device observer: %w", err)
+		client.Errorf("failed to close replaced device observer: %w", err)
 	}
 
-	deviceObserver, err := observation.NewDeviceObserver(ctx, deviceID, client.coapConn, client.server.rdClient,
+	deviceObserver, err := observation.NewDeviceObserver(client.Context(), deviceID, client, client,
 		observation.MakeResourcesObserverCallbacks(client.onObserveResource, client.onGetResourceContent),
-		observation.WithShadowSynchronization(shadow), observation.WithObservationType(observationType))
+		observation.WithShadowSynchronization(shadow), observation.WithObservationType(observationType),
+		observation.WithLogger(client.getLogger()),
+	)
 	if err != nil {
 		setDeviceObserver(nil, err)
 		return commands.ShadowSynchronization_UNSET, fmt.Errorf("cannot create observer for device %v: %w", deviceID, err)

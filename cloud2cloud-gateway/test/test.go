@@ -3,7 +3,6 @@ package test
 import (
 	"context"
 	"crypto/tls"
-	"fmt"
 	"net"
 	"sync"
 	"testing"
@@ -33,7 +32,7 @@ func MakeStorageConfig() service.StorageConfig {
 func MakeConfig(t *testing.T) service.Config {
 	var cfg service.Config
 
-	cfg.Log.Debug = true
+	cfg.Log = log.MakeDefaultConfig()
 
 	cfg.APIs.HTTP.Connection = config.MakeListenerConfig(config.C2C_GW_HOST)
 	cfg.APIs.HTTP.Connection.TLS.ClientCertificateRequired = false
@@ -54,7 +53,6 @@ func MakeConfig(t *testing.T) service.Config {
 	err := cfg.Validate()
 	require.NoError(t, err)
 
-	fmt.Printf("cfg\n%v\n", cfg.String())
 	return cfg
 }
 
@@ -63,8 +61,7 @@ func SetUp(t *testing.T) (TearDown func()) {
 }
 
 func New(t *testing.T, cfg service.Config) func() {
-	logger, err := log.NewLogger(cfg.Log)
-	require.NoError(t, err)
+	logger := log.NewLogger(cfg.Log)
 
 	s, err := service.New(context.Background(), cfg, logger)
 	require.NoError(t, err)
@@ -98,9 +95,8 @@ func GetUniqueSubscriptionID(subIDS ...string) string {
 }
 
 func NewTestListener(t *testing.T) (net.Listener, func()) {
-	loggerCfg := log.Config{Debug: true}
-	logger, err := log.NewLogger(loggerCfg)
-	require.NoError(t, err)
+	loggerCfg := log.MakeDefaultConfig()
+	logger := log.NewLogger(loggerCfg)
 
 	listenCfg := config.MakeListenerConfig("localhost:")
 	listenCfg.TLS.ClientCertificateRequired = false

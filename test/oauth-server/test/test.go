@@ -44,6 +44,9 @@ const (
 
 func MakeConfig(t *testing.T) service.Config {
 	var cfg service.Config
+
+	cfg.Log = log.MakeDefaultConfig()
+
 	cfg.APIs.HTTP = config.MakeListenerConfig(config.OAUTH_SERVER_HOST)
 	cfg.APIs.HTTP.TLS.ClientCertificateRequired = false
 
@@ -114,8 +117,7 @@ func SetUp(t *testing.T) (TearDown func()) {
 
 func New(t *testing.T, cfg service.Config) func() {
 	ctx := context.Background()
-	logger, err := log.NewLogger(cfg.Log)
-	require.NoError(t, err)
+	logger := log.NewLogger(cfg.Log)
 
 	s, err := service.New(ctx, cfg, logger)
 	require.NoError(t, err)

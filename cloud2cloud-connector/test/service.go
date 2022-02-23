@@ -2,7 +2,6 @@ package test
 
 import (
 	"context"
-	"fmt"
 	"sync"
 	"testing"
 	"time"
@@ -52,7 +51,7 @@ func MakeStorageConfig() service.StorageConfig {
 func MakeConfig(t *testing.T) service.Config {
 	var cfg service.Config
 
-	cfg.Log.Debug = true
+	cfg.Log = log.MakeDefaultConfig()
 
 	cfg.APIs.HTTP.EventsURL = config.C2C_CONNECTOR_EVENTS_URL
 	cfg.APIs.HTTP.PullDevices.Disabled = false
@@ -82,13 +81,11 @@ func MakeConfig(t *testing.T) service.Config {
 
 func SetUp(t *testing.T) (TearDown func()) {
 	cfg := MakeConfig(t)
-	fmt.Printf("cfg\n%v\n", cfg.String())
 	return New(t, cfg)
 }
 
 func New(t *testing.T, cfg service.Config) func() {
-	logger, err := log.NewLogger(cfg.Log)
-	require.NoError(t, err)
+	logger := log.NewLogger(cfg.Log)
 
 	s, err := service.New(context.Background(), cfg, logger)
 	require.NoError(t, err)

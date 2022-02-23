@@ -31,8 +31,7 @@ func NewTestEventStore(ctx context.Context, logger log.Logger) (*mongodb.EventSt
 }
 
 func TestEventStore(t *testing.T) {
-	logger, err := log.NewLogger(log.Config{})
-	require.NoError(t, err)
+	logger := log.NewLogger(log.MakeDefaultConfig())
 
 	ctx := context.Background()
 	store, err := NewTestEventStore(ctx, logger)
