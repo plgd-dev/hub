@@ -89,6 +89,10 @@ func WantToLog(code codes.Code, logger log.Logger) bool {
 
 func (client *Client) getLogger() log.Logger {
 	logger := client.server.logger
+	deviceID := client.deviceID()
+	if deviceID != "" {
+		logger = logger.With(log.DeviceIDKey, deviceID)
+	}
 	return logger
 }
 
@@ -124,9 +128,8 @@ type jwtMember struct {
 }
 
 type logCoapMessage struct {
-	DeviceID string     `json:"deviceId,omitempty"`
-	JWT      *jwtMember `json:"jwt,omitempty"`
-	Method   string     `json:"method,omitempty"`
+	JWT    *jwtMember `json:"jwt,omitempty"`
+	Method string     `json:"method,omitempty"`
 	coapgwMessage.JsonCoapMessage
 }
 
@@ -146,7 +149,6 @@ func (client *Client) logWithRequestResponse(logger log.Logger, req *pool.Messag
 	if resp != nil {
 		logMsg := client.msgToLogCoapMessage(resp, logger, req == nil)
 		if req != nil {
-			logMsg.DeviceID = ""
 			logMsg.JWT = nil
 		}
 		logger = logger.With(log.ResponseKey, logMsg)
@@ -156,13 +158,11 @@ func (client *Client) logWithRequestResponse(logger log.Logger, req *pool.Messag
 
 func (client *Client) msgToLogCoapMessage(req *pool.Message, logger log.Logger, withToken bool) logCoapMessage {
 	rq := coapgwMessage.ToJson(req, client.server.config.Log.DumpBody, withToken)
-	deviceID := client.deviceID()
 	var sub string
 	if v, err := client.GetAuthorizationContext(); err == nil {
 		sub = v.GetJWTClaims().Subject()
 	}
 	dumpReq := logCoapMessage{
-		DeviceID:        deviceID,
 		JsonCoapMessage: rq,
 	}
 	if sub != "" {

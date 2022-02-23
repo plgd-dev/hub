@@ -154,6 +154,10 @@ func MakeDefaultMessageProducer(logger *zap.Logger) func(ctx context.Context, ms
 				newTags.Set(log.StartTimeKey, v)
 				continue
 			}
+			if strings.HasPrefix(k, grpcPrefixKey+".request."+log.DeviceIDKey) {
+				newTags.Set(log.DeviceIDKey, v)
+				continue
+			}
 			if strings.HasPrefix(k, grpcPrefixKey+".request.") {
 				req[strings.TrimPrefix(k, grpcPrefixKey+".request.")] = v
 			}
