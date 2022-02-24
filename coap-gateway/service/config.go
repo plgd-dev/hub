@@ -10,6 +10,7 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/net/grpc/client"
 	certManagerServer "github.com/plgd-dev/hub/v2/pkg/security/certManager/server"
 	"github.com/plgd-dev/hub/v2/pkg/security/oauth2"
+	"github.com/plgd-dev/hub/v2/pkg/security/oauth2/oauth"
 	"github.com/plgd-dev/hub/v2/pkg/sync/task/queue"
 	natsClient "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/client"
 )
@@ -86,6 +87,9 @@ func (c *AuthorizationConfig) Validate() error {
 	}
 	duplicitProviderNames := make(map[string]bool)
 	for i := 0; i < len(c.Providers); i++ {
+		if c.Providers[i].GrantType == oauth.ClientCredentials && c.OwnerClaim == "sub" {
+			return fmt.Errorf("providers[%v].grantType - %w", i, fmt.Errorf("combination of ownerClaim set to '%v' is not compatible if at least one authorization provider uses grant type '%v'", c.OwnerClaim, c.Providers[i].GrantType))
+		}
 		if err := c.Providers[i].Validate(c.Providers[0].Authority, duplicitProviderNames); err != nil {
 			return fmt.Errorf("providers[%v].%w", i, err)
 		}
