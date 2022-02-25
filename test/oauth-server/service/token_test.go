@@ -22,14 +22,14 @@ func TestRequestHandler_getUItoken(t *testing.T) {
 	defer webTearDown()
 
 	code := getAuthorize(t, test.ClientTest, "https://localhost:3000", "nonse", "", "", "", http.StatusFound, false, false)
-	token := getToken(t, test.ClientTest, "", "localhost", "", code, "", service.AllowedGrantType_AUTHORIZATION_CODE, http.StatusOK)
+	token := getToken(t, test.ClientTest, "", "localhost", "", code, "", "", "", service.AllowedGrantType_AUTHORIZATION_CODE, http.StatusOK)
 
 	validator := jwt.NewValidator(fmt.Sprintf("https://%s%s", config.OAUTH_SERVER_HOST, uri.JWKs), &tls.Config{
 		InsecureSkipVerify: true,
 	})
 	accessToken, err := validator.Parse(token["access_token"])
 	require.NoError(t, err)
-	require.Empty(t, accessToken[service.TokenDeviceID])
+	require.Empty(t, accessToken[uri.DeviceIDClaimKey])
 	_, err = validator.Parse(token["id_token"])
 	require.NoError(t, err)
 }
@@ -38,7 +38,7 @@ func TestRequestHandler_getServiceToken(t *testing.T) {
 	webTearDown := test.SetUp(t)
 	defer webTearDown()
 
-	token := getToken(t, test.ClientTest, "", "localhost", "", "", "", service.AllowedGrantType_CLIENT_CREDENTIALS, http.StatusOK)
+	token := getToken(t, test.ClientTest, "", "localhost", "", "", "", "", "", service.AllowedGrantType_CLIENT_CREDENTIALS, http.StatusOK)
 
 	validator := jwt.NewValidator(fmt.Sprintf("https://%s%s", config.OAUTH_SERVER_HOST, uri.JWKs), &tls.Config{
 		InsecureSkipVerify: true,
@@ -52,7 +52,7 @@ func TestRequestHandler_getDeviceToken(t *testing.T) {
 	defer webTearDown()
 
 	code := getAuthorize(t, test.ClientTest, "", "https://localhost:3000", "abc", "", "", http.StatusFound, false, false)
-	token := getToken(t, test.ClientTest, "", "", "", code, "", service.AllowedGrantType_AUTHORIZATION_CODE, http.StatusOK)
+	token := getToken(t, test.ClientTest, "", "", "", code, "", "", "", service.AllowedGrantType_AUTHORIZATION_CODE, http.StatusOK)
 
 	require.NotEmpty(t, token["access_token"])
 	validator := jwt.NewValidator(fmt.Sprintf("https://%s%s", config.OAUTH_SERVER_HOST, uri.JWKs), &tls.Config{
@@ -60,7 +60,7 @@ func TestRequestHandler_getDeviceToken(t *testing.T) {
 	})
 	accessToken, err := validator.Parse(token["access_token"])
 	require.NoError(t, err)
-	require.NotEmpty(t, accessToken[service.TokenDeviceID])
+	require.NotEmpty(t, accessToken[uri.DeviceIDClaimKey])
 }
 
 func TestRequestHandlerGetTokenWithDefaultScopes(t *testing.T) {
@@ -68,7 +68,7 @@ func TestRequestHandlerGetTokenWithDefaultScopes(t *testing.T) {
 	defer webTearDown()
 
 	code := getAuthorize(t, test.ClientTest, "", "https://localhost:3000", "", "", "", http.StatusFound, false, false)
-	token := getToken(t, test.ClientTest, "", "", "", code, "", service.AllowedGrantType_AUTHORIZATION_CODE, http.StatusOK)
+	token := getToken(t, test.ClientTest, "", "", "", code, "", "", "", service.AllowedGrantType_AUTHORIZATION_CODE, http.StatusOK)
 
 	require.NotEmpty(t, token["access_token"])
 	require.Equal(t, token["scope"], service.DefaultScope)
@@ -85,7 +85,7 @@ func TestRequestHandlerGetTokenWithCuscomScopes(t *testing.T) {
 	defer webTearDown()
 
 	code := getAuthorize(t, test.ClientTest, "", "https://localhost:3000", "", "r:* w:*", "", http.StatusFound, false, false)
-	token := getToken(t, test.ClientTest, "", "", "", code, "", service.AllowedGrantType_AUTHORIZATION_CODE, http.StatusOK)
+	token := getToken(t, test.ClientTest, "", "", "", code, "", "", "", service.AllowedGrantType_AUTHORIZATION_CODE, http.StatusOK)
 
 	require.NotEmpty(t, token["access_token"])
 	require.Equal(t, token["scope"], "r:* w:*")
@@ -102,7 +102,7 @@ func TestRequestHandlerGetTokenWithInvalidSecret(t *testing.T) {
 	defer webTearDown()
 
 	code := getAuthorize(t, test.ClientTestRequiredParams, "", "http://localhost:7777", "", "r:*", "code", http.StatusFound, false, false)
-	getToken(t, test.ClientTestRequiredParams, "blabla", "", "http://localhost:7777", code, "", service.AllowedGrantType_AUTHORIZATION_CODE, http.StatusBadRequest)
+	getToken(t, test.ClientTestRequiredParams, "blabla", "", "http://localhost:7777", code, "", "", "", service.AllowedGrantType_AUTHORIZATION_CODE, http.StatusBadRequest)
 }
 
 func TestRequestHandlerGetTokenWithInvalidRedirectURI(t *testing.T) {
@@ -110,7 +110,7 @@ func TestRequestHandlerGetTokenWithInvalidRedirectURI(t *testing.T) {
 	defer webTearDown()
 
 	code := getAuthorize(t, test.ClientTestRequiredParams, "", "http://localhost:7777", "", "r:*", "code", http.StatusFound, false, false)
-	getToken(t, test.ClientTestRequiredParams, test.ClientTestRequiredParamsSecret, "", "https://localhost:3232", code, "", service.AllowedGrantType_AUTHORIZATION_CODE, http.StatusBadRequest)
+	getToken(t, test.ClientTestRequiredParams, test.ClientTestRequiredParamsSecret, "", "https://localhost:3232", code, "", "", "", service.AllowedGrantType_AUTHORIZATION_CODE, http.StatusBadRequest)
 }
 
 func TestRequestHandlerGetTokenWithInvalidCode(t *testing.T) {
@@ -118,7 +118,7 @@ func TestRequestHandlerGetTokenWithInvalidCode(t *testing.T) {
 	defer webTearDown()
 
 	getAuthorize(t, test.ClientTestRequiredParams, "", "http://localhost:7777", "", "r:*", "code", http.StatusFound, false, false)
-	getToken(t, test.ClientTestRequiredParams, test.ClientTestRequiredParamsSecret, "", "http://localhost:7777", "123", "", service.AllowedGrantType_AUTHORIZATION_CODE, http.StatusBadRequest)
+	getToken(t, test.ClientTestRequiredParams, test.ClientTestRequiredParamsSecret, "", "http://localhost:7777", "123", "", "", "", service.AllowedGrantType_AUTHORIZATION_CODE, http.StatusBadRequest)
 }
 
 func TestRequestHandlerGetTokenWithDuplicitExchange(t *testing.T) {
@@ -126,8 +126,8 @@ func TestRequestHandlerGetTokenWithDuplicitExchange(t *testing.T) {
 	defer webTearDown()
 
 	code := getAuthorize(t, test.ClientTestRequiredParams, "", "http://localhost:7777", "", "r:*", "code", http.StatusFound, false, false)
-	getToken(t, test.ClientTestRequiredParams, test.ClientTestRequiredParamsSecret, "", "http://localhost:7777", code, "", service.AllowedGrantType_AUTHORIZATION_CODE, http.StatusOK)
-	getToken(t, test.ClientTestRequiredParams, test.ClientTestRequiredParamsSecret, "", "http://localhost:7777", code, "", service.AllowedGrantType_AUTHORIZATION_CODE, http.StatusBadRequest)
+	getToken(t, test.ClientTestRequiredParams, test.ClientTestRequiredParamsSecret, "", "http://localhost:7777", code, "", "", "", service.AllowedGrantType_AUTHORIZATION_CODE, http.StatusOK)
+	getToken(t, test.ClientTestRequiredParams, test.ClientTestRequiredParamsSecret, "", "http://localhost:7777", code, "", "", "", service.AllowedGrantType_AUTHORIZATION_CODE, http.StatusBadRequest)
 }
 
 func TestRequestHandlerGetTokenWithValidRequiredParams(t *testing.T) {
@@ -135,7 +135,7 @@ func TestRequestHandlerGetTokenWithValidRequiredParams(t *testing.T) {
 	defer webTearDown()
 
 	code := getAuthorize(t, test.ClientTestRequiredParams, "", "http://localhost:7777", "", "r:*", "code", http.StatusFound, false, false)
-	token := getToken(t, test.ClientTestRequiredParams, test.ClientTestRequiredParamsSecret, "", "http://localhost:7777", code, "", service.AllowedGrantType_AUTHORIZATION_CODE, http.StatusOK)
+	token := getToken(t, test.ClientTestRequiredParams, test.ClientTestRequiredParamsSecret, "", "http://localhost:7777", code, "", "", "", service.AllowedGrantType_AUTHORIZATION_CODE, http.StatusOK)
 	require.NotEmpty(t, token["access_token"])
 	require.Equal(t, token["scope"], "r:*")
 	validator := jwt.NewValidator(fmt.Sprintf("https://%s%s", config.OAUTH_SERVER_HOST, uri.JWKs), &tls.Config{
@@ -150,22 +150,22 @@ func TestRequestHandlerGetTokenWithDuplicitdRefreshToken(t *testing.T) {
 	webTearDown := test.SetUp(t)
 	defer webTearDown()
 
-	getToken(t, test.ClientTestRequiredParams, test.ClientTestRequiredParamsSecret, "invalidRefreshToken", "http://localhost:7777", "", "refreshToken", service.AllowedGrantType_REFRESH_TOKEN, http.StatusOK)
-	getToken(t, test.ClientTestRequiredParams, test.ClientTestRequiredParamsSecret, "invalidRefreshToken", "http://localhost:7777", "", "refreshToken", service.AllowedGrantType_REFRESH_TOKEN, http.StatusBadRequest)
+	getToken(t, test.ClientTestRequiredParams, test.ClientTestRequiredParamsSecret, "invalidRefreshToken", "http://localhost:7777", "", "refreshToken", "", "", service.AllowedGrantType_REFRESH_TOKEN, http.StatusOK)
+	getToken(t, test.ClientTestRequiredParams, test.ClientTestRequiredParamsSecret, "invalidRefreshToken", "http://localhost:7777", "", "refreshToken", "", "", service.AllowedGrantType_REFRESH_TOKEN, http.StatusBadRequest)
 }
 
 func TestRequestHandlerGetTokenWithInvalidRefreshToken(t *testing.T) {
 	webTearDown := test.SetUp(t)
 	defer webTearDown()
 
-	getToken(t, test.ClientTest, test.ClientTestRequiredParamsSecret, "invalidRefreshToken", "http://localhost:7777", "", "refreshokeninvalid", service.AllowedGrantType_REFRESH_TOKEN, http.StatusBadRequest)
+	getToken(t, test.ClientTest, test.ClientTestRequiredParamsSecret, "invalidRefreshToken", "http://localhost:7777", "", "refreshokeninvalid", "", "", service.AllowedGrantType_REFRESH_TOKEN, http.StatusBadRequest)
 }
 
 func TestRequestHandlerGetTokenWithValidRefreshToken(t *testing.T) {
 	webTearDown := test.SetUp(t)
 	defer webTearDown()
 
-	token := getToken(t, test.ClientTest, test.ClientTestRequiredParamsSecret, "invalidRefreshToken", "http://localhost:7777", "", "refresh-token", service.AllowedGrantType_REFRESH_TOKEN, http.StatusOK)
+	token := getToken(t, test.ClientTest, test.ClientTestRequiredParamsSecret, "invalidRefreshToken", "http://localhost:7777", "", "refresh-token", "", "", service.AllowedGrantType_REFRESH_TOKEN, http.StatusOK)
 	require.NotEmpty(t, token["access_token"])
 	require.Equal(t, token["scope"], service.DefaultScope)
 	validator := jwt.NewValidator(fmt.Sprintf("https://%s%s", config.OAUTH_SERVER_HOST, uri.JWKs), &tls.Config{
@@ -186,6 +186,79 @@ func TestGetRequestHandlerGetTokenWithValidClient(t *testing.T) {
 	})
 	_, err := validator.Parse(accessToken)
 	require.NoError(t, err)
+}
+
+func TestGetRequestHandlerGetTokenWithDeviceIDAndOwnerClaim(t *testing.T) {
+	type args struct {
+		deviceID string
+		owner    string
+	}
+	const deviceID = "deviceId"
+	const owner = "owner"
+	tests := []struct {
+		name         string
+		args         args
+		wantDeviceID string
+		wantOwner    string
+	}{
+		{
+			name: deviceID,
+			args: args{
+				deviceID: deviceID,
+			},
+			wantDeviceID: deviceID,
+			// mock oauth server always set service.DeviceUserID
+			wantOwner: service.DeviceUserID,
+		},
+		{
+			name: owner,
+			args: args{
+				owner: owner,
+			},
+			// mock oauth server always set service.DeviceUserID
+			wantOwner: service.DeviceUserID,
+		},
+		{
+			name: deviceID + "+" + owner,
+			args: args{
+				deviceID: deviceID,
+				owner:    owner,
+			},
+			wantDeviceID: deviceID,
+			// mock oauth server always set service.DeviceUserID
+			wantOwner: service.DeviceUserID,
+		},
+		{
+			name: "empty",
+			// mock oauth server always set service.DeviceUserID
+			wantOwner: service.DeviceUserID,
+		},
+	}
+
+	webTearDown := test.SetUp(t)
+	defer webTearDown()
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+
+			token := getToken(t, test.ClientTest, "", "localhost", "", "", "", tt.args.deviceID, tt.args.owner, service.AllowedGrantType_CLIENT_CREDENTIALS, http.StatusOK)
+			validator := jwt.NewValidator(fmt.Sprintf("https://%s%s", config.OAUTH_SERVER_HOST, uri.JWKs), &tls.Config{
+				InsecureSkipVerify: true,
+			})
+			claims, err := validator.Parse(token["access_token"])
+			require.NoError(t, err)
+			if tt.wantDeviceID == "" {
+				require.Empty(t, claims[uri.DeviceIDClaimKey])
+			} else {
+				require.Equal(t, claims[uri.DeviceIDClaimKey], tt.wantDeviceID)
+			}
+			if tt.wantOwner == "" {
+				require.Empty(t, claims[uri.OwnerClaimKey])
+			} else {
+				require.Equal(t, claims[uri.OwnerClaimKey], tt.wantOwner)
+			}
+		})
+	}
 }
 
 func TestGetRequestHandlerGetTokenWithValidClientBasicAuth(t *testing.T) {
@@ -236,7 +309,7 @@ func getTokenUsingGet(t *testing.T, clientID string, useBasicAuth bool, statusCo
 	return ""
 }
 
-func getToken(t *testing.T, clientID, clientSecret, audience, redirectURI, code, refreshToken string, grantType service.AllowedGrantType, statusCode int) map[string]string {
+func getToken(t *testing.T, clientID, clientSecret, audience, redirectURI, code, refreshToken, deviceID, owner string, grantType service.AllowedGrantType, statusCode int) map[string]string {
 	reqBody := map[string]string{
 		uri.GrantTypeKey:   string(grantType),
 		uri.ClientIDKey:    clientID,
@@ -246,6 +319,12 @@ func getToken(t *testing.T, clientID, clientSecret, audience, redirectURI, code,
 	}
 	if refreshToken != "" {
 		reqBody[uri.RefreshTokenKey] = refreshToken
+	}
+	if deviceID != "" {
+		reqBody[uri.DeviceIDClaimKey] = deviceID
+	}
+	if owner != "" {
+		reqBody[uri.OwnerClaimKey] = owner
 	}
 
 	d, err := json.Encode(reqBody)

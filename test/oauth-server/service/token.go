@@ -27,7 +27,6 @@ const (
 	TokenNicknameKey = "nickname"
 	TokenNameKey     = "name"
 	TokenPictureKey  = "picture"
-	TokenDeviceID    = "https://plgd.dev/deviceId"
 )
 
 func makeAccessToken(clientID, host, deviceID, scopes string, issuedAt, expires time.Time) (jwt.Token, error) {
@@ -57,9 +56,13 @@ func makeAccessToken(clientID, host, deviceID, scopes string, issuedAt, expires 
 		return nil, fmt.Errorf("failed to set %v: %w", jwt.IssuerKey, err)
 	}
 	if deviceID != "" {
-		if err := token.Set(TokenDeviceID, deviceID); err != nil {
-			return nil, fmt.Errorf("failed to set %v: %w", TokenDeviceID, err)
+		if err := token.Set(uri.DeviceIDClaimKey, deviceID); err != nil {
+			return nil, fmt.Errorf("failed to set %v('%v'): %w", uri.DeviceIDClaimKey, deviceID, err)
 		}
+	}
+	// mock oauth server always set DeviceUserID, because it supports only one user
+	if err := token.Set(uri.OwnerClaimKey, DeviceUserID); err != nil {
+		return nil, fmt.Errorf("failed to set %v('%v'): %w", uri.OwnerClaimKey, DeviceUserID, err)
 	}
 
 	return token, nil
@@ -199,6 +202,9 @@ type tokenRequest struct {
 	Password     string `json:"password"`
 	Audience     string `json:"audience"`
 	RefreshToken string `json:"refresh_token"`
+	DeviceID     string `json:"https://plgd.dev/deviceId"`
+	// mock-oauth-server always put owner claim to access token
+	Owner string `json:"https://plgd.dev/owner"`
 
 	host      string
 	tokenType AccessTokenType
@@ -250,6 +256,8 @@ func (requestHandler *RequestHandler) postToken(w http.ResponseWriter, r *http.R
 		tokenReq.Password = r.PostFormValue(uri.PasswordKey)
 		tokenReq.Audience = r.PostFormValue(uri.AudienceKey)
 		tokenReq.RefreshToken = r.PostFormValue(uri.RefreshTokenKey)
+		tokenReq.Owner = r.PostFormValue(uri.OwnerClaimKey)
+		tokenReq.DeviceID = r.PostFormValue(uri.DeviceIDClaimKey)
 	} else {
 		err := json.ReadFrom(r.Body, &tokenReq)
 		if err != nil {
@@ -344,6 +352,10 @@ func (requestHandler *RequestHandler) processResponse(w http.ResponseWriter, tok
 		tokenReq.tokenType = AccessTokenType_JWT
 	}
 
+	if authSession.deviceID != "" {
+		tokenReq.DeviceID = authSession.deviceID
+	}
+
 	idToken, err := generateIDToken(tokenReq.ClientID, clientCfg.AccessTokenLifetime, tokenReq.host, authSession.nonce, requestHandler.idTokenKey, requestHandler.idTokenJwkKey)
 	if err != nil {
 		writeError(w, err, http.StatusInternalServerError)
@@ -355,7 +367,7 @@ func (requestHandler *RequestHandler) processResponse(w http.ResponseWriter, tok
 		scopes = DefaultScope
 	}
 
-	accessToken, accessTokenExpires, err := generateAccessToken(clientCfg.ID, clientCfg.AccessTokenLifetime, tokenReq.host, authSession.deviceID, scopes, requestHandler.accessTokenKey, requestHandler.accessTokenJwkKey)
+	accessToken, accessTokenExpires, err := generateAccessToken(clientCfg.ID, clientCfg.AccessTokenLifetime, tokenReq.host, tokenReq.DeviceID, scopes, requestHandler.accessTokenKey, requestHandler.accessTokenJwkKey)
 	if err != nil {
 		writeError(w, err, http.StatusInternalServerError)
 		return

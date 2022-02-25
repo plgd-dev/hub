@@ -16,8 +16,8 @@ import (
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	test "github.com/plgd-dev/hub/v2/test"
 	testCfg "github.com/plgd-dev/hub/v2/test/config"
-	oauthService "github.com/plgd-dev/hub/v2/test/oauth-server/service"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
+	oauthUri "github.com/plgd-dev/hub/v2/test/oauth-server/uri"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -142,7 +142,7 @@ func TestSignInWithMTLSAndDeviceIdClaim(t *testing.T) {
 	coapgwCfg := coapgwTest.MakeConfig(t)
 	coapgwCfg.APIs.COAP.TLS.Enabled = true
 	coapgwCfg.APIs.COAP.TLS.Embedded.ClientCertificateRequired = true
-	coapgwCfg.APIs.COAP.Authorization.DeviceIDClaim = oauthService.TokenDeviceID
+	coapgwCfg.APIs.COAP.Authorization.DeviceIDClaim = oauthUri.DeviceIDClaimKey
 	shutdown := setUp(t, coapgwCfg)
 	defer shutdown()
 
