@@ -207,12 +207,15 @@ func TestGetRequestHandlerGetTokenWithDeviceIDAndOwnerClaim(t *testing.T) {
 				deviceID: deviceID,
 			},
 			wantDeviceID: deviceID,
+			// mock oauth server always set service.DeviceUserID
+			wantOwner: service.DeviceUserID,
 		},
 		{
 			name: owner,
 			args: args{
 				owner: owner,
 			},
+			// mock oauth server always set service.DeviceUserID
 			wantOwner: service.DeviceUserID,
 		},
 		{
@@ -222,10 +225,13 @@ func TestGetRequestHandlerGetTokenWithDeviceIDAndOwnerClaim(t *testing.T) {
 				owner:    owner,
 			},
 			wantDeviceID: deviceID,
-			wantOwner:    service.DeviceUserID,
+			// mock oauth server always set service.DeviceUserID
+			wantOwner: service.DeviceUserID,
 		},
 		{
 			name: "empty",
+			// mock oauth server always set service.DeviceUserID
+			wantOwner: service.DeviceUserID,
 		},
 	}
 
@@ -249,8 +255,7 @@ func TestGetRequestHandlerGetTokenWithDeviceIDAndOwnerClaim(t *testing.T) {
 			if tt.wantOwner == "" {
 				require.Empty(t, claims[uri.OwnerClaimKey])
 			} else {
-				// mock oauth server always set service.DeviceUserID, because it supports only one user
-				require.Equal(t, claims[uri.OwnerClaimKey], service.DeviceUserID)
+				require.Equal(t, claims[uri.OwnerClaimKey], tt.wantOwner)
 			}
 		})
 	}

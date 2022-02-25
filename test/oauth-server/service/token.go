@@ -29,7 +29,7 @@ const (
 	TokenPictureKey  = "picture"
 )
 
-func makeAccessToken(clientID, host, deviceID, scopes, owner string, issuedAt, expires time.Time) (jwt.Token, error) {
+func makeAccessToken(clientID, host, deviceID, scopes string, issuedAt, expires time.Time) (jwt.Token, error) {
 	token := jwt.New()
 
 	if err := token.Set(jwt.SubjectKey, DeviceUserID); err != nil {
@@ -60,11 +60,9 @@ func makeAccessToken(clientID, host, deviceID, scopes, owner string, issuedAt, e
 			return nil, fmt.Errorf("failed to set %v('%v'): %w", uri.DeviceIDClaimKey, deviceID, err)
 		}
 	}
-	if owner != "" {
-		// mock oauth server always set DeviceUserID, because it supports only one user
-		if err := token.Set(uri.OwnerClaimKey, DeviceUserID); err != nil {
-			return nil, fmt.Errorf("failed to set %v('%v'): %w", uri.OwnerClaimKey, DeviceUserID, err)
-		}
+	// mock oauth server always set DeviceUserID, because it supports only one user
+	if err := token.Set(uri.OwnerClaimKey, DeviceUserID); err != nil {
+		return nil, fmt.Errorf("failed to set %v('%v'): %w", uri.OwnerClaimKey, DeviceUserID, err)
 	}
 
 	return token, nil
@@ -88,13 +86,13 @@ func makeJWTPayload(key interface{}, jwkKey jwk.Key, data []byte) ([]byte, error
 	return payload, nil
 }
 
-func generateAccessToken(clientID string, lifeTime time.Duration, host, deviceID, scopes, owner string, key interface{}, jwkKey jwk.Key) (string, time.Time, error) {
+func generateAccessToken(clientID string, lifeTime time.Duration, host, deviceID, scopes string, key interface{}, jwkKey jwk.Key) (string, time.Time, error) {
 	now := time.Now()
 	var expires time.Time
 	if lifeTime != 0 {
 		expires = now.Add(lifeTime)
 	}
-	token, err := makeAccessToken(clientID, host, deviceID, scopes, owner, now, expires)
+	token, err := makeAccessToken(clientID, host, deviceID, scopes, now, expires)
 	if err != nil {
 		return "", time.Time{}, fmt.Errorf("failed to make token: %w", err)
 	}
@@ -205,7 +203,8 @@ type tokenRequest struct {
 	Audience     string `json:"audience"`
 	RefreshToken string `json:"refresh_token"`
 	DeviceID     string `json:"https://plgd.dev/deviceId"`
-	Owner        string `json:"https://plgd.dev/ownerClaim"`
+	// mock-oauth-server always put owner claim to access token
+	Owner string `json:"https://plgd.dev/owner"`
 
 	host      string
 	tokenType AccessTokenType
@@ -368,7 +367,7 @@ func (requestHandler *RequestHandler) processResponse(w http.ResponseWriter, tok
 		scopes = DefaultScope
 	}
 
-	accessToken, accessTokenExpires, err := generateAccessToken(clientCfg.ID, clientCfg.AccessTokenLifetime, tokenReq.host, tokenReq.DeviceID, scopes, tokenReq.Owner, requestHandler.accessTokenKey, requestHandler.accessTokenJwkKey)
+	accessToken, accessTokenExpires, err := generateAccessToken(clientCfg.ID, clientCfg.AccessTokenLifetime, tokenReq.host, tokenReq.DeviceID, scopes, requestHandler.accessTokenKey, requestHandler.accessTokenJwkKey)
 	if err != nil {
 		writeError(w, err, http.StatusInternalServerError)
 		return
