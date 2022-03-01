@@ -24,13 +24,13 @@ require (
 	github.com/plgd-dev/kit/v2 v2.0.0-20211006190727-057b33161b90
 	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.7.0
+	github.com/ugorji/go/codec v1.2.6
 	go.mongodb.org/mongo-driver v1.8.3
 	go.uber.org/atomic v1.9.0
 	go.uber.org/zap v1.21.0
-	golang.org/x/net v0.0.0-20220127200216-cd36cc0744dd
+	golang.org/x/net v0.0.0-20220225172249-27dd8689420f
 	golang.org/x/oauth2 v0.0.0-20211104180415-d3ed0bb246c8
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
-	google.golang.org/api v0.67.0
 	google.golang.org/genproto v0.0.0-20220207185906-7721543eae58
 	google.golang.org/grpc v1.44.0
 	google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.2.0
@@ -47,9 +47,7 @@ require (
 	github.com/go-stack/stack v1.8.1 // indirect
 	github.com/goccy/go-json v0.9.4 // indirect
 	github.com/golang/glog v1.0.0 // indirect
-	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
-	github.com/googleapis/gax-go/v2 v2.1.1 // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.0.0-rc.2 // indirect
 	github.com/kelseyhightower/envconfig v1.4.0 // indirect
 	github.com/klauspost/compress v1.14.2 // indirect
@@ -69,13 +67,11 @@ require (
 	github.com/pion/udp v0.1.1 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	github.com/ugorji/go/codec v1.2.6 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	github.com/xdg-go/pbkdf2 v1.0.0 // indirect
 	github.com/xdg-go/scram v1.1.0 // indirect
 	github.com/xdg-go/stringprep v1.0.2 // indirect
 	github.com/youmark/pkcs8 v0.0.0-20201027041543-1326539a0a0a // indirect
-	go.opencensus.io v0.23.0 // indirect
 	go.uber.org/multierr v1.7.0 // indirect
 	golang.org/x/crypto v0.0.0-20220208050332-20e1d8d225ab // indirect
 	golang.org/x/sys v0.0.0-20220207234003-57398862261d // indirect
