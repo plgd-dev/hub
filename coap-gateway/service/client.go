@@ -87,6 +87,7 @@ type Client struct {
 	server      *Service
 	coapConn    *tcp.ClientConn
 	tlsDeviceID string
+	tlsValidTo  time.Time
 
 	resourceSubscriptions *kitSync.Map // [token]
 
@@ -101,7 +102,7 @@ type Client struct {
 }
 
 //newClient create and initialize client
-func newClient(server *Service, coapConn *tcp.ClientConn, tlsDeviceID string) *Client {
+func newClient(server *Service, coapConn *tcp.ClientConn, tlsDeviceID string, tlsValidTo time.Time) *Client {
 	return &Client{
 		server:                server,
 		coapConn:              coapConn,
@@ -109,6 +110,7 @@ func newClient(server *Service, coapConn *tcp.ClientConn, tlsDeviceID string) *C
 		resourceSubscriptions: kitSync.NewMap(),
 		exchangeCache:         NewExchangeCache(),
 		refreshCache:          NewRefreshCache(),
+		tlsValidTo:            tlsValidTo,
 	}
 }
 
@@ -121,6 +123,15 @@ func (client *Client) deviceID() string {
 		return a.GetDeviceID()
 	}
 	return ""
+}
+
+func (client *Client) getClientExpiration(validJWTUntil time.Time) time.Time {
+	if client.server.config.APIs.COAP.TLS.Enabled &&
+		client.server.config.APIs.COAP.TLS.DisconnectForCertificateExpiration &&
+		(validJWTUntil.IsZero() || validJWTUntil.After(client.tlsValidTo)) {
+		return client.tlsValidTo
+	}
+	return validJWTUntil
 }
 
 func (client *Client) Get(ctx context.Context, path string, opts ...message.Option) (*pool.Message, error) {

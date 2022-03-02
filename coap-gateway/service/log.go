@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/mux"
 	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
@@ -207,7 +208,7 @@ func (client *Client) logClientRequest(req *mux.Message, resp *pool.Message) {
 	logger = client.logWithRequestResponse(logger, rq, resp)
 	if resp != nil {
 		msg := fmt.Sprintf("finished unary call from the device with code %v", resp.Code())
-		if _, err := rq.Observe(); err == nil {
+		if rq != nil && rq.HasOption(message.Observe) {
 			msg = fmt.Sprintf("finished observe call from the device with code %v", resp.Code())
 		}
 		DefaultCodeToLevel(resp.Code(), logger)(msg)

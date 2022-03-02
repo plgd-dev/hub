@@ -9,7 +9,6 @@ import (
 
 	"github.com/plgd-dev/device/pkg/net/coap"
 	"github.com/plgd-dev/go-coap/v2/message/codes"
-	"github.com/plgd-dev/go-coap/v2/pkg/cache"
 	"github.com/plgd-dev/hub/v2/coap-gateway/uri"
 	"github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	pkgJwt "github.com/plgd-dev/hub/v2/pkg/security/jwt"
@@ -69,9 +68,9 @@ func (s *Service) VerifyDeviceID(tlsDeviceID string, claim pkgJwt.Claims) error 
 	return nil
 }
 
-func verifyChain(chain []*x509.Certificate, capool *x509.CertPool) (string, error) {
+func verifyChain(chain []*x509.Certificate, capool *x509.CertPool) error {
 	if len(chain) == 0 {
-		return "", fmt.Errorf("empty chain")
+		return fmt.Errorf("empty chain")
 	}
 	certificate := chain[0]
 	intermediateCAPool := x509.NewCertPool()
@@ -85,7 +84,7 @@ func verifyChain(chain []*x509.Certificate, capool *x509.CertPool) (string, erro
 		KeyUsages:     []x509.ExtKeyUsage{x509.ExtKeyUsageAny},
 	})
 	if err != nil {
-		return "", err
+		return err
 	}
 	// verify EKU manually
 	ekuHasClient := false
@@ -99,37 +98,37 @@ func verifyChain(chain []*x509.Certificate, capool *x509.CertPool) (string, erro
 		}
 	}
 	if !ekuHasClient {
-		return "", fmt.Errorf("not contains ExtKeyUsageClientAuth")
+		return fmt.Errorf("not contains ExtKeyUsageClientAuth")
 	}
 	if !ekuHasServer {
-		return "", fmt.Errorf("not contains ExtKeyUsageServerAuth")
+		return fmt.Errorf("not contains ExtKeyUsageServerAuth")
 	}
-	return coap.GetDeviceIDFromIdentityCertificate(certificate)
+	_, err = coap.GetDeviceIDFromIdentityCertificate(certificate)
+	if err != nil {
+		return fmt.Errorf("cannot get deviceID from common name: %w", err)
+	}
+	return nil
 }
 
-func MakeGetConfigForClient(tlsCfg *tls.Config, expiresIn time.Duration, deviceIdCache *cache.Cache) func(chi *tls.ClientHelloInfo) (*tls.Config, error) {
-	return func(chi *tls.ClientHelloInfo) (*tls.Config, error) {
-		return &tls.Config{
-			GetCertificate: tlsCfg.GetCertificate,
-			MinVersion:     tlsCfg.MinVersion,
-			ClientAuth:     tlsCfg.ClientAuth,
-			ClientCAs:      tlsCfg.ClientCAs,
-			VerifyPeerCertificate: func(rawCerts [][]byte, verifiedChains [][]*x509.Certificate) error {
-				var errors []error
-				for _, chain := range verifiedChains {
-					deviceID, err := verifyChain(chain, tlsCfg.ClientCAs)
-					if err == nil {
-						deviceIdCache.Delete(chi.Conn.RemoteAddr().String())
-						deviceIdCache.LoadOrStore(chi.Conn.RemoteAddr().String(), cache.NewElement(deviceID, time.Now().Add(expiresIn), nil))
-						return nil
-					}
-					errors = append(errors, err)
+func MakeGetConfigForClient(tlsCfg *tls.Config) tls.Config {
+	return tls.Config{
+		GetCertificate: tlsCfg.GetCertificate,
+		MinVersion:     tlsCfg.MinVersion,
+		ClientAuth:     tlsCfg.ClientAuth,
+		ClientCAs:      tlsCfg.ClientCAs,
+		VerifyPeerCertificate: func(rawCerts [][]byte, verifiedChains [][]*x509.Certificate) error {
+			var errors []error
+			for _, chain := range verifiedChains {
+				err := verifyChain(chain, tlsCfg.ClientCAs)
+				if err == nil {
+					return nil
 				}
-				if len(errors) > 0 {
-					return fmt.Errorf("%v", errors)
-				}
-				return fmt.Errorf("empty chains")
-			},
-		}, nil
+				errors = append(errors, err)
+			}
+			if len(errors) > 0 {
+				return fmt.Errorf("%v", errors)
+			}
+			return fmt.Errorf("empty chains")
+		},
 	}
 }

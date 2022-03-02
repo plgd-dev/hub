@@ -7,7 +7,7 @@ import (
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	coapgwTest "github.com/plgd-dev/hub/v2/coap-gateway/test"
 	"github.com/plgd-dev/hub/v2/coap-gateway/uri"
-	"github.com/plgd-dev/hub/v2/test/config"
+	testCfg "github.com/plgd-dev/hub/v2/test/config"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 )
 
@@ -31,7 +31,7 @@ func TestRefreshTokenHandler(t *testing.T) {
 
 	for _, test := range tbl {
 		tf := func(t *testing.T) {
-			co := testCoapDial(t, config.GW_HOST, "")
+			co := testCoapDial(t, testCfg.GW_HOST, "", true, time.Now().Add(time.Minute))
 			if co == nil {
 				return
 			}
@@ -57,7 +57,7 @@ func TestRefreshTokenHandlerWithRetry(t *testing.T) {
 	shutdown := setUp(t, coapgwCfg)
 	defer shutdown()
 
-	co := testCoapDial(t, config.GW_HOST, "")
+	co := testCoapDial(t, testCfg.GW_HOST, "", true, time.Now().Add(time.Minute))
 	if co == nil {
 		return
 	}

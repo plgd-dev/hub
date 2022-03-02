@@ -9,6 +9,7 @@ import (
 	"github.com/plgd-dev/hub/v2/coap-gateway/uri"
 	"github.com/plgd-dev/hub/v2/pkg/security/oauth2/oauth"
 	"github.com/plgd-dev/hub/v2/test/config"
+	testCfg "github.com/plgd-dev/hub/v2/test/config"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	"github.com/stretchr/testify/require"
 )
@@ -34,7 +35,7 @@ func TestSignUpPostHandler(t *testing.T) {
 
 	for _, test := range tbl {
 		tf := func(t *testing.T) {
-			co := testCoapDial(t, config.GW_HOST, "")
+			co := testCoapDial(t, testCfg.GW_HOST, "", true, time.Now().Add(time.Minute))
 			if co == nil {
 				return
 			}
@@ -62,7 +63,7 @@ func TestSignUpPostHandlerWithRetry(t *testing.T) {
 	defer shutdown()
 	codeEl := oauthTest.GetDefaultDeviceAuthorizationCode(t, "")
 
-	co := testCoapDial(t, config.GW_HOST, "")
+	co := testCoapDial(t, testCfg.GW_HOST, "", true, time.Now().Add(time.Minute))
 	if co == nil {
 		return
 	}
@@ -100,7 +101,7 @@ func TestSignUpClientCredentialPostHandler(t *testing.T) {
 
 	for _, test := range tbl {
 		tf := func(t *testing.T) {
-			co := testCoapDial(t, config.GW_HOST, "")
+			co := testCoapDial(t, testCfg.GW_HOST, "", true, time.Now().Add(time.Minute))
 			if co == nil {
 				return
 			}

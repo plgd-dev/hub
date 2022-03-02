@@ -11,6 +11,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/plgd-dev/device/pkg/net/coap"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/mux"
 	"github.com/plgd-dev/go-coap/v2/net"
@@ -53,7 +54,6 @@ type Service struct {
 	isClient              pbIS.IdentityStoreClient
 	rdClient              pbGRPC.GrpcGatewayClient
 	expirationClientCache *cache.Cache
-	tlsDeviceIDCache      *cache.Cache
 	coapServer            *tcp.Server
 	listener              tcp.Listener
 	authInterceptor       Interceptor
@@ -71,13 +71,26 @@ type Service struct {
 	logger                log.Logger
 }
 
-func setExpirationClientCache(c *cache.Cache, deviceID string, client *Client, validUntil time.Time) {
+func setExpirationClientCache(c *cache.Cache, deviceID string, client *Client, validJWTUntil time.Time) {
+	validJWTUntil = client.getClientExpiration(validJWTUntil)
 	c.Delete(deviceID)
-	c.LoadOrStore(deviceID, cache.NewElement(client, validUntil, func(cl interface{}) {
+	if validJWTUntil.IsZero() {
+		return
+	}
+	c.LoadOrStore(deviceID, cache.NewElement(client, validJWTUntil, func(cl interface{}) {
 		if cl == nil {
 			return
 		}
 		client := cl.(*Client)
+		now := time.Now()
+		exp := client.getClientExpiration(now)
+		if now.After(exp) {
+			if err2 := client.Close(); err2 != nil {
+				client.Errorf("failed to close client connection on certificate expiration: %w", err2)
+			}
+			client.Debugf("certificate has been expired")
+			return
+		}
 		_, err := client.GetAuthorizationContext()
 		if err != nil {
 			if err2 := client.Close(); err2 != nil {
@@ -88,9 +101,9 @@ func setExpirationClientCache(c *cache.Cache, deviceID string, client *Client, v
 	}))
 }
 
-func newExpirationClientCache(ctx context.Context) *cache.Cache {
+func newExpirationClientCache(ctx context.Context, interval time.Duration) *cache.Cache {
 	expirationClientCache := cache.NewCache()
-	add := periodic.New(ctx.Done(), time.Minute)
+	add := periodic.New(ctx.Done(), interval)
 	add(func(now time.Time) bool {
 		expirationClientCache.CheckExpirations(now)
 		return true
@@ -149,7 +162,7 @@ func newResourceDirectoryClient(config GrpcServerConfig, logger log.Logger) (pbG
 	return rdClient, closeRdConn, nil
 }
 
-func newTCPListener(config COAPConfig, tlsDeviceIDCache *cache.Cache, logger log.Logger) (tcp.Listener, func(), error) {
+func newTCPListener(config COAPConfig, logger log.Logger) (tcp.Listener, func(), error) {
 	if !config.TLS.Enabled {
 		listener, err := net.NewTCPListener("tcp", config.Addr)
 		if err != nil {
@@ -170,9 +183,7 @@ func newTCPListener(config COAPConfig, tlsDeviceIDCache *cache.Cache, logger log
 	}
 	closeListener.AddFunc(coapsTLS.Close)
 	tlsCfgForClient := coapsTLS.GetTLSConfig()
-	tlsCfg := tls.Config{
-		GetConfigForClient: MakeGetConfigForClient(tlsCfgForClient, config.KeepAlive.Timeout, tlsDeviceIDCache),
-	}
+	tlsCfg := MakeGetConfigForClient(tlsCfgForClient)
 	listener, err := net.NewTLSListener("tcp", config.Addr, &tlsCfg)
 	if err != nil {
 		closeListener.Execute()
@@ -288,14 +299,7 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 	}
 	nats.AddCloseFunc(closeRdClient)
 
-	tlsDeviceIDCache := cache.NewCache()
-	add := periodic.New(ctx.Done(), config.APIs.COAP.KeepAlive.Timeout/2)
-	add(func(now time.Time) bool {
-		tlsDeviceIDCache.CheckExpirations(now)
-		return true
-	})
-
-	listener, closeListener, err := newTCPListener(config.APIs.COAP, tlsDeviceIDCache, logger)
+	listener, closeListener, err := newTCPListener(config.APIs.COAP, logger)
 	if err != nil {
 		nats.Close()
 		return nil, fmt.Errorf("cannot create listener: %w", err)
@@ -347,8 +351,7 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 		raClient:              raClient,
 		isClient:              isClient,
 		rdClient:              rdClient,
-		expirationClientCache: newExpirationClientCache(ctx),
-		tlsDeviceIDCache:      tlsDeviceIDCache,
+		expirationClientCache: newExpirationClientCache(ctx, config.APIs.COAP.OwnerCacheExpiration),
 		listener:              listener,
 		authInterceptor:       newAuthInterceptor(),
 		devicesStatusUpdater:  newDevicesStatusUpdater(ctx, config.Clients.ResourceAggregate.DeviceStatusExpiration, logger),
@@ -399,7 +402,7 @@ func onUnprocessedRequest(client *Client, req *mux.Message) {
 func validateCommand(s mux.ResponseWriter, req *mux.Message, server *Service, fnc func(req *mux.Message, client *Client)) {
 	client, ok := s.Client().Context().Value(clientKey).(*Client)
 	if !ok || client == nil {
-		client = newClient(server, s.Client().ClientConn().(*tcp.ClientConn), "")
+		client = newClient(server, s.Client().ClientConn().(*tcp.ClientConn), "", time.Time{})
 	}
 	closeClient := func(c *Client) {
 		if err := c.Close(); err != nil {
@@ -443,11 +446,18 @@ const clientKey = "client"
 
 func (server *Service) coapConnOnNew(coapConn *tcp.ClientConn, tlscon *tls.Conn) {
 	var tlsDeviceID string
-	v := server.tlsDeviceIDCache.Load(coapConn.RemoteAddr().String())
-	if v != nil {
-		tlsDeviceID = v.Data().(string)
+	var tlsValidTo time.Time
+	if tlscon != nil {
+		peerCertificates := tlscon.ConnectionState().PeerCertificates
+		if len(peerCertificates) > 0 {
+			deviceID, err := coap.GetDeviceIDFromIdentityCertificate(peerCertificates[0])
+			if err == nil {
+				tlsDeviceID = deviceID
+			}
+			tlsValidTo = peerCertificates[0].NotAfter
+		}
 	}
-	client := newClient(server, coapConn, tlsDeviceID)
+	client := newClient(server, coapConn, tlsDeviceID, tlsValidTo)
 	coapConn.SetContextValue(clientKey, client)
 	coapConn.AddOnClose(func() {
 		client.OnClose()
@@ -459,7 +469,7 @@ func (server *Service) authMiddleware(next mux.Handler) mux.Handler {
 		t := time.Now()
 		client, ok := w.Client().Context().Value(clientKey).(*Client)
 		if !ok {
-			client = newClient(server, w.Client().ClientConn().(*tcp.ClientConn), "")
+			client = newClient(server, w.Client().ClientConn().(*tcp.ClientConn), "", time.Time{})
 		}
 		authCtx, _ := client.GetAuthorizationContext()
 		ctx := context.WithValue(r.Context, &authCtxKey, authCtx)
@@ -569,8 +579,6 @@ func (server *Service) serveWithHandlingSignal() error {
 
 	server.coapServer.Stop()
 	wg.Wait()
-
-	server.tlsDeviceIDCache.PullOutAll()
 
 	return err
 }
