@@ -84,10 +84,10 @@ func (a *authorizationContext) ToContext(ctx context.Context) context.Context {
 
 //Client a setup of connection
 type Client struct {
-	server      *Service
-	coapConn    *tcp.ClientConn
-	tlsDeviceID string
-	tlsValidTo  time.Time
+	server        *Service
+	coapConn      *tcp.ClientConn
+	tlsDeviceID   string
+	tlsValidUntil time.Time
 
 	resourceSubscriptions *kitSync.Map // [token]
 
@@ -102,7 +102,7 @@ type Client struct {
 }
 
 //newClient create and initialize client
-func newClient(server *Service, coapConn *tcp.ClientConn, tlsDeviceID string, tlsValidTo time.Time) *Client {
+func newClient(server *Service, coapConn *tcp.ClientConn, tlsDeviceID string, tlsValidUntil time.Time) *Client {
 	return &Client{
 		server:                server,
 		coapConn:              coapConn,
@@ -110,7 +110,7 @@ func newClient(server *Service, coapConn *tcp.ClientConn, tlsDeviceID string, tl
 		resourceSubscriptions: kitSync.NewMap(),
 		exchangeCache:         NewExchangeCache(),
 		refreshCache:          NewRefreshCache(),
-		tlsValidTo:            tlsValidTo,
+		tlsValidUntil:         tlsValidUntil,
 	}
 }
 
@@ -127,9 +127,9 @@ func (client *Client) deviceID() string {
 
 func (client *Client) getClientExpiration(validJWTUntil time.Time) time.Time {
 	if client.server.config.APIs.COAP.TLS.Enabled &&
-		client.server.config.APIs.COAP.TLS.DisconnectForCertificateExpiration &&
-		(validJWTUntil.IsZero() || validJWTUntil.After(client.tlsValidTo)) {
-		return client.tlsValidTo
+		client.server.config.APIs.COAP.TLS.DisconnectOnExpiredCertificate &&
+		(validJWTUntil.IsZero() || validJWTUntil.After(client.tlsValidUntil)) {
+		return client.tlsValidUntil
 	}
 	return validJWTUntil
 }

@@ -145,9 +145,9 @@ func (c *COAPConfig) Validate() error {
 }
 
 type TLSConfig struct {
-	Enabled                            bool                     `yaml:"enabled" json:"enabled"`
-	DisconnectForCertificateExpiration bool                     `yaml:"disconnectForCertificateExpiration" json:"disconnectForCertificateExpiration"`
-	Embedded                           certManagerServer.Config `yaml:",inline" json:",inline"`
+	Enabled                        bool                     `yaml:"enabled" json:"enabled"`
+	DisconnectOnExpiredCertificate bool                     `yaml:"disconnectOnExpiredCertificate" json:"disconnectOnExpiredCertificate"`
+	Embedded                       certManagerServer.Config `yaml:",inline" json:",inline"`
 }
 
 type KeepAlive struct {

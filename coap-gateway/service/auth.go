@@ -70,7 +70,7 @@ func (s *Service) VerifyDeviceID(tlsDeviceID string, claim pkgJwt.Claims) error 
 
 func verifyChain(chain []*x509.Certificate, capool *x509.CertPool) error {
 	if len(chain) == 0 {
-		return fmt.Errorf("empty chain")
+		return fmt.Errorf("certificate chain is empty")
 	}
 	certificate := chain[0]
 	intermediateCAPool := x509.NewCertPool()
@@ -98,14 +98,14 @@ func verifyChain(chain []*x509.Certificate, capool *x509.CertPool) error {
 		}
 	}
 	if !ekuHasClient {
-		return fmt.Errorf("not contains ExtKeyUsageClientAuth")
+		return fmt.Errorf("the extended key usage field in the device certificate does not contain client authentication")
 	}
 	if !ekuHasServer {
-		return fmt.Errorf("not contains ExtKeyUsageServerAuth")
+		return fmt.Errorf("the extended key usage field in the device certificate does not contain server authentication")
 	}
 	_, err = coap.GetDeviceIDFromIdentityCertificate(certificate)
 	if err != nil {
-		return fmt.Errorf("cannot get deviceID from common name: %w", err)
+		return fmt.Errorf("the device ID is not part of the certificate's common name: %w", err)
 	}
 	return nil
 }

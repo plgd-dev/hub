@@ -22,7 +22,7 @@ apis:
       blockSize: "1024"
     tls:
       enabled: true
-      disconnectForCertificateExpiration: false
+      disconnectOnExpiredCertificate: false
       caPool: "/secrets/public/rootca.crt"
       keyFile: "/secrets/private/cert.key"
       certFile: "/secrets/public/cert.crt"

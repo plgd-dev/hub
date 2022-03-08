@@ -446,7 +446,7 @@ const clientKey = "client"
 
 func (server *Service) coapConnOnNew(coapConn *tcp.ClientConn, tlscon *tls.Conn) {
 	var tlsDeviceID string
-	var tlsValidTo time.Time
+	var tlsValidUntil time.Time
 	if tlscon != nil {
 		peerCertificates := tlscon.ConnectionState().PeerCertificates
 		if len(peerCertificates) > 0 {
@@ -454,10 +454,10 @@ func (server *Service) coapConnOnNew(coapConn *tcp.ClientConn, tlscon *tls.Conn)
 			if err == nil {
 				tlsDeviceID = deviceID
 			}
-			tlsValidTo = peerCertificates[0].NotAfter
+			tlsValidUntil = peerCertificates[0].NotAfter
 		}
 	}
-	client := newClient(server, coapConn, tlsDeviceID, tlsValidTo)
+	client := newClient(server, coapConn, tlsDeviceID, tlsValidUntil)
 	coapConn.SetContextValue(clientKey, client)
 	coapConn.AddOnClose(func() {
 		client.OnClose()

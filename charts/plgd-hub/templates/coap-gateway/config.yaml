@@ -39,7 +39,7 @@ data:
           blockSize: {{ .apis.coap.blockwiseTransfer.blockSize | quote }}
         tls:
           enabled: {{ .apis.coap.tls.enabled }}
-          disconnectForCertificateExpiration: {{ .apis.coap.tls.disconnectForCertificateExpiration }}
+          disconnectOnExpiredCertificate: {{ .apis.coap.tls.disconnectOnExpiredCertificate }}
           {{- if .apis.coap.tls.enabled }}
           {{- $tls := .apis.coap.tls }}
           {{- include "plgd-hub.certificateConfig" (list $ $tls $coapGatewayServiceCert) | indent 8 }}

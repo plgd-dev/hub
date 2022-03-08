@@ -765,7 +765,7 @@ coapgateway:
       tls:
         enabled: true
         # -- After the certificate expires, the connection will be disconnected
-        disconnectForCertificateExpiration: false
+        disconnectOnExpiredCertificate: false
         caPool:
         keyFile:
         certFile:

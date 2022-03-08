@@ -181,7 +181,7 @@ func TestCertificateExpiration(t *testing.T) {
 	coapgwCfg := coapgwTest.MakeConfig(t)
 	coapgwCfg.APIs.COAP.TLS.Enabled = true
 	coapgwCfg.APIs.COAP.OwnerCacheExpiration = time.Second
-	coapgwCfg.APIs.COAP.TLS.DisconnectForCertificateExpiration = true
+	coapgwCfg.APIs.COAP.TLS.DisconnectOnExpiredCertificate = true
 	coapgwCfg.APIs.COAP.TLS.Embedded.ClientCertificateRequired = true
 	coapgwCfg.APIs.COAP.Authorization.DeviceIDClaim = oauthUri.DeviceIDClaimKey
 
