@@ -82,12 +82,7 @@ func updateClient(client *Client, deviceID, owner, accessToken string, validUnti
 	}
 	client.SetAuthorizationContext(&authCtx)
 
-	if validUntil.IsZero() {
-		client.server.expirationClientCache.Delete(deviceID)
-	} else {
-		expiresIn := validUntilToExpiresIn(validUntil)
-		setExpirationClientCache(client.server.expirationClientCache, deviceID, client, time.Now().Add(time.Second*time.Duration(expiresIn)))
-	}
+	setExpirationClientCache(client.server.expirationClientCache, deviceID, client, validUntil)
 }
 
 func refreshTokenPostHandler(req *mux.Message, client *Client) {

@@ -10,7 +10,7 @@ import (
 	"github.com/plgd-dev/go-coap/v2/tcp"
 	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
 	"github.com/plgd-dev/hub/v2/coap-gateway/uri"
-	"github.com/plgd-dev/hub/v2/test/config"
+	testCfg "github.com/plgd-dev/hub/v2/test/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -19,7 +19,7 @@ func TestClientRetrieveHandler(t *testing.T) {
 	shutdown := setUp(t)
 	defer shutdown()
 
-	co := testCoapDial(t, config.GW_HOST, "")
+	co := testCoapDial(t, testCfg.GW_HOST, "", true, time.Now().Add(time.Minute))
 	if co == nil {
 		return
 	}

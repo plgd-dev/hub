@@ -3,6 +3,7 @@ package service_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/plgd-dev/go-coap/v2/message"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
@@ -111,7 +112,7 @@ func TestResourceDirectoryPostHandler(t *testing.T) {
 	shutdown := setUp(t)
 	defer shutdown()
 
-	co := testCoapDial(t, testCfg.GW_HOST, "")
+	co := testCoapDial(t, testCfg.GW_HOST, "", true, time.Now().Add(time.Minute))
 	if co == nil {
 		return
 	}
@@ -143,7 +144,7 @@ func TestResourceDirectoryDeleteHandler(t *testing.T) {
 	shutdown := setUp(t)
 	defer shutdown()
 
-	co := testCoapDial(t, testCfg.GW_HOST, "")
+	co := testCoapDial(t, testCfg.GW_HOST, "", true, time.Now().Add(time.Minute))
 	if co == nil {
 		return
 	}
@@ -193,7 +194,7 @@ func TestResourceDirectoryGetSelector(t *testing.T) {
 	shutdown := setUp(t)
 	defer shutdown()
 
-	co := testCoapDial(t, testCfg.GW_HOST, "")
+	co := testCoapDial(t, testCfg.GW_HOST, "", true, time.Now().Add(time.Minute))
 	if co == nil {
 		return
 	}

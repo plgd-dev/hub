@@ -31,7 +31,7 @@ func TestClientCreateHandler(t *testing.T) {
 
 	log.Setup(coapgwCfg.Log.Config)
 
-	co := testCoapDial(t, testCfg.GW_HOST, "", true)
+	co := testCoapDial(t, testCfg.GW_HOST, "", false, time.Now().Add(time.Minute))
 	if co == nil {
 		return
 	}

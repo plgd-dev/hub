@@ -764,6 +764,8 @@ coapgateway:
         blockSize: "1024"
       tls:
         enabled: true
+        # -- After the certificate expires, the connection will be disconnected
+        disconnectOnExpiredCertificate: false
         caPool:
         keyFile:
         certFile:

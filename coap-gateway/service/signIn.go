@@ -303,11 +303,7 @@ func signInPostHandler(req *mux.Message, client *Client, signIn CoapSignInReq) {
 		return
 	}
 
-	if validUntil.IsZero() {
-		client.server.expirationClientCache.Delete(deviceID)
-	} else {
-		setExpirationClientCache(client.server.expirationClientCache, deviceID, client, time.Now().Add(time.Second*time.Duration(expiresIn)))
-	}
+	setExpirationClientCache(client.server.expirationClientCache, deviceID, client, validUntil)
 
 	client.exchangeCache.Clear()
 	client.refreshCache.Clear()

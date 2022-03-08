@@ -19,7 +19,7 @@ func TestClientDeleteHandler(t *testing.T) {
 	shutdown := setUp(t)
 	defer shutdown()
 
-	co := testCoapDial(t, testCfg.GW_HOST, "")
+	co := testCoapDial(t, testCfg.GW_HOST, "", true, time.Now().Add(time.Minute))
 	if co == nil {
 		return
 	}

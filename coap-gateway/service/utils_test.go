@@ -261,10 +261,10 @@ func testPrepareDevice(t *testing.T, co *tcp.ClientConn) {
 	}
 }
 
-func testCoapDial(t *testing.T, host, deviceID string, withoutTLS ...bool) *tcp.ClientConn {
+func testCoapDial(t *testing.T, host, deviceID string, withTLS bool, validTo time.Time) *tcp.ClientConn {
 	var tlsConfig *tls.Config
 
-	if len(withoutTLS) == 0 {
+	if withTLS {
 		priv, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 		require.NoError(t, err)
 		signerCert, err := security.LoadX509(os.Getenv("TEST_ROOT_CA_CERT"))
@@ -274,7 +274,7 @@ func testCoapDial(t *testing.T, host, deviceID string, withoutTLS ...bool) *tcp.
 
 		certData, err := generateCertificate.GenerateIdentityCert(generateCertificate.Configuration{
 			ValidFrom: time.Now().Add(-time.Hour).Format(time.RFC3339),
-			ValidFor:  2 * time.Hour,
+			ValidFor:  time.Until(validTo) + time.Hour,
 		}, deviceID, priv, signerCert, signerKey)
 		require.NoError(t, err)
 		b, err := x509.MarshalECPrivateKey(priv)
