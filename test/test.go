@@ -282,7 +282,7 @@ func OnboardDevSimForClient(ctx context.Context, t *testing.T, c pb.GrpcGatewayC
 		}
 		CheckProtobufs(t, expectedEvent, ev, RequireToCheckFunc(require.Equal))
 		onboard()
-		waitForDevice(ctx, t, subClient, deviceID, ev.GetSubscriptionId(), ev.GetCorrelationId(), expectedResources)
+		WaitForDevice(ctx, t, subClient, deviceID, ev.GetSubscriptionId(), ev.GetCorrelationId(), expectedResources)
 		err = subClient.CloseSend()
 		require.NoError(t, err)
 	} else {
@@ -304,7 +304,7 @@ func OnboardDevSim(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 	return OnboardDevSimForClient(ctx, t, c, config.OAUTH_MANAGER_CLIENT_ID, deviceID, gwHost, expectedResources)
 }
 
-func waitForDevice(ctx context.Context, t *testing.T, client pb.GrpcGateway_SubscribeToEventsClient, deviceID, subID, correlationID string, expectedResources []schema.ResourceLink) {
+func WaitForDevice(ctx context.Context, t *testing.T, client pb.GrpcGateway_SubscribeToEventsClient, deviceID, subID, correlationID string, expectedResources []schema.ResourceLink) {
 	getID := func(ev *pb.Event) string {
 		switch v := ev.GetType().(type) {
 		case *pb.Event_DeviceRegistered_:
