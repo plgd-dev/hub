@@ -1066,7 +1066,7 @@ httpgateway:
     # -- Ingress path
     paths:
       - /api
-      - /.well-known/
+      - /.well-known/hub-configuration
   # -- Http-gateway service yaml config section
   config:
     # -- Name of configuration file
@@ -1581,8 +1581,7 @@ mockoauthserver:
     paths:
       - /authorize
       - /oauth/token
-      - /.well-known
-      - /jwks.json
+      - /.well-known/jwks.json
       - /.well-known/openid-configuration
       - /v2/logout
       - /authorize/userinfo
