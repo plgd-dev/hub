@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"io"
+	"sync"
 	"testing"
 	"time"
 
@@ -11,6 +12,7 @@ import (
 	"github.com/plgd-dev/device/schema/device"
 	"github.com/plgd-dev/device/schema/interfaces"
 	"github.com/plgd-dev/go-coap/v2/message"
+	coapTest "github.com/plgd-dev/hub/v2/coap-gateway/test"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
@@ -348,4 +350,59 @@ func TestRequestHandlerRunMultipleUpdateResource(t *testing.T) {
 			}
 		}()
 	}
+}
+
+func TestRequestHandlerRunMultipleParallelUpdateResource(t *testing.T) {
+	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
+	numIteration := 20
+	timeout := time.Second * 120
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+
+	raCfg := raTest.MakeConfig(t)
+	raCfg.Clients.Eventstore.SnapshotThreshold = 5
+	raCfg.Clients.Eventstore.ConcurrencyExceptionMaxRetry = 40
+
+	coapCfg := coapTest.MakeConfig(t)
+	tearDown := service.SetUp(ctx, t, service.WithRAConfig(raCfg), service.WithCOAPGWConfig(coapCfg))
+	defer tearDown()
+	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
+
+	conn, err := grpc.Dial(config.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+		RootCAs: test.GetRootCertificatePool(t),
+	})))
+	require.NoError(t, err)
+	defer func() {
+		_ = conn.Close()
+	}()
+	c := pb.NewGrpcGatewayClient(conn)
+
+	resources := test.GetAllBackendResourceLinks()
+	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.GW_HOST, resources)
+	defer shutdownDevSim()
+
+	var wg sync.WaitGroup
+	wg.Add(numIteration)
+	for i := 0; i < numIteration; i++ {
+		t.Logf("TestRequestHandlerRunMultipleParallelUpdateResource:run %v\n", i)
+		go func() {
+			defer wg.Done()
+			lightHref := test.TestResourceLightInstanceHref("1")
+			ctx, cancel := context.WithTimeout(ctx, timeout)
+			defer cancel()
+			for j := 1; j >= 0; j-- {
+				_, err := c.UpdateResource(ctx, &pb.UpdateResourceRequest{
+					ResourceId: commands.NewResourceID(deviceID, lightHref),
+					Content: &pb.Content{
+						ContentType: message.AppOcfCbor.String(),
+						Data: test.EncodeToCbor(t, map[string]interface{}{
+							"power": j,
+						}),
+					},
+				})
+				require.NoError(t, err)
+			}
+		}()
+	}
+	wg.Wait()
 }
