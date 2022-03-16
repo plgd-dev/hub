@@ -101,28 +101,16 @@ func (client *Client) getLogger() log.Logger {
 
 func (client *Client) Errorf(fmt string, args ...interface{}) {
 	logger := client.getLogger()
-	deviceID := client.deviceID()
-	if deviceID != "" {
-		logger = logger.With(log.DeviceIDKey, deviceID)
-	}
 	logger.Errorf(fmt, args...)
 }
 
 func (client *Client) Debugf(fmt string, args ...interface{}) {
 	logger := client.getLogger()
-	deviceID := client.deviceID()
-	if deviceID != "" {
-		logger = logger.With(log.DeviceIDKey, deviceID)
-	}
 	logger.Debugf(fmt, args...)
 }
 
 func (client *Client) Infof(fmt string, args ...interface{}) {
 	logger := client.getLogger()
-	deviceID := client.deviceID()
-	if deviceID != "" {
-		logger = logger.With(log.DeviceIDKey, deviceID)
-	}
 	logger.Infof(fmt, args...)
 }
 
