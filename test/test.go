@@ -398,7 +398,8 @@ func WaitForDevice(ctx context.Context, t *testing.T, client pb.GrpcGateway_Subs
 
 		expectedEvent, ok := expectedEvents[getID(ev)]
 		if !ok {
-			require.NoError(t, fmt.Errorf("unexpected event %+v", ev))
+			t.Logf("unexpected event %+v", ev)
+			continue
 		}
 		cleanUpEvent(ev)
 		CheckProtobufs(t, expectedEvent, ev, RequireToCheckFunc(require.Equal))
