@@ -44,8 +44,8 @@
 
 
 {{- define "plgd-hub.grpcgateway.domain" -}}
-  {{- if .Values.httpgateway.domain }}
-    {{- printf "%s" .Values.httpgateway.domain }}
+  {{- if .Values.grpcgateway.domain }}
+    {{- printf "%s" .Values.grpcgateway.domain }}
   {{- else }}
     {{- printf "api.%s" .Values.global.domain }}
   {{- end }}
