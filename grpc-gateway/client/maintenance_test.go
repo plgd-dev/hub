@@ -17,7 +17,7 @@ import (
 const RebootTakes = time.Second * 8 // for reboot
 const RebootTimeout = TestTimeout + RebootTakes
 
-func TestClient_FactoryReset(t *testing.T) {
+func TestClientFactoryReset(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	ctx, cancel := context.WithTimeout(context.Background(), TestTimeout)
 	defer cancel()
@@ -70,7 +70,7 @@ func TestClient_FactoryReset(t *testing.T) {
 	}
 }
 
-func TestClient_Reboot(t *testing.T) {
+func TestClientReboot(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	ctx, cancel := context.WithTimeout(context.Background(), RebootTimeout)
 	defer cancel()
