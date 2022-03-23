@@ -59,7 +59,7 @@ func (c *Client) updateMaintenanceResource(
 	var v events.ResourceLinksPublished
 	if !it.Next(&v) {
 		if it.Err != nil {
-			return grpc.ForwardErrorf(codes.NotFound, "cannot find maintenance resource(%v): %w", maintenance.ResourceType, it.Err)
+			return grpc.ForwardErrorf(codes.NotFound, "cannot find maintenance resource(%v): %v", maintenance.ResourceType, it.Err)
 		}
 		return status.Errorf(codes.NotFound, "cannot find maintenance resource(%v)", maintenance.ResourceType)
 	}
