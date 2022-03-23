@@ -9,6 +9,7 @@ import (
 
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 )
 
 // GetResourceWithCodec retrieves content of a resource from the client.
@@ -46,6 +47,17 @@ func (c *Client) getResource(
 		return err
 	}
 	if resp == nil {
+		iter := c.GetResourceLinksIterator(ctx, []string{deviceID})
+		defer iter.Close()
+		var v events.ResourceLinksPublished
+		ok := iter.Next(&v)
+		if ok && v.GetDeviceId() == deviceID {
+			for _, r := range v.GetResources() {
+				if r.GetHref() == href {
+					return status.Errorf(codes.Unavailable, "content of resource /%v%v is not stored", deviceID, href)
+				}
+			}
+		}
 		return status.Errorf(codes.NotFound, "not found")
 	}
 

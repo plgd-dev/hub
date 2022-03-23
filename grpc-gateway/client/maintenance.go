@@ -5,7 +5,9 @@ import (
 	"net/http"
 
 	"github.com/plgd-dev/device/schema/maintenance"
-	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
+	"github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	"github.com/plgd-dev/hub/v2/pkg/strings"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -54,12 +56,23 @@ func (c *Client) updateMaintenanceResource(
 ) (ret error) {
 	it := c.GetResourceLinksIterator(ctx, []string{deviceID}, maintenance.ResourceType)
 	defer it.Close()
-	var v commands.Resource
+	var v events.ResourceLinksPublished
 	if !it.Next(&v) {
+		if it.Err != nil {
+			return grpc.ForwardErrorf(codes.NotFound, "cannot find maintenance resource(%v): %w", maintenance.ResourceType, it.Err)
+		}
 		return status.Errorf(codes.NotFound, "cannot find maintenance resource(%v)", maintenance.ResourceType)
 	}
+	var href string
+	for _, r := range v.GetResources() {
+		if r.GetDeviceId() == deviceID && strings.Contains(r.GetResourceTypes(), maintenance.ResourceType) {
+			href = r.GetHref()
+			break
+		}
+	}
+
 	var resp maintenance.Maintenance
-	err := c.UpdateResource(ctx, v.GetDeviceId(), v.GetHref(), req, &resp)
+	err := c.UpdateResource(ctx, v.GetDeviceId(), href, req, &resp)
 	if err != nil {
 		return err
 	}
