@@ -324,7 +324,8 @@ func updateDeviceMetadata(req *mux.Message, client *Client) error {
 			DeviceId: oldAuthCtx.GetDeviceID(),
 			Update: &commands.UpdateDeviceMetadataRequest_Status{
 				Status: &commands.ConnectionStatus{
-					Value: commands.ConnectionStatus_OFFLINE,
+					Value:        commands.ConnectionStatus_OFFLINE,
+					ConnectionId: client.remoteAddrString(),
 				},
 			},
 			CommandMetadata: &commands.CommandMetadata{

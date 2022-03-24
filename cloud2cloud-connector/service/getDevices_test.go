@@ -92,6 +92,7 @@ func testRequestHandlerGetDevices(t *testing.T, events store.Events) {
 				dev.ProtocolIndependentId = ""
 				if dev.GetMetadata().GetStatus() != nil {
 					dev.GetMetadata().GetStatus().ValidUntil = 0
+					dev.GetMetadata().GetStatus().ConnectionId = ""
 				}
 				devices = append(devices, dev)
 			}

@@ -157,7 +157,8 @@ func (s *SubscriptionManager) HandleDevicesOnline(ctx context.Context, d subscri
 			DeviceId: device.ID,
 			Update: &commands.UpdateDeviceMetadataRequest_Status{
 				Status: &commands.ConnectionStatus{
-					Value: commands.ConnectionStatus_ONLINE,
+					Value:        commands.ConnectionStatus_ONLINE,
+					ConnectionId: d.linkedAccount.ID + "." + d.subscription.ID,
 				},
 			},
 			CommandMetadata: &commands.CommandMetadata{
@@ -184,7 +185,8 @@ func (s *SubscriptionManager) HandleDevicesOffline(ctx context.Context, d subscr
 			DeviceId: device.ID,
 			Update: &commands.UpdateDeviceMetadataRequest_Status{
 				Status: &commands.ConnectionStatus{
-					Value: commands.ConnectionStatus_OFFLINE,
+					Value:        commands.ConnectionStatus_OFFLINE,
+					ConnectionId: d.linkedAccount.ID + "." + d.subscription.ID,
 				},
 			},
 			CommandMetadata: &commands.CommandMetadata{

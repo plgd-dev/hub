@@ -1161,6 +1161,9 @@
         "validUntil": {
           "type": "string",
           "format": "int64"
+        },
+        "connectionId": {
+          "type": "string"
         }
       }
     },

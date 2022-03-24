@@ -107,6 +107,7 @@ func TestClient_GetDevice(t *testing.T) {
 			require.NotEmpty(t, got.Device.GetProtocolIndependentId())
 			got.Device.ProtocolIndependentId = ""
 			got.Device.Metadata.Status.ValidUntil = 0
+			got.Device.Metadata.Status.ConnectionId = ""
 			test.CheckProtobufs(t, tt.want, got, test.RequireToCheckFunc(require.Equal))
 		})
 	}

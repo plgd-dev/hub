@@ -262,7 +262,8 @@ func testMakeUpdateDeviceMetadataRequest(deviceID, correlationID string, online 
 	if online != nil {
 		r.Update = &commands.UpdateDeviceMetadataRequest_Status{
 			Status: &commands.ConnectionStatus{
-				Value: *online,
+				Value:        *online,
+				ConnectionId: "123",
 			},
 		}
 	}
