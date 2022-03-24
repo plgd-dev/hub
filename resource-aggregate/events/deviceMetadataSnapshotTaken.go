@@ -65,6 +65,9 @@ func (e *DeviceMetadataSnapshotTaken) CheckInitialized() bool {
 }
 
 func (e *DeviceMetadataSnapshotTaken) HandleDeviceMetadataUpdated(ctx context.Context, upd *DeviceMetadataUpdated, confirm bool) (bool, error) {
+	if upd.GetStatus() != nil && upd.GetStatus().GetConnectionId() == "" {
+		return false, status.Errorf(codes.InvalidArgument, "cannot update connection status for empty connectionId")
+	}
 	index := -1
 	for i, event := range e.GetUpdatePendings() {
 		if event.GetAuditContext().GetCorrelationId() == upd.GetAuditContext().GetCorrelationId() {
@@ -76,6 +79,10 @@ func (e *DeviceMetadataSnapshotTaken) HandleDeviceMetadataUpdated(ctx context.Co
 		return false, status.Errorf(codes.InvalidArgument, "cannot find shadow synchronization status update pending event with correlationId('%v')", upd.GetAuditContext().GetCorrelationId())
 	}
 	if e.DeviceMetadataUpdated.Equal(upd) {
+		return false, nil
+	}
+	if e.DeviceMetadataUpdated.GetStatus().IsOnline() && upd.GetStatus() != nil && !upd.GetStatus().IsOnline() && e.DeviceMetadataUpdated.GetStatus().GetConnectionId() != upd.GetStatus().GetConnectionId() {
+		// if previous status was online and new status is offline, the connectionId must be the same
 		return false, nil
 	}
 	e.DeviceId = upd.GetDeviceId()

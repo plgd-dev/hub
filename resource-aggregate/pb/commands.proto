@@ -426,6 +426,7 @@ message ConnectionStatus {
     };
     Status value = 1;
     int64 valid_until = 2;
+    string connection_id = 3; // when status is ONLINE, this field contains the connection id. To update state offline, this field must be same as the one in the previous message.
 }
 //*******************************************************************************************************************************************************
 // Update Device Metadata - Shadow Synchronization Status

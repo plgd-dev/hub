@@ -326,6 +326,9 @@ func WaitForDevice(ctx context.Context, t *testing.T, client pb.GrpcGateway_Subs
 			val.DeviceMetadataUpdated.AuditContext = nil
 			require.NotZero(t, val.DeviceMetadataUpdated.GetEventMetadata().GetTimestamp())
 			val.DeviceMetadataUpdated.EventMetadata = nil
+			if val.DeviceMetadataUpdated.GetStatus() != nil {
+				val.DeviceMetadataUpdated.GetStatus().ConnectionId = ""
+			}
 		case *pb.Event_ResourcePublished:
 			require.NotEmpty(t, val.ResourcePublished.GetAuditContext().GetUserId())
 			val.ResourcePublished.AuditContext = nil

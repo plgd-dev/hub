@@ -90,6 +90,7 @@ func TestRequestHandler_GetDevices(t *testing.T) {
 					assert.NotEmpty(t, dev.ProtocolIndependentId)
 					dev.ProtocolIndependentId = ""
 					dev.Metadata.Status.ValidUntil = 0
+					dev.Metadata.Status.ConnectionId = ""
 					devices = append(devices, dev)
 				}
 				test.CheckProtobufs(t, tt.want, devices, test.RequireToCheckFunc(require.Equal))

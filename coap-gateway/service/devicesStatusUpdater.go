@@ -75,8 +75,9 @@ func (u *devicesStatusUpdater) updateOnlineStatus(client *Client, validUntil tim
 		DeviceId: authCtx.GetDeviceID(),
 		Update: &commands.UpdateDeviceMetadataRequest_Status{
 			Status: &commands.ConnectionStatus{
-				Value:      commands.ConnectionStatus_ONLINE,
-				ValidUntil: pkgTime.UnixNano(validUntil),
+				Value:        commands.ConnectionStatus_ONLINE,
+				ValidUntil:   pkgTime.UnixNano(validUntil),
+				ConnectionId: client.remoteAddrString(),
 			},
 		},
 		CommandMetadata: &commands.CommandMetadata{

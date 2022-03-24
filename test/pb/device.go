@@ -17,6 +17,7 @@ func CmpDeviceValues(t *testing.T, expected, got []*pbGrpc.Device) {
 	cleanUp := func(dev *pbGrpc.Device) {
 		dev.ProtocolIndependentId = ""
 		dev.Metadata.Status.ValidUntil = 0
+		dev.Metadata.Status.ConnectionId = ""
 	}
 
 	for idx := range expected {
@@ -44,6 +45,7 @@ func CleanUpDeviceMetadataUpdated(e *events.DeviceMetadataUpdated, resetCorrelat
 	e.EventMetadata = nil
 	if e.GetStatus() != nil {
 		e.GetStatus().ValidUntil = 0
+		e.GetStatus().ConnectionId = ""
 	}
 	return e
 }
