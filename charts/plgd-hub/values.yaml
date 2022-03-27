@@ -1059,14 +1059,36 @@ httpgateway:
   # -- Domain for http-gateway API. Default: api.{{ global.domain }}
   apiDomain:
   ingress:
-    # -- Enable ingress
-    enabled: true
-    # -- Ingress annotation
-    annotations: {}
-    # -- Ingress path
-    paths:
-      - /api
-      - /.well-known/hub-configuration
+    # -- API ingress
+    api:
+      # -- Enable ingress
+      enabled: true
+      # -- Pre defined map of Ingress annotation
+      annotations:
+        nginx.org/grpc-services: "{{ include \"plgd-hub.httpgateway.fullname\" . }}"
+        nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+        ingress.kubernetes.io/force-ssl-redirect: "true"
+        nginx.ingress.kubernetes.io/enable-cors: "true"
+      # -- Custom map of Ingress annotation
+      customAnnotations: {}
+      # -- Ingress path
+      paths:
+        - /api
+        - /.well-known/hub-configuration
+    # -- UI ingress
+    ui:
+      # -- Enable ingress
+      enabled: true
+      # -- Pre defined map of Ingress annotation
+      annotations:
+        nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+        ingress.kubernetes.io/force-ssl-redirect: "true"
+        nginx.ingress.kubernetes.io/enable-cors: "true"
+      # -- Custom map of Ingress annotation
+      customAnnotations: {}
+      # -- Ingress path
+      paths:
+        - /
   # -- Http-gateway service yaml config section
   config:
     # -- Name of configuration file
@@ -1223,8 +1245,13 @@ grpcgateway:
     # -- Enable ingress
     enabled: true
     # -- Ingress annotations
-    annotations: {}
-    # -- Default ingress paths
+    annotations:
+      nginx.org/grpc-services: "{{ include \"plgd-hub.grpcgateway.fullname\" . }}"
+      nginx.ingress.kubernetes.io/backend-protocol: "GRPCS"
+      ingress.kubernetes.io/force-ssl-redirect: "true"
+      nginx.ingress.kubernetes.io/enable-cors: "true"
+    # -- Custom map of Ingress annotation
+    customAnnotations: {}
     paths:
       - /grpcgateway.pb.GrpcGateway
   # -- Service yaml configuration section
@@ -1414,8 +1441,14 @@ certificateauthority:
   ingress:
     # -- Enable ingress
     enabled: true
-    # -- Ingress annotations
-    annotations: {}
+    # -- Pre defined map of Ingress annotation
+    annotations:
+      nginx.org/grpc-services: "{{ include \"plgd-hub.certificateauthority.fullname\" . }}"
+      nginx.ingress.kubernetes.io/backend-protocol: "GRPCS"
+      ingress.kubernetes.io/force-ssl-redirect: "true"
+      nginx.ingress.kubernetes.io/enable-cors: "true"
+    # -- Custom map of Ingress annotation
+    customAnnotations: { }
     # -- Paths
     paths:
       - /certificateauthority.pb.CertificateAuthority/SignIdentityCertificate
@@ -1575,8 +1608,41 @@ mockoauthserver:
   ingress:
     # -- Enable ingress
     enabled: true
-    # -- Ingress annotation
-    annotations: {}
+    # -- Pre defined map of Ingress annotation
+    annotations:
+      nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+      ingress.kubernetes.io/force-ssl-redirect: "true"
+      nginx.ingress.kubernetes.io/enable-cors: "true"
+      nginx.ingress.kubernetes.io/configuration-snippet: |
+        more_set_headers "Host $host";
+        more_set_headers "X-Forwarded-Host $host";
+        more_set_headers "X-Forwarded-Proto $scheme";
+        set $cors "true";
+        if ($request_method = 'OPTIONS') {
+          set $cors "${cors}options";
+        }
+        if ($cors = "trueoptions") {
+          add_header 'Access-Control-Allow-Origin' "$http_origin";
+          add_header 'Access-Control-Allow-Credentials' 'true';
+          add_header 'Access-Control-Allow-Methods' 'GET, PUT, POST, DELETE, PATCH, OPTIONS';
+          add_header 'Access-Control-Allow-Headers' '{{ .Values.mockoauthserver.ingress.allowHeaders }}';
+          add_header 'Access-Control-Expose-Headers' 'Content-Length,Content-Range';
+          add_header 'Access-Control-Max-Age' 1728000;
+          add_header 'Content-Type' 'text/plain charset=UTF-8';
+          add_header 'Content-Length' 0;
+          return 204;
+        }
+        if ($request_method = 'POST') {
+        add_header 'Access-Control-Allow-Credentials' 'true';
+        }
+        if ($request_method = 'PUT') {
+        add_header 'Access-Control-Allow-Credentials' 'true';
+        }
+        if ($request_method = 'GET') {
+            add_header 'Access-Control-Allow-Credentials' 'true';
+        }
+    # -- Custom map of Ingress annotation
+    customAnnotations: {}
     # -- Ingress path
     paths:
       - /authorize

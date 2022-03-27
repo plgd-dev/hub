@@ -323,3 +323,11 @@ app.kubernetes.io/instance: {{ .Release.Name }}
   {{- $fullName := include "plgd-hub.fullname" . -}}
   {{- printf "%s-wildcard-crt" $fullName -}}
 {{- end }}
+
+{{- define "plgd-hub.tplvalues.render" -}}
+    {{- if typeIs "string" .value }}
+        {{- tpl .value .context }}
+    {{- else }}
+        {{- tpl (.value | toYaml) .context }}
+    {{- end }}
+{{- end -}}
