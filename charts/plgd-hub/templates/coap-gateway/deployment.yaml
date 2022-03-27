@@ -32,7 +32,7 @@ spec:
       securityContext:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- if .Values.resourcedirectory.rbac.enabled }}
+      {{- if .Values.coapgateway.rbac.enabled }}
       serviceAccountName: {{ .Values.coapgateway.rbac.serviceAccountName }}
       {{- end }}
       {{- with .Values.coapgateway.image.imagePullSecrets }}
@@ -98,7 +98,7 @@ spec:
             {{- end }}
             {{- end }}
       volumes:
-        - name: {{ .Values.resourcedirectory.config.volume }}
+        - name: {{ .Values.coapgateway.config.volume }}
           configMap:
             name: {{ include "plgd-hub.coapgateway.configName" . }}
         {{- if ( include "plgd-hub.coapgateway.createServiceCertByCm" . ) }}
