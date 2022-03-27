@@ -951,7 +951,7 @@ identitystore:
       authorization:
         authority:
         audience:
-        ownerClaim: "sub"
+        ownerClaim:
         http:
           maxIdleConns: 16
           maxConnsPerHost: 32
