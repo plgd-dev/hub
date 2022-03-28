@@ -10,14 +10,12 @@ metadata:
   labels:
     {{- include "plgd-hub.labels" . | nindent 4 }}
   annotations:
-{{/*    kubernetes.io/ingress.class: "nginx"*/}}
-    nginx.org/grpc-services: {{ $fullname | quote }}
-    nginx.ingress.kubernetes.io/backend-protocol: "GRPCS"
-    ingress.kubernetes.io/force-ssl-redirect: "true"
-    nginx.ingress.kubernetes.io/enable-cors: "true"
-  {{- with .Values.certificateauthority.ingress.annotations }}
-    {{- toYaml . | nindent 4 }}
-  {{- end }}
+    {{- if .Values.certificateauthority.ingress.annotations }}
+    {{- include "plgd-hub.tplvalues.render" ( dict "value" .Values.certificateauthority.ingress.annotations "context" $ ) | nindent 4 }}
+    {{- end }}
+    {{- if .Values.certificateauthority.ingress.customAnnotations }}
+    {{- include "plgd-hub.tplvalues.render" ( dict "value" .Values.certificateauthority.ingress.customAnnotations "context" $ ) | nindent 4 }}
+    {{- end }}
 spec:
   tls:
     - hosts:

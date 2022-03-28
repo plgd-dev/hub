@@ -73,7 +73,7 @@ data:
       identityStore:
         pullFrequency: {{ .clients.identityStore.pullFrequency }}
         cacheExpiration: {{ .clients.identityStore.cacheExpiration }}
-        ownerClaim: {{ .clients.identityStore.ownerClaim }}
+        ownerClaim: {{ .clients.identityStore.ownerClaim | default $.Values.global.ownerClaim | quote }}
         grpc:
           {{- $authorizationServer := .clients.identityStore.grpc.address }}
           address:{{ printf " " }}{{- include "plgd-hub.identityStoreAddress" (list $ $authorizationServer ) | quote }}

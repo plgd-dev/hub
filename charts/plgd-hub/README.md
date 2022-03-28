@@ -77,7 +77,8 @@ global:
 | certificateauthority.image.repository | string | `"plgd-dev/hub/certificate-authority"` | Image repository |
 | certificateauthority.image.tag | string | `nil` | Image tag. |
 | certificateauthority.imagePullSecrets | string | `nil` | Image pull secrets |
-| certificateauthority.ingress.annotations | object | `{}` | Ingress annotations |
+| certificateauthority.ingress.annotations | object | `{"ingress.kubernetes.io/force-ssl-redirect":"true","nginx.ingress.kubernetes.io/backend-protocol":"GRPCS","nginx.ingress.kubernetes.io/enable-cors":"true","nginx.org/grpc-services":"{{ include \"plgd-hub.certificateauthority.fullname\" . }}"}` | Pre defined map of Ingress annotation |
+| certificateauthority.ingress.customAnnotations | object | `{}` | Custom map of Ingress annotation |
 | certificateauthority.ingress.enabled | bool | `true` | Enable ingress |
 | certificateauthority.ingress.paths | list | `["/certificateauthority.pb.CertificateAuthority/SignIdentityCertificate"]` | Paths |
 | certificateauthority.initContainersTpl | string | `nil` | Init containers definition |
@@ -113,7 +114,7 @@ global:
 | certmanager.coap.cert.key.size | string | `nil` | Certificate key size |
 | certmanager.coap.cert.renewBefore | string | `nil` | Certificate renew before |
 | certmanager.coap.issuer.annotations | object | `{}` | Annotations |
-| certmanager.coap.issuer.kind | string | `nil` | Kind |
+| certmanager.coap.issuer.kind | string | `nil` | Kind of coap issuer |
 | certmanager.coap.issuer.labels | object | `{}` | Labels |
 | certmanager.coap.issuer.name | string | `nil` | Name |
 | certmanager.coap.issuer.spec | string | `nil` | cert-manager issuer spec |
@@ -147,7 +148,7 @@ global:
 | certmanager.external.cert.key.size | string | `nil` | Certificate key size |
 | certmanager.external.cert.renewBefore | string | `nil` | Certificate renew before |
 | certmanager.external.issuer.annotations | object | `{}` | Annotations |
-| certmanager.external.issuer.kind | string | `nil` | Kind |
+| certmanager.external.issuer.kind | string | `nil` | Kind of external issuer |
 | certmanager.external.issuer.labels | object | `{}` | Labels |
 | certmanager.external.issuer.name | string | `nil` | Name |
 | certmanager.external.issuer.spec | string | `nil` | cert-manager issuer spec |
@@ -157,7 +158,7 @@ global:
 | certmanager.internal.cert.renewBefore | string | `nil` | Certificate renew before |
 | certmanager.internal.issuer | object | `{"annotations":{},"kind":null,"labels":{},"name":null,"spec":null}` | Internal issuer. In case you want to create your own issuer for internal certs |
 | certmanager.internal.issuer.annotations | object | `{}` | Annotations |
-| certmanager.internal.issuer.kind | string | `nil` | Kind |
+| certmanager.internal.issuer.kind | string | `nil` | Kind of internal issuer |
 | certmanager.internal.issuer.labels | object | `{}` | Labels |
 | certmanager.internal.issuer.name | string | `nil` | Name |
 | certmanager.internal.issuer.spec | string | `nil` | cert-manager issuer spec |
@@ -241,9 +242,10 @@ global:
 | grpcgateway.image.repository | string | `"plgd-dev/hub/grpc-gateway"` | Image repository |
 | grpcgateway.image.tag | string | `nil` | Image tag. |
 | grpcgateway.imagePullSecrets | object | `{}` | Image pull secrets |
-| grpcgateway.ingress.annotations | object | `{}` | Ingress annotations |
+| grpcgateway.ingress.annotations | object | `{"ingress.kubernetes.io/force-ssl-redirect":"true","nginx.ingress.kubernetes.io/backend-protocol":"GRPCS","nginx.ingress.kubernetes.io/enable-cors":"true","nginx.org/grpc-services":"{{ include \"plgd-hub.grpcgateway.fullname\" . }}"}` | Ingress annotations |
+| grpcgateway.ingress.customAnnotations | object | `{}` | Custom map of Ingress annotation |
 | grpcgateway.ingress.enabled | bool | `true` | Enable ingress |
-| grpcgateway.ingress.paths | list | `["/grpcgateway.pb.GrpcGateway"]` | Default ingress paths |
+| grpcgateway.ingress.paths[0] | string | `"/grpcgateway.pb.GrpcGateway"` |  |
 | grpcgateway.initContainersTpl | object | `{}` | Init containers definition |
 | grpcgateway.livenessProbe | object | `{}` | Liveness probe. grpc-gateway doesn't have any default liveness probe |
 | grpcgateway.log.encoderConfig.timeEncoder | string | `"rfc3339nano"` | Time format for logs. The supported values are: "rfc3339nano", "rfc3339" |
@@ -289,9 +291,16 @@ global:
 | httpgateway.image.repository | string | `"plgd-dev/hub/http-gateway"` | Image repository |
 | httpgateway.image.tag | string | `nil` | Image tag. |
 | httpgateway.imagePullSecrets | object | `{}` | Image pull secrets |
-| httpgateway.ingress.annotations | object | `{}` | Ingress annotation |
-| httpgateway.ingress.enabled | bool | `true` | Enable ingress |
-| httpgateway.ingress.paths | list | `["/api","/.well-known/"]` | Ingress path |
+| httpgateway.ingress.api | object | `{"annotations":{"ingress.kubernetes.io/force-ssl-redirect":"true","nginx.ingress.kubernetes.io/backend-protocol":"HTTPS","nginx.ingress.kubernetes.io/enable-cors":"true","nginx.org/grpc-services":"{{ include \"plgd-hub.httpgateway.fullname\" . }}"},"customAnnotations":{},"enabled":true,"paths":["/api","/.well-known/hub-configuration"]}` | API ingress |
+| httpgateway.ingress.api.annotations | object | `{"ingress.kubernetes.io/force-ssl-redirect":"true","nginx.ingress.kubernetes.io/backend-protocol":"HTTPS","nginx.ingress.kubernetes.io/enable-cors":"true","nginx.org/grpc-services":"{{ include \"plgd-hub.httpgateway.fullname\" . }}"}` | Pre defined map of Ingress annotation |
+| httpgateway.ingress.api.customAnnotations | object | `{}` | Custom map of Ingress annotation |
+| httpgateway.ingress.api.enabled | bool | `true` | Enable ingress |
+| httpgateway.ingress.api.paths | list | `["/api","/.well-known/hub-configuration"]` | Ingress path |
+| httpgateway.ingress.ui | object | `{"annotations":{"ingress.kubernetes.io/force-ssl-redirect":"true","nginx.ingress.kubernetes.io/backend-protocol":"HTTPS","nginx.ingress.kubernetes.io/enable-cors":"true"},"customAnnotations":{},"enabled":true,"paths":["/"]}` | UI ingress |
+| httpgateway.ingress.ui.annotations | object | `{"ingress.kubernetes.io/force-ssl-redirect":"true","nginx.ingress.kubernetes.io/backend-protocol":"HTTPS","nginx.ingress.kubernetes.io/enable-cors":"true"}` | Pre defined map of Ingress annotation |
+| httpgateway.ingress.ui.customAnnotations | object | `{}` | Custom map of Ingress annotation |
+| httpgateway.ingress.ui.enabled | bool | `true` | Enable ingress |
+| httpgateway.ingress.ui.paths | list | `["/"]` | Ingress path |
 | httpgateway.initContainersTpl | object | `{}` | Init containers definition. Render as template |
 | httpgateway.livenessProbe | object | `{}` | Liveness probe. http-gateway doesn't have any default liveness probe |
 | httpgateway.log.encoderConfig.timeEncoder | string | `"rfc3339nano"` | Time format for logs. The supported values are: "rfc3339nano", "rfc3339" |
@@ -321,7 +330,7 @@ global:
 | httpgateway.ui | object | `{"directory":"/usr/local/var/www","enabled":true,"webConfiguration":{"authority":"","deviceOAuthClient":{"audience":null,"clientID":null,"providerName":null,"scopes":[]},"httpGatewayAddress":"","webOAuthClient":{"audience":"","clientID":"","scopes":[]}}}` | For complete http-gateway service configuration see [plgd/http-gateway](https://github.com/plgd-dev/hub/tree/main/http-gateway) |
 | httpgateway.uiDomain | string | `nil` | Domain for UI Default: {{ global.domain }} |
 | identitystore.affinity | object | `{}` | Affinity definition |
-| identitystore.apis | object | `{"grpc":{"address":null,"authorization":{"audience":null,"authority":null,"http":{"idleConnTimeout":"30s","maxConnsPerHost":32,"maxIdleConns":16,"maxIdleConnsPerHost":16,"timeout":"10s","tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":true}},"ownerClaim":"sub"},"enforcementPolicy":{"minTime":"5s","permitWithoutStream":true},"keepAlive":{"maxConnectionAge":"0s","maxConnectionAgeGrace":"0s","maxConnectionIdle":"0s","time":"2h","timeout":"20s"},"tls":{"caPool":null,"certFile":null,"clientCertificateRequired":true,"keyFile":null}}}` | For complete identity service configuration see [plgd/identity](https://github.com/plgd-dev/hub/tree/main/identity) |
+| identitystore.apis | object | `{"grpc":{"address":null,"authorization":{"audience":null,"authority":null,"http":{"idleConnTimeout":"30s","maxConnsPerHost":32,"maxIdleConns":16,"maxIdleConnsPerHost":16,"timeout":"10s","tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":true}},"ownerClaim":null},"enforcementPolicy":{"minTime":"5s","permitWithoutStream":true},"keepAlive":{"maxConnectionAge":"0s","maxConnectionAgeGrace":"0s","maxConnectionIdle":"0s","time":"2h","timeout":"20s"},"tls":{"caPool":null,"certFile":null,"clientCertificateRequired":true,"keyFile":null}}}` | For complete identity service configuration see [plgd/identity](https://github.com/plgd-dev/hub/tree/main/identity) |
 | identitystore.clients | object | `{"eventBus":{"nats":{"flusherTimeout":"30s","jetstream":false,"tls":{"useSystemCAPool":false},"url":""}},"storage":{"mongoDB":{"database":"ownersDevices","maxConnIdleTime":"4m0s","maxPoolSize":16,"tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false},"uri":null}}}` | For complete identity service configuration see [plgd/authorization](https://github.com/plgd-dev/hub/tree/main/identity) |
 | identitystore.config | object | `{"fileName":"service.yaml","mountPath":"/config","volume":"config"}` | yaml configuration |
 | identitystore.config.fileName | string | `"service.yaml"` | File name |
@@ -387,9 +396,10 @@ global:
 | mockoauthserver.image.tag | string | `nil` | Image tag. |
 | mockoauthserver.imagePullSecrets | object | `{}` | Image pull secrets |
 | mockoauthserver.ingress.allowHeaders | string | `"Authortity,Method,Path,Scheme,Accept,Accept-Encoding,Accept-Language,Content-Type,auth0-client,Origin,Refer,Sec-Fetch-Dest,Sec-Fetch-Mode,Sec-Fetch-Site,Authorization,DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range"` |  |
-| mockoauthserver.ingress.annotations | object | `{}` | Ingress annotation |
+| mockoauthserver.ingress.annotations | object | `{"ingress.kubernetes.io/force-ssl-redirect":"true","nginx.ingress.kubernetes.io/backend-protocol":"HTTPS","nginx.ingress.kubernetes.io/configuration-snippet":"more_set_headers \"Host $host\";\nmore_set_headers \"X-Forwarded-Host $host\";\nmore_set_headers \"X-Forwarded-Proto $scheme\";\nset $cors \"true\";\nif ($request_method = 'OPTIONS') {\n  set $cors \"${cors}options\";\n}\nif ($cors = \"trueoptions\") {\n  add_header 'Access-Control-Allow-Origin' \"$http_origin\";\n  add_header 'Access-Control-Allow-Credentials' 'true';\n  add_header 'Access-Control-Allow-Methods' 'GET, PUT, POST, DELETE, PATCH, OPTIONS';\n  add_header 'Access-Control-Allow-Headers' '{{ .Values.mockoauthserver.ingress.allowHeaders }}';\n  add_header 'Access-Control-Expose-Headers' 'Content-Length,Content-Range';\n  add_header 'Access-Control-Max-Age' 1728000;\n  add_header 'Content-Type' 'text/plain charset=UTF-8';\n  add_header 'Content-Length' 0;\n  return 204;\n}\nif ($request_method = 'POST') {\nadd_header 'Access-Control-Allow-Credentials' 'true';\n}\nif ($request_method = 'PUT') {\nadd_header 'Access-Control-Allow-Credentials' 'true';\n}\nif ($request_method = 'GET') {\n    add_header 'Access-Control-Allow-Credentials' 'true';\n}\n","nginx.ingress.kubernetes.io/enable-cors":"true"}` | Pre defined map of Ingress annotation |
+| mockoauthserver.ingress.customAnnotations | object | `{}` | Custom map of Ingress annotation |
 | mockoauthserver.ingress.enabled | bool | `true` | Enable ingress |
-| mockoauthserver.ingress.paths | list | `["/authorize","/oauth/token","/.well-known","/jwks.json","/.well-known/openid-configuration","/v2/logout","/authorize/userinfo"]` | Ingress path |
+| mockoauthserver.ingress.paths | list | `["/authorize","/oauth/token","/.well-known/jwks.json","/.well-known/openid-configuration","/v2/logout","/authorize/userinfo"]` | Ingress path |
 | mockoauthserver.livenessProbe | object | `{}` | Liveness probe. mock-oauth-server doesn't have any default liveness probe |
 | mockoauthserver.log.encoderConfig.timeEncoder | string | `"rfc3339nano"` | Time format for logs. The supported values are: "rfc3339nano", "rfc3339" |
 | mockoauthserver.log.encoding | string | `"json"` | The supported values are: "json", "console" |
@@ -513,11 +523,11 @@ global:
 | resourcedirectory.extraVolumes | object | `{}` | Optional extra volumes |
 | resourcedirectory.fullnameOverride | string | `nil` | Full name to override |
 | resourcedirectory.image.command | string | `nil` | Container command |
-| resourcedirectory.image.imagePullSecrets | object | `{}` | Image pull secrets |
+| resourcedirectory.image.imagePullSecrets | object | `{}` |  |
 | resourcedirectory.image.pullPolicy | string | `"Always"` | Image pull policy |
 | resourcedirectory.image.registry | string | `"ghcr.io/"` | Image registry |
 | resourcedirectory.image.repository | string | `"plgd-dev/hub/resource-directory"` | Image repository |
-| resourcedirectory.image.tag | string | `nil` | Image tag. |
+| resourcedirectory.image.tag | string | `nil` |  |
 | resourcedirectory.initContainersTpl | object | `{}` | Init containers definition. Resolved as template |
 | resourcedirectory.livenessProbe | object | `{}` | Liveness probe. resource-directory doesn't have any default liveness probe |
 | resourcedirectory.log | object | `{"encoderConfig":{"timeEncoder":"rfc3339nano"},"encoding":"json","level":"info","stacktrace":{"enabled":false,"level":"warn"}}` | Log section |
@@ -539,7 +549,7 @@ global:
 | resourcedirectory.readinessProbe | object | `{}` | Readiness probe. resource-directory doesn't have aby default readiness probe |
 | resourcedirectory.replicas | int | `1` | Number of replicas |
 | resourcedirectory.resources | object | `{}` | Resources limit |
-| resourcedirectory.restartPolicy | string | `"Always"` | Restart policy for pod |
+| resourcedirectory.restartPolicy | string | `"Always"` |  |
 | resourcedirectory.securityContext | object | `{}` | Security context for pod |
 | resourcedirectory.service.annotations | object | `{}` | Annotations for resource-directory service |
 | resourcedirectory.service.labels | object | `{}` | Labels for resource-directory service |
@@ -547,5 +557,5 @@ global:
 | resourcedirectory.tolerations | object | `{}` | Toleration definition |
 
 ----------------------------------------------
-Autogenerated from chart metadata using [helm-docs v1.6.0](https://github.com/norwoodj/helm-docs/releases/v1.6.0)
+Autogenerated from chart metadata using [helm-docs v1.5.0](https://github.com/norwoodj/helm-docs/releases/v1.5.0)
 
