@@ -28,7 +28,7 @@ apis:
       certFile: "/secrets/public/cert.crt"
       clientCertificateRequired: true
     authorization:
-      ownerClaim:
+      ownerClaim: "sub"
       deviceIDClaim: ""
       providers:
         - name: "plgd.web"

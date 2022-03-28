@@ -433,7 +433,7 @@ resourcedirectory:
     identityStore:
       pullFrequency: 15s
       cacheExpiration: 1m
-      ownerClaim: sub
+      ownerClaim:
       grpc:
         address: ""
         tls:
