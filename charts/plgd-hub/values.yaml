@@ -156,7 +156,7 @@ certmanager:
       annotations: {}
       # -- Name of default issuer
       name: default-issuer
-      # --Kind of default issuer
+      # -- Kind of default issuer
       kind: Issuer
       # -- Default issuer specification.
       spec:
@@ -193,7 +193,7 @@ certmanager:
         annotations: {}
         # -- Name of root issuer
         name: ca-issuer
-        # --Kind of default issuer
+        # -- Kind of default issuer
         kind: Issuer
         # -- Default issuer specification.
         spec:
@@ -207,7 +207,7 @@ certmanager:
       annotations: {}
       # -- Name
       name:
-      # -- Kind
+      # -- Kind of internal issuer
       kind:
       # -- cert-manager issuer spec
       spec:
@@ -229,7 +229,7 @@ certmanager:
       annotations: {}
       # -- Name
       name:
-      # -- Kind
+      # -- Kind of coap issuer
       kind:
       # -- cert-manager issuer spec
       spec:
@@ -251,7 +251,7 @@ certmanager:
       annotations: {}
       # -- Name
       name:
-      # -- Kind
+      # -- Kind of external issuer
       kind:
       # -- cert-manager issuer spec
       spec:

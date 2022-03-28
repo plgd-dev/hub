@@ -114,7 +114,7 @@ global:
 | certmanager.coap.cert.key.size | string | `nil` | Certificate key size |
 | certmanager.coap.cert.renewBefore | string | `nil` | Certificate renew before |
 | certmanager.coap.issuer.annotations | object | `{}` | Annotations |
-| certmanager.coap.issuer.kind | string | `nil` | Kind |
+| certmanager.coap.issuer.kind | string | `nil` | Kind of coap issuer |
 | certmanager.coap.issuer.labels | object | `{}` | Labels |
 | certmanager.coap.issuer.name | string | `nil` | Name |
 | certmanager.coap.issuer.spec | string | `nil` | cert-manager issuer spec |
@@ -122,6 +122,7 @@ global:
 | certmanager.default.ca.commonName | string | `"plgd-ca"` | Common name for CA created as default issuer |
 | certmanager.default.ca.issuer.annotations | object | `{}` | Annotation for root issuer |
 | certmanager.default.ca.issuer.enabled | bool | `true` | Enable root issuer |
+| certmanager.default.ca.issuer.kind | string | `"Issuer"` | Kind of default issuer |
 | certmanager.default.ca.issuer.labels | object | `{}` | Labels for root issuer |
 | certmanager.default.ca.issuer.name | string | `"ca-issuer"` | Name of root issuer |
 | certmanager.default.ca.issuer.spec | object | `{"selfSigned":{}}` | Default issuer specification. |
@@ -137,6 +138,7 @@ global:
 | certmanager.default.issuer | object | `{"annotations":{},"enabled":true,"kind":"Issuer","labels":{},"name":"default-issuer","spec":{"selfSigned":{}}}` | Default cert-manager issuer |
 | certmanager.default.issuer.annotations | object | `{}` | Annotation for default issuer |
 | certmanager.default.issuer.enabled | bool | `true` | Enable Default issuer |
+| certmanager.default.issuer.kind | string | `"Issuer"` | Kind of default issuer |
 | certmanager.default.issuer.labels | object | `{}` | Labels for default issuer |
 | certmanager.default.issuer.name | string | `"default-issuer"` | Name of default issuer |
 | certmanager.default.issuer.spec | object | `{"selfSigned":{}}` | Default issuer specification. |
@@ -146,7 +148,7 @@ global:
 | certmanager.external.cert.key.size | string | `nil` | Certificate key size |
 | certmanager.external.cert.renewBefore | string | `nil` | Certificate renew before |
 | certmanager.external.issuer.annotations | object | `{}` | Annotations |
-| certmanager.external.issuer.kind | string | `nil` | Kind |
+| certmanager.external.issuer.kind | string | `nil` | Kind of external issuer |
 | certmanager.external.issuer.labels | object | `{}` | Labels |
 | certmanager.external.issuer.name | string | `nil` | Name |
 | certmanager.external.issuer.spec | string | `nil` | cert-manager issuer spec |
@@ -156,7 +158,7 @@ global:
 | certmanager.internal.cert.renewBefore | string | `nil` | Certificate renew before |
 | certmanager.internal.issuer | object | `{"annotations":{},"kind":null,"labels":{},"name":null,"spec":null}` | Internal issuer. In case you want to create your own issuer for internal certs |
 | certmanager.internal.issuer.annotations | object | `{}` | Annotations |
-| certmanager.internal.issuer.kind | string | `nil` | Kind |
+| certmanager.internal.issuer.kind | string | `nil` | Kind of internal issuer |
 | certmanager.internal.issuer.labels | object | `{}` | Labels |
 | certmanager.internal.issuer.name | string | `nil` | Name |
 | certmanager.internal.issuer.spec | string | `nil` | cert-manager issuer spec |
@@ -328,7 +330,7 @@ global:
 | httpgateway.ui | object | `{"directory":"/usr/local/var/www","enabled":true,"webConfiguration":{"authority":"","deviceOAuthClient":{"audience":null,"clientID":null,"providerName":null,"scopes":[]},"httpGatewayAddress":"","webOAuthClient":{"audience":"","clientID":"","scopes":[]}}}` | For complete http-gateway service configuration see [plgd/http-gateway](https://github.com/plgd-dev/hub/tree/main/http-gateway) |
 | httpgateway.uiDomain | string | `nil` | Domain for UI Default: {{ global.domain }} |
 | identitystore.affinity | object | `{}` | Affinity definition |
-| identitystore.apis | object | `{"grpc":{"address":null,"authorization":{"audience":null,"authority":null,"http":{"idleConnTimeout":"30s","maxConnsPerHost":32,"maxIdleConns":16,"maxIdleConnsPerHost":16,"timeout":"10s","tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":true}},"ownerClaim":"sub"},"enforcementPolicy":{"minTime":"5s","permitWithoutStream":true},"keepAlive":{"maxConnectionAge":"0s","maxConnectionAgeGrace":"0s","maxConnectionIdle":"0s","time":"2h","timeout":"20s"},"tls":{"caPool":null,"certFile":null,"clientCertificateRequired":true,"keyFile":null}}}` | For complete identity service configuration see [plgd/identity](https://github.com/plgd-dev/hub/tree/main/identity) |
+| identitystore.apis | object | `{"grpc":{"address":null,"authorization":{"audience":null,"authority":null,"http":{"idleConnTimeout":"30s","maxConnsPerHost":32,"maxIdleConns":16,"maxIdleConnsPerHost":16,"timeout":"10s","tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":true}},"ownerClaim":null},"enforcementPolicy":{"minTime":"5s","permitWithoutStream":true},"keepAlive":{"maxConnectionAge":"0s","maxConnectionAgeGrace":"0s","maxConnectionIdle":"0s","time":"2h","timeout":"20s"},"tls":{"caPool":null,"certFile":null,"clientCertificateRequired":true,"keyFile":null}}}` | For complete identity service configuration see [plgd/identity](https://github.com/plgd-dev/hub/tree/main/identity) |
 | identitystore.clients | object | `{"eventBus":{"nats":{"flusherTimeout":"30s","jetstream":false,"tls":{"useSystemCAPool":false},"url":""}},"storage":{"mongoDB":{"database":"ownersDevices","maxConnIdleTime":"4m0s","maxPoolSize":16,"tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false},"uri":null}}}` | For complete identity service configuration see [plgd/authorization](https://github.com/plgd-dev/hub/tree/main/identity) |
 | identitystore.config | object | `{"fileName":"service.yaml","mountPath":"/config","volume":"config"}` | yaml configuration |
 | identitystore.config.fileName | string | `"service.yaml"` | File name |
