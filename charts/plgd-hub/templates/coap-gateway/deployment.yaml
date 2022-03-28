@@ -62,7 +62,7 @@ spec:
             - "--config"
             - {{  printf "%s/%s" .Values.coapgateway.config.mountPath .Values.coapgateway.config.fileName | quote }}
           ports:
-            - name: grpc
+            - name: coaps
               containerPort: {{ .Values.coapgateway.port }}
               protocol: TCP
           {{- with .Values.coapgateway.livenessProbe }}

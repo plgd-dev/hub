@@ -9,9 +9,9 @@ metadata:
     {{- with .Values.mockoauthserver.service.labels }}
     {{- . | toYaml | nindent 4 }}
     {{- end }}
-  {{- with .Values.mockoauthserver.service.annotations }}
+  {{- if .Values.mockoauthserver.service.annotations }}
   annotations:
-  {{- . | toYaml | nindent 4 }}
+    {{- include "plgd-hub.tplvalues.render" ( dict "value" .Values.mockoauthserver.service.annotations "context" $ ) | nindent 4 }}
   {{- end }}
 spec:
   type: {{ .Values.mockoauthserver.service.type | default "ClusterIP" }}

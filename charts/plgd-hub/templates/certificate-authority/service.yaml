@@ -9,9 +9,9 @@ metadata:
     {{- with .Values.certificateauthority.service.labels }}
     {{- . | toYaml | nindent 4 }}
     {{- end }}
-  {{- with .Values.certificateauthority.service.annotations }}
+  {{- if .Values.certificateauthority.service.annotations }}
   annotations:
-  {{- . | toYaml | nindent 4 }}
+    {{- include "plgd-hub.tplvalues.render" ( dict "value" .Values.certificateauthority.service.annotations "context" $ ) | nindent 4 }}
   {{- end }}
 spec:
   type: {{ .Values.certificateauthority.service.type | default "ClusterIP" }}

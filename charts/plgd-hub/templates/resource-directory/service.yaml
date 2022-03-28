@@ -9,9 +9,9 @@ metadata:
     {{- with .Values.resourcedirectory.service.labels }}
     {{- . | toYaml | nindent 4 }}
     {{- end }}
-  {{- with .Values.resourcedirectory.service.annotations }}
+  {{- if .Values.resourcedirectory.service.annotations }}
   annotations:
-  {{- . | toYaml | nindent 4 }}
+    {{- include "plgd-hub.tplvalues.render" ( dict "value" .Values.resourcedirectory.service.annotations "context" $ ) | nindent 4 }}
   {{- end }}
 spec:
   type: {{ .Values.resourcedirectory.service.type | default "ClusterIP" }}
