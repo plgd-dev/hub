@@ -1451,7 +1451,7 @@ certificateauthority:
     customAnnotations: { }
     # -- Paths
     paths:
-      - /certificateauthority.pb.CertificateAuthority/SignIdentityCertificate
+      - /certificateauthority.pb.CertificateAuthority
   # -- Service configuration
   config:
     # -- File name for config file
