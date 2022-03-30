@@ -88,7 +88,7 @@ data:
     publicConfiguration:
       caPool: {{ .publicConfiguration.caPool | default "/certs/ca.crt" | quote }}
       {{- if not $.Values.mockoauthserver.enabled }}
-      authorizationServer: {{ required "resourcedirectory.publicConfiguration.authorizationServer or global.authority is required" ( .publicConfiguration.authorizationServer | default $.Values.global.authority ) | quote }}
+      authorizationServer: {{ required "resourcedirectory.publicConfiguration.authorizationServer or global.authority is required" ( tpl ( .publicConfiguration.authorizationServer | default $.Values.global.authority ) $ ) | quote }}
       {{- else }}
       authorizationServer: {{ include "plgd-hub.mockoauthserver.uri" $ | quote }}
       {{- end }}
@@ -97,7 +97,7 @@ data:
       deviceIDClaim: {{ .publicConfiguration.deviceIdClaim  | default $.Values.global.deviceIdClaim | quote }}
       {{- end }}
       hubID: {{ required "resourcedirectory.publicConfiguration.hubId or coapgateway.hubId or global.hubId is required" ( .publicConfiguration.hubId | default ( $.Values.coapgateway.hubId | default $.Values.global.hubId)) | quote }}
-      coapGateway: {{ .publicConfiguration.coapGateway | default (printf "coaps+tcp://%s:%v" $.Values.global.domain $.Values.coapgateway.port ) | quote }}
-      defaultCommandTimeToLive: {{ .publicConfiguration.defaultCommandTimeToLive | quote }}
+      coapGateway: {{ tpl ( .publicConfiguration.coapGateway | default (printf "coaps+tcp://%s:%v" $.Values.global.domain $.Values.coapgateway.port )) $ | quote }}
+      defaultCommandTimeToLive: {{ .publicConfiguration.defaultCommandTimeToLive | default $.Values.global.defaultCommandTimeToLive | quote }}
   {{- end }}
 {{- end }}

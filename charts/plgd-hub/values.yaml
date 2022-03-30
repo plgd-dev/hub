@@ -8,6 +8,8 @@ global:
   ownerClaim: "sub"
   # -- Device ID claim
   deviceIdClaim:
+  # -- Global Default command time to live for resource-aggregate and resource-directory
+  defaultCommandTimeToLive: "10s"
   # -- OAuth authority
   authority:
   # -- OAuth audience
@@ -471,7 +473,7 @@ resourcedirectory:
     deviceIdClaim:
     hubId:
     coapGateway:
-    defaultCommandTimeToLive: "0s"
+    defaultCommandTimeToLive:
 
 resourceaggregate:
   # -- Enable resource-aggregate service
@@ -619,7 +621,7 @@ resourceaggregate:
           useSystemCAPool: false
     eventStore:
       # replaces time to live in CreateResource, RetrieveResource, UpdateResource, DeleteResource and UpdateDeviceMetadata commands when it is zero value. 0s - means forever.
-      defaultCommandTimeToLive: 0s
+      defaultCommandTimeToLive:
       # tries to create the snapshot event after n events
       snapshotThreshold: 16
       # limits number of try to store event

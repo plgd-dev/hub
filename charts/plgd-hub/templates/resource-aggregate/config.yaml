@@ -57,7 +57,7 @@ data:
             {{- include "plgd-hub.certificateConfig" (list $ $natsTls $raCert) | indent 10 }}
             useSystemCAPool: {{ .clients.eventBus.nats.tls.useSystemCAPool }}
       eventStore:
-        defaultCommandTimeToLive: {{ .clients.eventStore.defaultCommandTimeToLive }}
+        defaultCommandTimeToLive: {{ .clients.eventStore.defaultCommandTimeToLive | default $.Values.global.defaultCommandTimeToLive | quote }}
         snapshotThreshold: {{ .clients.eventStore.snapshotThreshold }}
         occMaxRetry: {{ .clients.eventStore.occMaxRetry }}
         mongoDB:
