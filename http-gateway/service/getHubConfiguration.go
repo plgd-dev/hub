@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
+	"github.com/plgd-dev/hub/v2/http-gateway/serverMux"
 	"github.com/plgd-dev/hub/v2/http-gateway/uri"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/kit/v2/codec/json"
@@ -67,7 +68,7 @@ func (requestHandler *RequestHandler) getHubConfiguration(w http.ResponseWriter,
 	}
 	resp, err := requestHandler.client.GrpcGatewayClient().GetHubConfiguration(r.Context(), &pb.HubConfigurationRequest{})
 	if err != nil {
-		writeError(w, fmt.Errorf("cannot get cloud configuration: %w", err))
+		serverMux.WriteError(w, fmt.Errorf("cannot get cloud configuration: %w", err))
 		return
 	}
 	v := protojson.MarshalOptions{
@@ -75,12 +76,12 @@ func (requestHandler *RequestHandler) getHubConfiguration(w http.ResponseWriter,
 	}
 	data, err := v.Marshal(resp)
 	if err != nil {
-		writeError(w, fmt.Errorf("cannot marshal cloud configuration: %w", err))
+		serverMux.WriteError(w, fmt.Errorf("cannot marshal cloud configuration: %w", err))
 		return
 	}
 	decoded, err := decodeHubConfiguration(data)
 	if err != nil {
-		writeError(w, fmt.Errorf("cannot decode cloud configuration: %w", err))
+		serverMux.WriteError(w, fmt.Errorf("cannot decode cloud configuration: %w", err))
 		return
 	}
 

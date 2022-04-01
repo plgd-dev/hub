@@ -1,4 +1,4 @@
-package service
+package serverMux
 
 import (
 	"errors"
@@ -24,7 +24,8 @@ type sdkErr interface {
 	GetCode() grpcCodes.Code
 }
 
-func writeError(w netHttp.ResponseWriter, err error) {
+// WriteError encodes error as google.golang.org/genproto/googleapis/rpc/status
+func WriteError(w netHttp.ResponseWriter, err error) {
 	if err == nil {
 		w.WriteHeader(netHttp.StatusNoContent)
 		return

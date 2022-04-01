@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/go-querystring/query"
 	"github.com/gorilla/mux"
+	"github.com/plgd-dev/hub/v2/http-gateway/serverMux"
 	"github.com/plgd-dev/hub/v2/http-gateway/uri"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 )
@@ -31,7 +32,7 @@ func (requestHandler *RequestHandler) CancelPendingCommands(w http.ResponseWrite
 	}
 	q, err := query.Values(opt)
 	if err != nil {
-		writeError(w, fmt.Errorf("cannot cancel resource('%v') commands: %w", resourceID, err))
+		serverMux.WriteError(w, fmt.Errorf("cannot cancel resource('%v') commands: %w", resourceID, err))
 		return
 	}
 	for key, values := range r.URL.Query() {
