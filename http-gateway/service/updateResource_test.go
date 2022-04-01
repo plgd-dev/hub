@@ -218,7 +218,7 @@ func TestRequestHandlerUpdateResourcesValues(t *testing.T) {
 			assert.Equal(t, tt.wantHTTPCode, resp.StatusCode)
 
 			var got pb.UpdateResourceResponse
-			err = Unmarshal(resp.StatusCode, resp.Body, &got)
+			err = httpgwTest.Unmarshal(resp.StatusCode, resp.Body, &got)
 			if tt.wantErr {
 				require.Error(t, err)
 				return

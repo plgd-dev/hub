@@ -149,7 +149,7 @@ func TestRequestHandlerGetResource(t *testing.T) {
 			values := make([]*events.ResourceRetrieved, 0, 1)
 			for {
 				var value pb.GetResourceFromDeviceResponse
-				err = Unmarshal(resp.StatusCode, resp.Body, &value)
+				err = httpgwTest.Unmarshal(resp.StatusCode, resp.Body, &value)
 				if err == io.EOF {
 					break
 				}

@@ -173,7 +173,7 @@ func TestRequestHandlerGetEvents(t *testing.T) {
 			values := make([]*pb.GetEventsResponse, 0, 1)
 			for {
 				var value pb.GetEventsResponse
-				err = Unmarshal(resp.StatusCode, resp.Body, &value)
+				err = httpgwTest.Unmarshal(resp.StatusCode, resp.Body, &value)
 				if err == io.EOF {
 					break
 				}

@@ -21,7 +21,7 @@ func doPendingCommand(t *testing.T, request *http.Request) (*pb.CancelPendingCom
 		_ = resp.Body.Close()
 	}()
 	var v pb.CancelPendingCommandsResponse
-	err := Unmarshal(resp.StatusCode, resp.Body, &v)
+	err := httpgwTest.Unmarshal(resp.StatusCode, resp.Body, &v)
 	return &v, resp.StatusCode, err
 }
 

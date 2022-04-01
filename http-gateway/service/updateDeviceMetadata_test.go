@@ -105,7 +105,7 @@ func updateResource(t *testing.T, ctx context.Context, req *pb.UpdateResourceReq
 	}()
 
 	var got pb.UpdateResourceResponse
-	err = Unmarshal(resp.StatusCode, resp.Body, &got)
+	err = httpgwTest.Unmarshal(resp.StatusCode, resp.Body, &got)
 	if err != nil {
 		return nil, err
 	}
@@ -165,7 +165,7 @@ func TestRequestHandlerUpdateDeviceMetadata(t *testing.T) {
 		}()
 
 		var got pb.UpdateDeviceMetadataResponse
-		err = Unmarshal(resp.StatusCode, resp.Body, &got)
+		err = httpgwTest.Unmarshal(resp.StatusCode, resp.Body, &got)
 		if err != nil {
 			return nil, err
 		}

@@ -25,7 +25,7 @@ func unmarshalWebConfiguration(code int, input io.Reader, v *httpgwService.WebCo
 		return err
 	}
 	if code != http.StatusOK {
-		return UnmarshalError(data)
+		return httpgwTest.UnmarshalError(data)
 	}
 	err = json.Unmarshal(data, v)
 	return err
