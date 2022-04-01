@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/go-querystring/query"
 	"github.com/gorilla/mux"
+	"github.com/plgd-dev/hub/v2/http-gateway/serverMux"
 	"github.com/plgd-dev/hub/v2/http-gateway/uri"
 )
 
@@ -21,7 +22,7 @@ func (requestHandler *RequestHandler) getDeviceResources(w http.ResponseWriter, 
 	}
 	q, err := query.Values(opt)
 	if err != nil {
-		writeError(w, fmt.Errorf("cannot get device('%v') resources: %w", deviceID, err))
+		serverMux.WriteError(w, fmt.Errorf("cannot get device('%v') resources: %w", deviceID, err))
 		return
 	}
 	for key, values := range r.URL.Query() {

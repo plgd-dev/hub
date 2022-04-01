@@ -1,4 +1,4 @@
-package service
+package serverMux
 
 import (
 	"context"
@@ -10,30 +10,31 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-type errorResponseWrapperWriter struct {
+type ErrorResponseWrapperWriter struct {
 	http.ResponseWriter
 	code int
 }
 
-func newErrorResponseWrapperWriter(w http.ResponseWriter, code int) *errorResponseWrapperWriter {
-	return &errorResponseWrapperWriter{
+func NewErrorResponseWrapperWriter(w http.ResponseWriter, code int) *ErrorResponseWrapperWriter {
+	return &ErrorResponseWrapperWriter{
 		ResponseWriter: w,
 		code:           code,
 	}
 }
 
-func (w *errorResponseWrapperWriter) WriteHeader(_ int) {
+func (w *ErrorResponseWrapperWriter) WriteHeader(_ int) {
 	w.ResponseWriter.WriteHeader(w.code)
 }
 
-func (w *errorResponseWrapperWriter) Flush() {
+func (w *ErrorResponseWrapperWriter) Flush() {
 	f, ok := w.ResponseWriter.(http.Flusher)
 	if ok {
 		f.Flush()
 	}
 }
 
-func errorHandler(ctx context.Context, mux *runtime.ServeMux, marshaler runtime.Marshaler, w http.ResponseWriter, r *http.Request, err error) {
+// ErrorHandler is a convenient HTTP error handler for grpc.
+func ErrorHandler(ctx context.Context, mux *runtime.ServeMux, marshaler runtime.Marshaler, w http.ResponseWriter, r *http.Request, err error) {
 	var customStatus *runtime.HTTPStatusError
 	if errors.As(err, &customStatus) {
 		err = customStatus.Err
@@ -43,5 +44,5 @@ func errorHandler(ctx context.Context, mux *runtime.ServeMux, marshaler runtime.
 	if customStatus != nil {
 		httpCode = customStatus.HTTPStatus
 	}
-	runtime.DefaultHTTPErrorHandler(ctx, mux, marshaler, newErrorResponseWrapperWriter(w, httpCode), r, err)
+	runtime.DefaultHTTPErrorHandler(ctx, mux, marshaler, NewErrorResponseWrapperWriter(w, httpCode), r, err)
 }

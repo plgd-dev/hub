@@ -7,6 +7,7 @@ import (
 	"github.com/google/go-querystring/query"
 	"github.com/gorilla/mux"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
+	"github.com/plgd-dev/hub/v2/http-gateway/serverMux"
 	"github.com/plgd-dev/hub/v2/http-gateway/uri"
 )
 
@@ -22,7 +23,7 @@ func (requestHandler *RequestHandler) getPendingMetadataUpdates(w http.ResponseW
 	}
 	q, err := query.Values(opt)
 	if err != nil {
-		writeError(w, fmt.Errorf("cannot get device('%v') pending metadata updates: %w", deviceID, err))
+		serverMux.WriteError(w, fmt.Errorf("cannot get device('%v') pending metadata updates: %w", deviceID, err))
 		return
 	}
 	q.Add(uri.CommandFilterQueryKey, pb.GetPendingCommandsRequest_DEVICE_METADATA_UPDATE.String())

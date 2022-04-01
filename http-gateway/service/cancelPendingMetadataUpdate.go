@@ -7,6 +7,7 @@ import (
 	"github.com/google/go-querystring/query"
 	"github.com/gorilla/mux"
 	"github.com/jtacoma/uritemplates"
+	"github.com/plgd-dev/hub/v2/http-gateway/serverMux"
 	"github.com/plgd-dev/hub/v2/http-gateway/uri"
 )
 
@@ -27,19 +28,19 @@ func (requestHandler *RequestHandler) cancelPendingMetadataUpdate(w http.Respons
 	}
 	q, err := query.Values(opt)
 	if err != nil {
-		writeError(w, cannotCancelError(err))
+		serverMux.WriteError(w, cannotCancelError(err))
 		return
 	}
 	tmp, err := uritemplates.Parse(uri.AliasDevicePendingMetadataUpdates)
 	if err != nil {
-		writeError(w, cannotCancelError(err))
+		serverMux.WriteError(w, cannotCancelError(err))
 		return
 	}
 	urlPath, err := tmp.Expand(map[string]interface{}{
 		uri.DeviceIDKey: deviceID,
 	})
 	if err != nil {
-		writeError(w, cannotCancelError(err))
+		serverMux.WriteError(w, cannotCancelError(err))
 		return
 	}
 	r.URL.Path = urlPath
