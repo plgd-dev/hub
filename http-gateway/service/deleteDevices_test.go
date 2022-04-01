@@ -91,7 +91,7 @@ func TestRequestHandlerDeleteDevices(t *testing.T) {
 			assert.Equal(t, tt.wantHTTPCode, resp.StatusCode)
 
 			var got pb.DeleteDevicesResponse
-			err = Unmarshal(resp.StatusCode, resp.Body, &got)
+			err = httpgwTest.Unmarshal(resp.StatusCode, resp.Body, &got)
 			require.NoError(t, err)
 			require.Equal(t, tt.want.DeviceIds, got.DeviceIds)
 		})

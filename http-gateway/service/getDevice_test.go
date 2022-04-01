@@ -105,7 +105,7 @@ func TestRequestHandlerGetDevice(t *testing.T) {
 			devices := make([]*pb.Device, 0, 1)
 			for {
 				var dev pb.Device
-				err = Unmarshal(resp.StatusCode, resp.Body, &dev)
+				err = httpgwTest.Unmarshal(resp.StatusCode, resp.Body, &dev)
 				if err == io.EOF {
 					break
 				}

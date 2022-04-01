@@ -162,7 +162,7 @@ func TestRequestHandlerSubscribeToEvents(t *testing.T) {
 			return nil, err
 		}
 		var event pb.Event
-		err = Unmarshal(http.StatusOK, reader, &event)
+		err = httpgwTest.Unmarshal(http.StatusOK, reader, &event)
 		return &event, err
 	}
 

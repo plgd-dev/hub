@@ -178,7 +178,7 @@ func TestRequestHandlerGetPendingMetadataUpdates(t *testing.T) {
 
 			for {
 				var v pb.PendingCommand
-				err = Unmarshal(resp.StatusCode, resp.Body, &v)
+				err = httpgwTest.Unmarshal(resp.StatusCode, resp.Body, &v)
 				if err == io.EOF {
 					break
 				}

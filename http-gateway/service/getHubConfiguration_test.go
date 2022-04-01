@@ -47,7 +47,7 @@ func TestRequestHandlerGetHubConfiguration(t *testing.T) {
 				_ = resp.Body.Close()
 			}()
 			var got pb.HubConfigurationResponse
-			err := Unmarshal(resp.StatusCode, resp.Body, &got)
+			err := httpgwTest.Unmarshal(resp.StatusCode, resp.Body, &got)
 			require.NoError(t, err)
 			pbTest.CmpHubConfigurationResponse(t, tt.want, &got)
 		})

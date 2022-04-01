@@ -119,7 +119,7 @@ func TestRequestHandlerGetResourceLinks(t *testing.T) {
 			var links []*events.ResourceLinksPublished
 			for {
 				var v events.ResourceLinksPublished
-				err = Unmarshal(resp.StatusCode, resp.Body, &v)
+				err = httpgwTest.Unmarshal(resp.StatusCode, resp.Body, &v)
 				if err == io.EOF {
 					break
 				}
@@ -221,7 +221,7 @@ func TestRequestHandlerGetResourceLinksDevice(t *testing.T) {
 			var links []*events.ResourceLinksPublished
 			for {
 				var v events.ResourceLinksPublished
-				err = Unmarshal(resp.StatusCode, resp.Body, &v)
+				err = httpgwTest.Unmarshal(resp.StatusCode, resp.Body, &v)
 				if err == io.EOF {
 					break
 				}
