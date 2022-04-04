@@ -340,7 +340,10 @@ func (client *Client) CleanUp(resetAuthContext bool) *authorizationContext {
 // OnClose action when coap connection was closed.
 func (client *Client) OnClose() {
 	authCtx, _ := client.GetAuthorizationContext()
-	client.Debugf("close device connection")
+	if authCtx.GetDeviceID() != "" {
+		// don't log health check connection
+		client.Debugf("close device connection")
+	}
 	oldAuthCtx := client.CleanUp(false)
 
 	if oldAuthCtx.GetDeviceID() != "" {
