@@ -8,6 +8,7 @@ import (
 	"github.com/plgd-dev/go-coap/v2/message"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/mux"
+	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
 	"github.com/plgd-dev/hub/v2/coap-gateway/coapconv"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"github.com/plgd-dev/hub/v2/pkg/security/jwt"
@@ -85,60 +86,46 @@ func updateClient(client *Client, deviceID, owner, accessToken string, validUnti
 	setExpirationClientCache(client.server.expirationClientCache, deviceID, client, validUntil)
 }
 
-func refreshTokenPostHandler(req *mux.Message, client *Client) {
+func refreshTokenPostHandler(req *mux.Message, client *Client) (*pool.Message, error) {
 	const fmtErr = "cannot handle refresh token for %v: %w"
-	logErrorAndCloseClient := func(err error, code coapCodes.Code) {
-		client.logAndWriteErrorResponse(req, err, code, req.Token)
-		if err := client.Close(); err != nil {
-			client.Errorf("refresh token error: %w", err)
-		}
-	}
 
 	var refreshToken CoapRefreshTokenReq
 	err := cbor.ReadFrom(req.Body, &refreshToken)
 	if err != nil {
-		logErrorAndCloseClient(fmt.Errorf(fmtErr, "unknown", err), coapCodes.BadRequest)
-		return
+		return nil, statusErrorf(coapCodes.BadRequest, "%w", fmt.Errorf(fmtErr, "unknown", err))
 	}
 
 	err = validateRefreshToken(refreshToken)
 	if err != nil {
-		logErrorAndCloseClient(fmt.Errorf(fmtErr, refreshToken.DeviceID, err), coapCodes.BadRequest)
-		return
+		return nil, statusErrorf(coapCodes.BadRequest, "%w", fmt.Errorf(fmtErr, refreshToken.DeviceID, err))
 	}
 
 	token, err := client.refreshCache.Execute(req.Context, client.server.providers, client.server.taskQueue, refreshToken.RefreshToken, client.getLogger())
 	if err != nil {
-		logErrorAndCloseClient(fmt.Errorf(fmtErr, refreshToken.DeviceID, err), coapCodes.Unauthorized)
-		return
+		return nil, statusErrorf(coapCodes.Unauthorized, "%w", fmt.Errorf(fmtErr, refreshToken.DeviceID, err))
 	}
 
 	if token.RefreshToken == "" {
-		logErrorAndCloseClient(fmt.Errorf(fmtErr, refreshToken.DeviceID, fmt.Errorf("refresh didn't return a refresh token")), coapCodes.Unauthorized)
-		return
+		return nil, statusErrorf(coapCodes.Unauthorized, "%w", fmt.Errorf(fmtErr, refreshToken.DeviceID, fmt.Errorf("refresh didn't return a refresh token")))
 	}
 
 	claim, err := client.ValidateToken(req.Context, token.AccessToken.String())
 	if err != nil {
-		logErrorAndCloseClient(fmt.Errorf(fmtErr, refreshToken.DeviceID, err), coapCodes.Unauthorized)
-		return
+		return nil, statusErrorf(coapCodes.Unauthorized, "%w", fmt.Errorf(fmtErr, refreshToken.DeviceID, err))
 	}
 
 	err = client.server.VerifyDeviceID(client.tlsDeviceID, claim)
 	if err != nil {
-		logErrorAndCloseClient(fmt.Errorf(fmtErr, refreshToken.DeviceID, err), coapCodes.Unauthorized)
-		return
+		return nil, statusErrorf(coapCodes.Unauthorized, "%w", fmt.Errorf(fmtErr, refreshToken.DeviceID, err))
 	}
 	deviceID := client.ResolveDeviceID(claim, refreshToken.DeviceID)
 	ctx := kitNetGrpc.CtxWithIncomingToken(kitNetGrpc.CtxWithToken(req.Context, token.AccessToken.String()), token.AccessToken.String())
 	ok, err := client.server.ownerCache.OwnsDevice(ctx, deviceID)
 	if err != nil {
-		logErrorAndCloseClient(fmt.Errorf(fmtErr, deviceID, fmt.Errorf("cannot check owning: %w", err)), coapCodes.Unauthorized)
-		return
+		return nil, statusErrorf(coapCodes.Unauthorized, "%w", fmt.Errorf(fmtErr, deviceID, fmt.Errorf("cannot check owning: %w", err)))
 	}
 	if !ok {
-		logErrorAndCloseClient(fmt.Errorf(fmtErr, deviceID, fmt.Errorf("device is not registered")), coapCodes.Unauthorized)
-		return
+		return nil, statusErrorf(coapCodes.Unauthorized, "%w", fmt.Errorf(fmtErr, deviceID, fmt.Errorf("device is not registered")))
 	}
 
 	owner := claim.Owner(client.server.config.APIs.COAP.Authorization.OwnerClaim)
@@ -146,14 +133,12 @@ func refreshTokenPostHandler(req *mux.Message, client *Client) {
 		owner = refreshToken.UserID
 	}
 	if owner == "" {
-		logErrorAndCloseClient(fmt.Errorf(fmtErr, deviceID, fmt.Errorf("cannot determine owner")), coapCodes.Unauthorized)
-		return
+		return nil, statusErrorf(coapCodes.Unauthorized, "%w", fmt.Errorf(fmtErr, deviceID, fmt.Errorf("cannot determine owner")))
 	}
 
 	expire, ok := ValidUntil(token.Expiry)
 	if !ok {
-		logErrorAndCloseClient(fmt.Errorf(fmtErr, deviceID, fmt.Errorf("expired access token")), coapCodes.InternalServerError)
-		return
+		return nil, statusErrorf(coapCodes.Unauthorized, "%w", fmt.Errorf(fmtErr, deviceID, fmt.Errorf("expired access token")))
 	}
 
 	validUntil := pkgTime.Unix(0, expire)
@@ -161,22 +146,21 @@ func refreshTokenPostHandler(req *mux.Message, client *Client) {
 	expiresIn := validUntilToExpiresIn(validUntil)
 	accept, out, err := getRefreshTokenContent(token, expiresIn, req.Options)
 	if err != nil {
-		logErrorAndCloseClient(fmt.Errorf(fmtErr, deviceID, err), coapCodes.InternalServerError)
-		return
+		return nil, statusErrorf(coapCodes.InternalServerError, "%w", fmt.Errorf(fmtErr, deviceID, err))
 	}
 
 	updateClient(client, deviceID, owner, token.AccessToken.String(), validUntil, claim)
 
-	client.sendResponse(req, coapCodes.Changed, req.Token, accept, out)
+	return client.createResponse(coapCodes.Changed, req.Token, accept, out), nil
 }
 
 // RefreshToken
 // https://github.com/openconnectivityfoundation/security/blob/master/swagger2.0/oic.sec.tokenrefresh.swagger.json
-func refreshTokenHandler(req *mux.Message, client *Client) {
+func refreshTokenHandler(req *mux.Message, client *Client) (*pool.Message, error) {
 	switch req.Code {
 	case coapCodes.POST:
-		refreshTokenPostHandler(req, client)
+		return refreshTokenPostHandler(req, client)
 	default:
-		client.logAndWriteErrorResponse(req, fmt.Errorf("forbidden request from %v", client.remoteAddrString()), coapCodes.Forbidden, req.Token)
+		return nil, statusErrorf(coapCodes.NotFound, "unsupported method %v", req.Code)
 	}
 }

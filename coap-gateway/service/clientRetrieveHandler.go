@@ -8,23 +8,31 @@ import (
 	coapMessage "github.com/plgd-dev/go-coap/v2/message"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/mux"
+	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
 	"github.com/plgd-dev/hub/v2/coap-gateway/coapconv"
 	"github.com/plgd-dev/hub/v2/coap-gateway/service/message"
 	pbGRPC "github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 )
 
-func clientRetrieveHandler(req *mux.Message, client *Client) {
-	authCtx, err := client.GetAuthorizationContext()
+const errFmtRetrieveResource = "cannot handle retrieve resource %v: %w"
+
+func getRetrieveResourceErr(err error) error {
+	if err == nil {
+		return nil
+	}
+	return fmt.Errorf(errFmtRetrieveResource, "", err)
+}
+
+func clientRetrieveHandler(req *mux.Message, client *Client) (*pool.Message, error) {
+	_, err := client.GetAuthorizationContext()
 	if err != nil {
-		client.logAndWriteErrorResponse(req, fmt.Errorf("DeviceId: %v: cannot handle retrieve resource: %w", authCtx.GetDeviceID(), err), coapCodes.Unauthorized, req.Token)
-		return
+		return nil, statusErrorf(coapCodes.Unauthorized, "%w", getRetrieveResourceErr(err))
 	}
 
 	deviceID, href, err := message.URIToDeviceIDHref(req)
 	if err != nil {
-		client.logAndWriteErrorResponse(req, fmt.Errorf("DeviceId: %v: cannot handle retrieve resource: %w", authCtx.GetDeviceID(), err), coapCodes.BadRequest, req.Token)
-		return
+		return nil, statusErrorf(coapCodes.BadRequest, "%w", getRetrieveResourceErr(err))
 	}
 
 	var content *commands.Content
@@ -33,29 +41,25 @@ func clientRetrieveHandler(req *mux.Message, client *Client) {
 	if resourceInterface == "" {
 		content, code, err = clientRetrieveFromResourceShadowHandler(req.Context, client, deviceID, href)
 		if err != nil {
-			client.logAndWriteErrorResponse(req, fmt.Errorf("DeviceId: %v: cannot retrieve resource /%v%v from resource shadow: %w", authCtx.GetDeviceID(), deviceID, href, err), code, req.Token)
-			return
+			return nil, statusErrorf(code, errFmtRetrieveResource, fmt.Sprintf(" /%v%v from resource shadow", deviceID, href), err)
 		}
 	} else {
 		code = coapCodes.Content
 		content, err = clientRetrieveFromDeviceHandler(req, client, deviceID, href)
 		if err != nil {
 			code = coapconv.GrpcErr2CoapCode(err, coapconv.Retrieve)
-			client.logAndWriteErrorResponse(req, fmt.Errorf("DeviceId: %v: cannot retrieve resource /%v%v from device: %w", authCtx.GetDeviceID(), deviceID, href, err), code, req.Token)
-			return
+			return nil, statusErrorf(code, errFmtRetrieveResource, fmt.Sprintf(" /%v%v from device", deviceID, href), err)
 		}
 	}
 
 	if content == nil || len(content.Data) == 0 {
-		client.sendResponse(req, code, req.Token, coapMessage.TextPlain, nil)
-		return
+		return client.createResponse(code, req.Token, coapMessage.TextPlain, nil), nil
 	}
 	mediaType, err := coapconv.MakeMediaType(-1, content.ContentType)
 	if err != nil {
-		client.logAndWriteErrorResponse(req, fmt.Errorf("DeviceId: %v: cannot retrieve resource /%v%v: %w", authCtx.GetDeviceID(), deviceID, href, err), code, req.Token)
-		return
+		return nil, statusErrorf(code, errFmtRetrieveResource, fmt.Sprintf(" /%v%v", deviceID, href), err)
 	}
-	client.sendResponse(req, code, req.Token, mediaType, content.Data)
+	return client.createResponse(code, req.Token, mediaType, content.Data), nil
 }
 
 func clientRetrieveFromResourceShadowHandler(ctx context.Context, client *Client, deviceID, href string) (*commands.Content, coapCodes.Code, error) {

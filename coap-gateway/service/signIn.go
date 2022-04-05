@@ -9,6 +9,7 @@ import (
 	"github.com/plgd-dev/go-coap/v2/message"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/mux"
+	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
 	"github.com/plgd-dev/hub/v2/coap-gateway/coapconv"
 	"github.com/plgd-dev/hub/v2/coap-gateway/service/observation"
 	grpcgwClient "github.com/plgd-dev/hub/v2/grpc-gateway/client"
@@ -179,9 +180,7 @@ func subscribeToDeviceEvents(ctx context.Context, client *Client, owner, deviceI
 		if !strings.Contains(evt.DeviceIds, deviceID) {
 			return
 		}
-		if err := client.Close(); err != nil {
-			client.Errorf("sign in error: cannot close client: %w", err)
-		}
+		client.Close()
 	}); err != nil {
 		return fmt.Errorf("cannot subscribe to device events: %w", err)
 	}
@@ -240,41 +239,31 @@ func setNewDeviceObserver(ctx context.Context, client *Client, deviceID string, 
 	}
 }
 
-// https://github.com/openconnectivityfoundation/security/blob/master/swagger2.0/oic.sec.session.swagger.json
-func signInPostHandler(req *mux.Message, client *Client, signIn CoapSignInReq) {
-	logErrorAndCloseClient := func(err error, code coapCodes.Code) {
-		client.logAndWriteErrorResponse(req, fmt.Errorf("cannot handle sign in: %w", err), code, req.Token)
-		if err := client.Close(); err != nil {
-			client.Errorf("%w", signInError(err))
-		}
-	}
+const errFmtSignIn = "cannot handle sign in: %w"
 
+// https://github.com/openconnectivityfoundation/security/blob/master/swagger2.0/oic.sec.session.swagger.json
+func signInPostHandler(req *mux.Message, client *Client, signIn CoapSignInReq) (*pool.Message, error) {
 	if err := signIn.checkOAuthRequest(); err != nil {
-		logErrorAndCloseClient(err, coapCodes.BadRequest)
-		return
+		return nil, statusErrorf(coapCodes.BadRequest, errFmtSignIn, err)
 	}
 
 	jwtClaims, err := client.ValidateToken(req.Context, signIn.AccessToken)
 	if err != nil {
-		logErrorAndCloseClient(err, coapCodes.InternalServerError)
-		return
+		return nil, statusErrorf(coapCodes.Unauthorized, errFmtSignIn, err)
 	}
 
 	err = client.server.VerifyDeviceID(client.tlsDeviceID, jwtClaims)
 	if err != nil {
-		logErrorAndCloseClient(err, coapCodes.Unauthorized)
-		return
+		return nil, statusErrorf(coapCodes.Unauthorized, errFmtSignIn, err)
 	}
 
 	if err := jwtClaims.ValidateOwnerClaim(client.server.config.APIs.COAP.Authorization.OwnerClaim, signIn.UserID); err != nil {
-		logErrorAndCloseClient(err, coapCodes.InternalServerError)
-		return
+		return nil, statusErrorf(coapCodes.Unauthorized, errFmtSignIn, err)
 	}
 
 	validUntil, err := jwtClaims.ExpiresAt()
 	if err != nil {
-		logErrorAndCloseClient(err, coapCodes.InternalServerError)
-		return
+		return nil, statusErrorf(coapCodes.Unauthorized, errFmtSignIn, err)
 	}
 	deviceID := client.ResolveDeviceID(jwtClaims, signIn.DeviceID)
 
@@ -283,35 +272,35 @@ func signInPostHandler(req *mux.Message, client *Client, signIn CoapSignInReq) {
 	ctx := kitNetGrpc.CtxWithToken(kitNetGrpc.CtxWithIncomingToken(req.Context, signIn.AccessToken), signIn.AccessToken)
 	valid, err := subscribeAndValidateDeviceAccess(ctx, client, signIn.UserID, deviceID, upd != updateTypeNone)
 	if err != nil {
-		logErrorAndCloseClient(err, coapCodes.InternalServerError)
-		return
+		return nil, statusErrorf(coapCodes.Unauthorized, errFmtSignIn, err)
 	}
 	if !valid {
-		logErrorAndCloseClient(fmt.Errorf("access to device('%s') denied", deviceID), coapCodes.Unauthorized)
-		return
+		return nil, statusErrorf(coapCodes.Unauthorized, errFmtSignIn, fmt.Errorf("access to device('%s') denied", deviceID))
 	}
 
 	expiresIn := validUntilToExpiresIn(validUntil)
 	accept, out, err := getSignInContent(expiresIn, req.Options)
 	if err != nil {
-		logErrorAndCloseClient(err, coapCodes.InternalServerError)
-		return
+		return nil, statusErrorf(coapCodes.InternalServerError, errFmtSignIn, err)
 	}
 
 	if err := client.updateBySignInData(ctx, upd, deviceID, signIn.UserID); err != nil {
-		logErrorAndCloseClient(err, coapCodes.InternalServerError)
-		return
+		return nil, statusErrorf(coapCodes.InternalServerError, errFmtSignIn, err)
 	}
 
 	setExpirationClientCache(client.server.expirationClientCache, deviceID, client, validUntil)
-
 	client.exchangeCache.Clear()
 	client.refreshCache.Clear()
 
-	client.sendResponse(req, coapCodes.Changed, req.Token, accept, out)
+	if err := client.server.taskQueue.Submit(func() {
+		// try to register observations to the device at the cloud.
+		setNewDeviceObserver(ctx, client, deviceID, upd == updateTypeChanged)
+	}); err != nil {
+		return nil, statusErrorf(coapCodes.InternalServerError, errFmtSignIn, fmt.Errorf("failed to register device observer: %w", err))
+	}
 
-	// try to register observations to the device at the cloud.
-	setNewDeviceObserver(ctx, client, deviceID, upd == updateTypeChanged)
+	return client.createResponse(coapCodes.Changed, req.Token, accept, out), nil
+
 }
 
 func updateDeviceMetadata(req *mux.Message, client *Client) error {
@@ -341,71 +330,59 @@ func updateDeviceMetadata(req *mux.Message, client *Client) error {
 	return nil
 }
 
-func signOutPostHandler(req *mux.Message, client *Client, signOut CoapSignInReq) {
-	logErrorAndCloseClient := func(err error, code coapCodes.Code) {
-		client.logAndWriteErrorResponse(req, fmt.Errorf("cannot handle sign out: %w", err), code, req.Token)
-		if err := client.Close(); err != nil {
-			client.Errorf("sign out error: %w", err)
-		}
-	}
+const errFmtSignOut = "cannot handle sign out: %w"
 
+func signOutPostHandler(req *mux.Message, client *Client, signOut CoapSignInReq) (*pool.Message, error) {
 	if signOut.DeviceID == "" || signOut.UserID == "" || signOut.AccessToken == "" {
 		authCurrentCtx, err := client.GetAuthorizationContext()
 		if err != nil {
-			logErrorAndCloseClient(err, coapCodes.InternalServerError)
-			return
+			return nil, statusErrorf(coapCodes.InternalServerError, errFmtSignOut, err)
 		}
 		signOut = signOut.updateOAUthRequestIfEmpty(authCurrentCtx.DeviceID, authCurrentCtx.UserID, authCurrentCtx.AccessToken)
 	}
 
 	if err := signOut.checkOAuthRequest(); err != nil {
-		logErrorAndCloseClient(err, coapCodes.BadRequest)
-		return
+		return nil, statusErrorf(coapCodes.BadRequest, errFmtSignOut, err)
 	}
 
 	jwtClaims, err := client.ValidateToken(req.Context, signOut.AccessToken)
 	if err != nil {
-		logErrorAndCloseClient(err, coapCodes.InternalServerError)
-		return
+		return nil, statusErrorf(coapCodes.Unauthorized, errFmtSignOut, err)
 	}
 
 	err = client.server.VerifyDeviceID(client.tlsDeviceID, jwtClaims)
 	if err != nil {
-		logErrorAndCloseClient(err, coapCodes.Unauthorized)
-		return
+		return nil, statusErrorf(coapCodes.Unauthorized, errFmtSignOut, err)
 	}
 
 	if err := jwtClaims.ValidateOwnerClaim(client.server.config.APIs.COAP.Authorization.OwnerClaim, signOut.UserID); err != nil {
-		logErrorAndCloseClient(err, coapCodes.InternalServerError)
-		return
+		return nil, statusErrorf(coapCodes.Unauthorized, errFmtSignOut, err)
 	}
 
 	if err := updateDeviceMetadata(req, client); err != nil {
-		logErrorAndCloseClient(err, coapconv.GrpcErr2CoapCode(err, coapconv.Update))
-		return
+		return nil, statusErrorf(coapconv.GrpcErr2CoapCode(err, coapconv.Update), errFmtSignOut, err)
 	}
 
-	client.sendResponse(req, coapCodes.Changed, req.Token, message.AppOcfCbor, []byte{0xA0}) // empty object
+	return client.createResponse(coapCodes.Changed, req.Token, message.AppOcfCbor, []byte{0xA0}), nil // empty object
 }
 
 // Sign-in
 // https://github.com/openconnectivityfoundation/security/blob/master/swagger2.0/oic.sec.session.swagger.json
-func signInHandler(req *mux.Message, client *Client) {
+func signInHandler(req *mux.Message, client *Client) (*pool.Message, error) {
 	switch req.Code {
 	case coapCodes.POST:
 		var signIn CoapSignInReq
 		err := cbor.ReadFrom(req.Body, &signIn)
 		if err != nil {
-			client.logAndWriteErrorResponse(req, fmt.Errorf("cannot handle sign in: %w", err), coapCodes.BadRequest, req.Token)
-			return
+			return nil, statusErrorf(coapCodes.BadRequest, errFmtSignIn, fmt.Errorf("cannot decode body: %w", err))
 		}
 		switch signIn.Login {
 		case true:
-			signInPostHandler(req, client, signIn)
+			return signInPostHandler(req, client, signIn)
 		default:
-			signOutPostHandler(req, client, signIn)
+			return signOutPostHandler(req, client, signIn)
 		}
 	default:
-		client.logAndWriteErrorResponse(req, fmt.Errorf("forbidden request from %v", client.remoteAddrString()), coapCodes.Forbidden, req.Token)
+		return nil, statusErrorf(coapCodes.NotFound, "unsupported method %v", req.Code)
 	}
 }
