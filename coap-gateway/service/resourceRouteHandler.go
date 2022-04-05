@@ -1,28 +1,25 @@
 package service
 
 import (
-	"fmt"
-
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/mux"
+	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
 )
 
-func resourceRouteHandler(req *mux.Message, client *Client) {
+func resourceRouteHandler(req *mux.Message, client *Client) (*pool.Message, error) {
 	switch req.Code {
 	case coapCodes.POST:
 		//handles resource updates and creation
-		clientPostHandler(req, client)
+		return clientPostHandler(req, client)
 	case coapCodes.DELETE:
-		clientDeleteHandler(req, client)
+		return clientDeleteHandler(req, client)
 	case coapCodes.GET:
 		if observe, err := req.Options.Observe(); err == nil {
-			clientObserveHandler(req, client, observe)
-			return
+			return clientObserveHandler(req, client, observe)
 		}
-		clientRetrieveHandler(req, client)
+		return clientRetrieveHandler(req, client)
 	default:
-		deviceID := getDeviceID(client)
 		path, _ := req.Options.Path()
-		client.logAndWriteErrorResponse(req, fmt.Errorf("DeviceId: %v, Href %v: unsupported method %v", deviceID, path, req.Code), coapCodes.MethodNotAllowed, req.Token)
+		return nil, statusErrorf(coapCodes.NotFound, "unknown path %v", path)
 	}
 }

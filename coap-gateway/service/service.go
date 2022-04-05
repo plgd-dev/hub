@@ -12,7 +12,9 @@ import (
 	"time"
 
 	"github.com/plgd-dev/device/pkg/net/coap"
+	"github.com/plgd-dev/go-coap/v2/message"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
+	"github.com/plgd-dev/go-coap/v2/message/status"
 	"github.com/plgd-dev/go-coap/v2/mux"
 	"github.com/plgd-dev/go-coap/v2/net"
 	"github.com/plgd-dev/go-coap/v2/net/blockwise"
@@ -85,17 +87,13 @@ func setExpirationClientCache(c *cache.Cache, deviceID string, client *Client, v
 		now := time.Now()
 		exp := client.getClientExpiration(now)
 		if now.After(exp) {
-			if err2 := client.Close(); err2 != nil {
-				client.Errorf("failed to close client connection on certificate expiration: %w", err2)
-			}
+			client.Close()
 			client.Debugf("certificate has been expired")
 			return
 		}
 		_, err := client.GetAuthorizationContext()
 		if err != nil {
-			if err2 := client.Close(); err2 != nil {
-				client.Errorf("failed to close client connection on token expiration: %w", err2)
-			}
+			client.Close()
 			client.Debugf("token has been expired")
 		}
 	}))
@@ -391,54 +389,88 @@ func getDeviceID(client *Client) string {
 	return deviceID
 }
 
-func onUnprocessedRequest(client *Client, req *mux.Message) {
+func onUnprocessedRequestError(code coapCodes.Code) error {
 	errMsg := "request from client was dropped"
-	if req.Code == coapCodes.Content {
+	if code == coapCodes.Content {
 		errMsg = "notification from client was dropped"
 	}
-	client.ErrorfRequest(req, errMsg)
+	return fmt.Errorf(errMsg)
 }
 
-func validateCommand(s mux.ResponseWriter, req *mux.Message, server *Service, fnc func(req *mux.Message, client *Client)) {
-	client, ok := s.Client().Context().Value(clientKey).(*Client)
-	if !ok || client == nil {
-		client = newClient(server, s.Client().ClientConn().(*tcp.ClientConn), "", time.Time{})
+func wantToCloseClientOnError(req *mux.Message) bool {
+	if req == nil {
+		return true
 	}
-	closeClient := func(c *Client) {
-		if err := c.Close(); err != nil {
-			c.Errorf("cannot handle command: %w", err)
-		}
-	}
-	err := server.taskQueue.Submit(func() {
-		switch req.Code {
-		case coapCodes.POST, coapCodes.DELETE, coapCodes.PUT, coapCodes.GET:
-			fnc(req, client)
-		case coapCodes.Empty:
-			if !ok {
-				client.logAndWriteErrorResponse(req, fmt.Errorf("cannot handle command: client not found"), coapCodes.InternalServerError, req.Token)
-				closeClient(client)
-				return
-			}
-			clientResetHandler(req, client)
-		default:
-			onUnprocessedRequest(client, req)
-		}
-	})
+	path, err := req.Options.Path()
 	if err != nil {
-		client.ErrorfRequest(req, "cannot handle request by task queue: %w", err)
-		closeClient(client)
+		return true
+	}
+	switch path {
+	case uri.RefreshToken, uri.SignIn, uri.SignUp:
+		return true
+	}
+	return false
+}
+
+func (s *Service) makeCommandTask(req *mux.Message, client *Client, fnc func(req *mux.Message, client *Client) (*pool.Message, error)) func() {
+	return func() {
+		var resp *pool.Message
+		var err error
+		switch req.Code {
+		case coapCodes.Empty:
+			resp, err = clientResetHandler(req, client)
+		case coapCodes.POST, coapCodes.DELETE, coapCodes.PUT, coapCodes.GET:
+			resp, err = fnc(req, client)
+			if err != nil && wantToCloseClientOnError(req) {
+				defer client.Close()
+			}
+		default:
+			err := onUnprocessedRequestError(req.Code)
+			client.logRequestResponse(req, nil, err)
+			return
+		}
+		if err != nil {
+			resp = client.createErrorResponse(err, req.Token)
+		}
+		if resp != nil {
+			client.WriteMessage(resp)
+			defer client.ReleaseMessage(resp)
+		}
+		client.logRequestResponse(req, resp, err)
 	}
 }
 
-func defaultHandler(req *mux.Message, client *Client) {
+func executeCommand(s mux.ResponseWriter, req *mux.Message, server *Service, fnc func(req *mux.Message, client *Client) (*pool.Message, error)) {
+	client, ok := s.Client().Context().Value(clientKey).(*Client)
+	if !ok {
+		client = newClient(server, s.Client().ClientConn().(*tcp.ClientConn), "", time.Time{})
+		if req.Code == coapCodes.Empty {
+			client.logRequestResponse(req, nil, fmt.Errorf("cannot handle command: client not found"))
+			client.Close()
+			return
+		}
+	}
+	err := server.taskQueue.Submit(server.makeCommandTask(req, client, fnc))
+	if err != nil {
+		client.logRequestResponse(req, nil, fmt.Errorf("cannot handle request by task queue: %w", err))
+		client.Close()
+	}
+}
+
+func statusErrorf(code coapCodes.Code, fmt string, args ...interface{}) error {
+	return status.Errorf(&message.Message{
+		Code: code,
+	}, fmt, args...)
+}
+
+func defaultHandler(req *mux.Message, client *Client) (*pool.Message, error) {
 	path, _ := req.Options.Path()
 
 	switch {
 	case strings.HasPrefix(path, uri.ResourceRoute):
-		resourceRouteHandler(req, client)
+		return resourceRouteHandler(req, client)
 	default:
-		deviceID := getDeviceID(client)
-		client.logAndWriteErrorResponse(req, fmt.Errorf("DeviceId: %v: unknown path %v", deviceID, path), coapCodes.NotFound, req.Token)
+		return nil, statusErrorf(coapCodes.NotFound, "unknown path %v", path)
 	}
 }
 
@@ -480,11 +512,12 @@ func (server *Service) authMiddleware(next mux.Handler) mux.Handler {
 		}
 		r.Context = context.WithValue(ctx, &log.StartTimeKey, t)
 		if err != nil {
-			err = fmt.Errorf("cannot handle request to path '%v': %w", path, err)
-			client.logAndWriteErrorResponse(r, err, coapCodes.Unauthorized, r.Token)
-			if err := client.Close(); err != nil {
-				client.Errorf("coap server error: %w", err)
-			}
+			err = statusErrorf(coapCodes.Unauthorized, "cannot handle request to path '%v': %w", path, err)
+			resp := client.createErrorResponse(err, r.Token)
+			defer client.ReleaseMessage(resp)
+			client.WriteMessage(resp)
+			client.logRequestResponse(r, resp, err)
+			client.Close()
 			return
 		}
 		next.ServeCOAP(w, r)
@@ -499,30 +532,30 @@ func (server *Service) setupCoapServer() error {
 	m := mux.NewRouter()
 	m.Use(server.authMiddleware)
 	m.DefaultHandle(mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
-		validateCommand(w, r, server, defaultHandler)
+		executeCommand(w, r, server, defaultHandler)
 	}))
 	if err := m.Handle(uri.ResourceDirectory, mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
-		validateCommand(w, r, server, resourceDirectoryHandler)
+		executeCommand(w, r, server, resourceDirectoryHandler)
 	})); err != nil {
 		return setHandlerError(uri.ResourceDirectory, err)
 	}
 	if err := m.Handle(uri.SignUp, mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
-		validateCommand(w, r, server, signUpHandler)
+		executeCommand(w, r, server, signUpHandler)
 	})); err != nil {
 		return setHandlerError(uri.SignUp, err)
 	}
 	if err := m.Handle(uri.SignIn, mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
-		validateCommand(w, r, server, signInHandler)
+		executeCommand(w, r, server, signInHandler)
 	})); err != nil {
 		return setHandlerError(uri.SignIn, err)
 	}
 	if err := m.Handle(uri.ResourceDiscovery, mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
-		validateCommand(w, r, server, resourceDiscoveryHandler)
+		executeCommand(w, r, server, resourceDiscoveryHandler)
 	})); err != nil {
 		return setHandlerError(uri.ResourceDiscovery, err)
 	}
 	if err := m.Handle(uri.RefreshToken, mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
-		validateCommand(w, r, server, refreshTokenHandler)
+		executeCommand(w, r, server, refreshTokenHandler)
 	})); err != nil {
 		return setHandlerError(uri.RefreshToken, err)
 	}
