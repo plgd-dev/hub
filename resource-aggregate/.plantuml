@@ -1,6 +1,6 @@
 @startuml
 
-title "Publish / Unpublish Resources"
+title "Publish Resources"
 
 entity "OCF Server" as Server
 participant "Gateway" as Gateway
@@ -17,6 +17,38 @@ deactivate Gateway
 ResourceAggregate -> Bus : ResourceLinksPublished
 deactivate ResourceAggregate
 Gateway <- Bus: ResourceLinksPublished
+activate Gateway
+Gateway -> Server : OK
+deactivate Gateway
+deactivate Server
+
+@enduml
+
+@startuml
+
+title "Unpublish Resources"
+
+entity "OCF Server" as Server
+participant "Gateway" as Gateway
+participant "Resource Aggregate" as ResourceAggregate
+control "Event Bus" as Bus
+
+Server -> Gateway : [DELETE] '/oic/rd'
+activate Server
+activate Gateway
+Gateway -> ResourceAggregate : UnpublishResourceLinksRequest
+activate ResourceAggregate
+ResourceAggregate -> Gateway : UnpublishResourceLinksResponse
+deactivate Gateway
+ResourceAggregate -> Bus : ResourceLinksUnpublished
+loop for each unpublished resource
+    ResourceAggregate -> Bus : ResourceRetrieved (status=Canceled) if any pending
+    ResourceAggregate -> Bus : ResourceUpdated (status=Canceled) if any pending
+    ResourceAggregate -> Bus : ResourceCreated (status=Canceled) if any pending
+    ResourceAggregate -> Bus : ResourceDelete (status=Deleted) if any pending
+end
+deactivate ResourceAggregate
+Gateway <- Bus: ResourceLinksUnpublished
 activate Gateway
 Gateway -> Server : OK
 deactivate Gateway

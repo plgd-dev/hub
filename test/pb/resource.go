@@ -184,11 +184,8 @@ func MakeResourceChanged(t *testing.T, deviceID, href, correlationID string, dat
 
 func MakeResourceDeleted(t *testing.T, deviceID, href, correlationID string) *events.ResourceDeleted {
 	return &events.ResourceDeleted{
-		ResourceId: commands.NewResourceID(deviceID, href),
-		Status:     commands.Status_OK,
-		Content: &commands.Content{
-			CoapContentFormat: int32(-1),
-		},
+		ResourceId:   commands.NewResourceID(deviceID, href),
+		Status:       commands.Status_OK,
 		AuditContext: commands.NewAuditContext(service.DeviceUserID, correlationID),
 	}
 }
