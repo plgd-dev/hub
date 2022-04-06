@@ -589,7 +589,7 @@ func (e *ResourceStateSnapshotTaken) CancelResourceRetrieveCommand(ctx context.C
 	return events
 }
 
-func (e *ResourceStateSnapshotTaken) CancelResourceDeleteCommand(ctx context.Context, events []eventstore.Event, userID string, correlationIdFilter strings.Set, resourceID *commands.ResourceId, commandMetadata *commands.CommandMetadata, newVersion uint64, status commands.Status, calledFromUnpublishResource bool) []eventstore.Event {
+func (e *ResourceStateSnapshotTaken) CancelResourceDeleteCommand(ctx context.Context, events []eventstore.Event, userID string, correlationIdFilter strings.Set, resourceID *commands.ResourceId, commandMetadata *commands.CommandMetadata, status commands.Status, content *commands.Content, newVersion uint64) []eventstore.Event {
 	for _, event := range e.GetResourceDeletePendings() {
 		if len(correlationIdFilter) != 0 && !correlationIdFilter.HasOneOf(event.GetAuditContext().GetCorrelationId()) {
 			continue
@@ -599,6 +599,7 @@ func (e *ResourceStateSnapshotTaken) CancelResourceDeleteCommand(ctx context.Con
 			CorrelationId:   event.GetAuditContext().GetCorrelationId(),
 			Status:          status,
 			CommandMetadata: commandMetadata,
+			Content:         content,
 		}, newVersion+uint64(len(events)))
 		if err == nil {
 			// errors appears only when command with correlationID doesn't exist
@@ -617,14 +618,14 @@ func (e *ResourceStateSnapshotTaken) CancelPendingCommands(ctx context.Context, 
 	events = e.CancelResourceCreateCommand(ctx, events, userID, correlationIdFilter, req.GetResourceId(), req.GetCommandMetadata(), newVersion)
 	events = e.CancelResourceUpdateCommand(ctx, events, userID, correlationIdFilter, req.GetResourceId(), req.GetCommandMetadata(), newVersion)
 	events = e.CancelResourceRetrieveCommand(ctx, events, userID, correlationIdFilter, req.GetResourceId(), req.GetCommandMetadata(), newVersion)
-	events = e.CancelResourceDeleteCommand(ctx, events, userID, correlationIdFilter, req.GetResourceId(), req.GetCommandMetadata(), newVersion, commands.Status_CANCELED, false)
+	events = e.CancelResourceDeleteCommand(ctx, events, userID, correlationIdFilter, req.GetResourceId(), req.GetCommandMetadata(), commands.Status_CANCELED, nil, newVersion)
 	if len(events) == 0 {
 		return nil, status.Errorf(codes.NotFound, "cannot find commands with correlationID(%v)", req.GetCorrelationIdFilter())
 	}
 	return events, nil
 }
 
-func (e *ResourceStateSnapshotTaken) UnpublishResource(ctx context.Context, userID string, resourceID *commands.ResourceId, commandMetadata *commands.CommandMetadata, newVersion uint64) ([]eventstore.Event, error) {
+func (e *ResourceStateSnapshotTaken) UnpublishResource(ctx context.Context, userID string, resourceID *commands.ResourceId, commandMetadata *commands.CommandMetadata, deletedContent *commands.Content, newVersion uint64) ([]eventstore.Event, error) {
 	if commandMetadata == nil {
 		return nil, status.Errorf(codes.InvalidArgument, errInvalidCommandMetadata)
 	}
@@ -634,12 +635,13 @@ func (e *ResourceStateSnapshotTaken) UnpublishResource(ctx context.Context, user
 	events = e.CancelResourceUpdateCommand(ctx, events, userID, correlationIdFilter, resourceID, commandMetadata, newVersion)
 	events = e.CancelResourceRetrieveCommand(ctx, events, userID, correlationIdFilter, resourceID, commandMetadata, newVersion)
 	// send deleted as confirmation message
-	events = e.CancelResourceDeleteCommand(ctx, events, userID, correlationIdFilter, resourceID, commandMetadata, newVersion, commands.Status_OK, true)
+	lenEvents := len(events)
+	events = e.CancelResourceDeleteCommand(ctx, events, userID, correlationIdFilter, resourceID, commandMetadata, commands.Status_OK, deletedContent, newVersion)
 	// set latestResourceChange to nil
 	latestResourceChange := e.GetLatestResourceChange()
 	e.LatestResourceChange = nil
-	if latestResourceChange != nil {
-		// we neet to store snapshot for reset e.LatestResourceChange - otherwise next read will contains latestResourceChange with old value
+	if latestResourceChange != nil && lenEvents == len(events) {
+		// we need to store snapshot for reset e.LatestResourceChange or when deleted event was not created - otherwise next read will contains latestResourceChange with old value
 		snapshot, _ := e.TakeSnapshot(newVersion + uint64(len(events)))
 		events = append(events, snapshot)
 	}
@@ -756,7 +758,7 @@ func (e *ResourceStateSnapshotTaken) HandleCommand(ctx context.Context, cmd aggr
 		}
 		if req.GetStatus() == commands.Status_OK || req.GetStatus() == commands.Status_ACCEPTED {
 			// deleted can comes first than unpublish so we call same handler
-			return e.UnpublishResource(ctx, userID, req.GetResourceId(), req.GetCommandMetadata(), newVersion)
+			return e.UnpublishResource(ctx, userID, req.GetResourceId(), req.GetCommandMetadata(), req.GetContent(), newVersion)
 		}
 		return e.ConfirmResourceDeleteCommand(ctx, userID, req, newVersion)
 	case *commands.CreateResourceRequest:
@@ -787,7 +789,7 @@ func (e *ResourceStateSnapshotTaken) HandleCommand(ctx context.Context, cmd aggr
 	case *commands.CancelPendingCommandsRequest:
 		return e.CancelPendingCommands(ctx, userID, req, newVersion)
 	case *commands.UnpublishResourceLinksRequest:
-		return e.UnpublishResource(ctx, userID, e.GetResourceId(), req.GetCommandMetadata(), newVersion)
+		return e.UnpublishResource(ctx, userID, e.GetResourceId(), req.GetCommandMetadata(), nil, newVersion)
 	}
 
 	return nil, fmt.Errorf("unknown command(%T)", cmd)
