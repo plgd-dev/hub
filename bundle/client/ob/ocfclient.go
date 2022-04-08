@@ -41,7 +41,7 @@ func (c *OcfClient) Initialize(ctx context.Context, hubConfiguration *pb.HubConf
 			JWTClaimOwnerID: hubConfiguration.GetJwtOwnerClaim(),
 			Sign:            signer.Sign,
 		},
-	}, appCallback, nil, func(err error) {
+	}, appCallback, func(err error) {
 		log.Error(err)
 	})
 
