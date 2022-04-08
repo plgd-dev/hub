@@ -96,6 +96,9 @@ func NewSDKClient() (*client.Client, error) {
 			ID:      CertIdentity,
 			Cert:    string(identityIntermediateCA),
 			CertKey: string(identityIntermediateCAKey),
+			CreateSignerFunc: func(caCert []*x509.Certificate, caKey crypto.PrivateKey, validNotBefore time.Time, validNotAfter time.Time) core.CertificateSigner {
+				return signer.NewIdentityCertificateSigner(caCert, caKey, validNotBefore, validNotAfter)
+			},
 		},
 	}
 
@@ -103,8 +106,6 @@ func NewSDKClient() (*client.Client, error) {
 		mfgCA:   mfgCA,
 		mfgCert: mfgCert,
 		ca:      identityTrustedCACert,
-	}, func(caCert []*x509.Certificate, caKey crypto.PrivateKey, validNotBefore time.Time, validNotAfter time.Time) core.CertificateSigner {
-		return signer.NewIdentityCertificateSigner(caCert, caKey, validNotBefore, validNotAfter)
 	}, func(err error) { log.Debug(err) },
 	)
 	if err != nil {
