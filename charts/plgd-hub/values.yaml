@@ -1284,6 +1284,7 @@ grpcgateway:
     grpc:
       address:
       ownerCacheExpiration: 1m
+      subscriptionBufferSize: 1000
       enforcementPolicy:
         minTime: 5s
         permitWithoutStream: true

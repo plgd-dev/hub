@@ -20,6 +20,7 @@ data:
       grpc:
         address: {{ printf "0.0.0.0:%v" .port | quote }}
         ownerCacheExpiration: {{ .apis.grpc.ownerCacheExpiration }}
+        subscriptionBufferSize: {{ .apis.grpc.subscriptionBufferSize }}
         enforcementPolicy:
           minTime: {{ .apis.grpc.enforcementPolicy.minTime }}
           permitWithoutStream: {{ .apis.grpc.enforcementPolicy.permitWithoutStream }}
