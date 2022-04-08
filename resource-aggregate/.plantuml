@@ -12,12 +12,9 @@ activate Server
 activate Gateway
 Gateway -> ResourceAggregate : PublishResourceLinksRequest
 activate ResourceAggregate
-ResourceAggregate -> Gateway : PublishResourceLinksResponse
-deactivate Gateway
 ResourceAggregate -> Bus : ResourceLinksPublished
+ResourceAggregate -> Gateway : PublishResourceLinksResponse
 deactivate ResourceAggregate
-Gateway <- Bus: ResourceLinksPublished
-activate Gateway
 Gateway -> Server : OK
 deactivate Gateway
 deactivate Server
@@ -38,17 +35,17 @@ activate Server
 activate Gateway
 Gateway -> ResourceAggregate : UnpublishResourceLinksRequest
 activate ResourceAggregate
-ResourceAggregate -> Gateway : UnpublishResourceLinksResponse
 deactivate Gateway
 ResourceAggregate -> Bus : ResourceLinksUnpublished
 loop for each unpublished resource
     ResourceAggregate -> Bus : ResourceRetrieved (status=Canceled) if any pending
     ResourceAggregate -> Bus : ResourceUpdated (status=Canceled) if any pending
     ResourceAggregate -> Bus : ResourceCreated (status=Canceled) if any pending
-    ResourceAggregate -> Bus : ResourceDelete (status=Deleted) if any pending
+    ResourceAggregate -> Bus : ResourceDeleted (status=Ok) if any pending
+    ResourceAggregate -> Bus : ResourceStateSnapshotTaken
 end
+ResourceAggregate -> Gateway : UnpublishResourceLinksResponse
 deactivate ResourceAggregate
-Gateway <- Bus: ResourceLinksUnpublished
 activate Gateway
 Gateway -> Server : OK
 deactivate Gateway
@@ -146,8 +143,6 @@ deactivate Client
 
 @enduml
 
-@startuml
-
 title "Delete Resource"
 
 entity "OCF Server" as Server
@@ -170,9 +165,17 @@ Server -> Gateway : OK
 deactivate Server
 Gateway -> ResourceAggregate : ConfirmResourceDeleteRequest
 activate ResourceAggregate
-ResourceAggregate -> Gateway : ConfirmResourceDeleteResponse
 deactivate Gateway
-ResourceAggregate --> Bus : ResourceDeleted
+alt status=OK/accepted
+    ResourceAggregate -> Bus : ResourceRetrieved (status=Canceled) if any pending
+    ResourceAggregate -> Bus : ResourceUpdated (status=Canceled) if any pending
+    ResourceAggregate -> Bus : ResourceCreated (status=Canceled) if any pending
+    ResourceAggregate -> Bus : ResourceDeleted
+    ResourceAggregate -> Bus : ResourceStateSnapshotTaken
+else
+	ResourceAggregate --> Bus : ResourceDeleted
+end
+ResourceAggregate -> Gateway : ConfirmResourceDeleteResponse
 deactivate ResourceAggregate
 Bus --> Client : ResourceDeleted
 deactivate Client

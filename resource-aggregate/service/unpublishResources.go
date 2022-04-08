@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
@@ -27,6 +28,14 @@ func (r RequestHandler) UnpublishResource(ctx context.Context, request *commands
 	aggregate, err := NewAggregate(resourceID, r.config.Clients.Eventstore.SnapshotThreshold, r.eventstore, ResourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(r.config.Clients.Eventstore.ConcurrencyExceptionMaxRetry))
 	if err != nil {
 		return err
+	}
+	deadline, ok := ctx.Deadline()
+	// if deadline is not set or less than r.config.Clients.Eventbus.NATS.FlusherTimeout, set it to r.config.Clients.Eventbus.NATS.FlusherTimeout
+	if !ok || time.Until(deadline) < r.config.Clients.Eventbus.NATS.FlusherTimeout {
+		token, _ := kitNetGrpc.TokenFromMD(ctx)
+		newCtx, cancel := context.WithTimeout(context.Background(), r.config.Clients.Eventbus.NATS.FlusherTimeout)
+		defer cancel()
+		ctx = kitNetGrpc.CtxWithIncomingToken(newCtx, token)
 	}
 
 	events, err := aggregate.UnpublishResource(ctx, request)

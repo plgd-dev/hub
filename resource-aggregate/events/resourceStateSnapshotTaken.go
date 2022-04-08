@@ -634,17 +634,9 @@ func (e *ResourceStateSnapshotTaken) UnpublishResource(ctx context.Context, user
 	events = e.CancelResourceCreateCommand(ctx, events, userID, correlationIdFilter, resourceID, commandMetadata, newVersion)
 	events = e.CancelResourceUpdateCommand(ctx, events, userID, correlationIdFilter, resourceID, commandMetadata, newVersion)
 	events = e.CancelResourceRetrieveCommand(ctx, events, userID, correlationIdFilter, resourceID, commandMetadata, newVersion)
-	// send deleted as confirmation message
-	lenEvents := len(events)
 	events = e.CancelResourceDeleteCommand(ctx, events, userID, correlationIdFilter, resourceID, commandMetadata, commands.Status_OK, deletedContent, newVersion)
-	// set latestResourceChange to nil
-	latestResourceChange := e.GetLatestResourceChange()
-	e.LatestResourceChange = nil
-	if latestResourceChange != nil && lenEvents == len(events) {
-		// we need to store snapshot for reset e.LatestResourceChange or when deleted event was not created - otherwise next read will contains latestResourceChange with old value
-		snapshot, _ := e.TakeSnapshot(newVersion + uint64(len(events)))
-		events = append(events, snapshot)
-	}
+	snapshot, _ := e.TakeSnapshot(newVersion + uint64(len(events)))
+	events = append(events, snapshot)
 
 	return events, nil
 }
