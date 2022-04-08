@@ -22,6 +22,7 @@ const (
 	FilterBitmaskResourceChanged             FilterBitmask = 1 << 12
 	FilterBitmaskResourcesPublished          FilterBitmask = 1 << 13
 	FilterBitmaskResourcesUnpublished        FilterBitmask = 1 << 14
+	FilterBitmaskResourceStateSnapshotTaken  FilterBitmask = 1 << 15
 	FilterBitmaskMax                         FilterBitmask = 0xffffffff
 )
 
@@ -93,6 +94,7 @@ var eventsToBitmask = map[pb.SubscribeToEvents_CreateSubscription_Event]FilterBi
 	pb.SubscribeToEvents_CreateSubscription_RESOURCE_PUBLISHED:             FilterBitmaskResourcesPublished,
 	pb.SubscribeToEvents_CreateSubscription_RESOURCE_UNPUBLISHED:           FilterBitmaskResourcesUnpublished,
 	pb.SubscribeToEvents_CreateSubscription_RESOURCE_CHANGED:               FilterBitmaskResourceChanged,
+	pb.SubscribeToEvents_CreateSubscription_RESOURCE_STATE_SNAPSHOT_TAKEN:  FilterBitmaskResourceStateSnapshotTaken,
 }
 
 func EventFilterToBitmask(f pb.SubscribeToEvents_CreateSubscription_Event) FilterBitmask {

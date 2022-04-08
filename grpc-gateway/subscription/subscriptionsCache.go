@@ -239,6 +239,18 @@ func convDeviceMetadataUpdated(ev *eventbusPb.Event) (*pb.Event, FilterBitmask, 
 	}, FilterBitmaskDeviceMetadataUpdated, nil
 }
 
+func convResourceStateSnapshotTaken(ev *eventbusPb.Event) (*pb.Event, FilterBitmask, error) {
+	var e events.ResourceStateSnapshotTaken
+	if err := utils.Unmarshal(ev.GetData(), &e); err != nil {
+		return nil, 0, fmt.Errorf(errorUnmarshalEventFmt, ev.GetEventType(), err)
+	}
+	return &pb.Event{
+		Type: &pb.Event_ResourceStateSnapshotTaken{
+			ResourceStateSnapshotTaken: &e,
+		},
+	}, FilterBitmaskResourceStateSnapshotTaken, nil
+}
+
 var devicesEventToGrpcPb = map[string]devicesEventToGrpcFunc{
 	(&events.ResourceCreatePending{}).EventType():       convResourceCreatePending,
 	(&events.ResourceCreated{}).EventType():             convResourceCreated,
@@ -253,6 +265,7 @@ var devicesEventToGrpcPb = map[string]devicesEventToGrpcFunc{
 	(&events.ResourceChanged{}).EventType():             convResourceChanged,
 	(&events.ResourceLinksPublished{}).EventType():      convResourcesPublished,
 	(&events.ResourceLinksUnpublished{}).EventType():    convResourcesUnpublished,
+	(&events.ResourceStateSnapshotTaken{}).EventType():  convResourceStateSnapshotTaken,
 }
 
 func (d *eventSubject) copySenders() []SendEventWithTypeFunc {

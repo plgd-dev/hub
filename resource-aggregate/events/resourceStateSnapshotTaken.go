@@ -635,6 +635,7 @@ func (e *ResourceStateSnapshotTaken) UnpublishResource(ctx context.Context, user
 	events = e.CancelResourceUpdateCommand(ctx, events, userID, correlationIdFilter, resourceID, commandMetadata, newVersion)
 	events = e.CancelResourceRetrieveCommand(ctx, events, userID, correlationIdFilter, resourceID, commandMetadata, newVersion)
 	events = e.CancelResourceDeleteCommand(ctx, events, userID, correlationIdFilter, resourceID, commandMetadata, commands.Status_OK, deletedContent, newVersion)
+	e.LatestResourceChange = nil
 	snapshot, _ := e.TakeSnapshot(newVersion + uint64(len(events)))
 	events = append(events, snapshot)
 

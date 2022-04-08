@@ -96,6 +96,9 @@ var makeEventFromDataFn = map[string]func(e interface{}) *pb.Event{
 	getTypeName(&events.DeviceMetadataUpdated{}): func(e interface{}) *pb.Event {
 		return &pb.Event{Type: &pb.Event_DeviceMetadataUpdated{DeviceMetadataUpdated: e.(*events.DeviceMetadataUpdated)}}
 	},
+	getTypeName(&events.ResourceStateSnapshotTaken{}): func(e interface{}) *pb.Event {
+		return &pb.Event{Type: &pb.Event_ResourceStateSnapshotTaken{ResourceStateSnapshotTaken: e.(*events.ResourceStateSnapshotTaken)}}
+	},
 }
 
 func getTypeName(v interface{}) string {
@@ -206,6 +209,9 @@ var cleanupEventFn = map[string]func(ev *pb.Event){
 	},
 	getTypeName(&pb.Event_DeviceMetadataUpdated{}): func(ev *pb.Event) {
 		CleanUpDeviceMetadataUpdated(ev.GetDeviceMetadataUpdated(), false)
+	},
+	getTypeName(&pb.Event_ResourceStateSnapshotTaken{}): func(ev *pb.Event) {
+		CleanUpResourceStateSnapshotTaken(ev.GetResourceStateSnapshotTaken(), true)
 	},
 }
 

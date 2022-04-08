@@ -82,6 +82,7 @@ message SubscribeToEvents {
       RESOURCE_CREATE_PENDING = 14;
       RESOURCE_CREATED = 15;
       RESOURCE_CHANGED = 16;
+      RESOURCE_STATE_SNAPSHOT_TAKEN = 17;
     }
     repeated Event event_filter = 1;
     repeated string device_id_filter = 2;
@@ -140,6 +141,7 @@ message Event {
     resourceaggregate.pb.ResourceCreated resource_created = 19;
     resourceaggregate.pb.DeviceMetadataUpdatePending device_metadata_update_pending = 20;
     resourceaggregate.pb.DeviceMetadataUpdated device_metadata_updated = 21;
+    resourceaggregate.pb.ResourceStateSnapshotTaken resource_state_snapshot_taken = 22;
   }
 
 }

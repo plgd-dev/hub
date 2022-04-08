@@ -161,6 +161,16 @@ func CmpResourceChanged(t *testing.T, expected, got *events.ResourceChanged, cmp
 	test.CheckProtobufs(t, expected, got, test.RequireToCheckFunc(require.Equal))
 }
 
+func MakeEmptyResourceStateSnapshotTaken(t *testing.T, deviceID, href, correlationID string) *events.ResourceStateSnapshotTaken {
+	return &events.ResourceStateSnapshotTaken{
+		ResourceId: &commands.ResourceId{
+			DeviceId: deviceID,
+			Href:     href,
+		},
+		AuditContext: commands.NewAuditContext(service.DeviceUserID, correlationID),
+	}
+}
+
 func MakeResourceChanged(t *testing.T, deviceID, href, correlationID string, data interface{}) *events.ResourceChanged {
 	return &events.ResourceChanged{
 		ResourceId: &commands.ResourceId{

@@ -324,12 +324,10 @@ func testDeleteResourceEvents(t *testing.T, ctx context.Context, c pb.GrpcGatewa
 		_ = client.CloseSend()
 	}()
 
-	rdp := pbTest.MakeResourceDeletePending(deviceID, switchHref, "")
-	rd := pbTest.MakeResourceDeleted(t, deviceID, switchHref, "")
 	ru := pbTest.MakeResourceLinksUnpublished(deviceID, []string{switchHref}, "")
+	sn := pbTest.MakeEmptyResourceStateSnapshotTaken(t, deviceID, switchHref, "")
 	rc := pbTest.MakeResourceChanged(t, deviceID, test.TestResourceSwitchesHref, "", []interface{}{})
-
-	expectedEvents := []interface{}{rdp, rd, ru, rc}
+	expectedEvents := []interface{}{ru, sn, rc}
 	waitAndCheckEvents(t, client, expectedEvents)
 }
 

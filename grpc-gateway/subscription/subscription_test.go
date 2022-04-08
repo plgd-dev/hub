@@ -2,6 +2,7 @@ package subscription_test
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/panjf2000/ants/v2"
@@ -34,6 +35,7 @@ import (
 func waitForEvent(ctx context.Context, t *testing.T, recvChan <-chan *pb.Event) *pb.Event {
 	select {
 	case ev := <-recvChan:
+		fmt.Printf("waitForEvent %v+\n", ev)
 		return ev
 	case <-ctx.Done():
 		require.NoError(t, ctx.Err())

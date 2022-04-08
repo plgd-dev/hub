@@ -15,7 +15,7 @@ const FilterBitmaskDeviceDeviceResourcesResource = FilterBitmaskResourceChanged 
 	FilterBitmaskResourceCreatePending | FilterBitmaskResourceCreated |
 	FilterBitmaskResourceDeletePending | FilterBitmaskResourceDeleted |
 	FilterBitmaskResourceRetrievePending | FilterBitmaskResourceRetrieved |
-	FilterBitmaskResourceUpdatePending | FilterBitmaskResourceUpdated
+	FilterBitmaskResourceUpdatePending | FilterBitmaskResourceUpdated | FilterBitmaskResourceStateSnapshotTaken
 
 type subject struct {
 	bitmask FilterBitmask
@@ -49,6 +49,7 @@ var bitmaskToSubjectsTemplate = []subject{
 	{bitmask: FilterBitmaskResourceRetrieved, subject: isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceResourcesResourceEvent, isEvents.WithEventType((&events.ResourceRetrieved{}).EventType()))},
 	{bitmask: FilterBitmaskResourceUpdatePending, subject: isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceResourcesResourceEvent, isEvents.WithEventType((&events.ResourceUpdatePending{}).EventType()))},
 	{bitmask: FilterBitmaskResourceUpdated, subject: isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceResourcesResourceEvent, isEvents.WithEventType((&events.ResourceUpdated{}).EventType()))},
+	{bitmask: FilterBitmaskResourceStateSnapshotTaken, subject: isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceResourcesResourceEvent, isEvents.WithEventType((&events.ResourceStateSnapshotTaken{}).EventType()))},
 }
 
 func ConvertToSubjects(owner string, filterDeviceIDs kitStrings.Set, filterResourceIDs kitStrings.Set, bitmask FilterBitmask) []string {

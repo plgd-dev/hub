@@ -977,7 +977,8 @@
         "RESOURCE_DELETED",
         "RESOURCE_CREATE_PENDING",
         "RESOURCE_CREATED",
-        "RESOURCE_CHANGED"
+        "RESOURCE_CHANGED",
+        "RESOURCE_STATE_SNAPSHOT_TAKEN"
       ],
       "default": "REGISTERED"
     },
@@ -1108,6 +1109,9 @@
         },
         "deviceMetadataUpdated": {
           "$ref": "#/definitions/pbDeviceMetadataUpdated"
+        },
+        "resourceStateSnapshotTaken": {
+          "$ref": "#/definitions/pbResourceStateSnapshotTaken"
         }
       }
     },

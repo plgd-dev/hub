@@ -105,6 +105,8 @@ func (s *Sub) isFilteredEvent(e *pb.Event, eventType FilterBitmask) (bool, error
 		return isFilteredDevice(s.filteredDeviceIDs, ev.DeviceMetadataUpdatePending.GroupID()), nil
 	case *pb.Event_DeviceMetadataUpdated:
 		return isFilteredDevice(s.filteredDeviceIDs, ev.DeviceMetadataUpdated.GroupID()), nil
+	case *pb.Event_ResourceStateSnapshotTaken:
+		return isFilteredDevice(s.filteredDeviceIDs, ev.ResourceStateSnapshotTaken.GroupID()) && isFilteredResourceIDs(s.filteredResourceIDs, ev.ResourceStateSnapshotTaken.AggregateID()), nil
 	}
 	return false, fmt.Errorf("unknown event type('%T')", e.GetType())
 }
