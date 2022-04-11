@@ -198,9 +198,18 @@ func deleteSwitchResourceExpectedEvents(t *testing.T, deviceID, subID, correlati
 		},
 	}
 
+	snaphost := &pb.Event{
+		SubscriptionId: subID,
+		CorrelationId:  correlationID,
+		Type: &pb.Event_ResourceStateSnapshotTaken{
+			ResourceStateSnapshotTaken: pbTest.MakeEmptyResourceStateSnapshotTaken(t, deviceID, test.TestResourceSwitchesInstanceHref(switchID), ""),
+		},
+	}
+
 	return map[string]*pb.Event{
 		pbTest.GetEventID(deletePending): deletePending,
 		pbTest.GetEventID(deleted):       deleted,
+		pbTest.GetEventID(snaphost):      snaphost,
 		pbTest.GetEventID(unpublished):   unpublished,
 		pbTest.GetEventID(changed):       changed,
 	}

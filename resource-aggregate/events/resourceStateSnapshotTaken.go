@@ -625,9 +625,16 @@ func (e *ResourceStateSnapshotTaken) CancelPendingCommands(ctx context.Context, 
 	return events, nil
 }
 
+func (e *ResourceStateSnapshotTaken) isEmpty() bool {
+	return e.GetLatestResourceChange() == nil && len(e.GetResourceCreatePendings()) == 0 && len(e.GetResourceDeletePendings()) == 0 && len(e.GetResourceRetrievePendings()) == 0 && len(e.GetResourceUpdatePendings()) == 0
+}
+
 func (e *ResourceStateSnapshotTaken) UnpublishResource(ctx context.Context, userID string, resourceID *commands.ResourceId, commandMetadata *commands.CommandMetadata, deletedContent *commands.Content, newVersion uint64) ([]eventstore.Event, error) {
 	if commandMetadata == nil {
 		return nil, status.Errorf(codes.InvalidArgument, errInvalidCommandMetadata)
+	}
+	if e.isEmpty() {
+		return nil, nil
 	}
 	correlationIdFilter := strings.MakeSet()
 	events := make([]eventstore.Event, 0, 4)
