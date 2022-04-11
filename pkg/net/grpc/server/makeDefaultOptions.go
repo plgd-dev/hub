@@ -86,7 +86,7 @@ func setLogFilterLabels(m map[string]interface{}, req interface{}) {
 		log.SetLogValue(m, log.DeviceIDFilterKey, r.GetDeviceIdFilter())
 	}
 	if r, ok := req.(interface{ GetTypeFilter() []string }); ok {
-		log.SetLogValue(m, log.DeviceIDFilterKey, r.GetTypeFilter())
+		log.SetLogValue(m, log.TypeFilterKey, r.GetTypeFilter())
 	}
 }
 
@@ -149,11 +149,11 @@ func defaultMessageProducer(ctx context.Context, ctxLogger context.Context, msg 
 	newTags.Set(log.DurationMSKey, math.Float32frombits(uint32(duration.Integer)))
 	newTags.Set(log.ProtocolKey, "GRPC")
 	for k, v := range tags.Values() {
-		if strings.HasPrefix(k, grpcPrefixKey+"."+requestKey+"."+log.StartTimeKey) {
+		if strings.EqualFold(k, grpcPrefixKey+"."+requestKey+"."+log.StartTimeKey) {
 			newTags.Set(log.StartTimeKey, v)
 			continue
 		}
-		if strings.HasPrefix(k, grpcPrefixKey+"."+requestKey+"."+log.DeviceIDKey) {
+		if strings.EqualFold(k, grpcPrefixKey+"."+requestKey+"."+log.DeviceIDKey) {
 			newTags.Set(log.DeviceIDKey, v)
 			continue
 		}
