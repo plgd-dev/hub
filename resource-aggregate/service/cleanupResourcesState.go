@@ -14,7 +14,7 @@ import (
 	"google.golang.org/grpc/codes"
 )
 
-func (a *aggregate) UnpublishResource(ctx context.Context, request *commands.UnpublishResourceLinksRequest) (events []eventstore.Event, err error) {
+func (a *aggregate) CleanupResourceState(ctx context.Context, request *commands.UnpublishResourceLinksRequest) (events []eventstore.Event, err error) {
 	events, err = a.ag.HandleCommand(ctx, request)
 	if err != nil {
 		err = fmt.Errorf("unable to process unpublish resource command: %w", err)
@@ -24,7 +24,7 @@ func (a *aggregate) UnpublishResource(ctx context.Context, request *commands.Unp
 	return
 }
 
-func (r RequestHandler) UnpublishResource(ctx context.Context, request *commands.UnpublishResourceLinksRequest, owner string, resourceID *commands.ResourceId) error {
+func (r RequestHandler) CleanupResourceState(ctx context.Context, request *commands.UnpublishResourceLinksRequest, owner string, resourceID *commands.ResourceId) error {
 	aggregate, err := NewAggregate(resourceID, r.config.Clients.Eventstore.SnapshotThreshold, r.eventstore, ResourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(r.config.Clients.Eventstore.ConcurrencyExceptionMaxRetry))
 	if err != nil {
 		return err
@@ -38,7 +38,7 @@ func (r RequestHandler) UnpublishResource(ctx context.Context, request *commands
 		ctx = kitNetGrpc.CtxWithIncomingToken(newCtx, token)
 	}
 
-	events, err := aggregate.UnpublishResource(ctx, request)
+	events, err := aggregate.CleanupResourceState(ctx, request)
 	if err != nil {
 		return err
 	}
@@ -50,13 +50,13 @@ func (r RequestHandler) UnpublishResource(ctx context.Context, request *commands
 	return nil
 }
 
-func (r RequestHandler) UnpublishResources(ctx context.Context, request *commands.UnpublishResourceLinksRequest, owner string, events []eventstore.Event) {
+func (r RequestHandler) CleanupResourcesState(ctx context.Context, request *commands.UnpublishResourceLinksRequest, owner string, events []eventstore.Event) {
 	for _, event := range events {
 		if rlu, ok := event.(*raEvents.ResourceLinksUnpublished); ok {
 			for _, href := range rlu.GetHrefs() {
-				err := r.UnpublishResource(ctx, request, owner, commands.NewResourceID(rlu.GetDeviceId(), href))
+				err := r.CleanupResourceState(ctx, request, owner, commands.NewResourceID(rlu.GetDeviceId(), href))
 				if err != nil {
-					_ = log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "cannot unpublish resource /%v%v: %v", rlu.GetDeviceId(), href, err))
+					_ = log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "cannot cleanup resource state /%v%v: %v", rlu.GetDeviceId(), href, err))
 				}
 			}
 		}

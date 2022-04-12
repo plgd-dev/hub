@@ -156,7 +156,7 @@ func (r RequestHandler) UnpublishResourceLinks(ctx context.Context, request *com
 	}
 	auditContext := commands.NewAuditContext(owner, "")
 
-	r.UnpublishResources(ctx, request, owner, events)
+	r.CleanupResourcesState(ctx, request, owner, events)
 
 	return newUnpublishResourceLinksResponse(events, aggregate.DeviceID(), auditContext), nil
 }

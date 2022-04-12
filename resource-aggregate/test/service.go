@@ -26,7 +26,7 @@ func MakeConfig(t *testing.T) service.Config {
 
 	cfg.Clients.Eventstore.Connection.MongoDB = config.MakeEventsStoreMongoDBConfig()
 	cfg.Clients.Eventstore.ConcurrencyExceptionMaxRetry = 8
-	cfg.Clients.Eventstore.SnapshotThreshold = 32
+	cfg.Clients.Eventstore.SnapshotThreshold = 16
 
 	err := cfg.Validate()
 	require.NoError(t, err)

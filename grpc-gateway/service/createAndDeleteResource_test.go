@@ -14,6 +14,7 @@ import (
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
+	raTest "github.com/plgd-dev/hub/v2/resource-aggregate/test"
 	"github.com/plgd-dev/hub/v2/test"
 	"github.com/plgd-dev/hub/v2/test/config"
 	oauthService "github.com/plgd-dev/hub/v2/test/oauth-server/service"
@@ -241,7 +242,10 @@ func TestCreateAndDeleteResource(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
 	defer cancel()
 
-	tearDown := service.SetUp(ctx, t)
+	raCfg := raTest.MakeConfig(t)
+	// we need to increase number of events to create snapshot because snaphost event is not expected in test
+	raCfg.Clients.Eventstore.SnapshotThreshold = 32
+	tearDown := service.SetUp(ctx, t, service.WithRAConfig(raCfg))
 	defer tearDown()
 
 	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
