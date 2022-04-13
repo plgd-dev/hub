@@ -3,6 +3,7 @@ package service_test
 import (
 	"context"
 	"crypto/tls"
+	"fmt"
 	"testing"
 
 	"github.com/plgd-dev/device/schema"
@@ -206,7 +207,7 @@ func deleteSwitchResourceExpectedEvents(t *testing.T, deviceID, subID, correlati
 	}
 }
 
-func validateEvents(t *testing.T, subClient pb.GrpcGateway_SubscribeToEventsClient, expectedEvents map[string]*pb.Event) {
+func validateEvents(t *testing.T, subClient pb.GrpcGateway_SubscribeToEventsClient, expectedEvents map[string]*pb.Event, failOnUnexpectedEvent bool) {
 	for {
 		ev, err := subClient.Recv()
 		if kitNetGrpc.IsContextDeadlineExceeded(err) {
@@ -217,6 +218,10 @@ func validateEvents(t *testing.T, subClient pb.GrpcGateway_SubscribeToEventsClie
 		eventID := pbTest.GetEventID(ev)
 		expected, ok := expectedEvents[eventID]
 		if !ok {
+			if !failOnUnexpectedEvent {
+				t.Logf("unexpected event received: %+v", ev)
+				continue
+			}
 			require.Failf(t, "unexpected event", "invalid event: %+v", ev)
 		}
 		pbTest.CmpEvent(t, expected, ev, "")
@@ -254,12 +259,12 @@ func TestCreateAndDeleteResource(t *testing.T) {
 	const switchID = "1"
 
 	for i := 0; i < 5; i++ {
+		fmt.Printf("iteration %v\n", i)
 		createSwitchResource(t, ctx, c, deviceID, switchID)
 		expectedCreateEvents := createSwitchResourceExpectedEvents(t, deviceID, subID, correlationID, switchID)
-		validateEvents(t, subClient, expectedCreateEvents)
-
+		validateEvents(t, subClient, expectedCreateEvents, true)
 		deleteSwitchResource(t, ctx, c, deviceID, switchID)
 		expectedDeleteEvents := deleteSwitchResourceExpectedEvents(t, deviceID, subID, correlationID, switchID)
-		validateEvents(t, subClient, expectedDeleteEvents)
+		validateEvents(t, subClient, expectedDeleteEvents, false)
 	}
 }

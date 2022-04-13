@@ -250,6 +250,26 @@ func NewNotifyResourceChangedRequest(resourceID *commands.ResourceId, connection
 	}
 }
 
+var filterOutEmptyResources = []string{
+	"/oc/wk/introspection",
+	"/oic/sec/",
+}
+
+// inaccessible oic/sec resources have empty content and should be skipped
+func filterOutEmptyResource(resource resources.BatchRepresentation) bool {
+	if len(resource.Content) == 2 {
+		var v map[interface{}]interface{}
+		if err := cbor.Decode(resource.Content, &v); err == nil && len(v) == 0 {
+			for _, f := range filterOutEmptyResources {
+				if strings.HasPrefix(resource.Href(), f) {
+					return true
+				}
+			}
+		}
+	}
+	return false
+}
+
 func NewNotifyResourceChangedRequestsFromBatchResourceDiscovery(deviceID, connectionID string, req *pool.Message) ([]*commands.NotifyResourceChangedRequest, error) {
 	data, contentFormat := GetContentData(req.Options(), req.Body())
 	metadata := NewCommandMetadata(req.Sequence(), connectionID)
@@ -267,20 +287,9 @@ func NewNotifyResourceChangedRequestsFromBatchResourceDiscovery(deviceID, connec
 		return nil, discoveryError(fmt.Errorf("invalid format(%v)", contentFormat))
 	}
 
-	// inaccessible resources have empty content and should be skipped
-	isEmpty := func(resource resources.BatchRepresentation) bool {
-		if len(resource.Content) == 2 {
-			var v map[interface{}]interface{}
-			if err := cbor.Decode(resource.Content, &v); err == nil && len(v) == 0 {
-				return true
-			}
-		}
-		return false
-	}
-
 	requests := make([]*commands.NotifyResourceChangedRequest, 0, len(rs))
 	for _, r := range rs {
-		if isEmpty(r) {
+		if filterOutEmptyResource(r) {
 			continue
 		}
 
