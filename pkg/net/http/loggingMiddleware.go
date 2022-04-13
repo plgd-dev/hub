@@ -160,16 +160,21 @@ func WantToLog(code int, logger log.Logger) bool {
 	return true
 }
 
-type cfg struct {
+type LogOptions struct {
 	logger log.Logger
 }
 
-type LogOpt = func(cfg) cfg
+func NewLogOptions() *LogOptions {
+	return &LogOptions{
+		logger: log.Get(),
+	}
+}
+
+type LogOpt = func(*LogOptions)
 
 func WithLogger(logger log.Logger) LogOpt {
-	return func(c cfg) cfg {
+	return func(c *LogOptions) {
 		c.logger = logger
-		return c
 	}
 }
 
@@ -191,11 +196,9 @@ type response struct {
 }
 
 func CreateLoggingMiddleware(opts ...LogOpt) func(next http.Handler) http.Handler {
-	cfg := cfg{
-		logger: log.Get(),
-	}
+	cfg := NewLogOptions()
 	for _, o := range opts {
-		cfg = o(cfg)
+		o(cfg)
 	}
 	return func(next http.Handler) http.Handler {
 		return netHttp.HandlerFunc(func(w netHttp.ResponseWriter, r *netHttp.Request) {

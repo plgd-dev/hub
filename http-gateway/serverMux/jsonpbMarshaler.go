@@ -1,16 +1,17 @@
-package service
+package serverMux
 
 import (
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"google.golang.org/protobuf/encoding/protojson"
 )
 
-type jsonpbMarshaler struct {
+type JsonpbMarshaler struct {
 	*runtime.JSONPb
 }
 
-func newJsonpbMarshaler() *jsonpbMarshaler {
-	return &jsonpbMarshaler{
+// NewJsonpbMarshaler is a proto marshaler that uses jsonpb. proto <=> jsonpb
+func NewJsonpbMarshaler() *JsonpbMarshaler {
+	return &JsonpbMarshaler{
 		JSONPb: &runtime.JSONPb{
 			MarshalOptions: protojson.MarshalOptions{
 				EmitUnpopulated: true,
@@ -23,6 +24,6 @@ func newJsonpbMarshaler() *jsonpbMarshaler {
 }
 
 // ContentType always returns "application/json".
-func (*jsonpbMarshaler) ContentType(_ interface{}) string {
+func (*JsonpbMarshaler) ContentType(_ interface{}) string {
 	return "application/jsonpb"
 }

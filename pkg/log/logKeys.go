@@ -23,6 +23,7 @@ var MethodKey = "method"
 var ProtocolKey = "protocol"
 var BodyKey = "body"
 var DurationMSKey = "durationMs"
+var ErrorKey = "error"
 
 func DurationToMilliseconds(duration time.Duration) float32 {
 	return float32(duration.Nanoseconds()/1000) / 1000

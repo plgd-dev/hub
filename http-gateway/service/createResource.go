@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/plgd-dev/hub/v2/http-gateway/serverMux"
 	"github.com/plgd-dev/hub/v2/http-gateway/uri"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"google.golang.org/grpc/codes"
@@ -22,7 +23,7 @@ func (requestHandler *RequestHandler) createResource(w http.ResponseWriter, r *h
 
 	newBody, err := createContentBody(r.Body)
 	if err != nil {
-		writeError(w, kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "cannot create resource('%v%v'): %v", deviceID, href, err))
+		serverMux.WriteError(w, kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "cannot create resource('%v%v'): %v", deviceID, href, err))
 		return
 	}
 

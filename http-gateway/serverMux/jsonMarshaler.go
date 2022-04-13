@@ -1,4 +1,4 @@
-package service
+package serverMux
 
 import (
 	"bytes"
@@ -12,12 +12,13 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 )
 
-type jsonMarshaler struct {
+type JsonMarshaler struct {
 	*runtime.JSONPb
 }
 
-func newJsonMarshaler() *jsonMarshaler {
-	return &jsonMarshaler{
+// NewJsonMarshaler is a marshaler tries to encode internal data to jsons and cbors string as json object
+func NewJsonMarshaler() *JsonMarshaler {
+	return &JsonMarshaler{
 		JSONPb: &runtime.JSONPb{
 			MarshalOptions: protojson.MarshalOptions{
 				EmitUnpopulated: true,
@@ -30,7 +31,7 @@ func newJsonMarshaler() *jsonMarshaler {
 }
 
 // ContentType always returns "application/json".
-func (*jsonMarshaler) ContentType(_ interface{}) string {
+func (*JsonMarshaler) ContentType(_ interface{}) string {
 	return "application/json"
 }
 
@@ -100,7 +101,7 @@ func modify(v interface{}) (interface{}, bool) {
 }
 
 // Marshal marshals "v" into JSON.
-func (j *jsonMarshaler) Marshal(v interface{}) ([]byte, error) {
+func (j *JsonMarshaler) Marshal(v interface{}) ([]byte, error) {
 	data, err := j.JSONPb.Marshal(v)
 	if err != nil {
 		return data, err

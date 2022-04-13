@@ -62,7 +62,7 @@ func (s *Service) parseTokenMD(ctx context.Context) (owner, subject string, err 
 		return "", "", status.Errorf(codes.InvalidArgument, "%v", fmt.Errorf("claim '%v' was not found", s.ownerClaim))
 	}
 	subject = claims.Subject()
-	if owner == "" {
+	if subject == "" {
 		return "", "", status.Errorf(codes.InvalidArgument, "%v", fmt.Errorf("claim '%v' was not found", "sub"))
 	}
 	return

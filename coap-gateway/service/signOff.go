@@ -8,6 +8,7 @@ import (
 	"github.com/plgd-dev/go-coap/v2/message"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/mux"
+	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
 	"github.com/plgd-dev/hub/v2/coap-gateway/coapconv"
 	"github.com/plgd-dev/hub/v2/identity-store/pb"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
@@ -82,46 +83,36 @@ func (s signOffData) validateSignOffData() error {
 	return nil
 }
 
+const errFmtSignOff = "cannot handle sign off: %w"
+
 // Sign-off
 // https://github.com/openconnectivityfoundation/security/blob/master/swagger2.0/oic.sec.account.swagger.json
-func signOffHandler(req *mux.Message, client *Client) {
-	logErrorAndCloseClient := func(err error, code coapCodes.Code) {
-		client.logAndWriteErrorResponse(req, fmt.Errorf("cannot handle sign off: %w", err), code, req.Token)
-		if err := client.Close(); err != nil {
-			client.Errorf("sign off error: %w", err)
-		}
-	}
-
+func signOffHandler(req *mux.Message, client *Client) (*pool.Message, error) {
 	ctx, cancel := context.WithTimeout(client.server.ctx, client.server.config.APIs.COAP.KeepAlive.Timeout)
 	defer cancel()
 
 	signOffData, err := getSignOffDataFromQuery(req)
 	if err != nil {
-		logErrorAndCloseClient(err, coapCodes.BadOption)
-		return
+		return nil, statusErrorf(coapCodes.BadOption, errFmtSignOff, err)
 	}
 
 	signOffData = signOffData.updateSignOffDataFromAuthContext(client)
 	if err = signOffData.validateSignOffData(); err != nil {
-		logErrorAndCloseClient(err, coapCodes.BadRequest)
-		return
+		return nil, statusErrorf(coapCodes.BadRequest, errFmtSignOff, err)
 	}
 
 	jwtClaims, err := client.ValidateToken(req.Context, signOffData.accessToken)
 	if err != nil {
-		logErrorAndCloseClient(err, coapCodes.Unauthorized)
-		return
+		return nil, statusErrorf(coapCodes.Unauthorized, errFmtSignOff, err)
 	}
 
 	err = client.server.VerifyDeviceID(client.tlsDeviceID, jwtClaims)
 	if err != nil {
-		logErrorAndCloseClient(err, coapCodes.Unauthorized)
-		return
+		return nil, statusErrorf(coapCodes.Unauthorized, errFmtSignOff, err)
 	}
 
 	if err := jwtClaims.ValidateOwnerClaim(client.server.config.APIs.COAP.Authorization.OwnerClaim, signOffData.userID); err != nil {
-		logErrorAndCloseClient(err, coapCodes.Unauthorized)
-		return
+		return nil, statusErrorf(coapCodes.Unauthorized, errFmtSignOff, err)
 	}
 
 	deviceID := client.ResolveDeviceID(jwtClaims, signOffData.deviceID)
@@ -132,8 +123,7 @@ func signOffHandler(req *mux.Message, client *Client) {
 		DeviceIds: deviceIds,
 	})
 	if err != nil {
-		logErrorAndCloseClient(err, coapconv.GrpcErr2CoapCode(err, coapconv.Delete))
-		return
+		return nil, statusErrorf(coapconv.GrpcErr2CoapCode(err, coapconv.Delete), errFmtSignOff, err)
 	}
 	if len(respRA.GetDeviceIds()) != 1 {
 		client.Errorf("sign off error: failed to remove documents for device('%v') from eventstore", deviceID)
@@ -144,14 +134,12 @@ func signOffHandler(req *mux.Message, client *Client) {
 		DeviceIds: deviceIds,
 	})
 	if err != nil {
-		logErrorAndCloseClient(err, coapconv.GrpcErr2CoapCode(err, coapconv.Delete))
-		return
+		return nil, statusErrorf(coapconv.GrpcErr2CoapCode(err, coapconv.Delete), errFmtSignOff, err)
 	}
 	if len(respIS.GetDeviceIds()) != 1 {
-		logErrorAndCloseClient(fmt.Errorf("cannot remove device %v from user", deviceID), coapCodes.InternalServerError)
-		return
+		return nil, statusErrorf(coapCodes.InternalServerError, errFmtSignOff, fmt.Errorf("cannot remove device %v from user", deviceID))
 	}
 
 	client.CleanUp(true)
-	client.sendResponse(req, coapCodes.Deleted, req.Token, message.TextPlain, nil)
+	return client.createResponse(coapCodes.Deleted, req.Token, message.TextPlain, nil), nil
 }

@@ -20,7 +20,6 @@ import (
 	idEvents "github.com/plgd-dev/hub/v2/identity-store/events"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
-	"github.com/plgd-dev/hub/v2/pkg/security/jwt"
 	pkgJwt "github.com/plgd-dev/hub/v2/pkg/security/jwt"
 	"github.com/plgd-dev/hub/v2/pkg/sync/task/future"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
@@ -34,7 +33,7 @@ type authorizationContext struct {
 	AccessToken string
 	UserID      string
 	Expire      time.Time
-	JWTClaims   jwt.Claims
+	JWTClaims   pkgJwt.Claims
 }
 
 func (a *authorizationContext) GetUserID() string {
@@ -58,11 +57,11 @@ func (a *authorizationContext) GetAccessToken() string {
 	return ""
 }
 
-func (a *authorizationContext) GetJWTClaims() jwt.Claims {
+func (a *authorizationContext) GetJWTClaims() pkgJwt.Claims {
 	if a != nil {
 		return a.JWTClaims
 	}
-	return make(jwt.Claims)
+	return make(pkgJwt.Claims)
 }
 
 func (a *authorizationContext) IsValid() error {
@@ -134,6 +133,12 @@ func (client *Client) getClientExpiration(validJWTUntil time.Time) time.Time {
 	return validJWTUntil
 }
 
+func (client *Client) WriteMessage(msg *pool.Message) {
+	if err := client.coapConn.WriteMessage(msg); err != nil {
+		client.Errorf("cannot write message: %w", err)
+	}
+}
+
 func (client *Client) Get(ctx context.Context, path string, opts ...message.Option) (*pool.Message, error) {
 	req, err := tcp.NewGetRequest(ctx, client.server.messagePool, path, opts...)
 	if err != nil {
@@ -154,7 +159,7 @@ func (client *Client) Observe(ctx context.Context, path string, observeFunc func
 		return obs, err
 	}
 	logger = logger.With(log.StartTimeKey, t, log.DurationMSKey, log.DurationToMilliseconds(time.Since(t)))
-	logger = client.logWithRequestResponse(logger, req, nil)
+	logger = client.loggerWithRequestResponse(logger, req, nil)
 	if err != nil {
 		_ = logger.LogAndReturnError(fmt.Errorf("create observation to the device fails with error: %w", err))
 	} else if WantToLog(codes.Content, logger) {
@@ -175,7 +180,7 @@ func (client *Client) Do(req *pool.Message, correlationID string) (*pool.Message
 		return resp, err
 	}
 	logger = logger.With(log.StartTimeKey, t, log.DurationMSKey, log.DurationToMilliseconds(time.Since(t)))
-	logger = client.logWithRequestResponse(logger, req, resp)
+	logger = client.loggerWithRequestResponse(logger, req, resp)
 	if correlationID != "" {
 		logger = logger.With(log.CorrelationIDKey, correlationID)
 	}
@@ -245,9 +250,7 @@ func (client *Client) onGetResourceContent(ctx context.Context, deviceID, href s
 		if err2 != nil {
 			// cloud is unsynchronized against device. To recover cloud state, client need to reconnect to cloud.
 			client.Errorf("%w", cannotGetResourceContentError(deviceID, href, err2))
-			if err3 := client.Close(); err3 != nil {
-				client.Errorf("failed to close client connection on get resource /%v%v: %w", deviceID, href, err3)
-			}
+			client.Close()
 		}
 		if notification.Code() == codes.NotFound {
 			client.unpublishResourceLinks(client.getUserAuthorizedContext(ctx), []string{href}, nil)
@@ -278,9 +281,7 @@ func (client *Client) onObserveResource(ctx context.Context, deviceID, href stri
 		if err2 != nil {
 			// cloud is unsynchronized against device. To recover cloud state, client need to reconnect to cloud.
 			client.Errorf("%w", cannotObserResourceError(err2))
-			if err3 := client.Close(); err3 != nil {
-				client.Errorf("failed to close client connection on resource /%v%v observation: %w", deviceID, href, err3)
-			}
+			client.Close()
 		}
 		if notification.Code() == codes.NotFound {
 			client.unpublishResourceLinks(client.getUserAuthorizedContext(notification.Context()), []string{href}, nil)
@@ -294,12 +295,11 @@ func (client *Client) onObserveResource(ctx context.Context, deviceID, href stri
 }
 
 // Close closes coap connection
-func (client *Client) Close() error {
+func (client *Client) Close() {
 	err := client.coapConn.Close()
 	if err != nil {
-		return fmt.Errorf("cannot close client: %w", err)
+		client.Errorf("cannot close client: %w", err)
 	}
-	return nil
 }
 
 func (client *Client) cancelResourceSubscriptions(wantWait bool) {
@@ -340,7 +340,10 @@ func (client *Client) CleanUp(resetAuthContext bool) *authorizationContext {
 // OnClose action when coap connection was closed.
 func (client *Client) OnClose() {
 	authCtx, _ := client.GetAuthorizationContext()
-	client.Debugf("close device connection")
+	if authCtx.GetDeviceID() != "" {
+		// don't log health check connection
+		client.Debugf("close device connection")
+	}
 	oldAuthCtx := client.CleanUp(false)
 
 	if oldAuthCtx.GetDeviceID() != "" {
@@ -432,9 +435,7 @@ func (client *Client) UpdateResource(ctx context.Context, event *events.Resource
 	authCtx, err := client.GetAuthorizationContext()
 	if err != nil {
 		err := fmt.Errorf("cannot update resource /%v%v: %w", event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), err)
-		if err2 := client.Close(); err2 != nil {
-			client.Errorf("failed to close client connection on update resource /%v%v: %w", event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), err2)
-		}
+		client.Close()
 		return err
 	}
 	sendConfirmCtx := authCtx.ToContext(ctx)
@@ -498,9 +499,7 @@ func (client *Client) RetrieveResource(ctx context.Context, event *events.Resour
 	authCtx, err := client.GetAuthorizationContext()
 	if err != nil {
 		err := fmt.Errorf("cannot retrieve resource /%v%v: %w", event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), err)
-		if err2 := client.Close(); err2 != nil {
-			client.Errorf("failed to close client connection on retrieve resource /%v%v: %w", event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), err2)
-		}
+		client.Close()
 		return err
 	}
 	sendConfirmCtx := authCtx.ToContext(ctx)
@@ -565,9 +564,7 @@ func (client *Client) DeleteResource(ctx context.Context, event *events.Resource
 	authCtx, err := client.GetAuthorizationContext()
 	if err != nil {
 		err := fmt.Errorf("cannot delete resource /%v%v: %w", event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), err)
-		if err2 := client.Close(); err2 != nil {
-			client.Errorf("failed to close client connection on delete resource /%v%v: %w", event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), err2)
-		}
+		client.Close()
 		return err
 	}
 	sendConfirmCtx := authCtx.ToContext(ctx)
@@ -681,9 +678,7 @@ func (client *Client) CreateResource(ctx context.Context, event *events.Resource
 	authCtx, err := client.GetAuthorizationContext()
 	if err != nil {
 		err := fmt.Errorf("cannot create resource /%v%v: %w", event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), err)
-		if err2 := client.Close(); err2 != nil {
-			client.Errorf("failed to close client connection on create resource /%v%v: %w", event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), err2)
-		}
+		client.Close()
 		return err
 	}
 	sendConfirmCtx := authCtx.ToContext(ctx)
@@ -733,9 +728,7 @@ func (client *Client) OnDeviceSubscriberReconnectError(err error) {
 	auth, _ := client.GetAuthorizationContext()
 	deviceID := auth.GetDeviceID()
 	client.Errorf("cannot reconnect device %v subscriber to resource directory or eventbus - closing the device connection: %w", deviceID, err)
-	if err := client.Close(); err != nil {
-		client.Errorf("failed to close device %v connection : %w", deviceID, err)
-	}
+	client.Close()
 	logCloseDeviceSubscriberError := func(err error) {
 		client.Errorf("failed to close device %v subscription: %w", auth.GetDeviceID(), err)
 	}
@@ -760,9 +753,7 @@ func (client *Client) UpdateDeviceMetadata(ctx context.Context, event *events.De
 	authCtx, err := client.GetAuthorizationContext()
 	if err != nil {
 		err := fmt.Errorf("cannot update device('%v') metadata: %w", event.GetDeviceId(), err)
-		if err2 := client.Close(); err2 != nil {
-			client.Errorf("failed to close client connection on update device('%v') metadata: %w", event.GetDeviceId(), err2)
-		}
+		client.Close()
 		return err
 	}
 	if event.GetShadowSynchronization() == commands.ShadowSynchronization_UNSET {

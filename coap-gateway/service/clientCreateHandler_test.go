@@ -83,7 +83,7 @@ func TestClientCreateHandler(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ctx, cancel := context.WithTimeout(context.Background(), TestExchangeTimeout*3600)
+			ctx, cancel := context.WithTimeout(context.Background(), TestExchangeTimeout)
 			defer cancel()
 			var body io.ReadSeeker
 			if len(tt.args.payload) > 0 {

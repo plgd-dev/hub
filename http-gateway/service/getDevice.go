@@ -10,6 +10,7 @@ import (
 	"github.com/google/go-querystring/query"
 	"github.com/gorilla/mux"
 	jsoniter "github.com/json-iterator/go"
+	"github.com/plgd-dev/hub/v2/http-gateway/serverMux"
 	"github.com/plgd-dev/hub/v2/http-gateway/uri"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"google.golang.org/grpc/codes"
@@ -77,7 +78,7 @@ func (requestHandler *RequestHandler) getDevice(w http.ResponseWriter, r *http.R
 	}
 	v, err := query.Values(opt)
 	if err != nil {
-		writeError(w, kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "cannot get device('%v'): %v", deviceID, err))
+		serverMux.WriteError(w, kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "cannot get device('%v'): %v", deviceID, err))
 		return
 	}
 	r.URL.Path = uri.Devices
@@ -86,6 +87,6 @@ func (requestHandler *RequestHandler) getDevice(w http.ResponseWriter, r *http.R
 	requestHandler.mux.ServeHTTP(rec, r)
 
 	toSimpleResponse(w, rec, func(w http.ResponseWriter, err error) {
-		writeError(w, kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "cannot get device('%v'): %v", deviceID, err))
+		serverMux.WriteError(w, kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "cannot get device('%v'): %v", deviceID, err))
 	}, streamResponseKey)
 }

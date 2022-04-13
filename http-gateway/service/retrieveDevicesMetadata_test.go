@@ -129,7 +129,7 @@ func TestRequestHandlerGetDevicesMetadata(t *testing.T) {
 			var values []*events.DeviceMetadataUpdated
 			for {
 				var value events.DeviceMetadataUpdated
-				err = Unmarshal(resp.StatusCode, resp.Body, &value)
+				err = httpgwTest.Unmarshal(resp.StatusCode, resp.Body, &value)
 				if err == io.EOF {
 					break
 				}

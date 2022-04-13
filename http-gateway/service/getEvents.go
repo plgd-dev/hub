@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/go-querystring/query"
 	"github.com/gorilla/mux"
+	"github.com/plgd-dev/hub/v2/http-gateway/serverMux"
 	"github.com/plgd-dev/hub/v2/http-gateway/uri"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"google.golang.org/grpc/codes"
@@ -19,7 +20,7 @@ func (requestHandler *RequestHandler) getEvents(w http.ResponseWriter, r *http.R
 	if t != "" {
 		timestamp, err = strconv.ParseInt(t, 10, 64)
 		if err != nil {
-			writeError(w, status.Errorf(codes.InvalidArgument, "failed to parse timestamp %v: %v", t, err))
+			serverMux.WriteError(w, status.Errorf(codes.InvalidArgument, "failed to parse timestamp %v: %v", t, err))
 			return
 		}
 	}
@@ -46,7 +47,7 @@ func (requestHandler *RequestHandler) getEvents(w http.ResponseWriter, r *http.R
 	}
 	q, err := query.Values(opt)
 	if err != nil {
-		writeError(w,
+		serverMux.WriteError(w,
 			status.Errorf(codes.InvalidArgument,
 				"cannot get events (deviceId: %v, resourceId: %v, timestamp: %v): %v",
 				deviceID, resourceID, timestamp, err,

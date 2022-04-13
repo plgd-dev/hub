@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/mux"
 	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
@@ -124,7 +123,7 @@ type logCoapMessage struct {
 	coapgwMessage.JsonCoapMessage
 }
 
-func (client *Client) logWithRequestResponse(logger log.Logger, req *pool.Message, resp *pool.Message) log.Logger {
+func (client *Client) loggerWithRequestResponse(logger log.Logger, req *pool.Message, resp *pool.Message) log.Logger {
 	if req != nil {
 		startTime, ok := req.Context().Value(&log.StartTimeKey).(time.Time)
 		if ok {
@@ -147,6 +146,30 @@ func (client *Client) logWithRequestResponse(logger log.Logger, req *pool.Messag
 	return logger.With(log.ProtocolKey, "COAP")
 }
 
+func (client *Client) logRequestResponse(req *mux.Message, resp *pool.Message, err error) {
+	logger := client.getLogger()
+	if resp != nil && !WantToLog(resp.Code(), logger) {
+		return
+	}
+	var rq *pool.Message
+	if req != nil {
+		tmp, err := client.server.messagePool.ConvertFrom(req.Message)
+		if err == nil {
+			rq = tmp
+		}
+	}
+	logger = client.loggerWithRequestResponse(client.getLogger(), rq, resp)
+	if err != nil {
+		logger = logger.With(log.ErrorKey, err.Error())
+	}
+	if resp != nil {
+		msg := fmt.Sprintf("finished unary call from the device with code %v", resp.Code())
+		DefaultCodeToLevel(resp.Code(), logger)(msg)
+		return
+	}
+	logger.Debug("finished unary call from the device")
+}
+
 func (client *Client) msgToLogCoapMessage(req *pool.Message, logger log.Logger, withToken bool) logCoapMessage {
 	rq := coapgwMessage.ToJson(req, client.server.config.Log.DumpBody, withToken)
 	var sub string
@@ -166,43 +189,6 @@ func (client *Client) msgToLogCoapMessage(req *pool.Message, logger log.Logger, 
 		dumpReq.Code = ""
 	}
 	return dumpReq
-}
-
-func (client *Client) ErrorfRequest(req *mux.Message, fmt string, args ...interface{}) {
-	logger := client.getLogger()
-	var rq *pool.Message
-	if req != nil {
-		tmp, err := client.server.messagePool.ConvertFrom(req.Message)
-		if err == nil {
-			rq = tmp
-		}
-	}
-	logger = client.logWithRequestResponse(logger, rq, nil)
-	logger.Errorf(fmt, args...)
-}
-
-func (client *Client) logClientRequest(req *mux.Message, resp *pool.Message) {
-	logger := client.getLogger()
-	if resp != nil && !WantToLog(resp.Code(), logger) {
-		return
-	}
-	var rq *pool.Message
-	if req != nil {
-		tmp, err := client.server.messagePool.ConvertFrom(req.Message)
-		if err == nil {
-			rq = tmp
-		}
-	}
-	logger = client.logWithRequestResponse(logger, rq, resp)
-	if resp != nil {
-		msg := fmt.Sprintf("finished unary call from the device with code %v", resp.Code())
-		if rq != nil && rq.HasOption(message.Observe) {
-			msg = fmt.Sprintf("finished observe call from the device with code %v", resp.Code())
-		}
-		DefaultCodeToLevel(resp.Code(), logger)(msg)
-		return
-	}
-	logger.Debug("finished unary call from the device")
 }
 
 func (client *Client) logNotification(logMsg, path string, notification *pool.Message) {

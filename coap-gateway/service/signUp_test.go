@@ -8,7 +8,6 @@ import (
 	coapgwTest "github.com/plgd-dev/hub/v2/coap-gateway/test"
 	"github.com/plgd-dev/hub/v2/coap-gateway/uri"
 	"github.com/plgd-dev/hub/v2/pkg/security/oauth2/oauth"
-	"github.com/plgd-dev/hub/v2/test/config"
 	testCfg "github.com/plgd-dev/hub/v2/test/config"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	"github.com/stretchr/testify/require"
@@ -30,7 +29,7 @@ func TestSignUpPostHandler(t *testing.T) {
 	tbl := []testEl{
 		{"BadRequest (invalid)", input{coapCodes.POST, `{}`, nil}, output{coapCodes.BadRequest, `invalid device id`, nil}, true},
 		{"BadRequest (invalid access token)", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "accesstoken": 123}`, nil}, output{coapCodes.BadRequest, `cannot handle sign up: cbor: cannot unmarshal positive`, nil}, true},
-		{"Changed", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "accesstoken":"` + codeEl + `", "authprovider": "` + config.DEVICE_PROVIDER + `"}`, nil}, output{coapCodes.Changed, TestCoapSignUpResponse{RefreshToken: AuthorizationRefreshToken, UserID: "1"}, nil}, false},
+		{"Changed", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "accesstoken":"` + codeEl + `", "authprovider": "` + testCfg.DEVICE_PROVIDER + `"}`, nil}, output{coapCodes.Changed, TestCoapSignUpResponse{RefreshToken: AuthorizationRefreshToken, UserID: "1"}, nil}, false},
 	}
 
 	for _, test := range tbl {
@@ -73,7 +72,7 @@ func TestSignUpPostHandlerWithRetry(t *testing.T) {
 
 	testSignUp := testEl{
 		name: "Retry",
-		in:   input{coapCodes.POST, `{"di": "` + CertIdentity + `", "accesstoken":"` + codeEl + `", "authprovider": "` + config.DEVICE_PROVIDER + `"}`, nil},
+		in:   input{coapCodes.POST, `{"di": "` + CertIdentity + `", "accesstoken":"` + codeEl + `", "authprovider": "` + testCfg.DEVICE_PROVIDER + `"}`, nil},
 		out:  output{coapCodes.Changed, TestCoapSignUpResponseRetry{UserID: "1"}, nil},
 	}
 
@@ -96,7 +95,7 @@ func TestSignUpClientCredentialPostHandler(t *testing.T) {
 	tbl := []testEl{
 		{"BadRequest (invalid)", input{coapCodes.POST, `{}`, nil}, output{coapCodes.BadRequest, `invalid device id`, nil}, true},
 		{"BadRequest (invalid access token)", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "accesstoken": 123}`, nil}, output{coapCodes.BadRequest, `cannot handle sign up: cbor: cannot unmarshal positive`, nil}, true},
-		{"Changed", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "accesstoken":"` + codeEl + `", "authprovider": "` + config.DEVICE_PROVIDER + `"}`, nil}, output{coapCodes.Changed, TestCoapSignUpResponseRetry{UserID: "1"}, nil}, false},
+		{"Changed", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "accesstoken":"` + codeEl + `", "authprovider": "` + testCfg.DEVICE_PROVIDER + `"}`, nil}, output{coapCodes.Changed, TestCoapSignUpResponseRetry{UserID: "1"}, nil}, false},
 	}
 
 	for _, test := range tbl {

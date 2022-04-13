@@ -34,9 +34,9 @@ func TestSignInPostHandler(t *testing.T) {
 
 	tbl := []testEl{
 		{"BadRequest (invalid request)", input{coapCodes.POST, `{"login": true}`, nil}, output{coapCodes.BadRequest, `invalid device id`, nil}, true},
-		{"BadRequest (invalid userID)", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "uid": "0", "accesstoken":"%%ACCESS_TOKEN%%", "login": true }`, nil}, output{coapCodes.InternalServerError, `doesn't match userID`, nil}, true},
+		{"Unauthorized (invalid userID)", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "uid": "0", "accesstoken":"%%ACCESS_TOKEN%%", "login": true }`, nil}, output{coapCodes.Unauthorized, `doesn't match userID`, nil}, true},
 		{"BadRequest (missing access token)", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "uid": "0", "login": true }`, nil}, output{coapCodes.BadRequest, `invalid access token`, nil}, true},
-		{"BadRequest (invalid access token)", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "accesstoken": 123, "login": true}`, nil}, output{coapCodes.BadRequest, `cannot handle sign in: cbor: cannot unmarshal positive integer`, nil}, true},
+		{"BadRequest (invalid access token)", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "accesstoken": 123, "login": true}`, nil}, output{coapCodes.BadRequest, `cannot handle sign in: cannot decode body: cbor`, nil}, true},
 		{"Changed1", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "uid":"%%USER_ID%%", "accesstoken":"%%ACCESS_TOKEN%%", "login": true }`, nil}, output{coapCodes.Changed, TestCoapSignInResponse{}, nil}, false},
 	}
 

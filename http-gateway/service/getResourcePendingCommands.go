@@ -7,6 +7,7 @@ import (
 	"github.com/google/go-querystring/query"
 	"github.com/gorilla/mux"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
+	"github.com/plgd-dev/hub/v2/http-gateway/serverMux"
 	"github.com/plgd-dev/hub/v2/http-gateway/uri"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 )
@@ -25,7 +26,7 @@ func (requestHandler *RequestHandler) getResourcePendingCommands(w http.Response
 	}
 	q, err := query.Values(opt)
 	if err != nil {
-		writeError(w, fmt.Errorf("cannot get resource('%v') pending commands: %w", resourceID, err))
+		serverMux.WriteError(w, fmt.Errorf("cannot get resource('%v') pending commands: %w", resourceID, err))
 		return
 	}
 	for key, values := range r.URL.Query() {

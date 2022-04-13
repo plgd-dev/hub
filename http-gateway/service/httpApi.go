@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
 	"strings"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/client"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
+	"github.com/plgd-dev/hub/v2/http-gateway/serverMux"
 	"github.com/plgd-dev/hub/v2/http-gateway/uri"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	kitHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
@@ -33,55 +33,8 @@ func NewRequestHandler(config *Config, client *client.Client) *RequestHandler {
 	return &RequestHandler{
 		client: client,
 		config: config,
-		mux: runtime.NewServeMux(
-			runtime.WithErrorHandler(errorHandler),
-			runtime.WithMarshalerOption(uri.ApplicationProtoJsonContentType, newJsonpbMarshaler()),
-			runtime.WithMarshalerOption(runtime.MIMEWildcard, newJsonMarshaler()),
-		),
+		mux:    serverMux.New(),
 	}
-}
-
-func makeQueryCaseInsensitive(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		u, err := url.ParseRequestURI(r.RequestURI)
-		if err != nil {
-			log.Errorf("cannot make query case insensitive: %v", err)
-			next.ServeHTTP(w, r)
-			return
-		}
-		queries := u.Query()
-		newQueries := make(url.Values)
-		for key, val := range queries {
-			newKey, ok := uri.QueryCaseInsensitive[strings.ToLower(key)]
-			if ok {
-				newQueries[newKey] = val
-			} else {
-				newQueries[key] = val
-			}
-		}
-		r.URL.RawQuery = newQueries.Encode()
-		r.RequestURI = u.String()
-		next.ServeHTTP(w, r)
-	})
-}
-
-func trailSlashSuffix(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		u, err := url.ParseRequestURI(r.RequestURI)
-		if err != nil {
-			log.Errorf("cannot trail slash suffix: %v", err)
-			next.ServeHTTP(w, r)
-			return
-		}
-		l := len(u.Path)
-		u.Path = strings.TrimRight(u.Path, "/")
-		if l > 0 && len(u.Path) == 0 {
-			u.Path = "/"
-		}
-		r.RequestURI = u.String()
-		r.URL.Path = u.Path
-		next.ServeHTTP(w, r)
-	})
 }
 
 func splitURIPath(requestURI, prefix string) []string {
@@ -163,13 +116,7 @@ func resourceEventsMatcher(r *http.Request, rm *router.RouteMatch) bool {
 
 // NewHTTP returns HTTP server
 func NewHTTP(requestHandler *RequestHandler, authInterceptor kitHttp.Interceptor) (*http.Server, error) {
-	r0 := router.NewRouter()
-	r0.Use(kitHttp.CreateLoggingMiddleware())
-	r0.Use(kitHttp.CreateAuthMiddleware(authInterceptor, func(ctx context.Context, w http.ResponseWriter, r *http.Request, err error) {
-		writeError(w, fmt.Errorf("cannot access to %v: %w", r.RequestURI, err))
-	}))
-	r0.Use(makeQueryCaseInsensitive)
-	r0.Use(trailSlashSuffix)
+	r0 := serverMux.NewRouter(uri.QueryCaseInsensitive, authInterceptor)
 	r := router.NewRouter()
 	r0.PathPrefix("/").Handler(r)
 

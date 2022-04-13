@@ -138,7 +138,7 @@ func TestRequestHandlerDeleteResource(t *testing.T) {
 			assert.Equal(t, tt.wantHTTPCode, resp.StatusCode)
 
 			var got pb.DeleteResourceResponse
-			err = Unmarshal(resp.StatusCode, resp.Body, &got)
+			err = httpgwTest.Unmarshal(resp.StatusCode, resp.Body, &got)
 			if tt.wantErr {
 				require.Error(t, err)
 				assert.Equal(t, tt.wantErrCode.String(), exCodes.Code(status.Convert(err).Code()).String())
