@@ -296,6 +296,8 @@ resourcedirectory:
     labels: {}
     # -- Annotations for resource-directory service
     annotations: {}
+    # -- Custom resource directory service ports. In case it's not defined, default definition is used
+    ports:
   # -- RBAC configuration
   rbac:
     # Create RBAC config
@@ -349,6 +351,8 @@ resourcedirectory:
     mountPath: /config
   # -- Service and POD port
   port: 9100
+  # -- Custom resource directory container ports definition. In case it's not defined, default definition is used
+  customPodPorts: {}
   # -- Log section
   log:
     # -- Logging enabled from level 
@@ -501,6 +505,8 @@ resourceaggregate:
     labels: {}
     # -- Annotations for resource-aggregate service
     annotations: {}
+    # -- Custom resource aggregate service ports. In case it's not defined, default definition is used
+    ports:
   # -- RBAC configuration
   rbac:
     # -- Create RBAC config
@@ -554,6 +560,8 @@ resourceaggregate:
     mountPath: /config
   # -- Service and POD port
   port: 9100
+  # -- Custom resource aggregate container ports definition. In case it's not defined, default definition is used
+  customPodPorts: {}
   log:
     # -- Logging enabled from level 
     level: info
@@ -862,6 +870,8 @@ identitystore:
     labels: {}
     # -- Service annotations
     annotations: {}
+    # -- Custom identity-store service ports definition. In case it's not defined, default definition is used
+    ports: {}
   # -- RBAC configuration
   rbac:
     # -- Enable RBAC setup
@@ -908,6 +918,8 @@ identitystore:
   extraVolumeMounts: {}
   # -- Service and POD port
   port: 9100
+  # -- Custom identity-store container ports definition. In case it's not defined, default definition is used
+  customPodPorts: { }
   # -- yaml configuration
   config:
     # -- File name
@@ -1013,6 +1025,8 @@ httpgateway:
     labels: {}
     # -- Annotations for http-gateway service
     annotations: {}
+    # -- Custom http-gateway service ports definition. In case it's not defined, default definition is used
+    ports: {}
   # -- RBAC configuration
   rbac:
     # -- Enable RBAC setup
@@ -1065,6 +1079,8 @@ httpgateway:
     api:
       # -- Enable ingress
       enabled: true
+      # -- Override name of host/tls secret. If not specified, it will be generated
+      secretName:
       # -- Pre defined map of Ingress annotation
       annotations:
         nginx.org/grpc-services: "{{ include \"plgd-hub.httpgateway.fullname\" . }}"
@@ -1081,6 +1097,8 @@ httpgateway:
     ui:
       # -- Enable ingress
       enabled: true
+      # -- Override name of host/tls secret. If not specified, it will be generated
+      secretName:
       # -- Pre defined map of Ingress annotation
       annotations:
         nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
@@ -1101,6 +1119,8 @@ httpgateway:
     mountPath: /config
   # -- Port for service and POD
   port: 9100
+  # -- Custom http-gateway container ports definition. In case it's not defined, default definition is used
+  customPodPorts: {}
   log:
     # -- Logging enabled from level 
     level: info
@@ -1198,6 +1218,8 @@ grpcgateway:
     labels: {}
     # -- Annotations for grpc-gateway service
     annotations: {}
+    # -- Custom grpc-gateway service ports. In case it's not defined, default definition is used
+    ports:
   # -- RBAC configuration
   rbac:
     # Enable RBAC
@@ -1246,6 +1268,8 @@ grpcgateway:
   ingress:
     # -- Enable ingress
     enabled: true
+    # -- Override name of host/tls secret. If not specified, it will be generated
+    secretName:
     # -- Ingress annotations
     annotations:
       nginx.org/grpc-services: "{{ include \"plgd-hub.grpcgateway.fullname\" . }}"
@@ -1254,6 +1278,7 @@ grpcgateway:
       nginx.ingress.kubernetes.io/enable-cors: "true"
     # -- Custom map of Ingress annotation
     customAnnotations: {}
+
     paths:
       - /grpcgateway.pb.GrpcGateway
   # -- Service yaml configuration section
@@ -1266,6 +1291,8 @@ grpcgateway:
     mountPath: /config
   # -- Service and POD port
   port: 9100
+  # -- Custom grpc-gateway container ports definition. In case it's not defined, default definition is used
+  customPodPorts: {}
   log:
     # -- Logging enabled from level 
     level: info
@@ -1284,6 +1311,7 @@ grpcgateway:
     grpc:
       address:
       ownerCacheExpiration: 1m
+      subscriptionBufferSize: 1000
       enforcementPolicy:
         minTime: 5s
         permitWithoutStream: true
@@ -1395,6 +1423,8 @@ certificateauthority:
     labels: {}
     # -- Annotations for certificate-authority service
     annotations: {}
+    # -- Custom certificate-authority service ports. In case it's not defined, default definition is used
+    ports:
   # -- RBAC configuration
   rbac:
     # -- Enable RBAC
@@ -1443,6 +1473,8 @@ certificateauthority:
   ingress:
     # -- Enable ingress
     enabled: true
+    # -- Override name of host/tls secret. If not specified, it will be generated
+    secretName:
     # -- Pre defined map of Ingress annotation
     annotations:
       nginx.org/grpc-services: "{{ include \"plgd-hub.certificateauthority.fullname\" . }}"
@@ -1479,6 +1511,8 @@ certificateauthority:
       mountPath: /certs/coap-device-ca
   # -- Service and POD port
   port: 9100
+  # -- Custom certificate-authority container ports definition. In case it's not defined, default definition is used
+  customPodPorts: {}
   log:
     # -- Logging enabled from level 
     level: info
@@ -1573,6 +1607,8 @@ mockoauthserver:
     labels: {}
     # -- Annotations for mock-oauth-server service
     annotations: {}
+    # -- Custom mock auth server service ports definition. In case it's not defined, default definition is used
+    ports: {}
   securityContext: {}
   # -- Image pull secrets
   imagePullSecrets: {}
@@ -1664,6 +1700,8 @@ mockoauthserver:
     mountPath: /config
   # -- Port for service and POD
   port: 9100
+  # -- Custom mock auth server container ports definition. In case it's not defined, default definition is used
+  customPodPorts: {}
   log:
     # -- Logging enabled from level 
     level: info

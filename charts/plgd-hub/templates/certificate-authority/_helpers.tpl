@@ -46,8 +46,12 @@
 {{- end }}
 
 {{- define "plgd-hub.certificateauthority.domainCertName" -}}
-  {{- $fullName := include "plgd-hub.certificateauthority.fullname" . -}}
-  {{- printf "%s-domain-crt" $fullName -}}
+    {{- if .Values.certificateauthority.ingress.secretName }}
+        {{- printf "%s" .Values.certificateauthority.ingress.secretName -}}
+    {{- else }}
+        {{- $fullName := include "plgd-hub.certificateauthority.fullname" . -}}
+        {{- printf "%s-domain-crt" $fullName -}}
+    {{- end }}
 {{- end }}
 
 {{- define "plgd-hub.certificateauthority.selectorLabels" -}}

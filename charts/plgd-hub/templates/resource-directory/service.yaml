@@ -16,10 +16,14 @@ metadata:
 spec:
   type: {{ .Values.resourcedirectory.service.type | default "ClusterIP" }}
   ports:
+    {{- if .Values.resourcedirectory.service.ports }}
+    {{- toYaml .Values.resourcedirectory.service.ports | nindent 4 }}
+    {{- else }}
     - port: {{ .Values.resourcedirectory.port }}
       targetPort: grpc
       protocol: TCP
       name: grpc
+    {{- end }}
   selector:
   {{- include "plgd-hub.resourcedirectory.selectorLabels" . | nindent 4 }}
 {{- end }}

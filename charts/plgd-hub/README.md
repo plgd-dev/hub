@@ -64,6 +64,7 @@ global:
 | certificateauthority.config.fileName | string | `"service.yaml"` | File name for config file |
 | certificateauthority.config.mountPath | string | `"/config"` | Mount path |
 | certificateauthority.config.volume | string | `"config"` | Config file volume name |
+| certificateauthority.customPodPorts | object | `{}` | Custom certificate-authority container ports definition. In case it's not defined, default definition is used |
 | certificateauthority.deploymentAnnotations | object | `{}` | Additional annotations for certificate-authority deployment |
 | certificateauthority.deploymentLabels | object | `{}` | Additional labels for certificate-authority deployment |
 | certificateauthority.domain | string | `nil` | External domain for certificate-authority. Default: api.{{ global.domain }} |
@@ -81,6 +82,7 @@ global:
 | certificateauthority.ingress.customAnnotations | object | `{}` | Custom map of Ingress annotation |
 | certificateauthority.ingress.enabled | bool | `true` | Enable ingress |
 | certificateauthority.ingress.paths | list | `["/certificateauthority.pb.CertificateAuthority"]` | Paths |
+| certificateauthority.ingress.secretName | string | `nil` | Override name of host/tls secret. If not specified, it will be generated |
 | certificateauthority.initContainersTpl | string | `nil` | Init containers definition |
 | certificateauthority.livenessProbe | string | `nil` | Liveness probe. certificate-authority doesn't have any default liveness probe |
 | certificateauthority.log.encoderConfig.timeEncoder | string | `"rfc3339nano"` | Time format for logs. The supported values are: "rfc3339nano", "rfc3339" |
@@ -105,6 +107,7 @@ global:
 | certificateauthority.securityContext | string | `nil` | Security context for pod |
 | certificateauthority.service.annotations | object | `{}` | Annotations for certificate-authority service |
 | certificateauthority.service.labels | object | `{}` | Labels for certificate-authority service |
+| certificateauthority.service.ports | string | `nil` | Custom certificate-authority service ports. In case it's not defined, default definition is used |
 | certificateauthority.service.type | string | `"ClusterIP"` | Service type |
 | certificateauthority.signer | object | `{"certFile":null,"expiresIn":"87600h","hubId":null,"keyFile":null,"validFrom":"now-1h"}` | For complete certificate-authority service configuration see [plgd/certificate-authority](https://github.com/plgd-dev/hub/tree/main/certificate-authority) |
 | certificateauthority.tolerations | string | `nil` | Toleration definition |
@@ -224,12 +227,13 @@ global:
 | global.hubId | string | `nil` | hubId. Used by coap-gateway. It must be unique |
 | global.ownerClaim | string | `"sub"` | OAuth owner Claim |
 | grpcgateway.affinity | object | `{}` | Affinity definition |
-| grpcgateway.apis | object | `{"grpc":{"address":null,"authorization":{"audience":"","authority":"","http":{"idleConnTimeout":"30s","maxConnsPerHost":32,"maxIdleConns":16,"maxIdleConnsPerHost":16,"timeout":"10s","tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":true}}},"enforcementPolicy":{"minTime":"5s","permitWithoutStream":true},"keepAlive":{"maxConnectionAge":"0s","maxConnectionAgeGrace":"0s","maxConnectionIdle":"0s","time":"2h","timeout":"20s"},"ownerCacheExpiration":"1m","tls":{"caPool":null,"certFile":null,"clientCertificateRequired":false,"keyFile":null}}}` | For complete grpc-gateway service configuration see [plgd/grpc-gateway](https://github.com/plgd-dev/hub/tree/main/grpc-gateway) |
+| grpcgateway.apis | object | `{"grpc":{"address":null,"authorization":{"audience":"","authority":"","http":{"idleConnTimeout":"30s","maxConnsPerHost":32,"maxIdleConns":16,"maxIdleConnsPerHost":16,"timeout":"10s","tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":true}}},"enforcementPolicy":{"minTime":"5s","permitWithoutStream":true},"keepAlive":{"maxConnectionAge":"0s","maxConnectionAgeGrace":"0s","maxConnectionIdle":"0s","time":"2h","timeout":"20s"},"ownerCacheExpiration":"1m","subscriptionBufferSize":1000,"tls":{"caPool":null,"certFile":null,"clientCertificateRequired":false,"keyFile":null}}}` | For complete grpc-gateway service configuration see [plgd/grpc-gateway](https://github.com/plgd-dev/hub/tree/main/grpc-gateway) |
 | grpcgateway.clients | object | `{"eventBus":{"goPoolSize":16,"nats":{"pendingLimits":{"bytesLimit":"67108864","msgLimit":524288},"tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false},"url":null}},"identityStore":{"grpc":{"address":"","keepAlive":{"permitWithoutStream":true,"time":"10s","timeout":"20s"},"tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false}}},"resourceAggregate":{"grpc":{"address":"","keepAlive":{"permitWithoutStream":true,"time":"10s","timeout":"20s"},"tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false}}},"resourceDirectory":{"grpc":{"address":"","keepAlive":{"permitWithoutStream":true,"time":"10s","timeout":"20s"},"tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false}}}}` | For complete grpc-gateway service configuration see [plgd/grpc-gateway](https://github.com/plgd-dev/hub/tree/main/grpc-gateway) |
 | grpcgateway.config | object | `{"fileName":"service.yaml","mountPath":"/config","volume":"config"}` | Service yaml configuration section |
 | grpcgateway.config.fileName | string | `"service.yaml"` | Service configuration file name |
 | grpcgateway.config.mountPath | string | `"/config"` | Service configuration mount path |
 | grpcgateway.config.volume | string | `"config"` | Service configuration volume name |
+| grpcgateway.customPodPorts | object | `{}` | Custom grpc-gateway container ports definition. In case it's not defined, default definition is used |
 | grpcgateway.deploymentAnnotations | object | `{}` | Additional annotations for grpc-gateway deployment |
 | grpcgateway.deploymentLabels | object | `{}` | Additional labels for grpc-gateway deployment |
 | grpcgateway.domain | string | `nil` | External domain for grpc-gateway. Default: api.{{ global.domain }} |
@@ -247,6 +251,7 @@ global:
 | grpcgateway.ingress.customAnnotations | object | `{}` | Custom map of Ingress annotation |
 | grpcgateway.ingress.enabled | bool | `true` | Enable ingress |
 | grpcgateway.ingress.paths[0] | string | `"/grpcgateway.pb.GrpcGateway"` |  |
+| grpcgateway.ingress.secretName | string | `nil` | Override name of host/tls secret. If not specified, it will be generated |
 | grpcgateway.initContainersTpl | object | `{}` | Init containers definition |
 | grpcgateway.livenessProbe | object | `{}` | Liveness probe. grpc-gateway doesn't have any default liveness probe |
 | grpcgateway.log.encoderConfig.timeEncoder | string | `"rfc3339nano"` | Time format for logs. The supported values are: "rfc3339nano", "rfc3339" |
@@ -270,6 +275,7 @@ global:
 | grpcgateway.securityContext | object | `{}` | Security context for pod |
 | grpcgateway.service.annotations | object | `{}` | Annotations for grpc-gateway service |
 | grpcgateway.service.labels | object | `{}` | Labels for grpc-gateway service |
+| grpcgateway.service.ports | string | `nil` | Custom grpc-gateway service ports. In case it's not defined, default definition is used |
 | grpcgateway.service.type | string | `"ClusterIP"` | Service type |
 | grpcgateway.tolerations | object | `{}` | Toleration definition |
 | httpgateway.affinity | object | `{}` | Affinity definition |
@@ -280,6 +286,7 @@ global:
 | httpgateway.config.fileName | string | `"service.yaml"` | Name of configuration file |
 | httpgateway.config.mountPath | string | `"/config"` | Mount path |
 | httpgateway.config.volume | string | `"config"` | Volume for configuration file |
+| httpgateway.customPodPorts | object | `{}` | Custom http-gateway container ports definition. In case it's not defined, default definition is used |
 | httpgateway.deploymentAnnotations | object | `{}` | Additional annotations for http-gateway deployment |
 | httpgateway.deploymentLabels | object | `{}` | Additional labels for http-gateway deployment |
 | httpgateway.enabled | bool | `true` | Enable http-gateway service |
@@ -292,16 +299,18 @@ global:
 | httpgateway.image.repository | string | `"plgd-dev/hub/http-gateway"` | Image repository |
 | httpgateway.image.tag | string | `nil` | Image tag. |
 | httpgateway.imagePullSecrets | object | `{}` | Image pull secrets |
-| httpgateway.ingress.api | object | `{"annotations":{"ingress.kubernetes.io/force-ssl-redirect":"true","nginx.ingress.kubernetes.io/backend-protocol":"HTTPS","nginx.ingress.kubernetes.io/enable-cors":"true","nginx.org/grpc-services":"{{ include \"plgd-hub.httpgateway.fullname\" . }}"},"customAnnotations":{},"enabled":true,"paths":["/api","/.well-known/hub-configuration"]}` | API ingress |
+| httpgateway.ingress.api | object | `{"annotations":{"ingress.kubernetes.io/force-ssl-redirect":"true","nginx.ingress.kubernetes.io/backend-protocol":"HTTPS","nginx.ingress.kubernetes.io/enable-cors":"true","nginx.org/grpc-services":"{{ include \"plgd-hub.httpgateway.fullname\" . }}"},"customAnnotations":{},"enabled":true,"paths":["/api","/.well-known/hub-configuration"],"secretName":null}` | API ingress |
 | httpgateway.ingress.api.annotations | object | `{"ingress.kubernetes.io/force-ssl-redirect":"true","nginx.ingress.kubernetes.io/backend-protocol":"HTTPS","nginx.ingress.kubernetes.io/enable-cors":"true","nginx.org/grpc-services":"{{ include \"plgd-hub.httpgateway.fullname\" . }}"}` | Pre defined map of Ingress annotation |
 | httpgateway.ingress.api.customAnnotations | object | `{}` | Custom map of Ingress annotation |
 | httpgateway.ingress.api.enabled | bool | `true` | Enable ingress |
 | httpgateway.ingress.api.paths | list | `["/api","/.well-known/hub-configuration"]` | Ingress path |
-| httpgateway.ingress.ui | object | `{"annotations":{"ingress.kubernetes.io/force-ssl-redirect":"true","nginx.ingress.kubernetes.io/backend-protocol":"HTTPS","nginx.ingress.kubernetes.io/enable-cors":"true"},"customAnnotations":{},"enabled":true,"paths":["/"]}` | UI ingress |
+| httpgateway.ingress.api.secretName | string | `nil` | Override name of host/tls secret. If not specified, it will be generated |
+| httpgateway.ingress.ui | object | `{"annotations":{"ingress.kubernetes.io/force-ssl-redirect":"true","nginx.ingress.kubernetes.io/backend-protocol":"HTTPS","nginx.ingress.kubernetes.io/enable-cors":"true"},"customAnnotations":{},"enabled":true,"paths":["/"],"secretName":null}` | UI ingress |
 | httpgateway.ingress.ui.annotations | object | `{"ingress.kubernetes.io/force-ssl-redirect":"true","nginx.ingress.kubernetes.io/backend-protocol":"HTTPS","nginx.ingress.kubernetes.io/enable-cors":"true"}` | Pre defined map of Ingress annotation |
 | httpgateway.ingress.ui.customAnnotations | object | `{}` | Custom map of Ingress annotation |
 | httpgateway.ingress.ui.enabled | bool | `true` | Enable ingress |
 | httpgateway.ingress.ui.paths | list | `["/"]` | Ingress path |
+| httpgateway.ingress.ui.secretName | string | `nil` | Override name of host/tls secret. If not specified, it will be generated |
 | httpgateway.initContainersTpl | object | `{}` | Init containers definition. Render as template |
 | httpgateway.livenessProbe | object | `{}` | Liveness probe. http-gateway doesn't have any default liveness probe |
 | httpgateway.log.encoderConfig.timeEncoder | string | `"rfc3339nano"` | Time format for logs. The supported values are: "rfc3339nano", "rfc3339" |
@@ -326,6 +335,7 @@ global:
 | httpgateway.securityContext | object | `{}` | Security context for pod |
 | httpgateway.service.annotations | object | `{}` | Annotations for http-gateway service |
 | httpgateway.service.labels | object | `{}` | Labels for http-gateway service |
+| httpgateway.service.ports | object | `{}` | Custom http-gateway service ports definition. In case it's not defined, default definition is used |
 | httpgateway.service.type | string | `"ClusterIP"` |  |
 | httpgateway.tolerations | object | `{}` | Toleration definition |
 | httpgateway.ui | object | `{"directory":"/usr/local/var/www","enabled":true,"webConfiguration":{"authority":"","deviceOAuthClient":{"audience":null,"clientID":null,"providerName":null,"scopes":[]},"httpGatewayAddress":"","webOAuthClient":{"audience":"","clientID":"","scopes":[]}}}` | For complete http-gateway service configuration see [plgd/http-gateway](https://github.com/plgd-dev/hub/tree/main/http-gateway) |
@@ -337,6 +347,7 @@ global:
 | identitystore.config.fileName | string | `"service.yaml"` | File name |
 | identitystore.config.mountPath | string | `"/config"` | Service configuration mount path |
 | identitystore.config.volume | string | `"config"` | Volume name |
+| identitystore.customPodPorts | object | `{}` | Custom identity-store container ports definition. In case it's not defined, default definition is used |
 | identitystore.deploymentAnnotations | object | `{}` | Additional annotations for identity deployment |
 | identitystore.deploymentLabels | object | `{}` | Additional labels for identity deployment |
 | identitystore.enabled | bool | `true` | Enable identity service |
@@ -372,9 +383,10 @@ global:
 | identitystore.resources | object | `{}` | Resources limit |
 | identitystore.restartPolicy | string | `"Always"` | Restart policy for pod |
 | identitystore.securityContext | object | `{}` | Security context for pod |
-| identitystore.service | object | `{"annotations":{},"labels":{},"type":"ClusterIP"}` | Service configuration |
+| identitystore.service | object | `{"annotations":{},"labels":{},"ports":{},"type":"ClusterIP"}` | Service configuration |
 | identitystore.service.annotations | object | `{}` | Service annotations |
 | identitystore.service.labels | object | `{}` | Service labels |
+| identitystore.service.ports | object | `{}` | Custom identity-store service ports definition. In case it's not defined, default definition is used |
 | identitystore.service.type | string | `"ClusterIP"` | Service type |
 | identitystore.tolerations | object | `{}` | Toleration definition |
 | mockoauthserver.affinity | object | `{}` | Affinity definition |
@@ -383,6 +395,7 @@ global:
 | mockoauthserver.config.fileName | string | `"service.yaml"` | Name of configuration file |
 | mockoauthserver.config.mountPath | string | `"/config"` | Mount path |
 | mockoauthserver.config.volume | string | `"config"` | Volume for configuration file |
+| mockoauthserver.customPodPorts | object | `{}` | Custom mock auth server container ports definition. In case it's not defined, default definition is used |
 | mockoauthserver.deploymentAnnotations | object | `{}` | Additional annotations for mock-oauth-server deployment |
 | mockoauthserver.deploymentLabels | object | `{}` | Additional labels for mock-oauth-server deployment |
 | mockoauthserver.domain | string | `nil` | Domain for   apiDomain: Default: auth.{{ global.domain }} |
@@ -437,6 +450,7 @@ global:
 | mockoauthserver.securityContext | object | `{}` |  |
 | mockoauthserver.service.annotations | object | `{}` | Annotations for mock-oauth-server service |
 | mockoauthserver.service.labels | object | `{}` | Labels for mock-oauth-server service |
+| mockoauthserver.service.ports | object | `{}` | Custom mock auth server service ports definition. In case it's not defined, default definition is used |
 | mockoauthserver.service.type | string | `"ClusterIP"` |  |
 | mockoauthserver.tolerations | object | `{}` | Toleration definition |
 | mongodb | object | `{"arbiter":{"enabled":false},"architecture":"replicaset","auth":{"enabled":false},"customLivenessProbe":{"exec":{"command":["mongo","--disableImplicitSessions","--tls","--tlsCertificateKeyFile=/certs/cert.pem","--tlsCAFile=/certs/ca.pem","--eval","db.adminCommand('ping')"]},"failureThreshold":6,"initialDelaySeconds":30,"periodSeconds":10,"successThreshold":1,"timeoutSeconds":5},"customReadinessProbe":{"exec":{"command":["bash","-ec","TLS_OPTIONS='--tls --tlsCertificateKeyFile=/certs/cert.pem --tlsCAFile=/certs/ca.pem'\nmongo --disableImplicitSessions $TLS_OPTIONS --eval 'db.hello().isWritablePrimary || db.hello().secondary' | grep -q 'true'\n"]},"failureThreshold":6,"initialDelaySeconds":5,"periodSeconds":10,"successThreshold":1,"timeoutSeconds":5},"enabled":true,"extraEnvVars":[{"name":"MONGODB_EXTRA_FLAGS","value":"--tlsMode=requireTLS --tlsCertificateKeyFile=/certs/cert.pem --tlsCAFile=/certs/ca.pem"},{"name":"MONGODB_CLIENT_EXTRA_FLAGS","value":"--tls --tlsCertificateKeyFile=/certs/cert.pem --tlsCAFile=/certs/ca.pem"}],"extraVolumeMounts":[{"mountPath":"/certs","name":"mongodb-crt"}],"extraVolumes":[{"emptyDir":{},"name":"mongodb-crt"},{"name":"mongodb-cm-crt","secret":{"secretName":"mongodb-cm-crt"}}],"fullnameOverride":"mongodb","image":{"debug":true,"net":{"port":27017}},"initContainers":[{"command":["sh","-c","/bin/bash <<'EOF'\ncat /tmp/certs/tls.crt >> /certs/cert.pem\ncat /tmp/certs/tls.key >> /certs/cert.pem\ncp /tmp/certs/ca.crt  /certs/ca.pem\nEOF\n"],"image":"docker.io/bitnami/nginx:1.20.2-debian-10-r63","imagePullPolicy":"IfNotPresent","name":"convert-cm-crt","volumeMounts":[{"mountPath":"/certs","name":"mongodb-crt"},{"mountPath":"/tmp/certs","name":"mongodb-cm-crt"}]}],"livenessProbe":{"enabled":false},"persistence":{"enabled":true},"readinessProbe":{"enabled":false},"replicaCount":3,"replicaSetName":"rs0","tls":{"enabled":false}}` | External mongodb-replica dependency setup |
@@ -472,6 +486,7 @@ global:
 | resourceaggregate.config.fileName | string | `"service.yaml"` | Service configuration file name |
 | resourceaggregate.config.mountPath | string | `"/config"` | Configuration mount path |
 | resourceaggregate.config.volume | string | `"config"` | Volume name |
+| resourceaggregate.customPodPorts | object | `{}` | Custom resource aggregate container ports definition. In case it's not defined, default definition is used |
 | resourceaggregate.deploymentAnnotations | object | `{}` | Additional annotations for resource-aggregate deployment |
 | resourceaggregate.deploymentLabels | object | `{}` | Additional labels for resource-aggregate deployment |
 | resourceaggregate.enabled | bool | `true` | Enable resource-aggregate service |
@@ -508,6 +523,7 @@ global:
 | resourceaggregate.securityContext | object | `{}` | Security context for pod |
 | resourceaggregate.service.annotations | object | `{}` | Annotations for resource-aggregate service |
 | resourceaggregate.service.labels | object | `{}` | Labels for resource-aggregate service |
+| resourceaggregate.service.ports | string | `nil` | Custom resource aggregate service ports. In case it's not defined, default definition is used |
 | resourceaggregate.service.type | string | `"ClusterIP"` | Service type |
 | resourceaggregate.tolerations | object | `{}` | Toleration definition |
 | resourcedirectory.affinity | object | `{}` | Affinity definition |
@@ -517,6 +533,7 @@ global:
 | resourcedirectory.config.fileName | string | `"service.yaml"` | Service configuration file |
 | resourcedirectory.config.mountPath | string | `"/config"` | Configuration mount path |
 | resourcedirectory.config.volume | string | `"config"` | Service configuration volume name |
+| resourcedirectory.customPodPorts | object | `{}` | Custom resource directory container ports definition. In case it's not defined, default definition is used |
 | resourcedirectory.deploymentAnnotations | object | `{}` | Additional annotations for resource-directory deployment |
 | resourcedirectory.deploymentLabels | object | `{}` | Additional labels for resource-directory deployment |
 | resourcedirectory.enabled | bool | `true` | Enable resource-directory service |
@@ -554,6 +571,7 @@ global:
 | resourcedirectory.securityContext | object | `{}` | Security context for pod |
 | resourcedirectory.service.annotations | object | `{}` | Annotations for resource-directory service |
 | resourcedirectory.service.labels | object | `{}` | Labels for resource-directory service |
+| resourcedirectory.service.ports | string | `nil` | Custom resource directory service ports. In case it's not defined, default definition is used |
 | resourcedirectory.service.type | string | `"ClusterIP"` | resource-directory service type |
 | resourcedirectory.tolerations | object | `{}` | Toleration definition |
 

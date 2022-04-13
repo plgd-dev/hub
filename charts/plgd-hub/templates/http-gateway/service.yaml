@@ -16,10 +16,14 @@ metadata:
 spec:
   type: {{ .Values.httpgateway.service.type | default "ClusterIP" }}
   ports:
+    {{- if .Values.httpgateway.service.ports }}
+    {{- toYaml .Values.httpgateway.service.ports | nindent 4 }}
+    {{- else }}
     - port: {{ .Values.httpgateway.port }}
       targetPort: http
       protocol: TCP
       name: http
+    {{- end }}
   selector:
   {{- include "plgd-hub.httpgateway.selectorLabels" . | nindent 4 }}
 {{- end }}

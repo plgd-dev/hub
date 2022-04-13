@@ -62,9 +62,13 @@ spec:
             - "--config"
             - {{  printf "%s/%s" .Values.grpcgateway.config.mountPath .Values.grpcgateway.config.fileName | quote }}
           ports:
+            {{- if .Values.grpcgateway.customPodPorts }}
+            {{- toYaml .Values.grpcgateway.customPodPorts | nindent 12 }}
+            {{- else }}
             - name: grpc
               containerPort: {{ .Values.grpcgateway.port }}
               protocol: TCP
+            {{- end }}
           {{- with .Values.grpcgateway.livenessProbe }}
           livenessProbe:
           {{- toYaml . | nindent 12 }}

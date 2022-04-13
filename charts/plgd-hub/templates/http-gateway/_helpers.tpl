@@ -38,9 +38,22 @@
 {{- end }}
 
 
-{{- define "plgd-hub.httpgateway.domainCertName" -}}
+{{- define "plgd-hub.httpgateway.uiDomainSecretName" -}}
+  {{- if .Values.httpgateway.ingress.ui.secretName }}
+  {{- printf "%s" .Values.httpgateway.ingress.ui.secretName -}}
+  {{- else -}}
   {{- $fullName := include "plgd-hub.httpgateway.fullname" . -}}
-  {{- printf "%s-domain-crt" $fullName -}}
+  {{- printf "%s-ui-domain-crt" $fullName -}}
+  {{- end }}
+{{- end }}
+
+{{- define "plgd-hub.httpgateway.apiDomainSecretName" -}}
+  {{- if .Values.httpgateway.ingress.api.secretName }}
+  {{- printf "%s" .Values.httpgateway.ingress.api.secretName -}}
+  {{- else -}}
+  {{- $fullName := include "plgd-hub.httpgateway.fullname" . -}}
+  {{- printf "%s-api-domain-crt" $fullName -}}
+  {{- end }}
 {{- end }}
 
 {{- define "plgd-hub.httpgateway.apiDomain" -}}

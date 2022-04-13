@@ -1,6 +1,5 @@
 {{- if .Values.certificateauthority.enabled }}
 {{- $fullname := include "plgd-hub.certificateauthority.fullname" . }}
-{{- $domainCrt := include "plgd-hub.certificateauthority.domainCertName" . }}
 {{- $port := .Values.certificateauthority.port }}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
