@@ -24,6 +24,7 @@ var ProtocolKey = "protocol"
 var BodyKey = "body"
 var DurationMSKey = "durationMs"
 var ErrorKey = "error"
+var X509Key = "x509"
 
 func DurationToMilliseconds(duration time.Duration) float32 {
 	return float32(duration.Nanoseconds()/1000) / 1000

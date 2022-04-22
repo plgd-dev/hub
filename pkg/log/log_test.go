@@ -1,10 +1,13 @@
 package log
 
 import (
+	"crypto/x509"
+	"crypto/x509/pkix"
 	"fmt"
 	"testing"
 	"time"
 
+	pkgX509 "github.com/plgd-dev/hub/v2/pkg/security/x509"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -16,6 +19,13 @@ func TestNew(t *testing.T) {
 
 	assert.NotPanics(t, func() { Debug(testStr) })
 	assert.NotPanics(t, func() { Info(testStr) })
+	assert.NotPanics(t, func() {
+		Info(testStr, pkgX509.NewError([][]*x509.Certificate{{&x509.Certificate{
+			Subject: pkix.Name{
+				CommonName: "certName",
+			},
+		}}}, fmt.Errorf(" x509")))
+	})
 	assert.NotPanics(t, func() { Warn(testStr) })
 	assert.NotPanics(t, func() { Error(testStr) })
 
