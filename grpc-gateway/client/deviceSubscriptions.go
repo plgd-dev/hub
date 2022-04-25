@@ -5,14 +5,13 @@ import (
 	"fmt"
 	"io"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	"github.com/google/uuid"
-	kitSync "github.com/plgd-dev/kit/v2/sync"
-
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
+	kitSync "github.com/plgd-dev/kit/v2/sync"
+	"go.uber.org/atomic"
 )
 
 // ResourcePublishedHandler handler of events.
@@ -127,7 +126,7 @@ type DeviceSubscriptions struct {
 	errFunc             func(err error)
 
 	wait     func()
-	canceled uint32
+	canceled atomic.Bool
 }
 
 type deviceSub struct {
@@ -329,9 +328,9 @@ func (s *DeviceSubscriptions) Subscribe(ctx context.Context, deviceID string, cl
 		return nil, err
 	}
 
-	var cancelled uint32
+	var canceled atomic.Bool
 	cancel := func(ctx context.Context) error {
-		if !atomic.CompareAndSwapUint32(&cancelled, 0, 1) {
+		if !canceled.CAS(false, true) {
 			return nil
 		}
 		cancelToken, err := uuid.NewRandom()
@@ -364,7 +363,7 @@ func (s *DeviceSubscriptions) closeSend() error {
 
 // Cancel cancels subscription.
 func (s *DeviceSubscriptions) Cancel() (wait func(), err error) {
-	if !atomic.CompareAndSwapUint32(&s.canceled, 0, 1) {
+	if !s.canceled.CAS(false, true) {
 		return s.wait, nil
 	}
 
@@ -408,12 +407,12 @@ func (s *DeviceSubscriptions) handleRecvError(err error) {
 	if _, err2 := s.Cancel(); err2 != nil {
 		s.errFunc(fmt.Errorf("failed to cancel device subscription: %w", err2))
 	}
-	cancelled := false
+	canceled := false
 	if err == io.EOF {
-		cancelled = atomic.LoadUint32(&s.canceled) > 0
+		canceled = s.canceled.Load()
 	}
 	for _, h := range s.handlers.PullOutAll() {
-		if cancelled {
+		if canceled {
 			h.(SubscriptionHandler).OnClose()
 		} else {
 			h.(SubscriptionHandler).Error(err)
