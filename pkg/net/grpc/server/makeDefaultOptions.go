@@ -211,7 +211,6 @@ func MakeDefaultOptions(auth kitNetGrpc.AuthInterceptors, logger log.Logger) ([]
 			unaryInterceptors...,
 		)),
 	}, nil
-
 }
 
 type cfg struct {

@@ -4,9 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/plgd-dev/hub/v2/pkg/log"
-
 	"github.com/golang-jwt/jwt/v4"
+	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/pkg/net/http/client"
 	jwtValidator "github.com/plgd-dev/hub/v2/pkg/security/jwt"
 	"github.com/plgd-dev/hub/v2/pkg/security/openid"

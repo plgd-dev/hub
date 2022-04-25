@@ -2,9 +2,8 @@ package jwt
 
 import (
 	"fmt"
-	"time"
-
 	gstrings "strings"
+	"time"
 
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/plgd-dev/hub/v2/pkg/strings"

@@ -46,7 +46,6 @@ func (c *CertManager) Close() {
 
 // New creates a new certificate manager which watches for certs in a filesystem
 func New(config Config, logger log.Logger) (*CertManager, error) {
-
 	c, err := general.New(general.Config{
 		CAPool:                    config.CAPool,
 		KeyFile:                   config.KeyFile,

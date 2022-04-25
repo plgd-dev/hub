@@ -102,7 +102,6 @@ func (s *SubscriptionManager) HandleResourceChangedEvent(ctx context.Context, su
 	}
 
 	return nil
-
 }
 
 func (s *SubscriptionManager) HandleResourceEvent(ctx context.Context, header events.EventHeader, body []byte, subscriptionData subscriptionData) error {

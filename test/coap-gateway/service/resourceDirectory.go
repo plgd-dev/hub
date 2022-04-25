@@ -122,7 +122,6 @@ func resourceDirectoryUnpublishHandler(req *mux.Message, client *Client) {
 	if err != nil {
 		client.logAndWriteErrorResponse(err, coapCodes.InternalServerError, req.Token)
 		return
-
 	}
 
 	client.sendResponse(coapCodes.Deleted, req.Token, message.TextPlain, nil)

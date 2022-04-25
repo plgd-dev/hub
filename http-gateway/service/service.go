@@ -6,11 +6,10 @@ import (
 	"net/http"
 	"regexp"
 
-	"github.com/plgd-dev/hub/v2/pkg/log"
-
 	"github.com/plgd-dev/hub/v2/grpc-gateway/client"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	"github.com/plgd-dev/hub/v2/http-gateway/uri"
+	"github.com/plgd-dev/hub/v2/pkg/log"
 	grpcClient "github.com/plgd-dev/hub/v2/pkg/net/grpc/client"
 	kitNetHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
 	"github.com/plgd-dev/hub/v2/pkg/net/listener"

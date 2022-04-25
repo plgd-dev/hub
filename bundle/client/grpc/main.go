@@ -11,9 +11,6 @@ import (
 	"net/http"
 	"os"
 
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
-
 	"github.com/plgd-dev/go-coap/v2/message"
 	pbGW "github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	"github.com/plgd-dev/hub/v2/pkg/log"
@@ -23,6 +20,8 @@ import (
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	"github.com/plgd-dev/hub/v2/test/oauth-server/uri"
 	"github.com/plgd-dev/kit/v2/codec/json"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 )
 
 func getServiceToken(authAddr string, tls *tls.Config) (string, error) {

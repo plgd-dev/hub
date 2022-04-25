@@ -52,7 +52,6 @@ func (am *aggregateModel) Update(e EventUnmarshaler) (ignore bool, reload bool) 
 		return false, true
 	}
 	return false, false
-
 }
 
 func (am *aggregateModel) Handle(ctx context.Context, iter Iter) error {

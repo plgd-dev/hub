@@ -146,7 +146,6 @@ func (rh *RequestHandler) RetrieveResources(ctx context.Context, resourceIdFilte
 			Representation: rep,
 			Status:         content.GetData().GetStatus(),
 		})
-
 	}
 	if len(allResources) == 0 {
 		return nil, status.Errorf(codes.NotFound, "cannot retrieve resources values: not found")

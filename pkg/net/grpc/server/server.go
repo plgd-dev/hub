@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/plgd-dev/hub/v2/pkg/log"
-
 	"github.com/plgd-dev/hub/v2/pkg/security/certManager/server"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"

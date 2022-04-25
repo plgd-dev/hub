@@ -34,7 +34,6 @@ func createContentBody(body io.ReadCloser) (io.ReadCloser, error) {
 	}
 
 	return ioutil.NopCloser(bytes.NewReader(reqData)), nil
-
 }
 
 func (requestHandler *RequestHandler) updateResource(w http.ResponseWriter, r *http.Request) {

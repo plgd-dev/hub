@@ -27,7 +27,6 @@ func TestRequestHandler_authorize(t *testing.T) {
 	getAuthorize(t, test.ClientTestRequiredParams, "nonce", "http://localhost:7777", "", "r:* offline_access", "", http.StatusFound, true, false)
 	getAuthorize(t, test.ClientTestC2C, "nonce", "http://localhost:7777", "", "", "", http.StatusOK, false, true)
 	getAuthorize(t, test.ClientTestC2C, "nonce", "", "", "", "", http.StatusOK, false, false)
-
 }
 
 func getAuthorize(t *testing.T, clientID, nonce, redirectURI, deviceID, scope, responseType string, statusCode int, containsErrorQueryParameter, consentScreenDisplayed bool) string {

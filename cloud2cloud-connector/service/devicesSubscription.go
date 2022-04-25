@@ -141,7 +141,6 @@ func (s *SubscriptionManager) HandleDevicesUnregistered(ctx context.Context, sub
 		if err != nil {
 			errors = append(errors, fmt.Errorf("cannot unregister device %v from resource projection: %w", device.ID, err))
 		}
-
 	}
 	if len(errors) > 0 {
 		return fmt.Errorf("%v", errors)

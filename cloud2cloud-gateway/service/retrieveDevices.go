@@ -150,7 +150,6 @@ func (rh *RequestHandler) RetrieveDevicesWithContentQuery(ctx context.Context, w
 		}
 	}
 	return statusCode, err
-
 }
 
 func (rh *RequestHandler) RetrieveDevices(w http.ResponseWriter, r *http.Request) {

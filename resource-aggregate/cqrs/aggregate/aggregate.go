@@ -138,7 +138,6 @@ func HandleRetry(ctx context.Context, retryFunc RetryFunc) error {
 		return fmt.Errorf("cannot retry: %w", err)
 	}
 	select {
-
 	case <-time.After(time.Until(when)):
 	case <-ctx.Done():
 		return fmt.Errorf("retry canceled")

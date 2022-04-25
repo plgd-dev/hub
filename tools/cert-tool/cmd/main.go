@@ -10,10 +10,9 @@ import (
 	"log"
 	"os"
 
-	"github.com/plgd-dev/kit/v2/security/generateCertificate"
-
 	flags "github.com/jessevdk/go-flags"
 	"github.com/plgd-dev/kit/v2/security"
+	"github.com/plgd-dev/kit/v2/security/generateCertificate"
 )
 
 type Options struct {

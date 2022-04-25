@@ -5,15 +5,14 @@ import (
 	"time"
 
 	"github.com/plgd-dev/device/schema/device"
-	"github.com/plgd-dev/kit/v2/strings"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
-
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/subscription"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
+	"github.com/plgd-dev/kit/v2/strings"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 func toResourceValue(resource *Resource) *pb.Resource {
