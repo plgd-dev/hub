@@ -68,11 +68,11 @@ linters:
     # - tenv             # tenv is analyzer that detects using os.Setenv instead of t.Setenv since Go1.17
     # - tparallel        # tparallel detects inappropriate usage of t.Parallel() method in your Go test codes
     - typecheck        # Like the front-end of a Go compiler, parses and type-checks Go code
-    # - unconvert        # Remove unnecessary type conversions
-    # - unparam          # Reports unused function parameters
+    - unconvert        # Remove unnecessary type conversions
+    - unparam          # Reports unused function parameters
     - unused           # Checks Go code for unused constants, variables, functions and types
     - varcheck         # Finds unused global variables and constants
-    # - wastedassign     # wastedassign finds wasted assignment statements
+    - wastedassign     # wastedassign finds wasted assignment statements
     # - whitespace       # Tool for detection of leading and trailing whitespace
   disable:
     - containedctx     # containedctx is a linter that detects struct contained context.Context field
