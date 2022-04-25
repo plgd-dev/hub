@@ -180,7 +180,6 @@ func processNextRequest(ctx context.Context, srv pb.GrpcGateway_SubscribeToEvent
 }
 
 func (r *RequestHandler) SubscribeToEvents(srv pb.GrpcGateway_SubscribeToEventsServer) (errRet error) {
-
 	var wg sync.WaitGroup
 	wg.Add(1)
 	defer wg.Wait()

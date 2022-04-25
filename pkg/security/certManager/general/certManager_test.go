@@ -91,7 +91,6 @@ func TestNew(t *testing.T) {
 	require.NotNil(t, secondCrt)
 
 	require.Equal(t, firstCrt.Certificate, secondCrt.Certificate)
-
 }
 
 func createTmpCertFiles(t *testing.T, caFile, crtFile, keyFile string) general.Config {

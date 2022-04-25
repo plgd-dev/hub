@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/plgd-dev/hub/v2/pkg/log"
-
 	"github.com/plgd-dev/hub/v2/pkg/net/grpc/server"
 	"github.com/plgd-dev/hub/v2/pkg/security/jwt/validator"
 )

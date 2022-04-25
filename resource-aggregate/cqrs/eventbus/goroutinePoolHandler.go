@@ -27,7 +27,6 @@ func NewGoroutinePoolHandler(
 	goroutinePoolGo GoroutinePoolGoFunc,
 	eventsHandler Handler,
 	errFunc ErrFunc) *GoroutinePoolHandler {
-
 	return &GoroutinePoolHandler{
 		goroutinePoolGo:          goroutinePoolGo,
 		eventsHandler:            eventsHandler,

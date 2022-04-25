@@ -9,7 +9,6 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/resource-directory/service"
 	"github.com/plgd-dev/hub/v2/test/config"
-
 	"github.com/stretchr/testify/require"
 )
 

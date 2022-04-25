@@ -6,11 +6,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-
-	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore"
 )
 
 // IsDup check it error is duplicate

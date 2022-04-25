@@ -13,13 +13,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/plgd-dev/kit/v2/codec/json"
-
 	"github.com/jtacoma/uritemplates"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/test/config"
 	"github.com/plgd-dev/hub/v2/test/oauth-server/service"
 	"github.com/plgd-dev/hub/v2/test/oauth-server/uri"
+	"github.com/plgd-dev/kit/v2/codec/json"
 	"github.com/stretchr/testify/require"
 )
 

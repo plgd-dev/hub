@@ -29,5 +29,4 @@ func (r *RequestHandler) GetDevicesMetadata(req *pb.GetDevicesMetadataRequest, s
 		}
 	}
 	return nil
-
 }

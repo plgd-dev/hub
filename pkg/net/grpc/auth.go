@@ -6,14 +6,12 @@ import (
 	"fmt"
 
 	extJwt "github.com/golang-jwt/jwt/v4"
+	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
+	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
+	"github.com/plgd-dev/hub/v2/pkg/security/jwt"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-
-	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
-	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
-
-	"github.com/plgd-dev/hub/v2/pkg/security/jwt"
 )
 
 var authorizationKey = "authorization"

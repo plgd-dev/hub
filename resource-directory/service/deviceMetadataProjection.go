@@ -72,7 +72,6 @@ func (p *deviceMetadataProjection) Handle(ctx context.Context, iter eventstore.I
 			if _, err := p.data.HandleDeviceMetadataUpdated(ctx, &e, false); err != nil {
 				continue
 			}
-
 		}
 	}
 	return nil

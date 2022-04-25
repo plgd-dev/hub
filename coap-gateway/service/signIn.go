@@ -75,7 +75,6 @@ func getSignInContent(expiresIn int64, options message.Options) (message.MediaTy
 	out, err := encode(coapResp)
 	if err != nil {
 		return 0, nil, err
-
 	}
 	return accept, out, nil
 }
@@ -300,7 +299,6 @@ func signInPostHandler(req *mux.Message, client *Client, signIn CoapSignInReq) (
 	}
 
 	return client.createResponse(coapCodes.Changed, req.Token, accept, out), nil
-
 }
 
 func updateDeviceMetadata(req *mux.Message, client *Client) error {

@@ -5,8 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"google.golang.org/grpc/status"
-
 	"github.com/panjf2000/ants/v2"
 	"github.com/plgd-dev/device/schema/device"
 	"github.com/plgd-dev/go-coap/v2/message"
@@ -25,6 +23,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 func TestDeviceDirectory_GetDevices(t *testing.T) {

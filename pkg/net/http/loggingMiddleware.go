@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net"
 	"net/http"
-	netHttp "net/http"
 	"strings"
 	"time"
 
@@ -201,7 +200,7 @@ func CreateLoggingMiddleware(opts ...LogOpt) func(next http.Handler) http.Handle
 		o(cfg)
 	}
 	return func(next http.Handler) http.Handler {
-		return netHttp.HandlerFunc(func(w netHttp.ResponseWriter, r *netHttp.Request) {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			start := time.Now()
 			bearer := r.Header.Get("Authorization")
 			sw := statusWriter{ResponseWriter: w}

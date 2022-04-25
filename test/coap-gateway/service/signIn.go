@@ -36,7 +36,6 @@ func signInPostHandler(req *mux.Message, client *Client, signIn coapgwService.Co
 	if err != nil {
 		logErrorAndCloseClient(err, coapCodes.InternalServerError)
 		return
-
 	}
 
 	client.sendResponse(coapCodes.Changed, req.Token, accept, out)

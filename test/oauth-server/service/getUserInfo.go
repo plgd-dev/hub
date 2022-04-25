@@ -2,7 +2,6 @@ package service
 
 import (
 	"net/http"
-
 	"time"
 
 	"github.com/plgd-dev/hub/v2/pkg/log"
