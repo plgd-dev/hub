@@ -97,7 +97,7 @@ func updateResource(t *testing.T, ctx context.Context, req *pb.UpdateResourceReq
 		return nil, err
 	}
 
-	rb := httpgwTest.NewRequest(http.MethodPut, uri.AliasDeviceResource, bytes.NewReader([]byte(data))).AuthToken(token).Accept(accept).ContentType(contentType)
+	rb := httpgwTest.NewRequest(http.MethodPut, uri.AliasDeviceResource, bytes.NewReader(data)).AuthToken(token).Accept(accept).ContentType(contentType)
 	rb.DeviceId(req.GetResourceId().GetDeviceId()).ResourceHref(req.GetResourceId().GetHref()).ResourceInterface(req.GetResourceInterface())
 	resp := httpgwTest.HTTPDo(t, rb.Build())
 	defer func() {

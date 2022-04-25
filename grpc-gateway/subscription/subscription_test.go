@@ -110,7 +110,7 @@ func checkAndValidateUpdate(ctx context.Context, t *testing.T, rac raservice.Res
 					ResourceChanged: pbTest.MakeResourceChanged(t, deviceID, test.TestResourceLightInstanceHref("1"), "",
 						map[string]interface{}{
 							"name":  "Light",
-							"power": uint64(value),
+							"power": value,
 							"state": false,
 						},
 					),

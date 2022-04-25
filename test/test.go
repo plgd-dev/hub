@@ -121,7 +121,7 @@ func DefaultSwitchResourceLink(deviceID, id string) schema.ResourceLink {
 		ResourceTypes: []string{types.BINARY_SWITCH},
 		Interfaces:    []string{interfaces.OC_IF_A, interfaces.OC_IF_BASELINE},
 		Policy: &schema.Policy{
-			BitMask: schema.BitMask(schema.Discoverable | schema.Observable),
+			BitMask: schema.Discoverable | schema.Observable,
 		},
 	}
 }

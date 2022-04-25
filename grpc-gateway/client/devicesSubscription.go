@@ -54,7 +54,7 @@ func NewDevicesSubscription(ctx context.Context, closeErrorHandler SubscriptionH
 	var deviceUnregisteredHandler DeviceUnregisteredHandler
 	filterEvents := make([]pb.SubscribeToEvents_CreateSubscription_Event, 0, 1)
 	if v, ok := handle.(DeviceMetadataUpdatedHandler); ok {
-		filterEvents = append(filterEvents, pb.SubscribeToEvents_CreateSubscription_Event(pb.SubscribeToEvents_CreateSubscription_DEVICE_METADATA_UPDATED))
+		filterEvents = append(filterEvents, pb.SubscribeToEvents_CreateSubscription_DEVICE_METADATA_UPDATED)
 		deviceMetadataUpdatedHandler = v
 	}
 	if v, ok := handle.(DeviceRegisteredHandler); ok {

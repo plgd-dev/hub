@@ -35,10 +35,9 @@ func (rh *RequestHandler) makeSubscription(w http.ResponseWriter, r *http.Reques
 
 	eventTypes := make([]events.EventType, 0, 10)
 	for _, r := range req.EventTypes {
-		ev := events.EventType(r)
 		for _, v := range validEventTypes {
-			if ev == v {
-				eventTypes = append(eventTypes, ev)
+			if r == v {
+				eventTypes = append(eventTypes, r)
 			}
 		}
 	}
