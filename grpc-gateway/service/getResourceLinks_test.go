@@ -3,6 +3,7 @@ package service_test
 import (
 	"context"
 	"crypto/tls"
+	"errors"
 	"io"
 	"testing"
 	"time"
@@ -134,7 +135,7 @@ func TestRequestHandlerGetResourceLinks(t *testing.T) {
 			links := make([]*events.ResourceLinksPublished, 0, 1)
 			for {
 				link, err := client.Recv()
-				if err == io.EOF {
+				if errors.Is(err, io.EOF) {
 					break
 				}
 				require.NoError(t, err)

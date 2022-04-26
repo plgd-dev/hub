@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/tls"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -158,7 +159,7 @@ func getDevices(ctx context.Context, client pbGW.GrpcGatewayClient) {
 	devices := make([]*pbGW.Device, 0, 4)
 	for {
 		resp, err := getClient.Recv()
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			break
 		}
 		if err != nil {
@@ -195,7 +196,7 @@ func getResource(ctx context.Context, client pbGW.GrpcGatewayClient, deviceID, h
 	resources := make([]*pbGW.Resource, 0, 4)
 	for {
 		resp, err := getClient.Recv()
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			break
 		}
 		if err != nil {

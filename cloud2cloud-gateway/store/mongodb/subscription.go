@@ -2,6 +2,7 @@ package mongodb
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/plgd-dev/hub/v2/cloud2cloud-connector/events"
@@ -216,7 +217,7 @@ func (s *Store) LoadSubscriptions(ctx context.Context, query store.SubscriptionQ
 			Hint: typeQueryIndex,
 		})
 	}
-	if err == mongo.ErrNilDocument {
+	if errors.Is(err, mongo.ErrNilDocument) {
 		return nil
 	}
 	if err != nil {

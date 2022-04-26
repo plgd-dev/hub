@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"sync"
@@ -408,7 +409,7 @@ func (s *DeviceSubscriptions) handleRecvError(err error) {
 		s.errFunc(fmt.Errorf("failed to cancel device subscription: %w", err2))
 	}
 	canceled := false
-	if err == io.EOF {
+	if errors.Is(err, io.EOF) {
 		canceled = s.canceled.Load()
 	}
 	for _, h := range s.handlers.PullOutAll() {

@@ -55,7 +55,7 @@ func (s *EventStore) Insert(ctx context.Context, task maintenance.Task) error {
 		&opts,
 	)
 	if err != nil {
-		if err == mongo.ErrNilDocument || IsDup(err) {
+		if errors.Is(err, mongo.ErrNilDocument) || IsDup(err) {
 			return fmt.Errorf("could not insert record with aggregate ID %v, version %d - version is outdated - %w", task.AggregateID, task.Version, err)
 		}
 		return fmt.Errorf("could not insert record with aggregate ID %v, version %d - %w", task.AggregateID, task.Version, err)
@@ -99,7 +99,7 @@ func (s *EventStore) Query(ctx context.Context, limit int, taskHandler maintenan
 	opts := options.FindOptions{}
 	opts.SetLimit(int64(limit))
 	iter, err := s.client.Database(s.DBName()).Collection(maintenanceCName).Find(ctx, bson.M{}, &opts)
-	if err == mongo.ErrNilDocument {
+	if errors.Is(err, mongo.ErrNilDocument) {
 		return nil
 	}
 	if err != nil {

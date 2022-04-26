@@ -3,6 +3,7 @@ package service_test
 import (
 	"context"
 	"crypto/tls"
+	"errors"
 	"io"
 	"testing"
 	"time"
@@ -30,7 +31,7 @@ func waitForEvents(t *testing.T, client pb.GrpcGateway_GetEventsClient) []interf
 	events := make([]interface{}, 0, 8)
 	for {
 		value, err := client.Recv()
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			break
 		}
 		require.NoError(t, err)

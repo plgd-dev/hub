@@ -2,6 +2,7 @@ package mongodb
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -16,14 +17,18 @@ import (
 func IsDup(err error) bool {
 	// Besides being handy, helps with MongoDB bugs SERVER-7164 and SERVER-11493.
 	// What follows makes me sad. Hopefully conventions will be more clear over time.
-	switch e := err.(type) {
-	case mongo.CommandError:
-		return e.Code == 11000 || e.Code == 11001 || e.Code == 12582 || e.Code == 16460 && strings.Contains(e.Message, " E11000 ")
-	case mongo.WriteError:
-		return e.Code == 11000 || e.Code == 11001 || e.Code == 12582
-	case mongo.WriteException:
+	var cErr mongo.CommandError
+	if errors.As(err, &cErr) {
+		return cErr.Code == 11000 || cErr.Code == 11001 || cErr.Code == 12582 || cErr.Code == 16460 && strings.Contains(cErr.Message, " E11000 ")
+	}
+	var wErr mongo.WriteError
+	if errors.As(err, &wErr) {
+		return wErr.Code == 11000 || wErr.Code == 11001 || wErr.Code == 12582
+	}
+	var wExp mongo.WriteException
+	if errors.As(err, &wExp) {
 		isDup := true
-		for _, werr := range e.WriteErrors {
+		for _, werr := range wExp.WriteErrors {
 			if !IsDup(werr) {
 				isDup = false
 			}
@@ -65,17 +70,18 @@ func (s *EventStore) saveEvent(ctx context.Context, col *mongo.Collection, event
 	}
 
 	res, err := col.UpdateOne(ctx, filter, update, opts)
-	switch err {
-	case nil:
+	switch {
+	case err == nil:
 		if res.ModifiedCount == 0 {
 			return eventstore.ConcurrencyException, nil
 		}
 		return eventstore.Ok, nil
-	case mongo.ErrNilDocument:
+	case errors.Is(err, mongo.ErrNilDocument):
 		return eventstore.ConcurrencyException, nil
 	default:
-		switch wErr := err.(type) {
-		case mongo.WriteException:
+		var wErr mongo.WriteException
+		switch {
+		case errors.As(err, &wErr):
 			var sizeIsExceeded bool
 			for _, e := range wErr.WriteErrors {
 				if e.Code == 10334 {

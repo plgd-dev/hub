@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"sync"
@@ -173,7 +174,7 @@ func (s *DevicesSubscription) handleCancel(cancel *pb.Event_SubscriptionCanceled
 func (s *DevicesSubscription) runRecv() {
 	for {
 		ev, err := s.client.Recv()
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			s.cancelAndHandlerError(nil)
 			s.closeErrorHandler.OnClose()
 			return

@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"time"
@@ -67,7 +68,7 @@ func (s *Sub) initDevices() ([]string, error) {
 	devices := make([]string, 0, 32)
 	for {
 		recv, err := devicesClient.Recv()
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			return devices, nil
 		}
 		if err != nil {
@@ -187,7 +188,7 @@ func (s *Sub) initResourceChanged(deviceIDs []string, validUntil *time.Time) err
 	}
 	for {
 		recv, err := resourcesClient.Recv()
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			return nil
 		}
 		if err != nil {
@@ -227,7 +228,7 @@ func (s *Sub) initDeviceMetadataUpdated(deviceIDs []string, validUntil *time.Tim
 	}
 	for {
 		recv, err := linksClient.Recv()
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			return nil
 		}
 		if err != nil {
@@ -263,7 +264,7 @@ func (s *Sub) initResourcesPublished(deviceIDs []string, validUntil *time.Time) 
 	}
 	for {
 		recv, err := linksClient.Recv()
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			return nil
 		}
 		if err != nil {
@@ -381,7 +382,7 @@ func (s *Sub) initPendingCommands(deviceIDs []string, validUntil *time.Time) err
 	}
 	for {
 		recv, err := pendingCommands.Recv()
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			return nil
 		}
 		if err != nil {

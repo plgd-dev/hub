@@ -57,7 +57,7 @@ func (s *SubscriptionData) detectDevicesState(ctx context.Context) (hasDevice, h
 	}
 	for {
 		d, err := client.Recv()
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			break
 		}
 		if status.Convert(err).Code() == codes.NotFound {
@@ -283,7 +283,7 @@ func (s *SubscriptionData) hasPublishedDevice(ctx context.Context) (bool, error)
 		return false, err
 	}
 	_, err = client.Recv()
-	if err == io.EOF || status.Convert(err).Code() == codes.NotFound {
+	if errors.Is(err, io.EOF) || status.Convert(err).Code() == codes.NotFound {
 		return false, nil
 	}
 	if err != nil {

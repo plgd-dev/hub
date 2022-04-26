@@ -3,6 +3,7 @@ package pb
 import (
 	"context"
 	"crypto/tls"
+	"errors"
 	"io"
 	"sort"
 	"testing"
@@ -172,7 +173,7 @@ func InitPendingEvents(ctx context.Context, t *testing.T) (pb.GrpcGatewayClient,
 	devicePendings := make([]DevicePendingEvent, 0, 24)
 	for {
 		p, err := client.Recv()
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			break
 		}
 		require.NoError(t, err)

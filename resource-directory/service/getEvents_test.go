@@ -3,6 +3,7 @@ package service_test
 import (
 	"context"
 	"crypto/tls"
+	"errors"
 	"io"
 	"testing"
 	"time"
@@ -93,7 +94,7 @@ func waitAndCheckEvents(t *testing.T, client pb.GrpcGateway_GetEventsClient, exp
 	getEvents := make([]*pb.Event, 0, 8)
 	for {
 		value, err := client.Recv()
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			break
 		}
 		require.NoError(t, err)

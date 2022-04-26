@@ -37,7 +37,7 @@ func (rh *RequestHandler) addLinkedCloud(w http.ResponseWriter, r *http.Request)
 	}
 	uuid, err1 := uuid.NewRandom()
 	if err1 != nil {
-		return http.StatusBadRequest, fmt.Errorf("cannot generate uuid %v", err1)
+		return http.StatusBadRequest, fmt.Errorf("cannot generate uuid: %w", err1)
 	}
 	l.ID = uuid.String()
 	l, _, err = rh.store.LoadOrCreateCloud(r.Context(), l)

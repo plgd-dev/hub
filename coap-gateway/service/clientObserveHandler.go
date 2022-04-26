@@ -3,6 +3,7 @@ package service
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"sync"
@@ -156,7 +157,7 @@ func (s *resourceSubscription) Init(ctx context.Context) error {
 	var d *events.ResourceChanged
 	for {
 		resource, err := client.Recv()
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			break
 		}
 		if err != nil {
@@ -277,7 +278,7 @@ func clientResetObservationHandler(req *mux.Message, client *Client) (*pool.Mess
 	token := req.Token.String()
 	canceled, err := client.cancelResourceSubscription(token)
 	if err != nil {
-		return nil, statusErrorf(coapCodes.BadRequest, "%w", fmt.Errorf("cannot reset resource observation: %v", err))
+		return nil, statusErrorf(coapCodes.BadRequest, "%w", fmt.Errorf("cannot reset resource observation: %w", err))
 	}
 	if !canceled {
 		return nil, statusErrorf(coapCodes.BadRequest, "%w", fmt.Errorf("cannot reset resource observation: not found"))

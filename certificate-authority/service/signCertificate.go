@@ -14,7 +14,7 @@ import (
 func (r *RequestHandler) validateRequest(ctx context.Context, csr []byte) error {
 	infoData, err := getInfoData(ctx, csr)
 	if err != nil {
-		return fmt.Errorf("cannot get info data for csr=%v: %v", string(csr), err)
+		return fmt.Errorf("cannot get info data for csr=%v: %w", string(csr), err)
 	}
 	if infoData.CertificateCommonNameID == r.Config.Signer.HubID {
 		return fmt.Errorf("csr=%v common name contains same value as hub id(%v)", string(csr), r.Config.Signer.HubID)
