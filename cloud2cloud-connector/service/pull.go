@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -51,13 +52,13 @@ func getOwnerDevices(ctx context.Context, isClient pbIS.IdentityStoreClient) (ma
 	}
 	defer func() {
 		if err := getDevicesClient.CloseSend(); err != nil {
-			log.Errorf("failed to close user devices client: %v", err)
+			log.Errorf("failed to close user devices client: %w", err)
 		}
 	}()
 	ownerDevices := make(map[string]bool)
 	for {
 		device, err := getDevicesClient.Recv()
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			break
 		}
 		if err != nil {
@@ -91,7 +92,7 @@ func Get(ctx context.Context, url string, linkedAccount store.LinkedAccount, lin
 	}
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
-			log.Errorf("failed to close response body: %v", err)
+			log.Errorf("failed to close response body: %w", err)
 		}
 	}()
 	buf, err := ioutil.ReadAll(resp.Body)
@@ -412,8 +413,8 @@ func (p *pullDevicesHandler) runDevicePulling(ctx context.Context, timeout time.
 	defer cancel()
 	err := p.pullLinkedAccountsDevices(ctx)
 	if err != nil {
-		log.Errorf("cannot pull devices: %v", err)
+		log.Errorf("cannot pull devices: %w", err)
 	}
 	<-ctx.Done()
-	return ctx.Err() != context.Canceled
+	return !errors.Is(ctx.Err(), context.Canceled)
 }

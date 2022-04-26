@@ -3,6 +3,7 @@ package service_test
 import (
 	"context"
 	"crypto/tls"
+	"errors"
 	"fmt"
 	"io"
 	"sync"
@@ -196,7 +197,7 @@ func TestRequestHandlerSubscribeToEvents(t *testing.T) {
 				var events []*pb.Event
 				for range tt.want {
 					ev, err := client.Recv()
-					if err == io.EOF {
+					if errors.Is(err, io.EOF) {
 						break
 					}
 					require.NoError(t, err)

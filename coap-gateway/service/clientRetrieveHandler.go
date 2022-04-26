@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 
@@ -78,7 +79,7 @@ func clientRetrieveFromResourceShadowHandler(ctx context.Context, client *Client
 	}()
 	for {
 		resourceValue, err := RetrieveResourcesClient.Recv()
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			break
 		}
 		if err != nil {

@@ -3,6 +3,7 @@ package service_test
 import (
 	"context"
 	"crypto/tls"
+	"errors"
 	"fmt"
 	"strings"
 	"testing"
@@ -99,7 +100,7 @@ func TestSignInDeviceSubscriptionHandler(t *testing.T) {
 	require.NoError(t, err)
 
 	<-cancelCtx.Done()
-	require.True(t, cancelCtx.Err() == context.Canceled)
+	require.True(t, errors.Is(cancelCtx.Err(), context.Canceled))
 
 	co1 := testCoapDial(t, testCfg.GW_HOST, "", true, time.Now().Add(time.Minute))
 	resp, err := doSignIn(t, CertIdentity, signUpResp, co1)

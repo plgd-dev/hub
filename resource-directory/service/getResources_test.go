@@ -3,6 +3,7 @@ package service_test
 import (
 	"context"
 	"crypto/tls"
+	"errors"
 	"io"
 	"testing"
 
@@ -85,7 +86,7 @@ func TestRequestHandler_GetResources(t *testing.T) {
 			values := make([]*pb.Resource, 0, 1)
 			for {
 				value, err := client.Recv()
-				if err == io.EOF {
+				if errors.Is(err, io.EOF) {
 					break
 				}
 				require.NoError(t, err)

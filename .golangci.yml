@@ -26,9 +26,9 @@ linters:
     - errcheck         # Errcheck is a program for checking for unchecked errors in go programs. These unchecked errors can be critical bugs in some cases
     # - errchkjson       # Checks types passed to the json encoding functions. Reports unsupported types and optionally reports occations, where the check for the returned error can be omitted.
     # - errname          # Checks that sentinel errors are prefixed with the `Err` and error types are suffixed with the `Error`.
-    # - errorlint        # errorlint is a linter for that can be used to find code that will cause problems with the error wrapping scheme introduced in Go 1.13.
+    - errorlint        # errorlint is a linter for that can be used to find code that will cause problems with the error wrapping scheme introduced in Go 1.13.
     # - exhaustive       # check exhaustiveness of enum switch statements
-    # - exportloopref    # checks for pointers to enclosing loop variables
+    - exportloopref    # checks for pointers to enclosing loop variables
     # - forbidigo        # Forbids identifiers
     # - forcetypeassert  # finds forced type assertions
     - gci              # Gci control golang package import order and make it always deterministic.

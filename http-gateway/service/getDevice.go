@@ -3,6 +3,7 @@ package service
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -22,7 +23,7 @@ func toSimpleResponse(w http.ResponseWriter, rec *httptest.ResponseRecorder, wri
 	for {
 		var v interface{}
 		err := iter.Decode(&v)
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			break
 		}
 		if err != nil {

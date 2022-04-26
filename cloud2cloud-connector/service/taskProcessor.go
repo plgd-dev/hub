@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 	"time"
@@ -133,7 +134,7 @@ func (h *TaskProcessor) readTask(ctx context.Context, subscriptionManager *Subsc
 		}
 		return true, nil
 	case <-ctx.Done():
-		if ctx.Err() == context.DeadlineExceeded {
+		if errors.Is(ctx.Err(), context.DeadlineExceeded) {
 			return true, nil
 		}
 		return false, ctx.Err()

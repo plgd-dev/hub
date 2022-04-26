@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"sync"
@@ -130,7 +131,7 @@ func (s *subscriptions) cancelSubscription(ctx context.Context, req *pb.Subscrib
 
 func processNextRequest(ctx context.Context, srv pb.GrpcGateway_SubscribeToEventsServer, subs *subscriptions, send func(e *pb.Event) error) (bool, error) {
 	req, err := srv.Recv()
-	if err == io.EOF {
+	if errors.Is(err, io.EOF) {
 		return false, nil
 	}
 	if err != nil {

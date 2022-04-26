@@ -3,6 +3,7 @@ package service_test
 import (
 	"context"
 	"crypto/tls"
+	"errors"
 	"io"
 	"net/http"
 	"testing"
@@ -31,7 +32,7 @@ func getAllEvents(t *testing.T, client pb.GrpcGatewayClient, ctx context.Context
 	require.NoError(t, err)
 	for {
 		value, err := c.Recv()
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			break
 		}
 		event := pbTest.GetWrappedEvent(value)
@@ -174,7 +175,7 @@ func TestRequestHandlerGetEvents(t *testing.T) {
 			for {
 				var value pb.GetEventsResponse
 				err = httpgwTest.Unmarshal(resp.StatusCode, resp.Body, &value)
-				if err == io.EOF {
+				if errors.Is(err, io.EOF) {
 					break
 				}
 				if tt.wantErr {

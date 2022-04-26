@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -52,7 +53,7 @@ func (rh *RequestHandler) GetDevices(ctx context.Context, deviceIdFilter []strin
 	devices := make([]Device, 0, 32)
 	for {
 		device, err := getDevicesClient.Recv()
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			break
 		}
 		if err != nil {

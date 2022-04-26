@@ -3,6 +3,7 @@ package service_test
 import (
 	"context"
 	"crypto/tls"
+	"errors"
 	"io"
 	"net/http"
 	"testing"
@@ -362,7 +363,7 @@ func TestRequestHandlerGetPendingCommands(t *testing.T) {
 			for {
 				var v pb.PendingCommand
 				err = httpgwTest.Unmarshal(resp.StatusCode, resp.Body, &v)
-				if err == io.EOF {
+				if errors.Is(err, io.EOF) {
 					break
 				}
 				require.NoError(t, err)
