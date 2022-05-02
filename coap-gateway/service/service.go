@@ -41,6 +41,7 @@ import (
 	natsClient "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/client"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/subscriber"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/utils"
+	"go.opentelemetry.io/otel/trace"
 )
 
 var authCtxKey = "AuthCtx"
@@ -109,8 +110,8 @@ func newExpirationClientCache(ctx context.Context, interval time.Duration) *cach
 	return expirationClientCache
 }
 
-func newResourceAggregateClient(config ResourceAggregateConfig, resourceSubscriber eventbus.Subscriber, logger log.Logger) (*raClient.Client, func(), error) {
-	raConn, err := grpcClient.New(config.Connection, logger)
+func newResourceAggregateClient(config ResourceAggregateConfig, resourceSubscriber eventbus.Subscriber, logger log.Logger, tracerProvider trace.TracerProvider) (*raClient.Client, func(), error) {
+	raConn, err := grpcClient.New(config.Connection, logger, tracerProvider)
 	if err != nil {
 		return nil, nil, fmt.Errorf("cannot create connection to resource-aggregate: %w", err)
 	}
@@ -126,8 +127,8 @@ func newResourceAggregateClient(config ResourceAggregateConfig, resourceSubscrib
 	return raClient, closeRaConn, nil
 }
 
-func newIdentityStoreClient(config IdentityStoreConfig, logger log.Logger) (pbIS.IdentityStoreClient, func(), error) {
-	isConn, err := grpcClient.New(config.Connection, logger)
+func newIdentityStoreClient(config IdentityStoreConfig, logger log.Logger, tracerProvider trace.TracerProvider) (pbIS.IdentityStoreClient, func(), error) {
+	isConn, err := grpcClient.New(config.Connection, logger, tracerProvider)
 	if err != nil {
 		return nil, nil, fmt.Errorf("cannot create connection to identity-store: %w", err)
 	}
@@ -143,8 +144,8 @@ func newIdentityStoreClient(config IdentityStoreConfig, logger log.Logger) (pbIS
 	return isClient, closeIsConn, nil
 }
 
-func newResourceDirectoryClient(config GrpcServerConfig, logger log.Logger) (pbGRPC.GrpcGatewayClient, func(), error) {
-	rdConn, err := grpcClient.New(config.Connection, logger)
+func newResourceDirectoryClient(config GrpcServerConfig, logger log.Logger, tracerProvider trace.TracerProvider) (pbGRPC.GrpcGatewayClient, func(), error) {
+	rdConn, err := grpcClient.New(config.Connection, logger, tracerProvider)
 	if err != nil {
 		return nil, nil, fmt.Errorf("cannot create connection to resource-directory: %w", err)
 	}
@@ -253,6 +254,7 @@ func newProviders(ctx context.Context, config AuthorizationConfig, logger log.Lo
 
 // New creates server.
 func New(ctx context.Context, config Config, logger log.Logger) (*Service, error) {
+	tracerProvider := trace.NewNoopTracerProvider()
 	queue, err := queue.New(config.TaskQueue)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create job queue %w", err)
@@ -276,21 +278,21 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 	}
 	nats.AddCloseFunc(resourceSubscriber.Close)
 
-	raClient, closeRaClient, err := newResourceAggregateClient(config.Clients.ResourceAggregate, resourceSubscriber, logger)
+	raClient, closeRaClient, err := newResourceAggregateClient(config.Clients.ResourceAggregate, resourceSubscriber, logger, tracerProvider)
 	if err != nil {
 		nats.Close()
 		return nil, fmt.Errorf("cannot create resource-aggregate client: %w", err)
 	}
 	nats.AddCloseFunc(closeRaClient)
 
-	isClient, closeIsClient, err := newIdentityStoreClient(config.Clients.IdentityStore, logger)
+	isClient, closeIsClient, err := newIdentityStoreClient(config.Clients.IdentityStore, logger, tracerProvider)
 	if err != nil {
 		nats.Close()
 		return nil, fmt.Errorf("cannot create identity-store client: %w", err)
 	}
 	nats.AddCloseFunc(closeIsClient)
 
-	rdClient, closeRdClient, err := newResourceDirectoryClient(config.Clients.ResourceDirectory, logger)
+	rdClient, closeRdClient, err := newResourceDirectoryClient(config.Clients.ResourceDirectory, logger, tracerProvider)
 	if err != nil {
 		nats.Close()
 		return nil, fmt.Errorf("cannot create resource-directory client: %w", err)

@@ -17,6 +17,7 @@ import (
 	"github.com/plgd-dev/hub/v2/test/config"
 	"github.com/stretchr/testify/require"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type mockEvent struct {
@@ -135,6 +136,7 @@ func TestPerformMaintenance(t *testing.T) {
 		ctx,
 		config.Mongo,
 		logger,
+		trace.NewNoopTracerProvider(),
 		mongodb.WithMarshaler(bson.Marshal),
 		mongodb.WithUnmarshaler(unmarshalPlain),
 	)
