@@ -18,6 +18,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.opentelemetry.io/otel/trace"
 )
 
 const eventCName = "events"
@@ -102,7 +103,7 @@ func (s *EventStore) AddCloseFunc(f func()) {
 	s.closeFunc = append(s.closeFunc, f)
 }
 
-func New(ctx context.Context, config Config, logger log.Logger, opts ...Option) (*EventStore, error) {
+func New(ctx context.Context, config Config, logger log.Logger, tracerProvider trace.TracerProvider, opts ...Option) (*EventStore, error) {
 	config.marshalerFunc = json.Marshal
 	config.unmarshalerFunc = json.Unmarshal
 	for _, o := range opts {
@@ -112,7 +113,7 @@ func New(ctx context.Context, config Config, logger log.Logger, opts ...Option) 
 	if err != nil {
 		return nil, fmt.Errorf("could not create cert manager: %w", err)
 	}
-	mgoStore, err := pkgMongo.NewStore(ctx, config.Embedded, certManager.GetTLSConfig())
+	mgoStore, err := pkgMongo.NewStore(ctx, config.Embedded, certManager.GetTLSConfig(), tracerProvider)
 	if err != nil {
 		return nil, err
 	}

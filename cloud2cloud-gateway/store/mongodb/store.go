@@ -9,14 +9,15 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type Store struct {
 	*pkgMongo.Store
 }
 
-func NewStore(ctx context.Context, cfg pkgMongo.Config, tls *tls.Config) (*Store, error) {
-	s, err := pkgMongo.NewStoreWithCollection(ctx, cfg, tls, subscriptionsCName, typeQueryIndex, typeDeviceIDQueryIndex,
+func NewStore(ctx context.Context, cfg pkgMongo.Config, tls *tls.Config, tracerProvider trace.TracerProvider) (*Store, error) {
+	s, err := pkgMongo.NewStoreWithCollection(ctx, cfg, tls, tracerProvider, subscriptionsCName, typeQueryIndex, typeDeviceIDQueryIndex,
 		typeResourceIDQueryIndex, typeInitializedIDQueryIndex)
 	if err != nil {
 		return nil, err

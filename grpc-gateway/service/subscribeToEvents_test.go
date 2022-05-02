@@ -34,6 +34,7 @@ import (
 	serviceTest "github.com/plgd-dev/hub/v2/test/service"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )
@@ -712,7 +713,7 @@ func TestRequestHandlerIssue270(t *testing.T) {
 	defer tearDown()
 	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
 
-	rdConn, err := grpcClient.New(config.MakeGrpcClientConfig(config.GRPC_HOST), log.Get())
+	rdConn, err := grpcClient.New(config.MakeGrpcClientConfig(config.GRPC_HOST), log.Get(), trace.NewNoopTracerProvider())
 	require.NoError(t, err)
 	defer func() {
 		_ = rdConn.Close()

@@ -19,6 +19,7 @@ import (
 	"github.com/plgd-dev/hub/v2/test/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -72,13 +73,13 @@ func TestAggregateHandle_CancelPendingMetadataUpdates(t *testing.T) {
 	ctx := context.Background()
 	logger := log.NewLogger(cfg.Log)
 
-	eventstore, err := mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
+	eventstore, err := mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, logger, trace.NewNoopTracerProvider(), mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	err = eventstore.Clear(ctx)
 	require.NoError(t, err)
 	err = eventstore.Close(ctx)
 	assert.NoError(t, err)
-	eventstore, err = mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
+	eventstore, err = mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, logger, trace.NewNoopTracerProvider(), mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Close(ctx)
@@ -191,13 +192,13 @@ func TestRequestHandler_CancelPendingMetadataUpdates(t *testing.T) {
 	ctx := context.Background()
 	logger := log.NewLogger(cfg.Log)
 
-	eventstore, err := mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
+	eventstore, err := mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, logger, trace.NewNoopTracerProvider(), mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	err = eventstore.Clear(ctx)
 	require.NoError(t, err)
 	err = eventstore.Close(ctx)
 	assert.NoError(t, err)
-	eventstore, err = mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
+	eventstore, err = mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, logger, trace.NewNoopTracerProvider(), mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Close(ctx)

@@ -10,6 +10,8 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
+	"go.opentelemetry.io/contrib/instrumentation/go.mongodb.org/mongo-driver/mongo/otelmongo"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type OnClearFn = func(context.Context) error
@@ -23,8 +25,8 @@ type Store struct {
 }
 
 // NewStore creates a new Store.
-func NewStore(ctx context.Context, cfg Config, tls *tls.Config) (*Store, error) {
-	client, err := mongo.Connect(ctx, options.Client().SetMaxPoolSize(cfg.MaxPoolSize).SetMaxConnIdleTime(cfg.MaxConnIdleTime).ApplyURI(cfg.URI).SetTLSConfig(tls))
+func NewStore(ctx context.Context, cfg Config, tls *tls.Config, tracerProvider trace.TracerProvider) (*Store, error) {
+	client, err := mongo.Connect(ctx, options.Client().SetMaxPoolSize(cfg.MaxPoolSize).SetMaxConnIdleTime(cfg.MaxConnIdleTime).ApplyURI(cfg.URI).SetTLSConfig(tls).SetMonitor(otelmongo.NewMonitor(otelmongo.WithTracerProvider(tracerProvider))))
 	if err != nil {
 		return nil, fmt.Errorf("failed to dial database: %w", err)
 	}
@@ -50,8 +52,8 @@ func NewStore(ctx context.Context, cfg Config, tls *tls.Config) (*Store, error) 
 	return s, nil
 }
 
-func NewStoreWithCollection(ctx context.Context, cfg Config, tls *tls.Config, collection string, indexes ...bson.D) (*Store, error) {
-	s, err := NewStore(ctx, cfg, tls)
+func NewStoreWithCollection(ctx context.Context, cfg Config, tls *tls.Config, tracerProvider trace.TracerProvider, collection string, indexes ...bson.D) (*Store, error) {
+	s, err := NewStore(ctx, cfg, tls, tracerProvider)
 	if err != nil {
 		return nil, err
 	}

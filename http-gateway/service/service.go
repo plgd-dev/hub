@@ -14,6 +14,7 @@ import (
 	kitNetHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
 	"github.com/plgd-dev/hub/v2/pkg/net/listener"
 	"github.com/plgd-dev/hub/v2/pkg/security/jwt/validator"
+	"go.opentelemetry.io/otel/trace"
 )
 
 //Server handle HTTP request
@@ -26,6 +27,7 @@ type Server struct {
 
 // New parses configuration and creates new Server with provided store and bus
 func New(ctx context.Context, config Config, logger log.Logger) (*Server, error) {
+	tracerProvider := trace.NewNoopTracerProvider()
 	validator, err := validator.New(ctx, config.APIs.HTTP.Authorization, logger)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create validator: %w", err)
@@ -38,7 +40,7 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Server, error)
 	}
 	listener.AddCloseFunc(validator.Close)
 
-	grpcConn, err := grpcClient.New(config.Clients.GrpcGateway.Connection, logger)
+	grpcConn, err := grpcClient.New(config.Clients.GrpcGateway.Connection, logger, tracerProvider)
 	if err != nil {
 		return nil, fmt.Errorf("cannot connect to resource directory: %w", err)
 	}

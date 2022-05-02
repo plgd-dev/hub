@@ -23,6 +23,7 @@ import (
 	"github.com/plgd-dev/hub/v2/test/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type mockEventHandler struct {
@@ -83,6 +84,7 @@ func TestProjection(t *testing.T) {
 		ctx,
 		config.MakeEventsStoreMongoDBConfig(),
 		logger,
+		trace.NewNoopTracerProvider(),
 	)
 
 	require.NoError(t, err)
