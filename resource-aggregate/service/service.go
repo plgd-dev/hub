@@ -21,6 +21,7 @@ import (
 	cqrsMaintenance "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore/maintenance"
 	mongodb "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore/mongodb"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/utils"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type EventStore interface {
@@ -36,7 +37,8 @@ type Service struct {
 }
 
 func New(ctx context.Context, config Config, logger log.Logger) (*Service, error) {
-	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
+	tracerProvider := trace.NewNoopTracerProvider()
+	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger, tracerProvider, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	if err != nil {
 		return nil, fmt.Errorf("cannot create mongodb eventstore %w", err)
 	}
@@ -59,7 +61,7 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 	}
 	naClient.AddCloseFunc(publisher.Close)
 
-	service, err := NewService(ctx, config, logger, eventstore, publisher)
+	service, err := NewService(ctx, config, logger, tracerProvider, eventstore, publisher)
 	if err != nil {
 		naClient.Close()
 		closeEventStore()
@@ -71,13 +73,13 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 	return service, nil
 }
 
-func newGrpcServer(ctx context.Context, config GRPCConfig, logger log.Logger) (*server.Server, error) {
+func newGrpcServer(ctx context.Context, config GRPCConfig, logger log.Logger, tracerProvider trace.TracerProvider) (*server.Server, error) {
 	validator, err := validator.New(ctx, config.Authorization.Config, logger)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create validator: %w", err)
 	}
 	authInterceptor := server.NewAuth(validator)
-	opts, err := server.MakeDefaultOptions(authInterceptor, logger)
+	opts, err := server.MakeDefaultOptions(authInterceptor, logger, tracerProvider)
 	if err != nil {
 		validator.Close()
 		return nil, fmt.Errorf("cannot create grpc server options: %w", err)
@@ -92,8 +94,8 @@ func newGrpcServer(ctx context.Context, config GRPCConfig, logger log.Logger) (*
 	return grpcServer, nil
 }
 
-func newIdentityStoreClient(config IdentityStoreConfig, logger log.Logger) (pbIS.IdentityStoreClient, func(), error) {
-	isConn, err := client.New(config.Connection, logger)
+func newIdentityStoreClient(config IdentityStoreConfig, logger log.Logger, tracerProvider trace.TracerProvider) (pbIS.IdentityStoreClient, func(), error) {
+	isConn, err := client.New(config.Connection, logger, tracerProvider)
 	if err != nil {
 		return nil, nil, fmt.Errorf("cannot connect to identity-store: %w", err)
 	}
@@ -107,13 +109,13 @@ func newIdentityStoreClient(config IdentityStoreConfig, logger log.Logger) (pbIS
 }
 
 // New creates new Server with provided store and publisher.
-func NewService(ctx context.Context, config Config, logger log.Logger, eventStore EventStore, publisher cqrsEventBus.Publisher) (*Service, error) {
-	grpcServer, err := newGrpcServer(ctx, config.APIs.GRPC, logger)
+func NewService(ctx context.Context, config Config, logger log.Logger, tracerProvider trace.TracerProvider, eventStore EventStore, publisher cqrsEventBus.Publisher) (*Service, error) {
+	grpcServer, err := newGrpcServer(ctx, config.APIs.GRPC, logger, tracerProvider)
 	if err != nil {
 		return nil, err
 	}
 
-	isClient, closeIsClient, err := newIdentityStoreClient(config.Clients.IdentityStore, logger)
+	isClient, closeIsClient, err := newIdentityStoreClient(config.Clients.IdentityStore, logger, tracerProvider)
 	if err != nil {
 		grpcServer.Close()
 		return nil, fmt.Errorf("cannot create identity-store client: %w", err)

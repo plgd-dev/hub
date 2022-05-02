@@ -16,6 +16,7 @@ import (
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore/maintenance"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore/mongodb"
+	"go.opentelemetry.io/otel/trace"
 )
 
 // Config represent application arguments
@@ -162,7 +163,7 @@ func PerformMaintenance() error {
 	}
 	log.Info(config.String())
 
-	eventStore, err := mongodb.New(ctx, config.Mongo, nil, mongodb.WithUnmarshaler(unmarshalPlain))
+	eventStore, err := mongodb.New(ctx, config.Mongo, nil, trace.NewNoopTracerProvider(), mongodb.WithUnmarshaler(unmarshalPlain))
 	if err != nil {
 		return err
 	}

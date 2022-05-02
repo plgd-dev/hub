@@ -19,6 +19,7 @@ import (
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore"
 	mongodb "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore/mongodb"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/utils"
+	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
 )
 
@@ -37,8 +38,8 @@ func (s *RequestHandler) Close() {
 	s.closeFunc.Execute()
 }
 
-func AddHandler(ctx context.Context, svr *server.Server, config Config, publicConfiguration PublicConfiguration, logger log.Logger, goroutinePoolGo func(func()) error) error {
-	handler, err := newRequestHandlerFromConfig(ctx, config, publicConfiguration, logger, goroutinePoolGo)
+func AddHandler(ctx context.Context, svr *server.Server, config Config, publicConfiguration PublicConfiguration, logger log.Logger, tracerProvider trace.TracerProvider, goroutinePoolGo func(func()) error) error {
+	handler, err := newRequestHandlerFromConfig(ctx, config, publicConfiguration, logger, tracerProvider, goroutinePoolGo)
 	if err != nil {
 		return err
 	}
@@ -52,10 +53,10 @@ func Register(server *grpc.Server, handler *RequestHandler) {
 	pb.RegisterGrpcGatewayServer(server, handler)
 }
 
-func newIdentityStoreClient(config IdentityStoreConfig, logger log.Logger) (pbIS.IdentityStoreClient, func(), error) {
+func newIdentityStoreClient(config IdentityStoreConfig, logger log.Logger, tracerProvider trace.TracerProvider) (pbIS.IdentityStoreClient, func(), error) {
 	var closeIsClient fn.FuncList
 
-	isConn, err := client.New(config.Connection, logger)
+	isConn, err := client.New(config.Connection, logger, tracerProvider)
 	if err != nil {
 		return nil, nil, fmt.Errorf("cannot connect to identity-store: %w", err)
 	}
@@ -70,7 +71,7 @@ func newIdentityStoreClient(config IdentityStoreConfig, logger log.Logger) (pbIS
 	return isClient, closeIsClient.ToFunction(), nil
 }
 
-func newRequestHandlerFromConfig(ctx context.Context, config Config, publicConfiguration PublicConfiguration, logger log.Logger, goroutinePoolGo func(func()) error) (*RequestHandler, error) {
+func newRequestHandlerFromConfig(ctx context.Context, config Config, publicConfiguration PublicConfiguration, logger log.Logger, tracerProvider trace.TracerProvider, goroutinePoolGo func(func()) error) (*RequestHandler, error) {
 	var closeFunc fn.FuncList
 	if publicConfiguration.CAPool != "" {
 		content, err := ioutil.ReadFile(publicConfiguration.CAPool)
@@ -80,13 +81,13 @@ func newRequestHandlerFromConfig(ctx context.Context, config Config, publicConfi
 		publicConfiguration.cloudCertificateAuthorities = string(content)
 	}
 
-	isClient, closeIsClient, err := newIdentityStoreClient(config.Clients.IdentityStore, logger)
+	isClient, closeIsClient, err := newIdentityStoreClient(config.Clients.IdentityStore, logger, tracerProvider)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create identity-store client: %w", err)
 	}
 	closeFunc.AddFunc(closeIsClient)
 
-	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
+	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger, tracerProvider, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	if err != nil {
 		closeFunc.Execute()
 		return nil, fmt.Errorf("cannot create resource mongodb eventstore %w", err)

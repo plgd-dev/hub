@@ -12,6 +12,7 @@ import (
 	"github.com/plgd-dev/hub/v2/test/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/trace"
 )
 
 const (
@@ -51,7 +52,7 @@ func newTestService(t *testing.T) (*Server, func()) {
 	naClient, publisher, err := test.NewClientAndPublisher(cfg.Clients.Eventbus.NATS, logger)
 	require.NoError(t, err)
 
-	s, err := NewServer(context.Background(), cfg, logger, publisher)
+	s, err := NewServer(context.Background(), cfg, logger, trace.NewNoopTracerProvider(), publisher)
 	require.NoError(t, err)
 	var wg sync.WaitGroup
 	wg.Add(1)

@@ -17,6 +17,7 @@ import (
 	raTest "github.com/plgd-dev/hub/v2/resource-aggregate/test"
 	"github.com/plgd-dev/hub/v2/test/config"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/trace"
 )
 
 func TestRequestHandler_DeleteDevices(t *testing.T) {
@@ -28,7 +29,7 @@ func TestRequestHandler_DeleteDevices(t *testing.T) {
 	}))
 	cfg := raTest.MakeConfig(t)
 	logger := log.NewLogger(cfg.Log)
-	eventstore, err := mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
+	eventstore, err := mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, logger, trace.NewNoopTracerProvider(), mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)

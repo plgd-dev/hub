@@ -17,6 +17,7 @@ import (
 	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 	"github.com/plgd-dev/hub/v2/test/config"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/atomic"
 )
 
@@ -27,6 +28,7 @@ func testNewEventstore(ctx context.Context, t *testing.T) *mongodb.EventStore {
 		ctx,
 		cfg,
 		logger,
+		trace.NewNoopTracerProvider(),
 	)
 	require.NoError(t, err)
 	require.NotNil(t, store)
