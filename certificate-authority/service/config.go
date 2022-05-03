@@ -8,12 +8,14 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/config"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/pkg/net/grpc/server"
+	otelClient "github.com/plgd-dev/hub/v2/pkg/opentelemetry/collector/client"
 )
 
 type Config struct {
-	Log    log.Config   `yaml:"log" json:"log"`
-	APIs   APIsConfig   `yaml:"apis" json:"apis"`
-	Signer SignerConfig `yaml:"signer" json:"signer"`
+	Log     log.Config    `yaml:"log" json:"log"`
+	APIs    APIsConfig    `yaml:"apis" json:"apis"`
+	Signer  SignerConfig  `yaml:"signer" json:"signer"`
+	Clients ClientsConfig `yaml:"clients" json:"clients"`
 }
 
 func (c *Config) Validate() error {
@@ -24,6 +26,9 @@ func (c *Config) Validate() error {
 		return fmt.Errorf("apis.%w", err)
 	}
 	if err := c.Signer.Validate(); err != nil {
+		return fmt.Errorf("signer.%w", err)
+	}
+	if err := c.Clients.Validate(); err != nil {
 		return fmt.Errorf("clients.%w", err)
 	}
 	return nil
@@ -65,6 +70,17 @@ func (c *SignerConfig) Validate() error {
 	}
 	if c.HubID == "" {
 		return fmt.Errorf("hubID('%v')", c.HubID)
+	}
+	return nil
+}
+
+type ClientsConfig struct {
+	OpenTelemetryCollector otelClient.Config `yaml:"openTelemetryCollector" json:"openTelemetryCollector"`
+}
+
+func (c *ClientsConfig) Validate() error {
+	if err := c.OpenTelemetryCollector.Validate(); err != nil {
+		return fmt.Errorf("openTelemetryCollector.%w", err)
 	}
 	return nil
 }

@@ -20,6 +20,22 @@ import (
 
 var log atomic.Value
 
+func MakeDefaultConfig() Config {
+	return Config{
+		Level:    zap.InfoLevel,
+		Encoding: "json",
+		Stacktrace: StacktraceConfig{
+			Enabled: false,
+			Level:   zap.WarnLevel,
+		},
+		EncoderConfig: EncoderConfig{
+			EncodeTime: TimeEncoderWrapper{
+				TimeEncoder: RFC3339NanoTimeEncoder{},
+			},
+		},
+	}
+}
+
 type RFC3339NanoTimeEncoder struct {
 }
 
@@ -183,22 +199,6 @@ func (c *Config) Validate() error {
 		return fmt.Errorf("stacktrace.%w", err)
 	}
 	return nil
-}
-
-func MakeDefaultConfig() Config {
-	return Config{
-		Level:    zap.InfoLevel,
-		Encoding: "json",
-		Stacktrace: StacktraceConfig{
-			Enabled: false,
-			Level:   zap.WarnLevel,
-		},
-		EncoderConfig: EncoderConfig{
-			EncodeTime: TimeEncoderWrapper{
-				TimeEncoder: RFC3339NanoTimeEncoder{},
-			},
-		},
-	}
 }
 
 func init() {

@@ -1,4 +1,4 @@
-package grpc
+package client
 
 import (
 	"context"
@@ -17,6 +17,8 @@ import (
 )
 
 type Client struct {
+	ctx            context.Context
+	logger         log.Logger
 	client         *client.Client
 	tracerProvider *sdktrace.TracerProvider
 	closeFunc      fn.FuncList
@@ -35,7 +37,7 @@ func (c *Client) GetTracerProvider() trace.TracerProvider {
 	return c.tracerProvider
 }
 
-func (s *Client) Close(ctx context.Context) error {
+func (s *Client) close(ctx context.Context) error {
 	var errors []error
 	if s.tracerProvider != nil {
 		err := s.tracerProvider.Shutdown(ctx)
@@ -59,10 +61,19 @@ func (s *Client) Close(ctx context.Context) error {
 	return nil
 }
 
+func (s *Client) Close() {
+	if err := s.close(s.ctx); err != nil {
+		s.logger.Errorf("cannot close open telemetry collector client: %w", err)
+	}
+}
+
 // New creates a new tracer provider with grpc exporter when it is enabled.
-func New(ctx context.Context, logger log.Logger, serviceName string, cfg Config) (*Client, error) {
-	if !cfg.Enabled {
-		return &Client{}, nil
+func New(ctx context.Context, cfg Config, serviceName string, logger log.Logger) (*Client, error) {
+	if !cfg.GRPC.Enabled {
+		return &Client{
+			ctx:    ctx,
+			logger: logger,
+		}, nil
 	}
 	res, err := resource.New(ctx,
 		resource.WithAttributes(
@@ -79,7 +90,7 @@ func New(ctx context.Context, logger log.Logger, serviceName string, cfg Config)
 	// `localhost:30080` endpoint. Otherwise, replace `localhost` with the
 	// endpoint of your cluster. If you run the app inside k8s, then you can
 	// probably connect directly to the service through dns
-	client, err := client.New(cfg.Connection, logger, trace.NewNoopTracerProvider())
+	client, err := client.New(cfg.GRPC.Connection, logger, trace.NewNoopTracerProvider())
 	if err != nil {
 		return nil, fmt.Errorf("failed to create gRPC connection to collector: %w", err)
 	}
@@ -107,6 +118,8 @@ func New(ctx context.Context, logger log.Logger, serviceName string, cfg Config)
 	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
 
 	return &Client{
+		ctx:            ctx,
+		logger:         logger,
 		tracerProvider: tracerProvider,
 		client:         client,
 	}, nil

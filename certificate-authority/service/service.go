@@ -6,8 +6,8 @@ import (
 
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/pkg/net/grpc/server"
+	otelClient "github.com/plgd-dev/hub/v2/pkg/opentelemetry/collector/client"
 	"github.com/plgd-dev/hub/v2/pkg/security/jwt/validator"
-	"go.opentelemetry.io/otel/trace"
 )
 
 type Service struct {
@@ -15,7 +15,13 @@ type Service struct {
 }
 
 func New(ctx context.Context, config Config, logger log.Logger) (*Service, error) {
-	tracerProvider := trace.NewNoopTracerProvider()
+	otelClient, err := otelClient.New(ctx, config.Clients.OpenTelemetryCollector, "certificate-authority", logger)
+	if err != nil {
+		return nil, fmt.Errorf("cannot create open telemetry collector client: %w", err)
+	}
+
+	tracerProvider := otelClient.GetTracerProvider()
+
 	validator, err := validator.New(ctx, config.APIs.GRPC.Authorization.Config, logger)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create validator: %w", err)
