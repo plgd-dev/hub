@@ -13,8 +13,8 @@ import (
 	grpcClient "github.com/plgd-dev/hub/v2/pkg/net/grpc/client"
 	kitNetHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
 	"github.com/plgd-dev/hub/v2/pkg/net/listener"
+	otelClient "github.com/plgd-dev/hub/v2/pkg/opentelemetry/collector/client"
 	"github.com/plgd-dev/hub/v2/pkg/security/jwt/validator"
-	"go.opentelemetry.io/otel/trace"
 )
 
 //Server handle HTTP request
@@ -27,17 +27,25 @@ type Server struct {
 
 // New parses configuration and creates new Server with provided store and bus
 func New(ctx context.Context, config Config, logger log.Logger) (*Server, error) {
-	tracerProvider := trace.NewNoopTracerProvider()
+	otelClient, err := otelClient.New(ctx, config.Clients.OpenTelemetryCollector, "http-gateway", logger)
+	if err != nil {
+		return nil, fmt.Errorf("cannot create open telemetry collector client: %w", err)
+	}
+	tracerProvider := otelClient.GetTracerProvider()
+
 	validator, err := validator.New(ctx, config.APIs.HTTP.Authorization, logger)
 	if err != nil {
+		otelClient.Close()
 		return nil, fmt.Errorf("cannot create validator: %w", err)
 	}
 
 	listener, err := listener.New(config.APIs.HTTP.Connection, logger)
 	if err != nil {
+		otelClient.Close()
 		validator.Close()
 		return nil, fmt.Errorf("cannot create grpc server: %w", err)
 	}
+	listener.AddCloseFunc(otelClient.Close)
 	listener.AddCloseFunc(validator.Close)
 
 	grpcConn, err := grpcClient.New(config.Clients.GrpcGateway.Connection, logger, tracerProvider)

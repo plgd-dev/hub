@@ -27,6 +27,7 @@ func MakeConfig(t *testing.T) service.Config {
 	cfg.Clients.Eventbus.GoPoolSize = 16
 	cfg.Clients.ResourceAggregate.Connection = config.MakeGrpcClientConfig(config.RESOURCE_AGGREGATE_HOST)
 	cfg.Clients.ResourceDirectory.Connection = config.MakeGrpcClientConfig(config.RESOURCE_DIRECTORY_HOST)
+	cfg.Clients.OpenTelemetryCollector = config.MakeOpenTelemetryCollectorClient()
 
 	err := cfg.Validate()
 	require.NoError(t, err)

@@ -49,6 +49,7 @@ func MakeConfig(t *testing.T, enableUI bool) service.Config {
 	cfg.APIs.HTTP.WebSocket.PingFrequency = 10 * time.Second
 
 	cfg.Clients.GrpcGateway.Connection = config.MakeGrpcClientConfig(config.GRPC_HOST)
+	cfg.Clients.OpenTelemetryCollector = config.MakeOpenTelemetryCollectorClient()
 
 	if enableUI {
 		cfg.UI.Enabled = true

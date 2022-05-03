@@ -24,6 +24,7 @@ func MakeConfig(t *testing.T) service.Config {
 	cfg.Signer.HubID = config.HubID()
 
 	cfg.Log = log.MakeDefaultConfig()
+	cfg.Clients.OpenTelemetryCollector = config.MakeOpenTelemetryCollectorClient()
 
 	err := cfg.Validate()
 	require.NoError(t, err)

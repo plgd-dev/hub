@@ -48,11 +48,12 @@ func MakeConfig(t *testing.T) service.Config {
 
 	cfg.APIs.HTTP = config.MakeListenerConfig(config.OAUTH_SERVER_HOST)
 	cfg.APIs.HTTP.TLS.ClientCertificateRequired = false
+	cfg.Clients.OpenTelemetryCollector = config.MakeOpenTelemetryCollectorClient()
 
 	cfg.OAuthSigner.IDTokenKeyFile = os.Getenv("TEST_OAUTH_SERVER_ID_TOKEN_PRIVATE_KEY")
 	cfg.OAuthSigner.AccessTokenKeyFile = os.Getenv("TEST_OAUTH_SERVER_ACCESS_TOKEN_PRIVATE_KEY")
 	cfg.OAuthSigner.Domain = config.OAUTH_SERVER_HOST
-	cfg.OAuthSigner.Clients = service.ClientsConfig{
+	cfg.OAuthSigner.Clients = service.OAuthClientsConfig{
 		{
 			ID:                              config.OAUTH_MANAGER_CLIENT_ID,
 			AuthorizationCodeLifetime:       time.Minute * 10,

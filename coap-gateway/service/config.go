@@ -8,6 +8,7 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/config"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/pkg/net/grpc/client"
+	otelClient "github.com/plgd-dev/hub/v2/pkg/opentelemetry/collector/client"
 	certManagerServer "github.com/plgd-dev/hub/v2/pkg/security/certManager/server"
 	"github.com/plgd-dev/hub/v2/pkg/security/oauth2"
 	"github.com/plgd-dev/hub/v2/pkg/security/oauth2/oauth"
@@ -211,10 +212,11 @@ func (c *IdentityStoreConfig) Validate() error {
 }
 
 type ClientsConfig struct {
-	Eventbus          EventBusConfig          `yaml:"eventBus" json:"eventBus"`
-	IdentityStore     IdentityStoreConfig     `yaml:"identityStore" json:"identityStore"`
-	ResourceAggregate ResourceAggregateConfig `yaml:"resourceAggregate" json:"resourceAggregate"`
-	ResourceDirectory GrpcServerConfig        `yaml:"resourceDirectory" json:"resourceDirectory"`
+	Eventbus               EventBusConfig          `yaml:"eventBus" json:"eventBus"`
+	IdentityStore          IdentityStoreConfig     `yaml:"identityStore" json:"identityStore"`
+	ResourceAggregate      ResourceAggregateConfig `yaml:"resourceAggregate" json:"resourceAggregate"`
+	ResourceDirectory      GrpcServerConfig        `yaml:"resourceDirectory" json:"resourceDirectory"`
+	OpenTelemetryCollector otelClient.Config       `yaml:"openTelemetryCollector" json:"openTelemetryCollector"`
 }
 
 func (c *ClientsConfig) Validate() error {
@@ -229,6 +231,9 @@ func (c *ClientsConfig) Validate() error {
 	}
 	if err := c.ResourceDirectory.Validate(); err != nil {
 		return fmt.Errorf("resourceDirectory.%w", err)
+	}
+	if err := c.OpenTelemetryCollector.Validate(); err != nil {
+		return fmt.Errorf("openTelemetryCollector.%w", err)
 	}
 	return nil
 }

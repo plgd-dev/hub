@@ -6,6 +6,7 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/pkg/mongodb"
 	"github.com/plgd-dev/hub/v2/pkg/net/grpc/server"
+	otelClient "github.com/plgd-dev/hub/v2/pkg/opentelemetry/collector/client"
 	natsClient "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/client"
 	"github.com/plgd-dev/kit/v2/config"
 )
@@ -42,8 +43,9 @@ func (c *APIsConfig) Validate() error {
 }
 
 type ClientsConfig struct {
-	Storage  StorageConfig  `yaml:"storage" json:"storage"`
-	Eventbus EventBusConfig `yaml:"eventBus" json:"eventBus"`
+	Storage                StorageConfig     `yaml:"storage" json:"storage"`
+	Eventbus               EventBusConfig    `yaml:"eventBus" json:"eventBus"`
+	OpenTelemetryCollector otelClient.Config `yaml:"openTelemetryCollector" json:"openTelemetryCollector"`
 }
 
 func (c *ClientsConfig) Validate() error {
@@ -52,6 +54,9 @@ func (c *ClientsConfig) Validate() error {
 	}
 	if err := c.Eventbus.Validate(); err != nil {
 		return fmt.Errorf("eventBus.%w", err)
+	}
+	if err := c.OpenTelemetryCollector.Validate(); err != nil {
+		return fmt.Errorf("openTelemetryCollector.%w", err)
 	}
 	return nil
 }

@@ -14,6 +14,20 @@ apis:
       keyFile: "/secrets/private/cert.key"
       certFile: "/secrets/public/cert.crt"
       clientCertificateRequired: true
+clients:
+  openTelemetryCollector:
+    grpc:
+      enabled: false
+      address: ""
+      keepAlive:
+        time: 10s
+        timeout: 20s
+        permitWithoutStream: true
+      tls:
+        caPool: "/secrets/public/rootca.crt"
+        keyFile: "/secrets/private/cert.key"
+        certFile: "/secrets/public/cert.crt"
+        useSystemCAPool: false
 oauthSigner:
   idTokenKeyFile: "/secrets/private/idToken.key"
   accessTokenKeyFile: "/secrets/private/accessToken.key"
