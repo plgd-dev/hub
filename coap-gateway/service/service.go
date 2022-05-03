@@ -32,6 +32,7 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	grpcClient "github.com/plgd-dev/hub/v2/pkg/net/grpc/client"
+	otelClient "github.com/plgd-dev/hub/v2/pkg/opentelemetry/collector/client"
 	certManagerServer "github.com/plgd-dev/hub/v2/pkg/security/certManager/server"
 	"github.com/plgd-dev/hub/v2/pkg/security/jwt"
 	"github.com/plgd-dev/hub/v2/pkg/security/oauth2"
@@ -254,17 +255,26 @@ func newProviders(ctx context.Context, config AuthorizationConfig, logger log.Lo
 
 // New creates server.
 func New(ctx context.Context, config Config, logger log.Logger) (*Service, error) {
-	tracerProvider := trace.NewNoopTracerProvider()
+	otelClient, err := otelClient.New(ctx, config.Clients.OpenTelemetryCollector, "coap-gateway", logger)
+	if err != nil {
+		return nil, fmt.Errorf("cannot create open telemetry collector client: %w", err)
+	}
+
+	tracerProvider := otelClient.GetTracerProvider()
+
 	queue, err := queue.New(config.TaskQueue)
 	if err != nil {
+		otelClient.Close()
 		return nil, fmt.Errorf("cannot create job queue %w", err)
 	}
 
 	nats, err := natsClient.New(config.Clients.Eventbus.NATS, logger)
 	if err != nil {
+		otelClient.Close()
 		queue.Release()
 		return nil, fmt.Errorf("cannot create nats client: %w", err)
 	}
+	nats.AddCloseFunc(otelClient.Close)
 	nats.AddCloseFunc(queue.Release)
 
 	resourceSubscriber, err := subscriber.New(nats.GetConn(),

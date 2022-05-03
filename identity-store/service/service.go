@@ -9,6 +9,7 @@ import (
 	"github.com/plgd-dev/hub/v2/identity-store/persistence/mongodb"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/pkg/net/grpc/server"
+	otelClient "github.com/plgd-dev/hub/v2/pkg/opentelemetry/collector/client"
 	cmClient "github.com/plgd-dev/hub/v2/pkg/security/certManager/client"
 	"github.com/plgd-dev/hub/v2/pkg/security/jwt/validator"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/client"
@@ -78,16 +79,24 @@ func NewServer(ctx context.Context, cfg Config, logger log.Logger, tracerProvide
 
 // New creates the service's HTTP server.
 func New(ctx context.Context, cfg Config, logger log.Logger) (*Server, error) {
-	tracerProvider := trace.NewNoopTracerProvider()
+	otelClient, err := otelClient.New(ctx, cfg.Clients.OpenTelemetryCollector, "identity-store", logger)
+	if err != nil {
+		return nil, fmt.Errorf("cannot create open telemetry collector client: %w", err)
+	}
+	tracerProvider := otelClient.GetTracerProvider()
+
 	naClient, err := client.New(cfg.Clients.Eventbus.NATS.Config, logger)
 	if err != nil {
+		otelClient.Close()
 		return nil, fmt.Errorf("cannot create nats client %w", err)
 	}
 	publisher, err := publisher.New(naClient.GetConn(), cfg.Clients.Eventbus.NATS.JetStream, publisher.WithMarshaler(utils.Marshal))
 	if err != nil {
+		otelClient.Close()
 		naClient.Close()
 		return nil, fmt.Errorf("cannot create nats publisher %w", err)
 	}
+	naClient.AddCloseFunc(otelClient.Close)
 	naClient.AddCloseFunc(publisher.Close)
 	validator, err := validator.New(ctx, cfg.APIs.GRPC.Authorization.Config, logger)
 	if err != nil {

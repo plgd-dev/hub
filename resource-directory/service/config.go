@@ -9,6 +9,7 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/pkg/net/grpc/client"
 	"github.com/plgd-dev/hub/v2/pkg/net/grpc/server"
+	otelClient "github.com/plgd-dev/hub/v2/pkg/opentelemetry/collector/client"
 	pkgTime "github.com/plgd-dev/hub/v2/pkg/time"
 	natsClient "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/client"
 	eventstoreConfig "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore/config"
@@ -62,9 +63,10 @@ func (c *GRPCConfig) Validate() error {
 }
 
 type ClientsConfig struct {
-	Eventbus      EventBusConfig      `yaml:"eventBus" json:"eventBus"`
-	Eventstore    EventStoreConfig    `yaml:"eventStore" json:"eventStore"`
-	IdentityStore IdentityStoreConfig `yaml:"identityStore" json:"identityStore"`
+	Eventbus               EventBusConfig      `yaml:"eventBus" json:"eventBus"`
+	Eventstore             EventStoreConfig    `yaml:"eventStore" json:"eventStore"`
+	IdentityStore          IdentityStoreConfig `yaml:"identityStore" json:"identityStore"`
+	OpenTelemetryCollector otelClient.Config   `yaml:"openTelemetryCollector" json:"openTelemetryCollector"`
 }
 
 func (c *ClientsConfig) Validate() error {
@@ -76,6 +78,9 @@ func (c *ClientsConfig) Validate() error {
 	}
 	if err := c.Eventstore.Validate(); err != nil {
 		return fmt.Errorf("eventstore.%w", err)
+	}
+	if err := c.OpenTelemetryCollector.Validate(); err != nil {
+		return fmt.Errorf("openTelemetryCollector.%w", err)
 	}
 	return nil
 }

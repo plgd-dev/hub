@@ -15,6 +15,7 @@ import (
 	grpcClient "github.com/plgd-dev/hub/v2/pkg/net/grpc/client"
 	kitNetHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
 	"github.com/plgd-dev/hub/v2/pkg/net/listener"
+	otelClient "github.com/plgd-dev/hub/v2/pkg/opentelemetry/collector/client"
 	cmClient "github.com/plgd-dev/hub/v2/pkg/security/certManager/client"
 	"github.com/plgd-dev/hub/v2/pkg/security/jwt/validator"
 	"github.com/plgd-dev/hub/v2/pkg/sync/task/queue"
@@ -222,7 +223,13 @@ func newSubscriptionManager(ctx context.Context, cfg Config, gwClient pbGRPC.Grp
 
 // New parses configuration and creates new Server with provided store and bus
 func New(ctx context.Context, config Config, logger log.Logger) (*Server, error) {
-	tracerProvider := trace.NewNoopTracerProvider()
+	otelClient, err := otelClient.New(ctx, config.Clients.OpenTelemetryCollector, "cloud2cloud-gateway", logger)
+	if err != nil {
+		return nil, fmt.Errorf("cannot create open telemetry collector client: %w", err)
+	}
+
+	tracerProvider := otelClient.GetTracerProvider()
+
 	listener, err := listener.New(config.APIs.HTTP.Connection, logger)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create http server: %w", err)

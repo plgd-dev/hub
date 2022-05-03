@@ -10,6 +10,7 @@ import (
 
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/pkg/security/jwt"
+	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap/zapcore"
 )
 
@@ -226,11 +227,16 @@ func CreateLoggingMiddleware(opts ...LogOpt) func(next http.Handler) http.Handle
 			resp := &response{
 				Code: sw.status,
 			}
+			spanCtx := trace.SpanContextFromContext(r.Context())
+			if spanCtx.HasTraceID() {
+				logger = logger.With(log.TraceIDKey, spanCtx.TraceID().String())
+			}
 
 			logger = logger.With(logDurationKey, log.DurationToMilliseconds(duration), log.RequestKey, req, log.ResponseKey, resp, logStartTimeKey, start, log.ProtocolKey, "HTTP")
 			if deadline, ok := r.Context().Deadline(); ok {
 				logger = logger.With(log.DeadlineKey, deadline)
 			}
+
 			doLog := DefaultCodeToLevel(sw.status, logger)
 			doLog("finished unary call with status code ", sw.status)
 		})

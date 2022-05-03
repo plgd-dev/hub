@@ -138,7 +138,12 @@ func defaultMessageProducer(ctx context.Context, ctxLogger context.Context, msg 
 	resp := make(map[string]interface{})
 	resp["code"] = code.String()
 	if err != nil {
-		resp["error"] = err.Error()
+		resp[log.ErrorKey] = err.Error()
+	}
+
+	spanCtx := trace.SpanContextFromContext(ctx)
+	if spanCtx.HasTraceID() {
+		req[log.TraceIDKey] = spanCtx.TraceID().String()
 	}
 
 	if sub, err := kitNetGrpc.OwnerFromTokenMD(ctx, "sub"); err == nil {
