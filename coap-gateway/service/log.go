@@ -9,6 +9,7 @@ import (
 	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
 	coapgwMessage "github.com/plgd-dev/hub/v2/coap-gateway/service/message"
 	"github.com/plgd-dev/hub/v2/pkg/log"
+	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap/zapcore"
 )
 
@@ -124,7 +125,9 @@ type logCoapMessage struct {
 }
 
 func (client *Client) loggerWithRequestResponse(logger log.Logger, req *pool.Message, resp *pool.Message) log.Logger {
+	var spanCtx trace.SpanContext
 	if req != nil {
+		spanCtx = trace.SpanContextFromContext(req.Context())
 		startTime, ok := req.Context().Value(&log.StartTimeKey).(time.Time)
 		if ok {
 			logger = logger.With(log.StartTimeKey, startTime, log.DurationMSKey, log.DurationToMilliseconds(time.Since(startTime)))
@@ -137,11 +140,17 @@ func (client *Client) loggerWithRequestResponse(logger log.Logger, req *pool.Mes
 		logger = logger.With(log.RequestKey, logMsg)
 	}
 	if resp != nil {
+		if !spanCtx.IsValid() {
+			spanCtx = trace.SpanContextFromContext(resp.Context())
+		}
 		logMsg := client.msgToLogCoapMessage(resp, logger, req == nil)
 		if req != nil {
 			logMsg.JWT = nil
 		}
 		logger = logger.With(log.ResponseKey, logMsg)
+	}
+	if spanCtx.HasTraceID() {
+		logger = logger.With(log.TraceIDKey, spanCtx.TraceID().String())
 	}
 	return logger.With(log.ProtocolKey, "COAP")
 }
@@ -200,6 +209,10 @@ func (client *Client) logNotification(logMsg, path string, notification *pool.Me
 		rsp := client.msgToLogCoapMessage(notification, logger, true)
 		rsp.Path = path
 		logger = logger.With(logNotificationKey, rsp)
+		spanCtx := trace.SpanContextFromContext(notification.Context())
+		if spanCtx.HasTraceID() {
+			logger = logger.With(log.TraceIDKey, spanCtx.TraceID().String())
+		}
 	}
 	DefaultCodeToLevel(notification.Code(), logger.With(log.ProtocolKey, "COAP"))(logMsg)
 }

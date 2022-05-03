@@ -13,6 +13,7 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/pkg/net/grpc/client"
 	"github.com/plgd-dev/hub/v2/pkg/net/grpc/server"
+	otelClient "github.com/plgd-dev/hub/v2/pkg/opentelemetry/collector/client"
 	"github.com/plgd-dev/hub/v2/pkg/security/jwt/validator"
 	cqrsEventBus "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus"
 	natsClient "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/client"
@@ -37,9 +38,15 @@ type Service struct {
 }
 
 func New(ctx context.Context, config Config, logger log.Logger) (*Service, error) {
-	tracerProvider := trace.NewNoopTracerProvider()
+	otelClient, err := otelClient.New(ctx, config.Clients.OpenTelemetryCollector, "resource-aggregate", logger)
+	if err != nil {
+		return nil, fmt.Errorf("cannot create open telemetry collector client: %w", err)
+	}
+	tracerProvider := otelClient.GetTracerProvider()
+
 	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger, tracerProvider, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	if err != nil {
+		otelClient.Close()
 		return nil, fmt.Errorf("cannot create mongodb eventstore %w", err)
 	}
 	closeEventStore := func() {
@@ -51,14 +58,17 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 	naClient, err := natsClient.New(config.Clients.Eventbus.NATS.Config, logger)
 	if err != nil {
 		closeEventStore()
+		otelClient.Close()
 		return nil, fmt.Errorf("cannot create nats client %w", err)
 	}
 	publisher, err := publisher.New(naClient.GetConn(), config.Clients.Eventbus.NATS.JetStream, publisher.WithMarshaler(utils.Marshal), publisher.WithFlusherTimeout(config.Clients.Eventbus.NATS.Config.FlusherTimeout))
 	if err != nil {
 		naClient.Close()
 		closeEventStore()
+		otelClient.Close()
 		return nil, fmt.Errorf("cannot create nats publisher %w", err)
 	}
+	naClient.AddCloseFunc(otelClient.Close)
 	naClient.AddCloseFunc(publisher.Close)
 
 	service, err := NewService(ctx, config, logger, tracerProvider, eventstore, publisher)
