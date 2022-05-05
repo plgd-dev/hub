@@ -14,10 +14,11 @@ import (
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	raEvents "github.com/plgd-dev/hub/v2/resource-aggregate/events"
 	raService "github.com/plgd-dev/hub/v2/resource-aggregate/service"
+	"go.opentelemetry.io/otel/trace"
 )
 
-func retrieveDeviceResource(ctx context.Context, deviceID, href string, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud) (string, []byte, commands.Status, error) {
-	client := linkedCloud.GetHTTPClient()
+func retrieveDeviceResource(ctx context.Context, traceProvider trace.TracerProvider, deviceID, href string, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud) (string, []byte, commands.Status, error) {
+	client := linkedCloud.GetHTTPClient(traceProvider)
 	defer client.CloseIdleConnections()
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, makeHTTPEndpoint(linkedCloud.Endpoint.URL, deviceID, href), nil)
 	if err != nil {
@@ -51,10 +52,10 @@ func retrieveDeviceResource(ctx context.Context, deviceID, href string, linkedAc
 	return respContentType, respContent.Bytes(), commands.Status_OK, nil
 }
 
-func retrieveResource(ctx context.Context, raClient raService.ResourceAggregateClient, e *raEvents.ResourceRetrievePending, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud) error {
+func retrieveResource(ctx context.Context, traceProvider trace.TracerProvider, raClient raService.ResourceAggregateClient, e *raEvents.ResourceRetrievePending, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud) error {
 	deviceID := e.GetResourceId().GetDeviceId()
 	href := e.GetResourceId().GetHref()
-	contentType, content, status, err := retrieveDeviceResource(ctx, deviceID, href, linkedAccount, linkedCloud)
+	contentType, content, status, err := retrieveDeviceResource(ctx, traceProvider, deviceID, href, linkedAccount, linkedCloud)
 	if err != nil {
 		log.Errorf("cannot update resource %v/%v: %w", deviceID, href, err)
 	}

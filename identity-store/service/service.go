@@ -98,7 +98,7 @@ func New(ctx context.Context, cfg Config, logger log.Logger) (*Server, error) {
 	}
 	naClient.AddCloseFunc(otelClient.Close)
 	naClient.AddCloseFunc(publisher.Close)
-	validator, err := validator.New(ctx, cfg.APIs.GRPC.Authorization.Config, logger)
+	validator, err := validator.New(ctx, cfg.APIs.GRPC.Authorization.Config, logger, tracerProvider)
 	if err != nil {
 		naClient.Close()
 		return nil, fmt.Errorf("cannot create validator: %w", err)

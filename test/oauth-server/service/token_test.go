@@ -2,13 +2,11 @@ package service_test
 
 import (
 	"bytes"
-	"crypto/tls"
 	"fmt"
 	"net/http"
 	"net/url"
 	"testing"
 
-	"github.com/plgd-dev/hub/v2/pkg/security/jwt"
 	"github.com/plgd-dev/hub/v2/test/config"
 	"github.com/plgd-dev/hub/v2/test/oauth-server/service"
 	"github.com/plgd-dev/hub/v2/test/oauth-server/test"
@@ -24,9 +22,7 @@ func TestRequestHandler_getUItoken(t *testing.T) {
 	code := getAuthorize(t, test.ClientTest, "https://localhost:3000", "nonse", "", "", "", http.StatusFound, false, false)
 	token := getToken(t, test.ClientTest, "", "localhost", "", code, "", "", "", service.AllowedGrantType_AUTHORIZATION_CODE, http.StatusOK)
 
-	validator := jwt.NewValidator(fmt.Sprintf("https://%s%s", config.OAUTH_SERVER_HOST, uri.JWKs), &tls.Config{
-		InsecureSkipVerify: true,
-	})
+	validator := test.GetJWTValidator(fmt.Sprintf("https://%s%s", config.OAUTH_SERVER_HOST, uri.JWKs))
 	accessToken, err := validator.Parse(token["access_token"])
 	require.NoError(t, err)
 	require.Empty(t, accessToken[uri.DeviceIDClaimKey])
@@ -40,9 +36,7 @@ func TestRequestHandler_getServiceToken(t *testing.T) {
 
 	token := getToken(t, test.ClientTest, "", "localhost", "", "", "", "", "", service.AllowedGrantType_CLIENT_CREDENTIALS, http.StatusOK)
 
-	validator := jwt.NewValidator(fmt.Sprintf("https://%s%s", config.OAUTH_SERVER_HOST, uri.JWKs), &tls.Config{
-		InsecureSkipVerify: true,
-	})
+	validator := test.GetJWTValidator(fmt.Sprintf("https://%s%s", config.OAUTH_SERVER_HOST, uri.JWKs))
 	_, err := validator.Parse(token["access_token"])
 	require.NoError(t, err)
 }
@@ -55,9 +49,7 @@ func TestRequestHandler_getDeviceToken(t *testing.T) {
 	token := getToken(t, test.ClientTest, "", "", "", code, "", "", "", service.AllowedGrantType_AUTHORIZATION_CODE, http.StatusOK)
 
 	require.NotEmpty(t, token["access_token"])
-	validator := jwt.NewValidator(fmt.Sprintf("https://%s%s", config.OAUTH_SERVER_HOST, uri.JWKs), &tls.Config{
-		InsecureSkipVerify: true,
-	})
+	validator := test.GetJWTValidator(fmt.Sprintf("https://%s%s", config.OAUTH_SERVER_HOST, uri.JWKs))
 	accessToken, err := validator.Parse(token["access_token"])
 	require.NoError(t, err)
 	require.NotEmpty(t, accessToken[uri.DeviceIDClaimKey])
@@ -72,9 +64,7 @@ func TestRequestHandlerGetTokenWithDefaultScopes(t *testing.T) {
 
 	require.NotEmpty(t, token["access_token"])
 	require.Equal(t, token["scope"], service.DefaultScope)
-	validator := jwt.NewValidator(fmt.Sprintf("https://%s%s", config.OAUTH_SERVER_HOST, uri.JWKs), &tls.Config{
-		InsecureSkipVerify: true,
-	})
+	validator := test.GetJWTValidator(fmt.Sprintf("https://%s%s", config.OAUTH_SERVER_HOST, uri.JWKs))
 	accessToken, err := validator.Parse(token["access_token"])
 	require.NoError(t, err)
 	require.Equal(t, service.DefaultScope, accessToken[service.TokenScopeKey])
@@ -89,9 +79,7 @@ func TestRequestHandlerGetTokenWithCuscomScopes(t *testing.T) {
 
 	require.NotEmpty(t, token["access_token"])
 	require.Equal(t, token["scope"], "r:* w:*")
-	validator := jwt.NewValidator(fmt.Sprintf("https://%s%s", config.OAUTH_SERVER_HOST, uri.JWKs), &tls.Config{
-		InsecureSkipVerify: true,
-	})
+	validator := test.GetJWTValidator(fmt.Sprintf("https://%s%s", config.OAUTH_SERVER_HOST, uri.JWKs))
 	accessToken, err := validator.Parse(token["access_token"])
 	require.NoError(t, err)
 	require.Equal(t, "r:* w:*", accessToken[service.TokenScopeKey])
@@ -138,9 +126,7 @@ func TestRequestHandlerGetTokenWithValidRequiredParams(t *testing.T) {
 	token := getToken(t, test.ClientTestRequiredParams, test.ClientTestRequiredParamsSecret, "", "http://localhost:7777", code, "", "", "", service.AllowedGrantType_AUTHORIZATION_CODE, http.StatusOK)
 	require.NotEmpty(t, token["access_token"])
 	require.Equal(t, token["scope"], "r:*")
-	validator := jwt.NewValidator(fmt.Sprintf("https://%s%s", config.OAUTH_SERVER_HOST, uri.JWKs), &tls.Config{
-		InsecureSkipVerify: true,
-	})
+	validator := test.GetJWTValidator(fmt.Sprintf("https://%s%s", config.OAUTH_SERVER_HOST, uri.JWKs))
 	accessToken, err := validator.Parse(token["access_token"])
 	require.NoError(t, err)
 	require.Equal(t, "r:*", accessToken[service.TokenScopeKey])
@@ -168,9 +154,7 @@ func TestRequestHandlerGetTokenWithValidRefreshToken(t *testing.T) {
 	token := getToken(t, test.ClientTest, test.ClientTestRequiredParamsSecret, "invalidRefreshToken", "http://localhost:7777", "", "refresh-token", "", "", service.AllowedGrantType_REFRESH_TOKEN, http.StatusOK)
 	require.NotEmpty(t, token["access_token"])
 	require.Equal(t, token["scope"], service.DefaultScope)
-	validator := jwt.NewValidator(fmt.Sprintf("https://%s%s", config.OAUTH_SERVER_HOST, uri.JWKs), &tls.Config{
-		InsecureSkipVerify: true,
-	})
+	validator := test.GetJWTValidator(fmt.Sprintf("https://%s%s", config.OAUTH_SERVER_HOST, uri.JWKs))
 	accessToken, err := validator.Parse(token["access_token"])
 	require.NoError(t, err)
 	require.Equal(t, service.DefaultScope, accessToken[service.TokenScopeKey])
@@ -181,9 +165,7 @@ func TestGetRequestHandlerGetTokenWithValidClient(t *testing.T) {
 	defer webTearDown()
 
 	accessToken := getTokenUsingGet(t, test.ClientTest, false, http.StatusOK)
-	validator := jwt.NewValidator(fmt.Sprintf("https://%s%s", config.OAUTH_SERVER_HOST, uri.JWKs), &tls.Config{
-		InsecureSkipVerify: true,
-	})
+	validator := test.GetJWTValidator(fmt.Sprintf("https://%s%s", config.OAUTH_SERVER_HOST, uri.JWKs))
 	_, err := validator.Parse(accessToken)
 	require.NoError(t, err)
 }
@@ -241,9 +223,7 @@ func TestGetRequestHandlerGetTokenWithDeviceIDAndOwnerClaim(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			token := getToken(t, test.ClientTest, "", "localhost", "", "", "", tt.args.deviceID, tt.args.owner, service.AllowedGrantType_CLIENT_CREDENTIALS, http.StatusOK)
-			validator := jwt.NewValidator(fmt.Sprintf("https://%s%s", config.OAUTH_SERVER_HOST, uri.JWKs), &tls.Config{
-				InsecureSkipVerify: true,
-			})
+			validator := test.GetJWTValidator(fmt.Sprintf("https://%s%s", config.OAUTH_SERVER_HOST, uri.JWKs))
 			claims, err := validator.Parse(token["access_token"])
 			require.NoError(t, err)
 			if tt.wantDeviceID == "" {
@@ -265,9 +245,7 @@ func TestGetRequestHandlerGetTokenWithValidClientBasicAuth(t *testing.T) {
 	defer webTearDown()
 
 	accessToken := getTokenUsingGet(t, test.ClientTest, true, http.StatusOK)
-	validator := jwt.NewValidator(fmt.Sprintf("https://%s%s", config.OAUTH_SERVER_HOST, uri.JWKs), &tls.Config{
-		InsecureSkipVerify: true,
-	})
+	validator := test.GetJWTValidator(fmt.Sprintf("https://%s%s", config.OAUTH_SERVER_HOST, uri.JWKs))
 	_, err := validator.Parse(accessToken)
 	require.NoError(t, err)
 }

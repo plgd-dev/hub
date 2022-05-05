@@ -25,7 +25,7 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 	}
 	tracerProvider := otelClient.GetTracerProvider()
 
-	validator, err := validator.New(ctx, config.APIs.GRPC.Authorization.Config, logger)
+	validator, err := validator.New(ctx, config.APIs.GRPC.Authorization.Config, logger, tracerProvider)
 	if err != nil {
 		otelClient.Close()
 		return nil, fmt.Errorf("cannot create validator: %w", err)

@@ -9,6 +9,7 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/net/http/client"
 	"github.com/plgd-dev/hub/v2/pkg/security/oauth2/oauth"
 	"github.com/plgd-dev/hub/v2/pkg/security/openid"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type provider interface {
@@ -19,7 +20,7 @@ type provider interface {
 }
 
 // NewPlgdProvider creates OAuth client
-func NewPlgdProvider(ctx context.Context, config Config, logger log.Logger, ownerClaim, deviceIDClaim string) (*PlgdProvider, error) {
+func NewPlgdProvider(ctx context.Context, config Config, logger log.Logger, tracerProvider trace.TracerProvider, ownerClaim, deviceIDClaim string) (*PlgdProvider, error) {
 	config.ResponseMode = "query"
 	config.AccessType = "offline"
 	config.ResponseType = "code"
@@ -30,7 +31,7 @@ func NewPlgdProvider(ctx context.Context, config Config, logger log.Logger, owne
 	}
 	config.ClientSecret = string(clientSecret)
 
-	httpClient, err := client.New(config.HTTP, logger)
+	httpClient, err := client.New(config.HTTP, logger, tracerProvider)
 	if err != nil {
 		return nil, err
 	}

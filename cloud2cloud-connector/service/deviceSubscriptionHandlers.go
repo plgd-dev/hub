@@ -16,6 +16,7 @@ import (
 	raEvents "github.com/plgd-dev/hub/v2/resource-aggregate/events"
 	raService "github.com/plgd-dev/hub/v2/resource-aggregate/service"
 	kitSync "github.com/plgd-dev/kit/v2/sync"
+	"go.opentelemetry.io/otel/trace"
 )
 
 const NOT_SUPPORTED_ERR = "not supported"
@@ -62,9 +63,10 @@ type DevicesSubscription struct {
 	raClient          raService.ResourceAggregateClient
 	subscriber        *subscriber.Subscriber
 	reconnectInterval time.Duration
+	tracerProvider    trace.TracerProvider
 }
 
-func NewDevicesSubscription(ctx context.Context, rdClient pb.GrpcGatewayClient, raClient raService.ResourceAggregateClient, subscriber *subscriber.Subscriber, reconnectInterval time.Duration) *DevicesSubscription {
+func NewDevicesSubscription(ctx context.Context, tracerProvider trace.TracerProvider, rdClient pb.GrpcGatewayClient, raClient raService.ResourceAggregateClient, subscriber *subscriber.Subscriber, reconnectInterval time.Duration) *DevicesSubscription {
 	return &DevicesSubscription{
 		data:              kitSync.NewMap(),
 		rdClient:          rdClient,
@@ -72,6 +74,7 @@ func NewDevicesSubscription(ctx context.Context, rdClient pb.GrpcGatewayClient, 
 		reconnectInterval: reconnectInterval,
 		ctx:               ctx,
 		subscriber:        subscriber,
+		tracerProvider:    tracerProvider,
 	}
 }
 
@@ -110,10 +113,10 @@ func (c *DevicesSubscription) Add(deviceID string, linkedAccount store.LinkedAcc
 	}
 	h := grpcClient.NewDeviceSubscriptionHandlers(deviceSubscriptionHandlers{
 		onResourceUpdatePending: func(ctx context.Context, val *raEvents.ResourceUpdatePending) error {
-			return updateResource(ctx, c.raClient, val, linkedAccount, linkedCloud)
+			return updateResource(ctx, c.tracerProvider, c.raClient, val, linkedAccount, linkedCloud)
 		},
 		onResourceRetrievePending: func(ctx context.Context, val *raEvents.ResourceRetrievePending) error {
-			return retrieveResource(ctx, c.raClient, val, linkedAccount, linkedCloud)
+			return retrieveResource(ctx, c.tracerProvider, c.raClient, val, linkedAccount, linkedCloud)
 		},
 		onError: func(err error) {
 			log.Errorf("device %v subscription(ResourceUpdatePending, ResourceRetrievePending) was closed", deviceID)
