@@ -35,8 +35,8 @@ func (am *aggregateModel) Update(e EventUnmarshaler) (ignore bool, reload bool) 
 	am.LogDebugfFunc("projection.aggregateModel.Update: am.GroupID %v: AggregateID %v: Version %v, hasSnapshot %v", am.groupID, am.aggregateID, am.version, am.hasSnapshot)
 
 	switch {
-	case e.Version() == 0 || e.IsSnapshot():
-		am.LogDebugfFunc("projection.aggregateModel.Update: e.Version == 0 || e.IsSnapshot()")
+	case e.Version() == 0 || (e.IsSnapshot() && (!am.hasSnapshot || e.Version() > am.version)):
+		am.LogDebugfFunc("projection.aggregateModel.Update: e.Version == 0 || (e.IsSnapshot() && (!am.hasSnapshot || e.Version() > am.version)")
 		am.version = e.Version()
 		am.hasSnapshot = true
 	case am.version+1 == e.Version() && am.hasSnapshot:
