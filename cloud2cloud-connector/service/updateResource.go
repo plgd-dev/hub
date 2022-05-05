@@ -16,14 +16,15 @@ import (
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	raEvents "github.com/plgd-dev/hub/v2/resource-aggregate/events"
 	raService "github.com/plgd-dev/hub/v2/resource-aggregate/service"
+	"go.opentelemetry.io/otel/trace"
 )
 
 func makeHTTPEndpoint(url, deviceID, href string) string {
 	return url + kitHttp.CanonicalHref("devices/"+deviceID+"/"+href)
 }
 
-func updateDeviceResource(ctx context.Context, deviceID, href, contentType string, content []byte, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud) (string, []byte, commands.Status, error) {
-	client := linkedCloud.GetHTTPClient()
+func updateDeviceResource(ctx context.Context, tracerProvider trace.TracerProvider, deviceID, href, contentType string, content []byte, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud) (string, []byte, commands.Status, error) {
+	client := linkedCloud.GetHTTPClient(tracerProvider)
 	defer client.CloseIdleConnections()
 	r, w := io.Pipe()
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, makeHTTPEndpoint(linkedCloud.Endpoint.URL, deviceID, href), r)
@@ -70,10 +71,10 @@ func updateDeviceResource(ctx context.Context, deviceID, href, contentType strin
 	return respContentType, respContent.Bytes(), commands.Status_OK, nil
 }
 
-func updateResource(ctx context.Context, raClient raService.ResourceAggregateClient, e *raEvents.ResourceUpdatePending, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud) error {
+func updateResource(ctx context.Context, tracerProvider trace.TracerProvider, raClient raService.ResourceAggregateClient, e *raEvents.ResourceUpdatePending, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud) error {
 	deviceID := e.GetResourceId().GetDeviceId()
 	href := e.GetResourceId().GetHref()
-	contentType, content, status, err := updateDeviceResource(ctx, deviceID, href, e.GetContent().GetContentType(), e.GetContent().GetData(), linkedAccount, linkedCloud)
+	contentType, content, status, err := updateDeviceResource(ctx, tracerProvider, deviceID, href, e.GetContent().GetContentType(), e.GetContent().GetData(), linkedAccount, linkedCloud)
 	if err != nil {
 		log.Errorf("cannot update resource %v/%v: %w", deviceID, href, err)
 	}

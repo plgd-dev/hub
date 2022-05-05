@@ -46,10 +46,10 @@ func toValidator(c oauth2.Config) validator.Config {
 	}
 }
 
-func newAuthInterceptor(ctx context.Context, config validator.Config, logger log.Logger) (kitNetHttp.Interceptor, func(), error) {
+func newAuthInterceptor(ctx context.Context, config validator.Config, logger log.Logger, tracerProvider trace.TracerProvider) (kitNetHttp.Interceptor, func(), error) {
 	var fl fn.FuncList
 
-	validator, err := validator.New(ctx, config, logger)
+	validator, err := validator.New(ctx, config, logger, tracerProvider)
 	if err != nil {
 		return nil, nil, fmt.Errorf("cannot create validator: %w", err)
 	}
@@ -203,7 +203,7 @@ func newDevicesSubscription(ctx context.Context, config Config, raClient raServi
 	}
 	fl.AddFunc(closeSub)
 
-	devicesSubscription := NewDevicesSubscription(ctx, grpcClient, raClient, sub, config.Clients.Subscription.HTTP.ReconnectInterval)
+	devicesSubscription := NewDevicesSubscription(ctx, tracerProvider, grpcClient, raClient, sub, config.Clients.Subscription.HTTP.ReconnectInterval)
 	return devicesSubscription, fl.ToFunction(), nil
 }
 
@@ -245,7 +245,7 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Server, error)
 	}
 	listener.AddCloseFunc(closeDevSub)
 
-	taskProcessor := NewTaskProcessor(raClient, config.TaskProcessor.MaxParallel, config.TaskProcessor.CacheSize,
+	taskProcessor := NewTaskProcessor(raClient, tracerProvider, config.TaskProcessor.MaxParallel, config.TaskProcessor.CacheSize,
 		config.TaskProcessor.Timeout, config.TaskProcessor.Delay)
 
 	isClient, closeIsClient, err := newIdentityStoreClient(config.Clients.IdentityStore, logger, tracerProvider)
@@ -262,7 +262,7 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Server, error)
 	}
 	listener.AddCloseFunc(closeStore)
 
-	provider, err := oauth2.NewPlgdProvider(ctx, config.APIs.HTTP.Authorization.Config, logger, "", "")
+	provider, err := oauth2.NewPlgdProvider(ctx, config.APIs.HTTP.Authorization.Config, logger, tracerProvider, "", "")
 	if err != nil {
 		cleanUp.Execute()
 		return nil, fmt.Errorf("cannot create device provider: %w", err)
@@ -270,11 +270,11 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Server, error)
 	listener.AddCloseFunc(provider.Close)
 
 	subMgr := NewSubscriptionManager(config.APIs.HTTP.EventsURL, isClient, raClient, store, devicesSubscription,
-		provider, taskProcessor.Trigger)
+		provider, taskProcessor.Trigger, tracerProvider)
 
-	requestHandler := NewRequestHandler(config.APIs.HTTP.Authorization.OwnerClaim, provider, subMgr, store, taskProcessor.Trigger)
+	requestHandler := NewRequestHandler(config.APIs.HTTP.Authorization.OwnerClaim, provider, subMgr, store, taskProcessor.Trigger, tracerProvider)
 
-	auth, closeAuth, err := newAuthInterceptor(ctx, toValidator(config.APIs.HTTP.Authorization.Config), logger)
+	auth, closeAuth, err := newAuthInterceptor(ctx, toValidator(config.APIs.HTTP.Authorization.Config), logger, tracerProvider)
 	if err != nil {
 		cleanUp.Execute()
 		return nil, fmt.Errorf("cannot create auth interceptor: %w", err)
@@ -297,6 +297,7 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Server, error)
 			subscriptionManager: subMgr,
 			provider:            provider,
 			triggerTask:         taskProcessor.Trigger,
+			tracerProvider:      tracerProvider,
 		}
 		runDevicePulling(ctx, pdh, config.APIs.HTTP.PullDevices.Interval, &wg)
 	}

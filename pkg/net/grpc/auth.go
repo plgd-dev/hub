@@ -2,7 +2,6 @@ package grpc
 
 import (
 	"context"
-	"crypto/tls"
 	"fmt"
 
 	extJwt "github.com/golang-jwt/jwt/v4"
@@ -33,8 +32,8 @@ func MakeAuthInterceptors(authFunc Interceptor, whiteListedMethods ...string) Au
 	}
 }
 
-func MakeJWTInterceptors(jwksURL string, tls *tls.Config, claims ClaimsFunc, whiteListedMethods ...string) AuthInterceptors {
-	return MakeAuthInterceptors(ValidateJWT(jwksURL, tls, claims), whiteListedMethods...)
+func MakeJWTInterceptors(keyCache *jwt.KeyCache, claims ClaimsFunc, whiteListedMethods ...string) AuthInterceptors {
+	return MakeAuthInterceptors(ValidateJWT(keyCache, claims), whiteListedMethods...)
 }
 
 func (f AuthInterceptors) Unary() grpc.UnaryServerInterceptor {
@@ -64,8 +63,8 @@ func ValidateJWTWithValidator(validator Validator, claims ClaimsFunc) Intercepto
 	}
 }
 
-func ValidateJWT(jwksURL string, tls *tls.Config, claims ClaimsFunc) Interceptor {
-	return ValidateJWTWithValidator(jwt.NewValidator(jwksURL, tls), claims)
+func ValidateJWT(keyCache *jwt.KeyCache, claims ClaimsFunc) Interceptor {
+	return ValidateJWTWithValidator(jwt.NewValidator(keyCache), claims)
 }
 
 // CtxWithToken stores token to ctx of request.

@@ -15,6 +15,7 @@ import (
 
 	"github.com/jtacoma/uritemplates"
 	"github.com/plgd-dev/hub/v2/pkg/log"
+	"github.com/plgd-dev/hub/v2/pkg/security/jwt"
 	"github.com/plgd-dev/hub/v2/test/config"
 	"github.com/plgd-dev/hub/v2/test/oauth-server/service"
 	"github.com/plgd-dev/hub/v2/test/oauth-server/uri"
@@ -221,6 +222,22 @@ func GetAccessToken(t *testing.T, authServerHost, clientID string) string {
 
 func GetDefaultAccessToken(t *testing.T) string {
 	return GetAccessToken(t, config.OAUTH_SERVER_HOST, ClientTest)
+}
+
+func GetJWTValidator(jwkURL string) *jwt.Validator {
+	t := http.DefaultTransport.(*http.Transport).Clone()
+	//t.MaxIdleConns = 100
+	//t.MaxConnsPerHost = 100
+	//t.MaxIdleConnsPerHost = 1
+	//t.IdleConnTimeout = time.Second * 30
+	t.TLSClientConfig = &tls.Config{
+		InsecureSkipVerify: true,
+	}
+	client := http.Client{
+		Transport: t,
+		Timeout:   time.Second * 10,
+	}
+	return jwt.NewValidator(jwt.NewKeyCache(jwkURL, &client))
 }
 
 func GetAuthorizationCode(t *testing.T, authServerHost, clientID, deviceID, scopes string) string {

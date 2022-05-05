@@ -2,11 +2,9 @@ package jwt
 
 import (
 	"context"
-	"crypto/tls"
 	"fmt"
 	"net/http"
 	"sync"
-	"time"
 
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/lestrrat-go/jwx/jwk"
@@ -19,23 +17,8 @@ type KeyCache struct {
 	keys jwk.Set
 }
 
-func NewKeyCacheWithHttp(url string, client *http.Client) *KeyCache {
+func NewKeyCache(url string, client *http.Client) *KeyCache {
 	return &KeyCache{url: url, http: client}
-}
-
-func NewKeyCache(url string, tls *tls.Config) *KeyCache {
-	t := http.DefaultTransport.(*http.Transport).Clone()
-
-	t.MaxIdleConns = 100
-	t.MaxConnsPerHost = 100
-	t.MaxIdleConnsPerHost = 1
-	t.IdleConnTimeout = time.Second * 30
-	t.TLSClientConfig = tls
-	client := &http.Client{
-		Transport: t,
-		Timeout:   time.Second * 10,
-	}
-	return NewKeyCacheWithHttp(url, client)
 }
 
 func (c *KeyCache) GetOrFetchKeyWithContext(ctx context.Context, token *jwt.Token) (interface{}, error) {

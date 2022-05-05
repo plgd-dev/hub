@@ -12,9 +12,9 @@ import (
 
 // NewPlgdProvider creates OAuth client
 func NewClientCredentialsPlgdProvider(config Config, httpClient *client.Client, jwksURL string, ownerClaim, deviceIDClaim string) *ClientCredentialsPlgdProvider {
-	keyCache := jwt.NewKeyCacheWithHttp(jwksURL, httpClient.HTTP())
+	keyCache := jwt.NewKeyCache(jwksURL, httpClient.HTTP())
 
-	jwtValidator := jwt.NewValidatorWithKeyCache(keyCache)
+	jwtValidator := jwt.NewValidator(keyCache)
 	return &ClientCredentialsPlgdProvider{
 		Config:        config,
 		HTTPClient:    httpClient,

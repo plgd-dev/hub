@@ -11,6 +11,7 @@ import (
 	"github.com/plgd-dev/hub/v2/test/config"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/trace"
 )
 
 func TestExchangeCacheExecute(t *testing.T) {
@@ -21,7 +22,7 @@ func TestExchangeCacheExecute(t *testing.T) {
 
 	cfg := config.MakeDeviceAuthorization()
 	cfg.ClientID = oauthTest.ClientTestRestrictedAuth
-	provider, err := oauth2.NewPlgdProvider(context.Background(), cfg, logger, "", "")
+	provider, err := oauth2.NewPlgdProvider(context.Background(), cfg, logger, trace.NewNoopTracerProvider(), "", "")
 	require.NoError(t, err)
 
 	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
