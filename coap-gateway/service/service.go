@@ -234,12 +234,12 @@ func getOnInactivityFn(logger log.Logger) func(cc inactivity.ClientConn) {
 	}
 }
 
-func newProviders(ctx context.Context, config AuthorizationConfig, logger log.Logger) (map[string]*oauth2.PlgdProvider, *oauth2.PlgdProvider, func(), error) {
+func newProviders(ctx context.Context, config AuthorizationConfig, logger log.Logger, tracerProvider trace.TracerProvider) (map[string]*oauth2.PlgdProvider, *oauth2.PlgdProvider, func(), error) {
 	var closeProviders fn.FuncList
 	var firstProvider *oauth2.PlgdProvider
 	providers := make(map[string]*oauth2.PlgdProvider)
 	for _, p := range config.Providers {
-		provider, err := oauth2.NewPlgdProvider(ctx, p.Config, logger, config.OwnerClaim, config.DeviceIDClaim)
+		provider, err := oauth2.NewPlgdProvider(ctx, p.Config, logger, tracerProvider, config.OwnerClaim, config.DeviceIDClaim)
 		if err != nil {
 			closeProviders.Execute()
 			return nil, nil, nil, fmt.Errorf("cannot create device provider: %w", err)
@@ -325,7 +325,7 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 		}
 	}
 
-	providers, firstProvider, closeProviders, err := newProviders(ctx, config.APIs.COAP.Authorization, logger)
+	providers, firstProvider, closeProviders, err := newProviders(ctx, config.APIs.COAP.Authorization, logger, tracerProvider)
 	if err != nil {
 		nats.Close()
 		return nil, fmt.Errorf("cannot create device providers error: %w", err)
@@ -337,9 +337,9 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 		return nil, fmt.Errorf("device providers are empty")
 	}
 
-	keyCache := jwt.NewKeyCacheWithHttp(firstProvider.OpenID.JWKSURL, firstProvider.HTTP())
+	keyCache := jwt.NewKeyCache(firstProvider.OpenID.JWKSURL, firstProvider.HTTP())
 
-	jwtValidator := jwt.NewValidatorWithKeyCache(keyCache)
+	jwtValidator := jwt.NewValidator(keyCache)
 
 	ownerCache := idClient.NewOwnerCache(config.APIs.COAP.Authorization.OwnerClaim, config.APIs.COAP.OwnerCacheExpiration, nats.GetConn(), isClient, func(err error) {
 		logger.Errorf("ownerCache error: %w", err)
@@ -501,6 +501,7 @@ func (server *Service) coapConnOnNew(coapConn *tcp.ClientConn, tlscon *tls.Conn)
 			tlsValidUntil = peerCertificates[0].NotAfter
 		}
 	}
+
 	client := newClient(server, coapConn, tlsDeviceID, tlsValidUntil)
 	coapConn.SetContextValue(clientKey, client)
 	coapConn.AddOnClose(func() {

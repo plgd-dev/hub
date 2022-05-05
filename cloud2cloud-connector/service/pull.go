@@ -23,6 +23,7 @@ import (
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	raService "github.com/plgd-dev/hub/v2/resource-aggregate/service"
 	"github.com/plgd-dev/kit/v2/codec/json"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type Device struct {
@@ -43,6 +44,7 @@ type pullDevicesHandler struct {
 	subscriptionManager *SubscriptionManager
 	provider            *oauth2.PlgdProvider
 	triggerTask         OnTaskTrigger
+	tracerProvider      trace.TracerProvider
 }
 
 func getOwnerDevices(ctx context.Context, isClient pbIS.IdentityStoreClient) (map[string]bool, error) {
@@ -73,8 +75,8 @@ func getOwnerDevices(ctx context.Context, isClient pbIS.IdentityStoreClient) (ma
 	return ownerDevices, nil
 }
 
-func Get(ctx context.Context, url string, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud, v interface{}) error {
-	client := linkedCloud.GetHTTPClient()
+func Get(ctx context.Context, tracerProvider trace.TracerProvider, url string, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud, v interface{}) error {
+	client := linkedCloud.GetHTTPClient(tracerProvider)
 	defer client.CloseIdleConnections()
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
@@ -246,7 +248,7 @@ func (p *pullDevicesHandler) pullDevices(ctx context.Context, linkedAccount stor
 
 func (p *pullDevicesHandler) getDevicesWithResourceLinks(ctx context.Context, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud) error {
 	var devices []RetrieveDeviceWithLinksResponse
-	err := Get(ctx, linkedCloud.Endpoint.URL+"/devices", linkedAccount, linkedCloud, &devices)
+	err := Get(ctx, p.tracerProvider, linkedCloud.Endpoint.URL+"/devices", linkedAccount, linkedCloud, &devices)
 	if err != nil {
 		return err
 	}
@@ -315,7 +317,7 @@ func (p *pullDevicesHandler) notifyResourceChanged(ctx context.Context, linkedAc
 
 func (p *pullDevicesHandler) getDevicesWithResourceValues(ctx context.Context, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud) error {
 	var devices []RetrieveDeviceContentAllResponse
-	err := Get(ctx, linkedCloud.Endpoint.URL+"/devices?content=all", linkedAccount, linkedCloud, &devices)
+	err := Get(ctx, p.tracerProvider, linkedCloud.Endpoint.URL+"/devices?content=all", linkedAccount, linkedCloud, &devices)
 	if err != nil {
 		return err
 	}
@@ -337,7 +339,7 @@ func (p *pullDevicesHandler) getDevicesWithResourceValues(ctx context.Context, l
 	return nil
 }
 
-func refreshTokens(ctx context.Context, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud, provider *oauth2.PlgdProvider, s *Store) (store.LinkedAccount, error) {
+func refreshTokens(ctx context.Context, traceProvider trace.TracerProvider, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud, provider *oauth2.PlgdProvider, s *Store) (store.LinkedAccount, error) {
 	if !linkedAccount.Data.Origin().IsValidAccessToken() {
 		originToken, err := provider.Refresh(ctx, linkedAccount.Data.Origin().RefreshToken)
 		if err != nil {
@@ -346,7 +348,7 @@ func refreshTokens(ctx context.Context, linkedAccount store.LinkedAccount, linke
 		linkedAccount.Data = linkedAccount.Data.SetOrigin(*originToken)
 	}
 
-	ctx = linkedCloud.CtxWithHTTPClient(ctx)
+	ctx = linkedCloud.CtxWithHTTPClient(ctx, traceProvider)
 	oauthCfg := linkedCloud.OAuth
 	if oauthCfg.RedirectURL == "" {
 		oauthCfg.RedirectURL = provider.Config.RedirectURL
@@ -366,7 +368,7 @@ func refreshTokens(ctx context.Context, linkedAccount store.LinkedAccount, linke
 }
 
 func (p *pullDevicesHandler) pullDevicesFromAccount(ctx context.Context, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud) error {
-	linkedAccount, err := refreshTokens(ctx, linkedAccount, linkedCloud, p.provider, p.s)
+	linkedAccount, err := refreshTokens(ctx, p.tracerProvider, linkedAccount, linkedCloud, p.provider, p.s)
 	if err != nil {
 		return err
 	}

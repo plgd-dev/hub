@@ -20,7 +20,7 @@ func (rh *RequestHandler) deleteLinkedCloud(w http.ResponseWriter, r *http.Reque
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			cancelLinkedAccountSubscription(r.Context(), cloud.linkedCloud, account)
+			cancelLinkedAccountSubscription(r.Context(), rh.tracerProvider, cloud.linkedCloud, account)
 		}()
 		return true
 	})

@@ -240,7 +240,7 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Server, error)
 		}
 	}
 
-	validator, err := validator.New(ctx, config.APIs.HTTP.Authorization, logger)
+	validator, err := validator.New(ctx, config.APIs.HTTP.Authorization, logger, tracerProvider)
 	if err != nil {
 		closeListener()
 		return nil, fmt.Errorf("cannot create validator: %w", err)

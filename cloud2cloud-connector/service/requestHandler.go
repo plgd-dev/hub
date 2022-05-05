@@ -15,6 +15,7 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	kitNetHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
 	pkgOAuth2 "github.com/plgd-dev/hub/v2/pkg/security/oauth2"
+	"go.opentelemetry.io/otel/trace"
 )
 
 const cloudIDKey = "CloudId"
@@ -33,6 +34,7 @@ type RequestHandler struct {
 	provisionCache *cache.Cache
 	subManager     *SubscriptionManager
 	triggerTask    OnTaskTrigger
+	tracerProvider trace.TracerProvider
 }
 
 func logAndWriteErrorResponse(err error, statusCode int, w http.ResponseWriter) {
@@ -50,6 +52,7 @@ func NewRequestHandler(
 	subManager *SubscriptionManager,
 	store *Store,
 	triggerTask OnTaskTrigger,
+	tracerProvider trace.TracerProvider,
 ) *RequestHandler {
 	cache := cache.NewCache()
 	add := periodic.New(subManager.devicesSubscription.ctx.Done(), time.Minute*5)
@@ -64,6 +67,7 @@ func NewRequestHandler(
 		store:          store,
 		provisionCache: cache,
 		triggerTask:    triggerTask,
+		tracerProvider: tracerProvider,
 	}
 }
 
