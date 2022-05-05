@@ -195,6 +195,23 @@ type response struct {
 	Code int `json:"code,omitempty"`
 }
 
+func createLogRequest(r *http.Request) *request {
+	bearer := r.Header.Get("Authorization")
+	req := request{
+		Method: r.Method,
+		Href:   r.RequestURI,
+	}
+	token := strings.SplitN(bearer, " ", 2)
+	if len(token) == 2 && strings.ToLower(token[0]) == "bearer" {
+		if claims, err := jwt.ParseToken(token[1]); err == nil {
+			req.JWT = &jwtMember{
+				Sub: claims.Subject(),
+			}
+		}
+	}
+	return &req
+}
+
 func CreateLoggingMiddleware(opts ...LogOpt) func(next http.Handler) http.Handler {
 	cfg := NewLogOptions()
 	for _, o := range opts {
@@ -203,27 +220,14 @@ func CreateLoggingMiddleware(opts ...LogOpt) func(next http.Handler) http.Handle
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			start := time.Now()
-			bearer := r.Header.Get("Authorization")
 			sw := statusWriter{ResponseWriter: w}
-
 			next.ServeHTTP(&sw, r)
 			duration := time.Since(start)
 			logger := cfg.logger
 			if !WantToLog(sw.status, logger) {
 				return
 			}
-			req := &request{
-				Method: r.Method,
-				Href:   r.RequestURI,
-			}
-			token := strings.SplitN(bearer, " ", 2)
-			if len(token) == 2 && strings.ToLower(token[0]) == "bearer" {
-				if claims, err := jwt.ParseToken(token[1]); err == nil {
-					req.JWT = &jwtMember{
-						Sub: claims.Subject(),
-					}
-				}
-			}
+			req := createLogRequest(r)
 			resp := &response{
 				Code: sw.status,
 			}
