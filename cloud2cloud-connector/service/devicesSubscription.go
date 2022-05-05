@@ -12,6 +12,7 @@ import (
 	pbIS "github.com/plgd-dev/hub/v2/identity-store/pb"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
+	"go.opentelemetry.io/otel/trace"
 )
 
 func (s *SubscriptionManager) SubscribeToDevices(ctx context.Context, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud) error {
@@ -53,7 +54,7 @@ func (s *SubscriptionManager) SubscribeToDevices(ctx context.Context, linkedAcco
 	if err != nil {
 		var errors []error = make([]error, 1, 2)
 		errors = append(errors, fmt.Errorf("cannot store subscription to DB: %w", err))
-		if err2 := cancelDevicesSubscription(ctx, linkedAccount, linkedCloud, sub.ID); err2 != nil {
+		if err2 := cancelDevicesSubscription(ctx, s.tracerProvider, linkedAccount, linkedCloud, sub.ID); err2 != nil {
 			errors = append(errors, fmt.Errorf("cannot cancel subscription %v: %w", sub.ID, err2))
 		}
 		return fmt.Errorf("%v", errors)
@@ -62,7 +63,7 @@ func (s *SubscriptionManager) SubscribeToDevices(ctx context.Context, linkedAcco
 }
 
 func (s *SubscriptionManager) subscribeToDevices(ctx context.Context, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud, correlationID, signingSecret string) (string, error) {
-	resp, err := subscribe(ctx, "/devices/subscriptions", correlationID, events.SubscriptionRequest{
+	resp, err := subscribe(ctx, s.tracerProvider, "/devices/subscriptions", correlationID, events.SubscriptionRequest{
 		EventsURL: s.eventsURL,
 		EventTypes: []events.EventType{
 			events.EventType_DevicesRegistered, events.EventType_DevicesUnregistered,
@@ -76,8 +77,8 @@ func (s *SubscriptionManager) subscribeToDevices(ctx context.Context, linkedAcco
 	return resp.SubscriptionID, nil
 }
 
-func cancelDevicesSubscription(ctx context.Context, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud, subscriptionID string) error {
-	err := cancelSubscription(ctx, "/devices/subscriptions/"+subscriptionID, linkedAccount, linkedCloud)
+func cancelDevicesSubscription(ctx context.Context, tracerProvider trace.TracerProvider, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud, subscriptionID string) error {
+	err := cancelSubscription(ctx, tracerProvider, "/devices/subscriptions/"+subscriptionID, linkedAccount, linkedCloud)
 	if err != nil {
 		return fmt.Errorf("cannot cancel devices subscription for %v: %w", linkedAccount.ID, err)
 	}

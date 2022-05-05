@@ -10,6 +10,7 @@ import (
 
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/pkg/security/jwt"
+	"github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -18,7 +19,7 @@ func TestValidator(t *testing.T) {
 	server := newTestJwks()
 	defer server.Close()
 
-	v := jwt.NewValidator(server.URL+uri, &noTLS)
+	v := test.GetJWTValidator(server.URL + uri)
 	var c testClaims
 	err := v.ParseWithClaims(token, &c)
 	require.NoError(t, err)
@@ -32,7 +33,7 @@ func TestClaims(t *testing.T) {
 	server := newTestJwks()
 	defer server.Close()
 
-	v := jwt.NewValidator(server.URL+uri, &noTLS)
+	v := test.GetJWTValidator(server.URL + uri)
 	var c jwt.Claims
 	err := v.ParseWithClaims(token, &c)
 	require.Error(t, err)
@@ -62,7 +63,7 @@ func TestParser(t *testing.T) {
 	server := newTestJwks()
 	defer server.Close()
 
-	v := jwt.NewValidator(server.URL+uri, &noTLS)
+	v := test.GetJWTValidator(server.URL + uri)
 	c, err := v.Parse(token)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "Token is expired")
@@ -87,7 +88,7 @@ func TestEmptyToken(t *testing.T) {
 	server := newTestJwks()
 	defer server.Close()
 
-	v := jwt.NewValidator(server.URL+uri, &noTLS)
+	v := test.GetJWTValidator(server.URL + uri)
 	_, err := v.Parse("")
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "missing token")
@@ -102,7 +103,7 @@ func TestInvalidToken(t *testing.T) {
 	server := newTestJwks()
 	defer server.Close()
 
-	v := jwt.NewValidator(server.URL+uri, &noTLS)
+	v := test.GetJWTValidator(server.URL + uri)
 	_, err := v.Parse("invalid")
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "could not parse token")

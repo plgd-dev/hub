@@ -84,7 +84,7 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 }
 
 func newGrpcServer(ctx context.Context, config GRPCConfig, logger log.Logger, tracerProvider trace.TracerProvider) (*server.Server, error) {
-	validator, err := validator.New(ctx, config.Authorization.Config, logger)
+	validator, err := validator.New(ctx, config.Authorization.Config, logger, tracerProvider)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create validator: %w", err)
 	}

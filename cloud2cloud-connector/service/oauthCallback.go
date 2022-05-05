@@ -21,7 +21,7 @@ func (rh *RequestHandler) handleLinkedData(ctx context.Context, data provisionCa
 
 	if !data.linkedAccount.Data.HasTarget() {
 		oauth := data.linkedCloud.OAuth.ToDefaultOAuth2()
-		ctx = data.linkedCloud.CtxWithHTTPClient(ctx)
+		ctx = data.linkedCloud.CtxWithHTTPClient(ctx, rh.tracerProvider)
 		token, err := oauth.Exchange(ctx, authCode)
 		if err != nil {
 			return data, fmt.Errorf("cannot exchange target cloud authorization code for access token: %w", err)
