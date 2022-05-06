@@ -226,10 +226,6 @@ func GetDefaultAccessToken(t *testing.T) string {
 
 func GetJWTValidator(jwkURL string) *jwt.Validator {
 	t := http.DefaultTransport.(*http.Transport).Clone()
-	//t.MaxIdleConns = 100
-	//t.MaxConnsPerHost = 100
-	//t.MaxIdleConnsPerHost = 1
-	//t.IdleConnTimeout = time.Second * 30
 	t.TLSClientConfig = &tls.Config{
 		InsecureSkipVerify: true,
 	}
