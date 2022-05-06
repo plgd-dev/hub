@@ -32,27 +32,32 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 		return nil, fmt.Errorf("cannot create http server: %w", err)
 	}
 	listener.AddCloseFunc(otelClient.Close)
+	closeListener := func() {
+		if err := listener.Close(); err != nil {
+			logger.Errorf("cannot close listener: %w", err)
+		}
+	}
 
 	idTokenPrivateKeyI, err := LoadPrivateKey(config.OAuthSigner.IDTokenKeyFile)
 	if err != nil {
-		listener.Close()
+		closeListener()
 		return nil, fmt.Errorf("cannot load idTokenKeyFile(%v): %w", config.OAuthSigner.IDTokenKeyFile, err)
 	}
 	idTokenPrivateKey, ok := idTokenPrivateKeyI.(*rsa.PrivateKey)
 	if !ok {
-		listener.Close()
+		closeListener()
 		return nil, fmt.Errorf("cannot invalid idTokenKeyFile(%T): %w", idTokenPrivateKey, err)
 	}
 
 	accessTokenPrivateKeyI, err := LoadPrivateKey(config.OAuthSigner.AccessTokenKeyFile)
 	if err != nil {
-		listener.Close()
+		closeListener()
 		return nil, fmt.Errorf("cannot load private accessTokenKeyFile(%v): %w", config.OAuthSigner.AccessTokenKeyFile, err)
 	}
 
 	requestHandler, err := NewRequestHandler(ctx, &config, idTokenPrivateKey, accessTokenPrivateKeyI)
 	if err != nil {
-		listener.Close()
+		closeListener()
 		return nil, fmt.Errorf("cannot create request handler: %w", err)
 	}
 
