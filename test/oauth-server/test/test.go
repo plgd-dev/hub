@@ -15,6 +15,7 @@ import (
 
 	"github.com/jtacoma/uritemplates"
 	"github.com/plgd-dev/hub/v2/pkg/log"
+	kitNetHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
 	"github.com/plgd-dev/hub/v2/pkg/security/jwt"
 	"github.com/plgd-dev/hub/v2/test/config"
 	"github.com/plgd-dev/hub/v2/test/oauth-server/service"
@@ -49,7 +50,9 @@ func MakeConfig(t *testing.T) service.Config {
 
 	cfg.APIs.HTTP = config.MakeListenerConfig(config.OAUTH_SERVER_HOST)
 	cfg.APIs.HTTP.TLS.ClientCertificateRequired = false
-	cfg.Clients.OpenTelemetryCollector = config.MakeOpenTelemetryCollectorClient()
+	cfg.Clients.OpenTelemetryCollector = kitNetHttp.OpenTelemetryCollectorConfig{
+		Config: config.MakeOpenTelemetryCollectorClient(),
+	}
 
 	cfg.OAuthSigner.IDTokenKeyFile = os.Getenv("TEST_OAUTH_SERVER_ID_TOKEN_PRIVATE_KEY")
 	cfg.OAuthSigner.AccessTokenKeyFile = os.Getenv("TEST_OAUTH_SERVER_ACCESS_TOKEN_PRIVATE_KEY")

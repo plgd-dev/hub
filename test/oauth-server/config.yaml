@@ -16,6 +16,7 @@ apis:
       clientCertificateRequired: true
 clients:
   openTelemetryCollector:
+    publicEndpoint: true
     grpc:
       enabled: false
       address: ""
