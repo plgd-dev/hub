@@ -8,8 +8,8 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/pkg/mongodb"
 	grpcClient "github.com/plgd-dev/hub/v2/pkg/net/grpc/client"
+	"github.com/plgd-dev/hub/v2/pkg/net/http"
 	"github.com/plgd-dev/hub/v2/pkg/net/listener"
-	otelClient "github.com/plgd-dev/hub/v2/pkg/opentelemetry/collector/client"
 	cmClient "github.com/plgd-dev/hub/v2/pkg/security/certManager/client"
 	"github.com/plgd-dev/hub/v2/pkg/security/jwt/validator"
 	"github.com/plgd-dev/hub/v2/pkg/sync/task/queue"
@@ -67,12 +67,12 @@ func (c *HTTPConfig) Validate() error {
 }
 
 type ClientsConfig struct {
-	Eventbus               EventBusConfig          `yaml:"eventBus" json:"eventBus"`
-	GrpcGateway            GrpcGatewayConfig       `yaml:"grpcGateway" json:"grpcGateway"`
-	ResourceAggregate      ResourceAggregateConfig `yaml:"resourceAggregate" json:"resourceAggregate"`
-	Storage                StorageConfig           `yaml:"storage" json:"storage"`
-	Subscription           SubscriptionConfig      `yaml:"subscription" json:"subscription"`
-	OpenTelemetryCollector otelClient.Config       `yaml:"openTelemetryCollector" json:"openTelemetryCollector"`
+	Eventbus               EventBusConfig                    `yaml:"eventBus" json:"eventBus"`
+	GrpcGateway            GrpcGatewayConfig                 `yaml:"grpcGateway" json:"grpcGateway"`
+	ResourceAggregate      ResourceAggregateConfig           `yaml:"resourceAggregate" json:"resourceAggregate"`
+	Storage                StorageConfig                     `yaml:"storage" json:"storage"`
+	Subscription           SubscriptionConfig                `yaml:"subscription" json:"subscription"`
+	OpenTelemetryCollector http.OpenTelemetryCollectorConfig `yaml:"openTelemetryCollector" json:"openTelemetryCollector"`
 }
 
 func (c *ClientsConfig) Validate() error {

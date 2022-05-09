@@ -25,9 +25,11 @@ type Server struct {
 	listener       *listener.Server
 }
 
+const serviceName = "http-gateway"
+
 // New parses configuration and creates new Server with provided store and bus
 func New(ctx context.Context, config Config, logger log.Logger) (*Server, error) {
-	otelClient, err := otelClient.New(ctx, config.Clients.OpenTelemetryCollector, "http-gateway", logger)
+	otelClient, err := otelClient.New(ctx, config.Clients.OpenTelemetryCollector.Config, serviceName, logger)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create open telemetry collector client: %w", err)
 	}
@@ -80,13 +82,14 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Server, error)
 	auth := kitNetHttp.NewInterceptorWithValidator(validator, authRules, whiteList...)
 	requestHandler := NewRequestHandler(&config, client)
 
-	http, err := NewHTTP(requestHandler, auth)
+	httpHandler, err := NewHTTP(requestHandler, auth)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create http server: %w", err)
 	}
 
+	httpServer := http.Server{Handler: kitNetHttp.OpenTelemetryNewHandler(httpHandler, serviceName, tracerProvider, requestHandler.config.Clients.OpenTelemetryCollector.PublicEndpoint)}
 	server := Server{
-		server:         http,
+		server:         &httpServer,
 		config:         &config,
 		requestHandler: requestHandler,
 		listener:       listener,

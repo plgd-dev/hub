@@ -7,9 +7,12 @@ import (
 	"net/http"
 
 	"github.com/plgd-dev/hub/v2/pkg/log"
+	kitNetHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
 	"github.com/plgd-dev/hub/v2/pkg/net/listener"
 	otelClient "github.com/plgd-dev/hub/v2/pkg/opentelemetry/collector/client"
 )
+
+const serviceName = "mock-oauth-server"
 
 //Server handle HTTP request
 type Service struct {
@@ -20,11 +23,11 @@ type Service struct {
 
 // New parses configuration and creates new Server with provided store and bus
 func New(ctx context.Context, config Config, logger log.Logger) (*Service, error) {
-	otelClient, err := otelClient.New(ctx, config.Clients.OpenTelemetryCollector, "oauth-server", logger)
+	otelClient, err := otelClient.New(ctx, config.Clients.OpenTelemetryCollector.Config, serviceName, logger)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create open telemetry collector client: %w", err)
 	}
-	//tracerProvider := otelClient.GetTracerProvider()
+	tracerProvider := otelClient.GetTracerProvider()
 
 	listener, err := listener.New(config.APIs.HTTP, logger)
 	if err != nil {
@@ -61,8 +64,12 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 		return nil, fmt.Errorf("cannot create request handler: %w", err)
 	}
 
+	httpServer := http.Server{
+		Handler: kitNetHttp.OpenTelemetryNewHandler(NewHTTP(requestHandler), serviceName, tracerProvider, config.Clients.OpenTelemetryCollector.PublicEndpoint),
+	}
+
 	server := Service{
-		server:         NewHTTP(requestHandler),
+		server:         &httpServer,
 		requestHandler: requestHandler,
 		listener:       listener,
 	}

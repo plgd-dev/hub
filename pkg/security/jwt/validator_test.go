@@ -1,7 +1,6 @@
 package jwt_test
 
 import (
-	"crypto/tls"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -148,5 +147,3 @@ const jwks = `{
     }
   ]
 }`
-
-var noTLS = tls.Config{}

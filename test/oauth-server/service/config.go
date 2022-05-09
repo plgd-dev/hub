@@ -6,8 +6,8 @@ import (
 
 	"github.com/plgd-dev/hub/v2/pkg/config"
 	"github.com/plgd-dev/hub/v2/pkg/log"
+	"github.com/plgd-dev/hub/v2/pkg/net/http"
 	"github.com/plgd-dev/hub/v2/pkg/net/listener"
-	otelClient "github.com/plgd-dev/hub/v2/pkg/opentelemetry/collector/client"
 )
 
 type AsymmetricKey struct {
@@ -59,7 +59,7 @@ func (c OAuthClientsConfig) Find(id string) *Client {
 }
 
 type ClientsConfig struct {
-	OpenTelemetryCollector otelClient.Config `yaml:"openTelemetryCollector" json:"openTelemetryCollector"`
+	OpenTelemetryCollector http.OpenTelemetryCollectorConfig `yaml:"openTelemetryCollector" json:"openTelemetryCollector"`
 }
 
 func (c *ClientsConfig) Validate() error {
