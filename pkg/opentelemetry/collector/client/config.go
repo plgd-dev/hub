@@ -15,10 +15,7 @@ func (c *GRPCConfig) Validate() error {
 	if !c.Enabled {
 		return nil
 	}
-	if err := c.Connection.Validate(); err != nil {
-		return err
-	}
-	return nil
+	return c.Connection.Validate()
 }
 
 type Config struct {
