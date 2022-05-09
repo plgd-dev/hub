@@ -7,8 +7,8 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/config"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/pkg/net/grpc/client"
+	"github.com/plgd-dev/hub/v2/pkg/net/http"
 	"github.com/plgd-dev/hub/v2/pkg/net/listener"
-	otelClient "github.com/plgd-dev/hub/v2/pkg/opentelemetry/collector/client"
 	"github.com/plgd-dev/hub/v2/pkg/security/jwt/validator"
 )
 
@@ -79,8 +79,8 @@ func (c *HTTPConfig) Validate() error {
 }
 
 type ClientsConfig struct {
-	GrpcGateway            GrpcServerConfig  `yaml:"grpcGateway" json:"grpcGateway"`
-	OpenTelemetryCollector otelClient.Config `yaml:"openTelemetryCollector" json:"openTelemetryCollector"`
+	GrpcGateway            GrpcServerConfig                  `yaml:"grpcGateway" json:"grpcGateway"`
+	OpenTelemetryCollector http.OpenTelemetryCollectorConfig `yaml:"openTelemetryCollector" json:"openTelemetryCollector"`
 }
 
 type GrpcServerConfig struct {

@@ -75,8 +75,8 @@ func healthCheck(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-// NewHTTP returns HTTP server
-func NewHTTP(requestHandler *RequestHandler, authInterceptor kitNetHttp.Interceptor) (*http.Server, error) {
+// NewHTTP returns HTTP handler
+func NewHTTP(requestHandler *RequestHandler, authInterceptor kitNetHttp.Interceptor) (http.Handler, error) {
 	r := router.NewRouter()
 	r.StrictSlash(true)
 	r.Use(kitNetHttp.CreateLoggingMiddleware())
@@ -102,5 +102,5 @@ func NewHTTP(requestHandler *RequestHandler, authInterceptor kitNetHttp.Intercep
 
 	r.HandleFunc(uri.OAuthCallback, requestHandler.OAuthCallback).Methods(http.MethodGet, http.MethodPost)
 
-	return &http.Server{Handler: r}, nil
+	return r, nil
 }

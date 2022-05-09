@@ -26,6 +26,8 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
+const serviceName = "cloud2cloud-gateway"
+
 //Server handle HTTP request
 type Server struct {
 	server           *http.Server
@@ -223,7 +225,7 @@ func newSubscriptionManager(ctx context.Context, cfg Config, gwClient pbGRPC.Grp
 
 // New parses configuration and creates new Server with provided store and bus
 func New(ctx context.Context, config Config, logger log.Logger) (*Server, error) {
-	otelClient, err := otelClient.New(ctx, config.Clients.OpenTelemetryCollector, "cloud2cloud-gateway", logger)
+	otelClient, err := otelClient.New(ctx, config.Clients.OpenTelemetryCollector.Config, serviceName, logger)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create open telemetry collector client: %w", err)
 	}
@@ -294,8 +296,12 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Server, error)
 
 	requestHandler := NewRequestHandler(gwClient, raClient, subMgr, emitEvent)
 
+	httpServer := http.Server{
+		Handler: kitNetHttp.OpenTelemetryNewHandler(NewHTTP(requestHandler, auth), serviceName, tracerProvider, config.Clients.OpenTelemetryCollector.PublicEndpoint),
+	}
+
 	server := Server{
-		server:           NewHTTP(requestHandler, auth),
+		server:           &httpServer,
 		listener:         listener,
 		cancelSubMgrFunc: cancelSubMgrFunc,
 		subMgrDoneWg:     &subMgrWg,
