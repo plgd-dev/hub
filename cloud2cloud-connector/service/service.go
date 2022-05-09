@@ -46,6 +46,8 @@ func toValidator(c oauth2.Config) validator.Config {
 	}
 }
 
+const serviceName = "cloud2cloud-connector"
+
 func newAuthInterceptor(ctx context.Context, config validator.Config, logger log.Logger, tracerProvider trace.TracerProvider) (kitNetHttp.Interceptor, func(), error) {
 	var fl fn.FuncList
 
@@ -209,7 +211,7 @@ func newDevicesSubscription(ctx context.Context, config Config, raClient raServi
 
 // New parses configuration and creates new Server with provided store and bus
 func New(ctx context.Context, config Config, logger log.Logger) (*Server, error) {
-	otelClient, err := otelClient.New(ctx, config.Clients.OpenTelemetryCollector, "cloud2cloud-connector", logger)
+	otelClient, err := otelClient.New(ctx, config.Clients.OpenTelemetryCollector.Config, serviceName, logger)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create open telemetry collector client: %w", err)
 	}
@@ -281,10 +283,14 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Server, error)
 	}
 	listener.AddCloseFunc(closeAuth)
 
-	server, err := NewHTTP(requestHandler, auth)
+	httpHandler, err := NewHTTP(requestHandler, auth)
 	if err != nil {
 		cleanUp.Execute()
 		return nil, fmt.Errorf("cannot create http server interceptor: %w", err)
+	}
+
+	httpServer := http.Server{
+		Handler: kitNetHttp.OpenTelemetryNewHandler(httpHandler, serviceName, tracerProvider, config.Clients.OpenTelemetryCollector.PublicEndpoint),
 	}
 
 	var wg sync.WaitGroup
@@ -305,7 +311,7 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Server, error)
 	runSubscriptionManager(ctx, subMgr, config.Clients.Subscription.HTTP.ResubscribeInterval, &wg)
 
 	return &Server{
-		server:   server,
+		server:   &httpServer,
 		listener: listener,
 		doneWg:   &wg,
 		cancel:   cancel,
