@@ -15,10 +15,6 @@ export const PendingCommandsListPage = () => {
       title={_(menuT.pendingCommands)}
       breadcrumbs={[
         {
-          to: '/',
-          label: _(menuT.dashboard),
-        },
-        {
           label: _(menuT.pendingCommands),
         },
       ]}

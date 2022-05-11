@@ -37,7 +37,7 @@ fetch('/web_configuration.json')
       // only set the code to the session storage, so that the caller can process it.
       const urlParams = new URLSearchParams(window.location.search)
       const code = urlParams.get('code')
-      if (window.location.pathname === '/things' && code) {
+      if (window.location.pathname === '/' && code) {
         sessionStorage.setItem(DEVICE_AUTH_CODE_SESSION_KEY, code)
         return null
       }

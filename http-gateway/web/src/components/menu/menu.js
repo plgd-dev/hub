@@ -13,20 +13,8 @@ export const Menu = memo(({ collapsed, toggleCollapsed }) => {
   return (
     <nav id="menu">
       <div className="items">
-        <MenuItem
-          to="/"
-          exact
-          icon="fa-chart-bar"
-          tooltip={collapsed && _(t.dashboard)}
-        >
-          {_(t.dashboard)}
-        </MenuItem>
-        <MenuItem
-          to="/things"
-          icon="fa-list"
-          tooltip={collapsed && _(t.things)}
-        >
-          {_(t.things)}
+        <MenuItem to="/" icon="fa-list" tooltip={collapsed && _(t.devices)}>
+          {_(t.devices)}
         </MenuItem>
         <MenuItem
           to="/pending-commands"
@@ -63,7 +51,7 @@ export const Menu = memo(({ collapsed, toggleCollapsed }) => {
       </MenuItem>
     </nav>
   )
-})
+}, [])
 
 Menu.propTypes = {
   collapsed: PropTypes.bool.isRequired,

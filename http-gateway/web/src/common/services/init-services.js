@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 
-import { deviceStatusListener } from '@/containers/things/websockets'
+import { deviceStatusListener } from '@/containers/devices/websockets'
 import { WebSocketEventClient } from './websocket-event-client'
 import { eventFilters } from './websocket-event-constants'
 

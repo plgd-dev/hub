@@ -12,19 +12,19 @@ import { PendingCommandsExpandableList } from '@/containers/pending-commands'
 import { messages as menuT } from '@/components/menu/menu-i18n'
 
 import {
-  THINGS_REGISTERED_UNREGISTERED_COUNT_EVENT_KEY,
+  DEVICES_REGISTERED_UNREGISTERED_COUNT_EVENT_KEY,
   RESET_COUNTER,
 } from './constants'
-import { useThingsList } from './hooks'
-import { ThingsList } from './_things-list'
-import { ThingsListHeader } from './_things-list-header'
-import { deleteThingsApi } from './rest'
+import { useDevicesList } from './hooks'
+import { DevicesList } from './_devices-list'
+import { DevicesListHeader } from './_devices-list-header'
+import { deleteDevicesApi } from './rest'
 import { handleDeleteDevicesErrors, sleep } from './utils'
-import { messages as t } from './things-i18n'
+import { messages as t } from './devices-i18n'
 
-export const ThingsListPage = () => {
+export const DevicesListPage = () => {
   const { formatMessage: _ } = useIntl()
-  const { data, loading, error, refresh } = useThingsList()
+  const { data, loading, error, refresh } = useDevicesList()
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
   const [selectedDevices, setSelectedDevices] = useState([])
   const [singleDevice, setSingleDevice] = useState(null)
@@ -61,19 +61,19 @@ export const ThingsListPage = () => {
     setUnselectRowsToken(prevValue => prevValue + 1)
 
     // Reset the counter on the Refresh button
-    Emitter.emit(THINGS_REGISTERED_UNREGISTERED_COUNT_EVENT_KEY, RESET_COUNTER)
+    Emitter.emit(DEVICES_REGISTERED_UNREGISTERED_COUNT_EVENT_KEY, RESET_COUNTER)
   }
 
   const deleteDevices = async () => {
     try {
       setDeleting(true)
-      await deleteThingsApi(combinedSelectedDevices)
+      await deleteDevicesApi(combinedSelectedDevices)
       await sleep(200)
 
       if (isMounted.current) {
         showSuccessToast({
-          title: _(t.thingsDeleted),
-          message: _(t.thingsDeletedMessage),
+          title: _(t.devicesDeleted),
+          message: _(t.devicesDeletedMessage),
         })
 
         setDeleting(false)
@@ -99,20 +99,16 @@ export const ThingsListPage = () => {
 
   return (
     <Layout
-      title={_(menuT.things)}
+      title={_(menuT.devices)}
       breadcrumbs={[
         {
-          to: '/',
-          label: _(menuT.dashboard),
-        },
-        {
-          label: _(menuT.things),
+          label: _(menuT.devices),
         },
       ]}
       loading={loading}
-      header={<ThingsListHeader loading={loading} refresh={handleRefresh} />}
+      header={<DevicesListHeader loading={loading} refresh={handleRefresh} />}
     >
-      <ThingsList
+      <DevicesList
         data={data}
         selectedDevices={selectedDevices}
         setSelectedDevices={setSelectedDevices}
@@ -131,7 +127,7 @@ export const ThingsListPage = () => {
             <i className="fas fa-trash-alt" />
             {`${_(t.delete)} ${
               selectedDevicesCount > 1
-                ? `${selectedDevicesCount} ${_(menuT.things)}`
+                ? `${selectedDevicesCount} ${_(menuT.devices)}`
                 : selectedDeviceName
             }`}
           </>

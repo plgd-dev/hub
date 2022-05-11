@@ -11,7 +11,7 @@ import { CopyBox } from '@/components/copy-box'
 import { isValidGuid } from '@/common/utils'
 
 import { getDeviceAuthCode } from './rest'
-import { messages as t } from './things-i18n'
+import { messages as t } from './devices-i18n'
 
 const NOOP = () => {}
 

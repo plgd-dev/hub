@@ -67,6 +67,6 @@ msgstr "Services"
 #. defaultMessage is:
 #. Things
 #: ./i18n/template.json
-msgid "Things"
-msgstr "Things"
+msgid "Devices"
+msgstr "Devices"
 
