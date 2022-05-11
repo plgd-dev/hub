@@ -1,17 +1,15 @@
 {
-  "authority": "https://auth.plgd.cloud",
+  "authority": "",
   "deviceOauthClient": {
-    "audience": "https://try.plgd.cloud",
-    "clientId": "cYN3p6lwNcNlOvvUhz55KvDZLQbJeDr5",
-    "providerName": "plgd.web",
-    "scopes": [
-      "offline_access"
-    ]
+    "audience": "",
+    "clientId": "",
+    "providerName": "",
+    "scopes": []
   },
-  "httpGatewayAddress": "https://api.try.plgd.cloud",
+  "httpGatewayAddress": "",
   "webOauthClient": {
-    "audience": "https://try.plgd.cloud",
-    "clientId": "LXZ9OhKWWRYqf12W0B5OXduqt02q0zjS",
+    "audience": "",
+    "clientId": "",
     "scopes": []
   }
 }

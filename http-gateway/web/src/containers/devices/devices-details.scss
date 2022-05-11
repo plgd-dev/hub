@@ -41,8 +41,12 @@
   }
 }
 
-#auth-code-box {
+.auth-code-box {
   display: flex;
   justify-content: flex-end;
   align-items: center;
+
+  span{
+    text-align: right;
+  }
 }

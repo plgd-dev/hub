@@ -1,7 +1,7 @@
 import classNames from 'classnames'
 import OverlayTrigger from 'react-bootstrap/OverlayTrigger'
 import Tooltip from 'react-bootstrap/Tooltip'
-import { NavLink, useLocation } from 'react-router-dom'
+import { NavLink } from 'react-router-dom'
 
 export const MenuItem = ({
   children,
@@ -12,12 +12,7 @@ export const MenuItem = ({
   to,
   ...rest
 }) => {
-  const location = useLocation()
-  const menuItemClassName = classNames(
-    'menu-item',
-    className,
-    to === '/' && location.pathname.includes('devices') ? 'active' : ''
-  )
+  const menuItemClassName = classNames('menu-item', className)
 
   const renderMenuItemContent = () => {
     return (
