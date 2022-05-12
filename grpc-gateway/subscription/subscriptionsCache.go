@@ -37,7 +37,8 @@ func registrationEventToGrpcEvent(e *isEvents.Event) (*pb.Event, FilterBitmask) 
 		return &pb.Event{
 			Type: &pb.Event_DeviceRegistered_{
 				DeviceRegistered: &pb.Event_DeviceRegistered{
-					DeviceIds: e.GetDevicesRegistered().GetDeviceIds(),
+					DeviceIds:            e.GetDevicesRegistered().GetDeviceIds(),
+					OpenTelemetryCarrier: e.GetDevicesRegistered().GetOpenTelemetryCarrier(),
 				},
 			},
 		}, FilterBitmaskDeviceRegistered
@@ -45,7 +46,8 @@ func registrationEventToGrpcEvent(e *isEvents.Event) (*pb.Event, FilterBitmask) 
 		return &pb.Event{
 			Type: &pb.Event_DeviceUnregistered_{
 				DeviceUnregistered: &pb.Event_DeviceUnregistered{
-					DeviceIds: e.GetDevicesUnregistered().GetDeviceIds(),
+					DeviceIds:            e.GetDevicesUnregistered().GetDeviceIds(),
+					OpenTelemetryCarrier: e.GetDevicesUnregistered().GetOpenTelemetryCarrier(),
 				},
 			},
 		}, FilterBitmaskDeviceUnregistered

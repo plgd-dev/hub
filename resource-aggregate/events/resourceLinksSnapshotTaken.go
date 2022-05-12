@@ -7,6 +7,7 @@ import (
 
 	"github.com/plgd-dev/hub/v2/coap-gateway/resource"
 	"github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	"github.com/plgd-dev/hub/v2/pkg/opentelemetry/propagation"
 	pkgTime "github.com/plgd-dev/hub/v2/pkg/time"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/aggregate"
@@ -206,10 +207,11 @@ func (e *ResourceLinksSnapshotTaken) HandleCommand(ctx context.Context, cmd aggr
 		ac := commands.NewAuditContext(userID, "")
 
 		rlp := ResourceLinksPublished{
-			Resources:     req.GetResources(),
-			DeviceId:      req.GetDeviceId(),
-			AuditContext:  ac,
-			EventMetadata: em,
+			Resources:            req.GetResources(),
+			DeviceId:             req.GetDeviceId(),
+			AuditContext:         ac,
+			EventMetadata:        em,
+			OpenTelemetryCarrier: propagation.TraceFromCtx(ctx),
 		}
 		published := e.HandleEventResourceLinksPublished(&rlp)
 		if len(published) == 0 {
@@ -228,10 +230,11 @@ func (e *ResourceLinksSnapshotTaken) HandleCommand(ctx context.Context, cmd aggr
 		em := MakeEventMeta(req.GetCommandMetadata().GetConnectionId(), req.GetCommandMetadata().GetSequence(), newVersion)
 		ac := commands.NewAuditContext(userID, "")
 		rlu := ResourceLinksUnpublished{
-			DeviceId:      req.GetDeviceId(),
-			Hrefs:         req.GetHrefs(),
-			AuditContext:  ac,
-			EventMetadata: em,
+			DeviceId:             req.GetDeviceId(),
+			Hrefs:                req.GetHrefs(),
+			AuditContext:         ac,
+			EventMetadata:        em,
+			OpenTelemetryCarrier: propagation.TraceFromCtx(ctx),
 		}
 		unpublished := e.HandleEventResourceLinksUnpublished(req.GetInstanceIds(), &rlu)
 		if len(unpublished) == 0 {

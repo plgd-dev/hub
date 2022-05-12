@@ -47,6 +47,7 @@ func (e *ResourceLinksUnpublished) CopyData(event *ResourceLinksUnpublished) {
 	e.DeviceId = event.GetDeviceId()
 	e.AuditContext = event.GetAuditContext()
 	e.EventMetadata = event.GetEventMetadata()
+	e.OpenTelemetryCarrier = event.GetOpenTelemetryCarrier()
 }
 
 func (e *ResourceLinksUnpublished) CheckInitialized() bool {

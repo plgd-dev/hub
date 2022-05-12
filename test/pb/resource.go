@@ -77,6 +77,7 @@ func CleanUpResourceCreated(e *events.ResourceCreated, resetCorrelationID bool) 
 		e.GetAuditContext().CorrelationId = ""
 	}
 	e.EventMetadata = nil
+	e.OpenTelemetryCarrier = nil
 	return e
 }
 
@@ -111,6 +112,7 @@ func CleanUpResourceChanged(e *events.ResourceChanged, resetCorrelationID bool) 
 		e.GetAuditContext().CorrelationId = ""
 	}
 	e.EventMetadata = nil
+	e.OpenTelemetryCarrier = nil
 	return e
 }
 
@@ -198,6 +200,7 @@ func CleanResourceDeleted(e *events.ResourceDeleted, resetCorrelationID bool) *e
 		e.GetAuditContext().CorrelationId = ""
 	}
 	e.EventMetadata = nil
+	e.OpenTelemetryCarrier = nil
 	return e
 }
 
@@ -236,6 +239,7 @@ func CleanUpResourceRetrieved(e *events.ResourceRetrieved, resetCorrelationID bo
 		e.GetAuditContext().CorrelationId = ""
 	}
 	e.EventMetadata = nil
+	e.OpenTelemetryCarrier = nil
 	return e
 }
 
@@ -313,6 +317,7 @@ func CleanUpResourceUpdated(e *events.ResourceUpdated, resetCorrelationID bool) 
 		e.GetAuditContext().CorrelationId = ""
 	}
 	e.EventMetadata = nil
+	e.OpenTelemetryCarrier = nil
 	return e
 }
 
@@ -421,6 +426,7 @@ func CleanUpResourceLinksPublished(e *events.ResourceLinksPublished, resetCorrel
 		e.GetAuditContext().CorrelationId = ""
 	}
 	e.EventMetadata = nil
+	e.OpenTelemetryCarrier = nil
 	test.CleanUpResourcesArray(e.GetResources())
 	return e
 }
@@ -438,6 +444,7 @@ func CleanUpResourceLinksUnpublished(e *events.ResourceLinksUnpublished, resetCo
 		e.GetAuditContext().CorrelationId = ""
 	}
 	e.EventMetadata = nil
+	e.OpenTelemetryCarrier = nil
 	sort.Strings(e.GetHrefs())
 	return e
 }

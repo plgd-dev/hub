@@ -100,9 +100,15 @@ message SubscribeToEvents {
 message Event {
   message DeviceRegistered {
     repeated string device_ids = 1;
+
+     // exported open telemetry trace context, baggage,...
+     map<string,string> open_telemetry_carrier = 100;
   }
   message DeviceUnregistered {
     repeated string device_ids = 1;
+
+    // exported open telemetry trace context, baggage,...
+    map<string,string> open_telemetry_carrier = 100;
   }
   message OperationProcessed {
     message ErrorStatus {

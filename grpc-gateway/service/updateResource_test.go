@@ -31,7 +31,7 @@ import (
 	"google.golang.org/grpc/credentials"
 )
 
-func TestRequestHandlerUpdateResourcesValues(t *testing.T) {
+func TestUpdateResource(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	switchID := "1"
 	type args struct {

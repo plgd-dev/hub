@@ -49,6 +49,7 @@ func (e *DeviceMetadataUpdated) CopyData(event *DeviceMetadataUpdated) {
 	e.AuditContext = event.GetAuditContext()
 	e.EventMetadata = event.GetEventMetadata()
 	e.Canceled = event.GetCanceled()
+	e.OpenTelemetryCarrier = event.GetOpenTelemetryCarrier()
 }
 
 func (e *DeviceMetadataUpdated) CheckInitialized() bool {

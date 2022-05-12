@@ -49,6 +49,7 @@ func (e *ResourceChanged) CopyData(event *ResourceChanged) {
 	e.AuditContext = event.GetAuditContext()
 	e.EventMetadata = event.GetEventMetadata()
 	e.Status = event.GetStatus()
+	e.OpenTelemetryCarrier = event.GetOpenTelemetryCarrier()
 }
 
 func (e *ResourceChanged) CheckInitialized() bool {
