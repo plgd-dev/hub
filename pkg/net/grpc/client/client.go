@@ -24,13 +24,13 @@ func (c *Client) GRPC() *grpc.ClientConn {
 
 // AddCloseFunc adds a function to be called by the Close method.
 // This eliminates the need for wrapping the Client.
-func (s *Client) AddCloseFunc(f func()) {
-	s.closeFunc = append(s.closeFunc, f)
+func (c *Client) AddCloseFunc(f func()) {
+	c.closeFunc = append(c.closeFunc, f)
 }
 
-func (s *Client) Close() error {
-	err := s.client.Close()
-	for _, f := range s.closeFunc {
+func (c *Client) Close() error {
+	err := c.client.Close()
+	for _, f := range c.closeFunc {
 		f()
 	}
 	return err

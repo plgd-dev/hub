@@ -12,15 +12,15 @@ import (
 // Obtain deviceObserver from the client.
 //
 // The function might block and wait for the deviceObserver to be initialized.
-func (client *Client) getDeviceObserver(ctx context.Context) (*observation.DeviceObserver, error) {
+func (c *Client) getDeviceObserver(ctx context.Context) (*observation.DeviceObserver, error) {
 	getError := func(err error) error {
 		return fmt.Errorf("cannot get device observer: %w", err)
 	}
 
 	var deviceObserverFut *future.Future
-	client.mutex.Lock()
-	deviceObserverFut = client.deviceObserver
-	client.mutex.Unlock()
+	c.mutex.Lock()
+	deviceObserverFut = c.deviceObserver
+	c.mutex.Unlock()
 
 	if deviceObserverFut == nil {
 		return nil, fmt.Errorf("observer not set")
@@ -37,17 +37,17 @@ func (client *Client) getDeviceObserver(ctx context.Context) (*observation.Devic
 }
 
 // Replace deviceObserver instance in the client.
-func (client *Client) replaceDeviceObserver(deviceObserverFuture *future.Future) *future.Future {
-	client.mutex.Lock()
-	defer client.mutex.Unlock()
-	prevDeviceObserver := client.deviceObserver
-	client.deviceObserver = deviceObserverFuture
+func (c *Client) replaceDeviceObserver(deviceObserverFuture *future.Future) *future.Future {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+	prevDeviceObserver := c.deviceObserver
+	c.deviceObserver = deviceObserverFuture
 	return prevDeviceObserver
 }
 
 // Replace deviceObserver instance in the client if Device Shadow setting was changed for the device.
-func (client *Client) replaceDeviceObserverWithDeviceShadow(ctx context.Context, shadow commands.ShadowSynchronization) (commands.ShadowSynchronization, error) {
-	obs, err := client.getDeviceObserver(ctx)
+func (c *Client) replaceDeviceObserverWithDeviceShadow(ctx context.Context, shadow commands.ShadowSynchronization) (commands.ShadowSynchronization, error) {
+	obs, err := c.getDeviceObserver(ctx)
 	if err != nil {
 		return commands.ShadowSynchronization_UNSET, err
 	}
@@ -58,15 +58,15 @@ func (client *Client) replaceDeviceObserverWithDeviceShadow(ctx context.Context,
 		return prevShadow, nil
 	}
 	deviceObserverFuture, setDeviceObserver := future.New()
-	oldDeviceObserver := client.replaceDeviceObserver(deviceObserverFuture)
+	oldDeviceObserver := c.replaceDeviceObserver(deviceObserverFuture)
 	if err := cleanDeviceObserver(ctx, oldDeviceObserver); err != nil {
-		client.Errorf("failed to close replaced device observer: %w", err)
+		c.Errorf("failed to close replaced device observer: %w", err)
 	}
 
-	deviceObserver, err := observation.NewDeviceObserver(client.Context(), deviceID, client, client,
-		observation.MakeResourcesObserverCallbacks(client.onObserveResource, client.onGetResourceContent),
+	deviceObserver, err := observation.NewDeviceObserver(c.Context(), deviceID, c, c,
+		observation.MakeResourcesObserverCallbacks(c.onObserveResource, c.onGetResourceContent),
 		observation.WithShadowSynchronization(shadow), observation.WithObservationType(observationType),
-		observation.WithLogger(client.getLogger()),
+		observation.WithLogger(c.getLogger()),
 	)
 	if err != nil {
 		setDeviceObserver(nil, err)
@@ -105,7 +105,7 @@ func cleanDeviceObserver(ctx context.Context, devObsFut *future.Future) error {
 }
 
 // Replace the deviceObserver instance in the client with nil and clean up the previous deviceObserver instance.
-func (client *Client) closeDeviceObserver(ctx context.Context) error {
-	deviceObserverFut := client.replaceDeviceObserver(nil)
+func (c *Client) closeDeviceObserver(ctx context.Context) error {
+	deviceObserverFut := c.replaceDeviceObserver(nil)
 	return cleanDeviceObserver(ctx, deviceObserverFut)
 }

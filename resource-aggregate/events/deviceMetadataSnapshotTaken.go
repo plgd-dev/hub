@@ -19,58 +19,58 @@ import (
 
 const eventTypeDeviceMetadataSnapshotTaken = "devicemetadatasnapshottaken"
 
-func (e *DeviceMetadataSnapshotTaken) Version() uint64 {
-	return e.GetEventMetadata().GetVersion()
+func (d *DeviceMetadataSnapshotTaken) Version() uint64 {
+	return d.GetEventMetadata().GetVersion()
 }
 
-func (e *DeviceMetadataSnapshotTaken) Marshal() ([]byte, error) {
-	return proto.Marshal(e)
+func (d *DeviceMetadataSnapshotTaken) Marshal() ([]byte, error) {
+	return proto.Marshal(d)
 }
 
-func (e *DeviceMetadataSnapshotTaken) Unmarshal(b []byte) error {
-	return proto.Unmarshal(b, e)
+func (d *DeviceMetadataSnapshotTaken) Unmarshal(b []byte) error {
+	return proto.Unmarshal(b, d)
 }
 
-func (e *DeviceMetadataSnapshotTaken) EventType() string {
+func (d *DeviceMetadataSnapshotTaken) EventType() string {
 	return eventTypeDeviceMetadataSnapshotTaken
 }
 
-func (e *DeviceMetadataSnapshotTaken) AggregateID() string {
-	return commands.MakeStatusResourceUUID(e.GetDeviceId())
+func (d *DeviceMetadataSnapshotTaken) AggregateID() string {
+	return commands.MakeStatusResourceUUID(d.GetDeviceId())
 }
 
-func (e *DeviceMetadataSnapshotTaken) GroupID() string {
-	return e.GetDeviceId()
+func (d *DeviceMetadataSnapshotTaken) GroupID() string {
+	return d.GetDeviceId()
 }
 
-func (e *DeviceMetadataSnapshotTaken) IsSnapshot() bool {
+func (d *DeviceMetadataSnapshotTaken) IsSnapshot() bool {
 	return true
 }
 
-func (e *DeviceMetadataSnapshotTaken) Timestamp() time.Time {
-	return pkgTime.Unix(0, e.GetEventMetadata().GetTimestamp())
+func (d *DeviceMetadataSnapshotTaken) Timestamp() time.Time {
+	return pkgTime.Unix(0, d.GetEventMetadata().GetTimestamp())
 }
 
-func (e *DeviceMetadataSnapshotTaken) CopyData(event *DeviceMetadataSnapshotTaken) {
-	e.DeviceId = event.GetDeviceId()
-	e.DeviceMetadataUpdated = event.GetDeviceMetadataUpdated()
-	e.UpdatePendings = event.GetUpdatePendings()
-	e.EventMetadata = event.GetEventMetadata()
+func (d *DeviceMetadataSnapshotTaken) CopyData(event *DeviceMetadataSnapshotTaken) {
+	d.DeviceId = event.GetDeviceId()
+	d.DeviceMetadataUpdated = event.GetDeviceMetadataUpdated()
+	d.UpdatePendings = event.GetUpdatePendings()
+	d.EventMetadata = event.GetEventMetadata()
 }
 
-func (e *DeviceMetadataSnapshotTaken) CheckInitialized() bool {
-	return e.GetDeviceId() != "" &&
-		e.GetDeviceMetadataUpdated() != nil &&
-		e.GetUpdatePendings() != nil &&
-		e.GetEventMetadata() != nil
+func (d *DeviceMetadataSnapshotTaken) CheckInitialized() bool {
+	return d.GetDeviceId() != "" &&
+		d.GetDeviceMetadataUpdated() != nil &&
+		d.GetUpdatePendings() != nil &&
+		d.GetEventMetadata() != nil
 }
 
-func (e *DeviceMetadataSnapshotTaken) HandleDeviceMetadataUpdated(ctx context.Context, upd *DeviceMetadataUpdated, confirm bool) (bool, error) {
+func (d *DeviceMetadataSnapshotTaken) HandleDeviceMetadataUpdated(ctx context.Context, upd *DeviceMetadataUpdated, confirm bool) (bool, error) {
 	if upd.GetStatus() != nil && upd.GetStatus().GetConnectionId() == "" {
 		return false, status.Errorf(codes.InvalidArgument, "cannot update connection status for empty connectionId")
 	}
 	index := -1
-	for i, event := range e.GetUpdatePendings() {
+	for i, event := range d.GetUpdatePendings() {
 		if event.GetAuditContext().GetCorrelationId() == upd.GetAuditContext().GetCorrelationId() {
 			index = i
 			break
@@ -79,35 +79,35 @@ func (e *DeviceMetadataSnapshotTaken) HandleDeviceMetadataUpdated(ctx context.Co
 	if confirm && index < 0 {
 		return false, status.Errorf(codes.InvalidArgument, "cannot find shadow synchronization status update pending event with correlationId('%v')", upd.GetAuditContext().GetCorrelationId())
 	}
-	if e.DeviceMetadataUpdated.Equal(upd) {
+	if d.DeviceMetadataUpdated.Equal(upd) {
 		return false, nil
 	}
-	if e.DeviceMetadataUpdated.GetStatus().IsOnline() && upd.GetStatus() != nil && !upd.GetStatus().IsOnline() && e.DeviceMetadataUpdated.GetStatus().GetConnectionId() != upd.GetStatus().GetConnectionId() {
+	if d.DeviceMetadataUpdated.GetStatus().IsOnline() && upd.GetStatus() != nil && !upd.GetStatus().IsOnline() && d.DeviceMetadataUpdated.GetStatus().GetConnectionId() != upd.GetStatus().GetConnectionId() {
 		// if previous status was online and new status is offline, the connectionId must be the same
 		return false, nil
 	}
-	e.DeviceId = upd.GetDeviceId()
+	d.DeviceId = upd.GetDeviceId()
 	if index >= 0 {
-		e.UpdatePendings = append(e.UpdatePendings[:index], e.UpdatePendings[index+1:]...)
+		d.UpdatePendings = append(d.UpdatePendings[:index], d.UpdatePendings[index+1:]...)
 	}
-	e.DeviceMetadataUpdated = upd
-	e.EventMetadata = upd.GetEventMetadata()
+	d.DeviceMetadataUpdated = upd
+	d.EventMetadata = upd.GetEventMetadata()
 	return true, nil
 }
 
-func (e *DeviceMetadataSnapshotTaken) HandleDeviceMetadataSnapshotTaken(ctx context.Context, s *DeviceMetadataSnapshotTaken) {
-	e.CopyData(s)
+func (d *DeviceMetadataSnapshotTaken) HandleDeviceMetadataSnapshotTaken(ctx context.Context, s *DeviceMetadataSnapshotTaken) {
+	d.CopyData(s)
 }
 
-func (e *DeviceMetadataSnapshotTaken) HandleDeviceMetadataUpdatePending(ctx context.Context, updatePending *DeviceMetadataUpdatePending) error {
+func (d *DeviceMetadataSnapshotTaken) HandleDeviceMetadataUpdatePending(ctx context.Context, updatePending *DeviceMetadataUpdatePending) error {
 	now := time.Now()
 	if updatePending.IsExpired(now) {
-		e.DeviceId = updatePending.GetDeviceId()
-		e.EventMetadata = updatePending.GetEventMetadata()
+		d.DeviceId = updatePending.GetDeviceId()
+		d.EventMetadata = updatePending.GetEventMetadata()
 		// for events from eventstore we do nothing
 		return nil
 	}
-	for _, event := range e.GetUpdatePendings() {
+	for _, event := range d.GetUpdatePendings() {
 		if event.IsExpired(now) {
 			continue
 		}
@@ -115,13 +115,13 @@ func (e *DeviceMetadataSnapshotTaken) HandleDeviceMetadataUpdatePending(ctx cont
 			return status.Errorf(codes.InvalidArgument, "device metadata update pending with correlationId('%v') already exist", updatePending.GetAuditContext().GetCorrelationId())
 		}
 	}
-	e.DeviceId = updatePending.GetDeviceId()
-	e.EventMetadata = updatePending.GetEventMetadata()
-	e.UpdatePendings = append(e.UpdatePendings, updatePending)
+	d.DeviceId = updatePending.GetDeviceId()
+	d.EventMetadata = updatePending.GetEventMetadata()
+	d.UpdatePendings = append(d.UpdatePendings, updatePending)
 	return nil
 }
 
-func (e *DeviceMetadataSnapshotTaken) Handle(ctx context.Context, iter eventstore.Iter) error {
+func (d *DeviceMetadataSnapshotTaken) Handle(ctx context.Context, iter eventstore.Iter) error {
 	for {
 		eu, ok := iter.Next(ctx)
 		if !ok {
@@ -136,19 +136,19 @@ func (e *DeviceMetadataSnapshotTaken) Handle(ctx context.Context, iter eventstor
 			if err := eu.Unmarshal(&s); err != nil {
 				return status.Errorf(codes.Internal, "%v", err)
 			}
-			e.HandleDeviceMetadataSnapshotTaken(ctx, &s)
+			d.HandleDeviceMetadataSnapshotTaken(ctx, &s)
 		case (&DeviceMetadataUpdated{}).EventType():
 			var s DeviceMetadataUpdated
 			if err := eu.Unmarshal(&s); err != nil {
 				return status.Errorf(codes.Internal, "%v", err)
 			}
-			_, _ = e.HandleDeviceMetadataUpdated(ctx, &s, false)
+			_, _ = d.HandleDeviceMetadataUpdated(ctx, &s, false)
 		case (&DeviceMetadataUpdatePending{}).EventType():
 			var s DeviceMetadataUpdatePending
 			if err := eu.Unmarshal(&s); err != nil {
 				return status.Errorf(codes.Internal, "%v", err)
 			}
-			_ = e.HandleDeviceMetadataUpdatePending(ctx, &s)
+			_ = d.HandleDeviceMetadataUpdatePending(ctx, &s)
 		}
 	}
 	return iter.Err()
@@ -161,7 +161,7 @@ func timeToLive2ValidUntil(timeToLive int64) int64 {
 	return pkgTime.UnixNano(time.Now().Add(time.Duration(timeToLive)))
 }
 
-func (e *DeviceMetadataSnapshotTaken) ConfirmDeviceMetadataUpdate(ctx context.Context, userID string, req *commands.ConfirmDeviceMetadataUpdateRequest, newVersion uint64, cancel bool) ([]eventstore.Event, error) {
+func (d *DeviceMetadataSnapshotTaken) ConfirmDeviceMetadataUpdate(ctx context.Context, userID string, req *commands.ConfirmDeviceMetadataUpdateRequest, newVersion uint64, cancel bool) ([]eventstore.Event, error) {
 	if req.GetCommandMetadata() == nil {
 		return nil, status.Errorf(codes.InvalidArgument, errInvalidCommandMetadata)
 	}
@@ -172,14 +172,14 @@ func (e *DeviceMetadataSnapshotTaken) ConfirmDeviceMetadataUpdate(ctx context.Co
 	case cancel:
 		ev := DeviceMetadataUpdated{
 			DeviceId:              req.GetDeviceId(),
-			Status:                e.GetDeviceMetadataUpdated().GetStatus(),
-			ShadowSynchronization: e.GetDeviceMetadataUpdated().GetShadowSynchronization(),
+			Status:                d.GetDeviceMetadataUpdated().GetStatus(),
+			ShadowSynchronization: d.GetDeviceMetadataUpdated().GetShadowSynchronization(),
 			Canceled:              true,
 			AuditContext:          ac,
 			EventMetadata:         em,
 			OpenTelemetryCarrier:  propagation.TraceFromCtx(ctx),
 		}
-		ok, err := e.HandleDeviceMetadataUpdated(ctx, &ev, true)
+		ok, err := d.HandleDeviceMetadataUpdated(ctx, &ev, true)
 		if !ok {
 			return nil, err
 		}
@@ -187,13 +187,13 @@ func (e *DeviceMetadataSnapshotTaken) ConfirmDeviceMetadataUpdate(ctx context.Co
 	case req.GetShadowSynchronization() != commands.ShadowSynchronization_UNSET:
 		ev := DeviceMetadataUpdated{
 			DeviceId:              req.GetDeviceId(),
-			Status:                e.GetDeviceMetadataUpdated().GetStatus(),
+			Status:                d.GetDeviceMetadataUpdated().GetStatus(),
 			ShadowSynchronization: req.GetShadowSynchronization(),
 			AuditContext:          ac,
 			EventMetadata:         em,
 			OpenTelemetryCarrier:  propagation.TraceFromCtx(ctx),
 		}
-		ok, err := e.HandleDeviceMetadataUpdated(ctx, &ev, true)
+		ok, err := d.HandleDeviceMetadataUpdated(ctx, &ev, true)
 		if !ok {
 			return nil, err
 		}
@@ -203,17 +203,17 @@ func (e *DeviceMetadataSnapshotTaken) ConfirmDeviceMetadataUpdate(ctx context.Co
 	}
 }
 
-func (e *DeviceMetadataSnapshotTaken) CancelPendingMetadataUpdates(ctx context.Context, userID string, req *commands.CancelPendingMetadataUpdatesRequest, newVersion uint64) ([]eventstore.Event, error) {
+func (d *DeviceMetadataSnapshotTaken) CancelPendingMetadataUpdates(ctx context.Context, userID string, req *commands.CancelPendingMetadataUpdatesRequest, newVersion uint64) ([]eventstore.Event, error) {
 	if req.GetCommandMetadata() == nil {
 		return nil, status.Errorf(codes.InvalidArgument, errInvalidCommandMetadata)
 	}
 	correlationIdFilter := strings.MakeSet(req.GetCorrelationIdFilter()...)
 	events := make([]eventstore.Event, 0, 4)
-	for _, event := range e.GetUpdatePendings() {
+	for _, event := range d.GetUpdatePendings() {
 		if len(correlationIdFilter) != 0 && !correlationIdFilter.HasOneOf(event.GetAuditContext().GetCorrelationId()) {
 			continue
 		}
-		ev, err := e.ConfirmDeviceMetadataUpdate(ctx, userID, &commands.ConfirmDeviceMetadataUpdateRequest{
+		ev, err := d.ConfirmDeviceMetadataUpdate(ctx, userID, &commands.ConfirmDeviceMetadataUpdateRequest{
 			DeviceId:        req.GetDeviceId(),
 			CorrelationId:   event.GetAuditContext().GetCorrelationId(),
 			Status:          commands.Status_CANCELED,
@@ -230,7 +230,7 @@ func (e *DeviceMetadataSnapshotTaken) CancelPendingMetadataUpdates(ctx context.C
 	return events, nil
 }
 
-func (e *DeviceMetadataSnapshotTaken) HandleCommand(ctx context.Context, cmd aggregate.Command, newVersion uint64) ([]eventstore.Event, error) {
+func (d *DeviceMetadataSnapshotTaken) HandleCommand(ctx context.Context, cmd aggregate.Command, newVersion uint64) ([]eventstore.Event, error) {
 	userID, err := grpc.SubjectFromTokenMD(ctx)
 	if err != nil {
 		return nil, err
@@ -251,12 +251,12 @@ func (e *DeviceMetadataSnapshotTaken) HandleCommand(ctx context.Context, cmd agg
 			ev := DeviceMetadataUpdated{
 				DeviceId:              req.GetDeviceId(),
 				Status:                req.GetStatus(),
-				ShadowSynchronization: e.GetDeviceMetadataUpdated().GetShadowSynchronization(),
+				ShadowSynchronization: d.GetDeviceMetadataUpdated().GetShadowSynchronization(),
 				AuditContext:          ac,
 				EventMetadata:         em,
 				OpenTelemetryCarrier:  propagation.TraceFromCtx(ctx),
 			}
-			ok, err := e.HandleDeviceMetadataUpdated(ctx, &ev, false)
+			ok, err := d.HandleDeviceMetadataUpdated(ctx, &ev, false)
 			if !ok {
 				return nil, err
 			}
@@ -272,7 +272,7 @@ func (e *DeviceMetadataSnapshotTaken) HandleCommand(ctx context.Context, cmd agg
 				EventMetadata:        em,
 				OpenTelemetryCarrier: propagation.TraceFromCtx(ctx),
 			}
-			err := e.HandleDeviceMetadataUpdatePending(ctx, &ev)
+			err := d.HandleDeviceMetadataUpdatePending(ctx, &ev)
 			if err != nil {
 				return nil, err
 			}
@@ -281,19 +281,19 @@ func (e *DeviceMetadataSnapshotTaken) HandleCommand(ctx context.Context, cmd agg
 			return nil, status.Errorf(codes.InvalidArgument, "unknown update type(%T)", req.GetUpdate())
 		}
 	case *commands.ConfirmDeviceMetadataUpdateRequest:
-		return e.ConfirmDeviceMetadataUpdate(ctx, userID, req, newVersion, false)
+		return d.ConfirmDeviceMetadataUpdate(ctx, userID, req, newVersion, false)
 	case *commands.CancelPendingMetadataUpdatesRequest:
-		return e.CancelPendingMetadataUpdates(ctx, userID, req, newVersion)
+		return d.CancelPendingMetadataUpdates(ctx, userID, req, newVersion)
 	}
 
 	return nil, fmt.Errorf("unknown command (%T)", cmd)
 }
 
-func (e *DeviceMetadataSnapshotTaken) TakeSnapshot(version uint64) (eventstore.Event, bool) {
+func (d *DeviceMetadataSnapshotTaken) TakeSnapshot(version uint64) (eventstore.Event, bool) {
 	return &DeviceMetadataSnapshotTaken{
-		DeviceId:              e.GetDeviceId(),
-		EventMetadata:         MakeEventMeta(e.GetEventMetadata().GetConnectionId(), e.GetEventMetadata().GetSequence(), version),
-		DeviceMetadataUpdated: e.GetDeviceMetadataUpdated(),
+		DeviceId:              d.GetDeviceId(),
+		EventMetadata:         MakeEventMeta(d.GetEventMetadata().GetConnectionId(), d.GetEventMetadata().GetSequence(), version),
+		DeviceMetadataUpdated: d.GetDeviceMetadataUpdated(),
 	}, true
 }
 

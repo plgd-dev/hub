@@ -528,7 +528,7 @@ func defaultHandler(req *mux.Message, client *Client) (*pool.Message, error) {
 
 const clientKey = "client"
 
-func (server *Service) coapConnOnNew(coapConn *tcp.ClientConn, tlscon *tls.Conn) {
+func (s *Service) coapConnOnNew(coapConn *tcp.ClientConn, tlscon *tls.Conn) {
 	var tlsDeviceID string
 	var tlsValidUntil time.Time
 	if tlscon != nil {
@@ -542,24 +542,24 @@ func (server *Service) coapConnOnNew(coapConn *tcp.ClientConn, tlscon *tls.Conn)
 		}
 	}
 
-	client := newClient(server, coapConn, tlsDeviceID, tlsValidUntil)
+	client := newClient(s, coapConn, tlsDeviceID, tlsValidUntil)
 	coapConn.SetContextValue(clientKey, client)
 	coapConn.AddOnClose(func() {
 		client.OnClose()
 	})
 }
 
-func (server *Service) authMiddleware(next mux.Handler) mux.Handler {
+func (s *Service) authMiddleware(next mux.Handler) mux.Handler {
 	return mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
 		t := time.Now()
 		client, ok := w.Client().Context().Value(clientKey).(*Client)
 		if !ok {
-			client = newClient(server, w.Client().ClientConn().(*tcp.ClientConn), "", time.Time{})
+			client = newClient(s, w.Client().ClientConn().(*tcp.ClientConn), "", time.Time{})
 		}
 		authCtx, _ := client.GetAuthorizationContext()
 		ctx := context.WithValue(r.Context, &authCtxKey, authCtx)
 		path, _ := r.Options.Path()
-		ctx, err := server.authInterceptor(ctx, r.Code, path)
+		ctx, err := s.authInterceptor(ctx, r.Code, path)
 		if ctx == nil {
 			ctx = r.Context
 		}
@@ -578,50 +578,50 @@ func (server *Service) authMiddleware(next mux.Handler) mux.Handler {
 }
 
 //setupCoapServer setup coap server
-func (server *Service) setupCoapServer() error {
+func (s *Service) setupCoapServer() error {
 	setHandlerError := func(uri string, err error) error {
 		return fmt.Errorf("failed to set %v handler: %w", uri, err)
 	}
 	m := mux.NewRouter()
-	m.Use(server.authMiddleware)
+	m.Use(s.authMiddleware)
 	m.DefaultHandle(mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
-		executeCommand(w, r, server, defaultHandler)
+		executeCommand(w, r, s, defaultHandler)
 	}))
 	if err := m.Handle(uri.ResourceDirectory, mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
-		executeCommand(w, r, server, resourceDirectoryHandler)
+		executeCommand(w, r, s, resourceDirectoryHandler)
 	})); err != nil {
 		return setHandlerError(uri.ResourceDirectory, err)
 	}
 	if err := m.Handle(uri.SignUp, mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
-		executeCommand(w, r, server, signUpHandler)
+		executeCommand(w, r, s, signUpHandler)
 	})); err != nil {
 		return setHandlerError(uri.SignUp, err)
 	}
 	if err := m.Handle(uri.SignIn, mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
-		executeCommand(w, r, server, signInHandler)
+		executeCommand(w, r, s, signInHandler)
 	})); err != nil {
 		return setHandlerError(uri.SignIn, err)
 	}
 	if err := m.Handle(uri.ResourceDiscovery, mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
-		executeCommand(w, r, server, resourceDiscoveryHandler)
+		executeCommand(w, r, s, resourceDiscoveryHandler)
 	})); err != nil {
 		return setHandlerError(uri.ResourceDiscovery, err)
 	}
 	if err := m.Handle(uri.RefreshToken, mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
-		executeCommand(w, r, server, refreshTokenHandler)
+		executeCommand(w, r, s, refreshTokenHandler)
 	})); err != nil {
 		return setHandlerError(uri.RefreshToken, err)
 	}
 
 	opts := make([]tcp.ServerOption, 0, 8)
-	opts = append(opts, tcp.WithKeepAlive(1, server.config.APIs.COAP.KeepAlive.Timeout, server.keepaliveOnInactivity))
-	opts = append(opts, tcp.WithOnNewClientConn(server.coapConnOnNew))
-	opts = append(opts, tcp.WithBlockwise(server.config.APIs.COAP.BlockwiseTransfer.Enabled, server.blockWiseTransferSZX, server.config.APIs.COAP.KeepAlive.Timeout))
+	opts = append(opts, tcp.WithKeepAlive(1, s.config.APIs.COAP.KeepAlive.Timeout, s.keepaliveOnInactivity))
+	opts = append(opts, tcp.WithOnNewClientConn(s.coapConnOnNew))
+	opts = append(opts, tcp.WithBlockwise(s.config.APIs.COAP.BlockwiseTransfer.Enabled, s.blockWiseTransferSZX, s.config.APIs.COAP.KeepAlive.Timeout))
 	opts = append(opts, tcp.WithMux(m))
-	opts = append(opts, tcp.WithContext(server.ctx))
-	opts = append(opts, tcp.WithMaxMessageSize(server.config.APIs.COAP.MaxMessageSize))
+	opts = append(opts, tcp.WithContext(s.ctx))
+	opts = append(opts, tcp.WithMaxMessageSize(s.config.APIs.COAP.MaxMessageSize))
 	opts = append(opts, tcp.WithErrors(func(e error) {
-		server.logger.Errorf("plgd/go-coap: %w", e)
+		s.logger.Errorf("plgd/go-coap: %w", e)
 	}))
 	opts = append(opts, tcp.WithGoPool(func(f func()) error {
 		// we call directly function in connection-goroutine because
@@ -632,20 +632,20 @@ func (server *Service) setupCoapServer() error {
 		f()
 		return nil
 	}))
-	server.coapServer = tcp.NewServer(opts...)
+	s.coapServer = tcp.NewServer(opts...)
 	return nil
 }
 
-func (server *Service) tlsEnabled() bool {
-	return server.config.APIs.COAP.TLS.Enabled
+func (s *Service) tlsEnabled() bool {
+	return s.config.APIs.COAP.TLS.Enabled
 }
 
 // Serve starts a coapgateway on the configured address in *Service.
-func (server *Service) Serve() error {
-	return server.serveWithHandlingSignal()
+func (s *Service) Serve() error {
+	return s.serveWithHandlingSignal()
 }
 
-func (server *Service) serveWithHandlingSignal() error {
+func (s *Service) serveWithHandlingSignal() error {
 	var wg sync.WaitGroup
 	var err error
 	wg.Add(1)
@@ -654,25 +654,25 @@ func (server *Service) serveWithHandlingSignal() error {
 		err = server.coapServer.Serve(server.listener)
 		server.cancel()
 		server.natsClient.Close()
-	}(server)
+	}(s)
 
-	signal.Notify(server.sigs,
+	signal.Notify(s.sigs,
 		syscall.SIGHUP,
 		syscall.SIGINT,
 		syscall.SIGTERM,
 		syscall.SIGQUIT)
-	<-server.sigs
+	<-s.sigs
 
-	server.coapServer.Stop()
+	s.coapServer.Stop()
 	wg.Wait()
 
 	return err
 }
 
-// Shutdown turn off server.
-func (server *Service) Close() error {
+// Close turns off the server.
+func (s *Service) Close() error {
 	select {
-	case server.sigs <- syscall.SIGTERM:
+	case s.sigs <- syscall.SIGTERM:
 	default:
 	}
 	return nil

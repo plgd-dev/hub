@@ -26,9 +26,9 @@ type Config struct {
 	Mongo         mongodb.Config
 }
 
-//String return string representation of Config
+// String returns string representation of Config
 func (c Config) String() string {
-	b, _ := json.MarshalIndent(c, "", "  ")
+	b, _ := json.MarshalIndent(c, "", "  ") //nolint:errchkjson
 	return fmt.Sprintf("config: \n%v\n", string(b))
 }
 
@@ -106,7 +106,7 @@ func backup(file *os.File, eu eventstore.EventUnmarshaler) error {
 	}
 	event := hEvent{VersionI: eu.Version(), EventTypeI: eu.EventType(), Data: e}
 
-	b, _ := json.MarshalIndent(event, "", "  ")
+	b, _ := json.MarshalIndent(event, "", "  ") //nolint:errchkjson
 	text := fmt.Sprintf(string(b) + "\n")
 	if _, err = file.WriteString(text); err != nil {
 		return err

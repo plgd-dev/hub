@@ -9,14 +9,14 @@ import (
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 )
 
-func (client *Client) sendResponse(code coapCodes.Code, token message.Token, contentFormat message.MediaType, payload []byte) {
-	msg, cleanUp := coapgwMessage.GetResponse(client.coapConn.Context(), pool.New(0, 0), code, token, contentFormat, payload)
+func (c *Client) sendResponse(code coapCodes.Code, token message.Token, contentFormat message.MediaType, payload []byte) {
+	msg, cleanUp := coapgwMessage.GetResponse(c.coapConn.Context(), pool.New(0, 0), code, token, contentFormat, payload)
 	defer cleanUp()
-	err := client.coapConn.WriteMessage(msg)
+	err := c.coapConn.WriteMessage(msg)
 	if err != nil {
 		if !kitNetGrpc.IsContextCanceled(err) {
-			log.Errorf("cannot send reply to %v: %w", client.GetDeviceID(), err)
+			log.Errorf("cannot send reply to %v: %w", c.GetDeviceID(), err)
 		}
 	}
-	decodeMsgToDebug(client, msg, "SEND-RESPONSE")
+	decodeMsgToDebug(c, msg, "SEND-RESPONSE")
 }

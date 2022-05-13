@@ -36,18 +36,18 @@ func (p *Policy) ToSchema() *schema.Policy {
 	}
 }
 
-func (l *Resource) ToSchema() schema.ResourceLink {
+func (r *Resource) ToSchema() schema.ResourceLink {
 	return schema.ResourceLink{
-		ID:                    l.ToUUID(),
-		Anchor:                l.GetAnchor(),
-		DeviceID:              l.GetDeviceId(),
-		Endpoints:             EndpointInformations(l.GetEndpointInformations()).ToSchema(),
-		Href:                  l.GetHref(),
-		Interfaces:            l.GetInterfaces(),
-		Policy:                l.GetPolicy().ToSchema(),
-		ResourceTypes:         l.GetResourceTypes(),
-		SupportedContentTypes: l.GetSupportedContentTypes(),
-		Title:                 l.GetTitle(),
+		ID:                    r.ToUUID(),
+		Anchor:                r.GetAnchor(),
+		DeviceID:              r.GetDeviceId(),
+		Endpoints:             EndpointInformations(r.GetEndpointInformations()).ToSchema(),
+		Href:                  r.GetHref(),
+		Interfaces:            r.GetInterfaces(),
+		Policy:                r.GetPolicy().ToSchema(),
+		ResourceTypes:         r.GetResourceTypes(),
+		SupportedContentTypes: r.GetSupportedContentTypes(),
+		Title:                 r.GetTitle(),
 	}
 }
 

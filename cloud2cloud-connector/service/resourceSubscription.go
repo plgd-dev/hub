@@ -54,7 +54,7 @@ func (s *SubscriptionManager) SubscribeToResource(ctx context.Context, deviceID,
 	}
 	_, _, err = s.store.LoadOrCreateSubscription(sub)
 	if err != nil {
-		var errors []error = make([]error, 1, 2)
+		errors := make([]error, 1, 2)
 		errors = append(errors, fmt.Errorf("cannot store resource subscription to DB: %w", err))
 		if err2 := cancelResourceSubscription(ctx, s.tracerProvider, linkedAccount, linkedCloud, sub.DeviceID, sub.Href, sub.ID); err2 != nil {
 			errors = append(errors, fmt.Errorf("cannot cancel resource %v/%v subscription: %w", sub.DeviceID, sub.Href, err2))

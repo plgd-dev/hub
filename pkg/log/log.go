@@ -137,20 +137,20 @@ type TimeEncoderWrapper struct {
 	TimeEncoder TimeEncoder
 }
 
-func (e *TimeEncoderWrapper) UnmarshalText(text []byte) error {
+func (t *TimeEncoderWrapper) UnmarshalText(text []byte) error {
 	switch string(text) {
 	case "rfc3339nano", "RFC3339Nano":
-		e.TimeEncoder = RFC3339NanoTimeEncoder{}
+		t.TimeEncoder = RFC3339NanoTimeEncoder{}
 	case "rfc3339", "RFC3339":
-		e.TimeEncoder = RFC3339TimeEncoder{}
+		t.TimeEncoder = RFC3339TimeEncoder{}
 	case "iso8601", "ISO8601":
-		e.TimeEncoder = ISO8601TimeEncoder{}
+		t.TimeEncoder = ISO8601TimeEncoder{}
 	case "millis":
-		e.TimeEncoder = EpochMillisTimeEncoder{}
+		t.TimeEncoder = EpochMillisTimeEncoder{}
 	case "nanos":
-		e.TimeEncoder = EpochNanosTimeEncoder{}
+		t.TimeEncoder = EpochNanosTimeEncoder{}
 	default:
-		e.TimeEncoder = EpochTimeEncoder{}
+		t.TimeEncoder = EpochTimeEncoder{}
 	}
 	return nil
 }

@@ -26,8 +26,8 @@ type Client struct {
 
 // AddCloseFunc adds a function to be called by the Close method.
 // This eliminates the need for wrapping the Client.
-func (s *Client) AddCloseFunc(f func()) {
-	s.closeFunc.AddFunc(f)
+func (c *Client) AddCloseFunc(f func()) {
+	c.closeFunc.AddFunc(f)
 }
 
 func (c *Client) GetTracerProvider() trace.TracerProvider {
@@ -37,21 +37,21 @@ func (c *Client) GetTracerProvider() trace.TracerProvider {
 	return c.tracerProvider
 }
 
-func (s *Client) close(ctx context.Context) error {
+func (c *Client) close(ctx context.Context) error {
 	var errors []error
-	if s.tracerProvider != nil {
-		err := s.tracerProvider.Shutdown(ctx)
+	if c.tracerProvider != nil {
+		err := c.tracerProvider.Shutdown(ctx)
 		if err != nil {
 			errors = append(errors, err)
 		}
 	}
-	if s.client != nil {
-		err := s.client.Close()
+	if c.client != nil {
+		err := c.client.Close()
 		if err != nil {
 			errors = append(errors, err)
 		}
 	}
-	s.closeFunc.Execute()
+	c.closeFunc.Execute()
 	if len(errors) == 1 {
 		return errors[0]
 	}
@@ -61,9 +61,9 @@ func (s *Client) close(ctx context.Context) error {
 	return nil
 }
 
-func (s *Client) Close() {
-	if err := s.close(s.ctx); err != nil {
-		s.logger.Errorf("cannot close open telemetry collector client: %w", err)
+func (c *Client) Close() {
+	if err := c.close(c.ctx); err != nil {
+		c.logger.Errorf("cannot close open telemetry collector client: %w", err)
 	}
 }
 
