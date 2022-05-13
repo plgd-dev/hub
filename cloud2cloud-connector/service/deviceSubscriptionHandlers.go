@@ -82,7 +82,7 @@ func getKey(userID, deviceID string) string {
 	return userID + "." + deviceID
 }
 
-func (c *DevicesSubscription) Add(deviceID string, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud) error {
+func (c *DevicesSubscription) Add(ctx context.Context, deviceID string, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud) error {
 	var s atomic.Value
 	key := getKey(linkedAccount.UserID, deviceID)
 	_, loaded := c.data.LoadOrStore(key, &s)
@@ -106,7 +106,7 @@ func (c *DevicesSubscription) Add(deviceID string, linkedAccount store.LinkedAcc
 			log.Debugf("next iteration %v of retrying reconnect to grpc-client for deviceID %v will be at %v", count, deviceID, next)
 			return next, nil
 		}
-	}, c.rdClient, c.subscriber)
+	}, c.rdClient, c.subscriber, c.tracerProvider)
 	if err != nil {
 		c.data.Delete(getKey(linkedAccount.UserID, deviceID))
 		return fmt.Errorf("cannot create device %v pending subscription: %w", deviceID, err)
@@ -123,7 +123,7 @@ func (c *DevicesSubscription) Add(deviceID string, linkedAccount store.LinkedAcc
 			c.data.Delete(getKey(linkedAccount.UserID, deviceID))
 		},
 	})
-	deviceSubscriber.SubscribeToPendingCommands(h)
+	deviceSubscriber.SubscribeToPendingCommands(ctx, h)
 
 	s.Store(deviceSubscriber)
 	return nil

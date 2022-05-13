@@ -270,7 +270,7 @@ func (s *SubscriptionManager) Run(ctx context.Context, interval time.Duration) {
 			s.triggerTask(task)
 		}
 		for _, data := range s.store.DumpDevices() {
-			err := s.devicesSubscription.Add(data.subscription.DeviceID, data.linkedAccount, data.linkedCloud)
+			err := s.devicesSubscription.Add(ctx, data.subscription.DeviceID, data.linkedAccount, data.linkedCloud)
 			if err != nil {
 				log.Errorf("cannot add device %v from subscriptions to devicesSubscription: %w", data.subscription.DeviceID, err)
 			}

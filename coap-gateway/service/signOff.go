@@ -116,6 +116,7 @@ func signOffHandler(req *mux.Message, client *Client) (*pool.Message, error) {
 	}
 
 	deviceID := client.ResolveDeviceID(jwtClaims, signOffData.deviceID)
+	setDeviceIDToTracerSpan(req.Context, deviceID)
 
 	ctx = kitNetGrpc.CtxWithToken(ctx, signOffData.accessToken)
 	deviceIds := []string{deviceID}

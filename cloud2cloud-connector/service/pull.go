@@ -203,7 +203,7 @@ func (p *pullDevicesHandler) pullDevices(ctx context.Context, linkedAccount stor
 
 	for _, dev := range devices {
 		deviceID := dev.Device.Device.ID
-		err := p.devicesSubscription.Add(deviceID, linkedAccount, linkedCloud)
+		err := p.devicesSubscription.Add(ctx, deviceID, linkedAccount, linkedCloud)
 		if err != nil {
 			errors = append(errors, fmt.Errorf("cannot add device %v to devicesSubscription: %w", deviceID, err))
 		}
