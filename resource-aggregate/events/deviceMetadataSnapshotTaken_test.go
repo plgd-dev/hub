@@ -211,7 +211,8 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 					Status: &commands.ConnectionStatus{
 						Value: commands.ConnectionStatus_OFFLINE,
 					},
-					AuditContext: commands.NewAuditContext(userID, correlationID),
+					AuditContext:         commands.NewAuditContext(userID, correlationID),
+					OpenTelemetryCarrier: map[string]string{},
 				}),
 			},
 		},

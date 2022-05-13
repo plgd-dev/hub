@@ -253,6 +253,7 @@ func CleanUpResourceCreatePending(e *events.ResourceCreatePending, resetCorrelat
 		e.GetAuditContext().CorrelationId = ""
 	}
 	e.EventMetadata = nil
+	e.OpenTelemetryCarrier = nil
 	return e
 }
 
@@ -292,6 +293,7 @@ func CleanUpResourceUpdatePending(e *events.ResourceUpdatePending, resetCorrelat
 		e.GetAuditContext().CorrelationId = ""
 	}
 	e.EventMetadata = nil
+	e.OpenTelemetryCarrier = nil
 	return e
 }
 
@@ -331,6 +333,7 @@ func CleanUpResourceRetrievePending(e *events.ResourceRetrievePending, resetCorr
 		e.GetAuditContext().CorrelationId = ""
 	}
 	e.EventMetadata = nil
+	e.OpenTelemetryCarrier = nil
 	return e
 }
 
@@ -358,6 +361,7 @@ func CleanUpResourceDeletePending(e *events.ResourceDeletePending, resetCorrelat
 		e.GetAuditContext().CorrelationId = ""
 	}
 	e.EventMetadata = nil
+	e.OpenTelemetryCarrier = nil
 	return e
 }
 
@@ -382,6 +386,7 @@ func CleanUpDeviceMetadataUpdatePending(e *events.DeviceMetadataUpdatePending, r
 		e.GetAuditContext().CorrelationId = ""
 	}
 	e.EventMetadata = nil
+	e.OpenTelemetryCarrier = nil
 	return e
 }
 

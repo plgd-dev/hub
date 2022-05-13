@@ -321,6 +321,10 @@ func WaitForDevice(ctx context.Context, t *testing.T, client pb.GrpcGateway_Subs
 
 	cleanUpEvent := func(ev *pb.Event) {
 		switch val := ev.GetType().(type) {
+		case *pb.Event_DeviceRegistered_:
+			val.DeviceRegistered.OpenTelemetryCarrier = nil
+		case *pb.Event_DeviceUnregistered_:
+			val.DeviceUnregistered.OpenTelemetryCarrier = nil
 		case *pb.Event_DeviceMetadataUpdated:
 			require.NotEmpty(t, val.DeviceMetadataUpdated.GetAuditContext().GetUserId())
 			val.DeviceMetadataUpdated.AuditContext = nil
@@ -329,12 +333,14 @@ func WaitForDevice(ctx context.Context, t *testing.T, client pb.GrpcGateway_Subs
 			if val.DeviceMetadataUpdated.GetStatus() != nil {
 				val.DeviceMetadataUpdated.GetStatus().ConnectionId = ""
 			}
+			val.DeviceMetadataUpdated.OpenTelemetryCarrier = nil
 		case *pb.Event_ResourcePublished:
 			require.NotEmpty(t, val.ResourcePublished.GetAuditContext().GetUserId())
 			val.ResourcePublished.AuditContext = nil
 			require.NotZero(t, val.ResourcePublished.GetEventMetadata().GetTimestamp())
 			val.ResourcePublished.EventMetadata = nil
 			val.ResourcePublished.Resources = CleanUpResourcesArray(val.ResourcePublished.GetResources())
+			val.ResourcePublished.OpenTelemetryCarrier = nil
 		case *pb.Event_ResourceChanged:
 			require.NotEmpty(t, val.ResourceChanged.GetAuditContext().GetUserId())
 			val.ResourceChanged.AuditContext = nil
@@ -342,6 +348,7 @@ func WaitForDevice(ctx context.Context, t *testing.T, client pb.GrpcGateway_Subs
 			val.ResourceChanged.EventMetadata = nil
 			require.NotEmpty(t, val.ResourceChanged.GetContent().GetData())
 			val.ResourceChanged.Content = nil
+			val.ResourceChanged.OpenTelemetryCarrier = nil
 		}
 	}
 

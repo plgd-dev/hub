@@ -43,6 +43,7 @@ func CleanUpDeviceMetadataUpdated(e *events.DeviceMetadataUpdated, resetCorrelat
 		e.GetAuditContext().CorrelationId = ""
 	}
 	e.EventMetadata = nil
+	e.OpenTelemetryCarrier = nil
 	if e.GetStatus() != nil {
 		e.GetStatus().ValidUntil = 0
 		e.GetStatus().ConnectionId = ""

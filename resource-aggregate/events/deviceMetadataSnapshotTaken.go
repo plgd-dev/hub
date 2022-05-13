@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	"github.com/plgd-dev/hub/v2/pkg/opentelemetry/propagation"
 	pkgTime "github.com/plgd-dev/hub/v2/pkg/time"
 	commands "github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/aggregate"
@@ -176,6 +177,7 @@ func (e *DeviceMetadataSnapshotTaken) ConfirmDeviceMetadataUpdate(ctx context.Co
 			Canceled:              true,
 			AuditContext:          ac,
 			EventMetadata:         em,
+			OpenTelemetryCarrier:  propagation.TraceFromCtx(ctx),
 		}
 		ok, err := e.HandleDeviceMetadataUpdated(ctx, &ev, true)
 		if !ok {
@@ -189,6 +191,7 @@ func (e *DeviceMetadataSnapshotTaken) ConfirmDeviceMetadataUpdate(ctx context.Co
 			ShadowSynchronization: req.GetShadowSynchronization(),
 			AuditContext:          ac,
 			EventMetadata:         em,
+			OpenTelemetryCarrier:  propagation.TraceFromCtx(ctx),
 		}
 		ok, err := e.HandleDeviceMetadataUpdated(ctx, &ev, true)
 		if !ok {
@@ -251,6 +254,7 @@ func (e *DeviceMetadataSnapshotTaken) HandleCommand(ctx context.Context, cmd agg
 				ShadowSynchronization: e.GetDeviceMetadataUpdated().GetShadowSynchronization(),
 				AuditContext:          ac,
 				EventMetadata:         em,
+				OpenTelemetryCarrier:  propagation.TraceFromCtx(ctx),
 			}
 			ok, err := e.HandleDeviceMetadataUpdated(ctx, &ev, false)
 			if !ok {
@@ -264,8 +268,9 @@ func (e *DeviceMetadataSnapshotTaken) HandleCommand(ctx context.Context, cmd agg
 				UpdatePending: &DeviceMetadataUpdatePending_ShadowSynchronization{
 					ShadowSynchronization: req.GetShadowSynchronization(),
 				},
-				AuditContext:  ac,
-				EventMetadata: em,
+				AuditContext:         ac,
+				EventMetadata:        em,
+				OpenTelemetryCarrier: propagation.TraceFromCtx(ctx),
 			}
 			err := e.HandleDeviceMetadataUpdatePending(ctx, &ev)
 			if err != nil {

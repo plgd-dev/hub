@@ -15,6 +15,9 @@ message DevicesRegistered {
     repeated string device_ids = 2; // list of device ids added to owner.
     int64 timestamp = 3; // unix timestamp in nanoseconds of creation event.
     AuditContext audit_context = 4; // provides who register/unregister the device
+
+    // Open telemetry data propagated to asynchronous events
+    map<string,string> open_telemetry_carrier = 100;
 }
 
 // devices was deregistered from owner.
@@ -23,6 +26,9 @@ message DevicesUnregistered {
     repeated string device_ids = 2; // list of device ids deleted from owner.
     int64 timestamp = 3; // unix timestamp in nanoseconds of creation event.
     AuditContext audit_context = 4; // provides who register/unregister the device
+    
+    // Open telemetry data propagated to asynchronous events
+    map<string,string> open_telemetry_carrier = 100;
 }
 
 // nats: owners.{owner}.>

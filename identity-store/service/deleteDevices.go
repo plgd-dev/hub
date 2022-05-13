@@ -10,6 +10,7 @@ import (
 	"github.com/plgd-dev/hub/v2/identity-store/persistence"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	"github.com/plgd-dev/hub/v2/pkg/opentelemetry/propagation"
 	pkgTime "github.com/plgd-dev/hub/v2/pkg/time"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/utils"
 	"github.com/plgd-dev/kit/v2/strings"
@@ -38,7 +39,7 @@ func getOwnerDevices(tx persistence.PersistenceTx, owner string) ([]string, erro
 	return deviceIds, nil
 }
 
-func (s *Service) publishDevicesUnregistered(owner, userID string, deviceIDs []string) error {
+func (s *Service) publishDevicesUnregistered(ctx context.Context, owner, userID string, deviceIDs []string) error {
 	v := events.Event{
 		Type: &events.Event_DevicesUnregistered{
 			DevicesUnregistered: &events.DevicesUnregistered{
@@ -47,7 +48,8 @@ func (s *Service) publishDevicesUnregistered(owner, userID string, deviceIDs []s
 				AuditContext: &events.AuditContext{
 					UserId: userID,
 				},
-				Timestamp: pkgTime.UnixNano(time.Now()),
+				Timestamp:            pkgTime.UnixNano(time.Now()),
+				OpenTelemetryCarrier: propagation.TraceFromCtx(ctx),
 			},
 		},
 	}
@@ -131,7 +133,7 @@ func (s *Service) DeleteDevices(ctx context.Context, request *pb.DeleteDevicesRe
 		deletedDeviceIDs = append(deletedDeviceIDs, deviceID)
 	}
 
-	if err := s.publishDevicesUnregistered(owner, userID, deletedDeviceIDs); err != nil {
+	if err := s.publishDevicesUnregistered(ctx, owner, userID, deletedDeviceIDs); err != nil {
 		log.Errorf("cannot publish devices unregistered event with devices('%v') and owner('%v'): %w", deletedDeviceIDs, owner, err)
 	}
 

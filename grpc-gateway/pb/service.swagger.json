@@ -877,6 +877,13 @@
           "items": {
             "type": "string"
           }
+        },
+        "openTelemetryCarrier": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "exported open telemetry trace context. All events must have same protobuf identifier field(100)."
         }
       }
     },
@@ -888,6 +895,13 @@
           "items": {
             "type": "string"
           }
+        },
+        "openTelemetryCarrier": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "exported open telemetry trace context. All events must have same protobuf identifier field(100)."
         }
       }
     },
@@ -1251,6 +1265,13 @@
         "validUntil": {
           "type": "string",
           "format": "int64"
+        },
+        "openTelemetryCarrier": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "exported open telemetry trace context. All events must have same protobuf identifier field(100)."
         }
       }
     },
@@ -1274,6 +1295,13 @@
         },
         "canceled": {
           "type": "boolean"
+        },
+        "openTelemetryCarrier": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "exported open telemetry trace context. All events must have same protobuf identifier field(100)."
         }
       }
     },
@@ -1468,6 +1496,13 @@
         },
         "eventMetadata": {
           "$ref": "#/definitions/pbEventMetadata"
+        },
+        "openTelemetryCarrier": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "exported open telemetry trace context. All events must have same protobuf identifier field(100)."
         }
       }
     },
@@ -1489,6 +1524,13 @@
         "validUntil": {
           "type": "string",
           "format": "int64"
+        },
+        "openTelemetryCarrier": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "exported open telemetry trace context. All events must have same protobuf identifier field(100)."
         }
       }
     },
@@ -1509,6 +1551,13 @@
         },
         "eventMetadata": {
           "$ref": "#/definitions/pbEventMetadata"
+        },
+        "openTelemetryCarrier": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "exported open telemetry trace context. All events must have same protobuf identifier field(100)."
         }
       }
     },
@@ -1527,6 +1576,13 @@
         "validUntil": {
           "type": "string",
           "format": "int64"
+        },
+        "openTelemetryCarrier": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "exported open telemetry trace context. All events must have same protobuf identifier field(100)."
         }
       }
     },
@@ -1547,6 +1603,13 @@
         },
         "eventMetadata": {
           "$ref": "#/definitions/pbEventMetadata"
+        },
+        "openTelemetryCarrier": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "exported open telemetry trace context. All events must have same protobuf identifier field(100)."
         }
       }
     },
@@ -1578,6 +1641,13 @@
         },
         "eventMetadata": {
           "$ref": "#/definitions/pbEventMetadata"
+        },
+        "openTelemetryCarrier": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "exported open telemetry trace context. All events must have same protobuf identifier field(100)."
         }
       },
       "title": "https://github.com/openconnectivityfoundation/cloud-services/blob/master/swagger2.0/oic.wk.rd.swagger.json#L173"
@@ -1619,6 +1689,13 @@
         },
         "eventMetadata": {
           "$ref": "#/definitions/pbEventMetadata"
+        },
+        "openTelemetryCarrier": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "exported open telemetry trace context. All events must have same protobuf identifier field(100)."
         }
       },
       "title": "https://github.com/openconnectivityfoundation/cloud-services/blob/master/swagger2.0/oic.wk.rd.swagger.json #Specification CR needed"
@@ -1641,6 +1718,13 @@
         "validUntil": {
           "type": "string",
           "format": "int64"
+        },
+        "openTelemetryCarrier": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "exported open telemetry trace context. All events must have same protobuf identifier field(100)."
         }
       }
     },
@@ -1661,6 +1745,13 @@
         },
         "eventMetadata": {
           "$ref": "#/definitions/pbEventMetadata"
+        },
+        "openTelemetryCarrier": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "exported open telemetry trace context. All events must have same protobuf identifier field(100)."
         }
       }
     },
@@ -1726,6 +1817,13 @@
         "validUntil": {
           "type": "string",
           "format": "int64"
+        },
+        "openTelemetryCarrier": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "exported open telemetry trace context. All events must have same protobuf identifier field(100)."
         }
       }
     },
@@ -1746,6 +1844,13 @@
         },
         "eventMetadata": {
           "$ref": "#/definitions/pbEventMetadata"
+        },
+        "openTelemetryCarrier": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "exported open telemetry trace context. All events must have same protobuf identifier field(100)."
         }
       }
     },
