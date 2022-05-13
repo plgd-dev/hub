@@ -53,7 +53,7 @@ func (s *SubscriptionManager) SubscribeToDevice(ctx context.Context, deviceID st
 	}
 	_, _, err = s.store.LoadOrCreateSubscription(sub)
 	if err != nil {
-		var errors []error = make([]error, 1, 2)
+		errors := make([]error, 1, 2)
 		errors = append(errors, fmt.Errorf("cannot store subscription to DB: %w", err))
 		if err2 := cancelDeviceSubscription(ctx, s.tracerProvider, linkedAccount, linkedCloud, deviceID, sub.ID); err2 != nil {
 			errors = append(errors, fmt.Errorf("cannot cancel device %v subscription: %w", deviceID, err2))

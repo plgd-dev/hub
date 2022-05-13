@@ -24,9 +24,9 @@ func (c *Client) AddCloseFunc(f func()) {
 	c.closeFunc = append(c.closeFunc, f)
 }
 
-func (s *Client) Close() {
-	s.client.CloseIdleConnections()
-	for _, f := range s.closeFunc {
+func (c *Client) Close() {
+	c.client.CloseIdleConnections()
+	for _, f := range c.closeFunc {
 		f()
 	}
 }

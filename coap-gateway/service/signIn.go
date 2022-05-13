@@ -123,7 +123,7 @@ const (
 	updateTypeChanged updateType = 2
 )
 
-func (client *Client) updateAuthorizationContext(deviceID, userID, accessToken string, validUntil time.Time, jwtClaims jwt.Claims) updateType {
+func (c *Client) updateAuthorizationContext(deviceID, userID, accessToken string, validUntil time.Time, jwtClaims jwt.Claims) updateType {
 	authCtx := authorizationContext{
 		DeviceID:    deviceID,
 		UserID:      userID,
@@ -131,7 +131,7 @@ func (client *Client) updateAuthorizationContext(deviceID, userID, accessToken s
 		Expire:      validUntil,
 		JWTClaims:   jwtClaims,
 	}
-	oldAuthCtx := client.SetAuthorizationContext(&authCtx)
+	oldAuthCtx := c.SetAuthorizationContext(&authCtx)
 
 	if oldAuthCtx.GetDeviceID() == "" {
 		return updateTypeNew
@@ -142,25 +142,25 @@ func (client *Client) updateAuthorizationContext(deviceID, userID, accessToken s
 	return updateTypeNone
 }
 
-func (client *Client) updateBySignInData(ctx context.Context, upd updateType, deviceId, owner string) error {
+func (c *Client) updateBySignInData(ctx context.Context, upd updateType, deviceId, owner string) error {
 	if upd == updateTypeChanged {
-		client.cancelResourceSubscriptions(true)
-		if err := client.closeDeviceSubscriber(); err != nil {
-			client.Errorf("failed to close previous device subscription: %w", err)
+		c.cancelResourceSubscriptions(true)
+		if err := c.closeDeviceSubscriber(); err != nil {
+			c.Errorf("failed to close previous device subscription: %w", err)
 		}
-		if err := client.closeDeviceObserver(client.Context()); err != nil {
-			client.Errorf("failed to close previous device observer: %w", err)
+		if err := c.closeDeviceObserver(c.Context()); err != nil {
+			c.Errorf("failed to close previous device observer: %w", err)
 		}
-		client.unsubscribeFromDeviceEvents()
+		c.unsubscribeFromDeviceEvents()
 	}
 
 	if upd != updateTypeNone {
-		if err := setNewDeviceSubscriber(ctx, client, owner, deviceId); err != nil {
+		if err := setNewDeviceSubscriber(ctx, c, owner, deviceId); err != nil {
 			return fmt.Errorf("cannot set device subscriber: %w", err)
 		}
 	}
 
-	if err := client.server.devicesStatusUpdater.Add(ctx, client); err != nil {
+	if err := c.server.devicesStatusUpdater.Add(ctx, c); err != nil {
 		return fmt.Errorf("cannot update cloud device status: %w", err)
 	}
 

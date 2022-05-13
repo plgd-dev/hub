@@ -11,16 +11,16 @@ func (e *EndpointInformation) Clone() *EndpointInformation {
 	}
 }
 
-func (eis EndpointInformations) Clone() EndpointInformations {
-	if eis == nil {
+func (e EndpointInformations) Clone() EndpointInformations {
+	if e == nil {
 		return nil
 	}
 
-	e := make([]*EndpointInformation, len(eis))
-	for i := range eis {
-		e[i] = eis[i].Clone()
+	eis := make([]*EndpointInformation, len(e))
+	for i := range e {
+		eis[i] = e[i].Clone()
 	}
-	return e
+	return eis
 }
 
 func (r *Resource) Clone() *Resource {

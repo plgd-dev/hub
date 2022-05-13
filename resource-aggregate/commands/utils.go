@@ -84,19 +84,19 @@ func HTTPStatus2Status(s int) Status {
 	return Status_UNKNOWN
 }
 
-// IsOnline evaluate online state
-func (s *ConnectionStatus) IsOnline() bool {
-	if s == nil {
+// IsOnline evaluates online state
+func (c *ConnectionStatus) IsOnline() bool {
+	if c == nil {
 		return false
 	}
-	if s.Value == ConnectionStatus_OFFLINE {
+	if c.Value == ConnectionStatus_OFFLINE {
 		return false
 	}
-	if s.ValidUntil <= 0 {
+	if c.ValidUntil <= 0 {
 		// s.ValidUntil <= 0 means infinite
-		return s.Value == ConnectionStatus_ONLINE
+		return c.Value == ConnectionStatus_ONLINE
 	}
-	return time.Now().UnixNano() < s.ValidUntil
+	return time.Now().UnixNano() < c.ValidUntil
 }
 
 var status2grpcCode = map[Status]codes.Code{

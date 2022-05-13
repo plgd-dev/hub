@@ -34,8 +34,8 @@ type RequestHandler struct {
 	closeFunc           fn.FuncList
 }
 
-func (s *RequestHandler) Close() {
-	s.closeFunc.Execute()
+func (r *RequestHandler) Close() {
+	r.closeFunc.Execute()
 }
 
 func AddHandler(ctx context.Context, svr *server.Server, config Config, publicConfiguration PublicConfiguration, logger log.Logger, tracerProvider trace.TracerProvider, goroutinePoolGo func(func()) error) error {

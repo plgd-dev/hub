@@ -141,12 +141,12 @@ func NewMockEventStore() *MockEventStore {
 	return &MockEventStore{make(map[string]map[string][]eventstore.EventUnmarshaler)}
 }
 
-func (e *MockEventStore) Append(groupID, aggregateID string, ev eventstore.EventUnmarshaler) {
+func (s *MockEventStore) Append(groupID, aggregateID string, ev eventstore.EventUnmarshaler) {
 	var m map[string][]eventstore.EventUnmarshaler
 	var ok bool
-	if m, ok = e.events[groupID]; !ok {
+	if m, ok = s.events[groupID]; !ok {
 		m = make(map[string][]eventstore.EventUnmarshaler)
-		e.events[groupID] = m
+		s.events[groupID] = m
 	}
 	var r []eventstore.EventUnmarshaler
 	if r, ok = m[aggregateID]; !ok {

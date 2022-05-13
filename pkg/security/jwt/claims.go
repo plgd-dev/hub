@@ -39,9 +39,9 @@ func toNum(v interface{}) (time.Time, error) {
 
 /// Get expiration time (exp) from user info map.
 /// It might not be set, in that case zero time and no error are returned.
-func (u Claims) ExpiresAt() (time.Time, error) {
+func (c Claims) ExpiresAt() (time.Time, error) {
 	const expKey = ClaimExpiresAt
-	v, ok := u[expKey]
+	v, ok := c[expKey]
 	if !ok {
 		return time.Time{}, nil
 	}
@@ -54,8 +54,8 @@ func (u Claims) ExpiresAt() (time.Time, error) {
 }
 
 /// Validate that ownerClaim is set and that it matches given user ID
-func (u Claims) ValidateOwnerClaim(ownerClaim string, userID string) error {
-	v, ok := u[ownerClaim]
+func (c Claims) ValidateOwnerClaim(ownerClaim string, userID string) error {
+	v, ok := c[ownerClaim]
 	if !ok {
 		return fmt.Errorf("owner claim '%v' is not present", ownerClaim)
 	}

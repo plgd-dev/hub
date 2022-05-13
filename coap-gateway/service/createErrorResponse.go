@@ -11,7 +11,7 @@ import (
 	coapgwMessage "github.com/plgd-dev/hub/v2/coap-gateway/service/message"
 )
 
-func (client *Client) createErrorResponse(err error, token message.Token) *pool.Message {
+func (c *Client) createErrorResponse(err error, token message.Token) *pool.Message {
 	if err == nil {
 		return nil
 	}
@@ -24,7 +24,7 @@ func (client *Client) createErrorResponse(err error, token message.Token) *pool.
 		code = codes.ServiceUnavailable
 		err = fmt.Errorf("temporary error: %w", err)
 	}
-	msg := client.server.messagePool.AcquireMessage(client.Context())
+	msg := c.server.messagePool.AcquireMessage(c.Context())
 	msg.SetCode(code)
 	msg.SetToken(token)
 	// Don't set content format for diagnostic message: https://tools.ietf.org/html/rfc7252#section-5.5.2

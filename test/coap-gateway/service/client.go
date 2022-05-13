@@ -26,39 +26,39 @@ func newClient(server *Service, client *tcp.ClientConn, handler ServiceHandler) 
 	}
 }
 
-func (client *Client) GetCoapConnection() *tcp.ClientConn {
-	return client.coapConn
+func (c *Client) GetCoapConnection() *tcp.ClientConn {
+	return c.coapConn
 }
 
-func (client *Client) GetServiceHandler() ServiceHandler {
-	return client.handler
+func (c *Client) GetServiceHandler() ServiceHandler {
+	return c.handler
 }
 
-func (client *Client) GetDeviceID() string {
-	return client.deviceID
+func (c *Client) GetDeviceID() string {
+	return c.deviceID
 }
 
-func (client *Client) SetDeviceID(deviceID string) {
-	client.deviceID = deviceID
+func (c *Client) SetDeviceID(deviceID string) {
+	c.deviceID = deviceID
 }
 
-func (client *Client) RemoteAddrString() string {
-	return client.coapConn.RemoteAddr().String()
+func (c *Client) RemoteAddrString() string {
+	return c.coapConn.RemoteAddr().String()
 }
 
-func (client *Client) Context() context.Context {
-	return client.coapConn.Context()
+func (c *Client) Context() context.Context {
+	return c.coapConn.Context()
 }
 
 // Close closes coap connection
-func (client *Client) Close() error {
-	if err := client.coapConn.Close(); err != nil {
+func (c *Client) Close() error {
+	if err := c.coapConn.Close(); err != nil {
 		return fmt.Errorf("cannot close client: %w", err)
 	}
 	return nil
 }
 
-// OnClose action when coap connection was closed.
-func (client *Client) OnClose() {
-	log.Debugf("close client %v", client.coapConn.RemoteAddr())
+// OnClose is invoked when the coap connection was closed.
+func (c *Client) OnClose() {
+	log.Debugf("close client %v", c.coapConn.RemoteAddr())
 }
