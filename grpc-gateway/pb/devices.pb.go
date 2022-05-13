@@ -1695,7 +1695,7 @@ type Event_DeviceRegistered struct {
 	unknownFields protoimpl.UnknownFields
 
 	DeviceIds []string `protobuf:"bytes,1,rep,name=device_ids,json=deviceIds,proto3" json:"device_ids,omitempty"`
-	// exported open telemetry trace context, baggage,...
+	// Open telemetry data propagated to asynchronous events
 	OpenTelemetryCarrier map[string]string `protobuf:"bytes,100,rep,name=open_telemetry_carrier,json=openTelemetryCarrier,proto3" json:"open_telemetry_carrier,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 }
 
@@ -1751,7 +1751,7 @@ type Event_DeviceUnregistered struct {
 	unknownFields protoimpl.UnknownFields
 
 	DeviceIds []string `protobuf:"bytes,1,rep,name=device_ids,json=deviceIds,proto3" json:"device_ids,omitempty"`
-	// exported open telemetry trace context, baggage,...
+	// Open telemetry data propagated to asynchronous events
 	OpenTelemetryCarrier map[string]string `protobuf:"bytes,100,rep,name=open_telemetry_carrier,json=openTelemetryCarrier,proto3" json:"open_telemetry_carrier,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 }
 

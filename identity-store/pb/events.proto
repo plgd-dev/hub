@@ -16,7 +16,7 @@ message DevicesRegistered {
     int64 timestamp = 3; // unix timestamp in nanoseconds of creation event.
     AuditContext audit_context = 4; // provides who register/unregister the device
 
-    // exported open telemetry trace context, baggage,...
+    // Open telemetry data propagated to asynchronous events
     map<string,string> open_telemetry_carrier = 100;
 }
 
@@ -27,7 +27,7 @@ message DevicesUnregistered {
     int64 timestamp = 3; // unix timestamp in nanoseconds of creation event.
     AuditContext audit_context = 4; // provides who register/unregister the device
     
-    // exported open telemetry trace context, baggage,...
+    // Open telemetry data propagated to asynchronous events
     map<string,string> open_telemetry_carrier = 100;
 }
 

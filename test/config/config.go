@@ -68,7 +68,7 @@ func MakeTLSClientConfig() client.Config {
 func MakeOpenTelemetryCollectorClient() otelClient.Config {
 	return otelClient.Config{
 		GRPC: otelClient.GRPCConfig{
-			Enabled:    true,
+			Enabled:    false,
 			Connection: MakeGrpcClientConfig(OPENTELEMETRY_COLLECTOR_HOST),
 		},
 	}

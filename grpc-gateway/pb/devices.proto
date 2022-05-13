@@ -101,13 +101,13 @@ message Event {
   message DeviceRegistered {
     repeated string device_ids = 1;
 
-     // exported open telemetry trace context, baggage,...
+     // Open telemetry data propagated to asynchronous events
      map<string,string> open_telemetry_carrier = 100;
   }
   message DeviceUnregistered {
     repeated string device_ids = 1;
 
-    // exported open telemetry trace context, baggage,...
+    // Open telemetry data propagated to asynchronous events
     map<string,string> open_telemetry_carrier = 100;
   }
   message OperationProcessed {

@@ -102,7 +102,7 @@ type ResourceLinksPublished struct {
 	Resources     []*commands.Resource   `protobuf:"bytes,2,rep,name=resources,proto3" json:"resources,omitempty"`
 	AuditContext  *commands.AuditContext `protobuf:"bytes,3,opt,name=audit_context,json=auditContext,proto3" json:"audit_context,omitempty"`
 	EventMetadata *EventMetadata         `protobuf:"bytes,4,opt,name=event_metadata,json=eventMetadata,proto3" json:"event_metadata,omitempty"`
-	// exported open telemetry trace context, baggage,...
+	// Open telemetry data propagated to asynchronous events
 	OpenTelemetryCarrier map[string]string `protobuf:"bytes,100,rep,name=open_telemetry_carrier,json=openTelemetryCarrier,proto3" json:"open_telemetry_carrier,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 }
 
@@ -183,7 +183,7 @@ type ResourceLinksUnpublished struct {
 	Hrefs         []string               `protobuf:"bytes,2,rep,name=hrefs,proto3" json:"hrefs,omitempty"`
 	AuditContext  *commands.AuditContext `protobuf:"bytes,3,opt,name=audit_context,json=auditContext,proto3" json:"audit_context,omitempty"`
 	EventMetadata *EventMetadata         `protobuf:"bytes,4,opt,name=event_metadata,json=eventMetadata,proto3" json:"event_metadata,omitempty"`
-	// exported open telemetry trace context, baggage,...
+	// Open telemetry data propagated to asynchronous events
 	OpenTelemetryCarrier map[string]string `protobuf:"bytes,100,rep,name=open_telemetry_carrier,json=openTelemetryCarrier,proto3" json:"open_telemetry_carrier,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 }
 
@@ -335,7 +335,7 @@ type ResourceChanged struct {
 	Status        commands.Status        `protobuf:"varint,3,opt,name=status,proto3,enum=resourceaggregate.pb.Status" json:"status,omitempty"`
 	AuditContext  *commands.AuditContext `protobuf:"bytes,4,opt,name=audit_context,json=auditContext,proto3" json:"audit_context,omitempty"`
 	EventMetadata *EventMetadata         `protobuf:"bytes,5,opt,name=event_metadata,json=eventMetadata,proto3" json:"event_metadata,omitempty"`
-	// exported open telemetry trace context, baggage,...
+	// Open telemetry data propagated to asynchronous events
 	OpenTelemetryCarrier map[string]string `protobuf:"bytes,100,rep,name=open_telemetry_carrier,json=openTelemetryCarrier,proto3" json:"open_telemetry_carrier,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 }
 
@@ -424,7 +424,7 @@ type ResourceUpdatePending struct {
 	AuditContext      *commands.AuditContext `protobuf:"bytes,4,opt,name=audit_context,json=auditContext,proto3" json:"audit_context,omitempty"`
 	EventMetadata     *EventMetadata         `protobuf:"bytes,5,opt,name=event_metadata,json=eventMetadata,proto3" json:"event_metadata,omitempty"`
 	ValidUntil        int64                  `protobuf:"varint,6,opt,name=valid_until,json=validUntil,proto3" json:"valid_until,omitempty"` // unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when pending event is considered as expired. 0 means forever.
-	// exported open telemetry trace context, baggage,...
+	// Open telemetry data propagated to asynchronous events
 	OpenTelemetryCarrier map[string]string `protobuf:"bytes,100,rep,name=open_telemetry_carrier,json=openTelemetryCarrier,proto3" json:"open_telemetry_carrier,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 }
 
@@ -519,7 +519,7 @@ type ResourceUpdated struct {
 	Content       *commands.Content      `protobuf:"bytes,3,opt,name=content,proto3" json:"content,omitempty"`
 	AuditContext  *commands.AuditContext `protobuf:"bytes,4,opt,name=audit_context,json=auditContext,proto3" json:"audit_context,omitempty"`
 	EventMetadata *EventMetadata         `protobuf:"bytes,5,opt,name=event_metadata,json=eventMetadata,proto3" json:"event_metadata,omitempty"`
-	// exported open telemetry trace context, baggage,...
+	// Open telemetry data propagated to asynchronous events
 	OpenTelemetryCarrier map[string]string `protobuf:"bytes,100,rep,name=open_telemetry_carrier,json=openTelemetryCarrier,proto3" json:"open_telemetry_carrier,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 }
 
@@ -607,7 +607,7 @@ type ResourceRetrievePending struct {
 	AuditContext      *commands.AuditContext `protobuf:"bytes,3,opt,name=audit_context,json=auditContext,proto3" json:"audit_context,omitempty"`
 	EventMetadata     *EventMetadata         `protobuf:"bytes,4,opt,name=event_metadata,json=eventMetadata,proto3" json:"event_metadata,omitempty"`
 	ValidUntil        int64                  `protobuf:"varint,5,opt,name=valid_until,json=validUntil,proto3" json:"valid_until,omitempty"` // unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when pending event is considered as expired. 0 means forever.
-	// exported open telemetry trace context, baggage,...
+	// Open telemetry data propagated to asynchronous events
 	OpenTelemetryCarrier map[string]string `protobuf:"bytes,100,rep,name=open_telemetry_carrier,json=openTelemetryCarrier,proto3" json:"open_telemetry_carrier,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 }
 
@@ -695,7 +695,7 @@ type ResourceRetrieved struct {
 	Content       *commands.Content      `protobuf:"bytes,3,opt,name=content,proto3" json:"content,omitempty"`
 	AuditContext  *commands.AuditContext `protobuf:"bytes,4,opt,name=audit_context,json=auditContext,proto3" json:"audit_context,omitempty"`
 	EventMetadata *EventMetadata         `protobuf:"bytes,5,opt,name=event_metadata,json=eventMetadata,proto3" json:"event_metadata,omitempty"`
-	// exported open telemetry trace context, baggage,...
+	// Open telemetry data propagated to asynchronous events
 	OpenTelemetryCarrier map[string]string `protobuf:"bytes,100,rep,name=open_telemetry_carrier,json=openTelemetryCarrier,proto3" json:"open_telemetry_carrier,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 }
 
@@ -782,7 +782,7 @@ type ResourceDeletePending struct {
 	AuditContext  *commands.AuditContext `protobuf:"bytes,2,opt,name=audit_context,json=auditContext,proto3" json:"audit_context,omitempty"`
 	EventMetadata *EventMetadata         `protobuf:"bytes,3,opt,name=event_metadata,json=eventMetadata,proto3" json:"event_metadata,omitempty"`
 	ValidUntil    int64                  `protobuf:"varint,4,opt,name=valid_until,json=validUntil,proto3" json:"valid_until,omitempty"` // unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when pending event is considered as expired. 0 means forever.
-	// exported open telemetry trace context, baggage,...
+	// Open telemetry data propagated to asynchronous events
 	OpenTelemetryCarrier map[string]string `protobuf:"bytes,100,rep,name=open_telemetry_carrier,json=openTelemetryCarrier,proto3" json:"open_telemetry_carrier,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 }
 
@@ -863,7 +863,7 @@ type ResourceDeleted struct {
 	Content       *commands.Content      `protobuf:"bytes,3,opt,name=content,proto3" json:"content,omitempty"`
 	AuditContext  *commands.AuditContext `protobuf:"bytes,4,opt,name=audit_context,json=auditContext,proto3" json:"audit_context,omitempty"`
 	EventMetadata *EventMetadata         `protobuf:"bytes,5,opt,name=event_metadata,json=eventMetadata,proto3" json:"event_metadata,omitempty"`
-	// exported open telemetry trace context, baggage,...
+	// Open telemetry data propagated to asynchronous events
 	OpenTelemetryCarrier map[string]string `protobuf:"bytes,100,rep,name=open_telemetry_carrier,json=openTelemetryCarrier,proto3" json:"open_telemetry_carrier,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 }
 
@@ -951,7 +951,7 @@ type ResourceCreatePending struct {
 	AuditContext  *commands.AuditContext `protobuf:"bytes,3,opt,name=audit_context,json=auditContext,proto3" json:"audit_context,omitempty"`
 	EventMetadata *EventMetadata         `protobuf:"bytes,4,opt,name=event_metadata,json=eventMetadata,proto3" json:"event_metadata,omitempty"`
 	ValidUntil    int64                  `protobuf:"varint,5,opt,name=valid_until,json=validUntil,proto3" json:"valid_until,omitempty"` // unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when pending event is considered as expired. 0 means forever.
-	// exported open telemetry trace context, baggage,...
+	// Open telemetry data propagated to asynchronous events
 	OpenTelemetryCarrier map[string]string `protobuf:"bytes,100,rep,name=open_telemetry_carrier,json=openTelemetryCarrier,proto3" json:"open_telemetry_carrier,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 }
 
@@ -1039,7 +1039,7 @@ type ResourceCreated struct {
 	Content       *commands.Content      `protobuf:"bytes,3,opt,name=content,proto3" json:"content,omitempty"`
 	AuditContext  *commands.AuditContext `protobuf:"bytes,4,opt,name=audit_context,json=auditContext,proto3" json:"audit_context,omitempty"`
 	EventMetadata *EventMetadata         `protobuf:"bytes,5,opt,name=event_metadata,json=eventMetadata,proto3" json:"event_metadata,omitempty"`
-	// exported open telemetry trace context, baggage,...
+	// Open telemetry data propagated to asynchronous events
 	OpenTelemetryCarrier map[string]string `protobuf:"bytes,100,rep,name=open_telemetry_carrier,json=openTelemetryCarrier,proto3" json:"open_telemetry_carrier,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 }
 
@@ -1231,7 +1231,7 @@ type DeviceMetadataUpdated struct {
 	AuditContext          *commands.AuditContext         `protobuf:"bytes,4,opt,name=audit_context,json=auditContext,proto3" json:"audit_context,omitempty"`
 	EventMetadata         *EventMetadata                 `protobuf:"bytes,5,opt,name=event_metadata,json=eventMetadata,proto3" json:"event_metadata,omitempty"`
 	Canceled              bool                           `protobuf:"varint,6,opt,name=canceled,proto3" json:"canceled,omitempty"` // it true then the command with audit_context.correlation_id was canceled.
-	// exported open telemetry trace context, baggage,...
+	// Open telemetry data propagated to asynchronous events
 	OpenTelemetryCarrier map[string]string `protobuf:"bytes,100,rep,name=open_telemetry_carrier,json=openTelemetryCarrier,proto3" json:"open_telemetry_carrier,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 }
 
@@ -1328,7 +1328,7 @@ type DeviceMetadataUpdatePending struct {
 	AuditContext  *commands.AuditContext                      `protobuf:"bytes,3,opt,name=audit_context,json=auditContext,proto3" json:"audit_context,omitempty"`
 	EventMetadata *EventMetadata                              `protobuf:"bytes,4,opt,name=event_metadata,json=eventMetadata,proto3" json:"event_metadata,omitempty"`
 	ValidUntil    int64                                       `protobuf:"varint,5,opt,name=valid_until,json=validUntil,proto3" json:"valid_until,omitempty"` // unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when pending event is considered as expired. 0 means forever.
-	// exported open telemetry trace context, baggage,...
+	// Open telemetry data propagated to asynchronous events
 	OpenTelemetryCarrier map[string]string `protobuf:"bytes,100,rep,name=open_telemetry_carrier,json=openTelemetryCarrier,proto3" json:"open_telemetry_carrier,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 }
 

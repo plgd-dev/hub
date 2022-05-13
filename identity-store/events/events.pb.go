@@ -78,7 +78,7 @@ type DevicesRegistered struct {
 	DeviceIds    []string      `protobuf:"bytes,2,rep,name=device_ids,json=deviceIds,proto3" json:"device_ids,omitempty"`          // list of device ids added to owner.
 	Timestamp    int64         `protobuf:"varint,3,opt,name=timestamp,proto3" json:"timestamp,omitempty"`                          // unix timestamp in nanoseconds of creation event.
 	AuditContext *AuditContext `protobuf:"bytes,4,opt,name=audit_context,json=auditContext,proto3" json:"audit_context,omitempty"` // provides who register/unregister the device
-	// exported open telemetry trace context, baggage,...
+	// Open telemetry data propagated to asynchronous events
 	OpenTelemetryCarrier map[string]string `protobuf:"bytes,100,rep,name=open_telemetry_carrier,json=openTelemetryCarrier,proto3" json:"open_telemetry_carrier,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 }
 
@@ -159,7 +159,7 @@ type DevicesUnregistered struct {
 	DeviceIds    []string      `protobuf:"bytes,2,rep,name=device_ids,json=deviceIds,proto3" json:"device_ids,omitempty"`          // list of device ids deleted from owner.
 	Timestamp    int64         `protobuf:"varint,3,opt,name=timestamp,proto3" json:"timestamp,omitempty"`                          // unix timestamp in nanoseconds of creation event.
 	AuditContext *AuditContext `protobuf:"bytes,4,opt,name=audit_context,json=auditContext,proto3" json:"audit_context,omitempty"` // provides who register/unregister the device
-	// exported open telemetry trace context, baggage,...
+	// Open telemetry data propagated to asynchronous events
 	OpenTelemetryCarrier map[string]string `protobuf:"bytes,100,rep,name=open_telemetry_carrier,json=openTelemetryCarrier,proto3" json:"open_telemetry_carrier,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 }
 
