@@ -35,6 +35,7 @@ import (
 func waitForEvent(ctx context.Context, t *testing.T, recvChan <-chan *pb.Event) *pb.Event {
 	select {
 	case ev := <-recvChan:
+		pbTest.CleanUpEvent(t, ev)
 		return ev
 	case <-ctx.Done():
 		require.NoError(t, ctx.Err())

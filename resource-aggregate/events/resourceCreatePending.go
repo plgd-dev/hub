@@ -47,6 +47,7 @@ func (e *ResourceCreatePending) CopyData(event *ResourceCreatePending) {
 	e.AuditContext = event.GetAuditContext()
 	e.EventMetadata = event.GetEventMetadata()
 	e.ValidUntil = event.GetValidUntil()
+	e.OpenTelemetryCarrier = event.GetOpenTelemetryCarrier()
 }
 
 func (e *ResourceCreatePending) CheckInitialized() bool {

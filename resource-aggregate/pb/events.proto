@@ -20,6 +20,9 @@ message ResourceLinksPublished {
     repeated Resource resources = 2;
     AuditContext audit_context = 3;
     EventMetadata event_metadata = 4;
+
+    // Open telemetry data propagated to asynchronous events
+    map<string,string> open_telemetry_carrier = 100;
 }
 
 // https://github.com/openconnectivityfoundation/cloud-services/blob/master/swagger2.0/oic.wk.rd.swagger.json #Specification CR needed
@@ -28,6 +31,9 @@ message ResourceLinksUnpublished {
     repeated string hrefs = 2;
     AuditContext audit_context = 3;
     EventMetadata event_metadata = 4;
+
+    // Open telemetry data propagated to asynchronous events
+    map<string,string> open_telemetry_carrier = 100;
 }
 
 message ResourceLinksSnapshotTaken {
@@ -35,6 +41,9 @@ message ResourceLinksSnapshotTaken {
     map<string, Resource> resources = 2;
     EventMetadata event_metadata = 3;
     AuditContext audit_context = 4;
+
+    // Open telemetry data propagated to asynchronous events
+    // map<string,string> open_telemetry_carrier = 100;
 }
 
 message ResourceChanged {
@@ -43,6 +52,9 @@ message ResourceChanged {
     Status status = 3;
     AuditContext audit_context = 4;
     EventMetadata event_metadata = 5;
+
+    // Open telemetry data propagated to asynchronous events
+    map<string,string> open_telemetry_carrier = 100;
 }
 
 message ResourceUpdatePending {
@@ -52,6 +64,9 @@ message ResourceUpdatePending {
     AuditContext audit_context = 4;
     EventMetadata event_metadata = 5;
     int64 valid_until = 6;  // unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when pending event is considered as expired. 0 means forever.
+
+    // Open telemetry data propagated to asynchronous events
+    map<string,string> open_telemetry_carrier = 100;
 }
 
 message ResourceUpdated {
@@ -60,6 +75,9 @@ message ResourceUpdated {
     Content content = 3;
     AuditContext audit_context = 4;
     EventMetadata event_metadata = 5;
+
+    // Open telemetry data propagated to asynchronous events
+    map<string,string> open_telemetry_carrier = 100;
 }
 
 message ResourceRetrievePending {
@@ -68,6 +86,9 @@ message ResourceRetrievePending {
     AuditContext audit_context = 3;
     EventMetadata event_metadata = 4;
     int64 valid_until = 5;  // unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when pending event is considered as expired. 0 means forever.
+
+    // Open telemetry data propagated to asynchronous events
+    map<string,string> open_telemetry_carrier = 100;
 }
 
 message ResourceRetrieved {
@@ -76,6 +97,9 @@ message ResourceRetrieved {
     Content content = 3;
     AuditContext audit_context = 4;
     EventMetadata event_metadata = 5;
+
+    // Open telemetry data propagated to asynchronous events
+    map<string,string> open_telemetry_carrier = 100;
 }
 
 message ResourceDeletePending {
@@ -83,6 +107,9 @@ message ResourceDeletePending {
     AuditContext audit_context = 2;
     EventMetadata event_metadata = 3;
     int64 valid_until = 4;  // unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when pending event is considered as expired. 0 means forever.
+
+    // Open telemetry data propagated to asynchronous events
+    map<string,string> open_telemetry_carrier = 100;
 }
 
 message ResourceDeleted {
@@ -91,6 +118,9 @@ message ResourceDeleted {
     Content content = 3;
     AuditContext audit_context = 4;
     EventMetadata event_metadata = 5;
+    
+    // Open telemetry data propagated to asynchronous events
+    map<string,string> open_telemetry_carrier = 100;
 }
 
 message ResourceCreatePending {
@@ -99,6 +129,9 @@ message ResourceCreatePending {
     AuditContext audit_context = 3;
     EventMetadata event_metadata = 4;
     int64 valid_until = 5;  // unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when pending event is considered as expired. 0 means forever.
+    
+    // Open telemetry data propagated to asynchronous events
+    map<string,string> open_telemetry_carrier = 100;
 }
 
 message ResourceCreated {
@@ -107,6 +140,9 @@ message ResourceCreated {
     Content content = 3;
     AuditContext audit_context = 4;
     EventMetadata event_metadata = 5;
+
+    // Open telemetry data propagated to asynchronous events
+    map<string,string> open_telemetry_carrier = 100;
 }
 
 message ResourceStateSnapshotTaken {
@@ -118,6 +154,9 @@ message ResourceStateSnapshotTaken {
     repeated ResourceDeletePending resource_delete_pendings = 6; // expired events will be removed by creating a new snapshot.
     AuditContext audit_context = 7;
     EventMetadata event_metadata = 8;
+
+    // Open telemetry data propagated to asynchronous events
+   // map<string,string> open_telemetry_carrier = 100;
 }
 
 message DeviceMetadataUpdated {
@@ -127,6 +166,9 @@ message DeviceMetadataUpdated {
     AuditContext audit_context = 4;
     EventMetadata event_metadata = 5;
     bool canceled = 6; // it true then the command with audit_context.correlation_id was canceled.
+
+    // Open telemetry data propagated to asynchronous events
+    map<string,string> open_telemetry_carrier = 100;
 }
 
 message DeviceMetadataUpdatePending {
@@ -137,6 +179,9 @@ message DeviceMetadataUpdatePending {
     AuditContext audit_context = 3;
     EventMetadata event_metadata = 4;
     int64 valid_until = 5;  // unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when pending event is considered as expired. 0 means forever.
+
+    // Open telemetry data propagated to asynchronous events
+    map<string,string> open_telemetry_carrier = 100;
 }
 
 message DeviceMetadataSnapshotTaken {
@@ -144,4 +189,7 @@ message DeviceMetadataSnapshotTaken {
     DeviceMetadataUpdated device_metadata_updated = 2;
     repeated DeviceMetadataUpdatePending update_pendings = 3; // expired events will be removed by creating a new snapshot.
     EventMetadata event_metadata = 4;
+
+    // Open telemetry data propagated to asynchronous events
+   // map<string,string> open_telemetry_carrier = 100;
 }
