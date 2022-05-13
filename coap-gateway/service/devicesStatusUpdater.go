@@ -38,8 +38,8 @@ func newDevicesStatusUpdater(ctx context.Context, cfg DeviceStatusExpirationConf
 	return &u
 }
 
-func (u *devicesStatusUpdater) Add(c *Client) error {
-	expires, err := u.updateOnlineStatus(c, time.Now().Add(u.cfg.ExpiresIn))
+func (u *devicesStatusUpdater) Add(ctx context.Context, c *Client) error {
+	expires, err := u.updateOnlineStatus(ctx, c, time.Now().Add(u.cfg.ExpiresIn))
 	if err != nil {
 		return err
 	}
@@ -62,12 +62,12 @@ func (u *devicesStatusUpdater) Remove(c *Client) {
 	delete(u.devices, c.remoteAddrString())
 }
 
-func (u *devicesStatusUpdater) updateOnlineStatus(client *Client, validUntil time.Time) (time.Time, error) {
+func (u *devicesStatusUpdater) updateOnlineStatus(ctx context.Context, client *Client, validUntil time.Time) (time.Time, error) {
 	authCtx, err := client.GetAuthorizationContext()
 	if err != nil {
 		return time.Time{}, err
 	}
-	ctx := kitNetGrpc.CtxWithToken(client.Context(), authCtx.GetAccessToken())
+	ctx = kitNetGrpc.CtxWithToken(ctx, authCtx.GetAccessToken())
 	if !u.cfg.Enabled || authCtx.Expire.UnixNano() < validUntil.UnixNano() {
 		validUntil = authCtx.Expire
 	}
@@ -114,7 +114,7 @@ func (u *devicesStatusUpdater) run() {
 			return
 		case now := <-t.C:
 			for _, d := range u.getDevicesToUpdate(now) {
-				expires, err := u.updateOnlineStatus(d.client, time.Now().Add(u.cfg.ExpiresIn))
+				expires, err := u.updateOnlineStatus(d.client.Context(), d.client, time.Now().Add(u.cfg.ExpiresIn))
 				if err != nil {
 					u.logger.Errorf("cannot update device(%v) status to online: %w", getDeviceID(d.client), err)
 				} else {

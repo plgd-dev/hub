@@ -113,6 +113,7 @@ func signUpPostHandler(r *mux.Message, client *Client) (*pool.Message, error) {
 	}
 
 	deviceID := client.ResolveDeviceID(claim, signUp.DeviceID)
+	setDeviceIDToTracerSpan(r.Context, deviceID)
 
 	ctx := kitNetGrpc.CtxWithToken(r.Context, token.AccessToken.String())
 	if _, err := client.server.isClient.AddDevice(ctx, &pb.AddDeviceRequest{

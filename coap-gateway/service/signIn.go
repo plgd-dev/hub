@@ -79,7 +79,7 @@ func getSignInContent(expiresIn int64, options message.Options) (message.MediaTy
 	return accept, out, nil
 }
 
-func setNewDeviceSubscriber(client *Client, owner, deviceID string) error {
+func setNewDeviceSubscriber(ctx context.Context, client *Client, owner, deviceID string) error {
 	getContext := func() (context.Context, context.CancelFunc) {
 		return client.GetContext(), func() {
 			// no-op
@@ -100,7 +100,7 @@ func setNewDeviceSubscriber(client *Client, owner, deviceID string) error {
 				client.Debugf("next iteration %v of retrying reconnect to grpc-client will be at %v", count, next)
 				return next, nil
 			}
-		}, client.server.rdClient, client.server.resourceSubscriber)
+		}, client.server.rdClient, client.server.resourceSubscriber, client.server.tracerProvider)
 	if err != nil {
 		return fmt.Errorf("cannot create device subscription for device %v: %w", deviceID, err)
 	}
@@ -111,7 +111,7 @@ func setNewDeviceSubscriber(client *Client, owner, deviceID string) error {
 		}
 	}
 	h := grpcgwClient.NewDeviceSubscriptionHandlers(client)
-	deviceSubscriber.SubscribeToPendingCommands(h)
+	deviceSubscriber.SubscribeToPendingCommands(ctx, h)
 	return nil
 }
 
@@ -155,12 +155,12 @@ func (client *Client) updateBySignInData(ctx context.Context, upd updateType, de
 	}
 
 	if upd != updateTypeNone {
-		if err := setNewDeviceSubscriber(client, owner, deviceId); err != nil {
+		if err := setNewDeviceSubscriber(ctx, client, owner, deviceId); err != nil {
 			return fmt.Errorf("cannot set device subscriber: %w", err)
 		}
 	}
 
-	if err := client.server.devicesStatusUpdater.Add(client); err != nil {
+	if err := client.server.devicesStatusUpdater.Add(ctx, client); err != nil {
 		return fmt.Errorf("cannot update cloud device status: %w", err)
 	}
 
@@ -265,6 +265,7 @@ func signInPostHandler(req *mux.Message, client *Client, signIn CoapSignInReq) (
 		return nil, statusErrorf(coapCodes.Unauthorized, errFmtSignIn, err)
 	}
 	deviceID := client.ResolveDeviceID(jwtClaims, signIn.DeviceID)
+	setDeviceIDToTracerSpan(req.Context, deviceID)
 
 	upd := client.updateAuthorizationContext(deviceID, signIn.UserID, signIn.AccessToken, validUntil, jwtClaims)
 
@@ -356,6 +357,9 @@ func signOutPostHandler(req *mux.Message, client *Client, signOut CoapSignInReq)
 	if err := jwtClaims.ValidateOwnerClaim(client.server.config.APIs.COAP.Authorization.OwnerClaim, signOut.UserID); err != nil {
 		return nil, statusErrorf(coapCodes.Unauthorized, errFmtSignOut, err)
 	}
+
+	deviceID := client.ResolveDeviceID(jwtClaims, signOut.DeviceID)
+	setDeviceIDToTracerSpan(req.Context, deviceID)
 
 	if err := updateDeviceMetadata(req, client); err != nil {
 		return nil, statusErrorf(coapconv.GrpcErr2CoapCode(err, coapconv.Update), errFmtSignOut, err)

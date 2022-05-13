@@ -60,7 +60,7 @@ func (s *SubscriptionManager) SubscribeToDevice(ctx context.Context, deviceID st
 		}
 		return fmt.Errorf("%v", errors)
 	}
-	err = s.devicesSubscription.Add(deviceID, linkedAccount, linkedCloud)
+	err = s.devicesSubscription.Add(ctx, deviceID, linkedAccount, linkedCloud)
 	if err != nil {
 		return fmt.Errorf("cannot register device %v to resource projection: %w", deviceID, err)
 	}
