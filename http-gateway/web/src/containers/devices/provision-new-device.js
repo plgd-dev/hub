@@ -15,7 +15,7 @@ import { messages as t } from './devices-i18n'
 
 const NOOP = () => {}
 
-class _ProvisionNewDevice extends PureComponent {
+class ProvisionNewDeviceCore extends PureComponent {
   static contextType = AppContext
 
   constructor(props) {
@@ -217,4 +217,4 @@ class _ProvisionNewDevice extends PureComponent {
   }
 }
 
-export const ProvisionNewDevice = injectIntl(_ProvisionNewDevice)
+export const ProvisionNewDevice = injectIntl(ProvisionNewDeviceCore)

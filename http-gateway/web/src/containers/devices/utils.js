@@ -269,7 +269,7 @@ export const getLastPartOfAResourceHref = href => {
   if (!href) {
     return ''
   }
-  const values = href.split('/').filter(t => t)
+  const values = href.split('/').filter(_t => _t)
   return values[values.length - 1]
 }
 
@@ -309,12 +309,7 @@ export const hasCommandTimeoutError = (value, unit) => {
   const baseUnit = unit === INFINITE ? NS : unit
 
   const valueMs = time(value).from(baseUnit).to(MS).value
-
-  if (valueMs < MINIMAL_TTL_VALUE_MS && value !== 0) {
-    return true
-  }
-
-  return false
+  return valueMs < MINIMAL_TTL_VALUE_MS && value !== 0
 }
 
 export const convertAndNormalizeValueFromTo = (value, unitFrom, unitTo) =>

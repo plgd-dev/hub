@@ -48,7 +48,7 @@ import './devices-details.scss'
 
 export const DevicesDetailsPage = () => {
   const { formatMessage: _ } = useIntl()
-  const { id, href } = useParams()
+  const { id, href: hrefParam } = useParams()
   const [shadowSyncLoading, setShadowSyncLoading] = useState(false)
   const [resourceModalData, setResourceModalData] = useState(null)
   const [loadingResource, setLoadingResource] = useState(false)
@@ -60,7 +60,7 @@ export const DevicesDetailsPage = () => {
   const [ttl, setTtl] = useState(defaultCommandTimeToLive)
   const [ttlHasError, setTtlHasError] = useState(false)
   const isMounted = useIsMounted()
-  const { data, updateData, loading, error } = useDeviceDetails(id)
+  const { data, updateData, loading, error: deviceError } = useDeviceDetails(id)
   const {
     data: resourcesData,
     loading: loadingResources,
@@ -75,14 +75,14 @@ export const DevicesDetailsPage = () => {
   // Open the resource modal when href is present
   useEffect(
     () => {
-      if (href && !loading && !loadingResources) {
-        openUpdateModal({ href: `/${href}` })
+      if (hrefParam && !loading && !loadingResources) {
+        openUpdateModal({ href: `/${hrefParam}` })
       }
     },
-    [href, loading, loadingResources] // eslint-disable-line
+    [hrefParam, loading, loadingResources] // eslint-disable-line
   )
 
-  if (error) {
+  if (deviceError) {
     return (
       <NotFoundPage
         title={_(t.deviceNotFound)}
@@ -167,11 +167,11 @@ export const DevicesDetailsPage = () => {
     setLoadingResource(true)
 
     try {
-      const { data } = await getDevicesResourcesApi({
+      const { data: deviceData } = await getDevicesResourcesApi({
         deviceId: id,
         href,
       })
-      const supportedTypes = data?.data?.content?.rts || []
+      const supportedTypes = deviceData?.data?.content?.rts || []
 
       if (isMounted.current) {
         setLoadingResource(false)
@@ -297,9 +297,9 @@ export const DevicesDetailsPage = () => {
   const handleCloseUpdateModal = () => {
     setResourceModalData(null)
 
-    if (href) {
+    if (hrefParam) {
       // Remove the href from the URL when the update modal is closed
-      history.replace(window.location.pathname.replace(`/${href}`, ''))
+      history.replace(window.location.pathname.replace(`/${hrefParam}`, ''))
     }
   }
 

@@ -112,7 +112,7 @@ export const DevicesResourcesModal = ({
         </Label>
         <Label title={isUpdateModal ? _(t.types) : _(t.supportedTypes)} inline>
           <div className="align-items-end badges-box-vertical">
-            {data?.types?.map?.(type => <Badge key={type}>{type}</Badge>) ||
+            {data?.types?.map?.(_type => <Badge key={_type}>{_type}</Badge>) ||
               '-'}
           </div>
         </Label>

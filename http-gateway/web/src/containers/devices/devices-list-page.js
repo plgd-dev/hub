@@ -24,7 +24,7 @@ import { messages as t } from './devices-i18n'
 
 export const DevicesListPage = () => {
   const { formatMessage: _ } = useIntl()
-  const { data, loading, error, refresh } = useDevicesList()
+  const { data, loading, error: deviceError, refresh } = useDevicesList()
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
   const [selectedDevices, setSelectedDevices] = useState([])
   const [singleDevice, setSingleDevice] = useState(null)
@@ -36,10 +36,10 @@ export const DevicesListPage = () => {
     : selectedDevices
 
   useEffect(() => {
-    if (error) {
-      toast.error(getApiErrorMessage(error))
+    if (deviceError) {
+      toast.error(getApiErrorMessage(deviceError))
     }
-  }, [error])
+  }, [deviceError])
 
   const handleOpenDeleteModal = deviceId => {
     if (typeof deviceId === 'string') {

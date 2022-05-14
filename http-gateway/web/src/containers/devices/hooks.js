@@ -1,8 +1,6 @@
 import debounce from 'lodash/debounce'
-
-import { useApi, useStreamApi } from '@/common/hooks'
+import { useApi, useStreamApi, useEmitter } from '@/common/hooks'
 import { useAppConfig } from '@/containers/app'
-import { useEmitter } from '@/common/hooks'
 
 import {
   devicesApiEndpoints,

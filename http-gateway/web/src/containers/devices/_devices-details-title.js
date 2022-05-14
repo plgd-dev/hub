@@ -18,7 +18,6 @@ export const DevicesDetailsTitle = ({
   deviceName,
   deviceId,
   updateDeviceName,
-  loading,
   isOnline,
   links,
   ttl,

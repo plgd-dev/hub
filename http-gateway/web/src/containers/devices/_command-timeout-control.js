@@ -47,10 +47,10 @@ export const CommanTimeoutControl = ({
   )
 
   const units = Object.values(commandTimeoutUnits)
-    .filter(unit => unit !== NS)
-    .map(unit => ({
-      value: unit,
-      label: unit === INFINITE ? _(t.default) : unit,
+    .filter(_unit => _unit !== NS)
+    .map(_unit => ({
+      value: _unit,
+      label: _unit === INFINITE ? _(t.default) : _unit,
     }))
 
   const handleOnUnitChange = ({ value: unitValue }) => {

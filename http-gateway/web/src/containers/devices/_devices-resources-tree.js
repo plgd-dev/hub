@@ -21,7 +21,6 @@ export const DevicesResourcesTree = ({
   loading,
 }) => {
   const { formatMessage: _ } = useIntl()
-
   const isUnregistered = deviceStatus === devicesStatuses.UNREGISTERED
   const greyedOutClassName = classNames({ 'grayed-out': isUnregistered })
   const data = useMemo(() => createNestedResourceData(rawData), [rawData])

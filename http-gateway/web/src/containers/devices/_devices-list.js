@@ -1,15 +1,12 @@
 import PropTypes from 'prop-types'
 import { useMemo } from 'react'
 import { useIntl } from 'react-intl'
-import { Link } from 'react-router-dom'
+import { Link, useHistory } from 'react-router-dom'
 import classNames from 'classnames'
-import { useHistory } from 'react-router-dom'
-
 import { Button } from '@/components/button'
 import { Badge } from '@/components/badge'
 import { Table } from '@/components/table'
 import { IndeterminateCheckbox } from '@/components/checkbox'
-
 import { DevicesListActionButton } from './_devices-list-action-button'
 import {
   devicesStatuses,
