@@ -104,7 +104,7 @@ const App = ({ config }) => {
   }
 
   // If the loading is finished but still unauthenticated, it means the user is not logged in.
-  // Calling the loginWithRedirect will make a rediret to the login page where the user can login.
+  // Calling the loginWithRedirect will make a redirect to the login page where the user can login.
   if (!isLoading && !isAuthenticated) {
     loginWithRedirect({
       appState: {

@@ -1,0 +1,52 @@
+@import '@/common/styles/colors.scss';
+
+.command-timeout-label {
+  &.delete-modal {
+    margin-top: 20px;
+    border-top: 1px solid $secondary_20;
+    margin-bottom: 10px !important;
+  }
+
+  .label-data {
+    align-items: center !important;
+  }
+
+  .ttl-value-input {
+    margin-right: -1px;
+    text-align: left;
+    width: 120px;
+
+    &:hover, &:focus {
+      z-index: 1;
+    }
+
+    &.error {
+      border-color: $error_75;
+      z-index: 1;
+    }
+  }
+
+  .ttl-unit-dropdown {
+    &:hover, &:focus {
+      z-index: 1;
+    }
+  }
+
+  .error-message {
+    position: absolute;
+    right: 0;
+    bottom: -18px;
+    color: $error_75;
+    font-size: 12px;
+  }
+}
+
+.auth-code-box {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+
+  span{
+    text-align: right;
+  }
+}

@@ -1547,7 +1547,7 @@ mockoauthserver:
     - name: "plgd.web"
       clientID: "test"
       clientSecret: "test"
-      redirectURL: "{{ printf \"https://%s\" ( include \"plgd-hub.mockoauthserver.ingressDomain\" . ) }}/things"
+      redirectURL: "{{ printf \"https://%s\" ( include \"plgd-hub.mockoauthserver.ingressDomain\" . ) }}/devices"
       useInUi: true
       
   # -- Enable mock-oauth-server service

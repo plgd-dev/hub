@@ -27,7 +27,7 @@
     "react-intl": "^5.23.0",
     "react-intl-po": "^2.2.2",
     "react-redux": "^7.2.6",
-    "react-router-dom": "^5.3.0",
+    "react-router-dom": "^5.3.1",
     "react-scripts": "4.0.3",
     "react-select": "^5.2.1",
     "react-table": "^7.7.0",

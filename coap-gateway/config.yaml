@@ -36,7 +36,7 @@ apis:
           clientSecretFile: ""
           scopes: []
           audience: ""
-          redirectURL: "https://localhost/things"
+          redirectURL: "https://localhost/devices"
           authority: ""
           grantType: ""
           http:

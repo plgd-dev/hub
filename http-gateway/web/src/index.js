@@ -32,12 +32,12 @@ fetch('/web_configuration.json')
         history.replace(appState?.returnTo || '/')
       }
 
-      // When the URL contains a get parameter called `code` and the pathname is set to `/things`,
+      // When the URL contains a get parameter called `code` and the pathname is set to `/devices`,
       // that means we were redirected from the get auth code endpoint and we must not render the app,
       // only set the code to the session storage, so that the caller can process it.
       const urlParams = new URLSearchParams(window.location.search)
       const code = urlParams.get('code')
-      if (window.location.pathname === '/things' && code) {
+      if (window.location.pathname === '/devices' && code) {
         sessionStorage.setItem(DEVICE_AUTH_CODE_SESSION_KEY, code)
         return null
       }

@@ -424,7 +424,7 @@ global:
 | mockoauthserver.oauth[1].clientID | string | `"test"` |  |
 | mockoauthserver.oauth[1].clientSecret | string | `"test"` |  |
 | mockoauthserver.oauth[1].name | string | `"plgd.web"` |  |
-| mockoauthserver.oauth[1].redirectURL | string | `"{{ printf \"https://%s\" ( include \"plgd-hub.mockoauthserver.ingressDomain\" . ) }}/things"` |  |
+| mockoauthserver.oauth[1].redirectURL | string | `"{{ printf \"https://%s\" ( include \"plgd-hub.mockoauthserver.ingressDomain\" . ) }}/devices"` |  |
 | mockoauthserver.oauth[1].useInUi | bool | `true` |  |
 | mockoauthserver.podAnnotations | object | `{}` | Annotations for mock-oauth-server pod |
 | mockoauthserver.podLabels | object | `{}` | Labels for http-gateway pod |

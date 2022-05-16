@@ -11,11 +11,11 @@ import { CopyBox } from '@/components/copy-box'
 import { isValidGuid } from '@/common/utils'
 
 import { getDeviceAuthCode } from './rest'
-import { messages as t } from './things-i18n'
+import { messages as t } from './devices-i18n'
 
 const NOOP = () => {}
 
-class _ProvisionNewDevice extends PureComponent {
+class ProvisionNewDeviceCore extends PureComponent {
   static contextType = AppContext
 
   constructor(props) {
@@ -140,35 +140,35 @@ class _ProvisionNewDevice extends PureComponent {
     return (
       <>
         <Label title={_(t.hubId)} inline>
-          <div id="auth-code-box">
+          <div className="auth-code-box">
             <span>{hubId || '-'}</span>
             {hubId && <CopyBox textToCopy={hubId} />}
           </div>
         </Label>
 
         <Label title={_(t.deviceEndpoint)} inline>
-          <div id="auth-code-box">
+          <div className="auth-code-box">
             <span>{deviceEndpoint || '-'}</span>
             {deviceEndpoint && <CopyBox textToCopy={deviceEndpoint} />}
           </div>
         </Label>
 
         <Label title={_(t.authorizationCode)} inline>
-          <div id="auth-code-box">
+          <div className="auth-code-box">
             <span>{code}</span>
             <CopyBox textToCopy={code} />
           </div>
         </Label>
 
         <Label title={_(t.authorizationProvider)} inline>
-          <div id="auth-code-box">
+          <div className="auth-code-box">
             <span>{providerName || '-'}</span>
             {providerName && <CopyBox textToCopy={providerName} />}
           </div>
         </Label>
 
         <Label title={_(t.certificateAuthorities)} inline className="m-b-10">
-          <div id="auth-code-box">
+          <div className="auth-code-box">
             <span>...</span>
             {certificateAuthorities && (
               <CopyBox textToCopy={certificateAuthorities} />
@@ -217,4 +217,4 @@ class _ProvisionNewDevice extends PureComponent {
   }
 }
 
-export const ProvisionNewDevice = injectIntl(_ProvisionNewDevice)
+export const ProvisionNewDevice = injectIntl(ProvisionNewDeviceCore)

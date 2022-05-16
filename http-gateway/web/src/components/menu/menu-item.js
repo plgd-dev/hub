@@ -28,7 +28,7 @@ export const MenuItem = ({
   const renderMenuItem = () => {
     if (to) {
       return (
-        <NavLink to={to} className={menuItemClassName} {...rest}>
+        <NavLink exact to={to} className={menuItemClassName} {...rest}>
           {renderMenuItemContent()}
         </NavLink>
       )
