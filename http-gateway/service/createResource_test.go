@@ -203,7 +203,7 @@ func TestRequestHandler_CreateResource(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			data, err := httpgwTest.GetContentData(makeCreateResourceRequestContent(t, tt.args.data), tt.args.contentType)
 			require.NoError(t, err)
-			rb := httpgwTest.NewRequest(http.MethodPost, uri.DeviceResourceLink, bytes.NewReader([]byte(data))).AuthToken(token)
+			rb := httpgwTest.NewRequest(http.MethodPost, uri.DeviceResourceLink, bytes.NewReader(data)).AuthToken(token)
 			rb.Accept(tt.args.accept).ContentType(tt.args.contentType).DeviceId(deviceID).ResourceHref(tt.args.href).AddTimeToLive(tt.args.ttl)
 			resp := httpgwTest.HTTPDo(t, rb.Build())
 			defer func() {

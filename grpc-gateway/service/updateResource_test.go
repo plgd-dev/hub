@@ -3,6 +3,7 @@ package service_test
 import (
 	"context"
 	"crypto/tls"
+	"errors"
 	"io"
 	"sync"
 	"testing"
@@ -245,7 +246,7 @@ func TestRequestHandlerGetAfterUpdateResource(t *testing.T) {
 		assert.NoError(t, err)
 		for {
 			value, err := client.Recv()
-			if err == io.EOF {
+			if errors.Is(err, io.EOF) {
 				break
 			}
 			require.NoError(t, err)

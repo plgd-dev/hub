@@ -3,6 +3,7 @@ package service_test
 import (
 	"context"
 	"crypto/tls"
+	"fmt"
 	"testing"
 
 	"github.com/plgd-dev/device/schema"
@@ -158,7 +159,7 @@ func createSwitchResourceExpectedEvents(t *testing.T, deviceID, subID, correlati
 	}
 }
 
-func deleteSwitchResourceExpectedEvents(t *testing.T, deviceID, subID, correlationID, switchID string) map[string]*pb.Event {
+func deleteSwitchResourceExpectedEvents(t *testing.T, deviceID, subID, correlationID, switchID string, isDiscoveryResourceBatchObservable bool) map[string]*pb.Event {
 	deletePending := &pb.Event{
 		SubscriptionId: subID,
 		CorrelationId:  correlationID,
@@ -198,12 +199,25 @@ func deleteSwitchResourceExpectedEvents(t *testing.T, deviceID, subID, correlati
 		},
 	}
 
-	return map[string]*pb.Event{
+	e := map[string]*pb.Event{
 		pbTest.GetEventID(deletePending): deletePending,
 		pbTest.GetEventID(deleted):       deleted,
 		pbTest.GetEventID(unpublished):   unpublished,
 		pbTest.GetEventID(changed):       changed,
 	}
+
+	if isDiscoveryResourceBatchObservable {
+		changedRes := &pb.Event{
+			SubscriptionId: subID,
+			CorrelationId:  correlationID,
+			Type: &pb.Event_ResourceChanged{
+				ResourceChanged: pbTest.MakeResourceChanged(t, deviceID, test.TestResourceSwitchesInstanceHref(switchID), "", map[interface{}]interface{}{}),
+			},
+		}
+		e[pbTest.GetEventID(changedRes)] = changedRes
+	}
+
+	return e
 }
 
 func validateEvents(t *testing.T, subClient pb.GrpcGateway_SubscribeToEventsClient, expectedEvents map[string]*pb.Event) {
@@ -253,13 +267,15 @@ func TestCreateAndDeleteResource(t *testing.T) {
 	subClient, subID := subscribeToAllEvents(t, ctx, c, correlationID)
 	const switchID = "1"
 
+	isDiscoveryResourceBatchObservable := test.IsDiscoveryResourceBatchObservable(ctx, t, deviceID)
+
 	for i := 0; i < 5; i++ {
+		fmt.Printf("iteration %v\n", i)
 		createSwitchResource(t, ctx, c, deviceID, switchID)
 		expectedCreateEvents := createSwitchResourceExpectedEvents(t, deviceID, subID, correlationID, switchID)
 		validateEvents(t, subClient, expectedCreateEvents)
-
 		deleteSwitchResource(t, ctx, c, deviceID, switchID)
-		expectedDeleteEvents := deleteSwitchResourceExpectedEvents(t, deviceID, subID, correlationID, switchID)
+		expectedDeleteEvents := deleteSwitchResourceExpectedEvents(t, deviceID, subID, correlationID, switchID, isDiscoveryResourceBatchObservable)
 		validateEvents(t, subClient, expectedDeleteEvents)
 	}
 }

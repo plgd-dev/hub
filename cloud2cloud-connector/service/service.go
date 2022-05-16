@@ -120,7 +120,7 @@ func newSubscriber(config natsClient.Config, logger log.Logger) (*subscriber.Sub
 		config.PendingLimits,
 		logger, subscriber.WithUnmarshaler(utils.Unmarshal))
 	if err != nil {
-		return nil, nil, fmt.Errorf("cannot create subscriber: %v", err)
+		return nil, nil, fmt.Errorf("cannot create subscriber: %w", err)
 	}
 	fl.AddFunc(sub.Close)
 

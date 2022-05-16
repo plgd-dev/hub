@@ -74,7 +74,6 @@ func (e *ResourceLinksSnapshotTaken) CheckInitialized() bool {
 // Examine published resources by the ResourceLinksPublished, compare it with cached resources and
 // return array of new or changed resources.
 func (e *ResourceLinksSnapshotTaken) GetNewPublishedLinks(pub *ResourceLinksPublished) []*commands.Resource {
-
 	if e.GetResources() == nil {
 		return pub.GetResources()
 	}
@@ -261,7 +260,6 @@ func (e *ResourceLinksSnapshotTaken) TakeSnapshot(version uint64) (eventstore.Ev
 }
 
 func NewResourceLinksSnapshotTaken() *ResourceLinksSnapshotTaken {
-
 	return &ResourceLinksSnapshotTaken{
 		Resources:     make(map[string]*commands.Resource),
 		EventMetadata: &EventMetadata{},

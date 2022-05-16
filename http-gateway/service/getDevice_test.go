@@ -3,6 +3,7 @@ package service_test
 import (
 	"context"
 	"crypto/tls"
+	"errors"
 	"io"
 	"net/http"
 	"testing"
@@ -106,7 +107,7 @@ func TestRequestHandlerGetDevice(t *testing.T) {
 			for {
 				var dev pb.Device
 				err = httpgwTest.Unmarshal(resp.StatusCode, resp.Body, &dev)
-				if err == io.EOF {
+				if errors.Is(err, io.EOF) {
 					break
 				}
 				if tt.wantErr {

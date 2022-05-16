@@ -2,17 +2,16 @@ package mongodb
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
-	"go.mongodb.org/mongo-driver/bson/primitive"
-
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
-
 	pkgTime "github.com/plgd-dev/hub/v2/pkg/time"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type iterator struct {
@@ -184,7 +183,7 @@ func (r *queryResolver) check(aggregateID string, version int64) bool {
 func (s *EventStore) loadEventsQuery(ctx context.Context, eh eventstore.Handler, queryResolver *queryResolver, filter interface{}, opts ...*options.FindOptions) error {
 	col := s.client.Database(s.DBName()).Collection(getEventCollectionName())
 	iter, err := col.Find(ctx, filter, opts...)
-	if err == mongo.ErrNilDocument {
+	if errors.Is(err, mongo.ErrNilDocument) {
 		return nil
 	}
 	if err != nil {

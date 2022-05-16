@@ -1,6 +1,7 @@
 package service
 
 import (
+	"errors"
 	"io"
 
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
@@ -17,7 +18,7 @@ func (r *RequestHandler) GetDevices(req *pb.GetDevicesRequest, srv pb.GrpcGatewa
 	}
 	for {
 		resp, err := rd.Recv()
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			break
 		}
 		if err != nil {

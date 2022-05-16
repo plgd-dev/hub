@@ -162,6 +162,6 @@ func CalculateEventSignature(secret, contentType string, eventType EventType, su
 	hash.Write([]byte(":"))
 	hash.Write([]byte(strconv.FormatInt(timeStamp.Unix(), 10)))
 	hash.Write([]byte(":"))
-	hash.Write([]byte(body))
+	hash.Write(body)
 	return hex.EncodeToString(hash.Sum(nil))
 }

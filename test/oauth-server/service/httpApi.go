@@ -10,14 +10,13 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	router "github.com/gorilla/mux"
 	"github.com/lestrrat-go/jwx/jwa"
 	"github.com/lestrrat-go/jwx/jwk"
 	"github.com/plgd-dev/go-coap/v2/pkg/cache"
 	"github.com/plgd-dev/go-coap/v2/pkg/runner/periodic"
 	kitHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
 	"github.com/plgd-dev/hub/v2/test/oauth-server/uri"
-
-	router "github.com/gorilla/mux"
 )
 
 //RequestHandler for handling incoming request

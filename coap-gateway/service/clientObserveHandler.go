@@ -3,6 +3,7 @@ package service
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"sync"
@@ -156,7 +157,7 @@ func (s *resourceSubscription) Init(ctx context.Context) error {
 	var d *events.ResourceChanged
 	for {
 		resource, err := client.Recv()
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			break
 		}
 		if err != nil {
@@ -263,11 +264,11 @@ func getStopObserveResourceErr(deviceID, href string, err error) error {
 
 func stopResourceObservation(req *mux.Message, client *Client, authCtx *authorizationContext, deviceID, href string) (*pool.Message, error) {
 	token := req.Token.String()
-	cancelled, err := client.cancelResourceSubscription(token)
+	canceled, err := client.cancelResourceSubscription(token)
 	if err != nil {
 		return nil, statusErrorf(coapCodes.BadRequest, "%w", getStopObserveResourceErr(deviceID, href, err))
 	}
-	if !cancelled {
+	if !canceled {
 		return nil, statusErrorf(coapCodes.BadRequest, "%w", getStopObserveResourceErr(deviceID, href, fmt.Errorf("subscription not found")))
 	}
 	return CreateResourceContentToObserver(client, nil, 1, req.Token)
@@ -275,11 +276,11 @@ func stopResourceObservation(req *mux.Message, client *Client, authCtx *authoriz
 
 func clientResetObservationHandler(req *mux.Message, client *Client) (*pool.Message, error) {
 	token := req.Token.String()
-	cancelled, err := client.cancelResourceSubscription(token)
+	canceled, err := client.cancelResourceSubscription(token)
 	if err != nil {
-		return nil, statusErrorf(coapCodes.BadRequest, "%w", fmt.Errorf("cannot reset resource observation: %v", err))
+		return nil, statusErrorf(coapCodes.BadRequest, "%w", fmt.Errorf("cannot reset resource observation: %w", err))
 	}
-	if !cancelled {
+	if !canceled {
 		return nil, statusErrorf(coapCodes.BadRequest, "%w", fmt.Errorf("cannot reset resource observation: not found"))
 	}
 	// reset does not send response

@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -46,7 +47,7 @@ func (rh *RequestHandler) GetResourceLinks(ctx context.Context, deviceIdFilter [
 	resourceLinks := make(map[string]schema.ResourceLinks)
 	for {
 		snapshot, err := client.Recv()
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			break
 		}
 		if err != nil {
@@ -122,7 +123,7 @@ func (rh *RequestHandler) RetrieveResources(ctx context.Context, resourceIdFilte
 	allResources := make(map[string][]Representation)
 	for {
 		content, err := client.Recv()
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			break
 		}
 		if err != nil {
@@ -146,7 +147,6 @@ func (rh *RequestHandler) RetrieveResources(ctx context.Context, resourceIdFilte
 			Representation: rep,
 			Status:         content.GetData().GetStatus(),
 		})
-
 	}
 	if len(allResources) == 0 {
 		return nil, status.Errorf(codes.NotFound, "cannot retrieve resources values: not found")

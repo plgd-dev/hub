@@ -240,7 +240,6 @@ func TestGetRequestHandlerGetTokenWithDeviceIDAndOwnerClaim(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-
 			token := getToken(t, test.ClientTest, "", "localhost", "", "", "", tt.args.deviceID, tt.args.owner, service.AllowedGrantType_CLIENT_CREDENTIALS, http.StatusOK)
 			validator := jwt.NewValidator(fmt.Sprintf("https://%s%s", config.OAUTH_SERVER_HOST, uri.JWKs), &tls.Config{
 				InsecureSkipVerify: true,

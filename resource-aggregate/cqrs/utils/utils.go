@@ -5,11 +5,10 @@ import (
 	"time"
 
 	"github.com/golang/snappy"
+	isEvents "github.com/plgd-dev/hub/v2/identity-store/events"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
-
-	isEvents "github.com/plgd-dev/hub/v2/identity-store/events"
 )
 
 const DeviceIDKey = "deviceId"

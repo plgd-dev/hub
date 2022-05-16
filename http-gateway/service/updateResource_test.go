@@ -208,7 +208,7 @@ func TestRequestHandlerUpdateResourcesValues(t *testing.T) {
 				ContentType: message.AppOcfCbor.String(),
 			}, tt.args.contentType)
 			require.NoError(t, err)
-			rb := httpgwTest.NewRequest(http.MethodPut, uri.AliasDeviceResource, bytes.NewReader([]byte(data))).AuthToken(token).Accept(tt.args.accept)
+			rb := httpgwTest.NewRequest(http.MethodPut, uri.AliasDeviceResource, bytes.NewReader(data)).AuthToken(token).Accept(tt.args.accept)
 			rb.DeviceId(tt.args.deviceID).ResourceHref(tt.args.resourceHref).ResourceInterface(tt.args.resourceInterface).ContentType(tt.args.contentType)
 			rb.AddTimeToLive(tt.args.ttl)
 			resp := httpgwTest.HTTPDo(t, rb.Build())

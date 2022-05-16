@@ -91,5 +91,4 @@ func TestShutdownServiceWithDeviceIssue627(t *testing.T) {
 			require.NoError(t, ctx.Err())
 		}
 	}
-
 }

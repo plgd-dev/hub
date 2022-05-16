@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"sync"
@@ -173,13 +174,13 @@ func (c *OwnerCache) getOwnerDevices(ctx context.Context, isClient pbIS.Identity
 	}
 	defer func() {
 		if err := getDevicesClient.CloseSend(); err != nil {
-			c.errFunc(fmt.Errorf("cannot close send direction of get owners devices stream: %v", err))
+			c.errFunc(fmt.Errorf("cannot close send direction of get owners devices stream: %w", err))
 		}
 	}()
 	ownerDevices := make([]string, 0, 32)
 	for {
 		device, err := getDevicesClient.Recv()
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			break
 		}
 		if err != nil {

@@ -12,6 +12,7 @@ import (
 	"github.com/plgd-dev/hub/v2/coap-gateway/uri"
 	"github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	pkgJwt "github.com/plgd-dev/hub/v2/pkg/security/jwt"
+	pkgX509 "github.com/plgd-dev/hub/v2/pkg/security/x509"
 )
 
 type Interceptor = func(ctx context.Context, code codes.Code, path string) (context.Context, error)
@@ -116,19 +117,20 @@ func MakeGetConfigForClient(tlsCfg *tls.Config) tls.Config {
 		MinVersion:     tlsCfg.MinVersion,
 		ClientAuth:     tlsCfg.ClientAuth,
 		ClientCAs:      tlsCfg.ClientCAs,
-		VerifyPeerCertificate: func(rawCerts [][]byte, verifiedChains [][]*x509.Certificate) error {
+		VerifyPeerCertificate: func(rawCerts [][]byte, chains [][]*x509.Certificate) error {
 			var errors []error
-			for _, chain := range verifiedChains {
+			for _, chain := range chains {
 				err := verifyChain(chain, tlsCfg.ClientCAs)
 				if err == nil {
 					return nil
 				}
 				errors = append(errors, err)
 			}
+			err := fmt.Errorf("empty chains")
 			if len(errors) > 0 {
-				return fmt.Errorf("%v", errors)
+				err = fmt.Errorf("%v", errors)
 			}
-			return fmt.Errorf("empty chains")
+			return pkgX509.NewError(chains, err)
 		},
 	}
 }

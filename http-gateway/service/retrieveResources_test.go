@@ -3,6 +3,7 @@ package service_test
 import (
 	"context"
 	"crypto/tls"
+	"errors"
 	"io"
 	"net/http"
 	"testing"
@@ -149,7 +150,7 @@ func TestRequestHandlerGetResources(t *testing.T) {
 			for {
 				var value pb.Resource
 				err = httpgwTest.Unmarshal(resp.StatusCode, resp.Body, &value)
-				if err == io.EOF {
+				if errors.Is(err, io.EOF) {
 					break
 				}
 				require.NoError(t, err)

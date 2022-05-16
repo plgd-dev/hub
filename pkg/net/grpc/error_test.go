@@ -4,15 +4,13 @@ import (
 	"fmt"
 	"testing"
 
-	"google.golang.org/genproto/googleapis/rpc/errdetails"
-
 	"github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"github.com/plgd-dev/hub/v2/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"google.golang.org/grpc/status"
-
+	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 func TestForwardErrorf(t *testing.T) {

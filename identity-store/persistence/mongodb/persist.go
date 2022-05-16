@@ -2,6 +2,7 @@ package mongodb
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/plgd-dev/hub/v2/identity-store/persistence"
@@ -50,7 +51,7 @@ func (p *PersistenceTx) Retrieve(deviceID, userID string) (_ *persistence.Author
 		Hint: userDeviceQueryIndex,
 	})
 
-	if err == mongo.ErrNilDocument {
+	if errors.Is(err, mongo.ErrNilDocument) {
 		err = nil
 		return
 	}
@@ -83,7 +84,7 @@ func (p *PersistenceTx) RetrieveByDevice(deviceID string) (_ *persistence.Author
 	col := p.tx.Client().Database(p.dbname).Collection(userDevicesCName)
 	iter, err := col.Find(p.ctx, bson.M{deviceIDKey: deviceID})
 
-	if err == mongo.ErrNilDocument {
+	if errors.Is(err, mongo.ErrNilDocument) {
 		err = nil
 		return
 	}
@@ -117,7 +118,7 @@ func (p *PersistenceTx) RetrieveByOwner(owner string) persistence.Iterator {
 		Hint: userDevicesQueryIndex,
 	})
 
-	if err == mongo.ErrNilDocument {
+	if errors.Is(err, mongo.ErrNilDocument) {
 		return &iterator{}
 	}
 	if err != nil {
@@ -139,7 +140,7 @@ func (p *PersistenceTx) RetrieveAll() persistence.Iterator {
 	col := p.tx.Client().Database(p.dbname).Collection(userDevicesCName)
 	iter, err := col.Find(p.ctx, bson.M{})
 
-	if err == mongo.ErrNilDocument {
+	if errors.Is(err, mongo.ErrNilDocument) {
 		return &iterator{}
 	}
 	if err != nil {

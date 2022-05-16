@@ -4,10 +4,9 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo/options"
-
-	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore"
 )
 
 // RemoveUpToVersion deletes the aggregated events up to a specific version.

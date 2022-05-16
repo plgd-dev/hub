@@ -3,6 +3,7 @@ package service_test
 import (
 	"context"
 	"crypto/tls"
+	"errors"
 	"io"
 	"testing"
 	"time"
@@ -84,7 +85,7 @@ func testRequestHandlerGetDevices(t *testing.T, events store.Events) {
 			devices := make([]*pb.Device, 0, 1)
 			for {
 				dev, err := client.Recv()
-				if err == io.EOF {
+				if errors.Is(err, io.EOF) {
 					break
 				}
 				require.NoError(t, err)

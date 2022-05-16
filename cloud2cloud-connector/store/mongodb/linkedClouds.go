@@ -2,6 +2,7 @@ package mongodb
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/plgd-dev/hub/v2/cloud2cloud-connector/store"
@@ -89,7 +90,7 @@ func (s *Store) LoadLinkedClouds(ctx context.Context, query store.Query, h store
 	default:
 		iter, err = col.Find(ctx, bson.M{})
 	}
-	if err == mongo.ErrNilDocument {
+	if errors.Is(err, mongo.ErrNilDocument) {
 		return nil
 	}
 	if err != nil {

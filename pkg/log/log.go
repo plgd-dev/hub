@@ -10,6 +10,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	pkgX509 "github.com/plgd-dev/hub/v2/pkg/security/x509"
 	"github.com/ugorji/go/codec"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -234,84 +235,175 @@ func Set(logger Logger) {
 	log.Store(logger)
 }
 
-type wrapSuggarLogger struct {
-	*zap.SugaredLogger
+type WrapSuggarLogger struct {
+	logger *zap.SugaredLogger
 	config Config
 }
 
-func (l *wrapSuggarLogger) Config() Config {
+func (l *WrapSuggarLogger) Config() Config {
 	return l.config
 }
 
-func (l *wrapSuggarLogger) Check(lvl zapcore.Level) bool {
-	return l.SugaredLogger.Desugar().Core().Enabled(lvl)
+func (l *WrapSuggarLogger) Check(lvl zapcore.Level) bool {
+	return l.logger.Desugar().Core().Enabled(lvl)
 }
 
-func (l *wrapSuggarLogger) With(args ...interface{}) Logger {
-	return &wrapSuggarLogger{
-		SugaredLogger: l.SugaredLogger.With(args...),
+func (l *WrapSuggarLogger) with(args ...interface{}) *WrapSuggarLogger {
+	return &WrapSuggarLogger{
+		logger: l.logger.With(args...),
 	}
 }
 
-func (l *wrapSuggarLogger) Unwrap() interface{} {
-	return l.SugaredLogger
+func (l *WrapSuggarLogger) With(args ...interface{}) Logger {
+	return l.with(args...)
 }
 
-// Errorf uses fmt.Sprintf to log a templated message.
-func (l *wrapSuggarLogger) Errorf(template string, args ...interface{}) {
-	err := fmt.Errorf(template, args...)
-	_ = l.LogAndReturnError(err)
+func (l *WrapSuggarLogger) Unwrap() interface{} {
+	return l.logger
 }
 
 type grpcErr interface {
 	GRPCStatus() *status.Status
 }
 
-func (l *wrapSuggarLogger) LogAndReturnError(err error) error {
+func (l *WrapSuggarLogger) PreProccessArgs(args ...interface{}) *WrapSuggarLogger {
+	for _, arg := range args {
+		if arg == nil {
+			continue
+		}
+		err, ok := arg.(error)
+		if !ok {
+			continue
+		}
+		var x509Err *pkgX509.Error
+		if errors.As(err, &x509Err) {
+			if crt := x509Err.LeafCertificateInfo(); crt != nil {
+				return l.with(X509Key, crt)
+			}
+		}
+	}
+	return l
+}
+
+func (l *WrapSuggarLogger) Debug(args ...interface{}) {
+	l.PreProccessArgs(args...).logger.Debug(args...)
+}
+
+func (l *WrapSuggarLogger) Info(args ...interface{}) {
+	l.PreProccessArgs(args...).logger.Info(args...)
+}
+
+func (l *WrapSuggarLogger) Warn(args ...interface{}) {
+	l.PreProccessArgs(args...).logger.Warn(args...)
+}
+
+func (l *WrapSuggarLogger) error(args ...interface{}) {
+	l.PreProccessArgs(args...).logger.Error(args...)
+}
+
+func (l *WrapSuggarLogger) Error(args ...interface{}) {
+	var template string
+	var err error
+	for _, arg := range args {
+		if err != nil {
+			template = fmt.Sprintf("%s %v", template, arg)
+			continue
+		}
+		if err1, ok := arg.(error); ok {
+			err = err1
+			if template == "" {
+				template = "%w"
+			} else {
+				template = template + " %w"
+			}
+		} else {
+			template = fmt.Sprintf("%s %v", template, arg)
+			continue
+		}
+	}
+	if err != nil {
+		_ = l.LogAndReturnError(fmt.Errorf(template, err))
+		return
+	}
+	l.error(args...)
+}
+
+func (l *WrapSuggarLogger) Fatal(args ...interface{}) {
+	l.PreProccessArgs(args...).logger.Fatal(args...)
+}
+
+func (l *WrapSuggarLogger) Debugf(template string, args ...interface{}) {
+	l.PreProccessArgs(args...).logger.Debugf(template, args...)
+}
+
+func (l *WrapSuggarLogger) Infof(template string, args ...interface{}) {
+	l.PreProccessArgs(args...).logger.Infof(template, args...)
+}
+
+func (l *WrapSuggarLogger) Warnf(template string, args ...interface{}) {
+	l.PreProccessArgs(args...).logger.Warnf(template, args...)
+}
+
+// Errorf uses fmt.Sprintf to log a templated message.
+func (l *WrapSuggarLogger) Errorf(template string, args ...interface{}) {
+	err := fmt.Errorf(template, args...)
+	_ = l.LogAndReturnError(err)
+}
+
+func (l *WrapSuggarLogger) Fatalf(template string, args ...interface{}) {
+	l.PreProccessArgs(args...).logger.Fatalf(template, args...)
+}
+
+func (l *WrapSuggarLogger) LogAndReturnError(err error) error {
 	if err == nil {
 		return err
 	}
 	if errors.Is(err, io.EOF) {
-		l.SugaredLogger.Debugf("%v", err)
+		l.Debugf("%v", err)
 		return err
 	}
 	if errors.Is(err, io.ErrClosedPipe) {
-		l.SugaredLogger.Debugf("%v", err)
+		l.Debugf("%v", err)
 		return err
 	}
 	if errors.Is(err, context.Canceled) {
-		l.SugaredLogger.Debugf("%v", err)
+		l.Debugf("%v", err)
 		return err
 	}
 	if errors.Is(err, context.DeadlineExceeded) {
-		l.SugaredLogger.Warnf("%v", err)
+		l.Warnf("%v", err)
+		return err
+	}
+	var x509Err *pkgX509.Error
+	if errors.As(err, &x509Err) {
+		l.Warnf("%v", err)
 		return err
 	}
 	if strings.Contains(err.Error(), `write: broken pipe`) {
-		l.SugaredLogger.Debugf("%v", err)
+		l.Debugf("%v", err)
 		return err
 	}
 	if strings.Contains(err.Error(), `use of closed network connection`) {
-		l.SugaredLogger.Debugf("%v", err)
+		l.Debugf("%v", err)
 		return err
 	}
 	var grpcErr grpcErr
 	if errors.As(err, &grpcErr) {
 		if grpcErr.GRPCStatus().Code() == codes.Canceled {
-			l.SugaredLogger.Debugf("%v", err)
+			l.Debugf("%v", err)
 			return err
 		}
 		if grpcErr.GRPCStatus().Code() == codes.DeadlineExceeded {
-			l.SugaredLogger.Warnf("%v", err)
+			l.Warnf("%v", err)
 			return err
 		}
 	}
-	l.SugaredLogger.Error(err)
+	l.error(err)
 	return err
 }
 
 // NewLogger creates logger
-func NewLogger(config Config) Logger {
+func NewLogger(config Config) *WrapSuggarLogger {
 	encoderConfig := zap.NewDevelopmentEncoderConfig()
 	if config.EncoderConfig.EncodeTime.TimeEncoder == nil {
 		config.EncoderConfig.EncodeTime = MakeDefaultConfig().EncoderConfig.EncodeTime
@@ -364,7 +456,7 @@ func NewLogger(config Config) Logger {
 
 	// From a zapcore.Core, it's easy to construct a Logger.
 	logger := zap.New(core, opts...)
-	return &wrapSuggarLogger{SugaredLogger: logger.Sugar()}
+	return &WrapSuggarLogger{logger: logger.Sugar()}
 }
 
 func Get() Logger {

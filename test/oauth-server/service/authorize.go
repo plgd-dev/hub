@@ -82,13 +82,13 @@ func (requestHandler *RequestHandler) authorize(w http.ResponseWriter, r *http.R
 		}
 		return
 	}
-	successRedirectURI, err := buildRedirectURI(redirectURI, string(state), code, "")
+	successRedirectURI, err := buildRedirectURI(redirectURI, state, code, "")
 	if err != nil {
 		writeError(w, err, http.StatusBadRequest)
 		return
 	}
 	if clientCfg.ConsentScreenEnabled {
-		writeConsentScreen(w, redirectURI, scope, string(state), code)
+		writeConsentScreen(w, redirectURI, scope, state, code)
 		return
 	}
 	http.Redirect(w, r, successRedirectURI, http.StatusFound)
@@ -120,7 +120,7 @@ func (requestHandler *RequestHandler) validateAuthorizeRequest(clientCfg *Client
 }
 
 func buildRedirectURI(redirectURI, state, code, errMsg string) (string, error) {
-	u, err := url.Parse(string(redirectURI))
+	u, err := url.Parse(redirectURI)
 	if err != nil {
 		return "", err
 	}
@@ -129,7 +129,7 @@ func buildRedirectURI(redirectURI, state, code, errMsg string) (string, error) {
 		return "", err
 	}
 	if state != "" {
-		q.Add(uri.StateKey, string(state))
+		q.Add(uri.StateKey, state)
 	}
 	if code != "" {
 		q.Add(uri.CodeKey, code)
@@ -188,13 +188,13 @@ func writeConsentScreen(w http.ResponseWriter, redirectURI, scope, state, code s
 				</br></br></br>
 				<p>Hello! The OAuth Client is requesting access to scope: <b>'` + scope + `'</b></p>
 				<form action="` + redirectURI + `">
-					<input type="hidden" name="state" value="` + string(state) + `" />
+					<input type="hidden" name="state" value="` + state + `" />
 					<input type="hidden" name="code" value="` + code + `" />
 					<input style="background-color: lime; font-size: 16px" type="submit" value="ACCEPT" />
 				</form>
 				</br>
 				<form action="` + redirectURI + `">
-					<input type="hidden" name="state" value="` + string(state) + `" />
+					<input type="hidden" name="state" value="` + state + `" />
 					<input type="hidden" name="error" value="access_denied" />
 					<input style="background-color: tomato; font-size: 16px" type="submit" value="DECLINE" />
 				</form>

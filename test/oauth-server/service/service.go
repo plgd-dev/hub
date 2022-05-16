@@ -26,16 +26,16 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 
 	idTokenPrivateKeyI, err := LoadPrivateKey(config.OAuthSigner.IDTokenKeyFile)
 	if err != nil {
-		return nil, fmt.Errorf("cannot load idTokenKeyFile(%v): %v", config.OAuthSigner.IDTokenKeyFile, err)
+		return nil, fmt.Errorf("cannot load idTokenKeyFile(%v): %w", config.OAuthSigner.IDTokenKeyFile, err)
 	}
 	idTokenPrivateKey, ok := idTokenPrivateKeyI.(*rsa.PrivateKey)
 	if !ok {
-		return nil, fmt.Errorf("cannot invalid idTokenKeyFile(%T): %v", idTokenPrivateKey, err)
+		return nil, fmt.Errorf("cannot invalid idTokenKeyFile(%T): %w", idTokenPrivateKey, err)
 	}
 
 	accessTokenPrivateKeyI, err := LoadPrivateKey(config.OAuthSigner.AccessTokenKeyFile)
 	if err != nil {
-		return nil, fmt.Errorf("cannot load private accessTokenKeyFile(%v): %v", config.OAuthSigner.AccessTokenKeyFile, err)
+		return nil, fmt.Errorf("cannot load private accessTokenKeyFile(%v): %w", config.OAuthSigner.AccessTokenKeyFile, err)
 	}
 
 	requestHandler, err := NewRequestHandler(ctx, &config, idTokenPrivateKey, accessTokenPrivateKeyI)

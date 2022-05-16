@@ -121,7 +121,7 @@ func DefaultSwitchResourceLink(deviceID, id string) schema.ResourceLink {
 		ResourceTypes: []string{types.BINARY_SWITCH},
 		Interfaces:    []string{interfaces.OC_IF_A, interfaces.OC_IF_BASELINE},
 		Policy: &schema.Policy{
-			BitMask: schema.BitMask(schema.Discoverable | schema.Observable),
+			BitMask: schema.Discoverable | schema.Observable,
 		},
 	}
 }
@@ -482,6 +482,29 @@ func FindDeviceByName(ctx context.Context, name string) (deviceID string, _ erro
 		return "", fmt.Errorf("could not find the device named %s: not found", name)
 	}
 	return id, nil
+}
+
+func IsDiscoveryResourceBatchObservable(ctx context.Context, t *testing.T, deviceID string) bool {
+	devClient, err := NewSDKClient()
+	require.NoError(t, err)
+	defer func() {
+		_ = devClient.Close(ctx)
+	}()
+
+	device, links, err := devClient.GetRefDevice(ctx, deviceID)
+	require.NoError(t, err)
+	err = device.Release(ctx)
+	require.NoError(t, err)
+	links = links.GetResourceLinks(resources.ResourceType)
+	if len(links) == 0 {
+		return false
+	}
+	for _, iface := range links[0].Interfaces {
+		if iface == interfaces.OC_IF_B && links[0].Policy.BitMask.Has(schema.Observable) {
+			return true
+		}
+	}
+	return false
 }
 
 func CheckResource(ctx context.Context, t *testing.T, deviceID, href, resourceType string, checkFn func(schema.ResourceLink) bool) bool {

@@ -4,15 +4,13 @@ import (
 	"bytes"
 	"context"
 	"crypto/tls"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
-
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
 
 	"github.com/plgd-dev/go-coap/v2/message"
 	pbGW "github.com/plgd-dev/hub/v2/grpc-gateway/pb"
@@ -23,6 +21,8 @@ import (
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	"github.com/plgd-dev/hub/v2/test/oauth-server/uri"
 	"github.com/plgd-dev/kit/v2/codec/json"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 )
 
 func getServiceToken(authAddr string, tls *tls.Config) (string, error) {
@@ -159,7 +159,7 @@ func getDevices(ctx context.Context, client pbGW.GrpcGatewayClient) {
 	devices := make([]*pbGW.Device, 0, 4)
 	for {
 		resp, err := getClient.Recv()
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			break
 		}
 		if err != nil {
@@ -196,7 +196,7 @@ func getResource(ctx context.Context, client pbGW.GrpcGatewayClient, deviceID, h
 	resources := make([]*pbGW.Resource, 0, 4)
 	for {
 		resp, err := getClient.Recv()
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			break
 		}
 		if err != nil {

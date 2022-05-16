@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"sync"
@@ -54,7 +55,7 @@ func NewDevicesSubscription(ctx context.Context, closeErrorHandler SubscriptionH
 	var deviceUnregisteredHandler DeviceUnregisteredHandler
 	filterEvents := make([]pb.SubscribeToEvents_CreateSubscription_Event, 0, 1)
 	if v, ok := handle.(DeviceMetadataUpdatedHandler); ok {
-		filterEvents = append(filterEvents, pb.SubscribeToEvents_CreateSubscription_Event(pb.SubscribeToEvents_CreateSubscription_DEVICE_METADATA_UPDATED))
+		filterEvents = append(filterEvents, pb.SubscribeToEvents_CreateSubscription_DEVICE_METADATA_UPDATED)
 		deviceMetadataUpdatedHandler = v
 	}
 	if v, ok := handle.(DeviceRegisteredHandler); ok {
@@ -173,7 +174,7 @@ func (s *DevicesSubscription) handleCancel(cancel *pb.Event_SubscriptionCanceled
 func (s *DevicesSubscription) runRecv() {
 	for {
 		ev, err := s.client.Recv()
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			s.cancelAndHandlerError(nil)
 			s.closeErrorHandler.OnClose()
 			return

@@ -36,7 +36,7 @@ type RequestHandler struct {
 }
 
 func logAndWriteErrorResponse(err error, statusCode int, w http.ResponseWriter) {
-	log.Errorf("%v", err)
+	log.Errorf("%w", err)
 	w.Header().Set(events.ContentTypeKey, "text/plain")
 	w.WriteHeader(statusCode)
 	if _, err2 := w.Write([]byte(err.Error())); err2 != nil {

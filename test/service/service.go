@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	caService "github.com/plgd-dev/hub/v2/certificate-authority/test"
@@ -37,7 +38,7 @@ func ClearDB(ctx context.Context, t *testing.T) {
 	client, err := mongo.Connect(ctx, options.Client().ApplyURI("mongodb://localhost:27017").SetTLSConfig(certManager.GetTLSConfig()))
 	require.NoError(t, err)
 	dbs, err := client.ListDatabaseNames(ctx, bson.M{})
-	if mongo.ErrNilDocument == err {
+	if errors.Is(err, mongo.ErrNilDocument) {
 		return
 	}
 	require.NoError(t, err)

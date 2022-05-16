@@ -1,6 +1,7 @@
 package service
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"net/url"
@@ -55,7 +56,7 @@ func makeDiscoveryResp(isTLSListener bool, serverAddr string, getResourceLinksCl
 
 	for {
 		snapshot, err := getResourceLinksClient.Recv()
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			break
 		}
 		if err != nil {

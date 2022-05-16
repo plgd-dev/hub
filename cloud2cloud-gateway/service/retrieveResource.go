@@ -42,7 +42,6 @@ func (rh *RequestHandler) RetrieveResourceWithContentQuery(ctx context.Context, 
 			err = fmt.Errorf("cannot retrieve resource(deviceID: %v, Href: %v): %w", deviceID, href, err)
 		}
 		return code, err
-
 	}
 	return http.StatusBadRequest, fmt.Errorf("invalid content query parameter")
 }

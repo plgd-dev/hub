@@ -2,11 +2,11 @@ package mongodb
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/plgd-dev/hub/v2/cloud2cloud-connector/events"
 	"github.com/plgd-dev/hub/v2/cloud2cloud-gateway/store"
-
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -217,7 +217,7 @@ func (s *Store) LoadSubscriptions(ctx context.Context, query store.SubscriptionQ
 			Hint: typeQueryIndex,
 		})
 	}
-	if err == mongo.ErrNilDocument {
+	if errors.Is(err, mongo.ErrNilDocument) {
 		return nil
 	}
 	if err != nil {

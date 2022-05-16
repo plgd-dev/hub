@@ -2,6 +2,7 @@ package observation
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 
@@ -212,7 +213,7 @@ func loadShadowSynchronization(ctx context.Context, rdClient GrpcGatewayClient, 
 	shadowSynchronization := commands.ShadowSynchronization_UNSET
 	for {
 		m, err := deviceMetadataClient.Recv()
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			break
 		}
 		if status.Convert(err).Code() == codes.NotFound {
@@ -312,7 +313,7 @@ func getPublishedResources(ctx context.Context, rdClient GrpcGatewayClient, devi
 	resources := make([]*commands.Resource, 0, 8)
 	for {
 		m, err := getResourceLinksClient.Recv()
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			break
 		}
 		if status.Convert(err).Code() == codes.NotFound {

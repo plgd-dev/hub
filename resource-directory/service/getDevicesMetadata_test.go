@@ -3,6 +3,7 @@ package service_test
 import (
 	"context"
 	"crypto/tls"
+	"errors"
 	"io"
 	"testing"
 
@@ -128,7 +129,7 @@ func TestRequestHandlerGetDevicesMetadata(t *testing.T) {
 			var values []*events.DeviceMetadataUpdated
 			for {
 				value, err := client.Recv()
-				if err == io.EOF {
+				if errors.Is(err, io.EOF) {
 					break
 				}
 				if tt.wantErr {

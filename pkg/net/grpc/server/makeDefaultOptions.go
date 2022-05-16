@@ -157,6 +157,10 @@ func defaultMessageProducer(ctx context.Context, ctxLogger context.Context, msg 
 			newTags.Set(log.DeviceIDKey, v)
 			continue
 		}
+		if strings.EqualFold(k, grpcPrefixKey+"."+requestKey+"."+log.CorrelationIDKey) {
+			newTags.Set(log.CorrelationIDKey, v)
+			continue
+		}
 		if strings.HasPrefix(k, grpcPrefixKey+"."+requestKey+".") {
 			req[strings.TrimPrefix(k, grpcPrefixKey+"."+requestKey+".")] = v
 		}
@@ -211,7 +215,6 @@ func MakeDefaultOptions(auth kitNetGrpc.AuthInterceptors, logger log.Logger) ([]
 			unaryInterceptors...,
 		)),
 	}, nil
-
 }
 
 type cfg struct {
