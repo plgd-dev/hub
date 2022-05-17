@@ -296,8 +296,12 @@ resourcedirectory:
     labels: {}
     # -- Annotations for resource-directory service
     annotations: {}
-    # -- Custom resource directory service ports. In case it's not defined, default definition is used
-    ports:
+    # -- Target port
+    targetPort: grpc
+    # -- Protocol
+    protocol: TCP
+    # -- Name
+    name: grpc
   # -- RBAC configuration
   rbac:
     # Create RBAC config
@@ -312,6 +316,8 @@ resourcedirectory:
   restartPolicy: Always
   # -- Init containers definition. Resolved as template
   initContainersTpl: {}
+  # -- Extra POD containers
+  extraContainers: {}
   image:
     # -- Image registry
     registry: ghcr.io/
@@ -505,8 +511,12 @@ resourceaggregate:
     labels: {}
     # -- Annotations for resource-aggregate service
     annotations: {}
-    # -- Custom resource aggregate service ports. In case it's not defined, default definition is used
-    ports:
+    # -- Target port
+    targetPort: grpc
+    # -- Protocol
+    protocol: TCP
+    # -- Name
+    name: grpc
   # -- RBAC configuration
   rbac:
     # -- Create RBAC config
@@ -523,6 +533,8 @@ resourceaggregate:
   restartPolicy: Always
   # -- Init containers definition. Resolved as template
   initContainersTpl: {}
+  # -- Extra POD containers
+  extraContainers: {}
   image:
     # -- Image registry
     registry: ghcr.io/
@@ -690,6 +702,12 @@ coapgateway:
     labels: { }
     # -- Annotations for coap-gateway service
     annotations: { }
+    # -- Target port
+    targetPort: coaps
+    # -- Protocol
+    protocol: TCP
+    # -- Name
+    name: coaps
   # -- RBAC configuration
   rbac:
     # -- Create RBAC config
@@ -706,6 +724,8 @@ coapgateway:
   restartPolicy: Always
   # -- Init containers definition
   initContainersTpl: { }
+  # -- Extra POD containers
+  extraContainers: {}
   image:
     # -- Image registry
     registry: ghcr.io/
@@ -870,8 +890,12 @@ identitystore:
     labels: {}
     # -- Service annotations
     annotations: {}
-    # -- Custom identity-store service ports definition. In case it's not defined, default definition is used
-    ports: {}
+    # -- Target port
+    targetPort: grpc
+    # -- Protocol
+    protocol: TCP
+    # -- Name
+    name: grpc
   # -- RBAC configuration
   rbac:
     # -- Enable RBAC setup
@@ -888,6 +912,8 @@ identitystore:
   restartPolicy: Always
   # -- Init containers definition. Resolved as template
   initContainersTpl: {}
+  # -- Extra POD containers
+  extraContainers: {}
   # -- Identity service image section
   image:
     # -- Image registry
@@ -1025,8 +1051,12 @@ httpgateway:
     labels: {}
     # -- Annotations for http-gateway service
     annotations: {}
-    # -- Custom http-gateway service ports definition. In case it's not defined, default definition is used
-    ports: {}
+    # -- Target port
+    targetPort: http
+    # -- Protocol
+    protocol: TCP
+    # -- Name
+    name: http
   # -- RBAC configuration
   rbac:
     # -- Enable RBAC setup
@@ -1043,6 +1073,8 @@ httpgateway:
   restartPolicy: Always
   # -- Init containers definition. Render as template
   initContainersTpl: {}
+  # -- Extra POD containers
+  extraContainers: {}
   image:
     # -- Image registry
     registry: ghcr.io/
@@ -1218,8 +1250,12 @@ grpcgateway:
     labels: {}
     # -- Annotations for grpc-gateway service
     annotations: {}
-    # -- Custom grpc-gateway service ports. In case it's not defined, default definition is used
-    ports:
+    # -- Target port
+    targetPort: grpc
+    # -- Protocol
+    protocol: TCP
+    # -- Name
+    name: grpc
   # -- RBAC configuration
   rbac:
     # Enable RBAC
@@ -1236,6 +1272,8 @@ grpcgateway:
   restartPolicy: Always
   # -- Init containers definition
   initContainersTpl: {}
+  # -- Extra POD containers
+  extraContainers: {}
   image:
     # -- Image registry
     registry: ghcr.io/
@@ -1423,8 +1461,12 @@ certificateauthority:
     labels: {}
     # -- Annotations for certificate-authority service
     annotations: {}
-    # -- Custom certificate-authority service ports. In case it's not defined, default definition is used
-    ports:
+    # -- Target port
+    targetPort: grpc
+    # -- Protocol
+    protocol: TCP
+    # -- Name
+    name: grpc
   # -- RBAC configuration
   rbac:
     # -- Enable RBAC
@@ -1441,6 +1483,8 @@ certificateauthority:
   restartPolicy: Always
   # -- Init containers definition
   initContainersTpl:
+  # -- Extra POD containers
+  extraContainers: {}
   image:
     # -- Image registry
     registry: ghcr.io/
@@ -1607,8 +1651,12 @@ mockoauthserver:
     labels: {}
     # -- Annotations for mock-oauth-server service
     annotations: {}
-    # -- Custom mock auth server service ports definition. In case it's not defined, default definition is used
-    ports: {}
+    # -- Target port
+    targetPort: http
+    # -- Protocol
+    protocol: TCP
+    # -- Name
+    name: http
   securityContext: {}
   # -- Image pull secrets
   imagePullSecrets: {}

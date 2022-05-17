@@ -16,14 +16,10 @@ metadata:
 spec:
   type: {{ .Values.resourceaggregate.service.type | default "ClusterIP" }}
   ports:
-    {{- if .Values.resourceaggregate.service.ports }}
-    {{- toYaml .Values.resourceaggregate.service.ports | nindent 4 }}
-    {{- else }}
     - port: {{ .Values.resourceaggregate.port }}
-      targetPort: grpc
-      protocol: TCP
-      name: grpc
-    {{- end }}
+      targetPort: {{ .Values.resourceaggregate.service.targetPort }}
+      protocol: {{ .Values.resourceaggregate.service.protocol }}
+      name: {{ .Values.resourceaggregate.service.name }}
   selector:
   {{- include "plgd-hub.resourceaggregate.selectorLabels" . | nindent 4 }}
 {{- end }}

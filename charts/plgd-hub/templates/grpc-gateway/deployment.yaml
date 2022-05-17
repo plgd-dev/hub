@@ -91,6 +91,9 @@ spec:
             {{- with .Values.grpcgateway.extraVolumes }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
+      {{- if .Values.grpcgateway.extraContainers }}
+      {{- include "plgd-hub.tplvalues.render" ( dict "value" .Values.grpcgateway.extraContainers "context" $ ) | nindent 8 }}
+      {{- end }}
       volumes:
         - name: {{ .Values.grpcgateway.config.volume }}
           configMap:

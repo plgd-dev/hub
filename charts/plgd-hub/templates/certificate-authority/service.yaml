@@ -16,14 +16,10 @@ metadata:
 spec:
   type: {{ .Values.certificateauthority.service.type | default "ClusterIP" }}
   ports:
-    {{- if .Values.certificateauthority.service.ports }}
-    {{- toYaml .Values.certificateauthority.service.ports | nindent 4 }}
-    {{- else }}
     - port: {{ .Values.certificateauthority.port }}
-      targetPort: grpc
-      protocol: TCP
-      name: grpc
-    {{- end }}
+      targetPort: {{ .Values.certificateauthority.service.targetPort }}
+      protocol: {{ .Values.certificateauthority.service.protocol }}
+      name: {{ .Values.certificateauthority.service.name }}
   selector:
   {{- include "plgd-hub.certificateauthority.selectorLabels" . | nindent 4 }}
 {{- end }}

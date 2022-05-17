@@ -96,6 +96,9 @@ spec:
             {{- with .Values.certificateauthority.extraVolumes }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
+      {{- if .Values.certificateauthority.extraContainers }}
+      {{- include "plgd-hub.tplvalues.render" ( dict "value" .Values.certificateauthority.extraContainers "context" $ ) | nindent 8 }}
+      {{- end }}
       volumes:
         - name: {{ .Values.resourcedirectory.config.volume }}
           configMap:

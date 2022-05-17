@@ -16,14 +16,10 @@ metadata:
 spec:
   type: {{ .Values.identitystore.service.type | default "ClusterIP" }}
   ports:
-    {{- if .Values.identitystore.service.ports }}
-    {{- toYaml .Values.identitystore.service.ports | nindent 4 }}
-    {{- else }}
     - port: {{ .Values.identitystore.port }}
-      targetPort: grpc
-      protocol: TCP
-      name: grpc
-    {{- end }}
+      targetPort: {{ .Values.identitystore.service.targetPort }}
+      protocol: {{ .Values.identitystore.service.protocol }}
+      name: {{ .Values.identitystore.service.name }}
   selector:
   {{- include "plgd-hub.identitystore.selectorLabels" . | nindent 4 }}
 {{- end }}

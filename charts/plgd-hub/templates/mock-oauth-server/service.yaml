@@ -16,14 +16,10 @@ metadata:
 spec:
   type: {{ .Values.mockoauthserver.service.type | default "ClusterIP" }}
   ports:
-    {{- if .Values.mockoauthserver.service.ports }}
-    {{- toYaml .Values.mockoauthserver.service.ports | nindent 4 }}
-    {{- else }}
     - port: {{ .Values.mockoauthserver.port }}
-      targetPort: http
-      protocol: TCP
-      name: http
-    {{- end }}
+      targetPort: {{ .Values.mockoauthserver.service.targetPort }}
+      protocol: {{ .Values.mockoauthserver.service.protocol }}
+      name: {{ .Values.mockoauthserver.service.name }}
   selector:
   {{- include "plgd-hub.mockoauthserver.selectorLabels" . | nindent 4 }}
 {{- end }}

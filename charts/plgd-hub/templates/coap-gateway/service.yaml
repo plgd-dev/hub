@@ -20,9 +20,9 @@ spec:
       {{- if $.Values.coapgateway.service.nodePort }}
       nodePort: {{ $.Values.coapgateway.service.nodePort }}
       {{- end }}
-      targetPort: coaps
-      protocol: TCP
-      name: coaps
+      targetPort: {{ .Values.coapgateway.service.targetPort }}
+      protocol: {{ .Values.coapgateway.service.protocol }}
+      name: {{ .Values.coapgateway.service.name }}
   selector:
   {{- include "plgd-hub.coapgateway.selectorLabels" . | nindent 4 }}
 {{- end }}
