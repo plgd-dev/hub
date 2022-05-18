@@ -64,7 +64,6 @@ global:
 | certificateauthority.config.fileName | string | `"service.yaml"` | File name for config file |
 | certificateauthority.config.mountPath | string | `"/config"` | Mount path |
 | certificateauthority.config.volume | string | `"config"` | Config file volume name |
-| certificateauthority.customPodPorts | object | `{}` | Custom certificate-authority container ports definition. In case it's not defined, default definition is used |
 | certificateauthority.deploymentAnnotations | object | `{}` | Additional annotations for certificate-authority deployment |
 | certificateauthority.deploymentLabels | object | `{}` | Additional labels for certificate-authority deployment |
 | certificateauthority.domain | string | `nil` | External domain for certificate-authority. Default: api.{{ global.domain }} |
@@ -240,7 +239,6 @@ global:
 | grpcgateway.config.fileName | string | `"service.yaml"` | Service configuration file name |
 | grpcgateway.config.mountPath | string | `"/config"` | Service configuration mount path |
 | grpcgateway.config.volume | string | `"config"` | Service configuration volume name |
-| grpcgateway.customPodPorts | object | `{}` | Custom grpc-gateway container ports definition. In case it's not defined, default definition is used |
 | grpcgateway.deploymentAnnotations | object | `{}` | Additional annotations for grpc-gateway deployment |
 | grpcgateway.deploymentLabels | object | `{}` | Additional labels for grpc-gateway deployment |
 | grpcgateway.domain | string | `nil` | External domain for grpc-gateway. Default: api.{{ global.domain }} |
@@ -296,7 +294,6 @@ global:
 | httpgateway.config.fileName | string | `"service.yaml"` | Name of configuration file |
 | httpgateway.config.mountPath | string | `"/config"` | Mount path |
 | httpgateway.config.volume | string | `"config"` | Volume for configuration file |
-| httpgateway.customPodPorts | object | `{}` | Custom http-gateway container ports definition. In case it's not defined, default definition is used |
 | httpgateway.deploymentAnnotations | object | `{}` | Additional annotations for http-gateway deployment |
 | httpgateway.deploymentLabels | object | `{}` | Additional labels for http-gateway deployment |
 | httpgateway.enabled | bool | `true` | Enable http-gateway service |
@@ -360,7 +357,6 @@ global:
 | identitystore.config.fileName | string | `"service.yaml"` | File name |
 | identitystore.config.mountPath | string | `"/config"` | Service configuration mount path |
 | identitystore.config.volume | string | `"config"` | Volume name |
-| identitystore.customPodPorts | object | `{}` | Custom identity-store container ports definition. In case it's not defined, default definition is used |
 | identitystore.deploymentAnnotations | object | `{}` | Additional annotations for identity deployment |
 | identitystore.deploymentLabels | object | `{}` | Additional labels for identity deployment |
 | identitystore.enabled | bool | `true` | Enable identity service |
@@ -411,7 +407,6 @@ global:
 | mockoauthserver.config.fileName | string | `"service.yaml"` | Name of configuration file |
 | mockoauthserver.config.mountPath | string | `"/config"` | Mount path |
 | mockoauthserver.config.volume | string | `"config"` | Volume for configuration file |
-| mockoauthserver.customPodPorts | object | `{}` | Custom mock auth server container ports definition. In case it's not defined, default definition is used |
 | mockoauthserver.deploymentAnnotations | object | `{}` | Additional annotations for mock-oauth-server deployment |
 | mockoauthserver.deploymentLabels | object | `{}` | Additional labels for mock-oauth-server deployment |
 | mockoauthserver.domain | string | `nil` | Domain for   apiDomain: Default: auth.{{ global.domain }} |
@@ -504,7 +499,6 @@ global:
 | resourceaggregate.config.fileName | string | `"service.yaml"` | Service configuration file name |
 | resourceaggregate.config.mountPath | string | `"/config"` | Configuration mount path |
 | resourceaggregate.config.volume | string | `"config"` | Volume name |
-| resourceaggregate.customPodPorts | object | `{}` | Custom resource aggregate container ports definition. In case it's not defined, default definition is used |
 | resourceaggregate.deploymentAnnotations | object | `{}` | Additional annotations for resource-aggregate deployment |
 | resourceaggregate.deploymentLabels | object | `{}` | Additional labels for resource-aggregate deployment |
 | resourceaggregate.enabled | bool | `true` | Enable resource-aggregate service |
@@ -554,7 +548,6 @@ global:
 | resourcedirectory.config.fileName | string | `"service.yaml"` | Service configuration file |
 | resourcedirectory.config.mountPath | string | `"/config"` | Configuration mount path |
 | resourcedirectory.config.volume | string | `"config"` | Service configuration volume name |
-| resourcedirectory.customPodPorts | object | `{}` | Custom resource directory container ports definition. In case it's not defined, default definition is used |
 | resourcedirectory.deploymentAnnotations | object | `{}` | Additional annotations for resource-directory deployment |
 | resourcedirectory.deploymentLabels | object | `{}` | Additional labels for resource-directory deployment |
 | resourcedirectory.enabled | bool | `true` | Enable resource-directory service |
