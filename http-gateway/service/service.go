@@ -87,7 +87,7 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Server, error)
 		return nil, fmt.Errorf("cannot create http server: %w", err)
 	}
 
-	httpServer := http.Server{Handler: kitNetHttp.OpenTelemetryNewHandler(httpHandler, serviceName, tracerProvider, requestHandler.config.Clients.OpenTelemetryCollector.PublicEndpoint)}
+	httpServer := http.Server{Handler: kitNetHttp.OpenTelemetryNewHandler(httpHandler, serviceName, tracerProvider)}
 	server := Server{
 		server:         &httpServer,
 		config:         &config,

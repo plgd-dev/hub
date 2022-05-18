@@ -10,7 +10,6 @@ import (
 
 type OpenTelemetryCollectorConfig struct {
 	otelClient.Config `yaml:",inline"`
-	PublicEndpoint    bool `yaml:"publicEndpoint" json:"publicEndpoint"`
 }
 
 func (c *OpenTelemetryCollectorConfig) Validate() error {
@@ -20,12 +19,9 @@ func (c *OpenTelemetryCollectorConfig) Validate() error {
 	return nil
 }
 
-func OpenTelemetryNewHandler(handler http.Handler, serviceName string, tracerProvider trace.TracerProvider, publicEndpoint bool) http.Handler {
+func OpenTelemetryNewHandler(handler http.Handler, serviceName string, tracerProvider trace.TracerProvider) http.Handler {
 	opts := []otelhttp.Option{
 		otelhttp.WithTracerProvider(tracerProvider),
-	}
-	if publicEndpoint {
-		opts = append(opts, otelhttp.WithPublicEndpoint())
 	}
 
 	return otelhttp.NewHandler(handler, serviceName, opts...)

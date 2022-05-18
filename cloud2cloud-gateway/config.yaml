@@ -87,7 +87,6 @@ clients:
         certFile: "/secrets/public/cert.crt"
         useSystemCAPool: false
   openTelemetryCollector:
-    publicEndpoint: true
     grpc:
       enabled: false
       address: ""

@@ -290,7 +290,7 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Server, error)
 	}
 
 	httpServer := http.Server{
-		Handler: kitNetHttp.OpenTelemetryNewHandler(httpHandler, serviceName, tracerProvider, config.Clients.OpenTelemetryCollector.PublicEndpoint),
+		Handler: kitNetHttp.OpenTelemetryNewHandler(httpHandler, serviceName, tracerProvider),
 	}
 
 	var wg sync.WaitGroup

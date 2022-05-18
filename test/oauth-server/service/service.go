@@ -65,7 +65,7 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 	}
 
 	httpServer := http.Server{
-		Handler: kitNetHttp.OpenTelemetryNewHandler(NewHTTP(requestHandler), serviceName, tracerProvider, config.Clients.OpenTelemetryCollector.PublicEndpoint),
+		Handler: kitNetHttp.OpenTelemetryNewHandler(NewHTTP(requestHandler), serviceName, tracerProvider),
 	}
 
 	server := Service{

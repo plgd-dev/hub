@@ -297,7 +297,7 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Server, error)
 	requestHandler := NewRequestHandler(gwClient, raClient, subMgr, emitEvent)
 
 	httpServer := http.Server{
-		Handler: kitNetHttp.OpenTelemetryNewHandler(NewHTTP(requestHandler, auth), serviceName, tracerProvider, config.Clients.OpenTelemetryCollector.PublicEndpoint),
+		Handler: kitNetHttp.OpenTelemetryNewHandler(NewHTTP(requestHandler, auth), serviceName, tracerProvider),
 	}
 
 	server := Server{

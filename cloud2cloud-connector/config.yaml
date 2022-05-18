@@ -103,7 +103,6 @@ clients:
       reconnectInterval: "10s"
       resubscribeInterval: "10s"
   openTelemetryCollector:
-    publicEndpoint: true
     grpc:
       enabled: false
       address: ""
