@@ -17,9 +17,9 @@ spec:
   type: {{ .Values.identitystore.service.type | default "ClusterIP" }}
   ports:
     - port: {{ .Values.identitystore.port }}
-      targetPort: grpc
-      protocol: TCP
-      name: grpc
+      targetPort: {{ .Values.identitystore.service.targetPort }}
+      protocol: {{ .Values.identitystore.service.protocol }}
+      name: {{ .Values.identitystore.service.name }}
   selector:
   {{- include "plgd-hub.identitystore.selectorLabels" . | nindent 4 }}
 {{- end }}

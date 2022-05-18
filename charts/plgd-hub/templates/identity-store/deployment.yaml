@@ -87,6 +87,9 @@ spec:
             {{- with .Values.identitystore.extraVolumes }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
+      {{- if .Values.identitystore.extraContainers }}
+      {{- include "plgd-hub.tplvalues.render" ( dict "value" .Values.identitystore.extraContainers "context" $ ) | nindent 8 }}
+      {{- end }}
       volumes:
         {{- if ( include "plgd-hub.identitystore.createServiceCertByCm" . ) }}
         - name: service-crt

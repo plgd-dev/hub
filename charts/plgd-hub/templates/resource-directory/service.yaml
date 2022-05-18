@@ -17,9 +17,9 @@ spec:
   type: {{ .Values.resourcedirectory.service.type | default "ClusterIP" }}
   ports:
     - port: {{ .Values.resourcedirectory.port }}
-      targetPort: grpc
-      protocol: TCP
-      name: grpc
+      targetPort: {{ .Values.resourcedirectory.service.targetPort }}
+      protocol: {{ .Values.resourcedirectory.service.protocol }}
+      name: {{ .Values.resourcedirectory.service.name }}
   selector:
   {{- include "plgd-hub.resourcedirectory.selectorLabels" . | nindent 4 }}
 {{- end }}

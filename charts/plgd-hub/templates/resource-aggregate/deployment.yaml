@@ -87,6 +87,9 @@ spec:
             {{- with .Values.resourceaggregate.extraVolumes }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
+      {{- if .Values.resourceaggregate.extraContainers }}
+      {{- include "plgd-hub.tplvalues.render" ( dict "value" .Values.resourceaggregate.extraContainers "context" $ ) | nindent 8 }}
+      {{- end }}
       volumes:
         - name: {{ .Values.resourcedirectory.config.volume }}
           configMap:

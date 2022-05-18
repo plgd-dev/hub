@@ -17,9 +17,9 @@ spec:
   type: {{ .Values.certificateauthority.service.type | default "ClusterIP" }}
   ports:
     - port: {{ .Values.certificateauthority.port }}
-      targetPort: grpc
-      protocol: TCP
-      name: grpc
+      targetPort: {{ .Values.certificateauthority.service.targetPort }}
+      protocol: {{ .Values.certificateauthority.service.protocol }}
+      name: {{ .Values.certificateauthority.service.name }}
   selector:
   {{- include "plgd-hub.certificateauthority.selectorLabels" . | nindent 4 }}
 {{- end }}

@@ -17,9 +17,9 @@ spec:
   type: {{ .Values.httpgateway.service.type | default "ClusterIP" }}
   ports:
     - port: {{ .Values.httpgateway.port }}
-      targetPort: http
-      protocol: TCP
-      name: http
+      targetPort: {{ .Values.httpgateway.service.targetPort }}
+      protocol: {{ .Values.httpgateway.service.protocol }}
+      name: {{ .Values.httpgateway.service.name }}
   selector:
   {{- include "plgd-hub.httpgateway.selectorLabels" . | nindent 4 }}
 {{- end }}

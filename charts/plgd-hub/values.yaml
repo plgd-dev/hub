@@ -296,6 +296,12 @@ resourcedirectory:
     labels: {}
     # -- Annotations for resource-directory service
     annotations: {}
+    # -- Target port
+    targetPort: grpc
+    # -- Protocol
+    protocol: TCP
+    # -- Name
+    name: grpc
   # -- RBAC configuration
   rbac:
     # Create RBAC config
@@ -310,6 +316,8 @@ resourcedirectory:
   restartPolicy: Always
   # -- Init containers definition. Resolved as template
   initContainersTpl: {}
+  # -- Extra POD containers
+  extraContainers: {}
   image:
     # -- Image registry
     registry: ghcr.io/
@@ -501,6 +509,12 @@ resourceaggregate:
     labels: {}
     # -- Annotations for resource-aggregate service
     annotations: {}
+    # -- Target port
+    targetPort: grpc
+    # -- Protocol
+    protocol: TCP
+    # -- Name
+    name: grpc
   # -- RBAC configuration
   rbac:
     # -- Create RBAC config
@@ -517,6 +531,8 @@ resourceaggregate:
   restartPolicy: Always
   # -- Init containers definition. Resolved as template
   initContainersTpl: {}
+  # -- Extra POD containers
+  extraContainers: {}
   image:
     # -- Image registry
     registry: ghcr.io/
@@ -682,6 +698,12 @@ coapgateway:
     labels: { }
     # -- Annotations for coap-gateway service
     annotations: { }
+    # -- Target port
+    targetPort: coaps
+    # -- Protocol
+    protocol: TCP
+    # -- Name
+    name: coaps
   # -- RBAC configuration
   rbac:
     # -- Create RBAC config
@@ -698,6 +720,8 @@ coapgateway:
   restartPolicy: Always
   # -- Init containers definition
   initContainersTpl: { }
+  # -- Extra POD containers
+  extraContainers: {}
   image:
     # -- Image registry
     registry: ghcr.io/
@@ -862,6 +886,12 @@ identitystore:
     labels: {}
     # -- Service annotations
     annotations: {}
+    # -- Target port
+    targetPort: grpc
+    # -- Protocol
+    protocol: TCP
+    # -- Name
+    name: grpc
   # -- RBAC configuration
   rbac:
     # -- Enable RBAC setup
@@ -878,6 +908,8 @@ identitystore:
   restartPolicy: Always
   # -- Init containers definition. Resolved as template
   initContainersTpl: {}
+  # -- Extra POD containers
+  extraContainers: {}
   # -- Identity service image section
   image:
     # -- Image registry
@@ -1013,6 +1045,12 @@ httpgateway:
     labels: {}
     # -- Annotations for http-gateway service
     annotations: {}
+    # -- Target port
+    targetPort: http
+    # -- Protocol
+    protocol: TCP
+    # -- Name
+    name: http
   # -- RBAC configuration
   rbac:
     # -- Enable RBAC setup
@@ -1029,6 +1067,8 @@ httpgateway:
   restartPolicy: Always
   # -- Init containers definition. Render as template
   initContainersTpl: {}
+  # -- Extra POD containers
+  extraContainers: {}
   image:
     # -- Image registry
     registry: ghcr.io/
@@ -1065,6 +1105,8 @@ httpgateway:
     api:
       # -- Enable ingress
       enabled: true
+      # -- Override name of host/tls secret. If not specified, it will be generated
+      secretName:
       # -- Pre defined map of Ingress annotation
       annotations:
         nginx.org/grpc-services: "{{ include \"plgd-hub.httpgateway.fullname\" . }}"
@@ -1081,6 +1123,8 @@ httpgateway:
     ui:
       # -- Enable ingress
       enabled: true
+      # -- Override name of host/tls secret. If not specified, it will be generated
+      secretName:
       # -- Pre defined map of Ingress annotation
       annotations:
         nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
@@ -1198,6 +1242,12 @@ grpcgateway:
     labels: {}
     # -- Annotations for grpc-gateway service
     annotations: {}
+    # -- Target port
+    targetPort: grpc
+    # -- Protocol
+    protocol: TCP
+    # -- Name
+    name: grpc
   # -- RBAC configuration
   rbac:
     # Enable RBAC
@@ -1214,6 +1264,8 @@ grpcgateway:
   restartPolicy: Always
   # -- Init containers definition
   initContainersTpl: {}
+  # -- Extra POD containers
+  extraContainers: {}
   image:
     # -- Image registry
     registry: ghcr.io/
@@ -1246,6 +1298,8 @@ grpcgateway:
   ingress:
     # -- Enable ingress
     enabled: true
+    # -- Override name of host/tls secret. If not specified, it will be generated
+    secretName:
     # -- Ingress annotations
     annotations:
       nginx.org/grpc-services: "{{ include \"plgd-hub.grpcgateway.fullname\" . }}"
@@ -1254,6 +1308,7 @@ grpcgateway:
       nginx.ingress.kubernetes.io/enable-cors: "true"
     # -- Custom map of Ingress annotation
     customAnnotations: {}
+
     paths:
       - /grpcgateway.pb.GrpcGateway
   # -- Service yaml configuration section
@@ -1396,6 +1451,12 @@ certificateauthority:
     labels: {}
     # -- Annotations for certificate-authority service
     annotations: {}
+    # -- Target port
+    targetPort: grpc
+    # -- Protocol
+    protocol: TCP
+    # -- Name
+    name: grpc
   # -- RBAC configuration
   rbac:
     # -- Enable RBAC
@@ -1412,6 +1473,8 @@ certificateauthority:
   restartPolicy: Always
   # -- Init containers definition
   initContainersTpl:
+  # -- Extra POD containers
+  extraContainers: {}
   image:
     # -- Image registry
     registry: ghcr.io/
@@ -1444,6 +1507,8 @@ certificateauthority:
   ingress:
     # -- Enable ingress
     enabled: true
+    # -- Override name of host/tls secret. If not specified, it will be generated
+    secretName:
     # -- Pre defined map of Ingress annotation
     annotations:
       nginx.org/grpc-services: "{{ include \"plgd-hub.certificateauthority.fullname\" . }}"
@@ -1574,6 +1639,12 @@ mockoauthserver:
     labels: {}
     # -- Annotations for mock-oauth-server service
     annotations: {}
+    # -- Target port
+    targetPort: http
+    # -- Protocol
+    protocol: TCP
+    # -- Name
+    name: http
   securityContext: {}
   # -- Image pull secrets
   imagePullSecrets: {}

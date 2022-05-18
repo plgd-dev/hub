@@ -97,6 +97,9 @@ spec:
               mountPath: {{ printf "/secrets/%s" .name }}
             {{- end }}
             {{- end }}
+      {{- if .Values.coapgateway.extraContainers }}
+      {{- include "plgd-hub.tplvalues.render" ( dict "value" .Values.coapgateway.extraContainers "context" $ ) | nindent 8 }}
+      {{- end }}
       volumes:
         - name: {{ .Values.coapgateway.config.volume }}
           configMap:

@@ -1,6 +1,5 @@
 {{- if .Values.httpgateway.enabled }}
 {{- $fullname := include "plgd-hub.httpgateway.fullname" . }}
-{{- $domainCrt := include "plgd-hub.httpgateway.domainCertName" . }}
 {{- $port := .Values.httpgateway.port }}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -23,7 +22,7 @@ spec:
       {{- if $.Values.global.enableWildCartCert }}
       secretName: {{ include "plgd-hub.wildCardCertName" . | quote }}
       {{- else }}
-      secretName: {{ include "plgd-hub.httpgateway.domainCertName" . | quote }}
+      secretName: {{ include "plgd-hub.httpgateway.apiDomainSecretName" . | quote }}
       {{- end }}
   rules:
   - host: {{ include "plgd-hub.httpgateway.apiDomain" . | quote }}

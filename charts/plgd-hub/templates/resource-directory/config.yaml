@@ -88,7 +88,7 @@ data:
     publicConfiguration:
       caPool: {{ .publicConfiguration.caPool | default "/certs/ca.crt" | quote }}
       {{- if not $.Values.mockoauthserver.enabled }}
-      authorizationServer: {{ required "resourcedirectory.publicConfiguration.authorizationServer or global.authority is required" ( .publicConfiguration.authorizationServer | default $.Values.global.authority ) | quote }}
+      authorizationServer: {{ required "resourcedirectory.publicConfiguration.authorizationServer or global.authority is required" ( tpl (( .publicConfiguration.authorizationServer | default $.Values.global.authority ) | default "" ) $ ) | quote }}
       {{- else }}
       authorizationServer: {{ include "plgd-hub.mockoauthserver.uri" $ | quote }}
       {{- end }}

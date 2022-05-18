@@ -68,6 +68,7 @@ global:
 | certificateauthority.deploymentLabels | object | `{}` | Additional labels for certificate-authority deployment |
 | certificateauthority.domain | string | `nil` | External domain for certificate-authority. Default: api.{{ global.domain }} |
 | certificateauthority.enabled | bool | `true` | Enable certificate-authority service |
+| certificateauthority.extraContainers | object | `{}` | Extra POD containers |
 | certificateauthority.extraVolumeMounts | string | `nil` | Optional extra volume mounts |
 | certificateauthority.extraVolumes | string | `nil` | Optional extra volumes |
 | certificateauthority.fullnameOverride | string | `nil` | Full name to override |
@@ -81,6 +82,7 @@ global:
 | certificateauthority.ingress.customAnnotations | object | `{}` | Custom map of Ingress annotation |
 | certificateauthority.ingress.enabled | bool | `true` | Enable ingress |
 | certificateauthority.ingress.paths | list | `["/certificateauthority.pb.CertificateAuthority"]` | Paths |
+| certificateauthority.ingress.secretName | string | `nil` | Override name of host/tls secret. If not specified, it will be generated |
 | certificateauthority.initContainersTpl | string | `nil` | Init containers definition |
 | certificateauthority.livenessProbe | string | `nil` | Liveness probe. certificate-authority doesn't have any default liveness probe |
 | certificateauthority.log.encoderConfig.timeEncoder | string | `"rfc3339nano"` | Time format for logs. The supported values are: "rfc3339nano", "rfc3339" |
@@ -105,6 +107,9 @@ global:
 | certificateauthority.securityContext | string | `nil` | Security context for pod |
 | certificateauthority.service.annotations | object | `{}` | Annotations for certificate-authority service |
 | certificateauthority.service.labels | object | `{}` | Labels for certificate-authority service |
+| certificateauthority.service.name | string | `"grpc"` | Name |
+| certificateauthority.service.protocol | string | `"TCP"` | Protocol |
+| certificateauthority.service.targetPort | string | `"grpc"` | Target port |
 | certificateauthority.service.type | string | `"ClusterIP"` | Service type |
 | certificateauthority.signer | object | `{"certFile":null,"expiresIn":"87600h","hubId":null,"keyFile":null,"validFrom":"now-1h"}` | For complete certificate-authority service configuration see [plgd/certificate-authority](https://github.com/plgd-dev/hub/tree/main/certificate-authority) |
 | certificateauthority.tolerations | string | `nil` | Toleration definition |
@@ -163,7 +168,7 @@ global:
 | certmanager.internal.issuer.name | string | `nil` | Name |
 | certmanager.internal.issuer.spec | string | `nil` | cert-manager issuer spec |
 | cluster.dns | string | `"cluster.local"` | Cluster internal DNS prefix |
-| coapgateway | object | `{"affinity":{},"apis":{"coap":{"authorization":{"deviceIdClaim":null,"ownerClaim":null,"providers":null},"blockwiseTransfer":{"blockSize":"1024","enabled":false},"externalAddress":"","keepAlive":{"timeout":"20s"},"maxMessageSize":262144,"messagePoolSize":1000,"ownerCacheExpiration":"1m","subscriptionBufferSize":1000,"tls":{"caPool":null,"certFile":null,"clientCertificateRequired":true,"disconnectOnExpiredCertificate":false,"enabled":true,"keyFile":null}}},"clients":{"eventBus":{"nats":{"pendingLimits":{"bytesLimit":"67108864","msgLimit":"524288"},"tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false},"url":""}},"identityStore":{"grpc":{"address":"","keepAlive":{"permitWithoutStream":true,"time":"10s","timeout":"20s"},"tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false}},"ownerClaim":null},"resourceAggregate":{"deviceStatusExpiration":{"enabled":false,"expiresIn":"0s"},"grpc":{"address":"","keepAlive":{"permitWithoutStream":true,"time":"10s","timeout":"20s"},"tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false}}},"resourceDirectory":{"grpc":{"address":"","keepAlive":{"permitWithoutStream":true,"time":"10s","timeout":"20s"},"tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false}}}},"config":{"fileName":"service.yaml","mountPath":"/config","volume":"config"},"deploymentAnnotations":{},"deploymentLabels":{},"enabled":true,"extraVolumeMounts":{},"extraVolumes":{},"fullnameOverride":null,"hubId":null,"image":{"imagePullSecrets":{},"pullPolicy":"Always","registry":"ghcr.io/","repository":"plgd-dev/hub/coap-gateway","tag":null},"imagePullSecrets":{},"initContainersTpl":{},"livenessProbe":{},"log":{"dumpBody":false,"encoderConfig":{"timeEncoder":"rfc3339nano"},"encoding":"json","level":"info","stacktrace":{"enabled":false,"level":"warn"}},"name":"coap-gateway","nodeSelector":{},"podAnnotations":{},"podLabels":{},"podSecurityContext":{},"port":5684,"rbac":{"enabled":false,"roleBindingDefinitionTpl":null,"serviceAccountName":"coap-gateway"},"readinessProbe":{},"replicas":1,"resources":{},"restartPolicy":"Always","securityContext":{},"service":{"annotations":{},"labels":{},"nodePort":null,"type":"LoadBalancer"},"taskQueue":{"goPoolSize":1600,"maxIdleTime":"10m","size":"2097152"},"tolerations":{}}` | CoAP gateway parameters |
+| coapgateway | object | `{"affinity":{},"apis":{"coap":{"authorization":{"deviceIdClaim":null,"ownerClaim":null,"providers":null},"blockwiseTransfer":{"blockSize":"1024","enabled":false},"externalAddress":"","keepAlive":{"timeout":"20s"},"maxMessageSize":262144,"messagePoolSize":1000,"ownerCacheExpiration":"1m","subscriptionBufferSize":1000,"tls":{"caPool":null,"certFile":null,"clientCertificateRequired":true,"disconnectOnExpiredCertificate":false,"enabled":true,"keyFile":null}}},"clients":{"eventBus":{"nats":{"pendingLimits":{"bytesLimit":"67108864","msgLimit":"524288"},"tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false},"url":""}},"identityStore":{"grpc":{"address":"","keepAlive":{"permitWithoutStream":true,"time":"10s","timeout":"20s"},"tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false}},"ownerClaim":null},"resourceAggregate":{"deviceStatusExpiration":{"enabled":false,"expiresIn":"0s"},"grpc":{"address":"","keepAlive":{"permitWithoutStream":true,"time":"10s","timeout":"20s"},"tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false}}},"resourceDirectory":{"grpc":{"address":"","keepAlive":{"permitWithoutStream":true,"time":"10s","timeout":"20s"},"tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false}}}},"config":{"fileName":"service.yaml","mountPath":"/config","volume":"config"},"deploymentAnnotations":{},"deploymentLabels":{},"enabled":true,"extraContainers":{},"extraVolumeMounts":{},"extraVolumes":{},"fullnameOverride":null,"hubId":null,"image":{"imagePullSecrets":{},"pullPolicy":"Always","registry":"ghcr.io/","repository":"plgd-dev/hub/coap-gateway","tag":null},"imagePullSecrets":{},"initContainersTpl":{},"livenessProbe":{},"log":{"dumpBody":false,"encoderConfig":{"timeEncoder":"rfc3339nano"},"encoding":"json","level":"info","stacktrace":{"enabled":false,"level":"warn"}},"name":"coap-gateway","nodeSelector":{},"podAnnotations":{},"podLabels":{},"podSecurityContext":{},"port":5684,"rbac":{"enabled":false,"roleBindingDefinitionTpl":null,"serviceAccountName":"coap-gateway"},"readinessProbe":{},"replicas":1,"resources":{},"restartPolicy":"Always","securityContext":{},"service":{"annotations":{},"labels":{},"name":"coaps","nodePort":null,"protocol":"TCP","targetPort":"coaps","type":"LoadBalancer"},"taskQueue":{"goPoolSize":1600,"maxIdleTime":"10m","size":"2097152"},"tolerations":{}}` | CoAP gateway parameters |
 | coapgateway.affinity | object | `{}` | Affinity definition |
 | coapgateway.apis | object | `{"coap":{"authorization":{"deviceIdClaim":null,"ownerClaim":null,"providers":null},"blockwiseTransfer":{"blockSize":"1024","enabled":false},"externalAddress":"","keepAlive":{"timeout":"20s"},"maxMessageSize":262144,"messagePoolSize":1000,"ownerCacheExpiration":"1m","subscriptionBufferSize":1000,"tls":{"caPool":null,"certFile":null,"clientCertificateRequired":true,"disconnectOnExpiredCertificate":false,"enabled":true,"keyFile":null}}}` | For complete coap-gateway service configuration see [plgd/coap-gateway](https://github.com/plgd-dev/hub/tree/main/coap-gateway) |
 | coapgateway.apis.coap.tls.disconnectOnExpiredCertificate | bool | `false` | After the certificate expires, the connection will be disconnected |
@@ -174,6 +179,7 @@ global:
 | coapgateway.deploymentAnnotations | object | `{}` | Additional annotations for coap-gateway deployment |
 | coapgateway.deploymentLabels | object | `{}` | Additional labels for coap-gateway deployment |
 | coapgateway.enabled | bool | `true` | Enable coap-gateway service |
+| coapgateway.extraContainers | object | `{}` | Extra POD containers |
 | coapgateway.extraVolumeMounts | object | `{}` | Optional extra volume mounts |
 | coapgateway.extraVolumes | object | `{}` | Optional extra volumes |
 | coapgateway.fullnameOverride | string | `nil` | Full name to override |
@@ -209,7 +215,10 @@ global:
 | coapgateway.securityContext | object | `{}` | Security context for pod |
 | coapgateway.service.annotations | object | `{}` | Annotations for coap-gateway service |
 | coapgateway.service.labels | object | `{}` | Labels for coap-gateway service |
+| coapgateway.service.name | string | `"coaps"` | Name |
 | coapgateway.service.nodePort | string | `nil` | Use nodePort if specified |
+| coapgateway.service.protocol | string | `"TCP"` | Protocol |
+| coapgateway.service.targetPort | string | `"coaps"` | Target port |
 | coapgateway.service.type | string | `"LoadBalancer"` | Service type |
 | coapgateway.taskQueue | object | `{"goPoolSize":1600,"maxIdleTime":"10m","size":"2097152"}` | For complete coap-gateway service configuration see [plgd/coap-gateway](https://github.com/plgd-dev/hub/tree/main/coap-gateway) |
 | coapgateway.tolerations | object | `{}` | Toleration definition |
@@ -234,6 +243,7 @@ global:
 | grpcgateway.deploymentLabels | object | `{}` | Additional labels for grpc-gateway deployment |
 | grpcgateway.domain | string | `nil` | External domain for grpc-gateway. Default: api.{{ global.domain }} |
 | grpcgateway.enabled | bool | `true` | Enable grpc-gateway service |
+| grpcgateway.extraContainers | object | `{}` | Extra POD containers |
 | grpcgateway.extraVolumeMounts | object | `{}` | Optional extra volume mounts |
 | grpcgateway.extraVolumes | object | `{}` | Optional extra volumes |
 | grpcgateway.fullnameOverride | string | `nil` | Full name to override |
@@ -247,6 +257,7 @@ global:
 | grpcgateway.ingress.customAnnotations | object | `{}` | Custom map of Ingress annotation |
 | grpcgateway.ingress.enabled | bool | `true` | Enable ingress |
 | grpcgateway.ingress.paths[0] | string | `"/grpcgateway.pb.GrpcGateway"` |  |
+| grpcgateway.ingress.secretName | string | `nil` | Override name of host/tls secret. If not specified, it will be generated |
 | grpcgateway.initContainersTpl | object | `{}` | Init containers definition |
 | grpcgateway.livenessProbe | object | `{}` | Liveness probe. grpc-gateway doesn't have any default liveness probe |
 | grpcgateway.log.encoderConfig.timeEncoder | string | `"rfc3339nano"` | Time format for logs. The supported values are: "rfc3339nano", "rfc3339" |
@@ -270,6 +281,9 @@ global:
 | grpcgateway.securityContext | object | `{}` | Security context for pod |
 | grpcgateway.service.annotations | object | `{}` | Annotations for grpc-gateway service |
 | grpcgateway.service.labels | object | `{}` | Labels for grpc-gateway service |
+| grpcgateway.service.name | string | `"grpc"` | Name |
+| grpcgateway.service.protocol | string | `"TCP"` | Protocol |
+| grpcgateway.service.targetPort | string | `"grpc"` | Target port |
 | grpcgateway.service.type | string | `"ClusterIP"` | Service type |
 | grpcgateway.tolerations | object | `{}` | Toleration definition |
 | httpgateway.affinity | object | `{}` | Affinity definition |
@@ -283,6 +297,7 @@ global:
 | httpgateway.deploymentAnnotations | object | `{}` | Additional annotations for http-gateway deployment |
 | httpgateway.deploymentLabels | object | `{}` | Additional labels for http-gateway deployment |
 | httpgateway.enabled | bool | `true` | Enable http-gateway service |
+| httpgateway.extraContainers | object | `{}` | Extra POD containers |
 | httpgateway.extraVolumeMounts | object | `{}` | Optional extra volume mounts |
 | httpgateway.extraVolumes | object | `{}` | Optional extra volumes |
 | httpgateway.fullnameOverride | string | `nil` | Full name to override |
@@ -292,16 +307,18 @@ global:
 | httpgateway.image.repository | string | `"plgd-dev/hub/http-gateway"` | Image repository |
 | httpgateway.image.tag | string | `nil` | Image tag. |
 | httpgateway.imagePullSecrets | object | `{}` | Image pull secrets |
-| httpgateway.ingress.api | object | `{"annotations":{"ingress.kubernetes.io/force-ssl-redirect":"true","nginx.ingress.kubernetes.io/backend-protocol":"HTTPS","nginx.ingress.kubernetes.io/enable-cors":"true","nginx.org/grpc-services":"{{ include \"plgd-hub.httpgateway.fullname\" . }}"},"customAnnotations":{},"enabled":true,"paths":["/api","/.well-known/hub-configuration"]}` | API ingress |
+| httpgateway.ingress.api | object | `{"annotations":{"ingress.kubernetes.io/force-ssl-redirect":"true","nginx.ingress.kubernetes.io/backend-protocol":"HTTPS","nginx.ingress.kubernetes.io/enable-cors":"true","nginx.org/grpc-services":"{{ include \"plgd-hub.httpgateway.fullname\" . }}"},"customAnnotations":{},"enabled":true,"paths":["/api","/.well-known/hub-configuration"],"secretName":null}` | API ingress |
 | httpgateway.ingress.api.annotations | object | `{"ingress.kubernetes.io/force-ssl-redirect":"true","nginx.ingress.kubernetes.io/backend-protocol":"HTTPS","nginx.ingress.kubernetes.io/enable-cors":"true","nginx.org/grpc-services":"{{ include \"plgd-hub.httpgateway.fullname\" . }}"}` | Pre defined map of Ingress annotation |
 | httpgateway.ingress.api.customAnnotations | object | `{}` | Custom map of Ingress annotation |
 | httpgateway.ingress.api.enabled | bool | `true` | Enable ingress |
 | httpgateway.ingress.api.paths | list | `["/api","/.well-known/hub-configuration"]` | Ingress path |
-| httpgateway.ingress.ui | object | `{"annotations":{"ingress.kubernetes.io/force-ssl-redirect":"true","nginx.ingress.kubernetes.io/backend-protocol":"HTTPS","nginx.ingress.kubernetes.io/enable-cors":"true"},"customAnnotations":{},"enabled":true,"paths":["/"]}` | UI ingress |
+| httpgateway.ingress.api.secretName | string | `nil` | Override name of host/tls secret. If not specified, it will be generated |
+| httpgateway.ingress.ui | object | `{"annotations":{"ingress.kubernetes.io/force-ssl-redirect":"true","nginx.ingress.kubernetes.io/backend-protocol":"HTTPS","nginx.ingress.kubernetes.io/enable-cors":"true"},"customAnnotations":{},"enabled":true,"paths":["/"],"secretName":null}` | UI ingress |
 | httpgateway.ingress.ui.annotations | object | `{"ingress.kubernetes.io/force-ssl-redirect":"true","nginx.ingress.kubernetes.io/backend-protocol":"HTTPS","nginx.ingress.kubernetes.io/enable-cors":"true"}` | Pre defined map of Ingress annotation |
 | httpgateway.ingress.ui.customAnnotations | object | `{}` | Custom map of Ingress annotation |
 | httpgateway.ingress.ui.enabled | bool | `true` | Enable ingress |
 | httpgateway.ingress.ui.paths | list | `["/"]` | Ingress path |
+| httpgateway.ingress.ui.secretName | string | `nil` | Override name of host/tls secret. If not specified, it will be generated |
 | httpgateway.initContainersTpl | object | `{}` | Init containers definition. Render as template |
 | httpgateway.livenessProbe | object | `{}` | Liveness probe. http-gateway doesn't have any default liveness probe |
 | httpgateway.log.encoderConfig.timeEncoder | string | `"rfc3339nano"` | Time format for logs. The supported values are: "rfc3339nano", "rfc3339" |
@@ -326,6 +343,9 @@ global:
 | httpgateway.securityContext | object | `{}` | Security context for pod |
 | httpgateway.service.annotations | object | `{}` | Annotations for http-gateway service |
 | httpgateway.service.labels | object | `{}` | Labels for http-gateway service |
+| httpgateway.service.name | string | `"http"` | Name |
+| httpgateway.service.protocol | string | `"TCP"` | Protocol |
+| httpgateway.service.targetPort | string | `"http"` | Target port |
 | httpgateway.service.type | string | `"ClusterIP"` |  |
 | httpgateway.tolerations | object | `{}` | Toleration definition |
 | httpgateway.ui | object | `{"directory":"/usr/local/var/www","enabled":true,"webConfiguration":{"authority":"","deviceOAuthClient":{"audience":null,"clientID":null,"providerName":null,"scopes":[]},"httpGatewayAddress":"","webOAuthClient":{"audience":"","clientID":"","scopes":[]}}}` | For complete http-gateway service configuration see [plgd/http-gateway](https://github.com/plgd-dev/hub/tree/main/http-gateway) |
@@ -340,6 +360,7 @@ global:
 | identitystore.deploymentAnnotations | object | `{}` | Additional annotations for identity deployment |
 | identitystore.deploymentLabels | object | `{}` | Additional labels for identity deployment |
 | identitystore.enabled | bool | `true` | Enable identity service |
+| identitystore.extraContainers | object | `{}` | Extra POD containers |
 | identitystore.extraVolumeMounts | object | `{}` | Extra volume mounts |
 | identitystore.extraVolumes | object | `{}` | Extra volumes |
 | identitystore.fullnameOverride | string | `nil` | Full name to override |
@@ -372,9 +393,12 @@ global:
 | identitystore.resources | object | `{}` | Resources limit |
 | identitystore.restartPolicy | string | `"Always"` | Restart policy for pod |
 | identitystore.securityContext | object | `{}` | Security context for pod |
-| identitystore.service | object | `{"annotations":{},"labels":{},"type":"ClusterIP"}` | Service configuration |
+| identitystore.service | object | `{"annotations":{},"labels":{},"name":"grpc","protocol":"TCP","targetPort":"grpc","type":"ClusterIP"}` | Service configuration |
 | identitystore.service.annotations | object | `{}` | Service annotations |
 | identitystore.service.labels | object | `{}` | Service labels |
+| identitystore.service.name | string | `"grpc"` | Name |
+| identitystore.service.protocol | string | `"TCP"` | Protocol |
+| identitystore.service.targetPort | string | `"grpc"` | Target port |
 | identitystore.service.type | string | `"ClusterIP"` | Service type |
 | identitystore.tolerations | object | `{}` | Toleration definition |
 | mockoauthserver.affinity | object | `{}` | Affinity definition |
@@ -437,6 +461,9 @@ global:
 | mockoauthserver.securityContext | object | `{}` |  |
 | mockoauthserver.service.annotations | object | `{}` | Annotations for mock-oauth-server service |
 | mockoauthserver.service.labels | object | `{}` | Labels for mock-oauth-server service |
+| mockoauthserver.service.name | string | `"http"` | Name |
+| mockoauthserver.service.protocol | string | `"TCP"` | Protocol |
+| mockoauthserver.service.targetPort | string | `"http"` | Target port |
 | mockoauthserver.service.type | string | `"ClusterIP"` |  |
 | mockoauthserver.tolerations | object | `{}` | Toleration definition |
 | mongodb | object | `{"arbiter":{"enabled":false},"architecture":"replicaset","auth":{"enabled":false},"customLivenessProbe":{"exec":{"command":["mongo","--disableImplicitSessions","--tls","--tlsCertificateKeyFile=/certs/cert.pem","--tlsCAFile=/certs/ca.pem","--eval","db.adminCommand('ping')"]},"failureThreshold":6,"initialDelaySeconds":30,"periodSeconds":10,"successThreshold":1,"timeoutSeconds":5},"customReadinessProbe":{"exec":{"command":["bash","-ec","TLS_OPTIONS='--tls --tlsCertificateKeyFile=/certs/cert.pem --tlsCAFile=/certs/ca.pem'\nmongo --disableImplicitSessions $TLS_OPTIONS --eval 'db.hello().isWritablePrimary || db.hello().secondary' | grep -q 'true'\n"]},"failureThreshold":6,"initialDelaySeconds":5,"periodSeconds":10,"successThreshold":1,"timeoutSeconds":5},"enabled":true,"extraEnvVars":[{"name":"MONGODB_EXTRA_FLAGS","value":"--tlsMode=requireTLS --tlsCertificateKeyFile=/certs/cert.pem --tlsCAFile=/certs/ca.pem"},{"name":"MONGODB_CLIENT_EXTRA_FLAGS","value":"--tls --tlsCertificateKeyFile=/certs/cert.pem --tlsCAFile=/certs/ca.pem"}],"extraVolumeMounts":[{"mountPath":"/certs","name":"mongodb-crt"}],"extraVolumes":[{"emptyDir":{},"name":"mongodb-crt"},{"name":"mongodb-cm-crt","secret":{"secretName":"mongodb-cm-crt"}}],"fullnameOverride":"mongodb","image":{"debug":true,"net":{"port":27017}},"initContainers":[{"command":["sh","-c","/bin/bash <<'EOF'\ncat /tmp/certs/tls.crt >> /certs/cert.pem\ncat /tmp/certs/tls.key >> /certs/cert.pem\ncp /tmp/certs/ca.crt  /certs/ca.pem\nEOF\n"],"image":"docker.io/bitnami/nginx:1.20.2-debian-10-r63","imagePullPolicy":"IfNotPresent","name":"convert-cm-crt","volumeMounts":[{"mountPath":"/certs","name":"mongodb-crt"},{"mountPath":"/tmp/certs","name":"mongodb-cm-crt"}]}],"livenessProbe":{"enabled":false},"persistence":{"enabled":true},"readinessProbe":{"enabled":false},"replicaCount":3,"replicaSetName":"rs0","tls":{"enabled":false}}` | External mongodb-replica dependency setup |
@@ -475,6 +502,7 @@ global:
 | resourceaggregate.deploymentAnnotations | object | `{}` | Additional annotations for resource-aggregate deployment |
 | resourceaggregate.deploymentLabels | object | `{}` | Additional labels for resource-aggregate deployment |
 | resourceaggregate.enabled | bool | `true` | Enable resource-aggregate service |
+| resourceaggregate.extraContainers | object | `{}` | Extra POD containers |
 | resourceaggregate.extraVolumeMounts | object | `{}` | Optional extra volume mounts |
 | resourceaggregate.extraVolumes | object | `{}` | Optional extra volumes |
 | resourceaggregate.fullnameOverride | string | `nil` | Full name to override |
@@ -508,6 +536,9 @@ global:
 | resourceaggregate.securityContext | object | `{}` | Security context for pod |
 | resourceaggregate.service.annotations | object | `{}` | Annotations for resource-aggregate service |
 | resourceaggregate.service.labels | object | `{}` | Labels for resource-aggregate service |
+| resourceaggregate.service.name | string | `"grpc"` | Name |
+| resourceaggregate.service.protocol | string | `"TCP"` | Protocol |
+| resourceaggregate.service.targetPort | string | `"grpc"` | Target port |
 | resourceaggregate.service.type | string | `"ClusterIP"` | Service type |
 | resourceaggregate.tolerations | object | `{}` | Toleration definition |
 | resourcedirectory.affinity | object | `{}` | Affinity definition |
@@ -520,15 +551,16 @@ global:
 | resourcedirectory.deploymentAnnotations | object | `{}` | Additional annotations for resource-directory deployment |
 | resourcedirectory.deploymentLabels | object | `{}` | Additional labels for resource-directory deployment |
 | resourcedirectory.enabled | bool | `true` | Enable resource-directory service |
+| resourcedirectory.extraContainers | object | `{}` | Extra POD containers |
 | resourcedirectory.extraVolumeMounts | object | `{}` | Optional extra volume mounts |
 | resourcedirectory.extraVolumes | object | `{}` | Optional extra volumes |
 | resourcedirectory.fullnameOverride | string | `nil` | Full name to override |
 | resourcedirectory.image.command | string | `nil` | Container command |
-| resourcedirectory.image.imagePullSecrets | object | `{}` | Image pull secrets |
+| resourcedirectory.image.imagePullSecrets | object | `{}` |  |
 | resourcedirectory.image.pullPolicy | string | `"Always"` | Image pull policy |
 | resourcedirectory.image.registry | string | `"ghcr.io/"` | Image registry |
 | resourcedirectory.image.repository | string | `"plgd-dev/hub/resource-directory"` | Image repository |
-| resourcedirectory.image.tag | string | `nil` | Image tag. |
+| resourcedirectory.image.tag | string | `nil` |  |
 | resourcedirectory.initContainersTpl | object | `{}` | Init containers definition. Resolved as template |
 | resourcedirectory.livenessProbe | object | `{}` | Liveness probe. resource-directory doesn't have any default liveness probe |
 | resourcedirectory.log | object | `{"encoderConfig":{"timeEncoder":"rfc3339nano"},"encoding":"json","level":"info","stacktrace":{"enabled":false,"level":"warn"}}` | Log section |
@@ -550,13 +582,16 @@ global:
 | resourcedirectory.readinessProbe | object | `{}` | Readiness probe. resource-directory doesn't have aby default readiness probe |
 | resourcedirectory.replicas | int | `1` | Number of replicas |
 | resourcedirectory.resources | object | `{}` | Resources limit |
-| resourcedirectory.restartPolicy | string | `"Always"` | Restart policy for pod |
+| resourcedirectory.restartPolicy | string | `"Always"` |  |
 | resourcedirectory.securityContext | object | `{}` | Security context for pod |
 | resourcedirectory.service.annotations | object | `{}` | Annotations for resource-directory service |
 | resourcedirectory.service.labels | object | `{}` | Labels for resource-directory service |
+| resourcedirectory.service.name | string | `"grpc"` | Name |
+| resourcedirectory.service.protocol | string | `"TCP"` | Protocol |
+| resourcedirectory.service.targetPort | string | `"grpc"` | Target port |
 | resourcedirectory.service.type | string | `"ClusterIP"` | resource-directory service type |
 | resourcedirectory.tolerations | object | `{}` | Toleration definition |
 
 ----------------------------------------------
-Autogenerated from chart metadata using [helm-docs v1.6.0](https://github.com/norwoodj/helm-docs/releases/v1.6.0)
+Autogenerated from chart metadata using [helm-docs v1.5.0](https://github.com/norwoodj/helm-docs/releases/v1.5.0)
 
