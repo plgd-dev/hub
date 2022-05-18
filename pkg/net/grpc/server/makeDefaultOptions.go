@@ -15,6 +15,8 @@ import (
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"github.com/plgd-dev/hub/v2/pkg/security/jwt"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"google.golang.org/grpc"
@@ -136,7 +138,12 @@ func defaultMessageProducer(ctx context.Context, ctxLogger context.Context, msg 
 	resp := make(map[string]interface{})
 	resp["code"] = code.String()
 	if err != nil {
-		resp["error"] = err.Error()
+		resp[log.ErrorKey] = err.Error()
+	}
+
+	spanCtx := trace.SpanContextFromContext(ctx)
+	if spanCtx.HasTraceID() {
+		req[log.TraceIDKey] = spanCtx.TraceID().String()
 	}
 
 	if sub, err := kitNetGrpc.OwnerFromTokenMD(ctx, "sub"); err == nil {
@@ -190,9 +197,13 @@ type GetDeviceIDPb interface {
 	GetDeviceId() string
 }
 
-func MakeDefaultOptions(auth kitNetGrpc.AuthInterceptors, logger log.Logger) ([]grpc.ServerOption, error) {
-	streamInterceptors := []grpc.StreamServerInterceptor{}
-	unaryInterceptors := []grpc.UnaryServerInterceptor{}
+func MakeDefaultOptions(auth kitNetGrpc.AuthInterceptors, logger log.Logger, tracerProvider trace.TracerProvider) ([]grpc.ServerOption, error) {
+	streamInterceptors := []grpc.StreamServerInterceptor{
+		otelgrpc.StreamServerInterceptor(otelgrpc.WithTracerProvider(tracerProvider)),
+	}
+	unaryInterceptors := []grpc.UnaryServerInterceptor{
+		otelgrpc.UnaryServerInterceptor(otelgrpc.WithTracerProvider(tracerProvider)),
+	}
 	zapLogger, ok := logger.Unwrap().(*zap.SugaredLogger)
 	if ok {
 		cfg := logger.Config()

@@ -28,6 +28,7 @@ import (
 	"github.com/plgd-dev/kit/v2/strings"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/atomic"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -202,7 +203,7 @@ func runTestDeviceObserverRegister(ctx context.Context, t *testing.T, deviceID s
 
 	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
 
-	rdConn, err := grpcClient.New(config.MakeGrpcClientConfig(config.RESOURCE_DIRECTORY_HOST), log.Get())
+	rdConn, err := grpcClient.New(config.MakeGrpcClientConfig(config.RESOURCE_DIRECTORY_HOST), log.Get(), trace.NewNoopTracerProvider())
 	require.NoError(t, err)
 	defer func() {
 		_ = rdConn.Close()

@@ -16,6 +16,7 @@ import (
 	raEvents "github.com/plgd-dev/hub/v2/resource-aggregate/events"
 	raService "github.com/plgd-dev/hub/v2/resource-aggregate/service"
 	kitSync "github.com/plgd-dev/kit/v2/sync"
+	"go.opentelemetry.io/otel/trace"
 )
 
 const NOT_SUPPORTED_ERR = "not supported"
@@ -62,9 +63,10 @@ type DevicesSubscription struct {
 	raClient          raService.ResourceAggregateClient
 	subscriber        *subscriber.Subscriber
 	reconnectInterval time.Duration
+	tracerProvider    trace.TracerProvider
 }
 
-func NewDevicesSubscription(ctx context.Context, rdClient pb.GrpcGatewayClient, raClient raService.ResourceAggregateClient, subscriber *subscriber.Subscriber, reconnectInterval time.Duration) *DevicesSubscription {
+func NewDevicesSubscription(ctx context.Context, tracerProvider trace.TracerProvider, rdClient pb.GrpcGatewayClient, raClient raService.ResourceAggregateClient, subscriber *subscriber.Subscriber, reconnectInterval time.Duration) *DevicesSubscription {
 	return &DevicesSubscription{
 		data:              kitSync.NewMap(),
 		rdClient:          rdClient,
@@ -72,6 +74,7 @@ func NewDevicesSubscription(ctx context.Context, rdClient pb.GrpcGatewayClient, 
 		reconnectInterval: reconnectInterval,
 		ctx:               ctx,
 		subscriber:        subscriber,
+		tracerProvider:    tracerProvider,
 	}
 }
 
@@ -79,7 +82,7 @@ func getKey(userID, deviceID string) string {
 	return userID + "." + deviceID
 }
 
-func (c *DevicesSubscription) Add(deviceID string, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud) error {
+func (c *DevicesSubscription) Add(ctx context.Context, deviceID string, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud) error {
 	var s atomic.Value
 	key := getKey(linkedAccount.UserID, deviceID)
 	_, loaded := c.data.LoadOrStore(key, &s)
@@ -103,24 +106,24 @@ func (c *DevicesSubscription) Add(deviceID string, linkedAccount store.LinkedAcc
 			log.Debugf("next iteration %v of retrying reconnect to grpc-client for deviceID %v will be at %v", count, deviceID, next)
 			return next, nil
 		}
-	}, c.rdClient, c.subscriber)
+	}, c.rdClient, c.subscriber, c.tracerProvider)
 	if err != nil {
 		c.data.Delete(getKey(linkedAccount.UserID, deviceID))
 		return fmt.Errorf("cannot create device %v pending subscription: %w", deviceID, err)
 	}
 	h := grpcClient.NewDeviceSubscriptionHandlers(deviceSubscriptionHandlers{
 		onResourceUpdatePending: func(ctx context.Context, val *raEvents.ResourceUpdatePending) error {
-			return updateResource(ctx, c.raClient, val, linkedAccount, linkedCloud)
+			return updateResource(ctx, c.tracerProvider, c.raClient, val, linkedAccount, linkedCloud)
 		},
 		onResourceRetrievePending: func(ctx context.Context, val *raEvents.ResourceRetrievePending) error {
-			return retrieveResource(ctx, c.raClient, val, linkedAccount, linkedCloud)
+			return retrieveResource(ctx, c.tracerProvider, c.raClient, val, linkedAccount, linkedCloud)
 		},
 		onError: func(err error) {
 			log.Errorf("device %v subscription(ResourceUpdatePending, ResourceRetrievePending) was closed", deviceID)
 			c.data.Delete(getKey(linkedAccount.UserID, deviceID))
 		},
 	})
-	deviceSubscriber.SubscribeToPendingCommands(h)
+	deviceSubscriber.SubscribeToPendingCommands(ctx, h)
 
 	s.Store(deviceSubscriber)
 	return nil

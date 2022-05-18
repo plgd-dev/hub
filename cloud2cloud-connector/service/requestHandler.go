@@ -15,6 +15,7 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	kitNetHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
 	pkgOAuth2 "github.com/plgd-dev/hub/v2/pkg/security/oauth2"
+	"go.opentelemetry.io/otel/trace"
 )
 
 const cloudIDKey = "CloudId"
@@ -33,6 +34,7 @@ type RequestHandler struct {
 	provisionCache *cache.Cache
 	subManager     *SubscriptionManager
 	triggerTask    OnTaskTrigger
+	tracerProvider trace.TracerProvider
 }
 
 func logAndWriteErrorResponse(err error, statusCode int, w http.ResponseWriter) {
@@ -50,6 +52,7 @@ func NewRequestHandler(
 	subManager *SubscriptionManager,
 	store *Store,
 	triggerTask OnTaskTrigger,
+	tracerProvider trace.TracerProvider,
 ) *RequestHandler {
 	cache := cache.NewCache()
 	add := periodic.New(subManager.devicesSubscription.ctx.Done(), time.Minute*5)
@@ -64,6 +67,7 @@ func NewRequestHandler(
 		store:          store,
 		provisionCache: cache,
 		triggerTask:    triggerTask,
+		tracerProvider: tracerProvider,
 	}
 }
 
@@ -71,8 +75,8 @@ func healthCheck(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-// NewHTTP returns HTTP server
-func NewHTTP(requestHandler *RequestHandler, authInterceptor kitNetHttp.Interceptor) (*http.Server, error) {
+// NewHTTP returns HTTP handler
+func NewHTTP(requestHandler *RequestHandler, authInterceptor kitNetHttp.Interceptor) (http.Handler, error) {
 	r := router.NewRouter()
 	r.StrictSlash(true)
 	r.Use(kitNetHttp.CreateLoggingMiddleware())
@@ -98,5 +102,5 @@ func NewHTTP(requestHandler *RequestHandler, authInterceptor kitNetHttp.Intercep
 
 	r.HandleFunc(uri.OAuthCallback, requestHandler.OAuthCallback).Methods(http.MethodGet, http.MethodPost)
 
-	return &http.Server{Handler: r}, nil
+	return r, nil
 }

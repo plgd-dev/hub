@@ -11,11 +11,15 @@ import (
 	"github.com/google/uuid"
 	pbGRPC "github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	"github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	"github.com/plgd-dev/hub/v2/pkg/opentelemetry"
+	"github.com/plgd-dev/hub/v2/pkg/opentelemetry/propagation"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/subscriber"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/utils"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 	kitSync "github.com/plgd-dev/kit/v2/sync"
+	"go.opentelemetry.io/otel/trace"
+	"go.uber.org/atomic"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -159,6 +163,11 @@ func (h *DeviceSubscriptionHandlers) HandleDeviceMetadataUpdatePending(ctx conte
 	return err
 }
 
+type setHandlerRequest struct {
+	ctx context.Context
+	h   *DeviceSubscriptionHandlers
+}
+
 type DeviceSubscriber struct {
 	rdClient pbGRPC.GrpcGatewayClient
 	deviceID string
@@ -170,15 +179,16 @@ type DeviceSubscriber struct {
 	mutex                  sync.Mutex
 	pendingCommandsHandler *DeviceSubscriptionHandlers
 	reconnectChan          chan bool
-	setHandlerChan         chan *DeviceSubscriptionHandlers
+	setHandlerChan         chan *setHandlerRequest
 	closeFunc              func()
 	factoryRetry           func() RetryFunc
 	getContext             func() (context.Context, context.CancelFunc)
+	tracerProvider         trace.TracerProvider
 }
 
 type RetryFunc = func() (when time.Time, err error)
 
-func NewDeviceSubscriber(getContext func() (context.Context, context.CancelFunc), owner, deviceID string, factoryRetry func() RetryFunc, rdClient pbGRPC.GrpcGatewayClient, resourceSubscriber *subscriber.Subscriber) (*DeviceSubscriber, error) {
+func NewDeviceSubscriber(getContext func() (context.Context, context.CancelFunc), owner, deviceID string, factoryRetry func() RetryFunc, rdClient pbGRPC.GrpcGatewayClient, resourceSubscriber *subscriber.Subscriber, tracerProvider trace.TracerProvider) (*DeviceSubscriber, error) {
 	uuid, err := uuid.NewRandom()
 	if err != nil {
 		return nil, err
@@ -189,10 +199,11 @@ func NewDeviceSubscriber(getContext func() (context.Context, context.CancelFunc)
 		rdClient:               rdClient,
 		pendingCommandsVersion: kitSync.NewMap(),
 		reconnectChan:          make(chan bool, 1),
-		setHandlerChan:         make(chan *DeviceSubscriptionHandlers, 1),
+		setHandlerChan:         make(chan *setHandlerRequest, 1),
 		done:                   make(chan struct{}),
 		factoryRetry:           factoryRetry,
 		getContext:             getContext,
+		tracerProvider:         tracerProvider,
 	}
 	ctx, cancel := getContext()
 	defer cancel()
@@ -219,7 +230,7 @@ func NewDeviceSubscriber(getContext func() (context.Context, context.CancelFunc)
 	return &s, nil
 }
 
-func (s *DeviceSubscriber) tryReconnectToGRPC(wantToSetPendingCommandsHandler bool, pendingCommandsHandler *DeviceSubscriptionHandlers) bool {
+func (s *DeviceSubscriber) tryReconnectToGRPC(getContext func() (context.Context, context.CancelFunc), wantToSetPendingCommandsHandler bool, pendingCommandsHandler *DeviceSubscriptionHandlers) bool {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
@@ -231,7 +242,7 @@ func (s *DeviceSubscriber) tryReconnectToGRPC(wantToSetPendingCommandsHandler bo
 		return false
 	}
 
-	err := s.coldStartPendingCommandsLocked(s.pendingCommandsHandler)
+	err := s.coldStartPendingCommandsLocked(getContext, s.pendingCommandsHandler)
 	if err != nil {
 		var grpcStatus interface{ GRPCStatus() *status.Status }
 		code := codes.Unknown
@@ -259,16 +270,28 @@ func (s *DeviceSubscriber) reconnect() {
 	for {
 		var wantToSetPendingCommandsHandler bool
 		var pendingCommandsHandler *DeviceSubscriptionHandlers
+		var setHandlerReq *setHandlerRequest
+		getContext := s.getContext
 		select {
-		case pendingCommandsHandler = <-s.setHandlerChan:
+		case setHandlerReq = <-s.setHandlerChan:
 			wantToSetPendingCommandsHandler = true
+			pendingCommandsHandler = setHandlerReq.h
+			runOnce := atomic.NewBool(true)
+			getContext = func() (context.Context, context.CancelFunc) {
+				ctx, cancel := s.getContext()
+				if runOnce.CAS(true, false) {
+					span := trace.SpanFromContext(setHandlerReq.ctx)
+					return trace.ContextWithSpan(ctx, span), cancel
+				}
+				return ctx, cancel
+			}
 		case <-s.reconnectChan:
 		case <-s.done:
 			return
 		}
 		nextRetry := s.factoryRetry()
 	LOOP_TRY_RECONNECT_TO_GRPC:
-		for !s.tryReconnectToGRPC(wantToSetPendingCommandsHandler, pendingCommandsHandler) {
+		for !s.tryReconnectToGRPC(getContext, wantToSetPendingCommandsHandler, pendingCommandsHandler) {
 			when, err := nextRetry()
 			if err != nil {
 				s.pendingCommandsHandler.operations.OnDeviceSubscriberReconnectError(err)
@@ -294,27 +317,45 @@ func (s *DeviceSubscriber) Close() (err error) {
 	return s.observer.Close()
 }
 
+func (s *DeviceSubscriber) createSpanEvent(ctx context.Context, name string) (context.Context, trace.Span) {
+	tracer := s.tracerProvider.Tracer(
+		opentelemetry.InstrumentationName,
+		trace.WithInstrumentationVersion(opentelemetry.SemVersion()),
+	)
+	return tracer.Start(ctx, name, trace.WithSpanKind(trace.SpanKindConsumer))
+}
+
 func (s *DeviceSubscriber) processPendingCommand(ctx context.Context, h *DeviceSubscriptionHandlers, ev *pbGRPC.PendingCommand) error {
 	var sendEvent func(ctx context.Context) error
 	switch {
 	case ev.GetResourceCreatePending() != nil:
 		sendEvent = func(ctx context.Context) error {
+			ctx, span := s.createSpanEvent(ctx, "CreateResource")
+			defer span.End()
 			return h.HandleResourceCreatePending(ctx, ev.GetResourceCreatePending(), true)
 		}
 	case ev.GetResourceRetrievePending() != nil:
 		sendEvent = func(ctx context.Context) error {
+			ctx, span := s.createSpanEvent(ctx, "RetrieveResource")
+			defer span.End()
 			return h.HandleResourceRetrievePending(ctx, ev.GetResourceRetrievePending(), true)
 		}
 	case ev.GetResourceUpdatePending() != nil:
 		sendEvent = func(ctx context.Context) error {
+			ctx, span := s.createSpanEvent(ctx, "UpdateResource")
+			defer span.End()
 			return h.HandleResourceUpdatePending(ctx, ev.GetResourceUpdatePending(), true)
 		}
 	case ev.GetResourceDeletePending() != nil:
 		sendEvent = func(ctx context.Context) error {
+			ctx, span := s.createSpanEvent(ctx, "DeleteResource")
+			defer span.End()
 			return h.HandleResourceDeletePending(ctx, ev.GetResourceDeletePending(), true)
 		}
 	case ev.GetDeviceMetadataUpdatePending() != nil:
 		sendEvent = func(ctx context.Context) error {
+			ctx, span := s.createSpanEvent(ctx, "UpdateDeviceMetadata")
+			defer span.End()
 			return h.HandleDeviceMetadataUpdatePending(ctx, ev.GetDeviceMetadataUpdatePending(), true)
 		}
 	}
@@ -325,8 +366,8 @@ func (s *DeviceSubscriber) processPendingCommand(ctx context.Context, h *DeviceS
 	return sendEvent(ctx)
 }
 
-func (s *DeviceSubscriber) coldStartPendingCommandsLocked(h *DeviceSubscriptionHandlers) error {
-	ctx, cancel := s.getContext()
+func (s *DeviceSubscriber) coldStartPendingCommandsLocked(getContext func() (context.Context, context.CancelFunc), h *DeviceSubscriptionHandlers) error {
+	ctx, cancel := getContext()
 	defer cancel()
 	resp, err := s.rdClient.GetPendingCommands(ctx, &pbGRPC.GetPendingCommandsRequest{
 		DeviceIdFilter: []string{s.deviceID},
@@ -353,10 +394,13 @@ func (s *DeviceSubscriber) coldStartPendingCommandsLocked(h *DeviceSubscriptionH
 	return nil
 }
 
-func (s *DeviceSubscriber) SubscribeToPendingCommands(h *DeviceSubscriptionHandlers) {
+func (s *DeviceSubscriber) SubscribeToPendingCommands(ctx context.Context, h *DeviceSubscriptionHandlers) {
 	select {
 	case <-s.done:
-	case s.setHandlerChan <- h:
+	case s.setHandlerChan <- &setHandlerRequest{
+		ctx: ctx,
+		h:   h,
+	}:
 	default:
 	}
 }
@@ -375,35 +419,35 @@ func sendEvent(ctx context.Context, h *DeviceSubscriptionHandlers, ev eventbus.E
 		if err != nil {
 			return fmt.Errorf("cannot unmarshal resource retrieve pending event('%v'): %w", ev, err)
 		}
-		return h.HandleResourceRetrievePending(ctx, &event, false)
+		return h.HandleResourceRetrievePending(propagation.CtxWithTrace(ctx, event.GetOpenTelemetryCarrier()), &event, false)
 	case (&events.ResourceUpdatePending{}).EventType():
 		var event events.ResourceUpdatePending
 		err := ev.Unmarshal(&event)
 		if err != nil {
 			return fmt.Errorf("cannot unmarshal resource update pending event('%v'): %w", ev, err)
 		}
-		return h.HandleResourceUpdatePending(ctx, &event, false)
+		return h.HandleResourceUpdatePending(propagation.CtxWithTrace(ctx, event.GetOpenTelemetryCarrier()), &event, false)
 	case (&events.ResourceDeletePending{}).EventType():
 		var event events.ResourceDeletePending
 		err := ev.Unmarshal(&event)
 		if err != nil {
 			return fmt.Errorf("cannot unmarshal resource delete pending event('%v'): %w", ev, err)
 		}
-		return h.HandleResourceDeletePending(ctx, &event, false)
+		return h.HandleResourceDeletePending(propagation.CtxWithTrace(ctx, event.GetOpenTelemetryCarrier()), &event, false)
 	case (&events.ResourceCreatePending{}).EventType():
 		var event events.ResourceCreatePending
 		err := ev.Unmarshal(&event)
 		if err != nil {
 			return fmt.Errorf("cannot unmarshal resource create pending event('%v'): %w", ev, err)
 		}
-		return h.HandleResourceCreatePending(ctx, &event, false)
+		return h.HandleResourceCreatePending(propagation.CtxWithTrace(ctx, event.GetOpenTelemetryCarrier()), &event, false)
 	case (&events.DeviceMetadataUpdatePending{}).EventType():
 		var event events.DeviceMetadataUpdatePending
 		err := ev.Unmarshal(&event)
 		if err != nil {
 			return fmt.Errorf("cannot unmarshal device metadate update pending event('%v'): %w", ev, err)
 		}
-		return h.HandleDeviceMetadataUpdatePending(ctx, &event, false)
+		return h.HandleDeviceMetadataUpdatePending(propagation.CtxWithTrace(ctx, event.GetOpenTelemetryCarrier()), &event, false)
 	}
 	return nil
 }

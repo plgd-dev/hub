@@ -11,6 +11,7 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	raService "github.com/plgd-dev/hub/v2/resource-aggregate/service"
 	kitSync "github.com/plgd-dev/kit/v2/sync"
+	"go.opentelemetry.io/otel/trace"
 	"golang.org/x/sync/semaphore"
 )
 
@@ -34,24 +35,26 @@ type Task struct {
 type OnTaskTrigger func(Task)
 
 type TaskProcessor struct {
-	tasksChan     chan Task
-	wg            *sync.WaitGroup
-	poolGets      *semaphore.Weighted
-	timeout       time.Duration
-	raClient      raService.ResourceAggregateClient
-	pulledDevices *kitSync.Map //[userid+deviceID]
-	delay         time.Duration
+	tasksChan      chan Task
+	wg             *sync.WaitGroup
+	poolGets       *semaphore.Weighted
+	timeout        time.Duration
+	raClient       raService.ResourceAggregateClient
+	pulledDevices  *kitSync.Map //[userid+deviceID]
+	delay          time.Duration
+	tracerProvider trace.TracerProvider
 }
 
-func NewTaskProcessor(raClient raService.ResourceAggregateClient, maxParallelGets, cacheSize int, timeout, delay time.Duration) *TaskProcessor {
+func NewTaskProcessor(raClient raService.ResourceAggregateClient, tracerProvider trace.TracerProvider, maxParallelGets, cacheSize int, timeout, delay time.Duration) *TaskProcessor {
 	return &TaskProcessor{
-		pulledDevices: kitSync.NewMap(),
-		tasksChan:     make(chan Task, cacheSize),
-		wg:            &sync.WaitGroup{},
-		poolGets:      semaphore.NewWeighted(int64(maxParallelGets)),
-		timeout:       timeout,
-		raClient:      raClient,
-		delay:         delay,
+		pulledDevices:  kitSync.NewMap(),
+		tasksChan:      make(chan Task, cacheSize),
+		wg:             &sync.WaitGroup{},
+		poolGets:       semaphore.NewWeighted(int64(maxParallelGets)),
+		timeout:        timeout,
+		raClient:       raClient,
+		delay:          delay,
+		tracerProvider: tracerProvider,
 	}
 }
 
@@ -66,7 +69,7 @@ func (h *TaskProcessor) pullDevice(ctx context.Context, e Task) error {
 		return nil
 	}
 	var device RetrieveDeviceWithLinksResponse
-	err := Get(ctx, e.linkedCloud.Endpoint.URL+"/devices/"+e.deviceID, e.linkedAccount, e.linkedCloud, &device)
+	err := Get(ctx, h.tracerProvider, e.linkedCloud.Endpoint.URL+"/devices/"+e.deviceID, e.linkedAccount, e.linkedCloud, &device)
 	if err != nil {
 		h.pulledDevices.Delete(key)
 		return fmt.Errorf("cannot pull device %v for linked linkedAccount(%v): %w", e.deviceID, e.linkedAccount, err)

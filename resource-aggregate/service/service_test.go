@@ -15,6 +15,7 @@ import (
 	testCfg "github.com/plgd-dev/hub/v2/test/config"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 )
 
@@ -36,14 +37,14 @@ func TestPublishUnpublish(t *testing.T) {
 
 	ctx := kitNetGrpc.CtxWithToken(context.Background(), oauthTest.GetDefaultAccessToken(t))
 
-	idConn, err := client.New(testCfg.MakeGrpcClientConfig(config.Clients.IdentityStore.Connection.Addr), log.Get())
+	idConn, err := client.New(testCfg.MakeGrpcClientConfig(config.Clients.IdentityStore.Connection.Addr), log.Get(), trace.NewNoopTracerProvider())
 	require.NoError(t, err)
 	defer func() {
 		_ = idConn.Close()
 	}()
 	idClient := pbIS.NewIdentityStoreClient(idConn.GRPC())
 
-	raConn, err := client.New(testCfg.MakeGrpcClientConfig(config.APIs.GRPC.Addr), log.Get())
+	raConn, err := client.New(testCfg.MakeGrpcClientConfig(config.APIs.GRPC.Addr), log.Get(), trace.NewNoopTracerProvider())
 	require.NoError(t, err)
 	defer func() {
 		_ = raConn.Close()

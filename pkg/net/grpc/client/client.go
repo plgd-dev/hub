@@ -5,6 +5,8 @@ import (
 
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/pkg/security/certManager/client"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/keepalive"
@@ -34,7 +36,7 @@ func (s *Client) Close() error {
 	return err
 }
 
-func New(config Config, logger log.Logger, opts ...grpc.DialOption) (*Client, error) {
+func New(config Config, logger log.Logger, tracerProvider trace.TracerProvider, opts ...grpc.DialOption) (*Client, error) {
 	certManager, err := client.New(config.TLS, logger)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create cert manager: %w", err)
@@ -46,6 +48,8 @@ func New(config Config, logger log.Logger, opts ...grpc.DialOption) (*Client, er
 			Timeout:             config.KeepAlive.Timeout,
 			PermitWithoutStream: config.KeepAlive.PermitWithoutStream,
 		}),
+		grpc.WithUnaryInterceptor(otelgrpc.UnaryClientInterceptor(otelgrpc.WithTracerProvider(tracerProvider))),
+		grpc.WithStreamInterceptor(otelgrpc.StreamClientInterceptor(otelgrpc.WithTracerProvider(tracerProvider))),
 	}
 	if len(opts) > 0 {
 		v = append(v, opts...)

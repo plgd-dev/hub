@@ -17,6 +17,7 @@ import (
 	naClient "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/client"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/subscriber"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/utils"
+	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
 )
 
@@ -33,8 +34,8 @@ type RequestHandler struct {
 	closeFunc               func()
 }
 
-func AddHandler(ctx context.Context, svr *server.Server, config Config, logger log.Logger, goroutinePoolGo func(func()) error) error {
-	handler, err := NewRequestHandlerFromConfig(ctx, config, logger, goroutinePoolGo)
+func AddHandler(ctx context.Context, svr *server.Server, config Config, logger log.Logger, tracerProvider trace.TracerProvider, goroutinePoolGo func(func()) error) error {
+	handler, err := NewRequestHandlerFromConfig(ctx, config, logger, tracerProvider, goroutinePoolGo)
 	if err != nil {
 		return err
 	}
@@ -48,8 +49,8 @@ func Register(server *grpc.Server, handler *RequestHandler) {
 	pb.RegisterGrpcGatewayServer(server, handler)
 }
 
-func newIdentityStoreClient(config IdentityStoreConfig, logger log.Logger) (pbIS.IdentityStoreClient, func(), error) {
-	idConn, err := client.New(config.Connection, logger)
+func newIdentityStoreClient(config IdentityStoreConfig, logger log.Logger, tracerProvider trace.TracerProvider) (pbIS.IdentityStoreClient, func(), error) {
+	idConn, err := client.New(config.Connection, logger, tracerProvider)
 	if err != nil {
 		return nil, nil, fmt.Errorf("cannot create connection to identity-store: %w", err)
 	}
@@ -62,8 +63,8 @@ func newIdentityStoreClient(config IdentityStoreConfig, logger log.Logger) (pbIS
 	return idClient, closeIdConn, nil
 }
 
-func newResourceDirectoryClient(config GrpcServerConfig, logger log.Logger) (pb.GrpcGatewayClient, func(), error) {
-	rdConn, err := client.New(config.Connection, logger)
+func newResourceDirectoryClient(config GrpcServerConfig, logger log.Logger, tracerProvider trace.TracerProvider) (pb.GrpcGatewayClient, func(), error) {
+	rdConn, err := client.New(config.Connection, logger, tracerProvider)
 	if err != nil {
 		return nil, nil, fmt.Errorf("cannot connect to resource-directory: %w", err)
 	}
@@ -76,8 +77,8 @@ func newResourceDirectoryClient(config GrpcServerConfig, logger log.Logger) (pb.
 	return resourceDirectoryClient, closeRdConn, nil
 }
 
-func newResourceAggregateClient(config GrpcServerConfig, resourceSubscriber eventbus.Subscriber, logger log.Logger) (*raClient.Client, func(), error) {
-	raConn, err := client.New(config.Connection, logger)
+func newResourceAggregateClient(config GrpcServerConfig, resourceSubscriber eventbus.Subscriber, logger log.Logger, tracerProvider trace.TracerProvider) (*raClient.Client, func(), error) {
+	raConn, err := client.New(config.Connection, logger, tracerProvider)
 	if err != nil {
 		return nil, nil, fmt.Errorf("cannot connect to resource-aggregate: %w", err)
 	}
@@ -90,9 +91,9 @@ func newResourceAggregateClient(config GrpcServerConfig, resourceSubscriber even
 	return raClient, closeRaConn, nil
 }
 
-func NewRequestHandlerFromConfig(ctx context.Context, config Config, logger log.Logger, goroutinePoolGo func(func()) error) (*RequestHandler, error) {
+func NewRequestHandlerFromConfig(ctx context.Context, config Config, logger log.Logger, tracerProvider trace.TracerProvider, goroutinePoolGo func(func()) error) (*RequestHandler, error) {
 	var closeFunc fn.FuncList
-	idClient, closeIdClient, err := newIdentityStoreClient(config.Clients.IdentityStore, logger)
+	idClient, closeIdClient, err := newIdentityStoreClient(config.Clients.IdentityStore, logger, tracerProvider)
 	if err != nil {
 		closeFunc.Execute()
 		return nil, fmt.Errorf("cannot create identity-store client: %w", err)
@@ -111,7 +112,7 @@ func NewRequestHandlerFromConfig(ctx context.Context, config Config, logger log.
 		})
 	closeFunc.AddFunc(ownerCache.Close)
 
-	resourceDirectoryClient, closeResourceDirectoryClient, err := newResourceDirectoryClient(config.Clients.ResourceDirectory, logger)
+	resourceDirectoryClient, closeResourceDirectoryClient, err := newResourceDirectoryClient(config.Clients.ResourceDirectory, logger, tracerProvider)
 	if err != nil {
 		closeFunc.Execute()
 		return nil, fmt.Errorf("cannot create resource-directory client: %w", err)
@@ -131,7 +132,7 @@ func NewRequestHandlerFromConfig(ctx context.Context, config Config, logger log.
 	closeFunc.AddFunc(resourceSubscriber.Close)
 
 	resourceAggregateClient, closeResourceAggregateClient, err := newResourceAggregateClient(config.Clients.ResourceAggregate, resourceSubscriber,
-		logger)
+		logger, tracerProvider)
 	if err != nil {
 		closeFunc.Execute()
 		return nil, fmt.Errorf("cannot create resource-aggregate client: %w", err)

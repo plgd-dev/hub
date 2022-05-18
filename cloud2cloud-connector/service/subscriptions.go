@@ -18,6 +18,7 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/security/oauth2"
 	raService "github.com/plgd-dev/hub/v2/resource-aggregate/service"
 	"github.com/plgd-dev/kit/v2/codec/json"
+	"go.opentelemetry.io/otel/trace"
 )
 
 const AuthorizationHeader string = "Authorization"
@@ -51,6 +52,7 @@ type SubscriptionManager struct {
 	devicesSubscription *DevicesSubscription
 	provider            *oauth2.PlgdProvider
 	triggerTask         OnTaskTrigger
+	tracerProvider      trace.TracerProvider
 }
 
 func NewSubscriptionManager(
@@ -61,6 +63,7 @@ func NewSubscriptionManager(
 	devicesSubscription *DevicesSubscription,
 	provider *oauth2.PlgdProvider,
 	triggerTask OnTaskTrigger,
+	tracerProvider trace.TracerProvider,
 ) *SubscriptionManager {
 	cache := cache.NewCache()
 	add := periodic.New(devicesSubscription.ctx.Done(), time.Minute*5)
@@ -78,11 +81,12 @@ func NewSubscriptionManager(
 		cache:               cache,
 		provider:            provider,
 		triggerTask:         triggerTask,
+		tracerProvider:      tracerProvider,
 	}
 }
 
-func subscribe(ctx context.Context, href, correlationID string, reqBody events.SubscriptionRequest, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud) (resp events.SubscriptionResponse, err error) {
-	client := linkedCloud.GetHTTPClient()
+func subscribe(ctx context.Context, tracerProvider trace.TracerProvider, href, correlationID string, reqBody events.SubscriptionRequest, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud) (resp events.SubscriptionResponse, err error) {
+	client := linkedCloud.GetHTTPClient(tracerProvider)
 	defer client.CloseIdleConnections()
 
 	r, w := io.Pipe()
@@ -128,8 +132,8 @@ func subscribe(ctx context.Context, href, correlationID string, reqBody events.S
 	return resp, nil
 }
 
-func cancelSubscription(ctx context.Context, href string, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud) error {
-	client := linkedCloud.GetHTTPClient()
+func cancelSubscription(ctx context.Context, tracerProvider trace.TracerProvider, href string, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud) error {
+	client := linkedCloud.GetHTTPClient(tracerProvider)
 	defer client.CloseIdleConnections()
 	req, err := http.NewRequestWithContext(ctx, http.MethodDelete, linkedCloud.Endpoint.URL+kitHttp.CanonicalHref(href), nil)
 	if err != nil {
@@ -198,7 +202,7 @@ func (s *SubscriptionManager) HandleEvent(ctx context.Context, header events.Eve
 		return http.StatusBadRequest, fmt.Errorf("invalid event signature %v(%+v != %+v, %s): not match", header.ID, subData.subscription, header, body)
 	}
 
-	subData.linkedAccount, err = refreshTokens(ctx, subData.linkedAccount, subData.linkedCloud, s.provider, s.store)
+	subData.linkedAccount, err = refreshTokens(ctx, s.tracerProvider, subData.linkedAccount, subData.linkedCloud, s.provider, s.store)
 	if err != nil {
 		return http.StatusInternalServerError, fmt.Errorf("cannot refresh token: %w", err)
 	}
@@ -266,7 +270,7 @@ func (s *SubscriptionManager) Run(ctx context.Context, interval time.Duration) {
 			s.triggerTask(task)
 		}
 		for _, data := range s.store.DumpDevices() {
-			err := s.devicesSubscription.Add(data.subscription.DeviceID, data.linkedAccount, data.linkedCloud)
+			err := s.devicesSubscription.Add(ctx, data.subscription.DeviceID, data.linkedAccount, data.linkedCloud)
 			if err != nil {
 				log.Errorf("cannot add device %v from subscriptions to devicesSubscription: %w", data.subscription.DeviceID, err)
 			}

@@ -15,6 +15,7 @@ import (
 	grpcClient "github.com/plgd-dev/hub/v2/pkg/net/grpc/client"
 	kitNetHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
 	"github.com/plgd-dev/hub/v2/pkg/net/listener"
+	otelClient "github.com/plgd-dev/hub/v2/pkg/opentelemetry/collector/client"
 	cmClient "github.com/plgd-dev/hub/v2/pkg/security/certManager/client"
 	"github.com/plgd-dev/hub/v2/pkg/security/jwt/validator"
 	"github.com/plgd-dev/hub/v2/pkg/sync/task/queue"
@@ -22,7 +23,10 @@ import (
 	natsClient "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/client"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/subscriber"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/utils"
+	"go.opentelemetry.io/otel/trace"
 )
+
+const serviceName = "cloud2cloud-gateway"
 
 //Server handle HTTP request
 type Server struct {
@@ -132,9 +136,9 @@ var authRules = map[string][]kitNetHttp.AuthArgs{
 	},
 }
 
-func newGrpcGatewayClient(config GrpcGatewayConfig, logger log.Logger) (pbGRPC.GrpcGatewayClient, func(), error) {
+func newGrpcGatewayClient(config GrpcGatewayConfig, logger log.Logger, tracerProvider trace.TracerProvider) (pbGRPC.GrpcGatewayClient, func(), error) {
 	var fl fn.FuncList
-	conn, err := grpcClient.New(config.Connection, logger)
+	conn, err := grpcClient.New(config.Connection, logger, tracerProvider)
 	if err != nil {
 		return nil, nil, fmt.Errorf("cannot connect to grpc-gateway: %w", err)
 	}
@@ -176,9 +180,9 @@ func newResourceSubscriber(config Config, logger log.Logger) (*subscriber.Subscr
 	return resourceSubscriber, fl.ToFunction(), nil
 }
 
-func newResourceAggregateClient(config ResourceAggregateConfig, subscriber *subscriber.Subscriber, logger log.Logger) (*raClient.Client, func(), error) {
+func newResourceAggregateClient(config ResourceAggregateConfig, subscriber *subscriber.Subscriber, logger log.Logger, tracerProvider trace.TracerProvider) (*raClient.Client, func(), error) {
 	var fl fn.FuncList
-	conn, err := grpcClient.New(config.Connection, logger)
+	conn, err := grpcClient.New(config.Connection, logger, tracerProvider)
 	if err != nil {
 		return nil, nil, fmt.Errorf("cannot connect to resource aggregate: %w", err)
 	}
@@ -191,7 +195,7 @@ func newResourceAggregateClient(config ResourceAggregateConfig, subscriber *subs
 	return client, fl.ToFunction(), nil
 }
 
-func newSubscriptionManager(ctx context.Context, cfg Config, gwClient pbGRPC.GrpcGatewayClient, emitEvent emitEventFunc, logger log.Logger) (*SubscriptionManager, func(), error) {
+func newSubscriptionManager(ctx context.Context, cfg Config, gwClient pbGRPC.GrpcGatewayClient, emitEvent emitEventFunc, logger log.Logger, tracerProvider trace.TracerProvider) (*SubscriptionManager, func(), error) {
 	var fl fn.FuncList
 	certManager, err := cmClient.New(cfg.Clients.Storage.MongoDB.TLS, logger)
 	if err != nil {
@@ -199,7 +203,7 @@ func newSubscriptionManager(ctx context.Context, cfg Config, gwClient pbGRPC.Grp
 	}
 	fl.AddFunc(certManager.Close)
 
-	store, err := mongodb.NewStore(ctx, cfg.Clients.Storage.MongoDB, certManager.GetTLSConfig())
+	store, err := mongodb.NewStore(ctx, cfg.Clients.Storage.MongoDB, certManager.GetTLSConfig(), tracerProvider)
 	if err != nil {
 		fl.Execute()
 		return nil, nil, fmt.Errorf("cannot create mongodb subscription store: %w", err)
@@ -221,6 +225,13 @@ func newSubscriptionManager(ctx context.Context, cfg Config, gwClient pbGRPC.Grp
 
 // New parses configuration and creates new Server with provided store and bus
 func New(ctx context.Context, config Config, logger log.Logger) (*Server, error) {
+	otelClient, err := otelClient.New(ctx, config.Clients.OpenTelemetryCollector.Config, serviceName, logger)
+	if err != nil {
+		return nil, fmt.Errorf("cannot create open telemetry collector client: %w", err)
+	}
+
+	tracerProvider := otelClient.GetTracerProvider()
+
 	listener, err := listener.New(config.APIs.HTTP.Connection, logger)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create http server: %w", err)
@@ -231,7 +242,7 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Server, error)
 		}
 	}
 
-	validator, err := validator.New(ctx, config.APIs.HTTP.Authorization, logger)
+	validator, err := validator.New(ctx, config.APIs.HTTP.Authorization, logger, tracerProvider)
 	if err != nil {
 		closeListener()
 		return nil, fmt.Errorf("cannot create validator: %w", err)
@@ -239,7 +250,7 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Server, error)
 	listener.AddCloseFunc(validator.Close)
 	auth := kitNetHttp.NewInterceptorWithValidator(validator, authRules)
 
-	gwClient, closeGwClient, err := newGrpcGatewayClient(config.Clients.GrpcGateway, logger)
+	gwClient, closeGwClient, err := newGrpcGatewayClient(config.Clients.GrpcGateway, logger, tracerProvider)
 	if err != nil {
 		closeListener()
 		return nil, fmt.Errorf("cannot create grpc client: %w", err)
@@ -253,7 +264,7 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Server, error)
 	}
 	listener.AddCloseFunc(closeSubscriberFn)
 
-	raClient, closeRaClient, err := newResourceAggregateClient(config.Clients.ResourceAggregate, subscriber, logger)
+	raClient, closeRaClient, err := newResourceAggregateClient(config.Clients.ResourceAggregate, subscriber, logger, tracerProvider)
 	if err != nil {
 		closeListener()
 		return nil, fmt.Errorf("cannot create resource-aggregate client: %w", err)
@@ -268,7 +279,7 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Server, error)
 	listener.AddCloseFunc(closeEmitEventFn)
 
 	ctx, cancelSubMgrFunc := context.WithCancel(context.Background())
-	subMgr, closeSubMgrFn, err := newSubscriptionManager(ctx, config, gwClient, emitEvent, logger)
+	subMgr, closeSubMgrFn, err := newSubscriptionManager(ctx, config, gwClient, emitEvent, logger, tracerProvider)
 	if err != nil {
 		cancelSubMgrFunc()
 		closeListener()
@@ -285,8 +296,12 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Server, error)
 
 	requestHandler := NewRequestHandler(gwClient, raClient, subMgr, emitEvent)
 
+	httpServer := http.Server{
+		Handler: kitNetHttp.OpenTelemetryNewHandler(NewHTTP(requestHandler, auth), serviceName, tracerProvider),
+	}
+
 	server := Server{
-		server:           NewHTTP(requestHandler, auth),
+		server:           &httpServer,
 		listener:         listener,
 		cancelSubMgrFunc: cancelSubMgrFunc,
 		subMgrDoneWg:     &subMgrWg,

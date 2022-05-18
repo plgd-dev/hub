@@ -155,12 +155,20 @@ func GetEventID(ev *pb.Event) string {
 	return ""
 }
 
+func CleanUpDeviceRegistered(deviceRegistered *pb.Event_DeviceRegistered) {
+	deviceRegistered.OpenTelemetryCarrier = nil
+}
+
+func CleanUpDeviceUnregistered(deviceUnregistered *pb.Event_DeviceUnregistered) {
+	deviceUnregistered.OpenTelemetryCarrier = nil
+}
+
 var cleanupEventFn = map[string]func(ev *pb.Event){
 	getTypeName(&pb.Event_DeviceRegistered_{}): func(ev *pb.Event) {
-		// nothing to do
+		CleanUpDeviceRegistered(ev.GetDeviceRegistered())
 	},
 	getTypeName(&pb.Event_DeviceUnregistered_{}): func(ev *pb.Event) {
-		// nothing to do
+		CleanUpDeviceUnregistered(ev.GetDeviceUnregistered())
 	},
 	getTypeName(&pb.Event_ResourcePublished{}): func(ev *pb.Event) {
 		CleanUpResourceLinksPublished(ev.GetResourcePublished(), false)

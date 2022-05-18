@@ -6,6 +6,7 @@ import (
 
 	"github.com/plgd-dev/hub/v2/pkg/config"
 	"github.com/plgd-dev/hub/v2/pkg/log"
+	"github.com/plgd-dev/hub/v2/pkg/net/http"
 	"github.com/plgd-dev/hub/v2/pkg/net/listener"
 )
 
@@ -46,9 +47,9 @@ func (c *Client) Validate() error {
 	return nil
 }
 
-type ClientsConfig []*Client
+type OAuthClientsConfig []*Client
 
-func (c ClientsConfig) Find(id string) *Client {
+func (c OAuthClientsConfig) Find(id string) *Client {
 	for _, client := range c {
 		if client.ID == id {
 			return client
@@ -57,10 +58,22 @@ func (c ClientsConfig) Find(id string) *Client {
 	return nil
 }
 
+type ClientsConfig struct {
+	OpenTelemetryCollector http.OpenTelemetryCollectorConfig `yaml:"openTelemetryCollector" json:"openTelemetryCollector"`
+}
+
+func (c *ClientsConfig) Validate() error {
+	if err := c.OpenTelemetryCollector.Validate(); err != nil {
+		return fmt.Errorf("openTelemetryCollector.%w", err)
+	}
+	return nil
+}
+
 // Config represents application configuration
 type Config struct {
 	Log         log.Config        `yaml:"log" json:"log"`
 	APIs        APIsConfig        `yaml:"apis" json:"apis"`
+	Clients     ClientsConfig     `yaml:"clients" json:"clients"`
 	OAuthSigner OAuthSignerConfig `yaml:"oauthSigner" json:"oauthSigner"`
 }
 
@@ -70,6 +83,9 @@ func (c *Config) Validate() error {
 	}
 	if err := c.APIs.Validate(); err != nil {
 		return fmt.Errorf("apis.%w", err)
+	}
+	if err := c.Clients.Validate(); err != nil {
+		return fmt.Errorf("clients.%w", err)
 	}
 	if err := c.OAuthSigner.Validate(); err != nil {
 		return fmt.Errorf("oauthSigner.%w", err)
@@ -90,10 +106,10 @@ func (c *APIsConfig) Validate() error {
 }
 
 type OAuthSignerConfig struct {
-	IDTokenKeyFile     string        `yaml:"idTokenKeyFile" json:"idTokenKeyFile"`
-	AccessTokenKeyFile string        `yaml:"accessTokenKeyFile" json:"accessTokenKeyFile"`
-	Domain             string        `yaml:"domain" json:"domain"`
-	Clients            ClientsConfig `yaml:"clients" json:"clients"`
+	IDTokenKeyFile     string             `yaml:"idTokenKeyFile" json:"idTokenKeyFile"`
+	AccessTokenKeyFile string             `yaml:"accessTokenKeyFile" json:"accessTokenKeyFile"`
+	Domain             string             `yaml:"domain" json:"domain"`
+	Clients            OAuthClientsConfig `yaml:"clients" json:"clients"`
 }
 
 func (c *OAuthSignerConfig) Validate() error {

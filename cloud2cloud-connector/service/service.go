@@ -19,6 +19,7 @@ import (
 	grpcClient "github.com/plgd-dev/hub/v2/pkg/net/grpc/client"
 	kitNetHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
 	"github.com/plgd-dev/hub/v2/pkg/net/listener"
+	otelClient "github.com/plgd-dev/hub/v2/pkg/opentelemetry/collector/client"
 	cmClient "github.com/plgd-dev/hub/v2/pkg/security/certManager/client"
 	"github.com/plgd-dev/hub/v2/pkg/security/jwt/validator"
 	"github.com/plgd-dev/hub/v2/pkg/security/oauth2"
@@ -26,6 +27,7 @@ import (
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/subscriber"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/utils"
 	raService "github.com/plgd-dev/hub/v2/resource-aggregate/service"
+	"go.opentelemetry.io/otel/trace"
 )
 
 // Server handles HTTP request
@@ -44,10 +46,12 @@ func toValidator(c oauth2.Config) validator.Config {
 	}
 }
 
-func newAuthInterceptor(ctx context.Context, config validator.Config, logger log.Logger) (kitNetHttp.Interceptor, func(), error) {
+const serviceName = "cloud2cloud-connector"
+
+func newAuthInterceptor(ctx context.Context, config validator.Config, logger log.Logger, tracerProvider trace.TracerProvider) (kitNetHttp.Interceptor, func(), error) {
 	var fl fn.FuncList
 
-	validator, err := validator.New(ctx, config, logger)
+	validator, err := validator.New(ctx, config, logger, tracerProvider)
 	if err != nil {
 		return nil, nil, fmt.Errorf("cannot create validator: %w", err)
 	}
@@ -95,8 +99,8 @@ func newAuthInterceptor(ctx context.Context, config validator.Config, logger log
 	return auth, fl.ToFunction(), nil
 }
 
-func newIdentityStoreClient(config IdentityStoreConfig, logger log.Logger) (pbIS.IdentityStoreClient, func(), error) {
-	isConn, err := grpcClient.New(config.Connection, logger)
+func newIdentityStoreClient(config IdentityStoreConfig, logger log.Logger, tracerProvider trace.TracerProvider) (pbIS.IdentityStoreClient, func(), error) {
+	isConn, err := grpcClient.New(config.Connection, logger, tracerProvider)
 	if err != nil {
 		return nil, nil, fmt.Errorf("cannot create connection to identity-store: %w", err)
 	}
@@ -127,7 +131,7 @@ func newSubscriber(config natsClient.Config, logger log.Logger) (*subscriber.Sub
 	return sub, fl.ToFunction(), nil
 }
 
-func newStore(ctx context.Context, config pkgMongo.Config, logger log.Logger) (*Store, func(), error) {
+func newStore(ctx context.Context, config pkgMongo.Config, logger log.Logger, tracerProvider trace.TracerProvider) (*Store, func(), error) {
 	var fl fn.FuncList
 	certManager, err := cmClient.New(config.TLS, logger)
 	if err != nil {
@@ -135,7 +139,7 @@ func newStore(ctx context.Context, config pkgMongo.Config, logger log.Logger) (*
 	}
 	fl.AddFunc(certManager.Close)
 
-	db, err := mongodb.NewStore(ctx, config, certManager.GetTLSConfig())
+	db, err := mongodb.NewStore(ctx, config, certManager.GetTLSConfig(), tracerProvider)
 	if err != nil {
 		fl.Execute()
 		return nil, nil, fmt.Errorf("cannot create mongodb subscription store: %w", err)
@@ -155,9 +159,9 @@ func newStore(ctx context.Context, config pkgMongo.Config, logger log.Logger) (*
 	return store, fl.ToFunction(), nil
 }
 
-func newGrpcGatewayClient(config GrpcGatewayConfig, logger log.Logger) (pbGRPC.GrpcGatewayClient, func(), error) {
+func newGrpcGatewayClient(config GrpcGatewayConfig, logger log.Logger, tracerProvider trace.TracerProvider) (pbGRPC.GrpcGatewayClient, func(), error) {
 	var fl fn.FuncList
-	grpcConn, err := grpcClient.New(config.Connection, logger)
+	grpcConn, err := grpcClient.New(config.Connection, logger, tracerProvider)
 	if err != nil {
 		return nil, nil, fmt.Errorf("cannot connect to resource aggregate: %w", err)
 	}
@@ -170,9 +174,9 @@ func newGrpcGatewayClient(config GrpcGatewayConfig, logger log.Logger) (pbGRPC.G
 	return grpcClient, fl.ToFunction(), nil
 }
 
-func newResourceAggregateClient(config ResourceAggregateConfig, logger log.Logger) (raService.ResourceAggregateClient, func(), error) {
+func newResourceAggregateClient(config ResourceAggregateConfig, logger log.Logger, tracerProvider trace.TracerProvider) (raService.ResourceAggregateClient, func(), error) {
 	var fl fn.FuncList
-	raConn, err := grpcClient.New(config.Connection, logger)
+	raConn, err := grpcClient.New(config.Connection, logger, tracerProvider)
 	if err != nil {
 		return nil, nil, fmt.Errorf("cannot connect to resource aggregate: %w", err)
 	}
@@ -185,10 +189,10 @@ func newResourceAggregateClient(config ResourceAggregateConfig, logger log.Logge
 	return raClient, fl.ToFunction(), nil
 }
 
-func newDevicesSubscription(ctx context.Context, config Config, raClient raService.ResourceAggregateClient, logger log.Logger) (*DevicesSubscription, func(), error) {
+func newDevicesSubscription(ctx context.Context, config Config, raClient raService.ResourceAggregateClient, logger log.Logger, tracerProvider trace.TracerProvider) (*DevicesSubscription, func(), error) {
 	var fl fn.FuncList
 
-	grpcClient, closeGrpcClient, err := newGrpcGatewayClient(config.Clients.GrpcGateway, logger)
+	grpcClient, closeGrpcClient, err := newGrpcGatewayClient(config.Clients.GrpcGateway, logger, tracerProvider)
 	if err != nil {
 		return nil, nil, fmt.Errorf("cannot create to grpc-gateway client: %w", err)
 	}
@@ -201,16 +205,25 @@ func newDevicesSubscription(ctx context.Context, config Config, raClient raServi
 	}
 	fl.AddFunc(closeSub)
 
-	devicesSubscription := NewDevicesSubscription(ctx, grpcClient, raClient, sub, config.Clients.Subscription.HTTP.ReconnectInterval)
+	devicesSubscription := NewDevicesSubscription(ctx, tracerProvider, grpcClient, raClient, sub, config.Clients.Subscription.HTTP.ReconnectInterval)
 	return devicesSubscription, fl.ToFunction(), nil
 }
 
 // New parses configuration and creates new Server with provided store and bus
 func New(ctx context.Context, config Config, logger log.Logger) (*Server, error) {
+	otelClient, err := otelClient.New(ctx, config.Clients.OpenTelemetryCollector.Config, serviceName, logger)
+	if err != nil {
+		return nil, fmt.Errorf("cannot create open telemetry collector client: %w", err)
+	}
+
+	tracerProvider := otelClient.GetTracerProvider()
+
 	listener, err := listener.New(config.APIs.HTTP.Connection, logger)
 	if err != nil {
+		otelClient.Close()
 		return nil, fmt.Errorf("cannot create http server: %w", err)
 	}
+	listener.AddCloseFunc(otelClient.Close)
 	var cleanUp fn.FuncList
 	cleanUp.AddFunc(func() {
 		if err := listener.Close(); err != nil {
@@ -218,7 +231,7 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Server, error)
 		}
 	})
 
-	raClient, closeRaClient, err := newResourceAggregateClient(config.Clients.ResourceAggregate, logger)
+	raClient, closeRaClient, err := newResourceAggregateClient(config.Clients.ResourceAggregate, logger, tracerProvider)
 	if err != nil {
 		cleanUp.Execute()
 		return nil, fmt.Errorf("cannot create to resource aggregate client: %w", err)
@@ -227,31 +240,31 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Server, error)
 
 	ctx, cancel := context.WithCancel(ctx)
 	cleanUp.AddFunc(cancel)
-	devicesSubscription, closeDevSub, err := newDevicesSubscription(ctx, config, raClient, logger)
+	devicesSubscription, closeDevSub, err := newDevicesSubscription(ctx, config, raClient, logger, tracerProvider)
 	if err != nil {
 		cleanUp.Execute()
 		return nil, fmt.Errorf("cannot create devices subscription subscriber: %w", err)
 	}
 	listener.AddCloseFunc(closeDevSub)
 
-	taskProcessor := NewTaskProcessor(raClient, config.TaskProcessor.MaxParallel, config.TaskProcessor.CacheSize,
+	taskProcessor := NewTaskProcessor(raClient, tracerProvider, config.TaskProcessor.MaxParallel, config.TaskProcessor.CacheSize,
 		config.TaskProcessor.Timeout, config.TaskProcessor.Delay)
 
-	isClient, closeIsClient, err := newIdentityStoreClient(config.Clients.IdentityStore, logger)
+	isClient, closeIsClient, err := newIdentityStoreClient(config.Clients.IdentityStore, logger, tracerProvider)
 	if err != nil {
 		cleanUp.Execute()
 		return nil, fmt.Errorf("cannot create identity-store client: %w", err)
 	}
 	listener.AddCloseFunc(closeIsClient)
 
-	store, closeStore, err := newStore(ctx, config.Clients.Storage.MongoDB, logger)
+	store, closeStore, err := newStore(ctx, config.Clients.Storage.MongoDB, logger, tracerProvider)
 	if err != nil {
 		cleanUp.Execute()
 		return nil, fmt.Errorf("cannot create store: %w", err)
 	}
 	listener.AddCloseFunc(closeStore)
 
-	provider, err := oauth2.NewPlgdProvider(ctx, config.APIs.HTTP.Authorization.Config, logger, "", "")
+	provider, err := oauth2.NewPlgdProvider(ctx, config.APIs.HTTP.Authorization.Config, logger, tracerProvider, "", "")
 	if err != nil {
 		cleanUp.Execute()
 		return nil, fmt.Errorf("cannot create device provider: %w", err)
@@ -259,21 +272,25 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Server, error)
 	listener.AddCloseFunc(provider.Close)
 
 	subMgr := NewSubscriptionManager(config.APIs.HTTP.EventsURL, isClient, raClient, store, devicesSubscription,
-		provider, taskProcessor.Trigger)
+		provider, taskProcessor.Trigger, tracerProvider)
 
-	requestHandler := NewRequestHandler(config.APIs.HTTP.Authorization.OwnerClaim, provider, subMgr, store, taskProcessor.Trigger)
+	requestHandler := NewRequestHandler(config.APIs.HTTP.Authorization.OwnerClaim, provider, subMgr, store, taskProcessor.Trigger, tracerProvider)
 
-	auth, closeAuth, err := newAuthInterceptor(ctx, toValidator(config.APIs.HTTP.Authorization.Config), logger)
+	auth, closeAuth, err := newAuthInterceptor(ctx, toValidator(config.APIs.HTTP.Authorization.Config), logger, tracerProvider)
 	if err != nil {
 		cleanUp.Execute()
 		return nil, fmt.Errorf("cannot create auth interceptor: %w", err)
 	}
 	listener.AddCloseFunc(closeAuth)
 
-	server, err := NewHTTP(requestHandler, auth)
+	httpHandler, err := NewHTTP(requestHandler, auth)
 	if err != nil {
 		cleanUp.Execute()
 		return nil, fmt.Errorf("cannot create http server interceptor: %w", err)
+	}
+
+	httpServer := http.Server{
+		Handler: kitNetHttp.OpenTelemetryNewHandler(httpHandler, serviceName, tracerProvider),
 	}
 
 	var wg sync.WaitGroup
@@ -286,6 +303,7 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Server, error)
 			subscriptionManager: subMgr,
 			provider:            provider,
 			triggerTask:         taskProcessor.Trigger,
+			tracerProvider:      tracerProvider,
 		}
 		runDevicePulling(ctx, pdh, config.APIs.HTTP.PullDevices.Interval, &wg)
 	}
@@ -293,7 +311,7 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Server, error)
 	runSubscriptionManager(ctx, subMgr, config.Clients.Subscription.HTTP.ResubscribeInterval, &wg)
 
 	return &Server{
-		server:   server,
+		server:   &httpServer,
 		listener: listener,
 		doneWg:   &wg,
 		cancel:   cancel,

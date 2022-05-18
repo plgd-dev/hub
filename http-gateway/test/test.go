@@ -11,6 +11,7 @@ import (
 	"github.com/plgd-dev/hub/v2/http-gateway/service"
 	"github.com/plgd-dev/hub/v2/http-gateway/uri"
 	"github.com/plgd-dev/hub/v2/pkg/log"
+	"github.com/plgd-dev/hub/v2/pkg/net/http"
 	"github.com/plgd-dev/hub/v2/test/config"
 	"github.com/plgd-dev/kit/v2/codec/cbor"
 	"github.com/stretchr/testify/require"
@@ -49,6 +50,9 @@ func MakeConfig(t *testing.T, enableUI bool) service.Config {
 	cfg.APIs.HTTP.WebSocket.PingFrequency = 10 * time.Second
 
 	cfg.Clients.GrpcGateway.Connection = config.MakeGrpcClientConfig(config.GRPC_HOST)
+	cfg.Clients.OpenTelemetryCollector = http.OpenTelemetryCollectorConfig{
+		Config: config.MakeOpenTelemetryCollectorClient(),
+	}
 
 	if enableUI {
 		cfg.UI.Enabled = true

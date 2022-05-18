@@ -31,6 +31,7 @@ import (
 	"github.com/plgd-dev/hub/v2/test/service"
 	"github.com/plgd-dev/kit/v2/codec/json"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )
@@ -144,7 +145,7 @@ func NewMongoStore(t *testing.T) (*mongodb.Store, func()) {
 	require.NoError(t, err)
 
 	ctx := context.Background()
-	store, err := mongodb.NewStore(ctx, cfg.Clients.Storage.MongoDB, certManager.GetTLSConfig())
+	store, err := mongodb.NewStore(ctx, cfg.Clients.Storage.MongoDB, certManager.GetTLSConfig(), trace.NewNoopTracerProvider())
 	require.NoError(t, err)
 
 	cleanUp := func() {

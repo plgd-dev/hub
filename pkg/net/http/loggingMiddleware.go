@@ -10,6 +10,7 @@ import (
 
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/pkg/security/jwt"
+	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap/zapcore"
 )
 
@@ -194,6 +195,23 @@ type response struct {
 	Code int `json:"code,omitempty"`
 }
 
+func createLogRequest(r *http.Request) *request {
+	bearer := r.Header.Get("Authorization")
+	req := request{
+		Method: r.Method,
+		Href:   r.RequestURI,
+	}
+	token := strings.SplitN(bearer, " ", 2)
+	if len(token) == 2 && strings.ToLower(token[0]) == "bearer" {
+		if claims, err := jwt.ParseToken(token[1]); err == nil {
+			req.JWT = &jwtMember{
+				Sub: claims.Subject(),
+			}
+		}
+	}
+	return &req
+}
+
 func CreateLoggingMiddleware(opts ...LogOpt) func(next http.Handler) http.Handler {
 	cfg := NewLogOptions()
 	for _, o := range opts {
@@ -202,35 +220,27 @@ func CreateLoggingMiddleware(opts ...LogOpt) func(next http.Handler) http.Handle
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			start := time.Now()
-			bearer := r.Header.Get("Authorization")
 			sw := statusWriter{ResponseWriter: w}
-
 			next.ServeHTTP(&sw, r)
 			duration := time.Since(start)
 			logger := cfg.logger
 			if !WantToLog(sw.status, logger) {
 				return
 			}
-			req := &request{
-				Method: r.Method,
-				Href:   r.RequestURI,
-			}
-			token := strings.SplitN(bearer, " ", 2)
-			if len(token) == 2 && strings.ToLower(token[0]) == "bearer" {
-				if claims, err := jwt.ParseToken(token[1]); err == nil {
-					req.JWT = &jwtMember{
-						Sub: claims.Subject(),
-					}
-				}
-			}
+			req := createLogRequest(r)
 			resp := &response{
 				Code: sw.status,
+			}
+			spanCtx := trace.SpanContextFromContext(r.Context())
+			if spanCtx.HasTraceID() {
+				logger = logger.With(log.TraceIDKey, spanCtx.TraceID().String())
 			}
 
 			logger = logger.With(logDurationKey, log.DurationToMilliseconds(duration), log.RequestKey, req, log.ResponseKey, resp, logStartTimeKey, start, log.ProtocolKey, "HTTP")
 			if deadline, ok := r.Context().Deadline(); ok {
 				logger = logger.With(log.DeadlineKey, deadline)
 			}
+
 			doLog := DefaultCodeToLevel(sw.status, logger)
 			doLog("finished unary call with status code ", sw.status)
 		})

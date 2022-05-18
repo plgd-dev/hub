@@ -15,6 +15,8 @@ import (
 
 	"github.com/jtacoma/uritemplates"
 	"github.com/plgd-dev/hub/v2/pkg/log"
+	kitNetHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
+	"github.com/plgd-dev/hub/v2/pkg/security/jwt"
 	"github.com/plgd-dev/hub/v2/test/config"
 	"github.com/plgd-dev/hub/v2/test/oauth-server/service"
 	"github.com/plgd-dev/hub/v2/test/oauth-server/uri"
@@ -48,11 +50,14 @@ func MakeConfig(t *testing.T) service.Config {
 
 	cfg.APIs.HTTP = config.MakeListenerConfig(config.OAUTH_SERVER_HOST)
 	cfg.APIs.HTTP.TLS.ClientCertificateRequired = false
+	cfg.Clients.OpenTelemetryCollector = kitNetHttp.OpenTelemetryCollectorConfig{
+		Config: config.MakeOpenTelemetryCollectorClient(),
+	}
 
 	cfg.OAuthSigner.IDTokenKeyFile = os.Getenv("TEST_OAUTH_SERVER_ID_TOKEN_PRIVATE_KEY")
 	cfg.OAuthSigner.AccessTokenKeyFile = os.Getenv("TEST_OAUTH_SERVER_ACCESS_TOKEN_PRIVATE_KEY")
 	cfg.OAuthSigner.Domain = config.OAUTH_SERVER_HOST
-	cfg.OAuthSigner.Clients = service.ClientsConfig{
+	cfg.OAuthSigner.Clients = service.OAuthClientsConfig{
 		{
 			ID:                              config.OAUTH_MANAGER_CLIENT_ID,
 			AuthorizationCodeLifetime:       time.Minute * 10,
@@ -220,6 +225,18 @@ func GetAccessToken(t *testing.T, authServerHost, clientID string) string {
 
 func GetDefaultAccessToken(t *testing.T) string {
 	return GetAccessToken(t, config.OAUTH_SERVER_HOST, ClientTest)
+}
+
+func GetJWTValidator(jwkURL string) *jwt.Validator {
+	t := http.DefaultTransport.(*http.Transport).Clone()
+	t.TLSClientConfig = &tls.Config{
+		InsecureSkipVerify: true,
+	}
+	client := http.Client{
+		Transport: t,
+		Timeout:   time.Second * 10,
+	}
+	return jwt.NewValidator(jwt.NewKeyCache(jwkURL, &client))
 }
 
 func GetAuthorizationCode(t *testing.T, authServerHost, clientID, deviceID, scopes string) string {

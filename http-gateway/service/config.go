@@ -7,6 +7,7 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/config"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/pkg/net/grpc/client"
+	"github.com/plgd-dev/hub/v2/pkg/net/http"
 	"github.com/plgd-dev/hub/v2/pkg/net/listener"
 	"github.com/plgd-dev/hub/v2/pkg/security/jwt/validator"
 )
@@ -78,7 +79,8 @@ func (c *HTTPConfig) Validate() error {
 }
 
 type ClientsConfig struct {
-	GrpcGateway GrpcServerConfig `yaml:"grpcGateway" json:"grpcGateway"`
+	GrpcGateway            GrpcServerConfig                  `yaml:"grpcGateway" json:"grpcGateway"`
+	OpenTelemetryCollector http.OpenTelemetryCollectorConfig `yaml:"openTelemetryCollector" json:"openTelemetryCollector"`
 }
 
 type GrpcServerConfig struct {
@@ -93,9 +95,11 @@ func (c *GrpcServerConfig) Validate() error {
 }
 
 func (c *ClientsConfig) Validate() error {
-	err := c.GrpcGateway.Validate()
-	if err != nil {
+	if err := c.GrpcGateway.Validate(); err != nil {
 		return fmt.Errorf("grpcGateway.%w", err)
+	}
+	if err := c.OpenTelemetryCollector.Validate(); err != nil {
+		return fmt.Errorf("openTelemetryCollector.%w", err)
 	}
 
 	return nil

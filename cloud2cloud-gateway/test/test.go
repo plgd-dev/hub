@@ -12,6 +12,7 @@ import (
 	"github.com/plgd-dev/hub/v2/cloud2cloud-gateway/service"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/pkg/mongodb"
+	"github.com/plgd-dev/hub/v2/pkg/net/http"
 	"github.com/plgd-dev/hub/v2/pkg/security/certManager/server"
 	pkgStrings "github.com/plgd-dev/hub/v2/pkg/strings"
 	"github.com/plgd-dev/hub/v2/test/config"
@@ -49,6 +50,10 @@ func MakeConfig(t *testing.T) service.Config {
 	cfg.TaskQueue.GoPoolSize = 1600
 	cfg.TaskQueue.Size = 2 * 1024 * 1024
 	cfg.TaskQueue.MaxIdleTime = time.Minute * 10
+
+	cfg.Clients.OpenTelemetryCollector = http.OpenTelemetryCollectorConfig{
+		Config: config.MakeOpenTelemetryCollectorClient(),
+	}
 
 	err := cfg.Validate()
 	require.NoError(t, err)

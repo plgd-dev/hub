@@ -94,8 +94,8 @@ func NewRequestHandler(ctx context.Context, config *Config, idTokenKey *rsa.Priv
 	}, nil
 }
 
-// NewHTTP returns HTTP server
-func NewHTTP(requestHandler *RequestHandler) *http.Server {
+// NewHTTP returns HTTP handler
+func NewHTTP(requestHandler *RequestHandler) http.Handler {
 	r := router.NewRouter()
 	r.Use(kitHttp.CreateLoggingMiddleware())
 	r.StrictSlash(true)
@@ -111,5 +111,5 @@ func NewHTTP(requestHandler *RequestHandler) *http.Server {
 	r.HandleFunc(uri.UserInfo, requestHandler.getUserInfo).Methods(http.MethodGet)
 	r.HandleFunc(uri.LogOut, requestHandler.logOut)
 
-	return &http.Server{Handler: r}
+	return r
 }

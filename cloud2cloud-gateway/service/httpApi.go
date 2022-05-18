@@ -161,8 +161,8 @@ func resourceMatcher(r *http.Request, rm *router.RouteMatch) bool {
 	return false
 }
 
-// NewHTTP returns HTTP server
-func NewHTTP(requestHandler *RequestHandler, authInterceptor kitNetHttp.Interceptor) *http.Server {
+// NewHTTP returns HTTP handler
+func NewHTTP(requestHandler *RequestHandler, authInterceptor kitNetHttp.Interceptor) http.Handler {
 	r := router.NewRouter()
 	r.StrictSlash(true)
 	r.Use(kitNetHttp.CreateLoggingMiddleware())
@@ -209,5 +209,5 @@ func NewHTTP(requestHandler *RequestHandler, authInterceptor kitNetHttp.Intercep
 	// resource
 	s1.MatcherFunc(resourceMatcher).Methods("POST").HandlerFunc(requestHandler.UpdateResource)
 	s1.MatcherFunc(resourceMatcher).Methods("GET").HandlerFunc(requestHandler.RetrieveResource)
-	return &http.Server{Handler: r}
+	return r
 }

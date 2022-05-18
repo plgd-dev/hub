@@ -34,6 +34,8 @@ func MakeConfig(t *testing.T) service.Config {
 	cfg.ExposedHubConfiguration.CoapGateway = config.GW_HOST
 	cfg.ExposedHubConfiguration.OwnerClaim = config.OWNER_CLAIM
 
+	cfg.Clients.OpenTelemetryCollector = config.MakeOpenTelemetryCollectorClient()
+
 	err := cfg.Validate()
 	require.NoError(t, err)
 

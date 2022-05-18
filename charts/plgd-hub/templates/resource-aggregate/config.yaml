@@ -1,5 +1,5 @@
 {{- if .Values.resourceaggregate.enabled }}
-{{- $raCert := "/certs" }}
+{{- $resourceAggregateCertPath := "/certs" }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -31,7 +31,7 @@ data:
           timeout: {{ .apis.grpc.keepAlive.timeout }}
         tls:
           {{- $tls := .apis.grpc.tls }}
-          {{- include "plgd-hub.certificateConfig" (list $ $tls $raCert) | indent 8 }}
+          {{- include "plgd-hub.certificateConfig" (list $ $tls $resourceAggregateCertPath) | indent 8 }}
           clientCertificateRequired: {{ .apis.grpc.tls.clientCertificateRequired }}
         authorization:
           {{- $authorization := .apis.grpc.authorization }}
@@ -44,7 +44,7 @@ data:
             timeout: {{ .apis.grpc.authorization.http.timeout }}
             tls:
               {{- $grpcTls := .apis.grpc.authorization.http.tls }}
-              {{- include "plgd-hub.certificateConfig" (list $ $grpcTls $raCert) | indent 12 }}
+              {{- include "plgd-hub.certificateConfig" (list $ $grpcTls $resourceAggregateCertPath) | indent 12 }}
               useSystemCAPool: {{ .apis.grpc.authorization.http.tls.useSystemCAPool }}
     clients:
       eventBus:
@@ -54,7 +54,7 @@ data:
           jetstream: {{ .clients.eventBus.nats.jetstream }}
           tls:
             {{- $natsTls := .clients.eventBus.nats.tls }}
-            {{- include "plgd-hub.certificateConfig" (list $ $natsTls $raCert) | indent 10 }}
+            {{- include "plgd-hub.certificateConfig" (list $ $natsTls $resourceAggregateCertPath) | indent 10 }}
             useSystemCAPool: {{ .clients.eventBus.nats.tls.useSystemCAPool }}
       eventStore:
         defaultCommandTimeToLive: {{ .clients.eventStore.defaultCommandTimeToLive | default $.Values.global.defaultCommandTimeToLive | quote }}
@@ -68,7 +68,7 @@ data:
           maxConnIdleTime: {{ .clients.eventStore.mongoDB.maxConnIdleTime }}
           tls:
             {{- $mongoTls := .clients.eventStore.mongoDB.tls }}
-            {{- include "plgd-hub.certificateConfig" (list $ $natsTls $raCert) | indent 10 }}
+            {{- include "plgd-hub.certificateConfig" (list $ $natsTls $resourceAggregateCertPath) | indent 10 }}
             useSystemCAPool: {{ .clients.eventStore.mongoDB.tls.useSystemCAPool }}
       identityStore:
         grpc:
@@ -80,7 +80,8 @@ data:
             permitWithoutStream: {{ .clients.identityStore.grpc.keepAlive.permitWithoutStream }}
           tls:
             {{- $authClientTls := .clients.identityStore.grpc.tls }}
-            {{- include "plgd-hub.certificateConfig" (list $ $authClientTls $raCert) | indent 10 }}
+            {{- include "plgd-hub.certificateConfig" (list $ $authClientTls $resourceAggregateCertPath) | indent 10 }}
             useSystemCAPool: {{ .clients.identityStore.grpc.tls.useSystemCAPool }}
+      {{- include "plgd-hub.openTelemetryExporterConfig" (list $ $resourceAggregateCertPath) | nindent 6 }}
   {{- end }}
 {{- end }}

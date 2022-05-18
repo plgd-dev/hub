@@ -12,12 +12,13 @@ import (
 	"github.com/plgd-dev/hub/v2/test/config"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/trace"
 )
 
 func getProvider(t *testing.T, logger log.Logger) *oauth2.PlgdProvider {
 	cfg := config.MakeDeviceAuthorization()
 	cfg.ClientID = oauthTest.ClientTestRestrictedAuth
-	provider, err := oauth2.NewPlgdProvider(context.Background(), cfg, logger, "", "")
+	provider, err := oauth2.NewPlgdProvider(context.Background(), cfg, logger, trace.NewNoopTracerProvider(), "", "")
 	require.NoError(t, err)
 	return provider
 }

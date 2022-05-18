@@ -21,6 +21,7 @@ func MakeConfig(t *testing.T) service.Config {
 	cfg.Clients.Storage.MongoDB.Database = config.IDENTITY_STORE_DB
 
 	cfg.Clients.Eventbus.NATS = config.MakePublisherConfig()
+	cfg.Clients.OpenTelemetryCollector = config.MakeOpenTelemetryCollectorClient()
 
 	err := cfg.Validate()
 	require.NoError(t, err)

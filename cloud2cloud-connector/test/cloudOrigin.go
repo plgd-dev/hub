@@ -6,8 +6,10 @@ import (
 	c2curi "github.com/plgd-dev/hub/v2/cloud2cloud-connector/uri"
 	grpcService "github.com/plgd-dev/hub/v2/grpc-gateway/test"
 	idService "github.com/plgd-dev/hub/v2/identity-store/test"
+	kitNetHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
 	raService "github.com/plgd-dev/hub/v2/resource-aggregate/test"
 	rdService "github.com/plgd-dev/hub/v2/resource-directory/test"
+	"github.com/plgd-dev/hub/v2/test/config"
 	"github.com/plgd-dev/hub/v2/test/http"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	"github.com/plgd-dev/hub/v2/test/oauth-server/uri"
@@ -79,6 +81,11 @@ func SetUpCloudWithConnector(t *testing.T) (TearDown func()) {
 	c2cConnectorCfg.Clients.GrpcGateway.Connection.Addr = GRPC_GATEWAY_HOST
 	c2cConnectorCfg.Clients.ResourceAggregate.Connection.Addr = RESOURCE_AGGREGATE_HOST
 	c2cConnectorCfg.Clients.Eventbus.NATS.URL = C2C_CONNECTOR_NATS_URL
+
+	c2cConnectorCfg.Clients.OpenTelemetryCollector = kitNetHttp.OpenTelemetryCollectorConfig{
+		Config: config.MakeOpenTelemetryCollectorClient(),
+	}
+
 	c2cConnectorShutdown := New(t, c2cConnectorCfg)
 
 	return func() {

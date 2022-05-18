@@ -12,6 +12,7 @@ import (
 	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/tcp"
+	tcpMessage "github.com/plgd-dev/go-coap/v2/tcp/message"
 	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
 	"github.com/plgd-dev/hub/v2/coap-gateway/coapconv"
 	"github.com/plgd-dev/hub/v2/coap-gateway/resource"
@@ -20,11 +21,17 @@ import (
 	idEvents "github.com/plgd-dev/hub/v2/identity-store/events"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	"github.com/plgd-dev/hub/v2/pkg/opentelemetry"
 	pkgJwt "github.com/plgd-dev/hub/v2/pkg/security/jwt"
 	"github.com/plgd-dev/hub/v2/pkg/sync/task/future"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 	kitSync "github.com/plgd-dev/kit/v2/sync"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+	"go.opentelemetry.io/otel/attribute"
+	otelCodes "go.opentelemetry.io/otel/codes"
+	semconv "go.opentelemetry.io/otel/semconv/v1.10.0"
+	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
 )
 
@@ -172,9 +179,80 @@ func (client *Client) ReleaseMessage(m *pool.Message) {
 	client.server.messagePool.ReleaseMessage(m)
 }
 
+type messageType attribute.KeyValue
+
+// Event adds an event of the messageType to the span associated with the
+// passed context with id and size (if message is a proto message).
+func (m messageType) Event(ctx context.Context, message *pool.Message) {
+	span := trace.SpanFromContext(ctx)
+	tcpMsg := tcpMessage.Message{
+		Code:    message.Code(),
+		Token:   message.Token(),
+		Options: message.Options(),
+	}
+	size, err := tcpMsg.Size()
+	if err != nil {
+		size = 0
+	}
+	if bodySize, err := message.BodySize(); err != nil {
+		size += int(bodySize)
+	}
+	span.AddEvent("message", trace.WithAttributes(
+		attribute.KeyValue(m),
+		semconv.MessageUncompressedSizeKey.Int(size),
+	))
+}
+
+var (
+	messageSent       = messageType(otelgrpc.RPCMessageTypeSent)
+	messageReceived   = messageType(otelgrpc.RPCMessageTypeReceived)
+	COAPStatusCodeKey = attribute.Key("coap.status_code")
+	COAPMethodKey     = attribute.Key("coap.method")
+	COAPPathKey       = attribute.Key("coap.path")
+)
+
+func defaultTransportFormatter(path string) string {
+	return "COAP " + path
+}
+
+func statusCodeAttr(c codes.Code) attribute.KeyValue {
+	return COAPStatusCodeKey.Int64(int64(c))
+}
+
+func (client *Client) do(req *pool.Message) (*pool.Message, error) {
+	tracer := client.server.tracerProvider.Tracer(
+		opentelemetry.InstrumentationName,
+		trace.WithInstrumentationVersion(opentelemetry.SemVersion()),
+	)
+
+	path, _ := req.Path()
+	attrs := []attribute.KeyValue{
+		semconv.NetPeerNameKey.String(client.deviceID()),
+		COAPMethodKey.String(req.Code().String()),
+		COAPPathKey.String(path),
+	}
+
+	ctx, span := tracer.Start(req.Context(), defaultTransportFormatter(path), trace.WithSpanKind(trace.SpanKindClient), trace.WithAttributes(attrs...))
+	defer span.End()
+
+	messageSent.Event(ctx, req)
+
+	resp, err := client.coapConn.Do(req)
+
+	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(otelCodes.Error, err.Error())
+		return nil, err
+	}
+	messageReceived.Event(ctx, resp)
+	span.SetAttributes(statusCodeAttr(resp.Code()))
+
+	return resp, nil
+}
+
 func (client *Client) Do(req *pool.Message, correlationID string) (*pool.Message, error) {
 	t := time.Now()
-	resp, err := client.coapConn.Do(req)
+	resp, err := client.do(req)
 	logger := client.getLogger()
 	if err == nil && resp != nil && !WantToLog(resp.Code(), logger) {
 		return resp, err
@@ -431,7 +509,15 @@ func (client *Client) sendErrorConfirmResourceUpdate(ctx context.Context, device
 	}
 }
 
+func setDeviceIDToTracerSpan(ctx context.Context, deviceID string) {
+	if deviceID != "" {
+		span := trace.SpanFromContext(ctx)
+		span.SetAttributes(semconv.NetPeerNameKey.String(deviceID))
+	}
+}
+
 func (client *Client) UpdateResource(ctx context.Context, event *events.ResourceUpdatePending) error {
+	setDeviceIDToTracerSpan(ctx, client.deviceID())
 	authCtx, err := client.GetAuthorizationContext()
 	if err != nil {
 		err := fmt.Errorf("cannot update resource /%v%v: %w", event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), err)
@@ -496,6 +582,7 @@ func (client *Client) sendErrorConfirmResourceRetrieve(ctx context.Context, devi
 }
 
 func (client *Client) RetrieveResource(ctx context.Context, event *events.ResourceRetrievePending) error {
+	setDeviceIDToTracerSpan(ctx, client.deviceID())
 	authCtx, err := client.GetAuthorizationContext()
 	if err != nil {
 		err := fmt.Errorf("cannot retrieve resource /%v%v: %w", event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), err)
@@ -561,6 +648,7 @@ func (client *Client) sendErrorConfirmResourceDelete(ctx context.Context, device
 }
 
 func (client *Client) DeleteResource(ctx context.Context, event *events.ResourceDeletePending) error {
+	setDeviceIDToTracerSpan(ctx, client.deviceID())
 	authCtx, err := client.GetAuthorizationContext()
 	if err != nil {
 		err := fmt.Errorf("cannot delete resource /%v%v: %w", event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), err)
@@ -675,6 +763,7 @@ func (client *Client) sendErrorConfirmResourceCreate(ctx context.Context, resour
 }
 
 func (client *Client) CreateResource(ctx context.Context, event *events.ResourceCreatePending) error {
+	setDeviceIDToTracerSpan(ctx, client.deviceID())
 	authCtx, err := client.GetAuthorizationContext()
 	if err != nil {
 		err := fmt.Errorf("cannot create resource /%v%v: %w", event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), err)
@@ -750,6 +839,7 @@ func (client *Client) GetContext() context.Context {
 }
 
 func (client *Client) UpdateDeviceMetadata(ctx context.Context, event *events.DeviceMetadataUpdatePending) error {
+	setDeviceIDToTracerSpan(ctx, client.deviceID())
 	authCtx, err := client.GetAuthorizationContext()
 	if err != nil {
 		err := fmt.Errorf("cannot update device('%v') metadata: %w", event.GetDeviceId(), err)

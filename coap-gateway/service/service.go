@@ -32,6 +32,8 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	grpcClient "github.com/plgd-dev/hub/v2/pkg/net/grpc/client"
+	"github.com/plgd-dev/hub/v2/pkg/opentelemetry"
+	otelClient "github.com/plgd-dev/hub/v2/pkg/opentelemetry/collector/client"
 	certManagerServer "github.com/plgd-dev/hub/v2/pkg/security/certManager/server"
 	"github.com/plgd-dev/hub/v2/pkg/security/jwt"
 	"github.com/plgd-dev/hub/v2/pkg/security/oauth2"
@@ -41,6 +43,10 @@ import (
 	natsClient "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/client"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/subscriber"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/utils"
+	"go.opentelemetry.io/otel/attribute"
+	otelCodes "go.opentelemetry.io/otel/codes"
+	semconv "go.opentelemetry.io/otel/semconv/v1.10.0"
+	"go.opentelemetry.io/otel/trace"
 )
 
 var authCtxKey = "AuthCtx"
@@ -71,6 +77,7 @@ type Service struct {
 	subscriptionsCache    *subscription.SubscriptionsCache
 	messagePool           *pool.Pool
 	logger                log.Logger
+	tracerProvider        trace.TracerProvider
 }
 
 func setExpirationClientCache(c *cache.Cache, deviceID string, client *Client, validJWTUntil time.Time) {
@@ -109,8 +116,8 @@ func newExpirationClientCache(ctx context.Context, interval time.Duration) *cach
 	return expirationClientCache
 }
 
-func newResourceAggregateClient(config ResourceAggregateConfig, resourceSubscriber eventbus.Subscriber, logger log.Logger) (*raClient.Client, func(), error) {
-	raConn, err := grpcClient.New(config.Connection, logger)
+func newResourceAggregateClient(config ResourceAggregateConfig, resourceSubscriber eventbus.Subscriber, logger log.Logger, tracerProvider trace.TracerProvider) (*raClient.Client, func(), error) {
+	raConn, err := grpcClient.New(config.Connection, logger, tracerProvider)
 	if err != nil {
 		return nil, nil, fmt.Errorf("cannot create connection to resource-aggregate: %w", err)
 	}
@@ -126,8 +133,8 @@ func newResourceAggregateClient(config ResourceAggregateConfig, resourceSubscrib
 	return raClient, closeRaConn, nil
 }
 
-func newIdentityStoreClient(config IdentityStoreConfig, logger log.Logger) (pbIS.IdentityStoreClient, func(), error) {
-	isConn, err := grpcClient.New(config.Connection, logger)
+func newIdentityStoreClient(config IdentityStoreConfig, logger log.Logger, tracerProvider trace.TracerProvider) (pbIS.IdentityStoreClient, func(), error) {
+	isConn, err := grpcClient.New(config.Connection, logger, tracerProvider)
 	if err != nil {
 		return nil, nil, fmt.Errorf("cannot create connection to identity-store: %w", err)
 	}
@@ -143,8 +150,8 @@ func newIdentityStoreClient(config IdentityStoreConfig, logger log.Logger) (pbIS
 	return isClient, closeIsConn, nil
 }
 
-func newResourceDirectoryClient(config GrpcServerConfig, logger log.Logger) (pbGRPC.GrpcGatewayClient, func(), error) {
-	rdConn, err := grpcClient.New(config.Connection, logger)
+func newResourceDirectoryClient(config GrpcServerConfig, logger log.Logger, tracerProvider trace.TracerProvider) (pbGRPC.GrpcGatewayClient, func(), error) {
+	rdConn, err := grpcClient.New(config.Connection, logger, tracerProvider)
 	if err != nil {
 		return nil, nil, fmt.Errorf("cannot create connection to resource-directory: %w", err)
 	}
@@ -232,12 +239,12 @@ func getOnInactivityFn(logger log.Logger) func(cc inactivity.ClientConn) {
 	}
 }
 
-func newProviders(ctx context.Context, config AuthorizationConfig, logger log.Logger) (map[string]*oauth2.PlgdProvider, *oauth2.PlgdProvider, func(), error) {
+func newProviders(ctx context.Context, config AuthorizationConfig, logger log.Logger, tracerProvider trace.TracerProvider) (map[string]*oauth2.PlgdProvider, *oauth2.PlgdProvider, func(), error) {
 	var closeProviders fn.FuncList
 	var firstProvider *oauth2.PlgdProvider
 	providers := make(map[string]*oauth2.PlgdProvider)
 	for _, p := range config.Providers {
-		provider, err := oauth2.NewPlgdProvider(ctx, p.Config, logger, config.OwnerClaim, config.DeviceIDClaim)
+		provider, err := oauth2.NewPlgdProvider(ctx, p.Config, logger, tracerProvider, config.OwnerClaim, config.DeviceIDClaim)
 		if err != nil {
 			closeProviders.Execute()
 			return nil, nil, nil, fmt.Errorf("cannot create device provider: %w", err)
@@ -253,16 +260,26 @@ func newProviders(ctx context.Context, config AuthorizationConfig, logger log.Lo
 
 // New creates server.
 func New(ctx context.Context, config Config, logger log.Logger) (*Service, error) {
+	otelClient, err := otelClient.New(ctx, config.Clients.OpenTelemetryCollector, "coap-gateway", logger)
+	if err != nil {
+		return nil, fmt.Errorf("cannot create open telemetry collector client: %w", err)
+	}
+
+	tracerProvider := otelClient.GetTracerProvider()
+
 	queue, err := queue.New(config.TaskQueue)
 	if err != nil {
+		otelClient.Close()
 		return nil, fmt.Errorf("cannot create job queue %w", err)
 	}
 
 	nats, err := natsClient.New(config.Clients.Eventbus.NATS, logger)
 	if err != nil {
+		otelClient.Close()
 		queue.Release()
 		return nil, fmt.Errorf("cannot create nats client: %w", err)
 	}
+	nats.AddCloseFunc(otelClient.Close)
 	nats.AddCloseFunc(queue.Release)
 
 	resourceSubscriber, err := subscriber.New(nats.GetConn(),
@@ -276,21 +293,21 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 	}
 	nats.AddCloseFunc(resourceSubscriber.Close)
 
-	raClient, closeRaClient, err := newResourceAggregateClient(config.Clients.ResourceAggregate, resourceSubscriber, logger)
+	raClient, closeRaClient, err := newResourceAggregateClient(config.Clients.ResourceAggregate, resourceSubscriber, logger, tracerProvider)
 	if err != nil {
 		nats.Close()
 		return nil, fmt.Errorf("cannot create resource-aggregate client: %w", err)
 	}
 	nats.AddCloseFunc(closeRaClient)
 
-	isClient, closeIsClient, err := newIdentityStoreClient(config.Clients.IdentityStore, logger)
+	isClient, closeIsClient, err := newIdentityStoreClient(config.Clients.IdentityStore, logger, tracerProvider)
 	if err != nil {
 		nats.Close()
 		return nil, fmt.Errorf("cannot create identity-store client: %w", err)
 	}
 	nats.AddCloseFunc(closeIsClient)
 
-	rdClient, closeRdClient, err := newResourceDirectoryClient(config.Clients.ResourceDirectory, logger)
+	rdClient, closeRdClient, err := newResourceDirectoryClient(config.Clients.ResourceDirectory, logger, tracerProvider)
 	if err != nil {
 		nats.Close()
 		return nil, fmt.Errorf("cannot create resource-directory client: %w", err)
@@ -313,7 +330,7 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 		}
 	}
 
-	providers, firstProvider, closeProviders, err := newProviders(ctx, config.APIs.COAP.Authorization, logger)
+	providers, firstProvider, closeProviders, err := newProviders(ctx, config.APIs.COAP.Authorization, logger, tracerProvider)
 	if err != nil {
 		nats.Close()
 		return nil, fmt.Errorf("cannot create device providers error: %w", err)
@@ -325,9 +342,9 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 		return nil, fmt.Errorf("device providers are empty")
 	}
 
-	keyCache := jwt.NewKeyCacheWithHttp(firstProvider.OpenID.JWKSURL, firstProvider.HTTP())
+	keyCache := jwt.NewKeyCache(firstProvider.OpenID.JWKSURL, firstProvider.HTTP())
 
-	jwtValidator := jwt.NewValidatorWithKeyCache(keyCache)
+	jwtValidator := jwt.NewValidator(keyCache)
 
 	ownerCache := idClient.NewOwnerCache(config.APIs.COAP.Authorization.OwnerClaim, config.APIs.COAP.OwnerCacheExpiration, nats.GetConn(), isClient, func(err error) {
 		logger.Errorf("ownerCache error: %w", err)
@@ -368,6 +385,7 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 		subscriptionsCache: subscriptionsCache,
 		messagePool:        pool.New(uint32(config.APIs.COAP.MessagePoolSize), 1024),
 		logger:             logger,
+		tracerProvider:     tracerProvider,
 	}
 
 	if err := s.setupCoapServer(); err != nil {
@@ -412,31 +430,65 @@ func wantToCloseClientOnError(req *mux.Message) bool {
 	return false
 }
 
+func (s *Service) processCommandTask(req *mux.Message, client *Client, span trace.Span, fnc func(req *mux.Message, client *Client) (*pool.Message, error)) {
+	var resp *pool.Message
+	var err error
+	switch req.Code {
+	case coapCodes.Empty:
+		resp, err = clientResetHandler(req, client)
+	case coapCodes.POST, coapCodes.DELETE, coapCodes.PUT, coapCodes.GET:
+		resp, err = fnc(req, client)
+		if err != nil && wantToCloseClientOnError(req) {
+			defer client.Close()
+		}
+	default:
+		err := onUnprocessedRequestError(req.Code)
+		client.logRequestResponse(req, nil, err)
+		span.RecordError(err)
+		span.SetStatus(otelCodes.Error, err.Error())
+		return
+	}
+	if err != nil {
+		resp = client.createErrorResponse(err, req.Token)
+	}
+	if resp != nil {
+		client.WriteMessage(resp)
+		defer client.ReleaseMessage(resp)
+	}
+	client.logRequestResponse(req, resp, err)
+	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(otelCodes.Error, err.Error())
+	}
+	if resp != nil {
+		messageSent.Event(req.Context, resp)
+		span.SetAttributes(statusCodeAttr(resp.Code()))
+	}
+}
+
 func (s *Service) makeCommandTask(req *mux.Message, client *Client, fnc func(req *mux.Message, client *Client) (*pool.Message, error)) func() {
+	tracer := client.server.tracerProvider.Tracer(
+		opentelemetry.InstrumentationName,
+		trace.WithInstrumentationVersion(opentelemetry.SemVersion()),
+	)
+
+	path, _ := req.Options.Path()
+	attrs := []attribute.KeyValue{
+		semconv.NetPeerNameKey.String(client.deviceID()),
+		COAPMethodKey.String(req.Code.String()),
+		COAPPathKey.String(path),
+	}
+
+	ctx, span := tracer.Start(req.Context, defaultTransportFormatter(path), trace.WithSpanKind(trace.SpanKindServer), trace.WithAttributes(attrs...))
+	req.Context = ctx
+
+	tmp, err := client.server.messagePool.ConvertFrom(req.Message)
+	if err == nil {
+		messageReceived.Event(ctx, tmp)
+	}
 	return func() {
-		var resp *pool.Message
-		var err error
-		switch req.Code {
-		case coapCodes.Empty:
-			resp, err = clientResetHandler(req, client)
-		case coapCodes.POST, coapCodes.DELETE, coapCodes.PUT, coapCodes.GET:
-			resp, err = fnc(req, client)
-			if err != nil && wantToCloseClientOnError(req) {
-				defer client.Close()
-			}
-		default:
-			err := onUnprocessedRequestError(req.Code)
-			client.logRequestResponse(req, nil, err)
-			return
-		}
-		if err != nil {
-			resp = client.createErrorResponse(err, req.Token)
-		}
-		if resp != nil {
-			client.WriteMessage(resp)
-			defer client.ReleaseMessage(resp)
-		}
-		client.logRequestResponse(req, resp, err)
+		defer span.End()
+		s.processCommandTask(req, client, span, fnc)
 	}
 }
 
@@ -489,6 +541,7 @@ func (server *Service) coapConnOnNew(coapConn *tcp.ClientConn, tlscon *tls.Conn)
 			tlsValidUntil = peerCertificates[0].NotAfter
 		}
 	}
+
 	client := newClient(server, coapConn, tlsDeviceID, tlsValidUntil)
 	coapConn.SetContextValue(clientKey, client)
 	coapConn.AddOnClose(func() {

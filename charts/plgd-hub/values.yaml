@@ -16,7 +16,7 @@ global:
   audience: ""
   # -- Enable *.{{ global.domain }} for all external domain
   enableWildCartCert: true
-  # Global OAuth configuration used by multiple services
+  # -- Global OAuth configuration used by multiple services
   oauth:
    device: []
 #     - name:
@@ -27,6 +27,23 @@ global:
 #       useInUi: true
    web:
     clientID:
+  # -- Global Open Telemetry exporter configuration
+  openTelemetryExporter:
+      # -- Enable OTLP gRPC exporter
+      enabled: false
+      # -- The gRPC collector to which the exporter is going to send data
+      address:
+      # -- Expoter keep alive configuration
+      keepAlive:
+        time: 10s
+        timeout: 20s
+        permitWithoutStream: true
+      # -- Expoter TLS configuration
+      tls:
+        caPool:
+        keyFile:
+        certFile:
+        useSystemCAPool: false
 
 # -- Extra deploy. Resolved as template
 extraDeploy:

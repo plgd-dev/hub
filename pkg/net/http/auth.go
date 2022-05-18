@@ -2,14 +2,12 @@ package http
 
 import (
 	"context"
-	"crypto/tls"
 	"fmt"
 	netHttp "net/http"
 	"strings"
 
 	extJwt "github.com/golang-jwt/jwt/v4"
 	"github.com/plgd-dev/hub/v2/pkg/net/grpc"
-	"github.com/plgd-dev/hub/v2/pkg/security/jwt"
 )
 
 type Claims = interface{ Valid() error }
@@ -65,11 +63,6 @@ func validateJWTWithValidator(validator Validator, claims ClaimsFunc) Intercepto
 		}
 		return ctx, nil
 	}
-}
-
-func validateJWT(jwksURL string, tls *tls.Config, claims ClaimsFunc) Interceptor {
-	validator := jwt.NewValidator(jwksURL, tls)
-	return validateJWTWithValidator(validator, claims)
 }
 
 // CreateAuthMiddleware creates middleware for authorization

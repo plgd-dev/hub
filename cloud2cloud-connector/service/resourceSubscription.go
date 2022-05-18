@@ -11,6 +11,7 @@ import (
 	"github.com/plgd-dev/hub/v2/cloud2cloud-connector/store"
 	kitHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
+	"go.opentelemetry.io/otel/trace"
 )
 
 func (s *SubscriptionManager) SubscribeToResource(ctx context.Context, deviceID, href string, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud) error {
@@ -55,7 +56,7 @@ func (s *SubscriptionManager) SubscribeToResource(ctx context.Context, deviceID,
 	if err != nil {
 		var errors []error = make([]error, 1, 2)
 		errors = append(errors, fmt.Errorf("cannot store resource subscription to DB: %w", err))
-		if err2 := cancelResourceSubscription(ctx, linkedAccount, linkedCloud, sub.DeviceID, sub.Href, sub.ID); err2 != nil {
+		if err2 := cancelResourceSubscription(ctx, s.tracerProvider, linkedAccount, linkedCloud, sub.DeviceID, sub.Href, sub.ID); err2 != nil {
 			errors = append(errors, fmt.Errorf("cannot cancel resource %v/%v subscription: %w", sub.DeviceID, sub.Href, err2))
 		}
 		return fmt.Errorf("%v", errors)
@@ -64,7 +65,7 @@ func (s *SubscriptionManager) SubscribeToResource(ctx context.Context, deviceID,
 }
 
 func (s *SubscriptionManager) subscribeToResource(ctx context.Context, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud, correlationID, signingSecret, deviceID, href string) (string, error) {
-	resp, err := subscribe(ctx, "/devices/"+deviceID+href+"/subscriptions", correlationID, events.SubscriptionRequest{
+	resp, err := subscribe(ctx, s.tracerProvider, "/devices/"+deviceID+href+"/subscriptions", correlationID, events.SubscriptionRequest{
 		EventsURL:     s.eventsURL,
 		EventTypes:    []events.EventType{events.EventType_ResourceChanged},
 		SigningSecret: signingSecret,
@@ -75,8 +76,8 @@ func (s *SubscriptionManager) subscribeToResource(ctx context.Context, linkedAcc
 	return resp.SubscriptionID, nil
 }
 
-func cancelResourceSubscription(ctx context.Context, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud, deviceID, href, subscriptionID string) error {
-	err := cancelSubscription(ctx, "/devices/"+deviceID+href+"/subscriptions/"+subscriptionID, linkedAccount, linkedCloud)
+func cancelResourceSubscription(ctx context.Context, traceProvider trace.TracerProvider, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud, deviceID, href, subscriptionID string) error {
+	err := cancelSubscription(ctx, traceProvider, "/devices/"+deviceID+href+"/subscriptions/"+subscriptionID, linkedAccount, linkedCloud)
 	if err != nil {
 		return fmt.Errorf("cannot cancel resource subscription for %v: %w", linkedAccount.ID, err)
 	}

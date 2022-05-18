@@ -13,6 +13,7 @@ import (
 	grpcClient "github.com/plgd-dev/hub/v2/pkg/net/grpc/client"
 	kitNetHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
 	"github.com/plgd-dev/hub/v2/pkg/net/listener"
+	otelClient "github.com/plgd-dev/hub/v2/pkg/opentelemetry/collector/client"
 	"github.com/plgd-dev/hub/v2/pkg/security/jwt/validator"
 )
 
@@ -24,21 +25,32 @@ type Server struct {
 	listener       *listener.Server
 }
 
+const serviceName = "http-gateway"
+
 // New parses configuration and creates new Server with provided store and bus
 func New(ctx context.Context, config Config, logger log.Logger) (*Server, error) {
-	validator, err := validator.New(ctx, config.APIs.HTTP.Authorization, logger)
+	otelClient, err := otelClient.New(ctx, config.Clients.OpenTelemetryCollector.Config, serviceName, logger)
 	if err != nil {
+		return nil, fmt.Errorf("cannot create open telemetry collector client: %w", err)
+	}
+	tracerProvider := otelClient.GetTracerProvider()
+
+	validator, err := validator.New(ctx, config.APIs.HTTP.Authorization, logger, tracerProvider)
+	if err != nil {
+		otelClient.Close()
 		return nil, fmt.Errorf("cannot create validator: %w", err)
 	}
 
 	listener, err := listener.New(config.APIs.HTTP.Connection, logger)
 	if err != nil {
+		otelClient.Close()
 		validator.Close()
 		return nil, fmt.Errorf("cannot create grpc server: %w", err)
 	}
+	listener.AddCloseFunc(otelClient.Close)
 	listener.AddCloseFunc(validator.Close)
 
-	grpcConn, err := grpcClient.New(config.Clients.GrpcGateway.Connection, logger)
+	grpcConn, err := grpcClient.New(config.Clients.GrpcGateway.Connection, logger, tracerProvider)
 	if err != nil {
 		return nil, fmt.Errorf("cannot connect to resource directory: %w", err)
 	}
@@ -70,13 +82,14 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Server, error)
 	auth := kitNetHttp.NewInterceptorWithValidator(validator, authRules, whiteList...)
 	requestHandler := NewRequestHandler(&config, client)
 
-	http, err := NewHTTP(requestHandler, auth)
+	httpHandler, err := NewHTTP(requestHandler, auth)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create http server: %w", err)
 	}
 
+	httpServer := http.Server{Handler: kitNetHttp.OpenTelemetryNewHandler(httpHandler, serviceName, tracerProvider)}
 	server := Server{
-		server:         http,
+		server:         &httpServer,
 		config:         &config,
 		requestHandler: requestHandler,
 		listener:       listener,

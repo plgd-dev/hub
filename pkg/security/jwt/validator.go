@@ -2,7 +2,6 @@ package jwt
 
 import (
 	"context"
-	"crypto/tls"
 	"fmt"
 
 	"github.com/golang-jwt/jwt/v4"
@@ -14,12 +13,8 @@ type Validator struct {
 
 var errMissingToken = fmt.Errorf("missing token")
 
-func NewValidatorWithKeyCache(keyCache *KeyCache) *Validator {
+func NewValidator(keyCache *KeyCache) *Validator {
 	return &Validator{keys: keyCache}
-}
-
-func NewValidator(jwksURL string, tls *tls.Config) *Validator {
-	return &Validator{keys: NewKeyCache(jwksURL, tls)}
 }
 
 func errParseToken(err error) error {
