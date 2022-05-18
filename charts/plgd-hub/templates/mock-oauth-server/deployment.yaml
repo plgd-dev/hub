@@ -74,13 +74,9 @@ spec:
             - "--config"
             - {{  printf "%s/%s" .Values.mockoauthserver.config.mountPath .Values.mockoauthserver.config.fileName | quote }}
           ports:
-            {{- if .Values.mockoauthserver.customPodPorts }}
-            {{- toYaml .Values.mockoauthserver.customPodPorts | nindent 12 }}
-            {{- else }}
             - name: http
               containerPort: {{ .Values.mockoauthserver.port }}
               protocol: TCP
-            {{- end }}
           {{- with .Values.mockoauthserver.livenessProbe }}
           livenessProbe:
           {{- toYaml . | nindent 12 }}

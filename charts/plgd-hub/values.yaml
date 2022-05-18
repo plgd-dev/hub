@@ -357,8 +357,6 @@ resourcedirectory:
     mountPath: /config
   # -- Service and POD port
   port: 9100
-  # -- Custom resource directory container ports definition. In case it's not defined, default definition is used
-  customPodPorts: {}
   # -- Log section
   log:
     # -- Logging enabled from level 
@@ -572,8 +570,6 @@ resourceaggregate:
     mountPath: /config
   # -- Service and POD port
   port: 9100
-  # -- Custom resource aggregate container ports definition. In case it's not defined, default definition is used
-  customPodPorts: {}
   log:
     # -- Logging enabled from level 
     level: info
@@ -944,8 +940,6 @@ identitystore:
   extraVolumeMounts: {}
   # -- Service and POD port
   port: 9100
-  # -- Custom identity-store container ports definition. In case it's not defined, default definition is used
-  customPodPorts: { }
   # -- yaml configuration
   config:
     # -- File name
@@ -1151,8 +1145,6 @@ httpgateway:
     mountPath: /config
   # -- Port for service and POD
   port: 9100
-  # -- Custom http-gateway container ports definition. In case it's not defined, default definition is used
-  customPodPorts: {}
   log:
     # -- Logging enabled from level 
     level: info
@@ -1329,8 +1321,6 @@ grpcgateway:
     mountPath: /config
   # -- Service and POD port
   port: 9100
-  # -- Custom grpc-gateway container ports definition. In case it's not defined, default definition is used
-  customPodPorts: {}
   log:
     # -- Logging enabled from level 
     level: info
@@ -1555,8 +1545,6 @@ certificateauthority:
       mountPath: /certs/coap-device-ca
   # -- Service and POD port
   port: 9100
-  # -- Custom certificate-authority container ports definition. In case it's not defined, default definition is used
-  customPodPorts: {}
   log:
     # -- Logging enabled from level 
     level: info
@@ -1748,8 +1736,6 @@ mockoauthserver:
     mountPath: /config
   # -- Port for service and POD
   port: 9100
-  # -- Custom mock auth server container ports definition. In case it's not defined, default definition is used
-  customPodPorts: {}
   log:
     # -- Logging enabled from level 
     level: info

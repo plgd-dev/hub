@@ -62,13 +62,9 @@ spec:
             - "--config"
             - {{  printf "%s/%s" .Values.resourceaggregate.config.mountPath .Values.resourceaggregate.config.fileName | quote }}
           ports:
-            {{- if .Values.resourceaggregate.customPodPorts }}
-            {{- toYaml .Values.resourceaggregate.customPodPorts | nindent 12 }}
-            {{- else }}
             - name: grpc
               containerPort: {{ .Values.resourceaggregate.port }}
               protocol: TCP
-            {{- end }}
           {{- with .Values.resourceaggregate.livenessProbe }}
           livenessProbe:
           {{- toYaml . | nindent 12 }}

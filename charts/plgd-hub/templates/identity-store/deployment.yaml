@@ -62,13 +62,9 @@ spec:
             - "--config"
             - {{  printf "%s/%s" .Values.identitystore.config.mountPath .Values.identitystore.config.fileName | quote }}
           ports:
-            {{- if .Values.identitystore.customPodPorts }}
-            {{- toYaml .Values.identitystore.customPodPorts | nindent 12 }}
-            {{- else }}
             - name: grpc
               containerPort: {{ .Values.identitystore.port }}
               protocol: TCP
-            {{- end }}
           {{- with .Values.identitystore.livenessProbe }}
           livenessProbe:
           {{- toYaml . | nindent 12 }}

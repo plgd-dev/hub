@@ -62,13 +62,9 @@ spec:
             - "--config"
             - {{  printf "%s/%s" .Values.httpgateway.config.mountPath .Values.httpgateway.config.fileName | quote }}
           ports:
-            {{- if .Values.httpgateway.customPodPorts }}
-            {{- toYaml .Values.httpgateway.customPodPorts | nindent 12 }}
-            {{- else }}
             - name: http
               containerPort: {{ .Values.httpgateway.port }}
               protocol: TCP
-            {{- end }}
           {{- with .Values.httpgateway.livenessProbe }}
           livenessProbe:
           {{- toYaml . | nindent 12 }}

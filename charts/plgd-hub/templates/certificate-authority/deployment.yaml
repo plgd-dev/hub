@@ -63,13 +63,9 @@ spec:
             - "--config"
             - {{  printf "%s/%s" .Values.certificateauthority.config.mountPath .Values.certificateauthority.config.fileName | quote }}
           ports:
-            {{- if .Values.certificateauthority.customPodPorts }}
-            {{- toYaml .Values.certificateauthority.customPodPorts | nindent 12 }}
-            {{- else }}
             - name: grpc
               containerPort: {{ .Values.certificateauthority.port }}
               protocol: TCP
-            {{- end }}
           {{- with .Values.certificateauthority.livenessProbe }}
           livenessProbe:
           {{- toYaml . | nindent 12 }}
