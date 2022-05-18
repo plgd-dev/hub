@@ -1,5 +1,5 @@
 {{- if .Values.resourcedirectory.enabled }}
-{{- $rdCert := "/certs" }}
+{{- $resourceDirectoryCertPath := "/certs" }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -31,7 +31,7 @@ data:
           timeout: {{ .apis.grpc.keepAlive.timeout }}
         tls:
           {{- $tls := .apis.grpc.tls }}
-          {{- include "plgd-hub.certificateConfig" (list $ $tls $rdCert ) | indent 8 }}
+          {{- include "plgd-hub.certificateConfig" (list $ $tls $resourceDirectoryCertPath ) | indent 8 }}
           clientCertificateRequired: {{ .apis.grpc.tls.clientCertificateRequired }}
         authorization:
           {{- $authorization := .apis.grpc.authorization }}
@@ -44,7 +44,7 @@ data:
             timeout: {{ .apis.grpc.authorization.http.timeout }}
             tls:
               {{- $grpcTls := .apis.grpc.authorization.http.tls }}
-              {{- include "plgd-hub.certificateConfig" (list $ $grpcTls $rdCert ) | indent 12 }}
+              {{- include "plgd-hub.certificateConfig" (list $ $grpcTls $resourceDirectoryCertPath ) | indent 12 }}
               useSystemCAPool: {{ .apis.grpc.authorization.http.tls.useSystemCAPool }}
     clients:
       eventBus:
@@ -56,7 +56,7 @@ data:
             bytesLimit: {{ printf "%v" .clients.eventBus.nats.pendingLimits.bytesLimit }}
           tls:
             {{- $natsTls := .clients.eventBus.nats.tls }}
-            {{- include "plgd-hub.certificateConfig" (list $ $natsTls $rdCert ) | indent 10 }}
+            {{- include "plgd-hub.certificateConfig" (list $ $natsTls $resourceDirectoryCertPath ) | indent 10 }}
             useSystemCAPool: {{ .clients.eventBus.nats.tls.useSystemCAPool }}
       eventStore:
         cacheExpiration: {{ .clients.eventStore.cacheExpiration }}
@@ -68,7 +68,7 @@ data:
           maxConnIdleTime: {{ .clients.eventStore.mongoDB.maxConnIdleTime }}
           tls:
             {{- $mongoTls := .clients.eventStore.mongoDB.tls }}
-            {{- include "plgd-hub.certificateConfig" (list $ $natsTls $rdCert ) | indent 10 }}
+            {{- include "plgd-hub.certificateConfig" (list $ $natsTls $resourceDirectoryCertPath ) | indent 10 }}
             useSystemCAPool: {{ .clients.eventStore.mongoDB.tls.useSystemCAPool }}
       identityStore:
         pullFrequency: {{ .clients.identityStore.pullFrequency }}
@@ -83,8 +83,9 @@ data:
             permitWithoutStream: {{ .clients.identityStore.grpc.keepAlive.permitWithoutStream }}
           tls:
             {{- $authClientTls := .clients.identityStore.grpc.tls }}
-            {{- include "plgd-hub.certificateConfig" (list $ $authClientTls $rdCert ) | indent 10 }}
+            {{- include "plgd-hub.certificateConfig" (list $ $authClientTls $resourceDirectoryCertPath ) | indent 10 }}
             useSystemCAPool: {{ .clients.identityStore.grpc.tls.useSystemCAPool }}
+      {{- include "plgd-hub.openTelemetryExporterConfig" (list $ $resourceDirectoryCertPath) | nindent 6 }}
     publicConfiguration:
       caPool: {{ .publicConfiguration.caPool | default "/certs/ca.crt" | quote }}
       {{- if not $.Values.mockoauthserver.enabled }}

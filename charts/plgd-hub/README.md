@@ -223,7 +223,7 @@ global:
 | coapgateway.taskQueue | object | `{"goPoolSize":1600,"maxIdleTime":"10m","size":"2097152"}` | For complete coap-gateway service configuration see [plgd/coap-gateway](https://github.com/plgd-dev/hub/tree/main/coap-gateway) |
 | coapgateway.tolerations | object | `{}` | Toleration definition |
 | extraDeploy | string | `nil` | Extra deploy. Resolved as template |
-| global | object | `{"audience":"","authority":null,"defaultCommandTimeToLive":"10s","deviceIdClaim":null,"domain":null,"enableWildCartCert":true,"hubId":null,"oauth":{"device":[],"web":{"clientID":null}},"ownerClaim":"sub"}` | Global config variables |
+| global | object | `{"audience":"","authority":null,"defaultCommandTimeToLive":"10s","deviceIdClaim":null,"domain":null,"enableWildCartCert":true,"hubId":null,"oauth":{"device":[],"web":{"clientID":null}},"openTelemetryExporter":{"address":null,"enabled":false,"keepAlive":{"permitWithoutStream":true,"time":"10s","timeout":"20s"},"tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false}},"ownerClaim":"sub"}` | Global config variables |
 | global.audience | string | `""` | OAuth audience |
 | global.authority | string | `nil` | OAuth authority |
 | global.defaultCommandTimeToLive | string | `"10s"` | Global Default command time to live for resource-aggregate and resource-directory |
@@ -231,6 +231,12 @@ global:
 | global.domain | string | `nil` | Global domain |
 | global.enableWildCartCert | bool | `true` | Enable *.{{ global.domain }} for all external domain |
 | global.hubId | string | `nil` | hubId. Used by coap-gateway. It must be unique |
+| global.oauth | object | `{"device":[],"web":{"clientID":null}}` | Global OAuth configuration used by multiple services |
+| global.openTelemetryExporter | object | `{"address":null,"enabled":false,"keepAlive":{"permitWithoutStream":true,"time":"10s","timeout":"20s"},"tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false}}` | Global Open Telemetry exporter configuration |
+| global.openTelemetryExporter.address | string | `nil` | The gRPC collector to which the exporter is going to send data |
+| global.openTelemetryExporter.enabled | bool | `false` | Enable OTLP gRPC exporter |
+| global.openTelemetryExporter.keepAlive | object | `{"permitWithoutStream":true,"time":"10s","timeout":"20s"}` | Expoter keep alive configuration |
+| global.openTelemetryExporter.tls | object | `{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false}` | Expoter TLS configuration |
 | global.ownerClaim | string | `"sub"` | OAuth owner Claim |
 | grpcgateway.affinity | object | `{}` | Affinity definition |
 | grpcgateway.apis | object | `{"grpc":{"address":null,"authorization":{"audience":"","authority":"","http":{"idleConnTimeout":"30s","maxConnsPerHost":32,"maxIdleConns":16,"maxIdleConnsPerHost":16,"timeout":"10s","tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":true}}},"enforcementPolicy":{"minTime":"5s","permitWithoutStream":true},"keepAlive":{"maxConnectionAge":"0s","maxConnectionAgeGrace":"0s","maxConnectionIdle":"0s","time":"2h","timeout":"20s"},"ownerCacheExpiration":"1m","subscriptionBufferSize":1000,"tls":{"caPool":null,"certFile":null,"clientCertificateRequired":false,"keyFile":null}}}` | For complete grpc-gateway service configuration see [plgd/grpc-gateway](https://github.com/plgd-dev/hub/tree/main/grpc-gateway) |
@@ -556,11 +562,11 @@ global:
 | resourcedirectory.extraVolumes | object | `{}` | Optional extra volumes |
 | resourcedirectory.fullnameOverride | string | `nil` | Full name to override |
 | resourcedirectory.image.command | string | `nil` | Container command |
-| resourcedirectory.image.imagePullSecrets | object | `{}` |  |
+| resourcedirectory.image.imagePullSecrets | object | `{}` | Image pull secrets |
 | resourcedirectory.image.pullPolicy | string | `"Always"` | Image pull policy |
 | resourcedirectory.image.registry | string | `"ghcr.io/"` | Image registry |
 | resourcedirectory.image.repository | string | `"plgd-dev/hub/resource-directory"` | Image repository |
-| resourcedirectory.image.tag | string | `nil` |  |
+| resourcedirectory.image.tag | string | `nil` | Image tag. |
 | resourcedirectory.initContainersTpl | object | `{}` | Init containers definition. Resolved as template |
 | resourcedirectory.livenessProbe | object | `{}` | Liveness probe. resource-directory doesn't have any default liveness probe |
 | resourcedirectory.log | object | `{"encoderConfig":{"timeEncoder":"rfc3339nano"},"encoding":"json","level":"info","stacktrace":{"enabled":false,"level":"warn"}}` | Log section |
@@ -582,7 +588,7 @@ global:
 | resourcedirectory.readinessProbe | object | `{}` | Readiness probe. resource-directory doesn't have aby default readiness probe |
 | resourcedirectory.replicas | int | `1` | Number of replicas |
 | resourcedirectory.resources | object | `{}` | Resources limit |
-| resourcedirectory.restartPolicy | string | `"Always"` |  |
+| resourcedirectory.restartPolicy | string | `"Always"` | Restart policy for pod |
 | resourcedirectory.securityContext | object | `{}` | Security context for pod |
 | resourcedirectory.service.annotations | object | `{}` | Annotations for resource-directory service |
 | resourcedirectory.service.labels | object | `{}` | Labels for resource-directory service |
@@ -593,5 +599,5 @@ global:
 | resourcedirectory.tolerations | object | `{}` | Toleration definition |
 
 ----------------------------------------------
-Autogenerated from chart metadata using [helm-docs v1.5.0](https://github.com/norwoodj/helm-docs/releases/v1.5.0)
+Autogenerated from chart metadata using [helm-docs v1.6.0](https://github.com/norwoodj/helm-docs/releases/v1.6.0)
 
