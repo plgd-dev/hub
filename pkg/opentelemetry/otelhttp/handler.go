@@ -32,8 +32,6 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-var _ http.Handler = &Handler{}
-
 // Handler is http middleware that corresponds to the http.Handler interface and
 // is designed to wrap a http.Mux (or equivalent), while individual routes on
 // the mux are wrapped with WithRouteTag. A Handler will add various attributes
@@ -144,7 +142,9 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx, span := tracer.Start(ctx, h.spanNameFormatter(h.operation, r), opts...)
 	defer span.End()
 
-	readRecordFunc := func(int64) {}
+	readRecordFunc := func(int64) {
+		// by default do nothing
+	}
 	if h.readEvent {
 		readRecordFunc = func(n int64) {
 			span.AddEvent("read", trace.WithAttributes(ReadBytesKey.Int64(n)))
@@ -161,7 +161,9 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		r.Body = &bw
 	}
 
-	writeRecordFunc := func(int64) {}
+	writeRecordFunc := func(int64) {
+		// by default do nothing
+	}
 	if h.writeEvent {
 		writeRecordFunc = func(n int64) {
 			span.AddEvent("write", trace.WithAttributes(WroteBytesKey.Int64(n)))
@@ -229,8 +231,6 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func setAfterServeAttributes(span trace.Span, read, wrote int64, statusCode int, rerr, werr error) {
 	attributes := []attribute.KeyValue{}
 
-	// TODO: Consider adding an event after each read and write, possibly as an
-	// option (defaulting to off), so as to not create needlessly verbose spans.
 	if read > 0 {
 		attributes = append(attributes, ReadBytesKey.Int64(read))
 	}

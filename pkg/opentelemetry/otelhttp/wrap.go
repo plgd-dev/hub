@@ -53,9 +53,6 @@ var _ http.ResponseWriter = &respWriterWrapper{}
 
 // respWriterWrapper wraps a http.ResponseWriter in order to track the number of
 // bytes written, the last error, and to catch the returned statusCode
-// TODO: The wrapped http.ResponseWriter doesn't implement any of the optional
-// types (http.Hijacker, http.Pusher, http.CloseNotifier, http.Flusher, etc)
-// that may be useful when using it in real life situations.
 type respWriterWrapper struct {
 	http.ResponseWriter
 	record func(n int64) // must not be nil
