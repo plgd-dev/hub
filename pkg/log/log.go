@@ -12,6 +12,7 @@ import (
 
 	pkgX509 "github.com/plgd-dev/hub/v2/pkg/security/x509"
 	"github.com/ugorji/go/codec"
+	"go.opentelemetry.io/otel"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"google.golang.org/grpc/codes"
@@ -230,9 +231,21 @@ type Logger interface {
 	Check(lvl zapcore.Level) bool
 }
 
+type otelErrorHandler struct {
+	logger Logger
+}
+
+func (h *otelErrorHandler) Handle(err error) {
+	if errors.Is(err, context.DeadlineExceeded) {
+		return
+	}
+	_ = h.logger.LogAndReturnError(fmt.Errorf("opentelemetry collector client: %w", err))
+}
+
 // Set logger for global log fuctions
 func Set(logger Logger) {
 	log.Store(logger)
+	otel.SetErrorHandler(&otelErrorHandler{logger: logger})
 }
 
 type WrapSuggarLogger struct {
