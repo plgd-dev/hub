@@ -331,3 +331,20 @@ app.kubernetes.io/instance: {{ .Release.Name }}
         {{- tpl (.value | toYaml) .context }}
     {{- end }}
 {{- end -}}
+
+{{- define "plgd-hub.openTelemetryExporterConfig" -}}
+{{- $ := index . 0 }}
+{{- $certPath := index . 1 }}
+{{- $cfg := $.Values.global.openTelemetryExporter -}}
+openTelemetryCollector:
+  grpc:
+    enabled: {{ $cfg.enabled }}
+    address: {{ $cfg.address | quote }}
+    keepAlive:
+      time: {{ $cfg.keepAlive.time }}
+      timeout: {{ $cfg.keepAlive.timeout }}
+      permitWithoutStream: {{ $cfg.keepAlive.permitWithoutStream }}
+    tls:
+      {{- include "plgd-hub.certificateConfig" (list $ $cfg.tls $certPath ) | indent 4 }}
+      useSystemCAPool: {{ $cfg.tls.useSystemCAPool }}
+{{- end -}}

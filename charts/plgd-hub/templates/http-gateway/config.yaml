@@ -1,4 +1,4 @@
-{{- $httpCert := "/certs" }}
+{{- $httpGatewayCertPath := "/certs" }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -20,7 +20,7 @@ data:
         address: {{  .apis.http.address | default (printf "0.0.0.0:%v" .port) | quote }}
         tls:
           {{- $tls := .apis.http.tls }}
-          {{- include "plgd-hub.certificateConfig" (list $ $tls $httpCert ) | indent 8 }}
+          {{- include "plgd-hub.certificateConfig" (list $ $tls $httpGatewayCertPath ) | indent 8 }}
           clientCertificateRequired: {{ .apis.http.tls.clientCertificateRequired }}
         webSocket:
           streamBodyLimit: {{ .apis.http.webSocket.streamBodyLimit }}
@@ -41,7 +41,7 @@ data:
             timeout: {{ .apis.http.authorization.http.timeout }}
             tls:
               {{- $httpTls := .apis.http.authorization.http.tls }}
-              {{- include "plgd-hub.certificateConfig" (list $ $httpTls $httpCert ) | indent 12 }}
+              {{- include "plgd-hub.certificateConfig" (list $ $httpTls $httpGatewayCertPath ) | indent 12 }}
               useSystemCAPool: {{ .apis.http.authorization.http.tls.useSystemCAPool }}
     clients:
       grpcGateway:
@@ -53,8 +53,9 @@ data:
             permitWithoutStream: {{ .clients.grpcGateway.grpc.keepAlive.permitWithoutStream }}
           tls:
             {{- $grpcTls := .clients.grpcGateway.grpc.tls }}
-            {{- include "plgd-hub.certificateConfig" (list $ $grpcTls $httpCert ) | indent 10 }}
+            {{- include "plgd-hub.certificateConfig" (list $ $grpcTls $httpGatewayCertPath ) | indent 10 }}
             useSystemCAPool: {{ .clients.grpcGateway.grpc.tls.useSystemCAPool }}
+      {{- include "plgd-hub.openTelemetryExporterConfig" (list $ $httpGatewayCertPath) | nindent 6 }}
     ui:
       enabled: {{ .ui.enabled }}
       directory: {{ .ui.directory | quote }}
