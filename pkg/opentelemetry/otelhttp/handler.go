@@ -15,12 +15,12 @@
 package otelhttp // import "go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 
 import (
+	"errors"
 	"io"
 	"net/http"
 	"time"
 
 	"github.com/felixge/httpsnoop"
-
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
@@ -234,7 +234,7 @@ func setAfterServeAttributes(span trace.Span, read, wrote int64, statusCode int,
 	if read > 0 {
 		attributes = append(attributes, ReadBytesKey.Int64(read))
 	}
-	if rerr != nil && rerr != io.EOF {
+	if rerr != nil && !errors.Is(rerr, io.EOF) {
 		attributes = append(attributes, ReadErrorKey.String(rerr.Error()))
 	}
 	if wrote > 0 {
@@ -244,7 +244,7 @@ func setAfterServeAttributes(span trace.Span, read, wrote int64, statusCode int,
 		attributes = append(attributes, semconv.HTTPAttributesFromHTTPStatusCode(statusCode)...)
 		span.SetStatus(semconv.SpanStatusFromHTTPStatusCode(statusCode))
 	}
-	if werr != nil && werr != io.EOF {
+	if werr != nil && !errors.Is(werr, io.EOF) {
 		attributes = append(attributes, WriteErrorKey.String(werr.Error()))
 	}
 	span.SetAttributes(attributes...)
