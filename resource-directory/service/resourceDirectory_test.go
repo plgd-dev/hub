@@ -24,7 +24,7 @@ import (
 	"google.golang.org/grpc"
 )
 
-func TestResourceDirectory_GetResourceLinks(t *testing.T) {
+func TestResourceDirectoryGetResourceLinks(t *testing.T) {
 	type args struct {
 		request *pb.GetResourceLinksRequest
 	}

@@ -2,6 +2,8 @@ package projection
 
 import (
 	"context"
+	"fmt"
+	"sync"
 	"testing"
 	"time"
 
@@ -10,6 +12,7 @@ import (
 	mockEvents "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore/test"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var d1res1 = commands.Resource{
@@ -154,6 +157,50 @@ func prepareResourceStateEventstore(t *testing.T) *mockEvents.MockEventStore {
 	eventstore.Append(d2res2.DeviceId, d2r2.ToUUID(), mockEvents.MakeResourceChangedEvent(d2r2, &commands.Content{}, makeEventMeta("a", 0, 3), mockEvents.MakeAuditContext("userId", "2")))
 
 	return eventstore
+}
+
+func TestResourceProjectionTestLoadParallelModels(t *testing.T) {
+	eventstore := mockEvents.NewMockEventStore()
+	resourceChangedEventMetadata := makeEventMeta("", 0, 0)
+	numDevices := 350
+	numResources := 500
+	numParallelRequests := 6
+
+	for i := 0; i < numDevices; i++ {
+		for j := 0; j < numResources; j++ {
+			resourceID := commands.NewResourceID(fmt.Sprintf("dev-%v", i), fmt.Sprintf("res-%v", j))
+			eventstore.Append(resourceID.GetDeviceId(), resourceID.ToUUID(), mockEvents.MakeResourceStateSnapshotTaken(resourceID, &events.ResourceChanged{Content: &commands.Content{}, EventMetadata: resourceChangedEventMetadata}, makeEventMeta("a", 0, 0), mockEvents.MakeAuditContext("userId", "2")))
+		}
+	}
+
+	ctx := context.Background()
+	p, err := NewProjection(
+		ctx,
+		"test",
+		eventstore,
+		nil,
+		func(ctx context.Context, groupID, aggregateID string) (cqrsEventStore.Model, error) {
+			return events.NewResourceLinksSnapshotTaken(), nil
+		},
+	)
+	require.NoError(t, err)
+
+	err = p.cqrsProjection.Project(ctx, nil)
+	require.NoError(t, err)
+
+	var wg sync.WaitGroup
+	wg.Add(numParallelRequests)
+	t.Logf("starting %v requests\n", numParallelRequests)
+	for i := 0; i < numParallelRequests; i++ {
+		go func(v int) {
+			defer wg.Done()
+			n := time.Now()
+			p.cqrsProjection.Models(nil, func(m cqrsEventStore.Model) (wantNext bool) { return true })
+			diff := -1 * time.Until(n)
+			t.Logf("%v models time %v\n", v, diff)
+		}(i)
+	}
+	wg.Wait()
 }
 
 func TestResourceProjection_Register(t *testing.T) {
@@ -411,7 +458,11 @@ func TestResourceLinksProjection_Models(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			_, err = p.Register(ctx, tt.args.deviceID)
 			assert.NoError(t, err)
-			got := p.Models(commands.NewResourceID(tt.args.deviceID, commands.ResourceLinksHref))
+			got := []cqrsEventStore.Model{}
+			p.Models(func(m cqrsEventStore.Model) (wantNext bool) {
+				got = append(got, m)
+				return true
+			}, commands.NewResourceID(tt.args.deviceID, commands.ResourceLinksHref))
 
 			mapWant := make(map[string]*events.ResourceLinksSnapshotTaken)
 			for _, r := range tt.want {
@@ -675,7 +726,11 @@ func TestResourceStateProjection_Models(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			_, err = p.Register(ctx, tt.args.resourceID.GetDeviceId())
 			assert.NoError(t, err)
-			got := p.Models(tt.args.resourceID)
+			got := []cqrsEventStore.Model{}
+			p.Models(func(m cqrsEventStore.Model) (wantNext bool) {
+				got = append(got, m)
+				return true
+			}, tt.args.resourceID)
 
 			mapWant := make(map[string]*events.ResourceStateSnapshotTaken)
 			for _, r := range tt.want {

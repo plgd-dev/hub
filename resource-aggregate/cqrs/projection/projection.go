@@ -115,9 +115,13 @@ func (p *Projection) Unregister(deviceID string) error {
 	return nil
 }
 
-// Models returns models for device, resource or nil for non exist.
-func (p *Projection) Models(resourceID *commands.ResourceId) []eventstore.Model {
-	return p.cqrsProjection.Models([]eventstore.SnapshotQuery{{GroupID: resourceID.GetDeviceId(), AggregateID: resourceID.ToUUID()}})
+// Models returns models via onModel function for device, resource or nil for non exist.
+func (p *Projection) Models(onModel func(eventstore.Model) (wantNext bool), resourceIDs ...*commands.ResourceId) {
+	q := make([]eventstore.SnapshotQuery, 0, len(resourceIDs))
+	for _, resourceID := range resourceIDs {
+		q = append(q, eventstore.SnapshotQuery{GroupID: resourceID.GetDeviceId(), AggregateID: resourceID.ToUUID()})
+	}
+	p.cqrsProjection.Models(q, onModel)
 }
 
 // ForceUpdate invokes update registered resource model from evenstore.

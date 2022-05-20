@@ -32,7 +32,7 @@ import (
 	"google.golang.org/grpc/credentials"
 )
 
-func TestRequestHandler_GetPendingCommands(t *testing.T) {
+func TestRequestHandlerGetPendingCommands(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	type args struct {
 		req *pb.GetPendingCommandsRequest

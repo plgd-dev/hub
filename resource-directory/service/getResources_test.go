@@ -21,7 +21,7 @@ import (
 	"google.golang.org/grpc/credentials"
 )
 
-func TestRequestHandler_GetResources(t *testing.T) {
+func TestRequestHandlerGetResources(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	type args struct {
 		req *pb.GetResourcesRequest

@@ -161,14 +161,24 @@ func TestProjection(t *testing.T) {
 		AggregateID: res1.ToUUID(),
 	}})
 	require.NoError(t, err)
-	require.Equal(t, 1, len(projection.Models(nil)))
+	models := []eventstore.Model{}
+	projection.Models(nil, func(m eventstore.Model) (wantTrue bool) {
+		models = append(models, m)
+		return true
+	})
+	require.Equal(t, 1, len(models))
 
 	err = projection.Project(ctx, []eventstore.SnapshotQuery{{
 		GroupID:     res2.DeviceId,
 		AggregateID: res2.ToUUID(),
 	}})
 	require.NoError(t, err)
-	require.Equal(t, 2, len(projection.Models(nil)))
+	models = []eventstore.Model{}
+	projection.Models(nil, func(m eventstore.Model) (wantTrue bool) {
+		models = append(models, m)
+		return true
+	})
+	require.Equal(t, 2, models)
 
 	err = projection.SubscribeTo(topics)
 	require.NoError(t, err)
@@ -192,7 +202,12 @@ func TestProjection(t *testing.T) {
 	}
 	time.Sleep(time.Second)
 
-	require.Equal(t, 3, len(projection.Models(nil)))
+	models = []eventstore.Model{}
+	projection.Models(nil, func(m eventstore.Model) (wantNext bool) {
+		models = append(models, m)
+		return true
+	})
+	require.Equal(t, 3, len(models))
 
 	err = projection.SubscribeTo(topics[0:1])
 	require.NoError(t, err)
@@ -207,7 +222,13 @@ func TestProjection(t *testing.T) {
 
 	time.Sleep(time.Second)
 	projection.lock.Lock()
-	require.Equal(t, 2, len(projection.Models(nil)))
+
+	models = []eventstore.Model{}
+	projection.Models(nil, func(m eventstore.Model) (wantNext bool) {
+		models = append(models, m)
+		return true
+	})
+	require.Equal(t, 2, len(models))
 	projection.lock.Unlock()
 
 	err = projection.SubscribeTo(nil)
@@ -226,6 +247,11 @@ func TestProjection(t *testing.T) {
 	}
 
 	projection.lock.Lock()
-	require.Equal(t, 2, len(projection.Models(nil)))
+	models = []eventstore.Model{}
+	projection.Models(nil, func(m eventstore.Model) (wantNext bool) {
+		models = append(models, m)
+		return true
+	})
+	require.Equal(t, 2, len(models))
 	projection.lock.Unlock()
 }

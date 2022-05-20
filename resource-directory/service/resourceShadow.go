@@ -7,9 +7,7 @@ import (
 	"github.com/plgd-dev/device/schema/device"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/subscription"
-	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
-	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 	"github.com/plgd-dev/kit/v2/strings"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -34,10 +32,7 @@ func NewResourceShadow(projection *Projection, deviceIds []string) *ResourceShad
 	return &ResourceShadow{projection: projection, userDeviceIds: mapDeviceIds}
 }
 
-func (rd *ResourceShadow) filterResources(ctx context.Context, resourceIDsFilter, deviceIdFilter, typeFilter []string) (map[string]map[string]*Resource, error) {
-	mapTypeFilter := make(strings.Set)
-	mapTypeFilter.Add(typeFilter...)
-
+func (rd *ResourceShadow) convertToResourceIDs(resourceIDsFilter, deviceIdFilter []string) []*commands.ResourceId {
 	internalResourceIDsFilter := make([]*commands.ResourceId, 0, len(resourceIDsFilter)+len(deviceIdFilter))
 	for _, r := range resourceIDsFilter {
 		res := commands.ResourceIdFromString(r)
@@ -53,42 +48,48 @@ func (rd *ResourceShadow) filterResources(ctx context.Context, resourceIDsFilter
 	}
 	if len(internalResourceIDsFilter) == 0 {
 		if len(resourceIDsFilter) > 0 || len(deviceIdFilter) > 0 {
-			return nil, nil
+			return nil
 		}
 		internalResourceIDsFilter = make([]*commands.ResourceId, 0, len(rd.userDeviceIds))
 		for userDeviceID := range rd.userDeviceIds {
 			internalResourceIDsFilter = append(internalResourceIDsFilter, commands.NewResourceID(userDeviceID, ""))
 		}
 	}
+	return internalResourceIDsFilter
+}
 
-	resources, err := rd.projection.GetResourcesWithLinks(ctx, internalResourceIDsFilter, mapTypeFilter)
-	if err != nil {
-		return nil, err
-	}
-	if len(resources) == 0 {
-		return nil, nil
-	}
-	return resources, err
+func (rd *ResourceShadow) filterResources(ctx context.Context, resourceIDsFilter []*commands.ResourceId, typeFilter []string, toReloadDevices strings.Set, onResource func(*Resource) error) error {
+	mapTypeFilter := make(strings.Set)
+	mapTypeFilter.Add(typeFilter...)
+	return rd.projection.LoadResourcesWithLinks(ctx, resourceIDsFilter, mapTypeFilter, toReloadDevices, onResource)
+}
+
+func (rd *ResourceShadow) getResources(resourceIDsFilter []*commands.ResourceId, typeFilter []string, srv pb.GrpcGateway_GetResourcesServer, toReloadDevices strings.Set) error {
+	return rd.filterResources(srv.Context(), resourceIDsFilter, typeFilter, toReloadDevices, func(resource *Resource) error {
+		val := toResourceValue(resource)
+		err := srv.Send(val)
+		if err != nil {
+			return status.Errorf(codes.Canceled, "cannot send resource value %v: %v", val, err)
+		}
+		return nil
+	})
 }
 
 func (rd *ResourceShadow) GetResources(req *pb.GetResourcesRequest, srv pb.GrpcGateway_GetResourcesServer) error {
-	resources, err := rd.filterResources(srv.Context(), req.GetResourceIdFilter(), req.GetDeviceIdFilter(), req.GetTypeFilter())
+	toReloadDevices := make(strings.Set)
+	resourceIDsFilter := rd.convertToResourceIDs(req.GetResourceIdFilter(), req.GetDeviceIdFilter())
+	err := rd.getResources(resourceIDsFilter, req.GetTypeFilter(), srv, toReloadDevices)
 	if err != nil {
 		return err
 	}
-	if len(resources) == 0 {
-		log.Debug("ResourceShadow.GetResources.filterResources returns empty resources")
-		return nil
-	}
-
-	for _, deviceResources := range resources {
-		for _, resource := range deviceResources {
-			val := toResourceValue(resource)
-			err = srv.Send(val)
-			if err != nil {
-				return status.Errorf(codes.Canceled, "cannot send resource value %v: %v", val, err)
+	if len(toReloadDevices) > 0 {
+		rd.projection.ReloadDevices(srv.Context(), toReloadDevices)
+		for i := range resourceIDsFilter {
+			if toReloadDevices.HasOneOf(resourceIDsFilter[i].GetDeviceId()) {
+				resourceIDsFilter = append(resourceIDsFilter, resourceIDsFilter[i])
 			}
 		}
+		return rd.getResources(resourceIDsFilter, req.GetTypeFilter(), srv, nil)
 	}
 	return nil
 }
@@ -149,106 +150,115 @@ func toPendingCommands(resource *Resource, commandFilter subscription.FilterBitm
 	return pendingCmds
 }
 
-func (rd *ResourceShadow) GetPendingCommands(req *pb.GetPendingCommandsRequest, srv pb.GrpcGateway_GetPendingCommandsServer) error {
-	filterCmds := subscription.FilterPendingsCommandsToBitmask(req.GetCommandFilter())
-	now := time.Now()
+func (rd *ResourceShadow) sendPendingCommands(srv pb.GrpcGateway_GetPendingCommandsServer, resourceIDsFilter []*commands.ResourceId, typeFilter []string, filterCmds subscription.FilterBitmask, now time.Time, toReloadDevices strings.Set) error {
+	return rd.filterResources(srv.Context(), resourceIDsFilter, typeFilter, toReloadDevices, func(resource *Resource) error {
+		for _, pendingCmd := range toPendingCommands(resource, filterCmds, now) {
+			err := srv.Send(pendingCmd)
+			if err != nil {
+				return status.Errorf(codes.Canceled, "cannot send pending command %v: %v", pendingCmd, err)
+			}
+		}
+		return nil
+	})
+}
+
+func (rd *ResourceShadow) sendDeviceMetadataUpdatePendingCommands(deviceIDs strings.Set, srv pb.GrpcGateway_GetPendingCommandsServer, now time.Time, toReloadDevices strings.Set) error {
+	return rd.projection.LoadDevicesMetadata(srv.Context(), deviceIDs, toReloadDevices, func(m *deviceMetadataProjection) error {
+		for _, pendingCmd := range m.data.GetUpdatePendings() {
+			if pendingCmd.IsExpired(now) {
+				continue
+			}
+			err := srv.Send(&pb.PendingCommand{
+				Command: &pb.PendingCommand_DeviceMetadataUpdatePending{
+					DeviceMetadataUpdatePending: pendingCmd,
+				},
+			})
+			if err != nil {
+				return status.Errorf(codes.Canceled, "cannot send device metadata update pending command %v: %v", pendingCmd, err)
+			}
+		}
+		return nil
+	})
+}
+
+func (rd *ResourceShadow) getDeviceMetadataUpdatePendingCommands(req *pb.GetPendingCommandsRequest, srv pb.GrpcGateway_GetPendingCommandsServer, now time.Time, filterCmds subscription.FilterBitmask) error {
+	toReloadDevices := make(strings.Set)
 	if subscription.IsFilteredBit(filterCmds, subscription.FilterBitmaskDeviceMetadataUpdatePending) &&
 		len(req.GetResourceIdFilter()) == 0 && len(req.GetTypeFilter()) == 0 {
 		deviceIDs := filterDevices(rd.userDeviceIds, req.GetDeviceIdFilter())
-		devicesMetadata, err := rd.projection.GetDevicesMetadata(srv.Context(), deviceIDs)
+		err := rd.sendDeviceMetadataUpdatePendingCommands(deviceIDs, srv, now, toReloadDevices)
 		if err != nil {
 			return err
 		}
-		for _, deviceMetadata := range devicesMetadata {
-			for _, pendingCmd := range deviceMetadata.GetUpdatePendings() {
-				if pendingCmd.IsExpired(now) {
-					continue
-				}
-				err = srv.Send(&pb.PendingCommand{
-					Command: &pb.PendingCommand_DeviceMetadataUpdatePending{
-						DeviceMetadataUpdatePending: pendingCmd,
-					},
-				})
-				if err != nil {
-					return status.Errorf(codes.Canceled, "cannot send device metadata update pending command %v: %v", pendingCmd, err)
-				}
-			}
-		}
 	}
-
-	resources, err := rd.filterResources(srv.Context(), req.GetResourceIdFilter(), req.GetDeviceIdFilter(), req.GetTypeFilter())
-	if err != nil {
-		return err
-	}
-	if len(resources) == 0 {
-		log.Debug("ResourceShadow.GetPendingCommands.filterResources returns empty resources")
-		return nil
-	}
-
-	for _, deviceResources := range resources {
-		for _, resource := range deviceResources {
-			for _, pendingCmd := range toPendingCommands(resource, filterCmds, now) {
-				err = srv.Send(pendingCmd)
-				if err != nil {
-					return status.Errorf(codes.Canceled, "cannot send pending command %v: %v", pendingCmd, err)
-				}
-			}
-		}
+	if len(toReloadDevices) > 0 {
+		rd.projection.ReloadDevices(srv.Context(), toReloadDevices)
+		return rd.sendDeviceMetadataUpdatePendingCommands(toReloadDevices, srv, now, nil)
 	}
 	return nil
 }
 
-func filterMetadataByUserFilters(resources map[string]map[string]*Resource, devicesMetadata map[string]*events.DeviceMetadataSnapshotTaken, req *pb.GetDevicesMetadataRequest) (map[string]*events.DeviceMetadataSnapshotTaken, error) {
-	result := make(map[string]*events.DeviceMetadataSnapshotTaken)
-	typeFilter := make(strings.Set)
-	typeFilter.Add(req.TypeFilter...)
-	for deviceID, resources := range resources {
-		for _, resource := range resources {
-			if !hasMatchingType(resource.Resource.GetResourceTypes(), typeFilter) {
-				continue
-			}
-			d, ok := devicesMetadata[deviceID]
-			if ok {
-				result[deviceID] = d
-			}
-		}
-	}
+func (rd *ResourceShadow) GetPendingCommands(req *pb.GetPendingCommandsRequest, srv pb.GrpcGateway_GetPendingCommandsServer) error {
+	filterCmds := subscription.FilterPendingsCommandsToBitmask(req.GetCommandFilter())
+	now := time.Now()
 
-	return result, nil
-}
-
-func (rd *ResourceShadow) GetDevicesMetadata(req *pb.GetDevicesMetadataRequest, srv pb.GrpcGateway_GetDevicesMetadataServer) error {
-	deviceIDs := filterDevices(rd.userDeviceIds, req.DeviceIdFilter)
-	resourceIdFilter := make([]*commands.ResourceId, 0, 64)
-	for deviceID := range deviceIDs {
-		resourceIdFilter = append(resourceIdFilter, commands.NewResourceID(deviceID, device.ResourceURI), commands.NewResourceID(deviceID, commands.StatusHref))
-	}
-
-	resources, err := rd.projection.GetResourcesWithLinks(srv.Context(), resourceIdFilter, nil)
-	if err != nil {
-		return status.Errorf(codes.Internal, "cannot get resources by device ids: %v", err)
-	}
-
-	devicesMetadata, err := rd.projection.GetDevicesMetadata(srv.Context(), deviceIDs)
+	err := rd.getDeviceMetadataUpdatePendingCommands(req, srv, now, filterCmds)
 	if err != nil {
 		return err
 	}
 
-	devicesMetadata, err = filterMetadataByUserFilters(resources, devicesMetadata, req)
+	toReloadDevices := make(strings.Set)
+	resourceIDsFilter := rd.convertToResourceIDs(req.GetResourceIdFilter(), req.GetDeviceIdFilter())
+	err = rd.sendPendingCommands(srv, resourceIDsFilter, req.GetTypeFilter(), filterCmds, now, toReloadDevices)
 	if err != nil {
-		return status.Errorf(codes.Internal, "cannot filter devices metadata by type: %v", err)
+		return err
 	}
-
-	if len(devicesMetadata) == 0 {
-		log.Debug("ResourceShadow.GetDevicesMetadata.filterMetadataByUserFilters returns empty devices metadata")
-		return nil
-	}
-
-	for _, deviceMetadata := range devicesMetadata {
-		err = srv.Send(deviceMetadata.GetDeviceMetadataUpdated())
-		if err != nil {
-			return status.Errorf(codes.Canceled, "cannot send devices metadata %v: %v", deviceMetadata, err)
+	if len(toReloadDevices) > 0 {
+		rd.projection.ReloadDevices(srv.Context(), toReloadDevices)
+		newResourceIDsFilter := make([]*commands.ResourceId, 0, len(resourceIDsFilter))
+		for i := range resourceIDsFilter {
+			if toReloadDevices.HasOneOf(resourceIDsFilter[i].GetDeviceId()) {
+				newResourceIDsFilter = append(newResourceIDsFilter, resourceIDsFilter[i])
+			}
 		}
+		return rd.sendPendingCommands(srv, newResourceIDsFilter, req.GetTypeFilter(), filterCmds, now, nil)
+	}
+	return nil
+}
+
+func (rd *ResourceShadow) sendDevicesMetadata(srv pb.GrpcGateway_GetDevicesMetadataServer, deviceIDFilter, typeFilter, toReloadDevices strings.Set) error {
+	return rd.projection.LoadResourceLinks(srv.Context(), deviceIDFilter, toReloadDevices, func(m *resourceLinksProjection) error {
+		if m.snapshot.GetResources() == nil || m.snapshot.GetResources()[device.ResourceURI] == nil {
+			if toReloadDevices != nil {
+				toReloadDevices.Add(m.GetDeviceID())
+			}
+			return nil
+		}
+		if len(typeFilter) > 0 && !typeFilter.HasOneOf(m.snapshot.GetResources()[device.ResourceURI].ResourceTypes...) {
+			return nil
+		}
+		return rd.projection.LoadDevicesMetadata(srv.Context(), strings.MakeSet(m.GetDeviceID()), toReloadDevices, func(m *deviceMetadataProjection) error {
+			err := srv.Send(m.data.GetDeviceMetadataUpdated())
+			if err != nil {
+				return status.Errorf(codes.Canceled, "cannot send devices metadata %v: %v", m.data.GetDeviceMetadataUpdated(), err)
+			}
+			return nil
+		})
+	})
+}
+
+func (rd *ResourceShadow) GetDevicesMetadata(req *pb.GetDevicesMetadataRequest, srv pb.GrpcGateway_GetDevicesMetadataServer) error {
+	deviceIDs := filterDevices(rd.userDeviceIds, req.DeviceIdFilter)
+	typeFilter := make(strings.Set)
+	typeFilter.Add(req.TypeFilter...)
+	toReloadDevices := make(strings.Set)
+	err := rd.sendDevicesMetadata(srv, deviceIDs, typeFilter, toReloadDevices)
+	if err != nil {
+		return err
+	}
+	if len(toReloadDevices) > 0 {
+		rd.projection.ReloadDevices(srv.Context(), toReloadDevices)
+		return rd.sendDevicesMetadata(srv, toReloadDevices, typeFilter, nil)
 	}
 	return nil
 }

@@ -11,7 +11,8 @@ import (
 	coapgwTest "github.com/plgd-dev/hub/v2/coap-gateway/test"
 	grpcgwConfig "github.com/plgd-dev/hub/v2/grpc-gateway/service"
 	grpcgwTest "github.com/plgd-dev/hub/v2/grpc-gateway/test"
-	idService "github.com/plgd-dev/hub/v2/identity-store/test"
+	isService "github.com/plgd-dev/hub/v2/identity-store/service"
+	isTest "github.com/plgd-dev/hub/v2/identity-store/test"
 	"github.com/plgd-dev/hub/v2/pkg/fn"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	cmClient "github.com/plgd-dev/hub/v2/pkg/security/certManager/client"
@@ -58,6 +59,7 @@ type Config struct {
 	RD     rdService.Config
 	GRPCGW grpcgwConfig.Config
 	RA     raService.Config
+	IS     isService.Config
 }
 
 func WithCOAPGWConfig(coapgwCfg coapgw.Config) SetUpOption {
@@ -84,6 +86,12 @@ func WithRAConfig(ra raService.Config) SetUpOption {
 	}
 }
 
+func WithISConfig(is isService.Config) SetUpOption {
+	return func(cfg *Config) {
+		cfg.IS = is
+	}
+}
+
 type SetUpOption = func(cfg *Config)
 
 func SetUp(ctx context.Context, t *testing.T, opts ...SetUpOption) (TearDown func()) {
@@ -92,6 +100,7 @@ func SetUp(ctx context.Context, t *testing.T, opts ...SetUpOption) (TearDown fun
 		RD:     rdTest.MakeConfig(t),
 		GRPCGW: grpcgwTest.MakeConfig(t),
 		RA:     raTest.MakeConfig(t),
+		IS:     isTest.MakeConfig(t),
 	}
 
 	for _, o := range opts {
@@ -100,7 +109,7 @@ func SetUp(ctx context.Context, t *testing.T, opts ...SetUpOption) (TearDown fun
 
 	ClearDB(ctx, t)
 	oauthShutdown := oauthTest.SetUp(t)
-	idShutdown := idService.SetUp(t)
+	isShutdown := isTest.New(t, config.IS)
 	raShutdown := raTest.New(t, config.RA)
 	rdShutdown := rdTest.New(t, config.RD)
 	grpcShutdown := grpcgwTest.New(t, config.GRPCGW)
@@ -115,7 +124,7 @@ func SetUp(ctx context.Context, t *testing.T, opts ...SetUpOption) (TearDown fun
 		secureGWShutdown()
 		rdShutdown()
 		raShutdown()
-		idShutdown()
+		isShutdown()
 		oauthShutdown()
 	}
 }
@@ -142,8 +151,8 @@ func SetUpServices(ctx context.Context, t *testing.T, servicesConfig SetUpServic
 		tearDown.AddFunc(oauthShutdown)
 	}
 	if servicesConfig&SetUpServicesId != 0 {
-		idShutdown := idService.SetUp(t)
-		tearDown.AddFunc(idShutdown)
+		isShutdown := isTest.SetUp(t)
+		tearDown.AddFunc(isShutdown)
 	}
 	if servicesConfig&SetUpServicesResourceAggregate != 0 {
 		raShutdown := raTest.SetUp(t)
