@@ -23,7 +23,7 @@ import (
 	"google.golang.org/grpc"
 )
 
-func TestResourceShadow_GetResources(t *testing.T) {
+func TestResourceShadowGetResources(t *testing.T) {
 	type args struct {
 		req *pb.GetResourcesRequest
 	}

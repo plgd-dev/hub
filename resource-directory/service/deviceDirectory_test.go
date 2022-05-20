@@ -26,7 +26,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func TestDeviceDirectory_GetDevices(t *testing.T) {
+func TestDeviceDirectoryGetDevices(t *testing.T) {
 	type args struct {
 		request *pb.GetDevicesRequest
 	}

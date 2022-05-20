@@ -12,7 +12,7 @@ import (
 )
 
 type resourceProjection struct {
-	lock                     sync.Mutex
+	lock                     sync.RWMutex
 	resourceID               *commands.ResourceId
 	content                  *events.ResourceChanged
 	version                  uint64
@@ -31,6 +31,10 @@ func NewResourceProjection() eventstore.Model {
 		resourceDeletePendings:   make([]*events.ResourceDeletePending, 0, 8),
 		resourceCreatePendings:   make([]*events.ResourceCreatePending, 0, 8),
 	}
+}
+
+func (rp *resourceProjection) GetDeviceID() string {
+	return rp.resourceID.GetDeviceId()
 }
 
 func (rp *resourceProjection) cloneLocked() *resourceProjection {
@@ -54,8 +58,8 @@ func (rp *resourceProjection) cloneLocked() *resourceProjection {
 }
 
 func (rp *resourceProjection) Clone() *resourceProjection {
-	rp.lock.Lock()
-	defer rp.lock.Unlock()
+	rp.lock.RLock()
+	defer rp.lock.RUnlock()
 
 	return rp.cloneLocked()
 }

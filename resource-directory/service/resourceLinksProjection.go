@@ -10,7 +10,7 @@ import (
 )
 
 type resourceLinksProjection struct {
-	lock     sync.Mutex
+	lock     sync.RWMutex
 	snapshot *events.ResourceLinksSnapshotTaken
 }
 
@@ -18,10 +18,14 @@ func NewResourceLinksProjection() eventstore.Model {
 	return &resourceLinksProjection{}
 }
 
+func (rlp *resourceLinksProjection) GetDeviceID() string {
+	return rlp.snapshot.GetDeviceId()
+}
+
 func (rlp *resourceLinksProjection) Clone() *resourceLinksProjection {
 	var snapshot *events.ResourceLinksSnapshotTaken
-	rlp.lock.Lock()
-	defer rlp.lock.Unlock()
+	rlp.lock.RLock()
+	defer rlp.lock.RUnlock()
 
 	if rlp.snapshot != nil {
 		s, _ := rlp.snapshot.TakeSnapshot(rlp.snapshot.Version())

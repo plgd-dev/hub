@@ -86,8 +86,8 @@ func (p *projection) SubscribeTo(topics []string) error {
 }
 
 // Models get models from projection
-func (p *projection) Models(queries []eventstore.SnapshotQuery) []eventstore.Model {
-	return p.projection.Models(queries)
+func (p *projection) Models(queries []eventstore.SnapshotQuery, onModel func(m eventstore.Model) (wantNext bool)) {
+	p.projection.Models(queries, onModel)
 }
 
 // Close cancel projection.

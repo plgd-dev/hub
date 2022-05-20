@@ -64,7 +64,7 @@ type Projection struct {
 	LogDebugfFunc LogDebugfFunc
 
 	factoryModel    FactoryModelFunc
-	lock            sync.Mutex
+	lock            sync.RWMutex
 	aggregateModels map[string]map[string]*aggregateModel
 }
 
@@ -174,13 +174,11 @@ func (i *iterator) Err() error {
 	return i.iter.Err()
 }
 
-func (p *Projection) getModel(ctx context.Context, groupID, aggregateID string) (*aggregateModel, error) {
+func (p *Projection) getModelLocked(ctx context.Context, groupID, aggregateID string) (*aggregateModel, error) {
 	var ok bool
 	var mapApm map[string]*aggregateModel
 	var apm *aggregateModel
 
-	p.lock.Lock()
-	defer p.lock.Unlock()
 	if mapApm, ok = p.aggregateModels[groupID]; !ok {
 		mapApm = make(map[string]*aggregateModel)
 		p.aggregateModels[groupID] = mapApm
@@ -204,9 +202,11 @@ func (p *Projection) handle(ctx context.Context, iter Iter) (reloadQueries []Ver
 	}
 	ie := e
 	reloadQueries = make([]VersionQuery, 0, 32)
+	p.lock.Lock()
+	defer p.lock.Unlock()
 	for ie != nil {
 		p.LogDebugfFunc("projection.iterator.handle: GroupID %v: AggregateID %v: Version %v, EvenType %v", ie.GroupID(), ie.AggregateID(), ie.Version(), ie.EventType())
-		am, err := p.getModel(ctx, ie.GroupID(), ie.AggregateID())
+		am, err := p.getModelLocked(ctx, ie.GroupID(), ie.AggregateID())
 		if err != nil {
 			return nil, fmt.Errorf("cannot handle projection: %w", err)
 		}
@@ -289,55 +289,45 @@ func (p *Projection) Forget(queries []SnapshotQuery) (err error) {
 	return nil
 }
 
-func makeModelID(groupID, aggregateID string) string {
-	return groupID + "." + aggregateID
-}
-
-func (p *Projection) allModels(models map[string]Model) map[string]Model {
-	for groupID, group := range p.aggregateModels {
-		for aggregateID, apm := range group {
-			models[makeModelID(groupID, aggregateID)] = apm.model
+func (p *Projection) allModels(onModel func(m Model) (wantNext bool)) {
+	for _, group := range p.aggregateModels {
+		for _, apm := range group {
+			if !onModel(apm.model) {
+				return // stop iteration
+			}
 		}
 	}
-	return models
 }
 
-func (p *Projection) models(queries []SnapshotQuery) map[string]Model {
-	models := make(map[string]Model)
-	p.lock.Lock()
-	defer p.lock.Unlock()
+// Models return models from projection.
+func (p *Projection) Models(queries []SnapshotQuery, onModel func(m Model) (wantNext bool)) {
+	p.lock.RLock()
+	defer p.lock.RUnlock()
 
 	if len(queries) == 0 {
-		return p.allModels(models)
+		p.allModels(onModel)
 	}
 	for _, query := range queries {
 		switch {
 		case query.GroupID == "" && query.AggregateID == "":
-			return p.allModels(models)
+			p.allModels(onModel)
+			return
 		case query.GroupID != "" && query.AggregateID == "":
 			if aggregates, ok := p.aggregateModels[query.GroupID]; ok {
-				for aggrID, apm := range aggregates {
-					models[makeModelID(query.GroupID, aggrID)] = apm.model
+				for _, apm := range aggregates {
+					if !onModel(apm.model) {
+						return // stop iteration
+					}
 				}
 			}
 		default:
 			if aggregates, ok := p.aggregateModels[query.GroupID]; ok {
 				if apm, ok := aggregates[query.AggregateID]; ok {
-					models[makeModelID(query.GroupID, query.AggregateID)] = apm.model
+					if !onModel(apm.model) {
+						return // stop iteration
+					}
 				}
 			}
 		}
 	}
-
-	return models
-}
-
-// Models return models from projection.
-func (p *Projection) Models(queries []SnapshotQuery) []Model {
-	models := p.models(queries)
-	result := make([]Model, 0, len(models))
-	for _, m := range models {
-		result = append(result, m)
-	}
-	return result
 }

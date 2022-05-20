@@ -22,7 +22,7 @@ import (
 	"google.golang.org/grpc/credentials"
 )
 
-func TestRequestHandler_GetResourceLinks(t *testing.T) {
+func TestRequestHandlerGetResourceLinks(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	type args struct {
 		req *pb.GetResourceLinksRequest

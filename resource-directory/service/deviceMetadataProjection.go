@@ -10,7 +10,7 @@ import (
 )
 
 type deviceMetadataProjection struct {
-	lock sync.Mutex
+	lock sync.RWMutex
 	data *events.DeviceMetadataSnapshotTaken
 }
 
@@ -18,9 +18,13 @@ func NewDeviceMetadataProjection() eventstore.Model {
 	return &deviceMetadataProjection{}
 }
 
+func (p *deviceMetadataProjection) GetDeviceID() string {
+	return p.data.GetDeviceId()
+}
+
 func (p *deviceMetadataProjection) Clone() *deviceMetadataProjection {
-	p.lock.Lock()
-	defer p.lock.Unlock()
+	p.lock.RLock()
+	defer p.lock.RUnlock()
 	return &deviceMetadataProjection{
 		data: p.data.Clone(),
 	}
