@@ -5,52 +5,38 @@ import (
 	"fmt"
 
 	"github.com/plgd-dev/device/schema"
+	"github.com/plgd-dev/device/schema/interfaces"
 	"github.com/plgd-dev/device/schema/resources"
 	coapMessage "github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/go-coap/v2/message/codes"
-	pkgStrings "github.com/plgd-dev/hub/v2/pkg/strings"
 	"github.com/plgd-dev/kit/v2/codec/cbor"
 )
 
-// Query /oic/res resource to determine whether resource with given href is observable and supports given interface.
-func IsResourceObservableWithInterface(ctx context.Context, coapConn ClientConn, resourceHref, resourceType, observeInterface string) (bool, error) {
-	var opts []coapMessage.Option
-	if resourceType != "" {
-		opts = append(opts, coapMessage.Option{
-			ID:    coapMessage.URIQuery,
-			Value: []byte("rt=" + resourceType),
-		})
-	}
-	msg, err := coapConn.Get(ctx, resources.ResourceURI, opts...)
+// Query /oic/res resource to get device resource links.
+func GetResourceLinks(ctx context.Context, coapConn ClientConn) (schema.ResourceLinks, uint64, error) {
+	msg, err := coapConn.Get(ctx, resources.ResourceURI, coapMessage.Option{
+		ID:    coapMessage.URIQuery,
+		Value: []byte("if=" + interfaces.OC_IF_LL),
+	})
 	if err != nil {
-		return false, err
+		return schema.ResourceLinks{}, 0, err
 	}
 	defer coapConn.ReleaseMessage(msg)
 
 	if msg.Code() != codes.Content {
-		return false, fmt.Errorf("invalid response code %v", msg.Code())
+		return schema.ResourceLinks{}, 0, fmt.Errorf("invalid response code %v", msg.Code())
 	}
 
 	data := msg.Body()
 	if data == nil {
-		return false, fmt.Errorf("empty response")
+		return schema.ResourceLinks{}, 0, fmt.Errorf("empty response")
 	}
 
 	var links schema.ResourceLinks
 	err = cbor.ReadFrom(msg.Body(), &links)
 	if err != nil {
-		return false, err
+		return schema.ResourceLinks{}, 0, err
 	}
 
-	res, ok := links.GetResourceLink(resourceHref)
-	if !ok {
-		return false, fmt.Errorf("resourceLink for href(%v) not found", resourceHref)
-	}
-
-	observable := res.Policy.BitMask.Has(schema.Observable)
-	if observeInterface == "" || !observable {
-		return observable, nil
-	}
-
-	return pkgStrings.Contains(res.Interfaces, observeInterface), nil
+	return links, msg.Sequence(), nil
 }

@@ -5,9 +5,6 @@ import (
 	"crypto/tls"
 	"testing"
 
-	"github.com/plgd-dev/device/schema/device"
-	"github.com/plgd-dev/device/schema/interfaces"
-	"github.com/plgd-dev/device/schema/resources"
 	"github.com/plgd-dev/go-coap/v2/tcp"
 	coapgwService "github.com/plgd-dev/hub/v2/coap-gateway/service"
 	"github.com/plgd-dev/hub/v2/coap-gateway/service/observation"
@@ -92,9 +89,6 @@ func TestIsResourceObservableWithInterface(t *testing.T) {
 		return "resource (" + href + ") "
 	}
 	type args struct {
-		resourceHref     string
-		resourceType     string
-		observeInterface string
 	}
 	tests := []struct {
 		name    string
@@ -103,86 +97,21 @@ func TestIsResourceObservableWithInterface(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: testResourceName("invalid"),
-			args: args{
-				resourceHref: "invalidHref",
-			},
-			wantErr: true,
-		},
-		{
-			name: testResourceName(resources.ResourceURI),
-			args: args{
-				resourceHref: resources.ResourceURI,
-			},
-			want: false,
-		},
-		{
-			name: testResourceName(resources.ResourceURI) + "with resourceType",
-			args: args{
-				resourceHref: resources.ResourceURI,
-				resourceType: resources.ResourceType,
-			},
-			want: false,
-		},
-		{
-			name: testResourceName(resources.ResourceURI) + "with invalid resourceType",
-			args: args{
-				resourceHref: resources.ResourceURI,
-				resourceType: "invalidResourceType",
-			},
-			wantErr: true,
-		},
-		{
-			name: testResourceName(device.ResourceURI),
-			args: args{
-				resourceHref: device.ResourceURI,
-			},
-			want: true,
-		},
-		{
-			name: testResourceName(device.ResourceURI) + "with resourceType",
-			args: args{
-				resourceHref: device.ResourceURI,
-				resourceType: device.ResourceType,
-			},
-			want: true,
-		},
-		{
-			name: testResourceName(device.ResourceURI) + "with wrong resourceType",
-			args: args{
-				resourceHref: device.ResourceURI,
-				resourceType: resources.ResourceType,
-			},
-			wantErr: true,
-		},
-		{
-			name: testResourceName(device.ResourceURI) + "with observeInterface",
-			args: args{
-				resourceHref:     device.ResourceURI,
-				resourceType:     device.ResourceType,
-				observeInterface: interfaces.OC_IF_BASELINE,
-			},
-			want: true,
-		},
-		{
-			name: testResourceName(device.ResourceURI) + "with not supported observeInterface",
-			args: args{
-				resourceHref:     device.ResourceURI,
-				resourceType:     device.ResourceType,
-				observeInterface: interfaces.OC_IF_B,
-			},
-			want: false,
+			name:    testResourceName("/oic/res"),
+			args:    args{},
+			wantErr: false,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			observable, err := observation.IsResourceObservableWithInterface(ctx, handler.coapConn, tt.args.resourceHref,
-				tt.args.resourceType, tt.args.observeInterface)
+			links, _, err := observation.GetResourceLinks(ctx, handler.coapConn)
 			if tt.wantErr {
 				require.Error(t, err)
 				return
 			}
+			require.NoError(t, err)
+			observable, err := observation.IsDiscoveryResourceObservable(links)
 			require.NoError(t, err)
 			require.Equal(t, tt.want, observable)
 		})

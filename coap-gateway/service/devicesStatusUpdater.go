@@ -52,14 +52,14 @@ func (u *devicesStatusUpdater) Add(ctx context.Context, c *Client) error {
 	}
 	u.mutex.Lock()
 	defer u.mutex.Unlock()
-	u.devices[c.remoteAddrString()] = &d
+	u.devices[c.RemoteAddr().String()] = &d
 	return nil
 }
 
 func (u *devicesStatusUpdater) Remove(c *Client) {
 	u.mutex.Lock()
 	defer u.mutex.Unlock()
-	delete(u.devices, c.remoteAddrString())
+	delete(u.devices, c.RemoteAddr().String())
 }
 
 func (u *devicesStatusUpdater) updateOnlineStatus(ctx context.Context, client *Client, validUntil time.Time) (time.Time, error) {
@@ -77,12 +77,12 @@ func (u *devicesStatusUpdater) updateOnlineStatus(ctx context.Context, client *C
 			Status: &commands.ConnectionStatus{
 				Value:        commands.ConnectionStatus_ONLINE,
 				ValidUntil:   pkgTime.UnixNano(validUntil),
-				ConnectionId: client.remoteAddrString(),
+				ConnectionId: client.RemoteAddr().String(),
 			},
 		},
 		CommandMetadata: &commands.CommandMetadata{
 			Sequence:     client.coapConn.Sequence(),
-			ConnectionId: client.remoteAddrString(),
+			ConnectionId: client.RemoteAddr().String(),
 		},
 	})
 

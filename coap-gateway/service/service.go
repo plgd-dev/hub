@@ -401,7 +401,7 @@ func getDeviceID(client *Client) string {
 		authCtx, _ := client.GetAuthorizationContext()
 		deviceID = authCtx.GetDeviceID()
 		if deviceID == "" {
-			deviceID = fmt.Sprintf("unknown(%v)", client.remoteAddrString())
+			deviceID = fmt.Sprintf("unknown(%v)", client.RemoteAddr().String())
 		}
 	}
 	return deviceID

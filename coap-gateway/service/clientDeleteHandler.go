@@ -49,7 +49,7 @@ func clientDeleteHandler(req *mux.Message, client *Client) (*pool.Message, error
 }
 
 func clientDeleteResourceHandler(req *mux.Message, client *Client, deviceID, href, userID string) (*commands.Content, error) {
-	deleteCommand, err := coapconv.NewDeleteResourceRequest(commands.NewResourceID(deviceID, href), req, client.remoteAddrString())
+	deleteCommand, err := coapconv.NewDeleteResourceRequest(commands.NewResourceID(deviceID, href), req, client.RemoteAddr().String())
 	if err != nil {
 		return nil, err
 	}

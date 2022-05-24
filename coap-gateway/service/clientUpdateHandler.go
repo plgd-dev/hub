@@ -58,7 +58,7 @@ func clientUpdateHandler(req *mux.Message, client *Client) (*pool.Message, error
 }
 
 func clientUpdateDeviceHandler(req *mux.Message, client *Client, deviceID, href string) (*commands.Content, error) {
-	updateCommand, err := coapconv.NewUpdateResourceRequest(commands.NewResourceID(deviceID, href), req, client.remoteAddrString())
+	updateCommand, err := coapconv.NewUpdateResourceRequest(commands.NewResourceID(deviceID, href), req, client.RemoteAddr().String())
 	if err != nil {
 		return nil, err
 	}

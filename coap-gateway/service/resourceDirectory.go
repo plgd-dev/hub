@@ -115,7 +115,7 @@ func PublishResourceLinks(ctx context.Context, raClient raService.ResourceAggreg
 }
 
 func observeResources(ctx context.Context, client *Client, w wkRd, sequenceNumber uint64) (coapCodes.Code, error) {
-	publishedResources, err := PublishResourceLinks(ctx, client.server.raClient, w.Links, w.DeviceID, int32(w.TimeToLive), client.remoteAddrString(), sequenceNumber)
+	publishedResources, err := PublishResourceLinks(ctx, client.server.raClient, w.Links, w.DeviceID, int32(w.TimeToLive), client.RemoteAddr().String(), sequenceNumber)
 	if err != nil {
 		return coapCodes.BadRequest, fmt.Errorf("unable to publish resources for device %v: %w", w.DeviceID, err)
 	}
