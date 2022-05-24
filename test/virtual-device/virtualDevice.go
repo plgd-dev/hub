@@ -12,7 +12,6 @@ import (
 	"github.com/plgd-dev/device/schema/interfaces"
 	"github.com/plgd-dev/device/schema/platform"
 	"github.com/plgd-dev/go-coap/v2/message"
-	grpcPb "github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	"github.com/plgd-dev/hub/v2/identity-store/pb"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
@@ -23,64 +22,45 @@ import (
 	"github.com/stretchr/testify/require"
 	"golang.org/x/sync/semaphore"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/status"
 )
 
-func CreateDevice(ctx context.Context, t *testing.T, name string, deviceID string, numResources int, isClient pb.IdentityStoreClient, raClient raPb.ResourceAggregateClient, grpcClient grpcPb.GrpcGatewayClient) {
-	client, err := grpcClient.SubscribeToEvents(ctx)
-	require.NoError(t, err)
-
-	err = client.Send(&grpcPb.SubscribeToEvents{
-		Action: &grpcPb.SubscribeToEvents_CreateSubscription_{
-			CreateSubscription: &grpcPb.SubscribeToEvents_CreateSubscription{
-				DeviceIdFilter: []string{deviceID},
-				EventFilter: []grpcPb.SubscribeToEvents_CreateSubscription_Event{
-					grpcPb.SubscribeToEvents_CreateSubscription_REGISTERED,
-				},
-			},
-		},
-	})
-	require.NoError(t, err)
-
-	ev, err := client.Recv()
-	require.NoError(t, err)
-	require.NotEmpty(t, ev.GetOperationProcessed())
-	require.Equal(t, ev.GetOperationProcessed().GetErrorStatus().GetCode(), grpcPb.Event_OperationProcessed_ErrorStatus_OK)
-
-	_, err = isClient.AddDevice(ctx, &pb.AddDeviceRequest{
+func CreateDevice(ctx context.Context, t *testing.T, name string, deviceID string, numResources int, isClient pb.IdentityStoreClient, raClient raPb.ResourceAggregateClient) {
+	const connID = "conn-Id"
+	_, err := isClient.AddDevice(ctx, &pb.AddDeviceRequest{
 		DeviceId: deviceID,
 	})
 	require.NoError(t, err)
 
 	for {
-		ev, err = client.Recv()
-		require.NoError(t, err)
-		require.NotEmpty(t, ev.GetDeviceRegistered().GetDeviceIds())
-		if ev.GetDeviceRegistered().GetDeviceIds()[0] == deviceID {
+		_, err = raClient.UpdateDeviceMetadata(ctx, &commands.UpdateDeviceMetadataRequest{
+			DeviceId:      deviceID,
+			CorrelationId: uuid.NewString(),
+			Update: &commands.UpdateDeviceMetadataRequest_Status{
+				Status: &commands.ConnectionStatus{
+					Value:        commands.ConnectionStatus_ONLINE,
+					ValidUntil:   time.Now().Add(time.Hour).UnixNano(),
+					ConnectionId: connID,
+				},
+			},
+			TimeToLive: time.Now().Add(time.Hour).UnixNano(),
+			CommandMetadata: &commands.CommandMetadata{
+				ConnectionId: connID,
+				Sequence:     0,
+			},
+		})
+		if err == nil {
 			break
 		}
+		if s, ok := status.FromError(err); ok && s.Code() == codes.PermissionDenied {
+			time.Sleep(time.Millisecond * 10)
+			// device is still not loaded to owner in resource-aggregate
+			continue
+		}
+		require.NoError(t, err)
 	}
-
-	err = client.CloseSend()
-	require.NoError(t, err)
-
-	_, err = raClient.UpdateDeviceMetadata(ctx, &commands.UpdateDeviceMetadataRequest{
-		DeviceId:      deviceID,
-		CorrelationId: uuid.NewString(),
-		Update: &commands.UpdateDeviceMetadataRequest_Status{
-			Status: &commands.ConnectionStatus{
-				Value:        commands.ConnectionStatus_ONLINE,
-				ValidUntil:   time.Now().Add(time.Hour).UnixNano(),
-				ConnectionId: "conn-id",
-			},
-		},
-		TimeToLive: time.Now().Add(time.Hour).UnixNano(),
-		CommandMetadata: &commands.CommandMetadata{
-			ConnectionId: "conn-id",
-			Sequence:     0,
-		},
-	})
-	require.NoError(t, err)
 
 	_, err = raClient.UpdateDeviceMetadata(ctx, &commands.UpdateDeviceMetadataRequest{
 		DeviceId:      deviceID,
@@ -88,11 +68,11 @@ func CreateDevice(ctx context.Context, t *testing.T, name string, deviceID strin
 		Update: &commands.UpdateDeviceMetadataRequest_Status{
 			Status: &commands.ConnectionStatus{
 				Value:        commands.ConnectionStatus_OFFLINE,
-				ConnectionId: "conn-id",
+				ConnectionId: connID,
 			},
 		},
 		CommandMetadata: &commands.CommandMetadata{
-			ConnectionId: "conn-id",
+			ConnectionId: connID,
 			Sequence:     1,
 		},
 	})
@@ -123,7 +103,7 @@ func CreateDevice(ctx context.Context, t *testing.T, name string, deviceID strin
 		DeviceId:  deviceID,
 		Resources: resources,
 		CommandMetadata: &commands.CommandMetadata{
-			ConnectionId: "conn-id",
+			ConnectionId: connID,
 			Sequence:     0,
 		},
 	}
@@ -134,7 +114,7 @@ func CreateDevice(ctx context.Context, t *testing.T, name string, deviceID strin
 		_, err = raClient.NotifyResourceChanged(ctx, &commands.NotifyResourceChangedRequest{
 			ResourceId: commands.NewResourceID(deviceID, fmt.Sprintf("/res-%v", i)),
 			CommandMetadata: &commands.CommandMetadata{
-				ConnectionId: "conn-id",
+				ConnectionId: connID,
 				Sequence:     0,
 			},
 			Content: &commands.Content{
@@ -148,7 +128,7 @@ func CreateDevice(ctx context.Context, t *testing.T, name string, deviceID strin
 	_, err = raClient.NotifyResourceChanged(ctx, &commands.NotifyResourceChangedRequest{
 		ResourceId: commands.NewResourceID(deviceID, "/oic/d"),
 		CommandMetadata: &commands.CommandMetadata{
-			ConnectionId: "conn-id",
+			ConnectionId: connID,
 			Sequence:     0,
 		},
 		Content: &commands.Content{
@@ -162,7 +142,7 @@ func CreateDevice(ctx context.Context, t *testing.T, name string, deviceID strin
 	_, err = raClient.NotifyResourceChanged(ctx, &commands.NotifyResourceChangedRequest{
 		ResourceId: commands.NewResourceID(deviceID, "/oic/p"),
 		CommandMetadata: &commands.CommandMetadata{
-			ConnectionId: "conn-id",
+			ConnectionId: connID,
 			Sequence:     0,
 		},
 		Content: &commands.Content{
@@ -195,22 +175,13 @@ func CreateDevices(ctx context.Context, t *testing.T, numDevices int, numResourc
 	}()
 	raClient := raPb.NewResourceAggregateClient(raConn)
 
-	grpcConn, err := grpc.Dial(config.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
-		RootCAs: test.GetRootCertificatePool(t),
-	})))
-	require.NoError(t, err)
-	defer func() {
-		_ = grpcConn.Close()
-	}()
-	grpcClient := grpcPb.NewGrpcGatewayClient(grpcConn)
-
 	numGoRoutines := int64(8)
 	sem := semaphore.NewWeighted(numGoRoutines)
 	for i := 0; i < numDevices; i++ {
 		err := sem.Acquire(ctx, 1)
 		require.NoError(t, err)
 		go func(i int) {
-			CreateDevice(ctx, t, fmt.Sprintf("dev-%v", i), uuid.NewString(), numResourcesPerDevice, isClient, raClient, grpcClient)
+			CreateDevice(ctx, t, fmt.Sprintf("dev-%v", i), uuid.NewString(), numResourcesPerDevice, isClient, raClient)
 			sem.Release(1)
 		}(i)
 	}
