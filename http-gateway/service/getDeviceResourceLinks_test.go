@@ -9,10 +9,14 @@ import (
 	"testing"
 	"time"
 
+	"github.com/plgd-dev/device/schema"
+	"github.com/plgd-dev/device/schema/collection"
+	"github.com/plgd-dev/device/test/resource/types"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	httpgwTest "github.com/plgd-dev/hub/v2/http-gateway/test"
 	"github.com/plgd-dev/hub/v2/http-gateway/uri"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	"github.com/plgd-dev/hub/v2/pkg/strings"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 	test "github.com/plgd-dev/hub/v2/test"
@@ -56,7 +60,8 @@ func TestRequestHandlerGetDeviceResourceLinks(t *testing.T) {
 	defer shutdownHttp()
 
 	type args struct {
-		deviceID string
+		deviceID   string
+		typeFilter []string
 	}
 	tests := []struct {
 		name    string
@@ -78,11 +83,34 @@ func TestRequestHandlerGetDeviceResourceLinks(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "invalid typefilter",
+			args: args{
+				typeFilter: []string{"unknown"},
+			},
+			wantErr: true,
+		},
+		{
+			name: "valid typefilter",
+			args: args{
+				typeFilter: []string{collection.ResourceType, types.BINARY_SWITCH},
+			},
+			want: []*events.ResourceLinksPublished{
+				{
+					DeviceId: deviceID,
+					Resources: test.ResourceLinksToResources(deviceID, test.FilterResourceLink(func(rl schema.ResourceLink) bool {
+						return strings.Contains(rl.ResourceTypes, collection.ResourceType) ||
+							strings.Contains(rl.ResourceTypes, types.BINARY_SWITCH)
+					}, resourceLinks)),
+					AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, ""),
+				},
+			},
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			request := httpgwTest.NewRequest(http.MethodGet, uri.AliasDeviceResourceLinks+"/", nil).DeviceId(deviceID).AuthToken(token).Build()
+			request := httpgwTest.NewRequest(http.MethodGet, uri.AliasDeviceResourceLinks+"/", nil).DeviceId(deviceID).AuthToken(token).AddTypeFilter(tt.args.typeFilter).Build()
 			resp := httpgwTest.HTTPDo(t, request)
 			defer func() {
 				_ = resp.Body.Close()
@@ -94,6 +122,10 @@ func TestRequestHandlerGetDeviceResourceLinks(t *testing.T) {
 				err = httpgwTest.Unmarshal(resp.StatusCode, resp.Body, &v)
 				if errors.Is(err, io.EOF) {
 					break
+				}
+				if tt.wantErr {
+					require.Error(t, err)
+					return
 				}
 				require.NoError(t, err)
 				require.NotEmpty(t, v.GetAuditContext())

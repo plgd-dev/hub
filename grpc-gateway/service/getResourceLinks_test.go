@@ -104,12 +104,7 @@ func TestRequestHandlerGetResourceLinks(t *testing.T) {
 					TypeFilter: []string{"unknown"},
 				},
 			},
-			want: []*events.ResourceLinksPublished{
-				{
-					DeviceId:     deviceID,
-					AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, ""),
-				},
-			},
+			want: []*events.ResourceLinksPublished{},
 		},
 		{
 			name: "valid typefilter",
