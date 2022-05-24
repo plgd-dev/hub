@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"fmt"
-	"sync"
 
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
@@ -11,8 +10,8 @@ import (
 	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 )
 
+// protected by lock in Projection struct in resource-aggregate/cqrs/eventstore/projection.go
 type resourceProjection struct {
-	lock                     sync.RWMutex
 	resourceID               *commands.ResourceId
 	content                  *events.ResourceChanged
 	version                  uint64
@@ -34,10 +33,13 @@ func NewResourceProjection() eventstore.Model {
 }
 
 func (rp *resourceProjection) GetDeviceID() string {
+	if rp.resourceID == nil {
+		return ""
+	}
 	return rp.resourceID.GetDeviceId()
 }
 
-func (rp *resourceProjection) cloneLocked() *resourceProjection {
+func (rp *resourceProjection) Clone() *resourceProjection {
 	resourceCreatePendings := make([]*events.ResourceCreatePending, 0, len(rp.resourceCreatePendings))
 	resourceCreatePendings = append(resourceCreatePendings, rp.resourceCreatePendings...)
 	resourceRetrievePendings := make([]*events.ResourceRetrievePending, 0, len(rp.resourceRetrievePendings))
@@ -55,13 +57,6 @@ func (rp *resourceProjection) cloneLocked() *resourceProjection {
 		resourceRetrievePendings: resourceRetrievePendings,
 		resourceDeletePendings:   resourceDeletePendings,
 	}
-}
-
-func (rp *resourceProjection) Clone() *resourceProjection {
-	rp.lock.RLock()
-	defer rp.lock.RUnlock()
-
-	return rp.cloneLocked()
 }
 
 func (rp *resourceProjection) EventType() string {
@@ -234,8 +229,6 @@ func (rp *resourceProjection) Handle(ctx context.Context, iter eventstore.Iter) 
 		(&events.ResourceCreated{}).EventType():            rp.handleResourceCreatedLocked,
 	}
 
-	rp.lock.Lock()
-	defer rp.lock.Unlock()
 	var groupID, aggregateID string
 	for {
 		eu, ok := iter.Next(ctx)

@@ -62,9 +62,9 @@ func (am *aggregateModel) Handle(ctx context.Context, iter Iter) error {
 type Projection struct {
 	store         EventStore
 	LogDebugfFunc LogDebugfFunc
+	factoryModel  FactoryModelFunc
 
-	factoryModel    FactoryModelFunc
-	lock            sync.RWMutex
+	lock            sync.RWMutex //protects aggregateModels
 	aggregateModels map[string]map[string]*aggregateModel
 }
 
@@ -289,7 +289,7 @@ func (p *Projection) Forget(queries []SnapshotQuery) (err error) {
 	return nil
 }
 
-func (p *Projection) allModels(onModel func(m Model) (wantNext bool)) {
+func (p *Projection) allModelsLocked(onModel func(m Model) (wantNext bool)) {
 	for _, group := range p.aggregateModels {
 		for _, apm := range group {
 			if !onModel(apm.model) {
@@ -305,12 +305,12 @@ func (p *Projection) Models(queries []SnapshotQuery, onModel func(m Model) (want
 	defer p.lock.RUnlock()
 
 	if len(queries) == 0 {
-		p.allModels(onModel)
+		p.allModelsLocked(onModel)
 	}
 	for _, query := range queries {
 		switch {
 		case query.GroupID == "" && query.AggregateID == "":
-			p.allModels(onModel)
+			p.allModelsLocked(onModel)
 			return
 		case query.GroupID != "" && query.AggregateID == "":
 			if aggregates, ok := p.aggregateModels[query.GroupID]; ok {

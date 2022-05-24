@@ -162,7 +162,7 @@ func TestProjection(t *testing.T) {
 	}})
 	require.NoError(t, err)
 	models := []eventstore.Model{}
-	projection.Models(nil, func(m eventstore.Model) (wantTrue bool) {
+	projection.Models(nil, func(m eventstore.Model) (wantNext bool) {
 		models = append(models, m)
 		return true
 	})
@@ -174,11 +174,11 @@ func TestProjection(t *testing.T) {
 	}})
 	require.NoError(t, err)
 	models = []eventstore.Model{}
-	projection.Models(nil, func(m eventstore.Model) (wantTrue bool) {
+	projection.Models(nil, func(m eventstore.Model) (wantNext bool) {
 		models = append(models, m)
 		return true
 	})
-	require.Equal(t, 2, models)
+	require.Equal(t, 2, len(models))
 
 	err = projection.SubscribeTo(topics)
 	require.NoError(t, err)

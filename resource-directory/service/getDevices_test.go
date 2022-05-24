@@ -34,7 +34,7 @@ func TestRequestHandlerGetDevicesParallel(t *testing.T) {
 
 	numDevices := 100
 	numResources := 1
-	numParallelRequests := 100
+	numParallelRequests := 10
 
 	isConfig := isTest.MakeConfig(t)
 	isConfig.APIs.GRPC.TLS.ClientCertificateRequired = false
@@ -83,7 +83,7 @@ func TestRequestHandlerGetDevicesParallel(t *testing.T) {
 			defer wg.Done()
 			n := time.Now()
 			getDevices(c)
-			t.Logf("%v getDevices client %v\n", v, time.Until(n))
+			t.Logf("%v getDevices client %v\n", v, -1*time.Until(n))
 		}(i)
 	}
 	wg.Wait()

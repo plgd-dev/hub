@@ -2,15 +2,14 @@ package service
 
 import (
 	"context"
-	"sync"
 
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 )
 
+// protected by lock in Projection struct in resource-aggregate/cqrs/eventstore/projection.go
 type deviceMetadataProjection struct {
-	lock sync.RWMutex
 	data *events.DeviceMetadataSnapshotTaken
 }
 
@@ -19,12 +18,13 @@ func NewDeviceMetadataProjection() eventstore.Model {
 }
 
 func (p *deviceMetadataProjection) GetDeviceID() string {
+	if p.data == nil {
+		return ""
+	}
 	return p.data.GetDeviceId()
 }
 
 func (p *deviceMetadataProjection) Clone() *deviceMetadataProjection {
-	p.lock.RLock()
-	defer p.lock.RUnlock()
 	return &deviceMetadataProjection{
 		data: p.data.Clone(),
 	}
@@ -36,8 +36,6 @@ func (p *deviceMetadataProjection) EventType() string {
 }
 
 func (p *deviceMetadataProjection) Handle(ctx context.Context, iter eventstore.Iter) error {
-	p.lock.Lock()
-	defer p.lock.Unlock()
 	for {
 		eu, ok := iter.Next(ctx)
 		if !ok {

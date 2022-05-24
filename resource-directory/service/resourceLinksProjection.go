@@ -2,15 +2,14 @@ package service
 
 import (
 	"context"
-	"sync"
 
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 )
 
+// protected by lock in Projection struct in resource-aggregate/cqrs/eventstore/projection.go
 type resourceLinksProjection struct {
-	lock     sync.RWMutex
 	snapshot *events.ResourceLinksSnapshotTaken
 }
 
@@ -19,13 +18,14 @@ func NewResourceLinksProjection() eventstore.Model {
 }
 
 func (rlp *resourceLinksProjection) GetDeviceID() string {
+	if rlp.snapshot == nil {
+		return ""
+	}
 	return rlp.snapshot.GetDeviceId()
 }
 
 func (rlp *resourceLinksProjection) Clone() *resourceLinksProjection {
 	var snapshot *events.ResourceLinksSnapshotTaken
-	rlp.lock.RLock()
-	defer rlp.lock.RUnlock()
 
 	if rlp.snapshot != nil {
 		s, _ := rlp.snapshot.TakeSnapshot(rlp.snapshot.Version())
@@ -43,8 +43,6 @@ func (rlp *resourceLinksProjection) EventType() string {
 }
 
 func (rlp *resourceLinksProjection) Handle(ctx context.Context, iter eventstore.Iter) error {
-	rlp.lock.Lock()
-	defer rlp.lock.Unlock()
 	for {
 		eu, ok := iter.Next(ctx)
 		if !ok {

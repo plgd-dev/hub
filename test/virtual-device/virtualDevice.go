@@ -12,6 +12,7 @@ import (
 	"github.com/plgd-dev/device/schema/interfaces"
 	"github.com/plgd-dev/device/schema/platform"
 	"github.com/plgd-dev/go-coap/v2/message"
+	grpcPb "github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	"github.com/plgd-dev/hub/v2/identity-store/pb"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
@@ -25,13 +26,43 @@ import (
 	"google.golang.org/grpc/credentials"
 )
 
-func CreateDevice(ctx context.Context, t *testing.T, name string, deviceID string, numResources int, isClient pb.IdentityStoreClient, raClient raPb.ResourceAggregateClient) {
-	_, err := isClient.AddDevice(ctx, &pb.AddDeviceRequest{
+func CreateDevice(ctx context.Context, t *testing.T, name string, deviceID string, numResources int, isClient pb.IdentityStoreClient, raClient raPb.ResourceAggregateClient, grpcClient grpcPb.GrpcGatewayClient) {
+	client, err := grpcClient.SubscribeToEvents(ctx)
+	require.NoError(t, err)
+
+	err = client.Send(&grpcPb.SubscribeToEvents{
+		Action: &grpcPb.SubscribeToEvents_CreateSubscription_{
+			CreateSubscription: &grpcPb.SubscribeToEvents_CreateSubscription{
+				DeviceIdFilter: []string{deviceID},
+				EventFilter: []grpcPb.SubscribeToEvents_CreateSubscription_Event{
+					grpcPb.SubscribeToEvents_CreateSubscription_REGISTERED,
+				},
+			},
+		},
+	})
+	require.NoError(t, err)
+
+	ev, err := client.Recv()
+	require.NoError(t, err)
+	require.NotEmpty(t, ev.GetOperationProcessed())
+	require.Equal(t, ev.GetOperationProcessed().GetErrorStatus().GetCode(), grpcPb.Event_OperationProcessed_ErrorStatus_OK)
+
+	_, err = isClient.AddDevice(ctx, &pb.AddDeviceRequest{
 		DeviceId: deviceID,
 	})
 	require.NoError(t, err)
 
-	time.Sleep(time.Millisecond * 10)
+	for {
+		ev, err = client.Recv()
+		require.NoError(t, err)
+		require.NotEmpty(t, ev.GetDeviceRegistered().GetDeviceIds())
+		if ev.GetDeviceRegistered().GetDeviceIds()[0] == deviceID {
+			break
+		}
+	}
+
+	err = client.CloseSend()
+	require.NoError(t, err)
 
 	_, err = raClient.UpdateDeviceMetadata(ctx, &commands.UpdateDeviceMetadataRequest{
 		DeviceId:      deviceID,
@@ -164,13 +195,22 @@ func CreateDevices(ctx context.Context, t *testing.T, numDevices int, numResourc
 	}()
 	raClient := raPb.NewResourceAggregateClient(raConn)
 
+	grpcConn, err := grpc.Dial(config.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+		RootCAs: test.GetRootCertificatePool(t),
+	})))
+	require.NoError(t, err)
+	defer func() {
+		_ = grpcConn.Close()
+	}()
+	grpcClient := grpcPb.NewGrpcGatewayClient(grpcConn)
+
 	numGoRoutines := int64(8)
 	sem := semaphore.NewWeighted(numGoRoutines)
 	for i := 0; i < numDevices; i++ {
 		err := sem.Acquire(ctx, 1)
 		require.NoError(t, err)
 		go func(i int) {
-			CreateDevice(ctx, t, fmt.Sprintf("dev-%v", i), uuid.NewString(), numResourcesPerDevice, isClient, raClient)
+			CreateDevice(ctx, t, fmt.Sprintf("dev-%v", i), uuid.NewString(), numResourcesPerDevice, isClient, raClient, grpcClient)
 			sem.Release(1)
 		}(i)
 	}

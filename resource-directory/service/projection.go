@@ -62,7 +62,7 @@ func (p *Projection) LoadResourceLinks(ctx context.Context, deviceIDFilter, toRe
 		p.Models(func(m eventstore.Model) (wantNext bool) {
 			rl := m.(*resourceLinksProjection)
 			if len(rl.snapshot.GetResources()) == 0 {
-				return
+				return false
 			}
 			reload = false
 			err = onResourceLinkProjection(rl)
