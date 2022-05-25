@@ -14,15 +14,9 @@ func (r *Resource) GetResourceChanged() *events.ResourceChanged {
 	if r == nil {
 		return nil
 	}
-	if r.projection == nil {
-		return nil
-	}
-	return r.projection.content
+	return r.projection.GetResourceChanged()
 }
 
 func (r *Resource) GetContent() *commands.Content {
-	if r.projection == nil {
-		return nil
-	}
 	return r.GetResourceChanged().GetContent()
 }

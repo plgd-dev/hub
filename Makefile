@@ -92,6 +92,7 @@ DEVICE_SIMULATOR_RES_OBSERVABLE_IMG := ghcr.io/iotivity/iotivity-lite/cloud-serv
 #          - name of the simulator ("$(1)-$(SIMULATOR_NAME_SUFFIX)")
 define RUN-DOCKER-DEVICE
 	mkdir -p "$(WORKING_DIRECTORY)/.tmp/$(1)" ; \
+	mkdir -p "$(WORKING_DIRECTORY)/.tmp/$(1)/cloud_server_creds" ; \
 	docker pull $(2) ; \
 	docker run \
 		-d \
@@ -99,6 +100,7 @@ define RUN-DOCKER-DEVICE
 		--name=$(1) \
 		--network=host \
 		-v $(WORKING_DIRECTORY)/.tmp/$(1):/tmp \
+		-v $(WORKING_DIRECTORY)/.tmp/$(1)/cloud_server_creds:/cloud_server_creds \
 		$(2) \
 		$(1)-$(SIMULATOR_NAME_SUFFIX)
 endef

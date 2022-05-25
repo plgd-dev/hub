@@ -174,11 +174,13 @@ func (i *iterator) Err() error {
 	return i.iter.Err()
 }
 
-func (p *Projection) getModelLocked(ctx context.Context, groupID, aggregateID string) (*aggregateModel, error) {
+func (p *Projection) getModel(ctx context.Context, groupID, aggregateID string) (*aggregateModel, error) {
 	var ok bool
 	var mapApm map[string]*aggregateModel
 	var apm *aggregateModel
 
+	p.lock.Lock()
+	defer p.lock.Unlock()
 	if mapApm, ok = p.aggregateModels[groupID]; !ok {
 		mapApm = make(map[string]*aggregateModel)
 		p.aggregateModels[groupID] = mapApm
@@ -202,11 +204,9 @@ func (p *Projection) handle(ctx context.Context, iter Iter) (reloadQueries []Ver
 	}
 	ie := e
 	reloadQueries = make([]VersionQuery, 0, 32)
-	p.lock.Lock()
-	defer p.lock.Unlock()
 	for ie != nil {
 		p.LogDebugfFunc("projection.iterator.handle: GroupID %v: AggregateID %v: Version %v, EvenType %v", ie.GroupID(), ie.AggregateID(), ie.Version(), ie.EventType())
-		am, err := p.getModelLocked(ctx, ie.GroupID(), ie.AggregateID())
+		am, err := p.getModel(ctx, ie.GroupID(), ie.AggregateID())
 		if err != nil {
 			return nil, fmt.Errorf("cannot handle projection: %w", err)
 		}
@@ -289,44 +289,70 @@ func (p *Projection) Forget(queries []SnapshotQuery) (err error) {
 	return nil
 }
 
-func (p *Projection) allModelsLocked(onModel func(m Model) (wantNext bool)) {
+func (p *Projection) iterateOverAllModels(onModel func(m Model) (wantNext bool)) {
+	p.lock.RLock()
+	defer p.lock.RUnlock()
 	for _, group := range p.aggregateModels {
 		for _, apm := range group {
-			if !onModel(apm.model) {
-				return // stop iteration
+			p.lock.RUnlock()
+			wantNext := onModel(apm.model)
+			p.lock.RLock()
+			if !wantNext {
+				return
 			}
 		}
 	}
 }
 
-// Models return models from projection.
-func (p *Projection) Models(queries []SnapshotQuery, onModel func(m Model) (wantNext bool)) {
+func (p *Projection) iterateOverGroupModels(groupID string, onModel func(m Model) (wantNext bool)) (wantNext bool) {
 	p.lock.RLock()
 	defer p.lock.RUnlock()
+	if aggregates, ok := p.aggregateModels[groupID]; ok {
+		for _, apm := range aggregates {
+			p.lock.RUnlock()
+			wantNext := onModel(apm.model)
+			p.lock.RLock()
+			if !wantNext {
+				return false
+			}
+		}
+	}
+	return true
+}
 
+func (p *Projection) iterateOverAggregateModel(groupID, aggregateID string, onModel func(m Model) (wantNext bool)) (wantNext bool) {
+	p.lock.RLock()
+	defer p.lock.RUnlock()
+	if aggregates, ok := p.aggregateModels[groupID]; ok {
+		if apm, ok := aggregates[aggregateID]; ok {
+			p.lock.RUnlock()
+			wantNext := onModel(apm.model)
+			p.lock.RLock()
+			if !wantNext {
+				return false
+			}
+		}
+	}
+	return true
+}
+
+// Models return models from projection.
+func (p *Projection) Models(queries []SnapshotQuery, onModel func(m Model) (wantNext bool)) {
 	if len(queries) == 0 {
-		p.allModelsLocked(onModel)
+		p.iterateOverAllModels(onModel)
 	}
 	for _, query := range queries {
 		switch {
 		case query.GroupID == "" && query.AggregateID == "":
-			p.allModelsLocked(onModel)
+			p.iterateOverAllModels(onModel)
 			return
 		case query.GroupID != "" && query.AggregateID == "":
-			if aggregates, ok := p.aggregateModels[query.GroupID]; ok {
-				for _, apm := range aggregates {
-					if !onModel(apm.model) {
-						return // stop iteration
-					}
-				}
+			if !p.iterateOverGroupModels(query.GroupID, onModel) {
+				return
 			}
 		default:
-			if aggregates, ok := p.aggregateModels[query.GroupID]; ok {
-				if apm, ok := aggregates[query.AggregateID]; ok {
-					if !onModel(apm.model) {
-						return // stop iteration
-					}
-				}
+			if !p.iterateOverAggregateModel(query.GroupID, query.AggregateID, onModel) {
+				return
 			}
 		}
 	}

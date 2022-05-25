@@ -26,7 +26,7 @@ func MakeConfig(t *testing.T) service.Config {
 	cfg.Clients.Eventbus.GoPoolSize = 16
 
 	cfg.Clients.Eventstore.Connection.MongoDB = config.MakeEventsStoreMongoDBConfig()
-	cfg.Clients.Eventstore.ProjectionCacheExpiration = time.Second * 60
+	cfg.Clients.Eventstore.ProjectionCacheExpiration = time.Second * 120
 
 	cfg.ExposedHubConfiguration.CAPool = config.CA_POOL
 	cfg.ExposedHubConfiguration.AuthorizationServer = "https://" + config.OAUTH_SERVER_HOST
