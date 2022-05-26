@@ -142,8 +142,19 @@ const (
 	SetUpServicesResourceDirectory
 )
 
-func SetUpServices(ctx context.Context, t *testing.T, servicesConfig SetUpServicesConfig) func() {
+func SetUpServices(ctx context.Context, t *testing.T, servicesConfig SetUpServicesConfig, opts ...SetUpOption) func() {
 	var tearDown fn.FuncList
+	config := Config{
+		COAPGW: coapgwTest.MakeConfig(t),
+		RD:     rdTest.MakeConfig(t),
+		GRPCGW: grpcgwTest.MakeConfig(t),
+		RA:     raTest.MakeConfig(t),
+		IS:     isTest.MakeConfig(t),
+	}
+
+	for _, o := range opts {
+		o(&config)
+	}
 
 	ClearDB(ctx, t)
 	if servicesConfig&SetUpServicesOAuth != 0 {
@@ -151,19 +162,19 @@ func SetUpServices(ctx context.Context, t *testing.T, servicesConfig SetUpServic
 		tearDown.AddFunc(oauthShutdown)
 	}
 	if servicesConfig&SetUpServicesId != 0 {
-		isShutdown := isTest.SetUp(t)
+		isShutdown := isTest.New(t, config.IS)
 		tearDown.AddFunc(isShutdown)
 	}
 	if servicesConfig&SetUpServicesResourceAggregate != 0 {
-		raShutdown := raTest.SetUp(t)
+		raShutdown := raTest.New(t, config.RA)
 		tearDown.AddFunc(raShutdown)
 	}
 	if servicesConfig&SetUpServicesResourceDirectory != 0 {
-		rdShutdown := rdTest.SetUp(t)
+		rdShutdown := rdTest.New(t, config.RD)
 		tearDown.AddFunc(rdShutdown)
 	}
 	if servicesConfig&SetUpServicesGrpcGateway != 0 {
-		grpcShutdown := grpcgwTest.SetUp(t)
+		grpcShutdown := grpcgwTest.New(t, config.GRPCGW)
 		tearDown.AddFunc(grpcShutdown)
 	}
 	if servicesConfig&SetUpServicesCloud2CloudGateway != 0 {
@@ -175,7 +186,7 @@ func SetUpServices(ctx context.Context, t *testing.T, servicesConfig SetUpServic
 		tearDown.AddFunc(caShutdown)
 	}
 	if servicesConfig&SetUpServicesCoapGateway != 0 {
-		secureGWShutdown := coapgwTest.SetUp(t)
+		secureGWShutdown := coapgwTest.New(t, config.COAPGW)
 		tearDown.AddFunc(secureGWShutdown)
 	}
 	return tearDown.ToFunction()

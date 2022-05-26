@@ -220,7 +220,7 @@ func setNewDeviceObserver(ctx context.Context, client *Client, deviceID string, 
 			oldDeviceObserver.Clean(ctx)
 		}
 
-		deviceObserver, err := observation.NewDeviceObserver(client.Context(), deviceID, client, client,
+		deviceObserver, err := observation.NewDeviceObserver(client.Context(), deviceID, client, client, client,
 			observation.MakeResourcesObserverCallbacks(client.onObserveResource, client.onGetResourceContent),
 			observation.WithObservationType(observationType),
 			observation.WithLogger(client.getLogger()))
@@ -313,12 +313,12 @@ func updateDeviceMetadata(req *mux.Message, client *Client) error {
 			Update: &commands.UpdateDeviceMetadataRequest_Status{
 				Status: &commands.ConnectionStatus{
 					Value:        commands.ConnectionStatus_OFFLINE,
-					ConnectionId: client.remoteAddrString(),
+					ConnectionId: client.RemoteAddr().String(),
 				},
 			},
 			CommandMetadata: &commands.CommandMetadata{
 				Sequence:     client.coapConn.Sequence(),
-				ConnectionId: client.remoteAddrString(),
+				ConnectionId: client.RemoteAddr().String(),
 			},
 		})
 		if err != nil {

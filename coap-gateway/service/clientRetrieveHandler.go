@@ -93,7 +93,7 @@ func clientRetrieveFromResourceShadowHandler(ctx context.Context, client *Client
 }
 
 func clientRetrieveFromDeviceHandler(req *mux.Message, client *Client, deviceID, href string) (*commands.Content, error) {
-	retrieveCommand, err := coapconv.NewRetrieveResourceRequest(commands.NewResourceID(deviceID, href), req, client.remoteAddrString())
+	retrieveCommand, err := coapconv.NewRetrieveResourceRequest(commands.NewResourceID(deviceID, href), req, client.RemoteAddr().String())
 	if err != nil {
 		return nil, err
 	}

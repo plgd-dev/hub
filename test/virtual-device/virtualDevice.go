@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/plgd-dev/device/schema"
 	"github.com/plgd-dev/device/schema/device"
 	"github.com/plgd-dev/device/schema/interfaces"
 	"github.com/plgd-dev/device/schema/platform"
@@ -27,6 +28,40 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+func CreateDeviceResourceLinks(deviceID string, numResources int) []*commands.Resource {
+	resources := make([]*commands.Resource, 0, numResources)
+	for i := 0; i < numResources; i++ {
+		resources = append(resources, &commands.Resource{
+			Href:          fmt.Sprintf("/res-%v", i),
+			DeviceId:      deviceID,
+			ResourceTypes: []string{fmt.Sprintf("res-type-%v", i)},
+			Interfaces:    []string{interfaces.OC_IF_BASELINE},
+			Policy: &commands.Policy{
+				BitFlags: int32(schema.Observable | schema.Discoverable),
+			},
+		})
+	}
+	resources = append(resources, &commands.Resource{
+		Href:          device.ResourceURI,
+		DeviceId:      deviceID,
+		ResourceTypes: []string{device.ResourceType},
+		Interfaces:    []string{interfaces.OC_IF_BASELINE},
+		Policy: &commands.Policy{
+			BitFlags: int32(schema.Observable | schema.Discoverable),
+		},
+	})
+	resources = append(resources, &commands.Resource{
+		Href:          platform.ResourceURI,
+		DeviceId:      deviceID,
+		ResourceTypes: []string{platform.ResourceType},
+		Interfaces:    []string{interfaces.OC_IF_BASELINE},
+		Policy: &commands.Policy{
+			BitFlags: int32(schema.Observable | schema.Discoverable),
+		},
+	})
+	return resources
+}
+
 func CreateDevice(ctx context.Context, t *testing.T, name string, deviceID string, numResources int, isClient pb.IdentityStoreClient, raClient raPb.ResourceAggregateClient) {
 	const connID = "conn-Id"
 	_, err := isClient.AddDevice(ctx, &pb.AddDeviceRequest{
@@ -41,7 +76,6 @@ func CreateDevice(ctx context.Context, t *testing.T, name string, deviceID strin
 			Update: &commands.UpdateDeviceMetadataRequest_Status{
 				Status: &commands.ConnectionStatus{
 					Value:        commands.ConnectionStatus_ONLINE,
-					ValidUntil:   time.Now().Add(time.Hour).UnixNano(),
 					ConnectionId: connID,
 				},
 			},
@@ -62,43 +96,7 @@ func CreateDevice(ctx context.Context, t *testing.T, name string, deviceID strin
 		require.NoError(t, err)
 	}
 
-	_, err = raClient.UpdateDeviceMetadata(ctx, &commands.UpdateDeviceMetadataRequest{
-		DeviceId:      deviceID,
-		CorrelationId: uuid.NewString(),
-		Update: &commands.UpdateDeviceMetadataRequest_Status{
-			Status: &commands.ConnectionStatus{
-				Value:        commands.ConnectionStatus_OFFLINE,
-				ConnectionId: connID,
-			},
-		},
-		CommandMetadata: &commands.CommandMetadata{
-			ConnectionId: connID,
-			Sequence:     1,
-		},
-	})
-	require.NoError(t, err)
-
-	resources := make([]*commands.Resource, 0, numResources)
-	for i := 0; i < numResources; i++ {
-		resources = append(resources, &commands.Resource{
-			Href:          fmt.Sprintf("/res-%v", i),
-			DeviceId:      deviceID,
-			ResourceTypes: []string{fmt.Sprintf("res-type-%v", i)},
-			Interfaces:    []string{interfaces.OC_IF_BASELINE},
-		})
-	}
-	resources = append(resources, &commands.Resource{
-		Href:          "/oic/d",
-		DeviceId:      deviceID,
-		ResourceTypes: []string{device.ResourceType},
-		Interfaces:    []string{interfaces.OC_IF_BASELINE},
-	})
-	resources = append(resources, &commands.Resource{
-		Href:          "/oic/p",
-		DeviceId:      deviceID,
-		ResourceTypes: []string{platform.ResourceType},
-		Interfaces:    []string{interfaces.OC_IF_BASELINE},
-	})
+	resources := CreateDeviceResourceLinks(deviceID, numResources)
 	pub := commands.PublishResourceLinksRequest{
 		DeviceId:  deviceID,
 		Resources: resources,

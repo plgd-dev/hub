@@ -3,21 +3,31 @@ package observation_test
 import (
 	"context"
 	"crypto/tls"
+	"errors"
+	"io"
 	"sync"
 	"testing"
 	"time"
 
+	"github.com/plgd-dev/device/schema"
+	"github.com/plgd-dev/device/schema/device"
+	"github.com/plgd-dev/device/schema/interfaces"
+	"github.com/plgd-dev/device/schema/platform"
 	"github.com/plgd-dev/device/schema/resources"
 	"github.com/plgd-dev/go-coap/v2/tcp"
 	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
 	coapgwService "github.com/plgd-dev/hub/v2/coap-gateway/service"
 	"github.com/plgd-dev/hub/v2/coap-gateway/service/observation"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
+	isPb "github.com/plgd-dev/hub/v2/identity-store/pb"
+	isTest "github.com/plgd-dev/hub/v2/identity-store/test"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	grpcClient "github.com/plgd-dev/hub/v2/pkg/net/grpc/client"
 	"github.com/plgd-dev/hub/v2/pkg/sync/task/future"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
+	raPb "github.com/plgd-dev/hub/v2/resource-aggregate/service"
+	raTest "github.com/plgd-dev/hub/v2/resource-aggregate/test"
 	"github.com/plgd-dev/hub/v2/test"
 	coapgwTestService "github.com/plgd-dev/hub/v2/test/coap-gateway/service"
 	coapgwTest "github.com/plgd-dev/hub/v2/test/coap-gateway/test"
@@ -25,6 +35,7 @@ import (
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	pbTest "github.com/plgd-dev/hub/v2/test/pb"
 	"github.com/plgd-dev/hub/v2/test/service"
+	virtualdevice "github.com/plgd-dev/hub/v2/test/virtual-device"
 	"github.com/plgd-dev/kit/v2/strings"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -37,11 +48,12 @@ import (
 type deviceObserverFactory struct {
 	deviceID string
 	rdClient pb.GrpcGatewayClient
+	raClient raPb.ResourceAggregateClient
 }
 
 func (f deviceObserverFactory) makeDeviceObserver(ctx context.Context, coapConn *tcp.ClientConn, onObserveResource observation.OnObserveResource,
 	onGetResourceContent observation.OnGetResourceContent) (*observation.DeviceObserver, error) {
-	return observation.NewDeviceObserver(ctx, f.deviceID, coapConn, f.rdClient,
+	return observation.NewDeviceObserver(ctx, f.deviceID, coapConn, f.rdClient, f.raClient,
 		observation.ResourcesObserverCallbacks{onObserveResource, onGetResourceContent})
 }
 
@@ -169,7 +181,31 @@ func TestDeviceObserverRegisterForPublishedResources(t *testing.T) {
 	for _, resID := range test.ResourceLinksToResourceIds(deviceID, test.TestDevsimResources) {
 		expectedObserved.Add(resID.ToString())
 	}
-	runTestDeviceObserverRegister(ctx, t, deviceID, expectedObserved, nil, validateData)
+	runTestDeviceObserverRegister(ctx, t, deviceID, expectedObserved, nil, validateData, nil, nil)
+}
+
+func TestDeviceObserverRegisterForPublishedResourcesWithAlreadyPublishedResources(t *testing.T) {
+	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
+	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
+	defer cancel()
+	discoveryObservable := test.ResourceIsBatchObservable(ctx, t, deviceID, resources.ResourceURI, resources.ResourceType)
+	if discoveryObservable {
+		t.Logf("skipping test for device with %v observable", resources.ResourceURI)
+		return
+	}
+	validateData := func(ctx context.Context, oh *observerHandler) {
+		obs := oh.getDeviceObserver(ctx)
+		require.Equal(t, observation.ObservationType_PerResource, obs.GetObservationType())
+		res, err := obs.GetResources()
+		require.NoError(t, err)
+		pbTest.CmpResourceIds(t, test.ResourceLinksToResourceIds(deviceID, test.TestDevsimResources), res)
+	}
+
+	expectedObserved := strings.MakeSet()
+	for _, resID := range test.ResourceLinksToResourceIds(deviceID, test.TestDevsimResources) {
+		expectedObserved.Add(resID.ToString())
+	}
+	runTestDeviceObserverRegister(ctx, t, deviceID, expectedObserved, nil, validateData, testPreregisterVirtualDevice, testValidateResourceLinks)
 }
 
 func TestDeviceObserverRegisterForDiscoveryResource(t *testing.T) {
@@ -190,25 +226,143 @@ func TestDeviceObserverRegisterForDiscoveryResource(t *testing.T) {
 	}
 
 	expectedObserved := strings.MakeSet(commands.NewResourceID(deviceID, resources.ResourceURI).ToString())
-	runTestDeviceObserverRegister(ctx, t, deviceID, expectedObserved, nil, validateData)
+	runTestDeviceObserverRegister(ctx, t, deviceID, expectedObserved, nil, validateData, nil, nil)
+}
+
+func testPreregisterVirtualDevice(ctx context.Context, t *testing.T, deviceID string, grpcClient pb.GrpcGatewayClient, raClient raPb.ResourceAggregateClient) {
+	isConn, err := grpc.Dial(config.IDENTITY_STORE_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+		RootCAs: test.GetRootCertificatePool(t),
+	})))
+	require.NoError(t, err)
+	defer func() {
+		_ = isConn.Close()
+	}()
+	isClient := isPb.NewIdentityStoreClient(isConn)
+	client, err := grpcClient.SubscribeToEvents(ctx)
+	require.NoError(t, err)
+	defer func() {
+		err := client.CloseSend()
+		require.NoError(t, err)
+	}()
+
+	err = client.Send(&pb.SubscribeToEvents{
+		Action: &pb.SubscribeToEvents_CreateSubscription_{
+			CreateSubscription: &pb.SubscribeToEvents_CreateSubscription{
+				DeviceIdFilter: []string{deviceID},
+			},
+		},
+	})
+	require.NoError(t, err)
+
+	numResources := 10
+	ev, err := client.Recv()
+	require.NoError(t, err)
+	require.NotEmpty(t, ev.GetOperationProcessed())
+	require.Equal(t, ev.GetOperationProcessed().GetErrorStatus().GetCode(), pb.Event_OperationProcessed_ErrorStatus_OK)
+	virtualdevice.CreateDevice(ctx, t, "name-"+deviceID, deviceID, numResources, isClient, raClient)
+	resources := virtualdevice.CreateDeviceResourceLinks(deviceID, numResources)
+	links := make([]schema.ResourceLink, 0, len(resources))
+	for _, r := range resources {
+		links = append(links, r.ToSchema())
+	}
+	test.WaitForDevice(ctx, t, client, deviceID, ev.GetSubscriptionId(), ev.GetCorrelationId(), links)
+}
+
+func testValidateResourceLinks(ctx context.Context, t *testing.T, deviceID string, grpcClient pb.GrpcGatewayClient, raClient raPb.ResourceAggregateClient) {
+	client, err := grpcClient.GetResourceLinks(ctx, &pb.GetResourceLinksRequest{
+		DeviceIdFilter: []string{deviceID},
+	})
+	require.NoError(t, err)
+	expected := []*commands.Resource{
+		{
+			Href:          device.ResourceURI,
+			DeviceId:      deviceID,
+			ResourceTypes: []string{device.ResourceType},
+			Interfaces:    []string{interfaces.OC_IF_BASELINE},
+			Policy: &commands.Policy{
+				BitFlags: int32(schema.Observable | schema.Discoverable),
+			},
+		},
+		{
+			Href:          platform.ResourceURI,
+			DeviceId:      deviceID,
+			ResourceTypes: []string{platform.ResourceType},
+			Interfaces:    []string{interfaces.OC_IF_BASELINE},
+			Policy: &commands.Policy{
+				BitFlags: int32(schema.Observable | schema.Discoverable),
+			},
+		},
+	}
+	var got []*commands.Resource
+	for {
+		v, err := client.Recv()
+		if errors.Is(err, io.EOF) {
+			break
+		}
+		require.NoError(t, err)
+		got = v.GetResources()
+	}
+	expected = test.CleanUpResourcesArray(expected)
+	got = test.CleanUpResourcesArray(got)
+	test.CheckProtobufs(t, expected, got, test.RequireToCheckFunc(require.Equal))
+}
+
+func TestDeviceObserverRegisterForDiscoveryResourceWithAlreadyPublishedResources(t *testing.T) {
+	deviceID := test.MustFindDeviceByName(test.TestDeviceNameWithOicResObservable)
+	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
+	defer cancel()
+	discoveryObservable := test.ResourceIsBatchObservable(ctx, t, deviceID, resources.ResourceURI, resources.ResourceURI)
+	if !discoveryObservable {
+		t.Logf("skipping test for device with %v non-observable", resources.ResourceURI)
+		return
+	}
+	validateData := func(ctx context.Context, oh *observerHandler) {
+		obs := oh.getDeviceObserver(ctx)
+		require.Equal(t, observation.ObservationType_PerDevice, obs.GetObservationType())
+		res, err := obs.GetResources()
+		require.NoError(t, err)
+		pbTest.CmpResourceIds(t, []*commands.ResourceId{{DeviceId: deviceID, Href: resources.ResourceURI}}, res)
+	}
+
+	expectedObserved := strings.MakeSet(commands.NewResourceID(deviceID, resources.ResourceURI).ToString())
+	runTestDeviceObserverRegister(ctx, t, deviceID, expectedObserved, nil, validateData, testPreregisterVirtualDevice, testValidateResourceLinks)
 }
 
 type verifyHandlerFn = func(context.Context, *observerHandler)
+type actioneHubFn = func(ctx context.Context, t *testing.T, deviceID string, grpcClient pb.GrpcGatewayClient, raClient raPb.ResourceAggregateClient)
 
-func runTestDeviceObserverRegister(ctx context.Context, t *testing.T, deviceID string, expectedObserved, expectedRetrieved strings.Set, verifyHandler verifyHandlerFn) {
+func runTestDeviceObserverRegister(ctx context.Context, t *testing.T, deviceID string, expectedObserved, expectedRetrieved strings.Set, verifyHandler verifyHandlerFn, prepareHub, postHub actioneHubFn) {
 	const services = service.SetUpServicesOAuth | service.SetUpServicesId | service.SetUpServicesResourceDirectory |
 		service.SetUpServicesGrpcGateway | service.SetUpServicesResourceAggregate
-	tearDown := service.SetUpServices(ctx, t, services)
+
+	isConfig := isTest.MakeConfig(t)
+	isConfig.APIs.GRPC.TLS.ClientCertificateRequired = false
+
+	raConfig := raTest.MakeConfig(t)
+	raConfig.APIs.GRPC.TLS.ClientCertificateRequired = false
+
+	tearDown := service.SetUpServices(ctx, t, services, service.WithISConfig(isConfig), service.WithRAConfig(raConfig))
 	defer tearDown()
 
 	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
 
-	rdConn, err := grpcClient.New(config.MakeGrpcClientConfig(config.RESOURCE_DIRECTORY_HOST), log.Get(), trace.NewNoopTracerProvider())
+	rdConn, err := grpcClient.New(config.MakeGrpcClientConfig(config.GRPC_HOST), log.Get(), trace.NewNoopTracerProvider())
 	require.NoError(t, err)
 	defer func() {
 		_ = rdConn.Close()
 	}()
 	rdClient := pb.NewGrpcGatewayClient(rdConn.GRPC())
+
+	raConn, err := grpcClient.New(config.MakeGrpcClientConfig(config.RESOURCE_AGGREGATE_HOST), log.Get(), trace.NewNoopTracerProvider())
+	require.NoError(t, err)
+	defer func() {
+		_ = raConn.Close()
+	}()
+	raClient := raPb.NewResourceAggregateClient(raConn.GRPC())
+
+	if prepareHub != nil {
+		prepareHub(ctx, t, deviceID, rdClient, raClient)
+	}
 
 	retrieveChan := make(chan *commands.ResourceId, 8)
 	observeChan := make(chan *commands.ResourceId, 8)
@@ -225,6 +379,7 @@ func runTestDeviceObserverRegister(ctx context.Context, t *testing.T, deviceID s
 			deviceObserverFactory: deviceObserverFactory{
 				deviceID: deviceID,
 				rdClient: rdClient,
+				raClient: raClient,
 			},
 			service:               service,
 			retrievedResourceChan: retrieveChan,
@@ -290,4 +445,8 @@ func runTestDeviceObserverRegister(ctx context.Context, t *testing.T, deviceID s
 	}
 	require.Empty(t, expectedObserved)
 	require.Empty(t, expectedRetrieved)
+
+	if postHub != nil {
+		postHub(ctx, t, deviceID, rdClient, raClient)
+	}
 }

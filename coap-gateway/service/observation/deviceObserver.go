@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
 
 	"github.com/plgd-dev/device/schema"
 	"github.com/plgd-dev/device/schema/interfaces"
@@ -12,8 +13,10 @@ import (
 	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/go-coap/v2/tcp"
 	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
+	"github.com/plgd-dev/hub/v2/coap-gateway/resource"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	"github.com/plgd-dev/hub/v2/pkg/log"
+	pkgStrings "github.com/plgd-dev/hub/v2/pkg/strings"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -25,6 +28,10 @@ type ObservationType int
 type GrpcGatewayClient interface {
 	GetDevicesMetadata(ctx context.Context, in *pb.GetDevicesMetadataRequest, opts ...grpc.CallOption) (pb.GrpcGateway_GetDevicesMetadataClient, error)
 	GetResourceLinks(ctx context.Context, in *pb.GetResourceLinksRequest, opts ...grpc.CallOption) (pb.GrpcGateway_GetResourceLinksClient, error)
+}
+
+type ResourceAggregateClient interface {
+	UnpublishResourceLinks(ctx context.Context, in *commands.UnpublishResourceLinksRequest, opts ...grpc.CallOption) (*commands.UnpublishResourceLinksResponse, error)
 }
 
 const (
@@ -54,6 +61,7 @@ type ClientConn interface {
 	Get(ctx context.Context, path string, opts ...message.Option) (*pool.Message, error)
 	Observe(ctx context.Context, path string, observeFunc func(req *pool.Message), opts ...message.Option) (*tcp.Observation, error)
 	ReleaseMessage(m *pool.Message)
+	RemoteAddr() net.Addr
 }
 
 type Option interface {
@@ -105,8 +113,42 @@ func (o LoggerOpt) Apply(opts *DeviceObserverConfig) {
 	opts.logger = o.logger
 }
 
+func prepareSetupDeviceObserver(ctx context.Context, deviceID string, coapConn ClientConn, rdClient GrpcGatewayClient, raClient ResourceAggregateClient, cfg DeviceObserverConfig) (DeviceObserverConfig, []*commands.Resource, error) {
+	links, sequence, err := GetResourceLinks(ctx, coapConn, resources.ResourceURI)
+	switch {
+	case err == nil:
+		if cfg.observationType == ObservationType_Detect {
+			cfg.observationType, err = detectObservationType(links)
+			if err != nil {
+				cfg.logger.Errorf("%w", err)
+				cfg.observationType = ObservationType_PerDevice
+			}
+		}
+	case errors.Is(err, context.Canceled):
+		// the connection has been closed
+		return cfg, nil, err
+	default:
+		cfg.logger.Debugf("cannot to get resource links from the device(%v): %w", deviceID, err)
+		// the device doesn't have a /oic/res resource or a timeout has occurred
+		if cfg.observationType == ObservationType_Detect {
+			cfg.observationType = ObservationType_PerDevice
+		}
+	}
+
+	published, err := getPublishedResources(ctx, rdClient, deviceID)
+	if err != nil {
+		return cfg, nil, err
+	}
+
+	published, err = cleanUpPublishedResources(ctx, raClient, deviceID, coapConn.RemoteAddr().String(), sequence, published, links)
+	if err != nil {
+		return cfg, nil, err
+	}
+	return cfg, published, nil
+}
+
 // Create new deviceObserver with given settings
-func NewDeviceObserver(ctx context.Context, deviceID string, coapConn ClientConn, rdClient GrpcGatewayClient, callbacks ResourcesObserverCallbacks, opts ...Option) (*DeviceObserver, error) {
+func NewDeviceObserver(ctx context.Context, deviceID string, coapConn ClientConn, rdClient GrpcGatewayClient, raClient ResourceAggregateClient, callbacks ResourcesObserverCallbacks, opts ...Option) (*DeviceObserver, error) {
 	createError := func(err error) error {
 		return fmt.Errorf("cannot create device observer: %w", err)
 	}
@@ -136,13 +178,9 @@ func NewDeviceObserver(ctx context.Context, deviceID string, coapConn ClientConn
 		}, nil
 	}
 
-	var err error
-	if cfg.observationType == ObservationType_Detect {
-		cfg.observationType, err = detectObservationType(ctx, coapConn)
-		if err != nil {
-			cfg.logger.Errorf("%w", err)
-			cfg.observationType = ObservationType_PerDevice
-		}
+	cfg, published, err := prepareSetupDeviceObserver(ctx, deviceID, coapConn, rdClient, raClient, cfg)
+	if err != nil {
+		return nil, createError(err)
 	}
 
 	if cfg.observationType == ObservationType_PerDevice {
@@ -160,7 +198,7 @@ func NewDeviceObserver(ctx context.Context, deviceID string, coapConn ClientConn
 		cfg.logger.Debugf("NewDeviceObserverWithResourceShadow: failed to create /oic/res observation for device(%v): %v", deviceID, err)
 	}
 
-	resourcesObserver, err := createPublishedResourcesObserver(ctx, rdClient, deviceID, coapConn, callbacks, cfg.logger)
+	resourcesObserver, err := createPublishedResourcesObserver(ctx, rdClient, deviceID, coapConn, callbacks, published, cfg.logger)
 	if err != nil {
 		return nil, createError(err)
 	}
@@ -178,12 +216,27 @@ func emptyDeviceIDError() error {
 	return fmt.Errorf("empty deviceID")
 }
 
-func isDiscoveryResourceObservable(ctx context.Context, coapConn ClientConn) (bool, error) {
-	return IsResourceObservableWithInterface(ctx, coapConn, resources.ResourceURI, resources.ResourceType, interfaces.OC_IF_B)
+func IsDiscoveryResourceObservable(links schema.ResourceLinks) (bool, error) {
+	if len(links) == 0 {
+		return false, fmt.Errorf("no links")
+	}
+	resourceHref := resources.ResourceURI
+	observeInterface := interfaces.OC_IF_B
+	res, ok := links.GetResourceLink(resourceHref)
+	if !ok {
+		return false, fmt.Errorf("resourceLink for href(%v) not found", resourceHref)
+	}
+
+	observable := res.Policy.BitMask.Has(schema.Observable)
+	if !observable {
+		return observable, nil
+	}
+
+	return pkgStrings.Contains(res.Interfaces, observeInterface), nil
 }
 
-func detectObservationType(ctx context.Context, coapConn ClientConn) (ObservationType, error) {
-	ok, err := isDiscoveryResourceObservable(ctx, coapConn)
+func detectObservationType(links schema.ResourceLinks) (ObservationType, error) {
+	ok, err := IsDiscoveryResourceObservable(links)
 	if err != nil {
 		return ObservationType_PerDevice, fmt.Errorf("cannot determine whether /oic/res is observable: %w", err)
 	}
@@ -243,15 +296,10 @@ func createDiscoveryResourceObserver(ctx context.Context, deviceID string, coapC
 }
 
 // Create observer with a single observations for all published resources.
-func createPublishedResourcesObserver(ctx context.Context, rdClient GrpcGatewayClient, deviceID string, coapConn ClientConn, callbacks ResourcesObserverCallbacks, logger log.Logger) (*resourcesObserver, error) {
+func createPublishedResourcesObserver(ctx context.Context, rdClient GrpcGatewayClient, deviceID string, coapConn ClientConn, callbacks ResourcesObserverCallbacks, published []*commands.Resource, logger log.Logger) (*resourcesObserver, error) {
 	resourcesObserver := newResourcesObserver(deviceID, coapConn, callbacks, logger)
 
-	published, err := getPublishedResources(ctx, rdClient, deviceID)
-	if err != nil {
-		return nil, err
-	}
-
-	err = resourcesObserver.addResources(ctx, published)
+	err := resourcesObserver.addResources(ctx, published)
 	if err != nil {
 		resourcesObserver.CleanObservedResources(ctx)
 		return nil, err
@@ -325,6 +373,62 @@ func getPublishedResources(ctx context.Context, rdClient GrpcGatewayClient, devi
 		resources = append(resources, m.GetResources()...)
 	}
 	return resources, nil
+}
+
+func diffResources(publishedResources commands.Resources, deviceResources schema.ResourceLinks) (validResources []*commands.Resource, toUnpublishResourceInstanceIds []int64) {
+	validResources = make([]*commands.Resource, 0, len(publishedResources))
+	toUnpublishResourceInstanceIds = make([]int64, 0, len(publishedResources))
+	publishedResources.Sort()
+	deviceResources.Sort()
+	var j int
+	for _, res := range publishedResources {
+		for j < len(deviceResources) && deviceResources[j].Href < res.GetHref() {
+			j++
+		}
+		if j >= len(deviceResources) {
+			break
+		}
+		if deviceResources[j].Href == res.GetHref() {
+			validResources = append(validResources, res)
+		} else {
+			toUnpublishResourceInstanceIds = append(toUnpublishResourceInstanceIds, resource.GetInstanceID(res.GetHref()))
+		}
+	}
+	return validResources, toUnpublishResourceInstanceIds
+}
+
+func cleanUpPublishedResources(ctx context.Context, raClient ResourceAggregateClient, deviceID, connectionID string, sequence uint64, publishedResources commands.Resources, deviceResources schema.ResourceLinks) ([]*commands.Resource, error) {
+	if len(publishedResources) == 0 {
+		return nil, nil
+	}
+	if len(deviceResources) == 0 {
+		return publishedResources, nil
+	}
+
+	validResources, toUnpublishResourceInstanceIds := diffResources(publishedResources, deviceResources)
+
+	for _, res := range publishedResources {
+		if _, ok := deviceResources.GetResourceLink(res.GetHref()); ok {
+			validResources = append(validResources, res)
+		} else {
+			toUnpublishResourceInstanceIds = append(toUnpublishResourceInstanceIds, resource.GetInstanceID(res.GetHref()))
+		}
+	}
+	if len(toUnpublishResourceInstanceIds) > 0 {
+		_, err := raClient.UnpublishResourceLinks(ctx, &commands.UnpublishResourceLinksRequest{
+			InstanceIds: toUnpublishResourceInstanceIds,
+			DeviceId:    deviceID,
+			CommandMetadata: &commands.CommandMetadata{
+				ConnectionId: connectionID,
+				Sequence:     sequence,
+			},
+		})
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return validResources, nil
 }
 
 // Add observation of published resources.

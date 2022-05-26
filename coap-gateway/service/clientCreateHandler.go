@@ -48,7 +48,7 @@ func clientCreateHandler(req *mux.Message, client *Client) (*pool.Message, error
 }
 
 func clientCreateDeviceHandler(req *mux.Message, client *Client, deviceID, href string) (*commands.Content, error) {
-	createCommand, err := coapconv.NewCreateResourceRequest(commands.NewResourceID(deviceID, href), req, client.remoteAddrString())
+	createCommand, err := coapconv.NewCreateResourceRequest(commands.NewResourceID(deviceID, href), req, client.RemoteAddr().String())
 	if err != nil {
 		return nil, err
 	}
