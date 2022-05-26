@@ -98,56 +98,7 @@ func toPendingCommands(resource *Resource, commandFilter subscription.FilterBitm
 	if resource.projection == nil {
 		return nil
 	}
-	pendingCmds := make([]*pb.PendingCommand, 0, 32)
-	if subscription.IsFilteredBit(commandFilter, subscription.FilterBitmaskResourceCreatePending) {
-		for _, pendingCmd := range resource.projection.resourceCreatePendings {
-			if pendingCmd.IsExpired(now) {
-				continue
-			}
-			pendingCmds = append(pendingCmds, &pb.PendingCommand{
-				Command: &pb.PendingCommand_ResourceCreatePending{
-					ResourceCreatePending: pendingCmd,
-				},
-			})
-		}
-	}
-	if subscription.IsFilteredBit(commandFilter, subscription.FilterBitmaskResourceRetrievePending) {
-		for _, pendingCmd := range resource.projection.resourceRetrievePendings {
-			if pendingCmd.IsExpired(now) {
-				continue
-			}
-			pendingCmds = append(pendingCmds, &pb.PendingCommand{
-				Command: &pb.PendingCommand_ResourceRetrievePending{
-					ResourceRetrievePending: pendingCmd,
-				},
-			})
-		}
-	}
-	if subscription.IsFilteredBit(commandFilter, subscription.FilterBitmaskResourceUpdatePending) {
-		for _, pendingCmd := range resource.projection.resourceUpdatePendings {
-			if pendingCmd.IsExpired(now) {
-				continue
-			}
-			pendingCmds = append(pendingCmds, &pb.PendingCommand{
-				Command: &pb.PendingCommand_ResourceUpdatePending{
-					ResourceUpdatePending: pendingCmd,
-				},
-			})
-		}
-	}
-	if subscription.IsFilteredBit(commandFilter, subscription.FilterBitmaskResourceDeletePending) {
-		for _, pendingCmd := range resource.projection.resourceDeletePendings {
-			if pendingCmd.IsExpired(now) {
-				continue
-			}
-			pendingCmds = append(pendingCmds, &pb.PendingCommand{
-				Command: &pb.PendingCommand_ResourceDeletePending{
-					ResourceDeletePending: pendingCmd,
-				},
-			})
-		}
-	}
-	return pendingCmds
+	return resource.projection.ToPendingCommands(commandFilter, now)
 }
 
 func (rd *ResourceShadow) sendPendingCommands(srv pb.GrpcGateway_GetPendingCommandsServer, resourceIDsFilter []*commands.ResourceId, typeFilter []string, filterCmds subscription.FilterBitmask, now time.Time, toReloadDevices strings.Set) error {
@@ -164,17 +115,14 @@ func (rd *ResourceShadow) sendPendingCommands(srv pb.GrpcGateway_GetPendingComma
 
 func (rd *ResourceShadow) sendDeviceMetadataUpdatePendingCommands(deviceIDs strings.Set, srv pb.GrpcGateway_GetPendingCommandsServer, now time.Time, toReloadDevices strings.Set) error {
 	return rd.projection.LoadDevicesMetadata(srv.Context(), deviceIDs, toReloadDevices, func(m *deviceMetadataProjection) error {
-		for _, pendingCmd := range m.data.GetUpdatePendings() {
-			if pendingCmd.IsExpired(now) {
-				continue
-			}
+		for _, pendingCmd := range m.GetDeviceUpdatePendings(now) {
 			err := srv.Send(&pb.PendingCommand{
 				Command: &pb.PendingCommand_DeviceMetadataUpdatePending{
 					DeviceMetadataUpdatePending: pendingCmd,
 				},
 			})
 			if err != nil {
-				return status.Errorf(codes.Canceled, "cannot send device metadata update pending command %v: %v", pendingCmd, err)
+				return status.Errorf(codes.Canceled, "cannot send device metadata update pending command: %v", err)
 			}
 		}
 		return nil
@@ -228,19 +176,24 @@ func (rd *ResourceShadow) GetPendingCommands(req *pb.GetPendingCommandsRequest, 
 
 func (rd *ResourceShadow) sendDevicesMetadata(srv pb.GrpcGateway_GetDevicesMetadataServer, deviceIDFilter, typeFilter, toReloadDevices strings.Set) error {
 	return rd.projection.LoadResourceLinks(srv.Context(), deviceIDFilter, toReloadDevices, func(m *resourceLinksProjection) error {
-		if m.snapshot.GetResources() == nil || m.snapshot.GetResources()[device.ResourceURI] == nil {
+		res := m.GetResource(device.ResourceURI)
+		if res == nil {
 			if toReloadDevices != nil {
 				toReloadDevices.Add(m.GetDeviceID())
 			}
 			return nil
 		}
-		if len(typeFilter) > 0 && !typeFilter.HasOneOf(m.snapshot.GetResources()[device.ResourceURI].ResourceTypes...) {
+		if len(typeFilter) > 0 && !typeFilter.HasOneOf(res.ResourceTypes...) {
 			return nil
 		}
 		return rd.projection.LoadDevicesMetadata(srv.Context(), strings.MakeSet(m.GetDeviceID()), toReloadDevices, func(m *deviceMetadataProjection) error {
-			err := srv.Send(m.data.GetDeviceMetadataUpdated())
+			data := m.GetDeviceMetadataUpdated()
+			if data == nil {
+				return nil
+			}
+			err := srv.Send(data)
 			if err != nil {
-				return status.Errorf(codes.Canceled, "cannot send devices metadata %v: %v", m.data.GetDeviceMetadataUpdated(), err)
+				return status.Errorf(codes.Canceled, "cannot send devices metadata %v: %v", data, err)
 			}
 			return nil
 		})

@@ -61,7 +61,7 @@ func (p *Projection) LoadResourceLinks(ctx context.Context, deviceIDFilter, toRe
 		var err error
 		p.Models(func(m eventstore.Model) (wantNext bool) {
 			rl := m.(*resourceLinksProjection)
-			if len(rl.snapshot.GetResources()) == 0 {
+			if rl.LenResources() == 0 {
 				return false
 			}
 			reload = false
@@ -111,8 +111,8 @@ func (p *Projection) LoadDevicesMetadata(ctx context.Context, deviceIDFilter, to
 		reload := true
 		p.Models(func(m eventstore.Model) (wantNext bool) {
 			dm := m.(*deviceMetadataProjection)
-			if dm.data == nil {
-				return
+			if !dm.IsInitialized() {
+				return true
 			}
 			reload = false
 			err = onDeviceMetadataProjection(dm)
@@ -146,12 +146,13 @@ func getResourceIDMapFilter(resourceIDFilter []*commands.ResourceId) map[string]
 }
 
 func (p *Projection) wantToReloadDevice(rl *resourceLinksProjection, hrefFilter map[string]bool, typeFilter strings.Set) bool {
-	for _, res := range rl.snapshot.GetResources() {
+	var finalReload bool
+	rl.IterateOverResources(func(res *commands.Resource) (wantNext bool) {
 		if len(hrefFilter) > 0 && !hrefFilter[res.GetHref()] {
-			continue
+			return true
 		}
 		if !hasMatchingType(res.ResourceTypes, typeFilter) {
-			continue
+			return true
 		}
 		reload := true
 		p.Models(func(eventstore.Model) (wantNext bool) {
@@ -159,10 +160,12 @@ func (p *Projection) wantToReloadDevice(rl *resourceLinksProjection, hrefFilter 
 			return true
 		}, commands.NewResourceID(rl.GetDeviceID(), res.Href))
 		if reload {
-			return true
+			finalReload = true
+			return false
 		}
-	}
-	return false
+		return true
+	})
+	return finalReload
 }
 
 func (p *Projection) LoadResourcesWithLinks(ctx context.Context, resourceIDFilter []*commands.ResourceId, typeFilter strings.Set, toReloadDevices strings.Set, onResource func(*Resource) error) error {
@@ -175,14 +178,14 @@ func (p *Projection) LoadResourcesWithLinks(ctx context.Context, resourceIDFilte
 				}
 				return nil
 			}
-			for _, res := range rl.snapshot.GetResources() {
+			var err error
+			rl.IterateOverResources(func(res *commands.Resource) (wantNext bool) {
 				if len(hrefFilter) > 0 && !hrefFilter[res.GetHref()] {
-					continue
+					return true
 				}
 				if !hasMatchingType(res.ResourceTypes, typeFilter) {
-					continue
+					return true
 				}
-				var err error
 				p.Models(func(model eventstore.Model) (wantNext bool) {
 					t := model.(interface{ EventType() string }).EventType()
 					if t == events.NewResourceLinksSnapshotTaken().EventType() ||
@@ -196,11 +199,9 @@ func (p *Projection) LoadResourcesWithLinks(ctx context.Context, resourceIDFilte
 					})
 					return err == nil
 				}, commands.NewResourceID(rl.GetDeviceID(), res.Href))
-				if err != nil {
-					return err
-				}
-			}
-			return nil
+				return true
+			})
+			return err
 		})
 		if err != nil {
 			return err

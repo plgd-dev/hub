@@ -167,9 +167,9 @@ func NewEventStoreModelFactory() func(context.Context, string, string) (eventsto
 	return func(ctx context.Context, deviceID, resourceID string) (eventstore.Model, error) {
 		switch resourceID {
 		case commands.MakeLinksResourceUUID(deviceID):
-			return NewResourceLinksProjection(), nil
+			return NewResourceLinksProjection(deviceID), nil
 		case commands.MakeStatusResourceUUID(deviceID):
-			return NewDeviceMetadataProjection(), nil
+			return NewDeviceMetadataProjection(deviceID), nil
 		}
 		return NewResourceProjection(), nil
 	}

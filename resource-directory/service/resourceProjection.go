@@ -3,7 +3,11 @@ package service
 import (
 	"context"
 	"fmt"
+	"sync"
+	"time"
 
+	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
+	"github.com/plgd-dev/hub/v2/grpc-gateway/subscription"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore"
@@ -12,51 +16,32 @@ import (
 
 // protected by lock in Projection struct in resource-aggregate/cqrs/eventstore/projection.go
 type resourceProjection struct {
-	resourceID               *commands.ResourceId
-	content                  *events.ResourceChanged
-	version                  uint64
-	onResourceChangedVersion uint64
-
-	resourceUpdatePendings   []*events.ResourceUpdatePending
-	resourceRetrievePendings []*events.ResourceRetrievePending
-	resourceDeletePendings   []*events.ResourceDeletePending
-	resourceCreatePendings   []*events.ResourceCreatePending
+	private struct {
+		lock                     sync.RWMutex // protects all fields
+		resourceID               *commands.ResourceId
+		content                  *events.ResourceChanged
+		version                  uint64
+		onResourceChangedVersion uint64
+		resourceUpdatePendings   []*events.ResourceUpdatePending
+		resourceRetrievePendings []*events.ResourceRetrievePending
+		resourceDeletePendings   []*events.ResourceDeletePending
+		resourceCreatePendings   []*events.ResourceCreatePending
+	}
 }
 
 func NewResourceProjection() eventstore.Model {
-	return &resourceProjection{
-		resourceUpdatePendings:   make([]*events.ResourceUpdatePending, 0, 8),
-		resourceRetrievePendings: make([]*events.ResourceRetrievePending, 0, 8),
-		resourceDeletePendings:   make([]*events.ResourceDeletePending, 0, 8),
-		resourceCreatePendings:   make([]*events.ResourceCreatePending, 0, 8),
-	}
+	var p resourceProjection
+	p.private.resourceUpdatePendings = make([]*events.ResourceUpdatePending, 0, 8)
+	p.private.resourceRetrievePendings = make([]*events.ResourceRetrievePending, 0, 8)
+	p.private.resourceDeletePendings = make([]*events.ResourceDeletePending, 0, 8)
+	p.private.resourceCreatePendings = make([]*events.ResourceCreatePending, 0, 8)
+	return &p
 }
 
-func (rp *resourceProjection) GetDeviceID() string {
-	if rp.resourceID == nil {
-		return ""
-	}
-	return rp.resourceID.GetDeviceId()
-}
-
-func (rp *resourceProjection) Clone() *resourceProjection {
-	resourceCreatePendings := make([]*events.ResourceCreatePending, 0, len(rp.resourceCreatePendings))
-	resourceCreatePendings = append(resourceCreatePendings, rp.resourceCreatePendings...)
-	resourceRetrievePendings := make([]*events.ResourceRetrievePending, 0, len(rp.resourceRetrievePendings))
-	resourceRetrievePendings = append(resourceRetrievePendings, rp.resourceRetrievePendings...)
-	resourceUpdatePendings := make([]*events.ResourceUpdatePending, 0, len(rp.resourceUpdatePendings))
-	resourceUpdatePendings = append(resourceUpdatePendings, rp.resourceUpdatePendings...)
-	resourceDeletePendings := make([]*events.ResourceDeletePending, 0, len(rp.resourceDeletePendings))
-	resourceDeletePendings = append(resourceDeletePendings, rp.resourceDeletePendings...)
-	return &resourceProjection{
-		resourceID:               rp.resourceID,
-		content:                  rp.content,
-		version:                  rp.version,
-		resourceUpdatePendings:   resourceUpdatePendings,
-		resourceCreatePendings:   resourceCreatePendings,
-		resourceRetrievePendings: resourceRetrievePendings,
-		resourceDeletePendings:   resourceDeletePendings,
-	}
+func (rp *resourceProjection) GetResourceChanged() *events.ResourceChanged {
+	rp.private.lock.RLock()
+	defer rp.private.lock.RUnlock()
+	return rp.private.content
 }
 
 func (rp *resourceProjection) EventType() string {
@@ -69,13 +54,13 @@ func (rp *resourceProjection) handleResourceStateSnapshotTakenLocked(eu eventsto
 	if err := eu.Unmarshal(&s); err != nil {
 		return err
 	}
-	rp.resourceID = s.ResourceId
-	rp.content = s.LatestResourceChange
-	rp.onResourceChangedVersion = eu.Version()
-	rp.resourceUpdatePendings = s.GetResourceUpdatePendings()
-	rp.resourceCreatePendings = s.GetResourceCreatePendings()
-	rp.resourceDeletePendings = s.GetResourceDeletePendings()
-	rp.resourceRetrievePendings = s.GetResourceRetrievePendings()
+	rp.private.resourceID = s.ResourceId
+	rp.private.content = s.LatestResourceChange
+	rp.private.onResourceChangedVersion = eu.Version()
+	rp.private.resourceUpdatePendings = s.GetResourceUpdatePendings()
+	rp.private.resourceCreatePendings = s.GetResourceCreatePendings()
+	rp.private.resourceDeletePendings = s.GetResourceDeletePendings()
+	rp.private.resourceRetrievePendings = s.GetResourceRetrievePendings()
 	return nil
 }
 
@@ -84,9 +69,9 @@ func (rp *resourceProjection) handleResourceChangedLocked(eu eventstore.EventUnm
 	if err := eu.Unmarshal(&s); err != nil {
 		return err
 	}
-	rp.resourceID = s.ResourceId
-	rp.content = &s
-	rp.onResourceChangedVersion = eu.Version()
+	rp.private.resourceID = s.ResourceId
+	rp.private.content = &s
+	rp.private.onResourceChangedVersion = eu.Version()
 	return nil
 }
 
@@ -95,8 +80,8 @@ func (rp *resourceProjection) handleResourceUpdatePendingLocked(eu eventstore.Ev
 	if err := eu.Unmarshal(&s); err != nil {
 		return err
 	}
-	rp.resourceUpdatePendings = append(rp.resourceUpdatePendings, &s)
-	rp.resourceID = s.ResourceId
+	rp.private.resourceUpdatePendings = append(rp.private.resourceUpdatePendings, &s)
+	rp.private.resourceID = s.ResourceId
 	return nil
 }
 
@@ -105,10 +90,10 @@ func (rp *resourceProjection) handleResourceUpdatedLocked(eu eventstore.EventUnm
 	if err := eu.Unmarshal(&s); err != nil {
 		return err
 	}
-	rp.resourceID = s.ResourceId
+	rp.private.resourceID = s.ResourceId
 	tmp := make([]*events.ResourceUpdatePending, 0, 16)
 	var found bool
-	for _, cu := range rp.resourceUpdatePendings {
+	for _, cu := range rp.private.resourceUpdatePendings {
 		if cu.GetAuditContext().GetCorrelationId() != s.GetAuditContext().GetCorrelationId() {
 			tmp = append(tmp, cu)
 		} else {
@@ -116,7 +101,7 @@ func (rp *resourceProjection) handleResourceUpdatedLocked(eu eventstore.EventUnm
 		}
 	}
 	if found {
-		rp.resourceUpdatePendings = tmp
+		rp.private.resourceUpdatePendings = tmp
 	}
 	return nil
 }
@@ -126,8 +111,8 @@ func (rp *resourceProjection) handleResourceRetrievePendingLocked(eu eventstore.
 	if err := eu.Unmarshal(&s); err != nil {
 		return err
 	}
-	rp.resourceID = s.ResourceId
-	rp.resourceRetrievePendings = append(rp.resourceRetrievePendings, &s)
+	rp.private.resourceID = s.ResourceId
+	rp.private.resourceRetrievePendings = append(rp.private.resourceRetrievePendings, &s)
 	return nil
 }
 
@@ -136,8 +121,8 @@ func (rp *resourceProjection) handleResourceDeletePendingLocked(eu eventstore.Ev
 	if err := eu.Unmarshal(&s); err != nil {
 		return err
 	}
-	rp.resourceID = s.ResourceId
-	rp.resourceDeletePendings = append(rp.resourceDeletePendings, &s)
+	rp.private.resourceID = s.ResourceId
+	rp.private.resourceDeletePendings = append(rp.private.resourceDeletePendings, &s)
 	return nil
 }
 
@@ -146,10 +131,10 @@ func (rp *resourceProjection) handleResourceRetrievedLocked(eu eventstore.EventU
 	if err := eu.Unmarshal(&s); err != nil {
 		return err
 	}
-	rp.resourceID = s.ResourceId
+	rp.private.resourceID = s.ResourceId
 	tmp := make([]*events.ResourceRetrievePending, 0, 16)
 	var found bool
-	for _, cu := range rp.resourceRetrievePendings {
+	for _, cu := range rp.private.resourceRetrievePendings {
 		if cu.GetAuditContext().GetCorrelationId() != s.GetAuditContext().GetCorrelationId() {
 			tmp = append(tmp, cu)
 		} else {
@@ -157,7 +142,7 @@ func (rp *resourceProjection) handleResourceRetrievedLocked(eu eventstore.EventU
 		}
 	}
 	if found {
-		rp.resourceRetrievePendings = tmp
+		rp.private.resourceRetrievePendings = tmp
 	}
 	return nil
 }
@@ -167,10 +152,10 @@ func (rp *resourceProjection) handleResourceDeletedLocked(eu eventstore.EventUnm
 	if err := eu.Unmarshal(&s); err != nil {
 		return err
 	}
-	rp.resourceID = s.ResourceId
+	rp.private.resourceID = s.ResourceId
 	tmp := make([]*events.ResourceDeletePending, 0, 16)
 	var found bool
-	for _, cu := range rp.resourceDeletePendings {
+	for _, cu := range rp.private.resourceDeletePendings {
 		if cu.GetAuditContext().GetCorrelationId() != s.GetAuditContext().GetCorrelationId() {
 			tmp = append(tmp, cu)
 		} else {
@@ -178,7 +163,7 @@ func (rp *resourceProjection) handleResourceDeletedLocked(eu eventstore.EventUnm
 		}
 	}
 	if found {
-		rp.resourceDeletePendings = tmp
+		rp.private.resourceDeletePendings = tmp
 	}
 	return nil
 }
@@ -188,8 +173,8 @@ func (rp *resourceProjection) handleResourceCreatePendingLocked(eu eventstore.Ev
 	if err := eu.Unmarshal(&s); err != nil {
 		return err
 	}
-	rp.resourceCreatePendings = append(rp.resourceCreatePendings, &s)
-	rp.resourceID = s.ResourceId
+	rp.private.resourceCreatePendings = append(rp.private.resourceCreatePendings, &s)
+	rp.private.resourceID = s.ResourceId
 	return nil
 }
 
@@ -198,10 +183,10 @@ func (rp *resourceProjection) handleResourceCreatedLocked(eu eventstore.EventUnm
 	if err := eu.Unmarshal(&s); err != nil {
 		return err
 	}
-	rp.resourceID = s.ResourceId
+	rp.private.resourceID = s.ResourceId
 	tmp := make([]*events.ResourceCreatePending, 0, 16)
 	var found bool
-	for _, cu := range rp.resourceCreatePendings {
+	for _, cu := range rp.private.resourceCreatePendings {
 		if cu.GetAuditContext().GetCorrelationId() != s.GetAuditContext().GetCorrelationId() {
 			tmp = append(tmp, cu)
 		} else {
@@ -209,7 +194,7 @@ func (rp *resourceProjection) handleResourceCreatedLocked(eu eventstore.EventUnm
 		}
 	}
 	if found {
-		rp.resourceCreatePendings = tmp
+		rp.private.resourceCreatePendings = tmp
 	}
 	return nil
 }
@@ -229,6 +214,8 @@ func (rp *resourceProjection) Handle(ctx context.Context, iter eventstore.Iter) 
 		(&events.ResourceCreated{}).EventType():            rp.handleResourceCreatedLocked,
 	}
 
+	rp.private.lock.Lock()
+	defer rp.private.lock.Unlock()
 	var groupID, aggregateID string
 	for {
 		eu, ok := iter.Next(ctx)
@@ -238,7 +225,7 @@ func (rp *resourceProjection) Handle(ctx context.Context, iter eventstore.Iter) 
 		log.Debugf("resourceProjection.Handle deviceID=%v eventype%v version=%v", eu.GroupID(), eu.EventType(), eu.Version())
 		groupID = eu.GroupID()
 		aggregateID = eu.AggregateID()
-		rp.version = eu.Version()
+		rp.private.version = eu.Version()
 
 		handler, ok := eventTypeToRPHandler[eu.EventType()]
 		if !ok {
@@ -249,8 +236,65 @@ func (rp *resourceProjection) Handle(ctx context.Context, iter eventstore.Iter) 
 			return err
 		}
 	}
-	if rp.resourceID == nil {
+	if rp.private.resourceID == nil {
 		return fmt.Errorf("DeviceId: %v, ResourceId: %v: invalid resource is stored in eventstore: Resource attribute is not set", groupID, aggregateID)
 	}
 	return nil
+}
+
+type resourcePending interface {
+	*events.ResourceCreatePending | *events.ResourceRetrievePending | *events.ResourceUpdatePending | *events.ResourceDeletePending
+	IsExpired(time.Time) bool
+}
+
+func appendPendingCmd[T resourcePending](pendingCmds []*pb.PendingCommand, commandFilter subscription.FilterBitmask, bit subscription.FilterBitmask, now time.Time, create func(v T) *pb.PendingCommand, data []T) []*pb.PendingCommand {
+	if subscription.IsFilteredBit(commandFilter, bit) {
+		for _, pendingCmd := range data {
+			if pendingCmd.IsExpired(now) {
+				continue
+			}
+			pendingCmds = append(pendingCmds, create(pendingCmd))
+		}
+	}
+	return pendingCmds
+}
+
+func (rp *resourceProjection) ToPendingCommands(commandFilter subscription.FilterBitmask, now time.Time) []*pb.PendingCommand {
+	pendingCmds := make([]*pb.PendingCommand, 0, 32)
+	rp.private.lock.RLock()
+	defer rp.private.lock.RUnlock()
+
+	pendingCmds = appendPendingCmd(pendingCmds, commandFilter, subscription.FilterBitmaskResourceCreatePending, now, func(p *events.ResourceCreatePending) *pb.PendingCommand {
+		return &pb.PendingCommand{
+			Command: &pb.PendingCommand_ResourceCreatePending{
+				ResourceCreatePending: p,
+			},
+		}
+	}, rp.private.resourceCreatePendings)
+
+	pendingCmds = appendPendingCmd(pendingCmds, commandFilter, subscription.FilterBitmaskResourceRetrievePending, now, func(p *events.ResourceRetrievePending) *pb.PendingCommand {
+		return &pb.PendingCommand{
+			Command: &pb.PendingCommand_ResourceRetrievePending{
+				ResourceRetrievePending: p,
+			},
+		}
+	}, rp.private.resourceRetrievePendings)
+
+	pendingCmds = appendPendingCmd(pendingCmds, commandFilter, subscription.FilterBitmaskResourceUpdatePending, now, func(p *events.ResourceUpdatePending) *pb.PendingCommand {
+		return &pb.PendingCommand{
+			Command: &pb.PendingCommand_ResourceUpdatePending{
+				ResourceUpdatePending: p,
+			},
+		}
+	}, rp.private.resourceUpdatePendings)
+
+	pendingCmds = appendPendingCmd(pendingCmds, commandFilter, subscription.FilterBitmaskResourceDeletePending, now, func(p *events.ResourceDeletePending) *pb.PendingCommand {
+		return &pb.PendingCommand{
+			Command: &pb.PendingCommand_ResourceDeletePending{
+				ResourceDeletePending: p,
+			},
+		}
+	}, rp.private.resourceDeletePendings)
+
+	return pendingCmds
 }

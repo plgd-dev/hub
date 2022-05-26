@@ -22,16 +22,11 @@ func NewResourceDirectory(projection *Projection, deviceIds []string) *ResourceD
 
 func (rd *ResourceDirectory) sendResourceLinks(srv pb.GrpcGateway_GetResourceLinksServer, deviceIDs, typeFilter, toReloadDevices strings.Set) error {
 	return rd.projection.LoadResourceLinks(srv.Context(), deviceIDs, toReloadDevices, func(m *resourceLinksProjection) error {
-		p := m.Clone()
-		for href, resource := range p.snapshot.GetResources() {
-			if !hasMatchingType(resource.ResourceTypes, typeFilter) {
-				delete(p.snapshot.Resources, href)
-			}
-		}
-		if len(p.snapshot.Resources) == 0 {
+		toSend := m.ToResourceLinksPublished(typeFilter)
+		if toSend == nil {
 			return nil
 		}
-		err := srv.Send(p.snapshot.ToResourceLinksPublished())
+		err := srv.Send(toSend)
 		if err != nil {
 			return status.Errorf(codes.Canceled, "cannot send resource link %v", err)
 		}
