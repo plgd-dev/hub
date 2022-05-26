@@ -5,6 +5,8 @@ import (
 	"crypto/tls"
 	"testing"
 
+	"github.com/plgd-dev/device/schema/device"
+	"github.com/plgd-dev/device/schema/resources"
 	"github.com/plgd-dev/go-coap/v2/tcp"
 	coapgwService "github.com/plgd-dev/hub/v2/coap-gateway/service"
 	"github.com/plgd-dev/hub/v2/coap-gateway/service/observation"
@@ -89,6 +91,7 @@ func TestIsResourceObservableWithInterface(t *testing.T) {
 		return "resource (" + href + ") "
 	}
 	type args struct {
+		href string
 	}
 	tests := []struct {
 		name    string
@@ -97,15 +100,23 @@ func TestIsResourceObservableWithInterface(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name:    testResourceName("/oic/res"),
-			args:    args{},
-			wantErr: false,
+			name: testResourceName(resources.ResourceURI),
+			args: args{
+				href: resources.ResourceURI,
+			},
+		},
+		{
+			name: testResourceName(device.ResourceURI),
+			args: args{
+				href: device.ResourceURI,
+			},
+			wantErr: true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			links, _, err := observation.GetResourceLinks(ctx, handler.coapConn)
+			links, _, err := observation.GetResourceLinks(ctx, handler.coapConn, tt.args.href)
 			if tt.wantErr {
 				require.Error(t, err)
 				return

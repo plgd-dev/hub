@@ -414,8 +414,8 @@ func runTestDeviceObserverRegister(ctx context.Context, t *testing.T, deviceID s
 	// give time to wait for data
 	ctxWait, waitCancel := context.WithTimeout(context.Background(), time.Second*10)
 	closeWaitChans := func() {
-		//	close(retrieveChan)
-		//	close(observeChan)
+		close(retrieveChan)
+		close(observeChan)
 	}
 	defer waitCancel()
 	for !done {

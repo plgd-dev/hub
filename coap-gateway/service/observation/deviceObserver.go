@@ -114,7 +114,7 @@ func (o LoggerOpt) Apply(opts *DeviceObserverConfig) {
 }
 
 func prepareSetupDeviceObserver(ctx context.Context, deviceID string, coapConn ClientConn, rdClient GrpcGatewayClient, raClient ResourceAggregateClient, cfg DeviceObserverConfig) (DeviceObserverConfig, []*commands.Resource, error) {
-	links, sequence, err := GetResourceLinks(ctx, coapConn)
+	links, sequence, err := GetResourceLinks(ctx, coapConn, resources.ResourceURI)
 	switch {
 	case err == nil:
 		if cfg.observationType == ObservationType_Detect {
@@ -228,7 +228,7 @@ func IsDiscoveryResourceObservable(links schema.ResourceLinks) (bool, error) {
 	}
 
 	observable := res.Policy.BitMask.Has(schema.Observable)
-	if observeInterface == "" || !observable {
+	if !observable {
 		return observable, nil
 	}
 
@@ -375,15 +375,38 @@ func getPublishedResources(ctx context.Context, rdClient GrpcGatewayClient, devi
 	return resources, nil
 }
 
-func cleanUpPublishedResources(ctx context.Context, raClient ResourceAggregateClient, deviceID, connectionID string, sequence uint64, publishedResources []*commands.Resource, deviceResources schema.ResourceLinks) ([]*commands.Resource, error) {
+func diffResources(publishedResources commands.Resources, deviceResources schema.ResourceLinks) (validResources []*commands.Resource, toUnpublishResourceInstanceIds []int64) {
+	validResources = make([]*commands.Resource, 0, len(publishedResources))
+	toUnpublishResourceInstanceIds = make([]int64, 0, len(publishedResources))
+	publishedResources.Sort()
+	deviceResources.Sort()
+	var j int
+	for _, res := range publishedResources {
+		for j < len(deviceResources) && deviceResources[j].Href < res.GetHref() {
+			j++
+		}
+		if j >= len(deviceResources) {
+			break
+		}
+		if deviceResources[j].Href == res.GetHref() {
+			validResources = append(validResources, res)
+		} else {
+			toUnpublishResourceInstanceIds = append(toUnpublishResourceInstanceIds, resource.GetInstanceID(res.GetHref()))
+		}
+	}
+	return validResources, toUnpublishResourceInstanceIds
+}
+
+func cleanUpPublishedResources(ctx context.Context, raClient ResourceAggregateClient, deviceID, connectionID string, sequence uint64, publishedResources commands.Resources, deviceResources schema.ResourceLinks) ([]*commands.Resource, error) {
 	if len(publishedResources) == 0 {
 		return nil, nil
 	}
 	if len(deviceResources) == 0 {
 		return publishedResources, nil
 	}
-	validResources := make([]*commands.Resource, 0, len(publishedResources))
-	toUnpublishResourceInstanceIds := make([]int64, 0, len(publishedResources))
+
+	validResources, toUnpublishResourceInstanceIds := diffResources(publishedResources, deviceResources)
+
 	for _, res := range publishedResources {
 		if _, ok := deviceResources.GetResourceLink(res.GetHref()); ok {
 			validResources = append(validResources, res)

@@ -6,15 +6,14 @@ import (
 
 	"github.com/plgd-dev/device/schema"
 	"github.com/plgd-dev/device/schema/interfaces"
-	"github.com/plgd-dev/device/schema/resources"
 	coapMessage "github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/kit/v2/codec/cbor"
 )
 
-// Query /oic/res resource to get device resource links.
-func GetResourceLinks(ctx context.Context, coapConn ClientConn) (schema.ResourceLinks, uint64, error) {
-	msg, err := coapConn.Get(ctx, resources.ResourceURI, coapMessage.Option{
+// Query resource links from the given resource with the interface oic.if.ll.
+func GetResourceLinks(ctx context.Context, coapConn ClientConn, href string) (schema.ResourceLinks, uint64, error) {
+	msg, err := coapConn.Get(ctx, href, coapMessage.Option{
 		ID:    coapMessage.URIQuery,
 		Value: []byte("if=" + interfaces.OC_IF_LL),
 	})

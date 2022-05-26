@@ -1,7 +1,6 @@
 package test
 
 import (
-	"sort"
 	"time"
 
 	"github.com/plgd-dev/device/schema"
@@ -10,18 +9,9 @@ import (
 	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 )
 
-type SortResourcesByHref []*commands.Resource
-
-func (a SortResourcesByHref) Len() int      { return len(a) }
-func (a SortResourcesByHref) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
-func (a SortResourcesByHref) Less(i, j int) bool {
-	return a[i].GetHref() < a[j].GetHref()
-}
-
-func SortResources(s []*commands.Resource) []*commands.Resource {
-	v := SortResourcesByHref(s)
-	sort.Sort(v)
-	return v
+func SortResources(s commands.Resources) commands.Resources {
+	s.Sort()
+	return s
 }
 
 func ResourceLinksToResources(deviceID string, s []schema.ResourceLink) []*commands.Resource {
