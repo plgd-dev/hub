@@ -242,57 +242,59 @@ func (rp *resourceProjection) Handle(ctx context.Context, iter eventstore.Iter) 
 	return nil
 }
 
+type resourcePending interface {
+	*events.ResourceCreatePending | *events.ResourceRetrievePending | *events.ResourceUpdatePending | *events.ResourceDeletePending
+	IsExpired(time.Time) bool
+}
+
+func appendPendingCmd[T resourcePending](pendingCmds []*pb.PendingCommand, commandFilter subscription.FilterBitmask, bit subscription.FilterBitmask, now time.Time, create func(v T) *pb.PendingCommand, data []T) []*pb.PendingCommand {
+	if subscription.IsFilteredBit(commandFilter, bit) {
+		for _, pendingCmd := range data {
+			if pendingCmd.IsExpired(now) {
+				continue
+			}
+			pendingCmds = append(pendingCmds, create(pendingCmd))
+		}
+	}
+	return pendingCmds
+}
+
 func (rp *resourceProjection) ToPendingCommands(commandFilter subscription.FilterBitmask, now time.Time) []*pb.PendingCommand {
 	pendingCmds := make([]*pb.PendingCommand, 0, 32)
 	rp.private.lock.RLock()
 	defer rp.private.lock.RUnlock()
-	if subscription.IsFilteredBit(commandFilter, subscription.FilterBitmaskResourceCreatePending) {
-		for _, pendingCmd := range rp.private.resourceCreatePendings {
-			if pendingCmd.IsExpired(now) {
-				continue
-			}
-			pendingCmds = append(pendingCmds, &pb.PendingCommand{
-				Command: &pb.PendingCommand_ResourceCreatePending{
-					ResourceCreatePending: pendingCmd,
-				},
-			})
+
+	pendingCmds = appendPendingCmd(pendingCmds, commandFilter, subscription.FilterBitmaskResourceCreatePending, now, func(p *events.ResourceCreatePending) *pb.PendingCommand {
+		return &pb.PendingCommand{
+			Command: &pb.PendingCommand_ResourceCreatePending{
+				ResourceCreatePending: p,
+			},
 		}
-	}
-	if subscription.IsFilteredBit(commandFilter, subscription.FilterBitmaskResourceRetrievePending) {
-		for _, pendingCmd := range rp.private.resourceRetrievePendings {
-			if pendingCmd.IsExpired(now) {
-				continue
-			}
-			pendingCmds = append(pendingCmds, &pb.PendingCommand{
-				Command: &pb.PendingCommand_ResourceRetrievePending{
-					ResourceRetrievePending: pendingCmd,
-				},
-			})
+	}, rp.private.resourceCreatePendings)
+
+	pendingCmds = appendPendingCmd(pendingCmds, commandFilter, subscription.FilterBitmaskResourceRetrievePending, now, func(p *events.ResourceRetrievePending) *pb.PendingCommand {
+		return &pb.PendingCommand{
+			Command: &pb.PendingCommand_ResourceRetrievePending{
+				ResourceRetrievePending: p,
+			},
 		}
-	}
-	if subscription.IsFilteredBit(commandFilter, subscription.FilterBitmaskResourceUpdatePending) {
-		for _, pendingCmd := range rp.private.resourceUpdatePendings {
-			if pendingCmd.IsExpired(now) {
-				continue
-			}
-			pendingCmds = append(pendingCmds, &pb.PendingCommand{
-				Command: &pb.PendingCommand_ResourceUpdatePending{
-					ResourceUpdatePending: pendingCmd,
-				},
-			})
+	}, rp.private.resourceRetrievePendings)
+
+	pendingCmds = appendPendingCmd(pendingCmds, commandFilter, subscription.FilterBitmaskResourceUpdatePending, now, func(p *events.ResourceUpdatePending) *pb.PendingCommand {
+		return &pb.PendingCommand{
+			Command: &pb.PendingCommand_ResourceUpdatePending{
+				ResourceUpdatePending: p,
+			},
 		}
-	}
-	if subscription.IsFilteredBit(commandFilter, subscription.FilterBitmaskResourceDeletePending) {
-		for _, pendingCmd := range rp.private.resourceDeletePendings {
-			if pendingCmd.IsExpired(now) {
-				continue
-			}
-			pendingCmds = append(pendingCmds, &pb.PendingCommand{
-				Command: &pb.PendingCommand_ResourceDeletePending{
-					ResourceDeletePending: pendingCmd,
-				},
-			})
+	}, rp.private.resourceUpdatePendings)
+
+	pendingCmds = appendPendingCmd(pendingCmds, commandFilter, subscription.FilterBitmaskResourceDeletePending, now, func(p *events.ResourceDeletePending) *pb.PendingCommand {
+		return &pb.PendingCommand{
+			Command: &pb.PendingCommand_ResourceDeletePending{
+				ResourceDeletePending: p,
+			},
 		}
-	}
+	}, rp.private.resourceDeletePendings)
+
 	return pendingCmds
 }
