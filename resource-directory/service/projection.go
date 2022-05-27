@@ -83,6 +83,7 @@ func (p *Projection) ReloadDevices(ctx context.Context, deviceIDFilter strings.S
 		created, err := p.Register(ctx, deviceID)
 		if err != nil {
 			log.Errorf("cannot register to projection for %v: %w", deviceID, err)
+			continue
 		}
 		p.cache.Delete(deviceID)
 		p.cache.LoadOrStore(deviceID, cache.NewElement(deviceID, time.Now().Add(p.expiration), func(d interface{}) {
@@ -173,10 +174,11 @@ func (p *Projection) LoadResourcesWithLinks(ctx context.Context, resourceIDFilte
 	for deviceID, hrefFilter := range resourceIDMapFilter { // filter duplicit load
 		err := p.LoadResourceLinks(ctx, strings.Set{deviceID: struct{}{}}, toReloadDevices, func(rl *resourceLinksProjection) error {
 			if p.wantToReloadDevice(rl, hrefFilter, typeFilter) {
+				// if toReloadDevices == nil it means that Reload was executed but all resources are not available yet, we want to provide partial resoures then.
 				if toReloadDevices != nil {
 					toReloadDevices.Add(rl.GetDeviceID())
+					return nil
 				}
-				return nil
 			}
 			var err error
 			rl.IterateOverResources(func(res *commands.Resource) (wantNext bool) {

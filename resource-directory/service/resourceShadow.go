@@ -84,12 +84,13 @@ func (rd *ResourceShadow) GetResources(req *pb.GetResourcesRequest, srv pb.GrpcG
 	}
 	if len(toReloadDevices) > 0 {
 		rd.projection.ReloadDevices(srv.Context(), toReloadDevices)
+		newResourceIDsFilter := make([]*commands.ResourceId, 0, len(resourceIDsFilter))
 		for i := range resourceIDsFilter {
 			if toReloadDevices.HasOneOf(resourceIDsFilter[i].GetDeviceId()) {
-				resourceIDsFilter = append(resourceIDsFilter, resourceIDsFilter[i])
+				newResourceIDsFilter = append(newResourceIDsFilter, resourceIDsFilter[i])
 			}
 		}
-		return rd.getResources(resourceIDsFilter, req.GetTypeFilter(), srv, nil)
+		return rd.getResources(newResourceIDsFilter, req.GetTypeFilter(), srv, nil)
 	}
 	return nil
 }
