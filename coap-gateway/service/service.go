@@ -32,8 +32,8 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	grpcClient "github.com/plgd-dev/hub/v2/pkg/net/grpc/client"
-	"github.com/plgd-dev/hub/v2/pkg/opentelemetry"
 	otelClient "github.com/plgd-dev/hub/v2/pkg/opentelemetry/collector/client"
+	"github.com/plgd-dev/hub/v2/pkg/opentelemetry/otelcoap"
 	certManagerServer "github.com/plgd-dev/hub/v2/pkg/security/certManager/server"
 	"github.com/plgd-dev/hub/v2/pkg/security/jwt"
 	"github.com/plgd-dev/hub/v2/pkg/security/oauth2"
@@ -43,7 +43,6 @@ import (
 	natsClient "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/client"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/subscriber"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/utils"
-	"go.opentelemetry.io/otel/attribute"
 	otelCodes "go.opentelemetry.io/otel/codes"
 	semconv "go.opentelemetry.io/otel/semconv/v1.10.0"
 	"go.opentelemetry.io/otel/trace"
@@ -461,30 +460,20 @@ func (s *Service) processCommandTask(req *mux.Message, client *Client, span trac
 		span.SetStatus(otelCodes.Error, err.Error())
 	}
 	if resp != nil {
-		messageSent.Event(req.Context, resp)
-		span.SetAttributes(statusCodeAttr(resp.Code()))
+		otelcoap.MessageSentEvent(req.Context, resp)
+		span.SetAttributes(otelcoap.StatusCodeAttr(resp.Code()))
 	}
 }
 
 func (s *Service) makeCommandTask(req *mux.Message, client *Client, fnc func(req *mux.Message, client *Client) (*pool.Message, error)) func() {
-	tracer := client.server.tracerProvider.Tracer(
-		opentelemetry.InstrumentationName,
-		trace.WithInstrumentationVersion(opentelemetry.SemVersion()),
-	)
-
 	path, _ := req.Options.Path()
-	attrs := []attribute.KeyValue{
-		semconv.NetPeerNameKey.String(client.deviceID()),
-		COAPMethodKey.String(req.Code.String()),
-		COAPPathKey.String(path),
-	}
-
-	ctx, span := tracer.Start(req.Context, defaultTransportFormatter(path), trace.WithSpanKind(trace.SpanKindServer), trace.WithAttributes(attrs...))
+	ctx, span := otelcoap.Start(req.Context, path, req.Code.String(), otelcoap.WithTracerProvider(s.tracerProvider), otelcoap.WithSpanOptions(trace.WithSpanKind(trace.SpanKindServer)))
+	span.SetAttributes(semconv.NetPeerNameKey.String(client.deviceID()))
 	req.Context = ctx
 
 	tmp, err := client.server.messagePool.ConvertFrom(req.Message)
 	if err == nil {
-		messageReceived.Event(ctx, tmp)
+		otelcoap.MessageReceivedEvent(ctx, tmp)
 	}
 	return func() {
 		defer span.End()

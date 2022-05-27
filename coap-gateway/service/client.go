@@ -13,7 +13,6 @@ import (
 	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/tcp"
-	tcpMessage "github.com/plgd-dev/go-coap/v2/tcp/message"
 	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
 	"github.com/plgd-dev/hub/v2/coap-gateway/coapconv"
 	"github.com/plgd-dev/hub/v2/coap-gateway/resource"
@@ -22,14 +21,12 @@ import (
 	idEvents "github.com/plgd-dev/hub/v2/identity-store/events"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
-	"github.com/plgd-dev/hub/v2/pkg/opentelemetry"
+	"github.com/plgd-dev/hub/v2/pkg/opentelemetry/otelcoap"
 	pkgJwt "github.com/plgd-dev/hub/v2/pkg/security/jwt"
 	"github.com/plgd-dev/hub/v2/pkg/sync/task/future"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 	kitSync "github.com/plgd-dev/kit/v2/sync"
-	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
-	"go.opentelemetry.io/otel/attribute"
 	otelCodes "go.opentelemetry.io/otel/codes"
 	semconv "go.opentelemetry.io/otel/semconv/v1.10.0"
 	"go.opentelemetry.io/otel/trace"
@@ -180,63 +177,13 @@ func (c *Client) ReleaseMessage(m *pool.Message) {
 	c.server.messagePool.ReleaseMessage(m)
 }
 
-type messageType attribute.KeyValue
-
-// Event adds an event of the messageType to the span associated with the
-// passed context with id and size (if message is a proto message).
-func (m messageType) Event(ctx context.Context, message *pool.Message) {
-	span := trace.SpanFromContext(ctx)
-	tcpMsg := tcpMessage.Message{
-		Code:    message.Code(),
-		Token:   message.Token(),
-		Options: message.Options(),
-	}
-	size, err := tcpMsg.Size()
-	if err != nil {
-		size = 0
-	}
-	if bodySize, err := message.BodySize(); err != nil {
-		size += int(bodySize)
-	}
-	span.AddEvent("message", trace.WithAttributes(
-		attribute.KeyValue(m),
-		semconv.MessageUncompressedSizeKey.Int(size),
-	))
-}
-
-var (
-	messageSent       = messageType(otelgrpc.RPCMessageTypeSent)
-	messageReceived   = messageType(otelgrpc.RPCMessageTypeReceived)
-	COAPStatusCodeKey = attribute.Key("coap.status_code")
-	COAPMethodKey     = attribute.Key("coap.method")
-	COAPPathKey       = attribute.Key("coap.path")
-)
-
-func defaultTransportFormatter(path string) string {
-	return "COAP " + path
-}
-
-func statusCodeAttr(c codes.Code) attribute.KeyValue {
-	return COAPStatusCodeKey.Int64(int64(c))
-}
-
 func (c *Client) do(req *pool.Message) (*pool.Message, error) {
-	tracer := c.server.tracerProvider.Tracer(
-		opentelemetry.InstrumentationName,
-		trace.WithInstrumentationVersion(opentelemetry.SemVersion()),
-	)
-
 	path, _ := req.Path()
-	attrs := []attribute.KeyValue{
-		semconv.NetPeerNameKey.String(c.deviceID()),
-		COAPMethodKey.String(req.Code().String()),
-		COAPPathKey.String(path),
-	}
-
-	ctx, span := tracer.Start(req.Context(), defaultTransportFormatter(path), trace.WithSpanKind(trace.SpanKindClient), trace.WithAttributes(attrs...))
+	ctx, span := otelcoap.Start(req.Context(), path, req.Code().String(), otelcoap.WithTracerProvider(c.server.tracerProvider), otelcoap.WithSpanOptions(trace.WithSpanKind(trace.SpanKindClient)))
 	defer span.End()
+	span.SetAttributes(semconv.NetPeerNameKey.String(c.deviceID()))
 
-	messageSent.Event(ctx, req)
+	otelcoap.MessageSentEvent(ctx, req)
 
 	resp, err := c.coapConn.Do(req)
 
@@ -245,8 +192,8 @@ func (c *Client) do(req *pool.Message) (*pool.Message, error) {
 		span.SetStatus(otelCodes.Error, err.Error())
 		return nil, err
 	}
-	messageReceived.Event(ctx, resp)
-	span.SetAttributes(statusCodeAttr(resp.Code()))
+	otelcoap.MessageReceivedEvent(ctx, resp)
+	span.SetAttributes(otelcoap.StatusCodeAttr(resp.Code()))
 
 	return resp, nil
 }
