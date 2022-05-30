@@ -11,11 +11,13 @@ import (
 	"github.com/grpc-ecosystem/go-grpc-middleware/logging/zap/ctxzap"
 	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
+	"github.com/plgd-dev/hub/v2/http-gateway/serverMux"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"github.com/plgd-dev/hub/v2/pkg/security/jwt"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -197,12 +199,60 @@ type GetDeviceIDPb interface {
 	GetDeviceId() string
 }
 
+func setGrpcRequest(ctx context.Context, v interface{}) {
+	span := trace.SpanFromContext(ctx)
+	if !span.IsRecording() {
+		return
+	}
+	marshaler := serverMux.NewJsonMarshaler()
+	marshaler.JSONPb.MarshalOptions.EmitUnpopulated = false
+	data, err := marshaler.Marshal(v)
+	if err == nil && len(data) > 2 {
+		span.SetAttributes(attribute.String("grpc.request", string(data)))
+	}
+}
+
+// serverStream wraps around the embedded grpc.ServerStream, and intercepts the RecvMsg and
+// SendMsg method call.
+type serverStream struct {
+	grpc.ServerStream
+	ctx context.Context
+}
+
+func (w *serverStream) Context() context.Context {
+	return w.ctx
+}
+
+func (w *serverStream) RecvMsg(m interface{}) error {
+	err := w.ServerStream.RecvMsg(m)
+	if err != nil {
+		return err
+	}
+	setGrpcRequest(w.ctx, m)
+	return err
+}
+
+func wrapServerStream(ctx context.Context, ss grpc.ServerStream) *serverStream {
+	return &serverStream{
+		ServerStream: ss,
+		ctx:          ctx,
+	}
+}
+
 func MakeDefaultOptions(auth kitNetGrpc.AuthInterceptors, logger log.Logger, tracerProvider trace.TracerProvider) ([]grpc.ServerOption, error) {
 	streamInterceptors := []grpc.StreamServerInterceptor{
-		otelgrpc.StreamServerInterceptor(otelgrpc.WithTracerProvider(tracerProvider)),
+		otelgrpc.StreamServerInterceptor(otelgrpc.WithTracerProvider(tracerProvider)), func(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+			if !info.IsClientStream {
+				return handler(srv, wrapServerStream(ss.Context(), ss))
+			}
+			return handler(srv, ss)
+		},
 	}
 	unaryInterceptors := []grpc.UnaryServerInterceptor{
-		otelgrpc.UnaryServerInterceptor(otelgrpc.WithTracerProvider(tracerProvider)),
+		otelgrpc.UnaryServerInterceptor(otelgrpc.WithTracerProvider(tracerProvider)), func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
+			setGrpcRequest(ctx, req)
+			return handler(ctx, req)
+		},
 	}
 	zapLogger, ok := logger.Unwrap().(*zap.SugaredLogger)
 	if ok {
