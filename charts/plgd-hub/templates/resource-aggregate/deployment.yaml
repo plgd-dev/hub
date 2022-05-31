@@ -84,7 +84,7 @@ spec:
             - name: service-crt
               mountPath: {{ $rdServiceCert }}
             {{- end }}
-            {{- with .Values.resourceaggregate.extraVolumes }}
+            {{- with .Values.resourceaggregate.extraVolumeMounts }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
       {{- if .Values.resourceaggregate.extraContainers }}
@@ -99,7 +99,7 @@ spec:
           secret:
             secretName: {{ include "plgd-hub.resourceaggregate.serviceCertName" . }}
         {{- end }}
-        {{- with .Values.resourceaggregate.extraVolumeMounts }}
+        {{- with .Values.resourceaggregate.extraVolumes }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
       {{- with .Values.resourceaggregate.nodeSelector }}

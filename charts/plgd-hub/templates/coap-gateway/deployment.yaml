@@ -84,7 +84,7 @@ spec:
             - name: service-crt
               mountPath: {{ $rdServiceCert }}
             {{- end }}
-            {{- with .Values.coapgateway.extraVolumes }}
+            {{- with .Values.coapgateway.extraVolumeMounts }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
             {{- $providers := $.Values.mockoauthserver.oauth }}
@@ -109,7 +109,7 @@ spec:
           secret:
             secretName: {{ include "plgd-hub.coapgateway.serviceCertName" . }}
         {{- end }}
-        {{- with .Values.coapgateway.extraVolumeMounts }}
+        {{- with .Values.coapgateway.extraVolumes }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
         {{- range $providers }}

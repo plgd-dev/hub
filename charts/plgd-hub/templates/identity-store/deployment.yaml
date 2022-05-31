@@ -84,7 +84,7 @@ spec:
             - name: service-crt
               mountPath: {{ $cert }}
             {{- end }}
-            {{- with .Values.identitystore.extraVolumes }}
+            {{- with .Values.identitystore.extraVolumeMounts }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
       {{- if .Values.identitystore.extraContainers }}
@@ -99,7 +99,7 @@ spec:
         - name: {{ .Values.identitystore.config.volume }}
           configMap:
             name: {{ include "plgd-hub.identitystore.configName" . }}
-        {{- with .Values.identitystore.extraVolumeMounts }}
+        {{- with .Values.identitystore.extraVolumes }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
       {{- with .Values.identitystore.nodeSelector }}

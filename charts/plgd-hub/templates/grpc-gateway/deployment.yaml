@@ -84,7 +84,7 @@ spec:
             - name: service-crt
               mountPath: {{ $cert }}
             {{- end }}
-            {{- with .Values.grpcgateway.extraVolumes }}
+            {{- with .Values.grpcgateway.extraVolumeMounts }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
       {{- if .Values.grpcgateway.extraContainers }}
@@ -99,7 +99,7 @@ spec:
           secret:
             secretName: {{ include "plgd-hub.grpcgateway.serviceCertName" . }}
         {{- end }}
-        {{- with .Values.grpcgateway.extraVolumeMounts }}
+        {{- with .Values.grpcgateway.extraVolumes }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
       {{- with .Values.grpcgateway.nodeSelector }}
