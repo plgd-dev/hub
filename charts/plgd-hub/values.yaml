@@ -319,6 +319,9 @@ resourcedirectory:
     protocol: TCP
     # -- Name
     name: grpc
+    crt:
+      # -- Extra DNS names for service certificate
+      extraDnsNames: []
   # -- RBAC configuration
   rbac:
     # Create RBAC config
@@ -329,7 +332,7 @@ resourcedirectory:
     roleBindingDefitionTpl:
   # -- Security context for pod
   securityContext: {}
-  # --Restart policy for pod
+  # -- Restart policy for pod
   restartPolicy: Always
   # -- Init containers definition. Resolved as template
   initContainersTpl: {}
@@ -340,11 +343,11 @@ resourcedirectory:
     registry: ghcr.io/
     # -- Image repository
     repository: plgd-dev/hub/resource-directory
-    # --Image tag.
+    # -- Image tag.
     tag:
     # -- Image pull policy
     pullPolicy: Always
-    # --Image pull secrets
+    # -- Image pull secrets
     imagePullSecrets: {}
     # -- Container command
     command:
@@ -532,6 +535,9 @@ resourceaggregate:
     protocol: TCP
     # -- Name
     name: grpc
+    crt:
+      # -- Extra DNS names for service certificate
+      extraDnsNames: []
   # -- RBAC configuration
   rbac:
     # -- Create RBAC config
@@ -909,6 +915,9 @@ identitystore:
     protocol: TCP
     # -- Name
     name: grpc
+    crt:
+      # -- Extra DNS names for service certificate
+      extraDnsNames: []
   # -- RBAC configuration
   rbac:
     # -- Enable RBAC setup
@@ -1068,6 +1077,9 @@ httpgateway:
     protocol: TCP
     # -- Name
     name: http
+    crt:
+      # -- Extra DNS names for service certificate
+      extraDnsNames: []
   # -- RBAC configuration
   rbac:
     # -- Enable RBAC setup
@@ -1265,6 +1277,9 @@ grpcgateway:
     protocol: TCP
     # -- Name
     name: grpc
+    crt:
+      # -- Extra DNS names for service certificate
+      extraDnsNames: []
   # -- RBAC configuration
   rbac:
     # Enable RBAC
@@ -1474,6 +1489,9 @@ certificateauthority:
     protocol: TCP
     # -- Name
     name: grpc
+    crt:
+      # -- Extra DNS names for service certificate
+      extraDnsNames: []
   # -- RBAC configuration
   rbac:
     # -- Enable RBAC
@@ -1662,6 +1680,9 @@ mockoauthserver:
     protocol: TCP
     # -- Name
     name: http
+    crt:
+      # -- Extra DNS names for service certificate
+      extraDnsNames: []
   securityContext: {}
   # -- Image pull secrets
   imagePullSecrets: {}
