@@ -320,8 +320,8 @@ resourcedirectory:
     # -- Name
     name: grpc
     crt:
-      # -- Extra DNS name for service certificate
-      extraDnsNames:
+      # -- Extra DNS names for service certificate
+      extraDnsNames: []
   # -- RBAC configuration
   rbac:
     # Create RBAC config
@@ -536,8 +536,8 @@ resourceaggregate:
     # -- Name
     name: grpc
     crt:
-      # -- Extra DNS name for service certificate
-      extraDnsNames:
+      # -- Extra DNS names for service certificate
+      extraDnsNames: []
   # -- RBAC configuration
   rbac:
     # -- Create RBAC config
@@ -916,8 +916,8 @@ identitystore:
     # -- Name
     name: grpc
     crt:
-      # -- Extra DNS name for service certificate
-      extraDnsNames:
+      # -- Extra DNS names for service certificate
+      extraDnsNames: []
   # -- RBAC configuration
   rbac:
     # -- Enable RBAC setup
@@ -1078,8 +1078,8 @@ httpgateway:
     # -- Name
     name: http
     crt:
-      # -- Extra DNS name for service certificate
-      extraDnsNames:
+      # -- Extra DNS names for service certificate
+      extraDnsNames: []
   # -- RBAC configuration
   rbac:
     # -- Enable RBAC setup
@@ -1278,8 +1278,8 @@ grpcgateway:
     # -- Name
     name: grpc
     crt:
-      # -- Extra DNS name for service certificate
-      extraDnsNames:
+      # -- Extra DNS names for service certificate
+      extraDnsNames: []
   # -- RBAC configuration
   rbac:
     # Enable RBAC
@@ -1490,8 +1490,8 @@ certificateauthority:
     # -- Name
     name: grpc
     crt:
-      # -- Extra DNS name for service certificate
-      extraDnsNames:
+      # -- Extra DNS names for service certificate
+      extraDnsNames: []
   # -- RBAC configuration
   rbac:
     # -- Enable RBAC
@@ -1681,8 +1681,8 @@ mockoauthserver:
     # -- Name
     name: http
     crt:
-      # -- Extra DNS name for service certificate
-      extraDnsNames:
+      # -- Extra DNS names for service certificate
+      extraDnsNames: []
   securityContext: {}
   # -- Image pull secrets
   imagePullSecrets: {}
