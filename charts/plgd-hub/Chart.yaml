@@ -5,9 +5,9 @@ description: A Helm chart for plgd-hub
 type: application
 
 # Equals to hub version; set during the release by the pipeline
-version: 2.4.2
+version: 0.1.0
 
-appVersion: 2.4.2
+appVersion: vnext
 
 dependencies:
   - name: "nats"
