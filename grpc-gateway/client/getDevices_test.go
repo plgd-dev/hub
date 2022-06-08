@@ -21,6 +21,7 @@ func sortDevices(s map[string]*client.DeviceDetails) map[string]*client.DeviceDe
 		x.Device.ProtocolIndependentId = ""
 		x.Device.Metadata.Status.ValidUntil = 0
 		x.Device.Metadata.Status.ConnectionId = ""
+		x.Device.Data = nil
 		s[key] = x
 	}
 

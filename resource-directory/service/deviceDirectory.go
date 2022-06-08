@@ -71,14 +71,14 @@ func decodeContent(content *commands.Content, v interface{}) error {
 
 type Device struct {
 	ID              string
-	Resource        *device.Device
+	Content         *device.Device
 	ResourceChanged *events.ResourceChanged
 	Metadata        *pb.Device_Metadata
 	Endpoints       []*commands.EndpointInformation
 }
 
 func (d Device) ToProto() *pb.Device {
-	r := pb.SchemaDeviceToProto(d.Resource)
+	r := pb.SchemaDeviceToProto(d.Content)
 	if r == nil {
 		r = &pb.Device{
 			Id: d.ID,
@@ -106,9 +106,9 @@ func updateDevice(dev *Device, resource *Resource) error {
 			return err
 		}
 		dev.ID = devContent.ID
-		dev.Resource = &devContent
-		dev.Resource.ResourceTypes = resource.Resource.GetResourceTypes()
-		dev.Resource.Interfaces = resource.Resource.GetInterfaces()
+		dev.Content = &devContent
+		dev.Content.ResourceTypes = resource.Resource.GetResourceTypes()
+		dev.Content.Interfaces = resource.Resource.GetInterfaces()
 		dev.Endpoints = resource.Resource.GetEndpointInformations()
 		dev.ResourceChanged = resource.GetResourceChanged()
 	}
