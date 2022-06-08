@@ -867,5 +867,5 @@ var GrpcGateway_ServiceDesc = grpc.ServiceDesc{
 			ServerStreams: true,
 		},
 	},
-	Metadata: "github.com/plgd-dev/hub/grpc-gateway/pb/service.proto",
+	Metadata: "grpc-gateway/pb/service.proto",
 }

@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package certificateauthority.pb;
 
-import "github.com/plgd-dev/hub/certificate-authority/pb/cert.proto";
+import "certificate-authority/pb/cert.proto";
 
 option go_package = "github.com/plgd-dev/hub/v2/certificate-authority/pb;pb";
 

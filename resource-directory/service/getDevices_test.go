@@ -116,6 +116,7 @@ func TestRequestHandlerGetDevices(t *testing.T) {
 							Value: commands.ConnectionStatus_ONLINE,
 						},
 					},
+					OwnershipStatus: pb.Device_OWNED,
 				},
 			},
 		},
@@ -155,9 +156,11 @@ func TestRequestHandlerGetDevices(t *testing.T) {
 					}
 					require.NoError(t, err)
 					assert.NotEmpty(t, dev.ProtocolIndependentId)
+					assert.NotEmpty(t, dev.GetData().GetContent().GetData())
 					dev.ProtocolIndependentId = ""
 					dev.Metadata.Status.ValidUntil = 0
 					dev.Metadata.Status.ConnectionId = ""
+					dev.Data = nil
 					devices = append(devices, dev)
 				}
 				test.CheckProtobufs(t, tt.want, devices, test.RequireToCheckFunc(require.Equal))

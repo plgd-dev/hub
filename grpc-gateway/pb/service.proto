@@ -2,14 +2,14 @@ syntax = "proto3";
 
 package grpcgateway.pb;
 
-import "github.com/plgd-dev/hub/grpc-gateway/pb/hubConfiguration.proto";
-import "github.com/plgd-dev/hub/grpc-gateway/pb/devices.proto";
-import "github.com/plgd-dev/hub/grpc-gateway/pb/events.proto";
-import "github.com/plgd-dev/hub/grpc-gateway/pb/getDevicesMetadata.proto";
-import "github.com/plgd-dev/hub/grpc-gateway/pb/getPendingCommands.proto";
-import "github.com/plgd-dev/hub/grpc-gateway/pb/cancelCommands.proto";
-import "github.com/plgd-dev/hub/grpc-gateway/pb/updateDeviceMetadata.proto";
-import "github.com/plgd-dev/hub/resource-aggregate/pb/events.proto";
+import "grpc-gateway/pb/hubConfiguration.proto";
+import "grpc-gateway/pb/devices.proto";
+import "grpc-gateway/pb/events.proto";
+import "grpc-gateway/pb/getDevicesMetadata.proto";
+import "grpc-gateway/pb/getPendingCommands.proto";
+import "grpc-gateway/pb/cancelCommands.proto";
+import "grpc-gateway/pb/updateDeviceMetadata.proto";
+import "resource-aggregate/pb/events.proto";
 
 import "google/api/annotations.proto";
 import "protoc-gen-openapiv2/options/annotations.proto";

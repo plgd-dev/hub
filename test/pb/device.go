@@ -18,6 +18,7 @@ func CmpDeviceValues(t *testing.T, expected, got []*pbGrpc.Device) {
 		dev.ProtocolIndependentId = ""
 		dev.Metadata.Status.ValidUntil = 0
 		dev.Metadata.Status.ConnectionId = ""
+		dev.Data = nil
 	}
 
 	for idx := range expected {

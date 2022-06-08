@@ -53,6 +53,7 @@ func testRequestHandlerGetDevices(t *testing.T, events store.Events) {
 							Value: commands.ConnectionStatus_ONLINE,
 						},
 					},
+					OwnershipStatus: pb.Device_OWNED,
 				},
 			},
 		},
@@ -95,6 +96,8 @@ func testRequestHandlerGetDevices(t *testing.T, events store.Events) {
 					dev.GetMetadata().GetStatus().ValidUntil = 0
 					dev.GetMetadata().GetStatus().ConnectionId = ""
 				}
+				assert.NotEmpty(t, dev.GetData().GetContent().GetData())
+				dev.Data = nil
 				devices = append(devices, dev)
 			}
 			test.CheckProtobufs(t, tt.want, devices, test.RequireToCheckFunc(require.Equal))

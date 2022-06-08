@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.27.1
 // 	protoc        v3.17.3
-// source: github.com/plgd-dev/hub/resource-aggregate/pb/commands.proto
+// source: resource-aggregate/pb/commands.proto
 
 package commands
 
@@ -53,11 +53,11 @@ func (x ShadowSynchronization) String() string {
 }
 
 func (ShadowSynchronization) Descriptor() protoreflect.EnumDescriptor {
-	return file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_enumTypes[0].Descriptor()
+	return file_resource_aggregate_pb_commands_proto_enumTypes[0].Descriptor()
 }
 
 func (ShadowSynchronization) Type() protoreflect.EnumType {
-	return &file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_enumTypes[0]
+	return &file_resource_aggregate_pb_commands_proto_enumTypes[0]
 }
 
 func (x ShadowSynchronization) Number() protoreflect.EnumNumber {
@@ -66,7 +66,7 @@ func (x ShadowSynchronization) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use ShadowSynchronization.Descriptor instead.
 func (ShadowSynchronization) EnumDescriptor() ([]byte, []int) {
-	return file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_rawDescGZIP(), []int{0}
+	return file_resource_aggregate_pb_commands_proto_rawDescGZIP(), []int{0}
 }
 
 type ConnectionStatus_Status int32
@@ -99,11 +99,11 @@ func (x ConnectionStatus_Status) String() string {
 }
 
 func (ConnectionStatus_Status) Descriptor() protoreflect.EnumDescriptor {
-	return file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_enumTypes[1].Descriptor()
+	return file_resource_aggregate_pb_commands_proto_enumTypes[1].Descriptor()
 }
 
 func (ConnectionStatus_Status) Type() protoreflect.EnumType {
-	return &file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_enumTypes[1]
+	return &file_resource_aggregate_pb_commands_proto_enumTypes[1]
 }
 
 func (x ConnectionStatus_Status) Number() protoreflect.EnumNumber {
@@ -112,7 +112,7 @@ func (x ConnectionStatus_Status) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use ConnectionStatus_Status.Descriptor instead.
 func (ConnectionStatus_Status) EnumDescriptor() ([]byte, []int) {
-	return file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_rawDescGZIP(), []int{25, 0}
+	return file_resource_aggregate_pb_commands_proto_rawDescGZIP(), []int{25, 0}
 }
 
 type CommandMetadata struct {
@@ -127,7 +127,7 @@ type CommandMetadata struct {
 func (x *CommandMetadata) Reset() {
 	*x = CommandMetadata{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[0]
+		mi := &file_resource_aggregate_pb_commands_proto_msgTypes[0]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -140,7 +140,7 @@ func (x *CommandMetadata) String() string {
 func (*CommandMetadata) ProtoMessage() {}
 
 func (x *CommandMetadata) ProtoReflect() protoreflect.Message {
-	mi := &file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[0]
+	mi := &file_resource_aggregate_pb_commands_proto_msgTypes[0]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -153,7 +153,7 @@ func (x *CommandMetadata) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CommandMetadata.ProtoReflect.Descriptor instead.
 func (*CommandMetadata) Descriptor() ([]byte, []int) {
-	return file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_rawDescGZIP(), []int{0}
+	return file_resource_aggregate_pb_commands_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *CommandMetadata) GetConnectionId() string {
@@ -182,7 +182,7 @@ type AuditContext struct {
 func (x *AuditContext) Reset() {
 	*x = AuditContext{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[1]
+		mi := &file_resource_aggregate_pb_commands_proto_msgTypes[1]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -195,7 +195,7 @@ func (x *AuditContext) String() string {
 func (*AuditContext) ProtoMessage() {}
 
 func (x *AuditContext) ProtoReflect() protoreflect.Message {
-	mi := &file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[1]
+	mi := &file_resource_aggregate_pb_commands_proto_msgTypes[1]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -208,7 +208,7 @@ func (x *AuditContext) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AuditContext.ProtoReflect.Descriptor instead.
 func (*AuditContext) Descriptor() ([]byte, []int) {
-	return file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_rawDescGZIP(), []int{1}
+	return file_resource_aggregate_pb_commands_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *AuditContext) GetUserId() string {
@@ -237,7 +237,7 @@ type ResourceId struct {
 func (x *ResourceId) Reset() {
 	*x = ResourceId{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[2]
+		mi := &file_resource_aggregate_pb_commands_proto_msgTypes[2]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -250,7 +250,7 @@ func (x *ResourceId) String() string {
 func (*ResourceId) ProtoMessage() {}
 
 func (x *ResourceId) ProtoReflect() protoreflect.Message {
-	mi := &file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[2]
+	mi := &file_resource_aggregate_pb_commands_proto_msgTypes[2]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -263,7 +263,7 @@ func (x *ResourceId) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ResourceId.ProtoReflect.Descriptor instead.
 func (*ResourceId) Descriptor() ([]byte, []int) {
-	return file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_rawDescGZIP(), []int{2}
+	return file_resource_aggregate_pb_commands_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *ResourceId) GetDeviceId() string {
@@ -294,7 +294,7 @@ type PublishResourceLinksRequest struct {
 func (x *PublishResourceLinksRequest) Reset() {
 	*x = PublishResourceLinksRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[3]
+		mi := &file_resource_aggregate_pb_commands_proto_msgTypes[3]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -307,7 +307,7 @@ func (x *PublishResourceLinksRequest) String() string {
 func (*PublishResourceLinksRequest) ProtoMessage() {}
 
 func (x *PublishResourceLinksRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[3]
+	mi := &file_resource_aggregate_pb_commands_proto_msgTypes[3]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -320,7 +320,7 @@ func (x *PublishResourceLinksRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PublishResourceLinksRequest.ProtoReflect.Descriptor instead.
 func (*PublishResourceLinksRequest) Descriptor() ([]byte, []int) {
-	return file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_rawDescGZIP(), []int{3}
+	return file_resource_aggregate_pb_commands_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *PublishResourceLinksRequest) GetResources() []*Resource {
@@ -357,7 +357,7 @@ type PublishResourceLinksResponse struct {
 func (x *PublishResourceLinksResponse) Reset() {
 	*x = PublishResourceLinksResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[4]
+		mi := &file_resource_aggregate_pb_commands_proto_msgTypes[4]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -370,7 +370,7 @@ func (x *PublishResourceLinksResponse) String() string {
 func (*PublishResourceLinksResponse) ProtoMessage() {}
 
 func (x *PublishResourceLinksResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[4]
+	mi := &file_resource_aggregate_pb_commands_proto_msgTypes[4]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -383,7 +383,7 @@ func (x *PublishResourceLinksResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PublishResourceLinksResponse.ProtoReflect.Descriptor instead.
 func (*PublishResourceLinksResponse) Descriptor() ([]byte, []int) {
-	return file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_rawDescGZIP(), []int{4}
+	return file_resource_aggregate_pb_commands_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *PublishResourceLinksResponse) GetPublishedResources() []*Resource {
@@ -422,7 +422,7 @@ type UnpublishResourceLinksRequest struct {
 func (x *UnpublishResourceLinksRequest) Reset() {
 	*x = UnpublishResourceLinksRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[5]
+		mi := &file_resource_aggregate_pb_commands_proto_msgTypes[5]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -435,7 +435,7 @@ func (x *UnpublishResourceLinksRequest) String() string {
 func (*UnpublishResourceLinksRequest) ProtoMessage() {}
 
 func (x *UnpublishResourceLinksRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[5]
+	mi := &file_resource_aggregate_pb_commands_proto_msgTypes[5]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -448,7 +448,7 @@ func (x *UnpublishResourceLinksRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UnpublishResourceLinksRequest.ProtoReflect.Descriptor instead.
 func (*UnpublishResourceLinksRequest) Descriptor() ([]byte, []int) {
-	return file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_rawDescGZIP(), []int{5}
+	return file_resource_aggregate_pb_commands_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *UnpublishResourceLinksRequest) GetHrefs() []string {
@@ -492,7 +492,7 @@ type UnpublishResourceLinksResponse struct {
 func (x *UnpublishResourceLinksResponse) Reset() {
 	*x = UnpublishResourceLinksResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[6]
+		mi := &file_resource_aggregate_pb_commands_proto_msgTypes[6]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -505,7 +505,7 @@ func (x *UnpublishResourceLinksResponse) String() string {
 func (*UnpublishResourceLinksResponse) ProtoMessage() {}
 
 func (x *UnpublishResourceLinksResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[6]
+	mi := &file_resource_aggregate_pb_commands_proto_msgTypes[6]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -518,7 +518,7 @@ func (x *UnpublishResourceLinksResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UnpublishResourceLinksResponse.ProtoReflect.Descriptor instead.
 func (*UnpublishResourceLinksResponse) Descriptor() ([]byte, []int) {
-	return file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_rawDescGZIP(), []int{6}
+	return file_resource_aggregate_pb_commands_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *UnpublishResourceLinksResponse) GetUnpublishedHrefs() []string {
@@ -556,7 +556,7 @@ type NotifyResourceChangedRequest struct {
 func (x *NotifyResourceChangedRequest) Reset() {
 	*x = NotifyResourceChangedRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[7]
+		mi := &file_resource_aggregate_pb_commands_proto_msgTypes[7]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -569,7 +569,7 @@ func (x *NotifyResourceChangedRequest) String() string {
 func (*NotifyResourceChangedRequest) ProtoMessage() {}
 
 func (x *NotifyResourceChangedRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[7]
+	mi := &file_resource_aggregate_pb_commands_proto_msgTypes[7]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -582,7 +582,7 @@ func (x *NotifyResourceChangedRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NotifyResourceChangedRequest.ProtoReflect.Descriptor instead.
 func (*NotifyResourceChangedRequest) Descriptor() ([]byte, []int) {
-	return file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_rawDescGZIP(), []int{7}
+	return file_resource_aggregate_pb_commands_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *NotifyResourceChangedRequest) GetResourceId() *ResourceId {
@@ -624,7 +624,7 @@ type NotifyResourceChangedResponse struct {
 func (x *NotifyResourceChangedResponse) Reset() {
 	*x = NotifyResourceChangedResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[8]
+		mi := &file_resource_aggregate_pb_commands_proto_msgTypes[8]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -637,7 +637,7 @@ func (x *NotifyResourceChangedResponse) String() string {
 func (*NotifyResourceChangedResponse) ProtoMessage() {}
 
 func (x *NotifyResourceChangedResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[8]
+	mi := &file_resource_aggregate_pb_commands_proto_msgTypes[8]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -650,7 +650,7 @@ func (x *NotifyResourceChangedResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NotifyResourceChangedResponse.ProtoReflect.Descriptor instead.
 func (*NotifyResourceChangedResponse) Descriptor() ([]byte, []int) {
-	return file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_rawDescGZIP(), []int{8}
+	return file_resource_aggregate_pb_commands_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *NotifyResourceChangedResponse) GetAuditContext() *AuditContext {
@@ -676,7 +676,7 @@ type UpdateResourceRequest struct {
 func (x *UpdateResourceRequest) Reset() {
 	*x = UpdateResourceRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[9]
+		mi := &file_resource_aggregate_pb_commands_proto_msgTypes[9]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -689,7 +689,7 @@ func (x *UpdateResourceRequest) String() string {
 func (*UpdateResourceRequest) ProtoMessage() {}
 
 func (x *UpdateResourceRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[9]
+	mi := &file_resource_aggregate_pb_commands_proto_msgTypes[9]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -702,7 +702,7 @@ func (x *UpdateResourceRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateResourceRequest.ProtoReflect.Descriptor instead.
 func (*UpdateResourceRequest) Descriptor() ([]byte, []int) {
-	return file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_rawDescGZIP(), []int{9}
+	return file_resource_aggregate_pb_commands_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *UpdateResourceRequest) GetResourceId() *ResourceId {
@@ -759,7 +759,7 @@ type UpdateResourceResponse struct {
 func (x *UpdateResourceResponse) Reset() {
 	*x = UpdateResourceResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[10]
+		mi := &file_resource_aggregate_pb_commands_proto_msgTypes[10]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -772,7 +772,7 @@ func (x *UpdateResourceResponse) String() string {
 func (*UpdateResourceResponse) ProtoMessage() {}
 
 func (x *UpdateResourceResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[10]
+	mi := &file_resource_aggregate_pb_commands_proto_msgTypes[10]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -785,7 +785,7 @@ func (x *UpdateResourceResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateResourceResponse.ProtoReflect.Descriptor instead.
 func (*UpdateResourceResponse) Descriptor() ([]byte, []int) {
-	return file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_rawDescGZIP(), []int{10}
+	return file_resource_aggregate_pb_commands_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *UpdateResourceResponse) GetValidUntil() int64 {
@@ -817,7 +817,7 @@ type ConfirmResourceUpdateRequest struct {
 func (x *ConfirmResourceUpdateRequest) Reset() {
 	*x = ConfirmResourceUpdateRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[11]
+		mi := &file_resource_aggregate_pb_commands_proto_msgTypes[11]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -830,7 +830,7 @@ func (x *ConfirmResourceUpdateRequest) String() string {
 func (*ConfirmResourceUpdateRequest) ProtoMessage() {}
 
 func (x *ConfirmResourceUpdateRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[11]
+	mi := &file_resource_aggregate_pb_commands_proto_msgTypes[11]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -843,7 +843,7 @@ func (x *ConfirmResourceUpdateRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ConfirmResourceUpdateRequest.ProtoReflect.Descriptor instead.
 func (*ConfirmResourceUpdateRequest) Descriptor() ([]byte, []int) {
-	return file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_rawDescGZIP(), []int{11}
+	return file_resource_aggregate_pb_commands_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *ConfirmResourceUpdateRequest) GetResourceId() *ResourceId {
@@ -892,7 +892,7 @@ type ConfirmResourceUpdateResponse struct {
 func (x *ConfirmResourceUpdateResponse) Reset() {
 	*x = ConfirmResourceUpdateResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[12]
+		mi := &file_resource_aggregate_pb_commands_proto_msgTypes[12]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -905,7 +905,7 @@ func (x *ConfirmResourceUpdateResponse) String() string {
 func (*ConfirmResourceUpdateResponse) ProtoMessage() {}
 
 func (x *ConfirmResourceUpdateResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[12]
+	mi := &file_resource_aggregate_pb_commands_proto_msgTypes[12]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -918,7 +918,7 @@ func (x *ConfirmResourceUpdateResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ConfirmResourceUpdateResponse.ProtoReflect.Descriptor instead.
 func (*ConfirmResourceUpdateResponse) Descriptor() ([]byte, []int) {
-	return file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_rawDescGZIP(), []int{12}
+	return file_resource_aggregate_pb_commands_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *ConfirmResourceUpdateResponse) GetAuditContext() *AuditContext {
@@ -943,7 +943,7 @@ type RetrieveResourceRequest struct {
 func (x *RetrieveResourceRequest) Reset() {
 	*x = RetrieveResourceRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[13]
+		mi := &file_resource_aggregate_pb_commands_proto_msgTypes[13]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -956,7 +956,7 @@ func (x *RetrieveResourceRequest) String() string {
 func (*RetrieveResourceRequest) ProtoMessage() {}
 
 func (x *RetrieveResourceRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[13]
+	mi := &file_resource_aggregate_pb_commands_proto_msgTypes[13]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -969,7 +969,7 @@ func (x *RetrieveResourceRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RetrieveResourceRequest.ProtoReflect.Descriptor instead.
 func (*RetrieveResourceRequest) Descriptor() ([]byte, []int) {
-	return file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_rawDescGZIP(), []int{13}
+	return file_resource_aggregate_pb_commands_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *RetrieveResourceRequest) GetResourceId() *ResourceId {
@@ -1019,7 +1019,7 @@ type RetrieveResourceResponse struct {
 func (x *RetrieveResourceResponse) Reset() {
 	*x = RetrieveResourceResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[14]
+		mi := &file_resource_aggregate_pb_commands_proto_msgTypes[14]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1032,7 +1032,7 @@ func (x *RetrieveResourceResponse) String() string {
 func (*RetrieveResourceResponse) ProtoMessage() {}
 
 func (x *RetrieveResourceResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[14]
+	mi := &file_resource_aggregate_pb_commands_proto_msgTypes[14]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1045,7 +1045,7 @@ func (x *RetrieveResourceResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RetrieveResourceResponse.ProtoReflect.Descriptor instead.
 func (*RetrieveResourceResponse) Descriptor() ([]byte, []int) {
-	return file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_rawDescGZIP(), []int{14}
+	return file_resource_aggregate_pb_commands_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *RetrieveResourceResponse) GetValidUntil() int64 {
@@ -1077,7 +1077,7 @@ type ConfirmResourceRetrieveRequest struct {
 func (x *ConfirmResourceRetrieveRequest) Reset() {
 	*x = ConfirmResourceRetrieveRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[15]
+		mi := &file_resource_aggregate_pb_commands_proto_msgTypes[15]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1090,7 +1090,7 @@ func (x *ConfirmResourceRetrieveRequest) String() string {
 func (*ConfirmResourceRetrieveRequest) ProtoMessage() {}
 
 func (x *ConfirmResourceRetrieveRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[15]
+	mi := &file_resource_aggregate_pb_commands_proto_msgTypes[15]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1103,7 +1103,7 @@ func (x *ConfirmResourceRetrieveRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ConfirmResourceRetrieveRequest.ProtoReflect.Descriptor instead.
 func (*ConfirmResourceRetrieveRequest) Descriptor() ([]byte, []int) {
-	return file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_rawDescGZIP(), []int{15}
+	return file_resource_aggregate_pb_commands_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *ConfirmResourceRetrieveRequest) GetResourceId() *ResourceId {
@@ -1152,7 +1152,7 @@ type ConfirmResourceRetrieveResponse struct {
 func (x *ConfirmResourceRetrieveResponse) Reset() {
 	*x = ConfirmResourceRetrieveResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[16]
+		mi := &file_resource_aggregate_pb_commands_proto_msgTypes[16]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1165,7 +1165,7 @@ func (x *ConfirmResourceRetrieveResponse) String() string {
 func (*ConfirmResourceRetrieveResponse) ProtoMessage() {}
 
 func (x *ConfirmResourceRetrieveResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[16]
+	mi := &file_resource_aggregate_pb_commands_proto_msgTypes[16]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1178,7 +1178,7 @@ func (x *ConfirmResourceRetrieveResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ConfirmResourceRetrieveResponse.ProtoReflect.Descriptor instead.
 func (*ConfirmResourceRetrieveResponse) Descriptor() ([]byte, []int) {
-	return file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_rawDescGZIP(), []int{16}
+	return file_resource_aggregate_pb_commands_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *ConfirmResourceRetrieveResponse) GetAuditContext() *AuditContext {
@@ -1202,7 +1202,7 @@ type DeleteResourceRequest struct {
 func (x *DeleteResourceRequest) Reset() {
 	*x = DeleteResourceRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[17]
+		mi := &file_resource_aggregate_pb_commands_proto_msgTypes[17]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1215,7 +1215,7 @@ func (x *DeleteResourceRequest) String() string {
 func (*DeleteResourceRequest) ProtoMessage() {}
 
 func (x *DeleteResourceRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[17]
+	mi := &file_resource_aggregate_pb_commands_proto_msgTypes[17]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1228,7 +1228,7 @@ func (x *DeleteResourceRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteResourceRequest.ProtoReflect.Descriptor instead.
 func (*DeleteResourceRequest) Descriptor() ([]byte, []int) {
-	return file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_rawDescGZIP(), []int{17}
+	return file_resource_aggregate_pb_commands_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *DeleteResourceRequest) GetResourceId() *ResourceId {
@@ -1271,7 +1271,7 @@ type DeleteResourceResponse struct {
 func (x *DeleteResourceResponse) Reset() {
 	*x = DeleteResourceResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[18]
+		mi := &file_resource_aggregate_pb_commands_proto_msgTypes[18]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1284,7 +1284,7 @@ func (x *DeleteResourceResponse) String() string {
 func (*DeleteResourceResponse) ProtoMessage() {}
 
 func (x *DeleteResourceResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[18]
+	mi := &file_resource_aggregate_pb_commands_proto_msgTypes[18]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1297,7 +1297,7 @@ func (x *DeleteResourceResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteResourceResponse.ProtoReflect.Descriptor instead.
 func (*DeleteResourceResponse) Descriptor() ([]byte, []int) {
-	return file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_rawDescGZIP(), []int{18}
+	return file_resource_aggregate_pb_commands_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *DeleteResourceResponse) GetValidUntil() int64 {
@@ -1329,7 +1329,7 @@ type ConfirmResourceDeleteRequest struct {
 func (x *ConfirmResourceDeleteRequest) Reset() {
 	*x = ConfirmResourceDeleteRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[19]
+		mi := &file_resource_aggregate_pb_commands_proto_msgTypes[19]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1342,7 +1342,7 @@ func (x *ConfirmResourceDeleteRequest) String() string {
 func (*ConfirmResourceDeleteRequest) ProtoMessage() {}
 
 func (x *ConfirmResourceDeleteRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[19]
+	mi := &file_resource_aggregate_pb_commands_proto_msgTypes[19]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1355,7 +1355,7 @@ func (x *ConfirmResourceDeleteRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ConfirmResourceDeleteRequest.ProtoReflect.Descriptor instead.
 func (*ConfirmResourceDeleteRequest) Descriptor() ([]byte, []int) {
-	return file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_rawDescGZIP(), []int{19}
+	return file_resource_aggregate_pb_commands_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *ConfirmResourceDeleteRequest) GetResourceId() *ResourceId {
@@ -1404,7 +1404,7 @@ type ConfirmResourceDeleteResponse struct {
 func (x *ConfirmResourceDeleteResponse) Reset() {
 	*x = ConfirmResourceDeleteResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[20]
+		mi := &file_resource_aggregate_pb_commands_proto_msgTypes[20]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1417,7 +1417,7 @@ func (x *ConfirmResourceDeleteResponse) String() string {
 func (*ConfirmResourceDeleteResponse) ProtoMessage() {}
 
 func (x *ConfirmResourceDeleteResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[20]
+	mi := &file_resource_aggregate_pb_commands_proto_msgTypes[20]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1430,7 +1430,7 @@ func (x *ConfirmResourceDeleteResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ConfirmResourceDeleteResponse.ProtoReflect.Descriptor instead.
 func (*ConfirmResourceDeleteResponse) Descriptor() ([]byte, []int) {
-	return file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_rawDescGZIP(), []int{20}
+	return file_resource_aggregate_pb_commands_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *ConfirmResourceDeleteResponse) GetAuditContext() *AuditContext {
@@ -1455,7 +1455,7 @@ type CreateResourceRequest struct {
 func (x *CreateResourceRequest) Reset() {
 	*x = CreateResourceRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[21]
+		mi := &file_resource_aggregate_pb_commands_proto_msgTypes[21]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1468,7 +1468,7 @@ func (x *CreateResourceRequest) String() string {
 func (*CreateResourceRequest) ProtoMessage() {}
 
 func (x *CreateResourceRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[21]
+	mi := &file_resource_aggregate_pb_commands_proto_msgTypes[21]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1481,7 +1481,7 @@ func (x *CreateResourceRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateResourceRequest.ProtoReflect.Descriptor instead.
 func (*CreateResourceRequest) Descriptor() ([]byte, []int) {
-	return file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_rawDescGZIP(), []int{21}
+	return file_resource_aggregate_pb_commands_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *CreateResourceRequest) GetResourceId() *ResourceId {
@@ -1531,7 +1531,7 @@ type CreateResourceResponse struct {
 func (x *CreateResourceResponse) Reset() {
 	*x = CreateResourceResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[22]
+		mi := &file_resource_aggregate_pb_commands_proto_msgTypes[22]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1544,7 +1544,7 @@ func (x *CreateResourceResponse) String() string {
 func (*CreateResourceResponse) ProtoMessage() {}
 
 func (x *CreateResourceResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[22]
+	mi := &file_resource_aggregate_pb_commands_proto_msgTypes[22]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1557,7 +1557,7 @@ func (x *CreateResourceResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateResourceResponse.ProtoReflect.Descriptor instead.
 func (*CreateResourceResponse) Descriptor() ([]byte, []int) {
-	return file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_rawDescGZIP(), []int{22}
+	return file_resource_aggregate_pb_commands_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *CreateResourceResponse) GetValidUntil() int64 {
@@ -1589,7 +1589,7 @@ type ConfirmResourceCreateRequest struct {
 func (x *ConfirmResourceCreateRequest) Reset() {
 	*x = ConfirmResourceCreateRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[23]
+		mi := &file_resource_aggregate_pb_commands_proto_msgTypes[23]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1602,7 +1602,7 @@ func (x *ConfirmResourceCreateRequest) String() string {
 func (*ConfirmResourceCreateRequest) ProtoMessage() {}
 
 func (x *ConfirmResourceCreateRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[23]
+	mi := &file_resource_aggregate_pb_commands_proto_msgTypes[23]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1615,7 +1615,7 @@ func (x *ConfirmResourceCreateRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ConfirmResourceCreateRequest.ProtoReflect.Descriptor instead.
 func (*ConfirmResourceCreateRequest) Descriptor() ([]byte, []int) {
-	return file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_rawDescGZIP(), []int{23}
+	return file_resource_aggregate_pb_commands_proto_rawDescGZIP(), []int{23}
 }
 
 func (x *ConfirmResourceCreateRequest) GetResourceId() *ResourceId {
@@ -1664,7 +1664,7 @@ type ConfirmResourceCreateResponse struct {
 func (x *ConfirmResourceCreateResponse) Reset() {
 	*x = ConfirmResourceCreateResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[24]
+		mi := &file_resource_aggregate_pb_commands_proto_msgTypes[24]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1677,7 +1677,7 @@ func (x *ConfirmResourceCreateResponse) String() string {
 func (*ConfirmResourceCreateResponse) ProtoMessage() {}
 
 func (x *ConfirmResourceCreateResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[24]
+	mi := &file_resource_aggregate_pb_commands_proto_msgTypes[24]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1690,7 +1690,7 @@ func (x *ConfirmResourceCreateResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ConfirmResourceCreateResponse.ProtoReflect.Descriptor instead.
 func (*ConfirmResourceCreateResponse) Descriptor() ([]byte, []int) {
-	return file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_rawDescGZIP(), []int{24}
+	return file_resource_aggregate_pb_commands_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *ConfirmResourceCreateResponse) GetAuditContext() *AuditContext {
@@ -1713,7 +1713,7 @@ type ConnectionStatus struct {
 func (x *ConnectionStatus) Reset() {
 	*x = ConnectionStatus{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[25]
+		mi := &file_resource_aggregate_pb_commands_proto_msgTypes[25]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1726,7 +1726,7 @@ func (x *ConnectionStatus) String() string {
 func (*ConnectionStatus) ProtoMessage() {}
 
 func (x *ConnectionStatus) ProtoReflect() protoreflect.Message {
-	mi := &file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[25]
+	mi := &file_resource_aggregate_pb_commands_proto_msgTypes[25]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1739,7 +1739,7 @@ func (x *ConnectionStatus) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ConnectionStatus.ProtoReflect.Descriptor instead.
 func (*ConnectionStatus) Descriptor() ([]byte, []int) {
-	return file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_rawDescGZIP(), []int{25}
+	return file_resource_aggregate_pb_commands_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *ConnectionStatus) GetValue() ConnectionStatus_Status {
@@ -1781,7 +1781,7 @@ type UpdateDeviceMetadataRequest struct {
 func (x *UpdateDeviceMetadataRequest) Reset() {
 	*x = UpdateDeviceMetadataRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[26]
+		mi := &file_resource_aggregate_pb_commands_proto_msgTypes[26]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1794,7 +1794,7 @@ func (x *UpdateDeviceMetadataRequest) String() string {
 func (*UpdateDeviceMetadataRequest) ProtoMessage() {}
 
 func (x *UpdateDeviceMetadataRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[26]
+	mi := &file_resource_aggregate_pb_commands_proto_msgTypes[26]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1807,7 +1807,7 @@ func (x *UpdateDeviceMetadataRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateDeviceMetadataRequest.ProtoReflect.Descriptor instead.
 func (*UpdateDeviceMetadataRequest) Descriptor() ([]byte, []int) {
-	return file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_rawDescGZIP(), []int{26}
+	return file_resource_aggregate_pb_commands_proto_rawDescGZIP(), []int{26}
 }
 
 func (x *UpdateDeviceMetadataRequest) GetDeviceId() string {
@@ -1887,7 +1887,7 @@ type UpdateDeviceMetadataResponse struct {
 func (x *UpdateDeviceMetadataResponse) Reset() {
 	*x = UpdateDeviceMetadataResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[27]
+		mi := &file_resource_aggregate_pb_commands_proto_msgTypes[27]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1900,7 +1900,7 @@ func (x *UpdateDeviceMetadataResponse) String() string {
 func (*UpdateDeviceMetadataResponse) ProtoMessage() {}
 
 func (x *UpdateDeviceMetadataResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[27]
+	mi := &file_resource_aggregate_pb_commands_proto_msgTypes[27]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1913,7 +1913,7 @@ func (x *UpdateDeviceMetadataResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateDeviceMetadataResponse.ProtoReflect.Descriptor instead.
 func (*UpdateDeviceMetadataResponse) Descriptor() ([]byte, []int) {
-	return file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_rawDescGZIP(), []int{27}
+	return file_resource_aggregate_pb_commands_proto_rawDescGZIP(), []int{27}
 }
 
 func (x *UpdateDeviceMetadataResponse) GetValidUntil() int64 {
@@ -1947,7 +1947,7 @@ type ConfirmDeviceMetadataUpdateRequest struct {
 func (x *ConfirmDeviceMetadataUpdateRequest) Reset() {
 	*x = ConfirmDeviceMetadataUpdateRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[28]
+		mi := &file_resource_aggregate_pb_commands_proto_msgTypes[28]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1960,7 +1960,7 @@ func (x *ConfirmDeviceMetadataUpdateRequest) String() string {
 func (*ConfirmDeviceMetadataUpdateRequest) ProtoMessage() {}
 
 func (x *ConfirmDeviceMetadataUpdateRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[28]
+	mi := &file_resource_aggregate_pb_commands_proto_msgTypes[28]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1973,7 +1973,7 @@ func (x *ConfirmDeviceMetadataUpdateRequest) ProtoReflect() protoreflect.Message
 
 // Deprecated: Use ConfirmDeviceMetadataUpdateRequest.ProtoReflect.Descriptor instead.
 func (*ConfirmDeviceMetadataUpdateRequest) Descriptor() ([]byte, []int) {
-	return file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_rawDescGZIP(), []int{28}
+	return file_resource_aggregate_pb_commands_proto_rawDescGZIP(), []int{28}
 }
 
 func (x *ConfirmDeviceMetadataUpdateRequest) GetDeviceId() string {
@@ -2040,7 +2040,7 @@ type ConfirmDeviceMetadataUpdateResponse struct {
 func (x *ConfirmDeviceMetadataUpdateResponse) Reset() {
 	*x = ConfirmDeviceMetadataUpdateResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[29]
+		mi := &file_resource_aggregate_pb_commands_proto_msgTypes[29]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2053,7 +2053,7 @@ func (x *ConfirmDeviceMetadataUpdateResponse) String() string {
 func (*ConfirmDeviceMetadataUpdateResponse) ProtoMessage() {}
 
 func (x *ConfirmDeviceMetadataUpdateResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[29]
+	mi := &file_resource_aggregate_pb_commands_proto_msgTypes[29]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2066,7 +2066,7 @@ func (x *ConfirmDeviceMetadataUpdateResponse) ProtoReflect() protoreflect.Messag
 
 // Deprecated: Use ConfirmDeviceMetadataUpdateResponse.ProtoReflect.Descriptor instead.
 func (*ConfirmDeviceMetadataUpdateResponse) Descriptor() ([]byte, []int) {
-	return file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_rawDescGZIP(), []int{29}
+	return file_resource_aggregate_pb_commands_proto_rawDescGZIP(), []int{29}
 }
 
 func (x *ConfirmDeviceMetadataUpdateResponse) GetAuditContext() *AuditContext {
@@ -2089,7 +2089,7 @@ type CancelPendingCommandsRequest struct {
 func (x *CancelPendingCommandsRequest) Reset() {
 	*x = CancelPendingCommandsRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[30]
+		mi := &file_resource_aggregate_pb_commands_proto_msgTypes[30]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2102,7 +2102,7 @@ func (x *CancelPendingCommandsRequest) String() string {
 func (*CancelPendingCommandsRequest) ProtoMessage() {}
 
 func (x *CancelPendingCommandsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[30]
+	mi := &file_resource_aggregate_pb_commands_proto_msgTypes[30]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2115,7 +2115,7 @@ func (x *CancelPendingCommandsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CancelPendingCommandsRequest.ProtoReflect.Descriptor instead.
 func (*CancelPendingCommandsRequest) Descriptor() ([]byte, []int) {
-	return file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_rawDescGZIP(), []int{30}
+	return file_resource_aggregate_pb_commands_proto_rawDescGZIP(), []int{30}
 }
 
 func (x *CancelPendingCommandsRequest) GetResourceId() *ResourceId {
@@ -2151,7 +2151,7 @@ type CancelPendingCommandsResponse struct {
 func (x *CancelPendingCommandsResponse) Reset() {
 	*x = CancelPendingCommandsResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[31]
+		mi := &file_resource_aggregate_pb_commands_proto_msgTypes[31]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2164,7 +2164,7 @@ func (x *CancelPendingCommandsResponse) String() string {
 func (*CancelPendingCommandsResponse) ProtoMessage() {}
 
 func (x *CancelPendingCommandsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[31]
+	mi := &file_resource_aggregate_pb_commands_proto_msgTypes[31]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2177,7 +2177,7 @@ func (x *CancelPendingCommandsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CancelPendingCommandsResponse.ProtoReflect.Descriptor instead.
 func (*CancelPendingCommandsResponse) Descriptor() ([]byte, []int) {
-	return file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_rawDescGZIP(), []int{31}
+	return file_resource_aggregate_pb_commands_proto_rawDescGZIP(), []int{31}
 }
 
 func (x *CancelPendingCommandsResponse) GetCorrelationIds() []string {
@@ -2207,7 +2207,7 @@ type CancelPendingMetadataUpdatesRequest struct {
 func (x *CancelPendingMetadataUpdatesRequest) Reset() {
 	*x = CancelPendingMetadataUpdatesRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[32]
+		mi := &file_resource_aggregate_pb_commands_proto_msgTypes[32]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2220,7 +2220,7 @@ func (x *CancelPendingMetadataUpdatesRequest) String() string {
 func (*CancelPendingMetadataUpdatesRequest) ProtoMessage() {}
 
 func (x *CancelPendingMetadataUpdatesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[32]
+	mi := &file_resource_aggregate_pb_commands_proto_msgTypes[32]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2233,7 +2233,7 @@ func (x *CancelPendingMetadataUpdatesRequest) ProtoReflect() protoreflect.Messag
 
 // Deprecated: Use CancelPendingMetadataUpdatesRequest.ProtoReflect.Descriptor instead.
 func (*CancelPendingMetadataUpdatesRequest) Descriptor() ([]byte, []int) {
-	return file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_rawDescGZIP(), []int{32}
+	return file_resource_aggregate_pb_commands_proto_rawDescGZIP(), []int{32}
 }
 
 func (x *CancelPendingMetadataUpdatesRequest) GetDeviceId() string {
@@ -2269,7 +2269,7 @@ type CancelPendingMetadataUpdatesResponse struct {
 func (x *CancelPendingMetadataUpdatesResponse) Reset() {
 	*x = CancelPendingMetadataUpdatesResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[33]
+		mi := &file_resource_aggregate_pb_commands_proto_msgTypes[33]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2282,7 +2282,7 @@ func (x *CancelPendingMetadataUpdatesResponse) String() string {
 func (*CancelPendingMetadataUpdatesResponse) ProtoMessage() {}
 
 func (x *CancelPendingMetadataUpdatesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[33]
+	mi := &file_resource_aggregate_pb_commands_proto_msgTypes[33]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2295,7 +2295,7 @@ func (x *CancelPendingMetadataUpdatesResponse) ProtoReflect() protoreflect.Messa
 
 // Deprecated: Use CancelPendingMetadataUpdatesResponse.ProtoReflect.Descriptor instead.
 func (*CancelPendingMetadataUpdatesResponse) Descriptor() ([]byte, []int) {
-	return file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_rawDescGZIP(), []int{33}
+	return file_resource_aggregate_pb_commands_proto_rawDescGZIP(), []int{33}
 }
 
 func (x *CancelPendingMetadataUpdatesResponse) GetCorrelationIds() []string {
@@ -2323,7 +2323,7 @@ type DeleteDevicesRequest struct {
 func (x *DeleteDevicesRequest) Reset() {
 	*x = DeleteDevicesRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[34]
+		mi := &file_resource_aggregate_pb_commands_proto_msgTypes[34]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2336,7 +2336,7 @@ func (x *DeleteDevicesRequest) String() string {
 func (*DeleteDevicesRequest) ProtoMessage() {}
 
 func (x *DeleteDevicesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[34]
+	mi := &file_resource_aggregate_pb_commands_proto_msgTypes[34]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2349,7 +2349,7 @@ func (x *DeleteDevicesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteDevicesRequest.ProtoReflect.Descriptor instead.
 func (*DeleteDevicesRequest) Descriptor() ([]byte, []int) {
-	return file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_rawDescGZIP(), []int{34}
+	return file_resource_aggregate_pb_commands_proto_rawDescGZIP(), []int{34}
 }
 
 func (x *DeleteDevicesRequest) GetDeviceIds() []string {
@@ -2371,7 +2371,7 @@ type DeleteDevicesResponse struct {
 func (x *DeleteDevicesResponse) Reset() {
 	*x = DeleteDevicesResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[35]
+		mi := &file_resource_aggregate_pb_commands_proto_msgTypes[35]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2384,7 +2384,7 @@ func (x *DeleteDevicesResponse) String() string {
 func (*DeleteDevicesResponse) ProtoMessage() {}
 
 func (x *DeleteDevicesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[35]
+	mi := &file_resource_aggregate_pb_commands_proto_msgTypes[35]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2397,7 +2397,7 @@ func (x *DeleteDevicesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteDevicesResponse.ProtoReflect.Descriptor instead.
 func (*DeleteDevicesResponse) Descriptor() ([]byte, []int) {
-	return file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_rawDescGZIP(), []int{35}
+	return file_resource_aggregate_pb_commands_proto_rawDescGZIP(), []int{35}
 }
 
 func (x *DeleteDevicesResponse) GetDeviceIds() []string {
@@ -2414,16 +2414,13 @@ func (x *DeleteDevicesResponse) GetAuditContext() *AuditContext {
 	return nil
 }
 
-var File_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto protoreflect.FileDescriptor
+var File_resource_aggregate_pb_commands_proto protoreflect.FileDescriptor
 
-var file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_rawDesc = []byte{
-	0x0a, 0x3c, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x70, 0x6c, 0x67,
-	0x64, 0x2d, 0x64, 0x65, 0x76, 0x2f, 0x68, 0x75, 0x62, 0x2f, 0x72, 0x65, 0x73, 0x6f, 0x75, 0x72,
-	0x63, 0x65, 0x2d, 0x61, 0x67, 0x67, 0x72, 0x65, 0x67, 0x61, 0x74, 0x65, 0x2f, 0x70, 0x62, 0x2f,
-	0x63, 0x6f, 0x6d, 0x6d, 0x61, 0x6e, 0x64, 0x73, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x12, 0x14,
-	0x72, 0x65, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x61, 0x67, 0x67, 0x72, 0x65, 0x67, 0x61, 0x74,
-	0x65, 0x2e, 0x70, 0x62, 0x1a, 0x3d, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d,
-	0x2f, 0x70, 0x6c, 0x67, 0x64, 0x2d, 0x64, 0x65, 0x76, 0x2f, 0x68, 0x75, 0x62, 0x2f, 0x72, 0x65,
+var file_resource_aggregate_pb_commands_proto_rawDesc = []byte{
+	0x0a, 0x24, 0x72, 0x65, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x2d, 0x61, 0x67, 0x67, 0x72, 0x65,
+	0x67, 0x61, 0x74, 0x65, 0x2f, 0x70, 0x62, 0x2f, 0x63, 0x6f, 0x6d, 0x6d, 0x61, 0x6e, 0x64, 0x73,
+	0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x12, 0x14, 0x72, 0x65, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65,
+	0x61, 0x67, 0x67, 0x72, 0x65, 0x67, 0x61, 0x74, 0x65, 0x2e, 0x70, 0x62, 0x1a, 0x25, 0x72, 0x65,
 	0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x2d, 0x61, 0x67, 0x67, 0x72, 0x65, 0x67, 0x61, 0x74, 0x65,
 	0x2f, 0x70, 0x62, 0x2f, 0x72, 0x65, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x73, 0x2e, 0x70, 0x72,
 	0x6f, 0x74, 0x6f, 0x22, 0x52, 0x0a, 0x0f, 0x43, 0x6f, 0x6d, 0x6d, 0x61, 0x6e, 0x64, 0x4d, 0x65,
@@ -2878,20 +2875,20 @@ var file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_rawDesc = 
 }
 
 var (
-	file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_rawDescOnce sync.Once
-	file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_rawDescData = file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_rawDesc
+	file_resource_aggregate_pb_commands_proto_rawDescOnce sync.Once
+	file_resource_aggregate_pb_commands_proto_rawDescData = file_resource_aggregate_pb_commands_proto_rawDesc
 )
 
-func file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_rawDescGZIP() []byte {
-	file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_rawDescOnce.Do(func() {
-		file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_rawDescData = protoimpl.X.CompressGZIP(file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_rawDescData)
+func file_resource_aggregate_pb_commands_proto_rawDescGZIP() []byte {
+	file_resource_aggregate_pb_commands_proto_rawDescOnce.Do(func() {
+		file_resource_aggregate_pb_commands_proto_rawDescData = protoimpl.X.CompressGZIP(file_resource_aggregate_pb_commands_proto_rawDescData)
 	})
-	return file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_rawDescData
+	return file_resource_aggregate_pb_commands_proto_rawDescData
 }
 
-var file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes = make([]protoimpl.MessageInfo, 36)
-var file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_goTypes = []interface{}{
+var file_resource_aggregate_pb_commands_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
+var file_resource_aggregate_pb_commands_proto_msgTypes = make([]protoimpl.MessageInfo, 36)
+var file_resource_aggregate_pb_commands_proto_goTypes = []interface{}{
 	(ShadowSynchronization)(0),                   // 0: resourceaggregate.pb.ShadowSynchronization
 	(ConnectionStatus_Status)(0),                 // 1: resourceaggregate.pb.ConnectionStatus.Status
 	(*CommandMetadata)(nil),                      // 2: resourceaggregate.pb.CommandMetadata
@@ -2934,7 +2931,7 @@ var file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_goTypes = 
 	(*Content)(nil),                              // 39: resourceaggregate.pb.Content
 	(Status)(0),                                  // 40: resourceaggregate.pb.Status
 }
-var file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_depIdxs = []int32{
+var file_resource_aggregate_pb_commands_proto_depIdxs = []int32{
 	38, // 0: resourceaggregate.pb.PublishResourceLinksRequest.resources:type_name -> resourceaggregate.pb.Resource
 	2,  // 1: resourceaggregate.pb.PublishResourceLinksRequest.command_metadata:type_name -> resourceaggregate.pb.CommandMetadata
 	38, // 2: resourceaggregate.pb.PublishResourceLinksResponse.published_resources:type_name -> resourceaggregate.pb.Resource
@@ -3002,14 +2999,14 @@ var file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_depIdxs = 
 	0,  // [0:60] is the sub-list for field type_name
 }
 
-func init() { file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_init() }
-func file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_init() {
-	if File_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto != nil {
+func init() { file_resource_aggregate_pb_commands_proto_init() }
+func file_resource_aggregate_pb_commands_proto_init() {
+	if File_resource_aggregate_pb_commands_proto != nil {
 		return
 	}
-	file_github_com_plgd_dev_hub_resource_aggregate_pb_resources_proto_init()
+	file_resource_aggregate_pb_resources_proto_init()
 	if !protoimpl.UnsafeEnabled {
-		file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {
+		file_resource_aggregate_pb_commands_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*CommandMetadata); i {
 			case 0:
 				return &v.state
@@ -3021,7 +3018,7 @@ func file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_init() {
 				return nil
 			}
 		}
-		file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
+		file_resource_aggregate_pb_commands_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*AuditContext); i {
 			case 0:
 				return &v.state
@@ -3033,7 +3030,7 @@ func file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_init() {
 				return nil
 			}
 		}
-		file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
+		file_resource_aggregate_pb_commands_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*ResourceId); i {
 			case 0:
 				return &v.state
@@ -3045,7 +3042,7 @@ func file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_init() {
 				return nil
 			}
 		}
-		file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
+		file_resource_aggregate_pb_commands_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*PublishResourceLinksRequest); i {
 			case 0:
 				return &v.state
@@ -3057,7 +3054,7 @@ func file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_init() {
 				return nil
 			}
 		}
-		file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
+		file_resource_aggregate_pb_commands_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*PublishResourceLinksResponse); i {
 			case 0:
 				return &v.state
@@ -3069,7 +3066,7 @@ func file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_init() {
 				return nil
 			}
 		}
-		file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
+		file_resource_aggregate_pb_commands_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*UnpublishResourceLinksRequest); i {
 			case 0:
 				return &v.state
@@ -3081,7 +3078,7 @@ func file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_init() {
 				return nil
 			}
 		}
-		file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
+		file_resource_aggregate_pb_commands_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*UnpublishResourceLinksResponse); i {
 			case 0:
 				return &v.state
@@ -3093,7 +3090,7 @@ func file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_init() {
 				return nil
 			}
 		}
-		file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {
+		file_resource_aggregate_pb_commands_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*NotifyResourceChangedRequest); i {
 			case 0:
 				return &v.state
@@ -3105,7 +3102,7 @@ func file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_init() {
 				return nil
 			}
 		}
-		file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[8].Exporter = func(v interface{}, i int) interface{} {
+		file_resource_aggregate_pb_commands_proto_msgTypes[8].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*NotifyResourceChangedResponse); i {
 			case 0:
 				return &v.state
@@ -3117,7 +3114,7 @@ func file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_init() {
 				return nil
 			}
 		}
-		file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[9].Exporter = func(v interface{}, i int) interface{} {
+		file_resource_aggregate_pb_commands_proto_msgTypes[9].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*UpdateResourceRequest); i {
 			case 0:
 				return &v.state
@@ -3129,7 +3126,7 @@ func file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_init() {
 				return nil
 			}
 		}
-		file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[10].Exporter = func(v interface{}, i int) interface{} {
+		file_resource_aggregate_pb_commands_proto_msgTypes[10].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*UpdateResourceResponse); i {
 			case 0:
 				return &v.state
@@ -3141,7 +3138,7 @@ func file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_init() {
 				return nil
 			}
 		}
-		file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[11].Exporter = func(v interface{}, i int) interface{} {
+		file_resource_aggregate_pb_commands_proto_msgTypes[11].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*ConfirmResourceUpdateRequest); i {
 			case 0:
 				return &v.state
@@ -3153,7 +3150,7 @@ func file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_init() {
 				return nil
 			}
 		}
-		file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[12].Exporter = func(v interface{}, i int) interface{} {
+		file_resource_aggregate_pb_commands_proto_msgTypes[12].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*ConfirmResourceUpdateResponse); i {
 			case 0:
 				return &v.state
@@ -3165,7 +3162,7 @@ func file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_init() {
 				return nil
 			}
 		}
-		file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[13].Exporter = func(v interface{}, i int) interface{} {
+		file_resource_aggregate_pb_commands_proto_msgTypes[13].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*RetrieveResourceRequest); i {
 			case 0:
 				return &v.state
@@ -3177,7 +3174,7 @@ func file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_init() {
 				return nil
 			}
 		}
-		file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[14].Exporter = func(v interface{}, i int) interface{} {
+		file_resource_aggregate_pb_commands_proto_msgTypes[14].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*RetrieveResourceResponse); i {
 			case 0:
 				return &v.state
@@ -3189,7 +3186,7 @@ func file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_init() {
 				return nil
 			}
 		}
-		file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[15].Exporter = func(v interface{}, i int) interface{} {
+		file_resource_aggregate_pb_commands_proto_msgTypes[15].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*ConfirmResourceRetrieveRequest); i {
 			case 0:
 				return &v.state
@@ -3201,7 +3198,7 @@ func file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_init() {
 				return nil
 			}
 		}
-		file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[16].Exporter = func(v interface{}, i int) interface{} {
+		file_resource_aggregate_pb_commands_proto_msgTypes[16].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*ConfirmResourceRetrieveResponse); i {
 			case 0:
 				return &v.state
@@ -3213,7 +3210,7 @@ func file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_init() {
 				return nil
 			}
 		}
-		file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[17].Exporter = func(v interface{}, i int) interface{} {
+		file_resource_aggregate_pb_commands_proto_msgTypes[17].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*DeleteResourceRequest); i {
 			case 0:
 				return &v.state
@@ -3225,7 +3222,7 @@ func file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_init() {
 				return nil
 			}
 		}
-		file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[18].Exporter = func(v interface{}, i int) interface{} {
+		file_resource_aggregate_pb_commands_proto_msgTypes[18].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*DeleteResourceResponse); i {
 			case 0:
 				return &v.state
@@ -3237,7 +3234,7 @@ func file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_init() {
 				return nil
 			}
 		}
-		file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[19].Exporter = func(v interface{}, i int) interface{} {
+		file_resource_aggregate_pb_commands_proto_msgTypes[19].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*ConfirmResourceDeleteRequest); i {
 			case 0:
 				return &v.state
@@ -3249,7 +3246,7 @@ func file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_init() {
 				return nil
 			}
 		}
-		file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[20].Exporter = func(v interface{}, i int) interface{} {
+		file_resource_aggregate_pb_commands_proto_msgTypes[20].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*ConfirmResourceDeleteResponse); i {
 			case 0:
 				return &v.state
@@ -3261,7 +3258,7 @@ func file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_init() {
 				return nil
 			}
 		}
-		file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[21].Exporter = func(v interface{}, i int) interface{} {
+		file_resource_aggregate_pb_commands_proto_msgTypes[21].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*CreateResourceRequest); i {
 			case 0:
 				return &v.state
@@ -3273,7 +3270,7 @@ func file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_init() {
 				return nil
 			}
 		}
-		file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[22].Exporter = func(v interface{}, i int) interface{} {
+		file_resource_aggregate_pb_commands_proto_msgTypes[22].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*CreateResourceResponse); i {
 			case 0:
 				return &v.state
@@ -3285,7 +3282,7 @@ func file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_init() {
 				return nil
 			}
 		}
-		file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[23].Exporter = func(v interface{}, i int) interface{} {
+		file_resource_aggregate_pb_commands_proto_msgTypes[23].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*ConfirmResourceCreateRequest); i {
 			case 0:
 				return &v.state
@@ -3297,7 +3294,7 @@ func file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_init() {
 				return nil
 			}
 		}
-		file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[24].Exporter = func(v interface{}, i int) interface{} {
+		file_resource_aggregate_pb_commands_proto_msgTypes[24].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*ConfirmResourceCreateResponse); i {
 			case 0:
 				return &v.state
@@ -3309,7 +3306,7 @@ func file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_init() {
 				return nil
 			}
 		}
-		file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[25].Exporter = func(v interface{}, i int) interface{} {
+		file_resource_aggregate_pb_commands_proto_msgTypes[25].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*ConnectionStatus); i {
 			case 0:
 				return &v.state
@@ -3321,7 +3318,7 @@ func file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_init() {
 				return nil
 			}
 		}
-		file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[26].Exporter = func(v interface{}, i int) interface{} {
+		file_resource_aggregate_pb_commands_proto_msgTypes[26].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*UpdateDeviceMetadataRequest); i {
 			case 0:
 				return &v.state
@@ -3333,7 +3330,7 @@ func file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_init() {
 				return nil
 			}
 		}
-		file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[27].Exporter = func(v interface{}, i int) interface{} {
+		file_resource_aggregate_pb_commands_proto_msgTypes[27].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*UpdateDeviceMetadataResponse); i {
 			case 0:
 				return &v.state
@@ -3345,7 +3342,7 @@ func file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_init() {
 				return nil
 			}
 		}
-		file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[28].Exporter = func(v interface{}, i int) interface{} {
+		file_resource_aggregate_pb_commands_proto_msgTypes[28].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*ConfirmDeviceMetadataUpdateRequest); i {
 			case 0:
 				return &v.state
@@ -3357,7 +3354,7 @@ func file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_init() {
 				return nil
 			}
 		}
-		file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[29].Exporter = func(v interface{}, i int) interface{} {
+		file_resource_aggregate_pb_commands_proto_msgTypes[29].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*ConfirmDeviceMetadataUpdateResponse); i {
 			case 0:
 				return &v.state
@@ -3369,7 +3366,7 @@ func file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_init() {
 				return nil
 			}
 		}
-		file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[30].Exporter = func(v interface{}, i int) interface{} {
+		file_resource_aggregate_pb_commands_proto_msgTypes[30].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*CancelPendingCommandsRequest); i {
 			case 0:
 				return &v.state
@@ -3381,7 +3378,7 @@ func file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_init() {
 				return nil
 			}
 		}
-		file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[31].Exporter = func(v interface{}, i int) interface{} {
+		file_resource_aggregate_pb_commands_proto_msgTypes[31].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*CancelPendingCommandsResponse); i {
 			case 0:
 				return &v.state
@@ -3393,7 +3390,7 @@ func file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_init() {
 				return nil
 			}
 		}
-		file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[32].Exporter = func(v interface{}, i int) interface{} {
+		file_resource_aggregate_pb_commands_proto_msgTypes[32].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*CancelPendingMetadataUpdatesRequest); i {
 			case 0:
 				return &v.state
@@ -3405,7 +3402,7 @@ func file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_init() {
 				return nil
 			}
 		}
-		file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[33].Exporter = func(v interface{}, i int) interface{} {
+		file_resource_aggregate_pb_commands_proto_msgTypes[33].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*CancelPendingMetadataUpdatesResponse); i {
 			case 0:
 				return &v.state
@@ -3417,7 +3414,7 @@ func file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_init() {
 				return nil
 			}
 		}
-		file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[34].Exporter = func(v interface{}, i int) interface{} {
+		file_resource_aggregate_pb_commands_proto_msgTypes[34].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*DeleteDevicesRequest); i {
 			case 0:
 				return &v.state
@@ -3429,7 +3426,7 @@ func file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_init() {
 				return nil
 			}
 		}
-		file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[35].Exporter = func(v interface{}, i int) interface{} {
+		file_resource_aggregate_pb_commands_proto_msgTypes[35].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*DeleteDevicesResponse); i {
 			case 0:
 				return &v.state
@@ -3442,30 +3439,30 @@ func file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_init() {
 			}
 		}
 	}
-	file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[26].OneofWrappers = []interface{}{
+	file_resource_aggregate_pb_commands_proto_msgTypes[26].OneofWrappers = []interface{}{
 		(*UpdateDeviceMetadataRequest_Status)(nil),
 		(*UpdateDeviceMetadataRequest_ShadowSynchronization)(nil),
 	}
-	file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes[28].OneofWrappers = []interface{}{
+	file_resource_aggregate_pb_commands_proto_msgTypes[28].OneofWrappers = []interface{}{
 		(*ConfirmDeviceMetadataUpdateRequest_ShadowSynchronization)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_rawDesc,
+			RawDescriptor: file_resource_aggregate_pb_commands_proto_rawDesc,
 			NumEnums:      2,
 			NumMessages:   36,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
-		GoTypes:           file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_goTypes,
-		DependencyIndexes: file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_depIdxs,
-		EnumInfos:         file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_enumTypes,
-		MessageInfos:      file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_msgTypes,
+		GoTypes:           file_resource_aggregate_pb_commands_proto_goTypes,
+		DependencyIndexes: file_resource_aggregate_pb_commands_proto_depIdxs,
+		EnumInfos:         file_resource_aggregate_pb_commands_proto_enumTypes,
+		MessageInfos:      file_resource_aggregate_pb_commands_proto_msgTypes,
 	}.Build()
-	File_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto = out.File
-	file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_rawDesc = nil
-	file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_goTypes = nil
-	file_github_com_plgd_dev_hub_resource_aggregate_pb_commands_proto_depIdxs = nil
+	File_resource_aggregate_pb_commands_proto = out.File
+	file_resource_aggregate_pb_commands_proto_rawDesc = nil
+	file_resource_aggregate_pb_commands_proto_goTypes = nil
+	file_resource_aggregate_pb_commands_proto_depIdxs = nil
 }

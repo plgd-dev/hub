@@ -40,6 +40,7 @@ func makeDefaultDevice(deviceID string) *pb.Device {
 				Value: commands.ConnectionStatus_ONLINE,
 			},
 		},
+		OwnershipStatus: pb.Device_OWNED,
 	}
 }
 

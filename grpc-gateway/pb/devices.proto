@@ -2,8 +2,9 @@ syntax = "proto3";
 
 package grpcgateway.pb;
 
-import "github.com/plgd-dev/hub/resource-aggregate/pb/commands.proto";
-import "github.com/plgd-dev/hub/resource-aggregate/pb/events.proto";
+import "resource-aggregate/pb/commands.proto";
+import "resource-aggregate/pb/events.proto";
+import "resource-aggregate/pb/resources.proto";
 
 option go_package = "github.com/plgd-dev/hub/v2/grpc-gateway/pb;pb";
 
@@ -156,6 +157,16 @@ message LocalizedString {
 }
 
 message Device {
+  enum OwnershipStatus {
+    // cannot determine ownership status
+    UNKNOWN = 0;
+    // device is ready to be owned the user
+    UNOWNED = 1;
+    // device is owned by the user. to determine who own the device you need to get ownership resource /oic/sec/doxm
+    OWNED = 2;
+    // set when device is not secured. (iotivity-lite was built without security)
+    UNSUPPORTED = 3;
+  }
   message Metadata {
     resourceaggregate.pb.ConnectionStatus status = 1;
     resourceaggregate.pb.ShadowSynchronization shadow_synchronization = 2;
@@ -168,6 +179,11 @@ message Device {
   string model_number = 6;
   repeated string interfaces = 7;
   string protocol_independent_id = 8;
+  resourceaggregate.pb.ResourceChanged data = 9;
+  // ownership status of the device
+  OwnershipStatus ownership_status = 10;
+  // endpoints with schemas which are hosted by the device
+  repeated string endpoints = 11;
 }
 
 message Content {
