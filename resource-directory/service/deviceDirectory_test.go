@@ -147,6 +147,10 @@ func TestDeviceDirectoryGetDevices(t *testing.T) {
 				require.NoError(t, err)
 			}
 			require.Equal(t, tt.wantStatusCode, status.Convert(err).Code())
+			for _, device := range s.got {
+				require.NotEmpty(t, device.GetData().GetContent().GetData())
+				device.Data = nil
+			}
 			require.Equal(t, tt.wantResponse, s.got)
 		}
 		t.Run(tt.name, fn)
@@ -196,6 +200,7 @@ func testMakeDeviceResouceProtobuf(deviceID string, types []string, isOnline boo
 				}(),
 			},
 		},
+		OwnershipStatus: pb.Device_OWNED,
 	}
 }
 

@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package identitystore.pb;
 
-import "github.com/plgd-dev/hub/identity-store/pb/devices.proto";
+import "identity-store/pb/devices.proto";
 
 option go_package = "github.com/plgd-dev/hub/v2/identity-store/pb;pb";
 

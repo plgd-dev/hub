@@ -41,7 +41,8 @@ func NewTestDeviceSimulator(deviceID, deviceName string, withResources bool) cli
 					Value: commands.ConnectionStatus_ONLINE,
 				},
 			},
-			Interfaces: []string{interfaces.OC_IF_R, interfaces.OC_IF_BASELINE},
+			Interfaces:      []string{interfaces.OC_IF_R, interfaces.OC_IF_BASELINE},
+			OwnershipStatus: pb.Device_OWNED,
 		},
 		Resources: resources,
 	}
@@ -108,6 +109,8 @@ func TestClient_GetDevice(t *testing.T) {
 			got.Device.ProtocolIndependentId = ""
 			got.Device.Metadata.Status.ValidUntil = 0
 			got.Device.Metadata.Status.ConnectionId = ""
+			require.NotEmpty(t, got.Device.GetData().GetContent().GetData())
+			got.Device.Data = nil
 			test.CheckProtobufs(t, tt.want, got, test.RequireToCheckFunc(require.Equal))
 		})
 	}

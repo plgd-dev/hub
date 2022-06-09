@@ -8,6 +8,7 @@ import (
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 	"github.com/plgd-dev/kit/v2/codec/cbor"
 	"github.com/plgd-dev/kit/v2/codec/json"
 	"github.com/plgd-dev/kit/v2/strings"
@@ -69,19 +70,30 @@ func decodeContent(content *commands.Content, v interface{}) error {
 }
 
 type Device struct {
-	ID       string
-	Resource *device.Device
-	Metadata *pb.Device_Metadata
+	ID              string
+	Content         *device.Device
+	ResourceChanged *events.ResourceChanged
+	Metadata        *pb.Device_Metadata
+	Endpoints       []*commands.EndpointInformation
 }
 
 func (d Device) ToProto() *pb.Device {
-	r := pb.SchemaDeviceToProto(d.Resource)
+	r := pb.SchemaDeviceToProto(d.Content)
 	if r == nil {
 		r = &pb.Device{
 			Id: d.ID,
 		}
 	}
 	r.Metadata = d.Metadata
+	r.Data = d.ResourceChanged
+	r.OwnershipStatus = pb.Device_OWNED
+	if len(d.Endpoints) == 0 {
+		return r
+	}
+	r.Endpoints = make([]string, 0, len(d.Endpoints))
+	for _, endpoint := range d.Endpoints {
+		r.Endpoints = append(r.Endpoints, endpoint.GetEndpoint())
+	}
 	return r
 }
 
@@ -94,9 +106,11 @@ func updateDevice(dev *Device, resource *Resource) error {
 			return err
 		}
 		dev.ID = devContent.ID
-		dev.Resource = &devContent
-		dev.Resource.ResourceTypes = resource.Resource.GetResourceTypes()
-		dev.Resource.Interfaces = resource.Resource.GetInterfaces()
+		dev.Content = &devContent
+		dev.Content.ResourceTypes = resource.Resource.GetResourceTypes()
+		dev.Content.Interfaces = resource.Resource.GetInterfaces()
+		dev.Endpoints = resource.Resource.GetEndpointInformations()
+		dev.ResourceChanged = resource.GetResourceChanged()
 	}
 	return nil
 }

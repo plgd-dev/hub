@@ -50,6 +50,7 @@ func TestRequestHandlerGetDevices(t *testing.T) {
 							Value: commands.ConnectionStatus_ONLINE,
 						},
 					},
+					OwnershipStatus: pb.Device_OWNED,
 				},
 			},
 		},
@@ -86,6 +87,7 @@ func TestRequestHandlerGetDevices(t *testing.T) {
 				}
 				require.NoError(t, err)
 				assert.NotEmpty(t, dev.ProtocolIndependentId)
+				assert.NotEmpty(t, dev.GetData().GetContent().GetData())
 				devices = append(devices, dev)
 			}
 			pbTest.CmpDeviceValues(t, tt.want, devices)

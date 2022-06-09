@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package resourceaggregate.pb;
 
-import "github.com/plgd-dev/hub/resource-aggregate/pb/commands.proto";
+import "resource-aggregate/pb/commands.proto";
 
 option go_package = "github.com/plgd-dev/hub/v2/resource-aggregate/service;service";
 

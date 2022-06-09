@@ -9,14 +9,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/plgd-dev/device/schema/device"
-	"github.com/plgd-dev/device/schema/interfaces"
-	"github.com/plgd-dev/device/test/resource/types"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	httpgwTest "github.com/plgd-dev/hub/v2/http-gateway/test"
 	"github.com/plgd-dev/hub/v2/http-gateway/uri"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
-	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/v2/test"
 	"github.com/plgd-dev/hub/v2/test/config"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
@@ -46,17 +42,7 @@ func TestRequestHandlerGetDevice(t *testing.T) {
 				deviceID: deviceID,
 			},
 			want: []*pb.Device{
-				{
-					Types:      []string{types.DEVICE_CLOUD, device.ResourceType},
-					Interfaces: []string{interfaces.OC_IF_R, interfaces.OC_IF_BASELINE},
-					Id:         deviceID,
-					Name:       test.TestDeviceName,
-					Metadata: &pb.Device_Metadata{
-						Status: &commands.ConnectionStatus{
-							Value: commands.ConnectionStatus_ONLINE,
-						},
-					},
-				},
+				makeDefaultDevice(deviceID),
 			},
 			wantHTTPCode: http.StatusOK,
 		},

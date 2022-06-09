@@ -2,8 +2,8 @@ syntax = "proto3";
 
 package resourceaggregate.pb;
 
-import "github.com/plgd-dev/hub/resource-aggregate/pb/commands.proto";
-import "github.com/plgd-dev/hub/resource-aggregate/pb/resources.proto";
+import "resource-aggregate/pb/commands.proto";
+import "resource-aggregate/pb/resources.proto";
 
 option go_package = "github.com/plgd-dev/hub/v2/resource-aggregate/events;events";
 

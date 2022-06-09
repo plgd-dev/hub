@@ -77,27 +77,58 @@ func replaceContent(val map[interface{}]interface{}) (interface{}, bool) {
 	return nil, false
 }
 
-func modify(v interface{}) (interface{}, bool) {
+func modifyMap(valMap map[interface{}]interface{}) (newValue interface{}, wantDelete bool) {
+	if len(valMap) == 0 {
+		return nil, true
+	}
+	newContent, replace := replaceContent(valMap)
+	if replace {
+		return newContent, false
+	}
+	for key, v := range valMap {
+		newContent, wantDelete := modify(v)
+		if wantDelete {
+			delete(valMap, key)
+		} else {
+			valMap[key] = newContent
+		}
+	}
+	if len(valMap) == 0 {
+		return nil, true
+	}
+	return valMap, false
+}
+
+func modifyArray(valArr []interface{}) (newValue interface{}, wantDelete bool) {
+	for idx, v := range valArr {
+		if v, wantDelete := modify(v); wantDelete {
+			valArr = append(valArr[:idx], valArr[idx+1:]...)
+		} else {
+			valArr[idx] = v
+		}
+	}
+	if len(valArr) == 0 {
+		return nil, true
+	}
+	return valArr, false
+}
+
+func modify(v interface{}) (newValue interface{}, wantDelete bool) {
+	if v == nil {
+		return nil, true
+	}
+	if val, ok := v.(string); ok && len(val) == 0 {
+		return nil, true
+	}
 	valMap, ok := v.(map[interface{}]interface{})
 	if ok {
-		newContent, replace := replaceContent(valMap)
-		if replace {
-			return newContent, replace
-		}
-		for key, v := range valMap {
-			newContent, replace := modify(v)
-			if replace {
-				valMap[key] = newContent
-			}
-		}
+		return modifyMap(valMap)
 	}
 	valArr, ok := v.([]interface{})
 	if ok {
-		for _, v := range valArr {
-			modify(v)
-		}
+		return modifyArray(valArr)
 	}
-	return nil, false
+	return v, false
 }
 
 // Marshal marshals "v" into JSON.
@@ -112,9 +143,9 @@ func (j *JsonMarshaler) Marshal(v interface{}) ([]byte, error) {
 	if err != nil {
 		return data, nil
 	}
-	newContent, replace := modify(val)
-	if replace {
-		val = newContent
+	newVal, _ := modify(val)
+	if newVal != nil {
+		val = newVal
 	}
 	w := bytes.NewBuffer(make([]byte, 0, len(data)))
 

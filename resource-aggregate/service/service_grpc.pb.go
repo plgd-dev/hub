@@ -638,5 +638,5 @@ var ResourceAggregate_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "github.com/plgd-dev/hub/resource-aggregate/pb/service.proto",
+	Metadata: "resource-aggregate/pb/service.proto",
 }
