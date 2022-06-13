@@ -10,6 +10,7 @@ import (
 	"github.com/plgd-dev/device/schema/interfaces"
 	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
+	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
@@ -85,7 +86,15 @@ func TestRequestHandler_UpdateDeviceMetadata(t *testing.T) {
 	defer shutdownDevSim()
 
 	logger := log.NewLogger(log.MakeDefaultConfig())
-	naClient, s, err := natsTest.NewClientAndSubscriber(testCfg.MakeSubscriberConfig(), logger, subscriber.WithUnmarshaler(utils.Unmarshal))
+
+	fileWatcher, err := fsnotify.NewWatcher()
+	require.NoError(t, err)
+	defer func() {
+		err := fileWatcher.Close()
+		require.NoError(t, err)
+	}()
+
+	naClient, s, err := natsTest.NewClientAndSubscriber(testCfg.MakeSubscriberConfig(), fileWatcher, logger, subscriber.WithUnmarshaler(utils.Unmarshal))
 	require.NoError(t, err)
 	defer func() {
 		s.Close()

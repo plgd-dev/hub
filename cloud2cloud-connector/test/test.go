@@ -20,6 +20,7 @@ import (
 	"github.com/plgd-dev/hub/v2/cloud2cloud-connector/uri"
 	c2cGwUri "github.com/plgd-dev/hub/v2/cloud2cloud-gateway/uri"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
+	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	cmClient "github.com/plgd-dev/hub/v2/pkg/security/certManager/client"
@@ -141,7 +142,10 @@ func NewMongoStore(t *testing.T) (*mongodb.Store, func()) {
 
 	logger := log.NewLogger(cfg.Log)
 
-	certManager, err := cmClient.New(cfg.Clients.Storage.MongoDB.TLS, logger)
+	fileWatcher, err := fsnotify.NewWatcher()
+	require.NoError(t, err)
+
+	certManager, err := cmClient.New(cfg.Clients.Storage.MongoDB.TLS, fileWatcher, logger)
 	require.NoError(t, err)
 
 	ctx := context.Background()
@@ -153,6 +157,8 @@ func NewMongoStore(t *testing.T) (*mongodb.Store, func()) {
 		require.NoError(t, err)
 		_ = store.Close(ctx)
 		certManager.Close()
+		err = fileWatcher.Close()
+		require.NoError(t, err)
 	}
 
 	return store, cleanUp

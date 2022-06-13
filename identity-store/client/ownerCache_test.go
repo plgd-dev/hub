@@ -12,6 +12,7 @@ import (
 	"github.com/plgd-dev/hub/v2/identity-store/events"
 	"github.com/plgd-dev/hub/v2/identity-store/pb"
 	idService "github.com/plgd-dev/hub/v2/identity-store/test"
+	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"github.com/plgd-dev/hub/v2/pkg/net/grpc/client"
@@ -42,6 +43,13 @@ func TestOwnerCacheSubscribe(t *testing.T) {
 
 	token := oauthService.GetDefaultAccessToken(t)
 
+	fileWatcher, err := fsnotify.NewWatcher()
+	require.NoError(t, err)
+	defer func() {
+		err := fileWatcher.Close()
+		require.NoError(t, err)
+	}()
+
 	conn, err := client.New(client.Config{
 		Addr: cfg.APIs.GRPC.Addr,
 		TLS: clientCertManager.Config{
@@ -49,7 +57,7 @@ func TestOwnerCacheSubscribe(t *testing.T) {
 			CertFile: cfg.APIs.GRPC.TLS.CertFile,
 			KeyFile:  cfg.APIs.GRPC.TLS.KeyFile,
 		},
-	}, log.Get(), trace.NewNoopTracerProvider(), grpc.WithPerRPCCredentials(kitNetGrpc.NewOAuthAccess(func(ctx context.Context) (*oauth2.Token, error) {
+	}, fileWatcher, log.Get(), trace.NewNoopTracerProvider(), grpc.WithPerRPCCredentials(kitNetGrpc.NewOAuthAccess(func(ctx context.Context) (*oauth2.Token, error) {
 		return &oauth2.Token{
 			AccessToken:  token,
 			TokenType:    "Bearer",
@@ -69,7 +77,7 @@ func TestOwnerCacheSubscribe(t *testing.T) {
 	owner, err := kitNetGrpc.ParseOwnerFromJwtToken("sub", token)
 	require.NoError(t, err)
 
-	naClient, subscriber, err := natsTest.NewClientAndSubscriber(config.MakeSubscriberConfig(), log.Get())
+	naClient, subscriber, err := natsTest.NewClientAndSubscriber(config.MakeSubscriberConfig(), fileWatcher, log.Get())
 	require.NoError(t, err)
 	defer func() {
 		subscriber.Close()

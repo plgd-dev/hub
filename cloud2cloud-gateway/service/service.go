@@ -10,6 +10,7 @@ import (
 	"github.com/plgd-dev/hub/v2/cloud2cloud-gateway/store/mongodb"
 	pbGRPC "github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	"github.com/plgd-dev/hub/v2/pkg/fn"
+	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	grpcClient "github.com/plgd-dev/hub/v2/pkg/net/grpc/client"
@@ -136,9 +137,9 @@ var authRules = map[string][]kitNetHttp.AuthArgs{
 	},
 }
 
-func newGrpcGatewayClient(config GrpcGatewayConfig, logger log.Logger, tracerProvider trace.TracerProvider) (pbGRPC.GrpcGatewayClient, func(), error) {
+func newGrpcGatewayClient(config GrpcGatewayConfig, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (pbGRPC.GrpcGatewayClient, func(), error) {
 	var fl fn.FuncList
-	conn, err := grpcClient.New(config.Connection, logger, tracerProvider)
+	conn, err := grpcClient.New(config.Connection, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		return nil, nil, fmt.Errorf("cannot connect to grpc-gateway: %w", err)
 	}
@@ -151,9 +152,9 @@ func newGrpcGatewayClient(config GrpcGatewayConfig, logger log.Logger, tracerPro
 	return client, fl.ToFunction(), nil
 }
 
-func newResourceSubscriber(config Config, logger log.Logger) (*subscriber.Subscriber, func(), error) {
+func newResourceSubscriber(config Config, fileWatcher *fsnotify.Watcher, logger log.Logger) (*subscriber.Subscriber, func(), error) {
 	var fl fn.FuncList
-	nats, err := natsClient.New(config.Clients.Eventbus.NATS, logger)
+	nats, err := natsClient.New(config.Clients.Eventbus.NATS, fileWatcher, logger)
 	if err != nil {
 		return nil, nil, fmt.Errorf("cannot create nats client: %w", err)
 	}
@@ -180,9 +181,9 @@ func newResourceSubscriber(config Config, logger log.Logger) (*subscriber.Subscr
 	return resourceSubscriber, fl.ToFunction(), nil
 }
 
-func newResourceAggregateClient(config ResourceAggregateConfig, subscriber *subscriber.Subscriber, logger log.Logger, tracerProvider trace.TracerProvider) (*raClient.Client, func(), error) {
+func newResourceAggregateClient(config ResourceAggregateConfig, subscriber *subscriber.Subscriber, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (*raClient.Client, func(), error) {
 	var fl fn.FuncList
-	conn, err := grpcClient.New(config.Connection, logger, tracerProvider)
+	conn, err := grpcClient.New(config.Connection, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		return nil, nil, fmt.Errorf("cannot connect to resource aggregate: %w", err)
 	}
@@ -195,9 +196,9 @@ func newResourceAggregateClient(config ResourceAggregateConfig, subscriber *subs
 	return client, fl.ToFunction(), nil
 }
 
-func newSubscriptionManager(ctx context.Context, cfg Config, gwClient pbGRPC.GrpcGatewayClient, emitEvent emitEventFunc, logger log.Logger, tracerProvider trace.TracerProvider) (*SubscriptionManager, func(), error) {
+func newSubscriptionManager(ctx context.Context, cfg Config, gwClient pbGRPC.GrpcGatewayClient, emitEvent emitEventFunc, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (*SubscriptionManager, func(), error) {
 	var fl fn.FuncList
-	certManager, err := cmClient.New(cfg.Clients.Storage.MongoDB.TLS, logger)
+	certManager, err := cmClient.New(cfg.Clients.Storage.MongoDB.TLS, fileWatcher, logger)
 	if err != nil {
 		return nil, nil, fmt.Errorf("cannot create cert manager: %w", err)
 	}
@@ -224,15 +225,15 @@ func newSubscriptionManager(ctx context.Context, cfg Config, gwClient pbGRPC.Grp
 }
 
 // New parses configuration and creates new Server with provided store and bus
-func New(ctx context.Context, config Config, logger log.Logger) (*Server, error) {
-	otelClient, err := otelClient.New(ctx, config.Clients.OpenTelemetryCollector.Config, serviceName, logger)
+func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logger log.Logger) (*Server, error) {
+	otelClient, err := otelClient.New(ctx, config.Clients.OpenTelemetryCollector.Config, serviceName, fileWatcher, logger)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create open telemetry collector client: %w", err)
 	}
 
 	tracerProvider := otelClient.GetTracerProvider()
 
-	listener, err := listener.New(config.APIs.HTTP.Connection, logger)
+	listener, err := listener.New(config.APIs.HTTP.Connection, fileWatcher, logger)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create http server: %w", err)
 	}
@@ -242,7 +243,7 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Server, error)
 		}
 	}
 
-	validator, err := validator.New(ctx, config.APIs.HTTP.Authorization, logger, tracerProvider)
+	validator, err := validator.New(ctx, config.APIs.HTTP.Authorization, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		closeListener()
 		return nil, fmt.Errorf("cannot create validator: %w", err)
@@ -250,28 +251,28 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Server, error)
 	listener.AddCloseFunc(validator.Close)
 	auth := kitNetHttp.NewInterceptorWithValidator(validator, authRules)
 
-	gwClient, closeGwClient, err := newGrpcGatewayClient(config.Clients.GrpcGateway, logger, tracerProvider)
+	gwClient, closeGwClient, err := newGrpcGatewayClient(config.Clients.GrpcGateway, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		closeListener()
 		return nil, fmt.Errorf("cannot create grpc client: %w", err)
 	}
 	listener.AddCloseFunc(closeGwClient)
 
-	subscriber, closeSubscriberFn, err := newResourceSubscriber(config, logger)
+	subscriber, closeSubscriberFn, err := newResourceSubscriber(config, fileWatcher, logger)
 	if err != nil {
 		closeListener()
 		return nil, fmt.Errorf("cannot create resource subscriber: %w", err)
 	}
 	listener.AddCloseFunc(closeSubscriberFn)
 
-	raClient, closeRaClient, err := newResourceAggregateClient(config.Clients.ResourceAggregate, subscriber, logger, tracerProvider)
+	raClient, closeRaClient, err := newResourceAggregateClient(config.Clients.ResourceAggregate, subscriber, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		closeListener()
 		return nil, fmt.Errorf("cannot create resource-aggregate client: %w", err)
 	}
 	listener.AddCloseFunc(closeRaClient)
 
-	emitEvent, closeEmitEventFn, err := createEmitEventFunc(config.Clients.Subscription.HTTP.TLS, config.Clients.Subscription.HTTP.EmitEventTimeout, logger)
+	emitEvent, closeEmitEventFn, err := createEmitEventFunc(config.Clients.Subscription.HTTP.TLS, config.Clients.Subscription.HTTP.EmitEventTimeout, fileWatcher, logger)
 	if err != nil {
 		closeListener()
 		return nil, fmt.Errorf("cannot create emit event function: %w", err)
@@ -279,7 +280,7 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Server, error)
 	listener.AddCloseFunc(closeEmitEventFn)
 
 	ctx, cancelSubMgrFunc := context.WithCancel(context.Background())
-	subMgr, closeSubMgrFn, err := newSubscriptionManager(ctx, config, gwClient, emitEvent, logger, tracerProvider)
+	subMgr, closeSubMgrFn, err := newSubscriptionManager(ctx, config, gwClient, emitEvent, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		cancelSubMgrFunc()
 		closeListener()

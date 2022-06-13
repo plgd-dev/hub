@@ -12,6 +12,7 @@ import (
 	router "github.com/gorilla/mux"
 	"github.com/plgd-dev/device/schema"
 	"github.com/plgd-dev/hub/v2/cloud2cloud-connector/events"
+	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/pkg/security/certManager/server"
 	"github.com/plgd-dev/hub/v2/test/config"
@@ -98,7 +99,10 @@ func NewEventsServer(t *testing.T, uri string) *EventsServer {
 	listenCfg := config.MakeListenerConfig("localhost:")
 	listenCfg.TLS.ClientCertificateRequired = false
 
-	certManager, err := server.New(listenCfg.TLS, logger)
+	fileWatcher, err := fsnotify.NewWatcher()
+	require.NoError(t, err)
+
+	certManager, err := server.New(listenCfg.TLS, fileWatcher, logger)
 	require.NoError(t, err)
 
 	listener, err := tls.Listen("tcp", listenCfg.Addr, certManager.GetTLSConfig())
@@ -109,6 +113,8 @@ func NewEventsServer(t *testing.T, uri string) *EventsServer {
 		listener: listener,
 		cleanUp: func() {
 			certManager.Close()
+			err = fileWatcher.Close()
+			require.NoError(t, err)
 		},
 	}
 }

@@ -5,6 +5,7 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	pkgMongo "github.com/plgd-dev/hub/v2/pkg/mongodb"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore/maintenance"
@@ -51,6 +52,13 @@ func (eh *mockRecordHandler) Handle(ctx context.Context, iter maintenance.Iter) 
 func TestMaintenance(t *testing.T) {
 	logger := log.NewLogger(log.MakeDefaultConfig())
 
+	fileWatcher, err := fsnotify.NewWatcher()
+	require.NoError(t, err)
+	defer func() {
+		err := fileWatcher.Close()
+		require.NoError(t, err)
+	}()
+
 	ctx := context.Background()
 
 	store, err := mongodb.New(
@@ -61,6 +69,7 @@ func TestMaintenance(t *testing.T) {
 				TLS: config.MakeTLSClientConfig(),
 			},
 		},
+		fileWatcher,
 		logger,
 		trace.NewNoopTracerProvider(),
 		mongodb.WithMarshaler(bson.Marshal),

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/pkg/security/certManager/client"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
@@ -31,8 +32,8 @@ func (c *Client) Close() {
 	}
 }
 
-func New(config Config, logger log.Logger, tracerProvider trace.TracerProvider) (*Client, error) {
-	certManager, err := client.New(config.TLS, logger)
+func New(config Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (*Client, error) {
+	certManager, err := client.New(config.TLS, fileWatcher, logger)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create cert manager %w", err)
 	}

@@ -8,6 +8,7 @@ import (
 	"github.com/plgd-dev/hub/v2/cloud2cloud-gateway/store"
 	"github.com/plgd-dev/hub/v2/cloud2cloud-gateway/store/mongodb"
 	"github.com/plgd-dev/hub/v2/cloud2cloud-gateway/test"
+	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/pkg/security/certManager/client"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
@@ -20,7 +21,10 @@ func newTestStore(t *testing.T) (*mongodb.Store, func()) {
 
 	logger := log.NewLogger(cfg.Log)
 
-	certManager, err := client.New(cfg.Clients.Storage.MongoDB.TLS, logger)
+	fileWatcher, err := fsnotify.NewWatcher()
+	require.NoError(t, err)
+
+	certManager, err := client.New(cfg.Clients.Storage.MongoDB.TLS, fileWatcher, logger)
 	require.NoError(t, err)
 
 	ctx := context.Background()
@@ -32,6 +36,8 @@ func newTestStore(t *testing.T) (*mongodb.Store, func()) {
 		require.NoError(t, err)
 		_ = s.Close(ctx)
 		certManager.Close()
+		err = fileWatcher.Close()
+		require.NoError(t, err)
 	}
 }
 

@@ -6,6 +6,7 @@ import (
 
 	"github.com/panjf2000/ants/v2"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
+	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"github.com/plgd-dev/hub/v2/pkg/net/grpc/server"
@@ -18,14 +19,14 @@ type Service struct {
 	*server.Server
 }
 
-func New(ctx context.Context, config Config, logger log.Logger) (*Service, error) {
-	otelClient, err := otelClient.New(ctx, config.Clients.OpenTelemetryCollector, "resource-directory", logger)
+func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logger log.Logger) (*Service, error) {
+	otelClient, err := otelClient.New(ctx, config.Clients.OpenTelemetryCollector, "resource-directory", fileWatcher, logger)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create open telemetry collector client: %w", err)
 	}
 	tracerProvider := otelClient.GetTracerProvider()
 
-	validator, err := validator.New(ctx, config.APIs.GRPC.Authorization.Config, logger, tracerProvider)
+	validator, err := validator.New(ctx, config.APIs.GRPC.Authorization.Config, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		otelClient.Close()
 		return nil, fmt.Errorf("cannot create validator: %w", err)
@@ -38,7 +39,7 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 		validator.Close()
 		return nil, fmt.Errorf("cannot create grpc server options: %w", err)
 	}
-	server, err := server.New(config.APIs.GRPC.Config, logger, opts...)
+	server, err := server.New(config.APIs.GRPC.Config, fileWatcher, logger, opts...)
 
 	if err != nil {
 		otelClient.Close()
@@ -55,7 +56,7 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 	}
 	server.AddCloseFunc(pool.Release)
 
-	if err := AddHandler(ctx, server, config, config.ExposedHubConfiguration, logger, tracerProvider, pool.Submit); err != nil {
+	if err := AddHandler(ctx, server, config, config.ExposedHubConfiguration, fileWatcher, logger, tracerProvider, pool.Submit); err != nil {
 		server.Close()
 		return nil, err
 	}

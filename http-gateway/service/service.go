@@ -9,6 +9,7 @@ import (
 	"github.com/plgd-dev/hub/v2/grpc-gateway/client"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	"github.com/plgd-dev/hub/v2/http-gateway/uri"
+	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	grpcClient "github.com/plgd-dev/hub/v2/pkg/net/grpc/client"
 	kitNetHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
@@ -28,20 +29,20 @@ type Server struct {
 const serviceName = "http-gateway"
 
 // New parses configuration and creates new Server with provided store and bus
-func New(ctx context.Context, config Config, logger log.Logger) (*Server, error) {
-	otelClient, err := otelClient.New(ctx, config.Clients.OpenTelemetryCollector.Config, serviceName, logger)
+func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logger log.Logger) (*Server, error) {
+	otelClient, err := otelClient.New(ctx, config.Clients.OpenTelemetryCollector.Config, serviceName, fileWatcher, logger)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create open telemetry collector client: %w", err)
 	}
 	tracerProvider := otelClient.GetTracerProvider()
 
-	validator, err := validator.New(ctx, config.APIs.HTTP.Authorization, logger, tracerProvider)
+	validator, err := validator.New(ctx, config.APIs.HTTP.Authorization, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		otelClient.Close()
 		return nil, fmt.Errorf("cannot create validator: %w", err)
 	}
 
-	listener, err := listener.New(config.APIs.HTTP.Connection, logger)
+	listener, err := listener.New(config.APIs.HTTP.Connection, fileWatcher, logger)
 	if err != nil {
 		otelClient.Close()
 		validator.Close()
@@ -50,7 +51,7 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Server, error)
 	listener.AddCloseFunc(otelClient.Close)
 	listener.AddCloseFunc(validator.Close)
 
-	grpcConn, err := grpcClient.New(config.Clients.GrpcGateway.Connection, logger, tracerProvider)
+	grpcConn, err := grpcClient.New(config.Clients.GrpcGateway.Connection, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		return nil, fmt.Errorf("cannot connect to resource directory: %w", err)
 	}

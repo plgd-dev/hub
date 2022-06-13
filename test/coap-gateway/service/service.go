@@ -17,6 +17,7 @@ import (
 	"github.com/plgd-dev/hub/v2/coap-gateway/service/message"
 	coapgwUri "github.com/plgd-dev/hub/v2/coap-gateway/uri"
 	"github.com/plgd-dev/hub/v2/pkg/fn"
+	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	certManagerServer "github.com/plgd-dev/hub/v2/pkg/security/certManager/server"
 	"github.com/plgd-dev/hub/v2/pkg/sync/task/queue"
@@ -36,7 +37,7 @@ type Service struct {
 	clients     []*Client
 }
 
-func newTCPListener(config COAPConfig, logger log.Logger) (tcp.Listener, func(), error) {
+func newTCPListener(config COAPConfig, fileWatcher *fsnotify.Watcher, logger log.Logger) (tcp.Listener, func(), error) {
 	if !config.TLS.Enabled {
 		listener, err := net.NewTCPListener("tcp", config.Addr)
 		if err != nil {
@@ -51,7 +52,7 @@ func newTCPListener(config COAPConfig, logger log.Logger) (tcp.Listener, func(),
 	}
 
 	var closeListener fn.FuncList
-	coapsTLS, err := certManagerServer.New(config.TLS.Config, logger)
+	coapsTLS, err := certManagerServer.New(config.TLS.Config, fileWatcher, logger)
 	if err != nil {
 		return nil, nil, fmt.Errorf("cannot create tls cert manager: %w", err)
 	}
@@ -70,14 +71,14 @@ func newTCPListener(config COAPConfig, logger log.Logger) (tcp.Listener, func(),
 }
 
 // New creates server.
-func New(ctx context.Context, config Config, logger log.Logger, makeHandler MakeServiceHandler) (*Service, error) {
+func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logger log.Logger, makeHandler MakeServiceHandler) (*Service, error) {
 	queue, err := queue.New(config.TaskQueue)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create job queue %w", err)
 	}
 
 	var closeFn fn.FuncList
-	listener, closeListener, err := newTCPListener(config.APIs.COAP, logger)
+	listener, closeListener, err := newTCPListener(config.APIs.COAP, fileWatcher, logger)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create listener: %w", err)
 	}

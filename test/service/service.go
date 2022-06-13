@@ -14,6 +14,7 @@ import (
 	isService "github.com/plgd-dev/hub/v2/identity-store/service"
 	isTest "github.com/plgd-dev/hub/v2/identity-store/test"
 	"github.com/plgd-dev/hub/v2/pkg/fn"
+	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	cmClient "github.com/plgd-dev/hub/v2/pkg/security/certManager/client"
 	raService "github.com/plgd-dev/hub/v2/resource-aggregate/service"
@@ -32,7 +33,13 @@ func ClearDB(ctx context.Context, t *testing.T) {
 	logCfg := log.MakeDefaultConfig()
 	logger := log.NewLogger(logCfg)
 	tlsConfig := config.MakeTLSClientConfig()
-	certManager, err := cmClient.New(tlsConfig, logger)
+	fileWatcher, err := fsnotify.NewWatcher()
+	require.NoError(t, err)
+	defer func() {
+		err = fileWatcher.Close()
+		require.NoError(t, err)
+	}()
+	certManager, err := cmClient.New(tlsConfig, fileWatcher, logger)
 	require.NoError(t, err)
 	defer certManager.Close()
 

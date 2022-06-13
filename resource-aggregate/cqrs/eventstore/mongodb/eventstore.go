@@ -10,6 +10,7 @@ import (
 
 	"github.com/plgd-dev/go-coap/v2/pkg/cache"
 	"github.com/plgd-dev/go-coap/v2/pkg/runner/periodic"
+	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	pkgMongo "github.com/plgd-dev/hub/v2/pkg/mongodb"
 	"github.com/plgd-dev/hub/v2/pkg/security/certManager/client"
@@ -103,13 +104,13 @@ func (s *EventStore) AddCloseFunc(f func()) {
 	s.closeFunc = append(s.closeFunc, f)
 }
 
-func New(ctx context.Context, config Config, logger log.Logger, tracerProvider trace.TracerProvider, opts ...Option) (*EventStore, error) {
+func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider, opts ...Option) (*EventStore, error) {
 	config.marshalerFunc = json.Marshal
 	config.unmarshalerFunc = json.Unmarshal
 	for _, o := range opts {
 		o.apply(&config)
 	}
-	certManager, err := client.New(config.Embedded.TLS, logger)
+	certManager, err := client.New(config.Embedded.TLS, fileWatcher, logger)
 	if err != nil {
 		return nil, fmt.Errorf("could not create cert manager: %w", err)
 	}

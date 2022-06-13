@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/plgd-dev/hub/v2/grpc-gateway/service"
+	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/test/config"
 	"github.com/stretchr/testify/require"
@@ -42,7 +43,10 @@ func SetUp(t *testing.T) (TearDown func()) {
 func New(t *testing.T, cfg service.Config) func() {
 	ctx := context.Background()
 	logger := log.NewLogger(cfg.Log)
-	s, err := service.New(ctx, cfg, logger)
+	fileWatcher, err := fsnotify.NewWatcher()
+	require.NoError(t, err)
+
+	s, err := service.New(ctx, cfg, fileWatcher, logger)
 	require.NoError(t, err)
 
 	var wg sync.WaitGroup
@@ -55,5 +59,7 @@ func New(t *testing.T, cfg service.Config) func() {
 	return func() {
 		s.Close()
 		wg.Wait()
+		err := fileWatcher.Close()
+		require.NoError(t, err)
 	}
 }

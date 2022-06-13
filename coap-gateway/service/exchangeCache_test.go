@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/plgd-dev/hub/v2/coap-gateway/service"
+	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/pkg/security/oauth2"
 	"github.com/plgd-dev/hub/v2/test/config"
@@ -17,12 +18,19 @@ import (
 func TestExchangeCacheExecute(t *testing.T) {
 	logger := log.NewLogger(log.MakeDefaultConfig())
 
+	fileWatcher, err := fsnotify.NewWatcher()
+	require.NoError(t, err)
+	defer func() {
+		err := fileWatcher.Close()
+		require.NoError(t, err)
+	}()
+
 	oauthShutdown := oauthTest.SetUp(t)
 	defer oauthShutdown()
 
 	cfg := config.MakeDeviceAuthorization()
 	cfg.ClientID = oauthTest.ClientTestRestrictedAuth
-	provider, err := oauth2.NewPlgdProvider(context.Background(), cfg, logger, trace.NewNoopTracerProvider(), "", "")
+	provider, err := oauth2.NewPlgdProvider(context.Background(), cfg, fileWatcher, logger, trace.NewNoopTracerProvider(), "", "")
 	require.NoError(t, err)
 
 	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)

@@ -6,6 +6,7 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/test/coap-gateway/service"
 	"github.com/plgd-dev/hub/v2/test/config"
@@ -40,7 +41,10 @@ func New(t *testing.T, cfg service.Config, makeHandler service.MakeServiceHandle
 	ctx := context.Background()
 	logger := log.NewLogger(cfg.Log.Config)
 
-	s, err := service.New(ctx, cfg, logger, makeHandler)
+	fileWatcher, err := fsnotify.NewWatcher()
+	require.NoError(t, err)
+
+	s, err := service.New(ctx, cfg, fileWatcher, logger, makeHandler)
 	require.NoError(t, err)
 
 	var wg sync.WaitGroup
@@ -58,5 +62,7 @@ func New(t *testing.T, cfg service.Config, makeHandler service.MakeServiceHandle
 		for _, c := range s.GetClients() {
 			verifyOnClose(c.GetServiceHandler())
 		}
+		err = fileWatcher.Close()
+		require.NoError(t, err)
 	}
 }

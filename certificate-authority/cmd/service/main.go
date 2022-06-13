@@ -5,6 +5,7 @@ import (
 
 	"github.com/plgd-dev/hub/v2/certificate-authority/service"
 	"github.com/plgd-dev/hub/v2/pkg/config"
+	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 )
 
@@ -17,7 +18,16 @@ func main() {
 	logger := log.NewLogger(cfg.Log)
 	log.Set(logger)
 	log.Infof("config: %v", cfg.String())
-	s, err := service.New(context.Background(), cfg, logger)
+
+	fileWatcher, err := fsnotify.NewWatcher()
+	if err != nil {
+		log.Fatalf("cannot create file fileWatcher: %v", err)
+	}
+	defer func() {
+		_ = fileWatcher.Close()
+	}()
+
+	s, err := service.New(context.Background(), cfg, fileWatcher, logger)
 	if err != nil {
 		log.Fatalf("cannot create service: %v", err)
 	}

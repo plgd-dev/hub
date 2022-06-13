@@ -10,6 +10,7 @@ import (
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	"github.com/plgd-dev/hub/v2/http-gateway/service"
 	"github.com/plgd-dev/hub/v2/http-gateway/uri"
+	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/pkg/net/http"
 	"github.com/plgd-dev/hub/v2/test/config"
@@ -73,7 +74,11 @@ func SetUp(t *testing.T) (TearDown func()) {
 func New(t *testing.T, cfg service.Config) func() {
 	ctx := context.Background()
 	logger := log.NewLogger(cfg.Log)
-	s, err := service.New(ctx, cfg, logger)
+
+	fileWatcher, err := fsnotify.NewWatcher()
+	require.NoError(t, err)
+
+	s, err := service.New(ctx, cfg, fileWatcher, logger)
 	require.NoError(t, err)
 
 	var wg sync.WaitGroup
@@ -85,6 +90,8 @@ func New(t *testing.T, cfg service.Config) func() {
 	return func() {
 		_ = s.Shutdown()
 		wg.Wait()
+		err = fileWatcher.Close()
+		require.NoError(t, err)
 	}
 }
 

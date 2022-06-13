@@ -7,6 +7,7 @@ import (
 	"github.com/plgd-dev/device/schema/platform"
 	pbIS "github.com/plgd-dev/hub/v2/identity-store/pb"
 	idService "github.com/plgd-dev/hub/v2/identity-store/test"
+	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"github.com/plgd-dev/hub/v2/pkg/net/grpc/client"
@@ -37,14 +38,21 @@ func TestPublishUnpublish(t *testing.T) {
 
 	ctx := kitNetGrpc.CtxWithToken(context.Background(), oauthTest.GetDefaultAccessToken(t))
 
-	idConn, err := client.New(testCfg.MakeGrpcClientConfig(config.Clients.IdentityStore.Connection.Addr), log.Get(), trace.NewNoopTracerProvider())
+	fileWatcher, err := fsnotify.NewWatcher()
+	require.NoError(t, err)
+	defer func() {
+		err := fileWatcher.Close()
+		require.NoError(t, err)
+	}()
+
+	idConn, err := client.New(testCfg.MakeGrpcClientConfig(config.Clients.IdentityStore.Connection.Addr), fileWatcher, log.Get(), trace.NewNoopTracerProvider())
 	require.NoError(t, err)
 	defer func() {
 		_ = idConn.Close()
 	}()
 	idClient := pbIS.NewIdentityStoreClient(idConn.GRPC())
 
-	raConn, err := client.New(testCfg.MakeGrpcClientConfig(config.APIs.GRPC.Addr), log.Get(), trace.NewNoopTracerProvider())
+	raConn, err := client.New(testCfg.MakeGrpcClientConfig(config.APIs.GRPC.Addr), fileWatcher, log.Get(), trace.NewNoopTracerProvider())
 	require.NoError(t, err)
 	defer func() {
 		_ = raConn.Close()
