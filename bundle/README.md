@@ -46,6 +46,11 @@ Image can be configured via environment variables as argument `-e ENV=VALUE` of 
 | `IDENTITY_STORE_PORT` | uint16 | secure grpc-tcp listen port for localhost | `"9081"` |
 | `MONGO_PORT` | uint16 | mongo listen port for localhost | `"10000"` |
 | `NATS_PORT` | uint16 | nats listen port for localhost | `"10001"` |
+| `OPEN_TELEMETRY_EXPORTER_ENABLED` | bool | Enable OTLP gRPC exporter | `false` |
+| `OPEN_TELEMETRY_EXPORTER_ADDRESS` | string | The gRPC collector to which the exporter is going to send data | `"localhost:4317"` |
+| `OPEN_TELEMETRY_EXPORTER_CERT_FILE` | string | File path to certificate in PEM format | `"/certs/otel/cert.crt"` |
+| `OPEN_TELEMETRY_EXPORTER_KEY_FILE` | string | File path to private key in PEM format | `"/certs/otel/cert.key"` |
+| `OPEN_TELEMETRY_EXPORTER_CA_POOL` | string | File path to the root certificate in PEM format which might contain multiple certificates in a single file | `"/certs/otel/rootca.crt"` |
 
 ### Run
 
@@ -181,3 +186,46 @@ go build
 ### HTTP access
 
 [REST API](https://petstore.swagger.io/?url=https://raw.githubusercontent.com/plgd-dev/hub/main/http-gateway/swagger.yaml)
+
+### Open telemetry exporter
+
+The first step is to create the files in directory *certs* for the exporter:
+
+ - `cert.crt` - certificate in PEM format for exporter
+ - `cert.key` - private key in PEM format for exporter
+ - `rootca.crt` - root certificate in PEM format used to sign collector certificate
+
+And a configuration of the open telemetry collector must include the following parameters:
+
+```yaml
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+        tls:
+          cert_file: cert.crt # signed by rootca.crt which is provided to exporter stored in certs directory
+          key_file: cert.key
+          # Set if you want to verify the client certificate
+          # client_ca_file: rootca.crt # the root ca certificate which sign exporter certificates stored in the directory certs
+...
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      ...
+```
+
+And then run bundle with the environment variables and mount volume:
+
+```bash
+mkdir -p `pwd`/data
+docker run -d --network=host -v `pwd`/data:/data --name=cloud \
+  -v `pwd`/certs:/certs/otel \
+  -e LOG_DEBUG=true \
+  -e OPEN_TELEMETRY_EXPORTER_ENABLED=true \
+  -e OPEN_TELEMETRY_EXPORTER_ADDRESS=<OTEL_COLLECTOR_ADDRESS>:4317 \
+  -t plgd/bundle:vnext
+```
+
+With debug log messages, you can see the open telemetry *traceId* associated with the request.
