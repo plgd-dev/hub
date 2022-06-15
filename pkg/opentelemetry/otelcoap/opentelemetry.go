@@ -6,7 +6,9 @@ import (
 	"github.com/plgd-dev/go-coap/v2/message/codes"
 	tcpMessage "github.com/plgd-dev/go-coap/v2/tcp/message"
 	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
+	pkgMessage "github.com/plgd-dev/hub/v2/coap-gateway/service/message"
 	"github.com/plgd-dev/hub/v2/pkg/opentelemetry"
+	"github.com/plgd-dev/kit/v2/codec/json"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel/attribute"
 	semconv "go.opentelemetry.io/otel/semconv/v1.10.0"
@@ -19,6 +21,7 @@ var (
 	COAPStatusCodeKey = attribute.Key("coap.status_code")
 	COAPMethodKey     = attribute.Key("coap.method")
 	COAPPathKey       = attribute.Key("coap.path")
+	COAPRequest       = attribute.Key("coap.request")
 )
 
 type MessageType attribute.KeyValue
@@ -43,6 +46,23 @@ func (m MessageType) Event(ctx context.Context, message *pool.Message) {
 		attribute.KeyValue(m),
 		semconv.MessageUncompressedSizeKey.Int(size),
 	))
+}
+
+func SetRequest(ctx context.Context, message *pool.Message) {
+	span := trace.SpanFromContext(ctx)
+	msg := pkgMessage.ToJson(message, true, false)
+	if msg.Body != nil {
+		var request = ""
+		if body, ok := msg.Body.(string); ok {
+			request = body
+		} else {
+			v, err := json.Encode(msg.Body)
+			if err == nil {
+				request = string(v)
+			}
+		}
+		span.SetAttributes(COAPRequest.String(request))
+	}
 }
 
 func DefaultTransportFormatter(path string) string {
