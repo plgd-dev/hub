@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/plgd-dev/hub/v2/pkg/file"
+	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/pkg/net/http/client"
 	"github.com/plgd-dev/hub/v2/pkg/security/oauth2/oauth"
@@ -20,7 +21,7 @@ type provider interface {
 }
 
 // NewPlgdProvider creates OAuth client
-func NewPlgdProvider(ctx context.Context, config Config, logger log.Logger, tracerProvider trace.TracerProvider, ownerClaim, deviceIDClaim string) (*PlgdProvider, error) {
+func NewPlgdProvider(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider, ownerClaim, deviceIDClaim string) (*PlgdProvider, error) {
 	config.ResponseMode = "query"
 	config.AccessType = "offline"
 	config.ResponseType = "code"
@@ -31,7 +32,7 @@ func NewPlgdProvider(ctx context.Context, config Config, logger log.Logger, trac
 	}
 	config.ClientSecret = string(clientSecret)
 
-	httpClient, err := client.New(config.HTTP, logger, tracerProvider)
+	httpClient, err := client.New(config.HTTP, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		return nil, err
 	}

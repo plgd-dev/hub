@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	pkgMongo "github.com/plgd-dev/hub/v2/pkg/mongodb"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore/mongodb"
@@ -15,7 +16,7 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-func NewTestEventStore(ctx context.Context, logger log.Logger) (*mongodb.EventStore, error) {
+func NewTestEventStore(ctx context.Context, fileWatcher *fsnotify.Watcher, logger log.Logger) (*mongodb.EventStore, error) {
 	store, err := mongodb.New(
 		ctx,
 		mongodb.Config{
@@ -24,6 +25,7 @@ func NewTestEventStore(ctx context.Context, logger log.Logger) (*mongodb.EventSt
 				TLS: config.MakeTLSClientConfig(),
 			},
 		},
+		fileWatcher,
 		logger,
 		trace.NewNoopTracerProvider(),
 		mongodb.WithMarshaler(bson.Marshal),
@@ -34,9 +36,15 @@ func NewTestEventStore(ctx context.Context, logger log.Logger) (*mongodb.EventSt
 
 func TestEventStore(t *testing.T) {
 	logger := log.NewLogger(log.MakeDefaultConfig())
+	fileWatcher, err := fsnotify.NewWatcher()
+	require.NoError(t, err)
+	defer func() {
+		err := fileWatcher.Close()
+		require.NoError(t, err)
+	}()
 
 	ctx := context.Background()
-	store, err := NewTestEventStore(ctx, logger)
+	store, err := NewTestEventStore(ctx, fileWatcher, logger)
 	assert.NoError(t, err)
 	assert.NotNil(t, store)
 	defer func() {

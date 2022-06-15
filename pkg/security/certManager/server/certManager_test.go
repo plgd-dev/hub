@@ -5,6 +5,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/pkg/security/certManager/server"
 	"github.com/stretchr/testify/require"
@@ -71,7 +72,9 @@ func TestNew(t *testing.T) {
 
 	logger := log.NewLogger(log.MakeDefaultConfig())
 	//cert manager
-	mng, err := server.New(config, logger)
+	fileWatcher, err := fsnotify.NewWatcher()
+	require.NoError(t, err)
+	mng, err := server.New(config, fileWatcher, logger)
 	require.NoError(t, err)
 
 	tlsConfig := mng.GetTLSConfig()

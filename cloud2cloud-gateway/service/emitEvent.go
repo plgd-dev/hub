@@ -11,6 +11,7 @@ import (
 
 	"github.com/plgd-dev/hub/v2/cloud2cloud-connector/events"
 	"github.com/plgd-dev/hub/v2/cloud2cloud-gateway/store"
+	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	cmClient "github.com/plgd-dev/hub/v2/pkg/security/certManager/client"
 )
@@ -86,8 +87,8 @@ func makeEmitEventRequest(ctx context.Context, eventType events.EventType, s sto
 	return req, nil
 }
 
-func createEmitEventFunc(cfg cmClient.Config, timeout time.Duration, logger log.Logger) (emitEventFunc, func(), error) {
-	certManager, err := cmClient.New(cfg, logger)
+func createEmitEventFunc(cfg cmClient.Config, timeout time.Duration, fileWatcher *fsnotify.Watcher, logger log.Logger) (emitEventFunc, func(), error) {
+	certManager, err := cmClient.New(cfg, fileWatcher, logger)
 	if err != nil {
 		return nil, nil, fmt.Errorf("cannot create cert manager: %w", err)
 	}

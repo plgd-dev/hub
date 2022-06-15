@@ -29,6 +29,7 @@ import (
 	idClient "github.com/plgd-dev/hub/v2/identity-store/client"
 	pbIS "github.com/plgd-dev/hub/v2/identity-store/pb"
 	"github.com/plgd-dev/hub/v2/pkg/fn"
+	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	grpcClient "github.com/plgd-dev/hub/v2/pkg/net/grpc/client"
@@ -115,8 +116,8 @@ func newExpirationClientCache(ctx context.Context, interval time.Duration) *cach
 	return expirationClientCache
 }
 
-func newResourceAggregateClient(config ResourceAggregateConfig, resourceSubscriber eventbus.Subscriber, logger log.Logger, tracerProvider trace.TracerProvider) (*raClient.Client, func(), error) {
-	raConn, err := grpcClient.New(config.Connection, logger, tracerProvider)
+func newResourceAggregateClient(config ResourceAggregateConfig, resourceSubscriber eventbus.Subscriber, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (*raClient.Client, func(), error) {
+	raConn, err := grpcClient.New(config.Connection, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		return nil, nil, fmt.Errorf("cannot create connection to resource-aggregate: %w", err)
 	}
@@ -132,8 +133,8 @@ func newResourceAggregateClient(config ResourceAggregateConfig, resourceSubscrib
 	return raClient, closeRaConn, nil
 }
 
-func newIdentityStoreClient(config IdentityStoreConfig, logger log.Logger, tracerProvider trace.TracerProvider) (pbIS.IdentityStoreClient, func(), error) {
-	isConn, err := grpcClient.New(config.Connection, logger, tracerProvider)
+func newIdentityStoreClient(config IdentityStoreConfig, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (pbIS.IdentityStoreClient, func(), error) {
+	isConn, err := grpcClient.New(config.Connection, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		return nil, nil, fmt.Errorf("cannot create connection to identity-store: %w", err)
 	}
@@ -149,8 +150,8 @@ func newIdentityStoreClient(config IdentityStoreConfig, logger log.Logger, trace
 	return isClient, closeIsConn, nil
 }
 
-func newResourceDirectoryClient(config GrpcServerConfig, logger log.Logger, tracerProvider trace.TracerProvider) (pbGRPC.GrpcGatewayClient, func(), error) {
-	rdConn, err := grpcClient.New(config.Connection, logger, tracerProvider)
+func newResourceDirectoryClient(config GrpcServerConfig, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (pbGRPC.GrpcGatewayClient, func(), error) {
+	rdConn, err := grpcClient.New(config.Connection, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		return nil, nil, fmt.Errorf("cannot create connection to resource-directory: %w", err)
 	}
@@ -166,7 +167,7 @@ func newResourceDirectoryClient(config GrpcServerConfig, logger log.Logger, trac
 	return rdClient, closeRdConn, nil
 }
 
-func newTCPListener(config COAPConfig, logger log.Logger) (tcp.Listener, func(), error) {
+func newTCPListener(config COAPConfig, fileWatcher *fsnotify.Watcher, logger log.Logger) (tcp.Listener, func(), error) {
 	if !config.TLS.Enabled {
 		listener, err := net.NewTCPListener("tcp", config.Addr)
 		if err != nil {
@@ -181,7 +182,7 @@ func newTCPListener(config COAPConfig, logger log.Logger) (tcp.Listener, func(),
 	}
 
 	var closeListener fn.FuncList
-	coapsTLS, err := certManagerServer.New(config.TLS.Embedded, logger)
+	coapsTLS, err := certManagerServer.New(config.TLS.Embedded, fileWatcher, logger)
 	if err != nil {
 		return nil, nil, fmt.Errorf("cannot create tls cert manager: %w", err)
 	}
@@ -238,12 +239,12 @@ func getOnInactivityFn(logger log.Logger) func(cc inactivity.ClientConn) {
 	}
 }
 
-func newProviders(ctx context.Context, config AuthorizationConfig, logger log.Logger, tracerProvider trace.TracerProvider) (map[string]*oauth2.PlgdProvider, *oauth2.PlgdProvider, func(), error) {
+func newProviders(ctx context.Context, config AuthorizationConfig, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (map[string]*oauth2.PlgdProvider, *oauth2.PlgdProvider, func(), error) {
 	var closeProviders fn.FuncList
 	var firstProvider *oauth2.PlgdProvider
 	providers := make(map[string]*oauth2.PlgdProvider)
 	for _, p := range config.Providers {
-		provider, err := oauth2.NewPlgdProvider(ctx, p.Config, logger, tracerProvider, config.OwnerClaim, config.DeviceIDClaim)
+		provider, err := oauth2.NewPlgdProvider(ctx, p.Config, fileWatcher, logger, tracerProvider, config.OwnerClaim, config.DeviceIDClaim)
 		if err != nil {
 			closeProviders.Execute()
 			return nil, nil, nil, fmt.Errorf("cannot create device provider: %w", err)
@@ -258,8 +259,8 @@ func newProviders(ctx context.Context, config AuthorizationConfig, logger log.Lo
 }
 
 // New creates server.
-func New(ctx context.Context, config Config, logger log.Logger) (*Service, error) {
-	otelClient, err := otelClient.New(ctx, config.Clients.OpenTelemetryCollector, "coap-gateway", logger)
+func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logger log.Logger) (*Service, error) {
+	otelClient, err := otelClient.New(ctx, config.Clients.OpenTelemetryCollector, "coap-gateway", fileWatcher, logger)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create open telemetry collector client: %w", err)
 	}
@@ -272,7 +273,7 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 		return nil, fmt.Errorf("cannot create job queue %w", err)
 	}
 
-	nats, err := natsClient.New(config.Clients.Eventbus.NATS, logger)
+	nats, err := natsClient.New(config.Clients.Eventbus.NATS, fileWatcher, logger)
 	if err != nil {
 		otelClient.Close()
 		queue.Release()
@@ -292,28 +293,28 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 	}
 	nats.AddCloseFunc(resourceSubscriber.Close)
 
-	raClient, closeRaClient, err := newResourceAggregateClient(config.Clients.ResourceAggregate, resourceSubscriber, logger, tracerProvider)
+	raClient, closeRaClient, err := newResourceAggregateClient(config.Clients.ResourceAggregate, resourceSubscriber, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		nats.Close()
 		return nil, fmt.Errorf("cannot create resource-aggregate client: %w", err)
 	}
 	nats.AddCloseFunc(closeRaClient)
 
-	isClient, closeIsClient, err := newIdentityStoreClient(config.Clients.IdentityStore, logger, tracerProvider)
+	isClient, closeIsClient, err := newIdentityStoreClient(config.Clients.IdentityStore, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		nats.Close()
 		return nil, fmt.Errorf("cannot create identity-store client: %w", err)
 	}
 	nats.AddCloseFunc(closeIsClient)
 
-	rdClient, closeRdClient, err := newResourceDirectoryClient(config.Clients.ResourceDirectory, logger, tracerProvider)
+	rdClient, closeRdClient, err := newResourceDirectoryClient(config.Clients.ResourceDirectory, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		nats.Close()
 		return nil, fmt.Errorf("cannot create resource-directory client: %w", err)
 	}
 	nats.AddCloseFunc(closeRdClient)
 
-	listener, closeListener, err := newTCPListener(config.APIs.COAP, logger)
+	listener, closeListener, err := newTCPListener(config.APIs.COAP, fileWatcher, logger)
 	if err != nil {
 		nats.Close()
 		return nil, fmt.Errorf("cannot create listener: %w", err)
@@ -329,7 +330,7 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 		}
 	}
 
-	providers, firstProvider, closeProviders, err := newProviders(ctx, config.APIs.COAP.Authorization, logger, tracerProvider)
+	providers, firstProvider, closeProviders, err := newProviders(ctx, config.APIs.COAP.Authorization, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		nats.Close()
 		return nil, fmt.Errorf("cannot create device providers error: %w", err)

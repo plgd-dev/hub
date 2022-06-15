@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"fmt"
 
+	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/pkg/security/certManager/general"
 )
@@ -45,14 +46,14 @@ func (c *CertManager) Close() {
 }
 
 // New creates a new certificate manager which watches for certs in a filesystem
-func New(config Config, logger log.Logger) (*CertManager, error) {
+func New(config Config, fileWatcher *fsnotify.Watcher, logger log.Logger) (*CertManager, error) {
 	c, err := general.New(general.Config{
 		CAPool:                    config.CAPool,
 		KeyFile:                   config.KeyFile,
 		CertFile:                  config.CertFile,
 		ClientCertificateRequired: false,
 		UseSystemCAPool:           config.UseSystemCAPool,
-	}, logger)
+	}, fileWatcher, logger)
 	if err != nil {
 		return nil, err
 	}

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	kitNetHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
 	"github.com/plgd-dev/hub/v2/pkg/net/listener"
@@ -22,14 +23,14 @@ type Service struct {
 }
 
 // New parses configuration and creates new Server with provided store and bus
-func New(ctx context.Context, config Config, logger log.Logger) (*Service, error) {
-	otelClient, err := otelClient.New(ctx, config.Clients.OpenTelemetryCollector.Config, serviceName, logger)
+func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logger log.Logger) (*Service, error) {
+	otelClient, err := otelClient.New(ctx, config.Clients.OpenTelemetryCollector.Config, serviceName, fileWatcher, logger)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create open telemetry collector client: %w", err)
 	}
 	tracerProvider := otelClient.GetTracerProvider()
 
-	listener, err := listener.New(config.APIs.HTTP, logger)
+	listener, err := listener.New(config.APIs.HTTP, fileWatcher, logger)
 	if err != nil {
 		otelClient.Close()
 		return nil, fmt.Errorf("cannot create http server: %w", err)

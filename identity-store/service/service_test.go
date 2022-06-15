@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/plgd-dev/hub/v2/identity-store/persistence"
+	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/test"
 	"github.com/plgd-dev/hub/v2/test/config"
@@ -49,10 +50,14 @@ func newTestService(t *testing.T) (*Server, func()) {
 	cfg := makeConfig(t)
 
 	logger := log.NewLogger(cfg.Log)
-	naClient, publisher, err := test.NewClientAndPublisher(cfg.Clients.Eventbus.NATS, logger)
+
+	fileWatcher, err := fsnotify.NewWatcher()
 	require.NoError(t, err)
 
-	s, err := NewServer(context.Background(), cfg, logger, trace.NewNoopTracerProvider(), publisher)
+	naClient, publisher, err := test.NewClientAndPublisher(cfg.Clients.Eventbus.NATS, fileWatcher, logger)
+	require.NoError(t, err)
+
+	s, err := NewServer(context.Background(), cfg, fileWatcher, logger, trace.NewNoopTracerProvider(), publisher)
 	require.NoError(t, err)
 	var wg sync.WaitGroup
 	wg.Add(1)
@@ -65,6 +70,8 @@ func newTestService(t *testing.T) (*Server, func()) {
 		publisher.Close()
 		naClient.Close()
 		wg.Wait()
+		err := fileWatcher.Close()
+		require.NoError(t, err)
 	}
 }
 

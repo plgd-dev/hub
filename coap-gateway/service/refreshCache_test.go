@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/plgd-dev/hub/v2/coap-gateway/service"
+	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/pkg/security/oauth2"
 	"github.com/plgd-dev/hub/v2/pkg/sync/task/queue"
@@ -15,10 +16,10 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-func getProvider(t *testing.T, logger log.Logger) *oauth2.PlgdProvider {
+func getProvider(t *testing.T, fileWatcher *fsnotify.Watcher, logger log.Logger) *oauth2.PlgdProvider {
 	cfg := config.MakeDeviceAuthorization()
 	cfg.ClientID = oauthTest.ClientTestRestrictedAuth
-	provider, err := oauth2.NewPlgdProvider(context.Background(), cfg, logger, trace.NewNoopTracerProvider(), "", "")
+	provider, err := oauth2.NewPlgdProvider(context.Background(), cfg, fileWatcher, logger, trace.NewNoopTracerProvider(), "", "")
 	require.NoError(t, err)
 	return provider
 }
@@ -29,7 +30,14 @@ func TestRefreshCacheExecute(t *testing.T) {
 	oauthShutdown := oauthTest.SetUp(t)
 	defer oauthShutdown()
 
-	provider1 := getProvider(t, logger)
+	fileWatcher, err := fsnotify.NewWatcher()
+	require.NoError(t, err)
+	defer func() {
+		err := fileWatcher.Close()
+		require.NoError(t, err)
+	}()
+
+	provider1 := getProvider(t, fileWatcher, logger)
 	defer provider1.Close()
 	code := oauthTest.GetAuthorizationCode(t, config.OAUTH_SERVER_HOST, oauthTest.ClientTestRestrictedAuth, "", "")
 	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
@@ -49,9 +57,9 @@ func TestRefreshCacheExecute(t *testing.T) {
 	require.NotEmpty(t, token2.RefreshToken)
 	require.NotEqual(t, token1.RefreshToken, token2.RefreshToken)
 
-	provider2 := getProvider(t, logger)
+	provider2 := getProvider(t, fileWatcher, logger)
 	defer provider2.Close()
-	provider3 := getProvider(t, logger)
+	provider3 := getProvider(t, fileWatcher, logger)
 	defer provider3.Close()
 	providers := map[string]*oauth2.PlgdProvider{
 		"1": provider1,

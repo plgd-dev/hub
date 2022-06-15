@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/golang-jwt/jwt/v4"
+	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/pkg/net/http/client"
 	jwtValidator "github.com/plgd-dev/hub/v2/pkg/security/jwt"
@@ -32,8 +33,8 @@ func (v *Validator) Close() {
 	v.http.Close()
 }
 
-func New(ctx context.Context, config Config, logger log.Logger, tracerProvider trace.TracerProvider) (*Validator, error) {
-	httpClient, err := client.New(config.HTTP, logger, tracerProvider)
+func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (*Validator, error) {
+	httpClient, err := client.New(config.HTTP, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create cert manager: %w", err)
 	}

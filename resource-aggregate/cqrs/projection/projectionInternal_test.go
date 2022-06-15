@@ -9,6 +9,7 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/google/uuid"
 	"github.com/panjf2000/ants/v2"
+	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
@@ -51,7 +52,14 @@ func TestProjection(t *testing.T) {
 	topics := []string{"test_projection_topic0_" + uuid.Must(uuid.NewRandom()).String(), "test_projection_topic1_" + uuid.Must(uuid.NewRandom()).String()}
 	logger := log.NewLogger(log.MakeDefaultConfig())
 
-	naPubClient, publisher, err := natsTest.NewClientAndPublisher(config.MakePublisherConfig(), logger, publisher.WithMarshaler(utils.Marshal))
+	fileWatcher, err := fsnotify.NewWatcher()
+	require.NoError(t, err)
+	defer func() {
+		err := fileWatcher.Close()
+		require.NoError(t, err)
+	}()
+
+	naPubClient, publisher, err := natsTest.NewClientAndPublisher(config.MakePublisherConfig(), fileWatcher, logger, publisher.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	assert.NotNil(t, publisher)
 	defer func() {
@@ -63,7 +71,7 @@ func TestProjection(t *testing.T) {
 	require.NoError(t, err)
 	defer pool.Release()
 
-	naSubClient, subscriber, err := natsTest.NewClientAndSubscriber(config.MakeSubscriberConfig(),
+	naSubClient, subscriber, err := natsTest.NewClientAndSubscriber(config.MakeSubscriberConfig(), fileWatcher,
 		logger,
 		subscriber.WithGoPool(pool.Submit),
 		subscriber.WithUnmarshaler(utils.Unmarshal),
@@ -83,6 +91,7 @@ func TestProjection(t *testing.T) {
 	store, err := mongodb.New(
 		ctx,
 		config.MakeEventsStoreMongoDBConfig(),
+		fileWatcher,
 		logger,
 		trace.NewNoopTracerProvider(),
 	)

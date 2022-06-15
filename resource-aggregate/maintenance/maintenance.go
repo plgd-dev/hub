@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/jessevdk/go-flags"
+	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore/maintenance"
@@ -162,8 +163,12 @@ func PerformMaintenance() error {
 		os.Exit(2)
 	}
 	log.Info(config.String())
-
-	eventStore, err := mongodb.New(ctx, config.Mongo, nil, trace.NewNoopTracerProvider(), mongodb.WithUnmarshaler(unmarshalPlain))
+	fileWatcher, err := fsnotify.NewWatcher()
+	if err != nil {
+		log.Error(err)
+		os.Exit(2)
+	}
+	eventStore, err := mongodb.New(ctx, config.Mongo, fileWatcher, log.Get(), trace.NewNoopTracerProvider(), mongodb.WithUnmarshaler(unmarshalPlain))
 	if err != nil {
 		return err
 	}

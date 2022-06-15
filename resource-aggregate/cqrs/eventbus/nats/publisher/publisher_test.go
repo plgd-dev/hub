@@ -10,6 +10,7 @@ import (
 
 	"github.com/google/uuid"
 	nats "github.com/nats-io/nats.go"
+	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/client"
@@ -28,6 +29,12 @@ func TestPublisher(t *testing.T) {
 	waitForSubscription := time.Millisecond * 100
 
 	logger := log.NewLogger(log.MakeDefaultConfig())
+	fileWatcher, err := fsnotify.NewWatcher()
+	require.NoError(t, err)
+	defer func() {
+		err := fileWatcher.Close()
+		require.NoError(t, err)
+	}()
 
 	naPubClient, publisher, err := test.NewClientAndPublisher(client.ConfigPublisher{
 		Config: client.Config{
@@ -35,7 +42,7 @@ func TestPublisher(t *testing.T) {
 			TLS:            config.MakeTLSClientConfig(),
 			FlusherTimeout: time.Second * 30,
 		},
-	}, logger, publisher.WithMarshaler(json.Marshal))
+	}, fileWatcher, logger, publisher.WithMarshaler(json.Marshal))
 	assert.NoError(t, err)
 	assert.NotNil(t, publisher)
 	defer func() {
@@ -43,7 +50,7 @@ func TestPublisher(t *testing.T) {
 		naPubClient.Close()
 	}()
 
-	naSubClient, subscriber, err := test.NewClientAndSubscriber(config.MakeSubscriberConfig(),
+	naSubClient, subscriber, err := test.NewClientAndSubscriber(config.MakeSubscriberConfig(), fileWatcher,
 		logger,
 		subscriber.WithGoPool(func(f func()) error { go f(); return nil }),
 		subscriber.WithUnmarshaler(json.Unmarshal))
@@ -64,6 +71,12 @@ func TestPublisherJetStream(t *testing.T) {
 	waitForSubscription := time.Millisecond * 100
 
 	logger := log.NewLogger(log.MakeDefaultConfig())
+	fileWatcher, err := fsnotify.NewWatcher()
+	require.NoError(t, err)
+	defer func() {
+		err := fileWatcher.Close()
+		require.NoError(t, err)
+	}()
 
 	cfg := config.MakeTLSClientConfig()
 	conn, err := nats.Connect("nats://localhost:4222", nats.ClientCert(cfg.CertFile, cfg.KeyFile), nats.RootCAs(cfg.CAPool))
@@ -86,7 +99,7 @@ func TestPublisherJetStream(t *testing.T) {
 			FlusherTimeout: time.Second * 30,
 		},
 		JetStream: true,
-	}, logger, publisher.WithMarshaler(json.Marshal))
+	}, fileWatcher, logger, publisher.WithMarshaler(json.Marshal))
 	require.NoError(t, err)
 	assert.NotNil(t, publisher)
 	defer func() {
@@ -94,7 +107,7 @@ func TestPublisherJetStream(t *testing.T) {
 		naPubClient.Close()
 	}()
 
-	naSubClient, subscriber, err := test.NewClientAndSubscriber(config.MakeSubscriberConfig(),
+	naSubClient, subscriber, err := test.NewClientAndSubscriber(config.MakeSubscriberConfig(), fileWatcher,
 		logger,
 		subscriber.WithGoPool(func(f func()) error { go f(); return nil }),
 		subscriber.WithUnmarshaler(json.Unmarshal))

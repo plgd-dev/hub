@@ -19,6 +19,7 @@ import (
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	grpcgwService "github.com/plgd-dev/hub/v2/grpc-gateway/test"
 	idService "github.com/plgd-dev/hub/v2/identity-store/test"
+	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	grpcClient "github.com/plgd-dev/hub/v2/pkg/net/grpc/client"
@@ -713,7 +714,14 @@ func TestRequestHandlerIssue270(t *testing.T) {
 	defer tearDown()
 	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
 
-	rdConn, err := grpcClient.New(config.MakeGrpcClientConfig(config.GRPC_HOST), log.Get(), trace.NewNoopTracerProvider())
+	fileWatcher, err := fsnotify.NewWatcher()
+	require.NoError(t, err)
+	defer func() {
+		err := fileWatcher.Close()
+		require.NoError(t, err)
+	}()
+
+	rdConn, err := grpcClient.New(config.MakeGrpcClientConfig(config.GRPC_HOST), fileWatcher, log.Get(), trace.NewNoopTracerProvider())
 	require.NoError(t, err)
 	defer func() {
 		_ = rdConn.Close()

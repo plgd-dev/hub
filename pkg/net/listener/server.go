@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 
+	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/pkg/security/certManager/server"
 )
@@ -17,8 +18,8 @@ type Server struct {
 
 // NewServer instantiates a listen server.
 // When passing addr with an unspecified port or ":", use Addr().
-func New(config Config, logger log.Logger) (*Server, error) {
-	certManager, err := server.New(config.TLS, logger)
+func New(config Config, fileWatcher *fsnotify.Watcher, logger log.Logger) (*Server, error) {
+	certManager, err := server.New(config.TLS, fileWatcher, logger)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create cert manager %w", err)
 	}

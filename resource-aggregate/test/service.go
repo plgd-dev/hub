@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/service"
 	"github.com/plgd-dev/hub/v2/test/config"
@@ -43,7 +44,10 @@ func New(t *testing.T, cfg service.Config) func() {
 	ctx := context.Background()
 	logger := log.NewLogger(cfg.Log)
 
-	s, err := service.New(ctx, cfg, logger)
+	fileWatcher, err := fsnotify.NewWatcher()
+	require.NoError(t, err)
+
+	s, err := service.New(ctx, cfg, fileWatcher, logger)
 	require.NoError(t, err)
 
 	var wg sync.WaitGroup
@@ -56,5 +60,7 @@ func New(t *testing.T, cfg service.Config) func() {
 	return func() {
 		s.Shutdown()
 		wg.Wait()
+		err = fileWatcher.Close()
+		require.NoError(t, err)
 	}
 }

@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/plgd-dev/hub/v2/pkg/fn"
+	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/pkg/net/grpc/client"
 	"go.opentelemetry.io/otel"
@@ -68,7 +69,7 @@ func (c *Client) Close() {
 }
 
 // New creates a new tracer provider with grpc exporter when it is enabled.
-func New(ctx context.Context, cfg Config, serviceName string, logger log.Logger) (*Client, error) {
+func New(ctx context.Context, cfg Config, serviceName string, fileWatcher *fsnotify.Watcher, logger log.Logger) (*Client, error) {
 	if !cfg.GRPC.Enabled {
 		return &Client{
 			ctx:    ctx,
@@ -90,7 +91,7 @@ func New(ctx context.Context, cfg Config, serviceName string, logger log.Logger)
 	// `localhost:30080` endpoint. Otherwise, replace `localhost` with the
 	// endpoint of your cluster. If you run the app inside k8s, then you can
 	// probably connect directly to the service through dns
-	client, err := client.New(cfg.GRPC.Connection, logger, trace.NewNoopTracerProvider())
+	client, err := client.New(cfg.GRPC.Connection, fileWatcher, logger, trace.NewNoopTracerProvider())
 	if err != nil {
 		return nil, fmt.Errorf("failed to create gRPC connection to collector: %w", err)
 	}

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/golang/snappy"
+	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	pkgMongo "github.com/plgd-dev/hub/v2/pkg/mongodb"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
@@ -118,7 +119,12 @@ func getTaskToSave(groupID, aggregateID string, version uint64) maintenance.Task
 
 func TestPerformMaintenance(t *testing.T) {
 	logger := log.NewLogger(log.MakeDefaultConfig())
-
+	fileWatcher, err := fsnotify.NewWatcher()
+	require.NoError(t, err)
+	defer func() {
+		err := fileWatcher.Close()
+		require.NoError(t, err)
+	}()
 	config := Config{
 		NumAggregates: 77,
 		BackupPath:    "/tmp/events.txt",
@@ -135,6 +141,7 @@ func TestPerformMaintenance(t *testing.T) {
 	store, err := mongodb.New(
 		ctx,
 		config.Mongo,
+		fileWatcher,
 		logger,
 		trace.NewNoopTracerProvider(),
 		mongodb.WithMarshaler(bson.Marshal),

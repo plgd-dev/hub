@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/publisher"
@@ -26,7 +27,14 @@ func TestSubscriber(t *testing.T) {
 
 	logger := log.NewLogger(log.MakeDefaultConfig())
 
-	naPubClient, publisher, err := test.NewClientAndPublisher(config.MakePublisherConfig(), logger, publisher.WithMarshaler(json.Marshal))
+	fileWatcher, err := fsnotify.NewWatcher()
+	require.NoError(t, err)
+	defer func() {
+		err := fileWatcher.Close()
+		require.NoError(t, err)
+	}()
+
+	naPubClient, publisher, err := test.NewClientAndPublisher(config.MakePublisherConfig(), fileWatcher, logger, publisher.WithMarshaler(json.Marshal))
 	require.NoError(t, err)
 	require.NotNil(t, publisher)
 	defer func() {
@@ -34,7 +42,7 @@ func TestSubscriber(t *testing.T) {
 		naPubClient.Close()
 	}()
 
-	naSubClient, subscriber, err := test.NewClientAndSubscriber(config.MakeSubscriberConfig(),
+	naSubClient, subscriber, err := test.NewClientAndSubscriber(config.MakeSubscriberConfig(), fileWatcher,
 		logger,
 		subscriber.WithGoPool(func(f func()) error { go f(); return nil }),
 		subscriber.WithUnmarshaler(json.Unmarshal),

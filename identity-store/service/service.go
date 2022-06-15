@@ -7,6 +7,7 @@ import (
 	"github.com/plgd-dev/hub/v2/identity-store/pb"
 	"github.com/plgd-dev/hub/v2/identity-store/persistence"
 	"github.com/plgd-dev/hub/v2/identity-store/persistence/mongodb"
+	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/pkg/net/grpc/server"
 	otelClient "github.com/plgd-dev/hub/v2/pkg/opentelemetry/collector/client"
@@ -48,13 +49,13 @@ func NewService(persistence Persistence, publisher *publisher.Publisher, ownerCl
 	}
 }
 
-func NewServer(ctx context.Context, cfg Config, logger log.Logger, tracerProvider trace.TracerProvider, publisher *publisher.Publisher, grpcOpts ...grpc.ServerOption) (*Server, error) {
-	grpcServer, err := server.New(cfg.APIs.GRPC, logger, grpcOpts...)
+func NewServer(ctx context.Context, cfg Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider, publisher *publisher.Publisher, grpcOpts ...grpc.ServerOption) (*Server, error) {
+	grpcServer, err := server.New(cfg.APIs.GRPC, fileWatcher, logger, grpcOpts...)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create grpc listener: %w", err)
 	}
 
-	certManager, err := cmClient.New(cfg.Clients.Storage.MongoDB.TLS, logger)
+	certManager, err := cmClient.New(cfg.Clients.Storage.MongoDB.TLS, fileWatcher, logger)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create cert manager %w", err)
 	}
@@ -78,14 +79,14 @@ func NewServer(ctx context.Context, cfg Config, logger log.Logger, tracerProvide
 }
 
 // New creates the service's HTTP server.
-func New(ctx context.Context, cfg Config, logger log.Logger) (*Server, error) {
-	otelClient, err := otelClient.New(ctx, cfg.Clients.OpenTelemetryCollector, "identity-store", logger)
+func New(ctx context.Context, cfg Config, fileWatcher *fsnotify.Watcher, logger log.Logger) (*Server, error) {
+	otelClient, err := otelClient.New(ctx, cfg.Clients.OpenTelemetryCollector, "identity-store", fileWatcher, logger)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create open telemetry collector client: %w", err)
 	}
 	tracerProvider := otelClient.GetTracerProvider()
 
-	naClient, err := client.New(cfg.Clients.Eventbus.NATS.Config, logger)
+	naClient, err := client.New(cfg.Clients.Eventbus.NATS.Config, fileWatcher, logger)
 	if err != nil {
 		otelClient.Close()
 		return nil, fmt.Errorf("cannot create nats client %w", err)
@@ -98,7 +99,7 @@ func New(ctx context.Context, cfg Config, logger log.Logger) (*Server, error) {
 	}
 	naClient.AddCloseFunc(otelClient.Close)
 	naClient.AddCloseFunc(publisher.Close)
-	validator, err := validator.New(ctx, cfg.APIs.GRPC.Authorization.Config, logger, tracerProvider)
+	validator, err := validator.New(ctx, cfg.APIs.GRPC.Authorization.Config, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		naClient.Close()
 		return nil, fmt.Errorf("cannot create validator: %w", err)
@@ -111,7 +112,7 @@ func New(ctx context.Context, cfg Config, logger log.Logger) (*Server, error) {
 		return nil, fmt.Errorf("cannot create grpc server options: %w", err)
 	}
 
-	s, err := NewServer(ctx, cfg, logger, tracerProvider, publisher, opts...)
+	s, err := NewServer(ctx, cfg, fileWatcher, logger, tracerProvider, publisher, opts...)
 	if err != nil {
 		validator.Close()
 		naClient.Close()

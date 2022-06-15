@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/publisher"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/subscriber"
@@ -24,7 +25,14 @@ func TestSubscriberReconnect(t *testing.T) {
 
 	logger := log.NewLogger(log.MakeDefaultConfig())
 
-	naPubClient, pub, err := natsTest.NewClientAndPublisher(config.MakePublisherConfig(), logger, publisher.WithMarshaler(json.Marshal))
+	fileWatcher, err := fsnotify.NewWatcher()
+	require.NoError(t, err)
+	defer func() {
+		err := fileWatcher.Close()
+		require.NoError(t, err)
+	}()
+
+	naPubClient, pub, err := natsTest.NewClientAndPublisher(config.MakePublisherConfig(), fileWatcher, logger, publisher.WithMarshaler(json.Marshal))
 	require.NoError(t, err)
 	require.NotNil(t, pub)
 	defer func() {
@@ -32,7 +40,7 @@ func TestSubscriberReconnect(t *testing.T) {
 		naPubClient.Close()
 	}()
 
-	naSubClient, subscriber, err := natsTest.NewClientAndSubscriber(config.MakeSubscriberConfig(),
+	naSubClient, subscriber, err := natsTest.NewClientAndSubscriber(config.MakeSubscriberConfig(), fileWatcher,
 		logger,
 		subscriber.WithGoPool(func(f func()) error { go f(); return nil }),
 		subscriber.WithUnmarshaler(json.Unmarshal))
@@ -89,7 +97,7 @@ func TestSubscriberReconnect(t *testing.T) {
 	case <-ctx.Done():
 		require.NoError(t, fmt.Errorf("Timeout"))
 	}
-	naClient1, pub1, err := natsTest.NewClientAndPublisher(config.MakePublisherConfig(), logger, publisher.WithMarshaler(json.Marshal))
+	naClient1, pub1, err := natsTest.NewClientAndPublisher(config.MakePublisherConfig(), fileWatcher, logger, publisher.WithMarshaler(json.Marshal))
 	require.NoError(t, err)
 	require.NotNil(t, pub1)
 	defer func() {

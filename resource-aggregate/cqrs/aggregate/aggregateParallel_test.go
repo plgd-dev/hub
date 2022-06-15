@@ -8,6 +8,7 @@ import (
 
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/google/uuid"
+	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
@@ -23,10 +24,17 @@ import (
 
 func testNewEventstore(ctx context.Context, t *testing.T) *mongodb.EventStore {
 	logger := log.NewLogger(log.MakeDefaultConfig())
+	fileWatcher, err := fsnotify.NewWatcher()
+	require.NoError(t, err)
+	defer func() {
+		err := fileWatcher.Close()
+		require.NoError(t, err)
+	}()
 	cfg := config.MakeEventsStoreMongoDBConfig()
 	store, err := mongodb.New(
 		ctx,
 		cfg,
+		fileWatcher,
 		logger,
 		trace.NewNoopTracerProvider(),
 	)
