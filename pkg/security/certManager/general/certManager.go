@@ -44,12 +44,14 @@ type CertManager struct {
 	fileWatcher             *fsnotify.Watcher
 	verifyClientCertificate tls.ClientAuthType
 	logger                  log.Logger
+	onFileChangeFunc        func(event fsnotify.Event)
+	done                    atomic.Bool
 
-	mutex            sync.Mutex
-	tlsKeyPair       tls.Certificate
-	tlsCAPool        *x509.CertPool
-	done             atomic.Bool
-	onFileChangeFunc func(event fsnotify.Event)
+	private struct {
+		mutex      sync.Mutex
+		tlsKeyPair tls.Certificate
+		tlsCAPool  *x509.CertPool
+	}
 }
 
 // New creates a new certificate manager which watches for certs in a filesystem
@@ -96,9 +98,9 @@ func New(config Config, fileWatcher *fsnotify.Watcher, logger log.Logger) (*Cert
 
 // GetCertificateAuthorities returns certificates authorities
 func (a *CertManager) GetCertificateAuthorities() *x509.CertPool {
-	a.mutex.Lock()
-	defer a.mutex.Unlock()
-	return a.tlsCAPool
+	a.private.mutex.Lock()
+	defer a.private.mutex.Unlock()
+	return a.private.tlsCAPool
 }
 
 // GetServerTLSConfig returns tls configuration for servers
@@ -145,15 +147,15 @@ func (a *CertManager) Close() {
 }
 
 func (a *CertManager) getServerCertificate(hello *tls.ClientHelloInfo) (*tls.Certificate, error) {
-	a.mutex.Lock()
-	defer a.mutex.Unlock()
-	return &a.tlsKeyPair, nil
+	a.private.mutex.Lock()
+	defer a.private.mutex.Unlock()
+	return &a.private.tlsKeyPair, nil
 }
 
 func (a *CertManager) getClientCertificate(*tls.CertificateRequestInfo) (*tls.Certificate, error) {
-	a.mutex.Lock()
-	defer a.mutex.Unlock()
-	return &a.tlsKeyPair, nil
+	a.private.mutex.Lock()
+	defer a.private.mutex.Unlock()
+	return &a.private.tlsKeyPair, nil
 }
 
 func (a *CertManager) loadCerts() error {
@@ -198,15 +200,15 @@ func (a *CertManager) loadCAs() error {
 }
 
 func (a *CertManager) setTLSKeyPair(cert tls.Certificate) {
-	a.mutex.Lock()
-	defer a.mutex.Unlock()
-	a.tlsKeyPair = cert
+	a.private.mutex.Lock()
+	defer a.private.mutex.Unlock()
+	a.private.tlsKeyPair = cert
 }
 
 func (a *CertManager) setCAPool(capool *x509.CertPool) {
-	a.mutex.Lock()
-	defer a.mutex.Unlock()
-	a.tlsCAPool = capool
+	a.private.mutex.Lock()
+	defer a.private.mutex.Unlock()
+	a.private.tlsCAPool = capool
 }
 
 func (a *CertManager) onFileChange(event fsnotify.Event) {
