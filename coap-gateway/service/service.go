@@ -474,6 +474,7 @@ func (s *Service) makeCommandTask(req *mux.Message, client *Client, fnc func(req
 	tmp, err := client.server.messagePool.ConvertFrom(req.Message)
 	if err == nil {
 		otelcoap.MessageReceivedEvent(ctx, tmp)
+		otelcoap.SetRequest(ctx, tmp)
 	}
 	return func() {
 		defer span.End()
