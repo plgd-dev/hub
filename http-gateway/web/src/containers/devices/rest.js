@@ -5,6 +5,7 @@ import { DEVICE_AUTH_CODE_SESSION_KEY } from '@/constants'
 
 import { devicesApiEndpoints, DEVICE_DELETE_CHUNK_SIZE } from './constants'
 import { interfaceGetParam } from './utils'
+import { withTelemetry } from '@/common/services/opentelemetry'
 
 /**
  * Get a single thing by its ID Rest Api endpoint
@@ -51,10 +52,14 @@ export const getDevicesResourcesApi = ({
   href,
   currentInterface = null,
 }) =>
-  fetchApi(
-    `${security.getGeneralConfig().httpGatewayAddress}${
-      devicesApiEndpoints.DEVICES
-    }/${deviceId}/resources${href}?${interfaceGetParam(currentInterface)}`
+  withTelemetry(
+    () =>
+      fetchApi(
+        `${security.getGeneralConfig().httpGatewayAddress}${
+          devicesApiEndpoints.DEVICES
+        }/${deviceId}/resources${href}?${interfaceGetParam(currentInterface)}`
+      ),
+    'get-resource-for-device'
   )
 
 /**
@@ -65,16 +70,19 @@ export const getDevicesResourcesApi = ({
 export const updateDevicesResourceApi = (
   { deviceId, href, currentInterface = null, ttl },
   data
-) => {
-  return fetchApi(
-    `${security.getGeneralConfig().httpGatewayAddress}${
-      devicesApiEndpoints.DEVICES
-    }/${deviceId}/resources${href}?timeToLive=${ttl}&${interfaceGetParam(
-      currentInterface
-    )}`,
-    { method: 'PUT', body: data, timeToLive: ttl }
+) =>
+  withTelemetry(
+    () =>
+      fetchApi(
+        `${security.getGeneralConfig().httpGatewayAddress}${
+          devicesApiEndpoints.DEVICES
+        }/${deviceId}/resources${href}?timeToLive=${ttl}&${interfaceGetParam(
+          currentInterface
+        )}`,
+        { method: 'PUT', body: data, timeToLive: ttl }
+      ),
+    'update-resource-for-device'
   )
-}
 
 /**
  * Create devices RESOURCE Rest Api endpoint

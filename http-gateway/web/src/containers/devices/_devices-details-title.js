@@ -21,6 +21,7 @@ export const DevicesDetailsTitle = ({
   isOnline,
   links,
   ttl,
+  loading,
   ...rest
 }) => {
   const { formatMessage: _ } = useIntl()
