@@ -13,10 +13,14 @@ import { withTelemetry } from '@/common/services/opentelemetry'
  * @param {*} data
  */
 export const getDeviceApi = deviceId =>
-  fetchApi(
-    `${security.getGeneralConfig().httpGatewayAddress}${
-      devicesApiEndpoints.DEVICES
-    }/${deviceId}`
+  withTelemetry(
+    () =>
+      fetchApi(
+        `${security.getGeneralConfig().httpGatewayAddress}${
+          devicesApiEndpoints.DEVICES
+        }/${deviceId}`
+      ),
+    'get-device'
   )
 
 /**
@@ -30,13 +34,17 @@ export const deleteDevicesApi = deviceIds => {
 
   return Promise.all(
     chunks.map(ids =>
-      fetchApi(
-        `${security.getGeneralConfig().httpGatewayAddress}${
-          devicesApiEndpoints.DEVICES
-        }?${ids.map(id => `deviceIdFilter=${id}`).join('&')}`,
-        {
-          method: 'DELETE',
-        }
+      withTelemetry(
+        () =>
+          fetchApi(
+            `${security.getGeneralConfig().httpGatewayAddress}${
+              devicesApiEndpoints.DEVICES
+            }?${ids.map(id => `deviceIdFilter=${id}`).join('&')}`,
+            {
+              method: 'DELETE',
+            }
+          ),
+        'delete-device'
       )
     )
   )
@@ -59,7 +67,7 @@ export const getDevicesResourcesApi = ({
           devicesApiEndpoints.DEVICES
         }/${deviceId}/resources${href}?${interfaceGetParam(currentInterface)}`
       ),
-    'get-resource-for-device'
+    'get-device-resource'
   )
 
 /**
@@ -81,7 +89,7 @@ export const updateDevicesResourceApi = (
         )}`,
         { method: 'PUT', body: data, timeToLive: ttl }
       ),
-    'update-resource-for-device'
+    'update-device-resource'
   )
 
 /**
@@ -92,30 +100,35 @@ export const updateDevicesResourceApi = (
 export const createDevicesResourceApi = (
   { deviceId, href, currentInterface = null, ttl },
   data
-) => {
-  return fetchApi(
-    `${security.getGeneralConfig().httpGatewayAddress}${
-      devicesApiEndpoints.DEVICES
-    }/${deviceId}/resource-links${href}?timeToLive=${ttl}&${interfaceGetParam(
-      currentInterface
-    )}`,
-    { method: 'POST', body: data, timeToLive: ttl }
+) =>
+  withTelemetry(
+    () =>
+      fetchApi(
+        `${security.getGeneralConfig().httpGatewayAddress}${
+          devicesApiEndpoints.DEVICES
+        }/${deviceId}/resource-links${href}?timeToLive=${ttl}&${interfaceGetParam(
+          currentInterface
+        )}`,
+        { method: 'POST', body: data, timeToLive: ttl }
+      ),
+    'create-device-resource'
   )
-}
 
 /**
  * Delete devices RESOURCE Rest Api endpoint
  * @param {*} params { deviceId, href - resource href, ttl - timeToLive }
  * @param {*} data
  */
-export const deleteDevicesResourceApi = ({ deviceId, href, ttl }) => {
-  return fetchApi(
-    `${security.getGeneralConfig().httpGatewayAddress}${
-      devicesApiEndpoints.DEVICES
-    }/${deviceId}/resource-links${href}?timeToLive=${ttl}`,
-    { method: 'DELETE', timeToLive: ttl }
+export const deleteDevicesResourceApi = ({ deviceId, href, ttl }) =>
+  withTelemetry(
+    fetchApi(
+      `${security.getGeneralConfig().httpGatewayAddress}${
+        devicesApiEndpoints.DEVICES
+      }/${deviceId}/resource-links${href}?timeToLive=${ttl}`,
+      { method: 'DELETE', timeToLive: ttl }
+    ),
+    'delete-device-resource'
   )
-}
 
 /**
  * Update the shadowSynchronization of one Thing Rest Api endpoint
