@@ -56,10 +56,20 @@ export const Table = ({
       },
       sortTypes: {
         alphanumeric: (row1, row2, columnName) => {
-          return compareIgnoreCase(
-            row1.values[columnName],
+          if (
+            row1 &&
+            row1.values[columnName] &&
+            row2 &&
             row2.values[columnName]
-          )
+          ) {
+            return compareIgnoreCase(
+              row1.values[columnName],
+              row2.values[columnName]
+            )
+          }
+
+          // fix metedata.status.value: undefined
+          return false
         },
       },
       autoResetPage: false,
