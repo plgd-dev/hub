@@ -121,12 +121,13 @@ export const createDevicesResourceApi = (
  */
 export const deleteDevicesResourceApi = ({ deviceId, href, ttl }) =>
   withTelemetry(
-    fetchApi(
-      `${security.getGeneralConfig().httpGatewayAddress}${
-        devicesApiEndpoints.DEVICES
-      }/${deviceId}/resource-links${href}?timeToLive=${ttl}`,
-      { method: 'DELETE', timeToLive: ttl }
-    ),
+    () =>
+      fetchApi(
+        `${security.getGeneralConfig().httpGatewayAddress}${
+          devicesApiEndpoints.DEVICES
+        }/${deviceId}/resource-links${href}?timeToLive=${ttl}`,
+        { method: 'DELETE', timeToLive: ttl }
+      ),
     'delete-device-resource'
   )
 
@@ -138,14 +139,17 @@ export const deleteDevicesResourceApi = ({ deviceId, href, ttl }) =>
 export const updateDeviceShadowSynchronizationApi = (
   deviceId,
   shadowSynchronization
-) => {
-  return fetchApi(
-    `${security.getGeneralConfig().httpGatewayAddress}${
-      devicesApiEndpoints.DEVICES
-    }/${deviceId}/metadata`,
-    { method: 'PUT', body: { shadowSynchronization } }
+) =>
+  withTelemetry(
+    () =>
+      fetchApi(
+        `${security.getGeneralConfig().httpGatewayAddress}${
+          devicesApiEndpoints.DEVICES
+        }/${deviceId}/metadata`,
+        { method: 'PUT', body: { shadowSynchronization } }
+      ),
+    'update-device-metadata'
   )
-}
 
 /**
  * Returns an async function which resolves with a authorization code gathered from a rendered iframe, used for onboarding of a device.
