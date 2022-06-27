@@ -6,31 +6,26 @@ import { useIsMounted } from '@/common/hooks'
 import { fetchApi, streamApi } from '@/common/services'
 import { useAppConfig } from '@/containers/app'
 
-const getData = async (method, url, options, telemetryWebTracer) => {
+const getData = (method, url, options, telemetryWebTracer) => {
   const { telemetrySpan } = options
-  let dataToReturn = undefined
 
   if (telemetryWebTracer && telemetrySpan) {
     const singleSpan = telemetryWebTracer.startSpan(telemetrySpan)
-    await context.with(
-      trace.setSpan(context.active(), singleSpan),
-      async () => {
-        dataToReturn = await method(url, options).then(result => {
-          trace
-            .getSpan(context.active())
-            .addEvent('fetching-single-span-completed')
-          singleSpan.end()
 
-          return result.data
-        })
-      }
+    return context.with(trace.setSpan(context.active(), singleSpan), () =>
+      method(url, options).then(result => {
+        trace
+          .getSpan(context.active())
+          .addEvent('fetching-single-span-completed')
+        singleSpan.end()
+
+        return result.data
+      })
     )
   } else {
-    const { data } = await method(url, options)
+    const { data } = method(url, options)
     return data
   }
-
-  return dataToReturn
 }
 
 export const useStreamApi = (url, options = {}) => {

@@ -35,26 +35,20 @@ const init = (appName = '') => {
   webTracer = provider.getTracer(`${appName}-tracer`)
 }
 
-export const withTelemetry = async (restMethod, telemetrySpan) => {
+export const withTelemetry = (restMethod, telemetrySpan) => {
   if (webTracer) {
     const singleSpan = webTracer.startSpan(telemetrySpan)
-    let dataToReturn = undefined
 
-    await context.with(
-      trace.setSpan(context.active(), singleSpan),
-      async () => {
-        dataToReturn = await restMethod().then(result => {
-          trace
-            .getSpan(context.active())
-            .addEvent('fetching-single-span-completed')
-          singleSpan.end()
+    return context.with(trace.setSpan(context.active(), singleSpan), () =>
+      restMethod().then(result => {
+        trace
+          .getSpan(context.active())
+          .addEvent('fetching-single-span-completed')
+        singleSpan.end()
 
-          return result
-        })
-      }
+        return result
+      })
     )
-
-    return dataToReturn
   } else {
     return restMethod()
   }
