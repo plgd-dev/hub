@@ -6,7 +6,7 @@ import {
 import { registerInstrumentations } from '@opentelemetry/instrumentation'
 import { FetchInstrumentation } from '@opentelemetry/instrumentation-fetch'
 import { ZoneContextManager } from '@opentelemetry/context-zone'
-import { B3Propagator } from '@opentelemetry/propagator-b3'
+import { W3CTraceContextPropagator } from '@opentelemetry/core'
 import { XMLHttpRequestInstrumentation } from '@opentelemetry/instrumentation-xml-http-request'
 import { context, trace } from '@opentelemetry/api'
 
@@ -17,7 +17,7 @@ const init = (appName = '') => {
   provider.addSpanProcessor(new SimpleSpanProcessor(new ConsoleSpanExporter()))
   provider.register({
     contextManager: new ZoneContextManager(),
-    propagator: new B3Propagator(),
+    propagator: new W3CTraceContextPropagator(),
   })
 
   registerInstrumentations({
