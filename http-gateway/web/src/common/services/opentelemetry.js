@@ -5,6 +5,9 @@ import {
 } from '@opentelemetry/sdk-trace-base'
 import { ZoneContextManager } from '@opentelemetry/context-zone'
 import { W3CTraceContextPropagator } from '@opentelemetry/core'
+import { registerInstrumentations } from '@opentelemetry/instrumentation'
+import { FetchInstrumentation } from '@opentelemetry/instrumentation-fetch'
+import { XMLHttpRequestInstrumentation } from '@opentelemetry/instrumentation-xml-http-request'
 import { context, trace } from '@opentelemetry/api'
 
 let webTracer = undefined
@@ -15,6 +18,18 @@ const init = (appName = '') => {
   provider.register({
     contextManager: new ZoneContextManager(),
     propagator: new W3CTraceContextPropagator(),
+  })
+
+  registerInstrumentations({
+    instrumentations: [
+      new FetchInstrumentation({
+        ignoreUrls: [/localhost:3000\/sockjs-node/],
+        clearTimingResources: true,
+      }),
+      new XMLHttpRequestInstrumentation({
+        ignoreUrls: [/localhost:3000\/sockjs-node/],
+      }),
+    ],
   })
 
   webTracer = provider.getTracer(`${appName}-tracer`)

@@ -12,6 +12,7 @@ import { updateDevicesResourceApi } from './rest'
 import { canChangeDeviceName, getDeviceChangeResourceHref } from './utils'
 import { deviceResourceShape } from './shapes'
 import { messages as t } from './devices-i18n'
+import omit from 'lodash/omit'
 
 export const DevicesDetailsTitle = ({
   className,
@@ -21,7 +22,6 @@ export const DevicesDetailsTitle = ({
   isOnline,
   links,
   ttl,
-  loading,
   ...rest
 }) => {
   const { formatMessage: _ } = useIntl()
@@ -124,7 +124,7 @@ export const DevicesDetailsTitle = ({
 
   return (
     <h2
-      {...rest}
+      {...omit(rest, 'loading')}
       className={classNames(className, 'd-inline-flex align-items-center', {
         'title-with-icon': canUpdate,
       })}
