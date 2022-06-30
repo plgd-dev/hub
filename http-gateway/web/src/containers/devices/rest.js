@@ -5,6 +5,7 @@ import { DEVICE_AUTH_CODE_SESSION_KEY } from '@/constants'
 
 import { devicesApiEndpoints, DEVICE_DELETE_CHUNK_SIZE } from './constants'
 import { interfaceGetParam } from './utils'
+import { withTelemetry } from '@/common/services/opentelemetry'
 
 /**
  * Get a single thing by its ID Rest Api endpoint
@@ -12,10 +13,14 @@ import { interfaceGetParam } from './utils'
  * @param {*} data
  */
 export const getDeviceApi = deviceId =>
-  fetchApi(
-    `${security.getGeneralConfig().httpGatewayAddress}${
-      devicesApiEndpoints.DEVICES
-    }/${deviceId}`
+  withTelemetry(
+    () =>
+      fetchApi(
+        `${security.getGeneralConfig().httpGatewayAddress}${
+          devicesApiEndpoints.DEVICES
+        }/${deviceId}`
+      ),
+    'get-device'
   )
 
 /**
@@ -29,13 +34,17 @@ export const deleteDevicesApi = deviceIds => {
 
   return Promise.all(
     chunks.map(ids =>
-      fetchApi(
-        `${security.getGeneralConfig().httpGatewayAddress}${
-          devicesApiEndpoints.DEVICES
-        }?${ids.map(id => `deviceIdFilter=${id}`).join('&')}`,
-        {
-          method: 'DELETE',
-        }
+      withTelemetry(
+        () =>
+          fetchApi(
+            `${security.getGeneralConfig().httpGatewayAddress}${
+              devicesApiEndpoints.DEVICES
+            }?${ids.map(id => `deviceIdFilter=${id}`).join('&')}`,
+            {
+              method: 'DELETE',
+            }
+          ),
+        'delete-device'
       )
     )
   )
@@ -51,10 +60,14 @@ export const getDevicesResourcesApi = ({
   href,
   currentInterface = null,
 }) =>
-  fetchApi(
-    `${security.getGeneralConfig().httpGatewayAddress}${
-      devicesApiEndpoints.DEVICES
-    }/${deviceId}/resources${href}?${interfaceGetParam(currentInterface)}`
+  withTelemetry(
+    () =>
+      fetchApi(
+        `${security.getGeneralConfig().httpGatewayAddress}${
+          devicesApiEndpoints.DEVICES
+        }/${deviceId}/resources${href}?${interfaceGetParam(currentInterface)}`
+      ),
+    'get-device-resource'
   )
 
 /**
@@ -65,16 +78,19 @@ export const getDevicesResourcesApi = ({
 export const updateDevicesResourceApi = (
   { deviceId, href, currentInterface = null, ttl },
   data
-) => {
-  return fetchApi(
-    `${security.getGeneralConfig().httpGatewayAddress}${
-      devicesApiEndpoints.DEVICES
-    }/${deviceId}/resources${href}?timeToLive=${ttl}&${interfaceGetParam(
-      currentInterface
-    )}`,
-    { method: 'PUT', body: data, timeToLive: ttl }
+) =>
+  withTelemetry(
+    () =>
+      fetchApi(
+        `${security.getGeneralConfig().httpGatewayAddress}${
+          devicesApiEndpoints.DEVICES
+        }/${deviceId}/resources${href}?timeToLive=${ttl}&${interfaceGetParam(
+          currentInterface
+        )}`,
+        { method: 'PUT', body: data, timeToLive: ttl }
+      ),
+    'update-device-resource'
   )
-}
 
 /**
  * Create devices RESOURCE Rest Api endpoint
@@ -84,30 +100,36 @@ export const updateDevicesResourceApi = (
 export const createDevicesResourceApi = (
   { deviceId, href, currentInterface = null, ttl },
   data
-) => {
-  return fetchApi(
-    `${security.getGeneralConfig().httpGatewayAddress}${
-      devicesApiEndpoints.DEVICES
-    }/${deviceId}/resource-links${href}?timeToLive=${ttl}&${interfaceGetParam(
-      currentInterface
-    )}`,
-    { method: 'POST', body: data, timeToLive: ttl }
+) =>
+  withTelemetry(
+    () =>
+      fetchApi(
+        `${security.getGeneralConfig().httpGatewayAddress}${
+          devicesApiEndpoints.DEVICES
+        }/${deviceId}/resource-links${href}?timeToLive=${ttl}&${interfaceGetParam(
+          currentInterface
+        )}`,
+        { method: 'POST', body: data, timeToLive: ttl }
+      ),
+    'create-device-resource'
   )
-}
 
 /**
  * Delete devices RESOURCE Rest Api endpoint
  * @param {*} params { deviceId, href - resource href, ttl - timeToLive }
  * @param {*} data
  */
-export const deleteDevicesResourceApi = ({ deviceId, href, ttl }) => {
-  return fetchApi(
-    `${security.getGeneralConfig().httpGatewayAddress}${
-      devicesApiEndpoints.DEVICES
-    }/${deviceId}/resource-links${href}?timeToLive=${ttl}`,
-    { method: 'DELETE', timeToLive: ttl }
+export const deleteDevicesResourceApi = ({ deviceId, href, ttl }) =>
+  withTelemetry(
+    () =>
+      fetchApi(
+        `${security.getGeneralConfig().httpGatewayAddress}${
+          devicesApiEndpoints.DEVICES
+        }/${deviceId}/resource-links${href}?timeToLive=${ttl}`,
+        { method: 'DELETE', timeToLive: ttl }
+      ),
+    'delete-device-resource'
   )
-}
 
 /**
  * Update the shadowSynchronization of one Thing Rest Api endpoint
@@ -117,14 +139,17 @@ export const deleteDevicesResourceApi = ({ deviceId, href, ttl }) => {
 export const updateDeviceShadowSynchronizationApi = (
   deviceId,
   shadowSynchronization
-) => {
-  return fetchApi(
-    `${security.getGeneralConfig().httpGatewayAddress}${
-      devicesApiEndpoints.DEVICES
-    }/${deviceId}/metadata`,
-    { method: 'PUT', body: { shadowSynchronization } }
+) =>
+  withTelemetry(
+    () =>
+      fetchApi(
+        `${security.getGeneralConfig().httpGatewayAddress}${
+          devicesApiEndpoints.DEVICES
+        }/${deviceId}/metadata`,
+        { method: 'PUT', body: { shadowSynchronization } }
+      ),
+    'update-device-metadata'
   )
-}
 
 /**
  * Returns an async function which resolves with a authorization code gathered from a rendered iframe, used for onboarding of a device.

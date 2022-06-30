@@ -37,9 +37,7 @@ export const fetchApi = async (url, options = {}) => {
 
   // Time needed to cancel the request
   const cancelDeadlineMs = timeToLive
-    ? time(timeToLive)
-        .from('ns')
-        .to('ms').value
+    ? time(timeToLive).from('ns').to('ms').value
     : CANCEL_REQUEST_DEADLINE_MS
 
   // Time needed to cancel the request with added threshold

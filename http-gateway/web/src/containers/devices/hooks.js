@@ -1,5 +1,5 @@
 import debounce from 'lodash/debounce'
-import { useApi, useStreamApi, useEmitter } from '@/common/hooks'
+import { useStreamApi, useEmitter } from '@/common/hooks'
 import { useAppConfig } from '@/containers/app'
 
 import {
@@ -17,7 +17,8 @@ export const useDevicesList = () => {
 
   // Fetch the data
   const { data, updateData, ...rest } = useStreamApi(
-    `${httpGatewayAddress}${devicesApiEndpoints.DEVICES}`
+    `${httpGatewayAddress}${devicesApiEndpoints.DEVICES}`,
+    { telemetrySpan: 'get-devices' }
   )
 
   // Update the metadata when a WS event is emitted
@@ -35,8 +36,12 @@ export const useDeviceDetails = deviceId => {
   const { httpGatewayAddress } = useAppConfig()
 
   // Fetch the data
-  const { data, updateData, ...rest } = useApi(
-    `${httpGatewayAddress}${devicesApiEndpoints.DEVICES}/${deviceId}`
+  const { data, updateData, ...rest } = useStreamApi(
+    `${httpGatewayAddress}${devicesApiEndpoints.DEVICES}/${deviceId}`,
+    {
+      streamApi: false,
+      telemetrySpan: 'get-device-detail',
+    }
   )
 
   // Update the metadata when a WS event is emitted
@@ -67,7 +72,8 @@ export const useDevicesResources = deviceId => {
 
   // Fetch the data
   const { data, updateData, ...rest } = useStreamApi(
-    `${httpGatewayAddress}${devicesApiEndpoints.DEVICES_RESOURCES}?device_id_filter=${deviceId}`
+    `${httpGatewayAddress}${devicesApiEndpoints.DEVICES_RESOURCES}?device_id_filter=${deviceId}`,
+    { telemetrySpan: 'get-device-resources' }
   )
 
   useEmitter(

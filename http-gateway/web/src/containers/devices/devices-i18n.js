@@ -410,4 +410,8 @@ export const messages = defineMessages({
     id: 'devices.certificateAuthorities',
     defaultMessage: 'Certificate Authorities',
   },
+  enterDeviceName: {
+    id: 'devices.enterDeviceName',
+    defaultMessage: 'Enter device name',
+  },
 })

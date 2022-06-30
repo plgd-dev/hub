@@ -60,7 +60,7 @@ export const Menu = memo(({ collapsed, toggleCollapsed }) => {
       </MenuItem>
     </nav>
   )
-}, [])
+})
 
 Menu.propTypes = {
   collapsed: PropTypes.bool.isRequired,
