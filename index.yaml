@@ -53,6 +53,25 @@ entries:
     version: 0.0.1
   plgd-hub:
   - apiVersion: v2
+    appVersion: 2.4.5
+    created: "2022-06-30T06:01:53.127330251Z"
+    dependencies:
+    - condition: nats.enabled
+      name: nats
+      repository: https://nats-io.github.io/k8s/helm/charts/
+      version: 0.13.1
+    - condition: mongodb.enabled
+      name: mongodb
+      repository: https://charts.bitnami.com/bitnami
+      version: 10.31.3
+    description: A Helm chart for plgd-hub
+    digest: 4b56958ddd865784b6051d0149a6127e0c4cb6ac3b145d9043a48b2b7fd27c89
+    name: plgd-hub
+    type: application
+    urls:
+    - https://charts.plgd.dev/plgd-hub-2.4.5.tgz
+    version: 2.4.5
+  - apiVersion: v2
     appVersion: 2.4.4
     created: "2022-06-15T09:33:08.49660861Z"
     dependencies:
@@ -508,4 +527,4 @@ entries:
     urls:
     - https://charts.plgd.dev/plgd-hub-2.1.0.tgz
     version: 2.1.0
-generated: "2022-06-15T09:33:08.479870492Z"
+generated: "2022-06-30T06:01:53.109897686Z"
