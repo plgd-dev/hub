@@ -47,7 +47,7 @@ func NewStore(ctx context.Context, cfg Config, tls *tls.Config, tracerProvider t
 
 	s.onClear = func(c context.Context) error {
 		// default clear function drops the whole database
-		return s.client.Database(s.DBName()).Drop(ctx)
+		return s.client.Database(s.DBName()).Drop(c)
 	}
 	return s, nil
 }
