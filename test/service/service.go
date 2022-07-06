@@ -29,6 +29,12 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
+var filterOutClearDB = map[string]bool{
+	"admin":  true,
+	"config": true,
+	"local":  true,
+}
+
 func ClearDB(ctx context.Context, t *testing.T) {
 	logCfg := log.MakeDefaultConfig()
 	logger := log.NewLogger(logCfg)
@@ -51,7 +57,7 @@ func ClearDB(ctx context.Context, t *testing.T) {
 	}
 	require.NoError(t, err)
 	for _, db := range dbs {
-		if db == "admin" {
+		if filterOutClearDB[db] {
 			continue
 		}
 		err = client.Database(db).Drop(ctx)
