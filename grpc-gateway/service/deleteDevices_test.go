@@ -4,12 +4,15 @@ import (
 	"context"
 	"crypto/tls"
 	"testing"
+	"time"
 
+	"github.com/plgd-dev/hub/v2/grpc-gateway/client"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"github.com/plgd-dev/hub/v2/test"
 	testCfg "github.com/plgd-dev/hub/v2/test/config"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
+	pbTest "github.com/plgd-dev/hub/v2/test/pb"
 	"github.com/plgd-dev/hub/v2/test/service"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
@@ -76,4 +79,90 @@ func TestRequestHandlerDeleteDevices(t *testing.T) {
 			require.Equal(t, tt.want.DeviceIds, resp.DeviceIds)
 		})
 	}
+}
+
+func waitForOperationProcessedEvent(t *testing.T, subClient pb.GrpcGateway_SubscribeToEventsClient) {
+	ev, err := subClient.Recv()
+	require.NoError(t, err)
+	expectedEvent := &pb.Event{
+		SubscriptionId: ev.SubscriptionId,
+		CorrelationId:  "device",
+		Type: &pb.Event_OperationProcessed_{
+			OperationProcessed: &pb.Event_OperationProcessed{
+				ErrorStatus: &pb.Event_OperationProcessed_ErrorStatus{
+					Code: pb.Event_OperationProcessed_ErrorStatus_OK,
+				},
+			},
+		},
+	}
+	pbTest.CmpEvent(t, expectedEvent, ev, "")
+}
+
+func waitForStopEvent(t *testing.T, subClient pb.GrpcGateway_SubscribeToEventsClient, deviceID string) {
+	ev, err := subClient.Recv()
+	require.NoError(t, err)
+
+	expectedEvent := &pb.Event{
+		SubscriptionId: ev.SubscriptionId,
+		CorrelationId:  "device",
+		Type: &pb.Event_DeviceUnregistered_{
+			DeviceUnregistered: &pb.Event_DeviceUnregistered{
+				DeviceIds: []string{deviceID},
+			},
+		},
+	}
+	pbTest.CmpEvent(t, expectedEvent, ev, "")
+}
+
+func TestRequestHandlerReconnectAfterDeleteDevice(t *testing.T) {
+	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	defer cancel()
+
+	tearDown := service.SetUp(ctx, t)
+	defer tearDown()
+	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
+
+	conn, err := grpc.Dial(testCfg.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+		RootCAs: test.GetRootCertificatePool(t),
+	})))
+	require.NoError(t, err)
+	c := pb.NewGrpcGatewayClient(conn)
+	defer func() {
+		_ = conn.Close()
+	}()
+
+	_, _ = test.OnboardDevSim(ctx, t, c, deviceID, testCfg.GW_HOST, test.GetAllBackendResourceLinks())
+
+	subClient, err := client.New(c).GrpcGatewayClient().SubscribeToEvents(ctx)
+	require.NoError(t, err)
+	err = subClient.Send(&pb.SubscribeToEvents{
+		CorrelationId: "device",
+		Action: &pb.SubscribeToEvents_CreateSubscription_{
+			CreateSubscription: &pb.SubscribeToEvents_CreateSubscription{
+				DeviceIdFilter: []string{deviceID},
+				EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
+					pb.SubscribeToEvents_CreateSubscription_UNREGISTERED,
+				},
+			},
+		},
+	})
+	require.NoError(t, err)
+	waitForOperationProcessedEvent(t, subClient)
+
+	resp, err := c.DeleteDevices(ctx, &pb.DeleteDevicesRequest{
+		DeviceIdFilter: []string{deviceID},
+	})
+	require.NoError(t, err)
+	require.Equal(t, []string{deviceID}, resp.DeviceIds)
+	waitForStopEvent(t, subClient, deviceID)
+	err = subClient.CloseSend()
+	require.NoError(t, err)
+
+	// wait for device to detect lost connection, try to reconnect and handle unauthorized code
+	time.Sleep(10 * time.Second)
+
+	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.GW_HOST, test.GetAllBackendResourceLinks())
+	defer shutdownDevSim()
 }
