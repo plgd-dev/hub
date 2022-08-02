@@ -58,7 +58,7 @@ linters:
     - ineffassign      # Detects when assignments to existing variables are not used
     - misspell         # Finds commonly misspelled English words in comments
     - nakedret         # Finds naked returns in functions greater than a specified function length
-    # - nilerr           # Finds the code that returns nil even if it checks that the error is not nil.
+    - nilerr           # Finds the code that returns nil even if it checks that the error is not nil.
     # - nilnil           # Checks that there is no simultaneous return of `nil` error and an invalid value.
     # - noctx            # noctx finds sending http request without context.Context
     - nolintlint       # Reports ill-formed or insufficient nolint directives
