@@ -144,7 +144,7 @@ func (dd *DeviceDirectory) sendDevices(deviceIDs strings.Set, req *pb.GetDevices
 			err = updateDevice(&device, resource)
 			if err != nil {
 				// device is not valid
-				return nil
+				return nil //nolint:nilerr
 			}
 			device.Metadata = &pb.Device_Metadata{
 				Status:                deviceMetadataUpdated.GetStatus(),

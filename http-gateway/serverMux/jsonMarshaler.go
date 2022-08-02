@@ -7,6 +7,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/plgd-dev/go-coap/v2/message"
+	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/kit/v2/codec/cbor"
 	"github.com/plgd-dev/kit/v2/codec/json"
 	"google.golang.org/protobuf/encoding/protojson"
@@ -135,13 +136,15 @@ func modify(v interface{}) (newValue interface{}, wantDelete bool) {
 func (j *JsonMarshaler) Marshal(v interface{}) ([]byte, error) {
 	data, err := j.JSONPb.Marshal(v)
 	if err != nil {
-		return data, err
+		return nil, err
 	}
 
 	var val interface{}
 	err = json.Decode(data, &val)
 	if err != nil {
-		return data, nil
+		log.Warnf("cannot decode json data: %v", v)
+		// fallback to data marshaled by JSONPb
+		return data, nil //nolint:nilerr
 	}
 	newVal, _ := modify(val)
 	if newVal != nil {
@@ -154,7 +157,9 @@ func (j *JsonMarshaler) Marshal(v interface{}) ([]byte, error) {
 
 	err = encoder.Encode(val)
 	if err != nil {
-		return data, nil
+		log.Warnf("cannot encode json data: %v", v)
+		// fallback to data marshaled by JSONPb
+		return data, nil //nolint:nilerr
 	}
 
 	return w.Bytes(), err

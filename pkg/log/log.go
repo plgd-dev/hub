@@ -363,7 +363,7 @@ func (l *WrapSuggarLogger) Fatalf(template string, args ...interface{}) {
 
 func (l *WrapSuggarLogger) LogAndReturnError(err error) error {
 	if err == nil {
-		return err
+		return nil
 	}
 	if errors.Is(err, io.EOF) {
 		l.Debugf("%v", err)
