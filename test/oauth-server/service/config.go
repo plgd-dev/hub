@@ -7,6 +7,7 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/config"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/pkg/net/http"
+	"github.com/plgd-dev/hub/v2/pkg/net/http/server"
 	"github.com/plgd-dev/hub/v2/pkg/net/listener"
 )
 
@@ -97,7 +98,7 @@ func (c *Config) Validate() error {
 
 // Config represent application configuration
 type APIsConfig struct {
-	HTTP listener.Config `yaml:"http" json:"http"`
+	HTTP HTTPConfig `yaml:"http" json:"http"`
 }
 
 func (c *APIsConfig) Validate() error {
@@ -105,6 +106,15 @@ func (c *APIsConfig) Validate() error {
 		return fmt.Errorf("http.%w", err)
 	}
 	return nil
+}
+
+type HTTPConfig struct {
+	Connection listener.Config `yaml:",inline" json:",inline"`
+	Server     server.Config   `yaml:",inline" json:",inline"`
+}
+
+func (c *HTTPConfig) Validate() error {
+	return c.Connection.Validate()
 }
 
 type OAuthSignerConfig struct {

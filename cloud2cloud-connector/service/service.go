@@ -291,7 +291,11 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 	}
 
 	httpServer := http.Server{
-		Handler: kitNetHttp.OpenTelemetryNewHandler(httpHandler, serviceName, tracerProvider),
+		Handler:           kitNetHttp.OpenTelemetryNewHandler(httpHandler, serviceName, tracerProvider),
+		ReadTimeout:       config.APIs.HTTP.Server.ReadTimeout,
+		ReadHeaderTimeout: config.APIs.HTTP.Server.ReadHeaderTimeout,
+		WriteTimeout:      config.APIs.HTTP.Server.WriteTimeout,
+		IdleTimeout:       config.APIs.HTTP.Server.IdleTimeout,
 	}
 
 	var wg sync.WaitGroup

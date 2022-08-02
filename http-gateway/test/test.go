@@ -49,6 +49,7 @@ func MakeConfig(t *testing.T, enableUI bool) service.Config {
 	cfg.APIs.HTTP.Connection.TLS.ClientCertificateRequired = false
 	cfg.APIs.HTTP.WebSocket.StreamBodyLimit = 256 * 1024
 	cfg.APIs.HTTP.WebSocket.PingFrequency = 10 * time.Second
+	cfg.APIs.HTTP.Server = config.MakeHttpServerConfig()
 
 	cfg.Clients.GrpcGateway.Connection = config.MakeGrpcClientConfig(config.GRPC_HOST)
 	cfg.Clients.OpenTelemetryCollector = http.OpenTelemetryCollectorConfig{

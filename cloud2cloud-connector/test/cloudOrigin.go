@@ -34,7 +34,7 @@ var (
 
 func SetUpCloudWithConnector(t *testing.T) (TearDown func()) {
 	oauthCfg := oauthTest.MakeConfig(t)
-	oauthCfg.APIs.HTTP.Addr = OAUTH_HOST
+	oauthCfg.APIs.HTTP.Connection.Addr = OAUTH_HOST
 	oauthCfg.OAuthSigner.Domain = OAUTH_HOST
 	oauthShutdown := oauthTest.New(t, oauthCfg)
 
@@ -76,6 +76,7 @@ func SetUpCloudWithConnector(t *testing.T) (TearDown func()) {
 	c2cConnectorCfg.APIs.HTTP.Authorization = MakeAuthorizationConfig()
 	c2cConnectorCfg.APIs.HTTP.Authorization.Authority = http.HTTPS_SCHEME + OAUTH_HOST
 	c2cConnectorCfg.APIs.HTTP.Authorization.Config.RedirectURL = C2C_CONNECTOR_OAUTH_CALLBACK
+	c2cConnectorCfg.APIs.HTTP.Server = config.MakeHttpServerConfig()
 	c2cConnectorCfg.Clients.Storage.MongoDB.Database = C2C_CONNECTOR_DB
 	c2cConnectorCfg.Clients.IdentityStore.Connection.Addr = IDENTITY_STORE_HOST
 	c2cConnectorCfg.Clients.GrpcGateway.Connection.Addr = GRPC_GATEWAY_HOST

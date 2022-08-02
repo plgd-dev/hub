@@ -9,6 +9,7 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/mongodb"
 	grpcClient "github.com/plgd-dev/hub/v2/pkg/net/grpc/client"
 	"github.com/plgd-dev/hub/v2/pkg/net/http"
+	"github.com/plgd-dev/hub/v2/pkg/net/http/server"
 	"github.com/plgd-dev/hub/v2/pkg/net/listener"
 	"github.com/plgd-dev/hub/v2/pkg/security/oauth2"
 	natsClient "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/client"
@@ -54,6 +55,7 @@ type HTTPConfig struct {
 	PullDevices   PullDevicesConfig   `yaml:"pullDevices" json:"pullDevices"`
 	Connection    listener.Config     `yaml:",inline" json:",inline"`
 	Authorization AuthorizationConfig `yaml:"authorization" json:"authorization"`
+	Server        server.Config       `yaml:",inline" json:",inline"`
 }
 
 type PullDevicesConfig struct {

@@ -49,8 +49,9 @@ func MakeConfig(t *testing.T) service.Config {
 
 	cfg.Log = log.MakeDefaultConfig()
 
-	cfg.APIs.HTTP = config.MakeListenerConfig(config.OAUTH_SERVER_HOST)
-	cfg.APIs.HTTP.TLS.ClientCertificateRequired = false
+	cfg.APIs.HTTP.Connection = config.MakeListenerConfig(config.OAUTH_SERVER_HOST)
+	cfg.APIs.HTTP.Connection.TLS.ClientCertificateRequired = false
+	cfg.APIs.HTTP.Server = config.MakeHttpServerConfig()
 	cfg.Clients.OpenTelemetryCollector = kitNetHttp.OpenTelemetryCollectorConfig{
 		Config: config.MakeOpenTelemetryCollectorClient(),
 	}
