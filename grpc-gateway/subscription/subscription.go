@@ -83,8 +83,8 @@ func (s *Sub) isFilteredEvent(e *pb.Event, eventType FilterBitmask) (bool, error
 		return isFilteredDevice(s.filteredDeviceIDs, ev.ResourceUnpublished.GetDeviceId()), nil
 	case *pb.Event_ResourceChanged:
 		return isFilteredDevice(s.filteredDeviceIDs, ev.ResourceChanged.GroupID()) && isFilteredResourceIDs(s.filteredResourceIDs, ev.ResourceChanged.AggregateID()), nil
-	//case *pb.Event_OperationProcessed_:
-	//case *pb.Event_SubscriptionCanceled_:
+	// case *pb.Event_OperationProcessed_:
+	// case *pb.Event_SubscriptionCanceled_:
 	case *pb.Event_ResourceUpdatePending:
 		return isFilteredDevice(s.filteredDeviceIDs, ev.ResourceUpdatePending.GroupID()) && isFilteredResourceIDs(s.filteredResourceIDs, ev.ResourceUpdatePending.AggregateID()), nil
 	case *pb.Event_ResourceUpdated:

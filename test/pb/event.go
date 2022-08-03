@@ -228,34 +228,34 @@ var compareEventFn = map[string]func(t *testing.T, e, g *pb.Event, cmpInterface 
 	getTypeName(&pb.Event_ResourceChanged{}): func(t *testing.T, e, g *pb.Event, cmpInterface string) {
 		CmpResourceChanged(t, e.GetResourceChanged(), g.GetResourceChanged(), cmpInterface)
 	},
-	getTypeName(&pb.Event_ResourceUpdatePending{}): func(t *testing.T, e, g *pb.Event, cmpInterface string) {
+	getTypeName(&pb.Event_ResourceUpdatePending{}): func(t *testing.T, e, g *pb.Event, cmpInterface string) { //nolint:unparam
 		CmpResourceUpdatePending(t, e.GetResourceUpdatePending(), g.GetResourceUpdatePending())
 	},
-	getTypeName(&pb.Event_ResourceUpdated{}): func(t *testing.T, e, g *pb.Event, cmpInterface string) {
+	getTypeName(&pb.Event_ResourceUpdated{}): func(t *testing.T, e, g *pb.Event, cmpInterface string) { //nolint:unparam
 		CmpResourceUpdated(t, e.GetResourceUpdated(), g.GetResourceUpdated())
 	},
-	getTypeName(&pb.Event_ResourceRetrievePending{}): func(t *testing.T, e, g *pb.Event, cmpInterface string) {
+	getTypeName(&pb.Event_ResourceRetrievePending{}): func(t *testing.T, e, g *pb.Event, cmpInterface string) { //nolint:unparam
 		CmpResourceRetrievePending(t, e.GetResourceRetrievePending(), g.GetResourceRetrievePending())
 	},
-	getTypeName(&pb.Event_ResourceRetrieved{}): func(t *testing.T, e, g *pb.Event, cmpInterface string) {
+	getTypeName(&pb.Event_ResourceRetrieved{}): func(t *testing.T, e, g *pb.Event, cmpInterface string) { //nolint:unparam
 		CmpResourceRetrieved(t, e.GetResourceRetrieved(), g.GetResourceRetrieved())
 	},
-	getTypeName(&pb.Event_ResourceDeletePending{}): func(t *testing.T, e, g *pb.Event, cmpInterface string) {
+	getTypeName(&pb.Event_ResourceDeletePending{}): func(t *testing.T, e, g *pb.Event, cmpInterface string) { //nolint:unparam
 		CmpResourceDeletePending(t, e.GetResourceDeletePending(), g.GetResourceDeletePending())
 	},
-	getTypeName(&pb.Event_ResourceDeleted{}): func(t *testing.T, e, g *pb.Event, cmpInterface string) {
+	getTypeName(&pb.Event_ResourceDeleted{}): func(t *testing.T, e, g *pb.Event, cmpInterface string) { //nolint:unparam
 		CmpResourceDeleted(t, e.GetResourceDeleted(), g.GetResourceDeleted())
 	},
-	getTypeName(&pb.Event_ResourceCreatePending{}): func(t *testing.T, e, g *pb.Event, cmpInterface string) {
+	getTypeName(&pb.Event_ResourceCreatePending{}): func(t *testing.T, e, g *pb.Event, cmpInterface string) { //nolint:unparam
 		CmpResourceCreatePending(t, e.GetResourceCreatePending(), g.GetResourceCreatePending())
 	},
-	getTypeName(&pb.Event_ResourceCreated{}): func(t *testing.T, e, g *pb.Event, cmpInterface string) {
+	getTypeName(&pb.Event_ResourceCreated{}): func(t *testing.T, e, g *pb.Event, cmpInterface string) { //nolint:unparam
 		CmpResourceCreated(t, e.GetResourceCreated(), g.GetResourceCreated())
 	},
-	getTypeName(&pb.Event_DeviceMetadataUpdatePending{}): func(t *testing.T, e, g *pb.Event, cmpInterface string) {
+	getTypeName(&pb.Event_DeviceMetadataUpdatePending{}): func(t *testing.T, e, g *pb.Event, cmpInterface string) { //nolint:unparam
 		CmpDeviceMetadataUpdatePending(t, e.GetDeviceMetadataUpdatePending(), g.GetDeviceMetadataUpdatePending())
 	},
-	getTypeName(&pb.Event_DeviceMetadataUpdated{}): func(t *testing.T, e, g *pb.Event, cmpInterface string) {
+	getTypeName(&pb.Event_DeviceMetadataUpdated{}): func(t *testing.T, e, g *pb.Event, cmpInterface string) { //nolint:unparam
 		CmpDeviceMetadataUpdated(t, e.GetDeviceMetadataUpdated(), g.GetDeviceMetadataUpdated())
 	},
 }

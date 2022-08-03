@@ -16,7 +16,7 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-//UnmarshalerFunc unmarshal bytes to pointer of struct.
+// UnmarshalerFunc unmarshal bytes to pointer of struct.
 type UnmarshalerFunc = func(s []byte, v interface{}) error
 
 // ReconnectFunc called when reconnect occurs
@@ -82,7 +82,7 @@ func (s *Subscriber) reconnectedHandler(c *nats.Conn) {
 	}
 }
 
-//Observer handles events from nats
+// Observer handles events from nats
 type Observer struct {
 	lock            sync.Mutex
 	dataUnmarshaler UnmarshalerFunc
@@ -311,21 +311,27 @@ type eventUnmarshaler struct {
 func (e *eventUnmarshaler) Version() uint64 {
 	return e.pb.GetVersion()
 }
+
 func (e *eventUnmarshaler) EventType() string {
 	return e.pb.GetEventType()
 }
+
 func (e *eventUnmarshaler) AggregateID() string {
 	return e.pb.GetAggregateId()
 }
+
 func (e *eventUnmarshaler) GroupID() string {
 	return e.pb.GetGroupId()
 }
+
 func (e *eventUnmarshaler) IsSnapshot() bool {
 	return e.pb.GetIsSnapshot()
 }
+
 func (e *eventUnmarshaler) Timestamp() time.Time {
 	return pkgTime.Unix(0, e.pb.GetTimestamp())
 }
+
 func (e *eventUnmarshaler) Unmarshal(v interface{}) error {
 	return e.dataUnmarshaler(v)
 }

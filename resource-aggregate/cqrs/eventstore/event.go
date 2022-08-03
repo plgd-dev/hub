@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-//Event interface over event created by user.
+// Event interface over event created by user.
 type Event = interface {
 	Version() uint64
 	EventType() string
@@ -15,7 +15,7 @@ type Event = interface {
 	Timestamp() time.Time
 }
 
-//EventUnmarshaler provides event.
+// EventUnmarshaler provides event.
 type EventUnmarshaler = interface {
 	Version() uint64
 	EventType() string
@@ -26,7 +26,7 @@ type EventUnmarshaler = interface {
 	Unmarshal(v interface{}) error
 }
 
-//Iter provides iterator over events from eventstore or eventbus.
+// Iter provides iterator over events from eventstore or eventbus.
 type Iter = interface {
 	Next(ctx context.Context) (EventUnmarshaler, bool)
 	Err() error
@@ -54,7 +54,8 @@ func NewLoadedEvent(
 	groupID string,
 	isSnapshot bool,
 	timestamp time.Time,
-	dataUnmarshaler func(v interface{}) error) LoadedEvent {
+	dataUnmarshaler func(v interface{}) error,
+) LoadedEvent {
 	return LoadedEvent{
 		version:         version,
 		eventType:       eventType,
@@ -69,21 +70,27 @@ func NewLoadedEvent(
 func (e LoadedEvent) Version() uint64 {
 	return e.version
 }
+
 func (e LoadedEvent) EventType() string {
 	return e.eventType
 }
+
 func (e LoadedEvent) AggregateID() string {
 	return e.aggregateID
 }
+
 func (e LoadedEvent) GroupID() string {
 	return e.groupID
 }
+
 func (e LoadedEvent) Unmarshal(v interface{}) error {
 	return e.dataUnmarshaler(v)
 }
+
 func (e LoadedEvent) IsSnapshot() bool {
 	return e.isSnapshot
 }
+
 func (e LoadedEvent) Timestamp() time.Time {
 	return e.timestamp
 }

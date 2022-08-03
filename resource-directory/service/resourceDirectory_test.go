@@ -99,10 +99,12 @@ func newResourceContent(deviceID, href string, resourceTypesp []string, content 
 	}
 }
 
-var Resource0 = newResourceContent("0", "/a", []string{"t0"}, &commands.Content{Data: []byte("0.a")})
-var Resource1 = newResourceContent("1", "/b", []string{"t1", "t2"}, &commands.Content{Data: []byte("1.b")})
-var Resource2 = newResourceContent("2", "/c", []string{"t1"}, &commands.Content{Data: []byte("2.c")})
-var Resource3 = newResourceContent("1", "/d", []string{"t3", "t8"}, &commands.Content{Data: []byte("1.d")})
+var (
+	Resource0 = newResourceContent("0", "/a", []string{"t0"}, &commands.Content{Data: []byte("0.a")})
+	Resource1 = newResourceContent("1", "/b", []string{"t1", "t2"}, &commands.Content{Data: []byte("1.b")})
+	Resource2 = newResourceContent("2", "/c", []string{"t1"}, &commands.Content{Data: []byte("2.c")})
+	Resource3 = newResourceContent("1", "/d", []string{"t3", "t8"}, &commands.Content{Data: []byte("1.d")})
+)
 
 func testCreateEventstore() *mockEvents.MockEventStore {
 	store := mockEvents.NewMockEventStore()

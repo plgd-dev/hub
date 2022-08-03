@@ -275,7 +275,6 @@ func getTokenUsingGet(t *testing.T, clientID string, useBasicAuth bool, statusCo
 	}()
 	require.Equal(t, statusCode, res.StatusCode)
 	if res.StatusCode == http.StatusOK {
-		require.Equal(t, http.StatusOK, res.StatusCode)
 		var body map[string]string
 		err = json.ReadFrom(res.Body, &body)
 		require.NoError(t, err)

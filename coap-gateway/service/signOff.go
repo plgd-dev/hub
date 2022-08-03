@@ -29,7 +29,7 @@ type signOffData struct {
 
 func getSignOffDataFromQuery(req *mux.Message) (signOffData, error) {
 	queries, _ := req.Options.Queries()
-	//from QUERY: di, accesstoken, uid
+	// from QUERY: di, accesstoken, uid
 	var data signOffData
 	for _, query := range queries {
 		values, err := url.ParseQuery(query)

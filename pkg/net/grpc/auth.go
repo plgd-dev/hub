@@ -39,15 +39,18 @@ func MakeJWTInterceptors(keyCache *jwt.KeyCache, claims ClaimsFunc, whiteListedM
 func (f AuthInterceptors) Unary() grpc.UnaryServerInterceptor {
 	return UnaryServerInterceptor(f.authFunc)
 }
+
 func (f AuthInterceptors) Stream() grpc.StreamServerInterceptor {
 	return StreamServerInterceptor(f.authFunc)
 }
 
-type ClaimsFunc = func(ctx context.Context, method string) Claims
-type Claims = interface{ Valid() error }
-type Validator interface {
-	ParseWithClaims(token string, claims extJwt.Claims) error
-}
+type (
+	ClaimsFunc = func(ctx context.Context, method string) Claims
+	Claims     = interface{ Valid() error }
+	Validator  interface {
+		ParseWithClaims(token string, claims extJwt.Claims) error
+	}
+)
 
 func ValidateJWTWithValidator(validator Validator, claims ClaimsFunc) Interceptor {
 	return func(ctx context.Context, method string) (context.Context, error) {

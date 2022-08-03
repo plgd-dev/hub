@@ -53,6 +53,7 @@ type testClientConn struct {
 func (t *testClientConn) Context() context.Context {
 	return t.ctx
 }
+
 func (t *testClientConn) Close() error {
 	return t.err
 }

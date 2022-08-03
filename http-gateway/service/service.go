@@ -18,7 +18,7 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/security/jwt/validator"
 )
 
-//Server handle HTTP request
+// Server handle HTTP request
 type Server struct {
 	server         *http.Server
 	config         *Config

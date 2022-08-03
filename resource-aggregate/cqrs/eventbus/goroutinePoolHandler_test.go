@@ -31,21 +31,27 @@ type eventUnmarshaler struct {
 func (e *eventUnmarshaler) Version() uint64 {
 	return e.version
 }
+
 func (e *eventUnmarshaler) EventType() string {
 	return e.eventType
 }
+
 func (e *eventUnmarshaler) AggregateID() string {
 	return e.aggregateID
 }
+
 func (e *eventUnmarshaler) GroupID() string {
 	return e.groupID
 }
+
 func (e *eventUnmarshaler) IsSnapshot() bool {
 	return e.isSnapshot
 }
+
 func (e *eventUnmarshaler) Timestamp() time.Time {
 	return time.Unix(0, e.timestamp)
 }
+
 func (e *eventUnmarshaler) Unmarshal(v interface{}) error {
 	return nil
 }

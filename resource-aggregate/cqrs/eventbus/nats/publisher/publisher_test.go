@@ -230,7 +230,7 @@ func testNewSubscription(t *testing.T, ctx context.Context, subscriber eventbus.
 //   }
 //
 func acceptanceTest(t *testing.T, ctx context.Context, timeout time.Duration, waitForSubscription time.Duration, topics []string, publisher eventbus.Publisher, subscriber eventbus.Subscriber) {
-	//savedEvents := []Event{}
+	// savedEvents := []Event{}
 	AggregateID1 := "aggregateID1"
 	AggregateID2 := "aggregateID2"
 	type Path struct {

@@ -19,8 +19,10 @@ import (
 
 type Status string
 
-const Status_ONLINE Status = "online"
-const Status_OFFLINE Status = "offline"
+const (
+	Status_ONLINE  Status = "online"
+	Status_OFFLINE Status = "offline"
+)
 
 func toStatus(isOnline bool) Status {
 	if isOnline {
@@ -40,7 +42,6 @@ func (rh *RequestHandler) GetDevices(ctx context.Context, deviceIdFilter []strin
 	getDevicesClient, err := rh.gwClient.GetDevices(ctx, &pbGRPC.GetDevicesRequest{
 		DeviceIdFilter: deviceIdFilter,
 	})
-
 	if err != nil {
 		return nil, fmt.Errorf("cannot get devices: %w", err)
 	}

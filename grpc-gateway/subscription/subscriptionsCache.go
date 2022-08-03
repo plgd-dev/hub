@@ -16,8 +16,10 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-type ErrFunc = func(err error)
-type SendEventWithTypeFunc = func(e *pb.Event, typeBit FilterBitmask) error
+type (
+	ErrFunc               = func(err error)
+	SendEventWithTypeFunc = func(e *pb.Event, typeBit FilterBitmask) error
+)
 
 type eventSubject struct {
 	senders      map[uint64]SendEventWithTypeFunc

@@ -19,7 +19,7 @@ import (
 	"github.com/plgd-dev/hub/v2/test/oauth-server/uri"
 )
 
-//RequestHandler for handling incoming request
+// RequestHandler for handling incoming request
 type RequestHandler struct {
 	config             *Config
 	authSession        *cache.Cache
@@ -61,7 +61,7 @@ func createJwkKey(privateKey interface{}) (jwk.Key, error) {
 	return jwkKey, nil
 }
 
-//NewRequestHandler factory for new RequestHandler
+// NewRequestHandler factory for new RequestHandler
 func NewRequestHandler(ctx context.Context, config *Config, idTokenKey *rsa.PrivateKey, accessTokenKey interface{}) (*RequestHandler, error) {
 	idTokenJwkKey, err := createJwkKey(idTokenKey)
 	if err != nil {

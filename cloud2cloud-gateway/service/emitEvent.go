@@ -16,8 +16,10 @@ import (
 	cmClient "github.com/plgd-dev/hub/v2/pkg/security/certManager/client"
 )
 
-type incrementSubscriptionSequenceNumberFunc func(ctx context.Context) (uint64, error)
-type emitEventFunc func(ctx context.Context, eventType events.EventType, s store.Subscription, incrementSubscriptionSequenceNumber incrementSubscriptionSequenceNumberFunc, rep interface{}) (remove bool, err error)
+type (
+	incrementSubscriptionSequenceNumberFunc func(ctx context.Context) (uint64, error)
+	emitEventFunc                           func(ctx context.Context, eventType events.EventType, s store.Subscription, incrementSubscriptionSequenceNumber incrementSubscriptionSequenceNumberFunc, rep interface{}) (remove bool, err error)
+)
 
 func makeEmitEventRequestBody(accept []string, rep interface{}) ([]byte, string, error) {
 	encoder, contentType, err := getEncoder(accept)

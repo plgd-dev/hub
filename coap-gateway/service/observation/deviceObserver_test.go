@@ -53,7 +53,8 @@ type deviceObserverFactory struct {
 }
 
 func (f deviceObserverFactory) makeDeviceObserver(ctx context.Context, coapConn *tcp.ClientConn, onObserveResource observation.OnObserveResource,
-	onGetResourceContent observation.OnGetResourceContent) (*observation.DeviceObserver, error) {
+	onGetResourceContent observation.OnGetResourceContent,
+) (*observation.DeviceObserver, error) {
 	return observation.NewDeviceObserver(ctx, f.deviceID, coapConn, f.rdClient, f.raClient,
 		observation.ResourcesObserverCallbacks{onObserveResource, onGetResourceContent})
 }
@@ -329,10 +330,13 @@ func TestDeviceObserverRegisterForDiscoveryResourceWithAlreadyPublishedResources
 	runTestDeviceObserverRegister(ctx, t, deviceID, expectedObserved, nil, validateData, testPreregisterVirtualDevice, testValidateResourceLinks)
 }
 
-type verifyHandlerFn = func(context.Context, *observerHandler)
-type actioneHubFn = func(ctx context.Context, t *testing.T, deviceID string, grpcClient pb.GrpcGatewayClient, raClient raPb.ResourceAggregateClient)
+type (
+	verifyHandlerFn = func(context.Context, *observerHandler)
+	actioneHubFn    = func(ctx context.Context, t *testing.T, deviceID string, grpcClient pb.GrpcGatewayClient, raClient raPb.ResourceAggregateClient)
+)
 
-func runTestDeviceObserverRegister(ctx context.Context, t *testing.T, deviceID string, expectedObserved, expectedRetrieved strings.Set, verifyHandler verifyHandlerFn, prepareHub, postHub actioneHubFn) {
+func runTestDeviceObserverRegister(ctx context.Context, t *testing.T, deviceID string, expectedObserved, expectedRetrieved strings.Set, verifyHandler verifyHandlerFn, prepareHub, postHub actioneHubFn) { //nolint:unparam
+	// TODO: add test with expectedRetrieved
 	const services = service.SetUpServicesOAuth | service.SetUpServicesId | service.SetUpServicesResourceDirectory |
 		service.SetUpServicesGrpcGateway | service.SetUpServicesResourceAggregate
 

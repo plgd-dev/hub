@@ -25,8 +25,10 @@ import (
 	"google.golang.org/grpc/codes"
 )
 
-const grpcPrefixKey = "grpc"
-const requestKey = "request"
+const (
+	grpcPrefixKey = "grpc"
+	requestKey    = "request"
+)
 
 var defaultCodeToLevel = map[codes.Code]zapcore.Level{
 	codes.OK:                 zap.DebugLevel,

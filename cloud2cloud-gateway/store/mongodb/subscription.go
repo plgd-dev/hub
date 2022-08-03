@@ -12,12 +12,14 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-const subscriptionsCName = "subscriptions"
-const typeKey = "type"
-const hrefKey = "href"
-const sequenceNumberKey = "sequencenumber"
-const deviceIDKey = "deviceid"
-const initializedKey = "initialized"
+const (
+	subscriptionsCName = "subscriptions"
+	typeKey            = "type"
+	hrefKey            = "href"
+	sequenceNumberKey  = "sequencenumber"
+	deviceIDKey        = "deviceid"
+	initializedKey     = "initialized"
+)
 
 var typeQueryIndex = bson.D{
 	{Key: typeKey, Value: 1},

@@ -14,8 +14,10 @@ import (
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 )
 
-type OnObserveResource = func(ctx context.Context, deviceID, resourceHref string, batch bool, notification *pool.Message) error
-type OnGetResourceContent = func(ctx context.Context, deviceID, resourceHref string, notification *pool.Message) error
+type (
+	OnObserveResource    = func(ctx context.Context, deviceID, resourceHref string, batch bool, notification *pool.Message) error
+	OnGetResourceContent = func(ctx context.Context, deviceID, resourceHref string, notification *pool.Message) error
+)
 
 type ResourcesObserverCallbacks struct {
 	OnObserveResource    OnObserveResource
@@ -232,7 +234,7 @@ func (o *resourcesObserver) getResources() []*commands.ResourceId {
 
 // Cancel observation of given resources.
 func (o *resourcesObserver) cancelResourcesObservations(ctx context.Context, hrefs []string) {
-	observations := o.popTrackedObservations(ctx, hrefs)
+	observations := o.popTrackedObservations(hrefs)
 	for _, obs := range observations {
 		if err := obs.Cancel(ctx); err != nil {
 			o.logger.Debugf("cannot cancel resource observation: %w", err)
@@ -240,7 +242,7 @@ func (o *resourcesObserver) cancelResourcesObservations(ctx context.Context, hre
 	}
 }
 
-func (o *resourcesObserver) popTrackedObservations(ctx context.Context, hrefs []string) []*tcp.Observation {
+func (o *resourcesObserver) popTrackedObservations(hrefs []string) []*tcp.Observation {
 	observations := make([]*tcp.Observation, 0, 32)
 	o.lock.Lock()
 	defer o.lock.Unlock()

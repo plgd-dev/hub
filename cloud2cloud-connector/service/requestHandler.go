@@ -18,8 +18,10 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-const cloudIDKey = "CloudId"
-const accountIDKey = "AccountId"
+const (
+	cloudIDKey   = "CloudId"
+	accountIDKey = "AccountId"
+)
 
 type provisionCacheData struct {
 	linkedAccount store.LinkedAccount

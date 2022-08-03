@@ -26,7 +26,7 @@ func TestServiceDeleteDevices(t *testing.T) {
 	jwtWithSubAaa := config.CreateJwtToken(t, jwt.MapClaims{
 		"sub": "aaa",
 	})
-	var jwtWithSubTestUser2 = config.CreateJwtToken(t, jwt.MapClaims{
+	jwtWithSubTestUser2 := config.CreateJwtToken(t, jwt.MapClaims{
 		"sub": testUser2,
 	})
 	const testUser2DevID1 = "test2DeviceID1"

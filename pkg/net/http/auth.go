@@ -10,12 +10,14 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/net/grpc"
 )
 
-type Claims = interface{ Valid() error }
-type ClaimsFunc = func(ctx context.Context, method, uri string) Claims
-type OnUnauthorizedAccessFunc = func(ctx context.Context, w netHttp.ResponseWriter, r *netHttp.Request, err error)
-type Validator interface {
-	ParseWithClaims(token string, claims extJwt.Claims) error
-}
+type (
+	Claims                   = interface{ Valid() error }
+	ClaimsFunc               = func(ctx context.Context, method, uri string) Claims
+	OnUnauthorizedAccessFunc = func(ctx context.Context, w netHttp.ResponseWriter, r *netHttp.Request, err error)
+	Validator                interface {
+		ParseWithClaims(token string, claims extJwt.Claims) error
+	}
+)
 
 const bearerKey = "bearer"
 

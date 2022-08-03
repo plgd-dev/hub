@@ -49,6 +49,7 @@ func (rlp *resourceLinksProjection) IterateOverResources(onResource func(res *co
 		}
 	}
 }
+
 func (rlp *resourceLinksProjection) GetResource(href string) *commands.Resource {
 	rlp.private.lock.RLock()
 	defer rlp.private.lock.RUnlock()

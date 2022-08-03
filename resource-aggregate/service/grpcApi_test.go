@@ -26,10 +26,10 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func TestRequestHandler_PublishResource(t *testing.T) {
-	deviceID := "dev0"
-	href := "/res0"
-	user0 := "user0"
+func TestRequestHandlerPublishResource(t *testing.T) {
+	const deviceID = "dev0"
+	const href = "/res0"
+	const user0 = "user0"
 	type args struct {
 		request *commands.PublishResourceLinksRequest
 	}
@@ -143,10 +143,10 @@ func TestRequestHandler_PublishResource(t *testing.T) {
 	}
 }
 
-func TestRequestHandler_UnpublishResource(t *testing.T) {
-	deviceID := "dev0"
-	href := "/res0"
-	user0 := "user0"
+func TestRequestHandlerUnpublishResource(t *testing.T) {
+	const deviceID = "dev0"
+	const href = "/res0"
+	const user0 = "user0"
 
 	type args struct {
 		request *commands.UnpublishResourceLinksRequest
@@ -263,10 +263,10 @@ func TestRequestHandler_UnpublishResource(t *testing.T) {
 	}
 }
 
-func TestRequestHandler_NotifyResourceChanged(t *testing.T) {
-	deviceID := "dev0"
-	resID := "/res0"
-	user0 := "user0"
+func TestRequestHandlerNotifyResourceChanged(t *testing.T) {
+	const deviceID = "dev0"
+	const resID = "/res0"
+	const user0 = "user0"
 
 	type args struct {
 		request *commands.NotifyResourceChangedRequest
@@ -340,10 +340,10 @@ func TestRequestHandler_NotifyResourceChanged(t *testing.T) {
 	}
 }
 
-func TestRequestHandler_UpdateResourceContent(t *testing.T) {
-	deviceID := "dev0"
-	resID := "/res0"
-	user0 := "user0"
+func TestRequestHandlerUpdateResourceContent(t *testing.T) {
+	const deviceID = "dev0"
+	const resID = "/res0"
+	const user0 = "user0"
 
 	type args struct {
 		request *commands.UpdateResourceRequest
@@ -444,11 +444,11 @@ func TestRequestHandler_UpdateResourceContent(t *testing.T) {
 	}
 }
 
-func TestRequestHandler_ConfirmResourceUpdate(t *testing.T) {
-	deviceID := "dev0"
-	resID := "/res0"
-	user0 := "user0"
-	correlationID := "123"
+func TestRequestHandlerConfirmResourceUpdate(t *testing.T) {
+	const deviceID = "dev0"
+	const resID = "/res0"
+	const user0 = "user0"
+	const correlationID = "123"
 
 	type args struct {
 		request *commands.ConfirmResourceUpdateRequest
@@ -533,11 +533,11 @@ func TestRequestHandler_ConfirmResourceUpdate(t *testing.T) {
 	}
 }
 
-func TestRequestHandler_RetrieveResource(t *testing.T) {
-	deviceID := "dev0"
-	resID := "/res0"
-	user0 := "user0"
-	correlationID := "123"
+func TestRequestHandlerRetrieveResource(t *testing.T) {
+	const deviceID = "dev0"
+	const resID = "/res0"
+	const user0 = "user0"
+	const correlationID = "123"
 
 	type args struct {
 		request *commands.RetrieveResourceRequest
@@ -627,11 +627,11 @@ func TestRequestHandler_RetrieveResource(t *testing.T) {
 	}
 }
 
-func TestRequestHandler_ConfirmResourceRetrieve(t *testing.T) {
-	deviceID := "dev0"
-	resID := "/res0"
-	user0 := "user0"
-	correlationID := "123"
+func TestRequestHandlerConfirmResourceRetrieve(t *testing.T) {
+	const deviceID = "dev0"
+	const resID = "/res0"
+	const user0 = "user0"
+	const correlationID = "123"
 
 	type args struct {
 		request *commands.ConfirmResourceRetrieveRequest
@@ -719,11 +719,11 @@ func TestRequestHandler_ConfirmResourceRetrieve(t *testing.T) {
 	}
 }
 
-func TestRequestHandler_DeleteResource(t *testing.T) {
-	deviceID := "dev0"
-	resID := "/res0"
-	user0 := "user0"
-	correlationID := "123"
+func TestRequestHandlerDeleteResource(t *testing.T) {
+	const deviceID = "dev0"
+	const resID = "/res0"
+	const user0 = "user0"
+	const correlationID = "123"
 
 	type args struct {
 		request *commands.DeleteResourceRequest
@@ -813,11 +813,11 @@ func TestRequestHandler_DeleteResource(t *testing.T) {
 	}
 }
 
-func TestRequestHandler_ConfirmResourceDelete(t *testing.T) {
-	deviceID := "dev0"
-	resID := "/res0"
-	user0 := "user0"
-	correlationID := "123"
+func TestRequestHandlerConfirmResourceDelete(t *testing.T) {
+	const deviceID = "dev0"
+	const resID = "/res0"
+	const user0 = "user0"
+	const correlationID = "123"
 
 	type args struct {
 		request *commands.ConfirmResourceDeleteRequest
@@ -905,11 +905,11 @@ func TestRequestHandler_ConfirmResourceDelete(t *testing.T) {
 	}
 }
 
-func TestRequestHandler_CreateResource(t *testing.T) {
-	deviceID := "dev0"
-	resID := "/res0"
-	user0 := "user0"
-	correlationID := "123"
+func TestRequestHandlerCreateResource(t *testing.T) {
+	const deviceID = "dev0"
+	const resID = "/res0"
+	const user0 = "user0"
+	const correlationID = "123"
 
 	type args struct {
 		request *commands.CreateResourceRequest
@@ -999,11 +999,11 @@ func TestRequestHandler_CreateResource(t *testing.T) {
 	}
 }
 
-func TestRequestHandler_ConfirmResourceCreate(t *testing.T) {
-	deviceID := "dev0"
-	resID := "/res0"
-	user0 := "user0"
-	correlationID := "123"
+func TestRequestHandlerConfirmResourceCreate(t *testing.T) {
+	const deviceID = "dev0"
+	const resID = "/res0"
+	const user0 = "user0"
+	const correlationID = "123"
 
 	type args struct {
 		request *commands.ConfirmResourceCreateRequest
@@ -1092,7 +1092,7 @@ func TestRequestHandler_ConfirmResourceCreate(t *testing.T) {
 }
 
 func mockGetOwnerDevices(ctx context.Context, owner string, deviceIDs []string) ([]string, error) {
-	ownedDevices, code, err := testListDevicesOfUserFunc(ctx, "0", owner)
+	ownedDevices, code, err := testListDevicesOfUserFunc(owner)
 	if err != nil {
 		return nil, status.Errorf(code, "%v", err)
 	}

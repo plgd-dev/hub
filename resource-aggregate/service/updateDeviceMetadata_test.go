@@ -31,40 +31,40 @@ func newConnectionStatus(v commands.ConnectionStatus_Status) *commands.Connectio
 	return &v
 }
 
-func TestAggregateHandle_UpdateDeviceMetadata(t *testing.T) {
+func TestAggregateHandleUpdateDeviceMetadata(t *testing.T) {
+	const deviceID = "dev1"
+	const userID = "user1"
 	type args struct {
 		request *commands.UpdateDeviceMetadataRequest
 		userID  string
 	}
-
 	test := []struct {
 		name    string
 		args    args
 		want    codes.Code
 		wantErr bool
 	}{
-
 		{
 			name: "set online",
 			args: args{
-				request: testMakeUpdateDeviceMetadataRequest("dev0", "", newConnectionStatus(commands.ConnectionStatus_ONLINE), commands.ShadowSynchronization_UNSET, time.Hour),
-				userID:  "user0",
+				request: testMakeUpdateDeviceMetadataRequest(deviceID, "", newConnectionStatus(commands.ConnectionStatus_ONLINE), commands.ShadowSynchronization_UNSET, time.Hour),
+				userID:  userID,
 			},
 			want: codes.OK,
 		},
 		{
 			name: "set shadowSynchronizationDisabled",
 			args: args{
-				request: testMakeUpdateDeviceMetadataRequest("dev0", "", nil, commands.ShadowSynchronization_DISABLED, time.Hour),
-				userID:  "user0",
+				request: testMakeUpdateDeviceMetadataRequest(deviceID, "", nil, commands.ShadowSynchronization_DISABLED, time.Hour),
+				userID:  userID,
 			},
 			want: codes.OK,
 		},
 		{
 			name: "invalid valid until",
 			args: args{
-				request: testMakeUpdateDeviceMetadataRequest("dev0", "", nil, commands.ShadowSynchronization_DISABLED, -time.Hour),
-				userID:  "user0",
+				request: testMakeUpdateDeviceMetadataRequest(deviceID, "", nil, commands.ShadowSynchronization_DISABLED, -time.Hour),
+				userID:  userID,
 			},
 			want:    codes.InvalidArgument,
 			wantErr: true,
@@ -72,8 +72,8 @@ func TestAggregateHandle_UpdateDeviceMetadata(t *testing.T) {
 		{
 			name: "invalid update commands",
 			args: args{
-				request: testMakeUpdateDeviceMetadataRequest("dev0", "", nil, commands.ShadowSynchronization_UNSET, time.Hour),
-				userID:  "user0",
+				request: testMakeUpdateDeviceMetadataRequest(deviceID, "", nil, commands.ShadowSynchronization_UNSET, time.Hour),
+				userID:  userID,
 			},
 			want:    codes.InvalidArgument,
 			wantErr: true,
@@ -123,19 +123,19 @@ func TestAggregateHandle_UpdateDeviceMetadata(t *testing.T) {
 				s, ok := status.FromError(kitNetGrpc.ForwardFromError(codes.Unknown, err))
 				require.True(t, ok)
 				assert.Equal(t, tt.want, s.Code())
-			} else {
-				require.NoError(t, err)
-				err = service.PublishEvents(publisher, tt.args.userID, tt.args.request.GetDeviceId(), ag.ResourceID(), events)
-				assert.NoError(t, err)
+				return
 			}
+			require.NoError(t, err)
+			err = service.PublishEvents(publisher, tt.args.userID, tt.args.request.GetDeviceId(), ag.ResourceID(), events)
+			assert.NoError(t, err)
 		}
 		t.Run(tt.name, tfunc)
 	}
 }
 
-func TestRequestHandler_UpdateDeviceMetadata(t *testing.T) {
-	deviceID := "dev0"
-	user0 := "user0"
+func TestRequestHandlerUpdateDeviceMetadata(t *testing.T) {
+	const deviceID = "dev0"
+	const user0 = "user0"
 	type args struct {
 		request *commands.UpdateDeviceMetadataRequest
 		sleep   time.Duration

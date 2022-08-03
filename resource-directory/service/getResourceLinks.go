@@ -9,11 +9,11 @@ import (
 )
 
 func (r *RequestHandler) GetResourceLinks(req *pb.GetResourceLinksRequest, srv pb.GrpcGateway_GetResourceLinksServer) error {
-	owner, err := kitNetGrpc.OwnerFromTokenMD(srv.Context(), r.ownerCache.OwnerClaim())
+	_, err := kitNetGrpc.OwnerFromTokenMD(srv.Context(), r.ownerCache.OwnerClaim())
 	if err != nil {
 		return log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Unauthenticated, "cannot get resource links: %v", err))
 	}
-	deviceIDs, err := r.getOwnerDevices(srv.Context(), owner)
+	deviceIDs, err := r.getOwnerDevices(srv.Context())
 	if err != nil {
 		return log.LogAndReturnError(status.Errorf(status.Convert(err).Code(), "cannot get resource links: %v", err))
 	}

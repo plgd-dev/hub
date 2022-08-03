@@ -38,6 +38,7 @@ CCsGAQUFBwMBMAoGCCqGSM49BAMCA0cAMEQCIAOm/45P8C/njZZrs8iYEotOk3oQ
 f7d8FwSKAagbNWomAiABQBEb9CvfG3so04yKmIMd/2XB5LXM2SQfBKdg/nMD8A==
 -----END CERTIFICATE-----
 `
+
 var TestCrtKey = `-----BEGIN EC PRIVATE KEY-----
 MHcCAQEEIAqNQjvFqI95fIE/2UOMBM+mOJq0mCCkZTj/clWsa5VCoAoGCCqGSM49
 AwEHoUQDQgAEJ/uXouda+6VDbVSn59q0bFLC0TpNKwzkBvaBL86owEYmcBhBLpkp
@@ -46,13 +47,13 @@ AnQ1eTGKTGLdAZsV+NnZPL17nit1cbiN2g==
 `
 
 func TestNew(t *testing.T) {
-	//tmp dir
+	// tmp dir
 	tmpDir, err := ioutil.TempDir("/tmp", "test")
 	require.NoError(t, err)
 	defer func() {
 		_ = deleteTmpDir(tmpDir)
 	}()
-	//ca
+	// ca
 	caFile, err := ioutil.TempFile(tmpDir, "ca")
 	require.NoError(t, err)
 	err = caFile.Close()
@@ -71,7 +72,7 @@ func TestNew(t *testing.T) {
 	config := createTmpCertFiles(t, caFile.Name(), crtFile.Name(), keyFile.Name())
 
 	logger := log.NewLogger(log.MakeDefaultConfig())
-	//cert manager
+	// cert manager
 	fileWatcher, err := fsnotify.NewWatcher()
 	require.NoError(t, err)
 	defer func() {
@@ -87,9 +88,9 @@ func TestNew(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, firstCrt)
 
-	//delete crt/key files
+	// delete crt/key files
 	deleteTmpCertFiles(t, config)
-	//create new crt/key files
+	// create new crt/key files
 	createTmpCertFiles(t, caFile.Name(), crtFile.Name(), keyFile.Name())
 	tlsConfig = mng.GetTLSConfig()
 
@@ -102,7 +103,7 @@ func TestNew(t *testing.T) {
 }
 
 func createTmpCertFiles(t *testing.T, caFile, crtFile, keyFile string) client.Config {
-	//ca
+	// ca
 	err := ioutil.WriteFile(caFile, []byte(TestCaCrt), os.FileMode(os.O_RDWR))
 	require.NoError(t, err)
 
@@ -110,7 +111,7 @@ func createTmpCertFiles(t *testing.T, caFile, crtFile, keyFile string) client.Co
 	err = ioutil.WriteFile(crtFile, []byte(TestCrt), os.FileMode(os.O_RDWR))
 	require.NoError(t, err)
 
-	//key
+	// key
 	err = ioutil.WriteFile(keyFile, []byte(TestCrtKey), os.FileMode(os.O_RDWR))
 	require.NoError(t, err)
 

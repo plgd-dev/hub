@@ -178,8 +178,10 @@ func WithLogger(logger log.Logger) LogOpt {
 	}
 }
 
-var logDurationKey = log.DurationMSKey
-var logStartTimeKey = log.StartTimeKey
+var (
+	logDurationKey  = log.DurationMSKey
+	logStartTimeKey = log.StartTimeKey
+)
 
 type jwtMember struct {
 	Sub string `json:"sub,omitempty"`

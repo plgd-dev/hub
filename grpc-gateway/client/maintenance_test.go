@@ -14,8 +14,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const RebootTakes = time.Second * 8 // for reboot
-const RebootTimeout = TestTimeout + RebootTakes
+const (
+	RebootTakes   = time.Second * 8 // for reboot
+	RebootTimeout = TestTimeout + RebootTakes
+)
 
 func TestClientFactoryReset(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)

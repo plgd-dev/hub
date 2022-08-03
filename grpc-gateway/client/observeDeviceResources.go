@@ -32,6 +32,7 @@ func (o *deviceResourcesObservation) OnClose() {
 	o.removeSubscription()
 	o.h.OnClose()
 }
+
 func (o *deviceResourcesObservation) Error(err error) {
 	o.removeSubscription()
 	o.h.Error(err)

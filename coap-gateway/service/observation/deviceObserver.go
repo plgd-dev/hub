@@ -109,6 +109,7 @@ func WithLogger(logger log.Logger) LoggerOpt {
 		logger: logger,
 	}
 }
+
 func (o LoggerOpt) Apply(opts *DeviceObserverConfig) {
 	opts.logger = o.logger
 }
@@ -198,7 +199,7 @@ func NewDeviceObserver(ctx context.Context, deviceID string, coapConn ClientConn
 		cfg.logger.Debugf("NewDeviceObserverWithResourceShadow: failed to create /oic/res observation for device(%v): %v", deviceID, err)
 	}
 
-	resourcesObserver, err := createPublishedResourcesObserver(ctx, rdClient, deviceID, coapConn, callbacks, published, cfg.logger)
+	resourcesObserver, err := createPublishedResourcesObserver(ctx, deviceID, coapConn, callbacks, published, cfg.logger)
 	if err != nil {
 		return nil, createError(err)
 	}
@@ -296,7 +297,7 @@ func createDiscoveryResourceObserver(ctx context.Context, deviceID string, coapC
 }
 
 // Create observer with a single observations for all published resources.
-func createPublishedResourcesObserver(ctx context.Context, rdClient GrpcGatewayClient, deviceID string, coapConn ClientConn, callbacks ResourcesObserverCallbacks, published []*commands.Resource, logger log.Logger) (*resourcesObserver, error) {
+func createPublishedResourcesObserver(ctx context.Context, deviceID string, coapConn ClientConn, callbacks ResourcesObserverCallbacks, published []*commands.Resource, logger log.Logger) (*resourcesObserver, error) {
 	resourcesObserver := newResourcesObserver(deviceID, coapConn, callbacks, logger)
 
 	err := resourcesObserver.addResources(ctx, published)

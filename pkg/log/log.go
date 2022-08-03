@@ -37,8 +37,7 @@ func MakeDefaultConfig() Config {
 	}
 }
 
-type RFC3339NanoTimeEncoder struct {
-}
+type RFC3339NanoTimeEncoder struct{}
 
 func (e RFC3339NanoTimeEncoder) Encode(t time.Time, enc zapcore.PrimitiveArrayEncoder) {
 	zapcore.RFC3339NanoTimeEncoder(t, enc)
@@ -52,8 +51,7 @@ func (e RFC3339NanoTimeEncoder) TimeString() string {
 	return time.RFC3339Nano
 }
 
-type RFC3339TimeEncoder struct {
-}
+type RFC3339TimeEncoder struct{}
 
 func (e RFC3339TimeEncoder) String() string {
 	return "rfc3339"
@@ -67,8 +65,7 @@ func (e RFC3339TimeEncoder) Encode(t time.Time, enc zapcore.PrimitiveArrayEncode
 	zapcore.RFC3339TimeEncoder(t, enc)
 }
 
-type ISO8601TimeEncoder struct {
-}
+type ISO8601TimeEncoder struct{}
 
 func (e ISO8601TimeEncoder) String() string {
 	return "iso8601"
@@ -82,8 +79,7 @@ func (e ISO8601TimeEncoder) Encode(t time.Time, enc zapcore.PrimitiveArrayEncode
 	zapcore.ISO8601TimeEncoder(t, enc)
 }
 
-type EpochMillisTimeEncoder struct {
-}
+type EpochMillisTimeEncoder struct{}
 
 func (e EpochMillisTimeEncoder) Encode(t time.Time, enc zapcore.PrimitiveArrayEncoder) {
 	zapcore.EpochMillisTimeEncoder(t, enc)
@@ -97,8 +93,7 @@ func (e EpochMillisTimeEncoder) TimeString() string {
 	return time.StampMilli
 }
 
-type EpochNanosTimeEncoder struct {
-}
+type EpochNanosTimeEncoder struct{}
 
 func (e EpochNanosTimeEncoder) Encode(t time.Time, enc zapcore.PrimitiveArrayEncoder) {
 	zapcore.EpochNanosTimeEncoder(t, enc)
@@ -112,8 +107,7 @@ func (e EpochNanosTimeEncoder) TimeString() string {
 	return time.StampNano
 }
 
-type EpochTimeEncoder struct {
-}
+type EpochTimeEncoder struct{}
 
 func (e EpochTimeEncoder) Encode(t time.Time, enc zapcore.PrimitiveArrayEncoder) {
 	zapcore.EpochTimeEncoder(t, enc)
@@ -189,7 +183,7 @@ type Config struct {
 	// An EncoderConfig allows users to configure the concrete encoders supplied by
 	// zapcore.
 	EncoderConfig EncoderConfig `json:"encoderConfig" yaml:"encoderConfig"`
-	//zap.Config    `yaml:",inline"`
+	// zap.Config    `yaml:",inline"`
 }
 
 func (c *Config) Validate() error {

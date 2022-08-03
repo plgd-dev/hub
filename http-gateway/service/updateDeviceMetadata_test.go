@@ -92,10 +92,12 @@ func (f *contentChangedFilter) WaitForDeviceMetadataUpdated(t time.Duration) *ev
 	}
 }
 
-func updateResource(t *testing.T, ctx context.Context, req *pb.UpdateResourceRequest, token, accept, contentType string) (*events.ResourceUpdated, error) {
+func updateResource(t *testing.T, req *pb.UpdateResourceRequest, token string) error {
+	const accept = uri.ApplicationProtoJsonContentType
+	const contentType = uri.ApplicationProtoJsonContentType
 	data, err := httpgwTest.GetContentData(req.GetContent(), contentType)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	rb := httpgwTest.NewRequest(http.MethodPut, uri.AliasDeviceResource, bytes.NewReader(data)).AuthToken(token).Accept(accept).ContentType(contentType)
@@ -108,9 +110,9 @@ func updateResource(t *testing.T, ctx context.Context, req *pb.UpdateResourceReq
 	var got pb.UpdateResourceResponse
 	err = httpgwTest.Unmarshal(resp.StatusCode, resp.Body, &got)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return got.GetData(), nil
+	return nil
 }
 
 func TestRequestHandlerUpdateDeviceMetadata(t *testing.T) {
@@ -163,25 +165,22 @@ func TestRequestHandlerUpdateDeviceMetadata(t *testing.T) {
 		_ = obs.Close()
 	}()
 
-	updateDeviceShadowSynchronization := func(ctx context.Context, in *pb.UpdateDeviceMetadataRequest) (*pb.UpdateDeviceMetadataResponse, error) {
+	updateDeviceShadowSynchronization := func(in *pb.UpdateDeviceMetadataRequest) error {
 		data, err := protojson.Marshal(in)
 		require.NoError(t, err)
 
 		rb := httpgwTest.NewRequest(http.MethodPut, uri.DeviceMetadata, bytes.NewReader(data)).AuthToken(token).DeviceId(deviceID)
 		resp := httpgwTest.HTTPDo(t, rb.Build())
-		defer func() {
-			_ = resp.Body.Close()
-		}()
+		defer func(r *http.Response) {
+			_ = r.Body.Close()
+		}(resp)
 
 		var got pb.UpdateDeviceMetadataResponse
 		err = httpgwTest.Unmarshal(resp.StatusCode, resp.Body, &got)
-		if err != nil {
-			return nil, err
-		}
-		return &got, nil
+		return err
 	}
 
-	_, err = updateDeviceShadowSynchronization(ctx, &pb.UpdateDeviceMetadataRequest{
+	err = updateDeviceShadowSynchronization(&pb.UpdateDeviceMetadataRequest{
 		DeviceId:              deviceID,
 		ShadowSynchronization: pb.UpdateDeviceMetadataRequest_DISABLED,
 	})
@@ -191,7 +190,7 @@ func TestRequestHandlerUpdateDeviceMetadata(t *testing.T) {
 	require.NotEmpty(t, ev)
 	require.Equal(t, commands.ShadowSynchronization_DISABLED, ev.GetShadowSynchronization())
 
-	_, err = updateResource(t, ctx, &pb.UpdateResourceRequest{
+	err = updateResource(t, &pb.UpdateResourceRequest{
 		ResourceInterface: interfaces.OC_IF_BASELINE,
 		ResourceId:        commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
 		Content: &pb.Content{
@@ -200,9 +199,9 @@ func TestRequestHandlerUpdateDeviceMetadata(t *testing.T) {
 				"power": 2,
 			}),
 		},
-	}, token, uri.ApplicationProtoJsonContentType, uri.ApplicationProtoJsonContentType)
+	}, token)
 	require.NoError(t, err)
-	_, err = updateResource(t, ctx, &pb.UpdateResourceRequest{
+	err = updateResource(t, &pb.UpdateResourceRequest{
 		ResourceInterface: interfaces.OC_IF_BASELINE,
 		ResourceId:        commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
 		Content: &pb.Content{
@@ -211,13 +210,13 @@ func TestRequestHandlerUpdateDeviceMetadata(t *testing.T) {
 				"power": 0,
 			}),
 		},
-	}, token, uri.ApplicationProtoJsonContentType, uri.ApplicationProtoJsonContentType)
+	}, token)
 	require.NoError(t, err)
 
 	evResourceChanged := v.WaitForResourceChanged(time.Second)
 	require.Empty(t, evResourceChanged)
 
-	_, err = updateDeviceShadowSynchronization(ctx, &pb.UpdateDeviceMetadataRequest{
+	err = updateDeviceShadowSynchronization(&pb.UpdateDeviceMetadataRequest{
 		DeviceId:              deviceID,
 		ShadowSynchronization: pb.UpdateDeviceMetadataRequest_ENABLED,
 	})
@@ -227,7 +226,7 @@ func TestRequestHandlerUpdateDeviceMetadata(t *testing.T) {
 	require.NotEmpty(t, ev)
 	require.Equal(t, commands.ShadowSynchronization_ENABLED, ev.GetShadowSynchronization())
 
-	_, err = updateResource(t, ctx, &pb.UpdateResourceRequest{
+	err = updateResource(t, &pb.UpdateResourceRequest{
 		ResourceInterface: interfaces.OC_IF_BASELINE,
 		ResourceId:        commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
 		Content: &pb.Content{
@@ -236,9 +235,9 @@ func TestRequestHandlerUpdateDeviceMetadata(t *testing.T) {
 				"power": 2,
 			}),
 		},
-	}, token, uri.ApplicationProtoJsonContentType, uri.ApplicationProtoJsonContentType)
+	}, token)
 	require.NoError(t, err)
-	_, err = updateResource(t, ctx, &pb.UpdateResourceRequest{
+	err = updateResource(t, &pb.UpdateResourceRequest{
 		ResourceInterface: interfaces.OC_IF_BASELINE,
 		ResourceId:        commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
 		Content: &pb.Content{
@@ -247,7 +246,7 @@ func TestRequestHandlerUpdateDeviceMetadata(t *testing.T) {
 				"power": 0,
 			}),
 		},
-	}, token, uri.ApplicationProtoJsonContentType, uri.ApplicationProtoJsonContentType)
+	}, token)
 	require.NoError(t, err)
 
 	evResourceChanged = v.WaitForResourceChanged(time.Second)

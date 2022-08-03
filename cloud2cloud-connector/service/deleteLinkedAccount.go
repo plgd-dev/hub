@@ -67,7 +67,7 @@ func cancelLinkedAccountSubscription(ctx context.Context, traceProvider trace.Tr
 	wg.Wait()
 }
 
-func (rh *RequestHandler) deleteLinkedAccount(w http.ResponseWriter, r *http.Request) (int, error) {
+func (rh *RequestHandler) deleteLinkedAccount(r *http.Request) (int, error) {
 	vars := mux.Vars(r)
 	cloudID := vars[cloudIDKey]
 	accountID := vars[accountIDKey]
@@ -86,7 +86,7 @@ func (rh *RequestHandler) deleteLinkedAccount(w http.ResponseWriter, r *http.Req
 }
 
 func (rh *RequestHandler) DeleteLinkedAccount(w http.ResponseWriter, r *http.Request) {
-	statusCode, err := rh.deleteLinkedAccount(w, r)
+	statusCode, err := rh.deleteLinkedAccount(r)
 	if err != nil {
 		logAndWriteErrorResponse(fmt.Errorf("cannot delete linked accounts: %w", err), statusCode, w)
 	}

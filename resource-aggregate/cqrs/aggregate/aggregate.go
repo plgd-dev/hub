@@ -18,7 +18,7 @@ type AggregateModel = interface {
 
 	HandleCommand(ctx context.Context, cmd Command, newVersion uint64) ([]eventstore.Event, error)
 	TakeSnapshot(version uint64) (snapshotEvent eventstore.Event, ok bool)
-	GroupID() string //defines group where model belows
+	GroupID() string // defines group where model belows
 }
 
 // RetryFunc defines policy to repeat HandleCommand on concurrency exception.
@@ -154,7 +154,6 @@ func NewAggrModel(ctx context.Context, groupID, aggregateID string, store events
 			AggregateID: aggregateID,
 		},
 	})
-
 	if err != nil {
 		return nil, fmt.Errorf("cannot load aggregate model: %w", err)
 	}
@@ -168,7 +167,7 @@ func (a *Aggregate) FactoryModel(ctx context.Context) (AggregateModel, error) {
 func (a *Aggregate) preparaModelForCommand(ctx context.Context, amodel *aggrModel) (version uint64, previousSnapshotEvent eventstore.Event, concurrencyExcpetion bool, err error) {
 	newVersion := amodel.lastVersion
 	if amodel.numEvents > 0 || amodel.lastVersion > 0 {
-		//increase version for event only when some events has been processed
+		// increase version for event only when some events has been processed
 		newVersion++
 	}
 

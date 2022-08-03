@@ -36,8 +36,7 @@ func TestProtobufMarshaler(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotEmpty(t, out)
 
-	a := struct {
-	}{}
+	a := struct{}{}
 	_, err = utils.Marshal(a)
 	assert.Error(t, err)
 

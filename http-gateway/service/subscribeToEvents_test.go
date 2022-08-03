@@ -146,8 +146,9 @@ func TestRequestHandlerSubscribeToEvents(t *testing.T) {
 	d.TLSClientConfig = &tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
 	}
-	wsConn, _, err := d.Dial(fmt.Sprintf("wss://%v/api/v1/ws/events", config.HTTP_GW_HOST), header)
+	wsConn, resp, err := d.Dial(fmt.Sprintf("wss://%v/api/v1/ws/events", config.HTTP_GW_HOST), header)
 	require.NoError(t, err)
+	_ = resp.Body.Close()
 
 	send := func(req *pb.SubscribeToEvents) error {
 		marshaler := runtime.JSONPb{}

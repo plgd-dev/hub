@@ -20,6 +20,7 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/security/oauth2/oauth"
 	natsClient "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/client"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore/mongodb"
+	"github.com/plgd-dev/hub/v2/test/http"
 	"github.com/plgd-dev/hub/v2/test/oauth-server/uri"
 	"github.com/stretchr/testify/require"
 )
@@ -45,17 +46,21 @@ const (
 	OPENTELEMETRY_COLLECTOR_HOST = "localhost:55690"
 )
 
-var CA_POOL = os.Getenv("LISTEN_FILE_CA_POOL")
-var KEY_FILE = os.Getenv("LISTEN_FILE_CERT_DIR_PATH") + "/" + os.Getenv("LISTEN_FILE_CERT_KEY_NAME")
-var CERT_FILE = os.Getenv("LISTEN_FILE_CERT_DIR_PATH") + "/" + os.Getenv("LISTEN_FILE_CERT_NAME")
-var MONGODB_URI = "mongodb://localhost:27017"
-var NATS_URL = "nats://localhost:4222"
-var OWNER_CLAIM = "sub"
+var (
+	CA_POOL     = os.Getenv("LISTEN_FILE_CA_POOL")
+	KEY_FILE    = os.Getenv("LISTEN_FILE_CERT_DIR_PATH") + "/" + os.Getenv("LISTEN_FILE_CERT_KEY_NAME")
+	CERT_FILE   = os.Getenv("LISTEN_FILE_CERT_DIR_PATH") + "/" + os.Getenv("LISTEN_FILE_CERT_NAME")
+	MONGODB_URI = "mongodb://localhost:27017"
+	NATS_URL    = "nats://localhost:4222"
+	OWNER_CLAIM = "sub"
+)
 
-var OAUTH_MANAGER_ENDPOINT_AUTHURL = "https://" + OAUTH_SERVER_HOST + uri.Authorize
-var OAUTH_MANAGER_ENDPOINT_TOKENURL = "https://" + OAUTH_SERVER_HOST + uri.Token
-var C2C_CONNECTOR_EVENTS_URL = "https://" + C2C_CONNECTOR_HOST + c2curi.Events
-var C2C_CONNECTOR_OAUTH_CALLBACK = "https://" + C2C_CONNECTOR_HOST + c2curi.OAuthCallback
+var (
+	OAUTH_MANAGER_ENDPOINT_AUTHURL  = http.HTTPS_SCHEME + OAUTH_SERVER_HOST + uri.Authorize
+	OAUTH_MANAGER_ENDPOINT_TOKENURL = http.HTTPS_SCHEME + OAUTH_SERVER_HOST + uri.Token
+	C2C_CONNECTOR_EVENTS_URL        = http.HTTPS_SCHEME + C2C_CONNECTOR_HOST + c2curi.Events
+	C2C_CONNECTOR_OAUTH_CALLBACK    = http.HTTPS_SCHEME + C2C_CONNECTOR_HOST + c2curi.OAuthCallback
+)
 
 func MakeTLSClientConfig() client.Config {
 	return client.Config{
@@ -163,15 +168,15 @@ func MakeEventsStoreMongoDBConfig() mongodb.Config {
 
 func MakeAuthorizationConfig() validator.Config {
 	return validator.Config{
-		Authority: "https://" + OAUTH_SERVER_HOST,
-		Audience:  "https://" + OAUTH_MANAGER_AUDIENCE,
+		Authority: http.HTTPS_SCHEME + OAUTH_SERVER_HOST,
+		Audience:  http.HTTPS_SCHEME + OAUTH_MANAGER_AUDIENCE,
 		HTTP:      MakeHttpClientConfig(),
 	}
 }
 
 func MakeDeviceAuthorization() oauth2.Config {
 	return oauth2.Config{
-		Authority: "https://" + OAUTH_SERVER_HOST,
+		Authority: http.HTTPS_SCHEME + OAUTH_SERVER_HOST,
 		Config: oauth.Config{
 			ClientID:         OAUTH_MANAGER_CLIENT_ID,
 			Audience:         OAUTH_MANAGER_AUDIENCE,
@@ -187,7 +192,7 @@ func HubID() string {
 }
 
 func MakeAuthURL() string {
-	return "https://" + OAUTH_SERVER_HOST + uri.Authorize
+	return http.HTTPS_SCHEME + OAUTH_SERVER_HOST + uri.Authorize
 }
 
 const JWTSecret = "secret"

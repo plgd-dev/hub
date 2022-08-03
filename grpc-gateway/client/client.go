@@ -21,10 +21,12 @@ type ApplicationCallback interface {
 	GetRootCertificateAuthorities() ([]*x509.Certificate, error)
 }
 
-type OnboardOption = func() interface{}
-type subscription = interface {
-	Cancel() (wait func(), err error)
-}
+type (
+	OnboardOption = func() interface{}
+	subscription  = interface {
+		Cancel() (wait func(), err error)
+	}
+)
 
 type Config struct {
 	GatewayAddress string

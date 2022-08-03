@@ -91,7 +91,7 @@ func ensureIndex(ctx context.Context, col *mongo.Collection, indexes ...bson.D) 
 		_, err := col.Indexes().CreateOne(ctx, index)
 		if err != nil {
 			if strings.HasPrefix(err.Error(), "(IndexKeySpecsConflict)") {
-				//index already exist, just skip error and continue
+				// index already exist, just skip error and continue
 				continue
 			}
 			return fmt.Errorf("failed to ensure indexes for collection: %w", err)

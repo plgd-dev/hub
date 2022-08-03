@@ -19,8 +19,10 @@ import (
 	"github.com/plgd-dev/kit/v2/codec/json"
 )
 
-const DeviceUserID = "1"
-const DefaultScope = "openid profile email offline_access r:* w:*"
+const (
+	DeviceUserID = "1"
+	DefaultScope = "openid profile email offline_access r:* w:*"
+)
 
 const (
 	TokenScopeKey    = "scope"

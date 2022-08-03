@@ -15,7 +15,7 @@ import (
 	"github.com/plgd-dev/kit/v2/codec/json"
 )
 
-func (rh *RequestHandler) makeSubscription(w http.ResponseWriter, r *http.Request, typ store.Type, validEventTypes []events.EventType) (store.Subscription, int, error) {
+func (rh *RequestHandler) makeSubscription(r *http.Request, typ store.Type, validEventTypes []events.EventType) (store.Subscription, int, error) {
 	var res store.Subscription
 	var req events.SubscriptionRequest
 	err := json.ReadFrom(r.Body, &req)
@@ -61,7 +61,7 @@ func (rh *RequestHandler) subscribeToResource(w http.ResponseWriter, r *http.Req
 	deviceID := routeVars[deviceIDKey]
 	href := routeVars[hrefKey]
 
-	s, code, err := rh.makeSubscription(w, r, store.Type_Resource, []events.EventType{events.EventType_ResourceChanged})
+	s, code, err := rh.makeSubscription(r, store.Type_Resource, []events.EventType{events.EventType_ResourceChanged})
 	if err != nil {
 		return code, err
 	}

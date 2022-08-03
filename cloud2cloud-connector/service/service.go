@@ -58,7 +58,7 @@ func newAuthInterceptor(ctx context.Context, config validator.Config, fileWatche
 	}
 	fl.AddFunc(validator.Close)
 
-	var authRules = map[string][]kitNetHttp.AuthArgs{
+	authRules := map[string][]kitNetHttp.AuthArgs{
 		http.MethodGet: {
 			{
 				URI: regexp.MustCompile(regexp.QuoteMeta(uri.API) + `\/.*`),

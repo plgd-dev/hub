@@ -37,7 +37,8 @@ func (rh *RequestHandler) RetrieveResourceWithContentQuery(ctx context.Context, 
 		deviceID := routeVars[deviceIDKey]
 		href := routeVars[hrefKey]
 		code, err := rh.RetrieveResourceBase(ctx, w, &commands.ResourceId{
-			DeviceId: deviceID, Href: href}, encoder)
+			DeviceId: deviceID, Href: href,
+		}, encoder)
 		if err != nil {
 			err = fmt.Errorf("cannot retrieve resource(deviceID: %v, Href: %v): %w", deviceID, href, err)
 		}

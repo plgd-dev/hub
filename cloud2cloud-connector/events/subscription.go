@@ -21,9 +21,11 @@ const (
 	EventType_SubscriptionCanceled EventType = "subscription_cancelled"
 )
 
-var AllDevicesEvents = []EventType{EventType_DevicesOnline, EventType_DevicesOffline, EventType_DevicesRegistered, EventType_DevicesUnregistered}
-var AllDeviceEvents = []EventType{EventType_ResourcesPublished, EventType_ResourcesUnpublished}
-var AllResourceEvents = []EventType{EventType_ResourceChanged}
+var (
+	AllDevicesEvents  = []EventType{EventType_DevicesOnline, EventType_DevicesOffline, EventType_DevicesRegistered, EventType_DevicesUnregistered}
+	AllDeviceEvents   = []EventType{EventType_ResourcesPublished, EventType_ResourcesUnpublished}
+	AllResourceEvents = []EventType{EventType_ResourceChanged}
+)
 
 type EventTypes []EventType
 

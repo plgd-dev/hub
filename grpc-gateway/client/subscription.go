@@ -89,7 +89,7 @@ func (s *Sub) initSubscription() ([]string, error) {
 }
 
 func (s *Sub) initEvents(devices []string) error {
-	var initEventFuncs = []func(devices []string, validUntil *time.Time) error{
+	initEventFuncs := []func(devices []string, validUntil *time.Time) error{
 		s.sendDevicesRegistered,
 		s.initDeviceMetadataUpdated,
 		s.initResourcesPublished,

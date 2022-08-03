@@ -25,15 +25,27 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func TestRequestHandler_CancelPendingCommands(t *testing.T) {
-	deviceID := "dev0"
-	resID0 := "res0"
-	resID1 := "res1"
-	userID := "user0"
-	correlationID0 := "0"
-	correlationID1 := "1"
-	correlationID2 := "2"
-	correlationID3 := "3"
+func TestRequestHandlerCancelPendingCommands(t *testing.T) {
+	const deviceID = "dev0"
+	const resID0 = "res0"
+	const resID1 = "res1"
+	const userID = "user0"
+	const correlationID0 = "0"
+	const correlationID1 = "1"
+	const correlationID2 = "2"
+	const correlationID3 = "3"
+
+	testMakeCancelPendingCommandsRequest := func(deviceID string, href string, correlationIdFilter []string) *commands.CancelPendingCommandsRequest {
+		r := commands.CancelPendingCommandsRequest{
+			ResourceId:          commands.NewResourceID(deviceID, href),
+			CorrelationIdFilter: correlationIdFilter,
+			CommandMetadata: &commands.CommandMetadata{
+				ConnectionId: uuid.Must(uuid.NewRandom()).String(),
+				Sequence:     0,
+			},
+		}
+		return &r
+	}
 
 	type args struct {
 		request *commands.CancelPendingCommandsRequest
@@ -193,22 +205,10 @@ func TestRequestHandler_CancelPendingCommands(t *testing.T) {
 				s, ok := status.FromError(kitNetGrpc.ForwardFromError(codes.Unknown, err))
 				require.True(t, ok)
 				assert.Equal(t, tt.wantCode, s.Code())
-			} else {
-				require.NoError(t, err)
-				assert.Equal(t, tt.want, want)
+				return
 			}
+			require.NoError(t, err)
+			assert.Equal(t, tt.want, want)
 		})
 	}
-}
-
-func testMakeCancelPendingCommandsRequest(deviceID string, href string, correlationIdFilter []string) *commands.CancelPendingCommandsRequest {
-	r := commands.CancelPendingCommandsRequest{
-		ResourceId:          commands.NewResourceID(deviceID, href),
-		CorrelationIdFilter: correlationIdFilter,
-		CommandMetadata: &commands.CommandMetadata{
-			ConnectionId: uuid.Must(uuid.NewRandom()).String(),
-			Sequence:     0,
-		},
-	}
-	return &r
 }

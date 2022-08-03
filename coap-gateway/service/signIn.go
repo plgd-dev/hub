@@ -167,7 +167,7 @@ func (c *Client) updateBySignInData(ctx context.Context, upd updateType, deviceI
 	return nil
 }
 
-func subscribeToDeviceEvents(ctx context.Context, client *Client, owner, deviceID string) error {
+func subscribeToDeviceEvents(client *Client, owner, deviceID string) error {
 	if err := client.subscribeToDeviceEvents(owner, func(e *events.Event) {
 		evt := e.GetDevicesUnregistered()
 		if evt == nil {
@@ -190,7 +190,7 @@ func subscribeAndValidateDeviceAccess(ctx context.Context, client *Client, owner
 	// subscribe to updates before checking cache, so when the device gets removed during sign in
 	// the client will always be closed
 	if subscribe {
-		if err := subscribeToDeviceEvents(ctx, client, owner, deviceID); err != nil {
+		if err := subscribeToDeviceEvents(client, owner, deviceID); err != nil {
 			return false, err
 		}
 	}

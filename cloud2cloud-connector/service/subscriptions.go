@@ -21,8 +21,10 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-const AuthorizationHeader string = "Authorization"
-const AcceptHeader string = "Accept"
+const (
+	AuthorizationHeader string = "Authorization"
+	AcceptHeader        string = "Accept"
+)
 
 type Type string
 

@@ -33,7 +33,6 @@ func TestResourceShadowGetResources(t *testing.T) {
 		args args
 		want map[string]*pb.Resource
 	}{
-
 		{
 			name: "list unauthorized device",
 			args: args{

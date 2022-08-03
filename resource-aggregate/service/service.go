@@ -31,7 +31,7 @@ type EventStore interface {
 	cqrsMaintenance.EventStore
 }
 
-//Service handle GRPC request
+// Service handle GRPC request
 type Service struct {
 	server  *server.Server
 	handler *RequestHandler
@@ -165,10 +165,10 @@ func (s *Service) serveWithHandlingSignal(serve func() error) error {
 	var wg sync.WaitGroup
 	var err error
 	wg.Add(1)
-	go func(s *Service) {
+	go func() {
 		defer wg.Done()
 		err = serve()
-	}(s)
+	}()
 
 	signal.Notify(s.sigs,
 		syscall.SIGHUP,

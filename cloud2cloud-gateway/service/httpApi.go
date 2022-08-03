@@ -19,18 +19,22 @@ import (
 	"github.com/plgd-dev/kit/v2/codec/json"
 )
 
-const hrefKey = "Href"
-const subscriptionIDKey = "subscriptionID"
-const deviceIDKey = "deviceID"
+const (
+	hrefKey           = "Href"
+	subscriptionIDKey = "subscriptionID"
+	deviceIDKey       = "deviceID"
+)
 
-const ContentQuery = "content"
-const ContentQueryBaseValue = "base"
-const ContentQueryAllValue = "all"
-const ContentQueryDefault = ContentQueryBaseValue
+const (
+	ContentQuery          = "content"
+	ContentQueryBaseValue = "base"
+	ContentQueryAllValue  = "all"
+	ContentQueryDefault   = ContentQueryBaseValue
+)
 
 type ListDevicesOfUserFunc func(ctx context.Context, correlationID, userID, accessToken string) (deviceIds []string, statusCode int, err error)
 
-//RequestHandler for handling incoming request
+// RequestHandler for handling incoming request
 type RequestHandler struct {
 	gwClient  pbGRPC.GrpcGatewayClient
 	raClient  *raClient.Client
@@ -47,7 +51,7 @@ func logAndWriteErrorResponse(err error, statusCode int, w http.ResponseWriter) 
 	}
 }
 
-//NewRequestHandler factory for new RequestHandler
+// NewRequestHandler factory for new RequestHandler
 func NewRequestHandler(
 	gwClient pbGRPC.GrpcGatewayClient,
 	raClient *raClient.Client,
@@ -134,9 +138,11 @@ func healthCheck(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+const subscriptions = "subscriptions"
+
 func resourceSubscriptionMatcher(r *http.Request, rm *router.RouteMatch) bool {
 	paths := splitDevicePath(r.RequestURI)
-	if len(paths) > 3 && paths[len(paths)-2] == "subscriptions" {
+	if len(paths) > 3 && paths[len(paths)-2] == subscriptions {
 		if rm.Vars == nil {
 			rm.Vars = make(map[string]string)
 		}
@@ -150,7 +156,7 @@ func resourceSubscriptionMatcher(r *http.Request, rm *router.RouteMatch) bool {
 
 func resourceMatcher(r *http.Request, rm *router.RouteMatch) bool {
 	paths := splitDevicePath(r.RequestURI)
-	if len(paths) >= 2 && paths[len(paths)-1] != "subscriptions" {
+	if len(paths) >= 2 && paths[len(paths)-1] != subscriptions {
 		if rm.Vars == nil {
 			rm.Vars = make(map[string]string)
 		}
@@ -193,7 +199,7 @@ func NewHTTP(requestHandler *RequestHandler, authInterceptor kitNetHttp.Intercep
 	// resource subscription
 	s1.MatcherFunc(func(r *http.Request, rm *router.RouteMatch) bool {
 		paths := splitDevicePath(r.RequestURI)
-		if len(paths) > 2 && paths[len(paths)-1] == "subscriptions" {
+		if len(paths) > 2 && paths[len(paths)-1] == subscriptions {
 			if rm.Vars == nil {
 				rm.Vars = make(map[string]string)
 			}

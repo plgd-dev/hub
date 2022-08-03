@@ -22,8 +22,10 @@ import (
 
 const eventTypeResourceStateSnapshotTaken = "resourcestatesnapshottaken"
 
-const errInvalidVersion = "invalid version for events"
-const errInvalidCommandMetadata = "invalid command metadata"
+const (
+	errInvalidVersion         = "invalid version for events"
+	errInvalidCommandMetadata = "invalid command metadata"
+)
 
 func (e *ResourceStateSnapshotTaken) AggregateID() string {
 	return e.GetResourceId().ToUUID()
@@ -87,15 +89,15 @@ type resourceValidUntilValidator interface {
 	GetResourceId() *commands.ResourceId
 }
 
-func (e *ResourceStateSnapshotTaken) processValidUntil(v resourceValidUntilValidator, now time.Time) (bool, error) {
+func (e *ResourceStateSnapshotTaken) processValidUntil(v resourceValidUntilValidator, now time.Time) bool {
 	if v.IsExpired(now) {
 		// for events from eventstore we just store metada from command.
 		e.ResourceId = v.GetResourceId()
 		e.EventMetadata = v.GetEventMetadata()
 		e.AuditContext = v.GetAuditContext()
-		return false, nil
+		return false
 	}
-	return true, nil
+	return true
 }
 
 func (e *ResourceStateSnapshotTaken) checkForDuplicitCorrelationID(correlationID string, now time.Time) error {
@@ -136,14 +138,10 @@ func (e *ResourceStateSnapshotTaken) checkForDuplicitCorrelationID(correlationID
 
 func (e *ResourceStateSnapshotTaken) HandleEventResourceCreatePending(ctx context.Context, createPending *ResourceCreatePending) error {
 	now := time.Now()
-	ok, err := e.processValidUntil(createPending, now)
-	if err != nil {
-		return err
-	}
-	if !ok {
+	if ok := e.processValidUntil(createPending, now); !ok {
 		return nil
 	}
-	err = e.checkForDuplicitCorrelationID(createPending.GetAuditContext().GetCorrelationId(), now)
+	err := e.checkForDuplicitCorrelationID(createPending.GetAuditContext().GetCorrelationId(), now)
 	if err != nil {
 		return err
 	}
@@ -156,14 +154,10 @@ func (e *ResourceStateSnapshotTaken) HandleEventResourceCreatePending(ctx contex
 
 func (e *ResourceStateSnapshotTaken) HandleEventResourceUpdatePending(ctx context.Context, updatePending *ResourceUpdatePending) error {
 	now := time.Now()
-	ok, err := e.processValidUntil(updatePending, now)
-	if err != nil {
-		return err
-	}
-	if !ok {
+	if ok := e.processValidUntil(updatePending, now); !ok {
 		return nil
 	}
-	err = e.checkForDuplicitCorrelationID(updatePending.GetAuditContext().GetCorrelationId(), now)
+	err := e.checkForDuplicitCorrelationID(updatePending.GetAuditContext().GetCorrelationId(), now)
 	if err != nil {
 		return err
 	}
@@ -176,14 +170,10 @@ func (e *ResourceStateSnapshotTaken) HandleEventResourceUpdatePending(ctx contex
 
 func (e *ResourceStateSnapshotTaken) HandleEventResourceRetrievePending(ctx context.Context, retrievePending *ResourceRetrievePending) error {
 	now := time.Now()
-	ok, err := e.processValidUntil(retrievePending, now)
-	if err != nil {
-		return err
-	}
-	if !ok {
+	if ok := e.processValidUntil(retrievePending, now); !ok {
 		return nil
 	}
-	err = e.checkForDuplicitCorrelationID(retrievePending.GetAuditContext().GetCorrelationId(), now)
+	err := e.checkForDuplicitCorrelationID(retrievePending.GetAuditContext().GetCorrelationId(), now)
 	if err != nil {
 		return err
 	}
@@ -195,14 +185,10 @@ func (e *ResourceStateSnapshotTaken) HandleEventResourceRetrievePending(ctx cont
 
 func (e *ResourceStateSnapshotTaken) HandleEventResourceDeletePending(ctx context.Context, deletePending *ResourceDeletePending) error {
 	now := time.Now()
-	ok, err := e.processValidUntil(deletePending, now)
-	if err != nil {
-		return err
-	}
-	if !ok {
+	if ok := e.processValidUntil(deletePending, now); !ok {
 		return nil
 	}
-	err = e.checkForDuplicitCorrelationID(deletePending.GetAuditContext().GetCorrelationId(), now)
+	err := e.checkForDuplicitCorrelationID(deletePending.GetAuditContext().GetCorrelationId(), now)
 	if err != nil {
 		return err
 	}
@@ -212,6 +198,7 @@ func (e *ResourceStateSnapshotTaken) HandleEventResourceDeletePending(ctx contex
 	e.AuditContext = deletePending.GetAuditContext()
 	return nil
 }
+
 func RemoveIndex(s []int, index int) []int {
 	return append(s[:index], s[index+1:]...)
 }
