@@ -52,8 +52,10 @@ func TestRequestHandlerRetrieveDeviceSubscription(t *testing.T) {
 	dataChan := eventsServer.Run(t)
 
 	subscriber := c2cTest.NewC2CSubscriber(eventsServer.GetPort(t), eventsURI, c2cTest.SubscriptionType_Device)
-	subID := subscriber.Subscribe(t, ctx, token, deviceID, "", c2cEvents.EventTypes{c2cEvents.EventType_ResourcesPublished,
-		c2cEvents.EventType_ResourcesUnpublished})
+	subID := subscriber.Subscribe(t, ctx, token, deviceID, "", c2cEvents.EventTypes{
+		c2cEvents.EventType_ResourcesPublished,
+		c2cEvents.EventType_ResourcesUnpublished,
+	})
 	require.NotEmpty(t, subID)
 
 	events := c2cTest.WaitForEvents(dataChan, 3*time.Second)

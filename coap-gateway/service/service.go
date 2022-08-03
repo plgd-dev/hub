@@ -568,7 +568,7 @@ func (s *Service) authMiddleware(next mux.Handler) mux.Handler {
 	})
 }
 
-//setupCoapServer setup coap server
+// setupCoapServer setup coap server
 func (s *Service) setupCoapServer() error {
 	setHandlerError := func(uri string, err error) error {
 		return fmt.Errorf("failed to set %v handler: %w", uri, err)

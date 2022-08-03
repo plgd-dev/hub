@@ -16,7 +16,7 @@ import (
 	natsClient "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/client"
 )
 
-//Config represent application configuration
+// Config represent application configuration
 type Config struct {
 	Log       LogConfig     `yaml:"log" json:"log"`
 	APIs      APIsConfig    `yaml:"apis" json:"apis"`
@@ -40,7 +40,7 @@ func (c *Config) Validate() error {
 	return nil
 }
 
-//Config represent application configuration
+// Config represent application configuration
 type LogConfig struct {
 	DumpBody   bool `yaml:"dumpBody" json:"dumpBody"`
 	log.Config `yaml:",inline"`
@@ -279,7 +279,7 @@ func (c *DeviceStatusExpirationConfig) Validate() error {
 	return nil
 }
 
-//String return string representation of Config
+// String return string representation of Config
 func (c Config) String() string {
 	return config.ToString(c)
 }

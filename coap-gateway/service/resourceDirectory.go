@@ -223,7 +223,7 @@ type resourceDirectorySelector struct {
 }
 
 func resourceDirectoryGetSelector(req *mux.Message, client *Client) (*pool.Message, error) {
-	var rds resourceDirectorySelector //we want to use sel:0 to prefer cloud RD
+	var rds resourceDirectorySelector // we want to use sel:0 to prefer cloud RD
 
 	accept := coapconv.GetAccept(req.Options)
 	encode, err := coapconv.GetEncoder(accept)

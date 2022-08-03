@@ -15,7 +15,7 @@ import (
 
 const serviceName = "mock-oauth-server"
 
-//Server handle HTTP request
+// Server handle HTTP request
 type Service struct {
 	server         *http.Server
 	requestHandler *RequestHandler

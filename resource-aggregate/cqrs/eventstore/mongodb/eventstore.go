@@ -26,21 +26,27 @@ const eventCName = "events"
 
 // Event
 const versionKey = "version"
-const dataKey = "data"
-const eventTypeKey = "eventtype"
-const isSnapshotKey = "issnapshot"
-const timestampKey = "timestamp"
+
+const (
+	dataKey       = "data"
+	eventTypeKey  = "eventtype"
+	isSnapshotKey = "issnapshot"
+	timestampKey  = "timestamp"
+)
 
 // Document
 const aggregateIDKey = "aggregateid"
-const idKey = "_id"
-const firstVersionKey = "firstversion"
-const latestVersionKey = "latestversion"
-const latestSnapshotVersionKey = "latestsnapshotversion"
-const latestTimestampKey = "latesttimestamp"
-const eventsKey = "events"
-const groupIDKey = "groupid"
-const isActiveKey = "isactive"
+
+const (
+	idKey                    = "_id"
+	firstVersionKey          = "firstversion"
+	latestVersionKey         = "latestversion"
+	latestSnapshotVersionKey = "latestsnapshotversion"
+	latestTimestampKey       = "latesttimestamp"
+	eventsKey                = "events"
+	groupIDKey               = "groupid"
+	isActiveKey              = "isactive"
+)
 
 var aggregateIDLastVersionQueryIndex = bson.D{
 	{Key: aggregateIDKey, Value: 1},
@@ -82,10 +88,10 @@ const (
 
 type LogDebugfFunc = func(fmt string, args ...interface{})
 
-//MarshalerFunc marshal struct to bytes.
+// MarshalerFunc marshal struct to bytes.
 type MarshalerFunc = func(v interface{}) ([]byte, error)
 
-//UnmarshalerFunc unmarshal bytes to pointer of struct.
+// UnmarshalerFunc unmarshal bytes to pointer of struct.
 type UnmarshalerFunc = func(b []byte, v interface{}) error
 
 // EventStore implements an EventStore for MongoDB.
@@ -206,7 +212,7 @@ func (s *EventStore) ensureIndex(ctx context.Context, col *mongo.Collection, ind
 		_, err := col.Indexes().CreateOne(ctx, index)
 		if err != nil {
 			if strings.HasPrefix(err.Error(), "(IndexKeySpecsConflict)") {
-				//index already exist, just skip error and continue
+				// index already exist, just skip error and continue
 				continue
 			}
 			return fmt.Errorf("cannot ensure indexes for eventstore: %w", err)

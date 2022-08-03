@@ -109,7 +109,8 @@ func Get(ctx context.Context, tracerProvider trace.TracerProvider, url string, l
 }
 
 func publishDeviceResources(ctx context.Context, raClient raService.ResourceAggregateClient, deviceID string, linkedAccount store.LinkedAccount,
-	linkedCloud store.LinkedCloud, dev RetrieveDeviceWithLinksResponse, triggerTask OnTaskTrigger) error {
+	linkedCloud store.LinkedCloud, dev RetrieveDeviceWithLinksResponse, triggerTask OnTaskTrigger,
+) error {
 	var errors []error
 	ctx = kitNetGrpc.CtxWithToken(ctx, linkedAccount.Data.Origin().AccessToken.String())
 	for _, link := range dev.Links {
@@ -289,7 +290,8 @@ func removeDeviceIDFromHref(href string) string {
 	href = "/" + strings.Join(hrefsp[2:], "/")
 	return href
 }
-func (p *pullDevicesHandler) notifyResourceChanged(ctx context.Context, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud, deviceID string, link Representation) error {
+
+func (p *pullDevicesHandler) notifyResourceChanged(ctx context.Context, linkedAccount store.LinkedAccount, deviceID string, link Representation) error {
 	link.Href = removeDeviceIDFromHref(link.Href)
 	body, err := json.Encode(link.Representation)
 	if err != nil {
@@ -327,7 +329,7 @@ func (p *pullDevicesHandler) getDevicesWithResourceValues(ctx context.Context, l
 	for _, dev := range devices {
 		deviceID := dev.Device.Device.ID
 		for _, link := range dev.Links {
-			if err := p.notifyResourceChanged(ctx, linkedAccount, linkedCloud, deviceID, link); err != nil {
+			if err := p.notifyResourceChanged(ctx, linkedAccount, deviceID, link); err != nil {
 				errors = append(errors, err)
 			}
 		}
@@ -391,7 +393,7 @@ func (p *pullDevicesHandler) pullDevicesFromAccount(ctx context.Context, linkedA
 	return nil
 }
 
-func (p *pullDevicesHandler) pullLinkedAccountsDevices(ctx context.Context) error {
+func (p *pullDevicesHandler) pullLinkedAccountsDevices(ctx context.Context) {
 	data := p.s.DumpLinkedAccounts()
 	var wg sync.WaitGroup
 	for _, d := range data {
@@ -407,16 +409,12 @@ func (p *pullDevicesHandler) pullLinkedAccountsDevices(ctx context.Context) erro
 	}
 
 	wg.Wait()
-	return nil
 }
 
 func (p *pullDevicesHandler) runDevicePulling(ctx context.Context, timeout time.Duration) bool {
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
-	err := p.pullLinkedAccountsDevices(ctx)
-	if err != nil {
-		log.Errorf("cannot pull devices: %w", err)
-	}
+	p.pullLinkedAccountsDevices(ctx)
 	<-ctx.Done()
 	return !errors.Is(ctx.Err(), context.Canceled)
 }

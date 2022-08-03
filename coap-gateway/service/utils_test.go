@@ -172,16 +172,15 @@ func runSignIn(t *testing.T, deviceID string, r service.CoapSignUpResponse, co *
 	return nil, resp.Code()
 }
 
-func testSignIn(t *testing.T, deviceID string, r service.CoapSignUpResponse, co *tcp.ClientConn) service.CoapSignInResp {
+func testSignIn(t *testing.T, deviceID string, r service.CoapSignUpResponse, co *tcp.ClientConn) {
 	signInResp, code := runSignIn(t, deviceID, r, co)
 	require.Equal(t, codes.Changed, code)
 	require.NotNil(t, signInResp)
-	return *signInResp
 }
 
-func testSignUpIn(t *testing.T, deviceID string, co *tcp.ClientConn) service.CoapSignInResp {
+func testSignUpIn(t *testing.T, deviceID string, co *tcp.ClientConn) {
 	resp := testSignUp(t, deviceID, co)
-	return testSignIn(t, deviceID, resp, co)
+	testSignIn(t, deviceID, resp, co)
 }
 
 func testPostHandler(t *testing.T, path string, test testEl, co *tcp.ClientConn) {
@@ -227,7 +226,9 @@ func json2cbor(data string) ([]byte, error) {
 func testPrepareDevice(t *testing.T, co *tcp.ClientConn) {
 	testSignUpIn(t, CertIdentity, co)
 	publishResEl := []testEl{
-		{"publishResourceA", input{codes.POST, `{ "di":"` + CertIdentity + `", "links":[ { "di":"` + CertIdentity + `", "href":"` + TestAResourceHref + `", "rt":["` + TestAResourceType + `"], "type":["` + message.TextPlain.String() + `"] } ], "ttl":12345}`, nil},
+		{
+			"publishResourceA",
+			input{codes.POST, `{ "di":"` + CertIdentity + `", "links":[ { "di":"` + CertIdentity + `", "href":"` + TestAResourceHref + `", "rt":["` + TestAResourceType + `"], "type":["` + message.TextPlain.String() + `"] } ], "ttl":12345}`, nil},
 			output{codes.Changed, TestWkRD{
 				DeviceID:         CertIdentity,
 				TimeToLive:       12345,
@@ -240,8 +241,12 @@ func testPrepareDevice(t *testing.T, co *tcp.ClientConn) {
 						Type:          []string{message.TextPlain.String()},
 					},
 				},
-			}, nil}, false},
-		{"publishResourceB", input{codes.POST, `{ "di":"` + CertIdentity + `", "links":[ { "di":"` + CertIdentity + `", "href":"` + TestBResourceHref + `", "rt":["` + TestBResourceType + `"], "type":["` + message.TextPlain.String() + `"] } ], "ttl":12345}`, nil},
+			}, nil},
+			false,
+		},
+		{
+			"publishResourceB",
+			input{codes.POST, `{ "di":"` + CertIdentity + `", "links":[ { "di":"` + CertIdentity + `", "href":"` + TestBResourceHref + `", "rt":["` + TestBResourceType + `"], "type":["` + message.TextPlain.String() + `"] } ], "ttl":12345}`, nil},
 			output{codes.Changed, TestWkRD{
 				DeviceID:         CertIdentity,
 				TimeToLive:       12345,
@@ -254,14 +259,16 @@ func testPrepareDevice(t *testing.T, co *tcp.ClientConn) {
 						Type:          []string{message.TextPlain.String()},
 					},
 				},
-			}, nil}, false},
+			}, nil},
+			false,
+		},
 	}
 	for _, tt := range publishResEl {
 		testPostHandler(t, uri.ResourceDirectory, tt, co)
 	}
 }
 
-func testCoapDial(t *testing.T, host, deviceID string, withTLS bool, validTo time.Time) *tcp.ClientConn {
+func testCoapDial(t *testing.T, deviceID string, withTLS bool, validTo time.Time) *tcp.ClientConn {
 	var tlsConfig *tls.Config
 
 	if withTLS {
@@ -325,7 +332,7 @@ func testCoapDial(t *testing.T, host, deviceID string, withTLS bool, validTo tim
 			},
 		}
 	}
-	conn, err := tcp.Dial(host, tcp.WithTLS(tlsConfig), tcp.WithHandlerFunc(func(w *tcp.ResponseWriter, r *pool.Message) {
+	conn, err := tcp.Dial(config.GW_HOST, tcp.WithTLS(tlsConfig), tcp.WithHandlerFunc(func(w *tcp.ResponseWriter, r *pool.Message) {
 		var err error
 		resp := []byte("hello world")
 		switch r.Code() {

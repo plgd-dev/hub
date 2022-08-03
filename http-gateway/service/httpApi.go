@@ -18,14 +18,14 @@ import (
 	kitHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
 )
 
-//RequestHandler for handling incoming request
+// RequestHandler for handling incoming request
 type RequestHandler struct {
 	client *client.Client
 	config *Config
 	mux    *runtime.ServeMux
 }
 
-//NewRequestHandler factory for new RequestHandler
+// NewRequestHandler factory for new RequestHandler
 func NewRequestHandler(config *Config, client *client.Client) *RequestHandler {
 	return &RequestHandler{
 		client: client,
@@ -34,7 +34,10 @@ func NewRequestHandler(config *Config, client *client.Client) *RequestHandler {
 	}
 }
 
-func splitURIPath(requestURI, prefix string) []string {
+func matchPrefixAndSplitURIPath(requestURI, prefix string) []string {
+	if len(requestURI) == 0 {
+		return nil
+	}
 	v := kitHttp.CanonicalHref(requestURI)
 	p := strings.TrimPrefix(v, prefix) // remove core prefix
 	if p == v {
@@ -45,7 +48,7 @@ func splitURIPath(requestURI, prefix string) []string {
 }
 
 func resourcePendingCommandsMatcher(r *http.Request, rm *router.RouteMatch) bool {
-	paths := splitURIPath(r.RequestURI, uri.Devices)
+	paths := matchPrefixAndSplitURIPath(r.RequestURI, uri.Devices)
 	if len(paths) > 3 && paths[1] == uri.ResourcesPathKey && strings.Contains(paths[len(paths)-1], uri.PendingCommandsPathKey) {
 		if rm.Vars == nil {
 			rm.Vars = make(map[string]string)
@@ -67,7 +70,7 @@ func resourcePendingCommandsMatcher(r *http.Request, rm *router.RouteMatch) bool
 }
 
 func resourceMatcher(r *http.Request, rm *router.RouteMatch) bool {
-	paths := splitURIPath(r.RequestURI, uri.Devices)
+	paths := matchPrefixAndSplitURIPath(r.RequestURI, uri.Devices)
 	if len(paths) > 2 &&
 		paths[1] == uri.ResourcesPathKey &&
 		!strings.HasPrefix(paths[len(paths)-1], uri.EventsPathKey) {
@@ -82,7 +85,7 @@ func resourceMatcher(r *http.Request, rm *router.RouteMatch) bool {
 }
 
 func resourceLinksMatcher(r *http.Request, rm *router.RouteMatch) bool {
-	paths := splitURIPath(r.RequestURI, uri.Devices)
+	paths := matchPrefixAndSplitURIPath(r.RequestURI, uri.Devices)
 	if len(paths) > 2 && paths[1] == uri.ResourceLinksPathKey {
 		if rm.Vars == nil {
 			rm.Vars = make(map[string]string)
@@ -95,7 +98,7 @@ func resourceLinksMatcher(r *http.Request, rm *router.RouteMatch) bool {
 }
 
 func resourceEventsMatcher(r *http.Request, rm *router.RouteMatch) bool {
-	paths := splitURIPath(r.RequestURI, uri.Devices)
+	paths := matchPrefixAndSplitURIPath(r.RequestURI, uri.Devices)
 	// /api/v1/devices/{deviceId}/resources/{resourceHref}/events
 	// /api/v1/devices/{deviceId}/resources/{resourceHref}/events?timestampFilter={timestamp}
 	if len(paths) > 3 &&

@@ -10,7 +10,7 @@ import (
 )
 
 func (rh *RequestHandler) subscribeToDevices(w http.ResponseWriter, r *http.Request) (int, error) {
-	s, code, err := rh.makeSubscription(w, r, store.Type_Devices, []events.EventType{
+	s, code, err := rh.makeSubscription(r, store.Type_Devices, []events.EventType{
 		events.EventType_DevicesRegistered,
 		events.EventType_DevicesUnregistered,
 		events.EventType_DevicesOnline,

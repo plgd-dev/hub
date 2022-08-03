@@ -6,7 +6,6 @@ import (
 
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/hub/v2/coap-gateway/uri"
-	testCfg "github.com/plgd-dev/hub/v2/test/config"
 	"github.com/stretchr/testify/require"
 )
 
@@ -14,7 +13,7 @@ func TestSignOffHandler(t *testing.T) {
 	shutdown := setUp(t)
 	defer shutdown()
 
-	co := testCoapDial(t, testCfg.GW_HOST, "", true, time.Now().Add(time.Minute))
+	co := testCoapDial(t, "", true, time.Now().Add(time.Minute))
 	require.NotNil(t, co)
 	_ = testSignUp(t, CertIdentity, co)
 	err := co.Close()
@@ -30,7 +29,7 @@ func TestSignOffHandler(t *testing.T) {
 
 	for _, test := range tbl {
 		tf := func(t *testing.T) {
-			co := testCoapDial(t, testCfg.GW_HOST, "", true, time.Now().Add(time.Minute))
+			co := testCoapDial(t, "", true, time.Now().Add(time.Minute))
 			require.NotNil(t, co)
 			defer func() {
 				_ = co.Close()
@@ -53,7 +52,7 @@ func TestSignOffWithSignInHandler(t *testing.T) {
 
 	for _, test := range tbl {
 		tf := func(t *testing.T) {
-			co := testCoapDial(t, testCfg.GW_HOST, "", true, time.Now().Add(time.Minute))
+			co := testCoapDial(t, "", true, time.Now().Add(time.Minute))
 			require.NotNil(t, co)
 			testSignUpIn(t, CertIdentity, co)
 			defer func() {

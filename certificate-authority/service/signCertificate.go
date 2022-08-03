@@ -11,8 +11,8 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func (r *RequestHandler) validateRequest(ctx context.Context, csr []byte) error {
-	infoData, err := getInfoData(ctx, csr)
+func (r *RequestHandler) validateRequest(csr []byte) error {
+	infoData, err := getInfoData(csr)
 	if err != nil {
 		return fmt.Errorf("cannot get info data for csr=%v: %w", string(csr), err)
 	}
@@ -23,7 +23,7 @@ func (r *RequestHandler) validateRequest(ctx context.Context, csr []byte) error 
 }
 
 func (r *RequestHandler) SignCertificate(ctx context.Context, req *pb.SignCertificateRequest) (*pb.SignCertificateResponse, error) {
-	err := r.validateRequest(ctx, req.GetCertificateSigningRequest())
+	err := r.validateRequest(req.GetCertificateSigningRequest())
 	if err != nil {
 		return nil, log.LogAndReturnError(status.Errorf(codes.InvalidArgument, "cannot sign certificate: %v", err))
 	}

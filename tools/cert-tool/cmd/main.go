@@ -112,7 +112,6 @@ func main() {
 	var opts Options
 	parser := flags.NewParser(&opts, flags.Default)
 	_, err := parser.Parse()
-
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(2)

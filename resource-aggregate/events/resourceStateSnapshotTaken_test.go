@@ -34,6 +34,7 @@ func (i *iterator) Next(ctx context.Context) (eventstore.EventUnmarshaler, bool)
 	}
 	return nil, false
 }
+
 func (i *iterator) Err() error {
 	return nil
 }

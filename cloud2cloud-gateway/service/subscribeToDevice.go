@@ -14,7 +14,7 @@ func (rh *RequestHandler) subscribeToDevice(w http.ResponseWriter, r *http.Reque
 	routeVars := mux.Vars(r)
 	deviceID := routeVars[deviceIDKey]
 
-	s, code, err := rh.makeSubscription(w, r, store.Type_Device, []events.EventType{
+	s, code, err := rh.makeSubscription(r, store.Type_Device, []events.EventType{
 		events.EventType_ResourcesPublished,
 		events.EventType_ResourcesUnpublished,
 	})

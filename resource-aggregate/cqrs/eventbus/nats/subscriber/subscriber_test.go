@@ -78,6 +78,7 @@ func (e mockEvent) EventType() string {
 func (e mockEvent) AggregateID() string {
 	return e.AggregateIDI
 }
+
 func (e mockEvent) GroupID() string {
 	return e.groupID
 }
@@ -171,7 +172,7 @@ type Path struct {
 }
 
 func acceptanceTest(t *testing.T, ctx context.Context, timeout time.Duration, publishTopics, subscribeTopics []string, publisher eventbus.Publisher, subscriber eventbus.Subscriber) {
-	//savedEvents := []Event{}
+	// savedEvents := []Event{}
 	AggregateID1 := "aggregateID1"
 	AggregateID2 := "aggregateID2"
 

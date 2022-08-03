@@ -11,7 +11,6 @@ import (
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	coapgwTest "github.com/plgd-dev/hub/v2/coap-gateway/test"
 	"github.com/plgd-dev/hub/v2/coap-gateway/uri"
-	testCfg "github.com/plgd-dev/hub/v2/test/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -22,7 +21,7 @@ func TestClientUpdateHandler(t *testing.T) {
 	shutdown := setUp(t, coapgwCfg)
 	defer shutdown()
 
-	co := testCoapDial(t, testCfg.GW_HOST, "", false, time.Now().Add(time.Minute))
+	co := testCoapDial(t, "", false, time.Now().Add(time.Minute))
 	if co == nil {
 		return
 	}

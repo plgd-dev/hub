@@ -120,7 +120,7 @@ func (c *GrpcServerConfig) Validate() error {
 	return nil
 }
 
-//String return string representation of Config
+// String return string representation of Config
 func (c Config) String() string {
 	return config.ToString(c)
 }

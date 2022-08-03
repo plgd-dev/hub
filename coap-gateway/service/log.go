@@ -136,14 +136,14 @@ func (c *Client) loggerWithRequestResponse(logger log.Logger, req *pool.Message,
 		if ok {
 			logger = logger.With(log.DeadlineKey, deadline)
 		}
-		logMsg := c.msgToLogCoapMessage(req, logger, resp == nil)
+		logMsg := c.msgToLogCoapMessage(req, resp == nil)
 		logger = logger.With(log.RequestKey, logMsg)
 	}
 	if resp != nil {
 		if !spanCtx.IsValid() {
 			spanCtx = trace.SpanContextFromContext(resp.Context())
 		}
-		logMsg := c.msgToLogCoapMessage(resp, logger, req == nil)
+		logMsg := c.msgToLogCoapMessage(resp, req == nil)
 		if req != nil {
 			logMsg.JWT = nil
 		}
@@ -179,7 +179,7 @@ func (c *Client) logRequestResponse(req *mux.Message, resp *pool.Message, err er
 	logger.Debug("finished unary call from the device")
 }
 
-func (c *Client) msgToLogCoapMessage(req *pool.Message, logger log.Logger, withToken bool) logCoapMessage {
+func (c *Client) msgToLogCoapMessage(req *pool.Message, withToken bool) logCoapMessage {
 	rq := coapgwMessage.ToJson(req, c.server.config.Log.DumpBody, withToken)
 	var sub string
 	if v, err := c.GetAuthorizationContext(); err == nil {
@@ -206,7 +206,7 @@ func (c *Client) logNotification(logMsg, path string, notification *pool.Message
 		return
 	}
 	if notification != nil {
-		rsp := c.msgToLogCoapMessage(notification, logger, true)
+		rsp := c.msgToLogCoapMessage(notification, true)
 		rsp.Path = path
 		logger = logger.With(logNotificationKey, rsp)
 		spanCtx := trace.SpanContextFromContext(notification.Context())
@@ -217,8 +217,10 @@ func (c *Client) logNotification(logMsg, path string, notification *pool.Message
 	DefaultCodeToLevel(notification.Code(), logger.With(log.ProtocolKey, "COAP"))(logMsg)
 }
 
+const logNotificationDefaultCode = "unknown"
+
 func (c *Client) logNotificationToClient(path string, notification *pool.Message) {
-	code := "unknown"
+	code := logNotificationDefaultCode
 	if notification != nil {
 		code = notification.Code().String()
 	}
@@ -226,7 +228,7 @@ func (c *Client) logNotificationToClient(path string, notification *pool.Message
 }
 
 func (c *Client) logNotificationFromClient(path string, notification *pool.Message) {
-	code := "unknown"
+	code := logNotificationDefaultCode
 	if notification != nil {
 		code = notification.Code().String()
 	}

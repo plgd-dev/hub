@@ -11,19 +11,23 @@ import (
 	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 )
 
-const DeviceIDKey = "deviceId"
-const ResourceIDKey = "resourceId"
+const (
+	DeviceIDKey   = "deviceId"
+	ResourceIDKey = "resourceId"
+)
 
-const Devices = "devices"
-const PlgdOwnersOwnerDevices = isEvents.PlgdOwnersOwner + "." + Devices
-const PlgdOwnersOwnerDevicesDevice = PlgdOwnersOwnerDevices + ".{" + DeviceIDKey + "}"
-const PlgdOwnersOwnerDevicesDeviceResourceLinks = PlgdOwnersOwnerDevicesDevice + ".resource-links"
-const PlgdOwnersOwnerDevicesDeviceResourceLinksEvent = PlgdOwnersOwnerDevicesDeviceResourceLinks + ".{" + isEvents.EventTypeKey + "}"
-const PlgdOwnersOwnerDevicesDeviceMetadata = PlgdOwnersOwnerDevicesDevice + ".metadata"
-const PlgdOwnersOwnerDevicesDeviceMetadataEvent = PlgdOwnersOwnerDevicesDeviceMetadata + ".{" + isEvents.EventTypeKey + "}"
-const PlgdOwnersOwnerDevicesDeviceResources = PlgdOwnersOwnerDevicesDevice + ".resources"
-const PlgdOwnersOwnerDevicesDeviceResourcesResource = PlgdOwnersOwnerDevicesDeviceResources + ".{" + ResourceIDKey + "}"
-const PlgdOwnersOwnerDevicesDeviceResourcesResourceEvent = PlgdOwnersOwnerDevicesDeviceResourcesResource + ".{" + isEvents.EventTypeKey + "}"
+const (
+	Devices                                            = "devices"
+	PlgdOwnersOwnerDevices                             = isEvents.PlgdOwnersOwner + "." + Devices
+	PlgdOwnersOwnerDevicesDevice                       = PlgdOwnersOwnerDevices + ".{" + DeviceIDKey + "}"
+	PlgdOwnersOwnerDevicesDeviceResourceLinks          = PlgdOwnersOwnerDevicesDevice + ".resource-links"
+	PlgdOwnersOwnerDevicesDeviceResourceLinksEvent     = PlgdOwnersOwnerDevicesDeviceResourceLinks + ".{" + isEvents.EventTypeKey + "}"
+	PlgdOwnersOwnerDevicesDeviceMetadata               = PlgdOwnersOwnerDevicesDevice + ".metadata"
+	PlgdOwnersOwnerDevicesDeviceMetadataEvent          = PlgdOwnersOwnerDevicesDeviceMetadata + ".{" + isEvents.EventTypeKey + "}"
+	PlgdOwnersOwnerDevicesDeviceResources              = PlgdOwnersOwnerDevicesDevice + ".resources"
+	PlgdOwnersOwnerDevicesDeviceResourcesResource      = PlgdOwnersOwnerDevicesDeviceResources + ".{" + ResourceIDKey + "}"
+	PlgdOwnersOwnerDevicesDeviceResourcesResourceEvent = PlgdOwnersOwnerDevicesDeviceResourcesResource + ".{" + isEvents.EventTypeKey + "}"
+)
 
 func WithResourceId(resourceID string) func(values map[string]string) {
 	return func(values map[string]string) {

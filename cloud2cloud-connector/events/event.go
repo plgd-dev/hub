@@ -29,8 +29,10 @@ const (
 )
 const ContentEncodingKey = "Content-Encoding"
 
-var ContentType_JSON = message.AppJSON.String()
-var ContentType_VNDOCFCBOR = message.AppOcfCbor.String()
+var (
+	ContentType_JSON       = message.AppJSON.String()
+	ContentType_VNDOCFCBOR = message.AppOcfCbor.String()
+)
 
 type EventHeader struct {
 	CorrelationID   string

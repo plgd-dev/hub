@@ -5,7 +5,7 @@ import (
 	"net/http"
 )
 
-func (rh *RequestHandler) retrieveLinkedClouds(w http.ResponseWriter, r *http.Request) (int, error) {
+func (rh *RequestHandler) retrieveLinkedClouds(w http.ResponseWriter) (int, error) {
 	if err := writeJson(w, rh.store.Dump()); err != nil {
 		return http.StatusInternalServerError, err
 	}
@@ -13,7 +13,7 @@ func (rh *RequestHandler) retrieveLinkedClouds(w http.ResponseWriter, r *http.Re
 }
 
 func (rh *RequestHandler) RetrieveLinkedClouds(w http.ResponseWriter, r *http.Request) {
-	statusCode, err := rh.retrieveLinkedClouds(w, r)
+	statusCode, err := rh.retrieveLinkedClouds(w)
 	if err != nil {
 		logAndWriteErrorResponse(fmt.Errorf("cannot retrieve linked clouds: %w", err), statusCode, w)
 	}

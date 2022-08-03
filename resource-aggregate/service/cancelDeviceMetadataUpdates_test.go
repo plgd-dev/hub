@@ -25,12 +25,12 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func TestAggregateHandle_CancelPendingMetadataUpdates(t *testing.T) {
-	deviceID := "dev0"
-	userID := "user0"
-	correlationID0 := "0"
-	correlationID1 := "1"
-	correlationID2 := "2"
+func TestAggregateHandleCancelPendingMetadataUpdates(t *testing.T) {
+	const deviceID = "dev0"
+	const userID = "user0"
+	const correlationID0 = "0"
+	const correlationID1 = "1"
+	const correlationID2 = "2"
 	type args struct {
 		request *commands.CancelPendingMetadataUpdatesRequest
 		userID  string
@@ -42,7 +42,6 @@ func TestAggregateHandle_CancelPendingMetadataUpdates(t *testing.T) {
 		wantCode codes.Code
 		wantErr  bool
 	}{
-
 		{
 			name: "cancel one update",
 			args: args{
@@ -127,22 +126,22 @@ func TestAggregateHandle_CancelPendingMetadataUpdates(t *testing.T) {
 				s, ok := status.FromError(kitNetGrpc.ForwardFromError(codes.Unknown, err))
 				require.True(t, ok)
 				assert.Equal(t, tt.wantCode, s.Code())
-			} else {
-				require.NoError(t, err)
-				err = service.PublishEvents(publisher, tt.args.userID, tt.args.request.GetDeviceId(), ag.ResourceID(), events)
-				assert.NoError(t, err)
+				return
 			}
+			require.NoError(t, err)
+			err = service.PublishEvents(publisher, tt.args.userID, tt.args.request.GetDeviceId(), ag.ResourceID(), events)
+			assert.NoError(t, err)
 		}
 		t.Run(tt.name, tfunc)
 	}
 }
 
-func TestRequestHandler_CancelPendingMetadataUpdates(t *testing.T) {
-	deviceID := "dev0"
-	userID := "user0"
-	correlationID0 := "0"
-	correlationID1 := "1"
-	correlationID2 := "2"
+func TestRequestHandlerCancelPendingMetadataUpdates(t *testing.T) {
+	const deviceID = "dev1"
+	const userID = "user1"
+	const correlationID0 = "0"
+	const correlationID1 = "1"
+	const correlationID2 = "2"
 	type args struct {
 		request *commands.CancelPendingMetadataUpdatesRequest
 		userID  string
@@ -155,7 +154,6 @@ func TestRequestHandler_CancelPendingMetadataUpdates(t *testing.T) {
 		wantCode codes.Code
 		wantErr  bool
 	}{
-
 		{
 			name: "cancel one update",
 			args: args{
@@ -252,10 +250,10 @@ func TestRequestHandler_CancelPendingMetadataUpdates(t *testing.T) {
 				s, ok := status.FromError(kitNetGrpc.ForwardFromError(codes.Unknown, err))
 				require.True(t, ok)
 				assert.Equal(t, tt.wantCode, s.Code())
-			} else {
-				require.NoError(t, err)
-				assert.Equal(t, tt.want, want)
+				return
 			}
+			require.NoError(t, err)
+			assert.Equal(t, tt.want, want)
 		}
 		t.Run(tt.name, tfunc)
 	}

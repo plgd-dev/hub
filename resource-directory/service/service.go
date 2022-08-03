@@ -40,7 +40,6 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 		return nil, fmt.Errorf("cannot create grpc server options: %w", err)
 	}
 	server, err := server.New(config.APIs.GRPC.Config, fileWatcher, logger, opts...)
-
 	if err != nil {
 		otelClient.Close()
 		validator.Close()
@@ -66,7 +65,7 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 	}, nil
 }
 
-func makeAuthFunc(validator kitNetGrpc.Validator, ownerClaim string) func(ctx context.Context, method string) (context.Context, error) {
+func makeAuthFunc(validator kitNetGrpc.Validator) func(ctx context.Context, method string) (context.Context, error) {
 	interceptor := kitNetGrpc.ValidateJWTWithValidator(validator, func(ctx context.Context, method string) kitNetGrpc.Claims {
 		return jwt.NewScopeClaims()
 	})
@@ -85,6 +84,6 @@ func makeAuthFunc(validator kitNetGrpc.Validator, ownerClaim string) func(ctx co
 	}
 }
 
-func NewAuth(validator kitNetGrpc.Validator, ownerClaim string) kitNetGrpc.AuthInterceptors {
-	return kitNetGrpc.MakeAuthInterceptors(makeAuthFunc(validator, ownerClaim))
+func NewAuth(validator kitNetGrpc.Validator) kitNetGrpc.AuthInterceptors {
+	return kitNetGrpc.MakeAuthInterceptors(makeAuthFunc(validator))
 }

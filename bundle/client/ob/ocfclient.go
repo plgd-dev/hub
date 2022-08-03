@@ -44,7 +44,6 @@ func (c *OcfClient) Initialize(ctx context.Context, hubConfiguration *pb.HubConf
 	}, appCallback, func(err error) {
 		log.Error(err)
 	})
-
 	if err != nil {
 		return fmt.Errorf("cannot create client: %w", err)
 	}

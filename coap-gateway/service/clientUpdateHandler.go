@@ -22,7 +22,7 @@ func getUpdateResourceErr(err error) error {
 	return fmt.Errorf(errFmtUpdateResource, "", err)
 }
 
-//handles resource updates and creation
+// handles resource updates and creation
 func clientPostHandler(req *mux.Message, client *Client) (*pool.Message, error) {
 	resourceInterface := message.GetResourceInterface(req)
 	if resourceInterface == interfaces.OC_IF_CREATE {

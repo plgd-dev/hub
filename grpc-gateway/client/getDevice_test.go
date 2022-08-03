@@ -20,8 +20,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const TestTimeout = time.Second * 20
-const DeviceSimulatorIdNotFound = "00000000-0000-0000-0000-000000000111"
+const (
+	TestTimeout               = time.Second * 20
+	DeviceSimulatorIdNotFound = "00000000-0000-0000-0000-000000000111"
+)
 
 func NewTestDeviceSimulator(deviceID, deviceName string, withResources bool) client.DeviceDetails {
 	var resources []*commands.Resource

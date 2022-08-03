@@ -10,10 +10,12 @@ import (
 
 type DevicesObservationEvent_type uint8
 
-const DevicesObservationEvent_ONLINE DevicesObservationEvent_type = 0
-const DevicesObservationEvent_OFFLINE DevicesObservationEvent_type = 1
-const DevicesObservationEvent_REGISTERED DevicesObservationEvent_type = 2
-const DevicesObservationEvent_UNREGISTERED DevicesObservationEvent_type = 3
+const (
+	DevicesObservationEvent_ONLINE       DevicesObservationEvent_type = 0
+	DevicesObservationEvent_OFFLINE      DevicesObservationEvent_type = 1
+	DevicesObservationEvent_REGISTERED   DevicesObservationEvent_type = 2
+	DevicesObservationEvent_UNREGISTERED DevicesObservationEvent_type = 3
+)
 
 type DevicesObservationEvent struct {
 	DeviceIDs []string
@@ -63,6 +65,7 @@ func (o *devicesObservation) OnClose() {
 	o.removeSubscription()
 	o.h.OnClose()
 }
+
 func (o *devicesObservation) Error(err error) {
 	o.removeSubscription()
 	o.h.Error(err)

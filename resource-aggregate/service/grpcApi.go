@@ -17,7 +17,7 @@ import (
 
 type getOwnerDevicesFunc = func(ctx context.Context, owner string, deviceIDs []string) ([]string, error)
 
-//RequestHandler for handling incoming request
+// RequestHandler for handling incoming request
 type RequestHandler struct {
 	UnimplementedResourceAggregateServer
 	config              Config
@@ -26,7 +26,7 @@ type RequestHandler struct {
 	getOwnerDevicesFunc getOwnerDevicesFunc
 }
 
-//NewRequestHandler factory for new RequestHandler
+// NewRequestHandler factory for new RequestHandler
 func NewRequestHandler(config Config, eventstore EventStore, publisher eventbus.Publisher, getOwnerDevicesFunc getOwnerDevicesFunc) *RequestHandler {
 	return &RequestHandler{
 		config:              config,

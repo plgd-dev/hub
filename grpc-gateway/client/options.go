@@ -30,8 +30,7 @@ func (r ResourceInterfaceOption) applyOnUpdate(opts updateOptions) updateOptions
 	return opts
 }
 
-type SkipShadowOption struct {
-}
+type SkipShadowOption struct{}
 
 func (r SkipShadowOption) applyOnGet(opts getOptions) getOptions {
 	opts.skipShadow = true

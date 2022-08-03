@@ -26,9 +26,9 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func TestAggregateHandle_ConfirmDeviceMetadataUpdate(t *testing.T) {
-	deviceID := "dev0"
-	user0 := "user0"
+func TestAggregateHandleConfirmDeviceMetadataUpdate(t *testing.T) {
+	const deviceID = "dev1"
+	const userID = "user1"
 	type args struct {
 		request *commands.ConfirmDeviceMetadataUpdateRequest
 		userID  string
@@ -44,7 +44,7 @@ func TestAggregateHandle_ConfirmDeviceMetadataUpdate(t *testing.T) {
 			name: "set shadowSynchronizationDisabled",
 			args: args{
 				request: testMakeConfirmDeviceMetadataUpdateRequest(deviceID, commands.ShadowSynchronization_ENABLED),
-				userID:  user0,
+				userID:  userID,
 			},
 			want: codes.OK,
 		},
@@ -52,7 +52,7 @@ func TestAggregateHandle_ConfirmDeviceMetadataUpdate(t *testing.T) {
 			name: "set shadowSynchronizationDisabled duplicit with same correlationID",
 			args: args{
 				request: testMakeConfirmDeviceMetadataUpdateRequest(deviceID, commands.ShadowSynchronization_DISABLED),
-				userID:  user0,
+				userID:  userID,
 			},
 			want:    codes.InvalidArgument,
 			wantErr: true,
@@ -61,7 +61,7 @@ func TestAggregateHandle_ConfirmDeviceMetadataUpdate(t *testing.T) {
 			name: "invalid update commands",
 			args: args{
 				request: testMakeConfirmDeviceMetadataUpdateRequest(deviceID, commands.ShadowSynchronization_UNSET),
-				userID:  user0,
+				userID:  userID,
 			},
 			want:    codes.InvalidArgument,
 			wantErr: true,
@@ -100,7 +100,7 @@ func TestAggregateHandle_ConfirmDeviceMetadataUpdate(t *testing.T) {
 	ag, err := service.NewAggregate(commands.NewResourceID(deviceID, commands.StatusHref), 10, eventstore, service.DeviceMetadataFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
 	require.NoError(t, err)
 	_, err = ag.UpdateDeviceMetadata(kitNetGrpc.CtxWithIncomingToken(ctx, config.CreateJwtToken(t, jwt.MapClaims{
-		"sub": user0,
+		"sub": userID,
 	})), testMakeUpdateDeviceMetadataRequest(deviceID, "", nil, commands.ShadowSynchronization_DISABLED, time.Hour))
 	require.NoError(t, err)
 
@@ -117,19 +117,19 @@ func TestAggregateHandle_ConfirmDeviceMetadataUpdate(t *testing.T) {
 				s, ok := status.FromError(kitNetGrpc.ForwardFromError(codes.Unknown, err))
 				require.True(t, ok)
 				assert.Equal(t, tt.want, s.Code())
-			} else {
-				require.NoError(t, err)
-				err = service.PublishEvents(publisher, tt.args.userID, tt.args.request.GetDeviceId(), ag.ResourceID(), events)
-				assert.NoError(t, err)
+				return
 			}
+			require.NoError(t, err)
+			err = service.PublishEvents(publisher, tt.args.userID, tt.args.request.GetDeviceId(), ag.ResourceID(), events)
+			assert.NoError(t, err)
 		}
 		t.Run(tt.name, tfunc)
 	}
 }
 
-func TestRequestHandler_ConfirmDeviceMetadataUpdate(t *testing.T) {
-	deviceID := "dev0"
-	user0 := "user0"
+func TestRequestHandlerConfirmDeviceMetadataUpdate(t *testing.T) {
+	const deviceID = "dev0"
+	const userID = "user0"
 	type args struct {
 		request *commands.ConfirmDeviceMetadataUpdateRequest
 	}
@@ -146,7 +146,7 @@ func TestRequestHandler_ConfirmDeviceMetadataUpdate(t *testing.T) {
 			},
 			want: &commands.ConfirmDeviceMetadataUpdateResponse{
 				AuditContext: &commands.AuditContext{
-					UserId: user0,
+					UserId: userID,
 				},
 			},
 		},
@@ -174,7 +174,7 @@ func TestRequestHandler_ConfirmDeviceMetadataUpdate(t *testing.T) {
 	}
 
 	ctx := kitNetGrpc.CtxWithIncomingToken(context.Background(), config.CreateJwtToken(t, jwt.MapClaims{
-		"sub": user0,
+		"sub": userID,
 	}))
 	config := raTest.MakeConfig(t)
 	logger := log.NewLogger(config.Log)

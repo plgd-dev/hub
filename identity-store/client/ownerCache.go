@@ -345,7 +345,7 @@ func (c *OwnerCache) getExpiredOwnerSubjects(t time.Time) []string {
 		defer s.Unlock()
 		if len(s.handlers) > 0 {
 			if s.validUntil.Before(t) {
-				//expire devices in cache - user needs to call UpdateDevices to refresh them
+				// expire devices in cache - user needs to call UpdateDevices to refresh them
 				s.devices = s.devices[:0]
 				s.devicesSynced = false
 			}

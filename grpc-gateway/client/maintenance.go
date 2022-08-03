@@ -32,7 +32,7 @@ func (c *Client) FactoryReset(
 	})
 }
 
-//https://github.com/grpc/grpc/blob/master/doc/http-grpc-status-mapping.md
+// https://github.com/grpc/grpc/blob/master/doc/http-grpc-status-mapping.md
 func httpCoreToGrpc(statusCode int) codes.Code {
 	switch statusCode {
 	case http.StatusBadRequest:

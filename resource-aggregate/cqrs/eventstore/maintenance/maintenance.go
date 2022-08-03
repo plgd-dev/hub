@@ -23,7 +23,7 @@ type TaskHandler interface {
 	Handle(ctx context.Context, iter Iter) (err error)
 }
 
-//Iter provides iterator over maintenance db records
+// Iter provides iterator over maintenance db records
 type Iter interface {
 	Next(ctx context.Context, task *Task) bool
 	Err() error

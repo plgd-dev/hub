@@ -6,7 +6,7 @@ import (
 	commands "github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 )
 
-//MakeEventMeta for creating EventMetadata for event.
+// MakeEventMeta for creating EventMetadata for event.
 func MakeEventMeta(connectionID string, sequence, version uint64) *EventMetadata {
 	return &EventMetadata{
 		ConnectionId: connectionID,

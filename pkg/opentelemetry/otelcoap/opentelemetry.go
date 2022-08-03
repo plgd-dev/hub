@@ -52,7 +52,7 @@ func SetRequest(ctx context.Context, message *pool.Message) {
 	span := trace.SpanFromContext(ctx)
 	msg := pkgMessage.ToJson(message, true, false)
 	if msg.Body != nil {
-		var request = ""
+		request := ""
 		if body, ok := msg.Body.(string); ok {
 			request = body
 		} else {

@@ -8,8 +8,10 @@ import (
 	"golang.org/x/oauth2/clientcredentials"
 )
 
-type AuthStyle string
-type GrantType string
+type (
+	AuthStyle string
+	GrantType string
+)
 
 const (
 	// AuthStyleAutoDetect means to auto-detect which authentication
@@ -40,7 +42,7 @@ func (a AuthStyle) ToOAuth2() oauth2.AuthStyle {
 	return oauth2.AuthStyleAutoDetect
 }
 
-//TODO cleanup settings AccessType, ResponseType, ResponseMode, AuthStyle - be careful it is used by c2c.
+// TODO cleanup settings AccessType, ResponseType, ResponseMode, AuthStyle - be careful it is used by c2c.
 type Config struct {
 	ClientID         string    `yaml:"clientID" json:"clientId"`
 	ClientSecretFile string    `yaml:"clientSecretFile" json:"clientSecretFile"`

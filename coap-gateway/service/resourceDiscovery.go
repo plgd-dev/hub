@@ -79,7 +79,7 @@ func makeDiscoveryResp(isTLSListener bool, serverAddr string, getResourceLinksCl
 			if links[i].Anchor == "" {
 				links[i].Anchor = "ocf://" + links[i].DeviceID
 			}
-			//override EndpointInformations to cloud address
+			// override EndpointInformations to cloud address
 			links[i].Endpoints = []schema.Endpoint{
 				{
 					URI:      ep,

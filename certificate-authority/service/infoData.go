@@ -1,7 +1,6 @@
 package service
 
 import (
-	"context"
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
@@ -23,7 +22,7 @@ func (d infoData) String() string {
 }
 
 // PrepareSignRequest can create a CertificateRequest struct with all the required data filled
-func getInfoData(ctx context.Context, csr []byte) (infoData, error) {
+func getInfoData(csr []byte) (infoData, error) {
 	csrBlock, _ := pem.Decode(csr)
 	if csrBlock == nil {
 		return infoData{}, fmt.Errorf("pem not found")

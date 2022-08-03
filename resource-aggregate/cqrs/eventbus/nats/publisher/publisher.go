@@ -13,7 +13,7 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-//MarshalerFunc marshal struct to bytes.
+// MarshalerFunc marshal struct to bytes.
 type MarshalerFunc = func(v interface{}) ([]byte, error)
 
 // Publisher implements a eventbus.Publisher interface.

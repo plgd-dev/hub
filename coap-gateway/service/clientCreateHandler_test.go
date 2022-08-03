@@ -15,7 +15,6 @@ import (
 	coapgwTest "github.com/plgd-dev/hub/v2/coap-gateway/test"
 	"github.com/plgd-dev/hub/v2/coap-gateway/uri"
 	"github.com/plgd-dev/hub/v2/pkg/log"
-	testCfg "github.com/plgd-dev/hub/v2/test/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
@@ -31,7 +30,7 @@ func TestClientCreateHandler(t *testing.T) {
 
 	log.Setup(coapgwCfg.Log.Config)
 
-	co := testCoapDial(t, testCfg.GW_HOST, "", false, time.Now().Add(time.Minute))
+	co := testCoapDial(t, "", false, time.Now().Add(time.Minute))
 	if co == nil {
 		return
 	}

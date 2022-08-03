@@ -332,9 +332,11 @@ func TestResourceLinksSnapshotTakenHandleEventResourceLinksUnpublished(t *testin
 		{
 			name: "unpublish all",
 			args: args{},
-			want: []string{testEventResourceLinksSnapshotTakenRes1.GetHref(),
+			want: []string{
+				testEventResourceLinksSnapshotTakenRes1.GetHref(),
 				testEventResourceLinksSnapshotTakenRes2.GetHref(),
-				testEventResourceLinksSnapshotTakenRes3.GetHref()},
+				testEventResourceLinksSnapshotTakenRes3.GetHref(),
+			},
 		},
 		{
 			name: "unpublish by repeated hrefs",

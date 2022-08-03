@@ -34,7 +34,6 @@ func (rh *RequestHandler) GetResourceLinks(ctx context.Context, deviceIdFilter [
 	client, err := rh.gwClient.GetResourceLinks(ctx, &pbGRPC.GetResourceLinksRequest{
 		DeviceIdFilter: deviceIdFilter,
 	})
-
 	if err != nil {
 		return nil, fmt.Errorf("cannot get resource links: %w", err)
 	}
@@ -110,7 +109,6 @@ func (rh *RequestHandler) RetrieveResources(ctx context.Context, resourceIdFilte
 		DeviceIdFilter:   deviceIdFilter,
 		ResourceIdFilter: resourceIdFilter,
 	})
-
 	if err != nil {
 		return nil, fmt.Errorf("cannot retrieve resources values: %w", err)
 	}

@@ -22,7 +22,7 @@ func getDeleteResourceErr(err error) error {
 }
 
 func clientDeleteHandler(req *mux.Message, client *Client) (*pool.Message, error) {
-	authCtx, err := client.GetAuthorizationContext()
+	_, err := client.GetAuthorizationContext()
 	if err != nil {
 		return nil, statusErrorf(coapCodes.Unauthorized, "%w", getDeleteResourceErr(err))
 	}
@@ -32,7 +32,7 @@ func clientDeleteHandler(req *mux.Message, client *Client) (*pool.Message, error
 	}
 
 	code := coapCodes.Deleted
-	content, err := clientDeleteResourceHandler(req, client, deviceID, href, authCtx.GetUserID())
+	content, err := clientDeleteResourceHandler(req, client, deviceID, href)
 	if err != nil {
 		code = coapconv.GrpcErr2CoapCode(err, coapconv.Delete)
 		return nil, statusErrorf(code, errFmtDeleteResource, fmt.Sprintf(" /%v%v", deviceID, href), err)
@@ -48,7 +48,7 @@ func clientDeleteHandler(req *mux.Message, client *Client) (*pool.Message, error
 	return client.createResponse(code, req.Token, mediaType, content.Data), nil
 }
 
-func clientDeleteResourceHandler(req *mux.Message, client *Client, deviceID, href, userID string) (*commands.Content, error) {
+func clientDeleteResourceHandler(req *mux.Message, client *Client, deviceID, href string) (*commands.Content, error) {
 	deleteCommand, err := coapconv.NewDeleteResourceRequest(commands.NewResourceID(deviceID, href), req, client.RemoteAddr().String())
 	if err != nil {
 		return nil, err

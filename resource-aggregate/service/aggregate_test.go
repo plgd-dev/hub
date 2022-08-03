@@ -38,7 +38,7 @@ var (
 	testUserDevices      = []string{"dev0", "dev1", "dev2", "dupDeviceId"}
 )
 
-func TestAggregateHandle_PublishResourceLinks(t *testing.T) {
+func TestAggregateHandlePublishResourceLinks(t *testing.T) {
 	type args struct {
 		request *commands.PublishResourceLinksRequest
 		userID  string
@@ -131,28 +131,21 @@ func TestAggregateHandle_PublishResourceLinks(t *testing.T) {
 	}
 }
 
-func testHandlePublishResource(t *testing.T, ctx context.Context, publisher *publisher.Publisher, eventstore service.EventStore, userID, deviceID string, hrefs []string, expStatusCode codes.Code, hasErr bool) {
+func testHandlePublishResource(t *testing.T, ctx context.Context, publisher *publisher.Publisher, eventstore service.EventStore, userID, deviceID string, hrefs []string) {
 	pc := testMakePublishResourceRequest(deviceID, hrefs)
 
 	ag, err := service.NewAggregate(commands.NewResourceID(pc.GetDeviceId(), commands.ResourceLinksHref), 10, eventstore, service.ResourceLinksFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
 	assert.NoError(t, err)
 	events, err := ag.PublishResourceLinks(ctx, pc)
-	if hasErr {
-		require.Error(t, err)
-		s, ok := status.FromError(kitNetGrpc.ForwardFromError(codes.Unknown, err))
-		require.True(t, ok)
-		assert.Equal(t, expStatusCode, s.Code())
-	} else {
-		require.NoError(t, err)
-		err = service.PublishEvents(publisher, userID, deviceID, ag.ResourceID(), events)
-		assert.NoError(t, err)
-	}
+	require.NoError(t, err)
+	err = service.PublishEvents(publisher, userID, deviceID, ag.ResourceID(), events)
+	assert.NoError(t, err)
 }
 
 func TestAggregateDuplicitPublishResource(t *testing.T) {
-	deviceID := "dupDeviceId"
-	resourceID := "/dupResourceId"
-	userID := "dupResourceId"
+	const deviceID = "dupDeviceId"
+	const resourceID = "/dupResourceId"
+	const userID = "dupResourceId"
 
 	pool, err := ants.NewPool(16)
 	assert.NoError(t, err)
@@ -206,9 +199,9 @@ func TestAggregateDuplicitPublishResource(t *testing.T) {
 }
 
 func TestAggregateHandleUnpublishResource(t *testing.T) {
-	deviceID := "dev0"
-	resourceID := platform.ResourceURI
-	userID := "user0"
+	const deviceID = "dev0"
+	const resourceID = platform.ResourceURI
+	const userID = "user0"
 
 	pool, err := ants.NewPool(16)
 	require.NoError(t, err)
@@ -244,7 +237,7 @@ func TestAggregateHandleUnpublishResource(t *testing.T) {
 		naClient.Close()
 	}()
 
-	testHandlePublishResource(t, ctx, publisher, eventstore, userID, deviceID, []string{resourceID}, codes.OK, false)
+	testHandlePublishResource(t, ctx, publisher, eventstore, userID, deviceID, []string{resourceID})
 
 	pc := testMakeUnpublishResourceRequest(deviceID, []string{resourceID})
 
@@ -261,11 +254,11 @@ func TestAggregateHandleUnpublishResource(t *testing.T) {
 }
 
 func TestAggregateHandleUnpublishAllResources(t *testing.T) {
-	deviceID := "dev0"
-	resourceID1 := "/res1"
-	resourceID2 := "/res2"
-	resourceID3 := "/res3"
-	userID := "user0"
+	const deviceID = "dev1"
+	const resourceID1 = "/res1"
+	const resourceID2 = "/res2"
+	const resourceID3 = "/res3"
+	const userID = "user1"
 	pool, err := ants.NewPool(16)
 	require.NoError(t, err)
 	defer pool.Release()
@@ -300,7 +293,7 @@ func TestAggregateHandleUnpublishAllResources(t *testing.T) {
 		naClient.Close()
 	}()
 
-	testHandlePublishResource(t, ctx, publisher, eventstore, userID, deviceID, []string{resourceID1, resourceID2, resourceID3}, codes.OK, false)
+	testHandlePublishResource(t, ctx, publisher, eventstore, userID, deviceID, []string{resourceID1, resourceID2, resourceID3})
 
 	pc := testMakeUnpublishResourceRequest(deviceID, []string{})
 
@@ -323,12 +316,12 @@ func TestAggregateHandleUnpublishAllResources(t *testing.T) {
 }
 
 func TestAggregateHandleUnpublishResourceSubset(t *testing.T) {
-	deviceID := "dev0"
-	resourceID1 := "/res1"
-	resourceID2 := "/res2"
-	resourceID3 := "/res3"
-	resourceID4 := "/res4"
-	userID := "user0"
+	const deviceID = "dev2"
+	const resourceID1 = "/res1"
+	const resourceID2 = "/res2"
+	const resourceID3 = "/res3"
+	const resourceID4 = "/res4"
+	const userID = "user2"
 	pool, err := ants.NewPool(16)
 	require.NoError(t, err)
 	defer pool.Release()
@@ -363,7 +356,7 @@ func TestAggregateHandleUnpublishResourceSubset(t *testing.T) {
 		naClient.Close()
 	}()
 
-	testHandlePublishResource(t, ctx, publisher, eventstore, userID, deviceID, []string{resourceID1, resourceID2, resourceID3, resourceID4}, codes.OK, false)
+	testHandlePublishResource(t, ctx, publisher, eventstore, userID, deviceID, []string{resourceID1, resourceID2, resourceID3, resourceID4})
 
 	ag, err := service.NewAggregate(commands.NewResourceID(deviceID, commands.ResourceLinksHref), 10, eventstore, service.ResourceLinksFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
 	assert.NoError(t, err)
@@ -593,10 +586,10 @@ func testNewResource(href string, deviceID string) *commands.Resource {
 	}
 }
 
-func Test_aggregate_HandleNotifyContentChanged(t *testing.T) {
-	deviceID := "dev0"
-	resourceID := platform.ResourceURI
-	userID := "user0"
+func TestAggregateHandleNotifyContentChanged(t *testing.T) {
+	const deviceID = "dev0"
+	const resourceID = platform.ResourceURI
+	const userID = "user0"
 
 	type args struct {
 		req *commands.NotifyResourceChangedRequest
@@ -678,7 +671,7 @@ func Test_aggregate_HandleNotifyContentChanged(t *testing.T) {
 		naClient.Close()
 	}()
 
-	testHandlePublishResource(t, ctx, publisher, eventstore, userID, deviceID, []string{resourceID}, codes.OK, false)
+	testHandlePublishResource(t, ctx, publisher, eventstore, userID, deviceID, []string{resourceID})
 
 	ag, err := service.NewAggregate(commands.NewResourceID(deviceID, resourceID), 10, eventstore, service.ResourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
 	assert.NoError(t, err)
@@ -701,10 +694,10 @@ func Test_aggregate_HandleNotifyContentChanged(t *testing.T) {
 	}
 }
 
-func Test_aggregate_HandleUpdateResourceContent(t *testing.T) {
-	deviceID := "dev0"
-	resourceID := platform.ResourceURI
-	userID := "user0"
+func TestAggregateHandleUpdateResourceContent(t *testing.T) {
+	const deviceID = "dev1"
+	const resourceID = platform.ResourceURI
+	const userID = "user1"
 
 	type args struct {
 		req   *commands.UpdateResourceRequest
@@ -818,10 +811,10 @@ func Test_aggregate_HandleUpdateResourceContent(t *testing.T) {
 	}
 }
 
-func Test_aggregate_HandleConfirmResourceUpdate(t *testing.T) {
-	deviceID := "dev0"
-	resourceID := platform.ResourceURI
-	userID := "user0"
+func TestAggregateHandleConfirmResourceUpdate(t *testing.T) {
+	const deviceID = "dev0"
+	const resourceID = platform.ResourceURI
+	const userID = "user0"
 
 	type args struct {
 		req *commands.ConfirmResourceUpdateRequest
@@ -909,10 +902,10 @@ func Test_aggregate_HandleConfirmResourceUpdate(t *testing.T) {
 	}
 }
 
-func Test_aggregate_HandleRetrieveResource(t *testing.T) {
-	deviceID := "dev0"
-	resourceID := platform.ResourceURI
-	userID := "user0"
+func TestAggregateHandleRetrieveResource(t *testing.T) {
+	const deviceID = "dev1"
+	const resourceID = platform.ResourceURI
+	const userID = "user1"
 
 	type args struct {
 		req   *commands.RetrieveResourceRequest
@@ -1016,10 +1009,10 @@ func Test_aggregate_HandleRetrieveResource(t *testing.T) {
 	}
 }
 
-func Test_aggregate_HandleNotifyResourceContentResourceProcessed(t *testing.T) {
-	deviceID := "dev0"
-	resourceID := platform.ResourceURI
-	userID := "user0"
+func TestAggregateHandleNotifyResourceContentResourceProcessed(t *testing.T) {
+	const deviceID = "dev0"
+	const resourceID = platform.ResourceURI
+	const userID = "user0"
 
 	type args struct {
 		req *commands.ConfirmResourceRetrieveRequest
@@ -1107,17 +1100,17 @@ func Test_aggregate_HandleNotifyResourceContentResourceProcessed(t *testing.T) {
 	}
 }
 
-func testListDevicesOfUserFunc(ctx context.Context, correlationID, userID string) ([]string, codes.Code, error) {
+func testListDevicesOfUserFunc(userID string) ([]string, codes.Code, error) {
 	if userID == testUnauthorizedUser {
 		return nil, codes.Unauthenticated, fmt.Errorf("unauthorized access")
 	}
 	return testUserDevices, codes.OK, nil
 }
 
-func Test_aggregate_HandleDeleteResource(t *testing.T) {
-	deviceID := "dev0"
-	resourceID := platform.ResourceURI
-	userID := "user0"
+func TestAggregateHandleDeleteResource(t *testing.T) {
+	const deviceID = "dev1"
+	const resourceID = platform.ResourceURI
+	const userID = "user1"
 
 	type args struct {
 		req   *commands.DeleteResourceRequest
@@ -1222,10 +1215,10 @@ func Test_aggregate_HandleDeleteResource(t *testing.T) {
 	}
 }
 
-func Test_aggregate_HandleConfirmResourceDelete(t *testing.T) {
-	deviceID := "dev0"
-	resourceID := platform.ResourceURI
-	userID := "user0"
+func TestAggregateHandleConfirmResourceDelete(t *testing.T) {
+	const deviceID = "dev0"
+	const resourceID = platform.ResourceURI
+	const userID = "user0"
 
 	type args struct {
 		req *commands.ConfirmResourceDeleteRequest
@@ -1315,10 +1308,10 @@ func Test_aggregate_HandleConfirmResourceDelete(t *testing.T) {
 	}
 }
 
-func Test_aggregate_HandleCreateResource(t *testing.T) {
-	deviceID := "dev0"
-	resourceID := platform.ResourceURI
-	userID := "user0"
+func TestAggregateHandleCreateResource(t *testing.T) {
+	const deviceID = "dev1"
+	const resourceID = platform.ResourceURI
+	const userID = "user1"
 
 	type args struct {
 		req   *commands.CreateResourceRequest
@@ -1422,10 +1415,10 @@ func Test_aggregate_HandleCreateResource(t *testing.T) {
 	}
 }
 
-func Test_aggregate_HandleConfirmResourceCreate(t *testing.T) {
-	deviceID := "dev0"
-	resourceID := platform.ResourceURI
-	userID := "user0"
+func TestAggregateHandleConfirmResourceCreate(t *testing.T) {
+	const deviceID = "dev0"
+	const resourceID = platform.ResourceURI
+	const userID = "user0"
 
 	type args struct {
 		req *commands.ConfirmResourceCreateRequest

@@ -34,7 +34,7 @@ func TestSignUpPostHandler(t *testing.T) {
 
 	for _, test := range tbl {
 		tf := func(t *testing.T) {
-			co := testCoapDial(t, testCfg.GW_HOST, "", true, time.Now().Add(time.Minute))
+			co := testCoapDial(t, "", true, time.Now().Add(time.Minute))
 			if co == nil {
 				return
 			}
@@ -62,7 +62,7 @@ func TestSignUpPostHandlerWithRetry(t *testing.T) {
 	defer shutdown()
 	codeEl := oauthTest.GetDefaultDeviceAuthorizationCode(t, "")
 
-	co := testCoapDial(t, testCfg.GW_HOST, "", true, time.Now().Add(time.Minute))
+	co := testCoapDial(t, "", true, time.Now().Add(time.Minute))
 	if co == nil {
 		return
 	}
@@ -100,7 +100,7 @@ func TestSignUpClientCredentialPostHandler(t *testing.T) {
 
 	for _, test := range tbl {
 		tf := func(t *testing.T) {
-			co := testCoapDial(t, testCfg.GW_HOST, "", true, time.Now().Add(time.Minute))
+			co := testCoapDial(t, "", true, time.Now().Add(time.Minute))
 			if co == nil {
 				return
 			}

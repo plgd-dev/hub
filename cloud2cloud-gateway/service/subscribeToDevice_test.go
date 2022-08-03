@@ -23,7 +23,7 @@ import (
 	"google.golang.org/grpc/credentials"
 )
 
-func testSubscribeToDeviceDecodeResources(t *testing.T, links ...schema.ResourceLinks) []*commands.Resource {
+func testSubscribeToDeviceDecodeResources(links ...schema.ResourceLinks) []*commands.Resource {
 	resources := make([]*commands.Resource, 0)
 	for _, link := range links {
 		for _, l := range link {
@@ -69,7 +69,7 @@ func TestRequestHandlerSubscribeToDevicePublishedOnly(t *testing.T) {
 	publishedResources := test.ResourceLinksToResources(deviceID, test.TestDevsimResources)
 	assert.Equal(t, c2cEvents.EventType_ResourcesPublished, ev.GetHeader().EventType)
 	links := ev.GetData().(schema.ResourceLinks)
-	resources := testSubscribeToDeviceDecodeResources(t, links)
+	resources := testSubscribeToDeviceDecodeResources(links)
 	test.CheckProtobufs(t, publishedResources, resources, test.RequireToCheckFunc(require.Equal))
 
 	// no additional messages should be received
@@ -108,8 +108,10 @@ func TestRequestHandlerSubscribeToDevice(t *testing.T) {
 	dataChan := eventsServer.Run(t)
 
 	subscriber := c2cTest.NewC2CSubscriber(eventsServer.GetPort(t), eventsURI, c2cTest.SubscriptionType_Device)
-	subID := subscriber.Subscribe(t, ctx, token, deviceID, "", c2cEvents.EventTypes{c2cEvents.EventType_ResourcesPublished,
-		c2cEvents.EventType_ResourcesUnpublished})
+	subID := subscriber.Subscribe(t, ctx, token, deviceID, "", c2cEvents.EventTypes{
+		c2cEvents.EventType_ResourcesPublished,
+		c2cEvents.EventType_ResourcesUnpublished,
+	})
 
 	events := c2cTest.WaitForEvents(dataChan, 3*time.Second)
 	// we should always receive one Published event and one Unpublished event
@@ -118,7 +120,7 @@ func TestRequestHandlerSubscribeToDevice(t *testing.T) {
 		if ev.GetHeader().EventType == c2cEvents.EventType_ResourcesPublished {
 			publishedResources := test.ResourceLinksToResources(deviceID, test.TestDevsimResources)
 			links := ev.GetData().(schema.ResourceLinks)
-			resources := testSubscribeToDeviceDecodeResources(t, links)
+			resources := testSubscribeToDeviceDecodeResources(links)
 			test.CheckProtobufs(t, publishedResources, resources, test.RequireToCheckFunc(require.Equal))
 			continue
 		}
@@ -143,7 +145,7 @@ func TestRequestHandlerSubscribeToDevice(t *testing.T) {
 		require.Equal(t, c2cEvents.EventType_ResourcesPublished, ev.GetHeader().EventType)
 		links = append(links, ev.GetData().(schema.ResourceLinks)...)
 	}
-	resources := testSubscribeToDeviceDecodeResources(t, links)
+	resources := testSubscribeToDeviceDecodeResources(links)
 	test.CheckProtobufs(t, publishedSwitches, resources, test.RequireToCheckFunc(require.Equal))
 
 	_, err = c.DeleteResource(ctx, &pb.DeleteResourceRequest{
@@ -153,7 +155,7 @@ func TestRequestHandlerSubscribeToDevice(t *testing.T) {
 	ev := <-dataChan
 	require.Equal(t, c2cEvents.EventType_ResourcesUnpublished, ev.GetHeader().EventType)
 	links = ev.GetData().(schema.ResourceLinks)
-	resources = testSubscribeToDeviceDecodeResources(t, links)
+	resources = testSubscribeToDeviceDecodeResources(links)
 	var unpublishedSwitches []*commands.Resource
 	for _, res := range resources {
 		if res.Href == test.TestResourceSwitchesInstanceHref(switchID2) {

@@ -12,7 +12,7 @@ import (
 
 // Projection project events to user defined model from evenstore and update it by events from subscriber.
 type projection struct {
-	//immutable
+	// immutable
 	projection *eventstore.Projection
 	ctx        context.Context
 	cancel     context.CancelFunc
@@ -20,7 +20,7 @@ type projection struct {
 	subscriber     eventbus.Subscriber
 	subscriptionID string
 
-	//mutable part
+	// mutable part
 	lock     sync.Mutex
 	observer eventbus.Observer
 }

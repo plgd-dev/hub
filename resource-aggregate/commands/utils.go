@@ -11,8 +11,10 @@ import (
 	"google.golang.org/grpc/codes"
 )
 
-const ResourceLinksHref string = "/plgd/res"
-const StatusHref string = "/plgd/s"
+const (
+	ResourceLinksHref string = "/plgd/res"
+	StatusHref        string = "/plgd/s"
+)
 
 // ToUUID converts resource href and device id to unique resource ID
 func (r *ResourceId) ToUUID() string {

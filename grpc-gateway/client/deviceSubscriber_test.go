@@ -8,21 +8,24 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-type testOperations struct {
-}
+type testOperations struct{}
 
 func (o testOperations) RetrieveResource(ctx context.Context, event *events.ResourceRetrievePending) error {
 	return nil
 }
+
 func (o testOperations) UpdateResource(ctx context.Context, event *events.ResourceUpdatePending) error {
 	return nil
 }
+
 func (o testOperations) DeleteResource(ctx context.Context, event *events.ResourceDeletePending) error {
 	return nil
 }
+
 func (o testOperations) CreateResource(ctx context.Context, event *events.ResourceCreatePending) error {
 	return nil
 }
+
 func (o testOperations) UpdateDeviceMetadata(ctx context.Context, event *events.DeviceMetadataUpdatePending) error {
 	return nil
 }

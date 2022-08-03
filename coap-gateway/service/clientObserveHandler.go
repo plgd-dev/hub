@@ -45,7 +45,7 @@ func clientObserveHandler(req *mux.Message, client *Client, observe uint32) (*po
 	case 0:
 		return startResourceObservation(req, client, authCtx, deviceID, href)
 	case 1:
-		return stopResourceObservation(req, client, authCtx, deviceID, href)
+		return stopResourceObservation(req, client, deviceID, href)
 	default:
 		return nil, statusErrorf(coapCodes.BadRequest, errFmtObserveResource, fmt.Sprintf(" /%v%v", deviceID, href), fmt.Errorf("invalid Observe value(%v)", observe))
 	}
@@ -262,7 +262,7 @@ func getStopObserveResourceErr(deviceID, href string, err error) error {
 	return fmt.Errorf(errFmtStopObserveResource, deviceID, href, err)
 }
 
-func stopResourceObservation(req *mux.Message, client *Client, authCtx *authorizationContext, deviceID, href string) (*pool.Message, error) {
+func stopResourceObservation(req *mux.Message, client *Client, deviceID, href string) (*pool.Message, error) {
 	token := req.Token.String()
 	canceled, err := client.cancelResourceSubscription(token)
 	if err != nil {

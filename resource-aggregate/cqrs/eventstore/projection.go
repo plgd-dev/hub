@@ -44,11 +44,11 @@ func (am *aggregateModel) Update(e EventUnmarshaler) (ignore bool, reload bool) 
 		am.version = e.Version()
 	case am.version >= e.Version() && am.hasSnapshot:
 		am.LogDebugfFunc("projection.aggregateModel.Update: am.version >= e.Version && am.hasSnapshot")
-		//ignore event - it was already applied
+		// ignore event - it was already applied
 		return true, false
 	default:
 		am.LogDebugfFunc("projection.aggregateModel.Update: default")
-		//need to reload
+		// need to reload
 		return false, true
 	}
 	return false, false
@@ -64,7 +64,7 @@ type Projection struct {
 	LogDebugfFunc LogDebugfFunc
 	factoryModel  FactoryModelFunc
 
-	lock            sync.RWMutex //protects aggregateModels
+	lock            sync.RWMutex // protects aggregateModels
 	aggregateModels map[string]map[string]*aggregateModel
 }
 
@@ -222,11 +222,11 @@ func (p *Projection) handle(ctx context.Context, iter Iter) (reloadQueries []Ver
 		if err != nil {
 			return nil, fmt.Errorf("cannot handle projection: %w", err)
 		}
-		//check if we are on the end
+		// check if we are on the end
 		if i.nextEventToProcess == nil {
 			_, ok := i.Next(ctx)
 			if ok {
-				//iterator need to move to the next event
+				// iterator need to move to the next event
 				i.nextEventToProcess = i.RewindToNextAggregateEvent(ctx)
 			}
 		}
@@ -249,7 +249,7 @@ func (p *Projection) Handle(ctx context.Context, iter Iter) error {
 
 // HandleWithReload update projection by events and reload events if it is needed.
 func (p *Projection) HandleWithReload(ctx context.Context, iter Iter) error {
-	//reload queries for db because version of events was greater > lastVersionSeen+1
+	// reload queries for db because version of events was greater > lastVersionSeen+1
 	reloadQueries, err := p.handle(ctx, iter)
 	if err != nil {
 		return fmt.Errorf("cannot handle events with reload: %w", err)

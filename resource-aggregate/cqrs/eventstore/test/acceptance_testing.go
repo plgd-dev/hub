@@ -55,14 +55,18 @@ func filterEvents(events []eventstore.Event, filter eventsFilter) []eventstore.E
 	return newEvents
 }
 
-const aggregateID1 = "aggregateID1"
-const aggregateID2 = "aggregateID2"
-const aggregateID3 = "aggregateID3"
-const aggregateID4 = "aggregateID4"
+const (
+	aggregateID1 = "aggregateID1"
+	aggregateID2 = "aggregateID2"
+	aggregateID3 = "aggregateID3"
+	aggregateID4 = "aggregateID4"
+)
 
-const groupID1 = "deviceId1"
-const groupID2 = "deviceId2"
-const groupID3 = "deviceId3"
+const (
+	groupID1 = "deviceId1"
+	groupID2 = "deviceId2"
+	groupID3 = "deviceId3"
+)
 
 func GetEventsTest(t *testing.T, ctx context.Context, store eventstore.EventStore) {
 	t.Log("testing GetEvents")
@@ -161,7 +165,7 @@ func emptySaveFailTest(t *testing.T, ctx context.Context, store eventstore.Event
 
 func invalidTimpestampFailTest(t *testing.T, ctx context.Context, store eventstore.EventStore) {
 	t.Log("try save descreasing timestamp")
-	timestamp := time.Date(2021, time.April, 1, 13, 37, 00, 0, time.UTC).UnixNano()
+	timestamp := time.Date(2021, time.April, 1, 13, 37, 0o0, 0, time.UTC).UnixNano()
 	events := getEvents(0, 2, false, groupID1, aggregateID1, timestamp)
 	mockEvent := events[1].(MockEvent)
 	mockEvent.TimestampI = timestamp - 1
@@ -194,7 +198,7 @@ func AcceptanceTest(t *testing.T, ctx context.Context, store eventstore.EventSto
 		GroupID:     groupID3,
 	}
 
-	timestamp := time.Date(2021, time.April, 1, 13, 37, 00, 0, time.UTC).UnixNano()
+	timestamp := time.Date(2021, time.April, 1, 13, 37, 0o0, 0, time.UTC).UnixNano()
 
 	emptySaveFailTest(t, ctx, store)
 	invalidTimpestampFailTest(t, ctx, store)

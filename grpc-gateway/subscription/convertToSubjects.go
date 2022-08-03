@@ -7,15 +7,17 @@ import (
 	kitStrings "github.com/plgd-dev/kit/v2/strings"
 )
 
-const FilterBitmaskRegistrations = FilterBitmaskDeviceRegistered | FilterBitmaskDeviceUnregistered
-const FilterBitmaskDevices = FilterBitmaskDeviceMetadata | FilterBitmaskDeviceResourceLinks | FilterBitmaskDeviceDeviceResourcesResource
-const FilterBitmaskDeviceMetadata = FilterBitmaskDeviceMetadataUpdatePending | FilterBitmaskDeviceMetadataUpdated
-const FilterBitmaskDeviceResourceLinks = FilterBitmaskResourcesPublished | FilterBitmaskResourcesUnpublished
-const FilterBitmaskDeviceDeviceResourcesResource = FilterBitmaskResourceChanged |
-	FilterBitmaskResourceCreatePending | FilterBitmaskResourceCreated |
-	FilterBitmaskResourceDeletePending | FilterBitmaskResourceDeleted |
-	FilterBitmaskResourceRetrievePending | FilterBitmaskResourceRetrieved |
-	FilterBitmaskResourceUpdatePending | FilterBitmaskResourceUpdated
+const (
+	FilterBitmaskRegistrations                 = FilterBitmaskDeviceRegistered | FilterBitmaskDeviceUnregistered
+	FilterBitmaskDevices                       = FilterBitmaskDeviceMetadata | FilterBitmaskDeviceResourceLinks | FilterBitmaskDeviceDeviceResourcesResource
+	FilterBitmaskDeviceMetadata                = FilterBitmaskDeviceMetadataUpdatePending | FilterBitmaskDeviceMetadataUpdated
+	FilterBitmaskDeviceResourceLinks           = FilterBitmaskResourcesPublished | FilterBitmaskResourcesUnpublished
+	FilterBitmaskDeviceDeviceResourcesResource = FilterBitmaskResourceChanged |
+		FilterBitmaskResourceCreatePending | FilterBitmaskResourceCreated |
+		FilterBitmaskResourceDeletePending | FilterBitmaskResourceDeleted |
+		FilterBitmaskResourceRetrievePending | FilterBitmaskResourceRetrieved |
+		FilterBitmaskResourceUpdatePending | FilterBitmaskResourceUpdated
+)
 
 type subject struct {
 	bitmask FilterBitmask

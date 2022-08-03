@@ -16,7 +16,6 @@ import (
 	raTest "github.com/plgd-dev/hub/v2/resource-aggregate/test"
 	rdTest "github.com/plgd-dev/hub/v2/resource-directory/test"
 	test "github.com/plgd-dev/hub/v2/test"
-	testCfg "github.com/plgd-dev/hub/v2/test/config"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	testService "github.com/plgd-dev/hub/v2/test/service"
 	"github.com/stretchr/testify/assert"
@@ -27,7 +26,7 @@ func TestReconnectNATS(t *testing.T) {
 	shutdown := setUp(t)
 	defer shutdown()
 
-	co := testCoapDial(t, testCfg.GW_HOST, "", true, time.Now().Add(time.Minute))
+	co := testCoapDial(t, "", true, time.Now().Add(time.Minute))
 	if co == nil {
 		return
 	}
@@ -71,7 +70,7 @@ func TestReconnectNATSAndGrpcGateway(t *testing.T) {
 		oauthShutdown()
 	}()
 
-	co := testCoapDial(t, testCfg.GW_HOST, "", true, time.Now().Add(time.Minute))
+	co := testCoapDial(t, "", true, time.Now().Add(time.Minute))
 	if co == nil {
 		return
 	}

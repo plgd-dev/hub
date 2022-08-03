@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-//Event interface over event created by user.
+// Event interface over event created by user.
 type Event = interface {
 	Version() uint64
 	EventType() string
@@ -15,7 +15,7 @@ type Event = interface {
 	Timestamp() time.Time
 }
 
-//EventUnmarshaler provides event.
+// EventUnmarshaler provides event.
 type EventUnmarshaler = interface {
 	Version() uint64
 	EventType() string
@@ -26,7 +26,7 @@ type EventUnmarshaler = interface {
 	Unmarshal(v interface{}) error
 }
 
-//Iter provides iterator over events from eventstore or eventbus.
+// Iter provides iterator over events from eventstore or eventbus.
 type Iter = interface {
 	Next(ctx context.Context) (EventUnmarshaler, bool)
 	Err() error

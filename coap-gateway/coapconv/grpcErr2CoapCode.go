@@ -8,10 +8,12 @@ import (
 
 type Operation uint8
 
-const Create Operation = 1
-const Retrieve Operation = 2
-const Update Operation = 3
-const Delete Operation = 4
+const (
+	Create   Operation = 1
+	Retrieve Operation = 2
+	Update   Operation = 3
+	Delete   Operation = 4
+)
 
 var grpcErrorCode2CoapCode map[codes.Code]coapCodes.Code = map[codes.Code]coapCodes.Code{
 	codes.Canceled:           coapCodes.ServiceUnavailable,

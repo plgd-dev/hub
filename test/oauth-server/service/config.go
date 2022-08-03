@@ -21,10 +21,12 @@ const AccessTokenType_JWT AccessTokenType = "jwt"
 
 type AllowedGrantType string
 
-const AllowedGrantType_AUTHORIZATION_CODE AllowedGrantType = "authorization_code"
-const AllowedGrantType_CLIENT_CREDENTIALS AllowedGrantType = "client_credentials"
-const AllowedGrantType_PASSWORD AllowedGrantType = "password"
-const AllowedGrantType_REFRESH_TOKEN AllowedGrantType = "refresh_token"
+const (
+	AllowedGrantType_AUTHORIZATION_CODE AllowedGrantType = "authorization_code"
+	AllowedGrantType_CLIENT_CREDENTIALS AllowedGrantType = "client_credentials"
+	AllowedGrantType_PASSWORD           AllowedGrantType = "password"
+	AllowedGrantType_REFRESH_TOKEN      AllowedGrantType = "refresh_token"
+)
 
 type Client struct {
 	ID                              string        `yaml:"id"`

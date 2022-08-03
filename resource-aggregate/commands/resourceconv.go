@@ -105,7 +105,7 @@ func SchemaResourceLinkToResourceId(link schema.ResourceLink) *ResourceId {
 }
 
 func SchemaResourceLinksToResources(links schema.ResourceLinks, validUntil time.Time) []*Resource {
-	var resources = make([]*Resource, 0, len(links))
+	resources := make([]*Resource, 0, len(links))
 	for _, link := range links {
 		resources = append(resources, SchemaResourceLinkToResource(link, validUntil))
 	}

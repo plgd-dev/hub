@@ -17,8 +17,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-type dummyEventHandler struct {
-}
+type dummyEventHandler struct{}
 
 func (eh *dummyEventHandler) Handle(ctx context.Context, iter eventstore.Iter) error {
 	for {

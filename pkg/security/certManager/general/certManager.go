@@ -178,6 +178,7 @@ func (a *CertManager) loadCerts() error {
 	}
 	return nil
 }
+
 func (a *CertManager) loadCAs() error {
 	var cas []*x509.Certificate
 	if a.config.CAPool != "" {

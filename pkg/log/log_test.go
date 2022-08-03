@@ -33,7 +33,7 @@ func TestNew(t *testing.T) {
 	assert.NotPanics(t, func() { Infof(testStr) })
 	assert.NotPanics(t, func() { Warnf(testStr) })
 	assert.NotPanics(t, func() { Errorf(testStr) })
-	var timesStr = []string{"rfc3339nano", "rfc3339", "iso8601", "millis", "nanos", ""}
+	timesStr := []string{"rfc3339nano", "rfc3339", "iso8601", "millis", "nanos", ""}
 	for _, str := range timesStr {
 		var v TimeEncoderWrapper
 		assert.NoError(t, v.UnmarshalText([]byte(str)))
