@@ -32,7 +32,7 @@ var (
 	OAUTH_MANAGER_ENDPOINT_TOKENURL = http.HTTPS_SCHEME + OAUTH_HOST + uri.Token
 )
 
-func SetUpCloudWithConnector(t *testing.T) (TearDown func()) {
+func SetUpCloudWithConnector(t *testing.T) (tearDown func()) {
 	oauthCfg := oauthTest.MakeConfig(t)
 	oauthCfg.APIs.HTTP.Addr = OAUTH_HOST
 	oauthCfg.OAuthSigner.Domain = OAUTH_HOST

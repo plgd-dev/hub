@@ -69,15 +69,15 @@ type Projection struct {
 }
 
 // NewProjection projection over eventstore.
-func NewProjection(store EventStore, factoryModel FactoryModelFunc, LogDebugfFunc LogDebugfFunc) *Projection {
-	if LogDebugfFunc == nil {
-		LogDebugfFunc = func(fmt string, args ...interface{}) {}
+func NewProjection(store EventStore, factoryModel FactoryModelFunc, logDebugfFunc LogDebugfFunc) *Projection {
+	if logDebugfFunc == nil {
+		logDebugfFunc = func(fmt string, args ...interface{}) {}
 	}
 	return &Projection{
 		store:           store,
 		factoryModel:    factoryModel,
 		aggregateModels: make(map[string]map[string]*aggregateModel),
-		LogDebugfFunc:   LogDebugfFunc,
+		LogDebugfFunc:   logDebugfFunc,
 	}
 }
 

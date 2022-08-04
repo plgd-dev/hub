@@ -29,8 +29,7 @@ func (requestHandler *RequestHandler) getDeviceResourceLinks(w http.ResponseWrit
 		return
 	}
 	for key, values := range r.URL.Query() {
-		switch key {
-		case uri.TypeFilterQueryKey:
+		if key == uri.TypeFilterQueryKey {
 			for _, v := range values {
 				q.Add(key, v)
 			}

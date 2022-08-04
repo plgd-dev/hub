@@ -80,7 +80,7 @@ func MakeConfig(t *testing.T) service.Config {
 	return cfg
 }
 
-func SetUp(t *testing.T) (TearDown func()) {
+func SetUp(t *testing.T) (tearDown func()) {
 	cfg := MakeConfig(t)
 	return New(t, cfg)
 }

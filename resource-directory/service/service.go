@@ -70,8 +70,7 @@ func makeAuthFunc(validator kitNetGrpc.Validator) func(ctx context.Context, meth
 		return jwt.NewScopeClaims()
 	})
 	return func(ctx context.Context, method string) (context.Context, error) {
-		switch method {
-		case "/" + pb.GrpcGateway_ServiceDesc.ServiceName + "/GetHubConfiguration":
+		if method == "/"+pb.GrpcGateway_ServiceDesc.ServiceName+"/GetHubConfiguration" {
 			return ctx, nil
 		}
 		token, _ := kitNetGrpc.TokenFromMD(ctx)

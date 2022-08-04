@@ -50,8 +50,7 @@ func refreshTokenPostHandler(req *mux.Message, client *Client) {
 // RefreshToken
 // https://github.com/openconnectivityfoundation/security/blob/master/swagger2.0/oic.sec.tokenrefresh.swagger.json
 func refreshTokenHandler(req *mux.Message, client *Client) {
-	switch req.Code {
-	case coapCodes.POST:
+	if req.Code == coapCodes.POST {
 		refreshTokenPostHandler(req, client)
 		return
 	}

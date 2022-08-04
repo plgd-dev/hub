@@ -67,7 +67,7 @@ func MakeConfig(t *testing.T, enableUI bool) service.Config {
 	return cfg
 }
 
-func SetUp(t *testing.T) (TearDown func()) {
+func SetUp(t *testing.T) (tearDown func()) {
 	return New(t, MakeConfig(t, false))
 }
 

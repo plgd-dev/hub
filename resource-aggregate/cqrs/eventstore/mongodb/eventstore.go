@@ -134,7 +134,7 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 }
 
 // NewEventStoreWithClient creates a new EventStore with a session.
-func newEventStoreWithClient(ctx context.Context, client *mongo.Client, dbPrefix string, colPrefix string, eventMarshaler MarshalerFunc, eventUnmarshaler UnmarshalerFunc, LogDebugfFunc LogDebugfFunc) (*EventStore, error) {
+func newEventStoreWithClient(ctx context.Context, client *mongo.Client, dbPrefix string, colPrefix string, eventMarshaler MarshalerFunc, eventUnmarshaler UnmarshalerFunc, logDebugfFunc LogDebugfFunc) (*EventStore, error) {
 	if client == nil {
 		return nil, errors.New("invalid client")
 	}
@@ -154,8 +154,8 @@ func newEventStoreWithClient(ctx context.Context, client *mongo.Client, dbPrefix
 		colPrefix = "events"
 	}
 
-	if LogDebugfFunc == nil {
-		LogDebugfFunc = func(fmt string, args ...interface{}) {}
+	if logDebugfFunc == nil {
+		logDebugfFunc = func(fmt string, args ...interface{}) {}
 	}
 	ensuredIndexes := cache.NewCache()
 	add := periodic.New(ctx.Done(), time.Hour/2)
@@ -170,7 +170,7 @@ func newEventStoreWithClient(ctx context.Context, client *mongo.Client, dbPrefix
 		colPrefix:       colPrefix,
 		dataMarshaler:   eventMarshaler,
 		dataUnmarshaler: eventUnmarshaler,
-		LogDebugfFunc:   LogDebugfFunc,
+		LogDebugfFunc:   logDebugfFunc,
 		ensuredIndexes:  ensuredIndexes,
 	}
 

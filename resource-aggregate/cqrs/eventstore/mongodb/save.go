@@ -80,8 +80,7 @@ func (s *EventStore) saveEvent(ctx context.Context, col *mongo.Collection, event
 		return eventstore.ConcurrencyException, nil
 	default:
 		var wErr mongo.WriteException
-		switch {
-		case errors.As(err, &wErr):
+		if errors.As(err, &wErr) {
 			var sizeIsExceeded bool
 			for _, e := range wErr.WriteErrors {
 				if e.Code == 10334 {
@@ -187,11 +186,8 @@ func (s *EventStore) Save(ctx context.Context, events ...eventstore.Event) (even
 	if err != nil {
 		return status, err
 	}
-	switch status {
-	case eventstore.SnapshotRequired:
-		if events[0].IsSnapshot() {
-			return s.saveSnapshot(ctx, events)
-		}
+	if status == eventstore.SnapshotRequired && events[0].IsSnapshot() {
+		return s.saveSnapshot(ctx, events)
 	}
 	return status, nil
 }

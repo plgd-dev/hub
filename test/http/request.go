@@ -100,7 +100,7 @@ func (c *HTTPRequestBuilder) SetQuery(value string) *HTTPRequestBuilder {
 func (c *HTTPRequestBuilder) Build(ctx context.Context, t *testing.T) *http.Request {
 	u := c.uri
 	if len(c.resourceHref) > 0 {
-		u = strings.Replace(c.uri, "{"+ResourceHrefKey+"}", c.resourceHref, -1)
+		u = strings.ReplaceAll(c.uri, "{"+ResourceHrefKey+"}", c.resourceHref)
 	}
 
 	tmp, err := uritemplates.Parse(u)

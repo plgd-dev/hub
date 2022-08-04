@@ -39,7 +39,7 @@ linters:
     # - gochecknoinits   # Checks that no init functions are present in Go code
     # - gocognit         # Computes and checks the cognitive complexity of functions
     - goconst          # Finds repeated strings that could be replaced by a constant
-    # - gocritic         # The most opinionated Go source code linter
+    - gocritic         # The most opinionated Go source code linter
     # - gocyclo          # Computes and checks the cyclomatic complexity of functions
     # - godox            # Tool for detection of FIXME, TODO and other comment keywords
     # - goerr113         # Golang linter to check the errors handling expressions

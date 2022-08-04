@@ -401,8 +401,8 @@ func (s *Cache) loadLinkedAccount(linkedCloudID, linkedAccountID string) (*Cloud
 	return cloud, linkedAccountI.(*LinkedAccountData), nil
 }
 
-func (s *Cache) LoadSubscription(ID string) (subscriptionData, bool) {
-	subI, ok := s.subscriptionsByID.Load(ID)
+func (s *Cache) LoadSubscription(id string) (subscriptionData, bool) {
+	subI, ok := s.subscriptionsByID.Load(id)
 	if !ok {
 		return subscriptionData{}, ok
 	}

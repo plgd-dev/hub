@@ -24,10 +24,10 @@ type ResourcesObserverCallbacks struct {
 	OnGetResourceContent OnGetResourceContent
 }
 
-func MakeResourcesObserverCallbacks(OnObserveResource OnObserveResource, OnGetResourceContent OnGetResourceContent) ResourcesObserverCallbacks {
+func MakeResourcesObserverCallbacks(onObserveResource OnObserveResource, onGetResourceContent OnGetResourceContent) ResourcesObserverCallbacks {
 	return ResourcesObserverCallbacks{
-		OnObserveResource:    OnObserveResource,
-		OnGetResourceContent: OnGetResourceContent,
+		OnObserveResource:    onObserveResource,
+		OnGetResourceContent: onGetResourceContent,
 	}
 }
 
