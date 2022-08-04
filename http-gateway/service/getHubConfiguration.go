@@ -48,9 +48,9 @@ func decodeHubConfiguration(data []byte) (map[string]interface{}, error) {
 			}
 			unescaped, err := url.QueryUnescape(hostQuery[1])
 			if err == nil {
-				query := bytes.Replace([]byte(unescaped), []byte("\\u003c"), []byte("<"), -1)
-				query = bytes.Replace(query, []byte("\\u003e"), []byte(">"), -1)
-				query = bytes.Replace(query, []byte("\\u0026"), []byte("&"), -1)
+				query := bytes.ReplaceAll([]byte(unescaped), []byte("\\u003c"), []byte("<"))
+				query = bytes.ReplaceAll(query, []byte("\\u003e"), []byte(">"))
+				query = bytes.ReplaceAll(query, []byte("\\u0026"), []byte("&"))
 				hostQuery[1] = string(query)
 				decoded[key] = strings.Join(hostQuery, "?")
 				continue

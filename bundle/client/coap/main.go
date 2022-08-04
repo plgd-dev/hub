@@ -112,7 +112,7 @@ func decodePayload(resp *pool.Message) {
 	if err == nil {
 		bufr, err := ioutil.ReadAll(resp.Body())
 		if err != nil {
-			buf = buf + fmt.Sprintf("cannot read body: %v", err)
+			buf += fmt.Sprintf("cannot read body: %v", err)
 			log.Print(buf)
 			return
 		}
@@ -120,19 +120,19 @@ func decodePayload(resp *pool.Message) {
 		case message.AppCBOR, message.AppOcfCbor:
 			s, err := cbor.ToJSON(bufr)
 			if err != nil {
-				buf = buf + fmt.Sprintf("Cannot encode %v to JSON: %v", bufr, err)
+				buf += fmt.Sprintf("Cannot encode %v to JSON: %v", bufr, err)
 			} else {
-				buf = buf + fmt.Sprintf("%v\n", s)
+				buf += fmt.Sprintf("%v\n", s)
 			}
 		case message.TextPlain:
 
-			buf = buf + fmt.Sprintf("%v\n", string(bufr))
+			buf += fmt.Sprintf("%v\n", string(bufr))
 		case message.AppJSON:
-			buf = buf + fmt.Sprintf("%v\n", string(bufr))
+			buf += fmt.Sprintf("%v\n", string(bufr))
 		case message.AppXML:
-			buf = buf + fmt.Sprintf("%v\n", string(bufr))
+			buf += fmt.Sprintf("%v\n", string(bufr))
 		default:
-			buf = buf + fmt.Sprintf("%v\n", bufr)
+			buf += fmt.Sprintf("%v\n", bufr)
 		}
 	}
 	log.Print(buf)

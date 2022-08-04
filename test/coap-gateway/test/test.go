@@ -33,7 +33,7 @@ func MakeConfig(t *testing.T) service.Config {
 	return cfg
 }
 
-func SetUp(t *testing.T, makeHandler service.MakeServiceHandler, verifyOnClose service.VerifyServiceHandler) (TearDown func()) {
+func SetUp(t *testing.T, makeHandler service.MakeServiceHandler, verifyOnClose service.VerifyServiceHandler) (tearDown func()) {
 	return New(t, MakeConfig(t), makeHandler, verifyOnClose)
 }
 

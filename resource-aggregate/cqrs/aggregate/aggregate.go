@@ -52,7 +52,7 @@ type Aggregate struct {
 }
 
 // NewAggregate creates aggregate. it load and store events created from commands
-func NewAggregate(groupID, aggregateID string, retryFunc RetryFunc, numEventsInSnapshot int, store eventstore.EventStore, factoryModel FactoryModelFunc, LogDebugfFunc eventstore.LogDebugfFunc) (*Aggregate, error) {
+func NewAggregate(groupID, aggregateID string, retryFunc RetryFunc, numEventsInSnapshot int, store eventstore.EventStore, factoryModel FactoryModelFunc, logDebugfFunc eventstore.LogDebugfFunc) (*Aggregate, error) {
 	if groupID == "" {
 		return nil, errors.New("cannot create aggregate: invalid groupID")
 	}
@@ -76,7 +76,7 @@ func NewAggregate(groupID, aggregateID string, retryFunc RetryFunc, numEventsInS
 		store:               store,
 		factoryModel:        factoryModel,
 		retryFunc:           retryFunc,
-		LogDebugfFunc:       LogDebugfFunc,
+		LogDebugfFunc:       logDebugfFunc,
 	}, nil
 }
 

@@ -61,17 +61,17 @@ func NewRequestHandlerFromConfig(cfg Config) (*RequestHandler, error) {
 
 // NewRequestHandler factory for new RequestHandler.
 func NewRequestHandler(
-	ValidFrom func() time.Time,
-	ValidFor time.Duration,
-	Certificate []*x509.Certificate,
-	PrivateKey crypto.PrivateKey,
+	validFrom func() time.Time,
+	validFor time.Duration,
+	certificate []*x509.Certificate,
+	privateKey crypto.PrivateKey,
 	cfg Config,
 ) *RequestHandler {
 	return &RequestHandler{
-		ValidFrom:   ValidFrom,
-		ValidFor:    ValidFor,
-		Certificate: Certificate,
-		PrivateKey:  PrivateKey,
+		ValidFrom:   validFrom,
+		ValidFor:    validFor,
+		Certificate: certificate,
+		PrivateKey:  privateKey,
 		Config:      cfg,
 	}
 }

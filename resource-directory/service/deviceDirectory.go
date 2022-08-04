@@ -98,8 +98,7 @@ func (d Device) ToProto() *pb.Device {
 }
 
 func updateDevice(dev *Device, resource *Resource) error {
-	switch {
-	case resource.Resource.GetHref() == device.ResourceURI:
+	if resource.Resource.GetHref() == device.ResourceURI {
 		var devContent device.Device
 		err := decodeContent(resource.GetContent(), &devContent)
 		if err != nil {

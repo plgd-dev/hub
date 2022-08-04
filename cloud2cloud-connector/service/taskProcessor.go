@@ -40,7 +40,7 @@ type TaskProcessor struct {
 	poolGets       *semaphore.Weighted
 	timeout        time.Duration
 	raClient       raService.ResourceAggregateClient
-	pulledDevices  *kitSync.Map //[userid+deviceID]
+	pulledDevices  *kitSync.Map // [userid+deviceID]
 	delay          time.Duration
 	tracerProvider trace.TracerProvider
 }

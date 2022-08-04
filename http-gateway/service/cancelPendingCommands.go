@@ -36,8 +36,7 @@ func (requestHandler *RequestHandler) CancelPendingCommands(w http.ResponseWrite
 		return
 	}
 	for key, values := range r.URL.Query() {
-		switch key {
-		case uri.CorrelationIdFilterQueryKey:
+		if key == uri.CorrelationIdFilterQueryKey {
 			for _, v := range values {
 				q.Add(key, v)
 			}

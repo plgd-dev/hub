@@ -70,8 +70,8 @@ func (s *SubscriptionManager) storeToSubs(sub store.Subscription) {
 	s.subscriptions.LoadOrStore(sub.ID, subData)
 }
 
-func (s *SubscriptionManager) Connect(ID string) error {
-	subRaw, ok := s.subscriptions.Load(ID)
+func (s *SubscriptionManager) Connect(id string) error {
+	subRaw, ok := s.subscriptions.Load(id)
 	if !ok {
 		return fmt.Errorf("not found")
 	}
@@ -97,8 +97,8 @@ func (s *SubscriptionManager) Store(ctx context.Context, sub store.Subscription)
 	return nil
 }
 
-func (s *SubscriptionManager) Load(ID string) (store.Subscription, bool) {
-	subDataRaw, ok := s.subscriptions.Load(ID)
+func (s *SubscriptionManager) Load(id string) (store.Subscription, bool) {
+	subDataRaw, ok := s.subscriptions.Load(id)
 	if !ok {
 		return store.Subscription{}, false
 	}
@@ -114,8 +114,8 @@ func cancelSubscription(ctx context.Context, emitEvent emitEventFunc, sub store.
 	return err
 }
 
-func (s *SubscriptionManager) PullOut(ctx context.Context, ID, href string) (store.Subscription, error) {
-	subDataRaw, ok := s.subscriptions.PullOut(ID)
+func (s *SubscriptionManager) PullOut(ctx context.Context, id, href string) (store.Subscription, error) {
+	subDataRaw, ok := s.subscriptions.PullOut(id)
 	if !ok {
 		return store.Subscription{}, fmt.Errorf("not found")
 	}
@@ -123,7 +123,7 @@ func (s *SubscriptionManager) PullOut(ctx context.Context, ID, href string) (sto
 	if href != "" && subData.data.Href != href {
 		return store.Subscription{}, fmt.Errorf("invalid resource(%v) for subscription", href)
 	}
-	sub, err := s.store.PopSubscription(ctx, ID)
+	sub, err := s.store.PopSubscription(ctx, id)
 	if err != nil {
 		return store.Subscription{}, err
 	}

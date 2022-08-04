@@ -98,7 +98,8 @@ func GetEventsTest(t *testing.T, ctx context.Context, store eventstore.EventStor
 
 	groupID2Events := groupID2AggID2Events
 	groupID2Events = append(groupID2Events, groupID2AggID3Events...)
-	allEvents := append(groupID1Events, groupID2Events...)
+	allEvents := groupID1Events
+	allEvents = append(allEvents, groupID2Events...)
 	allEvents = append(allEvents, groupID3Events...)
 
 	t.Log("get all events")

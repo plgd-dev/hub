@@ -321,7 +321,7 @@ func (l *WrapSuggarLogger) Error(args ...interface{}) {
 			if template == "" {
 				template = "%w"
 			} else {
-				template = template + " %w"
+				template += " %w"
 			}
 		} else {
 			template = fmt.Sprintf("%s %v", template, arg)

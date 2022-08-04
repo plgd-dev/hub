@@ -61,8 +61,7 @@ func (c *Client) getResource(
 		return status.Errorf(codes.NotFound, "not found")
 	}
 
-	switch resp.GetData().GetStatus() {
-	case commands.Status_UNKNOWN:
+	if resp.GetData().GetStatus() == commands.Status_UNKNOWN {
 		return status.Errorf(codes.Unavailable, "content of resource /%v%v is not stored", deviceID, href)
 	}
 	content, err := commands.EventContentToContent(resp.GetData())
