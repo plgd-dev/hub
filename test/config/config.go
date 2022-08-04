@@ -136,9 +136,9 @@ func MakeHttpClientConfig() httpClient.Config {
 
 func MakeHttpServerConfig() httpServer.Config {
 	return httpServer.Config{
-		ReadTimeout:       time.Second * 10,
-		ReadHeaderTimeout: time.Second * 10,
-		WriteTimeout:      time.Second * 10,
+		ReadTimeout:       time.Second * 8,
+		ReadHeaderTimeout: time.Second * 4,
+		WriteTimeout:      time.Second * 16,
 		IdleTimeout:       time.Second * 30,
 	}
 }

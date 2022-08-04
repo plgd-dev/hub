@@ -9,9 +9,9 @@ log:
 apis:
   http:
     address: "0.0.0.0:9100"
-    readTimeout: 10s
-    readHeaderTimeout: 10s
-    writeTimeout: 10s
+    readTimeout: 8s
+    readHeaderTimeout: 4s
+    writeTimeout: 16s
     idleTimeout: 30s
     tls:
       caPool: "/secrets/public/rootca.crt"
