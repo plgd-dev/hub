@@ -72,6 +72,9 @@ func validatePublish(w wkRd) error {
 }
 
 func ParsePublishedResources(data io.ReadSeeker, deviceID string) (wkRd, error) {
+	if data == nil {
+		return wkRd{}, fmt.Errorf("cannot read publish request body received from device %v: empty body", deviceID)
+	}
 	w := makeWkRd()
 	err := cbor.ReadFrom(data, &w)
 	if err != nil {

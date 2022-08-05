@@ -88,7 +88,7 @@ func TestObserveDeviceResourcesRetrieve(t *testing.T) {
 		err := c.Close(context.Background())
 		assert.NoError(t, err)
 	}()
-	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c.GrpcGatewayClient(), deviceID, config.GW_HOST, test.GetAllBackendResourceLinks())
+	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c.GrpcGatewayClient(), deviceID, config.COAPS_TCP_SCHEME+config.GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 
 	h := newTestDeviceResourcesRetrieveObservationHandler()
@@ -182,7 +182,7 @@ func TestObserveDeviceResourcesUpdate(t *testing.T) {
 		err := c.Close(context.Background())
 		assert.NoError(t, err)
 	}()
-	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c.GrpcGatewayClient(), deviceID, config.GW_HOST, test.GetAllBackendResourceLinks())
+	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c.GrpcGatewayClient(), deviceID, config.COAPS_TCP_SCHEME+config.GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 	const switchID = "1"
 	test.AddDeviceSwitchResources(ctx, t, deviceID, c.GrpcGatewayClient(), switchID)
@@ -310,7 +310,7 @@ func TestObserveDeviceResourcesCreateAndDelete(t *testing.T) {
 		err := c.Close(context.Background())
 		assert.NoError(t, err)
 	}()
-	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c.GrpcGatewayClient(), deviceID, config.GW_HOST, test.GetAllBackendResourceLinks())
+	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c.GrpcGatewayClient(), deviceID, config.COAPS_TCP_SCHEME+config.GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 
 	h := newTestDeviceResourcesCreateAndDeleteObservationHandler()

@@ -14,6 +14,7 @@ import (
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/v2/test"
+	"github.com/plgd-dev/hub/v2/test/config"
 	testCfg "github.com/plgd-dev/hub/v2/test/config"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	"github.com/plgd-dev/hub/v2/test/service"
@@ -54,7 +55,7 @@ func TestRequestHandlerSubscribeToDevicePublishedOnly(t *testing.T) {
 	defer func() {
 		_ = conn.Close()
 	}()
-	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.GW_HOST, test.GetAllBackendResourceLinks())
+	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.COAPS_TCP_SCHEME+testCfg.GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 
 	const eventsURI = "/events"
@@ -99,7 +100,7 @@ func TestRequestHandlerSubscribeToDevice(t *testing.T) {
 	defer func() {
 		_ = conn.Close()
 	}()
-	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.GW_HOST, test.GetAllBackendResourceLinks())
+	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.COAPS_TCP_SCHEME+testCfg.GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 
 	const eventsURI = "/events"

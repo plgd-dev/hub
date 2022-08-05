@@ -145,8 +145,13 @@ func (c *COAPConfig) Validate() error {
 	return nil
 }
 
+type DTLSConfig struct {
+	Enabled bool `yaml:"enabled" json:"enabled"`
+}
+
 type TLSConfig struct {
 	Enabled                        bool                     `yaml:"enabled" json:"enabled"`
+	DTLS                           DTLSConfig               `yaml:"dtls" json:"dtls"`
 	DisconnectOnExpiredCertificate bool                     `yaml:"disconnectOnExpiredCertificate" json:"disconnectOnExpiredCertificate"`
 	Embedded                       certManagerServer.Config `yaml:",inline" json:",inline"`
 }

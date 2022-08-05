@@ -16,6 +16,7 @@ import (
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 	test "github.com/plgd-dev/hub/v2/test"
+	"github.com/plgd-dev/hub/v2/test/config"
 	testCfg "github.com/plgd-dev/hub/v2/test/config"
 	oauthService "github.com/plgd-dev/hub/v2/test/oauth-server/service"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
@@ -46,7 +47,7 @@ func TestRequestHandlerGetResourceLinks(t *testing.T) {
 	c := pb.NewGrpcGatewayClient(conn)
 
 	resourceLinks := test.GetAllBackendResourceLinks()
-	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.GW_HOST, resourceLinks)
+	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.COAPS_TCP_SCHEME+testCfg.GW_HOST, resourceLinks)
 	defer shutdownDevSim()
 
 	resourceLinks = append(resourceLinks, test.AddDeviceSwitchResources(ctx, t, deviceID, c, "1", "2", "3")...)

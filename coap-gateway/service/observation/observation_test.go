@@ -77,7 +77,7 @@ func TestIsResourceObservableWithInterface(t *testing.T) {
 	}()
 	grpcClient := pb.NewGrpcGatewayClient(grpcConn)
 
-	_, shutdownDevSim := test.OnboardDevSim(ctx, t, grpcClient, deviceID, config.GW_HOST, nil)
+	_, shutdownDevSim := test.OnboardDevSim(ctx, t, grpcClient, deviceID, config.COAPS_TCP_SCHEME+config.GW_HOST, nil)
 	defer shutdownDevSim()
 
 	// wait for handler with coap connection to be initialized

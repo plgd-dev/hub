@@ -46,6 +46,8 @@ const (
 	HTTP_GW_HOST                    = "localhost:20010"
 	DEVICE_PROVIDER                 = "plgd"
 	OPENTELEMETRY_COLLECTOR_HOST    = "localhost:55690"
+	COAPS_SCHEME                    = "coaps://"
+	COAPS_TCP_SCHEME                = "coaps+tcp://"
 )
 
 var (

@@ -59,7 +59,7 @@ func TestShutdownServiceWithDeviceIssue627(t *testing.T) {
 	}()
 	grpcClient := client.New(pb.NewGrpcGatewayClient(grpcConn))
 
-	_, shutdownDevSim := test.OnboardDevSim(ctx, t, pb.NewGrpcGatewayClient(grpcConn), deviceID, config.GW_HOST, test.GetAllBackendResourceLinks())
+	_, shutdownDevSim := test.OnboardDevSim(ctx, t, pb.NewGrpcGatewayClient(grpcConn), deviceID, config.COAPS_TCP_SCHEME+config.GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 
 	ch := make(chan client.DevicesObservationEvent, 1000)

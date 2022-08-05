@@ -75,6 +75,11 @@ if [ "${LOG_DEBUG}" = "true" ]; then
 export LOG_LEVEL="debug"
 fi
 
+export COAP_GATEWAY_SCHEME="coaps+tcp://"
+if [ "${COAP_GATEWAY_DTLS_ENABLED}" = "true" ]; then
+export COAP_GATEWAY_SCHEME="coaps://"
+fi
+
 if [ -z "${OAUTH_ENDPOINT}" ]
 then
   export OAUTH_ENDPOINT=${DOMAIN}
@@ -591,7 +596,7 @@ cat /configs/resource-directory.yaml | yq e "\
   .clients.identityStore.grpc.address = \"${IDENTITY_STORE_ADDRESS}\" |
   .publicConfiguration.authority = \"https://${OAUTH_ENDPOINT}\" |
   .publicConfiguration.hubID = \"${COAP_GATEWAY_HUB_ID}\" |
-  .publicConfiguration.coapGateway = \"coaps+tcp://${COAP_GATEWAY_FQDN}:${COAP_GATEWAY_PORT}\" |
+  .publicConfiguration.coapGateway = \"${COAP_GATEWAY_SCHEME}${COAP_GATEWAY_FQDN}:${COAP_GATEWAY_PORT}\" |
   .publicConfiguration.ownerClaim = \"${OWNER_CLAIM}\"
 " - > /data/resource-directory.yaml
 
@@ -674,6 +679,8 @@ cat /configs/coap-gateway.yaml | yq e "\
   .apis.coap.address = \"${COAP_GATEWAY_ADDRESS}\" |
   .apis.coap.externalAddress = \"${FQDN}:${COAP_GATEWAY_PORT}\" |
   .apis.coap.tls.enabled = true |
+  .apis.coap.tls.dtls.enabled = ${COAP_GATEWAY_DTLS_ENABLED} |
+  .apis.coap.blockwiseTransfer.enabled = ${COAP_GATEWAY_DTLS_ENABLED} |
   .apis.coap.tls.keyFile = \"${EXTERNAL_CERT_DIR_PATH}/${COAP_GATEWAY_FILE_CERT_KEY_NAME}\" |
   .apis.coap.tls.certFile = \"${EXTERNAL_CERT_DIR_PATH}/${COAP_GATEWAY_FILE_CERT_NAME}\" |
   .apis.coap.tls.clientCertificateRequired = false |

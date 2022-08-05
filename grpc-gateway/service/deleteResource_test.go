@@ -110,7 +110,7 @@ func TestRequestHandlerDeleteResource(t *testing.T) {
 		_ = conn.Close()
 	}()
 	c := pb.NewGrpcGatewayClient(conn)
-	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.GW_HOST, test.GetAllBackendResourceLinks())
+	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.COAPS_TCP_SCHEME+config.GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 	test.AddDeviceSwitchResources(ctx, t, deviceID, c, "1", "2", "3")
 

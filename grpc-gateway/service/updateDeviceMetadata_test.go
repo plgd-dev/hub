@@ -20,6 +20,7 @@ import (
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/utils"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 	"github.com/plgd-dev/hub/v2/test"
+	"github.com/plgd-dev/hub/v2/test/config"
 	testCfg "github.com/plgd-dev/hub/v2/test/config"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	"github.com/plgd-dev/hub/v2/test/service"
@@ -82,7 +83,7 @@ func TestRequestHandler_UpdateDeviceMetadata(t *testing.T) {
 	}()
 	c := pb.NewGrpcGatewayClient(conn)
 
-	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.GW_HOST, test.GetAllBackendResourceLinks())
+	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.COAPS_TCP_SCHEME+testCfg.GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 
 	logger := log.NewLogger(log.MakeDefaultConfig())

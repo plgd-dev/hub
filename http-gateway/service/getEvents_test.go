@@ -66,7 +66,7 @@ func TestRequestHandlerGetEvents(t *testing.T) {
 	c := pb.NewGrpcGatewayClient(conn)
 
 	beforeOnBoard := time.Now()
-	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.GW_HOST, test.GetAllBackendResourceLinks())
+	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.COAPS_TCP_SCHEME+config.GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 
 	allEvents := getAllEvents(t, c, ctx)

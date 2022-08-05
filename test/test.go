@@ -238,7 +238,7 @@ func setAccessForCloud(ctx context.Context, t *testing.T, c *deviceClient.Client
 	require.NoError(t, err)
 }
 
-func OnboardDevSimForClient(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, clientID, deviceID, gwHost string, expectedResources []schema.ResourceLink) (string, func()) {
+func OnboardDevSimForClient(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, clientID, deviceID, hubEndpoint string, expectedResources []schema.ResourceLink) (string, func()) {
 	cloudSID := config.HubID()
 	require.NotEmpty(t, cloudSID)
 	devClient, err := NewSDKClient()
@@ -254,7 +254,7 @@ func OnboardDevSimForClient(ctx context.Context, t *testing.T, c pb.GrpcGatewayC
 	code := oauthTest.GetAuthorizationCode(t, config.OAUTH_SERVER_HOST, clientID, deviceID, "")
 
 	onboard := func() {
-		err = devClient.OnboardDevice(ctx, deviceID, config.DEVICE_PROVIDER, "coaps+tcp://"+gwHost, code, cloudSID)
+		err = devClient.OnboardDevice(ctx, deviceID, config.DEVICE_PROVIDER, hubEndpoint, code, cloudSID)
 		require.NoError(t, err)
 	}
 	if len(expectedResources) > 0 {
@@ -300,8 +300,8 @@ func OnboardDevSimForClient(ctx context.Context, t *testing.T, c pb.GrpcGatewayC
 	}
 }
 
-func OnboardDevSim(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, deviceID, gwHost string, expectedResources []schema.ResourceLink) (string, func()) {
-	return OnboardDevSimForClient(ctx, t, c, config.OAUTH_MANAGER_CLIENT_ID, deviceID, gwHost, expectedResources)
+func OnboardDevSim(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, deviceID, hubEndpoint string, expectedResources []schema.ResourceLink) (string, func()) {
+	return OnboardDevSimForClient(ctx, t, c, config.OAUTH_MANAGER_CLIENT_ID, deviceID, hubEndpoint, expectedResources)
 }
 
 func WaitForDevice(ctx context.Context, t *testing.T, client pb.GrpcGateway_SubscribeToEventsClient, deviceID, subID, correlationID string, expectedResources []schema.ResourceLink) {

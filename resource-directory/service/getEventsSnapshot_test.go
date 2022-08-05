@@ -64,7 +64,7 @@ func TestRequestHandlerGetEventsStateSnapshot(t *testing.T) {
 	c := pb.NewGrpcGatewayClient(conn)
 
 	resources := test.GetAllBackendResourceLinks()
-	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.GW_HOST, resources)
+	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.COAPS_TCP_SCHEME+config.GW_HOST, resources)
 	defer shutdownDevSim()
 
 	lightHref := test.TestResourceLightInstanceHref("1")

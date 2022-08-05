@@ -9,6 +9,7 @@ import (
 	"github.com/plgd-dev/device/v2/schema/device"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"github.com/plgd-dev/hub/v2/test"
+	"github.com/plgd-dev/hub/v2/test/config"
 	testCfg "github.com/plgd-dev/hub/v2/test/config"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	"github.com/plgd-dev/hub/v2/test/service"
@@ -72,7 +73,7 @@ func TestClient_CreateResource(t *testing.T) {
 		err := c.Close(context.Background())
 		assert.NoError(t, err)
 	}()
-	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c.GrpcGatewayClient(), deviceID, testCfg.GW_HOST, test.GetAllBackendResourceLinks())
+	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c.GrpcGatewayClient(), deviceID, config.COAPS_TCP_SCHEME+testCfg.GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 
 	for _, tt := range tests {

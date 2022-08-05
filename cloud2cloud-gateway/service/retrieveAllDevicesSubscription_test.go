@@ -44,7 +44,7 @@ func TestRequestHandlerRetrieveDevicesSubscription(t *testing.T) {
 	token := oauthTest.GetDefaultAccessToken(t)
 	ctx = kitNetGrpc.CtxWithToken(ctx, token)
 
-	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.GW_HOST, test.GetAllBackendResourceLinks())
+	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.COAPS_TCP_SCHEME+config.GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 
 	const eventsURI = "/events"
