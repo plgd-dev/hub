@@ -4,8 +4,8 @@ import (
 	"errors"
 	netHttp "net/http"
 
-	coapStatus "github.com/plgd-dev/go-coap/v2/message/status"
-	"github.com/plgd-dev/kit/v2/coapconv"
+	coapStatus "github.com/plgd-dev/go-coap/v3/message/status"
+	"github.com/plgd-dev/hub/v2/coap-gateway/coapconv"
 	"github.com/plgd-dev/kit/v2/grpcconv"
 	grpcCodes "google.golang.org/grpc/codes"
 	grpcStatus "google.golang.org/grpc/status"
@@ -26,7 +26,7 @@ func ErrToStatusWithDef(err error, def int) int {
 	}
 	var coapStatus coapStatus.Status
 	if errors.As(err, &coapStatus) {
-		return coapconv.ToHTTPCode(coapStatus.Message().Code, def)
+		return coapconv.ToHTTPCode(coapStatus.Message().Code(), def)
 	}
 	var grpcErr grpcErr
 	if errors.As(err, &grpcErr) {

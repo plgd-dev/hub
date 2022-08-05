@@ -4,10 +4,10 @@ import (
 	"fmt"
 
 	"github.com/plgd-dev/device/schema/interfaces"
-	coapMessage "github.com/plgd-dev/go-coap/v2/message"
-	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
-	"github.com/plgd-dev/go-coap/v2/mux"
-	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
+	coapMessage "github.com/plgd-dev/go-coap/v3/message"
+	coapCodes "github.com/plgd-dev/go-coap/v3/message/codes"
+	"github.com/plgd-dev/go-coap/v3/message/pool"
+	"github.com/plgd-dev/go-coap/v3/mux"
 	"github.com/plgd-dev/hub/v2/coap-gateway/coapconv"
 	"github.com/plgd-dev/hub/v2/coap-gateway/service/message"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
@@ -48,13 +48,13 @@ func clientUpdateHandler(req *mux.Message, client *Client) (*pool.Message, error
 		return nil, statusErrorf(code, errFmtUpdateResource, fmt.Sprintf(" /%v%v", deviceID, href), err)
 	}
 	if content == nil || len(content.Data) == 0 {
-		return client.createResponse(code, req.Token, coapMessage.TextPlain, nil), nil
+		return client.createResponse(code, req.Token(), coapMessage.TextPlain, nil), nil
 	}
 	mediaType, err := coapconv.MakeMediaType(-1, content.ContentType)
 	if err != nil {
 		return nil, statusErrorf(code, "cannot encode response for update resource /%v%v: %w", deviceID, href, err)
 	}
-	return client.createResponse(code, req.Token, mediaType, content.Data), nil
+	return client.createResponse(code, req.Token(), mediaType, content.Data), nil
 }
 
 func clientUpdateDeviceHandler(req *mux.Message, client *Client, deviceID, href string) (*commands.Content, error) {
@@ -63,7 +63,7 @@ func clientUpdateDeviceHandler(req *mux.Message, client *Client, deviceID, href 
 		return nil, err
 	}
 
-	updatedEvent, err := client.server.raClient.SyncUpdateResource(req.Context, "*", updateCommand)
+	updatedEvent, err := client.server.raClient.SyncUpdateResource(req.Context(), "*", updateCommand)
 	if err != nil {
 		return nil, err
 	}

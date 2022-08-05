@@ -5,7 +5,8 @@ import (
 	"io"
 	"io/ioutil"
 
-	"github.com/plgd-dev/go-coap/v2/message"
+	"github.com/plgd-dev/go-coap/v3/message"
+	"github.com/plgd-dev/go-coap/v3/message/pool"
 	"github.com/plgd-dev/kit/v2/codec/cbor"
 	"github.com/plgd-dev/kit/v2/codec/json"
 )
@@ -22,11 +23,11 @@ func (GeneralMessageCodec) Encode(v interface{}) ([]byte, error) {
 }
 
 // Decode the CBOR payload of a COAP message.
-func (GeneralMessageCodec) Decode(m *message.Message, v interface{}) error {
+func (GeneralMessageCodec) Decode(m *pool.Message, v interface{}) error {
 	if v == nil {
 		return nil
 	}
-	mt, err := m.Options.ContentFormat()
+	mt, err := m.Options().ContentFormat()
 	if err != nil {
 		return fmt.Errorf("cannot get content format: %w", err)
 	}
@@ -54,13 +55,13 @@ func (GeneralMessageCodec) Decode(m *message.Message, v interface{}) error {
 		return fmt.Errorf("unsupported content format: %v", mt)
 	}
 
-	if m.Body == nil {
+	if m.Body() == nil {
 		return fmt.Errorf("unexpected empty body")
 	}
 
-	if err := decoder(m.Body, v); err != nil {
-		p, _ := m.Options.Path()
-		return fmt.Errorf("decoding failed for the message %v on %v", m.Token, p)
+	if err := decoder(m.Body(), v); err != nil {
+		p, _ := m.Options().Path()
+		return fmt.Errorf("decoding failed for the message %v on %v", m.Token(), p)
 	}
 	return nil
 }

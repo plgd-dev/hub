@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/plgd-dev/go-coap/v2/pkg/cache"
-	"github.com/plgd-dev/go-coap/v2/pkg/runner/periodic"
+	"github.com/plgd-dev/go-coap/v3/pkg/cache"
+	"github.com/plgd-dev/go-coap/v3/pkg/runner/periodic"
 	"github.com/plgd-dev/hub/v2/cloud2cloud-connector/events"
 	"github.com/plgd-dev/hub/v2/cloud2cloud-connector/store"
 	pbIS "github.com/plgd-dev/hub/v2/identity-store/pb"
@@ -50,7 +50,7 @@ type SubscriptionManager struct {
 	store               *Store
 	raClient            raService.ResourceAggregateClient
 	isClient            pbIS.IdentityStoreClient
-	cache               *cache.Cache
+	cache               *cache.Cache[string, subscriptionData]
 	devicesSubscription *DevicesSubscription
 	provider            *oauth2.PlgdProvider
 	triggerTask         OnTaskTrigger
@@ -67,7 +67,7 @@ func NewSubscriptionManager(
 	triggerTask OnTaskTrigger,
 	tracerProvider trace.TracerProvider,
 ) *SubscriptionManager {
-	cache := cache.NewCache()
+	cache := cache.NewCache[string, subscriptionData]()
 	add := periodic.New(devicesSubscription.ctx.Done(), time.Minute*5)
 	add(func(now time.Time) bool {
 		cache.CheckExpirations(now)
@@ -165,7 +165,7 @@ func cancelSubscription(ctx context.Context, tracerProvider trace.TracerProvider
 func (s *SubscriptionManager) getSubscriptionData(subscriptionID, correlationID string) (subscriptionData, error) {
 	data := s.cache.Load(correlationID)
 	if data != nil {
-		subData := data.Data().(subscriptionData)
+		subData := data.Data()
 		subData.subscription.ID = subscriptionID
 		newSubscription, loaded, err := s.store.LoadOrCreateSubscription(subData.subscription)
 		s.cache.Delete(correlationID)

@@ -13,7 +13,7 @@ import (
 	"github.com/lestrrat-go/jwx/jwk"
 	"github.com/lestrrat-go/jwx/jws"
 	"github.com/lestrrat-go/jwx/jwt"
-	"github.com/plgd-dev/go-coap/v2/pkg/cache"
+	"github.com/plgd-dev/go-coap/v3/pkg/cache"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/test/oauth-server/uri"
 	"github.com/plgd-dev/kit/v2/codec/json"
@@ -279,7 +279,7 @@ func (requestHandler *RequestHandler) getAuthorizedSession(tokenReq tokenRequest
 	v := requestHandler.authSession.Load(tokenReq.Code)
 	requestHandler.authSession.Delete(tokenReq.Code)
 	if v != nil {
-		return v.Data().(authorizedSession), true
+		return v.Data(), true
 	}
 	return authorizedSession{}, false
 }

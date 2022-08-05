@@ -7,10 +7,10 @@ import (
 	"net/url"
 
 	"github.com/plgd-dev/device/schema"
-	"github.com/plgd-dev/go-coap/v2/message"
-	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
-	"github.com/plgd-dev/go-coap/v2/mux"
-	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
+	"github.com/plgd-dev/go-coap/v3/message"
+	coapCodes "github.com/plgd-dev/go-coap/v3/message/codes"
+	"github.com/plgd-dev/go-coap/v3/message/pool"
+	"github.com/plgd-dev/go-coap/v3/mux"
 	"github.com/plgd-dev/hub/v2/coap-gateway/coapconv"
 	"github.com/plgd-dev/hub/v2/coap-gateway/uri"
 	pbGRPC "github.com/plgd-dev/hub/v2/grpc-gateway/pb"
@@ -21,7 +21,7 @@ func makeListDevicesCommand(msg *mux.Message) (*pbGRPC.GetResourceLinksRequest, 
 	deviceIdFilter := make([]string, 0, 4)
 	typeFilter := make([]string, 0, 4)
 
-	queries, _ := msg.Options.Queries()
+	queries, _ := msg.Options().Queries()
 	for _, query := range queries {
 		values, err := url.ParseQuery(query)
 		if err != nil {
@@ -118,7 +118,7 @@ func resourceDirectoryFind(req *mux.Message, client *Client) (*pool.Message, err
 		return nil, statusErrorf(coapCodes.BadRequest, "%w", getDiscoveryResourceErr(err))
 	}
 
-	getResourceLinksClient, err := client.server.rdClient.GetResourceLinks(req.Context, request)
+	getResourceLinksClient, err := client.server.rdClient.GetResourceLinks(req.Context(), request)
 	if err != nil {
 		return nil, statusErrorf(coapconv.GrpcErr2CoapCode(err, coapconv.Retrieve), "%w", getDiscoveryResourceErr(err))
 	}
@@ -130,7 +130,7 @@ func resourceDirectoryFind(req *mux.Message, client *Client) (*pool.Message, err
 
 	coapCode := coapCodes.Content
 	var resp interface{}
-	accept := coapconv.GetAccept(req.Options)
+	accept := coapconv.GetAccept(req.Options())
 	switch accept {
 	case message.AppOcfCbor:
 		links := make([]schema.ResourceLink, 0, 64)
@@ -151,14 +151,14 @@ func resourceDirectoryFind(req *mux.Message, client *Client) (*pool.Message, err
 		return nil, statusErrorf(coapCodes.InternalServerError, "%w", getDiscoveryResourceErr(fmt.Errorf("cannot encode response: %w", err)))
 	}
 
-	return client.createResponse(coapCode, req.Token, accept, out), nil
+	return client.createResponse(coapCode, req.Token(), accept, out), nil
 }
 
 func resourceDiscoveryHandler(req *mux.Message, client *Client) (*pool.Message, error) {
-	switch req.Code {
+	switch req.Code() {
 	case coapCodes.GET:
 		return resourceDirectoryFind(req, client)
 	default:
-		return nil, statusErrorf(coapCodes.NotFound, "unsupported method %v", req.Code)
+		return nil, statusErrorf(coapCodes.NotFound, "unsupported method %v", req.Code())
 	}
 }

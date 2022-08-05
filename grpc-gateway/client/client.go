@@ -161,6 +161,7 @@ func (c *Client) GetResourceLinksViaCallback(ctx context.Context, deviceIDs, res
 // Returns false when failed or having no more items.
 // Check it.Err for errors.
 // Usage:
+//
 //	for {
 //		var v MyStruct
 //		if !it.Next(ctx, &v) {
@@ -179,6 +180,7 @@ func (c *Client) GetDevicesIterator(ctx context.Context, deviceIDs []string, res
 // Returns false when failed or having no more items.
 // Check it.Err for errors.
 // Usage:
+//
 //	for {
 //		var v MyStruct
 //		if !it.Next(ctx, &v) {
@@ -196,22 +198,24 @@ func (c *Client) GetResourceLinksIterator(ctx context.Context, deviceIDs []strin
 // By resourceIDs you can specify resources by deviceID and Href which will be retrieved from the backend, nil means all resources.
 // Or by deviceIDs or resourceTypes you can filter output when you get all resources.
 // Eg:
-//  get all resources
-//	it := client.GetResourcesIterator(ctx, nil, nil)
 //
-//  get all oic.wk.d resources
-//  iter := client.GetResourcesIterator(ctx, nil, nil, "oic.wk.d")
+//	 get all resources
+//		it := client.GetResourcesIterator(ctx, nil, nil)
 //
-//  get oic.wk.d resources of 2 devices
-//  iter := client.GetResourcesIterator(ctx, nil, string["60f6869d-343a-4989-7462-81ef215d31af", "07ef9eb6-1ce9-4ce4-73a6-9ee0a1d534d2"], "oic.wk.d")
+//	 get all oic.wk.d resources
+//	 iter := client.GetResourcesIterator(ctx, nil, nil, "oic.wk.d")
 //
-//  get a certain resource /oic/p of the device"60f6869d-343a-4989-7462-81ef215d31af"
-//  iter := client.GetResourcesIterator(ctx, commands.NewResourceID("60f6869d-343a-4989-7462-81ef215d31af", /oic/p), nil)
+//	 get oic.wk.d resources of 2 devices
+//	 iter := client.GetResourcesIterator(ctx, nil, string["60f6869d-343a-4989-7462-81ef215d31af", "07ef9eb6-1ce9-4ce4-73a6-9ee0a1d534d2"], "oic.wk.d")
+//
+//	 get a certain resource /oic/p of the device"60f6869d-343a-4989-7462-81ef215d31af"
+//	 iter := client.GetResourcesIterator(ctx, commands.NewResourceID("60f6869d-343a-4989-7462-81ef215d31af", /oic/p), nil)
 //
 // Next queries the next resource value.
 // Returns false when failed or having no more items.
 // Check it.Err for errors.
 // Usage:
+//
 //	for {
 //		var v MyStruct
 //		if !it.Next(ctx, &v) {

@@ -1,15 +1,15 @@
 package service
 
 import (
-	"github.com/plgd-dev/go-coap/v2/tcp"
+	"github.com/plgd-dev/go-coap/v3/tcp/client"
 	coapgwService "github.com/plgd-dev/hub/v2/coap-gateway/service"
 )
 
 type ServiceHandlerConfig struct {
-	coapConn *tcp.ClientConn
+	coapConn *client.ClientConn
 }
 
-func (s *ServiceHandlerConfig) GetCoapConnection() *tcp.ClientConn {
+func (s *ServiceHandlerConfig) GetCoapConnection() *client.ClientConn {
 	return s.coapConn
 }
 
@@ -18,14 +18,14 @@ type Option interface {
 }
 
 type CoapConnectionOpt struct {
-	coapConn *tcp.ClientConn
+	coapConn *client.ClientConn
 }
 
 func (o CoapConnectionOpt) Apply(opts *ServiceHandlerConfig) {
 	opts.coapConn = o.coapConn
 }
 
-func WithCoapConnectionOpt(c *tcp.ClientConn) CoapConnectionOpt {
+func WithCoapConnectionOpt(c *client.ClientConn) CoapConnectionOpt {
 	return CoapConnectionOpt{
 		coapConn: c,
 	}

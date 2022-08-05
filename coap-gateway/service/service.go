@@ -12,17 +12,18 @@ import (
 	"time"
 
 	"github.com/plgd-dev/device/pkg/net/coap"
-	"github.com/plgd-dev/go-coap/v2/message"
-	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
-	"github.com/plgd-dev/go-coap/v2/message/status"
-	"github.com/plgd-dev/go-coap/v2/mux"
-	"github.com/plgd-dev/go-coap/v2/net"
-	"github.com/plgd-dev/go-coap/v2/net/blockwise"
-	"github.com/plgd-dev/go-coap/v2/net/monitor/inactivity"
-	"github.com/plgd-dev/go-coap/v2/pkg/cache"
-	"github.com/plgd-dev/go-coap/v2/pkg/runner/periodic"
-	"github.com/plgd-dev/go-coap/v2/tcp"
-	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
+	coapCodes "github.com/plgd-dev/go-coap/v3/message/codes"
+	"github.com/plgd-dev/go-coap/v3/message/pool"
+	"github.com/plgd-dev/go-coap/v3/message/status"
+	"github.com/plgd-dev/go-coap/v3/mux"
+	"github.com/plgd-dev/go-coap/v3/net"
+	"github.com/plgd-dev/go-coap/v3/net/blockwise"
+	"github.com/plgd-dev/go-coap/v3/options"
+	"github.com/plgd-dev/go-coap/v3/pkg/cache"
+	"github.com/plgd-dev/go-coap/v3/pkg/runner/periodic"
+	coapTcp "github.com/plgd-dev/go-coap/v3/tcp"
+	coapTcpClient "github.com/plgd-dev/go-coap/v3/tcp/client"
+	coapTcpServer "github.com/plgd-dev/go-coap/v3/tcp/server"
 	"github.com/plgd-dev/hub/v2/coap-gateway/uri"
 	pbGRPC "github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/subscription"
@@ -55,15 +56,15 @@ var authCtxKey = "AuthCtx"
 type Service struct {
 	config Config
 
-	keepaliveOnInactivity func(cc inactivity.ClientConn)
+	keepaliveOnInactivity func(cc *coapTcpClient.ClientConn)
 	blockWiseTransferSZX  blockwise.SZX
 	natsClient            *natsClient.Client
 	raClient              *raClient.Client
 	isClient              pbIS.IdentityStoreClient
 	rdClient              pbGRPC.GrpcGatewayClient
-	expirationClientCache *cache.Cache
-	coapServer            *tcp.Server
-	listener              tcp.Listener
+	expirationClientCache *cache.Cache[string, *Client]
+	coapServer            *coapTcpServer.Server
+	listener              coapTcpServer.Listener
 	authInterceptor       Interceptor
 	ctx                   context.Context
 	cancel                context.CancelFunc
@@ -80,17 +81,16 @@ type Service struct {
 	tracerProvider        trace.TracerProvider
 }
 
-func setExpirationClientCache(c *cache.Cache, deviceID string, client *Client, validJWTUntil time.Time) {
+func setExpirationClientCache(c *cache.Cache[string, *Client], deviceID string, client *Client, validJWTUntil time.Time) {
 	validJWTUntil = client.getClientExpiration(validJWTUntil)
 	c.Delete(deviceID)
 	if validJWTUntil.IsZero() {
 		return
 	}
-	c.LoadOrStore(deviceID, cache.NewElement(client, validJWTUntil, func(cl interface{}) {
-		if cl == nil {
+	c.LoadOrStore(deviceID, cache.NewElement(client, validJWTUntil, func(client *Client) {
+		if client == nil {
 			return
 		}
-		client := cl.(*Client)
 		now := time.Now()
 		exp := client.getClientExpiration(now)
 		if now.After(exp) {
@@ -106,8 +106,8 @@ func setExpirationClientCache(c *cache.Cache, deviceID string, client *Client, v
 	}))
 }
 
-func newExpirationClientCache(ctx context.Context, interval time.Duration) *cache.Cache {
-	expirationClientCache := cache.NewCache()
+func newExpirationClientCache(ctx context.Context, interval time.Duration) *cache.Cache[string, *Client] {
+	expirationClientCache := cache.NewCache[string, *Client]()
 	add := periodic.New(ctx.Done(), interval)
 	add(func(now time.Time) bool {
 		expirationClientCache.CheckExpirations(now)
@@ -167,7 +167,7 @@ func newResourceDirectoryClient(config GrpcServerConfig, fileWatcher *fsnotify.W
 	return rdClient, closeRdConn, nil
 }
 
-func newTCPListener(config COAPConfig, fileWatcher *fsnotify.Watcher, logger log.Logger) (tcp.Listener, func(), error) {
+func newTCPListener(config COAPConfig, fileWatcher *fsnotify.Watcher, logger log.Logger) (coapTcpServer.Listener, func(), error) {
 	if !config.TLS.Enabled {
 		listener, err := net.NewTCPListener("tcp", config.Addr)
 		if err != nil {
@@ -224,8 +224,8 @@ func blockWiseTransferSZXFromString(s string) (blockwise.SZX, error) {
 	return blockwise.SZX(0), fmt.Errorf("invalid value %v", s)
 }
 
-func getOnInactivityFn(logger log.Logger) func(cc inactivity.ClientConn) {
-	return func(cc inactivity.ClientConn) {
+func getOnInactivityFn(logger log.Logger) func(cc *coapTcpClient.ClientConn) {
+	return func(cc *coapTcpClient.ClientConn) {
 		client, ok := cc.Context().Value(clientKey).(*Client)
 		if ok {
 			deviceID := getDeviceID(client)
@@ -419,7 +419,7 @@ func wantToCloseClientOnError(req *mux.Message) bool {
 	if req == nil {
 		return true
 	}
-	path, err := req.Options.Path()
+	path, err := req.Options().Path()
 	if err != nil {
 		return true
 	}
@@ -433,7 +433,7 @@ func wantToCloseClientOnError(req *mux.Message) bool {
 func (s *Service) processCommandTask(req *mux.Message, client *Client, span trace.Span, fnc func(req *mux.Message, client *Client) (*pool.Message, error)) {
 	var resp *pool.Message
 	var err error
-	switch req.Code {
+	switch req.Code() {
 	case coapCodes.Empty:
 		resp, err = clientResetHandler(req, client)
 	case coapCodes.POST, coapCodes.DELETE, coapCodes.PUT, coapCodes.GET:
@@ -442,14 +442,14 @@ func (s *Service) processCommandTask(req *mux.Message, client *Client, span trac
 			defer client.Close()
 		}
 	default:
-		err := onUnprocessedRequestError(req.Code)
+		err := onUnprocessedRequestError(req.Code())
 		client.logRequestResponse(req, nil, err)
 		span.RecordError(err)
 		span.SetStatus(otelCodes.Error, err.Error())
 		return
 	}
 	if err != nil {
-		resp = client.createErrorResponse(err, req.Token)
+		resp = client.createErrorResponse(err, req.Token())
 	}
 	if resp != nil {
 		client.WriteMessage(resp)
@@ -461,22 +461,18 @@ func (s *Service) processCommandTask(req *mux.Message, client *Client, span trac
 		span.SetStatus(otelCodes.Error, err.Error())
 	}
 	if resp != nil {
-		otelcoap.MessageSentEvent(req.Context, resp)
+		otelcoap.MessageSentEvent(req.Context(), resp)
 		span.SetAttributes(otelcoap.StatusCodeAttr(resp.Code()))
 	}
 }
 
 func (s *Service) makeCommandTask(req *mux.Message, client *Client, fnc func(req *mux.Message, client *Client) (*pool.Message, error)) func() {
-	path, _ := req.Options.Path()
-	ctx, span := otelcoap.Start(req.Context, path, req.Code.String(), otelcoap.WithTracerProvider(s.tracerProvider), otelcoap.WithSpanOptions(trace.WithSpanKind(trace.SpanKindServer)))
+	path, _ := req.Options().Path()
+	ctx, span := otelcoap.Start(req.Context(), path, req.Code().String(), otelcoap.WithTracerProvider(s.tracerProvider), otelcoap.WithSpanOptions(trace.WithSpanKind(trace.SpanKindServer)))
 	span.SetAttributes(semconv.NetPeerNameKey.String(client.deviceID()))
-	req.Context = ctx
-
-	tmp, err := client.server.messagePool.ConvertFrom(req.Message)
-	if err == nil {
-		otelcoap.MessageReceivedEvent(ctx, tmp)
-		otelcoap.SetRequest(ctx, tmp)
-	}
+	req.SetContext(ctx)
+	otelcoap.MessageReceivedEvent(ctx, req.Message)
+	otelcoap.SetRequest(ctx, req.Message)
 	return func() {
 		defer span.End()
 		s.processCommandTask(req, client, span, fnc)
@@ -484,15 +480,16 @@ func (s *Service) makeCommandTask(req *mux.Message, client *Client, fnc func(req
 }
 
 func executeCommand(s mux.ResponseWriter, req *mux.Message, server *Service, fnc func(req *mux.Message, client *Client) (*pool.Message, error)) {
-	client, ok := s.Client().Context().Value(clientKey).(*Client)
+	client, ok := s.ClientConn().Context().Value(clientKey).(*Client)
 	if !ok {
-		client = newClient(server, s.Client().ClientConn().(*tcp.ClientConn), "", time.Time{})
-		if req.Code == coapCodes.Empty {
+		client = newClient(server, s.ClientConn().(*coapTcpClient.ClientConn), "", time.Time{})
+		if req.Code() == coapCodes.Empty {
 			client.logRequestResponse(req, nil, fmt.Errorf("cannot handle command: client not found"))
 			client.Close()
 			return
 		}
 	}
+	req.Hijack()
 	err := server.taskQueue.Submit(server.makeCommandTask(req, client, fnc))
 	if err != nil {
 		client.logRequestResponse(req, nil, fmt.Errorf("cannot handle request by task queue: %w", err))
@@ -501,13 +498,13 @@ func executeCommand(s mux.ResponseWriter, req *mux.Message, server *Service, fnc
 }
 
 func statusErrorf(code coapCodes.Code, fmt string, args ...interface{}) error {
-	return status.Errorf(&message.Message{
-		Code: code,
-	}, fmt, args...)
+	msg := pool.NewMessage(context.Background())
+	msg.SetCode(code)
+	return status.Errorf(msg, fmt, args...)
 }
 
 func defaultHandler(req *mux.Message, client *Client) (*pool.Message, error) {
-	path, _ := req.Options.Path()
+	path, _ := req.Options().Path()
 
 	switch {
 	case strings.HasPrefix(path, uri.ResourceRoute):
@@ -519,11 +516,12 @@ func defaultHandler(req *mux.Message, client *Client) (*pool.Message, error) {
 
 const clientKey = "client"
 
-func (s *Service) coapConnOnNew(coapConn *tcp.ClientConn, tlscon *tls.Conn) {
+func (s *Service) coapConnOnNew(coapConn *coapTcpClient.ClientConn) {
 	var tlsDeviceID string
 	var tlsValidUntil time.Time
-	if tlscon != nil {
-		peerCertificates := tlscon.ConnectionState().PeerCertificates
+	tlsCon, ok := coapConn.NetConn().(*tls.Conn)
+	if ok {
+		peerCertificates := tlsCon.ConnectionState().PeerCertificates
 		if len(peerCertificates) > 0 {
 			deviceID, err := coap.GetDeviceIDFromIdentityCertificate(peerCertificates[0])
 			if err == nil {
@@ -543,21 +541,21 @@ func (s *Service) coapConnOnNew(coapConn *tcp.ClientConn, tlscon *tls.Conn) {
 func (s *Service) authMiddleware(next mux.Handler) mux.Handler {
 	return mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
 		t := time.Now()
-		client, ok := w.Client().Context().Value(clientKey).(*Client)
+		client, ok := w.ClientConn().Context().Value(clientKey).(*Client)
 		if !ok {
-			client = newClient(s, w.Client().ClientConn().(*tcp.ClientConn), "", time.Time{})
+			client = newClient(s, w.ClientConn().(*coapTcpClient.ClientConn), "", time.Time{})
 		}
 		authCtx, _ := client.GetAuthorizationContext()
-		ctx := context.WithValue(r.Context, &authCtxKey, authCtx)
-		path, _ := r.Options.Path()
-		ctx, err := s.authInterceptor(ctx, r.Code, path)
+		ctx := context.WithValue(r.Context(), &authCtxKey, authCtx)
+		path, _ := r.Options().Path()
+		ctx, err := s.authInterceptor(ctx, r.Code(), path)
 		if ctx == nil {
-			ctx = r.Context
+			ctx = r.Context()
 		}
-		r.Context = context.WithValue(ctx, &log.StartTimeKey, t)
+		r.SetContext(context.WithValue(ctx, &log.StartTimeKey, t))
 		if err != nil {
 			err = statusErrorf(coapCodes.Unauthorized, "cannot handle request to path '%v': %w", path, err)
-			resp := client.createErrorResponse(err, r.Token)
+			resp := client.createErrorResponse(err, r.Token())
 			defer client.ReleaseMessage(resp)
 			client.WriteMessage(resp)
 			client.logRequestResponse(r, resp, err)
@@ -604,17 +602,17 @@ func (s *Service) setupCoapServer() error {
 		return setHandlerError(uri.RefreshToken, err)
 	}
 
-	opts := make([]tcp.ServerOption, 0, 8)
-	opts = append(opts, tcp.WithKeepAlive(1, s.config.APIs.COAP.KeepAlive.Timeout, s.keepaliveOnInactivity))
-	opts = append(opts, tcp.WithOnNewClientConn(s.coapConnOnNew))
-	opts = append(opts, tcp.WithBlockwise(s.config.APIs.COAP.BlockwiseTransfer.Enabled, s.blockWiseTransferSZX, s.config.APIs.COAP.KeepAlive.Timeout))
-	opts = append(opts, tcp.WithMux(m))
-	opts = append(opts, tcp.WithContext(s.ctx))
-	opts = append(opts, tcp.WithMaxMessageSize(s.config.APIs.COAP.MaxMessageSize))
-	opts = append(opts, tcp.WithErrors(func(e error) {
+	opts := make([]coapTcpServer.ServerOption, 0, 8)
+	opts = append(opts, options.WithKeepAlive(1, s.config.APIs.COAP.KeepAlive.Timeout, s.keepaliveOnInactivity))
+	opts = append(opts, options.WithOnNewClientConn(s.coapConnOnNew))
+	opts = append(opts, options.WithBlockwise(s.config.APIs.COAP.BlockwiseTransfer.Enabled, s.blockWiseTransferSZX, s.config.APIs.COAP.KeepAlive.Timeout))
+	opts = append(opts, options.WithMux(m))
+	opts = append(opts, options.WithContext(s.ctx))
+	opts = append(opts, options.WithMaxMessageSize(s.config.APIs.COAP.MaxMessageSize))
+	opts = append(opts, options.WithErrors(func(e error) {
 		s.logger.Errorf("plgd/go-coap: %w", e)
 	}))
-	opts = append(opts, tcp.WithGoPool(func(f func()) error {
+	opts = append(opts, options.WithGoPool(func(f func()) error {
 		// we call directly function in connection-goroutine because
 		// pairing request/response cannot be done in taskQueue for a observe resource.
 		// - the observe resource creates task which wait for the response and this wait can be infinite
@@ -623,7 +621,7 @@ func (s *Service) setupCoapServer() error {
 		f()
 		return nil
 	}))
-	s.coapServer = tcp.NewServer(opts...)
+	s.coapServer = coapTcp.NewServer(opts...)
 	return nil
 }
 

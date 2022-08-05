@@ -10,12 +10,13 @@ import (
 	"time"
 
 	"github.com/plgd-dev/device/schema/resources"
-	"github.com/plgd-dev/go-coap/v2/message"
-	"github.com/plgd-dev/go-coap/v2/message/codes"
-	"github.com/plgd-dev/go-coap/v2/tcp"
-	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
+	"github.com/plgd-dev/go-coap/v3/message"
+	"github.com/plgd-dev/go-coap/v3/message/codes"
+	"github.com/plgd-dev/go-coap/v3/message/pool"
+	coapTcpClient "github.com/plgd-dev/go-coap/v3/tcp/client"
 	"github.com/plgd-dev/hub/v2/coap-gateway/coapconv"
 	"github.com/plgd-dev/hub/v2/coap-gateway/resource"
+	"github.com/plgd-dev/hub/v2/coap-gateway/service/observation"
 	grpcClient "github.com/plgd-dev/hub/v2/grpc-gateway/client"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	idEvents "github.com/plgd-dev/hub/v2/identity-store/events"
@@ -89,7 +90,7 @@ func (a *authorizationContext) ToContext(ctx context.Context) context.Context {
 // Client a setup of connection
 type Client struct {
 	server        *Service
-	coapConn      *tcp.ClientConn
+	coapConn      *coapTcpClient.ClientConn
 	tlsDeviceID   string
 	tlsValidUntil time.Time
 
@@ -106,7 +107,7 @@ type Client struct {
 }
 
 // newClient creates and initializes client
-func newClient(server *Service, coapConn *tcp.ClientConn, tlsDeviceID string, tlsValidUntil time.Time) *Client {
+func newClient(server *Service, coapConn *coapTcpClient.ClientConn, tlsDeviceID string, tlsValidUntil time.Time) *Client {
 	return &Client{
 		server:                server,
 		coapConn:              coapConn,
@@ -145,20 +146,20 @@ func (c *Client) WriteMessage(msg *pool.Message) {
 }
 
 func (c *Client) Get(ctx context.Context, path string, opts ...message.Option) (*pool.Message, error) {
-	req, err := tcp.NewGetRequest(ctx, c.server.messagePool, path, opts...)
+	req, err := c.coapConn.NewGetRequest(ctx, path, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return c.Do(req, "")
 }
 
-func (c *Client) Observe(ctx context.Context, path string, observeFunc func(req *pool.Message), opts ...message.Option) (*tcp.Observation, error) {
-	req, err := tcp.NewObserveRequest(ctx, c.server.messagePool, path, opts...)
+func (c *Client) Observe(ctx context.Context, path string, observeFunc func(req *pool.Message), opts ...message.Option) (observation.Observation, error) {
+	req, err := c.coapConn.NewObserveRequest(ctx, path, opts...)
 	if err != nil {
 		return nil, err
 	}
 	t := time.Now()
-	obs, err := c.coapConn.ObserveRequest(req, observeFunc)
+	obs, err := c.coapConn.DoObserve(req, observeFunc)
 	logger := c.getLogger()
 	if err == nil && !WantToLog(codes.Content, logger) {
 		return obs, err

@@ -3,10 +3,10 @@ package service
 import (
 	"fmt"
 
-	"github.com/plgd-dev/go-coap/v2/message"
-	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
-	"github.com/plgd-dev/go-coap/v2/mux"
-	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
+	"github.com/plgd-dev/go-coap/v3/message"
+	coapCodes "github.com/plgd-dev/go-coap/v3/message/codes"
+	"github.com/plgd-dev/go-coap/v3/message/pool"
+	"github.com/plgd-dev/go-coap/v3/mux"
 	"github.com/plgd-dev/hub/v2/coap-gateway/coapconv"
 	"github.com/plgd-dev/hub/v2/identity-store/pb"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
@@ -30,7 +30,7 @@ type CoapSignUpResponse struct {
 	RedirectURI  string `json:"redirecturi"`
 }
 
-/// Check that all required request fields are set
+// / Check that all required request fields are set
 func (request CoapSignUpRequest) checkOAuthRequest() error {
 	if request.DeviceID == "" {
 		return fmt.Errorf("invalid device id")
@@ -41,7 +41,7 @@ func (request CoapSignUpRequest) checkOAuthRequest() error {
 	return nil
 }
 
-/// Get data for sign up response
+// / Get data for sign up response
 func getSignUpContent(token *oauth2.Token, owner string, validUntil int64, options message.Options) (message.MediaType, []byte, error) {
 	resp := CoapSignUpResponse{
 		AccessToken:  token.AccessToken.String(),
@@ -66,9 +66,9 @@ func getSignUpContent(token *oauth2.Token, owner string, validUntil int64, optio
 const errFmtSignUP = "cannot handle sign up: %w"
 
 // https://github.com/openconnectivityfoundation/security/blob/master/swagger2.0/oic.sec.account.swagger.json
-func signUpPostHandler(r *mux.Message, client *Client) (*pool.Message, error) {
+func signUpPostHandler(req *mux.Message, client *Client) (*pool.Message, error) {
 	var signUp CoapSignUpRequest
-	if err := cbor.ReadFrom(r.Body, &signUp); err != nil {
+	if err := cbor.ReadFrom(req.Body(), &signUp); err != nil {
 		return nil, statusErrorf(coapCodes.BadRequest, errFmtSignUP, err)
 	}
 
@@ -84,7 +84,7 @@ func signUpPostHandler(r *mux.Message, client *Client) (*pool.Message, error) {
 		return nil, statusErrorf(coapCodes.Unauthorized, errFmtSignUP, fmt.Errorf("unknown authorization provider('%v')", signUp.AuthorizationProvider))
 	}
 
-	token, err := client.exchangeCache.Execute(r.Context, provider, signUp.AuthorizationCode)
+	token, err := client.exchangeCache.Execute(req.Context(), provider, signUp.AuthorizationCode)
 	if err != nil {
 		return nil, statusErrorf(coapCodes.Unauthorized, errFmtSignUP, err)
 	}
@@ -92,7 +92,7 @@ func signUpPostHandler(r *mux.Message, client *Client) (*pool.Message, error) {
 		return nil, statusErrorf(coapCodes.Unauthorized, errFmtSignUP, fmt.Errorf("exchange didn't return a refresh token"))
 	}
 
-	claim, err := client.ValidateToken(r.Context, token.AccessToken.String())
+	claim, err := client.ValidateToken(req.Context(), token.AccessToken.String())
 	if err != nil {
 		return nil, statusErrorf(coapCodes.Unauthorized, errFmtSignUP, err)
 	}
@@ -113,32 +113,32 @@ func signUpPostHandler(r *mux.Message, client *Client) (*pool.Message, error) {
 	}
 
 	deviceID := client.ResolveDeviceID(claim, signUp.DeviceID)
-	setDeviceIDToTracerSpan(r.Context, deviceID)
+	setDeviceIDToTracerSpan(req.Context(), deviceID)
 
-	ctx := kitNetGrpc.CtxWithToken(r.Context, token.AccessToken.String())
+	ctx := kitNetGrpc.CtxWithToken(req.Context(), token.AccessToken.String())
 	if _, err := client.server.isClient.AddDevice(ctx, &pb.AddDeviceRequest{
 		DeviceId: deviceID,
 	}); err != nil {
 		return nil, statusErrorf(coapconv.GrpcErr2CoapCode(err, coapconv.Update), errFmtSignUP, err)
 	}
 
-	accept, out, err := getSignUpContent(token, owner, validUntil, r.Options)
+	accept, out, err := getSignUpContent(token, owner, validUntil, req.Options())
 	if err != nil {
 		return nil, statusErrorf(coapCodes.InternalServerError, errFmtSignUP, err)
 	}
 
-	return client.createResponse(coapCodes.Changed, r.Token, accept, out), nil
+	return client.createResponse(coapCodes.Changed, req.Token(), accept, out), nil
 }
 
 // Sign-up
 // https://github.com/openconnectivityfoundation/security/blob/master/swagger2.0/oic.sec.account.swagger.json
-func signUpHandler(r *mux.Message, client *Client) (*pool.Message, error) {
-	switch r.Code {
+func signUpHandler(req *mux.Message, client *Client) (*pool.Message, error) {
+	switch req.Code() {
 	case coapCodes.POST:
-		return signUpPostHandler(r, client)
+		return signUpPostHandler(req, client)
 	case coapCodes.DELETE:
-		return signOffHandler(r, client)
+		return signOffHandler(req, client)
 	default:
-		return nil, statusErrorf(coapCodes.NotFound, "unsupported method %v", r.Code)
+		return nil, statusErrorf(coapCodes.NotFound, "unsupported method %v", req.Code())
 	}
 }

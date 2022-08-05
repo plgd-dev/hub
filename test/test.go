@@ -19,7 +19,7 @@ import (
 	"github.com/plgd-dev/device/schema/platform"
 	"github.com/plgd-dev/device/schema/resources"
 	"github.com/plgd-dev/device/test/resource/types"
-	"github.com/plgd-dev/go-coap/v2/message"
+	"github.com/plgd-dev/go-coap/v3/message"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/client"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	pkgStrings "github.com/plgd-dev/hub/v2/pkg/strings"

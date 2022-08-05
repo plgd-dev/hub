@@ -17,10 +17,12 @@ import (
 	"github.com/plgd-dev/device/schema/interfaces"
 	"github.com/plgd-dev/device/schema/resources"
 	"github.com/plgd-dev/device/schema/session"
-	"github.com/plgd-dev/go-coap/v2/message"
-	codes "github.com/plgd-dev/go-coap/v2/message/codes"
-	coap "github.com/plgd-dev/go-coap/v2/tcp"
-	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
+	"github.com/plgd-dev/go-coap/v3/message"
+	codes "github.com/plgd-dev/go-coap/v3/message/codes"
+	"github.com/plgd-dev/go-coap/v3/message/pool"
+	"github.com/plgd-dev/go-coap/v3/options"
+	coap "github.com/plgd-dev/go-coap/v3/tcp"
+	"github.com/plgd-dev/go-coap/v3/tcp/client"
 	"github.com/plgd-dev/kit/v2/codec/cbor"
 	"github.com/plgd-dev/kit/v2/codec/json"
 	"github.com/plgd-dev/kit/v2/net"
@@ -39,7 +41,7 @@ type authResp struct {
 	Login       bool   `json:"login"`
 }
 
-func signUp(co *coap.ClientConn, authreq authReq) authResp {
+func signUp(co *client.ClientConn, authreq authReq) authResp {
 	bw := bytes.NewBuffer(make([]byte, 0, 1024))
 	err := cbor.WriteTo(bw, authreq)
 	if err != nil {
@@ -63,7 +65,7 @@ func signUp(co *coap.ClientConn, authreq authReq) authResp {
 	return authresp
 }
 
-func signUpWithAuthCode(co *coap.ClientConn, authCode, deviceID string) (accessToken, uid string) {
+func signUpWithAuthCode(co *client.ClientConn, authCode, deviceID string) (accessToken, uid string) {
 	authreq := authReq{
 		Accesstoken:  authCode,
 		DeviceID:     deviceID,
@@ -75,7 +77,7 @@ func signUpWithAuthCode(co *coap.ClientConn, authCode, deviceID string) (accessT
 	return authresp.Accesstoken, authresp.UID
 }
 
-func signIn(co *coap.ClientConn, authresp authResp) {
+func signIn(co *client.ClientConn, authresp authResp) {
 	log.Printf("authresp: \n%v\n", toJSON(authresp))
 
 	bw := bytes.NewBuffer(make([]byte, 0, 1024))
@@ -138,7 +140,7 @@ func decodePayload(resp *pool.Message) {
 	log.Print(buf)
 }
 
-func clientConn(addr string) (*coap.ClientConn, error) {
+func clientConn(addr string) (*client.ClientConn, error) {
 	u, err := url.Parse(addr)
 	if err != nil {
 		return nil, fmt.Errorf("cannot parse url %v: %w", addr, err)
@@ -153,15 +155,15 @@ func clientConn(addr string) (*coap.ClientConn, error) {
 	}
 	switch address.GetScheme() {
 	case "coap+tcp":
-		co, err := coap.Dial(address.String(), coap.WithMaxMessageSize(256*1024))
+		co, err := coap.Dial(address.String(), options.WithMaxMessageSize(256*1024))
 		if err != nil {
 			return nil, dialError(err)
 		}
 		return co, nil
 	case "coaps+tcp":
-		co, err := coap.Dial(address.String(), coap.WithTLS(&tls.Config{
+		co, err := coap.Dial(address.String(), options.WithTLS(&tls.Config{
 			InsecureSkipVerify: true,
-		}), coap.WithMaxMessageSize(256*1024))
+		}), options.WithMaxMessageSize(256*1024))
 		if err != nil {
 			return nil, dialError(err)
 		}
@@ -171,7 +173,7 @@ func clientConn(addr string) (*coap.ClientConn, error) {
 	}
 }
 
-func deleteResource(co *coap.ClientConn, href string) {
+func deleteResource(co *client.ClientConn, href string) {
 	deleteError := func(err error) {
 		log.Fatalf("cannot delete resource: %v", err)
 	}
@@ -182,7 +184,7 @@ func deleteResource(co *coap.ClientConn, href string) {
 	decodePayload(resp)
 }
 
-func updateResource(co *coap.ClientConn, href string, contentFormat int) {
+func updateResource(co *client.ClientConn, href string, contentFormat int) {
 	updateError := func(err error) {
 		log.Fatalf("cannot update resource: %v", err)
 	}
@@ -198,7 +200,7 @@ func updateResource(co *coap.ClientConn, href string, contentFormat int) {
 	decodePayload(resp)
 }
 
-func createResource(co *coap.ClientConn, href string, contentFormat int) {
+func createResource(co *client.ClientConn, href string, contentFormat int) {
 	createError := func(err error) {
 		log.Fatalf("cannot create resource: %v", err)
 	}
@@ -207,7 +209,7 @@ func createResource(co *coap.ClientConn, href string, contentFormat int) {
 	if err != nil {
 		createError(err)
 	}
-	req, err := coap.NewPostRequest(context.Background(), pool.New(0, 0), href, message.MediaType(contentFormat), os.Stdin)
+	req, err := co.NewPostRequest(context.Background(), href, message.MediaType(contentFormat), os.Stdin)
 	if err != nil {
 		createError(err)
 	}
@@ -219,7 +221,7 @@ func createResource(co *coap.ClientConn, href string, contentFormat int) {
 	decodePayload(resp)
 }
 
-func observerResource(co *coap.ClientConn, href string) {
+func observerResource(co *client.ClientConn, href string) {
 	obs, err := co.Observe(context.Background(), href, func(req *pool.Message) {
 		decodePayload(req)
 	})
@@ -239,7 +241,7 @@ func observerResource(co *coap.ClientConn, href string) {
 	fmt.Println("exiting")
 }
 
-func getResource(co *coap.ClientConn, href, resIf, resRt string) {
+func getResource(co *client.ClientConn, href, resIf, resRt string) {
 	var opts message.Options
 	if resIf != "" {
 		v := "if=" + resIf

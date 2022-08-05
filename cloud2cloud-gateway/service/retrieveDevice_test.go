@@ -14,7 +14,7 @@ import (
 	"github.com/plgd-dev/device/schema/interfaces"
 	"github.com/plgd-dev/device/schema/platform"
 	"github.com/plgd-dev/device/test/resource/types"
-	"github.com/plgd-dev/go-coap/v2/message"
+	"github.com/plgd-dev/go-coap/v3/message"
 	c2cService "github.com/plgd-dev/hub/v2/cloud2cloud-gateway/service"
 	c2cTest "github.com/plgd-dev/hub/v2/cloud2cloud-gateway/test"
 	"github.com/plgd-dev/hub/v2/cloud2cloud-gateway/uri"

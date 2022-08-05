@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/plgd-dev/go-coap/v2/message"
+	"github.com/plgd-dev/go-coap/v3/message"
 	c2cEvents "github.com/plgd-dev/hub/v2/cloud2cloud-connector/events"
 	c2cTest "github.com/plgd-dev/hub/v2/cloud2cloud-gateway/test"
 	"github.com/plgd-dev/hub/v2/cloud2cloud-gateway/uri"

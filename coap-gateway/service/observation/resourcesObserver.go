@@ -7,9 +7,8 @@ import (
 
 	"github.com/plgd-dev/device/schema/interfaces"
 	"github.com/plgd-dev/device/schema/resources"
-	"github.com/plgd-dev/go-coap/v2/message"
-	"github.com/plgd-dev/go-coap/v2/tcp"
-	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
+	"github.com/plgd-dev/go-coap/v3/message"
+	"github.com/plgd-dev/go-coap/v3/message/pool"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 )
@@ -37,11 +36,11 @@ func MakeResourcesObserverCallbacks(OnObserveResource OnObserveResource, OnGetRe
 // The resource observer keeps track of observed resources to avoid multiple observation of the
 // same resource. Each new unique observation fires an event:
 //   - If the resource is observable then the connection to COAP-GW (coapConn) is used to
-//   register for observations from COAP-GW. Observation notifications are handled by the
-//   onObserveResource callback.
+//     register for observations from COAP-GW. Observation notifications are handled by the
+//     onObserveResource callback.
 //   - If the resource is not observable then a GET request is sent to COAP-GW to receive
-//   the content of the resource and the response is handled by the onGetResourceContent
-//   callback.
+//     the content of the resource and the response is handled by the onGetResourceContent
+//     callback.
 type resourcesObserver struct {
 	lock      sync.Mutex
 	deviceID  string
@@ -132,7 +131,7 @@ func (o *resourcesObserver) handleResourceLocked(ctx context.Context, obsRes *ob
 }
 
 // Register to COAP-GW resource observation for given resource
-func (o *resourcesObserver) observeResourceLocked(ctx context.Context, obsRes *observedResource) (*tcp.Observation, error) {
+func (o *resourcesObserver) observeResourceLocked(ctx context.Context, obsRes *observedResource) (Observation, error) {
 	cannotObserveResourceError := func(deviceID, href string, err error) error {
 		return fmt.Errorf("cannot observe resource /%v%v: %w", deviceID, href, err)
 	}
@@ -242,8 +241,8 @@ func (o *resourcesObserver) cancelResourcesObservations(ctx context.Context, hre
 	}
 }
 
-func (o *resourcesObserver) popTrackedObservations(hrefs []string) []*tcp.Observation {
-	observations := make([]*tcp.Observation, 0, 32)
+func (o *resourcesObserver) popTrackedObservations(hrefs []string) []Observation {
+	observations := make([]Observation, 0, 32)
 	o.lock.Lock()
 	defer o.lock.Unlock()
 	newResources, delResources := o.resources.removeByHref(hrefs...)

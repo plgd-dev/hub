@@ -3,9 +3,9 @@ package service
 import (
 	"bytes"
 
-	"github.com/plgd-dev/go-coap/v2/message"
-	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
-	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
+	"github.com/plgd-dev/go-coap/v3/message"
+	coapCodes "github.com/plgd-dev/go-coap/v3/message/codes"
+	"github.com/plgd-dev/go-coap/v3/message/pool"
 )
 
 func (c *Client) createResponse(code coapCodes.Code, token message.Token, contentFormat message.MediaType, payload []byte) *pool.Message {

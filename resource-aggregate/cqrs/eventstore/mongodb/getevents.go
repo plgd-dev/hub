@@ -11,7 +11,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-/// Get array of unique aggregateID values
+// / Get array of unique aggregateID values
 func getEventsAggregateIdFilter(groupID string, queries []eventstore.GetEventsQuery) bson.A {
 	if len(queries) == 0 {
 		return nil

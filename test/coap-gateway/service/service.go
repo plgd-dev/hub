@@ -2,18 +2,20 @@ package service
 
 import (
 	"context"
-	"crypto/tls"
 	"fmt"
 	"os"
 	"os/signal"
 	"sync"
 	"syscall"
 
-	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
-	"github.com/plgd-dev/go-coap/v2/mux"
-	"github.com/plgd-dev/go-coap/v2/net"
-	"github.com/plgd-dev/go-coap/v2/tcp"
-	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
+	coapCodes "github.com/plgd-dev/go-coap/v3/message/codes"
+	"github.com/plgd-dev/go-coap/v3/message/pool"
+	"github.com/plgd-dev/go-coap/v3/mux"
+	"github.com/plgd-dev/go-coap/v3/net"
+	"github.com/plgd-dev/go-coap/v3/options"
+	"github.com/plgd-dev/go-coap/v3/tcp"
+	coapTcpClient "github.com/plgd-dev/go-coap/v3/tcp/client"
+	coapTcpServer "github.com/plgd-dev/go-coap/v3/tcp/server"
 	"github.com/plgd-dev/hub/v2/coap-gateway/service/message"
 	coapgwUri "github.com/plgd-dev/hub/v2/coap-gateway/uri"
 	"github.com/plgd-dev/hub/v2/pkg/fn"
@@ -26,8 +28,8 @@ import (
 // Service is a configuration of coap-gateway
 type Service struct {
 	config      Config
-	coapServer  *tcp.Server
-	listener    tcp.Listener
+	coapServer  *coapTcpServer.Server
+	listener    coapTcpServer.Listener
 	closeFn     func()
 	ctx         context.Context
 	cancel      context.CancelFunc
@@ -37,7 +39,7 @@ type Service struct {
 	clients     []*Client
 }
 
-func newTCPListener(config COAPConfig, fileWatcher *fsnotify.Watcher, logger log.Logger) (tcp.Listener, func(), error) {
+func newTCPListener(config COAPConfig, fileWatcher *fsnotify.Watcher, logger log.Logger) (coapTcpServer.Listener, func(), error) {
 	if !config.TLS.Enabled {
 		listener, err := net.NewTCPListener("tcp", config.Addr)
 		if err != nil {
@@ -114,7 +116,7 @@ func decodeMsgToDebug(client *Client, resp *pool.Message, tag string) {
 
 const clientKey = "client"
 
-func (s *Service) coapConnOnNew(coapConn *tcp.ClientConn, tlscon *tls.Conn) {
+func (s *Service) coapConnOnNew(coapConn *coapTcpClient.ClientConn) {
 	client := newClient(s, coapConn, s.makeHandler(s, WithCoapConnectionOpt(coapConn)))
 	coapConn.SetContextValue(clientKey, client)
 	coapConn.AddOnClose(func() {
@@ -125,50 +127,41 @@ func (s *Service) coapConnOnNew(coapConn *tcp.ClientConn, tlscon *tls.Conn) {
 
 func (s *Service) loggingMiddleware(next mux.Handler) mux.Handler {
 	return mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
-		client, ok := w.Client().Context().Value(clientKey).(*Client)
+		client, ok := w.ClientConn().Context().Value(clientKey).(*Client)
 		if !ok {
-			client = newClient(s, w.Client().ClientConn().(*tcp.ClientConn), nil)
+			client = newClient(s, w.ClientConn().(*coapTcpClient.ClientConn), nil)
 		}
-		tmp, err := pool.New(0, 0).ConvertFrom(r.Message)
-		if err != nil {
-			client.logAndWriteErrorResponse(fmt.Errorf("cannot convert from mux.Message: %w", err), coapCodes.InternalServerError, r.Token)
-			return
-		}
-		decodeMsgToDebug(client, tmp, "RECEIVED-COMMAND")
+		decodeMsgToDebug(client, r.Message, "RECEIVED-COMMAND")
 		next.ServeCOAP(w, r)
 	})
 }
 
 func validateCommand(s mux.ResponseWriter, req *mux.Message, server *Service, fnc func(req *mux.Message, client *Client)) {
-	client, ok := s.Client().Context().Value(clientKey).(*Client)
+	client, ok := s.ClientConn().Context().Value(clientKey).(*Client)
 	if !ok || client == nil {
-		client = newClient(server, s.Client().ClientConn().(*tcp.ClientConn), nil)
+		client = newClient(server, s.ClientConn().(*coapTcpClient.ClientConn), nil)
 	}
 	closeClient := func(c *Client) {
 		if err := c.Close(); err != nil {
 			log.Errorf("cannot handle command: %w", err)
 		}
 	}
+	req.Hijack()
 	err := server.Submit(func() {
-		switch req.Code {
+		switch req.Code() {
 		case coapCodes.POST, coapCodes.DELETE, coapCodes.PUT, coapCodes.GET:
 			fnc(req, client)
 		case coapCodes.Empty:
 			if !ok {
-				client.logAndWriteErrorResponse(fmt.Errorf("cannot handle command: client not found"), coapCodes.InternalServerError, req.Token)
+				client.logAndWriteErrorResponse(fmt.Errorf("cannot handle command: client not found"), coapCodes.InternalServerError, req.Token())
 				closeClient(client)
 				return
 			}
 		case coapCodes.Content:
 			// Unregistered observer at a peer send us a notification
-			tmp, err := pool.New(0, 0).ConvertFrom(req.Message)
-			if err != nil {
-				log.Errorf("cannot convert dropped notification: %w", err)
-				return
-			}
-			decodeMsgToDebug(client, tmp, "DROPPED-NOTIFICATION")
+			decodeMsgToDebug(client, req.Message, "DROPPED-NOTIFICATION")
 		default:
-			log.Errorf("received invalid code: CoapCode(%v)", req.Code)
+			log.Errorf("received invalid code: CoapCode(%v)", req.Code())
 		}
 	})
 	if err != nil {
@@ -178,8 +171,8 @@ func validateCommand(s mux.ResponseWriter, req *mux.Message, server *Service, fn
 }
 
 func defaultHandler(req *mux.Message, client *Client) {
-	path, _ := req.Options.Path()
-	client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: unknown path %v", client.GetDeviceID(), path), coapCodes.NotFound, req.Token)
+	path, _ := req.Options().Path()
+	client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: unknown path %v", client.GetDeviceID(), path), coapCodes.NotFound, req.Token())
 }
 
 func (s *Service) setupCoapServer() error {
@@ -212,14 +205,14 @@ func (s *Service) setupCoapServer() error {
 		return setHandlerError(coapgwUri.RefreshToken, err)
 	}
 
-	opts := make([]tcp.ServerOption, 0, 6)
-	opts = append(opts, tcp.WithOnNewClientConn(s.coapConnOnNew))
-	opts = append(opts, tcp.WithMux(m))
-	opts = append(opts, tcp.WithContext(s.ctx))
-	opts = append(opts, tcp.WithErrors(func(e error) {
+	opts := make([]coapTcpServer.ServerOption, 0, 6)
+	opts = append(opts, options.WithOnNewClientConn(s.coapConnOnNew))
+	opts = append(opts, options.WithMux(m))
+	opts = append(opts, options.WithContext(s.ctx))
+	opts = append(opts, options.WithErrors(func(e error) {
 		log.Errorf("plgd/test-coap: %w", e)
 	}))
-	opts = append(opts, tcp.WithGoPool(func(f func()) error {
+	opts = append(opts, options.WithGoPool(func(f func()) error {
 		// we call directly function in connection-goroutine because
 		// pairing request/response cannot be done in taskQueue for a observe resource.
 		// - the observe resource creates task which wait for the response and this wait can be infinite

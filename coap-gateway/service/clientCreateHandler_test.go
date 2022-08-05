@@ -8,10 +8,8 @@ import (
 	"time"
 
 	"github.com/plgd-dev/device/schema/interfaces"
-	"github.com/plgd-dev/go-coap/v2/message"
-	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
-	"github.com/plgd-dev/go-coap/v2/tcp"
-	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
+	"github.com/plgd-dev/go-coap/v3/message"
+	coapCodes "github.com/plgd-dev/go-coap/v3/message/codes"
 	coapgwTest "github.com/plgd-dev/hub/v2/coap-gateway/test"
 	"github.com/plgd-dev/hub/v2/coap-gateway/uri"
 	"github.com/plgd-dev/hub/v2/pkg/log"
@@ -88,7 +86,7 @@ func TestClientCreateHandler(t *testing.T) {
 			if len(tt.args.payload) > 0 {
 				body = bytes.NewReader(tt.args.payload)
 			}
-			req, err := tcp.NewPostRequest(ctx, pool.New(0, 0), tt.args.href, tt.args.contentFormat, body)
+			req, err := co.NewPostRequest(ctx, tt.args.href, tt.args.contentFormat, body)
 			require.NoError(t, err)
 			req.SetOptionString(message.URIQuery, "if="+interfaces.OC_IF_CREATE)
 			resp, err := co.Do(req)

@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"net/url"
 
-	"github.com/plgd-dev/go-coap/v2/message"
-	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
-	"github.com/plgd-dev/go-coap/v2/mux"
-	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
+	"github.com/plgd-dev/go-coap/v3/message"
+	coapCodes "github.com/plgd-dev/go-coap/v3/message/codes"
+	"github.com/plgd-dev/go-coap/v3/message/pool"
+	"github.com/plgd-dev/go-coap/v3/mux"
 	"github.com/plgd-dev/hub/v2/coap-gateway/coapconv"
 	"github.com/plgd-dev/hub/v2/identity-store/pb"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
@@ -28,7 +28,7 @@ type signOffData struct {
 }
 
 func getSignOffDataFromQuery(req *mux.Message) (signOffData, error) {
-	queries, _ := req.Options.Queries()
+	queries, _ := req.Options().Queries()
 	// from QUERY: di, accesstoken, uid
 	var data signOffData
 	for _, query := range queries {
@@ -50,7 +50,7 @@ func getSignOffDataFromQuery(req *mux.Message) (signOffData, error) {
 	return data, nil
 }
 
-/// Update empty values
+// / Update empty values
 func (s signOffData) updateSignOffDataFromAuthContext(client *Client) signOffData {
 	authCurrentCtx, err := client.GetAuthorizationContext()
 	if err != nil {
@@ -101,7 +101,7 @@ func signOffHandler(req *mux.Message, client *Client) (*pool.Message, error) {
 		return nil, statusErrorf(coapCodes.BadRequest, errFmtSignOff, err)
 	}
 
-	jwtClaims, err := client.ValidateToken(req.Context, signOffData.accessToken)
+	jwtClaims, err := client.ValidateToken(req.Context(), signOffData.accessToken)
 	if err != nil {
 		return nil, statusErrorf(coapCodes.Unauthorized, errFmtSignOff, err)
 	}
@@ -116,7 +116,7 @@ func signOffHandler(req *mux.Message, client *Client) (*pool.Message, error) {
 	}
 
 	deviceID := client.ResolveDeviceID(jwtClaims, signOffData.deviceID)
-	setDeviceIDToTracerSpan(req.Context, deviceID)
+	setDeviceIDToTracerSpan(req.Context(), deviceID)
 
 	ctx = kitNetGrpc.CtxWithToken(ctx, signOffData.accessToken)
 	deviceIds := []string{deviceID}
@@ -142,5 +142,5 @@ func signOffHandler(req *mux.Message, client *Client) (*pool.Message, error) {
 	}
 
 	client.CleanUp(true)
-	return client.createResponse(coapCodes.Deleted, req.Token, message.TextPlain, nil), nil
+	return client.createResponse(coapCodes.Deleted, req.Token(), message.TextPlain, nil), nil
 }

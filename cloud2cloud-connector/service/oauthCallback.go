@@ -46,12 +46,7 @@ func (rh *RequestHandler) oAuthCallback(w http.ResponseWriter, r *http.Request) 
 		return http.StatusBadRequest, fmt.Errorf("invalid/expired OAuth state")
 	}
 	rh.provisionCache.Delete(state)
-
-	data, ok := cacheData.Data().(provisionCacheData)
-	if !ok {
-		return http.StatusBadRequest, fmt.Errorf("invalid/expired OAuth state")
-	}
-
+	data := cacheData.Data()
 	newData, err := rh.handleLinkedData(r.Context(), data, authCode)
 	if err != nil {
 		return http.StatusBadRequest, err

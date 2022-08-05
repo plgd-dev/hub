@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/plgd-dev/go-coap/v2/message/codes"
-	"github.com/plgd-dev/go-coap/v2/mux"
-	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
+	"github.com/plgd-dev/go-coap/v3/message/codes"
+	"github.com/plgd-dev/go-coap/v3/message/pool"
+	"github.com/plgd-dev/go-coap/v3/mux"
 	coapgwMessage "github.com/plgd-dev/hub/v2/coap-gateway/service/message"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"go.opentelemetry.io/otel/trace"
@@ -160,14 +160,7 @@ func (c *Client) logRequestResponse(req *mux.Message, resp *pool.Message, err er
 	if resp != nil && !WantToLog(resp.Code(), logger) {
 		return
 	}
-	var rq *pool.Message
-	if req != nil {
-		tmp, err := c.server.messagePool.ConvertFrom(req.Message)
-		if err == nil {
-			rq = tmp
-		}
-	}
-	logger = c.loggerWithRequestResponse(c.getLogger(), rq, resp)
+	logger = c.loggerWithRequestResponse(c.getLogger(), req.Message, resp)
 	if err != nil {
 		logger = logger.With(log.ErrorKey, err.Error())
 	}

@@ -6,10 +6,10 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/plgd-dev/go-coap/v2/message"
-	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
-	"github.com/plgd-dev/go-coap/v2/mux"
-	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
+	"github.com/plgd-dev/go-coap/v3/message"
+	coapCodes "github.com/plgd-dev/go-coap/v3/message/codes"
+	"github.com/plgd-dev/go-coap/v3/message/pool"
+	"github.com/plgd-dev/go-coap/v3/mux"
 	"github.com/plgd-dev/hub/v2/coap-gateway/coapconv"
 	"github.com/plgd-dev/hub/v2/coap-gateway/service/observation"
 	grpcgwClient "github.com/plgd-dev/hub/v2/grpc-gateway/client"
@@ -33,7 +33,7 @@ type CoapSignInResp struct {
 	ExpiresIn int64 `json:"expiresin"`
 }
 
-/// Check that all required request fields are set
+// / Check that all required request fields are set
 func (request CoapSignInReq) checkOAuthRequest() error {
 	if request.DeviceID == "" {
 		return fmt.Errorf("invalid device id")
@@ -47,7 +47,7 @@ func (request CoapSignInReq) checkOAuthRequest() error {
 	return nil
 }
 
-/// Update empty values
+// / Update empty values
 func (request CoapSignInReq) updateOAUthRequestIfEmpty(deviceID, userID, accessToken string) CoapSignInReq {
 	if request.DeviceID == "" {
 		request.DeviceID = deviceID
@@ -61,7 +61,7 @@ func (request CoapSignInReq) updateOAUthRequestIfEmpty(deviceID, userID, accessT
 	return request
 }
 
-/// Get data for sign in response
+// / Get data for sign in response
 func getSignInContent(expiresIn int64, options message.Options) (message.MediaType, []byte, error) {
 	coapResp := CoapSignInResp{
 		ExpiresIn: expiresIn,
@@ -246,7 +246,7 @@ func signInPostHandler(req *mux.Message, client *Client, signIn CoapSignInReq) (
 		return nil, statusErrorf(coapCodes.BadRequest, errFmtSignIn, err)
 	}
 
-	jwtClaims, err := client.ValidateToken(req.Context, signIn.AccessToken)
+	jwtClaims, err := client.ValidateToken(req.Context(), signIn.AccessToken)
 	if err != nil {
 		return nil, statusErrorf(coapCodes.Unauthorized, errFmtSignIn, err)
 	}
@@ -265,11 +265,11 @@ func signInPostHandler(req *mux.Message, client *Client, signIn CoapSignInReq) (
 		return nil, statusErrorf(coapCodes.Unauthorized, errFmtSignIn, err)
 	}
 	deviceID := client.ResolveDeviceID(jwtClaims, signIn.DeviceID)
-	setDeviceIDToTracerSpan(req.Context, deviceID)
+	setDeviceIDToTracerSpan(req.Context(), deviceID)
 
 	upd := client.updateAuthorizationContext(deviceID, signIn.UserID, signIn.AccessToken, validUntil, jwtClaims)
 
-	ctx := kitNetGrpc.CtxWithToken(kitNetGrpc.CtxWithIncomingToken(req.Context, signIn.AccessToken), signIn.AccessToken)
+	ctx := kitNetGrpc.CtxWithToken(kitNetGrpc.CtxWithIncomingToken(req.Context(), signIn.AccessToken), signIn.AccessToken)
 	valid, err := subscribeAndValidateDeviceAccess(ctx, client, signIn.UserID, deviceID, upd != updateTypeNone)
 	if err != nil {
 		return nil, statusErrorf(coapCodes.Unauthorized, errFmtSignIn, err)
@@ -279,7 +279,7 @@ func signInPostHandler(req *mux.Message, client *Client, signIn CoapSignInReq) (
 	}
 
 	expiresIn := validUntilToExpiresIn(validUntil)
-	accept, out, err := getSignInContent(expiresIn, req.Options)
+	accept, out, err := getSignInContent(expiresIn, req.Options())
 	if err != nil {
 		return nil, statusErrorf(coapCodes.InternalServerError, errFmtSignIn, err)
 	}
@@ -299,13 +299,13 @@ func signInPostHandler(req *mux.Message, client *Client, signIn CoapSignInReq) (
 		return nil, statusErrorf(coapCodes.InternalServerError, errFmtSignIn, fmt.Errorf("failed to register device observer: %w", err))
 	}
 
-	return client.createResponse(coapCodes.Changed, req.Token, accept, out), nil
+	return client.createResponse(coapCodes.Changed, req.Token(), accept, out), nil
 }
 
 func updateDeviceMetadata(req *mux.Message, client *Client) error {
 	oldAuthCtx := client.CleanUp(true)
 	if oldAuthCtx.GetDeviceID() != "" {
-		ctx := kitNetGrpc.CtxWithToken(req.Context, oldAuthCtx.GetAccessToken())
+		ctx := kitNetGrpc.CtxWithToken(req.Context(), oldAuthCtx.GetAccessToken())
 		client.server.expirationClientCache.Delete(oldAuthCtx.GetDeviceID())
 
 		_, err := client.server.raClient.UpdateDeviceMetadata(ctx, &commands.UpdateDeviceMetadataRequest{
@@ -344,7 +344,7 @@ func signOutPostHandler(req *mux.Message, client *Client, signOut CoapSignInReq)
 		return nil, statusErrorf(coapCodes.BadRequest, errFmtSignOut, err)
 	}
 
-	jwtClaims, err := client.ValidateToken(req.Context, signOut.AccessToken)
+	jwtClaims, err := client.ValidateToken(req.Context(), signOut.AccessToken)
 	if err != nil {
 		return nil, statusErrorf(coapCodes.Unauthorized, errFmtSignOut, err)
 	}
@@ -359,22 +359,22 @@ func signOutPostHandler(req *mux.Message, client *Client, signOut CoapSignInReq)
 	}
 
 	deviceID := client.ResolveDeviceID(jwtClaims, signOut.DeviceID)
-	setDeviceIDToTracerSpan(req.Context, deviceID)
+	setDeviceIDToTracerSpan(req.Context(), deviceID)
 
 	if err := updateDeviceMetadata(req, client); err != nil {
 		return nil, statusErrorf(coapconv.GrpcErr2CoapCode(err, coapconv.Update), errFmtSignOut, err)
 	}
 
-	return client.createResponse(coapCodes.Changed, req.Token, message.AppOcfCbor, []byte{0xA0}), nil // empty object
+	return client.createResponse(coapCodes.Changed, req.Token(), message.AppOcfCbor, []byte{0xA0}), nil // empty object
 }
 
 // Sign-in
 // https://github.com/openconnectivityfoundation/security/blob/master/swagger2.0/oic.sec.session.swagger.json
 func signInHandler(req *mux.Message, client *Client) (*pool.Message, error) {
-	switch req.Code {
+	switch req.Code() {
 	case coapCodes.POST:
 		var signIn CoapSignInReq
-		err := cbor.ReadFrom(req.Body, &signIn)
+		err := cbor.ReadFrom(req.Body(), &signIn)
 		if err != nil {
 			return nil, statusErrorf(coapCodes.BadRequest, errFmtSignIn, fmt.Errorf("cannot decode body: %w", err))
 		}
@@ -385,6 +385,6 @@ func signInHandler(req *mux.Message, client *Client) (*pool.Message, error) {
 			return signOutPostHandler(req, client, signIn)
 		}
 	default:
-		return nil, statusErrorf(coapCodes.NotFound, "unsupported method %v", req.Code)
+		return nil, statusErrorf(coapCodes.NotFound, "unsupported method %v", req.Code())
 	}
 }

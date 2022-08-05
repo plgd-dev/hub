@@ -11,11 +11,10 @@ import (
 	"github.com/google/uuid"
 	"github.com/plgd-dev/device/schema/interfaces"
 	"github.com/plgd-dev/device/schema/resources"
-	"github.com/plgd-dev/go-coap/v2/message"
-	"github.com/plgd-dev/go-coap/v2/message/codes"
-	"github.com/plgd-dev/go-coap/v2/mux"
-	"github.com/plgd-dev/go-coap/v2/tcp"
-	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
+	"github.com/plgd-dev/go-coap/v3/message"
+	"github.com/plgd-dev/go-coap/v3/message/codes"
+	"github.com/plgd-dev/go-coap/v3/message/pool"
+	"github.com/plgd-dev/go-coap/v3/mux"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 	"github.com/plgd-dev/kit/v2/codec/cbor"
@@ -107,36 +106,47 @@ func NewCoapResourceUpdateRequest(ctx context.Context, messagePool *pool.Pool, e
 	if event.Content == nil {
 		return nil, fmt.Errorf("invalid content for update content")
 	}
-
-	req, err := tcp.NewPostRequest(ctx, messagePool, event.GetResourceId().GetHref(), mediaType, bytes.NewReader(event.GetContent().GetData()))
+	token, err := message.GetToken()
+	if err != nil {
+		return nil, err
+	}
+	req := messagePool.AcquireMessage(ctx)
+	err = req.SetupPost(event.GetResourceId().GetHref(), token, mediaType, bytes.NewReader(event.GetContent().GetData()))
 	if err != nil {
 		return nil, err
 	}
 	if event.GetResourceInterface() != "" {
 		req.AddOptionString(message.URIQuery, "if="+event.GetResourceInterface())
 	}
-
 	return req, nil
 }
 
 func NewCoapResourceRetrieveRequest(ctx context.Context, messagePool *pool.Pool, event *events.ResourceRetrievePending) (*pool.Message, error) {
-	req, err := tcp.NewGetRequest(ctx, messagePool, event.GetResourceId().GetHref())
+	token, err := message.GetToken()
+	if err != nil {
+		return nil, err
+	}
+	req := messagePool.AcquireMessage(ctx)
+	err = req.SetupGet(event.GetResourceId().GetHref(), token)
 	if err != nil {
 		return nil, err
 	}
 	if event.GetResourceInterface() != "" {
 		req.AddOptionString(message.URIQuery, "if="+event.GetResourceInterface())
 	}
-
 	return req, nil
 }
 
 func NewCoapResourceDeleteRequest(ctx context.Context, messagePool *pool.Pool, event *events.ResourceDeletePending) (*pool.Message, error) {
-	req, err := tcp.NewDeleteRequest(ctx, messagePool, event.GetResourceId().GetHref())
+	token, err := message.GetToken()
 	if err != nil {
 		return nil, err
 	}
-
+	req := messagePool.AcquireMessage(ctx)
+	err = req.SetupDelete(event.GetResourceId().GetHref(), token)
+	if err != nil {
+		return nil, err
+	}
 	return req, nil
 }
 
@@ -217,7 +227,7 @@ func NewDeleteResourceRequest(resourceID *commands.ResourceId, req *mux.Message,
 		return nil, err
 	}
 
-	metadata := NewCommandMetadata(req.SequenceNumber, connectionID)
+	metadata := NewCommandMetadata(req.Sequence(), connectionID)
 	return &commands.DeleteResourceRequest{
 		ResourceId:      resourceID,
 		CorrelationId:   correlationID,
@@ -313,10 +323,10 @@ func NewUpdateResourceRequest(resourceID *commands.ResourceId, req *mux.Message,
 		return nil, err
 	}
 
-	content := NewContent(req.Options, req.Body)
-	metadata := NewCommandMetadata(req.SequenceNumber, connectionID)
+	content := NewContent(req.Options(), req.Body())
+	metadata := NewCommandMetadata(req.Sequence(), connectionID)
 	var resourceInterface string
-	qs, err := req.Options.Queries()
+	qs, err := req.Options().Queries()
 	if err == nil {
 		for _, q := range qs {
 			if strings.HasPrefix(q, "if=") {
@@ -343,9 +353,9 @@ func NewRetrieveResourceRequest(resourceID *commands.ResourceId, req *mux.Messag
 	if err != nil {
 		return nil, err
 	}
-	metadata := NewCommandMetadata(req.SequenceNumber, connectionID)
+	metadata := NewCommandMetadata(req.Sequence(), connectionID)
 	var resourceInterface string
-	qs, err := req.Options.Queries()
+	qs, err := req.Options().Queries()
 	if err == nil {
 		for _, q := range qs {
 			if strings.HasPrefix(q, "if=") {
@@ -368,8 +378,8 @@ func NewCreateResourceRequest(resourceID *commands.ResourceId, req *mux.Message,
 		return nil, err
 	}
 
-	content := NewContent(req.Options, req.Body)
-	metadata := NewCommandMetadata(req.SequenceNumber, connectionID)
+	content := NewContent(req.Options(), req.Body())
+	metadata := NewCommandMetadata(req.Sequence(), connectionID)
 
 	return &commands.CreateResourceRequest{
 		ResourceId:      resourceID,
@@ -400,8 +410,12 @@ func NewCoapResourceCreateRequest(ctx context.Context, messagePool *pool.Pool, e
 	if event.Content == nil {
 		return nil, fmt.Errorf("invalid content for create content")
 	}
-
-	req, err := tcp.NewPostRequest(ctx, messagePool, event.GetResourceId().GetHref(), mediaType, bytes.NewReader(event.GetContent().GetData()))
+	token, err := message.GetToken()
+	if err != nil {
+		return nil, err
+	}
+	req := messagePool.AcquireMessage(ctx)
+	err = req.SetupPost(event.GetResourceId().GetHref(), token, mediaType, bytes.NewReader(event.GetContent().GetData()))
 	if err != nil {
 		return nil, err
 	}

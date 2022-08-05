@@ -9,10 +9,10 @@ import (
 	"sync"
 	"sync/atomic"
 
-	coapMessage "github.com/plgd-dev/go-coap/v2/message"
-	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
-	"github.com/plgd-dev/go-coap/v2/mux"
-	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
+	coapMessage "github.com/plgd-dev/go-coap/v3/message"
+	coapCodes "github.com/plgd-dev/go-coap/v3/message/codes"
+	"github.com/plgd-dev/go-coap/v3/message/pool"
+	"github.com/plgd-dev/go-coap/v3/mux"
 	"github.com/plgd-dev/hub/v2/coap-gateway/coapconv"
 	"github.com/plgd-dev/hub/v2/coap-gateway/service/message"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
@@ -197,7 +197,7 @@ func (s *resourceSubscription) Close() error {
 func newResourceSubscription(req *mux.Message, client *Client, authCtx *authorizationContext, deviceID string, href string) *resourceSubscription {
 	r := &resourceSubscription{
 		client:   client,
-		token:    req.Token,
+		token:    req.Token(),
 		authCtx:  authCtx,
 		deviceID: deviceID,
 		href:     href,
@@ -205,7 +205,7 @@ func newResourceSubscription(req *mux.Message, client *Client, authCtx *authoriz
 	}
 
 	res := &commands.ResourceId{DeviceId: deviceID, Href: href}
-	sub := subscription.New(r.eventHandler, req.Token.String(), &pb.SubscribeToEvents_CreateSubscription{
+	sub := subscription.New(r.eventHandler, req.Token().String(), &pb.SubscribeToEvents_CreateSubscription{
 		ResourceIdFilter: []string{res.ToString()},
 		EventFilter:      []pb.SubscribeToEvents_CreateSubscription_Event{pb.SubscribeToEvents_CreateSubscription_RESOURCE_CHANGED, pb.SubscribeToEvents_CreateSubscription_UNREGISTERED, pb.SubscribeToEvents_CreateSubscription_RESOURCE_UNPUBLISHED},
 	})
@@ -224,14 +224,14 @@ func getStartObserveResourceErr(deviceID, href string, err error) error {
 }
 
 func startResourceObservation(req *mux.Message, client *Client, authCtx *authorizationContext, deviceID, href string) (*pool.Message, error) {
-	ok, err := client.server.ownerCache.OwnsDevice(req.Context, deviceID)
+	ok, err := client.server.ownerCache.OwnsDevice(req.Context(), deviceID)
 	if err != nil {
 		return nil, statusErrorf(coapconv.GrpcErr2CoapCode(err, coapconv.Retrieve), "%w", getStartObserveResourceErr(deviceID, href, err))
 	}
 	if !ok {
 		return nil, statusErrorf(coapCodes.Unauthorized, "%w", getStartObserveResourceErr(deviceID, href, fmt.Errorf("unauthorized access")))
 	}
-	token := req.Token.String()
+	token := req.Token().String()
 	sub := newResourceSubscription(req, client, authCtx, deviceID, href)
 	_, loaded := client.resourceSubscriptions.LoadOrStore(token, sub)
 	if loaded {
@@ -240,7 +240,7 @@ func startResourceObservation(req *mux.Message, client *Client, authCtx *authori
 		}
 		return nil, statusErrorf(coapCodes.BadRequest, "%w", getStartObserveResourceErr(deviceID, href, fmt.Errorf("resource subscription with token %v already exist", token)))
 	}
-	err = sub.Init(req.Context)
+	err = sub.Init(req.Context())
 	if err != nil {
 		_, _ = client.resourceSubscriptions.PullOut(token)
 		if errClose := sub.Close(); errClose != nil {
@@ -263,7 +263,7 @@ func getStopObserveResourceErr(deviceID, href string, err error) error {
 }
 
 func stopResourceObservation(req *mux.Message, client *Client, deviceID, href string) (*pool.Message, error) {
-	token := req.Token.String()
+	token := req.Token().String()
 	canceled, err := client.cancelResourceSubscription(token)
 	if err != nil {
 		return nil, statusErrorf(coapCodes.BadRequest, "%w", getStopObserveResourceErr(deviceID, href, err))
@@ -271,11 +271,11 @@ func stopResourceObservation(req *mux.Message, client *Client, deviceID, href st
 	if !canceled {
 		return nil, statusErrorf(coapCodes.BadRequest, "%w", getStopObserveResourceErr(deviceID, href, fmt.Errorf("subscription not found")))
 	}
-	return CreateResourceContentToObserver(client, nil, 1, req.Token)
+	return CreateResourceContentToObserver(client, nil, 1, req.Token())
 }
 
 func clientResetObservationHandler(req *mux.Message, client *Client) (*pool.Message, error) {
-	token := req.Token.String()
+	token := req.Token().String()
 	canceled, err := client.cancelResourceSubscription(token)
 	if err != nil {
 		return nil, statusErrorf(coapCodes.BadRequest, "%w", fmt.Errorf("cannot reset resource observation: %w", err))

@@ -4,21 +4,21 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/plgd-dev/go-coap/v2/tcp"
+	coapTcpClient "github.com/plgd-dev/go-coap/v3/tcp/client"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 )
 
 // Client a setup of connection
 type Client struct {
 	server   *Service
-	coapConn *tcp.ClientConn
+	coapConn *coapTcpClient.ClientConn
 	handler  ServiceHandler
 
 	deviceID string
 }
 
 // newClient creates and initializes client
-func newClient(server *Service, client *tcp.ClientConn, handler ServiceHandler) *Client {
+func newClient(server *Service, client *coapTcpClient.ClientConn, handler ServiceHandler) *Client {
 	return &Client{
 		server:   server,
 		coapConn: client,
@@ -26,7 +26,7 @@ func newClient(server *Service, client *tcp.ClientConn, handler ServiceHandler) 
 	}
 }
 
-func (c *Client) GetCoapConnection() *tcp.ClientConn {
+func (c *Client) GetCoapConnection() *coapTcpClient.ClientConn {
 	return c.coapConn
 }
 

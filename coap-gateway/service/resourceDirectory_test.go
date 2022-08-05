@@ -5,10 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/plgd-dev/go-coap/v2/message"
-	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
-	"github.com/plgd-dev/go-coap/v2/tcp"
-	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
+	"github.com/plgd-dev/go-coap/v3/message"
+	coapCodes "github.com/plgd-dev/go-coap/v3/message/codes"
 	"github.com/plgd-dev/hub/v2/coap-gateway/uri"
 	"github.com/stretchr/testify/require"
 )
@@ -186,7 +184,7 @@ func TestResourceDirectoryDeleteHandler(t *testing.T) {
 		tf := func(t *testing.T) {
 			ctx, cancel := context.WithTimeout(context.Background(), TestExchangeTimeout)
 			defer cancel()
-			req, err := tcp.NewDeleteRequest(ctx, pool.New(0, 0), uri.ResourceDirectory)
+			req, err := co.NewDeleteRequest(ctx, uri.ResourceDirectory)
 			require.NoError(t, err)
 			for _, q := range test.in.queries {
 				req.AddOptionString(message.URIQuery, q)
@@ -225,7 +223,7 @@ func TestResourceDirectoryGetSelector(t *testing.T) {
 
 	for _, test := range tbl {
 		tf := func(t *testing.T) {
-			req, err := tcp.NewGetRequest(co.Context(), pool.New(0, 0), uri.ResourceDirectory)
+			req, err := co.NewGetRequest(co.Context(), uri.ResourceDirectory)
 			require.NoError(t, err)
 			for _, q := range test.in.queries {
 				req.AddOptionString(message.URIQuery, q)

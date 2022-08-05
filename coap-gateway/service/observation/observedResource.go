@@ -1,11 +1,15 @@
 package observation
 
 import (
+	"context"
 	"sort"
 	"sync"
-
-	"github.com/plgd-dev/go-coap/v2/tcp"
 )
+
+type Observation = interface {
+	Cancel(context.Context) error
+	Canceled() bool
+}
 
 // Thread-safe wrapper with additional data for *tcp.Observation.
 type observedResource struct {
@@ -13,7 +17,7 @@ type observedResource struct {
 	resInterface string
 
 	mutex       sync.Mutex
-	observation *tcp.Observation
+	observation Observation
 }
 
 func NewObservedResource(href, resInterface string) *observedResource {
@@ -35,13 +39,13 @@ func (r *observedResource) Interface() string {
 	return r.resInterface
 }
 
-func (r *observedResource) SetObservation(o *tcp.Observation) {
+func (r *observedResource) SetObservation(o Observation) {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 	r.observation = o
 }
 
-func (r *observedResource) PopObservation() *tcp.Observation {
+func (r *observedResource) PopObservation() Observation {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 	o := r.observation

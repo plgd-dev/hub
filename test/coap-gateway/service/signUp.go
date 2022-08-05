@@ -3,8 +3,8 @@ package service
 import (
 	"fmt"
 
-	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
-	"github.com/plgd-dev/go-coap/v2/mux"
+	coapCodes "github.com/plgd-dev/go-coap/v3/message/codes"
+	"github.com/plgd-dev/go-coap/v3/mux"
 	"github.com/plgd-dev/hub/v2/coap-gateway/coapconv"
 	coapgwService "github.com/plgd-dev/hub/v2/coap-gateway/service"
 	"github.com/plgd-dev/hub/v2/pkg/log"
@@ -14,14 +14,14 @@ import (
 // https://github.com/openconnectivityfoundation/security/blob/master/swagger2.0/oic.sec.account.swagger.json
 func signUpPostHandler(r *mux.Message, client *Client) {
 	logErrorAndCloseClient := func(err error, code coapCodes.Code) {
-		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign up: %w", err), code, r.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign up: %w", err), code, r.Token())
 		if err := client.Close(); err != nil {
 			log.Errorf("sign up error: %w", err)
 		}
 	}
 
 	var signUp coapgwService.CoapSignUpRequest
-	if err := cbor.ReadFrom(r.Body, &signUp); err != nil {
+	if err := cbor.ReadFrom(r.Body(), &signUp); err != nil {
 		logErrorAndCloseClient(err, coapCodes.BadRequest)
 		return
 	}
@@ -34,7 +34,7 @@ func signUpPostHandler(r *mux.Message, client *Client) {
 		return
 	}
 
-	accept := coapconv.GetAccept(r.Options)
+	accept := coapconv.GetAccept(r.Options())
 	encode, err := coapconv.GetEncoder(accept)
 	if err != nil {
 		logErrorAndCloseClient(err, coapCodes.InternalServerError)
@@ -46,18 +46,18 @@ func signUpPostHandler(r *mux.Message, client *Client) {
 		return
 	}
 
-	client.sendResponse(coapCodes.Changed, r.Token, accept, out)
+	client.sendResponse(coapCodes.Changed, r.Token(), accept, out)
 }
 
 // Sign-up
 // https://github.com/openconnectivityfoundation/security/blob/master/swagger2.0/oic.sec.account.swagger.json
 func signUpHandler(r *mux.Message, client *Client) {
-	switch r.Code {
+	switch r.Code() {
 	case coapCodes.POST:
 		signUpPostHandler(r, client)
 	case coapCodes.DELETE:
 		signOffHandler(r, client)
 	default:
-		client.logAndWriteErrorResponse(fmt.Errorf("forbidden request from %v", client.RemoteAddrString()), coapCodes.Forbidden, r.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("forbidden request from %v", client.RemoteAddrString()), coapCodes.Forbidden, r.Token())
 	}
 }

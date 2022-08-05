@@ -7,7 +7,7 @@ import (
 
 	"github.com/plgd-dev/device/schema/device"
 	"github.com/plgd-dev/device/schema/resources"
-	"github.com/plgd-dev/go-coap/v2/tcp"
+	coapTcpClient "github.com/plgd-dev/go-coap/v3/tcp/client"
 	coapgwService "github.com/plgd-dev/hub/v2/coap-gateway/service"
 	"github.com/plgd-dev/hub/v2/coap-gateway/service/observation"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
@@ -27,7 +27,7 @@ import (
 type observerHandlerWithCoap struct {
 	coapgwTest.DefaultObserverHandler
 	t                     *testing.T
-	coapConn              *tcp.ClientConn
+	coapConn              *coapTcpClient.ClientConn
 	setInitializedHandler future.SetFunc
 }
 

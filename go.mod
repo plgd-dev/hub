@@ -21,7 +21,7 @@ require (
 	github.com/nats-io/nats.go v1.16.0
 	github.com/panjf2000/ants/v2 v2.5.0
 	github.com/plgd-dev/device v1.2.2-0.20220801125405-be755427f012
-	github.com/plgd-dev/go-coap/v2 v2.6.1-0.20220801124204-0ab75f6e0680
+	github.com/plgd-dev/go-coap/v3 v3.0.0-20220805074859-b524d0998ce6
 	github.com/plgd-dev/kit/v2 v2.0.0-20211006190727-057b33161b90
 	github.com/sirupsen/logrus v1.9.0
 	github.com/stretchr/testify v1.8.0
@@ -82,6 +82,7 @@ require (
 	github.com/pion/transport v0.13.1 // indirect
 	github.com/pion/udp v0.1.1 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
+	github.com/plgd-dev/go-coap/v2 v2.6.1-0.20220801124204-0ab75f6e0680 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	github.com/xdg-go/pbkdf2 v1.0.0 // indirect

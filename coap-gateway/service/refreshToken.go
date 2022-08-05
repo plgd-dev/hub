@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/plgd-dev/go-coap/v2/message"
-	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
-	"github.com/plgd-dev/go-coap/v2/mux"
-	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
+	"github.com/plgd-dev/go-coap/v3/message"
+	coapCodes "github.com/plgd-dev/go-coap/v3/message/codes"
+	"github.com/plgd-dev/go-coap/v3/message/pool"
+	"github.com/plgd-dev/go-coap/v3/mux"
 	"github.com/plgd-dev/hub/v2/coap-gateway/coapconv"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"github.com/plgd-dev/hub/v2/pkg/security/jwt"
@@ -29,7 +29,7 @@ type CoapRefreshTokenResp struct {
 	RefreshToken string `json:"refreshtoken"`
 }
 
-/// Get data for sign in response
+// / Get data for sign in response
 func getRefreshTokenContent(token *oauth2.Token, expiresIn int64, options message.Options) (message.MediaType, []byte, error) {
 	coapResp := CoapRefreshTokenResp{
 		RefreshToken: token.RefreshToken,
@@ -90,7 +90,7 @@ func refreshTokenPostHandler(req *mux.Message, client *Client) (*pool.Message, e
 	const fmtErr = "cannot handle refresh token for %v: %w"
 
 	var refreshToken CoapRefreshTokenReq
-	err := cbor.ReadFrom(req.Body, &refreshToken)
+	err := cbor.ReadFrom(req.Body(), &refreshToken)
 	if err != nil {
 		return nil, statusErrorf(coapCodes.BadRequest, "%w", fmt.Errorf(fmtErr, "unknown", err))
 	}
@@ -100,7 +100,7 @@ func refreshTokenPostHandler(req *mux.Message, client *Client) (*pool.Message, e
 		return nil, statusErrorf(coapCodes.BadRequest, "%w", fmt.Errorf(fmtErr, refreshToken.DeviceID, err))
 	}
 
-	token, err := client.refreshCache.Execute(req.Context, client.server.providers, client.server.taskQueue, refreshToken.RefreshToken, client.getLogger())
+	token, err := client.refreshCache.Execute(req.Context(), client.server.providers, client.server.taskQueue, refreshToken.RefreshToken, client.getLogger())
 	if err != nil {
 		return nil, statusErrorf(coapCodes.Unauthorized, "%w", fmt.Errorf(fmtErr, refreshToken.DeviceID, err))
 	}
@@ -109,7 +109,7 @@ func refreshTokenPostHandler(req *mux.Message, client *Client) (*pool.Message, e
 		return nil, statusErrorf(coapCodes.Unauthorized, "%w", fmt.Errorf(fmtErr, refreshToken.DeviceID, fmt.Errorf("refresh didn't return a refresh token")))
 	}
 
-	claim, err := client.ValidateToken(req.Context, token.AccessToken.String())
+	claim, err := client.ValidateToken(req.Context(), token.AccessToken.String())
 	if err != nil {
 		return nil, statusErrorf(coapCodes.Unauthorized, "%w", fmt.Errorf(fmtErr, refreshToken.DeviceID, err))
 	}
@@ -119,7 +119,7 @@ func refreshTokenPostHandler(req *mux.Message, client *Client) (*pool.Message, e
 		return nil, statusErrorf(coapCodes.Unauthorized, "%w", fmt.Errorf(fmtErr, refreshToken.DeviceID, err))
 	}
 	deviceID := client.ResolveDeviceID(claim, refreshToken.DeviceID)
-	ctx := kitNetGrpc.CtxWithIncomingToken(kitNetGrpc.CtxWithToken(req.Context, token.AccessToken.String()), token.AccessToken.String())
+	ctx := kitNetGrpc.CtxWithIncomingToken(kitNetGrpc.CtxWithToken(req.Context(), token.AccessToken.String()), token.AccessToken.String())
 	ok, err := client.server.ownerCache.OwnsDevice(ctx, deviceID)
 	if err != nil {
 		return nil, statusErrorf(coapCodes.Unauthorized, "%w", fmt.Errorf(fmtErr, deviceID, fmt.Errorf("cannot check owning: %w", err)))
@@ -144,23 +144,23 @@ func refreshTokenPostHandler(req *mux.Message, client *Client) (*pool.Message, e
 	validUntil := pkgTime.Unix(0, expire)
 
 	expiresIn := validUntilToExpiresIn(validUntil)
-	accept, out, err := getRefreshTokenContent(token, expiresIn, req.Options)
+	accept, out, err := getRefreshTokenContent(token, expiresIn, req.Options())
 	if err != nil {
 		return nil, statusErrorf(coapCodes.InternalServerError, "%w", fmt.Errorf(fmtErr, deviceID, err))
 	}
 
 	updateClient(client, deviceID, owner, token.AccessToken.String(), validUntil, claim)
 
-	return client.createResponse(coapCodes.Changed, req.Token, accept, out), nil
+	return client.createResponse(coapCodes.Changed, req.Token(), accept, out), nil
 }
 
 // RefreshToken
 // https://github.com/openconnectivityfoundation/security/blob/master/swagger2.0/oic.sec.tokenrefresh.swagger.json
 func refreshTokenHandler(req *mux.Message, client *Client) (*pool.Message, error) {
-	switch req.Code {
+	switch req.Code() {
 	case coapCodes.POST:
 		return refreshTokenPostHandler(req, client)
 	default:
-		return nil, statusErrorf(coapCodes.NotFound, "unsupported method %v", req.Code)
+		return nil, statusErrorf(coapCodes.NotFound, "unsupported method %v", req.Code())
 	}
 }
