@@ -88,7 +88,14 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 		return nil, fmt.Errorf("cannot create http server: %w", err)
 	}
 
-	httpServer := http.Server{Handler: kitNetHttp.OpenTelemetryNewHandler(httpHandler, serviceName, tracerProvider)}
+	httpServer := http.Server{
+		Handler:           kitNetHttp.OpenTelemetryNewHandler(httpHandler, serviceName, tracerProvider),
+		ReadTimeout:       config.APIs.HTTP.Server.ReadTimeout,
+		ReadHeaderTimeout: config.APIs.HTTP.Server.ReadHeaderTimeout,
+		WriteTimeout:      config.APIs.HTTP.Server.WriteTimeout,
+		IdleTimeout:       config.APIs.HTTP.Server.IdleTimeout,
+	}
+
 	server := Server{
 		server:         &httpServer,
 		config:         &config,

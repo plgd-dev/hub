@@ -11,6 +11,7 @@ import (
 	grpcClient "github.com/plgd-dev/hub/v2/pkg/net/grpc/client"
 	grpcServer "github.com/plgd-dev/hub/v2/pkg/net/grpc/server"
 	httpClient "github.com/plgd-dev/hub/v2/pkg/net/http/client"
+	httpServer "github.com/plgd-dev/hub/v2/pkg/net/http/server"
 	"github.com/plgd-dev/hub/v2/pkg/net/listener"
 	otelClient "github.com/plgd-dev/hub/v2/pkg/opentelemetry/collector/client"
 	"github.com/plgd-dev/hub/v2/pkg/security/certManager/client"
@@ -130,6 +131,15 @@ func MakeHttpClientConfig() httpClient.Config {
 		IdleConnTimeout:     time.Second * 30,
 		Timeout:             time.Second * 10,
 		TLS:                 MakeTLSClientConfig(),
+	}
+}
+
+func MakeHttpServerConfig() httpServer.Config {
+	return httpServer.Config{
+		ReadTimeout:       time.Second * 8,
+		ReadHeaderTimeout: time.Second * 4,
+		WriteTimeout:      time.Second * 16,
+		IdleTimeout:       time.Second * 30,
 	}
 }
 

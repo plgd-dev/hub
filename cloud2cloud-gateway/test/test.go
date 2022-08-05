@@ -39,6 +39,7 @@ func MakeConfig(t *testing.T) service.Config {
 	cfg.APIs.HTTP.Connection = config.MakeListenerConfig(config.C2C_GW_HOST)
 	cfg.APIs.HTTP.Connection.TLS.ClientCertificateRequired = false
 	cfg.APIs.HTTP.Authorization = config.MakeAuthorizationConfig()
+	cfg.APIs.HTTP.Server = config.MakeHttpServerConfig()
 
 	cfg.Clients.Eventbus.NATS = config.MakeSubscriberConfig()
 	cfg.Clients.GrpcGateway.Connection = config.MakeGrpcClientConfig(config.GRPC_HOST)

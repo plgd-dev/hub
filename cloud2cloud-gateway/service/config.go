@@ -9,6 +9,7 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/mongodb"
 	grpcClient "github.com/plgd-dev/hub/v2/pkg/net/grpc/client"
 	"github.com/plgd-dev/hub/v2/pkg/net/http"
+	"github.com/plgd-dev/hub/v2/pkg/net/http/server"
 	"github.com/plgd-dev/hub/v2/pkg/net/listener"
 	cmClient "github.com/plgd-dev/hub/v2/pkg/security/certManager/client"
 	"github.com/plgd-dev/hub/v2/pkg/security/jwt/validator"
@@ -54,6 +55,7 @@ func (c *APIsConfig) Validate() error {
 type HTTPConfig struct {
 	Connection    listener.Config  `yaml:",inline" json:",inline"`
 	Authorization validator.Config `yaml:"authorization" json:"authorization"`
+	Server        server.Config    `yaml:",inline" json:",inline"`
 }
 
 func (c *HTTPConfig) Validate() error {
