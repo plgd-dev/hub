@@ -1,4 +1,4 @@
-FROM golang:1.18.1-alpine AS build
+FROM golang:1.18.5-alpine AS build
 RUN apk add --no-cache curl git build-base
 WORKDIR $GOPATH/src/github.com/plgd-dev/hub
 COPY go.mod go.sum ./
@@ -21,11 +21,11 @@ RUN cd $GOPATH/pkg/mod/github.com/plgd-dev/kit/v2* && go build -ldflags "-linkmo
 WORKDIR $root_directory
 RUN apkArch="$(apk --print-arch)"; \
     case "$apkArch" in \
-        armhf) ARCH='arm' ;; \
-        aarch64) ARCH='arm64' ;; \
-        x86) ARCH='386' ;; \
-        x86_64) ARCH='amd64' ;; \
-        *) echo >&2 "error: unsupported architecture: $apkArch"; exit 1 ;; \
+    armhf) ARCH='arm' ;; \
+    aarch64) ARCH='arm64' ;; \
+    x86) ARCH='386' ;; \
+    x86_64) ARCH='amd64' ;; \
+    *) echo >&2 "error: unsupported architecture: $apkArch"; exit 1 ;; \
     esac; \
     curl -L https://github.com/nats-io/nats-server/releases/download/v2.3.1/nats-server-v2.3.1-linux-${ARCH}.zip -o ./nats-server.zip ; \
     curl -L https://github.com/nats-io/natscli/releases/download/0.0.24/nats-0.0.24-linux-${ARCH}.zip -o ./nats.zip

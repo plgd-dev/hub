@@ -30,7 +30,7 @@ type CoapSignUpResponse struct {
 	RedirectURI  string `json:"redirecturi"`
 }
 
-/// Check that all required request fields are set
+// Check that all required request fields are set
 func (request CoapSignUpRequest) checkOAuthRequest() error {
 	if request.DeviceID == "" {
 		return fmt.Errorf("invalid device id")
@@ -41,7 +41,7 @@ func (request CoapSignUpRequest) checkOAuthRequest() error {
 	return nil
 }
 
-/// Get data for sign up response
+// Get data for sign up response
 func getSignUpContent(token *oauth2.Token, owner string, validUntil int64, options message.Options) (message.MediaType, []byte, error) {
 	resp := CoapSignUpResponse{
 		AccessToken:  token.AccessToken.String(),
