@@ -26,8 +26,9 @@ type PersistenceTx struct {
 
 // NewTransaction creates a new transaction.
 // A transaction must always be closed:
-//  tx := s.persistence.NewTransaction()
-//  defer tx.Close()
+//
+//	tx := s.persistence.NewTransaction()
+//	defer tx.Close()
 func (p *Store) NewTransaction(ctx context.Context) persistence.PersistenceTx {
 	tx, err := p.Client().StartSession()
 	if err == nil {

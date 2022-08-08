@@ -37,11 +37,11 @@ func MakeResourcesObserverCallbacks(onObserveResource OnObserveResource, onGetRe
 // The resource observer keeps track of observed resources to avoid multiple observation of the
 // same resource. Each new unique observation fires an event:
 //   - If the resource is observable then the connection to COAP-GW (coapConn) is used to
-//   register for observations from COAP-GW. Observation notifications are handled by the
-//   onObserveResource callback.
+//     register for observations from COAP-GW. Observation notifications are handled by the
+//     onObserveResource callback.
 //   - If the resource is not observable then a GET request is sent to COAP-GW to receive
-//   the content of the resource and the response is handled by the onGetResourceContent
-//   callback.
+//     the content of the resource and the response is handled by the onGetResourceContent
+//     callback.
 type resourcesObserver struct {
 	lock      sync.Mutex
 	deviceID  string

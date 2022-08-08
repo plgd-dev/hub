@@ -50,7 +50,7 @@ func getSignOffDataFromQuery(req *mux.Message) (signOffData, error) {
 	return data, nil
 }
 
-/// Update empty values
+// Update empty values
 func (s signOffData) updateSignOffDataFromAuthContext(client *Client) signOffData {
 	authCurrentCtx, err := client.GetAuthorizationContext()
 	if err != nil {

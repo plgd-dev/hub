@@ -33,7 +33,7 @@ type CoapSignInResp struct {
 	ExpiresIn int64 `json:"expiresin"`
 }
 
-/// Check that all required request fields are set
+// Check that all required request fields are set
 func (request CoapSignInReq) checkOAuthRequest() error {
 	if request.DeviceID == "" {
 		return fmt.Errorf("invalid device id")
@@ -47,7 +47,7 @@ func (request CoapSignInReq) checkOAuthRequest() error {
 	return nil
 }
 
-/// Update empty values
+// Update empty values
 func (request CoapSignInReq) updateOAUthRequestIfEmpty(deviceID, userID, accessToken string) CoapSignInReq {
 	if request.DeviceID == "" {
 		request.DeviceID = deviceID
@@ -61,7 +61,7 @@ func (request CoapSignInReq) updateOAUthRequestIfEmpty(deviceID, userID, accessT
 	return request
 }
 
-/// Get data for sign in response
+// Get data for sign in response
 func getSignInContent(expiresIn int64, options message.Options) (message.MediaType, []byte, error) {
 	coapResp := CoapSignInResp{
 		ExpiresIn: expiresIn,

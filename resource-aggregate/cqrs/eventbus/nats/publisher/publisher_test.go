@@ -220,15 +220,14 @@ func testNewSubscription(t *testing.T, ctx context.Context, subscriber eventbus.
 // should pass. It should manually be called from a test case in each
 // implementation:
 //
-//   func TestSubscriber(t *testing.T) {
-//       ctx := context.Background() // Or other when testing namespaces.
-//       publisher := NewPublisher()
-//       subscriber := NewSubscriber()
-//       timeout := time.Second*5
-//       topics := []string{"a", "b"}
-//       eventbus.AcceptanceTest(t, ctx, timeout, topics, publisher, subscriber)
-//   }
-//
+//	func TestSubscriber(t *testing.T) {
+//	    ctx := context.Background() // Or other when testing namespaces.
+//	    publisher := NewPublisher()
+//	    subscriber := NewSubscriber()
+//	    timeout := time.Second*5
+//	    topics := []string{"a", "b"}
+//	    eventbus.AcceptanceTest(t, ctx, timeout, topics, publisher, subscriber)
+//	}
 func acceptanceTest(t *testing.T, ctx context.Context, timeout time.Duration, waitForSubscription time.Duration, topics []string, publisher eventbus.Publisher, subscriber eventbus.Subscriber) {
 	// savedEvents := []Event{}
 	AggregateID1 := "aggregateID1"
