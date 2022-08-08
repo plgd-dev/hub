@@ -7,33 +7,34 @@ import (
 	"net/url"
 	"strings"
 
+	router "github.com/gorilla/mux"
 	"github.com/plgd-dev/go-coap/v2/message"
+	"github.com/plgd-dev/hub/v2/cloud2cloud-connector/events"
+	"github.com/plgd-dev/hub/v2/cloud2cloud-gateway/uri"
+	pbGRPC "github.com/plgd-dev/hub/v2/grpc-gateway/pb"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	kitNetHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
+	raClient "github.com/plgd-dev/hub/v2/resource-aggregate/client"
 	"github.com/plgd-dev/kit/v2/codec/cbor"
 	"github.com/plgd-dev/kit/v2/codec/json"
-
-	"github.com/plgd-dev/hub/cloud2cloud-connector/events"
-	"github.com/plgd-dev/hub/cloud2cloud-gateway/uri"
-	kitNetHttp "github.com/plgd-dev/hub/pkg/net/http"
-	raClient "github.com/plgd-dev/hub/resource-aggregate/client"
-	"github.com/plgd-dev/kit/v2/log"
-
-	router "github.com/gorilla/mux"
-
-	pbGRPC "github.com/plgd-dev/hub/grpc-gateway/pb"
 )
 
-const HrefKey = "Href"
-const subscriptionIDKey = "subscriptionID"
-const deviceIDKey = "deviceID"
+const (
+	hrefKey           = "Href"
+	subscriptionIDKey = "subscriptionID"
+	deviceIDKey       = "deviceID"
+)
 
-const ContentQuery = "content"
-const ContentQueryBaseValue = "base"
-const ContentQueryAllValue = "all"
-const ContentQueryDefault = ContentQueryBaseValue
+const (
+	ContentQuery          = "content"
+	ContentQueryBaseValue = "base"
+	ContentQueryAllValue  = "all"
+	ContentQueryDefault   = ContentQueryBaseValue
+)
 
 type ListDevicesOfUserFunc func(ctx context.Context, correlationID, userID, accessToken string) (deviceIds []string, statusCode int, err error)
 
-//RequestHandler for handling incoming request
+// RequestHandler for handling incoming request
 type RequestHandler struct {
 	gwClient  pbGRPC.GrpcGatewayClient
 	raClient  *raClient.Client
@@ -50,7 +51,7 @@ func logAndWriteErrorResponse(err error, statusCode int, w http.ResponseWriter) 
 	}
 }
 
-//NewRequestHandler factory for new RequestHandler
+// NewRequestHandler factory for new RequestHandler
 func NewRequestHandler(
 	gwClient pbGRPC.GrpcGatewayClient,
 	raClient *raClient.Client,
@@ -133,26 +134,20 @@ func splitDevicePath(requestURI string) []string {
 	return strings.Split(p, "/")
 }
 
-func loggingMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		log.Debugf("%v %v", r.Method, r.RequestURI)
-		// Call the next handler, which can be another middleware in the chain, or the final handler.
-		next.ServeHTTP(w, r)
-	})
-}
-
 func healthCheck(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+const subscriptions = "subscriptions"
+
 func resourceSubscriptionMatcher(r *http.Request, rm *router.RouteMatch) bool {
 	paths := splitDevicePath(r.RequestURI)
-	if len(paths) > 3 && paths[len(paths)-2] == "subscriptions" {
+	if len(paths) > 3 && paths[len(paths)-2] == subscriptions {
 		if rm.Vars == nil {
 			rm.Vars = make(map[string]string)
 		}
 		rm.Vars[deviceIDKey] = paths[0]
-		rm.Vars[HrefKey] = makeHref(paths[1 : len(paths)-2])
+		rm.Vars[hrefKey] = makeHref(paths[1 : len(paths)-2])
 		rm.Vars[subscriptionIDKey] = paths[len(paths)-1]
 		return true
 	}
@@ -161,22 +156,22 @@ func resourceSubscriptionMatcher(r *http.Request, rm *router.RouteMatch) bool {
 
 func resourceMatcher(r *http.Request, rm *router.RouteMatch) bool {
 	paths := splitDevicePath(r.RequestURI)
-	if len(paths) >= 2 && paths[len(paths)-1] != "subscriptions" {
+	if len(paths) >= 2 && paths[len(paths)-1] != subscriptions {
 		if rm.Vars == nil {
 			rm.Vars = make(map[string]string)
 		}
 		rm.Vars[deviceIDKey] = paths[0]
-		rm.Vars[HrefKey] = makeHref(paths[1:])
+		rm.Vars[hrefKey] = makeHref(paths[1:])
 		return true
 	}
 	return false
 }
 
-// NewHTTP returns HTTP server
-func NewHTTP(requestHandler *RequestHandler, authInterceptor kitNetHttp.Interceptor) *http.Server {
+// NewHTTP returns HTTP handler
+func NewHTTP(requestHandler *RequestHandler, authInterceptor kitNetHttp.Interceptor) http.Handler {
 	r := router.NewRouter()
 	r.StrictSlash(true)
-	r.Use(loggingMiddleware)
+	r.Use(kitNetHttp.CreateLoggingMiddleware())
 	r.Use(kitNetHttp.CreateAuthMiddleware(authInterceptor, func(ctx context.Context, w http.ResponseWriter, r *http.Request, err error) {
 		logAndWriteErrorResponse(fmt.Errorf("cannot process request on %v: %w", r.RequestURI, err), http.StatusUnauthorized, w)
 	}))
@@ -204,12 +199,12 @@ func NewHTTP(requestHandler *RequestHandler, authInterceptor kitNetHttp.Intercep
 	// resource subscription
 	s1.MatcherFunc(func(r *http.Request, rm *router.RouteMatch) bool {
 		paths := splitDevicePath(r.RequestURI)
-		if len(paths) > 2 && paths[len(paths)-1] == "subscriptions" {
+		if len(paths) > 2 && paths[len(paths)-1] == subscriptions {
 			if rm.Vars == nil {
 				rm.Vars = make(map[string]string)
 			}
 			rm.Vars[deviceIDKey] = paths[0]
-			rm.Vars[HrefKey] = makeHref(paths[1 : len(paths)-1])
+			rm.Vars[hrefKey] = makeHref(paths[1 : len(paths)-1])
 			return true
 		}
 		return false
@@ -220,5 +215,5 @@ func NewHTTP(requestHandler *RequestHandler, authInterceptor kitNetHttp.Intercep
 	// resource
 	s1.MatcherFunc(resourceMatcher).Methods("POST").HandlerFunc(requestHandler.UpdateResource)
 	s1.MatcherFunc(resourceMatcher).Methods("GET").HandlerFunc(requestHandler.RetrieveResource)
-	return &http.Server{Handler: r}
+	return r
 }

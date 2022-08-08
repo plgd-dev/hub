@@ -2,12 +2,11 @@ package http
 
 import (
 	"context"
-	"crypto/tls"
 	"fmt"
 	"regexp"
 	"strings"
 
-	"github.com/plgd-dev/hub/pkg/security/jwt"
+	"github.com/plgd-dev/hub/v2/pkg/security/jwt"
 )
 
 type Interceptor = func(ctx context.Context, method, uri string) (context.Context, error)
@@ -26,19 +25,6 @@ type RequestMatcher struct {
 // NewInterceptor authorizes HTTP request with validator.
 func NewInterceptorWithValidator(validator Validator, auths map[string][]AuthArgs, whiteList ...RequestMatcher) Interceptor {
 	validateJWT := validateJWTWithValidator(validator, MakeClaimsFunc(auths))
-	return func(ctx context.Context, method, uri string) (context.Context, error) {
-		for _, wa := range whiteList {
-			if strings.EqualFold(method, wa.Method) && wa.URI.MatchString(uri) {
-				return ctx, nil
-			}
-		}
-		return validateJWT(ctx, method, uri)
-	}
-}
-
-// NewInterceptor authorizes HTTP request.
-func NewInterceptor(jwksURL string, tls *tls.Config, auths map[string][]AuthArgs, whiteList ...RequestMatcher) Interceptor {
-	validateJWT := validateJWT(jwksURL, tls, MakeClaimsFunc(auths))
 	return func(ctx context.Context, method, uri string) (context.Context, error) {
 		for _, wa := range whiteList {
 			if strings.EqualFold(method, wa.Method) && wa.URI.MatchString(uri) {

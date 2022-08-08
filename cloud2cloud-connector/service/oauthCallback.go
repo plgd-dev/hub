@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	"github.com/google/uuid"
-	"github.com/plgd-dev/hub/pkg/security/oauth2"
+	"github.com/plgd-dev/hub/v2/pkg/security/oauth2"
 )
 
 func (rh *RequestHandler) handleLinkedData(ctx context.Context, data provisionCacheData, authCode string) (provisionCacheData, error) {
@@ -21,7 +21,7 @@ func (rh *RequestHandler) handleLinkedData(ctx context.Context, data provisionCa
 
 	if !data.linkedAccount.Data.HasTarget() {
 		oauth := data.linkedCloud.OAuth.ToDefaultOAuth2()
-		ctx = data.linkedCloud.CtxWithHTTPClient(ctx)
+		ctx = data.linkedCloud.CtxWithHTTPClient(ctx, rh.tracerProvider)
 		token, err := oauth.Exchange(ctx, authCode)
 		if err != nil {
 			return data, fmt.Errorf("cannot exchange target cloud authorization code for access token: %w", err)
@@ -41,13 +41,13 @@ func (rh *RequestHandler) oAuthCallback(w http.ResponseWriter, r *http.Request) 
 	authCode := r.FormValue("code")
 	state := r.FormValue("state")
 
-	cacheData, ok := rh.provisionCache.Get(state)
-	if !ok {
+	cacheData := rh.provisionCache.Load(state)
+	if cacheData == nil {
 		return http.StatusBadRequest, fmt.Errorf("invalid/expired OAuth state")
 	}
 	rh.provisionCache.Delete(state)
 
-	data, ok := cacheData.(provisionCacheData)
+	data, ok := cacheData.Data().(provisionCacheData)
 	if !ok {
 		return http.StatusBadRequest, fmt.Errorf("invalid/expired OAuth state")
 	}
@@ -74,7 +74,7 @@ func (rh *RequestHandler) oAuthCallback(w http.ResponseWriter, r *http.Request) 
 	if err != nil {
 		return http.StatusBadRequest, fmt.Errorf("cannot store linked account %+v: %w", newData.linkedAccount, err)
 	}
-	if newData.linkedCloud.SupportedSubscriptionsEvents.NeedPullDevices() {
+	if newData.linkedCloud.SupportedSubscriptionEvents.NeedPullDevices() {
 		return http.StatusOK, nil
 	}
 	rh.triggerTask(Task{

@@ -5,13 +5,14 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/plgd-dev/hub/identity-store/events"
-	"github.com/plgd-dev/hub/identity-store/pb"
-	"github.com/plgd-dev/hub/identity-store/persistence"
-	"github.com/plgd-dev/hub/pkg/log"
-	"github.com/plgd-dev/hub/pkg/net/grpc"
-	pkgTime "github.com/plgd-dev/hub/pkg/time"
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/utils"
+	"github.com/plgd-dev/hub/v2/identity-store/events"
+	"github.com/plgd-dev/hub/v2/identity-store/pb"
+	"github.com/plgd-dev/hub/v2/identity-store/persistence"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	"github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	"github.com/plgd-dev/hub/v2/pkg/opentelemetry/propagation"
+	pkgTime "github.com/plgd-dev/hub/v2/pkg/time"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/utils"
 	"github.com/plgd-dev/kit/v2/strings"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -38,7 +39,7 @@ func getOwnerDevices(tx persistence.PersistenceTx, owner string) ([]string, erro
 	return deviceIds, nil
 }
 
-func (s *Service) publishDevicesUnregistered(owner, userID string, deviceIDs []string) error {
+func (s *Service) publishDevicesUnregistered(ctx context.Context, owner, userID string, deviceIDs []string) error {
 	v := events.Event{
 		Type: &events.Event_DevicesUnregistered{
 			DevicesUnregistered: &events.DevicesUnregistered{
@@ -47,7 +48,8 @@ func (s *Service) publishDevicesUnregistered(owner, userID string, deviceIDs []s
 				AuditContext: &events.AuditContext{
 					UserId: userID,
 				},
-				Timestamp: pkgTime.UnixNano(time.Now()),
+				Timestamp:            pkgTime.UnixNano(time.Now()),
+				OpenTelemetryCarrier: propagation.TraceFromCtx(ctx),
 			},
 		},
 	}
@@ -69,7 +71,7 @@ func (s *Service) publishDevicesUnregistered(owner, userID string, deviceIDs []s
 	return nil
 }
 
-func getDeviceIds(request *pb.DeleteDevicesRequest, tx persistence.PersistenceTx, owner string) ([]string, error) {
+func getDeviceIDs(request *pb.DeleteDevicesRequest, tx persistence.PersistenceTx, owner string) ([]string, error) {
 	var deviceIds []string
 	if len(request.DeviceIds) == 0 {
 		var err error
@@ -111,31 +113,31 @@ func (s *Service) DeleteDevices(ctx context.Context, request *pb.DeleteDevicesRe
 		return nil, log.LogAndReturnError(grpc.ForwardFromError(codes.InvalidArgument, fmt.Errorf("cannot delete devices: %w", err)))
 	}
 
-	deviceIds, err := getDeviceIds(request, tx, owner)
+	deviceIDs, err := getDeviceIDs(request, tx, owner)
 	if err != nil {
 		return nil, log.LogAndReturnError(err)
 	}
-	if len(deviceIds) == 0 {
+	if len(deviceIDs) == 0 {
 		return &pb.DeleteDevicesResponse{}, nil
 	}
 
-	var deletedDeviceIds []string
-	for _, deviceId := range deviceIds {
-		ok, err := deleteDevice(tx, deviceId, owner)
+	var deletedDeviceIDs []string
+	for _, deviceID := range deviceIDs {
+		ok, err := deleteDevice(tx, deviceID, owner)
 		if err != nil {
 			return nil, log.LogAndReturnError(err)
 		}
 		if !ok {
 			continue
 		}
-		deletedDeviceIds = append(deletedDeviceIds, deviceId)
+		deletedDeviceIDs = append(deletedDeviceIDs, deviceID)
 	}
 
-	if err := s.publishDevicesUnregistered(owner, userID, deletedDeviceIds); err != nil {
-		log.Errorf("cannot publish devices unregistered event with devices('%v') and owner('%v'): %w", deletedDeviceIds, owner, err)
+	if err := s.publishDevicesUnregistered(ctx, owner, userID, deletedDeviceIDs); err != nil {
+		log.Errorf("cannot publish devices unregistered event with devices('%v') and owner('%v'): %w", deletedDeviceIDs, owner, err)
 	}
 
 	return &pb.DeleteDevicesResponse{
-		DeviceIds: deletedDeviceIds,
+		DeviceIds: deletedDeviceIDs,
 	}, nil
 }

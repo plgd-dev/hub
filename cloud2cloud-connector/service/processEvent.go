@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/plgd-dev/hub/cloud2cloud-connector/events"
+	"github.com/plgd-dev/hub/v2/cloud2cloud-connector/events"
 )
 
-func (rh *RequestHandler) notifyLinkedAccount(w http.ResponseWriter, r *http.Request) (int, error) {
+func (rh *RequestHandler) notifyLinkedAccount(r *http.Request) (int, error) {
 	header, err := events.ParseEventHeader(r)
 	if err != nil {
 		return http.StatusGone, err
@@ -24,7 +24,7 @@ func (rh *RequestHandler) notifyLinkedAccount(w http.ResponseWriter, r *http.Req
 }
 
 func (rh *RequestHandler) ProcessEvent(w http.ResponseWriter, r *http.Request) {
-	statusCode, err := rh.notifyLinkedAccount(w, r)
+	statusCode, err := rh.notifyLinkedAccount(r)
 	if err != nil {
 		logAndWriteErrorResponse(fmt.Errorf("cannot notify linked accounts: %w", err), statusCode, w)
 	}

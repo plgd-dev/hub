@@ -23,7 +23,7 @@ http {
     ssl_certificate     /data/certs/external/endpoint.crt;
     ssl_certificate_key /data/certs/external/endpoint.key;
     proxy_ssl_name localhost;
-    location ~ ^(/authorize|/oauth/token|/.well-known/jwks.json|/.well-known/openid-configuration|/v2/logout|/authorize/userinfo) {
+    location ~ ^(/authorize|/oauth/token|/.well-known/jwks.json|/.well-known/openid-configuration|/v2/logout|/authorize/userinfo|/authorize/unauthorized) {
       set $upstream_oauth_server https://127.0.0.1:REPLACE_MOCK_OAUTH_SERVER_PORT;
       proxy_pass                     $upstream_oauth_server;
       proxy_ssl_certificate           /data/certs/internal/endpoint.crt;
@@ -67,6 +67,21 @@ http {
       set $upstream_c2c_gateway https://127.0.0.1:REPLACE_CLOUD2CLOUD_GATEWAY_PORT;
       rewrite           ^/c2c/gw/(.*) /$1 break;
       proxy_pass                     $upstream_c2c_gateway;
+      proxy_ssl_certificate           /data/certs/internal/endpoint.crt;
+      proxy_ssl_certificate_key       /data/certs/internal/endpoint.key;
+      proxy_ssl_trusted_certificate   /data/certs/root_ca.crt;
+      proxy_ssl_verify                on;
+      set $cors_headers 'Authority,Method,Path,Scheme,Accept,Accept-Encoding,Accept-Language,Content-Type,Origin,Refer,Sec-Fetch-Dest,Sec-Fetch-Mode,Sec-Fetch-Site,Authorization,DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,correlation-id';
+      include /nginx/cors.conf;
+      proxy_http_version 1.1;
+      proxy_set_header Upgrade $http_upgrade;
+      proxy_set_header Connection $connection_upgrade;
+      proxy_set_header Host $host;
+    }
+    location ~ ^/c2c/connector(.*)$ {
+      set $upstream_c2c_connector https://127.0.0.1:REPLACE_CLOUD2CLOUD_CONNECTOR_PORT;
+      rewrite           ^/c2c/connector/(.*) /$1 break;
+      proxy_pass                     $upstream_c2c_connector;
       proxy_ssl_certificate           /data/certs/internal/endpoint.crt;
       proxy_ssl_certificate_key       /data/certs/internal/endpoint.key;
       proxy_ssl_trusted_certificate   /data/certs/root_ca.crt;

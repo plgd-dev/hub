@@ -4,15 +4,17 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/plgd-dev/hub/pkg/config"
-	"github.com/plgd-dev/hub/pkg/log"
-	"github.com/plgd-dev/hub/pkg/mongodb"
-	grpcClient "github.com/plgd-dev/hub/pkg/net/grpc/client"
-	"github.com/plgd-dev/hub/pkg/net/listener"
-	cmClient "github.com/plgd-dev/hub/pkg/security/certManager/client"
-	"github.com/plgd-dev/hub/pkg/security/jwt/validator"
-	"github.com/plgd-dev/hub/pkg/sync/task/queue"
-	natsClient "github.com/plgd-dev/hub/resource-aggregate/cqrs/eventbus/nats/client"
+	"github.com/plgd-dev/hub/v2/pkg/config"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	"github.com/plgd-dev/hub/v2/pkg/mongodb"
+	grpcClient "github.com/plgd-dev/hub/v2/pkg/net/grpc/client"
+	"github.com/plgd-dev/hub/v2/pkg/net/http"
+	"github.com/plgd-dev/hub/v2/pkg/net/http/server"
+	"github.com/plgd-dev/hub/v2/pkg/net/listener"
+	cmClient "github.com/plgd-dev/hub/v2/pkg/security/certManager/client"
+	"github.com/plgd-dev/hub/v2/pkg/security/jwt/validator"
+	"github.com/plgd-dev/hub/v2/pkg/sync/task/queue"
+	natsClient "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/client"
 )
 
 // Config represents application configuration
@@ -24,6 +26,9 @@ type Config struct {
 }
 
 func (c *Config) Validate() error {
+	if err := c.Log.Validate(); err != nil {
+		return fmt.Errorf("log.%w", err)
+	}
 	if err := c.APIs.Validate(); err != nil {
 		return fmt.Errorf("apis.%w", err)
 	}
@@ -50,6 +55,7 @@ func (c *APIsConfig) Validate() error {
 type HTTPConfig struct {
 	Connection    listener.Config  `yaml:",inline" json:",inline"`
 	Authorization validator.Config `yaml:"authorization" json:"authorization"`
+	Server        server.Config    `yaml:",inline" json:",inline"`
 }
 
 func (c *HTTPConfig) Validate() error {
@@ -63,11 +69,12 @@ func (c *HTTPConfig) Validate() error {
 }
 
 type ClientsConfig struct {
-	Eventbus          EventBusConfig          `yaml:"eventBus" json:"eventBus"`
-	GrpcGateway       GrpcGatewayConfig       `yaml:"grpcGateway" json:"grpcGateway"`
-	ResourceAggregate ResourceAggregateConfig `yaml:"resourceAggregate" json:"resourceAggregate"`
-	Storage           StorageConfig           `yaml:"storage" json:"storage"`
-	Subscription      SubscriptionConfig      `yaml:"subscription" json:"subscription"`
+	Eventbus               EventBusConfig                    `yaml:"eventBus" json:"eventBus"`
+	GrpcGateway            GrpcGatewayConfig                 `yaml:"grpcGateway" json:"grpcGateway"`
+	ResourceAggregate      ResourceAggregateConfig           `yaml:"resourceAggregate" json:"resourceAggregate"`
+	Storage                StorageConfig                     `yaml:"storage" json:"storage"`
+	Subscription           SubscriptionConfig                `yaml:"subscription" json:"subscription"`
+	OpenTelemetryCollector http.OpenTelemetryCollectorConfig `yaml:"openTelemetryCollector" json:"openTelemetryCollector"`
 }
 
 func (c *ClientsConfig) Validate() error {
@@ -85,6 +92,9 @@ func (c *ClientsConfig) Validate() error {
 	}
 	if err := c.Subscription.Validate(); err != nil {
 		return fmt.Errorf("subscription.%w", err)
+	}
+	if err := c.OpenTelemetryCollector.Validate(); err != nil {
+		return fmt.Errorf("openTelemetryCollector.%w", err)
 	}
 	return nil
 }
@@ -123,7 +133,7 @@ func (c *ResourceAggregateConfig) Validate() error {
 }
 
 type StorageConfig struct {
-	MongoDB mongodb.Config `yaml:"mongoDB" json:"mongoDB"`
+	MongoDB mongodb.Config `yaml:"mongoDB" json:"mongoDb"`
 }
 
 func (c *StorageConfig) Validate() error {

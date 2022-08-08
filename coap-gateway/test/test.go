@@ -7,15 +7,17 @@ import (
 	"testing"
 	"time"
 
-	"github.com/plgd-dev/hub/coap-gateway/service"
-	"github.com/plgd-dev/hub/pkg/log"
-	"github.com/plgd-dev/hub/test/config"
+	"github.com/plgd-dev/hub/v2/coap-gateway/service"
+	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	"github.com/plgd-dev/hub/v2/test/config"
 	"github.com/stretchr/testify/require"
 )
 
 func MakeConfig(t *testing.T) service.Config {
 	var cfg service.Config
-	cfg.Log.DumpCoapMessages = true
+	cfg.Log.Config = log.MakeDefaultConfig()
+
 	cfg.TaskQueue.GoPoolSize = 1600
 	cfg.TaskQueue.Size = 2 * 1024 * 1024
 	cfg.APIs.COAP.Addr = config.GW_HOST
@@ -23,7 +25,7 @@ func MakeConfig(t *testing.T) service.Config {
 	cfg.APIs.COAP.MaxMessageSize = 256 * 1024
 	cfg.APIs.COAP.OwnerCacheExpiration = time.Minute
 	cfg.APIs.COAP.SubscriptionBufferSize = 1000
-	cfg.APIs.COAP.GoroutineSocketHeartbeat = time.Millisecond * 300
+	cfg.APIs.COAP.MessagePoolSize = 1000
 	cfg.APIs.COAP.KeepAlive.Timeout = time.Second * 20
 	cfg.APIs.COAP.BlockwiseTransfer.Enabled = false
 	cfg.APIs.COAP.BlockwiseTransfer.SZX = "1024"
@@ -45,6 +47,7 @@ func MakeConfig(t *testing.T) service.Config {
 	cfg.Clients.ResourceAggregate.Connection = config.MakeGrpcClientConfig(config.RESOURCE_AGGREGATE_HOST)
 	cfg.Clients.ResourceDirectory.Connection = config.MakeGrpcClientConfig(config.RESOURCE_DIRECTORY_HOST)
 	cfg.Clients.Eventbus.NATS = config.MakeSubscriberConfig()
+	cfg.Clients.OpenTelemetryCollector = config.MakeOpenTelemetryCollectorClient()
 
 	err := cfg.Validate()
 	require.NoError(t, err)
@@ -52,17 +55,19 @@ func MakeConfig(t *testing.T) service.Config {
 	return cfg
 }
 
-func SetUp(t *testing.T) (TearDown func()) {
+func SetUp(t *testing.T) (tearDown func()) {
 	return New(t, MakeConfig(t))
 }
 
 // New creates test coap-gateway.
 func New(t *testing.T, cfg service.Config) func() {
 	ctx := context.Background()
-	logger, err := log.NewLogger(cfg.Log.Embedded)
+	logger := log.NewLogger(cfg.Log.Config)
+
+	fileWatcher, err := fsnotify.NewWatcher()
 	require.NoError(t, err)
 
-	s, err := service.New(ctx, cfg, logger)
+	s, err := service.New(ctx, cfg, fileWatcher, logger)
 	require.NoError(t, err)
 
 	var wg sync.WaitGroup
@@ -75,5 +80,7 @@ func New(t *testing.T, cfg service.Config) func() {
 	return func() {
 		_ = s.Close()
 		wg.Wait()
+		err = fileWatcher.Close()
+		require.NoError(t, err)
 	}
 }

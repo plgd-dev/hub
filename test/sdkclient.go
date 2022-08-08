@@ -11,9 +11,9 @@ import (
 	"os"
 	"time"
 
-	"github.com/plgd-dev/hub/pkg/log"
 	"github.com/plgd-dev/device/client"
 	"github.com/plgd-dev/device/client/core"
+	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/kit/v2/security/signer"
 )
 
@@ -96,6 +96,9 @@ func NewSDKClient() (*client.Client, error) {
 			ID:      CertIdentity,
 			Cert:    string(identityIntermediateCA),
 			CertKey: string(identityIntermediateCAKey),
+			CreateSignerFunc: func(caCert []*x509.Certificate, caKey crypto.PrivateKey, validNotBefore time.Time, validNotAfter time.Time) core.CertificateSigner {
+				return signer.NewIdentityCertificateSigner(caCert, caKey, validNotBefore, validNotAfter)
+			},
 		},
 	}
 
@@ -103,8 +106,6 @@ func NewSDKClient() (*client.Client, error) {
 		mfgCA:   mfgCA,
 		mfgCert: mfgCert,
 		ca:      identityTrustedCACert,
-	}, func(caCert []*x509.Certificate, caKey crypto.PrivateKey, validNotBefore time.Time, validNotAfter time.Time) core.CertificateSigner {
-		return signer.NewIdentityCertificateSigner(caCert, caKey, validNotBefore, validNotAfter)
 	}, func(err error) { log.Debug(err) },
 	)
 	if err != nil {

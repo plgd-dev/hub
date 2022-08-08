@@ -6,9 +6,9 @@ import (
 	"testing"
 
 	"github.com/golang-jwt/jwt/v4"
-	"github.com/plgd-dev/hub/identity-store/pb"
-	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
-	"github.com/plgd-dev/hub/test/config"
+	"github.com/plgd-dev/hub/v2/identity-store/pb"
+	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	"github.com/plgd-dev/hub/v2/test/config"
 	"github.com/stretchr/testify/require"
 )
 
@@ -17,7 +17,7 @@ func TestServiceDeleteDevices(t *testing.T) {
 	const testDevID2 = "testDeviceID2"
 	const testDevID3 = "testDeviceID3"
 	const testDevID4 = "testDeviceID4"
-	jwtWithSubUserId := config.CreateJwtToken(t, jwt.MapClaims{
+	jwtWithSubUserID := config.CreateJwtToken(t, jwt.MapClaims{
 		"sub": "userId",
 	})
 	jwtWithSubTestUserID := config.CreateJwtToken(t, jwt.MapClaims{
@@ -26,7 +26,7 @@ func TestServiceDeleteDevices(t *testing.T) {
 	jwtWithSubAaa := config.CreateJwtToken(t, jwt.MapClaims{
 		"sub": "aaa",
 	})
-	var jwtWithSubTestUser2 = config.CreateJwtToken(t, jwt.MapClaims{
+	jwtWithSubTestUser2 := config.CreateJwtToken(t, jwt.MapClaims{
 		"sub": testUser2,
 	})
 	const testUser2DevID1 = "test2DeviceID1"
@@ -46,7 +46,7 @@ func TestServiceDeleteDevices(t *testing.T) {
 		{
 			name: "invalid deviceId",
 			args: args{
-				ctx:     kitNetGrpc.CtxWithIncomingToken(context.Background(), jwtWithSubUserId),
+				ctx:     kitNetGrpc.CtxWithIncomingToken(context.Background(), jwtWithSubUserID),
 				request: &pb.DeleteDevicesRequest{},
 			},
 			want: &pb.DeleteDevicesResponse{},

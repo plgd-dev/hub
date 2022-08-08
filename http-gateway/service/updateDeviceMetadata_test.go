@@ -11,21 +11,22 @@ import (
 	"github.com/google/uuid"
 	"github.com/plgd-dev/device/schema/interfaces"
 	"github.com/plgd-dev/go-coap/v2/message"
-	"github.com/plgd-dev/hub/grpc-gateway/pb"
-	httpgwTest "github.com/plgd-dev/hub/http-gateway/test"
-	"github.com/plgd-dev/hub/http-gateway/uri"
-	"github.com/plgd-dev/hub/pkg/log"
-	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
-	"github.com/plgd-dev/hub/resource-aggregate/commands"
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventbus"
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventbus/nats/subscriber"
-	natsTest "github.com/plgd-dev/hub/resource-aggregate/cqrs/eventbus/nats/test"
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/utils"
-	"github.com/plgd-dev/hub/resource-aggregate/events"
-	"github.com/plgd-dev/hub/test"
-	"github.com/plgd-dev/hub/test/config"
-	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
-	"github.com/plgd-dev/hub/test/service"
+	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
+	httpgwTest "github.com/plgd-dev/hub/v2/http-gateway/test"
+	"github.com/plgd-dev/hub/v2/http-gateway/uri"
+	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/subscriber"
+	natsTest "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/test"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/utils"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
+	"github.com/plgd-dev/hub/v2/test"
+	"github.com/plgd-dev/hub/v2/test/config"
+	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
+	"github.com/plgd-dev/hub/v2/test/service"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -91,13 +92,15 @@ func (f *contentChangedFilter) WaitForDeviceMetadataUpdated(t time.Duration) *ev
 	}
 }
 
-func updateResource(t *testing.T, ctx context.Context, req *pb.UpdateResourceRequest, token, accept, contentType string) (*events.ResourceUpdated, error) {
+func updateResource(t *testing.T, req *pb.UpdateResourceRequest, token string) error {
+	const accept = uri.ApplicationProtoJsonContentType
+	const contentType = uri.ApplicationProtoJsonContentType
 	data, err := httpgwTest.GetContentData(req.GetContent(), contentType)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	rb := httpgwTest.NewRequest(http.MethodPut, uri.AliasDeviceResource, bytes.NewReader([]byte(data))).AuthToken(token).Accept(accept).ContentType(contentType)
+	rb := httpgwTest.NewRequest(http.MethodPut, uri.AliasDeviceResource, bytes.NewReader(data)).AuthToken(token).Accept(accept).ContentType(contentType)
 	rb.DeviceId(req.GetResourceId().GetDeviceId()).ResourceHref(req.GetResourceId().GetHref()).ResourceInterface(req.GetResourceInterface())
 	resp := httpgwTest.HTTPDo(t, rb.Build())
 	defer func() {
@@ -105,11 +108,11 @@ func updateResource(t *testing.T, ctx context.Context, req *pb.UpdateResourceReq
 	}()
 
 	var got pb.UpdateResourceResponse
-	err = Unmarshal(resp.StatusCode, resp.Body, &got)
+	err = httpgwTest.Unmarshal(resp.StatusCode, resp.Body, &got)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return got.GetData(), nil
+	return nil
 }
 
 func TestRequestHandlerUpdateDeviceMetadata(t *testing.T) {
@@ -124,21 +127,31 @@ func TestRequestHandlerUpdateDeviceMetadata(t *testing.T) {
 	shutdownHttp := httpgwTest.SetUp(t)
 	defer shutdownHttp()
 
-	token := oauthTest.GetDefaultServiceToken(t)
+	token := oauthTest.GetDefaultAccessToken(t)
 	ctx = kitNetGrpc.CtxWithToken(ctx, token)
 
 	conn, err := grpc.Dial(config.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
 	})))
 	require.NoError(t, err)
+	defer func() {
+		_ = conn.Close()
+	}()
 	c := pb.NewGrpcGatewayClient(conn)
 
 	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 
-	logger, err := log.NewLogger(log.Config{})
+	logger := log.NewLogger(log.MakeDefaultConfig())
+
+	fileWatcher, err := fsnotify.NewWatcher()
 	require.NoError(t, err)
-	naClient, s, err := natsTest.NewClientAndSubscriber(config.MakeSubscriberConfig(), logger, subscriber.WithUnmarshaler(utils.Unmarshal))
+	defer func() {
+		err := fileWatcher.Close()
+		require.NoError(t, err)
+	}()
+
+	naClient, s, err := natsTest.NewClientAndSubscriber(config.MakeSubscriberConfig(), fileWatcher, logger, subscriber.WithUnmarshaler(utils.Unmarshal))
 	require.NoError(t, err)
 	defer func() {
 		s.Close()
@@ -152,25 +165,22 @@ func TestRequestHandlerUpdateDeviceMetadata(t *testing.T) {
 		_ = obs.Close()
 	}()
 
-	updateDeviceShadowSynchronization := func(ctx context.Context, in *pb.UpdateDeviceMetadataRequest) (*pb.UpdateDeviceMetadataResponse, error) {
+	updateDeviceShadowSynchronization := func(in *pb.UpdateDeviceMetadataRequest) error {
 		data, err := protojson.Marshal(in)
 		require.NoError(t, err)
 
 		rb := httpgwTest.NewRequest(http.MethodPut, uri.DeviceMetadata, bytes.NewReader(data)).AuthToken(token).DeviceId(deviceID)
 		resp := httpgwTest.HTTPDo(t, rb.Build())
-		defer func() {
-			_ = resp.Body.Close()
-		}()
+		defer func(r *http.Response) {
+			_ = r.Body.Close()
+		}(resp)
 
 		var got pb.UpdateDeviceMetadataResponse
-		err = Unmarshal(resp.StatusCode, resp.Body, &got)
-		if err != nil {
-			return nil, err
-		}
-		return &got, nil
+		err = httpgwTest.Unmarshal(resp.StatusCode, resp.Body, &got)
+		return err
 	}
 
-	_, err = updateDeviceShadowSynchronization(ctx, &pb.UpdateDeviceMetadataRequest{
+	err = updateDeviceShadowSynchronization(&pb.UpdateDeviceMetadataRequest{
 		DeviceId:              deviceID,
 		ShadowSynchronization: pb.UpdateDeviceMetadataRequest_DISABLED,
 	})
@@ -180,7 +190,7 @@ func TestRequestHandlerUpdateDeviceMetadata(t *testing.T) {
 	require.NotEmpty(t, ev)
 	require.Equal(t, commands.ShadowSynchronization_DISABLED, ev.GetShadowSynchronization())
 
-	_, err = updateResource(t, ctx, &pb.UpdateResourceRequest{
+	err = updateResource(t, &pb.UpdateResourceRequest{
 		ResourceInterface: interfaces.OC_IF_BASELINE,
 		ResourceId:        commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
 		Content: &pb.Content{
@@ -189,9 +199,9 @@ func TestRequestHandlerUpdateDeviceMetadata(t *testing.T) {
 				"power": 2,
 			}),
 		},
-	}, token, uri.ApplicationProtoJsonContentType, uri.ApplicationProtoJsonContentType)
+	}, token)
 	require.NoError(t, err)
-	_, err = updateResource(t, ctx, &pb.UpdateResourceRequest{
+	err = updateResource(t, &pb.UpdateResourceRequest{
 		ResourceInterface: interfaces.OC_IF_BASELINE,
 		ResourceId:        commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
 		Content: &pb.Content{
@@ -200,13 +210,13 @@ func TestRequestHandlerUpdateDeviceMetadata(t *testing.T) {
 				"power": 0,
 			}),
 		},
-	}, token, uri.ApplicationProtoJsonContentType, uri.ApplicationProtoJsonContentType)
+	}, token)
 	require.NoError(t, err)
 
 	evResourceChanged := v.WaitForResourceChanged(time.Second)
 	require.Empty(t, evResourceChanged)
 
-	_, err = updateDeviceShadowSynchronization(ctx, &pb.UpdateDeviceMetadataRequest{
+	err = updateDeviceShadowSynchronization(&pb.UpdateDeviceMetadataRequest{
 		DeviceId:              deviceID,
 		ShadowSynchronization: pb.UpdateDeviceMetadataRequest_ENABLED,
 	})
@@ -216,7 +226,7 @@ func TestRequestHandlerUpdateDeviceMetadata(t *testing.T) {
 	require.NotEmpty(t, ev)
 	require.Equal(t, commands.ShadowSynchronization_ENABLED, ev.GetShadowSynchronization())
 
-	_, err = updateResource(t, ctx, &pb.UpdateResourceRequest{
+	err = updateResource(t, &pb.UpdateResourceRequest{
 		ResourceInterface: interfaces.OC_IF_BASELINE,
 		ResourceId:        commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
 		Content: &pb.Content{
@@ -225,9 +235,9 @@ func TestRequestHandlerUpdateDeviceMetadata(t *testing.T) {
 				"power": 2,
 			}),
 		},
-	}, token, uri.ApplicationProtoJsonContentType, uri.ApplicationProtoJsonContentType)
+	}, token)
 	require.NoError(t, err)
-	_, err = updateResource(t, ctx, &pb.UpdateResourceRequest{
+	err = updateResource(t, &pb.UpdateResourceRequest{
 		ResourceInterface: interfaces.OC_IF_BASELINE,
 		ResourceId:        commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
 		Content: &pb.Content{
@@ -236,7 +246,7 @@ func TestRequestHandlerUpdateDeviceMetadata(t *testing.T) {
 				"power": 0,
 			}),
 		},
-	}, token, uri.ApplicationProtoJsonContentType, uri.ApplicationProtoJsonContentType)
+	}, token)
 	require.NoError(t, err)
 
 	evResourceChanged = v.WaitForResourceChanged(time.Second)

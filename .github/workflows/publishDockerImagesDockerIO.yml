@@ -3,15 +3,14 @@ name: Create and publish a docker images to docker.io
 on:
   workflow_run:
     workflows:
-    - "Test"
+      - "Test"
     branches:
-    - main
-    types: 
-    - completed
+      - main
+    types:
+      - completed
   push:
     tags:
-    - '*'
-  
+      - "*"
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
@@ -24,10 +23,9 @@ jobs:
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
-      
+
       - name: Set latest tag
         run: echo "RELEASE_VERSION=`echo ${GITHUB_REF#refs/*/} | sed -e 's/main//'`" >> $GITHUB_ENV
-      
+
       - name: Publish docker images
         run: echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin && make push LATEST_TAG=${{ env.RELEASE_VERSION }}
-        

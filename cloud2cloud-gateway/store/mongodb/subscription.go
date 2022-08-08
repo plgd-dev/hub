@@ -2,22 +2,24 @@ package mongodb
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
-	"github.com/plgd-dev/hub/cloud2cloud-connector/events"
-	"github.com/plgd-dev/hub/cloud2cloud-gateway/store"
-
+	"github.com/plgd-dev/hub/v2/cloud2cloud-connector/events"
+	"github.com/plgd-dev/hub/v2/cloud2cloud-gateway/store"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-const subscriptionsCName = "subscriptions"
-const typeKey = "type"
-const hrefKey = "href"
-const sequenceNumberKey = "sequencenumber"
-const deviceIDKey = "deviceid"
-const initializedKey = "initialized"
+const (
+	subscriptionsCName = "subscriptions"
+	typeKey            = "type"
+	hrefKey            = "href"
+	sequenceNumberKey  = "sequencenumber"
+	deviceIDKey        = "deviceid"
+	initializedKey     = "initialized"
+)
 
 var typeQueryIndex = bson.D{
 	{Key: typeKey, Value: 1},
@@ -217,7 +219,7 @@ func (s *Store) LoadSubscriptions(ctx context.Context, query store.SubscriptionQ
 			Hint: typeQueryIndex,
 		})
 	}
-	if err == mongo.ErrNilDocument {
+	if errors.Is(err, mongo.ErrNilDocument) {
 		return nil
 	}
 	if err != nil {

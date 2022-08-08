@@ -3,6 +3,7 @@ package service_test
 import (
 	"context"
 	"crypto/tls"
+	"errors"
 	"io"
 	"testing"
 	"time"
@@ -10,16 +11,16 @@ import (
 	"github.com/plgd-dev/device/schema/configuration"
 	"github.com/plgd-dev/device/schema/device"
 	"github.com/plgd-dev/device/schema/platform"
-	"github.com/plgd-dev/hub/grpc-gateway/pb"
-	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
-	"github.com/plgd-dev/hub/resource-aggregate/commands"
-	"github.com/plgd-dev/hub/resource-aggregate/events"
-	test "github.com/plgd-dev/hub/test"
-	testCfg "github.com/plgd-dev/hub/test/config"
-	oauthService "github.com/plgd-dev/hub/test/oauth-server/service"
-	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
-	pbTest "github.com/plgd-dev/hub/test/pb"
-	"github.com/plgd-dev/hub/test/service"
+	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
+	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
+	test "github.com/plgd-dev/hub/v2/test"
+	testCfg "github.com/plgd-dev/hub/v2/test/config"
+	oauthService "github.com/plgd-dev/hub/v2/test/oauth-server/service"
+	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
+	pbTest "github.com/plgd-dev/hub/v2/test/pb"
+	"github.com/plgd-dev/hub/v2/test/service"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -33,12 +34,15 @@ func TestRequestHandlerGetResourceLinks(t *testing.T) {
 
 	tearDown := service.SetUp(ctx, t)
 	defer tearDown()
-	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultServiceToken(t))
+	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
 
 	conn, err := grpc.Dial(testCfg.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
 	})))
 	require.NoError(t, err)
+	defer func() {
+		_ = conn.Close()
+	}()
 	c := pb.NewGrpcGatewayClient(conn)
 
 	resourceLinks := test.GetAllBackendResourceLinks()
@@ -100,12 +104,7 @@ func TestRequestHandlerGetResourceLinks(t *testing.T) {
 					TypeFilter: []string{"unknown"},
 				},
 			},
-			want: []*events.ResourceLinksPublished{
-				{
-					DeviceId:     deviceID,
-					AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, ""),
-				},
-			},
+			want: []*events.ResourceLinksPublished{},
 		},
 		{
 			name: "valid typefilter",
@@ -131,13 +130,13 @@ func TestRequestHandlerGetResourceLinks(t *testing.T) {
 			links := make([]*events.ResourceLinksPublished, 0, 1)
 			for {
 				link, err := client.Recv()
-				if err == io.EOF {
+				if errors.Is(err, io.EOF) {
 					break
 				}
 				require.NoError(t, err)
 				require.NotEmpty(t, link.GetAuditContext())
 				require.NotEmpty(t, link.GetEventMetadata())
-				links = append(links, pbTest.CleanUpResourceLinksPublished(link))
+				links = append(links, pbTest.CleanUpResourceLinksPublished(link, true))
 			}
 			test.CheckProtobufs(t, tt.want, links, test.RequireToCheckFunc(require.Equal))
 		})

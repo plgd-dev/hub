@@ -1,15 +1,15 @@
 package jwt_test
 
 import (
-	"crypto/tls"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
 
-	"github.com/plgd-dev/hub/pkg/log"
-	"github.com/plgd-dev/hub/pkg/security/jwt"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	"github.com/plgd-dev/hub/v2/pkg/security/jwt"
+	"github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -18,7 +18,7 @@ func TestValidator(t *testing.T) {
 	server := newTestJwks()
 	defer server.Close()
 
-	v := jwt.NewValidator(server.URL+uri, &noTLS)
+	v := test.GetJWTValidator(server.URL + uri)
 	var c testClaims
 	err := v.ParseWithClaims(token, &c)
 	require.NoError(t, err)
@@ -32,7 +32,7 @@ func TestClaims(t *testing.T) {
 	server := newTestJwks()
 	defer server.Close()
 
-	v := jwt.NewValidator(server.URL+uri, &noTLS)
+	v := test.GetJWTValidator(server.URL + uri)
 	var c jwt.Claims
 	err := v.ParseWithClaims(token, &c)
 	require.Error(t, err)
@@ -62,7 +62,7 @@ func TestParser(t *testing.T) {
 	server := newTestJwks()
 	defer server.Close()
 
-	v := jwt.NewValidator(server.URL+uri, &noTLS)
+	v := test.GetJWTValidator(server.URL + uri)
 	c, err := v.Parse(token)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "Token is expired")
@@ -87,7 +87,7 @@ func TestEmptyToken(t *testing.T) {
 	server := newTestJwks()
 	defer server.Close()
 
-	v := jwt.NewValidator(server.URL+uri, &noTLS)
+	v := test.GetJWTValidator(server.URL + uri)
 	_, err := v.Parse("")
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "missing token")
@@ -102,7 +102,7 @@ func TestInvalidToken(t *testing.T) {
 	server := newTestJwks()
 	defer server.Close()
 
-	v := jwt.NewValidator(server.URL+uri, &noTLS)
+	v := test.GetJWTValidator(server.URL + uri)
 	_, err := v.Parse("invalid")
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "could not parse token")
@@ -132,8 +132,10 @@ func (c testClaims) Valid() error {
 	return nil
 }
 
-const token = `eyJhbGciOiJSUzI1NiIsImtpZCI6IjdmNzM1NWJmYmY0ZjVmOTNkZjJiZjg3OWE3OGUyMjNhIiwidHlwIjoiSldUIn0.eyJuYmYiOjE1NjM4ODk5NTgsImV4cCI6MTU2Mzg5MzU1OCwiaXNzIjoiaHR0cDovL2lkZW50aXR5LXNlcnZlcjozMDAxIiwiYXVkIjpbImh0dHA6Ly9pZGVudGl0eS1zZXJ2ZXI6MzAwMS9yZXNvdXJjZXMiLCJ0ZXN0LnJlc291cmNlIl0sImNsaWVudF9pZCI6InRlc3QuY2xpZW50LmlkIiwic3ViIjoiMWI4N2VmZmEtMzRlMi00YTQ0LTgyYzYtNmUwYWI4MDIwOWZmIiwiYXV0aF90aW1lIjoxNTYzODg5ODQ1LCJpZHAiOiJsb2NhbCIsImVtYWlsIjoidXNlckBleGFtcGxlLmNvbSIsInRlbmFudF9pZCI6IjdlYWE1MzJhLWMyYmYtNDRiNC05MTA5LWE3ODBmNGY2MzI2NCIsImRlZmF1bHRfcHJvZHVjdF91cmkiOiIvIiwicm9sZXMiOlsidGVzdC5yb2xlMSIsInRlc3Qucm9sZTIiXSwic2NvcGUiOlsidGVzdC5zY29wZSJdLCJhbXIiOlsicHdkIl19.jwgEJpn9aYZrWFzMRvW9ABZpA_MnZDNZcfWJtFm-luyYBm2D06P6bsKTH0mYcxKTVSVHnEczRecQumwtWjyvyVVtCLDOW1GVPseChw-By152QxOIeOpsJh2zPEKlVaqvPkFKOfFGPWYb99RN8-Cfv9hKYtUCrFhHCwcWcrzCngiYElGvRkyObBWyA7M2V_BWJGmO7W_j1e5TQF8PiD8ZEgNhnMd7jcEM0tGAH-v0aiV-X37gFq0bRkU3cb3xZo_4s_eLnTxfe270webbMo4-mIOFzClG7asdkgGQvNnO-aN9bvxBtii6aJVnYT5UIQDEofeJG-PdDVhkVyfSl__EHw`
-const uri = "/auth/.well-known/openid-configuration/jwksX"
+const (
+	token = `eyJhbGciOiJSUzI1NiIsImtpZCI6IjdmNzM1NWJmYmY0ZjVmOTNkZjJiZjg3OWE3OGUyMjNhIiwidHlwIjoiSldUIn0.eyJuYmYiOjE1NjM4ODk5NTgsImV4cCI6MTU2Mzg5MzU1OCwiaXNzIjoiaHR0cDovL2lkZW50aXR5LXNlcnZlcjozMDAxIiwiYXVkIjpbImh0dHA6Ly9pZGVudGl0eS1zZXJ2ZXI6MzAwMS9yZXNvdXJjZXMiLCJ0ZXN0LnJlc291cmNlIl0sImNsaWVudF9pZCI6InRlc3QuY2xpZW50LmlkIiwic3ViIjoiMWI4N2VmZmEtMzRlMi00YTQ0LTgyYzYtNmUwYWI4MDIwOWZmIiwiYXV0aF90aW1lIjoxNTYzODg5ODQ1LCJpZHAiOiJsb2NhbCIsImVtYWlsIjoidXNlckBleGFtcGxlLmNvbSIsInRlbmFudF9pZCI6IjdlYWE1MzJhLWMyYmYtNDRiNC05MTA5LWE3ODBmNGY2MzI2NCIsImRlZmF1bHRfcHJvZHVjdF91cmkiOiIvIiwicm9sZXMiOlsidGVzdC5yb2xlMSIsInRlc3Qucm9sZTIiXSwic2NvcGUiOlsidGVzdC5zY29wZSJdLCJhbXIiOlsicHdkIl19.jwgEJpn9aYZrWFzMRvW9ABZpA_MnZDNZcfWJtFm-luyYBm2D06P6bsKTH0mYcxKTVSVHnEczRecQumwtWjyvyVVtCLDOW1GVPseChw-By152QxOIeOpsJh2zPEKlVaqvPkFKOfFGPWYb99RN8-Cfv9hKYtUCrFhHCwcWcrzCngiYElGvRkyObBWyA7M2V_BWJGmO7W_j1e5TQF8PiD8ZEgNhnMd7jcEM0tGAH-v0aiV-X37gFq0bRkU3cb3xZo_4s_eLnTxfe270webbMo4-mIOFzClG7asdkgGQvNnO-aN9bvxBtii6aJVnYT5UIQDEofeJG-PdDVhkVyfSl__EHw`
+	uri   = "/auth/.well-known/openid-configuration/jwksX"
+)
 
 const jwks = `{
   "keys": [
@@ -147,5 +149,3 @@ const jwks = `{
     }
   ]
 }`
-
-var noTLS = tls.Config{}

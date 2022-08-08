@@ -1,6 +1,12 @@
 log:
-  debug: false
-  dumpCoapMessages: true
+  dumpBody: false
+  level: info
+  encoding: json
+  stacktrace:
+    enabled: false
+    level: warn
+  encoderConfig:
+    timeEncoder: rfc3339nano
 apis:
   coap:
     address: "0.0.0.0:5684"
@@ -8,7 +14,7 @@ apis:
     maxMessageSize: 262144
     ownerCacheExpiration: 1m
     subscriptionBufferSize: 1000
-    goroutineSocketHeartbeat: "4s"
+    messagePoolSize: 1000
     keepAlive:
       timeout: 20s
     blockwiseTransfer:
@@ -16,32 +22,53 @@ apis:
       blockSize: "1024"
     tls:
       enabled: true
+      disconnectOnExpiredCertificate: false
       caPool: "/secrets/public/rootca.crt"
       keyFile: "/secrets/private/cert.key"
       certFile: "/secrets/public/cert.crt"
       clientCertificateRequired: true
     authorization:
       ownerClaim: "sub"
-      deviceIdClaim: ""
+      deviceIDClaim: ""
       providers:
-      - name: "plgd"
-        clientID: ""
-        clientSecretFile: ""
-        scopes: []
-        audience: ""
-        redirectURL: "cloud.plgd.mobile://login-callback"
-        authority: ""
-        http:
-          maxIdleConns: 16
-          maxConnsPerHost: 32
-          maxIdleConnsPerHost: 16
-          idleConnTimeout: 30s
-          timeout: 10s
-          tls:
-            caPool: "/secrets/public/rootca.crt"
-            keyFile: "/secrets/private/cert.key"
-            certFile: "/secrets/public/cert.crt"
-            useSystemCAPool: false
+        - name: "plgd.web"
+          clientID: ""
+          clientSecretFile: ""
+          scopes: []
+          audience: ""
+          redirectURL: "https://localhost/devices"
+          authority: ""
+          grantType: ""
+          http:
+            maxIdleConns: 16
+            maxConnsPerHost: 32
+            maxIdleConnsPerHost: 16
+            idleConnTimeout: 30s
+            timeout: 10s
+            tls:
+              caPool: "/secrets/public/rootca.crt"
+              keyFile: "/secrets/private/cert.key"
+              certFile: "/secrets/public/cert.crt"
+              useSystemCAPool: false
+        - name: "plgd.mobile"
+          clientID: ""
+          clientSecretFile: ""
+          scopes: []
+          audience: ""
+          redirectURL: "cloud.plgd.mobile://login-callback"
+          authority: ""
+          grantType: ""
+          http:
+            maxIdleConns: 16
+            maxConnsPerHost: 32
+            maxIdleConnsPerHost: 16
+            idleConnTimeout: 30s
+            timeout: 10s
+            tls:
+              caPool: "/secrets/public/rootca.crt"
+              keyFile: "/secrets/private/cert.key"
+              certFile: "/secrets/public/cert.crt"
+              useSystemCAPool: false
 clients:
   eventBus:
     nats:
@@ -83,6 +110,19 @@ clients:
       expiresIn: 0s
   resourceDirectory:
     grpc:
+      address: ""
+      keepAlive:
+        time: 10s
+        timeout: 20s
+        permitWithoutStream: true
+      tls:
+        caPool: "/secrets/public/rootca.crt"
+        keyFile: "/secrets/private/cert.key"
+        certFile: "/secrets/public/cert.crt"
+        useSystemCAPool: false
+  openTelemetryCollector:
+    grpc:
+      enabled: false
       address: ""
       keepAlive:
         time: 10s

@@ -1,0 +1,16 @@
+diff --git a/src/crypto/tls/conn.go b/src/crypto/tls/conn.go
+index 969f357834..63dff2b93e 100644
+--- a/src/crypto/tls/conn.go
++++ b/src/crypto/tls/conn.go
+@@ -789,6 +789,11 @@ func (r *atLeastReader) Read(p []byte) (int, error) {
+ // at least n bytes or else returns an error.
+ func (c *Conn) readFromUntil(r io.Reader, n int) error {
+ 	if c.rawInput.Len() >= n {
++		if c.rawInput.Len() < bytes.MinRead && c.rawInput.Cap() > 4*bytes.MinRead {
++			p := c.rawInput.Bytes()
++			c.rawInput = *bytes.NewBuffer(make([]byte, len(p), bytes.MinRead))
++			copy(c.rawInput.Bytes(), p)
++		}
+ 		return nil
+ 	}
+ 	needs := n - c.rawInput.Len()

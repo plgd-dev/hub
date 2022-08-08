@@ -5,10 +5,11 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/plgd-dev/hub/pkg/log"
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventstore"
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventstore/mongodb"
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventstore/test"
+	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore/mongodb"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -50,11 +51,16 @@ func addEventsForDeleteToDB(t *testing.T, ctx context.Context, store *mongodb.Ev
 }
 
 func TestEventStore_Delete(t *testing.T) {
-	logger, err := log.NewLogger(log.Config{})
+	logger := log.NewLogger(log.MakeDefaultConfig())
+	fileWatcher, err := fsnotify.NewWatcher()
 	require.NoError(t, err)
+	defer func() {
+		err := fileWatcher.Close()
+		require.NoError(t, err)
+	}()
 
 	ctx := context.Background()
-	store, err := NewTestEventStore(ctx, logger)
+	store, err := NewTestEventStore(ctx, fileWatcher, logger)
 	assert.NoError(t, err)
 	assert.NotNil(t, store)
 	defer func() {

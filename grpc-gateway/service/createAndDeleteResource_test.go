@@ -3,35 +3,34 @@ package service_test
 import (
 	"context"
 	"crypto/tls"
+	"fmt"
 	"testing"
 
 	"github.com/plgd-dev/device/schema"
-	"github.com/plgd-dev/device/schema/collection"
 	"github.com/plgd-dev/device/schema/interfaces"
 	"github.com/plgd-dev/device/test/resource/types"
 	"github.com/plgd-dev/go-coap/v2/message"
-	"github.com/plgd-dev/hub/grpc-gateway/client"
-	"github.com/plgd-dev/hub/grpc-gateway/pb"
-	"github.com/plgd-dev/hub/pkg/log"
-	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
-	"github.com/plgd-dev/hub/resource-aggregate/commands"
-	"github.com/plgd-dev/hub/resource-aggregate/events"
-	"github.com/plgd-dev/hub/test"
-	"github.com/plgd-dev/hub/test/config"
-	oauthService "github.com/plgd-dev/hub/test/oauth-server/service"
-	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
-	pbTest "github.com/plgd-dev/hub/test/pb"
-	"github.com/plgd-dev/hub/test/service"
+	"github.com/plgd-dev/hub/v2/grpc-gateway/client"
+	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
+	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
+	"github.com/plgd-dev/hub/v2/test"
+	"github.com/plgd-dev/hub/v2/test/config"
+	oauthService "github.com/plgd-dev/hub/v2/test/oauth-server/service"
+	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
+	pbTest "github.com/plgd-dev/hub/v2/test/pb"
+	"github.com/plgd-dev/hub/v2/test/service"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )
 
-func subscribeToAllEvents(t *testing.T, ctx context.Context, c pb.GrpcGatewayClient, correlationId string) (pb.GrpcGateway_SubscribeToEventsClient, string) {
+func subscribeToAllEvents(t *testing.T, ctx context.Context, c pb.GrpcGatewayClient, correlationID string) (pb.GrpcGateway_SubscribeToEventsClient, string) {
 	subClient, err := client.New(c).GrpcGatewayClient().SubscribeToEvents(ctx)
 	require.NoError(t, err)
 	err = subClient.Send(&pb.SubscribeToEvents{
-		CorrelationId: correlationId,
+		CorrelationId: correlationID,
 		Action: &pb.SubscribeToEvents_CreateSubscription_{
 			CreateSubscription: &pb.SubscribeToEvents_CreateSubscription{},
 		},
@@ -41,7 +40,7 @@ func subscribeToAllEvents(t *testing.T, ctx context.Context, c pb.GrpcGatewayCli
 	require.NoError(t, err)
 	expectedEvent := &pb.Event{
 		SubscriptionId: ev.GetSubscriptionId(),
-		CorrelationId:  correlationId,
+		CorrelationId:  correlationID,
 		Type:           pbTest.OperationProcessedOK(),
 	}
 	test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
@@ -57,8 +56,8 @@ func createSwitchResource(t *testing.T, ctx context.Context, c pb.GrpcGatewayCli
 		},
 	})
 	require.NoError(t, err)
-	switchData := pbTest.MakeCreateLightResourceResponseData(switchID)
-	want := pbTest.MakeResourceCreated(t, deviceID, test.TestResourceSwitchesHref, switchData)
+	switchData := pbTest.MakeCreateSwitchResourceResponseData(switchID)
+	want := pbTest.MakeResourceCreated(t, deviceID, test.TestResourceSwitchesHref, "", switchData)
 	pbTest.CmpResourceCreated(t, want, got.GetData())
 }
 
@@ -67,7 +66,7 @@ func deleteSwitchResource(t *testing.T, ctx context.Context, c pb.GrpcGatewayCli
 		ResourceId: commands.NewResourceID(deviceID, test.TestResourceSwitchesInstanceHref(switchID)),
 	})
 	require.NoError(t, err)
-	want := pbTest.MakeResourceDeleted(t, deviceID, test.TestResourceSwitchesInstanceHref(switchID))
+	want := pbTest.MakeResourceDeleted(t, deviceID, test.TestResourceSwitchesInstanceHref(switchID), "")
 	pbTest.CmpResourceDeleted(t, want, got.GetData())
 }
 
@@ -76,7 +75,7 @@ func createSwitchResourceExpectedEvents(t *testing.T, deviceID, subID, correlati
 		SubscriptionId: subID,
 		CorrelationId:  correlationID,
 		Type: &pb.Event_ResourceCreatePending{
-			ResourceCreatePending: pbTest.MakeResourceCreatePending(t, deviceID, test.TestResourceSwitchesHref,
+			ResourceCreatePending: pbTest.MakeResourceCreatePending(t, deviceID, test.TestResourceSwitchesHref, "",
 				test.MakeSwitchResourceDefaultData()),
 		},
 	}
@@ -85,26 +84,19 @@ func createSwitchResourceExpectedEvents(t *testing.T, deviceID, subID, correlati
 		SubscriptionId: subID,
 		CorrelationId:  correlationID,
 		Type: &pb.Event_ResourceChanged{
-			ResourceChanged: pbTest.MakeResourceChanged(t, deviceID, test.TestResourceSwitchesHref, map[string]interface{}{
-				"if": []interface{}{interfaces.OC_IF_LL, interfaces.OC_IF_CREATE, interfaces.OC_IF_B, interfaces.OC_IF_BASELINE},
-				"links": []interface{}{
-					map[string]interface{}{
+			ResourceChanged: pbTest.MakeResourceChanged(t, deviceID, test.TestResourceSwitchesHref, "",
+				[]map[string]interface{}{
+					{
 						"href": test.TestResourceSwitchesInstanceHref(switchID),
 						"if":   []string{interfaces.OC_IF_A, interfaces.OC_IF_BASELINE},
-						"p": map[string]interface{}{
+						"p": map[interface{}]interface{}{
 							"bm": uint64(schema.Discoverable | schema.Observable),
 						},
-						"rel": []interface{}{
-							"hosts",
-						},
-						"rt": []interface{}{types.BINARY_SWITCH},
+						"rel": []string{"hosts"},
+						"rt":  []string{types.BINARY_SWITCH},
 					},
 				},
-				"rt":                        []interface{}{collection.ResourceType},
-				"rts":                       []interface{}{types.BINARY_SWITCH},
-				"rts-m":                     []interface{}{types.BINARY_SWITCH},
-				"x.org.openconnectivity.bl": uint64(94),
-			}),
+			),
 		},
 	}
 
@@ -112,7 +104,7 @@ func createSwitchResourceExpectedEvents(t *testing.T, deviceID, subID, correlati
 		SubscriptionId: subID,
 		CorrelationId:  correlationID,
 		Type: &pb.Event_ResourceCreated{
-			ResourceCreated: pbTest.MakeResourceCreated(t, deviceID, test.TestResourceSwitchesHref,
+			ResourceCreated: pbTest.MakeResourceCreated(t, deviceID, test.TestResourceSwitchesHref, "",
 				test.MakeSwitchResourceData(map[string]interface{}{
 					"href": test.TestResourceSwitchesInstanceHref(switchID),
 					"rep": map[string]interface{}{
@@ -151,11 +143,10 @@ func createSwitchResourceExpectedEvents(t *testing.T, deviceID, subID, correlati
 		SubscriptionId: subID,
 		CorrelationId:  correlationID,
 		Type: &pb.Event_ResourceChanged{
-			ResourceChanged: pbTest.MakeResourceChanged(t, deviceID, test.TestResourceSwitchesInstanceHref(switchID), map[string]interface{}{
-				"if":    []string{interfaces.OC_IF_A, interfaces.OC_IF_BASELINE},
-				"rt":    []string{types.BINARY_SWITCH},
-				"value": false,
-			}),
+			ResourceChanged: pbTest.MakeResourceChanged(t, deviceID, test.TestResourceSwitchesInstanceHref(switchID), "",
+				map[string]interface{}{
+					"value": false,
+				}),
 		},
 	}
 
@@ -168,7 +159,7 @@ func createSwitchResourceExpectedEvents(t *testing.T, deviceID, subID, correlati
 	}
 }
 
-func deleteSwitchResourceExpectedEvents(t *testing.T, deviceID, subID, correlationID, switchID string) map[string]*pb.Event {
+func deleteSwitchResourceExpectedEvents(t *testing.T, deviceID, subID, correlationID, switchID string, isDiscoveryResourceBatchObservable bool) map[string]*pb.Event {
 	deletePending := &pb.Event{
 		SubscriptionId: subID,
 		CorrelationId:  correlationID,
@@ -184,7 +175,7 @@ func deleteSwitchResourceExpectedEvents(t *testing.T, deviceID, subID, correlati
 		SubscriptionId: subID,
 		CorrelationId:  correlationID,
 		Type: &pb.Event_ResourceDeleted{
-			ResourceDeleted: pbTest.MakeResourceDeleted(t, deviceID, test.TestResourceSwitchesInstanceHref(switchID)),
+			ResourceDeleted: pbTest.MakeResourceDeleted(t, deviceID, test.TestResourceSwitchesInstanceHref(switchID), ""),
 		},
 	}
 
@@ -204,23 +195,29 @@ func deleteSwitchResourceExpectedEvents(t *testing.T, deviceID, subID, correlati
 		SubscriptionId: subID,
 		CorrelationId:  correlationID,
 		Type: &pb.Event_ResourceChanged{
-			ResourceChanged: pbTest.MakeResourceChanged(t, deviceID, test.TestResourceSwitchesHref, map[string]interface{}{
-				"if":                        []interface{}{interfaces.OC_IF_LL, interfaces.OC_IF_CREATE, interfaces.OC_IF_B, interfaces.OC_IF_BASELINE},
-				"links":                     []interface{}{},
-				"rt":                        []interface{}{collection.ResourceType},
-				"rts":                       []interface{}{types.BINARY_SWITCH},
-				"rts-m":                     []interface{}{types.BINARY_SWITCH},
-				"x.org.openconnectivity.bl": uint64(94),
-			}),
+			ResourceChanged: pbTest.MakeResourceChanged(t, deviceID, test.TestResourceSwitchesHref, "", []interface{}{}),
 		},
 	}
 
-	return map[string]*pb.Event{
+	e := map[string]*pb.Event{
 		pbTest.GetEventID(deletePending): deletePending,
 		pbTest.GetEventID(deleted):       deleted,
 		pbTest.GetEventID(unpublished):   unpublished,
 		pbTest.GetEventID(changed):       changed,
 	}
+
+	if isDiscoveryResourceBatchObservable {
+		changedRes := &pb.Event{
+			SubscriptionId: subID,
+			CorrelationId:  correlationID,
+			Type: &pb.Event_ResourceChanged{
+				ResourceChanged: pbTest.MakeResourceChanged(t, deviceID, test.TestResourceSwitchesInstanceHref(switchID), "", map[interface{}]interface{}{}),
+			},
+		}
+		e[pbTest.GetEventID(changedRes)] = changedRes
+	}
+
+	return e
 }
 
 func validateEvents(t *testing.T, subClient pb.GrpcGateway_SubscribeToEventsClient, expectedEvents map[string]*pb.Event) {
@@ -231,13 +228,13 @@ func validateEvents(t *testing.T, subClient pb.GrpcGateway_SubscribeToEventsClie
 		}
 		require.NoError(t, err)
 
-		eventId := pbTest.GetEventID(ev)
-		expected, ok := expectedEvents[eventId]
+		eventID := pbTest.GetEventID(ev)
+		expected, ok := expectedEvents[eventID]
 		if !ok {
 			require.Failf(t, "unexpected event", "invalid event: %+v", ev)
 		}
-		pbTest.CmpEvent(t, expected, ev)
-		delete(expectedEvents, eventId)
+		pbTest.CmpEvent(t, expected, ev, "")
+		delete(expectedEvents, eventID)
 		if len(expectedEvents) == 0 {
 			break
 		}
@@ -251,13 +248,16 @@ func TestCreateAndDeleteResource(t *testing.T) {
 
 	tearDown := service.SetUp(ctx, t)
 	defer tearDown()
-	log.Setup(log.Config{Debug: true})
-	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultServiceToken(t))
+
+	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
 
 	conn, err := grpc.Dial(config.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
 	})))
 	require.NoError(t, err)
+	defer func() {
+		_ = conn.Close()
+	}()
 	c := pb.NewGrpcGatewayClient(conn)
 
 	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.GW_HOST, test.GetAllBackendResourceLinks())
@@ -267,13 +267,15 @@ func TestCreateAndDeleteResource(t *testing.T) {
 	subClient, subID := subscribeToAllEvents(t, ctx, c, correlationID)
 	const switchID = "1"
 
+	isDiscoveryResourceBatchObservable := test.IsDiscoveryResourceBatchObservable(ctx, t, deviceID)
+
 	for i := 0; i < 5; i++ {
+		fmt.Printf("iteration %v\n", i)
 		createSwitchResource(t, ctx, c, deviceID, switchID)
 		expectedCreateEvents := createSwitchResourceExpectedEvents(t, deviceID, subID, correlationID, switchID)
 		validateEvents(t, subClient, expectedCreateEvents)
-
 		deleteSwitchResource(t, ctx, c, deviceID, switchID)
-		expectedDeleteEvents := deleteSwitchResourceExpectedEvents(t, deviceID, subID, correlationID, switchID)
+		expectedDeleteEvents := deleteSwitchResourceExpectedEvents(t, deviceID, subID, correlationID, switchID, isDiscoveryResourceBatchObservable)
 		validateEvents(t, subClient, expectedDeleteEvents)
 	}
 }

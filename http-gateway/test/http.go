@@ -12,16 +12,17 @@ import (
 	"time"
 
 	"github.com/jtacoma/uritemplates"
-	"github.com/plgd-dev/hub/http-gateway/uri"
-	"github.com/plgd-dev/hub/test/config"
+	"github.com/plgd-dev/hub/v2/http-gateway/uri"
+	"github.com/plgd-dev/hub/v2/test/config"
 	"github.com/stretchr/testify/require"
 )
 
-func NewRequest(method, url string, body io.Reader) *requestBuilder {
+func NewRequest(method, path string, body io.Reader) *requestBuilder {
 	b := requestBuilder{
 		method:      method,
 		body:        body,
-		uri:         fmt.Sprintf("https://%v%v", config.HTTP_GW_HOST, url),
+		host:        config.HTTP_GW_HOST,
+		path:        path,
 		uriParams:   make(map[string]interface{}),
 		header:      make(map[string]string),
 		queryParams: make(map[string][]string),
@@ -32,12 +33,18 @@ func NewRequest(method, url string, body io.Reader) *requestBuilder {
 type requestBuilder struct {
 	method       string
 	body         io.Reader
-	uri          string
+	host         string
+	path         string
 	uriParams    map[string]interface{}
 	header       map[string]string
 	queryParams  map[string][]string
 	resourceHref string
 	query        string
+}
+
+func (c *requestBuilder) Host(host string) *requestBuilder {
+	c.host = host
+	return c
 }
 
 func (c *requestBuilder) DeviceId(deviceID string) *requestBuilder {
@@ -132,11 +139,11 @@ func (c *requestBuilder) AddTypeFilter(typeFilter []string) *requestBuilder {
 	return c
 }
 
-func (c *requestBuilder) AddCorrelantionIdFilter(correlantionId []string) *requestBuilder {
-	if len(correlantionId) == 0 {
+func (c *requestBuilder) AddCorrelationIdFilter(correlationID []string) *requestBuilder {
+	if len(correlationID) == 0 {
 		return c
 	}
-	c.AddQuery(uri.CorrelationIdFilterQueryKey, correlantionId...)
+	c.AddQuery(uri.CorrelationIdFilterQueryKey, correlationID...)
 	return c
 }
 
@@ -162,7 +169,8 @@ func (c *requestBuilder) SetQuery(value string) *requestBuilder {
 }
 
 func (c *requestBuilder) Build() *http.Request {
-	uri := strings.Replace(c.uri, "{"+uri.ResourceHrefKey+"}", c.resourceHref, -1)
+	r := fmt.Sprintf("https://%v%v", c.host, c.path)
+	uri := strings.ReplaceAll(r, "{"+uri.ResourceHrefKey+"}", c.resourceHref)
 
 	tmp, _ := uritemplates.Parse(uri)
 	uri, _ = tmp.Expand(c.uriParams)

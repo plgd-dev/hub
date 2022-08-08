@@ -1,23 +1,23 @@
 openapi: 3.0.1
 info:
   title: Cloud2Cloud Connector API
-  description: 'Provides API to maintenance linked clouds and linked accounts.'
+  description: "Provides API to maintenance linked clouds and linked accounts."
   license:
     name: Apache 2.0
     url: http://www.apache.org/licenses/LICENSE-2.0.html
   version: 1.0.0
 tags:
-- name: Clouds
-  description: Actions over linked clouds
-- name: Accounts
-  description: Actions over linked accounts
-- name: Events
-  description: Actions over coming events
+  - name: Clouds
+    description: Actions over linked clouds
+  - name: Accounts
+    description: Actions over linked accounts
+  - name: Events
+    description: Actions over coming events
 paths:
   /api/v1/clouds:
     post:
       tags:
-      - Clouds
+        - Clouds
       summary: Create linked cloud
       operationId: createCloud
       requestBody:
@@ -25,7 +25,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/LinkedCloud'
+              $ref: "#/components/schemas/LinkedCloud"
         required: true
       responses:
         200:
@@ -33,13 +33,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/LinkedCloud'
+                $ref: "#/components/schemas/LinkedCloud"
       security:
-      - c2c_connector_auth:
-        - empty
+        - c2c_connector_auth:
+            - empty
     get:
       tags:
-      - Clouds
+        - Clouds
       summary: List linked clouds
       operationId: listClouds
       responses:
@@ -51,141 +51,144 @@ paths:
                 type: object
                 properties:
                   cloudId:
-                    $ref: '#/components/schemas/LinkedClouds'
+                    $ref: "#/components/schemas/LinkedClouds"
       security:
-      - c2c_connector_auth:
-        - empty
+        - c2c_connector_auth:
+            - empty
   /api/v1/clouds/{cloudId}:
     delete:
       tags:
-      - Clouds
+        - Clouds
       summary: Delete linked cloud
       parameters:
-        - $ref: '#/components/parameters/cloudId'
+        - $ref: "#/components/parameters/cloudId"
       responses:
         200:
           description: successful operation
       security:
-      - c2c_connector_auth:
-        - empty
+        - c2c_connector_auth:
+            - empty
   /api/v1/clouds/{cloudId}/accounts:
     get:
       tags:
         - Accounts
       summary: Create linked account
       parameters:
-        - $ref: '#/components/parameters/cloudId'
+        - $ref: "#/components/parameters/cloudId"
       responses:
         307:
           description: redirect to get authorization code
       security:
-      - c2c_connector_auth:
-        - empty
+        - c2c_connector_auth:
+            - empty
   /api/v1/clouds/{cloudId}/accounts/{accountId}:
     delete:
       tags:
         - Accounts
       summary: Delete linked account
       parameters:
-        - $ref: '#/components/parameters/cloudId'
-        - $ref: '#/components/parameters/accountId'
+        - $ref: "#/components/parameters/cloudId"
+        - $ref: "#/components/parameters/accountId"
       responses:
         200:
           description: successful operation
       security:
-      - c2c_connector_auth:
-        - empty
-  /{oauthCallback}:
+        - c2c_connector_auth:
+            - empty
+  /api/v1/oauthCallback:
     get:
       tags:
         - Accounts
       summary: Used for get authorization code for linked account
       parameters:
-        - $ref: '#/components/parameters/oauthCallback'
+        - $ref: "#/components/parameters/{oauthCallback}"
       responses:
         200:
-          description: redirect to get autorization code
+          description: redirect to get authorization code
   /api/v1/events:
-    $ref: 'https://raw.githubusercontent.com/openconnectivityfoundation/core-extensions/ocfcloud-openapi/swagger2.0/oic.r.cloudopenapi.swagger.json#/paths/%2F%7BeventsUrl%7D'
+    $ref: "https://raw.githubusercontent.com/openconnectivityfoundation/core-extensions/ocfcloud-openapi/swagger2.0/oic.r.cloudopenapi.swagger.json#/paths/%2F%7BeventsUrl%7D"
 components:
   schemas:
     LinkedClouds:
       type: object
       properties:
         cloud:
-          $ref: '#/components/schemas/LinkedCloud'
+          $ref: "#/components/schemas/LinkedCloud"
     LinkedCloud:
       type: object
       properties:
-        Id:
+        id:
           type: string
           format: uuid
-        Name:
+        name:
           type: string
-        OAuth:
+        oauth:
           type: object
           properties:
-            ClientId:
+            clientId:
               type: string
-            ClientSecret:
+            clientSecret:
               type: string
-            Scopes:
+            scopes:
               type: array
               items:
                 type: string
-            Endpoint:
-              type: object
-              properties:
-                AuthUrl:
-                  type: string
-                TokenUrl:
-                  type: string
-                AuthStyle:
-                  type: string
-                  enum: [ AutoDetect, InParams, InHeader ]
-            Audience:
+            authUrl:
               type: string
-            RedirectUrl:
+            tokenUrl:
               type: string
-            AccessType:
+            authStyle:
               type: string
-            ResponseType:
+              enum: [autoDetect, inParams, inHeader]
+            audience:
               type: string
-            ResponseMode:
+            redirectUrl:
               type: string
-        SupportedSubscriptionEvents:
+            accessType:
+              type: string
+            responseType:
+              type: string
+            responseMode:
+              type: string
+        supportedSubscriptionEvents:
           type: object
           properties:
-            Devices:
+            devices:
               type: array
               items:
                 type: string
-                enum: [ devices_online, devices_offline, devices_registered, devices_unregistered ]
-            Device:
+                enum:
+                  [
+                    devices_online,
+                    devices_offline,
+                    devices_registered,
+                    devices_unregistered,
+                  ]
+            device:
               type: array
               items:
                 type: string
-                enum: [ resources_published, resources_unpublished ]
-            Resource:
+                enum: [resources_published, resources_unpublished]
+            resource:
               type: array
               items:
                 type: string
-                enum: [ resource_contentchanged ]
-            StaticDeviceEvents:
+                enum: [resource_contentchanged]
+            staticDeviceEvents:
               type: boolean
-        Endpoint:
+        endpoint:
           type: object
           properties:
-              URL:
+            url:
+              type: string
+            rootCas:
+              type: array
+              items:
                 type: string
-              RootCAs:
-                type: array
-                items:
-                  type: string
-              InsecureSkipVerify:
-                  type: boolean
-              UseSystemCAs:
-                  type: boolean
+            insecureSkipVerify:
+              type: boolean
+            useSystemCas:
+              type: boolean
   securitySchemes:
     c2c_connector_auth:
       type: oauth2

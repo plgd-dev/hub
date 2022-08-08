@@ -2,7 +2,7 @@ package strings
 
 import "sort"
 
-// Sorted slice of strings without duplicates
+// SortedSlice is a sorted slice of strings without duplicates
 type SortedSlice []string
 
 func MakeSortedSlice(slice []string) SortedSlice {
@@ -24,7 +24,7 @@ func MakeSortedSlice(slice []string) SortedSlice {
 	return SortedSlice(sortedSlice)
 }
 
-// Equality check for two sorted string slices
+// Equal checks if two sorted string slices are equal.
 func (slice SortedSlice) Equal(second SortedSlice) bool {
 	if len(slice) != len(second) {
 		return false
@@ -38,7 +38,7 @@ func (slice SortedSlice) Equal(second SortedSlice) bool {
 	return true
 }
 
-// Get elements of the first slice not contained in the second
+// Difference gets elements of the first slice not contained in the second.
 func (slice SortedSlice) Difference(second SortedSlice) SortedSlice {
 	var diff SortedSlice
 	var j int
@@ -57,6 +57,7 @@ func (slice SortedSlice) Difference(second SortedSlice) SortedSlice {
 	return diff
 }
 
+// Intersection returns a sorted slice of elements contained by two sorted slices.
 func (slice SortedSlice) Intersection(second SortedSlice) SortedSlice {
 	var inter SortedSlice
 	var j int
@@ -74,6 +75,7 @@ func (slice SortedSlice) Intersection(second SortedSlice) SortedSlice {
 	return inter
 }
 
+// Insert inserts string(s) into the sorted slice (preserving valid ordering).
 func (slice SortedSlice) Insert(elems ...string) SortedSlice {
 	for _, v := range elems {
 		i := sort.SearchStrings([]string(slice), v)
@@ -87,12 +89,13 @@ func (slice SortedSlice) Insert(elems ...string) SortedSlice {
 	return slice
 }
 
+// Contains checks whether sorted slice contains the string.
 func (slice SortedSlice) Contains(s string) bool {
 	i := sort.SearchStrings([]string(slice), s)
 	return i < len(slice) && slice[i] == s
 }
 
-// Check if slice is a subslice of s (ie. all elements in slice are contained by s)
+// IsSubslice checks if slice is a subslice of s (ie. all elements in slice are contained by s)
 func (slice SortedSlice) IsSubslice(s SortedSlice) bool {
 	if len(slice) > len(s) {
 		return false
@@ -105,7 +108,7 @@ func (slice SortedSlice) IsSubslice(s SortedSlice) bool {
 		return s.Contains(slice[0])
 	}
 
-	var j int = sort.SearchStrings(s, slice[0])
+	j := sort.SearchStrings(s, slice[0])
 	for i := range slice {
 		for (j < len(s)) && (s[j] < slice[i]) {
 			j++
@@ -117,11 +120,12 @@ func (slice SortedSlice) IsSubslice(s SortedSlice) bool {
 	return true
 }
 
-// Check if slice is a superslice of s
+// IsSuperslice checks if slice is a superslice of s
 func (slice SortedSlice) IsSuperslice(s SortedSlice) bool {
 	return s.IsSubslice(slice)
 }
 
+// Remove removes elements from the sorted slice and returns a new slice.
 func (slice SortedSlice) Remove(elems ...string) SortedSlice {
 	deleted := 0
 	for _, v := range elems {

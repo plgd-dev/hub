@@ -4,12 +4,13 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/plgd-dev/hub/pkg/log"
-
 	"github.com/golang-jwt/jwt/v4"
-	"github.com/plgd-dev/hub/pkg/net/http/client"
-	jwtValidator "github.com/plgd-dev/hub/pkg/security/jwt"
-	"github.com/plgd-dev/hub/pkg/security/openid"
+	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	"github.com/plgd-dev/hub/v2/pkg/net/http/client"
+	jwtValidator "github.com/plgd-dev/hub/v2/pkg/security/jwt"
+	"github.com/plgd-dev/hub/v2/pkg/security/openid"
+	"go.opentelemetry.io/otel/trace"
 )
 
 // Validator Client.
@@ -32,8 +33,8 @@ func (v *Validator) Close() {
 	v.http.Close()
 }
 
-func New(ctx context.Context, config Config, logger log.Logger) (*Validator, error) {
-	httpClient, err := client.New(config.HTTP, logger)
+func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (*Validator, error) {
+	httpClient, err := client.New(config.HTTP, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create cert manager: %w", err)
 	}
@@ -51,7 +52,7 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Validator, err
 		http:                httpClient,
 		openIDConfiguration: openIDCfg,
 		audience:            config.Audience,
-		validator:           jwtValidator.NewValidatorWithKeyCache(jwtValidator.NewKeyCacheWithHttp(openIDCfg.JWKSURL, httpClient.HTTP())),
+		validator:           jwtValidator.NewValidator(jwtValidator.NewKeyCache(openIDCfg.JWKSURL, httpClient.HTTP())),
 	}, nil
 }
 

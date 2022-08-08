@@ -3,23 +3,24 @@ package service_test
 import (
 	"context"
 	"crypto/tls"
+	"errors"
 	"io"
 	"net/http"
 	"testing"
 
 	"github.com/plgd-dev/device/schema/device"
-	"github.com/plgd-dev/hub/grpc-gateway/pb"
-	httpgwTest "github.com/plgd-dev/hub/http-gateway/test"
-	"github.com/plgd-dev/hub/http-gateway/uri"
-	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
-	"github.com/plgd-dev/hub/resource-aggregate/commands"
-	"github.com/plgd-dev/hub/resource-aggregate/events"
-	"github.com/plgd-dev/hub/test"
-	"github.com/plgd-dev/hub/test/config"
-	oauthService "github.com/plgd-dev/hub/test/oauth-server/service"
-	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
-	pbTest "github.com/plgd-dev/hub/test/pb"
-	"github.com/plgd-dev/hub/test/service"
+	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
+	httpgwTest "github.com/plgd-dev/hub/v2/http-gateway/test"
+	"github.com/plgd-dev/hub/v2/http-gateway/uri"
+	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
+	"github.com/plgd-dev/hub/v2/test"
+	"github.com/plgd-dev/hub/v2/test/config"
+	oauthService "github.com/plgd-dev/hub/v2/test/oauth-server/service"
+	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
+	pbTest "github.com/plgd-dev/hub/v2/test/pb"
+	"github.com/plgd-dev/hub/v2/test/service"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -102,17 +103,17 @@ func TestRequestHandlerGetDevicesMetadata(t *testing.T) {
 	shutdownHttp := httpgwTest.SetUp(t)
 	defer shutdownHttp()
 
-	token := oauthTest.GetDefaultServiceToken(t)
+	token := oauthTest.GetDefaultAccessToken(t)
 	ctx = kitNetGrpc.CtxWithToken(ctx, token)
 
 	conn, err := grpc.Dial(config.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
 	})))
 	require.NoError(t, err)
-	c := pb.NewGrpcGatewayClient(conn)
 	defer func() {
 		_ = conn.Close()
 	}()
+	c := pb.NewGrpcGatewayClient(conn)
 
 	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
@@ -129,8 +130,8 @@ func TestRequestHandlerGetDevicesMetadata(t *testing.T) {
 			var values []*events.DeviceMetadataUpdated
 			for {
 				var value events.DeviceMetadataUpdated
-				err = Unmarshal(resp.StatusCode, resp.Body, &value)
-				if err == io.EOF {
+				err = httpgwTest.Unmarshal(resp.StatusCode, resp.Body, &value)
+				if errors.Is(err, io.EOF) {
 					break
 				}
 				require.NoError(t, err)

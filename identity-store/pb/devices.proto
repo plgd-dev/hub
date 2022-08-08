@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package identitystore.pb;
 
-option go_package = "github.com/plgd-dev/hub/identity-store/pb;pb";
+option go_package = "github.com/plgd-dev/hub/v2/identity-store/pb;pb";
 
 message GetDevicesRequest {
     repeated string device_ids_filter = 2;

@@ -3,6 +3,7 @@ package service_test
 import (
 	"context"
 	"crypto/tls"
+	"errors"
 	"io"
 	"net/http"
 	"strconv"
@@ -12,17 +13,16 @@ import (
 	"github.com/plgd-dev/device/schema/device"
 	"github.com/plgd-dev/device/schema/interfaces"
 	"github.com/plgd-dev/device/test/resource/types"
-	"github.com/plgd-dev/hub/grpc-gateway/pb"
-	httpgwTest "github.com/plgd-dev/hub/http-gateway/test"
-	"github.com/plgd-dev/hub/http-gateway/uri"
-	"github.com/plgd-dev/hub/pkg/log"
-	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
-	"github.com/plgd-dev/hub/resource-aggregate/commands"
-	"github.com/plgd-dev/hub/test"
-	"github.com/plgd-dev/hub/test/config"
-	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
-	pbTest "github.com/plgd-dev/hub/test/pb"
-	"github.com/plgd-dev/hub/test/service"
+	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
+	httpgwTest "github.com/plgd-dev/hub/v2/http-gateway/test"
+	"github.com/plgd-dev/hub/v2/http-gateway/uri"
+	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
+	"github.com/plgd-dev/hub/v2/test"
+	"github.com/plgd-dev/hub/v2/test/config"
+	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
+	pbTest "github.com/plgd-dev/hub/v2/test/pb"
+	"github.com/plgd-dev/hub/v2/test/service"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
@@ -40,6 +40,7 @@ func makeDefaultDevice(deviceID string) *pb.Device {
 				Value: commands.ConnectionStatus_ONLINE,
 			},
 		},
+		OwnershipStatus: pb.Device_OWNED,
 	}
 }
 
@@ -111,16 +112,18 @@ func TestRequestHandlerGetDevices(t *testing.T) {
 	shutdownHttp := httpgwTest.SetUp(t)
 	defer shutdownHttp()
 
-	token := oauthTest.GetDefaultServiceToken(t)
+	token := oauthTest.GetDefaultAccessToken(t)
 	ctx = kitNetGrpc.CtxWithToken(ctx, token)
 
 	conn, err := grpc.Dial(config.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
 	})))
+	defer func() {
+		_ = conn.Close()
+	}()
 	require.NoError(t, err)
 	c := pb.NewGrpcGatewayClient(conn)
 
-	log.Setup(log.Config{Debug: true})
 	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 
@@ -144,8 +147,8 @@ func TestRequestHandlerGetDevices(t *testing.T) {
 			var devices []*pb.Device
 			for {
 				var dev pb.Device
-				err = Unmarshal(resp.StatusCode, resp.Body, &dev)
-				if err == io.EOF {
+				err = httpgwTest.Unmarshal(resp.StatusCode, resp.Body, &dev)
+				if errors.Is(err, io.EOF) {
 					break
 				}
 				require.NoError(t, err)

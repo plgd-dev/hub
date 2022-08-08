@@ -7,16 +7,13 @@ import (
 	"io"
 	"strings"
 	"sync"
-	"time"
 
-	"github.com/plgd-dev/hub/cloud2cloud-connector/events"
-	"github.com/plgd-dev/hub/cloud2cloud-gateway/store"
-	"github.com/plgd-dev/hub/grpc-gateway/client"
-	"github.com/plgd-dev/hub/grpc-gateway/pb"
-	"github.com/plgd-dev/hub/pkg/net/grpc"
-	"github.com/plgd-dev/hub/resource-aggregate/commands"
-	"github.com/plgd-dev/kit/v2/log"
-	kitSync "github.com/plgd-dev/kit/v2/sync"
+	"github.com/plgd-dev/hub/v2/cloud2cloud-connector/events"
+	"github.com/plgd-dev/hub/v2/cloud2cloud-gateway/store"
+	"github.com/plgd-dev/hub/v2/grpc-gateway/client"
+	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -60,7 +57,7 @@ func (s *SubscriptionData) detectDevicesState(ctx context.Context) (hasDevice, h
 	}
 	for {
 		d, err := client.Recv()
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			break
 		}
 		if status.Convert(err).Code() == codes.NotFound {
@@ -207,33 +204,36 @@ func (s *SubscriptionData) getEventHandlerForDevicesSubscription(emitEvent emitE
 			h: &devsHandler,
 		}
 	default:
-		return nil, fmt.Errorf("createDevicesSubscription: unsupported subscription event types %+v", s.data.EventTypes)
+		return nil, fmt.Errorf("unsupported subscription event types %+v", s.data.EventTypes)
 	}
 	return eventHandler, nil
 }
 
 func (s *SubscriptionData) createDevicesSubscription(ctx context.Context, emitEvent emitEventFunc, closeEventHandler *closeEventHandler) (Subscription, error) {
+	createSubDevicesError := func(err error) error {
+		return fmt.Errorf("createDevicesSubscription: %w", err)
+	}
+
 	if !s.data.Initialized {
 		eventTypes, err := s.getEventsToEmitForDevicesSubscription(ctx)
 		if err != nil {
-			return nil, err
+			return nil, createSubDevicesError(err)
 		}
 
 		for _, e := range eventTypes {
 			_, err := emitEvent(ctx, e, s.Data(), s.IncrementSequenceNumber, makeDevicesRepresentation([]string{}))
 			if err != nil {
-				return nil, err
+				return nil, createSubDevicesError(err)
 			}
 		}
 
-		err = s.SetInitialized(ctx)
-		if err != nil {
-			return nil, err
+		if err = s.SetInitialized(ctx); err != nil {
+			return nil, createSubDevicesError(err)
 		}
 	}
 	eventHandler, err := s.getEventHandlerForDevicesSubscription(emitEvent)
 	if err != nil {
-		return nil, err
+		return nil, createSubDevicesError(err)
 	}
 	return client.NewDevicesSubscription(ctx, closeEventHandler, eventHandler, s.gwClient)
 }
@@ -253,11 +253,12 @@ func (s *SubscriptionData) createResourceSubscription(ctx context.Context, emitE
 	return client.NewResourceSubscription(ctx, commands.NewResourceID(s.data.DeviceID, s.data.Href), closeEventHandler, eventHandler, s.gwClient)
 }
 
-func (s *SubscriptionData) createDeviceSubscription(ctx context.Context, emitEvent emitEventFunc, closeEventHandler *closeEventHandler) (Subscription, error) {
+func (s *SubscriptionData) getEventHandlerForDeviceSubscription(emitEvent emitEventFunc) (interface{}, error) {
 	devHandler := deviceSubscriptionHandler{
 		subData:   s,
 		emitEvent: emitEvent,
 	}
+
 	var eventHandler interface{}
 	switch {
 	case s.data.EventTypes.Has(events.EventType_ResourcesPublished) && s.data.EventTypes.Has(events.EventType_ResourcesUnpublished):
@@ -271,12 +272,72 @@ func (s *SubscriptionData) createDeviceSubscription(ctx context.Context, emitEve
 			h: &devHandler,
 		}
 	default:
-		return nil, fmt.Errorf("createDeviceSubscription: unsupported subscription eventypes %+v", s.data.EventTypes)
+		return nil, fmt.Errorf("unsupported subscription eventypes %+v", s.data.EventTypes)
+	}
+	return eventHandler, nil
+}
+
+func (s *SubscriptionData) hasPublishedDevice(ctx context.Context) (bool, error) {
+	client, err := s.gwClient.GetResourceLinks(ctx, &pb.GetResourceLinksRequest{DeviceIdFilter: []string{s.data.DeviceID}})
+	if err != nil {
+		return false, err
+	}
+	_, err = client.Recv()
+	if errors.Is(err, io.EOF) || status.Convert(err).Code() == codes.NotFound {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
+func (s *SubscriptionData) getEventsToEmitForDeviceSubscription(ctx context.Context) ([]events.EventType, error) {
+	hasPublishedDev, err := s.hasPublishedDevice(ctx)
+	if err != nil {
+		return nil, err
+	}
+	var eventTypes []events.EventType
+	if s.data.EventTypes.Has(events.EventType_ResourcesPublished) && !hasPublishedDev {
+		eventTypes = append(eventTypes, events.EventType_ResourcesPublished)
+	}
+	if s.data.EventTypes.Has(events.EventType_ResourcesUnpublished) {
+		eventTypes = append(eventTypes, events.EventType_ResourcesUnpublished)
+	}
+	return eventTypes, nil
+}
+
+func (s *SubscriptionData) createDeviceSubscription(ctx context.Context, emitEvent emitEventFunc, closeEventHandler *closeEventHandler) (Subscription, error) {
+	createSubDeviceError := func(err error) error {
+		return fmt.Errorf("createDeviceSubscription: %w", err)
+	}
+
+	if !s.data.Initialized {
+		eventTypes, err := s.getEventsToEmitForDeviceSubscription(ctx)
+		if err != nil {
+			return nil, createSubDeviceError(err)
+		}
+
+		for _, e := range eventTypes {
+			_, err := emitEvent(ctx, e, s.Data(), s.IncrementSequenceNumber, makeDevicesRepresentation([]string{}))
+			if err != nil {
+				return nil, createSubDeviceError(err)
+			}
+		}
+
+		if err := s.SetInitialized(ctx); err != nil {
+			return nil, createSubDeviceError(err)
+		}
+	}
+
+	eventHandler, err := s.getEventHandlerForDeviceSubscription(emitEvent)
+	if err != nil {
+		return nil, createSubDeviceError(err)
 	}
 	return client.NewDeviceSubscription(ctx, s.data.DeviceID, closeEventHandler, eventHandler, s.gwClient)
 }
 
-func (s *SubscriptionData) Connect(ctx context.Context, emitEvent emitEventFunc, deleteSub func(ctx context.Context, subID string) (store.Subscription, error)) error {
+func (s *SubscriptionData) Connect(ctx context.Context, emitEvent emitEventFunc, deleteSub func(ctx context.Context, subID, href string) (store.Subscription, error)) error {
 	if s.Subscription() != nil {
 		return fmt.Errorf("is already connected")
 	}
@@ -302,7 +363,7 @@ func (s *SubscriptionData) Connect(ctx context.Context, emitEvent emitEventFunc,
 	sub, err := createSubscriptionFunc(ctx, emitEvent, &h)
 	if err != nil {
 		if status.Convert(err).Code() == codes.Unauthenticated {
-			subToCancel, errSub := deleteSub(ctx, s.data.ID)
+			subToCancel, errSub := deleteSub(ctx, s.data.ID, "")
 			if errSub == nil {
 				if err2 := cancelSubscription(ctx, emitEvent, subToCancel); err2 != nil {
 					log.Errorf("cannot cancel subscription %v: %w", subToCancel.ID, err2)
@@ -334,12 +395,12 @@ func (s *SubscriptionData) SetInitialized(ctx context.Context) error {
 type closeEventHandler struct {
 	ctx       context.Context
 	emitEvent emitEventFunc
-	deleteSub func(ctx context.Context, subID string) (store.Subscription, error)
+	deleteSub func(ctx context.Context, subID, href string) (store.Subscription, error)
 	data      *SubscriptionData
 }
 
 func (h *closeEventHandler) OnClose() {
-	log.Errorf("subscription %+v was closed", h.data.Data())
+	log.Debugf("subscription %+v was closed", h.data.Data())
 	h.data.Store(nil)
 }
 
@@ -350,166 +411,12 @@ func (h *closeEventHandler) Error(err error) {
 		return
 	}
 	if !strings.Contains(err.Error(), "transport is closing") {
-		sub, errSub := h.deleteSub(h.ctx, data.ID)
+		sub, errSub := h.deleteSub(h.ctx, data.ID, "")
 		if errSub == nil {
 			if err2 := cancelSubscription(h.ctx, h.emitEvent, sub); err2 != nil {
 				log.Errorf("cannot cancel subscription %v: %w", sub.ID, err2)
 			}
 		}
 		return
-	}
-}
-
-type SubscriptionManager struct {
-	ctx               context.Context
-	subscriptions     *kitSync.Map
-	store             store.Store
-	gwClient          pb.GrpcGatewayClient
-	reconnectInterval time.Duration
-	emitEvent         emitEventFunc
-}
-
-func NewSubscriptionManager(ctx context.Context, store store.Store, gwClient pb.GrpcGatewayClient, reconnectInterval time.Duration, emitEvent emitEventFunc) *SubscriptionManager {
-	return &SubscriptionManager{
-		store:             store,
-		reconnectInterval: reconnectInterval,
-		subscriptions:     kitSync.NewMap(),
-		gwClient:          gwClient,
-		ctx:               ctx,
-		emitEvent:         emitEvent,
-	}
-}
-
-type subscriptionLoader struct {
-	s *SubscriptionManager
-}
-
-func (l *subscriptionLoader) Handle(ctx context.Context, iter store.SubscriptionIter) error {
-	for {
-		var s store.Subscription
-		if !iter.Next(ctx, &s) {
-			break
-		}
-		l.s.storeToSubs(s)
-	}
-	return iter.Err()
-}
-
-func (s *SubscriptionManager) LoadSubscriptions() error {
-	h := subscriptionLoader{
-		s: s,
-	}
-	err := s.store.LoadSubscriptions(s.ctx, store.SubscriptionQuery{}, &h)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (s *SubscriptionManager) storeToSubs(sub store.Subscription) {
-	subData := &SubscriptionData{
-		data:                                sub,
-		incrementSubscriptionSequenceNumber: s.store.IncrementSubscriptionSequenceNumber,
-		gwClient:                            s.gwClient,
-		setInitialized:                      s.store.SetInitialized,
-	}
-	s.subscriptions.LoadOrStore(sub.ID, subData)
-}
-
-func (s *SubscriptionManager) Connect(ID string) error {
-	subRaw, ok := s.subscriptions.Load(ID)
-	if !ok {
-		return fmt.Errorf("not found")
-	}
-	sub := subRaw.(*SubscriptionData)
-	if sub.sub != nil {
-		if !ok {
-			return fmt.Errorf("already connected")
-		}
-	}
-	ctx := s.ctx
-	if sub.data.AccessToken != "" {
-		ctx = grpc.CtxWithToken(ctx, sub.data.AccessToken)
-	}
-	return sub.Connect(ctx, s.emitEvent, s.PullOut)
-}
-
-func (s *SubscriptionManager) Store(ctx context.Context, sub store.Subscription) error {
-	err := s.store.SaveSubscription(ctx, sub)
-	if err != nil {
-		return err
-	}
-	s.storeToSubs(sub)
-	return nil
-}
-
-func (s *SubscriptionManager) Load(ID string) (store.Subscription, bool) {
-	subDataRaw, ok := s.subscriptions.Load(ID)
-	if !ok {
-		return store.Subscription{}, false
-	}
-	subData := subDataRaw.(*SubscriptionData)
-	data := subData.Data()
-	return data, true
-}
-
-func cancelSubscription(ctx context.Context, emitEvent emitEventFunc, sub store.Subscription) error {
-	_, err := emitEvent(ctx, events.EventType_SubscriptionCanceled, sub, func(ctx context.Context) (uint64, error) {
-		return sub.SequenceNumber, nil
-	}, nil)
-	return err
-}
-
-func (s *SubscriptionManager) PullOut(ctx context.Context, ID string) (store.Subscription, error) {
-	subDataRaw, ok := s.subscriptions.PullOut(ID)
-	if !ok {
-		return store.Subscription{}, fmt.Errorf("not found")
-	}
-	sub, err := s.store.PopSubscription(ctx, ID)
-	if err != nil {
-		return store.Subscription{}, err
-	}
-	subData := subDataRaw.(*SubscriptionData)
-	subscription := subData.Subscription()
-	if subscription != nil {
-		wait, err := subscription.Cancel()
-		if err == nil {
-			wait()
-		}
-	}
-	return sub, nil
-}
-
-func (s *SubscriptionManager) DumpNotConnectedSubscriptionDatas() map[string]*SubscriptionData {
-	out := make(map[string]*SubscriptionData)
-	s.subscriptions.Range(func(key, resourceI interface{}) bool {
-		subData := resourceI.(*SubscriptionData)
-		if subData.Subscription() == nil {
-			out[key.(string)] = resourceI.(*SubscriptionData)
-		}
-		return true
-	})
-	return out
-}
-
-func (s *SubscriptionManager) Run() {
-	for {
-		var wg sync.WaitGroup
-		for _, task := range s.DumpNotConnectedSubscriptionDatas() {
-			wg.Add(1)
-			go func(subData *SubscriptionData) {
-				defer wg.Done()
-				err := subData.Connect(s.ctx, s.emitEvent, s.PullOut)
-				if err != nil {
-					log.Errorf("cannot connect %+v: %w", subData.Data(), err)
-				}
-			}(task)
-		}
-		wg.Wait()
-		select {
-		case <-s.ctx.Done():
-			return
-		case <-time.After(s.reconnectInterval):
-		}
 	}
 }

@@ -8,15 +8,15 @@ import (
 	"time"
 
 	nats "github.com/nats-io/nats.go"
-	"github.com/plgd-dev/hub/pkg/log"
-	pkgTime "github.com/plgd-dev/hub/pkg/time"
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventbus"
-	natsClient "github.com/plgd-dev/hub/resource-aggregate/cqrs/eventbus/nats/client"
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventbus/pb"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	pkgTime "github.com/plgd-dev/hub/v2/pkg/time"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus"
+	natsClient "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/client"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/pb"
 	"google.golang.org/protobuf/proto"
 )
 
-//UnmarshalerFunc unmarshal bytes to pointer of struct.
+// UnmarshalerFunc unmarshal bytes to pointer of struct.
 type UnmarshalerFunc = func(s []byte, v interface{}) error
 
 // ReconnectFunc called when reconnect occurs
@@ -37,7 +37,7 @@ type Subscriber struct {
 	pendingLimits   natsClient.PendingLimitsConfig
 
 	lock        sync.Mutex
-	reconnectId uint64
+	reconnectID uint64
 	reconnect   []reconnect
 }
 
@@ -48,12 +48,12 @@ func (s *Subscriber) AddCloseFunc(f func()) {
 func (s *Subscriber) AddReconnectFunc(f func()) uint64 {
 	s.lock.Lock()
 	defer s.lock.Unlock()
-	s.reconnectId++
+	s.reconnectID++
 	s.reconnect = append(s.reconnect, reconnect{
-		id: s.reconnectId,
+		id: s.reconnectID,
 		f:  f,
 	})
-	return s.reconnectId
+	return s.reconnectID
 }
 
 func (s *Subscriber) RemoveReconnectFunc(id uint64) {
@@ -82,14 +82,14 @@ func (s *Subscriber) reconnectedHandler(c *nats.Conn) {
 	}
 }
 
-//Observer handles events from nats
+// Observer handles events from nats
 type Observer struct {
 	lock            sync.Mutex
 	dataUnmarshaler UnmarshalerFunc
 	eventHandler    eventbus.Handler
 	logger          log.Logger
 	conn            *nats.Conn
-	subscriptionId  string
+	subscriptionID  string
 	subs            map[string]*nats.Subscription
 	ctx             context.Context
 	cancel          context.CancelFunc
@@ -161,8 +161,8 @@ func New(conn *nats.Conn, pendingLimits natsClient.PendingLimitsConfig, logger l
 }
 
 // Subscribe creates a observer that listen on events from topics.
-func (s *Subscriber) Subscribe(ctx context.Context, subscriptionId string, topics []string, eh eventbus.Handler) (eventbus.Observer, error) {
-	observer := s.newObservation(subscriptionId, eventbus.NewGoroutinePoolHandler(s.goroutinePoolGo, eh, func(err error) { s.logger.Error(err) }))
+func (s *Subscriber) Subscribe(ctx context.Context, subscriptionID string, topics []string, eh eventbus.Handler) (eventbus.Observer, error) {
+	observer := s.newObservation(subscriptionID, eventbus.NewGoroutinePoolHandler(s.goroutinePoolGo, eh, func(err error) { s.logger.Error(err) }))
 
 	err := observer.SetTopics(ctx, topics)
 	if err != nil {
@@ -178,12 +178,12 @@ func (s *Subscriber) Close() {
 	}
 }
 
-func (s *Subscriber) newObservation(subscriptionId string, eh eventbus.Handler) *Observer {
+func (s *Subscriber) newObservation(subscriptionID string, eh eventbus.Handler) *Observer {
 	ctx, cancel := context.WithCancel(context.Background())
 	o := &Observer{
 		conn:            s.conn,
 		dataUnmarshaler: s.dataUnmarshaler,
-		subscriptionId:  subscriptionId,
+		subscriptionID:  subscriptionID,
 		subs:            make(map[string]*nats.Subscription),
 		eventHandler:    eh,
 		logger:          s.logger,
@@ -252,7 +252,7 @@ func (o *Observer) SetTopics(ctx context.Context, topics []string) error {
 	}
 
 	for topic := range newTopicsForSub {
-		sub, err := o.conn.QueueSubscribe(topic, o.subscriptionId, o.handleMsg)
+		sub, err := o.conn.QueueSubscribe(topic, o.subscriptionID, o.handleMsg)
 		if err != nil {
 			return cleanUpAfterError(err)
 		}
@@ -311,21 +311,27 @@ type eventUnmarshaler struct {
 func (e *eventUnmarshaler) Version() uint64 {
 	return e.pb.GetVersion()
 }
+
 func (e *eventUnmarshaler) EventType() string {
 	return e.pb.GetEventType()
 }
+
 func (e *eventUnmarshaler) AggregateID() string {
 	return e.pb.GetAggregateId()
 }
+
 func (e *eventUnmarshaler) GroupID() string {
 	return e.pb.GetGroupId()
 }
+
 func (e *eventUnmarshaler) IsSnapshot() bool {
 	return e.pb.GetIsSnapshot()
 }
+
 func (e *eventUnmarshaler) Timestamp() time.Time {
 	return pkgTime.Unix(0, e.pb.GetTimestamp())
 }
+
 func (e *eventUnmarshaler) Unmarshal(v interface{}) error {
 	return e.dataUnmarshaler(v)
 }

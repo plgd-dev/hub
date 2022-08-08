@@ -7,6 +7,7 @@
 debug
 .tmp/
 authsvc.db
+v2/
 
 # Test binary, build with `go test -c`
 *.test
@@ -131,3 +132,5 @@ charts/plgd-hub/charts/*
 bundle/client/grpc/grpc
 bundle/client/coap/coap
 bundle/client/ob/ob
+resource-aggregate/cmd/maintenance/maintenance
+resource-aggregate/cmd/service/service

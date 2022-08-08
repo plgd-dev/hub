@@ -6,7 +6,6 @@ import { Router } from 'react-router-dom'
 import Container from 'react-bootstrap/Container'
 import { Helmet } from 'react-helmet'
 import { useIntl } from 'react-intl'
-
 import {
   ToastContainer,
   BrowserNotificationsContainer,
@@ -20,6 +19,7 @@ import { useLocalStorage } from '@/common/hooks'
 import { Routes } from '@/routes'
 import { history } from '@/store/history'
 import { security } from '@/common/services/security'
+import { openTelemetry } from '@/common/services/opentelemetry'
 import { InitServices } from '@/common/services/init-services'
 import appConfig from '@/config'
 import { fetchApi } from '@/common/services'
@@ -45,10 +45,16 @@ const App = ({ config }) => {
   security.setAccessTokenSilently(getAccessTokenSilently)
 
   // Set the auth configurations
-  const { webOAuthClient, deviceOAuthClient, ...generalConfig } = config
+  const {
+    webOauthClient,
+    deviceOauthClient,
+    openTelemetry: openTelemetryConfig,
+    ...generalConfig
+  } = config
   security.setGeneralConfig(generalConfig)
-  security.setWebOAuthConfig(webOAuthClient)
-  security.setDeviceOAuthConfig(deviceOAuthClient)
+  security.setWebOAuthConfig(webOauthClient)
+  security.setDeviceOAuthConfig(deviceOauthClient)
+  openTelemetryConfig !== false && openTelemetry.init('hub')
 
   useEffect(() => {
     if (
@@ -59,8 +65,12 @@ const App = ({ config }) => {
     ) {
       const fetchWellKnownConfig = async () => {
         try {
-          const { data: wellKnown } = await fetchApi(
-            `${config.httpGatewayAddress}/.well-known/hub-configuration`
+          const { data: wellKnown } = await openTelemetry.withTelemetry(
+            () =>
+              fetchApi(
+                `${config.httpGatewayAddress}/.well-known/hub-configuration`
+              ),
+            'get-hub-configuration'
           )
 
           setWellKnownConfigFetched(true)
@@ -104,7 +114,7 @@ const App = ({ config }) => {
   }
 
   // If the loading is finished but still unauthenticated, it means the user is not logged in.
-  // Calling the loginWithRedirect will make a rediret to the login page where the user can login.
+  // Calling the loginWithRedirect will make a redirect to the login page where the user can login.
   if (!isLoading && !isAuthenticated) {
     loginWithRedirect({
       appState: {
@@ -120,7 +130,17 @@ const App = ({ config }) => {
   }
 
   return (
-    <AppContext.Provider value={{ ...config, collapsed, wellKnownConfig }}>
+    <AppContext.Provider
+      value={{
+        ...config,
+        collapsed,
+        wellKnownConfig,
+        telemetryWebTracer:
+          openTelemetryConfig !== false
+            ? openTelemetry.getWebTracer()
+            : undefined,
+      }}
+    >
       <Router history={history}>
         <InitServices />
         <Helmet

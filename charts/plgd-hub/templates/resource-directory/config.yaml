@@ -1,5 +1,5 @@
 {{- if .Values.resourcedirectory.enabled }}
-{{- $rdCert := "/certs" }}
+{{- $resourceDirectoryCertPath := "/certs" }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -9,7 +9,13 @@ data:
   {{ .Values.resourcedirectory.config.fileName }}: |
     {{- with .Values.resourcedirectory }}
     log:
-      debug: {{ .log.debug }}
+      level: {{ .log.level }}
+      encoding: {{ .log.encoding }}
+      stacktrace:
+        enabled: {{ .log.stacktrace.enabled }}
+        level: {{ .log.stacktrace.level }}
+      encoderConfig:
+        timeEncoder: {{ .log.encoderConfig.timeEncoder }}
     apis:
       grpc:
         address: {{  .apis.grpc.address | default (printf "0.0.0.0:%v" .port) | quote }}
@@ -25,7 +31,7 @@ data:
           timeout: {{ .apis.grpc.keepAlive.timeout }}
         tls:
           {{- $tls := .apis.grpc.tls }}
-          {{- include "plgd-hub.certificateConfig" (list $ $tls $rdCert ) | indent 8 }}
+          {{- include "plgd-hub.certificateConfig" (list $ $tls $resourceDirectoryCertPath ) | indent 8 }}
           clientCertificateRequired: {{ .apis.grpc.tls.clientCertificateRequired }}
         authorization:
           {{- $authorization := .apis.grpc.authorization }}
@@ -38,7 +44,7 @@ data:
             timeout: {{ .apis.grpc.authorization.http.timeout }}
             tls:
               {{- $grpcTls := .apis.grpc.authorization.http.tls }}
-              {{- include "plgd-hub.certificateConfig" (list $ $grpcTls $rdCert ) | indent 12 }}
+              {{- include "plgd-hub.certificateConfig" (list $ $grpcTls $resourceDirectoryCertPath ) | indent 12 }}
               useSystemCAPool: {{ .apis.grpc.authorization.http.tls.useSystemCAPool }}
     clients:
       eventBus:
@@ -50,7 +56,7 @@ data:
             bytesLimit: {{ printf "%v" .clients.eventBus.nats.pendingLimits.bytesLimit }}
           tls:
             {{- $natsTls := .clients.eventBus.nats.tls }}
-            {{- include "plgd-hub.certificateConfig" (list $ $natsTls $rdCert ) | indent 10 }}
+            {{- include "plgd-hub.certificateConfig" (list $ $natsTls $resourceDirectoryCertPath ) | indent 10 }}
             useSystemCAPool: {{ .clients.eventBus.nats.tls.useSystemCAPool }}
       eventStore:
         cacheExpiration: {{ .clients.eventStore.cacheExpiration }}
@@ -62,12 +68,12 @@ data:
           maxConnIdleTime: {{ .clients.eventStore.mongoDB.maxConnIdleTime }}
           tls:
             {{- $mongoTls := .clients.eventStore.mongoDB.tls }}
-            {{- include "plgd-hub.certificateConfig" (list $ $natsTls $rdCert ) | indent 10 }}
+            {{- include "plgd-hub.certificateConfig" (list $ $natsTls $resourceDirectoryCertPath ) | indent 10 }}
             useSystemCAPool: {{ .clients.eventStore.mongoDB.tls.useSystemCAPool }}
       identityStore:
         pullFrequency: {{ .clients.identityStore.pullFrequency }}
         cacheExpiration: {{ .clients.identityStore.cacheExpiration }}
-        ownerClaim: {{ .clients.identityStore.ownerClaim }}
+        ownerClaim: {{ .clients.identityStore.ownerClaim | default $.Values.global.ownerClaim | quote }}
         grpc:
           {{- $authorizationServer := .clients.identityStore.grpc.address }}
           address:{{ printf " " }}{{- include "plgd-hub.identityStoreAddress" (list $ $authorizationServer ) | quote }}
@@ -77,21 +83,22 @@ data:
             permitWithoutStream: {{ .clients.identityStore.grpc.keepAlive.permitWithoutStream }}
           tls:
             {{- $authClientTls := .clients.identityStore.grpc.tls }}
-            {{- include "plgd-hub.certificateConfig" (list $ $authClientTls $rdCert ) | indent 10 }}
+            {{- include "plgd-hub.certificateConfig" (list $ $authClientTls $resourceDirectoryCertPath ) | indent 10 }}
             useSystemCAPool: {{ .clients.identityStore.grpc.tls.useSystemCAPool }}
+      {{- include "plgd-hub.openTelemetryExporterConfig" (list $ $resourceDirectoryCertPath) | nindent 6 }}
     publicConfiguration:
       caPool: {{ .publicConfiguration.caPool | default "/certs/ca.crt" | quote }}
       {{- if not $.Values.mockoauthserver.enabled }}
-      authorizationServer: {{ required "resourcedirectory.publicConfiguration.authorizationServer or global.authority is required" ( .publicConfiguration.authorizationServer | default $.Values.global.authority ) | quote }}
+      authorizationServer: {{ required "resourcedirectory.publicConfiguration.authorizationServer or global.authority is required" ( tpl (( .publicConfiguration.authorizationServer | default $.Values.global.authority ) | default "" ) $ ) | quote }}
       {{- else }}
       authorizationServer: {{ include "plgd-hub.mockoauthserver.uri" $ | quote }}
       {{- end }}
       ownerClaim: {{ .publicConfiguration.ownerClaim  | default $.Values.global.ownerClaim | quote }}
       {{- if .publicConfiguration.deviceIdClaim  | default $.Values.global.deviceIdClaim }}
-      deviceIdClaim: {{ .publicConfiguration.deviceIdClaim  | default $.Values.global.deviceIdClaim | quote }}
+      deviceIDClaim: {{ .publicConfiguration.deviceIdClaim  | default $.Values.global.deviceIdClaim | quote }}
       {{- end }}
-      hubId: {{ required "resourcedirectory.publicConfiguration.hubId or coapgateway.hubId or global.hubId is required" ( .publicConfiguration.hubId | default ( $.Values.coapgateway.hubId | default $.Values.global.hubId)) | quote }}
-      coapGateway: {{ .publicConfiguration.coapGateway | default (printf "coaps+tcp://%s:%v" $.Values.global.domain $.Values.coapgateway.port ) | quote }}
-      defaultCommandTimeToLive: {{ .publicConfiguration.defaultCommandTimeToLive | quote }}
+      hubID: {{ required "resourcedirectory.publicConfiguration.hubId or coapgateway.hubId or global.hubId is required" ( .publicConfiguration.hubId | default ( $.Values.coapgateway.hubId | default $.Values.global.hubId)) | quote }}
+      coapGateway: {{ tpl ( .publicConfiguration.coapGateway | default (printf "coaps+tcp://%s:%v" $.Values.global.domain $.Values.coapgateway.port )) $ | quote }}
+      defaultCommandTimeToLive: {{ .publicConfiguration.defaultCommandTimeToLive | default $.Values.global.defaultCommandTimeToLive | quote }}
   {{- end }}
 {{- end }}

@@ -78,15 +78,18 @@ spec:
             {{- toYaml . | nindent 12 }}
           {{- end }}
           volumeMounts:
-            - mountPath: {{ .Values.resourceaggregate.config.mountPath }}
-              name: {{ .Values.resourceaggregate.config.volume }}
+            - name: {{ .Values.resourceaggregate.config.volume }}
+              mountPath: {{ .Values.resourceaggregate.config.mountPath }}
             {{- if ( include "plgd-hub.resourceaggregate.createServiceCertByCm" . ) }}
             - name: service-crt
               mountPath: {{ $rdServiceCert }}
             {{- end }}
-            {{- with .Values.resourceaggregate.extraVolumes }}
+            {{- with .Values.resourceaggregate.extraVolumeMounts }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
+      {{- if .Values.resourceaggregate.extraContainers }}
+      {{- include "plgd-hub.tplvalues.render" ( dict "value" .Values.resourceaggregate.extraContainers "context" $ ) | nindent 8 }}
+      {{- end }}
       volumes:
         - name: {{ .Values.resourcedirectory.config.volume }}
           configMap:
@@ -96,7 +99,7 @@ spec:
           secret:
             secretName: {{ include "plgd-hub.resourceaggregate.serviceCertName" . }}
         {{- end }}
-        {{- with .Values.resourceaggregate.extraVolumeMounts }}
+        {{- with .Values.resourceaggregate.extraVolumes }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
       {{- with .Values.resourceaggregate.nodeSelector }}

@@ -2,26 +2,27 @@ package service_test
 
 import (
 	"context"
-	"fmt"
 	"testing"
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/google/uuid"
-	"github.com/plgd-dev/hub/pkg/log"
-	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
-	pkgTime "github.com/plgd-dev/hub/pkg/time"
-	"github.com/plgd-dev/hub/resource-aggregate/commands"
-	cqrsAggregate "github.com/plgd-dev/hub/resource-aggregate/cqrs/aggregate"
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventbus/nats/publisher"
-	natsTest "github.com/plgd-dev/hub/resource-aggregate/cqrs/eventbus/nats/test"
-	mongodb "github.com/plgd-dev/hub/resource-aggregate/cqrs/eventstore/mongodb"
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/utils"
-	"github.com/plgd-dev/hub/resource-aggregate/service"
-	raTest "github.com/plgd-dev/hub/resource-aggregate/test"
-	"github.com/plgd-dev/hub/test/config"
+	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	pkgTime "github.com/plgd-dev/hub/v2/pkg/time"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
+	cqrsAggregate "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/aggregate"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/publisher"
+	natsTest "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/test"
+	mongodb "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore/mongodb"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/utils"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/service"
+	raTest "github.com/plgd-dev/hub/v2/resource-aggregate/test"
+	"github.com/plgd-dev/hub/v2/test/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -30,40 +31,40 @@ func newConnectionStatus(v commands.ConnectionStatus_Status) *commands.Connectio
 	return &v
 }
 
-func TestAggregateHandle_UpdateDeviceMetadata(t *testing.T) {
+func TestAggregateHandleUpdateDeviceMetadata(t *testing.T) {
+	const deviceID = "dev1"
+	const userID = "user1"
 	type args struct {
 		request *commands.UpdateDeviceMetadataRequest
 		userID  string
 	}
-
 	test := []struct {
 		name    string
 		args    args
 		want    codes.Code
 		wantErr bool
 	}{
-
 		{
 			name: "set online",
 			args: args{
-				request: testMakeUpdateDeviceMetadataRequest("dev0", "", newConnectionStatus(commands.ConnectionStatus_ONLINE), commands.ShadowSynchronization_UNSET, time.Hour),
-				userID:  "user0",
+				request: testMakeUpdateDeviceMetadataRequest(deviceID, "", newConnectionStatus(commands.ConnectionStatus_ONLINE), commands.ShadowSynchronization_UNSET, time.Hour),
+				userID:  userID,
 			},
 			want: codes.OK,
 		},
 		{
 			name: "set shadowSynchronizationDisabled",
 			args: args{
-				request: testMakeUpdateDeviceMetadataRequest("dev0", "", nil, commands.ShadowSynchronization_DISABLED, time.Hour),
-				userID:  "user0",
+				request: testMakeUpdateDeviceMetadataRequest(deviceID, "", nil, commands.ShadowSynchronization_DISABLED, time.Hour),
+				userID:  userID,
 			},
 			want: codes.OK,
 		},
 		{
 			name: "invalid valid until",
 			args: args{
-				request: testMakeUpdateDeviceMetadataRequest("dev0", "", nil, commands.ShadowSynchronization_DISABLED, -time.Hour),
-				userID:  "user0",
+				request: testMakeUpdateDeviceMetadataRequest(deviceID, "", nil, commands.ShadowSynchronization_DISABLED, -time.Hour),
+				userID:  userID,
 			},
 			want:    codes.InvalidArgument,
 			wantErr: true,
@@ -71,8 +72,8 @@ func TestAggregateHandle_UpdateDeviceMetadata(t *testing.T) {
 		{
 			name: "invalid update commands",
 			args: args{
-				request: testMakeUpdateDeviceMetadataRequest("dev0", "", nil, commands.ShadowSynchronization_UNSET, time.Hour),
-				userID:  "user0",
+				request: testMakeUpdateDeviceMetadataRequest(deviceID, "", nil, commands.ShadowSynchronization_UNSET, time.Hour),
+				userID:  userID,
 			},
 			want:    codes.InvalidArgument,
 			wantErr: true,
@@ -81,24 +82,27 @@ func TestAggregateHandle_UpdateDeviceMetadata(t *testing.T) {
 
 	cfg := raTest.MakeConfig(t)
 	ctx := context.Background()
-	logger, err := log.NewLogger(cfg.Log)
-
-	fmt.Printf("%v\n", cfg.String())
-
+	logger := log.NewLogger(cfg.Log)
+	fileWatcher, err := fsnotify.NewWatcher()
 	require.NoError(t, err)
-	eventstore, err := mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
+	defer func() {
+		err := fileWatcher.Close()
+		require.NoError(t, err)
+	}()
+
+	eventstore, err := mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, fileWatcher, logger, trace.NewNoopTracerProvider(), mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	err = eventstore.Clear(ctx)
 	require.NoError(t, err)
 	err = eventstore.Close(ctx)
 	assert.NoError(t, err)
-	eventstore, err = mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
+	eventstore, err = mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, fileWatcher, logger, trace.NewNoopTracerProvider(), mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Close(ctx)
 		assert.NoError(t, err)
 	}()
-	naClient, publisher, err := natsTest.NewClientAndPublisher(cfg.Clients.Eventbus.NATS, logger, publisher.WithMarshaler(utils.Marshal))
+	naClient, publisher, err := natsTest.NewClientAndPublisher(cfg.Clients.Eventbus.NATS, fileWatcher, logger, publisher.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
 		publisher.Close()
@@ -119,19 +123,19 @@ func TestAggregateHandle_UpdateDeviceMetadata(t *testing.T) {
 				s, ok := status.FromError(kitNetGrpc.ForwardFromError(codes.Unknown, err))
 				require.True(t, ok)
 				assert.Equal(t, tt.want, s.Code())
-			} else {
-				require.NoError(t, err)
-				err = service.PublishEvents(publisher, tt.args.userID, tt.args.request.GetDeviceId(), ag.ResourceID(), events)
-				assert.NoError(t, err)
+				return
 			}
+			require.NoError(t, err)
+			err = service.PublishEvents(publisher, tt.args.userID, tt.args.request.GetDeviceId(), ag.ResourceID(), events)
+			assert.NoError(t, err)
 		}
 		t.Run(tt.name, tfunc)
 	}
 }
 
-func TestRequestHandler_UpdateDeviceMetadata(t *testing.T) {
-	deviceID := "dev0"
-	user0 := "user0"
+func TestRequestHandlerUpdateDeviceMetadata(t *testing.T) {
+	const deviceID = "dev0"
+	const user0 = "user0"
 	type args struct {
 		request *commands.UpdateDeviceMetadataRequest
 		sleep   time.Duration
@@ -209,21 +213,26 @@ func TestRequestHandler_UpdateDeviceMetadata(t *testing.T) {
 		"sub": user0,
 	}))
 	config := raTest.MakeConfig(t)
-	logger, err := log.NewLogger(config.Log)
+	logger := log.NewLogger(config.Log)
+	fileWatcher, err := fsnotify.NewWatcher()
 	require.NoError(t, err)
-	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
+	defer func() {
+		err := fileWatcher.Close()
+		require.NoError(t, err)
+	}()
+	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, fileWatcher, logger, trace.NewNoopTracerProvider(), mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	err = eventstore.Clear(ctx)
 	require.NoError(t, err)
 	err = eventstore.Close(ctx)
 	assert.NoError(t, err)
-	eventstore, err = mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
+	eventstore, err = mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, fileWatcher, logger, trace.NewNoopTracerProvider(), mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Close(ctx)
 		assert.NoError(t, err)
 	}()
-	naClient, publisher, err := natsTest.NewClientAndPublisher(config.Clients.Eventbus.NATS, logger, publisher.WithMarshaler(utils.Marshal))
+	naClient, publisher, err := natsTest.NewClientAndPublisher(config.Clients.Eventbus.NATS, fileWatcher, logger, publisher.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
 		publisher.Close()
@@ -267,7 +276,8 @@ func testMakeUpdateDeviceMetadataRequest(deviceID, correlationID string, online 
 	if online != nil {
 		r.Update = &commands.UpdateDeviceMetadataRequest_Status{
 			Status: &commands.ConnectionStatus{
-				Value: *online,
+				Value:        *online,
+				ConnectionId: "123",
 			},
 		}
 	}

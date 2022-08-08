@@ -38,14 +38,18 @@
 {{- end }}
 
 {{- define "plgd-hub.grpcgateway.domainCertName" -}}
-  {{- $fullName := include "plgd-hub.grpcgateway.fullname" . -}}
-  {{- printf "%s-domain-crt" $fullName -}}
+    {{- if .Values.grpcgateway.ingress.secretName }}
+        {{- printf "%s" .Values.grpcgateway.ingress.secretName -}}
+    {{- else }}
+        {{- $fullName := include "plgd-hub.grpcgateway.fullname" . -}}
+        {{- printf "%s-domain-crt" $fullName -}}
+    {{- end }}
 {{- end }}
 
 
 {{- define "plgd-hub.grpcgateway.domain" -}}
-  {{- if .Values.httpgateway.domain }}
-    {{- printf "%s" .Values.httpgateway.domain }}
+  {{- if .Values.grpcgateway.domain }}
+    {{- printf "%s" .Values.grpcgateway.domain }}
   {{- else }}
     {{- printf "api.%s" .Values.global.domain }}
   {{- end }}

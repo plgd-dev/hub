@@ -5,16 +5,18 @@ import (
 	"strings"
 	"time"
 
-	"github.com/plgd-dev/hub/pkg/config"
-	"github.com/plgd-dev/hub/pkg/log"
-	"github.com/plgd-dev/hub/pkg/net/grpc/client"
-	certManagerServer "github.com/plgd-dev/hub/pkg/security/certManager/server"
-	"github.com/plgd-dev/hub/pkg/security/oauth2"
-	"github.com/plgd-dev/hub/pkg/sync/task/queue"
-	natsClient "github.com/plgd-dev/hub/resource-aggregate/cqrs/eventbus/nats/client"
+	"github.com/plgd-dev/hub/v2/pkg/config"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	"github.com/plgd-dev/hub/v2/pkg/net/grpc/client"
+	otelClient "github.com/plgd-dev/hub/v2/pkg/opentelemetry/collector/client"
+	certManagerServer "github.com/plgd-dev/hub/v2/pkg/security/certManager/server"
+	"github.com/plgd-dev/hub/v2/pkg/security/oauth2"
+	"github.com/plgd-dev/hub/v2/pkg/security/oauth2/oauth"
+	"github.com/plgd-dev/hub/v2/pkg/sync/task/queue"
+	natsClient "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/client"
 )
 
-//Config represent application configuration
+// Config represent application configuration
 type Config struct {
 	Log       LogConfig     `yaml:"log" json:"log"`
 	APIs      APIsConfig    `yaml:"apis" json:"apis"`
@@ -23,6 +25,9 @@ type Config struct {
 }
 
 func (c *Config) Validate() error {
+	if err := c.Log.Validate(); err != nil {
+		return fmt.Errorf("log.%w", err)
+	}
 	if err := c.APIs.Validate(); err != nil {
 		return fmt.Errorf("apis.%w", err)
 	}
@@ -35,10 +40,10 @@ func (c *Config) Validate() error {
 	return nil
 }
 
-//Config represent application configuration
+// Config represent application configuration
 type LogConfig struct {
-	Embedded         log.Config `yaml:",inline" json:",inline"`
-	DumpCoapMessages bool       `yaml:"dumpCoapMessages" json:"dumpCoapMessages"`
+	DumpBody   bool `yaml:"dumpBody" json:"dumpBody"`
+	log.Config `yaml:",inline"`
 }
 
 type APIsConfig struct {
@@ -69,7 +74,7 @@ func (c *ProvidersConfig) Validate(firstAuthority string, providerNames map[stri
 }
 
 type AuthorizationConfig struct {
-	DeviceIDClaim string            `yaml:"deviceIdClaim" json:"deviceIdClaim"`
+	DeviceIDClaim string            `yaml:"deviceIDClaim" json:"deviceIdClaim"`
 	OwnerClaim    string            `yaml:"ownerClaim" json:"ownerClaim"`
 	Providers     []ProvidersConfig `yaml:"providers" json:"providers"`
 }
@@ -83,6 +88,9 @@ func (c *AuthorizationConfig) Validate() error {
 	}
 	duplicitProviderNames := make(map[string]bool)
 	for i := 0; i < len(c.Providers); i++ {
+		if c.Providers[i].GrantType == oauth.ClientCredentials && c.OwnerClaim == "sub" {
+			return fmt.Errorf("providers[%v].grantType - %w", i, fmt.Errorf("combination of ownerClaim set to '%v' is not compatible if at least one authorization provider uses grant type '%v'", c.OwnerClaim, c.Providers[i].GrantType))
+		}
 		if err := c.Providers[i].Validate(c.Providers[0].Authority, duplicitProviderNames); err != nil {
 			return fmt.Errorf("providers[%v].%w", i, err)
 		}
@@ -91,16 +99,16 @@ func (c *AuthorizationConfig) Validate() error {
 }
 
 type COAPConfig struct {
-	Addr                     string                  `yaml:"address" json:"address"`
-	ExternalAddress          string                  `yaml:"externalAddress" json:"externalAddress"`
-	MaxMessageSize           int                     `yaml:"maxMessageSize" json:"maxMessageSize"`
-	OwnerCacheExpiration     time.Duration           `yaml:"ownerCacheExpiration" json:"ownerCacheExpiration"`
-	SubscriptionBufferSize   int                     `yaml:"subscriptionBufferSize" json:"subscriptionBufferSize"`
-	GoroutineSocketHeartbeat time.Duration           `yaml:"goroutineSocketHeartbeat" json:"goroutineSocketHeartbeat"`
-	KeepAlive                KeepAlive               `yaml:"keepAlive" json:"keepAlive"`
-	BlockwiseTransfer        BlockwiseTransferConfig `yaml:"blockwiseTransfer" json:"blockwiseTransfer"`
-	TLS                      TLSConfig               `yaml:"tls" json:"tls"`
-	Authorization            AuthorizationConfig     `yaml:"authorization" json:"authorization"`
+	Addr                   string                  `yaml:"address" json:"address"`
+	ExternalAddress        string                  `yaml:"externalAddress" json:"externalAddress"`
+	MaxMessageSize         uint32                  `yaml:"maxMessageSize" json:"maxMessageSize"`
+	OwnerCacheExpiration   time.Duration           `yaml:"ownerCacheExpiration" json:"ownerCacheExpiration"`
+	SubscriptionBufferSize int                     `yaml:"subscriptionBufferSize" json:"subscriptionBufferSize"`
+	MessagePoolSize        int                     `yaml:"messagePoolSize" json:"messagePoolSize"`
+	KeepAlive              KeepAlive               `yaml:"keepAlive" json:"keepAlive"`
+	BlockwiseTransfer      BlockwiseTransferConfig `yaml:"blockwiseTransfer" json:"blockwiseTransfer"`
+	TLS                    TLSConfig               `yaml:"tls" json:"tls"`
+	Authorization          AuthorizationConfig     `yaml:"authorization" json:"authorization"`
 }
 
 func (c *COAPConfig) Validate() error {
@@ -116,8 +124,8 @@ func (c *COAPConfig) Validate() error {
 	if c.OwnerCacheExpiration <= 0 {
 		return fmt.Errorf("ownerCacheExpiration('%v')", c.OwnerCacheExpiration)
 	}
-	if c.GoroutineSocketHeartbeat <= 0 {
-		return fmt.Errorf("goroutineSocketHeartbeat('%v')", c.GoroutineSocketHeartbeat)
+	if c.MessagePoolSize < 0 {
+		return fmt.Errorf("messagePoolSize('%v')", c.MessagePoolSize)
 	}
 	if c.SubscriptionBufferSize < 0 {
 		return fmt.Errorf("subscriptionBufferSize('%v')", c.SubscriptionBufferSize)
@@ -138,8 +146,9 @@ func (c *COAPConfig) Validate() error {
 }
 
 type TLSConfig struct {
-	Enabled  bool                     `yaml:"enabled" json:"enabled"`
-	Embedded certManagerServer.Config `yaml:",inline" json:",inline"`
+	Enabled                        bool                     `yaml:"enabled" json:"enabled"`
+	DisconnectOnExpiredCertificate bool                     `yaml:"disconnectOnExpiredCertificate" json:"disconnectOnExpiredCertificate"`
+	Embedded                       certManagerServer.Config `yaml:",inline" json:",inline"`
 }
 
 type KeepAlive struct {
@@ -203,10 +212,11 @@ func (c *IdentityStoreConfig) Validate() error {
 }
 
 type ClientsConfig struct {
-	Eventbus          EventBusConfig          `yaml:"eventBus" json:"eventBus"`
-	IdentityStore     IdentityStoreConfig     `yaml:"identityStore" json:"identityStore"`
-	ResourceAggregate ResourceAggregateConfig `yaml:"resourceAggregate" json:"resourceAggregate"`
-	ResourceDirectory GrpcServerConfig        `yaml:"resourceDirectory" json:"resourceDirectory"`
+	Eventbus               EventBusConfig          `yaml:"eventBus" json:"eventBus"`
+	IdentityStore          IdentityStoreConfig     `yaml:"identityStore" json:"identityStore"`
+	ResourceAggregate      ResourceAggregateConfig `yaml:"resourceAggregate" json:"resourceAggregate"`
+	ResourceDirectory      GrpcServerConfig        `yaml:"resourceDirectory" json:"resourceDirectory"`
+	OpenTelemetryCollector otelClient.Config       `yaml:"openTelemetryCollector" json:"openTelemetryCollector"`
 }
 
 func (c *ClientsConfig) Validate() error {
@@ -221,6 +231,9 @@ func (c *ClientsConfig) Validate() error {
 	}
 	if err := c.ResourceDirectory.Validate(); err != nil {
 		return fmt.Errorf("resourceDirectory.%w", err)
+	}
+	if err := c.OpenTelemetryCollector.Validate(); err != nil {
+		return fmt.Errorf("openTelemetryCollector.%w", err)
 	}
 	return nil
 }
@@ -266,7 +279,7 @@ func (c *DeviceStatusExpirationConfig) Validate() error {
 	return nil
 }
 
-//String return string representation of Config
+// String return string representation of Config
 func (c Config) String() string {
 	return config.ToString(c)
 }

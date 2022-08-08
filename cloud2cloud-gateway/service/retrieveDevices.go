@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -9,17 +10,19 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/plgd-dev/device/schema/device"
-	pbGRPC "github.com/plgd-dev/hub/grpc-gateway/pb"
-	kitNetHttp "github.com/plgd-dev/hub/pkg/net/http"
-	"github.com/plgd-dev/kit/v2/log"
+	pbGRPC "github.com/plgd-dev/hub/v2/grpc-gateway/pb"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	kitNetHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
 type Status string
 
-const Status_ONLINE Status = "online"
-const Status_OFFLINE Status = "offline"
+const (
+	Status_ONLINE  Status = "online"
+	Status_OFFLINE Status = "offline"
+)
 
 func toStatus(isOnline bool) Status {
 	if isOnline {
@@ -39,7 +42,6 @@ func (rh *RequestHandler) GetDevices(ctx context.Context, deviceIdFilter []strin
 	getDevicesClient, err := rh.gwClient.GetDevices(ctx, &pbGRPC.GetDevicesRequest{
 		DeviceIdFilter: deviceIdFilter,
 	})
-
 	if err != nil {
 		return nil, fmt.Errorf("cannot get devices: %w", err)
 	}
@@ -52,7 +54,7 @@ func (rh *RequestHandler) GetDevices(ctx context.Context, deviceIdFilter []strin
 	devices := make([]Device, 0, 32)
 	for {
 		device, err := getDevicesClient.Recv()
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			break
 		}
 		if err != nil {
@@ -70,14 +72,18 @@ func (rh *RequestHandler) GetDevices(ctx context.Context, deviceIdFilter []strin
 	return devices, nil
 }
 
+func retrieveDevicesError(tag string, err error) error {
+	return fmt.Errorf("cannot retrieve all devices[%s]: %w", tag, err)
+}
+
 func (rh *RequestHandler) RetrieveDevicesBase(ctx context.Context, w http.ResponseWriter, encoder responseWriterEncoderFunc) (int, error) {
 	devices, err := rh.GetDevices(ctx, nil)
 	if err != nil {
-		return kitNetHttp.ErrToStatusWithDef(err, http.StatusForbidden), fmt.Errorf("cannot retrieve all devices[base]: %w", err)
+		return kitNetHttp.ErrToStatusWithDef(err, http.StatusForbidden), retrieveDevicesError("base", err)
 	}
 	resourceLink, err := rh.GetResourceLinks(ctx, nil)
 	if err != nil {
-		return kitNetHttp.ErrToStatusWithDef(err, http.StatusForbidden), fmt.Errorf("cannot retrieve all devices[base]: %w", err)
+		return kitNetHttp.ErrToStatusWithDef(err, http.StatusForbidden), retrieveDevicesError("base", err)
 	}
 
 	resp := make([]RetrieveDeviceWithLinksResponse, 0, 32)
@@ -93,7 +99,7 @@ func (rh *RequestHandler) RetrieveDevicesBase(ctx context.Context, w http.Respon
 
 	err = encoder(w, resp, http.StatusOK)
 	if err != nil {
-		return http.StatusBadRequest, fmt.Errorf("cannot retrieve all devices[base]: %w", err)
+		return http.StatusBadRequest, retrieveDevicesError("base", err)
 	}
 	return http.StatusOK, nil
 }
@@ -101,11 +107,11 @@ func (rh *RequestHandler) RetrieveDevicesBase(ctx context.Context, w http.Respon
 func (rh *RequestHandler) RetrieveDevicesAll(ctx context.Context, w http.ResponseWriter, encoder responseWriterEncoderFunc) (int, error) {
 	devices, err := rh.GetDevices(ctx, nil)
 	if err != nil {
-		return kitNetHttp.ErrToStatusWithDef(err, http.StatusForbidden), fmt.Errorf("cannot retrieve all devices[base]: %w", err)
+		return kitNetHttp.ErrToStatusWithDef(err, http.StatusForbidden), retrieveDevicesError("all", err)
 	}
 	reps, err := rh.RetrieveResources(ctx, nil, nil)
 	if err != nil {
-		return kitNetHttp.ErrToStatusWithDef(err, http.StatusForbidden), fmt.Errorf("cannot retrieve all devices[base]: %w", err)
+		return kitNetHttp.ErrToStatusWithDef(err, http.StatusForbidden), retrieveDevicesError("all", err)
 	}
 
 	resp := make([]RetrieveDeviceContentAllResponse, 0, 32)
@@ -121,7 +127,7 @@ func (rh *RequestHandler) RetrieveDevicesAll(ctx context.Context, w http.Respons
 
 	err = encoder(w, resp, http.StatusOK)
 	if err != nil {
-		return http.StatusBadRequest, fmt.Errorf("cannot retrieve all devices[base]: %w", err)
+		return http.StatusBadRequest, retrieveDevicesError("all", err)
 	}
 	return http.StatusOK, nil
 }
@@ -146,7 +152,6 @@ func (rh *RequestHandler) RetrieveDevicesWithContentQuery(ctx context.Context, w
 		}
 	}
 	return statusCode, err
-
 }
 
 func (rh *RequestHandler) RetrieveDevices(w http.ResponseWriter, r *http.Request) {

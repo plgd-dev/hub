@@ -3,14 +3,16 @@ package test
 import (
 	"testing"
 
-	c2curi "github.com/plgd-dev/hub/cloud2cloud-connector/uri"
-	grpcService "github.com/plgd-dev/hub/grpc-gateway/test"
-	idService "github.com/plgd-dev/hub/identity-store/test"
-	raService "github.com/plgd-dev/hub/resource-aggregate/test"
-	rdService "github.com/plgd-dev/hub/resource-directory/test"
-	"github.com/plgd-dev/hub/test/http"
-	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
-	"github.com/plgd-dev/hub/test/oauth-server/uri"
+	c2curi "github.com/plgd-dev/hub/v2/cloud2cloud-connector/uri"
+	grpcService "github.com/plgd-dev/hub/v2/grpc-gateway/test"
+	idService "github.com/plgd-dev/hub/v2/identity-store/test"
+	kitNetHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
+	raService "github.com/plgd-dev/hub/v2/resource-aggregate/test"
+	rdService "github.com/plgd-dev/hub/v2/resource-directory/test"
+	"github.com/plgd-dev/hub/v2/test/config"
+	"github.com/plgd-dev/hub/v2/test/http"
+	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
+	"github.com/plgd-dev/hub/v2/test/oauth-server/uri"
 )
 
 const (
@@ -26,13 +28,13 @@ const (
 
 var (
 	C2C_CONNECTOR_EVENTS_URL        = http.HTTPS_SCHEME + C2C_CONNECTOR_HOST + c2curi.Events
-	C2C_CONNECTOR_OAUTH_CALLBACK    = http.HTTPS_SCHEME + C2C_CONNECTOR_HOST + "/oauthCbk"
+	C2C_CONNECTOR_OAUTH_CALLBACK    = http.HTTPS_SCHEME + C2C_CONNECTOR_HOST + c2curi.OAuthCallback
 	OAUTH_MANAGER_ENDPOINT_TOKENURL = http.HTTPS_SCHEME + OAUTH_HOST + uri.Token
 )
 
-func SetUpCloudWithConnector(t *testing.T) (TearDown func()) {
+func SetUpCloudWithConnector(t *testing.T) (tearDown func()) {
 	oauthCfg := oauthTest.MakeConfig(t)
-	oauthCfg.APIs.HTTP.Addr = OAUTH_HOST
+	oauthCfg.APIs.HTTP.Connection.Addr = OAUTH_HOST
 	oauthCfg.OAuthSigner.Domain = OAUTH_HOST
 	oauthShutdown := oauthTest.New(t, oauthCfg)
 
@@ -74,11 +76,17 @@ func SetUpCloudWithConnector(t *testing.T) (TearDown func()) {
 	c2cConnectorCfg.APIs.HTTP.Authorization = MakeAuthorizationConfig()
 	c2cConnectorCfg.APIs.HTTP.Authorization.Authority = http.HTTPS_SCHEME + OAUTH_HOST
 	c2cConnectorCfg.APIs.HTTP.Authorization.Config.RedirectURL = C2C_CONNECTOR_OAUTH_CALLBACK
+	c2cConnectorCfg.APIs.HTTP.Server = config.MakeHttpServerConfig()
 	c2cConnectorCfg.Clients.Storage.MongoDB.Database = C2C_CONNECTOR_DB
 	c2cConnectorCfg.Clients.IdentityStore.Connection.Addr = IDENTITY_STORE_HOST
 	c2cConnectorCfg.Clients.GrpcGateway.Connection.Addr = GRPC_GATEWAY_HOST
 	c2cConnectorCfg.Clients.ResourceAggregate.Connection.Addr = RESOURCE_AGGREGATE_HOST
 	c2cConnectorCfg.Clients.Eventbus.NATS.URL = C2C_CONNECTOR_NATS_URL
+
+	c2cConnectorCfg.Clients.OpenTelemetryCollector = kitNetHttp.OpenTelemetryCollectorConfig{
+		Config: config.MakeOpenTelemetryCollectorClient(),
+	}
+
 	c2cConnectorShutdown := New(t, c2cConnectorCfg)
 
 	return func() {

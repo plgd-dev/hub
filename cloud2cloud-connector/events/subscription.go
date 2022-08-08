@@ -2,6 +2,7 @@ package events
 
 type EventType string
 
+// https://github.com/openconnectivityfoundation/cloud-services/blob/master/swagger2.0/oic.r.cloudapiforcloudservices.swagger.json#/definitions/EventType
 const (
 	// resource
 	EventType_ResourceChanged EventType = "resource_contentchanged"
@@ -20,9 +21,11 @@ const (
 	EventType_SubscriptionCanceled EventType = "subscription_cancelled"
 )
 
-var AllDevicesEvents = []EventType{EventType_DevicesOnline, EventType_DevicesOffline, EventType_DevicesRegistered, EventType_DevicesUnregistered}
-var AllDeviceEvents = []EventType{EventType_ResourcesPublished, EventType_ResourcesUnpublished}
-var AllResourceEvents = []EventType{EventType_ResourceChanged}
+var (
+	AllDevicesEvents  = []EventType{EventType_DevicesOnline, EventType_DevicesOffline, EventType_DevicesRegistered, EventType_DevicesUnregistered}
+	AllDeviceEvents   = []EventType{EventType_ResourcesPublished, EventType_ResourcesUnpublished}
+	AllResourceEvents = []EventType{EventType_ResourceChanged}
+)
 
 type EventTypes []EventType
 
@@ -35,12 +38,16 @@ func (e EventTypes) Has(ev EventType) bool {
 	return false
 }
 
+// https://github.com/openconnectivityfoundation/cloud-services/blob/master/swagger2.0/oic.r.cloudapiforcloudservices.swagger.json#/definitions/SubscribeRequestDevices
+// https://github.com/openconnectivityfoundation/cloud-services/blob/master/swagger2.0/oic.r.cloudapiforcloudservices.swagger.json#/definitions/SubscribeRequestDevice
+// https://github.com/openconnectivityfoundation/cloud-services/blob/master/swagger2.0/oic.r.cloudapiforcloudservices.swagger.json#/definitions/SubscribeRequestResources
 type SubscriptionRequest struct {
-	URL           string      `json:"eventsUrl"`
+	EventsURL     string      `json:"eventsUrl"`
 	EventTypes    []EventType `json:"eventTypes"`
 	SigningSecret string      `json:"signingSecret"`
 }
 
+// https://github.com/openconnectivityfoundation/cloud-services/blob/master/swagger2.0/oic.r.cloudapiforcloudservices.swagger.json#/definitions/SubscribeResponse
 type SubscriptionResponse struct {
-	SubscriptionId string `json:"subscriptionId"`
+	SubscriptionID string `json:"subscriptionId"`
 }

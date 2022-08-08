@@ -6,12 +6,16 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/plgd-dev/hub/pkg/log"
-
-	"github.com/plgd-dev/hub/pkg/net/listener"
+	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	kitNetHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
+	"github.com/plgd-dev/hub/v2/pkg/net/listener"
+	otelClient "github.com/plgd-dev/hub/v2/pkg/opentelemetry/collector/client"
 )
 
-//Server handle HTTP request
+const serviceName = "mock-oauth-server"
+
+// Server handle HTTP request
 type Service struct {
 	server         *http.Server
 	requestHandler *RequestHandler
@@ -19,33 +23,58 @@ type Service struct {
 }
 
 // New parses configuration and creates new Server with provided store and bus
-func New(ctx context.Context, config Config, logger log.Logger) (*Service, error) {
-	listener, err := listener.New(config.APIs.HTTP, logger)
+func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logger log.Logger) (*Service, error) {
+	otelClient, err := otelClient.New(ctx, config.Clients.OpenTelemetryCollector.Config, serviceName, fileWatcher, logger)
 	if err != nil {
+		return nil, fmt.Errorf("cannot create open telemetry collector client: %w", err)
+	}
+	tracerProvider := otelClient.GetTracerProvider()
+
+	listener, err := listener.New(config.APIs.HTTP.Connection, fileWatcher, logger)
+	if err != nil {
+		otelClient.Close()
 		return nil, fmt.Errorf("cannot create http server: %w", err)
+	}
+	listener.AddCloseFunc(otelClient.Close)
+	closeListener := func() {
+		if err := listener.Close(); err != nil {
+			logger.Errorf("cannot close listener: %w", err)
+		}
 	}
 
 	idTokenPrivateKeyI, err := LoadPrivateKey(config.OAuthSigner.IDTokenKeyFile)
 	if err != nil {
-		return nil, fmt.Errorf("cannot load idTokenKeyFile(%v): %v", config.OAuthSigner.IDTokenKeyFile, err)
+		closeListener()
+		return nil, fmt.Errorf("cannot load idTokenKeyFile(%v): %w", config.OAuthSigner.IDTokenKeyFile, err)
 	}
 	idTokenPrivateKey, ok := idTokenPrivateKeyI.(*rsa.PrivateKey)
 	if !ok {
-		return nil, fmt.Errorf("cannot invalid idTokenKeyFile(%T): %v", idTokenPrivateKey, err)
+		closeListener()
+		return nil, fmt.Errorf("cannot invalid idTokenKeyFile(%T): %w", idTokenPrivateKey, err)
 	}
 
 	accessTokenPrivateKeyI, err := LoadPrivateKey(config.OAuthSigner.AccessTokenKeyFile)
 	if err != nil {
-		return nil, fmt.Errorf("cannot load private accessTokenKeyFile(%v): %v", config.OAuthSigner.AccessTokenKeyFile, err)
+		closeListener()
+		return nil, fmt.Errorf("cannot load private accessTokenKeyFile(%v): %w", config.OAuthSigner.AccessTokenKeyFile, err)
 	}
 
-	requestHandler, err := NewRequestHandler(&config, idTokenPrivateKey, accessTokenPrivateKeyI)
+	requestHandler, err := NewRequestHandler(ctx, &config, idTokenPrivateKey, accessTokenPrivateKeyI)
 	if err != nil {
+		closeListener()
 		return nil, fmt.Errorf("cannot create request handler: %w", err)
 	}
 
+	httpServer := http.Server{
+		Handler:           kitNetHttp.OpenTelemetryNewHandler(NewHTTP(requestHandler), serviceName, tracerProvider),
+		ReadTimeout:       config.APIs.HTTP.Server.ReadTimeout,
+		ReadHeaderTimeout: config.APIs.HTTP.Server.ReadHeaderTimeout,
+		WriteTimeout:      config.APIs.HTTP.Server.WriteTimeout,
+		IdleTimeout:       config.APIs.HTTP.Server.IdleTimeout,
+	}
+
 	server := Service{
-		server:         NewHTTP(requestHandler),
+		server:         &httpServer,
 		requestHandler: requestHandler,
 		listener:       listener,
 	}

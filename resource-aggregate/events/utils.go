@@ -3,13 +3,13 @@ package events
 import (
 	"time"
 
-	commands "github.com/plgd-dev/hub/resource-aggregate/commands"
+	commands "github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 )
 
-//MakeEventMeta for creating EventMetadata for event.
-func MakeEventMeta(connectionId string, sequence, version uint64) *EventMetadata {
+// MakeEventMeta for creating EventMetadata for event.
+func MakeEventMeta(connectionID string, sequence, version uint64) *EventMetadata {
 	return &EventMetadata{
-		ConnectionId: connectionId,
+		ConnectionId: connectionID,
 		Sequence:     sequence,
 		Version:      version,
 		Timestamp:    time.Now().UnixNano(),

@@ -8,20 +8,22 @@ import (
 	"testing"
 	"time"
 
-	idClient "github.com/plgd-dev/hub/identity-store/client"
-	"github.com/plgd-dev/hub/identity-store/events"
-	"github.com/plgd-dev/hub/identity-store/pb"
-	idService "github.com/plgd-dev/hub/identity-store/test"
-	"github.com/plgd-dev/hub/pkg/log"
-	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
-	"github.com/plgd-dev/hub/pkg/net/grpc/client"
-	clientCertManager "github.com/plgd-dev/hub/pkg/security/certManager/client"
-	natsTest "github.com/plgd-dev/hub/resource-aggregate/cqrs/eventbus/nats/test"
-	"github.com/plgd-dev/hub/test/config"
-	oauthService "github.com/plgd-dev/hub/test/oauth-server/test"
-	"github.com/plgd-dev/hub/test/service"
+	idClient "github.com/plgd-dev/hub/v2/identity-store/client"
+	"github.com/plgd-dev/hub/v2/identity-store/events"
+	"github.com/plgd-dev/hub/v2/identity-store/pb"
+	idService "github.com/plgd-dev/hub/v2/identity-store/test"
+	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	"github.com/plgd-dev/hub/v2/pkg/net/grpc/client"
+	clientCertManager "github.com/plgd-dev/hub/v2/pkg/security/certManager/client"
+	natsTest "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/test"
+	"github.com/plgd-dev/hub/v2/test/config"
+	oauthService "github.com/plgd-dev/hub/v2/test/oauth-server/test"
+	"github.com/plgd-dev/hub/v2/test/service"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/trace"
 	"golang.org/x/oauth2"
 	"google.golang.org/grpc"
 )
@@ -39,7 +41,14 @@ func TestOwnerCacheSubscribe(t *testing.T) {
 	shutdown := idService.New(t, cfg)
 	defer shutdown()
 
-	token := oauthService.GetDefaultServiceToken(t)
+	token := oauthService.GetDefaultAccessToken(t)
+
+	fileWatcher, err := fsnotify.NewWatcher()
+	require.NoError(t, err)
+	defer func() {
+		err := fileWatcher.Close()
+		require.NoError(t, err)
+	}()
 
 	conn, err := client.New(client.Config{
 		Addr: cfg.APIs.GRPC.Addr,
@@ -48,7 +57,7 @@ func TestOwnerCacheSubscribe(t *testing.T) {
 			CertFile: cfg.APIs.GRPC.TLS.CertFile,
 			KeyFile:  cfg.APIs.GRPC.TLS.KeyFile,
 		},
-	}, log.Get(), grpc.WithPerRPCCredentials(kitNetGrpc.NewOAuthAccess(func(ctx context.Context) (*oauth2.Token, error) {
+	}, fileWatcher, log.Get(), trace.NewNoopTracerProvider(), grpc.WithPerRPCCredentials(kitNetGrpc.NewOAuthAccess(func(ctx context.Context) (*oauth2.Token, error) {
 		return &oauth2.Token{
 			AccessToken:  token,
 			TokenType:    "Bearer",
@@ -68,7 +77,7 @@ func TestOwnerCacheSubscribe(t *testing.T) {
 	owner, err := kitNetGrpc.ParseOwnerFromJwtToken("sub", token)
 	require.NoError(t, err)
 
-	naClient, subscriber, err := natsTest.NewClientAndSubscriber(config.MakeSubscriberConfig(), log.Get())
+	naClient, subscriber, err := natsTest.NewClientAndSubscriber(config.MakeSubscriberConfig(), fileWatcher, log.Get())
 	require.NoError(t, err)
 	defer func() {
 		subscriber.Close()
@@ -163,6 +172,7 @@ func TestOwnerCacheSubscribe(t *testing.T) {
 	assert.Equal(t, devices[:1], deleted.DeviceIds)
 
 	// check update - after expiration
+	time.Sleep(time.Millisecond * 100) // wait for synchronize the cache, so update doesn't change the cache
 	added, removed, err = cache.Update(ctx)
 	require.NoError(t, err)
 	assert.Empty(t, added)

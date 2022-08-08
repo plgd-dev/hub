@@ -6,19 +6,21 @@ import (
 	"io/ioutil"
 
 	"github.com/google/uuid"
-	"github.com/plgd-dev/hub/grpc-gateway/pb"
-	clientIS "github.com/plgd-dev/hub/identity-store/client"
-	pbIS "github.com/plgd-dev/hub/identity-store/pb"
-	"github.com/plgd-dev/hub/pkg/fn"
-	"github.com/plgd-dev/hub/pkg/log"
-	"github.com/plgd-dev/hub/pkg/net/grpc/client"
-	"github.com/plgd-dev/hub/pkg/net/grpc/server"
-	"github.com/plgd-dev/hub/resource-aggregate/commands"
-	naClient "github.com/plgd-dev/hub/resource-aggregate/cqrs/eventbus/nats/client"
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventbus/nats/subscriber"
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventstore"
-	mongodb "github.com/plgd-dev/hub/resource-aggregate/cqrs/eventstore/mongodb"
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/utils"
+	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
+	clientIS "github.com/plgd-dev/hub/v2/identity-store/client"
+	pbIS "github.com/plgd-dev/hub/v2/identity-store/pb"
+	"github.com/plgd-dev/hub/v2/pkg/fn"
+	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	"github.com/plgd-dev/hub/v2/pkg/net/grpc/client"
+	"github.com/plgd-dev/hub/v2/pkg/net/grpc/server"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
+	naClient "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/client"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/subscriber"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore"
+	mongodb "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore/mongodb"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/utils"
+	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
 )
 
@@ -33,12 +35,12 @@ type RequestHandler struct {
 	closeFunc           fn.FuncList
 }
 
-func (s *RequestHandler) Close() {
-	s.closeFunc.Execute()
+func (r *RequestHandler) Close() {
+	r.closeFunc.Execute()
 }
 
-func AddHandler(ctx context.Context, svr *server.Server, config Config, publicConfiguration PublicConfiguration, logger log.Logger, goroutinePoolGo func(func()) error) error {
-	handler, err := newRequestHandlerFromConfig(ctx, config, publicConfiguration, logger, goroutinePoolGo)
+func AddHandler(ctx context.Context, svr *server.Server, config Config, publicConfiguration PublicConfiguration, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider, goroutinePoolGo func(func()) error) error {
+	handler, err := newRequestHandlerFromConfig(ctx, config, publicConfiguration, fileWatcher, logger, tracerProvider, goroutinePoolGo)
 	if err != nil {
 		return err
 	}
@@ -52,10 +54,10 @@ func Register(server *grpc.Server, handler *RequestHandler) {
 	pb.RegisterGrpcGatewayServer(server, handler)
 }
 
-func newIdentityStoreClient(config IdentityStoreConfig, logger log.Logger) (pbIS.IdentityStoreClient, func(), error) {
+func newIdentityStoreClient(config IdentityStoreConfig, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (pbIS.IdentityStoreClient, func(), error) {
 	var closeIsClient fn.FuncList
 
-	isConn, err := client.New(config.Connection, logger)
+	isConn, err := client.New(config.Connection, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		return nil, nil, fmt.Errorf("cannot connect to identity-store: %w", err)
 	}
@@ -70,7 +72,7 @@ func newIdentityStoreClient(config IdentityStoreConfig, logger log.Logger) (pbIS
 	return isClient, closeIsClient.ToFunction(), nil
 }
 
-func newRequestHandlerFromConfig(ctx context.Context, config Config, publicConfiguration PublicConfiguration, logger log.Logger, goroutinePoolGo func(func()) error) (*RequestHandler, error) {
+func newRequestHandlerFromConfig(ctx context.Context, config Config, publicConfiguration PublicConfiguration, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider, goroutinePoolGo func(func()) error) (*RequestHandler, error) {
 	var closeFunc fn.FuncList
 	if publicConfiguration.CAPool != "" {
 		content, err := ioutil.ReadFile(publicConfiguration.CAPool)
@@ -80,13 +82,13 @@ func newRequestHandlerFromConfig(ctx context.Context, config Config, publicConfi
 		publicConfiguration.cloudCertificateAuthorities = string(content)
 	}
 
-	isClient, closeIsClient, err := newIdentityStoreClient(config.Clients.IdentityStore, logger)
+	isClient, closeIsClient, err := newIdentityStoreClient(config.Clients.IdentityStore, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create identity-store client: %w", err)
 	}
 	closeFunc.AddFunc(closeIsClient)
 
-	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
+	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, fileWatcher, logger, tracerProvider, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	if err != nil {
 		closeFunc.Execute()
 		return nil, fmt.Errorf("cannot create resource mongodb eventstore %w", err)
@@ -97,7 +99,7 @@ func newRequestHandlerFromConfig(ctx context.Context, config Config, publicConfi
 		}
 	})
 
-	natsClient, err := naClient.New(config.Clients.Eventbus.NATS, logger)
+	natsClient, err := naClient.New(config.Clients.Eventbus.NATS, fileWatcher, logger)
 	if err != nil {
 		closeFunc.Execute()
 		return nil, fmt.Errorf("cannot create nats client: %w", err)
@@ -166,9 +168,9 @@ func NewEventStoreModelFactory() func(context.Context, string, string) (eventsto
 	return func(ctx context.Context, deviceID, resourceID string) (eventstore.Model, error) {
 		switch resourceID {
 		case commands.MakeLinksResourceUUID(deviceID):
-			return NewResourceLinksProjection(), nil
+			return NewResourceLinksProjection(deviceID), nil
 		case commands.MakeStatusResourceUUID(deviceID):
-			return NewDeviceMetadataProjection(), nil
+			return NewDeviceMetadataProjection(deviceID), nil
 		}
 		return NewResourceProjection(), nil
 	}

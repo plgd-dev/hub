@@ -7,17 +7,17 @@ import (
 
 	"github.com/plgd-dev/device/schema/configuration"
 	"github.com/plgd-dev/device/schema/interfaces"
-	"github.com/plgd-dev/hub/grpc-gateway/client"
-	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
-	"github.com/plgd-dev/hub/test"
-	testCfg "github.com/plgd-dev/hub/test/config"
-	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
-	"github.com/plgd-dev/hub/test/service"
+	"github.com/plgd-dev/hub/v2/grpc-gateway/client"
+	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	"github.com/plgd-dev/hub/v2/test"
+	testCfg "github.com/plgd-dev/hub/v2/test/config"
+	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
+	"github.com/plgd-dev/hub/v2/test/service"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func TestClient_UpdateResource(t *testing.T) {
+func TestClientUpdateResource(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	ctx, cancel := context.WithTimeout(context.Background(), TestTimeout)
 	defer cancel()
@@ -39,7 +39,7 @@ func TestClient_UpdateResource(t *testing.T) {
 		{
 			name: "valid - update value",
 			args: args{
-				token:    oauthTest.GetDefaultServiceToken(t),
+				token:    oauthTest.GetDefaultAccessToken(t),
 				deviceID: deviceID,
 				href:     configuration.ResourceURI,
 				data: map[string]interface{}{
@@ -53,7 +53,7 @@ func TestClient_UpdateResource(t *testing.T) {
 		{
 			name: "valid - revert update",
 			args: args{
-				token:    oauthTest.GetDefaultServiceToken(t),
+				token:    oauthTest.GetDefaultAccessToken(t),
 				deviceID: deviceID,
 				href:     configuration.ResourceURI,
 				data: map[string]interface{}{
@@ -67,7 +67,7 @@ func TestClient_UpdateResource(t *testing.T) {
 		{
 			name: "valid with resourceInterface",
 			args: args{
-				token:    oauthTest.GetDefaultServiceToken(t),
+				token:    oauthTest.GetDefaultAccessToken(t),
 				deviceID: deviceID,
 				href:     configuration.ResourceURI,
 				data: map[string]interface{}{
@@ -82,7 +82,7 @@ func TestClient_UpdateResource(t *testing.T) {
 		{
 			name: "invalid href",
 			args: args{
-				token:    oauthTest.GetDefaultServiceToken(t),
+				token:    oauthTest.GetDefaultAccessToken(t),
 				deviceID: deviceID,
 				href:     "/invalid/href",
 				data: map[string]interface{}{
@@ -93,7 +93,7 @@ func TestClient_UpdateResource(t *testing.T) {
 		},
 	}
 
-	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultServiceToken(t))
+	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
 
 	c := NewTestClient(t)
 	defer func() {
@@ -117,4 +117,54 @@ func TestClient_UpdateResource(t *testing.T) {
 			require.Equal(t, tt.want, got)
 		})
 	}
+}
+
+// Iotivity-lite - oic/d piid issue with notification (#40)
+// https://github.com/iotivity/iotivity-lite/issues/40
+//
+// After updating the device name using /oc/con resource the piid
+// field disappears from the /oic/d resource.
+func TestUpdateConfigurationName(t *testing.T) {
+	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
+	ctx, cancel := context.WithTimeout(context.Background(), TestTimeout)
+	defer cancel()
+	tearDown := service.SetUp(ctx, t)
+	defer tearDown()
+	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
+
+	c := NewTestClient(t)
+	defer func() {
+		err := c.Close(context.Background())
+		assert.NoError(t, err)
+	}()
+	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c.GrpcGatewayClient(), deviceID, testCfg.GW_HOST, test.GetAllBackendResourceLinks())
+	defer shutdownDevSim()
+
+	getData := func(devID string) map[string]interface{} {
+		resourceData := make(map[string]interface{})
+		for _, link := range test.GetAllBackendResourceLinks() {
+			var got interface{}
+			err := c.GetResource(ctx, devID, link.Href, &got)
+			assert.NoError(t, err)
+			resourceData[link.Href] = got
+		}
+		return resourceData
+	}
+
+	startData := getData(deviceID)
+
+	updateName := func(name string) {
+		err := c.UpdateResource(ctx, deviceID, configuration.ResourceURI, map[string]interface{}{
+			"n": name,
+		}, nil)
+		require.NoError(t, err)
+		time.Sleep(time.Millisecond * 200)
+	}
+
+	updateName("update simulator")
+	// revert name
+	updateName(test.TestDeviceName)
+
+	endData := getData(deviceID)
+	require.Equal(t, startData, endData)
 }

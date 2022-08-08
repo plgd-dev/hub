@@ -6,27 +6,27 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventbus"
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventstore"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore"
 )
 
 // Projection project events to user defined model from evenstore and update it by events from subscriber.
 type projection struct {
-	//immutable
+	// immutable
 	projection *eventstore.Projection
 	ctx        context.Context
 	cancel     context.CancelFunc
 
 	subscriber     eventbus.Subscriber
-	subscriptionId string
+	subscriptionID string
 
-	//mutable part
+	// mutable part
 	lock     sync.Mutex
 	observer eventbus.Observer
 }
 
 // NewProjection creates projection.
-func newProjection(ctx context.Context, store eventstore.EventStore, subscriptionId string, subscriber eventbus.Subscriber, factoryModel eventstore.FactoryModelFunc, LogDebugfFunc eventstore.LogDebugfFunc) (*projection, error) {
+func newProjection(ctx context.Context, store eventstore.EventStore, subscriptionID string, subscriber eventbus.Subscriber, factoryModel eventstore.FactoryModelFunc, logDebugfFunc eventstore.LogDebugfFunc) (*projection, error) {
 	if store == nil {
 		return nil, errors.New("invalid handle of event store")
 	}
@@ -34,11 +34,11 @@ func newProjection(ctx context.Context, store eventstore.EventStore, subscriptio
 	projCtx, projCancel := context.WithCancel(ctx)
 
 	rd := projection{
-		projection:     eventstore.NewProjection(store, factoryModel, LogDebugfFunc),
+		projection:     eventstore.NewProjection(store, factoryModel, logDebugfFunc),
 		ctx:            projCtx,
 		cancel:         projCancel,
 		subscriber:     subscriber,
-		subscriptionId: subscriptionId,
+		subscriptionID: subscriptionID,
 	}
 
 	return &rd, nil
@@ -71,7 +71,7 @@ func (p *projection) SubscribeTo(topics []string) error {
 		if p.subscriber == nil {
 			return fmt.Errorf("projection doesn't support subscribe to topics")
 		}
-		observer, err := p.subscriber.Subscribe(p.ctx, p.subscriptionId, topics, p)
+		observer, err := p.subscriber.Subscribe(p.ctx, p.subscriptionID, topics, p)
 		if err != nil {
 			return fmt.Errorf("projection cannot subscribe to topics: %w", err)
 		}
@@ -86,8 +86,8 @@ func (p *projection) SubscribeTo(topics []string) error {
 }
 
 // Models get models from projection
-func (p *projection) Models(queries []eventstore.SnapshotQuery) []eventstore.Model {
-	return p.projection.Models(queries)
+func (p *projection) Models(queries []eventstore.SnapshotQuery, onModel func(m eventstore.Model) (wantNext bool)) {
+	p.projection.Models(queries, onModel)
 }
 
 // Close cancel projection.

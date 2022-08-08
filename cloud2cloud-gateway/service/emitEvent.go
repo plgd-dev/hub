@@ -9,14 +9,17 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/plgd-dev/hub/cloud2cloud-connector/events"
-	"github.com/plgd-dev/hub/cloud2cloud-gateway/store"
-	"github.com/plgd-dev/hub/pkg/log"
-	cmClient "github.com/plgd-dev/hub/pkg/security/certManager/client"
+	"github.com/plgd-dev/hub/v2/cloud2cloud-connector/events"
+	"github.com/plgd-dev/hub/v2/cloud2cloud-gateway/store"
+	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	cmClient "github.com/plgd-dev/hub/v2/pkg/security/certManager/client"
 )
 
-type incrementSubscriptionSequenceNumberFunc func(ctx context.Context) (uint64, error)
-type emitEventFunc func(ctx context.Context, eventType events.EventType, s store.Subscription, incrementSubscriptionSequenceNumber incrementSubscriptionSequenceNumberFunc, rep interface{}) (remove bool, err error)
+type (
+	incrementSubscriptionSequenceNumberFunc func(ctx context.Context) (uint64, error)
+	emitEventFunc                           func(ctx context.Context, eventType events.EventType, s store.Subscription, incrementSubscriptionSequenceNumber incrementSubscriptionSequenceNumberFunc, rep interface{}) (remove bool, err error)
+)
 
 func makeEmitEventRequestBody(accept []string, rep interface{}) ([]byte, string, error) {
 	encoder, contentType, err := getEncoder(accept)
@@ -86,8 +89,8 @@ func makeEmitEventRequest(ctx context.Context, eventType events.EventType, s sto
 	return req, nil
 }
 
-func createEmitEventFunc(cfg cmClient.Config, timeout time.Duration, logger log.Logger) (emitEventFunc, func(), error) {
-	certManager, err := cmClient.New(cfg, logger)
+func createEmitEventFunc(cfg cmClient.Config, timeout time.Duration, fileWatcher *fsnotify.Watcher, logger log.Logger) (emitEventFunc, func(), error) {
+	certManager, err := cmClient.New(cfg, fileWatcher, logger)
 	if err != nil {
 		return nil, nil, fmt.Errorf("cannot create cert manager: %w", err)
 	}
@@ -100,7 +103,7 @@ func createEmitEventFunc(cfg cmClient.Config, timeout time.Duration, logger log.
 		Transport: trans,
 	}
 	emitFunc := func(ctx context.Context, eventType events.EventType, s store.Subscription, incrementSubscriptionSequenceNumber incrementSubscriptionSequenceNumberFunc, rep interface{}) (remove bool, err error) {
-		log.Debugf("emitEvent: %v: %+v", eventType, s)
+		log.Debugf("emitEvent: %v: %+v\n rep:%v\n", eventType, s, rep)
 		ctx, cancel := context.WithTimeout(ctx, timeout)
 		defer cancel()
 

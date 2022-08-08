@@ -1,0 +1,40 @@
+{{- if .Values.httpgateway.enabled }}
+{{- $fullname := include "plgd-hub.httpgateway.fullname" . }}
+{{- $port := .Values.httpgateway.port }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ $fullname }}-api
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "plgd-hub.labels" . | nindent 4 }}
+  annotations:
+    {{- if .Values.httpgateway.ingress.api.annotations }}
+    {{- include "plgd-hub.tplvalues.render" ( dict "value" .Values.httpgateway.ingress.api.annotations "context" $ ) | nindent 4 }}
+    {{- end }}
+    {{- if .Values.httpgateway.ingress.api.customAnnotations }}
+    {{- include "plgd-hub.tplvalues.render" ( dict "value" .Values.httpgateway.ingress.api.customAnnotations "context" $ ) | nindent 4 }}
+    {{- end }}
+spec:
+  tls:
+    - hosts:
+        - {{ include "plgd-hub.httpgateway.apiDomain" . | quote }}
+      {{- if $.Values.global.enableWildCartCert }}
+      secretName: {{ include "plgd-hub.wildCardCertName" . | quote }}
+      {{- else }}
+      secretName: {{ include "plgd-hub.httpgateway.apiDomainSecretName" . | quote }}
+      {{- end }}
+  rules:
+  - host: {{ include "plgd-hub.httpgateway.apiDomain" . | quote }}
+    http:
+      paths:
+      {{- range  .Values.httpgateway.ingress.api.paths }}
+      - path: {{ . }}
+        pathType: Prefix
+        backend:
+          service:
+            name: {{ $fullname }}
+            port:
+              number: {{ $port }}
+      {{- end }}
+{{- end }}

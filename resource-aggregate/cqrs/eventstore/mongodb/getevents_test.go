@@ -8,16 +8,16 @@ import (
 	"testing"
 	"time"
 
-	"github.com/plgd-dev/hub/pkg/log"
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventstore"
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventstore/mongodb"
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventstore/test"
+	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore/mongodb"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore/test"
 	"github.com/plgd-dev/kit/v2/strings"
 	"github.com/stretchr/testify/require"
 )
 
-type dummyEventHandler struct {
-}
+type dummyEventHandler struct{}
 
 func (eh *dummyEventHandler) Handle(ctx context.Context, iter eventstore.Iter) error {
 	for {
@@ -85,11 +85,16 @@ type runGetEventsConfig struct {
 }
 
 func runGetEvents(t *testing.T, cfg runGetEventsConfig) {
-	logger, err := log.NewLogger(log.Config{})
+	logger := log.NewLogger(log.MakeDefaultConfig())
+	fileWatcher, err := fsnotify.NewWatcher()
 	require.NoError(t, err)
+	defer func() {
+		err := fileWatcher.Close()
+		require.NoError(t, err)
+	}()
 
 	ctx := context.Background()
-	store, err := NewTestEventStore(ctx, logger)
+	store, err := NewTestEventStore(ctx, fileWatcher, logger)
 	require.NoError(t, err)
 	require.NotNil(t, store)
 	defer func() {

@@ -6,24 +6,24 @@ import (
 	"testing"
 	"time"
 
-	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
-	"github.com/plgd-dev/hub/resource-aggregate/events"
-	test "github.com/plgd-dev/hub/test"
-	testCfg "github.com/plgd-dev/hub/test/config"
-	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
-	pbTest "github.com/plgd-dev/hub/test/pb"
-	"github.com/plgd-dev/hub/test/service"
+	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
+	test "github.com/plgd-dev/hub/v2/test"
+	testCfg "github.com/plgd-dev/hub/v2/test/config"
+	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
+	pbTest "github.com/plgd-dev/hub/v2/test/pb"
+	"github.com/plgd-dev/hub/v2/test/service"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func TestObserveDeviceResources(t *testing.T) {
+func TestObserveDeviceResourcesPublish(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	ctx, cancel := context.WithTimeout(context.Background(), TestTimeout)
 	defer cancel()
 	tearDown := service.SetUp(ctx, t)
 	defer tearDown()
-	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultServiceToken(t))
+	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
 
 	c := NewTestClient(t)
 	defer func() {
@@ -47,7 +47,8 @@ func TestObserveDeviceResources(t *testing.T) {
 		pub, ok := res.(*events.ResourceLinksPublished)
 		require.True(t, ok)
 		exp := pbTest.ResourceLinkToPublishEvent(deviceID, "", test.GetAllBackendResourceLinks())
-		test.CheckProtobufs(t, pbTest.CleanUpResourceLinksPublished(exp.GetResourcePublished()), pbTest.CleanUpResourceLinksPublished(pub), test.RequireToCheckFunc(require.Equal))
+		test.CheckProtobufs(t, pbTest.CleanUpResourceLinksPublished(exp.GetResourcePublished(), false),
+			pbTest.CleanUpResourceLinksPublished(pub, false), test.RequireToCheckFunc(require.Equal))
 	case <-time.After(TestTimeout):
 		t.Error("timeout")
 	}

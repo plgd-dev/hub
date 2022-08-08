@@ -1,9 +1,4 @@
-{{- if and (not $.Values.mockoauthserver.enabled) .Values.httpgateway.enabled }}
-{{- if eq (( $.Values.coapgateway.apis.coap.authorization.providers | default $.Values.global.oauth.device) | len ) 0 }}
-{{- fail "At least one coapgateway.apis.coap.authorization.providers or global.oauth.device must be specified " }}
-{{- end }}
-{{- end }}
-{{- $httpCert := "/certs" }}
+{{- $httpGatewayCertPath := "/certs" }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -13,13 +8,19 @@ data:
   {{ .Values.httpgateway.config.fileName }}: |
     {{- with .Values.httpgateway }}
     log:
-      debug: {{ .log.debug }}
+      level: {{ .log.level }}
+      encoding: {{ .log.encoding }}
+      stacktrace:
+        enabled: {{ .log.stacktrace.enabled }}
+        level: {{ .log.stacktrace.level }}
+      encoderConfig:
+        timeEncoder: {{ .log.encoderConfig.timeEncoder }}
     apis:
       http:
         address: {{  .apis.http.address | default (printf "0.0.0.0:%v" .port) | quote }}
         tls:
           {{- $tls := .apis.http.tls }}
-          {{- include "plgd-hub.certificateConfig" (list $ $tls $httpCert ) | indent 8 }}
+          {{- include "plgd-hub.certificateConfig" (list $ $tls $httpGatewayCertPath ) | indent 8 }}
           clientCertificateRequired: {{ .apis.http.tls.clientCertificateRequired }}
         webSocket:
           streamBodyLimit: {{ .apis.http.webSocket.streamBodyLimit }}
@@ -40,7 +41,7 @@ data:
             timeout: {{ .apis.http.authorization.http.timeout }}
             tls:
               {{- $httpTls := .apis.http.authorization.http.tls }}
-              {{- include "plgd-hub.certificateConfig" (list $ $httpTls $httpCert ) | indent 12 }}
+              {{- include "plgd-hub.certificateConfig" (list $ $httpTls $httpGatewayCertPath ) | indent 12 }}
               useSystemCAPool: {{ .apis.http.authorization.http.tls.useSystemCAPool }}
     clients:
       grpcGateway:
@@ -52,8 +53,9 @@ data:
             permitWithoutStream: {{ .clients.grpcGateway.grpc.keepAlive.permitWithoutStream }}
           tls:
             {{- $grpcTls := .clients.grpcGateway.grpc.tls }}
-            {{- include "plgd-hub.certificateConfig" (list $ $grpcTls $httpCert ) | indent 10 }}
+            {{- include "plgd-hub.certificateConfig" (list $ $grpcTls $httpGatewayCertPath ) | indent 10 }}
             useSystemCAPool: {{ .clients.grpcGateway.grpc.tls.useSystemCAPool }}
+      {{- include "plgd-hub.openTelemetryExporterConfig" (list $ $httpGatewayCertPath) | nindent 6 }}
     ui:
       enabled: {{ .ui.enabled }}
       directory: {{ .ui.directory | quote }}
@@ -84,34 +86,12 @@ data:
           scopes: []
         {{- end }}
         deviceOAuthClient:
-        {{- $providers := $.Values.coapgateway.apis.coap.authorization.providers | default $.Values.global.oauth.device  }}
-        {{- if $.Values.mockoauthserver.enabled }}
-        {{- $providers = $.Values.mockoauthserver.oauth }}
-        {{- end }}
-        {{- $included := false }}
-        {{- range $providers }}
-          {{- if and .useInUi (not $included) }}
-          {{- $included = true }}
-          clientID: {{ .clientID | quote }}
-          audience: {{ .audience | default $.Values.global.audience | quote }}
-          {{- if .scopes }}
-          scopes:
-          {{- range  .scopes }}
-            - {{ toYaml . | quote }}
-          {{- end }}
-          {{- else }}
-          scopes: []
-          {{- end }}
-          providerName: {{ .name | quote }}
-          {{- end }}
-        {{- end }}
-        {{- if not $included }}
-        {{- $provider := index $.Values.mockoauthserver.oauth 1 }}
+        {{- $providers := $.Values.mockoauthserver.oauth }}
         {{- if not $.Values.mockoauthserver.enabled }}
-        {{- $provider = index ( $.Values.coapgateway.apis.coap.authorization.providers | default $.Values.global.oauth.device) 0 }}
-        {{- else }}
+        {{- $providers = required "At least one oauth provider must be specified for coapgateway.apis.coap.authorization.providers or global.oauth.device" ( $.Values.coapgateway.apis.coap.authorization.providers | default $.Values.global.oauth.device ) }}
         {{- end }}
-        {{- with $provider }}
+        {{- range $providers }}
+          {{- if .useInUi }}
           clientID: {{ .clientID | quote }}
           audience: {{ .audience | default $.Values.global.audience | quote }}
           {{- if .scopes }}
@@ -123,6 +103,6 @@ data:
           scopes: []
           {{- end }}
           providerName: {{ .name | quote }}
-        {{- end }}
+          {{- end }}
         {{- end }}
 {{- end }}

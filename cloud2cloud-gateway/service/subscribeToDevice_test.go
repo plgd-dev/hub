@@ -1,56 +1,49 @@
 package service_test
 
 import (
-	"bytes"
 	"context"
 	"crypto/tls"
-	"fmt"
-	"io/ioutil"
-	"net"
-	"net/http"
 	"strings"
-	"sync"
 	"testing"
 	"time"
 
-	router "github.com/gorilla/mux"
 	"github.com/plgd-dev/device/schema"
-	"github.com/plgd-dev/go-coap/v2/message"
-	"github.com/plgd-dev/hub/cloud2cloud-connector/events"
-	c2cTest "github.com/plgd-dev/hub/cloud2cloud-gateway/test"
-	"github.com/plgd-dev/hub/cloud2cloud-gateway/uri"
-	"github.com/plgd-dev/hub/grpc-gateway/pb"
-	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
-	"github.com/plgd-dev/hub/resource-aggregate/commands"
-	"github.com/plgd-dev/hub/test"
-	testCfg "github.com/plgd-dev/hub/test/config"
-	testHttp "github.com/plgd-dev/hub/test/http"
-	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
-	"github.com/plgd-dev/hub/test/service"
-	"github.com/plgd-dev/kit/v2/codec/json"
+	c2cEvents "github.com/plgd-dev/hub/v2/cloud2cloud-connector/events"
+	c2cTest "github.com/plgd-dev/hub/v2/cloud2cloud-gateway/test"
+	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
+	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
+	"github.com/plgd-dev/hub/v2/test"
+	testCfg "github.com/plgd-dev/hub/v2/test/config"
+	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
+	"github.com/plgd-dev/hub/v2/test/service"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )
 
-func TestRequestHandlerSubscribeToDevice(t *testing.T) {
-	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
-	wantCode := http.StatusCreated
-	wantContentType := message.AppJSON.String()
-	wantContent := true
-	wantEventType := events.EventType_ResourcesPublished
-	wantEventContent := test.ResourceLinksToResources(deviceID, test.TestDevsimResources)
-	eventType := events.EventType_ResourcesPublished
-	uri := "https://" + testCfg.C2C_GW_HOST + uri.Devices + "/" + deviceID + "/subscriptions"
-	accept := message.AppJSON.String()
+func testSubscribeToDeviceDecodeResources(links ...schema.ResourceLinks) []*commands.Resource {
+	resources := make([]*commands.Resource, 0)
+	for _, link := range links {
+		for _, l := range link {
+			pl := commands.SchemaResourceLinkToResource(l, time.Time{})
+			pl.Href = "/" + strings.Join(strings.Split(pl.GetHref(), "/")[2:], "/")
+			resources = append(resources, pl)
+		}
+	}
+	test.CleanUpResourcesArray(resources)
+	return resources
+}
 
+func TestRequestHandlerSubscribeToDevicePublishedOnly(t *testing.T) {
+	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	ctx, cancel := context.WithTimeout(context.Background(), testCfg.TEST_TIMEOUT)
 	defer cancel()
 	tearDown := service.SetUp(ctx, t)
 	defer tearDown()
 
-	token := oauthTest.GetDefaultServiceToken(t)
+	token := oauthTest.GetDefaultAccessToken(t)
 	ctx = kitNetGrpc.CtxWithToken(ctx, token)
 
 	conn, err := grpc.Dial(testCfg.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
@@ -64,70 +57,121 @@ func TestRequestHandlerSubscribeToDevice(t *testing.T) {
 	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 
-	eventsServer, cleanUpEventsServer := c2cTest.NewTestListener(t)
-	defer cleanUpEventsServer()
+	const eventsURI = "/events"
+	eventsServer := c2cTest.NewEventsServer(t, eventsURI)
+	defer eventsServer.Close(t)
+	dataChan := eventsServer.Run(t)
+
+	subscriber := c2cTest.NewC2CSubscriber(eventsServer.GetPort(t), eventsURI, c2cTest.SubscriptionType_Device)
+	subID := subscriber.Subscribe(t, ctx, token, deviceID, "", c2cEvents.EventTypes{c2cEvents.EventType_ResourcesPublished})
+
+	ev := <-dataChan
+	publishedResources := test.ResourceLinksToResources(deviceID, test.TestDevsimResources)
+	assert.Equal(t, c2cEvents.EventType_ResourcesPublished, ev.GetHeader().EventType)
+	links := ev.GetData().(schema.ResourceLinks)
+	resources := testSubscribeToDeviceDecodeResources(links)
+	test.CheckProtobufs(t, publishedResources, resources, test.RequireToCheckFunc(require.Equal))
+
+	// no additional messages should be received
+	events := c2cTest.WaitForEvents(dataChan, 3*time.Second)
+	require.Empty(t, events)
+
+	subscriber.Unsubscribe(t, ctx, token, deviceID, "", subID)
+	ev = <-dataChan
+	assert.Equal(t, c2cEvents.EventType_SubscriptionCanceled, ev.GetHeader().EventType)
+}
+
+func TestRequestHandlerSubscribeToDevice(t *testing.T) {
+	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+	tearDown := service.SetUp(ctx, t)
+	defer tearDown()
+
+	token := oauthTest.GetDefaultAccessToken(t)
+	ctx = kitNetGrpc.CtxWithToken(ctx, token)
+
+	conn, err := grpc.Dial(testCfg.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+		RootCAs: test.GetRootCertificatePool(t),
+	})))
+	require.NoError(t, err)
+	c := pb.NewGrpcGatewayClient(conn)
+	defer func() {
+		_ = conn.Close()
+	}()
+	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.GW_HOST, test.GetAllBackendResourceLinks())
+	defer shutdownDevSim()
 
 	const eventsURI = "/events"
-	var wg sync.WaitGroup
-	wg.Add(1)
-	defer wg.Wait()
-	go func() {
-		defer wg.Done()
-		r := router.NewRouter()
-		r.StrictSlash(true)
-		r.HandleFunc(eventsURI, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			h, err := events.ParseEventHeader(r)
-			assert.NoError(t, err)
-			defer func() {
-				_ = r.Body.Close()
-			}()
-			assert.Equal(t, wantEventType, h.EventType)
-			buf, err := ioutil.ReadAll(r.Body)
-			assert.NoError(t, err)
-			var v schema.ResourceLinks
-			err = json.Decode(buf, &v)
-			assert.NoError(t, err)
-			links := make([]*commands.Resource, 0)
-			for _, l := range v {
-				pl := commands.SchemaResourceLinkToResource(l, time.Time{})
-				pl.Href = "/" + strings.Join(strings.Split(pl.GetHref(), "/")[2:], "/")
-				links = append(links, pl)
-			}
-			test.CleanUpResourcesArray(links)
+	eventsServer := c2cTest.NewEventsServer(t, eventsURI)
+	defer eventsServer.Close(t)
+	dataChan := eventsServer.Run(t)
 
-			assert.Equal(t, wantEventContent, links)
-			w.WriteHeader(http.StatusOK)
-			err = eventsServer.Close()
-			assert.NoError(t, err)
-		})).Methods("POST")
-		_ = http.Serve(eventsServer, r)
-	}()
+	subscriber := c2cTest.NewC2CSubscriber(eventsServer.GetPort(t), eventsURI, c2cTest.SubscriptionType_Device)
+	subID := subscriber.Subscribe(t, ctx, token, deviceID, "", c2cEvents.EventTypes{
+		c2cEvents.EventType_ResourcesPublished,
+		c2cEvents.EventType_ResourcesUnpublished,
+	})
 
-	_, port, err := net.SplitHostPort(eventsServer.Addr().String())
-	require.NoError(t, err)
-
-	sub := events.SubscriptionRequest{
-		URL:           "https://localhost:" + port + eventsURI,
-		EventTypes:    events.EventTypes{eventType},
-		SigningSecret: "a",
+	events := c2cTest.WaitForEvents(dataChan, 3*time.Second)
+	// we should always receive one Published event and one Unpublished event
+	require.Len(t, events, 2)
+	for _, ev := range events {
+		if ev.GetHeader().EventType == c2cEvents.EventType_ResourcesPublished {
+			publishedResources := test.ResourceLinksToResources(deviceID, test.TestDevsimResources)
+			links := ev.GetData().(schema.ResourceLinks)
+			resources := testSubscribeToDeviceDecodeResources(links)
+			test.CheckProtobufs(t, publishedResources, resources, test.RequireToCheckFunc(require.Equal))
+			continue
+		}
+		if ev.GetHeader().EventType == c2cEvents.EventType_ResourcesUnpublished {
+			links := ev.GetData().(schema.ResourceLinks)
+			require.Empty(t, links)
+			continue
+		}
+		require.Fail(t, "unexpected event %v", ev.GetHeader().EventType)
 	}
-	fmt.Printf("%v\n", uri)
 
-	data, err := json.Encode(sub)
-	require.NoError(t, err)
-	req := testHttp.NewHTTPRequest(http.MethodPost, uri, bytes.NewBuffer(data)).AuthToken(token).Accept(accept).Build(ctx, t)
-	resp := testHttp.DoHTTPRequest(t, req)
-	assert.Equal(t, wantCode, resp.StatusCode)
-	defer func() {
-		_ = resp.Body.Close()
-	}()
-	v, err := ioutil.ReadAll(resp.Body)
-	fmt.Printf("body %v\n", string(v))
-	require.NoError(t, err)
-	require.Equal(t, wantContentType, resp.Header.Get("Content-Type"))
-	if wantContent {
-		require.NotEmpty(t, v)
-	} else {
-		require.Empty(t, v)
+	const switchID1 = "1"
+	const switchID2 = "2"
+	const switchID3 = "3"
+	switchIDs := []string{switchID1, switchID2, switchID3}
+	switchResources := test.AddDeviceSwitchResources(ctx, t, deviceID, c, switchIDs...)
+	publishedSwitches := test.ResourceLinksToResources(deviceID, switchResources)
+	events = c2cTest.WaitForEvents(dataChan, 3*time.Second)
+	require.Len(t, events, len(switchIDs))
+	var links schema.ResourceLinks
+	for _, ev := range events {
+		require.Equal(t, c2cEvents.EventType_ResourcesPublished, ev.GetHeader().EventType)
+		links = append(links, ev.GetData().(schema.ResourceLinks)...)
 	}
+	resources := testSubscribeToDeviceDecodeResources(links)
+	test.CheckProtobufs(t, publishedSwitches, resources, test.RequireToCheckFunc(require.Equal))
+
+	_, err = c.DeleteResource(ctx, &pb.DeleteResourceRequest{
+		ResourceId: commands.NewResourceID(deviceID, test.TestResourceSwitchesInstanceHref(switchID2)),
+	})
+	require.NoError(t, err)
+	ev := <-dataChan
+	require.Equal(t, c2cEvents.EventType_ResourcesUnpublished, ev.GetHeader().EventType)
+	links = ev.GetData().(schema.ResourceLinks)
+	resources = testSubscribeToDeviceDecodeResources(links)
+	var unpublishedSwitches []*commands.Resource
+	for _, res := range resources {
+		if res.Href == test.TestResourceSwitchesInstanceHref(switchID2) {
+			unpublishedSwitches = append(unpublishedSwitches, &commands.Resource{
+				DeviceId: deviceID,
+				Href:     test.TestResourceSwitchesInstanceHref(switchID2),
+			})
+		}
+	}
+	test.CheckProtobufs(t, unpublishedSwitches, resources, test.RequireToCheckFunc(require.Equal))
+
+	// no additional messages should be received
+	events = c2cTest.WaitForEvents(dataChan, 3*time.Second)
+	require.Empty(t, events)
+
+	subscriber.Unsubscribe(t, ctx, token, deviceID, "", subID)
+	ev = <-dataChan
+	assert.Equal(t, c2cEvents.EventType_SubscriptionCanceled, ev.GetHeader().EventType)
 }

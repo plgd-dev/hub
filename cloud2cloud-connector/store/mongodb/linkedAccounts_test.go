@@ -4,9 +4,9 @@ import (
 	"context"
 	"testing"
 
-	"github.com/plgd-dev/hub/cloud2cloud-connector/store"
-	"github.com/plgd-dev/hub/cloud2cloud-connector/test"
-	"github.com/plgd-dev/hub/pkg/security/oauth2"
+	"github.com/plgd-dev/hub/v2/cloud2cloud-connector/store"
+	"github.com/plgd-dev/hub/v2/cloud2cloud-connector/test"
+	"github.com/plgd-dev/hub/v2/pkg/security/oauth2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -121,7 +121,7 @@ func TestStoreRemoveLinkedAccount(t *testing.T) {
 		RefreshToken: "testRefreshToken",
 	}
 	type args struct {
-		linkedAccountId string
+		linkedAccountID string
 	}
 	tests := []struct {
 		name    string
@@ -131,14 +131,14 @@ func TestStoreRemoveLinkedAccount(t *testing.T) {
 		{
 			name: "invalid accountId",
 			args: args{
-				linkedAccountId: "testNotFound",
+				linkedAccountID: "testNotFound",
 			},
 			wantErr: true,
 		},
 		{
 			name: "valid",
 			args: args{
-				linkedAccountId: "testID",
+				linkedAccountID: "testID",
 			},
 		},
 	}
@@ -157,12 +157,12 @@ func TestStoreRemoveLinkedAccount(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := s.RemoveLinkedAccount(ctx, tt.args.linkedAccountId)
+			err := s.RemoveLinkedAccount(ctx, tt.args.linkedAccountID)
 			if tt.wantErr {
 				assert.Error(t, err)
-			} else {
-				assert.NoError(t, err)
+				return
 			}
+			assert.NoError(t, err)
 		})
 	}
 }

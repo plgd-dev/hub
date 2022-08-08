@@ -32,11 +32,11 @@ func (am *aggregateModel) Update(e EventUnmarshaler) (ignore bool, reload bool) 
 	am.lock.Lock()
 	defer am.lock.Unlock()
 
-	am.LogDebugfFunc("projection.aggregateModel.Update: am.GroupId %v: AggregateId %v: Version %v, hasSnapshot %v", am.groupID, am.aggregateID, am.version, am.hasSnapshot)
+	am.LogDebugfFunc("projection.aggregateModel.Update: am.GroupID %v: AggregateID %v: Version %v, hasSnapshot %v", am.groupID, am.aggregateID, am.version, am.hasSnapshot)
 
 	switch {
-	case e.Version() == 0 || e.IsSnapshot():
-		am.LogDebugfFunc("projection.aggregateModel.Update: e.Version == 0 || e.IsSnapshot()")
+	case e.Version() == 0 || (e.IsSnapshot() && (!am.hasSnapshot || e.Version() > am.version)):
+		am.LogDebugfFunc("projection.aggregateModel.Update: e.Version == 0 || (e.IsSnapshot() && (!am.hasSnapshot || e.Version() > am.version)")
 		am.version = e.Version()
 		am.hasSnapshot = true
 	case am.version+1 == e.Version() && am.hasSnapshot:
@@ -44,15 +44,14 @@ func (am *aggregateModel) Update(e EventUnmarshaler) (ignore bool, reload bool) 
 		am.version = e.Version()
 	case am.version >= e.Version() && am.hasSnapshot:
 		am.LogDebugfFunc("projection.aggregateModel.Update: am.version >= e.Version && am.hasSnapshot")
-		//ignore event - it was already applied
+		// ignore event - it was already applied
 		return true, false
 	default:
 		am.LogDebugfFunc("projection.aggregateModel.Update: default")
-		//need to reload
+		// need to reload
 		return false, true
 	}
 	return false, false
-
 }
 
 func (am *aggregateModel) Handle(ctx context.Context, iter Iter) error {
@@ -63,22 +62,22 @@ func (am *aggregateModel) Handle(ctx context.Context, iter Iter) error {
 type Projection struct {
 	store         EventStore
 	LogDebugfFunc LogDebugfFunc
+	factoryModel  FactoryModelFunc
 
-	factoryModel    FactoryModelFunc
-	lock            sync.Mutex
+	lock            sync.RWMutex // protects aggregateModels
 	aggregateModels map[string]map[string]*aggregateModel
 }
 
 // NewProjection projection over eventstore.
-func NewProjection(store EventStore, factoryModel FactoryModelFunc, LogDebugfFunc LogDebugfFunc) *Projection {
-	if LogDebugfFunc == nil {
-		LogDebugfFunc = func(fmt string, args ...interface{}) {}
+func NewProjection(store EventStore, factoryModel FactoryModelFunc, logDebugfFunc LogDebugfFunc) *Projection {
+	if logDebugfFunc == nil {
+		logDebugfFunc = func(fmt string, args ...interface{}) {}
 	}
 	return &Projection{
 		store:           store,
 		factoryModel:    factoryModel,
 		aggregateModels: make(map[string]map[string]*aggregateModel),
-		LogDebugfFunc:   LogDebugfFunc,
+		LogDebugfFunc:   logDebugfFunc,
 	}
 }
 
@@ -142,7 +141,7 @@ func (i *iterator) Next(ctx context.Context) (EventUnmarshaler, bool) {
 		tmp := i.firstEvent
 		i.firstEvent = nil
 		ignore, reload := i.model.Update(tmp)
-		i.model.LogDebugfFunc("projection.iterator.next: GroupId %v: AggregateId %v: Version %v, EvenType %v, ignore %v reload %v", tmp.GroupID, tmp.AggregateID, tmp.Version, tmp.EventType, ignore, reload)
+		i.model.LogDebugfFunc("projection.iterator.next: GroupID %v: AggregateID %v: Version %v, EvenType %v, ignore %v reload %v", tmp.GroupID, tmp.AggregateID, tmp.Version, tmp.EventType, ignore, reload)
 		if reload {
 			snapshot, nextAggregateEvent := i.RewindToSnapshot(ctx)
 			if snapshot == nil {
@@ -166,7 +165,7 @@ func (i *iterator) Next(ctx context.Context) (EventUnmarshaler, bool) {
 
 	e, ok := i.RewindIgnore(ctx)
 	if ok {
-		i.model.LogDebugfFunc("projection.iterator.next: GroupId %v: AggregateId %v: Version %v, EvenType %v", e.GroupID, e.AggregateID, e.Version, e.EventType)
+		i.model.LogDebugfFunc("projection.iterator.next: GroupID %v: AggregateID %v: Version %v, EvenType %v", e.GroupID, e.AggregateID, e.Version, e.EventType)
 	}
 	return e, ok
 }
@@ -191,7 +190,7 @@ func (p *Projection) getModel(ctx context.Context, groupID, aggregateID string) 
 		if err != nil {
 			return nil, fmt.Errorf("cannot create model: %w", err)
 		}
-		p.LogDebugfFunc("projection.Projection.getModel: GroupId %v: AggregateId %v: new model", groupID, aggregateID)
+		p.LogDebugfFunc("projection.Projection.getModel: GroupID %v: AggregateID %v: new model", groupID, aggregateID)
 		apm = &aggregateModel{groupID: groupID, aggregateID: aggregateID, model: model, LogDebugfFunc: p.LogDebugfFunc}
 		mapApm[aggregateID] = apm
 	}
@@ -206,7 +205,7 @@ func (p *Projection) handle(ctx context.Context, iter Iter) (reloadQueries []Ver
 	ie := e
 	reloadQueries = make([]VersionQuery, 0, 32)
 	for ie != nil {
-		p.LogDebugfFunc("projection.iterator.handle: GroupId %v: AggregateId %v: Version %v, EvenType %v", ie.GroupID(), ie.AggregateID(), ie.Version(), ie.EventType())
+		p.LogDebugfFunc("projection.iterator.handle: GroupID %v: AggregateID %v: Version %v, EvenType %v", ie.GroupID(), ie.AggregateID(), ie.Version(), ie.EventType())
 		am, err := p.getModel(ctx, ie.GroupID(), ie.AggregateID())
 		if err != nil {
 			return nil, fmt.Errorf("cannot handle projection: %w", err)
@@ -223,11 +222,11 @@ func (p *Projection) handle(ctx context.Context, iter Iter) (reloadQueries []Ver
 		if err != nil {
 			return nil, fmt.Errorf("cannot handle projection: %w", err)
 		}
-		//check if we are on the end
+		// check if we are on the end
 		if i.nextEventToProcess == nil {
 			_, ok := i.Next(ctx)
 			if ok {
-				//iterator need to move to the next event
+				// iterator need to move to the next event
 				i.nextEventToProcess = i.RewindToNextAggregateEvent(ctx)
 			}
 		}
@@ -250,7 +249,7 @@ func (p *Projection) Handle(ctx context.Context, iter Iter) error {
 
 // HandleWithReload update projection by events and reload events if it is needed.
 func (p *Projection) HandleWithReload(ctx context.Context, iter Iter) error {
-	//reload queries for db because version of events was greater > lastVersionSeen+1
+	// reload queries for db because version of events was greater > lastVersionSeen+1
 	reloadQueries, err := p.handle(ctx, iter)
 	if err != nil {
 		return fmt.Errorf("cannot handle events with reload: %w", err)
@@ -290,55 +289,71 @@ func (p *Projection) Forget(queries []SnapshotQuery) (err error) {
 	return nil
 }
 
-func makeModelID(groupID, aggregateID string) string {
-	return groupID + "." + aggregateID
-}
-
-func (p *Projection) allModels(models map[string]Model) map[string]Model {
-	for groupID, group := range p.aggregateModels {
-		for aggregateID, apm := range group {
-			models[makeModelID(groupID, aggregateID)] = apm.model
+func (p *Projection) iterateOverAllModels(onModel func(m Model) (wantNext bool)) {
+	p.lock.RLock()
+	defer p.lock.RUnlock()
+	for _, group := range p.aggregateModels {
+		for _, apm := range group {
+			p.lock.RUnlock()
+			wantNext := onModel(apm.model)
+			p.lock.RLock()
+			if !wantNext {
+				return
+			}
 		}
 	}
-	return models
 }
 
-func (p *Projection) models(queries []SnapshotQuery) map[string]Model {
-	models := make(map[string]Model)
-	p.lock.Lock()
-	defer p.lock.Unlock()
+func (p *Projection) iterateOverGroupModels(groupID string, onModel func(m Model) (wantNext bool)) (wantNext bool) {
+	p.lock.RLock()
+	defer p.lock.RUnlock()
+	if aggregates, ok := p.aggregateModels[groupID]; ok {
+		for _, apm := range aggregates {
+			p.lock.RUnlock()
+			wantNext := onModel(apm.model)
+			p.lock.RLock()
+			if !wantNext {
+				return false
+			}
+		}
+	}
+	return true
+}
 
+func (p *Projection) iterateOverAggregateModel(groupID, aggregateID string, onModel func(m Model) (wantNext bool)) (wantNext bool) {
+	p.lock.RLock()
+	defer p.lock.RUnlock()
+	if aggregates, ok := p.aggregateModels[groupID]; ok {
+		if apm, ok := aggregates[aggregateID]; ok {
+			p.lock.RUnlock()
+			wantNext := onModel(apm.model)
+			p.lock.RLock()
+			if !wantNext {
+				return false
+			}
+		}
+	}
+	return true
+}
+
+// Models return models from projection.
+func (p *Projection) Models(queries []SnapshotQuery, onModel func(m Model) (wantNext bool)) {
 	if len(queries) == 0 {
-		return p.allModels(models)
+		p.iterateOverAllModels(onModel)
 	}
 	for _, query := range queries {
 		switch {
 		case query.GroupID == "" && query.AggregateID == "":
-			return p.allModels(models)
+			p.iterateOverAllModels(onModel)
+			return
 		case query.GroupID != "" && query.AggregateID == "":
-			if aggregates, ok := p.aggregateModels[query.GroupID]; ok {
-				for aggrID, apm := range aggregates {
-					models[makeModelID(query.GroupID, aggrID)] = apm.model
-				}
+			if !p.iterateOverGroupModels(query.GroupID, onModel) {
+				return
 			}
 		default:
-			if aggregates, ok := p.aggregateModels[query.GroupID]; ok {
-				if apm, ok := aggregates[query.AggregateID]; ok {
-					models[makeModelID(query.GroupID, query.AggregateID)] = apm.model
-				}
+			if !p.iterateOverAggregateModel(query.GroupID, query.AggregateID, onModel) {
+				return
 			}
 		}
 	}
-
-	return models
-}
-
-// Models return models from projection.
-func (p *Projection) Models(queries []SnapshotQuery) []Model {
-	models := p.models(queries)
-	result := make([]Model, 0, len(models))
-	for _, m := range models {
-		result = append(result, m)
-	}
-	return result
 }

@@ -6,23 +6,19 @@ import (
 	"testing"
 	"time"
 
-	"github.com/plgd-dev/hub/coap-gateway/uri"
-	testCfg "github.com/plgd-dev/hub/test/config"
-
-	"github.com/plgd-dev/go-coap/v2/tcp"
-
-	"github.com/plgd-dev/hub/pkg/log"
-
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
+	"github.com/plgd-dev/go-coap/v2/tcp"
+	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
+	"github.com/plgd-dev/hub/v2/coap-gateway/uri"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func Test_clientDeleteHandler(t *testing.T) {
+func TestClientDeleteHandler(t *testing.T) {
 	shutdown := setUp(t)
 	defer shutdown()
 
-	co := testCoapDial(t, testCfg.GW_HOST, "")
+	co := testCoapDial(t, "", true, time.Now().Add(time.Minute))
 	if co == nil {
 		return
 	}
@@ -73,14 +69,11 @@ func Test_clientDeleteHandler(t *testing.T) {
 	testPrepareDevice(t, co)
 	time.Sleep(time.Second) // for publish content of device resources
 
-	log.Setup(log.Config{
-		Debug: true,
-	})
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx, cancel := context.WithTimeout(context.Background(), TestExchangeTimeout)
 			defer cancel()
-			req, err := tcp.NewDeleteRequest(ctx, tt.args.path)
+			req, err := tcp.NewDeleteRequest(ctx, pool.New(0, 0), tt.args.path)
 			require.NoError(t, err)
 			resp, err := co.Do(req)
 			require.NoError(t, err)

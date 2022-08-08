@@ -141,5 +141,5 @@ var CertificateAuthority_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "github.com/plgd-dev/hub/certificate-authority/pb/service.proto",
+	Metadata: "certificate-authority/pb/service.proto",
 }

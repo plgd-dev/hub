@@ -3,8 +3,8 @@ package events
 import (
 	"time"
 
-	pkgTime "github.com/plgd-dev/hub/pkg/time"
-	commands "github.com/plgd-dev/hub/resource-aggregate/commands"
+	pkgTime "github.com/plgd-dev/hub/v2/pkg/time"
+	commands "github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -48,6 +48,7 @@ func (e *ResourceUpdated) CopyData(event *ResourceUpdated) {
 	e.Content = event.GetContent()
 	e.AuditContext = event.GetAuditContext()
 	e.EventMetadata = event.GetEventMetadata()
+	e.OpenTelemetryCarrier = event.GetOpenTelemetryCarrier()
 }
 
 func (e *ResourceUpdated) CheckInitialized() bool {

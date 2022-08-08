@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"sync"
@@ -9,11 +10,11 @@ import (
 	"time"
 
 	nats "github.com/nats-io/nats.go"
-	"github.com/plgd-dev/hub/identity-store/events"
-	pbIS "github.com/plgd-dev/hub/identity-store/pb"
-	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
-	"github.com/plgd-dev/hub/pkg/strings"
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/utils"
+	"github.com/plgd-dev/hub/v2/identity-store/events"
+	pbIS "github.com/plgd-dev/hub/v2/identity-store/pb"
+	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	"github.com/plgd-dev/hub/v2/pkg/strings"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/utils"
 	kitSync "github.com/plgd-dev/kit/v2/sync"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -173,13 +174,13 @@ func (c *OwnerCache) getOwnerDevices(ctx context.Context, isClient pbIS.Identity
 	}
 	defer func() {
 		if err := getDevicesClient.CloseSend(); err != nil {
-			c.errFunc(fmt.Errorf("cannot close send direction of get owners devices stream: %v", err))
+			c.errFunc(fmt.Errorf("cannot close send direction of get owners devices stream: %w", err))
 		}
 	}()
 	ownerDevices := make([]string, 0, 32)
 	for {
 		device, err := getDevicesClient.Recv()
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			break
 		}
 		if err != nil {
@@ -214,11 +215,11 @@ func (c *OwnerCache) Subscribe(owner string, onEvent func(e *events.Event)) (clo
 	}
 	err = c.executeOnLockedOwnerSubject(owner, func(s *ownerSubject) error {
 		if onEvent != nil {
-			handlerId := atomic.AddUint64(&c.handlerID, 1)
-			for !s.AddHandlerLocked(handlerId, onEvent) {
-				handlerId = atomic.AddUint64(&c.handlerID, 1)
+			handlerID := atomic.AddUint64(&c.handlerID, 1)
+			for !s.AddHandlerLocked(handlerID, onEvent) {
+				handlerID = atomic.AddUint64(&c.handlerID, 1)
 			}
-			closeFunc = c.makeCloseFunc(owner, handlerId)
+			closeFunc = c.makeCloseFunc(owner, handlerID)
 		}
 		if s.subscription == nil {
 			err := s.subscribeLocked(owner, c.conn.Subscribe, func(msg *nats.Msg) {
@@ -344,7 +345,7 @@ func (c *OwnerCache) getExpiredOwnerSubjects(t time.Time) []string {
 		defer s.Unlock()
 		if len(s.handlers) > 0 {
 			if s.validUntil.Before(t) {
-				//expire devices in cache - user needs to call UpdateDevices to refresh them
+				// expire devices in cache - user needs to call UpdateDevices to refresh them
 				s.devices = s.devices[:0]
 				s.devicesSynced = false
 			}

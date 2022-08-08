@@ -323,3 +323,28 @@ app.kubernetes.io/instance: {{ .Release.Name }}
   {{- $fullName := include "plgd-hub.fullname" . -}}
   {{- printf "%s-wildcard-crt" $fullName -}}
 {{- end }}
+
+{{- define "plgd-hub.tplvalues.render" -}}
+    {{- if typeIs "string" .value }}
+        {{- tpl .value .context }}
+    {{- else }}
+        {{- tpl (.value | toYaml) .context }}
+    {{- end }}
+{{- end -}}
+
+{{- define "plgd-hub.openTelemetryExporterConfig" -}}
+{{- $ := index . 0 }}
+{{- $certPath := index . 1 }}
+{{- $cfg := $.Values.global.openTelemetryExporter -}}
+openTelemetryCollector:
+  grpc:
+    enabled: {{ $cfg.enabled }}
+    address: {{ $cfg.address | quote }}
+    keepAlive:
+      time: {{ $cfg.keepAlive.time }}
+      timeout: {{ $cfg.keepAlive.timeout }}
+      permitWithoutStream: {{ $cfg.keepAlive.permitWithoutStream }}
+    tls:
+      {{- include "plgd-hub.certificateConfig" (list $ $cfg.tls $certPath ) | indent 4 }}
+      useSystemCAPool: {{ $cfg.tls.useSystemCAPool }}
+{{- end -}}

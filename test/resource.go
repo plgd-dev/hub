@@ -1,27 +1,17 @@
 package test
 
 import (
-	"sort"
 	"time"
 
 	"github.com/plgd-dev/device/schema"
-	"github.com/plgd-dev/hub/grpc-gateway/pb"
-	"github.com/plgd-dev/hub/resource-aggregate/commands"
-	"github.com/plgd-dev/hub/resource-aggregate/events"
+	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 )
 
-type SortResourcesByHref []*commands.Resource
-
-func (a SortResourcesByHref) Len() int      { return len(a) }
-func (a SortResourcesByHref) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
-func (a SortResourcesByHref) Less(i, j int) bool {
-	return a[i].GetHref() < a[j].GetHref()
-}
-
-func SortResources(s []*commands.Resource) []*commands.Resource {
-	v := SortResourcesByHref(s)
-	sort.Sort(v)
-	return v
+func SortResources(s commands.Resources) commands.Resources {
+	s.Sort()
+	return s
 }
 
 func ResourceLinksToResources(deviceID string, s []schema.ResourceLink) []*commands.Resource {
@@ -31,6 +21,15 @@ func ResourceLinksToResources(deviceID string, s []schema.ResourceLink) []*comma
 		r = append(r, commands.SchemaResourceLinkToResource(l, time.Time{}))
 	}
 	CleanUpResourcesArray(r)
+	return r
+}
+
+func ResourceLinksToResourceIds(deviceID string, s []schema.ResourceLink) []*commands.ResourceId {
+	r := make([]*commands.ResourceId, 0, len(s))
+	for _, l := range s {
+		l.DeviceID = deviceID
+		r = append(r, commands.SchemaResourceLinkToResourceId(l))
+	}
 	return r
 }
 

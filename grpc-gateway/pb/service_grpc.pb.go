@@ -4,7 +4,7 @@ package pb
 
 import (
 	context "context"
-	events "github.com/plgd-dev/hub/resource-aggregate/events"
+	events "github.com/plgd-dev/hub/v2/resource-aggregate/events"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -867,5 +867,5 @@ var GrpcGateway_ServiceDesc = grpc.ServiceDesc{
 			ServerStreams: true,
 		},
 	},
-	Metadata: "github.com/plgd-dev/hub/grpc-gateway/pb/service.proto",
+	Metadata: "grpc-gateway/pb/service.proto",
 }

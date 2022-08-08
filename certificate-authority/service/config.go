@@ -5,22 +5,30 @@ import (
 	"time"
 
 	"github.com/karrick/tparse/v2"
-	"github.com/plgd-dev/hub/pkg/config"
-	"github.com/plgd-dev/hub/pkg/log"
-	"github.com/plgd-dev/hub/pkg/net/grpc/server"
+	"github.com/plgd-dev/hub/v2/pkg/config"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	"github.com/plgd-dev/hub/v2/pkg/net/grpc/server"
+	otelClient "github.com/plgd-dev/hub/v2/pkg/opentelemetry/collector/client"
 )
 
 type Config struct {
-	Log    log.Config   `yaml:"log" json:"log"`
-	APIs   APIsConfig   `yaml:"apis" json:"apis"`
-	Signer SignerConfig `yaml:"signer" json:"signer"`
+	Log     log.Config    `yaml:"log" json:"log"`
+	APIs    APIsConfig    `yaml:"apis" json:"apis"`
+	Signer  SignerConfig  `yaml:"signer" json:"signer"`
+	Clients ClientsConfig `yaml:"clients" json:"clients"`
 }
 
 func (c *Config) Validate() error {
+	if err := c.Log.Validate(); err != nil {
+		return fmt.Errorf("log.%w", err)
+	}
 	if err := c.APIs.Validate(); err != nil {
 		return fmt.Errorf("apis.%w", err)
 	}
 	if err := c.Signer.Validate(); err != nil {
+		return fmt.Errorf("signer.%w", err)
+	}
+	if err := c.Clients.Validate(); err != nil {
 		return fmt.Errorf("clients.%w", err)
 	}
 	return nil
@@ -43,6 +51,7 @@ type SignerConfig struct {
 	CertFile  string        `yaml:"certFile" json:"certFile" description:"file name of CA certificate in PEM format"`
 	ValidFrom string        `yaml:"validFrom" json:"validFrom" description:"format https://github.com/karrick/tparse"`
 	ExpiresIn time.Duration `yaml:"expiresIn" json:"expiresIn"`
+	HubID     string        `yaml:"hubID" json:"hubId"`
 }
 
 func (c *SignerConfig) Validate() error {
@@ -59,10 +68,24 @@ func (c *SignerConfig) Validate() error {
 	if err != nil {
 		return fmt.Errorf("validFrom('%v')", c.ValidFrom)
 	}
+	if c.HubID == "" {
+		return fmt.Errorf("hubID('%v')", c.HubID)
+	}
 	return nil
 }
 
-//String return string representation of Config
+type ClientsConfig struct {
+	OpenTelemetryCollector otelClient.Config `yaml:"openTelemetryCollector" json:"openTelemetryCollector"`
+}
+
+func (c *ClientsConfig) Validate() error {
+	if err := c.OpenTelemetryCollector.Validate(); err != nil {
+		return fmt.Errorf("openTelemetryCollector.%w", err)
+	}
+	return nil
+}
+
+// String return string representation of Config
 func (c Config) String() string {
 	return config.ToString(c)
 }

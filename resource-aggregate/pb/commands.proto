@@ -2,9 +2,9 @@ syntax = "proto3";
 
 package resourceaggregate.pb;
 
-import "github.com/plgd-dev/hub/resource-aggregate/pb/resources.proto";
+import "resource-aggregate/pb/resources.proto";
 
-option go_package = "github.com/plgd-dev/hub/resource-aggregate/commands;commands";
+option go_package = "github.com/plgd-dev/hub/v2/resource-aggregate/commands;commands";
 
 message CommandMetadata {
     string connection_id = 1;
@@ -67,6 +67,7 @@ message UnpublishResourceLinksRequest {
     repeated string hrefs = 1;
     string device_id = 2;
     CommandMetadata command_metadata = 3;
+    repeated int64 instance_ids = 4; // used by device when sending unpublish request to RD
 }
 
 message UnpublishResourceLinksResponse {
@@ -425,6 +426,7 @@ message ConnectionStatus {
     };
     Status value = 1;
     int64 valid_until = 2;
+    string connection_id = 3; // when status is ONLINE, this field contains the connection id. To update state offline, this field must be same as the one in the previous message.
 }
 //*******************************************************************************************************************************************************
 // Update Device Metadata - Shadow Synchronization Status

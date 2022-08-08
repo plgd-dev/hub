@@ -27,6 +27,9 @@ spec:
   dnsNames:
     - {{ printf "%s.%s.svc.%s" $serviceDns .Release.Namespace .Values.cluster.dns | quote }}
     - {{ $serviceDns | quote }}
+    {{- if .Values.resourcedirectory.service.crt.extraDnsNames }}
+    {{- toYaml .Values.resourcedirectory.service.crt.extraDnsNames | nindent 4 }}
+    {{- end }}
   duration: {{ .Values.certmanager.internal.cert.duration | default .Values.certmanager.default.cert.duration }}
   renewBefore: {{ .Values.certmanager.internal.cert.renewBefore | default .Values.certmanager.default.cert.renewBefore }}
   issuerRef:

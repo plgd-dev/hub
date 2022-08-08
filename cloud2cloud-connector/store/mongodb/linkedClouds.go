@@ -2,9 +2,10 @@ package mongodb
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
-	"github.com/plgd-dev/hub/cloud2cloud-connector/store"
+	"github.com/plgd-dev/hub/v2/cloud2cloud-connector/store"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -64,12 +65,12 @@ func (s *Store) InsertLinkedCloud(ctx context.Context, sub store.LinkedCloud) er
 	return nil
 }
 
-func (s *Store) RemoveLinkedCloud(ctx context.Context, linkedCloudId string) error {
-	if linkedCloudId == "" {
+func (s *Store) RemoveLinkedCloud(ctx context.Context, linkedCloudID string) error {
+	if linkedCloudID == "" {
 		return fmt.Errorf("cannot remove linked cloud: invalid LinkedCloudId")
 	}
 
-	res, err := s.Collection(resLinkedCloudCName).DeleteOne(ctx, bson.M{"_id": linkedCloudId})
+	res, err := s.Collection(resLinkedCloudCName).DeleteOne(ctx, bson.M{"_id": linkedCloudID})
 	if err != nil {
 		return fmt.Errorf("cannot remove linked cloud: %w", err)
 	}
@@ -89,7 +90,7 @@ func (s *Store) LoadLinkedClouds(ctx context.Context, query store.Query, h store
 	default:
 		iter, err = col.Find(ctx, bson.M{})
 	}
-	if err == mongo.ErrNilDocument {
+	if errors.Is(err, mongo.ErrNilDocument) {
 		return nil
 	}
 	if err != nil {

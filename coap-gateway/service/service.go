@@ -11,32 +11,42 @@ import (
 	"syscall"
 	"time"
 
-	cache "github.com/patrickmn/go-cache"
+	"github.com/plgd-dev/device/pkg/net/coap"
+	"github.com/plgd-dev/go-coap/v2/message"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
+	"github.com/plgd-dev/go-coap/v2/message/status"
 	"github.com/plgd-dev/go-coap/v2/mux"
 	"github.com/plgd-dev/go-coap/v2/net"
 	"github.com/plgd-dev/go-coap/v2/net/blockwise"
 	"github.com/plgd-dev/go-coap/v2/net/monitor/inactivity"
+	"github.com/plgd-dev/go-coap/v2/pkg/cache"
+	"github.com/plgd-dev/go-coap/v2/pkg/runner/periodic"
 	"github.com/plgd-dev/go-coap/v2/tcp"
 	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
-	"github.com/plgd-dev/hub/coap-gateway/uri"
-	pbGRPC "github.com/plgd-dev/hub/grpc-gateway/pb"
-	"github.com/plgd-dev/hub/grpc-gateway/subscription"
-	idClient "github.com/plgd-dev/hub/identity-store/client"
-	pbIS "github.com/plgd-dev/hub/identity-store/pb"
-	"github.com/plgd-dev/hub/pkg/fn"
-	"github.com/plgd-dev/hub/pkg/log"
-	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
-	grpcClient "github.com/plgd-dev/hub/pkg/net/grpc/client"
-	certManagerServer "github.com/plgd-dev/hub/pkg/security/certManager/server"
-	"github.com/plgd-dev/hub/pkg/security/jwt"
-	"github.com/plgd-dev/hub/pkg/security/oauth2"
-	"github.com/plgd-dev/hub/pkg/sync/task/queue"
-	raClient "github.com/plgd-dev/hub/resource-aggregate/client"
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventbus"
-	natsClient "github.com/plgd-dev/hub/resource-aggregate/cqrs/eventbus/nats/client"
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventbus/nats/subscriber"
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/utils"
+	"github.com/plgd-dev/hub/v2/coap-gateway/uri"
+	pbGRPC "github.com/plgd-dev/hub/v2/grpc-gateway/pb"
+	"github.com/plgd-dev/hub/v2/grpc-gateway/subscription"
+	idClient "github.com/plgd-dev/hub/v2/identity-store/client"
+	pbIS "github.com/plgd-dev/hub/v2/identity-store/pb"
+	"github.com/plgd-dev/hub/v2/pkg/fn"
+	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	grpcClient "github.com/plgd-dev/hub/v2/pkg/net/grpc/client"
+	otelClient "github.com/plgd-dev/hub/v2/pkg/opentelemetry/collector/client"
+	"github.com/plgd-dev/hub/v2/pkg/opentelemetry/otelcoap"
+	certManagerServer "github.com/plgd-dev/hub/v2/pkg/security/certManager/server"
+	"github.com/plgd-dev/hub/v2/pkg/security/jwt"
+	"github.com/plgd-dev/hub/v2/pkg/security/oauth2"
+	"github.com/plgd-dev/hub/v2/pkg/sync/task/queue"
+	raClient "github.com/plgd-dev/hub/v2/resource-aggregate/client"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus"
+	natsClient "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/client"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/subscriber"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/utils"
+	otelCodes "go.opentelemetry.io/otel/codes"
+	semconv "go.opentelemetry.io/otel/semconv/v1.10.0"
+	"go.opentelemetry.io/otel/trace"
 )
 
 var authCtxKey = "AuthCtx"
@@ -52,7 +62,6 @@ type Service struct {
 	isClient              pbIS.IdentityStoreClient
 	rdClient              pbGRPC.GrpcGatewayClient
 	expirationClientCache *cache.Cache
-	tlsDeviceIDCache      *cache.Cache
 	coapServer            *tcp.Server
 	listener              tcp.Listener
 	authInterceptor       Interceptor
@@ -66,28 +75,49 @@ type Service struct {
 	sigs                  chan os.Signal
 	ownerCache            *idClient.OwnerCache
 	subscriptionsCache    *subscription.SubscriptionsCache
+	messagePool           *pool.Pool
+	logger                log.Logger
+	tracerProvider        trace.TracerProvider
 }
 
-func newExpirationClientCache() *cache.Cache {
-	expirationClientCache := cache.New(cache.NoExpiration, time.Minute)
-	expirationClientCache.OnEvicted(func(deviceID string, c interface{}) {
-		if c == nil {
+func setExpirationClientCache(c *cache.Cache, deviceID string, client *Client, validJWTUntil time.Time) {
+	validJWTUntil = client.getClientExpiration(validJWTUntil)
+	c.Delete(deviceID)
+	if validJWTUntil.IsZero() {
+		return
+	}
+	c.LoadOrStore(deviceID, cache.NewElement(client, validJWTUntil, func(cl interface{}) {
+		if cl == nil {
 			return
 		}
-		client := c.(*Client)
-		authCtx, err := client.GetAuthorizationContext()
-		if err != nil {
-			if err2 := client.Close(); err2 != nil {
-				log.Errorf("failed to close client connection on token expiration: %w", err2)
-			}
-			log.Debugf("device %v token has been expired", authCtx.GetDeviceID())
+		client := cl.(*Client)
+		now := time.Now()
+		exp := client.getClientExpiration(now)
+		if now.After(exp) {
+			client.Close()
+			client.Debugf("certificate has been expired")
+			return
 		}
+		_, err := client.GetAuthorizationContext()
+		if err != nil {
+			client.Close()
+			client.Debugf("token has been expired")
+		}
+	}))
+}
+
+func newExpirationClientCache(ctx context.Context, interval time.Duration) *cache.Cache {
+	expirationClientCache := cache.NewCache()
+	add := periodic.New(ctx.Done(), interval)
+	add(func(now time.Time) bool {
+		expirationClientCache.CheckExpirations(now)
+		return true
 	})
 	return expirationClientCache
 }
 
-func newResourceAggregateClient(config ResourceAggregateConfig, resourceSubscriber eventbus.Subscriber, logger log.Logger) (*raClient.Client, func(), error) {
-	raConn, err := grpcClient.New(config.Connection, logger)
+func newResourceAggregateClient(config ResourceAggregateConfig, resourceSubscriber eventbus.Subscriber, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (*raClient.Client, func(), error) {
+	raConn, err := grpcClient.New(config.Connection, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		return nil, nil, fmt.Errorf("cannot create connection to resource-aggregate: %w", err)
 	}
@@ -103,8 +133,8 @@ func newResourceAggregateClient(config ResourceAggregateConfig, resourceSubscrib
 	return raClient, closeRaConn, nil
 }
 
-func newIdentityStoreClient(config IdentityStoreConfig, logger log.Logger) (pbIS.IdentityStoreClient, func(), error) {
-	isConn, err := grpcClient.New(config.Connection, logger)
+func newIdentityStoreClient(config IdentityStoreConfig, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (pbIS.IdentityStoreClient, func(), error) {
+	isConn, err := grpcClient.New(config.Connection, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		return nil, nil, fmt.Errorf("cannot create connection to identity-store: %w", err)
 	}
@@ -120,8 +150,8 @@ func newIdentityStoreClient(config IdentityStoreConfig, logger log.Logger) (pbIS
 	return isClient, closeIsConn, nil
 }
 
-func newResourceDirectoryClient(config GrpcServerConfig, logger log.Logger) (pbGRPC.GrpcGatewayClient, func(), error) {
-	rdConn, err := grpcClient.New(config.Connection, logger)
+func newResourceDirectoryClient(config GrpcServerConfig, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (pbGRPC.GrpcGatewayClient, func(), error) {
+	rdConn, err := grpcClient.New(config.Connection, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		return nil, nil, fmt.Errorf("cannot create connection to resource-directory: %w", err)
 	}
@@ -137,7 +167,7 @@ func newResourceDirectoryClient(config GrpcServerConfig, logger log.Logger) (pbG
 	return rdClient, closeRdConn, nil
 }
 
-func newTCPListener(config COAPConfig, tlsDeviceIDCache *cache.Cache, logger log.Logger) (tcp.Listener, func(), error) {
+func newTCPListener(config COAPConfig, fileWatcher *fsnotify.Watcher, logger log.Logger) (tcp.Listener, func(), error) {
 	if !config.TLS.Enabled {
 		listener, err := net.NewTCPListener("tcp", config.Addr)
 		if err != nil {
@@ -145,22 +175,20 @@ func newTCPListener(config COAPConfig, tlsDeviceIDCache *cache.Cache, logger log
 		}
 		closeListener := func() {
 			if err := listener.Close(); err != nil {
-				log.Errorf("failed to close tcp listener: %w", err)
+				logger.Errorf("failed to close tcp listener: %w", err)
 			}
 		}
 		return listener, closeListener, nil
 	}
 
 	var closeListener fn.FuncList
-	coapsTLS, err := certManagerServer.New(config.TLS.Embedded, logger)
+	coapsTLS, err := certManagerServer.New(config.TLS.Embedded, fileWatcher, logger)
 	if err != nil {
 		return nil, nil, fmt.Errorf("cannot create tls cert manager: %w", err)
 	}
 	closeListener.AddFunc(coapsTLS.Close)
 	tlsCfgForClient := coapsTLS.GetTLSConfig()
-	tlsCfg := tls.Config{
-		GetConfigForClient: MakeGetConfigForClient(tlsCfgForClient, tlsDeviceIDCache),
-	}
+	tlsCfg := MakeGetConfigForClient(tlsCfgForClient)
 	listener, err := net.NewTLSListener("tcp", config.Addr, &tlsCfg)
 	if err != nil {
 		closeListener.Execute()
@@ -168,7 +196,7 @@ func newTCPListener(config COAPConfig, tlsDeviceIDCache *cache.Cache, logger log
 	}
 	closeListener.AddFunc(func() {
 		if err := listener.Close(); err != nil {
-			log.Errorf("failed to close tcp-tls listener: %w", err)
+			logger.Errorf("failed to close tcp-tls listener: %w", err)
 		}
 	})
 	return listener, closeListener.ToFunction(), nil
@@ -196,27 +224,27 @@ func blockWiseTransferSZXFromString(s string) (blockwise.SZX, error) {
 	return blockwise.SZX(0), fmt.Errorf("invalid value %v", s)
 }
 
-func getOnInactivityFn() func(cc inactivity.ClientConn) {
+func getOnInactivityFn(logger log.Logger) func(cc inactivity.ClientConn) {
 	return func(cc inactivity.ClientConn) {
 		client, ok := cc.Context().Value(clientKey).(*Client)
 		if ok {
 			deviceID := getDeviceID(client)
-			log.Errorf("DeviceId: %v: keep alive was reached fail limit:: closing connection", deviceID)
+			client.Errorf("DeviceId: %v: keep alive was reached fail limit:: closing connection", deviceID)
 		} else {
-			log.Errorf("keep alive was reached fail limit:: closing connection")
+			logger.Errorf("keep alive was reached fail limit:: closing connection")
 		}
 		if err := cc.Close(); err != nil {
-			log.Errorf("failed to close connection: %w", err)
+			logger.Errorf("failed to close connection: %w", err)
 		}
 	}
 }
 
-func newProviders(ctx context.Context, config AuthorizationConfig, logger log.Logger) (map[string]*oauth2.PlgdProvider, *oauth2.PlgdProvider, func(), error) {
+func newProviders(ctx context.Context, config AuthorizationConfig, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (map[string]*oauth2.PlgdProvider, *oauth2.PlgdProvider, func(), error) {
 	var closeProviders fn.FuncList
 	var firstProvider *oauth2.PlgdProvider
 	providers := make(map[string]*oauth2.PlgdProvider)
 	for _, p := range config.Providers {
-		provider, err := oauth2.NewPlgdProvider(ctx, p.Config, logger)
+		provider, err := oauth2.NewPlgdProvider(ctx, p.Config, fileWatcher, logger, tracerProvider, config.OwnerClaim, config.DeviceIDClaim)
 		if err != nil {
 			closeProviders.Execute()
 			return nil, nil, nil, fmt.Errorf("cannot create device provider: %w", err)
@@ -231,17 +259,27 @@ func newProviders(ctx context.Context, config AuthorizationConfig, logger log.Lo
 }
 
 // New creates server.
-func New(ctx context.Context, config Config, logger log.Logger) (*Service, error) {
+func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logger log.Logger) (*Service, error) {
+	otelClient, err := otelClient.New(ctx, config.Clients.OpenTelemetryCollector, "coap-gateway", fileWatcher, logger)
+	if err != nil {
+		return nil, fmt.Errorf("cannot create open telemetry collector client: %w", err)
+	}
+
+	tracerProvider := otelClient.GetTracerProvider()
+
 	queue, err := queue.New(config.TaskQueue)
 	if err != nil {
+		otelClient.Close()
 		return nil, fmt.Errorf("cannot create job queue %w", err)
 	}
 
-	nats, err := natsClient.New(config.Clients.Eventbus.NATS, logger)
+	nats, err := natsClient.New(config.Clients.Eventbus.NATS, fileWatcher, logger)
 	if err != nil {
+		otelClient.Close()
 		queue.Release()
 		return nil, fmt.Errorf("cannot create nats client: %w", err)
 	}
+	nats.AddCloseFunc(otelClient.Close)
 	nats.AddCloseFunc(queue.Release)
 
 	resourceSubscriber, err := subscriber.New(nats.GetConn(),
@@ -255,29 +293,28 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 	}
 	nats.AddCloseFunc(resourceSubscriber.Close)
 
-	raClient, closeRaClient, err := newResourceAggregateClient(config.Clients.ResourceAggregate, resourceSubscriber, logger)
+	raClient, closeRaClient, err := newResourceAggregateClient(config.Clients.ResourceAggregate, resourceSubscriber, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		nats.Close()
 		return nil, fmt.Errorf("cannot create resource-aggregate client: %w", err)
 	}
 	nats.AddCloseFunc(closeRaClient)
 
-	isClient, closeIsClient, err := newIdentityStoreClient(config.Clients.IdentityStore, logger)
+	isClient, closeIsClient, err := newIdentityStoreClient(config.Clients.IdentityStore, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		nats.Close()
 		return nil, fmt.Errorf("cannot create identity-store client: %w", err)
 	}
 	nats.AddCloseFunc(closeIsClient)
 
-	rdClient, closeRdClient, err := newResourceDirectoryClient(config.Clients.ResourceDirectory, logger)
+	rdClient, closeRdClient, err := newResourceDirectoryClient(config.Clients.ResourceDirectory, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		nats.Close()
 		return nil, fmt.Errorf("cannot create resource-directory client: %w", err)
 	}
 	nats.AddCloseFunc(closeRdClient)
 
-	tlsDeviceIDCache := cache.New(config.APIs.COAP.KeepAlive.Timeout, config.APIs.COAP.KeepAlive.Timeout/2)
-	listener, closeListener, err := newTCPListener(config.APIs.COAP, tlsDeviceIDCache, logger)
+	listener, closeListener, err := newTCPListener(config.APIs.COAP, fileWatcher, logger)
 	if err != nil {
 		nats.Close()
 		return nil, fmt.Errorf("cannot create listener: %w", err)
@@ -293,7 +330,7 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 		}
 	}
 
-	providers, firstProvider, closeProviders, err := newProviders(ctx, config.APIs.COAP.Authorization, logger)
+	providers, firstProvider, closeProviders, err := newProviders(ctx, config.APIs.COAP.Authorization, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		nats.Close()
 		return nil, fmt.Errorf("cannot create device providers error: %w", err)
@@ -305,17 +342,17 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 		return nil, fmt.Errorf("device providers are empty")
 	}
 
-	keyCache := jwt.NewKeyCacheWithHttp(firstProvider.OpenID.JWKSURL, firstProvider.HTTPClient.HTTP())
+	keyCache := jwt.NewKeyCache(firstProvider.OpenID.JWKSURL, firstProvider.HTTP())
 
-	jwtValidator := jwt.NewValidatorWithKeyCache(keyCache)
+	jwtValidator := jwt.NewValidator(keyCache)
 
 	ownerCache := idClient.NewOwnerCache(config.APIs.COAP.Authorization.OwnerClaim, config.APIs.COAP.OwnerCacheExpiration, nats.GetConn(), isClient, func(err error) {
-		log.Errorf("ownerCache error: %w", err)
+		logger.Errorf("ownerCache error: %w", err)
 	})
 	nats.AddCloseFunc(ownerCache.Close)
 
 	subscriptionsCache := subscription.NewSubscriptionsCache(resourceSubscriber.Conn(), func(err error) {
-		log.Errorf("subscriptionsCache error: %w", err)
+		logger.Errorf("subscriptionsCache error: %w", err)
 	})
 
 	ctx, cancel := context.WithCancel(ctx)
@@ -323,17 +360,16 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 	s := Service{
 		config:                config,
 		blockWiseTransferSZX:  blockWiseTransferSZX,
-		keepaliveOnInactivity: getOnInactivityFn(),
+		keepaliveOnInactivity: getOnInactivityFn(logger),
 
 		natsClient:            nats,
 		raClient:              raClient,
 		isClient:              isClient,
 		rdClient:              rdClient,
-		expirationClientCache: newExpirationClientCache(),
-		tlsDeviceIDCache:      tlsDeviceIDCache,
+		expirationClientCache: newExpirationClientCache(ctx, config.APIs.COAP.OwnerCacheExpiration),
 		listener:              listener,
 		authInterceptor:       newAuthInterceptor(),
-		devicesStatusUpdater:  newDevicesStatusUpdater(ctx, config.Clients.ResourceAggregate.DeviceStatusExpiration),
+		devicesStatusUpdater:  newDevicesStatusUpdater(ctx, config.Clients.ResourceAggregate.DeviceStatusExpiration, logger),
 
 		sigs: make(chan os.Signal, 1),
 
@@ -347,6 +383,9 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 
 		ownerCache:         ownerCache,
 		subscriptionsCache: subscriptionsCache,
+		messagePool:        pool.New(uint32(config.APIs.COAP.MessagePoolSize), 1024),
+		logger:             logger,
+		tracerProvider:     tracerProvider,
 	}
 
 	if err := s.setupCoapServer(); err != nil {
@@ -362,164 +401,218 @@ func getDeviceID(client *Client) string {
 		authCtx, _ := client.GetAuthorizationContext()
 		deviceID = authCtx.GetDeviceID()
 		if deviceID == "" {
-			deviceID = fmt.Sprintf("unknown(%v)", client.remoteAddrString())
+			deviceID = fmt.Sprintf("unknown(%v)", client.RemoteAddr().String())
 		}
 	}
 	return deviceID
 }
 
-func validateCommand(s mux.ResponseWriter, req *mux.Message, server *Service, fnc func(req *mux.Message, client *Client)) {
-	client, ok := s.Client().Context().Value(clientKey).(*Client)
-	if !ok || client == nil {
-		client = newClient(server, s.Client().ClientConn().(*tcp.ClientConn), "")
+func onUnprocessedRequestError(code coapCodes.Code) error {
+	errMsg := "request from client was dropped"
+	if code == coapCodes.Content {
+		errMsg = "notification from client was dropped"
 	}
-	err := server.taskQueue.Submit(func() {
-		switch req.Code {
-		case coapCodes.POST, coapCodes.DELETE, coapCodes.PUT, coapCodes.GET:
-			fnc(req, client)
-		case coapCodes.Empty:
-			if !ok {
-				client.logAndWriteErrorResponse(fmt.Errorf("cannot handle command: client not found"), coapCodes.InternalServerError, req.Token)
-				if err := client.Close(); err != nil {
-					log.Errorf("cannot handle command: %w", err)
-				}
-				return
-			}
-			clientResetHandler(req, client)
-		case coapCodes.Content:
-			// Unregistered observer at a peer send us a notification
-			deviceID := getDeviceID(client)
-			tmp, err := pool.ConvertFrom(req.Message)
-			if err != nil {
-				log.Errorf("DeviceId: %v: cannot convert dropped notification: %w", deviceID, err)
-			} else {
-				decodeMsgToDebug(client, tmp, "DROPPED-NOTIFICATION")
-			}
-		default:
-			deviceID := getDeviceID(client)
-			log.Errorf("DeviceId: %v: received invalid code: CoapCode(%v)", deviceID, req.Code)
-		}
-	})
+	return fmt.Errorf(errMsg)
+}
+
+func wantToCloseClientOnError(req *mux.Message) bool {
+	if req == nil {
+		return true
+	}
+	path, err := req.Options.Path()
 	if err != nil {
-		deviceID := getDeviceID(client)
-		if err2 := client.Close(); err2 != nil {
-			log.Errorf("cannot handle command: %w", err2)
+		return true
+	}
+	switch path {
+	case uri.RefreshToken, uri.SignIn, uri.SignUp:
+		return true
+	}
+	return false
+}
+
+func (s *Service) processCommandTask(req *mux.Message, client *Client, span trace.Span, fnc func(req *mux.Message, client *Client) (*pool.Message, error)) {
+	var resp *pool.Message
+	var err error
+	switch req.Code {
+	case coapCodes.Empty:
+		resp, err = clientResetHandler(req, client)
+	case coapCodes.POST, coapCodes.DELETE, coapCodes.PUT, coapCodes.GET:
+		resp, err = fnc(req, client)
+		if err != nil && wantToCloseClientOnError(req) {
+			defer client.Close()
 		}
-		log.Errorf("DeviceId: %v: cannot handle request %v by task queue: %w", deviceID, req.String(), err)
+	default:
+		err := onUnprocessedRequestError(req.Code)
+		client.logRequestResponse(req, nil, err)
+		span.RecordError(err)
+		span.SetStatus(otelCodes.Error, err.Error())
+		return
+	}
+	if err != nil {
+		resp = client.createErrorResponse(err, req.Token)
+	}
+	if resp != nil {
+		client.WriteMessage(resp)
+		defer client.ReleaseMessage(resp)
+	}
+	client.logRequestResponse(req, resp, err)
+	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(otelCodes.Error, err.Error())
+	}
+	if resp != nil {
+		otelcoap.MessageSentEvent(req.Context, resp)
+		span.SetAttributes(otelcoap.StatusCodeAttr(resp.Code()))
 	}
 }
 
-func defaultHandler(req *mux.Message, client *Client) {
+func (s *Service) makeCommandTask(req *mux.Message, client *Client, fnc func(req *mux.Message, client *Client) (*pool.Message, error)) func() {
+	path, _ := req.Options.Path()
+	ctx, span := otelcoap.Start(req.Context, path, req.Code.String(), otelcoap.WithTracerProvider(s.tracerProvider), otelcoap.WithSpanOptions(trace.WithSpanKind(trace.SpanKindServer)))
+	span.SetAttributes(semconv.NetPeerNameKey.String(client.deviceID()))
+	req.Context = ctx
+
+	tmp, err := client.server.messagePool.ConvertFrom(req.Message)
+	if err == nil {
+		otelcoap.MessageReceivedEvent(ctx, tmp)
+		otelcoap.SetRequest(ctx, tmp)
+	}
+	return func() {
+		defer span.End()
+		s.processCommandTask(req, client, span, fnc)
+	}
+}
+
+func executeCommand(s mux.ResponseWriter, req *mux.Message, server *Service, fnc func(req *mux.Message, client *Client) (*pool.Message, error)) {
+	client, ok := s.Client().Context().Value(clientKey).(*Client)
+	if !ok {
+		client = newClient(server, s.Client().ClientConn().(*tcp.ClientConn), "", time.Time{})
+		if req.Code == coapCodes.Empty {
+			client.logRequestResponse(req, nil, fmt.Errorf("cannot handle command: client not found"))
+			client.Close()
+			return
+		}
+	}
+	err := server.taskQueue.Submit(server.makeCommandTask(req, client, fnc))
+	if err != nil {
+		client.logRequestResponse(req, nil, fmt.Errorf("cannot handle request by task queue: %w", err))
+		client.Close()
+	}
+}
+
+func statusErrorf(code coapCodes.Code, fmt string, args ...interface{}) error {
+	return status.Errorf(&message.Message{
+		Code: code,
+	}, fmt, args...)
+}
+
+func defaultHandler(req *mux.Message, client *Client) (*pool.Message, error) {
 	path, _ := req.Options.Path()
 
 	switch {
-	case strings.HasPrefix("/"+path, uri.ResourceRoute):
-		resourceRouteHandler(req, client)
+	case strings.HasPrefix(path, uri.ResourceRoute):
+		return resourceRouteHandler(req, client)
 	default:
-		deviceID := getDeviceID(client)
-		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: unknown path %v", deviceID, path), coapCodes.NotFound, req.Token)
+		return nil, statusErrorf(coapCodes.NotFound, "unknown path %v", path)
 	}
 }
 
 const clientKey = "client"
 
-func (server *Service) coapConnOnNew(coapConn *tcp.ClientConn, tlscon *tls.Conn) {
+func (s *Service) coapConnOnNew(coapConn *tcp.ClientConn, tlscon *tls.Conn) {
 	var tlsDeviceID string
-	v, ok := server.tlsDeviceIDCache.Get(coapConn.RemoteAddr().String())
-	if ok {
-		tlsDeviceID = v.(string)
+	var tlsValidUntil time.Time
+	if tlscon != nil {
+		peerCertificates := tlscon.ConnectionState().PeerCertificates
+		if len(peerCertificates) > 0 {
+			deviceID, err := coap.GetDeviceIDFromIdentityCertificate(peerCertificates[0])
+			if err == nil {
+				tlsDeviceID = deviceID
+			}
+			tlsValidUntil = peerCertificates[0].NotAfter
+		}
 	}
-	client := newClient(server, coapConn, tlsDeviceID)
+
+	client := newClient(s, coapConn, tlsDeviceID, tlsValidUntil)
 	coapConn.SetContextValue(clientKey, client)
 	coapConn.AddOnClose(func() {
 		client.OnClose()
 	})
 }
 
-func (server *Service) loggingMiddleware(next mux.Handler) mux.Handler {
+func (s *Service) authMiddleware(next mux.Handler) mux.Handler {
 	return mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
+		t := time.Now()
 		client, ok := w.Client().Context().Value(clientKey).(*Client)
 		if !ok {
-			client = newClient(server, w.Client().ClientConn().(*tcp.ClientConn), "")
-		}
-		tmp, err := pool.ConvertFrom(r.Message)
-		if err != nil {
-			client.logAndWriteErrorResponse(fmt.Errorf("cannot convert from mux.Message: %w", err), coapCodes.InternalServerError, r.Token)
-			return
-		}
-		decodeMsgToDebug(client, tmp, "RECEIVED-COMMAND")
-		next.ServeCOAP(w, r)
-	})
-}
-
-func (server *Service) authMiddleware(next mux.Handler) mux.Handler {
-	return mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
-		client, ok := w.Client().Context().Value(clientKey).(*Client)
-		if !ok {
-			client = newClient(server, w.Client().ClientConn().(*tcp.ClientConn), "")
+			client = newClient(s, w.Client().ClientConn().(*tcp.ClientConn), "", time.Time{})
 		}
 		authCtx, _ := client.GetAuthorizationContext()
 		ctx := context.WithValue(r.Context, &authCtxKey, authCtx)
 		path, _ := r.Options.Path()
-		logErrorAndCloseClient := func(err error, code coapCodes.Code) {
-			client.logAndWriteErrorResponse(err, code, r.Token)
-			if err := client.Close(); err != nil {
-				log.Errorf("coap server error: %w", err)
-			}
+		ctx, err := s.authInterceptor(ctx, r.Code, path)
+		if ctx == nil {
+			ctx = r.Context
 		}
-		ctx, err := server.authInterceptor(ctx, r.Code, "/"+path)
+		r.Context = context.WithValue(ctx, &log.StartTimeKey, t)
 		if err != nil {
-			logErrorAndCloseClient(fmt.Errorf("cannot handle request to path '%v': %w", path, err), coapCodes.Unauthorized)
+			err = statusErrorf(coapCodes.Unauthorized, "cannot handle request to path '%v': %w", path, err)
+			resp := client.createErrorResponse(err, r.Token)
+			defer client.ReleaseMessage(resp)
+			client.WriteMessage(resp)
+			client.logRequestResponse(r, resp, err)
+			client.Close()
 			return
 		}
-		r.Context = ctx
 		next.ServeCOAP(w, r)
 	})
 }
 
-//setupCoapServer setup coap server
-func (server *Service) setupCoapServer() error {
+// setupCoapServer setup coap server
+func (s *Service) setupCoapServer() error {
+	setHandlerError := func(uri string, err error) error {
+		return fmt.Errorf("failed to set %v handler: %w", uri, err)
+	}
 	m := mux.NewRouter()
-	m.Use(server.loggingMiddleware, server.authMiddleware)
+	m.Use(s.authMiddleware)
 	m.DefaultHandle(mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
-		validateCommand(w, r, server, defaultHandler)
+		executeCommand(w, r, s, defaultHandler)
 	}))
 	if err := m.Handle(uri.ResourceDirectory, mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
-		validateCommand(w, r, server, resourceDirectoryHandler)
+		executeCommand(w, r, s, resourceDirectoryHandler)
 	})); err != nil {
-		return fmt.Errorf("failed to set %v handler: %w", uri.ResourceDirectory, err)
+		return setHandlerError(uri.ResourceDirectory, err)
 	}
 	if err := m.Handle(uri.SignUp, mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
-		validateCommand(w, r, server, signUpHandler)
+		executeCommand(w, r, s, signUpHandler)
 	})); err != nil {
-		return fmt.Errorf("failed to set %v handler: %w", uri.SignUp, err)
+		return setHandlerError(uri.SignUp, err)
 	}
 	if err := m.Handle(uri.SignIn, mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
-		validateCommand(w, r, server, signInHandler)
+		executeCommand(w, r, s, signInHandler)
 	})); err != nil {
-		return fmt.Errorf("failed to set %v handler: %w", uri.SignIn, err)
+		return setHandlerError(uri.SignIn, err)
 	}
 	if err := m.Handle(uri.ResourceDiscovery, mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
-		validateCommand(w, r, server, resourceDiscoveryHandler)
+		executeCommand(w, r, s, resourceDiscoveryHandler)
 	})); err != nil {
-		return fmt.Errorf("failed to set %v handler: %w", uri.ResourceDiscovery, err)
+		return setHandlerError(uri.ResourceDiscovery, err)
 	}
 	if err := m.Handle(uri.RefreshToken, mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
-		validateCommand(w, r, server, refreshTokenHandler)
+		executeCommand(w, r, s, refreshTokenHandler)
 	})); err != nil {
-		return fmt.Errorf("failed to set %v handler: %w", uri.RefreshToken, err)
+		return setHandlerError(uri.RefreshToken, err)
 	}
 
 	opts := make([]tcp.ServerOption, 0, 8)
-	opts = append(opts, tcp.WithKeepAlive(1, server.config.APIs.COAP.KeepAlive.Timeout, server.keepaliveOnInactivity))
-	opts = append(opts, tcp.WithOnNewClientConn(server.coapConnOnNew))
-	opts = append(opts, tcp.WithBlockwise(server.config.APIs.COAP.BlockwiseTransfer.Enabled, server.blockWiseTransferSZX, server.config.APIs.COAP.KeepAlive.Timeout))
+	opts = append(opts, tcp.WithKeepAlive(1, s.config.APIs.COAP.KeepAlive.Timeout, s.keepaliveOnInactivity))
+	opts = append(opts, tcp.WithOnNewClientConn(s.coapConnOnNew))
+	opts = append(opts, tcp.WithBlockwise(s.config.APIs.COAP.BlockwiseTransfer.Enabled, s.blockWiseTransferSZX, s.config.APIs.COAP.KeepAlive.Timeout))
 	opts = append(opts, tcp.WithMux(m))
-	opts = append(opts, tcp.WithContext(server.ctx))
-	opts = append(opts, tcp.WithHeartBeat(server.config.APIs.COAP.GoroutineSocketHeartbeat))
-	opts = append(opts, tcp.WithMaxMessageSize(server.config.APIs.COAP.MaxMessageSize))
+	opts = append(opts, tcp.WithContext(s.ctx))
+	opts = append(opts, tcp.WithMaxMessageSize(s.config.APIs.COAP.MaxMessageSize))
 	opts = append(opts, tcp.WithErrors(func(e error) {
-		log.Errorf("plgd/go-coap: %w", e)
+		s.logger.Errorf("plgd/go-coap: %w", e)
 	}))
 	opts = append(opts, tcp.WithGoPool(func(f func()) error {
 		// we call directly function in connection-goroutine because
@@ -530,20 +623,20 @@ func (server *Service) setupCoapServer() error {
 		f()
 		return nil
 	}))
-	server.coapServer = tcp.NewServer(opts...)
+	s.coapServer = tcp.NewServer(opts...)
 	return nil
 }
 
-func (server *Service) tlsEnabled() bool {
-	return server.config.APIs.COAP.TLS.Enabled
+func (s *Service) tlsEnabled() bool {
+	return s.config.APIs.COAP.TLS.Enabled
 }
 
 // Serve starts a coapgateway on the configured address in *Service.
-func (server *Service) Serve() error {
-	return server.serveWithHandlingSignal()
+func (s *Service) Serve() error {
+	return s.serveWithHandlingSignal()
 }
 
-func (server *Service) serveWithHandlingSignal() error {
+func (s *Service) serveWithHandlingSignal() error {
 	var wg sync.WaitGroup
 	var err error
 	wg.Add(1)
@@ -552,27 +645,25 @@ func (server *Service) serveWithHandlingSignal() error {
 		err = server.coapServer.Serve(server.listener)
 		server.cancel()
 		server.natsClient.Close()
-	}(server)
+	}(s)
 
-	signal.Notify(server.sigs,
+	signal.Notify(s.sigs,
 		syscall.SIGHUP,
 		syscall.SIGINT,
 		syscall.SIGTERM,
 		syscall.SIGQUIT)
-	<-server.sigs
+	<-s.sigs
 
-	server.coapServer.Stop()
+	s.coapServer.Stop()
 	wg.Wait()
-
-	server.tlsDeviceIDCache.Flush()
 
 	return err
 }
 
-// Shutdown turn off server.
-func (server *Service) Close() error {
+// Close turns off the server.
+func (s *Service) Close() error {
 	select {
-	case server.sigs <- syscall.SIGTERM:
+	case s.sigs <- syscall.SIGTERM:
 	default:
 	}
 	return nil

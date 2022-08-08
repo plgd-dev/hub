@@ -1,8 +1,12 @@
 package events
 
-const OwnerIdKey = "ownerId"
-const EventTypeKey = "eventType"
+const (
+	OwnerIdKey   = "ownerId"
+	EventTypeKey = "eventType"
+)
 
-const Plgd = "plgd"
-const PlgdOwners = Plgd + ".owners"
-const PlgdOwnersOwner = PlgdOwners + ".{" + OwnerIdKey + "}"
+const (
+	Plgd            = "plgd"
+	PlgdOwners      = Plgd + ".owners"
+	PlgdOwnersOwner = PlgdOwners + ".{" + OwnerIdKey + "}"
+)

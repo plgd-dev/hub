@@ -4,19 +4,17 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/plgd-dev/hub/cloud2cloud-connector/events"
-	"github.com/plgd-dev/hub/cloud2cloud-gateway/store"
-
-	"github.com/plgd-dev/kit/v2/log"
-
 	"github.com/gorilla/mux"
+	"github.com/plgd-dev/hub/v2/cloud2cloud-connector/events"
+	"github.com/plgd-dev/hub/v2/cloud2cloud-gateway/store"
+	"github.com/plgd-dev/hub/v2/pkg/log"
 )
 
 func (rh *RequestHandler) subscribeToDevice(w http.ResponseWriter, r *http.Request) (int, error) {
 	routeVars := mux.Vars(r)
 	deviceID := routeVars[deviceIDKey]
 
-	s, code, err := rh.makeSubscription(w, r, store.Type_Device, []events.EventType{
+	s, code, err := rh.makeSubscription(r, store.Type_Device, []events.EventType{
 		events.EventType_ResourcesPublished,
 		events.EventType_ResourcesUnpublished,
 	})
@@ -28,7 +26,7 @@ func (rh *RequestHandler) subscribeToDevice(w http.ResponseWriter, r *http.Reque
 	if err != nil {
 		return http.StatusBadRequest, fmt.Errorf("cannot store subscription: %w", err)
 	}
-	err = jsonResponseWriterEncoder(w, SubscriptionResponse{
+	err = jsonResponseWriterEncoder(w, events.SubscriptionResponse{
 		SubscriptionID: s.ID,
 	}, http.StatusCreated)
 	if err != nil {

@@ -7,22 +7,23 @@ import (
 
 	"github.com/google/go-querystring/query"
 	"github.com/gorilla/mux"
-	"github.com/plgd-dev/hub/http-gateway/uri"
-	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
-	"github.com/plgd-dev/hub/resource-aggregate/commands"
+	"github.com/plgd-dev/hub/v2/http-gateway/serverMux"
+	"github.com/plgd-dev/hub/v2/http-gateway/uri"
+	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"google.golang.org/grpc/codes"
 )
 
 func (requestHandler *RequestHandler) getResourceFromShadow(w http.ResponseWriter, r *http.Request, resourceID string) {
 	type Options struct {
-		ResourceIdFilter []string `url:"resourceIdFilter"`
+		ResourceIDFilter []string `url:"resourceIdFilter"`
 	}
 	opt := Options{
-		ResourceIdFilter: []string{resourceID},
+		ResourceIDFilter: []string{resourceID},
 	}
 	v, err := query.Values(opt)
 	if err != nil {
-		writeError(w, kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "cannot get resource('%v') from shadow: %v", resourceID, err))
+		serverMux.WriteError(w, kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "cannot get resource('%v') from shadow: %v", resourceID, err))
 		return
 	}
 	r.URL.Path = uri.Resources
@@ -31,7 +32,7 @@ func (requestHandler *RequestHandler) getResourceFromShadow(w http.ResponseWrite
 	requestHandler.mux.ServeHTTP(rec, r)
 
 	toSimpleResponse(w, rec, func(w http.ResponseWriter, err error) {
-		writeError(w, kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "cannot get resource('%v') from shadow: %v", resourceID, err))
+		serverMux.WriteError(w, kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "cannot get resource('%v') from shadow: %v", resourceID, err))
 	}, streamResponseKey)
 }
 

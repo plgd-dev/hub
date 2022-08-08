@@ -2,22 +2,22 @@ package http
 
 import (
 	"context"
-	"crypto/tls"
 	"fmt"
 	netHttp "net/http"
 	"strings"
 
 	extJwt "github.com/golang-jwt/jwt/v4"
-	"github.com/plgd-dev/hub/pkg/net/grpc"
-	"github.com/plgd-dev/hub/pkg/security/jwt"
+	"github.com/plgd-dev/hub/v2/pkg/net/grpc"
 )
 
-type Claims = interface{ Valid() error }
-type ClaimsFunc = func(ctx context.Context, method, uri string) Claims
-type OnUnauthorizedAccessFunc = func(ctx context.Context, w netHttp.ResponseWriter, r *netHttp.Request, err error)
-type Validator interface {
-	ParseWithClaims(token string, claims extJwt.Claims) error
-}
+type (
+	Claims                   = interface{ Valid() error }
+	ClaimsFunc               = func(ctx context.Context, method, uri string) Claims
+	OnUnauthorizedAccessFunc = func(ctx context.Context, w netHttp.ResponseWriter, r *netHttp.Request, err error)
+	Validator                interface {
+		ParseWithClaims(token string, claims extJwt.Claims) error
+	}
+)
 
 const bearerKey = "bearer"
 
@@ -65,11 +65,6 @@ func validateJWTWithValidator(validator Validator, claims ClaimsFunc) Intercepto
 		}
 		return ctx, nil
 	}
-}
-
-func validateJWT(jwksURL string, tls *tls.Config, claims ClaimsFunc) Interceptor {
-	validator := jwt.NewValidator(jwksURL, tls)
-	return validateJWTWithValidator(validator, claims)
 }
 
 // CreateAuthMiddleware creates middleware for authorization

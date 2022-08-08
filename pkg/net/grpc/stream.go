@@ -1,6 +1,7 @@
 package grpc
 
 import (
+	"errors"
 	"io"
 
 	"google.golang.org/grpc"
@@ -23,7 +24,7 @@ func (it *Iterator) Next(v interface{}) bool {
 		return false
 	}
 	err := it.stream.RecvMsg(v)
-	if err == io.EOF {
+	if errors.Is(err, io.EOF) {
 		it.Close()
 		return false
 	}

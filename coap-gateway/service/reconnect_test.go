@@ -10,15 +10,14 @@ import (
 
 	"github.com/plgd-dev/go-coap/v2/message"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
-	coapgwTest "github.com/plgd-dev/hub/coap-gateway/test"
-	"github.com/plgd-dev/hub/coap-gateway/uri"
-	idTest "github.com/plgd-dev/hub/identity-store/test"
-	raTest "github.com/plgd-dev/hub/resource-aggregate/test"
-	rdTest "github.com/plgd-dev/hub/resource-directory/test"
-	test "github.com/plgd-dev/hub/test"
-	testCfg "github.com/plgd-dev/hub/test/config"
-	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
-	testService "github.com/plgd-dev/hub/test/service"
+	coapgwTest "github.com/plgd-dev/hub/v2/coap-gateway/test"
+	"github.com/plgd-dev/hub/v2/coap-gateway/uri"
+	idTest "github.com/plgd-dev/hub/v2/identity-store/test"
+	raTest "github.com/plgd-dev/hub/v2/resource-aggregate/test"
+	rdTest "github.com/plgd-dev/hub/v2/resource-directory/test"
+	test "github.com/plgd-dev/hub/v2/test"
+	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
+	testService "github.com/plgd-dev/hub/v2/test/service"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -27,7 +26,7 @@ func TestReconnectNATS(t *testing.T) {
 	shutdown := setUp(t)
 	defer shutdown()
 
-	co := testCoapDial(t, testCfg.GW_HOST, "")
+	co := testCoapDial(t, "", true, time.Now().Add(time.Minute))
 	if co == nil {
 		return
 	}
@@ -62,8 +61,7 @@ func TestReconnectNATSAndGrpcGateway(t *testing.T) {
 	raShutdown := raTest.SetUp(t)
 	rdShutdown := rdTest.SetUp(t)
 	coapgwCfg := coapgwTest.MakeConfig(t)
-	coapgwCfg.Log.Embedded.Debug = true
-	coapgwCfg.Log.DumpCoapMessages = true
+	coapgwCfg.Log.DumpBody = true
 	gwShutdown := coapgwTest.New(t, coapgwCfg)
 	defer func() {
 		gwShutdown()
@@ -72,7 +70,7 @@ func TestReconnectNATSAndGrpcGateway(t *testing.T) {
 		oauthShutdown()
 	}()
 
-	co := testCoapDial(t, testCfg.GW_HOST, "")
+	co := testCoapDial(t, "", true, time.Now().Add(time.Minute))
 	if co == nil {
 		return
 	}

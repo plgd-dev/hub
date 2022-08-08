@@ -5,16 +5,16 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/plgd-dev/hub/pkg/net/grpc"
-	pkgTime "github.com/plgd-dev/hub/pkg/time"
-
+	"github.com/plgd-dev/hub/v2/coap-gateway/resource"
+	"github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	"github.com/plgd-dev/hub/v2/pkg/opentelemetry/propagation"
+	pkgTime "github.com/plgd-dev/hub/v2/pkg/time"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/aggregate"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
-
-	"github.com/plgd-dev/hub/resource-aggregate/commands"
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/aggregate"
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventstore"
 )
 
 const eventTypeResourceLinksSnapshotTaken = "resourcelinkssnapshottaken"
@@ -51,9 +51,16 @@ func (e *ResourceLinksSnapshotTaken) Timestamp() time.Time {
 	return pkgTime.Unix(0, e.GetEventMetadata().GetTimestamp())
 }
 
-func (e *ResourceLinksSnapshotTaken) CopyData(event *ResourceLinksSnapshotTaken) {
-	e.Resources = event.GetResources()
+func (e *ResourceLinksSnapshotTaken) CloneData(event *ResourceLinksSnapshotTaken) {
 	e.DeviceId = event.GetDeviceId()
+	e.Resources = commands.CloneResourcesMap(event.GetResources())
+	e.EventMetadata = event.GetEventMetadata().Clone()
+	e.AuditContext = event.GetAuditContext().Clone()
+}
+
+func (e *ResourceLinksSnapshotTaken) CopyData(event *ResourceLinksSnapshotTaken) {
+	e.DeviceId = event.GetDeviceId()
+	e.Resources = event.GetResources()
 	e.EventMetadata = event.GetEventMetadata()
 	e.AuditContext = event.GetAuditContext()
 }
@@ -68,7 +75,6 @@ func (e *ResourceLinksSnapshotTaken) CheckInitialized() bool {
 // Examine published resources by the ResourceLinksPublished, compare it with cached resources and
 // return array of new or changed resources.
 func (e *ResourceLinksSnapshotTaken) GetNewPublishedLinks(pub *ResourceLinksPublished) []*commands.Resource {
-
 	if e.GetResources() == nil {
 		return pub.GetResources()
 	}
@@ -85,7 +91,7 @@ func (e *ResourceLinksSnapshotTaken) GetNewPublishedLinks(pub *ResourceLinksPubl
 	return published
 }
 
-func (e *ResourceLinksSnapshotTaken) HandleEventResourceLinksPublished(ctx context.Context, pub *ResourceLinksPublished) ([]*commands.Resource, error) {
+func (e *ResourceLinksSnapshotTaken) HandleEventResourceLinksPublished(pub *ResourceLinksPublished) []*commands.Resource {
 	published := e.GetNewPublishedLinks(pub)
 
 	for _, res := range published {
@@ -97,34 +103,59 @@ func (e *ResourceLinksSnapshotTaken) HandleEventResourceLinksPublished(ctx conte
 	e.DeviceId = pub.GetDeviceId()
 	e.EventMetadata = pub.GetEventMetadata()
 	e.AuditContext = pub.GetAuditContext()
-	return published, nil
+	return published
 }
 
-func (e *ResourceLinksSnapshotTaken) HandleEventResourceLinksUnpublished(ctx context.Context, upub *ResourceLinksUnpublished) ([]string, error) {
-	var unpublished []string
-	if len(upub.GetHrefs()) == 0 {
-		unpublished = make([]string, 0, len(e.GetResources()))
+func (e *ResourceLinksSnapshotTaken) unpublishResourceLinksAndUpdateCache(instanceIDs []int64, upub *ResourceLinksUnpublished) []string {
+	if len(e.GetResources()) == 0 {
+		return nil
+	}
+
+	if len(upub.GetHrefs()) == 0 && len(instanceIDs) == 0 {
+		unpublished := make([]string, 0, len(e.GetResources()))
 		for href := range e.GetResources() {
 			unpublished = append(unpublished, href)
 		}
 		e.Resources = make(map[string]*commands.Resource)
-	} else {
-		unpublished = make([]string, 0, len(upub.GetHrefs()))
-		if len(e.GetResources()) > 0 {
-			for _, href := range upub.GetHrefs() {
-				if _, present := e.GetResources()[href]; present {
-					unpublished = append(unpublished, href)
-					delete(e.GetResources(), href)
-				}
-			}
+		return unpublished
+	}
+
+	unpublished := make([]string, 0, len(upub.GetHrefs())+len(instanceIDs))
+	for _, href := range upub.GetHrefs() {
+		if _, present := e.GetResources()[href]; present {
+			unpublished = append(unpublished, href)
+			delete(e.GetResources(), href)
 		}
 	}
-	e.EventMetadata = upub.GetEventMetadata()
-	e.AuditContext = upub.GetAuditContext()
-	return unpublished, nil
+
+	if len(instanceIDs) == 0 {
+		return unpublished
+	}
+
+	instanceIDToHref := map[int64]string{}
+	for href := range e.GetResources() {
+		instanceIDToHref[resource.GetInstanceID(href)] = href
+	}
+
+	for _, insID := range instanceIDs {
+		if href, present := instanceIDToHref[insID]; present {
+			unpublished = append(unpublished, href)
+			delete(instanceIDToHref, insID)
+			delete(e.GetResources(), href)
+		}
+	}
+
+	return unpublished
 }
 
-func (e *ResourceLinksSnapshotTaken) HandleEventResourceLinksSnapshotTaken(ctx context.Context, s *ResourceLinksSnapshotTaken) {
+func (e *ResourceLinksSnapshotTaken) HandleEventResourceLinksUnpublished(instanceIDs []int64, upub *ResourceLinksUnpublished) []string {
+	unpublished := e.unpublishResourceLinksAndUpdateCache(instanceIDs, upub)
+	e.EventMetadata = upub.GetEventMetadata()
+	e.AuditContext = upub.GetAuditContext()
+	return unpublished
+}
+
+func (e *ResourceLinksSnapshotTaken) HandleEventResourceLinksSnapshotTaken(s *ResourceLinksSnapshotTaken) {
 	e.CopyData(s)
 }
 
@@ -143,19 +174,19 @@ func (e *ResourceLinksSnapshotTaken) Handle(ctx context.Context, iter eventstore
 			if err := eu.Unmarshal(&s); err != nil {
 				return status.Errorf(codes.Internal, "%v", err)
 			}
-			e.HandleEventResourceLinksSnapshotTaken(ctx, &s)
+			e.HandleEventResourceLinksSnapshotTaken(&s)
 		case (&ResourceLinksPublished{}).EventType():
 			var s ResourceLinksPublished
 			if err := eu.Unmarshal(&s); err != nil {
 				return status.Errorf(codes.Internal, "%v", err)
 			}
-			_, _ = e.HandleEventResourceLinksPublished(ctx, &s)
+			e.HandleEventResourceLinksPublished(&s)
 		case (&ResourceLinksUnpublished{}).EventType():
 			var s ResourceLinksUnpublished
 			if err := eu.Unmarshal(&s); err != nil {
 				return status.Errorf(codes.Internal, "%v", err)
 			}
-			_, _ = e.HandleEventResourceLinksUnpublished(ctx, &s)
+			e.HandleEventResourceLinksUnpublished(nil, &s)
 		}
 	}
 	return iter.Err()
@@ -176,15 +207,13 @@ func (e *ResourceLinksSnapshotTaken) HandleCommand(ctx context.Context, cmd aggr
 		ac := commands.NewAuditContext(userID, "")
 
 		rlp := ResourceLinksPublished{
-			Resources:     req.GetResources(),
-			DeviceId:      req.GetDeviceId(),
-			AuditContext:  ac,
-			EventMetadata: em,
+			Resources:            req.GetResources(),
+			DeviceId:             req.GetDeviceId(),
+			AuditContext:         ac,
+			EventMetadata:        em,
+			OpenTelemetryCarrier: propagation.TraceFromCtx(ctx),
 		}
-		published, err := e.HandleEventResourceLinksPublished(ctx, &rlp)
-		if err != nil {
-			return nil, err
-		}
+		published := e.HandleEventResourceLinksPublished(&rlp)
 		if len(published) == 0 {
 			return nil, nil
 		}
@@ -201,15 +230,13 @@ func (e *ResourceLinksSnapshotTaken) HandleCommand(ctx context.Context, cmd aggr
 		em := MakeEventMeta(req.GetCommandMetadata().GetConnectionId(), req.GetCommandMetadata().GetSequence(), newVersion)
 		ac := commands.NewAuditContext(userID, "")
 		rlu := ResourceLinksUnpublished{
-			Hrefs:         req.GetHrefs(),
-			DeviceId:      req.GetDeviceId(),
-			AuditContext:  ac,
-			EventMetadata: em,
+			DeviceId:             req.GetDeviceId(),
+			Hrefs:                req.GetHrefs(),
+			AuditContext:         ac,
+			EventMetadata:        em,
+			OpenTelemetryCarrier: propagation.TraceFromCtx(ctx),
 		}
-		unpublished, err := e.HandleEventResourceLinksUnpublished(ctx, &rlu)
-		if err != nil {
-			return nil, err
-		}
+		unpublished := e.HandleEventResourceLinksUnpublished(req.GetInstanceIds(), &rlu)
 		if len(unpublished) == 0 {
 			return nil, nil
 		}
@@ -236,7 +263,6 @@ func (e *ResourceLinksSnapshotTaken) TakeSnapshot(version uint64) (eventstore.Ev
 }
 
 func NewResourceLinksSnapshotTaken() *ResourceLinksSnapshotTaken {
-
 	return &ResourceLinksSnapshotTaken{
 		Resources:     make(map[string]*commands.Resource),
 		EventMetadata: &EventMetadata{},

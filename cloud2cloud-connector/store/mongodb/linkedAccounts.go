@@ -2,9 +2,10 @@ package mongodb
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
-	"github.com/plgd-dev/hub/cloud2cloud-connector/store"
+	"github.com/plgd-dev/hub/v2/cloud2cloud-connector/store"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -63,11 +64,11 @@ func (s *Store) UpdateLinkedAccount(ctx context.Context, sub store.LinkedAccount
 	return nil
 }
 
-func (s *Store) RemoveLinkedAccount(ctx context.Context, linkedAccountId string) error {
-	if linkedAccountId == "" {
-		return fmt.Errorf("cannot remove linked account: invalid linkedAccountId")
+func (s *Store) RemoveLinkedAccount(ctx context.Context, linkedAccountID string) error {
+	if linkedAccountID == "" {
+		return fmt.Errorf("cannot remove linked account: invalid linkedAccountID")
 	}
-	res, err := s.Collection(resLinkedAccountCName).DeleteOne(ctx, bson.M{"_id": linkedAccountId})
+	res, err := s.Collection(resLinkedAccountCName).DeleteOne(ctx, bson.M{"_id": linkedAccountID})
 	if err != nil {
 		return fmt.Errorf("cannot remove linked account: %w", err)
 	}
@@ -90,7 +91,7 @@ func (s *Store) LoadLinkedAccounts(ctx context.Context, query store.Query, h sto
 	default:
 		iter, err = col.Find(ctx, bson.M{})
 	}
-	if err == mongo.ErrNilDocument {
+	if errors.Is(err, mongo.ErrNilDocument) {
 		return nil
 	}
 	if err != nil {

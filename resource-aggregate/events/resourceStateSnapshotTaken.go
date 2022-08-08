@@ -6,25 +6,26 @@ import (
 	"time"
 
 	"github.com/plgd-dev/go-coap/v2/message"
-	"github.com/plgd-dev/hub/pkg/net/grpc"
-	pkgTime "github.com/plgd-dev/hub/pkg/time"
-
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/proto"
-
-	"github.com/plgd-dev/hub/resource-aggregate/commands"
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/aggregate"
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventstore"
+	"github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	"github.com/plgd-dev/hub/v2/pkg/opentelemetry/propagation"
+	pkgTime "github.com/plgd-dev/hub/v2/pkg/time"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/aggregate"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore"
 	"github.com/plgd-dev/kit/v2/codec/cbor"
 	"github.com/plgd-dev/kit/v2/codec/json"
 	"github.com/plgd-dev/kit/v2/strings"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 )
 
 const eventTypeResourceStateSnapshotTaken = "resourcestatesnapshottaken"
 
-const errInvalidVersion = "invalid version for events"
-const errInvalidCommandMetadata = "invalid command metadata"
+const (
+	errInvalidVersion         = "invalid version for events"
+	errInvalidCommandMetadata = "invalid command metadata"
+)
 
 func (e *ResourceStateSnapshotTaken) AggregateID() string {
 	return e.GetResourceId().ToUUID()
@@ -88,15 +89,15 @@ type resourceValidUntilValidator interface {
 	GetResourceId() *commands.ResourceId
 }
 
-func (e *ResourceStateSnapshotTaken) processValidUntil(v resourceValidUntilValidator, now time.Time) (bool, error) {
+func (e *ResourceStateSnapshotTaken) processValidUntil(v resourceValidUntilValidator, now time.Time) bool {
 	if v.IsExpired(now) {
 		// for events from eventstore we just store metada from command.
 		e.ResourceId = v.GetResourceId()
 		e.EventMetadata = v.GetEventMetadata()
 		e.AuditContext = v.GetAuditContext()
-		return false, nil
+		return false
 	}
-	return true, nil
+	return true
 }
 
 func (e *ResourceStateSnapshotTaken) checkForDuplicitCorrelationID(correlationID string, now time.Time) error {
@@ -137,14 +138,10 @@ func (e *ResourceStateSnapshotTaken) checkForDuplicitCorrelationID(correlationID
 
 func (e *ResourceStateSnapshotTaken) HandleEventResourceCreatePending(ctx context.Context, createPending *ResourceCreatePending) error {
 	now := time.Now()
-	ok, err := e.processValidUntil(createPending, now)
-	if err != nil {
-		return err
-	}
-	if !ok {
+	if ok := e.processValidUntil(createPending, now); !ok {
 		return nil
 	}
-	err = e.checkForDuplicitCorrelationID(createPending.GetAuditContext().GetCorrelationId(), now)
+	err := e.checkForDuplicitCorrelationID(createPending.GetAuditContext().GetCorrelationId(), now)
 	if err != nil {
 		return err
 	}
@@ -157,14 +154,10 @@ func (e *ResourceStateSnapshotTaken) HandleEventResourceCreatePending(ctx contex
 
 func (e *ResourceStateSnapshotTaken) HandleEventResourceUpdatePending(ctx context.Context, updatePending *ResourceUpdatePending) error {
 	now := time.Now()
-	ok, err := e.processValidUntil(updatePending, now)
-	if err != nil {
-		return err
-	}
-	if !ok {
+	if ok := e.processValidUntil(updatePending, now); !ok {
 		return nil
 	}
-	err = e.checkForDuplicitCorrelationID(updatePending.GetAuditContext().GetCorrelationId(), now)
+	err := e.checkForDuplicitCorrelationID(updatePending.GetAuditContext().GetCorrelationId(), now)
 	if err != nil {
 		return err
 	}
@@ -177,14 +170,10 @@ func (e *ResourceStateSnapshotTaken) HandleEventResourceUpdatePending(ctx contex
 
 func (e *ResourceStateSnapshotTaken) HandleEventResourceRetrievePending(ctx context.Context, retrievePending *ResourceRetrievePending) error {
 	now := time.Now()
-	ok, err := e.processValidUntil(retrievePending, now)
-	if err != nil {
-		return err
-	}
-	if !ok {
+	if ok := e.processValidUntil(retrievePending, now); !ok {
 		return nil
 	}
-	err = e.checkForDuplicitCorrelationID(retrievePending.GetAuditContext().GetCorrelationId(), now)
+	err := e.checkForDuplicitCorrelationID(retrievePending.GetAuditContext().GetCorrelationId(), now)
 	if err != nil {
 		return err
 	}
@@ -196,14 +185,10 @@ func (e *ResourceStateSnapshotTaken) HandleEventResourceRetrievePending(ctx cont
 
 func (e *ResourceStateSnapshotTaken) HandleEventResourceDeletePending(ctx context.Context, deletePending *ResourceDeletePending) error {
 	now := time.Now()
-	ok, err := e.processValidUntil(deletePending, now)
-	if err != nil {
-		return err
-	}
-	if !ok {
+	if ok := e.processValidUntil(deletePending, now); !ok {
 		return nil
 	}
-	err = e.checkForDuplicitCorrelationID(deletePending.GetAuditContext().GetCorrelationId(), now)
+	err := e.checkForDuplicitCorrelationID(deletePending.GetAuditContext().GetCorrelationId(), now)
 	if err != nil {
 		return err
 	}
@@ -213,6 +198,7 @@ func (e *ResourceStateSnapshotTaken) HandleEventResourceDeletePending(ctx contex
 	e.AuditContext = deletePending.GetAuditContext()
 	return nil
 }
+
 func RemoveIndex(s []int, index int) []int {
 	return append(s[:index], s[index+1:]...)
 }
@@ -464,11 +450,12 @@ func (e *ResourceStateSnapshotTaken) ConfirmResourceUpdateCommand(ctx context.Co
 	em := MakeEventMeta(req.GetCommandMetadata().GetConnectionId(), req.GetCommandMetadata().GetSequence(), newVersion)
 	ac := commands.NewAuditContext(userID, req.GetCorrelationId())
 	rc := ResourceUpdated{
-		ResourceId:    req.GetResourceId(),
-		AuditContext:  ac,
-		EventMetadata: em,
-		Content:       req.GetContent(),
-		Status:        req.GetStatus(),
+		ResourceId:           req.GetResourceId(),
+		AuditContext:         ac,
+		EventMetadata:        em,
+		Content:              req.GetContent(),
+		Status:               req.GetStatus(),
+		OpenTelemetryCarrier: propagation.TraceFromCtx(ctx),
 	}
 	if err := e.HandleEventResourceUpdated(ctx, &rc); err != nil {
 		return nil, err
@@ -484,11 +471,12 @@ func (e *ResourceStateSnapshotTaken) ConfirmResourceRetrieveCommand(ctx context.
 	em := MakeEventMeta(req.GetCommandMetadata().GetConnectionId(), req.GetCommandMetadata().GetSequence(), newVersion)
 	ac := commands.NewAuditContext(userID, req.GetCorrelationId())
 	rc := ResourceRetrieved{
-		ResourceId:    req.GetResourceId(),
-		AuditContext:  ac,
-		EventMetadata: em,
-		Content:       req.GetContent(),
-		Status:        req.GetStatus(),
+		ResourceId:           req.GetResourceId(),
+		AuditContext:         ac,
+		EventMetadata:        em,
+		Content:              req.GetContent(),
+		Status:               req.GetStatus(),
+		OpenTelemetryCarrier: propagation.TraceFromCtx(ctx),
 	}
 	if err := e.HandleEventResourceRetrieved(ctx, &rc); err != nil {
 		return nil, err
@@ -504,11 +492,12 @@ func (e *ResourceStateSnapshotTaken) ConfirmResourceDeleteCommand(ctx context.Co
 	em := MakeEventMeta(req.GetCommandMetadata().GetConnectionId(), req.GetCommandMetadata().GetSequence(), newVersion)
 	ac := commands.NewAuditContext(userID, req.GetCorrelationId())
 	rc := ResourceDeleted{
-		ResourceId:    req.GetResourceId(),
-		AuditContext:  ac,
-		EventMetadata: em,
-		Content:       req.GetContent(),
-		Status:        req.GetStatus(),
+		ResourceId:           req.GetResourceId(),
+		AuditContext:         ac,
+		EventMetadata:        em,
+		Content:              req.GetContent(),
+		Status:               req.GetStatus(),
+		OpenTelemetryCarrier: propagation.TraceFromCtx(ctx),
 	}
 	if err := e.HandleEventResourceDeleted(ctx, &rc); err != nil {
 		return nil, err
@@ -524,11 +513,12 @@ func (e *ResourceStateSnapshotTaken) ConfirmResourceCreateCommand(ctx context.Co
 	em := MakeEventMeta(req.GetCommandMetadata().GetConnectionId(), req.GetCommandMetadata().GetSequence(), newVersion)
 	ac := commands.NewAuditContext(userID, req.GetCorrelationId())
 	rc := ResourceCreated{
-		ResourceId:    req.GetResourceId(),
-		AuditContext:  ac,
-		EventMetadata: em,
-		Content:       req.GetContent(),
-		Status:        req.GetStatus(),
+		ResourceId:           req.GetResourceId(),
+		AuditContext:         ac,
+		EventMetadata:        em,
+		Content:              req.GetContent(),
+		Status:               req.GetStatus(),
+		OpenTelemetryCarrier: propagation.TraceFromCtx(ctx),
 	}
 	if err := e.HandleEventResourceCreated(ctx, &rc); err != nil {
 		return nil, err
@@ -628,11 +618,12 @@ func (e *ResourceStateSnapshotTaken) HandleCommand(ctx context.Context, cmd aggr
 		ac := commands.NewAuditContext(userID, "")
 
 		rc := ResourceChanged{
-			ResourceId:    req.GetResourceId(),
-			AuditContext:  ac,
-			EventMetadata: em,
-			Content:       req.GetContent(),
-			Status:        req.GetStatus(),
+			ResourceId:           req.GetResourceId(),
+			AuditContext:         ac,
+			EventMetadata:        em,
+			Content:              req.GetContent(),
+			Status:               req.GetStatus(),
+			OpenTelemetryCarrier: propagation.TraceFromCtx(ctx),
 		}
 		var ok bool
 		var err error
@@ -656,12 +647,13 @@ func (e *ResourceStateSnapshotTaken) HandleCommand(ctx context.Context, cmd aggr
 		}
 
 		rc := ResourceUpdatePending{
-			ResourceId:        req.GetResourceId(),
-			ResourceInterface: req.GetResourceInterface(),
-			AuditContext:      ac,
-			EventMetadata:     em,
-			Content:           content,
-			ValidUntil:        timeToLive2ValidUntil(req.GetTimeToLive()),
+			ResourceId:           req.GetResourceId(),
+			ResourceInterface:    req.GetResourceInterface(),
+			AuditContext:         ac,
+			EventMetadata:        em,
+			Content:              content,
+			ValidUntil:           timeToLive2ValidUntil(req.GetTimeToLive()),
+			OpenTelemetryCarrier: propagation.TraceFromCtx(ctx),
 		}
 
 		if err = e.HandleEventResourceUpdatePending(ctx, &rc); err != nil {
@@ -679,11 +671,12 @@ func (e *ResourceStateSnapshotTaken) HandleCommand(ctx context.Context, cmd aggr
 		ac := commands.NewAuditContext(userID, req.GetCorrelationId())
 
 		rc := ResourceRetrievePending{
-			ResourceId:        req.GetResourceId(),
-			ResourceInterface: req.GetResourceInterface(),
-			AuditContext:      ac,
-			EventMetadata:     em,
-			ValidUntil:        timeToLive2ValidUntil(req.GetTimeToLive()),
+			ResourceId:           req.GetResourceId(),
+			ResourceInterface:    req.GetResourceInterface(),
+			AuditContext:         ac,
+			EventMetadata:        em,
+			ValidUntil:           timeToLive2ValidUntil(req.GetTimeToLive()),
+			OpenTelemetryCarrier: propagation.TraceFromCtx(ctx),
 		}
 
 		if err := e.HandleEventResourceRetrievePending(ctx, &rc); err != nil {
@@ -701,10 +694,11 @@ func (e *ResourceStateSnapshotTaken) HandleCommand(ctx context.Context, cmd aggr
 		ac := commands.NewAuditContext(userID, req.GetCorrelationId())
 
 		rc := ResourceDeletePending{
-			ResourceId:    req.GetResourceId(),
-			AuditContext:  ac,
-			EventMetadata: em,
-			ValidUntil:    timeToLive2ValidUntil(req.GetTimeToLive()),
+			ResourceId:           req.GetResourceId(),
+			AuditContext:         ac,
+			EventMetadata:        em,
+			ValidUntil:           timeToLive2ValidUntil(req.GetTimeToLive()),
+			OpenTelemetryCarrier: propagation.TraceFromCtx(ctx),
 		}
 
 		if err := e.HandleEventResourceDeletePending(ctx, &rc); err != nil {
@@ -725,11 +719,12 @@ func (e *ResourceStateSnapshotTaken) HandleCommand(ctx context.Context, cmd aggr
 			return nil, err
 		}
 		rc := ResourceCreatePending{
-			ResourceId:    req.GetResourceId(),
-			Content:       content,
-			AuditContext:  ac,
-			EventMetadata: em,
-			ValidUntil:    timeToLive2ValidUntil(req.GetTimeToLive()),
+			ResourceId:           req.GetResourceId(),
+			Content:              content,
+			AuditContext:         ac,
+			EventMetadata:        em,
+			ValidUntil:           timeToLive2ValidUntil(req.GetTimeToLive()),
+			OpenTelemetryCarrier: propagation.TraceFromCtx(ctx),
 		}
 
 		if err := e.HandleEventResourceCreatePending(ctx, &rc); err != nil {

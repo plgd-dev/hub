@@ -1,11 +1,12 @@
 package service
 
 import (
+	"errors"
 	"io"
 
-	"github.com/plgd-dev/hub/grpc-gateway/pb"
-	"github.com/plgd-dev/hub/pkg/log"
-	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
+	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"google.golang.org/grpc/codes"
 )
 
@@ -17,7 +18,7 @@ func (r *RequestHandler) GetPendingCommands(req *pb.GetPendingCommandsRequest, s
 	}
 	for {
 		resp, err := rd.Recv()
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			break
 		}
 		if err != nil {

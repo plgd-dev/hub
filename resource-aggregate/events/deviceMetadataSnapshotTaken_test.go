@@ -5,10 +5,16 @@ import (
 	"testing"
 	"time"
 
-	commands "github.com/plgd-dev/hub/resource-aggregate/commands"
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventstore"
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventstore/test"
-	"github.com/plgd-dev/hub/resource-aggregate/events"
+	"github.com/golang-jwt/jwt/v4"
+	grpcgwPb "github.com/plgd-dev/hub/v2/grpc-gateway/pb"
+	"github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	commands "github.com/plgd-dev/hub/v2/resource-aggregate/commands"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/aggregate"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore/test"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
+	"github.com/plgd-dev/hub/v2/test/config"
+	"github.com/plgd-dev/hub/v2/test/pb"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
 )
@@ -18,8 +24,9 @@ var testEventDeviceMetadataSnapshotTaken events.DeviceMetadataSnapshotTaken = ev
 	DeviceMetadataUpdated: &events.DeviceMetadataUpdated{
 		DeviceId: "dev1",
 		Status: &commands.ConnectionStatus{
-			Value:      commands.ConnectionStatus_ONLINE,
-			ValidUntil: 12345,
+			Value:        commands.ConnectionStatus_ONLINE,
+			ValidUntil:   12345,
+			ConnectionId: "con1",
 		},
 		ShadowSynchronization: commands.ShadowSynchronization_ENABLED,
 		AuditContext: &commands.AuditContext{
@@ -46,7 +53,7 @@ var testEventDeviceMetadataSnapshotTaken events.DeviceMetadataSnapshotTaken = ev
 	},
 }
 
-func TestDeviceMetadataSnapshotTaken_CopyData(t *testing.T) {
+func TestDeviceMetadataSnapshotTakenCopyData(t *testing.T) {
 	type args struct {
 		event *events.DeviceMetadataSnapshotTaken
 	}
@@ -70,7 +77,7 @@ func TestDeviceMetadataSnapshotTaken_CopyData(t *testing.T) {
 	}
 }
 
-func TestDeviceMetadataSnapshotTaken_CheckInitialized(t *testing.T) {
+func TestDeviceMetadataSnapshotTakenCheckInitialized(t *testing.T) {
 	type args struct {
 		event *events.DeviceMetadataSnapshotTaken
 	}
@@ -101,7 +108,7 @@ func TestDeviceMetadataSnapshotTaken_CheckInitialized(t *testing.T) {
 	}
 }
 
-func TestDeviceMetadataSnapshotTaken_Handle(t *testing.T) {
+func TestDeviceMetadataSnapshotTakenHandle(t *testing.T) {
 	type args struct {
 		events *iterator
 	}
@@ -117,7 +124,7 @@ func TestDeviceMetadataSnapshotTaken_Handle(t *testing.T) {
 					test.MakeDeviceMetadataUpdatePending("a", &events.DeviceMetadataUpdatePending_ShadowSynchronization{
 						ShadowSynchronization: commands.ShadowSynchronization_ENABLED,
 					}, events.MakeEventMeta("", 0, 0), commands.NewAuditContext("userID", "0"), time.Now().Add(-time.Second)),
-					test.MakeDeviceMetadataUpdated("a", &commands.ConnectionStatus{}, commands.ShadowSynchronization_ENABLED, events.MakeEventMeta("", 0, 0), commands.NewAuditContext("userID", "0"), false),
+					test.MakeDeviceMetadataUpdated("a", &commands.ConnectionStatus{ConnectionId: "123"}, commands.ShadowSynchronization_ENABLED, events.MakeEventMeta("", 0, 0), commands.NewAuditContext("userID", "0"), false),
 				}),
 			},
 		},
@@ -131,6 +138,191 @@ func TestDeviceMetadataSnapshotTaken_Handle(t *testing.T) {
 				return
 			}
 			require.NoError(t, err)
+		})
+	}
+}
+
+func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
+	deviceID := "deviceId"
+	correlationID := "correlationID"
+	connectionID := "connectionID"
+	userID := "userID"
+	jwtWithSubUserID := config.CreateJwtToken(t, jwt.MapClaims{
+		"sub": userID,
+	})
+
+	type args struct {
+		ctx        context.Context
+		cmd        aggregate.Command
+		newVersion uint64
+	}
+	tests := []struct {
+		name    string
+		preCmds []args
+		args    args
+		want    []*grpcgwPb.Event
+		wantErr bool
+	}{
+		{
+			name: "online,offline",
+			preCmds: []args{
+				{
+					ctx: grpc.CtxWithIncomingToken(context.Background(), jwtWithSubUserID),
+					cmd: &commands.UpdateDeviceMetadataRequest{
+						DeviceId: deviceID,
+						CommandMetadata: &commands.CommandMetadata{
+							ConnectionId: connectionID,
+							Sequence:     0,
+						},
+						TimeToLive:    0,
+						CorrelationId: correlationID,
+						Update: &commands.UpdateDeviceMetadataRequest_Status{
+							Status: &commands.ConnectionStatus{
+								Value:        commands.ConnectionStatus_ONLINE,
+								ConnectionId: connectionID,
+							},
+						},
+					},
+					newVersion: 0,
+				},
+			},
+			args: args{
+				newVersion: 1,
+				ctx:        grpc.CtxWithIncomingToken(context.Background(), jwtWithSubUserID),
+				cmd: &commands.UpdateDeviceMetadataRequest{
+					DeviceId: deviceID,
+					CommandMetadata: &commands.CommandMetadata{
+						ConnectionId: connectionID,
+						Sequence:     0,
+					},
+					TimeToLive:    0,
+					CorrelationId: correlationID,
+					Update: &commands.UpdateDeviceMetadataRequest_Status{
+						Status: &commands.ConnectionStatus{
+							Value:        commands.ConnectionStatus_OFFLINE,
+							ConnectionId: connectionID,
+						},
+					},
+				},
+			},
+			want: []*grpcgwPb.Event{
+				pb.ToEvent(&events.DeviceMetadataUpdated{
+					DeviceId: deviceID,
+					Status: &commands.ConnectionStatus{
+						Value: commands.ConnectionStatus_OFFLINE,
+					},
+					AuditContext:         commands.NewAuditContext(userID, correlationID),
+					OpenTelemetryCarrier: map[string]string{},
+				}),
+			},
+		},
+		{
+			name: "online,online,offline",
+			preCmds: []args{
+				{
+					ctx: grpc.CtxWithIncomingToken(context.Background(), jwtWithSubUserID),
+					cmd: &commands.UpdateDeviceMetadataRequest{
+						DeviceId: deviceID,
+						CommandMetadata: &commands.CommandMetadata{
+							ConnectionId: connectionID,
+							Sequence:     0,
+						},
+						TimeToLive:    0,
+						CorrelationId: correlationID,
+						Update: &commands.UpdateDeviceMetadataRequest_Status{
+							Status: &commands.ConnectionStatus{
+								Value:        commands.ConnectionStatus_ONLINE,
+								ConnectionId: connectionID,
+							},
+						},
+					},
+					newVersion: 0,
+				},
+				{
+					ctx: grpc.CtxWithIncomingToken(context.Background(), jwtWithSubUserID),
+					cmd: &commands.UpdateDeviceMetadataRequest{
+						DeviceId: deviceID,
+						CommandMetadata: &commands.CommandMetadata{
+							ConnectionId: connectionID + "1",
+							Sequence:     0,
+						},
+						TimeToLive:    0,
+						CorrelationId: correlationID,
+						Update: &commands.UpdateDeviceMetadataRequest_Status{
+							Status: &commands.ConnectionStatus{
+								Value:        commands.ConnectionStatus_ONLINE,
+								ConnectionId: connectionID + "1",
+							},
+						},
+					},
+					newVersion: 1,
+				},
+			},
+			args: args{
+				newVersion: 2,
+				ctx:        grpc.CtxWithIncomingToken(context.Background(), jwtWithSubUserID),
+				cmd: &commands.UpdateDeviceMetadataRequest{
+					DeviceId: deviceID,
+					CommandMetadata: &commands.CommandMetadata{
+						ConnectionId: connectionID,
+						Sequence:     0,
+					},
+					TimeToLive:    0,
+					CorrelationId: correlationID,
+					Update: &commands.UpdateDeviceMetadataRequest_Status{
+						Status: &commands.ConnectionStatus{
+							Value:        commands.ConnectionStatus_OFFLINE,
+							ConnectionId: connectionID,
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "empty ConnectionStatus.ConnectionId",
+			args: args{
+				newVersion: 1,
+				ctx:        grpc.CtxWithIncomingToken(context.Background(), jwtWithSubUserID),
+				cmd: &commands.UpdateDeviceMetadataRequest{
+					DeviceId: deviceID,
+					CommandMetadata: &commands.CommandMetadata{
+						ConnectionId: connectionID,
+						Sequence:     0,
+					},
+					TimeToLive:    0,
+					CorrelationId: correlationID,
+					Update: &commands.UpdateDeviceMetadataRequest_Status{
+						Status: &commands.ConnectionStatus{
+							Value: commands.ConnectionStatus_ONLINE,
+						},
+					},
+				},
+			},
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			e := events.NewDeviceMetadataSnapshotTaken()
+			for _, preCmd := range tt.preCmds {
+				_, err := e.HandleCommand(preCmd.ctx, preCmd.cmd, preCmd.newVersion)
+				require.NoError(t, err)
+			}
+			res, err := e.HandleCommand(tt.args.ctx, tt.args.cmd, tt.args.newVersion)
+			if tt.wantErr {
+				require.Error(t, err)
+				return
+			}
+			require.NoError(t, err)
+			var got []*grpcgwPb.Event
+			if len(res) > 0 {
+				got = make([]*grpcgwPb.Event, 0, len(res))
+				for _, e := range res {
+					got = append(got, pb.ToEvent(e))
+				}
+			}
+			pb.CmpEvents(t, tt.want, got)
 		})
 	}
 }

@@ -6,12 +6,14 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/plgd-dev/hub/identity-store/persistence"
-	"github.com/plgd-dev/hub/pkg/log"
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventbus/nats/test"
-	"github.com/plgd-dev/hub/test/config"
+	"github.com/plgd-dev/hub/v2/identity-store/persistence"
+	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/test"
+	"github.com/plgd-dev/hub/v2/test/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/trace"
 )
 
 const (
@@ -47,13 +49,15 @@ func makeConfig(t *testing.T) Config {
 func newTestService(t *testing.T) (*Server, func()) {
 	cfg := makeConfig(t)
 
-	logger, err := log.NewLogger(cfg.Log)
+	logger := log.NewLogger(cfg.Log)
+
+	fileWatcher, err := fsnotify.NewWatcher()
 	require.NoError(t, err)
 
-	naClient, publisher, err := test.NewClientAndPublisher(cfg.Clients.Eventbus.NATS, logger)
+	naClient, publisher, err := test.NewClientAndPublisher(cfg.Clients.Eventbus.NATS, fileWatcher, logger)
 	require.NoError(t, err)
 
-	s, err := NewServer(context.Background(), cfg, logger, publisher)
+	s, err := NewServer(context.Background(), cfg, fileWatcher, logger, trace.NewNoopTracerProvider(), publisher)
 	require.NoError(t, err)
 	var wg sync.WaitGroup
 	wg.Add(1)
@@ -66,6 +70,8 @@ func newTestService(t *testing.T) (*Server, func()) {
 		publisher.Close()
 		naClient.Close()
 		wg.Wait()
+		err := fileWatcher.Close()
+		require.NoError(t, err)
 	}
 }
 

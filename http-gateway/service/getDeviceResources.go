@@ -6,7 +6,8 @@ import (
 
 	"github.com/google/go-querystring/query"
 	"github.com/gorilla/mux"
-	"github.com/plgd-dev/hub/http-gateway/uri"
+	"github.com/plgd-dev/hub/v2/http-gateway/serverMux"
+	"github.com/plgd-dev/hub/v2/http-gateway/uri"
 )
 
 func (requestHandler *RequestHandler) getDeviceResources(w http.ResponseWriter, r *http.Request) {
@@ -14,19 +15,18 @@ func (requestHandler *RequestHandler) getDeviceResources(w http.ResponseWriter, 
 	deviceID := vars[uri.DeviceIDKey]
 
 	type Options struct {
-		DeviceIdFilter []string `url:"deviceIdFilter"`
+		DeviceIDFilter []string `url:"deviceIdFilter"`
 	}
 	opt := Options{
-		DeviceIdFilter: []string{deviceID},
+		DeviceIDFilter: []string{deviceID},
 	}
 	q, err := query.Values(opt)
 	if err != nil {
-		writeError(w, fmt.Errorf("cannot get device('%v') resources: %w", deviceID, err))
+		serverMux.WriteError(w, fmt.Errorf("cannot get device('%v') resources: %w", deviceID, err))
 		return
 	}
 	for key, values := range r.URL.Query() {
-		switch key {
-		case uri.TypeFilterQueryKey:
+		if key == uri.TypeFilterQueryKey {
 			for _, v := range values {
 				q.Add(key, v)
 			}

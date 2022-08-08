@@ -6,13 +6,15 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	extCodes "github.com/plgd-dev/hub/grpc-gateway/pb/codes"
 	"github.com/plgd-dev/device/schema"
+	extCodes "github.com/plgd-dev/hub/v2/grpc-gateway/pb/codes"
 	"google.golang.org/grpc/codes"
 )
 
-const ResourceLinksHref string = "/plgd/res"
-const StatusHref string = "/plgd/s"
+const (
+	ResourceLinksHref string = "/plgd/res"
+	StatusHref        string = "/plgd/s"
+)
 
 // ToUUID converts resource href and device id to unique resource ID
 func (r *ResourceId) ToUUID() string {
@@ -46,13 +48,6 @@ func NewResourceID(deviceID, href string) *ResourceId {
 
 func (r *Resource) IsObservable() bool {
 	return r.GetPolicy() != nil && r.GetPolicy().GetBitFlags()&int32(schema.Observable) != 0
-}
-
-func NewAuditContext(userID, correlationId string) *AuditContext {
-	return &AuditContext{
-		UserId:        userID,
-		CorrelationId: correlationId,
-	}
 }
 
 var http2status = map[int]Status{
@@ -91,19 +86,19 @@ func HTTPStatus2Status(s int) Status {
 	return Status_UNKNOWN
 }
 
-// IsOnline evaluate online state
-func (s *ConnectionStatus) IsOnline() bool {
-	if s == nil {
+// IsOnline evaluates online state
+func (c *ConnectionStatus) IsOnline() bool {
+	if c == nil {
 		return false
 	}
-	if s.Value == ConnectionStatus_OFFLINE {
+	if c.Value == ConnectionStatus_OFFLINE {
 		return false
 	}
-	if s.ValidUntil <= 0 {
+	if c.ValidUntil <= 0 {
 		// s.ValidUntil <= 0 means infinite
-		return s.Value == ConnectionStatus_ONLINE
+		return c.Value == ConnectionStatus_ONLINE
 	}
-	return time.Now().UnixNano() < s.ValidUntil
+	return time.Now().UnixNano() < c.ValidUntil
 }
 
 var status2grpcCode = map[Status]codes.Code{

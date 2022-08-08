@@ -3,18 +3,19 @@ package service_test
 import (
 	"context"
 	"crypto/tls"
+	"errors"
 	"io"
 	"testing"
 	"time"
 
-	"github.com/plgd-dev/hub/grpc-gateway/pb"
-	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
-	"github.com/plgd-dev/hub/resource-aggregate/commands"
-	"github.com/plgd-dev/hub/test"
-	testCfg "github.com/plgd-dev/hub/test/config"
-	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
-	pbTest "github.com/plgd-dev/hub/test/pb"
-	"github.com/plgd-dev/hub/test/service"
+	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
+	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
+	"github.com/plgd-dev/hub/v2/test"
+	testCfg "github.com/plgd-dev/hub/v2/test/config"
+	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
+	pbTest "github.com/plgd-dev/hub/v2/test/pb"
+	"github.com/plgd-dev/hub/v2/test/service"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -28,7 +29,7 @@ func getAllEvents(t *testing.T, client pb.GrpcGatewayClient, ctx context.Context
 	require.NoError(t, err)
 	for {
 		value, err := c.Recv()
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			break
 		}
 		event := pbTest.GetWrappedEvent(value)
@@ -38,7 +39,7 @@ func getAllEvents(t *testing.T, client pb.GrpcGatewayClient, ctx context.Context
 	return events
 }
 
-func TestRequestHandler_GetEvents(t *testing.T) {
+func TestRequestHandlerGetEvents(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 
 	ctx, cancel := context.WithTimeout(context.Background(), testCfg.TEST_TIMEOUT)
@@ -46,12 +47,15 @@ func TestRequestHandler_GetEvents(t *testing.T) {
 
 	tearDown := service.SetUp(ctx, t)
 	defer tearDown()
-	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultServiceToken(t))
+	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
 
 	conn, err := grpc.Dial(testCfg.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
 	})))
 	require.NoError(t, err)
+	defer func() {
+		_ = conn.Close()
+	}()
 	c := pb.NewGrpcGatewayClient(conn)
 
 	beforeOnBoard := time.Now().UnixNano()
@@ -121,7 +125,7 @@ func TestRequestHandler_GetEvents(t *testing.T) {
 			values := make([]*pb.GetEventsResponse, 0, 1)
 			for {
 				value, err := client.Recv()
-				if err == io.EOF {
+				if errors.Is(err, io.EOF) {
 					break
 				}
 				if tt.wantErr {
@@ -133,7 +137,7 @@ func TestRequestHandler_GetEvents(t *testing.T) {
 			}
 
 			require.Len(t, values, tt.wantLen)
-			pbTest.CheckGetEventsResponse(t, deviceID, values)
+			pbTest.CheckGetEventsResponse(t, values)
 		})
 	}
 }

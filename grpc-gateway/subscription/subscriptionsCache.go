@@ -7,17 +7,19 @@ import (
 	"sync/atomic"
 
 	nats "github.com/nats-io/nats.go"
-	"github.com/plgd-dev/hub/grpc-gateway/pb"
-	isEvents "github.com/plgd-dev/hub/identity-store/events"
-	eventbusPb "github.com/plgd-dev/hub/resource-aggregate/cqrs/eventbus/pb"
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/utils"
-	"github.com/plgd-dev/hub/resource-aggregate/events"
+	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
+	isEvents "github.com/plgd-dev/hub/v2/identity-store/events"
+	eventbusPb "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/pb"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/utils"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 	kitSync "github.com/plgd-dev/kit/v2/sync"
 	"google.golang.org/protobuf/proto"
 )
 
-type ErrFunc = func(err error)
-type SendEventWithTypeFunc = func(e *pb.Event, typeBit FilterBitmask) error
+type (
+	ErrFunc               = func(err error)
+	SendEventWithTypeFunc = func(e *pb.Event, typeBit FilterBitmask) error
+)
 
 type eventSubject struct {
 	senders      map[uint64]SendEventWithTypeFunc
@@ -37,7 +39,8 @@ func registrationEventToGrpcEvent(e *isEvents.Event) (*pb.Event, FilterBitmask) 
 		return &pb.Event{
 			Type: &pb.Event_DeviceRegistered_{
 				DeviceRegistered: &pb.Event_DeviceRegistered{
-					DeviceIds: e.GetDevicesRegistered().GetDeviceIds(),
+					DeviceIds:            e.GetDevicesRegistered().GetDeviceIds(),
+					OpenTelemetryCarrier: e.GetDevicesRegistered().GetOpenTelemetryCarrier(),
 				},
 			},
 		}, FilterBitmaskDeviceRegistered
@@ -45,7 +48,8 @@ func registrationEventToGrpcEvent(e *isEvents.Event) (*pb.Event, FilterBitmask) 
 		return &pb.Event{
 			Type: &pb.Event_DeviceUnregistered_{
 				DeviceUnregistered: &pb.Event_DeviceUnregistered{
-					DeviceIds: e.GetDevicesUnregistered().GetDeviceIds(),
+					DeviceIds:            e.GetDevicesUnregistered().GetDeviceIds(),
+					OpenTelemetryCarrier: e.GetDevicesUnregistered().GetOpenTelemetryCarrier(),
 				},
 			},
 		}, FilterBitmaskDeviceUnregistered
@@ -380,11 +384,11 @@ func (c *SubscriptionsCache) Subscribe(subject string, onEvent SendEventWithType
 	}
 	err = c.executeOnLockedeventSubject(subject, func(s *eventSubject) error {
 		if onEvent != nil {
-			handlerId := atomic.AddUint64(&c.handlerID, 1)
-			for !s.AddHandlerLocked(handlerId, onEvent) {
-				handlerId = atomic.AddUint64(&c.handlerID, 1)
+			handlerID := atomic.AddUint64(&c.handlerID, 1)
+			for !s.AddHandlerLocked(handlerID, onEvent) {
+				handlerID = atomic.AddUint64(&c.handlerID, 1)
 			}
-			closeFunc = c.makeCloseFunc(subject, handlerId)
+			closeFunc = c.makeCloseFunc(subject, handlerID)
 		}
 		if s.subscription == nil {
 			err := s.subscribeLocked(subject, c.conn.Subscribe, func(msg *nats.Msg) {

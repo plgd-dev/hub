@@ -19,7 +19,10 @@ export const usePendingCommandsList = deviceId => {
   const { data, updateData, ...rest } = useStreamApi(
     `${httpGatewayAddress}${pendingCommandsApiEndpoints.PENDING_COMMANDS}${
       deviceId ? `?deviceIdFilter=${deviceId}` : ''
-    }`
+    }`,
+    {
+      telemetrySpan: 'get-pending-commands',
+    }
   )
 
   // Add a new pending command when a WS event is emitted

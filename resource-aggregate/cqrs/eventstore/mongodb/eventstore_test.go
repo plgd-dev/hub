@@ -4,17 +4,19 @@ import (
 	"context"
 	"testing"
 
-	"github.com/plgd-dev/hub/pkg/log"
-	pkgMongo "github.com/plgd-dev/hub/pkg/mongodb"
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventstore/mongodb"
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventstore/test"
-	"github.com/plgd-dev/hub/test/config"
+	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	pkgMongo "github.com/plgd-dev/hub/v2/pkg/mongodb"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore/mongodb"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore/test"
+	"github.com/plgd-dev/hub/v2/test/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.opentelemetry.io/otel/trace"
 )
 
-func NewTestEventStore(ctx context.Context, logger log.Logger) (*mongodb.EventStore, error) {
+func NewTestEventStore(ctx context.Context, fileWatcher *fsnotify.Watcher, logger log.Logger) (*mongodb.EventStore, error) {
 	store, err := mongodb.New(
 		ctx,
 		mongodb.Config{
@@ -23,7 +25,9 @@ func NewTestEventStore(ctx context.Context, logger log.Logger) (*mongodb.EventSt
 				TLS: config.MakeTLSClientConfig(),
 			},
 		},
+		fileWatcher,
 		logger,
+		trace.NewNoopTracerProvider(),
 		mongodb.WithMarshaler(bson.Marshal),
 		mongodb.WithUnmarshaler(bson.Unmarshal),
 	)
@@ -31,11 +35,16 @@ func NewTestEventStore(ctx context.Context, logger log.Logger) (*mongodb.EventSt
 }
 
 func TestEventStore(t *testing.T) {
-	logger, err := log.NewLogger(log.Config{})
+	logger := log.NewLogger(log.MakeDefaultConfig())
+	fileWatcher, err := fsnotify.NewWatcher()
 	require.NoError(t, err)
+	defer func() {
+		err := fileWatcher.Close()
+		require.NoError(t, err)
+	}()
 
 	ctx := context.Background()
-	store, err := NewTestEventStore(ctx, logger)
+	store, err := NewTestEventStore(ctx, fileWatcher, logger)
 	assert.NoError(t, err)
 	assert.NotNil(t, store)
 	defer func() {

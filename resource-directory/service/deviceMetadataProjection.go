@@ -3,84 +3,104 @@ package service
 import (
 	"context"
 	"sync"
+	"time"
 
-	"github.com/plgd-dev/hub/pkg/log"
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventstore"
-	"github.com/plgd-dev/hub/resource-aggregate/events"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 )
 
+// protected by lock in Projection struct in resource-aggregate/cqrs/eventstore/projection.go
 type deviceMetadataProjection struct {
-	lock sync.Mutex
-	data *events.DeviceMetadataSnapshotTaken
+	deviceID string
+
+	private struct {
+		lock     sync.RWMutex // protects snapshot
+		snapshot *events.DeviceMetadataSnapshotTaken
+	}
 }
 
-func NewDeviceMetadataProjection() eventstore.Model {
-	return &deviceMetadataProjection{}
+func NewDeviceMetadataProjection(deviceID string) eventstore.Model {
+	return &deviceMetadataProjection{deviceID: deviceID}
 }
 
-func (p *deviceMetadataProjection) Clone() *deviceMetadataProjection {
-	p.lock.Lock()
-	defer p.lock.Unlock()
+func (p *deviceMetadataProjection) GetDeviceID() string {
+	return p.deviceID
+}
 
-	data := &events.DeviceMetadataSnapshotTaken{
-		DeviceId:              p.data.GetDeviceId(),
-		DeviceMetadataUpdated: p.data.GetDeviceMetadataUpdated(),
-		UpdatePendings:        p.data.GetUpdatePendings(),
-		EventMetadata:         p.data.GetEventMetadata(),
-	}
+func (p *deviceMetadataProjection) GetDeviceMetadataUpdated() *events.DeviceMetadataUpdated {
+	p.private.lock.RLock()
+	defer p.private.lock.RUnlock()
+	return p.private.snapshot.GetDeviceMetadataUpdated()
+}
 
-	return &deviceMetadataProjection{
-		data: data,
+func (p *deviceMetadataProjection) GetDeviceUpdatePendings(now time.Time) []*events.DeviceMetadataUpdatePending {
+	updatePendings := make([]*events.DeviceMetadataUpdatePending, 0, 4)
+	p.private.lock.RLock()
+	defer p.private.lock.RUnlock()
+	for _, pendingCmd := range p.private.snapshot.GetUpdatePendings() {
+		if pendingCmd.IsExpired(now) {
+			continue
+		}
+		updatePendings = append(updatePendings, pendingCmd)
 	}
+	return updatePendings
+}
+
+func (p *deviceMetadataProjection) IsInitialized() bool {
+	p.private.lock.RLock()
+	defer p.private.lock.RUnlock()
+	return p.private.snapshot != nil
 }
 
 func (p *deviceMetadataProjection) EventType() string {
-	s := &events.ResourceLinksSnapshotTaken{}
+	s := &events.DeviceMetadataSnapshotTaken{}
 	return s.EventType()
 }
 
 func (p *deviceMetadataProjection) Handle(ctx context.Context, iter eventstore.Iter) error {
-	p.lock.Lock()
-	defer p.lock.Unlock()
+	p.private.lock.Lock()
+	defer p.private.lock.Unlock()
 	for {
 		eu, ok := iter.Next(ctx)
 		if !ok {
 			break
 		}
 		log.Debugf("deviceMetadataProjection.Handle deviceID=%v eventype%v version=%v", eu.GroupID(), eu.EventType(), eu.Version())
-		if p.data == nil {
-			p.data = &events.DeviceMetadataSnapshotTaken{
+		if p.private.snapshot == nil {
+			p.private.snapshot = &events.DeviceMetadataSnapshotTaken{
 				DeviceId:      eu.GroupID(),
 				EventMetadata: events.MakeEventMeta("", 0, eu.Version()),
 			}
 		}
-		p.data.GetEventMetadata().Version = eu.Version()
+		eventMetadata := p.private.snapshot.GetEventMetadata().Clone()
+		eventMetadata.Version = eu.Version()
+		p.private.snapshot.EventMetadata = eventMetadata
 		switch eu.EventType() {
 		case (&events.DeviceMetadataSnapshotTaken{}).EventType():
 			var e events.DeviceMetadataSnapshotTaken
 			if err := eu.Unmarshal(&e); err != nil {
 				return err
 			}
-			p.data = &e
+			p.private.snapshot = &e
 		case (&events.DeviceMetadataUpdatePending{}).EventType():
 			var e events.DeviceMetadataUpdatePending
 			if err := eu.Unmarshal(&e); err != nil {
 				return err
 			}
-			if err := p.data.HandleDeviceMetadataUpdatePending(ctx, &e); err != nil {
+			if err := p.private.snapshot.HandleDeviceMetadataUpdatePending(ctx, &e); err != nil {
 				continue
 			}
-			p.data.DeviceId = e.GetDeviceId()
+			p.private.snapshot.DeviceId = e.GetDeviceId()
 		case (&events.DeviceMetadataUpdated{}).EventType():
 			var e events.DeviceMetadataUpdated
 			if err := eu.Unmarshal(&e); err != nil {
 				return err
 			}
-			p.data.DeviceId = e.GetDeviceId()
-			if _, err := p.data.HandleDeviceMetadataUpdated(ctx, &e, false); err != nil {
+			p.private.snapshot.DeviceId = e.GetDeviceId()
+			if _, err := p.private.snapshot.HandleDeviceMetadataUpdated(ctx, &e, false); err != nil {
 				continue
 			}
-
 		}
 	}
 	return nil

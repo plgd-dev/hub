@@ -5,9 +5,9 @@ export const messages = defineMessages({
     id: 'menu.dashboard',
     defaultMessage: 'Dashboard',
   },
-  things: {
-    id: 'menu.things',
-    defaultMessage: 'Things',
+  devices: {
+    id: 'menu.devices',
+    defaultMessage: 'Devices',
   },
   pendingCommands: {
     id: 'menu.pendingCommands',

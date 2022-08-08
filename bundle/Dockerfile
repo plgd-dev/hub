@@ -1,9 +1,10 @@
-FROM golang:1.16.4-alpine AS build
+FROM golang:1.18.1-alpine AS build
 RUN apk add --no-cache curl git build-base
 WORKDIR $GOPATH/src/github.com/plgd-dev/hub
 COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
+RUN ( cd /usr/local/go && patch -p1 < $GOPATH/src/github.com/plgd-dev/hub/tools/docker/patches/shrink_tls_conn.patch )
 ARG root_directory=$GOPATH/src/github.com/plgd-dev/hub
 
 #coap-gateway
@@ -48,6 +49,11 @@ RUN go build -ldflags "-linkmode external -extldflags -static" -o /go/bin/$servi
 
 #cloud2cloud-gateway
 ARG service=cloud2cloud-gateway
+WORKDIR $root_directory/$service
+RUN go build -ldflags "-linkmode external -extldflags -static" -o /go/bin/$service ./cmd/service
+
+#cloud2cloud-connector
+ARG service=cloud2cloud-connector
 WORKDIR $root_directory/$service
 RUN go build -ldflags "-linkmode external -extldflags -static" -o /go/bin/$service ./cmd/service
 
@@ -113,6 +119,8 @@ COPY --from=build /go/src/github.com/plgd-dev/hub/test/oauth-server/config.yaml 
 COPY --from=build-web /web/build /usr/local/var/www
 COPY --from=build /go/bin/cloud2cloud-gateway /usr/local/bin/cloud2cloud-gateway
 COPY --from=build /go/src/github.com/plgd-dev/hub/cloud2cloud-gateway/config.yaml /configs/cloud2cloud-gateway.yaml
+COPY --from=build /go/bin/cloud2cloud-connector /usr/local/bin/cloud2cloud-connector
+COPY --from=build /go/src/github.com/plgd-dev/hub/cloud2cloud-connector/config.yaml /configs/cloud2cloud-connector.yaml
 COPY --from=build /go/src/github.com/plgd-dev/hub/bundle/run.sh /usr/local/bin/run.sh
 COPY --from=build /go/src/github.com/plgd-dev/hub/bundle/nginx /nginx
 
@@ -121,9 +129,17 @@ ENV FQDN="localhost"
 ENV LOG_DEBUG=false
 ENV JETSTREAM=false
 
+# global - open telemetry collector client
+ENV OPEN_TELEMETRY_EXPORTER_ENABLED=false
+ENV OPEN_TELEMETRY_EXPORTER_ADDRESS="localhost:4317"
+ENV OPEN_TELEMETRY_EXPORTER_CERT_FILE="/certs/otel/cert.crt"
+ENV OPEN_TELEMETRY_EXPORTER_KEY_FILE="/certs/otel/cert.key"
+ENV OPEN_TELEMETRY_EXPORTER_CA_POOL="/certs/otel/rootca.crt"
+
 # coap-gateway
 ENV COAP_GATEWAY_UNSECURE_PORT=5683
 ENV COAP_GATEWAY_UNSECURE_ADDRESS="0.0.0.0:$COAP_GATEWAY_UNSECURE_PORT"
+ENV COAP_GATEWAY_UNSECURE_ENABLED=true
 ENV COAP_GATEWAY_PORT=5684
 ENV COAP_GATEWAY_ADDRESS="0.0.0.0:$COAP_GATEWAY_PORT"
 ENV COAP_GATEWAY_HUB_ID="00000000-0000-0000-0000-000000000001"
@@ -139,12 +155,13 @@ ENV IDENTITY_STORE_PORT=9081
 ENV GRPC_GATEWAY_PORT=9084
 ENV HTTP_GATEWAY_PORT=9086
 ENV CLOUD2CLOUD_GATEWAY_PORT=9085
+ENV CLOUD2CLOUD_CONNECTOR_PORT=9089
 ENV MONGO_PORT=10000
 ENV NATS_PORT=10001
 
 # OAuth
 ENV DEVICE_PROVIDER=plgd
-ENV DEVICE_OAUTH_SCOPES=profile,openid,offline_access
+ENV DEVICE_OAUTH_SCOPES="offline_access"
 ENV OWNER_CLAIM="sub"
 ENV MOCK_OAUTH_SERVER_ACCESS_TOKEN_LIFETIME="0s"
 

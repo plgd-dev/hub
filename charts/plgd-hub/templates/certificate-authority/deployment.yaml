@@ -16,7 +16,7 @@ metadata:
   {{- . | toYaml | nindent 4 }}
   {{- end }}
 spec:
-  replicas: {{ .Values.resourcedirectory.replicas }}
+  replicas: {{ .Values.certificateauthority.replicas }}
   selector:
     matchLabels:
       {{- include "plgd-hub.certificateauthority.selectorLabels" . | nindent 6 }}
@@ -79,8 +79,8 @@ spec:
             {{- toYaml . | nindent 12 }}
           {{- end }}
           volumeMounts:
-            - mountPath: {{ .Values.certificateauthority.config.mountPath }}
-              name: {{ .Values.certificateauthority.config.volume }}
+            - name: {{ .Values.certificateauthority.config.volume }}
+              mountPath: {{ .Values.certificateauthority.config.mountPath }}
             {{- if ( include "plgd-hub.certificateauthority.createServiceCertByCm" . ) }}
             - name: service-crt
               mountPath: {{ $cert }}
@@ -89,9 +89,12 @@ spec:
             - name: {{ .Values.certificateauthority.ca.volume.name }}
               mountPath: {{ .Values.certificateauthority.ca.volume.mountPath }}
             {{- end }}
-            {{- with .Values.certificateauthority.extraVolumes }}
+            {{- with .Values.certificateauthority.extraVolumeMounts }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
+      {{- if .Values.certificateauthority.extraContainers }}
+      {{- include "plgd-hub.tplvalues.render" ( dict "value" .Values.certificateauthority.extraContainers "context" $ ) | nindent 8 }}
+      {{- end }}
       volumes:
         - name: {{ .Values.resourcedirectory.config.volume }}
           configMap:
@@ -106,7 +109,7 @@ spec:
           secret:
             secretName: {{ .Values.certificateauthority.ca.secret.name | default $.Values.certmanager.default.ca.secret.name }}
         {{- end }}
-        {{- with .Values.certificateauthority.extraVolumeMounts }}
+        {{- with .Values.certificateauthority.extraVolumes }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
       {{- with .Values.certificateauthority.nodeSelector }}

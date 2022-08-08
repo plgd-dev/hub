@@ -13,8 +13,9 @@ type Queue struct {
 	goPool *ants.Pool
 	limit  int
 
-	mutex sync.Mutex
-	queue *list.List
+	mutex          sync.Mutex
+	queue          *list.List
+	oneworkerQueue sync.Map
 }
 
 // New creates task queue which is processed by goroutines.

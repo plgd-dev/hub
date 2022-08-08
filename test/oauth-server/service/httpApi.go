@@ -1,25 +1,25 @@
 package service
 
 import (
+	"context"
 	"crypto/ecdsa"
 	"crypto/rsa"
 	"crypto/x509"
 	"fmt"
 	"net/http"
-	"net/http/httputil"
 	"time"
 
 	"github.com/google/uuid"
+	router "github.com/gorilla/mux"
 	"github.com/lestrrat-go/jwx/jwa"
 	"github.com/lestrrat-go/jwx/jwk"
-	"github.com/patrickmn/go-cache"
-	"github.com/plgd-dev/hub/pkg/log"
-	"github.com/plgd-dev/hub/test/oauth-server/uri"
-
-	router "github.com/gorilla/mux"
+	"github.com/plgd-dev/go-coap/v2/pkg/cache"
+	"github.com/plgd-dev/go-coap/v2/pkg/runner/periodic"
+	kitHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
+	"github.com/plgd-dev/hub/v2/test/oauth-server/uri"
 )
 
-//RequestHandler for handling incoming request
+// RequestHandler for handling incoming request
 type RequestHandler struct {
 	config             *Config
 	authSession        *cache.Cache
@@ -61,8 +61,8 @@ func createJwkKey(privateKey interface{}) (jwk.Key, error) {
 	return jwkKey, nil
 }
 
-//NewRequestHandler factory for new RequestHandler
-func NewRequestHandler(config *Config, idTokenKey *rsa.PrivateKey, accessTokenKey interface{}) (*RequestHandler, error) {
+// NewRequestHandler factory for new RequestHandler
+func NewRequestHandler(ctx context.Context, config *Config, idTokenKey *rsa.PrivateKey, accessTokenKey interface{}) (*RequestHandler, error) {
 	idTokenJwkKey, err := createJwkKey(idTokenKey)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create jwk for idToken: %w", err)
@@ -71,36 +71,33 @@ func NewRequestHandler(config *Config, idTokenKey *rsa.PrivateKey, accessTokenKe
 	if err != nil {
 		return nil, fmt.Errorf("cannot create jwk for idToken: %w", err)
 	}
+	authSession := cache.NewCache()
+	authRestriction := cache.NewCache()
+	refreshRestriction := cache.NewCache()
+	add := periodic.New(ctx.Done(), time.Second*5)
+	add(func(now time.Time) bool {
+		authSession.CheckExpirations(now)
+		authRestriction.CheckExpirations(now)
+		refreshRestriction.CheckExpirations(now)
+		return true
+	})
+
 	return &RequestHandler{
 		config:             config,
-		authSession:        cache.New(cache.NoExpiration, time.Second*5),
-		authRestriction:    cache.New(cache.NoExpiration, time.Second*5),
+		authSession:        authSession,
+		authRestriction:    authRestriction,
 		idTokenKey:         idTokenKey,
 		idTokenJwkKey:      idTokenJwkKey,
 		accessTokenJwkKey:  accessTokenJwkKey,
 		accessTokenKey:     accessTokenKey,
-		refreshRestriction: cache.New(cache.NoExpiration, time.Second*5),
+		refreshRestriction: refreshRestriction,
 	}, nil
 }
 
-func loggingMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		data, err := httputil.DumpRequest(r, false)
-		if err != nil {
-			log.Infof("Request: %v %v", r.Method, r.RequestURI)
-		} else {
-			log.Infof("Request: %v", string(data))
-		}
-
-		// Call the next handler, which can be another middleware in the chain, or the final handler.
-		next.ServeHTTP(w, r)
-	})
-}
-
-// NewHTTP returns HTTP server
-func NewHTTP(requestHandler *RequestHandler) *http.Server {
+// NewHTTP returns HTTP handler
+func NewHTTP(requestHandler *RequestHandler) http.Handler {
 	r := router.NewRouter()
-	r.Use(loggingMiddleware)
+	r.Use(kitHttp.CreateLoggingMiddleware())
 	r.StrictSlash(true)
 
 	// get JWKs
@@ -114,5 +111,5 @@ func NewHTTP(requestHandler *RequestHandler) *http.Server {
 	r.HandleFunc(uri.UserInfo, requestHandler.getUserInfo).Methods(http.MethodGet)
 	r.HandleFunc(uri.LogOut, requestHandler.logOut)
 
-	return &http.Server{Handler: r}
+	return r
 }

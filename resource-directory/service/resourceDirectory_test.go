@@ -6,25 +6,26 @@ import (
 	"time"
 
 	"github.com/panjf2000/ants/v2"
-	"github.com/plgd-dev/hub/grpc-gateway/pb"
-	"github.com/plgd-dev/hub/pkg/log"
-	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
-	"github.com/plgd-dev/hub/resource-aggregate/commands"
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventbus/nats/subscriber"
-	natsTest "github.com/plgd-dev/hub/resource-aggregate/cqrs/eventbus/nats/test"
-	mockEvents "github.com/plgd-dev/hub/resource-aggregate/cqrs/eventstore/test"
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/utils"
-	"github.com/plgd-dev/hub/resource-aggregate/events"
-	"github.com/plgd-dev/hub/resource-directory/service"
-	"github.com/plgd-dev/hub/test"
-	"github.com/plgd-dev/hub/test/config"
-	pbTest "github.com/plgd-dev/hub/test/pb"
+	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
+	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/subscriber"
+	natsTest "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/test"
+	mockEvents "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore/test"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/utils"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
+	"github.com/plgd-dev/hub/v2/resource-directory/service"
+	"github.com/plgd-dev/hub/v2/test"
+	"github.com/plgd-dev/hub/v2/test/config"
+	pbTest "github.com/plgd-dev/hub/v2/test/pb"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 )
 
-func TestResourceDirectory_GetResourceLinks(t *testing.T) {
+func TestResourceDirectoryGetResourceLinks(t *testing.T) {
 	type args struct {
 		request *pb.GetResourceLinksRequest
 	}
@@ -52,11 +53,17 @@ func TestResourceDirectory_GetResourceLinks(t *testing.T) {
 			},
 		},
 	}
-	logger, err := log.NewLogger(log.Config{})
+	logger := log.NewLogger(log.MakeDefaultConfig())
+	fileWatcher, err := fsnotify.NewWatcher()
 	require.NoError(t, err)
+	defer func() {
+		err := fileWatcher.Close()
+		require.NoError(t, err)
+	}()
+
 	pool, err := ants.NewPool(1)
 	require.NoError(t, err)
-	naClient, resourceSubscriber, err := natsTest.NewClientAndSubscriber(config.MakeSubscriberConfig(),
+	naClient, resourceSubscriber, err := natsTest.NewClientAndSubscriber(config.MakeSubscriberConfig(), fileWatcher,
 		logger,
 		subscriber.WithGoPool(pool.Submit),
 		subscriber.WithUnmarshaler(utils.Unmarshal),
@@ -92,10 +99,12 @@ func newResourceContent(deviceID, href string, resourceTypesp []string, content 
 	}
 }
 
-var Resource0 = newResourceContent("0", "/a", []string{"t0"}, &commands.Content{Data: []byte("0.a")})
-var Resource1 = newResourceContent("1", "/b", []string{"t1", "t2"}, &commands.Content{Data: []byte("1.b")})
-var Resource2 = newResourceContent("2", "/c", []string{"t1"}, &commands.Content{Data: []byte("2.c")})
-var Resource3 = newResourceContent("1", "/d", []string{"t3", "t8"}, &commands.Content{Data: []byte("1.d")})
+var (
+	Resource0 = newResourceContent("0", "/a", []string{"t0"}, &commands.Content{Data: []byte("0.a")})
+	Resource1 = newResourceContent("1", "/b", []string{"t1", "t2"}, &commands.Content{Data: []byte("1.b")})
+	Resource2 = newResourceContent("2", "/c", []string{"t1"}, &commands.Content{Data: []byte("2.c")})
+	Resource3 = newResourceContent("1", "/d", []string{"t3", "t8"}, &commands.Content{Data: []byte("1.d")})
+)
 
 func testCreateEventstore() *mockEvents.MockEventStore {
 	store := mockEvents.NewMockEventStore()
@@ -123,6 +132,6 @@ func (s *testGrpcGateway_GetResourceLinksServer) Send(d *events.ResourceLinksPub
 	if s.got == nil {
 		s.got = make(map[string]*events.ResourceLinksPublished)
 	}
-	s.got[d.DeviceId] = pbTest.CleanUpResourceLinksPublished(d)
+	s.got[d.DeviceId] = pbTest.CleanUpResourceLinksPublished(d, true)
 	return nil
 }

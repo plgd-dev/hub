@@ -15,7 +15,7 @@ metadata:
   {{- . | toYaml | nindent 4 }}
   {{- end }}
 spec:
-  replicas: {{ .Values.resourcedirectory.replicas }}
+  replicas: {{ .Values.coapgateway.replicas }}
   selector:
     matchLabels:
       {{- include "plgd-hub.coapgateway.selectorLabels" . | nindent 6 }}
@@ -32,7 +32,7 @@ spec:
       securityContext:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- if .Values.resourcedirectory.rbac.enabled }}
+      {{- if .Values.coapgateway.rbac.enabled }}
       serviceAccountName: {{ .Values.coapgateway.rbac.serviceAccountName }}
       {{- end }}
       {{- with .Values.coapgateway.image.imagePullSecrets }}
@@ -62,7 +62,7 @@ spec:
             - "--config"
             - {{  printf "%s/%s" .Values.coapgateway.config.mountPath .Values.coapgateway.config.fileName | quote }}
           ports:
-            - name: grpc
+            - name: coaps
               containerPort: {{ .Values.coapgateway.port }}
               protocol: TCP
           {{- with .Values.coapgateway.livenessProbe }}
@@ -78,13 +78,13 @@ spec:
             {{- toYaml . | nindent 12 }}
           {{- end }}
           volumeMounts:
-            - mountPath: {{ .Values.coapgateway.config.mountPath }}
-              name: {{ .Values.coapgateway.config.volume }}
+            - name: {{ .Values.coapgateway.config.volume }}
+              mountPath: {{ .Values.coapgateway.config.mountPath }}
             {{- if ( include "plgd-hub.coapgateway.createServiceCertByCm" . ) }}
             - name: service-crt
               mountPath: {{ $rdServiceCert }}
             {{- end }}
-            {{- with .Values.coapgateway.extraVolumes }}
+            {{- with .Values.coapgateway.extraVolumeMounts }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
             {{- $providers := $.Values.mockoauthserver.oauth }}
@@ -97,8 +97,11 @@ spec:
               mountPath: {{ printf "/secrets/%s" .name }}
             {{- end }}
             {{- end }}
+      {{- if .Values.coapgateway.extraContainers }}
+      {{- include "plgd-hub.tplvalues.render" ( dict "value" .Values.coapgateway.extraContainers "context" $ ) | nindent 8 }}
+      {{- end }}
       volumes:
-        - name: {{ .Values.resourcedirectory.config.volume }}
+        - name: {{ .Values.coapgateway.config.volume }}
           configMap:
             name: {{ include "plgd-hub.coapgateway.configName" . }}
         {{- if ( include "plgd-hub.coapgateway.createServiceCertByCm" . ) }}
@@ -106,7 +109,7 @@ spec:
           secret:
             secretName: {{ include "plgd-hub.coapgateway.serviceCertName" . }}
         {{- end }}
-        {{- with .Values.coapgateway.extraVolumeMounts }}
+        {{- with .Values.coapgateway.extraVolumes }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
         {{- range $providers }}

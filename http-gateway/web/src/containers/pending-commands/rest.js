@@ -1,7 +1,7 @@
 import { fetchApi, security } from '@/common/services'
 
 import { pendingCommandsApiEndpoints } from './constants'
-import { thingsApiEndpoints } from '@/containers/things/constants'
+import { devicesApiEndpoints } from '@/containers/devices/constants'
 
 /**
  * Cancel a pending command Rest Api endpoint
@@ -25,7 +25,7 @@ export const cancelPendingCommandApi = ({
   }
 
   return fetchApi(
-    `${httpGatewayAddress}${thingsApiEndpoints.THINGS}/${deviceId}/pending-metadata-updates?correlationIdFilter=${correlationId}`,
+    `${httpGatewayAddress}${devicesApiEndpoints.DEVICES}/${deviceId}/pending-metadata-updates?correlationIdFilter=${correlationId}`,
     { method: 'DELETE' }
   )
 }

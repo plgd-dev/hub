@@ -3,8 +3,11 @@ package client
 import (
 	"fmt"
 
-	"github.com/plgd-dev/hub/pkg/log"
-	"github.com/plgd-dev/hub/pkg/security/certManager/client"
+	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	"github.com/plgd-dev/hub/v2/pkg/security/certManager/client"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/keepalive"
@@ -22,20 +25,20 @@ func (c *Client) GRPC() *grpc.ClientConn {
 
 // AddCloseFunc adds a function to be called by the Close method.
 // This eliminates the need for wrapping the Client.
-func (s *Client) AddCloseFunc(f func()) {
-	s.closeFunc = append(s.closeFunc, f)
+func (c *Client) AddCloseFunc(f func()) {
+	c.closeFunc = append(c.closeFunc, f)
 }
 
-func (s *Client) Close() error {
-	err := s.client.Close()
-	for _, f := range s.closeFunc {
+func (c *Client) Close() error {
+	err := c.client.Close()
+	for _, f := range c.closeFunc {
 		f()
 	}
 	return err
 }
 
-func New(config Config, logger log.Logger, opts ...grpc.DialOption) (*Client, error) {
-	certManager, err := client.New(config.TLS, logger)
+func New(config Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider, opts ...grpc.DialOption) (*Client, error) {
+	certManager, err := client.New(config.TLS, fileWatcher, logger)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create cert manager: %w", err)
 	}
@@ -46,6 +49,8 @@ func New(config Config, logger log.Logger, opts ...grpc.DialOption) (*Client, er
 			Timeout:             config.KeepAlive.Timeout,
 			PermitWithoutStream: config.KeepAlive.PermitWithoutStream,
 		}),
+		grpc.WithUnaryInterceptor(otelgrpc.UnaryClientInterceptor(otelgrpc.WithTracerProvider(tracerProvider))),
+		grpc.WithStreamInterceptor(otelgrpc.StreamClientInterceptor(otelgrpc.WithTracerProvider(tracerProvider))),
 	}
 	if len(opts) > 0 {
 		v = append(v, opts...)

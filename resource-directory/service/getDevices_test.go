@@ -3,27 +3,93 @@ package service_test
 import (
 	"context"
 	"crypto/tls"
+	"errors"
 	"io"
+	"sync"
 	"testing"
+	"time"
 
 	"github.com/plgd-dev/device/schema/device"
 	"github.com/plgd-dev/device/schema/interfaces"
 	"github.com/plgd-dev/device/test/resource/types"
-	"github.com/plgd-dev/hub/grpc-gateway/pb"
-	"github.com/plgd-dev/hub/pkg/log"
-	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
-	"github.com/plgd-dev/hub/resource-aggregate/commands"
-	"github.com/plgd-dev/hub/test"
-	testCfg "github.com/plgd-dev/hub/test/config"
-	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
-	"github.com/plgd-dev/hub/test/service"
+	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
+	isTest "github.com/plgd-dev/hub/v2/identity-store/test"
+	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
+	raTest "github.com/plgd-dev/hub/v2/resource-aggregate/test"
+	"github.com/plgd-dev/hub/v2/test"
+	testCfg "github.com/plgd-dev/hub/v2/test/config"
+	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
+	"github.com/plgd-dev/hub/v2/test/service"
+	virtualdevice "github.com/plgd-dev/hub/v2/test/virtual-device"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )
 
-func TestRequestHandler_GetDevices(t *testing.T) {
+func TestRequestHandlerGetDevicesParallel(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*120)
+	defer cancel()
+
+	numDevices := 100
+	numResources := 1
+	numParallelRequests := 10
+
+	isConfig := isTest.MakeConfig(t)
+	isConfig.APIs.GRPC.TLS.ClientCertificateRequired = false
+
+	raConfig := raTest.MakeConfig(t)
+	raConfig.APIs.GRPC.TLS.ClientCertificateRequired = false
+
+	tearDown := service.SetUp(ctx, t, service.WithISConfig(isConfig), service.WithRAConfig(raConfig))
+	defer tearDown()
+
+	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
+	virtualdevice.CreateDevices(ctx, t, numDevices, numResources)
+
+	conn, err := grpc.Dial(testCfg.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+		RootCAs: test.GetRootCertificatePool(t),
+	})))
+	require.NoError(t, err)
+	defer func() {
+		_ = conn.Close()
+	}()
+	c := pb.NewGrpcGatewayClient(conn)
+
+	getDevices := func(c pb.GrpcGatewayClient) {
+		client, err := c.GetDevices(ctx, &pb.GetDevicesRequest{})
+		require.NoError(t, err)
+		numCurr := 0
+		for {
+			dev, err := client.Recv()
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			require.NoError(t, err)
+			require.NotEmpty(t, dev)
+			numCurr++
+		}
+		require.Equal(t, numDevices, numCurr)
+	}
+
+	getDevices(c)
+
+	var wg sync.WaitGroup
+	wg.Add(numParallelRequests)
+	t.Logf("starting %v requests\n", numParallelRequests)
+	for i := 0; i < numParallelRequests; i++ {
+		go func(v int) {
+			defer wg.Done()
+			n := time.Now()
+			getDevices(c)
+			t.Logf("%v getDevices client %v\n", v, -1*time.Until(n))
+		}(i)
+	}
+	wg.Wait()
+}
+
+func TestRequestHandlerGetDevices(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	type args struct {
 		req *pb.GetDevicesRequest
@@ -50,6 +116,7 @@ func TestRequestHandler_GetDevices(t *testing.T) {
 							Value: commands.ConnectionStatus_ONLINE,
 						},
 					},
+					OwnershipStatus: pb.Device_OWNED,
 				},
 			},
 		},
@@ -60,15 +127,17 @@ func TestRequestHandler_GetDevices(t *testing.T) {
 
 	tearDown := service.SetUp(ctx, t)
 	defer tearDown()
-	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultServiceToken(t))
+	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
 
 	conn, err := grpc.Dial(testCfg.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
 	})))
 	require.NoError(t, err)
+	defer func() {
+		_ = conn.Close()
+	}()
 	c := pb.NewGrpcGatewayClient(conn)
 
-	log.Setup(log.Config{Debug: true})
 	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 
@@ -82,13 +151,16 @@ func TestRequestHandler_GetDevices(t *testing.T) {
 				devices := make([]*pb.Device, 0, 1)
 				for {
 					dev, err := client.Recv()
-					if err == io.EOF {
+					if errors.Is(err, io.EOF) {
 						break
 					}
 					require.NoError(t, err)
 					assert.NotEmpty(t, dev.ProtocolIndependentId)
+					assert.NotEmpty(t, dev.GetData().GetContent().GetData())
 					dev.ProtocolIndependentId = ""
 					dev.Metadata.Status.ValidUntil = 0
+					dev.Metadata.Status.ConnectionId = ""
+					dev.Data = nil
 					devices = append(devices, dev)
 				}
 				test.CheckProtobufs(t, tt.want, devices, test.RequireToCheckFunc(require.Equal))

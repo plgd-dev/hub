@@ -7,27 +7,26 @@ import (
 	"testing"
 	"time"
 
+	"github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/tcp"
 	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
-
-	"github.com/plgd-dev/hub/coap-gateway/uri"
-	"github.com/plgd-dev/hub/grpc-gateway/pb"
-	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
-	test "github.com/plgd-dev/hub/test"
-	testCfg "github.com/plgd-dev/hub/test/config"
-	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
-	"github.com/plgd-dev/go-coap/v2/message/codes"
+	"github.com/plgd-dev/hub/v2/coap-gateway/uri"
+	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
+	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	test "github.com/plgd-dev/hub/v2/test"
+	testCfg "github.com/plgd-dev/hub/v2/test/config"
+	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 )
 
-func Test_clientObserveHandler(t *testing.T) {
+func TestClientObserveHandler(t *testing.T) {
 	shutdown := setUp(t)
 	defer shutdown()
 
-	co := testCoapDial(t, testCfg.GW_HOST, "")
+	co := testCoapDial(t, "", true, time.Now().Add(time.Minute))
 	if co == nil {
 		return
 	}
@@ -35,6 +34,7 @@ func Test_clientObserveHandler(t *testing.T) {
 		_ = co.Close()
 	}()
 
+	const invalidResPath = uri.ResourceRoute + "/dev0/res0"
 	type args struct {
 		path    string
 		observe uint32
@@ -48,7 +48,7 @@ func Test_clientObserveHandler(t *testing.T) {
 		{
 			name: "invalid observe",
 			args: args{
-				path:    uri.ResourceRoute + "/dev0/res0",
+				path:    invalidResPath,
 				observe: 123,
 				token:   nil,
 			},
@@ -57,7 +57,7 @@ func Test_clientObserveHandler(t *testing.T) {
 		{
 			name: "observe - not exist resource",
 			args: args{
-				path:    uri.ResourceRoute + "/dev0/res0",
+				path:    invalidResPath,
 				observe: 0,
 				token:   nil,
 			},
@@ -67,7 +67,7 @@ func Test_clientObserveHandler(t *testing.T) {
 		{
 			name: "unobserve - not exist resource",
 			args: args{
-				path:    uri.ResourceRoute + "/dev0/res0",
+				path:    invalidResPath,
 				observe: 1,
 				token:   nil,
 			},
@@ -100,7 +100,7 @@ func Test_clientObserveHandler(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx, cancel := context.WithTimeout(context.Background(), TestExchangeTimeout)
 			defer cancel()
-			req, err := tcp.NewGetRequest(ctx, tt.args.path)
+			req, err := tcp.NewGetRequest(ctx, pool.New(0, 0), tt.args.path)
 			require.NoError(t, err)
 			req.SetObserve(tt.args.observe)
 			if tt.args.token != nil {
@@ -113,17 +113,17 @@ func Test_clientObserveHandler(t *testing.T) {
 	}
 }
 
-func Test_clientObserveHandler_closeObservation(t *testing.T) {
+func TestClientObserveHandlerCloseObservation(t *testing.T) {
 	shutdown := setUp(t)
 	defer shutdown()
 
-	co1 := testCoapDial(t, testCfg.GW_HOST, "")
+	co1 := testCoapDial(t, "", true, time.Now().Add(time.Minute))
 	require.NotEmpty(t, co1)
 	defer func() {
 		_ = co1.Close()
 	}()
 	testPrepareDevice(t, co1)
-	co2 := testCoapDial(t, testCfg.GW_HOST, "")
+	co2 := testCoapDial(t, "", true, time.Now().Add(time.Minute))
 	require.NotEmpty(t, co1)
 	defer func() {
 		_ = co2.Close()
@@ -143,7 +143,7 @@ func Test_clientObserveHandler_closeObservation(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultServiceToken(t))
+	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
 	conn, err := grpc.Dial(testCfg.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
 	})))

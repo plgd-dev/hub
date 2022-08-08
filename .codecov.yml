@@ -1,0 +1,12 @@
+ignore:
+  - "bundle"
+  - "charts"
+  - "v2"
+  - "http-gateway/grpc-websocket"
+  - "http-gateway/web"
+  - "**/main.go"
+  - "**/*.pb.go"
+  - "**/*.pb.gw.go"
+  - "**/*_test.go"
+  - "**/*.js"
+  - "**/*.py"

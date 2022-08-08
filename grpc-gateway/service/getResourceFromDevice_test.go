@@ -10,15 +10,15 @@ import (
 	"github.com/plgd-dev/device/schema/device"
 	"github.com/plgd-dev/device/schema/interfaces"
 	"github.com/plgd-dev/device/test/resource/types"
-	"github.com/plgd-dev/hub/grpc-gateway/pb"
-	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
-	"github.com/plgd-dev/hub/resource-aggregate/commands"
-	"github.com/plgd-dev/hub/resource-aggregate/events"
-	"github.com/plgd-dev/hub/test"
-	"github.com/plgd-dev/hub/test/config"
-	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
-	pbTest "github.com/plgd-dev/hub/test/pb"
-	"github.com/plgd-dev/hub/test/service"
+	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
+	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
+	"github.com/plgd-dev/hub/v2/test"
+	"github.com/plgd-dev/hub/v2/test/config"
+	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
+	pbTest "github.com/plgd-dev/hub/v2/test/pb"
+	"github.com/plgd-dev/hub/v2/test/service"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -64,11 +64,13 @@ func TestRequestHandlerGetResourceFromDevice(t *testing.T) {
 					TimeToLive: int64(time.Hour),
 				},
 			},
-			want: pbTest.MakeResourceRetrieved(t, deviceID, test.TestResourceLightInstanceHref("1"), map[string]interface{}{
-				"name":  "Light",
-				"power": uint64(0),
-				"state": false,
-			}),
+			want: pbTest.MakeResourceRetrieved(t, deviceID, test.TestResourceLightInstanceHref("1"), "",
+				map[string]interface{}{
+					"name":  "Light",
+					"power": uint64(0),
+					"state": false,
+				},
+			),
 		},
 		{
 			name: "valid /oic/d",
@@ -78,12 +80,14 @@ func TestRequestHandlerGetResourceFromDevice(t *testing.T) {
 					TimeToLive: int64(time.Hour),
 				},
 			},
-			want: pbTest.MakeResourceRetrieved(t, deviceID, device.ResourceURI, map[string]interface{}{
-				"n":   test.TestDeviceName,
-				"di":  deviceID,
-				"dmv": "ocf.res.1.3.0",
-				"icv": "ocf.2.0.5",
-			}),
+			want: pbTest.MakeResourceRetrieved(t, deviceID, device.ResourceURI, "",
+				map[string]interface{}{
+					"n":   test.TestDeviceName,
+					"di":  deviceID,
+					"dmv": "ocf.res.1.3.0",
+					"icv": "ocf.2.0.5",
+				},
+			),
 		},
 		{
 			name: "valid /switches",
@@ -93,18 +97,20 @@ func TestRequestHandlerGetResourceFromDevice(t *testing.T) {
 					TimeToLive: int64(time.Hour),
 				},
 			},
-			want: pbTest.MakeResourceRetrieved(t, deviceID, test.TestResourceSwitchesHref, []map[string]interface{}{
-				{
-					"href": test.TestResourceSwitchesInstanceHref(switchID),
-					"if":   []interface{}{interfaces.OC_IF_A, interfaces.OC_IF_BASELINE},
-					"rt":   []interface{}{types.BINARY_SWITCH},
-					"rel":  []interface{}{"hosts"},
-					"p": map[string]interface{}{
-						"bm": uint64(schema.Discoverable | schema.Observable),
+			want: pbTest.MakeResourceRetrieved(t, deviceID, test.TestResourceSwitchesHref, "",
+				[]map[string]interface{}{
+					{
+						"href": test.TestResourceSwitchesInstanceHref(switchID),
+						"if":   []interface{}{interfaces.OC_IF_A, interfaces.OC_IF_BASELINE},
+						"rt":   []interface{}{types.BINARY_SWITCH},
+						"rel":  []interface{}{"hosts"},
+						"p": map[string]interface{}{
+							"bm": uint64(schema.Discoverable | schema.Observable),
+						},
+						"eps": []interface{}{},
 					},
-					"eps": []interface{}{},
 				},
-			}),
+			),
 		},
 		{
 			name: "valid /switches/1",
@@ -114,9 +120,11 @@ func TestRequestHandlerGetResourceFromDevice(t *testing.T) {
 					TimeToLive: int64(time.Hour),
 				},
 			},
-			want: pbTest.MakeResourceRetrieved(t, deviceID, test.TestResourceSwitchesInstanceHref(switchID), map[string]interface{}{
-				"value": false,
-			}),
+			want: pbTest.MakeResourceRetrieved(t, deviceID, test.TestResourceSwitchesInstanceHref(switchID), "",
+				map[string]interface{}{
+					"value": false,
+				},
+			),
 		},
 	}
 
@@ -125,12 +133,15 @@ func TestRequestHandlerGetResourceFromDevice(t *testing.T) {
 
 	tearDown := service.SetUp(ctx, t)
 	defer tearDown()
-	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultServiceToken(t))
+	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
 
 	conn, err := grpc.Dial(config.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
 	})))
 	require.NoError(t, err)
+	defer func() {
+		_ = conn.Close()
+	}()
 	c := pb.NewGrpcGatewayClient(conn)
 
 	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.GW_HOST, test.GetAllBackendResourceLinks())

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/plgd-dev/hub/cloud2cloud-connector/store"
+	"github.com/plgd-dev/hub/v2/cloud2cloud-connector/store"
 	kitSync "github.com/plgd-dev/kit/v2/sync"
 )
 
@@ -160,7 +160,7 @@ func (d *DeviceData) DumpResources() map[string]*ResourceData {
 
 func (d *DeviceData) DumpTasks(linkedCloud store.LinkedCloud, linkedAccount store.LinkedAccount, deviceID string) []Task {
 	out := make([]Task, 0, 32)
-	if !linkedCloud.SupportedSubscriptionsEvents.NeedPullDevice() && !linkedCloud.SupportedSubscriptionsEvents.StaticDeviceEvents {
+	if !linkedCloud.SupportedSubscriptionEvents.NeedPullDevice() && !linkedCloud.SupportedSubscriptionEvents.StaticDeviceEvents {
 		_, ok := d.Subscription()
 		if !ok {
 			out = append(out, Task{
@@ -171,7 +171,7 @@ func (d *DeviceData) DumpTasks(linkedCloud store.LinkedCloud, linkedAccount stor
 			})
 		}
 	}
-	if linkedCloud.SupportedSubscriptionsEvents.NeedPullResources() {
+	if linkedCloud.SupportedSubscriptionEvents.NeedPullResources() {
 		return out
 	}
 	for href, resource := range d.DumpResources() {
@@ -280,7 +280,7 @@ func (d *LinkedAccountData) DumpDevices() map[string]*DeviceData {
 func (d *LinkedAccountData) DumpTasks(linkedCloud store.LinkedCloud) []Task {
 	out := make([]Task, 0, 32)
 	linkedAccount := d.LinkedAccount()
-	if !linkedCloud.SupportedSubscriptionsEvents.NeedPullDevices() {
+	if !linkedCloud.SupportedSubscriptionEvents.NeedPullDevices() {
 		_, ok := d.Subscription()
 		if !ok {
 			out = append(out, Task{
@@ -290,7 +290,7 @@ func (d *LinkedAccountData) DumpTasks(linkedCloud store.LinkedCloud) []Task {
 			})
 		}
 	}
-	if linkedCloud.SupportedSubscriptionsEvents.NeedPullDevice() && linkedCloud.SupportedSubscriptionsEvents.NeedPullResources() {
+	if linkedCloud.SupportedSubscriptionEvents.NeedPullDevice() && linkedCloud.SupportedSubscriptionEvents.NeedPullResources() {
 		return out
 	}
 	for deviceID, device := range d.DumpDevices() {
@@ -338,7 +338,7 @@ func (d *CloudData) DumpLinkedAccounts() map[string]*LinkedAccountData {
 
 func (d *CloudData) DumpTasks() []Task {
 	out := make([]Task, 0, 32)
-	if d.linkedCloud.SupportedSubscriptionsEvents.NeedPullDevices() && d.linkedCloud.SupportedSubscriptionsEvents.NeedPullDevice() && d.linkedCloud.SupportedSubscriptionsEvents.NeedPullResources() {
+	if d.linkedCloud.SupportedSubscriptionEvents.NeedPullDevices() && d.linkedCloud.SupportedSubscriptionEvents.NeedPullDevice() && d.linkedCloud.SupportedSubscriptionEvents.NeedPullResources() {
 		return out
 	}
 	for _, linkedAccount := range d.DumpLinkedAccounts() {
@@ -401,8 +401,8 @@ func (s *Cache) loadLinkedAccount(linkedCloudID, linkedAccountID string) (*Cloud
 	return cloud, linkedAccountI.(*LinkedAccountData), nil
 }
 
-func (s *Cache) LoadSubscription(ID string) (subscriptionData, bool) {
-	subI, ok := s.subscriptionsByID.Load(ID)
+func (s *Cache) LoadSubscription(id string) (subscriptionData, bool) {
+	subI, ok := s.subscriptionsByID.Load(id)
 	if !ok {
 		return subscriptionData{}, ok
 	}

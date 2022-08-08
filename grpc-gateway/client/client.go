@@ -8,24 +8,25 @@ import (
 	"sync"
 	"time"
 
+	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
+	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/keepalive"
-
-	"github.com/plgd-dev/hub/grpc-gateway/pb"
-	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
-	"github.com/plgd-dev/hub/resource-aggregate/commands"
-	"github.com/plgd-dev/hub/resource-aggregate/events"
 )
 
 type ApplicationCallback interface {
 	GetRootCertificateAuthorities() ([]*x509.Certificate, error)
 }
 
-type OnboardOption = func() interface{}
-type subscription = interface {
-	Cancel() (wait func(), err error)
-}
+type (
+	OnboardOption = func() interface{}
+	subscription  = interface {
+		Cancel() (wait func(), err error)
+	}
+)
 
 type Config struct {
 	GatewayAddress string
@@ -85,21 +86,21 @@ func (c *Client) popSubscriptions() map[string]subscription {
 	return s
 }
 
-func (c *Client) popSubscription(ID string) (subscription, error) {
+func (c *Client) popSubscription(id string) (subscription, error) {
 	c.subscriptionsLock.Lock()
 	defer c.subscriptionsLock.Unlock()
-	v, ok := c.subscriptions[ID]
+	v, ok := c.subscriptions[id]
 	if !ok {
-		return nil, fmt.Errorf("cannot find observation %v", ID)
+		return nil, fmt.Errorf("cannot find observation %v", id)
 	}
-	delete(c.subscriptions, ID)
+	delete(c.subscriptions, id)
 	return v, nil
 }
 
-func (c *Client) insertSubscription(ID string, s subscription) {
+func (c *Client) insertSubscription(id string, s subscription) {
 	c.subscriptionsLock.Lock()
 	defer c.subscriptionsLock.Unlock()
-	c.subscriptions[ID] = s
+	c.subscriptions[id] = s
 }
 
 func (c *Client) Close(ctx context.Context) error {

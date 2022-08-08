@@ -2,14 +2,17 @@ package projection
 
 import (
 	"context"
+	"fmt"
+	"sync"
 	"testing"
 	"time"
 
-	"github.com/plgd-dev/hub/resource-aggregate/commands"
-	cqrsEventStore "github.com/plgd-dev/hub/resource-aggregate/cqrs/eventstore"
-	mockEvents "github.com/plgd-dev/hub/resource-aggregate/cqrs/eventstore/test"
-	"github.com/plgd-dev/hub/resource-aggregate/events"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
+	cqrsEventStore "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore"
+	mockEvents "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore/test"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var d1res1 = commands.Resource{
@@ -77,83 +80,127 @@ var d5res2 = commands.Resource{
 	Href:     "/res2",
 }
 
-func makeEventMeta(connectionID string, sequence, version uint64) *events.EventMetadata {
-	e := events.MakeEventMeta(connectionID, sequence, version)
+func makeEventMeta(connectionID string, version uint64) *events.EventMetadata {
+	e := events.MakeEventMeta(connectionID, 0, version)
 	e.Timestamp = 12345
 	return e
 }
 
-func prepareResourceLinksEventstore(t *testing.T) *mockEvents.MockEventStore {
+func prepareResourceLinksEventstore() *mockEvents.MockEventStore {
 	eventstore := mockEvents.NewMockEventStore()
 
 	d1resID := commands.MakeLinksResourceUUID(d1res1.DeviceId)
-	eventstore.Append(d1res1.DeviceId, d1resID, mockEvents.MakeResourceLinksPublishedEvent([]*commands.Resource{&d1res1}, d1res1.DeviceId, makeEventMeta("a", 0, 0)))
-	eventstore.Append(d1res2.DeviceId, d1resID, mockEvents.MakeResourceLinksPublishedEvent([]*commands.Resource{&d1res2, &d1res3}, d1res2.DeviceId, makeEventMeta("a", 0, 1)))
-	eventstore.Append(d1res2.DeviceId, d1resID, mockEvents.MakeResourceLinksUnpublishedEvent([]string{d1res2.Href}, d1res2.DeviceId, makeEventMeta("a", 0, 2)))
-	eventstore.Append(d1res4.DeviceId, d1resID, mockEvents.MakeResourceLinksPublishedEvent([]*commands.Resource{&d1res4, &d1res5}, d1res4.DeviceId, makeEventMeta("a", 0, 3)))
+	eventstore.Append(d1res1.DeviceId, d1resID, mockEvents.MakeResourceLinksPublishedEvent([]*commands.Resource{&d1res1}, d1res1.DeviceId, makeEventMeta("a", 0)))
+	eventstore.Append(d1res2.DeviceId, d1resID, mockEvents.MakeResourceLinksPublishedEvent([]*commands.Resource{&d1res2, &d1res3}, d1res2.DeviceId, makeEventMeta("a", 1)))
+	eventstore.Append(d1res2.DeviceId, d1resID, mockEvents.MakeResourceLinksUnpublishedEvent([]string{d1res2.Href}, d1res2.DeviceId, makeEventMeta("a", 2)))
+	eventstore.Append(d1res4.DeviceId, d1resID, mockEvents.MakeResourceLinksPublishedEvent([]*commands.Resource{&d1res4, &d1res5}, d1res4.DeviceId, makeEventMeta("a", 3)))
 
 	d2resID := commands.MakeLinksResourceUUID(d2res1.DeviceId)
-	eventstore.Append(d2res1.DeviceId, d2resID, mockEvents.MakeResourceLinksPublishedEvent([]*commands.Resource{&d2res1, &d2res2}, d2res1.DeviceId, makeEventMeta("a", 0, 0)))
-	eventstore.Append(d2res1.DeviceId, d2resID, mockEvents.MakeResourceLinksUnpublishedEvent([]string{d2res1.Href}, d2res1.DeviceId, makeEventMeta("a", 0, 1)))
-	eventstore.Append(d2res2.DeviceId, d2resID, mockEvents.MakeResourceLinksUnpublishedEvent([]string{d2res2.Href}, d2res2.DeviceId, makeEventMeta("a", 0, 2)))
-	eventstore.Append(d2res2.DeviceId, d2resID, mockEvents.MakeResourceLinksUnpublishedEvent([]string{d2res2.Href}, d2res2.DeviceId, makeEventMeta("a", 0, 3)))
-	eventstore.Append(d2res1.DeviceId, d2resID, mockEvents.MakeResourceLinksPublishedEvent([]*commands.Resource{&d2res1, &d2res1}, d2res1.DeviceId, makeEventMeta("a", 0, 4)))
-	eventstore.Append(d2res2.DeviceId, d2resID, mockEvents.MakeResourceLinksUnpublishedEvent([]string{d2res2.Href, d2res2.Href}, d2res2.DeviceId, makeEventMeta("a", 0, 5)))
-	eventstore.Append(d2res1.DeviceId, d2resID, mockEvents.MakeResourceLinksPublishedEvent([]*commands.Resource{&d2res1}, d2res1.DeviceId, makeEventMeta("a", 0, 6)))
+	eventstore.Append(d2res1.DeviceId, d2resID, mockEvents.MakeResourceLinksPublishedEvent([]*commands.Resource{&d2res1, &d2res2}, d2res1.DeviceId, makeEventMeta("a", 0)))
+	eventstore.Append(d2res1.DeviceId, d2resID, mockEvents.MakeResourceLinksUnpublishedEvent([]string{d2res1.Href}, d2res1.DeviceId, makeEventMeta("a", 1)))
+	eventstore.Append(d2res2.DeviceId, d2resID, mockEvents.MakeResourceLinksUnpublishedEvent([]string{d2res2.Href}, d2res2.DeviceId, makeEventMeta("a", 2)))
+	eventstore.Append(d2res2.DeviceId, d2resID, mockEvents.MakeResourceLinksUnpublishedEvent([]string{d2res2.Href}, d2res2.DeviceId, makeEventMeta("a", 3)))
+	eventstore.Append(d2res1.DeviceId, d2resID, mockEvents.MakeResourceLinksPublishedEvent([]*commands.Resource{&d2res1, &d2res1}, d2res1.DeviceId, makeEventMeta("a", 4)))
+	eventstore.Append(d2res2.DeviceId, d2resID, mockEvents.MakeResourceLinksUnpublishedEvent([]string{d2res2.Href, d2res2.Href}, d2res2.DeviceId, makeEventMeta("a", 5)))
+	eventstore.Append(d2res1.DeviceId, d2resID, mockEvents.MakeResourceLinksPublishedEvent([]*commands.Resource{&d2res1}, d2res1.DeviceId, makeEventMeta("a", 6)))
 
 	d3resID := commands.MakeLinksResourceUUID(d3res1.DeviceId)
-	eventstore.Append(d3res1.DeviceId, d3resID, mockEvents.MakeResourceLinksSnapshotTaken(map[string]*commands.Resource{d3res1.Href: &d3res1, d3res2.Href: &d3res2}, d3res1.DeviceId, makeEventMeta("a", 0, 0)))
-	eventstore.Append(d3res1.DeviceId, d3resID, mockEvents.MakeResourceLinksUnpublishedEvent([]string{d3res1.Href}, d3res1.DeviceId, makeEventMeta("a", 0, 1)))
+	eventstore.Append(d3res1.DeviceId, d3resID, mockEvents.MakeResourceLinksSnapshotTaken(map[string]*commands.Resource{d3res1.Href: &d3res1, d3res2.Href: &d3res2}, d3res1.DeviceId, makeEventMeta("a", 0)))
+	eventstore.Append(d3res1.DeviceId, d3resID, mockEvents.MakeResourceLinksUnpublishedEvent([]string{d3res1.Href}, d3res1.DeviceId, makeEventMeta("a", 1)))
 
 	d4resID := commands.MakeLinksResourceUUID(d4res1.DeviceId)
-	eventstore.Append(d4res1.DeviceId, d4resID, mockEvents.MakeResourceLinksPublishedEvent([]*commands.Resource{&d4res1, &d4res2}, d4res1.DeviceId, makeEventMeta("a", 0, 0)))
-	eventstore.Append(d4res1.DeviceId, d4resID, mockEvents.MakeResourceLinksUnpublishedEvent([]string{}, d4res1.DeviceId, makeEventMeta("a", 0, 1)))
+	eventstore.Append(d4res1.DeviceId, d4resID, mockEvents.MakeResourceLinksPublishedEvent([]*commands.Resource{&d4res1, &d4res2}, d4res1.DeviceId, makeEventMeta("a", 0)))
+	eventstore.Append(d4res1.DeviceId, d4resID, mockEvents.MakeResourceLinksUnpublishedEvent([]string{}, d4res1.DeviceId, makeEventMeta("a", 1)))
 
 	d5resID := commands.MakeLinksResourceUUID(d5res1.DeviceId)
-	eventstore.Append(d5res1.DeviceId, d5resID, mockEvents.MakeResourceLinksSnapshotTaken(map[string]*commands.Resource{d5res1.Href: &d5res1, d5res2.Href: &d5res2}, d5res1.DeviceId, makeEventMeta("a", 0, 0)))
-	eventstore.Append(d5res1.DeviceId, d5resID, mockEvents.MakeResourceLinksUnpublishedEvent([]string{}, d5res1.DeviceId, makeEventMeta("a", 0, 1)))
+	eventstore.Append(d5res1.DeviceId, d5resID, mockEvents.MakeResourceLinksSnapshotTaken(map[string]*commands.Resource{d5res1.Href: &d5res1, d5res2.Href: &d5res2}, d5res1.DeviceId, makeEventMeta("a", 0)))
+	eventstore.Append(d5res1.DeviceId, d5resID, mockEvents.MakeResourceLinksUnpublishedEvent([]string{}, d5res1.DeviceId, makeEventMeta("a", 1)))
 
 	return eventstore
 }
 
-func prepareResourceStateEventstore(t *testing.T) *mockEvents.MockEventStore {
+func prepareResourceStateEventstore() *mockEvents.MockEventStore {
 	eventstore := mockEvents.NewMockEventStore()
-	resourceChangedEventMetadata := makeEventMeta("", 0, 0)
+	resourceChangedEventMetadata := makeEventMeta("", 0)
 
 	d1r1 := commands.NewResourceID(d1res1.DeviceId, d1res1.Href)
-	eventstore.Append(d1res1.DeviceId, d1r1.ToUUID(), mockEvents.MakeResourceStateSnapshotTaken(d1r1, &events.ResourceChanged{Content: &commands.Content{}, EventMetadata: resourceChangedEventMetadata}, makeEventMeta("a", 0, 0), mockEvents.MakeAuditContext("userId", "0")))
-	eventstore.Append(d1res1.DeviceId, d1r1.ToUUID(), mockEvents.MakeResourceUpdatePending(d1r1, &commands.Content{}, makeEventMeta("a", 0, 1), mockEvents.MakeAuditContext("userId", "1"), time.Time{}))
-	eventstore.Append(d1res1.DeviceId, d1r1.ToUUID(), mockEvents.MakeResourceUpdatePending(d1r1, &commands.Content{}, makeEventMeta("a", 0, 2), mockEvents.MakeAuditContext("userId", "2"), time.Time{}))
-	eventstore.Append(d1res1.DeviceId, d1r1.ToUUID(), mockEvents.MakeResourceUpdated(d1r1, commands.Status_OK, &commands.Content{}, makeEventMeta("a", 0, 3), mockEvents.MakeAuditContext("userId", "1")))
-	eventstore.Append(d1res1.DeviceId, d1r1.ToUUID(), mockEvents.MakeResourceUpdatePending(d1r1, &commands.Content{}, makeEventMeta("a", 0, 4), mockEvents.MakeAuditContext("userId", "3"), time.Time{}))
+	eventstore.Append(d1res1.DeviceId, d1r1.ToUUID(), mockEvents.MakeResourceStateSnapshotTaken(d1r1, &events.ResourceChanged{Content: &commands.Content{}, EventMetadata: resourceChangedEventMetadata}, makeEventMeta("a", 0), mockEvents.MakeAuditContext("userId", "0")))
+	eventstore.Append(d1res1.DeviceId, d1r1.ToUUID(), mockEvents.MakeResourceUpdatePending(d1r1, &commands.Content{}, makeEventMeta("a", 1), mockEvents.MakeAuditContext("userId", "1"), time.Time{}))
+	eventstore.Append(d1res1.DeviceId, d1r1.ToUUID(), mockEvents.MakeResourceUpdatePending(d1r1, &commands.Content{}, makeEventMeta("a", 2), mockEvents.MakeAuditContext("userId", "2"), time.Time{}))
+	eventstore.Append(d1res1.DeviceId, d1r1.ToUUID(), mockEvents.MakeResourceUpdated(d1r1, commands.Status_OK, &commands.Content{}, makeEventMeta("a", 3), mockEvents.MakeAuditContext("userId", "1")))
+	eventstore.Append(d1res1.DeviceId, d1r1.ToUUID(), mockEvents.MakeResourceUpdatePending(d1r1, &commands.Content{}, makeEventMeta("a", 4), mockEvents.MakeAuditContext("userId", "3"), time.Time{}))
 
 	d1r2 := commands.NewResourceID(d1res2.DeviceId, d1res2.Href)
-	eventstore.Append(d1res2.DeviceId, d1r2.ToUUID(), mockEvents.MakeResourceStateSnapshotTaken(d1r2, &events.ResourceChanged{Content: &commands.Content{}, EventMetadata: resourceChangedEventMetadata}, makeEventMeta("a", 0, 0), mockEvents.MakeAuditContext("userId", "2")))
+	eventstore.Append(d1res2.DeviceId, d1r2.ToUUID(), mockEvents.MakeResourceStateSnapshotTaken(d1r2, &events.ResourceChanged{Content: &commands.Content{}, EventMetadata: resourceChangedEventMetadata}, makeEventMeta("a", 0), mockEvents.MakeAuditContext("userId", "2")))
 
 	d1r3 := commands.NewResourceID(d1res3.DeviceId, d1res3.Href)
-	eventstore.Append(d1res3.DeviceId, d1r3.ToUUID(), mockEvents.MakeResourceStateSnapshotTaken(d1r3, &events.ResourceChanged{Content: &commands.Content{}, EventMetadata: resourceChangedEventMetadata}, makeEventMeta("a", 0, 0), mockEvents.MakeAuditContext("userId", "2")))
-	eventstore.Append(d1res3.DeviceId, d1r3.ToUUID(), mockEvents.MakeResourceUpdatePending(d1r3, &commands.Content{}, makeEventMeta("a", 0, 1), mockEvents.MakeAuditContext("userId", "3"), time.Time{}))
+	eventstore.Append(d1res3.DeviceId, d1r3.ToUUID(), mockEvents.MakeResourceStateSnapshotTaken(d1r3, &events.ResourceChanged{Content: &commands.Content{}, EventMetadata: resourceChangedEventMetadata}, makeEventMeta("a", 0), mockEvents.MakeAuditContext("userId", "2")))
+	eventstore.Append(d1res3.DeviceId, d1r3.ToUUID(), mockEvents.MakeResourceUpdatePending(d1r3, &commands.Content{}, makeEventMeta("a", 1), mockEvents.MakeAuditContext("userId", "3"), time.Time{}))
 
 	d1r4 := commands.NewResourceID(d1res4.DeviceId, d1res4.Href)
-	eventstore.Append(d1res4.DeviceId, d1r4.ToUUID(), mockEvents.MakeResourceStateSnapshotTaken(d1r4, &events.ResourceChanged{Content: &commands.Content{}, EventMetadata: resourceChangedEventMetadata}, makeEventMeta("a", 0, 0), mockEvents.MakeAuditContext("userId", "0")))
-	eventstore.Append(d1res4.DeviceId, d1r4.ToUUID(), mockEvents.MakeResourceUpdatePending(d1r4, &commands.Content{}, makeEventMeta("a", 0, 1), mockEvents.MakeAuditContext("userId", "1"), time.Time{}))
-	eventstore.Append(d1res4.DeviceId, d1r4.ToUUID(), mockEvents.MakeResourceUpdatePending(d1r4, &commands.Content{}, makeEventMeta("a", 0, 2), mockEvents.MakeAuditContext("userId", "2"), time.Time{}))
-	eventstore.Append(d1res4.DeviceId, d1r4.ToUUID(), mockEvents.MakeResourceUpdated(d1r4, commands.Status_OK, &commands.Content{}, makeEventMeta("a", 0, 3), mockEvents.MakeAuditContext("userId", "1")))
-	eventstore.Append(d1res4.DeviceId, d1r4.ToUUID(), mockEvents.MakeResourceStateSnapshotTaken(d1r4, &events.ResourceChanged{Content: &commands.Content{}, EventMetadata: resourceChangedEventMetadata}, makeEventMeta("a", 0, 4), mockEvents.MakeAuditContext("userId", "3")))
-	eventstore.Append(d1res4.DeviceId, d1r4.ToUUID(), mockEvents.MakeResourceUpdatePending(d1r4, &commands.Content{}, makeEventMeta("a", 0, 5), mockEvents.MakeAuditContext("userId", "4"), time.Time{}))
+	eventstore.Append(d1res4.DeviceId, d1r4.ToUUID(), mockEvents.MakeResourceStateSnapshotTaken(d1r4, &events.ResourceChanged{Content: &commands.Content{}, EventMetadata: resourceChangedEventMetadata}, makeEventMeta("a", 0), mockEvents.MakeAuditContext("userId", "0")))
+	eventstore.Append(d1res4.DeviceId, d1r4.ToUUID(), mockEvents.MakeResourceUpdatePending(d1r4, &commands.Content{}, makeEventMeta("a", 1), mockEvents.MakeAuditContext("userId", "1"), time.Time{}))
+	eventstore.Append(d1res4.DeviceId, d1r4.ToUUID(), mockEvents.MakeResourceUpdatePending(d1r4, &commands.Content{}, makeEventMeta("a", 2), mockEvents.MakeAuditContext("userId", "2"), time.Time{}))
+	eventstore.Append(d1res4.DeviceId, d1r4.ToUUID(), mockEvents.MakeResourceUpdated(d1r4, commands.Status_OK, &commands.Content{}, makeEventMeta("a", 3), mockEvents.MakeAuditContext("userId", "1")))
+	eventstore.Append(d1res4.DeviceId, d1r4.ToUUID(), mockEvents.MakeResourceStateSnapshotTaken(d1r4, &events.ResourceChanged{Content: &commands.Content{}, EventMetadata: resourceChangedEventMetadata}, makeEventMeta("a", 4), mockEvents.MakeAuditContext("userId", "3")))
+	eventstore.Append(d1res4.DeviceId, d1r4.ToUUID(), mockEvents.MakeResourceUpdatePending(d1r4, &commands.Content{}, makeEventMeta("a", 5), mockEvents.MakeAuditContext("userId", "4"), time.Time{}))
 
 	d2r1 := commands.NewResourceID(d2res1.DeviceId, d2res1.Href)
-	eventstore.Append(d2res1.DeviceId, d2r1.ToUUID(), mockEvents.MakeResourceStateSnapshotTaken(d2r1, &events.ResourceChanged{Content: &commands.Content{}, EventMetadata: resourceChangedEventMetadata}, makeEventMeta("a", 0, 0), mockEvents.MakeAuditContext("userId", "0")))
-	eventstore.Append(d2res1.DeviceId, d2r1.ToUUID(), mockEvents.MakeResourceUpdatePending(d2r1, &commands.Content{}, makeEventMeta("a", 0, 1), mockEvents.MakeAuditContext("userId", "1"), time.Time{}))
-	eventstore.Append(d2res1.DeviceId, d2r1.ToUUID(), mockEvents.MakeResourceUpdated(d2r1, commands.Status_OK, &commands.Content{}, makeEventMeta("a", 0, 2), mockEvents.MakeAuditContext("userId", "1")))
+	eventstore.Append(d2res1.DeviceId, d2r1.ToUUID(), mockEvents.MakeResourceStateSnapshotTaken(d2r1, &events.ResourceChanged{Content: &commands.Content{}, EventMetadata: resourceChangedEventMetadata}, makeEventMeta("a", 0), mockEvents.MakeAuditContext("userId", "0")))
+	eventstore.Append(d2res1.DeviceId, d2r1.ToUUID(), mockEvents.MakeResourceUpdatePending(d2r1, &commands.Content{}, makeEventMeta("a", 1), mockEvents.MakeAuditContext("userId", "1"), time.Time{}))
+	eventstore.Append(d2res1.DeviceId, d2r1.ToUUID(), mockEvents.MakeResourceUpdated(d2r1, commands.Status_OK, &commands.Content{}, makeEventMeta("a", 2), mockEvents.MakeAuditContext("userId", "1")))
 
 	d2r2 := commands.NewResourceID(d2res2.DeviceId, d2res2.Href)
-	eventstore.Append(d2res2.DeviceId, d2r2.ToUUID(), mockEvents.MakeResourceStateSnapshotTaken(d2r2, &events.ResourceChanged{Content: &commands.Content{}, EventMetadata: resourceChangedEventMetadata}, makeEventMeta("a", 0, 0), mockEvents.MakeAuditContext("userId", "0")))
-	eventstore.Append(d2res2.DeviceId, d2r2.ToUUID(), mockEvents.MakeResourceUpdatePending(d2r2, &commands.Content{}, makeEventMeta("a", 0, 1), mockEvents.MakeAuditContext("userId", "1"), time.Time{}))
-	eventstore.Append(d2res2.DeviceId, d2r2.ToUUID(), mockEvents.MakeResourceUpdated(d2r2, commands.Status_OK, &commands.Content{}, makeEventMeta("a", 0, 2), mockEvents.MakeAuditContext("userId", "1")))
-	eventstore.Append(d2res2.DeviceId, d2r2.ToUUID(), mockEvents.MakeResourceChangedEvent(d2r2, &commands.Content{}, makeEventMeta("a", 0, 3), mockEvents.MakeAuditContext("userId", "2")))
+	eventstore.Append(d2res2.DeviceId, d2r2.ToUUID(), mockEvents.MakeResourceStateSnapshotTaken(d2r2, &events.ResourceChanged{Content: &commands.Content{}, EventMetadata: resourceChangedEventMetadata}, makeEventMeta("a", 0), mockEvents.MakeAuditContext("userId", "0")))
+	eventstore.Append(d2res2.DeviceId, d2r2.ToUUID(), mockEvents.MakeResourceUpdatePending(d2r2, &commands.Content{}, makeEventMeta("a", 1), mockEvents.MakeAuditContext("userId", "1"), time.Time{}))
+	eventstore.Append(d2res2.DeviceId, d2r2.ToUUID(), mockEvents.MakeResourceUpdated(d2r2, commands.Status_OK, &commands.Content{}, makeEventMeta("a", 2), mockEvents.MakeAuditContext("userId", "1")))
+	eventstore.Append(d2res2.DeviceId, d2r2.ToUUID(), mockEvents.MakeResourceChangedEvent(d2r2, &commands.Content{}, makeEventMeta("a", 3), mockEvents.MakeAuditContext("userId", "2")))
 
 	return eventstore
+}
+
+func TestResourceProjectionTestLoadParallelModels(t *testing.T) {
+	eventstore := mockEvents.NewMockEventStore()
+	resourceChangedEventMetadata := makeEventMeta("", 0)
+	numDevices := 350
+	numResources := 500
+	numParallelRequests := 6
+
+	for i := 0; i < numDevices; i++ {
+		for j := 0; j < numResources; j++ {
+			resourceID := commands.NewResourceID(fmt.Sprintf("dev-%v", i), fmt.Sprintf("res-%v", j))
+			eventstore.Append(resourceID.GetDeviceId(), resourceID.ToUUID(), mockEvents.MakeResourceStateSnapshotTaken(resourceID, &events.ResourceChanged{Content: &commands.Content{}, EventMetadata: resourceChangedEventMetadata}, makeEventMeta("a", 0), mockEvents.MakeAuditContext("userId", "2")))
+		}
+	}
+
+	ctx := context.Background()
+	p, err := NewProjection(
+		ctx,
+		"test",
+		eventstore,
+		nil,
+		func(ctx context.Context, groupID, aggregateID string) (cqrsEventStore.Model, error) {
+			return events.NewResourceLinksSnapshotTaken(), nil
+		},
+	)
+	require.NoError(t, err)
+
+	err = p.cqrsProjection.Project(ctx, nil)
+	require.NoError(t, err)
+
+	var wg sync.WaitGroup
+	wg.Add(numParallelRequests)
+	t.Logf("starting %v requests\n", numParallelRequests)
+	for i := 0; i < numParallelRequests; i++ {
+		go func(v int) {
+			defer wg.Done()
+			n := time.Now()
+			p.cqrsProjection.Models(nil, func(m cqrsEventStore.Model) (wantNext bool) { return true })
+			diff := -1 * time.Until(n)
+			t.Logf("%v models time %v\n", v, diff)
+		}(i)
+	}
+	wg.Wait()
 }
 
 func TestResourceProjection_Register(t *testing.T) {
@@ -188,7 +235,7 @@ func TestResourceProjection_Register(t *testing.T) {
 		},
 	}
 
-	eventstore := prepareResourceLinksEventstore(t)
+	eventstore := prepareResourceLinksEventstore()
 	ctx := context.Background()
 	p, err := NewProjection(
 		ctx,
@@ -255,7 +302,7 @@ func TestResourceProjection_Unregister(t *testing.T) {
 		},
 	}
 
-	eventstore := prepareResourceLinksEventstore(t)
+	eventstore := prepareResourceLinksEventstore()
 	ctx := context.Background()
 	p, err := NewProjection(
 		ctx,
@@ -394,7 +441,7 @@ func TestResourceLinksProjection_Models(t *testing.T) {
 		},
 	}
 
-	eventstore := prepareResourceLinksEventstore(t)
+	eventstore := prepareResourceLinksEventstore()
 	ctx := context.Background()
 	p, err := NewProjection(
 		ctx,
@@ -411,7 +458,11 @@ func TestResourceLinksProjection_Models(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			_, err = p.Register(ctx, tt.args.deviceID)
 			assert.NoError(t, err)
-			got := p.Models(commands.NewResourceID(tt.args.deviceID, commands.ResourceLinksHref))
+			got := []cqrsEventStore.Model{}
+			p.Models(func(m cqrsEventStore.Model) (wantNext bool) {
+				got = append(got, m)
+				return true
+			}, commands.NewResourceID(tt.args.deviceID, commands.ResourceLinksHref))
 
 			mapWant := make(map[string]*events.ResourceLinksSnapshotTaken)
 			for _, r := range tt.want {
@@ -658,7 +709,7 @@ func TestResourceStateProjection_Models(t *testing.T) {
 		},
 	}
 
-	eventstore := prepareResourceStateEventstore(t)
+	eventstore := prepareResourceStateEventstore()
 	ctx := context.Background()
 	p, err := NewProjection(
 		ctx,
@@ -675,7 +726,11 @@ func TestResourceStateProjection_Models(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			_, err = p.Register(ctx, tt.args.resourceID.GetDeviceId())
 			assert.NoError(t, err)
-			got := p.Models(tt.args.resourceID)
+			got := []cqrsEventStore.Model{}
+			p.Models(func(m cqrsEventStore.Model) (wantNext bool) {
+				got = append(got, m)
+				return true
+			}, tt.args.resourceID)
 
 			mapWant := make(map[string]*events.ResourceStateSnapshotTaken)
 			for _, r := range tt.want {
@@ -717,7 +772,7 @@ func TestResourceProjection_ForceUpdate(t *testing.T) {
 		},
 	}
 
-	eventstore := prepareResourceStateEventstore(t)
+	eventstore := prepareResourceStateEventstore()
 	ctx := context.Background()
 	p, err := NewProjection(
 		ctx,

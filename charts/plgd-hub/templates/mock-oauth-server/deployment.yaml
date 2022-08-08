@@ -90,13 +90,13 @@ spec:
             {{- toYaml . | nindent 12 }}
           {{- end }}
           volumeMounts:
-            - mountPath: {{ .Values.mockoauthserver.config.mountPath }}
-              name: {{ .Values.mockoauthserver.config.volume }}
+            - name: {{ .Values.mockoauthserver.config.volume }}
+              mountPath: {{ .Values.mockoauthserver.config.mountPath }}
             {{- if ( include "plgd-hub.mockoauthserver.createServiceCertByCm" . ) }}
             - name: service-crt
               mountPath: {{ $rdServiceCert }}
             {{- end }}
-            {{- with .Values.mockoauthserver.extraVolumes }}
+            {{- with .Values.mockoauthserver.extraVolumeMounts }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
             - name: keys
@@ -112,7 +112,7 @@ spec:
           secret:
             secretName: {{ include "plgd-hub.mockoauthserver.serviceCertName" . }}
         {{- end }}
-        {{- with .Values.mockoauthserver.extraVolumeMounts }}
+        {{- with .Values.mockoauthserver.extraVolumes }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
       {{- with .Values.mockoauthserver.nodeSelector }}

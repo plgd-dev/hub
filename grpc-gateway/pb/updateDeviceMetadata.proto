@@ -2,9 +2,9 @@ syntax = "proto3";
 
 package grpcgateway.pb;
 
-import "github.com/plgd-dev/hub/resource-aggregate/pb/events.proto";
+import "resource-aggregate/pb/events.proto";
 
-option go_package = "github.com/plgd-dev/hub/grpc-gateway/pb;pb";
+option go_package = "github.com/plgd-dev/hub/v2/grpc-gateway/pb;pb";
 
 message UpdateDeviceMetadataRequest{
     enum ShadowSynchronization {
@@ -13,7 +13,7 @@ message UpdateDeviceMetadataRequest{
     }
     string device_id = 1;
     ShadowSynchronization shadow_synchronization = 2;
-    int64 timeToLive = 3;  // command validity in nanoseconds. 0 means forever and minimal value is 100000000 (100ms).
+    int64 time_to_live = 3;  // command validity in nanoseconds. 0 means forever and minimal value is 100000000 (100ms).
 }
 
 message UpdateDeviceMetadataResponse{

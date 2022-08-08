@@ -4,8 +4,9 @@ import (
 	"crypto/tls"
 	"fmt"
 
-	"github.com/plgd-dev/hub/pkg/log"
-	"github.com/plgd-dev/hub/pkg/security/certManager/general"
+	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	"github.com/plgd-dev/hub/v2/pkg/security/certManager/general"
 )
 
 // Config provides configuration of a file based Server Certificate manager
@@ -13,7 +14,7 @@ type Config struct {
 	CAPool          string `yaml:"caPool" json:"caPool" description:"file path to the root certificates in PEM format"`
 	KeyFile         string `yaml:"keyFile" json:"keyFile" description:"file name of private key in PEM format"`
 	CertFile        string `yaml:"certFile" json:"certFile" description:"file name of certificate in PEM format"`
-	UseSystemCAPool bool   `yaml:"useSystemCAPool" json:"useSystemCAPool" description:"use system certification pool"`
+	UseSystemCAPool bool   `yaml:"useSystemCAPool" json:"useSystemCaPool" description:"use system certification pool"`
 }
 
 func (c Config) Validate() error {
@@ -27,9 +28,6 @@ func (c Config) Validate() error {
 		return fmt.Errorf("keyFile('%v')", c.KeyFile)
 	}
 	return nil
-}
-
-func (c *Config) SetDefaults() {
 }
 
 // CertManager holds certificates from filesystem watched for changes
@@ -48,14 +46,14 @@ func (c *CertManager) Close() {
 }
 
 // New creates a new certificate manager which watches for certs in a filesystem
-func New(config Config, logger log.Logger) (*CertManager, error) {
+func New(config Config, fileWatcher *fsnotify.Watcher, logger log.Logger) (*CertManager, error) {
 	c, err := general.New(general.Config{
 		CAPool:                    config.CAPool,
 		KeyFile:                   config.KeyFile,
 		CertFile:                  config.CertFile,
 		ClientCertificateRequired: false,
 		UseSystemCAPool:           config.UseSystemCAPool,
-	}, logger)
+	}, fileWatcher, logger)
 	if err != nil {
 		return nil, err
 	}

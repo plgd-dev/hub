@@ -2,26 +2,35 @@ package service_test
 
 import (
 	"context"
+	"sync"
 	"testing"
 
-	"github.com/plgd-dev/hub/coap-gateway/service"
-	"github.com/plgd-dev/hub/pkg/log"
-	"github.com/plgd-dev/hub/pkg/security/oauth2"
-	"github.com/plgd-dev/hub/test/config"
-	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
+	"github.com/plgd-dev/hub/v2/coap-gateway/service"
+	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	"github.com/plgd-dev/hub/v2/pkg/security/oauth2"
+	"github.com/plgd-dev/hub/v2/test/config"
+	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/trace"
 )
 
 func TestExchangeCacheExecute(t *testing.T) {
-	logger, err := log.NewLogger(log.Config{})
+	logger := log.NewLogger(log.MakeDefaultConfig())
+
+	fileWatcher, err := fsnotify.NewWatcher()
 	require.NoError(t, err)
+	defer func() {
+		err := fileWatcher.Close()
+		require.NoError(t, err)
+	}()
 
 	oauthShutdown := oauthTest.SetUp(t)
 	defer oauthShutdown()
 
 	cfg := config.MakeDeviceAuthorization()
 	cfg.ClientID = oauthTest.ClientTestRestrictedAuth
-	provider, err := oauth2.NewPlgdProvider(context.Background(), cfg, logger)
+	provider, err := oauth2.NewPlgdProvider(context.Background(), cfg, fileWatcher, logger, trace.NewNoopTracerProvider(), "", "")
 	require.NoError(t, err)
 
 	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
@@ -36,11 +45,33 @@ func TestExchangeCacheExecute(t *testing.T) {
 	code = oauthTest.GetDefaultDeviceAuthorizationCode(t, "")
 	// token cache prevents multiple requests with the same auth code being sent to the oauth server
 	ec := service.NewExchangeCache()
-	token1, err := ec.Execute(ctx, provider, code)
-	require.NoError(t, err)
-	token2, err := ec.Execute(ctx, provider, code)
-	require.NoError(t, err)
-	require.Equal(t, token1, token2)
+	results := []struct {
+		token *oauth2.Token
+		err   error
+	}{
+		{},
+		{},
+		{},
+		{},
+		{},
+		{},
+		{},
+		{},
+	}
+	var wg sync.WaitGroup
+	for i := range results {
+		wg.Add(1)
+		go func(idx int) {
+			defer wg.Done()
+			results[idx].token, results[idx].err = ec.Execute(ctx, provider, code)
+		}(i)
+	}
+	wg.Wait()
+	for _, r := range results {
+		require.NoError(t, r.err)
+		require.NotEmpty(t, r.token)
+		require.Equal(t, results[0].token, r.token)
+	}
 
 	// remove code from token cache, code will be send to the auth server and should return an error
 	ec.Clear()
@@ -51,5 +82,5 @@ func TestExchangeCacheExecute(t *testing.T) {
 	code = oauthTest.GetDefaultDeviceAuthorizationCode(t, "")
 	token3, err := ec.Execute(ctx, provider, code)
 	require.NoError(t, err)
-	require.NotEqual(t, token1, token3)
+	require.NotEqual(t, results[0].token, token3)
 }

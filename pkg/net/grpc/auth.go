@@ -2,18 +2,15 @@ package grpc
 
 import (
 	"context"
-	"crypto/tls"
 	"fmt"
 
 	extJwt "github.com/golang-jwt/jwt/v4"
+	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
+	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
+	"github.com/plgd-dev/hub/v2/pkg/security/jwt"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-
-	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
-	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
-
-	"github.com/plgd-dev/hub/pkg/security/jwt"
 )
 
 var authorizationKey = "authorization"
@@ -35,22 +32,25 @@ func MakeAuthInterceptors(authFunc Interceptor, whiteListedMethods ...string) Au
 	}
 }
 
-func MakeJWTInterceptors(jwksURL string, tls *tls.Config, claims ClaimsFunc, whiteListedMethods ...string) AuthInterceptors {
-	return MakeAuthInterceptors(ValidateJWT(jwksURL, tls, claims), whiteListedMethods...)
+func MakeJWTInterceptors(keyCache *jwt.KeyCache, claims ClaimsFunc, whiteListedMethods ...string) AuthInterceptors {
+	return MakeAuthInterceptors(ValidateJWT(keyCache, claims), whiteListedMethods...)
 }
 
 func (f AuthInterceptors) Unary() grpc.UnaryServerInterceptor {
 	return UnaryServerInterceptor(f.authFunc)
 }
+
 func (f AuthInterceptors) Stream() grpc.StreamServerInterceptor {
 	return StreamServerInterceptor(f.authFunc)
 }
 
-type ClaimsFunc = func(ctx context.Context, method string) Claims
-type Claims = interface{ Valid() error }
-type Validator interface {
-	ParseWithClaims(token string, claims extJwt.Claims) error
-}
+type (
+	ClaimsFunc = func(ctx context.Context, method string) Claims
+	Claims     = interface{ Valid() error }
+	Validator  interface {
+		ParseWithClaims(token string, claims extJwt.Claims) error
+	}
+)
 
 func ValidateJWTWithValidator(validator Validator, claims ClaimsFunc) Interceptor {
 	return func(ctx context.Context, method string) (context.Context, error) {
@@ -66,8 +66,8 @@ func ValidateJWTWithValidator(validator Validator, claims ClaimsFunc) Intercepto
 	}
 }
 
-func ValidateJWT(jwksURL string, tls *tls.Config, claims ClaimsFunc) Interceptor {
-	return ValidateJWTWithValidator(jwt.NewValidator(jwksURL, tls), claims)
+func ValidateJWT(keyCache *jwt.KeyCache, claims ClaimsFunc) Interceptor {
+	return ValidateJWTWithValidator(jwt.NewValidator(keyCache), claims)
 }
 
 // CtxWithToken stores token to ctx of request.

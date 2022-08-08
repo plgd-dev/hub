@@ -7,17 +7,18 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/plgd-dev/hub/cloud2cloud-connector/events"
-	"github.com/plgd-dev/hub/cloud2cloud-connector/store"
-	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
-	"github.com/plgd-dev/hub/resource-aggregate/commands"
-	raEvents "github.com/plgd-dev/hub/resource-aggregate/events"
-	raService "github.com/plgd-dev/hub/resource-aggregate/service"
-	"github.com/plgd-dev/kit/v2/log"
+	"github.com/plgd-dev/hub/v2/cloud2cloud-connector/events"
+	"github.com/plgd-dev/hub/v2/cloud2cloud-connector/store"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
+	raEvents "github.com/plgd-dev/hub/v2/resource-aggregate/events"
+	raService "github.com/plgd-dev/hub/v2/resource-aggregate/service"
+	"go.opentelemetry.io/otel/trace"
 )
 
-func retrieveDeviceResource(ctx context.Context, deviceID, href string, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud) (string, []byte, commands.Status, error) {
-	client := linkedCloud.GetHTTPClient()
+func retrieveDeviceResource(ctx context.Context, traceProvider trace.TracerProvider, deviceID, href string, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud) (string, []byte, commands.Status, error) {
+	client := linkedCloud.GetHTTPClient(traceProvider)
 	defer client.CloseIdleConnections()
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, makeHTTPEndpoint(linkedCloud.Endpoint.URL, deviceID, href), nil)
 	if err != nil {
@@ -34,7 +35,7 @@ func retrieveDeviceResource(ctx context.Context, deviceID, href string, linkedAc
 	}
 	defer func() {
 		if err := httpResp.Body.Close(); err != nil {
-			log.Errorf("failed to close response body stream: %v")
+			log.Errorf("failed to close response body stream: %w", err)
 		}
 	}()
 	if httpResp.StatusCode != http.StatusOK {
@@ -51,10 +52,10 @@ func retrieveDeviceResource(ctx context.Context, deviceID, href string, linkedAc
 	return respContentType, respContent.Bytes(), commands.Status_OK, nil
 }
 
-func retrieveResource(ctx context.Context, raClient raService.ResourceAggregateClient, e *raEvents.ResourceRetrievePending, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud) error {
+func retrieveResource(ctx context.Context, traceProvider trace.TracerProvider, raClient raService.ResourceAggregateClient, e *raEvents.ResourceRetrievePending, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud) error {
 	deviceID := e.GetResourceId().GetDeviceId()
 	href := e.GetResourceId().GetHref()
-	contentType, content, status, err := retrieveDeviceResource(ctx, deviceID, href, linkedAccount, linkedCloud)
+	contentType, content, status, err := retrieveDeviceResource(ctx, traceProvider, deviceID, href, linkedAccount, linkedCloud)
 	if err != nil {
 		log.Errorf("cannot update resource %v/%v: %w", deviceID, href, err)
 	}

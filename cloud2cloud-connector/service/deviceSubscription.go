@@ -4,14 +4,16 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
-	cache "github.com/patrickmn/go-cache"
-	"github.com/plgd-dev/hub/cloud2cloud-connector/events"
-	"github.com/plgd-dev/hub/cloud2cloud-connector/store"
-	kitHttp "github.com/plgd-dev/hub/pkg/net/http"
-	"github.com/plgd-dev/hub/resource-aggregate/commands"
-	"github.com/plgd-dev/kit/v2/log"
+	cache "github.com/plgd-dev/go-coap/v2/pkg/cache"
+	"github.com/plgd-dev/hub/v2/cloud2cloud-connector/events"
+	"github.com/plgd-dev/hub/v2/cloud2cloud-connector/store"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	kitHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
+	"go.opentelemetry.io/otel/trace"
 )
 
 func (s *SubscriptionManager) SubscribeToDevice(ctx context.Context, deviceID string, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud) error {
@@ -40,9 +42,9 @@ func (s *SubscriptionManager) SubscribeToDevice(ctx context.Context, deviceID st
 		linkedCloud:   linkedCloud,
 		subscription:  sub,
 	}
-	err = s.cache.Add(correlationID, data, cache.DefaultExpiration)
-	if err != nil {
-		return fmt.Errorf("cannot cache subscription for device subscriptions: %w", err)
+	_, loaded := s.cache.LoadOrStore(correlationID, cache.NewElement(data, time.Now().Add(CacheExpiration), nil))
+	if loaded {
+		return fmt.Errorf("cannot cache subscription for device subscriptions: subscription with %v already exists", correlationID)
 	}
 	sub.ID, err = s.subscribeToDevice(ctx, linkedAccount, linkedCloud, correlationID, signingSecret, deviceID)
 	if err != nil {
@@ -51,14 +53,14 @@ func (s *SubscriptionManager) SubscribeToDevice(ctx context.Context, deviceID st
 	}
 	_, _, err = s.store.LoadOrCreateSubscription(sub)
 	if err != nil {
-		var errors []error = make([]error, 1, 2)
+		errors := make([]error, 1, 2)
 		errors = append(errors, fmt.Errorf("cannot store subscription to DB: %w", err))
-		if err2 := cancelDeviceSubscription(ctx, linkedAccount, linkedCloud, deviceID, sub.ID); err2 != nil {
+		if err2 := cancelDeviceSubscription(ctx, s.tracerProvider, linkedAccount, linkedCloud, deviceID, sub.ID); err2 != nil {
 			errors = append(errors, fmt.Errorf("cannot cancel device %v subscription: %w", deviceID, err2))
 		}
 		return fmt.Errorf("%v", errors)
 	}
-	err = s.devicesSubscription.Add(deviceID, linkedAccount, linkedCloud)
+	err = s.devicesSubscription.Add(ctx, deviceID, linkedAccount, linkedCloud)
 	if err != nil {
 		return fmt.Errorf("cannot register device %v to resource projection: %w", deviceID, err)
 	}
@@ -66,8 +68,8 @@ func (s *SubscriptionManager) SubscribeToDevice(ctx context.Context, deviceID st
 }
 
 func (s *SubscriptionManager) subscribeToDevice(ctx context.Context, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud, correlationID, signingSecret, deviceID string) (string, error) {
-	resp, err := subscribe(ctx, "/devices/"+deviceID+"/subscriptions", correlationID, events.SubscriptionRequest{
-		URL: s.eventsURL,
+	resp, err := subscribe(ctx, s.tracerProvider, "/devices/"+deviceID+"/subscriptions", correlationID, events.SubscriptionRequest{
+		EventsURL: s.eventsURL,
 		EventTypes: []events.EventType{
 			events.EventType_ResourcesPublished,
 			events.EventType_ResourcesUnpublished,
@@ -77,11 +79,11 @@ func (s *SubscriptionManager) subscribeToDevice(ctx context.Context, linkedAccou
 	if err != nil {
 		return "", fmt.Errorf("cannot subscribe to device %v for %v: %w", deviceID, linkedAccount.ID, err)
 	}
-	return resp.SubscriptionId, nil
+	return resp.SubscriptionID, nil
 }
 
-func cancelDeviceSubscription(ctx context.Context, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud, deviceID, subscriptionID string) error {
-	err := cancelSubscription(ctx, "/devices/"+deviceID+"/subscriptions/"+subscriptionID, linkedAccount, linkedCloud)
+func cancelDeviceSubscription(ctx context.Context, tracerProvider trace.TracerProvider, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud, deviceID, subscriptionID string) error {
+	err := cancelSubscription(ctx, tracerProvider, "/devices/"+deviceID+"/subscriptions/"+subscriptionID, linkedAccount, linkedCloud)
 	if err != nil {
 		return fmt.Errorf("cannot cancel device subscription for %v: %w", linkedAccount.ID, err)
 	}
@@ -131,7 +133,7 @@ func (s *SubscriptionManager) HandleResourcesPublished(ctx context.Context, d su
 			errors = append(errors, fmt.Errorf("cannot publish resource: %w", err))
 			continue
 		}
-		if d.linkedCloud.SupportedSubscriptionsEvents.NeedPullResources() {
+		if d.linkedCloud.SupportedSubscriptionEvents.NeedPullResources() {
 			continue
 		}
 		s.triggerTask(Task{

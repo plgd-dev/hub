@@ -2,12 +2,12 @@
 // versions:
 // 	protoc-gen-go v1.27.1
 // 	protoc        v3.17.3
-// source: github.com/plgd-dev/hub/grpc-gateway/pb/getPendingCommands.proto
+// source: grpc-gateway/pb/getPendingCommands.proto
 
 package pb
 
 import (
-	events "github.com/plgd-dev/hub/resource-aggregate/events"
+	events "github.com/plgd-dev/hub/v2/resource-aggregate/events"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -60,11 +60,11 @@ func (x GetPendingCommandsRequest_Command) String() string {
 }
 
 func (GetPendingCommandsRequest_Command) Descriptor() protoreflect.EnumDescriptor {
-	return file_github_com_plgd_dev_hub_grpc_gateway_pb_getPendingCommands_proto_enumTypes[0].Descriptor()
+	return file_grpc_gateway_pb_getPendingCommands_proto_enumTypes[0].Descriptor()
 }
 
 func (GetPendingCommandsRequest_Command) Type() protoreflect.EnumType {
-	return &file_github_com_plgd_dev_hub_grpc_gateway_pb_getPendingCommands_proto_enumTypes[0]
+	return &file_grpc_gateway_pb_getPendingCommands_proto_enumTypes[0]
 }
 
 func (x GetPendingCommandsRequest_Command) Number() protoreflect.EnumNumber {
@@ -73,7 +73,7 @@ func (x GetPendingCommandsRequest_Command) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use GetPendingCommandsRequest_Command.Descriptor instead.
 func (GetPendingCommandsRequest_Command) EnumDescriptor() ([]byte, []int) {
-	return file_github_com_plgd_dev_hub_grpc_gateway_pb_getPendingCommands_proto_rawDescGZIP(), []int{0, 0}
+	return file_grpc_gateway_pb_getPendingCommands_proto_rawDescGZIP(), []int{0, 0}
 }
 
 type GetPendingCommandsRequest struct {
@@ -90,7 +90,7 @@ type GetPendingCommandsRequest struct {
 func (x *GetPendingCommandsRequest) Reset() {
 	*x = GetPendingCommandsRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_github_com_plgd_dev_hub_grpc_gateway_pb_getPendingCommands_proto_msgTypes[0]
+		mi := &file_grpc_gateway_pb_getPendingCommands_proto_msgTypes[0]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -103,7 +103,7 @@ func (x *GetPendingCommandsRequest) String() string {
 func (*GetPendingCommandsRequest) ProtoMessage() {}
 
 func (x *GetPendingCommandsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_github_com_plgd_dev_hub_grpc_gateway_pb_getPendingCommands_proto_msgTypes[0]
+	mi := &file_grpc_gateway_pb_getPendingCommands_proto_msgTypes[0]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -116,7 +116,7 @@ func (x *GetPendingCommandsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetPendingCommandsRequest.ProtoReflect.Descriptor instead.
 func (*GetPendingCommandsRequest) Descriptor() ([]byte, []int) {
-	return file_github_com_plgd_dev_hub_grpc_gateway_pb_getPendingCommands_proto_rawDescGZIP(), []int{0}
+	return file_grpc_gateway_pb_getPendingCommands_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *GetPendingCommandsRequest) GetCommandFilter() []GetPendingCommandsRequest_Command {
@@ -164,7 +164,7 @@ type PendingCommand struct {
 func (x *PendingCommand) Reset() {
 	*x = PendingCommand{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_github_com_plgd_dev_hub_grpc_gateway_pb_getPendingCommands_proto_msgTypes[1]
+		mi := &file_grpc_gateway_pb_getPendingCommands_proto_msgTypes[1]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -177,7 +177,7 @@ func (x *PendingCommand) String() string {
 func (*PendingCommand) ProtoMessage() {}
 
 func (x *PendingCommand) ProtoReflect() protoreflect.Message {
-	mi := &file_github_com_plgd_dev_hub_grpc_gateway_pb_getPendingCommands_proto_msgTypes[1]
+	mi := &file_grpc_gateway_pb_getPendingCommands_proto_msgTypes[1]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -190,7 +190,7 @@ func (x *PendingCommand) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PendingCommand.ProtoReflect.Descriptor instead.
 func (*PendingCommand) Descriptor() ([]byte, []int) {
-	return file_github_com_plgd_dev_hub_grpc_gateway_pb_getPendingCommands_proto_rawDescGZIP(), []int{1}
+	return file_grpc_gateway_pb_getPendingCommands_proto_rawDescGZIP(), []int{1}
 }
 
 func (m *PendingCommand) GetCommand() isPendingCommand_Command {
@@ -269,16 +269,13 @@ func (*PendingCommand_ResourceDeletePending) isPendingCommand_Command() {}
 
 func (*PendingCommand_DeviceMetadataUpdatePending) isPendingCommand_Command() {}
 
-var File_github_com_plgd_dev_hub_grpc_gateway_pb_getPendingCommands_proto protoreflect.FileDescriptor
+var File_grpc_gateway_pb_getPendingCommands_proto protoreflect.FileDescriptor
 
-var file_github_com_plgd_dev_hub_grpc_gateway_pb_getPendingCommands_proto_rawDesc = []byte{
-	0x0a, 0x40, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x70, 0x6c, 0x67,
-	0x64, 0x2d, 0x64, 0x65, 0x76, 0x2f, 0x68, 0x75, 0x62, 0x2f, 0x67, 0x72, 0x70, 0x63, 0x2d, 0x67,
-	0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x2f, 0x70, 0x62, 0x2f, 0x67, 0x65, 0x74, 0x50, 0x65, 0x6e,
-	0x64, 0x69, 0x6e, 0x67, 0x43, 0x6f, 0x6d, 0x6d, 0x61, 0x6e, 0x64, 0x73, 0x2e, 0x70, 0x72, 0x6f,
-	0x74, 0x6f, 0x12, 0x0e, 0x67, 0x72, 0x70, 0x63, 0x67, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x2e,
-	0x70, 0x62, 0x1a, 0x3a, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x70,
-	0x6c, 0x67, 0x64, 0x2d, 0x64, 0x65, 0x76, 0x2f, 0x68, 0x75, 0x62, 0x2f, 0x72, 0x65, 0x73, 0x6f,
+var file_grpc_gateway_pb_getPendingCommands_proto_rawDesc = []byte{
+	0x0a, 0x28, 0x67, 0x72, 0x70, 0x63, 0x2d, 0x67, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x2f, 0x70,
+	0x62, 0x2f, 0x67, 0x65, 0x74, 0x50, 0x65, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x43, 0x6f, 0x6d, 0x6d,
+	0x61, 0x6e, 0x64, 0x73, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x12, 0x0e, 0x67, 0x72, 0x70, 0x63,
+	0x67, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x2e, 0x70, 0x62, 0x1a, 0x22, 0x72, 0x65, 0x73, 0x6f,
 	0x75, 0x72, 0x63, 0x65, 0x2d, 0x61, 0x67, 0x67, 0x72, 0x65, 0x67, 0x61, 0x74, 0x65, 0x2f, 0x70,
 	0x62, 0x2f, 0x65, 0x76, 0x65, 0x6e, 0x74, 0x73, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0xeb,
 	0x02, 0x0a, 0x19, 0x47, 0x65, 0x74, 0x50, 0x65, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x43, 0x6f, 0x6d,
@@ -339,27 +336,27 @@ var file_github_com_plgd_dev_hub_grpc_gateway_pb_getPendingCommands_proto_rawDes
 	0x70, 0x64, 0x61, 0x74, 0x65, 0x50, 0x65, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x48, 0x00, 0x52, 0x1b,
 	0x64, 0x65, 0x76, 0x69, 0x63, 0x65, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x55, 0x70,
 	0x64, 0x61, 0x74, 0x65, 0x50, 0x65, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x42, 0x09, 0x0a, 0x07, 0x63,
-	0x6f, 0x6d, 0x6d, 0x61, 0x6e, 0x64, 0x42, 0x2c, 0x5a, 0x2a, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62,
+	0x6f, 0x6d, 0x6d, 0x61, 0x6e, 0x64, 0x42, 0x2f, 0x5a, 0x2d, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62,
 	0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x70, 0x6c, 0x67, 0x64, 0x2d, 0x64, 0x65, 0x76, 0x2f, 0x68, 0x75,
-	0x62, 0x2f, 0x67, 0x72, 0x70, 0x63, 0x2d, 0x67, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x2f, 0x70,
-	0x62, 0x3b, 0x70, 0x62, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x62, 0x2f, 0x76, 0x32, 0x2f, 0x67, 0x72, 0x70, 0x63, 0x2d, 0x67, 0x61, 0x74, 0x65, 0x77, 0x61,
+	0x79, 0x2f, 0x70, 0x62, 0x3b, 0x70, 0x62, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
-	file_github_com_plgd_dev_hub_grpc_gateway_pb_getPendingCommands_proto_rawDescOnce sync.Once
-	file_github_com_plgd_dev_hub_grpc_gateway_pb_getPendingCommands_proto_rawDescData = file_github_com_plgd_dev_hub_grpc_gateway_pb_getPendingCommands_proto_rawDesc
+	file_grpc_gateway_pb_getPendingCommands_proto_rawDescOnce sync.Once
+	file_grpc_gateway_pb_getPendingCommands_proto_rawDescData = file_grpc_gateway_pb_getPendingCommands_proto_rawDesc
 )
 
-func file_github_com_plgd_dev_hub_grpc_gateway_pb_getPendingCommands_proto_rawDescGZIP() []byte {
-	file_github_com_plgd_dev_hub_grpc_gateway_pb_getPendingCommands_proto_rawDescOnce.Do(func() {
-		file_github_com_plgd_dev_hub_grpc_gateway_pb_getPendingCommands_proto_rawDescData = protoimpl.X.CompressGZIP(file_github_com_plgd_dev_hub_grpc_gateway_pb_getPendingCommands_proto_rawDescData)
+func file_grpc_gateway_pb_getPendingCommands_proto_rawDescGZIP() []byte {
+	file_grpc_gateway_pb_getPendingCommands_proto_rawDescOnce.Do(func() {
+		file_grpc_gateway_pb_getPendingCommands_proto_rawDescData = protoimpl.X.CompressGZIP(file_grpc_gateway_pb_getPendingCommands_proto_rawDescData)
 	})
-	return file_github_com_plgd_dev_hub_grpc_gateway_pb_getPendingCommands_proto_rawDescData
+	return file_grpc_gateway_pb_getPendingCommands_proto_rawDescData
 }
 
-var file_github_com_plgd_dev_hub_grpc_gateway_pb_getPendingCommands_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_github_com_plgd_dev_hub_grpc_gateway_pb_getPendingCommands_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
-var file_github_com_plgd_dev_hub_grpc_gateway_pb_getPendingCommands_proto_goTypes = []interface{}{
+var file_grpc_gateway_pb_getPendingCommands_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
+var file_grpc_gateway_pb_getPendingCommands_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_grpc_gateway_pb_getPendingCommands_proto_goTypes = []interface{}{
 	(GetPendingCommandsRequest_Command)(0),     // 0: grpcgateway.pb.GetPendingCommandsRequest.Command
 	(*GetPendingCommandsRequest)(nil),          // 1: grpcgateway.pb.GetPendingCommandsRequest
 	(*PendingCommand)(nil),                     // 2: grpcgateway.pb.PendingCommand
@@ -369,7 +366,7 @@ var file_github_com_plgd_dev_hub_grpc_gateway_pb_getPendingCommands_proto_goType
 	(*events.ResourceDeletePending)(nil),       // 6: resourceaggregate.pb.ResourceDeletePending
 	(*events.DeviceMetadataUpdatePending)(nil), // 7: resourceaggregate.pb.DeviceMetadataUpdatePending
 }
-var file_github_com_plgd_dev_hub_grpc_gateway_pb_getPendingCommands_proto_depIdxs = []int32{
+var file_grpc_gateway_pb_getPendingCommands_proto_depIdxs = []int32{
 	0, // 0: grpcgateway.pb.GetPendingCommandsRequest.command_filter:type_name -> grpcgateway.pb.GetPendingCommandsRequest.Command
 	3, // 1: grpcgateway.pb.PendingCommand.resource_create_pending:type_name -> resourceaggregate.pb.ResourceCreatePending
 	4, // 2: grpcgateway.pb.PendingCommand.resource_retrieve_pending:type_name -> resourceaggregate.pb.ResourceRetrievePending
@@ -383,13 +380,13 @@ var file_github_com_plgd_dev_hub_grpc_gateway_pb_getPendingCommands_proto_depIdx
 	0, // [0:6] is the sub-list for field type_name
 }
 
-func init() { file_github_com_plgd_dev_hub_grpc_gateway_pb_getPendingCommands_proto_init() }
-func file_github_com_plgd_dev_hub_grpc_gateway_pb_getPendingCommands_proto_init() {
-	if File_github_com_plgd_dev_hub_grpc_gateway_pb_getPendingCommands_proto != nil {
+func init() { file_grpc_gateway_pb_getPendingCommands_proto_init() }
+func file_grpc_gateway_pb_getPendingCommands_proto_init() {
+	if File_grpc_gateway_pb_getPendingCommands_proto != nil {
 		return
 	}
 	if !protoimpl.UnsafeEnabled {
-		file_github_com_plgd_dev_hub_grpc_gateway_pb_getPendingCommands_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {
+		file_grpc_gateway_pb_getPendingCommands_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*GetPendingCommandsRequest); i {
 			case 0:
 				return &v.state
@@ -401,7 +398,7 @@ func file_github_com_plgd_dev_hub_grpc_gateway_pb_getPendingCommands_proto_init(
 				return nil
 			}
 		}
-		file_github_com_plgd_dev_hub_grpc_gateway_pb_getPendingCommands_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
+		file_grpc_gateway_pb_getPendingCommands_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*PendingCommand); i {
 			case 0:
 				return &v.state
@@ -414,7 +411,7 @@ func file_github_com_plgd_dev_hub_grpc_gateway_pb_getPendingCommands_proto_init(
 			}
 		}
 	}
-	file_github_com_plgd_dev_hub_grpc_gateway_pb_getPendingCommands_proto_msgTypes[1].OneofWrappers = []interface{}{
+	file_grpc_gateway_pb_getPendingCommands_proto_msgTypes[1].OneofWrappers = []interface{}{
 		(*PendingCommand_ResourceCreatePending)(nil),
 		(*PendingCommand_ResourceRetrievePending)(nil),
 		(*PendingCommand_ResourceUpdatePending)(nil),
@@ -425,19 +422,19 @@ func file_github_com_plgd_dev_hub_grpc_gateway_pb_getPendingCommands_proto_init(
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: file_github_com_plgd_dev_hub_grpc_gateway_pb_getPendingCommands_proto_rawDesc,
+			RawDescriptor: file_grpc_gateway_pb_getPendingCommands_proto_rawDesc,
 			NumEnums:      1,
 			NumMessages:   2,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
-		GoTypes:           file_github_com_plgd_dev_hub_grpc_gateway_pb_getPendingCommands_proto_goTypes,
-		DependencyIndexes: file_github_com_plgd_dev_hub_grpc_gateway_pb_getPendingCommands_proto_depIdxs,
-		EnumInfos:         file_github_com_plgd_dev_hub_grpc_gateway_pb_getPendingCommands_proto_enumTypes,
-		MessageInfos:      file_github_com_plgd_dev_hub_grpc_gateway_pb_getPendingCommands_proto_msgTypes,
+		GoTypes:           file_grpc_gateway_pb_getPendingCommands_proto_goTypes,
+		DependencyIndexes: file_grpc_gateway_pb_getPendingCommands_proto_depIdxs,
+		EnumInfos:         file_grpc_gateway_pb_getPendingCommands_proto_enumTypes,
+		MessageInfos:      file_grpc_gateway_pb_getPendingCommands_proto_msgTypes,
 	}.Build()
-	File_github_com_plgd_dev_hub_grpc_gateway_pb_getPendingCommands_proto = out.File
-	file_github_com_plgd_dev_hub_grpc_gateway_pb_getPendingCommands_proto_rawDesc = nil
-	file_github_com_plgd_dev_hub_grpc_gateway_pb_getPendingCommands_proto_goTypes = nil
-	file_github_com_plgd_dev_hub_grpc_gateway_pb_getPendingCommands_proto_depIdxs = nil
+	File_grpc_gateway_pb_getPendingCommands_proto = out.File
+	file_grpc_gateway_pb_getPendingCommands_proto_rawDesc = nil
+	file_grpc_gateway_pb_getPendingCommands_proto_goTypes = nil
+	file_grpc_gateway_pb_getPendingCommands_proto_depIdxs = nil
 }

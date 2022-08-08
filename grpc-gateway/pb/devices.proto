@@ -2,10 +2,11 @@ syntax = "proto3";
 
 package grpcgateway.pb;
 
-import "github.com/plgd-dev/hub/resource-aggregate/pb/commands.proto";
-import "github.com/plgd-dev/hub/resource-aggregate/pb/events.proto";
+import "resource-aggregate/pb/commands.proto";
+import "resource-aggregate/pb/events.proto";
+import "resource-aggregate/pb/resources.proto";
 
-option go_package = "github.com/plgd-dev/hub/grpc-gateway/pb;pb";
+option go_package = "github.com/plgd-dev/hub/v2/grpc-gateway/pb;pb";
 
 message GetDevicesRequest {
   enum Status {
@@ -34,7 +35,7 @@ message GetResourceLinksRequest {
 message GetResourceFromDeviceRequest {
   resourceaggregate.pb.ResourceId resource_id = 1;
   string resource_interface = 2;
-  int64 timeToLive = 3;  // command validity in nanoseconds. 0 means forever and minimal value is 100000000 (100ms).
+  int64 time_to_live = 3;  // command validity in nanoseconds. 0 means forever and minimal value is 100000000 (100ms).
 }
 
 message GetResourceFromDeviceResponse {
@@ -55,7 +56,7 @@ message Resource {
 message UpdateResourceRequest {
   resourceaggregate.pb.ResourceId resource_id = 1;
   string resource_interface = 3;
-  int64 timeToLive = 4;  // command validity in nanoseconds. 0 means forever and minimal value is 100000000 (100ms).
+  int64 time_to_live = 4;  // command validity in nanoseconds. 0 means forever and minimal value is 100000000 (100ms).
   Content content = 2;
 }
 
@@ -100,9 +101,15 @@ message SubscribeToEvents {
 message Event {
   message DeviceRegistered {
     repeated string device_ids = 1;
+
+     // Open telemetry data propagated to asynchronous events
+     map<string,string> open_telemetry_carrier = 100;
   }
   message DeviceUnregistered {
     repeated string device_ids = 1;
+
+    // Open telemetry data propagated to asynchronous events
+    map<string,string> open_telemetry_carrier = 100;
   }
   message OperationProcessed {
     message ErrorStatus {
@@ -150,6 +157,16 @@ message LocalizedString {
 }
 
 message Device {
+  enum OwnershipStatus {
+    // cannot determine ownership status
+    UNKNOWN = 0;
+    // device is ready to be owned the user
+    UNOWNED = 1;
+    // device is owned by the user. to determine who own the device you need to get ownership resource /oic/sec/doxm
+    OWNED = 2;
+    // set when device is not secured. (iotivity-lite was built without security)
+    UNSUPPORTED = 3;
+  }
   message Metadata {
     resourceaggregate.pb.ConnectionStatus status = 1;
     resourceaggregate.pb.ShadowSynchronization shadow_synchronization = 2;
@@ -162,6 +179,11 @@ message Device {
   string model_number = 6;
   repeated string interfaces = 7;
   string protocol_independent_id = 8;
+  resourceaggregate.pb.ResourceChanged data = 9;
+  // ownership status of the device
+  OwnershipStatus ownership_status = 10;
+  // endpoints with schemas which are hosted by the device
+  repeated string endpoints = 11;
 }
 
 message Content {
@@ -171,7 +193,7 @@ message Content {
 
 message DeleteResourceRequest {
   resourceaggregate.pb.ResourceId resource_id = 1;
-  int64 timeToLive = 2;  // command validity in nanoseconds. 0 means forever and minimal value is 100000000 (100ms).
+  int64 time_to_live = 2;  // command validity in nanoseconds. 0 means forever and minimal value is 100000000 (100ms).
 }
 
 message DeleteResourceResponse {
@@ -181,7 +203,7 @@ message DeleteResourceResponse {
 message CreateResourceRequest {
   resourceaggregate.pb.ResourceId resource_id = 1;
   Content content = 2;
-  int64 timeToLive = 3;  // command validity in nanoseconds. 0 means forever and minimal value is 100000000 (100ms).
+  int64 time_to_live = 3;  // command validity in nanoseconds. 0 means forever and minimal value is 100000000 (100ms).
 }
 
 message CreateResourceResponse {

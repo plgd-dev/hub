@@ -9,20 +9,22 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/google/uuid"
 	"github.com/panjf2000/ants/v2"
-	"github.com/plgd-dev/hub/pkg/log"
-	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
-	"github.com/plgd-dev/hub/resource-aggregate/commands"
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/aggregate"
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventbus/nats/publisher"
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventbus/nats/subscriber"
-	natsTest "github.com/plgd-dev/hub/resource-aggregate/cqrs/eventbus/nats/test"
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventstore"
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventstore/mongodb"
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/utils"
-	"github.com/plgd-dev/hub/resource-aggregate/events"
-	"github.com/plgd-dev/hub/test/config"
+	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/aggregate"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/publisher"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/subscriber"
+	natsTest "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/test"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore/mongodb"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/utils"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
+	"github.com/plgd-dev/hub/v2/test/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type mockEventHandler struct {
@@ -48,10 +50,16 @@ func TestProjection(t *testing.T) {
 	waitForSubscription := time.Second * 1
 
 	topics := []string{"test_projection_topic0_" + uuid.Must(uuid.NewRandom()).String(), "test_projection_topic1_" + uuid.Must(uuid.NewRandom()).String()}
-	logger, err := log.NewLogger(log.Config{})
-	require.NoError(t, err)
+	logger := log.NewLogger(log.MakeDefaultConfig())
 
-	naPubClient, publisher, err := natsTest.NewClientAndPublisher(config.MakePublisherConfig(), logger, publisher.WithMarshaler(utils.Marshal))
+	fileWatcher, err := fsnotify.NewWatcher()
+	require.NoError(t, err)
+	defer func() {
+		err := fileWatcher.Close()
+		require.NoError(t, err)
+	}()
+
+	naPubClient, publisher, err := natsTest.NewClientAndPublisher(config.MakePublisherConfig(), fileWatcher, logger, publisher.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	assert.NotNil(t, publisher)
 	defer func() {
@@ -63,7 +71,7 @@ func TestProjection(t *testing.T) {
 	require.NoError(t, err)
 	defer pool.Release()
 
-	naSubClient, subscriber, err := natsTest.NewClientAndSubscriber(config.MakeSubscriberConfig(),
+	naSubClient, subscriber, err := natsTest.NewClientAndSubscriber(config.MakeSubscriberConfig(), fileWatcher,
 		logger,
 		subscriber.WithGoPool(pool.Submit),
 		subscriber.WithUnmarshaler(utils.Unmarshal),
@@ -83,7 +91,9 @@ func TestProjection(t *testing.T) {
 	store, err := mongodb.New(
 		ctx,
 		config.MakeEventsStoreMongoDBConfig(),
+		fileWatcher,
 		logger,
+		trace.NewNoopTracerProvider(),
 	)
 
 	require.NoError(t, err)
@@ -160,14 +170,24 @@ func TestProjection(t *testing.T) {
 		AggregateID: res1.ToUUID(),
 	}})
 	require.NoError(t, err)
-	require.Equal(t, 1, len(projection.Models(nil)))
+	models := []eventstore.Model{}
+	projection.Models(nil, func(m eventstore.Model) (wantNext bool) {
+		models = append(models, m)
+		return true
+	})
+	require.Equal(t, 1, len(models))
 
 	err = projection.Project(ctx, []eventstore.SnapshotQuery{{
 		GroupID:     res2.DeviceId,
 		AggregateID: res2.ToUUID(),
 	}})
 	require.NoError(t, err)
-	require.Equal(t, 2, len(projection.Models(nil)))
+	models = []eventstore.Model{}
+	projection.Models(nil, func(m eventstore.Model) (wantNext bool) {
+		models = append(models, m)
+		return true
+	})
+	require.Equal(t, 2, len(models))
 
 	err = projection.SubscribeTo(topics)
 	require.NoError(t, err)
@@ -191,7 +211,12 @@ func TestProjection(t *testing.T) {
 	}
 	time.Sleep(time.Second)
 
-	require.Equal(t, 3, len(projection.Models(nil)))
+	models = []eventstore.Model{}
+	projection.Models(nil, func(m eventstore.Model) (wantNext bool) {
+		models = append(models, m)
+		return true
+	})
+	require.Equal(t, 3, len(models))
 
 	err = projection.SubscribeTo(topics[0:1])
 	require.NoError(t, err)
@@ -206,7 +231,13 @@ func TestProjection(t *testing.T) {
 
 	time.Sleep(time.Second)
 	projection.lock.Lock()
-	require.Equal(t, 2, len(projection.Models(nil)))
+
+	models = []eventstore.Model{}
+	projection.Models(nil, func(m eventstore.Model) (wantNext bool) {
+		models = append(models, m)
+		return true
+	})
+	require.Equal(t, 2, len(models))
 	projection.lock.Unlock()
 
 	err = projection.SubscribeTo(nil)
@@ -225,6 +256,11 @@ func TestProjection(t *testing.T) {
 	}
 
 	projection.lock.Lock()
-	require.Equal(t, 2, len(projection.Models(nil)))
+	models = []eventstore.Model{}
+	projection.Models(nil, func(m eventstore.Model) (wantNext bool) {
+		models = append(models, m)
+		return true
+	})
+	require.Equal(t, 2, len(models))
 	projection.lock.Unlock()
 }

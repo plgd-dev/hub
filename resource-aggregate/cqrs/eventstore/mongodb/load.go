@@ -2,17 +2,16 @@ package mongodb
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
-	"go.mongodb.org/mongo-driver/bson/primitive"
-
+	pkgTime "github.com/plgd-dev/hub/v2/pkg/time"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-
-	pkgTime "github.com/plgd-dev/hub/pkg/time"
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventstore"
 )
 
 type iterator struct {
@@ -116,7 +115,7 @@ func (i *iterator) Next(ctx context.Context) (eventstore.EventUnmarshaler, bool)
 		i.err = fmt.Errorf("invalid data, '%v' of event %v is not an int64", timestampKey, i.idx)
 		return nil, false
 	}
-	i.logDebugfFunc("mongodb.iterator.next: GroupId %v: AggregateId %v: Version %v, EvenType %v, Timestamp %v",
+	i.logDebugfFunc("mongodb.iterator.next: GroupID %v: AggregateID %v: Version %v, EvenType %v, Timestamp %v",
 		i.groupID, i.aggregateID, version, eventType, timestamp)
 	data, ok := ev[dataKey].(primitive.Binary)
 	if !ok {
@@ -184,7 +183,7 @@ func (r *queryResolver) check(aggregateID string, version int64) bool {
 func (s *EventStore) loadEventsQuery(ctx context.Context, eh eventstore.Handler, queryResolver *queryResolver, filter interface{}, opts ...*options.FindOptions) error {
 	col := s.client.Database(s.DBName()).Collection(getEventCollectionName())
 	iter, err := col.Find(ctx, filter, opts...)
-	if err == mongo.ErrNilDocument {
+	if errors.Is(err, mongo.ErrNilDocument) {
 		return nil
 	}
 	if err != nil {

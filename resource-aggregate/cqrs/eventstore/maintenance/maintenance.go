@@ -13,6 +13,7 @@ type EventStore interface {
 
 // Task used to target a specific db record
 type Task struct {
+	GroupID     string
 	AggregateID string
 	Version     uint64
 }
@@ -22,7 +23,7 @@ type TaskHandler interface {
 	Handle(ctx context.Context, iter Iter) (err error)
 }
 
-//Iter provides iterator over maintenance db records
+// Iter provides iterator over maintenance db records
 type Iter interface {
 	Next(ctx context.Context, task *Task) bool
 	Err() error

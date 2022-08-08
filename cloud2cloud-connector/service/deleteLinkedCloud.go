@@ -8,7 +8,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func (rh *RequestHandler) deleteLinkedCloud(w http.ResponseWriter, r *http.Request) (int, error) {
+func (rh *RequestHandler) deleteLinkedCloud(r *http.Request) (int, error) {
 	linkedCloudID := mux.Vars(r)[cloudIDKey]
 	cloud, err := rh.store.PullOutCloud(r.Context(), linkedCloudID)
 	if err != nil {
@@ -20,7 +20,7 @@ func (rh *RequestHandler) deleteLinkedCloud(w http.ResponseWriter, r *http.Reque
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			cancelLinkedAccountSubscription(r.Context(), cloud.linkedCloud, account)
+			cancelLinkedAccountSubscription(r.Context(), rh.tracerProvider, cloud.linkedCloud, account)
 		}()
 		return true
 	})
@@ -29,7 +29,7 @@ func (rh *RequestHandler) deleteLinkedCloud(w http.ResponseWriter, r *http.Reque
 }
 
 func (rh *RequestHandler) DeleteLinkedCloud(w http.ResponseWriter, r *http.Request) {
-	statusCode, err := rh.deleteLinkedCloud(w, r)
+	statusCode, err := rh.deleteLinkedCloud(r)
 	if err != nil {
 		logAndWriteErrorResponse(fmt.Errorf("cannot delete linked cloud: %w", err), statusCode, w)
 	}

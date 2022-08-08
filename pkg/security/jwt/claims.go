@@ -2,11 +2,12 @@ package jwt
 
 import (
 	"fmt"
+	gstrings "strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
-	"github.com/plgd-dev/hub/pkg/strings"
-	pkgTime "github.com/plgd-dev/hub/pkg/time"
+	"github.com/plgd-dev/hub/v2/pkg/strings"
+	pkgTime "github.com/plgd-dev/hub/v2/pkg/time"
 )
 
 type Claims jwt.MapClaims
@@ -15,7 +16,7 @@ const (
 	ClaimExpiresAt = "exp"
 	ClaimScope     = "scope"
 	ClaimAudience  = "aud"
-	ClaimId        = "jti"
+	ClaimID        = "jti"
 	ClaimIssuer    = "iss"
 	ClaimSubject   = "sub"
 	ClaimIssuedAt  = "iat"
@@ -38,9 +39,9 @@ func toNum(v interface{}) (time.Time, error) {
 
 /// Get expiration time (exp) from user info map.
 /// It might not be set, in that case zero time and no error are returned.
-func (u Claims) ExpiresAt() (time.Time, error) {
+func (c Claims) ExpiresAt() (time.Time, error) {
 	const expKey = ClaimExpiresAt
-	v, ok := u[expKey]
+	v, ok := c[expKey]
 	if !ok {
 		return time.Time{}, nil
 	}
@@ -53,8 +54,8 @@ func (u Claims) ExpiresAt() (time.Time, error) {
 }
 
 /// Validate that ownerClaim is set and that it matches given user ID
-func (u Claims) ValidateOwnerClaim(ownerClaim string, userID string) error {
-	v, ok := u[ownerClaim]
+func (c Claims) ValidateOwnerClaim(ownerClaim string, userID string) error {
+	v, ok := c[ownerClaim]
 	if !ok {
 		return fmt.Errorf("owner claim '%v' is not present", ownerClaim)
 	}
@@ -69,7 +70,11 @@ func (u Claims) ValidateOwnerClaim(ownerClaim string, userID string) error {
 }
 
 func (c Claims) Scope() []string {
-	return strings.ToSlice(c[ClaimScope])
+	s := strings.ToSlice(c[ClaimScope])
+	if len(s) == 1 {
+		return gstrings.Split(s[0], " ")
+	}
+	return s
 }
 
 func (c Claims) Owner(ownerClaim string) string {
@@ -102,7 +107,7 @@ func (c Claims) Audience() []string {
 }
 
 func (c Claims) ID() string {
-	s, _ := strings.ToString(c[ClaimId])
+	s, _ := strings.ToString(c[ClaimID])
 	return s
 }
 

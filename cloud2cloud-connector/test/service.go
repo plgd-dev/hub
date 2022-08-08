@@ -2,19 +2,19 @@ package test
 
 import (
 	"context"
-	"fmt"
 	"sync"
 	"testing"
 	"time"
 
-	"github.com/plgd-dev/hub/cloud2cloud-connector/service"
-	"github.com/plgd-dev/hub/pkg/log"
-	"github.com/plgd-dev/hub/pkg/mongodb"
-	"github.com/plgd-dev/hub/pkg/security/oauth2"
-	"github.com/plgd-dev/hub/pkg/security/oauth2/oauth"
-	"github.com/plgd-dev/hub/test/config"
-	"github.com/plgd-dev/hub/test/http"
-	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
+	"github.com/plgd-dev/hub/v2/cloud2cloud-connector/service"
+	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	"github.com/plgd-dev/hub/v2/pkg/mongodb"
+	"github.com/plgd-dev/hub/v2/pkg/security/oauth2"
+	"github.com/plgd-dev/hub/v2/pkg/security/oauth2/oauth"
+	"github.com/plgd-dev/hub/v2/test/config"
+	"github.com/plgd-dev/hub/v2/test/http"
+	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	"github.com/stretchr/testify/require"
 )
 
@@ -52,7 +52,7 @@ func MakeStorageConfig() service.StorageConfig {
 func MakeConfig(t *testing.T) service.Config {
 	var cfg service.Config
 
-	cfg.Log.Debug = true
+	cfg.Log = log.MakeDefaultConfig()
 
 	cfg.APIs.HTTP.EventsURL = config.C2C_CONNECTOR_EVENTS_URL
 	cfg.APIs.HTTP.PullDevices.Disabled = false
@@ -60,6 +60,7 @@ func MakeConfig(t *testing.T) service.Config {
 	cfg.APIs.HTTP.Connection = config.MakeListenerConfig(config.C2C_CONNECTOR_HOST)
 	cfg.APIs.HTTP.Connection.TLS.ClientCertificateRequired = false
 	cfg.APIs.HTTP.Authorization = MakeAuthorizationConfig()
+	cfg.APIs.HTTP.Server = config.MakeHttpServerConfig()
 
 	cfg.Clients.IdentityStore.Connection = config.MakeGrpcClientConfig(config.IDENTITY_STORE_HOST)
 	cfg.Clients.Eventbus.NATS = config.MakeSubscriberConfig()
@@ -80,17 +81,18 @@ func MakeConfig(t *testing.T) service.Config {
 	return cfg
 }
 
-func SetUp(t *testing.T) (TearDown func()) {
+func SetUp(t *testing.T) (tearDown func()) {
 	cfg := MakeConfig(t)
-	fmt.Printf("cfg\n%v\n", cfg.String())
 	return New(t, cfg)
 }
 
 func New(t *testing.T, cfg service.Config) func() {
-	logger, err := log.NewLogger(cfg.Log)
+	logger := log.NewLogger(cfg.Log)
+
+	fileWatcher, err := fsnotify.NewWatcher()
 	require.NoError(t, err)
 
-	s, err := service.New(context.Background(), cfg, logger)
+	s, err := service.New(context.Background(), cfg, fileWatcher, logger)
 	require.NoError(t, err)
 
 	var wg sync.WaitGroup
@@ -103,5 +105,7 @@ func New(t *testing.T, cfg service.Config) func() {
 	return func() {
 		_ = s.Shutdown()
 		wg.Wait()
+		err = fileWatcher.Close()
+		require.NoError(t, err)
 	}
 }

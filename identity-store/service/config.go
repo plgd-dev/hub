@@ -3,10 +3,11 @@ package service
 import (
 	"fmt"
 
-	"github.com/plgd-dev/hub/pkg/log"
-	"github.com/plgd-dev/hub/pkg/mongodb"
-	"github.com/plgd-dev/hub/pkg/net/grpc/server"
-	natsClient "github.com/plgd-dev/hub/resource-aggregate/cqrs/eventbus/nats/client"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	"github.com/plgd-dev/hub/v2/pkg/mongodb"
+	"github.com/plgd-dev/hub/v2/pkg/net/grpc/server"
+	otelClient "github.com/plgd-dev/hub/v2/pkg/opentelemetry/collector/client"
+	natsClient "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/client"
 	"github.com/plgd-dev/kit/v2/config"
 )
 
@@ -18,6 +19,9 @@ type Config struct {
 }
 
 func (c *Config) Validate() error {
+	if err := c.Log.Validate(); err != nil {
+		return fmt.Errorf("log.%w", err)
+	}
 	if err := c.Clients.Validate(); err != nil {
 		return fmt.Errorf("clients.%w", err)
 	}
@@ -39,8 +43,9 @@ func (c *APIsConfig) Validate() error {
 }
 
 type ClientsConfig struct {
-	Storage  StorageConfig  `yaml:"storage" json:"storage"`
-	Eventbus EventBusConfig `yaml:"eventBus" json:"eventBus"`
+	Storage                StorageConfig     `yaml:"storage" json:"storage"`
+	Eventbus               EventBusConfig    `yaml:"eventBus" json:"eventBus"`
+	OpenTelemetryCollector otelClient.Config `yaml:"openTelemetryCollector" json:"openTelemetryCollector"`
 }
 
 func (c *ClientsConfig) Validate() error {
@@ -49,6 +54,9 @@ func (c *ClientsConfig) Validate() error {
 	}
 	if err := c.Eventbus.Validate(); err != nil {
 		return fmt.Errorf("eventBus.%w", err)
+	}
+	if err := c.OpenTelemetryCollector.Validate(); err != nil {
+		return fmt.Errorf("openTelemetryCollector.%w", err)
 	}
 	return nil
 }
@@ -65,7 +73,7 @@ func (c *EventBusConfig) Validate() error {
 }
 
 type StorageConfig struct {
-	MongoDB mongodb.Config `yaml:"mongoDB" json:"mongoDB"`
+	MongoDB mongodb.Config `yaml:"mongoDB" json:"mongoDb"`
 }
 
 func (c *StorageConfig) Validate() error {
@@ -75,7 +83,7 @@ func (c *StorageConfig) Validate() error {
 	return nil
 }
 
-//String return string representation of Config
+// String return string representation of Config
 func (c Config) String() string {
 	return config.ToString(c)
 }

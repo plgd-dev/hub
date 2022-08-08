@@ -6,27 +6,24 @@ import PropTypes from 'prop-types'
 import { MenuItem } from './menu-item'
 import { messages as t } from './menu-i18n'
 import './menu.scss'
+import { useLocation } from 'react-router-dom'
 
 export const Menu = memo(({ collapsed, toggleCollapsed }) => {
   const { formatMessage: _ } = useIntl()
+  const location = useLocation()
 
   return (
     <nav id="menu">
       <div className="items">
         <MenuItem
           to="/"
-          exact
-          icon="fa-chart-bar"
-          tooltip={collapsed && _(t.dashboard)}
-        >
-          {_(t.dashboard)}
-        </MenuItem>
-        <MenuItem
-          to="/things"
           icon="fa-list"
-          tooltip={collapsed && _(t.things)}
+          tooltip={collapsed && _(t.devices)}
+          className={classNames({
+            active: location.pathname.includes('devices'),
+          })}
         >
-          {_(t.things)}
+          {_(t.devices)}
         </MenuItem>
         <MenuItem
           to="/pending-commands"

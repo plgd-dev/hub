@@ -12,10 +12,12 @@ import (
 	"time"
 
 	"github.com/jessevdk/go-flags"
-	"github.com/plgd-dev/hub/pkg/log"
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventstore"
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventstore/maintenance"
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventstore/mongodb"
+	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore/maintenance"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore/mongodb"
+	"go.opentelemetry.io/otel/trace"
 )
 
 // Config represent application arguments
@@ -25,9 +27,9 @@ type Config struct {
 	Mongo         mongodb.Config
 }
 
-//String return string representation of Config
+// String returns string representation of Config
 func (c Config) String() string {
-	b, _ := json.MarshalIndent(c, "", "  ")
+	b, _ := json.MarshalIndent(c, "", "  ") //nolint:errchkjson
 	return fmt.Sprintf("config: \n%v\n", string(b))
 }
 
@@ -43,7 +45,7 @@ func newRecordHandler() *recordHandler {
 func (eh *recordHandler) SetElement(task maintenance.Task) {
 	eh.lock.Lock()
 	defer eh.lock.Unlock()
-	eh.tasks = append(eh.tasks, maintenance.Task{AggregateID: task.AggregateID, Version: task.Version})
+	eh.tasks = append(eh.tasks, maintenance.Task{GroupID: task.GroupID, AggregateID: task.AggregateID, Version: task.Version})
 }
 
 func (eh *recordHandler) Handle(ctx context.Context, iter maintenance.Iter) error {
@@ -83,7 +85,7 @@ func handleBackupFile(file **os.File, aggregateID, backupPath string) error {
 			return err
 		}
 		if err := (*file).Close(); err != nil {
-			return nil
+			return err
 		}
 	}
 
@@ -105,7 +107,7 @@ func backup(file *os.File, eu eventstore.EventUnmarshaler) error {
 	}
 	event := hEvent{VersionI: eu.Version(), EventTypeI: eu.EventType(), Data: e}
 
-	b, _ := json.MarshalIndent(event, "", "  ")
+	b, _ := json.MarshalIndent(event, "", "  ") //nolint:errchkjson
 	text := fmt.Sprintf(string(b) + "\n")
 	if _, err = file.WriteString(text); err != nil {
 		return err
@@ -142,7 +144,7 @@ func (eh *eventHandler) Handle(ctx context.Context, iter eventstore.Iter) error 
 
 	if file != nil {
 		if err := file.Close(); err != nil {
-			return nil
+			return err
 		}
 	}
 
@@ -161,8 +163,12 @@ func PerformMaintenance() error {
 		os.Exit(2)
 	}
 	log.Info(config.String())
-
-	eventStore, err := mongodb.New(ctx, config.Mongo, nil, mongodb.WithUnmarshaler(unmarshalPlain))
+	fileWatcher, err := fsnotify.NewWatcher()
+	if err != nil {
+		log.Error(err)
+		os.Exit(2)
+	}
+	eventStore, err := mongodb.New(ctx, config.Mongo, fileWatcher, log.Get(), trace.NewNoopTracerProvider(), mongodb.WithUnmarshaler(unmarshalPlain))
 	if err != nil {
 		return err
 	}
@@ -181,7 +187,7 @@ func performMaintenanceWithEventStore(ctx context.Context, config Config, eventS
 	}
 	versionQueries := []eventstore.VersionQuery{}
 	for _, task := range handler.tasks {
-		versionQueries = append(versionQueries, eventstore.VersionQuery{AggregateID: task.AggregateID, Version: task.Version})
+		versionQueries = append(versionQueries, eventstore.VersionQuery{GroupID: task.GroupID, AggregateID: task.AggregateID, Version: task.Version})
 	}
 
 	log.Info("backing up the events")

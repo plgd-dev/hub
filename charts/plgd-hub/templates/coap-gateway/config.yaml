@@ -1,5 +1,10 @@
 {{- if .Values.coapgateway.enabled }}
-{{- $coapGatewayServiceCert := "/certs" }}
+{{- if (not $.Values.mockoauthserver.enabled)}}
+{{- if eq (( $.Values.coapgateway.apis.coap.authorization.providers | default $.Values.global.oauth.device) | len ) 0 }}
+{{- fail "At least one oauth provider must be specified for coapgateway.apis.coap.authorization.providers or global.oauth.device" }}
+{{- end }}
+{{- end }}
+{{- $coapGatewayCertPath := "/certs" }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -11,8 +16,14 @@ data:
   {{ .Values.coapgateway.config.fileName }}: |
     {{- with .Values.coapgateway }}
     log:
-      debug: {{ .log.debug }}
-      dumpCoapMessages: {{ .log.dumpCoapMessages }}
+      dumpBody: {{ .log.dumpBody }}
+      level: {{ .log.level }}
+      encoding: {{ .log.encoding }}
+      stacktrace:
+        enabled: {{ .log.stacktrace.enabled }}
+        level: {{ .log.stacktrace.level }}
+      encoderConfig:
+        timeEncoder: {{ .log.encoderConfig.timeEncoder }}
     apis:
       coap:
         address: {{ printf "0.0.0.0:%v" .port | quote }}
@@ -20,7 +31,7 @@ data:
         maxMessageSize: {{ .apis.coap.maxMessageSize }}
         ownerCacheExpiration: {{ .apis.coap.ownerCacheExpiration }}
         subscriptionBufferSize:  {{ .apis.coap.subscriptionBufferSize }}
-        goroutineSocketHeartbeat: {{ .apis.coap.goroutineSocketHeartbeat | quote }}
+        messagePoolSize: {{ .apis.coap.messagePoolSize }}
         keepAlive:
           timeout: {{ .apis.coap.keepAlive.timeout }}
         blockwiseTransfer:
@@ -28,15 +39,16 @@ data:
           blockSize: {{ .apis.coap.blockwiseTransfer.blockSize | quote }}
         tls:
           enabled: {{ .apis.coap.tls.enabled }}
+          disconnectOnExpiredCertificate: {{ .apis.coap.tls.disconnectOnExpiredCertificate }}
           {{- if .apis.coap.tls.enabled }}
           {{- $tls := .apis.coap.tls }}
-          {{- include "plgd-hub.certificateConfig" (list $ $tls $coapGatewayServiceCert) | indent 8 }}
+          {{- include "plgd-hub.certificateConfig" (list $ $tls $coapGatewayCertPath) | indent 8 }}
           clientCertificateRequired: {{ .apis.coap.tls.clientCertificateRequired }}
           {{- end }}
         authorization:
           ownerClaim: {{ .apis.coap.authorization.ownerClaim | default $.Values.global.ownerClaim | quote }}
           {{- if .apis.coap.authorization.deviceIdClaim | default $.Values.global.deviceIdClaim | quote }}
-          deviceIdClaim: {{ .apis.coap.authorization.deviceIdClaim | default $.Values.global.deviceIdClaim | quote }}
+          deviceIDClaim: {{ .apis.coap.authorization.deviceIdClaim | default $.Values.global.deviceIdClaim | quote }}
           {{- end }}
           providers:
           {{- $providers := $.Values.mockoauthserver.oauth }}
@@ -47,6 +59,9 @@ data:
             - name: {{ required "name for oauth device provider is required" .name | quote }}
               clientID: {{ required "clientID for oauth device provider is required" .clientID | quote }}
               clientSecretFile: {{ include "plgd-hub.oauthSecretFile" (list $ . ) }}
+              {{- if .grantType }}
+              grantType: {{ .grantType }}
+              {{- end }}
               {{- if .scopes }}
               scopes:
               {{- range  .scopes }}
@@ -71,7 +86,7 @@ data:
                 timeout: {{ $http.timeout | default "10s" }}
                 tls:
                   {{- $providerTls := $http.tls }}
-                  {{- include "plgd-hub.certificateConfig" (list $ $providerTls $coapGatewayServiceCert) | indent 16 }}
+                  {{- include "plgd-hub.certificateConfig" (list $ $providerTls $coapGatewayCertPath) | indent 16 }}
                   useSystemCAPool: {{ $providerTls.useSystemCAPool | default true }}
           {{- end }}
     clients:
@@ -83,7 +98,7 @@ data:
             bytesLimit: {{ printf "%v" .clients.eventBus.nats.pendingLimits.bytesLimit }}
           tls:
             {{- $natsTls := .clients.eventBus.nats.tls }}
-            {{- include "plgd-hub.certificateConfig" (list $ $natsTls $coapGatewayServiceCert) | indent 10 }}
+            {{- include "plgd-hub.certificateConfig" (list $ $natsTls $coapGatewayCertPath) | indent 10 }}
             useSystemCAPool: {{ .clients.eventBus.nats.tls.useSystemCAPool }}
       identityStore:
         ownerClaim: {{ .clients.identityStore.ownerClaim | default $.Values.global.ownerClaim | quote }}
@@ -96,7 +111,7 @@ data:
             permitWithoutStream: {{ .clients.identityStore.grpc.keepAlive.permitWithoutStream }}
           tls:
             {{- $authClientTls := .clients.identityStore.grpc.tls }}
-            {{- include "plgd-hub.certificateConfig" (list $ $authClientTls $coapGatewayServiceCert ) | indent 10 }}
+            {{- include "plgd-hub.certificateConfig" (list $ $authClientTls $coapGatewayCertPath ) | indent 10 }}
             useSystemCAPool: {{ .clients.identityStore.grpc.tls.useSystemCAPool }}
       resourceAggregate:
         grpc:
@@ -108,7 +123,7 @@ data:
             permitWithoutStream: {{ .clients.resourceAggregate.grpc.keepAlive.permitWithoutStream }}
           tls:
             {{- $raClientTls := .clients.resourceAggregate.grpc.tls }}
-            {{- include "plgd-hub.certificateConfig" (list $ $raClientTls $coapGatewayServiceCert) | indent 10 }}
+            {{- include "plgd-hub.certificateConfig" (list $ $raClientTls $coapGatewayCertPath) | indent 10 }}
             useSystemCAPool: {{ .clients.resourceAggregate.grpc.tls.useSystemCAPool }}
         deviceStatusExpiration:
           enabled: {{ .clients.resourceAggregate.deviceStatusExpiration.enabled }}
@@ -123,8 +138,9 @@ data:
             permitWithoutStream: {{ .clients.resourceDirectory.grpc.keepAlive.permitWithoutStream }}
           tls:
             {{- $rdClientTls := .clients.resourceDirectory.grpc.tls }}
-            {{- include "plgd-hub.certificateConfig" (list $ $rdClientTls $coapGatewayServiceCert) | indent 10 }}
+            {{- include "plgd-hub.certificateConfig" (list $ $rdClientTls $coapGatewayCertPath) | indent 10 }}
             useSystemCAPool: {{ .clients.resourceDirectory.grpc.tls.useSystemCAPool }}
+      {{- include "plgd-hub.openTelemetryExporterConfig" (list $ $coapGatewayCertPath) | nindent 6 }}
     taskQueue:
       goPoolSize: {{ .taskQueue.goPoolSize }}
       size: {{ .taskQueue.size }}

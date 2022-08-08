@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -10,15 +11,14 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/plgd-dev/device/schema"
 	"github.com/plgd-dev/go-coap/v2/message"
-	kitNetHttp "github.com/plgd-dev/hub/pkg/net/http"
+	pbGRPC "github.com/plgd-dev/hub/v2/grpc-gateway/pb"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	kitNetHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"github.com/plgd-dev/kit/v2/codec/cbor"
 	"github.com/plgd-dev/kit/v2/codec/json"
-	"github.com/plgd-dev/kit/v2/log"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-
-	pbGRPC "github.com/plgd-dev/hub/grpc-gateway/pb"
-	"github.com/plgd-dev/hub/resource-aggregate/commands"
 )
 
 type RetrieveDeviceWithLinksResponse struct {
@@ -34,7 +34,6 @@ func (rh *RequestHandler) GetResourceLinks(ctx context.Context, deviceIdFilter [
 	client, err := rh.gwClient.GetResourceLinks(ctx, &pbGRPC.GetResourceLinksRequest{
 		DeviceIdFilter: deviceIdFilter,
 	})
-
 	if err != nil {
 		return nil, fmt.Errorf("cannot get resource links: %w", err)
 	}
@@ -47,7 +46,7 @@ func (rh *RequestHandler) GetResourceLinks(ctx context.Context, deviceIdFilter [
 	resourceLinks := make(map[string]schema.ResourceLinks)
 	for {
 		snapshot, err := client.Recv()
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			break
 		}
 		if err != nil {
@@ -110,7 +109,6 @@ func (rh *RequestHandler) RetrieveResources(ctx context.Context, resourceIdFilte
 		DeviceIdFilter:   deviceIdFilter,
 		ResourceIdFilter: resourceIdFilter,
 	})
-
 	if err != nil {
 		return nil, fmt.Errorf("cannot retrieve resources values: %w", err)
 	}
@@ -123,7 +121,7 @@ func (rh *RequestHandler) RetrieveResources(ctx context.Context, resourceIdFilte
 	allResources := make(map[string][]Representation)
 	for {
 		content, err := client.Recv()
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			break
 		}
 		if err != nil {
@@ -147,7 +145,6 @@ func (rh *RequestHandler) RetrieveResources(ctx context.Context, resourceIdFilte
 			Representation: rep,
 			Status:         content.GetData().GetStatus(),
 		})
-
 	}
 	if len(allResources) == 0 {
 		return nil, status.Errorf(codes.NotFound, "cannot retrieve resources values: not found")

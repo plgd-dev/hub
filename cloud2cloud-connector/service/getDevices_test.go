@@ -3,6 +3,7 @@ package service_test
 import (
 	"context"
 	"crypto/tls"
+	"errors"
 	"io"
 	"testing"
 	"time"
@@ -10,15 +11,15 @@ import (
 	"github.com/plgd-dev/device/schema/device"
 	"github.com/plgd-dev/device/schema/interfaces"
 	"github.com/plgd-dev/device/test/resource/types"
-	"github.com/plgd-dev/hub/cloud2cloud-connector/events"
-	"github.com/plgd-dev/hub/cloud2cloud-connector/store"
-	c2cConnectorTest "github.com/plgd-dev/hub/cloud2cloud-connector/test"
-	"github.com/plgd-dev/hub/grpc-gateway/pb"
-	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
-	"github.com/plgd-dev/hub/resource-aggregate/commands"
-	"github.com/plgd-dev/hub/test"
-	testCfg "github.com/plgd-dev/hub/test/config"
-	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
+	"github.com/plgd-dev/hub/v2/cloud2cloud-connector/events"
+	"github.com/plgd-dev/hub/v2/cloud2cloud-connector/store"
+	c2cConnectorTest "github.com/plgd-dev/hub/v2/cloud2cloud-connector/test"
+	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
+	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
+	"github.com/plgd-dev/hub/v2/test"
+	testCfg "github.com/plgd-dev/hub/v2/test/config"
+	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
@@ -52,6 +53,7 @@ func testRequestHandlerGetDevices(t *testing.T, events store.Events) {
 							Value: commands.ConnectionStatus_ONLINE,
 						},
 					},
+					OwnershipStatus: pb.Device_OWNED,
 				},
 			},
 		},
@@ -62,7 +64,7 @@ func testRequestHandlerGetDevices(t *testing.T, events store.Events) {
 	defer cancel()
 	tearDown := c2cConnectorTest.SetUpClouds(ctx, t, deviceID, events)
 	defer tearDown()
-	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultServiceToken(t))
+	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
 
 	conn, err := grpc.Dial(c2cConnectorTest.GRPC_GATEWAY_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
@@ -84,7 +86,7 @@ func testRequestHandlerGetDevices(t *testing.T, events store.Events) {
 			devices := make([]*pb.Device, 0, 1)
 			for {
 				dev, err := client.Recv()
-				if err == io.EOF {
+				if errors.Is(err, io.EOF) {
 					break
 				}
 				require.NoError(t, err)
@@ -92,7 +94,10 @@ func testRequestHandlerGetDevices(t *testing.T, events store.Events) {
 				dev.ProtocolIndependentId = ""
 				if dev.GetMetadata().GetStatus() != nil {
 					dev.GetMetadata().GetStatus().ValidUntil = 0
+					dev.GetMetadata().GetStatus().ConnectionId = ""
 				}
+				assert.NotEmpty(t, dev.GetData().GetContent().GetData())
+				dev.Data = nil
 				devices = append(devices, dev)
 			}
 			test.CheckProtobufs(t, tt.want, devices, test.RequireToCheckFunc(require.Equal))

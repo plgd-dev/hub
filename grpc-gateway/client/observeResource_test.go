@@ -6,11 +6,11 @@ import (
 	"testing"
 
 	"github.com/plgd-dev/device/schema/configuration"
-	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
-	"github.com/plgd-dev/hub/test"
-	testCfg "github.com/plgd-dev/hub/test/config"
-	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
-	"github.com/plgd-dev/hub/test/service"
+	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	"github.com/plgd-dev/hub/v2/test"
+	testCfg "github.com/plgd-dev/hub/v2/test/config"
+	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
+	"github.com/plgd-dev/hub/v2/test/service"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -23,7 +23,7 @@ func TestObservingResource(t *testing.T) {
 	defer cancel()
 	tearDown := service.SetUp(ctx, t)
 	defer tearDown()
-	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultServiceToken(t))
+	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
 
 	c := NewTestClient(t)
 	defer func() {
@@ -75,6 +75,10 @@ func (h *testObservationHandler) Handle(ctx context.Context, body DecodeFunc) {
 	h.res <- body
 }
 
-func (h *testObservationHandler) Error(err error) { fmt.Println(err) }
+func (h *testObservationHandler) Error(err error) {
+	fmt.Println(err)
+}
 
-func (h *testObservationHandler) OnClose() { fmt.Println("Observation was closed") }
+func (h *testObservationHandler) OnClose() {
+	fmt.Println("Observation was closed")
+}

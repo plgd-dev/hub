@@ -10,6 +10,8 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
+	"go.opentelemetry.io/contrib/instrumentation/go.mongodb.org/mongo-driver/mongo/otelmongo"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type OnClearFn = func(context.Context) error
@@ -23,8 +25,8 @@ type Store struct {
 }
 
 // NewStore creates a new Store.
-func NewStore(ctx context.Context, cfg Config, tls *tls.Config) (*Store, error) {
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI(cfg.URI).SetTLSConfig(tls))
+func NewStore(ctx context.Context, cfg Config, tls *tls.Config, tracerProvider trace.TracerProvider) (*Store, error) {
+	client, err := mongo.Connect(ctx, options.Client().SetMaxPoolSize(cfg.MaxPoolSize).SetMaxConnIdleTime(cfg.MaxConnIdleTime).ApplyURI(cfg.URI).SetTLSConfig(tls).SetMonitor(otelmongo.NewMonitor(otelmongo.WithTracerProvider(tracerProvider))))
 	if err != nil {
 		return nil, fmt.Errorf("failed to dial database: %w", err)
 	}
@@ -45,13 +47,13 @@ func NewStore(ctx context.Context, cfg Config, tls *tls.Config) (*Store, error) 
 
 	s.onClear = func(c context.Context) error {
 		// default clear function drops the whole database
-		return s.client.Database(s.DBName()).Drop(ctx)
+		return s.client.Database(s.DBName()).Drop(c)
 	}
 	return s, nil
 }
 
-func NewStoreWithCollection(ctx context.Context, cfg Config, tls *tls.Config, collection string, indexes ...bson.D) (*Store, error) {
-	s, err := NewStore(ctx, cfg, tls)
+func NewStoreWithCollection(ctx context.Context, cfg Config, tls *tls.Config, tracerProvider trace.TracerProvider, collection string, indexes ...bson.D) (*Store, error) {
+	s, err := NewStore(ctx, cfg, tls, tracerProvider)
 	if err != nil {
 		return nil, err
 	}
@@ -89,7 +91,7 @@ func ensureIndex(ctx context.Context, col *mongo.Collection, indexes ...bson.D) 
 		_, err := col.Indexes().CreateOne(ctx, index)
 		if err != nil {
 			if strings.HasPrefix(err.Error(), "(IndexKeySpecsConflict)") {
-				//index already exist, just skip error and continue
+				// index already exist, just skip error and continue
 				continue
 			}
 			return fmt.Errorf("failed to ensure indexes for collection: %w", err)

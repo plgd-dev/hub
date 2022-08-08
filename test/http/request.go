@@ -9,25 +9,25 @@ import (
 	"net/http"
 	"net/url"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/jtacoma/uritemplates"
 	"github.com/plgd-dev/go-coap/v2/message"
-	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
 	"github.com/plgd-dev/kit/v2/codec/cbor"
 	"github.com/plgd-dev/kit/v2/codec/json"
 	"github.com/stretchr/testify/require"
 )
 
-const HTTPS_SCHEME = "https://"
-
 type HTTPRequestBuilder struct {
-	method      string
-	body        io.Reader
-	uri         string
-	uriParams   map[string]interface{}
-	header      map[string]string
-	queryParams map[string]string
+	method       string
+	body         io.Reader
+	uri          string
+	uriParams    map[string]interface{}
+	header       map[string]string
+	queryParams  map[string][]string
+	resourceHref string
+	query        string
 }
 
 func NewHTTPRequest(method, url string, body io.Reader) *HTTPRequestBuilder {
@@ -37,7 +37,7 @@ func NewHTTPRequest(method, url string, body io.Reader) *HTTPRequestBuilder {
 		uri:         url,
 		uriParams:   make(map[string]interface{}),
 		header:      make(map[string]string),
-		queryParams: make(map[string]string),
+		queryParams: make(map[string][]string),
 	}
 	return &b
 }
@@ -47,8 +47,13 @@ func (c *HTTPRequestBuilder) AuthToken(token string) *HTTPRequestBuilder {
 	return c
 }
 
-func (c *HTTPRequestBuilder) AddQuery(key, value string) *HTTPRequestBuilder {
-	c.queryParams[key] = value
+func (c *HTTPRequestBuilder) AddContentQuery(content string) *HTTPRequestBuilder {
+	c.AddQuery(ContentQueryKey, content)
+	return c
+}
+
+func (c *HTTPRequestBuilder) AddQuery(key string, value ...string) *HTTPRequestBuilder {
+	c.queryParams[key] = append(c.queryParams[key], value...)
 	return c
 }
 
@@ -60,8 +65,45 @@ func (c *HTTPRequestBuilder) Accept(accept string) *HTTPRequestBuilder {
 	return c
 }
 
+func (c *HTTPRequestBuilder) DeviceId(deviceID string) *HTTPRequestBuilder {
+	if deviceID == "" {
+		return c
+	}
+	c.uriParams[DeviceIDKey] = deviceID
+	return c
+}
+
+func (c *HTTPRequestBuilder) ResourceHref(resourceHref string) *HTTPRequestBuilder {
+	if resourceHref == "" {
+		return c
+	}
+	if len(resourceHref) > 0 && resourceHref[0] == '/' {
+		resourceHref = resourceHref[1:]
+	}
+	c.resourceHref = resourceHref
+	return c
+}
+
+func (c *HTTPRequestBuilder) SubscriptionID(subscriptionID string) *HTTPRequestBuilder {
+	if subscriptionID == "" {
+		return c
+	}
+	c.uriParams[SubscriptionIDKey] = subscriptionID
+	return c
+}
+
+func (c *HTTPRequestBuilder) SetQuery(value string) *HTTPRequestBuilder {
+	c.query = value
+	return c
+}
+
 func (c *HTTPRequestBuilder) Build(ctx context.Context, t *testing.T) *http.Request {
-	tmp, err := uritemplates.Parse(c.uri)
+	u := c.uri
+	if len(c.resourceHref) > 0 {
+		u = strings.ReplaceAll(c.uri, "{"+ResourceHrefKey+"}", c.resourceHref)
+	}
+
+	tmp, err := uritemplates.Parse(u)
 	require.NoError(t, err)
 	uri, err := tmp.Expand(c.uriParams)
 	require.NoError(t, err)
@@ -69,15 +111,18 @@ func (c *HTTPRequestBuilder) Build(ctx context.Context, t *testing.T) *http.Requ
 	require.NoError(t, err)
 	query := url.Query()
 
-	token, err := kitNetGrpc.TokenFromOutgoingMD(ctx)
-	if err == nil {
-		c.AuthToken(token)
+	for k, vals := range c.queryParams {
+		for _, v := range vals {
+			query.Add(k, v)
+		}
 	}
-
-	for k, v := range c.queryParams {
-		query.Set(k, v)
+	if c.query != "" {
+		url.RawQuery = c.query
+	} else {
+		url.RawQuery = query.Encode()
 	}
 	url.RawQuery = query.Encode()
+	fmt.Printf("URL %v\n", url.String())
 	request, _ := http.NewRequestWithContext(ctx, c.method, url.String(), c.body)
 	for k, v := range c.header {
 		request.Header.Add(k, v)

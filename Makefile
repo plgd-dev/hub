@@ -14,8 +14,8 @@ GROUP_ID := $(shell id -g)
 
 #$(error MY_FLAG=$(BUILD_TAG)AAA)
 
-SUBDIRS := bundle certificate-authority cloud2cloud-connector cloud2cloud-gateway coap-gateway grpc-gateway resource-aggregate resource-directory http-gateway identity-store test/oauth-server
-.PHONY: $(SUBDIRS) push proto/generate clean build test env mongo nats certificates hub-build
+SUBDIRS := bundle certificate-authority cloud2cloud-connector cloud2cloud-gateway coap-gateway grpc-gateway resource-aggregate resource-directory http-gateway identity-store test/oauth-server tools/cert-tool
+.PHONY: $(SUBDIRS) push proto/generate clean build test env mongo nats certificates hub-build http-gateway-www
 
 default: build
 
@@ -65,50 +65,94 @@ nats: certificates
 mongo: certificates
 	mkdir -p $(WORKING_DIRECTORY)/.tmp/mongo
 	docker run \
-	    -d \
+		-d \
 		--network=host \
 		--name=mongo \
 		-v $(WORKING_DIRECTORY)/.tmp/mongo:/data/db \
 		-v $(WORKING_DIRECTORY)/.tmp/certs:/certs --user $(USER_ID):$(GROUP_ID) \
 		mongo --tlsMode requireTLS --tlsCAFile /certs/root_ca.crt --tlsCertificateKeyFile /certs/mongo.key
 
-env: clean certificates nats mongo privateKeys
-	if [ "${TRAVIS_OS_NAME}" == "linux" ]; then \
-		sudo sh -c 'echo 0 > /proc/sys/net/ipv6/conf/all/disable_ipv6'; \
-	fi
-	mkdir -p $(WORKING_DIRECTORY)/.tmp/devsim
+http-gateway-www:
+	@mkdir -p $(WORKING_DIRECTORY)/.tmp/usr/local/www
+	@cp -r $(WORKING_DIRECTORY)/http-gateway/web/public/* $(WORKING_DIRECTORY)/.tmp/usr/local/www/
+
+# standard device
+DEVICE_SIMULATOR_NAME := devsim
+DEVICE_SIMULATOR_IMG := ghcr.io/iotivity/iotivity-lite/cloud-server-debug:master
+# device with /oic/res observable
+DEVICE_SIMULATOR_RES_OBSERVABLE_NAME := devsim-resobs
+DEVICE_SIMULATOR_RES_OBSERVABLE_IMG := ghcr.io/iotivity/iotivity-lite/cloud-server-discovery-resource-observable-debug:master
+
+# Pull latest device simulator with given name and run it
+#
+# Parameters:
+#   $(1): name, used for:
+#          - name of working directory for the device simulator (.tmp/$(1))
+#          - name of the docker container
+#          - name of the simulator ("$(1)-$(SIMULATOR_NAME_SUFFIX)")
+define RUN-DOCKER-DEVICE
+	mkdir -p "$(WORKING_DIRECTORY)/.tmp/$(1)" ; \
+	mkdir -p "$(WORKING_DIRECTORY)/.tmp/$(1)/cloud_server_creds" ; \
+	docker pull $(2) ; \
 	docker run \
 		-d \
 		--privileged \
-		--name=devsim \
+		--name=$(1) \
 		--network=host \
-		-v $(WORKING_DIRECTORY)/.tmp/devsim:/tmp \
-		ghcr.io/iotivity/iotivity-lite/cloud-server-debug:latest \
-		devsim-$(SIMULATOR_NAME_SUFFIX)
+		-v $(WORKING_DIRECTORY)/.tmp/$(1):/tmp \
+		-v $(WORKING_DIRECTORY)/.tmp/$(1)/cloud_server_creds:/cloud_server_creds \
+		$(2) \
+		$(1)-$(SIMULATOR_NAME_SUFFIX)
+endef
+
+define CLEAN-DOCKER-DEVICE
+	docker rm -f $(1) || true
+	sudo rm -rf $(WORKING_DIRECTORY)/.tmp/$(1) || true
+endef
+
+env: clean certificates nats mongo privateKeys http-gateway-www
+	if [ "${TRAVIS_OS_NAME}" == "linux" ]; then \
+		sudo sh -c 'echo 0 > /proc/sys/net/ipv6/conf/all/disable_ipv6'; \
+	fi
+	$(call RUN-DOCKER-DEVICE,$(DEVICE_SIMULATOR_NAME),$(DEVICE_SIMULATOR_IMG))
+	$(call RUN-DOCKER-DEVICE,$(DEVICE_SIMULATOR_RES_OBSERVABLE_NAME),$(DEVICE_SIMULATOR_RES_OBSERVABLE_IMG))
+
+define RUN-DOCKER
+	docker run \
+		--rm \
+		--network=host \
+		-v $(WORKING_DIRECTORY)/.tmp/certs:/certs \
+		-v $(WORKING_DIRECTORY)/.tmp/coverage:/coverage \
+		-v $(WORKING_DIRECTORY)/.tmp/report:/report \
+		-v $(WORKING_DIRECTORY)/.tmp/privKeys:/privKeys \
+		-v $(WORKING_DIRECTORY)/.tmp/usr/local/www:/usr/local/www \
+		-v /var/run/docker.sock:/var/run/docker.sock \
+		-e LISTEN_FILE_CA_POOL=/certs/root_ca.crt \
+		-e LISTEN_FILE_CERT_DIR_PATH=/certs \
+		-e LISTEN_FILE_CERT_NAME=http.crt \
+		-e LISTEN_FILE_CERT_KEY_NAME=http.key \
+		-e TEST_COAP_GW_CERT_FILE=/certs/coap.crt \
+		-e TEST_COAP_GW_KEY_FILE=/certs/coap.key \
+		-e TEST_CLOUD_SID=$(CLOUD_SID) \
+		-e TEST_ROOT_CA_CERT=/certs/root_ca.crt \
+		-e TEST_ROOT_CA_KEY=/certs/root_ca.key \
+		-e TEST_OAUTH_SERVER_ID_TOKEN_PRIVATE_KEY=/privKeys/idTokenKey.pem \
+		-e TEST_OAUTH_SERVER_ACCESS_TOKEN_PRIVATE_KEY=/privKeys/accessTokenKey.pem \
+		-e TEST_HTTP_GW_WWW_ROOT=/usr/local/www \
+		hub-test \
+		$(1) ;
+endef
 
 define RUN-TESTS-IN-DIRECTORY
 	echo "Executing tests from $(1) directory"; \
 	START_TIME=$$(date +%s); \
-	docker run \
-	--rm \
-	--network=host \
-	-v $(WORKING_DIRECTORY)/.tmp/certs:/certs \
-	-v $(WORKING_DIRECTORY)/.tmp/coverage:/coverage \
-	-v $(WORKING_DIRECTORY)/.tmp/privKeys:/privKeys \
-	-v /var/run/docker.sock:/var/run/docker.sock \
-	-e LISTEN_FILE_CA_POOL=/certs/root_ca.crt \
-	-e LISTEN_FILE_CERT_DIR_PATH=/certs \
-	-e LISTEN_FILE_CERT_NAME=http.crt \
-	-e LISTEN_FILE_CERT_KEY_NAME=http.key \
-	-e TEST_COAP_GW_CERT_FILE=/certs/coap.crt \
-	-e TEST_COAP_GW_KEY_FILE=/certs/coap.key \
-	-e TEST_CLOUD_SID=$(CLOUD_SID) \
-	-e TEST_ROOT_CA_CERT=/certs/root_ca.crt \
-	-e TEST_ROOT_CA_KEY=/certs/root_ca.key \
-	-e TEST_OAUTH_SERVER_ID_TOKEN_PRIVATE_KEY=/privKeys/idTokenKey.pem \
-	-e TEST_OAUTH_SERVER_ACCESS_TOKEN_PRIVATE_KEY=/privKeys/accessTokenKey.pem \
-	hub-test \
-	go test -timeout=45m -race -p 1 -v $(1)... -covermode=atomic -coverprofile=/coverage/`echo $(1) | sed -e "s/[\.\/]//g"`.coverage.txt ; \
+	COVERAGE_FILE=/coverage/$$(echo $(1) | sed -e "s/[\.\/]//g").coverage.txt ; \
+	JSON_REPORT_FILE=$(WORKING_DIRECTORY)/.tmp/report/$$(echo $(1) | sed -e "s/[\.\/]//g").report.json ; \
+	if [ -n "$${JSON_REPORT}" ]; then \
+		$(call RUN-DOCKER, go test -timeout=45m -race -p 1 -v $(1)... -covermode=atomic -coverprofile=$${COVERAGE_FILE} -json > "$${JSON_REPORT_FILE}") \
+	else \
+		$(call RUN-DOCKER, go test -timeout=45m -race -p 1 -v $(1)... -covermode=atomic -coverprofile=$${COVERAGE_FILE}) \
+	fi ; \
 	EXIT_STATUS=$$? ; \
 	if [ $${EXIT_STATUS} -ne 0 ]; then \
 		exit $${EXIT_STATUS}; \
@@ -122,22 +166,39 @@ endef
 
 DIRECTORIES:=$(shell ls -d ./*/)
 
+define RUN-TESTS
+	echo "Executing tests"; \
+	START_TIME=$$(date +%s); \
+	COVERAGE_FILE=/coverage/hub.coverage.txt ; \
+	JSON_REPORT_FILE=$(WORKING_DIRECTORY)/.tmp/report/hub.report.json ; \
+	if [ -n "$${JSON_REPORT}" ]; then \
+		$(call RUN-DOCKER, go test -timeout=45m -race -p 1 -v ./... -coverpkg=./... -covermode=atomic -coverprofile=$${COVERAGE_FILE} -json > "$${JSON_REPORT_FILE}") \
+	else \
+		$(call RUN-DOCKER, go test -timeout=45m -race -p 1 -v ./... -coverpkg=./... -covermode=atomic -coverprofile=$${COVERAGE_FILE}) \
+	fi ; \
+	EXIT_STATUS=$$? ; \
+	if [ $${EXIT_STATUS} -ne 0 ]; then \
+		exit $${EXIT_STATUS}; \
+	fi ; \
+	STOP_TIME=$$(date +%s) ; \
+	EXECUTION_TIME=$$((STOP_TIME-START_TIME)) ; \
+	echo "" ; \
+	echo "Execution time: $${EXECUTION_TIME} seconds" ; \
+	echo "" ;
+endef
+
 test: env
 	@mkdir -p $(WORKING_DIRECTORY)/.tmp/home
 	@mkdir -p $(WORKING_DIRECTORY)/.tmp/home/certificate-authority
-	@for DIRECTORY in $(DIRECTORIES); do \
-		if ! go list -f '{{.GoFiles}}' $$DIRECTORY... 2>/dev/null | grep go > /dev/null 2>&1; then \
-			echo "No golang files detected, directory $${DIRECTORY} skipped"; \
-			continue ; \
-		fi ; \
-		$(call RUN-TESTS-IN-DIRECTORY,$$DIRECTORY) \
-	done
+	@mkdir -p $(WORKING_DIRECTORY)/.tmp/report
+	@$(call RUN-TESTS)
 
 test-targets := $(addprefix test-,$(patsubst ./%/,%,$(DIRECTORIES)))
 
 $(test-targets): %: env
 	@mkdir -p $(WORKING_DIRECTORY)/.tmp/home
 	@mkdir -p $(WORKING_DIRECTORY)/.tmp/home/certificate-authority
+	@mkdir -p $(WORKING_DIRECTORY)/.tmp/report
 	@readonly TARGET_DIRECTORY=$(patsubst test-%,./%/,$@) ; \
 	if ! go list -f '{{.GoFiles}}' $$TARGET_DIRECTORY... 2>/dev/null | grep go > /dev/null 2>&1; then \
 		echo "No golang files detected, directory $$TARGET_DIRECTORY skipped"; \
@@ -153,12 +214,15 @@ clean:
 	docker rm -f mongo || true
 	docker rm -f nats || true
 	docker rm -f nats-cloud-connector || true
-	docker rm -f devsim || true
-	sudo rm -rf ./.tmp/devsim
+	$(call CLEAN-DOCKER-DEVICE,$(DEVICE_SIMULATOR_NAME))
+	$(call CLEAN-DOCKER-DEVICE,$(DEVICE_SIMULATOR_RES_OBSERVABLE_NAME))
 	sudo rm -rf ./.tmp/certs || true
 	sudo rm -rf ./.tmp/mongo || true
 	sudo rm -rf ./.tmp/home || true
 	sudo rm -rf ./.tmp/privateKeys || true
+	sudo rm -rf ./.tmp/coverage || true
+	sudo rm -rf ./.tmp/report || true
+	sudo rm -rf ./.tmp/usr || true
 
 proto/generate: $(SUBDIRS)
 	protoc -I=. -I=$(GOPATH)/src --go_out=$(GOPATH)/src $(WORKING_DIRECTORY)/pkg/net/grpc/stub.proto

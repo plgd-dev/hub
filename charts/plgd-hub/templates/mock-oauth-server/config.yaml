@@ -1,5 +1,5 @@
 {{- if .Values.mockoauthserver.enabled }}
-{{- $httpCert := "/certs" }}
+{{- $oauthServerCertPath := "/certs" }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -9,13 +9,19 @@ data:
   {{ .Values.mockoauthserver.config.fileName }}: |
     {{- with .Values.mockoauthserver }}
     log:
-      debug: {{ .log.debug }}
+      level: {{ .log.level }}
+      encoding: {{ .log.encoding }}
+      stacktrace:
+        enabled: {{ .log.stacktrace.enabled }}
+        level: {{ .log.stacktrace.level }}
+      encoderConfig:
+        timeEncoder: {{ .log.encoderConfig.timeEncoder }}
     apis:
       http:
         address: {{  .apis.http.address | default (printf "0.0.0.0:%v" .port) | quote }}
         tls:
           {{- $tls := .apis.http.tls }}
-          {{- include "plgd-hub.certificateConfig" (list $ $tls $httpCert ) | indent 8 }}
+          {{- include "plgd-hub.certificateConfig" (list $ $tls $oauthServerCertPath ) | indent 8 }}
           clientCertificateRequired: {{ .apis.http.tls.clientCertificateRequired }}
     oauthSigner:
       idTokenKeyFile: {{ .oauthSigner.idTokenKeyFile | quote }}
@@ -26,5 +32,6 @@ data:
           authorizationCodeLifetime:  {{ .oauthSigner.clients.authorizationCodeLifetime | quote }}
           accessTokenLifetime:  {{ .oauthSigner.clients.accessTokenLifetime | quote }}
           codeRestrictionLifetime:  {{ .oauthSigner.clients.codeRestrictionLifetime | quote }}
+          refreshTokenRestrictionLifetime:  {{ .oauthSigner.clients.refreshTokenRestrictionLifetime | quote }}
 {{- end }}
 {{- end }}

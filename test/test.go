@@ -17,14 +17,16 @@ import (
 	"github.com/plgd-dev/device/schema/device"
 	"github.com/plgd-dev/device/schema/interfaces"
 	"github.com/plgd-dev/device/schema/platform"
+	"github.com/plgd-dev/device/schema/resources"
 	"github.com/plgd-dev/device/test/resource/types"
 	"github.com/plgd-dev/go-coap/v2/message"
-	"github.com/plgd-dev/hub/grpc-gateway/client"
-	"github.com/plgd-dev/hub/grpc-gateway/pb"
-	"github.com/plgd-dev/hub/resource-aggregate/commands"
-	"github.com/plgd-dev/hub/resource-aggregate/events"
-	"github.com/plgd-dev/hub/test/config"
-	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
+	"github.com/plgd-dev/hub/v2/grpc-gateway/client"
+	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
+	pkgStrings "github.com/plgd-dev/hub/v2/pkg/strings"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
+	"github.com/plgd-dev/hub/v2/test/config"
+	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	"github.com/plgd-dev/kit/v2/codec/json"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -32,7 +34,8 @@ import (
 )
 
 var (
-	TestDeviceName string
+	TestDeviceName                     string
+	TestDeviceNameWithOicResObservable string
 
 	TestDevsimResources        []schema.ResourceLink
 	TestDevsimBackendResources []schema.ResourceLink
@@ -52,6 +55,7 @@ func TestResourceSwitchesInstanceHref(id string) string {
 
 func init() {
 	TestDeviceName = "devsim-" + MustGetHostname()
+	TestDeviceNameWithOicResObservable = "devsim-resobs-" + MustGetHostname()
 	TestDevsimResources = []schema.ResourceLink{
 		{
 			Href:          platform.ResourceURI,
@@ -110,13 +114,14 @@ func FilterResourceLink(filter func(schema.ResourceLink) bool, links []schema.Re
 	return l
 }
 
-func DefaultSwitchResourceLink(id string) schema.ResourceLink {
+func DefaultSwitchResourceLink(deviceID, id string) schema.ResourceLink {
 	return schema.ResourceLink{
+		DeviceID:      deviceID,
 		Href:          TestResourceSwitchesInstanceHref(id),
 		ResourceTypes: []string{types.BINARY_SWITCH},
 		Interfaces:    []string{interfaces.OC_IF_A, interfaces.OC_IF_BASELINE},
 		Policy: &schema.Policy{
-			BitMask: schema.BitMask(schema.Discoverable | schema.Observable),
+			BitMask: schema.Discoverable | schema.Observable,
 		},
 	}
 }
@@ -130,7 +135,7 @@ func MakeSwitchResourceData(overrides map[string]interface{}) map[string]interfa
 }
 
 func MakeSwitchResourceDefaultData() map[string]interface{} {
-	s := DefaultSwitchResourceLink("")
+	s := DefaultSwitchResourceLink("", "")
 	return map[string]interface{}{
 		"if": s.Interfaces,
 		"rt": s.ResourceTypes,
@@ -233,7 +238,7 @@ func setAccessForCloud(ctx context.Context, t *testing.T, c *deviceClient.Client
 	require.NoError(t, err)
 }
 
-func OnboardDevSimForClient(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, clientId, deviceID, gwHost string, expectedResources []schema.ResourceLink) (string, func()) {
+func OnboardDevSimForClient(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, clientID, deviceID, gwHost string, expectedResources []schema.ResourceLink) (string, func()) {
 	cloudSID := config.HubID()
 	require.NotEmpty(t, cloudSID)
 	devClient, err := NewSDKClient()
@@ -246,7 +251,7 @@ func OnboardDevSimForClient(ctx context.Context, t *testing.T, c pb.GrpcGatewayC
 
 	setAccessForCloud(ctx, t, devClient, deviceID)
 
-	code := oauthTest.GetDeviceAuthorizationCode(t, config.OAUTH_SERVER_HOST, clientId, deviceID)
+	code := oauthTest.GetAuthorizationCode(t, config.OAUTH_SERVER_HOST, clientID, deviceID, "")
 
 	onboard := func() {
 		err = devClient.OnboardDevice(ctx, deviceID, config.DEVICE_PROVIDER, "coaps+tcp://"+gwHost, code, cloudSID)
@@ -277,7 +282,7 @@ func OnboardDevSimForClient(ctx context.Context, t *testing.T, c pb.GrpcGatewayC
 		}
 		CheckProtobufs(t, expectedEvent, ev, RequireToCheckFunc(require.Equal))
 		onboard()
-		waitForDevice(ctx, t, subClient, deviceID, ev.GetSubscriptionId(), ev.GetCorrelationId(), expectedResources)
+		WaitForDevice(ctx, t, subClient, deviceID, ev.GetSubscriptionId(), ev.GetCorrelationId(), expectedResources)
 		err = subClient.CloseSend()
 		require.NoError(t, err)
 	} else {
@@ -299,7 +304,7 @@ func OnboardDevSim(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 	return OnboardDevSimForClient(ctx, t, c, config.OAUTH_MANAGER_CLIENT_ID, deviceID, gwHost, expectedResources)
 }
 
-func waitForDevice(ctx context.Context, t *testing.T, client pb.GrpcGateway_SubscribeToEventsClient, deviceID, subID, correlationID string, expectedResources []schema.ResourceLink) {
+func WaitForDevice(ctx context.Context, t *testing.T, client pb.GrpcGateway_SubscribeToEventsClient, deviceID, subID, correlationID string, expectedResources []schema.ResourceLink) {
 	getID := func(ev *pb.Event) string {
 		switch v := ev.GetType().(type) {
 		case *pb.Event_DeviceRegistered_:
@@ -316,17 +321,26 @@ func waitForDevice(ctx context.Context, t *testing.T, client pb.GrpcGateway_Subs
 
 	cleanUpEvent := func(ev *pb.Event) {
 		switch val := ev.GetType().(type) {
+		case *pb.Event_DeviceRegistered_:
+			val.DeviceRegistered.OpenTelemetryCarrier = nil
+		case *pb.Event_DeviceUnregistered_:
+			val.DeviceUnregistered.OpenTelemetryCarrier = nil
 		case *pb.Event_DeviceMetadataUpdated:
 			require.NotEmpty(t, val.DeviceMetadataUpdated.GetAuditContext().GetUserId())
 			val.DeviceMetadataUpdated.AuditContext = nil
 			require.NotZero(t, val.DeviceMetadataUpdated.GetEventMetadata().GetTimestamp())
 			val.DeviceMetadataUpdated.EventMetadata = nil
+			if val.DeviceMetadataUpdated.GetStatus() != nil {
+				val.DeviceMetadataUpdated.GetStatus().ConnectionId = ""
+			}
+			val.DeviceMetadataUpdated.OpenTelemetryCarrier = nil
 		case *pb.Event_ResourcePublished:
 			require.NotEmpty(t, val.ResourcePublished.GetAuditContext().GetUserId())
 			val.ResourcePublished.AuditContext = nil
 			require.NotZero(t, val.ResourcePublished.GetEventMetadata().GetTimestamp())
 			val.ResourcePublished.EventMetadata = nil
 			val.ResourcePublished.Resources = CleanUpResourcesArray(val.ResourcePublished.GetResources())
+			val.ResourcePublished.OpenTelemetryCarrier = nil
 		case *pb.Event_ResourceChanged:
 			require.NotEmpty(t, val.ResourceChanged.GetAuditContext().GetUserId())
 			val.ResourceChanged.AuditContext = nil
@@ -334,6 +348,7 @@ func waitForDevice(ctx context.Context, t *testing.T, client pb.GrpcGateway_Subs
 			val.ResourceChanged.EventMetadata = nil
 			require.NotEmpty(t, val.ResourceChanged.GetContent().GetData())
 			val.ResourceChanged.Content = nil
+			val.ResourceChanged.OpenTelemetryCarrier = nil
 		}
 	}
 
@@ -393,7 +408,8 @@ func waitForDevice(ctx context.Context, t *testing.T, client pb.GrpcGateway_Subs
 
 		expectedEvent, ok := expectedEvents[getID(ev)]
 		if !ok {
-			require.NoError(t, fmt.Errorf("unexpected event %+v", ev))
+			t.Logf("unexpected event %+v", ev)
+			continue
 		}
 		cleanUpEvent(ev)
 		CheckProtobufs(t, expectedEvent, ev, RequireToCheckFunc(require.Equal))
@@ -473,6 +489,50 @@ func FindDeviceByName(ctx context.Context, name string) (deviceID string, _ erro
 		return "", fmt.Errorf("could not find the device named %s: not found", name)
 	}
 	return id, nil
+}
+
+func IsDiscoveryResourceBatchObservable(ctx context.Context, t *testing.T, deviceID string) bool {
+	devClient, err := NewSDKClient()
+	require.NoError(t, err)
+	defer func() {
+		_ = devClient.Close(ctx)
+	}()
+
+	device, links, err := devClient.GetRefDevice(ctx, deviceID)
+	require.NoError(t, err)
+	err = device.Release(ctx)
+	require.NoError(t, err)
+	links = links.GetResourceLinks(resources.ResourceType)
+	if len(links) == 0 {
+		return false
+	}
+	for _, iface := range links[0].Interfaces {
+		if iface == interfaces.OC_IF_B && links[0].Policy.BitMask.Has(schema.Observable) {
+			return true
+		}
+	}
+	return false
+}
+
+func CheckResource(ctx context.Context, t *testing.T, deviceID, href, resourceType string, checkFn func(schema.ResourceLink) bool) bool {
+	devClient, err := NewSDKClient()
+	require.NoError(t, err)
+	defer func() {
+		_ = devClient.Close(ctx)
+	}()
+
+	var resp schema.ResourceLinks
+	err = devClient.GetResource(ctx, deviceID, resources.ResourceURI, &resp, deviceClient.WithResourceTypes(resources.ResourceType))
+	require.NoError(t, err)
+
+	return len(resp) == 1 && checkFn(resp[0])
+}
+
+func ResourceIsBatchObservable(ctx context.Context, t *testing.T, deviceID, href, resourceType string) bool {
+	return CheckResource(ctx, t, deviceID, href, resourceType, func(rl schema.ResourceLink) bool {
+		return rl.Policy.BitMask.Has(schema.Observable) &&
+			pkgStrings.Contains(rl.Interfaces, interfaces.OC_IF_B)
+	})
 }
 
 func GetAllBackendResourceLinks() []schema.ResourceLink {

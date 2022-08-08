@@ -1,5 +1,11 @@
 log:
-  debug: false
+  level: info
+  encoding: json
+  stacktrace:
+    enabled: false
+    level: warn
+  encoderConfig:
+    timeEncoder: rfc3339nano
 apis:
   grpc:
     ownerCacheExpiration: 1m
@@ -57,8 +63,6 @@ clients:
     mongoDB:
       uri:
       database: eventStore
-      # limits number of queries in one find request.
-      batchSize: 128
       # limits number of connections.
       maxPoolSize: 16
       # close connection when idle time reach the value.
@@ -80,3 +84,16 @@ clients:
         time: 10s
         timeout: 20s
         permitWithoutStream: true
+  openTelemetryCollector:
+    grpc:
+      enabled: false
+      address: ""
+      keepAlive:
+        time: 10s
+        timeout: 20s
+        permitWithoutStream: true
+      tls:
+        caPool: "/secrets/public/rootca.crt"
+        keyFile: "/secrets/private/cert.key"
+        certFile: "/secrets/public/cert.crt"
+        useSystemCAPool: false

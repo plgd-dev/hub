@@ -3,15 +3,15 @@ package server
 import (
 	"fmt"
 
-	"github.com/plgd-dev/hub/pkg/log"
-
-	"github.com/plgd-dev/hub/pkg/security/certManager/server"
+	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	"github.com/plgd-dev/hub/v2/pkg/security/certManager/server"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )
 
-func New(config Config, logger log.Logger, opts ...grpc.ServerOption) (*Server, error) {
-	tls, err := server.New(config.TLS, logger)
+func New(config Config, fileWatcher *fsnotify.Watcher, logger log.Logger, opts ...grpc.ServerOption) (*Server, error) {
+	tls, err := server.New(config.TLS, fileWatcher, logger)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create cert manager %w", err)
 	}

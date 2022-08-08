@@ -4,15 +4,16 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/plgd-dev/hub/pkg/config"
-	"github.com/plgd-dev/hub/pkg/log"
-	"github.com/plgd-dev/hub/pkg/net/grpc/client"
-	grpcServer "github.com/plgd-dev/hub/pkg/net/grpc/server"
-	natsClient "github.com/plgd-dev/hub/resource-aggregate/cqrs/eventbus/nats/client"
-	eventstoreConfig "github.com/plgd-dev/hub/resource-aggregate/cqrs/eventstore/config"
+	"github.com/plgd-dev/hub/v2/pkg/config"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	"github.com/plgd-dev/hub/v2/pkg/net/grpc/client"
+	grpcServer "github.com/plgd-dev/hub/v2/pkg/net/grpc/server"
+	otelClient "github.com/plgd-dev/hub/v2/pkg/opentelemetry/collector/client"
+	natsClient "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/client"
+	eventstoreConfig "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore/config"
 )
 
-//Config represent application configuration
+// Config represent application configuration
 type Config struct {
 	Log     log.Config    `yaml:"log" json:"log"`
 	APIs    APIsConfig    `yaml:"apis" json:"apis"`
@@ -20,6 +21,9 @@ type Config struct {
 }
 
 func (c *Config) Validate() error {
+	if err := c.Log.Validate(); err != nil {
+		return fmt.Errorf("log.%w", err)
+	}
 	if err := c.APIs.Validate(); err != nil {
 		return fmt.Errorf("apis.%w", err)
 	}
@@ -92,9 +96,10 @@ func (c *IdentityStoreConfig) Validate() error {
 }
 
 type ClientsConfig struct {
-	Eventbus      EventBusConfig      `yaml:"eventBus" json:"eventBus"`
-	Eventstore    EventStoreConfig    `yaml:"eventStore" json:"eventStore"`
-	IdentityStore IdentityStoreConfig `yaml:"identityStore" json:"identityStore"`
+	Eventbus               EventBusConfig      `yaml:"eventBus" json:"eventBus"`
+	Eventstore             EventStoreConfig    `yaml:"eventStore" json:"eventStore"`
+	IdentityStore          IdentityStoreConfig `yaml:"identityStore" json:"identityStore"`
+	OpenTelemetryCollector otelClient.Config   `yaml:"openTelemetryCollector" json:"openTelemetryCollector"`
 }
 
 func (c *ClientsConfig) Validate() error {
@@ -107,10 +112,13 @@ func (c *ClientsConfig) Validate() error {
 	if err := c.IdentityStore.Validate(); err != nil {
 		return fmt.Errorf("identityStore.%w", err)
 	}
+	if err := c.OpenTelemetryCollector.Validate(); err != nil {
+		return fmt.Errorf("openTelemetryCollector.%w", err)
+	}
 	return nil
 }
 
-//String return string representation of Config
+// String return string representation of Config
 func (c Config) String() string {
 	return config.ToString(c)
 }

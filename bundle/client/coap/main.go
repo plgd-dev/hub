@@ -63,6 +63,18 @@ func signUp(co *coap.ClientConn, authreq authReq) authResp {
 	return authresp
 }
 
+func signUpWithAuthCode(co *coap.ClientConn, authCode, deviceID string) (accessToken, uid string) {
+	authreq := authReq{
+		Accesstoken:  authCode,
+		DeviceID:     deviceID,
+		AuthProvider: "plgd",
+	}
+	authresp := signUp(co, authreq)
+	authresp.DeviceID = deviceID
+	authresp.Login = true
+	return authresp.Accesstoken, authresp.UID
+}
+
 func signIn(co *coap.ClientConn, authresp authResp) {
 	log.Printf("authresp: \n%v\n", toJSON(authresp))
 
@@ -79,7 +91,6 @@ func signIn(co *coap.ClientConn, authresp authResp) {
 	if resp.Code() != codes.Changed {
 		log.Fatalf("error get coap code for sigin: %v", resp.Code())
 	}
-
 }
 
 func toJSON(v interface{}) string {
@@ -101,7 +112,7 @@ func decodePayload(resp *pool.Message) {
 	if err == nil {
 		bufr, err := ioutil.ReadAll(resp.Body())
 		if err != nil {
-			buf = buf + fmt.Sprintf("cannot read body: %v", err)
+			buf += fmt.Sprintf("cannot read body: %v", err)
 			log.Print(buf)
 			return
 		}
@@ -109,22 +120,142 @@ func decodePayload(resp *pool.Message) {
 		case message.AppCBOR, message.AppOcfCbor:
 			s, err := cbor.ToJSON(bufr)
 			if err != nil {
-				buf = buf + fmt.Sprintf("Cannot encode %v to JSON: %v", bufr, err)
+				buf += fmt.Sprintf("Cannot encode %v to JSON: %v", bufr, err)
 			} else {
-				buf = buf + fmt.Sprintf("%v\n", s)
+				buf += fmt.Sprintf("%v\n", s)
 			}
 		case message.TextPlain:
 
-			buf = buf + fmt.Sprintf("%v\n", string(bufr))
+			buf += fmt.Sprintf("%v\n", string(bufr))
 		case message.AppJSON:
-			buf = buf + fmt.Sprintf("%v\n", string(bufr))
+			buf += fmt.Sprintf("%v\n", string(bufr))
 		case message.AppXML:
-			buf = buf + fmt.Sprintf("%v\n", string(bufr))
+			buf += fmt.Sprintf("%v\n", string(bufr))
 		default:
-			buf = buf + fmt.Sprintf("%v\n", bufr)
+			buf += fmt.Sprintf("%v\n", bufr)
 		}
 	}
 	log.Print(buf)
+}
+
+func clientConn(addr string) (*coap.ClientConn, error) {
+	u, err := url.Parse(addr)
+	if err != nil {
+		return nil, fmt.Errorf("cannot parse url %v: %w", addr, err)
+	}
+	address, err := net.ParseURL(u)
+	if err != nil {
+		return nil, fmt.Errorf("cannot parse address %v: %w", addr, err)
+	}
+
+	dialError := func(err error) error {
+		return fmt.Errorf("error dialing: %w", err)
+	}
+	switch address.GetScheme() {
+	case "coap+tcp":
+		co, err := coap.Dial(address.String(), coap.WithMaxMessageSize(256*1024))
+		if err != nil {
+			return nil, dialError(err)
+		}
+		return co, nil
+	case "coaps+tcp":
+		co, err := coap.Dial(address.String(), coap.WithTLS(&tls.Config{
+			InsecureSkipVerify: true,
+		}), coap.WithMaxMessageSize(256*1024))
+		if err != nil {
+			return nil, dialError(err)
+		}
+		return co, nil
+	default:
+		return nil, fmt.Errorf("invalid scheme %v of address %v", address.GetScheme(), address)
+	}
+}
+
+func deleteResource(co *coap.ClientConn, href string) {
+	deleteError := func(err error) {
+		log.Fatalf("cannot delete resource: %v", err)
+	}
+	resp, err := co.Delete(context.Background(), href)
+	if err != nil {
+		deleteError(err)
+	}
+	decodePayload(resp)
+}
+
+func updateResource(co *coap.ClientConn, href string, contentFormat int) {
+	updateError := func(err error) {
+		log.Fatalf("cannot update resource: %v", err)
+	}
+	b := bytes.NewBuffer(make([]byte, 0, 124))
+	_, err := b.ReadFrom(os.Stdin)
+	if err != nil {
+		updateError(err)
+	}
+	resp, err := co.Post(context.Background(), href, message.MediaType(contentFormat), bytes.NewReader(b.Bytes()))
+	if err != nil {
+		updateError(err)
+	}
+	decodePayload(resp)
+}
+
+func createResource(co *coap.ClientConn, href string, contentFormat int) {
+	createError := func(err error) {
+		log.Fatalf("cannot create resource: %v", err)
+	}
+	b := bytes.NewBuffer(make([]byte, 0, 124))
+	_, err := b.ReadFrom(os.Stdin)
+	if err != nil {
+		createError(err)
+	}
+	req, err := coap.NewPostRequest(context.Background(), pool.New(0, 0), href, message.MediaType(contentFormat), os.Stdin)
+	if err != nil {
+		createError(err)
+	}
+	req.SetOptionString(message.URIQuery, "if="+interfaces.OC_IF_CREATE)
+	resp, err := co.Do(req)
+	if err != nil {
+		createError(err)
+	}
+	decodePayload(resp)
+}
+
+func observerResource(co *coap.ClientConn, href string) {
+	obs, err := co.Observe(context.Background(), href, func(req *pool.Message) {
+		decodePayload(req)
+	})
+	if err != nil {
+		log.Fatalf("cannot observe resource: %v", err)
+	}
+	defer func() {
+		err := obs.Cancel(context.Background())
+		if err != nil {
+			fmt.Printf("failed to cancel observation: %v", err)
+		}
+	}()
+
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+	<-sigs
+	fmt.Println("exiting")
+}
+
+func getResource(co *coap.ClientConn, href, resIf, resRt string) {
+	var opts message.Options
+	if resIf != "" {
+		v := "if=" + resIf
+		buf := make([]byte, len(v))
+		opts, _, _ = opts.AddString(buf, message.URIQuery, v)
+	}
+	if resRt != "" {
+		v := "rt=" + resRt
+		buf := make([]byte, len(v))
+		opts, _, _ = opts.AddString(buf, message.URIQuery, v)
+	}
+	resp, err := co.Get(context.Background(), href, opts...)
+	if err != nil {
+		log.Fatalf("cannot get resource: %v", err)
+	}
+	decodePayload(resp)
 }
 
 func main() {
@@ -136,58 +267,22 @@ func main() {
 	href := flag.String("href", resources.ResourceURI, "href")
 	resIf := flag.String("if", "", "interface")
 	get := flag.Bool("get", true, "get resource(default)")
-	discoverRt := flag.String("rt", "", "resource type")
+	resRt := flag.String("rt", "", "resource type")
 	observe := flag.Bool("observe", false, "observe resource")
 	update := flag.Bool("update", false, "update resource, content is expected in stdin")
 	delete := flag.Bool("delete", false, "delete resource")
 	create := flag.Bool("create", false, "create resource, content is expected in stdin")
-
 	contentFormat := flag.Int("contentFormat", int(message.AppJSON), "contentFormat for update resource")
 
 	flag.Parse()
 
-	u, err := url.Parse(*addr)
+	co, err := clientConn(*addr)
 	if err != nil {
-		log.Fatalf("cannot parse url %v: %v", *addr, err)
-	}
-	address, err := net.ParseURL(u)
-	if err != nil {
-		log.Fatalf("cannot parse address %v: %v", *addr, err)
-	}
-
-	var co *coap.ClientConn
-	switch address.GetScheme() {
-	case "coap+tcp":
-		co, err = coap.Dial(address.String(), coap.WithMaxMessageSize(256*1024))
-		if err != nil {
-			log.Fatalf("Error dialing: %v", err)
-		}
-	case "coaps+tcp":
-		co, err = coap.Dial(address.String(), coap.WithTLS(&tls.Config{
-			InsecureSkipVerify: true,
-		}), coap.WithMaxMessageSize(256*1024))
-		if err != nil {
-			log.Fatalf("Error dialing: %v", err)
-		}
-	default:
-		log.Fatalf("invalid scheme %v of address %v", address.GetScheme(), address)
-	}
-
-	if err != nil {
-		log.Fatalf("Error dialing: %v", err)
+		log.Fatal(err)
 	}
 
 	if *authCode != "" {
-		authreq := authReq{
-			Accesstoken:  *authCode,
-			DeviceID:     *di,
-			AuthProvider: "plgd",
-		}
-		authresp := signUp(co, authreq)
-		*accesstoken = authresp.Accesstoken
-		*uid = authresp.UID
-		authresp.DeviceID = *di
-		authresp.Login = true
+		*accesstoken, *di = signUpWithAuthCode(co, *authCode, *di)
 	}
 	if *accesstoken != "" && *uid != "" {
 		signInReq := authResp{
@@ -201,76 +296,16 @@ func main() {
 
 	switch {
 	case *delete:
-		resp, err := co.Delete(context.Background(), *href)
-		if err != nil {
-			log.Fatalf("cannot delete resource: %v", err)
-		}
-		decodePayload(resp)
+		deleteResource(co, *href)
 	case *update:
-		b := bytes.NewBuffer(make([]byte, 0, 124))
-		_, err := b.ReadFrom(os.Stdin)
-		if err != nil {
-			log.Fatalf("cannot update resource: %v", err)
-		}
-		resp, err := co.Post(context.Background(), *href, message.MediaType(*contentFormat), bytes.NewReader(b.Bytes()))
-		if err != nil {
-			log.Fatalf("cannot update resource: %v", err)
-		}
-		decodePayload(resp)
+		updateResource(co, *href, *contentFormat)
 	case *create:
-		b := bytes.NewBuffer(make([]byte, 0, 124))
-		_, err := b.ReadFrom(os.Stdin)
-		if err != nil {
-			log.Fatalf("cannot update resource: %v", err)
-		}
-		req, err := coap.NewPostRequest(context.Background(), *href, message.MediaType(*contentFormat), os.Stdin)
-		if err != nil {
-			log.Fatalf("cannot create resource: %v", err)
-		}
-		req.SetOptionString(message.URIQuery, "if="+interfaces.OC_IF_CREATE)
-		resp, err := co.Do(req)
-		if err != nil {
-			log.Fatalf("cannot update resource: %v", err)
-		}
-		decodePayload(resp)
+		createResource(co, *href, *contentFormat)
 	case *observe:
-		obs, err := co.Observe(context.Background(), *href, func(req *pool.Message) {
-			decodePayload(req)
-		})
-		if err != nil {
-			log.Fatalf("cannot observe resource: %v", err)
-		}
-		defer func() {
-			err := obs.Cancel(context.Background())
-			if err != nil {
-				fmt.Printf("failed to cancel observation: %v", err)
-			}
-		}()
-
-		sigs := make(chan os.Signal, 1)
-		signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
-		<-sigs
-		fmt.Println("exiting")
+		observerResource(co, *href)
 	case *get:
-		var opts message.Options
-		if *resIf != "" {
-			v := "if=" + *resIf
-			buf := make([]byte, len(v))
-			opts, _, _ = opts.AddString(buf, message.URIQuery, v)
-		}
-		if *discoverRt != "" {
-			v := "rt=" + *discoverRt
-			buf := make([]byte, len(v))
-			opts, _, _ = opts.AddString(buf, message.URIQuery, v)
-		}
-		resp, err := co.Get(context.Background(), *href, opts...)
-		if err != nil {
-			log.Fatalf("cannot get resource: %v", err)
-		}
-		decodePayload(resp)
+		getResource(co, *href, *resIf, *resRt)
 	default:
-		if err != nil {
-			log.Fatal("unknown command")
-		}
+		log.Fatal("unknown command")
 	}
 }

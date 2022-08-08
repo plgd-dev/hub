@@ -3,9 +3,9 @@ package utils_test
 import (
 	"testing"
 
-	"github.com/plgd-dev/hub/resource-aggregate/commands"
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/utils"
-	"github.com/plgd-dev/hub/resource-aggregate/events"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/utils"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -15,13 +15,13 @@ func TestDummyForCoverage(t *testing.T) {
 	utils.GetDeviceSubject("a", deviceID)
 	sequence := uint64(1234)
 	version := uint64(5)
-	connId := "c"
+	connID := "c"
 	corID := "a"
 	userID := "u"
 
 	utils.TimeNowMs()
-	em := events.MakeEventMeta(connId, sequence, version)
-	assert.Equal(t, connId, em.ConnectionId)
+	em := events.MakeEventMeta(connID, sequence, version)
+	assert.Equal(t, connID, em.ConnectionId)
 	assert.Equal(t, sequence, em.Sequence)
 	assert.Equal(t, version, em.Version)
 	ac := commands.NewAuditContext(userID, corID)
@@ -36,8 +36,7 @@ func TestProtobufMarshaler(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotEmpty(t, out)
 
-	a := struct {
-	}{}
+	a := struct{}{}
 	_, err = utils.Marshal(a)
 	assert.Error(t, err)
 

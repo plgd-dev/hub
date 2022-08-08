@@ -197,5 +197,5 @@ var IdentityStore_ServiceDesc = grpc.ServiceDesc{
 			ServerStreams: true,
 		},
 	},
-	Metadata: "github.com/plgd-dev/hub/identity-store/pb/service.proto",
+	Metadata: "identity-store/pb/service.proto",
 }

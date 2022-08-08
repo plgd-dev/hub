@@ -7,16 +7,18 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/plgd-dev/hub/cloud2cloud-connector/events"
-	"github.com/plgd-dev/hub/pkg/security/oauth2/oauth"
+	"github.com/plgd-dev/hub/v2/cloud2cloud-connector/events"
+	"github.com/plgd-dev/hub/v2/pkg/security/oauth2/oauth"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+	"go.opentelemetry.io/otel/trace"
 	"golang.org/x/oauth2"
 )
 
 type Events struct {
-	Devices            []events.EventType `json:"Devices"`
-	Device             []events.EventType `json:"Device"`
-	Resource           []events.EventType `json:"Resource"`
-	StaticDeviceEvents bool               `json:"StaticDeviceEvents"`
+	Devices            []events.EventType `json:"devices"`
+	Device             []events.EventType `json:"device"`
+	Resource           []events.EventType `json:"resource"`
+	StaticDeviceEvents bool               `json:"staticDeviceEvents"`
 }
 
 func makeMap(evs ...events.EventType) map[events.EventType]bool {
@@ -55,21 +57,22 @@ func (e Events) NeedPullResources() bool {
 }
 
 type Endpoint struct {
-	URL                string   `json:"URL"`
-	RootCAs            []string `json:"RootCAs"`
-	InsecureSkipVerify bool     `json:"InsecureSkipVerify"`
-	UseSystemCAs       bool     `json:"UseSystemCAs"`
+	URL                string   `json:"url"`
+	RootCAs            []string `json:"rootCas"`
+	InsecureSkipVerify bool     `json:"insecureSkipVerify"`
+	UseSystemCAs       bool     `json:"useSystemCas"`
 }
 
+// https://github.com/plgd-dev/hub/blob/main/cloud2cloud-connector/swagger.yaml#/components/schemas/LinkedCloud
 type LinkedCloud struct {
-	ID                           string       `json:"Id" bson:"_id"`
-	Name                         string       `json:"Name"`
-	OAuth                        oauth.Config `json:"OAuth"`
-	SupportedSubscriptionsEvents Events       `json:"SupportedSubscriptionEvents"`
-	Endpoint                     Endpoint     `json:"Endpoint"`
+	ID                          string       `json:"id" bson:"_id"`
+	Name                        string       `json:"name"`
+	OAuth                       oauth.Config `json:"oauth"`
+	SupportedSubscriptionEvents Events       `json:"supportedSubscriptionEvents"`
+	Endpoint                    Endpoint     `json:"endpoint"`
 }
 
-func (l LinkedCloud) GetHTTPClient() *http.Client {
+func (l LinkedCloud) GetHTTPClient(tracerProvider trace.TracerProvider) *http.Client {
 	var pool *x509.CertPool
 	if l.Endpoint.UseSystemCAs {
 		pool, _ = x509.SystemCertPool()
@@ -92,10 +95,10 @@ func (l LinkedCloud) GetHTTPClient() *http.Client {
 	t.IdleConnTimeout = time.Second
 	return &http.Client{
 		Timeout:   time.Second * 10,
-		Transport: t,
+		Transport: otelhttp.NewTransport(t, otelhttp.WithTracerProvider(tracerProvider)),
 	}
 }
 
-func (l LinkedCloud) CtxWithHTTPClient(ctx context.Context) context.Context {
-	return context.WithValue(ctx, oauth2.HTTPClient, l.GetHTTPClient())
+func (l LinkedCloud) CtxWithHTTPClient(ctx context.Context, tracerProvider trace.TracerProvider) context.Context {
+	return context.WithValue(ctx, oauth2.HTTPClient, l.GetHTTPClient(tracerProvider))
 }

@@ -5,19 +5,21 @@ import (
 	"testing"
 	"time"
 
-	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
-	test "github.com/plgd-dev/hub/test"
-	testCfg "github.com/plgd-dev/hub/test/config"
-	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
-	"github.com/plgd-dev/hub/test/service"
+	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	test "github.com/plgd-dev/hub/v2/test"
+	testCfg "github.com/plgd-dev/hub/v2/test/config"
+	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
+	"github.com/plgd-dev/hub/v2/test/service"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-const RebootTakes = time.Second * 8 // for reboot
-const RebootTimeout = TestTimeout + RebootTakes
+const (
+	RebootTakes   = time.Second * 8 // for reboot
+	RebootTimeout = TestTimeout + RebootTakes
+)
 
-func TestClient_FactoryReset(t *testing.T) {
+func TestClientFactoryReset(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	ctx, cancel := context.WithTimeout(context.Background(), TestTimeout)
 	defer cancel()
@@ -47,7 +49,7 @@ func TestClient_FactoryReset(t *testing.T) {
 		},
 	}
 
-	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultServiceToken(t))
+	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
 
 	c := NewTestClient(t)
 	defer func() {
@@ -70,7 +72,7 @@ func TestClient_FactoryReset(t *testing.T) {
 	}
 }
 
-func TestClient_Reboot(t *testing.T) {
+func TestClientReboot(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	ctx, cancel := context.WithTimeout(context.Background(), RebootTimeout)
 	defer cancel()
@@ -100,7 +102,7 @@ func TestClient_Reboot(t *testing.T) {
 		},
 	}
 
-	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultServiceToken(t))
+	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
 
 	c := NewTestClient(t)
 	defer func() {

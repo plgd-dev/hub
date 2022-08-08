@@ -3,25 +3,24 @@ package service_test
 import (
 	"context"
 	"testing"
+	"time"
 
-	"github.com/plgd-dev/hub/coap-gateway/uri"
-	testCfg "github.com/plgd-dev/hub/test/config"
 	"github.com/plgd-dev/go-coap/v2/message"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/tcp"
+	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
+	"github.com/plgd-dev/hub/v2/coap-gateway/uri"
 	"github.com/stretchr/testify/require"
 )
 
 type TestResource struct {
-	DeviceID string `json:"di"`
-	//Eps interface{} `json:"eps"`
-	Href       string   `json:"href"`
-	ID         string   `json:"id"`
-	Interfaces []string `json:"if"`
-	InstanceID uint64   `json:"-"`
-	//P             interface{} `json:"p"`
-	ResourceTypes []string `json:"rt"`
-	Type          []string `json:"type"`
+	DeviceID      string   `json:"di,omitempty"`
+	Href          string   `json:"href"`
+	ID            string   `json:"id,omitempty"`
+	Interfaces    []string `json:"if,omitempty"`
+	InstanceID    uint64   `json:"-"`
+	ResourceTypes []string `json:"rt,omitempty"`
+	Type          []string `json:"type,omitempty"`
 }
 
 type TestWkRD struct {
@@ -41,7 +40,9 @@ var tblResourceDirectory = []testEl{
 	{"BadRequest6", input{coapCodes.POST, `{ "di":"` + CertIdentity + `", "links":[ {} ], "lt":-1}`, nil}, output{coapCodes.BadRequest, `invalid TimeToLive`, nil}, true},
 	{"BadRequest7", input{coapCodes.POST, `{ "di":"` + CertIdentity + `", "links":[ { "di":"` + CertIdentity + `", "href":"" } ], "ttl":12345}`, nil}, output{coapCodes.BadRequest, `invalid resource href`, nil}, true},
 	{"BadRequest8", input{coapCodes.POST, `{ "di":"` + CertIdentity + `", "links":[ { "href":"" } ], "ttl":12345}`, nil}, output{coapCodes.BadRequest, `invalid resource href`, nil}, true},
-	{"Changed0", input{coapCodes.POST, `{ "di":"` + CertIdentity + `", "links":[ { "di":"` + CertIdentity + `", "href":"` + TestAResourceHref + `" } ], "ttl":12345}`, nil},
+	{
+		"Changed0",
+		input{coapCodes.POST, `{ "di":"` + CertIdentity + `", "links":[ { "di":"` + CertIdentity + `", "href":"` + TestAResourceHref + `" } ], "ttl":12345}`, nil},
 		output{coapCodes.Changed, TestWkRD{
 			DeviceID:         CertIdentity,
 			TimeToLive:       12345,
@@ -52,9 +53,13 @@ var tblResourceDirectory = []testEl{
 					Href:     TestAResourceHref,
 				},
 			},
-		}, nil}, false},
+		}, nil},
+		false,
+	},
 
-	{"Changed1", input{coapCodes.POST, `{ "di":"` + CertIdentity + `", "links":[ { "di":"` + CertIdentity + `", "href":"/b" } ], "ttl":12345}`, nil},
+	{
+		"Changed1",
+		input{coapCodes.POST, `{ "di":"` + CertIdentity + `", "links":[ { "di":"` + CertIdentity + `", "href":"/b" } ], "ttl":12345}`, nil},
 		output{coapCodes.Changed, TestWkRD{
 			DeviceID:         CertIdentity,
 			TimeToLive:       12345,
@@ -65,8 +70,12 @@ var tblResourceDirectory = []testEl{
 					Href:     "/b",
 				},
 			},
-		}, nil}, false},
-	{"Changed2", input{coapCodes.POST, `{ "di":"` + CertIdentity + `", "links":[ { "di":"` + CertIdentity + `", "href":"/b" } , { "di":"` + CertIdentity + `", "href":"/c" }], "ttl":12345}`, nil},
+		}, nil},
+		false,
+	},
+	{
+		"Changed2",
+		input{coapCodes.POST, `{ "di":"` + CertIdentity + `", "links":[ { "di":"` + CertIdentity + `", "href":"/b" } , { "di":"` + CertIdentity + `", "href":"/c" }], "ttl":12345}`, nil},
 		output{coapCodes.Changed, TestWkRD{
 			DeviceID:         CertIdentity,
 			TimeToLive:       12345,
@@ -81,8 +90,12 @@ var tblResourceDirectory = []testEl{
 					Href:     "/c",
 				},
 			},
-		}, nil}, false},
-	{"Changed3", input{coapCodes.POST, `{ "di":"` + CertIdentity + `", "links":[ { "di":"` + CertIdentity + `", "href":"` + TestAResourceHref + `" } ], "ttl":0}`, nil},
+		}, nil},
+		false,
+	},
+	{
+		"Changed3",
+		input{coapCodes.POST, `{ "di":"` + CertIdentity + `", "links":[ { "di":"` + CertIdentity + `", "href":"` + TestAResourceHref + `" } ], "ttl":0}`, nil},
 		output{coapCodes.Changed, TestWkRD{
 			DeviceID:         CertIdentity,
 			TimeToLive:       0,
@@ -93,8 +106,12 @@ var tblResourceDirectory = []testEl{
 					Href:     TestAResourceHref,
 				},
 			},
-		}, nil}, false},
-	{"Changed4", input{coapCodes.POST, `{ "di":"` + CertIdentity + `", "links":[ { "di":"` + CertIdentity + `", "href":"` + TestAResourceHref + `" } ], "lt":0}`, nil},
+		}, nil},
+		false,
+	},
+	{
+		"Changed4",
+		input{coapCodes.POST, `{ "di":"` + CertIdentity + `", "links":[ { "di":"` + CertIdentity + `", "href":"` + TestAResourceHref + `" } ], "lt":0}`, nil},
 		output{coapCodes.Changed, TestWkRD{
 			DeviceID:         CertIdentity,
 			TimeToLive:       0,
@@ -105,14 +122,16 @@ var tblResourceDirectory = []testEl{
 					Href:     TestAResourceHref,
 				},
 			},
-		}, nil}, false},
+		}, nil},
+		false,
+	},
 }
 
 func TestResourceDirectoryPostHandler(t *testing.T) {
 	shutdown := setUp(t)
 	defer shutdown()
 
-	co := testCoapDial(t, testCfg.GW_HOST, "")
+	co := testCoapDial(t, "", true, time.Now().Add(time.Minute))
 	if co == nil {
 		return
 	}
@@ -131,10 +150,10 @@ func TestResourceDirectoryPostHandler(t *testing.T) {
 }
 
 func TestResourceDirectoryDeleteHandler(t *testing.T) {
-	//set counter 0, when other test run with this that it can be modified
+	// set counter 0, when other test run with this that it can be modified
 
 	deletetblResourceDirectory := []testEl{
-		{"NotExist1", input{coapCodes.DELETE, ``, []string{"di=c", "ins=5"}}, output{coapCodes.BadRequest, `cannot find observed resources using query`, nil}, true},                 // Non-existent device ID.
+		{"NotExist1", input{coapCodes.DELETE, ``, []string{"di=c", "ins=5"}}, output{coapCodes.BadRequest, `unable to parse unpublish request query deviceId`, nil}, true},           // Non-existent device ID.
 		{"NotExist2", input{coapCodes.DELETE, ``, []string{"ins=4"}}, output{coapCodes.BadRequest, `not found`, nil}, true},                                                          // Device ID empty.
 		{"NotExist3", input{coapCodes.DELETE, ``, []string{`di=` + CertIdentity, "ins=999"}}, output{coapCodes.BadRequest, `cannot find observed resources using query`, nil}, true}, // Instance ID non-existent.
 		{"Exist1", input{coapCodes.DELETE, ``, []string{`di=` + CertIdentity}}, output{coapCodes.Deleted, nil, nil}, false},                                                          // If instanceIDs empty, all instances for a given device ID should be unpublished.
@@ -144,7 +163,7 @@ func TestResourceDirectoryDeleteHandler(t *testing.T) {
 	shutdown := setUp(t)
 	defer shutdown()
 
-	co := testCoapDial(t, testCfg.GW_HOST, "")
+	co := testCoapDial(t, "", true, time.Now().Add(time.Minute))
 	if co == nil {
 		return
 	}
@@ -162,12 +181,12 @@ func TestResourceDirectoryDeleteHandler(t *testing.T) {
 		t.Run(test.name, tf)
 	}
 
-	//delete resources
+	// delete resources
 	for _, test := range deletetblResourceDirectory {
 		tf := func(t *testing.T) {
 			ctx, cancel := context.WithTimeout(context.Background(), TestExchangeTimeout)
 			defer cancel()
-			req, err := tcp.NewDeleteRequest(ctx, uri.ResourceDirectory)
+			req, err := tcp.NewDeleteRequest(ctx, pool.New(0, 0), uri.ResourceDirectory)
 			require.NoError(t, err)
 			for _, q := range test.in.queries {
 				req.AddOptionString(message.URIQuery, q)
@@ -194,7 +213,7 @@ func TestResourceDirectoryGetSelector(t *testing.T) {
 	shutdown := setUp(t)
 	defer shutdown()
 
-	co := testCoapDial(t, testCfg.GW_HOST, "")
+	co := testCoapDial(t, "", true, time.Now().Add(time.Minute))
 	if co == nil {
 		return
 	}
@@ -206,7 +225,7 @@ func TestResourceDirectoryGetSelector(t *testing.T) {
 
 	for _, test := range tbl {
 		tf := func(t *testing.T) {
-			req, err := tcp.NewGetRequest(co.Context(), uri.ResourceDirectory)
+			req, err := tcp.NewGetRequest(co.Context(), pool.New(0, 0), uri.ResourceDirectory)
 			require.NoError(t, err)
 			for _, q := range test.in.queries {
 				req.AddOptionString(message.URIQuery, q)

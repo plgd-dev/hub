@@ -3,7 +3,7 @@ package store
 import (
 	"context"
 
-	"github.com/plgd-dev/hub/pkg/security/oauth2"
+	"github.com/plgd-dev/hub/v2/pkg/security/oauth2"
 )
 
 type LinkedCloudsHandler struct {
@@ -74,7 +74,7 @@ func (d LinkedAccountData) Target() oauth2.Token {
 }
 
 type LinkedAccount struct {
-	ID            string `json:"Id" bson:"_id"`
+	ID            string `bson:"_id"`
 	LinkedCloudID string `bson:"linkedcloudid"`
 	UserID        string
 	Data          LinkedAccountData

@@ -2,14 +2,15 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"sync"
 
-	"github.com/plgd-dev/hub/grpc-gateway/pb"
-	"github.com/plgd-dev/hub/grpc-gateway/subscription"
-	"github.com/plgd-dev/hub/pkg/log"
-	"github.com/plgd-dev/hub/pkg/net/grpc"
+	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
+	"github.com/plgd-dev/hub/v2/grpc-gateway/subscription"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	"github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"google.golang.org/grpc/codes"
 )
 
@@ -24,7 +25,8 @@ type subscriptions struct {
 func newSubscriptions(
 	owner string,
 	subscriptionsCache *subscription.SubscriptionsCache,
-	send func(e *pb.Event) error) *subscriptions {
+	send func(e *pb.Event) error,
+) *subscriptions {
 	return &subscriptions{
 		owner:              owner,
 		subs:               make(map[string]*subscription.Sub),
@@ -78,7 +80,7 @@ func (s *subscriptions) createSubscription(req *pb.SubscribeToEvents) error {
 	return nil
 }
 
-func (s *subscriptions) cancelSubscription(ctx context.Context, req *pb.SubscribeToEvents) error {
+func (s *subscriptions) cancelSubscription(req *pb.SubscribeToEvents) error {
 	sub, ok := s.subs[req.GetCancelSubscription().GetSubscriptionId()]
 	if !ok {
 		err := fmt.Errorf("cannot cancel subscription('%v'): not found", req.GetCancelSubscription().GetSubscriptionId())
@@ -128,9 +130,9 @@ func (s *subscriptions) cancelSubscription(ctx context.Context, req *pb.Subscrib
 	return err
 }
 
-func processNextRequest(ctx context.Context, srv pb.GrpcGateway_SubscribeToEventsServer, subs *subscriptions, send func(e *pb.Event) error) (bool, error) {
+func processNextRequest(srv pb.GrpcGateway_SubscribeToEventsServer, subs *subscriptions, send func(e *pb.Event) error) (bool, error) {
 	req, err := srv.Recv()
-	if err == io.EOF {
+	if errors.Is(err, io.EOF) {
 		return false, nil
 	}
 	if err != nil {
@@ -143,7 +145,7 @@ func processNextRequest(ctx context.Context, srv pb.GrpcGateway_SubscribeToEvent
 			log.Errorf("cannot create subscription: %w", err)
 		}
 	case (*pb.SubscribeToEvents_CancelSubscription_):
-		err := subs.cancelSubscription(ctx, req)
+		err := subs.cancelSubscription(req)
 		if err != nil {
 			log.Errorf("cannot cancel subscription: %w", err)
 		}
@@ -180,7 +182,6 @@ func processNextRequest(ctx context.Context, srv pb.GrpcGateway_SubscribeToEvent
 }
 
 func (r *RequestHandler) SubscribeToEvents(srv pb.GrpcGateway_SubscribeToEventsServer) (errRet error) {
-
 	var wg sync.WaitGroup
 	wg.Add(1)
 	defer wg.Wait()
@@ -226,7 +227,7 @@ func (r *RequestHandler) SubscribeToEvents(srv pb.GrpcGateway_SubscribeToEventsS
 	defer subs.close()
 
 	for {
-		ok, err := processNextRequest(ctx, srv, subs, send)
+		ok, err := processNextRequest(srv, subs, send)
 		if err != nil {
 			return err
 		}

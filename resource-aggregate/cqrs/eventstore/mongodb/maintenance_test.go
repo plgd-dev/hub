@@ -5,14 +5,16 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/plgd-dev/hub/pkg/log"
-	pkgMongo "github.com/plgd-dev/hub/pkg/mongodb"
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventstore/maintenance"
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventstore/mongodb"
-	"github.com/plgd-dev/hub/test/config"
+	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	pkgMongo "github.com/plgd-dev/hub/v2/pkg/mongodb"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore/maintenance"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore/mongodb"
+	"github.com/plgd-dev/hub/v2/test/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type mockRecordHandler struct {
@@ -31,8 +33,9 @@ func (eh *mockRecordHandler) SetElement(aggregateID string, task maintenance.Tas
 	eh.lock.Lock()
 	defer eh.lock.Unlock()
 	if aggregate, ok = eh.tasks[aggregateID]; !ok {
-		eh.tasks[aggregateID] = maintenance.Task{AggregateID: task.AggregateID, Version: task.Version}
+		eh.tasks[aggregateID] = maintenance.Task{GroupID: task.GroupID, AggregateID: task.AggregateID, Version: task.Version}
 	}
+	aggregate.GroupID = task.GroupID
 	aggregate.AggregateID = task.AggregateID
 	aggregate.Version = task.Version
 }
@@ -47,8 +50,14 @@ func (eh *mockRecordHandler) Handle(ctx context.Context, iter maintenance.Iter) 
 }
 
 func TestMaintenance(t *testing.T) {
-	logger, err := log.NewLogger(log.Config{})
+	logger := log.NewLogger(log.MakeDefaultConfig())
+
+	fileWatcher, err := fsnotify.NewWatcher()
 	require.NoError(t, err)
+	defer func() {
+		err := fileWatcher.Close()
+		require.NoError(t, err)
+	}()
 
 	ctx := context.Background()
 
@@ -60,7 +69,9 @@ func TestMaintenance(t *testing.T) {
 				TLS: config.MakeTLSClientConfig(),
 			},
 		},
+		fileWatcher,
 		logger,
+		trace.NewNoopTracerProvider(),
 		mongodb.WithMarshaler(bson.Marshal),
 		mongodb.WithUnmarshaler(bson.Unmarshal),
 	)
@@ -73,24 +84,30 @@ func TestMaintenance(t *testing.T) {
 		_ = store.Close(ctx)
 	}()
 
-	aggregateID1 := "aggregateID1"
+	const groupID = "groupID1"
+	const aggregateID1 = "aggregateID1"
 	tasksToSave := []maintenance.Task{
 		{
+			GroupID:     groupID,
 			AggregateID: aggregateID1,
 		},
 		{
+			GroupID:     groupID,
 			AggregateID: aggregateID1,
 			Version:     1,
 		},
 		{
+			GroupID:     groupID,
 			AggregateID: aggregateID1,
 			Version:     2,
 		},
 		{
+			GroupID:     groupID,
 			AggregateID: aggregateID1,
 			Version:     3,
 		},
 		{
+			GroupID:     groupID,
 			AggregateID: aggregateID1,
 			Version:     4,
 		},
@@ -98,6 +115,14 @@ func TestMaintenance(t *testing.T) {
 
 	t.Log("insert maintenance record without body")
 	err = store.Insert(ctx, maintenance.Task{})
+	require.Error(t, err)
+
+	t.Log("insert maintenance record without GroupID")
+	err = store.Insert(ctx, maintenance.Task{AggregateID: aggregateID1})
+	require.Error(t, err)
+
+	t.Log("insert maintenance record without AggregateID")
+	err = store.Insert(ctx, maintenance.Task{GroupID: groupID})
 	require.Error(t, err)
 
 	t.Log("insert maintenance record")

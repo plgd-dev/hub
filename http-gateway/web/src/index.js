@@ -14,15 +14,15 @@ import reportWebVitals from './reportWebVitals'
 fetch('/web_configuration.json')
   .then(response => response.json())
   .then(config => {
-    const clientID = config?.webOAuthClient?.clientID
-    const audience = config?.webOAuthClient?.audience
-    const scopes = config?.webOAuthClient?.scopes?.join?.(',') || ''
+    const clientId = config?.webOauthClient?.clientId
+    const audience = config?.webOauthClient?.audience
+    const scopes = config?.webOauthClient?.scopes?.join?.(',') || ''
     const httpGatewayAddress = config.httpGatewayAddress
     const authority = config.authority
 
-    if (!clientID || !authority || !audience || !httpGatewayAddress) {
+    if (!clientId || !authority || !audience || !httpGatewayAddress) {
       throw new Error(
-        'clientID, authority, audience and httpGatewayAddress must be set in webOAuthClient of web_configuration.json'
+        'clientId, authority, audience and httpGatewayAddress must be set in webOauthClient of web_configuration.json'
       )
     }
 
@@ -32,12 +32,12 @@ fetch('/web_configuration.json')
         history.replace(appState?.returnTo || '/')
       }
 
-      // When the URL contains a get parameter called `code` and the pathname is set to `/things`,
+      // When the URL contains a get parameter called `code` and the pathname is set to `/devices`,
       // that means we were redirected from the get auth code endpoint and we must not render the app,
       // only set the code to the session storage, so that the caller can process it.
       const urlParams = new URLSearchParams(window.location.search)
       const code = urlParams.get('code')
-      if (window.location.pathname === '/things' && code) {
+      if (window.location.pathname === '/devices' && code) {
         sessionStorage.setItem(DEVICE_AUTH_CODE_SESSION_KEY, code)
         return null
       }
@@ -47,7 +47,7 @@ fetch('/web_configuration.json')
           <IntlProvider>
             <Auth0Provider
               domain={authority}
-              clientId={clientID}
+              clientId={clientId}
               redirectUri={window.location.origin}
               onRedirectCallback={onRedirectCallback}
               audience={audience}

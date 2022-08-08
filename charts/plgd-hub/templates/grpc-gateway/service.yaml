@@ -9,17 +9,17 @@ metadata:
     {{- with .Values.grpcgateway.service.labels }}
     {{- . | toYaml | nindent 4 }}
     {{- end }}
-  {{- with .Values.grpcgateway.service.annotations }}
+  {{- if .Values.grpcgateway.service.annotations }}
   annotations:
-  {{- . | toYaml | nindent 4 }}
+    {{- include "plgd-hub.tplvalues.render" ( dict "value" .Values.grpcgateway.service.annotations "context" $ ) | nindent 4 }}
   {{- end }}
 spec:
   type: {{ .Values.grpcgateway.service.type | default "ClusterIP" }}
   ports:
     - port: {{ .Values.grpcgateway.port }}
-      targetPort: grpc
-      protocol: TCP
-      name: grpc
+      targetPort: {{ .Values.grpcgateway.service.targetPort }}
+      protocol: {{ .Values.grpcgateway.service.protocol }}
+      name: {{ .Values.grpcgateway.service.name }}
   selector:
   {{- include "plgd-hub.grpcgateway.selectorLabels" . | nindent 4 }}
 {{- end }}

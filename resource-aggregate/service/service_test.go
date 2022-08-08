@@ -5,16 +5,19 @@ import (
 	"testing"
 
 	"github.com/plgd-dev/device/schema/platform"
-	pbIS "github.com/plgd-dev/hub/identity-store/pb"
-	idService "github.com/plgd-dev/hub/identity-store/test"
-	"github.com/plgd-dev/hub/pkg/log"
-	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
-	"github.com/plgd-dev/hub/pkg/net/grpc/client"
-	"github.com/plgd-dev/hub/resource-aggregate/service"
-	"github.com/plgd-dev/hub/resource-aggregate/test"
-	testCfg "github.com/plgd-dev/hub/test/config"
-	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
+	pbIS "github.com/plgd-dev/hub/v2/identity-store/pb"
+	idService "github.com/plgd-dev/hub/v2/identity-store/test"
+	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	"github.com/plgd-dev/hub/v2/pkg/net/grpc/client"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/service"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/test"
+	testCfg "github.com/plgd-dev/hub/v2/test/config"
+	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/trace"
+	"go.uber.org/zap"
 )
 
 func TestPublishUnpublish(t *testing.T) {
@@ -27,44 +30,55 @@ func TestPublishUnpublish(t *testing.T) {
 
 	idShutdown := idService.SetUp(t)
 	defer idShutdown()
-
+	cfg := log.MakeDefaultConfig()
+	cfg.Level = zap.DebugLevel
+	log.Setup(cfg)
 	raShutdown := test.New(t, config)
 	defer raShutdown()
 
-	ctx := kitNetGrpc.CtxWithToken(context.Background(), oauthTest.GetDefaultServiceToken(t))
+	ctx := kitNetGrpc.CtxWithToken(context.Background(), oauthTest.GetDefaultAccessToken(t))
 
-	idConn, err := client.New(testCfg.MakeGrpcClientConfig(config.Clients.IdentityStore.Connection.Addr), log.Get())
+	fileWatcher, err := fsnotify.NewWatcher()
+	require.NoError(t, err)
+	defer func() {
+		err := fileWatcher.Close()
+		require.NoError(t, err)
+	}()
+
+	idConn, err := client.New(testCfg.MakeGrpcClientConfig(config.Clients.IdentityStore.Connection.Addr), fileWatcher, log.Get(), trace.NewNoopTracerProvider())
 	require.NoError(t, err)
 	defer func() {
 		_ = idConn.Close()
 	}()
 	idClient := pbIS.NewIdentityStoreClient(idConn.GRPC())
 
-	raConn, err := client.New(testCfg.MakeGrpcClientConfig(config.APIs.GRPC.Addr), log.Get())
+	raConn, err := client.New(testCfg.MakeGrpcClientConfig(config.APIs.GRPC.Addr), fileWatcher, log.Get(), trace.NewNoopTracerProvider())
 	require.NoError(t, err)
 	defer func() {
 		_ = raConn.Close()
 	}()
 	raClient := service.NewResourceAggregateClient(raConn.GRPC())
 
-	deviceId := "dev0"
+	deviceID := "dev0"
 	href := platform.ResourceURI
 	_, err = idClient.AddDevice(ctx, &pbIS.AddDeviceRequest{
-		DeviceId: deviceId,
+		DeviceId: deviceID,
 	})
 	require.NoError(t, err)
 	defer func() {
 		_, err = idClient.DeleteDevices(ctx, &pbIS.DeleteDevicesRequest{
-			DeviceIds: []string{deviceId},
+			DeviceIds: []string{deviceID},
 		})
 		require.NoError(t, err)
 	}()
 
-	pubReq := testMakePublishResourceRequest(deviceId, []string{href})
+	cfg.Level = zap.DebugLevel
+	log.Setup(cfg)
+	pubReq := testMakePublishResourceRequest(deviceID, []string{href})
 	_, err = raClient.PublishResourceLinks(ctx, pubReq)
 	require.NoError(t, err)
 
-	unpubReq := testMakeUnpublishResourceRequest(deviceId, []string{href})
+	unpubReq := testMakeUnpublishResourceRequest(deviceID, []string{href})
 	_, err = raClient.UnpublishResourceLinks(ctx, unpubReq)
 	require.NoError(t, err)
 }

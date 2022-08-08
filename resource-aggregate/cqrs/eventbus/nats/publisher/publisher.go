@@ -8,12 +8,12 @@ import (
 	"time"
 
 	nats "github.com/nats-io/nats.go"
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventbus"
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventbus/pb"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/pb"
 	"google.golang.org/protobuf/proto"
 )
 
-//MarshalerFunc marshal struct to bytes.
+// MarshalerFunc marshal struct to bytes.
 type MarshalerFunc = func(v interface{}) ([]byte, error)
 
 // Publisher implements a eventbus.Publisher interface.
@@ -99,7 +99,7 @@ func New(conn *nats.Conn, jetstream bool, opts ...Option) (*Publisher, error) {
 }
 
 // Publish publishes an event to topics.
-func (p *Publisher) Publish(ctx context.Context, topics []string, groupId, aggregateId string, event eventbus.Event) error {
+func (p *Publisher) Publish(ctx context.Context, topics []string, groupID, aggregateID string, event eventbus.Event) error {
 	data, err := p.dataMarshaler(event)
 	if err != nil {
 		return errors.New("could not marshal data for event: " + err.Error())
@@ -109,8 +109,8 @@ func (p *Publisher) Publish(ctx context.Context, topics []string, groupId, aggre
 		EventType:   event.EventType(),
 		Data:        data,
 		Version:     event.Version(),
-		GroupId:     groupId,
-		AggregateId: aggregateId,
+		GroupId:     groupID,
+		AggregateId: aggregateID,
 	}
 
 	eData, err := proto.Marshal(&e)

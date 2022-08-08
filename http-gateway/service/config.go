@@ -4,12 +4,13 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/plgd-dev/hub/pkg/config"
-	"github.com/plgd-dev/hub/pkg/log"
-	"github.com/plgd-dev/hub/pkg/net/grpc/client"
-	"github.com/plgd-dev/hub/pkg/net/listener"
-	"github.com/plgd-dev/hub/pkg/security/jwt/validator"
-	natsClient "github.com/plgd-dev/hub/resource-aggregate/cqrs/eventbus/nats/client"
+	"github.com/plgd-dev/hub/v2/pkg/config"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	"github.com/plgd-dev/hub/v2/pkg/net/grpc/client"
+	"github.com/plgd-dev/hub/v2/pkg/net/http"
+	"github.com/plgd-dev/hub/v2/pkg/net/http/server"
+	"github.com/plgd-dev/hub/v2/pkg/net/listener"
+	"github.com/plgd-dev/hub/v2/pkg/security/jwt/validator"
 )
 
 type Config struct {
@@ -20,6 +21,9 @@ type Config struct {
 }
 
 func (c *Config) Validate() error {
+	if err := c.Log.Validate(); err != nil {
+		return fmt.Errorf("log.%w", err)
+	}
 	if err := c.APIs.Validate(); err != nil {
 		return fmt.Errorf("apis.%w", err)
 	}
@@ -63,6 +67,7 @@ type HTTPConfig struct {
 	Connection    listener.Config  `yaml:",inline" json:",inline"`
 	WebSocket     WebSocketConfig  `yaml:"webSocket" json:"webSocket"`
 	Authorization validator.Config `yaml:"authorization" json:"authorization"`
+	Server        server.Config    `yaml:",inline" json:",inline"`
 }
 
 func (c *HTTPConfig) Validate() error {
@@ -76,7 +81,8 @@ func (c *HTTPConfig) Validate() error {
 }
 
 type ClientsConfig struct {
-	GrpcGateway GrpcServerConfig `yaml:"grpcGateway" json:"grpcGateway"`
+	GrpcGateway            GrpcServerConfig                  `yaml:"grpcGateway" json:"grpcGateway"`
+	OpenTelemetryCollector http.OpenTelemetryCollectorConfig `yaml:"openTelemetryCollector" json:"openTelemetryCollector"`
 }
 
 type GrpcServerConfig struct {
@@ -90,42 +96,26 @@ func (c *GrpcServerConfig) Validate() error {
 	return nil
 }
 
-type EventBusConfig struct {
-	GoPoolSize int               `yaml:"goPoolSize" json:"goPoolSize"`
-	NATS       natsClient.Config `yaml:"nats" json:"nats"`
-}
-
-func (c *EventBusConfig) Validate() error {
-	if c.GoPoolSize <= 0 {
-		return fmt.Errorf("goPoolSize.%v", c.GoPoolSize)
-	}
-	if err := c.NATS.Validate(); err != nil {
-		return fmt.Errorf("nats.%w", err)
-	}
-	return nil
-}
-
 func (c *ClientsConfig) Validate() error {
-	err := c.GrpcGateway.Validate()
-	if err != nil {
+	if err := c.GrpcGateway.Validate(); err != nil {
 		return fmt.Errorf("grpcGateway.%w", err)
+	}
+	if err := c.OpenTelemetryCollector.Validate(); err != nil {
+		return fmt.Errorf("openTelemetryCollector.%w", err)
 	}
 
 	return nil
 }
 
 type BasicOAuthClient struct {
-	ClientID string   `json:"clientID" yaml:"clientID"`
-	Audience string   `json:"audience" yaml:"audience"`
-	Scopes   []string `json:"scopes" yaml:"scopes"`
+	ClientID string   `yaml:"clientID" json:"clientId"`
+	Audience string   `yaml:"audience" json:"audience"`
+	Scopes   []string `yaml:"scopes" json:"scopes"`
 }
 
 func (c *BasicOAuthClient) Validate() error {
 	if c.ClientID == "" {
 		return fmt.Errorf("clientID('%v')", c.ClientID)
-	}
-	if c.Audience == "" {
-		return fmt.Errorf("audience('%v')", c.Audience)
 	}
 	return nil
 }
@@ -144,10 +134,10 @@ func (c *DeviceOAuthClient) Validate() error {
 
 // WebConfiguration represents web configuration for user interface exposed via getOAuthConfiguration handler
 type WebConfiguration struct {
-	Authority          string            `json:"authority" yaml:"authority"`
-	HTTPGatewayAddress string            `json:"httpGatewayAddress" yaml:"httpGatewayAddress"`
-	WebOAuthClient     BasicOAuthClient  `json:"webOAuthClient" yaml:"webOAuthClient"`
-	DeviceOAuthClient  DeviceOAuthClient `json:"deviceOAuthClient" yaml:"deviceOAuthClient"`
+	Authority          string            `yaml:"authority" json:"authority"`
+	HTTPGatewayAddress string            `yaml:"httpGatewayAddress" json:"httpGatewayAddress"`
+	WebOAuthClient     BasicOAuthClient  `yaml:"webOAuthClient" json:"webOauthClient"`
+	DeviceOAuthClient  DeviceOAuthClient `yaml:"deviceOAuthClient" json:"deviceOauthClient"`
 }
 
 func (c *WebConfiguration) Validate() error {
@@ -186,7 +176,7 @@ func (c *UIConfig) Validate() error {
 	return nil
 }
 
-//String return string representation of Config
+// String return string representation of Config
 func (c Config) String() string {
 	return config.ToString(c)
 }

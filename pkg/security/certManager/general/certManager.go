@@ -9,9 +9,10 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/fsnotify/fsnotify"
-	"github.com/plgd-dev/hub/pkg/log"
+	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
+	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/kit/v2/security"
+	"go.uber.org/atomic"
 )
 
 // Config provides configuration of a file based Server Certificate manager
@@ -20,7 +21,7 @@ type Config struct {
 	KeyFile                   string `yaml:"keyFile" json:"keyFile" description:"file name of private key in PEM format"`
 	CertFile                  string `yaml:"certFile" json:"certFile" description:"file name of certificate in PEM format"`
 	ClientCertificateRequired bool   `yaml:"clientCertificateRequired" json:"clientCertificateRequired" description:"require client certificate"`
-	UseSystemCAPool           bool   `yaml:"useSystemCAPool" json:"useSystemCAPool" description:"use system certification pool"`
+	UseSystemCAPool           bool   `yaml:"useSystemCAPool" json:"useSystemCaPool" description:"use system certification pool"`
 }
 
 func (c Config) Validate() error {
@@ -36,45 +37,37 @@ func (c Config) Validate() error {
 	return nil
 }
 
-func (c *Config) SetDefaults() {
-	c.ClientCertificateRequired = true
-}
-
 // CertManager holds certificates from filesystem watched for changes
 type CertManager struct {
 	config Config
 
-	watcher                 *fsnotify.Watcher
-	doneWg                  sync.WaitGroup
-	done                    chan struct{}
+	fileWatcher             *fsnotify.Watcher
 	verifyClientCertificate tls.ClientAuthType
 	logger                  log.Logger
+	onFileChangeFunc        func(event fsnotify.Event)
+	done                    atomic.Bool
 
-	mutex      sync.Mutex
-	tlsKeyPair tls.Certificate
-	tlsCAPool  *x509.CertPool
+	private struct {
+		mutex      sync.Mutex
+		tlsKeyPair tls.Certificate
+		tlsCAPool  *x509.CertPool
+	}
 }
 
 // New creates a new certificate manager which watches for certs in a filesystem
-func New(config Config, logger log.Logger) (*CertManager, error) {
-	watcher, err := fsnotify.NewWatcher()
-	if err != nil {
-		return nil, err
-	}
-
+func New(config Config, fileWatcher *fsnotify.Watcher, logger log.Logger) (*CertManager, error) {
 	verifyClientCertificate := tls.RequireAndVerifyClientCert
 	if !config.ClientCertificateRequired {
 		verifyClientCertificate = tls.NoClientCert
 	}
 
 	c := &CertManager{
-		watcher:                 watcher,
+		fileWatcher:             fileWatcher,
 		config:                  config,
 		verifyClientCertificate: verifyClientCertificate,
 		logger:                  logger,
-		done:                    make(chan struct{}),
 	}
-	err = c.loadCAs()
+	err := c.loadCAs()
 	if err != nil {
 		return nil, err
 	}
@@ -82,27 +75,32 @@ func New(config Config, logger log.Logger) (*CertManager, error) {
 	if err != nil {
 		return nil, err
 	}
-	if err := c.watcher.Add(filepath.Dir(config.CAPool)); err != nil {
-		return nil, fmt.Errorf("cannot watch CAPool directory(%v): %w", filepath.Dir(config.CAPool), err)
+	if config.CAPool != "" {
+		if err := c.fileWatcher.Add(filepath.Dir(config.CAPool)); err != nil {
+			return nil, fmt.Errorf("cannot watch CAPool directory(%v): %w", filepath.Dir(config.CAPool), err)
+		}
 	}
-	if err := c.watcher.Add(filepath.Dir(config.CertFile)); err != nil {
-		return nil, fmt.Errorf("cannot watch CertFile directory(%v): %w", filepath.Dir(config.CertFile), err)
+	if config.CertFile != "" {
+		if err := c.fileWatcher.Add(filepath.Dir(config.CertFile)); err != nil {
+			return nil, fmt.Errorf("cannot watch CertFile directory(%v): %w", filepath.Dir(config.CertFile), err)
+		}
 	}
-	if err := c.watcher.Add(filepath.Dir(config.KeyFile)); err != nil {
-		return nil, fmt.Errorf("cannot watch KeyFile directory(%v): %w", filepath.Dir(config.CertFile), err)
+	if config.KeyFile != "" {
+		if err := c.fileWatcher.Add(filepath.Dir(config.KeyFile)); err != nil {
+			return nil, fmt.Errorf("cannot watch KeyFile directory(%v): %w", filepath.Dir(config.KeyFile), err)
+		}
 	}
-
-	c.doneWg.Add(1)
-	go c.watchFiles()
+	c.onFileChangeFunc = c.onFileChange
+	c.fileWatcher.AddOnEventHandler(&c.onFileChangeFunc)
 
 	return c, nil
 }
 
 // GetCertificateAuthorities returns certificates authorities
 func (a *CertManager) GetCertificateAuthorities() *x509.CertPool {
-	a.mutex.Lock()
-	defer a.mutex.Unlock()
-	return a.tlsCAPool
+	a.private.mutex.Lock()
+	defer a.private.mutex.Unlock()
+	return a.private.tlsCAPool
 }
 
 // GetServerTLSConfig returns tls configuration for servers
@@ -127,24 +125,37 @@ func (a *CertManager) GetClientTLSConfig() *tls.Config {
 
 // Close ends watching certificates
 func (a *CertManager) Close() {
-	if a.done != nil {
-		_ = a.watcher.Close()
-		close(a.done)
-		a.doneWg.Wait()
-		a.done = nil
+	if !a.done.CAS(false, true) {
+		return
 	}
+	if a.config.CAPool != "" {
+		if err := a.fileWatcher.Remove(filepath.Dir(a.config.CAPool)); err != nil {
+			a.logger.Errorf("cannot remove fileWatcher for CAPool directory(%v): %w", filepath.Dir(a.config.CAPool), err)
+		}
+	}
+	if a.config.CertFile != "" {
+		if err := a.fileWatcher.Remove(filepath.Dir(a.config.CertFile)); err != nil {
+			a.logger.Errorf("cannot remove fileWatcher for CertFile directory(%v): %w", filepath.Dir(a.config.CertFile), err)
+		}
+	}
+	if a.config.KeyFile != "" {
+		if err := a.fileWatcher.Remove(filepath.Dir(a.config.KeyFile)); err != nil {
+			a.logger.Errorf("cannot remove fileWatcher for KeyFile directory(%v): %w", filepath.Dir(a.config.KeyFile), err)
+		}
+	}
+	a.fileWatcher.RemoveOnEventHandler(&a.onFileChangeFunc)
 }
 
 func (a *CertManager) getServerCertificate(hello *tls.ClientHelloInfo) (*tls.Certificate, error) {
-	a.mutex.Lock()
-	defer a.mutex.Unlock()
-	return &a.tlsKeyPair, nil
+	a.private.mutex.Lock()
+	defer a.private.mutex.Unlock()
+	return &a.private.tlsKeyPair, nil
 }
 
 func (a *CertManager) getClientCertificate(*tls.CertificateRequestInfo) (*tls.Certificate, error) {
-	a.mutex.Lock()
-	defer a.mutex.Unlock()
-	return &a.tlsKeyPair, nil
+	a.private.mutex.Lock()
+	defer a.private.mutex.Unlock()
+	return &a.private.tlsKeyPair, nil
 }
 
 func (a *CertManager) loadCerts() error {
@@ -167,6 +178,7 @@ func (a *CertManager) loadCerts() error {
 	}
 	return nil
 }
+
 func (a *CertManager) loadCAs() error {
 	var cas []*x509.Certificate
 	if a.config.CAPool != "" {
@@ -189,52 +201,43 @@ func (a *CertManager) loadCAs() error {
 }
 
 func (a *CertManager) setTLSKeyPair(cert tls.Certificate) {
-	a.mutex.Lock()
-	defer a.mutex.Unlock()
-	a.tlsKeyPair = cert
+	a.private.mutex.Lock()
+	defer a.private.mutex.Unlock()
+	a.private.tlsKeyPair = cert
 }
 
 func (a *CertManager) setCAPool(capool *x509.CertPool) {
-	a.mutex.Lock()
-	defer a.mutex.Unlock()
-	a.tlsCAPool = capool
+	a.private.mutex.Lock()
+	defer a.private.mutex.Unlock()
+	a.private.tlsCAPool = capool
 }
 
-func (a *CertManager) watchFiles() {
-	defer a.doneWg.Done()
-	for {
-		var updateCert, updateKey, updateCAs bool
-		select {
-		case <-a.done:
-			return
-			// watch for events
-		case event := <-a.watcher.Events:
-			switch event.Op {
-			case fsnotify.Create, fsnotify.Write, fsnotify.Rename:
-				if strings.Contains(event.Name, a.config.KeyFile) {
-					updateKey = true
-				}
-
-				if strings.Contains(event.Name, a.config.CertFile) {
-					updateCert = true
-				}
-
-				if strings.Contains(event.Name, a.config.CAPool) {
-					updateCAs = true
-				}
-			}
+func (a *CertManager) onFileChange(event fsnotify.Event) {
+	var updateCert, updateKey, updateCAs bool
+	switch event.Op {
+	case fsnotify.Create, fsnotify.Write, fsnotify.Rename:
+		if strings.Contains(event.Name, a.config.KeyFile) {
+			updateKey = true
 		}
-		if updateCert && updateKey {
-			err := a.loadCerts()
-			if err != nil {
-				a.logger.Error(err.Error())
-			}
+
+		if strings.Contains(event.Name, a.config.CertFile) {
+			updateCert = true
 		}
-		if updateCAs {
-			err := a.loadCAs()
-			if err != nil {
-				a.logger.Error(err.Error())
-			}
+
+		if strings.Contains(event.Name, a.config.CAPool) {
+			updateCAs = true
+		}
+	}
+	if updateCert && updateKey {
+		err := a.loadCerts()
+		if err != nil {
+			a.logger.Error(err.Error())
+		}
+	}
+	if updateCAs {
+		err := a.loadCAs()
+		if err != nil {
+			a.logger.Error(err.Error())
 		}
 	}
 }

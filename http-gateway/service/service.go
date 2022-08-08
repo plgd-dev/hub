@@ -6,18 +6,19 @@ import (
 	"net/http"
 	"regexp"
 
-	"github.com/plgd-dev/hub/pkg/log"
-
-	"github.com/plgd-dev/hub/grpc-gateway/client"
-	"github.com/plgd-dev/hub/grpc-gateway/pb"
-	"github.com/plgd-dev/hub/http-gateway/uri"
-	grpcClient "github.com/plgd-dev/hub/pkg/net/grpc/client"
-	kitNetHttp "github.com/plgd-dev/hub/pkg/net/http"
-	"github.com/plgd-dev/hub/pkg/net/listener"
-	"github.com/plgd-dev/hub/pkg/security/jwt/validator"
+	"github.com/plgd-dev/hub/v2/grpc-gateway/client"
+	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
+	"github.com/plgd-dev/hub/v2/http-gateway/uri"
+	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	grpcClient "github.com/plgd-dev/hub/v2/pkg/net/grpc/client"
+	kitNetHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
+	"github.com/plgd-dev/hub/v2/pkg/net/listener"
+	otelClient "github.com/plgd-dev/hub/v2/pkg/opentelemetry/collector/client"
+	"github.com/plgd-dev/hub/v2/pkg/security/jwt/validator"
 )
 
-//Server handle HTTP request
+// Server handle HTTP request
 type Server struct {
 	server         *http.Server
 	config         *Config
@@ -25,21 +26,32 @@ type Server struct {
 	listener       *listener.Server
 }
 
+const serviceName = "http-gateway"
+
 // New parses configuration and creates new Server with provided store and bus
-func New(ctx context.Context, config Config, logger log.Logger) (*Server, error) {
-	validator, err := validator.New(ctx, config.APIs.HTTP.Authorization, logger)
+func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logger log.Logger) (*Server, error) {
+	otelClient, err := otelClient.New(ctx, config.Clients.OpenTelemetryCollector.Config, serviceName, fileWatcher, logger)
 	if err != nil {
+		return nil, fmt.Errorf("cannot create open telemetry collector client: %w", err)
+	}
+	tracerProvider := otelClient.GetTracerProvider()
+
+	validator, err := validator.New(ctx, config.APIs.HTTP.Authorization, fileWatcher, logger, tracerProvider)
+	if err != nil {
+		otelClient.Close()
 		return nil, fmt.Errorf("cannot create validator: %w", err)
 	}
 
-	listener, err := listener.New(config.APIs.HTTP.Connection, logger)
+	listener, err := listener.New(config.APIs.HTTP.Connection, fileWatcher, logger)
 	if err != nil {
+		otelClient.Close()
 		validator.Close()
 		return nil, fmt.Errorf("cannot create grpc server: %w", err)
 	}
+	listener.AddCloseFunc(otelClient.Close)
 	listener.AddCloseFunc(validator.Close)
 
-	grpcConn, err := grpcClient.New(config.Clients.GrpcGateway.Connection, logger)
+	grpcConn, err := grpcClient.New(config.Clients.GrpcGateway.Connection, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		return nil, fmt.Errorf("cannot connect to resource directory: %w", err)
 	}
@@ -71,13 +83,21 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Server, error)
 	auth := kitNetHttp.NewInterceptorWithValidator(validator, authRules, whiteList...)
 	requestHandler := NewRequestHandler(&config, client)
 
-	http, err := NewHTTP(requestHandler, auth)
+	httpHandler, err := NewHTTP(requestHandler, auth)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create http server: %w", err)
 	}
 
+	httpServer := http.Server{
+		Handler:           kitNetHttp.OpenTelemetryNewHandler(httpHandler, serviceName, tracerProvider),
+		ReadTimeout:       config.APIs.HTTP.Server.ReadTimeout,
+		ReadHeaderTimeout: config.APIs.HTTP.Server.ReadHeaderTimeout,
+		WriteTimeout:      config.APIs.HTTP.Server.WriteTimeout,
+		IdleTimeout:       config.APIs.HTTP.Server.IdleTimeout,
+	}
+
 	server := Server{
-		server:         http,
+		server:         &httpServer,
 		config:         &config,
 		requestHandler: requestHandler,
 		listener:       listener,

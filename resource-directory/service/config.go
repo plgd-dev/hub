@@ -4,14 +4,15 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/plgd-dev/hub/grpc-gateway/pb"
-	"github.com/plgd-dev/hub/pkg/config"
-	"github.com/plgd-dev/hub/pkg/log"
-	"github.com/plgd-dev/hub/pkg/net/grpc/client"
-	"github.com/plgd-dev/hub/pkg/net/grpc/server"
-	pkgTime "github.com/plgd-dev/hub/pkg/time"
-	natsClient "github.com/plgd-dev/hub/resource-aggregate/cqrs/eventbus/nats/client"
-	eventstoreConfig "github.com/plgd-dev/hub/resource-aggregate/cqrs/eventstore/config"
+	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
+	"github.com/plgd-dev/hub/v2/pkg/config"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	"github.com/plgd-dev/hub/v2/pkg/net/grpc/client"
+	"github.com/plgd-dev/hub/v2/pkg/net/grpc/server"
+	otelClient "github.com/plgd-dev/hub/v2/pkg/opentelemetry/collector/client"
+	pkgTime "github.com/plgd-dev/hub/v2/pkg/time"
+	natsClient "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/client"
+	eventstoreConfig "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore/config"
 )
 
 type Config struct {
@@ -22,6 +23,9 @@ type Config struct {
 }
 
 func (c *Config) Validate() error {
+	if err := c.Log.Validate(); err != nil {
+		return fmt.Errorf("log.%w", err)
+	}
 	if err := c.APIs.Validate(); err != nil {
 		return fmt.Errorf("apis.%w", err)
 	}
@@ -59,9 +63,10 @@ func (c *GRPCConfig) Validate() error {
 }
 
 type ClientsConfig struct {
-	Eventbus      EventBusConfig      `yaml:"eventBus" json:"eventBus"`
-	Eventstore    EventStoreConfig    `yaml:"eventStore" json:"eventStore"`
-	IdentityStore IdentityStoreConfig `yaml:"identityStore" json:"identityStore"`
+	Eventbus               EventBusConfig      `yaml:"eventBus" json:"eventBus"`
+	Eventstore             EventStoreConfig    `yaml:"eventStore" json:"eventStore"`
+	IdentityStore          IdentityStoreConfig `yaml:"identityStore" json:"identityStore"`
+	OpenTelemetryCollector otelClient.Config   `yaml:"openTelemetryCollector" json:"openTelemetryCollector"`
 }
 
 func (c *ClientsConfig) Validate() error {
@@ -73,6 +78,9 @@ func (c *ClientsConfig) Validate() error {
 	}
 	if err := c.Eventstore.Validate(); err != nil {
 		return fmt.Errorf("eventstore.%w", err)
+	}
+	if err := c.OpenTelemetryCollector.Validate(); err != nil {
+		return fmt.Errorf("openTelemetryCollector.%w", err)
 	}
 	return nil
 }
@@ -118,8 +126,8 @@ func (c *IdentityStoreConfig) Validate() error {
 type PublicConfiguration struct {
 	CAPool                   string        `yaml:"caPool" json:"caPool" description:"file path to the root certificate in PEM format"`
 	OwnerClaim               string        `yaml:"ownerClaim" json:"ownerClaim"`
-	DeviceIDClaim            string        `yaml:"deviceIdClaim" json:"deviceIdClaim"`
-	HubID                    string        `yaml:"hubId" json:"hubId"`
+	DeviceIDClaim            string        `yaml:"deviceIDClaim" json:"deviceIdClaim"`
+	HubID                    string        `yaml:"hubID" json:"hubId"`
 	CoapGateway              string        `yaml:"coapGateway" json:"coapGateway"`
 	DefaultCommandTimeToLive time.Duration `yaml:"defaultCommandTimeToLive" json:"defaultCommandTimeToLive"`
 	AuthorizationServer      string        `yaml:"authorizationServer" json:"authorizationServer"`
@@ -135,7 +143,7 @@ func (c *PublicConfiguration) Validate() error {
 		return fmt.Errorf("ownerClaim('%v')", c.OwnerClaim)
 	}
 	if c.HubID == "" {
-		return fmt.Errorf("hubId('%v')", c.HubID)
+		return fmt.Errorf("hubID('%v')", c.HubID)
 	}
 	if c.CoapGateway == "" {
 		return fmt.Errorf("coapGateway('%v')", c.CoapGateway)
@@ -162,7 +170,7 @@ func (c PublicConfiguration) ToProto() *pb.HubConfigurationResponse {
 	}
 }
 
-//String return string representation of Config
+// String return string representation of Config
 func (c Config) String() string {
 	return config.ToString(c)
 }

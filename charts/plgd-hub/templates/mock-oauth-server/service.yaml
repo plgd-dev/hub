@@ -9,17 +9,17 @@ metadata:
     {{- with .Values.mockoauthserver.service.labels }}
     {{- . | toYaml | nindent 4 }}
     {{- end }}
-  {{- with .Values.mockoauthserver.service.annotations }}
+  {{- if .Values.mockoauthserver.service.annotations }}
   annotations:
-  {{- . | toYaml | nindent 4 }}
+    {{- include "plgd-hub.tplvalues.render" ( dict "value" .Values.mockoauthserver.service.annotations "context" $ ) | nindent 4 }}
   {{- end }}
 spec:
   type: {{ .Values.mockoauthserver.service.type | default "ClusterIP" }}
   ports:
     - port: {{ .Values.mockoauthserver.port }}
-      targetPort: http
-      protocol: TCP
-      name: http
+      targetPort: {{ .Values.mockoauthserver.service.targetPort }}
+      protocol: {{ .Values.mockoauthserver.service.protocol }}
+      name: {{ .Values.mockoauthserver.service.name }}
   selector:
   {{- include "plgd-hub.mockoauthserver.selectorLabels" . | nindent 4 }}
 {{- end }}

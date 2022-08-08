@@ -13,17 +13,17 @@ import (
 
 	router "github.com/gorilla/mux"
 	"github.com/plgd-dev/go-coap/v2/message"
-	"github.com/plgd-dev/hub/cloud2cloud-connector/events"
-	c2cTest "github.com/plgd-dev/hub/cloud2cloud-gateway/test"
-	"github.com/plgd-dev/hub/cloud2cloud-gateway/uri"
-	coapgwTest "github.com/plgd-dev/hub/coap-gateway/test"
-	"github.com/plgd-dev/hub/grpc-gateway/pb"
-	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
-	"github.com/plgd-dev/hub/test"
-	testCfg "github.com/plgd-dev/hub/test/config"
-	testHttp "github.com/plgd-dev/hub/test/http"
-	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
-	"github.com/plgd-dev/hub/test/service"
+	"github.com/plgd-dev/hub/v2/cloud2cloud-connector/events"
+	c2cTest "github.com/plgd-dev/hub/v2/cloud2cloud-gateway/test"
+	"github.com/plgd-dev/hub/v2/cloud2cloud-gateway/uri"
+	coapgwTest "github.com/plgd-dev/hub/v2/coap-gateway/test"
+	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
+	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	"github.com/plgd-dev/hub/v2/test"
+	testCfg "github.com/plgd-dev/hub/v2/test/config"
+	testHttp "github.com/plgd-dev/hub/v2/test/http"
+	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
+	"github.com/plgd-dev/hub/v2/test/service"
 	"github.com/plgd-dev/kit/v2/codec/json"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -51,7 +51,7 @@ func TestRequestHandlerSubscribeToDevices(t *testing.T) {
 	tearDown := service.SetUp(ctx, t)
 	defer tearDown()
 
-	token := oauthTest.GetDefaultServiceToken(t)
+	token := oauthTest.GetDefaultAccessToken(t)
 	ctx = kitNetGrpc.CtxWithToken(ctx, token)
 
 	conn, err := grpc.Dial(testCfg.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
@@ -100,7 +100,7 @@ func TestRequestHandlerSubscribeToDevices(t *testing.T) {
 	require.NoError(t, err)
 
 	sub := events.SubscriptionRequest{
-		URL:           "https://localhost:" + port + eventsURI,
+		EventsURL:     "https://localhost:" + port + eventsURI,
 		EventTypes:    events.EventTypes{eventType},
 		SigningSecret: "a",
 	}
@@ -142,11 +142,10 @@ func TestRequestHandlerSubscribeToDevicesOffline(t *testing.T) {
 	tearDown := service.SetUp(ctx, t)
 	defer tearDown()
 	coapgwCfg := coapgwTest.MakeConfig(t)
-	coapgwCfg.Log.Embedded.Debug = true
-	coapgwCfg.Log.DumpCoapMessages = true
+	coapgwCfg.Log.DumpBody = true
 	coapgwCfg.APIs.COAP.Addr = "localhost:45684"
 	gwShutdown := coapgwTest.New(t, coapgwCfg)
-	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultServiceToken(t))
+	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
 
 	conn, err := grpc.Dial(testCfg.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
@@ -194,14 +193,14 @@ func TestRequestHandlerSubscribeToDevicesOffline(t *testing.T) {
 	require.NoError(t, err)
 
 	sub := events.SubscriptionRequest{
-		URL:           "https://localhost:" + port + eventsURI,
+		EventsURL:     "https://localhost:" + port + eventsURI,
 		EventTypes:    events.EventTypes{eventType},
 		SigningSecret: "a",
 	}
 
 	data, err := json.Encode(sub)
 	require.NoError(t, err)
-	req := testHttp.NewHTTPRequest(http.MethodPost, uri, bytes.NewBuffer(data)).AuthToken(oauthTest.GetDefaultServiceToken(t)).Accept(accept).Build(ctx, t)
+	req := testHttp.NewHTTPRequest(http.MethodPost, uri, bytes.NewBuffer(data)).AuthToken(oauthTest.GetDefaultAccessToken(t)).Accept(accept).Build(ctx, t)
 	resp := testHttp.DoHTTPRequest(t, req)
 	assert.Equal(t, wantCode, resp.StatusCode)
 	defer func() {

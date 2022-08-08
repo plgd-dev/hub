@@ -8,26 +8,35 @@ import (
 
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/google/uuid"
-	"github.com/plgd-dev/hub/pkg/log"
-	"github.com/plgd-dev/hub/pkg/net/grpc"
-	"github.com/plgd-dev/hub/resource-aggregate/commands"
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/aggregate"
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventstore"
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventstore/mongodb"
-	"github.com/plgd-dev/hub/resource-aggregate/events"
-	"github.com/plgd-dev/hub/test/config"
+	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	"github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/aggregate"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore/mongodb"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
+	"github.com/plgd-dev/hub/v2/test/config"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/atomic"
 )
 
 func testNewEventstore(ctx context.Context, t *testing.T) *mongodb.EventStore {
-	logger, err := log.NewLogger(log.Config{})
+	logger := log.NewLogger(log.MakeDefaultConfig())
+	fileWatcher, err := fsnotify.NewWatcher()
 	require.NoError(t, err)
+	defer func() {
+		err := fileWatcher.Close()
+		require.NoError(t, err)
+	}()
 	cfg := config.MakeEventsStoreMongoDBConfig()
 	store, err := mongodb.New(
 		ctx,
 		cfg,
+		fileWatcher,
 		logger,
+		trace.NewNoopTracerProvider(),
 	)
 	require.NoError(t, err)
 	require.NotNil(t, store)
@@ -47,8 +56,6 @@ func cleanUpToSnapshot(ctx context.Context, t *testing.T, store *mongodb.EventSt
 	}
 }
 
-//old 452.969s
-//new 474.906s
 func Test_parallelRequest(t *testing.T) {
 	ctx := context.Background()
 	token := config.CreateJwtToken(t, jwt.MapClaims{
@@ -82,7 +89,7 @@ func Test_parallelRequest(t *testing.T) {
 		wg.Add(1)
 		go func(id int) {
 			defer wg.Done()
-			for j := 0; j < 100000; j++ {
+			for j := 0; j < 1000; j++ {
 				if anyError.Load() != nil {
 					return
 				}

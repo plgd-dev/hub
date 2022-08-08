@@ -3,8 +3,8 @@ package service
 import (
 	"net/http"
 
-	"github.com/plgd-dev/hub/cloud2cloud-connector/events"
 	"github.com/plgd-dev/go-coap/v2/message"
+	"github.com/plgd-dev/hub/v2/cloud2cloud-connector/events"
 	"github.com/plgd-dev/kit/v2/codec/json"
 )
 

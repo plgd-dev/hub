@@ -5,10 +5,12 @@ import (
 	"time"
 
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
-	coapgwTest "github.com/plgd-dev/hub/coap-gateway/test"
-	"github.com/plgd-dev/hub/coap-gateway/uri"
-	"github.com/plgd-dev/hub/test/config"
-	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
+	coapgwTest "github.com/plgd-dev/hub/v2/coap-gateway/test"
+	"github.com/plgd-dev/hub/v2/coap-gateway/uri"
+	"github.com/plgd-dev/hub/v2/pkg/security/oauth2/oauth"
+	testCfg "github.com/plgd-dev/hub/v2/test/config"
+	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
+	"github.com/stretchr/testify/require"
 )
 
 type TestCoapSignUpResponse struct {
@@ -27,12 +29,12 @@ func TestSignUpPostHandler(t *testing.T) {
 	tbl := []testEl{
 		{"BadRequest (invalid)", input{coapCodes.POST, `{}`, nil}, output{coapCodes.BadRequest, `invalid device id`, nil}, true},
 		{"BadRequest (invalid access token)", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "accesstoken": 123}`, nil}, output{coapCodes.BadRequest, `cannot handle sign up: cbor: cannot unmarshal positive`, nil}, true},
-		{"Changed", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "accesstoken":"` + codeEl + `", "authprovider": "` + config.DEVICE_PROVIDER + `"}`, nil}, output{coapCodes.Changed, TestCoapSignUpResponse{RefreshToken: AuthorizationRefreshToken, UserID: "1"}, nil}, false},
+		{"Changed", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "accesstoken":"` + codeEl + `", "authprovider": "` + testCfg.DEVICE_PROVIDER + `"}`, nil}, output{coapCodes.Changed, TestCoapSignUpResponse{RefreshToken: AuthorizationRefreshToken, UserID: "1"}, nil}, false},
 	}
 
 	for _, test := range tbl {
 		tf := func(t *testing.T) {
-			co := testCoapDial(t, config.GW_HOST, "")
+			co := testCoapDial(t, "", true, time.Now().Add(time.Minute))
 			if co == nil {
 				return
 			}
@@ -60,7 +62,7 @@ func TestSignUpPostHandlerWithRetry(t *testing.T) {
 	defer shutdown()
 	codeEl := oauthTest.GetDefaultDeviceAuthorizationCode(t, "")
 
-	co := testCoapDial(t, config.GW_HOST, "")
+	co := testCoapDial(t, "", true, time.Now().Add(time.Minute))
 	if co == nil {
 		return
 	}
@@ -70,7 +72,7 @@ func TestSignUpPostHandlerWithRetry(t *testing.T) {
 
 	testSignUp := testEl{
 		name: "Retry",
-		in:   input{coapCodes.POST, `{"di": "` + CertIdentity + `", "accesstoken":"` + codeEl + `", "authprovider": "` + config.DEVICE_PROVIDER + `"}`, nil},
+		in:   input{coapCodes.POST, `{"di": "` + CertIdentity + `", "accesstoken":"` + codeEl + `", "authprovider": "` + testCfg.DEVICE_PROVIDER + `"}`, nil},
 		out:  output{coapCodes.Changed, TestCoapSignUpResponseRetry{UserID: "1"}, nil},
 	}
 
@@ -78,5 +80,35 @@ func TestSignUpPostHandlerWithRetry(t *testing.T) {
 	for i := 0; i < retryCount; i++ {
 		testPostHandler(t, uri.SignUp, testSignUp, co)
 		time.Sleep(time.Second)
+	}
+}
+
+func TestSignUpClientCredentialPostHandler(t *testing.T) {
+	coapgwCfg := coapgwTest.MakeConfig(t)
+	coapgwCfg.APIs.COAP.Authorization.Providers[0].GrantType = oauth.ClientCredentials
+	err := coapgwCfg.Validate()
+	require.Error(t, err)
+	shutdown := setUp(t, coapgwCfg)
+	defer shutdown()
+	codeEl := oauthTest.GetDefaultAccessToken(t)
+
+	tbl := []testEl{
+		{"BadRequest (invalid)", input{coapCodes.POST, `{}`, nil}, output{coapCodes.BadRequest, `invalid device id`, nil}, true},
+		{"BadRequest (invalid access token)", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "accesstoken": 123}`, nil}, output{coapCodes.BadRequest, `cannot handle sign up: cbor: cannot unmarshal positive`, nil}, true},
+		{"Changed", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "accesstoken":"` + codeEl + `", "authprovider": "` + testCfg.DEVICE_PROVIDER + `"}`, nil}, output{coapCodes.Changed, TestCoapSignUpResponseRetry{UserID: "1"}, nil}, false},
+	}
+
+	for _, test := range tbl {
+		tf := func(t *testing.T) {
+			co := testCoapDial(t, "", true, time.Now().Add(time.Minute))
+			if co == nil {
+				return
+			}
+			defer func() {
+				_ = co.Close()
+			}()
+			testPostHandler(t, uri.SignUp, test, co)
+		}
+		t.Run(test.name, tf)
 	}
 }

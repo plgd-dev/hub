@@ -5,36 +5,36 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventstore"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore"
 	"github.com/plgd-dev/kit/v2/strings"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-/// Get array of unique aggregateId values
+/// Get array of unique aggregateID values
 func getEventsAggregateIdFilter(groupID string, queries []eventstore.GetEventsQuery) bson.A {
 	if len(queries) == 0 {
 		return nil
 	}
 
-	// get unique aggregateIds
-	aggregateIds := make(map[string]struct{})
+	// get unique aggregateIDs
+	aggregateIDs := make(map[string]struct{})
 	for _, query := range queries {
 		if query.GroupID == groupID && len(query.AggregateID) != 0 {
-			aggregateIds[query.AggregateID] = struct{}{}
+			aggregateIDs[query.AggregateID] = struct{}{}
 		}
 	}
 
-	if len(aggregateIds) == 0 {
+	if len(aggregateIDs) == 0 {
 		return nil
 	}
 
-	// filter to include only given unique aggregateIds
-	aggregateIdFilter := make(bson.A, 0, len(aggregateIds))
-	for aggregateId := range aggregateIds {
-		aggregateIdFilter = append(aggregateIdFilter, aggregateId)
+	// filter to include only given unique aggregateIDs
+	aggregateIDFilter := make(bson.A, 0, len(aggregateIDs))
+	for aggregateID := range aggregateIDs {
+		aggregateIDFilter = append(aggregateIDFilter, aggregateID)
 	}
-	return aggregateIdFilter
+	return aggregateIDFilter
 }
 
 func getEventsFilter(groupID string, queries []eventstore.GetEventsQuery, timestamp int64) bson.D {

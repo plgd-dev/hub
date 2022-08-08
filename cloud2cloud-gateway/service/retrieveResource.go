@@ -7,8 +7,8 @@ import (
 	"strings"
 
 	"github.com/gorilla/mux"
-	kitNetHttp "github.com/plgd-dev/hub/pkg/net/http"
-	"github.com/plgd-dev/hub/resource-aggregate/commands"
+	kitNetHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 )
 
 func (rh *RequestHandler) RetrieveResourceBase(ctx context.Context, w http.ResponseWriter, resourceID *commands.ResourceId, encoder responseWriterEncoderFunc) (int, error) {
@@ -32,17 +32,16 @@ func (rh *RequestHandler) RetrieveResourceBase(ctx context.Context, w http.Respo
 }
 
 func (rh *RequestHandler) RetrieveResourceWithContentQuery(ctx context.Context, w http.ResponseWriter, routeVars map[string]string, contentQuery string, encoder responseWriterEncoderFunc) (int, error) {
-	switch contentQuery {
-	case ContentQueryBaseValue:
+	if contentQuery == ContentQueryBaseValue {
 		deviceID := routeVars[deviceIDKey]
-		href := routeVars[HrefKey]
+		href := routeVars[hrefKey]
 		code, err := rh.RetrieveResourceBase(ctx, w, &commands.ResourceId{
-			DeviceId: deviceID, Href: href}, encoder)
+			DeviceId: deviceID, Href: href,
+		}, encoder)
 		if err != nil {
 			err = fmt.Errorf("cannot retrieve resource(deviceID: %v, Href: %v): %w", deviceID, href, err)
 		}
 		return code, err
-
 	}
 	return http.StatusBadRequest, fmt.Errorf("invalid content query parameter")
 }

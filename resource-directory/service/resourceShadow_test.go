@@ -7,23 +7,24 @@ import (
 	"time"
 
 	"github.com/panjf2000/ants/v2"
-	"github.com/plgd-dev/hub/grpc-gateway/pb"
-	"github.com/plgd-dev/hub/pkg/log"
-	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
-	"github.com/plgd-dev/hub/resource-aggregate/commands"
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventbus/nats/subscriber"
-	natsTest "github.com/plgd-dev/hub/resource-aggregate/cqrs/eventbus/nats/test"
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/utils"
-	"github.com/plgd-dev/hub/resource-aggregate/events"
-	"github.com/plgd-dev/hub/resource-directory/service"
-	"github.com/plgd-dev/hub/test"
-	"github.com/plgd-dev/hub/test/config"
+	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
+	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/subscriber"
+	natsTest "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/test"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/utils"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
+	"github.com/plgd-dev/hub/v2/resource-directory/service"
+	"github.com/plgd-dev/hub/v2/test"
+	"github.com/plgd-dev/hub/v2/test/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 )
 
-func TestResourceShadow_GetResources(t *testing.T) {
+func TestResourceShadowGetResources(t *testing.T) {
 	type args struct {
 		req *pb.GetResourcesRequest
 	}
@@ -32,7 +33,6 @@ func TestResourceShadow_GetResources(t *testing.T) {
 		args args
 		want map[string]*pb.Resource
 	}{
-
 		{
 			name: "list unauthorized device",
 			args: args{
@@ -139,7 +139,7 @@ func TestResourceShadow_GetResources(t *testing.T) {
 		},
 
 		{
-			name: "filter by device Id and type",
+			name: "filter by device ID and type",
 			args: args{
 				req: &pb.GetResourcesRequest{
 					DeviceIdFilter: []string{Resource1.DeviceId},
@@ -199,11 +199,17 @@ func TestResourceShadow_GetResources(t *testing.T) {
 			},
 		},
 	}
-	logger, err := log.NewLogger(log.Config{})
+	logger := log.NewLogger(log.MakeDefaultConfig())
+	fileWatcher, err := fsnotify.NewWatcher()
 	require.NoError(t, err)
+	defer func() {
+		err := fileWatcher.Close()
+		require.NoError(t, err)
+	}()
+
 	pool, err := ants.NewPool(1)
 	require.NoError(t, err)
-	naClient, resourceSubscriber, err := natsTest.NewClientAndSubscriber(config.MakeSubscriberConfig(),
+	naClient, resourceSubscriber, err := natsTest.NewClientAndSubscriber(config.MakeSubscriberConfig(), fileWatcher,
 		logger,
 		subscriber.WithGoPool(pool.Submit),
 		subscriber.WithUnmarshaler(utils.Unmarshal),

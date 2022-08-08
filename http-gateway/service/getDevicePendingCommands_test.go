@@ -3,6 +3,7 @@ package service_test
 import (
 	"context"
 	"crypto/tls"
+	"errors"
 	"io"
 	"net/http"
 	"testing"
@@ -11,24 +12,24 @@ import (
 	"github.com/plgd-dev/device/schema/device"
 	"github.com/plgd-dev/device/schema/platform"
 	"github.com/plgd-dev/go-coap/v2/message"
-	caService "github.com/plgd-dev/hub/certificate-authority/test"
-	coapgwTest "github.com/plgd-dev/hub/coap-gateway/test"
-	"github.com/plgd-dev/hub/grpc-gateway/pb"
-	grpcgwService "github.com/plgd-dev/hub/grpc-gateway/test"
-	httpgwTest "github.com/plgd-dev/hub/http-gateway/test"
-	"github.com/plgd-dev/hub/http-gateway/uri"
-	idService "github.com/plgd-dev/hub/identity-store/test"
-	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
-	"github.com/plgd-dev/hub/resource-aggregate/commands"
-	"github.com/plgd-dev/hub/resource-aggregate/events"
-	raService "github.com/plgd-dev/hub/resource-aggregate/test"
-	rdService "github.com/plgd-dev/hub/resource-directory/test"
-	"github.com/plgd-dev/hub/test"
-	"github.com/plgd-dev/hub/test/config"
-	"github.com/plgd-dev/hub/test/oauth-server/service"
-	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
-	pbTest "github.com/plgd-dev/hub/test/pb"
-	testService "github.com/plgd-dev/hub/test/service"
+	caService "github.com/plgd-dev/hub/v2/certificate-authority/test"
+	coapgwTest "github.com/plgd-dev/hub/v2/coap-gateway/test"
+	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
+	grpcgwService "github.com/plgd-dev/hub/v2/grpc-gateway/test"
+	httpgwTest "github.com/plgd-dev/hub/v2/http-gateway/test"
+	"github.com/plgd-dev/hub/v2/http-gateway/uri"
+	idService "github.com/plgd-dev/hub/v2/identity-store/test"
+	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
+	raService "github.com/plgd-dev/hub/v2/resource-aggregate/test"
+	rdService "github.com/plgd-dev/hub/v2/resource-directory/test"
+	"github.com/plgd-dev/hub/v2/test"
+	"github.com/plgd-dev/hub/v2/test/config"
+	"github.com/plgd-dev/hub/v2/test/oauth-server/service"
+	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
+	pbTest "github.com/plgd-dev/hub/v2/test/pb"
+	testService "github.com/plgd-dev/hub/v2/test/service"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -68,7 +69,7 @@ func TestRequestHandlerGetDevicePendingCommands(t *testing.T) {
 				},
 				{
 					Command: &pb.PendingCommand_ResourceCreatePending{
-						ResourceCreatePending: pbTest.MakeResourceCreatePending(t, deviceID, device.ResourceURI,
+						ResourceCreatePending: pbTest.MakeResourceCreatePending(t, deviceID, device.ResourceURI, "",
 							map[string]interface{}{
 								"power": 1,
 							}),
@@ -87,7 +88,7 @@ func TestRequestHandlerGetDevicePendingCommands(t *testing.T) {
 				},
 				{
 					Command: &pb.PendingCommand_ResourceUpdatePending{
-						ResourceUpdatePending: pbTest.MakeResourceUpdatePending(t, deviceID, test.TestResourceLightInstanceHref("1"),
+						ResourceUpdatePending: pbTest.MakeResourceUpdatePending(t, deviceID, test.TestResourceLightInstanceHref("1"), "",
 							map[string]interface{}{
 								"power": 1,
 							}),
@@ -126,9 +127,11 @@ func TestRequestHandlerGetDevicePendingCommands(t *testing.T) {
 			want: []*pb.PendingCommand{
 				{
 					Command: &pb.PendingCommand_ResourceCreatePending{
-						ResourceCreatePending: pbTest.MakeResourceCreatePending(t, deviceID, device.ResourceURI, map[string]interface{}{
-							"power": 1,
-						}),
+						ResourceCreatePending: pbTest.MakeResourceCreatePending(t, deviceID, device.ResourceURI, "",
+							map[string]interface{}{
+								"power": 1,
+							},
+						),
 					},
 				},
 			},
@@ -164,7 +167,7 @@ func TestRequestHandlerGetDevicePendingCommands(t *testing.T) {
 			want: []*pb.PendingCommand{
 				{
 					Command: &pb.PendingCommand_ResourceUpdatePending{
-						ResourceUpdatePending: pbTest.MakeResourceUpdatePending(t, deviceID, test.TestResourceLightInstanceHref("1"),
+						ResourceUpdatePending: pbTest.MakeResourceUpdatePending(t, deviceID, test.TestResourceLightInstanceHref("1"), "",
 							map[string]interface{}{
 								"power": 1,
 							}),
@@ -182,7 +185,7 @@ func TestRequestHandlerGetDevicePendingCommands(t *testing.T) {
 			want: []*pb.PendingCommand{
 				{
 					Command: &pb.PendingCommand_ResourceCreatePending{
-						ResourceCreatePending: pbTest.MakeResourceCreatePending(t, deviceID, device.ResourceURI,
+						ResourceCreatePending: pbTest.MakeResourceCreatePending(t, deviceID, device.ResourceURI, "",
 							map[string]interface{}{
 								"power": 1,
 							}),
@@ -225,13 +228,16 @@ func TestRequestHandlerGetDevicePendingCommands(t *testing.T) {
 	shutdownHttp := httpgwTest.SetUp(t)
 	defer shutdownHttp()
 
-	token := oauthTest.GetDefaultServiceToken(t)
+	token := oauthTest.GetDefaultAccessToken(t)
 	ctx = kitNetGrpc.CtxWithToken(ctx, token)
 
 	conn, err := grpc.Dial(config.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
 	})))
 	require.NoError(t, err)
+	defer func() {
+		_ = conn.Close()
+	}()
 	c := pb.NewGrpcGatewayClient(conn)
 
 	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.GW_HOST, test.GetAllBackendResourceLinks())
@@ -310,8 +316,8 @@ func TestRequestHandlerGetDevicePendingCommands(t *testing.T) {
 			var values []*pb.PendingCommand
 			for {
 				var v pb.PendingCommand
-				err = Unmarshal(resp.StatusCode, resp.Body, &v)
-				if err == io.EOF {
+				err = httpgwTest.Unmarshal(resp.StatusCode, resp.Body, &v)
+				if errors.Is(err, io.EOF) {
 					break
 				}
 				require.NoError(t, err)

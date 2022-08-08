@@ -2,9 +2,8 @@ package config
 
 import (
 	"fmt"
-	"reflect"
 
-	yaml "gopkg.in/yaml.v2"
+	yaml "gopkg.in/yaml.v3"
 )
 
 // Parse parse bytes to config
@@ -20,8 +19,4 @@ func Parse(data []byte, config interface{}) error {
 func ToString(config interface{}) string {
 	b, _ := yaml.Marshal(config)
 	return string(b)
-}
-
-func FieldNameMarshaler(f reflect.StructField) string {
-	return f.Name
 }

@@ -5,12 +5,10 @@ import (
 
 	"github.com/plgd-dev/device/schema/device"
 	"github.com/plgd-dev/go-coap/v2/message"
-
-	"github.com/plgd-dev/hub/grpc-gateway/pb"
-	"github.com/plgd-dev/hub/resource-aggregate/commands"
-	"github.com/plgd-dev/hub/resource-aggregate/events"
-
-	"github.com/plgd-dev/hub/pkg/log"
+	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 	"github.com/plgd-dev/kit/v2/codec/cbor"
 	"github.com/plgd-dev/kit/v2/codec/json"
 	"github.com/plgd-dev/kit/v2/strings"
@@ -72,80 +70,48 @@ func decodeContent(content *commands.Content, v interface{}) error {
 }
 
 type Device struct {
-	ID       string
-	Resource *device.Device
-	Metadata *pb.Device_Metadata
+	ID              string
+	Content         *device.Device
+	ResourceChanged *events.ResourceChanged
+	Metadata        *pb.Device_Metadata
+	Endpoints       []*commands.EndpointInformation
 }
 
 func (d Device) ToProto() *pb.Device {
-	r := pb.SchemaDeviceToProto(d.Resource)
+	r := pb.SchemaDeviceToProto(d.Content)
 	if r == nil {
 		r = &pb.Device{
 			Id: d.ID,
 		}
 	}
 	r.Metadata = d.Metadata
+	r.Data = d.ResourceChanged
+	r.OwnershipStatus = pb.Device_OWNED
+	if len(d.Endpoints) == 0 {
+		return r
+	}
+	r.Endpoints = make([]string, 0, len(d.Endpoints))
+	for _, endpoint := range d.Endpoints {
+		r.Endpoints = append(r.Endpoints, endpoint.GetEndpoint())
+	}
 	return r
 }
 
 func updateDevice(dev *Device, resource *Resource) error {
-	switch {
-	case resource.Resource.GetHref() == device.ResourceURI:
+	if resource.Resource.GetHref() == device.ResourceURI {
 		var devContent device.Device
 		err := decodeContent(resource.GetContent(), &devContent)
 		if err != nil {
 			return err
 		}
 		dev.ID = devContent.ID
-		dev.Resource = &devContent
-		dev.Resource.ResourceTypes = resource.Resource.GetResourceTypes()
-		dev.Resource.Interfaces = resource.Resource.GetInterfaces()
+		dev.Content = &devContent
+		dev.Content.ResourceTypes = resource.Resource.GetResourceTypes()
+		dev.Content.Interfaces = resource.Resource.GetInterfaces()
+		dev.Endpoints = resource.Resource.GetEndpointInformations()
+		dev.ResourceChanged = resource.GetResourceChanged()
 	}
 	return nil
-}
-
-func filterDevicesByUserFilters(resources map[string]map[string]*Resource, devicesMetadata map[string]*events.DeviceMetadataSnapshotTaken, req *pb.GetDevicesRequest) ([]Device, error) {
-	devices := make([]Device, 0, len(resources))
-	typeFilter := make(strings.Set)
-	typeFilter.Add(req.TypeFilter...)
-	for deviceID, resources := range resources {
-		var device Device
-		var err error
-		for _, resource := range resources {
-			err = updateDevice(&device, resource)
-			if err != nil {
-				break
-			}
-		}
-		if err != nil {
-			log.Debugf("filterDevicesByUserFilters: cannot process device(%v) resources: %v", deviceID, err)
-			continue
-		}
-		var resourceTypes []string
-		if device.Resource == nil {
-			device.ID = deviceID
-		} else {
-			resourceTypes = device.Resource.ResourceTypes
-		}
-		if !hasMatchingType(resourceTypes, typeFilter) {
-			continue
-		}
-
-		deviceMetadata, ok := devicesMetadata[deviceID]
-		if !ok {
-			continue
-		}
-		if hasMatchingStatus(deviceMetadata.GetDeviceMetadataUpdated().GetStatus().IsOnline(), req.StatusFilter) {
-			device.Metadata = &pb.Device_Metadata{
-				Status:                deviceMetadata.GetDeviceMetadataUpdated().GetStatus(),
-				ShadowSynchronization: deviceMetadata.GetDeviceMetadataUpdated().GetShadowSynchronization(),
-			}
-
-			devices = append(devices, device)
-		}
-	}
-
-	return devices, nil
 }
 
 // filterDevices returns filtered device ids that match filter.
@@ -163,7 +129,35 @@ func filterDevices(deviceIds strings.Set, deviceIDsFilter []string) strings.Set 
 	return result
 }
 
-// GetDevices provides list state of devices.
+func (dd *DeviceDirectory) sendDevices(deviceIDs strings.Set, req *pb.GetDevicesRequest, srv pb.GrpcGateway_GetDevicesServer, toReloadDevices strings.Set) (err error) {
+	typeFilter := make(strings.Set)
+	typeFilter.Add(req.TypeFilter...)
+	return dd.projection.LoadDevicesMetadata(srv.Context(), deviceIDs, toReloadDevices, func(m *deviceMetadataProjection) error {
+		deviceMetadataUpdated := m.GetDeviceMetadataUpdated()
+		if !hasMatchingStatus(deviceMetadataUpdated.GetStatus().IsOnline(), req.StatusFilter) {
+			return nil
+		}
+		resourceIdFilter := []*commands.ResourceId{commands.NewResourceID(m.GetDeviceID(), device.ResourceURI)}
+		return dd.projection.LoadResourcesWithLinks(srv.Context(), resourceIdFilter, typeFilter, toReloadDevices, func(resource *Resource) error {
+			var device Device
+			err = updateDevice(&device, resource)
+			if err != nil {
+				// device is not valid
+				return nil //nolint:nilerr
+			}
+			device.Metadata = &pb.Device_Metadata{
+				Status:                deviceMetadataUpdated.GetStatus(),
+				ShadowSynchronization: deviceMetadataUpdated.GetShadowSynchronization(),
+			}
+			err := srv.Send(device.ToProto())
+			if err != nil {
+				return status.Errorf(codes.Canceled, "cannot send device: %v", err)
+			}
+			return nil
+		})
+	})
+}
+
 func (dd *DeviceDirectory) GetDevices(req *pb.GetDevicesRequest, srv pb.GrpcGateway_GetDevicesServer) (err error) {
 	deviceIDs := filterDevices(dd.userDeviceIds, req.DeviceIdFilter)
 	if len(deviceIDs) == 0 {
@@ -171,36 +165,15 @@ func (dd *DeviceDirectory) GetDevices(req *pb.GetDevicesRequest, srv pb.GrpcGate
 		return nil
 	}
 
-	resourceIdFilter := make([]*commands.ResourceId, 0, 64)
-	for deviceID := range deviceIDs {
-		resourceIdFilter = append(resourceIdFilter, commands.NewResourceID(deviceID, device.ResourceURI), commands.NewResourceID(deviceID, commands.StatusHref))
-	}
-
-	resources, err := dd.projection.GetResourcesWithLinks(srv.Context(), resourceIdFilter, nil)
+	toReloadDevices := make(strings.Set)
+	err = dd.sendDevices(deviceIDs, req, srv, toReloadDevices)
 	if err != nil {
-		return status.Errorf(codes.Internal, "cannot get resources by device ids: %v", err)
+		return err
 	}
 
-	devicesMetadata, err := dd.projection.GetDevicesMetadata(srv.Context(), deviceIDs)
-	if err != nil {
-		return status.Errorf(codes.Internal, "cannot get devices metadata device ids: %v", err)
-	}
-
-	devices, err := filterDevicesByUserFilters(resources, devicesMetadata, req)
-	if err != nil {
-		return status.Errorf(codes.Internal, "cannot filter devices by status: %v", err)
-	}
-
-	if len(devices) == 0 {
-		log.Debug("DeviceDirectory.GetDevices.filterDevicesByUserFilters returns empty devices")
-		return nil
-	}
-
-	for _, device := range devices {
-		err := srv.Send(device.ToProto())
-		if err != nil {
-			return status.Errorf(codes.Canceled, "cannot send device: %v", err)
-		}
+	if len(toReloadDevices) > 0 {
+		dd.projection.ReloadDevices(srv.Context(), toReloadDevices)
+		return dd.sendDevices(toReloadDevices, req, srv, nil)
 	}
 
 	return nil

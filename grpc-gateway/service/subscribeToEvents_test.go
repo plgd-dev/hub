@@ -3,6 +3,7 @@ package service_test
 import (
 	"context"
 	"crypto/tls"
+	"errors"
 	"fmt"
 	"io"
 	"sync"
@@ -12,27 +13,29 @@ import (
 	"github.com/plgd-dev/device/schema/device"
 	"github.com/plgd-dev/device/schema/platform"
 	"github.com/plgd-dev/go-coap/v2/message"
-	caService "github.com/plgd-dev/hub/certificate-authority/test"
-	coapgwTest "github.com/plgd-dev/hub/coap-gateway/test"
-	"github.com/plgd-dev/hub/grpc-gateway/client"
-	"github.com/plgd-dev/hub/grpc-gateway/pb"
-	grpcgwService "github.com/plgd-dev/hub/grpc-gateway/test"
-	idService "github.com/plgd-dev/hub/identity-store/test"
-	"github.com/plgd-dev/hub/pkg/log"
-	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
-	grpcClient "github.com/plgd-dev/hub/pkg/net/grpc/client"
-	"github.com/plgd-dev/hub/resource-aggregate/commands"
-	"github.com/plgd-dev/hub/resource-aggregate/events"
-	raService "github.com/plgd-dev/hub/resource-aggregate/test"
-	rdTest "github.com/plgd-dev/hub/resource-directory/test"
-	"github.com/plgd-dev/hub/test"
-	"github.com/plgd-dev/hub/test/config"
-	"github.com/plgd-dev/hub/test/oauth-server/service"
-	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
-	pbTest "github.com/plgd-dev/hub/test/pb"
-	serviceTest "github.com/plgd-dev/hub/test/service"
+	caService "github.com/plgd-dev/hub/v2/certificate-authority/test"
+	coapgwTest "github.com/plgd-dev/hub/v2/coap-gateway/test"
+	"github.com/plgd-dev/hub/v2/grpc-gateway/client"
+	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
+	grpcgwService "github.com/plgd-dev/hub/v2/grpc-gateway/test"
+	idService "github.com/plgd-dev/hub/v2/identity-store/test"
+	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	grpcClient "github.com/plgd-dev/hub/v2/pkg/net/grpc/client"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
+	raService "github.com/plgd-dev/hub/v2/resource-aggregate/test"
+	rdTest "github.com/plgd-dev/hub/v2/resource-directory/test"
+	"github.com/plgd-dev/hub/v2/test"
+	"github.com/plgd-dev/hub/v2/test/config"
+	"github.com/plgd-dev/hub/v2/test/oauth-server/service"
+	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
+	pbTest "github.com/plgd-dev/hub/v2/test/pb"
+	serviceTest "github.com/plgd-dev/hub/v2/test/service"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )
@@ -44,20 +47,23 @@ func TestRequestHandlerSubscribeToEvents(t *testing.T) {
 
 	tearDown := serviceTest.SetUp(ctx, t)
 	defer tearDown()
-	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultServiceToken(t))
+	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
 
 	conn, err := grpc.Dial(config.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
 	})))
 	require.NoError(t, err)
+	defer func() {
+		_ = conn.Close()
+	}()
 	c := pb.NewGrpcGatewayClient(conn)
 
 	resourceLinks := test.GetAllBackendResourceLinks()
 	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.GW_HOST, resourceLinks)
 	defer shutdownDevSim()
 
-	const switchId = "1"
-	resourceLinks = append(resourceLinks, test.AddDeviceSwitchResources(ctx, t, deviceID, c, switchId)...)
+	const switchID = "1"
+	resourceLinks = append(resourceLinks, test.AddDeviceSwitchResources(ctx, t, deviceID, c, switchID)...)
 	time.Sleep(200 * time.Millisecond)
 
 	type args struct {
@@ -193,7 +199,7 @@ func TestRequestHandlerSubscribeToEvents(t *testing.T) {
 				var events []*pb.Event
 				for range tt.want {
 					ev, err := client.Recv()
-					if err == io.EOF {
+					if errors.Is(err, io.EOF) {
 						break
 					}
 					require.NoError(t, err)
@@ -215,12 +221,15 @@ func TestRequestHandlerSubscribeForCreateEvents(t *testing.T) {
 
 	tearDown := serviceTest.SetUp(ctx, t)
 	defer tearDown()
-	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultServiceToken(t))
+	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
 
 	conn, err := grpc.Dial(config.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
 	})))
 	require.NoError(t, err)
+	defer func() {
+		_ = conn.Close()
+	}()
 	c := pb.NewGrpcGatewayClient(conn)
 
 	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.GW_HOST, test.GetAllBackendResourceLinks())
@@ -251,9 +260,9 @@ func TestRequestHandlerSubscribeForCreateEvents(t *testing.T) {
 	}
 	test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
 
-	const switchId = "1"
-	lightData := test.MakeSwitchResourceDefaultData()
-	test.AddDeviceSwitchResources(ctx, t, deviceID, c, switchId)
+	const switchID = "1"
+	switchData := test.MakeSwitchResourceDefaultData()
+	test.AddDeviceSwitchResources(ctx, t, deviceID, c, switchID)
 
 	ev, err = client.Recv()
 	require.NoError(t, err)
@@ -261,16 +270,17 @@ func TestRequestHandlerSubscribeForCreateEvents(t *testing.T) {
 		SubscriptionId: ev.SubscriptionId,
 		CorrelationId:  "testToken",
 		Type: &pb.Event_ResourceCreatePending{
-			ResourceCreatePending: pbTest.MakeResourceCreatePending(t, deviceID, test.TestResourceSwitchesHref, lightData),
+			ResourceCreatePending: pbTest.MakeResourceCreatePending(t, deviceID, test.TestResourceSwitchesHref, "",
+				switchData),
 		},
-	}, ev)
+	}, ev, "")
 
-	lightLink := test.DefaultSwitchResourceLink(switchId)
-	lightData = test.MakeSwitchResourceData(map[string]interface{}{
-		"href": lightLink.Href,
+	switchLink := test.DefaultSwitchResourceLink("", switchID)
+	switchData = test.MakeSwitchResourceData(map[string]interface{}{
+		"href": switchLink.Href,
 		"rep": map[string]interface{}{
-			"if":    lightLink.Interfaces,
-			"rt":    lightLink.ResourceTypes,
+			"if":    switchLink.Interfaces,
+			"rt":    switchLink.ResourceTypes,
 			"value": false,
 		},
 	})
@@ -281,9 +291,9 @@ func TestRequestHandlerSubscribeForCreateEvents(t *testing.T) {
 		SubscriptionId: ev.SubscriptionId,
 		CorrelationId:  "testToken",
 		Type: &pb.Event_ResourceCreated{
-			ResourceCreated: pbTest.MakeResourceCreated(t, deviceID, test.TestResourceSwitchesHref, lightData),
+			ResourceCreated: pbTest.MakeResourceCreated(t, deviceID, test.TestResourceSwitchesHref, "", switchData),
 		},
-	}, ev)
+	}, ev, "")
 }
 
 func TestRequestHandlerSubscribeForPendingCommands(t *testing.T) {
@@ -316,7 +326,7 @@ func TestRequestHandlerSubscribeForPendingCommands(t *testing.T) {
 			want: []*pb.PendingCommand{
 				{
 					Command: &pb.PendingCommand_ResourceUpdatePending{
-						ResourceUpdatePending: pbTest.MakeResourceUpdatePending(t, deviceID, test.TestResourceLightInstanceHref("1"),
+						ResourceUpdatePending: pbTest.MakeResourceUpdatePending(t, deviceID, test.TestResourceLightInstanceHref("1"), "",
 							map[string]interface{}{
 								"power": 1,
 							}),
@@ -363,7 +373,7 @@ func TestRequestHandlerSubscribeForPendingCommands(t *testing.T) {
 				},
 				{
 					Command: &pb.PendingCommand_ResourceCreatePending{
-						ResourceCreatePending: pbTest.MakeResourceCreatePending(t, deviceID, device.ResourceURI,
+						ResourceCreatePending: pbTest.MakeResourceCreatePending(t, deviceID, device.ResourceURI, "",
 							map[string]interface{}{
 								"power": 1,
 							}),
@@ -382,7 +392,7 @@ func TestRequestHandlerSubscribeForPendingCommands(t *testing.T) {
 				},
 				{
 					Command: &pb.PendingCommand_ResourceUpdatePending{
-						ResourceUpdatePending: pbTest.MakeResourceUpdatePending(t, deviceID, test.TestResourceLightInstanceHref("1"),
+						ResourceUpdatePending: pbTest.MakeResourceUpdatePending(t, deviceID, test.TestResourceLightInstanceHref("1"), "",
 							map[string]interface{}{
 								"power": 1,
 							}),
@@ -425,7 +435,7 @@ func TestRequestHandlerSubscribeForPendingCommands(t *testing.T) {
 			want: []*pb.PendingCommand{
 				{
 					Command: &pb.PendingCommand_ResourceCreatePending{
-						ResourceCreatePending: pbTest.MakeResourceCreatePending(t, deviceID, device.ResourceURI,
+						ResourceCreatePending: pbTest.MakeResourceCreatePending(t, deviceID, device.ResourceURI, "",
 							map[string]interface{}{
 								"power": 1,
 							}),
@@ -469,7 +479,7 @@ func TestRequestHandlerSubscribeForPendingCommands(t *testing.T) {
 			want: []*pb.PendingCommand{
 				{
 					Command: &pb.PendingCommand_ResourceUpdatePending{
-						ResourceUpdatePending: pbTest.MakeResourceUpdatePending(t, deviceID, test.TestResourceLightInstanceHref("1"),
+						ResourceUpdatePending: pbTest.MakeResourceUpdatePending(t, deviceID, test.TestResourceLightInstanceHref("1"), "",
 							map[string]interface{}{
 								"power": 1,
 							}),
@@ -521,12 +531,15 @@ func TestRequestHandlerSubscribeForPendingCommands(t *testing.T) {
 	defer authShutdown()
 	defer oauthShutdown()
 
-	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultServiceToken(t))
+	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
 
 	conn, err := grpc.Dial(config.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
 	})))
 	require.NoError(t, err)
+	defer func() {
+		_ = conn.Close()
+	}()
 	c := pb.NewGrpcGatewayClient(conn)
 
 	client, err := client.New(c).SubscribeToEventsWithCurrentState(ctx, time.Minute)
@@ -631,8 +644,8 @@ func TestRequestHandlerSubscribeForPendingCommands(t *testing.T) {
 				CorrelationId:  correlationID,
 			}
 			test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
-			subscriptionId := ev.SubscriptionId
-			fmt.Printf("sub %v\n", subscriptionId)
+			subscriptionID := ev.SubscriptionId
+			fmt.Printf("sub %v\n", subscriptionID)
 
 			values := make([]*pb.PendingCommand, 0, 1)
 			for len(values) < len(tt.want) {
@@ -657,7 +670,7 @@ func TestRequestHandlerSubscribeForPendingCommands(t *testing.T) {
 				CorrelationId: correlationID,
 				Action: &pb.SubscribeToEvents_CancelSubscription_{
 					CancelSubscription: &pb.SubscribeToEvents_CancelSubscription{
-						SubscriptionId: subscriptionId,
+						SubscriptionId: subscriptionID,
 					},
 				},
 			})
@@ -667,7 +680,7 @@ func TestRequestHandlerSubscribeForPendingCommands(t *testing.T) {
 			ev, err = client.Recv()
 			require.NoError(t, err)
 			expectedEvent = &pb.Event{
-				SubscriptionId: subscriptionId,
+				SubscriptionId: subscriptionID,
 				Type: &pb.Event_SubscriptionCanceled_{
 					SubscriptionCanceled: &pb.Event_SubscriptionCanceled{},
 				},
@@ -679,7 +692,7 @@ func TestRequestHandlerSubscribeForPendingCommands(t *testing.T) {
 			ev, err = client.Recv()
 			require.NoError(t, err)
 			expectedEvent = &pb.Event{
-				SubscriptionId: subscriptionId,
+				SubscriptionId: subscriptionID,
 				Type:           pbTest.OperationProcessedOK(),
 				CorrelationId:  correlationID,
 			}
@@ -699,9 +712,16 @@ func TestRequestHandlerIssue270(t *testing.T) {
 
 	tearDown := serviceTest.SetUp(ctx, t, serviceTest.WithCOAPGWConfig(coapgwCfg), serviceTest.WithRDConfig(rdCfg), serviceTest.WithGRPCGWConfig(grpcgwCfg))
 	defer tearDown()
-	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultServiceToken(t))
+	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
 
-	rdConn, err := grpcClient.New(config.MakeGrpcClientConfig(config.GRPC_HOST), log.Get())
+	fileWatcher, err := fsnotify.NewWatcher()
+	require.NoError(t, err)
+	defer func() {
+		err := fileWatcher.Close()
+		require.NoError(t, err)
+	}()
+
+	rdConn, err := grpcClient.New(config.MakeGrpcClientConfig(config.GRPC_HOST), fileWatcher, log.Get(), trace.NewNoopTracerProvider())
 	require.NoError(t, err)
 	defer func() {
 		_ = rdConn.Close()
@@ -779,7 +799,7 @@ func TestRequestHandlerIssue270(t *testing.T) {
 			},
 		},
 		CorrelationId: "testToken",
-	}, ev)
+	}, ev, "")
 
 	shutdownDevSim()
 	run := true
@@ -789,8 +809,7 @@ func TestRequestHandlerIssue270(t *testing.T) {
 
 		t.Logf("ev after shutdown: %v\n", ev)
 
-		switch {
-		case ev.GetDeviceUnregistered() != nil:
+		if ev.GetDeviceUnregistered() != nil {
 			expectedEvent = &pb.Event{
 				SubscriptionId: ev.SubscriptionId,
 				Type: &pb.Event_DeviceUnregistered_{

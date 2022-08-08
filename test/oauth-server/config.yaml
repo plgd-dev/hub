@@ -1,19 +1,58 @@
 log:
-  debug: false
+  level: info
+  encoding: json
+  stacktrace:
+    enabled: false
+    level: warn
+  encoderConfig:
+    timeEncoder: rfc3339nano
 apis:
   http:
     address: "0.0.0.0:9100"
+    readTimeout: 8s
+    readHeaderTimeout: 4s
+    writeTimeout: 16s
+    idleTimeout: 30s
     tls:
       caPool: "/secrets/public/rootca.crt"
       keyFile: "/secrets/private/cert.key"
       certFile: "/secrets/public/cert.crt"
       clientCertificateRequired: true
+clients:
+  openTelemetryCollector:
+    grpc:
+      enabled: false
+      address: ""
+      keepAlive:
+        time: 10s
+        timeout: 20s
+        permitWithoutStream: true
+      tls:
+        caPool: "/secrets/public/rootca.crt"
+        keyFile: "/secrets/private/cert.key"
+        certFile: "/secrets/public/cert.crt"
+        useSystemCAPool: false
 oauthSigner:
   idTokenKeyFile: "/secrets/private/idToken.key"
   accessTokenKeyFile: "/secrets/private/accessToken.key"
   domain: ""
   clients:
-  - id: "test"
-    authorizationCodeLifetime: "10m"
-    accessTokenLifetime: "0s"
-    codeRestrictionLifetime: "0s"
+    - id: "test"
+      authorizationCodeLifetime: "10m"
+      accessTokenLifetime: "0s"
+      codeRestrictionLifetime: "0s"
+      refreshTokenRestrictionLifetime: "0s"
+    - id: "testC2C"
+      secret: "testC2CSecret"
+      authorizationCodeLifetime: "5m"
+      accessTokenLifetime: "720m"
+      codeRestrictionLifetime: "5m"
+      refreshTokenRestrictionLifetime: "0s"
+      consentScreenEnabled: true
+      requireIssuedAuthorizationCode: true
+      requiredScope:
+        - "r:*"
+        - "w:*"
+        - "offline_access"
+      requiredResponseType: "code"
+      requiredRedirectURI: "https://localhost:8080/callback"

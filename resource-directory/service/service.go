@@ -5,36 +5,47 @@ import (
 	"fmt"
 
 	"github.com/panjf2000/ants/v2"
-	"github.com/plgd-dev/hub/grpc-gateway/pb"
-	"github.com/plgd-dev/hub/pkg/log"
-	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
-	"github.com/plgd-dev/hub/pkg/net/grpc/server"
-	"github.com/plgd-dev/hub/pkg/security/jwt"
-	"github.com/plgd-dev/hub/pkg/security/jwt/validator"
+	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
+	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	"github.com/plgd-dev/hub/v2/pkg/net/grpc/server"
+	otelClient "github.com/plgd-dev/hub/v2/pkg/opentelemetry/collector/client"
+	"github.com/plgd-dev/hub/v2/pkg/security/jwt"
+	"github.com/plgd-dev/hub/v2/pkg/security/jwt/validator"
 )
 
 type Service struct {
 	*server.Server
 }
 
-func New(ctx context.Context, config Config, logger log.Logger) (*Service, error) {
-	validator, err := validator.New(ctx, config.APIs.GRPC.Authorization.Config, logger)
+func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logger log.Logger) (*Service, error) {
+	otelClient, err := otelClient.New(ctx, config.Clients.OpenTelemetryCollector, "resource-directory", fileWatcher, logger)
 	if err != nil {
+		return nil, fmt.Errorf("cannot create open telemetry collector client: %w", err)
+	}
+	tracerProvider := otelClient.GetTracerProvider()
+
+	validator, err := validator.New(ctx, config.APIs.GRPC.Authorization.Config, fileWatcher, logger, tracerProvider)
+	if err != nil {
+		otelClient.Close()
 		return nil, fmt.Errorf("cannot create validator: %w", err)
 	}
 	method := "/" + pb.GrpcGateway_ServiceDesc.ServiceName + "/GetHubConfiguration"
 	interceptor := server.NewAuth(validator, server.WithWhiteListedMethods(method))
-	opts, err := server.MakeDefaultOptions(interceptor, logger)
+	opts, err := server.MakeDefaultOptions(interceptor, logger, tracerProvider)
 	if err != nil {
+		otelClient.Close()
 		validator.Close()
 		return nil, fmt.Errorf("cannot create grpc server options: %w", err)
 	}
-	server, err := server.New(config.APIs.GRPC.Config, logger, opts...)
-
+	server, err := server.New(config.APIs.GRPC.Config, fileWatcher, logger, opts...)
 	if err != nil {
+		otelClient.Close()
 		validator.Close()
 		return nil, err
 	}
+	server.AddCloseFunc(otelClient.Close)
 	server.AddCloseFunc(validator.Close)
 
 	pool, err := ants.NewPool(config.Clients.Eventbus.GoPoolSize)
@@ -44,7 +55,7 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 	}
 	server.AddCloseFunc(pool.Release)
 
-	if err := AddHandler(ctx, server, config, config.ExposedHubConfiguration, logger, pool.Submit); err != nil {
+	if err := AddHandler(ctx, server, config, config.ExposedHubConfiguration, fileWatcher, logger, tracerProvider, pool.Submit); err != nil {
 		server.Close()
 		return nil, err
 	}
@@ -54,13 +65,12 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 	}, nil
 }
 
-func makeAuthFunc(validator kitNetGrpc.Validator, ownerClaim string) func(ctx context.Context, method string) (context.Context, error) {
+func makeAuthFunc(validator kitNetGrpc.Validator) func(ctx context.Context, method string) (context.Context, error) {
 	interceptor := kitNetGrpc.ValidateJWTWithValidator(validator, func(ctx context.Context, method string) kitNetGrpc.Claims {
 		return jwt.NewScopeClaims()
 	})
 	return func(ctx context.Context, method string) (context.Context, error) {
-		switch method {
-		case "/" + pb.GrpcGateway_ServiceDesc.ServiceName + "/GetHubConfiguration":
+		if method == "/"+pb.GrpcGateway_ServiceDesc.ServiceName+"/GetHubConfiguration" {
 			return ctx, nil
 		}
 		token, _ := kitNetGrpc.TokenFromMD(ctx)
@@ -73,6 +83,6 @@ func makeAuthFunc(validator kitNetGrpc.Validator, ownerClaim string) func(ctx co
 	}
 }
 
-func NewAuth(validator kitNetGrpc.Validator, ownerClaim string) kitNetGrpc.AuthInterceptors {
-	return kitNetGrpc.MakeAuthInterceptors(makeAuthFunc(validator, ownerClaim))
+func NewAuth(validator kitNetGrpc.Validator) kitNetGrpc.AuthInterceptors {
+	return kitNetGrpc.MakeAuthInterceptors(makeAuthFunc(validator))
 }

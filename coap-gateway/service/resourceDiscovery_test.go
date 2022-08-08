@@ -3,22 +3,22 @@ package service_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/plgd-dev/device/schema/resources"
-	"github.com/plgd-dev/go-coap/v2/tcp"
-	testCfg "github.com/plgd-dev/hub/test/config"
-	"github.com/plgd-dev/kit/v2/codec/cbor"
-
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
+	"github.com/plgd-dev/go-coap/v2/tcp"
+	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
+	"github.com/plgd-dev/kit/v2/codec/cbor"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func Test_resourceDirectoryFind(t *testing.T) {
+func TestResourceDirectoryFind(t *testing.T) {
 	shutdown := setUp(t)
 	defer shutdown()
 
-	co := testCoapDial(t, testCfg.GW_HOST, "")
+	co := testCoapDial(t, "", true, time.Now().Add(time.Minute))
 	if co == nil {
 		return
 	}
@@ -77,7 +77,7 @@ func Test_resourceDirectoryFind(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx, cancel := context.WithTimeout(context.Background(), TestExchangeTimeout)
 			defer cancel()
-			req, err := tcp.NewGetRequest(ctx, resources.ResourceURI)
+			req, err := tcp.NewGetRequest(ctx, pool.New(0, 0), resources.ResourceURI)
 			require.NoError(t, err)
 			for _, q := range tt.args.queries {
 				req.AddQuery(q)

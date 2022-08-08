@@ -3,47 +3,53 @@ package service
 import (
 	"fmt"
 
-	"github.com/plgd-dev/hub/coap-gateway/coapconv"
-	"github.com/plgd-dev/hub/resource-aggregate/commands"
-	"github.com/plgd-dev/go-coap/v2/message"
+	coapMessage "github.com/plgd-dev/go-coap/v2/message"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/mux"
+	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
+	"github.com/plgd-dev/hub/v2/coap-gateway/coapconv"
+	"github.com/plgd-dev/hub/v2/coap-gateway/service/message"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 )
 
-func clientDeleteHandler(req *mux.Message, client *Client) {
-	authCtx, err := client.GetAuthorizationContext()
-	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot handle delete resource: %w", authCtx.GetDeviceID(), err), coapCodes.Unauthorized, req.Token)
-		return
+const errFmtDeleteResource = "cannot handle delete resource%v: %w"
+
+func getDeleteResourceErr(err error) error {
+	if err == nil {
+		return nil
 	}
-	deviceID, href, err := URIToDeviceIDHref(req)
+	return fmt.Errorf(errFmtDeleteResource, "", err)
+}
+
+func clientDeleteHandler(req *mux.Message, client *Client) (*pool.Message, error) {
+	_, err := client.GetAuthorizationContext()
 	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot handle delete resource: %w", authCtx.GetDeviceID(), err), coapCodes.BadRequest, req.Token)
-		return
+		return nil, statusErrorf(coapCodes.Unauthorized, "%w", getDeleteResourceErr(err))
+	}
+	deviceID, href, err := message.URIToDeviceIDHref(req)
+	if err != nil {
+		return nil, statusErrorf(coapCodes.BadRequest, "%w", getDeleteResourceErr(err))
 	}
 
 	code := coapCodes.Deleted
-	content, err := clientDeleteResourceHandler(req, client, deviceID, href, authCtx.GetUserID())
+	content, err := clientDeleteResourceHandler(req, client, deviceID, href)
 	if err != nil {
 		code = coapconv.GrpcErr2CoapCode(err, coapconv.Delete)
-		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot delete resource /%v%v from device: %w", authCtx.GetDeviceID(), deviceID, href, err), code, req.Token)
-		return
+		return nil, statusErrorf(code, errFmtDeleteResource, fmt.Sprintf(" /%v%v", deviceID, href), err)
 	}
 
 	if content == nil || len(content.Data) == 0 {
-		client.sendResponse(code, req.Token, message.TextPlain, nil)
-		return
+		return client.createResponse(code, req.Token, coapMessage.TextPlain, nil), nil
 	}
 	mediaType, err := coapconv.MakeMediaType(-1, content.ContentType)
 	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot delete resource /%v%v: %w", authCtx.GetDeviceID(), deviceID, href, err), coapCodes.BadRequest, req.Token)
-		return
+		return nil, statusErrorf(code, errFmtDeleteResource, fmt.Sprintf(" /%v%v", deviceID, href), err)
 	}
-	client.sendResponse(code, req.Token, mediaType, content.Data)
+	return client.createResponse(code, req.Token, mediaType, content.Data), nil
 }
 
-func clientDeleteResourceHandler(req *mux.Message, client *Client, deviceID, href, userID string) (*commands.Content, error) {
-	deleteCommand, err := coapconv.NewDeleteResourceRequest(commands.NewResourceID(deviceID, href), req, client.remoteAddrString())
+func clientDeleteResourceHandler(req *mux.Message, client *Client, deviceID, href string) (*commands.Content, error) {
+	deleteCommand, err := coapconv.NewDeleteResourceRequest(commands.NewResourceID(deviceID, href), req, client.RemoteAddr().String())
 	if err != nil {
 		return nil, err
 	}

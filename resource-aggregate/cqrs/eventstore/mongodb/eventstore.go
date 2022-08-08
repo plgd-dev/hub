@@ -8,38 +8,45 @@ import (
 	"strings"
 	"time"
 
-	"github.com/plgd-dev/hub/pkg/log"
-
+	"github.com/plgd-dev/go-coap/v2/pkg/cache"
+	"github.com/plgd-dev/go-coap/v2/pkg/runner/periodic"
+	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	pkgMongo "github.com/plgd-dev/hub/v2/pkg/mongodb"
+	"github.com/plgd-dev/hub/v2/pkg/security/certManager/client"
+	pkgTime "github.com/plgd-dev/hub/v2/pkg/time"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"go.mongodb.org/mongo-driver/mongo/readpref"
-
-	"github.com/patrickmn/go-cache"
-	"github.com/plgd-dev/hub/pkg/security/certManager/client"
-	pkgTime "github.com/plgd-dev/hub/pkg/time"
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventstore"
+	"go.opentelemetry.io/otel/trace"
 )
 
 const eventCName = "events"
 
 // Event
 const versionKey = "version"
-const dataKey = "data"
-const eventTypeKey = "eventtype"
-const isSnapshotKey = "issnapshot"
-const timestampKey = "timestamp"
+
+const (
+	dataKey       = "data"
+	eventTypeKey  = "eventtype"
+	isSnapshotKey = "issnapshot"
+	timestampKey  = "timestamp"
+)
 
 // Document
 const aggregateIDKey = "aggregateid"
-const idKey = "_id"
-const firstVersionKey = "firstversion"
-const latestVersionKey = "latestversion"
-const latestSnapshotVersionKey = "latestsnapshotversion"
-const latestTimestampKey = "latesttimestamp"
-const eventsKey = "events"
-const groupIDKey = "groupid"
-const isActiveKey = "isactive"
+
+const (
+	idKey                    = "_id"
+	firstVersionKey          = "firstversion"
+	latestVersionKey         = "latestversion"
+	latestSnapshotVersionKey = "latestsnapshotversion"
+	latestTimestampKey       = "latesttimestamp"
+	eventsKey                = "events"
+	groupIDKey               = "groupid"
+	isActiveKey              = "isactive"
+)
 
 var aggregateIDLastVersionQueryIndex = bson.D{
 	{Key: aggregateIDKey, Value: 1},
@@ -81,10 +88,10 @@ const (
 
 type LogDebugfFunc = func(fmt string, args ...interface{})
 
-//MarshalerFunc marshal struct to bytes.
+// MarshalerFunc marshal struct to bytes.
 type MarshalerFunc = func(v interface{}) ([]byte, error)
 
-//UnmarshalerFunc unmarshal bytes to pointer of struct.
+// UnmarshalerFunc unmarshal bytes to pointer of struct.
 type UnmarshalerFunc = func(b []byte, v interface{}) error
 
 // EventStore implements an EventStore for MongoDB.
@@ -93,7 +100,6 @@ type EventStore struct {
 	LogDebugfFunc   LogDebugfFunc
 	dbPrefix        string
 	colPrefix       string
-	batchSize       int
 	dataMarshaler   MarshalerFunc
 	dataUnmarshaler UnmarshalerFunc
 	ensuredIndexes  *cache.Cache
@@ -104,27 +110,22 @@ func (s *EventStore) AddCloseFunc(f func()) {
 	s.closeFunc = append(s.closeFunc, f)
 }
 
-func New(ctx context.Context, config Config, logger log.Logger, opts ...Option) (*EventStore, error) {
+func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider, opts ...Option) (*EventStore, error) {
 	config.marshalerFunc = json.Marshal
 	config.unmarshalerFunc = json.Unmarshal
 	for _, o := range opts {
 		o.apply(&config)
 	}
-	certManager, err := client.New(config.Embedded.TLS, logger)
+	certManager, err := client.New(config.Embedded.TLS, fileWatcher, logger)
 	if err != nil {
 		return nil, fmt.Errorf("could not create cert manager: %w", err)
 	}
-
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI(config.Embedded.URI).SetMaxPoolSize(config.MaxPoolSize).SetMaxConnIdleTime(config.MaxConnIdleTime).SetTLSConfig(certManager.GetTLSConfig()))
+	mgoStore, err := pkgMongo.NewStore(ctx, config.Embedded, certManager.GetTLSConfig(), tracerProvider)
 	if err != nil {
-		return nil, fmt.Errorf("could not dial database: %w", err)
+		return nil, err
 	}
-	err = client.Ping(ctx, readpref.Primary())
-	if err != nil {
-		return nil, fmt.Errorf("could not dial database: %w", err)
-	}
-
-	store, err := newEventStoreWithClient(ctx, client, config.Embedded.Database, "events", config.BatchSize, config.marshalerFunc, config.unmarshalerFunc, nil)
+	client := mgoStore.Client()
+	store, err := newEventStoreWithClient(ctx, client, config.Embedded.Database, "events", config.marshalerFunc, config.unmarshalerFunc, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -133,7 +134,7 @@ func New(ctx context.Context, config Config, logger log.Logger, opts ...Option) 
 }
 
 // NewEventStoreWithClient creates a new EventStore with a session.
-func newEventStoreWithClient(ctx context.Context, client *mongo.Client, dbPrefix string, colPrefix string, batchSize int, eventMarshaler MarshalerFunc, eventUnmarshaler UnmarshalerFunc, LogDebugfFunc LogDebugfFunc) (*EventStore, error) {
+func newEventStoreWithClient(ctx context.Context, client *mongo.Client, dbPrefix string, colPrefix string, eventMarshaler MarshalerFunc, eventUnmarshaler UnmarshalerFunc, logDebugfFunc LogDebugfFunc) (*EventStore, error) {
 	if client == nil {
 		return nil, errors.New("invalid client")
 	}
@@ -153,13 +154,15 @@ func newEventStoreWithClient(ctx context.Context, client *mongo.Client, dbPrefix
 		colPrefix = "events"
 	}
 
-	if batchSize < 1 {
-		batchSize = 128
+	if logDebugfFunc == nil {
+		logDebugfFunc = func(fmt string, args ...interface{}) {}
 	}
-
-	if LogDebugfFunc == nil {
-		LogDebugfFunc = func(fmt string, args ...interface{}) {}
-	}
+	ensuredIndexes := cache.NewCache()
+	add := periodic.New(ctx.Done(), time.Hour/2)
+	add(func(now time.Time) bool {
+		ensuredIndexes.CheckExpirations(now)
+		return true
+	})
 
 	s := &EventStore{
 		client:          client,
@@ -167,9 +170,8 @@ func newEventStoreWithClient(ctx context.Context, client *mongo.Client, dbPrefix
 		colPrefix:       colPrefix,
 		dataMarshaler:   eventMarshaler,
 		dataUnmarshaler: eventUnmarshaler,
-		batchSize:       batchSize,
-		LogDebugfFunc:   LogDebugfFunc,
-		ensuredIndexes:  cache.New(time.Hour, time.Hour),
+		LogDebugfFunc:   logDebugfFunc,
+		ensuredIndexes:  ensuredIndexes,
 	}
 
 	colAv := s.client.Database(s.DBName()).Collection(maintenanceCName)
@@ -196,8 +198,8 @@ func newEventStoreWithClient(ctx context.Context, client *mongo.Client, dbPrefix
 }
 
 func (s *EventStore) ensureIndex(ctx context.Context, col *mongo.Collection, indexes ...bson.D) error {
-	_, ok := s.ensuredIndexes.Get(col.Name())
-	if ok {
+	v := s.ensuredIndexes.Load(col.Name())
+	if v != nil {
 		return nil
 	}
 	for _, keys := range indexes {
@@ -210,13 +212,13 @@ func (s *EventStore) ensureIndex(ctx context.Context, col *mongo.Collection, ind
 		_, err := col.Indexes().CreateOne(ctx, index)
 		if err != nil {
 			if strings.HasPrefix(err.Error(), "(IndexKeySpecsConflict)") {
-				//index already exist, just skip error and continue
+				// index already exist, just skip error and continue
 				continue
 			}
 			return fmt.Errorf("cannot ensure indexes for eventstore: %w", err)
 		}
 	}
-	s.ensuredIndexes.SetDefault(col.Name(), true)
+	s.ensuredIndexes.LoadOrStore(col.Name(), cache.NewElement(true, time.Now().Add(time.Hour), nil))
 	return nil
 }
 
@@ -305,7 +307,7 @@ func (s *EventStore) ClearCollections(ctx context.Context) error {
 
 // Close closes the database session.
 func (s *EventStore) Close(ctx context.Context) error {
-	s.ensuredIndexes.Flush()
+	s.ensuredIndexes.PullOutAll()
 	err := s.client.Disconnect(ctx)
 	for _, f := range s.closeFunc {
 		f()

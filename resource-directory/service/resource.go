@@ -1,8 +1,8 @@
 package service
 
 import (
-	"github.com/plgd-dev/hub/resource-aggregate/commands"
-	"github.com/plgd-dev/hub/resource-aggregate/events"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 )
 
 type Resource struct {
@@ -14,22 +14,9 @@ func (r *Resource) GetResourceChanged() *events.ResourceChanged {
 	if r == nil {
 		return nil
 	}
-	if r.projection == nil {
-		return nil
-	}
-	return r.projection.content
+	return r.projection.GetResourceChanged()
 }
 
 func (r *Resource) GetContent() *commands.Content {
-	if r.projection == nil {
-		return nil
-	}
 	return r.GetResourceChanged().GetContent()
-}
-
-func (r *Resource) GetStatus() commands.Status {
-	if r.projection == nil {
-		return commands.Status_UNAVAILABLE
-	}
-	return r.GetResourceChanged().GetStatus()
 }

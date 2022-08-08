@@ -1,13 +1,14 @@
 package test
 
 import (
-	"github.com/plgd-dev/hub/pkg/log"
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventbus/nats/client"
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventbus/nats/subscriber"
+	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/client"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/subscriber"
 )
 
-func NewClientAndSubscriber(config client.Config, logger log.Logger, opts ...subscriber.Option) (*client.Client, *subscriber.Subscriber, error) {
-	c, err := client.New(config, logger)
+func NewClientAndSubscriber(config client.Config, fileWatcher *fsnotify.Watcher, logger log.Logger, opts ...subscriber.Option) (*client.Client, *subscriber.Subscriber, error) {
+	c, err := client.New(config, fileWatcher, logger)
 	if err != nil {
 		return nil, nil, err
 	}

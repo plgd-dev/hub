@@ -5,15 +5,16 @@ import (
 	"crypto/tls"
 	"fmt"
 
-	pkgMongo "github.com/plgd-dev/hub/pkg/mongodb"
+	pkgMongo "github.com/plgd-dev/hub/v2/pkg/mongodb"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type Store struct {
 	*pkgMongo.Store
 }
 
-func NewStore(ctx context.Context, cfg pkgMongo.Config, tls *tls.Config) (*Store, error) {
-	m, err := pkgMongo.NewStore(ctx, cfg, tls)
+func NewStore(ctx context.Context, cfg pkgMongo.Config, tls *tls.Config, tracerProvider trace.TracerProvider) (*Store, error) {
+	m, err := pkgMongo.NewStore(ctx, cfg, tls, tracerProvider)
 	if err != nil {
 		return nil, err
 	}

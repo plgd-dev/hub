@@ -2,46 +2,62 @@ package service
 
 import (
 	"context"
+	"errors"
 	"testing"
 
-	caService "github.com/plgd-dev/hub/certificate-authority/test"
-	c2cgwService "github.com/plgd-dev/hub/cloud2cloud-gateway/test"
-	coapgw "github.com/plgd-dev/hub/coap-gateway/service"
-	coapgwTest "github.com/plgd-dev/hub/coap-gateway/test"
-	grpcgwConfig "github.com/plgd-dev/hub/grpc-gateway/service"
-	grpcgwTest "github.com/plgd-dev/hub/grpc-gateway/test"
-	idService "github.com/plgd-dev/hub/identity-store/test"
-	"github.com/plgd-dev/hub/pkg/fn"
-	"github.com/plgd-dev/hub/pkg/log"
-	cmClient "github.com/plgd-dev/hub/pkg/security/certManager/client"
-	raService "github.com/plgd-dev/hub/resource-aggregate/test"
-	rdService "github.com/plgd-dev/hub/resource-directory/service"
-	rdTest "github.com/plgd-dev/hub/resource-directory/test"
-	"github.com/plgd-dev/hub/test/config"
-	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
+	caService "github.com/plgd-dev/hub/v2/certificate-authority/test"
+	c2cgwService "github.com/plgd-dev/hub/v2/cloud2cloud-gateway/test"
+	coapgw "github.com/plgd-dev/hub/v2/coap-gateway/service"
+	coapgwTest "github.com/plgd-dev/hub/v2/coap-gateway/test"
+	grpcgwConfig "github.com/plgd-dev/hub/v2/grpc-gateway/service"
+	grpcgwTest "github.com/plgd-dev/hub/v2/grpc-gateway/test"
+	isService "github.com/plgd-dev/hub/v2/identity-store/service"
+	isTest "github.com/plgd-dev/hub/v2/identity-store/test"
+	"github.com/plgd-dev/hub/v2/pkg/fn"
+	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	cmClient "github.com/plgd-dev/hub/v2/pkg/security/certManager/client"
+	raService "github.com/plgd-dev/hub/v2/resource-aggregate/service"
+	raTest "github.com/plgd-dev/hub/v2/resource-aggregate/test"
+	rdService "github.com/plgd-dev/hub/v2/resource-directory/service"
+	rdTest "github.com/plgd-dev/hub/v2/resource-directory/test"
+	"github.com/plgd-dev/hub/v2/test/config"
+	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	"github.com/stretchr/testify/require"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
+var filterOutClearDB = map[string]bool{
+	"admin":  true,
+	"config": true,
+	"local":  true,
+}
+
 func ClearDB(ctx context.Context, t *testing.T) {
-	logger, err := log.NewLogger(log.Config{Debug: true})
-	require.NoError(t, err)
+	logCfg := log.MakeDefaultConfig()
+	logger := log.NewLogger(logCfg)
 	tlsConfig := config.MakeTLSClientConfig()
-	certManager, err := cmClient.New(tlsConfig, logger)
+	fileWatcher, err := fsnotify.NewWatcher()
+	require.NoError(t, err)
+	defer func() {
+		err = fileWatcher.Close()
+		require.NoError(t, err)
+	}()
+	certManager, err := cmClient.New(tlsConfig, fileWatcher, logger)
 	require.NoError(t, err)
 	defer certManager.Close()
 
 	client, err := mongo.Connect(ctx, options.Client().ApplyURI("mongodb://localhost:27017").SetTLSConfig(certManager.GetTLSConfig()))
 	require.NoError(t, err)
 	dbs, err := client.ListDatabaseNames(ctx, bson.M{})
-	if mongo.ErrNilDocument == err {
+	if errors.Is(err, mongo.ErrNilDocument) {
 		return
 	}
 	require.NoError(t, err)
 	for _, db := range dbs {
-		if db == "admin" {
+		if filterOutClearDB[db] {
 			continue
 		}
 		err = client.Database(db).Drop(ctx)
@@ -55,6 +71,8 @@ type Config struct {
 	COAPGW coapgw.Config
 	RD     rdService.Config
 	GRPCGW grpcgwConfig.Config
+	RA     raService.Config
+	IS     isService.Config
 }
 
 func WithCOAPGWConfig(coapgwCfg coapgw.Config) SetUpOption {
@@ -75,13 +93,27 @@ func WithGRPCGWConfig(grpcCfg grpcgwConfig.Config) SetUpOption {
 	}
 }
 
+func WithRAConfig(ra raService.Config) SetUpOption {
+	return func(cfg *Config) {
+		cfg.RA = ra
+	}
+}
+
+func WithISConfig(is isService.Config) SetUpOption {
+	return func(cfg *Config) {
+		cfg.IS = is
+	}
+}
+
 type SetUpOption = func(cfg *Config)
 
-func SetUp(ctx context.Context, t *testing.T, opts ...SetUpOption) (TearDown func()) {
+func SetUp(ctx context.Context, t *testing.T, opts ...SetUpOption) (tearDown func()) {
 	config := Config{
 		COAPGW: coapgwTest.MakeConfig(t),
 		RD:     rdTest.MakeConfig(t),
 		GRPCGW: grpcgwTest.MakeConfig(t),
+		RA:     raTest.MakeConfig(t),
+		IS:     isTest.MakeConfig(t),
 	}
 
 	for _, o := range opts {
@@ -90,8 +122,8 @@ func SetUp(ctx context.Context, t *testing.T, opts ...SetUpOption) (TearDown fun
 
 	ClearDB(ctx, t)
 	oauthShutdown := oauthTest.SetUp(t)
-	idShutdown := idService.SetUp(t)
-	raShutdown := raService.SetUp(t)
+	isShutdown := isTest.New(t, config.IS)
+	raShutdown := raTest.New(t, config.RA)
 	rdShutdown := rdTest.New(t, config.RD)
 	grpcShutdown := grpcgwTest.New(t, config.GRPCGW)
 	c2cgwShutdown := c2cgwService.SetUp(t)
@@ -105,7 +137,7 @@ func SetUp(ctx context.Context, t *testing.T, opts ...SetUpOption) (TearDown fun
 		secureGWShutdown()
 		rdShutdown()
 		raShutdown()
-		idShutdown()
+		isShutdown()
 		oauthShutdown()
 	}
 }
@@ -123,8 +155,19 @@ const (
 	SetUpServicesResourceDirectory
 )
 
-func SetUpServices(ctx context.Context, t *testing.T, servicesConfig SetUpServicesConfig) func() {
+func SetUpServices(ctx context.Context, t *testing.T, servicesConfig SetUpServicesConfig, opts ...SetUpOption) func() {
 	var tearDown fn.FuncList
+	config := Config{
+		COAPGW: coapgwTest.MakeConfig(t),
+		RD:     rdTest.MakeConfig(t),
+		GRPCGW: grpcgwTest.MakeConfig(t),
+		RA:     raTest.MakeConfig(t),
+		IS:     isTest.MakeConfig(t),
+	}
+
+	for _, o := range opts {
+		o(&config)
+	}
 
 	ClearDB(ctx, t)
 	if servicesConfig&SetUpServicesOAuth != 0 {
@@ -132,19 +175,19 @@ func SetUpServices(ctx context.Context, t *testing.T, servicesConfig SetUpServic
 		tearDown.AddFunc(oauthShutdown)
 	}
 	if servicesConfig&SetUpServicesId != 0 {
-		idShutdown := idService.SetUp(t)
-		tearDown.AddFunc(idShutdown)
+		isShutdown := isTest.New(t, config.IS)
+		tearDown.AddFunc(isShutdown)
 	}
 	if servicesConfig&SetUpServicesResourceAggregate != 0 {
-		raShutdown := raService.SetUp(t)
+		raShutdown := raTest.New(t, config.RA)
 		tearDown.AddFunc(raShutdown)
 	}
 	if servicesConfig&SetUpServicesResourceDirectory != 0 {
-		rdShutdown := rdTest.SetUp(t)
+		rdShutdown := rdTest.New(t, config.RD)
 		tearDown.AddFunc(rdShutdown)
 	}
 	if servicesConfig&SetUpServicesGrpcGateway != 0 {
-		grpcShutdown := grpcgwTest.SetUp(t)
+		grpcShutdown := grpcgwTest.New(t, config.GRPCGW)
 		tearDown.AddFunc(grpcShutdown)
 	}
 	if servicesConfig&SetUpServicesCloud2CloudGateway != 0 {
@@ -156,7 +199,7 @@ func SetUpServices(ctx context.Context, t *testing.T, servicesConfig SetUpServic
 		tearDown.AddFunc(caShutdown)
 	}
 	if servicesConfig&SetUpServicesCoapGateway != 0 {
-		secureGWShutdown := coapgwTest.SetUp(t)
+		secureGWShutdown := coapgwTest.New(t, config.COAPGW)
 		tearDown.AddFunc(secureGWShutdown)
 	}
 	return tearDown.ToFunction()

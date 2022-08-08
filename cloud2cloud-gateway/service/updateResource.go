@@ -7,10 +7,10 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
-	"github.com/plgd-dev/hub/cloud2cloud-connector/events"
-	"github.com/plgd-dev/hub/resource-aggregate/commands"
-	raEvents "github.com/plgd-dev/hub/resource-aggregate/events"
-	"github.com/plgd-dev/kit/v2/log"
+	"github.com/plgd-dev/hub/v2/cloud2cloud-connector/events"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
+	raEvents "github.com/plgd-dev/hub/v2/resource-aggregate/events"
 )
 
 func statusToHttpStatus(status commands.Status) int {
@@ -90,7 +90,7 @@ func (rh *RequestHandler) updateResourceContent(w http.ResponseWriter, r *http.R
 
 	routeVars := mux.Vars(r)
 	deviceID := routeVars[deviceIDKey]
-	href := routeVars[HrefKey]
+	href := routeVars[hrefKey]
 
 	buffer := bytes.NewBuffer(make([]byte, 0, 1024))
 	_, err = buffer.ReadFrom(r.Body)

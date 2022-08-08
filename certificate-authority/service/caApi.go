@@ -8,14 +8,14 @@ import (
 	"time"
 
 	"github.com/karrick/tparse/v2"
-	"github.com/plgd-dev/hub/certificate-authority/pb"
-	"github.com/plgd-dev/hub/pkg/net/grpc/server"
+	"github.com/plgd-dev/hub/v2/certificate-authority/pb"
+	"github.com/plgd-dev/hub/v2/pkg/net/grpc/server"
 	"github.com/plgd-dev/kit/v2/security"
 	"google.golang.org/grpc"
 )
 
 type CertificateSigner interface {
-	//csr is encoded by PEM and returns PEM
+	// csr is encoded by PEM and returns PEM
 	Sign(ctx context.Context, csr []byte) ([]byte, error)
 }
 
@@ -26,9 +26,10 @@ type RequestHandler struct {
 	ValidFor    time.Duration
 	Certificate []*x509.Certificate
 	PrivateKey  crypto.PrivateKey
+	Config      Config
 }
 
-func AddHandler(svr *server.Server, cfg SignerConfig) error {
+func AddHandler(svr *server.Server, cfg Config) error {
 	handler, err := NewRequestHandlerFromConfig(cfg)
 	if err != nil {
 		return fmt.Errorf("could not create plgd-dev/certificate-authority: %w", err)
@@ -42,32 +43,35 @@ func Register(server *grpc.Server, handler *RequestHandler) {
 	pb.RegisterCertificateAuthorityServer(server, handler)
 }
 
-func NewRequestHandlerFromConfig(cfg SignerConfig) (*RequestHandler, error) {
-	chainCerts, err := security.LoadX509(cfg.CertFile)
+func NewRequestHandlerFromConfig(cfg Config) (*RequestHandler, error) {
+	chainCerts, err := security.LoadX509(cfg.Signer.CertFile)
 	if err != nil {
 		return nil, err
 	}
-	privateKey, err := security.LoadX509PrivateKey(cfg.KeyFile)
+	privateKey, err := security.LoadX509PrivateKey(cfg.Signer.KeyFile)
 	if err != nil {
 		return nil, err
 	}
 
 	return NewRequestHandler(func() time.Time {
-		t, _ := tparse.ParseNow(time.RFC3339, cfg.ValidFrom)
+		t, _ := tparse.ParseNow(time.RFC3339, cfg.Signer.ValidFrom)
 		return t
-	}, cfg.ExpiresIn, chainCerts, privateKey), nil
+	}, cfg.Signer.ExpiresIn, chainCerts, privateKey, cfg), nil
 }
 
 // NewRequestHandler factory for new RequestHandler.
 func NewRequestHandler(
-	ValidFrom func() time.Time,
-	ValidFor time.Duration,
-	Certificate []*x509.Certificate,
-	PrivateKey crypto.PrivateKey) *RequestHandler {
+	validFrom func() time.Time,
+	validFor time.Duration,
+	certificate []*x509.Certificate,
+	privateKey crypto.PrivateKey,
+	cfg Config,
+) *RequestHandler {
 	return &RequestHandler{
-		ValidFrom:   ValidFrom,
-		ValidFor:    ValidFor,
-		Certificate: Certificate,
-		PrivateKey:  PrivateKey,
+		ValidFrom:   validFrom,
+		ValidFor:    validFor,
+		Certificate: certificate,
+		PrivateKey:  privateKey,
+		Config:      cfg,
 	}
 }

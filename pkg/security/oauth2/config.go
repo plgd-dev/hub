@@ -3,8 +3,8 @@ package oauth2
 import (
 	"fmt"
 
-	"github.com/plgd-dev/hub/pkg/net/http/client"
-	"github.com/plgd-dev/hub/pkg/security/oauth2/oauth"
+	"github.com/plgd-dev/hub/v2/pkg/net/http/client"
+	"github.com/plgd-dev/hub/v2/pkg/security/oauth2/oauth"
 )
 
 // Config general configuration

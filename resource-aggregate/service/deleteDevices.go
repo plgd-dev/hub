@@ -3,22 +3,22 @@ package service
 import (
 	"context"
 
-	"github.com/plgd-dev/hub/pkg/log"
-	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
-	"github.com/plgd-dev/hub/resource-aggregate/commands"
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventstore"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore"
 	"github.com/plgd-dev/kit/v2/strings"
 	"google.golang.org/grpc/codes"
 )
 
 func getUniqueDeviceIdsFromDeleteRequest(request *commands.DeleteDevicesRequest) []string {
-	deviceIds := make(strings.Set)
-	for _, deviceId := range request.DeviceIds {
-		if deviceId != "" {
-			deviceIds.Add(deviceId)
+	deviceIDs := make(strings.Set)
+	for _, deviceID := range request.DeviceIds {
+		if deviceID != "" {
+			deviceIDs.Add(deviceID)
 		}
 	}
-	return deviceIds.ToSlice()
+	return deviceIDs.ToSlice()
 }
 
 // Delete documents from events database for devices selected by query

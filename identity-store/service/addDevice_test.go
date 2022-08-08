@@ -5,9 +5,9 @@ import (
 	"testing"
 
 	"github.com/golang-jwt/jwt/v4"
-	"github.com/plgd-dev/hub/identity-store/pb"
-	"github.com/plgd-dev/hub/pkg/net/grpc"
-	"github.com/plgd-dev/hub/test/config"
+	"github.com/plgd-dev/hub/v2/identity-store/pb"
+	"github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	"github.com/plgd-dev/hub/v2/test/config"
 	"github.com/stretchr/testify/require"
 )
 
@@ -15,7 +15,7 @@ func TestServiceAddDevice(t *testing.T) {
 	jwtWithSubAaa := config.CreateJwtToken(t, jwt.MapClaims{
 		"sub": "aaa",
 	})
-	jwtWithSubUserId := config.CreateJwtToken(t, jwt.MapClaims{
+	jwtWithSubUserID := config.CreateJwtToken(t, jwt.MapClaims{
 		"sub": "userId",
 	})
 	type args struct {
@@ -39,7 +39,7 @@ func TestServiceAddDevice(t *testing.T) {
 		{
 			name: "invalid deviceId",
 			args: args{
-				ctx:     grpc.CtxWithIncomingToken(context.Background(), jwtWithSubUserId),
+				ctx:     grpc.CtxWithIncomingToken(context.Background(), jwtWithSubUserID),
 				request: &pb.AddDeviceRequest{},
 			},
 			wantErr: true,
@@ -57,7 +57,7 @@ func TestServiceAddDevice(t *testing.T) {
 		{
 			name: "valid",
 			args: args{
-				ctx: grpc.CtxWithIncomingToken(context.Background(), jwtWithSubUserId),
+				ctx: grpc.CtxWithIncomingToken(context.Background(), jwtWithSubUserID),
 				request: &pb.AddDeviceRequest{
 					DeviceId: "deviceId",
 				},
@@ -67,7 +67,7 @@ func TestServiceAddDevice(t *testing.T) {
 		{
 			name: "duplicit",
 			args: args{
-				ctx: grpc.CtxWithIncomingToken(context.Background(), jwtWithSubUserId),
+				ctx: grpc.CtxWithIncomingToken(context.Background(), jwtWithSubUserID),
 				request: &pb.AddDeviceRequest{
 					DeviceId: "deviceId",
 				},

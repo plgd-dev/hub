@@ -5,13 +5,14 @@ import (
 	"fmt"
 	"time"
 
-	cache "github.com/patrickmn/go-cache"
-	"github.com/plgd-dev/hub/pkg/log"
-	"github.com/plgd-dev/hub/resource-aggregate/commands"
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventbus"
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventstore"
-	projectionRA "github.com/plgd-dev/hub/resource-aggregate/cqrs/projection"
-	"github.com/plgd-dev/hub/resource-aggregate/events"
+	cache "github.com/plgd-dev/go-coap/v2/pkg/cache"
+	"github.com/plgd-dev/go-coap/v2/pkg/runner/periodic"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore"
+	projectionRA "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/projection"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 	"github.com/plgd-dev/kit/v2/strings"
 )
 
@@ -29,7 +30,8 @@ func hasMatchingType(resourceTypes []string, typeFilter strings.Set) bool {
 
 type Projection struct {
 	*projectionRA.Projection
-	cache *cache.Cache
+	expiration time.Duration
+	cache      *cache.Cache
 }
 
 func NewProjection(ctx context.Context, name string, store eventstore.EventStore, subscriber eventbus.Subscriber, newModelFunc eventstore.FactoryModelFunc, expiration time.Duration) (*Projection, error) {
@@ -44,81 +46,84 @@ func NewProjection(ctx context.Context, name string, store eventstore.EventStore
 			cleanupInterval = time.Minute
 		}
 	}
-
-	cache := cache.New(expiration, cleanupInterval)
-	cache.OnEvicted(func(deviceID string, _ interface{}) {
-		if err := projection.Unregister(deviceID); err != nil {
-			log.Errorf("failed to unregister device %v in projection cache during eviction: %w", deviceID, err)
-		}
+	cache := cache.NewCache()
+	add := periodic.New(ctx.Done(), cleanupInterval)
+	add(func(now time.Time) bool {
+		cache.CheckExpirations(now)
+		return true
 	})
-	return &Projection{Projection: projection, cache: cache}, nil
+	return &Projection{Projection: projection, cache: cache, expiration: expiration}, nil
 }
 
-func (p *Projection) getModels(ctx context.Context, resourceID *commands.ResourceId, expectedModels int) ([]eventstore.Model, error) {
-	created, err := p.Register(ctx, resourceID.GetDeviceId())
-	if err != nil {
-		return nil, fmt.Errorf("cannot register to projection for %v: %w", resourceID, err)
-	}
-	if created {
-		p.cache.Set(resourceID.GetDeviceId(), created, cache.DefaultExpiration)
-	} else {
-		if err := p.cache.Replace(resourceID.GetDeviceId(), created, cache.DefaultExpiration); err != nil {
-			log.Debugf("failed to replace item %v in projection cache: %v", resourceID, err)
-		}
-		defer func(ID string) {
-			if err := p.Unregister(ID); err != nil {
-				log.Errorf("failed to unregister device %v in projection cache after replacement: %w", ID, err)
-			}
-		}(resourceID.GetDeviceId())
-	}
-	m := p.Models(resourceID)
-	if !created && len(m) < expectedModels {
-		err := p.ForceUpdate(ctx, resourceID)
-		if err == nil {
-			m = p.Models(resourceID)
-		}
-	}
-	return m, nil
-}
-
-func (p *Projection) GetResourceLinks(ctx context.Context, deviceIDFilter, typeFilter strings.Set) (map[string]*events.ResourceLinksSnapshotTaken, error) {
-	devicesResourceLinks := make(map[string]*events.ResourceLinksSnapshotTaken)
+func (p *Projection) LoadResourceLinks(ctx context.Context, deviceIDFilter, toReloadDevices strings.Set, onResourceLinkProjection func(m *resourceLinksProjection) error) error {
 	for deviceID := range deviceIDFilter {
-		models, err := p.getModels(ctx, commands.NewResourceID(deviceID, commands.ResourceLinksHref), 1)
-		if err != nil {
-			return nil, err
+		reload := true
+		var err error
+		p.Models(func(m eventstore.Model) (wantNext bool) {
+			rl := m.(*resourceLinksProjection)
+			if rl.LenResources() == 0 {
+				return false
+			}
+			reload = false
+			err = onResourceLinkProjection(rl)
+			return err == nil
+		}, commands.NewResourceID(deviceID, commands.ResourceLinksHref))
+		if reload && toReloadDevices != nil {
+			toReloadDevices.Add(deviceID)
 		}
-		if len(models) != 1 {
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (p *Projection) ReloadDevices(ctx context.Context, deviceIDFilter strings.Set) {
+	for deviceID := range deviceIDFilter {
+		created, err := p.Register(ctx, deviceID)
+		if err != nil {
+			log.Errorf("cannot register to projection for %v: %w", deviceID, err)
 			continue
 		}
-		resourceLinks := models[0].(*resourceLinksProjection).Clone()
-		devicesResourceLinks[resourceLinks.snapshot.GetDeviceId()] = resourceLinks.snapshot
-		for href, resource := range resourceLinks.snapshot.GetResources() {
-			if !hasMatchingType(resource.ResourceTypes, typeFilter) {
-				delete(resourceLinks.snapshot.Resources, href)
+		p.cache.Delete(deviceID)
+		p.cache.LoadOrStore(deviceID, cache.NewElement(deviceID, time.Now().Add(p.expiration), func(d interface{}) {
+			deviceID := d.(string)
+			if err := p.Unregister(deviceID); err != nil {
+				log.Errorf("failed to unregister device %v in projection cache during eviction: %w", deviceID, err)
 			}
+		}))
+		if !created {
+			err := p.ForceUpdate(ctx, commands.NewResourceID(deviceID, ""))
+			if err != nil {
+				log.Errorf("cannot update projection for device %v: %w", deviceID, err)
+			}
+			defer func(ID string) {
+				if err := p.Unregister(ID); err != nil {
+					log.Errorf("failed to unregister device %v in projection cache after replacement: %w", ID, err)
+				}
+			}(deviceID)
 		}
 	}
-
-	return devicesResourceLinks, nil
 }
 
-func (p *Projection) GetDevicesMetadata(ctx context.Context, deviceIDFilter strings.Set) (map[string]*events.DeviceMetadataSnapshotTaken, error) {
-	devicesMetadata := make(map[string]*events.DeviceMetadataSnapshotTaken)
+func (p *Projection) LoadDevicesMetadata(ctx context.Context, deviceIDFilter, toReloadDevices strings.Set, onDeviceMetadataProjection func(m *deviceMetadataProjection) error) error {
+	var err error
 	for deviceID := range deviceIDFilter {
-		models, err := p.getModels(ctx, commands.NewResourceID(deviceID, commands.StatusHref), 1)
-		if err != nil {
-			return nil, err
+		reload := true
+		p.Models(func(m eventstore.Model) (wantNext bool) {
+			dm := m.(*deviceMetadataProjection)
+			if !dm.IsInitialized() {
+				return true
+			}
+			reload = false
+			err = onDeviceMetadataProjection(dm)
+			return err == nil
+		}, commands.NewResourceID(deviceID, commands.StatusHref))
+		if reload && toReloadDevices != nil {
+			toReloadDevices.Add(deviceID)
 		}
-		if len(models) != 1 {
-			continue
-		}
-		deviceMetadata := models[0].(*deviceMetadataProjection).Clone()
-		deviceID = deviceMetadata.data.GetDeviceId()
-		devicesMetadata[deviceID] = deviceMetadata.data
 	}
-
-	return devicesMetadata, nil
+	return err
 }
 
 // Group filter first by device ID and then by resource ID
@@ -141,61 +146,68 @@ func getResourceIDMapFilter(resourceIDFilter []*commands.ResourceId) map[string]
 	return resourceIDMapFilter
 }
 
-func (p *Projection) GetResourcesWithLinks(ctx context.Context, resourceIDFilter []*commands.ResourceId, typeFilter strings.Set) (map[string]map[string]*Resource, error) {
+func (p *Projection) wantToReloadDevice(rl *resourceLinksProjection, hrefFilter map[string]bool, typeFilter strings.Set) bool {
+	var finalReload bool
+	rl.IterateOverResources(func(res *commands.Resource) (wantNext bool) {
+		if len(hrefFilter) > 0 && !hrefFilter[res.GetHref()] {
+			return true
+		}
+		if !hasMatchingType(res.ResourceTypes, typeFilter) {
+			return true
+		}
+		reload := true
+		p.Models(func(eventstore.Model) (wantNext bool) {
+			reload = false
+			return true
+		}, commands.NewResourceID(rl.GetDeviceID(), res.Href))
+		if reload {
+			finalReload = true
+			return false
+		}
+		return true
+	})
+	return finalReload
+}
+
+func (p *Projection) LoadResourcesWithLinks(ctx context.Context, resourceIDFilter []*commands.ResourceId, typeFilter strings.Set, toReloadDevices strings.Set, onResource func(*Resource) error) error {
 	resourceIDMapFilter := getResourceIDMapFilter(resourceIDFilter)
-	resources := make(map[string]map[string]*Resource)
-	models := make([]eventstore.Model, 0, len(resourceIDMapFilter))
-	for deviceID, hrefs := range resourceIDMapFilter {
-		// build resource links map of all devices which are requested
-		rl, err := p.GetResourceLinks(ctx, strings.Set{deviceID: {}}, nil)
-		if err != nil {
-			return nil, err
-		}
-
-		anyDeviceResourceFound := false
-		expectedModels := len(rl[deviceID].GetResources()) + 2 // for metadata and resourcelinks
-		resources[deviceID] = make(map[string]*Resource)
-		if hrefs == nil {
-			// case when client requests all device resources
-			for _, resource := range rl[deviceID].GetResources() {
-				if hasMatchingType(resource.ResourceTypes, typeFilter) {
-					resources[deviceID][resource.GetHref()] = &Resource{Resource: resource}
-					anyDeviceResourceFound = true
+	for deviceID, hrefFilter := range resourceIDMapFilter { // filter duplicit load
+		err := p.LoadResourceLinks(ctx, strings.Set{deviceID: struct{}{}}, toReloadDevices, func(rl *resourceLinksProjection) error {
+			if p.wantToReloadDevice(rl, hrefFilter, typeFilter) {
+				// if toReloadDevices == nil it means that Reload was executed but all resources are not available yet, we want to provide partial resoures then.
+				if toReloadDevices != nil {
+					toReloadDevices.Add(rl.GetDeviceID())
+					return nil
 				}
 			}
-		} else {
-			// case when client requests specific device resource
-			for href := range hrefs {
-				if resource, present := rl[deviceID].GetResources()[href]; present {
-					if hasMatchingType(resource.ResourceTypes, typeFilter) {
-						resources[deviceID][href] = &Resource{Resource: resource}
-						anyDeviceResourceFound = true
+			var err error
+			rl.IterateOverResources(func(res *commands.Resource) (wantNext bool) {
+				if len(hrefFilter) > 0 && !hrefFilter[res.GetHref()] {
+					return true
+				}
+				if !hasMatchingType(res.ResourceTypes, typeFilter) {
+					return true
+				}
+				p.Models(func(model eventstore.Model) (wantNext bool) {
+					t := model.(interface{ EventType() string }).EventType()
+					if t == events.NewResourceLinksSnapshotTaken().EventType() ||
+						t == events.NewDeviceMetadataSnapshotTaken().EventType() {
+						return true
 					}
-				}
-			}
-		}
-
-		if anyDeviceResourceFound {
-			m, err := p.getModels(ctx, commands.NewResourceID(deviceID, ""), expectedModels)
-			if err != nil {
-				return nil, err
-			}
-			models = append(models, m...)
-		} else {
-			delete(resources, deviceID)
+					rp := model.(*resourceProjection)
+					err = onResource(&Resource{
+						projection: rp,
+						Resource:   res,
+					})
+					return err == nil
+				}, commands.NewResourceID(rl.GetDeviceID(), res.Href))
+				return true
+			})
+			return err
+		})
+		if err != nil {
+			return err
 		}
 	}
-
-	for _, m := range models {
-		if m.(interface{ EventType() string }).EventType() == events.NewResourceLinksSnapshotTaken().EventType() {
-			continue
-		}
-		rp := m.(*resourceProjection).Clone()
-		if _, present := resources[rp.resourceID.GetDeviceId()][rp.resourceID.GetHref()]; !present {
-			continue
-		}
-		resources[rp.resourceID.GetDeviceId()][rp.resourceID.GetHref()].projection = rp
-	}
-
-	return resources, nil
+	return nil
 }

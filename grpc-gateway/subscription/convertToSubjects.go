@@ -1,21 +1,23 @@
 package subscription
 
 import (
-	isEvents "github.com/plgd-dev/hub/identity-store/events"
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/utils"
-	"github.com/plgd-dev/hub/resource-aggregate/events"
+	isEvents "github.com/plgd-dev/hub/v2/identity-store/events"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/utils"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 	kitStrings "github.com/plgd-dev/kit/v2/strings"
 )
 
-const FilterBitmaskRegistrations = FilterBitmaskDeviceRegistered | FilterBitmaskDeviceUnregistered
-const FilterBitmaskDevices = FilterBitmaskDeviceMetadata | FilterBitmaskDeviceResourceLinks | FilterBitmaskDeviceDeviceResourcesResource
-const FilterBitmaskDeviceMetadata = FilterBitmaskDeviceMetadataUpdatePending | FilterBitmaskDeviceMetadataUpdated
-const FilterBitmaskDeviceResourceLinks = FilterBitmaskResourcesPublished | FilterBitmaskResourcesUnpublished
-const FilterBitmaskDeviceDeviceResourcesResource = FilterBitmaskResourceChanged |
-	FilterBitmaskResourceCreatePending | FilterBitmaskResourceCreated |
-	FilterBitmaskResourceDeletePending | FilterBitmaskResourceDeleted |
-	FilterBitmaskResourceRetrievePending | FilterBitmaskResourceRetrieved |
-	FilterBitmaskResourceUpdatePending | FilterBitmaskResourceUpdated
+const (
+	FilterBitmaskRegistrations                 = FilterBitmaskDeviceRegistered | FilterBitmaskDeviceUnregistered
+	FilterBitmaskDevices                       = FilterBitmaskDeviceMetadata | FilterBitmaskDeviceResourceLinks | FilterBitmaskDeviceDeviceResourcesResource
+	FilterBitmaskDeviceMetadata                = FilterBitmaskDeviceMetadataUpdatePending | FilterBitmaskDeviceMetadataUpdated
+	FilterBitmaskDeviceResourceLinks           = FilterBitmaskResourcesPublished | FilterBitmaskResourcesUnpublished
+	FilterBitmaskDeviceDeviceResourcesResource = FilterBitmaskResourceChanged |
+		FilterBitmaskResourceCreatePending | FilterBitmaskResourceCreated |
+		FilterBitmaskResourceDeletePending | FilterBitmaskResourceDeleted |
+		FilterBitmaskResourceRetrievePending | FilterBitmaskResourceRetrieved |
+		FilterBitmaskResourceUpdatePending | FilterBitmaskResourceUpdated
+)
 
 type subject struct {
 	bitmask FilterBitmask
@@ -64,12 +66,12 @@ func ConvertToSubjects(owner string, filterDeviceIDs kitStrings.Set, filterResou
 	for _, rawTemplate := range rawTemplates {
 		switch {
 		case len(filterResourceIDs) > 0:
-			for resId := range filterResourceIDs {
-				intTemplates[isEvents.ToSubject(rawTemplate, isEvents.WithOwner(owner), utils.WithDeviceID("*"), utils.WithResourceId(resId))] = true
+			for resID := range filterResourceIDs {
+				intTemplates[isEvents.ToSubject(rawTemplate, isEvents.WithOwner(owner), utils.WithDeviceID("*"), utils.WithResourceId(resID))] = true
 			}
 		case len(filterDeviceIDs) > 0:
-			for devId := range filterDeviceIDs {
-				intTemplates[isEvents.ToSubject(rawTemplate, isEvents.WithOwner(owner), utils.WithDeviceID(devId), utils.WithResourceId("*"))] = true
+			for devID := range filterDeviceIDs {
+				intTemplates[isEvents.ToSubject(rawTemplate, isEvents.WithOwner(owner), utils.WithDeviceID(devID), utils.WithResourceId("*"))] = true
 			}
 		default:
 			intTemplates[isEvents.ToSubject(rawTemplate, isEvents.WithOwner(owner), utils.WithDeviceID("*"), utils.WithResourceId("*"))] = true

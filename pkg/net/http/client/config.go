@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/plgd-dev/hub/pkg/security/certManager/client"
+	"github.com/plgd-dev/hub/v2/pkg/security/certManager/client"
 )
 
 type Config struct {

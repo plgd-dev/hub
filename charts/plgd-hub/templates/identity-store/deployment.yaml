@@ -78,15 +78,18 @@ spec:
             {{- toYaml . | nindent 12 }}
           {{- end }}
           volumeMounts:
-            - mountPath: {{ .Values.identitystore.config.mountPath }}
-              name: {{ .Values.identitystore.config.volume }}
+            - name: {{ .Values.identitystore.config.volume }}
+              mountPath: {{ .Values.identitystore.config.mountPath }}
             {{- if ( include "plgd-hub.identitystore.createServiceCertByCm" . ) }}
             - name: service-crt
               mountPath: {{ $cert }}
             {{- end }}
-            {{- with .Values.identitystore.extraVolumes }}
+            {{- with .Values.identitystore.extraVolumeMounts }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
+      {{- if .Values.identitystore.extraContainers }}
+      {{- include "plgd-hub.tplvalues.render" ( dict "value" .Values.identitystore.extraContainers "context" $ ) | nindent 8 }}
+      {{- end }}
       volumes:
         {{- if ( include "plgd-hub.identitystore.createServiceCertByCm" . ) }}
         - name: service-crt
@@ -96,7 +99,7 @@ spec:
         - name: {{ .Values.identitystore.config.volume }}
           configMap:
             name: {{ include "plgd-hub.identitystore.configName" . }}
-        {{- with .Values.identitystore.extraVolumeMounts }}
+        {{- with .Values.identitystore.extraVolumes }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
       {{- with .Values.identitystore.nodeSelector }}

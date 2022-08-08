@@ -2,34 +2,35 @@ package service_test
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/google/uuid"
-	"github.com/plgd-dev/hub/pkg/log"
-	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
-	"github.com/plgd-dev/hub/resource-aggregate/commands"
-	cqrsAggregate "github.com/plgd-dev/hub/resource-aggregate/cqrs/aggregate"
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventbus/nats/publisher"
-	natsTest "github.com/plgd-dev/hub/resource-aggregate/cqrs/eventbus/nats/test"
-	mongodb "github.com/plgd-dev/hub/resource-aggregate/cqrs/eventstore/mongodb"
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/utils"
-	"github.com/plgd-dev/hub/resource-aggregate/service"
-	raTest "github.com/plgd-dev/hub/resource-aggregate/test"
-	"github.com/plgd-dev/hub/test/config"
+	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
+	cqrsAggregate "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/aggregate"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/publisher"
+	natsTest "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/test"
+	mongodb "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore/mongodb"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/utils"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/service"
+	raTest "github.com/plgd-dev/hub/v2/resource-aggregate/test"
+	"github.com/plgd-dev/hub/v2/test/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
-func TestAggregateHandle_CancelPendingMetadataUpdates(t *testing.T) {
-	deviceID := "dev0"
-	userID := "user0"
-	correlationID0 := "0"
-	correlationID1 := "1"
-	correlationID2 := "2"
+func TestAggregateHandleCancelPendingMetadataUpdates(t *testing.T) {
+	const deviceID = "dev0"
+	const userID = "user0"
+	const correlationID0 = "0"
+	const correlationID1 = "1"
+	const correlationID2 = "2"
 	type args struct {
 		request *commands.CancelPendingMetadataUpdatesRequest
 		userID  string
@@ -41,7 +42,6 @@ func TestAggregateHandle_CancelPendingMetadataUpdates(t *testing.T) {
 		wantCode codes.Code
 		wantErr  bool
 	}{
-
 		{
 			name: "cancel one update",
 			args: args{
@@ -71,24 +71,27 @@ func TestAggregateHandle_CancelPendingMetadataUpdates(t *testing.T) {
 
 	cfg := raTest.MakeConfig(t)
 	ctx := context.Background()
-	logger, err := log.NewLogger(cfg.Log)
-
-	fmt.Printf("%v\n", cfg.String())
-
+	logger := log.NewLogger(cfg.Log)
+	fileWatcher, err := fsnotify.NewWatcher()
 	require.NoError(t, err)
-	eventstore, err := mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
+	defer func() {
+		err := fileWatcher.Close()
+		require.NoError(t, err)
+	}()
+
+	eventstore, err := mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, fileWatcher, logger, trace.NewNoopTracerProvider(), mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	err = eventstore.Clear(ctx)
 	require.NoError(t, err)
 	err = eventstore.Close(ctx)
 	assert.NoError(t, err)
-	eventstore, err = mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
+	eventstore, err = mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, fileWatcher, logger, trace.NewNoopTracerProvider(), mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Close(ctx)
 		assert.NoError(t, err)
 	}()
-	naClient, publisher, err := natsTest.NewClientAndPublisher(cfg.Clients.Eventbus.NATS, logger, publisher.WithMarshaler(utils.Marshal))
+	naClient, publisher, err := natsTest.NewClientAndPublisher(cfg.Clients.Eventbus.NATS, fileWatcher, logger, publisher.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
 		publisher.Close()
@@ -123,22 +126,22 @@ func TestAggregateHandle_CancelPendingMetadataUpdates(t *testing.T) {
 				s, ok := status.FromError(kitNetGrpc.ForwardFromError(codes.Unknown, err))
 				require.True(t, ok)
 				assert.Equal(t, tt.wantCode, s.Code())
-			} else {
-				require.NoError(t, err)
-				err = service.PublishEvents(publisher, tt.args.userID, tt.args.request.GetDeviceId(), ag.ResourceID(), events)
-				assert.NoError(t, err)
+				return
 			}
+			require.NoError(t, err)
+			err = service.PublishEvents(publisher, tt.args.userID, tt.args.request.GetDeviceId(), ag.ResourceID(), events)
+			assert.NoError(t, err)
 		}
 		t.Run(tt.name, tfunc)
 	}
 }
 
-func TestRequestHandler_CancelPendingMetadataUpdates(t *testing.T) {
-	deviceID := "dev0"
-	userID := "user0"
-	correlationID0 := "0"
-	correlationID1 := "1"
-	correlationID2 := "2"
+func TestRequestHandlerCancelPendingMetadataUpdates(t *testing.T) {
+	const deviceID = "dev1"
+	const userID = "user1"
+	const correlationID0 = "0"
+	const correlationID1 = "1"
+	const correlationID2 = "2"
 	type args struct {
 		request *commands.CancelPendingMetadataUpdatesRequest
 		userID  string
@@ -151,7 +154,6 @@ func TestRequestHandler_CancelPendingMetadataUpdates(t *testing.T) {
 		wantCode codes.Code
 		wantErr  bool
 	}{
-
 		{
 			name: "cancel one update",
 			args: args{
@@ -193,24 +195,27 @@ func TestRequestHandler_CancelPendingMetadataUpdates(t *testing.T) {
 
 	cfg := raTest.MakeConfig(t)
 	ctx := context.Background()
-	logger, err := log.NewLogger(cfg.Log)
-
-	fmt.Printf("%v\n", cfg.String())
-
+	logger := log.NewLogger(cfg.Log)
+	fileWatcher, err := fsnotify.NewWatcher()
 	require.NoError(t, err)
-	eventstore, err := mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
+	defer func() {
+		err := fileWatcher.Close()
+		require.NoError(t, err)
+	}()
+
+	eventstore, err := mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, fileWatcher, logger, trace.NewNoopTracerProvider(), mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	err = eventstore.Clear(ctx)
 	require.NoError(t, err)
 	err = eventstore.Close(ctx)
 	assert.NoError(t, err)
-	eventstore, err = mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
+	eventstore, err = mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, fileWatcher, logger, trace.NewNoopTracerProvider(), mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Close(ctx)
 		assert.NoError(t, err)
 	}()
-	naClient, publisher, err := natsTest.NewClientAndPublisher(cfg.Clients.Eventbus.NATS, logger, publisher.WithMarshaler(utils.Marshal))
+	naClient, publisher, err := natsTest.NewClientAndPublisher(cfg.Clients.Eventbus.NATS, fileWatcher, logger, publisher.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
 		publisher.Close()
@@ -245,10 +250,10 @@ func TestRequestHandler_CancelPendingMetadataUpdates(t *testing.T) {
 				s, ok := status.FromError(kitNetGrpc.ForwardFromError(codes.Unknown, err))
 				require.True(t, ok)
 				assert.Equal(t, tt.wantCode, s.Code())
-			} else {
-				require.NoError(t, err)
-				assert.Equal(t, tt.want, want)
+				return
 			}
+			require.NoError(t, err)
+			assert.Equal(t, tt.want, want)
 		}
 		t.Run(tt.name, tfunc)
 	}

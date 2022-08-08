@@ -4,7 +4,7 @@ package service
 
 import (
 	context "context"
-	commands "github.com/plgd-dev/hub/resource-aggregate/commands"
+	commands "github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -638,5 +638,5 @@ var ResourceAggregate_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "github.com/plgd-dev/hub/resource-aggregate/pb/service.proto",
+	Metadata: "resource-aggregate/pb/service.proto",
 }

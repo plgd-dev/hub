@@ -1,21 +1,21 @@
 package service
 
 import (
-	"github.com/plgd-dev/hub/identity-store/pb"
-	"github.com/plgd-dev/hub/identity-store/persistence"
-	"github.com/plgd-dev/hub/pkg/log"
-	"github.com/plgd-dev/hub/pkg/net/grpc"
+	"github.com/plgd-dev/hub/v2/identity-store/pb"
+	"github.com/plgd-dev/hub/v2/identity-store/persistence"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	"github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
 // hasMatchDeviceID returns true if device id match filter.
 // An empty deviceIdFilter matches all device ids.
-func hasMatchDeviceID(deviceId string, deviceIdFilter map[string]bool) bool {
-	if len(deviceIdFilter) == 0 {
+func hasMatchDeviceID(deviceID string, deviceIDFilter map[string]bool) bool {
+	if len(deviceIDFilter) == 0 {
 		return true
 	}
-	if _, ok := deviceIdFilter[deviceId]; ok {
+	if _, ok := deviceIDFilter[deviceID]; ok {
 		return true
 	}
 	return false

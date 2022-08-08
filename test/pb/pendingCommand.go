@@ -3,29 +3,30 @@ package pb
 import (
 	"context"
 	"crypto/tls"
+	"errors"
 	"io"
 	"sort"
 	"testing"
 	"time"
 
 	"github.com/plgd-dev/go-coap/v2/message"
-	caService "github.com/plgd-dev/hub/certificate-authority/test"
-	coapgwTest "github.com/plgd-dev/hub/coap-gateway/test"
-	"github.com/plgd-dev/hub/grpc-gateway/pb"
-	grpcgwService "github.com/plgd-dev/hub/grpc-gateway/test"
-	httpgwTest "github.com/plgd-dev/hub/http-gateway/test"
-	idService "github.com/plgd-dev/hub/identity-store/test"
-	"github.com/plgd-dev/hub/pkg/fn"
-	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
-	"github.com/plgd-dev/hub/resource-aggregate/commands"
-	"github.com/plgd-dev/hub/resource-aggregate/events"
-	raService "github.com/plgd-dev/hub/resource-aggregate/test"
-	rdService "github.com/plgd-dev/hub/resource-directory/test"
-	"github.com/plgd-dev/hub/test"
-	"github.com/plgd-dev/hub/test/config"
-	oauthService "github.com/plgd-dev/hub/test/oauth-server/service"
-	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
-	"github.com/plgd-dev/hub/test/service"
+	caService "github.com/plgd-dev/hub/v2/certificate-authority/test"
+	coapgwTest "github.com/plgd-dev/hub/v2/coap-gateway/test"
+	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
+	grpcgwService "github.com/plgd-dev/hub/v2/grpc-gateway/test"
+	httpgwTest "github.com/plgd-dev/hub/v2/http-gateway/test"
+	idService "github.com/plgd-dev/hub/v2/identity-store/test"
+	"github.com/plgd-dev/hub/v2/pkg/fn"
+	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
+	raService "github.com/plgd-dev/hub/v2/resource-aggregate/test"
+	rdService "github.com/plgd-dev/hub/v2/resource-directory/test"
+	"github.com/plgd-dev/hub/v2/test"
+	"github.com/plgd-dev/hub/v2/test/config"
+	oauthService "github.com/plgd-dev/hub/v2/test/oauth-server/service"
+	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
+	"github.com/plgd-dev/hub/v2/test/service"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -89,13 +90,16 @@ func InitPendingEvents(ctx context.Context, t *testing.T) (pb.GrpcGatewayClient,
 	shutdownHttp := httpgwTest.SetUp(t)
 	closeFunc.AddFunc(shutdownHttp)
 
-	token := oauthTest.GetDefaultServiceToken(t)
+	token := oauthTest.GetDefaultAccessToken(t)
 	ctx = kitNetGrpc.CtxWithToken(ctx, token)
 
 	conn, err := grpc.Dial(config.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
 	})))
 	require.NoError(t, err)
+	closeFunc.AddFunc(func() {
+		_ = conn.Close
+	})
 	c := pb.NewGrpcGatewayClient(conn)
 
 	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.GW_HOST, test.GetAllBackendResourceLinks())
@@ -169,7 +173,7 @@ func InitPendingEvents(ctx context.Context, t *testing.T) (pb.GrpcGatewayClient,
 	devicePendings := make([]DevicePendingEvent, 0, 24)
 	for {
 		p, err := client.Recv()
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			break
 		}
 		require.NoError(t, err)
@@ -219,15 +223,20 @@ func CmpPendingCmds(t *testing.T, want []*pb.PendingCommand, got []*pb.PendingCo
 	for idx := range want {
 		switch {
 		case got[idx].GetResourceCreatePending() != nil:
-			CleanUpResourceCreatePending(got[idx].GetResourceCreatePending())
+			resetCorrelationID := want[idx].GetResourceCreatePending().GetAuditContext().GetCorrelationId() == ""
+			CleanUpResourceCreatePending(got[idx].GetResourceCreatePending(), resetCorrelationID)
 		case got[idx].GetResourceRetrievePending() != nil:
-			CleanUpResourceRetrievePending(got[idx].GetResourceRetrievePending())
+			resetCorrelationID := want[idx].GetResourceRetrievePending().GetAuditContext().GetCorrelationId() == ""
+			CleanUpResourceRetrievePending(got[idx].GetResourceRetrievePending(), resetCorrelationID)
 		case got[idx].GetResourceUpdatePending() != nil:
-			CleanUpResourceUpdatePending(got[idx].GetResourceUpdatePending())
+			resetCorrelationID := want[idx].GetResourceUpdatePending().GetAuditContext().GetCorrelationId() == ""
+			CleanUpResourceUpdatePending(got[idx].GetResourceUpdatePending(), resetCorrelationID)
 		case got[idx].GetResourceDeletePending() != nil:
-			CleanUpResourceDeletePending(got[idx].GetResourceDeletePending())
+			resetCorrelationID := want[idx].GetResourceDeletePending().GetAuditContext().GetCorrelationId() == ""
+			CleanUpResourceDeletePending(got[idx].GetResourceDeletePending(), resetCorrelationID)
 		case got[idx].GetDeviceMetadataUpdatePending() != nil:
-			CleanUpDeviceMetadataUpdatePending(got[idx].GetDeviceMetadataUpdatePending())
+			resetCorrelationID := want[idx].GetDeviceMetadataUpdatePending().GetAuditContext().GetCorrelationId() == ""
+			CleanUpDeviceMetadataUpdatePending(got[idx].GetDeviceMetadataUpdatePending(), resetCorrelationID)
 		}
 		test.CheckProtobufs(t, want[idx], got[idx], test.RequireToCheckFunc(require.Equal))
 	}
@@ -239,19 +248,21 @@ func CmpCancelPendingCmdResponses(t *testing.T, want *pb.CancelPendingCommandsRe
 	require.Equal(t, want.CorrelationIds, got.CorrelationIds)
 }
 
-func CleanUpResourceCreatePending(e *events.ResourceCreatePending) *events.ResourceCreatePending {
-	if e.GetAuditContext() != nil {
+func CleanUpResourceCreatePending(e *events.ResourceCreatePending, resetCorrelationID bool) *events.ResourceCreatePending {
+	if e.GetAuditContext() != nil && resetCorrelationID {
 		e.GetAuditContext().CorrelationId = ""
 	}
 	e.EventMetadata = nil
+	e.OpenTelemetryCarrier = nil
 	return e
 }
 
 func CmpResourceCreatePending(t *testing.T, expected, got *events.ResourceCreatePending) {
 	require.NotNil(t, expected)
-	e := CleanUpResourceCreatePending(expected)
+	resetCorrelationID := expected.GetAuditContext().GetCorrelationId() == ""
+	e := CleanUpResourceCreatePending(expected, resetCorrelationID)
 	require.NotNil(t, got)
-	g := CleanUpResourceCreatePending(got)
+	g := CleanUpResourceCreatePending(got, resetCorrelationID)
 
 	expectedData := test.DecodeCbor(t, e.GetContent().GetData())
 	gotData := test.DecodeCbor(t, g.GetContent().GetData())
@@ -262,7 +273,7 @@ func CmpResourceCreatePending(t *testing.T, expected, got *events.ResourceCreate
 	test.CheckProtobufs(t, expected, got, test.RequireToCheckFunc(require.Equal))
 }
 
-func MakeResourceCreatePending(t *testing.T, deviceID, href string, data interface{}) *events.ResourceCreatePending {
+func MakeResourceCreatePending(t *testing.T, deviceID, href, correlationID string, data interface{}) *events.ResourceCreatePending {
 	return &events.ResourceCreatePending{
 		ResourceId: &commands.ResourceId{
 			DeviceId: deviceID,
@@ -273,23 +284,25 @@ func MakeResourceCreatePending(t *testing.T, deviceID, href string, data interfa
 			CoapContentFormat: -1,
 			Data:              test.EncodeToCbor(t, data),
 		},
-		AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, ""),
+		AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, correlationID),
 	}
 }
 
-func CleanUpResourceUpdatePending(e *events.ResourceUpdatePending) *events.ResourceUpdatePending {
-	if e.GetAuditContext() != nil {
+func CleanUpResourceUpdatePending(e *events.ResourceUpdatePending, resetCorrelationID bool) *events.ResourceUpdatePending {
+	if e.GetAuditContext() != nil && resetCorrelationID {
 		e.GetAuditContext().CorrelationId = ""
 	}
 	e.EventMetadata = nil
+	e.OpenTelemetryCarrier = nil
 	return e
 }
 
 func CmpResourceUpdatePending(t *testing.T, expected, got *events.ResourceUpdatePending) {
 	require.NotNil(t, expected)
-	e := CleanUpResourceUpdatePending(expected)
+	resetCorrelationID := expected.GetAuditContext().GetCorrelationId() == ""
+	e := CleanUpResourceUpdatePending(expected, resetCorrelationID)
 	require.NotNil(t, got)
-	g := CleanUpResourceUpdatePending(got)
+	g := CleanUpResourceUpdatePending(got, resetCorrelationID)
 
 	expectedData := test.DecodeCbor(t, e.GetContent().GetData())
 	gotData := test.DecodeCbor(t, g.GetContent().GetData())
@@ -300,7 +313,7 @@ func CmpResourceUpdatePending(t *testing.T, expected, got *events.ResourceUpdate
 	test.CheckProtobufs(t, expected, got, test.RequireToCheckFunc(require.Equal))
 }
 
-func MakeResourceUpdatePending(t *testing.T, deviceID, href string, data interface{}) *events.ResourceUpdatePending {
+func MakeResourceUpdatePending(t *testing.T, deviceID, href, correlationID string, data interface{}) *events.ResourceUpdatePending {
 	return &events.ResourceUpdatePending{
 		ResourceId: &commands.ResourceId{
 			DeviceId: deviceID,
@@ -311,30 +324,87 @@ func MakeResourceUpdatePending(t *testing.T, deviceID, href string, data interfa
 			CoapContentFormat: -1,
 			Data:              test.EncodeToCbor(t, data),
 		},
-		AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, ""),
+		AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, correlationID),
 	}
 }
 
-func CleanUpResourceRetrievePending(e *events.ResourceRetrievePending) *events.ResourceRetrievePending {
-	if e.GetAuditContext() != nil {
+func CleanUpResourceRetrievePending(e *events.ResourceRetrievePending, resetCorrelationID bool) *events.ResourceRetrievePending {
+	if e.GetAuditContext() != nil && resetCorrelationID {
 		e.GetAuditContext().CorrelationId = ""
 	}
 	e.EventMetadata = nil
+	e.OpenTelemetryCarrier = nil
 	return e
 }
 
-func CleanUpResourceDeletePending(e *events.ResourceDeletePending) *events.ResourceDeletePending {
-	if e.GetAuditContext() != nil {
+func CmpResourceRetrievePending(t *testing.T, expected, got *events.ResourceRetrievePending) {
+	require.NotNil(t, expected)
+	resetCorrelationID := expected.GetAuditContext().GetCorrelationId() == ""
+	CleanUpResourceRetrievePending(expected, resetCorrelationID)
+	require.NotNil(t, got)
+	CleanUpResourceRetrievePending(got, resetCorrelationID)
+	test.CheckProtobufs(t, expected, got, test.RequireToCheckFunc(require.Equal))
+}
+
+func MakeResourceRetrievePending(deviceID, href, correlationID string) *events.ResourceRetrievePending {
+	return &events.ResourceRetrievePending{
+		ResourceId: &commands.ResourceId{
+			DeviceId: deviceID,
+			Href:     href,
+		},
+		AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, correlationID),
+	}
+}
+
+func CleanUpResourceDeletePending(e *events.ResourceDeletePending, resetCorrelationID bool) *events.ResourceDeletePending {
+	if e.GetAuditContext() != nil && resetCorrelationID {
 		e.GetAuditContext().CorrelationId = ""
 	}
 	e.EventMetadata = nil
+	e.OpenTelemetryCarrier = nil
 	return e
 }
 
-func CleanUpDeviceMetadataUpdatePending(e *events.DeviceMetadataUpdatePending) *events.DeviceMetadataUpdatePending {
-	if e.GetAuditContext() != nil {
+func CmpResourceDeletePending(t *testing.T, expected, got *events.ResourceDeletePending) {
+	require.NotNil(t, expected)
+	resetCorrelationID := expected.GetAuditContext().GetCorrelationId() == ""
+	CleanUpResourceDeletePending(expected, resetCorrelationID)
+	require.NotNil(t, got)
+	CleanUpResourceDeletePending(got, resetCorrelationID)
+	test.CheckProtobufs(t, expected, got, test.RequireToCheckFunc(require.Equal))
+}
+
+func MakeResourceDeletePending(deviceID, href, correlationID string) *events.ResourceDeletePending {
+	return &events.ResourceDeletePending{
+		ResourceId:   &commands.ResourceId{DeviceId: deviceID, Href: href},
+		AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, correlationID),
+	}
+}
+
+func CleanUpDeviceMetadataUpdatePending(e *events.DeviceMetadataUpdatePending, resetCorrelationID bool) *events.DeviceMetadataUpdatePending {
+	if e.GetAuditContext() != nil && resetCorrelationID {
 		e.GetAuditContext().CorrelationId = ""
 	}
 	e.EventMetadata = nil
+	e.OpenTelemetryCarrier = nil
 	return e
+}
+
+func CmpDeviceMetadataUpdatePending(t *testing.T, expected, got *events.DeviceMetadataUpdatePending) {
+	require.NotNil(t, expected)
+	resetCorrelationID := expected.GetAuditContext().GetCorrelationId() == ""
+	CleanUpDeviceMetadataUpdatePending(expected, resetCorrelationID)
+	require.NotNil(t, got)
+	CleanUpDeviceMetadataUpdatePending(got, resetCorrelationID)
+	test.CheckProtobufs(t, expected, got, test.RequireToCheckFunc(require.Equal))
+}
+
+func MakeDeviceMetadataUpdatePending(deviceID string, shadowSynchronization commands.ShadowSynchronization, correlationID string) *events.DeviceMetadataUpdatePending {
+	return &events.DeviceMetadataUpdatePending{
+		DeviceId: deviceID,
+		UpdatePending: &events.DeviceMetadataUpdatePending_ShadowSynchronization{
+			ShadowSynchronization: shadowSynchronization,
+		},
+		AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, correlationID),
+	}
 }

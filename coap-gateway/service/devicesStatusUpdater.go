@@ -5,10 +5,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/plgd-dev/hub/pkg/log"
-	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
-	pkgTime "github.com/plgd-dev/hub/pkg/time"
-	"github.com/plgd-dev/hub/resource-aggregate/commands"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	pkgTime "github.com/plgd-dev/hub/v2/pkg/time"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 )
 
 type deviceExpires struct {
@@ -17,18 +17,20 @@ type deviceExpires struct {
 }
 
 type devicesStatusUpdater struct {
-	ctx context.Context
-	cfg DeviceStatusExpirationConfig
+	ctx    context.Context
+	cfg    DeviceStatusExpirationConfig
+	logger log.Logger
 
 	mutex   sync.Mutex
 	devices map[string]*deviceExpires
 }
 
-func newDevicesStatusUpdater(ctx context.Context, cfg DeviceStatusExpirationConfig) *devicesStatusUpdater {
+func newDevicesStatusUpdater(ctx context.Context, cfg DeviceStatusExpirationConfig, logger log.Logger) *devicesStatusUpdater {
 	u := devicesStatusUpdater{
 		ctx:     ctx,
 		cfg:     cfg,
 		devices: make(map[string]*deviceExpires),
+		logger:  logger,
 	}
 	if cfg.Enabled {
 		go u.run()
@@ -36,8 +38,8 @@ func newDevicesStatusUpdater(ctx context.Context, cfg DeviceStatusExpirationConf
 	return &u
 }
 
-func (u *devicesStatusUpdater) Add(c *Client) error {
-	expires, err := u.updateOnlineStatus(c, time.Now().Add(u.cfg.ExpiresIn))
+func (u *devicesStatusUpdater) Add(ctx context.Context, c *Client) error {
+	expires, err := u.updateOnlineStatus(ctx, c, time.Now().Add(u.cfg.ExpiresIn))
 	if err != nil {
 		return err
 	}
@@ -50,22 +52,22 @@ func (u *devicesStatusUpdater) Add(c *Client) error {
 	}
 	u.mutex.Lock()
 	defer u.mutex.Unlock()
-	u.devices[c.remoteAddrString()] = &d
+	u.devices[c.RemoteAddr().String()] = &d
 	return nil
 }
 
 func (u *devicesStatusUpdater) Remove(c *Client) {
 	u.mutex.Lock()
 	defer u.mutex.Unlock()
-	delete(u.devices, c.remoteAddrString())
+	delete(u.devices, c.RemoteAddr().String())
 }
 
-func (u *devicesStatusUpdater) updateOnlineStatus(client *Client, validUntil time.Time) (time.Time, error) {
+func (u *devicesStatusUpdater) updateOnlineStatus(ctx context.Context, client *Client, validUntil time.Time) (time.Time, error) {
 	authCtx, err := client.GetAuthorizationContext()
 	if err != nil {
 		return time.Time{}, err
 	}
-	ctx := kitNetGrpc.CtxWithToken(client.Context(), authCtx.GetAccessToken())
+	ctx = kitNetGrpc.CtxWithToken(ctx, authCtx.GetAccessToken())
 	if !u.cfg.Enabled || authCtx.Expire.UnixNano() < validUntil.UnixNano() {
 		validUntil = authCtx.Expire
 	}
@@ -73,13 +75,14 @@ func (u *devicesStatusUpdater) updateOnlineStatus(client *Client, validUntil tim
 		DeviceId: authCtx.GetDeviceID(),
 		Update: &commands.UpdateDeviceMetadataRequest_Status{
 			Status: &commands.ConnectionStatus{
-				Value:      commands.ConnectionStatus_ONLINE,
-				ValidUntil: pkgTime.UnixNano(validUntil),
+				Value:        commands.ConnectionStatus_ONLINE,
+				ValidUntil:   pkgTime.UnixNano(validUntil),
+				ConnectionId: client.RemoteAddr().String(),
 			},
 		},
 		CommandMetadata: &commands.CommandMetadata{
 			Sequence:     client.coapConn.Sequence(),
-			ConnectionId: client.remoteAddrString(),
+			ConnectionId: client.RemoteAddr().String(),
 		},
 	})
 
@@ -111,14 +114,14 @@ func (u *devicesStatusUpdater) run() {
 			return
 		case now := <-t.C:
 			for _, d := range u.getDevicesToUpdate(now) {
-				expires, err := u.updateOnlineStatus(d.client, time.Now().Add(u.cfg.ExpiresIn))
+				expires, err := u.updateOnlineStatus(d.client.Context(), d.client, time.Now().Add(u.cfg.ExpiresIn))
 				if err != nil {
-					log.Errorf("cannot update device(%v) status to online: %w", getDeviceID(d.client), err)
+					u.logger.Errorf("cannot update device(%v) status to online: %w", getDeviceID(d.client), err)
 				} else {
 					d.expires = expires
 				}
 			}
-			log.Debugf("update devices statuses to online takes: %v", time.Since(now))
+			u.logger.Debugf("update devices statuses to online takes: %v", time.Since(now))
 		}
 	}
 }

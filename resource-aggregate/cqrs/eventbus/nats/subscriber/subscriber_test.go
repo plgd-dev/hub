@@ -9,12 +9,13 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/plgd-dev/hub/pkg/log"
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventbus"
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventbus/nats/publisher"
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventbus/nats/subscriber"
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventbus/nats/test"
-	"github.com/plgd-dev/hub/test/config"
+	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/publisher"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/subscriber"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/test"
+	"github.com/plgd-dev/hub/v2/test/config"
 	"github.com/stretchr/testify/require"
 )
 
@@ -24,10 +25,16 @@ func TestSubscriber(t *testing.T) {
 
 	timeout := time.Second * 30
 
-	logger, err := log.NewLogger(log.Config{})
-	require.NoError(t, err)
+	logger := log.NewLogger(log.MakeDefaultConfig())
 
-	naPubClient, publisher, err := test.NewClientAndPublisher(config.MakePublisherConfig(), logger, publisher.WithMarshaler(json.Marshal))
+	fileWatcher, err := fsnotify.NewWatcher()
+	require.NoError(t, err)
+	defer func() {
+		err := fileWatcher.Close()
+		require.NoError(t, err)
+	}()
+
+	naPubClient, publisher, err := test.NewClientAndPublisher(config.MakePublisherConfig(), fileWatcher, logger, publisher.WithMarshaler(json.Marshal))
 	require.NoError(t, err)
 	require.NotNil(t, publisher)
 	defer func() {
@@ -35,7 +42,7 @@ func TestSubscriber(t *testing.T) {
 		naPubClient.Close()
 	}()
 
-	naSubClient, subscriber, err := test.NewClientAndSubscriber(config.MakeSubscriberConfig(),
+	naSubClient, subscriber, err := test.NewClientAndSubscriber(config.MakeSubscriberConfig(), fileWatcher,
 		logger,
 		subscriber.WithGoPool(func(f func()) error { go f(); return nil }),
 		subscriber.WithUnmarshaler(json.Unmarshal),
@@ -71,6 +78,7 @@ func (e mockEvent) EventType() string {
 func (e mockEvent) AggregateID() string {
 	return e.AggregateIDI
 }
+
 func (e mockEvent) GroupID() string {
 	return e.groupID
 }
@@ -132,10 +140,10 @@ func testWaitForAnyEvent(timeout time.Duration, eh1 *mockEventHandler, eh2 *mock
 	}
 }
 
-func testNewSubscription(t *testing.T, ctx context.Context, subscriber eventbus.Subscriber, subscriptionId string, publishTopics []string) (*mockEventHandler, eventbus.Observer) {
+func testNewSubscription(t *testing.T, ctx context.Context, subscriber eventbus.Subscriber, subscriptionID string, publishTopics []string) (*mockEventHandler, eventbus.Observer) {
 	t.Log("Subscribe to testNewSubscription")
 	m := newMockEventHandler()
-	ob, err := subscriber.Subscribe(ctx, subscriptionId, publishTopics, m)
+	ob, err := subscriber.Subscribe(ctx, subscriptionID, publishTopics, m)
 	require.NoError(t, err)
 	require.NotNil(t, ob)
 	if ob == nil {
@@ -159,18 +167,18 @@ func testNewSubscription(t *testing.T, ctx context.Context, subscriber eventbus.
 //
 
 type Path struct {
-	AggregateId string
-	GroupId     string
+	AggregateID string
+	GroupID     string
 }
 
 func acceptanceTest(t *testing.T, ctx context.Context, timeout time.Duration, publishTopics, subscribeTopics []string, publisher eventbus.Publisher, subscriber eventbus.Subscriber) {
-	//savedEvents := []Event{}
+	// savedEvents := []Event{}
 	AggregateID1 := "aggregateID1"
 	AggregateID2 := "aggregateID2"
 
 	aggregateID1Path := Path{
-		AggregateId: AggregateID1,
-		GroupId:     "deviceId",
+		AggregateID: AggregateID1,
+		GroupID:     "deviceId",
 	}
 	/*
 		aggregateID2Path := protoEvent.Path{
@@ -222,14 +230,14 @@ func acceptanceTest(t *testing.T, ctx context.Context, timeout time.Duration, pu
 	require.Equal(t, 2, len(publishTopics))
 
 	t.Log("Without subscription")
-	err := publisher.Publish(ctx, publishTopics[0:1], aggregateID1Path.GroupId, aggregateID1Path.AggregateId, eventsToPublish[0])
+	err := publisher.Publish(ctx, publishTopics[0:1], aggregateID1Path.GroupID, aggregateID1Path.AggregateID, eventsToPublish[0])
 	require.NoError(t, err)
 
 	// Add handlers and observers.
 	t.Log("Subscribe to first topic")
 	m0, ob0 := testNewSubscription(t, ctx, subscriber, "sub-0", subscribeTopics[0:1])
 
-	err = publisher.Publish(ctx, publishTopics[0:1], aggregateID1Path.GroupId, aggregateID1Path.AggregateId, eventsToPublish[1])
+	err = publisher.Publish(ctx, publishTopics[0:1], aggregateID1Path.GroupID, aggregateID1Path.AggregateID, eventsToPublish[1])
 	require.NoError(t, err)
 
 	event0, err := m0.waitForEvent(timeout)
@@ -260,7 +268,7 @@ func acceptanceTest(t *testing.T, ctx context.Context, timeout time.Duration, pu
 		require.NoError(t, err)
 	}()
 
-	err = publisher.Publish(ctx, publishTopics, aggregateID1Path.GroupId, aggregateID1Path.AggregateId, eventsToPublish[2])
+	err = publisher.Publish(ctx, publishTopics, aggregateID1Path.GroupID, aggregateID1Path.AggregateID, eventsToPublish[2])
 	require.NoError(t, err)
 
 	event1, err := m1.waitForEvent(timeout)
@@ -280,7 +288,7 @@ func acceptanceTest(t *testing.T, ctx context.Context, timeout time.Duration, pu
 	err = ob4.SetTopics(ctx, publishTopics)
 	require.NoError(t, err)
 
-	err = publisher.Publish(ctx, []string{topic}, aggregateID1Path.GroupId, aggregateID1Path.AggregateId, eventsToPublish[3])
+	err = publisher.Publish(ctx, []string{topic}, aggregateID1Path.GroupID, aggregateID1Path.AggregateID, eventsToPublish[3])
 	require.NoError(t, err)
 
 	event4, err := m4.waitForEvent(timeout)

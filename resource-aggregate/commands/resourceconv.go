@@ -3,8 +3,8 @@ package commands
 import (
 	"time"
 
-	pkgTime "github.com/plgd-dev/hub/pkg/time"
 	"github.com/plgd-dev/device/schema"
+	pkgTime "github.com/plgd-dev/hub/v2/pkg/time"
 )
 
 func (e *EndpointInformation) ToSchema() schema.Endpoint {
@@ -36,18 +36,18 @@ func (p *Policy) ToSchema() *schema.Policy {
 	}
 }
 
-func (l *Resource) ToSchema() schema.ResourceLink {
+func (r *Resource) ToSchema() schema.ResourceLink {
 	return schema.ResourceLink{
-		ID:                    l.ToUUID(),
-		Anchor:                l.GetAnchor(),
-		DeviceID:              l.GetDeviceId(),
-		Endpoints:             EndpointInformations(l.GetEndpointInformations()).ToSchema(),
-		Href:                  l.GetHref(),
-		Interfaces:            l.GetInterfaces(),
-		Policy:                l.GetPolicy().ToSchema(),
-		ResourceTypes:         l.GetResourceTypes(),
-		SupportedContentTypes: l.GetSupportedContentTypes(),
-		Title:                 l.GetTitle(),
+		ID:                    r.ToUUID(),
+		Anchor:                r.GetAnchor(),
+		DeviceID:              r.GetDeviceId(),
+		Endpoints:             EndpointInformations(r.GetEndpointInformations()).ToSchema(),
+		Href:                  r.GetHref(),
+		Interfaces:            r.GetInterfaces(),
+		Policy:                r.GetPolicy().ToSchema(),
+		ResourceTypes:         r.GetResourceTypes(),
+		SupportedContentTypes: r.GetSupportedContentTypes(),
+		Title:                 r.GetTitle(),
 	}
 }
 
@@ -97,31 +97,15 @@ func SchemaResourceLinkToResource(link schema.ResourceLink, validUntil time.Time
 	}
 }
 
-func SchemaEndpointsToProto(ra []schema.Endpoint) []*EndpointInformation {
-	if ra == nil {
-		return nil
-	}
-	r := make([]*EndpointInformation, 0, len(ra))
-	for _, e := range ra {
-		r = append(r, &EndpointInformation{
-			Endpoint: e.URI,
-			Priority: int64(e.Priority),
-		})
-	}
-	return r
-}
-
-func SchemaPolicyToProto(ra *schema.Policy) *Policy {
-	if ra == nil {
-		return nil
-	}
-	return &Policy{
-		BitFlags: int32(ra.BitMask),
+func SchemaResourceLinkToResourceId(link schema.ResourceLink) *ResourceId {
+	return &ResourceId{
+		Href:     link.Href,
+		DeviceId: link.DeviceID,
 	}
 }
 
 func SchemaResourceLinksToResources(links schema.ResourceLinks, validUntil time.Time) []*Resource {
-	var resources = make([]*Resource, 0, len(links))
+	resources := make([]*Resource, 0, len(links))
 	for _, link := range links {
 		resources = append(resources, SchemaResourceLinkToResource(link, validUntil))
 	}

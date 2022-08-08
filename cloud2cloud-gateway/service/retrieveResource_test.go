@@ -6,17 +6,16 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/plgd-dev/device/schema/interfaces"
-	"github.com/plgd-dev/device/test/resource/types"
 	"github.com/plgd-dev/go-coap/v2/message"
-	"github.com/plgd-dev/hub/cloud2cloud-gateway/uri"
-	"github.com/plgd-dev/hub/grpc-gateway/pb"
-	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
-	"github.com/plgd-dev/hub/test"
-	testCfg "github.com/plgd-dev/hub/test/config"
-	testHttp "github.com/plgd-dev/hub/test/http"
-	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
-	"github.com/plgd-dev/hub/test/service"
+	c2cTest "github.com/plgd-dev/hub/v2/cloud2cloud-gateway/test"
+	"github.com/plgd-dev/hub/v2/cloud2cloud-gateway/uri"
+	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
+	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	"github.com/plgd-dev/hub/v2/test"
+	"github.com/plgd-dev/hub/v2/test/config"
+	testHttp "github.com/plgd-dev/hub/v2/test/http"
+	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
+	"github.com/plgd-dev/hub/v2/test/service"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
@@ -25,9 +24,32 @@ import (
 
 func TestRequestHandlerRetrieveResource(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
+
+	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
+	defer cancel()
+
+	tearDown := service.SetUp(ctx, t)
+	defer tearDown()
+
+	token := oauthTest.GetDefaultAccessToken(t)
+	ctx = kitNetGrpc.CtxWithToken(ctx, token)
+
+	conn, err := grpc.Dial(config.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+		RootCAs: test.GetRootCertificatePool(t),
+	})))
+	require.NoError(t, err)
+	c := pb.NewGrpcGatewayClient(conn)
+	defer func() {
+		_ = conn.Close()
+	}()
+	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.GW_HOST, test.GetAllBackendResourceLinks())
+	defer shutdownDevSim()
+
+	const textPlain = "text/plain"
 	type args struct {
-		uri    string
-		accept string
+		accept       string
+		token        string
+		resourceHref string
 	}
 	tests := []struct {
 		name            string
@@ -37,91 +59,116 @@ func TestRequestHandlerRetrieveResource(t *testing.T) {
 		want            interface{}
 	}{
 		{
-			name: "JSON: " + uri.Devices + "/" + deviceID + test.TestResourceLightInstanceHref("1"),
+			name: "missing token",
 			args: args{
-				uri:    testHttp.HTTPS_SCHEME + testCfg.C2C_GW_HOST + uri.Devices + "/" + deviceID + test.TestResourceLightInstanceHref("1"),
-				accept: message.AppJSON.String(),
+				resourceHref: test.TestResourceSwitchesHref,
 			},
-			wantCode:        http.StatusOK,
-			wantContentType: message.AppJSON.String(),
-			want: map[interface{}]interface{}{
-				"if":    []interface{}{interfaces.OC_IF_RW, interfaces.OC_IF_BASELINE},
-				"name":  "Light",
-				"power": uint64(0),
-				"state": false,
-				"rt":    []interface{}{types.CORE_LIGHT},
-			},
+			wantCode:        http.StatusUnauthorized,
+			wantContentType: textPlain,
+			want:            "invalid token: could not parse token: token contains an invalid number of segments",
 		},
 		{
-			name: "CBOR: " + uri.Devices + "/" + deviceID + test.TestResourceLightInstanceHref("1"),
+			name: "expired token",
 			args: args{
-				uri:    testHttp.HTTPS_SCHEME + testCfg.C2C_GW_HOST + uri.Devices + "/" + deviceID + test.TestResourceLightInstanceHref("1"),
-				accept: message.AppOcfCbor.String(),
+				token:        oauthTest.GetAccessToken(t, config.OAUTH_SERVER_HOST, oauthTest.ClientTestExpired),
+				resourceHref: test.TestResourceSwitchesHref,
 			},
-			wantCode:        http.StatusOK,
-			wantContentType: message.AppOcfCbor.String(),
-			want: map[interface{}]interface{}{
-				"if":    []interface{}{interfaces.OC_IF_RW, interfaces.OC_IF_BASELINE},
-				"name":  "Light",
-				"power": uint64(0),
-				"state": false,
-				"rt":    []interface{}{types.CORE_LIGHT},
-			},
+			wantCode:        http.StatusUnauthorized,
+			wantContentType: textPlain,
+			want:            "invalid token: could not parse token: token is expired",
 		},
 		{
 			name: "notFound",
 			args: args{
-				uri:    testHttp.HTTPS_SCHEME + testCfg.C2C_GW_HOST + uri.Devices + "/" + deviceID + "/notFound",
-				accept: message.AppJSON.String(),
+				accept:       message.AppJSON.String(),
+				token:        token,
+				resourceHref: "/notFound",
 			},
 			wantCode:        http.StatusNotFound,
-			wantContentType: "text/plain",
+			wantContentType: textPlain,
 			want:            "cannot retrieve resource: cannot retrieve resource(deviceID: " + deviceID + ", Href: /notFound): rpc error: code = NotFound desc = cannot retrieve resources values: not found",
 		},
 		{
 			name: "invalidAccept",
 			args: args{
-				uri:    testHttp.HTTPS_SCHEME + testCfg.C2C_GW_HOST + uri.Devices + "/" + deviceID + test.TestResourceLightInstanceHref("1"),
-				accept: "application/invalid",
+				accept:       "application/invalid",
+				token:        token,
+				resourceHref: test.TestResourceLightInstanceHref("1"),
 			},
 			wantCode:        http.StatusBadRequest,
-			wantContentType: "text/plain",
+			wantContentType: textPlain,
 			want:            "cannot retrieve resource: invalid accept header([application/invalid])",
+		},
+		{
+			name: "JSON: " + uri.Devices + "/" + deviceID + test.TestResourceLightInstanceHref("1"),
+			args: args{
+				accept:       message.AppJSON.String(),
+				token:        token,
+				resourceHref: test.TestResourceLightInstanceHref("1"),
+			},
+			wantCode:        http.StatusOK,
+			wantContentType: message.AppJSON.String(),
+			want: map[interface{}]interface{}{
+				"name":  "Light",
+				"power": uint64(0),
+				"state": false,
+			},
+		},
+		{
+			name: "CBOR: " + uri.Devices + "/" + deviceID + test.TestResourceLightInstanceHref("1"),
+			args: args{
+				accept:       message.AppOcfCbor.String(),
+				token:        token,
+				resourceHref: test.TestResourceLightInstanceHref("1"),
+			},
+			wantCode:        http.StatusOK,
+			wantContentType: message.AppOcfCbor.String(),
+			want: map[interface{}]interface{}{
+				"name":  "Light",
+				"power": uint64(0),
+				"state": false,
+			},
+		},
+		{
+			name: "JSON: " + uri.Devices + "/" + deviceID + test.TestResourceSwitchesHref,
+			args: args{
+				accept:       message.AppJSON.String(),
+				token:        token,
+				resourceHref: test.TestResourceSwitchesHref,
+			},
+			wantCode:        http.StatusOK,
+			wantContentType: message.AppJSON.String(),
+			want:            []interface{}{},
+		},
+		{
+			name: "CBOR: " + uri.Devices + "/" + deviceID + test.TestResourceSwitchesHref,
+			args: args{
+				accept:       message.AppOcfCbor.String(),
+				token:        token,
+				resourceHref: test.TestResourceSwitchesHref,
+			},
+			wantCode:        http.StatusOK,
+			wantContentType: message.AppOcfCbor.String(),
+			want:            []interface{}{},
 		},
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), testCfg.TEST_TIMEOUT)
-	defer cancel()
-
-	tearDown := service.SetUp(ctx, t)
-	defer tearDown()
-
-	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultServiceToken(t))
-
-	conn, err := grpc.Dial(testCfg.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
-		RootCAs: test.GetRootCertificatePool(t),
-	})))
-	require.NoError(t, err)
-	c := pb.NewGrpcGatewayClient(conn)
-	defer func() {
-		_ = conn.Close()
-	}()
-	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.GW_HOST, test.GetAllBackendResourceLinks())
-	defer shutdownDevSim()
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			req := testHttp.NewHTTPRequest(http.MethodGet, tt.args.uri, nil).Accept(tt.args.accept).Build(ctx, t)
-			resp := testHttp.DoHTTPRequest(t, req)
+			rb := testHttp.NewHTTPRequest(http.MethodGet, c2cTest.C2CURI(uri.ResourceValues), nil).Accept(tt.args.accept).AuthToken(tt.args.token)
+			rb.DeviceId(deviceID).ResourceHref(tt.args.resourceHref)
+			resp := testHttp.DoHTTPRequest(t, rb.Build(ctx, t))
 			assert.Equal(t, tt.wantCode, resp.StatusCode)
 			defer func() {
 				_ = resp.Body.Close()
 			}()
 			require.Equal(t, tt.wantContentType, resp.Header.Get("Content-Type"))
-			if tt.want != nil {
-				got := testHttp.ReadHTTPResponse(t, resp.Body, tt.wantContentType)
-				require.Equal(t, tt.want, got)
+			got := testHttp.ReadHTTPResponse(t, resp.Body, tt.wantContentType)
+			if tt.wantContentType == textPlain {
+				require.Contains(t, got, tt.want)
+				return
 			}
+			require.Equal(t, tt.want, got)
 		})
 	}
 }

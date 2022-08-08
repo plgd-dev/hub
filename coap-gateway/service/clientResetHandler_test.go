@@ -5,20 +5,19 @@ import (
 	"testing"
 	"time"
 
-	"github.com/plgd-dev/hub/coap-gateway/uri"
-	testCfg "github.com/plgd-dev/hub/test/config"
 	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
+	"github.com/plgd-dev/hub/v2/coap-gateway/uri"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func Test_clientResetHandler(t *testing.T) {
+func TestClientResetHandler(t *testing.T) {
 	shutdown := setUp(t)
 	defer shutdown()
 
-	co := testCoapDial(t, testCfg.GW_HOST, "")
+	co := testCoapDial(t, "", true, time.Now().Add(time.Minute))
 	if co == nil {
 		return
 	}
@@ -69,13 +68,14 @@ func Test_clientResetHandler(t *testing.T) {
 
 	testPrepareDevice(t, co)
 	time.Sleep(time.Second)
+	messagePool := pool.New(0, 0)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.args.code == codes.Empty {
 				ctx, cancel := context.WithTimeout(context.Background(), TestExchangeTimeout)
 				defer cancel()
-				msg := pool.AcquireMessage(ctx)
+				msg := messagePool.AcquireMessage(ctx)
 				msg.SetCode(tt.args.code)
 				msg.SetToken(tt.args.token)
 				err := co.WriteMessage(msg)
@@ -83,10 +83,11 @@ func Test_clientResetHandler(t *testing.T) {
 			} else {
 				ctx, cancel := context.WithTimeout(context.Background(), TestExchangeTimeout)
 				defer cancel()
-				msg := pool.AcquireMessage(ctx)
+				msg := messagePool.AcquireMessage(ctx)
 				msg.SetCode(tt.args.code)
 				msg.SetToken(tt.args.token)
-				msg.SetPath(tt.args.path)
+				err := msg.SetPath(tt.args.path)
+				require.NoError(t, err)
 				msg.SetObserve(tt.args.observe)
 				resp, err := co.Do(msg)
 				require.NoError(t, err)

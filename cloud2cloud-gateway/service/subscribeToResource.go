@@ -8,18 +8,14 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
-	"github.com/plgd-dev/hub/cloud2cloud-connector/events"
-	"github.com/plgd-dev/hub/cloud2cloud-gateway/store"
-	pkgHttp "github.com/plgd-dev/hub/pkg/net/http"
+	"github.com/plgd-dev/hub/v2/cloud2cloud-connector/events"
+	"github.com/plgd-dev/hub/v2/cloud2cloud-gateway/store"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	pkgHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
 	"github.com/plgd-dev/kit/v2/codec/json"
-	"github.com/plgd-dev/kit/v2/log"
 )
 
-type SubscriptionResponse struct {
-	SubscriptionID string `json:"subscriptionId"`
-}
-
-func (rh *RequestHandler) makeSubscription(w http.ResponseWriter, r *http.Request, typ store.Type, validEventTypes []events.EventType) (store.Subscription, int, error) {
+func (rh *RequestHandler) makeSubscription(r *http.Request, typ store.Type, validEventTypes []events.EventType) (store.Subscription, int, error) {
 	var res store.Subscription
 	var req events.SubscriptionRequest
 	err := json.ReadFrom(r.Body, &req)
@@ -27,7 +23,7 @@ func (rh *RequestHandler) makeSubscription(w http.ResponseWriter, r *http.Reques
 		return res, http.StatusBadRequest, fmt.Errorf("cannot decode request body: %w", err)
 	}
 
-	_, err = url.Parse(req.URL)
+	_, err = url.Parse(req.EventsURL)
 	if err != nil {
 		return res, http.StatusBadRequest, fmt.Errorf("invalid eventsurl(%w)", err)
 	}
@@ -39,10 +35,9 @@ func (rh *RequestHandler) makeSubscription(w http.ResponseWriter, r *http.Reques
 
 	eventTypes := make([]events.EventType, 0, 10)
 	for _, r := range req.EventTypes {
-		ev := events.EventType(r)
 		for _, v := range validEventTypes {
-			if ev == v {
-				eventTypes = append(eventTypes, ev)
+			if r == v {
+				eventTypes = append(eventTypes, r)
 			}
 		}
 	}
@@ -51,7 +46,7 @@ func (rh *RequestHandler) makeSubscription(w http.ResponseWriter, r *http.Reques
 	}
 	res.ID = uuid.Must(uuid.NewRandom()).String()
 	res.EventTypes = eventTypes
-	res.URL = req.URL
+	res.URL = req.EventsURL
 	res.CorrelationID = r.Header.Get(events.CorrelationIDKey)
 	res.Accept = strings.Split(r.Header.Get(events.AcceptKey), ",")
 	res.SigningSecret = req.SigningSecret
@@ -59,15 +54,14 @@ func (rh *RequestHandler) makeSubscription(w http.ResponseWriter, r *http.Reques
 	res.AccessToken = token
 
 	return res, http.StatusOK, nil
-
 }
 
 func (rh *RequestHandler) subscribeToResource(w http.ResponseWriter, r *http.Request) (int, error) {
 	routeVars := mux.Vars(r)
 	deviceID := routeVars[deviceIDKey]
-	href := routeVars[HrefKey]
+	href := routeVars[hrefKey]
 
-	s, code, err := rh.makeSubscription(w, r, store.Type_Resource, []events.EventType{events.EventType_ResourceChanged})
+	s, code, err := rh.makeSubscription(r, store.Type_Resource, []events.EventType{events.EventType_ResourceChanged})
 	if err != nil {
 		return code, err
 	}
@@ -78,7 +72,7 @@ func (rh *RequestHandler) subscribeToResource(w http.ResponseWriter, r *http.Req
 	if err != nil {
 		return http.StatusBadRequest, fmt.Errorf("cannot store subscription: %w", err)
 	}
-	err = jsonResponseWriterEncoder(w, SubscriptionResponse{
+	err = jsonResponseWriterEncoder(w, events.SubscriptionResponse{
 		SubscriptionID: s.ID,
 	}, http.StatusCreated)
 	if err != nil {

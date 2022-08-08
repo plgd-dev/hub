@@ -9,17 +9,17 @@ metadata:
     {{- with .Values.httpgateway.service.labels }}
     {{- . | toYaml | nindent 4 }}
     {{- end }}
-  {{- with .Values.httpgateway.service.annotations }}
+  {{- if .Values.httpgateway.service.annotations }}
   annotations:
-  {{- . | toYaml | nindent 4 }}
+    {{- include "plgd-hub.tplvalues.render" ( dict "value" .Values.httpgateway.service.annotations "context" $ ) | nindent 4 }}
   {{- end }}
 spec:
   type: {{ .Values.httpgateway.service.type | default "ClusterIP" }}
   ports:
     - port: {{ .Values.httpgateway.port }}
-      targetPort: http
-      protocol: TCP
-      name: http
+      targetPort: {{ .Values.httpgateway.service.targetPort }}
+      protocol: {{ .Values.httpgateway.service.protocol }}
+      name: {{ .Values.httpgateway.service.name }}
   selector:
   {{- include "plgd-hub.httpgateway.selectorLabels" . | nindent 4 }}
 {{- end }}

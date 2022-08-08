@@ -5,101 +5,39 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"net/http/httputil"
-	"net/url"
 	"strings"
 
-	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
-	"github.com/plgd-dev/hub/grpc-gateway/client"
-	"github.com/plgd-dev/hub/grpc-gateway/pb"
-	"github.com/plgd-dev/hub/http-gateway/uri"
-	"github.com/plgd-dev/hub/pkg/log"
-	kitHttp "github.com/plgd-dev/hub/pkg/net/http"
-
-	//	"github.com/tmc/grpc-websocket-proxy/wsproxy"
-	"github.com/plgd-dev/hub/http-gateway/grpc-websocket-proxy/wsproxy"
-
 	router "github.com/gorilla/mux"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"github.com/plgd-dev/hub/v2/grpc-gateway/client"
+	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
+	"github.com/plgd-dev/hub/v2/http-gateway/grpc-websocket-proxy/wsproxy" //	"github.com/tmc/grpc-websocket-proxy/wsproxy"
+	"github.com/plgd-dev/hub/v2/http-gateway/serverMux"
+	"github.com/plgd-dev/hub/v2/http-gateway/uri"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	kitHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
 )
 
-//RequestHandler for handling incoming request
+// RequestHandler for handling incoming request
 type RequestHandler struct {
 	client *client.Client
 	config *Config
 	mux    *runtime.ServeMux
 }
 
-//NewRequestHandler factory for new RequestHandler
+// NewRequestHandler factory for new RequestHandler
 func NewRequestHandler(config *Config, client *client.Client) *RequestHandler {
 	return &RequestHandler{
 		client: client,
 		config: config,
-		mux: runtime.NewServeMux(
-			runtime.WithErrorHandler(errorHandler),
-			runtime.WithMarshalerOption(uri.ApplicationProtoJsonContentType, newJsonpbMarshaler()),
-			runtime.WithMarshalerOption(runtime.MIMEWildcard, newJsonMarshaler()),
-		),
+		mux:    serverMux.New(),
 	}
 }
 
-func loggingMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		data, err := httputil.DumpRequest(r, false)
-		if err != nil {
-			log.Infof("Request: %v %v", r.Method, r.RequestURI)
-		} else {
-			log.Infof("Request: %v", string(data))
-		}
-
-		// Call the next handler, which can be another middleware in the chain, or the final handler.
-		next.ServeHTTP(w, r)
-	})
-}
-
-func makeQueryCaseInsensitive(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		u, err := url.ParseRequestURI(r.RequestURI)
-		if err != nil {
-			log.Errorf("cannot make query case insensitive: %v", err)
-			next.ServeHTTP(w, r)
-			return
-		}
-		queries := u.Query()
-		newQueries := make(url.Values)
-		for key, val := range queries {
-			newKey, ok := uri.QueryCaseInsensitive[strings.ToLower(key)]
-			if ok {
-				newQueries[newKey] = val
-			} else {
-				newQueries[key] = val
-			}
-		}
-		r.URL.RawQuery = newQueries.Encode()
-		r.RequestURI = u.String()
-		next.ServeHTTP(w, r)
-	})
-}
-
-func trailSlashSuffix(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		u, err := url.ParseRequestURI(r.RequestURI)
-		if err != nil {
-			log.Errorf("cannot trail slash suffix: %v", err)
-			next.ServeHTTP(w, r)
-			return
-		}
-		l := len(u.Path)
-		u.Path = strings.TrimRight(u.Path, "/")
-		if l > 0 && len(u.Path) == 0 {
-			u.Path = "/"
-		}
-		r.RequestURI = u.String()
-		r.URL.Path = u.Path
-		next.ServeHTTP(w, r)
-	})
-}
-
-func splitURIPath(requestURI, prefix string) []string {
+func matchPrefixAndSplitURIPath(requestURI, prefix string) []string {
+	if len(requestURI) == 0 {
+		return nil
+	}
 	v := kitHttp.CanonicalHref(requestURI)
 	p := strings.TrimPrefix(v, prefix) // remove core prefix
 	if p == v {
@@ -110,7 +48,7 @@ func splitURIPath(requestURI, prefix string) []string {
 }
 
 func resourcePendingCommandsMatcher(r *http.Request, rm *router.RouteMatch) bool {
-	paths := splitURIPath(r.RequestURI, uri.Devices)
+	paths := matchPrefixAndSplitURIPath(r.RequestURI, uri.Devices)
 	if len(paths) > 3 && paths[1] == uri.ResourcesPathKey && strings.Contains(paths[len(paths)-1], uri.PendingCommandsPathKey) {
 		if rm.Vars == nil {
 			rm.Vars = make(map[string]string)
@@ -132,7 +70,7 @@ func resourcePendingCommandsMatcher(r *http.Request, rm *router.RouteMatch) bool
 }
 
 func resourceMatcher(r *http.Request, rm *router.RouteMatch) bool {
-	paths := splitURIPath(r.RequestURI, uri.Devices)
+	paths := matchPrefixAndSplitURIPath(r.RequestURI, uri.Devices)
 	if len(paths) > 2 &&
 		paths[1] == uri.ResourcesPathKey &&
 		!strings.HasPrefix(paths[len(paths)-1], uri.EventsPathKey) {
@@ -147,7 +85,7 @@ func resourceMatcher(r *http.Request, rm *router.RouteMatch) bool {
 }
 
 func resourceLinksMatcher(r *http.Request, rm *router.RouteMatch) bool {
-	paths := splitURIPath(r.RequestURI, uri.Devices)
+	paths := matchPrefixAndSplitURIPath(r.RequestURI, uri.Devices)
 	if len(paths) > 2 && paths[1] == uri.ResourceLinksPathKey {
 		if rm.Vars == nil {
 			rm.Vars = make(map[string]string)
@@ -160,7 +98,7 @@ func resourceLinksMatcher(r *http.Request, rm *router.RouteMatch) bool {
 }
 
 func resourceEventsMatcher(r *http.Request, rm *router.RouteMatch) bool {
-	paths := splitURIPath(r.RequestURI, uri.Devices)
+	paths := matchPrefixAndSplitURIPath(r.RequestURI, uri.Devices)
 	// /api/v1/devices/{deviceId}/resources/{resourceHref}/events
 	// /api/v1/devices/{deviceId}/resources/{resourceHref}/events?timestampFilter={timestamp}
 	if len(paths) > 3 &&
@@ -176,15 +114,9 @@ func resourceEventsMatcher(r *http.Request, rm *router.RouteMatch) bool {
 	return false
 }
 
-// NewHTTP returns HTTP server
-func NewHTTP(requestHandler *RequestHandler, authInterceptor kitHttp.Interceptor) (*http.Server, error) {
-	r0 := router.NewRouter()
-	r0.Use(loggingMiddleware)
-	r0.Use(kitHttp.CreateAuthMiddleware(authInterceptor, func(ctx context.Context, w http.ResponseWriter, r *http.Request, err error) {
-		writeError(w, fmt.Errorf("cannot access to %v: %w", r.RequestURI, err))
-	}))
-	r0.Use(makeQueryCaseInsensitive)
-	r0.Use(trailSlashSuffix)
+// NewHTTP returns HTTP handler
+func NewHTTP(requestHandler *RequestHandler, authInterceptor kitHttp.Interceptor) (http.Handler, error) {
+	r0 := serverMux.NewRouter(uri.QueryCaseInsensitive, authInterceptor)
 	r := router.NewRouter()
 	r0.PathPrefix("/").Handler(r)
 
@@ -255,5 +187,5 @@ func NewHTTP(requestHandler *RequestHandler, authInterceptor kitHttp.Interceptor
 		}))
 	}
 
-	return &http.Server{Handler: r0}, nil
+	return r0, nil
 }

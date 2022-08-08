@@ -5,12 +5,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/plgd-dev/hub/grpc-gateway/client"
-	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
-	test "github.com/plgd-dev/hub/test"
-	testCfg "github.com/plgd-dev/hub/test/config"
-	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
-	"github.com/plgd-dev/hub/test/service"
+	"github.com/plgd-dev/hub/v2/grpc-gateway/client"
+	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	test "github.com/plgd-dev/hub/v2/test"
+	testCfg "github.com/plgd-dev/hub/v2/test/config"
+	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
+	"github.com/plgd-dev/hub/v2/test/service"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -20,6 +20,8 @@ func sortDevices(s map[string]*client.DeviceDetails) map[string]*client.DeviceDe
 		x.Resources = test.CleanUpResourcesArray(x.Resources)
 		x.Device.ProtocolIndependentId = ""
 		x.Device.Metadata.Status.ValidUntil = 0
+		x.Device.Metadata.Status.ConnectionId = ""
+		x.Device.Data = nil
 		s[key] = x
 	}
 
@@ -45,7 +47,7 @@ func TestClient_GetDevices(t *testing.T) {
 		{
 			name: "valid",
 			args: args{
-				token: oauthTest.GetDefaultServiceToken(t),
+				token: oauthTest.GetDefaultAccessToken(t),
 			},
 			want: map[string]client.DeviceDetails{
 				deviceID: NewTestDeviceSimulator(deviceID, test.TestDeviceName, false),
@@ -54,14 +56,14 @@ func TestClient_GetDevices(t *testing.T) {
 		{
 			name: "not-found",
 			args: args{
-				token: oauthTest.GetDefaultServiceToken(t),
+				token: oauthTest.GetDefaultAccessToken(t),
 				opts:  []client.GetDevicesOption{client.WithResourceTypes("not-found")},
 			},
 			wantErr: false,
 		},
 	}
 
-	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultServiceToken(t))
+	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
 
 	c := NewTestClient(t)
 	defer func() {

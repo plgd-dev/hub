@@ -21,17 +21,17 @@ import (
 	"github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/tcp"
 	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
-	"github.com/plgd-dev/hub/coap-gateway/service"
-	coapgwTest "github.com/plgd-dev/hub/coap-gateway/test"
-	"github.com/plgd-dev/hub/coap-gateway/uri"
-	grpcgwTest "github.com/plgd-dev/hub/grpc-gateway/test"
-	idTest "github.com/plgd-dev/hub/identity-store/test"
-	"github.com/plgd-dev/hub/resource-aggregate/commands"
-	raTest "github.com/plgd-dev/hub/resource-aggregate/test"
-	rdTest "github.com/plgd-dev/hub/resource-directory/test"
-	"github.com/plgd-dev/hub/test/config"
-	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
-	testService "github.com/plgd-dev/hub/test/service"
+	"github.com/plgd-dev/hub/v2/coap-gateway/service"
+	coapgwTest "github.com/plgd-dev/hub/v2/coap-gateway/test"
+	"github.com/plgd-dev/hub/v2/coap-gateway/uri"
+	grpcgwTest "github.com/plgd-dev/hub/v2/grpc-gateway/test"
+	idTest "github.com/plgd-dev/hub/v2/identity-store/test"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
+	raTest "github.com/plgd-dev/hub/v2/resource-aggregate/test"
+	rdTest "github.com/plgd-dev/hub/v2/resource-directory/test"
+	"github.com/plgd-dev/hub/v2/test/config"
+	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
+	testService "github.com/plgd-dev/hub/v2/test/service"
 	"github.com/plgd-dev/kit/v2/codec/cbor"
 	"github.com/plgd-dev/kit/v2/codec/json"
 	"github.com/plgd-dev/kit/v2/security"
@@ -58,38 +58,39 @@ type testEl struct {
 func testValidateResp(t *testing.T, test testEl, resp *pool.Message) {
 	require.Equal(t, test.out.code, resp.Code())
 	bodySize, _ := resp.BodySize()
-	if bodySize > 0 || test.out.payload != nil {
-		body, err := ioutil.ReadAll(resp.Body())
-		require.NoError(t, err)
-		if contentType, err := resp.ContentFormat(); err == nil {
-			switch contentType {
-			case message.AppCBOR, message.AppOcfCbor:
-				n := reflect.New(reflect.TypeOf(test.out.payload)).Interface()
-				err := cbor.Decode(body, n)
-				require.NoError(t, err)
-				if !assert.Equal(t, test.out.payload, reflect.ValueOf(n).Elem().Interface()) {
-					t.Fatal()
-				}
-			default:
-				t.Fatalf("Output payload %v is invalid, expected %v", body, test.out.payload)
-			}
-		} else {
-			// https://tools.ietf.org/html/rfc7252#section-5.5.2
-			if v, ok := test.out.payload.(string); ok {
-				require.Contains(t, string(body), v)
-			} else {
-				t.Fatalf("Output payload %v is invalid, expected %v", body, test.out.payload)
-			}
-		}
-
-		if len(test.out.queries) > 0 {
-			queries, err := resp.Options().Queries()
+	if bodySize == 0 && test.out.payload == nil {
+		return
+	}
+	body, err := ioutil.ReadAll(resp.Body())
+	require.NoError(t, err)
+	if contentType, err := resp.ContentFormat(); err == nil {
+		switch contentType {
+		case message.AppCBOR, message.AppOcfCbor:
+			n := reflect.New(reflect.TypeOf(test.out.payload)).Interface()
+			err := cbor.Decode(body, n)
 			require.NoError(t, err)
-			require.Len(t, queries, len(test.out.queries))
-			for idx := range queries {
-				if queries[idx] != test.out.queries[idx] {
-					t.Fatalf("Invalid query %v, expected %v", queries[idx], test.out.queries[idx])
-				}
+			if !assert.Equal(t, test.out.payload, reflect.ValueOf(n).Elem().Interface()) {
+				t.Fatal()
+			}
+		default:
+			t.Fatalf("Output payload %v is invalid, expected %v", body, test.out.payload)
+		}
+	} else {
+		// https://tools.ietf.org/html/rfc7252#section-5.5.2
+		if v, ok := test.out.payload.(string); ok {
+			require.Contains(t, string(body), v)
+		} else {
+			t.Fatalf("Output payload %v is invalid, expected %v", body, test.out.payload)
+		}
+	}
+
+	if len(test.out.queries) > 0 {
+		queries, err := resp.Options().Queries()
+		require.NoError(t, err)
+		require.Len(t, queries, len(test.out.queries))
+		for idx := range queries {
+			if queries[idx] != test.out.queries[idx] {
+				t.Fatalf("Invalid query %v, expected %v", queries[idx], test.out.queries[idx])
 			}
 		}
 	}
@@ -107,19 +108,20 @@ func testSignUp(t *testing.T, deviceID string, co *tcp.ClientConn) service.CoapS
 
 	ctx, cancel := context.WithTimeout(co.Context(), TestExchangeTimeout)
 	defer cancel()
-	req := pool.AcquireMessage(ctx)
-	defer pool.ReleaseMessage(req)
+	req := co.AcquireMessage(ctx)
+	defer co.ReleaseMessage(req)
 	token, err := message.GetToken()
 	require.NoError(t, err)
 	req.SetCode(codes.POST)
 	req.SetToken(token)
-	req.SetPath(uri.SignUp)
+	err = req.SetPath(uri.SignUp)
+	require.NoError(t, err)
 	req.SetContentFormat(message.AppOcfCbor)
 	req.SetBody(bytes.NewReader(inputCbor))
 
 	resp, err := co.Do(req)
 	require.NoError(t, err)
-	defer pool.ReleaseMessage(resp)
+	defer co.ReleaseMessage(resp)
 
 	require.Equal(t, codes.Changed, resp.Code())
 	var signUpResp service.CoapSignUpResponse
@@ -129,7 +131,7 @@ func testSignUp(t *testing.T, deviceID string, co *tcp.ClientConn) service.CoapS
 	return signUpResp
 }
 
-func runSignIn(t *testing.T, deviceID string, r service.CoapSignUpResponse, co *tcp.ClientConn) (*service.CoapSignInResp, codes.Code) {
+func doSignIn(t *testing.T, deviceID string, r service.CoapSignUpResponse, co *tcp.ClientConn) (*pool.Message, error) {
 	signInReq := service.CoapSignInReq{
 		DeviceID:    deviceID,
 		UserID:      r.UserID,
@@ -141,19 +143,24 @@ func runSignIn(t *testing.T, deviceID string, r service.CoapSignUpResponse, co *
 
 	ctx, cancel := context.WithTimeout(co.Context(), TestExchangeTimeout)
 	defer cancel()
-	req := pool.AcquireMessage(ctx)
-	defer pool.ReleaseMessage(req)
+	req := co.AcquireMessage(ctx)
+	defer co.ReleaseMessage(req)
 	token, err := message.GetToken()
 	require.NoError(t, err)
 	req.SetCode(codes.POST)
 	req.SetToken(token)
-	req.SetPath(uri.SignIn)
+	err = req.SetPath(uri.SignIn)
+	require.NoError(t, err)
 	req.SetContentFormat(message.AppOcfCbor)
 	req.SetBody(bytes.NewReader(inputCbor))
 
-	resp, err := co.Do(req)
+	return co.Do(req)
+}
+
+func runSignIn(t *testing.T, deviceID string, r service.CoapSignUpResponse, co *tcp.ClientConn) (*service.CoapSignInResp, codes.Code) {
+	resp, err := doSignIn(t, deviceID, r, co)
 	require.NoError(t, err)
-	defer pool.ReleaseMessage(resp)
+	defer co.ReleaseMessage(resp)
 
 	var signInResp service.CoapSignInResp
 	if resp.Code() == codes.Changed {
@@ -165,16 +172,15 @@ func runSignIn(t *testing.T, deviceID string, r service.CoapSignUpResponse, co *
 	return nil, resp.Code()
 }
 
-func testSignIn(t *testing.T, deviceID string, r service.CoapSignUpResponse, co *tcp.ClientConn) service.CoapSignInResp {
+func testSignIn(t *testing.T, deviceID string, r service.CoapSignUpResponse, co *tcp.ClientConn) {
 	signInResp, code := runSignIn(t, deviceID, r, co)
 	require.Equal(t, codes.Changed, code)
 	require.NotNil(t, signInResp)
-	return *signInResp
 }
 
-func testSignUpIn(t *testing.T, deviceID string, co *tcp.ClientConn) service.CoapSignInResp {
+func testSignUpIn(t *testing.T, deviceID string, co *tcp.ClientConn) {
 	resp := testSignUp(t, deviceID, co)
-	return testSignIn(t, deviceID, resp, co)
+	testSignIn(t, deviceID, resp, co)
 }
 
 func testPostHandler(t *testing.T, path string, test testEl, co *tcp.ClientConn) {
@@ -187,13 +193,14 @@ func testPostHandler(t *testing.T, path string, test testEl, co *tcp.ClientConn)
 
 	ctx, cancel := context.WithTimeout(co.Context(), TestExchangeTimeout)
 	defer cancel()
-	req := pool.AcquireMessage(ctx)
-	defer pool.ReleaseMessage(req)
+	req := co.AcquireMessage(ctx)
+	defer co.ReleaseMessage(req)
 	token, err := message.GetToken()
 	require.NoError(t, err)
 	req.SetCode(test.in.code)
 	req.SetToken(token)
-	req.SetPath(path)
+	err = req.SetPath(path)
+	require.NoError(t, err)
 	if len(inputCbor) > 0 {
 		req.SetContentFormat(message.AppOcfCbor)
 		req.SetBody(bytes.NewReader(inputCbor))
@@ -208,7 +215,7 @@ func testPostHandler(t *testing.T, path string, test testEl, co *tcp.ClientConn)
 		}
 		require.NoError(t, err)
 	}
-	defer pool.ReleaseMessage(resp)
+	defer co.ReleaseMessage(resp)
 	testValidateResp(t, test, resp)
 }
 
@@ -219,7 +226,9 @@ func json2cbor(data string) ([]byte, error) {
 func testPrepareDevice(t *testing.T, co *tcp.ClientConn) {
 	testSignUpIn(t, CertIdentity, co)
 	publishResEl := []testEl{
-		{"publishResourceA", input{codes.POST, `{ "di":"` + CertIdentity + `", "links":[ { "di":"` + CertIdentity + `", "href":"` + TestAResourceHref + `", "rt":["` + TestAResourceType + `"], "type":["` + message.TextPlain.String() + `"] } ], "ttl":12345}`, nil},
+		{
+			"publishResourceA",
+			input{codes.POST, `{ "di":"` + CertIdentity + `", "links":[ { "di":"` + CertIdentity + `", "href":"` + TestAResourceHref + `", "rt":["` + TestAResourceType + `"], "type":["` + message.TextPlain.String() + `"] } ], "ttl":12345}`, nil},
 			output{codes.Changed, TestWkRD{
 				DeviceID:         CertIdentity,
 				TimeToLive:       12345,
@@ -232,8 +241,12 @@ func testPrepareDevice(t *testing.T, co *tcp.ClientConn) {
 						Type:          []string{message.TextPlain.String()},
 					},
 				},
-			}, nil}, false},
-		{"publishResourceB", input{codes.POST, `{ "di":"` + CertIdentity + `", "links":[ { "di":"` + CertIdentity + `", "href":"` + TestBResourceHref + `", "rt":["` + TestBResourceType + `"], "type":["` + message.TextPlain.String() + `"] } ], "ttl":12345}`, nil},
+			}, nil},
+			false,
+		},
+		{
+			"publishResourceB",
+			input{codes.POST, `{ "di":"` + CertIdentity + `", "links":[ { "di":"` + CertIdentity + `", "href":"` + TestBResourceHref + `", "rt":["` + TestBResourceType + `"], "type":["` + message.TextPlain.String() + `"] } ], "ttl":12345}`, nil},
 			output{codes.Changed, TestWkRD{
 				DeviceID:         CertIdentity,
 				TimeToLive:       12345,
@@ -246,18 +259,19 @@ func testPrepareDevice(t *testing.T, co *tcp.ClientConn) {
 						Type:          []string{message.TextPlain.String()},
 					},
 				},
-			}, nil}, false},
+			}, nil},
+			false,
+		},
 	}
 	for _, tt := range publishResEl {
 		testPostHandler(t, uri.ResourceDirectory, tt, co)
 	}
 }
 
-func testCoapDial(t *testing.T, host, deviceID string, withoutTLS ...bool) *tcp.ClientConn {
+func testCoapDial(t *testing.T, deviceID string, withTLS bool, validTo time.Time) *tcp.ClientConn {
 	var tlsConfig *tls.Config
 
-	if len(withoutTLS) == 0 {
-
+	if withTLS {
 		priv, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 		require.NoError(t, err)
 		signerCert, err := security.LoadX509(os.Getenv("TEST_ROOT_CA_CERT"))
@@ -267,7 +281,7 @@ func testCoapDial(t *testing.T, host, deviceID string, withoutTLS ...bool) *tcp.
 
 		certData, err := generateCertificate.GenerateIdentityCert(generateCertificate.Configuration{
 			ValidFrom: time.Now().Add(-time.Hour).Format(time.RFC3339),
-			ValidFor:  2 * time.Hour,
+			ValidFor:  time.Until(validTo) + time.Hour,
 		}, deviceID, priv, signerCert, signerKey)
 		require.NoError(t, err)
 		b, err := x509.MarshalECPrivateKey(priv)
@@ -318,17 +332,18 @@ func testCoapDial(t *testing.T, host, deviceID string, withoutTLS ...bool) *tcp.
 			},
 		}
 	}
-	conn, err := tcp.Dial(host, tcp.WithTLS(tlsConfig), tcp.WithHandlerFunc(func(w *tcp.ResponseWriter, r *pool.Message) {
+	conn, err := tcp.Dial(config.GW_HOST, tcp.WithTLS(tlsConfig), tcp.WithHandlerFunc(func(w *tcp.ResponseWriter, r *pool.Message) {
 		var err error
+		resp := []byte("hello world")
 		switch r.Code() {
 		case codes.POST:
-			err = w.SetResponse(codes.Changed, message.TextPlain, bytes.NewReader([]byte("hello world")))
+			err = w.SetResponse(codes.Changed, message.TextPlain, bytes.NewReader(resp))
 		case codes.GET:
-			err = w.SetResponse(codes.Content, message.TextPlain, bytes.NewReader([]byte("hello world")))
+			err = w.SetResponse(codes.Content, message.TextPlain, bytes.NewReader(resp))
 		case codes.PUT:
-			err = w.SetResponse(codes.Created, message.TextPlain, bytes.NewReader([]byte("hello world")))
+			err = w.SetResponse(codes.Created, message.TextPlain, bytes.NewReader(resp))
 		case codes.DELETE:
-			err = w.SetResponse(codes.Deleted, message.TextPlain, bytes.NewReader([]byte("hello world")))
+			err = w.SetResponse(codes.Deleted, message.TextPlain, bytes.NewReader(resp))
 		}
 		require.NoError(t, err)
 	}))
@@ -361,15 +376,15 @@ func setUp(t *testing.T, coapgwCfgs ...service.Config) func() {
 }
 
 var (
-	AuthorizationUserId       = "1"
-	AuthorizationRefreshToken = "refresh-token"
+	AuthorizationUserID       = "1"
+	AuthorizationRefreshToken = oauthTest.ValidRefreshToken
 
 	CertIdentity      = "b5a2a42e-b285-42f1-a36b-034c8fc8efd5"
 	TestAResourceHref = "/a"
-	TestAResourceId   = (&commands.ResourceId{DeviceId: CertIdentity, Href: TestAResourceHref}).ToUUID()
+	TestAResourceID   = (&commands.ResourceId{DeviceId: CertIdentity, Href: TestAResourceHref}).ToUUID()
 	TestAResourceType = "x.a"
 	TestBResourceHref = "/b"
-	TestBResourceId   = (&commands.ResourceId{DeviceId: CertIdentity, Href: TestBResourceHref}).ToUUID()
+	TestBResourceID   = (&commands.ResourceId{DeviceId: CertIdentity, Href: TestBResourceHref}).ToUUID()
 	TestBResourceType = "x.b"
 
 	TestExchangeTimeout = time.Second * 15

@@ -7,27 +7,29 @@ import (
 
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/plgd-dev/device/schema/interfaces"
-	"github.com/plgd-dev/hub/pkg/log"
-	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
-	"github.com/plgd-dev/hub/pkg/strings"
-	pkgTime "github.com/plgd-dev/hub/pkg/time"
-	"github.com/plgd-dev/hub/resource-aggregate/commands"
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventbus/nats/publisher"
-	natsTest "github.com/plgd-dev/hub/resource-aggregate/cqrs/eventbus/nats/test"
-	mongodb "github.com/plgd-dev/hub/resource-aggregate/cqrs/eventstore/mongodb"
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/utils"
-	"github.com/plgd-dev/hub/resource-aggregate/service"
-	raTest "github.com/plgd-dev/hub/resource-aggregate/test"
-	"github.com/plgd-dev/hub/test/config"
+	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	"github.com/plgd-dev/hub/v2/pkg/strings"
+	pkgTime "github.com/plgd-dev/hub/v2/pkg/time"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/publisher"
+	natsTest "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/test"
+	mongodb "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore/mongodb"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/utils"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/service"
+	raTest "github.com/plgd-dev/hub/v2/resource-aggregate/test"
+	"github.com/plgd-dev/hub/v2/test/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc/status"
 )
 
-func TestRequestHandler_PublishResource(t *testing.T) {
-	deviceID := "dev0"
-	href := "/res0"
-	user0 := "user0"
+func TestRequestHandlerPublishResource(t *testing.T) {
+	const deviceID = "dev0"
+	const href = "/res0"
+	const user0 = "user0"
 	type args struct {
 		request *commands.PublishResourceLinksRequest
 	}
@@ -97,21 +99,26 @@ func TestRequestHandler_PublishResource(t *testing.T) {
 		"sub": user0,
 	}))
 	config := raTest.MakeConfig(t)
-	logger, err := log.NewLogger(config.Log)
+	logger := log.NewLogger(config.Log)
+	fileWatcher, err := fsnotify.NewWatcher()
 	require.NoError(t, err)
-	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
+	defer func() {
+		err := fileWatcher.Close()
+		require.NoError(t, err)
+	}()
+	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, fileWatcher, logger, trace.NewNoopTracerProvider(), mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	err = eventstore.Clear(ctx)
 	require.NoError(t, err)
 	err = eventstore.Close(ctx)
 	assert.NoError(t, err)
-	eventstore, err = mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
+	eventstore, err = mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, fileWatcher, logger, trace.NewNoopTracerProvider(), mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Close(ctx)
 		assert.NoError(t, err)
 	}()
-	naClient, publisher, err := natsTest.NewClientAndPublisher(config.Clients.Eventbus.NATS, logger, publisher.WithMarshaler(utils.Marshal))
+	naClient, publisher, err := natsTest.NewClientAndPublisher(config.Clients.Eventbus.NATS, fileWatcher, logger, publisher.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
 		publisher.Close()
@@ -136,10 +143,10 @@ func TestRequestHandler_PublishResource(t *testing.T) {
 	}
 }
 
-func TestRequestHandler_UnpublishResource(t *testing.T) {
-	deviceID := "dev0"
-	href := "/res0"
-	user0 := "user0"
+func TestRequestHandlerUnpublishResource(t *testing.T) {
+	const deviceID = "dev0"
+	const href = "/res0"
+	const user0 = "user0"
 
 	type args struct {
 		request *commands.UnpublishResourceLinksRequest
@@ -207,21 +214,26 @@ func TestRequestHandler_UnpublishResource(t *testing.T) {
 		"sub": user0,
 	}))
 	cfg := raTest.MakeConfig(t)
-	logger, err := log.NewLogger(cfg.Log)
+	logger := log.NewLogger(cfg.Log)
+	fileWatcher, err := fsnotify.NewWatcher()
 	require.NoError(t, err)
-	eventstore, err := mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
+	defer func() {
+		err := fileWatcher.Close()
+		require.NoError(t, err)
+	}()
+	eventstore, err := mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, fileWatcher, logger, trace.NewNoopTracerProvider(), mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	err = eventstore.Clear(ctx)
 	require.NoError(t, err)
 	err = eventstore.Close(ctx)
 	assert.NoError(t, err)
-	eventstore, err = mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
+	eventstore, err = mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, fileWatcher, logger, trace.NewNoopTracerProvider(), mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Close(ctx)
 		assert.NoError(t, err)
 	}()
-	naClient, publisher, err := natsTest.NewClientAndPublisher(cfg.Clients.Eventbus.NATS, logger, publisher.WithMarshaler(utils.Marshal))
+	naClient, publisher, err := natsTest.NewClientAndPublisher(cfg.Clients.Eventbus.NATS, fileWatcher, logger, publisher.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
 		publisher.Close()
@@ -251,10 +263,10 @@ func TestRequestHandler_UnpublishResource(t *testing.T) {
 	}
 }
 
-func TestRequestHandler_NotifyResourceChanged(t *testing.T) {
-	deviceID := "dev0"
-	resID := "/res0"
-	user0 := "user0"
+func TestRequestHandlerNotifyResourceChanged(t *testing.T) {
+	const deviceID = "dev0"
+	const resID = "/res0"
+	const user0 = "user0"
 
 	type args struct {
 		request *commands.NotifyResourceChangedRequest
@@ -287,21 +299,26 @@ func TestRequestHandler_NotifyResourceChanged(t *testing.T) {
 		"sub": user0,
 	}))
 	config := raTest.MakeConfig(t)
-	logger, err := log.NewLogger(config.Log)
+	logger := log.NewLogger(config.Log)
+	fileWatcher, err := fsnotify.NewWatcher()
 	require.NoError(t, err)
-	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
+	defer func() {
+		err := fileWatcher.Close()
+		require.NoError(t, err)
+	}()
+	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, fileWatcher, logger, trace.NewNoopTracerProvider(), mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	err = eventstore.Clear(ctx)
 	require.NoError(t, err)
 	err = eventstore.Close(ctx)
 	assert.NoError(t, err)
-	eventstore, err = mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
+	eventstore, err = mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, fileWatcher, logger, trace.NewNoopTracerProvider(), mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Close(ctx)
 		assert.NoError(t, err)
 	}()
-	naClient, publisher, err := natsTest.NewClientAndPublisher(config.Clients.Eventbus.NATS, logger, publisher.WithMarshaler(utils.Marshal))
+	naClient, publisher, err := natsTest.NewClientAndPublisher(config.Clients.Eventbus.NATS, fileWatcher, logger, publisher.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
 		publisher.Close()
@@ -323,10 +340,10 @@ func TestRequestHandler_NotifyResourceChanged(t *testing.T) {
 	}
 }
 
-func TestRequestHandler_UpdateResourceContent(t *testing.T) {
-	deviceID := "dev0"
-	resID := "/res0"
-	user0 := "user0"
+func TestRequestHandlerUpdateResourceContent(t *testing.T) {
+	const deviceID = "dev0"
+	const resID = "/res0"
+	const user0 = "user0"
 
 	type args struct {
 		request *commands.UpdateResourceRequest
@@ -377,21 +394,26 @@ func TestRequestHandler_UpdateResourceContent(t *testing.T) {
 		"sub": user0,
 	}))
 	config := raTest.MakeConfig(t)
-	logger, err := log.NewLogger(config.Log)
+	logger := log.NewLogger(config.Log)
+	fileWatcher, err := fsnotify.NewWatcher()
 	require.NoError(t, err)
-	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
+	defer func() {
+		err := fileWatcher.Close()
+		require.NoError(t, err)
+	}()
+	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, fileWatcher, logger, trace.NewNoopTracerProvider(), mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	err = eventstore.Clear(ctx)
 	require.NoError(t, err)
 	err = eventstore.Close(ctx)
 	assert.NoError(t, err)
-	eventstore, err = mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
+	eventstore, err = mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, fileWatcher, logger, trace.NewNoopTracerProvider(), mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Close(ctx)
 		assert.NoError(t, err)
 	}()
-	naClient, publisher, err := natsTest.NewClientAndPublisher(config.Clients.Eventbus.NATS, logger, publisher.WithMarshaler(utils.Marshal))
+	naClient, publisher, err := natsTest.NewClientAndPublisher(config.Clients.Eventbus.NATS, fileWatcher, logger, publisher.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
 		publisher.Close()
@@ -422,11 +444,11 @@ func TestRequestHandler_UpdateResourceContent(t *testing.T) {
 	}
 }
 
-func TestRequestHandler_ConfirmResourceUpdate(t *testing.T) {
-	deviceID := "dev0"
-	resID := "/res0"
-	user0 := "user0"
-	correlationID := "123"
+func TestRequestHandlerConfirmResourceUpdate(t *testing.T) {
+	const deviceID = "dev0"
+	const resID = "/res0"
+	const user0 = "user0"
+	const correlationID = "123"
 
 	type args struct {
 		request *commands.ConfirmResourceUpdateRequest
@@ -465,21 +487,26 @@ func TestRequestHandler_ConfirmResourceUpdate(t *testing.T) {
 		"sub": user0,
 	}))
 	config := raTest.MakeConfig(t)
-	logger, err := log.NewLogger(config.Log)
+	logger := log.NewLogger(config.Log)
+	fileWatcher, err := fsnotify.NewWatcher()
 	require.NoError(t, err)
-	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
+	defer func() {
+		err := fileWatcher.Close()
+		require.NoError(t, err)
+	}()
+	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, fileWatcher, logger, trace.NewNoopTracerProvider(), mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	err = eventstore.Clear(ctx)
 	require.NoError(t, err)
 	err = eventstore.Close(ctx)
 	assert.NoError(t, err)
-	eventstore, err = mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
+	eventstore, err = mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, fileWatcher, logger, trace.NewNoopTracerProvider(), mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Close(ctx)
 		assert.NoError(t, err)
 	}()
-	naClient, publisher, err := natsTest.NewClientAndPublisher(config.Clients.Eventbus.NATS, logger, publisher.WithMarshaler(utils.Marshal))
+	naClient, publisher, err := natsTest.NewClientAndPublisher(config.Clients.Eventbus.NATS, fileWatcher, logger, publisher.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
 		publisher.Close()
@@ -506,11 +533,11 @@ func TestRequestHandler_ConfirmResourceUpdate(t *testing.T) {
 	}
 }
 
-func TestRequestHandler_RetrieveResource(t *testing.T) {
-	deviceID := "dev0"
-	resID := "/res0"
-	user0 := "user0"
-	correlationID := "123"
+func TestRequestHandlerRetrieveResource(t *testing.T) {
+	const deviceID = "dev0"
+	const resID = "/res0"
+	const user0 = "user0"
+	const correlationID = "123"
 
 	type args struct {
 		request *commands.RetrieveResourceRequest
@@ -550,21 +577,26 @@ func TestRequestHandler_RetrieveResource(t *testing.T) {
 		"sub": user0,
 	}))
 	config := raTest.MakeConfig(t)
-	logger, err := log.NewLogger(config.Log)
+	logger := log.NewLogger(config.Log)
+	fileWatcher, err := fsnotify.NewWatcher()
 	require.NoError(t, err)
-	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
+	defer func() {
+		err := fileWatcher.Close()
+		require.NoError(t, err)
+	}()
+	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, fileWatcher, logger, trace.NewNoopTracerProvider(), mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	err = eventstore.Clear(ctx)
 	require.NoError(t, err)
 	err = eventstore.Close(ctx)
 	assert.NoError(t, err)
-	eventstore, err = mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
+	eventstore, err = mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, fileWatcher, logger, trace.NewNoopTracerProvider(), mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Close(ctx)
 		assert.NoError(t, err)
 	}()
-	naClient, publisher, err := natsTest.NewClientAndPublisher(config.Clients.Eventbus.NATS, logger, publisher.WithMarshaler(utils.Marshal))
+	naClient, publisher, err := natsTest.NewClientAndPublisher(config.Clients.Eventbus.NATS, fileWatcher, logger, publisher.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
 		publisher.Close()
@@ -595,11 +627,11 @@ func TestRequestHandler_RetrieveResource(t *testing.T) {
 	}
 }
 
-func TestRequestHandler_ConfirmResourceRetrieve(t *testing.T) {
-	deviceID := "dev0"
-	resID := "/res0"
-	user0 := "user0"
-	correlationID := "123"
+func TestRequestHandlerConfirmResourceRetrieve(t *testing.T) {
+	const deviceID = "dev0"
+	const resID = "/res0"
+	const user0 = "user0"
+	const correlationID = "123"
 
 	type args struct {
 		request *commands.ConfirmResourceRetrieveRequest
@@ -638,21 +670,26 @@ func TestRequestHandler_ConfirmResourceRetrieve(t *testing.T) {
 		"sub": user0,
 	}))
 	config := raTest.MakeConfig(t)
-	logger, err := log.NewLogger(config.Log)
+	logger := log.NewLogger(config.Log)
+	fileWatcher, err := fsnotify.NewWatcher()
 	require.NoError(t, err)
-	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
+	defer func() {
+		err := fileWatcher.Close()
+		require.NoError(t, err)
+	}()
+	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, fileWatcher, logger, trace.NewNoopTracerProvider(), mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	err = eventstore.Clear(ctx)
 	require.NoError(t, err)
 	err = eventstore.Close(ctx)
 	assert.NoError(t, err)
-	eventstore, err = mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
+	eventstore, err = mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, fileWatcher, logger, trace.NewNoopTracerProvider(), mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Close(ctx)
 		assert.NoError(t, err)
 	}()
-	naClient, publisher, err := natsTest.NewClientAndPublisher(config.Clients.Eventbus.NATS, logger, publisher.WithMarshaler(utils.Marshal))
+	naClient, publisher, err := natsTest.NewClientAndPublisher(config.Clients.Eventbus.NATS, fileWatcher, logger, publisher.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
 		publisher.Close()
@@ -682,11 +719,11 @@ func TestRequestHandler_ConfirmResourceRetrieve(t *testing.T) {
 	}
 }
 
-func TestRequestHandler_DeleteResource(t *testing.T) {
-	deviceID := "dev0"
-	resID := "/res0"
-	user0 := "user0"
-	correlationID := "123"
+func TestRequestHandlerDeleteResource(t *testing.T) {
+	const deviceID = "dev0"
+	const resID = "/res0"
+	const user0 = "user0"
+	const correlationID = "123"
 
 	type args struct {
 		request *commands.DeleteResourceRequest
@@ -726,21 +763,26 @@ func TestRequestHandler_DeleteResource(t *testing.T) {
 		"sub": user0,
 	}))
 	config := raTest.MakeConfig(t)
-	logger, err := log.NewLogger(config.Log)
+	logger := log.NewLogger(config.Log)
+	fileWatcher, err := fsnotify.NewWatcher()
 	require.NoError(t, err)
-	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
+	defer func() {
+		err := fileWatcher.Close()
+		require.NoError(t, err)
+	}()
+	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, fileWatcher, logger, trace.NewNoopTracerProvider(), mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	err = eventstore.Clear(ctx)
 	require.NoError(t, err)
 	err = eventstore.Close(ctx)
 	assert.NoError(t, err)
-	eventstore, err = mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
+	eventstore, err = mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, fileWatcher, logger, trace.NewNoopTracerProvider(), mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Close(ctx)
 		assert.NoError(t, err)
 	}()
-	naClient, publisher, err := natsTest.NewClientAndPublisher(config.Clients.Eventbus.NATS, logger, publisher.WithMarshaler(utils.Marshal))
+	naClient, publisher, err := natsTest.NewClientAndPublisher(config.Clients.Eventbus.NATS, fileWatcher, logger, publisher.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
 		publisher.Close()
@@ -771,11 +813,11 @@ func TestRequestHandler_DeleteResource(t *testing.T) {
 	}
 }
 
-func TestRequestHandler_ConfirmResourceDelete(t *testing.T) {
-	deviceID := "dev0"
-	resID := "/res0"
-	user0 := "user0"
-	correlationID := "123"
+func TestRequestHandlerConfirmResourceDelete(t *testing.T) {
+	const deviceID = "dev0"
+	const resID = "/res0"
+	const user0 = "user0"
+	const correlationID = "123"
 
 	type args struct {
 		request *commands.ConfirmResourceDeleteRequest
@@ -814,21 +856,26 @@ func TestRequestHandler_ConfirmResourceDelete(t *testing.T) {
 		"sub": user0,
 	}))
 	config := raTest.MakeConfig(t)
-	logger, err := log.NewLogger(config.Log)
+	logger := log.NewLogger(config.Log)
+	fileWatcher, err := fsnotify.NewWatcher()
 	require.NoError(t, err)
-	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
+	defer func() {
+		err := fileWatcher.Close()
+		require.NoError(t, err)
+	}()
+	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, fileWatcher, logger, trace.NewNoopTracerProvider(), mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	err = eventstore.Clear(ctx)
 	require.NoError(t, err)
 	err = eventstore.Close(ctx)
 	assert.NoError(t, err)
-	eventstore, err = mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
+	eventstore, err = mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, fileWatcher, logger, trace.NewNoopTracerProvider(), mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Close(ctx)
 		assert.NoError(t, err)
 	}()
-	naClient, publisher, err := natsTest.NewClientAndPublisher(config.Clients.Eventbus.NATS, logger, publisher.WithMarshaler(utils.Marshal))
+	naClient, publisher, err := natsTest.NewClientAndPublisher(config.Clients.Eventbus.NATS, fileWatcher, logger, publisher.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
 		publisher.Close()
@@ -858,11 +905,11 @@ func TestRequestHandler_ConfirmResourceDelete(t *testing.T) {
 	}
 }
 
-func TestRequestHandler_CreateResource(t *testing.T) {
-	deviceID := "dev0"
-	resID := "/res0"
-	user0 := "user0"
-	correlationID := "123"
+func TestRequestHandlerCreateResource(t *testing.T) {
+	const deviceID = "dev0"
+	const resID = "/res0"
+	const user0 = "user0"
+	const correlationID = "123"
 
 	type args struct {
 		request *commands.CreateResourceRequest
@@ -902,21 +949,26 @@ func TestRequestHandler_CreateResource(t *testing.T) {
 		"sub": user0,
 	}))
 	config := raTest.MakeConfig(t)
-	logger, err := log.NewLogger(config.Log)
+	logger := log.NewLogger(config.Log)
+	fileWatcher, err := fsnotify.NewWatcher()
 	require.NoError(t, err)
-	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
+	defer func() {
+		err := fileWatcher.Close()
+		require.NoError(t, err)
+	}()
+	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, fileWatcher, logger, trace.NewNoopTracerProvider(), mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	err = eventstore.Clear(ctx)
 	require.NoError(t, err)
 	err = eventstore.Close(ctx)
 	assert.NoError(t, err)
-	eventstore, err = mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
+	eventstore, err = mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, fileWatcher, logger, trace.NewNoopTracerProvider(), mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Close(ctx)
 		assert.NoError(t, err)
 	}()
-	naClient, publisher, err := natsTest.NewClientAndPublisher(config.Clients.Eventbus.NATS, logger, publisher.WithMarshaler(utils.Marshal))
+	naClient, publisher, err := natsTest.NewClientAndPublisher(config.Clients.Eventbus.NATS, fileWatcher, logger, publisher.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
 		publisher.Close()
@@ -947,11 +999,11 @@ func TestRequestHandler_CreateResource(t *testing.T) {
 	}
 }
 
-func TestRequestHandler_ConfirmResourceCreate(t *testing.T) {
-	deviceID := "dev0"
-	resID := "/res0"
-	user0 := "user0"
-	correlationID := "123"
+func TestRequestHandlerConfirmResourceCreate(t *testing.T) {
+	const deviceID = "dev0"
+	const resID = "/res0"
+	const user0 = "user0"
+	const correlationID = "123"
 
 	type args struct {
 		request *commands.ConfirmResourceCreateRequest
@@ -990,21 +1042,26 @@ func TestRequestHandler_ConfirmResourceCreate(t *testing.T) {
 		"sub": user0,
 	}))
 	config := raTest.MakeConfig(t)
-	logger, err := log.NewLogger(config.Log)
+	logger := log.NewLogger(config.Log)
+	fileWatcher, err := fsnotify.NewWatcher()
 	require.NoError(t, err)
-	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
+	defer func() {
+		err := fileWatcher.Close()
+		require.NoError(t, err)
+	}()
+	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, fileWatcher, logger, trace.NewNoopTracerProvider(), mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	err = eventstore.Clear(ctx)
 	require.NoError(t, err)
 	err = eventstore.Close(ctx)
 	assert.NoError(t, err)
-	eventstore, err = mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
+	eventstore, err = mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, fileWatcher, logger, trace.NewNoopTracerProvider(), mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Close(ctx)
 		assert.NoError(t, err)
 	}()
-	naClient, publisher, err := natsTest.NewClientAndPublisher(config.Clients.Eventbus.NATS, logger, publisher.WithMarshaler(utils.Marshal))
+	naClient, publisher, err := natsTest.NewClientAndPublisher(config.Clients.Eventbus.NATS, fileWatcher, logger, publisher.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
 		publisher.Close()
@@ -1035,7 +1092,7 @@ func TestRequestHandler_ConfirmResourceCreate(t *testing.T) {
 }
 
 func mockGetOwnerDevices(ctx context.Context, owner string, deviceIDs []string) ([]string, error) {
-	ownedDevices, code, err := testListDevicesOfUserFunc(ctx, "0", owner)
+	ownedDevices, code, err := testListDevicesOfUserFunc(owner)
 	if err != nil {
 		return nil, status.Errorf(code, "%v", err)
 	}

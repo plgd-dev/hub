@@ -5,12 +5,12 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/plgd-dev/hub/grpc-gateway/pb"
-	httpgwTest "github.com/plgd-dev/hub/http-gateway/test"
-	"github.com/plgd-dev/hub/http-gateway/uri"
-	"github.com/plgd-dev/hub/test/config"
-	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
-	pbTest "github.com/plgd-dev/hub/test/pb"
+	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
+	httpgwTest "github.com/plgd-dev/hub/v2/http-gateway/test"
+	"github.com/plgd-dev/hub/v2/http-gateway/uri"
+	"github.com/plgd-dev/hub/v2/test/config"
+	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
+	pbTest "github.com/plgd-dev/hub/v2/test/pb"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -21,7 +21,7 @@ func doPendingCommand(t *testing.T, request *http.Request) (*pb.CancelPendingCom
 		_ = resp.Body.Close()
 	}()
 	var v pb.CancelPendingCommandsResponse
-	err := Unmarshal(resp.StatusCode, resp.Body, &v)
+	err := httpgwTest.Unmarshal(resp.StatusCode, resp.Body, &v)
 	return &v, resp.StatusCode, err
 }
 
@@ -85,11 +85,11 @@ func TestRequestHandlerCancelPendingCommands(t *testing.T) {
 		},
 	}
 
-	token := oauthTest.GetDefaultServiceToken(t)
+	token := oauthTest.GetDefaultAccessToken(t)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			rb := httpgwTest.NewRequest(http.MethodDelete, uri.AliasResourcePendingCommands, nil).AuthToken(token).Accept(tt.args.accept)
-			rb.DeviceId(tt.args.deviceID).ResourceHref(tt.args.href).AddCorrelantionIdFilter(tt.args.correlationIdFilter)
+			rb.DeviceId(tt.args.deviceID).ResourceHref(tt.args.href).AddCorrelationIdFilter(tt.args.correlationIdFilter)
 			v, code, err := doPendingCommand(t, rb.Build())
 			assert.Equal(t, tt.wantHTTPCode, code)
 			if tt.wantErr {
@@ -114,7 +114,7 @@ func TestRequestHandlerCancelResourceCommand(t *testing.T) {
 	type args struct {
 		deviceID      string
 		href          string
-		correlationId string
+		correlationID string
 		accept        string
 	}
 	tests := []struct {
@@ -129,7 +129,7 @@ func TestRequestHandlerCancelResourceCommand(t *testing.T) {
 			args: args{
 				deviceID:      resourcePendings[0].ResourceId.GetDeviceId(),
 				href:          resourcePendings[0].ResourceId.GetHref(),
-				correlationId: resourcePendings[0].CorrelationID,
+				correlationID: resourcePendings[0].CorrelationID,
 				accept:        uri.ApplicationProtoJsonContentType,
 			},
 			want: &pb.CancelPendingCommandsResponse{
@@ -142,7 +142,7 @@ func TestRequestHandlerCancelResourceCommand(t *testing.T) {
 			args: args{
 				deviceID:      resourcePendings[0].ResourceId.GetDeviceId(),
 				href:          resourcePendings[0].ResourceId.GetHref(),
-				correlationId: resourcePendings[0].CorrelationID,
+				correlationID: resourcePendings[0].CorrelationID,
 				accept:        uri.ApplicationProtoJsonContentType,
 			},
 			wantErr:      true,
@@ -150,10 +150,10 @@ func TestRequestHandlerCancelResourceCommand(t *testing.T) {
 		},
 	}
 
-	token := oauthTest.GetDefaultServiceToken(t)
+	token := oauthTest.GetDefaultAccessToken(t)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			rb := httpgwTest.NewRequest(http.MethodDelete, uri.AliasResourcePendingCommands+"/"+tt.args.correlationId, nil).AuthToken(token).Accept(tt.args.accept)
+			rb := httpgwTest.NewRequest(http.MethodDelete, uri.AliasResourcePendingCommands+"/"+tt.args.correlationID, nil).AuthToken(token).Accept(tt.args.accept)
 			rb.DeviceId(tt.args.deviceID).ResourceHref(tt.args.href)
 			v, code, err := doPendingCommand(t, rb.Build())
 			assert.Equal(t, tt.wantHTTPCode, code)

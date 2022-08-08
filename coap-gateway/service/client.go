@@ -5,52 +5,40 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net"
 	"sync"
 	"time"
 
-	"github.com/plgd-dev/device/schema"
-	"github.com/plgd-dev/device/schema/interfaces"
+	"github.com/plgd-dev/device/schema/resources"
 	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/tcp"
 	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
-	"github.com/plgd-dev/hub/coap-gateway/coapconv"
-	grpcClient "github.com/plgd-dev/hub/grpc-gateway/client"
-	idEvents "github.com/plgd-dev/hub/identity-store/events"
-	"github.com/plgd-dev/hub/pkg/log"
-	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
-	pkgJwt "github.com/plgd-dev/hub/pkg/security/jwt"
-	"github.com/plgd-dev/hub/resource-aggregate/commands"
-	"github.com/plgd-dev/hub/resource-aggregate/events"
+	"github.com/plgd-dev/hub/v2/coap-gateway/coapconv"
+	"github.com/plgd-dev/hub/v2/coap-gateway/resource"
+	grpcClient "github.com/plgd-dev/hub/v2/grpc-gateway/client"
+	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
+	idEvents "github.com/plgd-dev/hub/v2/identity-store/events"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	"github.com/plgd-dev/hub/v2/pkg/opentelemetry/otelcoap"
+	pkgJwt "github.com/plgd-dev/hub/v2/pkg/security/jwt"
+	"github.com/plgd-dev/hub/v2/pkg/sync/task/future"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 	kitSync "github.com/plgd-dev/kit/v2/sync"
+	otelCodes "go.opentelemetry.io/otel/codes"
+	semconv "go.opentelemetry.io/otel/semconv/v1.10.0"
+	"go.opentelemetry.io/otel/trace"
+	"google.golang.org/grpc"
 )
-
-type observedResource struct {
-	href string
-
-	mutex       sync.Mutex
-	observation *tcp.Observation
-}
-
-func (r *observedResource) SetObservation(o *tcp.Observation) {
-	r.mutex.Lock()
-	defer r.mutex.Unlock()
-	r.observation = o
-}
-
-func (r *observedResource) PopObservation() *tcp.Observation {
-	r.mutex.Lock()
-	defer r.mutex.Unlock()
-	o := r.observation
-	r.observation = nil
-	return o
-}
 
 type authorizationContext struct {
 	DeviceID    string
 	AccessToken string
 	UserID      string
 	Expire      time.Time
+	JWTClaims   pkgJwt.Claims
 }
 
 func (a *authorizationContext) GetUserID() string {
@@ -74,6 +62,13 @@ func (a *authorizationContext) GetAccessToken() string {
 	return ""
 }
 
+func (a *authorizationContext) GetJWTClaims() pkgJwt.Claims {
+	if a != nil {
+		return a.JWTClaims
+	}
+	return make(pkgJwt.Claims)
+}
+
 func (a *authorizationContext) IsValid() error {
 	if a == nil {
 		return fmt.Errorf("invalid authorization context")
@@ -91,15 +86,12 @@ func (a *authorizationContext) ToContext(ctx context.Context) context.Context {
 	return kitNetGrpc.CtxWithToken(ctx, a.GetAccessToken())
 }
 
-//Client a setup of connection
+// Client a setup of connection
 type Client struct {
-	server      *Service
-	coapConn    *tcp.ClientConn
-	tlsDeviceID string
-
-	observedResources     map[string]map[int64]*observedResource // [deviceID][instanceID]
-	observedResourcesLock sync.Mutex
-	shadowSynchronization commands.ShadowSynchronization
+	server        *Service
+	coapConn      *tcp.ClientConn
+	tlsDeviceID   string
+	tlsValidUntil time.Time
 
 	resourceSubscriptions *kitSync.Map // [token]
 
@@ -109,43 +101,159 @@ type Client struct {
 	mutex                   sync.Mutex
 	authCtx                 *authorizationContext
 	deviceSubscriber        *grpcClient.DeviceSubscriber
+	deviceObserver          *future.Future
 	closeEventSubscriptions func()
 }
 
-//newClient create and initialize client
-func newClient(server *Service, client *tcp.ClientConn, tlsDeviceID string) *Client {
+// newClient creates and initializes client
+func newClient(server *Service, coapConn *tcp.ClientConn, tlsDeviceID string, tlsValidUntil time.Time) *Client {
 	return &Client{
 		server:                server,
-		coapConn:              client,
+		coapConn:              coapConn,
 		tlsDeviceID:           tlsDeviceID,
-		observedResources:     make(map[string]map[int64]*observedResource),
 		resourceSubscriptions: kitSync.NewMap(),
 		exchangeCache:         NewExchangeCache(),
 		refreshCache:          NewRefreshCache(),
+		tlsValidUntil:         tlsValidUntil,
 	}
 }
 
-func ToClient(v interface{}, ok bool) (*Client, bool) {
-	if !ok {
-		return nil, false
+func (c *Client) deviceID() string {
+	if c.tlsDeviceID != "" {
+		return c.tlsDeviceID
 	}
-	if v == nil {
-		return nil, false
+	a, err := c.GetAuthorizationContext()
+	if err == nil {
+		return a.GetDeviceID()
 	}
-	c, ok := v.(*Client)
-	return c, ok
+	return ""
 }
 
-func (client *Client) remoteAddrString() string {
-	return client.coapConn.RemoteAddr().String()
+func (c *Client) getClientExpiration(validJWTUntil time.Time) time.Time {
+	if c.server.config.APIs.COAP.TLS.Enabled &&
+		c.server.config.APIs.COAP.TLS.DisconnectOnExpiredCertificate &&
+		(validJWTUntil.IsZero() || validJWTUntil.After(c.tlsValidUntil)) {
+		return c.tlsValidUntil
+	}
+	return validJWTUntil
 }
 
-func (client *Client) Context() context.Context {
-	return client.coapConn.Context()
+func (c *Client) WriteMessage(msg *pool.Message) {
+	if err := c.coapConn.WriteMessage(msg); err != nil {
+		c.Errorf("cannot write message: %w", err)
+	}
 }
 
-func (client *Client) cancelResourceSubscription(token string) (bool, error) {
-	s, ok := client.resourceSubscriptions.PullOut(token)
+func (c *Client) Get(ctx context.Context, path string, opts ...message.Option) (*pool.Message, error) {
+	req, err := tcp.NewGetRequest(ctx, c.server.messagePool, path, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return c.Do(req, "")
+}
+
+func (c *Client) Observe(ctx context.Context, path string, observeFunc func(req *pool.Message), opts ...message.Option) (*tcp.Observation, error) {
+	req, err := tcp.NewObserveRequest(ctx, c.server.messagePool, path, opts...)
+	if err != nil {
+		return nil, err
+	}
+	t := time.Now()
+	obs, err := c.coapConn.ObserveRequest(req, observeFunc)
+	logger := c.getLogger()
+	if err == nil && !WantToLog(codes.Content, logger) {
+		return obs, err
+	}
+	logger = logger.With(log.StartTimeKey, t, log.DurationMSKey, log.DurationToMilliseconds(time.Since(t)))
+	logger = c.loggerWithRequestResponse(logger, req, nil)
+	if err != nil {
+		_ = logger.LogAndReturnError(fmt.Errorf("create observation to the device fails with error: %w", err))
+	} else if WantToLog(codes.Content, logger) {
+		DefaultCodeToLevel(codes.Content, logger)("finished creating observation to the device")
+	}
+	return obs, err
+}
+
+func (c *Client) ReleaseMessage(m *pool.Message) {
+	c.server.messagePool.ReleaseMessage(m)
+}
+
+func (c *Client) do(req *pool.Message) (*pool.Message, error) {
+	path, _ := req.Path()
+	ctx, span := otelcoap.Start(req.Context(), path, req.Code().String(), otelcoap.WithTracerProvider(c.server.tracerProvider), otelcoap.WithSpanOptions(trace.WithSpanKind(trace.SpanKindClient)))
+	defer span.End()
+	span.SetAttributes(semconv.NetPeerNameKey.String(c.deviceID()))
+
+	otelcoap.MessageSentEvent(ctx, req)
+
+	resp, err := c.coapConn.Do(req)
+	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(otelCodes.Error, err.Error())
+		return nil, err
+	}
+	otelcoap.MessageReceivedEvent(ctx, resp)
+	span.SetAttributes(otelcoap.StatusCodeAttr(resp.Code()))
+
+	return resp, nil
+}
+
+func (c *Client) Do(req *pool.Message, correlationID string) (*pool.Message, error) {
+	t := time.Now()
+	resp, err := c.do(req)
+	logger := c.getLogger()
+	if err == nil && resp != nil && !WantToLog(resp.Code(), logger) {
+		return resp, err
+	}
+	logger = logger.With(log.StartTimeKey, t, log.DurationMSKey, log.DurationToMilliseconds(time.Since(t)))
+	logger = c.loggerWithRequestResponse(logger, req, resp)
+	if correlationID != "" {
+		logger = logger.With(log.CorrelationIDKey, correlationID)
+	}
+	if err != nil {
+		_ = logger.LogAndReturnError(fmt.Errorf("finished unary call to the device with error: %w", err))
+	} else if WantToLog(resp.Code(), logger) {
+		DefaultCodeToLevel(resp.Code(), logger)(fmt.Sprintf("finished unary call to the device with code %v", resp.Code()))
+	}
+	return resp, err
+}
+
+func (c *Client) GetDevicesMetadata(ctx context.Context, in *pb.GetDevicesMetadataRequest, opts ...grpc.CallOption) (pb.GrpcGateway_GetDevicesMetadataClient, error) {
+	authCtx, err := c.GetAuthorizationContext()
+	if err != nil {
+		return nil, err
+	}
+	ctx = kitNetGrpc.CtxWithToken(ctx, authCtx.GetAccessToken())
+	return c.server.rdClient.GetDevicesMetadata(ctx, in, opts...)
+}
+
+func (c *Client) GetResourceLinks(ctx context.Context, in *pb.GetResourceLinksRequest, opts ...grpc.CallOption) (pb.GrpcGateway_GetResourceLinksClient, error) {
+	authCtx, err := c.GetAuthorizationContext()
+	if err != nil {
+		return nil, err
+	}
+	ctx = kitNetGrpc.CtxWithToken(ctx, authCtx.GetAccessToken())
+	return c.server.rdClient.GetResourceLinks(ctx, in, opts...)
+}
+
+func (c *Client) UnpublishResourceLinks(ctx context.Context, in *commands.UnpublishResourceLinksRequest, opts ...grpc.CallOption) (*commands.UnpublishResourceLinksResponse, error) {
+	authCtx, err := c.GetAuthorizationContext()
+	if err != nil {
+		return nil, err
+	}
+	ctx = kitNetGrpc.CtxWithToken(ctx, authCtx.GetAccessToken())
+	return c.server.raClient.UnpublishResourceLinks(ctx, in, opts...)
+}
+
+func (c *Client) RemoteAddr() net.Addr {
+	return c.coapConn.RemoteAddr()
+}
+
+func (c *Client) Context() context.Context {
+	return c.coapConn.Context()
+}
+
+func (c *Client) cancelResourceSubscription(token string) (bool, error) {
+	s, ok := c.resourceSubscriptions.PullOut(token)
 	if !ok {
 		return false, nil
 	}
@@ -157,229 +265,79 @@ func (client *Client) cancelResourceSubscription(token string) (bool, error) {
 	}
 	return true, nil
 }
-func (client *Client) observeResourcesLocked(ctx context.Context, resources []*commands.Resource) {
-	for _, resource := range resources {
-		client.observeResource(ctx, resource.GetResourceID(), resource.IsObservable())
-	}
-}
 
-func (client *Client) observeResources(ctx context.Context, resources []*commands.Resource) {
-	client.observedResourcesLock.Lock()
-	defer client.observedResourcesLock.Unlock()
-
-	client.observeResourcesLocked(ctx, resources)
-}
-
-func (client *Client) observeResource(ctx context.Context, resourceID *commands.ResourceId, observable bool) {
-	log.Debugf("observation of resource %v requested", resourceID)
-	instanceID := getInstanceID(resourceID.GetHref())
-	deviceID := resourceID.GetDeviceId()
-	href := resourceID.GetHref()
-	if _, ok := client.observedResources[deviceID]; !ok {
-		client.observedResources[deviceID] = make(map[int64]*observedResource)
+// Callback executed when the Get response is received in the deviceObserver.
+//
+// This function is executed in the coap connection-goroutine, any operation on the connection (read, write, ...)
+// will cause a deadlock . To avoid this problem the operation must be executed inside the taskQueue.
+//
+// The received notification is released by this function at the correct moment and must not be released
+// by the caller.
+func (c *Client) onGetResourceContent(ctx context.Context, deviceID, href string, notification *pool.Message) error {
+	cannotGetResourceContentError := func(deviceID, href string, err error) error {
+		return fmt.Errorf("cannot get resource /%v%v content: %w", deviceID, href, err)
 	}
-	if _, ok := client.observedResources[deviceID][instanceID]; ok {
-		return
-	}
-	obsRes := observedResource{href: href}
-	client.observedResources[deviceID][instanceID] = &obsRes
-	client.addObservedResourceLocked(ctx, deviceID, observable, &obsRes)
-}
-
-func (client *Client) getResourceContent(ctx context.Context, deviceID, href string) {
-	resp, err := client.coapConn.Get(ctx, href, message.Option{
-		ID:    message.URIQuery,
-		Value: []byte("if=" + interfaces.OC_IF_BASELINE),
-	})
-	if err != nil {
-		log.Errorf("cannot get resource /%v%v content: %w", deviceID, href, err)
-		return
-	}
-	err = client.server.taskQueue.Submit(func() {
-		defer pool.ReleaseMessage(resp)
-		err := client.notifyContentChanged(deviceID, href, resp)
-		if err != nil {
+	notification.Hijack()
+	err := c.server.taskQueue.Submit(func() {
+		defer c.server.messagePool.ReleaseMessage(notification)
+		err2 := c.notifyContentChanged(deviceID, href, false, notification)
+		if err2 != nil {
 			// cloud is unsynchronized against device. To recover cloud state, client need to reconnect to cloud.
-			log.Errorf("cannot get resource /%v%v content: %w", deviceID, href, err)
-			if err := client.Close(); err != nil {
-				log.Errorf("failed to close client connection on get resource /%v%v: %w", deviceID, href, err)
-			}
+			c.Errorf("%w", cannotGetResourceContentError(deviceID, href, err2))
+			c.Close()
 		}
-		if resp.Code() == codes.NotFound {
-			client.unpublishResourceLinks(client.getUserAuthorizedContext(ctx), []string{href})
+		if notification.Code() == codes.NotFound {
+			c.unpublishResourceLinks(c.getUserAuthorizedContext(ctx), []string{href}, nil)
 		}
 	})
 	if err != nil {
-		log.Errorf("cannot get resource /%v%v content: %w", deviceID, href, err)
-		return
+		defer c.server.messagePool.ReleaseMessage(notification)
+		return cannotGetResourceContentError(deviceID, href, err)
 	}
-}
-
-func (client *Client) addObservedResourceLocked(ctx context.Context, deviceID string, isObservable bool, obsRes *observedResource) {
-	if obsRes.href == commands.StatusHref {
-		return
-	}
-	if isObservable {
-		obs, err := client.coapConn.Observe(ctx, obsRes.href, func(req *pool.Message) {
-			req.Hijack()
-			err2 := client.server.taskQueue.Submit(func() {
-				err := client.notifyContentChanged(deviceID, obsRes.href, req)
-				defer pool.ReleaseMessage(req)
-				if err != nil {
-					// cloud is unsynchronized against device. To recover cloud state, client need to reconnect to cloud.
-					log.Errorf("cannot observe resource /%v%v: %w", deviceID, obsRes.href, err)
-					if err := client.Close(); err != nil {
-						log.Errorf("failed to close client connection on observe resource /%v%v: %w", deviceID, obsRes.href, err)
-					}
-				}
-				if req.Code() == codes.NotFound {
-					client.unpublishResourceLinks(client.getUserAuthorizedContext(req.Context()), []string{obsRes.href})
-				}
-			})
-			if err2 != nil {
-				log.Errorf("cannot observe resource /%v%v: %w", deviceID, obsRes.href, err2)
-			}
-		}, message.Option{
-			ID:    message.URIQuery,
-			Value: []byte("if=" + interfaces.OC_IF_BASELINE),
-		})
-		if err != nil {
-			log.Errorf("cannot observe resource /%v%v: %w", deviceID, obsRes.href, err)
-		} else {
-			obsRes.SetObservation(obs)
-		}
-	} else {
-		client.getResourceContent(ctx, deviceID, obsRes.href)
-	}
-}
-
-func (client *Client) getTrackedResources(deviceID string, instanceIDs []int64) []commands.ResourceId {
-	client.observedResourcesLock.Lock()
-	defer client.observedResourcesLock.Unlock()
-
-	getAllDeviceIDMatches := len(instanceIDs) == 0
-	matches := make([]commands.ResourceId, 0, 16)
-
-	if deviceResourcesMap, ok := client.observedResources[deviceID]; ok {
-		if getAllDeviceIDMatches {
-			for _, value := range deviceResourcesMap {
-				matches = append(matches, commands.ResourceId{
-					DeviceId: deviceID,
-					Href:     value.href,
-				})
-			}
-		} else {
-			for _, instanceID := range instanceIDs {
-				if resource, ok := deviceResourcesMap[instanceID]; ok {
-					matches = append(matches, commands.ResourceId{
-						DeviceId: deviceID,
-						Href:     resource.href,
-					})
-				}
-			}
-		}
-	}
-
-	return matches
-}
-
-func (client *Client) removeResourceLocked(deviceID string, instanceID int64) {
-	if device, ok := client.observedResources[deviceID]; ok {
-		delete(device, instanceID)
-		if len(client.observedResources[deviceID]) == 0 {
-			delete(client.observedResources, deviceID)
-		}
-	}
-}
-
-func (client *Client) popObservation(deviceID string, instanceID int64) *tcp.Observation {
-	log.Debugf("remove published resource ocf://%v/%v", deviceID, instanceID)
-
-	if device, ok := client.observedResources[deviceID]; ok {
-		if res, ok := device[instanceID]; ok {
-			return res.PopObservation()
-		}
-	}
-
 	return nil
 }
 
-func (client *Client) cancelResourcesObservations(ctx context.Context, hrefs []string) {
-	observartions := client.popTrackedObservation(hrefs)
-	for _, obs := range observartions {
-		if err := obs.Cancel(ctx); err != nil {
-			log.Errorf("cannot cancel resource observation: %w", err)
-		}
+// Callback executed when the Observe notification is received in the deviceObserver.
+//
+// This function is executed in the coap connection-goroutine, any operation on the connection (read, write, ...)
+// will cause a deadlock . To avoid this problem the operation must be executed inside the taskQueue.
+//
+// The received notification is released by this function at the correct moment and must not be released
+// by the caller.
+func (c *Client) onObserveResource(ctx context.Context, deviceID, href string, batch bool, notification *pool.Message) error {
+	cannotObserResourceError := func(err error) error {
+		return fmt.Errorf("cannot handle resource observation: %w", err)
 	}
+	notification.Hijack()
+	err := c.server.taskQueue.SubmitForOneWorker(resource.GetInstanceID(deviceID+href), func() {
+		defer c.server.messagePool.ReleaseMessage(notification)
+		err2 := c.notifyContentChanged(deviceID, href, batch, notification)
+		if err2 != nil {
+			// cloud is unsynchronized against device. To recover cloud state, client need to reconnect to cloud.
+			c.Errorf("%w", cannotObserResourceError(err2))
+			c.Close()
+		}
+		if notification.Code() == codes.NotFound {
+			c.unpublishResourceLinks(c.getUserAuthorizedContext(notification.Context()), []string{href}, nil)
+		}
+	})
+	if err != nil {
+		defer c.server.messagePool.ReleaseMessage(notification)
+		return cannotObserResourceError(err)
+	}
+	return nil
 }
 
 // Close closes coap connection
-func (client *Client) Close() error {
-	err := client.coapConn.Close()
+func (c *Client) Close() {
+	err := c.coapConn.Close()
 	if err != nil {
-		return fmt.Errorf("cannot close client: %w", err)
-	}
-	return nil
-}
-
-func (client *Client) popTrackedObservation(hrefs []string) []*tcp.Observation {
-	observartions := make([]*tcp.Observation, 0, 32)
-
-	client.observedResourcesLock.Lock()
-	defer client.observedResourcesLock.Unlock()
-
-	for _, href := range hrefs {
-		var instanceID int64
-		var deviceID string
-		for devID, devs := range client.observedResources {
-			for insID, r := range devs {
-				if r.href == href {
-					instanceID = insID
-					deviceID = devID
-					break
-				}
-			}
-		}
-
-		obs := client.popObservation(deviceID, instanceID)
-		if obs != nil {
-			observartions = append(observartions, obs)
-		}
-		client.removeResourceLocked(deviceID, instanceID)
-		log.Debugf("canceling observation on resource %v", deviceID+href)
-	}
-	return observartions
-}
-
-func (client *Client) popObservedResourcesLocked() map[string]map[int64]*observedResource {
-	observartions := client.observedResources
-	client.observedResources = make(map[string]map[int64]*observedResource)
-	return observartions
-}
-
-// cleanObservedResourcesLocked remove all device pbRA observation requested by cloud.
-func (client *Client) cleanObservedResourcesLocked() {
-	for _, resources := range client.popObservedResourcesLocked() {
-		for k, obs := range resources {
-			v := obs.PopObservation()
-			if v != nil {
-				if err := v.Cancel(client.coapConn.Context()); err != nil {
-					log.Errorf("cannot cancel resource('%v') observation: %w", k, err)
-				}
-			}
-		}
+		c.Errorf("cannot close client: %w", err)
 	}
 }
 
-// cleanObservedResources remove all device pbRA observation requested by cloud under lock.
-func (client *Client) cleanObservedResources() {
-	client.observedResourcesLock.Lock()
-	defer client.observedResourcesLock.Unlock()
-	client.cleanObservedResourcesLocked()
-}
-
-func (client *Client) cancelResourceSubscriptions(wantWait bool) {
-	resourceSubscriptions := client.resourceSubscriptions.PullOutAll()
+func (c *Client) cancelResourceSubscriptions(wantWait bool) {
+	resourceSubscriptions := c.resourceSubscriptions.PullOutAll()
 	for _, v := range resourceSubscriptions {
 		o, ok := grpcClient.ToResourceSubscription(v, true)
 		if !ok {
@@ -387,171 +345,181 @@ func (client *Client) cancelResourceSubscriptions(wantWait bool) {
 		}
 		wait, err := o.Cancel()
 		if err != nil {
-			log.Errorf("cannot cancel resource subscription: %w", err)
+			c.Errorf("cannot cancel resource subscription: %w", err)
 		} else if wantWait {
 			wait()
 		}
 	}
 }
 
-func (client *Client) replaceDeviceSubscriber(deviceSubscriber *grpcClient.DeviceSubscriber) *grpcClient.DeviceSubscriber {
-	client.mutex.Lock()
-	defer client.mutex.Unlock()
-	c := client.deviceSubscriber
-	client.deviceSubscriber = deviceSubscriber
-	return c
-}
-
-func (client *Client) closeDeviceSubscriber() error {
-	deviceSubscriber := client.replaceDeviceSubscriber(nil)
-	if deviceSubscriber != nil {
-		return deviceSubscriber.Close()
+func (c *Client) CleanUp(resetAuthContext bool) *authorizationContext {
+	authCtx, _ := c.GetAuthorizationContext()
+	c.server.devicesStatusUpdater.Remove(c)
+	if err := c.closeDeviceObserver(c.Context()); err != nil {
+		c.Errorf("cleanUp error: failed to close observer for device %v: %w", authCtx.GetDeviceID(), err)
 	}
-	return nil
-}
-
-func (client *Client) CleanUp(resetAuthContext bool) *authorizationContext {
-	authCtx, _ := client.GetAuthorizationContext()
-	log.Debugf("cleanUp client %v for device %v", client.coapConn.RemoteAddr(), authCtx.GetDeviceID())
-
-	client.server.devicesStatusUpdater.Remove(client)
-	client.cleanObservedResources()
-	client.cancelResourceSubscriptions(false)
-	if err := client.closeDeviceSubscriber(); err != nil {
-		log.Errorf("cleanUp error: failed to close device %v connection: %w", authCtx.GetDeviceID(), err)
+	c.cancelResourceSubscriptions(false)
+	if err := c.closeDeviceSubscriber(); err != nil {
+		c.Errorf("cleanUp error: failed to close device %v subscription: %w", authCtx.GetDeviceID(), err)
 	}
-	client.unsubscribeFromDeviceEvents()
+	c.unsubscribeFromDeviceEvents()
 
 	if resetAuthContext {
-		return client.SetAuthorizationContext(nil)
+		return c.SetAuthorizationContext(nil)
 	}
 	// we cannot reset authorizationContext need token (eg signOff)
 	return authCtx
 }
 
-// OnClose action when coap connection was closed.
-func (client *Client) OnClose() {
-	authCtx, _ := client.GetAuthorizationContext()
-	log.Debugf("close client %v for device %v", client.coapConn.RemoteAddr(), authCtx.GetDeviceID())
-	oldAuthCtx := client.CleanUp(false)
+// OnClose is invoked when the coap connection was closed.
+func (c *Client) OnClose() {
+	authCtx, _ := c.GetAuthorizationContext()
+	if authCtx.GetDeviceID() != "" {
+		// don't log health check connection
+		c.Debugf("close device connection")
+	}
+	oldAuthCtx := c.CleanUp(false)
 
 	if oldAuthCtx.GetDeviceID() != "" {
-		client.server.expirationClientCache.Set(oldAuthCtx.GetDeviceID(), nil, time.Millisecond)
-		ctx, cancel := context.WithTimeout(context.Background(), client.server.config.APIs.COAP.KeepAlive.Timeout)
+		c.server.expirationClientCache.Delete(oldAuthCtx.GetDeviceID())
+		ctx, cancel := context.WithTimeout(context.Background(), c.server.config.APIs.COAP.KeepAlive.Timeout)
 		defer cancel()
-		_, err := client.server.raClient.UpdateDeviceMetadata(kitNetGrpc.CtxWithToken(ctx, oldAuthCtx.GetAccessToken()), &commands.UpdateDeviceMetadataRequest{
+		_, err := c.server.raClient.UpdateDeviceMetadata(kitNetGrpc.CtxWithToken(ctx, oldAuthCtx.GetAccessToken()), &commands.UpdateDeviceMetadataRequest{
 			DeviceId: authCtx.GetDeviceID(),
 			Update: &commands.UpdateDeviceMetadataRequest_Status{
 				Status: &commands.ConnectionStatus{
-					Value: commands.ConnectionStatus_OFFLINE,
+					Value:        commands.ConnectionStatus_OFFLINE,
+					ConnectionId: c.RemoteAddr().String(),
 				},
 			},
 			CommandMetadata: &commands.CommandMetadata{
-				Sequence:     client.coapConn.Sequence(),
-				ConnectionId: client.remoteAddrString(),
+				Sequence:     c.coapConn.Sequence(),
+				ConnectionId: c.RemoteAddr().String(),
 			},
 		})
 		if err != nil {
 			// Device will be still reported as online and it can fix his state by next calls online, offline commands.
-			log.Errorf("DeviceId %v: cannot handle sign out: cannot update cloud device status: %w", oldAuthCtx.GetDeviceID(), err)
+			c.Errorf("DeviceID %v: cannot handle sign out: cannot update cloud device status: %w", oldAuthCtx.GetDeviceID(), err)
 		}
 	}
 }
 
-func (client *Client) SetAuthorizationContext(authCtx *authorizationContext) (oldDeviceID *authorizationContext) {
-	log.Debugf("Authorization context replaced for client %v, device %v, user %v", client.coapConn.RemoteAddr(), authCtx.GetDeviceID(), authCtx.GetUserID())
-	client.mutex.Lock()
-	defer client.mutex.Unlock()
-	oldAuthContext := client.authCtx
-	client.authCtx = authCtx
+func (c *Client) SetAuthorizationContext(authCtx *authorizationContext) (oldDeviceID *authorizationContext) {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+	oldAuthContext := c.authCtx
+	c.authCtx = authCtx
 	return oldAuthContext
 }
 
-func (client *Client) GetAuthorizationContext() (*authorizationContext, error) {
-	client.mutex.Lock()
-	defer client.mutex.Unlock()
-	return client.authCtx, client.authCtx.IsValid()
+func (c *Client) GetAuthorizationContext() (*authorizationContext, error) {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+	return c.authCtx, c.authCtx.IsValid()
 }
 
-func (client *Client) notifyContentChanged(deviceID string, href string, notification *pool.Message) error {
-	authCtx, err := client.GetAuthorizationContext()
-	if err != nil {
+func (c *Client) notifyContentChanged(deviceID, href string, batch bool, notification *pool.Message) error {
+	notifyError := func(deviceID, href string, err error) error {
 		return fmt.Errorf("cannot notify resource /%v%v content changed: %w", deviceID, href, err)
 	}
-	decodeMsgToDebug(client, notification, "RECEIVED-NOTIFICATION")
-
-	ctx := kitNetGrpc.CtxWithToken(client.Context(), authCtx.GetAccessToken())
-	request := coapconv.NewNotifyResourceChangedRequest(commands.NewResourceID(deviceID, href), client.remoteAddrString(), notification)
-	_, err = client.server.raClient.NotifyResourceChanged(ctx, request)
+	authCtx, err := c.GetAuthorizationContext()
 	if err != nil {
-		return fmt.Errorf("cannot notify resource /%v%v content changed: %w", deviceID, href, err)
+		return notifyError(deviceID, href, err)
+	}
+	if _, err = notification.Observe(); err == nil {
+		// we want to log only observations
+		c.logNotificationFromClient(href, notification)
+	}
+
+	var requests []*commands.NotifyResourceChangedRequest
+	if batch && href == resources.ResourceURI {
+		requests, err = coapconv.NewNotifyResourceChangedRequestsFromBatchResourceDiscovery(deviceID, c.RemoteAddr().String(), notification)
+		if err != nil {
+			return notifyError(deviceID, href, err)
+		}
+	} else {
+		requests = []*commands.NotifyResourceChangedRequest{coapconv.NewNotifyResourceChangedRequest(commands.NewResourceID(deviceID, href), c.RemoteAddr().String(), notification)}
+	}
+
+	ctx := kitNetGrpc.CtxWithToken(c.Context(), authCtx.GetAccessToken())
+	for _, request := range requests {
+		_, err = c.server.raClient.NotifyResourceChanged(ctx, request)
+		if err != nil {
+			return notifyError(request.GetResourceId().GetDeviceId(), request.GetResourceId().GetHref(), err)
+		}
 	}
 	return nil
 }
 
-func (client *Client) sendErrorConfirmResourceUpdate(ctx context.Context, deviceID, href, userID, correlationID string, code codes.Code, errToSend error) {
-	resp := pool.AcquireMessage(ctx)
-	defer pool.ReleaseMessage(resp)
+func (c *Client) sendErrorConfirmResourceUpdate(ctx context.Context, deviceID, href, correlationID string, code codes.Code, errToSend error) {
+	resp := c.server.messagePool.AcquireMessage(ctx)
+	defer c.server.messagePool.ReleaseMessage(resp)
 	resp.SetContentFormat(message.TextPlain)
 	resp.SetBody(bytes.NewReader([]byte(errToSend.Error())))
 	resp.SetCode(code)
-	request := coapconv.NewConfirmResourceUpdateRequest(commands.NewResourceID(deviceID, href), correlationID, client.remoteAddrString(), resp)
-	_, err := client.server.raClient.ConfirmResourceUpdate(ctx, request)
+
+	request := coapconv.NewConfirmResourceUpdateRequest(commands.NewResourceID(deviceID, href), correlationID, c.RemoteAddr().String(), resp)
+	_, err := c.server.raClient.ConfirmResourceUpdate(ctx, request)
 	if err != nil {
-		log.Errorf("cannot send error via confirm resource update: %w", err)
+		c.Errorf("cannot send error via confirm resource update: %w", err)
 	}
 }
 
-func (client *Client) UpdateResource(ctx context.Context, event *events.ResourceUpdatePending) error {
-	authCtx, err := client.GetAuthorizationContext()
+func setDeviceIDToTracerSpan(ctx context.Context, deviceID string) {
+	if deviceID != "" {
+		span := trace.SpanFromContext(ctx)
+		span.SetAttributes(semconv.NetPeerNameKey.String(deviceID))
+	}
+}
+
+func (c *Client) updateStatusResource(ctx context.Context, sendConfirmCtx context.Context, event *events.ResourceUpdatePending) error {
+	msg := c.server.messagePool.AcquireMessage(ctx)
+	msg.SetCode(codes.MethodNotAllowed)
+	msg.SetSequence(c.coapConn.Sequence())
+	defer c.server.messagePool.ReleaseMessage(msg)
+	request := coapconv.NewConfirmResourceUpdateRequest(event.GetResourceId(), event.GetAuditContext().GetCorrelationId(), c.RemoteAddr().String(), msg)
+	_, err := c.server.raClient.ConfirmResourceUpdate(sendConfirmCtx, request)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c *Client) UpdateResource(ctx context.Context, event *events.ResourceUpdatePending) error {
+	setDeviceIDToTracerSpan(ctx, c.deviceID())
+	authCtx, err := c.GetAuthorizationContext()
 	if err != nil {
 		err := fmt.Errorf("cannot update resource /%v%v: %w", event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), err)
-		if err2 := client.Close(); err2 != nil {
-			log.Errorf("failed to close client connection on update resource /%v%v: %w", event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), err2)
-		}
+		c.Close()
 		return err
 	}
 	sendConfirmCtx := authCtx.ToContext(ctx)
-
 	if event.GetResourceId().GetHref() == commands.StatusHref {
-		msg := pool.AcquireMessage(ctx)
-		msg.SetCode(codes.MethodNotAllowed)
-		msg.SetSequence(client.coapConn.Sequence())
-		defer pool.ReleaseMessage(msg)
-		request := coapconv.NewConfirmResourceUpdateRequest(event.GetResourceId(), event.GetAuditContext().GetCorrelationId(), client.remoteAddrString(), msg)
-		_, err = client.server.raClient.ConfirmResourceUpdate(sendConfirmCtx, request)
-		if err != nil {
-			return err
-		}
-		return nil
+		return c.updateStatusResource(ctx, sendConfirmCtx, event)
 	}
 
-	coapCtx, cancel := context.WithTimeout(ctx, client.server.config.APIs.COAP.KeepAlive.Timeout)
+	coapCtx, cancel := context.WithTimeout(ctx, c.server.config.APIs.COAP.KeepAlive.Timeout)
 	defer cancel()
-	req, err := coapconv.NewCoapResourceUpdateRequest(coapCtx, event)
+	req, err := coapconv.NewCoapResourceUpdateRequest(coapCtx, c.server.messagePool, event)
 	if err != nil {
-		client.sendErrorConfirmResourceUpdate(sendConfirmCtx, event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), authCtx.GetUserID(), event.GetAuditContext().GetCorrelationId(), codes.BadRequest, err)
+		c.sendErrorConfirmResourceUpdate(sendConfirmCtx, event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), event.GetAuditContext().GetCorrelationId(), codes.BadRequest, err)
 		return err
 	}
-	defer pool.ReleaseMessage(req)
+	defer c.server.messagePool.ReleaseMessage(req)
 
-	decodeMsgToDebug(client, req, "RESOURCE-UPDATE-REQUEST")
-
-	resp, err := client.coapConn.Do(req)
+	resp, err := c.Do(req, event.GetAuditContext().GetCorrelationId())
 	if err != nil {
-		client.sendErrorConfirmResourceUpdate(sendConfirmCtx, event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), authCtx.GetUserID(), event.GetAuditContext().GetCorrelationId(), codes.ServiceUnavailable, err)
+		c.sendErrorConfirmResourceUpdate(sendConfirmCtx, event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), event.GetAuditContext().GetCorrelationId(), codes.ServiceUnavailable, err)
 		return err
 	}
-	defer pool.ReleaseMessage(resp)
-
-	decodeMsgToDebug(client, resp, "RESOURCE-UPDATE-RESPONSE")
+	defer c.server.messagePool.ReleaseMessage(resp)
 
 	if resp.Code() == codes.NotFound {
-		client.unpublishResourceLinks(client.getUserAuthorizedContext(ctx), []string{event.GetResourceId().GetHref()})
+		c.unpublishResourceLinks(c.getUserAuthorizedContext(ctx), []string{event.GetResourceId().GetHref()}, nil)
 	}
 
-	request := coapconv.NewConfirmResourceUpdateRequest(event.GetResourceId(), event.GetAuditContext().GetCorrelationId(), client.remoteAddrString(), resp)
-	_, err = client.server.raClient.ConfirmResourceUpdate(sendConfirmCtx, request)
+	request := coapconv.NewConfirmResourceUpdateRequest(event.GetResourceId(), event.GetAuditContext().GetCorrelationId(), c.RemoteAddr().String(), resp)
+	_, err = c.server.raClient.ConfirmResourceUpdate(sendConfirmCtx, request)
 	if err != nil {
 		return err
 	}
@@ -559,70 +527,68 @@ func (client *Client) UpdateResource(ctx context.Context, event *events.Resource
 	return nil
 }
 
-func (client *Client) sendErrorConfirmResourceRetrieve(ctx context.Context, deviceID, href, userID, correlationID string, code codes.Code, errToSend error) {
-	resp := pool.AcquireMessage(ctx)
-	defer pool.ReleaseMessage(resp)
+func (c *Client) sendErrorConfirmResourceRetrieve(ctx context.Context, deviceID, href, correlationID string, code codes.Code, errToSend error) {
+	resp := c.server.messagePool.AcquireMessage(ctx)
+	defer c.server.messagePool.ReleaseMessage(resp)
 	resp.SetContentFormat(message.TextPlain)
 	resp.SetBody(bytes.NewReader([]byte(errToSend.Error())))
 	resp.SetCode(code)
-	request := coapconv.NewConfirmResourceRetrieveRequest(commands.NewResourceID(deviceID, href), correlationID, client.remoteAddrString(), resp)
-	_, err := client.server.raClient.ConfirmResourceRetrieve(ctx, request)
+	request := coapconv.NewConfirmResourceRetrieveRequest(commands.NewResourceID(deviceID, href), correlationID, c.RemoteAddr().String(), resp)
+	_, err := c.server.raClient.ConfirmResourceRetrieve(ctx, request)
 	if err != nil {
-		log.Errorf("cannot send error confirm resource retrieve: %w", err)
+		c.Errorf("cannot send error confirm resource retrieve: %w", err)
 	}
 }
 
-func (client *Client) RetrieveResource(ctx context.Context, event *events.ResourceRetrievePending) error {
-	authCtx, err := client.GetAuthorizationContext()
+func (c *Client) retrieveStatusResource(ctx context.Context, sendConfirmCtx context.Context, event *events.ResourceRetrievePending) error {
+	msg := c.server.messagePool.AcquireMessage(ctx)
+	msg.SetCode(codes.Content)
+	msg.SetSequence(c.coapConn.Sequence())
+	defer c.server.messagePool.ReleaseMessage(msg)
+
+	request := coapconv.NewConfirmResourceRetrieveRequest(event.GetResourceId(), event.GetAuditContext().GetCorrelationId(), c.RemoteAddr().String(), msg)
+	_, err := c.server.raClient.ConfirmResourceRetrieve(sendConfirmCtx, request)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c *Client) RetrieveResource(ctx context.Context, event *events.ResourceRetrievePending) error {
+	setDeviceIDToTracerSpan(ctx, c.deviceID())
+	authCtx, err := c.GetAuthorizationContext()
 	if err != nil {
 		err := fmt.Errorf("cannot retrieve resource /%v%v: %w", event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), err)
-		if err2 := client.Close(); err2 != nil {
-			log.Errorf("failed to close client connection on retrieve resource /%v%v: %w", event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), err2)
-		}
+		c.Close()
 		return err
 	}
 	sendConfirmCtx := authCtx.ToContext(ctx)
-
 	if event.GetResourceId().GetHref() == commands.StatusHref {
-		msg := pool.AcquireMessage(ctx)
-		msg.SetCode(codes.Content)
-		msg.SetSequence(client.coapConn.Sequence())
-		defer pool.ReleaseMessage(msg)
-
-		request := coapconv.NewConfirmResourceRetrieveRequest(event.GetResourceId(), event.GetAuditContext().GetCorrelationId(), client.remoteAddrString(), msg)
-		_, err = client.server.raClient.ConfirmResourceRetrieve(sendConfirmCtx, request)
-		if err != nil {
-			return err
-		}
-		return nil
+		return c.retrieveStatusResource(ctx, sendConfirmCtx, event)
 	}
 
-	coapCtx, cancel := context.WithTimeout(ctx, client.server.config.APIs.COAP.KeepAlive.Timeout)
+	coapCtx, cancel := context.WithTimeout(ctx, c.server.config.APIs.COAP.KeepAlive.Timeout)
 	defer cancel()
-	req, err := coapconv.NewCoapResourceRetrieveRequest(coapCtx, event)
+	req, err := coapconv.NewCoapResourceRetrieveRequest(coapCtx, c.server.messagePool, event)
 	if err != nil {
-		client.sendErrorConfirmResourceRetrieve(sendConfirmCtx, event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), authCtx.GetUserID(), event.GetAuditContext().GetCorrelationId(), codes.BadRequest, err)
+		c.sendErrorConfirmResourceRetrieve(sendConfirmCtx, event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), event.GetAuditContext().GetCorrelationId(), codes.BadRequest, err)
 		return err
 	}
-	defer pool.ReleaseMessage(req)
+	defer c.server.messagePool.ReleaseMessage(req)
 
-	decodeMsgToDebug(client, req, "RESOURCE-RETRIEVE-REQUEST")
-
-	resp, err := client.coapConn.Do(req)
+	resp, err := c.Do(req, event.GetAuditContext().GetCorrelationId())
 	if err != nil {
-		client.sendErrorConfirmResourceRetrieve(sendConfirmCtx, event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), authCtx.GetUserID(), event.GetAuditContext().GetCorrelationId(), codes.ServiceUnavailable, err)
+		c.sendErrorConfirmResourceRetrieve(sendConfirmCtx, event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), event.GetAuditContext().GetCorrelationId(), codes.ServiceUnavailable, err)
 		return err
 	}
-	defer pool.ReleaseMessage(resp)
-
-	decodeMsgToDebug(client, resp, "RESOURCE-RETRIEVE-RESPONSE")
+	defer c.server.messagePool.ReleaseMessage(resp)
 
 	if resp.Code() == codes.NotFound {
-		client.unpublishResourceLinks(client.getUserAuthorizedContext(ctx), []string{event.GetResourceId().GetHref()})
+		c.unpublishResourceLinks(c.getUserAuthorizedContext(ctx), []string{event.GetResourceId().GetHref()}, nil)
 	}
 
-	request := coapconv.NewConfirmResourceRetrieveRequest(event.GetResourceId(), event.GetAuditContext().GetCorrelationId(), client.remoteAddrString(), resp)
-	_, err = client.server.raClient.ConfirmResourceRetrieve(sendConfirmCtx, request)
+	request := coapconv.NewConfirmResourceRetrieveRequest(event.GetResourceId(), event.GetAuditContext().GetCorrelationId(), c.RemoteAddr().String(), resp)
+	_, err = c.server.raClient.ConfirmResourceRetrieve(sendConfirmCtx, request)
 	if err != nil {
 		return err
 	}
@@ -630,70 +596,68 @@ func (client *Client) RetrieveResource(ctx context.Context, event *events.Resour
 	return nil
 }
 
-func (client *Client) sendErrorConfirmResourceDelete(ctx context.Context, deviceID, href, userID, correlationID string, code codes.Code, errToSend error) {
-	resp := pool.AcquireMessage(ctx)
-	defer pool.ReleaseMessage(resp)
+func (c *Client) sendErrorConfirmResourceDelete(ctx context.Context, deviceID, href, correlationID string, code codes.Code, errToSend error) {
+	resp := c.server.messagePool.AcquireMessage(ctx)
+	defer c.server.messagePool.ReleaseMessage(resp)
 	resp.SetContentFormat(message.TextPlain)
 	resp.SetBody(bytes.NewReader([]byte(errToSend.Error())))
 	resp.SetCode(code)
-	request := coapconv.NewConfirmResourceDeleteRequest(commands.NewResourceID(deviceID, href), correlationID, client.remoteAddrString(), resp)
-	_, err := client.server.raClient.ConfirmResourceDelete(ctx, request)
+	request := coapconv.NewConfirmResourceDeleteRequest(commands.NewResourceID(deviceID, href), correlationID, c.RemoteAddr().String(), resp)
+	_, err := c.server.raClient.ConfirmResourceDelete(ctx, request)
 	if err != nil {
-		log.Errorf("cannot send error via confirm resource delete: %w", err)
+		c.Errorf("cannot send error via confirm resource delete: %w", err)
 	}
 }
 
-func (client *Client) DeleteResource(ctx context.Context, event *events.ResourceDeletePending) error {
-	authCtx, err := client.GetAuthorizationContext()
+func (c *Client) deleteStatusResource(ctx context.Context, sendConfirmCtx context.Context, event *events.ResourceDeletePending) error {
+	msg := c.server.messagePool.AcquireMessage(ctx)
+	msg.SetCode(codes.Forbidden)
+	msg.SetSequence(c.coapConn.Sequence())
+	defer c.server.messagePool.ReleaseMessage(msg)
+
+	request := coapconv.NewConfirmResourceDeleteRequest(event.GetResourceId(), event.GetAuditContext().GetCorrelationId(), c.RemoteAddr().String(), msg)
+	_, err := c.server.raClient.ConfirmResourceDelete(sendConfirmCtx, request)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c *Client) DeleteResource(ctx context.Context, event *events.ResourceDeletePending) error {
+	setDeviceIDToTracerSpan(ctx, c.deviceID())
+	authCtx, err := c.GetAuthorizationContext()
 	if err != nil {
 		err := fmt.Errorf("cannot delete resource /%v%v: %w", event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), err)
-		if err2 := client.Close(); err2 != nil {
-			log.Errorf("failed to close client connection on delete resource /%v%v: %w", event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), err2)
-		}
+		c.Close()
 		return err
 	}
 	sendConfirmCtx := authCtx.ToContext(ctx)
-
 	if event.GetResourceId().GetHref() == commands.StatusHref {
-		msg := pool.AcquireMessage(ctx)
-		msg.SetCode(codes.Forbidden)
-		msg.SetSequence(client.coapConn.Sequence())
-		defer pool.ReleaseMessage(msg)
-
-		request := coapconv.NewConfirmResourceDeleteRequest(event.GetResourceId(), event.GetAuditContext().GetCorrelationId(), client.remoteAddrString(), msg)
-		_, err = client.server.raClient.ConfirmResourceDelete(sendConfirmCtx, request)
-		if err != nil {
-			return err
-		}
-		return nil
+		return c.deleteStatusResource(ctx, sendConfirmCtx, event)
 	}
 
-	coapCtx, cancel := context.WithTimeout(ctx, client.server.config.APIs.COAP.KeepAlive.Timeout)
+	coapCtx, cancel := context.WithTimeout(ctx, c.server.config.APIs.COAP.KeepAlive.Timeout)
 	defer cancel()
-	req, err := coapconv.NewCoapResourceDeleteRequest(coapCtx, event)
+	req, err := coapconv.NewCoapResourceDeleteRequest(coapCtx, c.server.messagePool, event)
 	if err != nil {
-		client.sendErrorConfirmResourceDelete(sendConfirmCtx, event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), authCtx.GetUserID(), event.GetAuditContext().GetCorrelationId(), codes.BadRequest, err)
+		c.sendErrorConfirmResourceDelete(sendConfirmCtx, event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), event.GetAuditContext().GetCorrelationId(), codes.BadRequest, err)
 		return err
 	}
-	defer pool.ReleaseMessage(req)
+	defer c.server.messagePool.ReleaseMessage(req)
 
-	decodeMsgToDebug(client, req, "RESOURCE-DELETE-REQUEST")
-
-	resp, err := client.coapConn.Do(req)
+	resp, err := c.Do(req, event.GetAuditContext().GetCorrelationId())
 	if err != nil {
-		client.sendErrorConfirmResourceDelete(sendConfirmCtx, event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), authCtx.GetUserID(), event.GetAuditContext().GetCorrelationId(), codes.ServiceUnavailable, err)
+		c.sendErrorConfirmResourceDelete(sendConfirmCtx, event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), event.GetAuditContext().GetCorrelationId(), codes.ServiceUnavailable, err)
 		return err
 	}
-	defer pool.ReleaseMessage(resp)
-
-	decodeMsgToDebug(client, resp, "RESOURCE-DELETE-RESPONSE")
+	defer c.server.messagePool.ReleaseMessage(resp)
 
 	if resp.Code() == codes.NotFound {
-		client.unpublishResourceLinks(client.getUserAuthorizedContext(ctx), []string{event.GetResourceId().GetHref()})
+		c.unpublishResourceLinks(c.getUserAuthorizedContext(ctx), []string{event.GetResourceId().GetHref()}, nil)
 	}
 
-	request := coapconv.NewConfirmResourceDeleteRequest(event.GetResourceId(), event.GetAuditContext().GetCorrelationId(), client.remoteAddrString(), resp)
-	_, err = client.server.raClient.ConfirmResourceDelete(sendConfirmCtx, request)
+	request := coapconv.NewConfirmResourceDeleteRequest(event.GetResourceId(), event.GetAuditContext().GetCorrelationId(), c.RemoteAddr().String(), resp)
+	_, err = c.server.raClient.ConfirmResourceDelete(sendConfirmCtx, request)
 	if err != nil {
 		return err
 	}
@@ -701,127 +665,116 @@ func (client *Client) DeleteResource(ctx context.Context, event *events.Resource
 	return nil
 }
 
-func (client *Client) publishResourceLinks(ctx context.Context, links schema.ResourceLinks, deviceID string, ttl int32, connectionID string, sequence uint64) ([]*commands.Resource, error) {
-	var validUntil time.Time
-	if ttl > 0 {
-		validUntil = time.Now().Add(time.Second * time.Duration(ttl))
-	}
-
-	resources := commands.SchemaResourceLinksToResources(links, validUntil)
-	request := commands.PublishResourceLinksRequest{
-		Resources: resources,
-		DeviceId:  deviceID,
-		CommandMetadata: &commands.CommandMetadata{
-			Sequence:     sequence,
-			ConnectionId: connectionID,
-		},
-	}
-
-	resp, err := client.server.raClient.PublishResourceLinks(ctx, &request)
+func (c *Client) getUserAuthorizedContext(ctx context.Context) context.Context {
+	authCtx, err := c.GetAuthorizationContext()
 	if err != nil {
-		return nil, fmt.Errorf("error occurred during resource links publish %w", err)
-	}
-
-	return resp.GetPublishedResources(), nil
-}
-
-func (client *Client) getUserAuthorizedContext(ctx context.Context) context.Context {
-	authCtx, err := client.GetAuthorizationContext()
-	if err != nil {
-		log.Errorf("unable to load authorization context: %w", err)
+		c.Errorf("unable to load authorization context: %w", err)
 		return nil
 	}
 
 	return authCtx.ToContext(ctx)
 }
 
-func (client *Client) unpublishResourceLinks(ctx context.Context, hrefs []string) {
-	authCtx, err := client.GetAuthorizationContext()
+func (c *Client) unpublishResourceLinks(ctx context.Context, hrefs []string, instanceIDs []int64) []string {
+	authCtx, err := c.GetAuthorizationContext()
 	if err != nil {
-		log.Errorf("unable to load authorization context during resource links publish for device: %w", err)
-		return
+		c.Errorf("unable to load authorization context during resource links publish for device: %w", err)
+		return nil
 	}
 
-	resp, err := client.server.raClient.UnpublishResourceLinks(ctx, &commands.UnpublishResourceLinksRequest{
-		Hrefs:    hrefs,
-		DeviceId: authCtx.GetDeviceID(),
+	logUnpublishError := func(err error) {
+		c.Errorf("error occurred during resource links unpublish for device %v: %w", authCtx.GetDeviceID(), err)
+	}
+	resp, err := c.server.raClient.UnpublishResourceLinks(ctx, &commands.UnpublishResourceLinksRequest{
+		Hrefs:       hrefs,
+		InstanceIds: instanceIDs,
+		DeviceId:    authCtx.GetDeviceID(),
 		CommandMetadata: &commands.CommandMetadata{
-			ConnectionId: client.remoteAddrString(),
-			Sequence:     client.coapConn.Sequence(),
+			ConnectionId: c.RemoteAddr().String(),
+			Sequence:     c.coapConn.Sequence(),
 		},
 	})
 	if err != nil {
 		// unpublish resource is not critical -> resource can be still accessible
 		// next resource update will return 'not found' what triggers a publish again
-		log.Errorf("error occurred during resource links unpublish for device %v: %w", authCtx.GetDeviceID(), err)
-		return
+		logUnpublishError(err)
+		return nil
 	}
 
-	client.cancelResourcesObservations(ctx, resp.UnpublishedHrefs)
+	if len(resp.UnpublishedHrefs) == 0 {
+		return nil
+	}
+
+	observer, err := c.getDeviceObserver(ctx)
+	if err != nil {
+		logUnpublishError(err)
+		return resp.UnpublishedHrefs
+	}
+	observer.RemovePublishedResources(ctx, resp.UnpublishedHrefs)
+	return resp.UnpublishedHrefs
 }
 
-func (client *Client) sendErrorConfirmResourceCreate(ctx context.Context, resourceID *commands.ResourceId, userID, correlationID string, code codes.Code, errToSend error) {
-	resp := pool.AcquireMessage(ctx)
-	defer pool.ReleaseMessage(resp)
+func (c *Client) sendErrorConfirmResourceCreate(ctx context.Context, resourceID *commands.ResourceId, correlationID string, code codes.Code, errToSend error) {
+	resp := c.server.messagePool.AcquireMessage(ctx)
+	defer c.server.messagePool.ReleaseMessage(resp)
 	resp.SetContentFormat(message.TextPlain)
 	resp.SetBody(bytes.NewReader([]byte(errToSend.Error())))
 	resp.SetCode(code)
-	request := coapconv.NewConfirmResourceCreateRequest(resourceID, correlationID, client.remoteAddrString(), resp)
-	_, err := client.server.raClient.ConfirmResourceCreate(ctx, request)
+	request := coapconv.NewConfirmResourceCreateRequest(resourceID, correlationID, c.RemoteAddr().String(), resp)
+	_, err := c.server.raClient.ConfirmResourceCreate(ctx, request)
 	if err != nil {
-		log.Errorf("cannot send error via confirm resource create: %w", err)
+		c.Errorf("cannot send error via confirm resource create: %w", err)
 	}
 }
 
-func (client *Client) CreateResource(ctx context.Context, event *events.ResourceCreatePending) error {
-	authCtx, err := client.GetAuthorizationContext()
+func (c *Client) createStatusResource(ctx context.Context, sendConfirmCtx context.Context, event *events.ResourceCreatePending) error {
+	msg := c.server.messagePool.AcquireMessage(ctx)
+	msg.SetCode(codes.Forbidden)
+	msg.SetSequence(c.coapConn.Sequence())
+	defer c.server.messagePool.ReleaseMessage(msg)
+	request := coapconv.NewConfirmResourceCreateRequest(event.GetResourceId(), event.GetAuditContext().GetCorrelationId(), c.RemoteAddr().String(), msg)
+	_, err := c.server.raClient.ConfirmResourceCreate(sendConfirmCtx, request)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c *Client) CreateResource(ctx context.Context, event *events.ResourceCreatePending) error {
+	setDeviceIDToTracerSpan(ctx, c.deviceID())
+	authCtx, err := c.GetAuthorizationContext()
 	if err != nil {
 		err := fmt.Errorf("cannot create resource /%v%v: %w", event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), err)
-		if err2 := client.Close(); err2 != nil {
-			log.Errorf("failed to close client connection on create resource /%v%v: %w", event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), err2)
-		}
+		c.Close()
 		return err
 	}
 	sendConfirmCtx := authCtx.ToContext(ctx)
 	if event.GetResourceId().GetHref() == commands.StatusHref {
-		msg := pool.AcquireMessage(ctx)
-		msg.SetCode(codes.Forbidden)
-		msg.SetSequence(client.coapConn.Sequence())
-		defer pool.ReleaseMessage(msg)
-		request := coapconv.NewConfirmResourceCreateRequest(event.GetResourceId(), event.GetAuditContext().GetCorrelationId(), client.remoteAddrString(), msg)
-		_, err = client.server.raClient.ConfirmResourceCreate(sendConfirmCtx, request)
-		if err != nil {
-			return err
-		}
-		return nil
+		return c.createStatusResource(ctx, sendConfirmCtx, event)
 	}
 
-	coapCtx, cancel := context.WithTimeout(ctx, client.server.config.APIs.COAP.KeepAlive.Timeout)
+	coapCtx, cancel := context.WithTimeout(ctx, c.server.config.APIs.COAP.KeepAlive.Timeout)
 	defer cancel()
-	req, err := coapconv.NewCoapResourceCreateRequest(coapCtx, event)
+	req, err := coapconv.NewCoapResourceCreateRequest(coapCtx, c.server.messagePool, event)
 	if err != nil {
-		client.sendErrorConfirmResourceCreate(sendConfirmCtx, event.GetResourceId(), authCtx.GetUserID(), event.GetAuditContext().GetCorrelationId(), codes.BadRequest, err)
+		c.sendErrorConfirmResourceCreate(sendConfirmCtx, event.GetResourceId(), event.GetAuditContext().GetCorrelationId(), codes.BadRequest, err)
 		return err
 	}
-	defer pool.ReleaseMessage(req)
+	defer c.server.messagePool.ReleaseMessage(req)
 
-	decodeMsgToDebug(client, req, "RESOURCE-CREATE-REQUEST")
-
-	resp, err := client.coapConn.Do(req)
+	resp, err := c.Do(req, event.GetAuditContext().GetCorrelationId())
 	if err != nil {
-		client.sendErrorConfirmResourceCreate(sendConfirmCtx, event.GetResourceId(), authCtx.GetUserID(), event.GetAuditContext().GetCorrelationId(), codes.ServiceUnavailable, err)
+		c.sendErrorConfirmResourceCreate(sendConfirmCtx, event.GetResourceId(), event.GetAuditContext().GetCorrelationId(), codes.ServiceUnavailable, err)
 		return err
 	}
-	defer pool.ReleaseMessage(resp)
-
-	decodeMsgToDebug(client, resp, "RESOURCE-CREATE-RESPONSE")
+	defer c.server.messagePool.ReleaseMessage(resp)
 
 	if resp.Code() == codes.NotFound {
-		client.unpublishResourceLinks(client.getUserAuthorizedContext(ctx), []string{event.GetResourceId().GetHref()})
+		c.unpublishResourceLinks(c.getUserAuthorizedContext(ctx), []string{event.GetResourceId().GetHref()}, nil)
 	}
 
-	request := coapconv.NewConfirmResourceCreateRequest(event.GetResourceId(), event.GetAuditContext().GetCorrelationId(), client.remoteAddrString(), resp)
-	_, err = client.server.raClient.ConfirmResourceCreate(sendConfirmCtx, request)
+	request := coapconv.NewConfirmResourceCreateRequest(event.GetResourceId(), event.GetAuditContext().GetCorrelationId(), c.RemoteAddr().String(), resp)
+	_, err = c.server.raClient.ConfirmResourceCreate(sendConfirmCtx, request)
 	if err != nil {
 		return err
 	}
@@ -829,47 +782,37 @@ func (client *Client) CreateResource(ctx context.Context, event *events.Resource
 	return nil
 }
 
-func (client *Client) OnDeviceSubscriberReconnectError(err error) {
-	auth, _ := client.GetAuthorizationContext()
+func (c *Client) OnDeviceSubscriberReconnectError(err error) {
+	auth, _ := c.GetAuthorizationContext()
 	deviceID := auth.GetDeviceID()
-	log.Errorf("cannot reconnect device %v subscriber to resource directory or eventbus - closing the device connection: %w", deviceID, err)
-	if err := client.Close(); err != nil {
-		log.Errorf("failed to close device %v connection : %w", deviceID, err)
+	c.Errorf("cannot reconnect device %v subscriber to resource directory or eventbus - closing the device connection: %w", deviceID, err)
+	c.Close()
+	logCloseDeviceSubscriberError := func(err error) {
+		c.Errorf("failed to close device %v subscription: %w", auth.GetDeviceID(), err)
+	}
+	if err := c.server.taskQueue.Submit(func() {
+		if errSub := c.closeDeviceSubscriber(); err != nil {
+			logCloseDeviceSubscriberError(errSub)
+		}
+	}); err != nil {
+		logCloseDeviceSubscriberError(err)
 	}
 }
 
-func (client *Client) GetContext() (context.Context, context.CancelFunc) {
-	authCtx, err := client.GetAuthorizationContext()
+func (c *Client) GetContext() context.Context {
+	authCtx, err := c.GetAuthorizationContext()
 	if err != nil {
-		return client.Context(), func() {}
+		return c.Context()
 	}
-	return authCtx.ToContext(client.Context()), func() {}
+	return authCtx.ToContext(c.Context())
 }
 
-func (client *Client) setShadowSynchronization(ctx context.Context, deviceID string, shadowSynchronization commands.ShadowSynchronization) commands.ShadowSynchronization {
-	client.observedResourcesLock.Lock()
-	defer client.observedResourcesLock.Unlock()
-	if client.shadowSynchronization == shadowSynchronization {
-		return client.shadowSynchronization
-	}
-	previous := client.shadowSynchronization
-
-	client.shadowSynchronization = shadowSynchronization
-	if shadowSynchronization == commands.ShadowSynchronization_DISABLED {
-		client.cleanObservedResourcesLocked()
-	} else {
-		client.registerObservationsForPublishedResourcesLocked(ctx, deviceID)
-	}
-	return previous
-}
-
-func (client *Client) UpdateDeviceMetadata(ctx context.Context, event *events.DeviceMetadataUpdatePending) error {
-	authCtx, err := client.GetAuthorizationContext()
+func (c *Client) UpdateDeviceMetadata(ctx context.Context, event *events.DeviceMetadataUpdatePending) error {
+	setDeviceIDToTracerSpan(ctx, c.deviceID())
+	authCtx, err := c.GetAuthorizationContext()
 	if err != nil {
 		err := fmt.Errorf("cannot update device('%v') metadata: %w", event.GetDeviceId(), err)
-		if err2 := client.Close(); err2 != nil {
-			log.Errorf("failed to close client connection on update device('%v') metadata: %w", event.GetDeviceId(), err2)
-		}
+		c.Close()
 		return err
 	}
 	if event.GetShadowSynchronization() == commands.ShadowSynchronization_UNSET {
@@ -877,21 +820,27 @@ func (client *Client) UpdateDeviceMetadata(ctx context.Context, event *events.De
 	}
 	sendConfirmCtx := authCtx.ToContext(ctx)
 
-	previous := client.setShadowSynchronization(sendConfirmCtx, event.GetDeviceId(), event.GetShadowSynchronization())
-	_, err = client.server.raClient.ConfirmDeviceMetadataUpdate(sendConfirmCtx, &commands.ConfirmDeviceMetadataUpdateRequest{
+	previous, errObs := c.replaceDeviceObserverWithDeviceShadow(sendConfirmCtx, event.GetShadowSynchronization())
+	if errObs != nil {
+		c.Errorf("update device('%v') metadata error: %w", event.GetDeviceId(), errObs)
+	}
+	_, err = c.server.raClient.ConfirmDeviceMetadataUpdate(sendConfirmCtx, &commands.ConfirmDeviceMetadataUpdateRequest{
 		DeviceId:      event.GetDeviceId(),
 		CorrelationId: event.GetAuditContext().GetCorrelationId(),
 		Confirm: &commands.ConfirmDeviceMetadataUpdateRequest_ShadowSynchronization{
 			ShadowSynchronization: event.GetShadowSynchronization(),
 		},
 		CommandMetadata: &commands.CommandMetadata{
-			ConnectionId: client.remoteAddrString(),
-			Sequence:     client.coapConn.Sequence(),
+			ConnectionId: c.RemoteAddr().String(),
+			Sequence:     c.coapConn.Sequence(),
 		},
 		Status: commands.Status_OK,
 	})
 	if err != nil && !errors.Is(err, context.Canceled) {
-		client.setShadowSynchronization(sendConfirmCtx, event.GetDeviceId(), previous)
+		_, errObs := c.replaceDeviceObserverWithDeviceShadow(sendConfirmCtx, previous)
+		if errObs != nil {
+			c.Errorf("update device('%v') metadata error: %w", event.GetDeviceId(), errObs)
+		}
 	}
 	return err
 }
@@ -912,7 +861,9 @@ func (c *Client) subscribeToDeviceEvents(owner string, onEvent func(e *idEvents.
 }
 
 func (c *Client) unsubscribeFromDeviceEvents() {
-	close := func() {}
+	close := func() {
+		// default no-op
+	}
 	c.mutex.Lock()
 	if c.closeEventSubscriptions != nil {
 		close = c.closeEventSubscriptions

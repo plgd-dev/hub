@@ -11,20 +11,26 @@ import (
 	"github.com/plgd-dev/go-coap/v2/message"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/tcp"
-	coapgwTest "github.com/plgd-dev/hub/coap-gateway/test"
-	"github.com/plgd-dev/hub/coap-gateway/uri"
-	testCfg "github.com/plgd-dev/hub/test/config"
+	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
+	coapgwTest "github.com/plgd-dev/hub/v2/coap-gateway/test"
+	"github.com/plgd-dev/hub/v2/coap-gateway/uri"
+	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
 )
 
-func Test_clientCreateHandler(t *testing.T) {
+func TestClientCreateHandler(t *testing.T) {
 	coapgwCfg := coapgwTest.MakeConfig(t)
 	coapgwCfg.APIs.COAP.TLS.Enabled = false
+	coapgwCfg.Log.DumpBody = true
+	coapgwCfg.Log.Level = zap.DebugLevel
 	shutdown := setUp(t, coapgwCfg)
 	defer shutdown()
 
-	co := testCoapDial(t, testCfg.GW_HOST, "", true)
+	log.Setup(coapgwCfg.Log.Config)
+
+	co := testCoapDial(t, "", false, time.Now().Add(time.Minute))
 	if co == nil {
 		return
 	}
@@ -76,13 +82,13 @@ func Test_clientCreateHandler(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ctx, cancel := context.WithTimeout(context.Background(), TestExchangeTimeout*3600)
+			ctx, cancel := context.WithTimeout(context.Background(), TestExchangeTimeout)
 			defer cancel()
 			var body io.ReadSeeker
 			if len(tt.args.payload) > 0 {
 				body = bytes.NewReader(tt.args.payload)
 			}
-			req, err := tcp.NewPostRequest(ctx, tt.args.href, tt.args.contentFormat, body)
+			req, err := tcp.NewPostRequest(ctx, pool.New(0, 0), tt.args.href, tt.args.contentFormat, body)
 			require.NoError(t, err)
 			req.SetOptionString(message.URIQuery, "if="+interfaces.OC_IF_CREATE)
 			resp, err := co.Do(req)

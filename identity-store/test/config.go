@@ -3,13 +3,16 @@ package test
 import (
 	"testing"
 
-	"github.com/plgd-dev/hub/identity-store/service"
-	"github.com/plgd-dev/hub/test/config"
+	"github.com/plgd-dev/hub/v2/identity-store/service"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	"github.com/plgd-dev/hub/v2/test/config"
 	"github.com/stretchr/testify/require"
 )
 
 func MakeConfig(t *testing.T) service.Config {
 	var cfg service.Config
+
+	cfg.Log = log.MakeDefaultConfig()
 
 	cfg.APIs.GRPC = config.MakeGrpcServerConfig(config.IDENTITY_STORE_HOST)
 
@@ -18,6 +21,7 @@ func MakeConfig(t *testing.T) service.Config {
 	cfg.Clients.Storage.MongoDB.Database = config.IDENTITY_STORE_DB
 
 	cfg.Clients.Eventbus.NATS = config.MakePublisherConfig()
+	cfg.Clients.OpenTelemetryCollector = config.MakeOpenTelemetryCollectorClient()
 
 	err := cfg.Validate()
 	require.NoError(t, err)

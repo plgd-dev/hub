@@ -78,15 +78,18 @@ spec:
             {{- toYaml . | nindent 12 }}
           {{- end }}
           volumeMounts:
-            - mountPath: {{ .Values.httpgateway.config.mountPath }}
-              name: {{ .Values.httpgateway.config.volume }}
+            - name: {{ .Values.httpgateway.config.volume }}
+              mountPath: {{ .Values.httpgateway.config.mountPath }}
             {{- if ( include "plgd-hub.httpgateway.createServiceCertByCm" . ) }}
             - name: service-crt
               mountPath: {{ $rdServiceCert }}
             {{- end }}
-            {{- with .Values.httpgateway.extraVolumes }}
+            {{- with .Values.httpgateway.extraVolumeMounts }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
+      {{- if .Values.httpgateway.extraContainers }}
+      {{- include "plgd-hub.tplvalues.render" ( dict "value" .Values.httpgateway.extraContainers "context" $ ) | nindent 8 }}
+      {{- end }}
       volumes:
         - name: {{ .Values.httpgateway.config.volume }}
           configMap:
@@ -96,7 +99,7 @@ spec:
           secret:
             secretName: {{ include "plgd-hub.httpgateway.serviceCertName" . }}
         {{- end }}
-        {{- with .Values.httpgateway.extraVolumeMounts }}
+        {{- with .Values.httpgateway.extraVolumes }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
       {{- with .Values.httpgateway.nodeSelector }}

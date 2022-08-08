@@ -7,17 +7,21 @@ import (
 	"time"
 
 	router "github.com/gorilla/mux"
-	"github.com/patrickmn/go-cache"
-	"github.com/plgd-dev/hub/cloud2cloud-connector/events"
-	"github.com/plgd-dev/hub/cloud2cloud-connector/store"
-	"github.com/plgd-dev/hub/cloud2cloud-connector/uri"
-	kitNetHttp "github.com/plgd-dev/hub/pkg/net/http"
-	pkgOAuth2 "github.com/plgd-dev/hub/pkg/security/oauth2"
-	"github.com/plgd-dev/kit/v2/log"
+	"github.com/plgd-dev/go-coap/v2/pkg/cache"
+	"github.com/plgd-dev/go-coap/v2/pkg/runner/periodic"
+	"github.com/plgd-dev/hub/v2/cloud2cloud-connector/events"
+	"github.com/plgd-dev/hub/v2/cloud2cloud-connector/store"
+	"github.com/plgd-dev/hub/v2/cloud2cloud-connector/uri"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	kitNetHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
+	pkgOAuth2 "github.com/plgd-dev/hub/v2/pkg/security/oauth2"
+	"go.opentelemetry.io/otel/trace"
 )
 
-const cloudIDKey = "CloudId"
-const accountIDKey = "AccountId"
+const (
+	cloudIDKey   = "CloudId"
+	accountIDKey = "AccountId"
+)
 
 type provisionCacheData struct {
 	linkedAccount store.LinkedAccount
@@ -32,10 +36,11 @@ type RequestHandler struct {
 	provisionCache *cache.Cache
 	subManager     *SubscriptionManager
 	triggerTask    OnTaskTrigger
+	tracerProvider trace.TracerProvider
 }
 
 func logAndWriteErrorResponse(err error, statusCode int, w http.ResponseWriter) {
-	log.Errorf("%v", err)
+	log.Errorf("%w", err)
 	w.Header().Set(events.ContentTypeKey, "text/plain")
 	w.WriteHeader(statusCode)
 	if _, err2 := w.Write([]byte(err.Error())); err2 != nil {
@@ -49,59 +54,55 @@ func NewRequestHandler(
 	subManager *SubscriptionManager,
 	store *Store,
 	triggerTask OnTaskTrigger,
+	tracerProvider trace.TracerProvider,
 ) *RequestHandler {
+	cache := cache.NewCache()
+	add := periodic.New(subManager.devicesSubscription.ctx.Done(), time.Minute*5)
+	add(func(now time.Time) bool {
+		cache.CheckExpirations(now)
+		return true
+	})
 	return &RequestHandler{
 		ownerClaim:     ownerClaim,
 		provider:       provider,
 		subManager:     subManager,
 		store:          store,
-		provisionCache: cache.New(5*time.Minute, 10*time.Minute),
+		provisionCache: cache,
 		triggerTask:    triggerTask,
+		tracerProvider: tracerProvider,
 	}
-}
-
-func loggingMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		log.Infof("%v %v %+v", r.Method, r.RequestURI, r.Header)
-		// Call the next handler, which can be another middleware in the chain, or the final handler.
-		next.ServeHTTP(w, r)
-	})
 }
 
 func healthCheck(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-// NewHTTP returns HTTP server
-func NewHTTP(requestHandler *RequestHandler, authInterceptor kitNetHttp.Interceptor) (*http.Server, error) {
+// NewHTTP returns HTTP handler
+func NewHTTP(requestHandler *RequestHandler, authInterceptor kitNetHttp.Interceptor) (http.Handler, error) {
 	r := router.NewRouter()
 	r.StrictSlash(true)
-	r.Use(loggingMiddleware)
+	r.Use(kitNetHttp.CreateLoggingMiddleware())
 	r.Use(kitNetHttp.CreateAuthMiddleware(authInterceptor, func(ctx context.Context, w http.ResponseWriter, r *http.Request, err error) {
 		logAndWriteErrorResponse(fmt.Errorf("cannot process request on %v: %w", r.RequestURI, err), http.StatusUnauthorized, w)
 	}))
 
 	// health check
-	r.HandleFunc("/", healthCheck).Methods("GET")
+	r.HandleFunc("/", healthCheck).Methods(http.MethodGet)
 
 	// retrieve all linked clouds
-	r.HandleFunc(uri.LinkedClouds, requestHandler.RetrieveLinkedClouds).Methods("GET")
+	r.HandleFunc(uri.LinkedClouds, requestHandler.RetrieveLinkedClouds).Methods(http.MethodGet)
 	// add linked cloud
-	r.HandleFunc(uri.LinkedClouds, requestHandler.AddLinkedCloud).Methods("POST")
+	r.HandleFunc(uri.LinkedClouds, requestHandler.AddLinkedCloud).Methods(http.MethodPost)
 	// delete linked cloud
-	r.HandleFunc(uri.LinkedCloud, requestHandler.DeleteLinkedCloud).Methods("DELETE")
+	r.HandleFunc(uri.LinkedCloud, requestHandler.DeleteLinkedCloud).Methods(http.MethodDelete)
 	// add linked account
-	r.HandleFunc(uri.LinkedAccounts, requestHandler.AddLinkedAccount).Methods("GET")
+	r.HandleFunc(uri.LinkedAccounts, requestHandler.AddLinkedAccount).Methods(http.MethodGet)
 	// delete linked cloud
-	r.HandleFunc(uri.LinkedAccount, requestHandler.DeleteLinkedAccount).Methods("DELETE")
+	r.HandleFunc(uri.LinkedAccount, requestHandler.DeleteLinkedAccount).Methods(http.MethodDelete)
 	// notify linked cloud
-	r.HandleFunc(uri.Events, requestHandler.ProcessEvent).Methods("POST")
+	r.HandleFunc(uri.Events, requestHandler.ProcessEvent).Methods(http.MethodPost)
 
-	oauthURL, err := parseOAuthPaths(requestHandler.provider.Config.RedirectURL)
-	if err != nil {
-		return nil, err
-	}
-	r.HandleFunc(oauthURL.Path, requestHandler.OAuthCallback).Methods("GET")
+	r.HandleFunc(uri.OAuthCallback, requestHandler.OAuthCallback).Methods(http.MethodGet, http.MethodPost)
 
-	return &http.Server{Handler: r}, nil
+	return r, nil
 }

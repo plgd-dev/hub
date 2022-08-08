@@ -1,5 +1,11 @@
 log:
-  debug: false
+  level: info
+  encoding: json
+  stacktrace:
+    enabled: false
+    level: warn
+  encoderConfig:
+    timeEncoder: rfc3339nano
 apis:
   grpc:
     address: "0.0.0.0:9100"
@@ -35,8 +41,24 @@ apis:
           keyFile: "/secrets/private/cert.key"
           certFile: "/secrets/public/cert.crt"
           useSystemCAPool: false
+clients:
+  openTelemetryCollector:
+    grpc:
+      enabled: false
+      address: ""
+      keepAlive:
+        time: 10s
+        timeout: 20s
+        permitWithoutStream: true
+      tls:
+        caPool: "/secrets/public/rootca.crt"
+        keyFile: "/secrets/private/cert.key"
+        certFile: "/secrets/public/cert.crt"
+        useSystemCAPool: false
 signer:
   keyFile: "/secrets/private/intermediateca.key"
   certFile: "/secrets/public/intermediateca.crt"
   validFrom: "now-1h"
   expiresIn: "87600h"
+  hubID: ""
+

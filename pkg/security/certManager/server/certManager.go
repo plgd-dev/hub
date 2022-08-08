@@ -4,8 +4,9 @@ import (
 	"crypto/tls"
 	"fmt"
 
-	"github.com/plgd-dev/hub/pkg/log"
-	"github.com/plgd-dev/hub/pkg/security/certManager/general"
+	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	"github.com/plgd-dev/hub/v2/pkg/security/certManager/general"
 )
 
 // Config provides configuration of a file based Server Certificate manager
@@ -29,10 +30,6 @@ func (c Config) Validate() error {
 	return nil
 }
 
-func (c *Config) SetDefaults() {
-	c.ClientCertificateRequired = true
-}
-
 // CertManager holds certificates from filesystem watched for changes
 type CertManager struct {
 	c *general.CertManager
@@ -49,15 +46,14 @@ func (c *CertManager) Close() {
 }
 
 // New creates a new certificate manager which watches for certs in a filesystem
-func New(config Config, logger log.Logger) (*CertManager, error) {
-
+func New(config Config, fileWatcher *fsnotify.Watcher, logger log.Logger) (*CertManager, error) {
 	c, err := general.New(general.Config{
 		CAPool:                    config.CAPool,
 		KeyFile:                   config.KeyFile,
 		CertFile:                  config.CertFile,
 		ClientCertificateRequired: config.ClientCertificateRequired,
 		UseSystemCAPool:           false,
-	}, logger)
+	}, fileWatcher, logger)
 	if err != nil {
 		return nil, err
 	}

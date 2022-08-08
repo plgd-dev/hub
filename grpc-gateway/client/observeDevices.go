@@ -2,19 +2,20 @@ package client
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/google/uuid"
-	"github.com/plgd-dev/hub/grpc-gateway/pb"
-	"github.com/plgd-dev/hub/resource-aggregate/events"
+	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 )
 
 type DevicesObservationEvent_type uint8
 
-const DevicesObservationEvent_ONLINE DevicesObservationEvent_type = 0
-const DevicesObservationEvent_OFFLINE DevicesObservationEvent_type = 1
-const DevicesObservationEvent_REGISTERED DevicesObservationEvent_type = 2
-const DevicesObservationEvent_UNREGISTERED DevicesObservationEvent_type = 3
+const (
+	DevicesObservationEvent_ONLINE       DevicesObservationEvent_type = 0
+	DevicesObservationEvent_OFFLINE      DevicesObservationEvent_type = 1
+	DevicesObservationEvent_REGISTERED   DevicesObservationEvent_type = 2
+	DevicesObservationEvent_UNREGISTERED DevicesObservationEvent_type = 3
+)
 
 type DevicesObservationEvent struct {
 	DeviceIDs []string
@@ -64,6 +65,7 @@ func (o *devicesObservation) OnClose() {
 	o.removeSubscription()
 	o.h.OnClose()
 }
+
 func (o *devicesObservation) Error(err error) {
 	o.removeSubscription()
 	o.h.Error(err)
@@ -77,9 +79,9 @@ func (c *Client) ObserveDevices(ctx context.Context, handler DevicesObservationH
 	sub, err := c.NewDevicesSubscription(ctx, &devicesObservation{
 		h: handler,
 		removeSubscription: func() {
-			if _, err := c.stopObservingDevices(ID.String()); err != nil {
-				handler.Error(fmt.Errorf("failed to stop device('%v') observation: %w", ID.String(), err))
-			}
+			// we can ignore err during removeSubscription, if err != nil then some other
+			// part of code already removed the subscription
+			_, _ = c.stopObservingDevices(ID.String())
 		},
 	})
 	if err != nil {

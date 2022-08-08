@@ -4,20 +4,20 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/plgd-dev/hub/pkg/log"
-	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
-	"github.com/plgd-dev/hub/resource-aggregate/commands"
-	cqrsAggregate "github.com/plgd-dev/hub/resource-aggregate/cqrs/aggregate"
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventbus"
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventstore"
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/utils"
-	raEvents "github.com/plgd-dev/hub/resource-aggregate/events"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
+	cqrsAggregate "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/aggregate"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/utils"
+	raEvents "github.com/plgd-dev/hub/v2/resource-aggregate/events"
 	"google.golang.org/grpc/codes"
 )
 
 type getOwnerDevicesFunc = func(ctx context.Context, owner string, deviceIDs []string) ([]string, error)
 
-//RequestHandler for handling incoming request
+// RequestHandler for handling incoming request
 type RequestHandler struct {
 	UnimplementedResourceAggregateServer
 	config              Config
@@ -26,7 +26,7 @@ type RequestHandler struct {
 	getOwnerDevicesFunc getOwnerDevicesFunc
 }
 
-//NewRequestHandler factory for new RequestHandler
+// NewRequestHandler factory for new RequestHandler
 func NewRequestHandler(config Config, eventstore EventStore, publisher eventbus.Publisher, getOwnerDevicesFunc getOwnerDevicesFunc) *RequestHandler {
 	return &RequestHandler{
 		config:              config,
@@ -36,11 +36,11 @@ func NewRequestHandler(config Config, eventstore EventStore, publisher eventbus.
 	}
 }
 
-func PublishEvents(publisher eventbus.Publisher, owner, deviceId, resourceId string, events []eventbus.Event) error {
+func PublishEvents(publisher eventbus.Publisher, owner, deviceID, resourceID string, events []eventbus.Event) error {
 	var errors []error
 	for _, event := range events {
 		// timeout si driven by flusherTimeout.
-		err := publisher.Publish(context.Background(), utils.GetPublishSubject(owner, event), deviceId, resourceId, event)
+		err := publisher.Publish(context.Background(), utils.GetPublishSubject(owner, event), deviceID, resourceID, event)
 		if err != nil {
 			errors = append(errors, err)
 		}

@@ -15,22 +15,24 @@ import (
 	"testing"
 	"time"
 
-	"github.com/plgd-dev/hub/cloud2cloud-connector/store"
-	"github.com/plgd-dev/hub/cloud2cloud-connector/store/mongodb"
-	"github.com/plgd-dev/hub/cloud2cloud-connector/uri"
-	c2cGwUri "github.com/plgd-dev/hub/cloud2cloud-gateway/uri"
-	"github.com/plgd-dev/hub/grpc-gateway/pb"
-	"github.com/plgd-dev/hub/pkg/log"
-	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
-	cmClient "github.com/plgd-dev/hub/pkg/security/certManager/client"
-	"github.com/plgd-dev/hub/pkg/security/oauth2/oauth"
-	"github.com/plgd-dev/hub/test"
-	testCfg "github.com/plgd-dev/hub/test/config"
-	testHttp "github.com/plgd-dev/hub/test/http"
-	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
-	"github.com/plgd-dev/hub/test/service"
+	"github.com/plgd-dev/hub/v2/cloud2cloud-connector/store"
+	"github.com/plgd-dev/hub/v2/cloud2cloud-connector/store/mongodb"
+	"github.com/plgd-dev/hub/v2/cloud2cloud-connector/uri"
+	c2cGwUri "github.com/plgd-dev/hub/v2/cloud2cloud-gateway/uri"
+	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
+	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	cmClient "github.com/plgd-dev/hub/v2/pkg/security/certManager/client"
+	"github.com/plgd-dev/hub/v2/pkg/security/oauth2/oauth"
+	"github.com/plgd-dev/hub/v2/test"
+	testCfg "github.com/plgd-dev/hub/v2/test/config"
+	testHttp "github.com/plgd-dev/hub/v2/test/http"
+	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
+	"github.com/plgd-dev/hub/v2/test/service"
 	"github.com/plgd-dev/kit/v2/codec/json"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )
@@ -44,10 +46,10 @@ func countOpenFiles() int64 {
 	return int64(len(lines) - 1)
 }
 
-func SetUpClouds(ctx context.Context, t *testing.T, deviceID string, supportedEvents store.Events) func() {
+func SetUpClouds(ctx context.Context, t *testing.T, deviceID string, supportedEvents store.Events, switchIDs ...string) func() {
 	cloud1 := service.SetUp(ctx, t)
 	cloud2 := SetUpCloudWithConnector(t)
-	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultServiceToken(t))
+	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
 
 	cloud1Conn, err := grpc.Dial(testCfg.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
@@ -55,6 +57,9 @@ func SetUpClouds(ctx context.Context, t *testing.T, deviceID string, supportedEv
 	require.NoError(t, err)
 	c1 := pb.NewGrpcGatewayClient(cloud1Conn)
 	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c1, deviceID, testCfg.GW_HOST, test.GetAllBackendResourceLinks())
+	if len(switchIDs) > 0 {
+		test.AddDeviceSwitchResources(ctx, t, deviceID, c1, switchIDs...)
+	}
 
 	rootCAs := make([]string, 0, 1)
 	certs := test.GetRootCertificateAuthorities(t)
@@ -77,13 +82,14 @@ func SetUpClouds(ctx context.Context, t *testing.T, deviceID string, supportedEv
 			ClientSecret: "testClientSecret",
 			AuthURL:      testCfg.OAUTH_MANAGER_ENDPOINT_AUTHURL,
 			TokenURL:     testCfg.OAUTH_MANAGER_ENDPOINT_TOKENURL,
+			Scopes:       []string{"r:*", "w:*"},
 		},
-		SupportedSubscriptionsEvents: supportedEvents,
+		SupportedSubscriptionEvents: supportedEvents,
 	}
 	data, err := json.Encode(linkedCloud)
 	require.NoError(t, err)
 
-	token := oauthTest.GetServiceToken(t, OAUTH_HOST, oauthTest.ClientTest)
+	token := oauthTest.GetAccessToken(t, OAUTH_HOST, oauthTest.ClientTest)
 	req := testHttp.NewHTTPRequest(http.MethodPost, testHttp.HTTPS_SCHEME+C2C_CONNECTOR_HOST+uri.LinkedClouds, bytes.NewBuffer(data)).AuthToken(token).Build(ctx, t)
 	resp := testHttp.DoHTTPRequest(t, req)
 	require.Equal(t, http.StatusOK, resp.StatusCode)
@@ -134,14 +140,16 @@ func SetUpClouds(ctx context.Context, t *testing.T, deviceID string, supportedEv
 func NewMongoStore(t *testing.T) (*mongodb.Store, func()) {
 	cfg := MakeConfig(t)
 
-	logger, err := log.NewLogger(cfg.Log)
+	logger := log.NewLogger(cfg.Log)
+
+	fileWatcher, err := fsnotify.NewWatcher()
 	require.NoError(t, err)
 
-	certManager, err := cmClient.New(cfg.Clients.Storage.MongoDB.TLS, logger)
+	certManager, err := cmClient.New(cfg.Clients.Storage.MongoDB.TLS, fileWatcher, logger)
 	require.NoError(t, err)
 
 	ctx := context.Background()
-	store, err := mongodb.NewStore(ctx, cfg.Clients.Storage.MongoDB, certManager.GetTLSConfig())
+	store, err := mongodb.NewStore(ctx, cfg.Clients.Storage.MongoDB, certManager.GetTLSConfig(), trace.NewNoopTracerProvider())
 	require.NoError(t, err)
 
 	cleanUp := func() {
@@ -149,6 +157,8 @@ func NewMongoStore(t *testing.T) (*mongodb.Store, func()) {
 		require.NoError(t, err)
 		_ = store.Close(ctx)
 		certManager.Close()
+		err = fileWatcher.Close()
+		require.NoError(t, err)
 	}
 
 	return store, cleanUp

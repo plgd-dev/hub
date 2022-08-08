@@ -4,8 +4,9 @@ import (
 	"fmt"
 
 	nats "github.com/nats-io/nats.go"
-	"github.com/plgd-dev/hub/pkg/log"
-	"github.com/plgd-dev/hub/pkg/security/certManager/client"
+	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	"github.com/plgd-dev/hub/v2/pkg/security/certManager/client"
 )
 
 type Client struct {
@@ -13,8 +14,8 @@ type Client struct {
 	closeFunc []func()
 }
 
-func New(config Config, logger log.Logger) (*Client, error) {
-	certManager, err := client.New(config.TLS, logger)
+func New(config Config, fileWatcher *fsnotify.Watcher, logger log.Logger) (*Client, error) {
+	certManager, err := client.New(config.TLS, fileWatcher, logger)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create cert manager: %w", err)
 	}

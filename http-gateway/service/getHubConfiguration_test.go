@@ -5,18 +5,20 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/plgd-dev/hub/grpc-gateway/pb"
-	httpgwTest "github.com/plgd-dev/hub/http-gateway/test"
-	"github.com/plgd-dev/hub/http-gateway/uri"
-	rdTest "github.com/plgd-dev/hub/resource-directory/test"
-	"github.com/plgd-dev/hub/test/config"
-	pbTest "github.com/plgd-dev/hub/test/pb"
-	"github.com/plgd-dev/hub/test/service"
+	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
+	httpgwTest "github.com/plgd-dev/hub/v2/http-gateway/test"
+	"github.com/plgd-dev/hub/v2/http-gateway/uri"
+	rdTest "github.com/plgd-dev/hub/v2/resource-directory/test"
+	"github.com/plgd-dev/hub/v2/test/config"
+	pbTest "github.com/plgd-dev/hub/v2/test/pb"
+	"github.com/plgd-dev/hub/v2/test/service"
 	"github.com/stretchr/testify/require"
 )
 
-func TestRequestHandler_GetHubConfiguration(t *testing.T) {
-	expected := rdTest.MakeConfig(t).ExposedHubConfiguration.ToProto()
+func TestRequestHandlerGetHubConfiguration(t *testing.T) {
+	rdCfg := rdTest.MakeConfig(t)
+	rdCfg.ExposedHubConfiguration.AuthorizationServer = "https://" + config.OAUTH_SERVER_HOST + "?escape=test&test=escape"
+	expected := rdCfg.ExposedHubConfiguration.ToProto()
 	expected.CurrentTime = 0
 	tests := []struct {
 		name string
@@ -31,7 +33,7 @@ func TestRequestHandler_GetHubConfiguration(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
 	defer cancel()
 
-	tearDown := service.SetUp(ctx, t)
+	tearDown := service.SetUp(ctx, t, service.WithRDConfig(rdCfg))
 	defer tearDown()
 
 	shutdownHttp := httpgwTest.SetUp(t)
@@ -45,7 +47,7 @@ func TestRequestHandler_GetHubConfiguration(t *testing.T) {
 				_ = resp.Body.Close()
 			}()
 			var got pb.HubConfigurationResponse
-			err := Unmarshal(resp.StatusCode, resp.Body, &got)
+			err := httpgwTest.Unmarshal(resp.StatusCode, resp.Body, &got)
 			require.NoError(t, err)
 			pbTest.CmpHubConfigurationResponse(t, tt.want, &got)
 		})

@@ -4,11 +4,11 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-
-	"github.com/plgd-dev/hub/grpc-gateway/pb"
-	"github.com/plgd-dev/hub/resource-aggregate/commands"
 )
 
 // GetResourceWithCodec retrieves content of a resource from the client.
@@ -37,7 +37,8 @@ func (c *Client) getResource(
 	deviceID string,
 	href string,
 	codec Codec,
-	response interface{}) error {
+	response interface{},
+) error {
 	var resp *pb.Resource
 	err := c.GetResourcesByResourceIDs(ctx, MakeResourceIDCallback(deviceID, href, func(v *pb.Resource) {
 		resp = v
@@ -46,11 +47,21 @@ func (c *Client) getResource(
 		return err
 	}
 	if resp == nil {
+		iter := c.GetResourceLinksIterator(ctx, []string{deviceID})
+		defer iter.Close()
+		var v events.ResourceLinksPublished
+		ok := iter.Next(&v)
+		if ok && v.GetDeviceId() == deviceID {
+			for _, r := range v.GetResources() {
+				if r.GetHref() == href {
+					return status.Errorf(codes.Unavailable, "content of resource /%v%v is not stored", deviceID, href)
+				}
+			}
+		}
 		return status.Errorf(codes.NotFound, "not found")
 	}
 
-	switch resp.GetData().GetStatus() {
-	case commands.Status_UNKNOWN:
+	if resp.GetData().GetStatus() == commands.Status_UNKNOWN {
 		return status.Errorf(codes.Unavailable, "content of resource /%v%v is not stored", deviceID, href)
 	}
 	content, err := commands.EventContentToContent(resp.GetData())

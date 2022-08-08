@@ -5,14 +5,15 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"github.com/plgd-dev/kit/v2/log"
+	"github.com/plgd-dev/hub/v2/pkg/log"
 )
 
 func (rh *RequestHandler) unsubscribe(w http.ResponseWriter, r *http.Request) (int, error) {
 	routeVars := mux.Vars(r)
 	subscriptionID := routeVars[subscriptionIDKey]
+	href := routeVars[hrefKey]
 
-	sub, err := rh.subMgr.PullOut(r.Context(), subscriptionID)
+	sub, err := rh.subMgr.PullOut(r.Context(), subscriptionID, href)
 	if err != nil {
 		return http.StatusBadRequest, err
 	}

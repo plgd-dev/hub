@@ -4,8 +4,11 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/plgd-dev/hub/pkg/log"
-	"github.com/plgd-dev/hub/pkg/security/certManager/client"
+	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	"github.com/plgd-dev/hub/v2/pkg/security/certManager/client"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+	"go.opentelemetry.io/otel/trace"
 )
 
 // Server handles gRPC requests to the service.
@@ -22,15 +25,15 @@ func (c *Client) AddCloseFunc(f func()) {
 	c.closeFunc = append(c.closeFunc, f)
 }
 
-func (s *Client) Close() {
-	s.client.CloseIdleConnections()
-	for _, f := range s.closeFunc {
+func (c *Client) Close() {
+	c.client.CloseIdleConnections()
+	for _, f := range c.closeFunc {
 		f()
 	}
 }
 
-func New(config Config, logger log.Logger) (*Client, error) {
-	certManager, err := client.New(config.TLS, logger)
+func New(config Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (*Client, error) {
+	certManager, err := client.New(config.TLS, fileWatcher, logger)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create cert manager %w", err)
 	}
@@ -42,7 +45,7 @@ func New(config Config, logger log.Logger) (*Client, error) {
 	t.TLSClientConfig = certManager.GetTLSConfig()
 	return &Client{
 		client: &http.Client{
-			Transport: t,
+			Transport: otelhttp.NewTransport(t, otelhttp.WithTracerProvider(tracerProvider)),
 			Timeout:   config.Timeout,
 		}, closeFunc: []func(){certManager.Close},
 	}, nil

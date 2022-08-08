@@ -9,9 +9,9 @@ metadata:
     {{- with .Values.coapgateway.service.labels }}
     {{- . | toYaml | nindent 4 }}
     {{- end }}
-  {{- with .Values.coapgateway.service.annotations }}
+  {{- if .Values.coapgateway.service.annotations }}
   annotations:
-  {{- . | toYaml | nindent 4 }}
+    {{- include "plgd-hub.tplvalues.render" ( dict "value" .Values.coapgateway.service.annotations "context" $ ) | nindent 4 }}
   {{- end }}
 spec:
   type: {{ .Values.coapgateway.service.type | default "ClusterIP" }}
@@ -20,9 +20,9 @@ spec:
       {{- if $.Values.coapgateway.service.nodePort }}
       nodePort: {{ $.Values.coapgateway.service.nodePort }}
       {{- end }}
-      targetPort: grpc
-      protocol: TCP
-      name: grpc
+      targetPort: {{ .Values.coapgateway.service.targetPort }}
+      protocol: {{ .Values.coapgateway.service.protocol }}
+      name: {{ .Values.coapgateway.service.name }}
   selector:
   {{- include "plgd-hub.coapgateway.selectorLabels" . | nindent 4 }}
 {{- end }}

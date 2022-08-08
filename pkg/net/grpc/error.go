@@ -17,7 +17,8 @@ func IsContextCanceled(err error) bool {
 	if errors.Is(err, context.Canceled) {
 		return true
 	}
-	if grpcErr, ok := err.(grpcErr); ok {
+	var grpcErr grpcErr
+	if ok := errors.As(err, &grpcErr); ok {
 		return grpcErr.GRPCStatus().Code() == codes.Canceled
 	}
 	return false
@@ -27,7 +28,8 @@ func IsContextDeadlineExceeded(err error) bool {
 	if errors.Is(err, context.DeadlineExceeded) {
 		return true
 	}
-	if grpcErr, ok := err.(grpcErr); ok {
+	var grpcErr grpcErr
+	if ok := errors.As(err, &grpcErr); ok {
 		return grpcErr.GRPCStatus().Code() == codes.DeadlineExceeded
 	}
 	return false

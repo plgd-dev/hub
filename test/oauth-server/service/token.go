@@ -13,22 +13,25 @@ import (
 	"github.com/lestrrat-go/jwx/jwk"
 	"github.com/lestrrat-go/jwx/jws"
 	"github.com/lestrrat-go/jwx/jwt"
-	"github.com/plgd-dev/hub/pkg/log"
-	"github.com/plgd-dev/hub/test/oauth-server/uri"
+	"github.com/plgd-dev/go-coap/v2/pkg/cache"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	"github.com/plgd-dev/hub/v2/test/oauth-server/uri"
 	"github.com/plgd-dev/kit/v2/codec/json"
 )
 
-const DeviceUserID = "1"
+const (
+	DeviceUserID = "1"
+	DefaultScope = "openid profile email offline_access r:* w:*"
+)
 
 const (
 	TokenScopeKey    = "scope"
 	TokenNicknameKey = "nickname"
 	TokenNameKey     = "name"
 	TokenPictureKey  = "picture"
-	TokenDeviceID    = "https://plgd.dev/deviceId"
 )
 
-func makeAccessToken(clientID, host, deviceID string, issuedAt, expires time.Time) (jwt.Token, error) {
+func makeAccessToken(clientID, host, deviceID, scopes string, issuedAt, expires time.Time) (jwt.Token, error) {
 	token := jwt.New()
 
 	if err := token.Set(jwt.SubjectKey, DeviceUserID); err != nil {
@@ -45,7 +48,7 @@ func makeAccessToken(clientID, host, deviceID string, issuedAt, expires time.Tim
 			return nil, fmt.Errorf("failed to set %v: %w", jwt.ExpirationKey, err)
 		}
 	}
-	if err := token.Set(TokenScopeKey, []string{"openid", "r:deviceinformation:*", "r:resources:*", "w:resources:*", "w:subscriptions:*"}); err != nil {
+	if err := token.Set(TokenScopeKey, scopes); err != nil {
 		return nil, fmt.Errorf("failed to set %v: %w", TokenScopeKey, err)
 	}
 	if err := token.Set(uri.ClientIDKey, clientID); err != nil {
@@ -55,9 +58,13 @@ func makeAccessToken(clientID, host, deviceID string, issuedAt, expires time.Tim
 		return nil, fmt.Errorf("failed to set %v: %w", jwt.IssuerKey, err)
 	}
 	if deviceID != "" {
-		if err := token.Set(TokenDeviceID, deviceID); err != nil {
-			return nil, fmt.Errorf("failed to set %v: %w", TokenDeviceID, err)
+		if err := token.Set(uri.DeviceIDClaimKey, deviceID); err != nil {
+			return nil, fmt.Errorf("failed to set %v('%v'): %w", uri.DeviceIDClaimKey, deviceID, err)
 		}
+	}
+	// mock oauth server always set DeviceUserID, because it supports only one user
+	if err := token.Set(uri.OwnerClaimKey, DeviceUserID); err != nil {
+		return nil, fmt.Errorf("failed to set %v('%v'): %w", uri.OwnerClaimKey, DeviceUserID, err)
 	}
 
 	return token, nil
@@ -81,13 +88,13 @@ func makeJWTPayload(key interface{}, jwkKey jwk.Key, data []byte) ([]byte, error
 	return payload, nil
 }
 
-func generateAccessToken(clientID string, lifeTime time.Duration, host, deviceID string, key interface{}, jwkKey jwk.Key) (string, time.Time, error) {
+func generateAccessToken(clientID string, lifeTime time.Duration, host, deviceID, scopes string, key interface{}, jwkKey jwk.Key) (string, time.Time, error) {
 	now := time.Now()
 	var expires time.Time
-	if lifeTime > 0 {
+	if lifeTime != 0 {
 		expires = now.Add(lifeTime)
 	}
-	token, err := makeAccessToken(clientID, host, deviceID, now, expires)
+	token, err := makeAccessToken(clientID, host, deviceID, scopes, now, expires)
 	if err != nil {
 		return "", time.Time{}, fmt.Errorf("failed to make token: %w", err)
 	}
@@ -143,6 +150,9 @@ func makeIDToken(clientID string, host, nonce string, issuedAt, expires time.Tim
 }
 
 func generateIDToken(clientID string, lifeTime time.Duration, host, nonce string, key *rsa.PrivateKey, jwkKey jwk.Key) (string, error) {
+	if nonce == "" {
+		return "", nil
+	}
 	now := time.Now()
 	var expires time.Time
 	if lifeTime > 0 {
@@ -166,7 +176,10 @@ func generateIDToken(clientID string, lifeTime time.Duration, host, nonce string
 	return string(payload), nil
 }
 
-func generateRefreshToken() (string, error) {
+func generateRefreshToken(clientCfg *Client) (string, error) {
+	if clientCfg.RefreshTokenRestrictionLifetime == 0 {
+		return "refresh-token", nil
+	}
 	b := make([]byte, 16)
 	if _, err := rand.Read(b); err != nil {
 		return "", err
@@ -181,16 +194,19 @@ func (requestHandler *RequestHandler) tokenOptions(w http.ResponseWriter, r *htt
 }
 
 type tokenRequest struct {
-	// RedirectURI  string `json:"redirect_uri"`
 	ClientID     string `json:"client_id"`
 	CodeVerifier string `json:"code_verifier"`
 	GrantType    string `json:"grant_type"`
+	RedirectURI  string `json:"redirect_uri"`
 	//	AuthorizationCode string `json:"authorization_code"`
 	Code         string `json:"code"`
 	Username     string `json:"username"`
 	Password     string `json:"password"`
 	Audience     string `json:"audience"`
 	RefreshToken string `json:"refresh_token"`
+	DeviceID     string `json:"https://plgd.dev/deviceId"`
+	// mock-oauth-server always put owner claim to access token
+	Owner string `json:"https://plgd.dev/owner"`
 
 	host      string
 	tokenType AccessTokenType
@@ -223,7 +239,6 @@ func (requestHandler *RequestHandler) getDomain() string {
 }
 
 func (requestHandler *RequestHandler) postToken(w http.ResponseWriter, r *http.Request) {
-
 	tokenReq := tokenRequest{
 		host:      requestHandler.getDomain(),
 		tokenType: AccessTokenType_JWT,
@@ -237,11 +252,14 @@ func (requestHandler *RequestHandler) postToken(w http.ResponseWriter, r *http.R
 		}
 		tokenReq.GrantType = r.PostFormValue(uri.GrantTypeKey)
 		tokenReq.ClientID = r.PostFormValue(uri.ClientIDKey)
+		tokenReq.RedirectURI = r.PostFormValue(uri.RedirectURIKey)
 		tokenReq.Code = r.PostFormValue(uri.CodeKey)
 		tokenReq.Username = r.PostFormValue(uri.UsernameKey)
 		tokenReq.Password = r.PostFormValue(uri.PasswordKey)
 		tokenReq.Audience = r.PostFormValue(uri.AudienceKey)
 		tokenReq.RefreshToken = r.PostFormValue(uri.RefreshTokenKey)
+		tokenReq.Owner = r.PostFormValue(uri.OwnerClaimKey)
+		tokenReq.DeviceID = r.PostFormValue(uri.DeviceIDClaimKey)
 	} else {
 		err := json.ReadFrom(r.Body, &tokenReq)
 		if err != nil {
@@ -254,91 +272,104 @@ func (requestHandler *RequestHandler) postToken(w http.ResponseWriter, r *http.R
 		tokenReq.ClientID = clientID
 		tokenReq.Password = password
 	}
-
-	if tokenReq.Audience != "" {
-		tokenReq.tokenType = AccessTokenType_JWT
-	}
 	requestHandler.processResponse(w, tokenReq)
 }
 
-func (requestHandler *RequestHandler) handleRestriction(tokenReq tokenRequest, restrictionLifetime time.Duration) error {
-	if tokenReq.GrantType == string(AllowedGrantType_AUTHORIZATION_CODE) {
-		_, ok := requestHandler.authRestriction.Get(tokenReq.Code)
-		if ok {
-			return fmt.Errorf("auth code(%v) reused", tokenReq.Code)
-		}
-		requestHandler.authRestriction.Set(tokenReq.Code, struct{}{}, restrictionLifetime)
+func (requestHandler *RequestHandler) getAuthorizedSession(tokenReq tokenRequest) (authorizedSession, bool) {
+	v := requestHandler.authSession.Load(tokenReq.Code)
+	requestHandler.authSession.Delete(tokenReq.Code)
+	if v != nil {
+		return v.Data().(authorizedSession), true
 	}
-	if tokenReq.GrantType == string(AllowedGrantType_REFRESH_TOKEN) {
-		_, ok := requestHandler.refreshRestriction.Get(tokenReq.RefreshToken)
-		if ok {
-			return fmt.Errorf("refreshToken(%v) reused", tokenReq.RefreshToken)
-		}
-		requestHandler.refreshRestriction.Set(tokenReq.RefreshToken, struct{}{}, restrictionLifetime)
+	return authorizedSession{}, false
+}
+
+func (requestHandler *RequestHandler) validateTokenRequest(clientCfg *Client, tokenReq tokenRequest) error {
+	if clientCfg == nil {
+		return fmt.Errorf("client(%v) not found", tokenReq.ClientID)
+	}
+	if clientCfg.ClientSecret != "" && clientCfg.ClientSecret != tokenReq.Password {
+		return fmt.Errorf("invalid client secret")
+	}
+	if clientCfg.RequiredRedirectURI != "" && clientCfg.RequiredRedirectURI != tokenReq.RedirectURI {
+		return fmt.Errorf("invalid redirect uri(%v)", tokenReq.RedirectURI)
 	}
 	return nil
 }
 
-func (requestHandler *RequestHandler) getAuthorizedSession(tokenReq tokenRequest) authorizedSession {
-	var authSession authorizedSession
-	authSessionI, ok := requestHandler.authSession.Get(tokenReq.Code)
-	requestHandler.authSession.Delete(tokenReq.Code)
-	if ok {
-		authSession = authSessionI.(authorizedSession)
+func (requestHandler *RequestHandler) validateRestrictions(clientCfg *Client, tokenReq tokenRequest) error {
+	if clientCfg.CodeRestrictionLifetime != 0 && tokenReq.GrantType == string(AllowedGrantType_AUTHORIZATION_CODE) {
+		v := requestHandler.authRestriction.Load(tokenReq.Code)
+		if v != nil {
+			return fmt.Errorf("auth code(%v) reused", tokenReq.Code)
+		}
+		requestHandler.authRestriction.LoadOrStore(tokenReq.Code, cache.NewElement(struct{}{}, time.Now().Add(clientCfg.CodeRestrictionLifetime), nil))
 	}
-	return authSession
-}
 
-func (requestHandler *RequestHandler) getAccessToken(tokenReq tokenRequest, clientCfg *Client, deviceID string) (string, time.Time, error) {
-	if tokenReq.tokenType == AccessTokenType_JWT {
-		return generateAccessToken(clientCfg.ID, clientCfg.AccessTokenLifetime, tokenReq.host, deviceID, requestHandler.accessTokenKey,
-			requestHandler.accessTokenJwkKey)
+	if tokenReq.GrantType == string(AllowedGrantType_REFRESH_TOKEN) {
+		if clientCfg.RefreshTokenRestrictionLifetime != 0 {
+			v := requestHandler.refreshRestriction.Load(tokenReq.RefreshToken)
+			if v != nil {
+				return fmt.Errorf("refresh token(%v) reused", tokenReq.RefreshToken)
+			}
+			requestHandler.refreshRestriction.LoadOrStore(tokenReq.RefreshToken, cache.NewElement(struct{}{}, time.Now().Add(clientCfg.RefreshTokenRestrictionLifetime), nil))
+			return nil
+		}
+		if tokenReq.RefreshToken != "refresh-token" {
+			return fmt.Errorf("invalid refresh token(%v)", tokenReq.RefreshToken)
+		}
 	}
-	accessToken := clientCfg.ID
-	var accessTokenExpires time.Time
-	if clientCfg.AccessTokenLifetime > 0 {
-		accessTokenExpires = time.Now().Add(clientCfg.AccessTokenLifetime)
-	}
-	return accessToken, accessTokenExpires, nil
+	return nil
 }
 
 func (requestHandler *RequestHandler) processResponse(w http.ResponseWriter, tokenReq tokenRequest) {
 	clientCfg := requestHandler.config.OAuthSigner.Clients.Find(tokenReq.ClientID)
-	if clientCfg == nil {
-		writeError(w, fmt.Errorf("client(%v) not found", tokenReq.ClientID), http.StatusBadRequest)
+	if err := requestHandler.validateTokenRequest(clientCfg, tokenReq); err != nil {
+		writeError(w, err, http.StatusBadRequest)
 		return
 	}
-	var err error
-	refreshToken := "refresh-token"
-	if clientCfg.CodeRestrictionLifetime != 0 {
-		if err := requestHandler.handleRestriction(tokenReq, clientCfg.CodeRestrictionLifetime); err != nil {
-			writeError(w, err, http.StatusBadRequest)
-			return
-		}
+	if err := requestHandler.validateRestrictions(clientCfg, tokenReq); err != nil {
+		writeError(w, err, http.StatusBadRequest)
+		return
+	}
 
-		if refreshToken, err = generateRefreshToken(); err != nil {
-			writeError(w, err, http.StatusInternalServerError)
+	refreshToken, err := generateRefreshToken(clientCfg)
+	if err != nil {
+		writeError(w, err, http.StatusInternalServerError)
+		return
+	}
+
+	var authSession authorizedSession
+	if tokenReq.GrantType == string(AllowedGrantType_AUTHORIZATION_CODE) {
+		var found bool
+		authSession, found = requestHandler.getAuthorizedSession(tokenReq)
+		if !found && clientCfg.RequireIssuedAuthorizationCode {
+			writeError(w, fmt.Errorf("invalid authorization code(%v)", tokenReq.Code), http.StatusBadRequest)
 			return
 		}
 	}
 
-	authSession := requestHandler.getAuthorizedSession(tokenReq)
 	if authSession.audience != "" && tokenReq.Audience == "" {
 		tokenReq.Audience = authSession.audience
 		tokenReq.tokenType = AccessTokenType_JWT
 	}
 
-	var idToken string
-	if authSession.nonce != "" {
-		idToken, err = generateIDToken(tokenReq.ClientID, clientCfg.AccessTokenLifetime, tokenReq.host, authSession.nonce,
-			requestHandler.idTokenKey, requestHandler.idTokenJwkKey)
-		if err != nil {
-			writeError(w, err, http.StatusInternalServerError)
-			return
-		}
+	if authSession.deviceID != "" {
+		tokenReq.DeviceID = authSession.deviceID
 	}
 
-	accessToken, accessTokenExpires, err := requestHandler.getAccessToken(tokenReq, clientCfg, authSession.deviceID)
+	idToken, err := generateIDToken(tokenReq.ClientID, clientCfg.AccessTokenLifetime, tokenReq.host, authSession.nonce, requestHandler.idTokenKey, requestHandler.idTokenJwkKey)
+	if err != nil {
+		writeError(w, err, http.StatusInternalServerError)
+		return
+	}
+
+	scopes := authSession.scope
+	if tokenReq.GrantType == string(AllowedGrantType_REFRESH_TOKEN) {
+		scopes = DefaultScope
+	}
+
+	accessToken, accessTokenExpires, err := generateAccessToken(clientCfg.ID, clientCfg.AccessTokenLifetime, tokenReq.host, tokenReq.DeviceID, scopes, requestHandler.accessTokenKey, requestHandler.accessTokenJwkKey)
 	if err != nil {
 		writeError(w, err, http.StatusInternalServerError)
 		return
@@ -347,7 +378,7 @@ func (requestHandler *RequestHandler) processResponse(w http.ResponseWriter, tok
 	resp := map[string]interface{}{
 		"access_token":  accessToken,
 		"id_token":      idToken,
-		"scope":         "openid profile email",
+		"scope":         scopes,
 		"token_type":    "Bearer",
 		"refresh_token": refreshToken,
 	}

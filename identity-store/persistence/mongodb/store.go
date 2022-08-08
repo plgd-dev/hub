@@ -4,8 +4,9 @@ import (
 	"context"
 	"crypto/tls"
 
-	pkgMongo "github.com/plgd-dev/hub/pkg/mongodb"
+	pkgMongo "github.com/plgd-dev/hub/v2/pkg/mongodb"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.opentelemetry.io/otel/trace"
 )
 
 const userDevicesCName = "userdevices"
@@ -23,8 +24,8 @@ type Store struct {
 	*pkgMongo.Store
 }
 
-func NewStore(ctx context.Context, cfg pkgMongo.Config, tls *tls.Config) (*Store, error) {
-	s, err := pkgMongo.NewStoreWithCollection(ctx, cfg, tls, userDevicesCName, userDeviceQueryIndex, userDevicesQueryIndex)
+func NewStore(ctx context.Context, cfg pkgMongo.Config, tls *tls.Config, tracerProvider trace.TracerProvider) (*Store, error) {
+	s, err := pkgMongo.NewStoreWithCollection(ctx, cfg, tls, tracerProvider, userDevicesCName, userDeviceQueryIndex, userDevicesQueryIndex)
 	if err != nil {
 		return nil, err
 	}

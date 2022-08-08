@@ -4,59 +4,60 @@ import (
 	"bytes"
 	"time"
 
-	pkgTime "github.com/plgd-dev/hub/pkg/time"
-	commands "github.com/plgd-dev/hub/resource-aggregate/commands"
+	pkgTime "github.com/plgd-dev/hub/v2/pkg/time"
+	commands "github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"google.golang.org/protobuf/proto"
 )
 
 const eventTypeResourceChanged = "resourcechanged"
 
-func (e *ResourceChanged) Version() uint64 {
-	return e.GetEventMetadata().GetVersion()
+func (rc *ResourceChanged) Version() uint64 {
+	return rc.GetEventMetadata().GetVersion()
 }
 
-func (e *ResourceChanged) Marshal() ([]byte, error) {
-	return proto.Marshal(e)
+func (rc *ResourceChanged) Marshal() ([]byte, error) {
+	return proto.Marshal(rc)
 }
 
-func (e *ResourceChanged) Unmarshal(b []byte) error {
-	return proto.Unmarshal(b, e)
+func (rc *ResourceChanged) Unmarshal(b []byte) error {
+	return proto.Unmarshal(b, rc)
 }
 
-func (e *ResourceChanged) EventType() string {
+func (rc *ResourceChanged) EventType() string {
 	return eventTypeResourceChanged
 }
 
-func (e *ResourceChanged) AggregateID() string {
-	return e.GetResourceId().ToUUID()
+func (rc *ResourceChanged) AggregateID() string {
+	return rc.GetResourceId().ToUUID()
 }
 
-func (e *ResourceChanged) GroupID() string {
-	return e.GetResourceId().GetDeviceId()
+func (rc *ResourceChanged) GroupID() string {
+	return rc.GetResourceId().GetDeviceId()
 }
 
-func (e *ResourceChanged) IsSnapshot() bool {
+func (rc *ResourceChanged) IsSnapshot() bool {
 	return false
 }
 
-func (e *ResourceChanged) Timestamp() time.Time {
-	return pkgTime.Unix(0, e.GetEventMetadata().GetTimestamp())
+func (rc *ResourceChanged) Timestamp() time.Time {
+	return pkgTime.Unix(0, rc.GetEventMetadata().GetTimestamp())
 }
 
-func (e *ResourceChanged) CopyData(event *ResourceChanged) {
-	e.ResourceId = event.GetResourceId()
-	e.Content = event.GetContent()
-	e.AuditContext = event.GetAuditContext()
-	e.EventMetadata = event.GetEventMetadata()
-	e.Status = event.GetStatus()
+func (rc *ResourceChanged) CopyData(event *ResourceChanged) {
+	rc.ResourceId = event.GetResourceId()
+	rc.Content = event.GetContent()
+	rc.AuditContext = event.GetAuditContext()
+	rc.EventMetadata = event.GetEventMetadata()
+	rc.Status = event.GetStatus()
+	rc.OpenTelemetryCarrier = event.GetOpenTelemetryCarrier()
 }
 
-func (e *ResourceChanged) CheckInitialized() bool {
-	return e.GetResourceId() != nil &&
-		e.GetContent() != nil &&
-		e.GetAuditContext() != nil &&
-		e.GetEventMetadata() != nil &&
-		e.GetStatus() != commands.Status(0)
+func (rc *ResourceChanged) CheckInitialized() bool {
+	return rc.GetResourceId() != nil &&
+		rc.GetContent() != nil &&
+		rc.GetAuditContext() != nil &&
+		rc.GetEventMetadata() != nil &&
+		rc.GetStatus() != commands.Status(0)
 }
 
 func (rc *ResourceChanged) Equal(changed *ResourceChanged) bool {

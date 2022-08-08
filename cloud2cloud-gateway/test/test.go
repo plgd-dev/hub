@@ -3,17 +3,21 @@ package test
 import (
 	"context"
 	"crypto/tls"
-	"fmt"
 	"net"
 	"sync"
 	"testing"
 	"time"
 
-	"github.com/plgd-dev/hub/cloud2cloud-gateway/service"
-	"github.com/plgd-dev/hub/pkg/log"
-	"github.com/plgd-dev/hub/pkg/mongodb"
-	"github.com/plgd-dev/hub/pkg/security/certManager/server"
-	"github.com/plgd-dev/hub/test/config"
+	"github.com/google/uuid"
+	"github.com/plgd-dev/hub/v2/cloud2cloud-gateway/service"
+	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	"github.com/plgd-dev/hub/v2/pkg/mongodb"
+	"github.com/plgd-dev/hub/v2/pkg/net/http"
+	"github.com/plgd-dev/hub/v2/pkg/security/certManager/server"
+	pkgStrings "github.com/plgd-dev/hub/v2/pkg/strings"
+	"github.com/plgd-dev/hub/v2/test/config"
+	testHttp "github.com/plgd-dev/hub/v2/test/http"
 	"github.com/stretchr/testify/require"
 )
 
@@ -30,11 +34,12 @@ func MakeStorageConfig() service.StorageConfig {
 func MakeConfig(t *testing.T) service.Config {
 	var cfg service.Config
 
-	cfg.Log.Debug = true
+	cfg.Log = log.MakeDefaultConfig()
 
 	cfg.APIs.HTTP.Connection = config.MakeListenerConfig(config.C2C_GW_HOST)
 	cfg.APIs.HTTP.Connection.TLS.ClientCertificateRequired = false
 	cfg.APIs.HTTP.Authorization = config.MakeAuthorizationConfig()
+	cfg.APIs.HTTP.Server = config.MakeHttpServerConfig()
 
 	cfg.Clients.Eventbus.NATS = config.MakeSubscriberConfig()
 	cfg.Clients.GrpcGateway.Connection = config.MakeGrpcClientConfig(config.GRPC_HOST)
@@ -48,22 +53,27 @@ func MakeConfig(t *testing.T) service.Config {
 	cfg.TaskQueue.Size = 2 * 1024 * 1024
 	cfg.TaskQueue.MaxIdleTime = time.Minute * 10
 
+	cfg.Clients.OpenTelemetryCollector = http.OpenTelemetryCollectorConfig{
+		Config: config.MakeOpenTelemetryCollectorClient(),
+	}
+
 	err := cfg.Validate()
 	require.NoError(t, err)
 
-	fmt.Printf("cfg\n%v\n", cfg.String())
 	return cfg
 }
 
-func SetUp(t *testing.T) (TearDown func()) {
+func SetUp(t *testing.T) (tearDown func()) {
 	return New(t, MakeConfig(t))
 }
 
 func New(t *testing.T, cfg service.Config) func() {
-	logger, err := log.NewLogger(cfg.Log)
+	logger := log.NewLogger(cfg.Log)
+
+	fileWatcher, err := fsnotify.NewWatcher()
 	require.NoError(t, err)
 
-	s, err := service.New(context.Background(), cfg, logger)
+	s, err := service.New(context.Background(), cfg, fileWatcher, logger)
 	require.NoError(t, err)
 
 	var wg sync.WaitGroup
@@ -76,18 +86,37 @@ func New(t *testing.T, cfg service.Config) func() {
 	return func() {
 		_ = s.Shutdown()
 		wg.Wait()
+		err = fileWatcher.Close()
+		require.NoError(t, err)
 	}
 }
 
+func C2CURI(uri string) string {
+	return testHttp.HTTPS_SCHEME + config.C2C_GW_HOST + uri
+}
+
+func GetUniqueSubscriptionID(subIDS ...string) string {
+	id := uuid.NewString()
+	for {
+		if !pkgStrings.Contains(subIDS, id) {
+			break
+		}
+		id = uuid.NewString()
+	}
+	return id
+}
+
 func NewTestListener(t *testing.T) (net.Listener, func()) {
-	loggerCfg := log.Config{Debug: true}
-	logger, err := log.NewLogger(loggerCfg)
-	require.NoError(t, err)
+	loggerCfg := log.MakeDefaultConfig()
+	logger := log.NewLogger(loggerCfg)
 
 	listenCfg := config.MakeListenerConfig("localhost:")
 	listenCfg.TLS.ClientCertificateRequired = false
 
-	certManager, err := server.New(listenCfg.TLS, logger)
+	fileWatcher, err := fsnotify.NewWatcher()
+	require.NoError(t, err)
+
+	certManager, err := server.New(listenCfg.TLS, fileWatcher, logger)
 	require.NoError(t, err)
 
 	listener, err := tls.Listen("tcp", listenCfg.Addr, certManager.GetTLSConfig())
@@ -95,5 +124,7 @@ func NewTestListener(t *testing.T) (net.Listener, func()) {
 
 	return listener, func() {
 		certManager.Close()
+		err = fileWatcher.Close()
+		require.NoError(t, err)
 	}
 }

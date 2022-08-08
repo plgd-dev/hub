@@ -10,13 +10,14 @@ import (
 
 	"github.com/google/uuid"
 	nats "github.com/nats-io/nats.go"
-	"github.com/plgd-dev/hub/pkg/log"
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventbus"
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventbus/nats/client"
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventbus/nats/publisher"
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventbus/nats/subscriber"
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventbus/nats/test"
-	"github.com/plgd-dev/hub/test/config"
+	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/client"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/publisher"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/subscriber"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/test"
+	"github.com/plgd-dev/hub/v2/test/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -27,8 +28,13 @@ func TestPublisher(t *testing.T) {
 	timeout := time.Second * 30
 	waitForSubscription := time.Millisecond * 100
 
-	logger, err := log.NewLogger(log.Config{})
+	logger := log.NewLogger(log.MakeDefaultConfig())
+	fileWatcher, err := fsnotify.NewWatcher()
 	require.NoError(t, err)
+	defer func() {
+		err := fileWatcher.Close()
+		require.NoError(t, err)
+	}()
 
 	naPubClient, publisher, err := test.NewClientAndPublisher(client.ConfigPublisher{
 		Config: client.Config{
@@ -36,7 +42,7 @@ func TestPublisher(t *testing.T) {
 			TLS:            config.MakeTLSClientConfig(),
 			FlusherTimeout: time.Second * 30,
 		},
-	}, logger, publisher.WithMarshaler(json.Marshal))
+	}, fileWatcher, logger, publisher.WithMarshaler(json.Marshal))
 	assert.NoError(t, err)
 	assert.NotNil(t, publisher)
 	defer func() {
@@ -44,7 +50,7 @@ func TestPublisher(t *testing.T) {
 		naPubClient.Close()
 	}()
 
-	naSubClient, subscriber, err := test.NewClientAndSubscriber(config.MakeSubscriberConfig(),
+	naSubClient, subscriber, err := test.NewClientAndSubscriber(config.MakeSubscriberConfig(), fileWatcher,
 		logger,
 		subscriber.WithGoPool(func(f func()) error { go f(); return nil }),
 		subscriber.WithUnmarshaler(json.Unmarshal))
@@ -64,8 +70,13 @@ func TestPublisherJetStream(t *testing.T) {
 	timeout := time.Second * 30
 	waitForSubscription := time.Millisecond * 100
 
-	logger, err := log.NewLogger(log.Config{})
+	logger := log.NewLogger(log.MakeDefaultConfig())
+	fileWatcher, err := fsnotify.NewWatcher()
 	require.NoError(t, err)
+	defer func() {
+		err := fileWatcher.Close()
+		require.NoError(t, err)
+	}()
 
 	cfg := config.MakeTLSClientConfig()
 	conn, err := nats.Connect("nats://localhost:4222", nats.ClientCert(cfg.CertFile, cfg.KeyFile), nats.RootCAs(cfg.CAPool))
@@ -88,7 +99,7 @@ func TestPublisherJetStream(t *testing.T) {
 			FlusherTimeout: time.Second * 30,
 		},
 		JetStream: true,
-	}, logger, publisher.WithMarshaler(json.Marshal))
+	}, fileWatcher, logger, publisher.WithMarshaler(json.Marshal))
 	require.NoError(t, err)
 	assert.NotNil(t, publisher)
 	defer func() {
@@ -96,7 +107,7 @@ func TestPublisherJetStream(t *testing.T) {
 		naPubClient.Close()
 	}()
 
-	naSubClient, subscriber, err := test.NewClientAndSubscriber(config.MakeSubscriberConfig(),
+	naSubClient, subscriber, err := test.NewClientAndSubscriber(config.MakeSubscriberConfig(), fileWatcher,
 		logger,
 		subscriber.WithGoPool(func(f func()) error { go f(); return nil }),
 		subscriber.WithUnmarshaler(json.Unmarshal))
@@ -193,10 +204,10 @@ func testWaitForAnyEvent(timeout time.Duration, eh1 *mockEventHandler, eh2 *mock
 	}
 }
 
-func testNewSubscription(t *testing.T, ctx context.Context, subscriber eventbus.Subscriber, subscriptionId string, topics []string) (*mockEventHandler, eventbus.Observer) {
+func testNewSubscription(t *testing.T, ctx context.Context, subscriber eventbus.Subscriber, subscriptionID string, topics []string) (*mockEventHandler, eventbus.Observer) {
 	t.Log("Subscribe to testNewSubscription")
 	m := newMockEventHandler()
-	ob, err := subscriber.Subscribe(ctx, subscriptionId, topics, m)
+	ob, err := subscriber.Subscribe(ctx, subscriptionID, topics, m)
 	assert.NoError(t, err)
 	assert.NotNil(t, ob)
 	if ob == nil {
@@ -219,17 +230,17 @@ func testNewSubscription(t *testing.T, ctx context.Context, subscriber eventbus.
 //   }
 //
 func acceptanceTest(t *testing.T, ctx context.Context, timeout time.Duration, waitForSubscription time.Duration, topics []string, publisher eventbus.Publisher, subscriber eventbus.Subscriber) {
-	//savedEvents := []Event{}
+	// savedEvents := []Event{}
 	AggregateID1 := "aggregateID1"
 	AggregateID2 := "aggregateID2"
 	type Path struct {
-		AggregateId string
-		GroupId     string
+		AggregateID string
+		GroupID     string
 	}
 
 	aggregateID1Path := Path{
-		AggregateId: AggregateID1,
-		GroupId:     "deviceId",
+		AggregateID: AggregateID1,
+		GroupID:     "deviceId",
 	}
 	/*
 		aggregateID2Path := protoEvent.Path{
@@ -281,7 +292,7 @@ func acceptanceTest(t *testing.T, ctx context.Context, timeout time.Duration, wa
 	assert.Equal(t, 2, len(topics))
 
 	t.Log("Without subscription")
-	err := publisher.Publish(ctx, topics[0:1], aggregateID1Path.GroupId, aggregateID1Path.AggregateId, eventsToPublish[0])
+	err := publisher.Publish(ctx, topics[0:1], aggregateID1Path.GroupID, aggregateID1Path.AggregateID, eventsToPublish[0])
 	assert.NoError(t, err)
 	time.Sleep(waitForSubscription)
 
@@ -290,7 +301,7 @@ func acceptanceTest(t *testing.T, ctx context.Context, timeout time.Duration, wa
 	m0, ob0 := testNewSubscription(t, ctx, subscriber, "sub-0", topics[0:1])
 	time.Sleep(waitForSubscription)
 
-	err = publisher.Publish(ctx, topics[0:1], aggregateID1Path.GroupId, aggregateID1Path.AggregateId, eventsToPublish[1])
+	err = publisher.Publish(ctx, topics[0:1], aggregateID1Path.GroupID, aggregateID1Path.AggregateID, eventsToPublish[1])
 	assert.NoError(t, err)
 
 	event0, err := m0.waitForEvent(timeout)
@@ -323,7 +334,7 @@ func acceptanceTest(t *testing.T, ctx context.Context, timeout time.Duration, wa
 
 	time.Sleep(waitForSubscription)
 
-	err = publisher.Publish(ctx, topics, aggregateID1Path.GroupId, aggregateID1Path.AggregateId, eventsToPublish[2])
+	err = publisher.Publish(ctx, topics, aggregateID1Path.GroupID, aggregateID1Path.AggregateID, eventsToPublish[2])
 	assert.NoError(t, err)
 
 	event1, err := m1.waitForEvent(timeout)
@@ -344,7 +355,7 @@ func acceptanceTest(t *testing.T, ctx context.Context, timeout time.Duration, wa
 	time.Sleep(waitForSubscription)
 	assert.NoError(t, err)
 
-	err = publisher.Publish(ctx, []string{topic}, aggregateID1Path.GroupId, aggregateID1Path.AggregateId, eventsToPublish[3])
+	err = publisher.Publish(ctx, []string{topic}, aggregateID1Path.GroupID, aggregateID1Path.AggregateID, eventsToPublish[3])
 	assert.NoError(t, err)
 
 	event4, err := m4.waitForEvent(timeout)

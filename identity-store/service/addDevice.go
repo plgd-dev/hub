@@ -5,19 +5,20 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/plgd-dev/hub/identity-store/events"
-	"github.com/plgd-dev/hub/identity-store/pb"
-	"github.com/plgd-dev/hub/identity-store/persistence"
-	"github.com/plgd-dev/hub/pkg/log"
-	"github.com/plgd-dev/hub/pkg/net/grpc"
-	"github.com/plgd-dev/hub/pkg/security/jwt"
-	pkgTime "github.com/plgd-dev/hub/pkg/time"
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/utils"
+	"github.com/plgd-dev/hub/v2/identity-store/events"
+	"github.com/plgd-dev/hub/v2/identity-store/pb"
+	"github.com/plgd-dev/hub/v2/identity-store/persistence"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	"github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	"github.com/plgd-dev/hub/v2/pkg/opentelemetry/propagation"
+	"github.com/plgd-dev/hub/v2/pkg/security/jwt"
+	pkgTime "github.com/plgd-dev/hub/v2/pkg/time"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/utils"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
-func (s *Service) publishDevicesRegistered(owner, userID string, deviceID []string) error {
+func (s *Service) publishDevicesRegistered(ctx context.Context, owner, userID string, deviceID []string) error {
 	v := events.Event{
 		Type: &events.Event_DevicesRegistered{
 			DevicesRegistered: &events.DevicesRegistered{
@@ -26,7 +27,8 @@ func (s *Service) publishDevicesRegistered(owner, userID string, deviceID []stri
 				AuditContext: &events.AuditContext{
 					UserId: userID,
 				},
-				Timestamp: pkgTime.UnixNano(time.Now()),
+				Timestamp:            pkgTime.UnixNano(time.Now()),
+				OpenTelemetryCarrier: propagation.TraceFromCtx(ctx),
 			},
 		},
 	}
@@ -62,7 +64,7 @@ func (s *Service) parseTokenMD(ctx context.Context) (owner, subject string, err 
 		return "", "", status.Errorf(codes.InvalidArgument, "%v", fmt.Errorf("claim '%v' was not found", s.ownerClaim))
 	}
 	subject = claims.Subject()
-	if owner == "" {
+	if subject == "" {
 		return "", "", status.Errorf(codes.InvalidArgument, "%v", fmt.Errorf("claim '%v' was not found", "sub"))
 	}
 	return
@@ -102,7 +104,7 @@ func (s *Service) AddDevice(ctx context.Context, request *pb.AddDeviceRequest) (
 		return nil, log.LogAndReturnError(status.Errorf(codes.Internal, "cannot add device up: %v", err.Error()))
 	}
 
-	err = s.publishDevicesRegistered(owner, userID, []string{request.DeviceId})
+	err = s.publishDevicesRegistered(ctx, owner, userID, []string{request.DeviceId})
 	if err != nil {
 		log.Errorf("cannot publish devices registered event with device('%v') and owner('%v'): %w", request.DeviceId, owner, err)
 	}

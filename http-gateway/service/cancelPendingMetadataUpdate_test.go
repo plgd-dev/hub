@@ -5,12 +5,12 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/plgd-dev/hub/grpc-gateway/pb"
-	httpgwTest "github.com/plgd-dev/hub/http-gateway/test"
-	"github.com/plgd-dev/hub/http-gateway/uri"
-	"github.com/plgd-dev/hub/test/config"
-	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
-	pbTest "github.com/plgd-dev/hub/test/pb"
+	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
+	httpgwTest "github.com/plgd-dev/hub/v2/http-gateway/test"
+	"github.com/plgd-dev/hub/v2/http-gateway/uri"
+	"github.com/plgd-dev/hub/v2/test/config"
+	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
+	pbTest "github.com/plgd-dev/hub/v2/test/pb"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -26,7 +26,7 @@ func TestRequestHandlerCancelDeviceMetadataUpdate(t *testing.T) {
 
 	type args struct {
 		deviceID      string
-		correlationId string
+		correlationID string
 		accept        string
 	}
 	tests := []struct {
@@ -40,7 +40,7 @@ func TestRequestHandlerCancelDeviceMetadataUpdate(t *testing.T) {
 			name: "cancel one pending",
 			args: args{
 				deviceID:      devicePendings[0].DeviceID,
-				correlationId: devicePendings[0].CorrelationID,
+				correlationID: devicePendings[0].CorrelationID,
 				accept:        uri.ApplicationProtoJsonContentType,
 			},
 			want: &pb.CancelPendingCommandsResponse{
@@ -52,7 +52,7 @@ func TestRequestHandlerCancelDeviceMetadataUpdate(t *testing.T) {
 			name: "duplicate cancel event",
 			args: args{
 				deviceID:      devicePendings[0].DeviceID,
-				correlationId: devicePendings[0].CorrelationID,
+				correlationID: devicePendings[0].CorrelationID,
 				accept:        uri.ApplicationProtoJsonContentType,
 			},
 			wantErr:      true,
@@ -60,10 +60,10 @@ func TestRequestHandlerCancelDeviceMetadataUpdate(t *testing.T) {
 		},
 	}
 
-	token := oauthTest.GetDefaultServiceToken(t)
+	token := oauthTest.GetDefaultAccessToken(t)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			rb := httpgwTest.NewRequest(http.MethodDelete, uri.AliasDevicePendingMetadataUpdates+"/"+tt.args.correlationId, nil).AuthToken(token).Accept(tt.args.accept)
+			rb := httpgwTest.NewRequest(http.MethodDelete, uri.AliasDevicePendingMetadataUpdates+"/"+tt.args.correlationID, nil).AuthToken(token).Accept(tt.args.accept)
 			rb.DeviceId(tt.args.deviceID)
 			v, code, err := doPendingCommand(t, rb.Build())
 			assert.Equal(t, tt.wantHTTPCode, code)

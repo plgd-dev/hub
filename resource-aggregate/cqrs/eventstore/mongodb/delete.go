@@ -4,31 +4,31 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventstore"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore"
 	"github.com/plgd-dev/kit/v2/strings"
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-func getDeviceIdFilter(queries []eventstore.DeleteQuery) bson.A {
-	deviceIds := make(strings.Set)
+func getDeviceIDFilter(queries []eventstore.DeleteQuery) bson.A {
+	deviceIDs := make(strings.Set)
 	for _, q := range queries {
 		if q.GroupID != "" {
-			deviceIds.Add(q.GroupID)
+			deviceIDs.Add(q.GroupID)
 		}
 	}
 
-	deviceIdFilter := make(bson.A, 0, len(deviceIds))
-	for deviceId := range deviceIds {
-		deviceIdFilter = append(deviceIdFilter, deviceId)
+	deviceIDFilter := make(bson.A, 0, len(deviceIDs))
+	for deviceID := range deviceIDs {
+		deviceIDFilter = append(deviceIDFilter, deviceID)
 	}
 
-	return deviceIdFilter
+	return deviceIDFilter
 }
 
 // Delete documents with given group ids
 func (s *EventStore) Delete(ctx context.Context, queries []eventstore.DeleteQuery) error {
-	deviceIdFilter := getDeviceIdFilter(queries)
-	if len(deviceIdFilter) == 0 {
+	deviceIDFilter := getDeviceIDFilter(queries)
+	if len(deviceIDFilter) == 0 {
 		return fmt.Errorf("failed to delete documents: invalid query")
 	}
 
@@ -36,7 +36,7 @@ func (s *EventStore) Delete(ctx context.Context, queries []eventstore.DeleteQuer
 
 	_, err := col.DeleteMany(ctx, bson.M{
 		groupIDKey: bson.M{
-			"$in": deviceIdFilter,
+			"$in": deviceIDFilter,
 		},
 	})
 	return err

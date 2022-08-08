@@ -8,20 +8,22 @@ import (
 	"github.com/plgd-dev/device/schema/device"
 	"github.com/plgd-dev/device/schema/interfaces"
 	"github.com/plgd-dev/device/test/resource/types"
-	"github.com/plgd-dev/hub/grpc-gateway/client"
-	"github.com/plgd-dev/hub/grpc-gateway/pb"
-	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
-	"github.com/plgd-dev/hub/resource-aggregate/commands"
-	test "github.com/plgd-dev/hub/test"
-	testCfg "github.com/plgd-dev/hub/test/config"
-	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
-	"github.com/plgd-dev/hub/test/service"
+	"github.com/plgd-dev/hub/v2/grpc-gateway/client"
+	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
+	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
+	test "github.com/plgd-dev/hub/v2/test"
+	testCfg "github.com/plgd-dev/hub/v2/test/config"
+	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
+	"github.com/plgd-dev/hub/v2/test/service"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-const TestTimeout = time.Second * 20
-const DeviceSimulatorIdNotFound = "00000000-0000-0000-0000-000000000111"
+const (
+	TestTimeout               = time.Second * 20
+	DeviceSimulatorIdNotFound = "00000000-0000-0000-0000-000000000111"
+)
 
 func NewTestDeviceSimulator(deviceID, deviceName string, withResources bool) client.DeviceDetails {
 	var resources []*commands.Resource
@@ -41,7 +43,8 @@ func NewTestDeviceSimulator(deviceID, deviceName string, withResources bool) cli
 					Value: commands.ConnectionStatus_ONLINE,
 				},
 			},
-			Interfaces: []string{interfaces.OC_IF_R, interfaces.OC_IF_BASELINE},
+			Interfaces:      []string{interfaces.OC_IF_R, interfaces.OC_IF_BASELINE},
+			OwnershipStatus: pb.Device_OWNED,
 		},
 		Resources: resources,
 	}
@@ -67,7 +70,7 @@ func TestClient_GetDevice(t *testing.T) {
 		{
 			name: "valid",
 			args: args{
-				token:    oauthTest.GetDefaultServiceToken(t),
+				token:    oauthTest.GetDefaultAccessToken(t),
 				deviceID: deviceID,
 			},
 			want: NewTestDeviceSimulator(deviceID, test.TestDeviceName, true),
@@ -75,14 +78,14 @@ func TestClient_GetDevice(t *testing.T) {
 		{
 			name: "not-found",
 			args: args{
-				token:    oauthTest.GetDefaultServiceToken(t),
+				token:    oauthTest.GetDefaultAccessToken(t),
 				deviceID: "not-found",
 			},
 			wantErr: true,
 		},
 	}
 
-	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultServiceToken(t))
+	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
 
 	c := NewTestClient(t)
 	defer func() {
@@ -107,6 +110,9 @@ func TestClient_GetDevice(t *testing.T) {
 			require.NotEmpty(t, got.Device.GetProtocolIndependentId())
 			got.Device.ProtocolIndependentId = ""
 			got.Device.Metadata.Status.ValidUntil = 0
+			got.Device.Metadata.Status.ConnectionId = ""
+			require.NotEmpty(t, got.Device.GetData().GetContent().GetData())
+			got.Device.Data = nil
 			test.CheckProtobufs(t, tt.want, got, test.RequireToCheckFunc(require.Equal))
 		})
 	}

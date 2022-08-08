@@ -9,10 +9,10 @@ import (
 	"sync"
 	"time"
 
-	pkgTime "github.com/plgd-dev/hub/pkg/time"
-	"github.com/plgd-dev/hub/resource-aggregate/commands"
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventstore"
-	"github.com/plgd-dev/hub/resource-aggregate/events"
+	pkgTime "github.com/plgd-dev/hub/v2/pkg/time"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 )
 
 var StaticAuditContext = &commands.AuditContext{
@@ -97,9 +97,9 @@ func MakeAuditContext(userID string, correlationID string) *commands.AuditContex
 	}
 }
 
-func MakeResourceUpdatePending(resourceId *commands.ResourceId, content *commands.Content, eventMetadata *events.EventMetadata, auditContext *commands.AuditContext, validUntil time.Time) eventstore.EventUnmarshaler {
+func MakeResourceUpdatePending(resourceID *commands.ResourceId, content *commands.Content, eventMetadata *events.EventMetadata, auditContext *commands.AuditContext, validUntil time.Time) eventstore.EventUnmarshaler {
 	e := events.ResourceUpdatePending{
-		ResourceId:    resourceId,
+		ResourceId:    resourceID,
 		Content:       content,
 		AuditContext:  auditContext,
 		EventMetadata: eventMetadata,
@@ -122,9 +122,9 @@ func MakeResourceUpdatePending(resourceId *commands.ResourceId, content *command
 	)
 }
 
-func MakeResourceUpdated(resourceId *commands.ResourceId, status commands.Status, content *commands.Content, eventMetadata *events.EventMetadata, auditContext *commands.AuditContext) eventstore.EventUnmarshaler {
+func MakeResourceUpdated(resourceID *commands.ResourceId, status commands.Status, content *commands.Content, eventMetadata *events.EventMetadata, auditContext *commands.AuditContext) eventstore.EventUnmarshaler {
 	e := events.ResourceUpdated{
-		ResourceId:    resourceId,
+		ResourceId:    resourceID,
 		Content:       content,
 		Status:        status,
 		AuditContext:  auditContext,
@@ -147,9 +147,9 @@ func MakeResourceUpdated(resourceId *commands.ResourceId, status commands.Status
 	)
 }
 
-func MakeResourceCreatePending(resourceId *commands.ResourceId, content *commands.Content, eventMetadata *events.EventMetadata, auditContext *commands.AuditContext, validUntil time.Time) eventstore.EventUnmarshaler {
+func MakeResourceCreatePending(resourceID *commands.ResourceId, content *commands.Content, eventMetadata *events.EventMetadata, auditContext *commands.AuditContext, validUntil time.Time) eventstore.EventUnmarshaler {
 	e := events.ResourceCreatePending{
-		ResourceId:    resourceId,
+		ResourceId:    resourceID,
 		Content:       content,
 		AuditContext:  auditContext,
 		EventMetadata: eventMetadata,
@@ -172,9 +172,9 @@ func MakeResourceCreatePending(resourceId *commands.ResourceId, content *command
 	)
 }
 
-func MakeResourceCreated(resourceId *commands.ResourceId, status commands.Status, content *commands.Content, eventMetadata *events.EventMetadata, auditContext *commands.AuditContext) eventstore.EventUnmarshaler {
+func MakeResourceCreated(resourceID *commands.ResourceId, status commands.Status, content *commands.Content, eventMetadata *events.EventMetadata, auditContext *commands.AuditContext) eventstore.EventUnmarshaler {
 	e := events.ResourceCreated{
-		ResourceId:    resourceId,
+		ResourceId:    resourceID,
 		Content:       content,
 		Status:        status,
 		AuditContext:  auditContext,
@@ -197,9 +197,9 @@ func MakeResourceCreated(resourceId *commands.ResourceId, status commands.Status
 	)
 }
 
-func MakeResourceChangedEvent(resourceId *commands.ResourceId, content *commands.Content, eventMetadata *events.EventMetadata, auditContext *commands.AuditContext) eventstore.EventUnmarshaler {
+func MakeResourceChangedEvent(resourceID *commands.ResourceId, content *commands.Content, eventMetadata *events.EventMetadata, auditContext *commands.AuditContext) eventstore.EventUnmarshaler {
 	e := events.ResourceChanged{
-		ResourceId:    resourceId,
+		ResourceId:    resourceID,
 		AuditContext:  auditContext,
 		Content:       content,
 		EventMetadata: eventMetadata,
@@ -221,9 +221,9 @@ func MakeResourceChangedEvent(resourceId *commands.ResourceId, content *commands
 	)
 }
 
-func MakeResourceRetrievePending(resourceId *commands.ResourceId, resourceInterface string, eventMetadata *events.EventMetadata, auditContext *commands.AuditContext, validUntil time.Time) eventstore.EventUnmarshaler {
+func MakeResourceRetrievePending(resourceID *commands.ResourceId, resourceInterface string, eventMetadata *events.EventMetadata, auditContext *commands.AuditContext, validUntil time.Time) eventstore.EventUnmarshaler {
 	e := events.ResourceRetrievePending{
-		ResourceId:        resourceId,
+		ResourceId:        resourceID,
 		ResourceInterface: resourceInterface,
 		AuditContext:      auditContext,
 		EventMetadata:     eventMetadata,
@@ -246,9 +246,9 @@ func MakeResourceRetrievePending(resourceId *commands.ResourceId, resourceInterf
 	)
 }
 
-func MakeResourceRetrieved(resourceId *commands.ResourceId, status commands.Status, content *commands.Content, eventMetadata *events.EventMetadata, auditContext *commands.AuditContext) eventstore.EventUnmarshaler {
+func MakeResourceRetrieved(resourceID *commands.ResourceId, status commands.Status, content *commands.Content, eventMetadata *events.EventMetadata, auditContext *commands.AuditContext) eventstore.EventUnmarshaler {
 	e := events.ResourceRetrieved{
-		ResourceId:    resourceId,
+		ResourceId:    resourceID,
 		Content:       content,
 		Status:        status,
 		AuditContext:  auditContext,
@@ -271,9 +271,9 @@ func MakeResourceRetrieved(resourceId *commands.ResourceId, status commands.Stat
 	)
 }
 
-func MakeResourceDeletePending(resourceId *commands.ResourceId, eventMetadata *events.EventMetadata, auditContext *commands.AuditContext, validUntil time.Time) eventstore.EventUnmarshaler {
+func MakeResourceDeletePending(resourceID *commands.ResourceId, eventMetadata *events.EventMetadata, auditContext *commands.AuditContext, validUntil time.Time) eventstore.EventUnmarshaler {
 	e := events.ResourceDeletePending{
-		ResourceId:    resourceId,
+		ResourceId:    resourceID,
 		AuditContext:  auditContext,
 		EventMetadata: eventMetadata,
 		ValidUntil:    pkgTime.UnixNano(validUntil),
@@ -295,9 +295,9 @@ func MakeResourceDeletePending(resourceId *commands.ResourceId, eventMetadata *e
 	)
 }
 
-func MakeResourceDeleted(resourceId *commands.ResourceId, status commands.Status, content *commands.Content, eventMetadata *events.EventMetadata, auditContext *commands.AuditContext) eventstore.EventUnmarshaler {
+func MakeResourceDeleted(resourceID *commands.ResourceId, status commands.Status, content *commands.Content, eventMetadata *events.EventMetadata, auditContext *commands.AuditContext) eventstore.EventUnmarshaler {
 	e := events.ResourceDeleted{
-		ResourceId:    resourceId,
+		ResourceId:    resourceID,
 		Content:       content,
 		Status:        status,
 		AuditContext:  auditContext,
@@ -320,9 +320,9 @@ func MakeResourceDeleted(resourceId *commands.ResourceId, status commands.Status
 	)
 }
 
-func MakeResourceStateSnapshotTaken(resourceId *commands.ResourceId, latestResourceChange *events.ResourceChanged, eventMetadata *events.EventMetadata, auditContext *commands.AuditContext) eventstore.EventUnmarshaler {
+func MakeResourceStateSnapshotTaken(resourceID *commands.ResourceId, latestResourceChange *events.ResourceChanged, eventMetadata *events.EventMetadata, auditContext *commands.AuditContext) eventstore.EventUnmarshaler {
 	e := events.NewResourceStateSnapshotTaken()
-	e.ResourceId = resourceId
+	e.ResourceId = resourceID
 	e.LatestResourceChange = latestResourceChange
 	e.EventMetadata = eventMetadata
 	e.AuditContext = auditContext
@@ -461,17 +461,17 @@ func NewMockEventHandler() *MockEventHandler {
 	return &MockEventHandler{events: make(map[string]map[string][]eventstore.Event)}
 }
 
-func (eh *MockEventHandler) SetElement(groupId, aggregateId string, e MockEvent) {
+func (eh *MockEventHandler) SetElement(groupID, aggregateID string, e MockEvent) {
 	var device map[string][]eventstore.Event
 	var ok bool
 
 	eh.lock.Lock()
 	defer eh.lock.Unlock()
-	if device, ok = eh.events[groupId]; !ok {
+	if device, ok = eh.events[groupID]; !ok {
 		device = make(map[string][]eventstore.Event)
-		eh.events[groupId] = device
+		eh.events[groupID] = device
 	}
-	device[aggregateId] = append(device[aggregateId], e)
+	device[aggregateID] = append(device[aggregateID], e)
 }
 
 func (eh *MockEventHandler) Contains(event eventstore.Event) bool {

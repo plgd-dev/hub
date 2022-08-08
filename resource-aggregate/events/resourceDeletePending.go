@@ -3,7 +3,7 @@ package events
 import (
 	"time"
 
-	pkgTime "github.com/plgd-dev/hub/pkg/time"
+	pkgTime "github.com/plgd-dev/hub/v2/pkg/time"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -46,6 +46,7 @@ func (e *ResourceDeletePending) CopyData(event *ResourceDeletePending) {
 	e.AuditContext = event.GetAuditContext()
 	e.EventMetadata = event.GetEventMetadata()
 	e.ValidUntil = event.GetValidUntil()
+	e.OpenTelemetryCarrier = event.GetOpenTelemetryCarrier()
 }
 
 func (e *ResourceDeletePending) CheckInitialized() bool {

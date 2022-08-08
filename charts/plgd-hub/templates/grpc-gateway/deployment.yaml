@@ -78,15 +78,18 @@ spec:
             {{- toYaml . | nindent 12 }}
           {{- end }}
           volumeMounts:
-            - mountPath: {{ .Values.grpcgateway.config.mountPath }}
-              name: {{ .Values.grpcgateway.config.volume }}
+            - name: {{ .Values.grpcgateway.config.volume }}
+              mountPath: {{ .Values.grpcgateway.config.mountPath }}
             {{- if ( include "plgd-hub.grpcgateway.createServiceCertByCm" . ) }}
             - name: service-crt
               mountPath: {{ $cert }}
             {{- end }}
-            {{- with .Values.grpcgateway.extraVolumes }}
+            {{- with .Values.grpcgateway.extraVolumeMounts }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
+      {{- if .Values.grpcgateway.extraContainers }}
+      {{- include "plgd-hub.tplvalues.render" ( dict "value" .Values.grpcgateway.extraContainers "context" $ ) | nindent 8 }}
+      {{- end }}
       volumes:
         - name: {{ .Values.grpcgateway.config.volume }}
           configMap:
@@ -96,7 +99,7 @@ spec:
           secret:
             secretName: {{ include "plgd-hub.grpcgateway.serviceCertName" . }}
         {{- end }}
-        {{- with .Values.grpcgateway.extraVolumeMounts }}
+        {{- with .Values.grpcgateway.extraVolumes }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
       {{- with .Values.grpcgateway.nodeSelector }}

@@ -1,8 +1,18 @@
 log:
-  debug: false
+  level: info
+  encoding: json
+  stacktrace:
+    enabled: false
+    level: warn
+  encoderConfig:
+    timeEncoder: rfc3339nano
 apis:
   http:
     address: "0.0.0.0:9100"
+    readTimeout: 8s
+    readHeaderTimeout: 4s
+    writeTimeout: 16s
+    idleTimeout: 30s
     tls:
       caPool: "/secrets/public/rootca.crt"
       keyFile: "/secrets/private/cert.key"
@@ -67,7 +77,7 @@ clients:
         keyFile: "/secrets/private/cert.key"
         certFile: "/secrets/public/cert.crt"
         useSystemCAPool: false
-  resourceDirectory:
+  resourceAggregate:
     grpc:
       address: ""
       keepAlive:
@@ -83,17 +93,34 @@ clients:
     mongoDB:
       uri: "mongodb://localhost:27017"
       database: "cloud2cloudConnector"
+      # limits number of connections.
+      maxPoolSize: 16
+      # close connection when idle time reach the value.
+      maxConnIdleTime: 4m0s
       tls:
         caPool: "/secrets/public/rootca.crt"
         keyFile: "/secrets/private/cert.key"
-        certFile:  "/secrets/public/cert.crt"
+        certFile: "/secrets/public/cert.crt"
         useSystemCAPool: false
   subscription:
     http:
       reconnectInterval: "10s"
       resubscribeInterval: "10s"
+  openTelemetryCollector:
+    grpc:
+      enabled: false
+      address: ""
+      keepAlive:
+        time: 10s
+        timeout: 20s
+        permitWithoutStream: true
+      tls:
+        caPool: "/secrets/public/rootca.crt"
+        keyFile: "/secrets/private/cert.key"
+        certFile: "/secrets/public/cert.crt"
+        useSystemCAPool: false
 taskProcessor:
   cacheSize: 2048
   timeout: "5s"
   maxParallel: 128
-  delay: ""
+  delay: "0s"

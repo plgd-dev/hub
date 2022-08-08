@@ -4,9 +4,9 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
-	"github.com/plgd-dev/hub/grpc-gateway/pb"
-	"github.com/plgd-dev/hub/pkg/fn"
-	"github.com/plgd-dev/hub/resource-aggregate/commands"
+	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
+	"github.com/plgd-dev/hub/v2/pkg/fn"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"github.com/plgd-dev/kit/v2/strings"
 	"go.uber.org/atomic"
 )
@@ -83,8 +83,8 @@ func (s *Sub) isFilteredEvent(e *pb.Event, eventType FilterBitmask) (bool, error
 		return isFilteredDevice(s.filteredDeviceIDs, ev.ResourceUnpublished.GetDeviceId()), nil
 	case *pb.Event_ResourceChanged:
 		return isFilteredDevice(s.filteredDeviceIDs, ev.ResourceChanged.GroupID()) && isFilteredResourceIDs(s.filteredResourceIDs, ev.ResourceChanged.AggregateID()), nil
-	//case *pb.Event_OperationProcessed_:
-	//case *pb.Event_SubscriptionCanceled_:
+	// case *pb.Event_OperationProcessed_:
+	// case *pb.Event_SubscriptionCanceled_:
 	case *pb.Event_ResourceUpdatePending:
 		return isFilteredDevice(s.filteredDeviceIDs, ev.ResourceUpdatePending.GroupID()) && isFilteredResourceIDs(s.filteredResourceIDs, ev.ResourceUpdatePending.AggregateID()), nil
 	case *pb.Event_ResourceUpdated:

@@ -3,64 +3,65 @@ package events
 import (
 	"time"
 
-	pkgTime "github.com/plgd-dev/hub/pkg/time"
-	commands "github.com/plgd-dev/hub/resource-aggregate/commands"
+	pkgTime "github.com/plgd-dev/hub/v2/pkg/time"
+	commands "github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"google.golang.org/protobuf/proto"
 )
 
 const eventTypeDeviceMetadataUpdatePending = "devicemetadataupdatepending"
 
-func (e *DeviceMetadataUpdatePending) Version() uint64 {
-	return e.GetEventMetadata().GetVersion()
+func (d *DeviceMetadataUpdatePending) Version() uint64 {
+	return d.GetEventMetadata().GetVersion()
 }
 
-func (e *DeviceMetadataUpdatePending) Marshal() ([]byte, error) {
-	return proto.Marshal(e)
+func (d *DeviceMetadataUpdatePending) Marshal() ([]byte, error) {
+	return proto.Marshal(d)
 }
 
-func (e *DeviceMetadataUpdatePending) Unmarshal(b []byte) error {
-	return proto.Unmarshal(b, e)
+func (d *DeviceMetadataUpdatePending) Unmarshal(b []byte) error {
+	return proto.Unmarshal(b, d)
 }
 
-func (e *DeviceMetadataUpdatePending) EventType() string {
+func (d *DeviceMetadataUpdatePending) EventType() string {
 	return eventTypeDeviceMetadataUpdatePending
 }
 
-func (e *DeviceMetadataUpdatePending) AggregateID() string {
-	return commands.MakeStatusResourceUUID(e.GetDeviceId())
+func (d *DeviceMetadataUpdatePending) AggregateID() string {
+	return commands.MakeStatusResourceUUID(d.GetDeviceId())
 }
 
-func (e *DeviceMetadataUpdatePending) GroupID() string {
-	return e.GetDeviceId()
+func (d *DeviceMetadataUpdatePending) GroupID() string {
+	return d.GetDeviceId()
 }
 
-func (e *DeviceMetadataUpdatePending) IsSnapshot() bool {
+func (d *DeviceMetadataUpdatePending) IsSnapshot() bool {
 	return false
 }
 
-func (e *DeviceMetadataUpdatePending) Timestamp() time.Time {
-	return pkgTime.Unix(0, e.GetEventMetadata().GetTimestamp())
+func (d *DeviceMetadataUpdatePending) Timestamp() time.Time {
+	return pkgTime.Unix(0, d.GetEventMetadata().GetTimestamp())
 }
 
-func (e *DeviceMetadataUpdatePending) CopyData(event *DeviceMetadataUpdatePending) {
-	e.DeviceId = event.GetDeviceId()
-	e.UpdatePending = event.GetUpdatePending()
-	e.AuditContext = event.GetAuditContext()
-	e.EventMetadata = event.GetEventMetadata()
-	e.ValidUntil = event.GetValidUntil()
+func (d *DeviceMetadataUpdatePending) CopyData(event *DeviceMetadataUpdatePending) {
+	d.DeviceId = event.GetDeviceId()
+	d.UpdatePending = event.GetUpdatePending()
+	d.AuditContext = event.GetAuditContext()
+	d.EventMetadata = event.GetEventMetadata()
+	d.ValidUntil = event.GetValidUntil()
+	d.OpenTelemetryCarrier = event.GetOpenTelemetryCarrier()
 }
 
-func (e *DeviceMetadataUpdatePending) CheckInitialized() bool {
-	return e.GetDeviceId() != "" &&
-		e.GetUpdatePending() != nil &&
-		e.GetAuditContext() != nil &&
-		e.GetEventMetadata() != nil
+func (d *DeviceMetadataUpdatePending) CheckInitialized() bool {
+	return d.GetDeviceId() != "" &&
+		d.GetUpdatePending() != nil &&
+		d.GetAuditContext() != nil &&
+		d.GetEventMetadata() != nil
 }
 
-func (e *DeviceMetadataUpdatePending) ValidUntilTime() time.Time {
-	return pkgTime.Unix(0, e.GetValidUntil())
+func (d *DeviceMetadataUpdatePending) ValidUntilTime() time.Time {
+	return pkgTime.Unix(0, d.GetValidUntil())
 }
 
-func (e *DeviceMetadataUpdatePending) IsExpired(now time.Time) bool {
-	return IsExpired(now, e.ValidUntilTime())
+func (d *DeviceMetadataUpdatePending) IsExpired(now time.Time) bool {
+	return IsExpired(now, d.ValidUntilTime())
 }

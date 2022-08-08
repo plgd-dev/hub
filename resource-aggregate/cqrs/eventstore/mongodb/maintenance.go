@@ -5,17 +5,17 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore/maintenance"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-
-	"github.com/plgd-dev/hub/resource-aggregate/cqrs/eventstore/maintenance"
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 const maintenanceCName = "maintenance"
 
 func makeDbAggregateVersion(task maintenance.Task) bson.M {
 	return bson.M{
+		groupIDKey:     task.GroupID,
 		aggregateIDKey: task.AggregateID,
 		versionKey:     task.Version,
 		idKey:          getID(task),
@@ -28,8 +28,11 @@ func getID(task maintenance.Task) string {
 
 // Insert stores (or updates) the information about the latest snapshot version per aggregate into the DB
 func (s *EventStore) Insert(ctx context.Context, task maintenance.Task) error {
+	if task.GroupID == "" {
+		return errors.New("could not insert record - group ID cannot be empty")
+	}
 	if task.AggregateID == "" {
-		return errors.New("could not insert record - aggregate ID and/or version cannot be empty")
+		return errors.New("could not insert record - aggregate ID cannot be empty")
 	}
 
 	record := makeDbAggregateVersion(task)
@@ -52,7 +55,7 @@ func (s *EventStore) Insert(ctx context.Context, task maintenance.Task) error {
 		&opts,
 	)
 	if err != nil {
-		if err == mongo.ErrNilDocument || IsDup(err) {
+		if errors.Is(err, mongo.ErrNilDocument) || IsDup(err) {
 			return fmt.Errorf("could not insert record with aggregate ID %v, version %d - version is outdated - %w", task.AggregateID, task.Version, err)
 		}
 		return fmt.Errorf("could not insert record with aggregate ID %v, version %d - %w", task.AggregateID, task.Version, err)
@@ -80,6 +83,7 @@ func (i *dbAggregateVersionIterator) Next(ctx context.Context, task *maintenance
 		return false
 	}
 
+	task.GroupID = dbRecord[groupIDKey].(string)
 	task.AggregateID = dbRecord[aggregateIDKey].(string)
 	version := dbRecord[versionKey].(int64)
 	task.Version = uint64(version)
@@ -95,7 +99,7 @@ func (s *EventStore) Query(ctx context.Context, limit int, taskHandler maintenan
 	opts := options.FindOptions{}
 	opts.SetLimit(int64(limit))
 	iter, err := s.client.Database(s.DBName()).Collection(maintenanceCName).Find(ctx, bson.M{}, &opts)
-	if err == mongo.ErrNilDocument {
+	if errors.Is(err, mongo.ErrNilDocument) {
 		return nil
 	}
 	if err != nil {

@@ -3,13 +3,13 @@ info:
   title: plgd HTTP Gateway
   version: 2.0.0
 servers:
-  - url: 'https://try.plgd.cloud'
+  - url: "https://try.plgd.cloud"
 paths:
-  '/.well-known/hub-configuration':
+  "/.well-known/hub-configuration":
     get:
       tags:
-        - 'Configuration'
-      summary: 'plgd hub clients configuration'
+        - "Configuration"
+      summary: "plgd hub clients configuration"
       description: |
         Basic publicly available configuration required to connect the device to the plgd hub.
       responses:
@@ -18,11 +18,11 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HubConfiguration'
+                $ref: "#/components/schemas/HubConfiguration"
     post:
       tags:
-        - 'Configuration'
-      summary: 'Converts OAuth redirect response to body'
+        - "Configuration"
+      summary: "Converts OAuth redirect response to body"
       description: |
         Converts oauth redirect response to body as JSON. It is used for getting device onboarding authorization code as redirect.
       responses:
@@ -31,57 +31,57 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/OAuthResponse'
+                $ref: "#/components/schemas/OAuthResponse"
         400:
-          $ref: '#/components/responses/badRequest'
+          $ref: "#/components/responses/badRequest"
         401:
-          $ref: '#/components/responses/unauthorized'
+          $ref: "#/components/responses/unauthorized"
         403:
-          $ref: '#/components/responses/forbidden'
-  '/api/v1/devices':
+          $ref: "#/components/responses/forbidden"
+  "/api/v1/devices":
     get:
       tags:
-        - 'Devices'
-      summary: 'Get all devices'
+        - "Devices"
+      summary: "Get all devices"
       description: |
         All registered devices user is authorized to use are returned in form of a stream, chunk by chunk. Attach your reader and consume device by device. Various filters allows you to be more concrete in devices you would like to get. Error response might be returned immediately, but also anytime during the stream reading.
       parameters:
-        - $ref: '#/components/parameters/deviceIdFilter'
-        - $ref: '#/components/parameters/typeFilter'
-        - $ref: '#/components/parameters/statusFilter'
+        - $ref: "#/components/parameters/deviceIdFilter"
+        - $ref: "#/components/parameters/typeFilter"
+        - $ref: "#/components/parameters/statusFilter"
       security:
         - oauth2:
-          - 'plgd.devices'
+            - "plgd.devices"
       responses:
         200:
-          description: 'Stream of devices or errors.'
+          description: "Stream of devices or errors."
           content:
             application/json:
               schema:
                 type: object
                 properties:
                   result:
-                    $ref: '#/components/schemas/Device'
+                    $ref: "#/components/schemas/Device"
                   error:
-                    $ref: '#/components/schemas/Error'
+                    $ref: "#/components/schemas/Error"
         400:
-          $ref: '#/components/responses/badRequest'
+          $ref: "#/components/responses/badRequest"
         401:
-          $ref: '#/components/responses/unauthorized'
+          $ref: "#/components/responses/unauthorized"
     delete:
       tags:
-        - 'Devices'
-      summary: 'Delete devices'
+        - "Devices"
+      summary: "Delete devices"
       description: |
         Request to delete selected or all devices.
       parameters:
-        - $ref: '#/components/parameters/deviceIdFilter'
+        - $ref: "#/components/parameters/deviceIdFilter"
       security:
         - oauth2:
-          - 'plgd.devices'
+            - "plgd.devices"
       responses:
         200:
-          description: 'List of deleted device IDs'
+          description: "List of deleted device IDs"
           content:
             application/json:
               schema:
@@ -92,57 +92,57 @@ paths:
                     items:
                       type: string
                     example:
-                      - '7aaa3d7d-b8e2-4a83-5ce3-4d81ad2bf5f8'
-                      - '3eeac884-f38c-48dc-714f-0f36a829cb89'
+                      - "7aaa3d7d-b8e2-4a83-5ce3-4d81ad2bf5f8"
+                      - "3eeac884-f38c-48dc-714f-0f36a829cb89"
         204:
-          $ref: '#/components/responses/accepted'
+          $ref: "#/components/responses/accepted"
         400:
-          $ref: '#/components/responses/badRequest'
+          $ref: "#/components/responses/badRequest"
         401:
-          $ref: '#/components/responses/unauthorized'
+          $ref: "#/components/responses/unauthorized"
         403:
-          $ref: '#/components/responses/forbidden'
+          $ref: "#/components/responses/forbidden"
         404:
-          $ref: '#/components/responses/notFound'
-  '/api/v1/devices/{deviceId}':
+          $ref: "#/components/responses/notFound"
+  "/api/v1/devices/{deviceId}":
     get:
       tags:
-        - 'Devices'
-      summary: 'Get device by ID'
+        - "Devices"
+      summary: "Get device by ID"
       description: |
         Get information about a single device. Alternative is to call 'Get all devices' with a `deviceId` filter query parameter.
       parameters:
-        - $ref: '#/components/parameters/deviceId'
+        - $ref: "#/components/parameters/deviceId"
       security:
         - oauth2:
-          - 'plgd.devices'
+            - "plgd.devices"
       responses:
         200:
-          description: 'Information about a single device.'
+          description: "Information about a single device."
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Device'
+                $ref: "#/components/schemas/Device"
         400:
-          $ref: '#/components/responses/badRequest'
+          $ref: "#/components/responses/badRequest"
         401:
-          $ref: '#/components/responses/unauthorized'
+          $ref: "#/components/responses/unauthorized"
         404:
-          $ref: '#/components/responses/notFound'
+          $ref: "#/components/responses/notFound"
     delete:
       tags:
-        - 'Devices'
-      summary: 'Delete device by ID'
+        - "Devices"
+      summary: "Delete device by ID"
       description: |
         Delete a single device by ID. Alternative is to call 'Delete devices' with a `deviceIdFilter` filter query parameter.
       parameters:
-        - $ref: '#/components/parameters/deviceId'
+        - $ref: "#/components/parameters/deviceId"
       security:
         - oauth2:
-          - 'plgd.devices'
+            - "plgd.devices"
       responses:
         200:
-          description: 'List of deleted device IDs'
+          description: "List of deleted device IDs"
           content:
             application/json:
               schema:
@@ -153,179 +153,179 @@ paths:
                     items:
                       type: string
                     example:
-                      - '7aaa3d7d-b8e2-4a83-5ce3-4d81ad2bf5f8'
+                      - "7aaa3d7d-b8e2-4a83-5ce3-4d81ad2bf5f8"
         400:
-          $ref: '#/components/responses/badRequest'
+          $ref: "#/components/responses/badRequest"
         401:
-          $ref: '#/components/responses/unauthorized'
+          $ref: "#/components/responses/unauthorized"
         404:
-          $ref: '#/components/responses/notFound'
-  '/api/v1/resource-links':
+          $ref: "#/components/responses/notFound"
+  "/api/v1/resource-links":
     get:
       tags:
-        - 'Resource Links'
-      summary: 'Get resource links'
+        - "Resource Links"
+      summary: "Get resource links"
       description: |
         Each device publishes links to its resources to the plgd hub. Authorized user can get all published links in form of a stream, chunk by chunk. Attach your reader and consume link by link. Various filters allows you to be more concrete in links you would like to get. Error response might be returned immediately, but also anytime during the stream reading.
       parameters:
-        - $ref: '#/components/parameters/deviceIdFilter'
-        - $ref: '#/components/parameters/typeFilter'
+        - $ref: "#/components/parameters/deviceIdFilter"
+        - $ref: "#/components/parameters/typeFilter"
       security:
         - oauth2:
-          - 'plgd.devices'
+            - "plgd.devices"
       responses:
         200:
-          description: 'Stream of resource links or errors.'
+          description: "Stream of resource links or errors."
           content:
             application/json:
               schema:
                 type: object
                 properties:
                   result:
-                    $ref: '#/components/schemas/ResourceLinks'
+                    $ref: "#/components/schemas/ResourceLinks"
                   error:
-                    $ref: '#/components/schemas/Error'
+                    $ref: "#/components/schemas/Error"
         400:
-          $ref: '#/components/responses/badRequest'
+          $ref: "#/components/responses/badRequest"
         401:
-          $ref: '#/components/responses/unauthorized'
-  '/api/v1/devices/{deviceId}/resource-links':
+          $ref: "#/components/responses/unauthorized"
+  "/api/v1/devices/{deviceId}/resource-links":
     get:
       tags:
-        - 'Resource Links'
-      summary: 'Get device''s resource links'
+        - "Resource Links"
+      summary: "Get device's resource links"
       description: |
         Get resource links published by a single device. Alternative is to call 'Get all resource links' with `deviceId` filter query parameter.
       parameters:
-        - $ref: '#/components/parameters/deviceId'
-        - $ref: '#/components/parameters/typeFilter'
+        - $ref: "#/components/parameters/deviceId"
+        - $ref: "#/components/parameters/typeFilter"
       security:
         - oauth2:
-          - 'plgd.devices'
+            - "plgd.devices"
       responses:
         200:
-          description: 'Resource links of a single device.'
+          description: "Resource links of a single device."
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ResourceLinks'
+                $ref: "#/components/schemas/ResourceLinks"
         400:
-          $ref: '#/components/responses/badRequest'
+          $ref: "#/components/responses/badRequest"
         401:
-          $ref: '#/components/responses/unauthorized'
+          $ref: "#/components/responses/unauthorized"
         404:
-          $ref: '#/components/responses/notFound'
-  '/api/v1/devices/{deviceId}/resource-links/{resourceHref}':
+          $ref: "#/components/responses/notFound"
+  "/api/v1/devices/{deviceId}/resource-links/{resourceHref}":
     parameters:
-      - $ref: '#/components/parameters/deviceId'
-      - $ref: '#/components/parameters/resourceHref'
+      - $ref: "#/components/parameters/deviceId"
+      - $ref: "#/components/parameters/resourceHref"
     post:
       tags:
-        - 'Resource Links'
-      summary: 'Create a resource'
+        - "Resource Links"
+      summary: "Create a resource"
       description: |
         This API enables you to create a new resource on a collection supporting create operation - interface `oic.if.create` shall be present. The resource is automatically published by the device, about what you are informed through an `RESOURCE_PUBLISHED` event.
       security:
         - oauth2:
-          - 'plgd.devices'
+            - "plgd.devices"
       parameters:
-        - $ref: '#/components/parameters/timeToLive'
+        - $ref: "#/components/parameters/timeToLive"
       requestBody:
-        description: 'Create request as defined by the Open Connectivity Foundation.'
+        description: "Create request as defined by the Open Connectivity Foundation."
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ResourceCreateContent'
+              $ref: "#/components/schemas/ResourceCreateContent"
         required: true
       responses:
         200:
-          description: 'Resource create response containing href to a new resource.'
+          description: "Resource create response containing href to a new resource."
           content:
             application/json:
               schema:
                 type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/Resource'
+                    $ref: "#/components/schemas/Resource"
               example:
                 data:
                   resourceId:
-                    href: '/switches'
-                    deviceId: '4629b3cb-3a6e-477c-5d50-ccb28ad7c349'
+                    href: "/switches"
+                    deviceId: "4629b3cb-3a6e-477c-5d50-ccb28ad7c349"
                   content:
-                    href: '/switches/1'
+                    href: "/switches/1"
                     rt:
-                      - 'oic.r.switch.binary'
+                      - "oic.r.switch.binary"
                     if:
-                      - 'oic.if.a'
-                      - 'oic.if.baseline'
+                      - "oic.if.a"
+                      - "oic.if.baseline"
                     rep:
                       value: false
                   auditContext:
-                    userId: '9772fcff-dcfb-4db8-a6c9-1b75f2165eb1'
-                    correlationId: 'e20f1eef-2eeb-4755-b33e-139106d28e2c'
+                    userId: "9772fcff-dcfb-4db8-a6c9-1b75f2165eb1"
+                    correlationId: "e20f1eef-2eeb-4755-b33e-139106d28e2c"
                   eventMetadata:
-                    connectionId: '194.1.25.111:61692'
-                    sequence: '7'
-                    version: '0'
-                    timestamp: '1625427236429144178'
-                  status: 'CREATED'
+                    connectionId: "194.1.25.111:61692"
+                    sequence: "7"
+                    version: "0"
+                    timestamp: "1625427236429144178"
+                  status: "CREATED"
         400:
-          $ref: '#/components/responses/badRequest'
+          $ref: "#/components/responses/badRequest"
         401:
-          $ref: '#/components/responses/unauthorized'
+          $ref: "#/components/responses/unauthorized"
         403:
-          $ref: '#/components/responses/forbidden'
+          $ref: "#/components/responses/forbidden"
         404:
-          $ref: '#/components/responses/notFound'
+          $ref: "#/components/responses/notFound"
     delete:
       tags:
-        - 'Resource Links'
-      summary: 'Delete a resource'
+        - "Resource Links"
+      summary: "Delete a resource"
       description: |
         Request to delete a resource is an async operation. The device after successful resource deletion unpublishes the resource from the plgd hub. This information is published to the WebSocket in form of an `RESOURCE_UNPUBLISHED` event.
       security:
         - oauth2:
-          - 'plgd.devices'
+            - "plgd.devices"
       parameters:
-        - $ref: '#/components/parameters/timeToLive'
+        - $ref: "#/components/parameters/timeToLive"
       responses:
         200:
-          description: 'Confirmation event about successful resource deletion.'
+          description: "Confirmation event about successful resource deletion."
           content:
             application/json:
               schema:
                 type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/Resource'
+                    $ref: "#/components/schemas/Resource"
         204:
-          $ref: '#/components/responses/accepted'
+          $ref: "#/components/responses/accepted"
         400:
-          $ref: '#/components/responses/badRequest'
+          $ref: "#/components/responses/badRequest"
         401:
-          $ref: '#/components/responses/unauthorized'
+          $ref: "#/components/responses/unauthorized"
         403:
-          $ref: '#/components/responses/forbidden'
+          $ref: "#/components/responses/forbidden"
         404:
-          $ref: '#/components/responses/notFound'
-  '/api/v1/resources':
+          $ref: "#/components/responses/notFound"
+  "/api/v1/resources":
     get:
       tags:
-        - 'Resources'
-      summary: 'Get all resources'
+        - "Resources"
+      summary: "Get all resources"
       description: |
         The plgd hub builds an up to date [Shadow](https%3A%2F%2Fplgd.dev%2Ffeatures%2Fdevice-shadow%2F) for each published resource. This API allows you to retrieve shadow contents of all resources published by all device. Response is sent in form of a stream, chunk by chunk. Error response might be returned immediately, but also anytime during the stream reading.
       parameters:
-        - $ref: '#/components/parameters/deviceIdFilter'
-        - $ref: '#/components/parameters/typeFilter'
-        - $ref: '#/components/parameters/resourceIdFilter'
+        - $ref: "#/components/parameters/deviceIdFilter"
+        - $ref: "#/components/parameters/typeFilter"
+        - $ref: "#/components/parameters/resourceIdFilter"
       security:
         - oauth2:
-          - 'plgd.devices'
+            - "plgd.devices"
       responses:
         200:
-          description: 'Stream of resource shadow contents or errors.'
+          description: "Stream of resource shadow contents or errors."
           content:
             application/json:
               schema:
@@ -339,31 +339,31 @@ paths:
                         items:
                           type: string
                         example:
-                          - 'oic.r.switch.binary'
+                          - "oic.r.switch.binary"
                       data:
-                        $ref: '#/components/schemas/Resource'
+                        $ref: "#/components/schemas/Resource"
                   error:
-                    $ref: '#/components/schemas/Error'
+                    $ref: "#/components/schemas/Error"
         400:
-          $ref: '#/components/responses/badRequest'
+          $ref: "#/components/responses/badRequest"
         401:
-          $ref: '#/components/responses/unauthorized'
-  '/api/v1/devices/{deviceId}/resources/':
+          $ref: "#/components/responses/unauthorized"
+  "/api/v1/devices/{deviceId}/resources/":
     get:
       tags:
-        - 'Resources'
-      summary: 'Retrieve device''s resources'
+        - "Resources"
+      summary: "Retrieve device's resources"
       description: |
         The plgd hub builds an up to date [Shadow](https%3A%2F%2Fplgd.dev%2Ffeatures%2Fdevice-shadow%2F) for each published resource. This API allows you to retrieve shadow contents of all resources published by this device. Response is sent in form of a stream, chunk by chunk. Error response might be returned immediately, but also anytime during the stream reading.
       security:
         - oauth2:
-          - 'plgd.devices'
+            - "plgd.devices"
       parameters:
-        - $ref: '#/components/parameters/deviceId'
-        - $ref: '#/components/parameters/typeFilter'
+        - $ref: "#/components/parameters/deviceId"
+        - $ref: "#/components/parameters/typeFilter"
       responses:
         200:
-          description: 'Stream of resource shadow contents or errors.'
+          description: "Stream of resource shadow contents or errors."
           content:
             application/json:
               schema:
@@ -377,335 +377,335 @@ paths:
                         items:
                           type: string
                         example:
-                          - 'oic.r.switch.binary'
+                          - "oic.r.switch.binary"
                       data:
-                        $ref: '#/components/schemas/Resource'
+                        $ref: "#/components/schemas/Resource"
                   error:
-                    $ref: '#/components/schemas/Error'
+                    $ref: "#/components/schemas/Error"
         400:
-          $ref: '#/components/responses/badRequest'
+          $ref: "#/components/responses/badRequest"
         401:
-          $ref: '#/components/responses/unauthorized'
-  '/api/v1/devices/{deviceId}/resources/{resourceHref}':
+          $ref: "#/components/responses/unauthorized"
+  "/api/v1/devices/{deviceId}/resources/{resourceHref}":
     parameters:
-      - $ref: '#/components/parameters/deviceId'
-      - $ref: '#/components/parameters/resourceHref'
+      - $ref: "#/components/parameters/deviceId"
+      - $ref: "#/components/parameters/resourceHref"
     get:
       tags:
-        - 'Resources'
-      summary: 'Retrieve a resource'
+        - "Resources"
+      summary: "Retrieve a resource"
       description: |
         The plgd hub builds an up to date [Shadow](https%3A%2F%2Fplgd.dev%2Ffeatures%2Fdevice-shadow%2F) for each published resource. Retrieving it's content using this API returnes an eventually consistent shadow content of the resource. There is a possibility to bypass the shadow by setting the query parameter `shadow` to `false` or by setting the interface query parameter, which allows you to set the command expiration.
       security:
         - oauth2:
-          - 'plgd.devices'
+            - "plgd.devices"
       parameters:
-        - $ref: '#/components/parameters/interface'
-        - $ref: '#/components/parameters/shadow'
-        - $ref: '#/components/parameters/timeToLive'
+        - $ref: "#/components/parameters/interface"
+        - $ref: "#/components/parameters/shadow"
+        - $ref: "#/components/parameters/timeToLive"
       responses:
         200:
-          description: 'Resource content.'
+          description: "Resource content."
           content:
             application/json:
               schema:
                 type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/Resource'
+                    $ref: "#/components/schemas/Resource"
         400:
-          $ref: '#/components/responses/badRequest'
+          $ref: "#/components/responses/badRequest"
         401:
-          $ref: '#/components/responses/unauthorized'
+          $ref: "#/components/responses/unauthorized"
         404:
-          $ref: '#/components/responses/notFound'
+          $ref: "#/components/responses/notFound"
     put:
       tags:
-        - 'Resources'
-      summary: 'Update a resource'
+        - "Resources"
+      summary: "Update a resource"
       description: |
         Resource update request is send directly to the device, carrying values which should be modified. Update confirmation doesn't have to carry updated content, this is up to the device implementation if it replies with an up to date values. If subscribed to the websocket, after the update command is successfully accepted by the device, event `RESOURCE_UPDATED` with matching `correlationId` is emitted. At the moment values are applied / changed on the device (e.g. resource update might trigger some processing, which was successfully requested but operation is in progress) event `RESOURCE_CHANGED` is emitted and resource shadow updated.
       security:
         - oauth2:
-          - 'plgd.devices'
+            - "plgd.devices"
       parameters:
-        - $ref: '#/components/parameters/interface'
-        - $ref: '#/components/parameters/timeToLive'
+        - $ref: "#/components/parameters/interface"
+        - $ref: "#/components/parameters/timeToLive"
       requestBody:
-        description: 'Updated content of the resource.'
+        description: "Updated content of the resource."
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ResourceContent'
+              $ref: "#/components/schemas/ResourceContent"
         required: true
       responses:
         200:
-          description: 'Confirmation of an update. Presence of the content in the response depends on the device implementation.'
+          description: "Confirmation of an update. Presence of the content in the response depends on the device implementation."
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ResourceContent'
+                $ref: "#/components/schemas/ResourceContent"
         400:
-          $ref: '#/components/responses/badRequest'
+          $ref: "#/components/responses/badRequest"
         401:
-          $ref: '#/components/responses/unauthorized'
+          $ref: "#/components/responses/unauthorized"
         403:
-          $ref: '#/components/responses/forbidden'
+          $ref: "#/components/responses/forbidden"
         404:
-          $ref: '#/components/responses/notFound'
-  '/api/v1/devices/{deviceId}/metadata':
+          $ref: "#/components/responses/notFound"
+  "/api/v1/devices/{deviceId}/metadata":
     put:
       tags:
-        - 'Devices'
-      summary: 'Update device metadata'
+        - "Devices"
+      summary: "Update device metadata"
       description: |
         Device metadata represent configuration of the relationship between the plgd hub and the device. It's not configuration of the device itself. [Shadow](https%3A%2F%2Fplgd.dev%2Ffeatures%2Fdevice-shadow%2F) configuration is part of the metadata. By setting this value you control if the shadow for this device is kept up to date or not.
       security:
         - oauth2:
-          - 'plgd.devices'
+            - "plgd.devices"
       parameters:
-        - $ref: '#/components/parameters/deviceId'
-        - $ref: '#/components/parameters/timeToLive'
+        - $ref: "#/components/parameters/deviceId"
+        - $ref: "#/components/parameters/timeToLive"
       requestBody:
-        description: 'Device metadata change successfully requested. If the device is online, change is immediately applied. If the device is offline, pending command is registered and executed at the moment device comes online.'
+        description: "Device metadata change successfully requested. If the device is online, change is immediately applied. If the device is offline, pending command is registered and executed at the moment device comes online."
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/DeviceMetadata'
+              $ref: "#/components/schemas/DeviceMetadata"
             example:
-              shadowSynchronization: 'DISABLED'
+              shadowSynchronization: "DISABLED"
         required: true
       responses:
         200:
-          description: 'Metadata successfully updated.'
+          description: "Metadata successfully updated."
         400:
-          $ref: '#/components/responses/badRequest'
+          $ref: "#/components/responses/badRequest"
         401:
-          $ref: '#/components/responses/unauthorized'
+          $ref: "#/components/responses/unauthorized"
         404:
-          $ref: '#/components/responses/notFound'
-  '/api/v1/pending-commands':
+          $ref: "#/components/responses/notFound"
+  "/api/v1/pending-commands":
     get:
       tags:
-        - 'Pending Commands'
-      summary: 'Get all pending commands'
+        - "Pending Commands"
+      summary: "Get all pending commands"
       description: |
         Resource shadow can be updated even if the device is offline. Each update request creates a pending command which is executed at the moment devices comes online. If the device is offline, this API allows you to retrieve all pending commands in form of a stream. Various filters allows you to be more concrete in pending commands you would like to get. Error response might be returned immediately, but also anytime during the stream reading.
       parameters:
-        - $ref: '#/components/parameters/deviceIdFilter'
-        - $ref: '#/components/parameters/typeFilter'
-        - $ref: '#/components/parameters/resourceIdFilter'
-        - $ref: '#/components/parameters/commandFilter'
+        - $ref: "#/components/parameters/deviceIdFilter"
+        - $ref: "#/components/parameters/typeFilter"
+        - $ref: "#/components/parameters/resourceIdFilter"
+        - $ref: "#/components/parameters/commandFilter"
       security:
         - oauth2:
-          - 'plgd.devices'
+            - "plgd.devices"
       responses:
         200:
-          $ref: '#/components/responses/pendingCommands'
+          $ref: "#/components/responses/pendingCommands"
         400:
-          $ref: '#/components/responses/badRequest'
+          $ref: "#/components/responses/badRequest"
         401:
-          $ref: '#/components/responses/unauthorized'
-  '/api/v1/devices/{deviceId}/pending-commands':
+          $ref: "#/components/responses/unauthorized"
+  "/api/v1/devices/{deviceId}/pending-commands":
     parameters:
-      - $ref: '#/components/parameters/deviceId'
+      - $ref: "#/components/parameters/deviceId"
     get:
       tags:
-        - 'Pending Commands'
-      summary: 'Get all resource''s pending commands for a device'
+        - "Pending Commands"
+      summary: "Get all resource's pending commands for a device"
       description: |
         Retrieve all resource's pending commands for a single device. Alternative is to call 'Get all pending commands' with `deviceIdFilter` and `commandFilter` query parameters.
       parameters:
-        - $ref: '#/components/parameters/typeFilter'
-        - $ref: '#/components/parameters/resourceCommandFilter'
+        - $ref: "#/components/parameters/typeFilter"
+        - $ref: "#/components/parameters/resourceCommandFilter"
       security:
         - oauth2:
-          - 'plgd.devices'
+            - "plgd.devices"
       responses:
         200:
-          $ref: '#/components/responses/pendingCommands'
+          $ref: "#/components/responses/pendingCommands"
         400:
-          $ref: '#/components/responses/badRequest'
+          $ref: "#/components/responses/badRequest"
         401:
-          $ref: '#/components/responses/unauthorized'
-  '/api/v1/devices/{deviceId}/pending-metadata-updates':
+          $ref: "#/components/responses/unauthorized"
+  "/api/v1/devices/{deviceId}/pending-metadata-updates":
     parameters:
-      - $ref: '#/components/parameters/deviceId'
+      - $ref: "#/components/parameters/deviceId"
     get:
       tags:
-        - 'Pending Commands'
-      summary: 'Get all pending metadata updates for a device'
+        - "Pending Commands"
+      summary: "Get all pending metadata updates for a device"
       description: |
         Retrieve all pending metadata updates for a single device. Alternative is to call 'Get all pending commands' with `deviceIdFilter` and `commandFilter` query parameters.
       security:
         - oauth2:
-          - 'plgd.devices'
+            - "plgd.devices"
       responses:
         200:
-          $ref: '#/components/responses/pendingCommands'
+          $ref: "#/components/responses/pendingCommands"
         400:
-          $ref: '#/components/responses/badRequest'
+          $ref: "#/components/responses/badRequest"
         401:
-          $ref: '#/components/responses/unauthorized'
+          $ref: "#/components/responses/unauthorized"
     delete:
       tags:
-        - 'Pending Commands'
-      summary: 'Cancel pending metadata update.'
+        - "Pending Commands"
+      summary: "Cancel pending metadata update."
       description: |
         Pending metadata update is identified by the correlationId. If a `correlationIdFilter` is not specified, all pending metadata updates will be canceled.
       parameters:
-        - $ref: '#/components/parameters/correlationIdFilter'
+        - $ref: "#/components/parameters/correlationIdFilter"
       security:
         - oauth2:
-          - 'plgd.devices'
+            - "plgd.devices"
       responses:
         200:
-          $ref: '#/components/responses/canceledCommands'
+          $ref: "#/components/responses/canceledCommands"
         400:
-          $ref: '#/components/responses/badRequest'
+          $ref: "#/components/responses/badRequest"
         401:
-          $ref: '#/components/responses/unauthorized'
-  '/api/v1/devices/{deviceId}/resources/{resourceHref}/pending-commands':
+          $ref: "#/components/responses/unauthorized"
+  "/api/v1/devices/{deviceId}/resources/{resourceHref}/pending-commands":
     parameters:
-      - $ref: '#/components/parameters/deviceId'
-      - $ref: '#/components/parameters/resourceHref'
+      - $ref: "#/components/parameters/deviceId"
+      - $ref: "#/components/parameters/resourceHref"
     get:
       tags:
-        - 'Pending Commands'
-      summary: 'Get all pending commands for a resource.'
+        - "Pending Commands"
+      summary: "Get all pending commands for a resource."
       description: |
         Retrieve all pending commands for a single resource. Alternative is to call 'Get all pending commands' with `resourceIdFilter` and `commandFilter` query parameters.
       parameters:
-        - $ref: '#/components/parameters/typeFilter'
-        - $ref: '#/components/parameters/resourceCommandFilter'
+        - $ref: "#/components/parameters/typeFilter"
+        - $ref: "#/components/parameters/resourceCommandFilter"
       security:
         - oauth2:
-          - 'plgd.devices'
+            - "plgd.devices"
       responses:
         200:
-          $ref: '#/components/responses/pendingCommands'
+          $ref: "#/components/responses/pendingCommands"
         400:
-          $ref: '#/components/responses/badRequest'
+          $ref: "#/components/responses/badRequest"
         401:
-          $ref: '#/components/responses/unauthorized'
+          $ref: "#/components/responses/unauthorized"
     delete:
       tags:
-        - 'Pending Commands'
-      summary: 'Cancel pending command.'
+        - "Pending Commands"
+      summary: "Cancel pending command."
       description: |
         Pending command is identified by the correlationId. If a `correlationIdFilter` is not specified, all pending commands will be canceled.
       parameters:
-        - $ref: '#/components/parameters/correlationIdFilter'
+        - $ref: "#/components/parameters/correlationIdFilter"
       security:
         - oauth2:
-          - 'plgd.devices'
+            - "plgd.devices"
       responses:
         200:
-          $ref: '#/components/responses/canceledCommands'
+          $ref: "#/components/responses/canceledCommands"
         400:
-          $ref: '#/components/responses/badRequest'
+          $ref: "#/components/responses/badRequest"
         401:
-          $ref: '#/components/responses/unauthorized'
-  '/api/v1/events':
+          $ref: "#/components/responses/unauthorized"
+  "/api/v1/events":
     get:
       tags:
-        - 'Resource Events'
-      summary: 'Get resource events'
+        - "Resource Events"
+      summary: "Get resource events"
       description: |
         All events from resources belonging to devices user is authorized to use are returned in form of a stream, chunk by chunk. Attach your reader and consume event by event. Filters allow you to select devices and resources of interest, and the timestamp filter allows to filter out events and return only those that occurred after a given time. Error response might be returned immediately, but also anytime during the stream reading.
       parameters:
-        - $ref: '#/components/parameters/deviceIdFilter'
-        - $ref: '#/components/parameters/resourceIdFilter'
-        - $ref: '#/components/parameters/timestampFilter'
+        - $ref: "#/components/parameters/deviceIdFilter"
+        - $ref: "#/components/parameters/resourceIdFilter"
+        - $ref: "#/components/parameters/timestampFilter"
       security:
         - oauth2:
-          - 'plgd.devices'
+            - "plgd.devices"
       responses:
         200:
-          $ref: '#/components/responses/events'
+          $ref: "#/components/responses/events"
         400:
-          $ref: '#/components/responses/badRequest'
+          $ref: "#/components/responses/badRequest"
         401:
-          $ref: '#/components/responses/unauthorized'
-  '/api/v1/devices/{deviceId}/events':
+          $ref: "#/components/responses/unauthorized"
+  "/api/v1/devices/{deviceId}/events":
     parameters:
-      - $ref: '#/components/parameters/deviceId'
+      - $ref: "#/components/parameters/deviceId"
     get:
       tags:
-        - 'Resource Events'
-      summary: 'Get resource events from selected device'
+        - "Resource Events"
+      summary: "Get resource events from selected device"
       description: |
         Get all resource events that occurred on the device with given `deviceId`. Alternative is to call 'Get resource events' with `deviceIdFilter` query parameter.
       parameters:
-        - $ref: '#/components/parameters/timestampFilter'
+        - $ref: "#/components/parameters/timestampFilter"
       security:
         - oauth2:
-          - 'plgd.devices'
+            - "plgd.devices"
       responses:
         200:
-          $ref: '#/components/responses/events'
+          $ref: "#/components/responses/events"
         400:
-          $ref: '#/components/responses/badRequest'
+          $ref: "#/components/responses/badRequest"
         401:
-          $ref: '#/components/responses/unauthorized'
-  '/api/v1/devices/{deviceId}/resources/{resourceHref}/events':
+          $ref: "#/components/responses/unauthorized"
+  "/api/v1/devices/{deviceId}/resources/{resourceHref}/events":
     parameters:
-      - $ref: '#/components/parameters/deviceId'
-      - $ref: '#/components/parameters/resourceHref'
+      - $ref: "#/components/parameters/deviceId"
+      - $ref: "#/components/parameters/resourceHref"
     get:
       tags:
-        - 'Resource Events'
-      summary: 'Get events from selected resource'
+        - "Resource Events"
+      summary: "Get events from selected resource"
       description: |
         Get all events that occurred on the resource from device with given `deviceId` addressable at given `resourceHref`. Alternative is to call 'Get resource events' with `resourceIdFilter` query parameter.
       parameters:
-        - $ref: '#/components/parameters/timestampFilter'
+        - $ref: "#/components/parameters/timestampFilter"
       security:
         - oauth2:
-          - 'plgd.devices'
+            - "plgd.devices"
       responses:
         200:
-          $ref: '#/components/responses/events'
+          $ref: "#/components/responses/events"
         400:
-          $ref: '#/components/responses/badRequest'
+          $ref: "#/components/responses/badRequest"
         401:
-          $ref: '#/components/responses/unauthorized'
-  '/api/v1/ws/events':
+          $ref: "#/components/responses/unauthorized"
+  "/api/v1/ws/events":
     post:
       tags:
-        - 'Resource Events'
-      summary: 'Subscribe to events'
+        - "Resource Events"
+      summary: "Subscribe to events"
       description: |
         Open a websocket stream and receive events from devices. The contents of filters in the SubscribeToEvents message determine which events will be sent to the stream.
         Subscription doesn't guarantee that all events will be sent to the client. The client is responsible for synchronizing events.
       security:
         - oauth2:
-          - 'plgd.devices'
+            - "plgd.devices"
       requestBody:
-        description: 'SubscribeToEvents message that opens a websocket stream'
+        description: "SubscribeToEvents message that opens a websocket stream"
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/SubscribeToEvents'
+              $ref: "#/components/schemas/SubscribeToEvents"
         required: true
       responses:
         200:
-          description: 'Stream of events'
+          description: "Stream of events"
           content:
             application/json:
               schema:
                 type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/Event'
+                    $ref: "#/components/schemas/Event"
         400:
-          $ref: '#/components/responses/badRequest'
+          $ref: "#/components/responses/badRequest"
         401:
-          $ref: '#/components/responses/unauthorized'
+          $ref: "#/components/responses/unauthorized"
         403:
-          $ref: '#/components/responses/forbidden'
+          $ref: "#/components/responses/forbidden"
         404:
-          $ref: '#/components/responses/notFound'
+          $ref: "#/components/responses/notFound"
 components:
   securitySchemes:
     oauth2:
@@ -738,6 +738,7 @@ components:
         correlationId:
           type: string
     OAuthResponse:
+      type: object
       properties:
         code:
           description: Device onboarding code
@@ -745,24 +746,21 @@ components:
     HubConfiguration:
       type: object
       properties:
-        deviceOnboardingCodeUrl:
-          description: URL to get an authorization code, required for device registration at the plgd hub.
-          type: string
-        jwtClaimOwnerId:
+        jwtOwnerClaim:
           description: JWT claim identifying device owner.
           type: string
-          default: 'sub'
+          default: "sub"
         jwtDeviceIdClaim:
           description: JWT claim identifying device id. Empty means that JWT doesn't contain it.
           type: string
-        hubId:
+        id:
           description: Unique ID of the cloud, required for device registration at the plgd hub.
           type: string
           format: uuid
         coapGateway:
           description: URL of the device endpoint - plgd CoAP Gateway where the device connects.
           type: string
-        cloudCertificateAuthorities:
+        certificateAuthorities:
           description: Public key of the certificate authority issuing the plgd identity certificates.
           type: string
         defaultCommandTimeToLive:
@@ -773,19 +771,18 @@ components:
           description: Current time of server in nanoseconds.
           type: integer
           format: int64
-        deviceAuthority:
-          description: Authority is the address of the token-issuing authentication server. Services will use this URI to find and retrieve the public key that can be used to validate the token’s signature.
+        authorizationServer:
+          description: URL of the authorization server.
           type: string
       example:
-        deviceOnboardingCodeUrl: 'https://auth.plgd.cloud/authorize?audience=http://try.plgd.cloud/'
-        jwtClaimOwnerId: 'sub'
-        signingServerAddress: 'api.try.plgd.cloud:443'
-        hubId: 'adebc667-1f2b-41e3-bf5c-6d6eabc68cc6'
-        coapGateway: 'coaps+tcp://try.plgd.cloud:5684'
-        cloudAuthorizationProvider: 'plgd'
+        jwtOwnerClaim: "sub"
+        authorizationServer: "https://auth.plgd.cloud"
+        id: "adebc667-1f2b-41e3-bf5c-6d6eabc68cc6"
+        coapGateway: "coaps+tcp://try.plgd.cloud:5684"
+        cloudAuthorizationProvider: "plgd"
         currentTime: 1629728394151716523
         defaultCommandTimeToLive: 0
-        cloudCertificateAuthorities: |
+        certificateAuthorities: |
           -----BEGIN CERTIFICATE-----
           MIIBRTCB66ADAgECAhAYrP/8939ZQulrospE3RuHMAoGCCqGSM49BAMCMBIxEDAO
           BgNVBAMTB1Jvb3QgQ0EwHhcNMjAwODE3MDcyMzM3WhcNMjEwODE3MDcyMzM3WjAS
@@ -795,28 +792,27 @@ components:
           Af8wCgYIKoZIzj0EAwIDSQAwRgIhAIyyCjzD8YzCNSY6YbnLgJ7TaXz5HPE0Eyqm
           gfQCLUhwAiEAmfMN+GW05NyB3n5OxYHqVmHGDZJ8rHUUBCPJ3WbCweM=
           -----END CERTIFICATE-----
-
     CommandType:
       type: string
       enum:
-        - 'RESOURCE_CREATE'
-        - 'RESOURCE_RETRIEVE'
-        - 'RESOURCE_UPDATE'
-        - 'RESOURCE_DELETE'
-        - 'DEVICE_METADATA_UPDATE'
+        - "RESOURCE_CREATE"
+        - "RESOURCE_RETRIEVE"
+        - "RESOURCE_UPDATE"
+        - "RESOURCE_DELETE"
+        - "DEVICE_METADATA_UPDATE"
     resourceCommandType:
       type: string
       enum:
-        - 'RESOURCE_CREATE'
-        - 'RESOURCE_RETRIEVE'
-        - 'RESOURCE_UPDATE'
-        - 'RESOURCE_DELETE'
+        - "RESOURCE_CREATE"
+        - "RESOURCE_RETRIEVE"
+        - "RESOURCE_UPDATE"
+        - "RESOURCE_DELETE"
     ConnectionStatus:
       type: string
       enum:
-        - 'OFFLINE'
-        - 'ONLINE'
-      default: 'OFFLINE'
+        - "OFFLINE"
+        - "ONLINE"
+      default: "OFFLINE"
     Content:
       type: object
       properties:
@@ -840,7 +836,7 @@ components:
         name:
           type: string
         metadata:
-          $ref: '#/components/schemas/DeviceMetadata'
+          $ref: "#/components/schemas/DeviceMetadata"
         manufacturerName:
           type: array
           items:
@@ -859,24 +855,24 @@ components:
         protocolIndependentId:
           type: string
       example:
-        id: '4629b3cb-3a6e-477c-5d50-ccb28ad7c349'
+        id: "4629b3cb-3a6e-477c-5d50-ccb28ad7c349"
         types:
-          - 'oic.d.cloudDevice'
-          - 'oic.wk.d'
-        name: 'CloudServer'
+          - "oic.d.cloudDevice"
+          - "oic.wk.d"
+        name: "CloudServer"
         metadata:
           status:
-            value: 'ONLINE'
+            value: "ONLINE"
             validUntil: 1625262498747539632
-          shadowSynchronization: 'UNSET'
+          shadowSynchronization: "UNSET"
         manufacturerName:
-          - language: 'en-US'
-            value: 'plugged'
-        modelNumber: '12-d21d4-23jzi2'
+          - language: "en-US"
+            value: "plugged"
+        modelNumber: "12-d21d4-23jzi2"
         interfaces:
-          - 'oic.if.r'
-          - 'oic.if.baseline'
-        protocolIndependentId: 'cd5f73ed-51e0-4ad7-59f9-bfb0f7b4b747'
+          - "oic.if.r"
+          - "oic.if.baseline"
+        protocolIndependentId: "cd5f73ed-51e0-4ad7-59f9-bfb0f7b4b747"
     DeviceMetadata:
       type: object
       properties:
@@ -884,50 +880,50 @@ components:
           type: object
           properties:
             value:
-              $ref: '#/components/schemas/ConnectionStatus'
+              $ref: "#/components/schemas/ConnectionStatus"
             validUntil:
               type: string
               format: int64
-          description: 'Unix timestamp in nanoseconds.'
+          description: "Unix timestamp in nanoseconds."
         shadowSynchronization:
-          $ref: '#/components/schemas/ShadowSynchronizationStatus'
+          $ref: "#/components/schemas/ShadowSynchronizationStatus"
     DeviceMetadataSnapshotTaken:
       type: object
       properties:
         deviceId:
           type: string
         deviceMetadataUpdated:
-          $ref: '#/components/schemas/DeviceMetadataUpdated'
+          $ref: "#/components/schemas/DeviceMetadataUpdated"
         updatePendings:
           type: array
           items:
-            $ref: '#/components/schemas/DeviceMetadataUpdatePending'
+            $ref: "#/components/schemas/DeviceMetadataUpdatePending"
         eventMetadata:
-          $ref: '#/components/schemas/EventMetadata'
+          $ref: "#/components/schemas/EventMetadata"
     DeviceMetadataUpdated:
       type: object
       properties:
         deviceId:
           type: string
         status:
-          $ref: '#/components/schemas/ConnectionStatus'
+          $ref: "#/components/schemas/ConnectionStatus"
         shadowSynchronization:
-          $ref: '#/components/schemas/ShadowSynchronizationStatus'
+          $ref: "#/components/schemas/ShadowSynchronizationStatus"
         auditContext:
-          $ref: '#/components/schemas/AuditContext'
+          $ref: "#/components/schemas/AuditContext"
         eventMetadata:
-          $ref: '#/components/schemas/EventMetadata'
+          $ref: "#/components/schemas/EventMetadata"
     DeviceMetadataUpdatePending:
       type: object
       properties:
         deviceId:
           type: string
         shadowSynchronization:
-          $ref: '#/components/schemas/ShadowSynchronizationStatus'
+          $ref: "#/components/schemas/ShadowSynchronizationStatus"
         auditContext:
-          $ref: '#/components/schemas/AuditContext'
+          $ref: "#/components/schemas/AuditContext"
         eventMetadata:
-          $ref: '#/components/schemas/EventMetadata'
+          $ref: "#/components/schemas/EventMetadata"
     Event:
       type: object
       properties:
@@ -936,39 +932,39 @@ components:
         correlationId:
           type: string
         deviceRegistered:
-          $ref: '#/components/schemas/EventDeviceRegistered'
+          $ref: "#/components/schemas/EventDeviceRegistered"
         deviceUnregistered:
-          $ref: '#/components/schemas/EventDeviceUnregistered'
+          $ref: "#/components/schemas/EventDeviceUnregistered"
         resourcePublished:
-          $ref: '#/components/schemas/ResourceLinksPublished'
+          $ref: "#/components/schemas/ResourceLinksPublished"
         resourceUnpublished:
-          $ref: '#/components/schemas/ResourceLinksUnpublished'
+          $ref: "#/components/schemas/ResourceLinksUnpublished"
         resourceChanged:
-          $ref: '#/components/schemas/ResourceChanged'
+          $ref: "#/components/schemas/ResourceChanged"
         operationProcessed:
-          $ref: '#/components/schemas/EventOperationProcessed'
+          $ref: "#/components/schemas/EventOperationProcessed"
         subscriptionCanceled:
-          $ref: '#/components/schemas/EventSubscriptionCanceled'
+          $ref: "#/components/schemas/EventSubscriptionCanceled"
         resourceUpdatePending:
-          $ref: '#/components/schemas/ResourceUpdatePending'
+          $ref: "#/components/schemas/ResourceUpdatePending"
         resourceUpdated:
-          $ref: '#/components/schemas/ResourceUpdated'
+          $ref: "#/components/schemas/ResourceUpdated"
         resourceRetrievePending:
-          $ref: '#/components/schemas/ResourceRetrievePending'
+          $ref: "#/components/schemas/ResourceRetrievePending"
         resourceRetrieved:
-          $ref: '#/components/schemas/ResourceRetrieved'
+          $ref: "#/components/schemas/ResourceRetrieved"
         resourceDeletePending:
-          $ref: '#/components/schemas/ResourceDeletePending'
+          $ref: "#/components/schemas/ResourceDeletePending"
         resourceDeleted:
-          $ref: '#/components/schemas/ResourceDeleted'
+          $ref: "#/components/schemas/ResourceDeleted"
         resourceCreatePending:
-          $ref: '#/components/schemas/ResourceCreatePending'
+          $ref: "#/components/schemas/ResourceCreatePending"
         resourceCreated:
-          $ref: '#/components/schemas/ResourceCreated'
+          $ref: "#/components/schemas/ResourceCreated"
         deviceMetadataUpdatePending:
-          $ref: '#/components/schemas/DeviceMetadataUpdatePending'
+          $ref: "#/components/schemas/DeviceMetadataUpdatePending"
         deviceMetadataUpdated:
-          $ref: '#/components/schemas/DeviceMetadataUpdated'
+          $ref: "#/components/schemas/DeviceMetadataUpdated"
     EventDeviceRegistered:
       type: object
       properties:
@@ -1001,7 +997,7 @@ components:
       type: object
       properties:
         errorStatus:
-          $ref: '#/components/schemas/OperationProcessedErrorStatus'
+          $ref: "#/components/schemas/OperationProcessedErrorStatus"
     EventSubscriptionCanceled:
       type: object
       properties:
@@ -1019,68 +1015,74 @@ components:
           type: array
           items:
             type: object
+            properties:
+              typeUrl:
+                type: string
+              value:
+                type: string
+                format: byte
     ErrorStatusCode:
       type: string
-      default: 'OK'
+      default: "OK"
       enum:
-        - 'OK'
-        - 'ERROR'
-        - 'NOT_FOUND'
+        - "OK"
+        - "ERROR"
+        - "NOT_FOUND"
     OperationProcessedErrorStatus:
       type: object
       properties:
         code:
-          $ref: '#/components/schemas/ErrorStatusCode'
+          $ref: "#/components/schemas/ErrorStatusCode"
         message:
           type: string
     Resource:
       type: object
       properties:
         resourceId:
-          $ref: '#/components/schemas/ResourceId'
+          $ref: "#/components/schemas/ResourceId"
         content:
           oneOf:
-            - $ref: '#/components/schemas/ResourceContent'
-            - $ref: '#/components/schemas/ResourceCreatedContent'
+            - $ref: "#/components/schemas/ResourceContent"
+            - $ref: "#/components/schemas/ResourceCreatedContent"
         auditContext:
-          $ref: '#/components/schemas/AuditContext'
+          $ref: "#/components/schemas/AuditContext"
         eventMetadata:
-          $ref: '#/components/schemas/EventMetadata'
+          $ref: "#/components/schemas/EventMetadata"
         status:
-          $ref: '#/components/schemas/Status'
+          $ref: "#/components/schemas/Status"
       example:
         resourceId:
-          href: '/switches/1'
-          deviceId: '4629b3cb-3a6e-477c-5d50-ccb28ad7c349'
+          href: "/switches/1"
+          deviceId: "4629b3cb-3a6e-477c-5d50-ccb28ad7c349"
         content:
           rt:
-            - 'oic.r.switch.binary'
+            - "oic.r.switch.binary"
           if:
-            - 'oic.if.a'
-            - 'oic.if.baseline'
+            - "oic.if.a"
+            - "oic.if.baseline"
           value: false
         auditContext:
-          userId: '9772fcff-dcfb-4db8-a6c9-1b75f2165eb1'
-          correlationId: 'e20f1eef-2eeb-4755-b33e-139106d28e2c'
+          userId: "9772fcff-dcfb-4db8-a6c9-1b75f2165eb1"
+          correlationId: "e20f1eef-2eeb-4755-b33e-139106d28e2c"
         eventMetadata:
-          connectionId: '194.1.25.111:61692'
-          sequence: '7'
-          version: '0'
-          timestamp: '1625427236429144178'
-        status: 'OK'
+          connectionId: "194.1.25.111:61692"
+          sequence: "7"
+          version: "0"
+          timestamp: "1625427236429144178"
+        status: "OK"
     ResourceChanged:
       type: object
       properties:
         resourceId:
-          $ref: '#/components/schemas/ResourceId'
+          $ref: "#/components/schemas/ResourceId"
         content:
-          $ref: '#/components/schemas/Content'
+          $ref: "#/components/schemas/Content"
         auditContext:
-          $ref: '#/components/schemas/AuditContext'
+          $ref: "#/components/schemas/AuditContext"
         eventMetadata:
-          $ref: '#/components/schemas/EventMetadata'
+          $ref: "#/components/schemas/EventMetadata"
         status:
-          $ref: '#/components/schemas/Status'
+          $ref: "#/components/schemas/Status"
     ResourceContent:
       type: object
       example:
@@ -1097,7 +1099,7 @@ components:
           items:
             type: string
         rep:
-          description: 'Resource content provided as JSON object or base64 encoded CBOR.'
+          description: "Resource content provided as JSON object or base64 encoded CBOR."
           type: object
         p:
           type: object
@@ -1114,10 +1116,10 @@ components:
         - p
       example:
         rt:
-          - 'oic.r.switch.binary'
+          - "oic.r.switch.binary"
         if:
-          - 'oic.if.a'
-          - 'oic.if.baseline'
+          - "oic.if.a"
+          - "oic.if.baseline"
         rep:
           value: false
         p:
@@ -1126,15 +1128,15 @@ components:
       type: object
       properties:
         resourceId:
-          $ref: '#/components/schemas/ResourceId'
+          $ref: "#/components/schemas/ResourceId"
         status:
-          $ref: '#/components/schemas/Status'
+          $ref: "#/components/schemas/Status"
         content:
-          $ref: '#/components/schemas/Content'
+          $ref: "#/components/schemas/Content"
         auditContext:
-          $ref: '#/components/schemas/AuditContext'
+          $ref: "#/components/schemas/AuditContext"
         eventMetadata:
-          $ref: '#/components/schemas/EventMetadata'
+          $ref: "#/components/schemas/EventMetadata"
     ResourceCreatedContent:
       type: object
       properties:
@@ -1150,50 +1152,50 @@ components:
           items:
             type: string
         rep:
-          description: 'Resource content provided as JSON object or base64 encoded CBOR.'
+          description: "Resource content provided as JSON object or base64 encoded CBOR."
           type: object
       example:
-        href: '/switches/1'
+        href: "/switches/1"
         rt:
-          - 'oic.r.switch.binary'
+          - "oic.r.switch.binary"
         if:
-          - 'oic.if.a'
-          - 'oic.if.baseline'
+          - "oic.if.a"
+          - "oic.if.baseline"
         rep:
           value: false
     ResourceCreatePending:
       type: object
       properties:
         resourceId:
-          $ref: '#/components/schemas/ResourceId'
+          $ref: "#/components/schemas/ResourceId"
         content:
-          $ref: '#/components/schemas/Content'
+          $ref: "#/components/schemas/Content"
         auditContext:
-          $ref: '#/components/schemas/AuditContext'
+          $ref: "#/components/schemas/AuditContext"
         eventMetadata:
-          $ref: '#/components/schemas/EventMetadata'
+          $ref: "#/components/schemas/EventMetadata"
     ResourceDeleted:
       type: object
       properties:
         resourceId:
-          $ref: '#/components/schemas/ResourceId'
+          $ref: "#/components/schemas/ResourceId"
         status:
-          $ref: '#/components/schemas/Status'
+          $ref: "#/components/schemas/Status"
         content:
-          $ref: '#/components/schemas/Content'
+          $ref: "#/components/schemas/Content"
         auditContext:
-          $ref: '#/components/schemas/AuditContext'
+          $ref: "#/components/schemas/AuditContext"
         eventMetadata:
-          $ref: '#/components/schemas/EventMetadata'
+          $ref: "#/components/schemas/EventMetadata"
     ResourceDeletePending:
       type: object
       properties:
         resourceId:
-          $ref: '#/components/schemas/ResourceId'
+          $ref: "#/components/schemas/ResourceId"
         auditContext:
-          $ref: '#/components/schemas/AuditContext'
+          $ref: "#/components/schemas/AuditContext"
         eventMetadata:
-          $ref: '#/components/schemas/EventMetadata'
+          $ref: "#/components/schemas/EventMetadata"
     ResourceId:
       type: object
       properties:
@@ -1251,53 +1253,53 @@ components:
         resources:
           type: array
           items:
-            $ref: '#/components/schemas/ResourceLink'
+            $ref: "#/components/schemas/ResourceLink"
         deviceId:
           type: string
         auditContext:
-          $ref: '#/components/schemas/AuditContext'
+          $ref: "#/components/schemas/AuditContext"
         eventMetadata:
-          $ref: '#/components/schemas/EventMetadata'
+          $ref: "#/components/schemas/EventMetadata"
       example:
         resources:
-          - href: '/switches/1'
-            deviceId: '4629b3cb-3a6e-477c-5d50-ccb28ad7c349'
+          - href: "/switches/1"
+            deviceId: "4629b3cb-3a6e-477c-5d50-ccb28ad7c349"
             resourceTypes:
-              - 'oic.r.switch.binary'
+              - "oic.r.switch.binary"
             interfaces:
-              - 'oic.if.a'
-              - 'oic.if.baseline'
-            anchor: ''
-            title: ''
+              - "oic.if.a"
+              - "oic.if.baseline"
+            anchor: ""
+            title: ""
             supportedContentTypes: []
-            validUntil: '0'
+            validUntil: "0"
             policy:
               bitFlags: 3
             endpointInformations: []
-        deviceId: '4629b3cb-3a6e-477c-5d50-ccb28ad7c349'
+        deviceId: "4629b3cb-3a6e-477c-5d50-ccb28ad7c349"
         auditContext:
-          userId: '9772fcff-dcfb-4db8-a6c9-1b75f2165eb1'
-          correlationId: 'ef007f88-6073-4af1-8951-971578bf6803'
+          userId: "9772fcff-dcfb-4db8-a6c9-1b75f2165eb1"
+          correlationId: "ef007f88-6073-4af1-8951-971578bf6803"
         eventMetadata:
-          connectionId: '194.1.25.111:61692'
-          sequence: '4'
-          version: '0'
-          timestamp: '1625432924483895839'
+          connectionId: "194.1.25.111:61692"
+          sequence: "4"
+          version: "0"
+          timestamp: "1625432924483895839"
     ResourceLinksPublished:
-      $ref: '#/components/schemas/ResourceLinks'
+      $ref: "#/components/schemas/ResourceLinks"
     ResourceLinksSnapshotTaken:
       type: object
       properties:
         resources:
           type: object
           additionalProperties:
-            $ref: '#/components/schemas/Resource'
+            $ref: "#/components/schemas/Resource"
         deviceId:
           type: string
         eventMetadata:
-          $ref: '#/components/schemas/EventMetadata'
+          $ref: "#/components/schemas/EventMetadata"
         auditContext:
-          $ref: '#/components/schemas/AuditContext'
+          $ref: "#/components/schemas/AuditContext"
     ResourceLinksUnpublished:
       type: object
       properties:
@@ -1308,126 +1310,126 @@ components:
         deviceId:
           type: string
         auditContext:
-          $ref: '#/components/schemas/AuditContext'
+          $ref: "#/components/schemas/AuditContext"
         eventMetadata:
-          $ref: '#/components/schemas/EventMetadata'
+          $ref: "#/components/schemas/EventMetadata"
       example:
-        hrefs: ['/light/1', '/light/2']
-        deviceId: '4629b3cb-3a6e-477c-5d50-ccb28ad7c349'
+        hrefs: ["/light/1", "/light/2"]
+        deviceId: "4629b3cb-3a6e-477c-5d50-ccb28ad7c349"
         auditContext:
-          userId: '9772fcff-dcfb-4db8-a6c9-1b75f2165eb1'
-          correlationId: 'ef007f88-6073-4af1-8951-971578bf6803'
+          userId: "9772fcff-dcfb-4db8-a6c9-1b75f2165eb1"
+          correlationId: "ef007f88-6073-4af1-8951-971578bf6803"
         eventMetadata:
-          connectionId: '194.1.25.111:61692'
-          sequence: '4'
-          version: '0'
-          timestamp: '1625432924483895839'
+          connectionId: "194.1.25.111:61692"
+          sequence: "4"
+          version: "0"
+          timestamp: "1625432924483895839"
     ResourceRetrieved:
       type: object
       properties:
         resourceId:
-          $ref: '#/components/schemas/ResourceId'
+          $ref: "#/components/schemas/ResourceId"
         status:
-          $ref: '#/components/schemas/Status'
+          $ref: "#/components/schemas/Status"
         content:
-          $ref: '#/components/schemas/Content'
+          $ref: "#/components/schemas/Content"
         auditContext:
-          $ref: '#/components/schemas/AuditContext'
+          $ref: "#/components/schemas/AuditContext"
         eventMetadata:
-          $ref: '#/components/schemas/EventMetadata'
+          $ref: "#/components/schemas/EventMetadata"
     ResourceRetrievePending:
       type: object
       properties:
         resourceId:
-          $ref: '#/components/schemas/ResourceId'
+          $ref: "#/components/schemas/ResourceId"
         resourceInterface:
           type: string
         auditContext:
-          $ref: '#/components/schemas/AuditContext'
+          $ref: "#/components/schemas/AuditContext"
         eventMetadata:
-          $ref: '#/components/schemas/EventMetadata'
+          $ref: "#/components/schemas/EventMetadata"
     ResourceStateSnapshotTaken:
       type: object
       properties:
         resourceId:
-          $ref: '#/components/schemas/ResourceId'
+          $ref: "#/components/schemas/ResourceId"
         latestResourceChange:
-          $ref: '#/components/schemas/ResourceChanged'
+          $ref: "#/components/schemas/ResourceChanged"
         resourceCreatePendings:
           type: array
           items:
-            $ref: '#/components/schemas/ResourceCreatePending'
+            $ref: "#/components/schemas/ResourceCreatePending"
         resourceRetrievePendings:
           type: array
           items:
-            $ref: '#/components/schemas/ResourceRetrievePending'
+            $ref: "#/components/schemas/ResourceRetrievePending"
         resourceUpdatePendings:
           type: array
           items:
-            $ref: '#/components/schemas/ResourceUpdatePending'
+            $ref: "#/components/schemas/ResourceUpdatePending"
         resourceDeletePendings:
           type: array
           items:
-            $ref: '#/components/schemas/ResourceDeletePending'
+            $ref: "#/components/schemas/ResourceDeletePending"
         auditContext:
-          $ref: '#/components/schemas/AuditContext'
+          $ref: "#/components/schemas/AuditContext"
         eventMetadata:
-          $ref: '#/components/schemas/EventMetadata'
+          $ref: "#/components/schemas/EventMetadata"
     ResourceUpdated:
       type: object
       properties:
         resourceId:
-          $ref: '#/components/schemas/ResourceId'
+          $ref: "#/components/schemas/ResourceId"
         status:
-          $ref: '#/components/schemas/Status'
+          $ref: "#/components/schemas/Status"
         content:
-          $ref: '#/components/schemas/Content'
+          $ref: "#/components/schemas/Content"
         auditContext:
-          $ref: '#/components/schemas/AuditContext'
+          $ref: "#/components/schemas/AuditContext"
         eventMetadata:
-          $ref: '#/components/schemas/EventMetadata'
+          $ref: "#/components/schemas/EventMetadata"
     ResourceUpdatePending:
       type: object
       properties:
         resourceId:
-          $ref: '#/components/schemas/ResourceId'
+          $ref: "#/components/schemas/ResourceId"
         resourceInterface:
           type: string
         content:
-          $ref: '#/components/schemas/Content'
+          $ref: "#/components/schemas/Content"
         auditContext:
-          $ref: '#/components/schemas/AuditContext'
+          $ref: "#/components/schemas/AuditContext"
         eventMetadata:
-          $ref: '#/components/schemas/EventMetadata'
+          $ref: "#/components/schemas/EventMetadata"
     ShadowSynchronizationStatus:
       type: string
       enum:
-        - 'UNSET'
-        - 'ENABLED'
-        - 'DISABLED'
-      default: 'UNSET'
+        - "UNSET"
+        - "ENABLED"
+        - "DISABLED"
+      default: "UNSET"
     Status:
       type: string
       enum:
-        - 'UNKNOWN'
-        - 'OK'
-        - 'BAD_REQUEST'
-        - 'UNAUTHORIZED'
-        - 'FORBIDDEN'
-        - 'NOT_FOUND'
-        - 'UNAVAILABLE'
-        - 'NOT_IMPLEMENTED'
-        - 'ACCEPTED'
-        - 'ERROR'
-        - 'METHOD_NOT_ALLOWED'
-        - 'CREATED'
+        - "UNKNOWN"
+        - "OK"
+        - "BAD_REQUEST"
+        - "UNAUTHORIZED"
+        - "FORBIDDEN"
+        - "NOT_FOUND"
+        - "UNAVAILABLE"
+        - "NOT_IMPLEMENTED"
+        - "ACCEPTED"
+        - "ERROR"
+        - "METHOD_NOT_ALLOWED"
+        - "CREATED"
     SubscribeToEvents:
       type: object
       properties:
         createSubscription:
-          $ref: '#/components/schemas/SubscribeToEventsCreateSubscription'
+          $ref: "#/components/schemas/SubscribeToEventsCreateSubscription"
         cancelSubscription:
-          $ref: '#/components/schemas/SubscribeToEventsCancelSubscription'
+          $ref: "#/components/schemas/SubscribeToEventsCancelSubscription"
         correlationId:
           type: string
     SubscribeToEventsCancelSubscription:
@@ -1441,7 +1443,7 @@ components:
         eventFilter:
           type: array
           items:
-            $ref: '#/components/schemas/SubscribeToEventsCreateSubscriptionEvent'
+            $ref: "#/components/schemas/SubscribeToEventsCreateSubscriptionEvent"
         deviceIdFilter:
           type: array
           items:
@@ -1452,28 +1454,28 @@ components:
             type: string
     SubscribeToEventsCreateSubscriptionEvent:
       type: string
-      default: 'REGISTERED'
+      default: "REGISTERED"
       enum:
-        - 'REGISTERED'
-        - 'UNREGISTERED'
-        - 'DEVICE_METADATA_UPDATED'
-        - 'DEVICE_METADATA_UPDATE_PENDING'
-        - 'RESOURCE_PUBLISHED'
-        - 'RESOURCE_UNPUBLISHED'
-        - 'RESOURCE_UPDATE_PENDING'
-        - 'RESOURCE_UPDATED'
-        - 'RESOURCE_RETRIEVE_PENDING'
-        - 'RESOURCE_RETRIEVED'
-        - 'RESOURCE_DELETE_PENDING'
-        - 'RESOURCE_DELETED'
-        - 'RESOURCE_CREATE_PENDING'
-        - 'RESOURCE_CREATED'
-        - 'RESOURCE_CHANGED'
+        - "REGISTERED"
+        - "UNREGISTERED"
+        - "DEVICE_METADATA_UPDATED"
+        - "DEVICE_METADATA_UPDATE_PENDING"
+        - "RESOURCE_PUBLISHED"
+        - "RESOURCE_UNPUBLISHED"
+        - "RESOURCE_UPDATE_PENDING"
+        - "RESOURCE_UPDATED"
+        - "RESOURCE_RETRIEVE_PENDING"
+        - "RESOURCE_RETRIEVED"
+        - "RESOURCE_DELETE_PENDING"
+        - "RESOURCE_DELETED"
+        - "RESOURCE_CREATE_PENDING"
+        - "RESOURCE_CREATED"
+        - "RESOURCE_CHANGED"
   parameters:
     deviceId:
       name: deviceId
       in: path
-      description: 'Id of the device.'
+      description: "Id of the device."
       required: true
       schema:
         type: string
@@ -1481,28 +1483,28 @@ components:
     resourceHref:
       name: resourceHref
       in: path
-      description: 'Href of the resource.'
+      description: "Href of the resource."
       required: true
       schema:
         type: string
     shadow:
       name: shadow
       in: query
-      description: 'Bypass resource shadow and send the GET request directly to the device.'
+      description: "Bypass resource shadow and send the GET request directly to the device."
       schema:
         type: boolean
         default: true
     deviceIdFilter:
       name: deviceId
       in: query
-      description: 'Filter by the device id.'
+      description: "Filter by the device id."
       schema:
         type: string
         format: uuid
     typeFilter:
       name: type
       in: query
-      description: 'Filter by the type.'
+      description: "Filter by the type."
       schema:
         type: array
         items:
@@ -1510,21 +1512,21 @@ components:
     statusFilter:
       name: status
       in: query
-      description: 'Filter by the device status.'
+      description: "Filter by the device status."
       schema:
         type: array
         items:
-          $ref: '#/components/schemas/ConnectionStatus'
+          $ref: "#/components/schemas/ConnectionStatus"
     interface:
       name: interface
       in: query
-      description: 'Defines the view or a way how to interact with a resource.'
+      description: "Defines the view or a way how to interact with a resource."
       schema:
         type: string
     resourceIdFilter:
       name: resourceId
       in: query
-      description: 'Filter by resource id specified in format `{deviceId}+{resourceHref}`'
+      description: "Filter by resource id specified in format `{deviceId}+{resourceHref}`"
       schema:
         type: array
         items:
@@ -1533,30 +1535,30 @@ components:
     commandFilter:
       name: command
       in: query
-      description: 'Filter by the command type.'
+      description: "Filter by the command type."
       schema:
         type: array
         items:
-          $ref: '#/components/schemas/CommandType'
+          $ref: "#/components/schemas/CommandType"
     resourceCommandFilter:
       name: command
       in: query
-      description: 'Filter by the command type.'
+      description: "Filter by the command type."
       schema:
         type: array
         items:
-          $ref: '#/components/schemas/resourceCommandType'
+          $ref: "#/components/schemas/resourceCommandType"
     timestampFilter:
       name: timestamp
       in: query
-      description: 'Filter by Unix nanoseconds timestamp'
+      description: "Filter by Unix nanoseconds timestamp"
       schema:
         type: integer
         format: int64
     timeToLive:
       name: timeToLive
       in: query
-      description: 'Command expiration in nanoseconds. 0 means forever and 100ms is minimal value.'
+      description: "Command expiration in nanoseconds. 0 means forever and 100ms is minimal value."
       schema:
         type: integer
         format: int64
@@ -1565,7 +1567,7 @@ components:
     correlationIdFilter:
       name: correlationIdFilter
       in: query
-      description: 'Filter by the correlationId.'
+      description: "Filter by the correlationId."
       schema:
         type: string
         format: uuid
@@ -1584,7 +1586,7 @@ components:
             type: object
             properties:
               error:
-                $ref: '#/components/schemas/Error'
+                $ref: "#/components/schemas/Error"
     forbidden:
       description: Forbidden
       content:
@@ -1593,7 +1595,7 @@ components:
             type: object
             properties:
               error:
-                $ref: '#/components/schemas/Error'
+                $ref: "#/components/schemas/Error"
     badRequest:
       description: Bad Request
       content:
@@ -1602,22 +1604,22 @@ components:
             type: object
             properties:
               error:
-                $ref: '#/components/schemas/Error'
+                $ref: "#/components/schemas/Error"
     notFound:
-      description: 'Entity was not found.'
+      description: "Entity was not found."
     pendingCommands:
-      description: 'Stream of resource links or errors.'
+      description: "Stream of resource links or errors."
       content:
         application/json:
           schema:
             type: object
             properties:
               result:
-                $ref: '#/components/schemas/ResourceLinks'
+                $ref: "#/components/schemas/ResourceLinks"
               error:
-                $ref: '#/components/schemas/Error'
+                $ref: "#/components/schemas/Error"
     canceledCommands:
-      description: 'Correlation ids of all successfully canceled commands.'
+      description: "Correlation ids of all successfully canceled commands."
       content:
         application/json:
           schema:
@@ -1629,7 +1631,7 @@ components:
                   type: string
                   format: uuid
     events:
-      description: 'Stream of events or error'
+      description: "Stream of events or error"
       content:
         application/json:
           schema:
@@ -1639,36 +1641,36 @@ components:
                 result:
                   properties:
                     resourceLinksPublished:
-                      $ref: '#/components/schemas/ResourceLinksPublished'
+                      $ref: "#/components/schemas/ResourceLinksPublished"
                     resourceLinksUnpublished:
-                      $ref: '#/components/schemas/ResourceLinksUnpublished'
+                      $ref: "#/components/schemas/ResourceLinksUnpublished"
                     resourceLinksSnapshotTaken:
-                      $ref: '#/components/schemas/ResourceLinksSnapshotTaken'
+                      $ref: "#/components/schemas/ResourceLinksSnapshotTaken"
                     resourceChanged:
-                      $ref: '#/components/schemas/ResourceChanged'
+                      $ref: "#/components/schemas/ResourceChanged"
                     resourceUpdatePending:
-                      $ref: '#/components/schemas/ResourceUpdatePending'
+                      $ref: "#/components/schemas/ResourceUpdatePending"
                     resourceUpdated:
-                      $ref: '#/components/schemas/ResourceUpdated'
+                      $ref: "#/components/schemas/ResourceUpdated"
                     resourceRetrievePending:
-                      $ref: '#/components/schemas/ResourceRetrievePending'
+                      $ref: "#/components/schemas/ResourceRetrievePending"
                     resourceRetrieved:
-                      $ref: '#/components/schemas/ResourceRetrieved'
+                      $ref: "#/components/schemas/ResourceRetrieved"
                     resourceDeletePending:
-                      $ref: '#/components/schemas/ResourceDeletePending'
+                      $ref: "#/components/schemas/ResourceDeletePending"
                     resourceDeleted:
-                      $ref: '#/components/schemas/ResourceDeleted'
+                      $ref: "#/components/schemas/ResourceDeleted"
                     resourceCreatePending:
-                      $ref: '#/components/schemas/ResourceCreatePending'
+                      $ref: "#/components/schemas/ResourceCreatePending"
                     resourceCreated:
-                      $ref: '#/components/schemas/ResourceCreated'
+                      $ref: "#/components/schemas/ResourceCreated"
                     resourceStateSnapshotTaken:
-                      $ref: '#/components/schemas/ResourceStateSnapshotTaken'
+                      $ref: "#/components/schemas/ResourceStateSnapshotTaken"
                     deviceMetadataUpdatePending:
-                      $ref: '#/components/schemas/DeviceMetadataUpdatePending'
+                      $ref: "#/components/schemas/DeviceMetadataUpdatePending"
                     deviceMetadataUpdated:
-                      $ref: '#/components/schemas/DeviceMetadataUpdated'
+                      $ref: "#/components/schemas/DeviceMetadataUpdated"
                     deviceMetadataSnapshotTaken:
-                      $ref: '#/components/schemas/DeviceMetadataSnapshotTaken'
+                      $ref: "#/components/schemas/DeviceMetadataSnapshotTaken"
                 error:
-                  $ref: '#/components/schemas/Error'
+                  $ref: "#/components/schemas/Error"

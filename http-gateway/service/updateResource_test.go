@@ -11,18 +11,18 @@ import (
 	"github.com/plgd-dev/device/schema/device"
 	"github.com/plgd-dev/device/schema/interfaces"
 	"github.com/plgd-dev/go-coap/v2/message"
-	"github.com/plgd-dev/hub/grpc-gateway/pb"
-	httpgwTest "github.com/plgd-dev/hub/http-gateway/test"
-	"github.com/plgd-dev/hub/http-gateway/uri"
-	kitNetGrpc "github.com/plgd-dev/hub/pkg/net/grpc"
-	"github.com/plgd-dev/hub/resource-aggregate/commands"
-	"github.com/plgd-dev/hub/resource-aggregate/events"
-	"github.com/plgd-dev/hub/test"
-	"github.com/plgd-dev/hub/test/config"
-	oauthService "github.com/plgd-dev/hub/test/oauth-server/service"
-	oauthTest "github.com/plgd-dev/hub/test/oauth-server/test"
-	pbTest "github.com/plgd-dev/hub/test/pb"
-	"github.com/plgd-dev/hub/test/service"
+	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
+	httpgwTest "github.com/plgd-dev/hub/v2/http-gateway/test"
+	"github.com/plgd-dev/hub/v2/http-gateway/uri"
+	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
+	"github.com/plgd-dev/hub/v2/test"
+	"github.com/plgd-dev/hub/v2/test/config"
+	oauthService "github.com/plgd-dev/hub/v2/test/oauth-server/service"
+	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
+	pbTest "github.com/plgd-dev/hub/v2/test/pb"
+	"github.com/plgd-dev/hub/v2/test/service"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
@@ -100,7 +100,7 @@ func TestRequestHandlerUpdateResourcesValues(t *testing.T) {
 					"power": 1,
 				},
 			},
-			want:         pbTest.MakeResourceUpdated(deviceID, test.TestResourceLightInstanceHref("1")),
+			want:         pbTest.MakeResourceUpdated(t, deviceID, test.TestResourceLightInstanceHref("1"), "", nil),
 			wantHTTPCode: http.StatusOK,
 		},
 		{
@@ -114,7 +114,7 @@ func TestRequestHandlerUpdateResourcesValues(t *testing.T) {
 					"power": 102,
 				},
 			},
-			want:         pbTest.MakeResourceUpdated(deviceID, test.TestResourceLightInstanceHref("1")),
+			want:         pbTest.MakeResourceUpdated(t, deviceID, test.TestResourceLightInstanceHref("1"), "", nil),
 			wantHTTPCode: http.StatusOK,
 		},
 		{
@@ -128,7 +128,7 @@ func TestRequestHandlerUpdateResourcesValues(t *testing.T) {
 				},
 				resourceInterface: interfaces.OC_IF_BASELINE,
 			},
-			want:         pbTest.MakeResourceUpdated(deviceID, test.TestResourceLightInstanceHref("1")),
+			want:         pbTest.MakeResourceUpdated(t, deviceID, test.TestResourceLightInstanceHref("1"), "", nil),
 			wantHTTPCode: http.StatusOK,
 		},
 		{
@@ -142,7 +142,7 @@ func TestRequestHandlerUpdateResourcesValues(t *testing.T) {
 				},
 				resourceInterface: interfaces.OC_IF_BASELINE,
 			},
-			want:         pbTest.MakeResourceUpdated(deviceID, test.TestResourceLightInstanceHref("1")),
+			want:         pbTest.MakeResourceUpdated(t, deviceID, test.TestResourceLightInstanceHref("1"), "", nil),
 			wantHTTPCode: http.StatusOK,
 		},
 		{
@@ -183,13 +183,16 @@ func TestRequestHandlerUpdateResourcesValues(t *testing.T) {
 	shutdownHttp := httpgwTest.SetUp(t)
 	defer shutdownHttp()
 
-	token := oauthTest.GetDefaultServiceToken(t)
+	token := oauthTest.GetDefaultAccessToken(t)
 	ctx = kitNetGrpc.CtxWithToken(ctx, token)
 
 	conn, err := grpc.Dial(config.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
 	})))
 	require.NoError(t, err)
+	defer func() {
+		_ = conn.Close()
+	}()
 	c := pb.NewGrpcGatewayClient(conn)
 
 	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.GW_HOST, test.GetAllBackendResourceLinks())
@@ -205,7 +208,7 @@ func TestRequestHandlerUpdateResourcesValues(t *testing.T) {
 				ContentType: message.AppOcfCbor.String(),
 			}, tt.args.contentType)
 			require.NoError(t, err)
-			rb := httpgwTest.NewRequest(http.MethodPut, uri.AliasDeviceResource, bytes.NewReader([]byte(data))).AuthToken(token).Accept(tt.args.accept)
+			rb := httpgwTest.NewRequest(http.MethodPut, uri.AliasDeviceResource, bytes.NewReader(data)).AuthToken(token).Accept(tt.args.accept)
 			rb.DeviceId(tt.args.deviceID).ResourceHref(tt.args.resourceHref).ResourceInterface(tt.args.resourceInterface).ContentType(tt.args.contentType)
 			rb.AddTimeToLive(tt.args.ttl)
 			resp := httpgwTest.HTTPDo(t, rb.Build())
@@ -215,7 +218,7 @@ func TestRequestHandlerUpdateResourcesValues(t *testing.T) {
 			assert.Equal(t, tt.wantHTTPCode, resp.StatusCode)
 
 			var got pb.UpdateResourceResponse
-			err = Unmarshal(resp.StatusCode, resp.Body, &got)
+			err = httpgwTest.Unmarshal(resp.StatusCode, resp.Body, &got)
 			if tt.wantErr {
 				require.Error(t, err)
 				return
