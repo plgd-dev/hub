@@ -1,8 +1,9 @@
 {
   "compilerOptions": {
-    "baseUrl": "./",
+    "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["src/*"],
+      "@shared-ui/*": ["shared-ui/src/*"]
     }
   },
   "exclude": ["node_modules", "build"]

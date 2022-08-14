@@ -1,6 +1,6 @@
-import { useStreamApi } from '@/common/hooks'
+import { useStreamApi } from '@shared-ui/common/hooks'
 import { useAppConfig } from '@/containers/app'
-import { useEmitter } from '@/common/hooks'
+import { useEmitter } from '@shared-ui/common/hooks'
 
 import {
   pendingCommandsApiEndpoints,

@@ -3,10 +3,10 @@ import { useMemo } from 'react'
 import { useIntl } from 'react-intl'
 import { Link, useHistory } from 'react-router-dom'
 import classNames from 'classnames'
-import { Button } from '@/components/button'
-import { Badge } from '@/components/badge'
-import { Table } from '@/components/table'
-import { IndeterminateCheckbox } from '@/components/checkbox'
+import { Button } from '@shared-ui/components/old/button'
+import { Badge } from '@shared-ui/components/old/badge'
+import { Table } from '@shared-ui/components/old/table'
+import { IndeterminateCheckbox } from '@shared-ui/components/old/checkbox'
 import { DevicesListActionButton } from './_devices-list-action-button'
 import {
   devicesStatuses,
@@ -121,11 +121,19 @@ export const DevicesList = ({
     [] // eslint-disable-line
   )
 
+  const validateData = data => {
+    if (!data || (data.length === 1 && data[0] === undefined)) {
+      return []
+    }
+
+    return data
+  }
+
   return (
     <Table
       className="with-selectable-rows"
       columns={columns}
-      data={data || []}
+      data={validateData(data)}
       defaultSortBy={[
         {
           id: 'name',

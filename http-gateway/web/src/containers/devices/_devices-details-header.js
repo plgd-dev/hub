@@ -5,12 +5,12 @@ import classNames from 'classnames'
 import PropTypes from 'prop-types'
 import { useHistory } from 'react-router-dom'
 
-import { showSuccessToast } from '@/components/toast'
-import { ConfirmModal } from '@/components/confirm-modal'
-import { Button } from '@/components/button'
-import { WebSocketEventClient, eventFilters } from '@/common/services'
-import { Switch } from '@/components/switch'
-import { useIsMounted } from '@/common/hooks'
+import { showSuccessToast } from '@shared-ui/components/old/toast'
+import { ConfirmModal } from '@shared-ui/components/old/confirm-modal'
+import { Button } from '@shared-ui/components/old/button'
+import { WebSocketEventClient, eventFilters } from '@shared-ui/common/services'
+import { Switch } from '@shared-ui/components/old/switch'
+import { useIsMounted } from '@shared-ui/common/hooks'
 import {
   getDeviceNotificationKey,
   getResourceRegistrationNotificationKey,

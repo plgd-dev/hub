@@ -3,9 +3,9 @@ import { useIntl } from 'react-intl'
 import { useSelector, useDispatch } from 'react-redux'
 import PropTypes from 'prop-types'
 
-import { useEmitter } from '@/common/hooks'
-import { Button } from '@/components/button'
-import { Switch } from '@/components/switch'
+import { useEmitter } from '@shared-ui/common/hooks'
+import { Button } from '@shared-ui/components/old/button'
+import { Switch } from '@shared-ui/components/old/switch'
 import { ProvisionNewDevice } from './provision-new-device'
 import {
   DEVICES_STATUS_WS_KEY,

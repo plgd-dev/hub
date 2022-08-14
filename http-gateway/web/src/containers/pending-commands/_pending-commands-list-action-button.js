@@ -1,7 +1,7 @@
 import { useIntl } from 'react-intl'
 import PropTypes from 'prop-types'
 
-import { ActionButton } from '@/components/action-button'
+import { ActionButton } from '@shared-ui/components/old/action-button'
 import { messages as t } from './pending-commands-i18n'
 
 // Component is currently not used

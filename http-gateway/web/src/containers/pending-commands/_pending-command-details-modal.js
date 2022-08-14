@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types'
 import { useIntl } from 'react-intl'
 
-import { Modal } from '@/components/modal'
+import { Modal } from '@shared-ui/components/old/modal'
 
 import { commandTypes } from './constants'
 import { messages as t } from './pending-commands-i18n'
@@ -21,7 +21,9 @@ export const PendingCommandDetailsModal = ({
     )
   }
 
-  const title = commandType ? `${_(t[commandType])} ${_(t.commandContent)}` : null
+  const title = commandType
+    ? `${_(t[commandType])} ${_(t.commandContent)}`
+    : null
 
   return (
     <Modal

@@ -2,14 +2,14 @@ import { useEffect, useState } from 'react'
 import { useIntl } from 'react-intl'
 import { toast } from 'react-toastify'
 
-import { showSuccessToast } from '@/components/toast'
-import { ConfirmModal } from '@/components/confirm-modal'
-import { Layout } from '@/components/layout'
-import { getApiErrorMessage } from '@/common/utils'
-import { useIsMounted } from '@/common/hooks'
-import { Emitter } from '@/common/services/emitter'
+import { showSuccessToast } from '@shared-ui/components/old/toast'
+import { ConfirmModal } from '@shared-ui/components/old/confirm-modal'
+import { Layout } from '@shared-ui/components/old/layout'
+import { getApiErrorMessage } from '@shared-ui/common/utils'
+import { useIsMounted } from '@shared-ui/common/hooks'
+import { Emitter } from '@shared-ui/common/services/emitter'
 import { PendingCommandsExpandableList } from '@/containers/pending-commands'
-import { messages as menuT } from '@/components/menu/menu-i18n'
+import { messages as menuT } from '@shared-ui/components/old/menu/menu-i18n'
 
 import {
   DEVICES_REGISTERED_UNREGISTERED_COUNT_EVENT_KEY,

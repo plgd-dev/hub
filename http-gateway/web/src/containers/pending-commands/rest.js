@@ -1,4 +1,4 @@
-import { fetchApi, security } from '@/common/services'
+import { fetchApi, security } from '@shared-ui/common/services'
 
 import { pendingCommandsApiEndpoints } from './constants'
 import { devicesApiEndpoints } from '@/containers/devices/constants'

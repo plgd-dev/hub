@@ -1,5 +1,5 @@
 import debounce from 'lodash/debounce'
-import { useStreamApi, useEmitter } from '@/common/hooks'
+import { useStreamApi, useEmitter } from '@shared-ui/common/hooks'
 import { useAppConfig } from '@/containers/app'
 
 import {

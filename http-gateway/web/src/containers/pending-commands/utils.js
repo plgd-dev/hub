@@ -1,6 +1,6 @@
 import { time } from 'units-converter'
 
-import { Emitter } from '@/common/services/emitter'
+import { Emitter } from '@shared-ui/common/services/emitter'
 
 import {
   commandTypes,
@@ -55,7 +55,8 @@ export const handleEmitUpdatedCommandEvents = eventData => {
       correlationId: auditContext?.correlationId,
       deviceId: resourceId?.deviceId || deviceId,
       href: resourceId?.href,
-      status: typeof canceled === 'boolean' ? (canceled ? CANCELED : OK) : status,
+      status:
+        typeof canceled === 'boolean' ? (canceled ? CANCELED : OK) : status,
     })
   }
 }

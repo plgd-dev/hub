@@ -6,7 +6,7 @@ import { Auth0Provider } from '@auth0/auth0-react'
 import { App } from '@/containers/app'
 import { store } from '@/store'
 import { history } from '@/store/history'
-import { IntlProvider } from '@/components/intl-provider'
+import { IntlProvider } from '@shared-ui/components/old/intl-provider'
 
 import { DEVICE_AUTH_CODE_SESSION_KEY } from './constants'
 import reportWebVitals from './reportWebVitals'

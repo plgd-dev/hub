@@ -9,20 +9,20 @@ import { useIntl } from 'react-intl'
 import {
   ToastContainer,
   BrowserNotificationsContainer,
-} from '@/components/toast'
-import { PageLoader } from '@/components/page-loader'
-import { LeftPanel } from '@/components/left-panel'
-import { Menu } from '@/components/menu'
-import { StatusBar } from '@/components/status-bar'
-import { Footer } from '@/components/footer'
-import { useLocalStorage } from '@/common/hooks'
+} from '@shared-ui/components/old/toast'
+import { PageLoader } from '@shared-ui/components/old/page-loader'
+import { LeftPanel } from '@shared-ui/components/old/left-panel'
+import { Menu } from '@shared-ui/components/old/menu'
+import { StatusBar } from '@shared-ui/components/old/status-bar'
+import { Footer } from '@shared-ui/components/old/footer'
+import { useLocalStorage } from '@shared-ui/common/hooks'
 import { Routes } from '@/routes'
 import { history } from '@/store/history'
-import { security } from '@/common/services/security'
-import { openTelemetry } from '@/common/services/opentelemetry'
-import { InitServices } from '@/common/services/init-services'
+import { security } from '@shared-ui/common/services/security'
+import { openTelemetry } from '@shared-ui/common/services/opentelemetry'
+import { InitServices } from '@shared-ui/common/services/init-services'
 import appConfig from '@/config'
-import { fetchApi } from '@/common/services'
+import { fetchApi } from '@shared-ui/common/services'
 import { messages as t } from './app-i18n'
 import { AppContext } from './app-context'
 import './app.scss'
@@ -51,7 +51,7 @@ const App = ({ config }) => {
     openTelemetry: openTelemetryConfig,
     ...generalConfig
   } = config
-  security.setGeneralConfig(generalConfig)
+  security.setGeneralConfig({ ...generalConfig, useSecurity: true })
   security.setWebOAuthConfig(webOauthClient)
   security.setDeviceOAuthConfig(deviceOauthClient)
   openTelemetryConfig !== false && openTelemetry.init('hub')
@@ -139,6 +139,7 @@ const App = ({ config }) => {
           openTelemetryConfig !== false
             ? openTelemetry.getWebTracer()
             : undefined,
+        useSecurity: true,
       }}
     >
       <Router history={history}>
@@ -151,13 +152,41 @@ const App = ({ config }) => {
           <StatusBar />
           <LeftPanel>
             <Menu
+              menuItems={[
+                {
+                  to: '/',
+                  icon: 'fa-list',
+                  nameKey: 'devices',
+                  className: 'devices',
+                },
+                {
+                  to: '/pending-commands',
+                  icon: 'fa-compress-alt',
+                  nameKey: 'pendingCommands',
+                },
+              ]}
               collapsed={collapsed}
               toggleCollapsed={() => setCollapsed(!collapsed)}
             />
           </LeftPanel>
           <div id="content">
             <Routes />
-            <Footer />
+            <Footer
+              links={[
+                {
+                  to: 'https://github.com/plgd-dev/hub/raw/master/http-gateway/swagger.yaml',
+                  i18key: 'API',
+                },
+                {
+                  to: 'https://plgd.dev/documentation',
+                  i18key: 'docs',
+                },
+                {
+                  to: 'https://github.com/plgd-dev/hub',
+                  i18key: 'contribute',
+                },
+              ]}
+            />
           </div>
         </Container>
         <ToastContainer />
