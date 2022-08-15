@@ -139,6 +139,7 @@ define RUN-DOCKER
 		-e TEST_OAUTH_SERVER_ID_TOKEN_PRIVATE_KEY=/privKeys/idTokenKey.pem \
 		-e TEST_OAUTH_SERVER_ACCESS_TOKEN_PRIVATE_KEY=/privKeys/accessTokenKey.pem \
 		-e TEST_HTTP_GW_WWW_ROOT=/usr/local/www \
+		-e ENABLE_RECEIVE_CANCELLATION_NOTIFICATION=false \
 		hub-test \
 		$(1) ;
 endef
