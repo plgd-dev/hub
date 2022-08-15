@@ -5,7 +5,6 @@ import (
 	"crypto/tls"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"reflect"
@@ -155,7 +154,7 @@ func ReadHTTPResponse(t *testing.T, w io.Reader, contentType string) interface{}
 		readFrom = cbor.ReadFrom
 	case "text/plain":
 		readFrom = func(w io.Reader, v interface{}) error {
-			b, err := ioutil.ReadAll(w)
+			b, err := io.ReadAll(w)
 			if err != nil {
 				return err
 			}

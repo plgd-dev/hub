@@ -11,7 +11,7 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"reflect"
 	"testing"
@@ -61,7 +61,7 @@ func testValidateResp(t *testing.T, test testEl, resp *pool.Message) {
 	if bodySize == 0 && test.out.payload == nil {
 		return
 	}
-	body, err := ioutil.ReadAll(resp.Body())
+	body, err := io.ReadAll(resp.Body())
 	require.NoError(t, err)
 	if contentType, err := resp.ContentFormat(); err == nil {
 		switch contentType {

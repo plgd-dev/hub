@@ -3,7 +3,6 @@ package client
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 
 	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/kit/v2/codec/cbor"
@@ -38,7 +37,7 @@ func (GeneralMessageCodec) Decode(m *message.Message, v interface{}) error {
 		decoder = json.ReadFrom
 	case message.TextPlain:
 		decoder = func(w io.Reader, v interface{}) error {
-			data, err := ioutil.ReadAll(w)
+			data, err := io.ReadAll(w)
 			if err != nil {
 				return err
 			}

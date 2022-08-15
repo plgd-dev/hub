@@ -3,7 +3,6 @@ package test
 import (
 	"crypto/x509"
 	"encoding/pem"
-	"io/ioutil"
 	"os"
 	"testing"
 
@@ -13,7 +12,7 @@ import (
 
 func GetRootCertificatePool(t *testing.T) *x509.CertPool {
 	pool := security.NewDefaultCertPool(nil)
-	dat, err := ioutil.ReadFile(os.Getenv("TEST_ROOT_CA_CERT"))
+	dat, err := os.ReadFile(os.Getenv("TEST_ROOT_CA_CERT"))
 	require.NoError(t, err)
 	ok := pool.AppendCertsFromPEM(dat)
 	require.True(t, ok)
@@ -21,7 +20,7 @@ func GetRootCertificatePool(t *testing.T) *x509.CertPool {
 }
 
 func GetRootCertificateAuthorities(t *testing.T) []*x509.Certificate {
-	dat, err := ioutil.ReadFile(os.Getenv("TEST_ROOT_CA_CERT"))
+	dat, err := os.ReadFile(os.Getenv("TEST_ROOT_CA_CERT"))
 	require.NoError(t, err)
 	r := make([]*x509.Certificate, 0, 4)
 	for {

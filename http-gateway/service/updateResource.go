@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -18,7 +17,7 @@ import (
 )
 
 func createContentBody(body io.ReadCloser) (io.ReadCloser, error) {
-	data, err := ioutil.ReadAll(body)
+	data, err := io.ReadAll(body)
 	if err != nil {
 		return nil, fmt.Errorf("read body: %w", err)
 	}
@@ -33,7 +32,7 @@ func createContentBody(body io.ReadCloser) (io.ReadCloser, error) {
 		return nil, fmt.Errorf("cannot marshal to protojson: %w", err)
 	}
 
-	return ioutil.NopCloser(bytes.NewReader(reqData)), nil
+	return io.NopCloser(bytes.NewReader(reqData)), nil
 }
 
 func (requestHandler *RequestHandler) updateResource(w http.ResponseWriter, r *http.Request) {

@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"strings"
 
 	"github.com/google/uuid"
@@ -157,7 +156,7 @@ func GetContentData(opts message.Options, body io.Reader) (data []byte, contentF
 		contentFormat = int32(mt)
 	}
 	if body != nil {
-		data, _ = ioutil.ReadAll(body)
+		data, _ = io.ReadAll(body)
 	}
 	return data, contentFormat
 }

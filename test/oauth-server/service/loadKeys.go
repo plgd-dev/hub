@@ -4,11 +4,11 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
-	"io/ioutil"
+	"os"
 )
 
 func LoadPrivateKey(path string) (interface{}, error) {
-	certPEMBlock, err := ioutil.ReadFile(path)
+	certPEMBlock, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}

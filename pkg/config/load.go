@@ -2,7 +2,7 @@ package config
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 
 	"github.com/jessevdk/go-flags"
 )
@@ -40,7 +40,7 @@ func Load(config interface{}) error {
 
 // Read reads config from file.
 func Read(filename string, config interface{}) error {
-	cfg, err := ioutil.ReadFile(filename)
+	cfg, err := os.ReadFile(filename)
 	if err != nil {
 		return err
 	}

@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"testing"
@@ -126,7 +125,7 @@ func TestRequestHandlerGetWebDirectory(t *testing.T) {
 			got, err := io.ReadAll(resp.Body)
 			require.NoError(t, err)
 
-			want, err := ioutil.ReadFile(tt.wantFile)
+			want, err := os.ReadFile(tt.wantFile)
 			require.NoError(t, err)
 
 			require.Equal(t, got, want)
