@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"os"
 	"testing"
 
 	"github.com/plgd-dev/device/schema"
@@ -21,7 +22,6 @@ import (
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	pbTest "github.com/plgd-dev/hub/v2/test/pb"
 	"github.com/plgd-dev/hub/v2/test/service"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -216,48 +216,7 @@ func deleteSwitchResourceExpectedEvents(t *testing.T, deviceID, subID, correlati
 			},
 		}
 		e[pbTest.GetEventID(changedRes)] = changedRes
-	}
-
-	return e
-}
-
-func validateEvents(t *testing.T, subClient pb.GrpcGateway_SubscribeToEventsClient, expectedEvents map[string]*pb.Event, optionalEvents map[string]*pb.Event) {
-	for {
-		ev, err := subClient.Recv()
-		if kitNetGrpc.IsContextDeadlineExceeded(err) {
-			require.Failf(t, "missing events", "expected events not received: %+v", expectedEvents)
-		}
-		require.NoError(t, err)
-
-		eventID := pbTest.GetEventID(ev)
-		optional, ok := optionalEvents[eventID]
-		if ok {
-			pbTest.CleanUpEvent(t, optional)
-			pbTest.CleanUpEvent(t, ev)
-			equal := false
-			test.CheckProtobufs(t, optional, ev, func(t *testing.T, expected, actual interface{}, msgAndArgs ...interface{}) {
-				equal = assert.ObjectsAreEqual(expected, actual)
-			})
-			if equal {
-				continue
-			}
-		}
-
-		expected, ok := expectedEvents[eventID]
-		if !ok {
-			require.Failf(t, "unexpected event", "invalid event: %+v", ev)
-		}
-		pbTest.CmpEvent(t, expected, ev, "")
-		delete(expectedEvents, eventID)
-		if len(expectedEvents) == 0 {
-			break
-		}
-	}
-}
-
-func getOptionalEvents(t *testing.T, deviceID, subID, correlationID, switchID string, isDiscoveryResourceBatchObservable bool) map[string]*pb.Event {
-	e := make(map[string]*pb.Event)
-	if !isDiscoveryResourceBatchObservable {
+	} else if os.Getenv("ENABLE_RECEIVE_CANCELLATION_NOTIFICATION") == "" {
 		res := pbTest.MakeResourceChanged(t, deviceID, test.TestResourceSwitchesInstanceHref(switchID), "", nil)
 		res.Status = commands.Status_NOT_FOUND
 		res.Content.CoapContentFormat = -1
@@ -271,7 +230,29 @@ func getOptionalEvents(t *testing.T, deviceID, subID, correlationID, switchID st
 		}
 		e[pbTest.GetEventID(changedRes)] = changedRes
 	}
+
 	return e
+}
+
+func validateEvents(t *testing.T, subClient pb.GrpcGateway_SubscribeToEventsClient, expectedEvents map[string]*pb.Event) {
+	for {
+		ev, err := subClient.Recv()
+		if kitNetGrpc.IsContextDeadlineExceeded(err) {
+			require.Failf(t, "missing events", "expected events not received: %+v", expectedEvents)
+		}
+		require.NoError(t, err)
+
+		eventID := pbTest.GetEventID(ev)
+		expected, ok := expectedEvents[eventID]
+		if !ok {
+			require.Failf(t, "unexpected event", "invalid event: %+v", ev)
+		}
+		pbTest.CmpEvent(t, expected, ev, "")
+		delete(expectedEvents, eventID)
+		if len(expectedEvents) == 0 {
+			break
+		}
+	}
 }
 
 func TestCreateAndDeleteResource(t *testing.T) {
@@ -302,15 +283,13 @@ func TestCreateAndDeleteResource(t *testing.T) {
 
 	isDiscoveryResourceBatchObservable := test.IsDiscoveryResourceBatchObservable(ctx, t, deviceID)
 
-	optionalEvents := getOptionalEvents(t, deviceID, subID, correlationID, switchID, isDiscoveryResourceBatchObservable)
-
 	for i := 0; i < 5; i++ {
 		fmt.Printf("iteration %v\n", i)
 		createSwitchResource(t, ctx, c, deviceID, switchID)
 		expectedCreateEvents := createSwitchResourceExpectedEvents(t, deviceID, subID, correlationID, switchID)
-		validateEvents(t, subClient, expectedCreateEvents, optionalEvents)
+		validateEvents(t, subClient, expectedCreateEvents)
 		deleteSwitchResource(t, ctx, c, deviceID, switchID)
 		expectedDeleteEvents := deleteSwitchResourceExpectedEvents(t, deviceID, subID, correlationID, switchID, isDiscoveryResourceBatchObservable)
-		validateEvents(t, subClient, expectedDeleteEvents, optionalEvents)
+		validateEvents(t, subClient, expectedDeleteEvents)
 	}
 }
