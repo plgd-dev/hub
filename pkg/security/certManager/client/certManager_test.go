@@ -1,7 +1,6 @@
 package client_test
 
 import (
-	"io/ioutil"
 	"os"
 	"testing"
 
@@ -48,23 +47,23 @@ AnQ1eTGKTGLdAZsV+NnZPL17nit1cbiN2g==
 
 func TestNew(t *testing.T) {
 	// tmp dir
-	tmpDir, err := ioutil.TempDir("/tmp", "test")
+	tmpDir, err := os.MkdirTemp("/tmp", "test")
 	require.NoError(t, err)
 	defer func() {
 		_ = deleteTmpDir(tmpDir)
 	}()
 	// ca
-	caFile, err := ioutil.TempFile(tmpDir, "ca")
+	caFile, err := os.CreateTemp(tmpDir, "ca")
 	require.NoError(t, err)
 	err = caFile.Close()
 	require.NoError(t, err)
 
-	crtFile, err := ioutil.TempFile(tmpDir, "crt")
+	crtFile, err := os.CreateTemp(tmpDir, "crt")
 	require.NoError(t, err)
 	err = crtFile.Close()
 	require.NoError(t, err)
 
-	keyFile, err := ioutil.TempFile(tmpDir, "key")
+	keyFile, err := os.CreateTemp(tmpDir, "key")
 	require.NoError(t, err)
 	err = keyFile.Close()
 	require.NoError(t, err)
@@ -104,15 +103,15 @@ func TestNew(t *testing.T) {
 
 func createTmpCertFiles(t *testing.T, caFile, crtFile, keyFile string) client.Config {
 	// ca
-	err := ioutil.WriteFile(caFile, []byte(TestCaCrt), os.FileMode(os.O_RDWR))
+	err := os.WriteFile(caFile, []byte(TestCaCrt), os.FileMode(os.O_RDWR))
 	require.NoError(t, err)
 
 	// crt
-	err = ioutil.WriteFile(crtFile, []byte(TestCrt), os.FileMode(os.O_RDWR))
+	err = os.WriteFile(crtFile, []byte(TestCrt), os.FileMode(os.O_RDWR))
 	require.NoError(t, err)
 
 	// key
-	err = ioutil.WriteFile(keyFile, []byte(TestCrtKey), os.FileMode(os.O_RDWR))
+	err = os.WriteFile(keyFile, []byte(TestCrtKey), os.FileMode(os.O_RDWR))
 	require.NoError(t, err)
 
 	cfg := client.Config{

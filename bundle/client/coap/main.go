@@ -6,7 +6,7 @@ import (
 	"crypto/tls"
 	"flag"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"net/url"
 	"os"
@@ -110,7 +110,7 @@ func decodePayload(resp *pool.Message) {
 		"Payload: ",
 	)
 	if err == nil {
-		bufr, err := ioutil.ReadAll(resp.Body())
+		bufr, err := io.ReadAll(resp.Body())
 		if err != nil {
 			buf += fmt.Sprintf("cannot read body: %v", err)
 			log.Print(buf)

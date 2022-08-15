@@ -7,7 +7,6 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"time"
 
@@ -54,17 +53,17 @@ func NewSDKClient() (*client.Client, error) {
 		return nil, err
 	}
 
-	identityIntermediateCA, err := ioutil.ReadFile(os.Getenv("TEST_ROOT_CA_CERT"))
+	identityIntermediateCA, err := os.ReadFile(os.Getenv("TEST_ROOT_CA_CERT"))
 	if err != nil {
 		return nil, err
 	}
 
-	identityIntermediateCAKey, err := ioutil.ReadFile(os.Getenv("TEST_ROOT_CA_KEY"))
+	identityIntermediateCAKey, err := os.ReadFile(os.Getenv("TEST_ROOT_CA_KEY"))
 	if err != nil {
 		return nil, err
 	}
 
-	identityTrustedCA, err := ioutil.ReadFile(os.Getenv("TEST_ROOT_CA_CERT"))
+	identityTrustedCA, err := os.ReadFile(os.Getenv("TEST_ROOT_CA_CERT"))
 	if err != nil {
 		return nil, err
 	}

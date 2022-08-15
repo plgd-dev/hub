@@ -2,7 +2,7 @@ package service_test
 
 import (
 	"context"
-	"io/ioutil"
+	"io"
 	"testing"
 	"time"
 
@@ -80,7 +80,7 @@ func TestClientDeleteHandler(t *testing.T) {
 			assert.Equal(t, tt.wantsCode.String(), resp.Code().String())
 			if tt.wantsContent != nil {
 				require.NotEmpty(t, resp.Body())
-				b, err := ioutil.ReadAll(resp.Body())
+				b, err := io.ReadAll(resp.Body())
 				require.NoError(t, err)
 				assert.Equal(t, tt.wantsContent, b)
 			}

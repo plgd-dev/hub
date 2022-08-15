@@ -1,7 +1,7 @@
 package service_test
 
 import (
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"testing"
@@ -73,7 +73,7 @@ func getAuthorize(t *testing.T, clientID, nonce, redirectURI, deviceID, scope, r
 	}
 	if res.StatusCode == http.StatusOK {
 		if consentScreenDisplayed {
-			buf, err := ioutil.ReadAll(res.Body)
+			buf, err := io.ReadAll(res.Body)
 			require.NoError(t, err)
 			require.Contains(t, string(buf), "<title>Consent Screen</title>")
 			return ""

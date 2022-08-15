@@ -5,7 +5,7 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net"
 	"net/http"
 	"sync"
@@ -83,7 +83,7 @@ func TestRequestHandlerSubscribeToDevices(t *testing.T) {
 				_ = r.Body.Close()
 			}()
 			assert.Equal(t, wantEventType, h.EventType)
-			buf, err := ioutil.ReadAll(r.Body)
+			buf, err := io.ReadAll(r.Body)
 			assert.NoError(t, err)
 			var v interface{}
 			err = json.Decode(buf, &v)
@@ -113,7 +113,7 @@ func TestRequestHandlerSubscribeToDevices(t *testing.T) {
 	defer func() {
 		_ = resp.Body.Close()
 	}()
-	v, err := ioutil.ReadAll(resp.Body)
+	v, err := io.ReadAll(resp.Body)
 	fmt.Printf("body %v\n", string(v))
 	require.NoError(t, err)
 	require.Equal(t, wantContentType, resp.Header.Get("Content-Type"))
@@ -176,7 +176,7 @@ func TestRequestHandlerSubscribeToDevicesOffline(t *testing.T) {
 				_ = r.Body.Close()
 			}()
 			assert.Equal(t, wantEventType, h.EventType)
-			buf, err := ioutil.ReadAll(r.Body)
+			buf, err := io.ReadAll(r.Body)
 			assert.NoError(t, err)
 			var v interface{}
 			err = json.Decode(buf, &v)
@@ -206,7 +206,7 @@ func TestRequestHandlerSubscribeToDevicesOffline(t *testing.T) {
 	defer func() {
 		_ = resp.Body.Close()
 	}()
-	v, err := ioutil.ReadAll(resp.Body)
+	v, err := io.ReadAll(resp.Body)
 	fmt.Printf("body %v\n", string(v))
 	require.NoError(t, err)
 	require.Equal(t, wantContentType, resp.Header.Get("Content-Type"))

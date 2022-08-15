@@ -6,7 +6,7 @@ import (
 	"crypto/tls"
 	"encoding/pem"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os"
 	"os/exec"
@@ -114,7 +114,7 @@ func SetUpClouds(ctx context.Context, t *testing.T, deviceID string, supportedEv
 	defer func(r *http.Response) {
 		_ = r.Body.Close()
 	}(resp)
-	b, err := ioutil.ReadAll(resp.Body)
+	b, err := io.ReadAll(resp.Body)
 	require.NoError(t, err)
 	fmt.Println(string(b))
 

@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"strings"
 	"sync"
@@ -97,7 +96,7 @@ func Get(ctx context.Context, tracerProvider trace.TracerProvider, url string, l
 			log.Errorf("failed to close response body: %w", err)
 		}
 	}()
-	buf, err := ioutil.ReadAll(resp.Body)
+	buf, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return err
 	}
