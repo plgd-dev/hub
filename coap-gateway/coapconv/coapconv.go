@@ -255,18 +255,19 @@ var filterOutEmptyResources = []string{
 }
 
 // inaccessible oic/sec resources have empty content and should be skipped
-func filterOutEmptyResource(resource resources.BatchRepresentation) bool {
+func filterOutEmptyResource(resource resources.BatchRepresentation) (isEmpty bool, filterOut bool) {
 	if len(resource.Content) == 2 {
 		var v map[interface{}]interface{}
 		if err := cbor.Decode(resource.Content, &v); err == nil && len(v) == 0 {
+			isEmpty = true
 			for _, f := range filterOutEmptyResources {
 				if strings.HasPrefix(resource.Href(), f) {
-					return true
+					return isEmpty, true
 				}
 			}
 		}
 	}
-	return false
+	return isEmpty, false
 }
 
 func NewNotifyResourceChangedRequestsFromBatchResourceDiscovery(deviceID, connectionID string, req *pool.Message) ([]*commands.NotifyResourceChangedRequest, error) {
@@ -288,19 +289,29 @@ func NewNotifyResourceChangedRequestsFromBatchResourceDiscovery(deviceID, connec
 
 	requests := make([]*commands.NotifyResourceChangedRequest, 0, len(rs))
 	for _, r := range rs {
-		if filterOutEmptyResource(r) {
+		isEmpty, filterOut := filterOutEmptyResource(r)
+		if filterOut {
 			continue
+		}
+		ct := contentFormat
+		data := r.Content
+		code := CoapCodeToStatus(req.Code())
+		if isEmpty {
+			// if we gets empty content we consider it as not found. Empty message is send when resource is deleted/acls don't allows as to access.
+			ct = -1
+			data = nil
+			code = commands.Status_NOT_FOUND
 		}
 
 		requests = append(requests, &commands.NotifyResourceChangedRequest{
 			ResourceId: commands.NewResourceID(deviceID, r.Href()),
 			Content: &commands.Content{
-				ContentType:       getContentFormatString(contentFormat),
-				CoapContentFormat: contentFormat,
-				Data:              r.Content,
+				ContentType:       getContentFormatString(ct),
+				CoapContentFormat: ct,
+				Data:              data,
 			},
 			CommandMetadata: metadata,
-			Status:          CoapCodeToStatus(req.Code()),
+			Status:          code,
 		})
 	}
 	return requests, nil
