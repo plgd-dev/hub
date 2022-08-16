@@ -439,7 +439,11 @@ func (s *Service) processCommandTask(req *mux.Message, client *Client, span trac
 	case coapCodes.POST, coapCodes.DELETE, coapCodes.PUT, coapCodes.GET:
 		resp, err = fnc(req, client)
 		if err != nil && wantToCloseClientOnError(req) {
-			defer client.Close()
+			defer func() {
+				// Since tls.Conn is async, there is no way to flush or wait for the write, so we must use heuristics.
+				time.Sleep(time.Millisecond * 10)
+				client.Close()
+			}()
 		}
 	default:
 		err := onUnprocessedRequestError(req.Code)
