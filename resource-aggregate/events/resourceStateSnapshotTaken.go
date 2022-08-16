@@ -280,7 +280,6 @@ func (e *ResourceStateSnapshotTaken) HandleEventResourceChanged(ctx context.Cont
 
 func (e *ResourceStateSnapshotTaken) HandleEventResourceDeleted(ctx context.Context, deleted *ResourceDeleted) error {
 	if deleted.GetStatus() == commands.Status_OK || deleted.GetStatus() == commands.Status_ACCEPTED {
-		e.LatestResourceChange = nil
 		e.ResourceCreatePendings = nil
 		e.ResourceRetrievePendings = nil
 		e.ResourceDeletePendings = nil

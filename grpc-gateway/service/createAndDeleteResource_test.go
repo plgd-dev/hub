@@ -4,8 +4,8 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"os"
 	"testing"
+	"time"
 
 	"github.com/plgd-dev/device/schema"
 	"github.com/plgd-dev/device/schema/interfaces"
@@ -160,7 +160,7 @@ func createSwitchResourceExpectedEvents(t *testing.T, deviceID, subID, correlati
 	}
 }
 
-func deleteSwitchResourceExpectedEvents(t *testing.T, deviceID, subID, correlationID, switchID string, isDiscoveryResourceBatchObservable bool) map[string]*pb.Event {
+func deleteSwitchResourceExpectedEvents(t *testing.T, deviceID, subID, correlationID, switchID string) map[string]*pb.Event {
 	deletePending := &pb.Event{
 		SubscriptionId: subID,
 		CorrelationId:  correlationID,
@@ -200,35 +200,24 @@ func deleteSwitchResourceExpectedEvents(t *testing.T, deviceID, subID, correlati
 		},
 	}
 
+	res := pbTest.MakeResourceChanged(t, deviceID, test.TestResourceSwitchesInstanceHref(switchID), "", nil)
+	res.Status = commands.Status_NOT_FOUND
+	res.Content.CoapContentFormat = -1
+	res.Content.ContentType = ""
+	changedRes := &pb.Event{
+		SubscriptionId: subID,
+		CorrelationId:  correlationID,
+		Type: &pb.Event_ResourceChanged{
+			ResourceChanged: res,
+		},
+	}
+
 	e := map[string]*pb.Event{
 		pbTest.GetEventID(deletePending): deletePending,
 		pbTest.GetEventID(deleted):       deleted,
 		pbTest.GetEventID(unpublished):   unpublished,
 		pbTest.GetEventID(changed):       changed,
-	}
-
-	if isDiscoveryResourceBatchObservable {
-		changedRes := &pb.Event{
-			SubscriptionId: subID,
-			CorrelationId:  correlationID,
-			Type: &pb.Event_ResourceChanged{
-				ResourceChanged: pbTest.MakeResourceChanged(t, deviceID, test.TestResourceSwitchesInstanceHref(switchID), "", map[interface{}]interface{}{}),
-			},
-		}
-		e[pbTest.GetEventID(changedRes)] = changedRes
-	} else if os.Getenv("ENABLE_RECEIVE_CANCELLATION_NOTIFICATION") == "" {
-		res := pbTest.MakeResourceChanged(t, deviceID, test.TestResourceSwitchesInstanceHref(switchID), "", nil)
-		res.Status = commands.Status_NOT_FOUND
-		res.Content.CoapContentFormat = -1
-		res.Content.ContentType = ""
-		changedRes := &pb.Event{
-			SubscriptionId: subID,
-			CorrelationId:  correlationID,
-			Type: &pb.Event_ResourceChanged{
-				ResourceChanged: res,
-			},
-		}
-		e[pbTest.GetEventID(changedRes)] = changedRes
+		pbTest.GetEventID(changedRes):    changedRes,
 	}
 
 	return e
@@ -281,15 +270,14 @@ func TestCreateAndDeleteResource(t *testing.T) {
 	subClient, subID := subscribeToAllEvents(t, ctx, c, correlationID)
 	const switchID = "1"
 
-	isDiscoveryResourceBatchObservable := test.IsDiscoveryResourceBatchObservable(ctx, t, deviceID)
-
 	for i := 0; i < 5; i++ {
 		fmt.Printf("iteration %v\n", i)
+		time.Sleep(time.Millisecond * 500)
 		createSwitchResource(t, ctx, c, deviceID, switchID)
 		expectedCreateEvents := createSwitchResourceExpectedEvents(t, deviceID, subID, correlationID, switchID)
 		validateEvents(t, subClient, expectedCreateEvents)
 		deleteSwitchResource(t, ctx, c, deviceID, switchID)
-		expectedDeleteEvents := deleteSwitchResourceExpectedEvents(t, deviceID, subID, correlationID, switchID, isDiscoveryResourceBatchObservable)
+		expectedDeleteEvents := deleteSwitchResourceExpectedEvents(t, deviceID, subID, correlationID, switchID)
 		validateEvents(t, subClient, expectedDeleteEvents)
 	}
 }

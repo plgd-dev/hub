@@ -155,7 +155,23 @@ func (r RequestHandler) UnpublishResourceLinks(ctx context.Context, request *com
 		log.Errorf("cannot publish resource links unpublished events: %v", err)
 	}
 	auditContext := commands.NewAuditContext(owner, "")
-	return newUnpublishResourceLinksResponse(events, aggregate.DeviceID(), auditContext), nil
+
+	resp := newUnpublishResourceLinksResponse(events, aggregate.DeviceID(), auditContext)
+	for _, href := range resp.GetUnpublishedHrefs() {
+		_, err = r.NotifyResourceChanged(ctx, &commands.NotifyResourceChangedRequest{
+			ResourceId: commands.NewResourceID(resp.GetDeviceId(), href),
+			Content: &commands.Content{
+				CoapContentFormat: -1,
+			},
+			Status:          commands.Status_NOT_FOUND,
+			CommandMetadata: request.GetCommandMetadata(),
+		})
+		if err != nil {
+			log.Errorf("cannot reset content for unpublished resource %v%v : %v", err, resp.GetDeviceId(), href)
+		}
+	}
+
+	return resp, nil
 }
 
 func newUnpublishResourceLinksResponse(events []eventstore.Event, deviceID string, auditContext *commands.AuditContext) *commands.UnpublishResourceLinksResponse {
