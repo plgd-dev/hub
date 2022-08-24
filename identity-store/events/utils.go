@@ -7,6 +7,9 @@ import (
 )
 
 func OwnerToUUID(owner string) string {
+	if u, err := uuid.Parse(owner); err == nil && u != uuid.Nil {
+		return owner
+	}
 	return uuid.NewSHA1(uuid.NameSpaceURL, []byte(owner)).String()
 }
 

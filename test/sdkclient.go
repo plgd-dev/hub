@@ -13,7 +13,7 @@ import (
 	"github.com/plgd-dev/device/client"
 	"github.com/plgd-dev/device/client/core"
 	"github.com/plgd-dev/hub/v2/pkg/log"
-	"github.com/plgd-dev/kit/v2/security/signer"
+	"github.com/plgd-dev/hub/v2/pkg/security/certificateSigner"
 )
 
 type testSetupSecureClient struct {
@@ -96,7 +96,7 @@ func NewSDKClient() (*client.Client, error) {
 			Cert:    string(identityIntermediateCA),
 			CertKey: string(identityIntermediateCAKey),
 			CreateSignerFunc: func(caCert []*x509.Certificate, caKey crypto.PrivateKey, validNotBefore time.Time, validNotAfter time.Time) core.CertificateSigner {
-				return signer.NewIdentityCertificateSigner(caCert, caKey, validNotBefore, validNotAfter)
+				return certificateSigner.NewIdentityCertificateSigner(caCert, caKey, certificateSigner.WithNotBefore(validNotBefore), certificateSigner.WithNotAfter(validNotAfter))
 			},
 		},
 	}

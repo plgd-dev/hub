@@ -9,6 +9,7 @@ import (
 
 	"github.com/karrick/tparse/v2"
 	"github.com/plgd-dev/hub/v2/certificate-authority/pb"
+	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/pkg/net/grpc/server"
 	"github.com/plgd-dev/kit/v2/security"
 	"google.golang.org/grpc"
@@ -27,10 +28,11 @@ type RequestHandler struct {
 	Certificate []*x509.Certificate
 	PrivateKey  crypto.PrivateKey
 	Config      Config
+	logger      log.Logger
 }
 
-func AddHandler(svr *server.Server, cfg Config) error {
-	handler, err := NewRequestHandlerFromConfig(cfg)
+func AddHandler(svr *server.Server, cfg Config, logger log.Logger) error {
+	handler, err := NewRequestHandlerFromConfig(cfg, logger)
 	if err != nil {
 		return fmt.Errorf("could not create plgd-dev/certificate-authority: %w", err)
 	}
@@ -43,7 +45,7 @@ func Register(server *grpc.Server, handler *RequestHandler) {
 	pb.RegisterCertificateAuthorityServer(server, handler)
 }
 
-func NewRequestHandlerFromConfig(cfg Config) (*RequestHandler, error) {
+func NewRequestHandlerFromConfig(cfg Config, logger log.Logger) (*RequestHandler, error) {
 	chainCerts, err := security.LoadX509(cfg.Signer.CertFile)
 	if err != nil {
 		return nil, err
@@ -56,7 +58,7 @@ func NewRequestHandlerFromConfig(cfg Config) (*RequestHandler, error) {
 	return NewRequestHandler(func() time.Time {
 		t, _ := tparse.ParseNow(time.RFC3339, cfg.Signer.ValidFrom)
 		return t
-	}, cfg.Signer.ExpiresIn, chainCerts, privateKey, cfg), nil
+	}, cfg.Signer.ExpiresIn, chainCerts, privateKey, cfg, logger), nil
 }
 
 // NewRequestHandler factory for new RequestHandler.
@@ -66,6 +68,7 @@ func NewRequestHandler(
 	certificate []*x509.Certificate,
 	privateKey crypto.PrivateKey,
 	cfg Config,
+	logger log.Logger,
 ) *RequestHandler {
 	return &RequestHandler{
 		ValidFrom:   validFrom,
@@ -73,5 +76,6 @@ func NewRequestHandler(
 		Certificate: certificate,
 		PrivateKey:  privateKey,
 		Config:      cfg,
+		logger:      logger,
 	}
 }
