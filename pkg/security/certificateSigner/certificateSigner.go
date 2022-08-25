@@ -10,6 +10,7 @@ import (
 	"math/big"
 	"time"
 
+	pkgTime "github.com/plgd-dev/hub/v2/pkg/time"
 	"github.com/plgd-dev/kit/v2/security"
 )
 
@@ -47,7 +48,7 @@ type CertificateSigner struct {
 
 func New(caCert []*x509.Certificate, caKey crypto.PrivateKey, opts ...Opt) *CertificateSigner {
 	cfg := SignerConfig{
-		ValidNotAfter: time.Unix(1<<63-62135596801, 999999999),
+		ValidNotAfter: pkgTime.MaxTime,
 	}
 	for _, o := range opts {
 		o(&cfg)
