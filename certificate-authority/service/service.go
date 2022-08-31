@@ -39,7 +39,7 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 	}
 	server.AddCloseFunc(validator.Close)
 
-	err = AddHandler(server, config)
+	err = AddHandler(server, config, logger)
 	if err != nil {
 		server.Close()
 		return nil, err

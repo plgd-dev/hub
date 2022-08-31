@@ -20,6 +20,7 @@ type Options struct {
 		GenerateRootCA         bool   `long:"generateRootCA"`
 		GenerateIntermediateCA bool   `long:"generateIntermediateCA"`
 		GenerateCert           bool   `long:"generateCertificate"`
+		GenerateCSR            bool   `long:"generateCsr"`
 		GenerateIdentity       string `long:"generateIdentityCertificate" description:"deviceID"`
 		GenerateIdentityCsr    string `long:"generateIdentityCsr" description:"deviceID"`
 	} `group:"Command" namespace:"cmd"`
@@ -108,6 +109,15 @@ func cmdGenerateIdentityCSR(opts Options, priv *ecdsa.PrivateKey) {
 	writeCsrOut(opts, csr)
 }
 
+func cmdGenerateCSR(opts Options, priv *ecdsa.PrivateKey) {
+	csr, err := generateCertificate.GenerateCSR(opts.Certificate, priv)
+	if err != nil {
+		log.Fatal(err)
+	}
+	writePrivateKey(opts, priv)
+	writeCsrOut(opts, csr)
+}
+
 func main() {
 	var opts Options
 	parser := flags.NewParser(&opts, flags.Default)
@@ -129,6 +139,8 @@ func main() {
 		cmdGenerateIntermediateCA(opts, priv)
 	case opts.Command.GenerateCert:
 		cmdGenerateCert(opts, priv)
+	case opts.Command.GenerateCSR:
+		cmdGenerateCSR(opts, priv)
 	case opts.Command.GenerateIdentity != "":
 		cmdGenerateIdentityCert(opts, priv)
 	case opts.Command.GenerateIdentityCsr != "":
