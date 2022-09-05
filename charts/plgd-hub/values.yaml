@@ -127,7 +127,7 @@ mongodb:
   customLivenessProbe:
     exec:
       command:
-        - mongo
+        - mongosh
         - --disableImplicitSessions
         - --tls
         - --tlsCertificateKeyFile=/certs/cert.pem
@@ -148,7 +148,7 @@ mongodb:
         - -ec
         - |
           TLS_OPTIONS='--tls --tlsCertificateKeyFile=/certs/cert.pem --tlsCAFile=/certs/ca.pem'
-          mongo --disableImplicitSessions $TLS_OPTIONS --eval 'db.hello().isWritablePrimary || db.hello().secondary' | grep -q 'true'
+          mongosh --disableImplicitSessions $TLS_OPTIONS --eval 'db.hello().isWritablePrimary || db.hello().secondary' | grep -q 'true'
     initialDelaySeconds: 5
     periodSeconds: 10
     timeoutSeconds: 5
