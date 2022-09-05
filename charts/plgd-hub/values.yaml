@@ -128,7 +128,6 @@ mongodb:
     exec:
       command:
         - mongosh
-        - --disableImplicitSessions
         - --tls
         - --tlsCertificateKeyFile=/certs/cert.pem
         - --tlsCAFile=/certs/ca.pem
@@ -148,7 +147,7 @@ mongodb:
         - -ec
         - |
           TLS_OPTIONS='--tls --tlsCertificateKeyFile=/certs/cert.pem --tlsCAFile=/certs/ca.pem'
-          mongosh --disableImplicitSessions $TLS_OPTIONS --eval 'db.hello().isWritablePrimary || db.hello().secondary' | grep -q 'true'
+          mongosh $TLS_OPTIONS --eval 'db.hello().isWritablePrimary || db.hello().secondary' | grep -q 'true'
     initialDelaySeconds: 5
     periodSeconds: 10
     timeoutSeconds: 5
