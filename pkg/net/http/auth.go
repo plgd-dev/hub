@@ -8,6 +8,8 @@ import (
 
 	extJwt "github.com/golang-jwt/jwt/v4"
 	"github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 type (
@@ -39,18 +41,18 @@ func tokenFromCtx(ctx context.Context) (string, error) {
 	if bearer, ok := val.(string); ok && strings.HasPrefix(strings.ToLower(bearer), bearerKey+" ") {
 		token := bearer[7:]
 		if token == "" {
-			return "", fmt.Errorf("invalid token")
+			return "", status.Errorf(codes.Unauthenticated, "invalid token")
 		}
 		return token, nil
 	}
-	return "", fmt.Errorf("token not found")
+	return "", status.Errorf(codes.Unauthenticated, "token not found")
 }
 
 func ParseToken(auth string) (string, error) {
 	if strings.HasPrefix(strings.ToLower(auth), "bearer ") {
 		return auth[7:], nil
 	}
-	return "", fmt.Errorf("cannot parse bearer: prefix 'Bearer ' not found")
+	return "", status.Errorf(codes.Unauthenticated, "cannot parse bearer: prefix 'Bearer ' not found")
 }
 
 func validateJWTWithValidator(validator Validator, claims ClaimsFunc) Interceptor {

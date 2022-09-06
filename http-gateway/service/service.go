@@ -26,7 +26,10 @@ type Server struct {
 	listener       *listener.Server
 }
 
-const serviceName = "http-gateway"
+const (
+	serviceName                             = "http-gateway"
+	AuthorizationWhiteListedEndpointsRegexp = `^\/(a$|[^a].*|ap$|a[^p].*|ap[^i].*|api[^/])`
+)
 
 // New parses configuration and creates new Server with provided store and bus
 func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logger log.Logger) (*Server, error) {
@@ -77,7 +80,7 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 	if config.UI.Enabled {
 		whiteList = append(whiteList, kitNetHttp.RequestMatcher{
 			Method: http.MethodGet,
-			URI:    regexp.MustCompile(`(\/[^a]pi\/.*)|(\/a[^p]i\/.*)|(\/ap[^i]\/.*)||(\/api[^/].*)`),
+			URI:    regexp.MustCompile(AuthorizationWhiteListedEndpointsRegexp),
 		})
 	}
 	auth := kitNetHttp.NewInterceptorWithValidator(validator, authRules, whiteList...)
