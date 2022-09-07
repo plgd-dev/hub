@@ -168,10 +168,10 @@ func resourceMatcher(r *http.Request, rm *router.RouteMatch) bool {
 }
 
 // NewHTTP returns HTTP handler
-func NewHTTP(requestHandler *RequestHandler, authInterceptor kitNetHttp.Interceptor) http.Handler {
+func NewHTTP(requestHandler *RequestHandler, authInterceptor kitNetHttp.Interceptor, logger log.Logger) http.Handler {
 	r := router.NewRouter()
 	r.StrictSlash(true)
-	r.Use(kitNetHttp.CreateLoggingMiddleware())
+	r.Use(kitNetHttp.CreateLoggingMiddleware(kitNetHttp.WithLogger(logger)))
 	r.Use(kitNetHttp.CreateAuthMiddleware(authInterceptor, func(ctx context.Context, w http.ResponseWriter, r *http.Request, err error) {
 		logAndWriteErrorResponse(fmt.Errorf("cannot process request on %v: %w", r.RequestURI, err), http.StatusUnauthorized, w)
 	}))

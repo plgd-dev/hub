@@ -115,8 +115,8 @@ func resourceEventsMatcher(r *http.Request, rm *router.RouteMatch) bool {
 }
 
 // NewHTTP returns HTTP handler
-func NewHTTP(requestHandler *RequestHandler, authInterceptor kitHttp.Interceptor) (http.Handler, error) {
-	r0 := serverMux.NewRouter(uri.QueryCaseInsensitive, authInterceptor)
+func NewHTTP(requestHandler *RequestHandler, authInterceptor kitHttp.Interceptor, logger log.Logger) (http.Handler, error) {
+	r0 := serverMux.NewRouter(uri.QueryCaseInsensitive, authInterceptor, kitHttp.WithLogger(logger))
 	r := router.NewRouter()
 	r0.PathPrefix("/").Handler(r)
 

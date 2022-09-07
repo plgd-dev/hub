@@ -298,7 +298,7 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 	requestHandler := NewRequestHandler(gwClient, raClient, subMgr, emitEvent)
 
 	httpServer := http.Server{
-		Handler:           kitNetHttp.OpenTelemetryNewHandler(NewHTTP(requestHandler, auth), serviceName, tracerProvider),
+		Handler:           kitNetHttp.OpenTelemetryNewHandler(NewHTTP(requestHandler, auth, logger), serviceName, tracerProvider),
 		ReadTimeout:       config.APIs.HTTP.Server.ReadTimeout,
 		ReadHeaderTimeout: config.APIs.HTTP.Server.ReadHeaderTimeout,
 		WriteTimeout:      config.APIs.HTTP.Server.WriteTimeout,

@@ -15,6 +15,7 @@ import (
 	"github.com/lestrrat-go/jwx/jwk"
 	"github.com/plgd-dev/go-coap/v2/pkg/cache"
 	"github.com/plgd-dev/go-coap/v2/pkg/runner/periodic"
+	"github.com/plgd-dev/hub/v2/pkg/log"
 	kitHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
 	"github.com/plgd-dev/hub/v2/test/oauth-server/uri"
 )
@@ -95,9 +96,9 @@ func NewRequestHandler(ctx context.Context, config *Config, idTokenKey *rsa.Priv
 }
 
 // NewHTTP returns HTTP handler
-func NewHTTP(requestHandler *RequestHandler) http.Handler {
+func NewHTTP(requestHandler *RequestHandler, logger log.Logger) http.Handler {
 	r := router.NewRouter()
-	r.Use(kitHttp.CreateLoggingMiddleware())
+	r.Use(kitHttp.CreateLoggingMiddleware(kitHttp.WithLogger(logger)))
 	r.StrictSlash(true)
 
 	// get JWKs
