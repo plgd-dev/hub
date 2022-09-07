@@ -284,7 +284,7 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 	}
 	listener.AddCloseFunc(closeAuth)
 
-	httpHandler, err := NewHTTP(requestHandler, auth)
+	httpHandler, err := NewHTTP(requestHandler, auth, logger)
 	if err != nil {
 		cleanUp.Execute()
 		return nil, fmt.Errorf("cannot create http server interceptor: %w", err)

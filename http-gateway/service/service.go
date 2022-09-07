@@ -86,7 +86,7 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 	auth := kitNetHttp.NewInterceptorWithValidator(validator, authRules, whiteList...)
 	requestHandler := NewRequestHandler(&config, client)
 
-	httpHandler, err := NewHTTP(requestHandler, auth)
+	httpHandler, err := NewHTTP(requestHandler, auth, logger)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create http server: %w", err)
 	}

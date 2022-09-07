@@ -8,15 +8,21 @@ import (
 	"strings"
 	"time"
 
+	"github.com/plgd-dev/go-coap/v2/message"
+	"github.com/plgd-dev/hub/v2/http-gateway/uri"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/pkg/security/jwt"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap/zapcore"
+	rpcStatus "google.golang.org/genproto/googleapis/rpc/status"
+	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 type statusWriter struct {
 	http.ResponseWriter
 	status int
+	err    error
 }
 
 func (w *statusWriter) WriteHeader(status int) {
@@ -28,7 +34,25 @@ func (w *statusWriter) Write(b []byte) (int, error) {
 	if w.status == 0 {
 		w.status = 200
 	}
+	if w.status >= 400 && len(b) > 0 && w.err == nil {
+		switch w.ResponseWriter.Header().Get(uri.ContentTypeHeaderKey) {
+		case uri.ApplicationProtoJsonContentType:
+		case message.AppJSON.String():
+			var s rpcStatus.Status
+			if err := protojson.Unmarshal(b, &s); err == nil {
+				w.err = status.ErrorProto(&s)
+			}
+		}
+		if w.err == nil {
+			errLen := 1024
+			if len(b) < errLen {
+				errLen = len(b)
+			}
+			w.err = fmt.Errorf("%v", string(b[:errLen]))
+		}
+	}
 	n, err := w.ResponseWriter.Write(b)
+
 	return n, err
 }
 
@@ -194,7 +218,8 @@ type request struct {
 }
 
 type response struct {
-	Code int `json:"code,omitempty"`
+	Code  int    `json:"code,omitempty"`
+	Error string `json:"error,omitempty"`
 }
 
 func createLogRequest(r *http.Request) *request {
@@ -230,8 +255,13 @@ func CreateLoggingMiddleware(opts ...LogOpt) func(next http.Handler) http.Handle
 				return
 			}
 			req := createLogRequest(r)
+			errStr := ""
+			if sw.err != nil {
+				errStr = sw.err.Error()
+			}
 			resp := &response{
-				Code: sw.status,
+				Code:  sw.status,
+				Error: errStr,
 			}
 			spanCtx := trace.SpanContextFromContext(r.Context())
 			if spanCtx.HasTraceID() {
@@ -244,7 +274,7 @@ func CreateLoggingMiddleware(opts ...LogOpt) func(next http.Handler) http.Handle
 			}
 
 			doLog := DefaultCodeToLevel(sw.status, logger)
-			doLog("finished unary call with status code ", sw.status)
+			doLog("finished unary call with status code ", http.StatusText(sw.status))
 		})
 	}
 }
