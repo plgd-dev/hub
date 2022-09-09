@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"fmt"
-	"math/rand"
 	"time"
 
 	"github.com/plgd-dev/go-coap/v2/message"
@@ -18,6 +17,7 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/security/jwt"
 	"github.com/plgd-dev/hub/v2/pkg/strings"
 	"github.com/plgd-dev/hub/v2/pkg/sync/task/future"
+	pkgTime "github.com/plgd-dev/hub/v2/pkg/time"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"github.com/plgd-dev/kit/v2/codec/cbor"
 )
@@ -89,14 +89,10 @@ func setNewDeviceSubscriber(ctx context.Context, client *Client, owner, deviceID
 	deviceSubscriber, err := grpcgwClient.NewDeviceSubscriber(getContext, owner, deviceID,
 		func() func() (when time.Time, err error) {
 			var count uint64
-			maxRand := client.server.config.APIs.COAP.KeepAlive.Timeout / 2
-			if maxRand <= 0 {
-				maxRand = time.Second * 10
-			}
+			delayFn := pkgTime.GetRandomDelayGenerator(client.server.config.APIs.COAP.KeepAlive.Timeout / 4)
 			return func() (when time.Time, err error) {
 				count++
-				r := rand.Int63n(int64(maxRand) / 2)
-				next := time.Now().Add(client.server.config.APIs.COAP.KeepAlive.Timeout + time.Duration(r))
+				next := time.Now().Add(client.server.config.APIs.COAP.KeepAlive.Timeout + delayFn())
 				client.Debugf("next iteration %v of retrying reconnect to grpc-client will be at %v", count, next)
 				return next, nil
 			}
