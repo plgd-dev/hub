@@ -66,6 +66,9 @@ spec:
             - name: grpc
               containerPort: {{ .Values.certificateauthority.port }}
               protocol: TCP
+            - name: http
+              containerPort: {{ .Values.certificateauthority.httpPort }}
+              protocol: TCP  
           {{- with .Values.certificateauthority.livenessProbe }}
           livenessProbe:
           {{- toYaml . | nindent 12 }}

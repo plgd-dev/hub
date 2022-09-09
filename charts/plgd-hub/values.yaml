@@ -1190,6 +1190,10 @@ httpgateway:
   apis:
     http:
       address:
+      readTimeout: 8s
+      readHeaderTimeout: 4s
+      writeTimeout: 16s
+      idleTimeout: 30s
       tls:
         caPool:
         keyFile:
@@ -1476,21 +1480,38 @@ certificateauthority:
   # -- Annotations for certificate-authority pod
   podAnnotations: {}
   service:
-    # -- Service type
-    type: ClusterIP
-    # -- Labels for certificate-authority service
-    labels: {}
-    # -- Annotations for certificate-authority service
-    annotations: {}
-    # -- Target port
-    targetPort: grpc
-    # -- Protocol
-    protocol: TCP
-    # -- Name
-    name: grpc
-    crt:
-      # -- Extra DNS names for service certificate
-      extraDnsNames: []
+    grpc:
+      # -- Service type
+      type: ClusterIP
+      # -- Labels for certificate-authority service
+      labels: {}
+      # -- Annotations for certificate-authority service
+      annotations: {}
+      # -- Target port
+      targetPort: grpc
+      # -- Protocol
+      protocol: TCP
+      # -- Name
+      name: grpc
+      crt:
+        # -- Extra DNS names for service certificate
+        extraDnsNames: []
+    http:
+      # -- Service type
+      type: ClusterIP
+      # -- Labels for certificate-authority service
+      labels: {}
+      # -- Annotations for certificate-authority service
+      annotations: {}
+      # -- Target port
+      targetPort: http
+      # -- Protocol
+      protocol: TCP
+      # -- Name
+      name: http
+      crt:
+        # -- Extra DNS names for service certificate
+        extraDnsNames: []
   # -- RBAC configuration
   rbac:
     # -- Enable RBAC
@@ -1539,21 +1560,38 @@ certificateauthority:
   # -- External domain for certificate-authority. Default: api.{{ global.domain }}
   domain:
   ingress:
-    # -- Enable ingress
-    enabled: true
-    # -- Override name of host/tls secret. If not specified, it will be generated
-    secretName:
-    # -- Pre defined map of Ingress annotation
-    annotations:
-      nginx.org/grpc-services: "{{ include \"plgd-hub.certificateauthority.fullname\" . }}"
-      nginx.ingress.kubernetes.io/backend-protocol: "GRPCS"
-      ingress.kubernetes.io/force-ssl-redirect: "true"
-      nginx.ingress.kubernetes.io/enable-cors: "true"
-    # -- Custom map of Ingress annotation
-    customAnnotations: { }
-    # -- Paths
-    paths:
-      - /certificateauthority.pb.CertificateAuthority
+    http:
+      # -- Enable ingress
+      enabled: true
+      # -- Override name of host/tls secret. If not specified, it will be generated
+      secretName:
+      # -- Pre defined map of Ingress annotation
+      annotations:
+        nginx.org/grpc-services: "{{ include \"plgd-hub.certificateauthority.fullname\" . }}-http"
+        nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+        ingress.kubernetes.io/force-ssl-redirect: "true"
+        nginx.ingress.kubernetes.io/enable-cors: "true"
+      # -- Custom map of Ingress annotation
+      customAnnotations: {}
+      # -- Ingress path
+      paths:
+        - /api/v1/sign
+    grpc:
+      # -- Enable ingress
+      enabled: true
+      # -- Override name of host/tls secret. If not specified, it will be generated
+      secretName:
+      # -- Pre defined map of Ingress annotation
+      annotations:
+        nginx.org/grpc-services: "{{ include \"plgd-hub.certificateauthority.fullname\" . }}-grpc"
+        nginx.ingress.kubernetes.io/backend-protocol: "GRPCS"
+        ingress.kubernetes.io/force-ssl-redirect: "true"
+        nginx.ingress.kubernetes.io/enable-cors: "true"
+      # -- Custom map of Ingress annotation
+      customAnnotations: { }
+      # -- Paths
+      paths:
+        - /certificateauthority.pb.CertificateAuthority
   # -- Service configuration
   config:
     # -- File name for config file
@@ -1579,6 +1617,7 @@ certificateauthority:
       mountPath: /certs/coap-device-ca
   # -- Service and POD port
   port: 9100
+  httpPort: 9101
   log:
     # -- Logging enabled from level 
     level: info
@@ -1628,6 +1667,12 @@ certificateauthority:
             keyFile:
             certFile:
             useSystemCAPool: true
+    http:
+      address:
+      readTimeout: 8s
+      readHeaderTimeout: 4s
+      writeTimeout: 16s
+      idleTimeout: 30s
   # -- For complete certificate-authority service configuration see [plgd/certificate-authority](https://github.com/plgd-dev/hub/tree/main/certificate-authority)
   signer:
     keyFile:
@@ -1790,6 +1835,10 @@ mockoauthserver:
   apis:
     http:
       address:
+      readTimeout: 8s
+      readHeaderTimeout: 4s
+      writeTimeout: 16s
+      idleTimeout: 30s
       tls:
         caPool:
         keyFile:
