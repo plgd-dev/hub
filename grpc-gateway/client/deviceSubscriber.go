@@ -279,7 +279,7 @@ func (s *DeviceSubscriber) reconnect() {
 			runOnce := atomic.NewBool(true)
 			getContext = func() (context.Context, context.CancelFunc) {
 				ctx, cancel := s.getContext()
-				if runOnce.CAS(true, false) {
+				if runOnce.CompareAndSwap(true, false) {
 					span := trace.SpanFromContext(setHandlerReq.ctx)
 					return trace.ContextWithSpan(ctx, span), cancel
 				}

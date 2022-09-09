@@ -125,7 +125,7 @@ func (a *CertManager) GetClientTLSConfig() *tls.Config {
 
 // Close ends watching certificates
 func (a *CertManager) Close() {
-	if !a.done.CAS(false, true) {
+	if !a.done.CompareAndSwap(false, true) {
 		return
 	}
 	if a.config.CAPool != "" {
