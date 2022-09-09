@@ -45,7 +45,7 @@ func (f *Future) Get(ctx context.Context) (Value, error) {
 
 // Set value or error of the future and change state to ready.
 func (f *Future) set(value Value, err error) {
-	if !f.blockSet.CAS(false, true) {
+	if !f.blockSet.CompareAndSwap(false, true) {
 		return
 	}
 

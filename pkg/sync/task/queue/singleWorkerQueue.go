@@ -82,7 +82,7 @@ func (q *Queue) SubmitForOneWorker(key interface{}, tasks ...func()) error {
 			return
 		}
 		v := val.(*oneWorkerQueue)
-		if !v.inUse.CAS(false, true) {
+		if !v.inUse.CompareAndSwap(false, true) {
 			return
 		}
 		for {
@@ -97,7 +97,7 @@ func (q *Queue) SubmitForOneWorker(key interface{}, tasks ...func()) error {
 		w.addedToQueue.Store(true)
 		return nil
 	}
-	if !w.inUse.CAS(false, true) {
+	if !w.inUse.CompareAndSwap(false, true) {
 		w.addedToQueue.Store(true)
 		// one goroutine processes task from one worker queue
 		return nil
