@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"fmt"
-	"math/rand"
 	"sync/atomic"
 	"time"
 
@@ -12,6 +11,7 @@ import (
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	pkgTime "github.com/plgd-dev/hub/v2/pkg/time"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/subscriber"
 	raEvents "github.com/plgd-dev/hub/v2/resource-aggregate/events"
 	raService "github.com/plgd-dev/hub/v2/resource-aggregate/service"
@@ -95,14 +95,10 @@ func (c *DevicesSubscription) Add(ctx context.Context, deviceID string, linkedAc
 		}
 	}, "*", deviceID, func() func() (when time.Time, err error) {
 		var count uint64
-		maxRand := c.reconnectInterval / 2
-		if maxRand <= 0 {
-			maxRand = time.Second * 10
-		}
+		delayFn := pkgTime.GetRandomDelayGenerator(c.reconnectInterval / 4)
 		return func() (when time.Time, err error) {
 			count++
-			r := rand.Int63n(int64(maxRand) / 2)
-			next := time.Now().Add(c.reconnectInterval + time.Duration(r))
+			next := time.Now().Add(c.reconnectInterval + delayFn())
 			log.Debugf("next iteration %v of retrying reconnect to grpc-client for deviceID %v will be at %v", count, deviceID, next)
 			return next, nil
 		}
