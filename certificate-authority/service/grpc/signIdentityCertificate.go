@@ -1,4 +1,4 @@
-package service
+package grpc
 
 import (
 	"context"
@@ -32,16 +32,16 @@ func overrideSubject(ctx context.Context, subject pkix.Name, ownerClaim, hubID, 
 	return subject, nil
 }
 
-func (r *RequestHandler) SignIdentityCertificate(ctx context.Context, req *pb.SignCertificateRequest) (*pb.SignCertificateResponse, error) {
-	err := r.validateRequest(req.GetCertificateSigningRequest())
-	logger := r.logger.With("csr", string(req.GetCertificateSigningRequest()))
+func (s *CertificateAuthorityServer) SignIdentityCertificate(ctx context.Context, req *pb.SignCertificateRequest) (*pb.SignCertificateResponse, error) {
+	err := s.validateRequest(req.GetCertificateSigningRequest())
+	logger := s.logger.With("csr", string(req.GetCertificateSigningRequest()))
 	if err != nil {
 		return nil, logger.LogAndReturnError(status.Errorf(codes.InvalidArgument, "cannot sign identity certificate: %v", err))
 	}
-	notBefore := r.ValidFrom()
-	notAfter := notBefore.Add(r.ValidFor)
-	signer := certificateSigner.NewIdentityCertificateSigner(r.Certificate, r.PrivateKey, certificateSigner.WithNotBefore(notBefore), certificateSigner.WithNotAfter(notAfter), certificateSigner.WithOverrideCertTemplate(func(template *x509.Certificate) error {
-		subject, err := overrideSubject(ctx, template.Subject, r.Config.APIs.GRPC.Authorization.OwnerClaim, r.Config.Signer.HubID, "uuid:")
+	notBefore := s.validFrom()
+	notAfter := notBefore.Add(s.validFor)
+	signer := certificateSigner.NewIdentityCertificateSigner(s.certificate, s.privateKey, certificateSigner.WithNotBefore(notBefore), certificateSigner.WithNotAfter(notAfter), certificateSigner.WithOverrideCertTemplate(func(template *x509.Certificate) error {
+		subject, err := overrideSubject(ctx, template.Subject, s.ownerClaim, s.signerConfig.HubID, "uuid:")
 		if err != nil {
 			return err
 		}
@@ -52,7 +52,7 @@ func (r *RequestHandler) SignIdentityCertificate(ctx context.Context, req *pb.Si
 	if err != nil {
 		return nil, logger.LogAndReturnError(status.Errorf(codes.InvalidArgument, "cannot sign identity certificate: %v", err))
 	}
-	logger.With("crt", string(cert)).Debugf("RequestHandler.SignIdentityCertificate")
+	logger.With("crt", string(cert)).Debugf("CertificateAuthorityServer.SignIdentityCertificate")
 
 	return &pb.SignCertificateResponse{
 		Certificate: cert,

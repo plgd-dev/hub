@@ -47,13 +47,13 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 
 	pool, err := ants.NewPool(config.Clients.Eventbus.GoPoolSize)
 	if err != nil {
-		server.Close()
+		_ = server.Close()
 		return nil, fmt.Errorf("cannot create goroutine pool: %w", err)
 	}
 	server.AddCloseFunc(pool.Release)
 
 	if err := AddHandler(ctx, server, config, fileWatcher, logger, tracerProvider, pool.Submit); err != nil {
-		server.Close()
+		_ = server.Close()
 		return nil, err
 	}
 

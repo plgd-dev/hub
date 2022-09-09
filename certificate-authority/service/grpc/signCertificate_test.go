@@ -1,4 +1,4 @@
-package service_test
+package grpc_test
 
 import (
 	"context"
@@ -34,7 +34,7 @@ func testSigningByFunction(t *testing.T, signFn ClientSignFunc, csr []byte) {
 		wantErr bool
 	}{
 		{
-			name: "invalid auth",
+			name: "invalid csr",
 			args: args{
 				req: &pb.SignCertificateRequest{},
 			},
@@ -77,7 +77,7 @@ func testSigningByFunction(t *testing.T, signFn ClientSignFunc, csr []byte) {
 	}
 }
 
-func TestRequestHandlerSignCSR(t *testing.T) {
+func TestCertificateAuthorityServerSignCSR(t *testing.T) {
 	priv, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	require.NoError(t, err)
 	var cfg generateCertificate.Configuration
@@ -89,7 +89,7 @@ func TestRequestHandlerSignCSR(t *testing.T) {
 	}, csr)
 }
 
-func TestRequestHandlerSignCSRWithEmptyCommonName(t *testing.T) {
+func TestCertificateAuthorityServerSignCSRWithEmptyCommonName(t *testing.T) {
 	priv, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	require.NoError(t, err)
 	var cfg generateCertificate.Configuration

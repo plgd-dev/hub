@@ -103,7 +103,6 @@ func (c *ClientsConfig) Validate() error {
 	if err := c.OpenTelemetryCollector.Validate(); err != nil {
 		return fmt.Errorf("openTelemetryCollector.%w", err)
 	}
-
 	return nil
 }
 

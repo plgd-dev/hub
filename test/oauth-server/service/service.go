@@ -88,6 +88,6 @@ func (s *Service) Serve() error {
 }
 
 // Shutdown ends serving
-func (s *Service) Shutdown() error {
+func (s *Service) Close() error {
 	return s.server.Shutdown(context.Background())
 }

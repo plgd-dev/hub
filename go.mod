@@ -5,6 +5,7 @@ go 1.18
 require (
 	github.com/felixge/httpsnoop v1.0.3
 	github.com/fsnotify/fsnotify v1.5.4
+	github.com/fullstorydev/grpchan v1.1.1
 	github.com/golang-jwt/jwt/v4 v4.4.2
 	github.com/golang/snappy v0.0.4
 	github.com/google/go-querystring v1.1.0
@@ -64,6 +65,7 @@ require (
 	github.com/googleapis/enterprise-certificate-proxy v0.1.0 // indirect
 	github.com/googleapis/gax-go/v2 v2.4.0 // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.0.0-rc.2 // indirect
+	github.com/jhump/protoreflect v1.11.0 // indirect
 	github.com/kelseyhightower/envconfig v1.4.0 // indirect
 	github.com/klauspost/compress v1.15.9 // indirect
 	github.com/lestrrat-go/backoff/v2 v2.0.8 // indirect

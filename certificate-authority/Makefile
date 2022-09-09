@@ -29,9 +29,20 @@ push: build-servicecontainer
 	docker push plgd/$(SERVICE_NAME):$(VERSION_TAG)
 	docker push plgd/$(SERVICE_NAME):$(LATEST_TAG)
 
+GOOGLEAPIS_PATH := $(REPOSITORY_DIRECTORY)/dependency/googleapis
+GRPCGATEWAY_MODULE_PATH := $(shell go list -m -f '{{.Dir}}' github.com/grpc-ecosystem/grpc-gateway/v2 | head -1)
+
 proto/generate:
 	protoc -I=. -I=$(REPOSITORY_DIRECTORY) -I=$(GOPATH)/src --go_out=$(GOPATH)/src $(WORKING_DIRECTORY)/pb/cert.proto
-	protoc -I=. -I=$(REPOSITORY_DIRECTORY) -I=$(GOPATH)/src --go-grpc_out=$(GOPATH)/src $(WORKING_DIRECTORY)/pb/service.proto
+	protoc -I=. -I=$(REPOSITORY_DIRECTORY) -I=$(GOPATH)/src -I=$(GOOGLEAPIS_PATH) -I=$(GRPCGATEWAY_MODULE_PATH) --openapiv2_out=$(REPOSITORY_DIRECTORY) \
+		--openapiv2_opt logtostderr=true \
+		$(WORKING_DIRECTORY)/pb/service.proto
+	protoc -I=. -I=$(REPOSITORY_DIRECTORY) -I=$(GOPATH)/src -I=$(GOOGLEAPIS_PATH) -I=$(GRPCGATEWAY_MODULE_PATH) --grpc-gateway_out=$(REPOSITORY_DIRECTORY) \
+		--grpc-gateway_opt logtostderr=true \
+		--grpc-gateway_opt paths=source_relative \
+		$(WORKING_DIRECTORY)/pb/service.proto
+	protoc -I=. -I=$(REPOSITORY_DIRECTORY) -I=$(GOPATH)/src -I=$(GOOGLEAPIS_PATH) -I=$(GRPCGATEWAY_MODULE_PATH) --go-grpc_out=$(GOPATH)/src \
+		$(WORKING_DIRECTORY)/pb/service.proto
 
 .PHONY: build-servicecontainer build push proto/generate
 

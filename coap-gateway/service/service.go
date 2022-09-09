@@ -5,10 +5,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"os"
-	"os/signal"
 	"strings"
-	"sync"
-	"syscall"
 	"time"
 
 	"github.com/plgd-dev/device/pkg/net/coap"
@@ -38,6 +35,7 @@ import (
 	certManagerServer "github.com/plgd-dev/hub/v2/pkg/security/certManager/server"
 	"github.com/plgd-dev/hub/v2/pkg/security/jwt"
 	"github.com/plgd-dev/hub/v2/pkg/security/oauth2"
+	"github.com/plgd-dev/hub/v2/pkg/service"
 	"github.com/plgd-dev/hub/v2/pkg/sync/task/queue"
 	raClient "github.com/plgd-dev/hub/v2/resource-aggregate/client"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus"
@@ -259,7 +257,7 @@ func newProviders(ctx context.Context, config AuthorizationConfig, fileWatcher *
 }
 
 // New creates server.
-func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logger log.Logger) (*Service, error) {
+func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logger log.Logger) (*service.Service, error) {
 	otelClient, err := otelClient.New(ctx, config.Clients.OpenTelemetryCollector, "coap-gateway", fileWatcher, logger)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create open telemetry collector client: %w", err)
@@ -392,7 +390,7 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 		return nil, fmt.Errorf("cannot setup coap server: %w", err)
 	}
 
-	return &s, nil
+	return service.New(&s), nil
 }
 
 func getDeviceID(client *Client) string {
@@ -635,40 +633,11 @@ func (s *Service) tlsEnabled() bool {
 	return s.config.APIs.COAP.TLS.Enabled
 }
 
-// Serve starts a coapgateway on the configured address in *Service.
-func (s *Service) Serve() error {
-	return s.serveWithHandlingSignal()
-}
-
-func (s *Service) serveWithHandlingSignal() error {
-	var wg sync.WaitGroup
-	var err error
-	wg.Add(1)
-	go func(server *Service) {
-		defer wg.Done()
-		err = server.coapServer.Serve(server.listener)
-		server.cancel()
-		server.natsClient.Close()
-	}(s)
-
-	signal.Notify(s.sigs,
-		syscall.SIGHUP,
-		syscall.SIGINT,
-		syscall.SIGTERM,
-		syscall.SIGQUIT)
-	<-s.sigs
-
-	s.coapServer.Stop()
-	wg.Wait()
-
-	return err
-}
-
-// Close turns off the server.
 func (s *Service) Close() error {
-	select {
-	case s.sigs <- syscall.SIGTERM:
-	default:
-	}
+	s.coapServer.Stop()
 	return nil
+}
+
+func (s *Service) Serve() error {
+	return s.coapServer.Serve(s.listener)
 }

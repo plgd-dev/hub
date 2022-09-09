@@ -32,7 +32,7 @@ func New(t *testing.T, config service.Config) func() {
 	}()
 
 	return func() {
-		idServer.Shutdown()
+		_ = idServer.Close()
 		wg.Wait()
 		err := fileWatcher.Close()
 		require.NoError(t, err)
