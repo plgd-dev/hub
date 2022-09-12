@@ -138,7 +138,7 @@ func New(t *testing.T, cfg service.Config) func() {
 		_ = s.Serve()
 	}()
 	return func() {
-		_ = s.Shutdown()
+		_ = s.Close()
 		wg.Wait()
 		err = fileWatcher.Close()
 		require.NoError(t, err)

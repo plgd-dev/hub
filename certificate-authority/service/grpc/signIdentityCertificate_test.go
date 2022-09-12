@@ -1,4 +1,4 @@
-package service_test
+package grpc_test
 
 import (
 	"context"
@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestRequestHandlerSignIdentityCSR(t *testing.T) {
+func TestCertificateAuthorityServerSignIdentityCSR(t *testing.T) {
 	priv, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	require.NoError(t, err)
 	var cfg generateCertificate.Configuration
@@ -24,7 +24,7 @@ func TestRequestHandlerSignIdentityCSR(t *testing.T) {
 	}, csr)
 }
 
-func TestRequestHandlerSignIdentityCSRWithEmptyCN(t *testing.T) {
+func TestCertificateAuthorityServerSignIdentityCSRWithEmptyCN(t *testing.T) {
 	priv, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	require.NoError(t, err)
 	csr, err := generateCertificate.GenerateCSR(generateCertificate.Configuration{}, priv)

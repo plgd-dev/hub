@@ -1,0 +1,40 @@
+{{- if .Values.certificateauthority.enabled }}
+{{- $fullname := include "plgd-hub.certificateauthority.fullname" . }}
+{{- $port := .Values.certificateauthority.port }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ $fullname }}-grpc
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "plgd-hub.labels" . | nindent 4 }}
+  annotations:
+    {{- if .Values.certificateauthority.ingress.grpc.annotations }}
+    {{- include "plgd-hub.tplvalues.render" ( dict "value" .Values.certificateauthority.ingress.grpc.annotations "context" $ ) | nindent 4 }}
+    {{- end }}
+    {{- if .Values.certificateauthority.ingress.grpc.customAnnotations }}
+    {{- include "plgd-hub.tplvalues.render" ( dict "value" .Values.certificateauthority.ingress.grpc.customAnnotations "context" $ ) | nindent 4 }}
+    {{- end }}
+spec:
+  tls:
+    - hosts:
+        - {{ include "plgd-hub.certificateauthority.domain" . | quote }}
+      {{- if $.Values.global.enableWildCartCert }}
+      secretName: {{ include "plgd-hub.wildCardCertName" . | quote }}
+      {{- else }}
+      secretName: {{ include "plgd-hub.certificateauthority.domainCertName" . | quote }}
+      {{- end }}
+  rules:
+  - host: {{ include "plgd-hub.certificateauthority.domain" . | quote }}
+    http:
+      paths:
+      {{- range  .Values.certificateauthority.ingress.grpc.paths }}
+        - path: {{ . }}
+          pathType: Prefix
+          backend:
+            service:
+              name: {{ $fullname }}-grpc
+              port:
+                number: {{ $port }}
+      {{- end }}
+{{- end }}

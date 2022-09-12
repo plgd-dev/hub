@@ -18,6 +18,10 @@ data:
     apis:
       http:
         address: {{  .apis.http.address | default (printf "0.0.0.0:%v" .port) | quote }}
+        readTimeout: {{ .apis.http.readTimeout }}
+        readHeaderTimeout: {{ .apis.http.readHeaderTimeout }}
+        writeTimeout: {{ .apis.http.writeTimeout }}
+        idleTimeout: {{ .apis.http.idleTimeout }}
         tls:
           {{- $tls := .apis.http.tls }}
           {{- include "plgd-hub.certificateConfig" (list $ $tls $httpGatewayCertPath ) | indent 8 }}

@@ -329,7 +329,7 @@ func (s *Server) Serve() error {
 }
 
 // Shutdown ends serving
-func (s *Server) Shutdown() error {
+func (s *Server) Close() error {
 	s.cancel()
 	s.doneWg.Wait()
 	return s.server.Shutdown(context.Background())

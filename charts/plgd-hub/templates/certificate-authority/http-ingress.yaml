@@ -1,19 +1,19 @@
 {{- if .Values.certificateauthority.enabled }}
 {{- $fullname := include "plgd-hub.certificateauthority.fullname" . }}
-{{- $port := .Values.certificateauthority.port }}
+{{- $port := .Values.certificateauthority.httpPort }}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: {{ $fullname }}
+  name: {{ $fullname }}-http
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "plgd-hub.labels" . | nindent 4 }}
   annotations:
-    {{- if .Values.certificateauthority.ingress.annotations }}
-    {{- include "plgd-hub.tplvalues.render" ( dict "value" .Values.certificateauthority.ingress.annotations "context" $ ) | nindent 4 }}
+    {{- if .Values.certificateauthority.ingress.http.annotations }}
+    {{- include "plgd-hub.tplvalues.render" ( dict "value" .Values.certificateauthority.ingress.http.annotations "context" $ ) | nindent 4 }}
     {{- end }}
-    {{- if .Values.certificateauthority.ingress.customAnnotations }}
-    {{- include "plgd-hub.tplvalues.render" ( dict "value" .Values.certificateauthority.ingress.customAnnotations "context" $ ) | nindent 4 }}
+    {{- if .Values.certificateauthority.ingress.http.customAnnotations }}
+    {{- include "plgd-hub.tplvalues.render" ( dict "value" .Values.certificateauthority.ingress.http.customAnnotations "context" $ ) | nindent 4 }}
     {{- end }}
 spec:
   tls:
@@ -28,12 +28,12 @@ spec:
   - host: {{ include "plgd-hub.certificateauthority.domain" . | quote }}
     http:
       paths:
-      {{- range  .Values.certificateauthority.ingress.paths }}
+      {{- range  .Values.certificateauthority.ingress.http.paths }}
         - path: {{ . }}
           pathType: Prefix
           backend:
             service:
-              name: {{ $fullname }}
+              name: {{ $fullname }}-http
               port:
                 number: {{ $port }}
       {{- end }}

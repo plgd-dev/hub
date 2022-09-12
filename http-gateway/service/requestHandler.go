@@ -7,11 +7,11 @@ import (
 	"net/http/httptest"
 	"strings"
 
-	router "github.com/gorilla/mux"
+	"github.com/gorilla/mux"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/client"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
-	"github.com/plgd-dev/hub/v2/http-gateway/grpc-websocket-proxy/wsproxy" //	"github.com/tmc/grpc-websocket-proxy/wsproxy"
+	"github.com/plgd-dev/hub/v2/http-gateway/grpc-websocket-proxy/wsproxy"
 	"github.com/plgd-dev/hub/v2/http-gateway/serverMux"
 	"github.com/plgd-dev/hub/v2/http-gateway/uri"
 	"github.com/plgd-dev/hub/v2/pkg/log"
@@ -23,15 +23,6 @@ type RequestHandler struct {
 	client *client.Client
 	config *Config
 	mux    *runtime.ServeMux
-}
-
-// NewRequestHandler factory for new RequestHandler
-func NewRequestHandler(config *Config, client *client.Client) *RequestHandler {
-	return &RequestHandler{
-		client: client,
-		config: config,
-		mux:    serverMux.New(),
-	}
 }
 
 func matchPrefixAndSplitURIPath(requestURI, prefix string) []string {
@@ -47,7 +38,7 @@ func matchPrefixAndSplitURIPath(requestURI, prefix string) []string {
 	return strings.Split(p, "/")
 }
 
-func resourcePendingCommandsMatcher(r *http.Request, rm *router.RouteMatch) bool {
+func resourcePendingCommandsMatcher(r *http.Request, rm *mux.RouteMatch) bool {
 	paths := matchPrefixAndSplitURIPath(r.RequestURI, uri.Devices)
 	if len(paths) > 3 && paths[1] == uri.ResourcesPathKey && strings.Contains(paths[len(paths)-1], uri.PendingCommandsPathKey) {
 		if rm.Vars == nil {
@@ -69,7 +60,7 @@ func resourcePendingCommandsMatcher(r *http.Request, rm *router.RouteMatch) bool
 	return false
 }
 
-func resourceMatcher(r *http.Request, rm *router.RouteMatch) bool {
+func resourceMatcher(r *http.Request, rm *mux.RouteMatch) bool {
 	paths := matchPrefixAndSplitURIPath(r.RequestURI, uri.Devices)
 	if len(paths) > 2 &&
 		paths[1] == uri.ResourcesPathKey &&
@@ -84,7 +75,7 @@ func resourceMatcher(r *http.Request, rm *router.RouteMatch) bool {
 	return false
 }
 
-func resourceLinksMatcher(r *http.Request, rm *router.RouteMatch) bool {
+func resourceLinksMatcher(r *http.Request, rm *mux.RouteMatch) bool {
 	paths := matchPrefixAndSplitURIPath(r.RequestURI, uri.Devices)
 	if len(paths) > 2 && paths[1] == uri.ResourceLinksPathKey {
 		if rm.Vars == nil {
@@ -97,7 +88,7 @@ func resourceLinksMatcher(r *http.Request, rm *router.RouteMatch) bool {
 	return false
 }
 
-func resourceEventsMatcher(r *http.Request, rm *router.RouteMatch) bool {
+func resourceEventsMatcher(r *http.Request, rm *mux.RouteMatch) bool {
 	paths := matchPrefixAndSplitURIPath(r.RequestURI, uri.Devices)
 	// /api/v1/devices/{deviceId}/resources/{resourceHref}/events
 	// /api/v1/devices/{deviceId}/resources/{resourceHref}/events?timestampFilter={timestamp}
@@ -115,11 +106,12 @@ func resourceEventsMatcher(r *http.Request, rm *router.RouteMatch) bool {
 }
 
 // NewHTTP returns HTTP handler
-func NewHTTP(requestHandler *RequestHandler, authInterceptor kitHttp.Interceptor, logger log.Logger) (http.Handler, error) {
-	r0 := serverMux.NewRouter(uri.QueryCaseInsensitive, authInterceptor, kitHttp.WithLogger(logger))
-	r := router.NewRouter()
-	r0.PathPrefix("/").Handler(r)
-
+func NewRequestHandler(config *Config, r *mux.Router, client *client.Client) (*RequestHandler, error) {
+	requestHandler := &RequestHandler{
+		client: client,
+		config: config,
+		mux:    serverMux.New(),
+	}
 	// Aliases
 	r.HandleFunc(uri.AliasDevice, requestHandler.getDevice).Methods(http.MethodGet)
 	r.HandleFunc(uri.AliasDevice, requestHandler.deleteDevice).Methods(http.MethodDelete)
@@ -187,5 +179,5 @@ func NewHTTP(requestHandler *RequestHandler, authInterceptor kitHttp.Interceptor
 		}))
 	}
 
-	return r0, nil
+	return requestHandler, nil
 }

@@ -2,6 +2,7 @@ package listener
 
 import (
 	"fmt"
+	"net"
 
 	"github.com/plgd-dev/hub/v2/pkg/security/certManager/server"
 )
@@ -12,8 +13,8 @@ type Config struct {
 }
 
 func (c *Config) Validate() error {
-	if c.Addr == "" {
-		return fmt.Errorf("address('%v')", c.Addr)
+	if _, err := net.ResolveTCPAddr("tcp", c.Addr); err != nil {
+		return fmt.Errorf("address('%v') - %w", c.Addr, err)
 	}
 	if err := c.TLS.Validate(); err != nil {
 		return fmt.Errorf("tls.%w", err)

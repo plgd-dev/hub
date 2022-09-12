@@ -1,0 +1,150 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "plgd certificate authority - API",
+    "version": "1.0",
+    "contact": {
+      "name": "plgd.dev",
+      "url": "https://github.com/plgd-dev/hub",
+      "email": "info@plgd.dev"
+    },
+    "license": {
+      "name": "Apache License 2.0",
+      "url": "https://github.com/plgd-dev/hub/blob/v2/LICENSE"
+    }
+  },
+  "tags": [
+    {
+      "name": "CertificateAuthority"
+    }
+  ],
+  "schemes": [
+    "https"
+  ],
+  "consumes": [
+    "application/json",
+    "application/protojson"
+  ],
+  "produces": [
+    "application/json",
+    "application/protojson"
+  ],
+  "paths": {
+    "/api/v1/sign/csr": {
+      "post": {
+        "summary": "SignCertificate sends a Certificate Signing Request to the certificate authority \nand obtains a signed certificate. Both in the PEM format.",
+        "operationId": "CertificateAuthority_SignCertificate",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbSignCertificateResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/pbSignCertificateRequest"
+            }
+          }
+        ],
+        "tags": [
+          "certificate-authority"
+        ]
+      }
+    },
+    "/api/v1/sign/identity-csr": {
+      "post": {
+        "summary": "SignIdentityCertificate sends a Identity Certificate Signing Request to the certificate authority \nand obtains a signed certificate. Both in the PEM format. It adds EKU: '1.3.6.1.4.1.44924.1.6' .",
+        "operationId": "CertificateAuthority_SignIdentityCertificate",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbSignCertificateResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/pbSignCertificateRequest"
+            }
+          }
+        ],
+        "tags": [
+          "certificate-authority"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "pbSignCertificateRequest": {
+      "type": "object",
+      "properties": {
+        "certificateSigningRequest": {
+          "type": "string",
+          "format": "byte"
+        }
+      }
+    },
+    "pbSignCertificateResponse": {
+      "type": "object",
+      "properties": {
+        "certificate": {
+          "type": "string",
+          "format": "byte"
+        }
+      }
+    },
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "typeUrl": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string",
+          "format": "byte"
+        }
+      }
+    },
+    "rpcStatus": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    }
+  }
+}

@@ -66,7 +66,7 @@ func newTestService(t *testing.T) (*Server, func()) {
 		defer wg.Done()
 	}()
 	return s, func() {
-		s.Shutdown()
+		_ = s.Close()
 		publisher.Close()
 		naClient.Close()
 		wg.Wait()

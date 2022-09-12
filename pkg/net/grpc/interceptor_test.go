@@ -12,7 +12,9 @@ import (
 func TestUnaryInterceptor(t *testing.T) {
 	m := &MockInterceptor{}
 	svr := StubGrpcServer(grpc.UnaryServerInterceptorOption(m.Intercept))
-	defer svr.Close()
+	defer func() {
+		_ = svr.Close()
+	}()
 	go func() {
 		_ = svr.Serve()
 	}()
@@ -26,7 +28,9 @@ func TestUnaryInterceptor(t *testing.T) {
 func TestStreamInterceptor(t *testing.T) {
 	m := &MockInterceptor{}
 	svr := StubGrpcServer(grpc.StreamServerInterceptorOption(m.Intercept))
-	defer svr.Close()
+	defer func() {
+		_ = svr.Close()
+	}()
 	go func() {
 		_ = svr.Serve()
 	}()
