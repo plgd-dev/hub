@@ -237,7 +237,7 @@ func (o *resourcesObserver) cancelResourcesObservations(ctx context.Context, hre
 	observations := o.popTrackedObservations(hrefs)
 	for _, obs := range observations {
 		if err := obs.Cancel(ctx); err != nil {
-			o.logger.Debugf("cannot cancel resource observation: %w", err)
+			o.logger.Debugf("cannot cancel resource observation: %v", err)
 		}
 	}
 }

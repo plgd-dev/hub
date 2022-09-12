@@ -273,7 +273,7 @@ type grpcErr interface {
 	GRPCStatus() *status.Status
 }
 
-func (l *WrapSuggarLogger) PreProccessArgs(args ...interface{}) *WrapSuggarLogger {
+func (l *WrapSuggarLogger) PreProcessArgs(args ...interface{}) *WrapSuggarLogger {
 	for _, arg := range args {
 		if arg == nil {
 			continue
@@ -293,19 +293,19 @@ func (l *WrapSuggarLogger) PreProccessArgs(args ...interface{}) *WrapSuggarLogge
 }
 
 func (l *WrapSuggarLogger) Debug(args ...interface{}) {
-	l.PreProccessArgs(args...).logger.Debug(args...)
+	l.PreProcessArgs(args...).logger.Debug(args...)
 }
 
 func (l *WrapSuggarLogger) Info(args ...interface{}) {
-	l.PreProccessArgs(args...).logger.Info(args...)
+	l.PreProcessArgs(args...).logger.Info(args...)
 }
 
 func (l *WrapSuggarLogger) Warn(args ...interface{}) {
-	l.PreProccessArgs(args...).logger.Warn(args...)
+	l.PreProcessArgs(args...).logger.Warn(args...)
 }
 
 func (l *WrapSuggarLogger) error(args ...interface{}) {
-	l.PreProccessArgs(args...).logger.Error(args...)
+	l.PreProcessArgs(args...).logger.Error(args...)
 }
 
 func (l *WrapSuggarLogger) Error(args ...interface{}) {
@@ -336,19 +336,19 @@ func (l *WrapSuggarLogger) Error(args ...interface{}) {
 }
 
 func (l *WrapSuggarLogger) Fatal(args ...interface{}) {
-	l.PreProccessArgs(args...).logger.Fatal(args...)
+	l.PreProcessArgs(args...).logger.Fatal(args...)
 }
 
 func (l *WrapSuggarLogger) Debugf(template string, args ...interface{}) {
-	l.PreProccessArgs(args...).logger.Debugf(template, args...)
+	l.PreProcessArgs(args...).logger.Debugf(template, args...)
 }
 
 func (l *WrapSuggarLogger) Infof(template string, args ...interface{}) {
-	l.PreProccessArgs(args...).logger.Infof(template, args...)
+	l.PreProcessArgs(args...).logger.Infof(template, args...)
 }
 
 func (l *WrapSuggarLogger) Warnf(template string, args ...interface{}) {
-	l.PreProccessArgs(args...).logger.Warnf(template, args...)
+	l.PreProcessArgs(args...).logger.Warnf(template, args...)
 }
 
 // Errorf uses fmt.Sprintf to log a templated message.
@@ -358,7 +358,7 @@ func (l *WrapSuggarLogger) Errorf(template string, args ...interface{}) {
 }
 
 func (l *WrapSuggarLogger) Fatalf(template string, args ...interface{}) {
-	l.PreProccessArgs(args...).logger.Fatalf(template, args...)
+	l.PreProcessArgs(args...).logger.Fatalf(template, args...)
 }
 
 func (l *WrapSuggarLogger) LogAndReturnError(err error) error {
