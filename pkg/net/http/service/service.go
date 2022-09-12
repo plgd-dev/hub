@@ -7,7 +7,6 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/plgd-dev/hub/v2/http-gateway/serverMux"
-	"github.com/plgd-dev/hub/v2/http-gateway/uri"
 	kitNetHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
 	"github.com/plgd-dev/hub/v2/pkg/net/listener"
 )
@@ -29,7 +28,7 @@ func New(ctx context.Context, config Config) (*Service, error) {
 
 	router := mux.NewRouter()
 	auth := kitNetHttp.NewInterceptorWithValidator(config.Validator, config.AuthRules, config.WhiteEndpointList...)
-	r0 := serverMux.NewRouter(uri.QueryCaseInsensitive, auth, kitNetHttp.WithLogger(config.Logger))
+	r0 := serverMux.NewRouter(config.QueryCaseInsensitive, auth, kitNetHttp.WithLogger(config.Logger))
 	r0.PathPrefix("/").Handler(router)
 
 	httpServer := http.Server{

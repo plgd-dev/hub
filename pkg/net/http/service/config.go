@@ -17,13 +17,14 @@ type Config struct {
 	HTTPConnection listener.Config
 	HTTPServer     server.Config
 
-	ServiceName       string
-	FileWatcher       *fsnotify.Watcher
-	Logger            log.Logger
-	WhiteEndpointList []kitNetHttp.RequestMatcher
-	AuthRules         map[string][]kitNetHttp.AuthArgs
-	TraceProvider     trace.TracerProvider
-	Validator         *validator.Validator
+	ServiceName          string
+	FileWatcher          *fsnotify.Watcher
+	Logger               log.Logger
+	WhiteEndpointList    []kitNetHttp.RequestMatcher
+	AuthRules            map[string][]kitNetHttp.AuthArgs
+	TraceProvider        trace.TracerProvider
+	Validator            *validator.Validator
+	QueryCaseInsensitive map[string]string
 }
 
 func (c *Config) Validate() error {

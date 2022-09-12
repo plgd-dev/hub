@@ -57,6 +57,7 @@ func New(ctx context.Context, serviceName string, config Config, ca *grpcService
 		Logger:        logger,
 		TraceProvider: tracerProvider,
 		Validator:     validator,
+		// QueryCaseInsensitive: map[string]string{},
 	})
 	if err != nil {
 		return nil, fmt.Errorf("cannot create http service: %w", err)

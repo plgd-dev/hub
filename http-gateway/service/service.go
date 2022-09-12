@@ -77,15 +77,16 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 		})
 	}
 	s, err := httpService.New(ctx, httpService.Config{
-		HTTPConnection:    config.APIs.HTTP.Connection,
-		HTTPServer:        config.APIs.HTTP.Server,
-		ServiceName:       serviceName,
-		AuthRules:         authRules,
-		WhiteEndpointList: whiteList,
-		FileWatcher:       fileWatcher,
-		Logger:            logger,
-		TraceProvider:     tracerProvider,
-		Validator:         validator,
+		HTTPConnection:       config.APIs.HTTP.Connection,
+		HTTPServer:           config.APIs.HTTP.Server,
+		ServiceName:          serviceName,
+		AuthRules:            authRules,
+		WhiteEndpointList:    whiteList,
+		FileWatcher:          fileWatcher,
+		Logger:               logger,
+		TraceProvider:        tracerProvider,
+		Validator:            validator,
+		QueryCaseInsensitive: uri.QueryCaseInsensitive,
 	})
 	if err != nil {
 		otelClient.Close()

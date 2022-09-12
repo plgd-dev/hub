@@ -12,7 +12,7 @@ metadata:
     {{- if .Values.certificateauthority.ingress.grpc.annotations }}
     {{- include "plgd-hub.tplvalues.render" ( dict "value" .Values.certificateauthority.ingress.grpc.annotations "context" $ ) | nindent 4 }}
     {{- end }}
-    {{- if .Values.certificateauthority.ingress.customAnnotations }}
+    {{- if .Values.certificateauthority.ingress.grpc.customAnnotations }}
     {{- include "plgd-hub.tplvalues.render" ( dict "value" .Values.certificateauthority.ingress.grpc.customAnnotations "context" $ ) | nindent 4 }}
     {{- end }}
 spec:
