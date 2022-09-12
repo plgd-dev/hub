@@ -110,7 +110,11 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 	client := client.New(grpcClient)
 	_, err = NewRequestHandler(&config, s.GetRouter(), client)
 	if err != nil {
-		_ = s.Close()
+		err = fmt.Errorf("cannot create request handler: %w", err)
+		err2 := s.Close()
+		if err2 != nil {
+			err = fmt.Errorf(`[%w, "cannot close server: %v"]`, err, err2)
+		}
 		return nil, err
 	}
 

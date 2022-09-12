@@ -118,15 +118,23 @@ func NewService(ctx context.Context, config Config, fileWatcher *fsnotify.Watche
 
 	isClient, closeIsClient, err := newIdentityStoreClient(config.Clients.IdentityStore, fileWatcher, logger, tracerProvider)
 	if err != nil {
-		_ = grpcServer.Close()
-		return nil, fmt.Errorf("cannot create identity-store client: %w", err)
+		err = fmt.Errorf("cannot create identity-store client: %w", err)
+		err2 := grpcServer.Close()
+		if err2 != nil {
+			err = fmt.Errorf(`[%w, "cannot close server: %v"]`, err, err2)
+		}
+		return nil, err
 	}
 	grpcServer.AddCloseFunc(closeIsClient)
 
 	nats, err := natsClient.New(config.Clients.Eventbus.NATS.Config, fileWatcher, logger)
 	if err != nil {
-		_ = grpcServer.Close()
-		return nil, fmt.Errorf("cannot create nats client: %w", err)
+		err = fmt.Errorf("cannot create nats client: %w", err)
+		err2 := grpcServer.Close()
+		if err2 != nil {
+			err = fmt.Errorf(`[%w, "cannot close server: %v"]`, err, err2)
+		}
+		return nil, err
 	}
 	grpcServer.AddCloseFunc(nats.Close)
 
