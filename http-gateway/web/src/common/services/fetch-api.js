@@ -17,12 +17,8 @@ export const errorCodes = {
 
 export const fetchApi = async (url, options = {}) => {
   const { audience, scopes, body, timeToLive, ...fetchOptions } = options
-  const { audience: defaultAudience } = security.getWebOAuthConfig()
   // Access token must be gathered and set as a Bearer header in all requests
-  const accessToken = await security.getAccessTokenSilently()({
-    audience: audience || defaultAudience,
-    scope: scopes?.join?.(','),
-  })
+  const accessToken = security.getAccessToken()
   const oAuthSettings = {
     ...fetchOptions,
     headers: {

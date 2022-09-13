@@ -29,9 +29,7 @@ class _WebSocketEventClient {
   }
 
   _connect = async () => {
-    const accessToken = await security.getAccessTokenSilently()({
-      audience: security.getWebOAuthConfig()?.audience,
-    })
+    const accessToken = await security.getAccessToken()
     const { host, protocol } = new URL(
       security.getGeneralConfig().httpGatewayAddress
     )
