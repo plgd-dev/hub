@@ -1,11 +1,10 @@
 import React from 'react'
 import ReactDOM from 'react-dom'
 import { Provider } from 'react-redux'
-import { Auth0Provider } from '@auth0/auth0-react'
+import { AuthProvider } from 'oidc-react'
 
 import { App } from '@/containers/app'
 import { store } from '@/store'
-import { history } from '@/store/history'
 import { IntlProvider } from '@/components/intl-provider'
 
 import { DEVICE_AUTH_CODE_SESSION_KEY } from './constants'
@@ -27,11 +26,6 @@ fetch('/web_configuration.json')
     }
 
     const BaseComponent = () => {
-      const onRedirectCallback = appState => {
-        // Use the router's history module to replace the url
-        history.replace(appState?.returnTo || '/')
-      }
-
       // When the URL contains a get parameter called `code` and the pathname is set to `/devices`,
       // that means we were redirected from the get auth code endpoint and we must not render the app,
       // only set the code to the session storage, so that the caller can process it.
@@ -45,16 +39,19 @@ fetch('/web_configuration.json')
       return (
         <Provider store={store}>
           <IntlProvider>
-            <Auth0Provider
-              domain={authority}
+            <AuthProvider
+              authority={authority}
               clientId={clientId}
               redirectUri={window.location.origin}
-              onRedirectCallback={onRedirectCallback}
-              audience={audience}
               scope={scopes}
+              onSignIn={async user => {
+                window.location.hash = ''
+                window.location.href = window.location.origin
+              }}
+              automaticSilentRenew={true}
             >
               <App config={config} />
-            </Auth0Provider>
+            </AuthProvider>
           </IntlProvider>
         </Provider>
       )

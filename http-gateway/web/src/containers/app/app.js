@@ -1,6 +1,6 @@
 import { hot } from 'react-hot-loader/root'
 import { useContext, useState, useEffect } from 'react'
-import { useAuth0 } from '@auth0/auth0-react'
+import { useAuth } from 'oidc-react'
 import classNames from 'classnames'
 import { Router } from 'react-router-dom'
 import Container from 'react-bootstrap/Container'
@@ -28,21 +28,12 @@ import { AppContext } from './app-context'
 import './app.scss'
 
 const App = ({ config }) => {
-  const {
-    isLoading,
-    isAuthenticated,
-    error,
-    loginWithRedirect,
-    getAccessTokenSilently,
-  } = useAuth0()
+  const { isLoading, userData } = useAuth()
   const [collapsed, setCollapsed] = useLocalStorage('leftPanelCollapsed', true)
   const { formatMessage: _ } = useIntl()
   const [wellKnownConfig, setWellKnownConfig] = useState(null)
   const [wellKnownConfigFetched, setWellKnownConfigFetched] = useState(false)
   const [configError, setConfigError] = useState(null)
-
-  // Set the getAccessTokenSilently method to the security singleton
-  security.setAccessTokenSilently(getAccessTokenSilently)
 
   // Set the auth configurations
   const {
@@ -56,13 +47,12 @@ const App = ({ config }) => {
   security.setDeviceOAuthConfig(deviceOauthClient)
   openTelemetryConfig !== false && openTelemetry.init('hub')
 
+  if (userData) {
+    security.setAccessToken(userData.access_token)
+  }
+
   useEffect(() => {
-    if (
-      !isLoading &&
-      isAuthenticated &&
-      !wellKnownConfig &&
-      !wellKnownConfigFetched
-    ) {
+    if (!isLoading && userData && !wellKnownConfig && !wellKnownConfigFetched) {
       const fetchWellKnownConfig = async () => {
         try {
           const { data: wellKnown } = await openTelemetry.withTelemetry(
@@ -88,17 +78,17 @@ const App = ({ config }) => {
     }
   }, [
     isLoading,
-    isAuthenticated,
+    userData,
     wellKnownConfig,
     wellKnownConfigFetched,
     config.httpGatewayAddress,
   ])
 
   // Render an error box with an auth error
-  if (error || configError) {
+  if (configError) {
     return (
       <div className="client-error-message">
-        {`${_(t.authError)}: ${error?.message || configError?.message}`}
+        {`${_(t.authError)}: ${configError?.message}`}
       </div>
     )
   }
@@ -111,18 +101,6 @@ const App = ({ config }) => {
         <div className="page-loading-text">{`${_(t.loading)}...`}</div>
       </>
     )
-  }
-
-  // If the loading is finished but still unauthenticated, it means the user is not logged in.
-  // Calling the loginWithRedirect will make a redirect to the login page where the user can login.
-  if (!isLoading && !isAuthenticated) {
-    loginWithRedirect({
-      appState: {
-        returnTo: window.location.href.substr(window.location.origin.length),
-      },
-    })
-
-    return renderLoader()
   }
 
   if (isLoading || !wellKnownConfig) {

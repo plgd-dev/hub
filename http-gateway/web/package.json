@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": false,
   "dependencies": {
+    "@ampproject/remapping": "^2.2.0",
     "@auth0/auth0-react": "^1.8.0",
     "@babel/cli": "^7.16.0",
     "@craco/craco": "^6.4.3",
@@ -25,6 +26,7 @@
     "history": "^4.10.1",
     "jsoneditor": "^9.5.7",
     "lodash": "^4.17.21",
+    "oidc-react": "^2.0.3",
     "prettier": "2.5.1",
     "prop-types": "^15.7.2",
     "react": "^17.0.2",

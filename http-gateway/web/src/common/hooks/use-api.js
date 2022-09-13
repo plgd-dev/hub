@@ -69,9 +69,11 @@ export const useStreamApi = (url, options = {}) => {
               loading: false,
             })
 
-            trace
-              .getSpan(context.active())
-              .addEvent('fetching-single-span-completed')
+            if (telemetryWebTracer) {
+              trace
+                .getSpan(context.active())
+                .addEvent('fetching-single-span-completed')
+            }
           }
         }
       })()
