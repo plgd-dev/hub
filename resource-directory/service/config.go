@@ -130,7 +130,7 @@ type PublicConfiguration struct {
 	HubID                    string        `yaml:"hubID" json:"hubId"`
 	CoapGateway              string        `yaml:"coapGateway" json:"coapGateway"`
 	DefaultCommandTimeToLive time.Duration `yaml:"defaultCommandTimeToLive" json:"defaultCommandTimeToLive"`
-	AuthorizationServer      string        `yaml:"authorizationServer" json:"authorizationServer"`
+	Authority                string        `yaml:"authority" json:"authority"`
 
 	cloudCertificateAuthorities string `yaml:"-"`
 }
@@ -151,8 +151,8 @@ func (c *PublicConfiguration) Validate() error {
 	if c.CAPool == "" {
 		return fmt.Errorf("caPool('%v')", c.CAPool)
 	}
-	if c.AuthorizationServer == "" {
-		return fmt.Errorf("authorizationServer('%v')", c.AuthorizationServer)
+	if c.Authority == "" {
+		return fmt.Errorf("authority('%v')", c.Authority)
 	}
 	return nil
 }
@@ -166,7 +166,7 @@ func (c PublicConfiguration) ToProto() *pb.HubConfigurationResponse {
 		CertificateAuthorities:   c.cloudCertificateAuthorities,
 		DefaultCommandTimeToLive: int64(c.DefaultCommandTimeToLive),
 		CurrentTime:              pkgTime.UnixNano(time.Now()),
-		AuthorizationServer:      c.AuthorizationServer,
+		Authority:                c.Authority,
 	}
 }
 

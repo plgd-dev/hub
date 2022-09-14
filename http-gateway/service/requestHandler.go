@@ -121,6 +121,7 @@ func NewRequestHandler(config *Config, r *mux.Router, client *client.Client) (*R
 	r.HandleFunc(uri.AliasDevicePendingMetadataUpdates, requestHandler.getPendingMetadataUpdates).Methods(http.MethodGet)
 	r.HandleFunc(uri.AliasDevicePendingMetadataUpdate, requestHandler.cancelPendingMetadataUpdate).Methods(http.MethodDelete)
 	r.HandleFunc(uri.AliasDeviceEvents, requestHandler.getEvents).Methods(http.MethodGet)
+	r.HandleFunc(uri.Configuration, requestHandler.getHubConfiguration).Methods(http.MethodGet)
 	r.HandleFunc(uri.HubConfiguration, requestHandler.getHubConfiguration).Methods(http.MethodGet)
 
 	r.PathPrefix(uri.Devices).Methods(http.MethodPost).MatcherFunc(resourceLinksMatcher).HandlerFunc(requestHandler.createResource)

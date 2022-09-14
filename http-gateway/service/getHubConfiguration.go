@@ -62,13 +62,21 @@ func decodeHubConfiguration(data []byte) (map[string]interface{}, error) {
 
 func (requestHandler *RequestHandler) getHubConfiguration(w http.ResponseWriter, r *http.Request) {
 	accept := getAccept(r)
-	if accept == uri.ApplicationProtoJsonContentType {
-		requestHandler.mux.ServeHTTP(w, r)
-		return
-	}
 	resp, err := requestHandler.client.GrpcGatewayClient().GetHubConfiguration(r.Context(), &pb.HubConfigurationRequest{})
 	if err != nil {
-		serverMux.WriteError(w, fmt.Errorf("cannot get cloud configuration: %w", err))
+		serverMux.WriteError(w, fmt.Errorf("cannot get hub configuration: %w", err))
+		return
+	}
+	resp.HttpGatewayAddress = requestHandler.config.UI.WebConfiguration.HTTPGatewayAddress
+	resp.DeviceOauthClient = requestHandler.config.UI.WebConfiguration.DeviceOAuthClient.ToProto()
+	resp.WebOauthClient = requestHandler.config.UI.WebConfiguration.WebOAuthClient.ToProto()
+	if accept == uri.ApplicationProtoJsonContentType {
+		m := serverMux.NewJsonpbMarshaler()
+		w.Header().Set(contentTypeHeaderKey, uri.ApplicationProtoJsonContentType)
+		w.WriteHeader(http.StatusOK)
+		if err := m.NewEncoder(w).Encode(resp); err != nil {
+			log.Errorf("failed to write response: %v", err)
+		}
 		return
 	}
 	v := protojson.MarshalOptions{

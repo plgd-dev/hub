@@ -116,6 +116,9 @@ service GrpcGateway {
   rpc GetHubConfiguration(HubConfigurationRequest) returns (HubConfigurationResponse) {
     option (google.api.http) = {
       get: "/.well-known/hub-configuration"
+      additional_bindings: {
+        get: "/.well-known/configuration"
+      }
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: [ "Cloud" ]
