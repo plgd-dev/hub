@@ -73,7 +73,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Set up QEMU
         # https://github.com/felddy/foundryvtt-docker/issues/358 - Build workflow failing on push to ghcr.io: connection reset by peer
