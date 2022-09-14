@@ -2,6 +2,7 @@ package http
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -51,7 +52,11 @@ func New(ctx context.Context, config Config) (*Service, error) {
 
 // Serve starts the service's HTTP server and blocks
 func (s *Service) Serve() error {
-	return s.server.Serve(s.listener)
+	err := s.server.Serve(s.listener)
+	if errors.Is(err, http.ErrServerClosed) {
+		return nil
+	}
+	return err
 }
 
 // Close ends serving
