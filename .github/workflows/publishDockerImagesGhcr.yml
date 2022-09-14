@@ -77,7 +77,7 @@ jobs:
 
       - name: Set up QEMU
         # https://github.com/felddy/foundryvtt-docker/issues/358 - Build workflow failing on push to ghcr.io: connection reset by peer
-        uses: docker/setup-qemu-action@8b122486cedac8393e77aa9734c3528886e4a1a8
+        uses: docker/setup-qemu-action@c5ffa2a61740d9877bd1f40899a87c8ec93b0d9f
 
       - name: Set up Docker Buildx
         id: buildx
