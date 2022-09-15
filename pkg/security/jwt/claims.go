@@ -160,14 +160,14 @@ func (c Claims) ValidTimes(now time.Time) error {
 	if err != nil {
 		return err
 	}
-	if !iat.IsZero() && now.Before(iat) {
+	if !iat.IsZero() && now.Add(time.Minute).Before(iat) {
 		return fmt.Errorf("token used before issued")
 	}
 	nbf, err := c.NotBefore()
 	if err != nil {
 		return err
 	}
-	if !nbf.IsZero() && now.Before(nbf) {
+	if !nbf.IsZero() && now.Add(time.Minute).Before(nbf) {
 		return fmt.Errorf("token is not valid yet")
 	}
 	return nil
