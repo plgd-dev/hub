@@ -25,12 +25,18 @@ func TestRequestHandlerGetHubConfiguration(t *testing.T) {
 	expected.DeviceOauthClient = httpCfg.UI.WebConfiguration.DeviceOAuthClient.ToProto()
 	expected.HttpGatewayAddress = httpCfg.UI.WebConfiguration.HTTPGatewayAddress
 	tests := []struct {
-		name string
-		want *pb.HubConfigurationResponse
+		name   string
+		accept string
+		want   *pb.HubConfigurationResponse
 	}{
 		{
 			name: "valid",
 			want: expected,
+		},
+		{
+			name:   "valid configuration",
+			accept: uri.ApplicationProtoJsonContentType,
+			want:   expected,
 		},
 	}
 
@@ -45,7 +51,7 @@ func TestRequestHandlerGetHubConfiguration(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			request := httpgwTest.NewRequest(http.MethodGet, uri.HubConfiguration, nil).Build()
+			request := httpgwTest.NewRequest(http.MethodGet, uri.HubConfiguration, nil).Accept(tt.accept).Build()
 			resp := httpgwTest.HTTPDo(t, request)
 			defer func() {
 				_ = resp.Body.Close()

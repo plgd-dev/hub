@@ -107,7 +107,7 @@ http {
       proxy_set_header Connection $connection_upgrade;
       proxy_set_header Host $host;
     }
-    location ~ ^(/|/api/v1/devices|/api/v1/ws/devices|/.well-known/hub-configuration|/.well-known/configuration|/auth_config.json) {
+    location ~ ^/ {
       set $upstream_http_gateway https://127.0.0.1:REPLACE_HTTP_GATEWAY_PORT;
       proxy_pass                     $upstream_http_gateway;
       proxy_ssl_certificate           /data/certs/internal/endpoint.crt;
