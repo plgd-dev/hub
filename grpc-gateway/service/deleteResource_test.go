@@ -3,14 +3,23 @@ package service_test
 import (
 	"context"
 	"crypto/tls"
+	"errors"
+	"io"
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/plgd-dev/device/schema/device"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	exCodes "github.com/plgd-dev/hub/v2/grpc-gateway/pb/codes"
+	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
+	"github.com/plgd-dev/hub/v2/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	"github.com/plgd-dev/hub/v2/pkg/net/grpc/client"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
+	raService "github.com/plgd-dev/hub/v2/resource-aggregate/service"
+	raTest "github.com/plgd-dev/hub/v2/resource-aggregate/test"
 	"github.com/plgd-dev/hub/v2/test"
 	"github.com/plgd-dev/hub/v2/test/config"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
@@ -18,6 +27,7 @@ import (
 	"github.com/plgd-dev/hub/v2/test/service"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
@@ -122,4 +132,89 @@ func TestRequestHandlerDeleteResource(t *testing.T) {
 			pbTest.CmpResourceDeleted(t, want, got.GetData())
 		})
 	}
+}
+
+func TestRequestHandlerDeleteResourceAfterUnpublish(t *testing.T) {
+	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*config.TEST_TIMEOUT)
+	defer cancel()
+
+	tearDown := service.SetUp(ctx, t)
+	defer tearDown()
+	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
+
+	conn, err := grpc.Dial(config.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+		RootCAs: test.GetRootCertificatePool(t),
+	})))
+	require.NoError(t, err)
+	defer func() {
+		_ = conn.Close()
+	}()
+	c := pb.NewGrpcGatewayClient(conn)
+	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.GW_HOST, test.GetAllBackendResourceLinks())
+	defer shutdownDevSim()
+	const switchID1 = "1"
+	const switchID2 = "2"
+	test.AddDeviceSwitchResources(ctx, t, deviceID, c, switchID1, switchID2)
+	time.Sleep(200 * time.Millisecond)
+
+	fileWatcher, err := fsnotify.NewWatcher()
+	require.NoError(t, err)
+	defer func() {
+		err := fileWatcher.Close()
+		require.NoError(t, err)
+	}()
+
+	cfg := raTest.MakeConfig(t)
+	raConn, err := client.New(config.MakeGrpcClientConfig(cfg.APIs.GRPC.Addr), fileWatcher, log.Get(), trace.NewNoopTracerProvider())
+	require.NoError(t, err)
+	defer func() {
+		_ = raConn.Close()
+	}()
+	rac := raService.NewResourceAggregateClient(raConn.GRPC())
+
+	respUnpublish, err := rac.UnpublishResourceLinks(ctx, &commands.UnpublishResourceLinksRequest{
+		Hrefs:    []string{test.TestResourceSwitchesInstanceHref(switchID2)},
+		DeviceId: deviceID,
+		CommandMetadata: &commands.CommandMetadata{
+			ConnectionId: uuid.Must(uuid.NewRandom()).String(),
+			Sequence:     0,
+		},
+	})
+	require.NoError(t, err)
+	require.Len(t, respUnpublish.UnpublishedHrefs, 1)
+	require.Equal(t, respUnpublish.UnpublishedHrefs[0], test.TestResourceSwitchesInstanceHref(switchID2))
+	time.Sleep(200 * time.Millisecond)
+
+	_, err = c.DeleteResource(ctx, &pb.DeleteResourceRequest{
+		ResourceId: commands.NewResourceID(deviceID, test.TestResourceSwitchesInstanceHref(switchID2)),
+	})
+	require.NoError(t, err)
+	time.Sleep(200 * time.Millisecond)
+
+	test.AddDeviceSwitchResources(ctx, t, deviceID, c, switchID2)
+	time.Sleep(200 * time.Millisecond)
+
+	_, err = c.DeleteResource(ctx, &pb.DeleteResourceRequest{
+		ResourceId: commands.NewResourceID(deviceID, test.TestResourceSwitchesInstanceHref(switchID1)),
+	})
+	require.NoError(t, err)
+	time.Sleep(200 * time.Millisecond)
+
+	rlClient, err := c.GetResourceLinks(ctx, &pb.GetResourceLinksRequest{
+		DeviceIdFilter: []string{deviceID},
+	})
+	require.NoError(t, err)
+	links := make([]*events.ResourceLinksPublished, 0, 1)
+	for {
+		link, err := rlClient.Recv()
+		if errors.Is(err, io.EOF) {
+			break
+		}
+		require.NoError(t, err)
+		links = append(links, link)
+	}
+	require.Len(t, links, 1)
+	require.NotEmpty(t, pbTest.FindResourceInResourceLinksPublishedByHref(links[0], test.TestResourceSwitchesInstanceHref(switchID2)))
 }
