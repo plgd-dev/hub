@@ -5,7 +5,7 @@ info:
 servers:
   - url: "https://try.plgd.cloud"
 paths:
-  "/.well-known/hub-configuration":
+  "/.well-known/configuration":
     get:
       tags:
         - "Configuration"

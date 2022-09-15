@@ -30,7 +30,7 @@ func MakeConfig(t *testing.T) service.Config {
 	cfg.Clients.Eventstore.ProjectionCacheExpiration = time.Second * 120
 
 	cfg.ExposedHubConfiguration.CAPool = config.CA_POOL
-	cfg.ExposedHubConfiguration.AuthorizationServer = "https://" + config.OAUTH_SERVER_HOST
+	cfg.ExposedHubConfiguration.Authority = "https://" + config.OAUTH_SERVER_HOST
 	cfg.ExposedHubConfiguration.HubID = config.HubID()
 	cfg.ExposedHubConfiguration.CoapGateway = config.GW_HOST
 	cfg.ExposedHubConfiguration.OwnerClaim = config.OWNER_CLAIM

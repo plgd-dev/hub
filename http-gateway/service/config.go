@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	"github.com/plgd-dev/hub/v2/pkg/config"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/pkg/net/grpc/client"
@@ -112,6 +113,14 @@ type BasicOAuthClient struct {
 	Scopes   []string `yaml:"scopes" json:"scopes"`
 }
 
+func (c *BasicOAuthClient) ToProto() *pb.WebOAuthClient {
+	return &pb.WebOAuthClient{
+		ClientId: c.ClientID,
+		Audience: c.Audience,
+		Scopes:   c.Scopes,
+	}
+}
+
 func (c *BasicOAuthClient) Validate() error {
 	if c.ClientID == "" {
 		return fmt.Errorf("clientID('%v')", c.ClientID)
@@ -124,6 +133,15 @@ type DeviceOAuthClient struct {
 	ProviderName     string `json:"providerName" yaml:"providerName"`
 }
 
+func (c *DeviceOAuthClient) ToProto() *pb.DeviceOAuthClient {
+	return &pb.DeviceOAuthClient{
+		ClientId:     c.ClientID,
+		Audience:     c.Audience,
+		Scopes:       c.Scopes,
+		ProviderName: c.ProviderName,
+	}
+}
+
 func (c *DeviceOAuthClient) Validate() error {
 	if c.ClientID == "" {
 		return fmt.Errorf("clientID('%v')", c.ClientID)
@@ -133,16 +151,13 @@ func (c *DeviceOAuthClient) Validate() error {
 
 // WebConfiguration represents web configuration for user interface exposed via getOAuthConfiguration handler
 type WebConfiguration struct {
-	Authority          string            `yaml:"authority" json:"authority"`
+	Authority          string            `yaml:"-" json:"authority"`
 	HTTPGatewayAddress string            `yaml:"httpGatewayAddress" json:"httpGatewayAddress"`
 	WebOAuthClient     BasicOAuthClient  `yaml:"webOAuthClient" json:"webOauthClient"`
 	DeviceOAuthClient  DeviceOAuthClient `yaml:"deviceOAuthClient" json:"deviceOauthClient"`
 }
 
 func (c *WebConfiguration) Validate() error {
-	if c.Authority == "" {
-		return fmt.Errorf("authority('%v')", c.Authority)
-	}
 	if c.HTTPGatewayAddress == "" {
 		return fmt.Errorf("httpGatewayAddress('%v')", c.HTTPGatewayAddress)
 	}

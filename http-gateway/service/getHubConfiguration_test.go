@@ -17,16 +17,26 @@ import (
 
 func TestRequestHandlerGetHubConfiguration(t *testing.T) {
 	rdCfg := rdTest.MakeConfig(t)
-	rdCfg.ExposedHubConfiguration.AuthorizationServer = "https://" + config.OAUTH_SERVER_HOST + "?escape=test&test=escape"
+	rdCfg.ExposedHubConfiguration.Authority = "https://" + config.OAUTH_SERVER_HOST + "?escape=test&test=escape"
+	httpCfg := httpgwTest.MakeConfig(t, true)
 	expected := rdCfg.ExposedHubConfiguration.ToProto()
 	expected.CurrentTime = 0
+	expected.WebOauthClient = httpCfg.UI.WebConfiguration.WebOAuthClient.ToProto()
+	expected.DeviceOauthClient = httpCfg.UI.WebConfiguration.DeviceOAuthClient.ToProto()
+	expected.HttpGatewayAddress = httpCfg.UI.WebConfiguration.HTTPGatewayAddress
 	tests := []struct {
-		name string
-		want *pb.HubConfigurationResponse
+		name   string
+		accept string
+		want   *pb.HubConfigurationResponse
 	}{
 		{
 			name: "valid",
 			want: expected,
+		},
+		{
+			name:   "valid configuration",
+			accept: uri.ApplicationProtoJsonContentType,
+			want:   expected,
 		},
 	}
 
@@ -36,12 +46,12 @@ func TestRequestHandlerGetHubConfiguration(t *testing.T) {
 	tearDown := service.SetUp(ctx, t, service.WithRDConfig(rdCfg))
 	defer tearDown()
 
-	shutdownHttp := httpgwTest.SetUp(t)
+	shutdownHttp := httpgwTest.New(t, httpCfg)
 	defer shutdownHttp()
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			request := httpgwTest.NewRequest(http.MethodGet, uri.HubConfiguration, nil).Build()
+			request := httpgwTest.NewRequest(http.MethodGet, uri.HubConfiguration, nil).Accept(tt.accept).Build()
 			resp := httpgwTest.HTTPDo(t, request)
 			defer func() {
 				_ = resp.Body.Close()
