@@ -148,28 +148,28 @@ class ProvisionNewDeviceCore extends PureComponent {
 
         <Label title={_(t.deviceEndpoint)} inline>
           <div className="auth-code-box">
-            <span>{deviceEndpoint || '-'}</span>
+            <span className="text-overflow">{deviceEndpoint || '-'}</span>
             {deviceEndpoint && <CopyBox textToCopy={deviceEndpoint} />}
           </div>
         </Label>
 
         <Label title={_(t.authorizationCode)} inline>
           <div className="auth-code-box">
-            <span>{code}</span>
+            <span className="text-overflow">********</span>
             <CopyBox textToCopy={code} />
           </div>
         </Label>
 
         <Label title={_(t.authorizationProvider)} inline>
           <div className="auth-code-box">
-            <span>{providerName || '-'}</span>
+            <span className="text-overflow">{providerName || '-'}</span>
             {providerName && <CopyBox textToCopy={providerName} />}
           </div>
         </Label>
 
         <Label title={_(t.certificateAuthorities)} inline className="m-b-10">
           <div className="auth-code-box">
-            <span>...</span>
+            <span>********</span>
             {certificateAuthorities && (
               <CopyBox textToCopy={certificateAuthorities} />
             )}

@@ -45,8 +45,13 @@
   display: flex;
   justify-content: flex-end;
   align-items: center;
+  overflow: hidden;
 
-  span{
+  span {
     text-align: right;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    width: 100%;
+    overflow: hidden;
   }
 }

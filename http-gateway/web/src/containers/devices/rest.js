@@ -2,7 +2,6 @@ import chunk from 'lodash/chunk'
 
 import { fetchApi, security } from '@/common/services'
 import { DEVICE_AUTH_CODE_SESSION_KEY } from '@/constants'
-
 import { devicesApiEndpoints, DEVICE_DELETE_CHUNK_SIZE } from './constants'
 import { interfaceGetParam } from './utils'
 import { withTelemetry } from '@/common/services/opentelemetry'
@@ -157,8 +156,8 @@ export const updateDeviceShadowSynchronizationApi = (
  */
 export const getDeviceAuthCode = deviceId => {
   return new Promise((resolve, reject) => {
-    const { authority } = security.getGeneralConfig()
     const { clientId, audience, scopes = [] } = security.getDeviceOAuthConfig()
+    const AuthUserManager = security.getUserManager()
 
     if (!clientId) {
       return reject(
@@ -168,54 +167,60 @@ export const getDeviceAuthCode = deviceId => {
       )
     }
 
-    let timeout = null
-    const iframe = document.createElement('iframe')
-    iframe.src = `${authority}/authorize?response_type=code&client_id=${clientId}&scope=${scopes}&audience=${
-      audience || ''
-    }&redirect_uri=${window.location.origin}/devices&device_id=${deviceId}`
+    AuthUserManager.metadataService
+      .getAuthorizationEndpoint()
+      .then(authorizationEndpoint => {
+        let timeout = null
+        const iframe = document.createElement('iframe')
+        iframe.src = `${authorizationEndpoint}?response_type=code&client_id=${clientId}&scope=${scopes}&audience=${
+          audience || ''
+        }&redirect_uri=${window.location.origin}/devices&device_id=${deviceId}`
 
-    const destroyIframe = () => {
-      sessionStorage.removeItem(DEVICE_AUTH_CODE_SESSION_KEY)
-      iframe.parentNode.removeChild(iframe)
-    }
+        // iframe.className = 'test-iframe'
 
-    const doResolve = value => {
-      destroyIframe()
-      clearTimeout(timeout)
-      resolve(value)
-    }
-
-    const doReject = () => {
-      destroyIframe()
-      clearTimeout(timeout)
-      reject(new Error('Failed to get the device auth code.'))
-    }
-
-    iframe.onload = () => {
-      let attempts = 0
-      const maxAttempts = 40
-      const getCode = () => {
-        attempts += 1
-        const code = sessionStorage.getItem(DEVICE_AUTH_CODE_SESSION_KEY)
-
-        if (code) {
-          return doResolve(code)
+        const destroyIframe = () => {
+          sessionStorage.removeItem(DEVICE_AUTH_CODE_SESSION_KEY)
+          iframe.parentNode.removeChild(iframe)
         }
 
-        if (attempts > maxAttempts) {
-          return doReject()
+        const doResolve = value => {
+          destroyIframe()
+          clearTimeout(timeout)
+          resolve(value)
         }
 
-        timeout = setTimeout(getCode, 500)
-      }
+        const doReject = () => {
+          destroyIframe()
+          clearTimeout(timeout)
+          reject(new Error('Failed to get the device auth code.'))
+        }
 
-      getCode()
-    }
+        iframe.onload = () => {
+          let attempts = 0
+          const maxAttempts = 40
+          const getCode = () => {
+            attempts += 1
+            const code = sessionStorage.getItem(DEVICE_AUTH_CODE_SESSION_KEY)
 
-    iframe.onerror = () => {
-      doReject()
-    }
+            if (code) {
+              return doResolve(code)
+            }
 
-    document.body.appendChild(iframe)
+            if (attempts > maxAttempts) {
+              // return doReject()
+            }
+
+            timeout = setTimeout(getCode, 500)
+          }
+
+          getCode()
+        }
+
+        iframe.onerror = () => {
+          doReject()
+        }
+
+        document.body.appendChild(iframe)
+      })
   })
 }
