@@ -495,7 +495,7 @@ resourcedirectory:
   # -- For complete resource-directory service configuration see [plgd/resource-directory](https://github.com/plgd-dev/hub/tree/main/resource-directory)
   publicConfiguration:
     caPool:
-    authorizationServer:
+    authority:
     ownerClaim:
     deviceIdClaim:
     hubId:
@@ -1147,6 +1147,7 @@ httpgateway:
       paths:
         - /api
         - /.well-known/hub-configuration
+        - /.well-known/configuration
     # -- UI ingress
     ui:
       # -- Enable ingress
@@ -1235,7 +1236,6 @@ httpgateway:
     enabled: true
     directory: "/usr/local/var/www"
     webConfiguration:
-      authority: ""
       httpGatewayAddress: ""
       webOAuthClient:
         clientID: ""

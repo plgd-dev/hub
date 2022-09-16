@@ -98,7 +98,7 @@ clients:
         useSystemCAPool: false
 publicConfiguration:
   caPool: "/secrets/public/rootca.crt"
-  authorizationServer: ""
+  authority: ""
   ownerClaim: "sub"
   deviceIDClaim: ""
   hubID: ""
