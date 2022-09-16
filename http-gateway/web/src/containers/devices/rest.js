@@ -176,8 +176,6 @@ export const getDeviceAuthCode = deviceId => {
           audience || ''
         }&redirect_uri=${window.location.origin}/devices&device_id=${deviceId}`
 
-        // iframe.className = 'test-iframe'
-
         const destroyIframe = () => {
           sessionStorage.removeItem(DEVICE_AUTH_CODE_SESSION_KEY)
           iframe.parentNode.removeChild(iframe)
@@ -207,7 +205,7 @@ export const getDeviceAuthCode = deviceId => {
             }
 
             if (attempts > maxAttempts) {
-              // return doReject()
+              return doReject()
             }
 
             timeout = setTimeout(getCode, 500)

@@ -3,8 +3,6 @@
   "version": "0.1.0",
   "private": false,
   "dependencies": {
-    "@ampproject/remapping": "^2.2.0",
-    "@auth0/auth0-react": "^1.8.0",
     "@babel/cli": "^7.16.0",
     "@craco/craco": "^6.4.3",
     "@opentelemetry/api": "^1.1.0",
