@@ -19,25 +19,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HubConfiguration"
-    post:
-      tags:
-        - "Configuration"
-      summary: "Converts OAuth redirect response to body"
-      description: |
-        Converts oauth redirect response to body as JSON. It is used for getting device onboarding authorization code as redirect.
-      responses:
-        200:
-          description: OAuth response
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/OAuthResponse"
-        400:
-          $ref: "#/components/responses/badRequest"
-        401:
-          $ref: "#/components/responses/unauthorized"
-        403:
-          $ref: "#/components/responses/forbidden"
   "/api/v1/devices":
     get:
       tags:
@@ -771,12 +752,19 @@ components:
           description: Current time of server in nanoseconds.
           type: integer
           format: int64
-        authorizationServer:
+        authority:
           description: URL of the authorization server.
           type: string
+        httpGatewayAddress:
+          description: address where plgd HTTP Gateway handles API calls.
+          type: string
+        webOauthClient:
+          $ref: '#/components/schemas/webOAuthClient'
+        deviceOauthClient:
+          $ref: '#/components/schemas/deviceOAuthClient'
       example:
         jwtOwnerClaim: "sub"
-        authorizationServer: "https://auth.plgd.cloud"
+        authority: "https://auth.plgd.cloud/realms/shared"
         id: "adebc667-1f2b-41e3-bf5c-6d6eabc68cc6"
         coapGateway: "coaps+tcp://try.plgd.cloud:5684"
         cloudAuthorizationProvider: "plgd"
@@ -792,6 +780,47 @@ components:
           Af8wCgYIKoZIzj0EAwIDSQAwRgIhAIyyCjzD8YzCNSY6YbnLgJ7TaXz5HPE0Eyqm
           gfQCLUhwAiEAmfMN+GW05NyB3n5OxYHqVmHGDZJ8rHUUBCPJ3WbCweM=
           -----END CERTIFICATE-----
+        deviceOauthClient:
+          audience: "https://try.plgd.cloud"
+          clientId: "cYN3p6lwNcNlOvvUhz55KvDZLQbJeDr5"
+          providerName: "plgd.web"
+          scopes: [ "offline_access" ]
+        httpGatewayAddress: "https://api.try.plgd.cloud"
+        webOauthClient: 
+          audience: "https://try.plgd.cloud"
+          clientId: "LXZ9OhKWWRYqf12W0B5OXduqt02q0zjS"
+          scopes: [ "openid"]
+    webOAuthClient:
+      type: object
+      properties:
+        clientId:
+          description: Client ID of the web OAuth client.
+          type: string
+        audience:
+          description: Audience of the web OAuth client.
+          type: string
+        scopes:
+          description: Scopes of the web OAuth client.
+          type: array
+          items:
+            type: string
+    deviceOAuthClient:
+      type: object
+      properties:
+        clientId:
+          description: Client ID of the device OAuth client.
+          type: string
+        audience:
+          description: Audience of the device OAuth client.
+          type: string
+        providerName:
+          description: Provider name of the device OAuth client.
+          type: string
+        scopes:
+          description: Scopes of the device OAuth client.
+          type: array
+          items:
+            type: string
     CommandType:
       type: string
       enum:
