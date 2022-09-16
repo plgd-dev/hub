@@ -65,7 +65,6 @@ ui:
   enabled: false
   directory: "/usr/local/var/www"
   webConfiguration:
-    authority: ""
     httpGatewayAddress: ""
     webOAuthClient:
       clientID: ""

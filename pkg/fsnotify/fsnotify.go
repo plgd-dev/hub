@@ -109,7 +109,7 @@ func (w *Watcher) RemoveOnEventHandler(onEventHandler *func(event fsnotify.Event
 }
 
 func (w *Watcher) Close() error {
-	if !w.closed.CAS(false, true) {
+	if !w.closed.CompareAndSwap(false, true) {
 		return nil
 	}
 	err := w.private.w.Close()

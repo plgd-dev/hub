@@ -7,6 +7,20 @@ option go_package = "github.com/plgd-dev/hub/v2/grpc-gateway/pb;pb";
 message HubConfigurationRequest {
 }
 
+message WebOAuthClient {
+	string client_id = 1;
+	string audience = 2;
+	repeated string scopes = 3;
+}
+
+
+message DeviceOAuthClient {
+    string client_id = 1;
+	string audience = 2;
+	repeated string scopes = 3;
+    string provider_name = 4;
+}
+
 message HubConfigurationResponse {
     // provides a current time of server in nanoseconds.
     int64 current_time = 1;
@@ -15,7 +29,12 @@ message HubConfigurationResponse {
     string id = 4;
     string coap_gateway  = 5;
     string certificate_authorities = 6;
-    string authorization_server = 7;
+    string authority = 7;
     // exposes default command time to live in nanoseconds for CreateResource, RetrieveResource, UpdateResource, DeleteResource, and UpdateDeviceMetadata commands when it is not set in the request. 0 - means forever.
     int64 default_command_time_to_live = 8;
+
+    // cfg for UI http-gateway
+    string http_gateway_address = 10;
+    WebOAuthClient web_oauth_client = 11;
+    DeviceOAuthClient device_oauth_client = 12;
 }
