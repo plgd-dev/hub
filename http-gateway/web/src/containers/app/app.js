@@ -55,9 +55,7 @@ const App = () => {
           }
         } catch (e) {
           setConfigError(
-            new Error(
-              'Could not retrieve the well-known ocfcloud configuration.'
-            )
+            new Error('Could not retrieve the well-known configuration.')
           )
         }
       }
@@ -76,15 +74,13 @@ const App = () => {
   }
 
   // Placeholder loader while waiting for the auth status
-  const renderLoader = () => (
-    <>
-      <PageLoader className="auth-loader" loading />
-      <div className="page-loading-text">{`${_(t.loading)}...`}</div>
-    </>
-  )
-
   if (!wellKnownConfig) {
-    return renderLoader()
+    return (
+      <>
+        <PageLoader className="auth-loader" loading />
+        <div className="page-loading-text">{`${_(t.loading)}...`}</div>
+      </>
+    )
   }
 
   return (
