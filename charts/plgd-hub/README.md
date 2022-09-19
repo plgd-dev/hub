@@ -45,7 +45,7 @@ global:
 
 | Repository | Name | Version |
 |------------|------|---------|
-| https://charts.bitnami.com/bitnami | mongodb | 10.31.3 |
+| https://charts.bitnami.com/bitnami | mongodb | 13.1.2 |
 | https://nats-io.github.io/k8s/helm/charts/ | nats | 0.13.1 |
 
 ## Values
@@ -53,7 +53,7 @@ global:
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
 | certificateauthority.affinity | string | `nil` | Affinity definition |
-| certificateauthority.apis | object | `{"grpc":{"address":null,"authorization":{"audience":null,"authority":null,"http":{"idleConnTimeout":"30s","maxConnsPerHost":32,"maxIdleConns":16,"maxIdleConnsPerHost":16,"timeout":"10s","tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":true}},"ownerClaim":null},"enforcementPolicy":{"minTime":"5s","permitWithoutStream":true},"keepAlive":{"maxConnectionAge":"0s","maxConnectionAgeGrace":"0s","maxConnectionIdle":"0s","time":"2h","timeout":"20s"},"tls":{"caPool":null,"certFile":null,"clientCertificateRequired":false,"keyFile":null}}}` | For complete certificate-authority service configuration see [plgd/certificate-authority](https://github.com/plgd-dev/hub/tree/main/certificate-authority) |
+| certificateauthority.apis | object | `{"grpc":{"address":null,"authorization":{"audience":null,"authority":null,"http":{"idleConnTimeout":"30s","maxConnsPerHost":32,"maxIdleConns":16,"maxIdleConnsPerHost":16,"timeout":"10s","tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":true}},"ownerClaim":null},"enforcementPolicy":{"minTime":"5s","permitWithoutStream":true},"keepAlive":{"maxConnectionAge":"0s","maxConnectionAgeGrace":"0s","maxConnectionIdle":"0s","time":"2h","timeout":"20s"},"tls":{"caPool":null,"certFile":null,"clientCertificateRequired":false,"keyFile":null}},"http":{"address":null,"idleTimeout":"30s","readHeaderTimeout":"4s","readTimeout":"8s","writeTimeout":"16s"}}` | For complete certificate-authority service configuration see [plgd/certificate-authority](https://github.com/plgd-dev/hub/tree/main/certificate-authority) |
 | certificateauthority.ca | object | `{"cert":"tls.crt","key":"tls.key","secret":{"name":null},"volume":{"mountPath":"/certs/coap-device-ca","name":"coap-device-ca"}}` | CA section |
 | certificateauthority.ca.cert | string | `"tls.crt"` | Cert file name |
 | certificateauthority.ca.key | string | `"tls.key"` | Cert key file name |
@@ -72,17 +72,23 @@ global:
 | certificateauthority.extraVolumeMounts | string | `nil` | Optional extra volume mounts |
 | certificateauthority.extraVolumes | string | `nil` | Optional extra volumes |
 | certificateauthority.fullnameOverride | string | `nil` | Full name to override |
+| certificateauthority.httpPort | int | `9101` |  |
 | certificateauthority.image.imagePullSecrets | string | `nil` | Image pull secrets |
 | certificateauthority.image.pullPolicy | string | `"Always"` | Image pull policy |
 | certificateauthority.image.registry | string | `"ghcr.io/"` | Image registry |
 | certificateauthority.image.repository | string | `"plgd-dev/hub/certificate-authority"` | Image repository |
 | certificateauthority.image.tag | string | `nil` | Image tag. |
 | certificateauthority.imagePullSecrets | string | `nil` | Image pull secrets |
-| certificateauthority.ingress.annotations | object | `{"ingress.kubernetes.io/force-ssl-redirect":"true","nginx.ingress.kubernetes.io/backend-protocol":"GRPCS","nginx.ingress.kubernetes.io/enable-cors":"true","nginx.org/grpc-services":"{{ include \"plgd-hub.certificateauthority.fullname\" . }}"}` | Pre defined map of Ingress annotation |
-| certificateauthority.ingress.customAnnotations | object | `{}` | Custom map of Ingress annotation |
-| certificateauthority.ingress.enabled | bool | `true` | Enable ingress |
-| certificateauthority.ingress.paths | list | `["/certificateauthority.pb.CertificateAuthority"]` | Paths |
-| certificateauthority.ingress.secretName | string | `nil` | Override name of host/tls secret. If not specified, it will be generated |
+| certificateauthority.ingress.grpc.annotations | object | `{"ingress.kubernetes.io/force-ssl-redirect":"true","nginx.ingress.kubernetes.io/backend-protocol":"GRPCS","nginx.ingress.kubernetes.io/enable-cors":"true","nginx.org/grpc-services":"{{ include \"plgd-hub.certificateauthority.fullname\" . }}-grpc"}` | Pre defined map of Ingress annotation |
+| certificateauthority.ingress.grpc.customAnnotations | object | `{}` | Custom map of Ingress annotation |
+| certificateauthority.ingress.grpc.enabled | bool | `true` | Enable ingress |
+| certificateauthority.ingress.grpc.paths | list | `["/certificateauthority.pb.CertificateAuthority"]` | Paths |
+| certificateauthority.ingress.grpc.secretName | string | `nil` | Override name of host/tls secret. If not specified, it will be generated |
+| certificateauthority.ingress.http.annotations | object | `{"ingress.kubernetes.io/force-ssl-redirect":"true","nginx.ingress.kubernetes.io/backend-protocol":"HTTPS","nginx.ingress.kubernetes.io/enable-cors":"true","nginx.org/grpc-services":"{{ include \"plgd-hub.certificateauthority.fullname\" . }}-http"}` | Pre defined map of Ingress annotation |
+| certificateauthority.ingress.http.customAnnotations | object | `{}` | Custom map of Ingress annotation |
+| certificateauthority.ingress.http.enabled | bool | `true` | Enable ingress |
+| certificateauthority.ingress.http.paths | list | `["/api/v1/sign"]` | Ingress path |
+| certificateauthority.ingress.http.secretName | string | `nil` | Override name of host/tls secret. If not specified, it will be generated |
 | certificateauthority.initContainersTpl | string | `nil` | Init containers definition |
 | certificateauthority.livenessProbe | string | `nil` | Liveness probe. certificate-authority doesn't have any default liveness probe |
 | certificateauthority.log.encoderConfig.timeEncoder | string | `"rfc3339nano"` | Time format for logs. The supported values are: "rfc3339nano", "rfc3339" |
@@ -105,13 +111,20 @@ global:
 | certificateauthority.resources | string | `nil` | Resources limit |
 | certificateauthority.restartPolicy | string | `"Always"` | Restart policy for pod |
 | certificateauthority.securityContext | string | `nil` | Security context for pod |
-| certificateauthority.service.annotations | object | `{}` | Annotations for certificate-authority service |
-| certificateauthority.service.crt.extraDnsNames | list | `[]` | Extra DNS names for service certificate |
-| certificateauthority.service.labels | object | `{}` | Labels for certificate-authority service |
-| certificateauthority.service.name | string | `"grpc"` | Name |
-| certificateauthority.service.protocol | string | `"TCP"` | Protocol |
-| certificateauthority.service.targetPort | string | `"grpc"` | Target port |
-| certificateauthority.service.type | string | `"ClusterIP"` | Service type |
+| certificateauthority.service.grpc.annotations | object | `{}` | Annotations for certificate-authority service |
+| certificateauthority.service.grpc.crt.extraDnsNames | list | `[]` | Extra DNS names for service certificate |
+| certificateauthority.service.grpc.labels | object | `{}` | Labels for certificate-authority service |
+| certificateauthority.service.grpc.name | string | `"grpc"` | Name |
+| certificateauthority.service.grpc.protocol | string | `"TCP"` | Protocol |
+| certificateauthority.service.grpc.targetPort | string | `"grpc"` | Target port |
+| certificateauthority.service.grpc.type | string | `"ClusterIP"` | Service type |
+| certificateauthority.service.http.annotations | object | `{}` | Annotations for certificate-authority service |
+| certificateauthority.service.http.crt.extraDnsNames | list | `[]` | Extra DNS names for service certificate |
+| certificateauthority.service.http.labels | object | `{}` | Labels for certificate-authority service |
+| certificateauthority.service.http.name | string | `"http"` | Name |
+| certificateauthority.service.http.protocol | string | `"TCP"` | Protocol |
+| certificateauthority.service.http.targetPort | string | `"http"` | Target port |
+| certificateauthority.service.http.type | string | `"ClusterIP"` | Service type |
 | certificateauthority.signer | object | `{"certFile":null,"expiresIn":"87600h","hubId":null,"keyFile":null,"validFrom":"now-1h"}` | For complete certificate-authority service configuration see [plgd/certificate-authority](https://github.com/plgd-dev/hub/tree/main/certificate-authority) |
 | certificateauthority.tolerations | string | `nil` | Toleration definition |
 | certmanager | object | `{"coap":{"cert":{"duration":null,"key":{"algorithm":null,"size":null},"renewBefore":null},"issuer":{"annotations":{},"kind":null,"labels":{},"name":null,"spec":null}},"default":{"ca":{"commonName":"plgd-ca","enabled":true,"issuer":{"annotations":{},"enabled":true,"kind":"Issuer","labels":{},"name":"ca-issuer","spec":{"selfSigned":{}}},"secret":{"name":"plgd-ca"}},"cert":{"annotations":{},"duration":"8760h0m0s","key":{"algorithm":"ECDSA","size":256},"labels":{},"renewBefore":"360h0m0s"},"issuer":{"annotations":{},"enabled":true,"kind":"Issuer","labels":{},"name":"default-issuer","spec":{"selfSigned":{}}}},"enabled":true,"external":{"cert":{"duration":null,"key":{"algorithm":null,"size":null},"renewBefore":null},"issuer":{"annotations":{},"kind":null,"labels":{},"name":null,"spec":null}},"internal":{"cert":{"duration":null,"key":{"algorithm":null,"size":null},"renewBefore":null},"issuer":{"annotations":{},"kind":null,"labels":{},"name":null,"spec":null}}}` | Cert-manager integration section |
@@ -296,7 +309,7 @@ global:
 | grpcgateway.tolerations | object | `{}` | Toleration definition |
 | httpgateway.affinity | object | `{}` | Affinity definition |
 | httpgateway.apiDomain | string | `nil` | Domain for http-gateway API. Default: api.{{ global.domain }} |
-| httpgateway.apis | object | `{"http":{"address":null,"authorization":{"audience":null,"authority":null,"http":{"idleConnTimeout":"30s","maxConnsPerHost":32,"maxIdleConns":16,"maxIdleConnsPerHost":16,"timeout":"10s","tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":true}}},"tls":{"caPool":null,"certFile":null,"clientCertificateRequired":false,"keyFile":null},"webSocket":{"pingFrequency":"10s","streamBodyLimit":262144}}}` | For complete http-gateway service configuration see [plgd/http-gateway](https://github.com/plgd-dev/hub/tree/main/http-gateway) |
+| httpgateway.apis | object | `{"http":{"address":null,"authorization":{"audience":null,"authority":null,"http":{"idleConnTimeout":"30s","maxConnsPerHost":32,"maxIdleConns":16,"maxIdleConnsPerHost":16,"timeout":"10s","tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":true}}},"idleTimeout":"30s","readHeaderTimeout":"4s","readTimeout":"8s","tls":{"caPool":null,"certFile":null,"clientCertificateRequired":false,"keyFile":null},"webSocket":{"pingFrequency":"10s","streamBodyLimit":262144},"writeTimeout":"16s"}}` | For complete http-gateway service configuration see [plgd/http-gateway](https://github.com/plgd-dev/hub/tree/main/http-gateway) |
 | httpgateway.clients | object | `{"grpcGateway":{"grpc":{"address":"","keepAlive":{"permitWithoutStream":true,"time":"10s","timeout":"20s"},"tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false}}}}` | For complete http-gateway service configuration see [plgd/http-gateway](https://github.com/plgd-dev/hub/tree/main/http-gateway) |
 | httpgateway.config | object | `{"fileName":"service.yaml","mountPath":"/config","volume":"config"}` | Http-gateway service yaml config section |
 | httpgateway.config.fileName | string | `"service.yaml"` | Name of configuration file |
@@ -315,11 +328,11 @@ global:
 | httpgateway.image.repository | string | `"plgd-dev/hub/http-gateway"` | Image repository |
 | httpgateway.image.tag | string | `nil` | Image tag. |
 | httpgateway.imagePullSecrets | object | `{}` | Image pull secrets |
-| httpgateway.ingress.api | object | `{"annotations":{"ingress.kubernetes.io/force-ssl-redirect":"true","nginx.ingress.kubernetes.io/backend-protocol":"HTTPS","nginx.ingress.kubernetes.io/enable-cors":"true","nginx.org/grpc-services":"{{ include \"plgd-hub.httpgateway.fullname\" . }}"},"customAnnotations":{},"enabled":true,"paths":["/api","/.well-known/hub-configuration"],"secretName":null}` | API ingress |
+| httpgateway.ingress.api | object | `{"annotations":{"ingress.kubernetes.io/force-ssl-redirect":"true","nginx.ingress.kubernetes.io/backend-protocol":"HTTPS","nginx.ingress.kubernetes.io/enable-cors":"true","nginx.org/grpc-services":"{{ include \"plgd-hub.httpgateway.fullname\" . }}"},"customAnnotations":{},"enabled":true,"paths":["/api","/.well-known/hub-configuration","/.well-known/configuration"],"secretName":null}` | API ingress |
 | httpgateway.ingress.api.annotations | object | `{"ingress.kubernetes.io/force-ssl-redirect":"true","nginx.ingress.kubernetes.io/backend-protocol":"HTTPS","nginx.ingress.kubernetes.io/enable-cors":"true","nginx.org/grpc-services":"{{ include \"plgd-hub.httpgateway.fullname\" . }}"}` | Pre defined map of Ingress annotation |
 | httpgateway.ingress.api.customAnnotations | object | `{}` | Custom map of Ingress annotation |
 | httpgateway.ingress.api.enabled | bool | `true` | Enable ingress |
-| httpgateway.ingress.api.paths | list | `["/api","/.well-known/hub-configuration"]` | Ingress path |
+| httpgateway.ingress.api.paths | list | `["/api","/.well-known/hub-configuration","/.well-known/configuration"]` | Ingress path |
 | httpgateway.ingress.api.secretName | string | `nil` | Override name of host/tls secret. If not specified, it will be generated |
 | httpgateway.ingress.ui | object | `{"annotations":{"ingress.kubernetes.io/force-ssl-redirect":"true","nginx.ingress.kubernetes.io/backend-protocol":"HTTPS","nginx.ingress.kubernetes.io/enable-cors":"true"},"customAnnotations":{},"enabled":true,"paths":["/"],"secretName":null}` | UI ingress |
 | httpgateway.ingress.ui.annotations | object | `{"ingress.kubernetes.io/force-ssl-redirect":"true","nginx.ingress.kubernetes.io/backend-protocol":"HTTPS","nginx.ingress.kubernetes.io/enable-cors":"true"}` | Pre defined map of Ingress annotation |
@@ -357,7 +370,7 @@ global:
 | httpgateway.service.targetPort | string | `"http"` | Target port |
 | httpgateway.service.type | string | `"ClusterIP"` |  |
 | httpgateway.tolerations | object | `{}` | Toleration definition |
-| httpgateway.ui | object | `{"directory":"/usr/local/var/www","enabled":true,"webConfiguration":{"authority":"","deviceOAuthClient":{"audience":null,"clientID":null,"providerName":null,"scopes":[]},"httpGatewayAddress":"","webOAuthClient":{"audience":"","clientID":"","scopes":[]}}}` | For complete http-gateway service configuration see [plgd/http-gateway](https://github.com/plgd-dev/hub/tree/main/http-gateway) |
+| httpgateway.ui | object | `{"directory":"/usr/local/var/www","enabled":true,"webConfiguration":{"deviceOAuthClient":{"audience":null,"clientID":null,"providerName":null,"scopes":[]},"httpGatewayAddress":"","webOAuthClient":{"audience":"","clientID":"","scopes":[]}}}` | For complete http-gateway service configuration see [plgd/http-gateway](https://github.com/plgd-dev/hub/tree/main/http-gateway) |
 | httpgateway.uiDomain | string | `nil` | Domain for UI Default: {{ global.domain }} |
 | identitystore.affinity | object | `{}` | Affinity definition |
 | identitystore.apis | object | `{"grpc":{"address":null,"authorization":{"audience":null,"authority":null,"http":{"idleConnTimeout":"30s","maxConnsPerHost":32,"maxIdleConns":16,"maxIdleConnsPerHost":16,"timeout":"10s","tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":true}},"ownerClaim":null},"enforcementPolicy":{"minTime":"5s","permitWithoutStream":true},"keepAlive":{"maxConnectionAge":"0s","maxConnectionAgeGrace":"0s","maxConnectionIdle":"0s","time":"2h","timeout":"20s"},"tls":{"caPool":null,"certFile":null,"clientCertificateRequired":true,"keyFile":null}}}` | For complete identity service configuration see [plgd/identity](https://github.com/plgd-dev/hub/tree/main/identity) |
@@ -412,7 +425,7 @@ global:
 | identitystore.service.type | string | `"ClusterIP"` | Service type |
 | identitystore.tolerations | object | `{}` | Toleration definition |
 | mockoauthserver.affinity | object | `{}` | Affinity definition |
-| mockoauthserver.apis | object | `{"http":{"address":null,"tls":{"caPool":null,"certFile":null,"clientCertificateRequired":false,"keyFile":null}}}` | For complete mock-oauth-server service configuration see [plgd/oauth-server](https://github.com/plgd-dev/hub/tree/main/test/oauth-server) |
+| mockoauthserver.apis | object | `{"http":{"address":null,"idleTimeout":"30s","readHeaderTimeout":"4s","readTimeout":"8s","tls":{"caPool":null,"certFile":null,"clientCertificateRequired":false,"keyFile":null},"writeTimeout":"16s"}}` | For complete mock-oauth-server service configuration see [plgd/oauth-server](https://github.com/plgd-dev/hub/tree/main/test/oauth-server) |
 | mockoauthserver.config | object | `{"fileName":"service.yaml","mountPath":"/config","volume":"config"}` | mock-oauth-server service yaml config section |
 | mockoauthserver.config.fileName | string | `"service.yaml"` | Name of configuration file |
 | mockoauthserver.config.mountPath | string | `"/config"` | Mount path |
@@ -477,7 +490,7 @@ global:
 | mockoauthserver.service.targetPort | string | `"http"` | Target port |
 | mockoauthserver.service.type | string | `"ClusterIP"` |  |
 | mockoauthserver.tolerations | object | `{}` | Toleration definition |
-| mongodb | object | `{"arbiter":{"enabled":false},"architecture":"replicaset","auth":{"enabled":false},"customLivenessProbe":{"exec":{"command":["mongo","--disableImplicitSessions","--tls","--tlsCertificateKeyFile=/certs/cert.pem","--tlsCAFile=/certs/ca.pem","--eval","db.adminCommand('ping')"]},"failureThreshold":6,"initialDelaySeconds":30,"periodSeconds":10,"successThreshold":1,"timeoutSeconds":5},"customReadinessProbe":{"exec":{"command":["bash","-ec","TLS_OPTIONS='--tls --tlsCertificateKeyFile=/certs/cert.pem --tlsCAFile=/certs/ca.pem'\nmongo --disableImplicitSessions $TLS_OPTIONS --eval 'db.hello().isWritablePrimary || db.hello().secondary' | grep -q 'true'\n"]},"failureThreshold":6,"initialDelaySeconds":5,"periodSeconds":10,"successThreshold":1,"timeoutSeconds":5},"enabled":true,"extraEnvVars":[{"name":"MONGODB_EXTRA_FLAGS","value":"--tlsMode=requireTLS --tlsCertificateKeyFile=/certs/cert.pem --tlsCAFile=/certs/ca.pem"},{"name":"MONGODB_CLIENT_EXTRA_FLAGS","value":"--tls --tlsCertificateKeyFile=/certs/cert.pem --tlsCAFile=/certs/ca.pem"}],"extraVolumeMounts":[{"mountPath":"/certs","name":"mongodb-crt"}],"extraVolumes":[{"emptyDir":{},"name":"mongodb-crt"},{"name":"mongodb-cm-crt","secret":{"secretName":"mongodb-cm-crt"}}],"fullnameOverride":"mongodb","image":{"debug":true,"net":{"port":27017}},"initContainers":[{"command":["sh","-c","/bin/bash <<'EOF'\ncat /tmp/certs/tls.crt >> /certs/cert.pem\ncat /tmp/certs/tls.key >> /certs/cert.pem\ncp /tmp/certs/ca.crt  /certs/ca.pem\nEOF\n"],"image":"docker.io/bitnami/nginx:1.20.2-debian-10-r63","imagePullPolicy":"IfNotPresent","name":"convert-cm-crt","volumeMounts":[{"mountPath":"/certs","name":"mongodb-crt"},{"mountPath":"/tmp/certs","name":"mongodb-cm-crt"}]}],"livenessProbe":{"enabled":false},"persistence":{"enabled":true},"readinessProbe":{"enabled":false},"replicaCount":3,"replicaSetName":"rs0","tls":{"enabled":false}}` | External mongodb-replica dependency setup |
+| mongodb | object | `{"arbiter":{"enabled":false},"architecture":"replicaset","auth":{"enabled":false},"customLivenessProbe":{"exec":{"command":["mongosh","--tls","--tlsCertificateKeyFile=/certs/cert.pem","--tlsCAFile=/certs/ca.pem","--eval","db.adminCommand('ping')"]},"failureThreshold":6,"initialDelaySeconds":30,"periodSeconds":10,"successThreshold":1,"timeoutSeconds":5},"customReadinessProbe":{"exec":{"command":["bash","-ec","TLS_OPTIONS='--tls --tlsCertificateKeyFile=/certs/cert.pem --tlsCAFile=/certs/ca.pem'\nmongosh $TLS_OPTIONS --eval 'db.hello().isWritablePrimary || db.hello().secondary' | grep -q 'true'\n"]},"failureThreshold":6,"initialDelaySeconds":5,"periodSeconds":10,"successThreshold":1,"timeoutSeconds":5},"enabled":true,"extraEnvVars":[{"name":"MONGODB_EXTRA_FLAGS","value":"--tlsMode=requireTLS --tlsCertificateKeyFile=/certs/cert.pem --tlsCAFile=/certs/ca.pem"},{"name":"MONGODB_CLIENT_EXTRA_FLAGS","value":"--tls --tlsCertificateKeyFile=/certs/cert.pem --tlsCAFile=/certs/ca.pem"}],"extraVolumeMounts":[{"mountPath":"/certs","name":"mongodb-crt"}],"extraVolumes":[{"emptyDir":{},"name":"mongodb-crt"},{"name":"mongodb-cm-crt","secret":{"secretName":"mongodb-cm-crt"}}],"fullnameOverride":"mongodb","image":{"debug":true,"net":{"port":27017}},"initContainers":[{"command":["sh","-c","/bin/bash <<'EOF'\ncat /tmp/certs/tls.crt >> /certs/cert.pem\ncat /tmp/certs/tls.key >> /certs/cert.pem\ncp /tmp/certs/ca.crt  /certs/ca.pem\nEOF\n"],"image":"docker.io/bitnami/nginx:1.20.2-debian-10-r63","imagePullPolicy":"IfNotPresent","name":"convert-cm-crt","volumeMounts":[{"mountPath":"/certs","name":"mongodb-crt"},{"mountPath":"/tmp/certs","name":"mongodb-cm-crt"}]}],"livenessProbe":{"enabled":false},"persistence":{"enabled":true},"readinessProbe":{"enabled":false},"replicaCount":3,"replicaSetName":"rs0","tls":{"enabled":false}}` | External mongodb-replica dependency setup |
 | nats | object | `{"cluster":{"enabled":false,"noAdvertise":false},"enabled":true,"leafnodes":{"enabled":false,"noAdvertise":false},"nats":{"tls":{"ca":"ca.crt","cert":"tls.crt","key":"tls.key","secret":{"name":"nats-service-crt"},"verify":true}},"natsbox":{"enabled":false}}` | External nats dependency setup |
 | resourceaggregate.affinity | object | `{}` | Affinity definition |
 | resourceaggregate.apis.grpc.address | string | `nil` |  |
@@ -587,7 +600,7 @@ global:
 | resourcedirectory.podLabels | object | `{}` | Labels for resource-directory pod |
 | resourcedirectory.podSecurityContext | object | `{}` | Pod security context |
 | resourcedirectory.port | int | `9100` | Service and POD port |
-| resourcedirectory.publicConfiguration | object | `{"authorizationServer":null,"caPool":null,"coapGateway":null,"defaultCommandTimeToLive":null,"deviceIdClaim":null,"hubId":null,"ownerClaim":null}` | For complete resource-directory service configuration see [plgd/resource-directory](https://github.com/plgd-dev/hub/tree/main/resource-directory) |
+| resourcedirectory.publicConfiguration | object | `{"authority":null,"caPool":null,"coapGateway":null,"defaultCommandTimeToLive":null,"deviceIdClaim":null,"hubId":null,"ownerClaim":null}` | For complete resource-directory service configuration see [plgd/resource-directory](https://github.com/plgd-dev/hub/tree/main/resource-directory) |
 | resourcedirectory.rbac | object | `{"enabled":false,"roleBindingDefitionTpl":null,"serviceAccountName":"resource-directory"}` | RBAC configuration |
 | resourcedirectory.rbac.roleBindingDefitionTpl | string | `nil` | template definition for Role/binding etc.. |
 | resourcedirectory.rbac.serviceAccountName | string | `"resource-directory"` | Name of resource-directory SA |
@@ -606,5 +619,5 @@ global:
 | resourcedirectory.tolerations | object | `{}` | Toleration definition |
 
 ----------------------------------------------
-Autogenerated from chart metadata using [helm-docs v1.5.0](https://github.com/norwoodj/helm-docs/releases/v1.5.0)
+Autogenerated from chart metadata using [helm-docs v1.11.0](https://github.com/norwoodj/helm-docs/releases/v1.11.0)
 

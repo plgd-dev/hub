@@ -64,11 +64,6 @@ data:
       enabled: {{ .ui.enabled }}
       directory: {{ .ui.directory | quote }}
       webConfiguration:
-        {{- if not $.Values.mockoauthserver.enabled }}
-        authority: {{ .ui.webConfiguration.authority | default $.Values.global.authority | quote }}
-        {{- else }}
-        authority:{{ printf " " }}{{ include "plgd-hub.mockoauthserver.uri" $ }}
-        {{- end }}
         httpGatewayAddress: {{ .ui.webConfiguration.httpGatewayAddress | default ( printf "https://%s" ( include "plgd-hub.httpgateway.apiDomain" $)) | quote }}
         {{- if not $.Values.mockoauthserver.enabled }}
         webOAuthClient:

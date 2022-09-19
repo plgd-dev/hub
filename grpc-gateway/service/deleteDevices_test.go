@@ -81,12 +81,12 @@ func TestRequestHandlerDeleteDevices(t *testing.T) {
 	}
 }
 
-func waitForOperationProcessedEvent(t *testing.T, subClient pb.GrpcGateway_SubscribeToEventsClient) {
+func waitForOperationProcessedEvent(t *testing.T, subClient pb.GrpcGateway_SubscribeToEventsClient, corID string) {
 	ev, err := subClient.Recv()
 	require.NoError(t, err)
 	expectedEvent := &pb.Event{
 		SubscriptionId: ev.SubscriptionId,
-		CorrelationId:  "device",
+		CorrelationId:  corID,
 		Type: &pb.Event_OperationProcessed_{
 			OperationProcessed: &pb.Event_OperationProcessed{
 				ErrorStatus: &pb.Event_OperationProcessed_ErrorStatus{
@@ -98,13 +98,13 @@ func waitForOperationProcessedEvent(t *testing.T, subClient pb.GrpcGateway_Subsc
 	pbTest.CmpEvent(t, expectedEvent, ev, "")
 }
 
-func waitForStopEvent(t *testing.T, subClient pb.GrpcGateway_SubscribeToEventsClient, deviceID string) {
+func waitForStopEvent(t *testing.T, subClient pb.GrpcGateway_SubscribeToEventsClient, deviceID, corID string) {
 	ev, err := subClient.Recv()
 	require.NoError(t, err)
 
 	expectedEvent := &pb.Event{
 		SubscriptionId: ev.SubscriptionId,
-		CorrelationId:  "device",
+		CorrelationId:  corID,
 		Type: &pb.Event_DeviceUnregistered_{
 			DeviceUnregistered: &pb.Event_DeviceUnregistered{
 				DeviceIds: []string{deviceID},
@@ -135,10 +135,11 @@ func TestRequestHandlerReconnectAfterDeleteDevice(t *testing.T) {
 
 	_, _ = test.OnboardDevSim(ctx, t, c, deviceID, testCfg.GW_HOST, test.GetAllBackendResourceLinks())
 
+	const correlationID = "device"
 	subClient, err := client.New(c).GrpcGatewayClient().SubscribeToEvents(ctx)
 	require.NoError(t, err)
 	err = subClient.Send(&pb.SubscribeToEvents{
-		CorrelationId: "device",
+		CorrelationId: correlationID,
 		Action: &pb.SubscribeToEvents_CreateSubscription_{
 			CreateSubscription: &pb.SubscribeToEvents_CreateSubscription{
 				DeviceIdFilter: []string{deviceID},
@@ -149,14 +150,14 @@ func TestRequestHandlerReconnectAfterDeleteDevice(t *testing.T) {
 		},
 	})
 	require.NoError(t, err)
-	waitForOperationProcessedEvent(t, subClient)
+	waitForOperationProcessedEvent(t, subClient, correlationID)
 
 	resp, err := c.DeleteDevices(ctx, &pb.DeleteDevicesRequest{
 		DeviceIdFilter: []string{deviceID},
 	})
 	require.NoError(t, err)
 	require.Equal(t, []string{deviceID}, resp.DeviceIds)
-	waitForStopEvent(t, subClient, deviceID)
+	waitForStopEvent(t, subClient, deviceID, correlationID)
 	err = subClient.CloseSend()
 	require.NoError(t, err)
 
