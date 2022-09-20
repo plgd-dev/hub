@@ -9,7 +9,7 @@ import { AppContext } from './app-context'
 import './app.scss'
 import { getAppWellKnownConfiguration } from '@/containers/app/AppRest'
 import AppInner from '@/containers/app/AppInner/AppInner'
-import { AuthProvider } from 'oidc-react'
+import { AuthProvider, UserManager } from 'oidc-react'
 
 const App = () => {
   const { formatMessage: _ } = useIntl()
@@ -83,17 +83,31 @@ const App = () => {
     )
   }
 
+  const oidcCommonSettings = {
+    authority: wellKnownConfig.authority,
+    scope: wellKnownConfig.webOauthClient.scopes.join?.(' ') || 'openid',
+  }
+
   return (
     <AuthProvider
-      authority={wellKnownConfig.authority}
+      {...oidcCommonSettings}
       clientId={wellKnownConfig.webOauthClient.clientId}
       redirectUri={window.location.origin}
-      scope={wellKnownConfig.webOauthClient.scopes.join?.(' ') || ''}
       onSignIn={async user => {
         window.location.hash = ''
         window.location.href = window.location.origin
       }}
       automaticSilentRenew={true}
+      userManager={
+        new UserManager({
+          ...oidcCommonSettings,
+          client_id: wellKnownConfig.webOauthClient.clientId,
+          redirect_uri: window.location.origin,
+          extraQueryParams: {
+            audience: wellKnownConfig.webOauthClient.audience,
+          },
+        })
+      }
     >
       <AppInner
         wellKnownConfig={wellKnownConfig}
