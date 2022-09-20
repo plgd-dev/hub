@@ -169,7 +169,7 @@ class ProvisionNewDeviceCore extends PureComponent {
 
         <Label title={_(t.certificateAuthorities)} inline className="m-b-10">
           <div className="auth-code-box">
-            <span>********</span>
+            <span>...</span>
             {certificateAuthorities && (
               <CopyBox textToCopy={certificateAuthorities} />
             )}
