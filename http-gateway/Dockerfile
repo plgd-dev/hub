@@ -8,7 +8,7 @@ RUN ( cd /usr/local/go && patch -p1 < $GOPATH/src/github.com/plgd-dev/hub/tools/
 WORKDIR $GOPATH/src/github.com/plgd-dev/hub/http-gateway
 RUN go build -o /go/bin/http-gateway ./cmd/service
 
-FROM node:12 AS build-web
+FROM node:16 AS build-web
 COPY http-gateway/web /web
 RUN cd /web && npm install && npm run build
 
