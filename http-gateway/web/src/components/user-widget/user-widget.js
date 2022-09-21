@@ -4,8 +4,8 @@ import { useIntl } from 'react-intl'
 import Avatar from 'react-avatar'
 import { useClickOutside } from '@/common/hooks'
 import { messages as t } from './user-widget-i18n'
-import './user-widget.scss'
 import { useAuth } from 'oidc-react'
+import './user-widget.scss'
 
 export const UserWidget = memo(() => {
   const [expanded, setExpand] = useState(false)
@@ -43,7 +43,15 @@ export const UserWidget = memo(() => {
       </div>
       {expanded && (
         <div className="content">
-          <span onClick={() => signOutRedirect()}>{_(t.logOut)}</span>
+          <span
+            onClick={() => {
+              signOutRedirect({
+                post_logout_redirect_uri: window.location.origin,
+              }).then()
+            }}
+          >
+            {_(t.logOut)}
+          </span>
         </div>
       )}
     </div>

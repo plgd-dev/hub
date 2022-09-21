@@ -87,17 +87,6 @@ const App = () => {
     scope: wellKnownConfig.webOauthClient.scopes.join?.(' ') || 'openid',
   }
 
-  const userManagerOidcSettings = {
-    ...oidcCommonSettings,
-    client_id: wellKnownConfig.webOauthClient.clientId,
-    redirect_uri: window.location.origin,
-  }
-
-  if (wellKnownConfig.webOauthClient.audience) {
-    userManagerOidcSettings.extraQueryParams.audience =
-      wellKnownConfig.webOauthClient.audience
-  }
-
   return (
     <AuthProvider
       {...oidcCommonSettings}
@@ -108,7 +97,16 @@ const App = () => {
         window.location.href = window.location.origin
       }}
       automaticSilentRenew={true}
-      userManager={new UserManager(userManagerOidcSettings)}
+      userManager={
+        new UserManager({
+          ...oidcCommonSettings,
+          client_id: wellKnownConfig.webOauthClient.clientId,
+          redirect_uri: window.location.origin,
+          extraQueryParams: {
+            audience: wellKnownConfig.webOauthClient.audience || undefined,
+          },
+        })
+      }
     >
       <AppInner
         wellKnownConfig={wellKnownConfig}
