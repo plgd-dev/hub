@@ -13,7 +13,7 @@ export const Footer = memo(() => {
       <div className="left" />
       <div className="right">
         <a
-          href="https://github.com/plgd-dev/hub/raw/master/http-gateway/swagger.yaml"
+          href="https://github.com/plgd-dev/hub/raw/main/http-gateway/swagger.yaml"
           target="_blank"
           rel="noopener"
         >
