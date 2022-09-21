@@ -84,7 +84,7 @@ const App = () => {
 
   const oidcCommonSettings = {
     authority: wellKnownConfig.authority,
-    scope: wellKnownConfig.webOauthClient.scopes.join?.(' ') || 'openid',
+    scope: wellKnownConfig.webOauthClient.scopes.join?.(' '),
   }
 
   return (
