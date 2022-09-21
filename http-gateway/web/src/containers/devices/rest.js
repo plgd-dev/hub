@@ -172,9 +172,8 @@ export const getDeviceAuthCode = deviceId => {
       .then(authorizationEndpoint => {
         let timeout = null
         const iframe = document.createElement('iframe')
-        iframe.src = `${authorizationEndpoint}?response_type=code&client_id=${clientId}&scope=${scopes}&audience=${
-          audience || ''
-        }&redirect_uri=${window.location.origin}/devices&device_id=${deviceId}`
+        const audienceParam = audience ? `&audience=${audience}` : ''
+        iframe.src = `${authorizationEndpoint}?response_type=code&client_id=${clientId}&scope=${scopes}${audienceParam}&redirect_uri=${window.location.origin}/devices&device_id=${deviceId}`
 
         const destroyIframe = () => {
           sessionStorage.removeItem(DEVICE_AUTH_CODE_SESSION_KEY)
