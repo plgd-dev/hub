@@ -63,13 +63,3 @@
   border: 1px solid $error_100;
   color: $error_100;
 }
-
-.test-iframe {
-  position: fixed;
-  top: 100px;
-  left: 100px;
-  width: 1000px;
-  height: 1000px;
-  background: #000;
-  z-index: 100000;
-}
