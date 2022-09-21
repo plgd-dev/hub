@@ -46,7 +46,9 @@ export const UserWidget = memo(() => {
           <span
             onClick={() => {
               signOutRedirect({
-                post_logout_redirect_uri: window.location.origin,
+                extraQueryParams: {
+                  redirect_url: window.location.origin,
+                },
               }).then()
             }}
           >
