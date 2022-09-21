@@ -36,11 +36,10 @@ const App = () => {
             wellKnown
 
           const clientId = webOauthClient?.clientId
-          const audience = webOauthClient?.audience
           const httpGatewayAddress = wellKnown.httpGatewayAddress
           const authority = wellKnown.authority
 
-          if (!clientId || !authority || !audience || !httpGatewayAddress) {
+          if (!clientId || !authority || !httpGatewayAddress) {
             throw new Error(
               'clientId, authority, audience and httpGatewayAddress must be set in webOauthClient of web_configuration.json'
             )
@@ -88,26 +87,28 @@ const App = () => {
     scope: wellKnownConfig.webOauthClient.scopes.join?.(' ') || 'openid',
   }
 
+  const userManagerOidcSettings = {
+    ...oidcCommonSettings,
+    client_id: wellKnownConfig.webOauthClient.clientId,
+    redirect_uri: window.location.origin,
+  }
+
+  if (wellKnownConfig.webOauthClient.audience) {
+    userManagerOidcSettings.extraQueryParams.audience =
+      wellKnownConfig.webOauthClient.audience
+  }
+
   return (
     <AuthProvider
       {...oidcCommonSettings}
       clientId={wellKnownConfig.webOauthClient.clientId}
       redirectUri={window.location.origin}
-      onSignIn={async user => {
+      onSignIn={async () => {
         window.location.hash = ''
         window.location.href = window.location.origin
       }}
       automaticSilentRenew={true}
-      userManager={
-        new UserManager({
-          ...oidcCommonSettings,
-          client_id: wellKnownConfig.webOauthClient.clientId,
-          redirect_uri: window.location.origin,
-          extraQueryParams: {
-            audience: wellKnownConfig.webOauthClient.audience,
-          },
-        })
-      }
+      userManager={new UserManager(userManagerOidcSettings)}
     >
       <AppInner
         wellKnownConfig={wellKnownConfig}
