@@ -2,10 +2,12 @@
   .toggle {
     .user-avatar {
       margin-right: 10px;
+      width: 30px;
 
       img {
         display: block;
         width: 100%;
+        height: auto;
       }
     }
   }
