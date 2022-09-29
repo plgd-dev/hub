@@ -99,7 +99,7 @@ func testValidateResp(t *testing.T, test testEl, resp *pool.Message) {
 	}
 }
 
-func testSignUp(t *testing.T, deviceID string, co *coapTcpClient.ClientConn) service.CoapSignUpResponse {
+func testSignUp(t *testing.T, deviceID string, co *coapTcpClient.Conn) service.CoapSignUpResponse {
 	code := oauthTest.GetDefaultDeviceAuthorizationCode(t, deviceID)
 	signUpReq := service.CoapSignUpRequest{
 		DeviceID:              deviceID,
@@ -134,7 +134,7 @@ func testSignUp(t *testing.T, deviceID string, co *coapTcpClient.ClientConn) ser
 	return signUpResp
 }
 
-func doSignIn(t *testing.T, deviceID string, r service.CoapSignUpResponse, co *coapTcpClient.ClientConn) (*pool.Message, error) {
+func doSignIn(t *testing.T, deviceID string, r service.CoapSignUpResponse, co *coapTcpClient.Conn) (*pool.Message, error) {
 	signInReq := service.CoapSignInReq{
 		DeviceID:    deviceID,
 		UserID:      r.UserID,
@@ -160,7 +160,7 @@ func doSignIn(t *testing.T, deviceID string, r service.CoapSignUpResponse, co *c
 	return co.Do(req)
 }
 
-func runSignIn(t *testing.T, deviceID string, r service.CoapSignUpResponse, co *coapTcpClient.ClientConn) (*service.CoapSignInResp, codes.Code) {
+func runSignIn(t *testing.T, deviceID string, r service.CoapSignUpResponse, co *coapTcpClient.Conn) (*service.CoapSignInResp, codes.Code) {
 	resp, err := doSignIn(t, deviceID, r, co)
 	require.NoError(t, err)
 	defer co.ReleaseMessage(resp)
@@ -175,18 +175,18 @@ func runSignIn(t *testing.T, deviceID string, r service.CoapSignUpResponse, co *
 	return nil, resp.Code()
 }
 
-func testSignIn(t *testing.T, deviceID string, r service.CoapSignUpResponse, co *coapTcpClient.ClientConn) {
+func testSignIn(t *testing.T, deviceID string, r service.CoapSignUpResponse, co *coapTcpClient.Conn) {
 	signInResp, code := runSignIn(t, deviceID, r, co)
 	require.Equal(t, codes.Changed, code)
 	require.NotNil(t, signInResp)
 }
 
-func testSignUpIn(t *testing.T, deviceID string, co *coapTcpClient.ClientConn) {
+func testSignUpIn(t *testing.T, deviceID string, co *coapTcpClient.Conn) {
 	resp := testSignUp(t, deviceID, co)
 	testSignIn(t, deviceID, resp, co)
 }
 
-func testPostHandler(t *testing.T, path string, test testEl, co *coapTcpClient.ClientConn) {
+func testPostHandler(t *testing.T, path string, test testEl, co *coapTcpClient.Conn) {
 	var inputCbor []byte
 	var err error
 	if v, ok := test.in.payload.(string); ok && v != "" {
@@ -226,7 +226,7 @@ func json2cbor(data string) ([]byte, error) {
 	return json.ToCBOR(data)
 }
 
-func testPrepareDevice(t *testing.T, co *coapTcpClient.ClientConn) {
+func testPrepareDevice(t *testing.T, co *coapTcpClient.Conn) {
 	testSignUpIn(t, CertIdentity, co)
 	publishResEl := []testEl{
 		{
@@ -271,7 +271,7 @@ func testPrepareDevice(t *testing.T, co *coapTcpClient.ClientConn) {
 	}
 }
 
-func testCoapDial(t *testing.T, deviceID string, withTLS bool, validTo time.Time) *coapTcpClient.ClientConn {
+func testCoapDial(t *testing.T, deviceID string, withTLS bool, validTo time.Time) *coapTcpClient.Conn {
 	var tlsConfig *tls.Config
 
 	if withTLS {
@@ -335,7 +335,7 @@ func testCoapDial(t *testing.T, deviceID string, withTLS bool, validTo time.Time
 			},
 		}
 	}
-	conn, err := tcp.Dial(config.GW_HOST, options.WithTLS(tlsConfig), options.WithHandlerFunc(func(w *responsewriter.ResponseWriter[*coapTcpClient.ClientConn], r *pool.Message) {
+	conn, err := tcp.Dial(config.GW_HOST, options.WithTLS(tlsConfig), options.WithHandlerFunc(func(w *responsewriter.ResponseWriter[*coapTcpClient.Conn], r *pool.Message) {
 		var err error
 		resp := []byte("hello world")
 		switch r.Code() {

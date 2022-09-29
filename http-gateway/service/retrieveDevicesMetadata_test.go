@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/plgd-dev/device/schema/device"
+	"github.com/plgd-dev/device/v2/schema/device"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	httpgwTest "github.com/plgd-dev/hub/v2/http-gateway/test"
 	"github.com/plgd-dev/hub/v2/http-gateway/uri"

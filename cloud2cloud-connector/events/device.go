@@ -1,7 +1,7 @@
 package events
 
 import (
-	"github.com/plgd-dev/device/schema"
+	"github.com/plgd-dev/device/v2/schema"
 )
 
 type (

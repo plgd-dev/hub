@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/plgd-dev/device/schema/device"
+	"github.com/plgd-dev/device/v2/schema/device"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"github.com/plgd-dev/hub/v2/test"
 	testCfg "github.com/plgd-dev/hub/v2/test/config"

@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/plgd-dev/device/schema"
+	"github.com/plgd-dev/device/v2/schema"
 	coapMessage "github.com/plgd-dev/go-coap/v3/message"
 	coapCodes "github.com/plgd-dev/go-coap/v3/message/codes"
 	"github.com/plgd-dev/go-coap/v3/message/pool"

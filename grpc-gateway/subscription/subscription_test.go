@@ -5,9 +5,9 @@ import (
 	"testing"
 
 	"github.com/panjf2000/ants/v2"
-	"github.com/plgd-dev/device/schema/configuration"
-	"github.com/plgd-dev/device/schema/device"
-	"github.com/plgd-dev/device/schema/platform"
+	"github.com/plgd-dev/device/v2/schema/configuration"
+	"github.com/plgd-dev/device/v2/schema/device"
+	"github.com/plgd-dev/device/v2/schema/platform"
 	"github.com/plgd-dev/go-coap/v3/message"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	subscription "github.com/plgd-dev/hub/v2/grpc-gateway/subscription"

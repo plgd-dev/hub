@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/plgd-dev/device/schema/device"
+	"github.com/plgd-dev/device/v2/schema/device"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/subscription"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"

@@ -9,9 +9,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/plgd-dev/device/schema/configuration"
-	"github.com/plgd-dev/device/schema/device"
-	"github.com/plgd-dev/device/schema/interfaces"
+	"github.com/plgd-dev/device/v2/schema/configuration"
+	"github.com/plgd-dev/device/v2/schema/device"
+	"github.com/plgd-dev/device/v2/schema/interfaces"
 	"github.com/plgd-dev/go-coap/v3/message"
 	coapTest "github.com/plgd-dev/hub/v2/coap-gateway/test"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"

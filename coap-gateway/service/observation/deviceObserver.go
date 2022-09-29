@@ -7,9 +7,9 @@ import (
 	"io"
 	"net"
 
-	"github.com/plgd-dev/device/schema"
-	"github.com/plgd-dev/device/schema/interfaces"
-	"github.com/plgd-dev/device/schema/resources"
+	"github.com/plgd-dev/device/v2/schema"
+	"github.com/plgd-dev/device/v2/schema/interfaces"
+	"github.com/plgd-dev/device/v2/schema/resources"
 	"github.com/plgd-dev/go-coap/v3/message"
 	"github.com/plgd-dev/go-coap/v3/message/pool"
 	"github.com/plgd-dev/hub/v2/coap-gateway/resource"

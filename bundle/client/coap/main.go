@@ -13,10 +13,10 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/plgd-dev/device/schema/account"
-	"github.com/plgd-dev/device/schema/interfaces"
-	"github.com/plgd-dev/device/schema/resources"
-	"github.com/plgd-dev/device/schema/session"
+	"github.com/plgd-dev/device/v2/schema/account"
+	"github.com/plgd-dev/device/v2/schema/interfaces"
+	"github.com/plgd-dev/device/v2/schema/resources"
+	"github.com/plgd-dev/device/v2/schema/session"
 	"github.com/plgd-dev/go-coap/v3/message"
 	codes "github.com/plgd-dev/go-coap/v3/message/codes"
 	"github.com/plgd-dev/go-coap/v3/message/pool"
@@ -41,7 +41,7 @@ type authResp struct {
 	Login       bool   `json:"login"`
 }
 
-func signUp(co *client.ClientConn, authreq authReq) authResp {
+func signUp(co *client.Conn, authreq authReq) authResp {
 	bw := bytes.NewBuffer(make([]byte, 0, 1024))
 	err := cbor.WriteTo(bw, authreq)
 	if err != nil {
@@ -65,7 +65,7 @@ func signUp(co *client.ClientConn, authreq authReq) authResp {
 	return authresp
 }
 
-func signUpWithAuthCode(co *client.ClientConn, authCode, deviceID string) (accessToken, uid string) {
+func signUpWithAuthCode(co *client.Conn, authCode, deviceID string) (accessToken, uid string) {
 	authreq := authReq{
 		Accesstoken:  authCode,
 		DeviceID:     deviceID,
@@ -77,7 +77,7 @@ func signUpWithAuthCode(co *client.ClientConn, authCode, deviceID string) (acces
 	return authresp.Accesstoken, authresp.UID
 }
 
-func signIn(co *client.ClientConn, authresp authResp) {
+func signIn(co *client.Conn, authresp authResp) {
 	log.Printf("authresp: \n%v\n", toJSON(authresp))
 
 	bw := bytes.NewBuffer(make([]byte, 0, 1024))
@@ -140,7 +140,7 @@ func decodePayload(resp *pool.Message) {
 	log.Print(buf)
 }
 
-func clientConn(addr string) (*client.ClientConn, error) {
+func Conn(addr string) (*client.Conn, error) {
 	u, err := url.Parse(addr)
 	if err != nil {
 		return nil, fmt.Errorf("cannot parse url %v: %w", addr, err)
@@ -173,7 +173,7 @@ func clientConn(addr string) (*client.ClientConn, error) {
 	}
 }
 
-func deleteResource(co *client.ClientConn, href string) {
+func deleteResource(co *client.Conn, href string) {
 	deleteError := func(err error) {
 		log.Fatalf("cannot delete resource: %v", err)
 	}
@@ -184,7 +184,7 @@ func deleteResource(co *client.ClientConn, href string) {
 	decodePayload(resp)
 }
 
-func updateResource(co *client.ClientConn, href string, contentFormat int) {
+func updateResource(co *client.Conn, href string, contentFormat int) {
 	updateError := func(err error) {
 		log.Fatalf("cannot update resource: %v", err)
 	}
@@ -200,7 +200,7 @@ func updateResource(co *client.ClientConn, href string, contentFormat int) {
 	decodePayload(resp)
 }
 
-func createResource(co *client.ClientConn, href string, contentFormat int) {
+func createResource(co *client.Conn, href string, contentFormat int) {
 	createError := func(err error) {
 		log.Fatalf("cannot create resource: %v", err)
 	}
@@ -221,7 +221,7 @@ func createResource(co *client.ClientConn, href string, contentFormat int) {
 	decodePayload(resp)
 }
 
-func observerResource(co *client.ClientConn, href string) {
+func observerResource(co *client.Conn, href string) {
 	obs, err := co.Observe(context.Background(), href, func(req *pool.Message) {
 		decodePayload(req)
 	})
@@ -241,7 +241,7 @@ func observerResource(co *client.ClientConn, href string) {
 	fmt.Println("exiting")
 }
 
-func getResource(co *client.ClientConn, href, resIf, resRt string) {
+func getResource(co *client.Conn, href, resIf, resRt string) {
 	var opts message.Options
 	if resIf != "" {
 		v := "if=" + resIf
@@ -278,7 +278,7 @@ func main() {
 
 	flag.Parse()
 
-	co, err := clientConn(*addr)
+	co, err := Conn(*addr)
 	if err != nil {
 		log.Fatal(err)
 	}

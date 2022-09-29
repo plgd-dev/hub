@@ -116,7 +116,7 @@ func decodeMsgToDebug(client *Client, resp *pool.Message, tag string) {
 
 const clientKey = "client"
 
-func (s *Service) coapConnOnNew(coapConn *coapTcpClient.ClientConn) {
+func (s *Service) coapConnOnNew(coapConn *coapTcpClient.Conn) {
 	client := newClient(s, coapConn, s.makeHandler(s, WithCoapConnectionOpt(coapConn)))
 	coapConn.SetContextValue(clientKey, client)
 	coapConn.AddOnClose(func() {
@@ -127,9 +127,9 @@ func (s *Service) coapConnOnNew(coapConn *coapTcpClient.ClientConn) {
 
 func (s *Service) loggingMiddleware(next mux.Handler) mux.Handler {
 	return mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
-		client, ok := w.ClientConn().Context().Value(clientKey).(*Client)
+		client, ok := w.Conn().Context().Value(clientKey).(*Client)
 		if !ok {
-			client = newClient(s, w.ClientConn().(*coapTcpClient.ClientConn), nil)
+			client = newClient(s, w.Conn().(*coapTcpClient.Conn), nil)
 		}
 		decodeMsgToDebug(client, r.Message, "RECEIVED-COMMAND")
 		next.ServeCOAP(w, r)
@@ -137,9 +137,9 @@ func (s *Service) loggingMiddleware(next mux.Handler) mux.Handler {
 }
 
 func validateCommand(s mux.ResponseWriter, req *mux.Message, server *Service, fnc func(req *mux.Message, client *Client)) {
-	client, ok := s.ClientConn().Context().Value(clientKey).(*Client)
+	client, ok := s.Conn().Context().Value(clientKey).(*Client)
 	if !ok || client == nil {
-		client = newClient(server, s.ClientConn().(*coapTcpClient.ClientConn), nil)
+		client = newClient(server, s.Conn().(*coapTcpClient.Conn), nil)
 	}
 	closeClient := func(c *Client) {
 		if err := c.Close(); err != nil {
@@ -205,8 +205,8 @@ func (s *Service) setupCoapServer() error {
 		return setHandlerError(coapgwUri.RefreshToken, err)
 	}
 
-	opts := make([]coapTcpServer.ServerOption, 0, 6)
-	opts = append(opts, options.WithOnNewClientConn(s.coapConnOnNew))
+	opts := make([]coapTcpServer.Option, 0, 6)
+	opts = append(opts, options.WithOnNewConn(s.coapConnOnNew))
 	opts = append(opts, options.WithMux(m))
 	opts = append(opts, options.WithContext(s.ctx))
 	opts = append(opts, options.WithErrors(func(e error) {

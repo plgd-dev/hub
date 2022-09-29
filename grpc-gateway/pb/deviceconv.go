@@ -1,7 +1,7 @@
 package pb
 
 import (
-	"github.com/plgd-dev/device/schema/device"
+	"github.com/plgd-dev/device/v2/schema/device"
 )
 
 func (l *LocalizedString) ToSchema() device.LocalizedString {

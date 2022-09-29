@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/plgd-dev/device/schema"
-	"github.com/plgd-dev/device/schema/interfaces"
+	"github.com/plgd-dev/device/v2/schema"
+	"github.com/plgd-dev/device/v2/schema/interfaces"
 	coapMessage "github.com/plgd-dev/go-coap/v3/message"
 	"github.com/plgd-dev/go-coap/v3/message/codes"
 	"github.com/plgd-dev/kit/v2/codec/cbor"

@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/plgd-dev/device/test/resource/types"
+	"github.com/plgd-dev/device/v2/test/resource/types"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	httpgwTest "github.com/plgd-dev/hub/v2/http-gateway/test"
 	"github.com/plgd-dev/hub/v2/http-gateway/uri"

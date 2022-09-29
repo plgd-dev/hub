@@ -21,9 +21,9 @@ require (
 	github.com/lestrrat-go/jwx v1.2.25
 	github.com/nats-io/nats.go v1.16.0
 	github.com/panjf2000/ants/v2 v2.5.0
-	github.com/plgd-dev/device v1.2.2-0.20220801125405-be755427f012
+	github.com/plgd-dev/device/v2 v2.0.0-20220929115241-033fe063adb5
 	github.com/plgd-dev/go-coap/v2 v2.6.1-0.20220801124204-0ab75f6e0680
-	github.com/plgd-dev/go-coap/v3 v3.0.0-20220805074859-b524d0998ce6
+	github.com/plgd-dev/go-coap/v3 v3.0.0-20220928103836-d0503706ce4d
 	github.com/plgd-dev/kit/v2 v2.0.0-20211006190727-057b33161b90
 	github.com/sirupsen/logrus v1.9.0
 	github.com/stretchr/testify v1.8.0
@@ -80,7 +80,7 @@ require (
 	github.com/nats-io/nats-server/v2 v2.6.5 // indirect
 	github.com/nats-io/nkeys v0.3.0 // indirect
 	github.com/nats-io/nuid v1.0.1 // indirect
-	github.com/pion/dtls/v2 v2.1.5 // indirect
+	github.com/pion/dtls/v2 v2.1.6-0.20220815090156-a04cfccb23e5 // indirect
 	github.com/pion/logging v0.2.2 // indirect
 	github.com/pion/transport v0.13.1 // indirect
 	github.com/pion/udp v0.1.1 // indirect

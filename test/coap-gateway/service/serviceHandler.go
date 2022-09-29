@@ -6,10 +6,10 @@ import (
 )
 
 type ServiceHandlerConfig struct {
-	coapConn *client.ClientConn
+	coapConn *client.Conn
 }
 
-func (s *ServiceHandlerConfig) GetCoapConnection() *client.ClientConn {
+func (s *ServiceHandlerConfig) GetCoapConnection() *client.Conn {
 	return s.coapConn
 }
 
@@ -18,14 +18,14 @@ type Option interface {
 }
 
 type CoapConnectionOpt struct {
-	coapConn *client.ClientConn
+	coapConn *client.Conn
 }
 
 func (o CoapConnectionOpt) Apply(opts *ServiceHandlerConfig) {
 	opts.coapConn = o.coapConn
 }
 
-func WithCoapConnectionOpt(c *client.ClientConn) CoapConnectionOpt {
+func WithCoapConnectionOpt(c *client.Conn) CoapConnectionOpt {
 	return CoapConnectionOpt{
 		coapConn: c,
 	}

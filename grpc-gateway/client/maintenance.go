@@ -4,7 +4,7 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/plgd-dev/device/schema/maintenance"
+	"github.com/plgd-dev/device/v2/schema/maintenance"
 	"github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"github.com/plgd-dev/hub/v2/pkg/strings"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/events"

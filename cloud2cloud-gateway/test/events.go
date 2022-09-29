@@ -10,7 +10,7 @@ import (
 	"time"
 
 	router "github.com/gorilla/mux"
-	"github.com/plgd-dev/device/schema"
+	"github.com/plgd-dev/device/v2/schema"
 	"github.com/plgd-dev/hub/v2/cloud2cloud-connector/events"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"

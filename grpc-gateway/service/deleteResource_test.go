@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/plgd-dev/device/schema/device"
+	"github.com/plgd-dev/device/v2/schema/device"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	exCodes "github.com/plgd-dev/hub/v2/grpc-gateway/pb/codes"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"

@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/plgd-dev/device/pkg/net/coap"
+	"github.com/plgd-dev/device/v2/pkg/net/coap"
 	coapCodes "github.com/plgd-dev/go-coap/v3/message/codes"
 	"github.com/plgd-dev/go-coap/v3/message/pool"
 	"github.com/plgd-dev/go-coap/v3/message/status"
@@ -54,7 +54,7 @@ var authCtxKey = "AuthCtx"
 type Service struct {
 	config Config
 
-	keepaliveOnInactivity func(cc *coapTcpClient.ClientConn)
+	keepaliveOnInactivity func(cc *coapTcpClient.Conn)
 	blockWiseTransferSZX  blockwise.SZX
 	natsClient            *natsClient.Client
 	raClient              *raClient.Client
@@ -222,8 +222,8 @@ func blockWiseTransferSZXFromString(s string) (blockwise.SZX, error) {
 	return blockwise.SZX(0), fmt.Errorf("invalid value %v", s)
 }
 
-func getOnInactivityFn(logger log.Logger) func(cc *coapTcpClient.ClientConn) {
-	return func(cc *coapTcpClient.ClientConn) {
+func getOnInactivityFn(logger log.Logger) func(cc *coapTcpClient.Conn) {
+	return func(cc *coapTcpClient.Conn) {
 		client, ok := cc.Context().Value(clientKey).(*Client)
 		if ok {
 			deviceID := getDeviceID(client)
@@ -482,9 +482,9 @@ func (s *Service) makeCommandTask(req *mux.Message, client *Client, fnc func(req
 }
 
 func executeCommand(s mux.ResponseWriter, req *mux.Message, server *Service, fnc func(req *mux.Message, client *Client) (*pool.Message, error)) {
-	client, ok := s.ClientConn().Context().Value(clientKey).(*Client)
+	client, ok := s.Conn().Context().Value(clientKey).(*Client)
 	if !ok {
-		client = newClient(server, s.ClientConn().(*coapTcpClient.ClientConn), "", time.Time{})
+		client = newClient(server, s.Conn().(*coapTcpClient.Conn), "", time.Time{})
 		if req.Code() == coapCodes.Empty {
 			client.logRequestResponse(req, nil, fmt.Errorf("cannot handle command: client not found"))
 			client.Close()
@@ -518,7 +518,7 @@ func defaultHandler(req *mux.Message, client *Client) (*pool.Message, error) {
 
 const clientKey = "client"
 
-func (s *Service) coapConnOnNew(coapConn *coapTcpClient.ClientConn) {
+func (s *Service) coapConnOnNew(coapConn *coapTcpClient.Conn) {
 	var tlsDeviceID string
 	var tlsValidUntil time.Time
 	tlsCon, ok := coapConn.NetConn().(*tls.Conn)
@@ -543,9 +543,9 @@ func (s *Service) coapConnOnNew(coapConn *coapTcpClient.ClientConn) {
 func (s *Service) authMiddleware(next mux.Handler) mux.Handler {
 	return mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
 		t := time.Now()
-		client, ok := w.ClientConn().Context().Value(clientKey).(*Client)
+		client, ok := w.Conn().Context().Value(clientKey).(*Client)
 		if !ok {
-			client = newClient(s, w.ClientConn().(*coapTcpClient.ClientConn), "", time.Time{})
+			client = newClient(s, w.Conn().(*coapTcpClient.Conn), "", time.Time{})
 		}
 		authCtx, _ := client.GetAuthorizationContext()
 		ctx := context.WithValue(r.Context(), &authCtxKey, authCtx)
@@ -604,9 +604,9 @@ func (s *Service) setupCoapServer() error {
 		return setHandlerError(uri.RefreshToken, err)
 	}
 
-	opts := make([]coapTcpServer.ServerOption, 0, 8)
+	opts := make([]coapTcpServer.Option, 0, 8)
 	opts = append(opts, options.WithKeepAlive(1, s.config.APIs.COAP.KeepAlive.Timeout, s.keepaliveOnInactivity))
-	opts = append(opts, options.WithOnNewClientConn(s.coapConnOnNew))
+	opts = append(opts, options.WithOnNewConn(s.coapConnOnNew))
 	opts = append(opts, options.WithBlockwise(s.config.APIs.COAP.BlockwiseTransfer.Enabled, s.blockWiseTransferSZX, s.config.APIs.COAP.KeepAlive.Timeout))
 	opts = append(opts, options.WithMux(m))
 	opts = append(opts, options.WithContext(s.ctx))

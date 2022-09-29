@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/plgd-dev/device/schema/device"
+	"github.com/plgd-dev/device/v2/schema/device"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	exCodes "github.com/plgd-dev/hub/v2/grpc-gateway/pb/codes"
 	httpgwTest "github.com/plgd-dev/hub/v2/http-gateway/test"

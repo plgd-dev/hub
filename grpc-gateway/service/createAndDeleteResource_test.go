@@ -7,9 +7,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/plgd-dev/device/schema"
-	"github.com/plgd-dev/device/schema/interfaces"
-	"github.com/plgd-dev/device/test/resource/types"
+	"github.com/plgd-dev/device/v2/schema"
+	"github.com/plgd-dev/device/v2/schema/interfaces"
+	"github.com/plgd-dev/device/v2/test/resource/types"
 	"github.com/plgd-dev/go-coap/v3/message"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/client"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"

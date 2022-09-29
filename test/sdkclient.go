@@ -10,8 +10,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/plgd-dev/device/client"
-	"github.com/plgd-dev/device/client/core"
+	"github.com/plgd-dev/device/v2/client"
+	"github.com/plgd-dev/device/v2/client/core"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/pkg/security/certificateSigner"
 )

@@ -11,14 +11,14 @@ import (
 // Client a setup of connection
 type Client struct {
 	server   *Service
-	coapConn *coapTcpClient.ClientConn
+	coapConn *coapTcpClient.Conn
 	handler  ServiceHandler
 
 	deviceID string
 }
 
 // newClient creates and initializes client
-func newClient(server *Service, client *coapTcpClient.ClientConn, handler ServiceHandler) *Client {
+func newClient(server *Service, client *coapTcpClient.Conn, handler ServiceHandler) *Client {
 	return &Client{
 		server:   server,
 		coapConn: client,
@@ -26,7 +26,7 @@ func newClient(server *Service, client *coapTcpClient.ClientConn, handler Servic
 	}
 }
 
-func (c *Client) GetCoapConnection() *coapTcpClient.ClientConn {
+func (c *Client) GetCoapConnection() *coapTcpClient.Conn {
 	return c.coapConn
 }
 

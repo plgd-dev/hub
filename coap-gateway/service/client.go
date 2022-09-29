@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/plgd-dev/device/schema/resources"
+	"github.com/plgd-dev/device/v2/schema/resources"
 	"github.com/plgd-dev/go-coap/v3/message"
 	"github.com/plgd-dev/go-coap/v3/message/codes"
 	"github.com/plgd-dev/go-coap/v3/message/pool"
@@ -90,7 +90,7 @@ func (a *authorizationContext) ToContext(ctx context.Context) context.Context {
 // Client a setup of connection
 type Client struct {
 	server        *Service
-	coapConn      *coapTcpClient.ClientConn
+	coapConn      *coapTcpClient.Conn
 	tlsDeviceID   string
 	tlsValidUntil time.Time
 
@@ -107,7 +107,7 @@ type Client struct {
 }
 
 // newClient creates and initializes client
-func newClient(server *Service, coapConn *coapTcpClient.ClientConn, tlsDeviceID string, tlsValidUntil time.Time) *Client {
+func newClient(server *Service, coapConn *coapTcpClient.Conn, tlsDeviceID string, tlsValidUntil time.Time) *Client {
 	return &Client{
 		server:                server,
 		coapConn:              coapConn,

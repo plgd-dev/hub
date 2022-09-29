@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/plgd-dev/device/schema/platform"
+	"github.com/plgd-dev/device/v2/schema/platform"
 	pbIS "github.com/plgd-dev/hub/v2/identity-store/pb"
 	idService "github.com/plgd-dev/hub/v2/identity-store/test"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"

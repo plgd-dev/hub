@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/plgd-dev/device/schema/platform"
+	"github.com/plgd-dev/device/v2/schema/platform"
 	"github.com/plgd-dev/go-coap/v3/message"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"

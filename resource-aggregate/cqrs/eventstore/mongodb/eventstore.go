@@ -307,7 +307,7 @@ func (s *EventStore) ClearCollections(ctx context.Context) error {
 
 // Close closes the database session.
 func (s *EventStore) Close(ctx context.Context) error {
-	s.ensuredIndexes.PullOutAll()
+	_ = s.ensuredIndexes.LoadAndDeleteAll()
 	err := s.client.Disconnect(ctx)
 	for _, f := range s.closeFunc {
 		f()

@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/plgd-dev/device/schema/interfaces"
+	"github.com/plgd-dev/device/v2/schema/interfaces"
 	"github.com/plgd-dev/go-coap/v3/message"
 	coapCodes "github.com/plgd-dev/go-coap/v3/message/codes"
 	coapgwTest "github.com/plgd-dev/hub/v2/coap-gateway/test"

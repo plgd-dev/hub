@@ -9,11 +9,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/plgd-dev/device/schema"
-	"github.com/plgd-dev/device/schema/device"
-	"github.com/plgd-dev/device/schema/interfaces"
-	"github.com/plgd-dev/device/schema/platform"
-	"github.com/plgd-dev/device/schema/resources"
+	"github.com/plgd-dev/device/v2/schema"
+	"github.com/plgd-dev/device/v2/schema/device"
+	"github.com/plgd-dev/device/v2/schema/interfaces"
+	"github.com/plgd-dev/device/v2/schema/platform"
+	"github.com/plgd-dev/device/v2/schema/resources"
 	"github.com/plgd-dev/go-coap/v3/message/pool"
 	coapTcpClient "github.com/plgd-dev/go-coap/v3/tcp/client"
 	coapgwService "github.com/plgd-dev/hub/v2/coap-gateway/service"
@@ -52,7 +52,7 @@ type deviceObserverFactory struct {
 	raClient raPb.ResourceAggregateClient
 }
 
-func (f deviceObserverFactory) makeDeviceObserver(ctx context.Context, coapConn *coapTcpClient.ClientConn, onObserveResource observation.OnObserveResource,
+func (f deviceObserverFactory) makeDeviceObserver(ctx context.Context, coapConn *coapTcpClient.Conn, onObserveResource observation.OnObserveResource,
 	onGetResourceContent observation.OnGetResourceContent,
 ) (*observation.DeviceObserver, error) {
 	return observation.NewDeviceObserver(ctx, f.deviceID, coapConn, f.rdClient, f.raClient,
@@ -63,7 +63,7 @@ type observerHandler struct {
 	coapgwTest.DefaultObserverHandler
 	t                     *testing.T
 	ctx                   context.Context
-	coapConn              *coapTcpClient.ClientConn
+	coapConn              *coapTcpClient.Conn
 	service               *coapgwTestService.Service
 	deviceObserverLock    sync.Mutex
 	deviceObserverFactory deviceObserverFactory

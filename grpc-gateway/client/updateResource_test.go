@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/plgd-dev/device/schema/configuration"
-	"github.com/plgd-dev/device/schema/interfaces"
+	"github.com/plgd-dev/device/v2/schema/configuration"
+	"github.com/plgd-dev/device/v2/schema/interfaces"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/client"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"github.com/plgd-dev/hub/v2/test"
