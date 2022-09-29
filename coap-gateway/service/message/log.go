@@ -2,7 +2,6 @@ package message
 
 import (
 	"io"
-	"io/ioutil"
 
 	"github.com/plgd-dev/go-coap/v3/message"
 	"github.com/plgd-dev/go-coap/v3/message/pool"
@@ -36,7 +35,7 @@ func readBody(r io.ReadSeeker) []byte {
 	if err != nil {
 		return nil
 	}
-	body, err := ioutil.ReadAll(r)
+	body, err := io.ReadAll(r)
 	if err != nil {
 		return nil
 	}

@@ -4,7 +4,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -125,7 +125,7 @@ func (a *CertManager) GetClientTLSConfig() *tls.Config {
 
 // Close ends watching certificates
 func (a *CertManager) Close() {
-	if !a.done.CAS(false, true) {
+	if !a.done.CompareAndSwap(false, true) {
 		return
 	}
 	if a.config.CAPool != "" {
@@ -161,12 +161,12 @@ func (a *CertManager) getClientCertificate(*tls.CertificateRequestInfo) (*tls.Ce
 func (a *CertManager) loadCerts() error {
 	if a.config.KeyFile != "" && a.config.CertFile != "" {
 		keyPath := a.config.KeyFile
-		tlsKey, err := ioutil.ReadFile(keyPath)
+		tlsKey, err := os.ReadFile(keyPath)
 		if err != nil {
 			return fmt.Errorf("cannot load certificate key from '%v': %w", keyPath, err)
 		}
 		certPath := a.config.CertFile
-		tlsCert, err := ioutil.ReadFile(certPath)
+		tlsCert, err := os.ReadFile(certPath)
 		if err != nil {
 			return fmt.Errorf("cannot load certificate from '%v': %w", certPath, err)
 		}

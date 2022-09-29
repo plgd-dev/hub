@@ -331,7 +331,7 @@ func (s *DeviceSubscriptions) Subscribe(ctx context.Context, deviceID string, cl
 
 	var canceled atomic.Bool
 	cancel := func(ctx context.Context) error {
-		if !canceled.CAS(false, true) {
+		if !canceled.CompareAndSwap(false, true) {
 			return nil
 		}
 		cancelToken, err := uuid.NewRandom()
@@ -364,7 +364,7 @@ func (s *DeviceSubscriptions) closeSend() error {
 
 // Cancel cancels subscription.
 func (s *DeviceSubscriptions) Cancel() (wait func(), err error) {
-	if !s.canceled.CAS(false, true) {
+	if !s.canceled.CompareAndSwap(false, true) {
 		return s.wait, nil
 	}
 

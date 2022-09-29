@@ -3,10 +3,6 @@ package service
 import (
 	"context"
 	"fmt"
-	"os"
-	"os/signal"
-	"sync"
-	"syscall"
 
 	clientIS "github.com/plgd-dev/hub/v2/identity-store/client"
 	pbIS "github.com/plgd-dev/hub/v2/identity-store/pb"
@@ -16,6 +12,7 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/net/grpc/server"
 	otelClient "github.com/plgd-dev/hub/v2/pkg/opentelemetry/collector/client"
 	"github.com/plgd-dev/hub/v2/pkg/security/jwt/validator"
+	"github.com/plgd-dev/hub/v2/pkg/service"
 	cqrsEventBus "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus"
 	natsClient "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/client"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/publisher"
@@ -31,14 +28,7 @@ type EventStore interface {
 	cqrsMaintenance.EventStore
 }
 
-// Service handle GRPC request
-type Service struct {
-	server  *server.Server
-	handler *RequestHandler
-	sigs    chan os.Signal
-}
-
-func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logger log.Logger) (*Service, error) {
+func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logger log.Logger) (*service.Service, error) {
 	otelClient, err := otelClient.New(ctx, config.Clients.OpenTelemetryCollector, "resource-aggregate", fileWatcher, logger)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create open telemetry collector client: %w", err)
@@ -120,7 +110,7 @@ func newIdentityStoreClient(config IdentityStoreConfig, fileWatcher *fsnotify.Wa
 }
 
 // New creates new Server with provided store and publisher.
-func NewService(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider, eventStore EventStore, publisher cqrsEventBus.Publisher) (*Service, error) {
+func NewService(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider, eventStore EventStore, publisher cqrsEventBus.Publisher) (*service.Service, error) {
 	grpcServer, err := newGrpcServer(ctx, config.APIs.GRPC, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		return nil, err
@@ -128,15 +118,23 @@ func NewService(ctx context.Context, config Config, fileWatcher *fsnotify.Watche
 
 	isClient, closeIsClient, err := newIdentityStoreClient(config.Clients.IdentityStore, fileWatcher, logger, tracerProvider)
 	if err != nil {
-		grpcServer.Close()
-		return nil, fmt.Errorf("cannot create identity-store client: %w", err)
+		err = fmt.Errorf("cannot create identity-store client: %w", err)
+		err2 := grpcServer.Close()
+		if err2 != nil {
+			err = fmt.Errorf(`[%w, "cannot close server: %v"]`, err, err2)
+		}
+		return nil, err
 	}
 	grpcServer.AddCloseFunc(closeIsClient)
 
 	nats, err := natsClient.New(config.Clients.Eventbus.NATS.Config, fileWatcher, logger)
 	if err != nil {
-		grpcServer.Close()
-		return nil, fmt.Errorf("cannot create nats client: %w", err)
+		err = fmt.Errorf("cannot create nats client: %w", err)
+		err2 := grpcServer.Close()
+		if err2 != nil {
+			err = fmt.Errorf(`[%w, "cannot close server: %v"]`, err, err2)
+		}
+		return nil, err
 	}
 	grpcServer.AddCloseFunc(nats.Close)
 
@@ -154,45 +152,5 @@ func NewService(ctx context.Context, config Config, fileWatcher *fsnotify.Watche
 	})
 	RegisterResourceAggregateServer(grpcServer.Server, requestHandler)
 
-	return &Service{
-		server:  grpcServer,
-		handler: requestHandler,
-		sigs:    make(chan os.Signal, 1),
-	}, nil
-}
-
-func (s *Service) serveWithHandlingSignal(serve func() error) error {
-	var wg sync.WaitGroup
-	var err error
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		err = serve()
-	}()
-
-	signal.Notify(s.sigs,
-		syscall.SIGHUP,
-		syscall.SIGINT,
-		syscall.SIGTERM,
-		syscall.SIGQUIT)
-	<-s.sigs
-
-	s.server.Close()
-	wg.Wait()
-
-	return err
-}
-
-// Serve serve starts the service's HTTP server and blocks.
-func (s *Service) Serve() error {
-	return s.serveWithHandlingSignal(s.server.Serve)
-}
-
-// Shutdown ends serving
-func (s *Service) Shutdown() {
-	s.sigs <- syscall.SIGTERM
-}
-
-func (s *Service) AddCloseFunc(f func()) {
-	s.server.AddCloseFunc(f)
+	return service.New(grpcServer), nil
 }

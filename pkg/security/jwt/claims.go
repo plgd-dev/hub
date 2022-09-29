@@ -37,8 +37,8 @@ func toNum(v interface{}) (time.Time, error) {
 	}
 }
 
-// / Get expiration time (exp) from user info map.
-// / It might not be set, in that case zero time and no error are returned.
+// Get expiration time (exp) from user info map.
+// It might not be set, in that case zero time and no error are returned.
 func (c Claims) ExpiresAt() (time.Time, error) {
 	const expKey = ClaimExpiresAt
 	v, ok := c[expKey]
@@ -53,7 +53,7 @@ func (c Claims) ExpiresAt() (time.Time, error) {
 	return exp, nil
 }
 
-// / Validate that ownerClaim is set and that it matches given user ID
+// Validate that ownerClaim is set and that it matches given user ID
 func (c Claims) ValidateOwnerClaim(ownerClaim string, userID string) error {
 	v, ok := c[ownerClaim]
 	if !ok {
@@ -160,14 +160,14 @@ func (c Claims) ValidTimes(now time.Time) error {
 	if err != nil {
 		return err
 	}
-	if !iat.IsZero() && now.Before(iat) {
+	if !iat.IsZero() && now.Add(time.Minute).Before(iat) {
 		return fmt.Errorf("token used before issued")
 	}
 	nbf, err := c.NotBefore()
 	if err != nil {
 		return err
 	}
-	if !nbf.IsZero() && now.Before(nbf) {
+	if !nbf.IsZero() && now.Add(time.Minute).Before(nbf) {
 		return fmt.Errorf("token is not valid yet")
 	}
 	return nil

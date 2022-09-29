@@ -98,8 +98,7 @@ func (d Device) ToProto() *pb.Device {
 }
 
 func updateDevice(dev *Device, resource *Resource) error {
-	switch {
-	case resource.Resource.GetHref() == device.ResourceURI:
+	if resource.Resource.GetHref() == device.ResourceURI {
 		var devContent device.Device
 		err := decodeContent(resource.GetContent(), &devContent)
 		if err != nil {
@@ -144,7 +143,7 @@ func (dd *DeviceDirectory) sendDevices(deviceIDs strings.Set, req *pb.GetDevices
 			err = updateDevice(&device, resource)
 			if err != nil {
 				// device is not valid
-				return nil
+				return nil //nolint:nilerr
 			}
 			device.Metadata = &pb.Device_Metadata{
 				Status:                deviceMetadataUpdated.GetStatus(),

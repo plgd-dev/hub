@@ -107,7 +107,7 @@ func WithISConfig(is isService.Config) SetUpOption {
 
 type SetUpOption = func(cfg *Config)
 
-func SetUp(ctx context.Context, t *testing.T, opts ...SetUpOption) (TearDown func()) {
+func SetUp(ctx context.Context, t *testing.T, opts ...SetUpOption) (tearDown func()) {
 	config := Config{
 		COAPGW: coapgwTest.MakeConfig(t),
 		RD:     rdTest.MakeConfig(t),

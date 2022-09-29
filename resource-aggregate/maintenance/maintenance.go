@@ -85,7 +85,7 @@ func handleBackupFile(file **os.File, aggregateID, backupPath string) error {
 			return err
 		}
 		if err := (*file).Close(); err != nil {
-			return nil
+			return err
 		}
 	}
 
@@ -144,7 +144,7 @@ func (eh *eventHandler) Handle(ctx context.Context, iter eventstore.Iter) error 
 
 	if file != nil {
 		if err := file.Close(); err != nil {
-			return nil
+			return err
 		}
 	}
 

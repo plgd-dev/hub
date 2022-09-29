@@ -30,8 +30,7 @@ func (requestHandler *RequestHandler) getResourcePendingCommands(w http.Response
 		return
 	}
 	for key, values := range r.URL.Query() {
-		switch key {
-		case uri.CommandFilterQueryKey:
+		if key == uri.CommandFilterQueryKey {
 			for _, v := range values {
 				if v == pb.GetPendingCommandsRequest_DEVICE_METADATA_UPDATE.String() {
 					continue

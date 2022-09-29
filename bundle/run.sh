@@ -344,6 +344,7 @@ sed -i "s/REPLACE_MOCK_OAUTH_SERVER_PORT/$MOCK_OAUTH_SERVER_PORT/g" ${NGINX_PATH
 sed -i "s/REPLACE_CERTIFICATE_AUTHORITY_PORT/$CERTIFICATE_AUTHORITY_PORT/g" ${NGINX_PATH}/nginx.conf
 sed -i "s/REPLACE_CLOUD2CLOUD_GATEWAY_PORT/$CLOUD2CLOUD_GATEWAY_PORT/g" ${NGINX_PATH}/nginx.conf
 sed -i "s/REPLACE_CLOUD2CLOUD_CONNECTOR_PORT/$CLOUD2CLOUD_CONNECTOR_PORT/g" ${NGINX_PATH}/nginx.conf
+sed -i "s/REPLACE_HTTP_CERTIFICATE_AUTHORITY_PORT/$HTTP_CERTIFICATE_AUTHORITY_PORT/g" ${NGINX_PATH}/nginx.conf
 
 # nats
 echo "starting nats-server"
@@ -588,7 +589,7 @@ cat /configs/resource-directory.yaml | yq e "\
   .clients.eventStore.mongoDB.uri = \"${MONGODB_URI}\" |
   .clients.eventBus.nats.url = \"${NATS_URL}\" |
   .clients.identityStore.grpc.address = \"${IDENTITY_STORE_ADDRESS}\" |
-  .publicConfiguration.authorizationServer = \"https://${OAUTH_ENDPOINT}\" |
+  .publicConfiguration.authority = \"https://${OAUTH_ENDPOINT}\" |
   .publicConfiguration.hubID = \"${COAP_GATEWAY_HUB_ID}\" |
   .publicConfiguration.coapGateway = \"coaps+tcp://${COAP_GATEWAY_FQDN}:${COAP_GATEWAY_PORT}\" |
   .publicConfiguration.ownerClaim = \"${OWNER_CLAIM}\"
@@ -771,7 +772,6 @@ cat /configs/http-gateway.yaml | yq e "\
   .clients.openTelemetryCollector.grpc.tls.useSystemCAPool = true |
   .clients.grpcGateway.grpc.address = \"${GRPC_GATEWAY_ADDRESS}\" |
   .ui.enabled = true |
-  .ui.webConfiguration.authority = \"https://${OAUTH_ENDPOINT}\" |
   .ui.webConfiguration.httpGatewayAddress =\"https://${FQDN_NGINX_HTTPS}\" |
   .ui.webConfiguration.webOAuthClient.clientID = \"${OAUTH_CLIENT_ID}\" |
   .ui.webConfiguration.webOAuthClient.audience = \"${OAUTH_AUDIENCE}\" |

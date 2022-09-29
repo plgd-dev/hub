@@ -78,10 +78,10 @@ func healthCheck(w http.ResponseWriter, r *http.Request) {
 }
 
 // NewHTTP returns HTTP handler
-func NewHTTP(requestHandler *RequestHandler, authInterceptor kitNetHttp.Interceptor) (http.Handler, error) {
+func NewHTTP(requestHandler *RequestHandler, authInterceptor kitNetHttp.Interceptor, logger log.Logger) (http.Handler, error) {
 	r := router.NewRouter()
 	r.StrictSlash(true)
-	r.Use(kitNetHttp.CreateLoggingMiddleware())
+	r.Use(kitNetHttp.CreateLoggingMiddleware(kitNetHttp.WithLogger(logger)))
 	r.Use(kitNetHttp.CreateAuthMiddleware(authInterceptor, func(ctx context.Context, w http.ResponseWriter, r *http.Request, err error) {
 		logAndWriteErrorResponse(fmt.Errorf("cannot process request on %v: %w", r.RequestURI, err), http.StatusUnauthorized, w)
 	}))

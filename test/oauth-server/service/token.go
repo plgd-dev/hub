@@ -133,8 +133,10 @@ func makeIDToken(clientID string, host, nonce string, issuedAt, expires time.Tim
 	if err := token.Set(jwt.IssuerKey, host+"/"); err != nil {
 		return nil, fmt.Errorf("failed to set %v: %w", jwt.IssuerKey, err)
 	}
-	if err := token.Set(uri.NonceKey, nonce); err != nil {
-		return nil, fmt.Errorf("failed to set %v: %w", uri.NonceKey, err)
+	if nonce != "" {
+		if err := token.Set(uri.NonceKey, nonce); err != nil {
+			return nil, fmt.Errorf("failed to set %v: %w", uri.NonceKey, err)
+		}
 	}
 	if err := token.Set(TokenNicknameKey, "test"); err != nil {
 		return nil, fmt.Errorf("failed to set %v: %w", TokenNicknameKey, err)
@@ -150,9 +152,6 @@ func makeIDToken(clientID string, host, nonce string, issuedAt, expires time.Tim
 }
 
 func generateIDToken(clientID string, lifeTime time.Duration, host, nonce string, key *rsa.PrivateKey, jwkKey jwk.Key) (string, error) {
-	if nonce == "" {
-		return "", nil
-	}
 	now := time.Now()
 	var expires time.Time
 	if lifeTime > 0 {

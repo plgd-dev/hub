@@ -5,7 +5,6 @@ import (
 	"crypto/tls"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"reflect"
@@ -100,7 +99,7 @@ func (c *HTTPRequestBuilder) SetQuery(value string) *HTTPRequestBuilder {
 func (c *HTTPRequestBuilder) Build(ctx context.Context, t *testing.T) *http.Request {
 	u := c.uri
 	if len(c.resourceHref) > 0 {
-		u = strings.Replace(c.uri, "{"+ResourceHrefKey+"}", c.resourceHref, -1)
+		u = strings.ReplaceAll(c.uri, "{"+ResourceHrefKey+"}", c.resourceHref)
 	}
 
 	tmp, err := uritemplates.Parse(u)
@@ -155,7 +154,7 @@ func ReadHTTPResponse(t *testing.T, w io.Reader, contentType string) interface{}
 		readFrom = cbor.ReadFrom
 	case "text/plain":
 		readFrom = func(w io.Reader, v interface{}) error {
-			b, err := ioutil.ReadAll(w)
+			b, err := io.ReadAll(w)
 			if err != nil {
 				return err
 			}

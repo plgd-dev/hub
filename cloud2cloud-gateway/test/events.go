@@ -2,7 +2,7 @@ package test
 
 import (
 	"crypto/tls"
-	"io/ioutil"
+	"io"
 	"net"
 	"net/http"
 	"sync"
@@ -138,7 +138,7 @@ func (s *EventsServer) Run(t *testing.T) EventChan {
 			defer func() {
 				_ = r.Body.Close()
 			}()
-			buf, err := ioutil.ReadAll(r.Body)
+			buf, err := io.ReadAll(r.Body)
 			assert.NoError(t, err)
 
 			data := DecodeEvent(t, h.EventType, buf)

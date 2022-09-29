@@ -61,8 +61,7 @@ func (r RequestHandler) CancelPendingMetadataUpdates(ctx context.Context, reques
 
 	correlationIDs := make([]string, 0, len(cancelEvents))
 	for _, e := range cancelEvents {
-		switch ev := e.(type) {
-		case *events.DeviceMetadataUpdated:
+		if ev, ok := e.(*events.DeviceMetadataUpdated); ok {
 			correlationIDs = append(correlationIDs, ev.GetAuditContext().GetCorrelationId())
 		}
 	}

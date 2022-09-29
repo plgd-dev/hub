@@ -3,7 +3,6 @@ package client
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 
 	"github.com/plgd-dev/go-coap/v3/message"
 	"github.com/plgd-dev/go-coap/v3/message/pool"
@@ -39,7 +38,7 @@ func (GeneralMessageCodec) Decode(m *pool.Message, v interface{}) error {
 		decoder = json.ReadFrom
 	case message.TextPlain:
 		decoder = func(w io.Reader, v interface{}) error {
-			data, err := ioutil.ReadAll(w)
+			data, err := io.ReadAll(w)
 			if err != nil {
 				return err
 			}

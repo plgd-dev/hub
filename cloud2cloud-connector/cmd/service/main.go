@@ -2,12 +2,32 @@ package main
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/plgd-dev/hub/v2/cloud2cloud-connector/service"
 	"github.com/plgd-dev/hub/v2/pkg/config"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 )
+
+func run(cfg service.Config, logger log.Logger) error {
+	fileWatcher, err := fsnotify.NewWatcher()
+	if err != nil {
+		return fmt.Errorf("cannot create file fileWatcher: %w", err)
+	}
+	defer func() {
+		_ = fileWatcher.Close()
+	}()
+
+	s, err := service.New(context.Background(), cfg, fileWatcher, logger)
+	if err != nil {
+		return fmt.Errorf("cannot create service: %w", err)
+	}
+	if err = s.Serve(); err != nil {
+		return fmt.Errorf("cannot serve service: %w", err)
+	}
+	return nil
+}
 
 func main() {
 	var cfg service.Config
@@ -18,19 +38,7 @@ func main() {
 	log.Set(logger)
 	log.Infof("config: %v", cfg.String())
 
-	fileWatcher, err := fsnotify.NewWatcher()
-	if err != nil {
-		log.Fatalf("cannot create file fileWatcher: %v", err)
-	}
-	defer func() {
-		_ = fileWatcher.Close()
-	}()
-
-	s, err := service.New(context.Background(), cfg, fileWatcher, logger)
-	if err != nil {
-		log.Fatalf("cannot create service: %w", err)
-	}
-	if err = s.Serve(); err != nil {
-		log.Fatalf("cannot serve service: %v", err)
+	if err := run(cfg, logger); err != nil {
+		log.Fatalf("cannot run service: %w", err)
 	}
 }

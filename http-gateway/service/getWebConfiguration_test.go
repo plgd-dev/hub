@@ -4,9 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
+	"regexp"
 	"testing"
 
 	httpgwService "github.com/plgd-dev/hub/v2/http-gateway/service"
@@ -31,6 +31,36 @@ func unmarshalWebConfiguration(code int, input io.Reader, v *httpgwService.WebCo
 	return err
 }
 
+func TestRegexpAPI(t *testing.T) {
+	tests := []struct {
+		val string
+		ok  bool
+	}{
+		{"/api", false},
+		{"/api/", false},
+		{"/api/a", false},
+		{"/a", true},
+		{"/ap", true},
+		{"/bpi", true},
+		{"/bpi/", true},
+		{"/bpi/a", true},
+		{"/abi", true},
+		{"/abi/", true},
+		{"/abi/a", true},
+		{"/apb", true},
+		{"/apb/", true},
+		{"/apb/a", true},
+		{uri.WebConfiguration, true},
+		{"/abcdefg/asdsa", true},
+	}
+	v := regexp.MustCompile(httpgwService.AuthorizationWhiteListedEndpointsRegexp)
+	for _, tt := range tests {
+		t.Run(tt.val, func(t *testing.T) {
+			assert.Equal(t, tt.ok, v.MatchString(tt.val))
+		})
+	}
+}
+
 func TestRequestHandlerGetWebConfiguration(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
 	defer cancel()
@@ -49,7 +79,7 @@ func TestRequestHandlerGetWebConfiguration(t *testing.T) {
 		{
 			name:         "disabled UI",
 			wantErr:      true,
-			wantHTTPCode: http.StatusInternalServerError,
+			wantHTTPCode: http.StatusUnauthorized,
 		},
 		{
 			name:         "valid configuration",
@@ -126,7 +156,7 @@ func TestRequestHandlerGetWebDirectory(t *testing.T) {
 			got, err := io.ReadAll(resp.Body)
 			require.NoError(t, err)
 
-			want, err := ioutil.ReadFile(tt.wantFile)
+			want, err := os.ReadFile(tt.wantFile)
 			require.NoError(t, err)
 
 			require.Equal(t, got, want)

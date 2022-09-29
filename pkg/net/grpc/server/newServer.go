@@ -50,9 +50,10 @@ func (s *Server) Serve() error {
 // It cancels all active RPCs on the server side and the corresponding
 // pending RPCs on the client side will get notified by connection
 // errors.
-func (s *Server) Close() {
+func (s *Server) Close() error {
 	s.Server.Stop()
 	for _, f := range s.closeFunc {
 		f()
 	}
+	return nil
 }

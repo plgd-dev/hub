@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func SetUp(t *testing.T) (TearDown func()) {
+func SetUp(t *testing.T) (tearDown func()) {
 	return New(t, MakeConfig(t))
 }
 
@@ -32,7 +32,7 @@ func New(t *testing.T, config service.Config) func() {
 	}()
 
 	return func() {
-		idServer.Shutdown()
+		_ = idServer.Close()
 		wg.Wait()
 		err := fileWatcher.Close()
 		require.NoError(t, err)

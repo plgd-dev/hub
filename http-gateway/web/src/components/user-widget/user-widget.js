@@ -1,20 +1,20 @@
 import { useRef, useState, memo } from 'react'
 import classNames from 'classnames'
-import { useAuth0 } from '@auth0/auth0-react'
 import { useIntl } from 'react-intl'
-
+import Avatar from 'react-avatar'
 import { useClickOutside } from '@/common/hooks'
 import { messages as t } from './user-widget-i18n'
+import { useAuth } from 'oidc-react'
 import './user-widget.scss'
 
 export const UserWidget = memo(() => {
   const [expanded, setExpand] = useState(false)
-  const { isLoading, isAuthenticated, user, logout } = useAuth0()
+  const { isLoading, userData, signOutRedirect } = useAuth()
   const { formatMessage: _ } = useIntl()
   const clickRef = useRef()
   useClickOutside(clickRef, () => setExpand(false))
 
-  if (!isLoading && !isAuthenticated) {
+  if (!isLoading && !userData) {
     return null
   }
 
@@ -22,14 +22,36 @@ export const UserWidget = memo(() => {
     <div id="user-widget" className="status-bar-item" ref={clickRef}>
       <div className="toggle" onClick={() => setExpand(!expanded)}>
         <div className="user-avatar">
-          <img src={user.picture} alt="User Avatar" />
+          {userData.profile.picture ? (
+            <img src={userData.profile.picture} alt={userData.profile.name} />
+          ) : (
+            <Avatar
+              name={userData.profile.name}
+              size="30"
+              round="50%"
+              color="#255897"
+            />
+          )}
         </div>
-        {user.name}
-        <i className={classNames('fas', { 'fa-chevron-down': !expanded, 'fa-chevron-up': expanded })} />
+        {userData.profile.name}
+        <i
+          className={classNames('fas', {
+            'fa-chevron-down': !expanded,
+            'fa-chevron-up': expanded,
+          })}
+        />
       </div>
       {expanded && (
         <div className="content">
-          <span onClick={() => logout({ returnTo: window.location.origin })}>{_(t.logOut)}</span>
+          <span
+            onClick={() => {
+              signOutRedirect({
+                post_logout_redirect_uri: window.location.origin,
+              }).then()
+            }}
+          >
+            {_(t.logOut)}
+          </span>
         </div>
       )}
     </div>

@@ -33,11 +33,11 @@ func DeviceMetadataFactoryModel(ctx context.Context) (cqrsAggregate.AggregateMod
 }
 
 // NewAggregate creates new resource aggreate - it must be created for every run command.
-func NewAggregate(resourceID *commands.ResourceId, SnapshotThreshold int, eventstore EventStore, factoryModel cqrsAggregate.FactoryModelFunc, retry cqrsAggregate.RetryFunc) (*aggregate, error) {
+func NewAggregate(resourceID *commands.ResourceId, snapshotThreshold int, eventstore EventStore, factoryModel cqrsAggregate.FactoryModelFunc, retry cqrsAggregate.RetryFunc) (*aggregate, error) {
 	a := &aggregate{
 		eventstore: eventstore,
 	}
-	cqrsAg, err := cqrsAggregate.NewAggregate(resourceID.GetDeviceId(), resourceID.ToUUID(), retry, SnapshotThreshold, eventstore, factoryModel, func(template string, args ...interface{}) {})
+	cqrsAg, err := cqrsAggregate.NewAggregate(resourceID.GetDeviceId(), resourceID.ToUUID(), retry, snapshotThreshold, eventstore, factoryModel, func(template string, args ...interface{}) {})
 	if err != nil {
 		return nil, fmt.Errorf("cannot create aggregate for resource: %w", err)
 	}

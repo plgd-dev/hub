@@ -50,13 +50,20 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 
 	pool, err := ants.NewPool(config.Clients.Eventbus.GoPoolSize)
 	if err != nil {
-		server.Close()
-		return nil, fmt.Errorf("cannot create goroutine pool: %w", err)
+		err = fmt.Errorf("cannot create goroutine pool: %w", err)
+		err2 := server.Close()
+		if err2 != nil {
+			err = fmt.Errorf(`[%w, "cannot close server: %v"]`, err, err2)
+		}
+		return nil, err
 	}
 	server.AddCloseFunc(pool.Release)
 
 	if err := AddHandler(ctx, server, config, config.ExposedHubConfiguration, fileWatcher, logger, tracerProvider, pool.Submit); err != nil {
-		server.Close()
+		err2 := server.Close()
+		if err2 != nil {
+			err = fmt.Errorf(`[%w, "cannot close server: %v"]`, err, err2)
+		}
 		return nil, err
 	}
 
@@ -70,8 +77,7 @@ func makeAuthFunc(validator kitNetGrpc.Validator) func(ctx context.Context, meth
 		return jwt.NewScopeClaims()
 	})
 	return func(ctx context.Context, method string) (context.Context, error) {
-		switch method {
-		case "/" + pb.GrpcGateway_ServiceDesc.ServiceName + "/GetHubConfiguration":
+		if method == "/"+pb.GrpcGateway_ServiceDesc.ServiceName+"/GetHubConfiguration" {
 			return ctx, nil
 		}
 		token, _ := kitNetGrpc.TokenFromMD(ctx)

@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/plgd-dev/hub/v2/certificate-authority/service"
 	"github.com/plgd-dev/hub/v2/pkg/config"
@@ -9,19 +10,10 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/log"
 )
 
-func main() {
-	var cfg service.Config
-	err := config.LoadAndValidateConfig(&cfg)
-	if err != nil {
-		log.Fatalf("cannot load config: %v", err)
-	}
-	logger := log.NewLogger(cfg.Log)
-	log.Set(logger)
-	log.Infof("config: %v", cfg.String())
-
+func run(cfg service.Config, logger log.Logger) error {
 	fileWatcher, err := fsnotify.NewWatcher()
 	if err != nil {
-		log.Fatalf("cannot create file fileWatcher: %v", err)
+		return fmt.Errorf("cannot create file fileWatcher: %w", err)
 	}
 	defer func() {
 		_ = fileWatcher.Close()
@@ -29,10 +21,25 @@ func main() {
 
 	s, err := service.New(context.Background(), cfg, fileWatcher, logger)
 	if err != nil {
-		log.Fatalf("cannot create service: %v", err)
+		return fmt.Errorf("cannot create service: %w", err)
 	}
 	err = s.Serve()
 	if err != nil {
-		log.Fatalf("cannot serve service: %v", err)
+		return fmt.Errorf("cannot serve service: %w", err)
+	}
+	return nil
+}
+
+func main() {
+	var cfg service.Config
+	if err := config.LoadAndValidateConfig(&cfg); err != nil {
+		log.Fatalf("cannot load config: %v", err)
+	}
+	logger := log.NewLogger(cfg.Log)
+	log.Set(logger)
+	log.Infof("config: %v", cfg.String())
+
+	if err := run(cfg, logger); err != nil {
+		log.Fatalf("cannot run service: %w", err)
 	}
 }

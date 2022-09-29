@@ -353,8 +353,7 @@ func TestRequestHandlerSubscribeToEvents(t *testing.T) {
 
 		t.Logf("ev after shutdown: %v\n", ev)
 
-		switch {
-		case ev.GetDeviceUnregistered() != nil:
+		if ev.GetDeviceUnregistered() != nil {
 			expectedEvent = &pb.Event{
 				SubscriptionId: ev.SubscriptionId,
 				Type: &pb.Event_DeviceUnregistered_{

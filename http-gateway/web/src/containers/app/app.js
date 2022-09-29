@@ -1,110 +1,79 @@
 import { hot } from 'react-hot-loader/root'
 import { useContext, useState, useEffect } from 'react'
-import { useAuth0 } from '@auth0/auth0-react'
-import classNames from 'classnames'
-import { Router } from 'react-router-dom'
-import Container from 'react-bootstrap/Container'
-import { Helmet } from 'react-helmet'
 import { useIntl } from 'react-intl'
-import {
-  ToastContainer,
-  BrowserNotificationsContainer,
-} from '@/components/toast'
 import { PageLoader } from '@/components/page-loader'
-import { LeftPanel } from '@/components/left-panel'
-import { Menu } from '@/components/menu'
-import { StatusBar } from '@/components/status-bar'
-import { Footer } from '@/components/footer'
-import { useLocalStorage } from '@/common/hooks'
-import { Routes } from '@/routes'
-import { history } from '@/store/history'
 import { security } from '@/common/services/security'
 import { openTelemetry } from '@/common/services/opentelemetry'
-import { InitServices } from '@/common/services/init-services'
-import appConfig from '@/config'
-import { fetchApi } from '@/common/services'
 import { messages as t } from './app-i18n'
 import { AppContext } from './app-context'
 import './app.scss'
+import { getAppWellKnownConfiguration } from '@/containers/app/AppRest'
+import AppInner from '@/containers/app/AppInner/AppInner'
+import { AuthProvider, UserManager } from 'oidc-react'
 
-const App = ({ config }) => {
-  const {
-    isLoading,
-    isAuthenticated,
-    error,
-    loginWithRedirect,
-    getAccessTokenSilently,
-  } = useAuth0()
-  const [collapsed, setCollapsed] = useLocalStorage('leftPanelCollapsed', true)
+const App = () => {
   const { formatMessage: _ } = useIntl()
   const [wellKnownConfig, setWellKnownConfig] = useState(null)
   const [wellKnownConfigFetched, setWellKnownConfigFetched] = useState(false)
   const [configError, setConfigError] = useState(null)
 
-  // Set the getAccessTokenSilently method to the security singleton
-  security.setAccessTokenSilently(getAccessTokenSilently)
-
-  // Set the auth configurations
-  const {
-    webOauthClient,
-    deviceOauthClient,
-    openTelemetry: openTelemetryConfig,
-    ...generalConfig
-  } = config
-  security.setGeneralConfig(generalConfig)
-  security.setWebOAuthConfig(webOauthClient)
-  security.setDeviceOAuthConfig(deviceOauthClient)
-  openTelemetryConfig !== false && openTelemetry.init('hub')
+  openTelemetry.init('hub')
 
   useEffect(() => {
-    if (
-      !isLoading &&
-      isAuthenticated &&
-      !wellKnownConfig &&
-      !wellKnownConfigFetched
-    ) {
+    if (!wellKnownConfig && !wellKnownConfigFetched) {
       const fetchWellKnownConfig = async () => {
         try {
           const { data: wellKnown } = await openTelemetry.withTelemetry(
             () =>
-              fetchApi(
-                `${config.httpGatewayAddress}/.well-known/hub-configuration`
+              getAppWellKnownConfiguration(
+                process.env.REACT_APP_HTTP_WELL_NOW_CONFIGURATION_ADDRESS ||
+                  window.location.origin
               ),
             'get-hub-configuration'
           )
 
-          setWellKnownConfigFetched(true)
-          setWellKnownConfig(wellKnown)
+          const { webOauthClient, deviceOauthClient, ...generalConfig } =
+            wellKnown
+
+          const clientId = webOauthClient?.clientId
+          const httpGatewayAddress = wellKnown.httpGatewayAddress
+          const authority = wellKnown.authority
+
+          if (!clientId || !authority || !httpGatewayAddress) {
+            throw new Error(
+              'clientId, authority, audience and httpGatewayAddress must be set in webOauthClient of web_configuration.json'
+            )
+          } else {
+            // Set the auth configurations
+            security.setGeneralConfig(generalConfig)
+            security.setWebOAuthConfig(webOauthClient)
+            security.setDeviceOAuthConfig(deviceOauthClient)
+
+            setWellKnownConfigFetched(true)
+            setWellKnownConfig(wellKnown)
+          }
         } catch (e) {
           setConfigError(
-            new Error(
-              'Could not retrieve the well-known ocfcloud configuration.'
-            )
+            new Error('Could not retrieve the well-known configuration.')
           )
         }
       }
 
       fetchWellKnownConfig()
     }
-  }, [
-    isLoading,
-    isAuthenticated,
-    wellKnownConfig,
-    wellKnownConfigFetched,
-    config.httpGatewayAddress,
-  ])
+  }, [wellKnownConfig, wellKnownConfigFetched])
 
   // Render an error box with an auth error
-  if (error || configError) {
+  if (configError) {
     return (
       <div className="client-error-message">
-        {`${_(t.authError)}: ${error?.message || configError?.message}`}
+        {`${_(t.authError)}: ${configError?.message}`}
       </div>
     )
   }
 
   // Placeholder loader while waiting for the auth status
-  const renderLoader = () => {
+  if (!wellKnownConfig) {
     return (
       <>
         <PageLoader className="auth-loader" loading />
@@ -113,57 +82,37 @@ const App = ({ config }) => {
     )
   }
 
-  // If the loading is finished but still unauthenticated, it means the user is not logged in.
-  // Calling the loginWithRedirect will make a redirect to the login page where the user can login.
-  if (!isLoading && !isAuthenticated) {
-    loginWithRedirect({
-      appState: {
-        returnTo: window.location.href.substr(window.location.origin.length),
-      },
-    })
-
-    return renderLoader()
-  }
-
-  if (isLoading || !wellKnownConfig) {
-    return renderLoader()
+  const oidcCommonSettings = {
+    authority: wellKnownConfig.authority,
+    scope: wellKnownConfig.webOauthClient.scopes.join?.(' '),
   }
 
   return (
-    <AppContext.Provider
-      value={{
-        ...config,
-        collapsed,
-        wellKnownConfig,
-        telemetryWebTracer:
-          openTelemetryConfig !== false
-            ? openTelemetry.getWebTracer()
-            : undefined,
+    <AuthProvider
+      {...oidcCommonSettings}
+      clientId={wellKnownConfig.webOauthClient.clientId}
+      redirectUri={window.location.origin}
+      onSignIn={async () => {
+        window.location.hash = ''
+        window.location.href = window.location.origin
       }}
+      automaticSilentRenew={true}
+      userManager={
+        new UserManager({
+          ...oidcCommonSettings,
+          client_id: wellKnownConfig.webOauthClient.clientId,
+          redirect_uri: window.location.origin,
+          extraQueryParams: {
+            audience: wellKnownConfig.webOauthClient.audience || undefined,
+          },
+        })
+      }
     >
-      <Router history={history}>
-        <InitServices />
-        <Helmet
-          defaultTitle={appConfig.appName}
-          titleTemplate={`%s | ${appConfig.appName}`}
-        />
-        <Container fluid id="app" className={classNames({ collapsed })}>
-          <StatusBar />
-          <LeftPanel>
-            <Menu
-              collapsed={collapsed}
-              toggleCollapsed={() => setCollapsed(!collapsed)}
-            />
-          </LeftPanel>
-          <div id="content">
-            <Routes />
-            <Footer />
-          </div>
-        </Container>
-        <ToastContainer />
-        <BrowserNotificationsContainer />
-      </Router>
-    </AppContext.Provider>
+      <AppInner
+        wellKnownConfig={wellKnownConfig}
+        openTelemetry={openTelemetry}
+      />
+    </AuthProvider>
   )
 }
 

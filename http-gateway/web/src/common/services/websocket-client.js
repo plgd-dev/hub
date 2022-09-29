@@ -7,7 +7,9 @@ export class WebSocketClient {
   }
 
   connect = delayMessage => {
-    const { host, protocol } = new URL(security.getGeneralConfig().httpGatewayAddress)
+    const { host, protocol } = new URL(
+      security.getGeneralConfig().httpGatewayAddress
+    )
     const wsProtocol = protocol === 'https:' ? 'wss:' : 'ws:'
 
     const wsUrl = `${wsProtocol}//${host}${this.api}`
@@ -76,9 +78,7 @@ export class WebSocketClient {
 
   // Sends the access token as a first message right after connect
   _sendToken = async () => {
-    const accessToken = await security.getAccessTokenSilently()({
-      audience: security.getWebOAuthConfig()?.audience,
-    })
+    const accessToken = await security.getAccessToken()
     this.ws.send(JSON.stringify({ token: accessToken }))
   }
 }

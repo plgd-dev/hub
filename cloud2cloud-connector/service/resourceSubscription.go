@@ -106,8 +106,7 @@ func (s *SubscriptionManager) HandleResourceChangedEvent(ctx context.Context, su
 }
 
 func (s *SubscriptionManager) HandleResourceEvent(ctx context.Context, header events.EventHeader, body []byte, subscriptionData subscriptionData) error {
-	switch header.EventType {
-	case events.EventType_ResourceChanged:
+	if header.EventType == events.EventType_ResourceChanged {
 		return s.HandleResourceChangedEvent(ctx, subscriptionData, header, body)
 	}
 	return fmt.Errorf("cannot handle resource event: unsupported Event-Type %v", header.EventType)

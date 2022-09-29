@@ -37,11 +37,10 @@ func (requestHandler *RequestHandler) getEvents(w http.ResponseWriter, r *http.R
 	opt := Options{}
 	if resourceID != "" {
 		opt.ResourceIDFilter = append(opt.ResourceIDFilter, resourceID)
-	} else {
-		if deviceID != "" {
-			opt.DeviceIDFilter = append(opt.DeviceIDFilter, deviceID)
-		}
+	} else if deviceID != "" {
+		opt.DeviceIDFilter = append(opt.DeviceIDFilter, deviceID)
 	}
+
 	if timestamp != 0 {
 		opt.TimestampFilter = timestamp
 	}

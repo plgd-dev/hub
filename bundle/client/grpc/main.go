@@ -8,7 +8,6 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 
@@ -102,7 +101,7 @@ func updateResource(ctx context.Context, client pbGW.GrpcGatewayClient, deviceID
 	updError := func(err error) {
 		log.Fatalf("cannot update resource: %v", err)
 	}
-	data, err := ioutil.ReadAll(os.Stdin)
+	data, err := io.ReadAll(os.Stdin)
 	if err != nil {
 		updError(fmt.Errorf("cannot read data: %w", err))
 	}
@@ -127,7 +126,7 @@ func createResource(ctx context.Context, client pbGW.GrpcGatewayClient, deviceID
 	createError := func(err error) {
 		log.Fatalf("cannot create resource: %v", err)
 	}
-	data, err := ioutil.ReadAll(os.Stdin)
+	data, err := io.ReadAll(os.Stdin)
 	if err != nil {
 		createError(fmt.Errorf("cannot read data: %w", err))
 	}

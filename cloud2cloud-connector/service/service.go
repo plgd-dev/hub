@@ -284,14 +284,18 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 	}
 	listener.AddCloseFunc(closeAuth)
 
-	httpHandler, err := NewHTTP(requestHandler, auth)
+	httpHandler, err := NewHTTP(requestHandler, auth, logger)
 	if err != nil {
 		cleanUp.Execute()
 		return nil, fmt.Errorf("cannot create http server interceptor: %w", err)
 	}
 
 	httpServer := http.Server{
-		Handler: kitNetHttp.OpenTelemetryNewHandler(httpHandler, serviceName, tracerProvider),
+		Handler:           kitNetHttp.OpenTelemetryNewHandler(httpHandler, serviceName, tracerProvider),
+		ReadTimeout:       config.APIs.HTTP.Server.ReadTimeout,
+		ReadHeaderTimeout: config.APIs.HTTP.Server.ReadHeaderTimeout,
+		WriteTimeout:      config.APIs.HTTP.Server.WriteTimeout,
+		IdleTimeout:       config.APIs.HTTP.Server.IdleTimeout,
 	}
 
 	var wg sync.WaitGroup
@@ -325,7 +329,7 @@ func (s *Server) Serve() error {
 }
 
 // Shutdown ends serving
-func (s *Server) Shutdown() error {
+func (s *Server) Close() error {
 	s.cancel()
 	s.doneWg.Wait()
 	return s.server.Shutdown(context.Background())

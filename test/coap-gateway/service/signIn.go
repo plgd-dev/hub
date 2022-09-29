@@ -44,8 +44,7 @@ func signInPostHandler(req *mux.Message, client *Client, signIn coapgwService.Co
 // Sign-in
 // https://github.com/openconnectivityfoundation/security/blob/master/swagger2.0/oic.sec.session.swagger.json
 func signInHandler(req *mux.Message, client *Client) {
-	switch req.Code() {
-	case coapCodes.POST:
+	if req.Code() == coapCodes.POST {
 		var r coapgwService.CoapSignInReq
 		err := cbor.ReadFrom(req.Body(), &r)
 		if err != nil {

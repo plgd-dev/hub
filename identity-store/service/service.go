@@ -129,6 +129,6 @@ func (s *Server) Serve() error {
 }
 
 // Shutdown ends serving
-func (s *Server) Shutdown() {
-	s.grpcServer.Close()
+func (s *Server) Close() error {
+	return s.grpcServer.Close()
 }

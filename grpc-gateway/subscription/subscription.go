@@ -131,7 +131,7 @@ func (s *Sub) ProcessEvent(e *pb.Event, eventType FilterBitmask) error {
 
 // Close closes subscription.
 func (s *Sub) Close() error {
-	if !s.closed.CAS(false, true) {
+	if !s.closed.CompareAndSwap(false, true) {
 		return nil
 	}
 	closeCache := s.closeAtomic.Load().(func())

@@ -48,6 +48,12 @@ data:
               {{- $grpcTls := .apis.grpc.authorization.http.tls }}
               {{- include "plgd-hub.certificateConfig" (list $ $grpcTls $cert ) | indent 12 }}
               useSystemCAPool: {{ .apis.grpc.authorization.http.tls.useSystemCAPool }}
+      http:
+        address: {{  .apis.http.address | default (printf "0.0.0.0:%v" .httpPort) | quote }}
+        readTimeout: {{ .apis.http.readTimeout }}
+        readHeaderTimeout: {{ .apis.http.readHeaderTimeout }}
+        writeTimeout: {{ .apis.http.writeTimeout }}
+        idleTimeout: {{ .apis.http.idleTimeout }}
     signer:
       certFile: {{ .signer.certFile | default ( printf "%s/%s" $.Values.certificateauthority.ca.volume.mountPath $.Values.certificateauthority.ca.cert ) | quote }}
       keyFile: {{ .signer.keyFile | default ( printf "%s/%s" $.Values.certificateauthority.ca.volume.mountPath $.Values.certificateauthority.ca.key ) | quote }}

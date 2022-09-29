@@ -170,7 +170,7 @@ func (c *requestBuilder) SetQuery(value string) *requestBuilder {
 
 func (c *requestBuilder) Build() *http.Request {
 	r := fmt.Sprintf("https://%v%v", c.host, c.path)
-	uri := strings.Replace(r, "{"+uri.ResourceHrefKey+"}", c.resourceHref, -1)
+	uri := strings.ReplaceAll(r, "{"+uri.ResourceHrefKey+"}", c.resourceHref)
 
 	tmp, _ := uritemplates.Parse(uri)
 	uri, _ = tmp.Expand(c.uriParams)

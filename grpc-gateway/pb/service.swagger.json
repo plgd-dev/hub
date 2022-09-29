@@ -30,6 +30,29 @@
     "application/protojson"
   ],
   "paths": {
+    "/.well-known/configuration": {
+      "get": {
+        "summary": "Get cloud configuration",
+        "operationId": "GrpcGateway_GetHubConfiguration2",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbHubConfigurationResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "Cloud"
+        ]
+      }
+    },
     "/.well-known/hub-configuration": {
       "get": {
         "summary": "Get cloud configuration",
@@ -326,7 +349,8 @@
             "name": "resourceId.href",
             "in": "path",
             "required": true,
-            "type": "string"
+            "type": "string",
+            "pattern": ".+"
           },
           {
             "name": "timeToLive",
@@ -368,10 +392,11 @@
             "name": "resourceId.href",
             "in": "path",
             "required": true,
-            "type": "string"
+            "type": "string",
+            "pattern": ".+"
           },
           {
-            "name": "body",
+            "name": "content",
             "in": "body",
             "required": true,
             "schema": {
@@ -420,7 +445,8 @@
             "name": "resourceId.href",
             "in": "path",
             "required": true,
-            "type": "string"
+            "type": "string",
+            "pattern": ".+"
           },
           {
             "name": "resourceInterface",
@@ -468,10 +494,11 @@
             "name": "resourceId.href",
             "in": "path",
             "required": true,
-            "type": "string"
+            "type": "string",
+            "pattern": ".+"
           },
           {
-            "name": "body",
+            "name": "content",
             "in": "body",
             "required": true,
             "schema": {
@@ -537,7 +564,7 @@
           },
           {
             "name": "resourceIdFilter",
-            "description": "format {deviceID}{href}. eg \"ae424c58-e517-4494-6de7-583536c48213/oic/d\".",
+            "description": "format {deviceID}{href}. eg \"ae424c58-e517-4494-6de7-583536c48213/oic/d\"",
             "in": "query",
             "required": false,
             "type": "array",
@@ -548,7 +575,7 @@
           },
           {
             "name": "timestampFilter",
-            "description": "filter events with timestamp \u003e than given value.",
+            "description": "filter events with timestamp \u003e than given value",
             "in": "query",
             "required": false,
             "type": "string",
@@ -860,6 +887,17 @@
         }
       }
     },
+    "DeviceOwnershipStatus": {
+      "type": "string",
+      "enum": [
+        "UNKNOWN",
+        "UNOWNED",
+        "OWNED",
+        "UNSUPPORTED"
+      ],
+      "default": "UNKNOWN",
+      "title": "- UNKNOWN: cannot determine ownership status\n - UNOWNED: device is ready to be owned the user\n - OWNED: device is owned by the user. to determine who own the device you need to get ownership resource /oic/sec/doxm\n - UNSUPPORTED: set when device is not secured. (iotivity-lite was built without security)"
+    },
     "ErrorStatusCode": {
       "type": "string",
       "enum": [
@@ -883,7 +921,7 @@
           "additionalProperties": {
             "type": "string"
           },
-          "description": "exported open telemetry trace context. All events must have same protobuf identifier field(100)."
+          "title": "Open telemetry data propagated to asynchronous events"
         }
       }
     },
@@ -901,7 +939,7 @@
           "additionalProperties": {
             "type": "string"
           },
-          "description": "exported open telemetry trace context. All events must have same protobuf identifier field(100)."
+          "title": "Open telemetry data propagated to asynchronous events"
         }
       }
     },
@@ -1224,6 +1262,20 @@
         },
         "protocolIndependentId": {
           "type": "string"
+        },
+        "data": {
+          "$ref": "#/definitions/pbResourceChanged"
+        },
+        "ownershipStatus": {
+          "$ref": "#/definitions/DeviceOwnershipStatus",
+          "title": "ownership status of the device"
+        },
+        "endpoints": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "title": "endpoints with schemas which are hosted by the device"
         }
       }
     },
@@ -1271,7 +1323,7 @@
           "additionalProperties": {
             "type": "string"
           },
-          "description": "exported open telemetry trace context. All events must have same protobuf identifier field(100)."
+          "title": "Open telemetry data propagated to asynchronous events"
         }
       }
     },
@@ -1301,7 +1353,27 @@
           "additionalProperties": {
             "type": "string"
           },
-          "description": "exported open telemetry trace context. All events must have same protobuf identifier field(100)."
+          "title": "Open telemetry data propagated to asynchronous events"
+        }
+      }
+    },
+    "pbDeviceOAuthClient": {
+      "type": "object",
+      "properties": {
+        "clientId": {
+          "type": "string"
+        },
+        "audience": {
+          "type": "string"
+        },
+        "scopes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "providerName": {
+          "type": "string"
         }
       }
     },
@@ -1429,13 +1501,23 @@
         "certificateAuthorities": {
           "type": "string"
         },
-        "authorizationServer": {
+        "authority": {
           "type": "string"
         },
         "defaultCommandTimeToLive": {
           "type": "string",
           "format": "int64",
           "description": "exposes default command time to live in nanoseconds for CreateResource, RetrieveResource, UpdateResource, DeleteResource, and UpdateDeviceMetadata commands when it is not set in the request. 0 - means forever."
+        },
+        "httpGatewayAddress": {
+          "type": "string",
+          "title": "cfg for UI http-gateway"
+        },
+        "webOauthClient": {
+          "$ref": "#/definitions/pbWebOAuthClient"
+        },
+        "deviceOauthClient": {
+          "$ref": "#/definitions/pbDeviceOAuthClient"
         }
       }
     },
@@ -1502,7 +1584,7 @@
           "additionalProperties": {
             "type": "string"
           },
-          "description": "exported open telemetry trace context. All events must have same protobuf identifier field(100)."
+          "title": "Open telemetry data propagated to asynchronous events"
         }
       }
     },
@@ -1530,7 +1612,7 @@
           "additionalProperties": {
             "type": "string"
           },
-          "description": "exported open telemetry trace context. All events must have same protobuf identifier field(100)."
+          "title": "Open telemetry data propagated to asynchronous events"
         }
       }
     },
@@ -1557,7 +1639,7 @@
           "additionalProperties": {
             "type": "string"
           },
-          "description": "exported open telemetry trace context. All events must have same protobuf identifier field(100)."
+          "title": "Open telemetry data propagated to asynchronous events"
         }
       }
     },
@@ -1582,7 +1664,7 @@
           "additionalProperties": {
             "type": "string"
           },
-          "description": "exported open telemetry trace context. All events must have same protobuf identifier field(100)."
+          "title": "Open telemetry data propagated to asynchronous events"
         }
       }
     },
@@ -1609,7 +1691,7 @@
           "additionalProperties": {
             "type": "string"
           },
-          "description": "exported open telemetry trace context. All events must have same protobuf identifier field(100)."
+          "title": "Open telemetry data propagated to asynchronous events"
         }
       }
     },
@@ -1647,7 +1729,7 @@
           "additionalProperties": {
             "type": "string"
           },
-          "description": "exported open telemetry trace context. All events must have same protobuf identifier field(100)."
+          "title": "Open telemetry data propagated to asynchronous events"
         }
       },
       "title": "https://github.com/openconnectivityfoundation/cloud-services/blob/master/swagger2.0/oic.wk.rd.swagger.json#L173"
@@ -1695,7 +1777,7 @@
           "additionalProperties": {
             "type": "string"
           },
-          "description": "exported open telemetry trace context. All events must have same protobuf identifier field(100)."
+          "title": "Open telemetry data propagated to asynchronous events"
         }
       },
       "title": "https://github.com/openconnectivityfoundation/cloud-services/blob/master/swagger2.0/oic.wk.rd.swagger.json #Specification CR needed"
@@ -1724,7 +1806,7 @@
           "additionalProperties": {
             "type": "string"
           },
-          "description": "exported open telemetry trace context. All events must have same protobuf identifier field(100)."
+          "title": "Open telemetry data propagated to asynchronous events"
         }
       }
     },
@@ -1751,7 +1833,7 @@
           "additionalProperties": {
             "type": "string"
           },
-          "description": "exported open telemetry trace context. All events must have same protobuf identifier field(100)."
+          "title": "Open telemetry data propagated to asynchronous events"
         }
       }
     },
@@ -1823,7 +1905,7 @@
           "additionalProperties": {
             "type": "string"
           },
-          "description": "exported open telemetry trace context. All events must have same protobuf identifier field(100)."
+          "title": "Open telemetry data propagated to asynchronous events"
         }
       }
     },
@@ -1850,7 +1932,7 @@
           "additionalProperties": {
             "type": "string"
           },
-          "description": "exported open telemetry trace context. All events must have same protobuf identifier field(100)."
+          "title": "Open telemetry data propagated to asynchronous events"
         }
       }
     },
@@ -1876,17 +1958,31 @@
       ],
       "default": "DISABLED"
     },
+    "pbWebOAuthClient": {
+      "type": "object",
+      "properties": {
+        "clientId": {
+          "type": "string"
+        },
+        "audience": {
+          "type": "string"
+        },
+        "scopes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
     "protobufAny": {
       "type": "object",
       "properties": {
-        "typeUrl": {
+        "@type": {
           "type": "string"
-        },
-        "value": {
-          "type": "string",
-          "format": "byte"
         }
-      }
+      },
+      "additionalProperties": {}
     },
     "resourceaggregatepbContent": {
       "type": "object",

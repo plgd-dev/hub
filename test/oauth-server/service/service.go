@@ -30,7 +30,7 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 	}
 	tracerProvider := otelClient.GetTracerProvider()
 
-	listener, err := listener.New(config.APIs.HTTP, fileWatcher, logger)
+	listener, err := listener.New(config.APIs.HTTP.Connection, fileWatcher, logger)
 	if err != nil {
 		otelClient.Close()
 		return nil, fmt.Errorf("cannot create http server: %w", err)
@@ -66,7 +66,11 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 	}
 
 	httpServer := http.Server{
-		Handler: kitNetHttp.OpenTelemetryNewHandler(NewHTTP(requestHandler), serviceName, tracerProvider),
+		Handler:           kitNetHttp.OpenTelemetryNewHandler(NewHTTP(requestHandler, logger), serviceName, tracerProvider),
+		ReadTimeout:       config.APIs.HTTP.Server.ReadTimeout,
+		ReadHeaderTimeout: config.APIs.HTTP.Server.ReadHeaderTimeout,
+		WriteTimeout:      config.APIs.HTTP.Server.WriteTimeout,
+		IdleTimeout:       config.APIs.HTTP.Server.IdleTimeout,
 	}
 
 	server := Service{
@@ -84,6 +88,6 @@ func (s *Service) Serve() error {
 }
 
 // Shutdown ends serving
-func (s *Service) Shutdown() error {
+func (s *Service) Close() error {
 	return s.server.Shutdown(context.Background())
 }

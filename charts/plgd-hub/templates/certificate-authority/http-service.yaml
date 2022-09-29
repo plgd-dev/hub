@@ -1,0 +1,25 @@
+{{- if .Values.certificateauthority.enabled -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "plgd-hub.certificateauthority.fullname" . }}-http
+  namespace: {{ .Release.Namespace }}  
+  labels:
+    {{- include "plgd-hub.labels" . | nindent 4 }}
+    {{- with .Values.certificateauthority.service.http.labels }}
+    {{- . | toYaml | nindent 4 }}
+    {{- end }}
+  {{- if .Values.certificateauthority.service.http.annotations }}
+  annotations:
+    {{- include "plgd-hub.tplvalues.render" ( dict "value" .Values.certificateauthority.service.http.annotations "context" $ ) | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ .Values.certificateauthority.service.http.type | default "ClusterIP" }}
+  ports:
+    - port: {{ .Values.certificateauthority.httpPort }}
+      targetPort: {{ .Values.certificateauthority.service.http.targetPort }}
+      protocol: {{ .Values.certificateauthority.service.http.protocol }}
+      name: {{ .Values.certificateauthority.service.http.name }}
+  selector:
+  {{- include "plgd-hub.certificateauthority.selectorLabels" . | nindent 4 }}
+{{- end }}

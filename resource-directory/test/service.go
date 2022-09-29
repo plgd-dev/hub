@@ -30,7 +30,7 @@ func MakeConfig(t *testing.T) service.Config {
 	cfg.Clients.Eventstore.ProjectionCacheExpiration = time.Second * 120
 
 	cfg.ExposedHubConfiguration.CAPool = config.CA_POOL
-	cfg.ExposedHubConfiguration.AuthorizationServer = "https://" + config.OAUTH_SERVER_HOST
+	cfg.ExposedHubConfiguration.Authority = "https://" + config.OAUTH_SERVER_HOST
 	cfg.ExposedHubConfiguration.HubID = config.HubID()
 	cfg.ExposedHubConfiguration.CoapGateway = config.GW_HOST
 	cfg.ExposedHubConfiguration.OwnerClaim = config.OWNER_CLAIM
@@ -43,7 +43,7 @@ func MakeConfig(t *testing.T) service.Config {
 	return cfg
 }
 
-func SetUp(t *testing.T) (TearDown func()) {
+func SetUp(t *testing.T) (tearDown func()) {
 	return New(t, MakeConfig(t))
 }
 
@@ -65,7 +65,7 @@ func New(t *testing.T, cfg service.Config) func() {
 	}()
 
 	return func() {
-		s.Close()
+		_ = s.Close()
 		wg.Wait()
 		err = fileWatcher.Close()
 		require.NoError(t, err)

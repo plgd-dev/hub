@@ -3,7 +3,7 @@ package test
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"testing"
 
@@ -72,7 +72,7 @@ func (c *C2CSubscriber) Subscribe(t *testing.T, ctx context.Context, token, devi
 	defer func() {
 		_ = resp.Body.Close()
 	}()
-	respData, err := ioutil.ReadAll(resp.Body)
+	respData, err := io.ReadAll(resp.Body)
 	require.NoError(t, err)
 	fmt.Printf("body %v\n", string(respData))
 	require.Equal(t, message.AppJSON.String(), resp.Header.Get("Content-Type"))
@@ -113,6 +113,6 @@ func (c *C2CSubscriber) Unsubscribe(t *testing.T, ctx context.Context, token, de
 	defer func() {
 		_ = resp.Body.Close()
 	}()
-	_, err := ioutil.ReadAll(resp.Body)
+	_, err := io.ReadAll(resp.Body)
 	require.NoError(t, err)
 }

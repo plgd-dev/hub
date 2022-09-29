@@ -49,8 +49,9 @@ func MakeConfig(t *testing.T) service.Config {
 
 	cfg.Log = log.MakeDefaultConfig()
 
-	cfg.APIs.HTTP = config.MakeListenerConfig(config.OAUTH_SERVER_HOST)
-	cfg.APIs.HTTP.TLS.ClientCertificateRequired = false
+	cfg.APIs.HTTP.Connection = config.MakeListenerConfig(config.OAUTH_SERVER_HOST)
+	cfg.APIs.HTTP.Connection.TLS.ClientCertificateRequired = false
+	cfg.APIs.HTTP.Server = config.MakeHttpServerConfig()
 	cfg.Clients.OpenTelemetryCollector = kitNetHttp.OpenTelemetryCollectorConfig{
 		Config: config.MakeOpenTelemetryCollectorClient(),
 	}
@@ -116,7 +117,7 @@ func MakeConfig(t *testing.T) service.Config {
 	return cfg
 }
 
-func SetUp(t *testing.T) (TearDown func()) {
+func SetUp(t *testing.T) (tearDown func()) {
 	return New(t, MakeConfig(t))
 }
 
@@ -137,7 +138,7 @@ func New(t *testing.T, cfg service.Config) func() {
 		_ = s.Serve()
 	}()
 	return func() {
-		_ = s.Shutdown()
+		_ = s.Close()
 		wg.Wait()
 		err = fileWatcher.Close()
 		require.NoError(t, err)

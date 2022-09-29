@@ -49,6 +49,7 @@ func MakeConfig(t *testing.T, enableUI bool) service.Config {
 	cfg.APIs.HTTP.Connection.TLS.ClientCertificateRequired = false
 	cfg.APIs.HTTP.WebSocket.StreamBodyLimit = 256 * 1024
 	cfg.APIs.HTTP.WebSocket.PingFrequency = 10 * time.Second
+	cfg.APIs.HTTP.Server = config.MakeHttpServerConfig()
 
 	cfg.Clients.GrpcGateway.Connection = config.MakeGrpcClientConfig(config.GRPC_HOST)
 	cfg.Clients.OpenTelemetryCollector = http.OpenTelemetryCollectorConfig{
@@ -67,7 +68,7 @@ func MakeConfig(t *testing.T, enableUI bool) service.Config {
 	return cfg
 }
 
-func SetUp(t *testing.T) (TearDown func()) {
+func SetUp(t *testing.T) (tearDown func()) {
 	return New(t, MakeConfig(t, false))
 }
 
@@ -88,7 +89,7 @@ func New(t *testing.T, cfg service.Config) func() {
 		_ = s.Serve()
 	}()
 	return func() {
-		_ = s.Shutdown()
+		_ = s.Close()
 		wg.Wait()
 		err = fileWatcher.Close()
 		require.NoError(t, err)

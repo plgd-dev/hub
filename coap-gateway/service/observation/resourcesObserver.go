@@ -23,10 +23,10 @@ type ResourcesObserverCallbacks struct {
 	OnGetResourceContent OnGetResourceContent
 }
 
-func MakeResourcesObserverCallbacks(OnObserveResource OnObserveResource, OnGetResourceContent OnGetResourceContent) ResourcesObserverCallbacks {
+func MakeResourcesObserverCallbacks(onObserveResource OnObserveResource, onGetResourceContent OnGetResourceContent) ResourcesObserverCallbacks {
 	return ResourcesObserverCallbacks{
-		OnObserveResource:    OnObserveResource,
-		OnGetResourceContent: OnGetResourceContent,
+		OnObserveResource:    onObserveResource,
+		OnGetResourceContent: onGetResourceContent,
 	}
 }
 
@@ -236,7 +236,7 @@ func (o *resourcesObserver) cancelResourcesObservations(ctx context.Context, hre
 	observations := o.popTrackedObservations(hrefs)
 	for _, obs := range observations {
 		if err := obs.Cancel(ctx); err != nil {
-			o.logger.Debugf("cannot cancel resource observation: %w", err)
+			o.logger.Debugf("cannot cancel resource observation: %v", err)
 		}
 	}
 }

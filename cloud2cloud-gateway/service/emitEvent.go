@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	netHttp "net/http"
 	"strconv"
 	"time"
@@ -127,7 +126,7 @@ func createEmitEventFunc(cfg cmClient.Config, timeout time.Duration, fileWatcher
 			}
 		}()
 		if resp.StatusCode != netHttp.StatusOK {
-			errBody, _ := ioutil.ReadAll(resp.Body)
+			errBody, _ := io.ReadAll(resp.Body)
 			return resp.StatusCode == netHttp.StatusGone, fmt.Errorf("%v: unexpected statusCode %v: body: '%v'", s.URL, resp.StatusCode, string(errBody))
 		}
 		return eventType == events.EventType_SubscriptionCanceled, nil

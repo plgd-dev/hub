@@ -60,6 +60,7 @@ func MakeConfig(t *testing.T) service.Config {
 	cfg.APIs.HTTP.Connection = config.MakeListenerConfig(config.C2C_CONNECTOR_HOST)
 	cfg.APIs.HTTP.Connection.TLS.ClientCertificateRequired = false
 	cfg.APIs.HTTP.Authorization = MakeAuthorizationConfig()
+	cfg.APIs.HTTP.Server = config.MakeHttpServerConfig()
 
 	cfg.Clients.IdentityStore.Connection = config.MakeGrpcClientConfig(config.IDENTITY_STORE_HOST)
 	cfg.Clients.Eventbus.NATS = config.MakeSubscriberConfig()
@@ -80,7 +81,7 @@ func MakeConfig(t *testing.T) service.Config {
 	return cfg
 }
 
-func SetUp(t *testing.T) (TearDown func()) {
+func SetUp(t *testing.T) (tearDown func()) {
 	cfg := MakeConfig(t)
 	return New(t, cfg)
 }
@@ -102,7 +103,7 @@ func New(t *testing.T, cfg service.Config) func() {
 	}()
 
 	return func() {
-		_ = s.Shutdown()
+		_ = s.Close()
 		wg.Wait()
 		err = fileWatcher.Close()
 		require.NoError(t, err)

@@ -431,6 +431,15 @@ func CleanUpResourceLinksPublished(e *events.ResourceLinksPublished, resetCorrel
 	return e
 }
 
+func FindResourceInResourceLinksPublishedByHref(e *events.ResourceLinksPublished, href string) *commands.Resource {
+	for _, r := range e.GetResources() {
+		if r.GetHref() == href {
+			return r
+		}
+	}
+	return nil
+}
+
 func MakeResourceLinksPublished(deviceID string, resources []*commands.Resource, correlationID string) *events.ResourceLinksPublished {
 	return &events.ResourceLinksPublished{
 		DeviceId:     deviceID,

@@ -53,8 +53,8 @@ func TestSignInPostHandler(t *testing.T) {
 			signUpResp := testSignUp(t, CertIdentity, co)
 
 			payload := test.in.payload.(string)
-			payload = strings.Replace(payload, "%%USER_ID%%", signUpResp.UserID, -1)
-			payload = strings.Replace(payload, "%%ACCESS_TOKEN%%", signUpResp.AccessToken, -1)
+			payload = strings.ReplaceAll(payload, "%%USER_ID%%", signUpResp.UserID)
+			payload = strings.ReplaceAll(payload, "%%ACCESS_TOKEN%%", signUpResp.AccessToken)
 			test.in.payload = payload
 
 			testPostHandler(t, uri.SignIn, test, co)

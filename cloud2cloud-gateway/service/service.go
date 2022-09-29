@@ -298,7 +298,11 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 	requestHandler := NewRequestHandler(gwClient, raClient, subMgr, emitEvent)
 
 	httpServer := http.Server{
-		Handler: kitNetHttp.OpenTelemetryNewHandler(NewHTTP(requestHandler, auth), serviceName, tracerProvider),
+		Handler:           kitNetHttp.OpenTelemetryNewHandler(NewHTTP(requestHandler, auth, logger), serviceName, tracerProvider),
+		ReadTimeout:       config.APIs.HTTP.Server.ReadTimeout,
+		ReadHeaderTimeout: config.APIs.HTTP.Server.ReadHeaderTimeout,
+		WriteTimeout:      config.APIs.HTTP.Server.WriteTimeout,
+		IdleTimeout:       config.APIs.HTTP.Server.IdleTimeout,
 	}
 
 	server := Server{
@@ -320,7 +324,7 @@ func (s *Server) Serve() error {
 }
 
 // Shutdown ends serving
-func (s *Server) Shutdown() error {
+func (s *Server) Close() error {
 	s.cancelSubMgrFunc()
 	return s.server.Shutdown(context.Background())
 }

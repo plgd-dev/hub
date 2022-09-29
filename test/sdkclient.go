@@ -7,14 +7,13 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"time"
 
 	"github.com/plgd-dev/device/client"
 	"github.com/plgd-dev/device/client/core"
 	"github.com/plgd-dev/hub/v2/pkg/log"
-	"github.com/plgd-dev/kit/v2/security/signer"
+	"github.com/plgd-dev/hub/v2/pkg/security/certificateSigner"
 )
 
 type testSetupSecureClient struct {
@@ -44,7 +43,37 @@ func (c *testSetupSecureClient) GetRootCertificateAuthorities() ([]*x509.Certifi
 	return c.ca, nil
 }
 
-func NewSDKClient() (*client.Client, error) {
+// sdkConfig represents the configuration options available for the SDK client.
+type sdkConfig struct {
+	id string
+}
+
+// Option interface used for setting optional sdkConfig properties.
+type Option interface {
+	apply(*sdkConfig)
+}
+
+type optionFunc func(*sdkConfig)
+
+func (o optionFunc) apply(c *sdkConfig) {
+	o(c)
+}
+
+// WithID creates Option that overrides the default device ID used by the SDK client.
+func WithID(id string) Option {
+	return optionFunc(func(cfg *sdkConfig) {
+		cfg.id = id
+	})
+}
+
+func NewSDKClient(opts ...Option) (*client.Client, error) {
+	c := &sdkConfig{
+		id: CertIdentity,
+	}
+	for _, opt := range opts {
+		opt.apply(c)
+	}
+
 	mfgTrustedCABlock, _ := pem.Decode(MfgTrustedCA)
 	if mfgTrustedCABlock == nil {
 		return nil, fmt.Errorf("mfgTrustedCABlock is empty")
@@ -54,17 +83,17 @@ func NewSDKClient() (*client.Client, error) {
 		return nil, err
 	}
 
-	identityIntermediateCA, err := ioutil.ReadFile(os.Getenv("TEST_ROOT_CA_CERT"))
+	identityIntermediateCA, err := os.ReadFile(os.Getenv("TEST_ROOT_CA_CERT"))
 	if err != nil {
 		return nil, err
 	}
 
-	identityIntermediateCAKey, err := ioutil.ReadFile(os.Getenv("TEST_ROOT_CA_KEY"))
+	identityIntermediateCAKey, err := os.ReadFile(os.Getenv("TEST_ROOT_CA_KEY"))
 	if err != nil {
 		return nil, err
 	}
 
-	identityTrustedCA, err := ioutil.ReadFile(os.Getenv("TEST_ROOT_CA_CERT"))
+	identityTrustedCA, err := os.ReadFile(os.Getenv("TEST_ROOT_CA_CERT"))
 	if err != nil {
 		return nil, err
 	}
@@ -93,11 +122,11 @@ func NewSDKClient() (*client.Client, error) {
 	cfg := client.Config{
 		DisablePeerTCPSignalMessageCSMs: true,
 		DeviceOwnershipSDK: &client.DeviceOwnershipSDKConfig{
-			ID:      CertIdentity,
+			ID:      c.id,
 			Cert:    string(identityIntermediateCA),
 			CertKey: string(identityIntermediateCAKey),
 			CreateSignerFunc: func(caCert []*x509.Certificate, caKey crypto.PrivateKey, validNotBefore time.Time, validNotAfter time.Time) core.CertificateSigner {
-				return signer.NewIdentityCertificateSigner(caCert, caKey, validNotBefore, validNotAfter)
+				return certificateSigner.NewIdentityCertificateSigner(caCert, caKey, certificateSigner.WithNotBefore(validNotBefore), certificateSigner.WithNotAfter(validNotAfter))
 			},
 		},
 	}

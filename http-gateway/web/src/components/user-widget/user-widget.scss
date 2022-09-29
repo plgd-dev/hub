@@ -1,15 +1,13 @@
 #user-widget {
   .toggle {
     .user-avatar {
-      width: 30px;
-      height: 30px;
       margin-right: 10px;
-      border-radius: 100%;
-      overflow: hidden;
+      width: 30px;
 
       img {
         display: block;
         width: 100%;
+        height: auto;
       }
     }
   }

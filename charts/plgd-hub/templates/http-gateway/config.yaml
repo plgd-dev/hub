@@ -18,6 +18,10 @@ data:
     apis:
       http:
         address: {{  .apis.http.address | default (printf "0.0.0.0:%v" .port) | quote }}
+        readTimeout: {{ .apis.http.readTimeout }}
+        readHeaderTimeout: {{ .apis.http.readHeaderTimeout }}
+        writeTimeout: {{ .apis.http.writeTimeout }}
+        idleTimeout: {{ .apis.http.idleTimeout }}
         tls:
           {{- $tls := .apis.http.tls }}
           {{- include "plgd-hub.certificateConfig" (list $ $tls $httpGatewayCertPath ) | indent 8 }}
@@ -60,11 +64,6 @@ data:
       enabled: {{ .ui.enabled }}
       directory: {{ .ui.directory | quote }}
       webConfiguration:
-        {{- if not $.Values.mockoauthserver.enabled }}
-        authority: {{ .ui.webConfiguration.authority | default $.Values.global.authority | quote }}
-        {{- else }}
-        authority:{{ printf " " }}{{ include "plgd-hub.mockoauthserver.uri" $ }}
-        {{- end }}
         httpGatewayAddress: {{ .ui.webConfiguration.httpGatewayAddress | default ( printf "https://%s" ( include "plgd-hub.httpgateway.apiDomain" $)) | quote }}
         {{- if not $.Values.mockoauthserver.enabled }}
         webOAuthClient:

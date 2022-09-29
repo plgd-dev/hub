@@ -17,6 +17,8 @@ import (
 func MakeConfig(t *testing.T) service.Config {
 	var cfg service.Config
 	cfg.APIs.GRPC = config.MakeGrpcServerConfig(config.CERTIFICATE_AUTHORITY_HOST)
+	cfg.APIs.HTTP.Addr = config.CERTIFICATE_AUTHORITY_HTTP_HOST
+	cfg.APIs.HTTP.Server = config.MakeHttpServerConfig()
 	cfg.APIs.GRPC.TLS.ClientCertificateRequired = false
 	cfg.Signer.KeyFile = os.Getenv("TEST_ROOT_CA_KEY")
 	cfg.Signer.CertFile = os.Getenv("TEST_ROOT_CA_CERT")
@@ -33,7 +35,7 @@ func MakeConfig(t *testing.T) service.Config {
 	return cfg
 }
 
-func SetUp(t *testing.T) (TearDown func()) {
+func SetUp(t *testing.T) (tearDown func()) {
 	return New(t, MakeConfig(t))
 }
 
@@ -55,7 +57,7 @@ func New(t *testing.T, cfg service.Config) func() {
 	}()
 
 	return func() {
-		s.Close()
+		_ = s.Close()
 		wg.Wait()
 		err = fileWatcher.Close()
 		require.NoError(t, err)

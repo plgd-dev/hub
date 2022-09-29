@@ -41,6 +41,12 @@ apis:
           keyFile: "/secrets/private/cert.key"
           certFile: "/secrets/public/cert.crt"
           useSystemCAPool: false
+  http:
+    address: "0.0.0.0:9101"
+    readTimeout: 8s
+    readHeaderTimeout: 4s
+    writeTimeout: 16s
+    idleTimeout: 30s
 clients:
   openTelemetryCollector:
     grpc:

@@ -9,6 +9,10 @@ log:
 apis:
   http:
     address: "0.0.0.0:9100"
+    readTimeout: 8s
+    readHeaderTimeout: 4s
+    writeTimeout: 16s
+    idleTimeout: 30s
     tls:
       caPool: "/secrets/public/rootca.crt"
       keyFile: "/secrets/private/cert.key"
@@ -61,7 +65,6 @@ ui:
   enabled: false
   directory: "/usr/local/var/www"
   webConfiguration:
-    authority: ""
     httpGatewayAddress: ""
     webOAuthClient:
       clientID: ""

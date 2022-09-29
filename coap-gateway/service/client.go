@@ -281,14 +281,14 @@ func (c *Client) onGetResourceContent(ctx context.Context, deviceID, href string
 	notification.Hijack()
 	err := c.server.taskQueue.Submit(func() {
 		defer c.server.messagePool.ReleaseMessage(notification)
+		if notification.Code() == codes.NotFound {
+			c.unpublishResourceLinks(c.getUserAuthorizedContext(ctx), []string{href}, nil)
+		}
 		err2 := c.notifyContentChanged(deviceID, href, false, notification)
 		if err2 != nil {
 			// cloud is unsynchronized against device. To recover cloud state, client need to reconnect to cloud.
 			c.Errorf("%w", cannotGetResourceContentError(deviceID, href, err2))
 			c.Close()
-		}
-		if notification.Code() == codes.NotFound {
-			c.unpublishResourceLinks(c.getUserAuthorizedContext(ctx), []string{href}, nil)
 		}
 	})
 	if err != nil {
@@ -312,14 +312,14 @@ func (c *Client) onObserveResource(ctx context.Context, deviceID, href string, b
 	notification.Hijack()
 	err := c.server.taskQueue.SubmitForOneWorker(resource.GetInstanceID(deviceID+href), func() {
 		defer c.server.messagePool.ReleaseMessage(notification)
+		if notification.Code() == codes.NotFound {
+			c.unpublishResourceLinks(c.getUserAuthorizedContext(notification.Context()), []string{href}, nil)
+		}
 		err2 := c.notifyContentChanged(deviceID, href, batch, notification)
 		if err2 != nil {
 			// cloud is unsynchronized against device. To recover cloud state, client need to reconnect to cloud.
 			c.Errorf("%w", cannotObserResourceError(err2))
 			c.Close()
-		}
-		if notification.Code() == codes.NotFound {
-			c.unpublishResourceLinks(c.getUserAuthorizedContext(notification.Context()), []string{href}, nil)
 		}
 	})
 	if err != nil {
