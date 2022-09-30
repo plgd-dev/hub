@@ -1,0 +1,28 @@
+{{- if and (.Values.coapgateway.enabled) (has "tcp" .Values.coapgateway.apis.coap.protocols) -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "plgd-hub.coapgateway.fullname" . }}-tcp
+  namespace: {{ .Release.Namespace }}  
+  labels:
+    {{- include "plgd-hub.labels" . | nindent 4 }}
+    {{- with .Values.coapgateway.service.tcp.labels }}
+    {{- . | toYaml | nindent 4 }}
+    {{- end }}
+  {{- if .Values.coapgateway.service.tcp.annotations }}
+  annotations:
+    {{- include "plgd-hub.tplvalues.render" ( dict "value" .Values.coapgateway.service.tcp.annotations "context" $ ) | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ .Values.coapgateway.service.tcp.type | default "ClusterIP" }}
+  ports:
+    - port: {{ .Values.coapgateway.port }}
+      {{- if $.Values.coapgateway.service.tcp.nodePort }}
+      nodePort: {{ $.Values.coapgateway.service.tcp.nodePort }}
+      {{- end }}
+      targetPort: {{ .Values.coapgateway.service.tcp.targetPort }}
+      protocol: {{ .Values.coapgateway.service.tcp.protocol }}
+      name: {{ .Values.coapgateway.service.tcp.name }}
+  selector:
+  {{- include "plgd-hub.coapgateway.selectorLabels" . | nindent 4 }}
+{{- end }}

@@ -51,12 +51,12 @@ func SetUpClouds(ctx context.Context, t *testing.T, deviceID string, supportedEv
 	cloud2 := SetUpCloudWithConnector(t)
 	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
 
-	cloud1Conn, err := grpc.Dial(testCfg.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+	cloud1Conn, err := grpc.Dial(testCfg.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
 	})))
 	require.NoError(t, err)
 	c1 := pb.NewGrpcGatewayClient(cloud1Conn)
-	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c1, deviceID, testCfg.COAPS_TCP_SCHEME+testCfg.GW_HOST, test.GetAllBackendResourceLinks())
+	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c1, deviceID, testCfg.COAPS_TCP_SCHEME+testCfg.COAP_GW_HOST, test.GetAllBackendResourceLinks())
 	if len(switchIDs) > 0 {
 		test.AddDeviceSwitchResources(ctx, t, deviceID, c1, switchIDs...)
 	}

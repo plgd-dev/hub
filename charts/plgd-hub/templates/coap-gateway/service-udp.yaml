@@ -1,0 +1,28 @@
+{{- if and (.Values.coapgateway.enabled) (has "udp" .Values.coapgateway.apis.coap.protocols) -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "plgd-hub.coapgateway.fullname" . }}-udp
+  namespace: {{ .Release.Namespace }}  
+  labels:
+    {{- include "plgd-hub.labels" . | nindent 4 }}
+    {{- with .Values.coapgateway.service.udp.labels }}
+    {{- . | toYaml | nindent 4 }}
+    {{- end }}
+  {{- if .Values.coapgateway.service.udp.annotations }}
+  annotations:
+    {{- include "plgd-hub.tplvalues.render" ( dict "value" .Values.coapgateway.service.udp.annotations "context" $ ) | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ .Values.coapgateway.service.udp.type | default "ClusterIP" }}
+  ports:
+    - port: {{ .Values.coapgateway.port }}
+      {{- if $.Values.coapgateway.service.udp.nodePort }}
+      nodePort: {{ $.Values.coapgateway.service.udp.nodePort }}
+      {{- end }}
+      targetPort: {{ .Values.coapgateway.service.udp.targetPort }}
+      protocol: {{ .Values.coapgateway.service.udp.protocol }}
+      name: {{ .Values.coapgateway.service.udp.name }}
+  selector:
+  {{- include "plgd-hub.coapgateway.selectorLabels" . | nindent 4 }}
+{{- end }}

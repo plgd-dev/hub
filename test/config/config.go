@@ -29,12 +29,12 @@ import (
 const (
 	IDENTITY_STORE_HOST             = "localhost:20000"
 	IDENTITY_STORE_DB               = "ownersDevices"
-	GW_HOST                         = "localhost:20002"
+	COAP_GW_HOST                    = "localhost:20002"
 	RESOURCE_AGGREGATE_HOST         = "localhost:20003"
 	RESOURCE_DIRECTORY_HOST         = "localhost:20004"
 	CERTIFICATE_AUTHORITY_HOST      = "localhost:20011"
 	CERTIFICATE_AUTHORITY_HTTP_HOST = "localhost:20012"
-	GRPC_HOST                       = "localhost:20005"
+	GRPC_GW_HOST                    = "localhost:20005"
 	C2C_CONNECTOR_HOST              = "localhost:20006"
 	C2C_CONNECTOR_DB                = "cloud2cloudConnector"
 	C2C_GW_HOST                     = "localhost:20007"
@@ -51,12 +51,19 @@ const (
 )
 
 var (
-	CA_POOL     = os.Getenv("LISTEN_FILE_CA_POOL")
-	KEY_FILE    = os.Getenv("LISTEN_FILE_CERT_DIR_PATH") + "/" + os.Getenv("LISTEN_FILE_CERT_KEY_NAME")
-	CERT_FILE   = os.Getenv("LISTEN_FILE_CERT_DIR_PATH") + "/" + os.Getenv("LISTEN_FILE_CERT_NAME")
-	MONGODB_URI = "mongodb://localhost:27017"
-	NATS_URL    = "nats://localhost:4222"
-	OWNER_CLAIM = "sub"
+	CA_POOL                  = os.Getenv("LISTEN_FILE_CA_POOL")
+	KEY_FILE                 = os.Getenv("LISTEN_FILE_CERT_DIR_PATH") + "/" + os.Getenv("LISTEN_FILE_CERT_KEY_NAME")
+	CERT_FILE                = os.Getenv("LISTEN_FILE_CERT_DIR_PATH") + "/" + os.Getenv("LISTEN_FILE_CERT_NAME")
+	MONGODB_URI              = "mongodb://localhost:27017"
+	NATS_URL                 = "nats://localhost:4222"
+	OWNER_CLAIM              = "sub"
+	COAP_GATEWAY_UDP_ENABLED = os.Getenv("TEST_COAP_GATEWAY_UDP_ENABLED") == "true"
+	USE_COAP_SCHEME          = func() string {
+		if os.Getenv("TEST_COAP_GATEWAY_UDP_ENABLED") == "true" {
+			return COAPS_SCHEME
+		}
+		return COAPS_TCP_SCHEME
+	}()
 )
 
 var (

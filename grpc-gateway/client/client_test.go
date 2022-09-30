@@ -27,7 +27,7 @@ const (
 )
 
 var ClientTestCfg = client.Config{
-	GatewayAddress: testCfg.GRPC_HOST,
+	GatewayAddress: testCfg.GRPC_GW_HOST,
 }
 
 func NewTestClient(t *testing.T) *client.Client {

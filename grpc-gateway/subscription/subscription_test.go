@@ -277,7 +277,7 @@ func TestRequestHandlerSubscribeToEvents(t *testing.T) {
 		require.NoError(t, err)
 	}()
 
-	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, rdc, deviceID, config.COAPS_TCP_SCHEME+config.GW_HOST, nil)
+	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, rdc, deviceID, config.COAPS_TCP_SCHEME+config.COAP_GW_HOST, nil)
 
 	check(t, waitForEvent(ctx, t, recvChan), &pb.Event{
 		SubscriptionId: s.Id(),

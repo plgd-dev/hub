@@ -62,9 +62,16 @@ spec:
             - "--config"
             - {{  printf "%s/%s" .Values.coapgateway.config.mountPath .Values.coapgateway.config.fileName | quote }}
           ports:
-            - name: coaps
+            {{- if has "tcp" .Values.coapgateway.apis.coap.protocols }}
+            - name: {{ .Values.coapgateway.service.tcp.targetPort }}
               containerPort: {{ .Values.coapgateway.port }}
               protocol: TCP
+            {{- end }}
+            {{- if has "udp" .Values.coapgateway.apis.coap.protocols }}
+            - name: {{ .Values.coapgateway.service.udp.targetPort }}
+              containerPort: {{ .Values.coapgateway.port }}
+              protocol: UDP
+            {{- end }}
           {{- with .Values.coapgateway.livenessProbe }}
           livenessProbe:
           {{- toYaml . | nindent 12 }}

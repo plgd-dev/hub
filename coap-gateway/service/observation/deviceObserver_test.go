@@ -358,7 +358,7 @@ func runTestDeviceObserverRegister(ctx context.Context, t *testing.T, deviceID s
 		require.NoError(t, err)
 	}()
 
-	rdConn, err := grpcClient.New(config.MakeGrpcClientConfig(config.GRPC_HOST), fileWatcher, log.Get(), trace.NewNoopTracerProvider())
+	rdConn, err := grpcClient.New(config.MakeGrpcClientConfig(config.GRPC_GW_HOST), fileWatcher, log.Get(), trace.NewNoopTracerProvider())
 	require.NoError(t, err)
 	defer func() {
 		_ = rdConn.Close()
@@ -407,7 +407,7 @@ func runTestDeviceObserverRegister(ctx context.Context, t *testing.T, deviceID s
 	coapShutdown := coapgwTest.SetUp(t, makeHandler, validateHandler)
 	defer coapShutdown()
 
-	grpcConn, err := grpc.Dial(config.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+	grpcConn, err := grpc.Dial(config.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
 	})))
 	require.NoError(t, err)
@@ -416,7 +416,7 @@ func runTestDeviceObserverRegister(ctx context.Context, t *testing.T, deviceID s
 	}()
 	grpcClient := pb.NewGrpcGatewayClient(grpcConn)
 
-	_, shutdownDevSim := test.OnboardDevSim(ctx, t, grpcClient, deviceID, config.COAPS_TCP_SCHEME+config.GW_HOST, nil)
+	_, shutdownDevSim := test.OnboardDevSim(ctx, t, grpcClient, deviceID, config.COAPS_TCP_SCHEME+config.COAP_GW_HOST, nil)
 	defer shutdownDevSim()
 
 	done := false

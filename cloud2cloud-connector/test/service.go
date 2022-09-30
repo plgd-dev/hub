@@ -64,7 +64,7 @@ func MakeConfig(t *testing.T) service.Config {
 
 	cfg.Clients.IdentityStore.Connection = config.MakeGrpcClientConfig(config.IDENTITY_STORE_HOST)
 	cfg.Clients.Eventbus.NATS = config.MakeSubscriberConfig()
-	cfg.Clients.GrpcGateway.Connection = config.MakeGrpcClientConfig(config.GRPC_HOST)
+	cfg.Clients.GrpcGateway.Connection = config.MakeGrpcClientConfig(config.GRPC_GW_HOST)
 	cfg.Clients.ResourceAggregate.Connection = config.MakeGrpcClientConfig(config.RESOURCE_AGGREGATE_HOST)
 	cfg.Clients.Storage = MakeStorageConfig()
 	cfg.Clients.Subscription.HTTP.ReconnectInterval = time.Second * 10

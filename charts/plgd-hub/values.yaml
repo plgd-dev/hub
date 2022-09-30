@@ -712,20 +712,36 @@ coapgateway:
   # -- Annotations for coap-gateway pod
   podAnnotations: { }
   service:
-    # -- Service type
-    type: LoadBalancer
-    # -- Use nodePort if specified
-    nodePort:
-    # -- Labels for coap-gateway service
-    labels: { }
-    # -- Annotations for coap-gateway service
-    annotations: { }
-    # -- Target port
-    targetPort: coaps
-    # -- Protocol
-    protocol: TCP
-    # -- Name
-    name: coaps
+    tcp:  
+      # -- Service type
+      type: LoadBalancer
+      # -- Labels for coap-gateway service
+      labels: { }
+      # -- Annotations for coap-gateway service
+      annotations: { }
+      # -- Use nodePort if specified, must to be different as is in udp
+      nodePort:
+      # -- Target port
+      targetPort: coaps-tcp
+      # -- Protocol
+      protocol: TCP
+      # -- Name
+      name: coaps-tcp
+    udp:
+      # -- Service type
+      type: LoadBalancer
+      # -- Labels for coap-gateway service
+      labels: { }
+      # -- Annotations for coap-gateway service
+      annotations: { }
+      # -- Use nodePort if specified. Must to be different as is in tcp
+      nodePort:
+      # -- Target port
+      targetPort: coaps
+      # -- Protocol
+      protocol: UDP
+      # -- Name
+      name: coaps
   # -- RBAC configuration
   rbac:
     # -- Create RBAC config
@@ -801,6 +817,7 @@ coapgateway:
   apis:
     coap:
       externalAddress: ""
+      protocols: [ "tcp" ]
       maxMessageSize: 262144
       ownerCacheExpiration: 1m
       subscriptionBufferSize: 1000

@@ -3,25 +3,24 @@ package service
 import (
 	"context"
 	"crypto/tls"
+	"crypto/x509"
 	"fmt"
+	"net"
 	"os"
 	"strings"
 	"time"
 
 	"github.com/pion/dtls/v2"
 	"github.com/plgd-dev/device/v2/pkg/net/coap"
-	coapDtlsServer "github.com/plgd-dev/go-coap/v3/dtls/server"
 	coapCodes "github.com/plgd-dev/go-coap/v3/message/codes"
 	"github.com/plgd-dev/go-coap/v3/message/pool"
 	"github.com/plgd-dev/go-coap/v3/message/status"
 	"github.com/plgd-dev/go-coap/v3/mux"
-	"github.com/plgd-dev/go-coap/v3/net"
 	"github.com/plgd-dev/go-coap/v3/net/blockwise"
-	"github.com/plgd-dev/go-coap/v3/options"
+	coapOptionsConfig "github.com/plgd-dev/go-coap/v3/options/config"
 	"github.com/plgd-dev/go-coap/v3/pkg/cache"
 	"github.com/plgd-dev/go-coap/v3/pkg/runner/periodic"
 	coapTcpClient "github.com/plgd-dev/go-coap/v3/tcp/client"
-	coapTcpServer "github.com/plgd-dev/go-coap/v3/tcp/server"
 	coapUdpClient "github.com/plgd-dev/go-coap/v3/udp/client"
 	"github.com/plgd-dev/hub/v2/coap-gateway/uri"
 	pbGRPC "github.com/plgd-dev/hub/v2/grpc-gateway/pb"
@@ -31,11 +30,11 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/fn"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
+	coapService "github.com/plgd-dev/hub/v2/pkg/net/coap/service"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	grpcClient "github.com/plgd-dev/hub/v2/pkg/net/grpc/client"
 	otelClient "github.com/plgd-dev/hub/v2/pkg/opentelemetry/collector/client"
 	"github.com/plgd-dev/hub/v2/pkg/opentelemetry/otelcoap"
-	certManagerServer "github.com/plgd-dev/hub/v2/pkg/security/certManager/server"
 	"github.com/plgd-dev/hub/v2/pkg/security/jwt"
 	"github.com/plgd-dev/hub/v2/pkg/security/oauth2"
 	"github.com/plgd-dev/hub/v2/pkg/service"
@@ -52,61 +51,29 @@ import (
 
 var authCtxKey = "AuthCtx"
 
-type CoapServer interface {
-	Serve() error
-	Stop()
-}
-
-type tcpServer struct {
-	coapServer *coapTcpServer.Server
-	listener   coapTcpServer.Listener
-}
-
-func (s *tcpServer) Serve() error {
-	return s.coapServer.Serve(s.listener)
-}
-
-func (s *tcpServer) Stop() {
-	s.coapServer.Stop()
-}
-
-type dtlsServer struct {
-	coapServer *coapDtlsServer.Server
-	listener   coapDtlsServer.Listener
-}
-
-func (s *dtlsServer) Serve() error {
-	return s.coapServer.Serve(s.listener)
-}
-
-func (s *dtlsServer) Stop() {
-	s.coapServer.Stop()
-}
-
 // Service is a configuration of coap-gateway
 type Service struct {
 	config                Config
-	blockWiseTransferSZX  blockwise.SZX
 	natsClient            *natsClient.Client
 	raClient              *raClient.Client
 	isClient              pbIS.IdentityStoreClient
 	rdClient              pbGRPC.GrpcGatewayClient
 	expirationClientCache *cache.Cache[string, *session]
-	coapServer            CoapServer
-	authInterceptor       Interceptor
-	ctx                   context.Context
-	cancel                context.CancelFunc
-	taskQueue             *queue.Queue
-	devicesStatusUpdater  *devicesStatusUpdater
-	resourceSubscriber    *subscriber.Subscriber
-	providers             map[string]*oauth2.PlgdProvider
-	jwtValidator          *jwt.Validator
-	sigs                  chan os.Signal
-	ownerCache            *idClient.OwnerCache
-	subscriptionsCache    *subscription.SubscriptionsCache
-	messagePool           *pool.Pool
-	logger                log.Logger
-	tracerProvider        trace.TracerProvider
+
+	authInterceptor      Interceptor
+	ctx                  context.Context
+	cancel               context.CancelFunc
+	taskQueue            *queue.Queue
+	devicesStatusUpdater *devicesStatusUpdater
+	resourceSubscriber   *subscriber.Subscriber
+	providers            map[string]*oauth2.PlgdProvider
+	jwtValidator         *jwt.Validator
+	sigs                 chan os.Signal
+	ownerCache           *idClient.OwnerCache
+	subscriptionsCache   *subscription.SubscriptionsCache
+	messagePool          *pool.Pool
+	logger               log.Logger
+	tracerProvider       trace.TracerProvider
 }
 
 func setExpirationClientCache(c *cache.Cache[string, *session], deviceID string, client *session, validJWTUntil time.Time) {
@@ -193,76 +160,6 @@ func newResourceDirectoryClient(config GrpcServerConfig, fileWatcher *fsnotify.W
 	}
 	rdClient := pbGRPC.NewGrpcGatewayClient(rdConn.GRPC())
 	return rdClient, closeRdConn, nil
-}
-
-func newTCPListener(config COAPConfig, fileWatcher *fsnotify.Watcher, logger log.Logger) (coapTcpServer.Listener, func(), error) {
-	if !config.TLS.Enabled {
-		listener, err := net.NewTCPListener("tcp", config.Addr)
-		if err != nil {
-			return nil, nil, fmt.Errorf("cannot create tcp listener: %w", err)
-		}
-		closeListener := func() {
-			if err := listener.Close(); err != nil {
-				logger.Errorf("failed to close tcp listener: %w", err)
-			}
-		}
-		return listener, closeListener, nil
-	}
-
-	var closeListener fn.FuncList
-	coapsTLS, err := certManagerServer.New(config.TLS.Embedded, fileWatcher, logger)
-	if err != nil {
-		return nil, nil, fmt.Errorf("cannot create tls cert manager: %w", err)
-	}
-	closeListener.AddFunc(coapsTLS.Close)
-	tlsCfgForClient := coapsTLS.GetTLSConfig()
-	tlsCfg := MakeGetConfigForClient(tlsCfgForClient)
-	listener, err := net.NewTLSListener("tcp", config.Addr, &tlsCfg)
-	if err != nil {
-		closeListener.Execute()
-		return nil, nil, fmt.Errorf("cannot create tcp-tls listener: %w", err)
-	}
-	closeListener.AddFunc(func() {
-		if err := listener.Close(); err != nil {
-			logger.Errorf("failed to close tcp-tls listener: %w", err)
-		}
-	})
-	return listener, closeListener.ToFunction(), nil
-}
-
-func newDTLSListener(config COAPConfig, fileWatcher *fsnotify.Watcher, logger log.Logger) (coapDtlsServer.Listener, func(), error) {
-	var closeListener fn.FuncList
-	coapsTLS, err := certManagerServer.New(config.TLS.Embedded, fileWatcher, logger)
-	if err != nil {
-		return nil, nil, fmt.Errorf("cannot create tls cert manager: %w", err)
-	}
-	closeListener.AddFunc(coapsTLS.Close)
-	tlsCfgForClient := coapsTLS.GetTLSConfig()
-	tlsCfg := MakeGetConfigForClient(tlsCfgForClient)
-
-	dtlsCfg := dtls.Config{
-		GetCertificate: func(chi *dtls.ClientHelloInfo) (*tls.Certificate, error) {
-			return tlsCfg.GetCertificate(&tls.ClientHelloInfo{ServerName: chi.ServerName})
-		},
-		ClientCAs:             tlsCfg.ClientCAs,
-		VerifyPeerCertificate: tlsCfg.VerifyPeerCertificate,
-		LoggerFactory:         logger.DTLSLoggerFactory(),
-		CipherSuites:          []dtls.CipherSuiteID{dtls.TLS_ECDHE_ECDSA_WITH_AES_128_CCM, dtls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256, dtls.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384},
-		ConnectContextMaker: func() (context.Context, func()) {
-			return context.WithTimeout(context.Background(), time.Second*4)
-		},
-	}
-	listener, err := net.NewDTLSListener("udp", config.Addr, &dtlsCfg)
-	if err != nil {
-		closeListener.Execute()
-		return nil, nil, fmt.Errorf("cannot create dtls listener: %w", err)
-	}
-	closeListener.AddFunc(func() {
-		if err := listener.Close(); err != nil {
-			logger.Errorf("failed to close dtls listener: %w", err)
-		}
-	})
-	return listener, closeListener.ToFunction(), nil
 }
 
 func blockWiseTransferSZXFromString(s string) (blockwise.SZX, error) {
@@ -375,15 +272,6 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 	}
 	nats.AddCloseFunc(closeRdClient)
 
-	blockWiseTransferSZX := blockwise.SZX1024
-	if config.APIs.COAP.BlockwiseTransfer.Enabled {
-		blockWiseTransferSZX, err = blockWiseTransferSZXFromString(config.APIs.COAP.BlockwiseTransfer.SZX)
-		if err != nil {
-			nats.Close()
-			return nil, fmt.Errorf("blockWiseTransferSZX error: %w", err)
-		}
-	}
-
 	providers, firstProvider, closeProviders, err := newProviders(ctx, config.APIs.COAP.Authorization, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		nats.Close()
@@ -412,8 +300,7 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 	ctx, cancel := context.WithCancel(ctx)
 
 	s := Service{
-		config:               config,
-		blockWiseTransferSZX: blockWiseTransferSZX,
+		config: config,
 
 		natsClient:            nats,
 		raClient:              raClient,
@@ -440,11 +327,7 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 		tracerProvider:     tracerProvider,
 	}
 
-	if err := s.setupCoapServer(fileWatcher, logger); err != nil {
-		return nil, fmt.Errorf("cannot setup coap server: %w", err)
-	}
-
-	return service.New(&s), nil
+	return s.createServices(fileWatcher, logger)
 }
 
 func getDeviceID(client *session) string {
@@ -538,7 +421,7 @@ func (s *Service) makeCommandTask(req *mux.Message, client *session, fnc func(re
 func executeCommand(s mux.ResponseWriter, req *mux.Message, server *Service, fnc func(req *mux.Message, client *session) (*pool.Message, error)) {
 	client, ok := s.Conn().Context().Value(clientKey).(*session)
 	if !ok {
-		client = newSession(server, s.Conn().(*coapTcpClient.Conn), "", time.Time{})
+		client = newSession(server, s.Conn(), "", time.Time{})
 		if req.Code() == coapCodes.Empty {
 			client.logRequestResponse(req, nil, fmt.Errorf("cannot handle command: client not found"))
 			client.Close()
@@ -572,21 +455,44 @@ func defaultHandler(req *mux.Message, client *session) (*pool.Message, error) {
 
 const clientKey = "client"
 
-func (s *Service) coapConnOnNew(coapConn mux.Conn) {
-	var tlsDeviceID string
-	var tlsValidUntil time.Time
-	tlsCon, ok := coapConn.NetConn().(*tls.Conn)
-	if ok {
+func getTLSInfo(conn net.Conn, logger log.Logger) (deviceID string, validUntil time.Time) {
+	if tlsCon, ok := conn.(*tls.Conn); ok {
 		peerCertificates := tlsCon.ConnectionState().PeerCertificates
 		if len(peerCertificates) > 0 {
 			deviceID, err := coap.GetDeviceIDFromIdentityCertificate(peerCertificates[0])
 			if err == nil {
-				tlsDeviceID = deviceID
+				return deviceID, peerCertificates[0].NotAfter
 			}
-			tlsValidUntil = peerCertificates[0].NotAfter
+			logger.Errorf("cannot get deviceID from certificate %v: %v", peerCertificates[0].Subject.CommonName, err)
+			return "", peerCertificates[0].NotAfter
 		}
+		logger.Debugf("cannot get deviceID from certificate: certificate is not set")
+		return "", time.Time{}
 	}
+	if tlsCon, ok := conn.(*dtls.Conn); ok {
+		peerCertificates := tlsCon.ConnectionState().PeerCertificates
+		if len(peerCertificates) > 0 {
+			cert, err := x509.ParseCertificate(peerCertificates[0])
+			if err != nil {
+				logger.Errorf("cannot get deviceID from certificate: %w", err)
+				return "", time.Time{}
+			}
+			deviceID, err := coap.GetDeviceIDFromIdentityCertificate(cert)
+			if err == nil {
+				return deviceID, cert.NotAfter
+			}
+			logger.Errorf("cannot get deviceID from certificate %v: %w", cert.Subject.CommonName, err)
+			return "", cert.NotAfter
+		}
+		logger.Debugf("cannot get deviceID from certificate: certificate is not set")
+		return "", time.Time{}
+	}
+	logger.Debugf("cannot get deviceID from certificate: unsupported connection type")
+	return "", time.Time{}
+}
 
+func (s *Service) coapConnOnNew(coapConn mux.Conn) {
+	tlsDeviceID, tlsValidUntil := getTLSInfo(coapConn.NetConn(), s.logger)
 	client := newSession(s, coapConn, tlsDeviceID, tlsValidUntil)
 	coapConn.SetContextValue(clientKey, client)
 	coapConn.AddOnClose(func() {
@@ -599,7 +505,7 @@ func (s *Service) authMiddleware(next mux.Handler) mux.Handler {
 		t := time.Now()
 		client, ok := w.Conn().Context().Value(clientKey).(*session)
 		if !ok {
-			client = newSession(s, w.Conn().(*coapTcpClient.Conn), "", time.Time{})
+			client = newSession(s, w.Conn(), "", time.Time{})
 		}
 		authCtx, _ := client.GetAuthorizationContext()
 		ctx := context.WithValue(r.Context(), &authCtxKey, authCtx)
@@ -622,8 +528,8 @@ func (s *Service) authMiddleware(next mux.Handler) mux.Handler {
 	})
 }
 
-// setupCoapServer setup coap server
-func (s *Service) setupCoapServer(fileWatcher *fsnotify.Watcher, logger log.Logger) error {
+// createServices setup services for coap-gateway.
+func (s *Service) createServices(fileWatcher *fsnotify.Watcher, logger log.Logger) (*service.Service, error) {
 	setHandlerError := func(uri string, err error) error {
 		return fmt.Errorf("failed to set %v handler: %w", uri, err)
 	}
@@ -635,105 +541,53 @@ func (s *Service) setupCoapServer(fileWatcher *fsnotify.Watcher, logger log.Logg
 	if err := m.Handle(uri.ResourceDirectory, mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
 		executeCommand(w, r, s, resourceDirectoryHandler)
 	})); err != nil {
-		return setHandlerError(uri.ResourceDirectory, err)
+		return nil, setHandlerError(uri.ResourceDirectory, err)
 	}
 	if err := m.Handle(uri.SignUp, mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
 		executeCommand(w, r, s, signUpHandler)
 	})); err != nil {
-		return setHandlerError(uri.SignUp, err)
+		return nil, setHandlerError(uri.SignUp, err)
 	}
 	if err := m.Handle(uri.SignIn, mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
 		executeCommand(w, r, s, signInHandler)
 	})); err != nil {
-		return setHandlerError(uri.SignIn, err)
+		return nil, setHandlerError(uri.SignIn, err)
 	}
 	if err := m.Handle(uri.ResourceDiscovery, mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
 		executeCommand(w, r, s, resourceDiscoveryHandler)
 	})); err != nil {
-		return setHandlerError(uri.ResourceDiscovery, err)
+		return nil, setHandlerError(uri.ResourceDiscovery, err)
 	}
 	if err := m.Handle(uri.RefreshToken, mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
 		executeCommand(w, r, s, refreshTokenHandler)
 	})); err != nil {
-		return setHandlerError(uri.RefreshToken, err)
+		return nil, setHandlerError(uri.RefreshToken, err)
 	}
-
-	opts := make([]interface {
-		coapTcpServer.Option
-		coapDtlsServer.Option
-	}, 0, 8)
-	opts = append(opts, options.WithBlockwise(s.config.APIs.COAP.BlockwiseTransfer.Enabled, s.blockWiseTransferSZX, s.config.APIs.COAP.KeepAlive.Timeout))
-	opts = append(opts, options.WithMux(m))
-	opts = append(opts, options.WithContext(s.ctx))
-	opts = append(opts, options.WithMaxMessageSize(s.config.APIs.COAP.MaxMessageSize))
-	opts = append(opts, options.WithErrors(func(e error) {
-		s.logger.Errorf("plgd/go-coap: %w", e)
-	}))
-	opts = append(opts, options.WithGoPool(func(f func()) error {
-		// we call directly function in connection-goroutine because
-		// pairing request/response cannot be done in taskQueue for a observe resource.
-		// - the observe resource creates task which wait for the response and this wait can be infinite
-		// if all task goroutines are processing observations and they are waiting for the responses, which
-		// will be stored in task queue.  it happens when we use task queue here.
-		return s.taskQueue.Submit(f)
-	}))
-	if s.config.APIs.COAP.TLS.Enabled && s.config.APIs.COAP.TLS.DTLS.Enabled {
-		listener, closeListener, err := newDTLSListener(s.config.APIs.COAP, fileWatcher, logger)
-		if err != nil {
-			return fmt.Errorf("cannot create listener: %w", err)
-		}
-		s.natsClient.AddCloseFunc(closeListener)
-		dtlsOpts := []coapDtlsServer.Option{
-			options.WithKeepAlive(2, s.config.APIs.COAP.KeepAlive.Timeout, func(cc *coapUdpClient.Conn) {
-				s.onInactivityConnection(cc)
-			}),
-			options.WithOnNewConn(func(coapConn *coapUdpClient.Conn) {
-				s.coapConnOnNew(coapConn)
-			}),
-			options.WithTransmission(1, s.config.APIs.COAP.KeepAlive.Timeout, 4),
-		}
-		for _, o := range opts {
-			dtlsOpts = append(dtlsOpts, o)
-		}
-		s.coapServer = &dtlsServer{
-			coapServer: coapDtlsServer.New(dtlsOpts...),
-			listener:   listener,
-		}
-	} else {
-		listener, closeListener, err := newTCPListener(s.config.APIs.COAP, fileWatcher, logger)
-		if err != nil {
-			return fmt.Errorf("cannot create listener: %w", err)
-		}
-		s.natsClient.AddCloseFunc(closeListener)
-		tcpOpts := []coapTcpServer.Option{
-			options.WithKeepAlive(1, s.config.APIs.COAP.KeepAlive.Timeout, func(cc *coapTcpClient.Conn) {
-				s.onInactivityConnection(cc)
-			}),
-			options.WithOnNewConn(func(coapConn *coapTcpClient.Conn) {
-				s.coapConnOnNew(coapConn)
-			}),
-		}
-		for _, o := range opts {
-			tcpOpts = append(tcpOpts, o)
-		}
-		s.coapServer = &tcpServer{
-			coapServer: coapTcpServer.New(tcpOpts...),
-			listener:   listener,
-		}
-	}
-
-	return nil
-}
-
-func (s *Service) tlsEnabled() bool {
-	return s.config.APIs.COAP.TLS.Enabled
-}
-
-func (s *Service) Close() error {
-	s.coapServer.Stop()
-	return nil
-}
-
-func (s *Service) Serve() error {
-	return s.coapServer.Serve()
+	return coapService.New(s.ctx, s.config.APIs.COAP.Config, m, fileWatcher, logger,
+		coapService.WithTCPGoPool(func(processReqFunc coapOptionsConfig.ProcessRequestFunc[*coapTcpClient.Conn], req *pool.Message, cc *coapTcpClient.Conn, handler coapOptionsConfig.HandlerFunc[*coapTcpClient.Conn]) error {
+			if s.config.APIs.COAP.Config.BlockwiseTransfer.Enabled {
+				return s.taskQueue.Submit(func() {
+					processReqFunc(req, cc, handler)
+				})
+			}
+			processReqFunc(req, cc, handler)
+			return nil
+		}),
+		coapService.WithUDPGoPool(func(processReqFunc coapOptionsConfig.ProcessRequestFunc[*coapUdpClient.Conn], req *pool.Message, cc *coapUdpClient.Conn, handler coapOptionsConfig.HandlerFunc[*coapUdpClient.Conn]) error {
+			if s.config.APIs.COAP.Config.BlockwiseTransfer.Enabled {
+				return s.taskQueue.Submit(func() {
+					processReqFunc(req, cc, handler)
+				})
+			}
+			processReqFunc(req, cc, handler)
+			return nil
+		}),
+		coapService.WithOnNewConnection(s.coapConnOnNew),
+		coapService.WithOnInactivityConnection(s.onInactivityConnection),
+		coapService.WithMessagePool(s.messagePool),
+		coapService.WithOverrideTLS(func(cfg *tls.Config) *tls.Config {
+			tlsCfg := MakeGetConfigForClient(cfg)
+			return &tlsCfg
+		}),
+	)
 }

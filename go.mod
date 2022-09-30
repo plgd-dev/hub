@@ -25,7 +25,7 @@ require (
 	github.com/pion/logging v0.2.2
 	github.com/plgd-dev/device/v2 v2.0.0-20220929115241-033fe063adb5
 	github.com/plgd-dev/go-coap/v2 v2.6.1-0.20220801124204-0ab75f6e0680
-	github.com/plgd-dev/go-coap/v3 v3.0.0-20220928103836-d0503706ce4d
+	github.com/plgd-dev/go-coap/v3 v3.0.0-20221005062433-0b5741f66fb4
 	github.com/plgd-dev/kit/v2 v2.0.0-20211006190727-057b33161b90
 	github.com/sirupsen/logrus v1.9.0
 	github.com/stretchr/testify v1.8.0

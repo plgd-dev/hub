@@ -14,6 +14,7 @@ import (
 	"github.com/plgd-dev/go-coap/v3/message/codes"
 	"github.com/plgd-dev/go-coap/v3/message/pool"
 	"github.com/plgd-dev/go-coap/v3/mux"
+	coapTcpClient "github.com/plgd-dev/go-coap/v3/tcp/client"
 	"github.com/plgd-dev/hub/v2/coap-gateway/coapconv"
 	"github.com/plgd-dev/hub/v2/coap-gateway/resource"
 	"github.com/plgd-dev/hub/v2/coap-gateway/service/observation"
@@ -21,6 +22,7 @@ import (
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	idEvents "github.com/plgd-dev/hub/v2/identity-store/events"
 	"github.com/plgd-dev/hub/v2/pkg/log"
+	coapService "github.com/plgd-dev/hub/v2/pkg/net/coap/service"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"github.com/plgd-dev/hub/v2/pkg/opentelemetry/otelcoap"
 	pkgJwt "github.com/plgd-dev/hub/v2/pkg/security/jwt"
@@ -130,8 +132,15 @@ func (c *session) deviceID() string {
 	return ""
 }
 
+func (c *session) Protocol() coapService.Protocol {
+	if _, ok := c.coapConn.(*coapTcpClient.Conn); ok {
+		return coapService.TCP
+	}
+	return coapService.UDP
+}
+
 func (c *session) getSessionExpiration(validJWTUntil time.Time) time.Time {
-	if c.server.config.APIs.COAP.TLS.Enabled &&
+	if c.server.config.APIs.COAP.TLS.IsEnabled() &&
 		c.server.config.APIs.COAP.TLS.DisconnectOnExpiredCertificate &&
 		(validJWTUntil.IsZero() || validJWTUntil.After(c.tlsValidUntil)) {
 		return c.tlsValidUntil
@@ -878,7 +887,7 @@ func (c *session) ResolveDeviceID(claim pkgJwt.Claims, paramDeviceID string) str
 	if c.server.config.APIs.COAP.Authorization.DeviceIDClaim != "" {
 		return claim.DeviceID(c.server.config.APIs.COAP.Authorization.DeviceIDClaim)
 	}
-	if c.server.config.APIs.COAP.TLS.Enabled && c.server.config.APIs.COAP.TLS.Embedded.ClientCertificateRequired {
+	if c.server.config.APIs.COAP.TLS.IsEnabled() && c.server.config.APIs.COAP.TLS.Embedded.ClientCertificateRequired {
 		return c.tlsDeviceID
 	}
 	return paramDeviceID

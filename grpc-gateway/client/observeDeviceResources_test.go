@@ -30,7 +30,7 @@ func TestObserveDeviceResourcesPublish(t *testing.T) {
 		err := c.Close(context.Background())
 		assert.NoError(t, err)
 	}()
-	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c.GrpcGatewayClient(), deviceID, testCfg.COAPS_TCP_SCHEME+testCfg.GW_HOST, test.GetAllBackendResourceLinks())
+	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c.GrpcGatewayClient(), deviceID, testCfg.COAPS_TCP_SCHEME+testCfg.COAP_GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 
 	h := makeTestDeviceResourcesObservationHandler()

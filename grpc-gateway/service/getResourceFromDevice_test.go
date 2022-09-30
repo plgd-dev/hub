@@ -134,13 +134,11 @@ func TestRequestHandlerGetResourceFromDevice(t *testing.T) {
 	defer cancel()
 
 	coapCfg := coapTest.MakeConfig(t)
-	coapCfg.APIs.COAP.TLS.DTLS.Enabled = true
-	coapCfg.APIs.COAP.BlockwiseTransfer.Enabled = true
 	tearDown := service.SetUp(ctx, t, service.WithCOAPGWConfig(coapCfg))
 	defer tearDown()
 	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
 
-	conn, err := grpc.Dial(testCfg.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+	conn, err := grpc.Dial(testCfg.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
 	})))
 	require.NoError(t, err)
@@ -149,7 +147,7 @@ func TestRequestHandlerGetResourceFromDevice(t *testing.T) {
 	}()
 	c := pb.NewGrpcGatewayClient(conn)
 
-	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.COAPS_SCHEME+testCfg.GW_HOST, test.GetAllBackendResourceLinks())
+	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.USE_COAP_SCHEME+testCfg.COAP_GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 	test.AddDeviceSwitchResources(ctx, t, deviceID, c, switchID)
 
