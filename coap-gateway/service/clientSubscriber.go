@@ -3,7 +3,7 @@ package service
 import grpcClient "github.com/plgd-dev/hub/v2/grpc-gateway/client"
 
 // Replace deviceSubscriber instance in the client.
-func (c *Client) replaceDeviceSubscriber(deviceSubscriber *grpcClient.DeviceSubscriber) *grpcClient.DeviceSubscriber {
+func (c *session) replaceDeviceSubscriber(deviceSubscriber *grpcClient.DeviceSubscriber) *grpcClient.DeviceSubscriber {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 	s := c.deviceSubscriber
@@ -12,7 +12,7 @@ func (c *Client) replaceDeviceSubscriber(deviceSubscriber *grpcClient.DeviceSubs
 }
 
 // Replace the deviceSubscriber instance in the client with nil and clean up the previous instance.
-func (c *Client) closeDeviceSubscriber() error {
+func (c *session) closeDeviceSubscriber() error {
 	deviceSubscriber := c.replaceDeviceSubscriber(nil)
 	if deviceSubscriber != nil {
 		return deviceSubscriber.Close()

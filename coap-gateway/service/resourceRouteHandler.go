@@ -6,7 +6,7 @@ import (
 	"github.com/plgd-dev/go-coap/v3/mux"
 )
 
-func resourceRouteHandler(req *mux.Message, client *Client) (*pool.Message, error) {
+func resourceRouteHandler(req *mux.Message, client *session) (*pool.Message, error) {
 	switch req.Code() {
 	case coapCodes.POST:
 		// handles resource updates and creation

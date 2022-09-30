@@ -51,7 +51,7 @@ func getSignOffDataFromQuery(req *mux.Message) (signOffData, error) {
 }
 
 // Update empty values
-func (s signOffData) updateSignOffDataFromAuthContext(client *Client) signOffData {
+func (s signOffData) updateSignOffDataFromAuthContext(client *session) signOffData {
 	authCurrentCtx, err := client.GetAuthorizationContext()
 	if err != nil {
 		client.Debugf("auth context not available: %w", err)
@@ -87,7 +87,7 @@ const errFmtSignOff = "cannot handle sign off: %w"
 
 // Sign-off
 // https://github.com/openconnectivityfoundation/security/blob/master/swagger2.0/oic.sec.account.swagger.json
-func signOffHandler(req *mux.Message, client *Client) (*pool.Message, error) {
+func signOffHandler(req *mux.Message, client *session) (*pool.Message, error) {
 	ctx, cancel := context.WithTimeout(client.server.ctx, client.server.config.APIs.COAP.KeepAlive.Timeout)
 	defer cancel()
 

@@ -107,7 +107,7 @@ func getDiscoveryResourceErr(err error) error {
 	return fmt.Errorf(errFmtDiscoveryResource, "", err)
 }
 
-func resourceDirectoryFind(req *mux.Message, client *Client) (*pool.Message, error) {
+func resourceDirectoryFind(req *mux.Message, client *session) (*pool.Message, error) {
 	_, err := client.GetAuthorizationContext()
 	if err != nil {
 		return nil, statusErrorf(coapCodes.Unauthorized, "%w", getDiscoveryResourceErr(err))
@@ -154,7 +154,7 @@ func resourceDirectoryFind(req *mux.Message, client *Client) (*pool.Message, err
 	return client.createResponse(coapCode, req.Token(), accept, out), nil
 }
 
-func resourceDiscoveryHandler(req *mux.Message, client *Client) (*pool.Message, error) {
+func resourceDiscoveryHandler(req *mux.Message, client *session) (*pool.Message, error) {
 	switch req.Code() {
 	case coapCodes.GET:
 		return resourceDirectoryFind(req, client)

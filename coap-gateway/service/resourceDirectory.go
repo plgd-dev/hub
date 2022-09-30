@@ -117,7 +117,7 @@ func PublishResourceLinks(ctx context.Context, raClient raService.ResourceAggreg
 	return resp.GetPublishedResources(), nil
 }
 
-func observeResources(ctx context.Context, client *Client, w wkRd, sequenceNumber uint64) (coapCodes.Code, error) {
+func observeResources(ctx context.Context, client *session, w wkRd, sequenceNumber uint64) (coapCodes.Code, error) {
 	publishedResources, err := PublishResourceLinks(ctx, client.server.raClient, w.Links, w.DeviceID, int32(w.TimeToLive), client.RemoteAddr().String(), sequenceNumber)
 	if err != nil {
 		return coapCodes.BadRequest, fmt.Errorf("unable to publish resources for device %v: %w", w.DeviceID, err)
@@ -142,7 +142,7 @@ func observeResources(ctx context.Context, client *Client, w wkRd, sequenceNumbe
 	return 0, nil
 }
 
-func resourceDirectoryPublishHandler(req *mux.Message, client *Client) (*pool.Message, error) {
+func resourceDirectoryPublishHandler(req *mux.Message, client *session) (*pool.Message, error) {
 	authCtx, err := client.GetAuthorizationContext()
 	if err != nil {
 		return nil, statusErrorf(coapCodes.Unauthorized, "cannot load authorization context: %w", err)
@@ -196,7 +196,7 @@ func parseUnpublishQueryString(queries []string) (deviceID string, instanceIDs [
 	return
 }
 
-func resourceDirectoryUnpublishHandler(req *mux.Message, client *Client) (*pool.Message, error) {
+func resourceDirectoryUnpublishHandler(req *mux.Message, client *session) (*pool.Message, error) {
 	authCtx, err := client.GetAuthorizationContext()
 	if err != nil {
 		return nil, statusErrorf(coapCodes.BadRequest, "%w", fmt.Errorf("cannot load authorization context: %w", err))
@@ -225,7 +225,7 @@ type resourceDirectorySelector struct {
 	SelectionCriteria int `json:"sel"`
 }
 
-func resourceDirectoryGetSelector(req *mux.Message, client *Client) (*pool.Message, error) {
+func resourceDirectoryGetSelector(req *mux.Message, client *session) (*pool.Message, error) {
 	var rds resourceDirectorySelector // we want to use sel:0 to prefer cloud RD
 
 	accept := coapconv.GetAccept(req.Options())
@@ -241,7 +241,7 @@ func resourceDirectoryGetSelector(req *mux.Message, client *Client) (*pool.Messa
 	return client.createResponse(coapCodes.Content, req.Token(), accept, out), nil
 }
 
-func resourceDirectoryHandler(req *mux.Message, client *Client) (*pool.Message, error) {
+func resourceDirectoryHandler(req *mux.Message, client *session) (*pool.Message, error) {
 	switch req.Code() {
 	case coapCodes.POST:
 		return resourceDirectoryPublishHandler(req, client)

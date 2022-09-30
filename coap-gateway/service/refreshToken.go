@@ -70,7 +70,7 @@ func validUntilToExpiresIn(validUntil time.Time) int64 {
 	return int64(time.Until(validUntil).Seconds())
 }
 
-func updateClient(client *Client, deviceID, owner, accessToken string, validUntil time.Time, jwtClaims jwt.Claims) {
+func updateClient(client *session, deviceID, owner, accessToken string, validUntil time.Time, jwtClaims jwt.Claims) {
 	if _, err := client.GetAuthorizationContext(); err != nil {
 		return
 	}
@@ -86,7 +86,7 @@ func updateClient(client *Client, deviceID, owner, accessToken string, validUnti
 	setExpirationClientCache(client.server.expirationClientCache, deviceID, client, validUntil)
 }
 
-func refreshTokenPostHandler(req *mux.Message, client *Client) (*pool.Message, error) {
+func refreshTokenPostHandler(req *mux.Message, client *session) (*pool.Message, error) {
 	const fmtErr = "cannot handle refresh token for %v: %w"
 
 	var refreshToken CoapRefreshTokenReq
@@ -156,7 +156,7 @@ func refreshTokenPostHandler(req *mux.Message, client *Client) (*pool.Message, e
 
 // RefreshToken
 // https://github.com/openconnectivityfoundation/security/blob/master/swagger2.0/oic.sec.tokenrefresh.swagger.json
-func refreshTokenHandler(req *mux.Message, client *Client) (*pool.Message, error) {
+func refreshTokenHandler(req *mux.Message, client *session) (*pool.Message, error) {
 	switch req.Code() {
 	case coapCodes.POST:
 		return refreshTokenPostHandler(req, client)

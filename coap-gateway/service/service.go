@@ -91,7 +91,7 @@ type Service struct {
 	raClient              *raClient.Client
 	isClient              pbIS.IdentityStoreClient
 	rdClient              pbGRPC.GrpcGatewayClient
-	expirationClientCache *cache.Cache[string, *Client]
+	expirationClientCache *cache.Cache[string, *session]
 	coapServer            CoapServer
 	authInterceptor       Interceptor
 	ctx                   context.Context
@@ -109,18 +109,18 @@ type Service struct {
 	tracerProvider        trace.TracerProvider
 }
 
-func setExpirationClientCache(c *cache.Cache[string, *Client], deviceID string, client *Client, validJWTUntil time.Time) {
-	validJWTUntil = client.getClientExpiration(validJWTUntil)
+func setExpirationClientCache(c *cache.Cache[string, *session], deviceID string, client *session, validJWTUntil time.Time) {
+	validJWTUntil = client.getSessionExpiration(validJWTUntil)
 	c.Delete(deviceID)
 	if validJWTUntil.IsZero() {
 		return
 	}
-	c.LoadOrStore(deviceID, cache.NewElement(client, validJWTUntil, func(client *Client) {
+	c.LoadOrStore(deviceID, cache.NewElement(client, validJWTUntil, func(client *session) {
 		if client == nil {
 			return
 		}
 		now := time.Now()
-		exp := client.getClientExpiration(now)
+		exp := client.getSessionExpiration(now)
 		if now.After(exp) {
 			client.Close()
 			client.Debugf("certificate has been expired")
@@ -134,8 +134,8 @@ func setExpirationClientCache(c *cache.Cache[string, *Client], deviceID string, 
 	}))
 }
 
-func newExpirationClientCache(ctx context.Context, interval time.Duration) *cache.Cache[string, *Client] {
-	expirationClientCache := cache.NewCache[string, *Client]()
+func newExpirationClientCache(ctx context.Context, interval time.Duration) *cache.Cache[string, *session] {
+	expirationClientCache := cache.NewCache[string, *session]()
 	add := periodic.New(ctx.Done(), interval)
 	add(func(now time.Time) bool {
 		expirationClientCache.CheckExpirations(now)
@@ -288,7 +288,7 @@ func blockWiseTransferSZXFromString(s string) (blockwise.SZX, error) {
 }
 
 func (s *Service) onInactivityConnection(cc mux.Conn) {
-	client, ok := cc.Context().Value(clientKey).(*Client)
+	client, ok := cc.Context().Value(clientKey).(*session)
 	if ok {
 		deviceID := getDeviceID(client)
 		client.Errorf("DeviceId: %v: keep alive was reached fail limit:: closing connection", deviceID)
@@ -447,7 +447,7 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 	return service.New(&s), nil
 }
 
-func getDeviceID(client *Client) string {
+func getDeviceID(client *session) string {
 	deviceID := "unknown"
 	if client != nil {
 		authCtx, _ := client.GetAuthorizationContext()
@@ -482,7 +482,7 @@ func wantToCloseClientOnError(req *mux.Message) bool {
 	return false
 }
 
-func (s *Service) processCommandTask(req *mux.Message, client *Client, span trace.Span, fnc func(req *mux.Message, client *Client) (*pool.Message, error)) {
+func (s *Service) processCommandTask(req *mux.Message, client *session, span trace.Span, fnc func(req *mux.Message, client *session) (*pool.Message, error)) {
 	var resp *pool.Message
 	var err error
 	switch req.Code() {
@@ -522,7 +522,7 @@ func (s *Service) processCommandTask(req *mux.Message, client *Client, span trac
 	}
 }
 
-func (s *Service) makeCommandTask(req *mux.Message, client *Client, fnc func(req *mux.Message, client *Client) (*pool.Message, error)) func() {
+func (s *Service) makeCommandTask(req *mux.Message, client *session, fnc func(req *mux.Message, client *session) (*pool.Message, error)) func() {
 	path, _ := req.Options().Path()
 	ctx, span := otelcoap.Start(req.Context(), path, req.Code().String(), otelcoap.WithTracerProvider(s.tracerProvider), otelcoap.WithSpanOptions(trace.WithSpanKind(trace.SpanKindServer)))
 	span.SetAttributes(semconv.NetPeerNameKey.String(client.deviceID()))
@@ -535,10 +535,10 @@ func (s *Service) makeCommandTask(req *mux.Message, client *Client, fnc func(req
 	}
 }
 
-func executeCommand(s mux.ResponseWriter, req *mux.Message, server *Service, fnc func(req *mux.Message, client *Client) (*pool.Message, error)) {
-	client, ok := s.Conn().Context().Value(clientKey).(*Client)
+func executeCommand(s mux.ResponseWriter, req *mux.Message, server *Service, fnc func(req *mux.Message, client *session) (*pool.Message, error)) {
+	client, ok := s.Conn().Context().Value(clientKey).(*session)
 	if !ok {
-		client = newClient(server, s.Conn().(*coapTcpClient.Conn), "", time.Time{})
+		client = newSession(server, s.Conn().(*coapTcpClient.Conn), "", time.Time{})
 		if req.Code() == coapCodes.Empty {
 			client.logRequestResponse(req, nil, fmt.Errorf("cannot handle command: client not found"))
 			client.Close()
@@ -559,7 +559,7 @@ func statusErrorf(code coapCodes.Code, fmt string, args ...interface{}) error {
 	return status.Errorf(msg, fmt, args...)
 }
 
-func defaultHandler(req *mux.Message, client *Client) (*pool.Message, error) {
+func defaultHandler(req *mux.Message, client *session) (*pool.Message, error) {
 	path, _ := req.Options().Path()
 
 	switch {
@@ -587,7 +587,7 @@ func (s *Service) coapConnOnNew(coapConn mux.Conn) {
 		}
 	}
 
-	client := newClient(s, coapConn, tlsDeviceID, tlsValidUntil)
+	client := newSession(s, coapConn, tlsDeviceID, tlsValidUntil)
 	coapConn.SetContextValue(clientKey, client)
 	coapConn.AddOnClose(func() {
 		client.OnClose()
@@ -597,9 +597,9 @@ func (s *Service) coapConnOnNew(coapConn mux.Conn) {
 func (s *Service) authMiddleware(next mux.Handler) mux.Handler {
 	return mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
 		t := time.Now()
-		client, ok := w.Conn().Context().Value(clientKey).(*Client)
+		client, ok := w.Conn().Context().Value(clientKey).(*session)
 		if !ok {
-			client = newClient(s, w.Conn().(*coapTcpClient.Conn), "", time.Time{})
+			client = newSession(s, w.Conn().(*coapTcpClient.Conn), "", time.Time{})
 		}
 		authCtx, _ := client.GetAuthorizationContext()
 		ctx := context.WithValue(r.Context(), &authCtxKey, authCtx)

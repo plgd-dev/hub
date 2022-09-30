@@ -11,7 +11,7 @@ import (
 	coapgwMessage "github.com/plgd-dev/hub/v2/coap-gateway/service/message"
 )
 
-func (c *Client) createErrorResponse(err error, token message.Token) *pool.Message {
+func (c *session) createErrorResponse(err error, token message.Token) *pool.Message {
 	if err == nil {
 		return nil
 	}
