@@ -10,7 +10,6 @@ import (
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"github.com/plgd-dev/hub/v2/test"
-	"github.com/plgd-dev/hub/v2/test/config"
 	testCfg "github.com/plgd-dev/hub/v2/test/config"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	pbTest "github.com/plgd-dev/hub/v2/test/pb"
@@ -70,7 +69,7 @@ func TestRequestHandlerDeleteDevices(t *testing.T) {
 		_ = conn.Close()
 	}()
 
-	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.COAPS_TCP_SCHEME+testCfg.GW_HOST, test.GetAllBackendResourceLinks())
+	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.COAPS_TCP_SCHEME+testCfg.GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 
 	for _, tt := range tests {
@@ -134,7 +133,7 @@ func TestRequestHandlerReconnectAfterDeleteDevice(t *testing.T) {
 		_ = conn.Close()
 	}()
 
-	_, _ = test.OnboardDevSim(ctx, t, c, deviceID, config.COAPS_TCP_SCHEME+testCfg.GW_HOST, test.GetAllBackendResourceLinks())
+	_, _ = test.OnboardDevSim(ctx, t, c, deviceID, testCfg.COAPS_TCP_SCHEME+testCfg.GW_HOST, test.GetAllBackendResourceLinks())
 
 	const correlationID = "device"
 	subClient, err := client.New(c).GrpcGatewayClient().SubscribeToEvents(ctx)
@@ -165,6 +164,6 @@ func TestRequestHandlerReconnectAfterDeleteDevice(t *testing.T) {
 	// wait for device to detect lost connection, try to reconnect and handle unauthorized code
 	time.Sleep(10 * time.Second)
 
-	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.COAPS_TCP_SCHEME+testCfg.GW_HOST, test.GetAllBackendResourceLinks())
+	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.COAPS_TCP_SCHEME+testCfg.GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 }

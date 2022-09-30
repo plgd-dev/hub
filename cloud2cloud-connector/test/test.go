@@ -26,7 +26,6 @@ import (
 	cmClient "github.com/plgd-dev/hub/v2/pkg/security/certManager/client"
 	"github.com/plgd-dev/hub/v2/pkg/security/oauth2/oauth"
 	"github.com/plgd-dev/hub/v2/test"
-	"github.com/plgd-dev/hub/v2/test/config"
 	testCfg "github.com/plgd-dev/hub/v2/test/config"
 	testHttp "github.com/plgd-dev/hub/v2/test/http"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
@@ -57,7 +56,7 @@ func SetUpClouds(ctx context.Context, t *testing.T, deviceID string, supportedEv
 	})))
 	require.NoError(t, err)
 	c1 := pb.NewGrpcGatewayClient(cloud1Conn)
-	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c1, deviceID, config.COAPS_TCP_SCHEME+testCfg.GW_HOST, test.GetAllBackendResourceLinks())
+	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c1, deviceID, testCfg.COAPS_TCP_SCHEME+testCfg.GW_HOST, test.GetAllBackendResourceLinks())
 	if len(switchIDs) > 0 {
 		test.AddDeviceSwitchResources(ctx, t, deviceID, c1, switchIDs...)
 	}
