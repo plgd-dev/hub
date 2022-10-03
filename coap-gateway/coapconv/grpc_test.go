@@ -38,10 +38,10 @@ func TestToGrpcCode(t *testing.T) {
 		{name: "coapCodes.UnsupportedMediaType", args: args{code: coapCodes.UnsupportedMediaType, def: codes.DataLoss}, want: codes.InvalidArgument},
 		{name: "coapCodes.InternalServerError", args: args{code: coapCodes.InternalServerError, def: codes.DataLoss}, want: codes.Internal},
 		{name: "coapCodes.NotImplemented", args: args{code: coapCodes.NotImplemented, def: codes.DataLoss}, want: codes.Unimplemented},
-		{name: "coapCodes.BadGateway", args: args{code: coapCodes.BadGateway, def: codes.DataLoss}, want: codes.DataLoss},
+		{name: "coapCodes.BadGateway", args: args{code: coapCodes.BadGateway, def: codes.DataLoss}, want: codes.Unavailable},
 		{name: "coapCodes.ServiceUnavailable", args: args{code: coapCodes.ServiceUnavailable, def: codes.DataLoss}, want: codes.Unavailable},
-		{name: "coapCodes.GatewayTimeout", args: args{code: coapCodes.GatewayTimeout, def: codes.DataLoss}, want: codes.DataLoss},
-		{name: "coapCodes.ProxyingNotSupported", args: args{code: coapCodes.ProxyingNotSupported, def: codes.DataLoss}, want: codes.DataLoss},
+		{name: "coapCodes.GatewayTimeout", args: args{code: coapCodes.GatewayTimeout, def: codes.DataLoss}, want: codes.Unavailable},
+		{name: "coapCodes.ProxyingNotSupported", args: args{code: coapCodes.ProxyingNotSupported, def: codes.DataLoss}, want: codes.Unimplemented},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
