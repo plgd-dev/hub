@@ -63,8 +63,8 @@ func (c *Client) SyncDeleteResource(ctx context.Context, owner string, req *comm
 		return nil, fmt.Errorf("cannot subscribe to eventbus: %w", err)
 	}
 	defer func() {
-		if err := obs.Close(); err != nil {
-			log.Errorf("delete resource: %w", err)
+		if errC := obs.Close(); errC != nil {
+			log.Errorf("delete resource: %w", errC)
 		}
 	}()
 

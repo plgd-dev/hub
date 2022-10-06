@@ -41,8 +41,8 @@ func TestPublishUnpublish(t *testing.T) {
 	fileWatcher, err := fsnotify.NewWatcher()
 	require.NoError(t, err)
 	defer func() {
-		err := fileWatcher.Close()
-		require.NoError(t, err)
+		errC := fileWatcher.Close()
+		require.NoError(t, errC)
 	}()
 
 	idConn, err := client.New(testCfg.MakeGrpcClientConfig(config.Clients.IdentityStore.Connection.Addr), fileWatcher, log.Get(), trace.NewNoopTracerProvider())

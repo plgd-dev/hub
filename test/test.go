@@ -208,8 +208,8 @@ func setAccessForCloud(ctx context.Context, t *testing.T, c *deviceClient.Client
 	require.NoError(t, err)
 
 	defer func() {
-		err := d.Release(ctx)
-		require.NoError(t, err)
+		errC := d.Release(ctx)
+		require.NoError(t, errC)
 	}()
 	p, err := d.Provision(ctx, links)
 	require.NoError(t, err)

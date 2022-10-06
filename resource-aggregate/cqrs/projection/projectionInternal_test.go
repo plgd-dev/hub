@@ -55,8 +55,8 @@ func TestProjection(t *testing.T) {
 	fileWatcher, err := fsnotify.NewWatcher()
 	require.NoError(t, err)
 	defer func() {
-		err := fileWatcher.Close()
-		require.NoError(t, err)
+		errC := fileWatcher.Close()
+		require.NoError(t, errC)
 	}()
 
 	naPubClient, publisher, err := natsTest.NewClientAndPublisher(config.MakePublisherConfig(), fileWatcher, logger, publisher.WithMarshaler(utils.Marshal))
@@ -100,8 +100,8 @@ func TestProjection(t *testing.T) {
 	require.NotNil(t, store)
 
 	defer func() {
-		err := store.Clear(ctx)
-		require.NoError(t, err)
+		errC := store.Clear(ctx)
+		require.NoError(t, errC)
 		_ = store.Close(ctx)
 	}()
 

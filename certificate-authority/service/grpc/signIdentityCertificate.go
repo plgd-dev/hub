@@ -33,9 +33,8 @@ func overrideSubject(ctx context.Context, subject pkix.Name, ownerClaim, hubID, 
 }
 
 func (s *CertificateAuthorityServer) SignIdentityCertificate(ctx context.Context, req *pb.SignCertificateRequest) (*pb.SignCertificateResponse, error) {
-	err := s.validateRequest(req.GetCertificateSigningRequest())
 	logger := s.logger.With("csr", string(req.GetCertificateSigningRequest()))
-	if err != nil {
+	if err := s.validateRequest(req.GetCertificateSigningRequest()); err != nil {
 		return nil, logger.LogAndReturnError(status.Errorf(codes.InvalidArgument, "cannot sign identity certificate: %v", err))
 	}
 	notBefore := s.validFrom()

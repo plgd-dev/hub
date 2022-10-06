@@ -100,7 +100,7 @@ func (s *Service) AddDevice(ctx context.Context, request *pb.AddDeviceRequest) (
 		Owner:    owner,
 	}
 
-	if err := tx.Persist(&d); err != nil {
+	if err = tx.Persist(&d); err != nil {
 		return nil, log.LogAndReturnError(status.Errorf(codes.Internal, "cannot add device up: %v", err.Error()))
 	}
 

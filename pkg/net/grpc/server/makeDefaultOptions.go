@@ -280,21 +280,21 @@ func MakeDefaultOptions(auth kitNetGrpc.AuthInterceptors, logger log.Logger, tra
 	}, nil
 }
 
-type cfg struct {
+type config struct {
 	disableTokenForwarding bool
 	whiteListedMethods     []string
 }
 
-type Option func(*cfg)
+type Option func(*config)
 
 func WithDisabledTokenForwarding() Option {
-	return func(c *cfg) {
+	return func(c *config) {
 		c.disableTokenForwarding = true
 	}
 }
 
 func WithWhiteListedMethods(method ...string) Option {
-	return func(c *cfg) {
+	return func(c *config) {
 		c.whiteListedMethods = append(c.whiteListedMethods, method...)
 	}
 }
@@ -303,7 +303,7 @@ func NewAuth(validator kitNetGrpc.Validator, opts ...Option) kitNetGrpc.AuthInte
 	interceptor := kitNetGrpc.ValidateJWTWithValidator(validator, func(ctx context.Context, method string) kitNetGrpc.Claims {
 		return jwt.NewScopeClaims()
 	})
-	var cfg cfg
+	var cfg config
 	for _, o := range opts {
 		o(&cfg)
 	}

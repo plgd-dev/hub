@@ -84,8 +84,8 @@ func TestAggregateHandlePublishResourceLinks(t *testing.T) {
 	fileWatcher, err := fsnotify.NewWatcher()
 	require.NoError(t, err)
 	defer func() {
-		err := fileWatcher.Close()
-		require.NoError(t, err)
+		errC := fileWatcher.Close()
+		require.NoError(t, errC)
 	}()
 
 	eventstore, err := mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, fileWatcher, logger, trace.NewNoopTracerProvider(), mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
@@ -97,8 +97,8 @@ func TestAggregateHandlePublishResourceLinks(t *testing.T) {
 	eventstore, err = mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, fileWatcher, logger, trace.NewNoopTracerProvider(), mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
-		err := eventstore.Close(ctx)
-		assert.NoError(t, err)
+		errC := eventstore.Close(ctx)
+		assert.NoError(t, errC)
 	}()
 	naClient, publisher, err := natsTest.NewClientAndPublisher(cfg.Clients.Eventbus.NATS, fileWatcher, logger, publisher.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
@@ -159,8 +159,8 @@ func TestAggregateDuplicitPublishResource(t *testing.T) {
 	fileWatcher, err := fsnotify.NewWatcher()
 	require.NoError(t, err)
 	defer func() {
-		err := fileWatcher.Close()
-		require.NoError(t, err)
+		errC := fileWatcher.Close()
+		require.NoError(t, errC)
 	}()
 	eventstore, err := mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, fileWatcher, logger, trace.NewNoopTracerProvider(), mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
@@ -171,8 +171,8 @@ func TestAggregateDuplicitPublishResource(t *testing.T) {
 	eventstore, err = mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, fileWatcher, logger, trace.NewNoopTracerProvider(), mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
-		err := eventstore.Close(ctx)
-		assert.NoError(t, err)
+		errC := eventstore.Close(ctx)
+		assert.NoError(t, errC)
 	}()
 
 	ag, err := service.NewAggregate(commands.NewResourceID(deviceID, commands.ResourceLinksHref), 10, eventstore, service.ResourceLinksFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
@@ -215,8 +215,8 @@ func TestAggregateHandleUnpublishResource(t *testing.T) {
 	fileWatcher, err := fsnotify.NewWatcher()
 	require.NoError(t, err)
 	defer func() {
-		err := fileWatcher.Close()
-		require.NoError(t, err)
+		errC := fileWatcher.Close()
+		require.NoError(t, errC)
 	}()
 	eventstore, err := mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, fileWatcher, logger, trace.NewNoopTracerProvider(), mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
@@ -227,8 +227,8 @@ func TestAggregateHandleUnpublishResource(t *testing.T) {
 	eventstore, err = mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, fileWatcher, logger, trace.NewNoopTracerProvider(), mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
-		err := eventstore.Close(ctx)
-		assert.NoError(t, err)
+		errC := eventstore.Close(ctx)
+		assert.NoError(t, errC)
 	}()
 	naClient, publisher, err := natsTest.NewClientAndPublisher(cfg.Clients.Eventbus.NATS, fileWatcher, logger, publisher.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
@@ -271,8 +271,8 @@ func TestAggregateHandleUnpublishAllResources(t *testing.T) {
 	fileWatcher, err := fsnotify.NewWatcher()
 	require.NoError(t, err)
 	defer func() {
-		err := fileWatcher.Close()
-		require.NoError(t, err)
+		errC := fileWatcher.Close()
+		require.NoError(t, errC)
 	}()
 	eventstore, err := mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, fileWatcher, logger, trace.NewNoopTracerProvider(), mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
@@ -283,8 +283,8 @@ func TestAggregateHandleUnpublishAllResources(t *testing.T) {
 	eventstore, err = mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, fileWatcher, logger, trace.NewNoopTracerProvider(), mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
-		err := eventstore.Close(ctx)
-		assert.NoError(t, err)
+		errC := eventstore.Close(ctx)
+		assert.NoError(t, errC)
 	}()
 	naClient, publisher, err := natsTest.NewClientAndPublisher(cfg.Clients.Eventbus.NATS, fileWatcher, logger, publisher.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
@@ -334,8 +334,8 @@ func TestAggregateHandleUnpublishResourceSubset(t *testing.T) {
 	fileWatcher, err := fsnotify.NewWatcher()
 	require.NoError(t, err)
 	defer func() {
-		err := fileWatcher.Close()
-		require.NoError(t, err)
+		errC := fileWatcher.Close()
+		require.NoError(t, errC)
 	}()
 	eventstore, err := mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, fileWatcher, logger, trace.NewNoopTracerProvider(), mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
@@ -346,8 +346,8 @@ func TestAggregateHandleUnpublishResourceSubset(t *testing.T) {
 	eventstore, err = mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, fileWatcher, logger, trace.NewNoopTracerProvider(), mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
-		err := eventstore.Close(ctx)
-		assert.NoError(t, err)
+		errC := eventstore.Close(ctx)
+		assert.NoError(t, errC)
 	}()
 	naClient, publisher, err := natsTest.NewClientAndPublisher(cfg.Clients.Eventbus.NATS, fileWatcher, logger, publisher.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
@@ -649,8 +649,8 @@ func TestAggregateHandleNotifyContentChanged(t *testing.T) {
 	fileWatcher, err := fsnotify.NewWatcher()
 	require.NoError(t, err)
 	defer func() {
-		err := fileWatcher.Close()
-		require.NoError(t, err)
+		errC := fileWatcher.Close()
+		require.NoError(t, errC)
 	}()
 	eventstore, err := mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, fileWatcher, logger, trace.NewNoopTracerProvider(), mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
@@ -661,8 +661,8 @@ func TestAggregateHandleNotifyContentChanged(t *testing.T) {
 	eventstore, err = mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, fileWatcher, logger, trace.NewNoopTracerProvider(), mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
-		err := eventstore.Close(ctx)
-		assert.NoError(t, err)
+		errC := eventstore.Close(ctx)
+		assert.NoError(t, errC)
 	}()
 	naClient, publisher, err := natsTest.NewClientAndPublisher(cfg.Clients.Eventbus.NATS, fileWatcher, logger, publisher.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
@@ -768,8 +768,8 @@ func TestAggregateHandleUpdateResourceContent(t *testing.T) {
 	fileWatcher, err := fsnotify.NewWatcher()
 	require.NoError(t, err)
 	defer func() {
-		err := fileWatcher.Close()
-		require.NoError(t, err)
+		errC := fileWatcher.Close()
+		require.NoError(t, errC)
 	}()
 	eventstore, err := mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, fileWatcher, logger, trace.NewNoopTracerProvider(), mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
@@ -780,8 +780,8 @@ func TestAggregateHandleUpdateResourceContent(t *testing.T) {
 	eventstore, err = mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, fileWatcher, logger, trace.NewNoopTracerProvider(), mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
-		err := eventstore.Close(ctx)
-		assert.NoError(t, err)
+		errC := eventstore.Close(ctx)
+		assert.NoError(t, errC)
 	}()
 
 	ag, err := service.NewAggregate(commands.NewResourceID(deviceID, resourceID), 10, eventstore, service.ResourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
@@ -856,8 +856,8 @@ func TestAggregateHandleConfirmResourceUpdate(t *testing.T) {
 	fileWatcher, err := fsnotify.NewWatcher()
 	require.NoError(t, err)
 	defer func() {
-		err := fileWatcher.Close()
-		require.NoError(t, err)
+		errC := fileWatcher.Close()
+		require.NoError(t, errC)
 	}()
 	eventstore, err := mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, fileWatcher, logger, trace.NewNoopTracerProvider(), mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
@@ -868,8 +868,8 @@ func TestAggregateHandleConfirmResourceUpdate(t *testing.T) {
 	eventstore, err = mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, fileWatcher, logger, trace.NewNoopTracerProvider(), mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
-		err := eventstore.Close(ctx)
-		assert.NoError(t, err)
+		errC := eventstore.Close(ctx)
+		assert.NoError(t, errC)
 	}()
 
 	ag, err := service.NewAggregate(commands.NewResourceID(deviceID, resourceID), 10, eventstore, service.ResourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
@@ -967,8 +967,8 @@ func TestAggregateHandleRetrieveResource(t *testing.T) {
 	fileWatcher, err := fsnotify.NewWatcher()
 	require.NoError(t, err)
 	defer func() {
-		err := fileWatcher.Close()
-		require.NoError(t, err)
+		errC := fileWatcher.Close()
+		require.NoError(t, errC)
 	}()
 	eventstore, err := mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, fileWatcher, logger, trace.NewNoopTracerProvider(), mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
@@ -979,8 +979,8 @@ func TestAggregateHandleRetrieveResource(t *testing.T) {
 	eventstore, err = mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, fileWatcher, logger, trace.NewNoopTracerProvider(), mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
-		err := eventstore.Close(ctx)
-		assert.NoError(t, err)
+		errC := eventstore.Close(ctx)
+		assert.NoError(t, errC)
 	}()
 
 	ag, err := service.NewAggregate(commands.NewResourceID(deviceID, resourceID), 10, eventstore, service.ResourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
@@ -1054,8 +1054,8 @@ func TestAggregateHandleNotifyResourceContentResourceProcessed(t *testing.T) {
 	fileWatcher, err := fsnotify.NewWatcher()
 	require.NoError(t, err)
 	defer func() {
-		err := fileWatcher.Close()
-		require.NoError(t, err)
+		errC := fileWatcher.Close()
+		require.NoError(t, errC)
 	}()
 	eventstore, err := mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, fileWatcher, logger, trace.NewNoopTracerProvider(), mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
@@ -1066,8 +1066,8 @@ func TestAggregateHandleNotifyResourceContentResourceProcessed(t *testing.T) {
 	eventstore, err = mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, fileWatcher, logger, trace.NewNoopTracerProvider(), mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
-		err := eventstore.Close(ctx)
-		assert.NoError(t, err)
+		errC := eventstore.Close(ctx)
+		assert.NoError(t, errC)
 	}()
 
 	ag, err := service.NewAggregate(commands.NewResourceID(deviceID, resourceID), 10, eventstore, service.ResourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
@@ -1173,8 +1173,8 @@ func TestAggregateHandleDeleteResource(t *testing.T) {
 	fileWatcher, err := fsnotify.NewWatcher()
 	require.NoError(t, err)
 	defer func() {
-		err := fileWatcher.Close()
-		require.NoError(t, err)
+		errC := fileWatcher.Close()
+		require.NoError(t, errC)
 	}()
 	eventstore, err := mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, fileWatcher, logger, trace.NewNoopTracerProvider(), mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
@@ -1185,8 +1185,8 @@ func TestAggregateHandleDeleteResource(t *testing.T) {
 	eventstore, err = mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, fileWatcher, logger, trace.NewNoopTracerProvider(), mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
-		err := eventstore.Close(ctx)
-		assert.NoError(t, err)
+		errC := eventstore.Close(ctx)
+		assert.NoError(t, errC)
 	}()
 
 	ag, err := service.NewAggregate(commands.NewResourceID(deviceID, resourceID), 10, eventstore, service.ResourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
@@ -1261,8 +1261,8 @@ func TestAggregateHandleConfirmResourceDelete(t *testing.T) {
 	fileWatcher, err := fsnotify.NewWatcher()
 	require.NoError(t, err)
 	defer func() {
-		err := fileWatcher.Close()
-		require.NoError(t, err)
+		errC := fileWatcher.Close()
+		require.NoError(t, errC)
 	}()
 	eventstore, err := mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, fileWatcher, logger, trace.NewNoopTracerProvider(), mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
@@ -1273,8 +1273,8 @@ func TestAggregateHandleConfirmResourceDelete(t *testing.T) {
 	eventstore, err = mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, fileWatcher, logger, trace.NewNoopTracerProvider(), mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
-		err := eventstore.Close(ctx)
-		assert.NoError(t, err)
+		errC := eventstore.Close(ctx)
+		assert.NoError(t, errC)
 	}()
 
 	ag, err := service.NewAggregate(commands.NewResourceID(deviceID, resourceID), 10, eventstore, service.ResourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
@@ -1373,8 +1373,8 @@ func TestAggregateHandleCreateResource(t *testing.T) {
 	fileWatcher, err := fsnotify.NewWatcher()
 	require.NoError(t, err)
 	defer func() {
-		err := fileWatcher.Close()
-		require.NoError(t, err)
+		errC := fileWatcher.Close()
+		require.NoError(t, errC)
 	}()
 	eventstore, err := mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, fileWatcher, logger, trace.NewNoopTracerProvider(), mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
@@ -1385,8 +1385,8 @@ func TestAggregateHandleCreateResource(t *testing.T) {
 	eventstore, err = mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, fileWatcher, logger, trace.NewNoopTracerProvider(), mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
-		err := eventstore.Close(ctx)
-		assert.NoError(t, err)
+		errC := eventstore.Close(ctx)
+		assert.NoError(t, errC)
 	}()
 
 	ag, err := service.NewAggregate(commands.NewResourceID(deviceID, resourceID), 10, eventstore, service.ResourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
@@ -1461,8 +1461,8 @@ func TestAggregateHandleConfirmResourceCreate(t *testing.T) {
 	fileWatcher, err := fsnotify.NewWatcher()
 	require.NoError(t, err)
 	defer func() {
-		err := fileWatcher.Close()
-		require.NoError(t, err)
+		errC := fileWatcher.Close()
+		require.NoError(t, errC)
 	}()
 	eventstore, err := mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, fileWatcher, logger, trace.NewNoopTracerProvider(), mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
@@ -1473,8 +1473,8 @@ func TestAggregateHandleConfirmResourceCreate(t *testing.T) {
 	eventstore, err = mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, fileWatcher, logger, trace.NewNoopTracerProvider(), mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
-		err := eventstore.Close(ctx)
-		assert.NoError(t, err)
+		errC := eventstore.Close(ctx)
+		assert.NoError(t, errC)
 	}()
 
 	ag, err := service.NewAggregate(commands.NewResourceID(deviceID, resourceID), 10, eventstore, service.ResourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))

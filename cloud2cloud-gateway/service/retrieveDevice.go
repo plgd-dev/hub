@@ -38,8 +38,8 @@ func (rh *RequestHandler) GetResourceLinks(ctx context.Context, deviceIdFilter [
 		return nil, fmt.Errorf("cannot get resource links: %w", err)
 	}
 	defer func() {
-		if err := client.CloseSend(); err != nil {
-			log.Errorf("failed to close client send stream: %w", err)
+		if errC := client.CloseSend(); errC != nil {
+			log.Errorf("failed to close client send stream: %w", errC)
 		}
 	}()
 

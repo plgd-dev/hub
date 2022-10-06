@@ -101,8 +101,8 @@ func modifyMap(valMap map[interface{}]interface{}) (newValue interface{}, wantDe
 }
 
 func modifyArray(valArr []interface{}) (newValue interface{}, wantDelete bool) {
-	for idx, v := range valArr {
-		if v, wantDelete := modify(v); wantDelete {
+	for idx, val := range valArr {
+		if v, wantDelete := modify(val); wantDelete {
 			valArr = append(valArr[:idx], valArr[idx+1:]...)
 		} else {
 			valArr[idx] = v

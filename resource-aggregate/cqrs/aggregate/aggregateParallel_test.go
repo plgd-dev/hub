@@ -27,8 +27,8 @@ func testNewEventstore(ctx context.Context, t *testing.T) *mongodb.EventStore {
 	fileWatcher, err := fsnotify.NewWatcher()
 	require.NoError(t, err)
 	defer func() {
-		err := fileWatcher.Close()
-		require.NoError(t, err)
+		errC := fileWatcher.Close()
+		require.NoError(t, errC)
 	}()
 	cfg := config.MakeEventsStoreMongoDBConfig()
 	store, err := mongodb.New(
@@ -64,8 +64,8 @@ func Test_parallelRequest(t *testing.T) {
 	ctx = grpc.CtxWithIncomingToken(ctx, token)
 	store := testNewEventstore(ctx, t)
 	defer func() {
-		err := store.Clear(ctx)
-		require.NoError(t, err)
+		errC := store.Clear(ctx)
+		require.NoError(t, errC)
 		_ = store.Close(ctx)
 	}()
 

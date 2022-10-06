@@ -54,13 +54,13 @@ func sendResponse(w http.ResponseWriter, processed *raEvents.ResourceUpdated) (i
 		switch v := content.(type) {
 		case string:
 			w.WriteHeader(statusCode)
-			if _, err := w.Write([]byte(v)); err != nil {
+			if _, err = w.Write([]byte(v)); err != nil {
 				log.Errorf("cannot write response data: %w", err)
 			}
 			return statusCode, nil
 		case []byte:
 			w.WriteHeader(statusCode)
-			if _, err := w.Write(v); err != nil {
+			if _, err = w.Write(v); err != nil {
 				log.Errorf("cannot write response data: %w", err)
 			}
 			return statusCode, nil

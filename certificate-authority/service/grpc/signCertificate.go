@@ -23,9 +23,8 @@ func (s *CertificateAuthorityServer) validateRequest(csr []byte) error {
 }
 
 func (s *CertificateAuthorityServer) SignCertificate(ctx context.Context, req *pb.SignCertificateRequest) (*pb.SignCertificateResponse, error) {
-	err := s.validateRequest(req.GetCertificateSigningRequest())
 	logger := s.logger.With("csr", string(req.GetCertificateSigningRequest()))
-	if err != nil {
+	if err := s.validateRequest(req.GetCertificateSigningRequest()); err != nil {
 		return nil, logger.LogAndReturnError(status.Errorf(codes.InvalidArgument, "cannot sign certificate: %v", err))
 	}
 

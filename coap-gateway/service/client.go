@@ -259,8 +259,7 @@ func (c *Client) cancelResourceSubscription(token string) (bool, error) {
 	}
 	sub := s.(*resourceSubscription)
 
-	err := sub.Close()
-	if err != nil {
+	if err := sub.Close(); err != nil {
 		return false, err
 	}
 	return true, nil
@@ -489,9 +488,8 @@ func (c *Client) UpdateResource(ctx context.Context, event *events.ResourceUpdat
 	setDeviceIDToTracerSpan(ctx, c.deviceID())
 	authCtx, err := c.GetAuthorizationContext()
 	if err != nil {
-		err := fmt.Errorf("cannot update resource /%v%v: %w", event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), err)
 		c.Close()
-		return err
+		return fmt.Errorf("cannot update resource /%v%v: %w", event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), err)
 	}
 	sendConfirmCtx := authCtx.ToContext(ctx)
 	if event.GetResourceId().GetHref() == commands.StatusHref {
@@ -558,9 +556,8 @@ func (c *Client) RetrieveResource(ctx context.Context, event *events.ResourceRet
 	setDeviceIDToTracerSpan(ctx, c.deviceID())
 	authCtx, err := c.GetAuthorizationContext()
 	if err != nil {
-		err := fmt.Errorf("cannot retrieve resource /%v%v: %w", event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), err)
 		c.Close()
-		return err
+		return fmt.Errorf("cannot retrieve resource /%v%v: %w", event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), err)
 	}
 	sendConfirmCtx := authCtx.ToContext(ctx)
 	if event.GetResourceId().GetHref() == commands.StatusHref {
@@ -627,9 +624,8 @@ func (c *Client) DeleteResource(ctx context.Context, event *events.ResourceDelet
 	setDeviceIDToTracerSpan(ctx, c.deviceID())
 	authCtx, err := c.GetAuthorizationContext()
 	if err != nil {
-		err := fmt.Errorf("cannot delete resource /%v%v: %w", event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), err)
 		c.Close()
-		return err
+		return fmt.Errorf("cannot delete resource /%v%v: %w", event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), err)
 	}
 	sendConfirmCtx := authCtx.ToContext(ctx)
 	if event.GetResourceId().GetHref() == commands.StatusHref {
@@ -744,9 +740,8 @@ func (c *Client) CreateResource(ctx context.Context, event *events.ResourceCreat
 	setDeviceIDToTracerSpan(ctx, c.deviceID())
 	authCtx, err := c.GetAuthorizationContext()
 	if err != nil {
-		err := fmt.Errorf("cannot create resource /%v%v: %w", event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), err)
 		c.Close()
-		return err
+		return fmt.Errorf("cannot create resource /%v%v: %w", event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), err)
 	}
 	sendConfirmCtx := authCtx.ToContext(ctx)
 	if event.GetResourceId().GetHref() == commands.StatusHref {
@@ -790,9 +785,9 @@ func (c *Client) OnDeviceSubscriberReconnectError(err error) {
 	logCloseDeviceSubscriberError := func(err error) {
 		c.Errorf("failed to close device %v subscription: %w", auth.GetDeviceID(), err)
 	}
-	if err := c.server.taskQueue.Submit(func() {
-		if errSub := c.closeDeviceSubscriber(); err != nil {
-			logCloseDeviceSubscriberError(errSub)
+	if err = c.server.taskQueue.Submit(func() {
+		if errC := c.closeDeviceSubscriber(); errC != nil {
+			logCloseDeviceSubscriberError(errC)
 		}
 	}); err != nil {
 		logCloseDeviceSubscriberError(err)
@@ -811,9 +806,8 @@ func (c *Client) UpdateDeviceMetadata(ctx context.Context, event *events.DeviceM
 	setDeviceIDToTracerSpan(ctx, c.deviceID())
 	authCtx, err := c.GetAuthorizationContext()
 	if err != nil {
-		err := fmt.Errorf("cannot update device('%v') metadata: %w", event.GetDeviceId(), err)
 		c.Close()
-		return err
+		return fmt.Errorf("cannot update device('%v') metadata: %w", event.GetDeviceId(), err)
 	}
 	if event.GetShadowSynchronization() == commands.ShadowSynchronization_UNSET {
 		return nil

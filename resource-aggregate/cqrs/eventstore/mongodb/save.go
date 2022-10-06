@@ -161,8 +161,7 @@ func (s *EventStore) Save(ctx context.Context, events ...eventstore.Event) (even
 		s.LogDebugfFunc("mongodb.Evenstore.Save takes %v", time.Since(t))
 	}()
 
-	err := checkBeforeSave(events...)
-	if err != nil {
+	if err := checkBeforeSave(events...); err != nil {
 		return eventstore.Fail, err
 	}
 

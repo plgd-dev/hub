@@ -33,14 +33,14 @@ func TestRequestHandler_DeleteDevices(t *testing.T) {
 	fileWatcher, err := fsnotify.NewWatcher()
 	require.NoError(t, err)
 	defer func() {
-		err := fileWatcher.Close()
-		require.NoError(t, err)
+		errC := fileWatcher.Close()
+		require.NoError(t, errC)
 	}()
 	eventstore, err := mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, fileWatcher, logger, trace.NewNoopTracerProvider(), mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
-		err := eventstore.Clear(ctx)
-		require.NoError(t, err)
+		errC := eventstore.Clear(ctx)
+		require.NoError(t, errC)
 		_ = eventstore.Close(ctx)
 	}()
 	naClient, publisher, err := natsTest.NewClientAndPublisher(cfg.Clients.Eventbus.NATS, fileWatcher, logger, publisher.WithMarshaler(utils.Marshal))

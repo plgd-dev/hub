@@ -89,8 +89,8 @@ func runGetEvents(t *testing.T, cfg runGetEventsConfig) {
 	fileWatcher, err := fsnotify.NewWatcher()
 	require.NoError(t, err)
 	defer func() {
-		err := fileWatcher.Close()
-		require.NoError(t, err)
+		errC := fileWatcher.Close()
+		require.NoError(t, errC)
 	}()
 
 	ctx := context.Background()

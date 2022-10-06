@@ -153,12 +153,12 @@ func NewMongoStore(t *testing.T) (*mongodb.Store, func()) {
 	require.NoError(t, err)
 
 	cleanUp := func() {
-		err := store.Clear(ctx)
-		require.NoError(t, err)
+		errC := store.Clear(ctx)
+		require.NoError(t, errC)
 		_ = store.Close(ctx)
 		certManager.Close()
-		err = fileWatcher.Close()
-		require.NoError(t, err)
+		errC = fileWatcher.Close()
+		require.NoError(t, errC)
 	}
 
 	return store, cleanUp

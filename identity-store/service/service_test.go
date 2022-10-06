@@ -70,8 +70,8 @@ func newTestService(t *testing.T) (*Server, func()) {
 		publisher.Close()
 		naClient.Close()
 		wg.Wait()
-		err := fileWatcher.Close()
-		require.NoError(t, err)
+		errC := fileWatcher.Close()
+		require.NoError(t, errC)
 	}
 }
 
