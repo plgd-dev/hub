@@ -176,7 +176,7 @@ func CreateDevices(ctx context.Context, t *testing.T, numDevices int, numResourc
 	numGoRoutines := int64(8)
 	sem := semaphore.NewWeighted(numGoRoutines)
 	for i := 0; i < numDevices; i++ {
-		err := sem.Acquire(ctx, 1)
+		err = sem.Acquire(ctx, 1)
 		require.NoError(t, err)
 		go func(i int) {
 			CreateDevice(ctx, t, fmt.Sprintf("dev-%v", i), uuid.NewString(), numResourcesPerDevice, isClient, raClient)

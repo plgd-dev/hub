@@ -63,8 +63,8 @@ func (c *Client) SyncUpdateDeviceMetadata(ctx context.Context, owner string, req
 		return nil, fmt.Errorf("cannot subscribe to eventbus: %w", err)
 	}
 	defer func() {
-		if err := obs.Close(); err != nil {
-			log.Errorf("update device metadata: %w", err)
+		if errC := obs.Close(); errC != nil {
+			log.Errorf("update device metadata: %w", errC)
 		}
 	}()
 

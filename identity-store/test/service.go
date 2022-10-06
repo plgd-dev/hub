@@ -34,7 +34,7 @@ func New(t *testing.T, config service.Config) func() {
 	return func() {
 		_ = idServer.Close()
 		wg.Wait()
-		err := fileWatcher.Close()
-		require.NoError(t, err)
+		errC := fileWatcher.Close()
+		require.NoError(t, errC)
 	}
 }

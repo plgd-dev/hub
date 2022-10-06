@@ -136,9 +136,9 @@ func (s *Store) SaveSubscription(ctx context.Context, sub store.Subscription) er
 	if err := validateSubscription(sub); err != nil {
 		return fmt.Errorf("cannot save resource subscription: %w", err)
 	}
-	DBSub := makeDBSub(sub)
+	dbsub := makeDBSub(sub)
 	col := s.Collection(subscriptionsCName)
-	if _, err := col.InsertOne(ctx, DBSub); err != nil {
+	if _, err := col.InsertOne(ctx, dbsub); err != nil {
 		return fmt.Errorf("cannot save resource subscription: %w", err)
 	}
 	return nil
@@ -169,17 +169,17 @@ func (s *Store) SetInitialized(ctx context.Context, subscriptionID string) error
 }
 
 func (s *Store) PopSubscription(ctx context.Context, subscriptionID string) (sub store.Subscription, err error) {
-	var DBSub DBSub
+	var dbsub DBSub
 	col := s.Collection(subscriptionsCName)
 	res := col.FindOneAndDelete(ctx, bson.M{"_id": subscriptionID})
 	if res.Err() != nil {
 		return sub, res.Err()
 	}
-	err = res.Decode(&DBSub)
+	err = res.Decode(&dbsub)
 	if err != nil {
 		return sub, err
 	}
-	return convertToSubscription(DBSub), nil
+	return convertToSubscription(dbsub), nil
 }
 
 func (s *Store) LoadSubscriptions(ctx context.Context, query store.SubscriptionQuery, h store.SubscriptionHandler) error {

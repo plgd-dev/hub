@@ -120,7 +120,7 @@ func (p *Publisher) Publish(ctx context.Context, topics []string, groupID, aggre
 
 	var errors []error
 	for _, t := range topics {
-		err := p.PublishData(t, eData)
+		err = p.PublishData(t, eData)
 		if err != nil {
 			errors = append(errors, err)
 		}
@@ -146,9 +146,9 @@ func (p *Publisher) Flush(ctx context.Context) error {
 	flushCtx := ctx
 	_, ok := ctx.Deadline()
 	if !ok {
-		ctx, cancel := context.WithTimeout(ctx, p.flusherTimeout)
+		fctx, cancel := context.WithTimeout(ctx, p.flusherTimeout)
 		defer cancel()
-		flushCtx = ctx
+		flushCtx = fctx
 	}
 	return p.conn.FlushWithContext(flushCtx)
 }

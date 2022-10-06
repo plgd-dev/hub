@@ -17,9 +17,9 @@ func IsContextCanceled(err error) bool {
 	if errors.Is(err, context.Canceled) {
 		return true
 	}
-	var grpcErr grpcErr
-	if ok := errors.As(err, &grpcErr); ok {
-		return grpcErr.GRPCStatus().Code() == codes.Canceled
+	var gErr grpcErr
+	if ok := errors.As(err, &gErr); ok {
+		return gErr.GRPCStatus().Code() == codes.Canceled
 	}
 	return false
 }
@@ -28,9 +28,9 @@ func IsContextDeadlineExceeded(err error) bool {
 	if errors.Is(err, context.DeadlineExceeded) {
 		return true
 	}
-	var grpcErr grpcErr
-	if ok := errors.As(err, &grpcErr); ok {
-		return grpcErr.GRPCStatus().Code() == codes.DeadlineExceeded
+	var gErr grpcErr
+	if ok := errors.As(err, &gErr); ok {
+		return gErr.GRPCStatus().Code() == codes.DeadlineExceeded
 	}
 	return false
 }
@@ -44,10 +44,10 @@ func ForwardFromError(code codes.Code, err error) error {
 func ForwardErrorf(code codes.Code, formatter string, args ...interface{}) error {
 	var details []*anypb.Any
 	for _, a := range args {
-		var grpcErr grpcErr
+		var gErr grpcErr
 		if err, ok := a.(error); ok {
-			if errors.As(err, &grpcErr) {
-				s := grpcErr.GRPCStatus()
+			if errors.As(err, &gErr) {
+				s := gErr.GRPCStatus()
 				code = s.Code()
 				details = s.Proto().GetDetails()
 				break
@@ -60,9 +60,9 @@ func ForwardErrorf(code codes.Code, formatter string, args ...interface{}) error
 }
 
 func ErrToStatus(err error) *status.Status {
-	var grpcErr grpcErr
-	if errors.As(err, &grpcErr) {
-		return grpcErr.GRPCStatus()
+	var gErr grpcErr
+	if errors.As(err, &gErr) {
+		return gErr.GRPCStatus()
 	}
 	return status.Convert(err)
 }

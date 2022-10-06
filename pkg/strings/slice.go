@@ -75,13 +75,14 @@ func ToSlice(v interface{}) []string {
 	if v == nil {
 		return nil
 	}
-	s, ok := v.(string)
-	if ok && s == "" {
-		return nil
-	}
-	if ok {
+
+	if s, ok := v.(string); ok {
+		if s == "" {
+			return nil
+		}
 		return []string{s}
 	}
+
 	if a, ok := v.([]string); ok {
 		return a
 	}

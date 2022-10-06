@@ -23,17 +23,15 @@ func GetConfiguration(ctx context.Context, httpClient *http.Client, domain strin
 		return Config{}, fmt.Errorf("invalid response GET %v response: is empty", href)
 	}
 	defer func() {
-		if err := resp.Body.Close(); err != nil {
-			log.Errorf("failed to close response body stream: %w", err)
+		if errC := resp.Body.Close(); errC != nil {
+			log.Errorf("failed to close response body stream: %w", errC)
 		}
 	}()
 	var cfg Config
-	err = json.ReadFrom(resp.Body, &cfg)
-	if err != nil {
+	if err = json.ReadFrom(resp.Body, &cfg); err != nil {
 		return Config{}, fmt.Errorf("cannot decode GET %v response: %w", href, err)
 	}
-	err = cfg.Validate()
-	if err != nil {
+	if err = cfg.Validate(); err != nil {
 		return Config{}, fmt.Errorf("invalid property of GET %v response: %w", href, err)
 	}
 

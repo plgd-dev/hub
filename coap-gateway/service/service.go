@@ -172,8 +172,8 @@ func newTCPListener(config COAPConfig, fileWatcher *fsnotify.Watcher, logger log
 			return nil, nil, fmt.Errorf("cannot create tcp listener: %w", err)
 		}
 		closeListener := func() {
-			if err := listener.Close(); err != nil {
-				logger.Errorf("failed to close tcp listener: %w", err)
+			if errC := listener.Close(); errC != nil {
+				logger.Errorf("failed to close tcp listener: %w", errC)
 			}
 		}
 		return listener, closeListener, nil
@@ -193,8 +193,8 @@ func newTCPListener(config COAPConfig, fileWatcher *fsnotify.Watcher, logger log
 		return nil, nil, fmt.Errorf("cannot create tcp-tls listener: %w", err)
 	}
 	closeListener.AddFunc(func() {
-		if err := listener.Close(); err != nil {
-			logger.Errorf("failed to close tcp-tls listener: %w", err)
+		if errC := listener.Close(); errC != nil {
+			logger.Errorf("failed to close tcp-tls listener: %w", errC)
 		}
 	})
 	return listener, closeListener.ToFunction(), nil

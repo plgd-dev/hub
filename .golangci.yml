@@ -1,9 +1,12 @@
 run:
   skip-dirs:
     - dependency
+    - http-gateway/grpc-websocket-proxy
   skip-dirs-use-default: false
 
 linters-settings:
+  gocyclo:
+    min-complexity: 15
   govet:
     # check-shadowing: true
     check-shadowing: false

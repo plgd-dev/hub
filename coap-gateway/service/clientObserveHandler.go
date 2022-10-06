@@ -235,16 +235,16 @@ func startResourceObservation(req *mux.Message, client *Client, authCtx *authori
 	sub := newResourceSubscription(req, client, authCtx, deviceID, href)
 	_, loaded := client.resourceSubscriptions.LoadOrStore(token, sub)
 	if loaded {
-		if err := sub.Close(); err != nil {
-			client.Errorf("failed to close resource /%v%v subscription: %w", deviceID, href, err)
+		if errC := sub.Close(); errC != nil {
+			client.Errorf("failed to close resource /%v%v subscription: %w", deviceID, href, errC)
 		}
 		return nil, statusErrorf(coapCodes.BadRequest, "%w", getStartObserveResourceErr(deviceID, href, fmt.Errorf("resource subscription with token %v already exist", token)))
 	}
 	err = sub.Init(req.Context)
 	if err != nil {
 		_, _ = client.resourceSubscriptions.PullOut(token)
-		if errClose := sub.Close(); errClose != nil {
-			client.Errorf("failed to close resource /%v%v subscription: %w", deviceID, href, errClose)
+		if errC := sub.Close(); errC != nil {
+			client.Errorf("failed to close resource /%v%v subscription: %w", deviceID, href, errC)
 		}
 		return nil, statusErrorf(coapCodes.BadRequest, "%w", getStartObserveResourceErr(deviceID, href, err))
 	}

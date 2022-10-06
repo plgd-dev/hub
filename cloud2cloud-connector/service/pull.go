@@ -92,8 +92,8 @@ func Get(ctx context.Context, tracerProvider trace.TracerProvider, url string, l
 		return err
 	}
 	defer func() {
-		if err := resp.Body.Close(); err != nil {
-			log.Errorf("failed to close response body: %w", err)
+		if errC := resp.Body.Close(); errC != nil {
+			log.Errorf("failed to close response body: %w", errC)
 		}
 	}()
 	buf, err := io.ReadAll(resp.Body)
@@ -210,7 +210,7 @@ func (p *pullDevicesHandler) pullDevices(ctx context.Context, linkedAccount stor
 
 		ok := registeredDevices[deviceID]
 		if !ok {
-			_, err := p.isClient.AddDevice(ctx, &pbIS.AddDeviceRequest{
+			_, err = p.isClient.AddDevice(ctx, &pbIS.AddDeviceRequest{
 				DeviceId: deviceID,
 			})
 			if err != nil {

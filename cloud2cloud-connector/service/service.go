@@ -227,8 +227,8 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 	listener.AddCloseFunc(otelClient.Close)
 	var cleanUp fn.FuncList
 	cleanUp.AddFunc(func() {
-		if err := listener.Close(); err != nil {
-			logger.Errorf("cannot create http server: %w", err)
+		if errC := listener.Close(); errC != nil {
+			logger.Errorf("cannot create http server: %w", errC)
 		}
 	})
 
