@@ -56,7 +56,7 @@ func SetUpClouds(ctx context.Context, t *testing.T, deviceID string, supportedEv
 	})))
 	require.NoError(t, err)
 	c1 := pb.NewGrpcGatewayClient(cloud1Conn)
-	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c1, deviceID, testCfg.COAPS_TCP_SCHEME+testCfg.COAP_GW_HOST, test.GetAllBackendResourceLinks())
+	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c1, deviceID, testCfg.ACTIVE_COAP_SCHEME+testCfg.COAP_GW_HOST, test.GetAllBackendResourceLinks())
 	if len(switchIDs) > 0 {
 		test.AddDeviceSwitchResources(ctx, t, deviceID, c1, switchIDs...)
 	}

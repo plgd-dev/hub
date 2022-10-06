@@ -124,7 +124,7 @@ func TestRequestHandlerGetDevices(t *testing.T) {
 	require.NoError(t, err)
 	c := pb.NewGrpcGatewayClient(conn)
 
-	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.COAPS_TCP_SCHEME+config.COAP_GW_HOST, test.GetAllBackendResourceLinks())
+	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.ACTIVE_COAP_SCHEME+config.COAP_GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 
 	toStringSlice := func(s []pb.GetDevicesRequest_Status) []string {

@@ -59,7 +59,7 @@ func TestRequestHandlerSubscribeToEvents(t *testing.T) {
 	c := pb.NewGrpcGatewayClient(conn)
 
 	resourceLinks := test.GetAllBackendResourceLinks()
-	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.USE_COAP_SCHEME+testCfg.COAP_GW_HOST, resourceLinks)
+	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.ACTIVE_COAP_SCHEME+testCfg.COAP_GW_HOST, resourceLinks)
 	defer shutdownDevSim()
 
 	const switchID = "1"
@@ -232,7 +232,7 @@ func TestRequestHandlerSubscribeForCreateEvents(t *testing.T) {
 	}()
 	c := pb.NewGrpcGatewayClient(conn)
 
-	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.USE_COAP_SCHEME+testCfg.COAP_GW_HOST, test.GetAllBackendResourceLinks())
+	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.ACTIVE_COAP_SCHEME+testCfg.COAP_GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 
 	client, err := client.New(c).SubscribeToEventsWithCurrentState(ctx, time.Minute)
@@ -545,7 +545,7 @@ func TestRequestHandlerSubscribeForPendingCommands(t *testing.T) {
 	client, err := client.New(c).SubscribeToEventsWithCurrentState(ctx, time.Minute)
 	require.NoError(t, err)
 
-	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.USE_COAP_SCHEME+testCfg.COAP_GW_HOST, test.GetAllBackendResourceLinks())
+	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.ACTIVE_COAP_SCHEME+testCfg.COAP_GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 
 	secureGWShutdown()
@@ -768,7 +768,7 @@ func TestRequestHandlerIssue270(t *testing.T) {
 	}
 	test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
 
-	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.USE_COAP_SCHEME+testCfg.COAP_GW_HOST, test.GetAllBackendResourceLinks())
+	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.ACTIVE_COAP_SCHEME+testCfg.COAP_GW_HOST, test.GetAllBackendResourceLinks())
 
 	time.Sleep(time.Second * 10)
 

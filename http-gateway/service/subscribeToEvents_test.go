@@ -199,7 +199,7 @@ func TestRequestHandlerSubscribeToEvents(t *testing.T) {
 	pbTest.CmpEvent(t, expectedEvent, ev, "")
 	baseSubID := ev.SubscriptionId
 
-	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.COAPS_TCP_SCHEME+config.COAP_GW_HOST, nil)
+	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.ACTIVE_COAP_SCHEME+config.COAP_GW_HOST, nil)
 
 	ev, err = recv()
 	require.NoError(t, err)

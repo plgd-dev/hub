@@ -59,7 +59,7 @@ func TestRequestHandlerGetEvents(t *testing.T) {
 	c := pb.NewGrpcGatewayClient(conn)
 
 	beforeOnBoard := time.Now().UnixNano()
-	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.USE_COAP_SCHEME+testCfg.COAP_GW_HOST, test.GetAllBackendResourceLinks())
+	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.ACTIVE_COAP_SCHEME+testCfg.COAP_GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 
 	events := getAllEvents(t, c, ctx)

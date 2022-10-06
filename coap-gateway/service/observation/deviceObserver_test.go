@@ -416,7 +416,7 @@ func runTestDeviceObserverRegister(ctx context.Context, t *testing.T, deviceID s
 	}()
 	grpcClient := pb.NewGrpcGatewayClient(grpcConn)
 
-	_, shutdownDevSim := test.OnboardDevSim(ctx, t, grpcClient, deviceID, config.COAPS_TCP_SCHEME+config.COAP_GW_HOST, nil)
+	_, shutdownDevSim := test.OnboardDevSim(ctx, t, grpcClient, deviceID, config.ACTIVE_COAP_SCHEME+config.COAP_GW_HOST, nil)
 	defer shutdownDevSim()
 
 	done := false

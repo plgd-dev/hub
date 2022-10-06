@@ -58,7 +58,7 @@ var (
 	NATS_URL                 = "nats://localhost:4222"
 	OWNER_CLAIM              = "sub"
 	COAP_GATEWAY_UDP_ENABLED = os.Getenv("TEST_COAP_GATEWAY_UDP_ENABLED") == "true"
-	USE_COAP_SCHEME          = func() string {
+	ACTIVE_COAP_SCHEME       = func() string {
 		if os.Getenv("TEST_COAP_GATEWAY_UDP_ENABLED") == "true" {
 			return COAPS_SCHEME
 		}

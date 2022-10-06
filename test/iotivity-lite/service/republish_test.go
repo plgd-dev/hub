@@ -141,7 +141,7 @@ func TestRepublishAfterRefresh(t *testing.T) {
 	}()
 	c := pb.NewGrpcGatewayClient(conn)
 
-	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.COAPS_TCP_SCHEME+config.COAP_GW_HOST, nil)
+	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.ACTIVE_COAP_SCHEME+config.COAP_GW_HOST, nil)
 	defer shutdownDevSim()
 
 	for {

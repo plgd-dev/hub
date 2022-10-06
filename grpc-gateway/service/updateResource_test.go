@@ -192,7 +192,7 @@ func TestUpdateResource(t *testing.T) {
 	}()
 	c := pb.NewGrpcGatewayClient(conn)
 
-	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.USE_COAP_SCHEME+testCfg.COAP_GW_HOST, test.GetAllBackendResourceLinks())
+	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.ACTIVE_COAP_SCHEME+testCfg.COAP_GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 
 	test.AddDeviceSwitchResources(ctx, t, deviceID, c, switchID)
@@ -235,7 +235,7 @@ func TestRequestHandlerGetAfterUpdateResource(t *testing.T) {
 	}()
 	c := pb.NewGrpcGatewayClient(conn)
 
-	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.USE_COAP_SCHEME+testCfg.COAP_GW_HOST, test.GetAllBackendResourceLinks())
+	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.ACTIVE_COAP_SCHEME+testCfg.COAP_GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 
 	getData := func(devID string) map[string]interface{} {
@@ -299,7 +299,7 @@ func TestRequestHandlerRunMultipleUpdateResource(t *testing.T) {
 	c := pb.NewGrpcGatewayClient(conn)
 
 	resources := test.GetAllBackendResourceLinks()
-	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.USE_COAP_SCHEME+testCfg.COAP_GW_HOST, resources)
+	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.ACTIVE_COAP_SCHEME+testCfg.COAP_GW_HOST, resources)
 	defer shutdownDevSim()
 
 	for i := 0; i < numIteration; i++ {
@@ -379,7 +379,7 @@ func TestRequestHandlerRunMultipleParallelUpdateResource(t *testing.T) {
 	c := pb.NewGrpcGatewayClient(conn)
 
 	resources := test.GetAllBackendResourceLinks()
-	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.USE_COAP_SCHEME+testCfg.COAP_GW_HOST, resources)
+	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.ACTIVE_COAP_SCHEME+testCfg.COAP_GW_HOST, resources)
 	defer shutdownDevSim()
 
 	var wg sync.WaitGroup

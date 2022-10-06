@@ -49,7 +49,7 @@ func TestRequestHandlerGetResources(t *testing.T) {
 	c := pb.NewGrpcGatewayClient(conn)
 
 	resourceLinks := test.GetAllBackendResourceLinks()
-	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.COAPS_TCP_SCHEME+config.COAP_GW_HOST, resourceLinks)
+	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.ACTIVE_COAP_SCHEME+config.COAP_GW_HOST, resourceLinks)
 	defer shutdownDevSim()
 	const switchID = "1"
 	resourceLinks = append(resourceLinks, test.AddDeviceSwitchResources(ctx, t, deviceID, c, switchID)...)

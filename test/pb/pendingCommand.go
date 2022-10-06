@@ -102,7 +102,7 @@ func InitPendingEvents(ctx context.Context, t *testing.T) (pb.GrpcGatewayClient,
 	})
 	c := pb.NewGrpcGatewayClient(conn)
 
-	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.USE_COAP_SCHEME+config.COAP_GW_HOST, test.GetAllBackendResourceLinks())
+	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.ACTIVE_COAP_SCHEME+config.COAP_GW_HOST, test.GetAllBackendResourceLinks())
 	closeFunc.AddFunc(shutdownDevSim)
 
 	secureGWShutdown()

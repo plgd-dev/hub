@@ -110,7 +110,7 @@ func TestRequestHandlerDeleteResource(t *testing.T) {
 		_ = conn.Close()
 	}()
 	c := pb.NewGrpcGatewayClient(conn)
-	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.USE_COAP_SCHEME+testCfg.COAP_GW_HOST, test.GetAllBackendResourceLinks())
+	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.ACTIVE_COAP_SCHEME+testCfg.COAP_GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 	test.AddDeviceSwitchResources(ctx, t, deviceID, c, "1", "2", "3")
 
@@ -152,7 +152,7 @@ func TestRequestHandlerDeleteResourceAfterUnpublish(t *testing.T) {
 		_ = conn.Close()
 	}()
 	c := pb.NewGrpcGatewayClient(conn)
-	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.USE_COAP_SCHEME+testCfg.COAP_GW_HOST, test.GetAllBackendResourceLinks())
+	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.ACTIVE_COAP_SCHEME+testCfg.COAP_GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 	const switchID1 = "1"
 	const switchID2 = "2"

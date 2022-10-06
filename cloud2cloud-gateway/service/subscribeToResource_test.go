@@ -39,7 +39,7 @@ func TestRequestHandlerSubscribeToResource(t *testing.T) {
 	defer func() {
 		_ = conn.Close()
 	}()
-	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.COAPS_TCP_SCHEME+testCfg.COAP_GW_HOST, test.GetAllBackendResourceLinks())
+	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.ACTIVE_COAP_SCHEME+testCfg.COAP_GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 
 	const eventsURI = "/events"
@@ -90,7 +90,7 @@ func TestRequestHandlerSubscribeToResourceTokenTimeout(t *testing.T) {
 	token := oauthTest.GetAccessToken(t, testCfg.OAUTH_SERVER_HOST, oauthTest.ClientTestShortExpiration)
 	ctx = kitNetGrpc.CtxWithToken(ctx, token)
 
-	_, shutdownDevSim := test.OnboardDevSimForClient(ctx, t, c, oauthTest.ClientTestShortExpiration, deviceID, testCfg.COAPS_TCP_SCHEME+testCfg.COAP_GW_HOST,
+	_, shutdownDevSim := test.OnboardDevSimForClient(ctx, t, c, oauthTest.ClientTestShortExpiration, deviceID, testCfg.ACTIVE_COAP_SCHEME+testCfg.COAP_GW_HOST,
 		test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 

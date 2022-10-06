@@ -62,7 +62,7 @@ func TestRequestHandlerSubscribeToDevices(t *testing.T) {
 	defer func() {
 		_ = conn.Close()
 	}()
-	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.COAPS_TCP_SCHEME+testCfg.COAP_GW_HOST, test.GetAllBackendResourceLinks())
+	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.ACTIVE_COAP_SCHEME+testCfg.COAP_GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 
 	eventsServer, cleanUpEventsServer := c2cTest.NewTestListener(t)
@@ -155,7 +155,7 @@ func TestRequestHandlerSubscribeToDevicesOffline(t *testing.T) {
 	defer func() {
 		_ = conn.Close()
 	}()
-	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.COAPS_TCP_SCHEME+coapgwCfg.APIs.COAP.Addr, test.GetAllBackendResourceLinks())
+	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.ACTIVE_COAP_SCHEME+coapgwCfg.APIs.COAP.Addr, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 
 	eventsServer, cleanUpEventsServer := c2cTest.NewTestListener(t)

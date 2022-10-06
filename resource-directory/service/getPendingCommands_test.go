@@ -342,7 +342,7 @@ func TestRequestHandlerGetPendingCommands(t *testing.T) {
 	}()
 	c := pb.NewGrpcGatewayClient(conn)
 
-	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.COAPS_TCP_SCHEME+testCfg.COAP_GW_HOST, test.GetAllBackendResourceLinks())
+	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.ACTIVE_COAP_SCHEME+testCfg.COAP_GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 
 	secureGWShutdown()
