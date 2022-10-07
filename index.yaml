@@ -3,9 +3,9 @@ entries:
   plgd-dps:
   - apiVersion: v2
     appVersion: 0.6.0
-    created: "2022-10-07T10:57:36.68086945Z"
+    created: "2022-10-07T11:38:01.559557724Z"
     description: A Helm chart for plgd device provisioning service
-    digest: f6e34b642a84f94698723ac3b1b809c0f6d4c52cfc970b64b3b9633955062e5c
+    digest: b2772f1f15e5a8d217f0c72fd269c675a6209b6e019f8a41bd175560ec2f4a3f
     name: plgd-dps
     type: application
     urls:
@@ -613,4 +613,4 @@ entries:
     urls:
     - https://charts.plgd.dev/plgd-hub-2.1.0.tgz
     version: 2.1.0
-generated: "2022-10-07T10:57:36.677368009Z"
+generated: "2022-10-07T11:38:01.555744678Z"
