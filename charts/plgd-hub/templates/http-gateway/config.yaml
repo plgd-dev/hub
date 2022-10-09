@@ -82,7 +82,7 @@ data:
           {{- $client := index $.Values.mockoauthserver.oauth 1 }}
           clientID: {{ $client.clientID | quote }}
           audience: {{ include "plgd-hub.mockoauthserver.ingressDomain" $ | quote }}
-          scopes: []
+          scopes: [ "openid" ]
         {{- end }}
         deviceOAuthClient:
         {{- $providers := $.Values.mockoauthserver.oauth }}
