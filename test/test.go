@@ -204,13 +204,9 @@ func setAccessForCloud(ctx context.Context, t *testing.T, c *deviceClient.Client
 	cloudSID := config.HubID()
 	require.NotEmpty(t, cloudSID)
 
-	d, links, err := c.GetRefDevice(ctx, deviceID)
+	d, links, err := c.GetDevice(ctx, deviceID)
 	require.NoError(t, err)
 
-	defer func() {
-		err := d.Release(ctx)
-		require.NoError(t, err)
-	}()
 	p, err := d.Provision(ctx, links)
 	require.NoError(t, err)
 	defer func() {
@@ -447,18 +443,24 @@ type findDeviceIDByNameHandler struct {
 	cancel context.CancelFunc
 }
 
-func (h *findDeviceIDByNameHandler) Handle(ctx context.Context, dev *core.Device, deviceLinks schema.ResourceLinks) {
+func (h *findDeviceIDByNameHandler) Handle(ctx context.Context, dev *core.Device) {
 	defer func() {
 		err := dev.Close(ctx)
 		h.Error(err)
 	}()
+	deviceLinks, err := dev.GetResourceLinks(ctx, dev.GetEndpoints())
+	if err != nil {
+		h.Error(err)
+		return
+	}
 	l, ok := deviceLinks.GetResourceLink(device.ResourceURI)
 	if !ok {
 		return
 	}
 	var d device.Device
-	err := dev.GetResource(ctx, l, &d)
+	err = dev.GetResource(ctx, l, &d)
 	if err != nil {
+		h.Error(err)
 		return
 	}
 	if d.Name == h.name {
@@ -480,7 +482,7 @@ func FindDeviceByName(ctx context.Context, name string) (deviceID string, _ erro
 		cancel: cancel,
 	}
 
-	err := client.GetDevices(ctx, &h)
+	err := client.GetDevicesByMulticast(ctx, core.DefaultDiscoveryConfiguration(), &h)
 	if err != nil {
 		return "", fmt.Errorf("could not find the device named %s: %w", name, err)
 	}
@@ -498,9 +500,7 @@ func IsDiscoveryResourceBatchObservable(ctx context.Context, t *testing.T, devic
 		_ = devClient.Close(ctx)
 	}()
 
-	device, links, err := devClient.GetRefDevice(ctx, deviceID)
-	require.NoError(t, err)
-	err = device.Release(ctx)
+	_, links, err := devClient.GetDevice(ctx, deviceID)
 	require.NoError(t, err)
 	links = links.GetResourceLinks(resources.ResourceType)
 	if len(links) == 0 {
