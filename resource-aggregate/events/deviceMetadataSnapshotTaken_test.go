@@ -147,6 +147,7 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 	correlationID := "correlationID"
 	connectionID := "connectionID"
 	userID := "userID"
+	connectedAt := int64(1235)
 	jwtWithSubUserID := config.CreateJwtToken(t, jwt.MapClaims{
 		"sub": userID,
 	})
@@ -164,8 +165,28 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "online,offline",
+			name: "online,online,offline",
 			preCmds: []args{
+				{
+					ctx: grpc.CtxWithIncomingToken(context.Background(), jwtWithSubUserID),
+					cmd: &commands.UpdateDeviceMetadataRequest{
+						DeviceId: deviceID,
+						CommandMetadata: &commands.CommandMetadata{
+							ConnectionId: connectionID,
+							Sequence:     0,
+						},
+						TimeToLive:    0,
+						CorrelationId: correlationID,
+						Update: &commands.UpdateDeviceMetadataRequest_Status{
+							Status: &commands.ConnectionStatus{
+								Value:        commands.ConnectionStatus_ONLINE,
+								ConnectionId: connectionID,
+								ConnectedAt:  connectedAt,
+							},
+						},
+					},
+					newVersion: 0,
+				},
 				{
 					ctx: grpc.CtxWithIncomingToken(context.Background(), jwtWithSubUserID),
 					cmd: &commands.UpdateDeviceMetadataRequest{
@@ -209,7 +230,8 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 				pb.ToEvent(&events.DeviceMetadataUpdated{
 					DeviceId: deviceID,
 					Status: &commands.ConnectionStatus{
-						Value: commands.ConnectionStatus_OFFLINE,
+						Value:       commands.ConnectionStatus_OFFLINE,
+						ConnectedAt: connectedAt,
 					},
 					AuditContext:         commands.NewAuditContext(userID, correlationID),
 					OpenTelemetryCarrier: map[string]string{},
@@ -233,6 +255,7 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 							Status: &commands.ConnectionStatus{
 								Value:        commands.ConnectionStatus_ONLINE,
 								ConnectionId: connectionID,
+								ConnectedAt:  connectedAt,
 							},
 						},
 					},

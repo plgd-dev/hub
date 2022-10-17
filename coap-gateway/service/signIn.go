@@ -156,7 +156,7 @@ func (c *Client) updateBySignInData(ctx context.Context, upd updateType, deviceI
 		}
 	}
 
-	if err := c.server.devicesStatusUpdater.Add(ctx, c); err != nil {
+	if err := c.server.devicesStatusUpdater.Add(ctx, c, upd == updateTypeNew); err != nil {
 		return fmt.Errorf("cannot update cloud device status: %w", err)
 	}
 
