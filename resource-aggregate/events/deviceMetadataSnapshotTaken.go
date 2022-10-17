@@ -90,7 +90,11 @@ func (d *DeviceMetadataSnapshotTaken) HandleDeviceMetadataUpdated(ctx context.Co
 	if index >= 0 {
 		d.UpdatePendings = append(d.UpdatePendings[:index], d.UpdatePendings[index+1:]...)
 	}
-	d.DeviceMetadataUpdated = upd
+	if d.DeviceMetadataUpdated == nil {
+		d.DeviceMetadataUpdated = upd
+	} else {
+		d.DeviceMetadataUpdated.CopyData(upd)
+	}
 	d.EventMetadata = upd.GetEventMetadata()
 	return true, nil
 }
@@ -248,6 +252,12 @@ func (d *DeviceMetadataSnapshotTaken) HandleCommand(ctx context.Context, cmd agg
 		switch {
 		case req.GetStatus() != nil:
 			// it is expected that the device updates the status on its own. no confirmation needed.
+
+			// keep last connected at from the previous event
+			lastConnectedAt := d.GetDeviceMetadataUpdated().GetStatus().GetConnectedAt()
+			if req.GetStatus().GetConnectedAt() < lastConnectedAt {
+				req.GetStatus().ConnectedAt = lastConnectedAt
+			}
 			ev := DeviceMetadataUpdated{
 				DeviceId:              req.GetDeviceId(),
 				Status:                req.GetStatus(),

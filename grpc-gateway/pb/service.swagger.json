@@ -1216,6 +1216,10 @@
         },
         "connectionId": {
           "type": "string"
+        },
+        "connectedAt": {
+          "type": "string",
+          "format": "int64"
         }
       }
     },
