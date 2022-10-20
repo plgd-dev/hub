@@ -417,6 +417,17 @@ func (c *Client) GetAuthorizationContext() (*authorizationContext, error) {
 	return c.authCtx, c.authCtx.IsValid()
 }
 
+func (c *Client) batchNotifyContentChanged(ctx context.Context, deviceID string, notification *pool.Message) error {
+	batch, err := coapconv.NewNotifyResourceChangedRequestsFromBatchResourceDiscovery(deviceID, c.RemoteAddr().String(), notification)
+	if err != nil {
+		return err
+	}
+	_, err = c.server.raClient.BatchNotifyResourceChanged(ctx, &commands.BatchNotifyResourceChangedRequest{
+		Batch: batch,
+	})
+	return err
+}
+
 func (c *Client) notifyContentChanged(deviceID, href string, batch bool, notification *pool.Message) error {
 	notifyError := func(deviceID, href string, err error) error {
 		return fmt.Errorf("cannot notify resource /%v%v content changed: %w", deviceID, href, err)
@@ -429,23 +440,21 @@ func (c *Client) notifyContentChanged(deviceID, href string, batch bool, notific
 		// we want to log only observations
 		c.logNotificationFromClient(href, notification)
 	}
-
-	var requests []*commands.NotifyResourceChangedRequest
+	ctx := kitNetGrpc.CtxWithToken(c.Context(), authCtx.GetAccessToken())
 	if batch && href == resources.ResourceURI {
-		requests, err = coapconv.NewNotifyResourceChangedRequestsFromBatchResourceDiscovery(deviceID, c.RemoteAddr().String(), notification)
+		err = c.batchNotifyContentChanged(ctx, deviceID, notification)
 		if err != nil {
 			return notifyError(deviceID, href, err)
 		}
 	} else {
-		requests = []*commands.NotifyResourceChangedRequest{coapconv.NewNotifyResourceChangedRequest(commands.NewResourceID(deviceID, href), c.RemoteAddr().String(), notification)}
-	}
-
-	ctx := kitNetGrpc.CtxWithToken(c.Context(), authCtx.GetAccessToken())
-	for _, request := range requests {
-		_, err = c.server.raClient.NotifyResourceChanged(ctx, request)
+		_, err = c.server.raClient.NotifyResourceChanged(ctx, coapconv.NewNotifyResourceChangedRequest(commands.NewResourceID(deviceID, href), c.RemoteAddr().String(), notification))
 		if err != nil {
-			return notifyError(request.GetResourceId().GetDeviceId(), request.GetResourceId().GetHref(), err)
+			return notifyError(deviceID, href, err)
 		}
+	}
+	obs, err := c.getDeviceObserver(c.Context())
+	if err == nil {
+		obs.ResourceHasBeenSynchronized(ctx, href)
 	}
 	return nil
 }
@@ -875,4 +884,36 @@ func (c *Client) ResolveDeviceID(claim pkgJwt.Claims, paramDeviceID string) stri
 		return c.tlsDeviceID
 	}
 	return paramDeviceID
+}
+
+func (c *Client) UpdateShadowSynchronizationStatus(ctx context.Context, deviceID string, status commands.ShadowSynchronizationStatus_Status, t time.Time) error {
+	authCtx, err := c.GetAuthorizationContext()
+	if err != nil {
+		c.Close()
+		return fmt.Errorf("cannot update shadow synchronization status %v to %v: %w", deviceID, status, err)
+	}
+
+	var startAt, finishedAt int64
+	switch status {
+	case commands.ShadowSynchronizationStatus_STARTED:
+		startAt = t.UnixNano()
+	case commands.ShadowSynchronizationStatus_FINISHED:
+		finishedAt = t.UnixNano()
+	}
+	ctx = authCtx.ToContext(ctx)
+	_, err = c.server.raClient.UpdateDeviceMetadata(ctx, &commands.UpdateDeviceMetadataRequest{
+		DeviceId: deviceID,
+		CommandMetadata: &commands.CommandMetadata{
+			ConnectionId: c.RemoteAddr().String(),
+			Sequence:     c.coapConn.Sequence(),
+		},
+		Update: &commands.UpdateDeviceMetadataRequest_ShadowSynchronizationStatus{
+			ShadowSynchronizationStatus: &commands.ShadowSynchronizationStatus{
+				Value:      status,
+				StartedAt:  startAt,
+				FinishedAt: finishedAt,
+			},
+		},
+	})
+	return err
 }

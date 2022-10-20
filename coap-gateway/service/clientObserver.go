@@ -64,7 +64,7 @@ func (c *Client) replaceDeviceObserverWithDeviceShadow(ctx context.Context, shad
 	}
 
 	deviceObserver, err := observation.NewDeviceObserver(c.Context(), deviceID, c, c, c,
-		observation.MakeResourcesObserverCallbacks(c.onObserveResource, c.onGetResourceContent),
+		observation.MakeResourcesObserverCallbacks(c.onObserveResource, c.onGetResourceContent, c.UpdateShadowSynchronizationStatus),
 		observation.WithShadowSynchronization(shadow), observation.WithObservationType(observationType),
 		observation.WithLogger(c.getLogger()),
 	)

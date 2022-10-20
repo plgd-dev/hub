@@ -35,6 +35,7 @@ type ResourceAggregateClient interface {
 	CancelPendingMetadataUpdates(ctx context.Context, in *commands.CancelPendingMetadataUpdatesRequest, opts ...grpc.CallOption) (*commands.CancelPendingMetadataUpdatesResponse, error)
 	CancelPendingCommands(ctx context.Context, in *commands.CancelPendingCommandsRequest, opts ...grpc.CallOption) (*commands.CancelPendingCommandsResponse, error)
 	DeleteDevices(ctx context.Context, in *commands.DeleteDevicesRequest, opts ...grpc.CallOption) (*commands.DeleteDevicesResponse, error)
+	BatchNotifyResourceChanged(ctx context.Context, in *commands.BatchNotifyResourceChangedRequest, opts ...grpc.CallOption) (*commands.BatchNotifyResourceChangedResponse, error)
 }
 
 type resourceAggregateClient struct {
@@ -189,6 +190,15 @@ func (c *resourceAggregateClient) DeleteDevices(ctx context.Context, in *command
 	return out, nil
 }
 
+func (c *resourceAggregateClient) BatchNotifyResourceChanged(ctx context.Context, in *commands.BatchNotifyResourceChangedRequest, opts ...grpc.CallOption) (*commands.BatchNotifyResourceChangedResponse, error) {
+	out := new(commands.BatchNotifyResourceChangedResponse)
+	err := c.cc.Invoke(ctx, "/resourceaggregate.pb.ResourceAggregate/BatchNotifyResourceChanged", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ResourceAggregateServer is the server API for ResourceAggregate service.
 // All implementations must embed UnimplementedResourceAggregateServer
 // for forward compatibility
@@ -209,6 +219,7 @@ type ResourceAggregateServer interface {
 	CancelPendingMetadataUpdates(context.Context, *commands.CancelPendingMetadataUpdatesRequest) (*commands.CancelPendingMetadataUpdatesResponse, error)
 	CancelPendingCommands(context.Context, *commands.CancelPendingCommandsRequest) (*commands.CancelPendingCommandsResponse, error)
 	DeleteDevices(context.Context, *commands.DeleteDevicesRequest) (*commands.DeleteDevicesResponse, error)
+	BatchNotifyResourceChanged(context.Context, *commands.BatchNotifyResourceChangedRequest) (*commands.BatchNotifyResourceChangedResponse, error)
 	mustEmbedUnimplementedResourceAggregateServer()
 }
 
@@ -263,6 +274,9 @@ func (UnimplementedResourceAggregateServer) CancelPendingCommands(context.Contex
 }
 func (UnimplementedResourceAggregateServer) DeleteDevices(context.Context, *commands.DeleteDevicesRequest) (*commands.DeleteDevicesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteDevices not implemented")
+}
+func (UnimplementedResourceAggregateServer) BatchNotifyResourceChanged(context.Context, *commands.BatchNotifyResourceChangedRequest) (*commands.BatchNotifyResourceChangedResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method BatchNotifyResourceChanged not implemented")
 }
 func (UnimplementedResourceAggregateServer) mustEmbedUnimplementedResourceAggregateServer() {}
 
@@ -565,6 +579,24 @@ func _ResourceAggregate_DeleteDevices_Handler(srv interface{}, ctx context.Conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ResourceAggregate_BatchNotifyResourceChanged_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(commands.BatchNotifyResourceChangedRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ResourceAggregateServer).BatchNotifyResourceChanged(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/resourceaggregate.pb.ResourceAggregate/BatchNotifyResourceChanged",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ResourceAggregateServer).BatchNotifyResourceChanged(ctx, req.(*commands.BatchNotifyResourceChangedRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ResourceAggregate_ServiceDesc is the grpc.ServiceDesc for ResourceAggregate service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -635,6 +667,10 @@ var ResourceAggregate_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteDevices",
 			Handler:    _ResourceAggregate_DeleteDevices_Handler,
+		},
+		{
+			MethodName: "BatchNotifyResourceChanged",
+			Handler:    _ResourceAggregate_BatchNotifyResourceChanged_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

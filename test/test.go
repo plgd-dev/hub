@@ -310,7 +310,7 @@ func WaitForDevice(ctx context.Context, t *testing.T, client pb.GrpcGateway_Subs
 		case *pb.Event_DeviceRegistered_:
 			return fmt.Sprintf("%T", ev.GetType())
 		case *pb.Event_DeviceMetadataUpdated:
-			return fmt.Sprintf("%T", ev.GetType())
+			return fmt.Sprintf("%T:%v:%v", ev.GetType(), v.DeviceMetadataUpdated.GetStatus().GetValue(), v.DeviceMetadataUpdated.GetShadowSynchronizationStatus().GetValue())
 		case *pb.Event_ResourcePublished:
 			return fmt.Sprintf("%T", ev.GetType())
 		case *pb.Event_ResourceChanged:
@@ -334,6 +334,11 @@ func WaitForDevice(ctx context.Context, t *testing.T, client pb.GrpcGateway_Subs
 				val.DeviceMetadataUpdated.GetStatus().ConnectionId = ""
 				require.NotZero(t, val.DeviceMetadataUpdated.GetStatus().GetConnectedAt())
 				val.DeviceMetadataUpdated.GetStatus().ConnectedAt = 0
+			}
+			if val.DeviceMetadataUpdated.GetShadowSynchronizationStatus() != nil {
+				val.DeviceMetadataUpdated.GetShadowSynchronizationStatus().CommandMetadata = nil
+				val.DeviceMetadataUpdated.GetShadowSynchronizationStatus().StartedAt = 0
+				val.DeviceMetadataUpdated.GetShadowSynchronizationStatus().FinishedAt = 0
 			}
 			val.DeviceMetadataUpdated.OpenTelemetryCarrier = nil
 		case *pb.Event_ResourcePublished:
@@ -364,7 +369,13 @@ func WaitForDevice(ctx context.Context, t *testing.T, client pb.GrpcGateway_Subs
 				},
 			},
 		},
-		getID(&pb.Event{Type: &pb.Event_DeviceMetadataUpdated{}}): {
+		getID(&pb.Event{Type: &pb.Event_DeviceMetadataUpdated{
+			DeviceMetadataUpdated: &events.DeviceMetadataUpdated{
+				Status: &commands.ConnectionStatus{
+					Value: commands.ConnectionStatus_ONLINE,
+				},
+			},
+		}}): {
 			SubscriptionId: subID,
 			CorrelationId:  correlationID,
 			Type: &pb.Event_DeviceMetadataUpdated{
@@ -372,6 +383,57 @@ func WaitForDevice(ctx context.Context, t *testing.T, client pb.GrpcGateway_Subs
 					DeviceId: deviceID,
 					Status: &commands.ConnectionStatus{
 						Value: commands.ConnectionStatus_ONLINE,
+					},
+					ShadowSynchronizationStatus: &commands.ShadowSynchronizationStatus{
+						Value: commands.ShadowSynchronizationStatus_NONE,
+					},
+				},
+			},
+		},
+		getID(&pb.Event{Type: &pb.Event_DeviceMetadataUpdated{
+			DeviceMetadataUpdated: &events.DeviceMetadataUpdated{
+				Status: &commands.ConnectionStatus{
+					Value: commands.ConnectionStatus_ONLINE,
+				},
+				ShadowSynchronizationStatus: &commands.ShadowSynchronizationStatus{
+					Value: commands.ShadowSynchronizationStatus_STARTED,
+				},
+			},
+		}}): {
+			SubscriptionId: subID,
+			CorrelationId:  correlationID,
+			Type: &pb.Event_DeviceMetadataUpdated{
+				DeviceMetadataUpdated: &events.DeviceMetadataUpdated{
+					DeviceId: deviceID,
+					Status: &commands.ConnectionStatus{
+						Value: commands.ConnectionStatus_ONLINE,
+					},
+					ShadowSynchronizationStatus: &commands.ShadowSynchronizationStatus{
+						Value: commands.ShadowSynchronizationStatus_STARTED,
+					},
+				},
+			},
+		},
+		getID(&pb.Event{Type: &pb.Event_DeviceMetadataUpdated{
+			DeviceMetadataUpdated: &events.DeviceMetadataUpdated{
+				Status: &commands.ConnectionStatus{
+					Value: commands.ConnectionStatus_ONLINE,
+				},
+				ShadowSynchronizationStatus: &commands.ShadowSynchronizationStatus{
+					Value: commands.ShadowSynchronizationStatus_FINISHED,
+				},
+			},
+		}}): {
+			SubscriptionId: subID,
+			CorrelationId:  correlationID,
+			Type: &pb.Event_DeviceMetadataUpdated{
+				DeviceMetadataUpdated: &events.DeviceMetadataUpdated{
+					DeviceId: deviceID,
+					Status: &commands.ConnectionStatus{
+						Value: commands.ConnectionStatus_ONLINE,
+					},
+					ShadowSynchronizationStatus: &commands.ShadowSynchronizationStatus{
+						Value: commands.ShadowSynchronizationStatus_FINISHED,
 					},
 				},
 			},

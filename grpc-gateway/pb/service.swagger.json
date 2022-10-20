@@ -1204,6 +1204,18 @@
         }
       }
     },
+    "pbCommandMetadata": {
+      "type": "object",
+      "properties": {
+        "connectionId": {
+          "type": "string"
+        },
+        "sequence": {
+          "type": "string",
+          "format": "uint64"
+        }
+      }
+    },
     "pbConnectionStatus": {
       "type": "object",
       "properties": {
@@ -1342,6 +1354,9 @@
         },
         "shadowSynchronization": {
           "$ref": "#/definitions/resourceaggregatepbShadowSynchronization"
+        },
+        "shadowSynchronizationStatus": {
+          "$ref": "#/definitions/pbShadowSynchronizationStatus"
         },
         "auditContext": {
           "$ref": "#/definitions/pbAuditContext"
@@ -1939,6 +1954,34 @@
           "title": "Open telemetry data propagated to asynchronous events"
         }
       }
+    },
+    "pbShadowSynchronizationStatus": {
+      "type": "object",
+      "properties": {
+        "value": {
+          "$ref": "#/definitions/pbShadowSynchronizationStatusStatus"
+        },
+        "startedAt": {
+          "type": "string",
+          "format": "int64"
+        },
+        "finishedAt": {
+          "type": "string",
+          "format": "int64"
+        },
+        "commandMetadata": {
+          "$ref": "#/definitions/pbCommandMetadata"
+        }
+      }
+    },
+    "pbShadowSynchronizationStatusStatus": {
+      "type": "string",
+      "enum": [
+        "NONE",
+        "STARTED",
+        "FINISHED"
+      ],
+      "default": "NONE"
     },
     "pbSubscribeToEvents": {
       "type": "object",

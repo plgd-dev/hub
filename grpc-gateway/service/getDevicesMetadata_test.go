@@ -45,7 +45,8 @@ func TestRequestHandlerGetDevicesMetadata(t *testing.T) {
 					Status: &commands.ConnectionStatus{
 						Value: commands.ConnectionStatus_ONLINE,
 					},
-					AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, ""),
+					ShadowSynchronizationStatus: &commands.ShadowSynchronizationStatus{},
+					AuditContext:                commands.NewAuditContext(oauthService.DeviceUserID, ""),
 				},
 			},
 		},
@@ -62,7 +63,8 @@ func TestRequestHandlerGetDevicesMetadata(t *testing.T) {
 					Status: &commands.ConnectionStatus{
 						Value: commands.ConnectionStatus_ONLINE,
 					},
-					AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, ""),
+					ShadowSynchronizationStatus: &commands.ShadowSynchronizationStatus{},
+					AuditContext:                commands.NewAuditContext(oauthService.DeviceUserID, ""),
 				},
 			},
 		},
@@ -79,7 +81,8 @@ func TestRequestHandlerGetDevicesMetadata(t *testing.T) {
 					Status: &commands.ConnectionStatus{
 						Value: commands.ConnectionStatus_ONLINE,
 					},
-					AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, ""),
+					ShadowSynchronizationStatus: &commands.ShadowSynchronizationStatus{},
+					AuditContext:                commands.NewAuditContext(oauthService.DeviceUserID, ""),
 				},
 			},
 		},

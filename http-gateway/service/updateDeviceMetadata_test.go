@@ -41,7 +41,7 @@ type contentChangedFilter struct {
 func NewContentChangedFilter() *contentChangedFilter {
 	return &contentChangedFilter{
 		resourceChangedCh:       make(chan eventbus.EventUnmarshaler, 2),
-		deviceMetadataUpdatedCh: make(chan *events.DeviceMetadataUpdated, 1),
+		deviceMetadataUpdatedCh: make(chan *events.DeviceMetadataUpdated, 3),
 	}
 }
 
@@ -222,9 +222,13 @@ func TestRequestHandlerUpdateDeviceMetadata(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	ev = v.WaitForDeviceMetadataUpdated(time.Second * 5)
-	require.NotEmpty(t, ev)
-	require.Equal(t, commands.ShadowSynchronization_ENABLED, ev.GetShadowSynchronization())
+	for {
+		ev = v.WaitForDeviceMetadataUpdated(time.Second * 5)
+		require.NotEmpty(t, ev)
+		if ev.GetShadowSynchronization() == commands.ShadowSynchronization_ENABLED {
+			break
+		}
+	}
 
 	err = updateResource(t, &pb.UpdateResourceRequest{
 		ResourceInterface: interfaces.OC_IF_BASELINE,

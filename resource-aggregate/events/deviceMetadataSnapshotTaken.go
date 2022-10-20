@@ -66,9 +66,6 @@ func (d *DeviceMetadataSnapshotTaken) CheckInitialized() bool {
 }
 
 func (d *DeviceMetadataSnapshotTaken) HandleDeviceMetadataUpdated(ctx context.Context, upd *DeviceMetadataUpdated, confirm bool) (bool, error) {
-	if upd.GetStatus() != nil && upd.GetStatus().GetConnectionId() == "" {
-		return false, status.Errorf(codes.InvalidArgument, "cannot update connection status for empty connectionId")
-	}
 	index := -1
 	for i, event := range d.GetUpdatePendings() {
 		if event.GetAuditContext().GetCorrelationId() == upd.GetAuditContext().GetCorrelationId() {
@@ -189,13 +186,21 @@ func (d *DeviceMetadataSnapshotTaken) ConfirmDeviceMetadataUpdate(ctx context.Co
 		}
 		return []eventstore.Event{&ev}, nil
 	case req.GetShadowSynchronization() != commands.ShadowSynchronization_UNSET:
+		shadowSynchronizationStatus := d.GetDeviceMetadataUpdated().GetShadowSynchronizationStatus()
+		if req.GetShadowSynchronization() == commands.ShadowSynchronization_DISABLED && req.GetCommandMetadata().GetConnectionId() == d.GetDeviceMetadataUpdated().GetShadowSynchronizationStatus().GetCommandMetadata().GetConnectionId() {
+			// reset shadowSynchronizationStatus
+			if shadowSynchronizationStatus != nil {
+				shadowSynchronizationStatus.Value = commands.ShadowSynchronizationStatus_NONE
+			}
+		}
 		ev := DeviceMetadataUpdated{
-			DeviceId:              req.GetDeviceId(),
-			Status:                d.GetDeviceMetadataUpdated().GetStatus(),
-			ShadowSynchronization: req.GetShadowSynchronization(),
-			AuditContext:          ac,
-			EventMetadata:         em,
-			OpenTelemetryCarrier:  propagation.TraceFromCtx(ctx),
+			DeviceId:                    req.GetDeviceId(),
+			Status:                      d.GetDeviceMetadataUpdated().GetStatus(),
+			ShadowSynchronization:       req.GetShadowSynchronization(),
+			ShadowSynchronizationStatus: shadowSynchronizationStatus,
+			AuditContext:                ac,
+			EventMetadata:               em,
+			OpenTelemetryCarrier:        propagation.TraceFromCtx(ctx),
 		}
 		ok, err := d.HandleDeviceMetadataUpdated(ctx, &ev, true)
 		if !ok {
@@ -251,6 +256,9 @@ func (d *DeviceMetadataSnapshotTaken) HandleCommand(ctx context.Context, cmd agg
 
 		switch {
 		case req.GetStatus() != nil:
+			if req.GetStatus().GetConnectionId() == "" {
+				return nil, status.Errorf(codes.InvalidArgument, "cannot update connection status for empty connectionId")
+			}
 			// it is expected that the device updates the status on its own. no confirmation needed.
 
 			// keep last connected at from the previous event
@@ -258,17 +266,85 @@ func (d *DeviceMetadataSnapshotTaken) HandleCommand(ctx context.Context, cmd agg
 			if req.GetStatus().GetConnectedAt() < lastConnectedAt {
 				req.GetStatus().ConnectedAt = lastConnectedAt
 			}
+
+			shadowSynchronizationStatus := d.GetDeviceMetadataUpdated().GetShadowSynchronizationStatus()
+			// check if it is new connection
+			if req.GetStatus().GetValue() == commands.ConnectionStatus_ONLINE && req.GetStatus().GetConnectionId() != d.GetDeviceMetadataUpdated().GetStatus().GetConnectionId() {
+				// reset shadowSynchronizationStatus
+				if shadowSynchronizationStatus == nil {
+					shadowSynchronizationStatus = &commands.ShadowSynchronizationStatus{}
+				}
+				shadowSynchronizationStatus.Value = commands.ShadowSynchronizationStatus_NONE
+				shadowSynchronizationStatus.CommandMetadata = req.GetCommandMetadata()
+			}
 			ev := DeviceMetadataUpdated{
-				DeviceId:              req.GetDeviceId(),
-				Status:                req.GetStatus(),
-				ShadowSynchronization: d.GetDeviceMetadataUpdated().GetShadowSynchronization(),
-				AuditContext:          ac,
-				EventMetadata:         em,
-				OpenTelemetryCarrier:  propagation.TraceFromCtx(ctx),
+				DeviceId:                    req.GetDeviceId(),
+				Status:                      req.GetStatus(),
+				ShadowSynchronization:       d.GetDeviceMetadataUpdated().GetShadowSynchronization(),
+				ShadowSynchronizationStatus: shadowSynchronizationStatus,
+				AuditContext:                ac,
+				EventMetadata:               em,
+				OpenTelemetryCarrier:        propagation.TraceFromCtx(ctx),
 			}
 			ok, err := d.HandleDeviceMetadataUpdated(ctx, &ev, false)
 			if !ok {
 				return nil, err
+			}
+			return []eventstore.Event{&ev}, nil
+		case req.GetShadowSynchronizationStatus() != nil:
+			commandMetadata := req.GetCommandMetadata()
+			// it is expected that the device updates the status on its own. no confirmation needed.
+			if commandMetadata.GetConnectionId() == "" {
+				return nil, status.Errorf(codes.InvalidArgument, "cannot update shadow synchronization status for empty connectionId")
+			}
+			if commandMetadata.GetConnectionId() != d.GetDeviceMetadataUpdated().GetShadowSynchronizationStatus().GetCommandMetadata().GetConnectionId() {
+				return nil, status.Errorf(codes.InvalidArgument, "cannot update shadow synchronization status for different connectionId: get %v, expected %v", commandMetadata.GetConnectionId(), d.GetDeviceMetadataUpdated().GetShadowSynchronizationStatus().GetCommandMetadata().GetConnectionId())
+			}
+			if commandMetadata.GetSequence() <= d.GetDeviceMetadataUpdated().GetShadowSynchronizationStatus().GetCommandMetadata().GetSequence() {
+				return nil, nil
+			}
+			shadowSynchronizationStatus := req.GetShadowSynchronizationStatus()
+			if shadowSynchronizationStatus.GetValue() == commands.ShadowSynchronizationStatus_STARTED && shadowSynchronizationStatus.GetStartedAt() <= 0 {
+				return nil, status.Errorf(codes.InvalidArgument, "cannot update shadow synchronization status with invalid startedAt(%v)", shadowSynchronizationStatus.GetStartedAt())
+			}
+			if shadowSynchronizationStatus.GetValue() == commands.ShadowSynchronizationStatus_FINISHED && shadowSynchronizationStatus.GetFinishedAt() <= 0 {
+				return nil, status.Errorf(codes.InvalidArgument, "cannot update shadow synchronization status with invalid finishAt(%v)", shadowSynchronizationStatus.GetStartedAt())
+			}
+			if shadowSynchronizationStatus.GetValue() == commands.ShadowSynchronizationStatus_STARTED && d.GetDeviceMetadataUpdated().GetShadowSynchronizationStatus().GetValue() == commands.ShadowSynchronizationStatus_STARTED {
+				if shadowSynchronizationStatus.GetStartedAt() > d.GetDeviceMetadataUpdated().GetShadowSynchronizationStatus().GetStartedAt() {
+					return nil, nil
+				}
+			}
+			if shadowSynchronizationStatus.GetValue() == commands.ShadowSynchronizationStatus_FINISHED && d.GetDeviceMetadataUpdated().GetShadowSynchronizationStatus().GetValue() == commands.ShadowSynchronizationStatus_FINISHED {
+				if shadowSynchronizationStatus.GetFinishedAt() < d.GetDeviceMetadataUpdated().GetShadowSynchronizationStatus().GetFinishedAt() {
+					return nil, nil
+				}
+			}
+			if shadowSynchronizationStatus.GetValue() == commands.ShadowSynchronizationStatus_FINISHED && d.GetDeviceMetadataUpdated().GetShadowSynchronizationStatus().GetValue() == commands.ShadowSynchronizationStatus_STARTED {
+				if shadowSynchronizationStatus.GetFinishedAt() < d.GetDeviceMetadataUpdated().GetShadowSynchronizationStatus().GetStartedAt() {
+					return nil, nil
+				}
+			}
+			if shadowSynchronizationStatus.GetStartedAt() == 0 {
+				// set previous value
+				shadowSynchronizationStatus.StartedAt = d.GetDeviceMetadataUpdated().GetShadowSynchronizationStatus().GetStartedAt()
+			}
+			shadowSynchronizationStatus.CommandMetadata = commandMetadata
+			ev := DeviceMetadataUpdated{
+				DeviceId:                    req.GetDeviceId(),
+				Status:                      d.GetDeviceMetadataUpdated().GetStatus(),
+				ShadowSynchronization:       d.GetDeviceMetadataUpdated().GetShadowSynchronization(),
+				ShadowSynchronizationStatus: req.GetShadowSynchronizationStatus(),
+				AuditContext:                ac,
+				EventMetadata:               em,
+				OpenTelemetryCarrier:        propagation.TraceFromCtx(ctx),
+			}
+			ok, err := d.HandleDeviceMetadataUpdated(ctx, &ev, false)
+			if err != nil {
+				return nil, err
+			}
+			if !ok {
+				return nil, nil
 			}
 			return []eventstore.Event{&ev}, nil
 		case req.GetShadowSynchronization() != commands.ShadowSynchronization_UNSET:

@@ -23,4 +23,5 @@ service ResourceAggregate {
   rpc CancelPendingMetadataUpdates(CancelPendingMetadataUpdatesRequest) returns (CancelPendingMetadataUpdatesResponse) {}
   rpc CancelPendingCommands(CancelPendingCommandsRequest) returns (CancelPendingCommandsResponse) {}
   rpc DeleteDevices (DeleteDevicesRequest) returns (DeleteDevicesResponse) {}
+  rpc BatchNotifyResourceChanged (BatchNotifyResourceChangedRequest) returns (BatchNotifyResourceChangedResponse) {}
 }

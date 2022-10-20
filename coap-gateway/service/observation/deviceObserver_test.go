@@ -53,10 +53,14 @@ type deviceObserverFactory struct {
 }
 
 func (f deviceObserverFactory) makeDeviceObserver(ctx context.Context, coapConn *tcp.ClientConn, onObserveResource observation.OnObserveResource,
-	onGetResourceContent observation.OnGetResourceContent,
+	onGetResourceContent observation.OnGetResourceContent, updateShadowSynchronizationStatus observation.UpdateShadowSynchronizationStatus,
 ) (*observation.DeviceObserver, error) {
 	return observation.NewDeviceObserver(ctx, f.deviceID, coapConn, f.rdClient, f.raClient,
-		observation.ResourcesObserverCallbacks{onObserveResource, onGetResourceContent})
+		observation.ResourcesObserverCallbacks{
+			OnObserveResource:                 onObserveResource,
+			OnGetResourceContent:              onGetResourceContent,
+			UpdateShadowSynchronizationStatus: updateShadowSynchronizationStatus,
+		})
 }
 
 type observerHandler struct {
@@ -110,7 +114,7 @@ func (h *observerHandler) SignIn(req coapgwService.CoapSignInReq) (coapgwService
 			obs := v.(*observation.DeviceObserver)
 			obs.Clean(h.ctx)
 		}
-		deviceObserver, err := h.deviceObserverFactory.makeDeviceObserver(h.ctx, h.coapConn, h.OnObserveResource, h.OnGetResourceContent)
+		deviceObserver, err := h.deviceObserverFactory.makeDeviceObserver(h.ctx, h.coapConn, h.OnObserveResource, h.OnGetResourceContent, h.UpdateShadowSynchronizationStatus)
 		require.NoError(h.t, err)
 		setDeviceObserver(deviceObserver, nil)
 	})
@@ -159,6 +163,12 @@ func (h *observerHandler) OnGetResourceContent(ctx context.Context, deviceID, re
 	if !h.done.Load() {
 		h.retrievedResourceChan <- commands.NewResourceID(deviceID, resourceHref)
 	}
+	return nil
+}
+
+func (h *observerHandler) UpdateShadowSynchronizationStatus(ctx context.Context, deviceID string, status commands.ShadowSynchronizationStatus_Status, t time.Time) error {
+	err := h.DefaultObserverHandler.UpdateShadowSynchronizationStatus(ctx, deviceID, status, t)
+	require.NoError(h.t, err)
 	return nil
 }
 

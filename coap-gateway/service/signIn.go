@@ -217,7 +217,7 @@ func setNewDeviceObserver(ctx context.Context, client *Client, deviceID string, 
 		}
 
 		deviceObserver, err := observation.NewDeviceObserver(client.Context(), deviceID, client, client, client,
-			observation.MakeResourcesObserverCallbacks(client.onObserveResource, client.onGetResourceContent),
+			observation.MakeResourcesObserverCallbacks(client.onObserveResource, client.onGetResourceContent, client.UpdateShadowSynchronizationStatus),
 			observation.WithObservationType(observationType),
 			observation.WithLogger(client.getLogger()))
 		if err != nil {

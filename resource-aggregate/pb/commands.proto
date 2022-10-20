@@ -110,6 +110,15 @@ message NotifyResourceChangedResponse {
     AuditContext audit_context = 3;
 }
 
+// batch of NotifyResourceChangedRequest
+message BatchNotifyResourceChangedRequest {
+    repeated NotifyResourceChangedRequest batch = 1;
+}
+
+message BatchNotifyResourceChangedResponse {
+    AuditContext audit_context = 3;
+}
+
 //*******************************************************************************************************************************************************
 // Update Resource
 //
@@ -394,6 +403,18 @@ message ConfirmResourceCreateResponse {
     AuditContext audit_context = 1;
 }
 
+message ShadowSynchronizationStatus {
+    enum Status {
+        NONE = 0;
+        STARTED = 1;
+        FINISHED = 2;
+    };
+    Status value = 1;
+    int64 started_at = 2;  // unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when shadow synchronization started.
+    int64 finished_at = 3; // unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when shadow synchronization finished.
+    CommandMetadata command_metadata = 4; // when status is STARTED, this field contains the connection id. To update state to FINISHED, this field must be same as the one in the previous message.
+}
+
 //*******************************************************************************************************************************************************
 // Update Device Metadata - Connection status
 //
@@ -475,6 +496,7 @@ message UpdateDeviceMetadataRequest {
     oneof update {
         ConnectionStatus status = 3;
         ShadowSynchronization shadow_synchronization = 4;
+        ShadowSynchronizationStatus shadow_synchronization_status = 7;
     };
     int64 time_to_live = 5;  // command validity in nanoseconds. 0 means forever and minimal value is 100000000 (100ms).
     CommandMetadata command_metadata = 6;

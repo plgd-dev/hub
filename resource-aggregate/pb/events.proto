@@ -163,6 +163,7 @@ message DeviceMetadataUpdated {
     string device_id = 1;
     ConnectionStatus status = 2;
     ShadowSynchronization shadow_synchronization = 3;
+    ShadowSynchronizationStatus shadow_synchronization_status = 7;
     AuditContext audit_context = 4;
     EventMetadata event_metadata = 5;
     bool canceled = 6; // it true then the command with audit_context.correlation_id was canceled.

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"sync"
 
 	"github.com/plgd-dev/device/schema"
 	"github.com/plgd-dev/device/schema/interfaces"
@@ -46,6 +47,7 @@ type DeviceObserver struct {
 	observationType       ObservationType
 	shadowSynchronization commands.ShadowSynchronization
 	rdClient              GrpcGatewayClient
+	raClient              ResourceAggregateClient
 	resourcesObserver     *resourcesObserver
 	logger                log.Logger
 }
@@ -184,6 +186,11 @@ func NewDeviceObserver(ctx context.Context, deviceID string, coapConn ClientConn
 		return nil, createError(err)
 	}
 
+	var notSyncedResources sync.Map
+	for _, r := range published {
+		notSyncedResources.Store(r.GetHref(), r)
+	}
+
 	if cfg.observationType == ObservationType_PerDevice {
 		resourcesObserver, err := createDiscoveryResourceObserver(ctx, deviceID, coapConn, callbacks, cfg.logger)
 		if err == nil {
@@ -194,6 +201,7 @@ func NewDeviceObserver(ctx context.Context, deviceID string, coapConn ClientConn
 				rdClient:              rdClient,
 				resourcesObserver:     resourcesObserver,
 				logger:                cfg.logger,
+				raClient:              raClient,
 			}, nil
 		}
 		cfg.logger.Debugf("NewDeviceObserverWithResourceShadow: failed to create /oic/res observation for device(%v): %v", deviceID, err)
@@ -210,6 +218,7 @@ func NewDeviceObserver(ctx context.Context, deviceID string, coapConn ClientConn
 		rdClient:              rdClient,
 		resourcesObserver:     resourcesObserver,
 		logger:                cfg.logger,
+		raClient:              raClient,
 	}, nil
 }
 
@@ -314,6 +323,10 @@ func (d *DeviceObserver) GetDeviceID() string {
 
 func (d *DeviceObserver) GetObservationType() ObservationType {
 	return d.observationType
+}
+
+func (d *DeviceObserver) ResourceHasBeenSynchronized(ctx context.Context, href string) {
+	d.resourcesObserver.resourceHasBeenSynchronized(ctx, href)
 }
 
 func (d *DeviceObserver) GetShadowSynchronization() commands.ShadowSynchronization {

@@ -151,7 +151,8 @@ func TestRequestHandlerSubscribeToEvents(t *testing.T) {
 							Status: &commands.ConnectionStatus{
 								Value: commands.ConnectionStatus_ONLINE,
 							},
-							AuditContext: commands.NewAuditContext(service.DeviceUserID, ""),
+							ShadowSynchronizationStatus: &commands.ShadowSynchronizationStatus{},
+							AuditContext:                commands.NewAuditContext(service.DeviceUserID, ""),
 						},
 					},
 					CorrelationId: "testToken2",
@@ -795,7 +796,8 @@ func TestRequestHandlerIssue270(t *testing.T) {
 				Status: &commands.ConnectionStatus{
 					Value: commands.ConnectionStatus_ONLINE,
 				},
-				AuditContext: commands.NewAuditContext(service.DeviceUserID, ""),
+				ShadowSynchronizationStatus: &commands.ShadowSynchronizationStatus{},
+				AuditContext:                commands.NewAuditContext(service.DeviceUserID, ""),
 			},
 		},
 		CorrelationId: "testToken",

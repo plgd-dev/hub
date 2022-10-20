@@ -72,7 +72,9 @@ func getOnboardEventForResource(t *testing.T, deviceID, href string) interface{}
 }
 
 func getAllOnboardEvents(t *testing.T, deviceID string, links []schema.ResourceLink) []interface{} {
-	expectedDMU := pbTest.MakeDeviceMetadataUpdated(deviceID, commands.ShadowSynchronization_UNSET, "")
+	expectedDMU := pbTest.MakeDeviceMetadataUpdated(deviceID, commands.ConnectionStatus_ONLINE, commands.ShadowSynchronization_UNSET, commands.ShadowSynchronizationStatus_NONE, "")
+	expectedDMU1 := pbTest.MakeDeviceMetadataUpdated(deviceID, commands.ConnectionStatus_ONLINE, commands.ShadowSynchronization_UNSET, commands.ShadowSynchronizationStatus_STARTED, "")
+	expectedDMU2 := pbTest.MakeDeviceMetadataUpdated(deviceID, commands.ConnectionStatus_ONLINE, commands.ShadowSynchronization_UNSET, commands.ShadowSynchronizationStatus_FINISHED, "")
 	expectedRLP := pbTest.MakeResourceLinksPublished(deviceID, test.ResourceLinksToResources(deviceID, links), "")
 	expectedRCP := getOnboardEventForResource(t, deviceID, platform.ResourceURI)
 	expectedRCD := getOnboardEventForResource(t, deviceID, device.ResourceURI)
@@ -81,12 +83,14 @@ func getAllOnboardEvents(t *testing.T, deviceID string, links []schema.ResourceL
 	expectedRCS := getOnboardEventForResource(t, deviceID, test.TestResourceSwitchesHref)
 	return []interface{}{
 		expectedDMU,
+		expectedDMU1,
 		expectedRLP,
 		expectedRCP,
 		expectedRCD,
 		expectedRCC,
 		expectedRCL,
 		expectedRCS,
+		expectedDMU2,
 	}
 }
 
@@ -215,7 +219,9 @@ func testUpdateDeviceEvents(t *testing.T, ctx context.Context, c pb.GrpcGatewayC
 
 	expectedEvents := []interface{}{
 		pbTest.MakeDeviceMetadataUpdatePending(deviceID, commands.ShadowSynchronization_ENABLED, ""),
-		pbTest.MakeDeviceMetadataUpdated(deviceID, commands.ShadowSynchronization_ENABLED, ""),
+		pbTest.MakeDeviceMetadataUpdated(deviceID, commands.ConnectionStatus_ONLINE, commands.ShadowSynchronization_ENABLED, commands.ShadowSynchronizationStatus_NONE, ""),
+		pbTest.MakeDeviceMetadataUpdated(deviceID, commands.ConnectionStatus_ONLINE, commands.ShadowSynchronization_UNSET, commands.ShadowSynchronizationStatus_STARTED, ""),
+		pbTest.MakeDeviceMetadataUpdated(deviceID, commands.ConnectionStatus_ONLINE, commands.ShadowSynchronization_ENABLED, commands.ShadowSynchronizationStatus_FINISHED, ""),
 	}
 	waitAndCheckEvents(t, client, expectedEvents)
 }
@@ -270,7 +276,9 @@ func testCreateResourceEvents(t *testing.T, ctx context.Context, c pb.GrpcGatewa
 				"rt":  []string{types.BINARY_SWITCH},
 			},
 		})
-	expectedEvents := []interface{}{rcp, rlp, rcreat, rchangeSwitch, rchangeSwitches}
+	dmu := pbTest.MakeDeviceMetadataUpdated(deviceID, commands.ConnectionStatus_ONLINE, commands.ShadowSynchronization_ENABLED, commands.ShadowSynchronizationStatus_STARTED, "")
+	dmu1 := pbTest.MakeDeviceMetadataUpdated(deviceID, commands.ConnectionStatus_ONLINE, commands.ShadowSynchronization_ENABLED, commands.ShadowSynchronizationStatus_FINISHED, "")
+	expectedEvents := []interface{}{rcp, rlp, rcreat, rchangeSwitch, rchangeSwitches, dmu, dmu1}
 	waitAndCheckEvents(t, client, expectedEvents)
 }
 
@@ -340,7 +348,7 @@ func testDeleteResourceEvents(t *testing.T, ctx context.Context, c pb.GrpcGatewa
 
 func TestRequestHandlerGetEventsOnCollection(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
-	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
+	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT*3600)
 	defer cancel()
 
 	tearDown := service.SetUp(ctx, t)

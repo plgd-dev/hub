@@ -65,14 +65,22 @@ func (r RequestHandler) validateAccessToDevice(ctx context.Context, deviceID str
 	if err != nil {
 		return "", kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "invalid owner: %v", err)
 	}
-	ok, err := r.isUserDevice(ctx, owner, deviceID)
+	err = r.validateAccessToDeviceWithOwner(ctx, deviceID, owner)
 	if err != nil {
-		return "", kitNetGrpc.ForwardErrorf(codes.Internal, "cannot validate: %v", err)
-	}
-	if !ok {
-		return "", kitNetGrpc.ForwardErrorf(codes.PermissionDenied, "access denied")
+		return "", err
 	}
 	return owner, nil
+}
+
+func (r RequestHandler) validateAccessToDeviceWithOwner(ctx context.Context, deviceID, owner string) error {
+	ok, err := r.isUserDevice(ctx, owner, deviceID)
+	if err != nil {
+		return kitNetGrpc.ForwardErrorf(codes.Internal, "cannot validate: %v", err)
+	}
+	if !ok {
+		return kitNetGrpc.ForwardErrorf(codes.PermissionDenied, "access denied")
+	}
+	return nil
 }
 
 // Return owner and list of owned devices from the input slices.
@@ -190,25 +198,35 @@ func newUnpublishResourceLinksResponse(events []eventstore.Event, deviceID strin
 	}
 }
 
-func (r RequestHandler) NotifyResourceChanged(ctx context.Context, request *commands.NotifyResourceChangedRequest) (*commands.NotifyResourceChangedResponse, error) {
-	owner, err := r.validateAccessToDevice(ctx, request.GetResourceId().GetDeviceId())
-	if err != nil {
-		return nil, log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot validate user access: %v", err))
-	}
+func (r RequestHandler) notifyResourceChanged(ctx context.Context, request *commands.NotifyResourceChangedRequest, owner string) error {
 	aggregate, err := NewAggregate(request.ResourceId, r.config.Clients.Eventstore.SnapshotThreshold, r.eventstore, ResourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(r.config.Clients.Eventstore.ConcurrencyExceptionMaxRetry))
 	if err != nil {
-		return nil, log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "cannot notify about resource content change: %v", err))
+		return log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "cannot notify about resource content change: %v", err))
 	}
 
 	events, err := aggregate.NotifyResourceChanged(ctx, request)
 	if err != nil {
-		return nil, log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot notify about resource content change: %v", err))
+		return log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot notify about resource content change: %v", err))
 	}
 
 	err = PublishEvents(r.publisher, owner, aggregate.DeviceID(), aggregate.ResourceID(), events)
 	if err != nil {
 		log.Errorf("cannot publish resource content changed notification events: %v", err)
 	}
+	return nil
+}
+
+func (r RequestHandler) NotifyResourceChanged(ctx context.Context, request *commands.NotifyResourceChangedRequest) (*commands.NotifyResourceChangedResponse, error) {
+	owner, err := r.validateAccessToDevice(ctx, request.GetResourceId().GetDeviceId())
+	if err != nil {
+		return nil, log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot validate user access: %v", err))
+	}
+
+	err = r.notifyResourceChanged(ctx, request, owner)
+	if err != nil {
+		return nil, err
+	}
+
 	auditContext := commands.NewAuditContext(owner, "")
 	return &commands.NotifyResourceChangedResponse{
 		AuditContext: auditContext,

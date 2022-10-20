@@ -67,5 +67,9 @@ func (d *DeviceMetadataUpdated) Equal(upd *DeviceMetadataUpdated) bool {
 		d.GetStatus().GetValidUntil() == upd.GetStatus().GetValidUntil() &&
 		d.GetShadowSynchronization() == upd.GetShadowSynchronization() &&
 		d.GetAuditContext().GetUserId() == upd.GetAuditContext().GetUserId() &&
-		d.GetAuditContext().GetCorrelationId() == upd.GetAuditContext().GetCorrelationId()
+		d.GetAuditContext().GetCorrelationId() == upd.GetAuditContext().GetCorrelationId() &&
+		d.GetShadowSynchronizationStatus().GetCommandMetadata().GetConnectionId() == upd.GetShadowSynchronizationStatus().GetCommandMetadata().GetConnectionId() &&
+		d.GetShadowSynchronizationStatus().GetStartedAt() == upd.GetShadowSynchronizationStatus().GetStartedAt() &&
+		d.GetShadowSynchronizationStatus().GetFinishedAt() == upd.GetShadowSynchronizationStatus().GetFinishedAt() &&
+		d.GetShadowSynchronizationStatus().GetValue() == upd.GetShadowSynchronizationStatus().GetValue()
 }

@@ -29,11 +29,14 @@ func CmpDeviceValues(t *testing.T, expected, got []*pbGrpc.Device) {
 	test.CheckProtobufs(t, expected, got, test.RequireToCheckFunc(require.Equal))
 }
 
-func MakeDeviceMetadataUpdated(deviceID string, shadowSynchronization commands.ShadowSynchronization, correlationID string) *events.DeviceMetadataUpdated {
+func MakeDeviceMetadataUpdated(deviceID string, connectionStatus commands.ConnectionStatus_Status, shadowSynchronization commands.ShadowSynchronization, shadowSynchronizationStatus commands.ShadowSynchronizationStatus_Status, correlationID string) *events.DeviceMetadataUpdated {
 	return &events.DeviceMetadataUpdated{
 		DeviceId: deviceID,
 		Status: &commands.ConnectionStatus{
-			Value: commands.ConnectionStatus_ONLINE,
+			Value: connectionStatus,
+		},
+		ShadowSynchronizationStatus: &commands.ShadowSynchronizationStatus{
+			Value: shadowSynchronizationStatus,
 		},
 		ShadowSynchronization: shadowSynchronization,
 		AuditContext:          commands.NewAuditContext(oauthService.DeviceUserID, correlationID),
@@ -50,6 +53,11 @@ func CleanUpDeviceMetadataUpdated(e *events.DeviceMetadataUpdated, resetCorrelat
 		e.GetStatus().ValidUntil = 0
 		e.GetStatus().ConnectionId = ""
 		e.GetStatus().ConnectedAt = 0
+	}
+	if e.GetShadowSynchronizationStatus() != nil {
+		e.GetShadowSynchronizationStatus().CommandMetadata = nil
+		e.GetShadowSynchronizationStatus().StartedAt = 0
+		e.GetShadowSynchronizationStatus().FinishedAt = 0
 	}
 	return e
 }
