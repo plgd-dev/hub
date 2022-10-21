@@ -403,17 +403,6 @@ message ConfirmResourceCreateResponse {
     AuditContext audit_context = 1;
 }
 
-message ShadowSynchronizationStatus {
-    enum Status {
-        NONE = 0;
-        STARTED = 1;
-        FINISHED = 2;
-    };
-    Status value = 1;
-    int64 started_at = 2;  // unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when shadow synchronization started.
-    int64 finished_at = 3; // unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when shadow synchronization finished.
-    CommandMetadata command_metadata = 4; // when status is STARTED, this field contains the connection id. To update state to FINISHED, this field must be same as the one in the previous message.
-}
 
 //*******************************************************************************************************************************************************
 // Update Device Metadata - Connection status
@@ -484,19 +473,34 @@ message ConnectionStatus {
 // └──────────┘          └───────┘                         └──────────────────┘               └─────────┘               └──────┘
 //*******************************************************************************************************************************************************
 
-enum ShadowSynchronization {
-    UNSET = 0;
-    ENABLED = 1;
-    DISABLED = 2;
+message ShadowSynchronizationStatus {
+    enum Status {
+        NONE = 0;
+        STARTED = 1;
+        FINISHED = 2;
+    };
+    Status value = 1;
+    int64 started_at = 2;  // unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when shadow synchronization started.
+    int64 finished_at = 3; // unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when shadow synchronization finished.
+    CommandMetadata command_metadata = 4; // when status is STARTED, this field contains the connection id. To update state to FINISHED, this field must be same as the one in the previous message.
+}
+
+message ShadowSynchronization {
+    enum Status {
+        UNSET = 0;
+        ENABLED = 1;
+        DISABLED = 2;
+    }    
+    Status value = 1; 
+    ShadowSynchronizationStatus status = 2;
 }
 
 message UpdateDeviceMetadataRequest {
     string device_id = 1;
     string correlation_id = 2;
     oneof update {
-        ConnectionStatus status = 3;
+        ConnectionStatus connection_status = 3;
         ShadowSynchronization shadow_synchronization = 4;
-        ShadowSynchronizationStatus shadow_synchronization_status = 7;
     };
     int64 time_to_live = 5;  // command validity in nanoseconds. 0 means forever and minimal value is 100000000 (100ms).
     CommandMetadata command_metadata = 6;
