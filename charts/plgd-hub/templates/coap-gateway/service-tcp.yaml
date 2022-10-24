@@ -1,4 +1,21 @@
 {{- if and (.Values.coapgateway.enabled) (has "tcp" .Values.coapgateway.apis.coap.protocols) -}}
+{{- $tcpServiceType := "" }}
+{{- $tcpNodePort := "" }}
+{{- if (has "tcp" .Values.coapgateway.apis.coap.protocols) -}}
+  {{- $tcpServiceType = .Values.coapgateway.service.tcp.type | default .Values.coapgateway.service.type }}
+  {{- $tcpNodePort = .Values.coapgateway.service.tcp.nodePort | default .Values.coapgateway.service.nodePort }}
+{{- end -}}
+{{- $udpServiceType := "" }}
+{{- $udpNodePort := "" }}
+{{- if  (has "udp" .Values.coapgateway.apis.coap.protocols) -}}
+  {{- $udpServiceType = .Values.coapgateway.service.udp.type | default .Values.coapgateway.service.type }}
+  {{- $udpNodePort = .Values.coapgateway.service.nodePort | default .Values.coapgateway.service.udp.nodePort }}
+{{- end -}}
+{{- if and (eq (lower $tcpServiceType) "nodeport") (eq (lower $udpServiceType) "nodeport") ($tcpNodePort | quote) ($udpNodePort| quote) (eq ($tcpNodePort | quote) ($udpNodePort| quote)) -}}
+  {{- fail "tcp.nodePort and udp.nodePort are same which is not allowed by k8s" }}
+{{- end -}}
+{{- $serviceType := $tcpServiceType -}}
+{{- $nodePort := $tcpNodePort -}}
 apiVersion: v1
 kind: Service
 metadata:
@@ -14,11 +31,11 @@ metadata:
     {{- include "plgd-hub.tplvalues.render" ( dict "value" .Values.coapgateway.service.tcp.annotations "context" $ ) | nindent 4 }}
   {{- end }}
 spec:
-  type: {{ .Values.coapgateway.service.tcp.type | default "ClusterIP" }}
+  type: {{ $serviceType | default "ClusterIP" }}
   ports:
     - port: {{ .Values.coapgateway.port }}
-      {{- if $.Values.coapgateway.service.tcp.nodePort }}
-      nodePort: {{ $.Values.coapgateway.service.tcp.nodePort }}
+      {{- if $nodePort }}
+      nodePort: {{ $nodePort }}
       {{- end }}
       targetPort: {{ .Values.coapgateway.service.tcp.targetPort }}
       protocol: {{ .Values.coapgateway.service.tcp.protocol }}

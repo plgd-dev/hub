@@ -712,9 +712,13 @@ coapgateway:
   # -- Annotations for coap-gateway pod
   podAnnotations: { }
   service:
+    # -- Service type
+    type: LoadBalancer
+    # -- Use nodePort, if specified, for one of the protocols. If both protocols are enabled, nodePort needs to be configured directly in the service to mutually different ports.
+    nodePort:
     tcp:  
       # -- Service type
-      type: LoadBalancer
+      type:
       # -- Labels for coap-gateway service
       labels: { }
       # -- Annotations for coap-gateway service
@@ -729,7 +733,7 @@ coapgateway:
       name: coaps-tcp
     udp:
       # -- Service type
-      type: LoadBalancer
+      type:
       # -- Labels for coap-gateway service
       labels: { }
       # -- Annotations for coap-gateway service
@@ -737,11 +741,11 @@ coapgateway:
       # -- Use nodePort if specified. Must to be different as is in tcp
       nodePort:
       # -- Target port
-      targetPort: coaps
+      targetPort: coaps-udp
       # -- Protocol
       protocol: UDP
       # -- Name
-      name: coaps
+      name: coaps-udp
   # -- RBAC configuration
   rbac:
     # -- Create RBAC config
