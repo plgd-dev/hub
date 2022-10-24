@@ -435,7 +435,7 @@ message Connection {
         ONLINE = 1;
     };
     Status status = 1;
-    int64 status_valid_until = 2;
+    int64 online_valid_until = 2;
     string id = 3; // when status is ONLINE, this field contains the connection id. To update state offline, this field must be same as the one in the previous message.
     int64 connected_at = 4; // timestamp when the device was connected
 }
@@ -474,13 +474,12 @@ message Connection {
 //*******************************************************************************************************************************************************
 
 message ShadowSynchronization {
-    enum Status {
+    enum State {
         NONE = 0;
         STARTED = 1;
         FINISHED = 2;
     };
-    bool enabled = 1; // by default true
-    Status status = 2; // if status is changed to finished but during the synchronization the shadow synchronization was disabled, command is ignored and `enabled` stays disabled
+    State state = 2;
     int64 started_at = 3;  // unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when shadow synchronization started.
     int64 finished_at = 4; // unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when shadow synchronization finished.
     CommandMetadata command_metadata = 5; // when status is STARTED, this field contains the connection id. To update state to FINISHED, this field must be same as the one in the previous message.
@@ -492,9 +491,10 @@ message UpdateDeviceMetadataRequest {
     oneof update {
         Connection connection = 3;
         ShadowSynchronization shadow_synchronization = 4;
+        bool shadow_synchronization_enabled = 5; // by default true
     };
-    int64 time_to_live = 5;  // command validity in nanoseconds. 0 means forever and minimal value is 100000000 (100ms).
-    CommandMetadata command_metadata = 6;
+    int64 time_to_live = 6;  // command validity in nanoseconds. 0 means forever and minimal value is 100000000 (100ms).
+    CommandMetadata command_metadata = 7;
 }
 
 message UpdateDeviceMetadataResponse {
