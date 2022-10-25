@@ -440,7 +440,7 @@ message Connection {
     int64 connected_at = 4; // timestamp when the device was connected
 }
 //*******************************************************************************************************************************************************
-// Update Device Metadata - Shadow Synchronization Status
+// Update Device Metadata - Twin Synchronization State
 //
 // ┌──────────┐          ┌───────┐                         ┌──────────────────┐               ┌─────────┐               ┌──────┐
 // │OCF Server│          │Gateway│                         │Resource Aggregate│               │Event Bus│               │Client│
@@ -473,15 +473,15 @@ message Connection {
 // └──────────┘          └───────┘                         └──────────────────┘               └─────────┘               └──────┘
 //*******************************************************************************************************************************************************
 
-message ShadowSynchronization {
+message TwinSynchronization {
     enum State {
         NONE = 0;
         STARTED = 1;
         FINISHED = 2;
     };
     State state = 2;
-    int64 started_at = 3;  // unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when shadow synchronization started.
-    int64 finished_at = 4; // unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when shadow synchronization finished.
+    int64 started_at = 3;  // unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when twin synchronization started.
+    int64 finished_at = 4; // unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when twin synchronization finished.
     CommandMetadata command_metadata = 5; // when status is STARTED, this field contains the connection id. To update state to FINISHED, this field must be same as the one in the previous message.
 }
 
@@ -490,8 +490,8 @@ message UpdateDeviceMetadataRequest {
     string correlation_id = 2;
     oneof update {
         Connection connection = 3;
-        ShadowSynchronization shadow_synchronization = 4;
-        bool shadow_synchronization_enabled = 5; // by default true
+        TwinSynchronization twin_synchronization = 4;
+        bool twin_enabled = 5; // by default true
     };
     int64 time_to_live = 6;  // command validity in nanoseconds. 0 means forever and minimal value is 100000000 (100ms).
     CommandMetadata command_metadata = 7;
@@ -507,7 +507,7 @@ message ConfirmDeviceMetadataUpdateRequest {
     string correlation_id = 2;
     Status status = 3;
     oneof confirm {
-        ShadowSynchronization shadow_synchronization = 4;
+        TwinSynchronization twin_synchronization = 4;
     };
     CommandMetadata command_metadata = 5;
 }
@@ -559,7 +559,7 @@ message CancelPendingCommandsResponse{
 }
 
 //*******************************************************************************************************************************************************
-// Cancel update device metadata - Shadow Synchronization Status
+// Cancel update device metadata - Twin Synchronization State
 // ┌──────────────────┐                         ┌─────────┐          ┌──────┐          ┌──────────┐
 // │Resource Aggregate│                         │Event Bus│          │Client│          │OCF Server│
 // └────────┬─────────┘                         └─────────┘          └──────┘          └──────────┘
