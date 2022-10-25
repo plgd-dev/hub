@@ -38,8 +38,13 @@ func newDevicesStatusUpdater(ctx context.Context, cfg DeviceStatusExpirationConf
 	return &u
 }
 
-func (u *devicesStatusUpdater) Add(ctx context.Context, c *session) error {
-	expires, err := u.updateOnlineStatus(ctx, c, time.Now().Add(u.cfg.ExpiresIn))
+func (u *devicesStatusUpdater) Add(ctx context.Context, c *session, isNewDevice bool) error {
+	now := time.Now()
+	connectedAt := time.Time{}
+	if isNewDevice {
+		connectedAt = now
+	}
+	expires, err := u.updateOnlineStatus(ctx, c, now.Add(u.cfg.ExpiresIn), connectedAt)
 	if err != nil {
 		return err
 	}
@@ -62,7 +67,7 @@ func (u *devicesStatusUpdater) Remove(c *session) {
 	delete(u.devices, c.RemoteAddr().String())
 }
 
-func (u *devicesStatusUpdater) updateOnlineStatus(ctx context.Context, client *session, validUntil time.Time) (time.Time, error) {
+func (u *devicesStatusUpdater) updateOnlineStatus(ctx context.Context, client *session, validUntil time.Time, connectedAt time.Time) (time.Time, error) {
 	authCtx, err := client.GetAuthorizationContext()
 	if err != nil {
 		return time.Time{}, err
@@ -78,6 +83,7 @@ func (u *devicesStatusUpdater) updateOnlineStatus(ctx context.Context, client *s
 				Value:        commands.ConnectionStatus_ONLINE,
 				ValidUntil:   pkgTime.UnixNano(validUntil),
 				ConnectionId: client.RemoteAddr().String(),
+				ConnectedAt:  pkgTime.UnixNano(connectedAt),
 			},
 		},
 		CommandMetadata: &commands.CommandMetadata{
@@ -114,7 +120,7 @@ func (u *devicesStatusUpdater) run() {
 			return
 		case now := <-t.C:
 			for _, d := range u.getDevicesToUpdate(now) {
-				expires, err := u.updateOnlineStatus(d.client.Context(), d.client, time.Now().Add(u.cfg.ExpiresIn))
+				expires, err := u.updateOnlineStatus(d.client.Context(), d.client, time.Now().Add(u.cfg.ExpiresIn), time.Time{})
 				if err != nil {
 					u.logger.Errorf("cannot update device(%v) status to online: %w", getDeviceID(d.client), err)
 				} else {

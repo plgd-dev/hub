@@ -111,7 +111,7 @@ func TestQueueSubmitForOneWorker(t *testing.T) {
 			require.NoError(t, err)
 			defer q.Release()
 			if len(tt.args.preSharedTasks) > 0 {
-				err := q.appendQueue(tt.args.preSharedTasks)
+				err = q.appendQueue(tt.args.preSharedTasks)
 				require.NoError(t, err)
 			}
 			if tt.args.separateTasks {

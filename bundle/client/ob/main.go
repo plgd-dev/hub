@@ -52,8 +52,8 @@ func getServiceToken(authAddr string) (string, error) {
 		return "", err
 	}
 	defer func() {
-		if err := res.Body.Close(); err != nil {
-			log.Fatalf("failed to close response body: %v", err)
+		if errC := res.Body.Close(); errC != nil {
+			log.Fatalf("failed to close response body: %v", errC)
 		}
 	}()
 	if res.StatusCode != http.StatusOK {

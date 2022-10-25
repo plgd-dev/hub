@@ -36,19 +36,19 @@ func WriteError(w netHttp.ResponseWriter, err error) {
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	w.WriteHeader(http.ErrToStatus(err))
 
-	var grpcErr grpcErr
+	var gErr grpcErr
 	var s *status.Status
-	if errors.As(err, &grpcErr) {
-		s = grpcErr.GRPCStatus().Proto()
+	if errors.As(err, &gErr) {
+		s = gErr.GRPCStatus().Proto()
 	}
 	var coapStatus coapStatus.Status
 	if s == nil && errors.As(err, &coapStatus) {
 		s = grpcStatus.New(coapconv.ToGrpcCode(coapStatus.Code(), grpcCodes.Internal), err.Error()).Proto()
 	}
 
-	var sdkErr sdkErr
-	if s == nil && errors.As(err, &sdkErr) {
-		s = grpcStatus.New(sdkErr.GetCode(), err.Error()).Proto()
+	var sErr sdkErr
+	if s == nil && errors.As(err, &sErr) {
+		s = grpcStatus.New(sErr.GetCode(), err.Error()).Proto()
 	}
 	if s == nil {
 		s = grpcStatus.New(grpcCodes.Unknown, err.Error()).Proto()

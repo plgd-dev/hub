@@ -913,7 +913,11 @@ components:
             validUntil:
               type: string
               format: int64
-          description: "Unix timestamp in nanoseconds."
+              description: "Unix timestamp in nanoseconds."
+            connectedAt:
+              type: string
+              format: int64
+              description: "Unix timestamp in nanoseconds."
         shadowSynchronization:
           $ref: "#/components/schemas/ShadowSynchronizationStatus"
     DeviceMetadataSnapshotTaken:

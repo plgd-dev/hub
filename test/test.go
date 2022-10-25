@@ -207,6 +207,10 @@ func setAccessForCloud(ctx context.Context, t *testing.T, c *deviceClient.Client
 	d, links, err := c.GetDevice(ctx, deviceID)
 	require.NoError(t, err)
 
+	defer func() {
+		errC := d.Close(ctx)
+		require.NoError(t, errC)
+	}()
 	p, err := d.Provision(ctx, links)
 	require.NoError(t, err)
 	defer func() {
@@ -328,6 +332,8 @@ func WaitForDevice(ctx context.Context, t *testing.T, client pb.GrpcGateway_Subs
 			val.DeviceMetadataUpdated.EventMetadata = nil
 			if val.DeviceMetadataUpdated.GetStatus() != nil {
 				val.DeviceMetadataUpdated.GetStatus().ConnectionId = ""
+				require.NotZero(t, val.DeviceMetadataUpdated.GetStatus().GetConnectedAt())
+				val.DeviceMetadataUpdated.GetStatus().ConnectedAt = 0
 			}
 			val.DeviceMetadataUpdated.OpenTelemetryCarrier = nil
 		case *pb.Event_ResourcePublished:

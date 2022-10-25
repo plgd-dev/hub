@@ -120,8 +120,8 @@ func subscribe(ctx context.Context, tracerProvider trace.TracerProvider, href, c
 		return resp, fmt.Errorf("cannot post: %w", err)
 	}
 	defer func() {
-		if err := httpResp.Body.Close(); err != nil {
-			log.Errorf("failed to close response body stream: %w", err)
+		if errC := httpResp.Body.Close(); errC != nil {
+			log.Errorf("failed to close response body stream: %w", errC)
 		}
 	}()
 	if httpResp.StatusCode != http.StatusOK && httpResp.StatusCode != http.StatusCreated {
@@ -152,8 +152,8 @@ func cancelSubscription(ctx context.Context, tracerProvider trace.TracerProvider
 		return fmt.Errorf("cannot delete: %w", err)
 	}
 	defer func() {
-		if err := httpResp.Body.Close(); err != nil {
-			log.Errorf("failed to close response body stream: %w", err)
+		if errC := httpResp.Body.Close(); errC != nil {
+			log.Errorf("failed to close response body stream: %w", errC)
 		}
 	}()
 	if httpResp.StatusCode != http.StatusOK && httpResp.StatusCode != http.StatusAccepted {

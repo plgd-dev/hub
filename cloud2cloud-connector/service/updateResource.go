@@ -39,8 +39,8 @@ func updateDeviceResource(ctx context.Context, tracerProvider trace.TracerProvid
 
 	go func() {
 		defer func() {
-			if err := w.Close(); err != nil {
-				log.Errorf("failed to close write pipe: %v", err)
+			if errC := w.Close(); errC != nil {
+				log.Errorf("failed to close write pipe: %v", errC)
 			}
 		}()
 		_, err := w.Write(content)
@@ -53,8 +53,8 @@ func updateDeviceResource(ctx context.Context, tracerProvider trace.TracerProvid
 		return "", nil, commands.Status_UNAVAILABLE, fmt.Errorf("cannot post: %w", err)
 	}
 	defer func() {
-		if err := httpResp.Body.Close(); err != nil {
-			log.Errorf("failed to close response body stream: %w", err)
+		if errC := httpResp.Body.Close(); errC != nil {
+			log.Errorf("failed to close response body stream: %w", errC)
 		}
 	}()
 	if httpResp.StatusCode != http.StatusOK {

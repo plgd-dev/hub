@@ -243,8 +243,8 @@ func testPreregisterVirtualDevice(ctx context.Context, t *testing.T, deviceID st
 	client, err := grpcClient.SubscribeToEvents(ctx)
 	require.NoError(t, err)
 	defer func() {
-		err := client.CloseSend()
-		require.NoError(t, err)
+		errC := client.CloseSend()
+		require.NoError(t, errC)
 	}()
 
 	err = client.Send(&pb.SubscribeToEvents{

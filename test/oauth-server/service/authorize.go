@@ -99,21 +99,21 @@ func (requestHandler *RequestHandler) validateAuthorizeRequest(clientCfg *Client
 		return "", fmt.Errorf("invalid redirect uri(%v)", redirectURI)
 	}
 	if clientCfg.RequiredResponseType != "" && clientCfg.RequiredResponseType != responseType {
-		redirectURI, err := buildRedirectURI(redirectURI, "", "", "invalid response type")
+		uri, err := buildRedirectURI(redirectURI, "", "", "invalid response type")
 		if err != nil {
 			return "", err
 		}
-		return redirectURI, nil
+		return uri, nil
 	}
 	if clientCfg.RequiredScope != nil {
 		tScope := strings.Split(scope, " ")
 		refScope := pkgStrings.MakeSortedSlice(clientCfg.RequiredScope)
 		if !(pkgStrings.MakeSortedSlice(tScope).IsSubslice(refScope)) {
-			redirectURI, err := buildRedirectURI(redirectURI, "", "", "invalid scope")
+			uri, err := buildRedirectURI(redirectURI, "", "", "invalid scope")
 			if err != nil {
 				return "", err
 			}
-			return redirectURI, nil
+			return uri, nil
 		}
 	}
 	return "", nil

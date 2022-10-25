@@ -63,8 +63,8 @@ func (c *Client) SyncRetrieveResource(ctx context.Context, owner string, req *co
 		return nil, fmt.Errorf("cannot subscribe to eventbus: %w", err)
 	}
 	defer func() {
-		if err := obs.Close(); err != nil {
-			log.Errorf("retrieve resource: %w", err)
+		if errC := obs.Close(); errC != nil {
+			log.Errorf("retrieve resource: %w", errC)
 		}
 	}()
 

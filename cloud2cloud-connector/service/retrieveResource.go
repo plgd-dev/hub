@@ -34,8 +34,8 @@ func retrieveDeviceResource(ctx context.Context, traceProvider trace.TracerProvi
 		return "", nil, commands.Status_UNAVAILABLE, fmt.Errorf("cannot post: %w", err)
 	}
 	defer func() {
-		if err := httpResp.Body.Close(); err != nil {
-			log.Errorf("failed to close response body stream: %w", err)
+		if errC := httpResp.Body.Close(); errC != nil {
+			log.Errorf("failed to close response body stream: %w", errC)
 		}
 	}()
 	if httpResp.StatusCode != http.StatusOK {

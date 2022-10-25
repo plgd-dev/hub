@@ -116,8 +116,8 @@ func TestDeviceDirectoryGetDevices(t *testing.T) {
 	fileWatcher, err := fsnotify.NewWatcher()
 	require.NoError(t, err)
 	defer func() {
-		err := fileWatcher.Close()
-		require.NoError(t, err)
+		errC := fileWatcher.Close()
+		require.NoError(t, errC)
 	}()
 
 	pool, err := ants.NewPool(1)

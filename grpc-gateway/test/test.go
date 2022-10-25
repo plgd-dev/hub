@@ -59,7 +59,7 @@ func New(t *testing.T, cfg service.Config) func() {
 	return func() {
 		_ = s.Close()
 		wg.Wait()
-		err := fileWatcher.Close()
-		require.NoError(t, err)
+		errC := fileWatcher.Close()
+		require.NoError(t, errC)
 	}
 }

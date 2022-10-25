@@ -93,8 +93,8 @@ func (d *ownerSubject) subscribeLocked(owner string, subscribe func(subj string,
 
 func (d *ownerSubject) syncDevicesLocked(ctx context.Context, owner string, cache *OwnerCache) (added []string, removed []string, err error) {
 	err = d.subscribeLocked(owner, cache.conn.Subscribe, func(msg *nats.Msg) {
-		if err := d.Handle(msg); err != nil {
-			cache.errFunc(err)
+		if errH := d.Handle(msg); errH != nil {
+			cache.errFunc(errH)
 		}
 	})
 	if err != nil {
@@ -209,11 +209,11 @@ func (c *OwnerCache) executeOnLockedOwnerSubject(owner string, fn func(*ownerSub
 
 // Subscribe register onEvents handler and creates a NATS subscription, if it does not exist.
 // To free subscription call the returned close function.
-func (c *OwnerCache) Subscribe(owner string, onEvent func(e *events.Event)) (close func(), err error) {
+func (c *OwnerCache) Subscribe(owner string, onEvent func(e *events.Event)) (func(), error) {
 	closeFunc := func() {
 		// Do nothing if no owner subject is found
 	}
-	err = c.executeOnLockedOwnerSubject(owner, func(s *ownerSubject) error {
+	err := c.executeOnLockedOwnerSubject(owner, func(s *ownerSubject) error {
 		if onEvent != nil {
 			handlerID := atomic.AddUint64(&c.handlerID, 1)
 			for !s.AddHandlerLocked(handlerID, onEvent) {
@@ -223,8 +223,8 @@ func (c *OwnerCache) Subscribe(owner string, onEvent func(e *events.Event)) (clo
 		}
 		if s.subscription == nil {
 			err := s.subscribeLocked(owner, c.conn.Subscribe, func(msg *nats.Msg) {
-				if err := s.Handle(msg); err != nil {
-					c.errFunc(err)
+				if errH := s.Handle(msg); errH != nil {
+					c.errFunc(errH)
 				}
 			})
 			if err != nil {
@@ -269,8 +269,8 @@ func (c *OwnerCache) GetDevices(ctx context.Context) (devices []string, err erro
 	now := time.Now()
 	if err = c.executeOnLockedOwnerSubject(owner, func(s *ownerSubject) error {
 		if !s.devicesSynced {
-			if _, _, err := s.syncDevicesLocked(ctx, owner, c); err != nil {
-				return err
+			if _, _, err2 := s.syncDevicesLocked(ctx, owner, c); err2 != nil {
+				return err2
 			}
 		} else {
 			s.validUntil = now.Add(c.expiration)
@@ -295,8 +295,8 @@ func (c *OwnerCache) GetSelectedDevices(ctx context.Context, devices []string) (
 	deviceIds := strings.MakeSortedSlice(devices)
 	if err = c.executeOnLockedOwnerSubject(owner, func(s *ownerSubject) error {
 		if !s.devicesSynced {
-			if _, _, err := s.syncDevicesLocked(ctx, owner, c); err != nil {
-				return err
+			if _, _, err2 := s.syncDevicesLocked(ctx, owner, c); err2 != nil {
+				return err2
 			}
 		}
 		deviceIds = s.devices.Intersection(deviceIds)
@@ -319,8 +319,8 @@ func (c *OwnerCache) OwnsDevices(ctx context.Context, devices []string) (bool, e
 	deviceIds := strings.MakeSortedSlice(devices)
 	if err = c.executeOnLockedOwnerSubject(owner, func(s *ownerSubject) error {
 		if !s.devicesSynced {
-			if _, _, err := s.syncDevicesLocked(ctx, owner, c); err != nil {
-				return err
+			if _, _, err2 := s.syncDevicesLocked(ctx, owner, c); err2 != nil {
+				return err2
 			}
 		}
 		equalDevices = s.devices.IsSuperslice(deviceIds)

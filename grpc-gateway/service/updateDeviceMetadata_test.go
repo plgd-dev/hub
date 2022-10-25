@@ -90,8 +90,8 @@ func TestRequestHandler_UpdateDeviceMetadata(t *testing.T) {
 	fileWatcher, err := fsnotify.NewWatcher()
 	require.NoError(t, err)
 	defer func() {
-		err := fileWatcher.Close()
-		require.NoError(t, err)
+		errC := fileWatcher.Close()
+		require.NoError(t, errC)
 	}()
 
 	naClient, s, err := natsTest.NewClientAndSubscriber(testCfg.MakeSubscriberConfig(), fileWatcher, logger, subscriber.WithUnmarshaler(utils.Unmarshal))

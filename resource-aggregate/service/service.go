@@ -41,9 +41,9 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 		return nil, fmt.Errorf("cannot create mongodb eventstore %w", err)
 	}
 	closeEventStore := func() {
-		err := eventstore.Close(ctx)
-		if err != nil {
-			logger.Errorf("error occurs during closing of connection to mongodb: %w", err)
+		errC := eventstore.Close(ctx)
+		if errC != nil {
+			logger.Errorf("error occurs during closing of connection to mongodb: %w", errC)
 		}
 	}
 	naClient, err := natsClient.New(config.Clients.Eventbus.NATS.Config, fileWatcher, logger)

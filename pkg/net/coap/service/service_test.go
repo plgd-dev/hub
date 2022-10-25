@@ -53,7 +53,7 @@ func TestNew(t *testing.T) {
 					},
 					TLS: TLSConfig{
 						Enabled: new(bool), // TLS is disabled
-						//Embedded: config.MakeTLSServerConfig(),
+						// Embedded: config.MakeTLSServerConfig(),
 					},
 				},
 				options: []func(*Options){

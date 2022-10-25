@@ -396,13 +396,13 @@ func (l *WrapSuggarLogger) LogAndReturnError(err error) error {
 		l.Debugf("%v", err)
 		return err
 	}
-	var grpcErr grpcErr
-	if errors.As(err, &grpcErr) {
-		if grpcErr.GRPCStatus().Code() == codes.Canceled {
+	var gErr grpcErr
+	if errors.As(err, &gErr) {
+		if gErr.GRPCStatus().Code() == codes.Canceled {
 			l.Debugf("%v", err)
 			return err
 		}
-		if grpcErr.GRPCStatus().Code() == codes.DeadlineExceeded {
+		if gErr.GRPCStatus().Code() == codes.DeadlineExceeded {
 			l.Warnf("%v", err)
 			return err
 		}

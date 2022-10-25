@@ -58,8 +58,8 @@ func makeEmitEventRequest(ctx context.Context, eventType events.EventType, s sto
 	if len(body) > 0 {
 		go func() {
 			defer func() {
-				if err := w.Close(); err != nil {
-					log.Errorf("failed to close write pipe: %w", err)
+				if errC := w.Close(); errC != nil {
+					log.Errorf("failed to close write pipe: %w", errC)
 				}
 			}()
 			_, err := w.Write(body)
@@ -68,8 +68,8 @@ func makeEmitEventRequest(ctx context.Context, eventType events.EventType, s sto
 			}
 		}()
 	} else {
-		if err := w.Close(); err != nil {
-			log.Errorf("failed to close write pipe: %w", err)
+		if errC := w.Close(); errC != nil {
+			log.Errorf("failed to close write pipe: %w", errC)
 		}
 	}
 
@@ -121,8 +121,8 @@ func createEmitEventFunc(cfg cmClient.Config, timeout time.Duration, fileWatcher
 			return false, fmt.Errorf("cannot post: %w", err)
 		}
 		defer func() {
-			if err := resp.Body.Close(); err != nil {
-				log.Errorf("failed to close response body stream: %w", err)
+			if errC := resp.Body.Close(); errC != nil {
+				log.Errorf("failed to close response body stream: %w", errC)
 			}
 		}()
 		if resp.StatusCode != netHttp.StatusOK {

@@ -34,8 +34,8 @@ func TestAggregate(t *testing.T) {
 	ctx := context.Background()
 	store := testNewEventstore(ctx, t)
 	defer func() {
-		err := store.Clear(ctx)
-		require.NoError(t, err)
+		errC := store.Clear(ctx)
+		require.NoError(t, errC)
 		_ = store.Close(ctx)
 	}()
 

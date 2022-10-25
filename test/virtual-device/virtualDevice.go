@@ -77,6 +77,7 @@ func CreateDevice(ctx context.Context, t *testing.T, name string, deviceID strin
 				Status: &commands.ConnectionStatus{
 					Value:        commands.ConnectionStatus_ONLINE,
 					ConnectionId: connID,
+					ConnectedAt:  time.Now().UnixNano(),
 				},
 			},
 			TimeToLive: time.Now().Add(time.Hour).UnixNano(),
@@ -176,7 +177,7 @@ func CreateDevices(ctx context.Context, t *testing.T, numDevices int, numResourc
 	numGoRoutines := int64(8)
 	sem := semaphore.NewWeighted(numGoRoutines)
 	for i := 0; i < numDevices; i++ {
-		err := sem.Acquire(ctx, 1)
+		err = sem.Acquire(ctx, 1)
 		require.NoError(t, err)
 		go func(i int) {
 			CreateDevice(ctx, t, fmt.Sprintf("dev-%v", i), uuid.NewString(), numResourcesPerDevice, isClient, raClient)

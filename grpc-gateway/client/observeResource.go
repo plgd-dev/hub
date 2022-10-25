@@ -33,8 +33,8 @@ func (c *Client) ObserveResource(
 		codec: cfg.codec,
 		obs:   handler,
 		removeSubscription: func() {
-			if _, err := c.stopObservingResource(ID.String()); err != nil {
-				handler.Error(fmt.Errorf("failed to stop resource('%v') observation: %w", ID.String(), err))
+			if _, errS := c.stopObservingResource(ID.String()); errS != nil {
+				handler.Error(fmt.Errorf("failed to stop resource('%v') observation: %w", ID.String(), errS))
 			}
 		},
 	})
@@ -46,7 +46,7 @@ func (c *Client) ObserveResource(
 	return ID.String(), err
 }
 
-func (c *Client) stopObservingResource(observationID string) (wait func(), err error) {
+func (c *Client) stopObservingResource(observationID string) (func(), error) {
 	s, err := c.popSubscription(observationID)
 	if err != nil {
 		return nil, err

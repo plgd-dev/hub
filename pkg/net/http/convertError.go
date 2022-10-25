@@ -28,13 +28,13 @@ func ErrToStatusWithDef(err error, def int) int {
 	if errors.As(err, &coapStatus) {
 		return coapconv.ToHTTPCode(coapStatus.Message().Code(), def)
 	}
-	var grpcErr grpcErr
-	if errors.As(err, &grpcErr) {
-		return grpcconv.ToHTTPCode(grpcErr.GRPCStatus().Code(), def)
+	var gErr grpcErr
+	if errors.As(err, &gErr) {
+		return grpcconv.ToHTTPCode(gErr.GRPCStatus().Code(), def)
 	}
-	var sdkErr sdkErr
-	if errors.As(err, &sdkErr) {
-		return grpcconv.ToHTTPCode(sdkErr.GetCode(), def)
+	var sErr sdkErr
+	if errors.As(err, &sErr) {
+		return grpcconv.ToHTTPCode(sErr.GetCode(), def)
 	}
 	return def
 }

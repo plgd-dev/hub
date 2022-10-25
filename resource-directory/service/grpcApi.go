@@ -94,8 +94,8 @@ func newRequestHandlerFromConfig(ctx context.Context, config Config, publicConfi
 		return nil, fmt.Errorf("cannot create resource mongodb eventstore %w", err)
 	}
 	closeFunc.AddFunc(func() {
-		if err := eventstore.Close(ctx); err != nil {
-			logger.Errorf("error occurs during close connection to mongodb: %w", err)
+		if errC := eventstore.Close(ctx); errC != nil {
+			logger.Errorf("error occurs during close connection to mongodb: %w", errC)
 		}
 	})
 

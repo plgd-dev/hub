@@ -189,8 +189,8 @@ func TestRequestHandlerSubscribeToEvents(t *testing.T) {
 			client, err := client.New(c).SubscribeToEventsWithCurrentState(ctx, time.Minute)
 			require.NoError(t, err)
 			defer func() {
-				err := client.CloseSend()
-				assert.NoError(t, err)
+				errC := client.CloseSend()
+				assert.NoError(t, errC)
 			}()
 			var wg sync.WaitGroup
 			wg.Add(1)
@@ -717,8 +717,8 @@ func TestRequestHandlerIssue270(t *testing.T) {
 	fileWatcher, err := fsnotify.NewWatcher()
 	require.NoError(t, err)
 	defer func() {
-		err := fileWatcher.Close()
-		require.NoError(t, err)
+		errC := fileWatcher.Close()
+		require.NoError(t, errC)
 	}()
 
 	rdConn, err := grpcClient.New(testCfg.MakeGrpcClientConfig(testCfg.GRPC_GW_HOST), fileWatcher, log.Get(), trace.NewNoopTracerProvider())

@@ -238,8 +238,8 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 		return nil, fmt.Errorf("cannot create http server: %w", err)
 	}
 	closeListener := func() {
-		if err := listener.Close(); err != nil {
-			logger.Errorf("cannot create http server: %w", err)
+		if errC := listener.Close(); errC != nil {
+			logger.Errorf("cannot create http server: %w", errC)
 		}
 	}
 
