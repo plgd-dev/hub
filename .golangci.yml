@@ -121,6 +121,8 @@ issues:
         - gosec
     - path: test
       linters:
+        - gocognit
+        - gocyclo
         - gosec
     - path: pkg/time/delay.go
       text: "G404:"

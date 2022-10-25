@@ -35,6 +35,23 @@ func (c *Config) GetTimeout() time.Duration {
 	return c.InactivityMonitor.Timeout
 }
 
+func (c *Config) validateKeepAliveAndInactivityMonitor() error {
+	if c.InactivityMonitor != nil {
+		if err := c.InactivityMonitor.Validate(); err != nil {
+			return fmt.Errorf("inactivityMonitor.%w", err)
+		}
+	}
+	if c.KeepAlive != nil {
+		if err := c.KeepAlive.Validate(); err != nil {
+			return fmt.Errorf("keepAlive.%w", err)
+		}
+	}
+	if c.KeepAlive == nil && c.InactivityMonitor == nil {
+		return fmt.Errorf("keepAlive or inactivityMonitor must be set")
+	}
+	return nil
+}
+
 func (c *Config) Validate() error {
 	if c.Addr == "" {
 		return fmt.Errorf("address('%v')", c.Addr)
@@ -61,21 +78,7 @@ func (c *Config) Validate() error {
 	if err := c.TLS.Validate(); err != nil {
 		return fmt.Errorf("tls.%w", err)
 	}
-	if c.InactivityMonitor != nil {
-		if err := c.InactivityMonitor.Validate(); err != nil {
-			return fmt.Errorf("inactivityMonitor.%w", err)
-		}
-	}
-	if c.KeepAlive != nil {
-		if err := c.KeepAlive.Validate(); err != nil {
-			return fmt.Errorf("keepAlive.%w", err)
-		}
-	}
-	if c.KeepAlive == nil && c.InactivityMonitor == nil {
-		return fmt.Errorf("keepAlive or inactivityMonitor must be set")
-	}
-
-	return nil
+	return c.validateKeepAliveAndInactivityMonitor()
 }
 
 type TLSConfig struct {

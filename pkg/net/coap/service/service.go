@@ -48,6 +48,36 @@ func closeOnError(services []service.APIService, logger log.Logger) {
 	}
 }
 
+func newService(protocol Protocol, config Config, serviceOpts Options, fileWatcher *fsnotify.Watcher, logger log.Logger, opts ...interface {
+	coapTcpServer.Option
+	coapDtlsServer.Option
+	coapUdpServer.Option
+},
+) (service.APIService, error) {
+	switch protocol {
+	case TCP:
+		coapServer, err := newTCPServer(config, serviceOpts, fileWatcher, logger, opts...)
+		if err != nil {
+			return nil, fmt.Errorf("cannot create tcp server: %w", err)
+		}
+		return coapServer, nil
+	case UDP:
+		if config.TLS.IsEnabled() {
+			coapServer, err := newDTLSServer(config, serviceOpts, fileWatcher, logger, opts...)
+			if err != nil {
+				return nil, fmt.Errorf("cannot create dtls server: %w", err)
+			}
+			return coapServer, nil
+		}
+		coapServer, err := newUDPServer(config, serviceOpts, logger, opts...)
+		if err != nil {
+			return nil, fmt.Errorf("cannot create udp server: %w", err)
+		}
+		return coapServer, nil
+	}
+	return nil, nil
+}
+
 // New creates server.
 func New(ctx context.Context, config Config, router *mux.Router, fileWatcher *fsnotify.Watcher, logger log.Logger, opt ...func(*Options)) (*service.Service, error) {
 	err := config.Validate()
@@ -82,33 +112,19 @@ func New(ctx context.Context, config Config, router *mux.Router, fileWatcher *fs
 	opts = append(opts, options.WithErrors(func(e error) {
 		logger.Errorf("plgd/go-coap: %w", e)
 	}))
+
 	services := make([]service.APIService, 0, 2)
 	for _, protocol := range config.Protocols {
-		switch protocol {
-		case TCP:
-			coapServer, err := newTCPServer(config, serviceOpts, fileWatcher, logger, opts...)
-			if err != nil {
-				closeOnError(services, logger)
-				return nil, fmt.Errorf("cannot create tcp server: %w", err)
-			}
-			services = append(services, coapServer)
-		case UDP:
-			if config.TLS.IsEnabled() {
-				coapServer, err := newDTLSServer(config, serviceOpts, fileWatcher, logger, opts...)
-				if err != nil {
-					closeOnError(services, logger)
-					return nil, fmt.Errorf("cannot create dtls server: %w", err)
-				}
-				services = append(services, coapServer)
-			} else {
-				coapServer, err := newUDPServer(config, serviceOpts, logger, opts...)
-				if err != nil {
-					closeOnError(services, logger)
-					return nil, fmt.Errorf("cannot create udp server: %w", err)
-				}
-				services = append(services, coapServer)
-			}
+		service, err := newService(protocol, config, serviceOpts, fileWatcher, logger, opts...)
+		if err != nil {
+			closeOnError(services, logger)
+			return nil, err
 		}
+		if service == nil {
+			logger.Warnf("unsupported protocol(%v)", protocol)
+			continue
+		}
+		services = append(services, service)
 	}
 	return service.New(services...), nil
 }
