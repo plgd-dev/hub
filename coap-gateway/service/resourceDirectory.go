@@ -11,11 +11,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/plgd-dev/device/schema"
-	coapMessage "github.com/plgd-dev/go-coap/v2/message"
-	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
-	"github.com/plgd-dev/go-coap/v2/mux"
-	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
+	"github.com/plgd-dev/device/v2/schema"
+	coapMessage "github.com/plgd-dev/go-coap/v3/message"
+	coapCodes "github.com/plgd-dev/go-coap/v3/message/codes"
+	"github.com/plgd-dev/go-coap/v3/message/pool"
+	"github.com/plgd-dev/go-coap/v3/mux"
 	"github.com/plgd-dev/hub/v2/coap-gateway/coapconv"
 	"github.com/plgd-dev/hub/v2/coap-gateway/resource"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
@@ -72,6 +72,9 @@ func validatePublish(w wkRd) error {
 }
 
 func ParsePublishedResources(data io.ReadSeeker, deviceID string) (wkRd, error) {
+	if data == nil {
+		return wkRd{}, fmt.Errorf("cannot read publish request body received from device %v: empty body", deviceID)
+	}
 	w := makeWkRd()
 	err := cbor.ReadFrom(data, &w)
 	if err != nil {
@@ -114,7 +117,7 @@ func PublishResourceLinks(ctx context.Context, raClient raService.ResourceAggreg
 	return resp.GetPublishedResources(), nil
 }
 
-func observeResources(ctx context.Context, client *Client, w wkRd, sequenceNumber uint64) (coapCodes.Code, error) {
+func observeResources(ctx context.Context, client *session, w wkRd, sequenceNumber uint64) (coapCodes.Code, error) {
 	publishedResources, err := PublishResourceLinks(ctx, client.server.raClient, w.Links, w.DeviceID, int32(w.TimeToLive), client.RemoteAddr().String(), sequenceNumber)
 	if err != nil {
 		return coapCodes.BadRequest, fmt.Errorf("unable to publish resources for device %v: %w", w.DeviceID, err)
@@ -139,22 +142,22 @@ func observeResources(ctx context.Context, client *Client, w wkRd, sequenceNumbe
 	return 0, nil
 }
 
-func resourceDirectoryPublishHandler(req *mux.Message, client *Client) (*pool.Message, error) {
+func resourceDirectoryPublishHandler(req *mux.Message, client *session) (*pool.Message, error) {
 	authCtx, err := client.GetAuthorizationContext()
 	if err != nil {
 		return nil, statusErrorf(coapCodes.Unauthorized, "cannot load authorization context: %w", err)
 	}
 
-	w, err := ParsePublishedResources(req.Body, authCtx.GetDeviceID())
+	w, err := ParsePublishedResources(req.Body(), authCtx.GetDeviceID())
 	if err != nil {
 		return nil, statusErrorf(coapCodes.BadRequest, "%w", err)
 	}
 
-	if errCode, err := observeResources(req.Context, client, w, req.SequenceNumber); err != nil {
+	if errCode, err := observeResources(req.Context(), client, w, req.Sequence()); err != nil {
 		return nil, statusErrorf(errCode, "%w", err)
 	}
 
-	accept := coapconv.GetAccept(req.Options)
+	accept := coapconv.GetAccept(req.Options())
 	encode, err := coapconv.GetEncoder(accept)
 	if err != nil {
 		return nil, statusErrorf(coapCodes.InternalServerError, "%w", fmt.Errorf("unable to get encoder for accepted type %v requested: %w", accept, err))
@@ -164,7 +167,7 @@ func resourceDirectoryPublishHandler(req *mux.Message, client *Client) (*pool.Me
 		return nil, statusErrorf(coapCodes.InternalServerError, "%w", fmt.Errorf("unable to encode publish response: %w", err))
 	}
 
-	return client.createResponse(coapCodes.Changed, req.Token, accept, out), nil
+	return client.createResponse(coapCodes.Changed, req.Token(), accept, out), nil
 }
 
 func parseUnpublishQueryString(queries []string) (deviceID string, instanceIDs []int64, err error) {
@@ -193,13 +196,13 @@ func parseUnpublishQueryString(queries []string) (deviceID string, instanceIDs [
 	return
 }
 
-func resourceDirectoryUnpublishHandler(req *mux.Message, client *Client) (*pool.Message, error) {
+func resourceDirectoryUnpublishHandler(req *mux.Message, client *session) (*pool.Message, error) {
 	authCtx, err := client.GetAuthorizationContext()
 	if err != nil {
 		return nil, statusErrorf(coapCodes.BadRequest, "%w", fmt.Errorf("cannot load authorization context: %w", err))
 	}
 
-	queries, err := req.Options.Queries()
+	queries, err := req.Options().Queries()
 	if err != nil {
 		return nil, statusErrorf(coapCodes.BadRequest, "%w", fmt.Errorf("cannot query string from unpublish request: %w", err))
 	}
@@ -211,21 +214,21 @@ func resourceDirectoryUnpublishHandler(req *mux.Message, client *Client) (*pool.
 		return nil, statusErrorf(coapCodes.BadRequest, "%w", fmt.Errorf("unable to parse unpublish request query deviceId '%v': invalid deviceID", deviceID))
 	}
 
-	resources := client.unpublishResourceLinks(req.Context, nil, inss)
+	resources := client.unpublishResourceLinks(req.Context(), nil, inss)
 	if len(resources) == 0 {
 		return nil, statusErrorf(coapCodes.BadRequest, "%w", fmt.Errorf("cannot find observed resources using query %v which shall be unpublished", queries))
 	}
-	return client.createResponse(coapCodes.Deleted, req.Token, coapMessage.TextPlain, nil), nil
+	return client.createResponse(coapCodes.Deleted, req.Token(), coapMessage.TextPlain, nil), nil
 }
 
 type resourceDirectorySelector struct {
 	SelectionCriteria int `json:"sel"`
 }
 
-func resourceDirectoryGetSelector(req *mux.Message, client *Client) (*pool.Message, error) {
+func resourceDirectoryGetSelector(req *mux.Message, client *session) (*pool.Message, error) {
 	var rds resourceDirectorySelector // we want to use sel:0 to prefer cloud RD
 
-	accept := coapconv.GetAccept(req.Options)
+	accept := coapconv.GetAccept(req.Options())
 	encode, err := coapconv.GetEncoder(accept)
 	if err != nil {
 		return nil, statusErrorf(coapCodes.InternalServerError, "%w", fmt.Errorf("cannot get selector: %w", err))
@@ -235,11 +238,11 @@ func resourceDirectoryGetSelector(req *mux.Message, client *Client) (*pool.Messa
 		return nil, statusErrorf(coapCodes.InternalServerError, "%w", fmt.Errorf("cannot encode body for get selector: %w", err))
 	}
 
-	return client.createResponse(coapCodes.Content, req.Token, accept, out), nil
+	return client.createResponse(coapCodes.Content, req.Token(), accept, out), nil
 }
 
-func resourceDirectoryHandler(req *mux.Message, client *Client) (*pool.Message, error) {
-	switch req.Code {
+func resourceDirectoryHandler(req *mux.Message, client *session) (*pool.Message, error) {
+	switch req.Code() {
 	case coapCodes.POST:
 		return resourceDirectoryPublishHandler(req, client)
 	case coapCodes.DELETE:
@@ -247,6 +250,6 @@ func resourceDirectoryHandler(req *mux.Message, client *Client) (*pool.Message, 
 	case coapCodes.GET:
 		return resourceDirectoryGetSelector(req, client)
 	default:
-		return nil, statusErrorf(coapCodes.NotFound, "unsupported method %v", req.Code)
+		return nil, statusErrorf(coapCodes.NotFound, "unsupported method %v", req.Code())
 	}
 }

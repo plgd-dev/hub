@@ -15,7 +15,7 @@ GROUP_ID := $(shell id -g)
 #$(error MY_FLAG=$(BUILD_TAG)AAA)
 
 SUBDIRS := bundle certificate-authority cloud2cloud-connector cloud2cloud-gateway coap-gateway grpc-gateway resource-aggregate resource-directory http-gateway identity-store test/oauth-server tools/cert-tool
-.PHONY: $(SUBDIRS) push proto/generate clean build test env mongo nats certificates hub-build http-gateway-www
+.PHONY: $(SUBDIRS) push proto/generate clean build test env mongo nats certificates hub-build http-gateway-www simulators
 
 default: build
 
@@ -110,12 +110,11 @@ define CLEAN-DOCKER-DEVICE
 	sudo rm -rf $(WORKING_DIRECTORY)/.tmp/$(1) || true
 endef
 
-env: clean certificates nats mongo privateKeys http-gateway-www
-	if [ "${TRAVIS_OS_NAME}" == "linux" ]; then \
-		sudo sh -c 'echo 0 > /proc/sys/net/ipv6/conf/all/disable_ipv6'; \
-	fi
+simulators:
 	$(call RUN-DOCKER-DEVICE,$(DEVICE_SIMULATOR_NAME),$(DEVICE_SIMULATOR_IMG))
 	$(call RUN-DOCKER-DEVICE,$(DEVICE_SIMULATOR_RES_OBSERVABLE_NAME),$(DEVICE_SIMULATOR_RES_OBSERVABLE_IMG))
+
+env: clean certificates nats mongo privateKeys http-gateway-www simulators
 
 define RUN-DOCKER
 	docker run \
@@ -166,15 +165,16 @@ endef
 
 DIRECTORIES:=$(shell ls -d ./*/)
 
+# Run test with name $1 in over $2 directory with env $3 variables
 define RUN-TESTS
-	echo "Executing tests"; \
+	echo "Executing tests $1"; \
 	START_TIME=$$(date +%s); \
-	COVERAGE_FILE=/coverage/hub.coverage.txt ; \
-	JSON_REPORT_FILE=$(WORKING_DIRECTORY)/.tmp/report/hub.report.json ; \
+	COVERAGE_FILE=/coverage/$(1).coverage.txt ; \
+	JSON_REPORT_FILE=$(WORKING_DIRECTORY)/.tmp/report/$(1).report.json ; \
 	if [ -n "$${JSON_REPORT}" ]; then \
-		$(call RUN-DOCKER, go test -timeout=45m -race -p 1 -v ./... -coverpkg=./... -covermode=atomic -coverprofile=$${COVERAGE_FILE} -json > "$${JSON_REPORT_FILE}") \
+		$(call RUN-DOCKER, /bin/sh -c "$(3) go test -timeout=45m -race -p 1 -v $(2) -coverpkg=./... -covermode=atomic -coverprofile=$${COVERAGE_FILE} -json > $${JSON_REPORT_FILE}") \
 	else \
-		$(call RUN-DOCKER, go test -timeout=45m -race -p 1 -v ./... -coverpkg=./... -covermode=atomic -coverprofile=$${COVERAGE_FILE}) \
+		$(call RUN-DOCKER, /bin/sh -c "$(3) go test -timeout=45m -race -p 1 -v $(2) -coverpkg=./... -covermode=atomic -coverprofile=$${COVERAGE_FILE}") \
 	fi ; \
 	EXIT_STATUS=$$? ; \
 	if [ $${EXIT_STATUS} -ne 0 ]; then \
@@ -191,7 +191,8 @@ test: env
 	@mkdir -p $(WORKING_DIRECTORY)/.tmp/home
 	@mkdir -p $(WORKING_DIRECTORY)/.tmp/home/certificate-authority
 	@mkdir -p $(WORKING_DIRECTORY)/.tmp/report
-	@$(call RUN-TESTS)
+	@$(call RUN-TESTS,hub,./...,"")
+	@$(call RUN-TESTS,grpc-gateway-dtls,./grpc-gateway/service,"TEST_COAP_GATEWAY_UDP_ENABLED=true")
 
 test-targets := $(addprefix test-,$(patsubst ./%/,%,$(DIRECTORIES)))
 

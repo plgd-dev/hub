@@ -3,7 +3,7 @@ package events_test
 import (
 	"testing"
 
-	"github.com/plgd-dev/go-coap/v2/message"
+	"github.com/plgd-dev/go-coap/v3/message"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 	"github.com/stretchr/testify/require"

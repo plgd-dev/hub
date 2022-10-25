@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/plgd-dev/device/pkg/net/coap"
-	"github.com/plgd-dev/go-coap/v2/message/codes"
+	"github.com/plgd-dev/device/v2/pkg/net/coap"
+	"github.com/plgd-dev/go-coap/v3/message/codes"
 	"github.com/plgd-dev/hub/v2/coap-gateway/uri"
 	"github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	pkgJwt "github.com/plgd-dev/hub/v2/pkg/security/jwt"
@@ -51,7 +51,7 @@ func (s *Service) VerifyDeviceID(tlsDeviceID string, claim pkgJwt.Claims) error 
 	if s.config.APIs.COAP.Authorization.DeviceIDClaim != "" && jwtDeviceID == "" {
 		return fmt.Errorf("access token doesn't contain the required device id claim('%v')", s.config.APIs.COAP.Authorization.DeviceIDClaim)
 	}
-	if !s.config.APIs.COAP.TLS.Enabled {
+	if !s.config.APIs.COAP.TLS.IsEnabled() {
 		return nil
 	}
 	if !s.config.APIs.COAP.TLS.Embedded.ClientCertificateRequired {

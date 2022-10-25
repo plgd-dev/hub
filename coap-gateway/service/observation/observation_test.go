@@ -5,9 +5,9 @@ import (
 	"crypto/tls"
 	"testing"
 
-	"github.com/plgd-dev/device/schema/device"
-	"github.com/plgd-dev/device/schema/resources"
-	"github.com/plgd-dev/go-coap/v2/tcp"
+	"github.com/plgd-dev/device/v2/schema/device"
+	"github.com/plgd-dev/device/v2/schema/resources"
+	coapTcpClient "github.com/plgd-dev/go-coap/v3/tcp/client"
 	coapgwService "github.com/plgd-dev/hub/v2/coap-gateway/service"
 	"github.com/plgd-dev/hub/v2/coap-gateway/service/observation"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
@@ -27,7 +27,7 @@ import (
 type observerHandlerWithCoap struct {
 	coapgwTest.DefaultObserverHandler
 	t                     *testing.T
-	coapConn              *tcp.ClientConn
+	coapConn              *coapTcpClient.Conn
 	setInitializedHandler future.SetFunc
 }
 
@@ -68,7 +68,7 @@ func TestIsResourceObservableWithInterface(t *testing.T) {
 	coapShutdown := coapgwTest.SetUp(t, makeHandler, nil)
 	defer coapShutdown()
 
-	grpcConn, err := grpc.Dial(config.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+	grpcConn, err := grpc.Dial(config.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
 	})))
 	require.NoError(t, err)
@@ -77,7 +77,7 @@ func TestIsResourceObservableWithInterface(t *testing.T) {
 	}()
 	grpcClient := pb.NewGrpcGatewayClient(grpcConn)
 
-	_, shutdownDevSim := test.OnboardDevSim(ctx, t, grpcClient, deviceID, config.GW_HOST, nil)
+	_, shutdownDevSim := test.OnboardDevSim(ctx, t, grpcClient, deviceID, config.ACTIVE_COAP_SCHEME+config.COAP_GW_HOST, nil)
 	defer shutdownDevSim()
 
 	// wait for handler with coap connection to be initialized

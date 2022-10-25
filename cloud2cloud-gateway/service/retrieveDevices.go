@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/gorilla/mux"
-	"github.com/plgd-dev/device/schema/device"
+	"github.com/plgd-dev/device/v2/schema/device"
 	pbGRPC "github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	kitNetHttp "github.com/plgd-dev/hub/v2/pkg/net/http"

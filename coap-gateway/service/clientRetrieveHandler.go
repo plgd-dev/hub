@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"io"
 
-	coapMessage "github.com/plgd-dev/go-coap/v2/message"
-	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
-	"github.com/plgd-dev/go-coap/v2/mux"
-	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
+	coapMessage "github.com/plgd-dev/go-coap/v3/message"
+	coapCodes "github.com/plgd-dev/go-coap/v3/message/codes"
+	"github.com/plgd-dev/go-coap/v3/message/pool"
+	"github.com/plgd-dev/go-coap/v3/mux"
 	"github.com/plgd-dev/hub/v2/coap-gateway/coapconv"
 	"github.com/plgd-dev/hub/v2/coap-gateway/service/message"
 	pbGRPC "github.com/plgd-dev/hub/v2/grpc-gateway/pb"
@@ -25,7 +25,7 @@ func getRetrieveResourceErr(err error) error {
 	return fmt.Errorf(errFmtRetrieveResource, "", err)
 }
 
-func clientRetrieveHandler(req *mux.Message, client *Client) (*pool.Message, error) {
+func clientRetrieveHandler(req *mux.Message, client *session) (*pool.Message, error) {
 	_, err := client.GetAuthorizationContext()
 	if err != nil {
 		return nil, statusErrorf(coapCodes.Unauthorized, "%w", getRetrieveResourceErr(err))
@@ -40,7 +40,7 @@ func clientRetrieveHandler(req *mux.Message, client *Client) (*pool.Message, err
 	var code coapCodes.Code
 	resourceInterface := message.GetResourceInterface(req)
 	if resourceInterface == "" {
-		content, code, err = clientRetrieveFromResourceShadowHandler(req.Context, client, deviceID, href)
+		content, code, err = clientRetrieveFromResourceShadowHandler(req.Context(), client, deviceID, href)
 		if err != nil {
 			return nil, statusErrorf(code, errFmtRetrieveResource, fmt.Sprintf(" /%v%v from resource shadow", deviceID, href), err)
 		}
@@ -54,16 +54,16 @@ func clientRetrieveHandler(req *mux.Message, client *Client) (*pool.Message, err
 	}
 
 	if content == nil || len(content.Data) == 0 {
-		return client.createResponse(code, req.Token, coapMessage.TextPlain, nil), nil
+		return client.createResponse(code, req.Token(), coapMessage.TextPlain, nil), nil
 	}
 	mediaType, err := coapconv.MakeMediaType(-1, content.ContentType)
 	if err != nil {
 		return nil, statusErrorf(code, errFmtRetrieveResource, fmt.Sprintf(" /%v%v", deviceID, href), err)
 	}
-	return client.createResponse(code, req.Token, mediaType, content.Data), nil
+	return client.createResponse(code, req.Token(), mediaType, content.Data), nil
 }
 
-func clientRetrieveFromResourceShadowHandler(ctx context.Context, client *Client, deviceID, href string) (*commands.Content, coapCodes.Code, error) {
+func clientRetrieveFromResourceShadowHandler(ctx context.Context, client *session, deviceID, href string) (*commands.Content, coapCodes.Code, error) {
 	RetrieveResourcesClient, err := client.server.rdClient.GetResources(ctx, &pbGRPC.GetResourcesRequest{
 		ResourceIdFilter: []string{
 			commands.NewResourceID(deviceID, href).ToString(),
@@ -92,13 +92,13 @@ func clientRetrieveFromResourceShadowHandler(ctx context.Context, client *Client
 	return nil, coapCodes.NotFound, fmt.Errorf("not found")
 }
 
-func clientRetrieveFromDeviceHandler(req *mux.Message, client *Client, deviceID, href string) (*commands.Content, error) {
+func clientRetrieveFromDeviceHandler(req *mux.Message, client *session, deviceID, href string) (*commands.Content, error) {
 	retrieveCommand, err := coapconv.NewRetrieveResourceRequest(commands.NewResourceID(deviceID, href), req, client.RemoteAddr().String())
 	if err != nil {
 		return nil, err
 	}
 
-	retrievedEvent, err := client.server.raClient.SyncRetrieveResource(req.Context, "*", retrieveCommand)
+	retrievedEvent, err := client.server.raClient.SyncRetrieveResource(req.Context(), "*", retrieveCommand)
 	if err != nil {
 		return nil, err
 	}

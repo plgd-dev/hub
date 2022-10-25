@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 
-	"github.com/plgd-dev/device/schema"
+	"github.com/plgd-dev/device/v2/schema"
 	kitHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	raService "github.com/plgd-dev/hub/v2/resource-aggregate/service"

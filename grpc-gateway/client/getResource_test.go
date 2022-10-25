@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/plgd-dev/device/schema/configuration"
-	"github.com/plgd-dev/device/schema/interfaces"
+	"github.com/plgd-dev/device/v2/schema/configuration"
+	"github.com/plgd-dev/device/v2/schema/interfaces"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/client"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"github.com/plgd-dev/hub/v2/test"
@@ -107,7 +107,7 @@ func TestClientGetResource(t *testing.T) {
 		assert.NoError(t, err)
 	}()
 
-	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c.GrpcGatewayClient(), deviceID, testCfg.GW_HOST, test.GetAllBackendResourceLinks())
+	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c.GrpcGatewayClient(), deviceID, testCfg.ACTIVE_COAP_SCHEME+testCfg.COAP_GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 
 	for _, tt := range tests {

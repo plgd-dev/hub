@@ -7,14 +7,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/plgd-dev/go-coap/v2/message"
+	"github.com/plgd-dev/go-coap/v3/message"
 	c2cEvents "github.com/plgd-dev/hub/v2/cloud2cloud-connector/events"
 	c2cTest "github.com/plgd-dev/hub/v2/cloud2cloud-gateway/test"
 	"github.com/plgd-dev/hub/v2/cloud2cloud-gateway/uri"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"github.com/plgd-dev/hub/v2/test"
-	"github.com/plgd-dev/hub/v2/test/config"
+	testCfg "github.com/plgd-dev/hub/v2/test/config"
 	testHttp "github.com/plgd-dev/hub/v2/test/http"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	"github.com/plgd-dev/hub/v2/test/service"
@@ -26,7 +26,7 @@ import (
 
 func TestRequestHandlerRetrieveDeviceSubscription(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
-	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
+	ctx, cancel := context.WithTimeout(context.Background(), testCfg.TEST_TIMEOUT)
 	defer cancel()
 
 	tearDown := service.SetUp(ctx, t)
@@ -35,7 +35,7 @@ func TestRequestHandlerRetrieveDeviceSubscription(t *testing.T) {
 	token := oauthTest.GetDefaultAccessToken(t)
 	ctx = kitNetGrpc.CtxWithToken(ctx, token)
 
-	conn, err := grpc.Dial(config.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+	conn, err := grpc.Dial(testCfg.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
 	})))
 	require.NoError(t, err)
@@ -43,7 +43,7 @@ func TestRequestHandlerRetrieveDeviceSubscription(t *testing.T) {
 	defer func() {
 		_ = conn.Close()
 	}()
-	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.GW_HOST, test.GetAllBackendResourceLinks())
+	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.ACTIVE_COAP_SCHEME+testCfg.COAP_GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 
 	const eventsURI = "/events"
@@ -89,7 +89,7 @@ func TestRequestHandlerRetrieveDeviceSubscription(t *testing.T) {
 			args: args{
 				deviceID: deviceID,
 				subID:    subID,
-				token:    oauthTest.GetAccessToken(t, config.OAUTH_SERVER_HOST, oauthTest.ClientTestExpired),
+				token:    oauthTest.GetAccessToken(t, testCfg.OAUTH_SERVER_HOST, oauthTest.ClientTestExpired),
 			},
 			wantCode:        http.StatusUnauthorized,
 			wantContentType: textPlain,

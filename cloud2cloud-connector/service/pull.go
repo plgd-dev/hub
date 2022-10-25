@@ -10,9 +10,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/plgd-dev/device/schema"
-	"github.com/plgd-dev/device/schema/device"
-	"github.com/plgd-dev/go-coap/v2/message"
+	"github.com/plgd-dev/device/v2/schema"
+	"github.com/plgd-dev/device/v2/schema/device"
+	"github.com/plgd-dev/go-coap/v3/message"
 	"github.com/plgd-dev/hub/v2/cloud2cloud-connector/store"
 	pbIS "github.com/plgd-dev/hub/v2/identity-store/pb"
 	"github.com/plgd-dev/hub/v2/pkg/log"

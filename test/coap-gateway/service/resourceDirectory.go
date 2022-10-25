@@ -7,10 +7,10 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/plgd-dev/device/schema"
-	"github.com/plgd-dev/go-coap/v2/message"
-	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
-	"github.com/plgd-dev/go-coap/v2/mux"
+	"github.com/plgd-dev/device/v2/schema"
+	"github.com/plgd-dev/go-coap/v3/message"
+	coapCodes "github.com/plgd-dev/go-coap/v3/message/codes"
+	"github.com/plgd-dev/go-coap/v3/mux"
 	"github.com/plgd-dev/hub/v2/coap-gateway/coapconv"
 	"github.com/plgd-dev/kit/v2/codec/cbor"
 )
@@ -46,9 +46,9 @@ func fixHref(href string) string {
 
 func resourceDirectoryPublishHandler(req *mux.Message, client *Client) {
 	p := makePublishRequest()
-	err := cbor.ReadFrom(req.Body, &p)
+	err := cbor.ReadFrom(req.Body(), &p)
 	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("cannot read publish request body received: %w", err), coapCodes.BadRequest, req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("cannot read publish request body received: %w", err), coapCodes.BadRequest, req.Token())
 		return
 	}
 
@@ -56,26 +56,26 @@ func resourceDirectoryPublishHandler(req *mux.Message, client *Client) {
 		p.Links[i].DeviceID = p.DeviceID
 		p.Links[i].Href = fixHref(link.Href)
 	}
-	p.SequenceNumber = req.SequenceNumber
+	p.SequenceNumber = req.Sequence()
 
 	if err := client.handler.PublishResources(p); err != nil {
-		client.logAndWriteErrorResponse(err, coapCodes.InternalServerError, req.Token)
+		client.logAndWriteErrorResponse(err, coapCodes.InternalServerError, req.Token())
 		return
 	}
 
-	accept := coapconv.GetAccept(req.Options)
+	accept := coapconv.GetAccept(req.Options())
 	encode, err := coapconv.GetEncoder(accept)
 	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("unable to get encoder for accepted type %v: %w", accept, err), coapCodes.InternalServerError, req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("unable to get encoder for accepted type %v: %w", accept, err), coapCodes.InternalServerError, req.Token())
 		return
 	}
 	out, err := encode(p)
 	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("unable to encode publish response: %w", err), coapCodes.InternalServerError, req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("unable to encode publish response: %w", err), coapCodes.InternalServerError, req.Token())
 		return
 	}
 
-	client.sendResponse(coapCodes.Changed, req.Token, accept, out)
+	client.sendResponse(coapCodes.Changed, req.Token(), accept, out)
 }
 
 func parseUnpublishRequestFromQuery(queries []string) (UnpublishRequest, error) {
@@ -106,34 +106,34 @@ func parseUnpublishRequestFromQuery(queries []string) (UnpublishRequest, error) 
 }
 
 func resourceDirectoryUnpublishHandler(req *mux.Message, client *Client) {
-	queries, err := req.Options.Queries()
+	queries, err := req.Options().Queries()
 	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("cannot query string from unpublish request from device %v: %w", client.GetDeviceID(), err), coapCodes.BadRequest, req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("cannot query string from unpublish request from device %v: %w", client.GetDeviceID(), err), coapCodes.BadRequest, req.Token())
 		return
 	}
 
 	r, err := parseUnpublishRequestFromQuery(queries)
 	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("unable to parse unpublish request query string from device %v: %w", client.GetDeviceID(), err), coapCodes.BadRequest, req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("unable to parse unpublish request query string from device %v: %w", client.GetDeviceID(), err), coapCodes.BadRequest, req.Token())
 		return
 	}
 
 	err = client.handler.UnpublishResources(r)
 	if err != nil {
-		client.logAndWriteErrorResponse(err, coapCodes.InternalServerError, req.Token)
+		client.logAndWriteErrorResponse(err, coapCodes.InternalServerError, req.Token())
 		return
 	}
 
-	client.sendResponse(coapCodes.Deleted, req.Token, message.TextPlain, nil)
+	client.sendResponse(coapCodes.Deleted, req.Token(), message.TextPlain, nil)
 }
 
 func resourceDirectoryHandler(req *mux.Message, client *Client) {
-	switch req.Code {
+	switch req.Code() {
 	case coapCodes.POST:
 		resourceDirectoryPublishHandler(req, client)
 	case coapCodes.DELETE:
 		resourceDirectoryUnpublishHandler(req, client)
 	default:
-		client.logAndWriteErrorResponse(fmt.Errorf("forbidden request from %v", client.RemoteAddrString()), coapCodes.Forbidden, req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("forbidden request from %v", client.RemoteAddrString()), coapCodes.Forbidden, req.Token())
 	}
 }

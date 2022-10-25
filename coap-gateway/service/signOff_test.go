@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
+	coapCodes "github.com/plgd-dev/go-coap/v3/message/codes"
 	"github.com/plgd-dev/hub/v2/coap-gateway/uri"
 	"github.com/stretchr/testify/require"
 )

@@ -714,18 +714,38 @@ coapgateway:
   service:
     # -- Service type
     type: LoadBalancer
-    # -- Use nodePort if specified
+    # -- Use nodePort, if specified, for one of the protocols. If both protocols are enabled, nodePort needs to be configured directly in the service to mutually different ports.
     nodePort:
-    # -- Labels for coap-gateway service
-    labels: { }
-    # -- Annotations for coap-gateway service
-    annotations: { }
-    # -- Target port
-    targetPort: coaps
-    # -- Protocol
-    protocol: TCP
-    # -- Name
-    name: coaps
+    tcp:  
+      # -- Service type
+      type:
+      # -- Labels for coap-gateway service
+      labels: { }
+      # -- Annotations for coap-gateway service
+      annotations: { }
+      # -- Use nodePort if specified, must to be different as is in udp
+      nodePort:
+      # -- Target port
+      targetPort: coaps-tcp
+      # -- Protocol
+      protocol: TCP
+      # -- Name
+      name: coaps-tcp
+    udp:
+      # -- Service type
+      type:
+      # -- Labels for coap-gateway service
+      labels: { }
+      # -- Annotations for coap-gateway service
+      annotations: { }
+      # -- Use nodePort if specified. Must to be different as is in tcp
+      nodePort:
+      # -- Target port
+      targetPort: coaps-udp
+      # -- Protocol
+      protocol: UDP
+      # -- Name
+      name: coaps-udp
   # -- RBAC configuration
   rbac:
     # -- Create RBAC config
@@ -801,6 +821,7 @@ coapgateway:
   apis:
     coap:
       externalAddress: ""
+      protocols: [ "tcp" ]
       maxMessageSize: 262144
       ownerCacheExpiration: 1m
       subscriptionBufferSize: 1000

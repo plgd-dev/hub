@@ -1,13 +1,14 @@
 package http
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"testing"
 
-	"github.com/plgd-dev/go-coap/v2/message"
-	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
-	coapStatus "github.com/plgd-dev/go-coap/v2/message/status"
+	coapCodes "github.com/plgd-dev/go-coap/v3/message/codes"
+	"github.com/plgd-dev/go-coap/v3/message/pool"
+	coapStatus "github.com/plgd-dev/go-coap/v3/message/status"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -26,6 +27,8 @@ func (e SdkError) Error() string {
 }
 
 func TestErrToStatus(t *testing.T) {
+	forbidden := pool.NewMessage(context.Background())
+	forbidden.SetCode(coapCodes.Forbidden)
 	type args struct {
 		err error
 	}
@@ -39,7 +42,7 @@ func TestErrToStatus(t *testing.T) {
 		{
 			name: "coap",
 			args: args{
-				err: coapStatus.Error(&message.Message{Code: coapCodes.Forbidden}, fmt.Errorf("coap error")),
+				err: coapStatus.Error(forbidden, fmt.Errorf("coap error")),
 			},
 			want: http.StatusForbidden,
 		},

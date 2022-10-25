@@ -7,11 +7,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/plgd-dev/device/schema/interfaces"
-	"github.com/plgd-dev/go-coap/v2/message"
-	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
-	"github.com/plgd-dev/go-coap/v2/tcp"
-	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
+	"github.com/plgd-dev/device/v2/schema/interfaces"
+	"github.com/plgd-dev/go-coap/v3/message"
+	coapCodes "github.com/plgd-dev/go-coap/v3/message/codes"
 	coapgwTest "github.com/plgd-dev/hub/v2/coap-gateway/test"
 	"github.com/plgd-dev/hub/v2/coap-gateway/uri"
 	"github.com/plgd-dev/hub/v2/pkg/log"
@@ -22,7 +20,7 @@ import (
 
 func TestClientCreateHandler(t *testing.T) {
 	coapgwCfg := coapgwTest.MakeConfig(t)
-	coapgwCfg.APIs.COAP.TLS.Enabled = false
+	coapgwCfg.APIs.COAP.TLS.Enabled = new(bool)
 	coapgwCfg.Log.DumpBody = true
 	coapgwCfg.Log.Level = zap.DebugLevel
 	shutdown := setUp(t, coapgwCfg)
@@ -88,7 +86,7 @@ func TestClientCreateHandler(t *testing.T) {
 			if len(tt.args.payload) > 0 {
 				body = bytes.NewReader(tt.args.payload)
 			}
-			req, err := tcp.NewPostRequest(ctx, pool.New(0, 0), tt.args.href, tt.args.contentFormat, body)
+			req, err := co.NewPostRequest(ctx, tt.args.href, tt.args.contentFormat, body)
 			require.NoError(t, err)
 			req.SetOptionString(message.URIQuery, "if="+interfaces.OC_IF_CREATE)
 			resp, err := co.Do(req)

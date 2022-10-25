@@ -6,15 +6,15 @@ import (
 	"crypto/x509"
 	"testing"
 
-	"github.com/plgd-dev/device/schema/device"
-	"github.com/plgd-dev/go-coap/v2/message"
+	"github.com/plgd-dev/device/v2/schema/device"
+	"github.com/plgd-dev/go-coap/v3/message"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/client"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	"github.com/plgd-dev/hub/v2/pkg/net/grpc/server"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 	"github.com/plgd-dev/hub/v2/test"
-	"github.com/plgd-dev/hub/v2/test/config"
+	testCfg "github.com/plgd-dev/hub/v2/test/config"
 	"github.com/plgd-dev/kit/v2/codec/cbor"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
@@ -27,7 +27,7 @@ const (
 )
 
 var ClientTestCfg = client.Config{
-	GatewayAddress: config.GRPC_HOST,
+	GatewayAddress: testCfg.GRPC_GW_HOST,
 }
 
 func NewTestClient(t *testing.T) *client.Client {

@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	cache "github.com/plgd-dev/go-coap/v2/pkg/cache"
-	"github.com/plgd-dev/go-coap/v2/pkg/runner/periodic"
+	cache "github.com/plgd-dev/go-coap/v3/pkg/cache"
+	"github.com/plgd-dev/go-coap/v3/pkg/runner/periodic"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus"
@@ -31,7 +31,7 @@ func hasMatchingType(resourceTypes []string, typeFilter strings.Set) bool {
 type Projection struct {
 	*projectionRA.Projection
 	expiration time.Duration
-	cache      *cache.Cache
+	cache      *cache.Cache[string, string]
 }
 
 func NewProjection(ctx context.Context, name string, store eventstore.EventStore, subscriber eventbus.Subscriber, newModelFunc eventstore.FactoryModelFunc, expiration time.Duration) (*Projection, error) {
@@ -46,7 +46,7 @@ func NewProjection(ctx context.Context, name string, store eventstore.EventStore
 			cleanupInterval = time.Minute
 		}
 	}
-	cache := cache.NewCache()
+	cache := cache.NewCache[string, string]()
 	add := periodic.New(ctx.Done(), cleanupInterval)
 	add(func(now time.Time) bool {
 		cache.CheckExpirations(now)
@@ -86,8 +86,7 @@ func (p *Projection) ReloadDevices(ctx context.Context, deviceIDFilter strings.S
 			continue
 		}
 		p.cache.Delete(deviceID)
-		p.cache.LoadOrStore(deviceID, cache.NewElement(deviceID, time.Now().Add(p.expiration), func(d interface{}) {
-			deviceID := d.(string)
+		p.cache.LoadOrStore(deviceID, cache.NewElement(deviceID, time.Now().Add(p.expiration), func(deviceID string) {
 			if err := p.Unregister(deviceID); err != nil {
 				log.Errorf("failed to unregister device %v in projection cache during eviction: %w", deviceID, err)
 			}

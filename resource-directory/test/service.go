@@ -32,7 +32,7 @@ func MakeConfig(t *testing.T) service.Config {
 	cfg.ExposedHubConfiguration.CAPool = config.CA_POOL
 	cfg.ExposedHubConfiguration.Authority = "https://" + config.OAUTH_SERVER_HOST
 	cfg.ExposedHubConfiguration.HubID = config.HubID()
-	cfg.ExposedHubConfiguration.CoapGateway = config.GW_HOST
+	cfg.ExposedHubConfiguration.CoapGateway = config.COAP_GW_HOST
 	cfg.ExposedHubConfiguration.OwnerClaim = config.OWNER_CLAIM
 
 	cfg.Clients.OpenTelemetryCollector = config.MakeOpenTelemetryCollectorClient()

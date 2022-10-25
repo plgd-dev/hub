@@ -9,13 +9,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/plgd-dev/device/schema"
-	"github.com/plgd-dev/device/schema/device"
-	"github.com/plgd-dev/device/schema/interfaces"
-	"github.com/plgd-dev/device/schema/platform"
-	"github.com/plgd-dev/device/schema/resources"
-	"github.com/plgd-dev/go-coap/v2/tcp"
-	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
+	"github.com/plgd-dev/device/v2/schema"
+	"github.com/plgd-dev/device/v2/schema/device"
+	"github.com/plgd-dev/device/v2/schema/interfaces"
+	"github.com/plgd-dev/device/v2/schema/platform"
+	"github.com/plgd-dev/device/v2/schema/resources"
+	"github.com/plgd-dev/go-coap/v3/message/pool"
+	coapTcpClient "github.com/plgd-dev/go-coap/v3/tcp/client"
 	coapgwService "github.com/plgd-dev/hub/v2/coap-gateway/service"
 	"github.com/plgd-dev/hub/v2/coap-gateway/service/observation"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
@@ -52,7 +52,7 @@ type deviceObserverFactory struct {
 	raClient raPb.ResourceAggregateClient
 }
 
-func (f deviceObserverFactory) makeDeviceObserver(ctx context.Context, coapConn *tcp.ClientConn, onObserveResource observation.OnObserveResource,
+func (f deviceObserverFactory) makeDeviceObserver(ctx context.Context, coapConn *coapTcpClient.Conn, onObserveResource observation.OnObserveResource,
 	onGetResourceContent observation.OnGetResourceContent,
 ) (*observation.DeviceObserver, error) {
 	return observation.NewDeviceObserver(ctx, f.deviceID, coapConn, f.rdClient, f.raClient,
@@ -63,7 +63,7 @@ type observerHandler struct {
 	coapgwTest.DefaultObserverHandler
 	t                     *testing.T
 	ctx                   context.Context
-	coapConn              *tcp.ClientConn
+	coapConn              *coapTcpClient.Conn
 	service               *coapgwTestService.Service
 	deviceObserverLock    sync.Mutex
 	deviceObserverFactory deviceObserverFactory
@@ -358,7 +358,7 @@ func runTestDeviceObserverRegister(ctx context.Context, t *testing.T, deviceID s
 		require.NoError(t, err)
 	}()
 
-	rdConn, err := grpcClient.New(config.MakeGrpcClientConfig(config.GRPC_HOST), fileWatcher, log.Get(), trace.NewNoopTracerProvider())
+	rdConn, err := grpcClient.New(config.MakeGrpcClientConfig(config.GRPC_GW_HOST), fileWatcher, log.Get(), trace.NewNoopTracerProvider())
 	require.NoError(t, err)
 	defer func() {
 		_ = rdConn.Close()
@@ -407,7 +407,7 @@ func runTestDeviceObserverRegister(ctx context.Context, t *testing.T, deviceID s
 	coapShutdown := coapgwTest.SetUp(t, makeHandler, validateHandler)
 	defer coapShutdown()
 
-	grpcConn, err := grpc.Dial(config.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+	grpcConn, err := grpc.Dial(config.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
 	})))
 	require.NoError(t, err)
@@ -416,7 +416,7 @@ func runTestDeviceObserverRegister(ctx context.Context, t *testing.T, deviceID s
 	}()
 	grpcClient := pb.NewGrpcGatewayClient(grpcConn)
 
-	_, shutdownDevSim := test.OnboardDevSim(ctx, t, grpcClient, deviceID, config.GW_HOST, nil)
+	_, shutdownDevSim := test.OnboardDevSim(ctx, t, grpcClient, deviceID, config.ACTIVE_COAP_SCHEME+config.COAP_GW_HOST, nil)
 	defer shutdownDevSim()
 
 	done := false

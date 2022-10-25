@@ -7,7 +7,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"github.com/plgd-dev/go-coap/v2/message"
+	"github.com/plgd-dev/go-coap/v3/message"
 	"github.com/plgd-dev/hub/v2/http-gateway/serverMux"
 	"github.com/plgd-dev/hub/v2/http-gateway/uri"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"

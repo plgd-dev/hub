@@ -5,9 +5,9 @@ import (
 	"crypto/tls"
 	"testing"
 
-	"github.com/plgd-dev/device/schema/device"
-	"github.com/plgd-dev/device/schema/interfaces"
-	"github.com/plgd-dev/go-coap/v2/message"
+	"github.com/plgd-dev/device/v2/schema/device"
+	"github.com/plgd-dev/device/v2/schema/interfaces"
+	"github.com/plgd-dev/go-coap/v3/message"
 	"github.com/plgd-dev/hub/v2/cloud2cloud-connector/events"
 	"github.com/plgd-dev/hub/v2/cloud2cloud-connector/store"
 	c2cConnectorTest "github.com/plgd-dev/hub/v2/cloud2cloud-connector/test"

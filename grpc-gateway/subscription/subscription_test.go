@@ -5,10 +5,10 @@ import (
 	"testing"
 
 	"github.com/panjf2000/ants/v2"
-	"github.com/plgd-dev/device/schema/configuration"
-	"github.com/plgd-dev/device/schema/device"
-	"github.com/plgd-dev/device/schema/platform"
-	"github.com/plgd-dev/go-coap/v2/message"
+	"github.com/plgd-dev/device/v2/schema/configuration"
+	"github.com/plgd-dev/device/v2/schema/device"
+	"github.com/plgd-dev/device/v2/schema/platform"
+	"github.com/plgd-dev/go-coap/v3/message"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	subscription "github.com/plgd-dev/hub/v2/grpc-gateway/subscription"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
@@ -277,7 +277,7 @@ func TestRequestHandlerSubscribeToEvents(t *testing.T) {
 		require.NoError(t, err)
 	}()
 
-	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, rdc, deviceID, config.GW_HOST, nil)
+	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, rdc, deviceID, config.ACTIVE_COAP_SCHEME+config.COAP_GW_HOST, nil)
 
 	check(t, waitForEvent(ctx, t, recvChan), &pb.Event{
 		SubscriptionId: s.Id(),

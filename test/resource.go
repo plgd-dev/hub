@@ -3,7 +3,7 @@ package test
 import (
 	"time"
 
-	"github.com/plgd-dev/device/schema"
+	"github.com/plgd-dev/device/v2/schema"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/events"

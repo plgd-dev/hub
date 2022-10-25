@@ -10,9 +10,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/plgd-dev/device/schema/device"
-	"github.com/plgd-dev/device/schema/platform"
-	"github.com/plgd-dev/go-coap/v2/message"
+	"github.com/plgd-dev/device/v2/schema/device"
+	"github.com/plgd-dev/device/v2/schema/platform"
+	"github.com/plgd-dev/go-coap/v3/message"
 	caService "github.com/plgd-dev/hub/v2/certificate-authority/test"
 	coapgwTest "github.com/plgd-dev/hub/v2/coap-gateway/test"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/client"
@@ -28,7 +28,7 @@ import (
 	raService "github.com/plgd-dev/hub/v2/resource-aggregate/test"
 	rdTest "github.com/plgd-dev/hub/v2/resource-directory/test"
 	"github.com/plgd-dev/hub/v2/test"
-	"github.com/plgd-dev/hub/v2/test/config"
+	testCfg "github.com/plgd-dev/hub/v2/test/config"
 	"github.com/plgd-dev/hub/v2/test/oauth-server/service"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	pbTest "github.com/plgd-dev/hub/v2/test/pb"
@@ -42,14 +42,14 @@ import (
 
 func TestRequestHandlerSubscribeToEvents(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
-	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
+	ctx, cancel := context.WithTimeout(context.Background(), testCfg.TEST_TIMEOUT)
 	defer cancel()
 
 	tearDown := serviceTest.SetUp(ctx, t)
 	defer tearDown()
 	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
 
-	conn, err := grpc.Dial(config.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+	conn, err := grpc.Dial(testCfg.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
 	})))
 	require.NoError(t, err)
@@ -59,7 +59,7 @@ func TestRequestHandlerSubscribeToEvents(t *testing.T) {
 	c := pb.NewGrpcGatewayClient(conn)
 
 	resourceLinks := test.GetAllBackendResourceLinks()
-	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.GW_HOST, resourceLinks)
+	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.ACTIVE_COAP_SCHEME+testCfg.COAP_GW_HOST, resourceLinks)
 	defer shutdownDevSim()
 
 	const switchID = "1"
@@ -216,14 +216,14 @@ func TestRequestHandlerSubscribeToEvents(t *testing.T) {
 
 func TestRequestHandlerSubscribeForCreateEvents(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
-	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
+	ctx, cancel := context.WithTimeout(context.Background(), testCfg.TEST_TIMEOUT)
 	defer cancel()
 
 	tearDown := serviceTest.SetUp(ctx, t)
 	defer tearDown()
 	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
 
-	conn, err := grpc.Dial(config.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+	conn, err := grpc.Dial(testCfg.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
 	})))
 	require.NoError(t, err)
@@ -232,7 +232,7 @@ func TestRequestHandlerSubscribeForCreateEvents(t *testing.T) {
 	}()
 	c := pb.NewGrpcGatewayClient(conn)
 
-	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.GW_HOST, test.GetAllBackendResourceLinks())
+	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.ACTIVE_COAP_SCHEME+testCfg.COAP_GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 
 	client, err := client.New(c).SubscribeToEventsWithCurrentState(ctx, time.Minute)
@@ -512,7 +512,7 @@ func TestRequestHandlerSubscribeForPendingCommands(t *testing.T) {
 		},
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
+	ctx, cancel := context.WithTimeout(context.Background(), testCfg.TEST_TIMEOUT)
 	defer cancel()
 
 	serviceTest.ClearDB(ctx, t)
@@ -533,7 +533,7 @@ func TestRequestHandlerSubscribeForPendingCommands(t *testing.T) {
 
 	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
 
-	conn, err := grpc.Dial(config.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+	conn, err := grpc.Dial(testCfg.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
 	})))
 	require.NoError(t, err)
@@ -545,7 +545,7 @@ func TestRequestHandlerSubscribeForPendingCommands(t *testing.T) {
 	client, err := client.New(c).SubscribeToEventsWithCurrentState(ctx, time.Minute)
 	require.NoError(t, err)
 
-	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.GW_HOST, test.GetAllBackendResourceLinks())
+	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.ACTIVE_COAP_SCHEME+testCfg.COAP_GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 
 	secureGWShutdown()
@@ -721,7 +721,7 @@ func TestRequestHandlerIssue270(t *testing.T) {
 		require.NoError(t, errC)
 	}()
 
-	rdConn, err := grpcClient.New(config.MakeGrpcClientConfig(config.GRPC_HOST), fileWatcher, log.Get(), trace.NewNoopTracerProvider())
+	rdConn, err := grpcClient.New(testCfg.MakeGrpcClientConfig(testCfg.GRPC_GW_HOST), fileWatcher, log.Get(), trace.NewNoopTracerProvider())
 	require.NoError(t, err)
 	defer func() {
 		_ = rdConn.Close()
@@ -768,7 +768,7 @@ func TestRequestHandlerIssue270(t *testing.T) {
 	}
 	test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
 
-	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.GW_HOST, test.GetAllBackendResourceLinks())
+	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.ACTIVE_COAP_SCHEME+testCfg.COAP_GW_HOST, test.GetAllBackendResourceLinks())
 
 	time.Sleep(time.Second * 10)
 

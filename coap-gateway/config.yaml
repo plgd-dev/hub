@@ -11,6 +11,9 @@ apis:
   coap:
     address: "0.0.0.0:5684"
     externalAddress: ""
+    protocols:
+      - "tcp"
+      - "udp"
     maxMessageSize: 262144
     ownerCacheExpiration: 1m
     subscriptionBufferSize: 1000
@@ -18,7 +21,7 @@ apis:
     keepAlive:
       timeout: 20s
     blockwiseTransfer:
-      enabled: false
+      enabled: true
       blockSize: "1024"
     tls:
       enabled: true

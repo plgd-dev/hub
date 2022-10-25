@@ -5,10 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/plgd-dev/go-coap/v2/message"
-	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
-	"github.com/plgd-dev/go-coap/v2/tcp"
-	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
+	"github.com/plgd-dev/go-coap/v3/message"
+	coapCodes "github.com/plgd-dev/go-coap/v3/message/codes"
 	"github.com/plgd-dev/hub/v2/coap-gateway/uri"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -73,7 +71,7 @@ func TestClientRetrieveHandler(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx, cancel := context.WithTimeout(context.Background(), TestExchangeTimeout)
 			defer cancel()
-			req, err := tcp.NewGetRequest(ctx, pool.New(0, 0), tt.args.path)
+			req, err := co.NewGetRequest(ctx, tt.args.path)
 			require.NoError(t, err)
 			if tt.args.query != "" {
 				req.SetOptionString(message.URIQuery, tt.args.query)

@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/plgd-dev/go-coap/v2/message"
+	"github.com/plgd-dev/go-coap/v3/message"
 	"github.com/plgd-dev/hub/v2/cloud2cloud-connector/events"
 	"github.com/plgd-dev/hub/v2/cloud2cloud-gateway/uri"
 	testHttp "github.com/plgd-dev/hub/v2/test/http"

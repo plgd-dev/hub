@@ -1,13 +1,9 @@
 package service
 
 import (
-	"context"
-	"fmt"
 	"testing"
 
-	"github.com/plgd-dev/go-coap/v2/net/blockwise"
-	"github.com/plgd-dev/go-coap/v2/net/monitor/inactivity"
-	"github.com/plgd-dev/hub/v2/pkg/log"
+	"github.com/plgd-dev/go-coap/v3/net/blockwise"
 	"github.com/stretchr/testify/require"
 )
 
@@ -41,54 +37,6 @@ func TestBlockWiseTransferSZXFromString(t *testing.T) {
 			}
 			require.NoError(t, err)
 			require.Equal(t, tt.want, got)
-		})
-	}
-}
-
-type testClientConn struct {
-	ctx context.Context
-	err error
-}
-
-func (t *testClientConn) Context() context.Context {
-	return t.ctx
-}
-
-func (t *testClientConn) Close() error {
-	return t.err
-}
-
-func TestGetOnInactivityFn(t *testing.T) {
-	type args struct {
-		cc inactivity.ClientConn
-	}
-	tests := []struct {
-		name string
-		args args
-	}{
-		{
-			name: "conn",
-			args: args{
-				cc: &testClientConn{
-					ctx: context.Background(),
-					err: nil,
-				},
-			},
-		},
-		{
-			name: "connWithErr",
-			args: args{
-				cc: &testClientConn{
-					ctx: context.Background(),
-					err: fmt.Errorf("err"),
-				},
-			},
-		},
-	}
-	onInactivity := getOnInactivityFn(log.Get())
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			onInactivity(tt.args.cc)
 		})
 	}
 }

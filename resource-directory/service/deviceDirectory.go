@@ -3,8 +3,8 @@ package service
 import (
 	"fmt"
 
-	"github.com/plgd-dev/device/schema/device"
-	"github.com/plgd-dev/go-coap/v2/message"
+	"github.com/plgd-dev/device/v2/schema/device"
+	"github.com/plgd-dev/go-coap/v3/message"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
