@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/plgd-dev/go-coap/v2/message"
+	"github.com/plgd-dev/go-coap/v3/message"
 	"github.com/plgd-dev/hub/v2/http-gateway/uri"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/pkg/security/jwt"

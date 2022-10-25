@@ -233,13 +233,14 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 						Value:       commands.ConnectionStatus_OFFLINE,
 						ConnectedAt: connectedAt,
 					},
-					AuditContext:         commands.NewAuditContext(userID, correlationID),
-					OpenTelemetryCarrier: map[string]string{},
+					ShadowSynchronizationStatus: &commands.ShadowSynchronizationStatus{},
+					AuditContext:                commands.NewAuditContext(userID, correlationID),
+					OpenTelemetryCarrier:        map[string]string{},
 				}),
 			},
 		},
 		{
-			name: "online,online,offline",
+			name: "online-old-connection,online,offline-old-connection",
 			preCmds: []args{
 				{
 					ctx: grpc.CtxWithIncomingToken(context.Background(), jwtWithSubUserID),

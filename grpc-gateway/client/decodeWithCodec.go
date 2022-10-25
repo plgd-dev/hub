@@ -2,9 +2,11 @@ package client
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 
-	"github.com/plgd-dev/go-coap/v2/message"
+	"github.com/plgd-dev/go-coap/v3/message"
+	"github.com/plgd-dev/go-coap/v3/message/pool"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -13,7 +15,7 @@ import (
 type Codec = interface {
 	ContentFormat() message.MediaType
 	Encode(v interface{}) ([]byte, error)
-	Decode(m *message.Message, v interface{}) error
+	Decode(m *pool.Message, v interface{}) error
 }
 
 func ContentTypeToMediaType(contentType string) (message.MediaType, error) {
@@ -49,10 +51,9 @@ func DecodeContentWithCodec(codec Codec, contentType string, data []byte, respon
 	}
 	opts := make(message.Options, 0, 1)
 	opts, _, _ = opts.SetContentFormat(make([]byte, 4), mediaType)
-	msg := &message.Message{
-		Options: opts,
-		Body:    bytes.NewReader(data),
-	}
+	msg := pool.NewMessage(context.Background())
+	msg.ResetOptionsTo(opts)
+	msg.SetBody(bytes.NewReader(data))
 	err = codec.Decode(msg, response)
 	if err != nil {
 		return status.Errorf(codes.InvalidArgument, "cannot decode response: %v", err)

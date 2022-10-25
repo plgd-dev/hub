@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
+	coapCodes "github.com/plgd-dev/go-coap/v3/message/codes"
 	coapgwTest "github.com/plgd-dev/hub/v2/coap-gateway/test"
 	"github.com/plgd-dev/hub/v2/coap-gateway/uri"
 	"github.com/plgd-dev/hub/v2/pkg/security/oauth2/oauth"

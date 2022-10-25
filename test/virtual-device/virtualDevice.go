@@ -8,11 +8,11 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/plgd-dev/device/schema"
-	"github.com/plgd-dev/device/schema/device"
-	"github.com/plgd-dev/device/schema/interfaces"
-	"github.com/plgd-dev/device/schema/platform"
-	"github.com/plgd-dev/go-coap/v2/message"
+	"github.com/plgd-dev/device/v2/schema"
+	"github.com/plgd-dev/device/v2/schema/device"
+	"github.com/plgd-dev/device/v2/schema/interfaces"
+	"github.com/plgd-dev/device/v2/schema/platform"
+	"github.com/plgd-dev/go-coap/v3/message"
 	"github.com/plgd-dev/hub/v2/identity-store/pb"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
@@ -64,6 +64,11 @@ func CreateDeviceResourceLinks(deviceID string, numResources int) []*commands.Re
 
 func CreateDevice(ctx context.Context, t *testing.T, name string, deviceID string, numResources int, isClient pb.IdentityStoreClient, raClient raPb.ResourceAggregateClient) {
 	const connID = "conn-Id"
+	var conSeq uint64
+	incSeq := func() uint64 {
+		conSeq++
+		return conSeq
+	}
 	_, err := isClient.AddDevice(ctx, &pb.AddDeviceRequest{
 		DeviceId: deviceID,
 	})
@@ -83,7 +88,7 @@ func CreateDevice(ctx context.Context, t *testing.T, name string, deviceID strin
 			TimeToLive: time.Now().Add(time.Hour).UnixNano(),
 			CommandMetadata: &commands.CommandMetadata{
 				ConnectionId: connID,
-				Sequence:     0,
+				Sequence:     incSeq(),
 			},
 		})
 		if err == nil {
@@ -103,18 +108,34 @@ func CreateDevice(ctx context.Context, t *testing.T, name string, deviceID strin
 		Resources: resources,
 		CommandMetadata: &commands.CommandMetadata{
 			ConnectionId: connID,
-			Sequence:     0,
+			Sequence:     incSeq(),
 		},
 	}
 	_, err = raClient.PublishResourceLinks(ctx, &pub)
 	require.NoError(t, err)
 
+	_, err = raClient.UpdateDeviceMetadata(ctx, &commands.UpdateDeviceMetadataRequest{
+		DeviceId:      deviceID,
+		CorrelationId: uuid.NewString(),
+		Update: &commands.UpdateDeviceMetadataRequest_ShadowSynchronizationStatus{
+			ShadowSynchronizationStatus: &commands.ShadowSynchronizationStatus{
+				Value:     commands.ShadowSynchronizationStatus_STARTED,
+				StartedAt: time.Now().UnixNano(),
+			},
+		},
+		TimeToLive: time.Now().Add(time.Hour).UnixNano(),
+		CommandMetadata: &commands.CommandMetadata{
+			ConnectionId: connID,
+			Sequence:     incSeq(),
+		},
+	})
+	require.NoError(t, err)
 	for i := 0; i < numResources; i++ {
 		_, err = raClient.NotifyResourceChanged(ctx, &commands.NotifyResourceChangedRequest{
 			ResourceId: commands.NewResourceID(deviceID, fmt.Sprintf("/res-%v", i)),
 			CommandMetadata: &commands.CommandMetadata{
 				ConnectionId: connID,
-				Sequence:     0,
+				Sequence:     incSeq(),
 			},
 			Content: &commands.Content{
 				Data:        []byte(fmt.Sprintf("content res-%v", i)),
@@ -128,7 +149,7 @@ func CreateDevice(ctx context.Context, t *testing.T, name string, deviceID strin
 		ResourceId: commands.NewResourceID(deviceID, "/oic/d"),
 		CommandMetadata: &commands.CommandMetadata{
 			ConnectionId: connID,
-			Sequence:     0,
+			Sequence:     incSeq(),
 		},
 		Content: &commands.Content{
 			Data:        test.EncodeToCbor(t, &device.Device{Name: name, ID: deviceID, ResourceTypes: []string{device.ResourceType}, Interfaces: []string{interfaces.OC_IF_BASELINE}}),
@@ -142,13 +163,30 @@ func CreateDevice(ctx context.Context, t *testing.T, name string, deviceID strin
 		ResourceId: commands.NewResourceID(deviceID, "/oic/p"),
 		CommandMetadata: &commands.CommandMetadata{
 			ConnectionId: connID,
-			Sequence:     0,
+			Sequence:     incSeq(),
 		},
 		Content: &commands.Content{
 			Data:        test.EncodeToCbor(t, &platform.Platform{ResourceTypes: []string{device.ResourceType}, Interfaces: []string{interfaces.OC_IF_BASELINE}, SerialNumber: fmt.Sprintf("sn %v", deviceID)}),
 			ContentType: message.AppOcfCbor.String(),
 		},
 		Status: commands.Status_OK,
+	})
+	require.NoError(t, err)
+
+	_, err = raClient.UpdateDeviceMetadata(ctx, &commands.UpdateDeviceMetadataRequest{
+		DeviceId:      deviceID,
+		CorrelationId: uuid.NewString(),
+		Update: &commands.UpdateDeviceMetadataRequest_ShadowSynchronizationStatus{
+			ShadowSynchronizationStatus: &commands.ShadowSynchronizationStatus{
+				Value:      commands.ShadowSynchronizationStatus_FINISHED,
+				FinishedAt: time.Now().UnixNano(),
+			},
+		},
+		TimeToLive: time.Now().Add(time.Hour).UnixNano(),
+		CommandMetadata: &commands.CommandMetadata{
+			ConnectionId: connID,
+			Sequence:     incSeq(),
+		},
 	})
 	require.NoError(t, err)
 }

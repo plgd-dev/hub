@@ -3,9 +3,11 @@ package otelcoap
 import (
 	"context"
 
-	"github.com/plgd-dev/go-coap/v2/message/codes"
-	tcpMessage "github.com/plgd-dev/go-coap/v2/tcp/message"
-	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
+	"github.com/plgd-dev/go-coap/v3/message"
+	"github.com/plgd-dev/go-coap/v3/message/codes"
+	"github.com/plgd-dev/go-coap/v3/message/pool"
+	tcpCoder "github.com/plgd-dev/go-coap/v3/tcp/coder"
+	udpCoder "github.com/plgd-dev/go-coap/v3/udp/coder"
 	pkgMessage "github.com/plgd-dev/hub/v2/coap-gateway/service/message"
 	"github.com/plgd-dev/hub/v2/pkg/opentelemetry"
 	"github.com/plgd-dev/kit/v2/codec/json"
@@ -28,18 +30,27 @@ type MessageType attribute.KeyValue
 
 // Event adds an event of the messageType to the span associated with the
 // passed context with id and size (if message is a proto message).
-func (m MessageType) Event(ctx context.Context, message *pool.Message) {
+func (m MessageType) Event(ctx context.Context, msg *pool.Message) {
 	span := trace.SpanFromContext(ctx)
-	tcpMsg := tcpMessage.Message{
-		Code:    message.Code(),
-		Token:   message.Token(),
-		Options: message.Options(),
+	tcpMsg := message.Message{
+		Code:    msg.Code(),
+		Token:   msg.Token(),
+		Options: msg.Options(),
 	}
-	size, err := tcpMsg.Size()
+	var coder interface {
+		Size(message.Message) (int, error)
+	}
+	if msg.Type() == message.Unset && msg.MessageID() < 0 {
+		coder = tcpCoder.DefaultCoder
+	} else {
+		coder = udpCoder.DefaultCoder
+	}
+	size, err := coder.Size(tcpMsg)
 	if err != nil {
 		size = 0
 	}
-	if bodySize, err := message.BodySize(); err != nil {
+
+	if bodySize, err := msg.BodySize(); err != nil {
 		size += int(bodySize)
 	}
 	span.AddEvent("message", trace.WithAttributes(

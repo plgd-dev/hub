@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/plgd-dev/go-coap/v2/pkg/cache"
-	"github.com/plgd-dev/go-coap/v2/pkg/runner/periodic"
+	"github.com/plgd-dev/go-coap/v3/pkg/cache"
+	"github.com/plgd-dev/go-coap/v3/pkg/runner/periodic"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	pkgMongo "github.com/plgd-dev/hub/v2/pkg/mongodb"
@@ -102,7 +102,7 @@ type EventStore struct {
 	colPrefix       string
 	dataMarshaler   MarshalerFunc
 	dataUnmarshaler UnmarshalerFunc
-	ensuredIndexes  *cache.Cache
+	ensuredIndexes  *cache.Cache[string, bool]
 	closeFunc       []func()
 }
 
@@ -157,7 +157,7 @@ func newEventStoreWithClient(ctx context.Context, client *mongo.Client, dbPrefix
 	if logDebugfFunc == nil {
 		logDebugfFunc = func(fmt string, args ...interface{}) {}
 	}
-	ensuredIndexes := cache.NewCache()
+	ensuredIndexes := cache.NewCache[string, bool]()
 	add := periodic.New(ctx.Done(), time.Hour/2)
 	add(func(now time.Time) bool {
 		ensuredIndexes.CheckExpirations(now)
@@ -307,7 +307,7 @@ func (s *EventStore) ClearCollections(ctx context.Context) error {
 
 // Close closes the database session.
 func (s *EventStore) Close(ctx context.Context) error {
-	s.ensuredIndexes.PullOutAll()
+	_ = s.ensuredIndexes.LoadAndDeleteAll()
 	err := s.client.Disconnect(ctx)
 	for _, f := range s.closeFunc {
 		f()

@@ -8,12 +8,11 @@ import (
 	"net"
 	"sync"
 
-	"github.com/plgd-dev/device/schema"
-	"github.com/plgd-dev/device/schema/interfaces"
-	"github.com/plgd-dev/device/schema/resources"
-	"github.com/plgd-dev/go-coap/v2/message"
-	"github.com/plgd-dev/go-coap/v2/tcp"
-	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
+	"github.com/plgd-dev/device/v2/schema"
+	"github.com/plgd-dev/device/v2/schema/interfaces"
+	"github.com/plgd-dev/device/v2/schema/resources"
+	"github.com/plgd-dev/go-coap/v3/message"
+	"github.com/plgd-dev/go-coap/v3/message/pool"
 	"github.com/plgd-dev/hub/v2/coap-gateway/resource"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	"github.com/plgd-dev/hub/v2/pkg/log"
@@ -61,7 +60,7 @@ type DeviceObserverConfig struct {
 
 type ClientConn interface {
 	Get(ctx context.Context, path string, opts ...message.Option) (*pool.Message, error)
-	Observe(ctx context.Context, path string, observeFunc func(req *pool.Message), opts ...message.Option) (*tcp.Observation, error)
+	Observe(ctx context.Context, path string, observeFunc func(req *pool.Message), opts ...message.Option) (Observation, error)
 	ReleaseMessage(m *pool.Message)
 	RemoteAddr() net.Addr
 }

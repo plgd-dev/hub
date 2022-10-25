@@ -1,6 +1,6 @@
 package service
 
-import "github.com/plgd-dev/go-coap/v2/message"
+import "github.com/plgd-dev/go-coap/v3/message"
 
 func stringToSupportedMediaType(t string) int32 {
 	switch t {

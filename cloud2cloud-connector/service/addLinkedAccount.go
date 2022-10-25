@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	cache "github.com/plgd-dev/go-coap/v2/pkg/cache"
+	cache "github.com/plgd-dev/go-coap/v3/pkg/cache"
 	"github.com/plgd-dev/hub/v2/cloud2cloud-connector/store"
 	"github.com/plgd-dev/hub/v2/pkg/net/grpc"
 )

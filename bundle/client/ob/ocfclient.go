@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/plgd-dev/device/app"
-	"github.com/plgd-dev/device/client"
-	"github.com/plgd-dev/device/client/core"
-	"github.com/plgd-dev/device/schema/acl"
+	"github.com/plgd-dev/device/v2/client"
+	"github.com/plgd-dev/device/v2/client/app"
+	"github.com/plgd-dev/device/v2/client/core"
+	"github.com/plgd-dev/device/v2/schema/acl"
 	capb "github.com/plgd-dev/hub/v2/certificate-authority/pb"
 	"github.com/plgd-dev/hub/v2/certificate-authority/signer"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
@@ -41,9 +41,7 @@ func (c *OcfClient) Initialize(ctx context.Context, hubConfiguration *pb.HubConf
 			JWTClaimOwnerID: hubConfiguration.GetJwtOwnerClaim(),
 			Sign:            signer.Sign,
 		},
-	}, appCallback, func(err error) {
-		log.Error(err)
-	})
+	}, appCallback, log.Get().DTLSLoggerFactory().NewLogger("client"))
 	if err != nil {
 		return fmt.Errorf("cannot create client: %w", err)
 	}
@@ -76,14 +74,11 @@ func (c *OcfClient) OwnDevice(ctx context.Context, deviceID string) (string, err
 
 // SetAccessForCloud sets required ACL for the Cloud
 func (c *OcfClient) SetAccessForCloud(ctx context.Context, deviceID string) error {
-	d, links, err := c.localClient.GetRefDevice(ctx, deviceID)
+	d, links, err := c.localClient.GetDevice(ctx, deviceID)
 	if err != nil {
 		return err
 	}
 
-	defer func() {
-		_ = d.Release(ctx)
-	}()
 	p, err := d.Provision(ctx, links)
 	if err != nil {
 		return err

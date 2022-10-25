@@ -7,8 +7,8 @@ import (
 	"time"
 
 	router "github.com/gorilla/mux"
-	"github.com/plgd-dev/go-coap/v2/pkg/cache"
-	"github.com/plgd-dev/go-coap/v2/pkg/runner/periodic"
+	"github.com/plgd-dev/go-coap/v3/pkg/cache"
+	"github.com/plgd-dev/go-coap/v3/pkg/runner/periodic"
 	"github.com/plgd-dev/hub/v2/cloud2cloud-connector/events"
 	"github.com/plgd-dev/hub/v2/cloud2cloud-connector/store"
 	"github.com/plgd-dev/hub/v2/cloud2cloud-connector/uri"
@@ -33,7 +33,7 @@ type RequestHandler struct {
 	ownerClaim     string
 	provider       *pkgOAuth2.PlgdProvider
 	store          *Store
-	provisionCache *cache.Cache
+	provisionCache *cache.Cache[string, provisionCacheData]
 	subManager     *SubscriptionManager
 	triggerTask    OnTaskTrigger
 	tracerProvider trace.TracerProvider
@@ -56,7 +56,7 @@ func NewRequestHandler(
 	triggerTask OnTaskTrigger,
 	tracerProvider trace.TracerProvider,
 ) *RequestHandler {
-	cache := cache.NewCache()
+	cache := cache.NewCache[string, provisionCacheData]()
 	add := periodic.New(subManager.devicesSubscription.ctx.Done(), time.Minute*5)
 	add(func(now time.Time) bool {
 		cache.CheckExpirations(now)

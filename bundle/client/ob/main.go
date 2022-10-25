@@ -12,8 +12,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/plgd-dev/device/client"
-	"github.com/plgd-dev/device/schema/device"
+	"github.com/plgd-dev/device/v2/client"
+	"github.com/plgd-dev/device/v2/schema/device"
 	capb "github.com/plgd-dev/hub/v2/certificate-authority/pb"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	grpcCloud "github.com/plgd-dev/hub/v2/pkg/net/grpc"

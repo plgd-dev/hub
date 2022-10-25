@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/plgd-dev/go-coap/v2/pkg/cache"
+	"github.com/plgd-dev/go-coap/v3/pkg/cache"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	pkgStrings "github.com/plgd-dev/hub/v2/pkg/strings"
 	"github.com/plgd-dev/hub/v2/test/oauth-server/uri"

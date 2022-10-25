@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/panjf2000/ants/v2"
-	"github.com/plgd-dev/device/schema/device"
-	"github.com/plgd-dev/go-coap/v2/message"
+	"github.com/plgd-dev/device/v2/schema/device"
+	"github.com/plgd-dev/go-coap/v3/message"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
@@ -19,7 +19,7 @@ import (
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/utils"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 	"github.com/plgd-dev/hub/v2/resource-directory/service"
-	"github.com/plgd-dev/hub/v2/test/config"
+	testCfg "github.com/plgd-dev/hub/v2/test/config"
 	cbor "github.com/plgd-dev/kit/v2/codec/cbor"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
@@ -122,7 +122,7 @@ func TestDeviceDirectoryGetDevices(t *testing.T) {
 
 	pool, err := ants.NewPool(1)
 	require.NoError(t, err)
-	naClient, resourceSubscriber, err := natsTest.NewClientAndSubscriber(config.MakeSubscriberConfig(), fileWatcher,
+	naClient, resourceSubscriber, err := natsTest.NewClientAndSubscriber(testCfg.MakeSubscriberConfig(), fileWatcher,
 		logger,
 		subscriber.WithGoPool(pool.Submit),
 		subscriber.WithUnmarshaler(utils.Unmarshal),

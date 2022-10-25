@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/plgd-dev/go-coap/v2/message"
-	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
+	"github.com/plgd-dev/go-coap/v3/message"
+	coapCodes "github.com/plgd-dev/go-coap/v3/message/codes"
 	coapgwTest "github.com/plgd-dev/hub/v2/coap-gateway/test"
 	"github.com/plgd-dev/hub/v2/coap-gateway/uri"
 	"github.com/stretchr/testify/assert"
@@ -17,7 +17,7 @@ import (
 
 func TestClientUpdateHandler(t *testing.T) {
 	coapgwCfg := coapgwTest.MakeConfig(t)
-	coapgwCfg.APIs.COAP.TLS.Enabled = false
+	coapgwCfg.APIs.COAP.TLS.Enabled = new(bool)
 	shutdown := setUp(t, coapgwCfg)
 	defer shutdown()
 

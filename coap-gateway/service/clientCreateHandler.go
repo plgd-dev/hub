@@ -3,10 +3,10 @@ package service
 import (
 	"fmt"
 
-	coapMessage "github.com/plgd-dev/go-coap/v2/message"
-	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
-	"github.com/plgd-dev/go-coap/v2/mux"
-	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
+	coapMessage "github.com/plgd-dev/go-coap/v3/message"
+	coapCodes "github.com/plgd-dev/go-coap/v3/message/codes"
+	"github.com/plgd-dev/go-coap/v3/message/pool"
+	"github.com/plgd-dev/go-coap/v3/mux"
 	"github.com/plgd-dev/hub/v2/coap-gateway/coapconv"
 	"github.com/plgd-dev/hub/v2/coap-gateway/service/message"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
@@ -21,7 +21,7 @@ func getCreateResourceErr(err error) error {
 	return fmt.Errorf(errFmtCreateResource, "", err)
 }
 
-func clientCreateHandler(req *mux.Message, client *Client) (*pool.Message, error) {
+func clientCreateHandler(req *mux.Message, client *session) (*pool.Message, error) {
 	_, err := client.GetAuthorizationContext()
 	if err != nil {
 		return nil, statusErrorf(coapCodes.Unauthorized, "%w", getCreateResourceErr(err))
@@ -38,22 +38,22 @@ func clientCreateHandler(req *mux.Message, client *Client) (*pool.Message, error
 		return nil, statusErrorf(code, errFmtCreateResource, fmt.Sprintf(" /%v%v", deviceID, href), err)
 	}
 	if content == nil || len(content.Data) == 0 {
-		return client.createResponse(code, req.Token, coapMessage.TextPlain, nil), nil
+		return client.createResponse(code, req.Token(), coapMessage.TextPlain, nil), nil
 	}
 	mediaType, err := coapconv.MakeMediaType(-1, content.ContentType)
 	if err != nil {
 		return nil, statusErrorf(coapCodes.BadRequest, "cannot encode response for create resource %v: %w", fmt.Sprintf(" /%v%v", deviceID, href), err)
 	}
-	return client.createResponse(code, req.Token, mediaType, content.Data), nil
+	return client.createResponse(code, req.Token(), mediaType, content.Data), nil
 }
 
-func clientCreateDeviceHandler(req *mux.Message, client *Client, deviceID, href string) (*commands.Content, error) {
+func clientCreateDeviceHandler(req *mux.Message, client *session, deviceID, href string) (*commands.Content, error) {
 	createCommand, err := coapconv.NewCreateResourceRequest(commands.NewResourceID(deviceID, href), req, client.RemoteAddr().String())
 	if err != nil {
 		return nil, err
 	}
 
-	createdEvent, err := client.server.raClient.SyncCreateResource(req.Context, "*", createCommand)
+	createdEvent, err := client.server.raClient.SyncCreateResource(req.Context(), "*", createCommand)
 	if err != nil {
 		return nil, err
 	}

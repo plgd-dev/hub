@@ -10,8 +10,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/plgd-dev/device/client"
-	"github.com/plgd-dev/device/client/core"
+	"github.com/plgd-dev/device/v2/client"
+	"github.com/plgd-dev/device/v2/client/core"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/pkg/security/certificateSigner"
 )
@@ -135,7 +135,7 @@ func NewSDKClient(opts ...Option) (*client.Client, error) {
 		mfgCA:   mfgCA,
 		mfgCert: mfgCert,
 		ca:      identityTrustedCACert,
-	}, func(err error) { log.Debug(err) },
+	}, log.Get().DTLSLoggerFactory().NewLogger("test"),
 	)
 	if err != nil {
 		return nil, err

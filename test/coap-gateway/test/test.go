@@ -18,7 +18,7 @@ func MakeConfig(t *testing.T) service.Config {
 	var cfg service.Config
 	cfg.Log.Config.Level = zapcore.DebugLevel
 	cfg.Log.DumpCoapMessages = true
-	cfg.APIs.COAP.Addr = config.GW_HOST
+	cfg.APIs.COAP.Addr = config.COAP_GW_HOST
 	cfg.APIs.COAP.TLS.Config = config.MakeTLSServerConfig()
 	cfg.APIs.COAP.TLS.Config.ClientCertificateRequired = false
 	cfg.APIs.COAP.TLS.Config.CertFile = os.Getenv("TEST_COAP_GW_CERT_FILE")

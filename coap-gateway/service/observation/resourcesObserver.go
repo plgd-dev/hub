@@ -6,11 +6,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/plgd-dev/device/schema/interfaces"
-	"github.com/plgd-dev/device/schema/resources"
-	"github.com/plgd-dev/go-coap/v2/message"
-	"github.com/plgd-dev/go-coap/v2/tcp"
-	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
+	"github.com/plgd-dev/device/v2/schema/interfaces"
+	"github.com/plgd-dev/device/v2/schema/resources"
+	"github.com/plgd-dev/go-coap/v3/message"
+	"github.com/plgd-dev/go-coap/v3/message/pool"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 )
@@ -176,7 +175,7 @@ func (o *resourcesObserver) handleResource(ctx context.Context, obsRes *observed
 }
 
 // Register to COAP-GW resource observation for given resource
-func (o *resourcesObserver) observeResource(ctx context.Context, obsRes *observedResource) (*tcp.Observation, error) {
+func (o *resourcesObserver) observeResource(ctx context.Context, obsRes *observedResource) (Observation, error) {
 	cannotObserveResourceError := func(deviceID, href string, err error) error {
 		return fmt.Errorf("cannot observe resource /%v%v: %w", deviceID, href, err)
 	}
@@ -331,8 +330,8 @@ func (o *resourcesObserver) cancelResourcesObservations(ctx context.Context, hre
 	}
 }
 
-func (o *resourcesObserver) popTrackedObservations(hrefs []string) []*tcp.Observation {
-	observations := make([]*tcp.Observation, 0, 32)
+func (o *resourcesObserver) popTrackedObservations(hrefs []string) []Observation {
+	observations := make([]Observation, 0, 32)
 	o.lock.Lock()
 	defer o.lock.Unlock()
 	newResources, delResources := o.resources.removeByHref(hrefs...)

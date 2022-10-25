@@ -13,8 +13,8 @@ import (
 	router "github.com/gorilla/mux"
 	"github.com/lestrrat-go/jwx/jwa"
 	"github.com/lestrrat-go/jwx/jwk"
-	"github.com/plgd-dev/go-coap/v2/pkg/cache"
-	"github.com/plgd-dev/go-coap/v2/pkg/runner/periodic"
+	"github.com/plgd-dev/go-coap/v3/pkg/cache"
+	"github.com/plgd-dev/go-coap/v3/pkg/runner/periodic"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	kitHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
 	"github.com/plgd-dev/hub/v2/test/oauth-server/uri"
@@ -23,13 +23,13 @@ import (
 // RequestHandler for handling incoming request
 type RequestHandler struct {
 	config             *Config
-	authSession        *cache.Cache
-	authRestriction    *cache.Cache
+	authSession        *cache.Cache[string, authorizedSession]
+	authRestriction    *cache.Cache[string, struct{}]
 	idTokenKey         *rsa.PrivateKey
 	idTokenJwkKey      jwk.Key
 	accessTokenKey     interface{}
 	accessTokenJwkKey  jwk.Key
-	refreshRestriction *cache.Cache
+	refreshRestriction *cache.Cache[string, struct{}]
 }
 
 func createJwkKey(privateKey interface{}) (jwk.Key, error) {
@@ -72,9 +72,9 @@ func NewRequestHandler(ctx context.Context, config *Config, idTokenKey *rsa.Priv
 	if err != nil {
 		return nil, fmt.Errorf("cannot create jwk for idToken: %w", err)
 	}
-	authSession := cache.NewCache()
-	authRestriction := cache.NewCache()
-	refreshRestriction := cache.NewCache()
+	authSession := cache.NewCache[string, authorizedSession]()
+	authRestriction := cache.NewCache[string, struct{}]()
+	refreshRestriction := cache.NewCache[string, struct{}]()
 	add := periodic.New(ctx.Done(), time.Second*5)
 	add(func(now time.Time) bool {
 		authSession.CheckExpirations(now)

@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	cache "github.com/plgd-dev/go-coap/v2/pkg/cache"
+	cache "github.com/plgd-dev/go-coap/v3/pkg/cache"
 	"github.com/plgd-dev/hub/v2/cloud2cloud-connector/events"
 	"github.com/plgd-dev/hub/v2/cloud2cloud-connector/store"
 	"github.com/plgd-dev/hub/v2/pkg/log"

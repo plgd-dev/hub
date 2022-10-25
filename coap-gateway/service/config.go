@@ -2,14 +2,13 @@ package service
 
 import (
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/plgd-dev/hub/v2/pkg/config"
 	"github.com/plgd-dev/hub/v2/pkg/log"
+	coapService "github.com/plgd-dev/hub/v2/pkg/net/coap/service"
 	"github.com/plgd-dev/hub/v2/pkg/net/grpc/client"
 	otelClient "github.com/plgd-dev/hub/v2/pkg/opentelemetry/collector/client"
-	certManagerServer "github.com/plgd-dev/hub/v2/pkg/security/certManager/server"
 	"github.com/plgd-dev/hub/v2/pkg/security/oauth2"
 	"github.com/plgd-dev/hub/v2/pkg/security/oauth2/oauth"
 	"github.com/plgd-dev/hub/v2/pkg/sync/task/queue"
@@ -99,94 +98,27 @@ func (c *AuthorizationConfig) Validate() error {
 }
 
 type COAPConfig struct {
-	Addr                   string                  `yaml:"address" json:"address"`
-	ExternalAddress        string                  `yaml:"externalAddress" json:"externalAddress"`
-	MaxMessageSize         uint32                  `yaml:"maxMessageSize" json:"maxMessageSize"`
-	OwnerCacheExpiration   time.Duration           `yaml:"ownerCacheExpiration" json:"ownerCacheExpiration"`
-	SubscriptionBufferSize int                     `yaml:"subscriptionBufferSize" json:"subscriptionBufferSize"`
-	MessagePoolSize        int                     `yaml:"messagePoolSize" json:"messagePoolSize"`
-	KeepAlive              KeepAlive               `yaml:"keepAlive" json:"keepAlive"`
-	BlockwiseTransfer      BlockwiseTransferConfig `yaml:"blockwiseTransfer" json:"blockwiseTransfer"`
-	TLS                    TLSConfig               `yaml:"tls" json:"tls"`
-	Authorization          AuthorizationConfig     `yaml:"authorization" json:"authorization"`
+	ExternalAddress        string              `yaml:"externalAddress" json:"externalAddress"`
+	OwnerCacheExpiration   time.Duration       `yaml:"ownerCacheExpiration" json:"ownerCacheExpiration"`
+	SubscriptionBufferSize int                 `yaml:"subscriptionBufferSize" json:"subscriptionBufferSize"`
+	Authorization          AuthorizationConfig `yaml:"authorization" json:"authorization"`
+	coapService.Config     `yaml:",inline" json:",inline"`
 }
 
 func (c *COAPConfig) Validate() error {
-	if c.Addr == "" {
-		return fmt.Errorf("address('%v')", c.Addr)
-	}
 	if c.ExternalAddress == "" {
 		return fmt.Errorf("externalAddress('%v')", c.ExternalAddress)
-	}
-	if c.MaxMessageSize <= 64 {
-		return fmt.Errorf("maxMessageSize('%v')", c.MaxMessageSize)
 	}
 	if c.OwnerCacheExpiration <= 0 {
 		return fmt.Errorf("ownerCacheExpiration('%v')", c.OwnerCacheExpiration)
 	}
-	if c.MessagePoolSize < 0 {
-		return fmt.Errorf("messagePoolSize('%v')", c.MessagePoolSize)
-	}
 	if c.SubscriptionBufferSize < 0 {
 		return fmt.Errorf("subscriptionBufferSize('%v')", c.SubscriptionBufferSize)
-	}
-	if err := c.KeepAlive.Validate(); err != nil {
-		return fmt.Errorf("keepAlive.%w", err)
-	}
-	if err := c.BlockwiseTransfer.Validate(); err != nil {
-		return fmt.Errorf("blockwiseTransfer.%w", err)
-	}
-	if err := c.TLS.Validate(); err != nil {
-		return fmt.Errorf("tls.%w", err)
 	}
 	if err := c.Authorization.Validate(); err != nil {
 		return fmt.Errorf("authorization.%w", err)
 	}
-	return nil
-}
-
-type TLSConfig struct {
-	Enabled                        bool                     `yaml:"enabled" json:"enabled"`
-	DisconnectOnExpiredCertificate bool                     `yaml:"disconnectOnExpiredCertificate" json:"disconnectOnExpiredCertificate"`
-	Embedded                       certManagerServer.Config `yaml:",inline" json:",inline"`
-}
-
-type KeepAlive struct {
-	Timeout time.Duration `yaml:"timeout" json:"timeout"`
-}
-
-func (c *KeepAlive) Validate() error {
-	if c.Timeout < time.Second {
-		return fmt.Errorf("timeout('%v')", c.Timeout)
-	}
-	return nil
-}
-
-type BlockwiseTransferConfig struct {
-	Enabled bool   `yaml:"enabled" json:"enabled"`
-	SZX     string `yaml:"blockSize" json:"blockSize"`
-}
-
-func (c *BlockwiseTransferConfig) Validate() error {
-	if !c.Enabled {
-		return nil
-	}
-	switch strings.ToLower(c.SZX) {
-	case "16", "32", "64", "128", "256", "512", "1024", "bert":
-	default:
-		return fmt.Errorf("blockSize('%v')", c.SZX)
-	}
-	return nil
-}
-
-func (c *TLSConfig) Validate() error {
-	if !c.Enabled {
-		return nil
-	}
-	if err := c.Embedded.Validate(); err != nil {
-		return err
-	}
-	return nil
+	return c.Config.Validate()
 }
 
 type EventBusConfig struct {
