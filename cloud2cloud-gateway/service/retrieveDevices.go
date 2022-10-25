@@ -63,7 +63,7 @@ func (rh *RequestHandler) GetDevices(ctx context.Context, deviceIdFilter []strin
 
 		devices = append(devices, Device{
 			Device: device.ToSchema(),
-			Status: toStatus(device.GetMetadata().GetStatus().IsOnline()),
+			Status: toStatus(device.GetMetadata().GetConnection().IsOnline()),
 		})
 	}
 	if len(devices) == 0 {

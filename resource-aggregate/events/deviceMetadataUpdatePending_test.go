@@ -11,8 +11,8 @@ import (
 
 var testEventDeviceMetadataUpdatePending events.DeviceMetadataUpdatePending = events.DeviceMetadataUpdatePending{
 	DeviceId: "dev1",
-	UpdatePending: &events.DeviceMetadataUpdatePending_ShadowSynchronization{
-		ShadowSynchronization: commands.ShadowSynchronization_ENABLED,
+	UpdatePending: &events.DeviceMetadataUpdatePending_TwinEnabled{
+		TwinEnabled: true,
 	},
 	AuditContext: &commands.AuditContext{
 		UserId:        "501",

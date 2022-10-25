@@ -8,7 +8,7 @@ const (
 	CorrelationIDKey = "correlationId"
 
 	ResourceInterfaceQueryKey   = "resourceInterface"
-	ShadowQueryKey              = "shadow"
+	TwinQueryKey                = "twin"
 	CommandFilterQueryKey       = "commandFilter"
 	TypeFilterQueryKey          = "typeFilter"
 	StatusFilterQueryKey        = "statusFilter"
@@ -69,7 +69,7 @@ const (
 	// (GRPC + HTTP) GET /api/v1/devices/devices-metadata
 	DeviceMetadata = AliasDevice + "/metadata"
 
-	// (HTTP ALIAS) GET /api/v1/devices/{deviceId}/resources/{resourceHref}?shadow=false -> rpc RetrieveResourceFromDevice
+	// (HTTP ALIAS) GET /api/v1/devices/{deviceId}/resources/{resourceHref}?twin=false -> rpc RetrieveResourceFromDevice
 	// (GRPC + HTTP) PUT /api/v1/devices/{deviceId}/resources/{resourceHref} -> rpc Update Resource
 	AliasDeviceResource = AliasDeviceResources + "/{" + ResourceHrefKey + "}"
 
@@ -116,7 +116,7 @@ var QueryCaseInsensitive = map[string]string{
 	strings.ToLower(DeviceIdFilterQueryKey):        DeviceIdFilterQueryKey,
 	strings.ToLower(ResourceIdFilterQueryKey):      ResourceIdFilterQueryKey,
 	strings.ToLower(ResourceInterfaceQueryKey):     ResourceInterfaceQueryKey,
-	strings.ToLower(ShadowQueryKey):                ShadowQueryKey,
+	strings.ToLower(TwinQueryKey):                  TwinQueryKey,
 	strings.ToLower(TypeFilterQueryKey):            TypeFilterQueryKey,
 	strings.ToLower(AliasCommandFilterQueryKey):    CommandFilterQueryKey,
 	strings.ToLower(AliasDeviceIdFilterQueryKey):   DeviceIdFilterQueryKey,

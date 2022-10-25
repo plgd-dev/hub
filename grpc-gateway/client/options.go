@@ -7,9 +7,9 @@ func WithInterface(resourceInterface string) ResourceInterfaceOption {
 	}
 }
 
-// WithSkipShadow gets resource directly from a device without using interface for client client.
-func WithSkipShadow() SkipShadowOption {
-	return SkipShadowOption{}
+// WithSkipTwin gets resource directly from a device without using interface for client client.
+func WithSkipTwin() SkipTwinOption {
+	return SkipTwinOption{}
 }
 
 type ResourceInterfaceOption struct {
@@ -30,10 +30,10 @@ func (r ResourceInterfaceOption) applyOnUpdate(opts updateOptions) updateOptions
 	return opts
 }
 
-type SkipShadowOption struct{}
+type SkipTwinOption struct{}
 
-func (r SkipShadowOption) applyOnGet(opts getOptions) getOptions {
-	opts.skipShadow = true
+func (r SkipTwinOption) applyOnGet(opts getOptions) getOptions {
+	opts.skipTwin = true
 	return opts
 }
 
@@ -44,7 +44,7 @@ type GetOption = interface {
 
 type getOptions struct {
 	resourceInterface string
-	skipShadow        bool
+	skipTwin          bool
 	codec             Codec
 }
 

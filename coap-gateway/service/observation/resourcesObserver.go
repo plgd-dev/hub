@@ -15,22 +15,22 @@ import (
 )
 
 type (
-	OnObserveResource                 = func(ctx context.Context, deviceID, resourceHref string, batch bool, notification *pool.Message) error
-	OnGetResourceContent              = func(ctx context.Context, deviceID, resourceHref string, notification *pool.Message) error
-	UpdateShadowSynchronizationStatus = func(ctx context.Context, deviceID string, status commands.ShadowSynchronizationStatus_Status, t time.Time) error
+	OnObserveResource         = func(ctx context.Context, deviceID, resourceHref string, batch bool, notification *pool.Message) error
+	OnGetResourceContent      = func(ctx context.Context, deviceID, resourceHref string, notification *pool.Message) error
+	UpdateTwinSynchronization = func(ctx context.Context, deviceID string, status commands.TwinSynchronization_State, t time.Time) error
 )
 
 type ResourcesObserverCallbacks struct {
-	OnObserveResource                 OnObserveResource
-	OnGetResourceContent              OnGetResourceContent
-	UpdateShadowSynchronizationStatus UpdateShadowSynchronizationStatus
+	OnObserveResource         OnObserveResource
+	OnGetResourceContent      OnGetResourceContent
+	UpdateTwinSynchronization UpdateTwinSynchronization
 }
 
-func MakeResourcesObserverCallbacks(onObserveResource OnObserveResource, onGetResourceContent OnGetResourceContent, updateShadowSynchronizationStatus UpdateShadowSynchronizationStatus) ResourcesObserverCallbacks {
+func MakeResourcesObserverCallbacks(onObserveResource OnObserveResource, onGetResourceContent OnGetResourceContent, updateTwinSynchronization UpdateTwinSynchronization) ResourcesObserverCallbacks {
 	return ResourcesObserverCallbacks{
-		OnObserveResource:                 onObserveResource,
-		OnGetResourceContent:              onGetResourceContent,
-		UpdateShadowSynchronizationStatus: updateShadowSynchronizationStatus,
+		OnObserveResource:         onObserveResource,
+		OnGetResourceContent:      onGetResourceContent,
+		UpdateTwinSynchronization: updateTwinSynchronization,
 	}
 }
 
@@ -89,11 +89,11 @@ func (o *resourcesObserver) addResource(ctx context.Context, res *commands.Resou
 	defer o.lock.Unlock()
 	obs, err := o.addResourceLocked(res, obsInterface)
 	if err == nil && obs != nil {
-		o.notifyAboutStartShadowSynchronizationStatus(ctx)
+		o.notifyAboutStartTwinSynchronization(ctx)
 		err = o.performObservationLocked([]*observedResource{obs})
 		if err != nil {
 			o.resources, _ = o.resources.removeByHref(obs.Href())
-			defer o.notifyAboutFinishShadowSynchronizationStatus(ctx)
+			defer o.notifyAboutFinishTwinSynchronization(ctx)
 		}
 	}
 	return err
@@ -110,7 +110,7 @@ func (o *resourcesObserver) isSynchronizedLocked() bool {
 
 func (o *resourcesObserver) resourceHasBeenSynchronized(ctx context.Context, href string) {
 	if o.setSynchronizedAtResource(href) {
-		o.notifyAboutFinishShadowSynchronizationStatus(ctx)
+		o.notifyAboutFinishTwinSynchronization(ctx)
 	}
 }
 
@@ -239,17 +239,17 @@ func (o *resourcesObserver) getResourceContent(ctx context.Context, href string)
 	return nil
 }
 
-func (o *resourcesObserver) notifyAboutStartShadowSynchronizationStatus(ctx context.Context) {
-	err := o.callbacks.UpdateShadowSynchronizationStatus(ctx, o.deviceID, commands.ShadowSynchronizationStatus_STARTED, time.Now())
+func (o *resourcesObserver) notifyAboutStartTwinSynchronization(ctx context.Context) {
+	err := o.callbacks.UpdateTwinSynchronization(ctx, o.deviceID, commands.TwinSynchronization_STARTED, time.Now())
 	if err != nil {
-		o.logger.Debugf("cannot update shadow synchronization status to finish: %v", err)
+		o.logger.Debugf("cannot update twin synchronization to finish: %v", err)
 	}
 }
 
-func (o *resourcesObserver) notifyAboutFinishShadowSynchronizationStatus(ctx context.Context) {
-	err := o.callbacks.UpdateShadowSynchronizationStatus(ctx, o.deviceID, commands.ShadowSynchronizationStatus_FINISHED, time.Now())
+func (o *resourcesObserver) notifyAboutFinishTwinSynchronization(ctx context.Context) {
+	err := o.callbacks.UpdateTwinSynchronization(ctx, o.deviceID, commands.TwinSynchronization_FINISHED, time.Now())
 	if err != nil {
-		o.logger.Debugf("cannot update shadow synchronization status to start: %v", err)
+		o.logger.Debugf("cannot update twin synchronization to start: %v", err)
 	}
 }
 
@@ -272,7 +272,7 @@ func (o *resourcesObserver) addResources(ctx context.Context, resources []*comma
 	o.lock.Lock()
 	observedResources, err := o.addResourcesLocked(resources)
 	if len(observedResources) > 0 {
-		o.notifyAboutStartShadowSynchronizationStatus(ctx)
+		o.notifyAboutStartTwinSynchronization(ctx)
 		err2 := o.performObservationLocked(observedResources)
 		if err2 != nil {
 			if err == nil {
@@ -281,7 +281,7 @@ func (o *resourcesObserver) addResources(ctx context.Context, resources []*comma
 				err = fmt.Errorf("[%w, %v]", err, err2)
 			}
 			if o.isSynchronizedLocked() {
-				defer o.notifyAboutFinishShadowSynchronizationStatus(ctx)
+				defer o.notifyAboutFinishTwinSynchronization(ctx)
 			}
 		}
 	}

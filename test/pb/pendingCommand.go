@@ -159,8 +159,8 @@ func InitPendingEvents(ctx context.Context, t *testing.T) (pb.GrpcGatewayClient,
 		ctx, cancel := context.WithTimeout(ctx, time.Second)
 		defer cancel()
 		_, err := c.UpdateDeviceMetadata(ctx, &pb.UpdateDeviceMetadataRequest{
-			DeviceId:              deviceID,
-			ShadowSynchronization: pb.UpdateDeviceMetadataRequest_DISABLED,
+			DeviceId:    deviceID,
+			TwinEnabled: false,
 		})
 		require.Error(t, err)
 	}
@@ -399,11 +399,11 @@ func CmpDeviceMetadataUpdatePending(t *testing.T, expected, got *events.DeviceMe
 	test.CheckProtobufs(t, expected, got, test.RequireToCheckFunc(require.Equal))
 }
 
-func MakeDeviceMetadataUpdatePending(deviceID string, shadowSynchronization commands.ShadowSynchronization, correlationID string) *events.DeviceMetadataUpdatePending {
+func MakeDeviceMetadataUpdatePending(deviceID string, twinEnabled bool, correlationID string) *events.DeviceMetadataUpdatePending {
 	return &events.DeviceMetadataUpdatePending{
 		DeviceId: deviceID,
-		UpdatePending: &events.DeviceMetadataUpdatePending_ShadowSynchronization{
-			ShadowSynchronization: shadowSynchronization,
+		UpdatePending: &events.DeviceMetadataUpdatePending_TwinEnabled{
+			TwinEnabled: twinEnabled,
 		},
 		AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, correlationID),
 	}

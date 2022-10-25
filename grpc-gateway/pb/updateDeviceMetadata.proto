@@ -7,12 +7,10 @@ import "resource-aggregate/pb/events.proto";
 option go_package = "github.com/plgd-dev/hub/v2/grpc-gateway/pb;pb";
 
 message UpdateDeviceMetadataRequest{
-    enum ShadowSynchronization {
-      DISABLED = 0;
-      ENABLED = 1;
-    }
+    reserved 2;
     string device_id = 1;
-    ShadowSynchronization shadow_synchronization = 2;
+    // ShadowSynchronization shadow_synchronization = 2; replaced by twin_enabled
+    bool twin_enabled = 4;
     int64 time_to_live = 3;  // command validity in nanoseconds. 0 means forever and minimal value is 100000000 (100ms).
 }
 

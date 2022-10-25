@@ -18,7 +18,7 @@ func (r *RequestHandler) GetResources(req *pb.GetResourcesRequest, srv pb.GrpcGa
 		return log.LogAndReturnError(status.Errorf(status.Convert(err).Code(), "cannot get devices contents: %v", err))
 	}
 
-	rs := NewResourceShadow(r.resourceProjection, deviceIDs)
+	rs := NewResourceTwin(r.resourceProjection, deviceIDs)
 	err = rs.GetResources(req, srv)
 	if err != nil {
 		return log.LogAndReturnError(err)

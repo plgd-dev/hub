@@ -217,7 +217,7 @@ func setNewDeviceObserver(ctx context.Context, client *session, deviceID string,
 		}
 
 		deviceObserver, err := observation.NewDeviceObserver(client.Context(), deviceID, client, client, client,
-			observation.MakeResourcesObserverCallbacks(client.onObserveResource, client.onGetResourceContent, client.UpdateShadowSynchronizationStatus),
+			observation.MakeResourcesObserverCallbacks(client.onObserveResource, client.onGetResourceContent, client.UpdateTwinSynchronizationStatus),
 			observation.WithObservationType(observationType),
 			observation.WithLogger(client.getLogger()))
 		if err != nil {
@@ -306,10 +306,10 @@ func updateDeviceMetadata(req *mux.Message, client *session) error {
 
 		_, err := client.server.raClient.UpdateDeviceMetadata(ctx, &commands.UpdateDeviceMetadataRequest{
 			DeviceId: oldAuthCtx.GetDeviceID(),
-			Update: &commands.UpdateDeviceMetadataRequest_Status{
-				Status: &commands.ConnectionStatus{
-					Value:        commands.ConnectionStatus_OFFLINE,
-					ConnectionId: client.RemoteAddr().String(),
+			Update: &commands.UpdateDeviceMetadataRequest_Connection{
+				Connection: &commands.Connection{
+					Status: commands.Connection_OFFLINE,
+					Id:     client.RemoteAddr().String(),
 				},
 			},
 			CommandMetadata: &commands.CommandMetadata{

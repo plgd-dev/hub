@@ -74,12 +74,12 @@ func (d *DeviceMetadataSnapshotTaken) HandleDeviceMetadataUpdated(ctx context.Co
 		}
 	}
 	if confirm && index < 0 {
-		return false, status.Errorf(codes.InvalidArgument, "cannot find shadow synchronization status update pending event with correlationId('%v')", upd.GetAuditContext().GetCorrelationId())
+		return false, status.Errorf(codes.InvalidArgument, "cannot find twin synchronization update pending event with correlationId('%v')", upd.GetAuditContext().GetCorrelationId())
 	}
 	if d.DeviceMetadataUpdated.Equal(upd) {
 		return false, nil
 	}
-	if d.DeviceMetadataUpdated.GetStatus().IsOnline() && upd.GetStatus() != nil && !upd.GetStatus().IsOnline() && d.DeviceMetadataUpdated.GetStatus().GetConnectionId() != upd.GetStatus().GetConnectionId() {
+	if d.DeviceMetadataUpdated.GetConnection().IsOnline() && upd.GetConnection() != nil && !upd.GetConnection().IsOnline() && d.DeviceMetadataUpdated.GetConnection().GetId() != upd.GetConnection().GetId() {
 		// if previous status was online and new status is offline, the connectionId must be the same
 		return false, nil
 	}
@@ -169,38 +169,40 @@ func (d *DeviceMetadataSnapshotTaken) ConfirmDeviceMetadataUpdate(ctx context.Co
 
 	em := MakeEventMeta(req.GetCommandMetadata().GetConnectionId(), req.GetCommandMetadata().GetSequence(), newVersion)
 	ac := commands.NewAuditContext(userID, req.GetCorrelationId())
+	_, is_confirm_twin_enabled := req.GetConfirm().(*commands.ConfirmDeviceMetadataUpdateRequest_TwinEnabled)
 	switch {
 	case cancel:
 		ev := DeviceMetadataUpdated{
-			DeviceId:              req.GetDeviceId(),
-			Status:                d.GetDeviceMetadataUpdated().GetStatus(),
-			ShadowSynchronization: d.GetDeviceMetadataUpdated().GetShadowSynchronization(),
-			Canceled:              true,
-			AuditContext:          ac,
-			EventMetadata:         em,
-			OpenTelemetryCarrier:  propagation.TraceFromCtx(ctx),
+			DeviceId:             req.GetDeviceId(),
+			Connection:           d.GetDeviceMetadataUpdated().GetConnection(),
+			TwinSynchronization:  d.GetDeviceMetadataUpdated().GetTwinSynchronization(),
+			TwinEnabled:          d.GetDeviceMetadataUpdated().GetTwinEnabled(),
+			Canceled:             true,
+			AuditContext:         ac,
+			EventMetadata:        em,
+			OpenTelemetryCarrier: propagation.TraceFromCtx(ctx),
 		}
 		ok, err := d.HandleDeviceMetadataUpdated(ctx, &ev, true)
 		if !ok {
 			return nil, err
 		}
 		return []eventstore.Event{&ev}, nil
-	case req.GetShadowSynchronization() != commands.ShadowSynchronization_UNSET:
-		shadowSynchronizationStatus := d.GetDeviceMetadataUpdated().GetShadowSynchronizationStatus()
-		if req.GetShadowSynchronization() == commands.ShadowSynchronization_DISABLED && req.GetCommandMetadata().GetConnectionId() == d.GetDeviceMetadataUpdated().GetShadowSynchronizationStatus().GetCommandMetadata().GetConnectionId() {
-			// reset shadowSynchronizationStatus
-			if shadowSynchronizationStatus != nil {
-				shadowSynchronizationStatus.Value = commands.ShadowSynchronizationStatus_NONE
+	case is_confirm_twin_enabled:
+		twinSynchronization := d.GetDeviceMetadataUpdated().GetTwinSynchronization()
+		if !req.GetTwinEnabled() && req.GetCommandMetadata().GetConnectionId() == d.GetDeviceMetadataUpdated().GetTwinSynchronization().GetCommandMetadata().GetConnectionId() {
+			// reset twinSynchronization
+			if twinSynchronization != nil {
+				twinSynchronization.State = commands.TwinSynchronization_NONE
 			}
 		}
 		ev := DeviceMetadataUpdated{
-			DeviceId:                    req.GetDeviceId(),
-			Status:                      d.GetDeviceMetadataUpdated().GetStatus(),
-			ShadowSynchronization:       req.GetShadowSynchronization(),
-			ShadowSynchronizationStatus: shadowSynchronizationStatus,
-			AuditContext:                ac,
-			EventMetadata:               em,
-			OpenTelemetryCarrier:        propagation.TraceFromCtx(ctx),
+			DeviceId:             req.GetDeviceId(),
+			Connection:           d.GetDeviceMetadataUpdated().GetConnection(),
+			TwinEnabled:          req.GetTwinEnabled(),
+			TwinSynchronization:  twinSynchronization,
+			AuditContext:         ac,
+			EventMetadata:        em,
+			OpenTelemetryCarrier: propagation.TraceFromCtx(ctx),
 		}
 		ok, err := d.HandleDeviceMetadataUpdated(ctx, &ev, true)
 		if !ok {
@@ -254,90 +256,91 @@ func (d *DeviceMetadataSnapshotTaken) HandleCommand(ctx context.Context, cmd agg
 		em := MakeEventMeta(req.GetCommandMetadata().GetConnectionId(), req.GetCommandMetadata().GetSequence(), newVersion)
 		ac := commands.NewAuditContext(userID, req.GetCorrelationId())
 
+		_, is_update_twin_enabled := req.GetUpdate().(*commands.UpdateDeviceMetadataRequest_TwinEnabled)
 		switch {
-		case req.GetStatus() != nil:
-			if req.GetStatus().GetConnectionId() == "" {
+		case req.GetConnection() != nil:
+			if req.GetConnection().GetId() == "" {
 				return nil, status.Errorf(codes.InvalidArgument, "cannot update connection status for empty connectionId")
 			}
 			// it is expected that the device updates the status on its own. no confirmation needed.
 
 			// keep last connected at from the previous event
-			lastConnectedAt := d.GetDeviceMetadataUpdated().GetStatus().GetConnectedAt()
-			if req.GetStatus().GetConnectedAt() < lastConnectedAt {
-				req.GetStatus().ConnectedAt = lastConnectedAt
+			lastConnectedAt := d.GetDeviceMetadataUpdated().GetConnection().GetConnectedAt()
+			if req.GetConnection().GetConnectedAt() < lastConnectedAt {
+				req.GetConnection().ConnectedAt = lastConnectedAt
 			}
 
-			shadowSynchronizationStatus := d.GetDeviceMetadataUpdated().GetShadowSynchronizationStatus()
+			twinSynchronization := d.GetDeviceMetadataUpdated().GetTwinSynchronization()
 			// check if it is new connection
-			if req.GetStatus().GetValue() == commands.ConnectionStatus_ONLINE && req.GetStatus().GetConnectionId() != d.GetDeviceMetadataUpdated().GetStatus().GetConnectionId() {
-				// reset shadowSynchronizationStatus
-				if shadowSynchronizationStatus == nil {
-					shadowSynchronizationStatus = &commands.ShadowSynchronizationStatus{}
+			if req.GetConnection().GetStatus() == commands.Connection_ONLINE && req.GetConnection().GetId() != d.GetDeviceMetadataUpdated().GetConnection().GetId() {
+				// reset twinSynchronization
+				if twinSynchronization == nil {
+					twinSynchronization = &commands.TwinSynchronization{}
 				}
-				shadowSynchronizationStatus.Value = commands.ShadowSynchronizationStatus_NONE
-				shadowSynchronizationStatus.CommandMetadata = req.GetCommandMetadata()
+				twinSynchronization.State = commands.TwinSynchronization_NONE
+				twinSynchronization.CommandMetadata = req.GetCommandMetadata()
 			}
 			ev := DeviceMetadataUpdated{
-				DeviceId:                    req.GetDeviceId(),
-				Status:                      req.GetStatus(),
-				ShadowSynchronization:       d.GetDeviceMetadataUpdated().GetShadowSynchronization(),
-				ShadowSynchronizationStatus: shadowSynchronizationStatus,
-				AuditContext:                ac,
-				EventMetadata:               em,
-				OpenTelemetryCarrier:        propagation.TraceFromCtx(ctx),
+				DeviceId:             req.GetDeviceId(),
+				Connection:           req.GetConnection(),
+				TwinEnabled:          d.GetDeviceMetadataUpdated().GetTwinEnabled(),
+				TwinSynchronization:  twinSynchronization,
+				AuditContext:         ac,
+				EventMetadata:        em,
+				OpenTelemetryCarrier: propagation.TraceFromCtx(ctx),
 			}
 			ok, err := d.HandleDeviceMetadataUpdated(ctx, &ev, false)
 			if !ok {
 				return nil, err
 			}
 			return []eventstore.Event{&ev}, nil
-		case req.GetShadowSynchronizationStatus() != nil:
+		case req.GetTwinSynchronization() != nil:
 			commandMetadata := req.GetCommandMetadata()
 			// it is expected that the device updates the status on its own. no confirmation needed.
 			if commandMetadata.GetConnectionId() == "" {
-				return nil, status.Errorf(codes.InvalidArgument, "cannot update shadow synchronization status for empty connectionId")
+				return nil, status.Errorf(codes.InvalidArgument, "cannot update twin synchronization for empty connectionId")
 			}
-			if commandMetadata.GetConnectionId() != d.GetDeviceMetadataUpdated().GetShadowSynchronizationStatus().GetCommandMetadata().GetConnectionId() {
-				return nil, status.Errorf(codes.InvalidArgument, "cannot update shadow synchronization status for different connectionId: get %v, expected %v", commandMetadata.GetConnectionId(), d.GetDeviceMetadataUpdated().GetShadowSynchronizationStatus().GetCommandMetadata().GetConnectionId())
+			if commandMetadata.GetConnectionId() != d.GetDeviceMetadataUpdated().GetTwinSynchronization().GetCommandMetadata().GetConnectionId() {
+				return nil, status.Errorf(codes.InvalidArgument, "cannot update twin synchronization for different connectionId: get %v, expected %v", commandMetadata.GetConnectionId(), d.GetDeviceMetadataUpdated().GetTwinSynchronization().GetCommandMetadata().GetConnectionId())
 			}
-			if commandMetadata.GetSequence() <= d.GetDeviceMetadataUpdated().GetShadowSynchronizationStatus().GetCommandMetadata().GetSequence() {
+			if commandMetadata.GetSequence() <= d.GetDeviceMetadataUpdated().GetTwinSynchronization().GetCommandMetadata().GetSequence() {
 				return nil, nil
 			}
-			shadowSynchronizationStatus := req.GetShadowSynchronizationStatus()
-			if shadowSynchronizationStatus.GetValue() == commands.ShadowSynchronizationStatus_STARTED && shadowSynchronizationStatus.GetStartedAt() <= 0 {
-				return nil, status.Errorf(codes.InvalidArgument, "cannot update shadow synchronization status with invalid startedAt(%v)", shadowSynchronizationStatus.GetStartedAt())
+			twinSynchronization := req.GetTwinSynchronization()
+			if twinSynchronization.GetState() == commands.TwinSynchronization_STARTED && twinSynchronization.GetStartedAt() <= 0 {
+				return nil, status.Errorf(codes.InvalidArgument, "cannot update twin synchronization with invalid startedAt(%v)", twinSynchronization.GetStartedAt())
 			}
-			if shadowSynchronizationStatus.GetValue() == commands.ShadowSynchronizationStatus_FINISHED && shadowSynchronizationStatus.GetFinishedAt() <= 0 {
-				return nil, status.Errorf(codes.InvalidArgument, "cannot update shadow synchronization status with invalid finishAt(%v)", shadowSynchronizationStatus.GetStartedAt())
+			if twinSynchronization.GetState() == commands.TwinSynchronization_FINISHED && twinSynchronization.GetFinishedAt() <= 0 {
+				return nil, status.Errorf(codes.InvalidArgument, "cannot update twin synchronization with invalid finishAt(%v)", twinSynchronization.GetStartedAt())
 			}
-			if shadowSynchronizationStatus.GetValue() == commands.ShadowSynchronizationStatus_STARTED && d.GetDeviceMetadataUpdated().GetShadowSynchronizationStatus().GetValue() == commands.ShadowSynchronizationStatus_STARTED {
-				if shadowSynchronizationStatus.GetStartedAt() > d.GetDeviceMetadataUpdated().GetShadowSynchronizationStatus().GetStartedAt() {
+			if twinSynchronization.GetState() == commands.TwinSynchronization_STARTED && d.GetDeviceMetadataUpdated().GetTwinSynchronization().GetState() == commands.TwinSynchronization_STARTED {
+				if twinSynchronization.GetStartedAt() > d.GetDeviceMetadataUpdated().GetTwinSynchronization().GetStartedAt() {
 					return nil, nil
 				}
 			}
-			if shadowSynchronizationStatus.GetValue() == commands.ShadowSynchronizationStatus_FINISHED && d.GetDeviceMetadataUpdated().GetShadowSynchronizationStatus().GetValue() == commands.ShadowSynchronizationStatus_FINISHED {
-				if shadowSynchronizationStatus.GetFinishedAt() < d.GetDeviceMetadataUpdated().GetShadowSynchronizationStatus().GetFinishedAt() {
+			if twinSynchronization.GetState() == commands.TwinSynchronization_FINISHED && d.GetDeviceMetadataUpdated().GetTwinSynchronization().GetState() == commands.TwinSynchronization_FINISHED {
+				if twinSynchronization.GetFinishedAt() < d.GetDeviceMetadataUpdated().GetTwinSynchronization().GetFinishedAt() {
 					return nil, nil
 				}
 			}
-			if shadowSynchronizationStatus.GetValue() == commands.ShadowSynchronizationStatus_FINISHED && d.GetDeviceMetadataUpdated().GetShadowSynchronizationStatus().GetValue() == commands.ShadowSynchronizationStatus_STARTED {
-				if shadowSynchronizationStatus.GetFinishedAt() < d.GetDeviceMetadataUpdated().GetShadowSynchronizationStatus().GetStartedAt() {
+			if twinSynchronization.GetState() == commands.TwinSynchronization_FINISHED && d.GetDeviceMetadataUpdated().GetTwinSynchronization().GetState() == commands.TwinSynchronization_STARTED {
+				if twinSynchronization.GetFinishedAt() < d.GetDeviceMetadataUpdated().GetTwinSynchronization().GetStartedAt() {
 					return nil, nil
 				}
 			}
-			if shadowSynchronizationStatus.GetStartedAt() == 0 {
+			if twinSynchronization.GetStartedAt() == 0 {
 				// set previous value
-				shadowSynchronizationStatus.StartedAt = d.GetDeviceMetadataUpdated().GetShadowSynchronizationStatus().GetStartedAt()
+				twinSynchronization.StartedAt = d.GetDeviceMetadataUpdated().GetTwinSynchronization().GetStartedAt()
 			}
-			shadowSynchronizationStatus.CommandMetadata = commandMetadata
+			twinSynchronization.CommandMetadata = commandMetadata
 			ev := DeviceMetadataUpdated{
-				DeviceId:                    req.GetDeviceId(),
-				Status:                      d.GetDeviceMetadataUpdated().GetStatus(),
-				ShadowSynchronization:       d.GetDeviceMetadataUpdated().GetShadowSynchronization(),
-				ShadowSynchronizationStatus: req.GetShadowSynchronizationStatus(),
-				AuditContext:                ac,
-				EventMetadata:               em,
-				OpenTelemetryCarrier:        propagation.TraceFromCtx(ctx),
+				DeviceId:             req.GetDeviceId(),
+				Connection:           d.GetDeviceMetadataUpdated().GetConnection(),
+				TwinEnabled:          d.GetDeviceMetadataUpdated().GetTwinEnabled(),
+				TwinSynchronization:  req.GetTwinSynchronization(),
+				AuditContext:         ac,
+				EventMetadata:        em,
+				OpenTelemetryCarrier: propagation.TraceFromCtx(ctx),
 			}
 			ok, err := d.HandleDeviceMetadataUpdated(ctx, &ev, false)
 			if err != nil {
@@ -347,12 +350,12 @@ func (d *DeviceMetadataSnapshotTaken) HandleCommand(ctx context.Context, cmd agg
 				return nil, nil
 			}
 			return []eventstore.Event{&ev}, nil
-		case req.GetShadowSynchronization() != commands.ShadowSynchronization_UNSET:
+		case is_update_twin_enabled:
 			ev := DeviceMetadataUpdatePending{
 				DeviceId:   req.GetDeviceId(),
 				ValidUntil: timeToLive2ValidUntil(req.GetTimeToLive()),
-				UpdatePending: &DeviceMetadataUpdatePending_ShadowSynchronization{
-					ShadowSynchronization: req.GetShadowSynchronization(),
+				UpdatePending: &DeviceMetadataUpdatePending_TwinEnabled{
+					TwinEnabled: req.GetTwinEnabled(),
 				},
 				AuditContext:         ac,
 				EventMetadata:        em,
@@ -385,6 +388,9 @@ func (d *DeviceMetadataSnapshotTaken) TakeSnapshot(version uint64) (eventstore.E
 
 func NewDeviceMetadataSnapshotTaken() *DeviceMetadataSnapshotTaken {
 	return &DeviceMetadataSnapshotTaken{
+		DeviceMetadataUpdated: &DeviceMetadataUpdated{
+			TwinEnabled: true,
+		},
 		EventMetadata: &EventMetadata{},
 	}
 }

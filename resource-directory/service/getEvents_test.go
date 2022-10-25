@@ -72,9 +72,9 @@ func getOnboardEventForResource(t *testing.T, deviceID, href string) interface{}
 }
 
 func getAllOnboardEvents(t *testing.T, deviceID string, links []schema.ResourceLink) []interface{} {
-	expectedDMU := pbTest.MakeDeviceMetadataUpdated(deviceID, commands.ConnectionStatus_ONLINE, commands.ShadowSynchronization_UNSET, commands.ShadowSynchronizationStatus_NONE, "")
-	expectedDMU1 := pbTest.MakeDeviceMetadataUpdated(deviceID, commands.ConnectionStatus_ONLINE, commands.ShadowSynchronization_UNSET, commands.ShadowSynchronizationStatus_STARTED, "")
-	expectedDMU2 := pbTest.MakeDeviceMetadataUpdated(deviceID, commands.ConnectionStatus_ONLINE, commands.ShadowSynchronization_UNSET, commands.ShadowSynchronizationStatus_FINISHED, "")
+	expectedDMU := pbTest.MakeDeviceMetadataUpdated(deviceID, commands.Connection_ONLINE, true, commands.TwinSynchronization_NONE, "")
+	expectedDMU1 := pbTest.MakeDeviceMetadataUpdated(deviceID, commands.Connection_ONLINE, true, commands.TwinSynchronization_STARTED, "")
+	expectedDMU2 := pbTest.MakeDeviceMetadataUpdated(deviceID, commands.Connection_ONLINE, true, commands.TwinSynchronization_FINISHED, "")
 	expectedRLP := pbTest.MakeResourceLinksPublished(deviceID, test.ResourceLinksToResources(deviceID, links), "")
 	expectedRCP := getOnboardEventForResource(t, deviceID, platform.ResourceURI)
 	expectedRCD := getOnboardEventForResource(t, deviceID, device.ResourceURI)
@@ -202,8 +202,8 @@ func testRetrieveDeviceEvents(t *testing.T, ctx context.Context, c pb.GrpcGatewa
 
 func testUpdateDeviceEvents(t *testing.T, ctx context.Context, c pb.GrpcGatewayClient, deviceID string, timestampFilter int64) {
 	_, err := c.UpdateDeviceMetadata(ctx, &pb.UpdateDeviceMetadataRequest{
-		DeviceId:              deviceID,
-		ShadowSynchronization: pb.UpdateDeviceMetadataRequest_ENABLED,
+		DeviceId:    deviceID,
+		TwinEnabled: true,
 	})
 	require.NoError(t, err)
 	time.Sleep(time.Millisecond * 200)
@@ -218,10 +218,10 @@ func testUpdateDeviceEvents(t *testing.T, ctx context.Context, c pb.GrpcGatewayC
 	}()
 
 	expectedEvents := []interface{}{
-		pbTest.MakeDeviceMetadataUpdatePending(deviceID, commands.ShadowSynchronization_ENABLED, ""),
-		pbTest.MakeDeviceMetadataUpdated(deviceID, commands.ConnectionStatus_ONLINE, commands.ShadowSynchronization_ENABLED, commands.ShadowSynchronizationStatus_NONE, ""),
-		pbTest.MakeDeviceMetadataUpdated(deviceID, commands.ConnectionStatus_ONLINE, commands.ShadowSynchronization_UNSET, commands.ShadowSynchronizationStatus_STARTED, ""),
-		pbTest.MakeDeviceMetadataUpdated(deviceID, commands.ConnectionStatus_ONLINE, commands.ShadowSynchronization_ENABLED, commands.ShadowSynchronizationStatus_FINISHED, ""),
+		pbTest.MakeDeviceMetadataUpdatePending(deviceID, true, ""),
+		pbTest.MakeDeviceMetadataUpdated(deviceID, commands.Connection_ONLINE, true, commands.TwinSynchronization_NONE, ""),
+		pbTest.MakeDeviceMetadataUpdated(deviceID, commands.Connection_ONLINE, true, commands.TwinSynchronization_STARTED, ""),
+		pbTest.MakeDeviceMetadataUpdated(deviceID, commands.Connection_ONLINE, true, commands.TwinSynchronization_FINISHED, ""),
 	}
 	waitAndCheckEvents(t, client, expectedEvents)
 }
@@ -276,8 +276,8 @@ func testCreateResourceEvents(t *testing.T, ctx context.Context, c pb.GrpcGatewa
 				"rt":  []string{types.BINARY_SWITCH},
 			},
 		})
-	dmu := pbTest.MakeDeviceMetadataUpdated(deviceID, commands.ConnectionStatus_ONLINE, commands.ShadowSynchronization_ENABLED, commands.ShadowSynchronizationStatus_STARTED, "")
-	dmu1 := pbTest.MakeDeviceMetadataUpdated(deviceID, commands.ConnectionStatus_ONLINE, commands.ShadowSynchronization_ENABLED, commands.ShadowSynchronizationStatus_FINISHED, "")
+	dmu := pbTest.MakeDeviceMetadataUpdated(deviceID, commands.Connection_ONLINE, true, commands.TwinSynchronization_STARTED, "")
+	dmu1 := pbTest.MakeDeviceMetadataUpdated(deviceID, commands.Connection_ONLINE, true, commands.TwinSynchronization_FINISHED, "")
 	expectedEvents := []interface{}{rcp, rlp, rcreat, rchangeSwitch, rchangeSwitches, dmu, dmu1}
 	waitAndCheckEvents(t, client, expectedEvents)
 }

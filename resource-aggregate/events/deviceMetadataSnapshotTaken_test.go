@@ -23,12 +23,12 @@ var testEventDeviceMetadataSnapshotTaken events.DeviceMetadataSnapshotTaken = ev
 	DeviceId: "dev1",
 	DeviceMetadataUpdated: &events.DeviceMetadataUpdated{
 		DeviceId: "dev1",
-		Status: &commands.ConnectionStatus{
-			Value:        commands.ConnectionStatus_ONLINE,
-			ValidUntil:   12345,
-			ConnectionId: "con1",
+		Connection: &commands.Connection{
+			Status:           commands.Connection_ONLINE,
+			OnlineValidUntil: 12345,
+			Id:               "con1",
 		},
-		ShadowSynchronization: commands.ShadowSynchronization_ENABLED,
+		TwinEnabled: true,
 		AuditContext: &commands.AuditContext{
 			UserId:        "501",
 			CorrelationId: "0",
@@ -118,13 +118,13 @@ func TestDeviceMetadataSnapshotTakenHandle(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "shadowSyncPending, updated",
+			name: "twinSyncPending, updated",
 			args: args{
 				events: newIterator([]eventstore.EventUnmarshaler{
-					test.MakeDeviceMetadataUpdatePending("a", &events.DeviceMetadataUpdatePending_ShadowSynchronization{
-						ShadowSynchronization: commands.ShadowSynchronization_ENABLED,
+					test.MakeDeviceMetadataUpdatePending("a", &events.DeviceMetadataUpdatePending_TwinEnabled{
+						TwinEnabled: true,
 					}, events.MakeEventMeta("", 0, 0), commands.NewAuditContext("userID", "0"), time.Now().Add(-time.Second)),
-					test.MakeDeviceMetadataUpdated("a", &commands.ConnectionStatus{ConnectionId: "123"}, commands.ShadowSynchronization_ENABLED, events.MakeEventMeta("", 0, 0), commands.NewAuditContext("userID", "0"), false),
+					test.MakeDeviceMetadataUpdated("a", &commands.Connection{Id: "123"}, true, events.MakeEventMeta("", 0, 0), commands.NewAuditContext("userID", "0"), false),
 				}),
 			},
 		},
@@ -177,11 +177,11 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 						},
 						TimeToLive:    0,
 						CorrelationId: correlationID,
-						Update: &commands.UpdateDeviceMetadataRequest_Status{
-							Status: &commands.ConnectionStatus{
-								Value:        commands.ConnectionStatus_ONLINE,
-								ConnectionId: connectionID,
-								ConnectedAt:  connectedAt,
+						Update: &commands.UpdateDeviceMetadataRequest_Connection{
+							Connection: &commands.Connection{
+								Status:      commands.Connection_ONLINE,
+								Id:          connectionID,
+								ConnectedAt: connectedAt,
 							},
 						},
 					},
@@ -197,10 +197,10 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 						},
 						TimeToLive:    0,
 						CorrelationId: correlationID,
-						Update: &commands.UpdateDeviceMetadataRequest_Status{
-							Status: &commands.ConnectionStatus{
-								Value:        commands.ConnectionStatus_ONLINE,
-								ConnectionId: connectionID,
+						Update: &commands.UpdateDeviceMetadataRequest_Connection{
+							Connection: &commands.Connection{
+								Status: commands.Connection_ONLINE,
+								Id:     connectionID,
 							},
 						},
 					},
@@ -218,10 +218,10 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 					},
 					TimeToLive:    0,
 					CorrelationId: correlationID,
-					Update: &commands.UpdateDeviceMetadataRequest_Status{
-						Status: &commands.ConnectionStatus{
-							Value:        commands.ConnectionStatus_OFFLINE,
-							ConnectionId: connectionID,
+					Update: &commands.UpdateDeviceMetadataRequest_Connection{
+						Connection: &commands.Connection{
+							Status: commands.Connection_OFFLINE,
+							Id:     connectionID,
 						},
 					},
 				},
@@ -229,13 +229,14 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 			want: []*grpcgwPb.Event{
 				pb.ToEvent(&events.DeviceMetadataUpdated{
 					DeviceId: deviceID,
-					Status: &commands.ConnectionStatus{
-						Value:       commands.ConnectionStatus_OFFLINE,
+					Connection: &commands.Connection{
+						Status:      commands.Connection_OFFLINE,
 						ConnectedAt: connectedAt,
 					},
-					ShadowSynchronizationStatus: &commands.ShadowSynchronizationStatus{},
-					AuditContext:                commands.NewAuditContext(userID, correlationID),
-					OpenTelemetryCarrier:        map[string]string{},
+					TwinEnabled:          true,
+					TwinSynchronization:  &commands.TwinSynchronization{},
+					AuditContext:         commands.NewAuditContext(userID, correlationID),
+					OpenTelemetryCarrier: map[string]string{},
 				}),
 			},
 		},
@@ -252,11 +253,11 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 						},
 						TimeToLive:    0,
 						CorrelationId: correlationID,
-						Update: &commands.UpdateDeviceMetadataRequest_Status{
-							Status: &commands.ConnectionStatus{
-								Value:        commands.ConnectionStatus_ONLINE,
-								ConnectionId: connectionID,
-								ConnectedAt:  connectedAt,
+						Update: &commands.UpdateDeviceMetadataRequest_Connection{
+							Connection: &commands.Connection{
+								Status:      commands.Connection_ONLINE,
+								Id:          connectionID,
+								ConnectedAt: connectedAt,
 							},
 						},
 					},
@@ -272,10 +273,10 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 						},
 						TimeToLive:    0,
 						CorrelationId: correlationID,
-						Update: &commands.UpdateDeviceMetadataRequest_Status{
-							Status: &commands.ConnectionStatus{
-								Value:        commands.ConnectionStatus_ONLINE,
-								ConnectionId: connectionID + "1",
+						Update: &commands.UpdateDeviceMetadataRequest_Connection{
+							Connection: &commands.Connection{
+								Status: commands.Connection_ONLINE,
+								Id:     connectionID + "1",
 							},
 						},
 					},
@@ -293,10 +294,10 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 					},
 					TimeToLive:    0,
 					CorrelationId: correlationID,
-					Update: &commands.UpdateDeviceMetadataRequest_Status{
-						Status: &commands.ConnectionStatus{
-							Value:        commands.ConnectionStatus_OFFLINE,
-							ConnectionId: connectionID,
+					Update: &commands.UpdateDeviceMetadataRequest_Connection{
+						Connection: &commands.Connection{
+							Status: commands.Connection_OFFLINE,
+							Id:     connectionID,
 						},
 					},
 				},
@@ -315,9 +316,9 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 					},
 					TimeToLive:    0,
 					CorrelationId: correlationID,
-					Update: &commands.UpdateDeviceMetadataRequest_Status{
-						Status: &commands.ConnectionStatus{
-							Value: commands.ConnectionStatus_ONLINE,
+					Update: &commands.UpdateDeviceMetadataRequest_Connection{
+						Connection: &commands.Connection{
+							Status: commands.Connection_ONLINE,
 						},
 					},
 				},

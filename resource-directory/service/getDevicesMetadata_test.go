@@ -42,11 +42,11 @@ func TestRequestHandlerGetDevicesMetadata(t *testing.T) {
 			want: []*events.DeviceMetadataUpdated{
 				{
 					DeviceId: deviceID,
-					Status: &commands.ConnectionStatus{
-						Value: commands.ConnectionStatus_ONLINE,
+					Connection: &commands.Connection{
+						Status: commands.Connection_ONLINE,
 					},
-					ShadowSynchronizationStatus: &commands.ShadowSynchronizationStatus{
-						Value: commands.ShadowSynchronizationStatus_NONE,
+					TwinSynchronization: &commands.TwinSynchronization{
+						State: commands.TwinSynchronization_NONE,
 					},
 					AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, ""),
 				},
@@ -62,11 +62,11 @@ func TestRequestHandlerGetDevicesMetadata(t *testing.T) {
 			want: []*events.DeviceMetadataUpdated{
 				{
 					DeviceId: deviceID,
-					Status: &commands.ConnectionStatus{
-						Value: commands.ConnectionStatus_ONLINE,
+					Connection: &commands.Connection{
+						Status: commands.Connection_ONLINE,
 					},
-					ShadowSynchronizationStatus: &commands.ShadowSynchronizationStatus{
-						Value: commands.ShadowSynchronizationStatus_NONE,
+					TwinSynchronization: &commands.TwinSynchronization{
+						State: commands.TwinSynchronization_NONE,
 					},
 					AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, ""),
 				},
@@ -82,11 +82,11 @@ func TestRequestHandlerGetDevicesMetadata(t *testing.T) {
 			want: []*events.DeviceMetadataUpdated{
 				{
 					DeviceId: deviceID,
-					Status: &commands.ConnectionStatus{
-						Value: commands.ConnectionStatus_ONLINE,
+					Connection: &commands.Connection{
+						Status: commands.Connection_ONLINE,
 					},
-					ShadowSynchronizationStatus: &commands.ShadowSynchronizationStatus{
-						Value: commands.ShadowSynchronizationStatus_NONE,
+					TwinSynchronization: &commands.TwinSynchronization{
+						State: commands.TwinSynchronization_NONE,
 					},
 					AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, ""),
 				},

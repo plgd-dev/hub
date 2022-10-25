@@ -199,12 +199,12 @@ func testMakeDeviceResouceProtobuf(deviceID string, types []string, isOnline boo
 		},
 		ModelNumber: "ModelNumber." + deviceID,
 		Metadata: &pb.Device_Metadata{
-			Status: &commands.ConnectionStatus{
-				Value: func() commands.ConnectionStatus_Status {
+			Connection: &commands.Connection{
+				Status: func() commands.Connection_Status {
 					if isOnline {
-						return commands.ConnectionStatus_ONLINE
+						return commands.Connection_ONLINE
 					}
-					return commands.ConnectionStatus_OFFLINE
+					return commands.Connection_OFFLINE
 				}(),
 			},
 		},
@@ -236,14 +236,14 @@ func makeTestDeviceResourceContent(deviceID string) ResourceContent {
 }
 
 func makeTestDeviceConnectionStatus(deviceID string, online bool) *events.DeviceMetadataUpdated {
-	v := commands.ConnectionStatus_OFFLINE
+	v := commands.Connection_OFFLINE
 	if online {
-		v = commands.ConnectionStatus_ONLINE
+		v = commands.Connection_ONLINE
 	}
 	return &events.DeviceMetadataUpdated{
 		DeviceId: deviceID,
-		Status: &commands.ConnectionStatus{
-			Value: v,
+		Connection: &commands.Connection{
+			Status: v,
 		},
 	}
 }

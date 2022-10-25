@@ -98,7 +98,7 @@ func (h *DefaultObserverHandler) OnGetResourceContent(ctx context.Context, devic
 	return nil
 }
 
-func (h *DefaultObserverHandler) UpdateShadowSynchronizationStatus(ctx context.Context, deviceID string, status commands.ShadowSynchronizationStatus_Status, t time.Time) error {
-	log.Debugf("UpdateShadowSynchronizationStatus: %v %v %v", deviceID, status, t)
+func (h *DefaultObserverHandler) UpdateTwinSynchronization(ctx context.Context, deviceID string, status commands.TwinSynchronization_State, t time.Time) error {
+	log.Debugf("UpdateTwinSynchronizationStatus: %v %v %v", deviceID, status, t)
 	return nil
 }

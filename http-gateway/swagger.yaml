@@ -296,7 +296,7 @@ paths:
         - "Resources"
       summary: "Get all resources"
       description: |
-        The plgd hub builds an up to date [Shadow](https%3A%2F%2Fplgd.dev%2Ffeatures%2Fdevice-shadow%2F) for each published resource. This API allows you to retrieve shadow contents of all resources published by all device. Response is sent in form of a stream, chunk by chunk. Error response might be returned immediately, but also anytime during the stream reading.
+        The plgd hub builds an up to date [Twin](https%3A%2F%2Fplgd.dev%2Ffeatures%2Fdevice-shadow%2F) for each published resource. This API allows you to retrieve shadow contents of all resources published by all device. Response is sent in form of a stream, chunk by chunk. Error response might be returned immediately, but also anytime during the stream reading.
       parameters:
         - $ref: "#/components/parameters/deviceIdFilter"
         - $ref: "#/components/parameters/typeFilter"
@@ -335,7 +335,7 @@ paths:
         - "Resources"
       summary: "Retrieve device's resources"
       description: |
-        The plgd hub builds an up to date [Shadow](https%3A%2F%2Fplgd.dev%2Ffeatures%2Fdevice-shadow%2F) for each published resource. This API allows you to retrieve shadow contents of all resources published by this device. Response is sent in form of a stream, chunk by chunk. Error response might be returned immediately, but also anytime during the stream reading.
+        The plgd hub builds an up to date [Twin](https%3A%2F%2Fplgd.dev%2Ffeatures%2Fdevice-shadow%2F) for each published resource. This API allows you to retrieve shadow contents of all resources published by this device. Response is sent in form of a stream, chunk by chunk. Error response might be returned immediately, but also anytime during the stream reading.
       security:
         - oauth2:
             - "plgd.devices"
@@ -376,7 +376,7 @@ paths:
         - "Resources"
       summary: "Retrieve a resource"
       description: |
-        The plgd hub builds an up to date [Shadow](https%3A%2F%2Fplgd.dev%2Ffeatures%2Fdevice-shadow%2F) for each published resource. Retrieving it's content using this API returnes an eventually consistent shadow content of the resource. There is a possibility to bypass the shadow by setting the query parameter `shadow` to `false` or by setting the interface query parameter, which allows you to set the command expiration.
+        The plgd hub builds an up to date [Twin](https%3A%2F%2Fplgd.dev%2Ffeatures%2Fdevice-shadow%2F) for each published resource. Retrieving it's content using this API returnes an eventually consistent shadow content of the resource. There is a possibility to bypass the shadow by setting the query parameter `shadow` to `false` or by setting the interface query parameter, which allows you to set the command expiration.
       security:
         - oauth2:
             - "plgd.devices"
@@ -440,7 +440,7 @@ paths:
         - "Devices"
       summary: "Update device metadata"
       description: |
-        Device metadata represent configuration of the relationship between the plgd hub and the device. It's not configuration of the device itself. [Shadow](https%3A%2F%2Fplgd.dev%2Ffeatures%2Fdevice-shadow%2F) configuration is part of the metadata. By setting this value you control if the shadow for this device is kept up to date or not.
+        Device metadata represent configuration of the relationship between the plgd hub and the device. It's not configuration of the device itself. [Twin](https%3A%2F%2Fplgd.dev%2Ffeatures%2Fdevice-shadow%2F) configuration is part of the metadata. By setting this value you control if the shadow for this device is kept up to date or not.
       security:
         - oauth2:
             - "plgd.devices"
@@ -454,7 +454,7 @@ paths:
             schema:
               $ref: "#/components/schemas/DeviceMetadata"
             example:
-              shadowSynchronization: "DISABLED"
+              twinEnabled: false
         required: true
       responses:
         200:
@@ -890,10 +890,10 @@ components:
           - "oic.wk.d"
         name: "CloudServer"
         metadata:
-          status:
-            value: "ONLINE"
-            validUntil: 1625262498747539632
-          shadowSynchronization: "UNSET"
+          connection:
+            status: "ONLINE"
+            onlineValidUntil: 1625262498747539632
+          twinEnabled: true
         manufacturerName:
           - language: "en-US"
             value: "plugged"
@@ -918,8 +918,10 @@ components:
               type: string
               format: int64
               description: "Unix timestamp in nanoseconds."
-        shadowSynchronization:
-          $ref: "#/components/schemas/ShadowSynchronizationStatus"
+        twinSynchronization:
+          $ref: "#/components/schemas/TwinSynchronization"
+        twinEnabled:
+          $ref: "#/components/schemas/TwinEnabled"
     DeviceMetadataSnapshotTaken:
       type: object
       properties:
@@ -940,8 +942,10 @@ components:
           type: string
         status:
           $ref: "#/components/schemas/ConnectionStatus"
-        shadowSynchronization:
-          $ref: "#/components/schemas/ShadowSynchronizationStatus"
+        twinEnabled:
+          $ref: "#/components/schemas/TwinEnabled"
+        twinSynchronization:
+          $ref: "#/components/schemas/TwinSynchronization"
         auditContext:
           $ref: "#/components/schemas/AuditContext"
         eventMetadata:
@@ -951,8 +955,8 @@ components:
       properties:
         deviceId:
           type: string
-        shadowSynchronization:
-          $ref: "#/components/schemas/ShadowSynchronizationStatus"
+        twinEnabled:
+          $ref: "#/components/schemas/TwinEnabled"
         auditContext:
           $ref: "#/components/schemas/AuditContext"
         eventMetadata:
@@ -1434,13 +1438,37 @@ components:
           $ref: "#/components/schemas/AuditContext"
         eventMetadata:
           $ref: "#/components/schemas/EventMetadata"
-    ShadowSynchronizationStatus:
+    TwinEnabled:
+      type: boolean
+      default: true
+    TwinSynchronization:
+      type: object
+      properties:
+        state:
+          $ref: "#/components/schemas/TwinSynchronizationState"
+        startedAt:
+          type: string
+          format: int64
+        finishedAt:
+          type: string
+          format: int64
+        commandMetadata:
+          $ref: "#/components/schemas/CommandMetadata"
+    TwinSynchronizationState:
       type: string
       enum:
-        - "UNSET"
-        - "ENABLED"
-        - "DISABLED"
-      default: "UNSET"
+        - "NONE"
+        - "STARTED"
+        - "FINISHED"
+      default: "NONE"
+    CommandMetadata:
+      type: object
+      properties:
+        connectionId:
+          type: string
+        sequence:
+          type: string
+          format: uint64
     Status:
       type: string
       enum:

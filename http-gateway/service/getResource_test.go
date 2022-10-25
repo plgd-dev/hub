@@ -38,7 +38,7 @@ func TestRequestHandlerGetResource(t *testing.T) {
 		deviceID          string
 		resourceHref      string
 		resourceInterface string
-		shadow            *bool
+		twin              *bool
 	}
 	tests := []struct {
 		name string
@@ -46,7 +46,7 @@ func TestRequestHandlerGetResource(t *testing.T) {
 		want *events.ResourceRetrieved
 	}{
 		{
-			name: "json: get from resource shadow",
+			name: "json: get from resource twin",
 			args: args{
 				deviceID:     deviceID,
 				resourceHref: test.TestResourceLightInstanceHref("1"),
@@ -62,7 +62,7 @@ func TestRequestHandlerGetResource(t *testing.T) {
 			},
 		},
 		{
-			name: "jsonpb: get from resource shadow",
+			name: "jsonpb: get from resource twin",
 			args: args{
 				accept:       uri.ApplicationProtoJsonContentType,
 				deviceID:     deviceID,
@@ -94,12 +94,12 @@ func TestRequestHandlerGetResource(t *testing.T) {
 			),
 		},
 		{
-			name: "jsonpb: get from device with disabled shadow",
+			name: "jsonpb: get from device with disabled twin",
 			args: args{
 				accept:       uri.ApplicationProtoJsonContentType,
 				deviceID:     deviceID,
 				resourceHref: test.TestResourceLightInstanceHref("1"),
-				shadow:       newBool(false),
+				twin:         newBool(false),
 			},
 			want: pbTest.MakeResourceRetrieved(t, deviceID, test.TestResourceLightInstanceHref("1"), "",
 				map[string]interface{}{
@@ -139,8 +139,8 @@ func TestRequestHandlerGetResource(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			rb := httpgwTest.NewRequest(http.MethodGet, uri.AliasDeviceResource, nil).AuthToken(token).Accept(tt.args.accept)
 			rb.DeviceId(tt.args.deviceID).ResourceHref(tt.args.resourceHref).ResourceInterface(tt.args.resourceInterface)
-			if tt.args.shadow != nil {
-				rb.Shadow(*tt.args.shadow)
+			if tt.args.twin != nil {
+				rb.Twin(*tt.args.twin)
 			}
 			resp := httpgwTest.HTTPDo(t, rb.Build())
 			defer func() {

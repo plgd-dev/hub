@@ -78,11 +78,11 @@ func CreateDevice(ctx context.Context, t *testing.T, name string, deviceID strin
 		_, err = raClient.UpdateDeviceMetadata(ctx, &commands.UpdateDeviceMetadataRequest{
 			DeviceId:      deviceID,
 			CorrelationId: uuid.NewString(),
-			Update: &commands.UpdateDeviceMetadataRequest_Status{
-				Status: &commands.ConnectionStatus{
-					Value:        commands.ConnectionStatus_ONLINE,
-					ConnectionId: connID,
-					ConnectedAt:  time.Now().UnixNano(),
+			Update: &commands.UpdateDeviceMetadataRequest_Connection{
+				Connection: &commands.Connection{
+					Status:      commands.Connection_ONLINE,
+					Id:          connID,
+					ConnectedAt: time.Now().UnixNano(),
 				},
 			},
 			TimeToLive: time.Now().Add(time.Hour).UnixNano(),
@@ -117,9 +117,9 @@ func CreateDevice(ctx context.Context, t *testing.T, name string, deviceID strin
 	_, err = raClient.UpdateDeviceMetadata(ctx, &commands.UpdateDeviceMetadataRequest{
 		DeviceId:      deviceID,
 		CorrelationId: uuid.NewString(),
-		Update: &commands.UpdateDeviceMetadataRequest_ShadowSynchronizationStatus{
-			ShadowSynchronizationStatus: &commands.ShadowSynchronizationStatus{
-				Value:     commands.ShadowSynchronizationStatus_STARTED,
+		Update: &commands.UpdateDeviceMetadataRequest_TwinSynchronization{
+			TwinSynchronization: &commands.TwinSynchronization{
+				State:     commands.TwinSynchronization_STARTED,
 				StartedAt: time.Now().UnixNano(),
 			},
 		},
@@ -176,9 +176,9 @@ func CreateDevice(ctx context.Context, t *testing.T, name string, deviceID strin
 	_, err = raClient.UpdateDeviceMetadata(ctx, &commands.UpdateDeviceMetadataRequest{
 		DeviceId:      deviceID,
 		CorrelationId: uuid.NewString(),
-		Update: &commands.UpdateDeviceMetadataRequest_ShadowSynchronizationStatus{
-			ShadowSynchronizationStatus: &commands.ShadowSynchronizationStatus{
-				Value:      commands.ShadowSynchronizationStatus_FINISHED,
+		Update: &commands.UpdateDeviceMetadataRequest_TwinSynchronization{
+			TwinSynchronization: &commands.TwinSynchronization{
+				State:      commands.TwinSynchronization_FINISHED,
 				FinishedAt: time.Now().UnixNano(),
 			},
 		},

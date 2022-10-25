@@ -148,11 +148,11 @@ func TestRequestHandlerSubscribeToEvents(t *testing.T) {
 					Type: &pb.Event_DeviceMetadataUpdated{
 						DeviceMetadataUpdated: &events.DeviceMetadataUpdated{
 							DeviceId: deviceID,
-							Status: &commands.ConnectionStatus{
-								Value: commands.ConnectionStatus_ONLINE,
+							Connection: &commands.Connection{
+								Status: commands.Connection_ONLINE,
 							},
-							ShadowSynchronizationStatus: &commands.ShadowSynchronizationStatus{},
-							AuditContext:                commands.NewAuditContext(service.DeviceUserID, ""),
+							TwinSynchronization: &commands.TwinSynchronization{},
+							AuditContext:        commands.NewAuditContext(service.DeviceUserID, ""),
 						},
 					},
 					CorrelationId: "testToken2",
@@ -354,8 +354,8 @@ func TestRequestHandlerSubscribeForPendingCommands(t *testing.T) {
 					Command: &pb.PendingCommand_DeviceMetadataUpdatePending{
 						DeviceMetadataUpdatePending: &events.DeviceMetadataUpdatePending{
 							DeviceId: deviceID,
-							UpdatePending: &events.DeviceMetadataUpdatePending_ShadowSynchronization{
-								ShadowSynchronization: commands.ShadowSynchronization_DISABLED,
+							UpdatePending: &events.DeviceMetadataUpdatePending_TwinEnabled{
+								TwinEnabled: false,
 							},
 							AuditContext: commands.NewAuditContext(service.DeviceUserID, ""),
 						},
@@ -502,8 +502,8 @@ func TestRequestHandlerSubscribeForPendingCommands(t *testing.T) {
 					Command: &pb.PendingCommand_DeviceMetadataUpdatePending{
 						DeviceMetadataUpdatePending: &events.DeviceMetadataUpdatePending{
 							DeviceId: deviceID,
-							UpdatePending: &events.DeviceMetadataUpdatePending_ShadowSynchronization{
-								ShadowSynchronization: commands.ShadowSynchronization_DISABLED,
+							UpdatePending: &events.DeviceMetadataUpdatePending_TwinEnabled{
+								TwinEnabled: false,
 							},
 							AuditContext: commands.NewAuditContext(service.DeviceUserID, ""),
 						},
@@ -615,9 +615,9 @@ func TestRequestHandlerSubscribeForPendingCommands(t *testing.T) {
 		ctx, cancel := context.WithTimeout(ctx, time.Second)
 		defer cancel()
 		_, err := c.UpdateDeviceMetadata(ctx, &pb.UpdateDeviceMetadataRequest{
-			DeviceId:              deviceID,
-			ShadowSynchronization: pb.UpdateDeviceMetadataRequest_DISABLED,
-			TimeToLive:            int64(timeToLive),
+			DeviceId:    deviceID,
+			TwinEnabled: false,
+			TimeToLive:  int64(timeToLive),
 		})
 		require.Error(t, err)
 	}
@@ -793,11 +793,11 @@ func TestRequestHandlerIssue270(t *testing.T) {
 		Type: &pb.Event_DeviceMetadataUpdated{
 			DeviceMetadataUpdated: &events.DeviceMetadataUpdated{
 				DeviceId: deviceID,
-				Status: &commands.ConnectionStatus{
-					Value: commands.ConnectionStatus_ONLINE,
+				Connection: &commands.Connection{
+					Status: commands.Connection_ONLINE,
 				},
-				ShadowSynchronizationStatus: &commands.ShadowSynchronizationStatus{},
-				AuditContext:                commands.NewAuditContext(service.DeviceUserID, ""),
+				TwinSynchronization: &commands.TwinSynchronization{},
+				AuditContext:        commands.NewAuditContext(service.DeviceUserID, ""),
 			},
 		},
 		CorrelationId: "testToken",

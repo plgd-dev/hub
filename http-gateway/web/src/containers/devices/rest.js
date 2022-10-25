@@ -135,7 +135,7 @@ export const deleteDevicesResourceApi = ({ deviceId, href, ttl }) =>
  * @param {*} deviceId
  * @param {*} shadowSynchronization
  */
-export const updateDeviceShadowSynchronizationApi = (
+export const updateDeviceTwinSynchronizationApi = (
   deviceId,
   shadowSynchronization
 ) =>

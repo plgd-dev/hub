@@ -166,11 +166,11 @@ func createSwitchResourceExpectedEvents(t *testing.T, deviceID, subID, correlati
 			Type: &pb.Event_DeviceMetadataUpdated{
 				DeviceMetadataUpdated: &events.DeviceMetadataUpdated{
 					DeviceId: deviceID,
-					Status: &commands.ConnectionStatus{
-						Value: commands.ConnectionStatus_ONLINE,
+					Connection: &commands.Connection{
+						Status: commands.Connection_ONLINE,
 					},
-					ShadowSynchronizationStatus: &commands.ShadowSynchronizationStatus{
-						Value: commands.ShadowSynchronizationStatus_STARTED,
+					TwinSynchronization: &commands.TwinSynchronization{
+						State: commands.TwinSynchronization_STARTED,
 					},
 					AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, ""),
 				},
@@ -183,11 +183,11 @@ func createSwitchResourceExpectedEvents(t *testing.T, deviceID, subID, correlati
 			Type: &pb.Event_DeviceMetadataUpdated{
 				DeviceMetadataUpdated: &events.DeviceMetadataUpdated{
 					DeviceId: deviceID,
-					Status: &commands.ConnectionStatus{
-						Value: commands.ConnectionStatus_ONLINE,
+					Connection: &commands.Connection{
+						Status: commands.Connection_ONLINE,
 					},
-					ShadowSynchronizationStatus: &commands.ShadowSynchronizationStatus{
-						Value: commands.ShadowSynchronizationStatus_FINISHED,
+					TwinSynchronization: &commands.TwinSynchronization{
+						State: commands.TwinSynchronization_FINISHED,
 					},
 					AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, ""),
 				},

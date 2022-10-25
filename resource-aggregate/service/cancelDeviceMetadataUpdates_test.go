@@ -102,15 +102,15 @@ func TestAggregateHandleCancelPendingMetadataUpdates(t *testing.T) {
 	require.NoError(t, err)
 	_, err = ag.UpdateDeviceMetadata(kitNetGrpc.CtxWithIncomingToken(context.Background(), config.CreateJwtToken(t, jwt.MapClaims{
 		"sub": userID,
-	})), testMakeUpdateDeviceMetadataRequest(deviceID, correlationID0, nil, commands.ShadowSynchronization_DISABLED, 0))
+	})), testMakeUpdateDeviceMetadataRequest(deviceID, correlationID0, nil, newTwinEnabled(false), 0))
 	require.NoError(t, err)
 	_, err = ag.UpdateDeviceMetadata(kitNetGrpc.CtxWithIncomingToken(context.Background(), config.CreateJwtToken(t, jwt.MapClaims{
 		"sub": userID,
-	})), testMakeUpdateDeviceMetadataRequest(deviceID, correlationID1, nil, commands.ShadowSynchronization_ENABLED, 0))
+	})), testMakeUpdateDeviceMetadataRequest(deviceID, correlationID1, nil, newTwinEnabled(true), 0))
 	require.NoError(t, err)
 	_, err = ag.UpdateDeviceMetadata(kitNetGrpc.CtxWithIncomingToken(context.Background(), config.CreateJwtToken(t, jwt.MapClaims{
 		"sub": userID,
-	})), testMakeUpdateDeviceMetadataRequest(deviceID, correlationID2, nil, commands.ShadowSynchronization_DISABLED, 0))
+	})), testMakeUpdateDeviceMetadataRequest(deviceID, correlationID2, nil, newTwinEnabled(false), 0))
 	require.NoError(t, err)
 
 	for _, tt := range test {
@@ -226,15 +226,15 @@ func TestRequestHandlerCancelPendingMetadataUpdates(t *testing.T) {
 	require.NoError(t, err)
 	_, err = ag.UpdateDeviceMetadata(kitNetGrpc.CtxWithIncomingToken(ctx, config.CreateJwtToken(t, jwt.MapClaims{
 		"sub": userID,
-	})), testMakeUpdateDeviceMetadataRequest(deviceID, correlationID0, nil, commands.ShadowSynchronization_DISABLED, 0))
+	})), testMakeUpdateDeviceMetadataRequest(deviceID, correlationID0, nil, newTwinEnabled(false), 0))
 	require.NoError(t, err)
 	_, err = ag.UpdateDeviceMetadata(kitNetGrpc.CtxWithIncomingToken(ctx, config.CreateJwtToken(t, jwt.MapClaims{
 		"sub": userID,
-	})), testMakeUpdateDeviceMetadataRequest(deviceID, correlationID1, nil, commands.ShadowSynchronization_ENABLED, 0))
+	})), testMakeUpdateDeviceMetadataRequest(deviceID, correlationID1, nil, newTwinEnabled(true), 0))
 	require.NoError(t, err)
 	_, err = ag.UpdateDeviceMetadata(kitNetGrpc.CtxWithIncomingToken(ctx, config.CreateJwtToken(t, jwt.MapClaims{
 		"sub": userID,
-	})), testMakeUpdateDeviceMetadataRequest(deviceID, correlationID2, nil, commands.ShadowSynchronization_DISABLED, 0))
+	})), testMakeUpdateDeviceMetadataRequest(deviceID, correlationID2, nil, newTwinEnabled(false), 0))
 	require.NoError(t, err)
 
 	requestHandler := service.NewRequestHandler(cfg, eventstore, publisher, mockGetOwnerDevices)

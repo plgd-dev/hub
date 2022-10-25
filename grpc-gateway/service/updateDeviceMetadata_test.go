@@ -110,18 +110,18 @@ func TestRequestHandler_UpdateDeviceMetadata(t *testing.T) {
 	}()
 
 	_, err = c.UpdateDeviceMetadata(ctx, &pb.UpdateDeviceMetadataRequest{
-		DeviceId:              deviceID,
-		ShadowSynchronization: pb.UpdateDeviceMetadataRequest_DISABLED,
-		TimeToLive:            int64(99 * time.Millisecond),
+		DeviceId:    deviceID,
+		TwinEnabled: false,
+		TimeToLive:  int64(99 * time.Millisecond),
 	})
 	require.Error(t, err)
 
 	ev, err := c.UpdateDeviceMetadata(ctx, &pb.UpdateDeviceMetadataRequest{
-		DeviceId:              deviceID,
-		ShadowSynchronization: pb.UpdateDeviceMetadataRequest_DISABLED,
+		DeviceId:    deviceID,
+		TwinEnabled: false,
 	})
 	require.NoError(t, err)
-	require.Equal(t, commands.ShadowSynchronization_DISABLED, ev.GetData().GetShadowSynchronization())
+	require.False(t, ev.GetData().GetTwinEnabled())
 
 	_, err = c.UpdateResource(ctx, &pb.UpdateResourceRequest{
 		ResourceInterface: interfaces.OC_IF_BASELINE,
@@ -150,12 +150,12 @@ func TestRequestHandler_UpdateDeviceMetadata(t *testing.T) {
 	require.Empty(t, evResourceChanged)
 
 	ev, err = c.UpdateDeviceMetadata(ctx, &pb.UpdateDeviceMetadataRequest{
-		DeviceId:              deviceID,
-		ShadowSynchronization: pb.UpdateDeviceMetadataRequest_ENABLED,
+		DeviceId:    deviceID,
+		TwinEnabled: true,
 	})
 	require.NoError(t, err)
 
-	require.Equal(t, commands.ShadowSynchronization_ENABLED, ev.GetData().GetShadowSynchronization())
+	require.True(t, ev.GetData().GetTwinEnabled())
 
 	_, err = c.UpdateResource(ctx, &pb.UpdateResourceRequest{
 		ResourceInterface: interfaces.OC_IF_BASELINE,

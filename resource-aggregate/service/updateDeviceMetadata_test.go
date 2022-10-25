@@ -27,7 +27,11 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func newConnectionStatus(v commands.ConnectionStatus_Status) *commands.ConnectionStatus_Status {
+func newConnectionStatus(v commands.Connection_Status) *commands.Connection_Status {
+	return &v
+}
+
+func newTwinEnabled(v bool) *bool {
 	return &v
 }
 
@@ -47,15 +51,15 @@ func TestAggregateHandleUpdateDeviceMetadata(t *testing.T) {
 		{
 			name: "set online",
 			args: args{
-				request: testMakeUpdateDeviceMetadataRequest(deviceID, "", newConnectionStatus(commands.ConnectionStatus_ONLINE), commands.ShadowSynchronization_UNSET, time.Hour),
+				request: testMakeUpdateDeviceMetadataRequest(deviceID, "", newConnectionStatus(commands.Connection_ONLINE), nil, time.Hour),
 				userID:  userID,
 			},
 			want: codes.OK,
 		},
 		{
-			name: "set shadowSynchronizationDisabled",
+			name: "set twinSynchronizationDisabled",
 			args: args{
-				request: testMakeUpdateDeviceMetadataRequest(deviceID, "", nil, commands.ShadowSynchronization_DISABLED, time.Hour),
+				request: testMakeUpdateDeviceMetadataRequest(deviceID, "", nil, newTwinEnabled(false), time.Hour),
 				userID:  userID,
 			},
 			want: codes.OK,
@@ -63,7 +67,7 @@ func TestAggregateHandleUpdateDeviceMetadata(t *testing.T) {
 		{
 			name: "invalid valid until",
 			args: args{
-				request: testMakeUpdateDeviceMetadataRequest(deviceID, "", nil, commands.ShadowSynchronization_DISABLED, -time.Hour),
+				request: testMakeUpdateDeviceMetadataRequest(deviceID, "", nil, newTwinEnabled(false), -time.Hour),
 				userID:  userID,
 			},
 			want:    codes.InvalidArgument,
@@ -72,7 +76,7 @@ func TestAggregateHandleUpdateDeviceMetadata(t *testing.T) {
 		{
 			name: "invalid update commands",
 			args: args{
-				request: testMakeUpdateDeviceMetadataRequest(deviceID, "", nil, commands.ShadowSynchronization_UNSET, time.Hour),
+				request: testMakeUpdateDeviceMetadataRequest(deviceID, "", nil, nil, time.Hour),
 				userID:  userID,
 			},
 			want:    codes.InvalidArgument,
@@ -149,7 +153,7 @@ func TestRequestHandlerUpdateDeviceMetadata(t *testing.T) {
 		{
 			name: "set online",
 			args: args{
-				request: testMakeUpdateDeviceMetadataRequest(deviceID, "", newConnectionStatus(commands.ConnectionStatus_ONLINE), commands.ShadowSynchronization_UNSET, time.Hour),
+				request: testMakeUpdateDeviceMetadataRequest(deviceID, "", newConnectionStatus(commands.Connection_ONLINE), nil, time.Hour),
 			},
 			want: &commands.UpdateDeviceMetadataResponse{
 				AuditContext: &commands.AuditContext{
@@ -160,7 +164,7 @@ func TestRequestHandlerUpdateDeviceMetadata(t *testing.T) {
 		{
 			name: "duplicit",
 			args: args{
-				request: testMakeUpdateDeviceMetadataRequest(deviceID, "", newConnectionStatus(commands.ConnectionStatus_ONLINE), commands.ShadowSynchronization_UNSET, time.Hour),
+				request: testMakeUpdateDeviceMetadataRequest(deviceID, "", newConnectionStatus(commands.Connection_ONLINE), nil, time.Hour),
 			},
 			want: &commands.UpdateDeviceMetadataResponse{
 				AuditContext: &commands.AuditContext{
@@ -169,9 +173,9 @@ func TestRequestHandlerUpdateDeviceMetadata(t *testing.T) {
 			},
 		},
 		{
-			name: "set shadowSynchronizationDisabled - with expiration",
+			name: "set twinSynchronizationDisabled - with expiration",
 			args: args{
-				request: testMakeUpdateDeviceMetadataRequest(deviceID, "", nil, commands.ShadowSynchronization_DISABLED, time.Millisecond*250),
+				request: testMakeUpdateDeviceMetadataRequest(deviceID, "", nil, newTwinEnabled(false), time.Millisecond*250),
 				sleep:   time.Millisecond * 500,
 			},
 			want: &commands.UpdateDeviceMetadataResponse{
@@ -182,9 +186,9 @@ func TestRequestHandlerUpdateDeviceMetadata(t *testing.T) {
 			},
 		},
 		{
-			name: "set shadowSynchronizationDisabled",
+			name: "set twinSynchronizationDisabled",
 			args: args{
-				request: testMakeUpdateDeviceMetadataRequest(deviceID, "", nil, commands.ShadowSynchronization_DISABLED, time.Hour),
+				request: testMakeUpdateDeviceMetadataRequest(deviceID, "", nil, newTwinEnabled(false), time.Hour),
 			},
 			want: &commands.UpdateDeviceMetadataResponse{
 				AuditContext: &commands.AuditContext{
@@ -196,7 +200,7 @@ func TestRequestHandlerUpdateDeviceMetadata(t *testing.T) {
 		{
 			name: "invalid",
 			args: args{
-				request: testMakeUpdateDeviceMetadataRequest(deviceID, "", nil, commands.ShadowSynchronization_UNSET, time.Hour),
+				request: testMakeUpdateDeviceMetadataRequest(deviceID, "", nil, nil, time.Hour),
 			},
 			wantError: true,
 		},
@@ -263,7 +267,7 @@ func TestRequestHandlerUpdateDeviceMetadata(t *testing.T) {
 	}
 }
 
-func testMakeUpdateDeviceMetadataRequest(deviceID, correlationID string, online *commands.ConnectionStatus_Status, shadowSynchronization commands.ShadowSynchronization, timeToLive time.Duration) *commands.UpdateDeviceMetadataRequest {
+func testMakeUpdateDeviceMetadataRequest(deviceID, correlationID string, online *commands.Connection_Status, twinEnabled *bool, timeToLive time.Duration) *commands.UpdateDeviceMetadataRequest {
 	r := commands.UpdateDeviceMetadataRequest{
 		DeviceId: deviceID,
 		CommandMetadata: &commands.CommandMetadata{
@@ -274,16 +278,16 @@ func testMakeUpdateDeviceMetadataRequest(deviceID, correlationID string, online 
 		CorrelationId: correlationID,
 	}
 	if online != nil {
-		r.Update = &commands.UpdateDeviceMetadataRequest_Status{
-			Status: &commands.ConnectionStatus{
-				Value:        *online,
-				ConnectionId: "123",
+		r.Update = &commands.UpdateDeviceMetadataRequest_Connection{
+			Connection: &commands.Connection{
+				Status: *online,
+				Id:     "123",
 			},
 		}
 	}
-	if shadowSynchronization != commands.ShadowSynchronization_UNSET {
-		r.Update = &commands.UpdateDeviceMetadataRequest_ShadowSynchronization{
-			ShadowSynchronization: shadowSynchronization,
+	if twinEnabled != nil {
+		r.Update = &commands.UpdateDeviceMetadataRequest_TwinEnabled{
+			TwinEnabled: *twinEnabled,
 		}
 	}
 	return &r

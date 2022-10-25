@@ -281,21 +281,21 @@ func TestRequestHandlerSubscribeToEvents(t *testing.T) {
 	online := &pb.Event{
 		SubscriptionId: s.Id(),
 		Type: &pb.Event_DeviceMetadataUpdated{
-			DeviceMetadataUpdated: pbTest.MakeDeviceMetadataUpdated(deviceID, commands.ConnectionStatus_ONLINE, commands.ShadowSynchronization_UNSET, commands.ShadowSynchronizationStatus_NONE, ""),
+			DeviceMetadataUpdated: pbTest.MakeDeviceMetadataUpdated(deviceID, commands.Connection_ONLINE, true, commands.TwinSynchronization_NONE, ""),
 		},
 		CorrelationId: correlationID,
 	}
 	onlineStartSync := &pb.Event{
 		SubscriptionId: s.Id(),
 		Type: &pb.Event_DeviceMetadataUpdated{
-			DeviceMetadataUpdated: pbTest.MakeDeviceMetadataUpdated(deviceID, commands.ConnectionStatus_ONLINE, commands.ShadowSynchronization_UNSET, commands.ShadowSynchronizationStatus_STARTED, ""),
+			DeviceMetadataUpdated: pbTest.MakeDeviceMetadataUpdated(deviceID, commands.Connection_ONLINE, true, commands.TwinSynchronization_STARTED, ""),
 		},
 		CorrelationId: correlationID,
 	}
 	onlineFinishedSync := &pb.Event{
 		SubscriptionId: s.Id(),
 		Type: &pb.Event_DeviceMetadataUpdated{
-			DeviceMetadataUpdated: pbTest.MakeDeviceMetadataUpdated(deviceID, commands.ConnectionStatus_ONLINE, commands.ShadowSynchronization_UNSET, commands.ShadowSynchronizationStatus_FINISHED, ""),
+			DeviceMetadataUpdated: pbTest.MakeDeviceMetadataUpdated(deviceID, commands.Connection_ONLINE, true, commands.TwinSynchronization_FINISHED, ""),
 		},
 		CorrelationId: correlationID,
 	}
@@ -344,8 +344,8 @@ LOOP:
 				Type: &pb.Event_DeviceMetadataUpdated{
 					DeviceMetadataUpdated: &events.DeviceMetadataUpdated{
 						DeviceId: deviceID,
-						Status: &commands.ConnectionStatus{
-							Value: commands.ConnectionStatus_OFFLINE,
+						Connection: &commands.Connection{
+							Status: commands.Connection_OFFLINE,
 						},
 						AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, ""),
 					},

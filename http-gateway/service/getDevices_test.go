@@ -36,8 +36,8 @@ func makeDefaultDevice(deviceID string) *pb.Device {
 		Id:         deviceID,
 		Name:       test.TestDeviceName,
 		Metadata: &pb.Device_Metadata{
-			Status: &commands.ConnectionStatus{
-				Value: commands.ConnectionStatus_ONLINE,
+			Connection: &commands.Connection{
+				Status: commands.Connection_ONLINE,
 			},
 		},
 		OwnershipStatus: pb.Device_OWNED,

@@ -310,7 +310,7 @@ func WaitForDevice(ctx context.Context, t *testing.T, client pb.GrpcGateway_Subs
 		case *pb.Event_DeviceRegistered_:
 			return fmt.Sprintf("%T", ev.GetType())
 		case *pb.Event_DeviceMetadataUpdated:
-			return fmt.Sprintf("%T:%v:%v", ev.GetType(), v.DeviceMetadataUpdated.GetStatus().GetValue(), v.DeviceMetadataUpdated.GetShadowSynchronizationStatus().GetValue())
+			return fmt.Sprintf("%T:%v:%v", ev.GetType(), v.DeviceMetadataUpdated.GetConnection().GetStatus(), v.DeviceMetadataUpdated.GetTwinSynchronization().GetState())
 		case *pb.Event_ResourcePublished:
 			return fmt.Sprintf("%T", ev.GetType())
 		case *pb.Event_ResourceChanged:
@@ -330,15 +330,15 @@ func WaitForDevice(ctx context.Context, t *testing.T, client pb.GrpcGateway_Subs
 			val.DeviceMetadataUpdated.AuditContext = nil
 			require.NotZero(t, val.DeviceMetadataUpdated.GetEventMetadata().GetTimestamp())
 			val.DeviceMetadataUpdated.EventMetadata = nil
-			if val.DeviceMetadataUpdated.GetStatus() != nil {
-				val.DeviceMetadataUpdated.GetStatus().ConnectionId = ""
-				require.NotZero(t, val.DeviceMetadataUpdated.GetStatus().GetConnectedAt())
-				val.DeviceMetadataUpdated.GetStatus().ConnectedAt = 0
+			if val.DeviceMetadataUpdated.GetConnection() != nil {
+				val.DeviceMetadataUpdated.GetConnection().Id = ""
+				require.NotZero(t, val.DeviceMetadataUpdated.GetConnection().GetConnectedAt())
+				val.DeviceMetadataUpdated.GetConnection().ConnectedAt = 0
 			}
-			if val.DeviceMetadataUpdated.GetShadowSynchronizationStatus() != nil {
-				val.DeviceMetadataUpdated.GetShadowSynchronizationStatus().CommandMetadata = nil
-				val.DeviceMetadataUpdated.GetShadowSynchronizationStatus().StartedAt = 0
-				val.DeviceMetadataUpdated.GetShadowSynchronizationStatus().FinishedAt = 0
+			if val.DeviceMetadataUpdated.GetTwinSynchronization() != nil {
+				val.DeviceMetadataUpdated.GetTwinSynchronization().CommandMetadata = nil
+				val.DeviceMetadataUpdated.GetTwinSynchronization().StartedAt = 0
+				val.DeviceMetadataUpdated.GetTwinSynchronization().FinishedAt = 0
 			}
 			val.DeviceMetadataUpdated.OpenTelemetryCarrier = nil
 		case *pb.Event_ResourcePublished:
@@ -371,8 +371,8 @@ func WaitForDevice(ctx context.Context, t *testing.T, client pb.GrpcGateway_Subs
 		},
 		getID(&pb.Event{Type: &pb.Event_DeviceMetadataUpdated{
 			DeviceMetadataUpdated: &events.DeviceMetadataUpdated{
-				Status: &commands.ConnectionStatus{
-					Value: commands.ConnectionStatus_ONLINE,
+				Connection: &commands.Connection{
+					Status: commands.Connection_ONLINE,
 				},
 			},
 		}}): {
@@ -381,22 +381,22 @@ func WaitForDevice(ctx context.Context, t *testing.T, client pb.GrpcGateway_Subs
 			Type: &pb.Event_DeviceMetadataUpdated{
 				DeviceMetadataUpdated: &events.DeviceMetadataUpdated{
 					DeviceId: deviceID,
-					Status: &commands.ConnectionStatus{
-						Value: commands.ConnectionStatus_ONLINE,
+					Connection: &commands.Connection{
+						Status: commands.Connection_ONLINE,
 					},
-					ShadowSynchronizationStatus: &commands.ShadowSynchronizationStatus{
-						Value: commands.ShadowSynchronizationStatus_NONE,
+					TwinSynchronization: &commands.TwinSynchronization{
+						State: commands.TwinSynchronization_NONE,
 					},
 				},
 			},
 		},
 		getID(&pb.Event{Type: &pb.Event_DeviceMetadataUpdated{
 			DeviceMetadataUpdated: &events.DeviceMetadataUpdated{
-				Status: &commands.ConnectionStatus{
-					Value: commands.ConnectionStatus_ONLINE,
+				Connection: &commands.Connection{
+					Status: commands.Connection_ONLINE,
 				},
-				ShadowSynchronizationStatus: &commands.ShadowSynchronizationStatus{
-					Value: commands.ShadowSynchronizationStatus_STARTED,
+				TwinSynchronization: &commands.TwinSynchronization{
+					State: commands.TwinSynchronization_STARTED,
 				},
 			},
 		}}): {
@@ -405,22 +405,22 @@ func WaitForDevice(ctx context.Context, t *testing.T, client pb.GrpcGateway_Subs
 			Type: &pb.Event_DeviceMetadataUpdated{
 				DeviceMetadataUpdated: &events.DeviceMetadataUpdated{
 					DeviceId: deviceID,
-					Status: &commands.ConnectionStatus{
-						Value: commands.ConnectionStatus_ONLINE,
+					Connection: &commands.Connection{
+						Status: commands.Connection_ONLINE,
 					},
-					ShadowSynchronizationStatus: &commands.ShadowSynchronizationStatus{
-						Value: commands.ShadowSynchronizationStatus_STARTED,
+					TwinSynchronization: &commands.TwinSynchronization{
+						State: commands.TwinSynchronization_STARTED,
 					},
 				},
 			},
 		},
 		getID(&pb.Event{Type: &pb.Event_DeviceMetadataUpdated{
 			DeviceMetadataUpdated: &events.DeviceMetadataUpdated{
-				Status: &commands.ConnectionStatus{
-					Value: commands.ConnectionStatus_ONLINE,
+				Connection: &commands.Connection{
+					Status: commands.Connection_ONLINE,
 				},
-				ShadowSynchronizationStatus: &commands.ShadowSynchronizationStatus{
-					Value: commands.ShadowSynchronizationStatus_FINISHED,
+				TwinSynchronization: &commands.TwinSynchronization{
+					State: commands.TwinSynchronization_FINISHED,
 				},
 			},
 		}}): {
@@ -429,11 +429,11 @@ func WaitForDevice(ctx context.Context, t *testing.T, client pb.GrpcGateway_Subs
 			Type: &pb.Event_DeviceMetadataUpdated{
 				DeviceMetadataUpdated: &events.DeviceMetadataUpdated{
 					DeviceId: deviceID,
-					Status: &commands.ConnectionStatus{
-						Value: commands.ConnectionStatus_ONLINE,
+					Connection: &commands.Connection{
+						Status: commands.Connection_ONLINE,
 					},
-					ShadowSynchronizationStatus: &commands.ShadowSynchronizationStatus{
-						Value: commands.ShadowSynchronizationStatus_FINISHED,
+					TwinSynchronization: &commands.TwinSynchronization{
+						State: commands.TwinSynchronization_FINISHED,
 					},
 				},
 			},

@@ -344,10 +344,10 @@ func MakeResourceStateSnapshotTaken(resourceID *commands.ResourceId, latestResou
 	)
 }
 
-func MakeDeviceMetadataUpdatePending(deviceID string, shadowSync *events.DeviceMetadataUpdatePending_ShadowSynchronization, eventMetadata *events.EventMetadata, auditContext *commands.AuditContext, validUntil time.Time) eventstore.EventUnmarshaler {
+func MakeDeviceMetadataUpdatePending(deviceID string, twinEnabled *events.DeviceMetadataUpdatePending_TwinEnabled, eventMetadata *events.EventMetadata, auditContext *commands.AuditContext, validUntil time.Time) eventstore.EventUnmarshaler {
 	e := events.DeviceMetadataUpdatePending{
 		DeviceId:      deviceID,
-		UpdatePending: shadowSync,
+		UpdatePending: twinEnabled,
 		EventMetadata: eventMetadata,
 		AuditContext:  auditContext,
 		ValidUntil:    pkgTime.UnixNano(validUntil),
@@ -369,14 +369,14 @@ func MakeDeviceMetadataUpdatePending(deviceID string, shadowSync *events.DeviceM
 	)
 }
 
-func MakeDeviceMetadataUpdated(deviceID string, status *commands.ConnectionStatus, shadowSynchronization commands.ShadowSynchronization, eventMetadata *events.EventMetadata, auditContext *commands.AuditContext, canceled bool) eventstore.EventUnmarshaler {
+func MakeDeviceMetadataUpdated(deviceID string, connection *commands.Connection, twinEnabled bool, eventMetadata *events.EventMetadata, auditContext *commands.AuditContext, canceled bool) eventstore.EventUnmarshaler {
 	e := events.DeviceMetadataUpdated{
-		DeviceId:              deviceID,
-		Status:                status,
-		ShadowSynchronization: shadowSynchronization,
-		AuditContext:          auditContext,
-		EventMetadata:         eventMetadata,
-		Canceled:              canceled,
+		DeviceId:      deviceID,
+		Connection:    connection,
+		TwinEnabled:   twinEnabled,
+		AuditContext:  auditContext,
+		EventMetadata: eventMetadata,
+		Canceled:      canceled,
 	}
 	return eventstore.NewLoadedEvent(
 		e.GetEventMetadata().GetVersion(),

@@ -19,17 +19,14 @@ func (req *UpdateDeviceMetadataRequest) ToRACommand(ctx context.Context) (*comma
 		connectionID = peer.Addr.String()
 	}
 
-	shadowSynchronization := commands.ShadowSynchronization_DISABLED
-	if req.GetShadowSynchronization() == UpdateDeviceMetadataRequest_ENABLED {
-		shadowSynchronization = commands.ShadowSynchronization_ENABLED
-	}
+	twinEnabled := req.GetTwinEnabled()
 
 	return &commands.UpdateDeviceMetadataRequest{
 		DeviceId:      req.GetDeviceId(),
 		CorrelationId: correlationUUID.String(),
 		TimeToLive:    req.GetTimeToLive(),
-		Update: &commands.UpdateDeviceMetadataRequest_ShadowSynchronization{
-			ShadowSynchronization: shadowSynchronization,
+		Update: &commands.UpdateDeviceMetadataRequest_TwinEnabled{
+			TwinEnabled: twinEnabled,
 		},
 		CommandMetadata: &commands.CommandMetadata{
 			ConnectionId: connectionID,

@@ -16,9 +16,9 @@ func CmpDeviceValues(t *testing.T, expected, got []*pbGrpc.Device) {
 
 	cleanUp := func(dev *pbGrpc.Device) {
 		dev.ProtocolIndependentId = ""
-		dev.Metadata.Status.ValidUntil = 0
-		dev.Metadata.Status.ConnectionId = ""
-		dev.Metadata.Status.ConnectedAt = 0
+		dev.Metadata.Connection.OnlineValidUntil = 0
+		dev.Metadata.Connection.Id = ""
+		dev.Metadata.Connection.ConnectedAt = 0
 		dev.Data = nil
 	}
 
@@ -29,17 +29,17 @@ func CmpDeviceValues(t *testing.T, expected, got []*pbGrpc.Device) {
 	test.CheckProtobufs(t, expected, got, test.RequireToCheckFunc(require.Equal))
 }
 
-func MakeDeviceMetadataUpdated(deviceID string, connectionStatus commands.ConnectionStatus_Status, shadowSynchronization commands.ShadowSynchronization, shadowSynchronizationStatus commands.ShadowSynchronizationStatus_Status, correlationID string) *events.DeviceMetadataUpdated {
+func MakeDeviceMetadataUpdated(deviceID string, connectionStatus commands.Connection_Status, twinEnabled bool, twinSynchronizationState commands.TwinSynchronization_State, correlationID string) *events.DeviceMetadataUpdated {
 	return &events.DeviceMetadataUpdated{
 		DeviceId: deviceID,
-		Status: &commands.ConnectionStatus{
-			Value: connectionStatus,
+		Connection: &commands.Connection{
+			Status: connectionStatus,
 		},
-		ShadowSynchronizationStatus: &commands.ShadowSynchronizationStatus{
-			Value: shadowSynchronizationStatus,
+		TwinSynchronization: &commands.TwinSynchronization{
+			State: twinSynchronizationState,
 		},
-		ShadowSynchronization: shadowSynchronization,
-		AuditContext:          commands.NewAuditContext(oauthService.DeviceUserID, correlationID),
+		TwinEnabled:  twinEnabled,
+		AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, correlationID),
 	}
 }
 
@@ -49,15 +49,15 @@ func CleanUpDeviceMetadataUpdated(e *events.DeviceMetadataUpdated, resetCorrelat
 	}
 	e.EventMetadata = nil
 	e.OpenTelemetryCarrier = nil
-	if e.GetStatus() != nil {
-		e.GetStatus().ValidUntil = 0
-		e.GetStatus().ConnectionId = ""
-		e.GetStatus().ConnectedAt = 0
+	if e.GetConnection() != nil {
+		e.GetConnection().OnlineValidUntil = 0
+		e.GetConnection().Id = ""
+		e.GetConnection().ConnectedAt = 0
 	}
-	if e.GetShadowSynchronizationStatus() != nil {
-		e.GetShadowSynchronizationStatus().CommandMetadata = nil
-		e.GetShadowSynchronizationStatus().StartedAt = 0
-		e.GetShadowSynchronizationStatus().FinishedAt = 0
+	if e.GetTwinSynchronization() != nil {
+		e.GetTwinSynchronization().CommandMetadata = nil
+		e.GetTwinSynchronization().StartedAt = 0
+		e.GetTwinSynchronization().FinishedAt = 0
 	}
 	return e
 }

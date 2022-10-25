@@ -395,10 +395,10 @@ func (c *session) OnClose() {
 		defer cancel()
 		_, err := c.server.raClient.UpdateDeviceMetadata(kitNetGrpc.CtxWithToken(ctx, oldAuthCtx.GetAccessToken()), &commands.UpdateDeviceMetadataRequest{
 			DeviceId: authCtx.GetDeviceID(),
-			Update: &commands.UpdateDeviceMetadataRequest_Status{
-				Status: &commands.ConnectionStatus{
-					Value:        commands.ConnectionStatus_OFFLINE,
-					ConnectionId: c.RemoteAddr().String(),
+			Update: &commands.UpdateDeviceMetadataRequest_Connection{
+				Connection: &commands.Connection{
+					Status: commands.Connection_OFFLINE,
+					Id:     c.RemoteAddr().String(),
 				},
 			},
 			CommandMetadata: &commands.CommandMetadata{
@@ -828,20 +828,20 @@ func (c *session) UpdateDeviceMetadata(ctx context.Context, event *events.Device
 		c.Close()
 		return fmt.Errorf("cannot update device('%v') metadata: %w", event.GetDeviceId(), err)
 	}
-	if event.GetShadowSynchronization() == commands.ShadowSynchronization_UNSET {
+	if _, ok := event.GetUpdatePending().(*events.DeviceMetadataUpdatePending_TwinEnabled); !ok {
 		return nil
 	}
 	sendConfirmCtx := authCtx.ToContext(ctx)
 
-	previous, errObs := c.replaceDeviceObserverWithDeviceShadow(sendConfirmCtx, event.GetShadowSynchronization())
+	previous, errObs := c.replaceDeviceObserverWithDeviceTwin(sendConfirmCtx, event.GetTwinEnabled())
 	if errObs != nil {
 		c.Errorf("update device('%v') metadata error: %w", event.GetDeviceId(), errObs)
 	}
 	_, err = c.server.raClient.ConfirmDeviceMetadataUpdate(sendConfirmCtx, &commands.ConfirmDeviceMetadataUpdateRequest{
 		DeviceId:      event.GetDeviceId(),
 		CorrelationId: event.GetAuditContext().GetCorrelationId(),
-		Confirm: &commands.ConfirmDeviceMetadataUpdateRequest_ShadowSynchronization{
-			ShadowSynchronization: event.GetShadowSynchronization(),
+		Confirm: &commands.ConfirmDeviceMetadataUpdateRequest_TwinEnabled{
+			TwinEnabled: event.GetTwinEnabled(),
 		},
 		CommandMetadata: &commands.CommandMetadata{
 			ConnectionId: c.RemoteAddr().String(),
@@ -850,7 +850,7 @@ func (c *session) UpdateDeviceMetadata(ctx context.Context, event *events.Device
 		Status: commands.Status_OK,
 	})
 	if err != nil && !errors.Is(err, context.Canceled) {
-		_, errObs := c.replaceDeviceObserverWithDeviceShadow(sendConfirmCtx, previous)
+		_, errObs := c.replaceDeviceObserverWithDeviceTwin(sendConfirmCtx, previous)
 		if errObs != nil {
 			c.Errorf("update device('%v') metadata error: %w", event.GetDeviceId(), errObs)
 		}
@@ -896,18 +896,18 @@ func (c *session) ResolveDeviceID(claim pkgJwt.Claims, paramDeviceID string) str
 	return paramDeviceID
 }
 
-func (c *session) UpdateShadowSynchronizationStatus(ctx context.Context, deviceID string, status commands.ShadowSynchronizationStatus_Status, t time.Time) error {
+func (c *session) UpdateTwinSynchronizationStatus(ctx context.Context, deviceID string, state commands.TwinSynchronization_State, t time.Time) error {
 	authCtx, err := c.GetAuthorizationContext()
 	if err != nil {
 		c.Close()
-		return fmt.Errorf("cannot update shadow synchronization status %v to %v: %w", deviceID, status, err)
+		return fmt.Errorf("cannot update twin synchronization %v to %v: %w", deviceID, state, err)
 	}
 
 	var startAt, finishedAt int64
-	switch status {
-	case commands.ShadowSynchronizationStatus_STARTED:
+	switch state {
+	case commands.TwinSynchronization_STARTED:
 		startAt = t.UnixNano()
-	case commands.ShadowSynchronizationStatus_FINISHED:
+	case commands.TwinSynchronization_FINISHED:
 		finishedAt = t.UnixNano()
 	}
 	ctx = authCtx.ToContext(ctx)
@@ -917,9 +917,9 @@ func (c *session) UpdateShadowSynchronizationStatus(ctx context.Context, deviceI
 			ConnectionId: c.RemoteAddr().String(),
 			Sequence:     c.coapConn.Sequence(),
 		},
-		Update: &commands.UpdateDeviceMetadataRequest_ShadowSynchronizationStatus{
-			ShadowSynchronizationStatus: &commands.ShadowSynchronizationStatus{
-				Value:      status,
+		Update: &commands.UpdateDeviceMetadataRequest_TwinSynchronization{
+			TwinSynchronization: &commands.TwinSynchronization{
+				State:      state,
 				StartedAt:  startAt,
 				FinishedAt: finishedAt,
 			},

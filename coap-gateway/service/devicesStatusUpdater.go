@@ -78,12 +78,12 @@ func (u *devicesStatusUpdater) updateOnlineStatus(ctx context.Context, client *s
 	}
 	_, err = client.server.raClient.UpdateDeviceMetadata(ctx, &commands.UpdateDeviceMetadataRequest{
 		DeviceId: authCtx.GetDeviceID(),
-		Update: &commands.UpdateDeviceMetadataRequest_Status{
-			Status: &commands.ConnectionStatus{
-				Value:        commands.ConnectionStatus_ONLINE,
-				ValidUntil:   pkgTime.UnixNano(validUntil),
-				ConnectionId: client.RemoteAddr().String(),
-				ConnectedAt:  pkgTime.UnixNano(connectedAt),
+		Update: &commands.UpdateDeviceMetadataRequest_Connection{
+			Connection: &commands.Connection{
+				Status:           commands.Connection_ONLINE,
+				OnlineValidUntil: pkgTime.UnixNano(validUntil),
+				Id:               client.RemoteAddr().String(),
+				ConnectedAt:      pkgTime.UnixNano(connectedAt),
 			},
 		},
 		CommandMetadata: &commands.CommandMetadata{

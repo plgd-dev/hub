@@ -30,15 +30,15 @@ import (
 func isDeviceMetadataUpdatedOnlineEvent(ev *pb.Event, deviceID string) bool {
 	return ev.GetDeviceMetadataUpdated() != nil &&
 		ev.GetDeviceMetadataUpdated().GetDeviceId() == deviceID &&
-		ev.GetDeviceMetadataUpdated().GetStatus().GetValue() == commands.ConnectionStatus_ONLINE &&
-		ev.GetDeviceMetadataUpdated().GetShadowSynchronizationStatus().GetValue() == commands.ShadowSynchronizationStatus_FINISHED
+		ev.GetDeviceMetadataUpdated().GetConnection().GetStatus() == commands.Connection_ONLINE &&
+		ev.GetDeviceMetadataUpdated().GetTwinSynchronization().GetState() == commands.TwinSynchronization_FINISHED
 }
 
-func checkDeviceMetadataUpdatedOnlineEvent(t *testing.T, ev *pb.Event, deviceID, baseSubID string, shadowSynchronizationStatus commands.ShadowSynchronizationStatus_Status) {
+func checkDeviceMetadataUpdatedOnlineEvent(t *testing.T, ev *pb.Event, deviceID, baseSubID string, twinSynchronizationState commands.TwinSynchronization_State) {
 	expectedEvent := &pb.Event{
 		SubscriptionId: baseSubID,
 		Type: &pb.Event_DeviceMetadataUpdated{
-			DeviceMetadataUpdated: pbTest.MakeDeviceMetadataUpdated(deviceID, commands.ConnectionStatus_ONLINE, commands.ShadowSynchronization_UNSET, shadowSynchronizationStatus, ""),
+			DeviceMetadataUpdated: pbTest.MakeDeviceMetadataUpdated(deviceID, commands.Connection_ONLINE, true, twinSynchronizationState, ""),
 		},
 		CorrelationId: "testToken",
 	}
@@ -222,7 +222,7 @@ func TestRequestHandlerSubscribeToEvents(t *testing.T) {
 			break
 		}
 	}
-	checkDeviceMetadataUpdatedOnlineEvent(t, ev, deviceID, baseSubID, commands.ShadowSynchronizationStatus_FINISHED)
+	checkDeviceMetadataUpdatedOnlineEvent(t, ev, deviceID, baseSubID, commands.TwinSynchronization_FINISHED)
 
 	err = send(&pb.SubscribeToEvents{
 		CorrelationId: "updatePending + resourceUpdated",

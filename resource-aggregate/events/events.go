@@ -19,12 +19,13 @@ func (d *DeviceMetadataUpdated) Clone() *DeviceMetadataUpdated {
 	}
 
 	return &DeviceMetadataUpdated{
-		DeviceId:              d.GetDeviceId(),
-		Status:                d.GetStatus().Clone(),
-		ShadowSynchronization: d.GetShadowSynchronization(),
-		AuditContext:          d.GetAuditContext().Clone(),
-		EventMetadata:         d.GetEventMetadata().Clone(),
-		Canceled:              d.GetCanceled(),
+		DeviceId:            d.GetDeviceId(),
+		Connection:          d.GetConnection().Clone(),
+		TwinSynchronization: d.GetTwinSynchronization(),
+		TwinEnabled:         d.GetTwinEnabled(),
+		AuditContext:        d.GetAuditContext().Clone(),
+		EventMetadata:       d.GetEventMetadata().Clone(),
+		Canceled:            d.GetCanceled(),
 	}
 }
 

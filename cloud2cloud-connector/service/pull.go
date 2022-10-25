@@ -141,11 +141,11 @@ func publishDeviceResources(ctx context.Context, raClient raService.ResourceAggr
 	return nil
 }
 
-func toConnectionStatus(status string) commands.ConnectionStatus_Status {
+func toConnectionStatus(status string) commands.Connection_Status {
 	if strings.ToLower(status) == "online" {
-		return commands.ConnectionStatus_ONLINE
+		return commands.Connection_ONLINE
 	}
-	return commands.ConnectionStatus_OFFLINE
+	return commands.Connection_OFFLINE
 }
 
 func (p *pullDevicesHandler) triggerTaskForDevice(ctx context.Context, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud, dev RetrieveDeviceWithLinksResponse) error {
@@ -221,10 +221,10 @@ func (p *pullDevicesHandler) pullDevices(ctx context.Context, linkedAccount stor
 		delete(registeredDevices, deviceID)
 		_, err = p.raClient.UpdateDeviceMetadata(ctx, &commands.UpdateDeviceMetadataRequest{
 			DeviceId: deviceID,
-			Update: &commands.UpdateDeviceMetadataRequest_Status{
-				Status: &commands.ConnectionStatus{
-					Value:        toConnectionStatus(dev.Status),
-					ConnectionId: linkedAccount.ID,
+			Update: &commands.UpdateDeviceMetadataRequest_Connection{
+				Connection: &commands.Connection{
+					Status: toConnectionStatus(dev.Status),
+					Id:     linkedAccount.ID,
 				},
 			},
 			CommandMetadata: &commands.CommandMetadata{

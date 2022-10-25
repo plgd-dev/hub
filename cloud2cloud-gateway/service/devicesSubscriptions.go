@@ -23,11 +23,11 @@ func makeDevicesRepresentation(deviceIDs []string) []map[string]string {
 }
 
 func (h *devicesSubscriptionHandler) HandleDeviceMetadataUpdated(ctx context.Context, val *raEvents.DeviceMetadataUpdated) error {
-	if val.GetStatus() == nil {
+	if val.GetConnection() == nil {
 		return nil
 	}
 	status := events.EventType_DevicesOffline
-	if val.GetStatus().IsOnline() {
+	if val.GetConnection().IsOnline() {
 		status = events.EventType_DevicesOnline
 	}
 
@@ -68,10 +68,7 @@ type devicesOnlineHandler struct {
 }
 
 func isOnline(val *raEvents.DeviceMetadataUpdated) bool {
-	if val.GetStatus() == nil {
-		return false
-	}
-	return val.GetStatus().IsOnline()
+	return val.GetConnection().IsOnline()
 }
 
 func (h *devicesOnlineHandler) HandleDeviceMetadataUpdated(ctx context.Context, val *raEvents.DeviceMetadataUpdated) error {

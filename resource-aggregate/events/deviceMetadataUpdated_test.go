@@ -12,11 +12,11 @@ import (
 
 var testEventDeviceMetadataUpdated events.DeviceMetadataUpdated = events.DeviceMetadataUpdated{
 	DeviceId: "dev1",
-	Status: &commands.ConnectionStatus{
-		Value:      commands.ConnectionStatus_ONLINE,
-		ValidUntil: 12345,
+	Connection: &commands.Connection{
+		Status:           commands.Connection_ONLINE,
+		OnlineValidUntil: 12345,
 	},
-	ShadowSynchronization: commands.ShadowSynchronization_ENABLED,
+	TwinEnabled: true,
 	AuditContext: &commands.AuditContext{
 		UserId:        "501",
 		CorrelationId: "0",
@@ -31,9 +31,9 @@ var testEventDeviceMetadataUpdated events.DeviceMetadataUpdated = events.DeviceM
 
 func TestDeviceMetadataUpdated_Equal(t *testing.T) {
 	type fields struct {
-		Status                *commands.ConnectionStatus
-		ShadowSynchronization commands.ShadowSynchronization
-		AuditContext          *commands.AuditContext
+		Connection   *commands.Connection
+		TwinEnabled  bool
+		AuditContext *commands.AuditContext
 	}
 	type args struct {
 		upd *events.DeviceMetadataUpdated
@@ -49,45 +49,45 @@ func TestDeviceMetadataUpdated_Equal(t *testing.T) {
 		{
 			name: "Identity",
 			fields: fields{
-				Status:                upd.Status,
-				ShadowSynchronization: upd.ShadowSynchronization,
-				AuditContext:          upd.AuditContext,
+				Connection:   upd.Connection,
+				TwinEnabled:  upd.TwinEnabled,
+				AuditContext: upd.AuditContext,
 			},
 			args: args{upd},
 			want: true,
 		},
 		{
-			name: "Changed Status.Value",
+			name: "Changed Connection.Value",
 			fields: fields{
-				Status: &commands.ConnectionStatus{
-					Value:      commands.ConnectionStatus_OFFLINE,
-					ValidUntil: upd.Status.ValidUntil,
+				Connection: &commands.Connection{
+					Status:           commands.Connection_OFFLINE,
+					OnlineValidUntil: upd.Connection.OnlineValidUntil,
 				},
-				ShadowSynchronization: upd.ShadowSynchronization,
-				AuditContext:          upd.AuditContext,
+				TwinEnabled:  upd.TwinEnabled,
+				AuditContext: upd.AuditContext,
 			},
 			args: args{upd},
 			want: false,
 		},
 		{
-			name: "Changed Status.ValidUntil",
+			name: "Changed Connection.ValidUntil",
 			fields: fields{
-				Status: &commands.ConnectionStatus{
-					Value:      upd.Status.Value,
-					ValidUntil: upd.Status.ValidUntil + 1,
+				Connection: &commands.Connection{
+					Status:           upd.Connection.Status,
+					OnlineValidUntil: upd.Connection.OnlineValidUntil + 1,
 				},
-				ShadowSynchronization: upd.ShadowSynchronization,
-				AuditContext:          upd.AuditContext,
+				TwinEnabled:  upd.TwinEnabled,
+				AuditContext: upd.AuditContext,
 			},
 			args: args{upd},
 			want: false,
 		},
 		{
-			name: "Changed ShadowSynchronization",
+			name: "Changed TwinSynchronization",
 			fields: fields{
-				Status:                upd.Status,
-				ShadowSynchronization: commands.ShadowSynchronization_DISABLED,
-				AuditContext:          upd.AuditContext,
+				Connection:   upd.Connection,
+				TwinEnabled:  false,
+				AuditContext: upd.AuditContext,
 			},
 			args: args{upd},
 			want: false,
@@ -95,8 +95,8 @@ func TestDeviceMetadataUpdated_Equal(t *testing.T) {
 		{
 			name: "Changed AuditContext.UserId",
 			fields: fields{
-				Status:                upd.Status,
-				ShadowSynchronization: upd.ShadowSynchronization,
+				Connection:  upd.Connection,
+				TwinEnabled: upd.TwinEnabled,
 				AuditContext: &commands.AuditContext{
 					UserId:        upd.AuditContext.UserId + "0",
 					CorrelationId: upd.AuditContext.CorrelationId,
@@ -108,8 +108,8 @@ func TestDeviceMetadataUpdated_Equal(t *testing.T) {
 		{
 			name: "Changed AuditContext.CorrelationId",
 			fields: fields{
-				Status:                upd.Status,
-				ShadowSynchronization: upd.ShadowSynchronization,
+				Connection:  upd.Connection,
+				TwinEnabled: upd.TwinEnabled,
 				AuditContext: &commands.AuditContext{
 					UserId:        upd.AuditContext.UserId,
 					CorrelationId: upd.AuditContext.CorrelationId + "0",
@@ -122,9 +122,9 @@ func TestDeviceMetadataUpdated_Equal(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			e := &events.DeviceMetadataUpdated{
-				Status:                tt.fields.Status,
-				ShadowSynchronization: tt.fields.ShadowSynchronization,
-				AuditContext:          tt.fields.AuditContext,
+				Connection:   tt.fields.Connection,
+				TwinEnabled:  tt.fields.TwinEnabled,
+				AuditContext: tt.fields.AuditContext,
 			}
 			got := e.Equal(tt.args.upd)
 			assert.Equal(t, tt.want, got)

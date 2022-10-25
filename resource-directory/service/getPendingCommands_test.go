@@ -85,8 +85,8 @@ func TestRequestHandlerGetPendingCommands(t *testing.T) {
 					Command: &pb.PendingCommand_DeviceMetadataUpdatePending{
 						DeviceMetadataUpdatePending: &events.DeviceMetadataUpdatePending{
 							DeviceId: deviceID,
-							UpdatePending: &events.DeviceMetadataUpdatePending_ShadowSynchronization{
-								ShadowSynchronization: commands.ShadowSynchronization_DISABLED,
+							UpdatePending: &events.DeviceMetadataUpdatePending_TwinEnabled{
+								TwinEnabled: false,
 							},
 							AuditContext: commands.NewAuditContext(service.DeviceUserID, ""),
 						},
@@ -301,8 +301,8 @@ func TestRequestHandlerGetPendingCommands(t *testing.T) {
 					Command: &pb.PendingCommand_DeviceMetadataUpdatePending{
 						DeviceMetadataUpdatePending: &events.DeviceMetadataUpdatePending{
 							DeviceId: deviceID,
-							UpdatePending: &events.DeviceMetadataUpdatePending_ShadowSynchronization{
-								ShadowSynchronization: commands.ShadowSynchronization_DISABLED,
+							UpdatePending: &events.DeviceMetadataUpdatePending_TwinEnabled{
+								TwinEnabled: false,
 							},
 							AuditContext: commands.NewAuditContext(service.DeviceUserID, ""),
 						},
@@ -411,9 +411,9 @@ func TestRequestHandlerGetPendingCommands(t *testing.T) {
 		ctx, cancel := context.WithTimeout(ctx, time.Second)
 		defer cancel()
 		_, err := c.UpdateDeviceMetadata(ctx, &pb.UpdateDeviceMetadataRequest{
-			DeviceId:              deviceID,
-			ShadowSynchronization: pb.UpdateDeviceMetadataRequest_DISABLED,
-			TimeToLive:            int64(timeToLive),
+			DeviceId:    deviceID,
+			TwinEnabled: false,
+			TimeToLive:  int64(timeToLive),
 		})
 		require.Error(t, err)
 	}

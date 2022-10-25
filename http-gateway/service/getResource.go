@@ -14,7 +14,7 @@ import (
 	"google.golang.org/grpc/codes"
 )
 
-func (requestHandler *RequestHandler) getResourceFromShadow(w http.ResponseWriter, r *http.Request, resourceID string) {
+func (requestHandler *RequestHandler) getResourceFromTwin(w http.ResponseWriter, r *http.Request, resourceID string) {
 	type Options struct {
 		ResourceIDFilter []string `url:"resourceIdFilter"`
 	}
@@ -23,7 +23,7 @@ func (requestHandler *RequestHandler) getResourceFromShadow(w http.ResponseWrite
 	}
 	v, err := query.Values(opt)
 	if err != nil {
-		serverMux.WriteError(w, kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "cannot get resource('%v') from shadow: %v", resourceID, err))
+		serverMux.WriteError(w, kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "cannot get resource('%v') from twin: %v", resourceID, err))
 		return
 	}
 	r.URL.Path = uri.Resources
@@ -32,7 +32,7 @@ func (requestHandler *RequestHandler) getResourceFromShadow(w http.ResponseWrite
 	requestHandler.mux.ServeHTTP(rec, r)
 
 	toSimpleResponse(w, rec, func(w http.ResponseWriter, err error) {
-		serverMux.WriteError(w, kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "cannot get resource('%v') from shadow: %v", resourceID, err))
+		serverMux.WriteError(w, kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "cannot get resource('%v') from twin: %v", resourceID, err))
 	}, streamResponseKey)
 }
 
@@ -41,10 +41,10 @@ func (requestHandler *RequestHandler) getResource(w http.ResponseWriter, r *http
 	deviceID := vars[uri.DeviceIDKey]
 	resourceHref := vars[uri.ResourceHrefKey]
 	resourceID := commands.NewResourceID(deviceID, resourceHref).ToString()
-	shadow := r.URL.Query().Get(uri.ShadowQueryKey)
+	twin := r.URL.Query().Get(uri.TwinQueryKey)
 	resourceInterface := r.URL.Query().Get(uri.ResourceInterfaceQueryKey)
-	if (shadow == "" || strings.ToLower(shadow) == "true") && resourceInterface == "" {
-		requestHandler.getResourceFromShadow(w, r, resourceID)
+	if (twin == "" || strings.ToLower(twin) == "true") && resourceInterface == "" {
+		requestHandler.getResourceFromTwin(w, r, resourceID)
 		return
 	}
 

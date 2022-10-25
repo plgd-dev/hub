@@ -24,7 +24,7 @@ import (
 	"google.golang.org/grpc"
 )
 
-func TestResourceShadowGetResources(t *testing.T) {
+func TestResourceTwinGetResources(t *testing.T) {
 	type args struct {
 		req *pb.GetResourcesRequest
 	}
@@ -224,7 +224,7 @@ func TestResourceShadowGetResources(t *testing.T) {
 	resourceProjection, err := service.NewProjection(ctx, "test", testCreateEventstore(), resourceSubscriber, mf, time.Second)
 	require.NoError(t, err)
 
-	rd := service.NewResourceShadow(resourceProjection, []string{ /*Resource0.DeviceId,*/ Resource1.DeviceId, Resource2.DeviceId})
+	rd := service.NewResourceTwin(resourceProjection, []string{ /*Resource0.DeviceId,*/ Resource1.DeviceId, Resource2.DeviceId})
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

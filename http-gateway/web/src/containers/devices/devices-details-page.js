@@ -39,7 +39,7 @@ import {
   updateDevicesResourceApi,
   createDevicesResourceApi,
   deleteDevicesResourceApi,
-  updateDeviceShadowSynchronizationApi,
+  updateDeviceTwinSynchronizationApi,
 } from './rest'
 import { useDeviceDetails, useDevicesResources } from './hooks'
 import { messages as t } from './devices-i18n'
@@ -319,7 +319,7 @@ export const DevicesDetailsPage = () => {
       const setSync = isShadowSynchronizationEnabled
         ? shadowSynchronizationStates.DISABLED
         : shadowSynchronizationStates.ENABLED
-      await updateDeviceShadowSynchronizationApi(id, setSync)
+      await updateDeviceTwinSynchronizationApi(id, setSync)
 
       if (isMounted.current) {
         setShadowSyncLoading(false)
