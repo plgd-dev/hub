@@ -486,15 +486,17 @@ message TwinSynchronization {
 }
 
 message UpdateDeviceMetadataRequest {
+    reserved 4;
     string device_id = 1;
     string correlation_id = 2;
     oneof update {
         Connection connection = 3;
-        TwinSynchronization twin_synchronization = 4;
-        bool twin_enabled = 5; // by default true
+        // ShadowSynchronization shadow_synchronization = 4; replaced by twin_enabled
+        TwinSynchronization twin_synchronization = 7;
+        bool twin_enabled = 8; // by default true
     };
-    int64 time_to_live = 6;  // command validity in nanoseconds. 0 means forever and minimal value is 100000000 (100ms).
-    CommandMetadata command_metadata = 7;
+    int64 time_to_live = 5;  // command validity in nanoseconds. 0 means forever and minimal value is 100000000 (100ms).
+    CommandMetadata command_metadata = 6;
 }
 
 message UpdateDeviceMetadataResponse {
@@ -503,11 +505,13 @@ message UpdateDeviceMetadataResponse {
 }
 
 message ConfirmDeviceMetadataUpdateRequest {
+    reserved 4;
     string device_id = 1;
     string correlation_id = 2;
     Status status = 3;
     oneof confirm {
-        TwinSynchronization twin_synchronization = 4;
+        // ShadowSynchronization shadow_synchronization = 4; replaced by twin_enabled
+        bool twin_enabled = 6;
     };
     CommandMetadata command_metadata = 5;
 }
