@@ -21,7 +21,7 @@ func getCreateResourceErr(err error) error {
 	return fmt.Errorf(errFmtCreateResource, "", err)
 }
 
-func clientCreateHandler(req *mux.Message, client *Client) (*pool.Message, error) {
+func clientCreateHandler(req *mux.Message, client *session) (*pool.Message, error) {
 	_, err := client.GetAuthorizationContext()
 	if err != nil {
 		return nil, statusErrorf(coapCodes.Unauthorized, "%w", getCreateResourceErr(err))
@@ -47,7 +47,7 @@ func clientCreateHandler(req *mux.Message, client *Client) (*pool.Message, error
 	return client.createResponse(code, req.Token(), mediaType, content.Data), nil
 }
 
-func clientCreateDeviceHandler(req *mux.Message, client *Client, deviceID, href string) (*commands.Content, error) {
+func clientCreateDeviceHandler(req *mux.Message, client *session, deviceID, href string) (*commands.Content, error) {
 	createCommand, err := coapconv.NewCreateResourceRequest(commands.NewResourceID(deviceID, href), req, client.RemoteAddr().String())
 	if err != nil {
 		return nil, err

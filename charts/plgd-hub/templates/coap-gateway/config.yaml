@@ -29,6 +29,10 @@ data:
         address: {{ printf "0.0.0.0:%v" .port | quote }}
         externalAddress: {{ .apis.coap.externalAddress  | default (printf "%s:%v" $.Values.global.domain $.Values.coapgateway.port ) | quote }}
         maxMessageSize: {{ .apis.coap.maxMessageSize }}
+        protocols: 
+        {{- range .apis.coap.protocols }}
+          - {{ toYaml . | quote }}
+        {{- end }}
         ownerCacheExpiration: {{ .apis.coap.ownerCacheExpiration }}
         subscriptionBufferSize:  {{ .apis.coap.subscriptionBufferSize }}
         messagePoolSize: {{ .apis.coap.messagePoolSize }}

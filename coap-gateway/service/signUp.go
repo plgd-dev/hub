@@ -66,7 +66,7 @@ func getSignUpContent(token *oauth2.Token, owner string, validUntil int64, optio
 const errFmtSignUP = "cannot handle sign up: %w"
 
 // https://github.com/openconnectivityfoundation/security/blob/master/swagger2.0/oic.sec.account.swagger.json
-func signUpPostHandler(req *mux.Message, client *Client) (*pool.Message, error) {
+func signUpPostHandler(req *mux.Message, client *session) (*pool.Message, error) {
 	var signUp CoapSignUpRequest
 	if err := cbor.ReadFrom(req.Body(), &signUp); err != nil {
 		return nil, statusErrorf(coapCodes.BadRequest, errFmtSignUP, err)
@@ -132,7 +132,7 @@ func signUpPostHandler(req *mux.Message, client *Client) (*pool.Message, error) 
 
 // Sign-up
 // https://github.com/openconnectivityfoundation/security/blob/master/swagger2.0/oic.sec.account.swagger.json
-func signUpHandler(req *mux.Message, client *Client) (*pool.Message, error) {
+func signUpHandler(req *mux.Message, client *session) (*pool.Message, error) {
 	switch req.Code() {
 	case coapCodes.POST:
 		return signUpPostHandler(req, client)

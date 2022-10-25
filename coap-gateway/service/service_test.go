@@ -50,7 +50,7 @@ func TestShutdownServiceWithDeviceIssue627(t *testing.T) {
 	coapShutdown := coapgwTest.SetUp(t)
 	defer coapShutdown()
 
-	grpcConn, err := grpc.Dial(config.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+	grpcConn, err := grpc.Dial(config.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
 	})))
 	require.NoError(t, err)
@@ -59,7 +59,7 @@ func TestShutdownServiceWithDeviceIssue627(t *testing.T) {
 	}()
 	grpcClient := client.New(pb.NewGrpcGatewayClient(grpcConn))
 
-	_, shutdownDevSim := test.OnboardDevSim(ctx, t, pb.NewGrpcGatewayClient(grpcConn), deviceID, config.GW_HOST, test.GetAllBackendResourceLinks())
+	_, shutdownDevSim := test.OnboardDevSim(ctx, t, pb.NewGrpcGatewayClient(grpcConn), deviceID, config.ACTIVE_COAP_SCHEME+config.COAP_GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 
 	ch := make(chan client.DevicesObservationEvent, 1000)

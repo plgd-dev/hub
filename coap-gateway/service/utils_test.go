@@ -335,7 +335,7 @@ func testCoapDial(t *testing.T, deviceID string, withTLS bool, validTo time.Time
 			},
 		}
 	}
-	conn, err := tcp.Dial(config.GW_HOST, options.WithTLS(tlsConfig), options.WithHandlerFunc(func(w *responsewriter.ResponseWriter[*coapTcpClient.Conn], r *pool.Message) {
+	conn, err := tcp.Dial(config.COAP_GW_HOST, options.WithTLS(tlsConfig), options.WithHandlerFunc(func(w *responsewriter.ResponseWriter[*coapTcpClient.Conn], r *pool.Message) {
 		var err error
 		resp := []byte("hello world")
 		switch r.Code() {

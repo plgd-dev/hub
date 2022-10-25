@@ -135,7 +135,7 @@ func NewSDKClient(opts ...Option) (*client.Client, error) {
 		mfgCA:   mfgCA,
 		mfgCert: mfgCert,
 		ca:      identityTrustedCACert,
-	}, func(err error) { log.Debug(err) },
+	}, log.Get().DTLSLoggerFactory().NewLogger("test"),
 	)
 	if err != nil {
 		return nil, err

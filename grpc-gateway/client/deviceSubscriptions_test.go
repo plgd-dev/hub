@@ -17,7 +17,7 @@ import (
 	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 	raservice "github.com/plgd-dev/hub/v2/resource-aggregate/service"
 	"github.com/plgd-dev/hub/v2/test"
-	"github.com/plgd-dev/hub/v2/test/config"
+	testCfg "github.com/plgd-dev/hub/v2/test/config"
 	oauthService "github.com/plgd-dev/hub/v2/test/oauth-server/service"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	pbTest "github.com/plgd-dev/hub/v2/test/pb"
@@ -64,7 +64,7 @@ func (h *testDeviceResourcesBaseObservationHandler) waitForEvents(t *testing.T, 
 
 func TestObserveDeviceResourcesRetrieve(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
-	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
+	ctx, cancel := context.WithTimeout(context.Background(), testCfg.TEST_TIMEOUT)
 	defer cancel()
 	tearDown := service.SetUp(ctx, t)
 	defer tearDown()
@@ -76,7 +76,7 @@ func TestObserveDeviceResourcesRetrieve(t *testing.T) {
 		require.NoError(t, err)
 	}()
 
-	raConn, err := grpcClient.New(config.MakeGrpcClientConfig(config.RESOURCE_AGGREGATE_HOST), fileWatcher, log.Get(), trace.NewNoopTracerProvider())
+	raConn, err := grpcClient.New(testCfg.MakeGrpcClientConfig(testCfg.RESOURCE_AGGREGATE_HOST), fileWatcher, log.Get(), trace.NewNoopTracerProvider())
 	require.NoError(t, err)
 	defer func() {
 		_ = raConn.Close()
@@ -88,7 +88,7 @@ func TestObserveDeviceResourcesRetrieve(t *testing.T) {
 		err := c.Close(context.Background())
 		assert.NoError(t, err)
 	}()
-	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c.GrpcGatewayClient(), deviceID, config.GW_HOST, test.GetAllBackendResourceLinks())
+	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c.GrpcGatewayClient(), deviceID, testCfg.ACTIVE_COAP_SCHEME+testCfg.COAP_GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 
 	h := newTestDeviceResourcesRetrieveObservationHandler()
@@ -158,7 +158,7 @@ func (h *testDeviceResourcesRetrieveObservationHandler) HandleResourceRetrieved(
 
 func TestObserveDeviceResourcesUpdate(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
-	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
+	ctx, cancel := context.WithTimeout(context.Background(), testCfg.TEST_TIMEOUT)
 	defer cancel()
 	tearDown := service.SetUp(ctx, t)
 	defer tearDown()
@@ -170,7 +170,7 @@ func TestObserveDeviceResourcesUpdate(t *testing.T) {
 		require.NoError(t, err)
 	}()
 
-	raConn, err := grpcClient.New(config.MakeGrpcClientConfig(config.RESOURCE_AGGREGATE_HOST), fileWatcher, log.Get(), trace.NewNoopTracerProvider())
+	raConn, err := grpcClient.New(testCfg.MakeGrpcClientConfig(testCfg.RESOURCE_AGGREGATE_HOST), fileWatcher, log.Get(), trace.NewNoopTracerProvider())
 	require.NoError(t, err)
 	defer func() {
 		_ = raConn.Close()
@@ -182,7 +182,7 @@ func TestObserveDeviceResourcesUpdate(t *testing.T) {
 		err := c.Close(context.Background())
 		assert.NoError(t, err)
 	}()
-	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c.GrpcGatewayClient(), deviceID, config.GW_HOST, test.GetAllBackendResourceLinks())
+	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c.GrpcGatewayClient(), deviceID, testCfg.ACTIVE_COAP_SCHEME+testCfg.COAP_GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 	const switchID = "1"
 	test.AddDeviceSwitchResources(ctx, t, deviceID, c.GrpcGatewayClient(), switchID)
@@ -286,7 +286,7 @@ func (h *testDeviceResourcesUpdateObservationHandler) HandleResourceUpdated(ctx 
 
 func TestObserveDeviceResourcesCreateAndDelete(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
-	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT*5)
+	ctx, cancel := context.WithTimeout(context.Background(), testCfg.TEST_TIMEOUT*5)
 	defer cancel()
 	tearDown := service.SetUp(ctx, t)
 	defer tearDown()
@@ -298,7 +298,7 @@ func TestObserveDeviceResourcesCreateAndDelete(t *testing.T) {
 		require.NoError(t, err)
 	}()
 
-	raConn, err := grpcClient.New(config.MakeGrpcClientConfig(config.RESOURCE_AGGREGATE_HOST), fileWatcher, log.Get(), trace.NewNoopTracerProvider())
+	raConn, err := grpcClient.New(testCfg.MakeGrpcClientConfig(testCfg.RESOURCE_AGGREGATE_HOST), fileWatcher, log.Get(), trace.NewNoopTracerProvider())
 	require.NoError(t, err)
 	defer func() {
 		_ = raConn.Close()
@@ -310,7 +310,7 @@ func TestObserveDeviceResourcesCreateAndDelete(t *testing.T) {
 		err := c.Close(context.Background())
 		assert.NoError(t, err)
 	}()
-	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c.GrpcGatewayClient(), deviceID, config.GW_HOST, test.GetAllBackendResourceLinks())
+	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c.GrpcGatewayClient(), deviceID, testCfg.ACTIVE_COAP_SCHEME+testCfg.COAP_GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 
 	h := newTestDeviceResourcesCreateAndDeleteObservationHandler()

@@ -23,7 +23,7 @@ func getUpdateResourceErr(err error) error {
 }
 
 // handles resource updates and creation
-func clientPostHandler(req *mux.Message, client *Client) (*pool.Message, error) {
+func clientPostHandler(req *mux.Message, client *session) (*pool.Message, error) {
 	resourceInterface := message.GetResourceInterface(req)
 	if resourceInterface == interfaces.OC_IF_CREATE {
 		return clientCreateHandler(req, client)
@@ -31,7 +31,7 @@ func clientPostHandler(req *mux.Message, client *Client) (*pool.Message, error) 
 	return clientUpdateHandler(req, client)
 }
 
-func clientUpdateHandler(req *mux.Message, client *Client) (*pool.Message, error) {
+func clientUpdateHandler(req *mux.Message, client *session) (*pool.Message, error) {
 	_, err := client.GetAuthorizationContext()
 	if err != nil {
 		return nil, statusErrorf(coapCodes.Unauthorized, "%w", getUpdateResourceErr(err))
@@ -57,7 +57,7 @@ func clientUpdateHandler(req *mux.Message, client *Client) (*pool.Message, error
 	return client.createResponse(code, req.Token(), mediaType, content.Data), nil
 }
 
-func clientUpdateDeviceHandler(req *mux.Message, client *Client, deviceID, href string) (*commands.Content, error) {
+func clientUpdateDeviceHandler(req *mux.Message, client *session, deviceID, href string) (*commands.Content, error) {
 	updateCommand, err := coapconv.NewUpdateResourceRequest(commands.NewResourceID(deviceID, href), req, client.RemoteAddr().String())
 	if err != nil {
 		return nil, err

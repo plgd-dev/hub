@@ -90,7 +90,7 @@ func WantToLog(code codes.Code, logger log.Logger) bool {
 	return true
 }
 
-func (c *Client) getLogger() log.Logger {
+func (c *session) getLogger() log.Logger {
 	logger := c.server.logger
 	deviceID := c.deviceID()
 	if deviceID != "" {
@@ -99,17 +99,17 @@ func (c *Client) getLogger() log.Logger {
 	return logger
 }
 
-func (c *Client) Errorf(fmt string, args ...interface{}) {
+func (c *session) Errorf(fmt string, args ...interface{}) {
 	logger := c.getLogger()
 	logger.Errorf(fmt, args...)
 }
 
-func (c *Client) Debugf(fmt string, args ...interface{}) {
+func (c *session) Debugf(fmt string, args ...interface{}) {
 	logger := c.getLogger()
 	logger.Debugf(fmt, args...)
 }
 
-func (c *Client) Infof(fmt string, args ...interface{}) {
+func (c *session) Infof(fmt string, args ...interface{}) {
 	logger := c.getLogger()
 	logger.Infof(fmt, args...)
 }
@@ -124,7 +124,7 @@ type logCoapMessage struct {
 	coapgwMessage.JsonCoapMessage
 }
 
-func (c *Client) loggerWithRequestResponse(logger log.Logger, req *pool.Message, resp *pool.Message) log.Logger {
+func (c *session) loggerWithRequestResponse(logger log.Logger, req *pool.Message, resp *pool.Message) log.Logger {
 	var spanCtx trace.SpanContext
 	if req != nil {
 		spanCtx = trace.SpanContextFromContext(req.Context())
@@ -155,7 +155,7 @@ func (c *Client) loggerWithRequestResponse(logger log.Logger, req *pool.Message,
 	return logger.With(log.ProtocolKey, "COAP")
 }
 
-func (c *Client) logRequestResponse(req *mux.Message, resp *pool.Message, err error) {
+func (c *session) logRequestResponse(req *mux.Message, resp *pool.Message, err error) {
 	logger := c.getLogger()
 	if resp != nil && !WantToLog(resp.Code(), logger) {
 		return
@@ -172,7 +172,7 @@ func (c *Client) logRequestResponse(req *mux.Message, resp *pool.Message, err er
 	logger.Debug("finished unary call from the device")
 }
 
-func (c *Client) msgToLogCoapMessage(req *pool.Message, withToken bool) logCoapMessage {
+func (c *session) msgToLogCoapMessage(req *pool.Message, withToken bool) logCoapMessage {
 	rq := coapgwMessage.ToJson(req, c.server.config.Log.DumpBody, withToken)
 	var sub string
 	if v, err := c.GetAuthorizationContext(); err == nil {
@@ -193,7 +193,7 @@ func (c *Client) msgToLogCoapMessage(req *pool.Message, withToken bool) logCoapM
 	return dumpReq
 }
 
-func (c *Client) logNotification(logMsg, path string, notification *pool.Message) {
+func (c *session) logNotification(logMsg, path string, notification *pool.Message) {
 	logger := c.getLogger()
 	if notification != nil && !WantToLog(notification.Code(), logger) {
 		return
@@ -212,7 +212,7 @@ func (c *Client) logNotification(logMsg, path string, notification *pool.Message
 
 const logNotificationDefaultCode = "unknown"
 
-func (c *Client) logNotificationToClient(path string, notification *pool.Message) {
+func (c *session) logNotificationToClient(path string, notification *pool.Message) {
 	code := logNotificationDefaultCode
 	if notification != nil {
 		code = notification.Code().String()
@@ -220,7 +220,7 @@ func (c *Client) logNotificationToClient(path string, notification *pool.Message
 	c.logNotification(fmt.Sprintf("notification to the device was send with code %v", code), path, notification)
 }
 
-func (c *Client) logNotificationFromClient(path string, notification *pool.Message) {
+func (c *session) logNotificationFromClient(path string, notification *pool.Message) {
 	code := logNotificationDefaultCode
 	if notification != nil {
 		code = notification.Code().String()

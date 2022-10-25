@@ -21,7 +21,7 @@ func getDeleteResourceErr(err error) error {
 	return fmt.Errorf(errFmtDeleteResource, "", err)
 }
 
-func clientDeleteHandler(req *mux.Message, client *Client) (*pool.Message, error) {
+func clientDeleteHandler(req *mux.Message, client *session) (*pool.Message, error) {
 	_, err := client.GetAuthorizationContext()
 	if err != nil {
 		return nil, statusErrorf(coapCodes.Unauthorized, "%w", getDeleteResourceErr(err))
@@ -48,7 +48,7 @@ func clientDeleteHandler(req *mux.Message, client *Client) (*pool.Message, error
 	return client.createResponse(code, req.Token(), mediaType, content.Data), nil
 }
 
-func clientDeleteResourceHandler(req *mux.Message, client *Client, deviceID, href string) (*commands.Content, error) {
+func clientDeleteResourceHandler(req *mux.Message, client *session, deviceID, href string) (*commands.Content, error) {
 	deleteCommand, err := coapconv.NewDeleteResourceRequest(commands.NewResourceID(deviceID, href), req, client.RemoteAddr().String())
 	if err != nil {
 		return nil, err

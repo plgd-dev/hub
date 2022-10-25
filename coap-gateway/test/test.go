@@ -10,27 +10,36 @@ import (
 	"github.com/plgd-dev/hub/v2/coap-gateway/service"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
+	coapService "github.com/plgd-dev/hub/v2/pkg/net/coap/service"
 	"github.com/plgd-dev/hub/v2/test/config"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap/zapcore"
 )
 
 func MakeConfig(t *testing.T) service.Config {
 	var cfg service.Config
 	cfg.Log.Config = log.MakeDefaultConfig()
-
+	cfg.Log.DumpBody = true
+	cfg.Log.Level = zapcore.DebugLevel
 	cfg.TaskQueue.GoPoolSize = 1600
 	cfg.TaskQueue.Size = 2 * 1024 * 1024
-	cfg.APIs.COAP.Addr = config.GW_HOST
-	cfg.APIs.COAP.ExternalAddress = config.GW_HOST
+	cfg.APIs.COAP.Addr = config.COAP_GW_HOST
+	cfg.APIs.COAP.ExternalAddress = config.COAP_GW_HOST
+	cfg.APIs.COAP.Protocols = []coapService.Protocol{coapService.TCP}
+	if config.COAP_GATEWAY_UDP_ENABLED {
+		cfg.APIs.COAP.Protocols = append(cfg.APIs.COAP.Protocols, coapService.UDP)
+	}
 	cfg.APIs.COAP.MaxMessageSize = 256 * 1024
 	cfg.APIs.COAP.OwnerCacheExpiration = time.Minute
 	cfg.APIs.COAP.SubscriptionBufferSize = 1000
 	cfg.APIs.COAP.MessagePoolSize = 1000
+	cfg.APIs.COAP.KeepAlive = new(coapService.KeepAlive)
 	cfg.APIs.COAP.KeepAlive.Timeout = time.Second * 20
-	cfg.APIs.COAP.BlockwiseTransfer.Enabled = false
+	cfg.APIs.COAP.BlockwiseTransfer.Enabled = config.COAP_GATEWAY_UDP_ENABLED
 	cfg.APIs.COAP.BlockwiseTransfer.SZX = "1024"
 	cfg.APIs.COAP.TLS.Embedded = config.MakeTLSServerConfig()
-	cfg.APIs.COAP.TLS.Enabled = true
+	cfg.APIs.COAP.TLS.Enabled = new(bool)
+	*cfg.APIs.COAP.TLS.Enabled = true
 	cfg.APIs.COAP.TLS.Embedded.ClientCertificateRequired = false
 	cfg.APIs.COAP.TLS.Embedded.CertFile = os.Getenv("TEST_COAP_GW_CERT_FILE")
 	cfg.APIs.COAP.TLS.Embedded.KeyFile = os.Getenv("TEST_COAP_GW_KEY_FILE")

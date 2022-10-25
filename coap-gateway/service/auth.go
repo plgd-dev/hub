@@ -51,7 +51,7 @@ func (s *Service) VerifyDeviceID(tlsDeviceID string, claim pkgJwt.Claims) error 
 	if s.config.APIs.COAP.Authorization.DeviceIDClaim != "" && jwtDeviceID == "" {
 		return fmt.Errorf("access token doesn't contain the required device id claim('%v')", s.config.APIs.COAP.Authorization.DeviceIDClaim)
 	}
-	if !s.config.APIs.COAP.TLS.Enabled {
+	if !s.config.APIs.COAP.TLS.IsEnabled() {
 		return nil
 	}
 	if !s.config.APIs.COAP.TLS.Embedded.ClientCertificateRequired {

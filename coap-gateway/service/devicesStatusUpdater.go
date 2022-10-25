@@ -13,7 +13,7 @@ import (
 
 type deviceExpires struct {
 	expires time.Time
-	client  *Client
+	client  *session
 }
 
 type devicesStatusUpdater struct {
@@ -38,7 +38,7 @@ func newDevicesStatusUpdater(ctx context.Context, cfg DeviceStatusExpirationConf
 	return &u
 }
 
-func (u *devicesStatusUpdater) Add(ctx context.Context, c *Client) error {
+func (u *devicesStatusUpdater) Add(ctx context.Context, c *session) error {
 	expires, err := u.updateOnlineStatus(ctx, c, time.Now().Add(u.cfg.ExpiresIn))
 	if err != nil {
 		return err
@@ -56,13 +56,13 @@ func (u *devicesStatusUpdater) Add(ctx context.Context, c *Client) error {
 	return nil
 }
 
-func (u *devicesStatusUpdater) Remove(c *Client) {
+func (u *devicesStatusUpdater) Remove(c *session) {
 	u.mutex.Lock()
 	defer u.mutex.Unlock()
 	delete(u.devices, c.RemoteAddr().String())
 }
 
-func (u *devicesStatusUpdater) updateOnlineStatus(ctx context.Context, client *Client, validUntil time.Time) (time.Time, error) {
+func (u *devicesStatusUpdater) updateOnlineStatus(ctx context.Context, client *session, validUntil time.Time) (time.Time, error) {
 	authCtx, err := client.GetAuthorizationContext()
 	if err != nil {
 		return time.Time{}, err

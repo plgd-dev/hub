@@ -10,6 +10,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/pion/logging"
 	pkgX509 "github.com/plgd-dev/hub/v2/pkg/security/x509"
 	"github.com/ugorji/go/codec"
 	"go.opentelemetry.io/otel"
@@ -223,6 +224,7 @@ type Logger interface {
 	LogAndReturnError(err error) error
 	Config() Config
 	Check(lvl zapcore.Level) bool
+	DTLSLoggerFactory() logging.LoggerFactory
 }
 
 type otelErrorHandler struct {

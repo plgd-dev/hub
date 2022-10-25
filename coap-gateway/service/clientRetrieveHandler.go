@@ -25,7 +25,7 @@ func getRetrieveResourceErr(err error) error {
 	return fmt.Errorf(errFmtRetrieveResource, "", err)
 }
 
-func clientRetrieveHandler(req *mux.Message, client *Client) (*pool.Message, error) {
+func clientRetrieveHandler(req *mux.Message, client *session) (*pool.Message, error) {
 	_, err := client.GetAuthorizationContext()
 	if err != nil {
 		return nil, statusErrorf(coapCodes.Unauthorized, "%w", getRetrieveResourceErr(err))
@@ -63,7 +63,7 @@ func clientRetrieveHandler(req *mux.Message, client *Client) (*pool.Message, err
 	return client.createResponse(code, req.Token(), mediaType, content.Data), nil
 }
 
-func clientRetrieveFromResourceShadowHandler(ctx context.Context, client *Client, deviceID, href string) (*commands.Content, coapCodes.Code, error) {
+func clientRetrieveFromResourceShadowHandler(ctx context.Context, client *session, deviceID, href string) (*commands.Content, coapCodes.Code, error) {
 	RetrieveResourcesClient, err := client.server.rdClient.GetResources(ctx, &pbGRPC.GetResourcesRequest{
 		ResourceIdFilter: []string{
 			commands.NewResourceID(deviceID, href).ToString(),
@@ -92,7 +92,7 @@ func clientRetrieveFromResourceShadowHandler(ctx context.Context, client *Client
 	return nil, coapCodes.NotFound, fmt.Errorf("not found")
 }
 
-func clientRetrieveFromDeviceHandler(req *mux.Message, client *Client, deviceID, href string) (*commands.Content, error) {
+func clientRetrieveFromDeviceHandler(req *mux.Message, client *session, deviceID, href string) (*commands.Content, error) {
 	retrieveCommand, err := coapconv.NewRetrieveResourceRequest(commands.NewResourceID(deviceID, href), req, client.RemoteAddr().String())
 	if err != nil {
 		return nil, err

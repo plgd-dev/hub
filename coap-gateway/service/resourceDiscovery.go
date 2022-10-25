@@ -14,6 +14,7 @@ import (
 	"github.com/plgd-dev/hub/v2/coap-gateway/coapconv"
 	"github.com/plgd-dev/hub/v2/coap-gateway/uri"
 	pbGRPC "github.com/plgd-dev/hub/v2/grpc-gateway/pb"
+	coapService "github.com/plgd-dev/hub/v2/pkg/net/coap/service"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 )
 
@@ -46,13 +47,16 @@ func makeHref(deviceID, href string) string {
 	return fixHref("/" + uri.ResourceRoute + "/" + deviceID + "/" + href)
 }
 
-func makeDiscoveryResp(isTLSListener bool, serverAddr string, getResourceLinksClient pbGRPC.GrpcGateway_GetResourceLinksClient) ([]*wkRd, error) {
+func makeDiscoveryResp(isTLSListener bool, protocol coapService.Protocol, serverAddr string, getResourceLinksClient pbGRPC.GrpcGateway_GetResourceLinksClient) ([]*wkRd, error) {
 	deviceRes := make(map[string]*wkRd)
 	ep := "coap"
 	if isTLSListener {
 		ep = "coaps"
 	}
-	ep = ep + "+tcp://" + serverAddr
+	if protocol == coapService.TCP {
+		ep += "+tcp"
+	}
+	ep = ep + "://" + serverAddr
 
 	for {
 		snapshot, err := getResourceLinksClient.Recv()
@@ -107,7 +111,7 @@ func getDiscoveryResourceErr(err error) error {
 	return fmt.Errorf(errFmtDiscoveryResource, "", err)
 }
 
-func resourceDirectoryFind(req *mux.Message, client *Client) (*pool.Message, error) {
+func resourceDirectoryFind(req *mux.Message, client *session) (*pool.Message, error) {
 	_, err := client.GetAuthorizationContext()
 	if err != nil {
 		return nil, statusErrorf(coapCodes.Unauthorized, "%w", getDiscoveryResourceErr(err))
@@ -123,7 +127,7 @@ func resourceDirectoryFind(req *mux.Message, client *Client) (*pool.Message, err
 		return nil, statusErrorf(coapconv.GrpcErr2CoapCode(err, coapconv.Retrieve), "%w", getDiscoveryResourceErr(err))
 	}
 
-	discoveryResp, err := makeDiscoveryResp(client.server.tlsEnabled(), client.server.config.APIs.COAP.ExternalAddress, getResourceLinksClient)
+	discoveryResp, err := makeDiscoveryResp(client.server.config.APIs.COAP.TLS.IsEnabled(), client.Protocol(), client.server.config.APIs.COAP.ExternalAddress, getResourceLinksClient)
 	if err != nil {
 		return nil, statusErrorf(coapconv.GrpcErr2CoapCode(err, coapconv.Retrieve), "%w", getDiscoveryResourceErr(err))
 	}
@@ -154,7 +158,7 @@ func resourceDirectoryFind(req *mux.Message, client *Client) (*pool.Message, err
 	return client.createResponse(coapCode, req.Token(), accept, out), nil
 }
 
-func resourceDiscoveryHandler(req *mux.Message, client *Client) (*pool.Message, error) {
+func resourceDiscoveryHandler(req *mux.Message, client *session) (*pool.Message, error) {
 	switch req.Code() {
 	case coapCodes.GET:
 		return resourceDirectoryFind(req, client)

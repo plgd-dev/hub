@@ -21,7 +21,7 @@ import (
 	raService "github.com/plgd-dev/hub/v2/resource-aggregate/service"
 	raTest "github.com/plgd-dev/hub/v2/resource-aggregate/test"
 	"github.com/plgd-dev/hub/v2/test"
-	"github.com/plgd-dev/hub/v2/test/config"
+	testCfg "github.com/plgd-dev/hub/v2/test/config"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	pbTest "github.com/plgd-dev/hub/v2/test/pb"
 	"github.com/plgd-dev/hub/v2/test/service"
@@ -95,14 +95,14 @@ func TestRequestHandlerDeleteResource(t *testing.T) {
 		},
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
+	ctx, cancel := context.WithTimeout(context.Background(), testCfg.TEST_TIMEOUT)
 	defer cancel()
 
 	tearDown := service.SetUp(ctx, t)
 	defer tearDown()
 	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
 
-	conn, err := grpc.Dial(config.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+	conn, err := grpc.Dial(testCfg.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
 	})))
 	require.NoError(t, err)
@@ -110,7 +110,7 @@ func TestRequestHandlerDeleteResource(t *testing.T) {
 		_ = conn.Close()
 	}()
 	c := pb.NewGrpcGatewayClient(conn)
-	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.GW_HOST, test.GetAllBackendResourceLinks())
+	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.ACTIVE_COAP_SCHEME+testCfg.COAP_GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 	test.AddDeviceSwitchResources(ctx, t, deviceID, c, "1", "2", "3")
 
@@ -137,14 +137,14 @@ func TestRequestHandlerDeleteResource(t *testing.T) {
 func TestRequestHandlerDeleteResourceAfterUnpublish(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*config.TEST_TIMEOUT)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*testCfg.TEST_TIMEOUT)
 	defer cancel()
 
 	tearDown := service.SetUp(ctx, t)
 	defer tearDown()
 	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
 
-	conn, err := grpc.Dial(config.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+	conn, err := grpc.Dial(testCfg.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
 	})))
 	require.NoError(t, err)
@@ -152,7 +152,7 @@ func TestRequestHandlerDeleteResourceAfterUnpublish(t *testing.T) {
 		_ = conn.Close()
 	}()
 	c := pb.NewGrpcGatewayClient(conn)
-	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.GW_HOST, test.GetAllBackendResourceLinks())
+	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.ACTIVE_COAP_SCHEME+testCfg.COAP_GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 	const switchID1 = "1"
 	const switchID2 = "2"
@@ -167,7 +167,7 @@ func TestRequestHandlerDeleteResourceAfterUnpublish(t *testing.T) {
 	}()
 
 	cfg := raTest.MakeConfig(t)
-	raConn, err := client.New(config.MakeGrpcClientConfig(cfg.APIs.GRPC.Addr), fileWatcher, log.Get(), trace.NewNoopTracerProvider())
+	raConn, err := client.New(testCfg.MakeGrpcClientConfig(cfg.APIs.GRPC.Addr), fileWatcher, log.Get(), trace.NewNoopTracerProvider())
 	require.NoError(t, err)
 	defer func() {
 		_ = raConn.Close()

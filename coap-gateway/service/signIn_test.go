@@ -68,7 +68,7 @@ func TestSignInDeviceSubscriptionHandler(t *testing.T) {
 	defer shutdown()
 
 	ctx := kitNetGrpc.CtxWithToken(context.Background(), oauthTest.GetDefaultAccessToken(t))
-	conn, err := grpc.Dial(testCfg.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+	conn, err := grpc.Dial(testCfg.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
 	})))
 	require.NoError(t, err)
@@ -142,7 +142,8 @@ func TestSignOutPostHandler(t *testing.T) {
 
 func TestSignInWithMTLSAndDeviceIdClaim(t *testing.T) {
 	coapgwCfg := coapgwTest.MakeConfig(t)
-	coapgwCfg.APIs.COAP.TLS.Enabled = true
+	coapgwCfg.APIs.COAP.TLS.Enabled = new(bool)
+	*coapgwCfg.APIs.COAP.TLS.Enabled = true
 	coapgwCfg.APIs.COAP.TLS.Embedded.ClientCertificateRequired = true
 	coapgwCfg.APIs.COAP.Authorization.DeviceIDClaim = oauthUri.DeviceIDClaimKey
 	shutdown := setUp(t, coapgwCfg)
@@ -180,7 +181,8 @@ func TestSignInWithMTLSAndDeviceIdClaim(t *testing.T) {
 
 func TestCertificateExpiration(t *testing.T) {
 	coapgwCfg := coapgwTest.MakeConfig(t)
-	coapgwCfg.APIs.COAP.TLS.Enabled = true
+	coapgwCfg.APIs.COAP.TLS.Enabled = new(bool)
+	*coapgwCfg.APIs.COAP.TLS.Enabled = true
 	coapgwCfg.APIs.COAP.OwnerCacheExpiration = time.Second
 	coapgwCfg.APIs.COAP.TLS.DisconnectOnExpiredCertificate = true
 	coapgwCfg.APIs.COAP.TLS.Embedded.ClientCertificateRequired = true

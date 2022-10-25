@@ -31,7 +31,7 @@ func getObserveResourceErr(err error) error {
 	return fmt.Errorf(errFmtObserveResource, "", err)
 }
 
-func clientObserveHandler(req *mux.Message, client *Client, observe uint32) (*pool.Message, error) {
+func clientObserveHandler(req *mux.Message, client *session, observe uint32) (*pool.Message, error) {
 	authCtx, err := client.GetAuthorizationContext()
 	if err != nil {
 		return nil, statusErrorf(coapCodes.Unauthorized, "%w", getObserveResourceErr(err))
@@ -51,7 +51,7 @@ func clientObserveHandler(req *mux.Message, client *Client, observe uint32) (*po
 	}
 }
 
-func CreateResourceContentToObserver(client *Client, resourceChanged *events.ResourceChanged, observe uint32, token coapMessage.Token) (*pool.Message, error) {
+func CreateResourceContentToObserver(client *session, resourceChanged *events.ResourceChanged, observe uint32, token coapMessage.Token) (*pool.Message, error) {
 	msg := client.server.messagePool.AcquireMessage(client.coapConn.Context())
 	msg.SetCode(coapCodes.Content)
 	msg.SetObserve(observe)
@@ -68,7 +68,7 @@ func CreateResourceContentToObserver(client *Client, resourceChanged *events.Res
 }
 
 type resourceSubscription struct {
-	client   *Client
+	client   *session
 	token    coapMessage.Token
 	authCtx  *authorizationContext
 	deviceID string
@@ -194,7 +194,7 @@ func (s *resourceSubscription) Close() error {
 	return s.sub.Close()
 }
 
-func newResourceSubscription(req *mux.Message, client *Client, authCtx *authorizationContext, deviceID string, href string) *resourceSubscription {
+func newResourceSubscription(req *mux.Message, client *session, authCtx *authorizationContext, deviceID string, href string) *resourceSubscription {
 	r := &resourceSubscription{
 		client:   client,
 		token:    req.Token(),
@@ -223,7 +223,7 @@ func getStartObserveResourceErr(deviceID, href string, err error) error {
 	return fmt.Errorf(errFmtStartObserveResource, deviceID, href, err)
 }
 
-func startResourceObservation(req *mux.Message, client *Client, authCtx *authorizationContext, deviceID, href string) (*pool.Message, error) {
+func startResourceObservation(req *mux.Message, client *session, authCtx *authorizationContext, deviceID, href string) (*pool.Message, error) {
 	ok, err := client.server.ownerCache.OwnsDevice(req.Context(), deviceID)
 	if err != nil {
 		return nil, statusErrorf(coapconv.GrpcErr2CoapCode(err, coapconv.Retrieve), "%w", getStartObserveResourceErr(deviceID, href, err))
@@ -262,7 +262,7 @@ func getStopObserveResourceErr(deviceID, href string, err error) error {
 	return fmt.Errorf(errFmtStopObserveResource, deviceID, href, err)
 }
 
-func stopResourceObservation(req *mux.Message, client *Client, deviceID, href string) (*pool.Message, error) {
+func stopResourceObservation(req *mux.Message, client *session, deviceID, href string) (*pool.Message, error) {
 	token := req.Token().String()
 	canceled, err := client.cancelResourceSubscription(token)
 	if err != nil {
@@ -274,7 +274,7 @@ func stopResourceObservation(req *mux.Message, client *Client, deviceID, href st
 	return CreateResourceContentToObserver(client, nil, 1, req.Token())
 }
 
-func clientResetObservationHandler(req *mux.Message, client *Client) (*pool.Message, error) {
+func clientResetObservationHandler(req *mux.Message, client *session) (*pool.Message, error) {
 	token := req.Token().String()
 	canceled, err := client.cancelResourceSubscription(token)
 	if err != nil {

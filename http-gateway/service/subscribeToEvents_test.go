@@ -126,7 +126,7 @@ func TestRequestHandlerSubscribeToEvents(t *testing.T) {
 	shutdownHttp := httpgwTest.SetUp(t)
 	defer shutdownHttp()
 
-	conn, err := grpc.Dial(config.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+	conn, err := grpc.Dial(config.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
 	})))
 	require.NoError(t, err)
@@ -199,7 +199,7 @@ func TestRequestHandlerSubscribeToEvents(t *testing.T) {
 	pbTest.CmpEvent(t, expectedEvent, ev, "")
 	baseSubID := ev.SubscriptionId
 
-	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.GW_HOST, nil)
+	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.ACTIVE_COAP_SCHEME+config.COAP_GW_HOST, nil)
 
 	ev, err = recv()
 	require.NoError(t, err)

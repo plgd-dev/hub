@@ -5,6 +5,6 @@ import (
 	"github.com/plgd-dev/go-coap/v3/mux"
 )
 
-func clientResetHandler(req *mux.Message, client *Client) (*pool.Message, error) {
+func clientResetHandler(req *mux.Message, client *session) (*pool.Message, error) {
 	return clientResetObservationHandler(req, client)
 }

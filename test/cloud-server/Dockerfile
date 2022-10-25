@@ -57,6 +57,6 @@ ENV FQDN="localhost"
 # ports
 ENV MONGO_PORT=27017
 ENV NATS_PORT=4222
-
+ENV COAP_GATEWAY_UDP_ENABLED=false
 
 ENTRYPOINT ["/usr/local/bin/run.sh"]
