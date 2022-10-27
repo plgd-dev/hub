@@ -39,6 +39,10 @@ func makeDefaultDevice(deviceID string) *pb.Device {
 			Connection: &commands.Connection{
 				Status: commands.Connection_ONLINE,
 			},
+			TwinEnabled: true,
+			TwinSynchronization: &commands.TwinSynchronization{
+				State: commands.TwinSynchronization_FINISHED,
+			},
 		},
 		OwnershipStatus: pb.Device_OWNED,
 	}

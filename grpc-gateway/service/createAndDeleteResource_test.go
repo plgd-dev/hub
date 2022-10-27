@@ -169,6 +169,7 @@ func createSwitchResourceExpectedEvents(t *testing.T, deviceID, subID, correlati
 					Connection: &commands.Connection{
 						Status: commands.Connection_ONLINE,
 					},
+					TwinEnabled: true,
 					TwinSynchronization: &commands.TwinSynchronization{
 						State: commands.TwinSynchronization_STARTED,
 					},
@@ -186,6 +187,7 @@ func createSwitchResourceExpectedEvents(t *testing.T, deviceID, subID, correlati
 					Connection: &commands.Connection{
 						Status: commands.Connection_ONLINE,
 					},
+					TwinEnabled: true,
 					TwinSynchronization: &commands.TwinSynchronization{
 						State: commands.TwinSynchronization_FINISHED,
 					},

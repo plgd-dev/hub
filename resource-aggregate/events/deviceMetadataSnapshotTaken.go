@@ -76,6 +76,9 @@ func (d *DeviceMetadataSnapshotTaken) HandleDeviceMetadataUpdated(ctx context.Co
 	if confirm && index < 0 {
 		return false, status.Errorf(codes.InvalidArgument, "cannot find twin synchronization update pending event with correlationId('%v')", upd.GetAuditContext().GetCorrelationId())
 	}
+	if index >= 0 {
+		d.UpdatePendings = append(d.UpdatePendings[:index], d.UpdatePendings[index+1:]...)
+	}
 	if d.DeviceMetadataUpdated.Equal(upd) {
 		return false, nil
 	}
@@ -84,9 +87,6 @@ func (d *DeviceMetadataSnapshotTaken) HandleDeviceMetadataUpdated(ctx context.Co
 		return false, nil
 	}
 	d.DeviceId = upd.GetDeviceId()
-	if index >= 0 {
-		d.UpdatePendings = append(d.UpdatePendings[:index], d.UpdatePendings[index+1:]...)
-	}
 	if d.DeviceMetadataUpdated == nil {
 		d.DeviceMetadataUpdated = upd
 	} else {
@@ -205,8 +205,11 @@ func (d *DeviceMetadataSnapshotTaken) ConfirmDeviceMetadataUpdate(ctx context.Co
 			OpenTelemetryCarrier: propagation.TraceFromCtx(ctx),
 		}
 		ok, err := d.HandleDeviceMetadataUpdated(ctx, &ev, true)
-		if !ok {
+		if err != nil {
 			return nil, err
+		}
+		if !ok {
+			return nil, nil
 		}
 		return []eventstore.Event{&ev}, nil
 	default:

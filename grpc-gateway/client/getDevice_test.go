@@ -42,6 +42,10 @@ func NewTestDeviceSimulator(deviceID, deviceName string, withResources bool) cli
 				Connection: &commands.Connection{
 					Status: commands.Connection_ONLINE,
 				},
+				TwinEnabled: true,
+				TwinSynchronization: &commands.TwinSynchronization{
+					State: commands.TwinSynchronization_FINISHED,
+				},
 			},
 			Interfaces:      []string{interfaces.OC_IF_R, interfaces.OC_IF_BASELINE},
 			OwnershipStatus: pb.Device_OWNED,
@@ -112,6 +116,9 @@ func TestClient_GetDevice(t *testing.T) {
 			got.Device.Metadata.Connection.OnlineValidUntil = 0
 			got.Device.Metadata.Connection.Id = ""
 			got.Device.Metadata.Connection.ConnectedAt = 0
+			got.Device.Metadata.TwinSynchronization.StartedAt = 0
+			got.Device.Metadata.TwinSynchronization.FinishedAt = 0
+			got.Device.Metadata.TwinSynchronization.CommandMetadata = nil
 			require.NotEmpty(t, got.Device.GetData().GetContent().GetData())
 			got.Device.Data = nil
 			test.CheckProtobufs(t, tt.want, got, test.RequireToCheckFunc(require.Equal))

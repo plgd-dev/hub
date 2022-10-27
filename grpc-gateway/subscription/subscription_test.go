@@ -347,6 +347,7 @@ LOOP:
 						Connection: &commands.Connection{
 							Status: commands.Connection_OFFLINE,
 						},
+						TwinEnabled:  true,
 						AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, ""),
 					},
 				},

@@ -374,6 +374,7 @@ func WaitForDevice(ctx context.Context, t *testing.T, client pb.GrpcGateway_Subs
 				Connection: &commands.Connection{
 					Status: commands.Connection_ONLINE,
 				},
+				TwinEnabled: true,
 			},
 		}}): {
 			SubscriptionId: subID,
@@ -387,6 +388,7 @@ func WaitForDevice(ctx context.Context, t *testing.T, client pb.GrpcGateway_Subs
 					TwinSynchronization: &commands.TwinSynchronization{
 						State: commands.TwinSynchronization_NONE,
 					},
+					TwinEnabled: true,
 				},
 			},
 		},
@@ -398,6 +400,7 @@ func WaitForDevice(ctx context.Context, t *testing.T, client pb.GrpcGateway_Subs
 				TwinSynchronization: &commands.TwinSynchronization{
 					State: commands.TwinSynchronization_STARTED,
 				},
+				TwinEnabled: true,
 			},
 		}}): {
 			SubscriptionId: subID,
@@ -411,6 +414,7 @@ func WaitForDevice(ctx context.Context, t *testing.T, client pb.GrpcGateway_Subs
 					TwinSynchronization: &commands.TwinSynchronization{
 						State: commands.TwinSynchronization_STARTED,
 					},
+					TwinEnabled: true,
 				},
 			},
 		},
@@ -422,6 +426,7 @@ func WaitForDevice(ctx context.Context, t *testing.T, client pb.GrpcGateway_Subs
 				TwinSynchronization: &commands.TwinSynchronization{
 					State: commands.TwinSynchronization_FINISHED,
 				},
+				TwinEnabled: true,
 			},
 		}}): {
 			SubscriptionId: subID,
@@ -435,6 +440,7 @@ func WaitForDevice(ctx context.Context, t *testing.T, client pb.GrpcGateway_Subs
 					TwinSynchronization: &commands.TwinSynchronization{
 						State: commands.TwinSynchronization_FINISHED,
 					},
+					TwinEnabled: true,
 				},
 			},
 		},

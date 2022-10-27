@@ -273,7 +273,7 @@ func loadTwinEnabled(ctx context.Context, rdClient GrpcGatewayClient, deviceID s
 		}
 		return false, metadataError(err)
 	}
-	twinEnabled := false
+	twinEnabled := true
 	for {
 		m, err := deviceMetadataClient.Recv()
 		if errors.Is(err, io.EOF) {
@@ -281,7 +281,7 @@ func loadTwinEnabled(ctx context.Context, rdClient GrpcGatewayClient, deviceID s
 		}
 		if status.Convert(err).Code() == codes.NotFound {
 			// device not exist yet so by default twin is enabled
-			return true, nil
+			break
 		}
 		if err != nil {
 			return false, metadataError(err)

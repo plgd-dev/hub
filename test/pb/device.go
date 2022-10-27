@@ -19,6 +19,11 @@ func CmpDeviceValues(t *testing.T, expected, got []*pbGrpc.Device) {
 		dev.Metadata.Connection.OnlineValidUntil = 0
 		dev.Metadata.Connection.Id = ""
 		dev.Metadata.Connection.ConnectedAt = 0
+		if dev.Metadata.TwinSynchronization != nil {
+			dev.Metadata.TwinSynchronization.StartedAt = 0
+			dev.Metadata.TwinSynchronization.FinishedAt = 0
+			dev.Metadata.TwinSynchronization.CommandMetadata = nil
+		}
 		dev.Data = nil
 	}
 

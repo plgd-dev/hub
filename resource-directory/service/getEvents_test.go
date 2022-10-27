@@ -219,8 +219,6 @@ func testUpdateDeviceEvents(t *testing.T, ctx context.Context, c pb.GrpcGatewayC
 
 	expectedEvents := []interface{}{
 		pbTest.MakeDeviceMetadataUpdatePending(deviceID, true, ""),
-		pbTest.MakeDeviceMetadataUpdated(deviceID, commands.Connection_ONLINE, true, commands.TwinSynchronization_NONE, ""),
-		pbTest.MakeDeviceMetadataUpdated(deviceID, commands.Connection_ONLINE, true, commands.TwinSynchronization_STARTED, ""),
 		pbTest.MakeDeviceMetadataUpdated(deviceID, commands.Connection_ONLINE, true, commands.TwinSynchronization_FINISHED, ""),
 	}
 	waitAndCheckEvents(t, client, expectedEvents)
@@ -348,7 +346,7 @@ func testDeleteResourceEvents(t *testing.T, ctx context.Context, c pb.GrpcGatewa
 
 func TestRequestHandlerGetEventsOnCollection(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
-	ctx, cancel := context.WithTimeout(context.Background(), testCfg.TEST_TIMEOUT)
+	ctx, cancel := context.WithTimeout(context.Background(), testCfg.TEST_TIMEOUT*30)
 	defer cancel()
 
 	tearDown := service.SetUp(ctx, t)
