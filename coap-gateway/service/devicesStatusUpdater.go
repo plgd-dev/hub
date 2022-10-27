@@ -82,7 +82,6 @@ func (u *devicesStatusUpdater) updateOnlineStatus(ctx context.Context, client *s
 			Connection: &commands.Connection{
 				Status:           commands.Connection_ONLINE,
 				OnlineValidUntil: pkgTime.UnixNano(validUntil),
-				Id:               client.RemoteAddr().String(),
 				ConnectedAt:      pkgTime.UnixNano(connectedAt),
 			},
 		},

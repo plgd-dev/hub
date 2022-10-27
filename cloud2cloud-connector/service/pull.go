@@ -224,7 +224,6 @@ func (p *pullDevicesHandler) pullDevices(ctx context.Context, linkedAccount stor
 			Update: &commands.UpdateDeviceMetadataRequest_Connection{
 				Connection: &commands.Connection{
 					Status: toConnectionStatus(dev.Status),
-					Id:     linkedAccount.ID,
 				},
 			},
 			CommandMetadata: &commands.CommandMetadata{

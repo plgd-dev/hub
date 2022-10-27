@@ -244,6 +244,146 @@ func (d *DeviceMetadataSnapshotTaken) CancelPendingMetadataUpdates(ctx context.C
 	return events, nil
 }
 
+func (d *DeviceMetadataSnapshotTaken) updateDeviceConnection(ctx context.Context, req *commands.UpdateDeviceMetadataRequest, em *EventMetadata, ac *commands.AuditContext) ([]eventstore.Event, error) {
+	req.GetConnection().Id = req.GetCommandMetadata().GetConnectionId()
+	if req.GetConnection().GetId() == "" {
+		return nil, status.Errorf(codes.InvalidArgument, "cannot update connection status for empty connectionId")
+	}
+	// it is expected that the device updates the status on its own. no confirmation needed.
+
+	// keep last connected at from the previous event
+	lastConnectedAt := d.GetDeviceMetadataUpdated().GetConnection().GetConnectedAt()
+	if req.GetConnection().GetConnectedAt() < lastConnectedAt {
+		req.GetConnection().ConnectedAt = lastConnectedAt
+	}
+
+	twinSynchronization := d.GetDeviceMetadataUpdated().GetTwinSynchronization()
+	// check if it is new connection
+	if req.GetConnection().GetStatus() == commands.Connection_ONLINE && req.GetConnection().GetId() != d.GetDeviceMetadataUpdated().GetConnection().GetId() {
+		// reset twinSynchronization
+		if twinSynchronization == nil {
+			twinSynchronization = &commands.TwinSynchronization{}
+		}
+		twinSynchronization.State = commands.TwinSynchronization_NONE
+		twinSynchronization.CommandMetadata = req.GetCommandMetadata()
+	}
+	ev := DeviceMetadataUpdated{
+		DeviceId:             req.GetDeviceId(),
+		Connection:           req.GetConnection(),
+		TwinEnabled:          d.GetDeviceMetadataUpdated().GetTwinEnabled(),
+		TwinSynchronization:  twinSynchronization,
+		AuditContext:         ac,
+		EventMetadata:        em,
+		OpenTelemetryCarrier: propagation.TraceFromCtx(ctx),
+	}
+	ok, err := d.HandleDeviceMetadataUpdated(ctx, &ev, false)
+	if !ok {
+		return nil, err
+	}
+	return []eventstore.Event{&ev}, nil
+}
+
+func (d *DeviceMetadataSnapshotTaken) updateDeviceTwinSynchronization(ctx context.Context, req *commands.UpdateDeviceMetadataRequest, em *EventMetadata, ac *commands.AuditContext) ([]eventstore.Event, error) {
+	commandMetadata := req.GetCommandMetadata()
+	// it is expected that the device updates the status on its own. no confirmation needed.
+	if commandMetadata.GetConnectionId() == "" {
+		return nil, status.Errorf(codes.InvalidArgument, "cannot update twin synchronization for empty connectionId")
+	}
+	if commandMetadata.GetConnectionId() != d.GetDeviceMetadataUpdated().GetTwinSynchronization().GetCommandMetadata().GetConnectionId() {
+		return nil, status.Errorf(codes.InvalidArgument, "cannot update twin synchronization for different connectionId: get %v, expected %v", commandMetadata.GetConnectionId(), d.GetDeviceMetadataUpdated().GetTwinSynchronization().GetCommandMetadata().GetConnectionId())
+	}
+	if commandMetadata.GetSequence() <= d.GetDeviceMetadataUpdated().GetTwinSynchronization().GetCommandMetadata().GetSequence() {
+		return nil, nil
+	}
+	twinSynchronization := req.GetTwinSynchronization()
+	switch twinSynchronization.GetState() {
+	case commands.TwinSynchronization_NONE:
+		return nil, status.Errorf(codes.InvalidArgument, "cannot update twin synchronization with invalid state(%v)", twinSynchronization.GetState())
+	case commands.TwinSynchronization_STARTED:
+		if twinSynchronization.GetStartedAt() <= 0 {
+			return nil, status.Errorf(codes.InvalidArgument, "cannot update twin synchronization with invalid startedAt(%v)", twinSynchronization.GetStartedAt())
+		}
+		if d.GetDeviceMetadataUpdated().GetTwinSynchronization().GetState() == commands.TwinSynchronization_STARTED {
+			if twinSynchronization.GetStartedAt() > d.GetDeviceMetadataUpdated().GetTwinSynchronization().GetStartedAt() {
+				return nil, nil
+			}
+		}
+		twinSynchronization.FinishedAt = d.GetDeviceMetadataUpdated().GetTwinSynchronization().GetFinishedAt()
+	case commands.TwinSynchronization_FINISHED:
+		if twinSynchronization.GetFinishedAt() <= 0 {
+			return nil, status.Errorf(codes.InvalidArgument, "cannot update twin synchronization with invalid finishAt(%v)", twinSynchronization.GetStartedAt())
+		}
+		if d.GetDeviceMetadataUpdated().GetTwinSynchronization().GetState() == commands.TwinSynchronization_FINISHED {
+			if twinSynchronization.GetFinishedAt() < d.GetDeviceMetadataUpdated().GetTwinSynchronization().GetFinishedAt() {
+				return nil, nil
+			}
+		}
+		if d.GetDeviceMetadataUpdated().GetTwinSynchronization().GetState() == commands.TwinSynchronization_STARTED {
+			if twinSynchronization.GetFinishedAt() < d.GetDeviceMetadataUpdated().GetTwinSynchronization().GetStartedAt() {
+				return nil, nil
+			}
+		}
+		twinSynchronization.StartedAt = d.GetDeviceMetadataUpdated().GetTwinSynchronization().GetStartedAt()
+	}
+	twinSynchronization.CommandMetadata = commandMetadata
+	ev := DeviceMetadataUpdated{
+		DeviceId:             req.GetDeviceId(),
+		Connection:           d.GetDeviceMetadataUpdated().GetConnection(),
+		TwinEnabled:          d.GetDeviceMetadataUpdated().GetTwinEnabled(),
+		TwinSynchronization:  twinSynchronization,
+		AuditContext:         ac,
+		EventMetadata:        em,
+		OpenTelemetryCarrier: propagation.TraceFromCtx(ctx),
+	}
+	ok, err := d.HandleDeviceMetadataUpdated(ctx, &ev, false)
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		return nil, nil
+	}
+	return []eventstore.Event{&ev}, nil
+}
+
+func (d *DeviceMetadataSnapshotTaken) updateDeviceTwinEnabled(ctx context.Context, req *commands.UpdateDeviceMetadataRequest, em *EventMetadata, ac *commands.AuditContext) ([]eventstore.Event, error) {
+	ev := DeviceMetadataUpdatePending{
+		DeviceId:   req.GetDeviceId(),
+		ValidUntil: timeToLive2ValidUntil(req.GetTimeToLive()),
+		UpdatePending: &DeviceMetadataUpdatePending_TwinEnabled{
+			TwinEnabled: req.GetTwinEnabled(),
+		},
+		AuditContext:         ac,
+		EventMetadata:        em,
+		OpenTelemetryCarrier: propagation.TraceFromCtx(ctx),
+	}
+	err := d.HandleDeviceMetadataUpdatePending(ctx, &ev)
+	if err != nil {
+		return nil, err
+	}
+	return []eventstore.Event{&ev}, nil
+}
+
+func (d *DeviceMetadataSnapshotTaken) updateDeviceMetadata(ctx context.Context, userID string, req *commands.UpdateDeviceMetadataRequest, newVersion uint64) ([]eventstore.Event, error) {
+	if req.GetCommandMetadata() == nil {
+		return nil, status.Errorf(codes.InvalidArgument, errInvalidCommandMetadata)
+	}
+
+	em := MakeEventMeta(req.GetCommandMetadata().GetConnectionId(), req.GetCommandMetadata().GetSequence(), newVersion)
+	ac := commands.NewAuditContext(userID, req.GetCorrelationId())
+
+	_, is_update_twin_enabled := req.GetUpdate().(*commands.UpdateDeviceMetadataRequest_TwinEnabled)
+	switch {
+	case req.GetConnection() != nil:
+		return d.updateDeviceConnection(ctx, req, em, ac)
+	case req.GetTwinSynchronization() != nil:
+		return d.updateDeviceTwinSynchronization(ctx, req, em, ac)
+	case is_update_twin_enabled:
+		return d.updateDeviceTwinEnabled(ctx, req, em, ac)
+	default:
+		return nil, status.Errorf(codes.InvalidArgument, "unknown update type(%T)", req.GetUpdate())
+	}
+}
+
 func (d *DeviceMetadataSnapshotTaken) HandleCommand(ctx context.Context, cmd aggregate.Command, newVersion uint64) ([]eventstore.Event, error) {
 	userID, err := grpc.SubjectFromTokenMD(ctx)
 	if err != nil {
@@ -252,126 +392,7 @@ func (d *DeviceMetadataSnapshotTaken) HandleCommand(ctx context.Context, cmd agg
 
 	switch req := cmd.(type) {
 	case *commands.UpdateDeviceMetadataRequest:
-		if req.GetCommandMetadata() == nil {
-			return nil, status.Errorf(codes.InvalidArgument, errInvalidCommandMetadata)
-		}
-
-		em := MakeEventMeta(req.GetCommandMetadata().GetConnectionId(), req.GetCommandMetadata().GetSequence(), newVersion)
-		ac := commands.NewAuditContext(userID, req.GetCorrelationId())
-
-		_, is_update_twin_enabled := req.GetUpdate().(*commands.UpdateDeviceMetadataRequest_TwinEnabled)
-		switch {
-		case req.GetConnection() != nil:
-			if req.GetConnection().GetId() == "" {
-				return nil, status.Errorf(codes.InvalidArgument, "cannot update connection status for empty connectionId")
-			}
-			// it is expected that the device updates the status on its own. no confirmation needed.
-
-			// keep last connected at from the previous event
-			lastConnectedAt := d.GetDeviceMetadataUpdated().GetConnection().GetConnectedAt()
-			if req.GetConnection().GetConnectedAt() < lastConnectedAt {
-				req.GetConnection().ConnectedAt = lastConnectedAt
-			}
-
-			twinSynchronization := d.GetDeviceMetadataUpdated().GetTwinSynchronization()
-			// check if it is new connection
-			if req.GetConnection().GetStatus() == commands.Connection_ONLINE && req.GetConnection().GetId() != d.GetDeviceMetadataUpdated().GetConnection().GetId() {
-				// reset twinSynchronization
-				if twinSynchronization == nil {
-					twinSynchronization = &commands.TwinSynchronization{}
-				}
-				twinSynchronization.State = commands.TwinSynchronization_NONE
-				twinSynchronization.CommandMetadata = req.GetCommandMetadata()
-			}
-			ev := DeviceMetadataUpdated{
-				DeviceId:             req.GetDeviceId(),
-				Connection:           req.GetConnection(),
-				TwinEnabled:          d.GetDeviceMetadataUpdated().GetTwinEnabled(),
-				TwinSynchronization:  twinSynchronization,
-				AuditContext:         ac,
-				EventMetadata:        em,
-				OpenTelemetryCarrier: propagation.TraceFromCtx(ctx),
-			}
-			ok, err := d.HandleDeviceMetadataUpdated(ctx, &ev, false)
-			if !ok {
-				return nil, err
-			}
-			return []eventstore.Event{&ev}, nil
-		case req.GetTwinSynchronization() != nil:
-			commandMetadata := req.GetCommandMetadata()
-			// it is expected that the device updates the status on its own. no confirmation needed.
-			if commandMetadata.GetConnectionId() == "" {
-				return nil, status.Errorf(codes.InvalidArgument, "cannot update twin synchronization for empty connectionId")
-			}
-			if commandMetadata.GetConnectionId() != d.GetDeviceMetadataUpdated().GetTwinSynchronization().GetCommandMetadata().GetConnectionId() {
-				return nil, status.Errorf(codes.InvalidArgument, "cannot update twin synchronization for different connectionId: get %v, expected %v", commandMetadata.GetConnectionId(), d.GetDeviceMetadataUpdated().GetTwinSynchronization().GetCommandMetadata().GetConnectionId())
-			}
-			if commandMetadata.GetSequence() <= d.GetDeviceMetadataUpdated().GetTwinSynchronization().GetCommandMetadata().GetSequence() {
-				return nil, nil
-			}
-			twinSynchronization := req.GetTwinSynchronization()
-			if twinSynchronization.GetState() == commands.TwinSynchronization_STARTED && twinSynchronization.GetStartedAt() <= 0 {
-				return nil, status.Errorf(codes.InvalidArgument, "cannot update twin synchronization with invalid startedAt(%v)", twinSynchronization.GetStartedAt())
-			}
-			if twinSynchronization.GetState() == commands.TwinSynchronization_FINISHED && twinSynchronization.GetFinishedAt() <= 0 {
-				return nil, status.Errorf(codes.InvalidArgument, "cannot update twin synchronization with invalid finishAt(%v)", twinSynchronization.GetStartedAt())
-			}
-			if twinSynchronization.GetState() == commands.TwinSynchronization_STARTED && d.GetDeviceMetadataUpdated().GetTwinSynchronization().GetState() == commands.TwinSynchronization_STARTED {
-				if twinSynchronization.GetStartedAt() > d.GetDeviceMetadataUpdated().GetTwinSynchronization().GetStartedAt() {
-					return nil, nil
-				}
-			}
-			if twinSynchronization.GetState() == commands.TwinSynchronization_FINISHED && d.GetDeviceMetadataUpdated().GetTwinSynchronization().GetState() == commands.TwinSynchronization_FINISHED {
-				if twinSynchronization.GetFinishedAt() < d.GetDeviceMetadataUpdated().GetTwinSynchronization().GetFinishedAt() {
-					return nil, nil
-				}
-			}
-			if twinSynchronization.GetState() == commands.TwinSynchronization_FINISHED && d.GetDeviceMetadataUpdated().GetTwinSynchronization().GetState() == commands.TwinSynchronization_STARTED {
-				if twinSynchronization.GetFinishedAt() < d.GetDeviceMetadataUpdated().GetTwinSynchronization().GetStartedAt() {
-					return nil, nil
-				}
-			}
-			if twinSynchronization.GetStartedAt() == 0 {
-				// set previous value
-				twinSynchronization.StartedAt = d.GetDeviceMetadataUpdated().GetTwinSynchronization().GetStartedAt()
-			}
-			twinSynchronization.CommandMetadata = commandMetadata
-			ev := DeviceMetadataUpdated{
-				DeviceId:             req.GetDeviceId(),
-				Connection:           d.GetDeviceMetadataUpdated().GetConnection(),
-				TwinEnabled:          d.GetDeviceMetadataUpdated().GetTwinEnabled(),
-				TwinSynchronization:  req.GetTwinSynchronization(),
-				AuditContext:         ac,
-				EventMetadata:        em,
-				OpenTelemetryCarrier: propagation.TraceFromCtx(ctx),
-			}
-			ok, err := d.HandleDeviceMetadataUpdated(ctx, &ev, false)
-			if err != nil {
-				return nil, err
-			}
-			if !ok {
-				return nil, nil
-			}
-			return []eventstore.Event{&ev}, nil
-		case is_update_twin_enabled:
-			ev := DeviceMetadataUpdatePending{
-				DeviceId:   req.GetDeviceId(),
-				ValidUntil: timeToLive2ValidUntil(req.GetTimeToLive()),
-				UpdatePending: &DeviceMetadataUpdatePending_TwinEnabled{
-					TwinEnabled: req.GetTwinEnabled(),
-				},
-				AuditContext:         ac,
-				EventMetadata:        em,
-				OpenTelemetryCarrier: propagation.TraceFromCtx(ctx),
-			}
-			err := d.HandleDeviceMetadataUpdatePending(ctx, &ev)
-			if err != nil {
-				return nil, err
-			}
-			return []eventstore.Event{&ev}, nil
-		default:
-			return nil, status.Errorf(codes.InvalidArgument, "unknown update type(%T)", req.GetUpdate())
-		}
+		return d.updateDeviceMetadata(ctx, userID, req, newVersion)
 	case *commands.ConfirmDeviceMetadataUpdateRequest:
 		return d.ConfirmDeviceMetadataUpdate(ctx, userID, req, newVersion, false)
 	case *commands.CancelPendingMetadataUpdatesRequest:

@@ -81,7 +81,6 @@ func CreateDevice(ctx context.Context, t *testing.T, name string, deviceID strin
 			Update: &commands.UpdateDeviceMetadataRequest_Connection{
 				Connection: &commands.Connection{
 					Status:      commands.Connection_ONLINE,
-					Id:          connID,
 					ConnectedAt: time.Now().UnixNano(),
 				},
 			},

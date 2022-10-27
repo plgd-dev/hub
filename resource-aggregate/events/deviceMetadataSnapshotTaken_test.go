@@ -157,16 +157,22 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 		cmd        aggregate.Command
 		newVersion uint64
 	}
+	type preCmds struct {
+		ctx        context.Context
+		cmd        aggregate.Command
+		newVersion uint64
+		wantErr    bool
+	}
 	tests := []struct {
 		name    string
-		preCmds []args
+		preCmds []preCmds
 		args    args
 		want    []*grpcgwPb.Event
 		wantErr bool
 	}{
 		{
 			name: "online,online,offline",
-			preCmds: []args{
+			preCmds: []preCmds{
 				{
 					ctx: grpc.CtxWithIncomingToken(context.Background(), jwtWithSubUserID),
 					cmd: &commands.UpdateDeviceMetadataRequest{
@@ -180,7 +186,6 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 						Update: &commands.UpdateDeviceMetadataRequest_Connection{
 							Connection: &commands.Connection{
 								Status:      commands.Connection_ONLINE,
-								Id:          connectionID,
 								ConnectedAt: connectedAt,
 							},
 						},
@@ -200,7 +205,6 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 						Update: &commands.UpdateDeviceMetadataRequest_Connection{
 							Connection: &commands.Connection{
 								Status: commands.Connection_ONLINE,
-								Id:     connectionID,
 							},
 						},
 					},
@@ -221,7 +225,6 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 					Update: &commands.UpdateDeviceMetadataRequest_Connection{
 						Connection: &commands.Connection{
 							Status: commands.Connection_OFFLINE,
-							Id:     connectionID,
 						},
 					},
 				},
@@ -242,7 +245,7 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 		},
 		{
 			name: "online-old-connection,online,offline-old-connection",
-			preCmds: []args{
+			preCmds: []preCmds{
 				{
 					ctx: grpc.CtxWithIncomingToken(context.Background(), jwtWithSubUserID),
 					cmd: &commands.UpdateDeviceMetadataRequest{
@@ -256,7 +259,6 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 						Update: &commands.UpdateDeviceMetadataRequest_Connection{
 							Connection: &commands.Connection{
 								Status:      commands.Connection_ONLINE,
-								Id:          connectionID,
 								ConnectedAt: connectedAt,
 							},
 						},
@@ -276,7 +278,6 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 						Update: &commands.UpdateDeviceMetadataRequest_Connection{
 							Connection: &commands.Connection{
 								Status: commands.Connection_ONLINE,
-								Id:     connectionID + "1",
 							},
 						},
 					},
@@ -297,7 +298,6 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 					Update: &commands.UpdateDeviceMetadataRequest_Connection{
 						Connection: &commands.Connection{
 							Status: commands.Connection_OFFLINE,
-							Id:     connectionID,
 						},
 					},
 				},
@@ -311,8 +311,7 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 				cmd: &commands.UpdateDeviceMetadataRequest{
 					DeviceId: deviceID,
 					CommandMetadata: &commands.CommandMetadata{
-						ConnectionId: connectionID,
-						Sequence:     0,
+						Sequence: 0,
 					},
 					TimeToLive:    0,
 					CorrelationId: correlationID,
@@ -325,14 +324,280 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 			},
 			wantErr: true,
 		},
+		{
+			name: "online,twin-sync-started,twin-sync-started,twin-sync-finished,twin-sync-finished",
+			preCmds: []preCmds{
+				{
+					ctx: grpc.CtxWithIncomingToken(context.Background(), jwtWithSubUserID),
+					cmd: &commands.UpdateDeviceMetadataRequest{
+						DeviceId: deviceID,
+						CommandMetadata: &commands.CommandMetadata{
+							ConnectionId: connectionID,
+							Sequence:     0,
+						},
+						CorrelationId: correlationID,
+						Update: &commands.UpdateDeviceMetadataRequest_Connection{
+							Connection: &commands.Connection{
+								Status:      commands.Connection_ONLINE,
+								ConnectedAt: connectedAt,
+							},
+						},
+					},
+					newVersion: 0,
+				},
+				{
+					ctx: grpc.CtxWithIncomingToken(context.Background(), jwtWithSubUserID),
+					cmd: &commands.UpdateDeviceMetadataRequest{
+						DeviceId: deviceID,
+						CommandMetadata: &commands.CommandMetadata{
+							ConnectionId: connectionID,
+							Sequence:     1,
+						},
+						CorrelationId: correlationID,
+						Update: &commands.UpdateDeviceMetadataRequest_TwinSynchronization{
+							TwinSynchronization: &commands.TwinSynchronization{
+								State:     commands.TwinSynchronization_STARTED,
+								StartedAt: 1,
+							},
+						},
+					},
+					newVersion: 0,
+				},
+				{
+					ctx: grpc.CtxWithIncomingToken(context.Background(), jwtWithSubUserID),
+					cmd: &commands.UpdateDeviceMetadataRequest{
+						DeviceId: deviceID,
+						CommandMetadata: &commands.CommandMetadata{
+							ConnectionId: connectionID,
+							Sequence:     2,
+						},
+						CorrelationId: correlationID,
+						Update: &commands.UpdateDeviceMetadataRequest_TwinSynchronization{
+							TwinSynchronization: &commands.TwinSynchronization{
+								State:     commands.TwinSynchronization_STARTED,
+								StartedAt: 2,
+							},
+						},
+					},
+					newVersion: 0,
+				},
+				{
+					ctx: grpc.CtxWithIncomingToken(context.Background(), jwtWithSubUserID),
+					cmd: &commands.UpdateDeviceMetadataRequest{
+						DeviceId: deviceID,
+						CommandMetadata: &commands.CommandMetadata{
+							ConnectionId: connectionID,
+							Sequence:     3,
+						},
+						CorrelationId: correlationID,
+						Update: &commands.UpdateDeviceMetadataRequest_TwinSynchronization{
+							TwinSynchronization: &commands.TwinSynchronization{
+								State:      commands.TwinSynchronization_FINISHED,
+								FinishedAt: 3,
+							},
+						},
+					},
+					newVersion: 0,
+				},
+			},
+			args: args{
+				newVersion: 1,
+				ctx:        grpc.CtxWithIncomingToken(context.Background(), jwtWithSubUserID),
+				cmd: &commands.UpdateDeviceMetadataRequest{
+					DeviceId: deviceID,
+					CommandMetadata: &commands.CommandMetadata{
+						ConnectionId: connectionID,
+						Sequence:     4,
+					},
+					CorrelationId: correlationID,
+					Update: &commands.UpdateDeviceMetadataRequest_TwinSynchronization{
+						TwinSynchronization: &commands.TwinSynchronization{
+							State:      commands.TwinSynchronization_FINISHED,
+							FinishedAt: 4,
+						},
+					},
+				},
+			},
+			want: []*grpcgwPb.Event{
+				pb.ToEvent(&events.DeviceMetadataUpdated{
+					DeviceId: deviceID,
+					Connection: &commands.Connection{
+						Status:      commands.Connection_ONLINE,
+						ConnectedAt: connectedAt,
+					},
+					TwinEnabled: true,
+					TwinSynchronization: &commands.TwinSynchronization{
+						StartedAt:  1,
+						FinishedAt: 4,
+						State:      commands.TwinSynchronization_FINISHED,
+					},
+					AuditContext:         commands.NewAuditContext(userID, correlationID),
+					OpenTelemetryCarrier: map[string]string{},
+				}),
+			},
+		},
+		{
+			name: "online-old,twin-sync-started-old,online,twin-sync-started,twin-sync-finished-old,twin-sync-finished",
+			preCmds: []preCmds{
+				{
+					ctx: grpc.CtxWithIncomingToken(context.Background(), jwtWithSubUserID),
+					cmd: &commands.UpdateDeviceMetadataRequest{
+						DeviceId: deviceID,
+						CommandMetadata: &commands.CommandMetadata{
+							ConnectionId: connectionID + "1",
+							Sequence:     0,
+						},
+						CorrelationId: correlationID,
+						Update: &commands.UpdateDeviceMetadataRequest_Connection{
+							Connection: &commands.Connection{
+								Status:      commands.Connection_ONLINE,
+								ConnectedAt: connectedAt,
+							},
+						},
+					},
+					newVersion: 0,
+				},
+				{
+					ctx: grpc.CtxWithIncomingToken(context.Background(), jwtWithSubUserID),
+					cmd: &commands.UpdateDeviceMetadataRequest{
+						DeviceId: deviceID,
+						CommandMetadata: &commands.CommandMetadata{
+							ConnectionId: connectionID + "1",
+							Sequence:     1,
+						},
+						CorrelationId: correlationID,
+						Update: &commands.UpdateDeviceMetadataRequest_TwinSynchronization{
+							TwinSynchronization: &commands.TwinSynchronization{
+								State:     commands.TwinSynchronization_STARTED,
+								StartedAt: 1,
+							},
+						},
+					},
+					newVersion: 0,
+				},
+				{
+					ctx: grpc.CtxWithIncomingToken(context.Background(), jwtWithSubUserID),
+					cmd: &commands.UpdateDeviceMetadataRequest{
+						DeviceId: deviceID,
+						CommandMetadata: &commands.CommandMetadata{
+							ConnectionId: connectionID,
+							Sequence:     0,
+						},
+						CorrelationId: correlationID,
+						Update: &commands.UpdateDeviceMetadataRequest_Connection{
+							Connection: &commands.Connection{
+								Status: commands.Connection_ONLINE,
+
+								ConnectedAt: connectedAt,
+							},
+						},
+					},
+					newVersion: 0,
+				},
+				{
+					ctx: grpc.CtxWithIncomingToken(context.Background(), jwtWithSubUserID),
+					cmd: &commands.UpdateDeviceMetadataRequest{
+						DeviceId: deviceID,
+						CommandMetadata: &commands.CommandMetadata{
+							ConnectionId: connectionID,
+							Sequence:     1,
+						},
+						CorrelationId: correlationID,
+						Update: &commands.UpdateDeviceMetadataRequest_TwinSynchronization{
+							TwinSynchronization: &commands.TwinSynchronization{
+								State:     commands.TwinSynchronization_STARTED,
+								StartedAt: 1,
+							},
+						},
+					},
+					newVersion: 0,
+				},
+				{
+					ctx: grpc.CtxWithIncomingToken(context.Background(), jwtWithSubUserID),
+					cmd: &commands.UpdateDeviceMetadataRequest{
+						DeviceId: deviceID,
+						CommandMetadata: &commands.CommandMetadata{
+							ConnectionId: connectionID,
+							Sequence:     2,
+						},
+						CorrelationId: correlationID,
+						Update: &commands.UpdateDeviceMetadataRequest_TwinSynchronization{
+							TwinSynchronization: &commands.TwinSynchronization{
+								State:     commands.TwinSynchronization_STARTED,
+								StartedAt: 2,
+							},
+						},
+					},
+					newVersion: 0,
+				},
+				{
+					ctx: grpc.CtxWithIncomingToken(context.Background(), jwtWithSubUserID),
+					cmd: &commands.UpdateDeviceMetadataRequest{
+						DeviceId: deviceID,
+						CommandMetadata: &commands.CommandMetadata{
+							ConnectionId: connectionID + "1",
+							Sequence:     2,
+						},
+						CorrelationId: correlationID,
+						Update: &commands.UpdateDeviceMetadataRequest_TwinSynchronization{
+							TwinSynchronization: &commands.TwinSynchronization{
+								State:      commands.TwinSynchronization_FINISHED,
+								FinishedAt: 3,
+							},
+						},
+					},
+					newVersion: 0,
+					wantErr:    true,
+				},
+			},
+			args: args{
+				newVersion: 1,
+				ctx:        grpc.CtxWithIncomingToken(context.Background(), jwtWithSubUserID),
+				cmd: &commands.UpdateDeviceMetadataRequest{
+					DeviceId: deviceID,
+					CommandMetadata: &commands.CommandMetadata{
+						ConnectionId: connectionID,
+						Sequence:     3,
+					},
+					CorrelationId: correlationID,
+					Update: &commands.UpdateDeviceMetadataRequest_TwinSynchronization{
+						TwinSynchronization: &commands.TwinSynchronization{
+							State:      commands.TwinSynchronization_FINISHED,
+							FinishedAt: 3,
+						},
+					},
+				},
+			},
+			want: []*grpcgwPb.Event{
+				pb.ToEvent(&events.DeviceMetadataUpdated{
+					DeviceId: deviceID,
+					Connection: &commands.Connection{
+						Status:      commands.Connection_ONLINE,
+						ConnectedAt: connectedAt,
+					},
+					TwinEnabled: true,
+					TwinSynchronization: &commands.TwinSynchronization{
+						StartedAt:  1,
+						FinishedAt: 3,
+						State:      commands.TwinSynchronization_FINISHED,
+					},
+					AuditContext:         commands.NewAuditContext(userID, correlationID),
+					OpenTelemetryCarrier: map[string]string{},
+				}),
+			},
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			e := events.NewDeviceMetadataSnapshotTaken()
-			for _, preCmd := range tt.preCmds {
+			for idx, preCmd := range tt.preCmds {
 				_, err := e.HandleCommand(preCmd.ctx, preCmd.cmd, preCmd.newVersion)
-				require.NoError(t, err)
+				if preCmd.wantErr {
+					require.Error(t, err, "precmd: %v", idx)
+				} else {
+					require.NoError(t, err, "precmd: %v", idx)
+				}
 			}
 			res, err := e.HandleCommand(tt.args.ctx, tt.args.cmd, tt.args.newVersion)
 			if tt.wantErr {

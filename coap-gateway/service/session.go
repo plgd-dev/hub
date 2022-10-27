@@ -398,7 +398,6 @@ func (c *session) OnClose() {
 			Update: &commands.UpdateDeviceMetadataRequest_Connection{
 				Connection: &commands.Connection{
 					Status: commands.Connection_OFFLINE,
-					Id:     c.RemoteAddr().String(),
 				},
 			},
 			CommandMetadata: &commands.CommandMetadata{

@@ -309,7 +309,6 @@ func updateDeviceMetadata(req *mux.Message, client *session) error {
 			Update: &commands.UpdateDeviceMetadataRequest_Connection{
 				Connection: &commands.Connection{
 					Status: commands.Connection_OFFLINE,
-					Id:     client.RemoteAddr().String(),
 				},
 			},
 			CommandMetadata: &commands.CommandMetadata{
