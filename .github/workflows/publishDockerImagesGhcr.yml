@@ -72,6 +72,11 @@ jobs:
       packages: write
 
     steps:
+      - name: CPU Info
+        run: |
+          cat /proc/cpuinfo
+          echo "Number of cores: $(nproc)"
+          echo "Number of threads: $(nproc --all)"
       - name: Checkout repository
         uses: actions/checkout@v3
 
