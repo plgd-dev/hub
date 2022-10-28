@@ -84,7 +84,7 @@ func (d *DeviceMetadataSnapshotTaken) HandleDeviceMetadataUpdated(ctx context.Co
 	}
 	if d.DeviceMetadataUpdated.GetConnection().IsOnline() && upd.GetConnection() != nil && !upd.GetConnection().IsOnline() && d.DeviceMetadataUpdated.GetConnection().GetId() != upd.GetConnection().GetId() {
 		// if previous status was online and new status is offline, the connectionId must be the same
-		return false, nil
+		return false, status.Errorf(codes.InvalidArgument, "cannot update connection status online(id='%v') to offline(id='%v'): connectionId mismatch", d.DeviceMetadataUpdated.GetConnection().GetId(), upd.GetConnection().GetId())
 	}
 	d.DeviceId = upd.GetDeviceId()
 	if d.DeviceMetadataUpdated == nil {
@@ -259,7 +259,7 @@ func (d *DeviceMetadataSnapshotTaken) updateDeviceConnection(ctx context.Context
 
 	twinSynchronization := d.GetDeviceMetadataUpdated().GetTwinSynchronization()
 	// check if it is new connection
-	if req.GetConnection().GetStatus() == commands.Connection_ONLINE && req.GetConnection().GetId() != d.GetDeviceMetadataUpdated().GetConnection().GetId() {
+	if req.GetConnection().GetStatus() == commands.Connection_ONLINE && (req.GetConnection().GetId() != d.GetDeviceMetadataUpdated().GetConnection().GetId() || !d.GetDeviceMetadataUpdated().GetConnection().IsOnline()) {
 		// reset twinSynchronization
 		if twinSynchronization == nil {
 			twinSynchronization = &commands.TwinSynchronization{}
@@ -277,10 +277,44 @@ func (d *DeviceMetadataSnapshotTaken) updateDeviceConnection(ctx context.Context
 		OpenTelemetryCarrier: propagation.TraceFromCtx(ctx),
 	}
 	ok, err := d.HandleDeviceMetadataUpdated(ctx, &ev, false)
-	if !ok {
+	if err != nil {
 		return nil, err
 	}
+	if !ok {
+		return nil, nil
+	}
 	return []eventstore.Event{&ev}, nil
+}
+
+func (d *DeviceMetadataSnapshotTaken) checkTwinSynchronizationToStarted(twinSynchronization *commands.TwinSynchronization) (bool, error) {
+	if twinSynchronization.GetStartedAt() <= 0 {
+		return false, status.Errorf(codes.InvalidArgument, "cannot update twin synchronization with invalid startedAt(%v)", twinSynchronization.GetStartedAt())
+	}
+	if d.GetDeviceMetadataUpdated().GetTwinSynchronization().GetState() == commands.TwinSynchronization_STARTED {
+		if twinSynchronization.GetStartedAt() > d.GetDeviceMetadataUpdated().GetTwinSynchronization().GetStartedAt() {
+			return false, nil
+		}
+	}
+	twinSynchronization.FinishedAt = d.GetDeviceMetadataUpdated().GetTwinSynchronization().GetFinishedAt()
+	return true, nil
+}
+
+func (d *DeviceMetadataSnapshotTaken) checkTwinSynchronizationToFinished(twinSynchronization *commands.TwinSynchronization) (bool, error) {
+	if twinSynchronization.GetFinishedAt() <= 0 {
+		return false, status.Errorf(codes.InvalidArgument, "cannot update twin synchronization with invalid finishAt(%v)", twinSynchronization.GetStartedAt())
+	}
+	if d.GetDeviceMetadataUpdated().GetTwinSynchronization().GetState() == commands.TwinSynchronization_FINISHED {
+		if twinSynchronization.GetFinishedAt() < d.GetDeviceMetadataUpdated().GetTwinSynchronization().GetFinishedAt() {
+			return false, nil
+		}
+	}
+	if d.GetDeviceMetadataUpdated().GetTwinSynchronization().GetState() == commands.TwinSynchronization_STARTED {
+		if twinSynchronization.GetFinishedAt() < d.GetDeviceMetadataUpdated().GetTwinSynchronization().GetStartedAt() {
+			return false, nil
+		}
+	}
+	twinSynchronization.StartedAt = d.GetDeviceMetadataUpdated().GetTwinSynchronization().GetStartedAt()
+	return true, nil
 }
 
 func (d *DeviceMetadataSnapshotTaken) updateDeviceTwinSynchronization(ctx context.Context, req *commands.UpdateDeviceMetadataRequest, em *EventMetadata, ac *commands.AuditContext) ([]eventstore.Event, error) {
@@ -300,30 +334,13 @@ func (d *DeviceMetadataSnapshotTaken) updateDeviceTwinSynchronization(ctx contex
 	case commands.TwinSynchronization_NONE:
 		return nil, status.Errorf(codes.InvalidArgument, "cannot update twin synchronization with invalid state(%v)", twinSynchronization.GetState())
 	case commands.TwinSynchronization_STARTED:
-		if twinSynchronization.GetStartedAt() <= 0 {
-			return nil, status.Errorf(codes.InvalidArgument, "cannot update twin synchronization with invalid startedAt(%v)", twinSynchronization.GetStartedAt())
+		if ok, err := d.checkTwinSynchronizationToStarted(twinSynchronization); err != nil || !ok {
+			return nil, err
 		}
-		if d.GetDeviceMetadataUpdated().GetTwinSynchronization().GetState() == commands.TwinSynchronization_STARTED {
-			if twinSynchronization.GetStartedAt() > d.GetDeviceMetadataUpdated().GetTwinSynchronization().GetStartedAt() {
-				return nil, nil
-			}
-		}
-		twinSynchronization.FinishedAt = d.GetDeviceMetadataUpdated().GetTwinSynchronization().GetFinishedAt()
 	case commands.TwinSynchronization_FINISHED:
-		if twinSynchronization.GetFinishedAt() <= 0 {
-			return nil, status.Errorf(codes.InvalidArgument, "cannot update twin synchronization with invalid finishAt(%v)", twinSynchronization.GetStartedAt())
+		if ok, err := d.checkTwinSynchronizationToFinished(twinSynchronization); err != nil || !ok {
+			return nil, err
 		}
-		if d.GetDeviceMetadataUpdated().GetTwinSynchronization().GetState() == commands.TwinSynchronization_FINISHED {
-			if twinSynchronization.GetFinishedAt() < d.GetDeviceMetadataUpdated().GetTwinSynchronization().GetFinishedAt() {
-				return nil, nil
-			}
-		}
-		if d.GetDeviceMetadataUpdated().GetTwinSynchronization().GetState() == commands.TwinSynchronization_STARTED {
-			if twinSynchronization.GetFinishedAt() < d.GetDeviceMetadataUpdated().GetTwinSynchronization().GetStartedAt() {
-				return nil, nil
-			}
-		}
-		twinSynchronization.StartedAt = d.GetDeviceMetadataUpdated().GetTwinSynchronization().GetStartedAt()
 	}
 	twinSynchronization.CommandMetadata = commandMetadata
 	ev := DeviceMetadataUpdated{
