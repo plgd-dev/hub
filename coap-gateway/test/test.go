@@ -24,6 +24,7 @@ func MakeConfig(t *testing.T) service.Config {
 	cfg.TaskQueue.GoPoolSize = 1600
 	cfg.TaskQueue.Size = 2 * 1024 * 1024
 	cfg.APIs.COAP.Addr = config.COAP_GW_HOST
+	cfg.APIs.COAP.ObservationPerResourceEnabled = true
 	cfg.APIs.COAP.ExternalAddress = config.COAP_GW_HOST
 	cfg.APIs.COAP.Protocols = []coapService.Protocol{coapService.TCP}
 	if config.COAP_GATEWAY_UDP_ENABLED {

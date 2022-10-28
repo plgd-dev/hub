@@ -826,6 +826,7 @@ coapgateway:
       ownerCacheExpiration: 1m
       subscriptionBufferSize: 1000
       messagePoolSize: 1000
+      observationPerResourceEnabled: false
       keepAlive:
         timeout: 20s
       blockwiseTransfer:

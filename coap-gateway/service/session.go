@@ -834,7 +834,8 @@ func (c *session) UpdateDeviceMetadata(ctx context.Context, event *events.Device
 
 	previous, errObs := c.replaceDeviceObserverWithDeviceTwin(sendConfirmCtx, event.GetTwinEnabled())
 	if errObs != nil {
-		c.Errorf("update device('%v') metadata error: %w", event.GetDeviceId(), errObs)
+		c.Close()
+		return fmt.Errorf("cannot update device('%v') metadata: %w", event.GetDeviceId(), errObs)
 	}
 	_, err = c.server.raClient.ConfirmDeviceMetadataUpdate(sendConfirmCtx, &commands.ConfirmDeviceMetadataUpdateRequest{
 		DeviceId:      event.GetDeviceId(),
@@ -851,6 +852,7 @@ func (c *session) UpdateDeviceMetadata(ctx context.Context, event *events.Device
 	if err != nil && !errors.Is(err, context.Canceled) {
 		_, errObs := c.replaceDeviceObserverWithDeviceTwin(sendConfirmCtx, previous)
 		if errObs != nil {
+			c.Close()
 			c.Errorf("update device('%v') metadata error: %w", event.GetDeviceId(), errObs)
 		}
 	}

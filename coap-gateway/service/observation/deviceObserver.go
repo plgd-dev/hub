@@ -52,10 +52,11 @@ type DeviceObserver struct {
 }
 
 type DeviceObserverConfig struct {
-	observationType ObservationType
-	twinEnabled     bool
-	twinEnabledSet  bool
-	logger          log.Logger
+	ObservationType               ObservationType
+	TwinEnabled                   bool
+	TwinEnabledSet                bool
+	Logger                        log.Logger
+	ObservationPerResourceEnabled bool
 }
 
 type ClientConn interface {
@@ -70,12 +71,27 @@ type Option interface {
 }
 
 // Force observationType
+type ObservationPerResourceEnabledOpt struct {
+	observationPerResourceEnabled bool
+}
+
+func (o ObservationPerResourceEnabledOpt) Apply(opts *DeviceObserverConfig) {
+	opts.ObservationPerResourceEnabled = o.observationPerResourceEnabled
+}
+
+func WithObservationPerResourceEnabled(v bool) ObservationPerResourceEnabledOpt {
+	return ObservationPerResourceEnabledOpt{
+		observationPerResourceEnabled: v,
+	}
+}
+
+// Force observationType
 type ObservationTypeOpt struct {
 	observationType ObservationType
 }
 
 func (o ObservationTypeOpt) Apply(opts *DeviceObserverConfig) {
-	opts.observationType = o.observationType
+	opts.ObservationType = o.observationType
 }
 
 func WithObservationType(observationType ObservationType) ObservationTypeOpt {
@@ -90,8 +106,8 @@ type TwinEnabledOpt struct {
 }
 
 func (o TwinEnabledOpt) Apply(opts *DeviceObserverConfig) {
-	opts.twinEnabled = o.twinEnabled
-	opts.twinEnabledSet = true
+	opts.TwinEnabled = o.twinEnabled
+	opts.TwinEnabledSet = true
 }
 
 func WithTwinSynchronization(twinEnabled bool) TwinEnabledOpt {
@@ -112,28 +128,28 @@ func WithLogger(logger log.Logger) LoggerOpt {
 }
 
 func (o LoggerOpt) Apply(opts *DeviceObserverConfig) {
-	opts.logger = o.logger
+	opts.Logger = o.logger
 }
 
 func prepareSetupDeviceObserver(ctx context.Context, deviceID string, coapConn ClientConn, rdClient GrpcGatewayClient, raClient ResourceAggregateClient, cfg DeviceObserverConfig) (DeviceObserverConfig, []*commands.Resource, error) {
 	links, sequence, err := GetResourceLinks(ctx, coapConn, resources.ResourceURI)
 	switch {
 	case err == nil:
-		if cfg.observationType == ObservationType_Detect {
-			cfg.observationType, err = detectObservationType(links)
+		if cfg.ObservationType == ObservationType_Detect {
+			cfg.ObservationType, err = detectObservationType(links)
 			if err != nil {
-				cfg.logger.Errorf("%w", err)
-				cfg.observationType = ObservationType_PerDevice
+				cfg.Logger.Errorf("%w", err)
+				cfg.ObservationType = ObservationType_PerDevice
 			}
 		}
 	case errors.Is(err, context.Canceled):
 		// the connection has been closed
 		return cfg, nil, err
 	default:
-		cfg.logger.Debugf("cannot to get resource links from the device(%v): %w", deviceID, err)
+		cfg.Logger.Debugf("cannot to get resource links from the device(%v): %w", deviceID, err)
 		// the device doesn't have a /oic/res resource or a timeout has occurred
-		if cfg.observationType == ObservationType_Detect {
-			cfg.observationType = ObservationType_PerDevice
+		if cfg.ObservationType == ObservationType_Detect {
+			cfg.ObservationType = ObservationType_PerDevice
 		}
 	}
 
@@ -159,25 +175,25 @@ func NewDeviceObserver(ctx context.Context, deviceID string, coapConn ClientConn
 	}
 
 	cfg := DeviceObserverConfig{
-		logger: log.Get(),
+		Logger: log.Get(),
 	}
 	for _, o := range opts {
 		o.Apply(&cfg)
 	}
 
-	if !cfg.twinEnabledSet {
+	if !cfg.TwinEnabledSet {
 		twinEnabled, err := loadTwinEnabled(ctx, rdClient, deviceID)
 		if err != nil {
 			return nil, createError(err)
 		}
-		cfg.twinEnabled = twinEnabled
+		cfg.TwinEnabled = twinEnabled
 	}
 
-	if !cfg.twinEnabled {
+	if !cfg.TwinEnabled {
 		return &DeviceObserver{
 			deviceID:    deviceID,
-			twinEnabled: cfg.twinEnabled,
-			logger:      cfg.logger,
+			twinEnabled: cfg.TwinEnabled,
+			logger:      cfg.Logger,
 		}, nil
 	}
 
@@ -191,33 +207,36 @@ func NewDeviceObserver(ctx context.Context, deviceID string, coapConn ClientConn
 		notSyncedResources.Store(r.GetHref(), r)
 	}
 
-	if cfg.observationType == ObservationType_PerDevice {
-		resourcesObserver, err := createDiscoveryResourceObserver(ctx, deviceID, coapConn, callbacks, cfg.logger)
+	if cfg.ObservationType == ObservationType_PerDevice {
+		resourcesObserver, err := createDiscoveryResourceObserver(ctx, deviceID, coapConn, callbacks, cfg.Logger)
 		if err == nil {
 			return &DeviceObserver{
 				deviceID:          deviceID,
 				observationType:   ObservationType_PerDevice,
-				twinEnabled:       cfg.twinEnabled,
+				twinEnabled:       cfg.TwinEnabled,
 				rdClient:          rdClient,
 				resourcesObserver: resourcesObserver,
-				logger:            cfg.logger,
+				logger:            cfg.Logger,
 				raClient:          raClient,
 			}, nil
 		}
-		cfg.logger.Debugf("NewDeviceObserverWithResourceTwin: failed to create /oic/res observation for device(%v): %v", deviceID, err)
+		cfg.Logger.Debugf("NewDeviceObserver: failed to create /oic/res observation for device(%v): %v", deviceID, err)
+	}
+	if !cfg.ObservationPerResourceEnabled {
+		return nil, createError(fmt.Errorf("cannot create observation per resource for device(%v): disabled by configuration", deviceID))
 	}
 
-	resourcesObserver, err := createPublishedResourcesObserver(ctx, deviceID, coapConn, callbacks, published, cfg.logger)
+	resourcesObserver, err := createPublishedResourcesObserver(ctx, deviceID, coapConn, callbacks, published, cfg.Logger)
 	if err != nil {
 		return nil, createError(err)
 	}
 	return &DeviceObserver{
 		deviceID:          deviceID,
 		observationType:   ObservationType_PerResource,
-		twinEnabled:       cfg.twinEnabled,
+		twinEnabled:       cfg.TwinEnabled,
 		rdClient:          rdClient,
 		resourcesObserver: resourcesObserver,
-		logger:            cfg.logger,
+		logger:            cfg.Logger,
 		raClient:          raClient,
 	}, nil
 }

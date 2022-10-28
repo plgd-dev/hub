@@ -66,6 +66,7 @@ func (c *session) replaceDeviceObserverWithDeviceTwin(ctx context.Context, twinE
 		observation.MakeResourcesObserverCallbacks(c.onObserveResource, c.onGetResourceContent, c.UpdateTwinSynchronizationStatus),
 		observation.WithTwinSynchronization(twinEnabled), observation.WithObservationType(observationType),
 		observation.WithLogger(c.getLogger()),
+		observation.WithObservationPerResourceEnabled(c.server.config.APIs.COAP.ObservationPerResourceEnabled),
 	)
 	if err != nil {
 		setDeviceObserver(nil, err)

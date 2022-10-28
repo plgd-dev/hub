@@ -219,8 +219,11 @@ func setNewDeviceObserver(ctx context.Context, client *session, deviceID string,
 		deviceObserver, err := observation.NewDeviceObserver(client.Context(), deviceID, client, client, client,
 			observation.MakeResourcesObserverCallbacks(client.onObserveResource, client.onGetResourceContent, client.UpdateTwinSynchronizationStatus),
 			observation.WithObservationType(observationType),
-			observation.WithLogger(client.getLogger()))
+			observation.WithLogger(client.getLogger()),
+			observation.WithObservationPerResourceEnabled(client.server.config.APIs.COAP.ObservationPerResourceEnabled),
+		)
 		if err != nil {
+			client.Close()
 			client.Errorf("%w", signInError(fmt.Errorf("cannot create observer for device %v: %w", deviceID, err)))
 			setDeviceObserver(nil, err)
 			return
