@@ -15,10 +15,11 @@ type Config struct {
 	KeyFile                   string `yaml:"keyFile" json:"keyFile" description:"file name of private key in PEM format"`
 	CertFile                  string `yaml:"certFile" json:"certFile" description:"file name of certificate in PEM format"`
 	ClientCertificateRequired bool   `yaml:"clientCertificateRequired" json:"clientCertificateRequired" description:"require client certificate"`
+	CAPoolIsOptional          bool   `yaml:"-" json:"-"`
 }
 
 func (c Config) Validate() error {
-	if c.CAPool == "" {
+	if !c.CAPoolIsOptional && c.CAPool == "" {
 		return fmt.Errorf("caPool('%v')", c.CAPool)
 	}
 	if c.CertFile == "" {
