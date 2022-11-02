@@ -75,6 +75,33 @@ func toDTLSClientAuth(t tls.ClientAuthType) dtls.ClientAuthType {
 	return mapDTLSClientAuth[t]
 }
 
+func TLSConfigToDTLSConfig(tlsConfig *tls.Config) *dtls.Config {
+	var getClientCertificate func(cri *dtls.CertificateRequestInfo) (*tls.Certificate, error)
+	if tlsConfig.GetClientCertificate != nil {
+		getClientCertificate = func(cri *dtls.CertificateRequestInfo) (*tls.Certificate, error) {
+			return tlsConfig.GetClientCertificate(&tls.CertificateRequestInfo{AcceptableCAs: cri.AcceptableCAs})
+		}
+	}
+	var getCertificate func(chi *dtls.ClientHelloInfo) (*tls.Certificate, error)
+	if tlsConfig.GetCertificate != nil {
+		getCertificate = func(chi *dtls.ClientHelloInfo) (*tls.Certificate, error) {
+			return tlsConfig.GetCertificate(&tls.ClientHelloInfo{ServerName: chi.ServerName})
+		}
+	}
+	return &dtls.Config{
+		GetCertificate:        getCertificate,
+		ClientCAs:             tlsConfig.ClientCAs,
+		VerifyPeerCertificate: tlsConfig.VerifyPeerCertificate,
+		RootCAs:               tlsConfig.RootCAs,
+		InsecureSkipVerify:    tlsConfig.InsecureSkipVerify,
+		Certificates:          tlsConfig.Certificates,
+		ServerName:            tlsConfig.ServerName,
+		GetClientCertificate:  getClientCertificate,
+		ClientAuth:            toDTLSClientAuth(tlsConfig.ClientAuth),
+		CipherSuites:          []dtls.CipherSuiteID{dtls.TLS_ECDHE_ECDSA_WITH_AES_128_CCM, dtls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256, dtls.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384},
+	}
+}
+
 func newDTLSListener(config Config, serviceOpts Options, fileWatcher *fsnotify.Watcher, logger log.Logger) (coapDtlsServer.Listener, func(), error) {
 	var closeListener fn.FuncList
 	coapsTLS, err := certManagerServer.New(config.TLS.Embedded, fileWatcher, logger)
@@ -86,20 +113,12 @@ func newDTLSListener(config Config, serviceOpts Options, fileWatcher *fsnotify.W
 	if serviceOpts.OverrideTLSConfig != nil {
 		tlsCfg = serviceOpts.OverrideTLSConfig(tlsCfg)
 	}
-	dtlsCfg := dtls.Config{
-		GetCertificate: func(chi *dtls.ClientHelloInfo) (*tls.Certificate, error) {
-			return tlsCfg.GetCertificate(&tls.ClientHelloInfo{ServerName: chi.ServerName})
-		},
-		ClientCAs:             tlsCfg.ClientCAs,
-		VerifyPeerCertificate: tlsCfg.VerifyPeerCertificate,
-		ClientAuth:            toDTLSClientAuth(tlsCfg.ClientAuth),
-		LoggerFactory:         logger.DTLSLoggerFactory(),
-		CipherSuites:          []dtls.CipherSuiteID{dtls.TLS_ECDHE_ECDSA_WITH_AES_128_CCM, dtls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256, dtls.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384},
-		ConnectContextMaker: func() (context.Context, func()) {
-			return context.WithTimeout(context.Background(), config.GetTimeout())
-		},
+	dtlsCfg := TLSConfigToDTLSConfig(tlsCfg)
+	dtlsCfg.LoggerFactory = logger.DTLSLoggerFactory()
+	dtlsCfg.ConnectContextMaker = func() (context.Context, func()) {
+		return context.WithTimeout(context.Background(), config.GetTimeout())
 	}
-	listener, err := net.NewDTLSListener("udp", config.Addr, &dtlsCfg)
+	listener, err := net.NewDTLSListener("udp", config.Addr, dtlsCfg)
 	if err != nil {
 		closeListener.Execute()
 		return nil, nil, fmt.Errorf("cannot create dtls listener: %w", err)
