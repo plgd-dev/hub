@@ -112,9 +112,9 @@ func TestSignInDeviceSubscriptionHandler(t *testing.T) {
 	_ = co1.Close()
 }
 
-func TestSignInWithNotObservationPerResourceEnabled(t *testing.T) {
+func TestSignInWithRequireBatchObserveEnabled(t *testing.T) {
 	coapgwCfg := coapgwTest.MakeConfig(t)
-	coapgwCfg.APIs.COAP.ObservationPerResourceEnabled = false
+	coapgwCfg.APIs.COAP.RequireBatchObserveEnabled = true
 	shutdown := setUp(t, coapgwCfg)
 	defer shutdown()
 

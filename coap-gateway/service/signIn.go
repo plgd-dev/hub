@@ -220,7 +220,7 @@ func setNewDeviceObserver(ctx context.Context, client *session, deviceID string,
 			observation.MakeResourcesObserverCallbacks(client.onObserveResource, client.onGetResourceContent, client.UpdateTwinSynchronizationStatus),
 			observation.WithObservationType(observationType),
 			observation.WithLogger(client.getLogger()),
-			observation.WithObservationPerResourceEnabled(client.server.config.APIs.COAP.ObservationPerResourceEnabled),
+			observation.WithRequireBatchObserveEnabled(client.server.config.APIs.COAP.RequireBatchObserveEnabled),
 		)
 		if err != nil {
 			client.Close()

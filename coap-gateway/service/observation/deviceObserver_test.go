@@ -66,17 +66,17 @@ func (f deviceObserverFactory) makeDeviceObserver(ctx context.Context, coapConn 
 
 type observerHandler struct {
 	coapgwTest.DefaultObserverHandler
-	t                             *testing.T
-	ctx                           context.Context
-	coapConn                      *coapTcpClient.Conn
-	service                       *coapgwTestService.Service
-	deviceObserverLock            sync.Mutex
-	deviceObserverFactory         deviceObserverFactory
-	deviceObserver                *future.Future
-	done                          atomic.Bool
-	retrievedResourceChan         chan *commands.ResourceId
-	observedResourceChan          chan *commands.ResourceId
-	observationPerResourceEnabled bool
+	t                          *testing.T
+	ctx                        context.Context
+	coapConn                   *coapTcpClient.Conn
+	service                    *coapgwTestService.Service
+	deviceObserverLock         sync.Mutex
+	deviceObserverFactory      deviceObserverFactory
+	deviceObserver             *future.Future
+	done                       atomic.Bool
+	retrievedResourceChan      chan *commands.ResourceId
+	observedResourceChan       chan *commands.ResourceId
+	requireBatchObserveEnabled bool
 }
 
 const (
@@ -116,7 +116,7 @@ func (h *observerHandler) SignIn(req coapgwService.CoapSignInReq) (coapgwService
 			obs := v.(*observation.DeviceObserver)
 			obs.Clean(h.ctx)
 		}
-		deviceObserver, err := h.deviceObserverFactory.makeDeviceObserver(h.ctx, h.coapConn, h.OnObserveResource, h.OnGetResourceContent, h.UpdateTwinSynchronizationStatus, observation.WithObservationPerResourceEnabled(h.observationPerResourceEnabled))
+		deviceObserver, err := h.deviceObserverFactory.makeDeviceObserver(h.ctx, h.coapConn, h.OnObserveResource, h.OnGetResourceContent, h.UpdateTwinSynchronizationStatus, observation.WithRequireBatchObserveEnabled(h.requireBatchObserveEnabled))
 		require.NoError(h.t, err)
 		setDeviceObserver(deviceObserver, nil)
 	})
@@ -195,7 +195,7 @@ func TestDeviceObserverRegisterForPublishedResources(t *testing.T) {
 	for _, resID := range test.ResourceLinksToResourceIds(deviceID, test.TestDevsimResources) {
 		expectedObserved.Add(resID.ToString())
 	}
-	runTestDeviceObserverRegister(ctx, t, deviceID, expectedObserved, nil, validateData, nil, nil, true)
+	runTestDeviceObserverRegister(ctx, t, deviceID, expectedObserved, nil, validateData, nil, nil, false)
 }
 
 func TestDeviceObserverRegisterForPublishedResourcesWithAlreadyPublishedResources(t *testing.T) {
@@ -219,7 +219,7 @@ func TestDeviceObserverRegisterForPublishedResourcesWithAlreadyPublishedResource
 	for _, resID := range test.ResourceLinksToResourceIds(deviceID, test.TestDevsimResources) {
 		expectedObserved.Add(resID.ToString())
 	}
-	runTestDeviceObserverRegister(ctx, t, deviceID, expectedObserved, nil, validateData, testPreregisterVirtualDevice, testValidateResourceLinks, true)
+	runTestDeviceObserverRegister(ctx, t, deviceID, expectedObserved, nil, validateData, testPreregisterVirtualDevice, testValidateResourceLinks, false)
 }
 
 func TestDeviceObserverRegisterForDiscoveryResource(t *testing.T) {
@@ -240,7 +240,7 @@ func TestDeviceObserverRegisterForDiscoveryResource(t *testing.T) {
 	}
 
 	expectedObserved := strings.MakeSet(commands.NewResourceID(deviceID, resources.ResourceURI).ToString())
-	runTestDeviceObserverRegister(ctx, t, deviceID, expectedObserved, nil, validateData, nil, nil, false)
+	runTestDeviceObserverRegister(ctx, t, deviceID, expectedObserved, nil, validateData, nil, nil, true)
 }
 
 func testPreregisterVirtualDevice(ctx context.Context, t *testing.T, deviceID string, grpcClient pb.GrpcGatewayClient, raClient raPb.ResourceAggregateClient) {
@@ -347,7 +347,7 @@ type (
 	actioneHubFn    = func(ctx context.Context, t *testing.T, deviceID string, grpcClient pb.GrpcGatewayClient, raClient raPb.ResourceAggregateClient)
 )
 
-func runTestDeviceObserverRegister(ctx context.Context, t *testing.T, deviceID string, expectedObserved, expectedRetrieved strings.Set, verifyHandler verifyHandlerFn, prepareHub, postHub actioneHubFn, observationPerResourceEnabled bool) { //nolint:unparam
+func runTestDeviceObserverRegister(ctx context.Context, t *testing.T, deviceID string, expectedObserved, expectedRetrieved strings.Set, verifyHandler verifyHandlerFn, prepareHub, postHub actioneHubFn, requireBatchObserveEnabled bool) { //nolint:unparam
 	// TODO: add test with expectedRetrieved
 	const services = service.SetUpServicesOAuth | service.SetUpServicesId | service.SetUpServicesResourceDirectory |
 		service.SetUpServicesGrpcGateway | service.SetUpServicesResourceAggregate
@@ -405,10 +405,10 @@ func runTestDeviceObserverRegister(ctx context.Context, t *testing.T, deviceID s
 				rdClient: rdClient,
 				raClient: raClient,
 			},
-			service:                       service,
-			retrievedResourceChan:         retrieveChan,
-			observedResourceChan:          observeChan,
-			observationPerResourceEnabled: observationPerResourceEnabled,
+			service:                    service,
+			retrievedResourceChan:      retrieveChan,
+			observedResourceChan:       observeChan,
+			requireBatchObserveEnabled: requireBatchObserveEnabled,
 		}
 		return h
 	}

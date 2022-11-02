@@ -627,6 +627,7 @@ cat /configs/coap-gateway.yaml | yq e "\
   .apis.coap.externalAddress = \"${FQDN}:${COAP_GATEWAY_UNSECURE_PORT}\" |
   .apis.coap.protocols = [\"tcp\"] |
   .apis.coap.tls.enabled = false |
+  .apis.coap.requireBatchObserveEnabled = false |
   .apis.coap.authorization.ownerClaim = \"${OWNER_CLAIM}\" |
   .apis.coap.authorization.providers[0].name = \"${DEVICE_PROVIDER}\" |
   .apis.coap.authorization.providers[0].authority = \"https://${OAUTH_ENDPOINT}\" |
@@ -674,6 +675,7 @@ cat /configs/coap-gateway.yaml | yq e "\
   .log.dumpBody =  ${COAP_GATEWAY_LOG_MESSAGES} |
   .apis.coap.address = \"${COAP_GATEWAY_ADDRESS}\" |
   .apis.coap.externalAddress = \"${FQDN}:${COAP_GATEWAY_PORT}\" |
+  .apis.coap.requireBatchObserveEnabled = false |
   .apis.coap.tls.enabled = true |
   .apis.coap.tls.keyFile = \"${EXTERNAL_CERT_DIR_PATH}/${COAP_GATEWAY_FILE_CERT_KEY_NAME}\" |
   .apis.coap.tls.certFile = \"${EXTERNAL_CERT_DIR_PATH}/${COAP_GATEWAY_FILE_CERT_NAME}\" |

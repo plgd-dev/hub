@@ -17,7 +17,7 @@ apis:
     ownerCacheExpiration: 1m
     subscriptionBufferSize: 1000
     messagePoolSize: 1000
-    observationPerResourceEnabled: false
+    requireBatchObserveEnabled: true
     keepAlive:
       timeout: 20s
     blockwiseTransfer:

@@ -98,12 +98,12 @@ func (c *AuthorizationConfig) Validate() error {
 }
 
 type COAPConfig struct {
-	ExternalAddress               string              `yaml:"externalAddress" json:"externalAddress"`
-	OwnerCacheExpiration          time.Duration       `yaml:"ownerCacheExpiration" json:"ownerCacheExpiration"`
-	SubscriptionBufferSize        int                 `yaml:"subscriptionBufferSize" json:"subscriptionBufferSize"`
-	Authorization                 AuthorizationConfig `yaml:"authorization" json:"authorization"`
-	ObservationPerResourceEnabled bool                `yaml:"observationPerResourceEnabled" json:"observationPerResourceEnabled"`
-	coapService.Config            `yaml:",inline" json:",inline"`
+	ExternalAddress            string              `yaml:"externalAddress" json:"externalAddress"`
+	OwnerCacheExpiration       time.Duration       `yaml:"ownerCacheExpiration" json:"ownerCacheExpiration"`
+	SubscriptionBufferSize     int                 `yaml:"subscriptionBufferSize" json:"subscriptionBufferSize"`
+	Authorization              AuthorizationConfig `yaml:"authorization" json:"authorization"`
+	RequireBatchObserveEnabled bool                `yaml:"requireBatchObserveEnabled" json:"requireBatchObserveEnabled"`
+	coapService.Config         `yaml:",inline" json:",inline"`
 }
 
 func (c *COAPConfig) Validate() error {

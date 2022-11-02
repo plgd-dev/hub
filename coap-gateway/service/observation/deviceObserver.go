@@ -52,11 +52,11 @@ type DeviceObserver struct {
 }
 
 type DeviceObserverConfig struct {
-	ObservationType               ObservationType
-	TwinEnabled                   bool
-	TwinEnabledSet                bool
-	Logger                        log.Logger
-	ObservationPerResourceEnabled bool
+	ObservationType            ObservationType
+	TwinEnabled                bool
+	TwinEnabledSet             bool
+	Logger                     log.Logger
+	RequireBatchObserveEnabled bool
 }
 
 type ClientConn interface {
@@ -71,17 +71,17 @@ type Option interface {
 }
 
 // Force observationType
-type ObservationPerResourceEnabledOpt struct {
-	observationPerResourceEnabled bool
+type RequireBatchObserveEnabledOpt struct {
+	requireBatchObserveEnabled bool
 }
 
-func (o ObservationPerResourceEnabledOpt) Apply(opts *DeviceObserverConfig) {
-	opts.ObservationPerResourceEnabled = o.observationPerResourceEnabled
+func (o RequireBatchObserveEnabledOpt) Apply(opts *DeviceObserverConfig) {
+	opts.RequireBatchObserveEnabled = o.requireBatchObserveEnabled
 }
 
-func WithObservationPerResourceEnabled(v bool) ObservationPerResourceEnabledOpt {
-	return ObservationPerResourceEnabledOpt{
-		observationPerResourceEnabled: v,
+func WithRequireBatchObserveEnabled(v bool) RequireBatchObserveEnabledOpt {
+	return RequireBatchObserveEnabledOpt{
+		requireBatchObserveEnabled: v,
 	}
 }
 
@@ -222,8 +222,8 @@ func NewDeviceObserver(ctx context.Context, deviceID string, coapConn ClientConn
 		}
 		cfg.Logger.Debugf("NewDeviceObserver: failed to create /oic/res observation for device(%v): %v", deviceID, err)
 	}
-	if !cfg.ObservationPerResourceEnabled {
-		return nil, createError(fmt.Errorf("cannot create observation per resource for device(%v): disabled by configuration", deviceID))
+	if cfg.RequireBatchObserveEnabled {
+		return nil, createError(fmt.Errorf("device(%v) doesn't support batch observe, which is required by configuration", deviceID))
 	}
 
 	resourcesObserver, err := createPublishedResourcesObserver(ctx, deviceID, coapConn, callbacks, published, cfg.Logger)
