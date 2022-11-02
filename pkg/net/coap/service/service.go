@@ -115,6 +115,9 @@ func New(ctx context.Context, config Config, router *mux.Router, fileWatcher *fs
 
 	services := make([]service.APIService, 0, 2)
 	for _, protocol := range config.Protocols {
+		if protocol == UDP && !config.BlockwiseTransfer.Enabled {
+			logger.Warnf("It's possible that UDP messages bigger than MTU (1500) will be dropped, since apis.coap.blockwiseTransfer.enabled is set to false.")
+		}
 		service, err := newService(protocol, config, serviceOpts, fileWatcher, logger, opts...)
 		if err != nil {
 			closeOnError(services, logger)
