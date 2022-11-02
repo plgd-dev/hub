@@ -9,7 +9,7 @@
 {{- $udpNodePort := "" }}
 {{- if  (has "udp" .Values.coapgateway.apis.coap.protocols) -}}
   {{- $udpServiceType = .Values.coapgateway.service.udp.type | default .Values.coapgateway.service.type }}
-  {{- $udpNodePort = .Values.coapgateway.service.nodePort | default .Values.coapgateway.service.udp.nodePort }}
+  {{- $udpNodePort = .Values.coapgateway.service.udp.nodePort | default .Values.coapgateway.service.nodePort }}
 {{- end -}}
 {{- if and (eq (lower $tcpServiceType) "nodeport") (eq (lower $udpServiceType) "nodeport") ($tcpNodePort | quote) ($udpNodePort| quote) (eq ($tcpNodePort | quote) ($udpNodePort| quote)) -}}
   {{- fail "tcp.nodePort and udp.nodePort are same which is not allowed by k8s" }}
