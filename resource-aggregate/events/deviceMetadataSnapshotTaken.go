@@ -159,6 +159,61 @@ func timeToLive2ValidUntil(timeToLive int64) int64 {
 	return pkgTime.UnixNano(time.Now().Add(time.Duration(timeToLive)))
 }
 
+func (d *DeviceMetadataSnapshotTaken) cancelDeviceMetadataUpdate(ctx context.Context, req *commands.ConfirmDeviceMetadataUpdateRequest, em *EventMetadata, ac *commands.AuditContext) ([]eventstore.Event, error) {
+	ev := DeviceMetadataUpdated{
+		DeviceId:             req.GetDeviceId(),
+		Connection:           d.GetDeviceMetadataUpdated().GetConnection(),
+		TwinSynchronization:  d.GetDeviceMetadataUpdated().GetTwinSynchronization(),
+		TwinEnabled:          d.GetDeviceMetadataUpdated().GetTwinEnabled(),
+		Canceled:             true,
+		AuditContext:         ac,
+		EventMetadata:        em,
+		OpenTelemetryCarrier: propagation.TraceFromCtx(ctx),
+	}
+	ok, err := d.HandleDeviceMetadataUpdated(ctx, &ev, true)
+	if !ok {
+		return nil, err
+	}
+	return []eventstore.Event{&ev}, nil
+}
+
+func (d *DeviceMetadataSnapshotTaken) updateTwinEnabled(ctx context.Context, req *commands.ConfirmDeviceMetadataUpdateRequest, em *EventMetadata, ac *commands.AuditContext) ([]eventstore.Event, error) {
+	twinSynchronization := d.GetDeviceMetadataUpdated().GetTwinSynchronization()
+	if twinSynchronization == nil {
+		twinSynchronization = &commands.TwinSynchronization{
+			State:           commands.TwinSynchronization_OUT_OF_SYNC,
+			CommandMetadata: req.GetCommandMetadata(),
+		}
+	}
+	if req.GetCommandMetadata().GetConnectionId() == d.GetDeviceMetadataUpdated().GetTwinSynchronization().GetCommandMetadata().GetConnectionId() {
+		switch req.GetTwinEnabled() {
+		case true:
+			if twinSynchronization.GetState() == commands.TwinSynchronization_DISABLED {
+				twinSynchronization.State = commands.TwinSynchronization_OUT_OF_SYNC
+			}
+		case false:
+			twinSynchronization.State = commands.TwinSynchronization_DISABLED
+		}
+	}
+	ev := DeviceMetadataUpdated{
+		DeviceId:             req.GetDeviceId(),
+		Connection:           d.GetDeviceMetadataUpdated().GetConnection(),
+		TwinEnabled:          req.GetTwinEnabled(),
+		TwinSynchronization:  twinSynchronization,
+		AuditContext:         ac,
+		EventMetadata:        em,
+		OpenTelemetryCarrier: propagation.TraceFromCtx(ctx),
+	}
+	ok, err := d.HandleDeviceMetadataUpdated(ctx, &ev, true)
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		return nil, nil
+	}
+	return []eventstore.Event{&ev}, nil
+}
+
 func (d *DeviceMetadataSnapshotTaken) ConfirmDeviceMetadataUpdate(ctx context.Context, userID string, req *commands.ConfirmDeviceMetadataUpdateRequest, newVersion uint64, cancel bool) ([]eventstore.Event, error) {
 	if req.GetCommandMetadata() == nil {
 		return nil, status.Errorf(codes.InvalidArgument, errInvalidCommandMetadata)
@@ -169,56 +224,9 @@ func (d *DeviceMetadataSnapshotTaken) ConfirmDeviceMetadataUpdate(ctx context.Co
 	_, is_confirm_twin_enabled := req.GetConfirm().(*commands.ConfirmDeviceMetadataUpdateRequest_TwinEnabled)
 	switch {
 	case cancel:
-		ev := DeviceMetadataUpdated{
-			DeviceId:             req.GetDeviceId(),
-			Connection:           d.GetDeviceMetadataUpdated().GetConnection(),
-			TwinSynchronization:  d.GetDeviceMetadataUpdated().GetTwinSynchronization(),
-			TwinEnabled:          d.GetDeviceMetadataUpdated().GetTwinEnabled(),
-			Canceled:             true,
-			AuditContext:         ac,
-			EventMetadata:        em,
-			OpenTelemetryCarrier: propagation.TraceFromCtx(ctx),
-		}
-		ok, err := d.HandleDeviceMetadataUpdated(ctx, &ev, true)
-		if !ok {
-			return nil, err
-		}
-		return []eventstore.Event{&ev}, nil
+		return d.cancelDeviceMetadataUpdate(ctx, req, em, ac)
 	case is_confirm_twin_enabled:
-		twinSynchronization := d.GetDeviceMetadataUpdated().GetTwinSynchronization()
-		if twinSynchronization == nil {
-			twinSynchronization = &commands.TwinSynchronization{
-				State:           commands.TwinSynchronization_OUT_OF_SYNC,
-				CommandMetadata: req.GetCommandMetadata(),
-			}
-		}
-		if req.GetCommandMetadata().GetConnectionId() == d.GetDeviceMetadataUpdated().GetTwinSynchronization().GetCommandMetadata().GetConnectionId() {
-			switch req.GetTwinEnabled() {
-			case true:
-				if twinSynchronization.GetState() == commands.TwinSynchronization_DISABLED {
-					twinSynchronization.State = commands.TwinSynchronization_OUT_OF_SYNC
-				}
-			case false:
-				twinSynchronization.State = commands.TwinSynchronization_DISABLED
-			}
-		}
-		ev := DeviceMetadataUpdated{
-			DeviceId:             req.GetDeviceId(),
-			Connection:           d.GetDeviceMetadataUpdated().GetConnection(),
-			TwinEnabled:          req.GetTwinEnabled(),
-			TwinSynchronization:  twinSynchronization,
-			AuditContext:         ac,
-			EventMetadata:        em,
-			OpenTelemetryCarrier: propagation.TraceFromCtx(ctx),
-		}
-		ok, err := d.HandleDeviceMetadataUpdated(ctx, &ev, true)
-		if err != nil {
-			return nil, err
-		}
-		if !ok {
-			return nil, nil
-		}
-		return []eventstore.Event{&ev}, nil
+		return d.updateTwinEnabled(ctx, req, em, ac)
 	default:
 		return nil, status.Errorf(codes.InvalidArgument, "unknown confirm type(%T)", req.GetConfirm())
 	}
