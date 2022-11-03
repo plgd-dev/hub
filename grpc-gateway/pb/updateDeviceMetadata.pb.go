@@ -26,10 +26,9 @@ type UpdateDeviceMetadataRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	DeviceId string `protobuf:"bytes,1,opt,name=device_id,json=deviceId,proto3" json:"device_id,omitempty"`
-	// ShadowSynchronization shadow_synchronization = 2; replaced by twin_enabled
-	TwinEnabled bool  `protobuf:"varint,4,opt,name=twin_enabled,json=twinEnabled,proto3" json:"twin_enabled,omitempty"`
-	TimeToLive  int64 `protobuf:"varint,3,opt,name=time_to_live,json=timeToLive,proto3" json:"time_to_live,omitempty"` // command validity in nanoseconds. 0 means forever and minimal value is 100000000 (100ms).
+	DeviceId    string `protobuf:"bytes,1,opt,name=device_id,json=deviceId,proto3" json:"device_id,omitempty"`
+	TwinEnabled bool   `protobuf:"varint,4,opt,name=twin_enabled,json=twinEnabled,proto3" json:"twin_enabled,omitempty"`
+	TimeToLive  int64  `protobuf:"varint,3,opt,name=time_to_live,json=timeToLive,proto3" json:"time_to_live,omitempty"` // command validity in nanoseconds. 0 means forever and minimal value is 100000000 (100ms).
 }
 
 func (x *UpdateDeviceMetadataRequest) Reset() {

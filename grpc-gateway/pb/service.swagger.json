@@ -264,8 +264,7 @@
               "type": "object",
               "properties": {
                 "twinEnabled": {
-                  "type": "boolean",
-                  "title": "ShadowSynchronization shadow_synchronization = 2; replaced by twin_enabled"
+                  "type": "boolean"
                 },
                 "timeToLive": {
                   "type": "string",
@@ -884,8 +883,7 @@
           "$ref": "#/definitions/pbConnection"
         },
         "twinSynchronization": {
-          "$ref": "#/definitions/pbTwinSynchronization",
-          "title": "resourceaggregate.pb.ShadowSynchronization shadow_synchronization = 2; replaced by twin_enabled;"
+          "$ref": "#/definitions/pbTwinSynchronization"
         },
         "twinEnabled": {
           "type": "boolean"

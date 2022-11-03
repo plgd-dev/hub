@@ -2037,8 +2037,7 @@ type Device_Metadata struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Connection *commands.Connection `protobuf:"bytes,1,opt,name=connection,proto3" json:"connection,omitempty"`
-	// resourceaggregate.pb.ShadowSynchronization shadow_synchronization = 2; replaced by twin_enabled;
+	Connection          *commands.Connection          `protobuf:"bytes,1,opt,name=connection,proto3" json:"connection,omitempty"`
 	TwinSynchronization *commands.TwinSynchronization `protobuf:"bytes,3,opt,name=twin_synchronization,json=twinSynchronization,proto3" json:"twin_synchronization,omitempty"`
 	TwinEnabled         bool                          `protobuf:"varint,4,opt,name=twin_enabled,json=twinEnabled,proto3" json:"twin_enabled,omitempty"`
 }
