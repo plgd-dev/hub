@@ -116,7 +116,7 @@ message BatchNotifyResourceChangedRequest {
 }
 
 message BatchNotifyResourceChangedResponse {
-    AuditContext audit_context = 3;
+    AuditContext audit_context = 1;
 }
 
 //*******************************************************************************************************************************************************

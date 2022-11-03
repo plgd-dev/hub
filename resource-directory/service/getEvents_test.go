@@ -346,7 +346,7 @@ func testDeleteResourceEvents(t *testing.T, ctx context.Context, c pb.GrpcGatewa
 
 func TestRequestHandlerGetEventsOnCollection(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
-	ctx, cancel := context.WithTimeout(context.Background(), testCfg.TEST_TIMEOUT*30)
+	ctx, cancel := context.WithTimeout(context.Background(), testCfg.TEST_TIMEOUT)
 	defer cancel()
 
 	tearDown := service.SetUp(ctx, t)

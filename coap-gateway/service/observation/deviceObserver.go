@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"net"
-	"sync"
 
 	"github.com/plgd-dev/device/v2/schema"
 	"github.com/plgd-dev/device/v2/schema/interfaces"
@@ -184,11 +183,6 @@ func NewDeviceObserver(ctx context.Context, deviceID string, coapConn ClientConn
 	cfg, published, err := prepareSetupDeviceObserver(ctx, deviceID, coapConn, rdClient, raClient, cfg)
 	if err != nil {
 		return nil, createError(err)
-	}
-
-	var notSyncedResources sync.Map
-	for _, r := range published {
-		notSyncedResources.Store(r.GetHref(), r)
 	}
 
 	if cfg.observationType == ObservationType_PerDevice {
