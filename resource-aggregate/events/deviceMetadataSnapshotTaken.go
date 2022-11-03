@@ -279,15 +279,23 @@ func (d *DeviceMetadataSnapshotTaken) updateDeviceConnection(ctx context.Context
 		twinSynchronization = &commands.TwinSynchronization{}
 	}
 	if req.GetConnection().GetStatus() == commands.Connection_ONLINE && (req.GetConnection().GetId() != d.GetDeviceMetadataUpdated().GetConnection().GetId() || !d.GetDeviceMetadataUpdated().GetConnection().IsOnline()) {
-		twinSynchronization.State = commands.TwinSynchronization_OUT_OF_SYNC
+		if d.GetDeviceMetadataUpdated().GetTwinEnabled() {
+			twinSynchronization.State = commands.TwinSynchronization_OUT_OF_SYNC
+		} else {
+			twinSynchronization.State = commands.TwinSynchronization_DISABLED
+		}
 		twinSynchronization.CommandMetadata = req.GetCommandMetadata()
 	}
-	if !req.GetConnection().IsOnline() {
+	if req.GetConnection() != nil && !req.GetConnection().IsOnline() {
 		if d.DeviceMetadataUpdated.GetConnection().IsOnline() && !req.GetConnection().IsOnline() && d.DeviceMetadataUpdated.GetConnection().GetId() != req.GetConnection().GetId() {
 			// if previous status was online and new status is offline, the connectionId must be the same
 			return nil, status.Errorf(codes.InvalidArgument, "cannot update connection status online(id='%v') to offline(id='%v'): connectionId mismatch", d.DeviceMetadataUpdated.GetConnection().GetId(), req.GetConnection().GetId())
 		}
-		twinSynchronization.State = commands.TwinSynchronization_OUT_OF_SYNC
+		if d.GetDeviceMetadataUpdated().GetTwinEnabled() {
+			twinSynchronization.State = commands.TwinSynchronization_OUT_OF_SYNC
+		} else {
+			twinSynchronization.State = commands.TwinSynchronization_DISABLED
+		}
 		twinSynchronization.CommandMetadata = req.GetCommandMetadata()
 	}
 
