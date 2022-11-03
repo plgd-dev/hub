@@ -480,10 +480,10 @@ message TwinSynchronization {
         SYNCING = 2; // As soon as device connects, successfully signs in and batch observe is called on device from the cloud.
         IN_SYNC = 3; // As soon as current device resources values are received and applied to twin database. Twin was successfully reconciled after device reconnect and is kept up to date using an active subscription to device resource changes.
     };
-    State state = 2;
-    int64 syncing_at = 3;  // unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when synchronization started.
-    int64 in_sync_at = 4; // unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when synchronization finished.
-    CommandMetadata command_metadata = 5; // when status is SYNCING, this field contains the connection id. To update state to IN_SYNC, this field must be same as the one in the previous message.
+    State state = 1;
+    int64 syncing_at = 2;  // unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when synchronization started.
+    int64 in_sync_at = 3; // unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when synchronization finished.
+    CommandMetadata command_metadata = 4; // when status is SYNCING, this field contains the connection id. To update state to IN_SYNC, this field must be same as the one in the previous message.
 }
 
 message UpdateDeviceMetadataRequest {
