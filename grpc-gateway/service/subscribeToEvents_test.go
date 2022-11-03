@@ -153,7 +153,7 @@ func TestRequestHandlerSubscribeToEvents(t *testing.T) {
 							},
 							TwinEnabled: true,
 							TwinSynchronization: &commands.TwinSynchronization{
-								State: commands.TwinSynchronization_FINISHED,
+								State: commands.TwinSynchronization_IN_SYNC,
 							},
 							AuditContext: commands.NewAuditContext(service.DeviceUserID, ""),
 						},
@@ -801,7 +801,7 @@ func TestRequestHandlerIssue270(t *testing.T) {
 				},
 				TwinEnabled: true,
 				TwinSynchronization: &commands.TwinSynchronization{
-					State: commands.TwinSynchronization_FINISHED,
+					State: commands.TwinSynchronization_IN_SYNC,
 				},
 				AuditContext: commands.NewAuditContext(service.DeviceUserID, ""),
 			},

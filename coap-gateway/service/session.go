@@ -904,9 +904,9 @@ func (c *session) UpdateTwinSynchronizationStatus(ctx context.Context, deviceID 
 
 	var startAt, finishedAt int64
 	switch state {
-	case commands.TwinSynchronization_STARTED:
+	case commands.TwinSynchronization_SYNCING:
 		startAt = t.UnixNano()
-	case commands.TwinSynchronization_FINISHED:
+	case commands.TwinSynchronization_IN_SYNC:
 		finishedAt = t.UnixNano()
 	}
 	ctx = authCtx.ToContext(ctx)
@@ -918,9 +918,9 @@ func (c *session) UpdateTwinSynchronizationStatus(ctx context.Context, deviceID 
 		},
 		Update: &commands.UpdateDeviceMetadataRequest_TwinSynchronization{
 			TwinSynchronization: &commands.TwinSynchronization{
-				State:      state,
-				StartedAt:  startAt,
-				FinishedAt: finishedAt,
+				State:     state,
+				SyncingAt: startAt,
+				InSyncAt:  finishedAt,
 			},
 		},
 	})

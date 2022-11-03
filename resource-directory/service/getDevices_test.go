@@ -117,7 +117,7 @@ func TestRequestHandlerGetDevices(t *testing.T) {
 						},
 						TwinEnabled: true,
 						TwinSynchronization: &commands.TwinSynchronization{
-							State: commands.TwinSynchronization_FINISHED,
+							State: commands.TwinSynchronization_IN_SYNC,
 						},
 					},
 					OwnershipStatus: pb.Device_OWNED,
@@ -165,8 +165,8 @@ func TestRequestHandlerGetDevices(t *testing.T) {
 					dev.Metadata.Connection.OnlineValidUntil = 0
 					dev.Metadata.Connection.Id = ""
 					dev.Metadata.Connection.ConnectedAt = 0
-					dev.Metadata.TwinSynchronization.StartedAt = 0
-					dev.Metadata.TwinSynchronization.FinishedAt = 0
+					dev.Metadata.TwinSynchronization.SyncingAt = 0
+					dev.Metadata.TwinSynchronization.InSyncAt = 0
 					dev.Metadata.TwinSynchronization.CommandMetadata = nil
 					dev.Data = nil
 					devices = append(devices, dev)

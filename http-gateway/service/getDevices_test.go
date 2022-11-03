@@ -41,7 +41,7 @@ func makeDefaultDevice(deviceID string) *pb.Device {
 			},
 			TwinEnabled: true,
 			TwinSynchronization: &commands.TwinSynchronization{
-				State: commands.TwinSynchronization_FINISHED,
+				State: commands.TwinSynchronization_IN_SYNC,
 			},
 		},
 		OwnershipStatus: pb.Device_OWNED,

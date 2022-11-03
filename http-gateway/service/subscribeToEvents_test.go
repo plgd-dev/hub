@@ -31,7 +31,7 @@ func isDeviceMetadataUpdatedOnlineEvent(ev *pb.Event, deviceID string) bool {
 	return ev.GetDeviceMetadataUpdated() != nil &&
 		ev.GetDeviceMetadataUpdated().GetDeviceId() == deviceID &&
 		ev.GetDeviceMetadataUpdated().GetConnection().GetStatus() == commands.Connection_ONLINE &&
-		ev.GetDeviceMetadataUpdated().GetTwinSynchronization().GetState() == commands.TwinSynchronization_FINISHED
+		ev.GetDeviceMetadataUpdated().GetTwinSynchronization().GetState() == commands.TwinSynchronization_IN_SYNC
 }
 
 func checkDeviceMetadataUpdatedOnlineEvent(t *testing.T, ev *pb.Event, deviceID, baseSubID string, twinSynchronizationState commands.TwinSynchronization_State) {
@@ -222,7 +222,7 @@ func TestRequestHandlerSubscribeToEvents(t *testing.T) {
 			break
 		}
 	}
-	checkDeviceMetadataUpdatedOnlineEvent(t, ev, deviceID, baseSubID, commands.TwinSynchronization_FINISHED)
+	checkDeviceMetadataUpdatedOnlineEvent(t, ev, deviceID, baseSubID, commands.TwinSynchronization_IN_SYNC)
 
 	err = send(&pb.SubscribeToEvents{
 		CorrelationId: "updatePending + resourceUpdated",

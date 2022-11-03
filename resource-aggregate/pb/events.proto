@@ -163,7 +163,6 @@ message DeviceMetadataUpdated {
     reserved 3;
     string device_id = 1;
     Connection connection = 2;
-    // ShadowSynchronization shadow_synchronization = 3; - replaced by twin_enabled
     TwinSynchronization twin_synchronization = 7;
     bool twin_enabled = 8;
     AuditContext audit_context = 4;
@@ -172,14 +171,17 @@ message DeviceMetadataUpdated {
 
     // Open telemetry data propagated to asynchronous events
     map<string,string> open_telemetry_carrier = 100;
+
+    // ShadowSynchronization shadow_synchronization = 3; - replaced by twin_enabled
 }
 
 message DeviceMetadataUpdatePending {
     reserved 2;
     string device_id = 1;
     oneof update_pending {
-        // ShadowSynchronization shadow_synchronization = 2; replaced by twin_enabled
         bool twin_enabled = 6;
+
+        // ShadowSynchronization shadow_synchronization = 2; replaced by twin_enabled
     };
     AuditContext audit_context = 3;
     EventMetadata event_metadata = 4;

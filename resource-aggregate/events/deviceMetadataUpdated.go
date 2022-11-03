@@ -70,7 +70,7 @@ func (d *DeviceMetadataUpdated) Equal(upd *DeviceMetadataUpdated) bool {
 		d.GetAuditContext().GetUserId() == upd.GetAuditContext().GetUserId() &&
 		d.GetAuditContext().GetCorrelationId() == upd.GetAuditContext().GetCorrelationId() &&
 		d.GetTwinSynchronization().GetCommandMetadata().GetConnectionId() == upd.GetTwinSynchronization().GetCommandMetadata().GetConnectionId() &&
-		d.GetTwinSynchronization().GetStartedAt() == upd.GetTwinSynchronization().GetStartedAt() &&
-		d.GetTwinSynchronization().GetFinishedAt() == upd.GetTwinSynchronization().GetFinishedAt() &&
+		d.GetTwinSynchronization().GetSyncingAt() == upd.GetTwinSynchronization().GetSyncingAt() &&
+		d.GetTwinSynchronization().GetInSyncAt() == upd.GetTwinSynchronization().GetInSyncAt() &&
 		d.GetTwinSynchronization().GetState() == upd.GetTwinSynchronization().GetState()
 }

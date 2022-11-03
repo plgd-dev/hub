@@ -72,9 +72,9 @@ func getOnboardEventForResource(t *testing.T, deviceID, href string) interface{}
 }
 
 func getAllOnboardEvents(t *testing.T, deviceID string, links []schema.ResourceLink) []interface{} {
-	expectedDMU := pbTest.MakeDeviceMetadataUpdated(deviceID, commands.Connection_ONLINE, true, commands.TwinSynchronization_NONE, "")
-	expectedDMU1 := pbTest.MakeDeviceMetadataUpdated(deviceID, commands.Connection_ONLINE, true, commands.TwinSynchronization_STARTED, "")
-	expectedDMU2 := pbTest.MakeDeviceMetadataUpdated(deviceID, commands.Connection_ONLINE, true, commands.TwinSynchronization_FINISHED, "")
+	expectedDMU := pbTest.MakeDeviceMetadataUpdated(deviceID, commands.Connection_ONLINE, true, commands.TwinSynchronization_OUT_OF_SYNC, "")
+	expectedDMU1 := pbTest.MakeDeviceMetadataUpdated(deviceID, commands.Connection_ONLINE, true, commands.TwinSynchronization_SYNCING, "")
+	expectedDMU2 := pbTest.MakeDeviceMetadataUpdated(deviceID, commands.Connection_ONLINE, true, commands.TwinSynchronization_IN_SYNC, "")
 	expectedRLP := pbTest.MakeResourceLinksPublished(deviceID, test.ResourceLinksToResources(deviceID, links), "")
 	expectedRCP := getOnboardEventForResource(t, deviceID, platform.ResourceURI)
 	expectedRCD := getOnboardEventForResource(t, deviceID, device.ResourceURI)
@@ -219,7 +219,7 @@ func testUpdateDeviceEvents(t *testing.T, ctx context.Context, c pb.GrpcGatewayC
 
 	expectedEvents := []interface{}{
 		pbTest.MakeDeviceMetadataUpdatePending(deviceID, true, ""),
-		pbTest.MakeDeviceMetadataUpdated(deviceID, commands.Connection_ONLINE, true, commands.TwinSynchronization_FINISHED, ""),
+		pbTest.MakeDeviceMetadataUpdated(deviceID, commands.Connection_ONLINE, true, commands.TwinSynchronization_IN_SYNC, ""),
 	}
 	waitAndCheckEvents(t, client, expectedEvents)
 }
@@ -274,8 +274,8 @@ func testCreateResourceEvents(t *testing.T, ctx context.Context, c pb.GrpcGatewa
 				"rt":  []string{types.BINARY_SWITCH},
 			},
 		})
-	dmu := pbTest.MakeDeviceMetadataUpdated(deviceID, commands.Connection_ONLINE, true, commands.TwinSynchronization_STARTED, "")
-	dmu1 := pbTest.MakeDeviceMetadataUpdated(deviceID, commands.Connection_ONLINE, true, commands.TwinSynchronization_FINISHED, "")
+	dmu := pbTest.MakeDeviceMetadataUpdated(deviceID, commands.Connection_ONLINE, true, commands.TwinSynchronization_SYNCING, "")
+	dmu1 := pbTest.MakeDeviceMetadataUpdated(deviceID, commands.Connection_ONLINE, true, commands.TwinSynchronization_IN_SYNC, "")
 	expectedEvents := []interface{}{rcp, rlp, rcreat, rchangeSwitch, rchangeSwitches, dmu, dmu1}
 	waitAndCheckEvents(t, client, expectedEvents)
 }

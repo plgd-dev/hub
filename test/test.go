@@ -337,8 +337,8 @@ func WaitForDevice(ctx context.Context, t *testing.T, client pb.GrpcGateway_Subs
 			}
 			if val.DeviceMetadataUpdated.GetTwinSynchronization() != nil {
 				val.DeviceMetadataUpdated.GetTwinSynchronization().CommandMetadata = nil
-				val.DeviceMetadataUpdated.GetTwinSynchronization().StartedAt = 0
-				val.DeviceMetadataUpdated.GetTwinSynchronization().FinishedAt = 0
+				val.DeviceMetadataUpdated.GetTwinSynchronization().SyncingAt = 0
+				val.DeviceMetadataUpdated.GetTwinSynchronization().InSyncAt = 0
 			}
 			val.DeviceMetadataUpdated.OpenTelemetryCarrier = nil
 		case *pb.Event_ResourcePublished:
@@ -386,7 +386,7 @@ func WaitForDevice(ctx context.Context, t *testing.T, client pb.GrpcGateway_Subs
 						Status: commands.Connection_ONLINE,
 					},
 					TwinSynchronization: &commands.TwinSynchronization{
-						State: commands.TwinSynchronization_NONE,
+						State: commands.TwinSynchronization_OUT_OF_SYNC,
 					},
 					TwinEnabled: true,
 				},
@@ -398,7 +398,7 @@ func WaitForDevice(ctx context.Context, t *testing.T, client pb.GrpcGateway_Subs
 					Status: commands.Connection_ONLINE,
 				},
 				TwinSynchronization: &commands.TwinSynchronization{
-					State: commands.TwinSynchronization_STARTED,
+					State: commands.TwinSynchronization_SYNCING,
 				},
 				TwinEnabled: true,
 			},
@@ -412,7 +412,7 @@ func WaitForDevice(ctx context.Context, t *testing.T, client pb.GrpcGateway_Subs
 						Status: commands.Connection_ONLINE,
 					},
 					TwinSynchronization: &commands.TwinSynchronization{
-						State: commands.TwinSynchronization_STARTED,
+						State: commands.TwinSynchronization_SYNCING,
 					},
 					TwinEnabled: true,
 				},
@@ -424,7 +424,7 @@ func WaitForDevice(ctx context.Context, t *testing.T, client pb.GrpcGateway_Subs
 					Status: commands.Connection_ONLINE,
 				},
 				TwinSynchronization: &commands.TwinSynchronization{
-					State: commands.TwinSynchronization_FINISHED,
+					State: commands.TwinSynchronization_IN_SYNC,
 				},
 				TwinEnabled: true,
 			},
@@ -438,7 +438,7 @@ func WaitForDevice(ctx context.Context, t *testing.T, client pb.GrpcGateway_Subs
 						Status: commands.Connection_ONLINE,
 					},
 					TwinSynchronization: &commands.TwinSynchronization{
-						State: commands.TwinSynchronization_FINISHED,
+						State: commands.TwinSynchronization_IN_SYNC,
 					},
 					TwinEnabled: true,
 				},

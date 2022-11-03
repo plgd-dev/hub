@@ -3,6 +3,7 @@ package service_test
 import (
 	"context"
 	"crypto/tls"
+	"fmt"
 	"testing"
 	"time"
 
@@ -63,6 +64,53 @@ func (f *contentChangedFilter) WaitForResourceChanged(t time.Duration) eventbus.
 	}
 }
 
+type deviceMetadataUpdatedFilter struct {
+	ch chan eventbus.EventUnmarshaler
+}
+
+func NewDeviceMetadataUpdatedFilter() *deviceMetadataUpdatedFilter {
+	return &deviceMetadataUpdatedFilter{
+		ch: make(chan eventbus.EventUnmarshaler, 2),
+	}
+}
+
+func (f *deviceMetadataUpdatedFilter) Handle(ctx context.Context, iter eventbus.Iter) (err error) {
+	for {
+		v, ok := iter.Next(ctx)
+		if !ok {
+			return nil
+		}
+		if v.EventType() == (&events.DeviceMetadataUpdated{}).EventType() {
+			select {
+			case f.ch <- v:
+			default:
+			}
+		}
+	}
+}
+
+func (f *deviceMetadataUpdatedFilter) WaitForEvent(t time.Duration, correlationID string) (*events.DeviceMetadataUpdated, error) {
+	deadline := time.Now().Add(t)
+	for {
+		select {
+		case v := <-f.ch:
+			var ev events.DeviceMetadataUpdated
+			err := v.Unmarshal(&ev)
+			if err != nil {
+				return nil, err
+			}
+			if correlationID == "" {
+				return &ev, nil
+			}
+			if ev.GetAuditContext().GetCorrelationId() == correlationID {
+				return &ev, nil
+			}
+		case <-time.After(time.Until(deadline)):
+			return nil, fmt.Errorf("timeout")
+		}
+	}
+}
+
 func TestRequestHandler_UpdateDeviceMetadata(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 
@@ -102,10 +150,15 @@ func TestRequestHandler_UpdateDeviceMetadata(t *testing.T) {
 	}()
 	tmp := uuid.New()
 	v := NewContentChangedFilter()
+	deviceMetadataUpdatedFilter := NewDeviceMetadataUpdatedFilter()
 	obs, err := s.Subscribe(ctx, tmp.String(), utils.GetDeviceSubject("*", deviceID), v)
+	require.NoError(t, err)
+	obsDeviceMetadataUpdated, err := s.Subscribe(ctx, uuid.New().String(), utils.GetDeviceMetadataEventSubject("*", deviceID, (&events.DeviceMetadataUpdated{}).EventType()), deviceMetadataUpdatedFilter)
 	require.NoError(t, err)
 	defer func() {
 		err := obs.Close()
+		assert.NoError(t, err)
+		err = obsDeviceMetadataUpdated.Close()
 		assert.NoError(t, err)
 	}()
 
@@ -122,6 +175,12 @@ func TestRequestHandler_UpdateDeviceMetadata(t *testing.T) {
 	})
 	require.NoError(t, err)
 	require.False(t, ev.GetData().GetTwinEnabled())
+	require.Equal(t, ev.GetData().GetTwinSynchronization().GetState(), commands.TwinSynchronization_DISABLED)
+
+	deviceMetadataUpdated, err := deviceMetadataUpdatedFilter.WaitForEvent(time.Second, ev.GetData().GetAuditContext().GetCorrelationId())
+	require.NoError(t, err)
+	require.False(t, deviceMetadataUpdated.GetTwinEnabled())
+	require.Equal(t, deviceMetadataUpdated.GetTwinSynchronization().GetState(), commands.TwinSynchronization_DISABLED)
 
 	_, err = c.UpdateResource(ctx, &pb.UpdateResourceRequest{
 		ResourceInterface: interfaces.OC_IF_BASELINE,
@@ -154,8 +213,13 @@ func TestRequestHandler_UpdateDeviceMetadata(t *testing.T) {
 		TwinEnabled: true,
 	})
 	require.NoError(t, err)
-
 	require.True(t, ev.GetData().GetTwinEnabled())
+	require.NotEqual(t, ev.GetData().GetTwinSynchronization().GetState(), commands.TwinSynchronization_DISABLED)
+
+	deviceMetadataUpdated, err = deviceMetadataUpdatedFilter.WaitForEvent(time.Second, ev.GetData().GetAuditContext().GetCorrelationId())
+	require.NoError(t, err)
+	require.True(t, deviceMetadataUpdated.GetTwinEnabled())
+	require.NotEqual(t, deviceMetadataUpdated.GetTwinSynchronization().GetState(), commands.TwinSynchronization_DISABLED)
 
 	_, err = c.UpdateResource(ctx, &pb.UpdateResourceRequest{
 		ResourceInterface: interfaces.OC_IF_BASELINE,

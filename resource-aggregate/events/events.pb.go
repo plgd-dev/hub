@@ -1225,9 +1225,8 @@ type DeviceMetadataUpdated struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	DeviceId   string               `protobuf:"bytes,1,opt,name=device_id,json=deviceId,proto3" json:"device_id,omitempty"`
-	Connection *commands.Connection `protobuf:"bytes,2,opt,name=connection,proto3" json:"connection,omitempty"`
-	// ShadowSynchronization shadow_synchronization = 3; - replaced by twin_enabled
+	DeviceId            string                        `protobuf:"bytes,1,opt,name=device_id,json=deviceId,proto3" json:"device_id,omitempty"`
+	Connection          *commands.Connection          `protobuf:"bytes,2,opt,name=connection,proto3" json:"connection,omitempty"`
 	TwinSynchronization *commands.TwinSynchronization `protobuf:"bytes,7,opt,name=twin_synchronization,json=twinSynchronization,proto3" json:"twin_synchronization,omitempty"`
 	TwinEnabled         bool                          `protobuf:"varint,8,opt,name=twin_enabled,json=twinEnabled,proto3" json:"twin_enabled,omitempty"`
 	AuditContext        *commands.AuditContext        `protobuf:"bytes,4,opt,name=audit_context,json=auditContext,proto3" json:"audit_context,omitempty"`
@@ -1427,7 +1426,6 @@ type isDeviceMetadataUpdatePending_UpdatePending interface {
 }
 
 type DeviceMetadataUpdatePending_TwinEnabled struct {
-	// ShadowSynchronization shadow_synchronization = 2; replaced by twin_enabled
 	TwinEnabled bool `protobuf:"varint,6,opt,name=twin_enabled,json=twinEnabled,proto3,oneof"`
 }
 

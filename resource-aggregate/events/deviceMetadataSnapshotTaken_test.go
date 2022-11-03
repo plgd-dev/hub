@@ -404,8 +404,8 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 						CorrelationId: correlationID,
 						Update: &commands.UpdateDeviceMetadataRequest_TwinSynchronization{
 							TwinSynchronization: &commands.TwinSynchronization{
-								State:     commands.TwinSynchronization_STARTED,
-								StartedAt: 1,
+								State:     commands.TwinSynchronization_SYNCING,
+								SyncingAt: 1,
 							},
 						},
 					},
@@ -419,8 +419,8 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 							},
 							TwinEnabled: true,
 							TwinSynchronization: &commands.TwinSynchronization{
-								State:     commands.TwinSynchronization_STARTED,
-								StartedAt: 1,
+								State:     commands.TwinSynchronization_SYNCING,
+								SyncingAt: 1,
 							},
 							AuditContext:         commands.NewAuditContext(userID, correlationID),
 							OpenTelemetryCarrier: map[string]string{},
@@ -438,8 +438,8 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 						CorrelationId: correlationID,
 						Update: &commands.UpdateDeviceMetadataRequest_TwinSynchronization{
 							TwinSynchronization: &commands.TwinSynchronization{
-								State:     commands.TwinSynchronization_STARTED,
-								StartedAt: 2,
+								State:     commands.TwinSynchronization_SYNCING,
+								SyncingAt: 2,
 							},
 						},
 					},
@@ -456,8 +456,8 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 						CorrelationId: correlationID,
 						Update: &commands.UpdateDeviceMetadataRequest_TwinSynchronization{
 							TwinSynchronization: &commands.TwinSynchronization{
-								State:      commands.TwinSynchronization_FINISHED,
-								FinishedAt: 3,
+								State:    commands.TwinSynchronization_IN_SYNC,
+								InSyncAt: 3,
 							},
 						},
 					},
@@ -471,9 +471,9 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 							},
 							TwinEnabled: true,
 							TwinSynchronization: &commands.TwinSynchronization{
-								State:      commands.TwinSynchronization_FINISHED,
-								StartedAt:  1,
-								FinishedAt: 3,
+								State:     commands.TwinSynchronization_IN_SYNC,
+								SyncingAt: 1,
+								InSyncAt:  3,
 							},
 							AuditContext:         commands.NewAuditContext(userID, correlationID),
 							OpenTelemetryCarrier: map[string]string{},
@@ -492,8 +492,8 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 						CorrelationId: correlationID,
 						Update: &commands.UpdateDeviceMetadataRequest_TwinSynchronization{
 							TwinSynchronization: &commands.TwinSynchronization{
-								State:      commands.TwinSynchronization_FINISHED,
-								FinishedAt: 4,
+								State:    commands.TwinSynchronization_IN_SYNC,
+								InSyncAt: 4,
 							},
 						},
 					},
@@ -506,9 +506,9 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 							},
 							TwinEnabled: true,
 							TwinSynchronization: &commands.TwinSynchronization{
-								StartedAt:  1,
-								FinishedAt: 4,
-								State:      commands.TwinSynchronization_FINISHED,
+								SyncingAt: 1,
+								InSyncAt:  4,
+								State:     commands.TwinSynchronization_IN_SYNC,
 							},
 							AuditContext:         commands.NewAuditContext(userID, correlationID),
 							OpenTelemetryCarrier: map[string]string{},
@@ -562,8 +562,8 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 						CorrelationId: correlationID,
 						Update: &commands.UpdateDeviceMetadataRequest_TwinSynchronization{
 							TwinSynchronization: &commands.TwinSynchronization{
-								State:     commands.TwinSynchronization_STARTED,
-								StartedAt: 1,
+								State:     commands.TwinSynchronization_SYNCING,
+								SyncingAt: 1,
 							},
 						},
 					},
@@ -577,8 +577,8 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 							},
 							TwinEnabled: true,
 							TwinSynchronization: &commands.TwinSynchronization{
-								State:     commands.TwinSynchronization_STARTED,
-								StartedAt: 1,
+								State:     commands.TwinSynchronization_SYNCING,
+								SyncingAt: 1,
 							},
 							AuditContext:         commands.NewAuditContext(userID, correlationID),
 							OpenTelemetryCarrier: map[string]string{},
@@ -627,8 +627,8 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 						CorrelationId: correlationID,
 						Update: &commands.UpdateDeviceMetadataRequest_TwinSynchronization{
 							TwinSynchronization: &commands.TwinSynchronization{
-								State:     commands.TwinSynchronization_STARTED,
-								StartedAt: 1,
+								State:     commands.TwinSynchronization_SYNCING,
+								SyncingAt: 1,
 							},
 						},
 					},
@@ -642,8 +642,8 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 							},
 							TwinEnabled: true,
 							TwinSynchronization: &commands.TwinSynchronization{
-								State:     commands.TwinSynchronization_STARTED,
-								StartedAt: 1,
+								State:     commands.TwinSynchronization_SYNCING,
+								SyncingAt: 1,
 							},
 							AuditContext:         commands.NewAuditContext(userID, correlationID),
 							OpenTelemetryCarrier: map[string]string{},
@@ -661,8 +661,8 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 						CorrelationId: correlationID,
 						Update: &commands.UpdateDeviceMetadataRequest_TwinSynchronization{
 							TwinSynchronization: &commands.TwinSynchronization{
-								State:     commands.TwinSynchronization_STARTED,
-								StartedAt: 2,
+								State:     commands.TwinSynchronization_SYNCING,
+								SyncingAt: 2,
 							},
 						},
 					},
@@ -679,8 +679,8 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 						CorrelationId: correlationID,
 						Update: &commands.UpdateDeviceMetadataRequest_TwinSynchronization{
 							TwinSynchronization: &commands.TwinSynchronization{
-								State:      commands.TwinSynchronization_FINISHED,
-								FinishedAt: 3,
+								State:    commands.TwinSynchronization_IN_SYNC,
+								InSyncAt: 3,
 							},
 						},
 					},
@@ -699,8 +699,8 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 						CorrelationId: correlationID,
 						Update: &commands.UpdateDeviceMetadataRequest_TwinSynchronization{
 							TwinSynchronization: &commands.TwinSynchronization{
-								State:      commands.TwinSynchronization_FINISHED,
-								FinishedAt: 3,
+								State:    commands.TwinSynchronization_IN_SYNC,
+								InSyncAt: 3,
 							},
 						},
 					},
@@ -713,9 +713,9 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 							},
 							TwinEnabled: true,
 							TwinSynchronization: &commands.TwinSynchronization{
-								StartedAt:  1,
-								FinishedAt: 3,
-								State:      commands.TwinSynchronization_FINISHED,
+								SyncingAt: 1,
+								InSyncAt:  3,
+								State:     commands.TwinSynchronization_IN_SYNC,
 							},
 							AuditContext:         commands.NewAuditContext(userID, correlationID),
 							OpenTelemetryCarrier: map[string]string{},
