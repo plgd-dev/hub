@@ -118,8 +118,8 @@ func CreateDevice(ctx context.Context, t *testing.T, name string, deviceID strin
 		CorrelationId: uuid.NewString(),
 		Update: &commands.UpdateDeviceMetadataRequest_TwinSynchronization{
 			TwinSynchronization: &commands.TwinSynchronization{
-				State:     commands.TwinSynchronization_STARTED,
-				StartedAt: time.Now().UnixNano(),
+				State:     commands.TwinSynchronization_SYNCING,
+				SyncingAt: time.Now().UnixNano(),
 			},
 		},
 		TimeToLive: time.Now().Add(time.Hour).UnixNano(),
@@ -177,8 +177,8 @@ func CreateDevice(ctx context.Context, t *testing.T, name string, deviceID strin
 		CorrelationId: uuid.NewString(),
 		Update: &commands.UpdateDeviceMetadataRequest_TwinSynchronization{
 			TwinSynchronization: &commands.TwinSynchronization{
-				State:      commands.TwinSynchronization_FINISHED,
-				FinishedAt: time.Now().UnixNano(),
+				State:    commands.TwinSynchronization_IN_SYNC,
+				InSyncAt: time.Now().UnixNano(),
 			},
 		},
 		TimeToLive: time.Now().Add(time.Hour).UnixNano(),

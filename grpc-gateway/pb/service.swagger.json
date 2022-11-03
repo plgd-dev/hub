@@ -264,8 +264,7 @@
               "type": "object",
               "properties": {
                 "twinEnabled": {
-                  "type": "boolean",
-                  "title": "ShadowSynchronization shadow_synchronization = 2; replaced by twin_enabled"
+                  "type": "boolean"
                 },
                 "timeToLive": {
                   "type": "string",
@@ -884,8 +883,7 @@
           "$ref": "#/definitions/pbConnection"
         },
         "twinSynchronization": {
-          "$ref": "#/definitions/pbTwinSynchronization",
-          "title": "resourceaggregate.pb.ShadowSynchronization shadow_synchronization = 2; replaced by twin_enabled;"
+          "$ref": "#/definitions/pbTwinSynchronization"
         },
         "twinEnabled": {
           "type": "boolean"
@@ -1041,11 +1039,12 @@
     "TwinSynchronizationState": {
       "type": "string",
       "enum": [
-        "NONE",
-        "STARTED",
-        "FINISHED"
+        "OUT_OF_SYNC",
+        "DISABLED",
+        "SYNCING",
+        "IN_SYNC"
       ],
-      "default": "NONE"
+      "default": "OUT_OF_SYNC"
     },
     "googlerpcStatus": {
       "type": "object",
@@ -1336,8 +1335,7 @@
           "type": "string"
         },
         "twinEnabled": {
-          "type": "boolean",
-          "title": "ShadowSynchronization shadow_synchronization = 2; replaced by twin_enabled"
+          "type": "boolean"
         },
         "auditContext": {
           "$ref": "#/definitions/pbAuditContext"
@@ -1368,8 +1366,7 @@
           "$ref": "#/definitions/pbConnection"
         },
         "twinSynchronization": {
-          "$ref": "#/definitions/pbTwinSynchronization",
-          "title": "ShadowSynchronization shadow_synchronization = 3; - replaced by twin_enabled"
+          "$ref": "#/definitions/pbTwinSynchronization"
         },
         "twinEnabled": {
           "type": "boolean"
@@ -1991,11 +1988,11 @@
         "state": {
           "$ref": "#/definitions/TwinSynchronizationState"
         },
-        "startedAt": {
+        "syncingAt": {
           "type": "string",
           "format": "int64"
         },
-        "finishedAt": {
+        "inSyncAt": {
           "type": "string",
           "format": "int64"
         },

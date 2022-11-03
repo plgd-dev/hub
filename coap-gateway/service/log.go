@@ -168,7 +168,11 @@ func (c *session) logRequestResponse(req *mux.Message, resp *pool.Message, err e
 	if resp != nil && !WantToLog(resp.Code(), logger) {
 		return
 	}
-	logger = c.loggerWithRequestResponse(c.getLogger(), req.Message, resp)
+	var reqMsg *pool.Message
+	if req != nil {
+		reqMsg = req.Message
+	}
+	logger = c.loggerWithRequestResponse(logger, reqMsg, resp)
 	if err != nil {
 		logger = logger.With(log.ErrorKey, err.Error())
 	}

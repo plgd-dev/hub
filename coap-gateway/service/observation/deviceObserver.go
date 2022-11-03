@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"net"
-	"sync"
 
 	"github.com/plgd-dev/device/v2/schema"
 	"github.com/plgd-dev/device/v2/schema/interfaces"
@@ -202,13 +201,8 @@ func NewDeviceObserver(ctx context.Context, deviceID string, coapConn ClientConn
 		return nil, createError(err)
 	}
 
-	var notSyncedResources sync.Map
-	for _, r := range published {
-		notSyncedResources.Store(r.GetHref(), r)
-	}
-
 	if cfg.ObservationType == ObservationType_PerDevice {
-		resourcesObserver, err := createDiscoveryResourceObserver(ctx, deviceID, coapConn, callbacks, cfg.Logger)
+		resourcesObserver, err := createDiscoveryResourceObserver(ctx, deviceID, coapConn, callbacks, cfg.logger)
 		if err == nil {
 			return &DeviceObserver{
 				deviceID:          deviceID,

@@ -63,10 +63,6 @@ func (f *contentChangedFilter) Handle(ctx context.Context, iter eventbus.Iter) (
 			if err != nil {
 				return err
 			}
-			// TODO ????
-			// if ev.GetTwinSynchronization() == commands.TwinSynchronization_UNSET {
-			//	continue
-			//}
 			select {
 			case f.deviceMetadataUpdatedCh <- &ev:
 			default:

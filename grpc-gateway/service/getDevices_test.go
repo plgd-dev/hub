@@ -50,7 +50,7 @@ func TestRequestHandlerGetDevices(t *testing.T) {
 							Status: commands.Connection_ONLINE,
 						},
 						TwinSynchronization: &commands.TwinSynchronization{
-							State: commands.TwinSynchronization_FINISHED,
+							State: commands.TwinSynchronization_IN_SYNC,
 						},
 						TwinEnabled: true,
 					},

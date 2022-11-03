@@ -294,13 +294,20 @@ func (c *session) onGetResourceContent(ctx context.Context, deviceID, href strin
 		}
 		err2 := c.notifyContentChanged(deviceID, href, false, notification)
 		if err2 != nil {
-			// cloud is unsynchronized against device. To recover cloud state, client need to reconnect to cloud.
-			c.Errorf("%w", cannotGetResourceContentError(deviceID, href, err2))
+			// hub is out of sync with the device, for recovery, the device is disconnected from the hub
 			c.Close()
+			c.Errorf("%w", cannotGetResourceContentError(deviceID, href, err2))
+			return
+		}
+		obs, err := c.getDeviceObserver(c.Context())
+		if err == nil {
+			obs.ResourceHasBeenSynchronized(ctx, href)
 		}
 	})
 	if err != nil {
 		defer c.server.messagePool.ReleaseMessage(notification)
+		// hub is out of sync with the device, for recovery, the device is disconnected from the hub
+		c.Close()
 		return cannotGetResourceContentError(deviceID, href, err)
 	}
 	return nil
@@ -325,13 +332,20 @@ func (c *session) onObserveResource(ctx context.Context, deviceID, href string, 
 		}
 		err2 := c.notifyContentChanged(deviceID, href, batch, notification)
 		if err2 != nil {
-			// cloud is unsynchronized against device. To recover cloud state, client need to reconnect to cloud.
-			c.Errorf("%w", cannotObserResourceError(err2))
+			// hub is out of sync with the device, for recovery, the device is disconnected from the hub
 			c.Close()
+			c.Errorf("%w", cannotObserResourceError(err2))
+			return
+		}
+		obs, err := c.getDeviceObserver(c.Context())
+		if err == nil {
+			obs.ResourceHasBeenSynchronized(ctx, href)
 		}
 	})
 	if err != nil {
 		defer c.server.messagePool.ReleaseMessage(notification)
+		// hub is out of sync with the device, for recovery, the device is disconnected from the hub
+		c.Close()
 		return cannotObserResourceError(err)
 	}
 	return nil
@@ -455,15 +469,11 @@ func (c *session) notifyContentChanged(deviceID, href string, batch bool, notifi
 		if err != nil {
 			return notifyError(deviceID, href, err)
 		}
-	} else {
-		_, err = c.server.raClient.NotifyResourceChanged(ctx, coapconv.NewNotifyResourceChangedRequest(commands.NewResourceID(deviceID, href), c.RemoteAddr().String(), notification))
-		if err != nil {
-			return notifyError(deviceID, href, err)
-		}
+		return nil
 	}
-	obs, err := c.getDeviceObserver(c.Context())
-	if err == nil {
-		obs.ResourceHasBeenSynchronized(ctx, href)
+	_, err = c.server.raClient.NotifyResourceChanged(ctx, coapconv.NewNotifyResourceChangedRequest(commands.NewResourceID(deviceID, href), c.RemoteAddr().String(), notification))
+	if err != nil {
+		return notifyError(deviceID, href, err)
 	}
 	return nil
 }
@@ -820,6 +830,22 @@ func (c *session) GetContext() context.Context {
 	return authCtx.ToContext(c.Context())
 }
 
+func (c *session) confirmDeviceMetadataUpdate(ctx context.Context, event *events.DeviceMetadataUpdatePending) error {
+	_, err := c.server.raClient.ConfirmDeviceMetadataUpdate(ctx, &commands.ConfirmDeviceMetadataUpdateRequest{
+		DeviceId:      event.GetDeviceId(),
+		CorrelationId: event.GetAuditContext().GetCorrelationId(),
+		Confirm: &commands.ConfirmDeviceMetadataUpdateRequest_TwinEnabled{
+			TwinEnabled: event.GetTwinEnabled(),
+		},
+		CommandMetadata: &commands.CommandMetadata{
+			ConnectionId: c.RemoteAddr().String(),
+			Sequence:     c.coapConn.Sequence(),
+		},
+		Status: commands.Status_OK,
+	})
+	return err
+}
+
 func (c *session) UpdateDeviceMetadata(ctx context.Context, event *events.DeviceMetadataUpdatePending) error {
 	setDeviceIDToTracerSpan(ctx, c.deviceID())
 	authCtx, err := c.GetAuthorizationContext()
@@ -832,23 +858,23 @@ func (c *session) UpdateDeviceMetadata(ctx context.Context, event *events.Device
 	}
 	sendConfirmCtx := authCtx.ToContext(ctx)
 
-	previous, errObs := c.replaceDeviceObserverWithDeviceTwin(sendConfirmCtx, event.GetTwinEnabled())
+	var errObs error
+	var previous bool
+	if event.GetTwinEnabled() {
+		// if twin is enabled, we need to first update twin synchronization state to sync out
+		// and then synchronization state will be updated by other replaceDeviceObserverWithDeviceTwin
+		err = c.confirmDeviceMetadataUpdate(sendConfirmCtx, event)
+		previous, errObs = c.replaceDeviceObserverWithDeviceTwin(sendConfirmCtx, event.GetTwinEnabled())
+	} else {
+		// if twin is disabled, we to stop observation resources to disable all update twin synchronization state
+		previous, errObs = c.replaceDeviceObserverWithDeviceTwin(sendConfirmCtx, event.GetTwinEnabled())
+		// and then we need to update twin synchronization state to disabled
+		err = c.confirmDeviceMetadataUpdate(sendConfirmCtx, event)
+	}
 	if errObs != nil {
 		c.Close()
 		return fmt.Errorf("cannot update device('%v') metadata: %w", event.GetDeviceId(), errObs)
 	}
-	_, err = c.server.raClient.ConfirmDeviceMetadataUpdate(sendConfirmCtx, &commands.ConfirmDeviceMetadataUpdateRequest{
-		DeviceId:      event.GetDeviceId(),
-		CorrelationId: event.GetAuditContext().GetCorrelationId(),
-		Confirm: &commands.ConfirmDeviceMetadataUpdateRequest_TwinEnabled{
-			TwinEnabled: event.GetTwinEnabled(),
-		},
-		CommandMetadata: &commands.CommandMetadata{
-			ConnectionId: c.RemoteAddr().String(),
-			Sequence:     c.coapConn.Sequence(),
-		},
-		Status: commands.Status_OK,
-	})
 	if err != nil && !errors.Is(err, context.Canceled) {
 		_, errObs := c.replaceDeviceObserverWithDeviceTwin(sendConfirmCtx, previous)
 		if errObs != nil {
@@ -906,9 +932,9 @@ func (c *session) UpdateTwinSynchronizationStatus(ctx context.Context, deviceID 
 
 	var startAt, finishedAt int64
 	switch state {
-	case commands.TwinSynchronization_STARTED:
+	case commands.TwinSynchronization_SYNCING:
 		startAt = t.UnixNano()
-	case commands.TwinSynchronization_FINISHED:
+	case commands.TwinSynchronization_IN_SYNC:
 		finishedAt = t.UnixNano()
 	}
 	ctx = authCtx.ToContext(ctx)
@@ -920,9 +946,9 @@ func (c *session) UpdateTwinSynchronizationStatus(ctx context.Context, deviceID 
 		},
 		Update: &commands.UpdateDeviceMetadataRequest_TwinSynchronization{
 			TwinSynchronization: &commands.TwinSynchronization{
-				State:      state,
-				StartedAt:  startAt,
-				FinishedAt: finishedAt,
+				State:     state,
+				SyncingAt: startAt,
+				InSyncAt:  finishedAt,
 			},
 		},
 	})

@@ -240,14 +240,14 @@ func (o *resourcesObserver) getResourceContent(ctx context.Context, href string)
 }
 
 func (o *resourcesObserver) notifyAboutStartTwinSynchronization(ctx context.Context) {
-	err := o.callbacks.UpdateTwinSynchronization(ctx, o.deviceID, commands.TwinSynchronization_STARTED, time.Now())
+	err := o.callbacks.UpdateTwinSynchronization(ctx, o.deviceID, commands.TwinSynchronization_SYNCING, time.Now())
 	if err != nil {
 		o.logger.Debugf("cannot update twin synchronization to finish: %v", err)
 	}
 }
 
 func (o *resourcesObserver) notifyAboutFinishTwinSynchronization(ctx context.Context) {
-	err := o.callbacks.UpdateTwinSynchronization(ctx, o.deviceID, commands.TwinSynchronization_FINISHED, time.Now())
+	err := o.callbacks.UpdateTwinSynchronization(ctx, o.deviceID, commands.TwinSynchronization_IN_SYNC, time.Now())
 	if err != nil {
 		o.logger.Debugf("cannot update twin synchronization to start: %v", err)
 	}

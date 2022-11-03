@@ -116,7 +116,7 @@ message BatchNotifyResourceChangedRequest {
 }
 
 message BatchNotifyResourceChangedResponse {
-    AuditContext audit_context = 3;
+    AuditContext audit_context = 1;
 }
 
 //*******************************************************************************************************************************************************
@@ -475,14 +475,15 @@ message Connection {
 
 message TwinSynchronization {
     enum State {
-        NONE = 0;
-        STARTED = 1;
-        FINISHED = 2;
+        OUT_OF_SYNC = 0; // As soon as it connects after it was offline or when it goes errorless offline or when twin enabled has been changed to true.
+        DISABLED = 1; // As soon as twin enabled is set to false.
+        SYNCING = 2; // As soon as device connects, successfully signs in and batch observe is called on device from the cloud.
+        IN_SYNC = 3; // As soon as current device resources values are received and applied to twin database. Twin was successfully reconciled after device reconnect and is kept up to date using an active subscription to device resource changes.
     };
-    State state = 2;
-    int64 started_at = 3;  // unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when twin synchronization started.
-    int64 finished_at = 4; // unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when twin synchronization finished.
-    CommandMetadata command_metadata = 5; // when status is STARTED, this field contains the connection id. To update state to FINISHED, this field must be same as the one in the previous message.
+    State state = 1;
+    int64 syncing_at = 2;  // unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when synchronization started.
+    int64 in_sync_at = 3; // unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when synchronization finished.
+    CommandMetadata command_metadata = 4; // when status is SYNCING, this field contains the connection id. To update state to IN_SYNC, this field must be same as the one in the previous message.
 }
 
 message UpdateDeviceMetadataRequest {
@@ -491,9 +492,10 @@ message UpdateDeviceMetadataRequest {
     string correlation_id = 2;
     oneof update {
         Connection connection = 3;
-        // ShadowSynchronization shadow_synchronization = 4; replaced by twin_enabled
         TwinSynchronization twin_synchronization = 7;
         bool twin_enabled = 8; // by default true
+
+        // ShadowSynchronization shadow_synchronization = 4; replaced by twin_enabled
     };
     int64 time_to_live = 5;  // command validity in nanoseconds. 0 means forever and minimal value is 100000000 (100ms).
     CommandMetadata command_metadata = 6;
@@ -510,8 +512,9 @@ message ConfirmDeviceMetadataUpdateRequest {
     string correlation_id = 2;
     Status status = 3;
     oneof confirm {
-        // ShadowSynchronization shadow_synchronization = 4; replaced by twin_enabled
         bool twin_enabled = 6;
+
+        // ShadowSynchronization shadow_synchronization = 4; replaced by twin_enabled
     };
     CommandMetadata command_metadata = 5;
 }

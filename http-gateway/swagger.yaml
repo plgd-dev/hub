@@ -1446,10 +1446,10 @@ components:
       properties:
         state:
           $ref: "#/components/schemas/TwinSynchronizationState"
-        startedAt:
+        syncingAt:
           type: string
           format: int64
-        finishedAt:
+        inSyncAt:
           type: string
           format: int64
         commandMetadata:
@@ -1457,10 +1457,16 @@ components:
     TwinSynchronizationState:
       type: string
       enum:
-        - "NONE"
-        - "STARTED"
-        - "FINISHED"
-      default: "NONE"
+        - "OUT_OF_SYNC"
+        - "DISABLED"
+        - "SYNCING"
+        - "IN_SYNC"
+      default: "OUT_OF_SYNC"
+      description: |
+        OUT_OF_SYNC - As soon as it connects after it was offline or when it goes errorless offline or when twin enabled has been changed to true.
+        DISABLED - As soon as twin enabled is set to false.
+        SYNCING - As soon as device connects, successfully signs in and batch observe is called on device from the cloud.
+        IN_SYNC - As soon as current device resources values are received and applied to twin database. Twin was successfully reconciled after device reconnect and is kept up to date using an active subscription to device resource changes.
     CommandMetadata:
       type: object
       properties:

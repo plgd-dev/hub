@@ -22,8 +22,8 @@ func sortDevices(s map[string]*client.DeviceDetails) map[string]*client.DeviceDe
 		x.Device.Metadata.Connection.OnlineValidUntil = 0
 		x.Device.Metadata.Connection.Id = ""
 		x.Device.Metadata.Connection.ConnectedAt = 0
-		x.Device.Metadata.TwinSynchronization.StartedAt = 0
-		x.Device.Metadata.TwinSynchronization.FinishedAt = 0
+		x.Device.Metadata.TwinSynchronization.SyncingAt = 0
+		x.Device.Metadata.TwinSynchronization.InSyncAt = 0
 		x.Device.Metadata.TwinSynchronization.CommandMetadata = nil
 		x.Device.Data = nil
 		s[key] = x

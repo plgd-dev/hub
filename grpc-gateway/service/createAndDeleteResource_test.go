@@ -171,7 +171,7 @@ func createSwitchResourceExpectedEvents(t *testing.T, deviceID, subID, correlati
 					},
 					TwinEnabled: true,
 					TwinSynchronization: &commands.TwinSynchronization{
-						State: commands.TwinSynchronization_STARTED,
+						State: commands.TwinSynchronization_SYNCING,
 					},
 					AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, ""),
 				},
@@ -189,7 +189,7 @@ func createSwitchResourceExpectedEvents(t *testing.T, deviceID, subID, correlati
 					},
 					TwinEnabled: true,
 					TwinSynchronization: &commands.TwinSynchronization{
-						State: commands.TwinSynchronization_FINISHED,
+						State: commands.TwinSynchronization_IN_SYNC,
 					},
 					AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, ""),
 				},

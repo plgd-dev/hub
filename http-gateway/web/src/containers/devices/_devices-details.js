@@ -12,18 +12,15 @@ import { getValue } from '@/common/utils'
 
 import { devicesStatuses } from './constants'
 import { deviceShape } from './shapes'
-import { shadowSynchronizationEnabled } from './utils'
 import { messages as t } from './devices-i18n'
 
 export const DevicesDetails = memo(
-  ({ data, loading, shadowSyncLoading, setShadowSynchronization }) => {
+  ({ data, loading, twinSyncLoading, setTwinSynchronization }) => {
     const { formatMessage: _ } = useIntl()
-    const deviceStatus = data?.metadata?.status?.value
+    const deviceStatus = data?.metadata?.connection?.status
     const isOnline = devicesStatuses.ONLINE === deviceStatus
     const isUnregistered = devicesStatuses.UNREGISTERED === deviceStatus
-    const isShadowSynchronizationEnabled = shadowSynchronizationEnabled(
-      data?.metadata?.shadowSynchronization
-    )
+    const isTwinEnabled = data?.metadata?.twinEnabled
     const LabelWithLoading = p =>
       createElement(Label, {
         ...p,
@@ -51,16 +48,16 @@ export const DevicesDetails = memo(
               {isOnline ? _(t.online) : _(t.offline)}
             </Badge>
           </LabelWithLoading>
-          <LabelWithLoading title={_(t.shadowSynchronization)}>
+          <LabelWithLoading title={_(t.twinSynchronization)}>
             <Switch
               className="text-left"
-              id="toggle-shadow-synchronization"
+              id="toggle-twin-synchronization"
               label={
-                isShadowSynchronizationEnabled ? _(t.enabled) : _(t.disabled)
+                isTwinEnabled ? _(t.enabled) : _(t.disabled)
               }
-              checked={isShadowSynchronizationEnabled}
-              onChange={setShadowSynchronization}
-              disabled={shadowSyncLoading || isUnregistered}
+              checked={isTwinEnabled}
+              onChange={setTwinSynchronization}
+              disabled={twinSyncLoading || isUnregistered}
             />
           </LabelWithLoading>
         </Col>
@@ -72,8 +69,8 @@ export const DevicesDetails = memo(
 DevicesDetails.propTypes = {
   data: deviceShape,
   loading: PropTypes.bool.isRequired,
-  shadowSyncLoading: PropTypes.bool.isRequired,
-  setShadowSynchronization: PropTypes.func.isRequired,
+  twinSyncLoading: PropTypes.bool.isRequired,
+  setTwinSynchronization: PropTypes.func.isRequired,
 }
 
 DevicesDetails.defaultProps = {
