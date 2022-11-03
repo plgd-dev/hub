@@ -294,13 +294,20 @@ func (c *session) onGetResourceContent(ctx context.Context, deviceID, href strin
 		}
 		err2 := c.notifyContentChanged(deviceID, href, false, notification)
 		if err2 != nil {
-			// cloud is unsynchronized against device. To recover cloud state, client need to reconnect to cloud.
-			c.Errorf("%w", cannotGetResourceContentError(deviceID, href, err2))
+			// hub is out of sync with the device, for recovery, the device is disconnected from the hub
 			c.Close()
+			c.Errorf("%w", cannotGetResourceContentError(deviceID, href, err2))
+			return
+		}
+		obs, err := c.getDeviceObserver(c.Context())
+		if err == nil {
+			obs.ResourceHasBeenSynchronized(ctx, href)
 		}
 	})
 	if err != nil {
 		defer c.server.messagePool.ReleaseMessage(notification)
+		// hub is out of sync with the device, for recovery, the device is disconnected from the hub
+		c.Close()
 		return cannotGetResourceContentError(deviceID, href, err)
 	}
 	return nil
@@ -325,13 +332,20 @@ func (c *session) onObserveResource(ctx context.Context, deviceID, href string, 
 		}
 		err2 := c.notifyContentChanged(deviceID, href, batch, notification)
 		if err2 != nil {
-			// cloud is unsynchronized against device. To recover cloud state, client need to reconnect to cloud.
-			c.Errorf("%w", cannotObserResourceError(err2))
+			// hub is out of sync with the device, for recovery, the device is disconnected from the hub
 			c.Close()
+			c.Errorf("%w", cannotObserResourceError(err2))
+			return
+		}
+		obs, err := c.getDeviceObserver(c.Context())
+		if err == nil {
+			obs.ResourceHasBeenSynchronized(ctx, href)
 		}
 	})
 	if err != nil {
 		defer c.server.messagePool.ReleaseMessage(notification)
+		// hub is out of sync with the device, for recovery, the device is disconnected from the hub
+		c.Close()
 		return cannotObserResourceError(err)
 	}
 	return nil
@@ -455,15 +469,11 @@ func (c *session) notifyContentChanged(deviceID, href string, batch bool, notifi
 		if err != nil {
 			return notifyError(deviceID, href, err)
 		}
-	} else {
-		_, err = c.server.raClient.NotifyResourceChanged(ctx, coapconv.NewNotifyResourceChangedRequest(commands.NewResourceID(deviceID, href), c.RemoteAddr().String(), notification))
-		if err != nil {
-			return notifyError(deviceID, href, err)
-		}
+		return nil
 	}
-	obs, err := c.getDeviceObserver(c.Context())
-	if err == nil {
-		obs.ResourceHasBeenSynchronized(ctx, href)
+	_, err = c.server.raClient.NotifyResourceChanged(ctx, coapconv.NewNotifyResourceChangedRequest(commands.NewResourceID(deviceID, href), c.RemoteAddr().String(), notification))
+	if err != nil {
+		return notifyError(deviceID, href, err)
 	}
 	return nil
 }
