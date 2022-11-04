@@ -131,13 +131,13 @@ export const deleteDevicesResourceApi = ({ deviceId, href, ttl }) =>
   )
 
 /**
- * Update the shadowSynchronization of one Thing Rest Api endpoint
+ * Update the twinEnabled of one Thing Rest Api endpoint
  * @param {*} deviceId
- * @param {*} shadowSynchronization
+ * @param {*} twinEnabled
  */
 export const updateDeviceTwinSynchronizationApi = (
   deviceId,
-  shadowSynchronization
+  twinEnabled
 ) =>
   withTelemetry(
     () =>
@@ -145,7 +145,7 @@ export const updateDeviceTwinSynchronizationApi = (
         `${security.getGeneralConfig().httpGatewayAddress}${
           devicesApiEndpoints.DEVICES
         }/${deviceId}/metadata`,
-        { method: 'PUT', body: { shadowSynchronization } }
+        { method: 'PUT', body: { twinEnabled } }
       ),
     'update-device-metadata'
   )

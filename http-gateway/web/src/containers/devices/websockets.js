@@ -34,8 +34,8 @@ export const deviceStatusListener = async ({
       async () => {
         const {
           deviceId,
-          status: { value: deviceStatus } = {},
-          shadowSynchronization,
+          connection: { status: deviceStatus } = {},
+          twinEnabled,
         } = deviceMetadataUpdated || {}
         const eventType = deviceRegistered
           ? REGISTERED
@@ -55,7 +55,7 @@ export const deviceStatusListener = async ({
             Emitter.emit(`${DEVICES_STATUS_WS_KEY}.${deviceId}`, {
               deviceId,
               status,
-              shadowSynchronization,
+              twinEnabled,
             })
 
             // Get the notification state of a single device from redux store

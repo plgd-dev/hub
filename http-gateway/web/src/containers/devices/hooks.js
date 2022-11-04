@@ -24,7 +24,7 @@ export const useDevicesList = () => {
   // Update the metadata when a WS event is emitted
   useEmitter(DEVICES_STATUS_WS_KEY, newDeviceStatus => {
     if (data) {
-      // Update the data with the current device status and shadowSynchronization
+      // Update the data with the current device status and twinSynchronization
       updateData(updateDevicesDataStatus(data, newDeviceStatus))
     }
   })
@@ -47,16 +47,16 @@ export const useDeviceDetails = deviceId => {
   // Update the metadata when a WS event is emitted
   useEmitter(
     `${DEVICES_STATUS_WS_KEY}.${deviceId}`,
-    debounce(({ status, shadowSynchronization }) => {
+    debounce(({ status, twinEnabled }) => {
       if (data) {
         updateData({
           ...data,
           metadata: {
             ...data.metadata,
-            shadowSynchronization,
-            status: {
-              ...data.metadata.status,
-              value: status,
+            twinEnabled,
+            connection: {
+              ...data.metadata.connection,
+              status: status,
             },
           },
         })

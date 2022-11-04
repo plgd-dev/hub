@@ -9,7 +9,6 @@ import {
   DEVICES_WS_KEY,
   DEVICES_RESOURCE_REGISTRATION_WS_KEY,
   DEVICES_RESOURCE_UPDATE_WS_KEY,
-  shadowSynchronizationStates,
   commandTimeoutUnits,
   MINIMAL_TTL_VALUE_MS,
 } from './constants'
@@ -110,19 +109,19 @@ export const handleCreateResourceErrors = (
   }
 }
 
-// Handle the errors occurred shadowSynchronization set
-export const handleShadowSynchronizationErrors = (error, _) => {
+// Handle the errors occurred twinSynchronization set
+export const handleTwinSynchronizationErrors = (error, _) => {
   const errorMessage = getApiErrorMessage(error)
 
   if (errorMessage?.includes?.(errorCodes.DEADLINE_EXCEEDED)) {
-    // Shadow synchronization set went through, but it will be applied once the device comes online
+    // Twin synchronization set went through, but it will be applied once the device comes online
     showWarningToast({
-      title: _(t.shadowSynchronization),
-      message: _(t.shadowSynchronizationWasSetOffline),
+      title: _(t.twinSynchronization),
+      message: _(t.twinSynchronizationWasSetOffline),
     })
   } else {
     showErrorToast({
-      title: _(t.shadowSynchronizationError),
+      title: _(t.twinSynchronizationError),
       message: errorMessage,
     })
   }
@@ -176,10 +175,10 @@ export const handleDeleteDevicesErrors = (error, _, singular = false) => {
   })
 }
 
-// Updates the device data with an object of { deviceId, status, shadowSynchronization } which came from the WS events.
+// Updates the device data with an object of { deviceId, status, twinEnabled } which came from the WS events.
 export const updateDevicesDataStatus = (
   data,
-  { deviceId, status, shadowSynchronization }
+  { deviceId, status, twinEnabled }
 ) => {
   return data?.map(device => {
     if (device.id === deviceId) {
@@ -187,10 +186,10 @@ export const updateDevicesDataStatus = (
         ...device,
         metadata: {
           ...device.metadata,
-          shadowSynchronization,
-          status: {
-            ...device.metadata.status,
-            value: status,
+          twinEnabled,
+          connection: {
+            ...device.metadata.connection,
+            status: status,
           },
         },
       }
@@ -314,13 +313,6 @@ export const hasCommandTimeoutError = (value, unit) => {
 
 export const convertAndNormalizeValueFromTo = (value, unitFrom, unitTo) =>
   normalizeToFixedFloatValue(convertValueFromTo(value, unitFrom, unitTo))
-
-// Returns a boolean wether the shadow synchronization is enabled
-export const shadowSynchronizationEnabled = shadowSynchronization =>
-  [
-    shadowSynchronizationStates.ENABLED,
-    shadowSynchronizationStates.UNSET,
-  ].includes(shadowSynchronization)
 
 // Redux and event key for the notification state of a single device
 export const getDeviceNotificationKey = deviceId =>
