@@ -157,12 +157,12 @@ func getDevices(ctx context.Context, client pbGW.GrpcGatewayClient) {
 	}
 	devices := make([]*pbGW.Device, 0, 4)
 	for {
-		resp, err := getClient.Recv()
-		if errors.Is(err, io.EOF) {
+		resp, err2 := getClient.Recv()
+		if errors.Is(err2, io.EOF) {
 			break
 		}
-		if err != nil {
-			getError(fmt.Errorf("cannot recv device: %w", err))
+		if err2 != nil {
+			getError(fmt.Errorf("cannot recv device: %w", err2))
 		}
 		devices = append(devices, resp)
 	}
@@ -194,12 +194,12 @@ func getResource(ctx context.Context, client pbGW.GrpcGatewayClient, deviceID, h
 	}
 	resources := make([]*pbGW.Resource, 0, 4)
 	for {
-		resp, err := getClient.Recv()
-		if errors.Is(err, io.EOF) {
+		resp, err2 := getClient.Recv()
+		if errors.Is(err2, io.EOF) {
 			break
 		}
-		if err != nil {
-			getError(fmt.Errorf("cannot recv value: %w", err))
+		if err2 != nil {
+			getError(fmt.Errorf("cannot recv value: %w", err2))
 		}
 		resources = append(resources, resp)
 	}

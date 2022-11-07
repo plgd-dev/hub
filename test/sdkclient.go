@@ -22,23 +22,25 @@ type testSetupSecureClient struct {
 	mfgCert tls.Certificate
 }
 
+var errNotSet = fmt.Errorf("not set")
+
 func (c *testSetupSecureClient) GetManufacturerCertificate() (tls.Certificate, error) {
 	if c.mfgCert.PrivateKey == nil {
-		return c.mfgCert, fmt.Errorf("not set")
+		return c.mfgCert, errNotSet
 	}
 	return c.mfgCert, nil
 }
 
 func (c *testSetupSecureClient) GetManufacturerCertificateAuthorities() ([]*x509.Certificate, error) {
 	if len(c.mfgCA) == 0 {
-		return nil, fmt.Errorf("not set")
+		return nil, errNotSet
 	}
 	return c.mfgCA, nil
 }
 
 func (c *testSetupSecureClient) GetRootCertificateAuthorities() ([]*x509.Certificate, error) {
 	if len(c.ca) == 0 {
-		return nil, fmt.Errorf("not set")
+		return nil, errNotSet
 	}
 	return c.ca, nil
 }

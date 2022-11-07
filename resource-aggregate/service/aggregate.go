@@ -37,13 +37,27 @@ func NewAggregate(resourceID *commands.ResourceId, snapshotThreshold int, events
 	a := &aggregate{
 		eventstore: eventstore,
 	}
-	cqrsAg, err := cqrsAggregate.NewAggregate(resourceID.GetDeviceId(), resourceID.ToUUID(), retry, snapshotThreshold, eventstore, factoryModel, func(template string, args ...interface{}) {})
+	cqrsAg, err := cqrsAggregate.NewAggregate(resourceID.GetDeviceId(),
+		resourceID.ToUUID(),
+		retry,
+		snapshotThreshold,
+		eventstore,
+		factoryModel,
+		func(template string, args ...interface{}) {})
 	if err != nil {
 		return nil, fmt.Errorf("cannot create aggregate for resource: %w", err)
 	}
 	a.ag = cqrsAg
 	return a, nil
 }
+
+var (
+	errInvalidDeviceID           = status.Errorf(codes.InvalidArgument, "invalid DeviceId")
+	errInvalidContent            = status.Errorf(codes.InvalidArgument, "invalid Content")
+	errInvalidCorrelationID      = status.Errorf(codes.InvalidArgument, "invalid CorrelationId")
+	errInvalidResourceIdDeviceID = status.Errorf(codes.InvalidArgument, "invalid ResourceId.DeviceId")
+	errInvalidResourceIdHref     = status.Errorf(codes.InvalidArgument, "invalid ResourceId.Href")
+)
 
 func validatePublish(request *commands.PublishResourceLinksRequest) error {
 	if len(request.Resources) == 0 {
@@ -58,14 +72,14 @@ func validatePublish(request *commands.PublishResourceLinksRequest) error {
 		}
 	}
 	if request.DeviceId == "" {
-		return status.Errorf(codes.InvalidArgument, "invalid deviceID")
+		return errInvalidDeviceID
 	}
 	return nil
 }
 
 func validateUnpublish(request *commands.UnpublishResourceLinksRequest) error {
 	if request.GetDeviceId() == "" {
-		return status.Errorf(codes.InvalidArgument, "invalid deviceID")
+		return errInvalidDeviceID
 	}
 	for _, href := range request.Hrefs {
 		if href == "" {
@@ -77,13 +91,13 @@ func validateUnpublish(request *commands.UnpublishResourceLinksRequest) error {
 
 func validateNotifyContentChanged(request *commands.NotifyResourceChangedRequest) error {
 	if request.Content == nil {
-		return status.Errorf(codes.InvalidArgument, "invalid Content")
+		return errInvalidContent
 	}
 	if request.GetResourceId().GetDeviceId() == "" {
-		return status.Errorf(codes.InvalidArgument, "invalid ResourceId.DeviceId")
+		return errInvalidResourceIdDeviceID
 	}
 	if request.GetResourceId().GetHref() == "" {
-		return status.Errorf(codes.InvalidArgument, "invalid ResourceId.Href")
+		return errInvalidResourceIdHref
 	}
 	return nil
 }
@@ -93,16 +107,16 @@ func validateUpdateResourceContent(request *commands.UpdateResourceRequest) erro
 		return err
 	}
 	if request.Content == nil {
-		return status.Errorf(codes.InvalidArgument, "invalid Content")
+		return errInvalidContent
 	}
 	if request.GetResourceId().GetDeviceId() == "" {
-		return status.Errorf(codes.InvalidArgument, "invalid ResourceId.DeviceId")
+		return errInvalidResourceIdDeviceID
 	}
 	if request.GetResourceId().GetHref() == "" {
-		return status.Errorf(codes.InvalidArgument, "invalid ResourceId.Href")
+		return errInvalidResourceIdHref
 	}
 	if request.GetCorrelationId() == "" {
-		return status.Errorf(codes.InvalidArgument, "invalid CorrelationId")
+		return errInvalidCorrelationID
 	}
 	return nil
 }
@@ -112,29 +126,29 @@ func validateRetrieveResource(request *commands.RetrieveResourceRequest) error {
 		return err
 	}
 	if request.GetResourceId().GetDeviceId() == "" {
-		return status.Errorf(codes.InvalidArgument, "invalid ResourceId.DeviceId")
+		return errInvalidResourceIdDeviceID
 	}
 	if request.GetResourceId().GetHref() == "" {
-		return status.Errorf(codes.InvalidArgument, "invalid ResourceId.Href")
+		return errInvalidResourceIdHref
 	}
 	if request.GetCorrelationId() == "" {
-		return status.Errorf(codes.InvalidArgument, "invalid CorrelationId")
+		return errInvalidCorrelationID
 	}
 	return nil
 }
 
 func validateConfirmResourceUpdate(request *commands.ConfirmResourceUpdateRequest) error {
 	if request.Content == nil {
-		return status.Errorf(codes.InvalidArgument, "invalid Content")
+		return errInvalidContent
 	}
 	if request.GetResourceId().GetDeviceId() == "" {
-		return status.Errorf(codes.InvalidArgument, "invalid ResourceId.DeviceId")
+		return errInvalidResourceIdDeviceID
 	}
 	if request.GetResourceId().GetHref() == "" {
-		return status.Errorf(codes.InvalidArgument, "invalid ResourceId.Href")
+		return errInvalidResourceIdHref
 	}
 	if request.GetCorrelationId() == "" {
-		return status.Errorf(codes.InvalidArgument, "invalid CorrelationId")
+		return errInvalidCorrelationID
 	}
 
 	return nil
@@ -142,16 +156,16 @@ func validateConfirmResourceUpdate(request *commands.ConfirmResourceUpdateReques
 
 func validateConfirmResourceRetrieve(request *commands.ConfirmResourceRetrieveRequest) error {
 	if request.Content == nil {
-		return status.Errorf(codes.InvalidArgument, "invalid Content")
+		return errInvalidContent
 	}
 	if request.GetResourceId().GetDeviceId() == "" {
-		return status.Errorf(codes.InvalidArgument, "invalid ResourceId.DeviceId")
+		return errInvalidResourceIdDeviceID
 	}
 	if request.GetResourceId().GetHref() == "" {
-		return status.Errorf(codes.InvalidArgument, "invalid ResourceId.Href")
+		return errInvalidResourceIdHref
 	}
 	if request.GetCorrelationId() == "" {
-		return status.Errorf(codes.InvalidArgument, "invalid CorrelationId")
+		return errInvalidCorrelationID
 	}
 
 	return nil
@@ -162,13 +176,13 @@ func validateDeleteResource(request *commands.DeleteResourceRequest) error {
 		return err
 	}
 	if request.GetResourceId().GetDeviceId() == "" {
-		return status.Errorf(codes.InvalidArgument, "invalid ResourceId.DeviceId")
+		return errInvalidResourceIdDeviceID
 	}
 	if request.GetResourceId().GetHref() == "" {
-		return status.Errorf(codes.InvalidArgument, "invalid ResourceId.Href")
+		return errInvalidResourceIdHref
 	}
 	if request.GetCorrelationId() == "" {
-		return status.Errorf(codes.InvalidArgument, "invalid CorrelationId")
+		return errInvalidCorrelationID
 	}
 	return nil
 }
@@ -178,16 +192,16 @@ func validateCreateResource(request *commands.CreateResourceRequest) error {
 		return err
 	}
 	if request.GetResourceId().GetDeviceId() == "" {
-		return status.Errorf(codes.InvalidArgument, "invalid ResourceId.DeviceId")
+		return errInvalidResourceIdDeviceID
 	}
 	if request.GetResourceId().GetHref() == "" {
-		return status.Errorf(codes.InvalidArgument, "invalid ResourceId.Href")
+		return errInvalidResourceIdHref
 	}
 	if request.GetCorrelationId() == "" {
-		return status.Errorf(codes.InvalidArgument, "invalid CorrelationId")
+		return errInvalidCorrelationID
 	}
 	if request.GetContent() == nil {
-		return status.Errorf(codes.InvalidArgument, "invalid Content")
+		return errInvalidContent
 	}
 	if request.GetContent().GetData() == nil {
 		return status.Errorf(codes.InvalidArgument, "invalid Content.Data")
@@ -197,16 +211,16 @@ func validateCreateResource(request *commands.CreateResourceRequest) error {
 
 func validateConfirmResourceCreate(request *commands.ConfirmResourceCreateRequest) error {
 	if request.GetContent() == nil {
-		return status.Errorf(codes.InvalidArgument, "invalid Content")
+		return errInvalidContent
 	}
 	if request.GetResourceId().GetDeviceId() == "" {
-		return status.Errorf(codes.InvalidArgument, "invalid ResourceId.DeviceId")
+		return errInvalidResourceIdDeviceID
 	}
 	if request.GetResourceId().GetHref() == "" {
-		return status.Errorf(codes.InvalidArgument, "invalid ResourceId.Href")
+		return errInvalidResourceIdHref
 	}
 	if request.GetCorrelationId() == "" {
-		return status.Errorf(codes.InvalidArgument, "invalid CorrelationId")
+		return errInvalidCorrelationID
 	}
 
 	return nil
@@ -214,13 +228,13 @@ func validateConfirmResourceCreate(request *commands.ConfirmResourceCreateReques
 
 func validateConfirmResourceDelete(request *commands.ConfirmResourceDeleteRequest) error {
 	if request.GetResourceId().GetDeviceId() == "" {
-		return status.Errorf(codes.InvalidArgument, "invalid ResourceId.DeviceId")
+		return errInvalidResourceIdDeviceID
 	}
 	if request.GetResourceId().GetHref() == "" {
-		return status.Errorf(codes.InvalidArgument, "invalid ResourceId.Href")
+		return errInvalidResourceIdHref
 	}
 	if request.GetCorrelationId() == "" {
-		return status.Errorf(codes.InvalidArgument, "invalid CorrelationId")
+		return errInvalidCorrelationID
 	}
 
 	return nil

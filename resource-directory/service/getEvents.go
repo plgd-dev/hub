@@ -21,10 +21,14 @@ type resourceEvent struct {
 
 type resourceEventHandler func(eventstore.EventUnmarshaler) *pb.GetEventsResponse
 
+func logErrUnmarshal(eu eventstore.EventUnmarshaler, err error) {
+	log.Errorf("failed to unmarshal event %v: %w", eu.EventType(), err)
+}
+
 func handleResourceLinksPublished(eu eventstore.EventUnmarshaler) *pb.GetEventsResponse {
 	var e events.ResourceLinksPublished
 	if err := eu.Unmarshal(&e); err != nil {
-		log.Errorf("failed to unmarshal event %v", eu.EventType())
+		logErrUnmarshal(eu, err)
 		return nil
 	}
 	return &pb.GetEventsResponse{
@@ -37,7 +41,7 @@ func handleResourceLinksPublished(eu eventstore.EventUnmarshaler) *pb.GetEventsR
 func handleResourceLinksUnpublished(eu eventstore.EventUnmarshaler) *pb.GetEventsResponse {
 	var e events.ResourceLinksUnpublished
 	if err := eu.Unmarshal(&e); err != nil {
-		log.Errorf("failed to unmarshal event %v", eu.EventType())
+		logErrUnmarshal(eu, err)
 		return nil
 	}
 	return &pb.GetEventsResponse{
@@ -50,7 +54,7 @@ func handleResourceLinksUnpublished(eu eventstore.EventUnmarshaler) *pb.GetEvent
 func handleResourceLinksSnapshotTaken(eu eventstore.EventUnmarshaler) *pb.GetEventsResponse {
 	var e events.ResourceLinksSnapshotTaken
 	if err := eu.Unmarshal(&e); err != nil {
-		log.Errorf("failed to unmarshal event %v", eu.EventType())
+		logErrUnmarshal(eu, err)
 		return nil
 	}
 	return &pb.GetEventsResponse{
@@ -63,7 +67,7 @@ func handleResourceLinksSnapshotTaken(eu eventstore.EventUnmarshaler) *pb.GetEve
 func handleResourceChanged(eu eventstore.EventUnmarshaler) *pb.GetEventsResponse {
 	var e events.ResourceChanged
 	if err := eu.Unmarshal(&e); err != nil {
-		log.Errorf("failed to unmarshal event %v", eu.EventType())
+		logErrUnmarshal(eu, err)
 		return nil
 	}
 	return &pb.GetEventsResponse{
@@ -76,7 +80,7 @@ func handleResourceChanged(eu eventstore.EventUnmarshaler) *pb.GetEventsResponse
 func handleResourceUpdatePending(eu eventstore.EventUnmarshaler) *pb.GetEventsResponse {
 	var e events.ResourceUpdatePending
 	if err := eu.Unmarshal(&e); err != nil {
-		log.Errorf("failed to unmarshal event %v", eu.EventType())
+		logErrUnmarshal(eu, err)
 		return nil
 	}
 	return &pb.GetEventsResponse{
@@ -89,7 +93,7 @@ func handleResourceUpdatePending(eu eventstore.EventUnmarshaler) *pb.GetEventsRe
 func handleResourceUpdated(eu eventstore.EventUnmarshaler) *pb.GetEventsResponse {
 	var e events.ResourceUpdated
 	if err := eu.Unmarshal(&e); err != nil {
-		log.Errorf("failed to unmarshal event %v", eu.EventType())
+		logErrUnmarshal(eu, err)
 		return nil
 	}
 	return &pb.GetEventsResponse{
@@ -102,7 +106,7 @@ func handleResourceUpdated(eu eventstore.EventUnmarshaler) *pb.GetEventsResponse
 func handleResourceRetrievePending(eu eventstore.EventUnmarshaler) *pb.GetEventsResponse {
 	var e events.ResourceRetrievePending
 	if err := eu.Unmarshal(&e); err != nil {
-		log.Errorf("failed to unmarshal event %v", eu.EventType())
+		logErrUnmarshal(eu, err)
 		return nil
 	}
 	return &pb.GetEventsResponse{
@@ -115,7 +119,7 @@ func handleResourceRetrievePending(eu eventstore.EventUnmarshaler) *pb.GetEvents
 func handleResourceRetrieved(eu eventstore.EventUnmarshaler) *pb.GetEventsResponse {
 	var e events.ResourceRetrieved
 	if err := eu.Unmarshal(&e); err != nil {
-		log.Errorf("failed to unmarshal event %v", eu.EventType())
+		logErrUnmarshal(eu, err)
 		return nil
 	}
 	return &pb.GetEventsResponse{
@@ -128,7 +132,7 @@ func handleResourceRetrieved(eu eventstore.EventUnmarshaler) *pb.GetEventsRespon
 func handleResourceDeletePending(eu eventstore.EventUnmarshaler) *pb.GetEventsResponse {
 	var e events.ResourceDeletePending
 	if err := eu.Unmarshal(&e); err != nil {
-		log.Errorf("failed to unmarshal event %v", eu.EventType())
+		logErrUnmarshal(eu, err)
 		return nil
 	}
 	return &pb.GetEventsResponse{
@@ -141,7 +145,7 @@ func handleResourceDeletePending(eu eventstore.EventUnmarshaler) *pb.GetEventsRe
 func handleResourceDeleted(eu eventstore.EventUnmarshaler) *pb.GetEventsResponse {
 	var e events.ResourceDeleted
 	if err := eu.Unmarshal(&e); err != nil {
-		log.Errorf("failed to unmarshal event %v", eu.EventType())
+		logErrUnmarshal(eu, err)
 		return nil
 	}
 	return &pb.GetEventsResponse{
@@ -154,7 +158,7 @@ func handleResourceDeleted(eu eventstore.EventUnmarshaler) *pb.GetEventsResponse
 func handleResourceCreatePending(eu eventstore.EventUnmarshaler) *pb.GetEventsResponse {
 	var e events.ResourceCreatePending
 	if err := eu.Unmarshal(&e); err != nil {
-		log.Errorf("failed to unmarshal event %v", eu.EventType())
+		logErrUnmarshal(eu, err)
 		return nil
 	}
 	return &pb.GetEventsResponse{
@@ -167,7 +171,7 @@ func handleResourceCreatePending(eu eventstore.EventUnmarshaler) *pb.GetEventsRe
 func handleResourceCreated(eu eventstore.EventUnmarshaler) *pb.GetEventsResponse {
 	var e events.ResourceCreated
 	if err := eu.Unmarshal(&e); err != nil {
-		log.Errorf("failed to unmarshal event %v", eu.EventType())
+		logErrUnmarshal(eu, err)
 		return nil
 	}
 	return &pb.GetEventsResponse{
@@ -180,7 +184,7 @@ func handleResourceCreated(eu eventstore.EventUnmarshaler) *pb.GetEventsResponse
 func handleResourceStateSnapshotTaken(eu eventstore.EventUnmarshaler) *pb.GetEventsResponse {
 	var e events.ResourceStateSnapshotTaken
 	if err := eu.Unmarshal(&e); err != nil {
-		log.Errorf("failed to unmarshal event %v", eu.EventType())
+		logErrUnmarshal(eu, err)
 		return nil
 	}
 	return &pb.GetEventsResponse{
@@ -193,7 +197,7 @@ func handleResourceStateSnapshotTaken(eu eventstore.EventUnmarshaler) *pb.GetEve
 func handleDeviceMetadataUpdatePending(eu eventstore.EventUnmarshaler) *pb.GetEventsResponse {
 	var e events.DeviceMetadataUpdatePending
 	if err := eu.Unmarshal(&e); err != nil {
-		log.Errorf("failed to unmarshal event %v", eu.EventType())
+		logErrUnmarshal(eu, err)
 		return nil
 	}
 	return &pb.GetEventsResponse{
@@ -206,7 +210,7 @@ func handleDeviceMetadataUpdatePending(eu eventstore.EventUnmarshaler) *pb.GetEv
 func handleDeviceMetadataUpdated(eu eventstore.EventUnmarshaler) *pb.GetEventsResponse {
 	var e events.DeviceMetadataUpdated
 	if err := eu.Unmarshal(&e); err != nil {
-		log.Errorf("failed to unmarshal event %v", eu.EventType())
+		logErrUnmarshal(eu, err)
 		return nil
 	}
 	return &pb.GetEventsResponse{
@@ -219,7 +223,7 @@ func handleDeviceMetadataUpdated(eu eventstore.EventUnmarshaler) *pb.GetEventsRe
 func handleDeviceMetadataSnapshotTaken(eu eventstore.EventUnmarshaler) *pb.GetEventsResponse {
 	var e events.DeviceMetadataSnapshotTaken
 	if err := eu.Unmarshal(&e); err != nil {
-		log.Errorf("failed to unmarshal event %v", eu.EventType())
+		logErrUnmarshal(eu, err)
 		return nil
 	}
 	return &pb.GetEventsResponse{

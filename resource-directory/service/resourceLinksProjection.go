@@ -65,6 +65,37 @@ func (rlp *resourceLinksProjection) LenResources() int {
 	return len(rlp.private.snapshot.GetResources())
 }
 
+func (rlp *resourceLinksProjection) HandleEventLocked(eu eventstore.EventUnmarshaler) error {
+	if rlp.private.snapshot == nil {
+		rlp.private.snapshot = events.NewResourceLinksSnapshotTaken()
+	}
+	eventMetadata := rlp.private.snapshot.GetEventMetadata().Clone()
+	eventMetadata.Version = eu.Version()
+	rlp.private.snapshot.EventMetadata = eventMetadata
+	switch eu.EventType() {
+	case (&events.ResourceLinksSnapshotTaken{}).EventType():
+		var e events.ResourceLinksSnapshotTaken
+		if err := eu.Unmarshal(&e); err != nil {
+			return err
+		}
+		rlp.private.snapshot = &e
+	case (&events.ResourceLinksPublished{}).EventType():
+		var e events.ResourceLinksPublished
+		if err := eu.Unmarshal(&e); err != nil {
+			return err
+		}
+		rlp.private.snapshot.HandleEventResourceLinksPublished(&e)
+	case (&events.ResourceLinksUnpublished{}).EventType():
+		var e events.ResourceLinksUnpublished
+		if err := eu.Unmarshal(&e); err != nil {
+			return err
+		}
+		rlp.private.snapshot.HandleEventResourceLinksUnpublished(nil, &e)
+	}
+
+	return nil
+}
+
 func (rlp *resourceLinksProjection) Handle(ctx context.Context, iter eventstore.Iter) error {
 	rlp.private.lock.Lock()
 	defer rlp.private.lock.Unlock()
@@ -74,31 +105,8 @@ func (rlp *resourceLinksProjection) Handle(ctx context.Context, iter eventstore.
 			break
 		}
 		log.Debugf("resourceLinksProjection.Handle deviceID=%v eventype%v version=%v", eu.GroupID(), eu.EventType(), eu.Version())
-		if rlp.private.snapshot == nil {
-			rlp.private.snapshot = events.NewResourceLinksSnapshotTaken()
-		}
-		eventMetadata := rlp.private.snapshot.GetEventMetadata().Clone()
-		eventMetadata.Version = eu.Version()
-		rlp.private.snapshot.EventMetadata = eventMetadata
-		switch eu.EventType() {
-		case (&events.ResourceLinksSnapshotTaken{}).EventType():
-			var e events.ResourceLinksSnapshotTaken
-			if err := eu.Unmarshal(&e); err != nil {
-				return err
-			}
-			rlp.private.snapshot = &e
-		case (&events.ResourceLinksPublished{}).EventType():
-			var e events.ResourceLinksPublished
-			if err := eu.Unmarshal(&e); err != nil {
-				return err
-			}
-			rlp.private.snapshot.HandleEventResourceLinksPublished(&e)
-		case (&events.ResourceLinksUnpublished{}).EventType():
-			var e events.ResourceLinksUnpublished
-			if err := eu.Unmarshal(&e); err != nil {
-				return err
-			}
-			rlp.private.snapshot.HandleEventResourceLinksUnpublished(nil, &e)
+		if err := rlp.HandleEventLocked(eu); err != nil {
+			return err
 		}
 	}
 	return nil

@@ -168,42 +168,58 @@ func (p *Projection) wantToReloadDevice(rl *resourceLinksProjection, hrefFilter 
 	return finalReload
 }
 
+func (p *Projection) loadResourceWithLinks(ctx context.Context, deviceID string, hrefFilter map[string]bool, typeFilter strings.Set, toReloadDevices strings.Set, onResource func(*Resource) error) error {
+	isMatchingResource := func(res *commands.Resource) bool {
+		if len(hrefFilter) > 0 && !hrefFilter[res.GetHref()] {
+			return false
+		}
+		if !hasMatchingType(res.ResourceTypes, typeFilter) {
+			return false
+		}
+		return true
+	}
+	isSnapShotEvent := func(model eventstore.Model) bool {
+		e, ok := model.(interface{ EventType() string })
+		if !ok {
+			panic(fmt.Errorf("invalid event type(%T)", model))
+		}
+		t := e.EventType()
+		return t == events.NewResourceLinksSnapshotTaken().EventType() ||
+			t == events.NewDeviceMetadataSnapshotTaken().EventType()
+	}
+
+	return p.LoadResourceLinks(ctx, strings.Set{deviceID: struct{}{}}, toReloadDevices, func(rl *resourceLinksProjection) error {
+		if p.wantToReloadDevice(rl, hrefFilter, typeFilter) && toReloadDevices != nil {
+			// if toReloadDevices == nil it means that Reload was executed but all resources are not available yet, we want to provide partial resoures then.
+			toReloadDevices.Add(rl.GetDeviceID())
+			return nil
+		}
+		var err error
+		rl.IterateOverResources(func(res *commands.Resource) (wantNext bool) {
+			if !isMatchingResource(res) {
+				return true
+			}
+			p.Models(func(model eventstore.Model) (wantNext bool) {
+				if isSnapShotEvent(model) {
+					return true
+				}
+				rp := model.(*resourceProjection)
+				err = onResource(&Resource{
+					projection: rp,
+					Resource:   res,
+				})
+				return err == nil
+			}, commands.NewResourceID(rl.GetDeviceID(), res.Href))
+			return true
+		})
+		return err
+	})
+}
+
 func (p *Projection) LoadResourcesWithLinks(ctx context.Context, resourceIDFilter []*commands.ResourceId, typeFilter strings.Set, toReloadDevices strings.Set, onResource func(*Resource) error) error {
 	resourceIDMapFilter := getResourceIDMapFilter(resourceIDFilter)
 	for deviceID, hrefFilter := range resourceIDMapFilter { // filter duplicit load
-		err := p.LoadResourceLinks(ctx, strings.Set{deviceID: struct{}{}}, toReloadDevices, func(rl *resourceLinksProjection) error {
-			if p.wantToReloadDevice(rl, hrefFilter, typeFilter) {
-				// if toReloadDevices == nil it means that Reload was executed but all resources are not available yet, we want to provide partial resoures then.
-				if toReloadDevices != nil {
-					toReloadDevices.Add(rl.GetDeviceID())
-					return nil
-				}
-			}
-			var err error
-			rl.IterateOverResources(func(res *commands.Resource) (wantNext bool) {
-				if len(hrefFilter) > 0 && !hrefFilter[res.GetHref()] {
-					return true
-				}
-				if !hasMatchingType(res.ResourceTypes, typeFilter) {
-					return true
-				}
-				p.Models(func(model eventstore.Model) (wantNext bool) {
-					t := model.(interface{ EventType() string }).EventType()
-					if t == events.NewResourceLinksSnapshotTaken().EventType() ||
-						t == events.NewDeviceMetadataSnapshotTaken().EventType() {
-						return true
-					}
-					rp := model.(*resourceProjection)
-					err = onResource(&Resource{
-						projection: rp,
-						Resource:   res,
-					})
-					return err == nil
-				}, commands.NewResourceID(rl.GetDeviceID(), res.Href))
-				return true
-			})
-			return err
-		})
+		err := p.loadResourceWithLinks(ctx, deviceID, hrefFilter, typeFilter, toReloadDevices, onResource)
 		if err != nil {
 			return err
 		}
