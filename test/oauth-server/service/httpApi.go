@@ -54,10 +54,10 @@ func createJwkKey(privateKey interface{}) (jwk.Key, error) {
 	}
 
 	if err = jwkKey.Set(jwk.KeyIDKey, uuid.NewSHA1(uuid.NameSpaceX500, data).String()); err != nil {
-		return nil, fmt.Errorf("failed to set %v: %w", jwk.KeyIDKey, err)
+		return nil, setKeyError(jwk.KeyIDKey, err)
 	}
 	if err = jwkKey.Set(jwk.AlgorithmKey, alg); err != nil {
-		return nil, fmt.Errorf("failed to set %v: %w", jwk.AlgorithmKey, err)
+		return nil, setKeyError(jwk.AlgorithmKey, err)
 	}
 	return jwkKey, nil
 }

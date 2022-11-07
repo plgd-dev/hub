@@ -3,6 +3,7 @@ package test
 import (
 	"context"
 	"fmt"
+	"log"
 	"os"
 	"os/exec"
 	"testing"
@@ -519,8 +520,9 @@ type findDeviceIDByNameHandler struct {
 
 func (h *findDeviceIDByNameHandler) Handle(ctx context.Context, dev *core.Device) {
 	defer func() {
-		err := dev.Close(ctx)
-		h.Error(err)
+		if errC := dev.Close(ctx); errC != nil {
+			h.Error(errC)
+		}
 	}()
 	deviceLinks, err := dev.GetResourceLinks(ctx, dev.GetEndpoints())
 	if err != nil {
@@ -543,7 +545,9 @@ func (h *findDeviceIDByNameHandler) Handle(ctx context.Context, dev *core.Device
 	}
 }
 
-func (h *findDeviceIDByNameHandler) Error(err error) {}
+func (h *findDeviceIDByNameHandler) Error(err error) {
+	log.Printf("find device ID by name handler error: %v", err.Error())
+}
 
 func FindDeviceByName(ctx context.Context, name string) (deviceID string, _ error) {
 	client := core.NewClient()

@@ -15,9 +15,13 @@ import (
 	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 )
 
-var StaticAuditContext = &commands.AuditContext{
-	UserId: "userId",
-}
+var (
+	StaticAuditContext = &commands.AuditContext{
+		UserId: "userId",
+	}
+
+	errCannotUnmarshalEvent = fmt.Errorf("cannot unmarshal event")
+)
 
 func MakeResourceLinksPublishedEvent(resources []*commands.Resource, deviceID string, eventMetadata *events.EventMetadata) eventstore.EventUnmarshaler {
 	e := events.ResourceLinksPublished{
@@ -38,7 +42,7 @@ func MakeResourceLinksPublishedEvent(resources []*commands.Resource, deviceID st
 				x.CopyData(&e)
 				return nil
 			}
-			return fmt.Errorf("cannot unmarshal event")
+			return errCannotUnmarshalEvent
 		},
 	)
 }
@@ -62,7 +66,7 @@ func MakeResourceLinksUnpublishedEvent(hrefs []string, deviceID string, eventMet
 				x.CopyData(&e)
 				return nil
 			}
-			return fmt.Errorf("cannot unmarshal event")
+			return errCannotUnmarshalEvent
 		},
 	)
 }
@@ -85,7 +89,7 @@ func MakeResourceLinksSnapshotTaken(resources map[string]*commands.Resource, dev
 				x.CopyData(e)
 				return nil
 			}
-			return fmt.Errorf("cannot unmarshal event")
+			return errCannotUnmarshalEvent
 		},
 	)
 }
@@ -117,7 +121,7 @@ func MakeResourceUpdatePending(resourceID *commands.ResourceId, content *command
 				x.CopyData(&e)
 				return nil
 			}
-			return fmt.Errorf("cannot unmarshal event")
+			return errCannotUnmarshalEvent
 		},
 	)
 }
@@ -142,7 +146,7 @@ func MakeResourceUpdated(resourceID *commands.ResourceId, status commands.Status
 				x.CopyData(&e)
 				return nil
 			}
-			return fmt.Errorf("cannot unmarshal event")
+			return errCannotUnmarshalEvent
 		},
 	)
 }
@@ -167,7 +171,7 @@ func MakeResourceCreatePending(resourceID *commands.ResourceId, content *command
 				x.CopyData(&e)
 				return nil
 			}
-			return fmt.Errorf("cannot unmarshal event")
+			return errCannotUnmarshalEvent
 		},
 	)
 }
@@ -192,7 +196,7 @@ func MakeResourceCreated(resourceID *commands.ResourceId, status commands.Status
 				x.CopyData(&e)
 				return nil
 			}
-			return fmt.Errorf("cannot unmarshal event")
+			return errCannotUnmarshalEvent
 		},
 	)
 }
@@ -216,7 +220,7 @@ func MakeResourceChangedEvent(resourceID *commands.ResourceId, content *commands
 				x.CopyData(&e)
 				return nil
 			}
-			return fmt.Errorf("cannot unmarshal event")
+			return errCannotUnmarshalEvent
 		},
 	)
 }
@@ -241,7 +245,7 @@ func MakeResourceRetrievePending(resourceID *commands.ResourceId, resourceInterf
 				x.CopyData(&e)
 				return nil
 			}
-			return fmt.Errorf("cannot unmarshal event")
+			return errCannotUnmarshalEvent
 		},
 	)
 }
@@ -266,7 +270,7 @@ func MakeResourceRetrieved(resourceID *commands.ResourceId, status commands.Stat
 				x.CopyData(&e)
 				return nil
 			}
-			return fmt.Errorf("cannot unmarshal event")
+			return errCannotUnmarshalEvent
 		},
 	)
 }
@@ -290,7 +294,7 @@ func MakeResourceDeletePending(resourceID *commands.ResourceId, eventMetadata *e
 				x.CopyData(&e)
 				return nil
 			}
-			return fmt.Errorf("cannot unmarshal event")
+			return errCannotUnmarshalEvent
 		},
 	)
 }
@@ -315,7 +319,7 @@ func MakeResourceDeleted(resourceID *commands.ResourceId, status commands.Status
 				x.CopyData(&e)
 				return nil
 			}
-			return fmt.Errorf("cannot unmarshal event")
+			return errCannotUnmarshalEvent
 		},
 	)
 }
@@ -339,7 +343,7 @@ func MakeResourceStateSnapshotTaken(resourceID *commands.ResourceId, latestResou
 				x.CopyData(e)
 				return nil
 			}
-			return fmt.Errorf("cannot unmarshal event")
+			return errCannotUnmarshalEvent
 		},
 	)
 }
@@ -364,7 +368,7 @@ func MakeDeviceMetadataUpdatePending(deviceID string, twinEnabled *events.Device
 				x.CopyData(&e)
 				return nil
 			}
-			return fmt.Errorf("cannot unmarshal event")
+			return errCannotUnmarshalEvent
 		},
 	)
 }
@@ -390,7 +394,7 @@ func MakeDeviceMetadataUpdated(deviceID string, connection *commands.Connection,
 				x.CopyData(&e)
 				return nil
 			}
-			return fmt.Errorf("cannot unmarshal event")
+			return errCannotUnmarshalEvent
 		},
 	)
 }
@@ -413,7 +417,7 @@ func MakeDeviceMetadata(deviceID string, deviceMetadataUpdated *events.DeviceMet
 				x.CopyData(&e)
 				return nil
 			}
-			return fmt.Errorf("cannot unmarshal event")
+			return errCannotUnmarshalEvent
 		},
 	)
 }

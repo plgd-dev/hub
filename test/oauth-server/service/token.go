@@ -31,40 +31,48 @@ const (
 	TokenPictureKey  = "picture"
 )
 
+func setKeyError(key string, err error) error {
+	return fmt.Errorf("failed to set %v: %w", key, err)
+}
+
+func setKeyErrorExt(key, info string, err error) error {
+	return fmt.Errorf("failed to set %v('%v'): %w", key, info, err)
+}
+
 func makeAccessToken(clientID, host, deviceID, scopes string, issuedAt, expires time.Time) (jwt.Token, error) {
 	token := jwt.New()
 
 	if err := token.Set(jwt.SubjectKey, DeviceUserID); err != nil {
-		return nil, fmt.Errorf("failed to set %v: %w", jwt.SubjectKey, err)
+		return nil, setKeyError(jwt.SubjectKey, err)
 	}
 	if err := token.Set(jwt.AudienceKey, host+"/"); err != nil {
-		return nil, fmt.Errorf("failed to set %v: %w", jwt.AudienceKey, err)
+		return nil, setKeyError(jwt.AudienceKey, err)
 	}
 	if err := token.Set(jwt.IssuedAtKey, issuedAt); err != nil {
-		return nil, fmt.Errorf("failed to set %v: %w", jwt.IssuedAtKey, err)
+		return nil, setKeyError(jwt.IssuedAtKey, err)
 	}
 	if !expires.IsZero() {
 		if err := token.Set(jwt.ExpirationKey, expires); err != nil {
-			return nil, fmt.Errorf("failed to set %v: %w", jwt.ExpirationKey, err)
+			return nil, setKeyError(jwt.ExpirationKey, err)
 		}
 	}
 	if err := token.Set(TokenScopeKey, scopes); err != nil {
-		return nil, fmt.Errorf("failed to set %v: %w", TokenScopeKey, err)
+		return nil, setKeyError(TokenScopeKey, err)
 	}
 	if err := token.Set(uri.ClientIDKey, clientID); err != nil {
-		return nil, fmt.Errorf("failed to set %v: %w", uri.ClientIDKey, err)
+		return nil, setKeyError(uri.ClientIDKey, err)
 	}
 	if err := token.Set(jwt.IssuerKey, host+"/"); err != nil {
-		return nil, fmt.Errorf("failed to set %v: %w", jwt.IssuerKey, err)
+		return nil, setKeyError(jwt.IssuerKey, err)
 	}
 	if deviceID != "" {
 		if err := token.Set(uri.DeviceIDClaimKey, deviceID); err != nil {
-			return nil, fmt.Errorf("failed to set %v('%v'): %w", uri.DeviceIDClaimKey, deviceID, err)
+			return nil, setKeyErrorExt(uri.DeviceIDClaimKey, deviceID, err)
 		}
 	}
 	// mock oauth server always set DeviceUserID, because it supports only one user
 	if err := token.Set(uri.OwnerClaimKey, DeviceUserID); err != nil {
-		return nil, fmt.Errorf("failed to set %v('%v'): %w", uri.OwnerClaimKey, DeviceUserID, err)
+		return nil, setKeyErrorExt(uri.OwnerClaimKey, DeviceUserID, err)
 	}
 
 	return token, nil
@@ -73,13 +81,13 @@ func makeAccessToken(clientID, host, deviceID, scopes string, issuedAt, expires 
 func makeJWTPayload(key interface{}, jwkKey jwk.Key, data []byte) ([]byte, error) {
 	hdr := jws.NewHeaders()
 	if err := hdr.Set(jws.AlgorithmKey, jwkKey.Algorithm()); err != nil {
-		return nil, fmt.Errorf("failed to set %v: %w", jws.AlgorithmKey, err)
+		return nil, setKeyError(jws.AlgorithmKey, err)
 	}
 	if err := hdr.Set(jws.TypeKey, `JWT`); err != nil {
-		return nil, fmt.Errorf("failed to set %v: %w", jws.TypeKey, err)
+		return nil, setKeyError(jws.TypeKey, err)
 	}
 	if err := hdr.Set(jws.KeyIDKey, jwkKey.KeyID()); err != nil {
-		return nil, fmt.Errorf("failed to set %v: %w", jws.KeyIDKey, err)
+		return nil, setKeyError(jws.KeyIDKey, err)
 	}
 	payload, err := jws.Sign(data, jwa.SignatureAlgorithm(jwkKey.Algorithm()), key, jws.WithHeaders(hdr))
 	if err != nil {
@@ -115,37 +123,37 @@ func makeIDToken(clientID string, host, nonce string, issuedAt, expires time.Tim
 	token := jwt.New()
 
 	if err := token.Set(jwt.SubjectKey, DeviceUserID); err != nil {
-		return nil, fmt.Errorf("failed to set %v: %w", jwt.SubjectKey, err)
+		return nil, setKeyError(jwt.SubjectKey, err)
 	}
 	if err := token.Set(jwt.AudienceKey, clientID); err != nil {
-		return nil, fmt.Errorf("failed to set %v: %w", jwt.AudienceKey, err)
+		return nil, setKeyError(jwt.AudienceKey, err)
 	}
 	if err := token.Set(jwt.IssuedAtKey, issuedAt); err != nil {
-		return nil, fmt.Errorf("failed to set %v: %w", jwt.IssuedAtKey, err)
+		return nil, setKeyError(jwt.IssuedAtKey, err)
 	}
 	if expires.IsZero() {
 		// itToken for UI must contains exp
 		expires = time.Now().Add(time.Hour * 24 * 365 * 10)
 	}
 	if err := token.Set(jwt.ExpirationKey, expires); err != nil {
-		return nil, fmt.Errorf("failed to set %v: %w", jwt.ExpirationKey, err)
+		return nil, setKeyError(jwt.ExpirationKey, err)
 	}
 	if err := token.Set(jwt.IssuerKey, host+"/"); err != nil {
-		return nil, fmt.Errorf("failed to set %v: %w", jwt.IssuerKey, err)
+		return nil, setKeyError(jwt.IssuerKey, err)
 	}
 	if nonce != "" {
 		if err := token.Set(uri.NonceKey, nonce); err != nil {
-			return nil, fmt.Errorf("failed to set %v: %w", uri.NonceKey, err)
+			return nil, setKeyError(uri.NonceKey, err)
 		}
 	}
 	if err := token.Set(TokenNicknameKey, "test"); err != nil {
-		return nil, fmt.Errorf("failed to set %v: %w", TokenNicknameKey, err)
+		return nil, setKeyError(TokenNicknameKey, err)
 	}
 	if err := token.Set(TokenNameKey, "test@test.com"); err != nil {
-		return nil, fmt.Errorf("failed to set %v: %w", TokenNameKey, err)
+		return nil, setKeyError(TokenNameKey, err)
 	}
 	if err := token.Set(TokenPictureKey, "https://s.gravatar.com/avatar/319673928161fae8216e9a2225cff4b6?s=480&r=pg&d=https%3A%2F%2Fcdn.auth0.com%2Favatars%2Fte.png"); err != nil {
-		return nil, fmt.Errorf("failed to set %v: %w", TokenPictureKey, err)
+		return nil, setKeyError(TokenPictureKey, err)
 	}
 
 	return token, nil
