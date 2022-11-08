@@ -36,6 +36,7 @@ data:
         ownerCacheExpiration: {{ .apis.coap.ownerCacheExpiration }}
         subscriptionBufferSize:  {{ .apis.coap.subscriptionBufferSize }}
         messagePoolSize: {{ .apis.coap.messagePoolSize }}
+        requireBatchObserveEnabled: {{ .apis.coap.requireBatchObserveEnabled }}
         keepAlive:
           timeout: {{ .apis.coap.keepAlive.timeout }}
         blockwiseTransfer:

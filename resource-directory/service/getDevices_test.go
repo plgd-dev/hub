@@ -112,8 +112,12 @@ func TestRequestHandlerGetDevices(t *testing.T) {
 					Id:         deviceID,
 					Name:       test.TestDeviceName,
 					Metadata: &pb.Device_Metadata{
-						Status: &commands.ConnectionStatus{
-							Value: commands.ConnectionStatus_ONLINE,
+						Connection: &commands.Connection{
+							Status: commands.Connection_ONLINE,
+						},
+						TwinEnabled: true,
+						TwinSynchronization: &commands.TwinSynchronization{
+							State: commands.TwinSynchronization_IN_SYNC,
 						},
 					},
 					OwnershipStatus: pb.Device_OWNED,
@@ -158,9 +162,12 @@ func TestRequestHandlerGetDevices(t *testing.T) {
 					assert.NotEmpty(t, dev.ProtocolIndependentId)
 					assert.NotEmpty(t, dev.GetData().GetContent().GetData())
 					dev.ProtocolIndependentId = ""
-					dev.Metadata.Status.ValidUntil = 0
-					dev.Metadata.Status.ConnectionId = ""
-					dev.Metadata.Status.ConnectedAt = 0
+					dev.Metadata.Connection.OnlineValidUntil = 0
+					dev.Metadata.Connection.Id = ""
+					dev.Metadata.Connection.ConnectedAt = 0
+					dev.Metadata.TwinSynchronization.SyncingAt = 0
+					dev.Metadata.TwinSynchronization.InSyncAt = 0
+					dev.Metadata.TwinSynchronization.CommandMetadata = nil
 					dev.Data = nil
 					devices = append(devices, dev)
 				}

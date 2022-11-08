@@ -72,8 +72,8 @@ func (h *gatewayHandler) GetDevices(req *pb.GetDevicesRequest, srv pb.GrpcGatewa
 		Id:   h.deviceID,
 		Name: h.deviceName,
 		Metadata: &pb.Device_Metadata{
-			Status: &commands.ConnectionStatus{
-				Value: commands.ConnectionStatus_ONLINE,
+			Connection: &commands.Connection{
+				Status: commands.Connection_ONLINE,
 			},
 		},
 		ManufacturerName: []*pb.LocalizedString{{Value: TestManufacturer, Language: "en"}},

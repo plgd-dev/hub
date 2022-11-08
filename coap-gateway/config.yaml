@@ -13,11 +13,11 @@ apis:
     externalAddress: ""
     protocols:
       - "tcp"
-      - "udp"
     maxMessageSize: 262144
     ownerCacheExpiration: 1m
     subscriptionBufferSize: 1000
     messagePoolSize: 1000
+    requireBatchObserveEnabled: true
     keepAlive:
       timeout: 20s
     blockwiseTransfer:

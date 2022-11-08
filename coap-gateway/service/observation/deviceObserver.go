@@ -41,19 +41,21 @@ const (
 
 // DeviceObserver is a type that sets up resources observation for a single device.
 type DeviceObserver struct {
-	deviceID              string
-	observationType       ObservationType
-	shadowSynchronization commands.ShadowSynchronization
-	rdClient              GrpcGatewayClient
-	resourcesObserver     *resourcesObserver
-	logger                log.Logger
+	deviceID          string
+	observationType   ObservationType
+	twinEnabled       bool
+	rdClient          GrpcGatewayClient
+	raClient          ResourceAggregateClient
+	resourcesObserver *resourcesObserver
+	logger            log.Logger
 }
 
 type DeviceObserverConfig struct {
-	observationType          ObservationType
-	shadowSynchronization    commands.ShadowSynchronization
-	shadowSynchronizationSet bool
-	logger                   log.Logger
+	ObservationType            ObservationType
+	TwinEnabled                bool
+	TwinEnabledSet             bool
+	Logger                     log.Logger
+	RequireBatchObserveEnabled bool
 }
 
 type ClientConn interface {
@@ -68,12 +70,27 @@ type Option interface {
 }
 
 // Force observationType
+type RequireBatchObserveEnabledOpt struct {
+	requireBatchObserveEnabled bool
+}
+
+func (o RequireBatchObserveEnabledOpt) Apply(opts *DeviceObserverConfig) {
+	opts.RequireBatchObserveEnabled = o.requireBatchObserveEnabled
+}
+
+func WithRequireBatchObserveEnabled(v bool) RequireBatchObserveEnabledOpt {
+	return RequireBatchObserveEnabledOpt{
+		requireBatchObserveEnabled: v,
+	}
+}
+
+// Force observationType
 type ObservationTypeOpt struct {
 	observationType ObservationType
 }
 
 func (o ObservationTypeOpt) Apply(opts *DeviceObserverConfig) {
-	opts.observationType = o.observationType
+	opts.ObservationType = o.observationType
 }
 
 func WithObservationType(observationType ObservationType) ObservationTypeOpt {
@@ -82,19 +99,19 @@ func WithObservationType(observationType ObservationType) ObservationTypeOpt {
 	}
 }
 
-// Force shadowSynchronization value
-type ShadowSynchronizationOpt struct {
-	shadowSynchronization commands.ShadowSynchronization
+// Force twinEnabled value
+type TwinEnabledOpt struct {
+	twinEnabled bool
 }
 
-func (o ShadowSynchronizationOpt) Apply(opts *DeviceObserverConfig) {
-	opts.shadowSynchronization = o.shadowSynchronization
-	opts.shadowSynchronizationSet = true
+func (o TwinEnabledOpt) Apply(opts *DeviceObserverConfig) {
+	opts.TwinEnabled = o.twinEnabled
+	opts.TwinEnabledSet = true
 }
 
-func WithShadowSynchronization(shadowSynchronization commands.ShadowSynchronization) ShadowSynchronizationOpt {
-	return ShadowSynchronizationOpt{
-		shadowSynchronization: shadowSynchronization,
+func WithTwinSynchronization(twinEnabled bool) TwinEnabledOpt {
+	return TwinEnabledOpt{
+		twinEnabled: twinEnabled,
 	}
 }
 
@@ -110,28 +127,28 @@ func WithLogger(logger log.Logger) LoggerOpt {
 }
 
 func (o LoggerOpt) Apply(opts *DeviceObserverConfig) {
-	opts.logger = o.logger
+	opts.Logger = o.logger
 }
 
 func prepareSetupDeviceObserver(ctx context.Context, deviceID string, coapConn ClientConn, rdClient GrpcGatewayClient, raClient ResourceAggregateClient, cfg DeviceObserverConfig) (DeviceObserverConfig, []*commands.Resource, error) {
 	links, sequence, err := GetResourceLinks(ctx, coapConn, resources.ResourceURI)
 	switch {
 	case err == nil:
-		if cfg.observationType == ObservationType_Detect {
-			cfg.observationType, err = detectObservationType(links)
+		if cfg.ObservationType == ObservationType_Detect {
+			cfg.ObservationType, err = detectObservationType(links)
 			if err != nil {
-				cfg.logger.Errorf("%w", err)
-				cfg.observationType = ObservationType_PerDevice
+				cfg.Logger.Errorf("%w", err)
+				cfg.ObservationType = ObservationType_PerDevice
 			}
 		}
 	case errors.Is(err, context.Canceled):
 		// the connection has been closed
 		return cfg, nil, err
 	default:
-		cfg.logger.Debugf("cannot to get resource links from the device(%v): %w", deviceID, err)
+		cfg.Logger.Debugf("cannot to get resource links from the device(%v): %w", deviceID, err)
 		// the device doesn't have a /oic/res resource or a timeout has occurred
-		if cfg.observationType == ObservationType_Detect {
-			cfg.observationType = ObservationType_PerDevice
+		if cfg.ObservationType == ObservationType_Detect {
+			cfg.ObservationType = ObservationType_PerDevice
 		}
 	}
 
@@ -157,24 +174,25 @@ func NewDeviceObserver(ctx context.Context, deviceID string, coapConn ClientConn
 	}
 
 	cfg := DeviceObserverConfig{
-		logger: log.Get(),
+		Logger: log.Get(),
 	}
 	for _, o := range opts {
 		o.Apply(&cfg)
 	}
 
-	if !cfg.shadowSynchronizationSet {
-		shadowSynchronization, err := loadShadowSynchronization(ctx, rdClient, deviceID)
+	if !cfg.TwinEnabledSet {
+		twinEnabled, err := loadTwinEnabled(ctx, rdClient, deviceID)
 		if err != nil {
 			return nil, createError(err)
 		}
-		cfg.shadowSynchronization = shadowSynchronization
+		cfg.TwinEnabled = twinEnabled
 	}
 
-	if cfg.shadowSynchronization == commands.ShadowSynchronization_DISABLED {
+	if !cfg.TwinEnabled {
 		return &DeviceObserver{
-			deviceID:              deviceID,
-			shadowSynchronization: commands.ShadowSynchronization_DISABLED,
+			deviceID:    deviceID,
+			twinEnabled: cfg.TwinEnabled,
+			logger:      cfg.Logger,
 		}, nil
 	}
 
@@ -183,32 +201,37 @@ func NewDeviceObserver(ctx context.Context, deviceID string, coapConn ClientConn
 		return nil, createError(err)
 	}
 
-	if cfg.observationType == ObservationType_PerDevice {
-		resourcesObserver, err := createDiscoveryResourceObserver(ctx, deviceID, coapConn, callbacks, cfg.logger)
+	if cfg.ObservationType == ObservationType_PerDevice {
+		resourcesObserver, err := createDiscoveryResourceObserver(ctx, deviceID, coapConn, callbacks, cfg.Logger)
 		if err == nil {
 			return &DeviceObserver{
-				deviceID:              deviceID,
-				observationType:       ObservationType_PerDevice,
-				shadowSynchronization: cfg.shadowSynchronization,
-				rdClient:              rdClient,
-				resourcesObserver:     resourcesObserver,
-				logger:                cfg.logger,
+				deviceID:          deviceID,
+				observationType:   ObservationType_PerDevice,
+				twinEnabled:       cfg.TwinEnabled,
+				rdClient:          rdClient,
+				resourcesObserver: resourcesObserver,
+				logger:            cfg.Logger,
+				raClient:          raClient,
 			}, nil
 		}
-		cfg.logger.Debugf("NewDeviceObserverWithResourceShadow: failed to create /oic/res observation for device(%v): %v", deviceID, err)
+		cfg.Logger.Debugf("NewDeviceObserver: failed to create /oic/res observation for device(%v): %v", deviceID, err)
+	}
+	if cfg.RequireBatchObserveEnabled {
+		return nil, createError(fmt.Errorf("device(%v) doesn't support batch observe, which is required by configuration", deviceID))
 	}
 
-	resourcesObserver, err := createPublishedResourcesObserver(ctx, deviceID, coapConn, callbacks, published, cfg.logger)
+	resourcesObserver, err := createPublishedResourcesObserver(ctx, deviceID, coapConn, callbacks, published, cfg.Logger)
 	if err != nil {
 		return nil, createError(err)
 	}
 	return &DeviceObserver{
-		deviceID:              deviceID,
-		observationType:       ObservationType_PerResource,
-		shadowSynchronization: cfg.shadowSynchronization,
-		rdClient:              rdClient,
-		resourcesObserver:     resourcesObserver,
-		logger:                cfg.logger,
+		deviceID:          deviceID,
+		observationType:   ObservationType_PerResource,
+		twinEnabled:       cfg.TwinEnabled,
+		rdClient:          rdClient,
+		resourcesObserver: resourcesObserver,
+		logger:            cfg.Logger,
+		raClient:          raClient,
 	}, nil
 }
 
@@ -246,38 +269,39 @@ func detectObservationType(links schema.ResourceLinks) (ObservationType, error) 
 	return ObservationType_PerResource, nil
 }
 
-// Retrieve device metadata and get ShadowSynchronization value.
-func loadShadowSynchronization(ctx context.Context, rdClient GrpcGatewayClient, deviceID string) (commands.ShadowSynchronization, error) {
+// Retrieve device metadata and get TwinEnabled value.
+func loadTwinEnabled(ctx context.Context, rdClient GrpcGatewayClient, deviceID string) (bool, error) {
 	metadataError := func(err error) error {
 		return fmt.Errorf("cannot get device(%v) metadata: %w", deviceID, err)
 	}
 	if deviceID == "" {
-		return commands.ShadowSynchronization_UNSET, metadataError(fmt.Errorf("invalid deviceID"))
+		return false, metadataError(fmt.Errorf("invalid deviceID"))
 	}
 	deviceMetadataClient, err := rdClient.GetDevicesMetadata(ctx, &pb.GetDevicesMetadataRequest{
 		DeviceIdFilter: []string{deviceID},
 	})
 	if err != nil {
 		if status.Convert(err).Code() == codes.NotFound {
-			return commands.ShadowSynchronization_UNSET, nil
+			return false, nil
 		}
-		return commands.ShadowSynchronization_UNSET, metadataError(err)
+		return false, metadataError(err)
 	}
-	shadowSynchronization := commands.ShadowSynchronization_UNSET
+	twinEnabled := true
 	for {
 		m, err := deviceMetadataClient.Recv()
 		if errors.Is(err, io.EOF) {
 			break
 		}
 		if status.Convert(err).Code() == codes.NotFound {
-			return commands.ShadowSynchronization_UNSET, nil
+			// device not exist yet so by default twin is enabled
+			break
 		}
 		if err != nil {
-			return commands.ShadowSynchronization_UNSET, metadataError(err)
+			return false, metadataError(err)
 		}
-		shadowSynchronization = m.GetShadowSynchronization()
+		twinEnabled = m.GetTwinEnabled()
 	}
-	return shadowSynchronization, nil
+	return twinEnabled, nil
 }
 
 // Create observer with a single observation for /oic/res resource.
@@ -315,8 +339,12 @@ func (d *DeviceObserver) GetObservationType() ObservationType {
 	return d.observationType
 }
 
-func (d *DeviceObserver) GetShadowSynchronization() commands.ShadowSynchronization {
-	return d.shadowSynchronization
+func (d *DeviceObserver) ResourceHasBeenSynchronized(ctx context.Context, href string) {
+	d.resourcesObserver.resourceHasBeenSynchronized(ctx, href)
+}
+
+func (d *DeviceObserver) GetTwinEnabled() bool {
+	return d.twinEnabled
 }
 
 // Get list of observed resources for device.
@@ -324,7 +352,7 @@ func (d *DeviceObserver) GetResources() ([]*commands.ResourceId, error) {
 	getResourcesError := func(err error) error {
 		return fmt.Errorf("cannot get observed resources: %w", err)
 	}
-	if d.shadowSynchronization == commands.ShadowSynchronization_DISABLED {
+	if !d.twinEnabled {
 		return nil, nil
 	}
 	if d.resourcesObserver == nil {
@@ -335,7 +363,7 @@ func (d *DeviceObserver) GetResources() ([]*commands.ResourceId, error) {
 
 // Remove all observations.
 func (d *DeviceObserver) Clean(ctx context.Context) {
-	if d.shadowSynchronization == commands.ShadowSynchronization_DISABLED {
+	if !d.twinEnabled {
 		return
 	}
 	d.resourcesObserver.CleanObservedResources(ctx)
@@ -433,12 +461,12 @@ func cleanUpPublishedResources(ctx context.Context, raClient ResourceAggregateCl
 
 // Add observation of published resources.
 //
-// Function does nothing if device shadow is disabled or /oic/res observation type (ObservationType_PerDevice)
+// Function does nothing if device twin is disabled or /oic/res observation type (ObservationType_PerDevice)
 // is active. Only if observation per published resource (ObservationType_PerResource) is active does the
 // function try to add the given resources to active observations.
 func (d *DeviceObserver) AddPublishedResources(ctx context.Context, resources []*commands.Resource) error {
-	if d.shadowSynchronization == commands.ShadowSynchronization_DISABLED {
-		d.logger.Debugf("add published resources skipped: device shadow disabled")
+	if !d.twinEnabled {
+		d.logger.Debugf("add published resources skipped: device twin disabled")
 		return nil
 	}
 	if d.observationType == ObservationType_PerDevice {
@@ -450,12 +478,12 @@ func (d *DeviceObserver) AddPublishedResources(ctx context.Context, resources []
 
 // Remove observation of published resources.
 //
-// Function does nothing if device shadow is disabled or /oic/res observation type (ObservationType_PerDevice)
+// Function does nothing if device twin is disabled or /oic/res observation type (ObservationType_PerDevice)
 // is active. Only if observation per published resource (ObservationType_PerResource) is active does the
 // function try to cancel the observations of given resources.
 func (d *DeviceObserver) RemovePublishedResources(ctx context.Context, resourceHrefs []string) {
-	if d.shadowSynchronization == commands.ShadowSynchronization_DISABLED {
-		d.logger.Debugf("remove published resources skipped: device shadow disabled")
+	if !d.twinEnabled {
+		d.logger.Debugf("remove published resources skipped: device twin disabled")
 		return
 	}
 	if d.observationType == ObservationType_PerDevice {

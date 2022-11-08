@@ -18,19 +18,20 @@ func (c *AuditContext) Clone() *AuditContext {
 	return NewAuditContext(c.GetUserId(), c.GetCorrelationId())
 }
 
-func NewConnectionStatus(value ConnectionStatus_Status, validUntil int64, connectionID string) *ConnectionStatus {
-	return &ConnectionStatus{
-		Value:        value,
-		ValidUntil:   validUntil,
-		ConnectionId: connectionID,
+func NewConnection(status Connection_Status, onlineValidUntil int64, connectionID string, connectedAt int64) *Connection {
+	return &Connection{
+		Status:           status,
+		OnlineValidUntil: onlineValidUntil,
+		Id:               connectionID,
+		ConnectedAt:      connectedAt,
 	}
 }
 
-func (c *ConnectionStatus) Clone() *ConnectionStatus {
+func (c *Connection) Clone() *Connection {
 	if c == nil {
 		return c
 	}
-	return NewConnectionStatus(c.GetValue(), c.GetValidUntil(), c.GetConnectionId())
+	return NewConnection(c.GetStatus(), c.GetOnlineValidUntil(), c.GetId(), c.GetConnectedAt())
 }
 
 type Resources []*Resource

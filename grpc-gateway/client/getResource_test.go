@@ -47,12 +47,12 @@ func TestClientGetResource(t *testing.T) {
 			},
 		},
 		{
-			name: "valid with skip shadow",
+			name: "valid with skip twin",
 			args: args{
 				token:    oauthTest.GetDefaultAccessToken(t),
 				deviceID: deviceID,
 				href:     configuration.ResourceURI,
-				opts:     []client.GetOption{client.WithSkipShadow()},
+				opts:     []client.GetOption{client.WithSkipTwin()},
 			},
 			want: map[interface{}]interface{}{
 				"n": test.TestDeviceName,
@@ -74,12 +74,12 @@ func TestClientGetResource(t *testing.T) {
 			},
 		},
 		{
-			name: "valid with interface and skip shadow",
+			name: "valid with interface and skip twin",
 			args: args{
 				token:    oauthTest.GetDefaultAccessToken(t),
 				deviceID: deviceID,
 				href:     configuration.ResourceURI,
-				opts:     []client.GetOption{client.WithSkipShadow(), client.WithInterface(interfaces.OC_IF_BASELINE)},
+				opts:     []client.GetOption{client.WithSkipTwin(), client.WithInterface(interfaces.OC_IF_BASELINE)},
 			},
 			wantErr: false,
 			want: map[interface{}]interface{}{

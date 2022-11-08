@@ -41,7 +41,7 @@ type contentChangedFilter struct {
 func NewContentChangedFilter() *contentChangedFilter {
 	return &contentChangedFilter{
 		resourceChangedCh:       make(chan eventbus.EventUnmarshaler, 2),
-		deviceMetadataUpdatedCh: make(chan *events.DeviceMetadataUpdated, 1),
+		deviceMetadataUpdatedCh: make(chan *events.DeviceMetadataUpdated, 3),
 	}
 }
 
@@ -62,9 +62,6 @@ func (f *contentChangedFilter) Handle(ctx context.Context, iter eventbus.Iter) (
 			err := v.Unmarshal(&ev)
 			if err != nil {
 				return err
-			}
-			if ev.GetShadowSynchronization() == commands.ShadowSynchronization_UNSET {
-				continue
 			}
 			select {
 			case f.deviceMetadataUpdatedCh <- &ev:
@@ -165,7 +162,7 @@ func TestRequestHandlerUpdateDeviceMetadata(t *testing.T) {
 		_ = obs.Close()
 	}()
 
-	updateDeviceShadowSynchronization := func(in *pb.UpdateDeviceMetadataRequest) error {
+	updateDeviceTwinSynchronization := func(in *pb.UpdateDeviceMetadataRequest) error {
 		data, err := protojson.Marshal(in)
 		require.NoError(t, err)
 
@@ -180,15 +177,15 @@ func TestRequestHandlerUpdateDeviceMetadata(t *testing.T) {
 		return err
 	}
 
-	err = updateDeviceShadowSynchronization(&pb.UpdateDeviceMetadataRequest{
-		DeviceId:              deviceID,
-		ShadowSynchronization: pb.UpdateDeviceMetadataRequest_DISABLED,
+	err = updateDeviceTwinSynchronization(&pb.UpdateDeviceMetadataRequest{
+		DeviceId:    deviceID,
+		TwinEnabled: false,
 	})
 	require.NoError(t, err)
 
 	ev := v.WaitForDeviceMetadataUpdated(time.Second)
 	require.NotEmpty(t, ev)
-	require.Equal(t, commands.ShadowSynchronization_DISABLED, ev.GetShadowSynchronization())
+	require.False(t, ev.GetTwinEnabled())
 
 	err = updateResource(t, &pb.UpdateResourceRequest{
 		ResourceInterface: interfaces.OC_IF_BASELINE,
@@ -216,15 +213,19 @@ func TestRequestHandlerUpdateDeviceMetadata(t *testing.T) {
 	evResourceChanged := v.WaitForResourceChanged(time.Second)
 	require.Empty(t, evResourceChanged)
 
-	err = updateDeviceShadowSynchronization(&pb.UpdateDeviceMetadataRequest{
-		DeviceId:              deviceID,
-		ShadowSynchronization: pb.UpdateDeviceMetadataRequest_ENABLED,
+	err = updateDeviceTwinSynchronization(&pb.UpdateDeviceMetadataRequest{
+		DeviceId:    deviceID,
+		TwinEnabled: true,
 	})
 	require.NoError(t, err)
 
-	ev = v.WaitForDeviceMetadataUpdated(time.Second * 5)
-	require.NotEmpty(t, ev)
-	require.Equal(t, commands.ShadowSynchronization_ENABLED, ev.GetShadowSynchronization())
+	for {
+		ev = v.WaitForDeviceMetadataUpdated(time.Second * 5)
+		require.NotEmpty(t, ev)
+		if ev.GetTwinEnabled() {
+			break
+		}
+	}
 
 	err = updateResource(t, &pb.UpdateResourceRequest{
 		ResourceInterface: interfaces.OC_IF_BASELINE,

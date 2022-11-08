@@ -14,7 +14,6 @@ import {
   NO_DEVICE_NAME,
 } from './constants'
 import { deviceShape } from './shapes'
-import { shadowSynchronizationEnabled } from './utils'
 import { messages as t } from './devices-i18n'
 
 const { ONLINE, UNREGISTERED } = devicesStatuses
@@ -41,7 +40,7 @@ export const DevicesList = ({
           <IndeterminateCheckbox {...getToggleAllRowsSelectedProps()} />
         ),
         Cell: ({ row }) => {
-          if (row.original?.metadata?.status?.value === UNREGISTERED) {
+          if (row.original?.metadata?.connection?.status === UNREGISTERED) {
             return null
           }
 
@@ -54,7 +53,7 @@ export const DevicesList = ({
         Cell: ({ value, row }) => {
           const deviceName = value || NO_DEVICE_NAME
 
-          if (row.original?.metadata?.status?.value === UNREGISTERED) {
+          if (row.original?.metadata?.connection?.status === UNREGISTERED) {
             return <span>{deviceName}</span>
           }
           return (
@@ -74,21 +73,20 @@ export const DevicesList = ({
         },
       },
       {
-        Header: _(t.shadowSynchronization),
-        accessor: 'metadata.shadowSynchronization',
+        Header: _(t.twinSynchronization),
+        accessor: 'metadata.twinEnabled',
         Cell: ({ value }) => {
-          const isShadowSynchronizationEnabled =
-            shadowSynchronizationEnabled(value)
+          const isTwinEnabled = value
           return (
-            <Badge className={isShadowSynchronizationEnabled ? 'green' : 'red'}>
-              {isShadowSynchronizationEnabled ? _(t.enabled) : _(t.disabled)}
+            <Badge className={isTwinEnabled ? 'green' : 'red'}>
+              {isTwinEnabled ? _(t.enabled) : _(t.disabled)}
             </Badge>
           )
         },
       },
       {
         Header: _(t.status),
-        accessor: 'metadata.status.value',
+        accessor: 'metadata.connection.status',
         style: { width: '120px' },
         Cell: ({ value }) => {
           const isOnline = ONLINE === value

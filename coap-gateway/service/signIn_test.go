@@ -112,6 +112,23 @@ func TestSignInDeviceSubscriptionHandler(t *testing.T) {
 	_ = co1.Close()
 }
 
+func TestSignInWithRequireBatchObserveEnabled(t *testing.T) {
+	coapgwCfg := coapgwTest.MakeConfig(t)
+	coapgwCfg.APIs.COAP.RequireBatchObserveEnabled = true
+	shutdown := setUp(t, coapgwCfg)
+	defer shutdown()
+
+	co := testCoapDial(t, "", true, time.Now().Add(time.Minute))
+	if co == nil {
+		return
+	}
+	signUpResp := testSignUp(t, CertIdentity, co)
+	testSignIn(t, CertIdentity, signUpResp, co)
+
+	// wait for connection be closed for not observation per resource enabled
+	<-co.Done()
+}
+
 func TestSignOutPostHandler(t *testing.T) {
 	shutdown := setUp(t)
 	defer shutdown()

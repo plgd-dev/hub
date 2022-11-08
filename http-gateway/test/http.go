@@ -52,8 +52,8 @@ func (c *requestBuilder) DeviceId(deviceID string) *requestBuilder {
 	return c
 }
 
-func (c *requestBuilder) Shadow(v bool) *requestBuilder {
-	c.AddQuery(uri.ShadowQueryKey, fmt.Sprintf("%v", v))
+func (c *requestBuilder) Twin(v bool) *requestBuilder {
+	c.AddQuery(uri.TwinQueryKey, fmt.Sprintf("%v", v))
 	return c
 }
 

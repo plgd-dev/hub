@@ -39,8 +39,12 @@ func NewTestDeviceSimulator(deviceID, deviceName string, withResources bool) cli
 			Name:  deviceName,
 			Types: []string{types.DEVICE_CLOUD, device.ResourceType},
 			Metadata: &pb.Device_Metadata{
-				Status: &commands.ConnectionStatus{
-					Value: commands.ConnectionStatus_ONLINE,
+				Connection: &commands.Connection{
+					Status: commands.Connection_ONLINE,
+				},
+				TwinEnabled: true,
+				TwinSynchronization: &commands.TwinSynchronization{
+					State: commands.TwinSynchronization_IN_SYNC,
 				},
 			},
 			Interfaces:      []string{interfaces.OC_IF_R, interfaces.OC_IF_BASELINE},
@@ -109,9 +113,12 @@ func TestClient_GetDevice(t *testing.T) {
 			got.Resources = test.CleanUpResourcesArray(got.Resources)
 			require.NotEmpty(t, got.Device.GetProtocolIndependentId())
 			got.Device.ProtocolIndependentId = ""
-			got.Device.Metadata.Status.ValidUntil = 0
-			got.Device.Metadata.Status.ConnectionId = ""
-			got.Device.Metadata.Status.ConnectedAt = 0
+			got.Device.Metadata.Connection.OnlineValidUntil = 0
+			got.Device.Metadata.Connection.Id = ""
+			got.Device.Metadata.Connection.ConnectedAt = 0
+			got.Device.Metadata.TwinSynchronization.SyncingAt = 0
+			got.Device.Metadata.TwinSynchronization.InSyncAt = 0
+			got.Device.Metadata.TwinSynchronization.CommandMetadata = nil
 			require.NotEmpty(t, got.Device.GetData().GetContent().GetData())
 			got.Device.Data = nil
 			test.CheckProtobufs(t, tt.want, got, test.RequireToCheckFunc(require.Equal))

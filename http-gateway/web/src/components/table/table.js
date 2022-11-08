@@ -68,7 +68,7 @@ export const Table = ({
             )
           }
 
-          // fix metedata.status.value: undefined
+          // fix metadata.connection.status: undefined
           return false
         },
       },

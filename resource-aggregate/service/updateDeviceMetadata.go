@@ -22,8 +22,10 @@ func validateUpdateDeviceMetadata(request *commands.UpdateDeviceMetadataRequest)
 	if request.GetDeviceId() == "" {
 		return status.Errorf(codes.InvalidArgument, "invalid DeviceId")
 	}
-	if request.GetStatus() == nil && request.GetShadowSynchronization() == commands.ShadowSynchronization_UNSET {
-		return status.Errorf(codes.InvalidArgument, "set.onlineStatus and set.shadowSynchronizationStatus are invalid")
+	switch v := request.GetUpdate().(type) {
+	case *commands.UpdateDeviceMetadataRequest_Connection, *commands.UpdateDeviceMetadataRequest_TwinEnabled, *commands.UpdateDeviceMetadataRequest_TwinSynchronization:
+	default:
+		return status.Errorf(codes.InvalidArgument, "update type (%T) invalid", v)
 	}
 
 	return nil

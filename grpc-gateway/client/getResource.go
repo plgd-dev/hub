@@ -25,7 +25,7 @@ func (c *Client) GetResource(
 	for _, o := range opts {
 		cfg = o.applyOnGet(cfg)
 	}
-	if cfg.resourceInterface != "" || cfg.skipShadow {
+	if cfg.resourceInterface != "" || cfg.skipTwin {
 		return c.getResourceFromDevice(ctx, deviceID, href, cfg.resourceInterface, cfg.codec, response)
 	}
 	return c.getResource(ctx, deviceID, href, cfg.codec, response)

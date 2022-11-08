@@ -30,14 +30,15 @@ import (
 func isDeviceMetadataUpdatedOnlineEvent(ev *pb.Event, deviceID string) bool {
 	return ev.GetDeviceMetadataUpdated() != nil &&
 		ev.GetDeviceMetadataUpdated().GetDeviceId() == deviceID &&
-		ev.GetDeviceMetadataUpdated().GetStatus().GetValue() == commands.ConnectionStatus_ONLINE
+		ev.GetDeviceMetadataUpdated().GetConnection().GetStatus() == commands.Connection_ONLINE &&
+		ev.GetDeviceMetadataUpdated().GetTwinSynchronization().GetState() == commands.TwinSynchronization_IN_SYNC
 }
 
-func checkDeviceMetadataUpdatedOnlineEvent(t *testing.T, ev *pb.Event, deviceID, baseSubID string) {
+func checkDeviceMetadataUpdatedOnlineEvent(t *testing.T, ev *pb.Event, deviceID, baseSubID string, twinSynchronizationState commands.TwinSynchronization_State) {
 	expectedEvent := &pb.Event{
 		SubscriptionId: baseSubID,
 		Type: &pb.Event_DeviceMetadataUpdated{
-			DeviceMetadataUpdated: pbTest.MakeDeviceMetadataUpdated(deviceID, commands.ShadowSynchronization_UNSET, ""),
+			DeviceMetadataUpdated: pbTest.MakeDeviceMetadataUpdated(deviceID, commands.Connection_ONLINE, true, twinSynchronizationState, ""),
 		},
 		CorrelationId: "testToken",
 	}
@@ -221,24 +222,7 @@ func TestRequestHandlerSubscribeToEvents(t *testing.T) {
 			break
 		}
 	}
-	checkDeviceMetadataUpdatedOnlineEvent(t, ev, deviceID, baseSubID)
-
-	ev, err = recv()
-	require.NoError(t, err)
-	expectedEvent = &pb.Event{
-		SubscriptionId: baseSubID,
-		Type: &pb.Event_ResourceChanged{
-			ResourceChanged: pbTest.MakeResourceChanged(t, deviceID, test.TestResourceLightInstanceHref("1"),
-				ev.GetResourceChanged().GetAuditContext().GetCorrelationId(),
-				map[string]interface{}{
-					"name":  "Light",
-					"power": 0x0,
-					"state": false,
-				}),
-		},
-		CorrelationId: "testToken",
-	}
-	pbTest.CmpEvent(t, expectedEvent, ev, "")
+	checkDeviceMetadataUpdatedOnlineEvent(t, ev, deviceID, baseSubID, commands.TwinSynchronization_IN_SYNC)
 
 	err = send(&pb.SubscribeToEvents{
 		CorrelationId: "updatePending + resourceUpdated",

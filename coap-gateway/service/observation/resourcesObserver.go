@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/plgd-dev/device/v2/schema/interfaces"
 	"github.com/plgd-dev/device/v2/schema/resources"
@@ -14,19 +15,22 @@ import (
 )
 
 type (
-	OnObserveResource    = func(ctx context.Context, deviceID, resourceHref string, batch bool, notification *pool.Message) error
-	OnGetResourceContent = func(ctx context.Context, deviceID, resourceHref string, notification *pool.Message) error
+	OnObserveResource         = func(ctx context.Context, deviceID, resourceHref string, batch bool, notification *pool.Message) error
+	OnGetResourceContent      = func(ctx context.Context, deviceID, resourceHref string, notification *pool.Message) error
+	UpdateTwinSynchronization = func(ctx context.Context, deviceID string, status commands.TwinSynchronization_State, t time.Time) error
 )
 
 type ResourcesObserverCallbacks struct {
-	OnObserveResource    OnObserveResource
-	OnGetResourceContent OnGetResourceContent
+	OnObserveResource         OnObserveResource
+	OnGetResourceContent      OnGetResourceContent
+	UpdateTwinSynchronization UpdateTwinSynchronization
 }
 
-func MakeResourcesObserverCallbacks(onObserveResource OnObserveResource, onGetResourceContent OnGetResourceContent) ResourcesObserverCallbacks {
+func MakeResourcesObserverCallbacks(onObserveResource OnObserveResource, onGetResourceContent OnGetResourceContent, updateTwinSynchronization UpdateTwinSynchronization) ResourcesObserverCallbacks {
 	return ResourcesObserverCallbacks{
-		OnObserveResource:    onObserveResource,
-		OnGetResourceContent: onGetResourceContent,
+		OnObserveResource:         onObserveResource,
+		OnGetResourceContent:      onGetResourceContent,
+		UpdateTwinSynchronization: updateTwinSynchronization,
 	}
 }
 
@@ -83,55 +87,95 @@ func newResourcesObserver(deviceID string, coapConn ClientConn, callbacks Resour
 func (o *resourcesObserver) addResource(ctx context.Context, res *commands.Resource, obsInterface string) error {
 	o.lock.Lock()
 	defer o.lock.Unlock()
-	err := o.addResourceLocked(ctx, res, obsInterface)
+	obs, err := o.addResourceLocked(res, obsInterface)
+	if err == nil && obs != nil {
+		o.notifyAboutStartTwinSynchronization(ctx)
+		err = o.performObservationLocked([]*observedResource{obs})
+		if err != nil {
+			o.resources, _ = o.resources.removeByHref(obs.Href())
+			defer o.notifyAboutFinishTwinSynchronization(ctx)
+		}
+	}
 	return err
 }
 
-func (o *resourcesObserver) addResourceLocked(ctx context.Context, res *commands.Resource, obsInterface string) error {
+func (o *resourcesObserver) isSynchronizedLocked() bool {
+	for _, res := range o.resources {
+		if !res.synced.Load() {
+			return false
+		}
+	}
+	return true
+}
+
+func (o *resourcesObserver) resourceHasBeenSynchronized(ctx context.Context, href string) {
+	if o.setSynchronizedAtResource(href) {
+		o.notifyAboutFinishTwinSynchronization(ctx)
+	}
+}
+
+// returns true if all resources are observed and synchronized
+func (o *resourcesObserver) setSynchronizedAtResource(href string) bool {
+	o.lock.Lock()
+	defer o.lock.Unlock()
+	i := o.resources.search(href)
+	synced := false
+	if i < len(o.resources) && o.resources[i].Equals(href) {
+		synced = o.resources[i].synced.CompareAndSwap(false, true)
+	} else {
+		return false
+	}
+	if !synced {
+		return false
+	}
+	if o.isSynchronizedLocked() {
+		return true
+	}
+	return false
+}
+
+func (o *resourcesObserver) addResourceLocked(res *commands.Resource, obsInterface string) (*observedResource, error) {
 	resID := res.GetResourceID()
 	addObservationError := func(err error) error {
 		return fmt.Errorf("cannot add resource observation: %w", err)
 	}
 	if o.deviceID == "" {
-		return addObservationError(emptyDeviceIDError())
+		return nil, addObservationError(emptyDeviceIDError())
 	}
 	if o.deviceID != resID.GetDeviceId() {
-		return addObservationError(fmt.Errorf("invalid deviceID(%v)", resID.GetDeviceId()))
+		return nil, addObservationError(fmt.Errorf("invalid deviceID(%v)", resID.GetDeviceId()))
 	}
 	href := resID.GetHref()
 	if o.resources.contains(href) {
-		return nil
+		return nil, nil
 	}
-	obsRes := NewObservedResource(href, obsInterface)
-	if err := o.handleResourceLocked(ctx, obsRes, res.IsObservable()); err != nil {
-		return addObservationError(err)
-	}
+	obsRes := NewObservedResource(href, obsInterface, res.IsObservable())
 	o.resources = o.resources.insert(obsRes)
-	return nil
+	return obsRes, nil
 }
 
 // Handle given resource.
 //
 // For observable resources subscribe to observations, for unobservable resources retrieve
 // their content.
-func (o *resourcesObserver) handleResourceLocked(ctx context.Context, obsRes *observedResource, isObservable bool) error {
+func (o *resourcesObserver) handleResource(ctx context.Context, obsRes *observedResource) error {
 	if obsRes.Href() == commands.StatusHref {
 		return nil
 	}
 
-	if isObservable {
-		obs, err := o.observeResourceLocked(ctx, obsRes)
+	if obsRes.isObservable {
+		obs, err := o.observeResource(ctx, obsRes)
 		if err != nil {
 			return err
 		}
 		obsRes.SetObservation(obs)
 		return nil
 	}
-	return o.getResourceContentLocked(ctx, obsRes.Href())
+	return o.getResourceContent(ctx, obsRes.Href())
 }
 
 // Register to COAP-GW resource observation for given resource
-func (o *resourcesObserver) observeResourceLocked(ctx context.Context, obsRes *observedResource) (Observation, error) {
+func (o *resourcesObserver) observeResource(ctx context.Context, obsRes *observedResource) (Observation, error) {
 	cannotObserveResourceError := func(deviceID, href string, err error) error {
 		return fmt.Errorf("cannot observe resource /%v%v: %w", deviceID, href, err)
 	}
@@ -173,7 +217,7 @@ func (o *resourcesObserver) observeResourceLocked(ctx context.Context, obsRes *o
 }
 
 // Request resource content form COAP-GW
-func (o *resourcesObserver) getResourceContentLocked(ctx context.Context, href string) error {
+func (o *resourcesObserver) getResourceContent(ctx context.Context, href string) error {
 	cannotGetResourceError := func(deviceID, href string, err error) error {
 		return fmt.Errorf("cannot get resource /%v%v content: %w", deviceID, href, err)
 	}
@@ -181,16 +225,44 @@ func (o *resourcesObserver) getResourceContentLocked(ctx context.Context, href s
 		return cannotGetResourceError(o.deviceID, href, emptyDeviceIDError())
 	}
 	resp, err := o.coapConn.Get(ctx, href)
+	if err != nil {
+		return cannotGetResourceError(o.deviceID, href, err)
+	}
 	defer func() {
 		if !resp.IsHijacked() {
 			o.coapConn.ReleaseMessage(resp)
 		}
 	}()
-	if err != nil {
-		return cannotGetResourceError(o.deviceID, href, err)
-	}
 	if err := o.callbacks.OnGetResourceContent(ctx, o.deviceID, href, resp); err != nil {
 		return cannotGetResourceError(o.deviceID, href, err)
+	}
+	return nil
+}
+
+func (o *resourcesObserver) notifyAboutStartTwinSynchronization(ctx context.Context) {
+	err := o.callbacks.UpdateTwinSynchronization(ctx, o.deviceID, commands.TwinSynchronization_SYNCING, time.Now())
+	if err != nil {
+		o.logger.Debugf("cannot update twin synchronization to finish: %v", err)
+	}
+}
+
+func (o *resourcesObserver) notifyAboutFinishTwinSynchronization(ctx context.Context) {
+	err := o.callbacks.UpdateTwinSynchronization(ctx, o.deviceID, commands.TwinSynchronization_IN_SYNC, time.Now())
+	if err != nil {
+		o.logger.Debugf("cannot update twin synchronization to start: %v", err)
+	}
+}
+
+func (o *resourcesObserver) performObservationLocked(obs []*observedResource) error {
+	var errors []error
+	for _, obsRes := range obs {
+		if err := o.handleResource(context.Background(), obsRes); err != nil {
+			o.resources, _ = o.resources.removeByHref(obsRes.Href())
+			errors = append(errors, err)
+		}
+	}
+	if len(errors) > 0 {
+		return fmt.Errorf("cannot perform observation: %v", errors)
 	}
 	return nil
 }
@@ -198,23 +270,40 @@ func (o *resourcesObserver) getResourceContentLocked(ctx context.Context, href s
 // Add multiple resources to observer.
 func (o *resourcesObserver) addResources(ctx context.Context, resources []*commands.Resource) error {
 	o.lock.Lock()
-	defer o.lock.Unlock()
-	return o.addResourcesLocked(ctx, resources)
-}
-
-func (o *resourcesObserver) addResourcesLocked(ctx context.Context, resources []*commands.Resource) error {
-	var errors []error
-	for _, resource := range resources {
-		err := o.addResourceLocked(ctx, resource, "")
-		if err != nil {
-			errors = append(errors, err)
+	observedResources, err := o.addResourcesLocked(resources)
+	if len(observedResources) > 0 {
+		o.notifyAboutStartTwinSynchronization(ctx)
+		err2 := o.performObservationLocked(observedResources)
+		if err2 != nil {
+			if err == nil {
+				err = err2
+			} else {
+				err = fmt.Errorf("[%w, %v]", err, err2)
+			}
+			if o.isSynchronizedLocked() {
+				defer o.notifyAboutFinishTwinSynchronization(ctx)
+			}
 		}
 	}
+	o.lock.Unlock()
+	return err
+}
 
-	if len(errors) > 0 {
-		return fmt.Errorf("cannot add resources to observe: %v", errors)
+func (o *resourcesObserver) addResourcesLocked(resources []*commands.Resource) ([]*observedResource, error) {
+	var errors []error
+	observedResources := make([]*observedResource, 0, len(resources))
+	for _, resource := range resources {
+		observedResource, err := o.addResourceLocked(resource, "")
+		if err != nil {
+			errors = append(errors, err)
+		} else if observedResource != nil {
+			observedResources = append(observedResources, observedResource)
+		}
 	}
-	return nil
+	if len(errors) > 0 {
+		return observedResources, fmt.Errorf("cannot add resources to observe: %v", errors)
+	}
+	return observedResources, nil
 }
 
 // Get list of observable and non-observable resources added to resourcesObserver.

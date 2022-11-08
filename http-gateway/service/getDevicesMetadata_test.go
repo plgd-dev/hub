@@ -43,8 +43,12 @@ func TestRequestHandlerGetDevicesMetadata(t *testing.T) {
 			want: []*events.DeviceMetadataUpdated{
 				{
 					DeviceId: deviceID,
-					Status: &commands.ConnectionStatus{
-						Value: commands.ConnectionStatus_ONLINE,
+					Connection: &commands.Connection{
+						Status: commands.Connection_ONLINE,
+					},
+					TwinEnabled: true,
+					TwinSynchronization: &commands.TwinSynchronization{
+						State: commands.TwinSynchronization_IN_SYNC,
 					},
 					AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, ""),
 				},
@@ -58,8 +62,12 @@ func TestRequestHandlerGetDevicesMetadata(t *testing.T) {
 			want: []*events.DeviceMetadataUpdated{
 				{
 					DeviceId: deviceID,
-					Status: &commands.ConnectionStatus{
-						Value: commands.ConnectionStatus_ONLINE,
+					Connection: &commands.Connection{
+						Status: commands.Connection_ONLINE,
+					},
+					TwinEnabled: true,
+					TwinSynchronization: &commands.TwinSynchronization{
+						State: commands.TwinSynchronization_IN_SYNC,
 					},
 					AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, ""),
 				},
@@ -73,8 +81,12 @@ func TestRequestHandlerGetDevicesMetadata(t *testing.T) {
 			want: []*events.DeviceMetadataUpdated{
 				{
 					DeviceId: deviceID,
-					Status: &commands.ConnectionStatus{
-						Value: commands.ConnectionStatus_ONLINE,
+					Connection: &commands.Connection{
+						Status: commands.Connection_ONLINE,
+					},
+					TwinEnabled: true,
+					TwinSynchronization: &commands.TwinSynchronization{
+						State: commands.TwinSynchronization_IN_SYNC,
 					},
 					AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, ""),
 				},

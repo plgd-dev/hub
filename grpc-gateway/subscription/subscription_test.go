@@ -28,7 +28,6 @@ import (
 	pbTest "github.com/plgd-dev/hub/v2/test/pb"
 	"github.com/plgd-dev/hub/v2/test/service"
 	"github.com/plgd-dev/kit/v2/codec/cbor"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace"
 )
@@ -49,15 +48,6 @@ func check(t *testing.T, ev *pb.Event, expectedEvent *pb.Event) {
 		expectedEvent.SubscriptionId = ev.SubscriptionId
 	}
 	pbTest.CmpEvent(t, expectedEvent, ev, "")
-}
-
-func checkResourceChanged(t *testing.T, ev *pb.Event, expectedEvents map[string]*pb.Event) {
-	if ev.GetResourceChanged() != nil {
-		expectedEvent := expectedEvents[ev.GetResourceChanged().GetResourceId().GetHref()]
-		pbTest.CmpEvent(t, expectedEvent, ev, "")
-		return
-	}
-	assert.Fail(t, "unexpected event", "event: %v", ev)
 }
 
 func checkAndValidateUpdate(ctx context.Context, t *testing.T, rac raservice.ResourceAggregateClient, s *subscription.Sub, recvChan <-chan *pb.Event, correlationID, deviceID string, value uint64) {
@@ -288,18 +278,54 @@ func TestRequestHandlerSubscribeToEvents(t *testing.T) {
 		},
 		CorrelationId: correlationID,
 	})
-	check(t, waitForEvent(ctx, t, recvChan), &pb.Event{
+	online := &pb.Event{
 		SubscriptionId: s.Id(),
 		Type: &pb.Event_DeviceMetadataUpdated{
-			DeviceMetadataUpdated: pbTest.MakeDeviceMetadataUpdated(deviceID, commands.ShadowSynchronization_UNSET, ""),
+			DeviceMetadataUpdated: pbTest.MakeDeviceMetadataUpdated(deviceID, commands.Connection_ONLINE, true, commands.TwinSynchronization_OUT_OF_SYNC, ""),
 		},
 		CorrelationId: correlationID,
-	})
-	check(t, waitForEvent(ctx, t, recvChan), pbTest.ResourceLinkToPublishEvent(deviceID, correlationID, test.GetAllBackendResourceLinks()))
-
-	expectedEvents := getResourceChangedEvents(t, deviceID, correlationID, s.Id())
-	for range expectedEvents {
-		checkResourceChanged(t, waitForEvent(ctx, t, recvChan), expectedEvents)
+	}
+	onlineStartSync := &pb.Event{
+		SubscriptionId: s.Id(),
+		Type: &pb.Event_DeviceMetadataUpdated{
+			DeviceMetadataUpdated: pbTest.MakeDeviceMetadataUpdated(deviceID, commands.Connection_ONLINE, true, commands.TwinSynchronization_SYNCING, ""),
+		},
+		CorrelationId: correlationID,
+	}
+	onlineFinishedSync := &pb.Event{
+		SubscriptionId: s.Id(),
+		Type: &pb.Event_DeviceMetadataUpdated{
+			DeviceMetadataUpdated: pbTest.MakeDeviceMetadataUpdated(deviceID, commands.Connection_ONLINE, true, commands.TwinSynchronization_IN_SYNC, ""),
+		},
+		CorrelationId: correlationID,
+	}
+	publishedEv := pbTest.ResourceLinkToPublishEvent(deviceID, correlationID, test.GetAllBackendResourceLinks())
+	expEvents := map[string]*pb.Event{
+		pbTest.GetEventID(online):             online,
+		pbTest.GetEventID(onlineStartSync):    onlineStartSync,
+		pbTest.GetEventID(onlineFinishedSync): onlineFinishedSync,
+		pbTest.GetEventID(publishedEv):        publishedEv,
+	}
+	resChanged := getResourceChangedEvents(t, deviceID, correlationID, s.Id())
+	for _, v := range resChanged {
+		expEvents[pbTest.GetEventID(v)] = v
+	}
+LOOP:
+	for {
+		select {
+		case <-ctx.Done():
+			require.Fail(t, "timeout")
+		case e := <-recvChan:
+			exp, ok := expEvents[pbTest.GetEventID(e)]
+			if !ok {
+				require.Failf(t, "unexpected event", "%v", e)
+			}
+			check(t, e, exp)
+			delete(expEvents, pbTest.GetEventID(e))
+			if len(expEvents) == 0 {
+				break LOOP
+			}
+		}
 	}
 
 	checkAndValidateUpdate(ctx, t, rac, s, recvChan, correlationID, deviceID, 99)
@@ -318,10 +344,12 @@ func TestRequestHandlerSubscribeToEvents(t *testing.T) {
 				Type: &pb.Event_DeviceMetadataUpdated{
 					DeviceMetadataUpdated: &events.DeviceMetadataUpdated{
 						DeviceId: deviceID,
-						Status: &commands.ConnectionStatus{
-							Value: commands.ConnectionStatus_OFFLINE,
+						Connection: &commands.Connection{
+							Status: commands.Connection_OFFLINE,
 						},
-						AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, ""),
+						TwinSynchronization: &commands.TwinSynchronization{},
+						TwinEnabled:         true,
+						AuditContext:        commands.NewAuditContext(oauthService.DeviceUserID, ""),
 					},
 				},
 				CorrelationId: correlationID,

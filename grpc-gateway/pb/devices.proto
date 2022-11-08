@@ -168,8 +168,12 @@ message Device {
     UNSUPPORTED = 3;
   }
   message Metadata {
-    resourceaggregate.pb.ConnectionStatus status = 1;
-    resourceaggregate.pb.ShadowSynchronization shadow_synchronization = 2;
+    reserved 2;
+    resourceaggregate.pb.Connection connection = 1;
+    resourceaggregate.pb.TwinSynchronization twin_synchronization = 3;
+    bool twin_enabled = 4;
+    
+     // resourceaggregate.pb.ShadowSynchronization shadow_synchronization = 2; replaced by twin_enabled;
   }
   string id = 1;
   repeated string types = 2;

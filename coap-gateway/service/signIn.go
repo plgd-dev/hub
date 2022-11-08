@@ -217,10 +217,13 @@ func setNewDeviceObserver(ctx context.Context, client *session, deviceID string,
 		}
 
 		deviceObserver, err := observation.NewDeviceObserver(client.Context(), deviceID, client, client, client,
-			observation.MakeResourcesObserverCallbacks(client.onObserveResource, client.onGetResourceContent),
+			observation.MakeResourcesObserverCallbacks(client.onObserveResource, client.onGetResourceContent, client.UpdateTwinSynchronizationStatus),
 			observation.WithObservationType(observationType),
-			observation.WithLogger(client.getLogger()))
+			observation.WithLogger(client.getLogger()),
+			observation.WithRequireBatchObserveEnabled(client.server.config.APIs.COAP.RequireBatchObserveEnabled),
+		)
 		if err != nil {
+			client.Close()
 			client.Errorf("%w", signInError(fmt.Errorf("cannot create observer for device %v: %w", deviceID, err)))
 			setDeviceObserver(nil, err)
 			return
@@ -306,10 +309,9 @@ func updateDeviceMetadata(req *mux.Message, client *session) error {
 
 		_, err := client.server.raClient.UpdateDeviceMetadata(ctx, &commands.UpdateDeviceMetadataRequest{
 			DeviceId: oldAuthCtx.GetDeviceID(),
-			Update: &commands.UpdateDeviceMetadataRequest_Status{
-				Status: &commands.ConnectionStatus{
-					Value:        commands.ConnectionStatus_OFFLINE,
-					ConnectionId: client.RemoteAddr().String(),
+			Update: &commands.UpdateDeviceMetadataRequest_Connection{
+				Connection: &commands.Connection{
+					Status: commands.Connection_OFFLINE,
 				},
 			},
 			CommandMetadata: &commands.CommandMetadata{

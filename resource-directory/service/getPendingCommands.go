@@ -28,7 +28,7 @@ func (r *RequestHandler) GetPendingCommands(req *pb.GetPendingCommandsRequest, s
 		return log.LogAndReturnError(status.Errorf(status.Convert(err).Code(), "cannot retrieve pending commands: %v", err))
 	}
 
-	rs := NewResourceShadow(r.resourceProjection, deviceIDs)
+	rs := NewResourceTwin(r.resourceProjection, deviceIDs)
 	err = rs.GetPendingCommands(req, srv)
 	if err != nil {
 		return log.LogAndReturnError(err)

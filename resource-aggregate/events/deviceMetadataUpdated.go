@@ -44,8 +44,9 @@ func (d *DeviceMetadataUpdated) Timestamp() time.Time {
 
 func (d *DeviceMetadataUpdated) CopyData(event *DeviceMetadataUpdated) {
 	d.DeviceId = event.GetDeviceId()
-	d.Status = event.GetStatus()
-	d.ShadowSynchronization = event.GetShadowSynchronization()
+	d.Connection = event.GetConnection()
+	d.TwinSynchronization = event.GetTwinSynchronization()
+	d.TwinEnabled = event.GetTwinEnabled()
 	d.AuditContext = event.GetAuditContext()
 	d.EventMetadata = event.GetEventMetadata()
 	d.Canceled = event.GetCanceled()
@@ -54,18 +55,22 @@ func (d *DeviceMetadataUpdated) CopyData(event *DeviceMetadataUpdated) {
 
 func (d *DeviceMetadataUpdated) CheckInitialized() bool {
 	return d.GetDeviceId() != "" &&
-		d.GetStatus() != nil &&
+		d.GetConnection() != nil &&
 		d.GetAuditContext() != nil &&
 		d.GetEventMetadata() != nil
 }
 
 // Equal checks if two DeviceMetadataUpdated events are equal.
 func (d *DeviceMetadataUpdated) Equal(upd *DeviceMetadataUpdated) bool {
-	return d.GetStatus().GetValue() == upd.GetStatus().GetValue() &&
-		d.GetStatus().GetConnectionId() == upd.GetStatus().GetConnectionId() &&
+	return d.GetConnection().GetStatus() == upd.GetConnection().GetStatus() &&
+		d.GetConnection().GetId() == upd.GetConnection().GetId() &&
 		d.GetCanceled() == upd.GetCanceled() &&
-		d.GetStatus().GetValidUntil() == upd.GetStatus().GetValidUntil() &&
-		d.GetShadowSynchronization() == upd.GetShadowSynchronization() &&
+		d.GetConnection().GetOnlineValidUntil() == upd.GetConnection().GetOnlineValidUntil() &&
+		d.GetTwinEnabled() == upd.GetTwinEnabled() &&
 		d.GetAuditContext().GetUserId() == upd.GetAuditContext().GetUserId() &&
-		d.GetAuditContext().GetCorrelationId() == upd.GetAuditContext().GetCorrelationId()
+		d.GetAuditContext().GetCorrelationId() == upd.GetAuditContext().GetCorrelationId() &&
+		d.GetTwinSynchronization().GetCommandMetadata().GetConnectionId() == upd.GetTwinSynchronization().GetCommandMetadata().GetConnectionId() &&
+		d.GetTwinSynchronization().GetSyncingAt() == upd.GetTwinSynchronization().GetSyncingAt() &&
+		d.GetTwinSynchronization().GetInSyncAt() == upd.GetTwinSynchronization().GetInSyncAt() &&
+		d.GetTwinSynchronization().GetState() == upd.GetTwinSynchronization().GetState()
 }

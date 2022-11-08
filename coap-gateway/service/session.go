@@ -294,13 +294,20 @@ func (c *session) onGetResourceContent(ctx context.Context, deviceID, href strin
 		}
 		err2 := c.notifyContentChanged(deviceID, href, false, notification)
 		if err2 != nil {
-			// cloud is unsynchronized against device. To recover cloud state, client need to reconnect to cloud.
-			c.Errorf("%w", cannotGetResourceContentError(deviceID, href, err2))
+			// hub is out of sync with the device, for recovery, the device is disconnected from the hub
 			c.Close()
+			c.Errorf("%w", cannotGetResourceContentError(deviceID, href, err2))
+			return
+		}
+		obs, err := c.getDeviceObserver(c.Context())
+		if err == nil {
+			obs.ResourceHasBeenSynchronized(ctx, href)
 		}
 	})
 	if err != nil {
 		defer c.server.messagePool.ReleaseMessage(notification)
+		// hub is out of sync with the device, for recovery, the device is disconnected from the hub
+		c.Close()
 		return cannotGetResourceContentError(deviceID, href, err)
 	}
 	return nil
@@ -325,13 +332,20 @@ func (c *session) onObserveResource(ctx context.Context, deviceID, href string, 
 		}
 		err2 := c.notifyContentChanged(deviceID, href, batch, notification)
 		if err2 != nil {
-			// cloud is unsynchronized against device. To recover cloud state, client need to reconnect to cloud.
-			c.Errorf("%w", cannotObserResourceError(err2))
+			// hub is out of sync with the device, for recovery, the device is disconnected from the hub
 			c.Close()
+			c.Errorf("%w", cannotObserResourceError(err2))
+			return
+		}
+		obs, err := c.getDeviceObserver(c.Context())
+		if err == nil {
+			obs.ResourceHasBeenSynchronized(ctx, href)
 		}
 	})
 	if err != nil {
 		defer c.server.messagePool.ReleaseMessage(notification)
+		// hub is out of sync with the device, for recovery, the device is disconnected from the hub
+		c.Close()
 		return cannotObserResourceError(err)
 	}
 	return nil
@@ -395,10 +409,9 @@ func (c *session) OnClose() {
 		defer cancel()
 		_, err := c.server.raClient.UpdateDeviceMetadata(kitNetGrpc.CtxWithToken(ctx, oldAuthCtx.GetAccessToken()), &commands.UpdateDeviceMetadataRequest{
 			DeviceId: authCtx.GetDeviceID(),
-			Update: &commands.UpdateDeviceMetadataRequest_Status{
-				Status: &commands.ConnectionStatus{
-					Value:        commands.ConnectionStatus_OFFLINE,
-					ConnectionId: c.RemoteAddr().String(),
+			Update: &commands.UpdateDeviceMetadataRequest_Connection{
+				Connection: &commands.Connection{
+					Status: commands.Connection_OFFLINE,
 				},
 			},
 			CommandMetadata: &commands.CommandMetadata{
@@ -427,6 +440,17 @@ func (c *session) GetAuthorizationContext() (*authorizationContext, error) {
 	return c.authCtx, c.authCtx.IsValid()
 }
 
+func (c *session) batchNotifyContentChanged(ctx context.Context, deviceID string, notification *pool.Message) error {
+	batch, err := coapconv.NewNotifyResourceChangedRequestsFromBatchResourceDiscovery(deviceID, c.RemoteAddr().String(), notification)
+	if err != nil {
+		return err
+	}
+	_, err = c.server.raClient.BatchNotifyResourceChanged(ctx, &commands.BatchNotifyResourceChangedRequest{
+		Batch: batch,
+	})
+	return err
+}
+
 func (c *session) notifyContentChanged(deviceID, href string, batch bool, notification *pool.Message) error {
 	notifyError := func(deviceID, href string, err error) error {
 		return fmt.Errorf("cannot notify resource /%v%v content changed: %w", deviceID, href, err)
@@ -439,23 +463,17 @@ func (c *session) notifyContentChanged(deviceID, href string, batch bool, notifi
 		// we want to log only observations
 		c.logNotificationFromClient(href, notification)
 	}
-
-	var requests []*commands.NotifyResourceChangedRequest
+	ctx := kitNetGrpc.CtxWithToken(c.Context(), authCtx.GetAccessToken())
 	if batch && href == resources.ResourceURI {
-		requests, err = coapconv.NewNotifyResourceChangedRequestsFromBatchResourceDiscovery(deviceID, c.RemoteAddr().String(), notification)
+		err = c.batchNotifyContentChanged(ctx, deviceID, notification)
 		if err != nil {
 			return notifyError(deviceID, href, err)
 		}
-	} else {
-		requests = []*commands.NotifyResourceChangedRequest{coapconv.NewNotifyResourceChangedRequest(commands.NewResourceID(deviceID, href), c.RemoteAddr().String(), notification)}
+		return nil
 	}
-
-	ctx := kitNetGrpc.CtxWithToken(c.Context(), authCtx.GetAccessToken())
-	for _, request := range requests {
-		_, err = c.server.raClient.NotifyResourceChanged(ctx, request)
-		if err != nil {
-			return notifyError(request.GetResourceId().GetDeviceId(), request.GetResourceId().GetHref(), err)
-		}
+	_, err = c.server.raClient.NotifyResourceChanged(ctx, coapconv.NewNotifyResourceChangedRequest(commands.NewResourceID(deviceID, href), c.RemoteAddr().String(), notification))
+	if err != nil {
+		return notifyError(deviceID, href, err)
 	}
 	return nil
 }
@@ -812,27 +830,12 @@ func (c *session) GetContext() context.Context {
 	return authCtx.ToContext(c.Context())
 }
 
-func (c *session) UpdateDeviceMetadata(ctx context.Context, event *events.DeviceMetadataUpdatePending) error {
-	setDeviceIDToTracerSpan(ctx, c.deviceID())
-	authCtx, err := c.GetAuthorizationContext()
-	if err != nil {
-		c.Close()
-		return fmt.Errorf("cannot update device('%v') metadata: %w", event.GetDeviceId(), err)
-	}
-	if event.GetShadowSynchronization() == commands.ShadowSynchronization_UNSET {
-		return nil
-	}
-	sendConfirmCtx := authCtx.ToContext(ctx)
-
-	previous, errObs := c.replaceDeviceObserverWithDeviceShadow(sendConfirmCtx, event.GetShadowSynchronization())
-	if errObs != nil {
-		c.Errorf("update device('%v') metadata error: %w", event.GetDeviceId(), errObs)
-	}
-	_, err = c.server.raClient.ConfirmDeviceMetadataUpdate(sendConfirmCtx, &commands.ConfirmDeviceMetadataUpdateRequest{
+func (c *session) confirmDeviceMetadataUpdate(ctx context.Context, event *events.DeviceMetadataUpdatePending) error {
+	_, err := c.server.raClient.ConfirmDeviceMetadataUpdate(ctx, &commands.ConfirmDeviceMetadataUpdateRequest{
 		DeviceId:      event.GetDeviceId(),
 		CorrelationId: event.GetAuditContext().GetCorrelationId(),
-		Confirm: &commands.ConfirmDeviceMetadataUpdateRequest_ShadowSynchronization{
-			ShadowSynchronization: event.GetShadowSynchronization(),
+		Confirm: &commands.ConfirmDeviceMetadataUpdateRequest_TwinEnabled{
+			TwinEnabled: event.GetTwinEnabled(),
 		},
 		CommandMetadata: &commands.CommandMetadata{
 			ConnectionId: c.RemoteAddr().String(),
@@ -840,9 +843,42 @@ func (c *session) UpdateDeviceMetadata(ctx context.Context, event *events.Device
 		},
 		Status: commands.Status_OK,
 	})
+	return err
+}
+
+func (c *session) UpdateDeviceMetadata(ctx context.Context, event *events.DeviceMetadataUpdatePending) error {
+	setDeviceIDToTracerSpan(ctx, c.deviceID())
+	authCtx, err := c.GetAuthorizationContext()
+	if err != nil {
+		c.Close()
+		return fmt.Errorf("cannot update device('%v') metadata: %w", event.GetDeviceId(), err)
+	}
+	if _, ok := event.GetUpdatePending().(*events.DeviceMetadataUpdatePending_TwinEnabled); !ok {
+		return nil
+	}
+	sendConfirmCtx := authCtx.ToContext(ctx)
+
+	var errObs error
+	var previous bool
+	if event.GetTwinEnabled() {
+		// if twin is enabled, we need to first update twin synchronization state to sync out
+		// and then synchronization state will be updated by other replaceDeviceObserverWithDeviceTwin
+		err = c.confirmDeviceMetadataUpdate(sendConfirmCtx, event)
+		previous, errObs = c.replaceDeviceObserverWithDeviceTwin(sendConfirmCtx, event.GetTwinEnabled())
+	} else {
+		// if twin is disabled, we to stop observation resources to disable all update twin synchronization state
+		previous, errObs = c.replaceDeviceObserverWithDeviceTwin(sendConfirmCtx, event.GetTwinEnabled())
+		// and then we need to update twin synchronization state to disabled
+		err = c.confirmDeviceMetadataUpdate(sendConfirmCtx, event)
+	}
+	if errObs != nil {
+		c.Close()
+		return fmt.Errorf("cannot update device('%v') metadata: %w", event.GetDeviceId(), errObs)
+	}
 	if err != nil && !errors.Is(err, context.Canceled) {
-		_, errObs := c.replaceDeviceObserverWithDeviceShadow(sendConfirmCtx, previous)
+		_, errObs := c.replaceDeviceObserverWithDeviceTwin(sendConfirmCtx, previous)
 		if errObs != nil {
+			c.Close()
 			c.Errorf("update device('%v') metadata error: %w", event.GetDeviceId(), errObs)
 		}
 	}
@@ -885,4 +921,36 @@ func (c *session) ResolveDeviceID(claim pkgJwt.Claims, paramDeviceID string) str
 		return c.tlsDeviceID
 	}
 	return paramDeviceID
+}
+
+func (c *session) UpdateTwinSynchronizationStatus(ctx context.Context, deviceID string, state commands.TwinSynchronization_State, t time.Time) error {
+	authCtx, err := c.GetAuthorizationContext()
+	if err != nil {
+		c.Close()
+		return fmt.Errorf("cannot update twin synchronization %v to %v: %w", deviceID, state, err)
+	}
+
+	var startAt, finishedAt int64
+	switch state {
+	case commands.TwinSynchronization_SYNCING:
+		startAt = t.UnixNano()
+	case commands.TwinSynchronization_IN_SYNC:
+		finishedAt = t.UnixNano()
+	}
+	ctx = authCtx.ToContext(ctx)
+	_, err = c.server.raClient.UpdateDeviceMetadata(ctx, &commands.UpdateDeviceMetadataRequest{
+		DeviceId: deviceID,
+		CommandMetadata: &commands.CommandMetadata{
+			ConnectionId: c.RemoteAddr().String(),
+			Sequence:     c.coapConn.Sequence(),
+		},
+		Update: &commands.UpdateDeviceMetadataRequest_TwinSynchronization{
+			TwinSynchronization: &commands.TwinSynchronization{
+				State:     state,
+				SyncingAt: startAt,
+				InSyncAt:  finishedAt,
+			},
+		},
+	})
+	return err
 }

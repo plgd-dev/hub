@@ -46,9 +46,13 @@ func TestRequestHandlerGetDevices(t *testing.T) {
 					Id:         deviceID,
 					Name:       test.TestDeviceName,
 					Metadata: &pb.Device_Metadata{
-						Status: &commands.ConnectionStatus{
-							Value: commands.ConnectionStatus_ONLINE,
+						Connection: &commands.Connection{
+							Status: commands.Connection_ONLINE,
 						},
+						TwinSynchronization: &commands.TwinSynchronization{
+							State: commands.TwinSynchronization_IN_SYNC,
+						},
+						TwinEnabled: true,
 					},
 					OwnershipStatus: pb.Device_OWNED,
 				},

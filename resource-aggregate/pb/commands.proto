@@ -110,6 +110,15 @@ message NotifyResourceChangedResponse {
     AuditContext audit_context = 3;
 }
 
+// batch of NotifyResourceChangedRequest
+message BatchNotifyResourceChangedRequest {
+    repeated NotifyResourceChangedRequest batch = 1;
+}
+
+message BatchNotifyResourceChangedResponse {
+    AuditContext audit_context = 1;
+}
+
 //*******************************************************************************************************************************************************
 // Update Resource
 //
@@ -394,6 +403,7 @@ message ConfirmResourceCreateResponse {
     AuditContext audit_context = 1;
 }
 
+
 //*******************************************************************************************************************************************************
 // Update Device Metadata - Connection status
 //
@@ -419,18 +429,18 @@ message ConfirmResourceCreateResponse {
 // └──────────┘          └───────┘                  └──────────────────┘          └─────────┘
 //*******************************************************************************************************************************************************
 
-message ConnectionStatus {
+message Connection {
     enum Status {
         OFFLINE = 0;
         ONLINE = 1;
     };
-    Status value = 1;
-    int64 valid_until = 2;
-    string connection_id = 3; // when status is ONLINE, this field contains the connection id. To update state offline, this field must be same as the one in the previous message.
+    Status status = 1;
+    int64 online_valid_until = 2;
+    string id = 3; // when status is ONLINE, this field contains the connection id. To update state offline, this field must be same as the one in the previous message.
     int64 connected_at = 4; // timestamp when the device was connected
 }
 //*******************************************************************************************************************************************************
-// Update Device Metadata - Shadow Synchronization Status
+// Update Device Metadata - Twin Synchronization State
 //
 // ┌──────────┐          ┌───────┐                         ┌──────────────────┐               ┌─────────┐               ┌──────┐
 // │OCF Server│          │Gateway│                         │Resource Aggregate│               │Event Bus│               │Client│
@@ -463,18 +473,29 @@ message ConnectionStatus {
 // └──────────┘          └───────┘                         └──────────────────┘               └─────────┘               └──────┘
 //*******************************************************************************************************************************************************
 
-enum ShadowSynchronization {
-    UNSET = 0;
-    ENABLED = 1;
-    DISABLED = 2;
+message TwinSynchronization {
+    enum State {
+        OUT_OF_SYNC = 0; // As soon as it connects after it was offline or when it goes errorless offline or when twin enabled has been changed to true.
+        DISABLED = 1; // As soon as twin enabled is set to false.
+        SYNCING = 2; // As soon as device connects, successfully signs in and batch observe is called on device from the cloud.
+        IN_SYNC = 3; // As soon as current device resources values are received and applied to twin database. Twin was successfully reconciled after device reconnect and is kept up to date using an active subscription to device resource changes.
+    };
+    State state = 1;
+    int64 syncing_at = 2;  // unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when synchronization started.
+    int64 in_sync_at = 3; // unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when synchronization finished.
+    CommandMetadata command_metadata = 4; // when status is SYNCING, this field contains the connection id. To update state to IN_SYNC, this field must be same as the one in the previous message.
 }
 
 message UpdateDeviceMetadataRequest {
+    reserved 4;
     string device_id = 1;
     string correlation_id = 2;
     oneof update {
-        ConnectionStatus status = 3;
-        ShadowSynchronization shadow_synchronization = 4;
+        Connection connection = 3;
+        TwinSynchronization twin_synchronization = 7;
+        bool twin_enabled = 8; // by default true
+
+        // ShadowSynchronization shadow_synchronization = 4; replaced by twin_enabled
     };
     int64 time_to_live = 5;  // command validity in nanoseconds. 0 means forever and minimal value is 100000000 (100ms).
     CommandMetadata command_metadata = 6;
@@ -486,11 +507,14 @@ message UpdateDeviceMetadataResponse {
 }
 
 message ConfirmDeviceMetadataUpdateRequest {
+    reserved 4;
     string device_id = 1;
     string correlation_id = 2;
     Status status = 3;
     oneof confirm {
-        ShadowSynchronization shadow_synchronization = 4;
+        bool twin_enabled = 6;
+
+        // ShadowSynchronization shadow_synchronization = 4; replaced by twin_enabled
     };
     CommandMetadata command_metadata = 5;
 }
@@ -542,7 +566,7 @@ message CancelPendingCommandsResponse{
 }
 
 //*******************************************************************************************************************************************************
-// Cancel update device metadata - Shadow Synchronization Status
+// Cancel update device metadata - Twin Synchronization State
 // ┌──────────────────┐                         ┌─────────┐          ┌──────┐          ┌──────────┐
 // │Resource Aggregate│                         │Event Bus│          │Client│          │OCF Server│
 // └────────┬─────────┘                         └─────────┘          └──────┘          └──────────┘

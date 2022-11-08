@@ -64,6 +64,11 @@ func CreateDeviceResourceLinks(deviceID string, numResources int) []*commands.Re
 
 func CreateDevice(ctx context.Context, t *testing.T, name string, deviceID string, numResources int, isClient pb.IdentityStoreClient, raClient raPb.ResourceAggregateClient) {
 	const connID = "conn-Id"
+	var conSeq uint64
+	incSeq := func() uint64 {
+		conSeq++
+		return conSeq
+	}
 	_, err := isClient.AddDevice(ctx, &pb.AddDeviceRequest{
 		DeviceId: deviceID,
 	})
@@ -73,17 +78,16 @@ func CreateDevice(ctx context.Context, t *testing.T, name string, deviceID strin
 		_, err = raClient.UpdateDeviceMetadata(ctx, &commands.UpdateDeviceMetadataRequest{
 			DeviceId:      deviceID,
 			CorrelationId: uuid.NewString(),
-			Update: &commands.UpdateDeviceMetadataRequest_Status{
-				Status: &commands.ConnectionStatus{
-					Value:        commands.ConnectionStatus_ONLINE,
-					ConnectionId: connID,
-					ConnectedAt:  time.Now().UnixNano(),
+			Update: &commands.UpdateDeviceMetadataRequest_Connection{
+				Connection: &commands.Connection{
+					Status:      commands.Connection_ONLINE,
+					ConnectedAt: time.Now().UnixNano(),
 				},
 			},
 			TimeToLive: time.Now().Add(time.Hour).UnixNano(),
 			CommandMetadata: &commands.CommandMetadata{
 				ConnectionId: connID,
-				Sequence:     0,
+				Sequence:     incSeq(),
 			},
 		})
 		if err == nil {
@@ -103,18 +107,34 @@ func CreateDevice(ctx context.Context, t *testing.T, name string, deviceID strin
 		Resources: resources,
 		CommandMetadata: &commands.CommandMetadata{
 			ConnectionId: connID,
-			Sequence:     0,
+			Sequence:     incSeq(),
 		},
 	}
 	_, err = raClient.PublishResourceLinks(ctx, &pub)
 	require.NoError(t, err)
 
+	_, err = raClient.UpdateDeviceMetadata(ctx, &commands.UpdateDeviceMetadataRequest{
+		DeviceId:      deviceID,
+		CorrelationId: uuid.NewString(),
+		Update: &commands.UpdateDeviceMetadataRequest_TwinSynchronization{
+			TwinSynchronization: &commands.TwinSynchronization{
+				State:     commands.TwinSynchronization_SYNCING,
+				SyncingAt: time.Now().UnixNano(),
+			},
+		},
+		TimeToLive: time.Now().Add(time.Hour).UnixNano(),
+		CommandMetadata: &commands.CommandMetadata{
+			ConnectionId: connID,
+			Sequence:     incSeq(),
+		},
+	})
+	require.NoError(t, err)
 	for i := 0; i < numResources; i++ {
 		_, err = raClient.NotifyResourceChanged(ctx, &commands.NotifyResourceChangedRequest{
 			ResourceId: commands.NewResourceID(deviceID, fmt.Sprintf("/res-%v", i)),
 			CommandMetadata: &commands.CommandMetadata{
 				ConnectionId: connID,
-				Sequence:     0,
+				Sequence:     incSeq(),
 			},
 			Content: &commands.Content{
 				Data:        []byte(fmt.Sprintf("content res-%v", i)),
@@ -128,7 +148,7 @@ func CreateDevice(ctx context.Context, t *testing.T, name string, deviceID strin
 		ResourceId: commands.NewResourceID(deviceID, "/oic/d"),
 		CommandMetadata: &commands.CommandMetadata{
 			ConnectionId: connID,
-			Sequence:     0,
+			Sequence:     incSeq(),
 		},
 		Content: &commands.Content{
 			Data:        test.EncodeToCbor(t, &device.Device{Name: name, ID: deviceID, ResourceTypes: []string{device.ResourceType}, Interfaces: []string{interfaces.OC_IF_BASELINE}}),
@@ -142,13 +162,30 @@ func CreateDevice(ctx context.Context, t *testing.T, name string, deviceID strin
 		ResourceId: commands.NewResourceID(deviceID, "/oic/p"),
 		CommandMetadata: &commands.CommandMetadata{
 			ConnectionId: connID,
-			Sequence:     0,
+			Sequence:     incSeq(),
 		},
 		Content: &commands.Content{
 			Data:        test.EncodeToCbor(t, &platform.Platform{ResourceTypes: []string{device.ResourceType}, Interfaces: []string{interfaces.OC_IF_BASELINE}, SerialNumber: fmt.Sprintf("sn %v", deviceID)}),
 			ContentType: message.AppOcfCbor.String(),
 		},
 		Status: commands.Status_OK,
+	})
+	require.NoError(t, err)
+
+	_, err = raClient.UpdateDeviceMetadata(ctx, &commands.UpdateDeviceMetadataRequest{
+		DeviceId:      deviceID,
+		CorrelationId: uuid.NewString(),
+		Update: &commands.UpdateDeviceMetadataRequest_TwinSynchronization{
+			TwinSynchronization: &commands.TwinSynchronization{
+				State:    commands.TwinSynchronization_IN_SYNC,
+				InSyncAt: time.Now().UnixNano(),
+			},
+		},
+		TimeToLive: time.Now().Add(time.Hour).UnixNano(),
+		CommandMetadata: &commands.CommandMetadata{
+			ConnectionId: connID,
+			Sequence:     incSeq(),
+		},
 	})
 	require.NoError(t, err)
 }

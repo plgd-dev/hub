@@ -6,7 +6,6 @@ import (
 
 	"github.com/plgd-dev/hub/v2/coap-gateway/service/observation"
 	"github.com/plgd-dev/hub/v2/pkg/sync/task/future"
-	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 )
 
 // Obtain deviceObserver from the client.
@@ -45,17 +44,17 @@ func (c *session) replaceDeviceObserver(deviceObserverFuture *future.Future) *fu
 	return prevDeviceObserver
 }
 
-// Replace deviceObserver instance in the client if Device Shadow setting was changed for the device.
-func (c *session) replaceDeviceObserverWithDeviceShadow(ctx context.Context, shadow commands.ShadowSynchronization) (commands.ShadowSynchronization, error) {
+// Replace deviceObserver instance in the client if Device Twin setting was changed for the device.
+func (c *session) replaceDeviceObserverWithDeviceTwin(ctx context.Context, twinEnabled bool) (bool, error) {
 	obs, err := c.getDeviceObserver(ctx)
 	if err != nil {
-		return commands.ShadowSynchronization_UNSET, err
+		return false, err
 	}
-	prevShadow := obs.GetShadowSynchronization()
+	prevTwinEnabled := obs.GetTwinEnabled()
 	deviceID := obs.GetDeviceID()
 	observationType := obs.GetObservationType()
-	if prevShadow == shadow {
-		return prevShadow, nil
+	if prevTwinEnabled == twinEnabled {
+		return prevTwinEnabled, nil
 	}
 	deviceObserverFuture, setDeviceObserver := future.New()
 	oldDeviceObserver := c.replaceDeviceObserver(deviceObserverFuture)
@@ -64,16 +63,17 @@ func (c *session) replaceDeviceObserverWithDeviceShadow(ctx context.Context, sha
 	}
 
 	deviceObserver, err := observation.NewDeviceObserver(c.Context(), deviceID, c, c, c,
-		observation.MakeResourcesObserverCallbacks(c.onObserveResource, c.onGetResourceContent),
-		observation.WithShadowSynchronization(shadow), observation.WithObservationType(observationType),
+		observation.MakeResourcesObserverCallbacks(c.onObserveResource, c.onGetResourceContent, c.UpdateTwinSynchronizationStatus),
+		observation.WithTwinSynchronization(twinEnabled), observation.WithObservationType(observationType),
 		observation.WithLogger(c.getLogger()),
+		observation.WithRequireBatchObserveEnabled(c.server.config.APIs.COAP.RequireBatchObserveEnabled),
 	)
 	if err != nil {
 		setDeviceObserver(nil, err)
-		return commands.ShadowSynchronization_UNSET, fmt.Errorf("cannot create observer for device %v: %w", deviceID, err)
+		return false, fmt.Errorf("cannot create observer for device %v: %w", deviceID, err)
 	}
 	setDeviceObserver(deviceObserver, nil)
-	return prevShadow, nil
+	return prevTwinEnabled, nil
 }
 
 func toDeviceObserver(ctx context.Context, devObsFut *future.Future) (*observation.DeviceObserver, error) {

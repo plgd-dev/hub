@@ -17,8 +17,10 @@ func validateConfirmDeviceMetadataUpdate(request *commands.ConfirmDeviceMetadata
 	if request.GetDeviceId() == "" {
 		return status.Errorf(codes.InvalidArgument, "invalid DeviceId")
 	}
-	if request.GetShadowSynchronization() == commands.ShadowSynchronization_UNSET {
-		return status.Errorf(codes.InvalidArgument, "confirm.shadowSynchronizationStatus are invalid")
+	switch v := request.GetConfirm().(type) {
+	case *commands.ConfirmDeviceMetadataUpdateRequest_TwinEnabled:
+	default:
+		return status.Errorf(codes.InvalidArgument, "confirm has invalid type (%T)", v)
 	}
 
 	return nil

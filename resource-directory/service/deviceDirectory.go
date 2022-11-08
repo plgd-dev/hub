@@ -134,7 +134,7 @@ func (dd *DeviceDirectory) sendDevices(deviceIDs strings.Set, req *pb.GetDevices
 	typeFilter.Add(req.TypeFilter...)
 	return dd.projection.LoadDevicesMetadata(srv.Context(), deviceIDs, toReloadDevices, func(m *deviceMetadataProjection) error {
 		deviceMetadataUpdated := m.GetDeviceMetadataUpdated()
-		if !hasMatchingStatus(deviceMetadataUpdated.GetStatus().IsOnline(), req.StatusFilter) {
+		if !hasMatchingStatus(deviceMetadataUpdated.GetConnection().IsOnline(), req.StatusFilter) {
 			return nil
 		}
 		resourceIdFilter := []*commands.ResourceId{commands.NewResourceID(m.GetDeviceID(), device.ResourceURI)}
@@ -146,8 +146,9 @@ func (dd *DeviceDirectory) sendDevices(deviceIDs strings.Set, req *pb.GetDevices
 				return nil //nolint:nilerr
 			}
 			device.Metadata = &pb.Device_Metadata{
-				Status:                deviceMetadataUpdated.GetStatus(),
-				ShadowSynchronization: deviceMetadataUpdated.GetShadowSynchronization(),
+				Connection:          deviceMetadataUpdated.GetConnection(),
+				TwinSynchronization: deviceMetadataUpdated.GetTwinSynchronization(),
+				TwinEnabled:         deviceMetadataUpdated.GetTwinEnabled(),
 			}
 			err := srv.Send(device.ToProto())
 			if err != nil {

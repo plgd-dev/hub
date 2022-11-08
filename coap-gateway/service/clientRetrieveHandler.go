@@ -40,9 +40,9 @@ func clientRetrieveHandler(req *mux.Message, client *session) (*pool.Message, er
 	var code coapCodes.Code
 	resourceInterface := message.GetResourceInterface(req)
 	if resourceInterface == "" {
-		content, code, err = clientRetrieveFromResourceShadowHandler(req.Context(), client, deviceID, href)
+		content, code, err = clientRetrieveFromResourceTwinHandler(req.Context(), client, deviceID, href)
 		if err != nil {
-			return nil, statusErrorf(code, errFmtRetrieveResource, fmt.Sprintf(" /%v%v from resource shadow", deviceID, href), err)
+			return nil, statusErrorf(code, errFmtRetrieveResource, fmt.Sprintf(" /%v%v from resource twin", deviceID, href), err)
 		}
 	} else {
 		code = coapCodes.Content
@@ -63,7 +63,7 @@ func clientRetrieveHandler(req *mux.Message, client *session) (*pool.Message, er
 	return client.createResponse(code, req.Token(), mediaType, content.Data), nil
 }
 
-func clientRetrieveFromResourceShadowHandler(ctx context.Context, client *session, deviceID, href string) (*commands.Content, coapCodes.Code, error) {
+func clientRetrieveFromResourceTwinHandler(ctx context.Context, client *session, deviceID, href string) (*commands.Content, coapCodes.Code, error) {
 	RetrieveResourcesClient, err := client.server.rdClient.GetResources(ctx, &pbGRPC.GetResourcesRequest{
 		ResourceIdFilter: []string{
 			commands.NewResourceID(deviceID, href).ToString(),

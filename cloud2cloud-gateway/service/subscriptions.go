@@ -67,7 +67,7 @@ func (s *SubscriptionData) detectDevicesState(ctx context.Context) (hasDevice, h
 			return false, false, false, err
 		}
 		hasDevice = true
-		if d.GetStatus().IsOnline() {
+		if d.GetConnection().IsOnline() {
 			hasOnline = true
 		} else {
 			hasOffline = true

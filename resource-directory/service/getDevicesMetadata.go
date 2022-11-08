@@ -18,7 +18,7 @@ func (r *RequestHandler) GetDevicesMetadata(req *pb.GetDevicesMetadataRequest, s
 		return log.LogAndReturnError(status.Errorf(status.Convert(err).Code(), "cannot retrieve devices metadata: %v", err))
 	}
 
-	rs := NewResourceShadow(r.resourceProjection, deviceIDs)
+	rs := NewResourceTwin(r.resourceProjection, deviceIDs)
 	err = rs.GetDevicesMetadata(req, srv)
 	if err != nil {
 		return log.LogAndReturnError(err)

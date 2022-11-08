@@ -53,6 +53,16 @@ func ForwardErrorf(code codes.Code, formatter string, args ...interface{}) error
 				break
 			}
 		}
+		if errs, ok := a.([]error); ok {
+			for _, err := range errs {
+				if errors.As(err, &gErr) {
+					s := gErr.GRPCStatus()
+					code = s.Code()
+					details = s.Proto().GetDetails()
+					break
+				}
+			}
+		}
 	}
 	sProto := status.Newf(code, formatter, args...).Proto()
 	sProto.Details = details

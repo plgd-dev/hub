@@ -194,7 +194,7 @@ func (c *Client) GetResourceLinksIterator(ctx context.Context, deviceIDs []strin
 	return kitNetGrpc.NewIterator(c.gateway.GetResourceLinks(ctx, &r))
 }
 
-// GetResourcesIterator gets resources contents from resource shadow (cache of backend). JWT token must be stored in context for grpc call.
+// GetResourcesIterator gets resources contents from resource twin (cache of backend). JWT token must be stored in context for grpc call.
 // By resourceIDs you can specify resources by deviceID and Href which will be retrieved from the backend, nil means all resources.
 // Or by deviceIDs or resourceTypes you can filter output when you get all resources.
 // Eg:

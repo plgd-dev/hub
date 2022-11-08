@@ -150,7 +150,7 @@ func GetEventID(ev *pb.Event) string {
 	case *pb.Event_DeviceMetadataUpdatePending:
 		return fmt.Sprintf("%T:%v", ev.GetType(), v.DeviceMetadataUpdatePending.GetDeviceId())
 	case *pb.Event_DeviceMetadataUpdated:
-		return fmt.Sprintf("%T:%v", ev.GetType(), v.DeviceMetadataUpdated.GetDeviceId())
+		return fmt.Sprintf("%T:%v:%v:%v:%v", ev.GetType(), v.DeviceMetadataUpdated.GetDeviceId(), v.DeviceMetadataUpdated.GetTwinEnabled(), v.DeviceMetadataUpdated.GetConnection().GetStatus(), v.DeviceMetadataUpdated.GetTwinSynchronization().GetState())
 	}
 	return ""
 }

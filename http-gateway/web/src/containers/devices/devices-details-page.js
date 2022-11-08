@@ -24,22 +24,20 @@ import {
   defaultNewResource,
   resourceModalTypes,
   NO_DEVICE_NAME,
-  shadowSynchronizationStates,
 } from './constants'
 import {
   handleCreateResourceErrors,
   handleUpdateResourceErrors,
   handleFetchResourceErrors,
   handleDeleteResourceErrors,
-  handleShadowSynchronizationErrors,
-  shadowSynchronizationEnabled,
+  handleTwinSynchronizationErrors,
 } from './utils'
 import {
   getDevicesResourcesApi,
   updateDevicesResourceApi,
   createDevicesResourceApi,
   deleteDevicesResourceApi,
-  updateDeviceShadowSynchronizationApi,
+  updateDeviceTwinSynchronizationApi,
 } from './rest'
 import { useDeviceDetails, useDevicesResources } from './hooks'
 import { messages as t } from './devices-i18n'
@@ -49,7 +47,7 @@ import './devices-details.scss'
 export const DevicesDetailsPage = () => {
   const { formatMessage: _ } = useIntl()
   const { id, href: hrefParam } = useParams()
-  const [shadowSyncLoading, setShadowSyncLoading] = useState(false)
+  const [twinSyncLoading, setTwinSyncLoading] = useState(false)
   const [resourceModalData, setResourceModalData] = useState(null)
   const [loadingResource, setLoadingResource] = useState(false)
   const [savingResource, setSavingResource] = useState(false)
@@ -67,9 +65,7 @@ export const DevicesDetailsPage = () => {
     error: resourcesError,
   } = useDevicesResources(id)
 
-  const isShadowSynchronizationEnabled = shadowSynchronizationEnabled(
-    data?.metadata?.shadowSynchronization
-  )
+  const isTwinEnabled = data?.metadata?.twinEnabled
   const resources = resourcesData?.[0]?.resources || []
 
   // Open the resource modal when href is present
@@ -100,7 +96,7 @@ export const DevicesDetailsPage = () => {
     )
   }
 
-  const deviceStatus = data?.metadata?.status?.value
+  const deviceStatus = data?.metadata?.connection?.status
   const isOnline = devicesStatuses.ONLINE === deviceStatus
   const isUnregistered = devicesStatuses.UNREGISTERED === deviceStatus
   const greyedOutClassName = classNames({
@@ -311,23 +307,21 @@ export const DevicesDetailsPage = () => {
     })
   }
 
-  // Handler for setting the shadow synchronization on a device
-  const setShadowSynchronization = async () => {
-    setShadowSyncLoading(true)
+  // Handler for setting the twin synchronization on a device
+  const setTwinSynchronization = async () => {
+    setTwinSyncLoading(true)
 
     try {
-      const setSync = isShadowSynchronizationEnabled
-        ? shadowSynchronizationStates.DISABLED
-        : shadowSynchronizationStates.ENABLED
-      await updateDeviceShadowSynchronizationApi(id, setSync)
+      const setSync = isTwinEnabled ? false : true
+      await updateDeviceTwinSynchronizationApi(id, setSync)
 
       if (isMounted.current) {
-        setShadowSyncLoading(false)
+        setTwinSyncLoading(false)
       }
     } catch (error) {
       if (error && isMounted.current) {
-        handleShadowSynchronizationErrors(error, _)
-        setShadowSyncLoading(false)
+        handleTwinSynchronizationErrors(error, _)
+        setTwinSyncLoading(false)
       }
     }
   }
@@ -337,7 +331,7 @@ export const DevicesDetailsPage = () => {
       title={`${deviceName ? deviceName + ' | ' : ''}${_(menuT.devices)}`}
       breadcrumbs={breadcrumbs}
       loading={
-        loading || (!resourceModalData && loadingResource) || shadowSyncLoading
+        loading || (!resourceModalData && loadingResource) || twinSyncLoading
       }
       header={
         <DevicesDetailsHeader
@@ -365,8 +359,8 @@ export const DevicesDetailsPage = () => {
       <DevicesDetails
         data={data}
         loading={loading}
-        shadowSyncLoading={shadowSyncLoading}
-        setShadowSynchronization={setShadowSynchronization}
+        twinSyncLoading={twinSyncLoading}
+        setTwinSynchronization={setTwinSynchronization}
       />
 
       <PendingCommandsExpandableList deviceId={id} />

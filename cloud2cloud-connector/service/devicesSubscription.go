@@ -155,10 +155,9 @@ func (s *SubscriptionManager) HandleDevicesOnline(ctx context.Context, d subscri
 	for _, device := range devices {
 		_, err := s.raClient.UpdateDeviceMetadata(ctx, &commands.UpdateDeviceMetadataRequest{
 			DeviceId: device.ID,
-			Update: &commands.UpdateDeviceMetadataRequest_Status{
-				Status: &commands.ConnectionStatus{
-					Value:        commands.ConnectionStatus_ONLINE,
-					ConnectionId: d.linkedAccount.ID + "." + d.subscription.ID,
+			Update: &commands.UpdateDeviceMetadataRequest_Connection{
+				Connection: &commands.Connection{
+					Status: commands.Connection_ONLINE,
 				},
 			},
 			CommandMetadata: &commands.CommandMetadata{
@@ -183,10 +182,9 @@ func (s *SubscriptionManager) HandleDevicesOffline(ctx context.Context, d subscr
 	for _, device := range devices {
 		_, err := s.raClient.UpdateDeviceMetadata(ctx, &commands.UpdateDeviceMetadataRequest{
 			DeviceId: device.ID,
-			Update: &commands.UpdateDeviceMetadataRequest_Status{
-				Status: &commands.ConnectionStatus{
-					Value:        commands.ConnectionStatus_OFFLINE,
-					ConnectionId: d.linkedAccount.ID + "." + d.subscription.ID,
+			Update: &commands.UpdateDeviceMetadataRequest_Connection{
+				Connection: &commands.Connection{
+					Status: commands.Connection_OFFLINE,
 				},
 			},
 			CommandMetadata: &commands.CommandMetadata{

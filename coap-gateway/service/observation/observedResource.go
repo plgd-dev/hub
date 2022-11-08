@@ -4,6 +4,8 @@ import (
 	"context"
 	"sort"
 	"sync"
+
+	"go.uber.org/atomic"
 )
 
 type Observation = interface {
@@ -15,20 +17,23 @@ type Observation = interface {
 type observedResource struct {
 	href         string
 	resInterface string
+	isObservable bool
+	synced       atomic.Bool
 
 	mutex       sync.Mutex
 	observation Observation
 }
 
-func NewObservedResource(href, resInterface string) *observedResource {
+func NewObservedResource(href, resInterface string, isObservable bool) *observedResource {
 	return &observedResource{
 		href:         href,
 		resInterface: resInterface,
+		isObservable: isObservable,
 	}
 }
 
-func (r *observedResource) Equals(res *observedResource) bool {
-	return r.href == res.href
+func (r *observedResource) Equals(href string) bool {
+	return r.href == href
 }
 
 func (r *observedResource) Href() string {
@@ -69,7 +74,7 @@ func (o observedResources) search(href string) int {
 func (o observedResources) insert(rs ...*observedResource) observedResources {
 	for _, v := range rs {
 		i := o.search(v.Href())
-		if i < len(o) && o[i].Equals(v) {
+		if i < len(o) && o[i].Equals(v.Href()) {
 			continue
 		}
 		o = append(o, nil)

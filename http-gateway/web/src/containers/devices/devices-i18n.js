@@ -210,16 +210,16 @@ export const messages = defineMessages({
     defaultMessage: 'Failed to delete a resource',
     description: 'Title of the toast message on resource delete error.',
   },
-  shadowSynchronizationError: {
-    id: 'devices.shadowSynchronizationError',
-    defaultMessage: 'Failed to set shadow synchronization',
+  twinSynchronizationError: {
+    id: 'devices.twinSynchronizationError',
+    defaultMessage: 'Failed to set twin synchronization',
     description:
-      'Title of the toast message on shadow synchronization set error.',
+      'Title of the toast message on twin synchronization set error.',
   },
-  shadowSynchronizationWasSetOffline: {
-    id: 'devices.shadowSynchronizationWasSetOffline',
+  twinSynchronizationWasSetOffline: {
+    id: 'devices.twinSynchronizationWasSetOffline',
     defaultMessage:
-      'Shadow synchronization was scheduled, changes will be applied once the device is online.',
+      'Twin synchronization was scheduled, changes will be applied once the device is online.',
   },
   deviceWentOnline: {
     id: 'devices.deviceWentOnline',
@@ -294,9 +294,9 @@ export const messages = defineMessages({
     id: 'devices.treeView',
     defaultMessage: 'Tree view',
   },
-  shadowSynchronization: {
-    id: 'devices.shadowSynchronization',
-    defaultMessage: 'Shadow synchronization',
+  twinSynchronization: {
+    id: 'devices.twinSynchronization',
+    defaultMessage: 'Twin synchronization',
   },
   save: {
     id: 'devices.save',

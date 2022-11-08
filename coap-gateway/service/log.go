@@ -96,6 +96,14 @@ func (c *session) getLogger() log.Logger {
 	if deviceID != "" {
 		logger = logger.With(log.DeviceIDKey, deviceID)
 	}
+	select {
+	case <-c.coapConn.Done():
+		logger = logger.With("closedConnection", true)
+	default:
+		if c.coapConn.Context().Err() != nil {
+			logger = logger.With("closingConnection", true)
+		}
+	}
 	return logger
 }
 
@@ -160,7 +168,11 @@ func (c *session) logRequestResponse(req *mux.Message, resp *pool.Message, err e
 	if resp != nil && !WantToLog(resp.Code(), logger) {
 		return
 	}
-	logger = c.loggerWithRequestResponse(c.getLogger(), req.Message, resp)
+	var reqMsg *pool.Message
+	if req != nil {
+		reqMsg = req.Message
+	}
+	logger = c.loggerWithRequestResponse(logger, reqMsg, resp)
 	if err != nil {
 		logger = logger.With(log.ErrorKey, err.Error())
 	}

@@ -71,7 +71,7 @@ func deleteSwitchResource(t *testing.T, ctx context.Context, c pb.GrpcGatewayCli
 	pbTest.CmpResourceDeleted(t, want, got.GetData())
 }
 
-func createSwitchResourceExpectedEvents(t *testing.T, deviceID, subID, correlationID, switchID string) map[string]*pb.Event {
+func createSwitchResourceExpectedEvents(t *testing.T, deviceID, subID, correlationID, switchID string, isDiscoveryResourceBatchObservable bool) map[string]*pb.Event {
 	cpEvent := &pb.Event{
 		SubscriptionId: subID,
 		CorrelationId:  correlationID,
@@ -151,13 +151,54 @@ func createSwitchResourceExpectedEvents(t *testing.T, deviceID, subID, correlati
 		},
 	}
 
-	return map[string]*pb.Event{
+	ret := map[string]*pb.Event{
 		pbTest.GetEventID(cpEvent):         cpEvent,
 		pbTest.GetEventID(rchangedEvent):   rchangedEvent,
 		pbTest.GetEventID(rcreatedEvent):   rcreatedEvent,
 		pbTest.GetEventID(rpublishedEvent): rpublishedEvent,
 		pbTest.GetEventID(rchangedEvent2):  rchangedEvent2,
 	}
+
+	if !isDiscoveryResourceBatchObservable {
+		rsSyncStartedEvent := &pb.Event{
+			SubscriptionId: subID,
+			CorrelationId:  correlationID,
+			Type: &pb.Event_DeviceMetadataUpdated{
+				DeviceMetadataUpdated: &events.DeviceMetadataUpdated{
+					DeviceId: deviceID,
+					Connection: &commands.Connection{
+						Status: commands.Connection_ONLINE,
+					},
+					TwinEnabled: true,
+					TwinSynchronization: &commands.TwinSynchronization{
+						State: commands.TwinSynchronization_SYNCING,
+					},
+					AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, ""),
+				},
+			},
+		}
+
+		rsSyncFinishedEvent := &pb.Event{
+			SubscriptionId: subID,
+			CorrelationId:  correlationID,
+			Type: &pb.Event_DeviceMetadataUpdated{
+				DeviceMetadataUpdated: &events.DeviceMetadataUpdated{
+					DeviceId: deviceID,
+					Connection: &commands.Connection{
+						Status: commands.Connection_ONLINE,
+					},
+					TwinEnabled: true,
+					TwinSynchronization: &commands.TwinSynchronization{
+						State: commands.TwinSynchronization_IN_SYNC,
+					},
+					AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, ""),
+				},
+			},
+		}
+		ret[pbTest.GetEventID(rsSyncStartedEvent)] = rsSyncStartedEvent
+		ret[pbTest.GetEventID(rsSyncFinishedEvent)] = rsSyncFinishedEvent
+	}
+	return ret
 }
 
 func deleteSwitchResourceExpectedEvents(t *testing.T, deviceID, subID, correlationID, switchID string) map[string]*pb.Event {
@@ -270,11 +311,12 @@ func TestCreateAndDeleteResource(t *testing.T) {
 	subClient, subID := subscribeToAllEvents(t, ctx, c, correlationID)
 	const switchID = "1"
 
+	isDiscoveryResourceBatchObservable := test.IsDiscoveryResourceBatchObservable(ctx, t, deviceID)
 	for i := 0; i < 5; i++ {
 		fmt.Printf("iteration %v\n", i)
 		time.Sleep(time.Millisecond * 500)
 		createSwitchResource(t, ctx, c, deviceID, switchID)
-		expectedCreateEvents := createSwitchResourceExpectedEvents(t, deviceID, subID, correlationID, switchID)
+		expectedCreateEvents := createSwitchResourceExpectedEvents(t, deviceID, subID, correlationID, switchID, isDiscoveryResourceBatchObservable)
 		validateEvents(t, subClient, expectedCreateEvents)
 		deleteSwitchResource(t, ctx, c, deviceID, switchID)
 		expectedDeleteEvents := deleteSwitchResourceExpectedEvents(t, deviceID, subID, correlationID, switchID)

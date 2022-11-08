@@ -41,17 +41,17 @@ func TestAggregateHandleConfirmDeviceMetadataUpdate(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "set shadowSynchronizationDisabled",
+			name: "set twinSynchronizationDisabled",
 			args: args{
-				request: testMakeConfirmDeviceMetadataUpdateRequest(deviceID, commands.ShadowSynchronization_ENABLED),
+				request: testMakeConfirmDeviceMetadataUpdateRequest(deviceID, newTwinEnabled(true)),
 				userID:  userID,
 			},
 			want: codes.OK,
 		},
 		{
-			name: "set shadowSynchronizationDisabled duplicit with same correlationID",
+			name: "set twinSynchronizationDisabled duplicit with same correlationID",
 			args: args{
-				request: testMakeConfirmDeviceMetadataUpdateRequest(deviceID, commands.ShadowSynchronization_DISABLED),
+				request: testMakeConfirmDeviceMetadataUpdateRequest(deviceID, newTwinEnabled(false)),
 				userID:  userID,
 			},
 			want:    codes.InvalidArgument,
@@ -60,7 +60,7 @@ func TestAggregateHandleConfirmDeviceMetadataUpdate(t *testing.T) {
 		{
 			name: "invalid update commands",
 			args: args{
-				request: testMakeConfirmDeviceMetadataUpdateRequest(deviceID, commands.ShadowSynchronization_UNSET),
+				request: testMakeConfirmDeviceMetadataUpdateRequest(deviceID, nil),
 				userID:  userID,
 			},
 			want:    codes.InvalidArgument,
@@ -101,7 +101,7 @@ func TestAggregateHandleConfirmDeviceMetadataUpdate(t *testing.T) {
 	require.NoError(t, err)
 	_, err = ag.UpdateDeviceMetadata(kitNetGrpc.CtxWithIncomingToken(ctx, config.CreateJwtToken(t, jwt.MapClaims{
 		"sub": userID,
-	})), testMakeUpdateDeviceMetadataRequest(deviceID, "", nil, commands.ShadowSynchronization_DISABLED, time.Hour))
+	})), testMakeUpdateDeviceMetadataRequest(deviceID, "", nil, newTwinEnabled(false), time.Hour))
 	require.NoError(t, err)
 
 	for _, tt := range test {
@@ -140,9 +140,9 @@ func TestRequestHandlerConfirmDeviceMetadataUpdate(t *testing.T) {
 		wantError bool
 	}{
 		{
-			name: "set shadowSynchronizationDisabled",
+			name: "set twinSynchronizationDisabled",
 			args: args{
-				request: testMakeConfirmDeviceMetadataUpdateRequest(deviceID, commands.ShadowSynchronization_DISABLED),
+				request: testMakeConfirmDeviceMetadataUpdateRequest(deviceID, newTwinEnabled(false)),
 			},
 			want: &commands.ConfirmDeviceMetadataUpdateResponse{
 				AuditContext: &commands.AuditContext{
@@ -153,14 +153,14 @@ func TestRequestHandlerConfirmDeviceMetadataUpdate(t *testing.T) {
 		{
 			name: "duplicit",
 			args: args{
-				request: testMakeConfirmDeviceMetadataUpdateRequest(deviceID, commands.ShadowSynchronization_DISABLED),
+				request: testMakeConfirmDeviceMetadataUpdateRequest(deviceID, newTwinEnabled(false)),
 			},
 			wantError: true,
 		},
 		{
 			name: "invalid",
 			args: args{
-				request: testMakeConfirmDeviceMetadataUpdateRequest(deviceID, commands.ShadowSynchronization_UNSET),
+				request: testMakeConfirmDeviceMetadataUpdateRequest(deviceID, nil),
 			},
 			wantError: true,
 		},
@@ -205,7 +205,7 @@ func TestRequestHandlerConfirmDeviceMetadataUpdate(t *testing.T) {
 
 	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetOwnerDevices)
 
-	_, err = requestHandler.UpdateDeviceMetadata(ctx, testMakeUpdateDeviceMetadataRequest(deviceID, "", nil, commands.ShadowSynchronization_DISABLED, time.Hour))
+	_, err = requestHandler.UpdateDeviceMetadata(ctx, testMakeUpdateDeviceMetadataRequest(deviceID, "", nil, newTwinEnabled(false), time.Hour))
 	require.NoError(t, err)
 
 	for _, tt := range test {
@@ -224,7 +224,7 @@ func TestRequestHandlerConfirmDeviceMetadataUpdate(t *testing.T) {
 	}
 }
 
-func testMakeConfirmDeviceMetadataUpdateRequest(deviceID string, shadowSynchronization commands.ShadowSynchronization) *commands.ConfirmDeviceMetadataUpdateRequest {
+func testMakeConfirmDeviceMetadataUpdateRequest(deviceID string, twinEnabled *bool) *commands.ConfirmDeviceMetadataUpdateRequest {
 	r := commands.ConfirmDeviceMetadataUpdateRequest{
 		DeviceId: deviceID,
 		CommandMetadata: &commands.CommandMetadata{
@@ -232,9 +232,9 @@ func testMakeConfirmDeviceMetadataUpdateRequest(deviceID string, shadowSynchroni
 			Sequence:     0,
 		},
 	}
-	if shadowSynchronization != commands.ShadowSynchronization_UNSET {
-		r.Confirm = &commands.ConfirmDeviceMetadataUpdateRequest_ShadowSynchronization{
-			ShadowSynchronization: shadowSynchronization,
+	if twinEnabled != nil {
+		r.Confirm = &commands.ConfirmDeviceMetadataUpdateRequest_TwinEnabled{
+			TwinEnabled: *twinEnabled,
 		}
 	}
 	return &r

@@ -8,6 +8,7 @@ import (
 	coapgwService "github.com/plgd-dev/hub/v2/coap-gateway/service"
 	"github.com/plgd-dev/hub/v2/coap-gateway/service/message"
 	"github.com/plgd-dev/hub/v2/pkg/log"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	coapgwTestService "github.com/plgd-dev/hub/v2/test/coap-gateway/service"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 )
@@ -94,5 +95,10 @@ func (h *DefaultObserverHandler) OnGetResourceContent(ctx context.Context, devic
 	log.Debugf("OnGetResourceContent: %v%v", deviceID, resourceHref)
 	msg := message.ToJson(notification, true, false)
 	log.Get().With("notification", msg).Debug("RECEIVED-GET")
+	return nil
+}
+
+func (h *DefaultObserverHandler) UpdateTwinSynchronization(ctx context.Context, deviceID string, status commands.TwinSynchronization_State, t time.Time) error {
+	log.Debugf("UpdateTwinSynchronizationStatus: %v %v %v", deviceID, status, t)
 	return nil
 }

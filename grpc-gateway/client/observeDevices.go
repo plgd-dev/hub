@@ -34,11 +34,11 @@ type devicesObservation struct {
 }
 
 func (o *devicesObservation) HandleDeviceMetadataUpdated(ctx context.Context, val *events.DeviceMetadataUpdated) error {
-	if val.GetStatus() == nil {
+	if val.GetConnection() == nil {
 		return nil
 	}
 	event := DevicesObservationEvent_OFFLINE
-	if val.GetStatus().IsOnline() {
+	if val.GetConnection().IsOnline() {
 		event = DevicesObservationEvent_ONLINE
 	}
 	return o.h.Handle(ctx, DevicesObservationEvent{

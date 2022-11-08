@@ -263,8 +263,8 @@
             "schema": {
               "type": "object",
               "properties": {
-                "shadowSynchronization": {
-                  "$ref": "#/definitions/pbUpdateDeviceMetadataRequestShadowSynchronization"
+                "twinEnabled": {
+                  "type": "boolean"
                 },
                 "timeToLive": {
                   "type": "string",
@@ -879,11 +879,14 @@
     "DeviceMetadata": {
       "type": "object",
       "properties": {
-        "status": {
-          "$ref": "#/definitions/pbConnectionStatus"
+        "connection": {
+          "$ref": "#/definitions/pbConnection"
         },
-        "shadowSynchronization": {
-          "$ref": "#/definitions/resourceaggregatepbShadowSynchronization"
+        "twinSynchronization": {
+          "$ref": "#/definitions/pbTwinSynchronization"
+        },
+        "twinEnabled": {
+          "type": "boolean"
         }
       }
     },
@@ -1032,6 +1035,16 @@
         "RESOURCE_CHANGED"
       ],
       "default": "REGISTERED"
+    },
+    "TwinSynchronizationState": {
+      "type": "string",
+      "enum": [
+        "OUT_OF_SYNC",
+        "DISABLED",
+        "SYNCING",
+        "IN_SYNC"
+      ],
+      "default": "OUT_OF_SYNC"
     },
     "googlerpcStatus": {
       "type": "object",
@@ -1204,17 +1217,29 @@
         }
       }
     },
-    "pbConnectionStatus": {
+    "pbCommandMetadata": {
       "type": "object",
       "properties": {
-        "value": {
-          "$ref": "#/definitions/pbConnectionStatusStatus"
+        "connectionId": {
+          "type": "string"
         },
-        "validUntil": {
+        "sequence": {
+          "type": "string",
+          "format": "uint64"
+        }
+      }
+    },
+    "pbConnection": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "$ref": "#/definitions/pbConnectionStatus"
+        },
+        "onlineValidUntil": {
           "type": "string",
           "format": "int64"
         },
-        "connectionId": {
+        "id": {
           "type": "string"
         },
         "connectedAt": {
@@ -1223,7 +1248,7 @@
         }
       }
     },
-    "pbConnectionStatusStatus": {
+    "pbConnectionStatus": {
       "type": "string",
       "enum": [
         "OFFLINE",
@@ -1309,8 +1334,8 @@
         "deviceId": {
           "type": "string"
         },
-        "shadowSynchronization": {
-          "$ref": "#/definitions/resourceaggregatepbShadowSynchronization"
+        "twinEnabled": {
+          "type": "boolean"
         },
         "auditContext": {
           "$ref": "#/definitions/pbAuditContext"
@@ -1337,11 +1362,14 @@
         "deviceId": {
           "type": "string"
         },
-        "status": {
-          "$ref": "#/definitions/pbConnectionStatus"
+        "connection": {
+          "$ref": "#/definitions/pbConnection"
         },
-        "shadowSynchronization": {
-          "$ref": "#/definitions/resourceaggregatepbShadowSynchronization"
+        "twinSynchronization": {
+          "$ref": "#/definitions/pbTwinSynchronization"
+        },
+        "twinEnabled": {
+          "type": "boolean"
         },
         "auditContext": {
           "$ref": "#/definitions/pbAuditContext"
@@ -1954,13 +1982,24 @@
         }
       }
     },
-    "pbUpdateDeviceMetadataRequestShadowSynchronization": {
-      "type": "string",
-      "enum": [
-        "DISABLED",
-        "ENABLED"
-      ],
-      "default": "DISABLED"
+    "pbTwinSynchronization": {
+      "type": "object",
+      "properties": {
+        "state": {
+          "$ref": "#/definitions/TwinSynchronizationState"
+        },
+        "syncingAt": {
+          "type": "string",
+          "format": "int64"
+        },
+        "inSyncAt": {
+          "type": "string",
+          "format": "int64"
+        },
+        "commandMetadata": {
+          "$ref": "#/definitions/pbCommandMetadata"
+        }
+      }
     },
     "pbWebOAuthClient": {
       "type": "object",
@@ -2052,15 +2091,6 @@
         }
       },
       "title": "https://github.com/openconnectivityfoundation/core/blob/master/schemas/oic.links.properties.core-schema.json"
-    },
-    "resourceaggregatepbShadowSynchronization": {
-      "type": "string",
-      "enum": [
-        "UNSET",
-        "ENABLED",
-        "DISABLED"
-      ],
-      "default": "UNSET"
     },
     "resourceaggregatepbStatus": {
       "type": "string",

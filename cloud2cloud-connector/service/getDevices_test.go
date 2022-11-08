@@ -49,9 +49,11 @@ func testRequestHandlerGetDevices(t *testing.T, events store.Events) {
 					Id:         deviceID,
 					Name:       test.TestDeviceName,
 					Metadata: &pb.Device_Metadata{
-						Status: &commands.ConnectionStatus{
-							Value: commands.ConnectionStatus_ONLINE,
+						Connection: &commands.Connection{
+							Status: commands.Connection_ONLINE,
 						},
+						TwinSynchronization: &commands.TwinSynchronization{},
+						TwinEnabled:         true,
 					},
 					OwnershipStatus: pb.Device_OWNED,
 				},
@@ -92,9 +94,12 @@ func testRequestHandlerGetDevices(t *testing.T, events store.Events) {
 				require.NoError(t, err)
 				assert.NotEmpty(t, dev.ProtocolIndependentId)
 				dev.ProtocolIndependentId = ""
-				if dev.GetMetadata().GetStatus() != nil {
-					dev.GetMetadata().GetStatus().ValidUntil = 0
-					dev.GetMetadata().GetStatus().ConnectionId = ""
+				if dev.GetMetadata().GetConnection() != nil {
+					dev.GetMetadata().GetConnection().OnlineValidUntil = 0
+					dev.GetMetadata().GetConnection().Id = ""
+				}
+				if dev.GetMetadata().GetTwinSynchronization() != nil {
+					dev.GetMetadata().GetTwinSynchronization().CommandMetadata = nil
 				}
 				assert.NotEmpty(t, dev.GetData().GetContent().GetData())
 				dev.Data = nil

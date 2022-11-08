@@ -20,19 +20,19 @@ func toResourceValue(resource *Resource) *pb.Resource {
 	}
 }
 
-type ResourceShadow struct {
+type ResourceTwin struct {
 	projection    *Projection
 	userDeviceIds strings.Set
 }
 
-func NewResourceShadow(projection *Projection, deviceIds []string) *ResourceShadow {
+func NewResourceTwin(projection *Projection, deviceIds []string) *ResourceTwin {
 	mapDeviceIds := make(strings.Set)
 	mapDeviceIds.Add(deviceIds...)
 
-	return &ResourceShadow{projection: projection, userDeviceIds: mapDeviceIds}
+	return &ResourceTwin{projection: projection, userDeviceIds: mapDeviceIds}
 }
 
-func (rd *ResourceShadow) convertToResourceIDs(resourceIDsFilter, deviceIdFilter []string) []*commands.ResourceId {
+func (rd *ResourceTwin) convertToResourceIDs(resourceIDsFilter, deviceIdFilter []string) []*commands.ResourceId {
 	internalResourceIDsFilter := make([]*commands.ResourceId, 0, len(resourceIDsFilter)+len(deviceIdFilter))
 	for _, r := range resourceIDsFilter {
 		res := commands.ResourceIdFromString(r)
@@ -58,13 +58,13 @@ func (rd *ResourceShadow) convertToResourceIDs(resourceIDsFilter, deviceIdFilter
 	return internalResourceIDsFilter
 }
 
-func (rd *ResourceShadow) filterResources(ctx context.Context, resourceIDsFilter []*commands.ResourceId, typeFilter []string, toReloadDevices strings.Set, onResource func(*Resource) error) error {
+func (rd *ResourceTwin) filterResources(ctx context.Context, resourceIDsFilter []*commands.ResourceId, typeFilter []string, toReloadDevices strings.Set, onResource func(*Resource) error) error {
 	mapTypeFilter := make(strings.Set)
 	mapTypeFilter.Add(typeFilter...)
 	return rd.projection.LoadResourcesWithLinks(ctx, resourceIDsFilter, mapTypeFilter, toReloadDevices, onResource)
 }
 
-func (rd *ResourceShadow) getResources(resourceIDsFilter []*commands.ResourceId, typeFilter []string, srv pb.GrpcGateway_GetResourcesServer, toReloadDevices strings.Set) error {
+func (rd *ResourceTwin) getResources(resourceIDsFilter []*commands.ResourceId, typeFilter []string, srv pb.GrpcGateway_GetResourcesServer, toReloadDevices strings.Set) error {
 	return rd.filterResources(srv.Context(), resourceIDsFilter, typeFilter, toReloadDevices, func(resource *Resource) error {
 		val := toResourceValue(resource)
 		err := srv.Send(val)
@@ -75,7 +75,7 @@ func (rd *ResourceShadow) getResources(resourceIDsFilter []*commands.ResourceId,
 	})
 }
 
-func (rd *ResourceShadow) GetResources(req *pb.GetResourcesRequest, srv pb.GrpcGateway_GetResourcesServer) error {
+func (rd *ResourceTwin) GetResources(req *pb.GetResourcesRequest, srv pb.GrpcGateway_GetResourcesServer) error {
 	toReloadDevices := make(strings.Set)
 	resourceIDsFilter := rd.convertToResourceIDs(req.GetResourceIdFilter(), req.GetDeviceIdFilter())
 	err := rd.getResources(resourceIDsFilter, req.GetTypeFilter(), srv, toReloadDevices)
@@ -102,7 +102,7 @@ func toPendingCommands(resource *Resource, commandFilter subscription.FilterBitm
 	return resource.projection.ToPendingCommands(commandFilter, now)
 }
 
-func (rd *ResourceShadow) sendPendingCommands(srv pb.GrpcGateway_GetPendingCommandsServer, resourceIDsFilter []*commands.ResourceId, typeFilter []string, filterCmds subscription.FilterBitmask, now time.Time, toReloadDevices strings.Set) error {
+func (rd *ResourceTwin) sendPendingCommands(srv pb.GrpcGateway_GetPendingCommandsServer, resourceIDsFilter []*commands.ResourceId, typeFilter []string, filterCmds subscription.FilterBitmask, now time.Time, toReloadDevices strings.Set) error {
 	return rd.filterResources(srv.Context(), resourceIDsFilter, typeFilter, toReloadDevices, func(resource *Resource) error {
 		for _, pendingCmd := range toPendingCommands(resource, filterCmds, now) {
 			err := srv.Send(pendingCmd)
@@ -114,7 +114,7 @@ func (rd *ResourceShadow) sendPendingCommands(srv pb.GrpcGateway_GetPendingComma
 	})
 }
 
-func (rd *ResourceShadow) sendDeviceMetadataUpdatePendingCommands(deviceIDs strings.Set, srv pb.GrpcGateway_GetPendingCommandsServer, now time.Time, toReloadDevices strings.Set) error {
+func (rd *ResourceTwin) sendDeviceMetadataUpdatePendingCommands(deviceIDs strings.Set, srv pb.GrpcGateway_GetPendingCommandsServer, now time.Time, toReloadDevices strings.Set) error {
 	return rd.projection.LoadDevicesMetadata(srv.Context(), deviceIDs, toReloadDevices, func(m *deviceMetadataProjection) error {
 		for _, pendingCmd := range m.GetDeviceUpdatePendings(now) {
 			err := srv.Send(&pb.PendingCommand{
@@ -130,7 +130,7 @@ func (rd *ResourceShadow) sendDeviceMetadataUpdatePendingCommands(deviceIDs stri
 	})
 }
 
-func (rd *ResourceShadow) getDeviceMetadataUpdatePendingCommands(req *pb.GetPendingCommandsRequest, srv pb.GrpcGateway_GetPendingCommandsServer, now time.Time, filterCmds subscription.FilterBitmask) error {
+func (rd *ResourceTwin) getDeviceMetadataUpdatePendingCommands(req *pb.GetPendingCommandsRequest, srv pb.GrpcGateway_GetPendingCommandsServer, now time.Time, filterCmds subscription.FilterBitmask) error {
 	toReloadDevices := make(strings.Set)
 	if subscription.IsFilteredBit(filterCmds, subscription.FilterBitmaskDeviceMetadataUpdatePending) &&
 		len(req.GetResourceIdFilter()) == 0 && len(req.GetTypeFilter()) == 0 {
@@ -147,7 +147,7 @@ func (rd *ResourceShadow) getDeviceMetadataUpdatePendingCommands(req *pb.GetPend
 	return nil
 }
 
-func (rd *ResourceShadow) GetPendingCommands(req *pb.GetPendingCommandsRequest, srv pb.GrpcGateway_GetPendingCommandsServer) error {
+func (rd *ResourceTwin) GetPendingCommands(req *pb.GetPendingCommandsRequest, srv pb.GrpcGateway_GetPendingCommandsServer) error {
 	filterCmds := subscription.FilterPendingsCommandsToBitmask(req.GetCommandFilter())
 	now := time.Now()
 
@@ -175,7 +175,7 @@ func (rd *ResourceShadow) GetPendingCommands(req *pb.GetPendingCommandsRequest, 
 	return nil
 }
 
-func (rd *ResourceShadow) sendDevicesMetadata(srv pb.GrpcGateway_GetDevicesMetadataServer, deviceIDFilter, typeFilter, toReloadDevices strings.Set) error {
+func (rd *ResourceTwin) sendDevicesMetadata(srv pb.GrpcGateway_GetDevicesMetadataServer, deviceIDFilter, typeFilter, toReloadDevices strings.Set) error {
 	return rd.projection.LoadResourceLinks(srv.Context(), deviceIDFilter, toReloadDevices, func(m *resourceLinksProjection) error {
 		res := m.GetResource(device.ResourceURI)
 		if res == nil {
@@ -201,7 +201,7 @@ func (rd *ResourceShadow) sendDevicesMetadata(srv pb.GrpcGateway_GetDevicesMetad
 	})
 }
 
-func (rd *ResourceShadow) GetDevicesMetadata(req *pb.GetDevicesMetadataRequest, srv pb.GrpcGateway_GetDevicesMetadataServer) error {
+func (rd *ResourceTwin) GetDevicesMetadata(req *pb.GetDevicesMetadataRequest, srv pb.GrpcGateway_GetDevicesMetadataServer) error {
 	deviceIDs := filterDevices(rd.userDeviceIds, req.DeviceIdFilter)
 	typeFilter := make(strings.Set)
 	typeFilter.Add(req.TypeFilter...)

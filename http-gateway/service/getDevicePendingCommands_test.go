@@ -297,8 +297,8 @@ func TestRequestHandlerGetDevicePendingCommands(t *testing.T) {
 		ctx, cancel := context.WithTimeout(ctx, time.Second)
 		defer cancel()
 		_, err := c.UpdateDeviceMetadata(ctx, &pb.UpdateDeviceMetadataRequest{
-			DeviceId:              deviceID,
-			ShadowSynchronization: pb.UpdateDeviceMetadataRequest_DISABLED,
+			DeviceId:    deviceID,
+			TwinEnabled: false,
 		})
 		require.Error(t, err)
 	}

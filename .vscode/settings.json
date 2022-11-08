@@ -20,6 +20,7 @@
         "TEST_OAUTH_SERVER_ID_TOKEN_PRIVATE_KEY": "${workspaceFolder}/.tmp/privKeys/idTokenKey.pem",
         "TEST_OAUTH_SERVER_ACCESS_TOKEN_PRIVATE_KEY": "${workspaceFolder}/.tmp/privKeys/accessTokenKey.pem",
         "TEST_HTTP_GW_WWW_ROOT": "${workspaceFolder}/.tmp/usr/local/www",
+        // "TEST_COAP_GATEWAY_UDP_ENABLED": "true",
         // "GOMAXPROCS": 1,
         // "GOFLAGS":"-mod=vendor",
         // "GRPC_VERBOSITY":"DEBUG",
