@@ -20,23 +20,12 @@ jobs:
       - uses: actions/checkout@v3
       - uses: actions/setup-go@v3
         with:
-          go-version: "1.18" # The Go version to download (if necessary) and use.
+          go-version: "^1.18" # The Go version to download (if necessary) and use.
+          check-latest: true
       - run: go version
 
       - name: Run go vet
         run: go vet ./...
-
-      - name: Install and run ineffassign
-        run: |
-          export PATH=${PATH}:`go env GOPATH`/bin
-          go install github.com/gordonklaus/ineffassign@latest
-          ineffassign ./...
-
-      - name: Install and run errcheck
-        run: |
-          export PATH=${PATH}:`go env GOPATH`/bin
-          go install github.com/kisielk/errcheck@latest
-          errcheck ./...
 
       - name: Install and run gocyclo
         run: |
@@ -50,11 +39,6 @@ jobs:
           export PATH=${PATH}:`go env GOPATH`/bin
           go install github.com/client9/misspell/cmd/misspell@latest
           find . -type f -exec misspell {} \;
-
-      - name: Install and run aligncheck
-        run: |
-          go get -u gitlab.com/opennota/check/cmd/aligncheck@latest
-          aligncheck ./... || echo "aligncheck detected inefficiently packed structs"
 
       - name: Check yaml field names and yaml tags
         run: tools/validate/validateYaml.py || echo "invalid yaml field name(s) detected"

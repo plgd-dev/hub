@@ -45,7 +45,11 @@ func (c *testSetupSecureClient) GetRootCertificateAuthorities() ([]*x509.Certifi
 
 // sdkConfig represents the configuration options available for the SDK client.
 type sdkConfig struct {
-	id string
+	id     string
+	rootCA struct {
+		certificate []byte
+		key         []byte
+	}
 }
 
 // Option interface used for setting optional sdkConfig properties.
@@ -66,12 +70,42 @@ func WithID(id string) Option {
 	})
 }
 
-func NewSDKClient(opts ...Option) (*client.Client, error) {
+// WithID creates Option that overrides the certificate authority used by the SDK client.
+func WithRootCA(certificate, key []byte) Option {
+	return optionFunc(func(cfg *sdkConfig) {
+		cfg.rootCA.certificate = certificate
+		cfg.rootCA.key = key
+	})
+}
+
+func getSDKConfig(opts ...Option) (*sdkConfig, error) {
 	c := &sdkConfig{
 		id: CertIdentity,
 	}
 	for _, opt := range opts {
 		opt.apply(c)
+	}
+
+	var err error
+	if c.rootCA.certificate == nil {
+		c.rootCA.certificate, err = os.ReadFile(os.Getenv("TEST_ROOT_CA_CERT"))
+		if err != nil {
+			return nil, err
+		}
+	}
+	if c.rootCA.key == nil {
+		c.rootCA.key, err = os.ReadFile(os.Getenv("TEST_ROOT_CA_KEY"))
+		if err != nil {
+			return nil, err
+		}
+	}
+	return c, nil
+}
+
+func NewSDKClient(opts ...Option) (*client.Client, error) {
+	c, err := getSDKConfig(opts...)
+	if err != nil {
+		return nil, err
 	}
 
 	mfgTrustedCABlock, _ := pem.Decode(MfgTrustedCA)
@@ -83,20 +117,9 @@ func NewSDKClient(opts ...Option) (*client.Client, error) {
 		return nil, err
 	}
 
-	identityIntermediateCA, err := os.ReadFile(os.Getenv("TEST_ROOT_CA_CERT"))
-	if err != nil {
-		return nil, err
-	}
-
-	identityIntermediateCAKey, err := os.ReadFile(os.Getenv("TEST_ROOT_CA_KEY"))
-	if err != nil {
-		return nil, err
-	}
-
-	identityTrustedCA, err := os.ReadFile(os.Getenv("TEST_ROOT_CA_CERT"))
-	if err != nil {
-		return nil, err
-	}
+	identityIntermediateCA := c.rootCA.certificate
+	identityIntermediateCAKey := c.rootCA.key
+	identityTrustedCA := c.rootCA.certificate
 
 	identityIntermediateCABlock, _ := pem.Decode(identityIntermediateCA)
 	if identityIntermediateCABlock == nil {

@@ -597,6 +597,132 @@ func (e *ResourceStateSnapshotTaken) CancelPendingCommands(ctx context.Context, 
 	return events, nil
 }
 
+func (e *ResourceStateSnapshotTaken) handleNotifyResourceChangedRequest(ctx context.Context, userID string, req *commands.NotifyResourceChangedRequest, newVersion uint64) ([]eventstore.Event, error) {
+	if req.CommandMetadata == nil {
+		return nil, status.Errorf(codes.InvalidArgument, errInvalidCommandMetadata)
+	}
+
+	em := MakeEventMeta(req.GetCommandMetadata().GetConnectionId(), req.GetCommandMetadata().GetSequence(), newVersion)
+	ac := commands.NewAuditContext(userID, "")
+
+	rc := ResourceChanged{
+		ResourceId:           req.GetResourceId(),
+		AuditContext:         ac,
+		EventMetadata:        em,
+		Content:              req.GetContent(),
+		Status:               req.GetStatus(),
+		OpenTelemetryCarrier: propagation.TraceFromCtx(ctx),
+	}
+	var ok bool
+	var err error
+	if ok, err = e.HandleEventResourceChanged(ctx, &rc); err != nil {
+		return nil, err
+	}
+	if ok {
+		return []eventstore.Event{&rc}, nil
+	}
+	return nil, nil
+}
+
+func (e *ResourceStateSnapshotTaken) handleUpdateResourceRequest(ctx context.Context, userID string, req *commands.UpdateResourceRequest, newVersion uint64) ([]eventstore.Event, error) {
+	if req.GetCommandMetadata() == nil {
+		return nil, status.Errorf(codes.InvalidArgument, errInvalidCommandMetadata)
+	}
+
+	em := MakeEventMeta(req.GetCommandMetadata().GetConnectionId(), req.GetCommandMetadata().GetSequence(), newVersion)
+	ac := commands.NewAuditContext(userID, req.GetCorrelationId())
+	content, err := convertContent(req.GetContent(), e.GetLatestResourceChange().GetContent().GetContentType())
+	if err != nil {
+		return nil, err
+	}
+
+	rc := ResourceUpdatePending{
+		ResourceId:           req.GetResourceId(),
+		ResourceInterface:    req.GetResourceInterface(),
+		AuditContext:         ac,
+		EventMetadata:        em,
+		Content:              content,
+		ValidUntil:           timeToLive2ValidUntil(req.GetTimeToLive()),
+		OpenTelemetryCarrier: propagation.TraceFromCtx(ctx),
+	}
+
+	if err = e.HandleEventResourceUpdatePending(ctx, &rc); err != nil {
+		return nil, err
+	}
+	return []eventstore.Event{&rc}, nil
+}
+
+func (e *ResourceStateSnapshotTaken) handleRetrieveResourceRequest(ctx context.Context, userID string, req *commands.RetrieveResourceRequest, newVersion uint64) ([]eventstore.Event, error) {
+	if req.GetCommandMetadata() == nil {
+		return nil, status.Errorf(codes.InvalidArgument, errInvalidCommandMetadata)
+	}
+
+	em := MakeEventMeta(req.GetCommandMetadata().GetConnectionId(), req.GetCommandMetadata().GetSequence(), newVersion)
+	ac := commands.NewAuditContext(userID, req.GetCorrelationId())
+
+	rc := ResourceRetrievePending{
+		ResourceId:           req.GetResourceId(),
+		ResourceInterface:    req.GetResourceInterface(),
+		AuditContext:         ac,
+		EventMetadata:        em,
+		ValidUntil:           timeToLive2ValidUntil(req.GetTimeToLive()),
+		OpenTelemetryCarrier: propagation.TraceFromCtx(ctx),
+	}
+
+	if err := e.HandleEventResourceRetrievePending(ctx, &rc); err != nil {
+		return nil, err
+	}
+	return []eventstore.Event{&rc}, nil
+}
+
+func (e *ResourceStateSnapshotTaken) handleDeleteResourceRequest(ctx context.Context, userID string, req *commands.DeleteResourceRequest, newVersion uint64) ([]eventstore.Event, error) {
+	if req.GetCommandMetadata() == nil {
+		return nil, status.Errorf(codes.InvalidArgument, errInvalidCommandMetadata)
+	}
+
+	em := MakeEventMeta(req.GetCommandMetadata().GetConnectionId(), req.GetCommandMetadata().GetSequence(), newVersion)
+	ac := commands.NewAuditContext(userID, req.GetCorrelationId())
+
+	rc := ResourceDeletePending{
+		ResourceId:           req.GetResourceId(),
+		AuditContext:         ac,
+		EventMetadata:        em,
+		ValidUntil:           timeToLive2ValidUntil(req.GetTimeToLive()),
+		OpenTelemetryCarrier: propagation.TraceFromCtx(ctx),
+	}
+
+	if err := e.HandleEventResourceDeletePending(ctx, &rc); err != nil {
+		return nil, err
+	}
+	return []eventstore.Event{&rc}, nil
+}
+
+func (e *ResourceStateSnapshotTaken) handleCreateResourceRequest(ctx context.Context, userID string, req *commands.CreateResourceRequest, newVersion uint64) ([]eventstore.Event, error) {
+	if req.GetCommandMetadata() == nil {
+		return nil, status.Errorf(codes.InvalidArgument, errInvalidCommandMetadata)
+	}
+
+	em := MakeEventMeta(req.GetCommandMetadata().GetConnectionId(), req.GetCommandMetadata().GetSequence(), newVersion)
+	ac := commands.NewAuditContext(userID, req.GetCorrelationId())
+	content, err := convertContent(req.GetContent(), e.GetLatestResourceChange().GetContent().GetContentType())
+	if err != nil {
+		return nil, err
+	}
+	rc := ResourceCreatePending{
+		ResourceId:           req.GetResourceId(),
+		Content:              content,
+		AuditContext:         ac,
+		EventMetadata:        em,
+		ValidUntil:           timeToLive2ValidUntil(req.GetTimeToLive()),
+		OpenTelemetryCarrier: propagation.TraceFromCtx(ctx),
+	}
+
+	if err := e.HandleEventResourceCreatePending(ctx, &rc); err != nil {
+		return nil, err
+	}
+	return []eventstore.Event{&rc}, nil
+}
+
 func (e *ResourceStateSnapshotTaken) HandleCommand(ctx context.Context, cmd aggregate.Command, newVersion uint64) ([]eventstore.Event, error) {
 	userID, err := grpc.SubjectFromTokenMD(ctx)
 	if err != nil {
@@ -609,127 +735,21 @@ func (e *ResourceStateSnapshotTaken) HandleCommand(ctx context.Context, cmd aggr
 
 	switch req := cmd.(type) {
 	case *commands.NotifyResourceChangedRequest:
-		if req.CommandMetadata == nil {
-			return nil, status.Errorf(codes.InvalidArgument, errInvalidCommandMetadata)
-		}
-
-		em := MakeEventMeta(req.GetCommandMetadata().GetConnectionId(), req.GetCommandMetadata().GetSequence(), newVersion)
-		ac := commands.NewAuditContext(userID, "")
-
-		rc := ResourceChanged{
-			ResourceId:           req.GetResourceId(),
-			AuditContext:         ac,
-			EventMetadata:        em,
-			Content:              req.GetContent(),
-			Status:               req.GetStatus(),
-			OpenTelemetryCarrier: propagation.TraceFromCtx(ctx),
-		}
-		var ok bool
-		var err error
-		if ok, err = e.HandleEventResourceChanged(ctx, &rc); err != nil {
-			return nil, err
-		}
-		if ok {
-			return []eventstore.Event{&rc}, nil
-		}
-		return nil, nil
+		return e.handleNotifyResourceChangedRequest(ctx, userID, req, newVersion)
 	case *commands.UpdateResourceRequest:
-		if req.GetCommandMetadata() == nil {
-			return nil, status.Errorf(codes.InvalidArgument, errInvalidCommandMetadata)
-		}
-
-		em := MakeEventMeta(req.GetCommandMetadata().GetConnectionId(), req.GetCommandMetadata().GetSequence(), newVersion)
-		ac := commands.NewAuditContext(userID, req.GetCorrelationId())
-		content, err := convertContent(req.GetContent(), e.GetLatestResourceChange().GetContent().GetContentType())
-		if err != nil {
-			return nil, err
-		}
-
-		rc := ResourceUpdatePending{
-			ResourceId:           req.GetResourceId(),
-			ResourceInterface:    req.GetResourceInterface(),
-			AuditContext:         ac,
-			EventMetadata:        em,
-			Content:              content,
-			ValidUntil:           timeToLive2ValidUntil(req.GetTimeToLive()),
-			OpenTelemetryCarrier: propagation.TraceFromCtx(ctx),
-		}
-
-		if err = e.HandleEventResourceUpdatePending(ctx, &rc); err != nil {
-			return nil, err
-		}
-		return []eventstore.Event{&rc}, nil
+		return e.handleUpdateResourceRequest(ctx, userID, req, newVersion)
 	case *commands.ConfirmResourceUpdateRequest:
 		return e.ConfirmResourceUpdateCommand(ctx, userID, req, newVersion)
 	case *commands.RetrieveResourceRequest:
-		if req.GetCommandMetadata() == nil {
-			return nil, status.Errorf(codes.InvalidArgument, errInvalidCommandMetadata)
-		}
-
-		em := MakeEventMeta(req.GetCommandMetadata().GetConnectionId(), req.GetCommandMetadata().GetSequence(), newVersion)
-		ac := commands.NewAuditContext(userID, req.GetCorrelationId())
-
-		rc := ResourceRetrievePending{
-			ResourceId:           req.GetResourceId(),
-			ResourceInterface:    req.GetResourceInterface(),
-			AuditContext:         ac,
-			EventMetadata:        em,
-			ValidUntil:           timeToLive2ValidUntil(req.GetTimeToLive()),
-			OpenTelemetryCarrier: propagation.TraceFromCtx(ctx),
-		}
-
-		if err := e.HandleEventResourceRetrievePending(ctx, &rc); err != nil {
-			return nil, err
-		}
-		return []eventstore.Event{&rc}, nil
+		return e.handleRetrieveResourceRequest(ctx, userID, req, newVersion)
 	case *commands.ConfirmResourceRetrieveRequest:
 		return e.ConfirmResourceRetrieveCommand(ctx, userID, req, newVersion)
 	case *commands.DeleteResourceRequest:
-		if req.GetCommandMetadata() == nil {
-			return nil, status.Errorf(codes.InvalidArgument, errInvalidCommandMetadata)
-		}
-
-		em := MakeEventMeta(req.GetCommandMetadata().GetConnectionId(), req.GetCommandMetadata().GetSequence(), newVersion)
-		ac := commands.NewAuditContext(userID, req.GetCorrelationId())
-
-		rc := ResourceDeletePending{
-			ResourceId:           req.GetResourceId(),
-			AuditContext:         ac,
-			EventMetadata:        em,
-			ValidUntil:           timeToLive2ValidUntil(req.GetTimeToLive()),
-			OpenTelemetryCarrier: propagation.TraceFromCtx(ctx),
-		}
-
-		if err := e.HandleEventResourceDeletePending(ctx, &rc); err != nil {
-			return nil, err
-		}
-		return []eventstore.Event{&rc}, nil
+		return e.handleDeleteResourceRequest(ctx, userID, req, newVersion)
 	case *commands.ConfirmResourceDeleteRequest:
 		return e.ConfirmResourceDeleteCommand(ctx, userID, req, newVersion)
 	case *commands.CreateResourceRequest:
-		if req.GetCommandMetadata() == nil {
-			return nil, status.Errorf(codes.InvalidArgument, errInvalidCommandMetadata)
-		}
-
-		em := MakeEventMeta(req.GetCommandMetadata().GetConnectionId(), req.GetCommandMetadata().GetSequence(), newVersion)
-		ac := commands.NewAuditContext(userID, req.GetCorrelationId())
-		content, err := convertContent(req.GetContent(), e.GetLatestResourceChange().GetContent().GetContentType())
-		if err != nil {
-			return nil, err
-		}
-		rc := ResourceCreatePending{
-			ResourceId:           req.GetResourceId(),
-			Content:              content,
-			AuditContext:         ac,
-			EventMetadata:        em,
-			ValidUntil:           timeToLive2ValidUntil(req.GetTimeToLive()),
-			OpenTelemetryCarrier: propagation.TraceFromCtx(ctx),
-		}
-
-		if err := e.HandleEventResourceCreatePending(ctx, &rc); err != nil {
-			return nil, err
-		}
-		return []eventstore.Event{&rc}, nil
+		return e.handleCreateResourceRequest(ctx, userID, req, newVersion)
 	case *commands.ConfirmResourceCreateRequest:
 		return e.ConfirmResourceCreateCommand(ctx, userID, req, newVersion)
 	case *commands.CancelPendingCommandsRequest:

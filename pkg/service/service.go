@@ -30,6 +30,11 @@ func New(services ...APIService) *Service {
 	}
 }
 
+// Add adds other API services. This needs to be called before Serve.
+func (s *Service) Add(services ...APIService) {
+	s.services = append(s.services, services...)
+}
+
 func (s *Service) Serve() error {
 	defer close(s.done)
 	var wg sync.WaitGroup
@@ -85,6 +90,7 @@ func (s *Service) Close() error {
 	return nil
 }
 
+// AddCloseFunc adds a function to be called when the server is closed
 func (s *Service) AddCloseFunc(f func()) {
 	s.closeFn.AddFunc(f)
 }

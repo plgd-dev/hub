@@ -830,7 +830,7 @@ coapgateway:
       keepAlive:
         timeout: 20s
       blockwiseTransfer:
-        enabled: false
+        enabled: true
         blockSize: "1024"
       tls:
         enabled: true

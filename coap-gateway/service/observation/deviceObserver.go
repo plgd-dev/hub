@@ -202,7 +202,7 @@ func NewDeviceObserver(ctx context.Context, deviceID string, coapConn ClientConn
 	}
 
 	if cfg.ObservationType == ObservationType_PerDevice {
-		resourcesObserver, err := createDiscoveryResourceObserver(ctx, deviceID, coapConn, callbacks, cfg.logger)
+		resourcesObserver, err := createDiscoveryResourceObserver(ctx, deviceID, coapConn, callbacks, cfg.Logger)
 		if err == nil {
 			return &DeviceObserver{
 				deviceID:          deviceID,
