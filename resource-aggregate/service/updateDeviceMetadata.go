@@ -65,7 +65,14 @@ func (r RequestHandler) UpdateDeviceMetadata(ctx context.Context, request *comma
 	request.TimeToLive = checkTimeToLiveForDefault(r.config.Clients.Eventstore.DefaultCommandTimeToLive, request.GetTimeToLive())
 
 	resID := commands.NewResourceID(request.GetDeviceId(), commands.StatusHref)
-	aggregate, err := NewAggregate(resID, r.config.Clients.Eventstore.SnapshotThreshold, r.eventstore, DeviceMetadataFactoryModel, cqrsAggregate.NewDefaultRetryFunc(r.config.Clients.Eventstore.ConcurrencyExceptionMaxRetry))
+
+	var latestSnapshot *events.DeviceMetadataSnapshotTaken
+	deviceMetadataFactoryModel := func(ctx context.Context) (cqrsAggregate.AggregateModel, error) {
+		latestSnapshot = events.NewDeviceMetadataSnapshotTaken()
+		return latestSnapshot, nil
+	}
+
+	aggregate, err := NewAggregate(resID, r.config.Clients.Eventstore.SnapshotThreshold, r.eventstore, deviceMetadataFactoryModel, cqrsAggregate.NewDefaultRetryFunc(r.config.Clients.Eventstore.ConcurrencyExceptionMaxRetry))
 	if err != nil {
 		return nil, log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "cannot update device('%v') metadata: %v", request.GetDeviceId(), err))
 	}
@@ -90,6 +97,7 @@ func (r RequestHandler) UpdateDeviceMetadata(ctx context.Context, request *comma
 
 	return &commands.UpdateDeviceMetadataResponse{
 		AuditContext: commands.NewAuditContext(owner, ""),
+		TwinEnabled:  latestSnapshot.GetDeviceMetadataUpdated().GetTwinEnabled(),
 		ValidUntil:   validUntil,
 	}, nil
 }

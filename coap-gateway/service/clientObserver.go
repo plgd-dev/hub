@@ -64,7 +64,7 @@ func (c *session) replaceDeviceObserverWithDeviceTwin(ctx context.Context, twinE
 
 	deviceObserver, err := observation.NewDeviceObserver(c.Context(), deviceID, c, c, c,
 		observation.MakeResourcesObserverCallbacks(c.onObserveResource, c.onGetResourceContent, c.UpdateTwinSynchronizationStatus),
-		observation.WithTwinSynchronization(twinEnabled), observation.WithObservationType(observationType),
+		observation.WithTwinEnabled(twinEnabled), observation.WithObservationType(observationType),
 		observation.WithLogger(c.getLogger()),
 		observation.WithRequireBatchObserveEnabled(c.server.config.APIs.COAP.RequireBatchObserveEnabled),
 	)

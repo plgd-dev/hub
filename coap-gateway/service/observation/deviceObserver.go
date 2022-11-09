@@ -51,11 +51,12 @@ type DeviceObserver struct {
 }
 
 type DeviceObserverConfig struct {
-	ObservationType            ObservationType
-	TwinEnabled                bool
-	TwinEnabledSet             bool
-	Logger                     log.Logger
-	RequireBatchObserveEnabled bool
+	ObservationType              ObservationType
+	TwinEnabled                  bool
+	TwinEnabledSet               bool
+	Logger                       log.Logger
+	RequireBatchObserveEnabled   bool
+	UpdateDeviceMetadataResponse *commands.UpdateDeviceMetadataResponse
 }
 
 type ClientConn interface {
@@ -109,7 +110,7 @@ func (o TwinEnabledOpt) Apply(opts *DeviceObserverConfig) {
 	opts.TwinEnabledSet = true
 }
 
-func WithTwinSynchronization(twinEnabled bool) TwinEnabledOpt {
+func WithTwinEnabled(twinEnabled bool) TwinEnabledOpt {
 	return TwinEnabledOpt{
 		twinEnabled: twinEnabled,
 	}
