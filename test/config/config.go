@@ -74,11 +74,13 @@ var (
 )
 
 func MakeTLSClientConfig() client.Config {
-	return client.Config{
+	cfg := client.Config{
 		CAPool:   CA_POOL,
 		KeyFile:  KEY_FILE,
 		CertFile: CERT_FILE,
 	}
+	_ = cfg.Validate()
+	return cfg
 }
 
 func MakeOpenTelemetryCollectorClient() otelClient.Config {

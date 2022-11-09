@@ -9,6 +9,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/hashicorp/go-multierror"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/kit/v2/security"
@@ -17,15 +18,15 @@ import (
 
 // Config provides configuration of a file based Server Certificate manager
 type Config struct {
-	CAPool                    string `yaml:"caPool" json:"caPool" description:"file path to the root certificates in PEM format"`
-	KeyFile                   string `yaml:"keyFile" json:"keyFile" description:"file name of private key in PEM format"`
-	CertFile                  string `yaml:"certFile" json:"certFile" description:"file name of certificate in PEM format"`
-	ClientCertificateRequired bool   `yaml:"clientCertificateRequired" json:"clientCertificateRequired" description:"require client certificate"`
-	UseSystemCAPool           bool   `yaml:"useSystemCAPool" json:"useSystemCaPool" description:"use system certification pool"`
+	CAPool                    []string `yaml:"caPool" json:"caPool" description:"file path to the root certificates in PEM format"`
+	KeyFile                   string   `yaml:"keyFile" json:"keyFile" description:"file name of private key in PEM format"`
+	CertFile                  string   `yaml:"certFile" json:"certFile" description:"file name of certificate in PEM format"`
+	ClientCertificateRequired bool     `yaml:"clientCertificateRequired" json:"clientCertificateRequired" description:"require client certificate"`
+	UseSystemCAPool           bool     `yaml:"useSystemCAPool" json:"useSystemCaPool" description:"use system certification pool"`
 }
 
 func (c Config) Validate() error {
-	if c.CAPool == "" && !c.UseSystemCAPool {
+	if len(c.CAPool) == 0 && !c.UseSystemCAPool {
 		return fmt.Errorf("caPool('%v')", c.CAPool)
 	}
 	if c.CertFile == "" {
@@ -75,9 +76,9 @@ func New(config Config, fileWatcher *fsnotify.Watcher, logger log.Logger) (*Cert
 	if err != nil {
 		return nil, err
 	}
-	if config.CAPool != "" {
-		if err := c.fileWatcher.Add(filepath.Dir(config.CAPool)); err != nil {
-			return nil, fmt.Errorf("cannot watch CAPool directory(%v): %w", filepath.Dir(config.CAPool), err)
+	for _, ca := range config.CAPool {
+		if err := c.fileWatcher.Add(filepath.Dir(ca)); err != nil {
+			return nil, fmt.Errorf("cannot watch CAPool directory(%v): %w", filepath.Dir(ca), err)
 		}
 	}
 	if config.CertFile != "" {
@@ -128,9 +129,9 @@ func (a *CertManager) Close() {
 	if !a.done.CompareAndSwap(false, true) {
 		return
 	}
-	if a.config.CAPool != "" {
-		if err := a.fileWatcher.Remove(filepath.Dir(a.config.CAPool)); err != nil {
-			a.logger.Errorf("cannot remove fileWatcher for CAPool directory(%v): %w", filepath.Dir(a.config.CAPool), err)
+	for _, ca := range a.config.CAPool {
+		if err := a.fileWatcher.Remove(filepath.Dir(ca)); err != nil {
+			a.logger.Errorf("cannot remove fileWatcher for CAPool directory(%v): %w", filepath.Dir(ca), err)
 		}
 	}
 	if a.config.CertFile != "" {
@@ -181,12 +182,14 @@ func (a *CertManager) loadCerts() error {
 
 func (a *CertManager) loadCAs() error {
 	var cas []*x509.Certificate
-	if a.config.CAPool != "" {
-		certs, err := security.LoadX509(a.config.CAPool)
+	var errors *multierror.Error
+	for _, ca := range a.config.CAPool {
+		certs, err := security.LoadX509(ca)
 		if err != nil {
-			return fmt.Errorf("cannot load certificate authorities from '%v': %w", a.config.CAPool, err)
+			errors = multierror.Append(errors, fmt.Errorf("cannot load CA from '%v': %w", ca, err))
+		} else {
+			cas = append(cas, certs...)
 		}
-		cas = certs
 	}
 	if a.config.UseSystemCAPool {
 		a.setCAPool(security.NewDefaultCertPool(cas))
@@ -197,7 +200,7 @@ func (a *CertManager) loadCAs() error {
 		}
 		a.setCAPool(p)
 	}
-	return nil
+	return errors.ErrorOrNil()
 }
 
 func (a *CertManager) setTLSKeyPair(cert tls.Certificate) {
@@ -212,8 +215,7 @@ func (a *CertManager) setCAPool(capool *x509.CertPool) {
 	a.private.tlsCAPool = capool
 }
 
-func (a *CertManager) onFileChange(event fsnotify.Event) {
-	var updateCert, updateKey, updateCAs bool
+func (a *CertManager) whatNeedToUpdate(event fsnotify.Event) (updateCert, updateKey, updateCAs bool) {
 	switch event.Op {
 	case fsnotify.Create, fsnotify.Write, fsnotify.Rename:
 		if strings.Contains(event.Name, a.config.KeyFile) {
@@ -224,10 +226,18 @@ func (a *CertManager) onFileChange(event fsnotify.Event) {
 			updateCert = true
 		}
 
-		if strings.Contains(event.Name, a.config.CAPool) {
-			updateCAs = true
+		for _, ca := range a.config.CAPool {
+			if strings.Contains(event.Name, ca) {
+				updateCAs = true
+				break
+			}
 		}
 	}
+	return
+}
+
+func (a *CertManager) onFileChange(event fsnotify.Event) {
+	updateCert, updateKey, updateCAs := a.whatNeedToUpdate(event)
 	if updateCert && updateKey {
 		err := a.loadCerts()
 		if err != nil {

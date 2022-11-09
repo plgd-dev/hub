@@ -8,6 +8,7 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/pkg/security/certManager/client"
 	"github.com/stretchr/testify/require"
+	"gopkg.in/yaml.v3"
 )
 
 var TestCaCrt = `-----BEGIN CERTIFICATE-----
@@ -44,6 +45,93 @@ AwEHoUQDQgAEJ/uXouda+6VDbVSn59q0bFLC0TpNKwzkBvaBL86owEYmcBhBLpkp
 AnQ1eTGKTGLdAZsV+NnZPL17nit1cbiN2g==
 -----END EC PRIVATE KEY-----
 `
+
+func TestValidateConfig(t *testing.T) {
+	type args struct {
+		configYaml string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+		want    client.Config
+	}{
+		{
+			name: "caPool as string",
+			args: args{
+				configYaml: `caPool: /tmp/test3570354545/ca3202122454
+keyFile: /tmp/test3570354545/key3658110735
+certFile: /tmp/test3570354545/crt4065348335
+`,
+			},
+			want: client.Config{
+				CAPool:   "/tmp/test3570354545/ca3202122454",
+				KeyFile:  "/tmp/test3570354545/key3658110735",
+				CertFile: "/tmp/test3570354545/crt4065348335",
+				CAPoolArray: []string{
+					"/tmp/test3570354545/ca3202122454",
+				},
+			},
+		},
+		{
+			name: "caPool as []string",
+			args: args{
+				configYaml: `
+caPool:
+- /tmp/test3570354545/ca3202122454
+keyFile: /tmp/test3570354545/key3658110735
+certFile: /tmp/test3570354545/crt4065348335
+`,
+			},
+			want: client.Config{
+				CAPool:   "/tmp/test3570354545/ca3202122454",
+				KeyFile:  "/tmp/test3570354545/key3658110735",
+				CertFile: "/tmp/test3570354545/crt4065348335",
+				CAPoolArray: []string{
+					"/tmp/test3570354545/ca3202122454",
+				},
+			},
+		},
+		{
+			name: "caPool is not set",
+			args: args{
+				configYaml: `
+keyFile: /tmp/test3570354545/key3658110735
+certFile: /tmp/test3570354545/crt4065348335
+useSystemCAPool: true
+`,
+			},
+			want: client.Config{
+				KeyFile:         "/tmp/test3570354545/key3658110735",
+				CertFile:        "/tmp/test3570354545/crt4065348335",
+				UseSystemCAPool: true,
+			},
+		},
+		{
+			name: "caPool is not set - error",
+			args: args{
+				configYaml: `
+keyFile: /tmp/test3570354545/key3658110735
+certFile: /tmp/test3570354545/crt4065348335
+`,
+			},
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var testCfg client.Config
+			err := yaml.Unmarshal([]byte(tt.args.configYaml), &testCfg)
+			require.NoError(t, err)
+			err = testCfg.Validate()
+			if tt.wantErr {
+				require.Error(t, err)
+				return
+			}
+			require.NoError(t, err)
+		})
+	}
+}
 
 func TestNew(t *testing.T) {
 	// tmp dir
@@ -123,9 +211,11 @@ func createTmpCertFiles(t *testing.T, caFile, crtFile, keyFile string) client.Co
 }
 
 func deleteTmpCertFiles(t *testing.T, cfg client.Config) {
-	err := os.Remove(cfg.CAPool)
-	require.NoError(t, err)
-	err = os.Remove(cfg.CertFile)
+	for _, ca := range cfg.CAPoolArray {
+		err := os.Remove(ca)
+		require.NoError(t, err)
+	}
+	err := os.Remove(cfg.CertFile)
 	require.NoError(t, err)
 	err = os.Remove(cfg.KeyFile)
 	require.NoError(t, err)
