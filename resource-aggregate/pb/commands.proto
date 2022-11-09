@@ -504,6 +504,7 @@ message UpdateDeviceMetadataRequest {
 message UpdateDeviceMetadataResponse {
     int64 valid_until = 1;  // unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when command is considered as expired. 0 means forever.
     AuditContext audit_context = 2;
+    bool twin_enabled = 3;
 }
 
 message ConfirmDeviceMetadataUpdateRequest {

@@ -138,7 +138,7 @@ func (c *session) updateAuthorizationContext(deviceID, userID, accessToken strin
 	return updateTypeNone
 }
 
-func (c *session) updateBySignInData(ctx context.Context, upd updateType, deviceId, owner string) error {
+func (c *session) updateBySignInData(ctx context.Context, upd updateType, deviceId, owner string) (*commands.UpdateDeviceMetadataResponse, error) {
 	if upd == updateTypeChanged {
 		c.cancelResourceSubscriptions(true)
 		if err := c.closeDeviceSubscriber(); err != nil {
@@ -152,15 +152,16 @@ func (c *session) updateBySignInData(ctx context.Context, upd updateType, device
 
 	if upd != updateTypeNone {
 		if err := setNewDeviceSubscriber(ctx, c, owner, deviceId); err != nil {
-			return fmt.Errorf("cannot set device subscriber: %w", err)
+			return nil, fmt.Errorf("cannot set device subscriber: %w", err)
 		}
 	}
 
-	if err := c.server.devicesStatusUpdater.Add(ctx, c, upd == updateTypeNew); err != nil {
-		return fmt.Errorf("cannot update cloud device status: %w", err)
+	resp, err := c.server.devicesStatusUpdater.Add(ctx, c, upd == updateTypeNew)
+	if err != nil {
+		return nil, fmt.Errorf("cannot update cloud device status: %w", err)
 	}
 
-	return nil
+	return resp, nil
 }
 
 func subscribeToDeviceEvents(client *session, owner, deviceID string) error {
@@ -198,7 +199,7 @@ func signInError(err error) error {
 	return fmt.Errorf("sign in error: %w", err)
 }
 
-func setNewDeviceObserver(ctx context.Context, client *session, deviceID string, resetObservationType bool) {
+func setNewDeviceObserver(ctx context.Context, client *session, deviceID string, resetObservationType bool, twinEnabled bool) {
 	newDeviceObserverFut, setDeviceObserver := future.New()
 	oldDeviceObserverFut := client.replaceDeviceObserver(newDeviceObserverFut)
 
@@ -221,6 +222,7 @@ func setNewDeviceObserver(ctx context.Context, client *session, deviceID string,
 			observation.WithObservationType(observationType),
 			observation.WithLogger(client.getLogger()),
 			observation.WithRequireBatchObserveEnabled(client.server.config.APIs.COAP.RequireBatchObserveEnabled),
+			observation.WithTwinEnabled(twinEnabled),
 		)
 		if err != nil {
 			client.Close()
@@ -283,7 +285,8 @@ func signInPostHandler(req *mux.Message, client *session, signIn CoapSignInReq) 
 		return nil, statusErrorf(coapCodes.InternalServerError, errFmtSignIn, err)
 	}
 
-	if err := client.updateBySignInData(ctx, upd, deviceID, signIn.UserID); err != nil {
+	updateDeviceMetadataResp, err := client.updateBySignInData(ctx, upd, deviceID, signIn.UserID)
+	if err != nil {
 		return nil, statusErrorf(coapCodes.InternalServerError, errFmtSignIn, err)
 	}
 
@@ -293,7 +296,7 @@ func signInPostHandler(req *mux.Message, client *session, signIn CoapSignInReq) 
 
 	if err := client.server.taskQueue.Submit(func() {
 		// try to register observations to the device at the cloud.
-		setNewDeviceObserver(ctx, client, deviceID, upd == updateTypeChanged)
+		setNewDeviceObserver(ctx, client, deviceID, upd == updateTypeChanged, updateDeviceMetadataResp.GetTwinEnabled())
 	}); err != nil {
 		return nil, statusErrorf(coapCodes.InternalServerError, errFmtSignIn, fmt.Errorf("failed to register device observer: %w", err))
 	}
