@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/hashicorp/go-multierror"
 	"github.com/plgd-dev/go-coap/v3/pkg/cache"
 	"github.com/plgd-dev/go-coap/v3/pkg/runner/periodic"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
@@ -292,17 +293,13 @@ func (s *EventStore) ClearCollections(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("failed to obtain collection names: %w", err)
 	}
-	var errors []error
+	var errors *multierror.Error
 	for _, col := range cols {
 		if _, err2 := s.client.Database(s.DBName()).Collection(col).DeleteMany(ctx, bson.D{}); err2 != nil {
-			errors = append(errors, fmt.Errorf("failed to clear collection %v: %w", col, err2))
+			errors = multierror.Append(errors, fmt.Errorf("failed to clear collection %v: %w", col, err2))
 		}
 	}
-
-	if len(errors) > 0 {
-		return fmt.Errorf("%v", errors)
-	}
-	return nil
+	return errors.ErrorOrNil()
 }
 
 // Close closes the database session.

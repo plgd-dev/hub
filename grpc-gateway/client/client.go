@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/hashicorp/go-multierror"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
@@ -104,11 +105,11 @@ func (c *Client) insertSubscription(id string, s subscription) {
 }
 
 func (c *Client) Close(ctx context.Context) error {
-	var errors []error
+	var errors *multierror.Error
 	for _, s := range c.popSubscriptions() {
 		wait, err := s.Cancel()
 		if err != nil {
-			errors = append(errors, err)
+			errors = multierror.Append(errors, err)
 			continue
 		}
 		wait()
@@ -116,15 +117,11 @@ func (c *Client) Close(ctx context.Context) error {
 	if c.conn != nil {
 		err := c.conn.Close()
 		if err != nil {
-			errors = append(errors, err)
+			errors = multierror.Append(errors, err)
 		}
 	}
 
-	if len(errors) != 0 {
-		return fmt.Errorf("%v", errors)
-	}
-
-	return nil
+	return errors.ErrorOrNil()
 }
 
 // GetDevicesViaCallback returns devices. JWT token must be stored in context for grpc call.

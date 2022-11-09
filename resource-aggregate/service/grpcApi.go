@@ -2,8 +2,8 @@ package service
 
 import (
 	"context"
-	"fmt"
 
+	"github.com/hashicorp/go-multierror"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
@@ -37,18 +37,15 @@ func NewRequestHandler(config Config, eventstore EventStore, publisher eventbus.
 }
 
 func PublishEvents(publisher eventbus.Publisher, owner, deviceID, resourceID string, events []eventbus.Event) error {
-	var errors []error
+	var errors *multierror.Error
 	for _, event := range events {
 		// timeout si driven by flusherTimeout.
 		err := publisher.Publish(context.Background(), utils.GetPublishSubject(owner, event), deviceID, resourceID, event)
 		if err != nil {
-			errors = append(errors, err)
+			errors = multierror.Append(errors, err)
 		}
 	}
-	if len(errors) > 0 {
-		return fmt.Errorf("cannot publish events: %v", errors)
-	}
-	return nil
+	return errors.ErrorOrNil()
 }
 
 // Check if device with given ID belongs to given owner

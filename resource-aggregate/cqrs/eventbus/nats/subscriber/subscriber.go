@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/hashicorp/go-multierror"
 	nats "github.com/nats-io/nats.go"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	pkgTime "github.com/plgd-dev/hub/v2/pkg/time"
@@ -196,13 +197,13 @@ func (s *Subscriber) newObservation(subscriptionID string, eh eventbus.Handler) 
 }
 
 func (o *Observer) cleanUp(topics map[string]bool) (map[string]bool, error) {
-	var errors []error
+	var errors *multierror.Error
 	var unsetTopics bool
 	for topic, sub := range o.subs {
 		if _, ok := topics[topic]; !ok {
 			err := sub.Unsubscribe()
 			if err != nil {
-				errors = append(errors, err)
+				errors = multierror.Append(errors, err)
 			}
 			delete(o.subs, topic)
 			unsetTopics = true
@@ -210,7 +211,7 @@ func (o *Observer) cleanUp(topics map[string]bool) (map[string]bool, error) {
 	}
 	if unsetTopics {
 		if err := o.conn.Flush(); err != nil {
-			errors = append(errors, err)
+			errors = multierror.Append(errors, err)
 		}
 	}
 	newSubs := make(map[string]bool)
@@ -220,8 +221,8 @@ func (o *Observer) cleanUp(topics map[string]bool) (map[string]bool, error) {
 		}
 	}
 
-	if len(errors) > 0 {
-		return nil, fmt.Errorf("cannot unsubscribe from topics: %v", errors)
+	if errors.ErrorOrNil() != nil {
+		return nil, fmt.Errorf("cannot unsubscribe from topics: %w", errors)
 	}
 	return newSubs, nil
 }
@@ -242,13 +243,12 @@ func (o *Observer) SetTopics(ctx context.Context, topics []string) error {
 	}
 
 	cleanUpAfterError := func(err error) error {
-		errors := []error{
-			fmt.Errorf("cannot subscribe to topics: %w", err),
-		}
+		var errors *multierror.Error
+		errors = multierror.Append(errors, fmt.Errorf("cannot subscribe to topics: %w", err))
 		if _, err := o.cleanUp(make(map[string]bool)); err != nil {
-			errors = append(errors, err)
+			errors = multierror.Append(errors, err)
 		}
-		return fmt.Errorf("%+v", errors)
+		return errors.ErrorOrNil()
 	}
 
 	for topic := range newTopicsForSub {

@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/hashicorp/go-multierror"
 	"github.com/plgd-dev/device/v2/schema/interfaces"
 	"github.com/plgd-dev/device/v2/schema/resources"
 	"github.com/plgd-dev/go-coap/v3/message"
@@ -254,15 +255,15 @@ func (o *resourcesObserver) notifyAboutFinishTwinSynchronization(ctx context.Con
 }
 
 func (o *resourcesObserver) performObservationLocked(obs []*observedResource) error {
-	var errors []error
+	var errors *multierror.Error
 	for _, obsRes := range obs {
 		if err := o.handleResource(context.Background(), obsRes); err != nil {
 			o.resources, _ = o.resources.removeByHref(obsRes.Href())
-			errors = append(errors, err)
+			errors = multierror.Append(errors, err)
 		}
 	}
-	if len(errors) > 0 {
-		return fmt.Errorf("cannot perform observation: %v", errors)
+	if errors.ErrorOrNil() != nil {
+		return fmt.Errorf("cannot perform observation: %w", errors)
 	}
 	return nil
 }
@@ -290,18 +291,18 @@ func (o *resourcesObserver) addResources(ctx context.Context, resources []*comma
 }
 
 func (o *resourcesObserver) addResourcesLocked(resources []*commands.Resource) ([]*observedResource, error) {
-	var errors []error
+	var errors *multierror.Error
 	observedResources := make([]*observedResource, 0, len(resources))
 	for _, resource := range resources {
 		observedResource, err := o.addResourceLocked(resource, "")
 		if err != nil {
-			errors = append(errors, err)
+			errors = multierror.Append(errors, err)
 		} else if observedResource != nil {
 			observedResources = append(observedResources, observedResource)
 		}
 	}
-	if len(errors) > 0 {
-		return observedResources, fmt.Errorf("cannot add resources to observe: %v", errors)
+	if errors.ErrorOrNil() != nil {
+		return observedResources, fmt.Errorf("cannot add resources to observe: %w", errors)
 	}
 	return observedResources, nil
 }

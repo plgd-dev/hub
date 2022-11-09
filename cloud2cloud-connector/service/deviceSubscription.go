@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/hashicorp/go-multierror"
 	cache "github.com/plgd-dev/go-coap/v3/pkg/cache"
 	"github.com/plgd-dev/hub/v2/cloud2cloud-connector/events"
 	"github.com/plgd-dev/hub/v2/cloud2cloud-connector/store"
@@ -53,12 +54,12 @@ func (s *SubscriptionManager) SubscribeToDevice(ctx context.Context, deviceID st
 	}
 	_, _, err = s.store.LoadOrCreateSubscription(sub)
 	if err != nil {
-		errors := make([]error, 1, 2)
-		errors = append(errors, fmt.Errorf("cannot store subscription to DB: %w", err))
+		var errors *multierror.Error
+		errors = multierror.Append(errors, fmt.Errorf("cannot store subscription to DB: %w", err))
 		if err2 := cancelDeviceSubscription(ctx, s.tracerProvider, linkedAccount, linkedCloud, deviceID, sub.ID); err2 != nil {
-			errors = append(errors, fmt.Errorf("cannot cancel device %v subscription: %w", deviceID, err2))
+			errors = multierror.Append(errors, fmt.Errorf("cannot cancel device %v subscription: %w", deviceID, err2))
 		}
-		return fmt.Errorf("%v", errors)
+		return errors.ErrorOrNil()
 	}
 	err = s.devicesSubscription.Add(ctx, deviceID, linkedAccount, linkedCloud)
 	if err != nil {
@@ -99,7 +100,7 @@ func trimDeviceIDFromHref(deviceID, href string) string {
 
 // HandleResourcesPublished publish resources to resource aggregate and subscribes to resources.
 func (s *SubscriptionManager) HandleResourcesPublished(ctx context.Context, d subscriptionData, header events.EventHeader, links events.ResourcesPublished) error {
-	var errors []error
+	var errors *multierror.Error
 	for _, link := range links {
 		deviceID := d.subscription.DeviceID
 		link.DeviceID = deviceID
@@ -130,7 +131,7 @@ func (s *SubscriptionManager) HandleResourcesPublished(ctx context.Context, d su
 			},
 		})
 		if err != nil {
-			errors = append(errors, fmt.Errorf("cannot publish resource: %w", err))
+			errors = multierror.Append(errors, fmt.Errorf("cannot publish resource: %w", err))
 			continue
 		}
 		if d.linkedCloud.SupportedSubscriptionEvents.NeedPullResources() {
@@ -144,15 +145,12 @@ func (s *SubscriptionManager) HandleResourcesPublished(ctx context.Context, d su
 			href:          href,
 		})
 	}
-	if len(errors) > 0 {
-		return fmt.Errorf("%v", errors)
-	}
-	return nil
+	return errors.ErrorOrNil()
 }
 
 // HandleResourcesUnpublished unpublish resources from resource aggregate and cancel resources subscriptions.
 func (s *SubscriptionManager) HandleResourcesUnpublished(ctx context.Context, d subscriptionData, header events.EventHeader, links events.ResourcesUnpublished) error {
-	var errors []error
+	var errors *multierror.Error
 	for _, link := range links {
 		link.DeviceID = d.subscription.DeviceID
 		href := kitHttp.CanonicalHref(trimDeviceIDFromHref(link.DeviceID, link.Href))
@@ -165,7 +163,7 @@ func (s *SubscriptionManager) HandleResourcesUnpublished(ctx context.Context, d 
 			},
 		})
 		if err != nil {
-			errors = append(errors, fmt.Errorf("cannot unpublish resource: %w", err))
+			errors = multierror.Append(errors, fmt.Errorf("cannot unpublish resource: %w", err))
 		}
 		_, ok := s.store.PullOutResource(d.linkedAccount.LinkedCloudID, d.linkedAccount.ID, link.DeviceID, href)
 		if !ok {
@@ -173,10 +171,7 @@ func (s *SubscriptionManager) HandleResourcesUnpublished(ctx context.Context, d 
 		}
 		s.cache.Delete(header.CorrelationID)
 	}
-	if len(errors) > 0 {
-		return fmt.Errorf("%v", errors)
-	}
-	return nil
+	return errors.ErrorOrNil()
 }
 
 // HandleDeviceEvent handles device events.

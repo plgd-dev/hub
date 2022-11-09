@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/hashicorp/go-multierror"
 	"github.com/plgd-dev/hub/v2/pkg/fn"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
@@ -39,27 +40,21 @@ func (c *Client) GetTracerProvider() trace.TracerProvider {
 }
 
 func (c *Client) close(ctx context.Context) error {
-	var errors []error
+	var errors *multierror.Error
 	if c.tracerProvider != nil {
 		err := c.tracerProvider.Shutdown(ctx)
 		if err != nil {
-			errors = append(errors, err)
+			errors = multierror.Append(errors, err)
 		}
 	}
 	if c.client != nil {
 		err := c.client.Close()
 		if err != nil {
-			errors = append(errors, err)
+			errors = multierror.Append(errors, err)
 		}
 	}
 	c.closeFunc.Execute()
-	if len(errors) == 1 {
-		return errors[0]
-	}
-	if len(errors) > 1 {
-		return fmt.Errorf("%v", errors)
-	}
-	return nil
+	return errors.ErrorOrNil()
 }
 
 func (c *Client) Close() {

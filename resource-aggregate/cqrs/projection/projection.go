@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/hashicorp/go-multierror"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus"
@@ -66,13 +67,12 @@ func (p *Projection) Register(ctx context.Context, deviceID string) (created boo
 	}
 	topics, updateSubscriber := p.topicManager.Add(deviceID)
 	releaseAndReturnError := func(deviceID string, err error) error {
-		errors := []error{
-			fmt.Errorf("cannot register device %v: %w", deviceID, err),
-		}
+		var errors *multierror.Error
+		errors = multierror.Append(errors, fmt.Errorf("cannot register device %v: %w", deviceID, err))
 		if err := p.release(r); err != nil {
-			errors = append(errors, fmt.Errorf("cannot register device: %w", err))
+			errors = multierror.Append(errors, fmt.Errorf("cannot register device: %w", err))
 		}
-		return fmt.Errorf("%+v", errors)
+		return errors.ErrorOrNil()
 	}
 	if updateSubscriber {
 		err := p.cqrsProjection.SubscribeTo(topics)
@@ -103,16 +103,13 @@ func (p *Projection) Unregister(deviceID string) error {
 	d := r.Data().(*deviceProjection)
 	d.mutex.Lock()
 	defer d.mutex.Unlock()
-	var errors []error
+	var errors *multierror.Error
 	for i := 0; i < 2; i++ {
 		if err := p.release(r); err != nil {
-			errors = append(errors, fmt.Errorf("cannot unregister projection for %v: %w", deviceID, err))
+			errors = multierror.Append(errors, fmt.Errorf("cannot unregister projection for %v: %w", deviceID, err))
 		}
 	}
-	if len(errors) > 0 {
-		return fmt.Errorf("%+v", errors)
-	}
-	return nil
+	return errors.ErrorOrNil()
 }
 
 // Models returns models via onModel function for device, resource or nil for non exist.

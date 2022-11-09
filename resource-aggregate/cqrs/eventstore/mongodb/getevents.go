@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/hashicorp/go-multierror"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore"
 	"github.com/plgd-dev/kit/v2/strings"
 	"go.mongodb.org/mongo-driver/bson"
@@ -171,17 +172,13 @@ func (s *EventStore) GetEvents(ctx context.Context, queries []eventstore.GetEven
 		return s.getEvents(ctx, "", nil, timestamp, eventHandler)
 	}
 
-	var errors []error
+	var errors *multierror.Error
 	for groupID, filter := range eventFilter.DeviceIds {
 		s.LogDebugfFunc("GroupID: %v, all: %v #resourceIds: %v", groupID, filter.All, len(filter.ResourceIds))
 		err := s.getEvents(ctx, groupID, queries, timestamp, eventHandler)
 		if err != nil {
-			errors = append(errors, err)
+			errors = multierror.Append(errors, err)
 		}
 	}
-	if len(errors) > 0 {
-		return fmt.Errorf("%+v", errors)
-	}
-
-	return nil
+	return errors.ErrorOrNil()
 }

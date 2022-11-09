@@ -3,8 +3,8 @@ package mongodb
 import (
 	"context"
 	"crypto/tls"
-	"fmt"
 
+	"github.com/hashicorp/go-multierror"
 	pkgMongo "github.com/plgd-dev/hub/v2/pkg/mongodb"
 	"go.opentelemetry.io/otel/trace"
 )
@@ -26,15 +26,12 @@ func NewStore(ctx context.Context, cfg pkgMongo.Config, tls *tls.Config, tracerP
 }
 
 func (s *Store) clearDatabases(ctx context.Context) error {
-	var errors []error
+	var errors *multierror.Error
 	if err := s.Collection(resLinkedAccountCName).Drop(ctx); err != nil {
-		errors = append(errors, err)
+		errors = multierror.Append(errors, err)
 	}
 	if err := s.Collection(resLinkedCloudCName).Drop(ctx); err != nil {
-		errors = append(errors, err)
+		errors = multierror.Append(errors, err)
 	}
-	if len(errors) > 0 {
-		return fmt.Errorf("cannot clear: %v", errors)
-	}
-	return nil
+	return errors.ErrorOrNil()
 }

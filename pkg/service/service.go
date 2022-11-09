@@ -1,12 +1,12 @@
 package service
 
 import (
-	"fmt"
 	"os"
 	"os/signal"
 	"sync"
 	"syscall"
 
+	"github.com/hashicorp/go-multierror"
 	"github.com/plgd-dev/hub/v2/pkg/fn"
 )
 
@@ -60,22 +60,15 @@ func (s *Service) Serve() error {
 	}
 	wg.Wait()
 	s.closeFn.Execute()
-	var errors []error
+	var errors *multierror.Error
 	for {
 		select {
 		case err := <-errCh:
 			if err != nil {
-				errors = append(errors, err)
+				errors = multierror.Append(errors, err)
 			}
 		default:
-			switch len(errors) {
-			case 0:
-				return nil
-			case 1:
-				return errors[0]
-			default:
-				return fmt.Errorf("%v", errors)
-			}
+			return errors.ErrorOrNil()
 		}
 	}
 }

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/hashicorp/go-multierror"
 	nats "github.com/nats-io/nats.go"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/pb"
@@ -118,24 +119,20 @@ func (p *Publisher) Publish(ctx context.Context, topics []string, groupID, aggre
 		return errors.New("could not marshal event: " + err.Error())
 	}
 
-	var errors []error
+	var errors *multierror.Error
 	for _, t := range topics {
 		err = p.PublishData(t, eData)
 		if err != nil {
-			errors = append(errors, err)
+			errors = multierror.Append(errors, err)
 		}
 	}
 
 	err = p.Flush(ctx)
 	if err != nil {
-		errors = append(errors, err)
+		errors = multierror.Append(errors, err)
 	}
 
-	if len(errors) > 0 {
-		return fmt.Errorf("cannot publish events: %v", errors)
-	}
-
-	return nil
+	return errors.ErrorOrNil()
 }
 
 func (p *Publisher) PublishData(subj string, data []byte) error {
