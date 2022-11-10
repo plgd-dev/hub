@@ -121,9 +121,11 @@ func createTmpCertFiles(t *testing.T, caFile, crtFile, keyFile string) general.C
 }
 
 func deleteTmpCertFiles(t *testing.T, cfg general.Config) {
-	err := os.Remove(cfg.CAPool[0])
-	require.NoError(t, err)
-	err = os.Remove(cfg.CertFile)
+	for _, ca := range cfg.CAPool {
+		err := os.Remove(ca)
+		require.NoError(t, err)
+	}
+	err := os.Remove(cfg.CertFile)
 	require.NoError(t, err)
 	err = os.Remove(cfg.KeyFile)
 	require.NoError(t, err)

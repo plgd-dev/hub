@@ -51,10 +51,11 @@ func TestValidateConfig(t *testing.T) {
 		configYaml string
 	}
 	tests := []struct {
-		name    string
-		args    args
-		wantErr bool
-		want    client.Config
+		name            string
+		args            args
+		wantErr         bool
+		want            client.Config
+		wantCAPoolArray []string
 	}{
 		{
 			name: "caPool as string",
@@ -68,9 +69,9 @@ certFile: /tmp/test3570354545/crt4065348335
 				CAPool:   "/tmp/test3570354545/ca3202122454",
 				KeyFile:  "/tmp/test3570354545/key3658110735",
 				CertFile: "/tmp/test3570354545/crt4065348335",
-				CAPoolArray: []string{
-					"/tmp/test3570354545/ca3202122454",
-				},
+			},
+			wantCAPoolArray: []string{
+				"/tmp/test3570354545/ca3202122454",
 			},
 		},
 		{
@@ -84,12 +85,12 @@ certFile: /tmp/test3570354545/crt4065348335
 `,
 			},
 			want: client.Config{
-				CAPool:   "/tmp/test3570354545/ca3202122454",
+				CAPool:   []interface{}{"/tmp/test3570354545/ca3202122454"},
 				KeyFile:  "/tmp/test3570354545/key3658110735",
 				CertFile: "/tmp/test3570354545/crt4065348335",
-				CAPoolArray: []string{
-					"/tmp/test3570354545/ca3202122454",
-				},
+			},
+			wantCAPoolArray: []string{
+				"/tmp/test3570354545/ca3202122454",
 			},
 		},
 		{
@@ -129,6 +130,12 @@ certFile: /tmp/test3570354545/crt4065348335
 				return
 			}
 			require.NoError(t, err)
+			err = tt.want.Validate()
+			require.NoError(t, err)
+			require.Equal(t, tt.want, testCfg)
+			caPoolArray, err := testCfg.CAPoolArray()
+			require.NoError(t, err)
+			require.Equal(t, tt.wantCAPoolArray, caPoolArray)
 		})
 	}
 }
@@ -157,6 +164,8 @@ func TestNew(t *testing.T) {
 	require.NoError(t, err)
 
 	config := createTmpCertFiles(t, caFile.Name(), crtFile.Name(), keyFile.Name())
+	err = config.Validate()
+	require.NoError(t, err)
 
 	logger := log.NewLogger(log.MakeDefaultConfig())
 	// cert manager
@@ -211,7 +220,9 @@ func createTmpCertFiles(t *testing.T, caFile, crtFile, keyFile string) client.Co
 }
 
 func deleteTmpCertFiles(t *testing.T, cfg client.Config) {
-	for _, ca := range cfg.CAPoolArray {
+	caPoolArray, error := cfg.CAPoolArray()
+	require.NoError(t, error)
+	for _, ca := range caPoolArray {
 		err := os.Remove(ca)
 		require.NoError(t, err)
 	}

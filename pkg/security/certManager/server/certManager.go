@@ -17,7 +17,7 @@ type Config struct {
 	CertFile                  string      `yaml:"certFile" json:"certFile" description:"file name of certificate in PEM format"`
 	ClientCertificateRequired bool        `yaml:"clientCertificateRequired" json:"clientCertificateRequired" description:"require client certificate"`
 	CAPoolIsOptional          bool        `yaml:"-" json:"-"`
-	CAPoolArray               []string    `yaml:"-" json:"-"`
+	caPoolArray               []string    `yaml:"-" json:"-"`
 	validated                 bool
 }
 
@@ -26,7 +26,7 @@ func (c *Config) Validate() error {
 	if !ok {
 		return fmt.Errorf("caPool('%v')", c.CAPool)
 	}
-	c.CAPoolArray = caPoolArray
+	c.caPoolArray = caPoolArray
 	if !c.CAPoolIsOptional && len(caPoolArray) == 0 {
 		return fmt.Errorf("caPool('%v')", c.CAPool)
 	}
@@ -38,6 +38,13 @@ func (c *Config) Validate() error {
 	}
 	c.validated = true
 	return nil
+}
+
+func (c *Config) CAPoolArray() ([]string, error) {
+	if !c.validated {
+		return nil, fmt.Errorf("call Validate() first")
+	}
+	return c.caPoolArray, nil
 }
 
 // CertManager holds certificates from filesystem watched for changes
@@ -63,7 +70,7 @@ func New(config Config, fileWatcher *fsnotify.Watcher, logger log.Logger) (*Cert
 		}
 	}
 	c, err := general.New(general.Config{
-		CAPool:                    config.CAPoolArray,
+		CAPool:                    config.caPoolArray,
 		KeyFile:                   config.KeyFile,
 		CertFile:                  config.CertFile,
 		ClientCertificateRequired: config.ClientCertificateRequired,

@@ -53,10 +53,11 @@ func TestValidateConfig(t *testing.T) {
 		caPoolIsOptional bool
 	}
 	tests := []struct {
-		name    string
-		args    args
-		wantErr bool
-		want    server.Config
+		name            string
+		args            args
+		wantErr         bool
+		want            server.Config
+		wantCAPoolArray []string
 	}{
 		{
 			name: "caPool as string",
@@ -70,9 +71,9 @@ certFile: /tmp/test3570354545/crt4065348335
 				CAPool:   "/tmp/test3570354545/ca3202122454",
 				KeyFile:  "/tmp/test3570354545/key3658110735",
 				CertFile: "/tmp/test3570354545/crt4065348335",
-				CAPoolArray: []string{
-					"/tmp/test3570354545/ca3202122454",
-				},
+			},
+			wantCAPoolArray: []string{
+				"/tmp/test3570354545/ca3202122454",
 			},
 		},
 		{
@@ -86,12 +87,14 @@ certFile: /tmp/test3570354545/crt4065348335
 `,
 			},
 			want: server.Config{
-				CAPool:   "/tmp/test3570354545/ca3202122454",
-				KeyFile:  "/tmp/test3570354545/key3658110735",
-				CertFile: "/tmp/test3570354545/crt4065348335",
-				CAPoolArray: []string{
+				CAPool: []interface{}{
 					"/tmp/test3570354545/ca3202122454",
 				},
+				KeyFile:  "/tmp/test3570354545/key3658110735",
+				CertFile: "/tmp/test3570354545/crt4065348335",
+			},
+			wantCAPoolArray: []string{
+				"/tmp/test3570354545/ca3202122454",
 			},
 		},
 		{
@@ -132,6 +135,12 @@ certFile: /tmp/test3570354545/crt4065348335
 				return
 			}
 			require.NoError(t, err)
+			err = tt.want.Validate()
+			require.NoError(t, err)
+			require.Equal(t, tt.want, testCfg)
+			caPoolArray, err := testCfg.CAPoolArray()
+			require.NoError(t, err)
+			require.Equal(t, tt.wantCAPoolArray, caPoolArray)
 		})
 	}
 }
@@ -224,7 +233,9 @@ func createTmpCertFiles(t *testing.T, caFile, crtFile, keyFile string) server.Co
 }
 
 func deleteTmpCertFiles(t *testing.T, cfg server.Config) {
-	for _, ca := range cfg.CAPoolArray {
+	caPoolArray, error := cfg.CAPoolArray()
+	require.NoError(t, error)
+	for _, ca := range caPoolArray {
 		err := os.Remove(ca)
 		require.NoError(t, err)
 	}
