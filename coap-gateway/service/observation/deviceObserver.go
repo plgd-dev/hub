@@ -51,12 +51,11 @@ type DeviceObserver struct {
 }
 
 type DeviceObserverConfig struct {
-	ObservationType              ObservationType
-	TwinEnabled                  bool
-	TwinEnabledSet               bool
-	Logger                       log.Logger
-	RequireBatchObserveEnabled   bool
-	UpdateDeviceMetadataResponse *commands.UpdateDeviceMetadataResponse
+	ObservationType            ObservationType
+	TwinEnabled                bool
+	TwinEnabledSet             bool
+	Logger                     log.Logger
+	RequireBatchObserveEnabled bool
 }
 
 type ClientConn interface {
