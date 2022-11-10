@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/hashicorp/go-multierror"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -16,13 +17,13 @@ func (s *EventStore) RemoveUpToVersion(ctx context.Context, versionQueries []eve
 		normalizedVersionQueries[query.GroupID] = append(normalizedVersionQueries[query.GroupID], query)
 	}
 
-	var errors []error
+	var errors *multierror.Error
 	for _, queries := range normalizedVersionQueries {
 		queryResolver := newQueryResolver(signOperator_lt)
 		for _, q := range queries {
 			err := queryResolver.set(q)
 			if err != nil {
-				errors = append(errors, fmt.Errorf("cannot remove events version for query('%+v'): %w", q, err))
+				errors = multierror.Append(errors, fmt.Errorf("cannot remove events version for query('%+v'): %w", q, err))
 				continue
 			}
 		}
@@ -32,7 +33,7 @@ func (s *EventStore) RemoveUpToVersion(ctx context.Context, versionQueries []eve
 		opts.SetHint(hint)
 		_, err := s.client.Database(s.DBName()).Collection(getEventCollectionName()).DeleteMany(ctx, filter, opts)
 		if err != nil {
-			errors = append(errors, err)
+			errors = multierror.Append(errors, err)
 			continue
 		}
 
@@ -41,7 +42,7 @@ func (s *EventStore) RemoveUpToVersion(ctx context.Context, versionQueries []eve
 			queryResolver := newQueryResolver(signOperator_lt)
 			err := queryResolver.set(q)
 			if err != nil {
-				errors = append(errors, fmt.Errorf("cannot pull events version for query('%+v'): %w", q, err))
+				errors = multierror.Append(errors, fmt.Errorf("cannot pull events version for query('%+v'): %w", q, err))
 				continue
 			}
 			filter, hint = queryResolver.toMongoQuery(firstVersionKey)
@@ -60,13 +61,10 @@ func (s *EventStore) RemoveUpToVersion(ctx context.Context, versionQueries []eve
 				},
 			}, updOpts)
 			if err != nil {
-				errors = append(errors, err)
+				errors = multierror.Append(errors, err)
 				continue
 			}
 		}
 	}
-	if len(errors) > 0 {
-		return fmt.Errorf("%+v", errors)
-	}
-	return nil
+	return errors.ErrorOrNil()
 }

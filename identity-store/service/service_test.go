@@ -2,10 +2,10 @@ package service
 
 import (
 	"context"
-	"fmt"
 	"sync"
 	"testing"
 
+	"github.com/hashicorp/go-multierror"
 	"github.com/plgd-dev/hub/v2/identity-store/persistence"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
@@ -77,17 +77,14 @@ func newTestService(t *testing.T) (*Server, func()) {
 
 func (s *Server) cleanUp() error {
 	p := s.service.persistence
-	var errors []error
+	var errors *multierror.Error
 	if err := p.Clear(context.Background()); err != nil {
-		errors = append(errors, err)
+		errors = multierror.Append(errors, err)
 	}
 	if err := p.Close(context.Background()); err != nil {
-		errors = append(errors, err)
+		errors = multierror.Append(errors, err)
 	}
-	if len(errors) > 0 {
-		return fmt.Errorf("%v", errors)
-	}
-	return nil
+	return errors.ErrorOrNil()
 }
 
 func newTestDevice() *persistence.AuthorizedDevice {

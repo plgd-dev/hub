@@ -6,6 +6,7 @@ import (
 	"sync"
 	"sync/atomic"
 
+	"github.com/hashicorp/go-multierror"
 	nats "github.com/nats-io/nats.go"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	isEvents "github.com/plgd-dev/hub/v2/identity-store/events"
@@ -58,17 +59,14 @@ func registrationEventToGrpcEvent(e *isEvents.Event) (*pb.Event, FilterBitmask) 
 }
 
 func sendToSenders(ev *pb.Event, bit FilterBitmask, senders []func(e *pb.Event, typeBit FilterBitmask) error) error {
-	var errors []error
+	var errors *multierror.Error
 	for _, send := range senders {
 		err := send(ev, bit)
 		if err != nil {
-			errors = append(errors, err)
+			errors = multierror.Append(errors, err)
 		}
 	}
-	if len(errors) > 0 {
-		return fmt.Errorf("%v", errors)
-	}
-	return nil
+	return errors.ErrorOrNil()
 }
 
 func (d *eventSubject) HandleRegistrationsEvent(msg *nats.Msg) error {

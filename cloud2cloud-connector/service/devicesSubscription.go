@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/hashicorp/go-multierror"
 	"github.com/plgd-dev/go-coap/v3/pkg/cache"
 	"github.com/plgd-dev/hub/v2/cloud2cloud-connector/events"
 	"github.com/plgd-dev/hub/v2/cloud2cloud-connector/store"
@@ -52,12 +53,12 @@ func (s *SubscriptionManager) SubscribeToDevices(ctx context.Context, linkedAcco
 	}
 	_, _, err = s.store.LoadOrCreateSubscription(sub)
 	if err != nil {
-		errors := make([]error, 1, 2)
-		errors = append(errors, fmt.Errorf("cannot store subscription to DB: %w", err))
+		var errors *multierror.Error
+		errors = multierror.Append(errors, fmt.Errorf("cannot store subscription to DB: %w", err))
 		if err2 := cancelDevicesSubscription(ctx, s.tracerProvider, linkedAccount, linkedCloud, sub.ID); err2 != nil {
-			errors = append(errors, fmt.Errorf("cannot cancel subscription %v: %w", sub.ID, err2))
+			errors = multierror.Append(errors, fmt.Errorf("cannot cancel subscription %v: %w", sub.ID, err2))
 		}
-		return fmt.Errorf("%v", errors)
+		return errors.ErrorOrNil()
 	}
 	return nil
 }
@@ -86,13 +87,13 @@ func cancelDevicesSubscription(ctx context.Context, tracerProvider trace.TracerP
 }
 
 func (s *SubscriptionManager) HandleDevicesRegistered(ctx context.Context, d subscriptionData, devices events.DevicesRegistered, header events.EventHeader) error {
-	var errors []error
+	var errors *multierror.Error
 	for _, device := range devices {
 		_, err := s.isClient.AddDevice(ctx, &pbIS.AddDeviceRequest{
 			DeviceId: device.ID,
 		})
 		if err != nil {
-			errors = append(errors, err)
+			errors = multierror.Append(errors, err)
 			continue
 		}
 		if d.linkedCloud.SupportedSubscriptionEvents.StaticDeviceEvents {
@@ -114,15 +115,12 @@ func (s *SubscriptionManager) HandleDevicesRegistered(ctx context.Context, d sub
 			deviceID:      device.ID,
 		})
 	}
-	if len(errors) > 0 {
-		return fmt.Errorf("%v", errors)
-	}
-	return nil
+	return errors.ErrorOrNil()
 }
 
 func (s *SubscriptionManager) HandleDevicesUnregistered(ctx context.Context, subscriptionData subscriptionData, correlationID string, devices events.DevicesUnregistered) error {
 	userID := subscriptionData.linkedAccount.UserID
-	var errors []error
+	var errors *multierror.Error
 	for _, device := range devices {
 		_, ok := s.store.PullOutDevice(subscriptionData.linkedAccount.LinkedCloudID, subscriptionData.linkedAccount.ID, device.ID)
 		if !ok {
@@ -133,25 +131,22 @@ func (s *SubscriptionManager) HandleDevicesUnregistered(ctx context.Context, sub
 			DeviceIds: []string{device.ID},
 		})
 		if err != nil {
-			errors = append(errors, fmt.Errorf("cannot remove device %v from user: %w", device.ID, err))
+			errors = multierror.Append(errors, fmt.Errorf("cannot remove device %v from user: %w", device.ID, err))
 		}
 		if err == nil && len(resp.DeviceIds) != 1 {
-			errors = append(errors, fmt.Errorf("cannot remove device %v from user", device.ID))
+			errors = multierror.Append(errors, fmt.Errorf("cannot remove device %v from user", device.ID))
 		}
 		err = s.devicesSubscription.Delete(userID, device.ID)
 		if err != nil {
-			errors = append(errors, fmt.Errorf("cannot unregister device %v from resource projection: %w", device.ID, err))
+			errors = multierror.Append(errors, fmt.Errorf("cannot unregister device %v from resource projection: %w", device.ID, err))
 		}
 	}
-	if len(errors) > 0 {
-		return fmt.Errorf("%v", errors)
-	}
-	return nil
+	return errors.ErrorOrNil()
 }
 
 // HandleDevicesOnline sets device online to resource aggregate and register device to projection.
 func (s *SubscriptionManager) HandleDevicesOnline(ctx context.Context, d subscriptionData, header events.EventHeader, devices events.DevicesOnline) error {
-	var errors []error
+	var errors *multierror.Error
 	for _, device := range devices {
 		_, err := s.raClient.UpdateDeviceMetadata(ctx, &commands.UpdateDeviceMetadataRequest{
 			DeviceId: device.ID,
@@ -166,19 +161,16 @@ func (s *SubscriptionManager) HandleDevicesOnline(ctx context.Context, d subscri
 			},
 		})
 		if err != nil {
-			errors = append(errors, fmt.Errorf("cannot set device %v to online: %w", device.ID, err))
+			errors = multierror.Append(errors, fmt.Errorf("cannot set device %v to online: %w", device.ID, err))
 		}
 	}
-	if len(errors) > 0 {
-		return fmt.Errorf("%v", errors)
-	}
 
-	return nil
+	return errors.ErrorOrNil()
 }
 
 // HandleDevicesOffline sets device off to resource aggregate and unregister device to projection.
 func (s *SubscriptionManager) HandleDevicesOffline(ctx context.Context, d subscriptionData, header events.EventHeader, devices events.DevicesOffline) error {
-	var errors []error
+	var errors *multierror.Error
 	for _, device := range devices {
 		_, err := s.raClient.UpdateDeviceMetadata(ctx, &commands.UpdateDeviceMetadataRequest{
 			DeviceId: device.ID,
@@ -193,14 +185,10 @@ func (s *SubscriptionManager) HandleDevicesOffline(ctx context.Context, d subscr
 			},
 		})
 		if err != nil {
-			errors = append(errors, fmt.Errorf("cannot set device %v to offline: %w", device.ID, err))
+			errors = multierror.Append(errors, fmt.Errorf("cannot set device %v to offline: %w", device.ID, err))
 		}
 	}
-	if len(errors) > 0 {
-		return fmt.Errorf("%v", errors)
-	}
-
-	return nil
+	return errors.ErrorOrNil()
 }
 
 func decodeError(err error) error {

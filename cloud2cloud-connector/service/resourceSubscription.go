@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/hashicorp/go-multierror"
 	"github.com/plgd-dev/go-coap/v3/pkg/cache"
 	"github.com/plgd-dev/hub/v2/cloud2cloud-connector/events"
 	"github.com/plgd-dev/hub/v2/cloud2cloud-connector/store"
@@ -54,12 +55,12 @@ func (s *SubscriptionManager) SubscribeToResource(ctx context.Context, deviceID,
 	}
 	_, _, err = s.store.LoadOrCreateSubscription(sub)
 	if err != nil {
-		errors := make([]error, 1, 2)
-		errors = append(errors, fmt.Errorf("cannot store resource subscription to DB: %w", err))
+		var errors *multierror.Error
+		errors = multierror.Append(errors, fmt.Errorf("cannot store resource subscription to DB: %w", err))
 		if err2 := cancelResourceSubscription(ctx, s.tracerProvider, linkedAccount, linkedCloud, sub.DeviceID, sub.Href, sub.ID); err2 != nil {
-			errors = append(errors, fmt.Errorf("cannot cancel resource %v/%v subscription: %w", sub.DeviceID, sub.Href, err2))
+			errors = multierror.Append(errors, fmt.Errorf("cannot cancel resource %v/%v subscription: %w", sub.DeviceID, sub.Href, err2))
 		}
-		return fmt.Errorf("%v", errors)
+		return errors.ErrorOrNil()
 	}
 	return nil
 }

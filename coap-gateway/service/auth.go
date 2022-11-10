@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/hashicorp/go-multierror"
 	"github.com/plgd-dev/device/v2/pkg/net/coap"
 	"github.com/plgd-dev/go-coap/v3/message/codes"
 	"github.com/plgd-dev/hub/v2/coap-gateway/uri"
@@ -118,17 +119,17 @@ func MakeGetConfigForClient(tlsCfg *tls.Config) tls.Config {
 		ClientAuth:     tlsCfg.ClientAuth,
 		ClientCAs:      tlsCfg.ClientCAs,
 		VerifyPeerCertificate: func(rawCerts [][]byte, chains [][]*x509.Certificate) error {
-			var errors []error
+			var errors *multierror.Error
 			for _, chain := range chains {
 				err := verifyChain(chain, tlsCfg.ClientCAs)
 				if err == nil {
 					return nil
 				}
-				errors = append(errors, err)
+				errors = multierror.Append(errors, err)
 			}
 			err := fmt.Errorf("empty chains")
-			if len(errors) > 0 {
-				err = fmt.Errorf("%v", errors)
+			if errors.ErrorOrNil() != nil {
+				err = errors
 			}
 			return pkgX509.NewError(chains, err)
 		},

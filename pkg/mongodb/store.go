@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/hashicorp/go-multierror"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -59,13 +60,12 @@ func NewStoreWithCollection(ctx context.Context, cfg Config, tls *tls.Config, tr
 	}
 	err = s.EnsureIndex(ctx, collection, indexes...)
 	if err != nil {
-		errors := []error{
-			err,
-		}
+		var errors *multierror.Error
+		errors = multierror.Append(errors, err)
 		if err = s.client.Disconnect(ctx); err != nil {
-			errors = append(errors, fmt.Errorf("failed to disconnect mongodb client: %w", err))
+			errors = multierror.Append(errors, fmt.Errorf("failed to disconnect mongodb client: %w", err))
 		}
-		return nil, fmt.Errorf("%v", errors)
+		return nil, errors.ErrorOrNil()
 	}
 	return s, nil
 }

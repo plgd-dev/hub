@@ -7,6 +7,7 @@ import (
 	"io"
 	"time"
 
+	"github.com/hashicorp/go-multierror"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	grpcSubscription "github.com/plgd-dev/hub/v2/grpc-gateway/subscription"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
@@ -96,21 +97,18 @@ func (s *Sub) initEvents(devices []string) error {
 		s.initResourceChanged,
 		s.initPendingCommands,
 	}
-	var errors []error
+	var errors *multierror.Error
 	var validUntil time.Time
 	start := time.Now()
 	for _, f := range initEventFuncs {
 		err := f(devices, &validUntil)
 		if err != nil {
-			errors = append(errors, err)
+			errors = multierror.Append(errors, err)
 		}
 	}
 	now := time.Now()
 	validUntil = now.Add(now.Sub(start) + s.expiration)
-	if len(errors) > 0 {
-		return fmt.Errorf("%v", errors)
-	}
-	return nil
+	return errors.ErrorOrNil()
 }
 
 func (s *Sub) Init(id string) error {

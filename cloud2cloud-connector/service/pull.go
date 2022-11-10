@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/hashicorp/go-multierror"
 	"github.com/plgd-dev/device/v2/schema"
 	"github.com/plgd-dev/device/v2/schema/device"
 	"github.com/plgd-dev/go-coap/v3/message"
@@ -110,7 +111,7 @@ func Get(ctx context.Context, tracerProvider trace.TracerProvider, url string, l
 func publishDeviceResources(ctx context.Context, raClient raService.ResourceAggregateClient, deviceID string, linkedAccount store.LinkedAccount,
 	linkedCloud store.LinkedCloud, dev RetrieveDeviceWithLinksResponse, triggerTask OnTaskTrigger,
 ) error {
-	var errors []error
+	var errors *multierror.Error
 	ctx = kitNetGrpc.CtxWithToken(ctx, linkedAccount.Data.Origin().AccessToken.String())
 	for _, link := range dev.Links {
 		link.DeviceID = deviceID
@@ -121,7 +122,7 @@ func publishDeviceResources(ctx context.Context, raClient raService.ResourceAggr
 			Sequence:     uint64(time.Now().UnixNano()),
 		})
 		if err != nil {
-			errors = append(errors, fmt.Errorf("cannot publish resource %+v: %w", link, err))
+			errors = multierror.Append(errors, fmt.Errorf("cannot publish resource %+v: %w", link, err))
 			continue
 		}
 		if linkedCloud.SupportedSubscriptionEvents.NeedPullResources() {
@@ -135,10 +136,7 @@ func publishDeviceResources(ctx context.Context, raClient raService.ResourceAggr
 			href:          href,
 		})
 	}
-	if len(errors) > 0 {
-		return fmt.Errorf("%+v", errors)
-	}
-	return nil
+	return errors.ErrorOrNil()
 }
 
 func toConnectionStatus(status string) commands.Connection_Status {
@@ -176,36 +174,36 @@ func (p *pullDevicesHandler) triggerTaskForDevice(ctx context.Context, linkedAcc
 	return nil
 }
 
-func (p *pullDevicesHandler) deleteDevice(ctx context.Context, userID, deviceID string) []error {
-	var errors []error
+func (p *pullDevicesHandler) deleteDevice(ctx context.Context, userID, deviceID string) error {
+	var errors *multierror.Error
 	err := p.devicesSubscription.Delete(userID, deviceID)
 	if err != nil {
-		errors = append(errors, fmt.Errorf("cannot delete device %v from devicesSubscription: %w", deviceID, err))
+		errors = multierror.Append(errors, fmt.Errorf("cannot delete device %v from devicesSubscription: %w", deviceID, err))
 	}
 	resp, err := p.isClient.DeleteDevices(ctx, &pbIS.DeleteDevicesRequest{
 		DeviceIds: []string{deviceID},
 	})
 	if err != nil {
-		errors = append(errors, fmt.Errorf("cannot delete device %v: %w", deviceID, err))
+		errors = multierror.Append(errors, fmt.Errorf("cannot delete device %v: %w", deviceID, err))
 	}
 	if err == nil && len(resp.DeviceIds) != 1 {
-		errors = append(errors, fmt.Errorf("cannot remove device %v", deviceID))
+		errors = multierror.Append(errors, fmt.Errorf("cannot remove device %v", deviceID))
 	}
-	return errors
+	return errors.ErrorOrNil()
 }
 
-func (p *pullDevicesHandler) pullDevices(ctx context.Context, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud, devices []RetrieveDeviceWithLinksResponse) (bool, []error) {
-	var errors []error
+func (p *pullDevicesHandler) pullDevices(ctx context.Context, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud, devices []RetrieveDeviceWithLinksResponse) (bool, *multierror.Error) {
+	var errors *multierror.Error
 	registeredDevices, err := getOwnerDevices(ctx, p.isClient)
 	if err != nil {
-		return false, []error{err}
+		return false, multierror.Append(err)
 	}
 
 	for _, dev := range devices {
 		deviceID := dev.Device.Device.ID
 		err := p.devicesSubscription.Add(ctx, deviceID, linkedAccount, linkedCloud)
 		if err != nil {
-			errors = append(errors, fmt.Errorf("cannot add device %v to devicesSubscription: %w", deviceID, err))
+			errors = multierror.Append(errors, fmt.Errorf("cannot add device %v to devicesSubscription: %w", deviceID, err))
 		}
 
 		ok := registeredDevices[deviceID]
@@ -214,7 +212,7 @@ func (p *pullDevicesHandler) pullDevices(ctx context.Context, linkedAccount stor
 				DeviceId: deviceID,
 			})
 			if err != nil {
-				errors = append(errors, fmt.Errorf("cannot addDevice %v: %w", deviceID, err))
+				errors = multierror.Append(errors, fmt.Errorf("cannot addDevice %v: %w", deviceID, err))
 				continue
 			}
 		}
@@ -232,14 +230,14 @@ func (p *pullDevicesHandler) pullDevices(ctx context.Context, linkedAccount stor
 			},
 		})
 		if err != nil {
-			errors = append(errors, fmt.Errorf("cannot update cloud status: %v: %w", deviceID, err))
+			errors = multierror.Append(errors, fmt.Errorf("cannot update cloud status: %v: %w", deviceID, err))
 		}
 	}
 
 	userID := linkedAccount.UserID
 	for deviceID := range registeredDevices {
 		if err := p.deleteDevice(ctx, deviceID, userID); err != nil {
-			errors = append(errors, err...)
+			errors = multierror.Append(errors, err)
 		}
 	}
 	return true, errors
@@ -252,25 +250,22 @@ func (p *pullDevicesHandler) getDevicesWithResourceLinks(ctx context.Context, li
 		return err
 	}
 
-	var errors []error
+	var errors *multierror.Error
 	ctx = kitNetGrpc.CtxWithToken(ctx, linkedAccount.Data.Origin().AccessToken.String())
 	if linkedCloud.SupportedSubscriptionEvents.NeedPullDevices() {
 		ok, pullErrors := p.pullDevices(ctx, linkedAccount, linkedCloud, devices)
 		if !ok {
-			return fmt.Errorf("%+v", errors)
+			return errors.ErrorOrNil()
 		}
-		errors = append(errors, pullErrors...)
+		errors = multierror.Append(errors, pullErrors)
 	}
 
 	for _, dev := range devices {
 		if err := p.triggerTaskForDevice(ctx, linkedAccount, linkedCloud, dev); err != nil {
-			errors = append(errors, err)
+			errors = multierror.Append(errors, err)
 		}
 	}
-	if len(errors) > 0 {
-		return fmt.Errorf("%+v", errors)
-	}
-	return nil
+	return errors.ErrorOrNil()
 }
 
 type Representation struct {
@@ -322,21 +317,17 @@ func (p *pullDevicesHandler) getDevicesWithResourceValues(ctx context.Context, l
 		return err
 	}
 
-	var errors []error
+	var errors *multierror.Error
 	ctx = kitNetGrpc.CtxWithToken(ctx, linkedAccount.Data.Origin().AccessToken.String())
 	for _, dev := range devices {
 		deviceID := dev.Device.Device.ID
 		for _, link := range dev.Links {
 			if err := p.notifyResourceChanged(ctx, linkedAccount, deviceID, link); err != nil {
-				errors = append(errors, err)
+				errors = multierror.Append(errors, err)
 			}
 		}
 	}
-	if len(errors) > 0 {
-		return fmt.Errorf("%+v", errors)
-	}
-
-	return nil
+	return errors.ErrorOrNil()
 }
 
 func refreshTokens(ctx context.Context, traceProvider trace.TracerProvider, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud, provider *oauth2.PlgdProvider, s *Store) (store.LinkedAccount, error) {
@@ -372,23 +363,20 @@ func (p *pullDevicesHandler) pullDevicesFromAccount(ctx context.Context, linkedA
 	if err != nil {
 		return err
 	}
-	var errors []error
+	var errors *multierror.Error
 	if linkedCloud.SupportedSubscriptionEvents.NeedPullDevices() || linkedCloud.SupportedSubscriptionEvents.NeedPullDevice() {
 		err = p.getDevicesWithResourceLinks(ctx, linkedAccount, linkedCloud)
 		if err != nil {
-			errors = append(errors, err)
+			errors = multierror.Append(errors, err)
 		}
 	}
 	if linkedCloud.SupportedSubscriptionEvents.NeedPullResources() {
 		err = p.getDevicesWithResourceValues(ctx, linkedAccount, linkedCloud)
 		if err != nil {
-			errors = append(errors, err)
+			errors = multierror.Append(errors, err)
 		}
 	}
-	if len(errors) > 0 {
-		return fmt.Errorf("%+v", errors)
-	}
-	return nil
+	return errors.ErrorOrNil()
 }
 
 func (p *pullDevicesHandler) pullLinkedAccountsDevices(ctx context.Context) {

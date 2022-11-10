@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/hashicorp/go-multierror"
 	pkgTime "github.com/plgd-dev/hub/v2/pkg/time"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore"
 	"go.mongodb.org/mongo-driver/bson"
@@ -241,26 +242,23 @@ func (s *EventStore) loadEvents(ctx context.Context, versionQueries []eventstore
 		normalizedVersionQueries[query.GroupID] = append(normalizedVersionQueries[query.GroupID], query)
 	}
 
-	var errors []error
+	var errors *multierror.Error
 	for _, queries := range normalizedVersionQueries {
 		queryResolver := newQueryResolver(op)
 		for _, q := range queries {
 			err := queryResolver.set(q)
 			if err != nil {
-				errors = append(errors, fmt.Errorf("cannot load events version for query('%+v'): %w", q, err))
+				errors = multierror.Append(errors, fmt.Errorf("cannot load events version for query('%+v'): %w", q, err))
 				continue
 			}
 		}
 		err := s.loadMongoQuery(ctx, eh, queryResolver, maxVersionKey)
 		if err != nil {
-			errors = append(errors, err)
+			errors = multierror.Append(errors, err)
 			continue
 		}
 	}
-	if len(errors) > 0 {
-		return fmt.Errorf("%+v", errors)
-	}
-	return nil
+	return errors.ErrorOrNil()
 }
 
 // LoadFromVersion loads aggregates events from version.
@@ -345,15 +343,12 @@ func (s *EventStore) LoadFromSnapshot(ctx context.Context, queries []eventstore.
 		normalizeQuery[query.GroupID] = v
 	}
 
-	var errors []error
+	var errors *multierror.Error
 	for groupID, queries := range normalizeQuery {
 		err := s.loadFromSnapshot(ctx, groupID, queries, eventHandler)
 		if err != nil {
-			errors = append(errors, err)
+			errors = multierror.Append(errors, err)
 		}
 	}
-	if len(errors) > 0 {
-		return fmt.Errorf("%+v", errors)
-	}
-	return nil
+	return errors.ErrorOrNil()
 }

@@ -9,6 +9,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/hashicorp/go-multierror"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
@@ -118,15 +119,15 @@ func (s *ResourceSubscription) ID() string {
 }
 
 func (s *ResourceSubscription) cancelAndHandleError(err error) {
-	errors := make([]error, 0, 2)
+	var errors *multierror.Error
 	if err != nil {
-		errors = append(errors, err)
+		errors = multierror.Append(errors, err)
 	}
 	if _, err := s.Cancel(); err != nil {
-		errors = append(errors, fmt.Errorf("failed to cancel resource subscription: %w", err))
+		errors = multierror.Append(errors, fmt.Errorf("failed to cancel resource subscription: %w", err))
 	}
-	if len(errors) > 0 {
-		s.closeErrorHandler.Error(fmt.Errorf("%+v", errors))
+	if errors.ErrorOrNil() != nil {
+		s.closeErrorHandler.Error(errors)
 	}
 }
 
