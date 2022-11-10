@@ -84,11 +84,7 @@ func (d *DeviceMetadataSnapshotTaken) HandleDeviceMetadataUpdated(ctx context.Co
 	}
 
 	d.DeviceId = upd.GetDeviceId()
-	if d.DeviceMetadataUpdated == nil {
-		d.DeviceMetadataUpdated = upd
-	} else {
-		d.DeviceMetadataUpdated.CopyData(upd)
-	}
+	d.DeviceMetadataUpdated = upd
 	d.EventMetadata = upd.GetEventMetadata()
 	return true, nil
 }
