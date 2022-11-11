@@ -55,7 +55,7 @@ func TestRequestHandlerRetrieveResourceSubscription(t *testing.T) {
 
 	const resourceHref = test.TestResourceSwitchesHref
 	subscriber := c2cTest.NewC2CSubscriber(eventsServer.GetPort(t), eventsURI, c2cTest.SubscriptionType_Resource)
-	subID := subscriber.Subscribe(t, ctx, token, deviceID, resourceHref, c2cEvents.EventTypes{c2cEvents.EventType_ResourceChanged})
+	subID := subscriber.Subscribe(ctx, t, token, deviceID, resourceHref, c2cEvents.EventTypes{c2cEvents.EventType_ResourceChanged})
 	require.NotEmpty(t, subID)
 
 	events := c2cTest.WaitForEvents(dataChan, 3*time.Second)
@@ -169,7 +169,7 @@ func TestRequestHandlerRetrieveResourceSubscription(t *testing.T) {
 		})
 	}
 
-	subscriber.Unsubscribe(t, ctx, token, deviceID, resourceHref, subID)
+	subscriber.Unsubscribe(ctx, t, token, deviceID, resourceHref, subID)
 	ev := <-dataChan
 	assert.Equal(t, c2cEvents.EventType_SubscriptionCanceled, ev.GetHeader().EventType)
 }

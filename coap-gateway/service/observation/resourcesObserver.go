@@ -150,7 +150,7 @@ func (o *resourcesObserver) addResourceLocked(res *commands.Resource, obsInterfa
 	if o.resources.contains(href) {
 		return nil, nil
 	}
-	obsRes := NewObservedResource(href, obsInterface, res.IsObservable())
+	obsRes := newObservedResource(href, obsInterface, res.IsObservable())
 	o.resources = o.resources.insert(obsRes)
 	return obsRes, nil
 }

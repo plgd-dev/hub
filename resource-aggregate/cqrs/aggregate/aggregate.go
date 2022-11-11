@@ -145,7 +145,7 @@ func HandleRetry(ctx context.Context, retryFunc RetryFunc) error {
 	return nil
 }
 
-func NewAggrModel(ctx context.Context, groupID, aggregateID string, store eventstore.EventStore, logDebugfFunc eventstore.LogDebugfFunc, model AggregateModel) (*aggrModel, error) {
+func NewAggrModel(ctx context.Context, groupID, aggregateID string, store eventstore.EventStore, logDebugfFunc eventstore.LogDebugfFunc, model AggregateModel) (*aggrModel, error) { //nolint:revive
 	amodel := &aggrModel{model: model}
 	ep := eventstore.NewProjection(store, func(ctx context.Context, groupID, aggregateID string) (eventstore.Model, error) { return amodel, nil }, logDebugfFunc)
 	err := ep.Project(ctx, []eventstore.SnapshotQuery{

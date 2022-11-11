@@ -17,14 +17,14 @@ import (
 // the last (refreshToken, oauth2.token) pair and if the authorization code for next Refresh
 // call is the same as the cache value then the call is skipped and the stored token
 // is returned instead.
-type refreshCache struct {
+type RefreshCache struct {
 	refreshToken string
 	token        *future.Future
 	mutex        sync.Mutex
 }
 
-func NewRefreshCache() *refreshCache {
-	return &refreshCache{}
+func NewRefreshCache() *RefreshCache {
+	return &RefreshCache{}
 }
 
 func refresh(ctx context.Context, providers map[string]*oauth2.PlgdProvider, queue *queue.Queue, refreshToken string, logger log.Logger) (*oauth2.Token, error) {
@@ -69,7 +69,7 @@ func refresh(ctx context.Context, providers map[string]*oauth2.PlgdProvider, que
 	return nil, fmt.Errorf("invalid token")
 }
 
-func (r *refreshCache) getFutureToken(refreshToken string) (*future.Future, future.SetFunc) {
+func (r *RefreshCache) getFutureToken(refreshToken string) (*future.Future, future.SetFunc) {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 	if r.token == nil || r.refreshToken != refreshToken {
@@ -81,7 +81,7 @@ func (r *refreshCache) getFutureToken(refreshToken string) (*future.Future, futu
 	return r.token, nil
 }
 
-func (r *refreshCache) Execute(ctx context.Context, providers map[string]*oauth2.PlgdProvider, queue *queue.Queue, refreshToken string, logger log.Logger) (*oauth2.Token, error) {
+func (r *RefreshCache) Execute(ctx context.Context, providers map[string]*oauth2.PlgdProvider, queue *queue.Queue, refreshToken string, logger log.Logger) (*oauth2.Token, error) {
 	if refreshToken == "" {
 		return nil, fmt.Errorf("invalid refreshToken")
 	}
@@ -105,7 +105,7 @@ func (r *refreshCache) Execute(ctx context.Context, providers map[string]*oauth2
 	return token, nil
 }
 
-func (r *refreshCache) Clear() {
+func (r *RefreshCache) Clear() {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 	r.refreshToken = ""

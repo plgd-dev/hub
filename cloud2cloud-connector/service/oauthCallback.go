@@ -9,7 +9,7 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/security/oauth2"
 )
 
-func (rh *RequestHandler) handleLinkedData(ctx context.Context, data provisionCacheData, authCode string) (provisionCacheData, error) {
+func (rh *RequestHandler) handleLinkedData(ctx context.Context, data ProvisionCacheData, authCode string) (ProvisionCacheData, error) {
 	if !data.linkedAccount.Data.HasOrigin() {
 		token, err := rh.provider.Exchange(ctx, authCode)
 		if err != nil {

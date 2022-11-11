@@ -145,8 +145,8 @@ func New(t *testing.T, cfg service.Config) func() {
 	}
 }
 
-func NewRequest(method, host, url string, body io.Reader) *requestBuilder {
-	b := requestBuilder{
+func NewRequestBuilder(method, host, url string, body io.Reader) *RequestBuilder {
+	b := RequestBuilder{
 		method:      method,
 		body:        body,
 		uri:         fmt.Sprintf("https://%s%s", host, url),
@@ -157,7 +157,7 @@ func NewRequest(method, host, url string, body io.Reader) *requestBuilder {
 	return &b
 }
 
-type requestBuilder struct {
+type RequestBuilder struct {
 	method      string
 	body        io.Reader
 	uri         string
@@ -166,12 +166,12 @@ type requestBuilder struct {
 	queryParams map[string]string
 }
 
-func (c *requestBuilder) AddQuery(key, value string) *requestBuilder {
+func (c *RequestBuilder) AddQuery(key, value string) *RequestBuilder {
 	c.queryParams[key] = value
 	return c
 }
 
-func (c *requestBuilder) Build() *http.Request {
+func (c *RequestBuilder) Build() *http.Request {
 	tmp, _ := uritemplates.Parse(c.uri)
 	uri, _ := tmp.Expand(c.uriParams)
 	url, _ := url.Parse(uri)
@@ -216,7 +216,7 @@ func GetAccessToken(t *testing.T, authServerHost, clientID string) string {
 	d, err := json.Encode(reqBody)
 	require.NoError(t, err)
 
-	getReq := NewRequest(http.MethodPost, authServerHost, uri.Token, bytes.NewReader(d)).Build()
+	getReq := NewRequestBuilder(http.MethodPost, authServerHost, uri.Token, bytes.NewReader(d)).Build()
 	res := HTTPDo(t, getReq, false)
 	defer func() {
 		_ = res.Body.Close()
@@ -259,7 +259,7 @@ func GetAuthorizationCode(t *testing.T, authServerHost, clientID, deviceID, scop
 		q.Add(uri.ScopeKey, scopes)
 	}
 	u.RawQuery = q.Encode()
-	getReq := NewRequest(http.MethodGet, authServerHost, u.String(), nil).Build()
+	getReq := NewRequestBuilder(http.MethodGet, authServerHost, u.String(), nil).Build()
 	res := HTTPDo(t, getReq, false)
 	defer func() {
 		_ = res.Body.Close()

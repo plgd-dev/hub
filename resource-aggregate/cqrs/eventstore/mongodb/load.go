@@ -28,7 +28,7 @@ type iterator struct {
 	err         error
 }
 
-func NewIterator(iter *mongo.Cursor, queryResolver *queryResolver, dataUnmarshaler UnmarshalerFunc, logDebugfFunc LogDebugfFunc) *iterator {
+func newIterator(iter *mongo.Cursor, queryResolver *queryResolver, dataUnmarshaler UnmarshalerFunc, logDebugfFunc LogDebugfFunc) *iterator {
 	return &iterator{
 		queryResolver:   queryResolver,
 		iter:            iter,
@@ -190,7 +190,7 @@ func (s *EventStore) loadEventsQuery(ctx context.Context, eh eventstore.Handler,
 	if err != nil {
 		return err
 	}
-	i := NewIterator(iter, queryResolver, s.dataUnmarshaler, s.LogDebugfFunc)
+	i := newIterator(iter, queryResolver, s.dataUnmarshaler, s.LogDebugfFunc)
 	err = eh.Handle(ctx, i)
 	errClose := iter.Close(ctx)
 	if err == nil {

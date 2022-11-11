@@ -131,7 +131,7 @@ func TestAggregateHandlePublishResourceLinks(t *testing.T) {
 	}
 }
 
-func testHandlePublishResource(t *testing.T, ctx context.Context, publisher *publisher.Publisher, eventstore service.EventStore, userID, deviceID string, hrefs []string) {
+func testHandlePublishResource(ctx context.Context, t *testing.T, publisher *publisher.Publisher, eventstore service.EventStore, userID, deviceID string, hrefs []string) {
 	pc := testMakePublishResourceRequest(deviceID, hrefs)
 
 	ag, err := service.NewAggregate(commands.NewResourceID(pc.GetDeviceId(), commands.ResourceLinksHref), 10, eventstore, service.ResourceLinksFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
@@ -237,7 +237,7 @@ func TestAggregateHandleUnpublishResource(t *testing.T) {
 		naClient.Close()
 	}()
 
-	testHandlePublishResource(t, ctx, publisher, eventstore, userID, deviceID, []string{resourceID})
+	testHandlePublishResource(ctx, t, publisher, eventstore, userID, deviceID, []string{resourceID})
 
 	pc := testMakeUnpublishResourceRequest(deviceID, []string{resourceID})
 
@@ -293,7 +293,7 @@ func TestAggregateHandleUnpublishAllResources(t *testing.T) {
 		naClient.Close()
 	}()
 
-	testHandlePublishResource(t, ctx, publisher, eventstore, userID, deviceID, []string{resourceID1, resourceID2, resourceID3})
+	testHandlePublishResource(ctx, t, publisher, eventstore, userID, deviceID, []string{resourceID1, resourceID2, resourceID3})
 
 	pc := testMakeUnpublishResourceRequest(deviceID, []string{})
 
@@ -356,7 +356,7 @@ func TestAggregateHandleUnpublishResourceSubset(t *testing.T) {
 		naClient.Close()
 	}()
 
-	testHandlePublishResource(t, ctx, publisher, eventstore, userID, deviceID, []string{resourceID1, resourceID2, resourceID3, resourceID4})
+	testHandlePublishResource(ctx, t, publisher, eventstore, userID, deviceID, []string{resourceID1, resourceID2, resourceID3, resourceID4})
 
 	ag, err := service.NewAggregate(commands.NewResourceID(deviceID, commands.ResourceLinksHref), 10, eventstore, service.ResourceLinksFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
 	assert.NoError(t, err)
@@ -671,7 +671,7 @@ func TestAggregateHandleNotifyContentChanged(t *testing.T) {
 		naClient.Close()
 	}()
 
-	testHandlePublishResource(t, ctx, publisher, eventstore, userID, deviceID, []string{resourceID})
+	testHandlePublishResource(ctx, t, publisher, eventstore, userID, deviceID, []string{resourceID})
 
 	ag, err := service.NewAggregate(commands.NewResourceID(deviceID, resourceID), 10, eventstore, service.ResourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
 	assert.NoError(t, err)

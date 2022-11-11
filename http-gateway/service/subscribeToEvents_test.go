@@ -55,7 +55,7 @@ type updateChecker struct {
 }
 
 // update light resource and check received events
-func (u *updateChecker) checkUpdateLightResource(t *testing.T, ctx context.Context, power uint64) {
+func (u *updateChecker) checkUpdateLightResource(ctx context.Context, t *testing.T, power uint64) {
 	_, err := u.c.UpdateResource(ctx, &pb.UpdateResourceRequest{
 		ResourceId: commands.NewResourceID(u.deviceID, test.TestResourceLightInstanceHref("1")),
 		Content: &pb.Content{
@@ -260,8 +260,8 @@ func TestRequestHandlerSubscribeToEvents(t *testing.T) {
 		subUpdatedID: ev.SubscriptionId,
 		recv:         recv,
 	}
-	updChecker.checkUpdateLightResource(t, ctx, 99)
-	updChecker.checkUpdateLightResource(t, ctx, 0)
+	updChecker.checkUpdateLightResource(ctx, t, 99)
+	updChecker.checkUpdateLightResource(ctx, t, 0)
 
 	err = send(&pb.SubscribeToEvents{
 		CorrelationId: "receivePending + resourceReceived",

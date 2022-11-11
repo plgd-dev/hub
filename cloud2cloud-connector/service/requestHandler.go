@@ -23,7 +23,7 @@ const (
 	accountIDKey = "AccountId"
 )
 
-type provisionCacheData struct {
+type ProvisionCacheData struct {
 	linkedAccount store.LinkedAccount
 	linkedCloud   store.LinkedCloud
 }
@@ -33,7 +33,7 @@ type RequestHandler struct {
 	ownerClaim     string
 	provider       *pkgOAuth2.PlgdProvider
 	store          *Store
-	provisionCache *cache.Cache[string, provisionCacheData]
+	provisionCache *cache.Cache[string, ProvisionCacheData]
 	subManager     *SubscriptionManager
 	triggerTask    OnTaskTrigger
 	tracerProvider trace.TracerProvider
@@ -56,7 +56,7 @@ func NewRequestHandler(
 	triggerTask OnTaskTrigger,
 	tracerProvider trace.TracerProvider,
 ) *RequestHandler {
-	cache := cache.NewCache[string, provisionCacheData]()
+	cache := cache.NewCache[string, ProvisionCacheData]()
 	add := periodic.New(subManager.devicesSubscription.ctx.Done(), time.Minute*5)
 	add(func(now time.Time) bool {
 		cache.CheckExpirations(now)

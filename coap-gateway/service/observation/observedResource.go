@@ -24,7 +24,7 @@ type observedResource struct {
 	observation Observation
 }
 
-func NewObservedResource(href, resInterface string, isObservable bool) *observedResource {
+func newObservedResource(href, resInterface string, isObservable bool) *observedResource {
 	return &observedResource{
 		href:         href,
 		resInterface: resInterface,

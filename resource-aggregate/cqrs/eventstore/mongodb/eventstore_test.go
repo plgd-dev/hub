@@ -55,10 +55,10 @@ func TestEventStore(t *testing.T) {
 	}()
 
 	t.Log("event store with default namespace")
-	test.AcceptanceTest(t, ctx, store)
+	test.AcceptanceTest(ctx, t, store)
 
 	t.Log("clearing collections")
 	err = store.ClearCollections(ctx)
 	require.NoError(t, err)
-	test.GetEventsTest(t, ctx, store)
+	test.GetEventsTest(ctx, t, store)
 }

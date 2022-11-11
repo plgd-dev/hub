@@ -265,7 +265,7 @@ func getTokenUsingGet(t *testing.T, clientID string, useBasicAuth bool, statusCo
 	q.Add(uri.ClientIDKey, clientID)
 
 	u.RawQuery = q.Encode()
-	getReq := test.NewRequest(http.MethodGet, config.OAUTH_SERVER_HOST, u.String(), nil).Build()
+	getReq := test.NewRequestBuilder(http.MethodGet, config.OAUTH_SERVER_HOST, u.String(), nil).Build()
 	if useBasicAuth {
 		getReq.SetBasicAuth(clientID, "")
 	}
@@ -306,7 +306,7 @@ func getToken(t *testing.T, clientID, clientSecret, audience, redirectURI, code,
 	d, err := json.Encode(reqBody)
 	require.NoError(t, err)
 
-	getReq := test.NewRequest(http.MethodPost, config.OAUTH_SERVER_HOST, uri.Token, bytes.NewReader(d)).Build()
+	getReq := test.NewRequestBuilder(http.MethodPost, config.OAUTH_SERVER_HOST, uri.Token, bytes.NewReader(d)).Build()
 	getReq.SetBasicAuth(clientID, clientSecret)
 	res := test.HTTPDo(t, getReq, false)
 	defer func() {

@@ -74,7 +74,7 @@ linters:
     - nolintlint       # Reports ill-formed or insufficient nolint directives
     # - paralleltest     # paralleltest detects missing usage of t.Parallel() method in your Go test
     # - predeclared      # find code that shadows one of Go's predeclared identifiers
-    # - revive           # golint replacement, finds style mistakes
+    - revive           # golint replacement, finds style mistakes
     - staticcheck      # Staticcheck is a go vet on steroids, applying a ton of static analysis checks
     # - structcheck      # Finds unused struct fields
     - stylecheck       # Stylecheck is a replacement for golint
@@ -128,5 +128,8 @@ issues:
       text: "G404:"
       linters:
         - gosec
+    - text: "var-naming:|exported:"
+      linters:
+        - revive
   # Fix found issues (if it's supported by the linter).
   # fix: true

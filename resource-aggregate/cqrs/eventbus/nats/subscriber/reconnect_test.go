@@ -56,7 +56,7 @@ func TestSubscriberReconnect(t *testing.T) {
 
 	// Add handlers and observers.
 	t.Log("Subscribe to first topic")
-	m0, _ := testNewSubscription(t, ctx, subscriber, "sub-0", topics[0:1])
+	m0, _ := testNewSubscription(ctx, t, subscriber, "sub-0", topics[0:1])
 
 	AggregateID1 := "aggregateID1"
 	aggregateID1Path := Path{

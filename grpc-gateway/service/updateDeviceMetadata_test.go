@@ -34,7 +34,7 @@ type contentChangedFilter struct {
 	resourceChangedCh chan eventbus.EventUnmarshaler
 }
 
-func NewContentChangedFilter() *contentChangedFilter {
+func newContentChangedFilter() *contentChangedFilter {
 	return &contentChangedFilter{
 		resourceChangedCh: make(chan eventbus.EventUnmarshaler, 2),
 	}
@@ -68,7 +68,7 @@ type deviceMetadataUpdatedFilter struct {
 	ch chan eventbus.EventUnmarshaler
 }
 
-func NewDeviceMetadataUpdatedFilter() *deviceMetadataUpdatedFilter {
+func newDeviceMetadataUpdatedFilter() *deviceMetadataUpdatedFilter {
 	return &deviceMetadataUpdatedFilter{
 		ch: make(chan eventbus.EventUnmarshaler, 2),
 	}
@@ -149,8 +149,8 @@ func TestRequestHandler_UpdateDeviceMetadata(t *testing.T) {
 		naClient.Close()
 	}()
 	tmp := uuid.New()
-	v := NewContentChangedFilter()
-	deviceMetadataUpdatedFilter := NewDeviceMetadataUpdatedFilter()
+	v := newContentChangedFilter()
+	deviceMetadataUpdatedFilter := newDeviceMetadataUpdatedFilter()
 	obs, err := s.Subscribe(ctx, tmp.String(), utils.GetDeviceSubject("*", deviceID), v)
 	require.NoError(t, err)
 	obsDeviceMetadataUpdated, err := s.Subscribe(ctx, uuid.New().String(), utils.GetDeviceMetadataEventSubject("*", deviceID, (&events.DeviceMetadataUpdated{}).EventType()), deviceMetadataUpdatedFilter)
