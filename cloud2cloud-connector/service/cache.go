@@ -401,57 +401,57 @@ func (s *Cache) loadLinkedAccount(linkedCloudID, linkedAccountID string) (*Cloud
 	return cloud, linkedAccountI.(*LinkedAccountData), nil
 }
 
-func (s *Cache) LoadSubscription(id string) (subscriptionData, bool) {
+func (s *Cache) LoadSubscription(id string) (SubscriptionData, bool) {
 	subI, ok := s.subscriptionsByID.Load(id)
 	if !ok {
-		return subscriptionData{}, ok
+		return SubscriptionData{}, ok
 	}
 	sub := subI.(Subscription)
 	cloud, linkedAccount, err := s.loadLinkedAccount(sub.LinkedCloudID, sub.LinkedAccountID)
 	if err != nil {
 		s.subscriptionsByID.Delete(sub.ID)
-		return subscriptionData{}, ok
+		return SubscriptionData{}, ok
 	}
-	return subscriptionData{
+	return SubscriptionData{
 		linkedAccount: linkedAccount.LinkedAccount(),
 		linkedCloud:   cloud.linkedCloud,
 		subscription:  sub,
 	}, true
 }
 
-func (s *Cache) LoadDevicesSubscription(cloudID, linkedAccountID string) (subscriptionData, bool) {
+func (s *Cache) LoadDevicesSubscription(cloudID, linkedAccountID string) (SubscriptionData, bool) {
 	cloud, linkedAccount, err := s.loadLinkedAccount(cloudID, linkedAccountID)
 	if err != nil {
-		return subscriptionData{}, false
+		return SubscriptionData{}, false
 	}
 	sub, ok := linkedAccount.Subscription()
-	return subscriptionData{
+	return SubscriptionData{
 		linkedAccount: linkedAccount.LinkedAccount(),
 		linkedCloud:   cloud.linkedCloud,
 		subscription:  sub,
 	}, ok
 }
 
-func (s *Cache) LoadDeviceSubscription(cloudID, linkedAccountID, deviceID string) (subscriptionData, bool) {
+func (s *Cache) LoadDeviceSubscription(cloudID, linkedAccountID, deviceID string) (SubscriptionData, bool) {
 	cloud, linkedAccount, device, err := s.loadDevice(cloudID, linkedAccountID, deviceID)
 	if err != nil {
-		return subscriptionData{}, false
+		return SubscriptionData{}, false
 	}
 	sub, ok := device.Subscription()
-	return subscriptionData{
+	return SubscriptionData{
 		linkedAccount: linkedAccount.LinkedAccount(),
 		linkedCloud:   cloud.linkedCloud,
 		subscription:  sub,
 	}, ok
 }
 
-func (s *Cache) LoadResourceSubscription(cloudID, linkedAccountID, deviceID, href string) (subscriptionData, bool) {
+func (s *Cache) LoadResourceSubscription(cloudID, linkedAccountID, deviceID, href string) (SubscriptionData, bool) {
 	cloud, linkedAccount, _, resource, err := s.loadResource(cloudID, linkedAccountID, deviceID, href)
 	if err != nil {
-		return subscriptionData{}, false
+		return SubscriptionData{}, false
 	}
 	sub, ok := resource.Subscription()
-	return subscriptionData{
+	return SubscriptionData{
 		linkedAccount: linkedAccount.LinkedAccount(),
 		linkedCloud:   cloud.linkedCloud,
 		subscription:  sub,
@@ -493,41 +493,41 @@ func (s *Cache) UpdateLinkedAccount(l store.LinkedAccount) error {
 	return nil
 }
 
-func (s *Cache) LoadOrCreateSubscription(sub Subscription) (subscriptionData, bool, error) {
+func (s *Cache) LoadOrCreateSubscription(sub Subscription) (SubscriptionData, bool, error) {
 	subData, ok := s.LoadSubscription(sub.ID)
 	if ok {
 		return subData, ok, nil
 	}
 	cloud, linkedAccount, err := s.loadLinkedAccount(sub.LinkedCloudID, sub.LinkedAccountID)
 	if err != nil {
-		return subscriptionData{}, false, err
+		return SubscriptionData{}, false, err
 	}
 	sub, loaded := linkedAccount.LoadOrCreate(sub)
 	if !loaded {
 		s.subscriptionsByID.Replace(sub.ID, sub)
 	}
-	return subscriptionData{
+	return SubscriptionData{
 		linkedAccount: linkedAccount.LinkedAccount(),
 		linkedCloud:   cloud.linkedCloud,
 		subscription:  sub,
 	}, loaded, nil
 }
 
-func (s *Cache) PullOutSubscription(subscripionID string) (subscriptionData, bool) {
+func (s *Cache) PullOutSubscription(subscripionID string) (SubscriptionData, bool) {
 	subI, ok := s.subscriptionsByID.PullOut(subscripionID)
 	if !ok {
-		return subscriptionData{}, ok
+		return SubscriptionData{}, ok
 	}
 	sub := subI.(Subscription)
 	cloud, linkedAccount, err := s.loadLinkedAccount(sub.LinkedCloudID, sub.LinkedAccountID)
 	if err != nil {
-		return subscriptionData{}, false
+		return SubscriptionData{}, false
 	}
 	sub, ok = linkedAccount.PullOut(sub)
 	if !ok {
-		return subscriptionData{}, ok
+		return SubscriptionData{}, ok
 	}
-	return subscriptionData{
+	return SubscriptionData{
 		linkedAccount: linkedAccount.LinkedAccount(),
 		linkedCloud:   cloud.linkedCloud,
 		subscription:  sub,
@@ -630,11 +630,11 @@ func (s *Cache) Dump() interface{} {
 	return out
 }
 
-func (s *Cache) DumpLinkedAccounts() []provisionCacheData {
-	out := make([]provisionCacheData, 0, 32)
+func (s *Cache) DumpLinkedAccounts() []ProvisionCacheData {
+	out := make([]ProvisionCacheData, 0, 32)
 	for _, cloud := range s.DumpClouds() {
 		for _, linkedAccount := range cloud.DumpLinkedAccounts() {
-			out = append(out, provisionCacheData{
+			out = append(out, ProvisionCacheData{
 				linkedCloud:   cloud.linkedCloud,
 				linkedAccount: linkedAccount.LinkedAccount(),
 			})
@@ -643,8 +643,8 @@ func (s *Cache) DumpLinkedAccounts() []provisionCacheData {
 	return out
 }
 
-func (s *Cache) DumpDevices() []subscriptionData {
-	out := make([]subscriptionData, 0, 32)
+func (s *Cache) DumpDevices() []SubscriptionData {
+	out := make([]SubscriptionData, 0, 32)
 	for _, cloud := range s.DumpClouds() {
 		for _, linkedAccount := range cloud.DumpLinkedAccounts() {
 			for _, device := range linkedAccount.DumpDevices() {
@@ -652,7 +652,7 @@ func (s *Cache) DumpDevices() []subscriptionData {
 				if !ok {
 					continue
 				}
-				out = append(out, subscriptionData{
+				out = append(out, SubscriptionData{
 					linkedCloud:   cloud.linkedCloud,
 					linkedAccount: linkedAccount.LinkedAccount(),
 					subscription:  sub,

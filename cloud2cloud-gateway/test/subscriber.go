@@ -51,7 +51,7 @@ func (c *C2CSubscriber) subscriptionURI() string {
 	return ""
 }
 
-func (c *C2CSubscriber) Subscribe(t *testing.T, ctx context.Context, token, deviceID, href string, eventTypes events.EventTypes) string {
+func (c *C2CSubscriber) Subscribe(ctx context.Context, t *testing.T, token, deviceID, href string, eventTypes events.EventTypes) string {
 	sub := events.SubscriptionRequest{
 		EventsURL:     "https://localhost:" + c.port + c.eventsURI,
 		EventTypes:    eventTypes,
@@ -101,7 +101,7 @@ func (c *C2CSubscriber) unsubscriptionURI() string {
 	return ""
 }
 
-func (c *C2CSubscriber) Unsubscribe(t *testing.T, ctx context.Context, token, deviceID, href, subID string) {
+func (c *C2CSubscriber) Unsubscribe(ctx context.Context, t *testing.T, token, deviceID, href, subID string) {
 	uri := c.unsubscriptionURI()
 	require.NotEmpty(t, uri)
 	rb := testHttp.NewHTTPRequest(http.MethodDelete, uri, nil).AuthToken(token)

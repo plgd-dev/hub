@@ -52,7 +52,7 @@ func TestRequestHandlerRetrieveDeviceSubscription(t *testing.T) {
 	dataChan := eventsServer.Run(t)
 
 	subscriber := c2cTest.NewC2CSubscriber(eventsServer.GetPort(t), eventsURI, c2cTest.SubscriptionType_Device)
-	subID := subscriber.Subscribe(t, ctx, token, deviceID, "", c2cEvents.EventTypes{
+	subID := subscriber.Subscribe(ctx, t, token, deviceID, "", c2cEvents.EventTypes{
 		c2cEvents.EventType_ResourcesPublished,
 		c2cEvents.EventType_ResourcesUnpublished,
 	})
@@ -151,7 +151,7 @@ func TestRequestHandlerRetrieveDeviceSubscription(t *testing.T) {
 		})
 	}
 
-	subscriber.Unsubscribe(t, ctx, token, deviceID, "", subID)
+	subscriber.Unsubscribe(ctx, t, token, deviceID, "", subID)
 	ev := <-dataChan
 	assert.Equal(t, c2cEvents.EventType_SubscriptionCanceled, ev.GetHeader().EventType)
 }

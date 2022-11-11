@@ -170,7 +170,7 @@ func TestRequestHandlerGetEventsOnOnboard(t *testing.T) {
 	}
 }
 
-func testRetrieveDeviceEvents(t *testing.T, ctx context.Context, c pb.GrpcGatewayClient, deviceID string, timestampFilter int64) {
+func testRetrieveDeviceEvents(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, deviceID string, timestampFilter int64) {
 	_, err := c.GetResourceFromDevice(ctx, &pb.GetResourceFromDeviceRequest{
 		ResourceId: commands.NewResourceID(deviceID, device.ResourceURI),
 	})
@@ -200,7 +200,7 @@ func testRetrieveDeviceEvents(t *testing.T, ctx context.Context, c pb.GrpcGatewa
 	waitAndCheckEvents(t, client, expectedEvents)
 }
 
-func testUpdateDeviceEvents(t *testing.T, ctx context.Context, c pb.GrpcGatewayClient, deviceID string, timestampFilter int64) {
+func testUpdateDeviceEvents(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, deviceID string, timestampFilter int64) {
 	_, err := c.UpdateDeviceMetadata(ctx, &pb.UpdateDeviceMetadataRequest{
 		DeviceId:    deviceID,
 		TwinEnabled: true,
@@ -224,7 +224,7 @@ func testUpdateDeviceEvents(t *testing.T, ctx context.Context, c pb.GrpcGatewayC
 	waitAndCheckEvents(t, client, expectedEvents)
 }
 
-func testCreateResourceEvents(t *testing.T, ctx context.Context, c pb.GrpcGatewayClient, deviceID string, timestampFilter int64) {
+func testCreateResourceEvents(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, deviceID string, timestampFilter int64) {
 	_, err := c.CreateResource(ctx, &pb.CreateResourceRequest{
 		ResourceId: commands.NewResourceID(deviceID, test.TestResourceSwitchesHref),
 		Content: &pb.Content{
@@ -280,7 +280,7 @@ func testCreateResourceEvents(t *testing.T, ctx context.Context, c pb.GrpcGatewa
 	waitAndCheckEvents(t, client, expectedEvents)
 }
 
-func testUpdateResourceEvents(t *testing.T, ctx context.Context, c pb.GrpcGatewayClient, deviceID string, timestampFilter int64) {
+func testUpdateResourceEvents(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, deviceID string, timestampFilter int64) {
 	switchID := "1"
 	switchHref := test.TestResourceSwitchesInstanceHref(switchID)
 	switchData := map[string]interface{}{
@@ -313,7 +313,7 @@ func testUpdateResourceEvents(t *testing.T, ctx context.Context, c pb.GrpcGatewa
 	waitAndCheckEvents(t, client, expectedEvents)
 }
 
-func testDeleteResourceEvents(t *testing.T, ctx context.Context, c pb.GrpcGatewayClient, deviceID string, timestampFilter int64) {
+func testDeleteResourceEvents(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, deviceID string, timestampFilter int64) {
 	switchID := "1"
 	switchHref := test.TestResourceSwitchesInstanceHref(switchID)
 	_, err := c.DeleteResource(ctx, &pb.DeleteResourceRequest{
@@ -369,25 +369,25 @@ func TestRequestHandlerGetEventsOnCollection(t *testing.T) {
 	// Retrieve
 	time.Sleep(time.Millisecond * 200)
 	retrieveResourceFilter := time.Now().UnixNano()
-	testRetrieveDeviceEvents(t, ctx, c, deviceID, retrieveResourceFilter)
+	testRetrieveDeviceEvents(ctx, t, c, deviceID, retrieveResourceFilter)
 
 	// Update device
 	time.Sleep(time.Millisecond * 200)
 	updateDeviceFilter := time.Now().UnixNano()
-	testUpdateDeviceEvents(t, ctx, c, deviceID, updateDeviceFilter)
+	testUpdateDeviceEvents(ctx, t, c, deviceID, updateDeviceFilter)
 
 	// Create resource /switches/1
 	time.Sleep(time.Millisecond * 200)
 	createResourceFilter := time.Now().UnixNano()
-	testCreateResourceEvents(t, ctx, c, deviceID, createResourceFilter)
+	testCreateResourceEvents(ctx, t, c, deviceID, createResourceFilter)
 
 	// Update resource /switches/1
 	time.Sleep(time.Millisecond * 200)
 	updateResourceFilter := time.Now().UnixNano()
-	testUpdateResourceEvents(t, ctx, c, deviceID, updateResourceFilter)
+	testUpdateResourceEvents(ctx, t, c, deviceID, updateResourceFilter)
 
 	// Delete resource /switches/1
 	time.Sleep(time.Millisecond * 200)
 	deleteResourceFilter := time.Now().UnixNano()
-	testDeleteResourceEvents(t, ctx, c, deviceID, deleteResourceFilter)
+	testDeleteResourceEvents(ctx, t, c, deviceID, deleteResourceFilter)
 }

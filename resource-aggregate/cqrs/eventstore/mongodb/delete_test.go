@@ -14,7 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func addEventsForDeleteToDB(t *testing.T, ctx context.Context, store *mongodb.EventStore) int {
+func addEventsForDeleteToDB(ctx context.Context, t *testing.T, store *mongodb.EventStore) int {
 	const eventCount = 2000
 	const deviceCount = 10
 	const resourceCount = 100
@@ -133,7 +133,7 @@ func TestEventStore_Delete(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			addEventsForDeleteToDB(t, ctx, store)
+			addEventsForDeleteToDB(ctx, t, store)
 			defer func() {
 				err = store.ClearCollections(ctx)
 				require.NoError(t, err)

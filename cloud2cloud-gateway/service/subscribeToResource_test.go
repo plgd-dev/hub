@@ -48,7 +48,7 @@ func TestRequestHandlerSubscribeToResource(t *testing.T) {
 	dataChan := eventsServer.Run(t)
 
 	subscriber := c2cTest.NewC2CSubscriber(eventsServer.GetPort(t), eventsURI, c2cTest.SubscriptionType_Resource)
-	subID := subscriber.Subscribe(t, ctx, token, deviceID, test.TestResourceLightInstanceHref("1"),
+	subID := subscriber.Subscribe(ctx, t, token, deviceID, test.TestResourceLightInstanceHref("1"),
 		c2cEvents.EventTypes{c2cEvents.EventType_ResourceChanged})
 
 	events := c2cTest.WaitForEvents(dataChan, 3*time.Second)
@@ -61,7 +61,7 @@ func TestRequestHandlerSubscribeToResource(t *testing.T) {
 	}
 	assert.Equal(t, wantEventContent, events[0].GetData())
 
-	subscriber.Unsubscribe(t, ctx, token, deviceID, test.TestResourceLightInstanceHref("1"), subID)
+	subscriber.Unsubscribe(ctx, t, token, deviceID, test.TestResourceLightInstanceHref("1"), subID)
 	ev := <-dataChan
 	assert.Equal(t, c2cEvents.EventType_SubscriptionCanceled, ev.GetHeader().EventType)
 }
@@ -100,7 +100,7 @@ func TestRequestHandlerSubscribeToResourceTokenTimeout(t *testing.T) {
 	dataChan := eventsServer.Run(t)
 
 	subscriber := c2cTest.NewC2CSubscriber(eventsServer.GetPort(t), eventsURI, c2cTest.SubscriptionType_Resource)
-	_ = subscriber.Subscribe(t, ctx, token, deviceID, test.TestResourceLightInstanceHref("1"),
+	_ = subscriber.Subscribe(ctx, t, token, deviceID, test.TestResourceLightInstanceHref("1"),
 		c2cEvents.EventTypes{c2cEvents.EventType_ResourceChanged})
 
 	events := c2cTest.WaitForEvents(dataChan, 3*time.Second)

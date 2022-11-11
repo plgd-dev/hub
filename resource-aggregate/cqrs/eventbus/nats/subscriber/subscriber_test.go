@@ -54,7 +54,7 @@ func TestSubscriber(t *testing.T) {
 		naSubClient.Close()
 	}()
 
-	acceptanceTest(t, context.Background(), timeout, publishTopics, subscriberTopics, publisher, subscriber)
+	acceptanceTest(context.Background(), t, timeout, publishTopics, subscriberTopics, publisher, subscriber)
 }
 
 type mockEvent struct {
@@ -140,10 +140,10 @@ func testWaitForAnyEvent(timeout time.Duration, eh1 *mockEventHandler, eh2 *mock
 	}
 }
 
-func testNewSubscription(t *testing.T, ctx context.Context, subscriber eventbus.Subscriber, subscriptionID string, publishTopics []string) (*mockEventHandler, eventbus.Observer) {
+func testNewSubscription(ctx context.Context, t *testing.T, subscriber eventbus.Subscriber, subscriptionID string, topics []string) (*mockEventHandler, eventbus.Observer) {
 	t.Log("Subscribe to testNewSubscription")
 	m := newMockEventHandler()
-	ob, err := subscriber.Subscribe(ctx, subscriptionID, publishTopics, m)
+	ob, err := subscriber.Subscribe(ctx, subscriptionID, topics, m)
 	require.NoError(t, err)
 	require.NotNil(t, ob)
 	if ob == nil {
@@ -162,7 +162,7 @@ func testNewSubscription(t *testing.T, ctx context.Context, subscriber eventbus.
 //       subscriber := NewSubscriber()
 //       timeout := time.Second*5
 //       publishTopics := []string{"a", "b"}
-//       eventbus.AcceptanceTest(t, ctx, timeout, publishTopics, publisher, subscriber)
+//       acceptanceTest(ctx, t, timeout, publishTopics, publisher, subscriber)
 //   }
 //
 
@@ -171,7 +171,7 @@ type Path struct {
 	GroupID     string
 }
 
-func acceptanceTest(t *testing.T, ctx context.Context, timeout time.Duration, publishTopics, subscribeTopics []string, publisher eventbus.Publisher, subscriber eventbus.Subscriber) {
+func acceptanceTest(ctx context.Context, t *testing.T, timeout time.Duration, publishTopics, subscribeTopics []string, publisher eventbus.Publisher, subscriber eventbus.Subscriber) {
 	// savedEvents := []Event{}
 	AggregateID1 := "aggregateID1"
 	AggregateID2 := "aggregateID2"
@@ -235,7 +235,7 @@ func acceptanceTest(t *testing.T, ctx context.Context, timeout time.Duration, pu
 
 	// Add handlers and observers.
 	t.Log("Subscribe to first topic")
-	m0, ob0 := testNewSubscription(t, ctx, subscriber, "sub-0", subscribeTopics[0:1])
+	m0, ob0 := testNewSubscription(ctx, t, subscriber, "sub-0", subscribeTopics[0:1])
 
 	err = publisher.Publish(ctx, publishTopics[0:1], aggregateID1Path.GroupID, aggregateID1Path.AggregateID, eventsToPublish[1])
 	require.NoError(t, err)
@@ -247,22 +247,22 @@ func acceptanceTest(t *testing.T, ctx context.Context, timeout time.Duration, pu
 	err = ob0.Close()
 	require.NoError(t, err)
 	t.Log("Subscribe more observers")
-	m1, ob1 := testNewSubscription(t, ctx, subscriber, "sub-1", subscribeTopics[1:2])
+	m1, ob1 := testNewSubscription(ctx, t, subscriber, "sub-1", subscribeTopics[1:2])
 	defer func() {
 		err = ob1.Close()
 		require.NoError(t, err)
 	}()
-	m2, ob2 := testNewSubscription(t, ctx, subscriber, "sub-2", subscribeTopics[1:2])
+	m2, ob2 := testNewSubscription(ctx, t, subscriber, "sub-2", subscribeTopics[1:2])
 	defer func() {
 		err = ob2.Close()
 		require.NoError(t, err)
 	}()
-	m3, ob3 := testNewSubscription(t, ctx, subscriber, "sub-shared", subscribeTopics[0:1])
+	m3, ob3 := testNewSubscription(ctx, t, subscriber, "sub-shared", subscribeTopics[0:1])
 	defer func() {
 		err = ob3.Close()
 		require.NoError(t, err)
 	}()
-	m4, ob4 := testNewSubscription(t, ctx, subscriber, "sub-shared", subscribeTopics[0:1])
+	m4, ob4 := testNewSubscription(ctx, t, subscriber, "sub-shared", subscribeTopics[0:1])
 	defer func() {
 		err = ob4.Close()
 		require.NoError(t, err)

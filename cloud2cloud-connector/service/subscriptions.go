@@ -50,7 +50,7 @@ type SubscriptionManager struct {
 	store               *Store
 	raClient            raService.ResourceAggregateClient
 	isClient            pbIS.IdentityStoreClient
-	cache               *cache.Cache[string, subscriptionData]
+	cache               *cache.Cache[string, SubscriptionData]
 	devicesSubscription *DevicesSubscription
 	provider            *oauth2.PlgdProvider
 	triggerTask         OnTaskTrigger
@@ -67,7 +67,7 @@ func NewSubscriptionManager(
 	triggerTask OnTaskTrigger,
 	tracerProvider trace.TracerProvider,
 ) *SubscriptionManager {
-	cache := cache.NewCache[string, subscriptionData]()
+	cache := cache.NewCache[string, SubscriptionData]()
 	add := periodic.New(devicesSubscription.ctx.Done(), time.Minute*5)
 	add(func(now time.Time) bool {
 		cache.CheckExpirations(now)
@@ -162,7 +162,7 @@ func cancelSubscription(ctx context.Context, tracerProvider trace.TracerProvider
 	return nil
 }
 
-func (s *SubscriptionManager) getSubscriptionData(subscriptionID, correlationID string) (subscriptionData, error) {
+func (s *SubscriptionManager) getSubscriptionData(subscriptionID, correlationID string) (SubscriptionData, error) {
 	data := s.cache.Load(correlationID)
 	if data != nil {
 		subData := data.Data()
@@ -170,10 +170,10 @@ func (s *SubscriptionManager) getSubscriptionData(subscriptionID, correlationID 
 		newSubscription, loaded, err := s.store.LoadOrCreateSubscription(subData.subscription)
 		s.cache.Delete(correlationID)
 		if err != nil {
-			return subscriptionData{}, fmt.Errorf("cannot store subscription(CorrelationID: %v, ID: %v) to DB: %w", correlationID, subscriptionID, err)
+			return SubscriptionData{}, fmt.Errorf("cannot store subscription(CorrelationID: %v, ID: %v) to DB: %w", correlationID, subscriptionID, err)
 		}
 		if loaded && newSubscription.subscription.ID != subscriptionID {
-			return subscriptionData{}, fmt.Errorf("cannot store subscription(CorrelationID: %v, ID: %v) to DB: duplicit subscription(CorrelationID %v, ID: %v)",
+			return SubscriptionData{}, fmt.Errorf("cannot store subscription(CorrelationID: %v, ID: %v) to DB: duplicit subscription(CorrelationID %v, ID: %v)",
 				subscriptionID, subscriptionID, newSubscription.subscription.CorrelationID, newSubscription.subscription.ID)
 		}
 		subData.subscription = newSubscription.subscription
@@ -181,7 +181,7 @@ func (s *SubscriptionManager) getSubscriptionData(subscriptionID, correlationID 
 	}
 	newSubscription, ok := s.store.LoadSubscription(subscriptionID)
 	if !ok {
-		return subscriptionData{}, fmt.Errorf("cannot load subscription(CorrelationID: %v, ID: %v) from DB: not found",
+		return SubscriptionData{}, fmt.Errorf("cannot load subscription(CorrelationID: %v, ID: %v) from DB: not found",
 			correlationID, subscriptionID)
 	}
 	return newSubscription, nil
@@ -260,7 +260,7 @@ func (s *SubscriptionManager) HandleCancelEvent(ctx context.Context, header even
 	return nil
 }
 
-type subscriptionData struct {
+type SubscriptionData struct {
 	linkedAccount store.LinkedAccount
 	linkedCloud   store.LinkedCloud
 	subscription  Subscription

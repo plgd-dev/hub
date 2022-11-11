@@ -48,7 +48,7 @@ func (rh *RequestHandler) handleOAuth(w http.ResponseWriter, r *http.Request, li
 	if err != nil {
 		return http.StatusInternalServerError, fmt.Errorf("cannot generate token")
 	}
-	_, loaded := rh.provisionCache.LoadOrStore(t, cache.NewElement(provisionCacheData{
+	_, loaded := rh.provisionCache.LoadOrStore(t, cache.NewElement(ProvisionCacheData{
 		linkedAccount: linkedAccount,
 		linkedCloud:   linkedCloud,
 	}, time.Now().Add(CacheExpiration), nil))

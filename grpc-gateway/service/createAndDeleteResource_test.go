@@ -27,7 +27,7 @@ import (
 	"google.golang.org/grpc/credentials"
 )
 
-func subscribeToAllEvents(t *testing.T, ctx context.Context, c pb.GrpcGatewayClient, correlationID string) (pb.GrpcGateway_SubscribeToEventsClient, string) {
+func subscribeToAllEvents(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, correlationID string) (pb.GrpcGateway_SubscribeToEventsClient, string) {
 	subClient, err := client.New(c).GrpcGatewayClient().SubscribeToEvents(ctx)
 	require.NoError(t, err)
 	err = subClient.Send(&pb.SubscribeToEvents{
@@ -48,7 +48,7 @@ func subscribeToAllEvents(t *testing.T, ctx context.Context, c pb.GrpcGatewayCli
 	return subClient, ev.GetSubscriptionId()
 }
 
-func createSwitchResource(t *testing.T, ctx context.Context, c pb.GrpcGatewayClient, deviceID, switchID string) {
+func createSwitchResource(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, deviceID, switchID string) {
 	got, err := c.CreateResource(ctx, &pb.CreateResourceRequest{
 		ResourceId: commands.NewResourceID(deviceID, test.TestResourceSwitchesHref),
 		Content: &pb.Content{
@@ -62,7 +62,7 @@ func createSwitchResource(t *testing.T, ctx context.Context, c pb.GrpcGatewayCli
 	pbTest.CmpResourceCreated(t, want, got.GetData())
 }
 
-func deleteSwitchResource(t *testing.T, ctx context.Context, c pb.GrpcGatewayClient, deviceID, switchID string) {
+func deleteSwitchResource(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, deviceID, switchID string) {
 	got, err := c.DeleteResource(ctx, &pb.DeleteResourceRequest{
 		ResourceId: commands.NewResourceID(deviceID, test.TestResourceSwitchesInstanceHref(switchID)),
 	})
@@ -308,17 +308,17 @@ func TestCreateAndDeleteResource(t *testing.T) {
 	defer shutdownDevSim()
 
 	const correlationID = "allEvents"
-	subClient, subID := subscribeToAllEvents(t, ctx, c, correlationID)
+	subClient, subID := subscribeToAllEvents(ctx, t, c, correlationID)
 	const switchID = "1"
 
 	isDiscoveryResourceBatchObservable := test.IsDiscoveryResourceBatchObservable(ctx, t, deviceID)
 	for i := 0; i < 5; i++ {
 		fmt.Printf("iteration %v\n", i)
 		time.Sleep(time.Millisecond * 500)
-		createSwitchResource(t, ctx, c, deviceID, switchID)
+		createSwitchResource(ctx, t, c, deviceID, switchID)
 		expectedCreateEvents := createSwitchResourceExpectedEvents(t, deviceID, subID, correlationID, switchID, isDiscoveryResourceBatchObservable)
 		validateEvents(t, subClient, expectedCreateEvents)
-		deleteSwitchResource(t, ctx, c, deviceID, switchID)
+		deleteSwitchResource(ctx, t, c, deviceID, switchID)
 		expectedDeleteEvents := deleteSwitchResourceExpectedEvents(t, deviceID, subID, correlationID, switchID)
 		validateEvents(t, subClient, expectedDeleteEvents)
 	}

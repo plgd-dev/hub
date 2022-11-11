@@ -24,7 +24,7 @@ import (
 	"google.golang.org/grpc/credentials"
 )
 
-func getAllEvents(t *testing.T, client pb.GrpcGatewayClient, ctx context.Context) []interface{} {
+func getAllEvents(ctx context.Context, t *testing.T, client pb.GrpcGatewayClient) []interface{} {
 	events := make([]interface{}, 0, len(test.GetAllBackendResourceLinks()))
 	c, err := client.GetEvents(ctx, &pb.GetEventsRequest{
 		TimestampFilter: 0,
@@ -69,7 +69,7 @@ func TestRequestHandlerGetEvents(t *testing.T) {
 	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.ACTIVE_COAP_SCHEME+config.COAP_GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 
-	allEvents := getAllEvents(t, c, ctx)
+	allEvents := getAllEvents(ctx, t, c)
 	require.NotNil(t, allEvents)
 
 	type args struct {

@@ -38,7 +38,7 @@ func (s *SubscriptionManager) SubscribeToDevice(ctx context.Context, deviceID st
 		LinkedCloudID:   linkedCloud.ID,
 		CorrelationID:   correlationID,
 	}
-	data := subscriptionData{
+	data := SubscriptionData{
 		linkedAccount: linkedAccount,
 		linkedCloud:   linkedCloud,
 		subscription:  sub,
@@ -99,7 +99,7 @@ func trimDeviceIDFromHref(deviceID, href string) string {
 }
 
 // HandleResourcesPublished publish resources to resource aggregate and subscribes to resources.
-func (s *SubscriptionManager) HandleResourcesPublished(ctx context.Context, d subscriptionData, header events.EventHeader, links events.ResourcesPublished) error {
+func (s *SubscriptionManager) HandleResourcesPublished(ctx context.Context, d SubscriptionData, header events.EventHeader, links events.ResourcesPublished) error {
 	var errors *multierror.Error
 	for _, link := range links {
 		deviceID := d.subscription.DeviceID
@@ -149,7 +149,7 @@ func (s *SubscriptionManager) HandleResourcesPublished(ctx context.Context, d su
 }
 
 // HandleResourcesUnpublished unpublish resources from resource aggregate and cancel resources subscriptions.
-func (s *SubscriptionManager) HandleResourcesUnpublished(ctx context.Context, d subscriptionData, header events.EventHeader, links events.ResourcesUnpublished) error {
+func (s *SubscriptionManager) HandleResourcesUnpublished(ctx context.Context, d SubscriptionData, header events.EventHeader, links events.ResourcesUnpublished) error {
 	var errors *multierror.Error
 	for _, link := range links {
 		link.DeviceID = d.subscription.DeviceID
@@ -175,7 +175,7 @@ func (s *SubscriptionManager) HandleResourcesUnpublished(ctx context.Context, d 
 }
 
 // HandleDeviceEvent handles device events.
-func (s *SubscriptionManager) HandleDeviceEvent(ctx context.Context, header events.EventHeader, body []byte, subscriptionData subscriptionData) error {
+func (s *SubscriptionManager) HandleDeviceEvent(ctx context.Context, header events.EventHeader, body []byte, subscriptionData SubscriptionData) error {
 	contentReader, err := header.GetContentDecoder()
 	if err != nil {
 		return fmt.Errorf("cannot get content reader: %w", err)

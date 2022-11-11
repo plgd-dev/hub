@@ -98,8 +98,8 @@ type session struct {
 
 	resourceSubscriptions *kitSync.Map // [token]
 
-	exchangeCache *exchangeCache
-	refreshCache  *refreshCache
+	exchangeCache *ExchangeCache
+	refreshCache  *RefreshCache
 
 	mutex                   sync.Mutex
 	authCtx                 *authorizationContext

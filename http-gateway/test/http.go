@@ -17,8 +17,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func NewRequest(method, path string, body io.Reader) *requestBuilder {
-	b := requestBuilder{
+func NewRequest(method, path string, body io.Reader) *RequestBuilder {
+	b := RequestBuilder{
 		method:      method,
 		body:        body,
 		host:        config.HTTP_GW_HOST,
@@ -30,7 +30,7 @@ func NewRequest(method, path string, body io.Reader) *requestBuilder {
 	return &b
 }
 
-type requestBuilder struct {
+type RequestBuilder struct {
 	method       string
 	body         io.Reader
 	host         string
@@ -42,22 +42,22 @@ type requestBuilder struct {
 	query        string
 }
 
-func (c *requestBuilder) Host(host string) *requestBuilder {
+func (c *RequestBuilder) Host(host string) *RequestBuilder {
 	c.host = host
 	return c
 }
 
-func (c *requestBuilder) DeviceId(deviceID string) *requestBuilder {
+func (c *RequestBuilder) DeviceId(deviceID string) *RequestBuilder {
 	c.uriParams[uri.DeviceIDKey] = deviceID
 	return c
 }
 
-func (c *requestBuilder) Twin(v bool) *requestBuilder {
+func (c *RequestBuilder) Twin(v bool) *RequestBuilder {
 	c.AddQuery(uri.TwinQueryKey, fmt.Sprintf("%v", v))
 	return c
 }
 
-func (c *requestBuilder) Timestamp(v time.Time) *requestBuilder {
+func (c *RequestBuilder) Timestamp(v time.Time) *RequestBuilder {
 	if v.IsZero() {
 		return c
 	}
@@ -65,7 +65,7 @@ func (c *requestBuilder) Timestamp(v time.Time) *requestBuilder {
 	return c
 }
 
-func (c *requestBuilder) ResourceInterface(v string) *requestBuilder {
+func (c *RequestBuilder) ResourceInterface(v string) *RequestBuilder {
 	if v == "" {
 		return c
 	}
@@ -73,7 +73,7 @@ func (c *requestBuilder) ResourceInterface(v string) *requestBuilder {
 	return c
 }
 
-func (c *requestBuilder) ResourceHref(resourceHref string) *requestBuilder {
+func (c *RequestBuilder) ResourceHref(resourceHref string) *RequestBuilder {
 	if len(resourceHref) > 0 && resourceHref[0] == '/' {
 		resourceHref = resourceHref[1:]
 	}
@@ -81,12 +81,12 @@ func (c *requestBuilder) ResourceHref(resourceHref string) *requestBuilder {
 	return c
 }
 
-func (c *requestBuilder) AuthToken(token string) *requestBuilder {
+func (c *RequestBuilder) AuthToken(token string) *RequestBuilder {
 	c.header["Authorization"] = fmt.Sprintf("bearer %s", token)
 	return c
 }
 
-func (c *requestBuilder) Accept(accept string) *requestBuilder {
+func (c *RequestBuilder) Accept(accept string) *RequestBuilder {
 	if accept == "" {
 		return c
 	}
@@ -94,7 +94,7 @@ func (c *requestBuilder) Accept(accept string) *requestBuilder {
 	return c
 }
 
-func (c *requestBuilder) ContentType(contentType string) *requestBuilder {
+func (c *RequestBuilder) ContentType(contentType string) *RequestBuilder {
 	if contentType == "" {
 		return c
 	}
@@ -102,12 +102,12 @@ func (c *requestBuilder) ContentType(contentType string) *requestBuilder {
 	return c
 }
 
-func (c *requestBuilder) AddQuery(key string, value ...string) *requestBuilder {
+func (c *RequestBuilder) AddQuery(key string, value ...string) *RequestBuilder {
 	c.queryParams[key] = append(c.queryParams[key], value...)
 	return c
 }
 
-func (c *requestBuilder) AddDeviceIdFilter(deviceFilter []string) *requestBuilder {
+func (c *RequestBuilder) AddDeviceIdFilter(deviceFilter []string) *RequestBuilder {
 	if len(deviceFilter) == 0 {
 		return c
 	}
@@ -115,7 +115,7 @@ func (c *requestBuilder) AddDeviceIdFilter(deviceFilter []string) *requestBuilde
 	return c
 }
 
-func (c *requestBuilder) AddResourceIdFilter(resourcefilter []string) *requestBuilder {
+func (c *RequestBuilder) AddResourceIdFilter(resourcefilter []string) *RequestBuilder {
 	if len(resourcefilter) == 0 {
 		return c
 	}
@@ -123,7 +123,7 @@ func (c *requestBuilder) AddResourceIdFilter(resourcefilter []string) *requestBu
 	return c
 }
 
-func (c *requestBuilder) AddStatusFilter(statusFilter []string) *requestBuilder {
+func (c *RequestBuilder) AddStatusFilter(statusFilter []string) *RequestBuilder {
 	if len(statusFilter) == 0 {
 		return c
 	}
@@ -131,7 +131,7 @@ func (c *requestBuilder) AddStatusFilter(statusFilter []string) *requestBuilder 
 	return c
 }
 
-func (c *requestBuilder) AddTypeFilter(typeFilter []string) *requestBuilder {
+func (c *RequestBuilder) AddTypeFilter(typeFilter []string) *RequestBuilder {
 	if len(typeFilter) == 0 {
 		return c
 	}
@@ -139,7 +139,7 @@ func (c *requestBuilder) AddTypeFilter(typeFilter []string) *requestBuilder {
 	return c
 }
 
-func (c *requestBuilder) AddCorrelationIdFilter(correlationID []string) *requestBuilder {
+func (c *RequestBuilder) AddCorrelationIdFilter(correlationID []string) *RequestBuilder {
 	if len(correlationID) == 0 {
 		return c
 	}
@@ -147,7 +147,7 @@ func (c *requestBuilder) AddCorrelationIdFilter(correlationID []string) *request
 	return c
 }
 
-func (c *requestBuilder) AddCommandsFilter(commandFilter []string) *requestBuilder {
+func (c *RequestBuilder) AddCommandsFilter(commandFilter []string) *RequestBuilder {
 	if len(commandFilter) == 0 {
 		return c
 	}
@@ -155,7 +155,7 @@ func (c *requestBuilder) AddCommandsFilter(commandFilter []string) *requestBuild
 	return c
 }
 
-func (c *requestBuilder) AddTimeToLive(ttl time.Duration) *requestBuilder {
+func (c *RequestBuilder) AddTimeToLive(ttl time.Duration) *RequestBuilder {
 	if ttl == 0 {
 		return c
 	}
@@ -163,12 +163,12 @@ func (c *requestBuilder) AddTimeToLive(ttl time.Duration) *requestBuilder {
 	return c
 }
 
-func (c *requestBuilder) SetQuery(value string) *requestBuilder {
+func (c *RequestBuilder) SetQuery(value string) *RequestBuilder {
 	c.query = value
 	return c
 }
 
-func (c *requestBuilder) Build() *http.Request {
+func (c *RequestBuilder) Build() *http.Request {
 	r := fmt.Sprintf("https://%v%v", c.host, c.path)
 	uri := strings.ReplaceAll(r, "{"+uri.ResourceHrefKey+"}", c.resourceHref)
 

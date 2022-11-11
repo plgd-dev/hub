@@ -19,7 +19,7 @@ func TestRequestHandler_getJWKs(t *testing.T) {
 }
 
 func getJWKs(t *testing.T) map[string]interface{} {
-	getReq := test.NewRequest(http.MethodGet, config.OAUTH_SERVER_HOST, uri.JWKs, nil).Build()
+	getReq := test.NewRequestBuilder(http.MethodGet, config.OAUTH_SERVER_HOST, uri.JWKs, nil).Build()
 	res := test.HTTPDo(t, getReq, false)
 	defer func() {
 		_ = res.Body.Close()

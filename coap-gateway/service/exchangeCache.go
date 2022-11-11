@@ -15,17 +15,17 @@ import (
 // the last (code, oauth2.token) pair and if the authorization code for next Exchange
 // call is the same as the cached value then the call is skipped and the stored token
 // is returned instead.
-type exchangeCache struct {
+type ExchangeCache struct {
 	token *future.Future
 	code  string
 	mutex sync.Mutex
 }
 
-func NewExchangeCache() *exchangeCache {
-	return &exchangeCache{}
+func NewExchangeCache() *ExchangeCache {
+	return &ExchangeCache{}
 }
 
-func (e *exchangeCache) getFutureToken(authorizationCode string) (*future.Future, future.SetFunc) {
+func (e *ExchangeCache) getFutureToken(authorizationCode string) (*future.Future, future.SetFunc) {
 	e.mutex.Lock()
 	defer e.mutex.Unlock()
 	if e.token == nil || e.code != authorizationCode {
@@ -38,7 +38,7 @@ func (e *exchangeCache) getFutureToken(authorizationCode string) (*future.Future
 }
 
 // Execute Exchange or returned cached value.
-func (e *exchangeCache) Execute(ctx context.Context, provider *oauth2.PlgdProvider, authorizationCode string) (*oauth2.Token, error) {
+func (e *ExchangeCache) Execute(ctx context.Context, provider *oauth2.PlgdProvider, authorizationCode string) (*oauth2.Token, error) {
 	if authorizationCode == "" {
 		return nil, fmt.Errorf("invalid authorization code")
 	}
@@ -63,7 +63,7 @@ func (e *exchangeCache) Execute(ctx context.Context, provider *oauth2.PlgdProvid
 }
 
 // Clear stored value.
-func (e *exchangeCache) Clear() {
+func (e *ExchangeCache) Clear() {
 	e.mutex.Lock()
 	defer e.mutex.Unlock()
 	e.code = ""

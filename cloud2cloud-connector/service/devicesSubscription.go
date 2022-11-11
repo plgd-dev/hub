@@ -37,7 +37,7 @@ func (s *SubscriptionManager) SubscribeToDevices(ctx context.Context, linkedAcco
 		LinkedCloudID:   linkedCloud.ID,
 		CorrelationID:   correlationID,
 	}
-	data := subscriptionData{
+	data := SubscriptionData{
 		linkedAccount: linkedAccount,
 		linkedCloud:   linkedCloud,
 		subscription:  sub,
@@ -86,7 +86,7 @@ func cancelDevicesSubscription(ctx context.Context, tracerProvider trace.TracerP
 	return nil
 }
 
-func (s *SubscriptionManager) HandleDevicesRegistered(ctx context.Context, d subscriptionData, devices events.DevicesRegistered, header events.EventHeader) error {
+func (s *SubscriptionManager) HandleDevicesRegistered(ctx context.Context, d SubscriptionData, devices events.DevicesRegistered, header events.EventHeader) error {
 	var errors *multierror.Error
 	for _, device := range devices {
 		_, err := s.isClient.AddDevice(ctx, &pbIS.AddDeviceRequest{
@@ -118,7 +118,7 @@ func (s *SubscriptionManager) HandleDevicesRegistered(ctx context.Context, d sub
 	return errors.ErrorOrNil()
 }
 
-func (s *SubscriptionManager) HandleDevicesUnregistered(ctx context.Context, subscriptionData subscriptionData, correlationID string, devices events.DevicesUnregistered) error {
+func (s *SubscriptionManager) HandleDevicesUnregistered(ctx context.Context, subscriptionData SubscriptionData, correlationID string, devices events.DevicesUnregistered) error {
 	userID := subscriptionData.linkedAccount.UserID
 	var errors *multierror.Error
 	for _, device := range devices {
@@ -145,7 +145,7 @@ func (s *SubscriptionManager) HandleDevicesUnregistered(ctx context.Context, sub
 }
 
 // HandleDevicesOnline sets device online to resource aggregate and register device to projection.
-func (s *SubscriptionManager) HandleDevicesOnline(ctx context.Context, d subscriptionData, header events.EventHeader, devices events.DevicesOnline) error {
+func (s *SubscriptionManager) HandleDevicesOnline(ctx context.Context, d SubscriptionData, header events.EventHeader, devices events.DevicesOnline) error {
 	var errors *multierror.Error
 	for _, device := range devices {
 		_, err := s.raClient.UpdateDeviceMetadata(ctx, &commands.UpdateDeviceMetadataRequest{
@@ -169,7 +169,7 @@ func (s *SubscriptionManager) HandleDevicesOnline(ctx context.Context, d subscri
 }
 
 // HandleDevicesOffline sets device off to resource aggregate and unregister device to projection.
-func (s *SubscriptionManager) HandleDevicesOffline(ctx context.Context, d subscriptionData, header events.EventHeader, devices events.DevicesOffline) error {
+func (s *SubscriptionManager) HandleDevicesOffline(ctx context.Context, d SubscriptionData, header events.EventHeader, devices events.DevicesOffline) error {
 	var errors *multierror.Error
 	for _, device := range devices {
 		_, err := s.raClient.UpdateDeviceMetadata(ctx, &commands.UpdateDeviceMetadataRequest{
@@ -195,7 +195,7 @@ func decodeError(err error) error {
 	return fmt.Errorf("cannot decode devices event: %w", err)
 }
 
-func (s *SubscriptionManager) HandleDevicesEvent(ctx context.Context, header events.EventHeader, body []byte, d subscriptionData) error {
+func (s *SubscriptionManager) HandleDevicesEvent(ctx context.Context, header events.EventHeader, body []byte, d SubscriptionData) error {
 	contentReader, err := header.GetContentDecoder()
 	if err != nil {
 		return fmt.Errorf("cannot handle device event: %w", err)

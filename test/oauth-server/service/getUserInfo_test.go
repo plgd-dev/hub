@@ -15,7 +15,7 @@ func TestRequestHandler_getUserInfo(t *testing.T) {
 	webTearDown := test.SetUp(t)
 	defer webTearDown()
 
-	getReq := test.NewRequest(http.MethodGet, config.OAUTH_SERVER_HOST, uri.UserInfo, nil).Build()
+	getReq := test.NewRequestBuilder(http.MethodGet, config.OAUTH_SERVER_HOST, uri.UserInfo, nil).Build()
 	res := test.HTTPDo(t, getReq, false)
 	defer func() {
 		_ = res.Body.Close()

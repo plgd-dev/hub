@@ -53,7 +53,7 @@ func getAuthorize(t *testing.T, clientID, nonce, redirectURI, deviceID, scope, r
 	}
 
 	u.RawQuery = q.Encode()
-	getReq := test.NewRequest(http.MethodGet, config.OAUTH_SERVER_HOST, u.String(), nil).Build()
+	getReq := test.NewRequestBuilder(http.MethodGet, config.OAUTH_SERVER_HOST, u.String(), nil).Build()
 	res := test.HTTPDo(t, getReq, false)
 	defer func() {
 		_ = res.Body.Close()

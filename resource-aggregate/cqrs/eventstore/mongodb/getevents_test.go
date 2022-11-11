@@ -37,7 +37,7 @@ const (
 	getEventsResourceCount = 2000
 )
 
-func addEventsForGetEventsToDB(t *testing.T, ctx context.Context, store *mongodb.EventStore) int {
+func addEventsForGetEventsToDB(ctx context.Context, t *testing.T, store *mongodb.EventStore) int {
 	const eventCount = 100000
 	var resourceVersion [getEventsResourceCount]uint64
 	var resourceTimestamp [getEventsResourceCount]int64
@@ -71,7 +71,7 @@ func addEventsForGetEventsToDB(t *testing.T, ctx context.Context, store *mongodb
 	return eventCount
 }
 
-func getEventsByTimestamp(t *testing.T, ctx context.Context, store *mongodb.EventStore, queries []eventstore.GetEventsQuery, timestamp int64) {
+func getEventsByTimestamp(ctx context.Context, t *testing.T, store *mongodb.EventStore, queries []eventstore.GetEventsQuery, timestamp int64) {
 	err := store.GetEvents(ctx, queries, timestamp, &dummyEventHandler{})
 	require.NoError(t, err)
 }
@@ -105,15 +105,15 @@ func runGetEvents(t *testing.T, cfg runGetEventsConfig) {
 		require.NoError(t, err)
 	}()
 
-	eventCount := addEventsForGetEventsToDB(t, ctx, store)
+	eventCount := addEventsForGetEventsToDB(ctx, t, store)
 
 	rand.Seed(time.Now().UnixNano())
 	start := time.Now()
 	for i := 0; i < cfg.iterations; i++ {
 		if cfg.queries != nil {
-			getEventsByTimestamp(t, ctx, store, cfg.queries, int64(rand.Intn(eventCount+1)))
+			getEventsByTimestamp(ctx, t, store, cfg.queries, int64(rand.Intn(eventCount+1)))
 		} else {
-			getEventsByTimestamp(t, ctx, store, cfg.generator(), int64(rand.Intn(eventCount+1)))
+			getEventsByTimestamp(ctx, t, store, cfg.generator(), int64(rand.Intn(eventCount+1)))
 		}
 	}
 	end := time.Now()

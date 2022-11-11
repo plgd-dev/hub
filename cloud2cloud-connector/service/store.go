@@ -97,23 +97,23 @@ func (s *Store) UpdateLinkedAccount(ctx context.Context, linkedAccount store.Lin
 	return s.cache.UpdateLinkedAccount(linkedAccount)
 }
 
-func (s *Store) LoadOrCreateSubscription(sub Subscription) (subscriptionData, bool, error) {
+func (s *Store) LoadOrCreateSubscription(sub Subscription) (SubscriptionData, bool, error) {
 	return s.cache.LoadOrCreateSubscription(sub)
 }
 
-func (s *Store) LoadSubscription(subscripionID string) (subscriptionData, bool) {
+func (s *Store) LoadSubscription(subscripionID string) (SubscriptionData, bool) {
 	return s.cache.LoadSubscription(subscripionID)
 }
 
-func (s *Store) LoadDevicesSubscription(cloudID, linkedAccountID string) (subscriptionData, bool) {
+func (s *Store) LoadDevicesSubscription(cloudID, linkedAccountID string) (SubscriptionData, bool) {
 	return s.cache.LoadDevicesSubscription(cloudID, linkedAccountID)
 }
 
-func (s *Store) LoadDeviceSubscription(cloudID, linkedAccountID, deviceID string) (subscriptionData, bool) {
+func (s *Store) LoadDeviceSubscription(cloudID, linkedAccountID, deviceID string) (SubscriptionData, bool) {
 	return s.cache.LoadDeviceSubscription(cloudID, linkedAccountID, deviceID)
 }
 
-func (s *Store) LoadResourceSubscription(cloudID, linkedAccountID, deviceID, href string) (subscriptionData, bool) {
+func (s *Store) LoadResourceSubscription(cloudID, linkedAccountID, deviceID, href string) (SubscriptionData, bool) {
 	return s.cache.LoadResourceSubscription(cloudID, linkedAccountID, deviceID, href)
 }
 
@@ -121,7 +121,7 @@ func (s *Store) Dump() interface{} {
 	return s.cache.Dump()
 }
 
-func (s *Store) PullOutSubscription(subscripionID string) (subscriptionData, bool) {
+func (s *Store) PullOutSubscription(subscripionID string) (SubscriptionData, bool) {
 	return s.cache.PullOutSubscription(subscripionID)
 }
 
@@ -149,11 +149,11 @@ func (s *Store) PullOutResource(cloudID, linkedAccountID, deviceID, href string)
 	return s.cache.PullOutResource(cloudID, linkedAccountID, deviceID, href)
 }
 
-func (s *Store) DumpLinkedAccounts() []provisionCacheData {
+func (s *Store) DumpLinkedAccounts() []ProvisionCacheData {
 	return s.cache.DumpLinkedAccounts()
 }
 
-func (s *Store) DumpDevices() []subscriptionData {
+func (s *Store) DumpDevices() []SubscriptionData {
 	return s.cache.DumpDevices()
 }
 

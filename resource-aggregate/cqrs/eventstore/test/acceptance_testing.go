@@ -16,7 +16,7 @@ import (
 //   func TestEventStore(t *testing.T) {
 //       ctx := context.Background() // Or other when testing namespaces.
 //       store := NewEventStore()
-//       eventstore.AcceptanceTest(t, ctx, store)
+//       test.AcceptanceTest(ctx, t,store)
 //   }
 //
 
@@ -68,7 +68,7 @@ const (
 	groupID3 = "deviceId3"
 )
 
-func GetEventsTest(t *testing.T, ctx context.Context, store eventstore.EventStore) {
+func GetEventsTest(ctx context.Context, t *testing.T, store eventstore.EventStore) {
 	t.Log("testing GetEvents")
 
 	const timestamp1 = int64(0)
@@ -157,14 +157,14 @@ func GetEventsTest(t *testing.T, ctx context.Context, store eventstore.EventStor
 	require.True(t, saveEh.Equals(events))
 }
 
-func emptySaveFailTest(t *testing.T, ctx context.Context, store eventstore.EventStore) {
+func emptySaveFailTest(ctx context.Context, t *testing.T, store eventstore.EventStore) {
 	t.Log("try save no events")
 	saveStatus, err := store.Save(ctx, nil)
 	require.Error(t, err)
 	require.Equal(t, eventstore.Fail, saveStatus)
 }
 
-func invalidTimpestampFailTest(t *testing.T, ctx context.Context, store eventstore.EventStore) {
+func invalidTimpestampFailTest(ctx context.Context, t *testing.T, store eventstore.EventStore) {
 	t.Log("try save descreasing timestamp")
 	timestamp := time.Date(2021, time.April, 1, 13, 37, 0o0, 0, time.UTC).UnixNano()
 	events := getEvents(0, 2, false, groupID1, aggregateID1, timestamp)
@@ -176,7 +176,7 @@ func invalidTimpestampFailTest(t *testing.T, ctx context.Context, store eventsto
 	require.Equal(t, eventstore.Fail, saveStatus)
 }
 
-func AcceptanceTest(t *testing.T, ctx context.Context, store eventstore.EventStore) {
+func AcceptanceTest(ctx context.Context, t *testing.T, store eventstore.EventStore) {
 	type Path struct {
 		GroupID     string
 		AggregateID string
@@ -201,8 +201,8 @@ func AcceptanceTest(t *testing.T, ctx context.Context, store eventstore.EventSto
 
 	timestamp := time.Date(2021, time.April, 1, 13, 37, 0o0, 0, time.UTC).UnixNano()
 
-	emptySaveFailTest(t, ctx, store)
-	invalidTimpestampFailTest(t, ctx, store)
+	emptySaveFailTest(ctx, t, store)
+	invalidTimpestampFailTest(ctx, t, store)
 
 	t.Log("save event, VersionI 0")
 	saveStatus, err := store.Save(ctx, getEvents(0, 6, false, aggregateID1Path.GroupID, aggregateID1Path.AggregateID, timestamp)[0])

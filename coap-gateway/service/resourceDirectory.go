@@ -71,7 +71,7 @@ func validatePublish(w wkRd) error {
 	return nil
 }
 
-func ParsePublishedResources(data io.ReadSeeker, deviceID string) (wkRd, error) {
+func parsePublishedResources(data io.ReadSeeker, deviceID string) (wkRd, error) {
 	if data == nil {
 		return wkRd{}, fmt.Errorf("cannot read publish request body received from device %v: empty body", deviceID)
 	}
@@ -148,7 +148,7 @@ func resourceDirectoryPublishHandler(req *mux.Message, client *session) (*pool.M
 		return nil, statusErrorf(coapCodes.Unauthorized, "cannot load authorization context: %w", err)
 	}
 
-	w, err := ParsePublishedResources(req.Body(), authCtx.GetDeviceID())
+	w, err := parsePublishedResources(req.Body(), authCtx.GetDeviceID())
 	if err != nil {
 		return nil, statusErrorf(coapCodes.BadRequest, "%w", err)
 	}

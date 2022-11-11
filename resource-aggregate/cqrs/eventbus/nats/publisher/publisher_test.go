@@ -61,7 +61,7 @@ func TestPublisher(t *testing.T) {
 		naSubClient.Close()
 	}()
 
-	acceptanceTest(t, context.Background(), timeout, waitForSubscription, topics, publisher, subscriber)
+	acceptanceTest(context.Background(), t, timeout, waitForSubscription, topics, publisher, subscriber)
 }
 
 func TestPublisherJetStream(t *testing.T) {
@@ -120,7 +120,7 @@ func TestPublisherJetStream(t *testing.T) {
 		naSubClient.Close()
 	}()
 
-	acceptanceTest(t, context.Background(), timeout, waitForSubscription, topics, publisher, subscriber)
+	acceptanceTest(context.Background(), t, timeout, waitForSubscription, topics, publisher, subscriber)
 }
 
 type mockEvent struct {
@@ -206,7 +206,7 @@ func testWaitForAnyEvent(timeout time.Duration, eh1 *mockEventHandler, eh2 *mock
 	}
 }
 
-func testNewSubscription(t *testing.T, ctx context.Context, subscriber eventbus.Subscriber, subscriptionID string, topics []string) (*mockEventHandler, eventbus.Observer) {
+func testNewSubscription(ctx context.Context, t *testing.T, subscriber eventbus.Subscriber, subscriptionID string, topics []string) (*mockEventHandler, eventbus.Observer) {
 	t.Log("Subscribe to testNewSubscription")
 	m := newMockEventHandler()
 	ob, err := subscriber.Subscribe(ctx, subscriptionID, topics, m)
@@ -228,9 +228,9 @@ func testNewSubscription(t *testing.T, ctx context.Context, subscriber eventbus.
 //	    subscriber := NewSubscriber()
 //	    timeout := time.Second*5
 //	    topics := []string{"a", "b"}
-//	    eventbus.AcceptanceTest(t, ctx, timeout, topics, publisher, subscriber)
+//	    acceptanceTest(ctx, t, timeout, topics, publisher, subscriber)
 //	}
-func acceptanceTest(t *testing.T, ctx context.Context, timeout time.Duration, waitForSubscription time.Duration, topics []string, publisher eventbus.Publisher, subscriber eventbus.Subscriber) {
+func acceptanceTest(ctx context.Context, t *testing.T, timeout time.Duration, waitForSubscription time.Duration, topics []string, publisher eventbus.Publisher, subscriber eventbus.Subscriber) {
 	// savedEvents := []Event{}
 	AggregateID1 := "aggregateID1"
 	AggregateID2 := "aggregateID2"
@@ -299,7 +299,7 @@ func acceptanceTest(t *testing.T, ctx context.Context, timeout time.Duration, wa
 
 	// Add handlers and observers.
 	t.Log("Subscribe to first topic")
-	m0, ob0 := testNewSubscription(t, ctx, subscriber, "sub-0", topics[0:1])
+	m0, ob0 := testNewSubscription(ctx, t, subscriber, "sub-0", topics[0:1])
 	time.Sleep(waitForSubscription)
 
 	err = publisher.Publish(ctx, topics[0:1], aggregateID1Path.GroupID, aggregateID1Path.AggregateID, eventsToPublish[1])
@@ -312,22 +312,22 @@ func acceptanceTest(t *testing.T, ctx context.Context, timeout time.Duration, wa
 	err = ob0.Close()
 	assert.NoError(t, err)
 	t.Log("Subscribe more observers")
-	m1, ob1 := testNewSubscription(t, ctx, subscriber, "sub-1", topics[1:2])
+	m1, ob1 := testNewSubscription(ctx, t, subscriber, "sub-1", topics[1:2])
 	defer func() {
 		err = ob1.Close()
 		assert.NoError(t, err)
 	}()
-	m2, ob2 := testNewSubscription(t, ctx, subscriber, "sub-2", topics[1:2])
+	m2, ob2 := testNewSubscription(ctx, t, subscriber, "sub-2", topics[1:2])
 	defer func() {
 		err = ob2.Close()
 		assert.NoError(t, err)
 	}()
-	m3, ob3 := testNewSubscription(t, ctx, subscriber, "sub-shared", topics[0:1])
+	m3, ob3 := testNewSubscription(ctx, t, subscriber, "sub-shared", topics[0:1])
 	defer func() {
 		err = ob3.Close()
 		assert.NoError(t, err)
 	}()
-	m4, ob4 := testNewSubscription(t, ctx, subscriber, "sub-shared", topics[0:1])
+	m4, ob4 := testNewSubscription(ctx, t, subscriber, "sub-shared", topics[0:1])
 	defer func() {
 		err = ob4.Close()
 		assert.NoError(t, err)

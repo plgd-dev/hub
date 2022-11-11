@@ -206,9 +206,8 @@ func main() {
 			ownAndOnboard(ctx, c, d.ID, *apn, *authCode)
 			if idx == *maxNum-1 {
 				return
-			} else {
-				continue
 			}
+			continue
 		}
 		id := d.ID
 		name := getDeviceName(d.Details)
