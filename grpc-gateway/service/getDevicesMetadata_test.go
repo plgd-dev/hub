@@ -6,6 +6,7 @@ import (
 	"errors"
 	"io"
 	"testing"
+	"time"
 
 	"github.com/plgd-dev/device/v2/schema/device"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
@@ -133,6 +134,9 @@ func TestRequestHandlerGetDevicesMetadata(t *testing.T) {
 
 	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.ACTIVE_COAP_SCHEME+testCfg.COAP_GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
+
+	// for update resource-directory cache
+	time.Sleep(time.Second)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

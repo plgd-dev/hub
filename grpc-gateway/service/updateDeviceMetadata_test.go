@@ -221,6 +221,15 @@ func TestRequestHandler_UpdateDeviceMetadata(t *testing.T) {
 	require.True(t, deviceMetadataUpdated.GetTwinEnabled())
 	require.NotEqual(t, deviceMetadataUpdated.GetTwinSynchronization().GetState(), commands.TwinSynchronization_DISABLED)
 
+	for {
+		deviceMetadataUpdated, err = deviceMetadataUpdatedFilter.WaitForEvent(time.Second, "")
+		require.NoError(t, err)
+		require.True(t, deviceMetadataUpdated.GetTwinEnabled())
+		if deviceMetadataUpdated.GetTwinSynchronization().GetState() == commands.TwinSynchronization_IN_SYNC {
+			break
+		}
+	}
+
 	_, err = c.UpdateResource(ctx, &pb.UpdateResourceRequest{
 		ResourceInterface: interfaces.OC_IF_BASELINE,
 		ResourceId:        commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
