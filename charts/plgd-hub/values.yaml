@@ -716,6 +716,11 @@ coapgateway:
     type: LoadBalancer
     # -- Use nodePort, if specified, for one of the protocols. If both protocols are enabled, nodePort needs to be configured directly in the service to mutually different ports.
     nodePort:
+    # -- Default labels for coap-gateway services
+    labels: { }
+    # -- Default annotations for coap-gateway services
+    annotations: { }
+    # -- TCP service
     tcp:  
       # -- Service type
       type:
@@ -731,6 +736,7 @@ coapgateway:
       protocol: TCP
       # -- Name
       name: coaps-tcp
+    # -- UDP service
     udp:
       # -- Service type
       type:
