@@ -26,7 +26,7 @@ import (
 )
 
 func TestRequestHandlerGetResourceFromDevice(t *testing.T) {
-	deviceName := test.TestDeviceNameWithOicResObservable
+	deviceName := test.TestDeviceName
 	deviceID := test.MustFindDeviceByName(deviceName)
 	switchID := "1"
 	type args struct {
