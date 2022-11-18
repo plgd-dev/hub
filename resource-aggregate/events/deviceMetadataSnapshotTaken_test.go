@@ -180,6 +180,7 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 							Connection: &commands.Connection{
 								Status:      commands.Connection_ONLINE,
 								ConnectedAt: connectedAt,
+								Protocol:    commands.Connection_COAPS,
 							},
 						},
 					},
@@ -190,6 +191,7 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 							Connection: &commands.Connection{
 								Status:      commands.Connection_ONLINE,
 								ConnectedAt: connectedAt,
+								Protocol:    commands.Connection_COAPS,
 							},
 							TwinEnabled:          true,
 							TwinSynchronization:  &commands.TwinSynchronization{},
@@ -210,7 +212,8 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 						CorrelationId: correlationID,
 						Update: &commands.UpdateDeviceMetadataRequest_Connection{
 							Connection: &commands.Connection{
-								Status: commands.Connection_ONLINE,
+								Status:   commands.Connection_ONLINE,
+								Protocol: commands.Connection_COAPS,
 							},
 						},
 					},
@@ -239,6 +242,7 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 							Connection: &commands.Connection{
 								Status:      commands.Connection_OFFLINE,
 								ConnectedAt: connectedAt,
+								Protocol:    commands.Connection_COAPS,
 							},
 							TwinEnabled:          true,
 							TwinSynchronization:  &commands.TwinSynchronization{},

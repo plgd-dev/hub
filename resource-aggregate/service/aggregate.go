@@ -15,7 +15,7 @@ import (
 
 type LogPublishErrFunc func(err error)
 
-type aggregate struct {
+type Aggregate struct {
 	ag         *cqrsAggregate.Aggregate
 	eventstore EventStore
 }
@@ -33,8 +33,8 @@ func DeviceMetadataFactoryModel(ctx context.Context) (cqrsAggregate.AggregateMod
 }
 
 // NewAggregate creates new resource aggreate - it must be created for every run command.
-func NewAggregate(resourceID *commands.ResourceId, snapshotThreshold int, eventstore EventStore, factoryModel cqrsAggregate.FactoryModelFunc, retry cqrsAggregate.RetryFunc) (*aggregate, error) { //nolint:revive
-	a := &aggregate{
+func NewAggregate(resourceID *commands.ResourceId, snapshotThreshold int, eventstore EventStore, factoryModel cqrsAggregate.FactoryModelFunc, retry cqrsAggregate.RetryFunc) (*Aggregate, error) {
+	a := &Aggregate{
 		eventstore: eventstore,
 	}
 	cqrsAg, err := cqrsAggregate.NewAggregate(resourceID.GetDeviceId(),
@@ -240,7 +240,7 @@ func validateConfirmResourceDelete(request *commands.ConfirmResourceDeleteReques
 	return nil
 }
 
-func cleanUpToSnapshot(ctx context.Context, aggregate *aggregate, events []eventstore.Event) {
+func cleanUpToSnapshot(ctx context.Context, aggregate *Aggregate, events []eventstore.Event) {
 	for _, event := range events {
 		if event.IsSnapshot() {
 			err := aggregate.eventstore.RemoveUpToVersion(ctx, []eventstore.VersionQuery{{GroupID: event.GroupID(), AggregateID: event.AggregateID(), Version: event.Version()}})
@@ -256,16 +256,16 @@ func cleanUpToSnapshot(ctx context.Context, aggregate *aggregate, events []event
 	}
 }
 
-func (a *aggregate) DeviceID() string {
+func (a *Aggregate) DeviceID() string {
 	return a.ag.GroupID()
 }
 
-func (a *aggregate) ResourceID() string {
+func (a *Aggregate) ResourceID() string {
 	return a.ag.AggregateID()
 }
 
 // HandlePublishResource handles a command PublishResourceLinks
-func (a *aggregate) PublishResourceLinks(ctx context.Context, request *commands.PublishResourceLinksRequest) (events []eventstore.Event, err error) {
+func (a *Aggregate) PublishResourceLinks(ctx context.Context, request *commands.PublishResourceLinksRequest) (events []eventstore.Event, err error) {
 	if err = validatePublish(request); err != nil {
 		err = fmt.Errorf("invalid publish resource links command: %w", err)
 		return
@@ -283,7 +283,7 @@ func (a *aggregate) PublishResourceLinks(ctx context.Context, request *commands.
 }
 
 // HandleUnpublishResource handles a command UnpublishResourceLinks
-func (a *aggregate) UnpublishResourceLinks(ctx context.Context, request *commands.UnpublishResourceLinksRequest) (events []eventstore.Event, err error) {
+func (a *Aggregate) UnpublishResourceLinks(ctx context.Context, request *commands.UnpublishResourceLinksRequest) (events []eventstore.Event, err error) {
 	if err = validateUnpublish(request); err != nil {
 		err = fmt.Errorf("invalid unpublish resource links command: %w", err)
 		return
@@ -300,7 +300,7 @@ func (a *aggregate) UnpublishResourceLinks(ctx context.Context, request *command
 }
 
 // NotifyContentChanged handles a command NotifyContentChanged
-func (a *aggregate) NotifyResourceChanged(ctx context.Context, request *commands.NotifyResourceChangedRequest) (events []eventstore.Event, err error) {
+func (a *Aggregate) NotifyResourceChanged(ctx context.Context, request *commands.NotifyResourceChangedRequest) (events []eventstore.Event, err error) {
 	if err = validateNotifyContentChanged(request); err != nil {
 		err = fmt.Errorf("invalid notify content changed command: %w", err)
 		return
@@ -316,7 +316,7 @@ func (a *aggregate) NotifyResourceChanged(ctx context.Context, request *commands
 }
 
 // HandleUpdateResourceContent handles a command UpdateResource
-func (a *aggregate) UpdateResource(ctx context.Context, request *commands.UpdateResourceRequest) (events []eventstore.Event, err error) {
+func (a *Aggregate) UpdateResource(ctx context.Context, request *commands.UpdateResourceRequest) (events []eventstore.Event, err error) {
 	if err = validateUpdateResourceContent(request); err != nil {
 		err = fmt.Errorf("invalid update resource content command: %w", err)
 		return
@@ -332,7 +332,7 @@ func (a *aggregate) UpdateResource(ctx context.Context, request *commands.Update
 	return
 }
 
-func (a *aggregate) ConfirmResourceUpdate(ctx context.Context, request *commands.ConfirmResourceUpdateRequest) (events []eventstore.Event, err error) {
+func (a *Aggregate) ConfirmResourceUpdate(ctx context.Context, request *commands.ConfirmResourceUpdateRequest) (events []eventstore.Event, err error) {
 	if err = validateConfirmResourceUpdate(request); err != nil {
 		err = fmt.Errorf("invalid update resource content notification command: %w", err)
 		return
@@ -349,7 +349,7 @@ func (a *aggregate) ConfirmResourceUpdate(ctx context.Context, request *commands
 }
 
 // RetrieveResource handles a command RetriveResource
-func (a *aggregate) RetrieveResource(ctx context.Context, request *commands.RetrieveResourceRequest) (events []eventstore.Event, err error) {
+func (a *Aggregate) RetrieveResource(ctx context.Context, request *commands.RetrieveResourceRequest) (events []eventstore.Event, err error) {
 	if err = validateRetrieveResource(request); err != nil {
 		err = fmt.Errorf("invalid retrieve resource content command: %w", err)
 		return
@@ -365,7 +365,7 @@ func (a *aggregate) RetrieveResource(ctx context.Context, request *commands.Retr
 	return
 }
 
-func (a *aggregate) ConfirmResourceRetrieve(ctx context.Context, request *commands.ConfirmResourceRetrieveRequest) (events []eventstore.Event, err error) {
+func (a *Aggregate) ConfirmResourceRetrieve(ctx context.Context, request *commands.ConfirmResourceRetrieveRequest) (events []eventstore.Event, err error) {
 	if err = validateConfirmResourceRetrieve(request); err != nil {
 		err = fmt.Errorf("invalid retrieve resource content notification command: %w", err)
 		return
@@ -381,7 +381,7 @@ func (a *aggregate) ConfirmResourceRetrieve(ctx context.Context, request *comman
 }
 
 // DeleteResource handles a command DeleteResource
-func (a *aggregate) DeleteResource(ctx context.Context, request *commands.DeleteResourceRequest) (events []eventstore.Event, err error) {
+func (a *Aggregate) DeleteResource(ctx context.Context, request *commands.DeleteResourceRequest) (events []eventstore.Event, err error) {
 	if err = validateDeleteResource(request); err != nil {
 		err = fmt.Errorf("invalid delete resource content command: %w", err)
 		return
@@ -397,7 +397,7 @@ func (a *aggregate) DeleteResource(ctx context.Context, request *commands.Delete
 	return
 }
 
-func (a *aggregate) ConfirmResourceDelete(ctx context.Context, request *commands.ConfirmResourceDeleteRequest) (events []eventstore.Event, err error) {
+func (a *Aggregate) ConfirmResourceDelete(ctx context.Context, request *commands.ConfirmResourceDeleteRequest) (events []eventstore.Event, err error) {
 	if err = validateConfirmResourceDelete(request); err != nil {
 		err = fmt.Errorf("invalid delete resource content notification command: %w", err)
 		return
@@ -414,7 +414,7 @@ func (a *aggregate) ConfirmResourceDelete(ctx context.Context, request *commands
 }
 
 // CreateResource handles a command CreateResource
-func (a *aggregate) CreateResource(ctx context.Context, request *commands.CreateResourceRequest) (events []eventstore.Event, err error) {
+func (a *Aggregate) CreateResource(ctx context.Context, request *commands.CreateResourceRequest) (events []eventstore.Event, err error) {
 	if err = validateCreateResource(request); err != nil {
 		err = fmt.Errorf("invalid create resource content command: %w", err)
 		return
@@ -430,7 +430,7 @@ func (a *aggregate) CreateResource(ctx context.Context, request *commands.Create
 	return
 }
 
-func (a *aggregate) ConfirmResourceCreate(ctx context.Context, request *commands.ConfirmResourceCreateRequest) (events []eventstore.Event, err error) {
+func (a *Aggregate) ConfirmResourceCreate(ctx context.Context, request *commands.ConfirmResourceCreateRequest) (events []eventstore.Event, err error) {
 	if err = validateConfirmResourceCreate(request); err != nil {
 		err = fmt.Errorf("invalid create resource content notification command: %w", err)
 		return

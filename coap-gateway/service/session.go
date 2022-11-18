@@ -3,12 +3,14 @@ package service
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"net"
 	"sync"
 	"time"
 
+	"github.com/pion/dtls/v2"
 	"github.com/plgd-dev/device/v2/schema/resources"
 	"github.com/plgd-dev/go-coap/v3/message"
 	"github.com/plgd-dev/go-coap/v3/message/codes"
@@ -137,6 +139,20 @@ func (c *session) Protocol() coapService.Protocol {
 		return coapService.TCP
 	}
 	return coapService.UDP
+}
+
+func (c *session) GetApplicationProtocol() commands.Connection_Protocol {
+	switch c.coapConn.NetConn().(type) {
+	case *tls.Conn:
+		return commands.Connection_COAPS_TCP
+	case *dtls.Conn:
+		return commands.Connection_COAPS
+	case *net.TCPConn:
+		return commands.Connection_COAP_TCP
+	case *net.UDPConn:
+		return commands.Connection_COAP
+	}
+	return commands.Connection_UNKNOWN
 }
 
 func (c *session) getSessionExpiration(validJWTUntil time.Time) time.Time {

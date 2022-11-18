@@ -44,7 +44,8 @@ func TestRequestHandlerGetDevicesMetadata(t *testing.T) {
 				{
 					DeviceId: deviceID,
 					Connection: &commands.Connection{
-						Status: commands.Connection_ONLINE,
+						Status:   commands.Connection_ONLINE,
+						Protocol: test.StringToApplicationProtocol(config.ACTIVE_COAP_SCHEME),
 					},
 					TwinEnabled: true,
 					TwinSynchronization: &commands.TwinSynchronization{
@@ -63,7 +64,8 @@ func TestRequestHandlerGetDevicesMetadata(t *testing.T) {
 				{
 					DeviceId: deviceID,
 					Connection: &commands.Connection{
-						Status: commands.Connection_ONLINE,
+						Status:   commands.Connection_ONLINE,
+						Protocol: test.StringToApplicationProtocol(config.ACTIVE_COAP_SCHEME),
 					},
 					TwinEnabled: true,
 					TwinSynchronization: &commands.TwinSynchronization{
@@ -82,7 +84,8 @@ func TestRequestHandlerGetDevicesMetadata(t *testing.T) {
 				{
 					DeviceId: deviceID,
 					Connection: &commands.Connection{
-						Status: commands.Connection_ONLINE,
+						Status:   commands.Connection_ONLINE,
+						Protocol: test.StringToApplicationProtocol(config.ACTIVE_COAP_SCHEME),
 					},
 					TwinEnabled: true,
 					TwinSynchronization: &commands.TwinSynchronization{
@@ -127,7 +130,7 @@ func TestRequestHandlerGetDevicesMetadata(t *testing.T) {
 	}()
 	c := pb.NewGrpcGatewayClient(conn)
 
-	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.ACTIVE_COAP_SCHEME+config.COAP_GW_HOST, test.GetAllBackendResourceLinks())
+	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.ACTIVE_COAP_SCHEME+"://"+config.COAP_GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 
 	for _, tt := range tests {

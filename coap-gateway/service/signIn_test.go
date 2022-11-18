@@ -17,7 +17,7 @@ import (
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	test "github.com/plgd-dev/hub/v2/test"
-	testCfg "github.com/plgd-dev/hub/v2/test/config"
+	config "github.com/plgd-dev/hub/v2/test/config"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	oauthUri "github.com/plgd-dev/hub/v2/test/oauth-server/uri"
 	"github.com/stretchr/testify/require"
@@ -68,7 +68,7 @@ func TestSignInDeviceSubscriptionHandler(t *testing.T) {
 	defer shutdown()
 
 	ctx := kitNetGrpc.CtxWithToken(context.Background(), oauthTest.GetDefaultAccessToken(t))
-	conn, err := grpc.Dial(testCfg.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+	conn, err := grpc.Dial(config.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
 	})))
 	require.NoError(t, err)

@@ -34,11 +34,12 @@ func CmpDeviceValues(t *testing.T, expected, got []*pbGrpc.Device) {
 	test.CheckProtobufs(t, expected, got, test.RequireToCheckFunc(require.Equal))
 }
 
-func MakeDeviceMetadataUpdated(deviceID string, connectionStatus commands.Connection_Status, twinEnabled bool, twinSynchronizationState commands.TwinSynchronization_State, correlationID string) *events.DeviceMetadataUpdated {
+func MakeDeviceMetadataUpdated(deviceID string, connectionStatus commands.Connection_Status, connectionProtocol commands.Connection_Protocol, twinEnabled bool, twinSynchronizationState commands.TwinSynchronization_State, correlationID string) *events.DeviceMetadataUpdated {
 	return &events.DeviceMetadataUpdated{
 		DeviceId: deviceID,
 		Connection: &commands.Connection{
-			Status: connectionStatus,
+			Status:   connectionStatus,
+			Protocol: connectionProtocol,
 		},
 		TwinSynchronization: &commands.TwinSynchronization{
 			State: twinSynchronizationState,

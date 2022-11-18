@@ -13,7 +13,7 @@ import (
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	test "github.com/plgd-dev/hub/v2/test"
-	testCfg "github.com/plgd-dev/hub/v2/test/config"
+	"github.com/plgd-dev/hub/v2/test/config"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -131,7 +131,7 @@ func TestClientObserveHandlerCloseObservation(t *testing.T) {
 
 	time.Sleep(time.Second)
 
-	ctx, cancel := context.WithTimeout(context.Background(), testCfg.TEST_TIMEOUT)
+	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
 	defer cancel()
 	done := make(chan struct{})
 	_, err := co2.Observe(ctx, uri.ResourceRoute+"/"+CertIdentity+TestAResourceHref, func(req *pool.Message) {
@@ -143,7 +143,7 @@ func TestClientObserveHandlerCloseObservation(t *testing.T) {
 	require.NoError(t, err)
 
 	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
-	conn, err := grpc.Dial(testCfg.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+	conn, err := grpc.Dial(config.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
 	})))
 	require.NoError(t, err)

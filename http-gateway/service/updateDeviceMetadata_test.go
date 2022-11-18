@@ -136,7 +136,7 @@ func TestRequestHandlerUpdateDeviceMetadata(t *testing.T) {
 	}()
 	c := pb.NewGrpcGatewayClient(conn)
 
-	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.ACTIVE_COAP_SCHEME+config.COAP_GW_HOST, test.GetAllBackendResourceLinks())
+	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.ACTIVE_COAP_SCHEME+"://"+config.COAP_GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 
 	logger := log.NewLogger(log.MakeDefaultConfig())

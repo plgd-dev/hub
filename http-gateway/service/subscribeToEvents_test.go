@@ -38,7 +38,7 @@ func checkDeviceMetadataUpdatedOnlineEvent(t *testing.T, ev *pb.Event, deviceID,
 	expectedEvent := &pb.Event{
 		SubscriptionId: baseSubID,
 		Type: &pb.Event_DeviceMetadataUpdated{
-			DeviceMetadataUpdated: pbTest.MakeDeviceMetadataUpdated(deviceID, commands.Connection_ONLINE, true, twinSynchronizationState, ""),
+			DeviceMetadataUpdated: pbTest.MakeDeviceMetadataUpdated(deviceID, commands.Connection_ONLINE, test.StringToApplicationProtocol(config.ACTIVE_COAP_SCHEME), true, twinSynchronizationState, ""),
 		},
 		CorrelationId: "testToken",
 	}
@@ -200,7 +200,7 @@ func TestRequestHandlerSubscribeToEvents(t *testing.T) {
 	pbTest.CmpEvent(t, expectedEvent, ev, "")
 	baseSubID := ev.SubscriptionId
 
-	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.ACTIVE_COAP_SCHEME+config.COAP_GW_HOST, nil)
+	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.ACTIVE_COAP_SCHEME+"://"+config.COAP_GW_HOST, nil)
 
 	ev, err = recv()
 	require.NoError(t, err)

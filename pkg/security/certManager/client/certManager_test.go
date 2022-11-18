@@ -121,10 +121,10 @@ certFile: /tmp/test3570354545/crt4065348335
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var testCfg client.Config
-			err := yaml.Unmarshal([]byte(tt.args.configYaml), &testCfg)
+			var config client.Config
+			err := yaml.Unmarshal([]byte(tt.args.configYaml), &config)
 			require.NoError(t, err)
-			err = testCfg.Validate()
+			err = config.Validate()
 			if tt.wantErr {
 				require.Error(t, err)
 				return
@@ -132,8 +132,8 @@ certFile: /tmp/test3570354545/crt4065348335
 			require.NoError(t, err)
 			err = tt.want.Validate()
 			require.NoError(t, err)
-			require.Equal(t, tt.want, testCfg)
-			caPoolArray, err := testCfg.CAPoolArray()
+			require.Equal(t, tt.want, config)
+			caPoolArray, err := config.CAPoolArray()
 			require.NoError(t, err)
 			require.Equal(t, tt.wantCAPoolArray, caPoolArray)
 		})

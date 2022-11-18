@@ -14,7 +14,7 @@ import (
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 	"github.com/plgd-dev/hub/v2/test"
-	testCfg "github.com/plgd-dev/hub/v2/test/config"
+	"github.com/plgd-dev/hub/v2/test/config"
 	"github.com/plgd-dev/kit/v2/codec/cbor"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
@@ -26,8 +26,8 @@ const (
 	TestManufacturer = "Test Manufacturer"
 )
 
-var ClientTestCfg = client.Config{
-	GatewayAddress: testCfg.GRPC_GW_HOST,
+var Clientconfig = client.Config{
+	GatewayAddress: config.GRPC_GW_HOST,
 }
 
 func NewTestClient(t *testing.T) *client.Client {
@@ -38,7 +38,7 @@ func NewTestClient(t *testing.T) *client.Client {
 	tlsCfg := tls.Config{
 		RootCAs: rootCAs,
 	}
-	c, err := client.NewFromConfig(&ClientTestCfg, &tlsCfg)
+	c, err := client.NewFromConfig(&Clientconfig, &tlsCfg)
 	require.NoError(t, err)
 	return c
 }
@@ -73,7 +73,8 @@ func (h *gatewayHandler) GetDevices(req *pb.GetDevicesRequest, srv pb.GrpcGatewa
 		Name: h.deviceName,
 		Metadata: &pb.Device_Metadata{
 			Connection: &commands.Connection{
-				Status: commands.Connection_ONLINE,
+				Status:   commands.Connection_ONLINE,
+				Protocol: test.StringToApplicationProtocol(config.ACTIVE_COAP_SCHEME),
 			},
 		},
 		ManufacturerName: []*pb.LocalizedString{{Value: TestManufacturer, Language: "en"}},

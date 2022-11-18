@@ -273,7 +273,7 @@ func testPreregisterVirtualDevice(ctx context.Context, t *testing.T, deviceID st
 	require.NoError(t, err)
 	require.NotEmpty(t, ev.GetOperationProcessed())
 	require.Equal(t, ev.GetOperationProcessed().GetErrorStatus().GetCode(), pb.Event_OperationProcessed_ErrorStatus_OK)
-	virtualdevice.CreateDevice(ctx, t, "name-"+deviceID, deviceID, numResources, isClient, raClient)
+	virtualdevice.CreateDevice(ctx, t, "name-"+deviceID, deviceID, numResources, test.StringToApplicationProtocol(config.ACTIVE_COAP_SCHEME), isClient, raClient)
 	resources := virtualdevice.CreateDeviceResourceLinks(deviceID, numResources)
 	links := make([]schema.ResourceLink, 0, len(resources))
 	for _, r := range resources {
@@ -429,7 +429,7 @@ func runTestDeviceObserverRegister(ctx context.Context, t *testing.T, deviceID s
 	}()
 	grpcClient := pb.NewGrpcGatewayClient(grpcConn)
 
-	_, shutdownDevSim := test.OnboardDevSim(ctx, t, grpcClient, deviceID, config.ACTIVE_COAP_SCHEME+config.COAP_GW_HOST, nil)
+	_, shutdownDevSim := test.OnboardDevSim(ctx, t, grpcClient, deviceID, config.ACTIVE_COAP_SCHEME+"://"+config.COAP_GW_HOST, nil)
 	defer shutdownDevSim()
 
 	done := false

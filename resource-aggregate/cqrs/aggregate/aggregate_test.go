@@ -137,15 +137,15 @@ func TestAggregate(t *testing.T) {
 	model, err := concurrencyExcepTestA.FactoryModel(ctx)
 	require.NoError(t, err)
 
-	amodel, err := aggregate.NewAggrModel(ctx, a.GroupID(), a.AggregateID(), store, a.LogDebugfFunc, model)
+	amodel, err := aggregate.NewAggregateModel(ctx, a.GroupID(), a.AggregateID(), store, a.LogDebugfFunc, model)
 	require.NoError(t, err)
 
-	ev, concurrencyException, err := a.HandleCommandWithAggrModel(ctx, &commandPub1, amodel)
+	ev, concurrencyException, err := a.HandleCommandWithAggregateModelWrapper(ctx, &commandPub1, amodel)
 	require.NoError(t, err)
 	require.False(t, concurrencyException)
 	require.NotNil(t, ev)
 
-	ev, concurrencyException, err = a.HandleCommandWithAggrModel(ctx, &commandPub1, amodel)
+	ev, concurrencyException, err = a.HandleCommandWithAggregateModelWrapper(ctx, &commandPub1, amodel)
 	require.NoError(t, err)
 	require.True(t, concurrencyException)
 	require.Nil(t, ev)

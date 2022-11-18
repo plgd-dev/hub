@@ -64,8 +64,9 @@ func (d *DeviceMetadataUpdated) CheckInitialized() bool {
 func (d *DeviceMetadataUpdated) Equal(upd *DeviceMetadataUpdated) bool {
 	return d.GetConnection().GetStatus() == upd.GetConnection().GetStatus() &&
 		d.GetConnection().GetId() == upd.GetConnection().GetId() &&
-		d.GetCanceled() == upd.GetCanceled() &&
 		d.GetConnection().GetOnlineValidUntil() == upd.GetConnection().GetOnlineValidUntil() &&
+		d.GetConnection().GetProtocol() == upd.GetConnection().GetProtocol() &&
+		d.GetCanceled() == upd.GetCanceled() &&
 		d.GetTwinEnabled() == upd.GetTwinEnabled() &&
 		d.GetAuditContext().GetUserId() == upd.GetAuditContext().GetUserId() &&
 		d.GetAuditContext().GetCorrelationId() == upd.GetAuditContext().GetCorrelationId() &&

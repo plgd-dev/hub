@@ -25,7 +25,7 @@ func validateCancelResourceCommand(request *commands.CancelPendingCommandsReques
 	return nil
 }
 
-func (a *aggregate) CancelResourceCommand(ctx context.Context, request *commands.CancelPendingCommandsRequest) (events []eventstore.Event, err error) {
+func (a *Aggregate) CancelResourceCommand(ctx context.Context, request *commands.CancelPendingCommandsRequest) (events []eventstore.Event, err error) {
 	if err = validateCancelResourceCommand(request); err != nil {
 		return
 	}

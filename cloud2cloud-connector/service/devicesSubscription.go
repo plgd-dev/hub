@@ -152,7 +152,8 @@ func (s *SubscriptionManager) HandleDevicesOnline(ctx context.Context, d Subscri
 			DeviceId: device.ID,
 			Update: &commands.UpdateDeviceMetadataRequest_Connection{
 				Connection: &commands.Connection{
-					Status: commands.Connection_ONLINE,
+					Status:   commands.Connection_ONLINE,
+					Protocol: commands.Connection_C2C,
 				},
 			},
 			CommandMetadata: &commands.CommandMetadata{

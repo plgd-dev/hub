@@ -20,7 +20,7 @@ import (
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"github.com/plgd-dev/hub/v2/test"
-	testCfg "github.com/plgd-dev/hub/v2/test/config"
+	config "github.com/plgd-dev/hub/v2/test/config"
 	testHttp "github.com/plgd-dev/hub/v2/test/http"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	"github.com/plgd-dev/hub/v2/test/service"
@@ -42,10 +42,10 @@ func TestRequestHandlerSubscribeToDevices(t *testing.T) {
 		map[interface{}]interface{}{"di": deviceID},
 	}
 	eventType := events.EventType_DevicesOnline
-	uri := "https://" + testCfg.C2C_GW_HOST + uri.DevicesSubscriptions
+	uri := "https://" + config.C2C_GW_HOST + uri.DevicesSubscriptions
 	accept := message.AppJSON.String()
 
-	ctx, cancel := context.WithTimeout(context.Background(), testCfg.TEST_TIMEOUT)
+	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
 	defer cancel()
 
 	tearDown := service.SetUp(ctx, t)
@@ -54,7 +54,7 @@ func TestRequestHandlerSubscribeToDevices(t *testing.T) {
 	token := oauthTest.GetDefaultAccessToken(t)
 	ctx = kitNetGrpc.CtxWithToken(ctx, token)
 
-	conn, err := grpc.Dial(testCfg.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+	conn, err := grpc.Dial(config.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
 	})))
 	require.NoError(t, err)
@@ -62,7 +62,7 @@ func TestRequestHandlerSubscribeToDevices(t *testing.T) {
 	defer func() {
 		_ = conn.Close()
 	}()
-	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.ACTIVE_COAP_SCHEME+testCfg.COAP_GW_HOST, test.GetAllBackendResourceLinks())
+	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.ACTIVE_COAP_SCHEME+"://"+config.COAP_GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 
 	eventsServer, cleanUpEventsServer := c2cTest.NewTestListener(t)
@@ -133,10 +133,10 @@ func TestRequestHandlerSubscribeToDevicesOffline(t *testing.T) {
 	wantEventType := events.EventType_DevicesOffline
 	wantEventContent := []interface{}{}
 	eventType := events.EventType_DevicesOffline
-	uri := "https://" + testCfg.C2C_GW_HOST + uri.DevicesSubscriptions
+	uri := "https://" + config.C2C_GW_HOST + uri.DevicesSubscriptions
 	accept := message.AppJSON.String()
 
-	ctx, cancel := context.WithTimeout(context.Background(), testCfg.TEST_TIMEOUT)
+	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
 	defer cancel()
 
 	tearDown := service.SetUp(ctx, t)
@@ -147,7 +147,7 @@ func TestRequestHandlerSubscribeToDevicesOffline(t *testing.T) {
 	gwShutdown := coapgwTest.New(t, coapgwCfg)
 	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
 
-	conn, err := grpc.Dial(testCfg.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+	conn, err := grpc.Dial(config.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
 	})))
 	require.NoError(t, err)
@@ -155,7 +155,7 @@ func TestRequestHandlerSubscribeToDevicesOffline(t *testing.T) {
 	defer func() {
 		_ = conn.Close()
 	}()
-	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.ACTIVE_COAP_SCHEME+coapgwCfg.APIs.COAP.Addr, test.GetAllBackendResourceLinks())
+	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.ACTIVE_COAP_SCHEME+"://"+coapgwCfg.APIs.COAP.Addr, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 
 	eventsServer, cleanUpEventsServer := c2cTest.NewTestListener(t)

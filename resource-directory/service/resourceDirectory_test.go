@@ -18,7 +18,7 @@ import (
 	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 	"github.com/plgd-dev/hub/v2/resource-directory/service"
 	"github.com/plgd-dev/hub/v2/test"
-	testCfg "github.com/plgd-dev/hub/v2/test/config"
+	config "github.com/plgd-dev/hub/v2/test/config"
 	pbTest "github.com/plgd-dev/hub/v2/test/pb"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -63,7 +63,7 @@ func TestResourceDirectoryGetResourceLinks(t *testing.T) {
 
 	pool, err := ants.NewPool(1)
 	require.NoError(t, err)
-	naClient, resourceSubscriber, err := natsTest.NewClientAndSubscriber(testCfg.MakeSubscriberConfig(), fileWatcher,
+	naClient, resourceSubscriber, err := natsTest.NewClientAndSubscriber(config.MakeSubscriberConfig(), fileWatcher,
 		logger,
 		subscriber.WithGoPool(pool.Submit),
 		subscriber.WithUnmarshaler(utils.Unmarshal),

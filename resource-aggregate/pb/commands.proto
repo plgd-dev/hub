@@ -438,6 +438,15 @@ message Connection {
     int64 online_valid_until = 2;
     string id = 3; // when status is ONLINE, this field contains the connection id. To update state offline, this field must be same as the one in the previous message.
     int64 connected_at = 4; // timestamp when the device was connected
+    enum Protocol {
+        UNKNOWN = 0;
+        COAP = 1;
+        COAPS = 2;
+        COAP_TCP = 3;
+        COAPS_TCP = 4;
+        C2C = 5;
+    }
+    Protocol protocol = 5; // application protocol. It need to be set when the status is ONLINE.
 }
 //*******************************************************************************************************************************************************
 // Update Device Metadata - Twin Synchronization State
