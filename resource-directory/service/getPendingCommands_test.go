@@ -22,7 +22,7 @@ import (
 	raService "github.com/plgd-dev/hub/v2/resource-aggregate/test"
 	rdService "github.com/plgd-dev/hub/v2/resource-directory/test"
 	"github.com/plgd-dev/hub/v2/test"
-	config "github.com/plgd-dev/hub/v2/test/config"
+	"github.com/plgd-dev/hub/v2/test/config"
 	"github.com/plgd-dev/hub/v2/test/oauth-server/service"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	pbTest "github.com/plgd-dev/hub/v2/test/pb"

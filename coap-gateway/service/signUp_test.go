@@ -8,7 +8,7 @@ import (
 	coapgwTest "github.com/plgd-dev/hub/v2/coap-gateway/test"
 	"github.com/plgd-dev/hub/v2/coap-gateway/uri"
 	"github.com/plgd-dev/hub/v2/pkg/security/oauth2/oauth"
-	config "github.com/plgd-dev/hub/v2/test/config"
+	"github.com/plgd-dev/hub/v2/test/config"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	"github.com/stretchr/testify/require"
 )

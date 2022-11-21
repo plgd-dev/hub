@@ -8,7 +8,7 @@ import (
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	rdTest "github.com/plgd-dev/hub/v2/resource-directory/test"
 	"github.com/plgd-dev/hub/v2/test"
-	config "github.com/plgd-dev/hub/v2/test/config"
+	"github.com/plgd-dev/hub/v2/test/config"
 	"github.com/plgd-dev/hub/v2/test/service"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"

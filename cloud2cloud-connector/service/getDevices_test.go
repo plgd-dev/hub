@@ -18,7 +18,7 @@ import (
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/v2/test"
-	config "github.com/plgd-dev/hub/v2/test/config"
+	"github.com/plgd-dev/hub/v2/test/config"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

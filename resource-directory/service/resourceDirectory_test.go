@@ -18,7 +18,7 @@ import (
 	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 	"github.com/plgd-dev/hub/v2/resource-directory/service"
 	"github.com/plgd-dev/hub/v2/test"
-	config "github.com/plgd-dev/hub/v2/test/config"
+	"github.com/plgd-dev/hub/v2/test/config"
 	pbTest "github.com/plgd-dev/hub/v2/test/pb"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

@@ -18,7 +18,7 @@ import (
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	raEvents "github.com/plgd-dev/hub/v2/resource-aggregate/events"
 	"github.com/plgd-dev/hub/v2/test"
-	config "github.com/plgd-dev/hub/v2/test/config"
+	"github.com/plgd-dev/hub/v2/test/config"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	pbTest "github.com/plgd-dev/hub/v2/test/pb"
 	"github.com/stretchr/testify/assert"

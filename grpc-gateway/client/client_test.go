@@ -26,10 +26,6 @@ const (
 	TestManufacturer = "Test Manufacturer"
 )
 
-var Clientconfig = client.Config{
-	GatewayAddress: config.GRPC_GW_HOST,
-}
-
 func NewTestClient(t *testing.T) *client.Client {
 	rootCAs := x509.NewCertPool()
 	for _, c := range test.GetRootCertificateAuthorities(t) {
@@ -38,7 +34,10 @@ func NewTestClient(t *testing.T) *client.Client {
 	tlsCfg := tls.Config{
 		RootCAs: rootCAs,
 	}
-	c, err := client.NewFromConfig(&Clientconfig, &tlsCfg)
+	clientConfig := client.Config{
+		GatewayAddress: config.GRPC_GW_HOST,
+	}
+	c, err := client.NewFromConfig(&clientConfig, &tlsCfg)
 	require.NoError(t, err)
 	return c
 }

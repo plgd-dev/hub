@@ -11,7 +11,7 @@ import (
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"github.com/plgd-dev/hub/v2/test"
-	config "github.com/plgd-dev/hub/v2/test/config"
+	"github.com/plgd-dev/hub/v2/test/config"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	"github.com/plgd-dev/hub/v2/test/service"
 	"github.com/stretchr/testify/assert"
