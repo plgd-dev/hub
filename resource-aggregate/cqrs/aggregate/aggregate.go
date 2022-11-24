@@ -104,25 +104,25 @@ func (i *aggrIterator) Err() error {
 	return i.iter.Err()
 }
 
-type aggrModel struct {
+type AggregateModelWrapper struct {
 	model       AggregateModel
 	lastVersion uint64
 	numEvents   int
 }
 
-func (ah *aggrModel) TakeSnapshot(newVersion uint64) (eventstore.Event, bool) {
+func (ah *AggregateModelWrapper) TakeSnapshot(newVersion uint64) (eventstore.Event, bool) {
 	return ah.model.TakeSnapshot(newVersion)
 }
 
-func (ah *aggrModel) GroupID() string {
+func (ah *AggregateModelWrapper) GroupID() string {
 	return ah.model.GroupID()
 }
 
-func (ah *aggrModel) HandleCommand(ctx context.Context, cmd Command, newVersion uint64) ([]eventstore.Event, error) {
+func (ah *AggregateModelWrapper) HandleCommand(ctx context.Context, cmd Command, newVersion uint64) ([]eventstore.Event, error) {
 	return ah.model.HandleCommand(ctx, cmd, newVersion)
 }
 
-func (ah *aggrModel) Handle(ctx context.Context, iter eventstore.Iter) error {
+func (ah *AggregateModelWrapper) Handle(ctx context.Context, iter eventstore.Iter) error {
 	i := aggrIterator{
 		iter: iter,
 	}
@@ -145,8 +145,8 @@ func HandleRetry(ctx context.Context, retryFunc RetryFunc) error {
 	return nil
 }
 
-func NewAggrModel(ctx context.Context, groupID, aggregateID string, store eventstore.EventStore, logDebugfFunc eventstore.LogDebugfFunc, model AggregateModel) (*aggrModel, error) { //nolint:revive
-	amodel := &aggrModel{model: model}
+func NewAggregateModel(ctx context.Context, groupID, aggregateID string, store eventstore.EventStore, logDebugfFunc eventstore.LogDebugfFunc, model AggregateModel) (*AggregateModelWrapper, error) {
+	amodel := &AggregateModelWrapper{model: model}
 	ep := eventstore.NewProjection(store, func(ctx context.Context, groupID, aggregateID string) (eventstore.Model, error) { return amodel, nil }, logDebugfFunc)
 	err := ep.Project(ctx, []eventstore.SnapshotQuery{
 		{
@@ -164,7 +164,7 @@ func (a *Aggregate) FactoryModel(ctx context.Context) (AggregateModel, error) {
 	return a.factoryModel(ctx)
 }
 
-func (a *Aggregate) preparaModelForCommand(ctx context.Context, amodel *aggrModel) (version uint64, previousSnapshotEvent eventstore.Event, concurrencyExcpetion bool, err error) {
+func (a *Aggregate) preparaModelForCommand(ctx context.Context, amodel *AggregateModelWrapper) (version uint64, previousSnapshotEvent eventstore.Event, concurrencyExcpetion bool, err error) {
 	newVersion := amodel.lastVersion
 	if amodel.numEvents > 0 || amodel.lastVersion > 0 {
 		// increase version for event only when some events has been processed
@@ -220,7 +220,7 @@ func (a *Aggregate) processSaveStatus(ctx context.Context, status eventstore.Sav
 	return newEvents, false, nil
 }
 
-func (a *Aggregate) HandleCommandWithAggrModel(ctx context.Context, cmd Command, amodel *aggrModel) (events []eventstore.Event, concurrencyExcpetion bool, err error) {
+func (a *Aggregate) HandleCommandWithAggregateModelWrapper(ctx context.Context, cmd Command, amodel *AggregateModelWrapper) (events []eventstore.Event, concurrencyExcpetion bool, err error) {
 	newVersion, previousSnapshotEvent, concurrencyExcpetion, err := a.preparaModelForCommand(ctx, amodel)
 	if err != nil {
 		return nil, concurrencyExcpetion, err
@@ -269,12 +269,12 @@ func (a *Aggregate) HandleCommand(ctx context.Context, cmd Command) ([]eventstor
 			return nil, fmt.Errorf("aggregate model cannot handle command: %w", err)
 		}
 
-		amodel, err := NewAggrModel(ctx, a.groupID, a.aggregateID, a.store, a.LogDebugfFunc, model)
+		amodel, err := NewAggregateModel(ctx, a.groupID, a.aggregateID, a.store, a.LogDebugfFunc, model)
 		if err != nil {
 			return nil, fmt.Errorf("aggregate model cannot handle command: %w", err)
 		}
 
-		events, concurrencyException, err := a.HandleCommandWithAggrModel(ctx, cmd, amodel)
+		events, concurrencyException, err := a.HandleCommandWithAggregateModelWrapper(ctx, cmd, amodel)
 		if err != nil {
 			return nil, fmt.Errorf("aggregate model cannot handle command: %w", err)
 		}

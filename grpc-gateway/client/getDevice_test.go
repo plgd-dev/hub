@@ -13,7 +13,7 @@ import (
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	test "github.com/plgd-dev/hub/v2/test"
-	testCfg "github.com/plgd-dev/hub/v2/test/config"
+	"github.com/plgd-dev/hub/v2/test/config"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	"github.com/plgd-dev/hub/v2/test/service"
 	"github.com/stretchr/testify/assert"
@@ -40,7 +40,8 @@ func NewTestDeviceSimulator(deviceID, deviceName string, withResources bool) cli
 			Types: []string{types.DEVICE_CLOUD, device.ResourceType},
 			Metadata: &pb.Device_Metadata{
 				Connection: &commands.Connection{
-					Status: commands.Connection_ONLINE,
+					Status:   commands.Connection_ONLINE,
+					Protocol: test.StringToApplicationProtocol(config.ACTIVE_COAP_SCHEME),
 				},
 				TwinEnabled: true,
 				TwinSynchronization: &commands.TwinSynchronization{
@@ -97,7 +98,7 @@ func TestClient_GetDevice(t *testing.T) {
 		assert.NoError(t, err)
 	}()
 
-	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c.GrpcGatewayClient(), deviceID, testCfg.ACTIVE_COAP_SCHEME+testCfg.COAP_GW_HOST, test.GetAllBackendResourceLinks())
+	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c.GrpcGatewayClient(), deviceID, config.ACTIVE_COAP_SCHEME+"://"+config.COAP_GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 
 	for _, tt := range tests {

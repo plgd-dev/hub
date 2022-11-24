@@ -267,7 +267,7 @@ func TestRequestHandlerSubscribeToEvents(t *testing.T) {
 		require.NoError(t, err)
 	}()
 
-	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, rdc, deviceID, config.ACTIVE_COAP_SCHEME+config.COAP_GW_HOST, nil)
+	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, rdc, deviceID, config.ACTIVE_COAP_SCHEME+"://"+config.COAP_GW_HOST, nil)
 
 	check(t, waitForEvent(ctx, t, recvChan), &pb.Event{
 		SubscriptionId: s.Id(),
@@ -281,21 +281,21 @@ func TestRequestHandlerSubscribeToEvents(t *testing.T) {
 	online := &pb.Event{
 		SubscriptionId: s.Id(),
 		Type: &pb.Event_DeviceMetadataUpdated{
-			DeviceMetadataUpdated: pbTest.MakeDeviceMetadataUpdated(deviceID, commands.Connection_ONLINE, true, commands.TwinSynchronization_OUT_OF_SYNC, ""),
+			DeviceMetadataUpdated: pbTest.MakeDeviceMetadataUpdated(deviceID, commands.Connection_ONLINE, test.StringToApplicationProtocol(config.ACTIVE_COAP_SCHEME), true, commands.TwinSynchronization_OUT_OF_SYNC, ""),
 		},
 		CorrelationId: correlationID,
 	}
 	onlineStartSync := &pb.Event{
 		SubscriptionId: s.Id(),
 		Type: &pb.Event_DeviceMetadataUpdated{
-			DeviceMetadataUpdated: pbTest.MakeDeviceMetadataUpdated(deviceID, commands.Connection_ONLINE, true, commands.TwinSynchronization_SYNCING, ""),
+			DeviceMetadataUpdated: pbTest.MakeDeviceMetadataUpdated(deviceID, commands.Connection_ONLINE, test.StringToApplicationProtocol(config.ACTIVE_COAP_SCHEME), true, commands.TwinSynchronization_SYNCING, ""),
 		},
 		CorrelationId: correlationID,
 	}
 	onlineFinishedSync := &pb.Event{
 		SubscriptionId: s.Id(),
 		Type: &pb.Event_DeviceMetadataUpdated{
-			DeviceMetadataUpdated: pbTest.MakeDeviceMetadataUpdated(deviceID, commands.Connection_ONLINE, true, commands.TwinSynchronization_IN_SYNC, ""),
+			DeviceMetadataUpdated: pbTest.MakeDeviceMetadataUpdated(deviceID, commands.Connection_ONLINE, test.StringToApplicationProtocol(config.ACTIVE_COAP_SCHEME), true, commands.TwinSynchronization_IN_SYNC, ""),
 		},
 		CorrelationId: correlationID,
 	}

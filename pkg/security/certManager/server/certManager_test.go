@@ -125,11 +125,11 @@ certFile: /tmp/test3570354545/crt4065348335
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var testCfg server.Config
-			err := yaml.Unmarshal([]byte(tt.args.configYaml), &testCfg)
+			var config server.Config
+			err := yaml.Unmarshal([]byte(tt.args.configYaml), &config)
 			require.NoError(t, err)
-			testCfg.CAPoolIsOptional = tt.args.caPoolIsOptional
-			err = testCfg.Validate()
+			config.CAPoolIsOptional = tt.args.caPoolIsOptional
+			err = config.Validate()
 			if tt.wantErr {
 				require.Error(t, err)
 				return
@@ -137,8 +137,8 @@ certFile: /tmp/test3570354545/crt4065348335
 			require.NoError(t, err)
 			err = tt.want.Validate()
 			require.NoError(t, err)
-			require.Equal(t, tt.want, testCfg)
-			caPoolArray, err := testCfg.CAPoolArray()
+			require.Equal(t, tt.want, config)
+			caPoolArray, err := config.CAPoolArray()
 			require.NoError(t, err)
 			require.Equal(t, tt.wantCAPoolArray, caPoolArray)
 		})
@@ -177,11 +177,11 @@ func TestNew(t *testing.T) {
 
 	fmt.Printf("%s\n", configYaml)
 
-	var testCfg server.Config
-	err = yaml.Unmarshal(configYaml, &testCfg)
+	var cfg server.Config
+	err = yaml.Unmarshal(configYaml, &cfg)
 	require.NoError(t, err)
 
-	err = testCfg.Validate()
+	err = cfg.Validate()
 	require.NoError(t, err)
 
 	logger := log.NewLogger(log.MakeDefaultConfig())

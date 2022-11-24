@@ -18,7 +18,7 @@ import (
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	raEvents "github.com/plgd-dev/hub/v2/resource-aggregate/events"
 	"github.com/plgd-dev/hub/v2/test"
-	testCfg "github.com/plgd-dev/hub/v2/test/config"
+	"github.com/plgd-dev/hub/v2/test/config"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	pbTest "github.com/plgd-dev/hub/v2/test/pb"
 	"github.com/stretchr/testify/assert"
@@ -98,7 +98,7 @@ func testRequestHandlerGetResourceFromDevice(t *testing.T, events store.Events) 
 		},
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), testCfg.TEST_TIMEOUT)
+	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
 	defer cancel()
 
 	tearDown := c2cConnectorTest.SetUpClouds(ctx, t, deviceID, events, switchID)

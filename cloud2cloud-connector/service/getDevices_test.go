@@ -18,7 +18,7 @@ import (
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/v2/test"
-	testCfg "github.com/plgd-dev/hub/v2/test/config"
+	"github.com/plgd-dev/hub/v2/test/config"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -50,7 +50,8 @@ func testRequestHandlerGetDevices(t *testing.T, events store.Events) {
 					Name:       test.TestDeviceName,
 					Metadata: &pb.Device_Metadata{
 						Connection: &commands.Connection{
-							Status: commands.Connection_ONLINE,
+							Status:   commands.Connection_ONLINE,
+							Protocol: commands.Connection_C2C,
 						},
 						TwinSynchronization: &commands.TwinSynchronization{},
 						TwinEnabled:         true,
@@ -61,7 +62,7 @@ func testRequestHandlerGetDevices(t *testing.T, events store.Events) {
 		},
 	}
 
-	const timeoutWithPull = testCfg.TEST_TIMEOUT + time.Second*10 // longer timeout is needed because of the 10s sleep in setUp
+	const timeoutWithPull = config.TEST_TIMEOUT + time.Second*10 // longer timeout is needed because of the 10s sleep in setUp
 	ctx, cancel := context.WithTimeout(context.Background(), timeoutWithPull)
 	defer cancel()
 	tearDown := c2cConnectorTest.SetUpClouds(ctx, t, deviceID, events)

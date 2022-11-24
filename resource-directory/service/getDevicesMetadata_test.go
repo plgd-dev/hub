@@ -13,7 +13,7 @@ import (
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 	"github.com/plgd-dev/hub/v2/test"
-	testCfg "github.com/plgd-dev/hub/v2/test/config"
+	"github.com/plgd-dev/hub/v2/test/config"
 	oauthService "github.com/plgd-dev/hub/v2/test/oauth-server/service"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	pbTest "github.com/plgd-dev/hub/v2/test/pb"
@@ -43,7 +43,8 @@ func TestRequestHandlerGetDevicesMetadata(t *testing.T) {
 				{
 					DeviceId: deviceID,
 					Connection: &commands.Connection{
-						Status: commands.Connection_ONLINE,
+						Status:   commands.Connection_ONLINE,
+						Protocol: test.StringToApplicationProtocol(config.ACTIVE_COAP_SCHEME),
 					},
 					TwinEnabled: true,
 					TwinSynchronization: &commands.TwinSynchronization{
@@ -64,7 +65,8 @@ func TestRequestHandlerGetDevicesMetadata(t *testing.T) {
 				{
 					DeviceId: deviceID,
 					Connection: &commands.Connection{
-						Status: commands.Connection_ONLINE,
+						Status:   commands.Connection_ONLINE,
+						Protocol: test.StringToApplicationProtocol(config.ACTIVE_COAP_SCHEME),
 					},
 					TwinEnabled: true,
 					TwinSynchronization: &commands.TwinSynchronization{
@@ -85,7 +87,8 @@ func TestRequestHandlerGetDevicesMetadata(t *testing.T) {
 				{
 					DeviceId: deviceID,
 					Connection: &commands.Connection{
-						Status: commands.Connection_ONLINE,
+						Status:   commands.Connection_ONLINE,
+						Protocol: test.StringToApplicationProtocol(config.ACTIVE_COAP_SCHEME),
 					},
 					TwinEnabled: true,
 					TwinSynchronization: &commands.TwinSynchronization{
@@ -115,14 +118,14 @@ func TestRequestHandlerGetDevicesMetadata(t *testing.T) {
 		},
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), testCfg.TEST_TIMEOUT)
+	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
 	defer cancel()
 
 	tearDown := service.SetUp(ctx, t)
 	defer tearDown()
 	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
 
-	conn, err := grpc.Dial(testCfg.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+	conn, err := grpc.Dial(config.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
 	})))
 	require.NoError(t, err)
@@ -131,7 +134,7 @@ func TestRequestHandlerGetDevicesMetadata(t *testing.T) {
 	}()
 	c := pb.NewGrpcGatewayClient(conn)
 
-	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.ACTIVE_COAP_SCHEME+testCfg.COAP_GW_HOST, test.GetAllBackendResourceLinks())
+	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.ACTIVE_COAP_SCHEME+"://"+config.COAP_GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 
 	for _, tt := range tests {

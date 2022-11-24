@@ -31,7 +31,7 @@ func validateUpdateDeviceMetadata(request *commands.UpdateDeviceMetadataRequest)
 	return nil
 }
 
-func (a *aggregate) UpdateDeviceMetadata(ctx context.Context, request *commands.UpdateDeviceMetadataRequest) (events []eventstore.Event, err error) {
+func (a *Aggregate) UpdateDeviceMetadata(ctx context.Context, request *commands.UpdateDeviceMetadataRequest) (events []eventstore.Event, err error) {
 	if err = validateUpdateDeviceMetadata(request); err != nil {
 		err = fmt.Errorf("invalid update device metadata command: %w", err)
 		return

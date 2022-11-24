@@ -62,7 +62,7 @@ func CreateDeviceResourceLinks(deviceID string, numResources int) []*commands.Re
 	return resources
 }
 
-func CreateDevice(ctx context.Context, t *testing.T, name string, deviceID string, numResources int, isClient pb.IdentityStoreClient, raClient raPb.ResourceAggregateClient) {
+func CreateDevice(ctx context.Context, t *testing.T, name string, deviceID string, numResources int, protocol commands.Connection_Protocol, isClient pb.IdentityStoreClient, raClient raPb.ResourceAggregateClient) {
 	const connID = "conn-Id"
 	var conSeq uint64
 	incSeq := func() uint64 {
@@ -82,6 +82,7 @@ func CreateDevice(ctx context.Context, t *testing.T, name string, deviceID strin
 				Connection: &commands.Connection{
 					Status:      commands.Connection_ONLINE,
 					ConnectedAt: time.Now().UnixNano(),
+					Protocol:    protocol,
 				},
 			},
 			TimeToLive: time.Now().Add(time.Hour).UnixNano(),
@@ -190,7 +191,7 @@ func CreateDevice(ctx context.Context, t *testing.T, name string, deviceID strin
 	require.NoError(t, err)
 }
 
-func CreateDevices(ctx context.Context, t *testing.T, numDevices int, numResourcesPerDevice int) {
+func CreateDevices(ctx context.Context, t *testing.T, numDevices int, numResourcesPerDevice int, protocol commands.Connection_Protocol) {
 	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
 
 	isConn, err := grpc.Dial(config.IDENTITY_STORE_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
@@ -217,7 +218,7 @@ func CreateDevices(ctx context.Context, t *testing.T, numDevices int, numResourc
 		err = sem.Acquire(ctx, 1)
 		require.NoError(t, err)
 		go func(i int) {
-			CreateDevice(ctx, t, fmt.Sprintf("dev-%v", i), uuid.NewString(), numResourcesPerDevice, isClient, raClient)
+			CreateDevice(ctx, t, fmt.Sprintf("dev-%v", i), uuid.NewString(), numResourcesPerDevice, protocol, isClient, raClient)
 			sem.Release(1)
 		}(i)
 	}

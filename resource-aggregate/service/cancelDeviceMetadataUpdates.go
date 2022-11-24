@@ -22,7 +22,7 @@ func validateCancelPendingMetadataUpdates(request *commands.CancelPendingMetadat
 	return nil
 }
 
-func (a *aggregate) CancelPendingMetadataUpdates(ctx context.Context, request *commands.CancelPendingMetadataUpdatesRequest) (events []eventstore.Event, err error) {
+func (a *Aggregate) CancelPendingMetadataUpdates(ctx context.Context, request *commands.CancelPendingMetadataUpdatesRequest) (events []eventstore.Event, err error) {
 	if err = validateCancelPendingMetadataUpdates(request); err != nil {
 		return
 	}

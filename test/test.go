@@ -149,6 +149,20 @@ func MakeSwitchResourceDefaultData() map[string]interface{} {
 	}
 }
 
+func StringToApplicationProtocol(p string) commands.Connection_Protocol {
+	switch p {
+	case string(schema.TCPSecureScheme):
+		return commands.Connection_COAPS_TCP
+	case string(schema.UDPSecureScheme):
+		return commands.Connection_COAPS
+	case string(schema.TCPScheme):
+		return commands.Connection_COAP_TCP
+	case string(schema.UDPScheme):
+		return commands.Connection_COAP
+	}
+	return commands.Connection_UNKNOWN
+}
+
 func AddDeviceSwitchResources(ctx context.Context, t *testing.T, deviceID string, c pb.GrpcGatewayClient, resourceIDs ...string) []schema.ResourceLink {
 	toStringArray := func(v interface{}) []string {
 		var result []string
@@ -373,7 +387,8 @@ func WaitForDevice(ctx context.Context, t *testing.T, client pb.GrpcGateway_Subs
 		getID(&pb.Event{Type: &pb.Event_DeviceMetadataUpdated{
 			DeviceMetadataUpdated: &events.DeviceMetadataUpdated{
 				Connection: &commands.Connection{
-					Status: commands.Connection_ONLINE,
+					Status:   commands.Connection_ONLINE,
+					Protocol: StringToApplicationProtocol(config.ACTIVE_COAP_SCHEME),
 				},
 				TwinEnabled: true,
 			},
@@ -384,7 +399,8 @@ func WaitForDevice(ctx context.Context, t *testing.T, client pb.GrpcGateway_Subs
 				DeviceMetadataUpdated: &events.DeviceMetadataUpdated{
 					DeviceId: deviceID,
 					Connection: &commands.Connection{
-						Status: commands.Connection_ONLINE,
+						Status:   commands.Connection_ONLINE,
+						Protocol: StringToApplicationProtocol(config.ACTIVE_COAP_SCHEME),
 					},
 					TwinSynchronization: &commands.TwinSynchronization{
 						State: commands.TwinSynchronization_OUT_OF_SYNC,
@@ -396,7 +412,8 @@ func WaitForDevice(ctx context.Context, t *testing.T, client pb.GrpcGateway_Subs
 		getID(&pb.Event{Type: &pb.Event_DeviceMetadataUpdated{
 			DeviceMetadataUpdated: &events.DeviceMetadataUpdated{
 				Connection: &commands.Connection{
-					Status: commands.Connection_ONLINE,
+					Status:   commands.Connection_ONLINE,
+					Protocol: StringToApplicationProtocol(config.ACTIVE_COAP_SCHEME),
 				},
 				TwinSynchronization: &commands.TwinSynchronization{
 					State: commands.TwinSynchronization_SYNCING,
@@ -410,7 +427,8 @@ func WaitForDevice(ctx context.Context, t *testing.T, client pb.GrpcGateway_Subs
 				DeviceMetadataUpdated: &events.DeviceMetadataUpdated{
 					DeviceId: deviceID,
 					Connection: &commands.Connection{
-						Status: commands.Connection_ONLINE,
+						Status:   commands.Connection_ONLINE,
+						Protocol: StringToApplicationProtocol(config.ACTIVE_COAP_SCHEME),
 					},
 					TwinSynchronization: &commands.TwinSynchronization{
 						State: commands.TwinSynchronization_SYNCING,
@@ -422,7 +440,8 @@ func WaitForDevice(ctx context.Context, t *testing.T, client pb.GrpcGateway_Subs
 		getID(&pb.Event{Type: &pb.Event_DeviceMetadataUpdated{
 			DeviceMetadataUpdated: &events.DeviceMetadataUpdated{
 				Connection: &commands.Connection{
-					Status: commands.Connection_ONLINE,
+					Status:   commands.Connection_ONLINE,
+					Protocol: StringToApplicationProtocol(config.ACTIVE_COAP_SCHEME),
 				},
 				TwinSynchronization: &commands.TwinSynchronization{
 					State: commands.TwinSynchronization_IN_SYNC,
@@ -436,7 +455,8 @@ func WaitForDevice(ctx context.Context, t *testing.T, client pb.GrpcGateway_Subs
 				DeviceMetadataUpdated: &events.DeviceMetadataUpdated{
 					DeviceId: deviceID,
 					Connection: &commands.Connection{
-						Status: commands.Connection_ONLINE,
+						Status:   commands.Connection_ONLINE,
+						Protocol: StringToApplicationProtocol(config.ACTIVE_COAP_SCHEME),
 					},
 					TwinSynchronization: &commands.TwinSynchronization{
 						State: commands.TwinSynchronization_IN_SYNC,

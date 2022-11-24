@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
+	"github.com/plgd-dev/device/v2/schema"
 	c2curi "github.com/plgd-dev/hub/v2/cloud2cloud-connector/uri"
 	pkgMongo "github.com/plgd-dev/hub/v2/pkg/mongodb"
 	grpcClient "github.com/plgd-dev/hub/v2/pkg/net/grpc/client"
@@ -46,8 +47,6 @@ const (
 	HTTP_GW_HOST                    = "localhost:20010"
 	DEVICE_PROVIDER                 = "plgd"
 	OPENTELEMETRY_COLLECTOR_HOST    = "localhost:55690"
-	COAPS_SCHEME                    = "coaps://"
-	COAPS_TCP_SCHEME                = "coaps+tcp://"
 )
 
 var (
@@ -60,9 +59,9 @@ var (
 	COAP_GATEWAY_UDP_ENABLED = os.Getenv("TEST_COAP_GATEWAY_UDP_ENABLED") == "true"
 	ACTIVE_COAP_SCHEME       = func() string {
 		if os.Getenv("TEST_COAP_GATEWAY_UDP_ENABLED") == "true" {
-			return COAPS_SCHEME
+			return string(schema.UDPSecureScheme)
 		}
-		return COAPS_TCP_SCHEME
+		return string(schema.TCPSecureScheme)
 	}()
 )
 

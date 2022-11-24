@@ -294,11 +294,15 @@ func (d *DeviceMetadataSnapshotTaken) getTwinSynchronizationForDisconnectedDevic
 }
 
 func (d *DeviceMetadataSnapshotTaken) updateDeviceConnection(ctx context.Context, req *commands.UpdateDeviceMetadataRequest, em *EventMetadata, ac *commands.AuditContext) ([]eventstore.Event, error) {
+	// it is expected that the device updates the status on its own. no confirmation needed.
 	req.GetConnection().Id = req.GetCommandMetadata().GetConnectionId()
 	if req.GetConnection().GetId() == "" {
 		return nil, status.Errorf(codes.InvalidArgument, "cannot update connection status for empty connectionId")
 	}
-	// it is expected that the device updates the status on its own. no confirmation needed.
+	if !req.GetConnection().IsOnline() {
+		// only online status can update protocol
+		req.GetConnection().Protocol = d.GetDeviceMetadataUpdated().GetConnection().GetProtocol()
+	}
 
 	// keep last connected at from the previous event
 	lastConnectedAt := d.GetDeviceMetadataUpdated().GetConnection().GetConnectedAt()

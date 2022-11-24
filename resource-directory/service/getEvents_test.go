@@ -19,7 +19,7 @@ import (
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/v2/test"
-	testCfg "github.com/plgd-dev/hub/v2/test/config"
+	"github.com/plgd-dev/hub/v2/test/config"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	pbTest "github.com/plgd-dev/hub/v2/test/pb"
 	"github.com/plgd-dev/hub/v2/test/service"
@@ -72,9 +72,9 @@ func getOnboardEventForResource(t *testing.T, deviceID, href string) interface{}
 }
 
 func getAllOnboardEvents(t *testing.T, deviceID string, links []schema.ResourceLink) []interface{} {
-	expectedDMU := pbTest.MakeDeviceMetadataUpdated(deviceID, commands.Connection_ONLINE, true, commands.TwinSynchronization_OUT_OF_SYNC, "")
-	expectedDMU1 := pbTest.MakeDeviceMetadataUpdated(deviceID, commands.Connection_ONLINE, true, commands.TwinSynchronization_SYNCING, "")
-	expectedDMU2 := pbTest.MakeDeviceMetadataUpdated(deviceID, commands.Connection_ONLINE, true, commands.TwinSynchronization_IN_SYNC, "")
+	expectedDMU := pbTest.MakeDeviceMetadataUpdated(deviceID, commands.Connection_ONLINE, test.StringToApplicationProtocol(config.ACTIVE_COAP_SCHEME), true, commands.TwinSynchronization_OUT_OF_SYNC, "")
+	expectedDMU1 := pbTest.MakeDeviceMetadataUpdated(deviceID, commands.Connection_ONLINE, test.StringToApplicationProtocol(config.ACTIVE_COAP_SCHEME), true, commands.TwinSynchronization_SYNCING, "")
+	expectedDMU2 := pbTest.MakeDeviceMetadataUpdated(deviceID, commands.Connection_ONLINE, test.StringToApplicationProtocol(config.ACTIVE_COAP_SCHEME), true, commands.TwinSynchronization_IN_SYNC, "")
 	expectedRLP := pbTest.MakeResourceLinksPublished(deviceID, test.ResourceLinksToResources(deviceID, links), "")
 	expectedRCP := getOnboardEventForResource(t, deviceID, platform.ResourceURI)
 	expectedRCD := getOnboardEventForResource(t, deviceID, device.ResourceURI)
@@ -130,14 +130,14 @@ func waitAndCheckEvents(t *testing.T, client pb.GrpcGateway_GetEventsClient, exp
 
 func TestRequestHandlerGetEventsOnOnboard(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
-	ctx, cancel := context.WithTimeout(context.Background(), testCfg.TEST_TIMEOUT)
+	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
 	defer cancel()
 
 	tearDown := service.SetUp(ctx, t)
 	defer tearDown()
 	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
 
-	conn, err := grpc.Dial(testCfg.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+	conn, err := grpc.Dial(config.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
 	})))
 	require.NoError(t, err)
@@ -147,7 +147,7 @@ func TestRequestHandlerGetEventsOnOnboard(t *testing.T) {
 	c := pb.NewGrpcGatewayClient(conn)
 
 	resources := test.GetAllBackendResourceLinks()
-	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.ACTIVE_COAP_SCHEME+testCfg.COAP_GW_HOST, resources)
+	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.ACTIVE_COAP_SCHEME+"://"+config.COAP_GW_HOST, resources)
 	defer shutdownDevSim()
 
 	client, err := c.GetEvents(ctx, &pb.GetEventsRequest{})
@@ -219,7 +219,7 @@ func testUpdateDeviceEvents(ctx context.Context, t *testing.T, c pb.GrpcGatewayC
 
 	expectedEvents := []interface{}{
 		pbTest.MakeDeviceMetadataUpdatePending(deviceID, true, ""),
-		pbTest.MakeDeviceMetadataUpdated(deviceID, commands.Connection_ONLINE, true, commands.TwinSynchronization_IN_SYNC, ""),
+		pbTest.MakeDeviceMetadataUpdated(deviceID, commands.Connection_ONLINE, test.StringToApplicationProtocol(config.ACTIVE_COAP_SCHEME), true, commands.TwinSynchronization_IN_SYNC, ""),
 	}
 	waitAndCheckEvents(t, client, expectedEvents)
 }
@@ -274,8 +274,8 @@ func testCreateResourceEvents(ctx context.Context, t *testing.T, c pb.GrpcGatewa
 				"rt":  []string{types.BINARY_SWITCH},
 			},
 		})
-	dmu := pbTest.MakeDeviceMetadataUpdated(deviceID, commands.Connection_ONLINE, true, commands.TwinSynchronization_SYNCING, "")
-	dmu1 := pbTest.MakeDeviceMetadataUpdated(deviceID, commands.Connection_ONLINE, true, commands.TwinSynchronization_IN_SYNC, "")
+	dmu := pbTest.MakeDeviceMetadataUpdated(deviceID, commands.Connection_ONLINE, test.StringToApplicationProtocol(config.ACTIVE_COAP_SCHEME), true, commands.TwinSynchronization_SYNCING, "")
+	dmu1 := pbTest.MakeDeviceMetadataUpdated(deviceID, commands.Connection_ONLINE, test.StringToApplicationProtocol(config.ACTIVE_COAP_SCHEME), true, commands.TwinSynchronization_IN_SYNC, "")
 	expectedEvents := []interface{}{rcp, rlp, rcreat, rchangeSwitch, rchangeSwitches, dmu, dmu1}
 	waitAndCheckEvents(t, client, expectedEvents)
 }
@@ -346,14 +346,14 @@ func testDeleteResourceEvents(ctx context.Context, t *testing.T, c pb.GrpcGatewa
 
 func TestRequestHandlerGetEventsOnCollection(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
-	ctx, cancel := context.WithTimeout(context.Background(), testCfg.TEST_TIMEOUT)
+	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
 	defer cancel()
 
 	tearDown := service.SetUp(ctx, t)
 	defer tearDown()
 	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
 
-	conn, err := grpc.Dial(testCfg.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+	conn, err := grpc.Dial(config.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
 	})))
 	require.NoError(t, err)
@@ -363,7 +363,7 @@ func TestRequestHandlerGetEventsOnCollection(t *testing.T) {
 	c := pb.NewGrpcGatewayClient(conn)
 
 	resources := test.GetAllBackendResourceLinks()
-	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.ACTIVE_COAP_SCHEME+testCfg.COAP_GW_HOST, resources)
+	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.ACTIVE_COAP_SCHEME+"://"+config.COAP_GW_HOST, resources)
 	defer shutdownDevSim()
 
 	// Retrieve

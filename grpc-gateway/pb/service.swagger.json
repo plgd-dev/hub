@@ -876,6 +876,18 @@
     }
   },
   "definitions": {
+    "ConnectionProtocol": {
+      "type": "string",
+      "enum": [
+        "UNKNOWN",
+        "COAP",
+        "COAPS",
+        "COAP_TCP",
+        "COAPS_TCP",
+        "C2C"
+      ],
+      "default": "UNKNOWN"
+    },
     "DeviceMetadata": {
       "type": "object",
       "properties": {
@@ -1245,6 +1257,9 @@
         "connectedAt": {
           "type": "string",
           "format": "int64"
+        },
+        "protocol": {
+          "$ref": "#/definitions/ConnectionProtocol"
         }
       }
     },

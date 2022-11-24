@@ -146,6 +146,13 @@ func toConnectionStatus(status string) commands.Connection_Status {
 	return commands.Connection_OFFLINE
 }
 
+func toConnectionProtocol(status string) commands.Connection_Protocol {
+	if strings.ToLower(status) == "online" {
+		return commands.Connection_C2C
+	}
+	return commands.Connection_UNKNOWN
+}
+
 func (p *pullDevicesHandler) triggerTaskForDevice(ctx context.Context, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud, dev RetrieveDeviceWithLinksResponse) error {
 	deviceID := dev.Device.Device.ID
 	if linkedCloud.SupportedSubscriptionEvents.StaticDeviceEvents {
@@ -221,7 +228,8 @@ func (p *pullDevicesHandler) pullDevices(ctx context.Context, linkedAccount stor
 			DeviceId: deviceID,
 			Update: &commands.UpdateDeviceMetadataRequest_Connection{
 				Connection: &commands.Connection{
-					Status: toConnectionStatus(dev.Status),
+					Status:   toConnectionStatus(dev.Status),
+					Protocol: toConnectionProtocol(dev.Status),
 				},
 			},
 			CommandMetadata: &commands.CommandMetadata{
