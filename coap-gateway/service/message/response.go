@@ -3,6 +3,7 @@ package message
 import (
 	"bytes"
 	"context"
+	"errors"
 	"strings"
 
 	"github.com/plgd-dev/go-coap/v3/message"
@@ -24,6 +25,18 @@ func GetResponse(ctx context.Context, messagePool *pool.Pool, code codes.Code, t
 }
 
 func IsTempError(err error) bool {
+	var isTemporary interface {
+		Temporary() bool
+	}
+	if errors.As(err, &isTemporary) && isTemporary.Temporary() {
+		return true
+	}
+	var isTimeout interface {
+		Timeout() bool
+	}
+	if errors.As(err, &isTimeout) && isTimeout.Timeout() {
+		return true
+	}
 	switch {
 	// TODO: We could optimize this by using error.Is to avoid string comparison.
 	case strings.Contains(err.Error(), "connect: connection refused"),
@@ -31,6 +44,7 @@ func IsTempError(err error) bool {
 		strings.Contains(err.Error(), "TLS handshake timeout"),
 		strings.Contains(err.Error(), `http2:`), // any error at http2 protocol is considered as temporary error
 		strings.Contains(err.Error(), `write: broken pipe`),
+		strings.Contains(err.Error(), `request canceled while waiting for connection`),
 		strings.Contains(err.Error(), context.DeadlineExceeded.Error()),
 		strings.Contains(err.Error(), context.Canceled.Error()):
 		return true
