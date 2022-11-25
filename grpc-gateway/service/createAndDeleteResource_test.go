@@ -316,7 +316,8 @@ func TestCreateAndDeleteResource(t *testing.T) {
 	isDiscoveryResourceBatchObservable := test.IsDiscoveryResourceBatchObservable(ctx, t, deviceID)
 	for i := 0; i < 5; i++ {
 		fmt.Printf("iteration %v\n", i)
-		time.Sleep(time.Millisecond * 500)
+		// for update resource-directory cache
+		time.Sleep(time.Second)
 		createSwitchResource(ctx, t, c, deviceID, switchID)
 		expectedCreateEvents := createSwitchResourceExpectedEvents(t, deviceID, subID, correlationID, switchID, isDiscoveryResourceBatchObservable)
 		validateEvents(t, subClient, expectedCreateEvents)

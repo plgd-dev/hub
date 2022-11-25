@@ -157,7 +157,8 @@ func TestRequestHandlerDeleteResourceAfterUnpublish(t *testing.T) {
 	const switchID1 = "1"
 	const switchID2 = "2"
 	test.AddDeviceSwitchResources(ctx, t, deviceID, c, switchID1, switchID2)
-	time.Sleep(200 * time.Millisecond)
+	// for update resource-directory cache
+	time.Sleep(time.Second)
 
 	fileWatcher, err := fsnotify.NewWatcher()
 	require.NoError(t, err)
@@ -185,22 +186,26 @@ func TestRequestHandlerDeleteResourceAfterUnpublish(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, respUnpublish.UnpublishedHrefs, 1)
 	require.Equal(t, respUnpublish.UnpublishedHrefs[0], test.TestResourceSwitchesInstanceHref(switchID2))
-	time.Sleep(200 * time.Millisecond)
+	// for update resource-directory cache
+	time.Sleep(time.Second)
 
 	_, err = c.DeleteResource(ctx, &pb.DeleteResourceRequest{
 		ResourceId: commands.NewResourceID(deviceID, test.TestResourceSwitchesInstanceHref(switchID2)),
 	})
 	require.NoError(t, err)
-	time.Sleep(200 * time.Millisecond)
+	// for update resource-directory cache
+	time.Sleep(time.Second)
 
 	test.AddDeviceSwitchResources(ctx, t, deviceID, c, switchID2)
-	time.Sleep(200 * time.Millisecond)
+	// for update resource-directory cache
+	time.Sleep(time.Second)
 
 	_, err = c.DeleteResource(ctx, &pb.DeleteResourceRequest{
 		ResourceId: commands.NewResourceID(deviceID, test.TestResourceSwitchesInstanceHref(switchID1)),
 	})
 	require.NoError(t, err)
-	time.Sleep(200 * time.Millisecond)
+	// for update resource-directory cache
+	time.Sleep(time.Second)
 
 	rlClient, err := c.GetResourceLinks(ctx, &pb.GetResourceLinksRequest{
 		DeviceIdFilter: []string{deviceID},

@@ -64,7 +64,8 @@ func TestRequestHandlerSubscribeToEvents(t *testing.T) {
 
 	const switchID = "1"
 	resourceLinks = append(resourceLinks, test.AddDeviceSwitchResources(ctx, t, deviceID, c, switchID)...)
-	time.Sleep(200 * time.Millisecond)
+	// for update resource-directory cache
+	time.Sleep(time.Second)
 
 	type args struct {
 		sub *pb.SubscribeToEvents

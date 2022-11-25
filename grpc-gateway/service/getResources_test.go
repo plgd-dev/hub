@@ -46,7 +46,8 @@ func TestRequestHandlerGetResources(t *testing.T) {
 	defer shutdownDevSim()
 	const switchID = "1"
 	resourceLinks = append(resourceLinks, test.AddDeviceSwitchResources(ctx, t, deviceID, c, switchID)...)
-	time.Sleep(200 * time.Millisecond)
+	// for update resource-directory cache
+	time.Sleep(time.Second)
 
 	type args struct {
 		req *pb.GetResourcesRequest
