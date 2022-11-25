@@ -196,7 +196,8 @@ func TestUpdateResource(t *testing.T) {
 	defer shutdownDevSim()
 
 	test.AddDeviceSwitchResources(ctx, t, deviceID, c, switchID)
-	time.Sleep(200 * time.Millisecond)
+	// for update resource-directory cache
+	time.Sleep(time.Second)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -267,7 +268,8 @@ func TestRequestHandlerGetAfterUpdateResource(t *testing.T) {
 			},
 		})
 		require.NoError(t, err)
-		time.Sleep(time.Millisecond * 200)
+		// for update resource-directory cache
+		time.Sleep(time.Second)
 	}
 	updateName("update simulator")
 	// revert name
