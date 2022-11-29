@@ -1,13 +1,20 @@
 package service_test
 
 import (
+	"context"
 	"testing"
 	"time"
 
 	coapCodes "github.com/plgd-dev/go-coap/v3/message/codes"
 	coapgwTest "github.com/plgd-dev/hub/v2/coap-gateway/test"
 	"github.com/plgd-dev/hub/v2/coap-gateway/uri"
+	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	"github.com/plgd-dev/hub/v2/pkg/net/listener"
+	"github.com/plgd-dev/hub/v2/test/config"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
+	testService "github.com/plgd-dev/hub/v2/test/service"
+	"github.com/stretchr/testify/require"
 )
 
 type TestCoapRefreshTokenResponse struct {
@@ -76,4 +83,39 @@ func TestRefreshTokenHandlerWithRetry(t *testing.T) {
 		testPostHandler(t, uri.RefreshToken, testRefreshToken, co)
 		time.Sleep(time.Second)
 	}
+}
+
+func TestRefreshTokenWithOAuthNotWorking(t *testing.T) {
+	test := testEl{"ServiceUnavailable", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "uid":"` + AuthorizationUserID + `", "refreshtoken":"refresh-token"}`, nil}, output{coapCodes.ServiceUnavailable, `temporary error`, nil}, true}
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
+	defer cancel()
+	cfg := oauthTest.MakeConfig(t)
+	oauthShutdown := oauthTest.New(t, cfg)
+	coapgwCfg := coapgwTest.MakeConfig(t)
+	coapgwCfg.APIs.COAP.Authorization.Providers[0].HTTP.Timeout = time.Second
+	shutdown := testService.SetUpServices(ctx, t, testService.SetUpServicesId|testService.SetUpServicesCoapGateway|testService.SetUpServicesResourceAggregate|testService.SetUpServicesResourceDirectory, testService.WithCOAPGWConfig(coapgwCfg))
+	defer shutdown()
+
+	co := testCoapDial(t, "", true, time.Now().Add(time.Minute))
+	if co == nil {
+		return
+	}
+	testSignUp(t, CertIdentity, co)
+	defer func() {
+		_ = co.Close()
+	}()
+	oauthShutdown()
+	fileWatcher, err := fsnotify.NewWatcher()
+	require.NoError(t, err)
+	defer func() {
+		err = fileWatcher.Close()
+		require.NoError(t, err)
+	}()
+	s, err := listener.New(config.MakeListenerConfig(cfg.APIs.HTTP.Connection.Addr), fileWatcher, log.Get())
+	require.NoError(t, err)
+	defer func() {
+		err = s.Close()
+		require.NoError(t, err)
+	}()
+	testPostHandler(t, uri.RefreshToken, test, co)
 }
