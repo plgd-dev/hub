@@ -906,27 +906,27 @@ func (c *session) ValidateToken(ctx context.Context, token string) (pkgJwt.Claim
 }
 
 func (c *session) subscribeToDeviceEvents(owner string, onEvent func(e *idEvents.Event)) error {
-	close, err := c.server.ownerCache.Subscribe(owner, onEvent)
+	closeFn, err := c.server.ownerCache.Subscribe(owner, onEvent)
 	if err != nil {
 		return err
 	}
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
-	c.closeEventSubscriptions = close
+	c.closeEventSubscriptions = closeFn
 	return nil
 }
 
 func (c *session) unsubscribeFromDeviceEvents() {
-	close := func() {
+	closeFn := func() {
 		// default no-op
 	}
 	c.mutex.Lock()
 	if c.closeEventSubscriptions != nil {
-		close = c.closeEventSubscriptions
+		closeFn = c.closeEventSubscriptions
 		c.closeEventSubscriptions = nil
 	}
 	c.mutex.Unlock()
-	close()
+	closeFn()
 }
 
 func (c *session) ResolveDeviceID(claim pkgJwt.Claims, paramDeviceID string) string {

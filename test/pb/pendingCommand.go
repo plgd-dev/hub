@@ -107,7 +107,7 @@ func InitPendingEvents(ctx context.Context, t *testing.T) (pb.GrpcGatewayClient,
 
 	secureGWShutdown()
 
-	create := func() {
+	createFn := func() {
 		ctx, cancel := context.WithTimeout(ctx, time.Second)
 		defer cancel()
 		_, err := c.CreateResource(ctx, &pb.CreateResourceRequest{
@@ -121,8 +121,8 @@ func InitPendingEvents(ctx context.Context, t *testing.T) (pb.GrpcGatewayClient,
 		})
 		require.Error(t, err)
 	}
-	create()
-	retrieve := func() {
+	createFn()
+	retrieveFn := func() {
 		ctx, cancel := context.WithTimeout(ctx, time.Second)
 		defer cancel()
 		_, err := c.GetResourceFromDevice(ctx, &pb.GetResourceFromDeviceRequest{
@@ -130,8 +130,8 @@ func InitPendingEvents(ctx context.Context, t *testing.T) (pb.GrpcGatewayClient,
 		})
 		require.Error(t, err)
 	}
-	retrieve()
-	update := func() {
+	retrieveFn()
+	updateFn := func() {
 		ctx, cancel := context.WithTimeout(ctx, time.Second)
 		defer cancel()
 		_, err := c.UpdateResource(ctx, &pb.UpdateResourceRequest{
@@ -145,8 +145,8 @@ func InitPendingEvents(ctx context.Context, t *testing.T) (pb.GrpcGatewayClient,
 		})
 		require.Error(t, err)
 	}
-	update()
-	delete := func() {
+	updateFn()
+	deleteFn := func() {
 		ctx, cancel := context.WithTimeout(ctx, time.Second)
 		defer cancel()
 		_, err := c.DeleteResource(ctx, &pb.DeleteResourceRequest{
@@ -154,8 +154,8 @@ func InitPendingEvents(ctx context.Context, t *testing.T) (pb.GrpcGatewayClient,
 		})
 		require.Error(t, err)
 	}
-	delete()
-	updateDeviceMetadata := func() {
+	deleteFn()
+	updateDeviceMetadataFn := func() {
 		ctx, cancel := context.WithTimeout(ctx, time.Second)
 		defer cancel()
 		_, err := c.UpdateDeviceMetadata(ctx, &pb.UpdateDeviceMetadataRequest{
@@ -164,8 +164,7 @@ func InitPendingEvents(ctx context.Context, t *testing.T) (pb.GrpcGatewayClient,
 		})
 		require.Error(t, err)
 	}
-	updateDeviceMetadata()
-	updateDeviceMetadata()
+	updateDeviceMetadataFn()
 
 	client, err := c.GetPendingCommands(ctx, &pb.GetPendingCommandsRequest{})
 	require.NoError(t, err)

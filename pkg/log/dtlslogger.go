@@ -46,10 +46,6 @@ func (l DTLSLogger) Errorf(format string, args ...interface{}) {
 	l.logger.Errorf(format, args...)
 }
 
-func (l DTLSLogger) NewLo(format string, args ...interface{}) {
-	l.logger.Errorf(format, args...)
-}
-
 type DTLSLoggerFactory struct {
 	logger *WrapSuggarLogger
 }

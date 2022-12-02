@@ -336,7 +336,7 @@ func NewSubscriptionsCache(conn *nats.Conn, errFunc ErrFunc) *SubscriptionsCache
 func (c *SubscriptionsCache) makeCloseFunc(subject string, id uint64) func() {
 	return func() {
 		var sub *nats.Subscription
-		c.subjects.ReplaceWithFunc(subject, func(oldValue interface{}, oldLoaded bool) (newValue interface{}, delete bool) {
+		c.subjects.ReplaceWithFunc(subject, func(oldValue interface{}, oldLoaded bool) (newValue interface{}, doDelete bool) {
 			if !oldLoaded {
 				return nil, true
 			}
@@ -376,7 +376,7 @@ func (c *SubscriptionsCache) executeOnLockedeventSubject(subject string, fn func
 
 // Subscribe register onEvents handler and creates a NATS subscription, if it does not exist.
 // To free subscription call the returned close function.
-func (c *SubscriptionsCache) Subscribe(subject string, onEvent SendEventWithTypeFunc) (close func(), err error) {
+func (c *SubscriptionsCache) Subscribe(subject string, onEvent SendEventWithTypeFunc) (closeFn func(), err error) {
 	closeFunc := func() {
 		// Do nothing if no owner subject is found
 	}

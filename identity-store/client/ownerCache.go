@@ -150,7 +150,7 @@ func (c *OwnerCache) OwnerClaim() string {
 
 func (c *OwnerCache) makeCloseFunc(owner string, id uint64) func() {
 	return func() {
-		c.owners.ReplaceWithFunc(owner, func(oldValue interface{}, oldLoaded bool) (newValue interface{}, delete bool) {
+		c.owners.ReplaceWithFunc(owner, func(oldValue interface{}, oldLoaded bool) (newValue interface{}, doDelete bool) {
 			if !oldLoaded {
 				return nil, true
 			}
@@ -365,7 +365,7 @@ func (c *OwnerCache) checkExpiration() {
 
 	for _, o := range expiredOwners {
 		var unsubscribeSubscription *nats.Subscription
-		c.owners.ReplaceWithFunc(o, func(oldValue interface{}, oldLoaded bool) (newValue interface{}, delete bool) {
+		c.owners.ReplaceWithFunc(o, func(oldValue interface{}, oldLoaded bool) (newValue interface{}, doDelete bool) {
 			if !oldLoaded {
 				return nil, true
 			}

@@ -290,7 +290,7 @@ func TestRequestHandlerGetPendingCommands(t *testing.T) {
 
 	secureGWShutdown()
 
-	create := func() {
+	createFn := func() {
 		ctx, cancel := context.WithTimeout(ctx, time.Second)
 		defer cancel()
 		_, err := c.CreateResource(ctx, &pb.CreateResourceRequest{
@@ -304,8 +304,8 @@ func TestRequestHandlerGetPendingCommands(t *testing.T) {
 		})
 		require.Error(t, err)
 	}
-	create()
-	retrieve := func() {
+	createFn()
+	retrieveFn := func() {
 		ctx, cancel := context.WithTimeout(ctx, time.Second)
 		defer cancel()
 		_, err := c.GetResourceFromDevice(ctx, &pb.GetResourceFromDeviceRequest{
@@ -313,8 +313,8 @@ func TestRequestHandlerGetPendingCommands(t *testing.T) {
 		})
 		require.Error(t, err)
 	}
-	retrieve()
-	update := func() {
+	retrieveFn()
+	updateFn := func() {
 		ctx, cancel := context.WithTimeout(ctx, time.Second)
 		defer cancel()
 		_, err := c.UpdateResource(ctx, &pb.UpdateResourceRequest{
@@ -328,8 +328,8 @@ func TestRequestHandlerGetPendingCommands(t *testing.T) {
 		})
 		require.Error(t, err)
 	}
-	update()
-	delete := func() {
+	updateFn()
+	deleteFn := func() {
 		ctx, cancel := context.WithTimeout(ctx, time.Second)
 		defer cancel()
 		_, err := c.DeleteResource(ctx, &pb.DeleteResourceRequest{
@@ -337,8 +337,8 @@ func TestRequestHandlerGetPendingCommands(t *testing.T) {
 		})
 		require.Error(t, err)
 	}
-	delete()
-	updateDeviceMetadata := func() {
+	deleteFn()
+	updateDeviceMetadataFn := func() {
 		ctx, cancel := context.WithTimeout(ctx, time.Second)
 		defer cancel()
 		_, err := c.UpdateDeviceMetadata(ctx, &pb.UpdateDeviceMetadataRequest{
@@ -347,7 +347,7 @@ func TestRequestHandlerGetPendingCommands(t *testing.T) {
 		})
 		require.Error(t, err)
 	}
-	updateDeviceMetadata()
+	updateDeviceMetadataFn()
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

@@ -272,7 +272,7 @@ func main() {
 	resRt := flag.String("rt", "", "resource type")
 	observe := flag.Bool("observe", false, "observe resource")
 	update := flag.Bool("update", false, "update resource, content is expected in stdin")
-	delete := flag.Bool("delete", false, "delete resource")
+	resDelete := flag.Bool("delete", false, "delete resource")
 	create := flag.Bool("create", false, "create resource, content is expected in stdin")
 	contentFormat := flag.Int("contentFormat", int(message.AppJSON), "contentFormat for update resource")
 
@@ -297,7 +297,7 @@ func main() {
 	}
 
 	switch {
-	case *delete:
+	case *resDelete:
 		deleteResource(co, *href)
 	case *update:
 		updateResource(co, *href, *contentFormat)

@@ -151,7 +151,7 @@ func (p *Projection) ForceUpdate(ctx context.Context, resourceID *commands.Resou
 func (p *Projection) release(v *kitSync.RefCounter) error {
 	data := v.Data().(*deviceProjection)
 	deviceID := data.deviceID
-	p.refCountMap.ReplaceWithFunc(deviceID, func(oldValue interface{}, oldLoaded bool) (newValue interface{}, delete bool) {
+	p.refCountMap.ReplaceWithFunc(deviceID, func(oldValue interface{}, oldLoaded bool) (newValue interface{}, doDelete bool) {
 		o := oldValue.(*kitSync.RefCounter)
 		d := o.Data().(*deviceProjection)
 		if err := o.Release(context.Background()); err != nil {

@@ -50,18 +50,18 @@ func (s *Sub) CorrelationId() string {
 
 func (s *Sub) Init(owner string, subCache *SubscriptionsCache) error {
 	subjects := ConvertToSubjects(owner, s.filteredDeviceIDs, s.filteredResourceIDs, s.filter)
-	var close fn.FuncList
+	var closeFn fn.FuncList
 
 	for _, subject := range subjects {
 		closeSub, err := subCache.Subscribe(subject, s.ProcessEvent)
 		if err != nil {
-			close.Execute()
+			closeFn.Execute()
 			return err
 		}
-		close.AddFunc(closeSub)
+		closeFn.AddFunc(closeSub)
 	}
 
-	s.closeAtomic.Store(close.Execute)
+	s.closeAtomic.Store(closeFn.Execute)
 	return nil
 }
 
