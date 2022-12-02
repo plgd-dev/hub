@@ -43,7 +43,9 @@ func NewAggregate(resourceID *commands.ResourceId, snapshotThreshold int, events
 		snapshotThreshold,
 		eventstore,
 		factoryModel,
-		func(template string, args ...interface{}) {})
+		func(template string, args ...interface{}) {
+			// TODO: add debug log
+		})
 	if err != nil {
 		return nil, fmt.Errorf("cannot create aggregate for resource: %w", err)
 	}

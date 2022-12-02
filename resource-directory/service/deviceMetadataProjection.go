@@ -58,6 +58,45 @@ func (p *deviceMetadataProjection) EventType() string {
 	return s.EventType()
 }
 
+func (p *deviceMetadataProjection) handleEventLocked(ctx context.Context, eu eventstore.EventUnmarshaler) error {
+	if p.private.snapshot == nil {
+		p.private.snapshot = &events.DeviceMetadataSnapshotTaken{
+			DeviceId:      eu.GroupID(),
+			EventMetadata: events.MakeEventMeta("", 0, eu.Version()),
+		}
+	}
+	eventMetadata := p.private.snapshot.GetEventMetadata().Clone()
+	eventMetadata.Version = eu.Version()
+	p.private.snapshot.EventMetadata = eventMetadata
+	switch eu.EventType() {
+	case (&events.DeviceMetadataSnapshotTaken{}).EventType():
+		var e events.DeviceMetadataSnapshotTaken
+		if err := eu.Unmarshal(&e); err != nil {
+			return err
+		}
+		p.private.snapshot = &e
+	case (&events.DeviceMetadataUpdatePending{}).EventType():
+		var e events.DeviceMetadataUpdatePending
+		if err := eu.Unmarshal(&e); err != nil {
+			return err
+		}
+		if err := p.private.snapshot.HandleDeviceMetadataUpdatePending(ctx, &e); err != nil {
+			return nil //nolint:nilerr
+		}
+		p.private.snapshot.DeviceId = e.GetDeviceId()
+	case (&events.DeviceMetadataUpdated{}).EventType():
+		var e events.DeviceMetadataUpdated
+		if err := eu.Unmarshal(&e); err != nil {
+			return err
+		}
+		p.private.snapshot.DeviceId = e.GetDeviceId()
+		if _, err := p.private.snapshot.HandleDeviceMetadataUpdated(ctx, &e, false); err != nil {
+			return nil //nolint:nilerr
+		}
+	}
+	return nil
+}
+
 func (p *deviceMetadataProjection) Handle(ctx context.Context, iter eventstore.Iter) error {
 	p.private.lock.Lock()
 	defer p.private.lock.Unlock()
@@ -67,40 +106,8 @@ func (p *deviceMetadataProjection) Handle(ctx context.Context, iter eventstore.I
 			break
 		}
 		log.Debugf("deviceMetadataProjection.Handle deviceID=%v eventype%v version=%v", eu.GroupID(), eu.EventType(), eu.Version())
-		if p.private.snapshot == nil {
-			p.private.snapshot = &events.DeviceMetadataSnapshotTaken{
-				DeviceId:      eu.GroupID(),
-				EventMetadata: events.MakeEventMeta("", 0, eu.Version()),
-			}
-		}
-		eventMetadata := p.private.snapshot.GetEventMetadata().Clone()
-		eventMetadata.Version = eu.Version()
-		p.private.snapshot.EventMetadata = eventMetadata
-		switch eu.EventType() {
-		case (&events.DeviceMetadataSnapshotTaken{}).EventType():
-			var e events.DeviceMetadataSnapshotTaken
-			if err := eu.Unmarshal(&e); err != nil {
-				return err
-			}
-			p.private.snapshot = &e
-		case (&events.DeviceMetadataUpdatePending{}).EventType():
-			var e events.DeviceMetadataUpdatePending
-			if err := eu.Unmarshal(&e); err != nil {
-				return err
-			}
-			if err := p.private.snapshot.HandleDeviceMetadataUpdatePending(ctx, &e); err != nil {
-				continue
-			}
-			p.private.snapshot.DeviceId = e.GetDeviceId()
-		case (&events.DeviceMetadataUpdated{}).EventType():
-			var e events.DeviceMetadataUpdated
-			if err := eu.Unmarshal(&e); err != nil {
-				return err
-			}
-			p.private.snapshot.DeviceId = e.GetDeviceId()
-			if _, err := p.private.snapshot.HandleDeviceMetadataUpdated(ctx, &e, false); err != nil {
-				continue
-			}
+		if err := p.handleEventLocked(ctx, eu); err != nil {
+			return err
 		}
 	}
 	return nil

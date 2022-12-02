@@ -55,6 +55,18 @@ func (ep *GoroutinePoolHandler) run(ctx context.Context, p *eventsProcessor) err
 	return nil
 }
 
+func (ep *GoroutinePoolHandler) handleEventsBatch(ctx context.Context, name string, events []EventUnmarshaler) error {
+	ed := ep.getEventsData(name)
+	spawnGo := ed.push(events)
+	if spawnGo {
+		err := ep.run(ctx, ed)
+		if err != nil {
+			return fmt.Errorf("cannot handle events: %w", err)
+		}
+	}
+	return nil
+}
+
 // Handle pushes event to queue and process the queue by goroutine pool.
 func (ep *GoroutinePoolHandler) Handle(ctx context.Context, iter Iter) (err error) {
 	lastID := ""
@@ -66,13 +78,8 @@ func (ep *GoroutinePoolHandler) Handle(ctx context.Context, iter Iter) (err erro
 		}
 		id := eventToName(eu)
 		if lastID != "" && id != lastID || len(events) >= 128 {
-			ed := ep.getEventsData(id)
-			spawnGo := ed.push(events)
-			if spawnGo {
-				err := ep.run(ctx, ed)
-				if err != nil {
-					return fmt.Errorf("cannot handle events: %w", err)
-				}
+			if err := ep.handleEventsBatch(ctx, id, events); err != nil {
+				return err
 			}
 			events = make([]EventUnmarshaler, 0, 128)
 		}
@@ -80,13 +87,8 @@ func (ep *GoroutinePoolHandler) Handle(ctx context.Context, iter Iter) (err erro
 		events = append(events, eu)
 	}
 	if len(events) > 0 {
-		ed := ep.getEventsData(eventToName(events[0]))
-		spawnGo := ed.push(events)
-		if spawnGo {
-			err := ep.run(ctx, ed)
-			if err != nil {
-				return fmt.Errorf("cannot handle events: %w", err)
-			}
+		if err := ep.handleEventsBatch(ctx, eventToName(events[0]), events); err != nil {
+			return err
 		}
 	}
 	return nil
