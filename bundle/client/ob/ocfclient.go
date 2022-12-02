@@ -64,7 +64,7 @@ func (c *OcfClient) GetOwnerID() (string, error) {
 func (c *OcfClient) Discover(ctx context.Context, timeout time.Duration) (map[string]client.DeviceDetails, error) {
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
-	return c.localClient.GetDevices(ctx)
+	return c.localClient.GetDevicesDetails(ctx)
 }
 
 // OwnDevice transfers the ownersip of the device to user represented by the token
