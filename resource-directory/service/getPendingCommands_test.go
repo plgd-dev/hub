@@ -347,7 +347,7 @@ func TestRequestHandlerGetPendingCommands(t *testing.T) {
 
 	secureGWShutdown()
 
-	create := func(timeToLive time.Duration) {
+	createFn := func(timeToLive time.Duration) {
 		ctx, cancel := context.WithTimeout(ctx, time.Second)
 		defer cancel()
 		_, err := c.CreateResource(ctx, &pb.CreateResourceRequest{
@@ -362,10 +362,10 @@ func TestRequestHandlerGetPendingCommands(t *testing.T) {
 		})
 		require.Error(t, err)
 	}
-	create(time.Millisecond * 500) // for test expired event
-	create(0)
+	createFn(time.Millisecond * 500) // for test expired event
+	createFn(0)
 
-	retrieve := func(timeToLive time.Duration) {
+	retrieveFn := func(timeToLive time.Duration) {
 		ctx, cancel := context.WithTimeout(ctx, time.Second)
 		defer cancel()
 		_, err := c.GetResourceFromDevice(ctx, &pb.GetResourceFromDeviceRequest{
@@ -374,10 +374,10 @@ func TestRequestHandlerGetPendingCommands(t *testing.T) {
 		})
 		require.Error(t, err)
 	}
-	retrieve(time.Millisecond * 500) // for test expired event
-	retrieve(0)
+	retrieveFn(time.Millisecond * 500) // for test expired event
+	retrieveFn(0)
 
-	update := func(timeToLive time.Duration) {
+	updateFn := func(timeToLive time.Duration) {
 		ctx, cancel := context.WithTimeout(ctx, time.Second)
 		defer cancel()
 		_, err := c.UpdateResource(ctx, &pb.UpdateResourceRequest{
@@ -392,10 +392,10 @@ func TestRequestHandlerGetPendingCommands(t *testing.T) {
 		})
 		require.Error(t, err)
 	}
-	update(time.Millisecond * 500) // for test expired event
-	update(0)
+	updateFn(time.Millisecond * 500) // for test expired event
+	updateFn(0)
 
-	delete := func(timeToLive time.Duration) {
+	deleteFn := func(timeToLive time.Duration) {
 		ctx, cancel := context.WithTimeout(ctx, time.Second)
 		defer cancel()
 		_, err := c.DeleteResource(ctx, &pb.DeleteResourceRequest{
@@ -404,8 +404,8 @@ func TestRequestHandlerGetPendingCommands(t *testing.T) {
 		})
 		require.Error(t, err)
 	}
-	delete(time.Millisecond * 500) // for test expired event
-	delete(0)
+	deleteFn(time.Millisecond * 500) // for test expired event
+	deleteFn(0)
 
 	updateDeviceMetadata := func(timeToLive time.Duration) {
 		ctx, cancel := context.WithTimeout(ctx, time.Second)

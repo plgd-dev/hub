@@ -84,7 +84,7 @@ func (o observedResources) insert(rs ...*observedResource) observedResources {
 	return o
 }
 
-func (o observedResources) removeByHref(hrefs ...string) (new, removed observedResources) {
+func (o observedResources) removeByHref(hrefs ...string) (retained, removed observedResources) {
 	removed = make(observedResources, 0, len(hrefs))
 	for _, h := range hrefs {
 		i := o.search(h)
