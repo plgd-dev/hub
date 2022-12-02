@@ -165,6 +165,7 @@ func InitPendingEvents(ctx context.Context, t *testing.T) (pb.GrpcGatewayClient,
 		require.Error(t, err)
 	}
 	updateDeviceMetadataFn()
+	updateDeviceMetadataFn()
 
 	client, err := c.GetPendingCommands(ctx, &pb.GetPendingCommandsRequest{})
 	require.NoError(t, err)
