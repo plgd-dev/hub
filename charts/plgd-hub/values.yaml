@@ -92,7 +92,7 @@ mongodb:
     enabled: false
   extraEnvVars:
     - name: MONGODB_EXTRA_FLAGS
-      value: "--tlsMode=requireTLS --tlsCertificateKeyFile=/certs/cert.pem --tlsCAFile=/certs/ca.pem"
+      value: "--tlsMode=requireTLS --tlsCertificateKeyFile=/certs/cert.pem --tlsCAFile=/certs/ca.pem --tlsClusterFile=/certs/cert.pem"
     - name: MONGODB_CLIENT_EXTRA_FLAGS
       value: "--tls --tlsCertificateKeyFile=/certs/cert.pem --tlsCAFile=/certs/ca.pem"
   extraVolumeMounts:
