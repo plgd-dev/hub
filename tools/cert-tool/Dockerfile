@@ -1,4 +1,4 @@
-FROM golang:1.18.5-alpine AS build
+FROM golang:1.18.8-alpine AS build
 ARG DIRECTORY
 ARG NAME
 RUN apk add --no-cache curl git build-base
@@ -10,6 +10,6 @@ RUN ( cd /usr/local/go && patch -p1 < $GOPATH/src/github.com/plgd-dev/hub/tools/
 WORKDIR $GOPATH/src/github.com/plgd-dev/hub/tools/cert-tool
 RUN go build -o /go/bin/cert-tool ./cmd
 
-FROM alpine:3.16 as service
+FROM alpine:3.17 as service
 COPY --from=build /go/bin/cert-tool /usr/local/bin/cert-tool
 ENTRYPOINT [ "/usr/local/bin/cert-tool" ]
