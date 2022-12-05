@@ -221,7 +221,7 @@ app.kubernetes.io/instance: {{ .Release.Name }}
   {{- else if $mongoUri }}
   {{- printf "%s" $mongoUri }}
   {{- else }}
-  {{- printf "mongodb://mongodb-0.mongodb-headless.%s.svc.%s:27017" $.Release.Namespace $.Values.cluster.dns }}
+  {{- printf "mongodb://mongodb-headless.%s.svc.%s:27017/?replicaSet=%s" $.Release.Namespace $.Values.cluster.dns $.Values.mongodb.replicaSetName }}
   {{- end }}
 {{- end }}
 
