@@ -1,4 +1,4 @@
-FROM golang:1.18.5-alpine AS build
+FROM golang:1.18.8-alpine AS build
 RUN apk add --no-cache curl git build-base
 WORKDIR $GOPATH/src/github.com/plgd-dev/hub
 COPY go.mod go.sum ./
@@ -12,7 +12,7 @@ FROM node:16 AS build-web
 COPY http-gateway/web /web
 RUN cd /web && npm install && npm run build
 
-FROM alpine:3.16 as service
+FROM alpine:3.17 as service
 RUN apk add --no-cache ca-certificates
 COPY --from=build-web /web/build /usr/local/var/www
 COPY --from=build /go/bin/http-gateway /usr/local/bin/http-gateway
