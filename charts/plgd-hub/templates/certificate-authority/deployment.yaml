@@ -92,6 +92,10 @@ spec:
             - name: {{ .Values.certificateauthority.ca.volume.name }}
               mountPath: {{ .Values.certificateauthority.ca.volume.mountPath }}
             {{- end }}
+            {{- if .Values.global.authorizationCaPool }}
+            - name: {{ .Values.extraAuthCaPool.name }}
+              mountPath: {{ .Values.extraAuthCaPool.mountPath }}
+            {{- end }}
             {{- with .Values.certificateauthority.extraVolumeMounts }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
@@ -111,6 +115,11 @@ spec:
         - name: {{ .Values.certificateauthority.ca.volume.name }}
           secret:
             secretName: {{ .Values.certificateauthority.ca.secret.name | default $.Values.certmanager.default.ca.secret.name }}
+        {{- end }}
+        {{- if .Values.global.authorizationCaPool }}
+        - name: {{ .Values.extraAuthCaPool.name }}
+          secret:
+            secretName: {{ .Values.extraAuthCaPool.name }}
         {{- end }}
         {{- with .Values.certificateauthority.extraVolumes }}
         {{- toYaml . | nindent 8 }}

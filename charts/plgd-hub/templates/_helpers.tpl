@@ -97,6 +97,36 @@ If release name contains chart name it will be used as a full name.
   {{- end }}
 {{- end }}
 
+{{- define "plgd-hub.authzCertificateConfig" }}
+  {{- $ := index . 0 }}
+  {{- $certDefinition := index . 1 }}
+  {{- $certPath := index . 2 }}
+  {{- $caPool := list (printf "%s/%s" $.Values.extraAuthCaPool.mountPath $.Values.extraAuthCaPool.fileName | quote) (printf "%s/ca.crt" $certPath | quote) }}
+  {{- if $certDefinition.caPool }}
+  caPool:{{- printf " " }}{{- printf "%s" $certDefinition.caPool | quote }}
+  {{- else if $.Values.certmanager.enabled }}
+  {{- if $.Values.global.authorizationCaPool }}
+  caPool:
+    {{- range $caPool }}
+    - {{ printf "%s" . }}
+    {{- end }}
+  {{- else }}
+  caPool:{{- printf " " }}{{- printf "%s/ca.crt" $certPath | quote  }}
+  {{- end }}
+  {{- end }}
+  {{- if $certDefinition.keyFile }}
+  keyFile:{{- printf " " }}{{- printf "%s" $certDefinition.keyFile | quote }}
+  {{- else if $.Values.certmanager.enabled }}
+  keyFile:{{- printf " " }}{{- printf "%s/tls.key" $certPath  | quote  }}
+  {{- end }}
+  {{- if $certDefinition.certFile }}
+  certFile:{{- printf " " }}{{- printf "%s" $certDefinition.certFile | quote }}
+  {{- else if $.Values.certmanager.enabled }}
+  certFile:{{- printf " " }}{{- printf "%s/tls.crt" $certPath | quote }}
+  {{- end }}
+{{- end }}
+
+
 {{- define "plgd-hub.authorizationConfig" }}
   {{- $ := index . 0 }}
   {{- $authoriztion := index . 1 }}

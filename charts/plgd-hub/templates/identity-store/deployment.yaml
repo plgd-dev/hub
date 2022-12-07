@@ -84,6 +84,10 @@ spec:
             - name: service-crt
               mountPath: {{ $cert }}
             {{- end }}
+            {{- if .Values.global.authorizationCaPool }}
+            - name: {{ .Values.extraAuthCaPool.name }}
+              mountPath: {{ .Values.extraAuthCaPool.mountPath }}
+            {{- end }}
             {{- with .Values.identitystore.extraVolumeMounts }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
@@ -99,6 +103,11 @@ spec:
         - name: {{ .Values.identitystore.config.volume }}
           configMap:
             name: {{ include "plgd-hub.identitystore.configName" . }}
+        {{- if .Values.global.authorizationCaPool }}
+        - name: {{ .Values.extraAuthCaPool.name }}
+          secret:
+            secretName: {{ .Values.extraAuthCaPool.name }}
+        {{- end }}
         {{- with .Values.identitystore.extraVolumes }}
         {{- toYaml . | nindent 8 }}
         {{- end }}

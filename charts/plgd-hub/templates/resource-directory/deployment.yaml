@@ -84,6 +84,10 @@ spec:
             - name: service-crt
               mountPath: {{ $rdServiceCert }}
             {{- end }}
+            {{- if .Values.global.authorizationCaPool }}
+            - name: {{ .Values.extraAuthCaPool.name }}
+              mountPath: {{ .Values.extraAuthCaPool.mountPath }}
+            {{- end }}
             {{- with .Values.resourcedirectory.extraVolumeMounts }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
@@ -98,6 +102,11 @@ spec:
         - name: service-crt
           secret:
             secretName: {{ include "plgd-hub.resourcedirectory.serviceCertName" . }}
+        {{- end }}
+        {{- if .Values.global.authorizationCaPool }}
+        - name: {{ .Values.extraAuthCaPool.name }}
+          secret:
+            secretName: {{ .Values.extraAuthCaPool.name }}
         {{- end }}
         {{- with .Values.resourcedirectory.extraVolumes }}
         {{- toYaml . | nindent 8 }}
