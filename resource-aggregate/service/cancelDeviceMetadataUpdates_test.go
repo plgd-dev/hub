@@ -102,6 +102,10 @@ func TestAggregateHandleCancelPendingMetadataUpdates(t *testing.T) {
 	require.NoError(t, err)
 	_, err = ag.UpdateDeviceMetadata(kitNetGrpc.CtxWithIncomingToken(context.Background(), config.CreateJwtToken(t, jwt.MapClaims{
 		"sub": userID,
+	})), testMakeUpdateDeviceMetadataRequest(deviceID, correlationID0, newConnectionStatus(commands.Connection_ONLINE), nil, 0))
+	require.NoError(t, err)
+	_, err = ag.UpdateDeviceMetadata(kitNetGrpc.CtxWithIncomingToken(context.Background(), config.CreateJwtToken(t, jwt.MapClaims{
+		"sub": userID,
 	})), testMakeUpdateDeviceMetadataRequest(deviceID, correlationID0, nil, newTwinEnabled(false), 0))
 	require.NoError(t, err)
 	_, err = ag.UpdateDeviceMetadata(kitNetGrpc.CtxWithIncomingToken(context.Background(), config.CreateJwtToken(t, jwt.MapClaims{
@@ -223,6 +227,10 @@ func TestRequestHandlerCancelPendingMetadataUpdates(t *testing.T) {
 	}()
 
 	ag, err := service.NewAggregate(commands.NewResourceID(deviceID, commands.StatusHref), 10, eventstore, service.DeviceMetadataFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
+	require.NoError(t, err)
+	_, err = ag.UpdateDeviceMetadata(kitNetGrpc.CtxWithIncomingToken(context.Background(), config.CreateJwtToken(t, jwt.MapClaims{
+		"sub": userID,
+	})), testMakeUpdateDeviceMetadataRequest(deviceID, correlationID0, newConnectionStatus(commands.Connection_ONLINE), nil, 0))
 	require.NoError(t, err)
 	_, err = ag.UpdateDeviceMetadata(kitNetGrpc.CtxWithIncomingToken(ctx, config.CreateJwtToken(t, jwt.MapClaims{
 		"sub": userID,

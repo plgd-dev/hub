@@ -413,7 +413,7 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 							},
 						},
 					},
-					newVersion: 0,
+					newVersion: 1,
 					want: []*grpcgwPb.Event{
 						pb.ToEvent(&events.DeviceMetadataUpdated{
 							DeviceId: deviceID,
@@ -447,7 +447,7 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 							},
 						},
 					},
-					newVersion: 0,
+					newVersion: 2,
 				},
 				{
 					ctx: grpc.CtxWithIncomingToken(context.Background(), jwtWithSubUserID),
@@ -465,7 +465,7 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 							},
 						},
 					},
-					newVersion: 0,
+					newVersion: 3,
 					want: []*grpcgwPb.Event{
 						pb.ToEvent(&events.DeviceMetadataUpdated{
 							DeviceId: deviceID,
@@ -485,7 +485,7 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 					},
 				},
 				{
-					newVersion: 1,
+					newVersion: 4,
 					ctx:        grpc.CtxWithIncomingToken(context.Background(), jwtWithSubUserID),
 					cmd: &commands.UpdateDeviceMetadataRequest{
 						DeviceId: deviceID,
@@ -571,7 +571,7 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 							},
 						},
 					},
-					newVersion: 0,
+					newVersion: 1,
 					want: []*grpcgwPb.Event{
 						pb.ToEvent(&events.DeviceMetadataUpdated{
 							DeviceId: deviceID,
@@ -605,7 +605,7 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 							},
 						},
 					},
-					newVersion: 0,
+					newVersion: 2,
 					want: []*grpcgwPb.Event{
 						pb.ToEvent(&events.DeviceMetadataUpdated{
 							DeviceId: deviceID,
@@ -636,7 +636,7 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 							},
 						},
 					},
-					newVersion: 0,
+					newVersion: 3,
 					want: []*grpcgwPb.Event{
 						pb.ToEvent(&events.DeviceMetadataUpdated{
 							DeviceId: deviceID,
@@ -670,7 +670,7 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 							},
 						},
 					},
-					newVersion: 0,
+					newVersion: 3,
 				},
 				{
 					ctx: grpc.CtxWithIncomingToken(context.Background(), jwtWithSubUserID),
@@ -688,11 +688,11 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 							},
 						},
 					},
-					newVersion: 0,
+					newVersion: 3,
 					wantErr:    true,
 				},
 				{
-					newVersion: 1,
+					newVersion: 3,
 					ctx:        grpc.CtxWithIncomingToken(context.Background(), jwtWithSubUserID),
 					cmd: &commands.UpdateDeviceMetadataRequest{
 						DeviceId: deviceID,

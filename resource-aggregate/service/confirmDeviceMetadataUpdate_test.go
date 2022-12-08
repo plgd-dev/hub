@@ -99,6 +99,10 @@ func TestAggregateHandleConfirmDeviceMetadataUpdate(t *testing.T) {
 
 	ag, err := service.NewAggregate(commands.NewResourceID(deviceID, commands.StatusHref), 10, eventstore, service.DeviceMetadataFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
 	require.NoError(t, err)
+	_, err = ag.UpdateDeviceMetadata(kitNetGrpc.CtxWithIncomingToken(context.Background(), config.CreateJwtToken(t, jwt.MapClaims{
+		"sub": userID,
+	})), testMakeUpdateDeviceMetadataRequest(deviceID, "a", newConnectionStatus(commands.Connection_ONLINE), nil, 0))
+	require.NoError(t, err)
 	_, err = ag.UpdateDeviceMetadata(kitNetGrpc.CtxWithIncomingToken(ctx, config.CreateJwtToken(t, jwt.MapClaims{
 		"sub": userID,
 	})), testMakeUpdateDeviceMetadataRequest(deviceID, "", nil, newTwinEnabled(false), time.Hour))
@@ -205,6 +209,8 @@ func TestRequestHandlerConfirmDeviceMetadataUpdate(t *testing.T) {
 
 	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetOwnerDevices)
 
+	_, err = requestHandler.UpdateDeviceMetadata(ctx, testMakeUpdateDeviceMetadataRequest(deviceID, "", newConnectionStatus(commands.Connection_ONLINE), nil, time.Hour))
+	require.NoError(t, err)
 	_, err = requestHandler.UpdateDeviceMetadata(ctx, testMakeUpdateDeviceMetadataRequest(deviceID, "", nil, newTwinEnabled(false), time.Hour))
 	require.NoError(t, err)
 
