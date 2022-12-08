@@ -9,6 +9,8 @@ import (
 	"github.com/plgd-dev/go-coap/v3/message"
 	"github.com/plgd-dev/go-coap/v3/message/codes"
 	"github.com/plgd-dev/go-coap/v3/message/pool"
+	grpcCodes "google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 func GetResponse(ctx context.Context, messagePool *pool.Pool, code codes.Code, token message.Token, contentFormat message.MediaType, payload []byte) (*pool.Message, func()) {
@@ -37,6 +39,15 @@ func IsTempError(err error) bool {
 	if errors.As(err, &isTimeout) && isTimeout.Timeout() {
 		return true
 	}
+	var grpcStatus interface {
+		GRPCStatus() *status.Status
+	}
+	if errors.As(err, &grpcStatus) {
+		switch grpcStatus.GRPCStatus().Code() {
+		case grpcCodes.Unavailable, grpcCodes.DeadlineExceeded, grpcCodes.Canceled, grpcCodes.Aborted:
+			return true
+		}
+	}
 	switch {
 	// TODO: We could optimize this by using error.Is to avoid string comparison.
 	case strings.Contains(err.Error(), "connect: connection refused"),
@@ -45,6 +56,7 @@ func IsTempError(err error) bool {
 		strings.Contains(err.Error(), `http2:`), // any error at http2 protocol is considered as temporary error
 		strings.Contains(err.Error(), `write: broken pipe`),
 		strings.Contains(err.Error(), `request canceled while waiting for connection`),
+		strings.Contains(err.Error(), `authentication handshake failed`),
 		strings.Contains(err.Error(), context.DeadlineExceeded.Error()),
 		strings.Contains(err.Error(), context.Canceled.Error()):
 		return true
