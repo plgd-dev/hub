@@ -249,15 +249,15 @@ global:
 | coapgateway.service.udp.type | string | `nil` | Service type |
 | coapgateway.taskQueue | object | `{"goPoolSize":1600,"maxIdleTime":"10m","size":"2097152"}` | For complete coap-gateway service configuration see [plgd/coap-gateway](https://github.com/plgd-dev/hub/tree/main/coap-gateway) |
 | coapgateway.tolerations | object | `{}` | Toleration definition |
-| extraAuthCaPool | object | `{"fileName":"ca.crt","mountPath":"/certs/extra","name":"extra-auth-ca-pool"}` | Configuration parameters for authorizationCaPool |
-| extraAuthCaPool.fileName | string | `"ca.crt"` | Name of file for custom auth ca pool |
-| extraAuthCaPool.mountPath | string | `"/certs/extra"` | Mount path for custom auth ca pool |
-| extraAuthCaPool.name | string | `"extra-auth-ca-pool"` | Name of secret for storing custom auth ca pool |
+| extraAuthorizationCAPool | object | `{"fileName":"ca.crt","mountPath":"/certs/extra","name":"authorization-ca-pool"}` | Configuration parameters for authorizationCaPool |
+| extraAuthorizationCAPool.fileName | string | `"ca.crt"` | Name of file for custom auth ca pool |
+| extraAuthorizationCAPool.mountPath | string | `"/certs/extra"` | Mount path for custom auth ca pool |
+| extraAuthorizationCAPool.name | string | `"authorization-ca-pool"` | Name of secret for storing custom auth ca pool |
 | extraDeploy | string | `nil` | Extra deploy. Resolved as template |
-| global | object | `{"audience":"","authority":null,"authorizationCaPool":null,"defaultCommandTimeToLive":"10s","deviceIdClaim":null,"domain":null,"enableWildCartCert":true,"hubId":null,"oauth":{"device":[],"web":{"clientID":null}},"openTelemetryExporter":{"address":null,"enabled":false,"keepAlive":{"permitWithoutStream":true,"time":"10s","timeout":"20s"},"tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false}},"ownerClaim":"sub"}` | Global config variables |
+| global | object | `{"audience":"","authority":null,"authorizationCAPool":null,"defaultCommandTimeToLive":"10s","deviceIdClaim":null,"domain":null,"enableWildCartCert":true,"hubId":null,"oauth":{"device":[],"web":{"clientID":null}},"openTelemetryExporter":{"address":null,"enabled":false,"keepAlive":{"permitWithoutStream":true,"time":"10s","timeout":"20s"},"tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false}},"ownerClaim":"sub"}` | Global config variables |
 | global.audience | string | `""` | OAuth audience |
 | global.authority | string | `nil` | OAuth authority |
-| global.authorizationCaPool | string | `nil` | Custom CA certificate for authorization endpoint in PEM format |
+| global.authorizationCAPool | string | `nil` | Custom CA certificate for authorization endpoint in PEM format |
 | global.defaultCommandTimeToLive | string | `"10s"` | Global Default command time to live for resource-aggregate and resource-directory |
 | global.deviceIdClaim | string | `nil` | Device ID claim |
 | global.domain | string | `nil` | Global domain |

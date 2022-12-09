@@ -91,9 +91,9 @@ spec:
             - name: service-crt
               mountPath: {{ $rdServiceCert }}
             {{- end }}
-            {{- if .Values.global.authorizationCaPool }}
-            - name: {{ .Values.extraAuthCaPool.name }}
-              mountPath: {{ .Values.extraAuthCaPool.mountPath }}
+            {{- if .Values.global.authorizationCAPool }}
+            - name: {{ .Values.extraAuthorizationCAPool.name }}
+              mountPath: {{ .Values.extraAuthorizationCAPool.mountPath }}
             {{- end }}
             {{- with .Values.coapgateway.extraVolumeMounts }}
             {{- toYaml . | nindent 12 }}
@@ -120,10 +120,10 @@ spec:
           secret:
             secretName: {{ include "plgd-hub.coapgateway.serviceCertName" . }}
         {{- end }}
-        {{- if .Values.global.authorizationCaPool }}
-        - name: {{ .Values.extraAuthCaPool.name }}
+        {{- if .Values.global.authorizationCAPool }}
+        - name: {{ .Values.extraAuthorizationCAPool.name }}
           secret:
-            secretName: {{ .Values.extraAuthCaPool.name }}
+            secretName: {{ .Values.extraAuthorizationCAPool.name }}
         {{- end }}
         {{- with .Values.coapgateway.extraVolumes }}
         {{- toYaml . | nindent 8 }}

@@ -97,15 +97,15 @@ If release name contains chart name it will be used as a full name.
   {{- end }}
 {{- end }}
 
-{{- define "plgd-hub.authzCertificateConfig" }}
+{{- define "plgd-hub.authorizationCaCertificateConfig" }}
   {{- $ := index . 0 }}
   {{- $certDefinition := index . 1 }}
   {{- $certPath := index . 2 }}
-  {{- $caPool := list (printf "%s/%s" $.Values.extraAuthCaPool.mountPath $.Values.extraAuthCaPool.fileName | quote) (printf "%s/ca.crt" $certPath | quote) }}
+  {{- $caPool := list (printf "%s/%s" $.Values.extraAuthorizationCAPool.mountPath $.Values.extraAuthorizationCAPool.fileName | quote) (printf "%s/ca.crt" $certPath | quote) }}
   {{- if $certDefinition.caPool }}
   caPool:{{- printf " " }}{{- printf "%s" $certDefinition.caPool | quote }}
   {{- else if $.Values.certmanager.enabled }}
-  {{- if $.Values.global.authorizationCaPool }}
+  {{- if $.Values.global.authorizationCAPool }}
   caPool:
     {{- range $caPool }}
     - {{ printf "%s" . }}

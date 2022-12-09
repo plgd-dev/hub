@@ -28,7 +28,7 @@ global:
    web:
     clientID:
   # -- Custom CA certificate for authorization endpoint in PEM format
-  authorizationCaPool:
+  authorizationCAPool:
   # -- Global Open Telemetry exporter configuration
   openTelemetryExporter:
       # -- Enable OTLP gRPC exporter
@@ -287,9 +287,9 @@ certmanager:
         size:
 
 # -- Configuration parameters for authorizationCaPool
-extraAuthCaPool:
+extraAuthorizationCAPool:
   # -- Name of secret for storing custom auth ca pool
-  name: extra-auth-ca-pool
+  name: authorization-ca-pool
   # -- Mount path for custom auth ca pool
   mountPath: /certs/extra
   # -- Name of file for custom auth ca pool

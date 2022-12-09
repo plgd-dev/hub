@@ -46,7 +46,7 @@ data:
             timeout: {{ .apis.grpc.authorization.http.timeout }}
             tls:
               {{- $grpcTls := .apis.grpc.authorization.http.tls }}
-              {{- include "plgd-hub.authzCertificateConfig" (list $ $grpcTls $cert ) | indent 12 }}
+              {{- include "plgd-hub.authorizationCaCertificateConfig" (list $ $grpcTls $cert ) | indent 12 }}
               useSystemCAPool: {{ .apis.grpc.authorization.http.tls.useSystemCAPool }}
       http:
         address: {{  .apis.http.address | default (printf "0.0.0.0:%v" .httpPort) | quote }}
