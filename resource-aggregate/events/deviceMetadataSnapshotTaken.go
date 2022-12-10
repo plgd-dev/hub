@@ -300,6 +300,9 @@ func (d *DeviceMetadataSnapshotTaken) updateDeviceConnection(ctx context.Context
 		return nil, status.Errorf(codes.InvalidArgument, "cannot update connection status for empty connectionId")
 	}
 	if !req.GetConnection().IsOnline() {
+		if em.GetVersion() == 0 {
+			return nil, status.Errorf(codes.InvalidArgument, "cannot update connection status to offline for not existing device %v", req.GetDeviceId())
+		}
 		// only online status can update protocol
 		req.GetConnection().Protocol = d.GetDeviceMetadataUpdated().GetConnection().GetProtocol()
 	}
@@ -384,6 +387,9 @@ func (d *DeviceMetadataSnapshotTaken) updateDeviceTwinSynchronization(ctx contex
 	if commandMetadata.GetConnectionId() != d.GetDeviceMetadataUpdated().GetTwinSynchronization().GetCommandMetadata().GetConnectionId() {
 		return nil, status.Errorf(codes.InvalidArgument, "cannot update twin synchronization for different connectionId: get %v, expected %v", commandMetadata.GetConnectionId(), d.GetDeviceMetadataUpdated().GetTwinSynchronization().GetCommandMetadata().GetConnectionId())
 	}
+	if em.GetVersion() == 0 {
+		return nil, status.Errorf(codes.InvalidArgument, "cannot update twin synchronization for not existing device %v", req.GetDeviceId())
+	}
 	if commandMetadata.GetSequence() <= d.GetDeviceMetadataUpdated().GetTwinSynchronization().GetCommandMetadata().GetSequence() {
 		return nil, nil
 	}
@@ -421,6 +427,9 @@ func (d *DeviceMetadataSnapshotTaken) updateDeviceTwinSynchronization(ctx contex
 }
 
 func (d *DeviceMetadataSnapshotTaken) updateDeviceTwinEnabled(ctx context.Context, req *commands.UpdateDeviceMetadataRequest, em *EventMetadata, ac *commands.AuditContext) ([]eventstore.Event, error) {
+	if em.GetVersion() == 0 {
+		return nil, status.Errorf(codes.InvalidArgument, "cannot update twin enabled for not existing device %v", req.GetDeviceId())
+	}
 	ev := DeviceMetadataUpdatePending{
 		DeviceId:   req.GetDeviceId(),
 		ValidUntil: timeToLive2ValidUntil(req.GetTimeToLive()),

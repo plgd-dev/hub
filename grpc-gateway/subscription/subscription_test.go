@@ -345,7 +345,8 @@ LOOP:
 					DeviceMetadataUpdated: &events.DeviceMetadataUpdated{
 						DeviceId: deviceID,
 						Connection: &commands.Connection{
-							Status: commands.Connection_OFFLINE,
+							Status:   commands.Connection_OFFLINE,
+							Protocol: test.StringToApplicationProtocol(config.ACTIVE_COAP_SCHEME),
 						},
 						TwinSynchronization: &commands.TwinSynchronization{},
 						TwinEnabled:         true,
