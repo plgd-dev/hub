@@ -8,17 +8,17 @@ message HubConfigurationRequest {
 }
 
 message WebOAuthClient {
-	string client_id = 1;
+	string client_id = 1; // @gotags: yaml:"clientID"
 	string audience = 2;
 	repeated string scopes = 3;
 }
 
 
 message DeviceOAuthClient {
-    string client_id = 1;
+    string client_id = 1; // @gotags: yaml:"clientID"
 	string audience = 2;
 	repeated string scopes = 3;
-    string provider_name = 4;
+    string provider_name = 4; // @gotags: yaml:"providerName"
 }
 
 message HubConfigurationResponse {

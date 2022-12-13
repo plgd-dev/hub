@@ -3,6 +3,7 @@ module github.com/plgd-dev/hub/v2
 go 1.18
 
 require (
+	github.com/favadi/protoc-go-inject-tag v1.4.0
 	github.com/felixge/httpsnoop v1.0.3
 	github.com/fsnotify/fsnotify v1.6.0
 	github.com/fullstorydev/grpchan v1.1.1
