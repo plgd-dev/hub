@@ -63,7 +63,7 @@ type WebOAuthClient struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	ClientId string   `protobuf:"bytes,1,opt,name=client_id,json=clientId,proto3" json:"client_id,omitempty"`
+	ClientId string   `protobuf:"bytes,1,opt,name=client_id,json=clientId,proto3" json:"client_id,omitempty" yaml:"clientID"` // @gotags: yaml:"clientID"
 	Audience string   `protobuf:"bytes,2,opt,name=audience,proto3" json:"audience,omitempty"`
 	Scopes   []string `protobuf:"bytes,3,rep,name=scopes,proto3" json:"scopes,omitempty"`
 }
@@ -126,10 +126,10 @@ type DeviceOAuthClient struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	ClientId     string   `protobuf:"bytes,1,opt,name=client_id,json=clientId,proto3" json:"client_id,omitempty"`
+	ClientId     string   `protobuf:"bytes,1,opt,name=client_id,json=clientId,proto3" json:"client_id,omitempty" yaml:"clientID"` // @gotags: yaml:"clientID"
 	Audience     string   `protobuf:"bytes,2,opt,name=audience,proto3" json:"audience,omitempty"`
 	Scopes       []string `protobuf:"bytes,3,rep,name=scopes,proto3" json:"scopes,omitempty"`
-	ProviderName string   `protobuf:"bytes,4,opt,name=provider_name,json=providerName,proto3" json:"provider_name,omitempty"`
+	ProviderName string   `protobuf:"bytes,4,opt,name=provider_name,json=providerName,proto3" json:"provider_name,omitempty" yaml:"providerName"` // @gotags: yaml:"providerName"
 }
 
 func (x *DeviceOAuthClient) Reset() {
