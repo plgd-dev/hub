@@ -45,7 +45,7 @@ data:
             timeout: {{ .apis.http.authorization.http.timeout }}
             tls:
               {{- $httpTls := .apis.http.authorization.http.tls }}
-              {{- include "plgd-hub.certificateConfig" (list $ $httpTls $httpGatewayCertPath ) | indent 12 }}
+              {{- include "plgd-hub.authorizationCaCertificateConfig" (list $ $httpTls $httpGatewayCertPath ) | indent 12 }}
               useSystemCAPool: {{ .apis.http.authorization.http.tls.useSystemCAPool }}
     clients:
       grpcGateway:

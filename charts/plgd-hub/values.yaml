@@ -27,6 +27,8 @@ global:
 #       useInUi: true
    web:
     clientID:
+  # -- Custom CA certificate for authorization endpoint in PEM format
+  authorizationCAPool:
   # -- Global Open Telemetry exporter configuration
   openTelemetryExporter:
       # -- Enable OTLP gRPC exporter
@@ -283,6 +285,15 @@ certmanager:
         algorithm:
         # -- Certificate key size
         size:
+
+# -- Configuration parameters for authorizationCaPool
+extraAuthorizationCAPool:
+  # -- Name of secret for storing custom auth ca pool
+  name: authorization-ca-pool
+  # -- Mount path for custom auth ca pool
+  mountPath: /certs/extra
+  # -- Name of file for custom auth ca pool
+  fileName: ca.crt
 
 
 

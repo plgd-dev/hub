@@ -91,7 +91,7 @@ data:
                 timeout: {{ $http.timeout | default "10s" }}
                 tls:
                   {{- $providerTls := $http.tls }}
-                  {{- include "plgd-hub.certificateConfig" (list $ $providerTls $coapGatewayCertPath) | indent 16 }}
+                  {{- include "plgd-hub.authorizationCaCertificateConfig" (list $ $providerTls $coapGatewayCertPath) | indent 16 }}
                   useSystemCAPool: {{ $providerTls.useSystemCAPool | default true }}
           {{- end }}
     clients:

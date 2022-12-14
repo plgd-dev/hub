@@ -43,7 +43,7 @@ data:
             timeout: {{ .apis.grpc.authorization.http.timeout }}
             tls:
               {{- $httpTls := .apis.grpc.authorization.http.tls }}
-              {{- include "plgd-hub.certificateConfig" (list $ $httpTls $identityStoreCertPath ) | indent 12 }}
+              {{- include "plgd-hub.authorizationCaCertificateConfig" (list $ $httpTls $identityStoreCertPath ) | indent 12 }}
               useSystemCAPool: {{ .apis.grpc.authorization.http.tls.useSystemCAPool }}
     clients:
       eventBus:
