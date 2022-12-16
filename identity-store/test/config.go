@@ -1,15 +1,13 @@
 package test
 
 import (
-	"testing"
-
 	"github.com/plgd-dev/hub/v2/identity-store/service"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/test/config"
 	"github.com/stretchr/testify/require"
 )
 
-func MakeConfig(t *testing.T) service.Config {
+func MakeConfig(t require.TestingT) service.Config {
 	var cfg service.Config
 
 	cfg.Log = log.MakeDefaultConfig()

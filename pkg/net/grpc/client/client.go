@@ -38,6 +38,10 @@ func (c *Client) Close() error {
 }
 
 func New(config Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider, opts ...grpc.DialOption) (*Client, error) {
+	err := config.Validate()
+	if err != nil {
+		return nil, fmt.Errorf("invalid config: %w", err)
+	}
 	certManager, err := client.New(config.TLS, fileWatcher, logger)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create cert manager: %w", err)
@@ -51,6 +55,7 @@ func New(config Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tracer
 		}),
 		grpc.WithUnaryInterceptor(otelgrpc.UnaryClientInterceptor(otelgrpc.WithTracerProvider(tracerProvider))),
 		grpc.WithStreamInterceptor(otelgrpc.StreamClientInterceptor(otelgrpc.WithTracerProvider(tracerProvider))),
+		grpc.WithDefaultCallOptions(grpc.MaxCallSendMsgSize(config.SendMsgSize), grpc.MaxCallRecvMsgSize(config.RecvMsgSize)),
 	}
 	if len(opts) > 0 {
 		v = append(v, opts...)

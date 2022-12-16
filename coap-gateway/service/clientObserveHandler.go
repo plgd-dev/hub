@@ -69,29 +69,36 @@ func CreateResourceContentToObserver(client *session, resourceChanged *events.Re
 
 type resourceSubscription struct {
 	client   *session
-	token    coapMessage.Token
 	authCtx  *authorizationContext
+	sub      *subscription.Sub
 	deviceID string
 	href     string
-
-	seqNum uint32
-	sub    *subscription.Sub
-
-	mutex              sync.Mutex
-	version            uint64
-	versionInitialized bool
+	token    coapMessage.Token
+	seqNum   uint32
+	private  struct {
+		mutex              sync.Mutex
+		version            uint64
+		versionInitialized bool
+	}
 }
 
 func (s *resourceSubscription) cancelSubscription(code coapCodes.Code) {
+	x := struct {
+		s    *resourceSubscription
+		code coapCodes.Code
+	}{
+		s:    s,
+		code: code,
+	}
 	err := s.client.server.taskQueue.Submit(func() {
-		if _, err := s.client.cancelResourceSubscription(s.token.String()); err != nil {
-			s.client.Errorf("failed to cancel resource /%v%v subscription: %w", s.deviceID, s.href, err)
+		if _, err := x.s.client.cancelResourceSubscription(x.s.token.String()); err != nil {
+			x.s.client.Errorf("failed to cancel resource /%v%v subscription: %w", x.s.deviceID, x.s.href, err)
 		}
-		err := statusErrorf(code, "cannot observe resource /%v%v, device response: %v", s.deviceID, s.href, code)
-		resp := s.client.createErrorResponse(err, s.token)
-		defer s.client.ReleaseMessage(resp)
-		s.client.WriteMessage(resp)
-		s.client.logRequestResponse(nil, resp, err)
+		err := statusErrorf(x.code, "cannot observe resource /%v%v, device response: %v", x.s.deviceID, x.s.href, x.code)
+		resp := x.s.client.createErrorResponse(err, x.s.token)
+		defer x.s.client.ReleaseMessage(resp)
+		x.s.client.WriteMessage(resp)
+		x.s.client.logRequestResponse(nil, resp, err)
 	})
 	if err != nil {
 		s.client.Errorf("failed to cancel resource /%v%v subscription: %w", s.deviceID, s.href, err)
@@ -99,13 +106,13 @@ func (s *resourceSubscription) cancelSubscription(code coapCodes.Code) {
 }
 
 func (s *resourceSubscription) isDuplicateEvent(ev *events.ResourceChanged) bool {
-	s.mutex.Lock()
-	defer s.mutex.Unlock()
-	if s.versionInitialized && s.version >= ev.GetEventMetadata().GetVersion() {
+	s.private.mutex.Lock()
+	defer s.private.mutex.Unlock()
+	if s.private.versionInitialized && s.private.version >= ev.GetEventMetadata().GetVersion() {
 		return true
 	}
-	s.versionInitialized = true
-	s.version = ev.GetEventMetadata().GetVersion()
+	s.private.versionInitialized = true
+	s.private.version = ev.GetEventMetadata().GetVersion()
 	return false
 }
 
@@ -128,14 +135,25 @@ func (s *resourceSubscription) eventHandler(e *pb.Event) error {
 			return nil
 		}
 		seqNum := atomic.AddUint32(&s.seqNum, 1)
+		x := struct {
+			client *session
+			seqNum uint32
+			e      *pb.Event
+			s      *resourceSubscription
+		}{
+			client: s.client,
+			seqNum: seqNum,
+			e:      e,
+			s:      s,
+		}
 		err := s.client.server.taskQueue.Submit(func() {
-			msg, err := CreateResourceContentToObserver(s.client, e.GetResourceChanged(), seqNum, s.token)
+			msg, err := CreateResourceContentToObserver(x.client, x.e.GetResourceChanged(), x.seqNum, x.s.token)
 			if err != nil {
-				s.client.Errorf("failed to create resource content for observer: %w", err)
+				x.s.client.Errorf("failed to create resource content for observer: %w", err)
 			}
-			defer s.client.ReleaseMessage(msg)
-			s.client.WriteMessage(msg)
-			s.client.logNotificationToClient(e.GetResourceChanged().GetResourceId().GetHref(), msg)
+			defer x.s.client.ReleaseMessage(msg)
+			x.s.client.WriteMessage(msg)
+			x.s.client.logNotificationToClient(x.e.GetResourceChanged().GetResourceId().GetHref(), msg)
 		})
 		if err != nil {
 			s.client.Errorf("failed to send event resource /%v%v to observer: %w", s.deviceID, s.href, err)

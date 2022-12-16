@@ -19,6 +19,8 @@ data:
     apis:
       grpc:
         address: {{ printf "0.0.0.0:%v" .port | quote }}
+        sendMsgSize: {{ int64 .apis.grpc.sendMsgSize | default 4194304 }}
+        recvMsgSize: {{ int64 .apis.grpc.recvMsgSize | default 4194304 }}
         ownerCacheExpiration: {{ .apis.grpc.ownerCacheExpiration }}
         subscriptionBufferSize: {{ .apis.grpc.subscriptionBufferSize }}
         enforcementPolicy:
@@ -66,6 +68,8 @@ data:
         grpc:
           {{- $authorizationServer := .clients.identityStore.grpc.address }}
           address:{{ printf " " }}{{- include "plgd-hub.identityStoreAddress" (list $ $authorizationServer ) | quote }}
+          sendMsgSize: {{ int64 .clients.identityStore.grpc.sendMsgSize | default 4194304 }}
+          recvMsgSize: {{ int64 .clients.identityStore.grpc.recvMsgSize | default 4194304 }}
           keepAlive:
             time: {{ .clients.identityStore.grpc.keepAlive.timeout }}
             timeout: {{ .clients.identityStore.grpc.keepAlive.timeout }}
@@ -78,6 +82,8 @@ data:
         grpc:
           {{- $resourceAggregate := .clients.resourceAggregate.grpc.address }}
           address:{{ printf " " }}{{- include "plgd-hub.resourceAggregateAddress" (list $ $resourceAggregate ) | quote }}
+          sendMsgSize: {{ int64 .clients.resourceAggregate.grpc.sendMsgSize | default 4194304 }}
+          recvMsgSize: {{ int64 .clients.resourceAggregate.grpc.recvMsgSize | default 4194304 }}
           keepAlive:
             time: {{ .clients.resourceAggregate.grpc.keepAlive.time }}
             timeout: {{ .clients.resourceAggregate.grpc.keepAlive.timeout }}
@@ -90,6 +96,8 @@ data:
         grpc:
           {{- $resourceDirectory := .clients.resourceDirectory.grpc.address }}
           address:{{ printf " " }}{{- include "plgd-hub.resourceDirectoryAddress" (list $ $resourceDirectory ) | quote }}
+          sendMsgSize: {{ int64 .clients.resourceDirectory.grpc.sendMsgSize | default 4194304 }}
+          recvMsgSize: {{ int64 .clients.resourceDirectory.grpc.recvMsgSize | default 4194304 }}
           keepAlive:
             time: {{ .clients.resourceDirectory.grpc.keepAlive.time }}
             timeout: {{ .clients.resourceDirectory.grpc.keepAlive.timeout }}

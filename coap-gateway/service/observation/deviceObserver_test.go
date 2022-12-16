@@ -47,9 +47,9 @@ import (
 )
 
 type deviceObserverFactory struct {
-	deviceID string
 	rdClient pb.GrpcGatewayClient
 	raClient raPb.ResourceAggregateClient
+	deviceID string
 }
 
 func (f deviceObserverFactory) makeDeviceObserver(ctx context.Context, coapConn *coapTcpClient.Conn, onObserveResource observation.OnObserveResource,
@@ -65,18 +65,22 @@ func (f deviceObserverFactory) makeDeviceObserver(ctx context.Context, coapConn 
 }
 
 type observerHandler struct {
+	deviceObserverFactory deviceObserverFactory
+	ctx                   context.Context
+	t                     *testing.T
+	coapConn              *coapTcpClient.Conn
+	service               *coapgwTestService.Service
+
+	retrievedResourceChan chan *commands.ResourceId
+	observedResourceChan  chan *commands.ResourceId
 	coapgwTest.DefaultObserverHandler
-	t                          *testing.T
-	ctx                        context.Context
-	coapConn                   *coapTcpClient.Conn
-	service                    *coapgwTestService.Service
-	deviceObserverLock         sync.Mutex
-	deviceObserverFactory      deviceObserverFactory
-	deviceObserver             *future.Future
-	done                       atomic.Bool
-	retrievedResourceChan      chan *commands.ResourceId
-	observedResourceChan       chan *commands.ResourceId
+	done atomic.Bool
+
 	requireBatchObserveEnabled bool
+	private                    struct { // guarded by deviceObserverLock
+		deviceObserverLock sync.Mutex
+		deviceObserver     *future.Future
+	}
 }
 
 const (
@@ -85,9 +89,9 @@ const (
 
 func (h *observerHandler) getDeviceObserver(ctx context.Context) *observation.DeviceObserver {
 	var f *future.Future
-	h.deviceObserverLock.Lock()
-	f = h.deviceObserver
-	h.deviceObserverLock.Unlock()
+	h.private.deviceObserverLock.Lock()
+	f = h.private.deviceObserver
+	h.private.deviceObserverLock.Unlock()
 	v, err := f.Get(ctx)
 	require.NoError(h.t, err)
 	return v.(*observation.DeviceObserver)
@@ -95,10 +99,10 @@ func (h *observerHandler) getDeviceObserver(ctx context.Context) *observation.De
 
 func (h *observerHandler) replaceDeviceObserver(deviceObserverFuture *future.Future) *future.Future {
 	var prevObs *future.Future
-	h.deviceObserverLock.Lock()
-	defer h.deviceObserverLock.Unlock()
-	prevObs = h.deviceObserver
-	h.deviceObserver = deviceObserverFuture
+	h.private.deviceObserverLock.Lock()
+	defer h.private.deviceObserverLock.Unlock()
+	prevObs = h.private.deviceObserver
+	h.private.deviceObserver = deviceObserverFuture
 	return prevObs
 }
 

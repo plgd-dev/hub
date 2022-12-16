@@ -47,12 +47,14 @@ func MakeResourcesObserverCallbacks(onObserveResource OnObserveResource, onGetRe
 //     the content of the resource and the response is handled by the onGetResourceContent
 //     callback.
 type resourcesObserver struct {
-	lock      sync.Mutex
-	deviceID  string
-	resources observedResources
-	coapConn  ClientConn
 	callbacks ResourcesObserverCallbacks
+	coapConn  ClientConn
 	logger    log.Logger
+	deviceID  string
+	private   struct { // guarded by lock
+		resources observedResources
+		lock      sync.Mutex
+	}
 }
 
 // Create new Resource Observer.
@@ -76,8 +78,11 @@ func newResourcesObserver(deviceID string, coapConn ClientConn, callbacks Resour
 		fatalCannotCreate(fmt.Errorf("invalid onGetResourceContent callback"))
 	}
 	return &resourcesObserver{
-		deviceID:  deviceID,
-		resources: make(observedResources, 0, 1),
+		deviceID: deviceID,
+		private: struct {
+			resources observedResources
+			lock      sync.Mutex
+		}{resources: make(observedResources, 0, 1)},
 		coapConn:  coapConn,
 		callbacks: callbacks,
 		logger:    logger,
@@ -86,14 +91,14 @@ func newResourcesObserver(deviceID string, coapConn ClientConn, callbacks Resour
 
 // Add resource to observer with given interface and wait for initialization message.
 func (o *resourcesObserver) addResource(ctx context.Context, res *commands.Resource, obsInterface string) error {
-	o.lock.Lock()
-	defer o.lock.Unlock()
+	o.private.lock.Lock()
+	defer o.private.lock.Unlock()
 	obs, err := o.addResourceLocked(res, obsInterface)
 	if err == nil && obs != nil {
 		o.notifyAboutStartTwinSynchronization(ctx)
 		err = o.performObservationLocked([]*observedResource{obs})
 		if err != nil {
-			o.resources, _ = o.resources.removeByHref(obs.Href())
+			o.private.resources, _ = o.private.resources.removeByHref(obs.Href())
 			defer o.notifyAboutFinishTwinSynchronization(ctx)
 		}
 	}
@@ -101,7 +106,7 @@ func (o *resourcesObserver) addResource(ctx context.Context, res *commands.Resou
 }
 
 func (o *resourcesObserver) isSynchronizedLocked() bool {
-	for _, res := range o.resources {
+	for _, res := range o.private.resources {
 		if !res.synced.Load() {
 			return false
 		}
@@ -117,12 +122,12 @@ func (o *resourcesObserver) resourceHasBeenSynchronized(ctx context.Context, hre
 
 // returns true if all resources are observed and synchronized
 func (o *resourcesObserver) setSynchronizedAtResource(href string) bool {
-	o.lock.Lock()
-	defer o.lock.Unlock()
-	i := o.resources.search(href)
+	o.private.lock.Lock()
+	defer o.private.lock.Unlock()
+	i := o.private.resources.search(href)
 	synced := false
-	if i < len(o.resources) && o.resources[i].Equals(href) {
-		synced = o.resources[i].synced.CompareAndSwap(false, true)
+	if i < len(o.private.resources) && o.private.resources[i].Equals(href) {
+		synced = o.private.resources[i].synced.CompareAndSwap(false, true)
 	} else {
 		return false
 	}
@@ -147,11 +152,11 @@ func (o *resourcesObserver) addResourceLocked(res *commands.Resource, obsInterfa
 		return nil, addObservationError(fmt.Errorf("invalid deviceID(%v)", resID.GetDeviceId()))
 	}
 	href := resID.GetHref()
-	if o.resources.contains(href) {
+	if o.private.resources.contains(href) {
 		return nil, nil
 	}
 	obsRes := newObservedResource(href, obsInterface, res.IsObservable())
-	o.resources = o.resources.insert(obsRes)
+	o.private.resources = o.private.resources.insert(obsRes)
 	return obsRes, nil
 }
 
@@ -258,7 +263,7 @@ func (o *resourcesObserver) performObservationLocked(obs []*observedResource) er
 	var errors *multierror.Error
 	for _, obsRes := range obs {
 		if err := o.handleResource(context.Background(), obsRes); err != nil {
-			o.resources, _ = o.resources.removeByHref(obsRes.Href())
+			o.private.resources, _ = o.private.resources.removeByHref(obsRes.Href())
 			errors = multierror.Append(errors, err)
 		}
 	}
@@ -270,7 +275,7 @@ func (o *resourcesObserver) performObservationLocked(obs []*observedResource) er
 
 // Add multiple resources to observer.
 func (o *resourcesObserver) addResources(ctx context.Context, resources []*commands.Resource) error {
-	o.lock.Lock()
+	o.private.lock.Lock()
 	observedResources, err := o.addResourcesLocked(resources)
 	if len(observedResources) > 0 {
 		o.notifyAboutStartTwinSynchronization(ctx)
@@ -286,7 +291,7 @@ func (o *resourcesObserver) addResources(ctx context.Context, resources []*comma
 			}
 		}
 	}
-	o.lock.Unlock()
+	o.private.lock.Unlock()
 	return err
 }
 
@@ -310,9 +315,9 @@ func (o *resourcesObserver) addResourcesLocked(resources []*commands.Resource) (
 // Get list of observable and non-observable resources added to resourcesObserver.
 func (o *resourcesObserver) getResources() []*commands.ResourceId {
 	matches := make([]*commands.ResourceId, 0, 16)
-	o.lock.Lock()
-	defer o.lock.Unlock()
-	for _, value := range o.resources {
+	o.private.lock.Lock()
+	defer o.private.lock.Unlock()
+	for _, value := range o.private.resources {
 		matches = append(matches, &commands.ResourceId{
 			DeviceId: o.deviceID,
 			Href:     value.Href(),
@@ -333,9 +338,9 @@ func (o *resourcesObserver) cancelResourcesObservations(ctx context.Context, hre
 
 func (o *resourcesObserver) popTrackedObservations(hrefs []string) []Observation {
 	observations := make([]Observation, 0, 32)
-	o.lock.Lock()
-	defer o.lock.Unlock()
-	newResources, delResources := o.resources.removeByHref(hrefs...)
+	o.private.lock.Lock()
+	defer o.private.lock.Unlock()
+	newResources, delResources := o.private.resources.removeByHref(hrefs...)
 	if len(delResources) == 0 {
 		return nil
 	}
@@ -347,14 +352,14 @@ func (o *resourcesObserver) popTrackedObservations(hrefs []string) []Observation
 		o.logger.Debugf("canceling observation on resource(/%v%v)", o.deviceID, res.Href())
 		observations = append(observations, obs)
 	}
-	o.resources = newResources
+	o.private.resources = newResources
 	return observations
 }
 
 // Remove all observations.
 func (o *resourcesObserver) CleanObservedResources(ctx context.Context) {
-	o.lock.Lock()
-	defer o.lock.Unlock()
+	o.private.lock.Lock()
+	defer o.private.lock.Unlock()
 	o.cleanObservedResourcesLocked(ctx)
 }
 
@@ -370,7 +375,7 @@ func (o *resourcesObserver) cleanObservedResourcesLocked(ctx context.Context) {
 }
 
 func (o *resourcesObserver) popObservedResourcesLocked() observedResources {
-	observations := o.resources
-	o.resources = make(observedResources, 0, 1)
+	observations := o.private.resources
+	o.private.resources = make(observedResources, 0, 1)
 	return observations
 }

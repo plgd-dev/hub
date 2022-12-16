@@ -1,3 +1,6 @@
+//go:build test
+// +build test
+
 package service_test
 
 import (
@@ -16,9 +19,9 @@ import (
 type TestCoapSignUpResponse struct {
 	AccessToken  string `json:"-"`
 	RedirectURI  string `json:"redirecturi"`
-	ExpiresIn    uint64 `json:"-"`
 	RefreshToken string `json:"refreshtoken"`
 	UserID       string `json:"uid"`
+	ExpiresIn    uint64 `json:"-"`
 }
 
 func TestSignUpPostHandler(t *testing.T) {
@@ -50,9 +53,9 @@ func TestSignUpPostHandler(t *testing.T) {
 type TestCoapSignUpResponseRetry struct {
 	AccessToken  string `json:"-"`
 	RedirectURI  string `json:"-"`
-	ExpiresIn    uint64 `json:"-"`
 	RefreshToken string `json:"-"`
 	UserID       string `json:"uid"`
+	ExpiresIn    uint64 `json:"-"`
 }
 
 func TestSignUpPostHandlerWithRetry(t *testing.T) {

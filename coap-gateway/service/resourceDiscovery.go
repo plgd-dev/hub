@@ -48,7 +48,7 @@ func makeHref(deviceID, href string) string {
 }
 
 func makeDiscoveryResp(isTLSListener bool, protocol coapService.Protocol, serverAddr string, getResourceLinksClient pbGRPC.GrpcGateway_GetResourceLinksClient) ([]*wkRd, error) {
-	deviceRes := make(map[string]*wkRd)
+	deviceRes := make(map[string]*wkRd, 16)
 	ep := "coap"
 	if isTLSListener {
 		ep = "coaps"

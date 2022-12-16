@@ -23,10 +23,16 @@ type KeepAliveConfig struct {
 }
 
 type Config struct {
-	Addr      string          `yaml:"address" json:"address"`
-	KeepAlive KeepAliveConfig `yaml:"keepAlive" json:"keepAlive"`
-	TLS       client.Config   `yaml:"tls" json:"tls"`
+	Addr string `yaml:"address" json:"address"`
+	// SendMsgSize is the maximum size of a message the client can send. If <=0, a default of 4MB will be used.
+	SendMsgSize int `yaml:"sendMsgSize" json:"sendMsgSize"`
+	// RecvMsgSize is the maximum size of a message the client can receive. If <=0, a default of 4MB will be used.
+	RecvMsgSize int             `yaml:"recvMsgSize" json:"recvMsgSize"`
+	KeepAlive   KeepAliveConfig `yaml:"keepAlive" json:"keepAlive"`
+	TLS         client.Config   `yaml:"tls" json:"tls"`
 }
+
+const defaultMessageSize4MB = 4 * 1024 * 1024
 
 func (c *Config) Validate() error {
 	if c.Addr == "" {
@@ -34,6 +40,12 @@ func (c *Config) Validate() error {
 	}
 	if err := c.TLS.Validate(); err != nil {
 		return fmt.Errorf("tls.%w", err)
+	}
+	if c.SendMsgSize <= 0 {
+		c.SendMsgSize = defaultMessageSize4MB
+	}
+	if c.RecvMsgSize <= 0 {
+		c.RecvMsgSize = defaultMessageSize4MB
 	}
 	return nil
 }

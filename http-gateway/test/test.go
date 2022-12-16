@@ -4,7 +4,6 @@ import (
 	"context"
 	"os"
 	"sync"
-	"testing"
 	"time"
 
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
@@ -39,7 +38,7 @@ func MakeWebConfigurationConfig() service.WebConfiguration {
 	}
 }
 
-func MakeConfig(t *testing.T, enableUI bool) service.Config {
+func MakeConfig(t require.TestingT, enableUI bool) service.Config {
 	var cfg service.Config
 
 	cfg.Log = log.MakeDefaultConfig()
@@ -68,11 +67,11 @@ func MakeConfig(t *testing.T, enableUI bool) service.Config {
 	return cfg
 }
 
-func SetUp(t *testing.T) (tearDown func()) {
+func SetUp(t require.TestingT) (tearDown func()) {
 	return New(t, MakeConfig(t, false))
 }
 
-func New(t *testing.T, cfg service.Config) func() {
+func New(t require.TestingT, cfg service.Config) func() {
 	ctx := context.Background()
 	logger := log.NewLogger(cfg.Log)
 

@@ -16,7 +16,6 @@ import (
 	"github.com/plgd-dev/go-coap/v3/message/pool"
 	"github.com/plgd-dev/go-coap/v3/message/status"
 	"github.com/plgd-dev/go-coap/v3/mux"
-	"github.com/plgd-dev/go-coap/v3/net/blockwise"
 	coapOptionsConfig "github.com/plgd-dev/go-coap/v3/options/config"
 	"github.com/plgd-dev/go-coap/v3/pkg/cache"
 	"github.com/plgd-dev/go-coap/v3/pkg/runner/periodic"
@@ -53,27 +52,26 @@ var authCtxKey = "AuthCtx"
 
 // Service is a configuration of coap-gateway
 type Service struct {
-	config                Config
-	natsClient            *natsClient.Client
-	raClient              *raClient.Client
+	ctx                   context.Context
+	tracerProvider        trace.TracerProvider
+	logger                log.Logger
 	isClient              pbIS.IdentityStoreClient
 	rdClient              pbGRPC.GrpcGatewayClient
+	devicesStatusUpdater  *devicesStatusUpdater
+	providers             map[string]*oauth2.PlgdProvider
 	expirationClientCache *cache.Cache[string, *session]
-
-	authInterceptor      Interceptor
-	ctx                  context.Context
-	cancel               context.CancelFunc
-	taskQueue            *queue.Queue
-	devicesStatusUpdater *devicesStatusUpdater
-	resourceSubscriber   *subscriber.Subscriber
-	providers            map[string]*oauth2.PlgdProvider
-	jwtValidator         *jwt.Validator
-	sigs                 chan os.Signal
-	ownerCache           *idClient.OwnerCache
-	subscriptionsCache   *subscription.SubscriptionsCache
-	messagePool          *pool.Pool
-	logger               log.Logger
-	tracerProvider       trace.TracerProvider
+	cancel                context.CancelFunc
+	taskQueue             *queue.Queue
+	natsClient            *natsClient.Client
+	resourceSubscriber    *subscriber.Subscriber
+	authInterceptor       Interceptor
+	jwtValidator          *jwt.Validator
+	sigs                  chan os.Signal
+	ownerCache            *idClient.OwnerCache
+	subscriptionsCache    *subscription.SubscriptionsCache
+	messagePool           *pool.Pool
+	raClient              *raClient.Client
+	config                Config
 }
 
 func setExpirationClientCache(c *cache.Cache[string, *session], deviceID string, client *session, validJWTUntil time.Time) {
@@ -162,28 +160,6 @@ func newResourceDirectoryClient(config GrpcServerConfig, fileWatcher *fsnotify.W
 	return rdClient, closeRdConn, nil
 }
 
-func blockWiseTransferSZXFromString(s string) (blockwise.SZX, error) {
-	switch strings.ToLower(s) {
-	case "16":
-		return blockwise.SZX16, nil
-	case "32":
-		return blockwise.SZX32, nil
-	case "64":
-		return blockwise.SZX64, nil
-	case "128":
-		return blockwise.SZX128, nil
-	case "256":
-		return blockwise.SZX256, nil
-	case "512":
-		return blockwise.SZX512, nil
-	case "1024":
-		return blockwise.SZX1024, nil
-	case "bert":
-		return blockwise.SZXBERT, nil
-	}
-	return blockwise.SZX(0), fmt.Errorf("invalid value %v", s)
-}
-
 func (s *Service) onInactivityConnection(cc mux.Conn) {
 	client, ok := cc.Context().Value(clientKey).(*session)
 	if ok {
@@ -200,7 +176,7 @@ func (s *Service) onInactivityConnection(cc mux.Conn) {
 func newProviders(ctx context.Context, config AuthorizationConfig, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (map[string]*oauth2.PlgdProvider, *oauth2.PlgdProvider, func(), error) {
 	var closeProviders fn.FuncList
 	var firstProvider *oauth2.PlgdProvider
-	providers := make(map[string]*oauth2.PlgdProvider)
+	providers := make(map[string]*oauth2.PlgdProvider, 4)
 	for _, p := range config.Providers {
 		provider, err := oauth2.NewPlgdProvider(ctx, p.Config, fileWatcher, logger, tracerProvider, config.OwnerClaim, config.DeviceIDClaim)
 		if err != nil {
@@ -412,9 +388,24 @@ func (s *Service) makeCommandTask(req *mux.Message, client *session, fnc func(re
 	req.SetContext(ctx)
 	otelcoap.MessageReceivedEvent(ctx, req.Message)
 	otelcoap.SetRequest(ctx, req.Message)
+
+	x := struct {
+		req    *mux.Message
+		client *session
+		span   trace.Span
+		fnc    func(req *mux.Message, client *session) (*pool.Message, error)
+		s      *Service
+	}{
+		req:    req,
+		client: client,
+		span:   span,
+		fnc:    fnc,
+		s:      s,
+	}
+
 	return func() {
-		defer span.End()
-		s.processCommandTask(req, client, span, fnc)
+		defer x.span.End()
+		x.s.processCommandTask(x.req, x.client, x.span, x.fnc)
 	}
 }
 
@@ -566,8 +557,19 @@ func (s *Service) createServices(fileWatcher *fsnotify.Watcher, logger log.Logge
 	return coapService.New(s.ctx, s.config.APIs.COAP.Config, m, fileWatcher, logger,
 		coapService.WithTCPGoPool(func(processReqFunc coapOptionsConfig.ProcessRequestFunc[*coapTcpClient.Conn], req *pool.Message, cc *coapTcpClient.Conn, handler coapOptionsConfig.HandlerFunc[*coapTcpClient.Conn]) error {
 			if s.config.APIs.COAP.Config.BlockwiseTransfer.Enabled {
+				x := struct {
+					processReqFunc coapOptionsConfig.ProcessRequestFunc[*coapTcpClient.Conn]
+					req            *pool.Message
+					cc             *coapTcpClient.Conn
+					handler        coapOptionsConfig.HandlerFunc[*coapTcpClient.Conn]
+				}{
+					processReqFunc: processReqFunc,
+					req:            req,
+					cc:             cc,
+					handler:        handler,
+				}
 				return s.taskQueue.Submit(func() {
-					processReqFunc(req, cc, handler)
+					x.processReqFunc(x.req, x.cc, x.handler)
 				})
 			}
 			processReqFunc(req, cc, handler)
@@ -575,8 +577,19 @@ func (s *Service) createServices(fileWatcher *fsnotify.Watcher, logger log.Logge
 		}),
 		coapService.WithUDPGoPool(func(processReqFunc coapOptionsConfig.ProcessRequestFunc[*coapUdpClient.Conn], req *pool.Message, cc *coapUdpClient.Conn, handler coapOptionsConfig.HandlerFunc[*coapUdpClient.Conn]) error {
 			if s.config.APIs.COAP.Config.BlockwiseTransfer.Enabled {
+				x := struct {
+					processReqFunc coapOptionsConfig.ProcessRequestFunc[*coapUdpClient.Conn]
+					req            *pool.Message
+					cc             *coapUdpClient.Conn
+					handler        coapOptionsConfig.HandlerFunc[*coapUdpClient.Conn]
+				}{
+					processReqFunc: processReqFunc,
+					req:            req,
+					cc:             cc,
+					handler:        handler,
+				}
 				return s.taskQueue.Submit(func() {
-					processReqFunc(req, cc, handler)
+					x.processReqFunc(x.req, x.cc, x.handler)
 				})
 			}
 			processReqFunc(req, cc, handler)

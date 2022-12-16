@@ -10,6 +10,8 @@ import (
 	"google.golang.org/grpc/keepalive"
 )
 
+const defaultMessageSize4MB = 4 * 1024 * 1024
+
 // EnforcementPolicyConfig is used to set keepalive enforcement policy on the
 // server-side. Server will close connection with a client that violates this
 // policy.
@@ -65,7 +67,11 @@ func (c KeepAliveConfig) ToGrpc() keepalive.ServerParameters {
 }
 
 type Config struct {
-	Addr              string                  `yaml:"address" json:"address"`
+	Addr string `yaml:"address" json:"address"`
+	// SendMsgSize is the maximum size of a message the server can send. If <=0, a default of 4MB will be used.
+	SendMsgSize int `yaml:"sendMsgSize" json:"sendMsgSize"`
+	// RecvMsgSize is the maximum size of a message the server can receive. If <=0, a default of 4MB will be used.
+	RecvMsgSize       int                     `yaml:"recvMsgSize" json:"recvMsgSize"`
 	EnforcementPolicy EnforcementPolicyConfig `yaml:"enforcementPolicy" json:"enforcementPolicy"`
 	KeepAlive         KeepAliveConfig         `yaml:"keepAlive" json:"keepAlive"`
 	TLS               server.Config           `yaml:"tls" json:"tls"`
@@ -93,6 +99,12 @@ func (c *Config) Validate() error {
 	}
 	if err := c.Authorization.Validate(); err != nil {
 		return fmt.Errorf("authorization.%w", err)
+	}
+	if c.SendMsgSize <= 0 {
+		c.SendMsgSize = defaultMessageSize4MB
+	}
+	if c.RecvMsgSize <= 0 {
+		c.RecvMsgSize = defaultMessageSize4MB
 	}
 	return nil
 }

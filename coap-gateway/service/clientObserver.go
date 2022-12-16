@@ -17,9 +17,9 @@ func (c *session) getDeviceObserver(ctx context.Context) (*observation.DeviceObs
 	}
 
 	var deviceObserverFut *future.Future
-	c.mutex.Lock()
-	deviceObserverFut = c.deviceObserver
-	c.mutex.Unlock()
+	c.private.mutex.Lock()
+	deviceObserverFut = c.private.deviceObserver
+	c.private.mutex.Unlock()
 
 	if deviceObserverFut == nil {
 		return nil, fmt.Errorf("observer not set")
@@ -37,10 +37,10 @@ func (c *session) getDeviceObserver(ctx context.Context) (*observation.DeviceObs
 
 // Replace deviceObserver instance in the client.
 func (c *session) replaceDeviceObserver(deviceObserverFuture *future.Future) *future.Future {
-	c.mutex.Lock()
-	defer c.mutex.Unlock()
-	prevDeviceObserver := c.deviceObserver
-	c.deviceObserver = deviceObserverFuture
+	c.private.mutex.Lock()
+	defer c.private.mutex.Unlock()
+	prevDeviceObserver := c.private.deviceObserver
+	c.private.deviceObserver = deviceObserverFuture
 	return prevDeviceObserver
 }
 

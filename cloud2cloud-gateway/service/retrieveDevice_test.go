@@ -236,7 +236,36 @@ func TestRequestHandlerRetrieveDevice(t *testing.T) {
 	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.ACTIVE_COAP_SCHEME+"://"+config.COAP_GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 	const switchID = "1"
+	// create subscription to wait resourceChanged event
+	subClient, err := c.SubscribeToEvents(ctx)
+	require.NoError(t, err)
+	err = subClient.Send(&pb.SubscribeToEvents{
+		Action: &pb.SubscribeToEvents_CreateSubscription_{
+			CreateSubscription: &pb.SubscribeToEvents_CreateSubscription{
+				DeviceIdFilter: []string{deviceID},
+				EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
+					pb.SubscribeToEvents_CreateSubscription_RESOURCE_CHANGED,
+				},
+			},
+		},
+	})
+	require.NoError(t, err)
+	resp, err := subClient.Recv()
+	require.NoError(t, err)
+	require.Equal(t, pb.Event_OperationProcessed_ErrorStatus_OK, resp.GetOperationProcessed().GetErrorStatus().GetCode())
+	defer func() {
+		err := subClient.CloseSend()
+		require.NoError(t, err)
+	}()
 	test.AddDeviceSwitchResources(ctx, t, deviceID, c, switchID)
+	// wait for resource changed
+	for {
+		ev, err := subClient.Recv()
+		require.NoError(t, err)
+		if ev.GetResourceChanged().GetResourceId().GetDeviceId() == deviceID && ev.GetResourceChanged().GetResourceId().GetHref() == test.TestResourceSwitchesInstanceHref(switchID) {
+			break
+		}
+	}
 
 	const textPlain = "text/plain"
 	type args struct {

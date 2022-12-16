@@ -1,3 +1,6 @@
+//go:build test
+// +build test
+
 package service_test
 
 import (
@@ -36,8 +39,8 @@ func TestClientObserveHandler(t *testing.T) {
 	const invalidResPath = uri.ResourceRoute + "/dev0/res0"
 	type args struct {
 		path    string
-		observe uint32
 		token   []byte
+		observe uint32
 	}
 	tests := []struct {
 		name      string

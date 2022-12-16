@@ -41,20 +41,20 @@ const (
 
 // DeviceObserver is a type that sets up resources observation for a single device.
 type DeviceObserver struct {
+	rdClient          GrpcGatewayClient
+	raClient          ResourceAggregateClient
+	logger            log.Logger
+	resourcesObserver *resourcesObserver
 	deviceID          string
 	observationType   ObservationType
 	twinEnabled       bool
-	rdClient          GrpcGatewayClient
-	raClient          ResourceAggregateClient
-	resourcesObserver *resourcesObserver
-	logger            log.Logger
 }
 
 type DeviceObserverConfig struct {
+	Logger                     log.Logger
 	ObservationType            ObservationType
 	TwinEnabled                bool
 	TwinEnabledSet             bool
-	Logger                     log.Logger
 	RequireBatchObserveEnabled bool
 }
 

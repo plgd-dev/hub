@@ -10,7 +10,6 @@ import (
 	"net/url"
 	"os"
 	"sync"
-	"testing"
 	"time"
 
 	"github.com/jtacoma/uritemplates"
@@ -44,7 +43,7 @@ const (
 	ValidRefreshToken = "refresh-token"
 )
 
-func MakeConfig(t *testing.T) service.Config {
+func MakeConfig(t require.TestingT) service.Config {
 	var cfg service.Config
 
 	cfg.Log = log.MakeDefaultConfig()
@@ -117,11 +116,11 @@ func MakeConfig(t *testing.T) service.Config {
 	return cfg
 }
 
-func SetUp(t *testing.T) (tearDown func()) {
+func SetUp(t require.TestingT) (tearDown func()) {
 	return New(t, MakeConfig(t))
 }
 
-func New(t *testing.T, cfg service.Config) func() {
+func New(t require.TestingT, cfg service.Config) func() {
 	ctx := context.Background()
 	logger := log.NewLogger(cfg.Log)
 
@@ -187,7 +186,7 @@ func (c *RequestBuilder) Build() *http.Request {
 	return request
 }
 
-func HTTPDo(t *testing.T, req *http.Request, followRedirect bool) *http.Response {
+func HTTPDo(t require.TestingT, req *http.Request, followRedirect bool) *http.Response {
 	trans := http.DefaultTransport.(*http.Transport).Clone()
 	trans.TLSClientConfig = &tls.Config{
 		InsecureSkipVerify: true,
@@ -206,7 +205,7 @@ func HTTPDo(t *testing.T, req *http.Request, followRedirect bool) *http.Response
 	return resp
 }
 
-func GetAccessToken(t *testing.T, authServerHost, clientID string) string {
+func GetAccessToken(t require.TestingT, authServerHost, clientID string) string {
 	code := GetAuthorizationCode(t, authServerHost, clientID, "", "r:* w:*")
 	reqBody := map[string]string{
 		uri.GrantTypeKey: string(service.AllowedGrantType_AUTHORIZATION_CODE),
@@ -230,7 +229,7 @@ func GetAccessToken(t *testing.T, authServerHost, clientID string) string {
 	return token
 }
 
-func GetDefaultAccessToken(t *testing.T) string {
+func GetDefaultAccessToken(t require.TestingT) string {
 	return GetAccessToken(t, config.OAUTH_SERVER_HOST, ClientTest)
 }
 
@@ -246,7 +245,7 @@ func GetJWTValidator(jwkURL string) *jwt.Validator {
 	return jwt.NewValidator(jwt.NewKeyCache(jwkURL, &client))
 }
 
-func GetAuthorizationCode(t *testing.T, authServerHost, clientID, deviceID, scopes string) string {
+func GetAuthorizationCode(t require.TestingT, authServerHost, clientID, deviceID, scopes string) string {
 	u, err := url.Parse(uri.Authorize)
 	require.NoError(t, err)
 	q, err := url.ParseQuery(u.RawQuery)
@@ -274,6 +273,6 @@ func GetAuthorizationCode(t *testing.T, authServerHost, clientID, deviceID, scop
 	return code
 }
 
-func GetDefaultDeviceAuthorizationCode(t *testing.T, deviceID string) string {
+func GetDefaultDeviceAuthorizationCode(t require.TestingT, deviceID string) string {
 	return GetAuthorizationCode(t, config.OAUTH_SERVER_HOST, ClientTest, deviceID, "")
 }
