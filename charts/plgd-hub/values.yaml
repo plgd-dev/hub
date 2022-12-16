@@ -405,6 +405,8 @@ resourcedirectory:
   apis:
     grpc:
       address:
+      sendMsgSize: 4194304
+      recvMsgSize: 4194304
       ownerCacheExpiration: 1m
       enforcementPolicy:
         minTime: 5s
@@ -476,6 +478,8 @@ resourcedirectory:
       ownerClaim:
       grpc:
         address: ""
+        sendMsgSize: 4194304
+        recvMsgSize: 4194304
         tls:
           caPool:
           keyFile:
@@ -621,6 +625,8 @@ resourceaggregate:
     grpc:
       ownerCacheExpiration: 1m
       address:
+      sendMsgSize: 4194304
+      recvMsgSize: 4194304
       enforcementPolicy:
         minTime: 5s
         permitWithoutStream: true
@@ -692,6 +698,8 @@ resourceaggregate:
     identityStore:
       grpc:
         address:
+        sendMsgSize: 4194304
+        recvMsgSize: 4194304
         tls:
           caPool:
           keyFile:
@@ -878,6 +886,8 @@ coapgateway:
       ownerClaim:
       grpc:
         address: ""
+        sendMsgSize: 4194304
+        recvMsgSize: 4194304
         keepAlive:
           time: 10s
           timeout: 20s
@@ -890,6 +900,8 @@ coapgateway:
     resourceAggregate:
       grpc:
         address: ""
+        sendMsgSize: 4194304
+        recvMsgSize: 4194304
         keepAlive:
           time: 10s
           timeout: 20s
@@ -905,6 +917,8 @@ coapgateway:
     resourceDirectory:
       grpc:
         address: ""
+        sendMsgSize: 4194304
+        recvMsgSize: 4194304
         keepAlive:
           time: 10s
           timeout: 20s
@@ -1029,6 +1043,8 @@ identitystore:
   apis:
     grpc:
       address:
+      sendMsgSize: 4194304
+      recvMsgSize: 4194304
       enforcementPolicy:
         minTime: 5s
         permitWithoutStream: true
@@ -1261,6 +1277,8 @@ httpgateway:
     grpcGateway:
       grpc:
         address: ""
+        sendMsgSize: 4194304
+        recvMsgSize: 4194304
         keepAlive:
           time: 10s
           timeout: 20s
@@ -1412,6 +1430,8 @@ grpcgateway:
   apis:
     grpc:
       address:
+      sendMsgSize: 4194304
+      recvMsgSize: 4194304
       ownerCacheExpiration: 1m
       subscriptionBufferSize: 1000
       enforcementPolicy:
@@ -1450,6 +1470,8 @@ grpcgateway:
     identityStore:
       grpc:
         address: ""
+        sendMsgSize: 4194304
+        recvMsgSize: 4194304
         tls:
           caPool:
           keyFile:
@@ -1476,6 +1498,8 @@ grpcgateway:
     resourceAggregate:
       grpc:
         address: ""
+        sendMsgSize: 4194304
+        recvMsgSize: 4194304
         keepAlive:
           time: 10s
           timeout: 20s
@@ -1488,6 +1512,8 @@ grpcgateway:
     resourceDirectory:
       grpc:
         address: ""
+        sendMsgSize: 4194304
+        recvMsgSize: 4194304
         keepAlive:
           time: 10s
           timeout: 20s
@@ -1674,6 +1700,8 @@ certificateauthority:
   apis:
     grpc:
       address:
+      sendMsgSize: 4194304
+      recvMsgSize: 4194304
       enforcementPolicy:
         minTime: 5s
         permitWithoutStream: true

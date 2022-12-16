@@ -1,3 +1,6 @@
+//go:build test
+// +build test
+
 package service_test
 
 import (
@@ -31,8 +34,8 @@ func TestClientUpdateHandler(t *testing.T) {
 
 	type args struct {
 		href          string
-		contentFormat message.MediaType
 		payload       []byte
+		contentFormat message.MediaType
 	}
 	tests := []struct {
 		name      string

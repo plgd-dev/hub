@@ -19,6 +19,8 @@ data:
     apis:
       grpc:
         address: {{  .apis.grpc.address | default (printf "0.0.0.0:%v" .port) | quote }}
+        sendMsgSize: {{ int64 .apis.grpc.sendMsgSize | default 4194304 }}
+        recvMsgSize: {{ int64 .apis.grpc.recvMsgSize | default 4194304 }}
         enforcementPolicy:
           minTime: {{ .apis.grpc.enforcementPolicy.minTime }}
           permitWithoutStream: {{ .apis.grpc.enforcementPolicy.permitWithoutStream }}

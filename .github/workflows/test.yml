@@ -18,7 +18,17 @@ jobs:
   test:
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
-
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: test
+            cmd: test
+            codecov: "true"
+            sonarcloud: "true"
+          - name: test/norace
+            cmd: test/norace
+ 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       - name: CPU Info
@@ -44,13 +54,14 @@ jobs:
         run: ulimit -S
 
       - name: Run a test
-        run: make test
+        run: make ${{ matrix.cmd }} ${{ matrix.args }}
 
       - name: Publish the coverage for main branch
-        if: ${{ github.ref == 'refs/heads/main' }}
+        if: ${{ github.ref == 'refs/heads/main' && matrix.codecov == 'true' }}
         run: bash <(curl -s https://codecov.io/bash)
 
       - name: SonarCloud Scan
+        if: ${{ matrix.sonarcloud == 'true' }}
         uses: SonarSource/sonarcloud-github-action@master
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

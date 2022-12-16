@@ -91,10 +91,14 @@ func MakeOpenTelemetryCollectorClient() otelClient.Config {
 	}
 }
 
+const DefaultGrpcMaxMsgSize = 1024 * 1024 * 128
+
 func MakeGrpcClientConfig(address string) grpcClient.Config {
 	return grpcClient.Config{
-		Addr: address,
-		TLS:  MakeTLSClientConfig(),
+		Addr:        address,
+		SendMsgSize: DefaultGrpcMaxMsgSize,
+		RecvMsgSize: DefaultGrpcMaxMsgSize,
+		TLS:         MakeTLSClientConfig(),
 		KeepAlive: grpcClient.KeepAliveConfig{
 			Time:                time.Second * 10,
 			Timeout:             time.Second * 20,
@@ -114,8 +118,10 @@ func MakeTLSServerConfig() server.Config {
 
 func MakeGrpcServerConfig(address string) grpcServer.Config {
 	return grpcServer.Config{
-		Addr: address,
-		TLS:  MakeTLSServerConfig(),
+		Addr:        address,
+		SendMsgSize: DefaultGrpcMaxMsgSize,
+		RecvMsgSize: DefaultGrpcMaxMsgSize,
+		TLS:         MakeTLSServerConfig(),
 		Authorization: grpcServer.AuthorizationConfig{
 			OwnerClaim: OWNER_CLAIM,
 			Config:     MakeAuthorizationConfig(),

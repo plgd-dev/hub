@@ -1,3 +1,6 @@
+//go:build test
+// +build test
+
 package service_test
 
 import (
@@ -18,9 +21,9 @@ import (
 )
 
 type TestCoapRefreshTokenResponse struct {
-	ExpiresIn    int64  `json:"-"`
 	AccessToken  string `json:"-"`
 	RefreshToken string `json:"refreshtoken"`
+	ExpiresIn    int64  `json:"-"`
 }
 
 func TestRefreshTokenHandler(t *testing.T) {
@@ -52,9 +55,9 @@ func TestRefreshTokenHandler(t *testing.T) {
 }
 
 type TestCoapRefreshTokenResponseRetry struct {
-	ExpiresIn    int64  `json:"-"`
 	AccessToken  string `json:"-"`
 	RefreshToken string `json:"-"`
+	ExpiresIn    int64  `json:"-"`
 }
 
 func TestRefreshTokenHandlerWithRetry(t *testing.T) {

@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"errors"
-	"testing"
 
 	caService "github.com/plgd-dev/hub/v2/certificate-authority/test"
 	c2cgwService "github.com/plgd-dev/hub/v2/cloud2cloud-gateway/test"
@@ -35,7 +34,7 @@ var filterOutClearDB = map[string]bool{
 	"local":  true,
 }
 
-func ClearDB(ctx context.Context, t *testing.T) {
+func ClearDB(ctx context.Context, t require.TestingT) {
 	logCfg := log.MakeDefaultConfig()
 	logger := log.NewLogger(logCfg)
 	tlsConfig := config.MakeTLSClientConfig()
@@ -107,7 +106,7 @@ func WithISConfig(is isService.Config) SetUpOption {
 
 type SetUpOption = func(cfg *Config)
 
-func SetUp(ctx context.Context, t *testing.T, opts ...SetUpOption) (tearDown func()) {
+func SetUp(ctx context.Context, t require.TestingT, opts ...SetUpOption) (tearDown func()) {
 	config := Config{
 		COAPGW: coapgwTest.MakeConfig(t),
 		RD:     rdTest.MakeConfig(t),
@@ -147,60 +146,106 @@ type SetUpServicesConfig uint16
 const (
 	SetUpServicesOAuth SetUpServicesConfig = 1 << iota
 	SetUpServicesId
+	SetUpServicesResourceAggregate
+	SetUpServicesResourceDirectory
 	SetUpServicesCertificateAuthority
 	SetUpServicesCloud2CloudGateway
 	SetUpServicesCoapGateway
 	SetUpServicesGrpcGateway
-	SetUpServicesResourceAggregate
-	SetUpServicesResourceDirectory
+	// need to be last
+	SetUpServicesMax
 )
 
-func SetUpServices(ctx context.Context, t *testing.T, servicesConfig SetUpServicesConfig, opts ...SetUpOption) func() {
-	var tearDown fn.FuncList
-	config := Config{
-		COAPGW: coapgwTest.MakeConfig(t),
-		RD:     rdTest.MakeConfig(t),
-		GRPCGW: grpcgwTest.MakeConfig(t),
-		RA:     raTest.MakeConfig(t),
-		IS:     isTest.MakeConfig(t),
-	}
-
-	for _, o := range opts {
-		o(&config)
-	}
-
-	ClearDB(ctx, t)
-	if servicesConfig&SetUpServicesOAuth != 0 {
+var setupServicesMap = map[SetUpServicesConfig]func(t require.TestingT, tearDown *fn.FuncList, opts ...SetUpOption){
+	SetUpServicesOAuth: func(t require.TestingT, tearDown *fn.FuncList, opts ...SetUpOption) {
+		// to fix `opts` is unused
+		config := Config{}
+		for _, o := range opts {
+			o(&config)
+		}
 		oauthShutdown := oauthTest.SetUp(t)
 		tearDown.AddFunc(oauthShutdown)
-	}
-	if servicesConfig&SetUpServicesId != 0 {
+	},
+	SetUpServicesId: func(t require.TestingT, tearDown *fn.FuncList, opts ...SetUpOption) {
+		config := Config{
+			IS: isTest.MakeConfig(t),
+		}
+		for _, o := range opts {
+			o(&config)
+		}
 		isShutdown := isTest.New(t, config.IS)
 		tearDown.AddFunc(isShutdown)
-	}
-	if servicesConfig&SetUpServicesResourceAggregate != 0 {
+	},
+	SetUpServicesResourceAggregate: func(t require.TestingT, tearDown *fn.FuncList, opts ...SetUpOption) {
+		config := Config{
+			RA: raTest.MakeConfig(t),
+		}
+		for _, o := range opts {
+			o(&config)
+		}
 		raShutdown := raTest.New(t, config.RA)
 		tearDown.AddFunc(raShutdown)
-	}
-	if servicesConfig&SetUpServicesResourceDirectory != 0 {
+	},
+	SetUpServicesResourceDirectory: func(t require.TestingT, tearDown *fn.FuncList, opts ...SetUpOption) {
+		config := Config{
+			RD: rdTest.MakeConfig(t),
+		}
+		for _, o := range opts {
+			o(&config)
+		}
 		rdShutdown := rdTest.New(t, config.RD)
 		tearDown.AddFunc(rdShutdown)
-	}
-	if servicesConfig&SetUpServicesGrpcGateway != 0 {
+	},
+	SetUpServicesGrpcGateway: func(t require.TestingT, tearDown *fn.FuncList, opts ...SetUpOption) {
+		config := Config{
+			GRPCGW: grpcgwTest.MakeConfig(t),
+		}
+		for _, o := range opts {
+			o(&config)
+		}
 		grpcShutdown := grpcgwTest.New(t, config.GRPCGW)
 		tearDown.AddFunc(grpcShutdown)
-	}
-	if servicesConfig&SetUpServicesCloud2CloudGateway != 0 {
+	},
+	SetUpServicesCloud2CloudGateway: func(t require.TestingT, tearDown *fn.FuncList, opts ...SetUpOption) {
+		// to fix `opts` is unused
+		config := Config{}
+		for _, o := range opts {
+			o(&config)
+		}
 		c2cgwShutdown := c2cgwService.SetUp(t)
 		tearDown.AddFunc(c2cgwShutdown)
-	}
-	if servicesConfig&SetUpServicesCertificateAuthority != 0 {
+	},
+	SetUpServicesCertificateAuthority: func(t require.TestingT, tearDown *fn.FuncList, opts ...SetUpOption) {
+		// to fix `opts` is unused
+		config := Config{}
+		for _, o := range opts {
+			o(&config)
+		}
 		caShutdown := caService.SetUp(t)
 		tearDown.AddFunc(caShutdown)
-	}
-	if servicesConfig&SetUpServicesCoapGateway != 0 {
+	},
+	SetUpServicesCoapGateway: func(t require.TestingT, tearDown *fn.FuncList, opts ...SetUpOption) {
+		config := Config{
+			COAPGW: coapgwTest.MakeConfig(t),
+		}
+		for _, o := range opts {
+			o(&config)
+		}
 		secureGWShutdown := coapgwTest.New(t, config.COAPGW)
 		tearDown.AddFunc(secureGWShutdown)
+	},
+}
+
+func SetUpServices(ctx context.Context, t require.TestingT, servicesConfig SetUpServicesConfig, opts ...SetUpOption) func() {
+	var tearDown fn.FuncList
+	ClearDB(ctx, t)
+
+	for i := SetUpServicesConfig(1); i < SetUpServicesMax; i <<= 1 {
+		if servicesConfig&i != 0 {
+			if f, ok := setupServicesMap[i]; ok {
+				f(t, &tearDown, opts...)
+			}
+		}
 	}
 	return tearDown.ToFunction()
 }

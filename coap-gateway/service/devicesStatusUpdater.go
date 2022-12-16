@@ -17,20 +17,24 @@ type deviceExpires struct {
 }
 
 type devicesStatusUpdater struct {
-	ctx    context.Context
-	cfg    DeviceStatusExpirationConfig
-	logger log.Logger
-
-	mutex   sync.Mutex
-	devices map[string]*deviceExpires
+	ctx     context.Context
+	logger  log.Logger
+	cfg     DeviceStatusExpirationConfig
+	private struct { // guarded by mutex
+		mutex   sync.Mutex
+		devices map[string]*deviceExpires
+	}
 }
 
 func newDevicesStatusUpdater(ctx context.Context, cfg DeviceStatusExpirationConfig, logger log.Logger) *devicesStatusUpdater {
 	u := devicesStatusUpdater{
-		ctx:     ctx,
-		cfg:     cfg,
-		devices: make(map[string]*deviceExpires),
-		logger:  logger,
+		ctx: ctx,
+		cfg: cfg,
+		private: struct {
+			mutex   sync.Mutex
+			devices map[string]*deviceExpires
+		}{devices: make(map[string]*deviceExpires)},
+		logger: logger,
 	}
 	if cfg.Enabled {
 		go u.run()
@@ -55,16 +59,16 @@ func (u *devicesStatusUpdater) Add(ctx context.Context, c *session, isNewDevice 
 		client:  c,
 		expires: expires,
 	}
-	u.mutex.Lock()
-	defer u.mutex.Unlock()
-	u.devices[c.RemoteAddr().String()] = &d
+	u.private.mutex.Lock()
+	defer u.private.mutex.Unlock()
+	u.private.devices[c.RemoteAddr().String()] = &d
 	return resp, nil
 }
 
 func (u *devicesStatusUpdater) Remove(c *session) {
-	u.mutex.Lock()
-	defer u.mutex.Unlock()
-	delete(u.devices, c.RemoteAddr().String())
+	u.private.mutex.Lock()
+	defer u.private.mutex.Unlock()
+	delete(u.private.devices, c.RemoteAddr().String())
 }
 
 func (u *devicesStatusUpdater) updateOnlineStatus(ctx context.Context, client *session, validUntil time.Time, connectedAt time.Time) (*commands.UpdateDeviceMetadataResponse, time.Time, error) {
@@ -96,13 +100,13 @@ func (u *devicesStatusUpdater) updateOnlineStatus(ctx context.Context, client *s
 }
 
 func (u *devicesStatusUpdater) getDevicesToUpdate(now time.Time) []*deviceExpires {
-	u.mutex.Lock()
-	defer u.mutex.Unlock()
-	res := make([]*deviceExpires, 0, len(u.devices))
-	for key, d := range u.devices {
+	u.private.mutex.Lock()
+	defer u.private.mutex.Unlock()
+	res := make([]*deviceExpires, 0, len(u.private.devices))
+	for key, d := range u.private.devices {
 		select {
 		case <-d.client.Context().Done():
-			delete(u.devices, key)
+			delete(u.private.devices, key)
 		default:
 			if d.expires.UnixNano() < now.Add(u.cfg.ExpiresIn/2).UnixNano() {
 				res = append(res, d)

@@ -51,6 +51,8 @@ data:
       grpcGateway:
         grpc:
           address: {{ printf " " }}{{- include "plgd-hub.grpcGatewayAddress" (list $ .clients.grpcGateway.grpc.address ) | quote }}
+          sendMsgSize: {{ int64 .clients.grpcGateway.grpc.sendMsgSize | default 4194304 }}
+          recvMsgSize: {{ int64 .clients.grpcGateway.grpc.recvMsgSize | default 4194304 }}
           keepAlive:
             time: {{ .clients.grpcGateway.grpc.keepAlive.time }}
             timeout: {{ .clients.grpcGateway.grpc.keepAlive.timeout }}

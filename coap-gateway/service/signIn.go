@@ -14,7 +14,6 @@ import (
 	grpcgwClient "github.com/plgd-dev/hub/v2/grpc-gateway/client"
 	"github.com/plgd-dev/hub/v2/identity-store/events"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
-	"github.com/plgd-dev/hub/v2/pkg/security/jwt"
 	"github.com/plgd-dev/hub/v2/pkg/strings"
 	"github.com/plgd-dev/hub/v2/pkg/sync/task/future"
 	pkgTime "github.com/plgd-dev/hub/v2/pkg/time"
@@ -119,13 +118,12 @@ const (
 	updateTypeChanged updateType = 2
 )
 
-func (c *session) updateAuthorizationContext(deviceID, userID, accessToken string, validUntil time.Time, jwtClaims jwt.Claims) updateType {
+func (c *session) updateAuthorizationContext(deviceID, userID, accessToken string, validUntil time.Time) updateType {
 	authCtx := authorizationContext{
 		DeviceID:    deviceID,
 		UserID:      userID,
 		AccessToken: accessToken,
 		Expire:      validUntil,
-		JWTClaims:   jwtClaims,
 	}
 	oldAuthCtx := c.SetAuthorizationContext(&authCtx)
 
@@ -199,41 +197,61 @@ func signInError(err error) error {
 	return fmt.Errorf("sign in error: %w", err)
 }
 
+type asyncCreateDeviceObserverArg struct {
+	ctx                  context.Context
+	client               *session
+	deviceID             string
+	resetObservationType bool
+	oldDeviceObserverFut *future.Future
+	setDeviceObserver    future.SetFunc
+	twinEnabled          bool
+}
+
+func asyncCreateDeviceObserver(x asyncCreateDeviceObserverArg) {
+	observationType := observation.ObservationType_Detect
+	oldDeviceObserver, err := toDeviceObserver(x.ctx, x.oldDeviceObserverFut)
+	if err != nil {
+		x.client.Errorf("failed to get replaced device observer: %w", err)
+	}
+	if err == nil && oldDeviceObserver != nil {
+		// if the device didn't change we can skip detection and force the previous observation type
+		if !x.resetObservationType {
+			observationType = oldDeviceObserver.GetObservationType()
+		}
+		oldDeviceObserver.Clean(x.ctx)
+	}
+
+	deviceObserver, err := observation.NewDeviceObserver(x.client.Context(), x.deviceID, x.client, x.client, x.client,
+		observation.MakeResourcesObserverCallbacks(x.client.onObserveResource, x.client.onGetResourceContent, x.client.UpdateTwinSynchronizationStatus),
+		observation.WithObservationType(observationType),
+		observation.WithLogger(x.client.getLogger()),
+		observation.WithRequireBatchObserveEnabled(x.client.server.config.APIs.COAP.RequireBatchObserveEnabled),
+		observation.WithTwinEnabled(x.twinEnabled),
+	)
+	if err != nil {
+		x.client.Close()
+		x.client.Errorf("%w", signInError(fmt.Errorf("cannot create observer for device %v: %w", x.deviceID, err)))
+		x.setDeviceObserver(nil, err)
+		return
+	}
+	x.setDeviceObserver(deviceObserver, nil)
+}
+
 func setNewDeviceObserver(ctx context.Context, client *session, deviceID string, resetObservationType bool, twinEnabled bool) {
 	newDeviceObserverFut, setDeviceObserver := future.New()
 	oldDeviceObserverFut := client.replaceDeviceObserver(newDeviceObserverFut)
-
-	createDeviceObserver := func() {
-		observationType := observation.ObservationType_Detect
-		oldDeviceObserver, err := toDeviceObserver(ctx, oldDeviceObserverFut)
-		if err != nil {
-			client.Errorf("failed to get replaced device observer: %w", err)
-		}
-		if err == nil && oldDeviceObserver != nil {
-			// if the device didn't change we can skip detection and force the previous observation type
-			if !resetObservationType {
-				observationType = oldDeviceObserver.GetObservationType()
-			}
-			oldDeviceObserver.Clean(ctx)
-		}
-
-		deviceObserver, err := observation.NewDeviceObserver(client.Context(), deviceID, client, client, client,
-			observation.MakeResourcesObserverCallbacks(client.onObserveResource, client.onGetResourceContent, client.UpdateTwinSynchronizationStatus),
-			observation.WithObservationType(observationType),
-			observation.WithLogger(client.getLogger()),
-			observation.WithRequireBatchObserveEnabled(client.server.config.APIs.COAP.RequireBatchObserveEnabled),
-			observation.WithTwinEnabled(twinEnabled),
-		)
-		if err != nil {
-			client.Close()
-			client.Errorf("%w", signInError(fmt.Errorf("cannot create observer for device %v: %w", deviceID, err)))
-			setDeviceObserver(nil, err)
-			return
-		}
-		setDeviceObserver(deviceObserver, nil)
+	x := asyncCreateDeviceObserverArg{
+		ctx:                  ctx,
+		client:               client,
+		deviceID:             deviceID,
+		resetObservationType: resetObservationType,
+		oldDeviceObserverFut: oldDeviceObserverFut,
+		twinEnabled:          twinEnabled,
+		setDeviceObserver:    setDeviceObserver,
 	}
-
-	if err := client.server.taskQueue.Submit(createDeviceObserver); err != nil {
+	if err := client.server.taskQueue.Submit(func() {
+		asyncCreateDeviceObserver(x)
+	}); err != nil {
 		client.Errorf("%w", signInError(fmt.Errorf("failed to register resource observations for device %v: %w", deviceID, err)))
 		setDeviceObserver(nil, err)
 	}
@@ -268,7 +286,7 @@ func signInPostHandler(req *mux.Message, client *session, signIn CoapSignInReq) 
 	deviceID := client.ResolveDeviceID(jwtClaims, signIn.DeviceID)
 	setDeviceIDToTracerSpan(req.Context(), deviceID)
 
-	upd := client.updateAuthorizationContext(deviceID, signIn.UserID, signIn.AccessToken, validUntil, jwtClaims)
+	upd := client.updateAuthorizationContext(deviceID, signIn.UserID, signIn.AccessToken, validUntil)
 
 	ctx := kitNetGrpc.CtxWithToken(kitNetGrpc.CtxWithIncomingToken(req.Context(), signIn.AccessToken), signIn.AccessToken)
 	valid, err := subscribeAndValidateDeviceAccess(ctx, client, signIn.UserID, deviceID, upd != updateTypeNone)
@@ -294,9 +312,22 @@ func signInPostHandler(req *mux.Message, client *session, signIn CoapSignInReq) 
 	client.exchangeCache.Clear()
 	client.refreshCache.Clear()
 
+	x := struct {
+		ctx                  context.Context
+		client               *session
+		deviceID             string
+		resetObservationType bool
+		twinEnabled          bool
+	}{
+		ctx:                  ctx,
+		client:               client,
+		deviceID:             deviceID,
+		resetObservationType: upd == updateTypeChanged,
+		twinEnabled:          updateDeviceMetadataResp.GetTwinEnabled(),
+	}
 	if err := client.server.taskQueue.Submit(func() {
 		// try to register observations to the device at the cloud.
-		setNewDeviceObserver(ctx, client, deviceID, upd == updateTypeChanged, updateDeviceMetadataResp.GetTwinEnabled())
+		setNewDeviceObserver(x.ctx, x.client, x.deviceID, x.resetObservationType, x.twinEnabled)
 	}); err != nil {
 		return nil, statusErrorf(coapCodes.InternalServerError, errFmtSignIn, fmt.Errorf("failed to register device observer: %w", err))
 	}

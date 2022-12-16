@@ -3,7 +3,6 @@ package test
 import (
 	"context"
 	"sync"
-	"testing"
 	"time"
 
 	"github.com/plgd-dev/hub/v2/cloud2cloud-connector/service"
@@ -49,7 +48,7 @@ func MakeStorageConfig() service.StorageConfig {
 	}
 }
 
-func MakeConfig(t *testing.T) service.Config {
+func MakeConfig(t require.TestingT) service.Config {
 	var cfg service.Config
 
 	cfg.Log = log.MakeDefaultConfig()
@@ -81,12 +80,12 @@ func MakeConfig(t *testing.T) service.Config {
 	return cfg
 }
 
-func SetUp(t *testing.T) (tearDown func()) {
+func SetUp(t require.TestingT) (tearDown func()) {
 	cfg := MakeConfig(t)
 	return New(t, cfg)
 }
 
-func New(t *testing.T, cfg service.Config) func() {
+func New(t require.TestingT, cfg service.Config) func() {
 	logger := log.NewLogger(cfg.Log)
 
 	fileWatcher, err := fsnotify.NewWatcher()

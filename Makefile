@@ -11,6 +11,13 @@ GOPATH ?= $(shell go env GOPATH)
 WORKING_DIRECTORY := $(shell pwd)
 USER_ID := $(shell id -u)
 GROUP_ID := $(shell id -g)
+TEST_MEMORY_COAP_GATEWAY_LOG_LEVEL ?= info
+TEST_MEMORY_COAP_GATEWAY_LOG_DUMP_BODY ?= false
+TEST_MEMORY_COAP_GATEWAY_NUM_DEVICES ?= 1
+TEST_MEMORY_COAP_GATEWAY_NUM_RESOURCES ?= 1
+TEST_MEMORY_COAP_GATEWAY_EXPECTED_RSS_IN_MB ?= 50
+TEST_MEMORY_COAP_GATEWAY_RESOURCE_DATA_SIZE ?= 200
+TEST_MEMORY_COAP_GATEWAY_TIMEOUT ?= 120m
 
 #$(error MY_FLAG=$(BUILD_TAG)AAA)
 
@@ -70,7 +77,7 @@ mongo: certificates
 		--name=mongo \
 		-v $(WORKING_DIRECTORY)/.tmp/mongo:/data/db \
 		-v $(WORKING_DIRECTORY)/.tmp/certs:/certs --user $(USER_ID):$(GROUP_ID) \
-		mongo --tlsMode requireTLS --tlsCAFile /certs/root_ca.crt --tlsCertificateKeyFile /certs/mongo.key
+		mongo --tlsMode requireTLS --wiredTigerCacheSizeGB 1 --tlsCAFile  /certs/root_ca.crt --tlsCertificateKeyFile /certs/mongo.key
 
 http-gateway-www:
 	@mkdir -p $(WORKING_DIRECTORY)/.tmp/usr/local/www
@@ -116,7 +123,11 @@ simulators:
 	$(call RUN-DOCKER-DEVICE,$(DEVICE_SIMULATOR_NAME),$(DEVICE_SIMULATOR_IMG))
 	$(call RUN-DOCKER-DEVICE,$(DEVICE_SIMULATOR_RES_OBSERVABLE_NAME),$(DEVICE_SIMULATOR_RES_OBSERVABLE_IMG))
 
-env: clean certificates nats mongo privateKeys http-gateway-www simulators
+env/test/mem: clean certificates nats mongo privateKeys
+.PHONY: env/test/mem
+
+env: env/test/mem http-gateway-www simulators
+.PHONY: env
 
 define RUN-DOCKER
 	docker run \
@@ -167,16 +178,16 @@ endef
 
 DIRECTORIES:=$(shell ls -d ./*/)
 
-# Run test with name $1 in over $2 directory with env $3 variables
+# Run test with name $1 in over $2 directory with args $3 and env $4 variables
 define RUN-TESTS
 	echo "Executing tests $1"; \
 	START_TIME=$$(date +%s); \
 	COVERAGE_FILE=/coverage/$(1).coverage.txt ; \
 	JSON_REPORT_FILE=$(WORKING_DIRECTORY)/.tmp/report/$(1).report.json ; \
 	if [ -n "$${JSON_REPORT}" ]; then \
-		$(call RUN-DOCKER, /bin/sh -c "$(3) go test -timeout=45m -race -p 1 -v $(2) -coverpkg=./... -covermode=atomic -coverprofile=$${COVERAGE_FILE} -json > $${JSON_REPORT_FILE}") \
+		$(call RUN-DOCKER, /bin/sh -c "$(4) go test $(3) $(2) -coverpkg=./... -covermode=atomic -coverprofile=$${COVERAGE_FILE} -json > $${JSON_REPORT_FILE}") \
 	else \
-		$(call RUN-DOCKER, /bin/sh -c "$(3) go test -timeout=45m -race -p 1 -v $(2) -coverpkg=./... -covermode=atomic -coverprofile=$${COVERAGE_FILE}") \
+		$(call RUN-DOCKER, /bin/sh -c "$(4) go test $(3) $(2) -coverpkg=./... -covermode=atomic -coverprofile=$${COVERAGE_FILE}") \
 	fi ; \
 	EXIT_STATUS=$$? ; \
 	if [ $${EXIT_STATUS} -ne 0 ]; then \
@@ -193,8 +204,24 @@ test: env
 	@mkdir -p $(WORKING_DIRECTORY)/.tmp/home
 	@mkdir -p $(WORKING_DIRECTORY)/.tmp/home/certificate-authority
 	@mkdir -p $(WORKING_DIRECTORY)/.tmp/report
-	@$(call RUN-TESTS,hub,./...,"")
-	@$(call RUN-TESTS,grpc-gateway-dtls,./grpc-gateway/service,"TEST_COAP_GATEWAY_UDP_ENABLED=true")
+	@$(call RUN-TESTS,hub,./...,-timeout=45m -race -p 1 -v -tags=test,"")
+	@$(call RUN-TESTS,grpc-gateway-dtls,./grpc-gateway/service,-timeout=45m -race -p 1 -v -tags=test,"TEST_COAP_GATEWAY_UDP_ENABLED=true")
+.PHONY: test
+
+test/norace: env
+	@mkdir -p $(WORKING_DIRECTORY)/.tmp/home
+	@mkdir -p $(WORKING_DIRECTORY)/.tmp/home/certificate-authority
+	@mkdir -p $(WORKING_DIRECTORY)/.tmp/report
+	@$(call RUN-TESTS,hub,./...,-timeout=45m -p 1 -v,"")
+	@$(call RUN-TESTS,grpc-gateway-dtls,./grpc-gateway/service,-timeout=45m -p 1 -v -tags=test,"TEST_COAP_GATEWAY_UDP_ENABLED=true")
+.PHONY: test/norace
+
+test/mem: env/test/mem
+	@mkdir -p $(WORKING_DIRECTORY)/.tmp/home
+	@mkdir -p $(WORKING_DIRECTORY)/.tmp/home/certificate-authority
+	@mkdir -p $(WORKING_DIRECTORY)/.tmp/report
+	@$(call RUN-TESTS,coap-gateway-mem,./coap-gateway/service,-timeout=$(TEST_MEMORY_COAP_GATEWAY_TIMEOUT) -p 1 -v -tags=test_mem,TEST_MEMORY_COAP_GATEWAY_NUM_DEVICES=$(TEST_MEMORY_COAP_GATEWAY_NUM_DEVICES) TEST_MEMORY_COAP_GATEWAY_NUM_RESOURCES=$(TEST_MEMORY_COAP_GATEWAY_NUM_RESOURCES) TEST_MEMORY_COAP_GATEWAY_EXPECTED_RSS_IN_MB=$(TEST_MEMORY_COAP_GATEWAY_EXPECTED_RSS_IN_MB) TEST_MEMORY_COAP_GATEWAY_LOG_LEVEL=$(TEST_MEMORY_COAP_GATEWAY_LOG_LEVEL) TEST_MEMORY_COAP_GATEWAY_LOG_DUMP_BODY=$(TEST_MEMORY_COAP_GATEWAY_LOG_DUMP_BODY) TEST_MEMORY_COAP_GATEWAY_RESOURCE_DATA_SIZE=$(TEST_MEMORY_COAP_GATEWAY_RESOURCE_DATA_SIZE))
+.PHONY: test/mem
 
 test-targets := $(addprefix test-,$(patsubst ./%/,%,$(DIRECTORIES)))
 

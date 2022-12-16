@@ -126,14 +126,27 @@ func observeResources(ctx context.Context, client *session, w wkRd, sequenceNumb
 	observeError := func(deviceID string, err error) error {
 		return fmt.Errorf("unable to observe published resources for device %v: %w", deviceID, err)
 	}
+	x := struct {
+		ctx                context.Context
+		client             *session
+		w                  wkRd
+		observeError       func(deviceID string, err error) error
+		publishedResources []*commands.Resource
+	}{
+		ctx:                ctx,
+		client:             client,
+		w:                  w,
+		observeError:       observeError,
+		publishedResources: publishedResources,
+	}
 	if err := client.server.taskQueue.Submit(func() {
-		obs, errObs := client.getDeviceObserver(ctx)
+		obs, errObs := x.client.getDeviceObserver(x.ctx)
 		if errObs != nil {
-			client.Errorf("%w", observeError(w.DeviceID, errObs))
+			x.client.Errorf("%w", x.observeError(x.w.DeviceID, errObs))
 			return
 		}
-		if errObs := obs.AddPublishedResources(ctx, publishedResources); errObs != nil {
-			client.Errorf("%w", observeError(w.DeviceID, errObs))
+		if errObs := obs.AddPublishedResources(x.ctx, x.publishedResources); errObs != nil {
+			x.client.Errorf("%w", x.observeError(x.w.DeviceID, errObs))
 			return
 		}
 	}); err != nil {

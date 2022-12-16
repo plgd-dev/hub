@@ -4,7 +4,6 @@ import (
 	"context"
 	"os"
 	"sync"
-	"testing"
 
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
@@ -14,7 +13,7 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-func MakeConfig(t *testing.T) service.Config {
+func MakeConfig(t require.TestingT) service.Config {
 	var cfg service.Config
 	cfg.Log.Config.Level = zapcore.DebugLevel
 	cfg.Log.DumpCoapMessages = true
@@ -33,11 +32,11 @@ func MakeConfig(t *testing.T) service.Config {
 	return cfg
 }
 
-func SetUp(t *testing.T, makeHandler service.MakeServiceHandler, verifyOnClose service.VerifyServiceHandler) (tearDown func()) {
+func SetUp(t require.TestingT, makeHandler service.MakeServiceHandler, verifyOnClose service.VerifyServiceHandler) (tearDown func()) {
 	return New(t, MakeConfig(t), makeHandler, verifyOnClose)
 }
 
-func New(t *testing.T, cfg service.Config, makeHandler service.MakeServiceHandler, verifyOnClose service.VerifyServiceHandler) func() {
+func New(t require.TestingT, cfg service.Config, makeHandler service.MakeServiceHandler, verifyOnClose service.VerifyServiceHandler) func() {
 	ctx := context.Background()
 	logger := log.NewLogger(cfg.Log.Config)
 

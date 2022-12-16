@@ -11,7 +11,6 @@ import (
 	"github.com/plgd-dev/go-coap/v3/mux"
 	"github.com/plgd-dev/hub/v2/coap-gateway/coapconv"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
-	"github.com/plgd-dev/hub/v2/pkg/security/jwt"
 	"github.com/plgd-dev/hub/v2/pkg/security/oauth2"
 	pkgTime "github.com/plgd-dev/hub/v2/pkg/time"
 	"github.com/plgd-dev/kit/v2/codec/cbor"
@@ -24,9 +23,9 @@ type CoapRefreshTokenReq struct {
 }
 
 type CoapRefreshTokenResp struct {
-	ExpiresIn    int64  `json:"expiresin"`
 	AccessToken  string `json:"accesstoken"`
 	RefreshToken string `json:"refreshtoken"`
+	ExpiresIn    int64  `json:"expiresin"`
 }
 
 // Get data for sign in response
@@ -70,7 +69,7 @@ func validUntilToExpiresIn(validUntil time.Time) int64 {
 	return int64(time.Until(validUntil).Seconds())
 }
 
-func updateClient(client *session, deviceID, owner, accessToken string, validUntil time.Time, jwtClaims jwt.Claims) {
+func updateClient(client *session, deviceID, owner, accessToken string, validUntil time.Time) {
 	if _, err := client.GetAuthorizationContext(); err != nil {
 		return
 	}
@@ -79,7 +78,6 @@ func updateClient(client *session, deviceID, owner, accessToken string, validUnt
 		UserID:      owner,
 		AccessToken: accessToken,
 		Expire:      validUntil,
-		JWTClaims:   jwtClaims,
 	}
 	client.SetAuthorizationContext(&authCtx)
 
@@ -149,7 +147,7 @@ func refreshTokenPostHandler(req *mux.Message, client *session) (*pool.Message, 
 		return nil, statusErrorf(coapCodes.InternalServerError, "%w", fmt.Errorf(fmtErr, deviceID, err))
 	}
 
-	updateClient(client, deviceID, owner, token.AccessToken.String(), validUntil, claim)
+	updateClient(client, deviceID, owner, token.AccessToken.String(), validUntil)
 
 	return client.createResponse(coapCodes.Changed, req.Token(), accept, out), nil
 }

@@ -4,7 +4,6 @@ import (
 	"context"
 	"os"
 	"sync"
-	"testing"
 	"time"
 
 	"github.com/plgd-dev/hub/v2/certificate-authority/service"
@@ -14,7 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func MakeConfig(t *testing.T) service.Config {
+func MakeConfig(t require.TestingT) service.Config {
 	var cfg service.Config
 	cfg.APIs.GRPC = config.MakeGrpcServerConfig(config.CERTIFICATE_AUTHORITY_HOST)
 	cfg.APIs.HTTP.Addr = config.CERTIFICATE_AUTHORITY_HTTP_HOST
@@ -35,11 +34,11 @@ func MakeConfig(t *testing.T) service.Config {
 	return cfg
 }
 
-func SetUp(t *testing.T) (tearDown func()) {
+func SetUp(t require.TestingT) (tearDown func()) {
 	return New(t, MakeConfig(t))
 }
 
-func New(t *testing.T, cfg service.Config) func() {
+func New(t require.TestingT, cfg service.Config) func() {
 	ctx := context.Background()
 	logger := log.NewLogger(cfg.Log)
 

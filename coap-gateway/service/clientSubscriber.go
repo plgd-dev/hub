@@ -4,10 +4,10 @@ import grpcClient "github.com/plgd-dev/hub/v2/grpc-gateway/client"
 
 // Replace deviceSubscriber instance in the client.
 func (c *session) replaceDeviceSubscriber(deviceSubscriber *grpcClient.DeviceSubscriber) *grpcClient.DeviceSubscriber {
-	c.mutex.Lock()
-	defer c.mutex.Unlock()
-	s := c.deviceSubscriber
-	c.deviceSubscriber = deviceSubscriber
+	c.private.mutex.Lock()
+	defer c.private.mutex.Unlock()
+	s := c.private.deviceSubscriber
+	c.private.deviceSubscriber = deviceSubscriber
 	return s
 }
 

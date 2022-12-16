@@ -1,11 +1,38 @@
+//go:build test
+// +build test
+
 package service
 
 import (
+	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/plgd-dev/go-coap/v3/net/blockwise"
 	"github.com/stretchr/testify/require"
 )
+
+func blockWiseTransferSZXFromString(s string) (blockwise.SZX, error) {
+	switch strings.ToLower(s) {
+	case "16":
+		return blockwise.SZX16, nil
+	case "32":
+		return blockwise.SZX32, nil
+	case "64":
+		return blockwise.SZX64, nil
+	case "128":
+		return blockwise.SZX128, nil
+	case "256":
+		return blockwise.SZX256, nil
+	case "512":
+		return blockwise.SZX512, nil
+	case "1024":
+		return blockwise.SZX1024, nil
+	case "bert":
+		return blockwise.SZXBERT, nil
+	}
+	return blockwise.SZX(0), fmt.Errorf("invalid value %v", s)
+}
 
 func TestBlockWiseTransferSZXFromString(t *testing.T) {
 	type args struct {

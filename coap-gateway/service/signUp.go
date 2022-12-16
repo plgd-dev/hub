@@ -26,8 +26,8 @@ type CoapSignUpResponse struct {
 	AccessToken  string `json:"accesstoken"`
 	UserID       string `json:"uid"`
 	RefreshToken string `json:"refreshtoken"`
-	ExpiresIn    int64  `json:"expiresin"`
 	RedirectURI  string `json:"redirecturi"`
+	ExpiresIn    int64  `json:"expiresin"`
 }
 
 // Check that all required request fields are set

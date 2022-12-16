@@ -39,12 +39,12 @@ func NewProjection(ctx context.Context, name string, store eventstore.EventStore
 	if err != nil {
 		return nil, fmt.Errorf("cannot create server: %w", err)
 	}
-	cleanupInterval := expiration / 30
-	if cleanupInterval < time.Minute {
+	cleanupInterval := expiration / 2
+	if cleanupInterval < time.Second {
 		cleanupInterval = expiration
-		if cleanupInterval > time.Minute {
-			cleanupInterval = time.Minute
-		}
+	}
+	if cleanupInterval > time.Minute {
+		cleanupInterval = time.Minute
 	}
 	cache := cache.NewCache[string, string]()
 	add := periodic.New(ctx.Done(), cleanupInterval)

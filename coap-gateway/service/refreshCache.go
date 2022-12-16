@@ -18,8 +18,8 @@ import (
 // call is the same as the cache value then the call is skipped and the stored token
 // is returned instead.
 type RefreshCache struct {
-	refreshToken string
 	token        *future.Future
+	refreshToken string
 	mutex        sync.Mutex
 }
 

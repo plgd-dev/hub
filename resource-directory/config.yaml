@@ -9,6 +9,8 @@ log:
 apis:
   grpc:
     address: "0.0.0.0:9100"
+    sendMsgSize: 4194304
+    recvMsgSize: 4194304
     ownerCacheExpiration: 1m
     enforcementPolicy:
       minTime: 5s
@@ -74,6 +76,8 @@ clients:
   identityStore:
     grpc:
       address: ""
+      sendMsgSize: 4194304
+      recvMsgSize: 4194304
       tls:
         caPool: "/secrets/public/rootca.crt"
         keyFile: "/secrets/private/cert.key"
@@ -87,6 +91,8 @@ clients:
     grpc:
       enabled: false
       address: ""
+      sendMsgSize: 4194304
+      recvMsgSize: 4194304
       keepAlive:
         time: 10s
         timeout: 20s

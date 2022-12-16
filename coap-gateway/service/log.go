@@ -127,9 +127,9 @@ type jwtMember struct {
 }
 
 type logCoapMessage struct {
+	coapgwMessage.JsonCoapMessage
 	JWT    *jwtMember `json:"jwt,omitempty"`
 	Method string     `json:"method,omitempty"`
-	coapgwMessage.JsonCoapMessage
 }
 
 func (c *session) loggerWithRequestResponse(logger log.Logger, req *pool.Message, resp *pool.Message) log.Logger {
