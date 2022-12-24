@@ -13,12 +13,14 @@ class _CopyBox extends PureComponent {
     text: PropTypes.string,
     textToCopy: PropTypes.string,
     copyToClipboardText: PropTypes.string,
+    certFormat: PropTypes.bool,
   }
 
   static defaultProps = {
     copyToClipboardText: null,
     textToCopy: null,
     text: null,
+    certFormat: false,
   }
 
   copyTimer = null
@@ -36,9 +38,9 @@ class _CopyBox extends PureComponent {
   }
 
   handleCopyToClipboard = () => {
-    const { text, textToCopy } = this.props
+    const { text, textToCopy, certFormat } = this.props
 
-    if (copyToClipboard(textToCopy || text)) {
+    if (copyToClipboard(textToCopy || text, certFormat)) {
       this.setState({ copiedToClipboard: true })
 
       this.copyTimer = setTimeout(() => {

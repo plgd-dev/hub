@@ -1,7 +1,9 @@
-export const copyToClipboard = text => {
+export const copyToClipboard = (text, certFormat = false) => {
   if (document.execCommand) {
     const textField = document.createElement('textarea')
-    textField.innerText = JSON.stringify(text.replace(/<br>/g, '\n'))
+    textField.innerText = certFormat
+      ? JSON.stringify(text.replace(/<br>/g, '\n'))
+      : text
     document.body.appendChild(textField)
     textField.select()
     document.execCommand('copy')
