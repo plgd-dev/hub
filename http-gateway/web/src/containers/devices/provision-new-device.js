@@ -171,7 +171,7 @@ class ProvisionNewDeviceCore extends PureComponent {
           <div className="auth-code-box">
             <span>...</span>
             {certificateAuthorities && (
-              <CopyBox textToCopy={certificateAuthorities} />
+              <CopyBox textToCopy={certificateAuthorities} certFormat={true} />
             )}
           </div>
         </Label>
