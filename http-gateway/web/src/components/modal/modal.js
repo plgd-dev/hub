@@ -2,7 +2,7 @@ import PropTypes from 'prop-types'
 import BModal from 'react-bootstrap/Modal'
 import classNames from 'classnames'
 
-import { useAppConfig } from '@/containers/app'
+import { useAppConfig } from '@/containers/App'
 
 export const Modal = ({
   onClose,

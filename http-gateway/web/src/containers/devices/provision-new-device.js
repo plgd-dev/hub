@@ -6,7 +6,7 @@ import { Modal } from '@/components/modal'
 import { TextField } from '@/components/text-field'
 import { Label } from '@/components/label'
 import { showErrorToast } from '@/components/toast'
-import { AppContext } from '@/containers/app/app-context'
+import { AppContext } from '@/containers/App/AppContext'
 import { CopyBox } from '@/components/copy-box'
 import { isValidGuid } from '@/common/utils'
 

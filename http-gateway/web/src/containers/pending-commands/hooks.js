@@ -1,5 +1,5 @@
 import { useStreamApi } from '@/common/hooks'
-import { useAppConfig } from '@/containers/app'
+import { useAppConfig } from '@/containers/App'
 import { useEmitter } from '@/common/hooks'
 
 import {

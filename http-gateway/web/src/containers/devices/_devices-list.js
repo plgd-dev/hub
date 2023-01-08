@@ -119,11 +119,13 @@ export const DevicesList = ({
     [] // eslint-disable-line
   )
 
+  const validData = data => (!data || data[0] === undefined ? [] : data)
+
   return (
     <Table
       className="with-selectable-rows"
       columns={columns}
-      data={data || []}
+      data={validData(data)}
       defaultSortBy={[
         {
           id: 'name',
