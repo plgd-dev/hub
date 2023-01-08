@@ -1,5 +1,5 @@
 import { PageLoader } from '@/components/page-loader'
-import { messages as t } from '../app-i18n'
+import { messages as t } from '../App.i18n'
 import { useIntl } from 'react-intl'
 
 const AppLoader = () => {

@@ -1,14 +1,14 @@
 import { hot } from 'react-hot-loader/root'
 import { useContext, useState, useEffect } from 'react'
 import { useIntl } from 'react-intl'
-import { PageLoader } from '@/components/page-loader'
-import { security } from '@/common/services/security'
-import { openTelemetry } from '@/common/services/opentelemetry'
-import { messages as t } from './app-i18n'
-import { AppContext } from './app-context'
+import PageLoader from '@shared-ui/components/new/PageLoader'
+import { security } from '@/common/services/security' // TODO: shared
+import { openTelemetry } from '@shared-ui/common/services/opentelemetry'
+import { messages as t } from './App.i18n'
+import { AppContext } from './AppContext'
 import './app.scss'
-import { getAppWellKnownConfiguration } from '@/containers/app/AppRest'
-import AppInner from '@/containers/app/AppInner/AppInner'
+import { getAppWellKnownConfiguration } from '@/containers/App/AppRest'
+import AppInner from '@/containers/App/AppInner/AppInner'
 import { AuthProvider, UserManager } from 'oidc-react'
 
 const App = () => {

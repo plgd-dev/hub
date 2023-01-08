@@ -1,4 +1,4 @@
-import { AppContext } from '@/containers/app/app-context'
+import { AppContext } from '@/containers/App/AppContext'
 import { Router } from 'react-router-dom'
 import { history } from '@/store'
 import { InitServices } from '@/common/services/init-services'
@@ -10,15 +10,15 @@ import { StatusBar } from '@/components/status-bar'
 import { LeftPanel } from '@/components/left-panel'
 import { Menu } from '@/components/menu'
 import { Routes } from '@/routes'
-import { Footer } from '@/components/footer'
+import { Footer } from '@shared-ui/components/old/footer'
 import {
   BrowserNotificationsContainer,
   ToastContainer,
 } from '@/components/toast'
-import { useLocalStorage } from '@/common/hooks'
+import { useLocalStorage } from '@shared-ui/common/hooks'
 import { useAuth } from 'oidc-react'
-import { security } from '@/common/services'
-import AppLoader from '@/containers/app/AppLoader/AppLoader'
+import { security } from '@shared-ui/common/services'
+import AppLoader from '@/containers/App/AppLoader/AppLoader'
 
 const AppInner = props => {
   const { wellKnownConfig, openTelemetry } = props
@@ -60,7 +60,22 @@ const AppInner = props => {
           </LeftPanel>
           <div id="content">
             <Routes />
-            <Footer />
+            <Footer
+              links={[
+                {
+                  to: 'https://github.com/plgd-dev/hub/raw/main/http-gateway/swagger.yaml',
+                  i18key: 'API',
+                },
+                {
+                  to: 'https://plgd.dev/documentation',
+                  i18key: 'docs',
+                },
+                {
+                  to: 'https://github.com/plgd-dev/hub',
+                  i18key: 'contribute',
+                },
+              ]}
+            />
           </div>
         </Container>
         <ToastContainer />

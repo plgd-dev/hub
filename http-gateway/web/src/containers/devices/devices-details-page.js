@@ -10,7 +10,7 @@ import { NotFoundPage } from '@/containers/not-found-page'
 import { useIsMounted } from '@/common/hooks'
 import { messages as menuT } from '@/components/menu/menu-i18n'
 import { showSuccessToast } from '@/components/toast'
-import { useAppConfig } from '@/containers/app'
+import { useAppConfig } from '@/containers/App'
 import { PendingCommandsExpandableList } from '@/containers/pending-commands'
 
 import { DevicesDetails } from './_devices-details'
