@@ -188,12 +188,7 @@ func (p *Projection) loadResourceWithLinks(ctx context.Context, deviceID string,
 			t == events.NewDeviceMetadataSnapshotTaken().EventType()
 	}
 
-	return p.LoadResourceLinks(ctx, strings.Set{deviceID: struct{}{}}, toReloadDevices, func(rl *resourceLinksProjection) error {
-		if p.wantToReloadDevice(rl, hrefFilter, typeFilter) && toReloadDevices != nil {
-			// if toReloadDevices == nil it means that Reload was executed but all resources are not available yet, we want to provide partial resoures then.
-			toReloadDevices.Add(rl.GetDeviceID())
-			return nil
-		}
+	iterateResources := func(rl *resourceLinksProjection) error {
 		var err error
 		rl.IterateOverResources(func(res *commands.Resource) (wantNext bool) {
 			if !isMatchingResource(res) {
@@ -213,6 +208,15 @@ func (p *Projection) loadResourceWithLinks(ctx context.Context, deviceID string,
 			return true
 		})
 		return err
+	}
+
+	return p.LoadResourceLinks(ctx, strings.Set{deviceID: struct{}{}}, toReloadDevices, func(rl *resourceLinksProjection) error {
+		if p.wantToReloadDevice(rl, hrefFilter, typeFilter) && toReloadDevices != nil {
+			// if toReloadDevices == nil it means that Reload was executed but all resources are not available yet, we want to provide partial resoures then.
+			toReloadDevices.Add(rl.GetDeviceID())
+			return nil
+		}
+		return iterateResources(rl)
 	})
 }
 
