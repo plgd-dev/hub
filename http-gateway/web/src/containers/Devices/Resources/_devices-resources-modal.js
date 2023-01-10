@@ -10,8 +10,8 @@ import { Label } from '@/components/label'
 import { Modal } from '@/components/modal'
 
 import { DevicesResourcesModalNotifications } from './_devices-resources-modal-notifications'
-import { resourceModalTypes } from './constants'
-import { messages as t } from './devices-i18n'
+import { resourceModalTypes } from '../constants'
+import { messages as t } from '../devices-i18n'
 
 const NOOP = () => {}
 const { CREATE_RESOURCE, UPDATE_RESOURCE } = resourceModalTypes

@@ -1,21 +1,20 @@
-import { useState } from 'react'
+import { FC, useState } from 'react'
 import { useIntl } from 'react-intl'
 import { useSelector, useDispatch } from 'react-redux'
-import PropTypes from 'prop-types'
-
 import { useEmitter } from '@/common/hooks'
-import { Button } from '@/components/button'
-import { Switch } from '@/components/switch'
-import { ProvisionNewDevice } from './provision-new-device'
+import Button from '@shared-ui/components/new/Button'
+import Switch from '@shared-ui/components/new/Switch'
+import { ProvisionNewDevice } from '../ProvisionNewDevice/provision-new-device'
 import {
   DEVICES_STATUS_WS_KEY,
   DEVICES_REGISTERED_UNREGISTERED_COUNT_EVENT_KEY,
   RESET_COUNTER,
-} from './constants'
-import { isNotificationActive, toggleActiveNotification } from './slice'
-import { messages as t } from './devices-i18n'
+} from '../../constants'
+import { isNotificationActive, toggleActiveNotification } from '../../slice'
+import { messages as t } from '../../devices-i18n'
+import { Props } from './DevicesListHeader.types'
 
-export const DevicesListHeader = ({ loading, refresh }) => {
+const DevicesListHeader: FC<Props> = ({ loading, refresh }) => {
   const { formatMessage: _ } = useIntl()
   const dispatch = useDispatch()
   const enabled = useSelector(isNotificationActive(DEVICES_STATUS_WS_KEY))
@@ -23,12 +22,10 @@ export const DevicesListHeader = ({ loading, refresh }) => {
 
   useEmitter(
     DEVICES_REGISTERED_UNREGISTERED_COUNT_EVENT_KEY,
-    numberOfNewChanges => {
-      setNumberOfChanges(
-        numberOfNewChanges === RESET_COUNTER
-          ? 0
-          : numberOfChanges + numberOfNewChanges
-      )
+    (numberOfNewChanges: number | string) => {
+      typeof numberOfNewChanges === 'number' &&
+        setNumberOfChanges(numberOfChanges + numberOfNewChanges)
+      numberOfNewChanges === RESET_COUNTER && setNumberOfChanges(0)
     }
   )
 
@@ -70,7 +67,6 @@ export const DevicesListHeader = ({ loading, refresh }) => {
   )
 }
 
-DevicesListHeader.propTypes = {
-  loading: PropTypes.bool.isRequired,
-  refresh: PropTypes.func.isRequired,
-}
+DevicesListHeader.displayName = 'DevicesListHeader'
+
+export default DevicesListHeader

@@ -2,8 +2,8 @@ import { useIntl } from 'react-intl'
 import PropTypes from 'prop-types'
 
 import { ActionButton } from '@/components/action-button'
-import { canCreateResource } from './utils'
-import { messages as t } from './devices-i18n'
+import { canCreateResource } from '../utils'
+import { messages as t } from '../devices-i18n'
 
 export const DevicesResourcesActionButton = ({
   disabled,

@@ -14,13 +14,13 @@ import { messages as menuT } from '@/components/menu/menu-i18n'
 import {
   DEVICES_REGISTERED_UNREGISTERED_COUNT_EVENT_KEY,
   RESET_COUNTER,
-} from './constants'
-import { useDevicesList } from './hooks'
-import { DevicesList } from './_devices-list'
-import { DevicesListHeader } from './_devices-list-header'
-import { deleteDevicesApi } from './rest'
-import { handleDeleteDevicesErrors, sleep } from './utils'
-import { messages as t } from './devices-i18n'
+} from '../../constants'
+import { useDevicesList } from '../../hooks'
+import { DevicesList } from '../DevicesList/_devices-list'
+import DevicesListHeader from '../DevicesListHeader/DevicesListHeader'
+import { deleteDevicesApi } from '../../rest'
+import { handleDeleteDevicesErrors, sleep } from '../../utils'
+import { messages as t } from '../../devices-i18n'
 
 export const DevicesListPage = () => {
   const { formatMessage: _ } = useIntl()

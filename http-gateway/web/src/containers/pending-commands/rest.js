@@ -1,7 +1,7 @@
 import { fetchApi, security } from '@/common/services'
 
 import { pendingCommandsApiEndpoints } from './constants'
-import { devicesApiEndpoints } from '@/containers/devices/constants'
+import { devicesApiEndpoints } from '@/containers/Devices/constants'
 
 /**
  * Cancel a pending command Rest Api endpoint

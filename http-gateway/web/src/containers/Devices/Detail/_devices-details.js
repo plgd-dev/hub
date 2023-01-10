@@ -10,9 +10,9 @@ import { Badge } from '@/components/badge'
 import { Label } from '@/components/label'
 import { getValue } from '@/common/utils'
 
-import { devicesStatuses } from './constants'
-import { deviceShape } from './shapes'
-import { messages as t } from './devices-i18n'
+import { devicesStatuses } from '../constants'
+import { deviceShape } from '../shapes'
+import { messages as t } from '../devices-i18n'
 
 export const DevicesDetails = memo(
   ({ data, loading, twinSyncLoading, setTwinSynchronization }) => {
@@ -52,9 +52,7 @@ export const DevicesDetails = memo(
             <Switch
               className="text-left"
               id="toggle-twin-synchronization"
-              label={
-                isTwinEnabled ? _(t.enabled) : _(t.disabled)
-              }
+              label={isTwinEnabled ? _(t.enabled) : _(t.disabled)}
               checked={isTwinEnabled}
               onChange={setTwinSynchronization}
               disabled={twinSyncLoading || isUnregistered}
