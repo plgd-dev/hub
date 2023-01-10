@@ -5,10 +5,10 @@ import PropTypes from 'prop-types'
 
 import { WebSocketEventClient, eventFilters } from '@/common/services'
 import { Switch } from '@/components/switch'
-import { getResourceUpdateNotificationKey } from './utils'
-import { isNotificationActive, toggleActiveNotification } from './slice'
-import { deviceResourceUpdateListener } from './websockets'
-import { messages as t } from './devices-i18n'
+import { getResourceUpdateNotificationKey } from '../utils'
+import { isNotificationActive, toggleActiveNotification } from '../slice'
+import { deviceResourceUpdateListener } from '../websockets'
+import { messages as t } from '../devices-i18n'
 
 export const DevicesResourcesModalNotifications = ({
   deviceId,

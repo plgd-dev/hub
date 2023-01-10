@@ -10,8 +10,8 @@ import { AppContext } from '@/containers/App/AppContext'
 import { CopyBox } from '@/components/copy-box'
 import { isValidGuid } from '@/common/utils'
 
-import { getDeviceAuthCode } from './rest'
-import { messages as t } from './devices-i18n'
+import { getDeviceAuthCode } from '../../rest'
+import { messages as t } from '../../devices-i18n'
 
 const NOOP = () => {}
 

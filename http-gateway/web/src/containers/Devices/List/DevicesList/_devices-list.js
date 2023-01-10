@@ -7,14 +7,14 @@ import { Button } from '@/components/button'
 import { Badge } from '@/components/badge'
 import { Table } from '@/components/table'
 import { IndeterminateCheckbox } from '@/components/checkbox'
-import { DevicesListActionButton } from './_devices-list-action-button'
+import DevicesListActionButton from '../DevicesListActionButton'
 import {
   devicesStatuses,
   DEVICES_DEFAULT_PAGE_SIZE,
   NO_DEVICE_NAME,
-} from './constants'
-import { deviceShape } from './shapes'
-import { messages as t } from './devices-i18n'
+} from '../../constants'
+import { deviceShape } from '../../shapes'
+import { messages as t } from '../../devices-i18n'
 
 const { ONLINE, UNREGISTERED } = devicesStatuses
 

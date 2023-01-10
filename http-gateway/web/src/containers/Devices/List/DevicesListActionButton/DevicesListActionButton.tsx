@@ -1,10 +1,11 @@
+import { FC } from 'react'
 import { useIntl } from 'react-intl'
-import PropTypes from 'prop-types'
-
 import { ActionButton } from '@/components/action-button'
-import { messages as t } from './devices-i18n'
+import { messages as t } from '../../devices-i18n'
+import { Props } from './DevicesListActionButton.types'
 
-export const DevicesListActionButton = ({ deviceId, onView, onDelete }) => {
+const DevicesListActionButton: FC<Props> = props => {
+  const { deviceId, onView, onDelete } = props
   const { formatMessage: _ } = useIntl()
 
   return (
@@ -30,8 +31,6 @@ export const DevicesListActionButton = ({ deviceId, onView, onDelete }) => {
   )
 }
 
-DevicesListActionButton.propTypes = {
-  deviceId: PropTypes.string.isRequired,
-  onView: PropTypes.func.isRequired,
-  onDelete: PropTypes.func.isRequired,
-}
+DevicesListActionButton.displayName = 'DevicesListActionButton'
+
+export default DevicesListActionButton

@@ -14,33 +14,33 @@ import { useAppConfig } from '@/containers/App'
 import { PendingCommandsExpandableList } from '@/containers/pending-commands'
 
 import { DevicesDetails } from './_devices-details'
-import { DevicesResources } from './_devices-resources'
+import { DevicesResources } from '../Resources/_devices-resources'
 import { DevicesDetailsHeader } from './_devices-details-header'
 import { DevicesDetailsTitle } from './_devices-details-title'
-import { DevicesResourcesModal } from './_devices-resources-modal'
-import { CommanTimeoutControl } from './_command-timeout-control'
+import { DevicesResourcesModal } from '../Resources/_devices-resources-modal'
+import { CommanTimeoutControl } from '../_command-timeout-control'
 import {
   devicesStatuses,
   defaultNewResource,
   resourceModalTypes,
   NO_DEVICE_NAME,
-} from './constants'
+} from '../constants'
 import {
   handleCreateResourceErrors,
   handleUpdateResourceErrors,
   handleFetchResourceErrors,
   handleDeleteResourceErrors,
   handleTwinSynchronizationErrors,
-} from './utils'
+} from '../utils'
 import {
   getDevicesResourcesApi,
   updateDevicesResourceApi,
   createDevicesResourceApi,
   deleteDevicesResourceApi,
   updateDeviceTwinSynchronizationApi,
-} from './rest'
-import { useDeviceDetails, useDevicesResources } from './hooks'
-import { messages as t } from './devices-i18n'
+} from '../rest'
+import { useDeviceDetails, useDevicesResources } from '../hooks'
+import { messages as t } from '../devices-i18n'
 
 import './devices-details.scss'
 

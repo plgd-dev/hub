@@ -16,11 +16,11 @@ import {
   getResourceRegistrationNotificationKey,
   handleDeleteDevicesErrors,
   sleep,
-} from './utils'
-import { isNotificationActive, toggleActiveNotification } from './slice'
-import { deviceResourceRegistrationListener } from './websockets'
-import { deleteDevicesApi } from './rest'
-import { messages as t } from './devices-i18n'
+} from '../utils'
+import { isNotificationActive, toggleActiveNotification } from '../slice'
+import { deviceResourceRegistrationListener } from '../websockets'
+import { deleteDevicesApi } from '../rest'
+import { messages as t } from '../devices-i18n'
 
 export const DevicesDetailsHeader = ({
   deviceId,

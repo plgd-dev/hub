@@ -1,9 +1,8 @@
 import { Switch, Route } from 'react-router-dom'
 
-import { DevicesListPage, DevicesDetailsPage } from '@/containers/devices'
+import { DevicesListPage, DevicesDetailsPage } from '@/containers/Devices'
 import { PendingCommandsListPage } from '@/containers/pending-commands'
 import { Notifications } from '@/containers/notifications'
-import { Configuration } from '@/containers/configuration'
 import { NotFoundPage } from '@/containers/not-found-page'
 
 export const Routes = () => (
@@ -16,9 +15,6 @@ export const Routes = () => (
     <Route path="/pending-commands" component={PendingCommandsListPage} />
     <Route path="/notifications">
       <Notifications />
-    </Route>
-    <Route path="/configuration">
-      <Configuration />
     </Route>
     <Route path="*">
       <NotFoundPage />

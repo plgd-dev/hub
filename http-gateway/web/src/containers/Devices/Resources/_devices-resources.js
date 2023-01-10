@@ -6,9 +6,9 @@ import { Switch } from '@/components/switch'
 import { useLocalStorage } from '@/common/hooks'
 import { DevicesResourcesList } from './_devices-resources-list'
 import { DevicesResourcesTree } from './_devices-resources-tree'
-import { devicesStatuses } from './constants'
-import { deviceResourceShape } from './shapes'
-import { messages as t } from './devices-i18n'
+import { devicesStatuses } from '../constants'
+import { deviceResourceShape } from '../shapes'
+import { messages as t } from '../devices-i18n'
 
 export const DevicesResources = ({
   data,
