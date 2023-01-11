@@ -12,10 +12,14 @@ import (
 
 // remove all documents which has latest version less than the version
 func (s *EventStore) removeDocumentsUpToVersion(ctx context.Context, queries []eventstore.VersionQuery) error {
+	var errors *multierror.Error
 	queryResolver := newQueryResolver(signOperator_lt)
 	for _, q := range queries {
 		err := queryResolver.set(q)
-		return fmt.Errorf("cannot remove events version for query('%+v'): %w", q, err)
+		if err != nil {
+			errors = multierror.Append(errors, fmt.Errorf("cannot remove events version for query('%+v'): %w", q, err))
+			continue
+		}
 	}
 
 	filter, hint := queryResolver.toMongoQuery(latestVersionKey)
@@ -23,9 +27,9 @@ func (s *EventStore) removeDocumentsUpToVersion(ctx context.Context, queries []e
 	opts.SetHint(hint)
 	_, err := s.client.Database(s.DBName()).Collection(getEventCollectionName()).DeleteMany(ctx, filter, opts)
 	if err != nil {
-		return err
+		errors = multierror.Append(errors, err)
 	}
-	return nil
+	return errors.ErrorOrNil()
 }
 
 // pull events from documents which has first version less than the version
