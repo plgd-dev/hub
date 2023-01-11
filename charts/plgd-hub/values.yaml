@@ -136,8 +136,8 @@ mongodb:
         - --eval
         - db.adminCommand('ping')
     initialDelaySeconds: 30
-    periodSeconds: 10
-    timeoutSeconds: 5
+    periodSeconds: 20
+    timeoutSeconds: 10
     successThreshold: 1
     failureThreshold: 6
   readinessProbe:
@@ -150,9 +150,9 @@ mongodb:
         - |
           TLS_OPTIONS='--tls --tlsCertificateKeyFile=/certs/cert.pem --tlsCAFile=/certs/ca.pem'
           mongosh $TLS_OPTIONS --eval 'db.hello().isWritablePrimary || db.hello().secondary' | grep -q 'true'
-    initialDelaySeconds: 5
-    periodSeconds: 10
-    timeoutSeconds: 5
+    initialDelaySeconds: 10
+    periodSeconds: 20
+    timeoutSeconds: 10
     successThreshold: 1
     failureThreshold: 6
 
