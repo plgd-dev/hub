@@ -206,6 +206,9 @@ type Config struct {
 	// zapcore.
 	EncoderConfig EncoderConfig `json:"encoderConfig" yaml:"encoderConfig"`
 	// zap.Config    `yaml:",inline"`
+
+	// DumpBody if true, dump request/response/stream body to log.
+	DumpBody bool `json:"dumpBody" yaml:"dumpBody"`
 }
 
 func (c *Config) Validate() error {
@@ -245,6 +248,7 @@ type Logger interface {
 	LogAndReturnError(err error) error
 	Config() Config
 	Check(lvl zapcore.Level) bool
+	GetLogFunc(lvl zapcore.Level) func(args ...interface{})
 	DTLSLoggerFactory() logging.LoggerFactory
 }
 
@@ -276,6 +280,25 @@ func (l *WrapSuggarLogger) Config() Config {
 
 func (l *WrapSuggarLogger) Check(lvl zapcore.Level) bool {
 	return l.logger.Desugar().Core().Enabled(lvl)
+}
+
+var getLogFuncMap = map[zapcore.Level]func(l *WrapSuggarLogger) func(args ...interface{}){
+	zapcore.DebugLevel: func(l *WrapSuggarLogger) func(args ...interface{}) { return l.Debug },
+	zapcore.InfoLevel:  func(l *WrapSuggarLogger) func(args ...interface{}) { return l.Info },
+	zapcore.WarnLevel:  func(l *WrapSuggarLogger) func(args ...interface{}) { return l.Warn },
+	zapcore.ErrorLevel: func(l *WrapSuggarLogger) func(args ...interface{}) { return l.Error },
+	zapcore.FatalLevel: func(l *WrapSuggarLogger) func(args ...interface{}) { return l.Fatal },
+}
+
+var emptyLogFunc = func(args ...interface{}) {
+	// do nothing
+}
+
+func (l *WrapSuggarLogger) GetLogFunc(lvl zapcore.Level) func(args ...interface{}) {
+	if f, ok := getLogFuncMap[lvl]; ok {
+		return f(l)
+	}
+	return emptyLogFunc
 }
 
 func (l *WrapSuggarLogger) with(args ...interface{}) *WrapSuggarLogger {

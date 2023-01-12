@@ -7,7 +7,6 @@ import (
 	"time"
 
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
-	grpc_zap "github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
 	"github.com/grpc-ecosystem/go-grpc-middleware/logging/zap/ctxzap"
 	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
@@ -256,17 +255,14 @@ func MakeDefaultOptions(auth kitNetGrpc.AuthInterceptors, logger log.Logger, tra
 			return handler(ctx, req)
 		},
 	}
-	zapLogger, ok := logger.Unwrap().(*zap.SugaredLogger)
-	if ok {
-		cfg := logger.Config()
-		if cfg.EncoderConfig.EncodeTime.TimeEncoder == nil {
-			cfg.EncoderConfig.EncodeTime = log.MakeDefaultConfig().EncoderConfig.EncodeTime
-		}
-		streamInterceptors = append(streamInterceptors, grpc_ctxtags.StreamServerInterceptor(grpc_ctxtags.WithFieldExtractor(CodeGenRequestFieldExtractor)),
-			grpc_zap.StreamServerInterceptor(zapLogger.Desugar(), grpc_zap.WithTimestampFormat(cfg.EncoderConfig.EncodeTime.TimeEncoder.TimeString()), grpc_zap.WithLevels(DefaultCodeToLevel), grpc_zap.WithMessageProducer(MakeDefaultMessageProducer(zapLogger.Desugar()))))
-		unaryInterceptors = append(unaryInterceptors, grpc_ctxtags.UnaryServerInterceptor(grpc_ctxtags.WithFieldExtractor(CodeGenRequestFieldExtractor)),
-			grpc_zap.UnaryServerInterceptor(zapLogger.Desugar(), grpc_zap.WithTimestampFormat(cfg.EncoderConfig.EncodeTime.TimeEncoder.TimeString()), grpc_zap.WithLevels(DefaultCodeToLevel), grpc_zap.WithMessageProducer(MakeDefaultMessageProducer(zapLogger.Desugar()))))
+
+	cfg := logger.Config()
+	if cfg.EncoderConfig.EncodeTime.TimeEncoder == nil {
+		cfg.EncoderConfig.EncodeTime = log.MakeDefaultConfig().EncoderConfig.EncodeTime
 	}
+	streamInterceptors = append(streamInterceptors, NewLogStreamServerInterceptor(logger, cfg.DumpBody))
+	unaryInterceptors = append(unaryInterceptors, NewLogUnaryServerInterceptor(logger, cfg.DumpBody))
+
 	streamInterceptors = append(streamInterceptors, auth.Stream())
 	unaryInterceptors = append(unaryInterceptors, auth.Unary())
 

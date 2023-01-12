@@ -39,11 +39,7 @@ func (c *Config) Validate() error {
 	return nil
 }
 
-// Config represent application configuration
-type LogConfig struct {
-	log.Config `yaml:",inline"`
-	DumpBody   bool `yaml:"dumpBody" json:"dumpBody"`
-}
+type LogConfig = log.Config
 
 type APIsConfig struct {
 	COAP COAPConfig `yaml:"coap" json:"coap"`
