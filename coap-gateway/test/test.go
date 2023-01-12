@@ -17,7 +17,7 @@ import (
 
 func MakeConfig(t require.TestingT) service.Config {
 	var cfg service.Config
-	cfg.Log.Config = log.MakeDefaultConfig()
+	cfg.Log = log.MakeDefaultConfig()
 	cfg.Log.DumpBody = true
 	cfg.Log.Level = zapcore.DebugLevel
 	cfg.TaskQueue.GoPoolSize = 1600
@@ -71,7 +71,7 @@ func SetUp(t require.TestingT) (tearDown func()) {
 // New creates test coap-gateway.
 func New(t require.TestingT, cfg service.Config) func() {
 	ctx := context.Background()
-	logger := log.NewLogger(cfg.Log.Config)
+	logger := log.NewLogger(cfg.Log)
 
 	fileWatcher, err := fsnotify.NewWatcher()
 	require.NoError(t, err)

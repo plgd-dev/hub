@@ -509,7 +509,7 @@ func NewLogger(config Config) *WrapSuggarLogger {
 
 	// From a zapcore.Core, it's easy to construct a Logger.
 	logger := zap.New(core, opts...)
-	return &WrapSuggarLogger{logger: logger.Sugar()}
+	return &WrapSuggarLogger{logger: logger.Sugar(), config: config}
 }
 
 func Get() Logger {

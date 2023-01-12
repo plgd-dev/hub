@@ -3,6 +3,8 @@ package server
 import (
 	context "context"
 	"encoding/json"
+	"errors"
+	"io"
 	"strings"
 	"time"
 
@@ -23,8 +25,7 @@ type jwtMember struct {
 }
 
 const (
-	logReceivedMessageKey = "receivedMessage"
-	logSendMessageKey     = "sendMessage"
+	logMessageKey = "message"
 )
 
 type logGrpcMessage struct {
@@ -38,7 +39,7 @@ type logGrpcMessage struct {
 	Error string `json:"error,omitempty"`
 
 	// request/response/stream
-	Body interface{} `json:"body,omitempty"`
+	Body map[string]interface{} `json:"body,omitempty"`
 
 	// stream
 	// for pairing streams
@@ -75,7 +76,10 @@ func parseServiceAndMethod(fullMethod string) (string, string) {
 	return "", fullMethod
 }
 
-func logUnary(ctx context.Context, logger log.Logger, req interface{}, resp interface{}, code *codes.Code, err error, fullMethod string, dumpBody bool, startTime time.Time, duration time.Duration) log.Logger {
+func logUnary(ctx context.Context, logger log.Logger, req interface{}, resp interface{}, code *codes.Code, err error, fullMethod string, dumpBody bool, startTime time.Time, duration time.Duration, token string) log.Logger {
+	if !startTime.IsZero() {
+		logger = logger.With(log.StartTimeKey, startTime)
+	}
 	if duration > 0 {
 		logger = logger.With(log.DurationMSKey, log.DurationToMilliseconds(duration))
 	}
@@ -89,7 +93,9 @@ func logUnary(ctx context.Context, logger log.Logger, req interface{}, resp inte
 		logger = logger.With(log.TraceIDKey, spanCtx.TraceID().String())
 	}
 
-	reqData := logGrpcMessage{}
+	reqData := logGrpcMessage{
+		Token: token,
+	}
 	reqData.Service, reqData.Method = parseServiceAndMethod(fullMethod)
 	sub := getSub(ctx)
 	if sub != "" {
@@ -97,8 +103,8 @@ func logUnary(ctx context.Context, logger log.Logger, req interface{}, resp inte
 			Sub: sub,
 		}
 	}
-	if dumpBody && req != nil {
-		reqData.Body = decodeToJsonObject(resp)
+	if dumpBody {
+		reqData.Body = decodeToJsonObject(req)
 	}
 	if !reqData.IsEmpty() {
 		logger = logger.With(log.RequestKey, reqData)
@@ -111,7 +117,7 @@ func logUnary(ctx context.Context, logger log.Logger, req interface{}, resp inte
 	if err != nil {
 		respData.Error = err.Error()
 	}
-	if dumpBody && resp != nil {
+	if dumpBody {
 		respData.Body = decodeToJsonObject(resp)
 	}
 	if !respData.IsEmpty() {
@@ -121,20 +127,24 @@ func logUnary(ctx context.Context, logger log.Logger, req interface{}, resp inte
 	return logger
 }
 
+func handleUnary(ctx context.Context, logger log.Logger, dumpBody bool, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+	startTime := time.Now()
+	resp, err := handler(ctx, req)
+	code := status.Code(err)
+	level := DefaultCodeToLevel(code)
+	if !logger.Check(level) {
+		return resp, err
+	}
+	duration := time.Since(startTime)
+	logger = logUnary(ctx, logger, req, resp, &code, err, info.FullMethod, dumpBody, startTime, duration, "")
+	logger.GetLogFunc(level)("finished unary call with code " + code.String())
+	return resp, err
+}
+
 func NewLogUnaryServerInterceptor(logger log.Logger, dumpBody bool) grpc.UnaryServerInterceptor {
 	logger = logger.With(log.ProtocolKey, "GRPC")
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-		startTime := time.Now()
-		resp, err := handler(ctx, req)
-		code := status.Code(err)
-		level := DefaultCodeToLevel(code)
-		if !logger.Check(level) {
-			return resp, err
-		}
-		duration := time.Since(startTime)
-		logger = logUnary(ctx, logger, req, resp, &code, err, info.FullMethod, dumpBody, startTime, duration)
-		logger.GetLogFunc(level)("finished unary call with code " + code.String())
-		return resp, err
+		return handleUnary(ctx, logger, dumpBody, req, info, handler)
 	}
 }
 
@@ -150,14 +160,17 @@ type logServerStream struct {
 	sub      string
 }
 
-func decodeToJsonObject(m interface{}) interface{} {
+func decodeToJsonObject(m interface{}) map[string]interface{} {
+	if m == nil {
+		return nil
+	}
 	marshaler := serverMux.NewJsonMarshaler()
 	marshaler.JSONPb.MarshalOptions.EmitUnpopulated = false
 	data, err := marshaler.Marshal(m)
 	if err == nil && len(data) > 2 {
-		var v interface{}
+		var v map[string]interface{}
 		err = json.Unmarshal(data, &v)
-		if err == nil {
+		if err == nil && len(v) > 0 {
 			return v
 		}
 	}
@@ -166,16 +179,27 @@ func decodeToJsonObject(m interface{}) interface{} {
 
 func (w *logServerStream) SendMsg(m interface{}) error {
 	err := w.ServerStream.SendMsg(m)
-	if err != nil {
+	code := status.Code(err)
+	level := DefaultCodeToLevel(code)
+	if errors.Is(err, io.EOF) {
+		level = zap.DebugLevel
+	}
+	if !w.logger.Check(level) {
 		return err
 	}
-	if !w.logger.Check(zap.DebugLevel) {
-		return err
-	}
+	logger := w.getLoggerForStreamMessage(m, err)
+	logger.Debug("sent a streaming message")
+	return err
+}
+
+func (w *logServerStream) getLoggerForStreamMessage(m interface{}, err error) log.Logger {
 	r := logGrpcMessage{
 		Service: w.service,
 		Method:  w.method,
 		Token:   w.token,
+	}
+	if err != nil {
+		r.Error = err.Error()
 	}
 	if w.sub != "" {
 		r.JWT = &jwtMember{
@@ -186,40 +210,25 @@ func (w *logServerStream) SendMsg(m interface{}) error {
 		r.Body = decodeToJsonObject(m)
 	}
 	logger := w.logger
+	logger = setLogBasicLabelsNew(logger, m)
 	if !r.IsEmpty() {
-		logger = logger.With(logSendMessageKey, r)
+		logger = logger.With(logMessageKey, r)
 	}
-	logger.Debug("send stream message")
-
-	return err
+	return logger
 }
 
 func (w *logServerStream) RecvMsg(m interface{}) error {
 	err := w.ServerStream.RecvMsg(m)
-	if err != nil {
+	code := status.Code(err)
+	level := DefaultCodeToLevel(code)
+	if errors.Is(err, io.EOF) {
+		level = zap.DebugLevel
+	}
+	if !w.logger.Check(level) {
 		return err
 	}
-	if !w.logger.Check(zap.DebugLevel) {
-		return err
-	}
-	r := logGrpcMessage{
-		Service: w.service,
-		Method:  w.method,
-		Token:   w.token,
-	}
-	if w.sub != "" {
-		r.JWT = &jwtMember{
-			Sub: w.sub,
-		}
-	}
-	if w.dumpBody {
-		r.Body = decodeToJsonObject(m)
-	}
-	logger := w.logger
-	if !r.IsEmpty() {
-		logger = logger.With(logReceivedMessageKey, r)
-	}
-	logger.Debug("received stream message")
+	logger := w.getLoggerForStreamMessage(m, err)
+	logger.Debug("received a streaming message")
 	return err
 }
 
@@ -246,27 +255,31 @@ func wrapServerStreamNew(logger log.Logger, dumpBody bool, fullMethod string, ss
 
 func logStartStream(ctx context.Context, logger log.Logger, startTime time.Time, fullMethod, token string) {
 	if logger.Check(zap.DebugLevel) {
-		logger = logUnary(ctx, logger, nil, nil, nil, nil, fullMethod, false, startTime, 0)
-		logger.Debug("starting streaming call with token " + token)
+		logger = logUnary(ctx, logger, nil, nil, nil, nil, fullMethod, false, startTime, 0, token)
+		logger.Debug("started streaming call")
 	}
+}
+
+func handleStream(logger log.Logger, dumpBody bool, srv interface{}, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+	startTime := time.Now()
+	logServerStream := wrapServerStreamNew(logger, dumpBody, info.FullMethod, stream)
+	logStartStream(logServerStream.Context(), logger, startTime, info.FullMethod, logServerStream.token)
+	err := handler(srv, logServerStream)
+	code := status.Code(err)
+	level := DefaultCodeToLevel(code)
+	if !logger.Check(level) {
+		return err
+	}
+	duration := time.Since(startTime)
+	logger = logUnary(stream.Context(), logger, nil, nil, &code, err, info.FullMethod, false, startTime, duration, logServerStream.token)
+	logger.GetLogFunc(level)("finished streaming call with code " + code.String())
+	return err
 }
 
 // StreamServerInterceptor returns a new streaming server interceptor that adds zap.Logger to the context.
 func NewLogStreamServerInterceptor(logger log.Logger, dumpBody bool) grpc.StreamServerInterceptor {
 	logger = logger.With(log.ProtocolKey, "GRPC")
 	return func(srv interface{}, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
-		startTime := time.Now()
-		logServerStream := wrapServerStreamNew(logger, dumpBody, info.FullMethod, stream)
-		logStartStream(logServerStream.Context(), logger, startTime, info.FullMethod, logServerStream.token)
-		err := handler(srv, logServerStream)
-		code := status.Code(err)
-		level := DefaultCodeToLevel(code)
-		if !logger.Check(level) {
-			return err
-		}
-		duration := time.Since(startTime)
-		logger = logUnary(stream.Context(), logger, nil, nil, &code, err, info.FullMethod, false, startTime, duration)
-		logger.GetLogFunc(level)("finished streaming call with code " + code.String())
-		return err
+		return handleStream(logger, dumpBody, srv, stream, info, handler)
 	}
 }
