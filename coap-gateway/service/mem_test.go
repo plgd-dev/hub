@@ -357,7 +357,6 @@ func testDevices(t *testing.T, numDevices, numResources, expRSSInMB int, logLvl 
 		LogLevel         string
 		LogDumpBody      bool
 		Duration         time.Duration
-		Config           string
 	}{
 		NumDevices:       numDevices,
 		NumResources:     numResources,
@@ -368,7 +367,6 @@ func testDevices(t *testing.T, numDevices, numResources, expRSSInMB int, logLvl 
 		LogDumpBody:      logDumpBody,
 		Duration:         duration,
 		ResourceDataSize: resourceDataSize,
-		Config:           config.String(),
 	}
 	data, err := json.Encode(v)
 	require.NoError(t, err)
