@@ -13,6 +13,7 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
@@ -20,13 +21,77 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+func tryToMoveData(req interface{}) interface{} {
+	switch v := req.(type) {
+	case interface {
+		GetData() *events.ResourceUpdated
+	}:
+		return v.GetData()
+	case interface {
+		GetData() *events.ResourceRetrieved
+	}:
+		return v.GetData()
+	case interface {
+		GetData() *events.ResourceChanged
+	}:
+		return v.GetData()
+	case interface {
+		GetData() *events.ResourceDeleted
+	}:
+		return v.GetData()
+	case interface {
+		GetData() *events.ResourceCreated
+	}:
+		return v.GetData()
+	case interface {
+		GetData() *events.DeviceMetadataUpdated
+	}:
+		return v.GetData()
+	}
+	return req
+}
+
+func FillLoggerWithDeviceIDHrefCorrelationID(logger log.Logger, req interface{}) log.Logger {
+	if req == nil {
+		return logger
+	}
+	req = tryToMoveData(req)
+	if d, ok := req.(interface{ GetDeviceId() string }); ok && d.GetDeviceId() != "" {
+		logger = logger.With(log.DeviceIDKey, d.GetDeviceId())
+	}
+	if r, ok := req.(interface{ GetResourceId() *commands.ResourceId }); ok {
+		logger = logger.With(log.DeviceIDKey, r.GetResourceId().GetDeviceId(), log.ResourceHrefKey, r.GetResourceId().GetHref())
+	}
+	if r, ok := req.(interface{ GetCorrelationId() string }); ok && r.GetCorrelationId() != "" {
+		logger = logger.With(log.CorrelationIDKey, r.GetCorrelationId())
+	}
+	if r, ok := req.(interface{ GetAuditContext() *commands.AuditContext }); ok && r.GetAuditContext().GetCorrelationId() != "" {
+		logger = logger.With(log.CorrelationIDKey, r.GetAuditContext().GetCorrelationId())
+	}
+
+	return logger
+}
+
+func DecodeToJsonObject(m interface{}) map[string]interface{} {
+	if m == nil {
+		return nil
+	}
+	marshaler := serverMux.NewJsonMarshaler()
+	marshaler.JSONPb.MarshalOptions.EmitUnpopulated = false
+	data, err := marshaler.Marshal(m)
+	if err == nil && len(data) > 2 {
+		var v map[string]interface{}
+		err = json.Unmarshal(data, &v)
+		if err == nil && len(v) > 0 {
+			return v
+		}
+	}
+	return nil
+}
+
 type jwtMember struct {
 	Sub string `json:"sub,omitempty"`
 }
-
-const (
-	logMessageKey = "message"
-)
 
 type logGrpcMessage struct {
 	// request
@@ -50,22 +115,6 @@ func (m logGrpcMessage) IsEmpty() bool {
 	return m.Body == nil && m.JWT == nil && m.Method == "" && m.Service == "" && m.Code == "" && m.Error == "" && m.Token == ""
 }
 
-func setLogBasicLabelsNew(logger log.Logger, req interface{}) log.Logger {
-	if req == nil {
-		return logger
-	}
-	if d, ok := req.(interface{ GetDeviceId() string }); ok && d.GetDeviceId() != "" {
-		logger = logger.With(log.DeviceIDKey, d.GetDeviceId())
-	}
-	if r, ok := req.(interface{ GetResourceId() *commands.ResourceId }); ok {
-		logger = logger.With(log.DeviceIDKey, r.GetResourceId().GetDeviceId(), log.ResourceHrefKey, r.GetResourceId().GetHref())
-	}
-	if r, ok := req.(interface{ GetCorrelationId() string }); ok && r.GetCorrelationId() != "" {
-		logger = logger.With(log.CorrelationIDKey, r.GetCorrelationId())
-	}
-	return logger
-}
-
 func parseServiceAndMethod(fullMethod string) (string, string) {
 	elems := strings.SplitAfterN(fullMethod, "/", 3)
 	if len(elems) == 3 {
@@ -87,7 +136,7 @@ func logUnary(ctx context.Context, logger log.Logger, req interface{}, resp inte
 	if ok {
 		logger = logger.With(log.DeadlineKey, deadline)
 	}
-	logger = setLogBasicLabelsNew(logger, req)
+	logger = FillLoggerWithDeviceIDHrefCorrelationID(logger, req)
 	spanCtx := trace.SpanContextFromContext(ctx)
 	if spanCtx.HasTraceID() {
 		logger = logger.With(log.TraceIDKey, spanCtx.TraceID().String())
@@ -104,7 +153,7 @@ func logUnary(ctx context.Context, logger log.Logger, req interface{}, resp inte
 		}
 	}
 	if dumpBody {
-		reqData.Body = decodeToJsonObject(req)
+		reqData.Body = DecodeToJsonObject(req)
 	}
 	if !reqData.IsEmpty() {
 		logger = logger.With(log.RequestKey, reqData)
@@ -118,7 +167,7 @@ func logUnary(ctx context.Context, logger log.Logger, req interface{}, resp inte
 		respData.Error = err.Error()
 	}
 	if dumpBody {
-		respData.Body = decodeToJsonObject(resp)
+		respData.Body = DecodeToJsonObject(resp)
 	}
 	if !respData.IsEmpty() {
 		logger = logger.With(log.ResponseKey, respData)
@@ -160,23 +209,6 @@ type logServerStream struct {
 	sub      string
 }
 
-func decodeToJsonObject(m interface{}) map[string]interface{} {
-	if m == nil {
-		return nil
-	}
-	marshaler := serverMux.NewJsonMarshaler()
-	marshaler.JSONPb.MarshalOptions.EmitUnpopulated = false
-	data, err := marshaler.Marshal(m)
-	if err == nil && len(data) > 2 {
-		var v map[string]interface{}
-		err = json.Unmarshal(data, &v)
-		if err == nil && len(v) > 0 {
-			return v
-		}
-	}
-	return nil
-}
-
 func (w *logServerStream) SendMsg(m interface{}) error {
 	err := w.ServerStream.SendMsg(m)
 	code := status.Code(err)
@@ -207,12 +239,12 @@ func (w *logServerStream) getLoggerForStreamMessage(m interface{}, err error) lo
 		}
 	}
 	if w.dumpBody {
-		r.Body = decodeToJsonObject(m)
+		r.Body = DecodeToJsonObject(m)
 	}
 	logger := w.logger
-	logger = setLogBasicLabelsNew(logger, m)
+	logger = FillLoggerWithDeviceIDHrefCorrelationID(logger, m)
 	if !r.IsEmpty() {
-		logger = logger.With(logMessageKey, r)
+		logger = logger.With(log.MessageKey, r)
 	}
 	return logger
 }

@@ -6,7 +6,6 @@ var (
 	CorrelationIDKey    = "correlationId"
 	DeviceIDKey         = "deviceId"
 	ResourceHrefKey     = "href"
-	JWTSubKey           = "jwt.sub"
 	CommandFilterKey    = "commandFilter"
 	DeviceIDFilterKey   = "deviceIdFilter"
 	ResourceIDFilterKey = "resourceIdFilter"
@@ -27,6 +26,8 @@ var (
 	ErrorKey            = "error"
 	X509Key             = "x509"
 	TraceIDKey          = "traceId"
+	MessageKey          = "message"
+	SubjectsKey         = "subjects"
 )
 
 func DurationToMilliseconds(duration time.Duration) float32 {

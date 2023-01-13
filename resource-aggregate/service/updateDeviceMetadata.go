@@ -82,10 +82,7 @@ func (r RequestHandler) UpdateDeviceMetadata(ctx context.Context, request *comma
 		return nil, log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot update device('%v') metadata: %v", request.GetDeviceId(), err))
 	}
 
-	err = PublishEvents(r.publisher, owner, aggregate.DeviceID(), aggregate.ResourceID(), publishEvents)
-	if err != nil {
-		log.Errorf("cannot publish device('%v') metadata events: %w", request.GetDeviceId(), err)
-	}
+	PublishEvents(r.publisher, owner, aggregate.DeviceID(), aggregate.ResourceID(), publishEvents, r.logger)
 
 	var validUntil int64
 	for _, e := range publishEvents {

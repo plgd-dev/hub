@@ -54,10 +54,7 @@ func (r RequestHandler) CancelPendingMetadataUpdates(ctx context.Context, reques
 		return nil, log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "cannot cancel resource('%v') metadata updates: %v", request.GetDeviceId(), err))
 	}
 
-	err = PublishEvents(r.publisher, owner, aggregate.DeviceID(), aggregate.ResourceID(), cancelEvents)
-	if err != nil {
-		log.Errorf("cannot publish device ('%v') metadata events: %w", request.GetDeviceId(), err)
-	}
+	PublishEvents(r.publisher, owner, aggregate.DeviceID(), aggregate.ResourceID(), cancelEvents, r.logger)
 
 	correlationIDs := make([]string, 0, len(cancelEvents))
 	for _, e := range cancelEvents {
