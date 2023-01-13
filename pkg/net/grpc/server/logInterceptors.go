@@ -15,7 +15,6 @@ import (
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 	"go.opentelemetry.io/otel/trace"
-	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -214,7 +213,7 @@ func (w *logServerStream) SendMsg(m interface{}) error {
 	code := status.Code(err)
 	level := DefaultCodeToLevel(code)
 	if errors.Is(err, io.EOF) {
-		level = zap.DebugLevel
+		level = log.DebugLevel
 	}
 	if !w.logger.Check(level) {
 		return err
@@ -254,7 +253,7 @@ func (w *logServerStream) RecvMsg(m interface{}) error {
 	code := status.Code(err)
 	level := DefaultCodeToLevel(code)
 	if errors.Is(err, io.EOF) {
-		level = zap.DebugLevel
+		return err
 	}
 	if !w.logger.Check(level) {
 		return err
@@ -286,7 +285,7 @@ func wrapServerStreamNew(logger log.Logger, dumpBody bool, fullMethod string, ss
 }
 
 func logStartStream(ctx context.Context, logger log.Logger, startTime time.Time, fullMethod, token string) {
-	if logger.Check(zap.DebugLevel) {
+	if logger.Check(log.DebugLevel) {
 		logger = logUnary(ctx, logger, nil, nil, nil, nil, fullMethod, false, startTime, 0, token)
 		logger.Debug("started streaming call")
 	}

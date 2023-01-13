@@ -185,7 +185,7 @@ type StacktraceConfig struct {
 }
 
 func (c *StacktraceConfig) Validate() error {
-	if c.Level < zapcore.DebugLevel || c.Level > zap.FatalLevel {
+	if c.Level < DebugLevel || c.Level > FatalLevel {
 		return fmt.Errorf("level('%v')", c.Level)
 	}
 	return nil
@@ -212,7 +212,7 @@ type Config struct {
 }
 
 func (c *Config) Validate() error {
-	if c.Level < zapcore.DebugLevel || c.Level > zap.FatalLevel {
+	if c.Level < DebugLevel || c.Level > FatalLevel {
 		return fmt.Errorf("level('%v')", c.Level)
 	}
 	if err := c.Stacktrace.Validate(); err != nil {
@@ -283,11 +283,11 @@ func (l *WrapSuggarLogger) Check(lvl zapcore.Level) bool {
 }
 
 var getLogFuncMap = map[zapcore.Level]func(l *WrapSuggarLogger) func(args ...interface{}){
-	zapcore.DebugLevel: func(l *WrapSuggarLogger) func(args ...interface{}) { return l.Debug },
-	zapcore.InfoLevel:  func(l *WrapSuggarLogger) func(args ...interface{}) { return l.Info },
-	zapcore.WarnLevel:  func(l *WrapSuggarLogger) func(args ...interface{}) { return l.Warn },
-	zapcore.ErrorLevel: func(l *WrapSuggarLogger) func(args ...interface{}) { return l.Error },
-	zapcore.FatalLevel: func(l *WrapSuggarLogger) func(args ...interface{}) { return l.Fatal },
+	DebugLevel: func(l *WrapSuggarLogger) func(args ...interface{}) { return l.Debug },
+	InfoLevel:  func(l *WrapSuggarLogger) func(args ...interface{}) { return l.Info },
+	WarnLevel:  func(l *WrapSuggarLogger) func(args ...interface{}) { return l.Warn },
+	ErrorLevel: func(l *WrapSuggarLogger) func(args ...interface{}) { return l.Error },
+	FatalLevel: func(l *WrapSuggarLogger) func(args ...interface{}) { return l.Fatal },
 }
 
 var emptyLogFunc = func(args ...interface{}) {
@@ -504,7 +504,7 @@ func NewLogger(config Config) *WrapSuggarLogger {
 	)
 	opts := make([]zap.Option, 0, 16)
 	if config.Stacktrace.Enabled {
-		opts = append(opts, zap.AddStacktrace(zap.NewAtomicLevelAt(zap.WarnLevel)))
+		opts = append(opts, zap.AddStacktrace(zap.NewAtomicLevelAt(WarnLevel)))
 	}
 
 	// From a zapcore.Core, it's easy to construct a Logger.

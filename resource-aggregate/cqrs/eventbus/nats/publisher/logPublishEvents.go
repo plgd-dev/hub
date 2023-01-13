@@ -3,13 +3,12 @@ package publisher
 import (
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/pkg/net/grpc/server"
-	"go.uber.org/zap/zapcore"
 )
 
 func LogPublish(logger log.Logger, event interface{}, subjects []string, err error) {
-	lvl := zapcore.DebugLevel
+	lvl := log.DebugLevel
 	if err != nil {
-		lvl = zapcore.ErrorLevel
+		lvl = log.ErrorLevel
 	}
 	if !logger.Check(lvl) {
 		return

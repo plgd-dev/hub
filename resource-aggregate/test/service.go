@@ -10,15 +10,12 @@ import (
 	"github.com/plgd-dev/hub/v2/resource-aggregate/service"
 	"github.com/plgd-dev/hub/v2/test/config"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap/zapcore"
 )
 
 func MakeConfig(t require.TestingT) service.Config {
 	var cfg service.Config
 
 	cfg.Log = log.MakeDefaultConfig()
-	cfg.Log.Level = zapcore.DebugLevel
-	cfg.Log.DumpBody = true
 
 	cfg.APIs.GRPC.OwnerCacheExpiration = time.Minute
 	cfg.APIs.GRPC.Config = config.MakeGrpcServerConfig(config.RESOURCE_AGGREGATE_HOST)

@@ -17,7 +17,6 @@ import (
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace"
-	"go.uber.org/zap"
 )
 
 func TestPublishUnpublish(t *testing.T) {
@@ -31,7 +30,7 @@ func TestPublishUnpublish(t *testing.T) {
 	idShutdown := idService.SetUp(t)
 	defer idShutdown()
 	logCfg := log.MakeDefaultConfig()
-	logCfg.Level = zap.DebugLevel
+	logCfg.Level = log.DebugLevel
 	log.Setup(logCfg)
 	raShutdown := test.New(t, cfg)
 	defer raShutdown()
@@ -72,7 +71,7 @@ func TestPublishUnpublish(t *testing.T) {
 		require.NoError(t, err)
 	}()
 
-	logCfg.Level = zap.DebugLevel
+	logCfg.Level = log.DebugLevel
 	log.Setup(logCfg)
 	pubReq := testMakePublishResourceRequest(deviceID, []string{href})
 	_, err = raClient.PublishResourceLinks(ctx, pubReq)

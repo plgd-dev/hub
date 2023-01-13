@@ -30,23 +30,23 @@ const (
 )
 
 var defaultCodeToLevel = map[codes.Code]zapcore.Level{
-	codes.OK:                 zap.DebugLevel,
-	codes.Canceled:           zap.DebugLevel,
-	codes.Unknown:            zap.ErrorLevel,
-	codes.InvalidArgument:    zap.DebugLevel,
-	codes.DeadlineExceeded:   zap.WarnLevel,
-	codes.NotFound:           zap.DebugLevel,
-	codes.AlreadyExists:      zap.DebugLevel,
-	codes.PermissionDenied:   zap.WarnLevel,
-	codes.Unauthenticated:    zap.DebugLevel,
-	codes.ResourceExhausted:  zap.WarnLevel,
-	codes.FailedPrecondition: zap.WarnLevel,
-	codes.Aborted:            zap.WarnLevel,
-	codes.OutOfRange:         zap.WarnLevel,
-	codes.Unimplemented:      zap.ErrorLevel,
-	codes.Internal:           zap.ErrorLevel,
-	codes.Unavailable:        zap.WarnLevel,
-	codes.DataLoss:           zap.ErrorLevel,
+	codes.OK:                 log.DebugLevel,
+	codes.Canceled:           log.DebugLevel,
+	codes.Unknown:            log.ErrorLevel,
+	codes.InvalidArgument:    log.DebugLevel,
+	codes.DeadlineExceeded:   log.WarnLevel,
+	codes.NotFound:           log.DebugLevel,
+	codes.AlreadyExists:      log.DebugLevel,
+	codes.PermissionDenied:   log.WarnLevel,
+	codes.Unauthenticated:    log.DebugLevel,
+	codes.ResourceExhausted:  log.WarnLevel,
+	codes.FailedPrecondition: log.WarnLevel,
+	codes.Aborted:            log.WarnLevel,
+	codes.OutOfRange:         log.WarnLevel,
+	codes.Unimplemented:      log.ErrorLevel,
+	codes.Internal:           log.ErrorLevel,
+	codes.Unavailable:        log.WarnLevel,
+	codes.DataLoss:           log.ErrorLevel,
 }
 
 // DefaultCodeToLevel is the default implementation of gRPC return codes and interceptor log level for server side.
@@ -55,7 +55,7 @@ func DefaultCodeToLevel(code codes.Code) zapcore.Level {
 	if ok {
 		return lvl
 	}
-	return zap.ErrorLevel
+	return log.ErrorLevel
 }
 
 func setLogBasicLabels(m map[string]interface{}, req interface{}) {

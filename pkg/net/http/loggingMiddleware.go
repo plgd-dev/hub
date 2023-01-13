@@ -13,7 +13,6 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/pkg/security/jwt"
 	"go.opentelemetry.io/otel/trace"
-	"go.uber.org/zap/zapcore"
 	rpcStatus "google.golang.org/genproto/googleapis/rpc/status"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/encoding/protojson"
@@ -76,21 +75,21 @@ var toNil = func(args ...interface{}) {
 }
 
 func toDebug(logger log.Logger) func(args ...interface{}) {
-	if logger.Check(zapcore.DebugLevel) {
+	if logger.Check(log.DebugLevel) {
 		return logger.Debug
 	}
 	return nil
 }
 
 func toWarn(logger log.Logger) func(args ...interface{}) {
-	if logger.Check(zapcore.WarnLevel) {
+	if logger.Check(log.WarnLevel) {
 		return logger.Warn
 	}
 	return nil
 }
 
 func toError(logger log.Logger) func(args ...interface{}) {
-	if logger.Check(zapcore.ErrorLevel) {
+	if logger.Check(log.ErrorLevel) {
 		return logger.Error
 	}
 	return nil
