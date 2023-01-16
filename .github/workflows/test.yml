@@ -82,8 +82,8 @@ jobs:
       - name: Prepare upload files
         run: |
           mkdir -p ./outputs
-          mv .tmp/coverage ./outputs/
-          mv .tmp/report ./outputs/
+          cp -r .tmp/coverage ./outputs/
+          cp -r .tmp/report ./outputs/
       
       - name: Upload coverage and report files
         uses: actions/upload-artifact@v3
