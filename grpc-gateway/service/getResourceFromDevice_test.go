@@ -150,6 +150,8 @@ func TestRequestHandlerGetResourceFromDevice(t *testing.T) {
 	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.ACTIVE_COAP_SCHEME+"://"+config.COAP_GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 	test.AddDeviceSwitchResources(ctx, t, deviceID, c, switchID)
+	// for update resource-directory cache
+	time.Sleep(time.Second)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
