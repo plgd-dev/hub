@@ -107,11 +107,11 @@ type logGrpcMessage struct {
 
 	// stream
 	// for pairing streams
-	Token string `json:"token,omitempty"`
+	StreamID string `json:"streamId,omitempty"`
 }
 
 func (m logGrpcMessage) IsEmpty() bool {
-	return m.Body == nil && m.JWT == nil && m.Method == "" && m.Service == "" && m.Code == "" && m.Error == "" && m.Token == ""
+	return m.Body == nil && m.JWT == nil && m.Method == "" && m.Service == "" && m.Code == "" && m.Error == "" && m.StreamID == ""
 }
 
 func parseServiceAndMethod(fullMethod string) (string, string) {
@@ -124,7 +124,7 @@ func parseServiceAndMethod(fullMethod string) (string, string) {
 	return "", fullMethod
 }
 
-func logUnary(ctx context.Context, logger log.Logger, req interface{}, resp interface{}, code *codes.Code, err error, fullMethod string, dumpBody bool, startTime time.Time, duration time.Duration, token string) log.Logger {
+func logUnary(ctx context.Context, logger log.Logger, req interface{}, resp interface{}, code *codes.Code, err error, fullMethod string, dumpBody bool, startTime time.Time, duration time.Duration, streamID string) log.Logger {
 	if !startTime.IsZero() {
 		logger = logger.With(log.StartTimeKey, startTime)
 	}
@@ -142,7 +142,7 @@ func logUnary(ctx context.Context, logger log.Logger, req interface{}, resp inte
 	}
 
 	reqData := logGrpcMessage{
-		Token: token,
+		StreamID: streamID,
 	}
 	reqData.Service, reqData.Method = parseServiceAndMethod(fullMethod)
 	sub := getSub(ctx)
@@ -202,7 +202,7 @@ type logServerStream struct {
 	grpc.ServerStream
 	logger   log.Logger
 	dumpBody bool
-	token    string
+	streamID string
 	service  string
 	method   string
 	sub      string
@@ -225,9 +225,9 @@ func (w *logServerStream) SendMsg(m interface{}) error {
 
 func (w *logServerStream) getLoggerForStreamMessage(m interface{}, err error) log.Logger {
 	r := logGrpcMessage{
-		Service: w.service,
-		Method:  w.method,
-		Token:   w.token,
+		Service:  w.service,
+		Method:   w.method,
+		StreamID: w.streamID,
 	}
 	if err != nil {
 		r.Error = err.Error()
@@ -277,16 +277,16 @@ func wrapServerStreamNew(logger log.Logger, dumpBody bool, fullMethod string, ss
 		ServerStream: ss,
 		logger:       logger,
 		dumpBody:     dumpBody,
-		token:        uuid.New().String(),
+		streamID:     uuid.New().String(),
 		service:      service,
 		method:       method,
 		sub:          sub,
 	}
 }
 
-func logStartStream(ctx context.Context, logger log.Logger, startTime time.Time, fullMethod, token string) {
+func logStartStream(ctx context.Context, logger log.Logger, startTime time.Time, fullMethod, streamID string) {
 	if logger.Check(log.DebugLevel) {
-		logger = logUnary(ctx, logger, nil, nil, nil, nil, fullMethod, false, startTime, 0, token)
+		logger = logUnary(ctx, logger, nil, nil, nil, nil, fullMethod, false, startTime, 0, streamID)
 		logger.Debug("started streaming call")
 	}
 }
@@ -294,7 +294,7 @@ func logStartStream(ctx context.Context, logger log.Logger, startTime time.Time,
 func handleStream(logger log.Logger, dumpBody bool, srv interface{}, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 	startTime := time.Now()
 	logServerStream := wrapServerStreamNew(logger, dumpBody, info.FullMethod, stream)
-	logStartStream(logServerStream.Context(), logger, startTime, info.FullMethod, logServerStream.token)
+	logStartStream(logServerStream.Context(), logger, startTime, info.FullMethod, logServerStream.streamID)
 	err := handler(srv, logServerStream)
 	code := status.Code(err)
 	level := DefaultCodeToLevel(code)
@@ -302,7 +302,7 @@ func handleStream(logger log.Logger, dumpBody bool, srv interface{}, stream grpc
 		return err
 	}
 	duration := time.Since(startTime)
-	logger = logUnary(stream.Context(), logger, nil, nil, &code, err, info.FullMethod, false, startTime, duration, logServerStream.token)
+	logger = logUnary(stream.Context(), logger, nil, nil, &code, err, info.FullMethod, false, startTime, duration, logServerStream.streamID)
 	logger.GetLogFunc(level)("finished streaming call with code " + code.String())
 	return err
 }
