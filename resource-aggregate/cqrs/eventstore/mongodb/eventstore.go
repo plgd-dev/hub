@@ -156,7 +156,9 @@ func newEventStoreWithClient(ctx context.Context, client *mongo.Client, dbPrefix
 	}
 
 	if logDebugfFunc == nil {
-		logDebugfFunc = func(fmt string, args ...interface{}) {}
+		logDebugfFunc = func(fmt string, args ...interface{}) {
+			// no-op if not set
+		}
 	}
 	ensuredIndexes := cache.NewCache[string, bool]()
 	add := periodic.New(ctx.Done(), time.Hour/2)

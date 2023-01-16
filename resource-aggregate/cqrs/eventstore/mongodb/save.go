@@ -81,13 +81,7 @@ func (s *EventStore) saveEvent(ctx context.Context, col *mongo.Collection, event
 	default:
 		var wErr mongo.WriteException
 		if errors.As(err, &wErr) {
-			var sizeIsExceeded bool
-			for _, e := range wErr.WriteErrors {
-				if e.Code == 10334 {
-					sizeIsExceeded = true
-					break
-				}
-			}
+			sizeIsExceeded := wErr.HasErrorCode(10334)
 			if !sizeIsExceeded {
 				return eventstore.Fail, fmt.Errorf("cannot push events('%v') to db: %w", events, err)
 			}

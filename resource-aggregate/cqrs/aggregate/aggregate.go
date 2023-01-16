@@ -254,29 +254,33 @@ func (a *Aggregate) HandleCommandWithAggregateModelWrapper(ctx context.Context, 
 
 // HandleCommand transforms command to a event, store and publish eventstore.
 func (a *Aggregate) HandleCommand(ctx context.Context, cmd Command) ([]eventstore.Event, error) {
+	errHandleCommand := func(err error) error {
+		return fmt.Errorf("aggregate model cannot handle command: %w", err)
+	}
+
 	firstIteration := true
 	for {
 		if !firstIteration {
 			err := HandleRetry(ctx, a.retryFunc)
 			if err != nil {
-				return nil, fmt.Errorf("aggregate model cannot handle command: %w", err)
+				return nil, errHandleCommand(err)
 			}
 		}
 
 		firstIteration = false
 		model, err := a.factoryModel(ctx)
 		if err != nil {
-			return nil, fmt.Errorf("aggregate model cannot handle command: %w", err)
+			return nil, errHandleCommand(err)
 		}
 
 		amodel, err := NewAggregateModel(ctx, a.groupID, a.aggregateID, a.store, a.LogDebugfFunc, model)
 		if err != nil {
-			return nil, fmt.Errorf("aggregate model cannot handle command: %w", err)
+			return nil, errHandleCommand(err)
 		}
 
 		events, concurrencyException, err := a.HandleCommandWithAggregateModelWrapper(ctx, cmd, amodel)
 		if err != nil {
-			return nil, fmt.Errorf("aggregate model cannot handle command: %w", err)
+			return nil, errHandleCommand(err)
 		}
 		if concurrencyException {
 			continue
