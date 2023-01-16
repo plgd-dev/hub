@@ -51,6 +51,7 @@ const (
 	HTTP_GW_HOST                    = "localhost:20010"
 	DEVICE_PROVIDER                 = "plgd"
 	OPENTELEMETRY_COLLECTOR_HOST    = "localhost:55690"
+	TRUE_STRING                     = "true"
 )
 
 var (
@@ -60,9 +61,9 @@ var (
 	MONGODB_URI              = "mongodb://localhost:27017"
 	NATS_URL                 = "nats://localhost:4222"
 	OWNER_CLAIM              = "sub"
-	COAP_GATEWAY_UDP_ENABLED = os.Getenv("TEST_COAP_GATEWAY_UDP_ENABLED") == "true"
+	COAP_GATEWAY_UDP_ENABLED = os.Getenv("TEST_COAP_GATEWAY_UDP_ENABLED") == TRUE_STRING
 	ACTIVE_COAP_SCHEME       = func() string {
-		if os.Getenv("TEST_COAP_GATEWAY_UDP_ENABLED") == "true" {
+		if os.Getenv("TEST_COAP_GATEWAY_UDP_ENABLED") == TRUE_STRING {
 			return string(schema.UDPSecureScheme)
 		}
 		return string(schema.TCPSecureScheme)
@@ -248,12 +249,12 @@ func MakeLogConfig(t require.TestingT, envLogLevel, envLogDumpBody string) log.C
 	cfg.Level = logLvl.Level()
 	logDumpBodyStr := strings.ToLower(os.Getenv(envLogDumpBody))
 	switch logDumpBodyStr {
-	case "true", "false":
-		cfg.DumpBody = logDumpBodyStr == "true"
+	case TRUE_STRING, "false":
+		cfg.DumpBody = logDumpBodyStr == TRUE_STRING
 	case "":
 		cfg.DumpBody = false
 	default:
-		require.NoError(t, fmt.Errorf("invalid value for %v", envLogDumpBody))
+		require.NoError(t, fmt.Errorf("invalid value %v for %v", logDumpBodyStr, envLogDumpBody))
 	}
 	return cfg
 }

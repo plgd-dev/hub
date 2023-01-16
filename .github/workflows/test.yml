@@ -77,9 +77,9 @@ jobs:
         run: |
           make ${{ matrix.cmd }} TEST_CHECK_RACE=${{ matrix.checkRace }} \
           TEST_COAP_GATEWAY_LOG_LEVEL=${{ matrix.coapGateway.log.level }} TEST_COAP_GATEWAY_LOG_DUMP_BODY=${{ matrix.coapGateway.log.dumpBody }} \
-          TEST_RESOURCE_AGGREGATE_LOG_LEVEL=${{ matrix.resourceAggregate.log.level }} TEST_RESOURCE_AGGREGATE_LOG_DUMP_BODY={{ matrix.resourceAggregate.log.dumpBody }} \
-          TEST_GRPC_GATEWAY_LOG_LEVEL=${{ matrix.grpcGateway.log.level }} TEST_GRPC_GATEWAY_LOG_DUMP_BODY={{ matrix.grpcGateway.log.dumpBody }} \
-          TEST_IDENTITY_STORE_LOG_LEVEL=${{ matrix.identityStore.log.level }} TEST_IDENTITY_STORE_LOG_DUMP_BODY={{ matrix.identityStore.log.dumpBody }}
+          TEST_RESOURCE_AGGREGATE_LOG_LEVEL=${{ matrix.resourceAggregate.log.level }} TEST_RESOURCE_AGGREGATE_LOG_DUMP_BODY=${{ matrix.resourceAggregate.log.dumpBody }} \
+          TEST_GRPC_GATEWAY_LOG_LEVEL=${{ matrix.grpcGateway.log.level }} TEST_GRPC_GATEWAY_LOG_DUMP_BODY=${{ matrix.grpcGateway.log.dumpBody }} \
+          TEST_IDENTITY_STORE_LOG_LEVEL=${{ matrix.identityStore.log.level }} TEST_IDENTITY_STORE_LOG_DUMP_BODY=${{ matrix.identityStore.log.dumpBody }}
 
       - name: Publish the coverage for main branch
         if: ${{ github.ref == 'refs/heads/main' && matrix.codecov == 'true' }}
