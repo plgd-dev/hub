@@ -93,11 +93,16 @@ jobs:
           retention-days: 1
           if-no-files-found: warn
 
-  sonar-cloud-scan:
+  coverage-sonar-cloud-scan:
     needs: test
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
     steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 # Shallow clones should be disabled for a better relevancy of analysis
+
       - name: Download artifacts
         uses: actions/download-artifact@v3
         with:
