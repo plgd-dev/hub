@@ -67,6 +67,18 @@ func (i *iterator) parseDocument() bool {
 	return true
 }
 
+func (i *iterator) getEvent() (bson.M, int64, error) {
+	ev, ok := i.events[i.idx].(bson.M)
+	if !ok {
+		return nil, 0, fmt.Errorf("invalid data, event %v is not a BSON document", i.idx)
+	}
+	version, ok := ev[versionKey].(int64)
+	if !ok {
+		return nil, 0, fmt.Errorf("invalid data, '%v' of event %v is not an int64", versionKey, i.idx)
+	}
+	return ev, version, nil
+}
+
 func (i *iterator) nextEvent(ctx context.Context) (bson.M, int64) {
 	var ev bson.M
 	var version int64
@@ -82,14 +94,10 @@ func (i *iterator) nextEvent(ctx context.Context) (bson.M, int64) {
 				return nil, 0
 			}
 		}
-		ev, ok = i.events[i.idx].(bson.M)
-		if !ok {
-			i.err = fmt.Errorf("invalid data, event %v is not a BSON document", i.idx)
-			return nil, 0
-		}
-		version, ok = ev[versionKey].(int64)
-		if !ok {
-			i.err = fmt.Errorf("invalid data, '%v' of event %v is not an int64", versionKey, i.idx)
+		var err error
+		ev, version, err = i.getEvent()
+		if err != nil {
+			i.err = err
 			return nil, 0
 		}
 		if i.queryResolver == nil {
