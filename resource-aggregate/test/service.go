@@ -15,7 +15,7 @@ import (
 func MakeConfig(t require.TestingT) service.Config {
 	var cfg service.Config
 
-	cfg.Log = log.MakeDefaultConfig()
+	cfg.Log = config.MakeLogConfig(t, "TEST_RESOURCE_AGGREGATE_LOG_LEVEL", "TEST_RESOURCE_AGGREGATE_LOG_DUMP_BODY")
 
 	cfg.APIs.GRPC.OwnerCacheExpiration = time.Minute
 	cfg.APIs.GRPC.Config = config.MakeGrpcServerConfig(config.RESOURCE_AGGREGATE_HOST)

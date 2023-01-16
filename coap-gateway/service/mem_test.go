@@ -12,7 +12,6 @@ import (
 	"runtime"
 	"runtime/debug"
 	"strconv"
-	"strings"
 	"sync"
 	"syscall"
 	"testing"
@@ -34,8 +33,6 @@ import (
 	"github.com/plgd-dev/kit/v2/codec/json"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )
@@ -163,14 +160,10 @@ func TestMemoryWithDevices(t *testing.T) {
 	require.NoError(t, err)
 	resourceDataSize, err := strconv.Atoi(os.Getenv("TEST_MEMORY_COAP_GATEWAY_RESOURCE_DATA_SIZE"))
 	require.NoError(t, err)
-
-	logLvl, err := zap.ParseAtomicLevel(os.Getenv("TEST_MEMORY_COAP_GATEWAY_LOG_LEVEL"))
-	require.NoError(t, err)
-	logDumpBody := strings.ToLower(os.Getenv("TEST_MEMORY_COAP_GATEWAY_LOG_DUMP_BODY")) == "true"
-	testDevices(t, numDevices, numResources, expRSSInMB, logLvl.Level(), logDumpBody, resourceDataSize)
+	testDevices(t, numDevices, numResources, expRSSInMB, resourceDataSize)
 }
 
-func testDevices(t *testing.T, numDevices, numResources, expRSSInMB int, logLvl zapcore.Level, logDumpBody bool, resourceDataSize int) {
+func testDevices(t *testing.T, numDevices, numResources, expRSSInMB int, resourceDataSize int) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -238,12 +231,10 @@ func testDevices(t *testing.T, numDevices, numResources, expRSSInMB int, logLvl 
 	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
 
 	cfg := coapgwTest.MakeConfig(t)
-	cfg.Log.DumpBody = logDumpBody
-	cfg.Log.Level = logLvl
 	cfg.APIs.COAP.MaxMessageSize = uint32(numResources*(resourceDataSize+1024) + 8*1024)
 	cfg.APIs.COAP.BlockwiseTransfer.Enabled = true
 
-	logger := log.NewLogger(cfg.Log.Config)
+	logger := log.NewLogger(cfg.Log)
 
 	fileWatcher, err := fsnotify.NewWatcher()
 	require.NoError(t, err)
@@ -363,8 +354,8 @@ func testDevices(t *testing.T, numDevices, numResources, expRSSInMB int, logLvl 
 		ExpectedMemRSS:   expRSSInMB,
 		CurrentMemRSS:    int(rssMb),
 		InitMemRSS:       int(beforeTestRSSMB),
-		LogLevel:         logLvl.String(),
-		LogDumpBody:      logDumpBody,
+		LogLevel:         cfg.Log.Level.String(),
+		LogDumpBody:      cfg.Log.DumpBody,
 		Duration:         duration,
 		ResourceDataSize: resourceDataSize,
 	}

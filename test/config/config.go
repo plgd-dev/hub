@@ -1,13 +1,16 @@
 package config
 
 import (
+	"fmt"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/plgd-dev/device/v2/schema"
 	c2curi "github.com/plgd-dev/hub/v2/cloud2cloud-connector/uri"
+	"github.com/plgd-dev/hub/v2/pkg/log"
 	pkgMongo "github.com/plgd-dev/hub/v2/pkg/mongodb"
 	grpcClient "github.com/plgd-dev/hub/v2/pkg/net/grpc/client"
 	grpcServer "github.com/plgd-dev/hub/v2/pkg/net/grpc/server"
@@ -25,6 +28,7 @@ import (
 	"github.com/plgd-dev/hub/v2/test/http"
 	"github.com/plgd-dev/hub/v2/test/oauth-server/uri"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
 )
 
 const (
@@ -230,4 +234,26 @@ func CreateJwtToken(t *testing.T, claims jwt.MapClaims) string {
 	tokenString, err := token.SignedString([]byte(JWTSecret))
 	require.NoError(t, err)
 	return tokenString
+}
+
+func MakeLogConfig(t require.TestingT, envLogLevel, envLogDumpBody string) log.Config {
+	cfg := log.MakeDefaultConfig()
+	logLvlString := os.Getenv(envLogLevel)
+	logLvl := zap.NewAtomicLevelAt(log.InfoLevel)
+	if logLvlString != "" {
+		var err error
+		logLvl, err = zap.ParseAtomicLevel(logLvlString)
+		require.NoError(t, err)
+	}
+	cfg.Level = logLvl.Level()
+	logDumpBodyStr := strings.ToLower(os.Getenv(envLogDumpBody))
+	switch logDumpBodyStr {
+	case "true", "false":
+		cfg.DumpBody = logDumpBodyStr == "true"
+	case "":
+		cfg.DumpBody = false
+	default:
+		require.NoError(t, fmt.Errorf("invalid value for %v", envLogDumpBody))
+	}
+	return cfg
 }

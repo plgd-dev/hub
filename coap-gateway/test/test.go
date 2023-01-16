@@ -12,14 +12,11 @@ import (
 	coapService "github.com/plgd-dev/hub/v2/pkg/net/coap/service"
 	"github.com/plgd-dev/hub/v2/test/config"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap/zapcore"
 )
 
 func MakeConfig(t require.TestingT) service.Config {
 	var cfg service.Config
-	cfg.Log = log.MakeDefaultConfig()
-	cfg.Log.DumpBody = true
-	cfg.Log.Level = zapcore.DebugLevel
+	cfg.Log = config.MakeLogConfig(t, "TEST_COAP_GATEWAY_LOG_LEVEL", "TEST_COAP_GATEWAY_LOG_DUMP_BODY")
 	cfg.TaskQueue.GoPoolSize = 1600
 	cfg.TaskQueue.Size = 2 * 1024 * 1024
 	cfg.APIs.COAP.Addr = config.COAP_GW_HOST
