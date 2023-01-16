@@ -26,8 +26,6 @@ jobs:
           - name: test
             cmd: test
             checkRace: "true"
-            codecov: "true"
-            sonarcloud: "true"
             coapGateway:
               log:
                 level: "debug"
@@ -81,12 +79,42 @@ jobs:
           TEST_GRPC_GATEWAY_LOG_LEVEL=${{ matrix.grpcGateway.log.level }} TEST_GRPC_GATEWAY_LOG_DUMP_BODY=${{ matrix.grpcGateway.log.dumpBody }} \
           TEST_IDENTITY_STORE_LOG_LEVEL=${{ matrix.identityStore.log.level }} TEST_IDENTITY_STORE_LOG_DUMP_BODY=${{ matrix.identityStore.log.dumpBody }}
 
+      - name: Prepare upload files
+        run: |
+          mkdir -p ./outputs
+          mv .tmp/coverage ./outputs/
+          mv .tmp/report ./outputs/
+      
+      - name: Upload coverage and report files
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ hashFiles('./outputs') || 'none' }}
+          path: ./outputs
+          retention-days: 1
+          if-no-files-found: warn
+
+  sonar-cloud-scan:
+    needs: test
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v3
+        with:
+          path: ./outputs
+
+      - name: Prepare coverage and report files
+        run: |
+          mkdir -p .tmp/coverage
+          mkdir -p .tmp/report
+          find ./outputs -name "*.coverage.txt" -exec sh -c 'cp $1 .tmp/coverage/$(echo $1 | sed "s/[\/.]/-/g" ).coverage.txt' _ {}  \;
+          find ./outputs -name "*.report.json" -exec sh -c 'cp $1 .tmp/report/$(echo $1 | sed "s/[\/.]/-/g" ).report.json' _ {}  \;
+
       - name: Publish the coverage for main branch
-        if: ${{ github.ref == 'refs/heads/main' && matrix.codecov == 'true' }}
+        if: ${{ github.ref == 'refs/heads/main' }}
         run: bash <(curl -s https://codecov.io/bash)
 
       - name: SonarCloud Scan
-        if: ${{ matrix.sonarcloud == 'true' }}
         uses: SonarSource/sonarcloud-github-action@master
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
