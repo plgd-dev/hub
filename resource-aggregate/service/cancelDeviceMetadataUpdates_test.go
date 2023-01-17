@@ -133,8 +133,7 @@ func TestAggregateHandleCancelPendingMetadataUpdates(t *testing.T) {
 				return
 			}
 			require.NoError(t, err)
-			err = service.PublishEvents(publisher, tt.args.userID, tt.args.request.GetDeviceId(), ag.ResourceID(), events)
-			assert.NoError(t, err)
+			service.PublishEvents(publisher, tt.args.userID, tt.args.request.GetDeviceId(), ag.ResourceID(), events, logger)
 		}
 		t.Run(tt.name, tfunc)
 	}
@@ -245,7 +244,7 @@ func TestRequestHandlerCancelPendingMetadataUpdates(t *testing.T) {
 	})), testMakeUpdateDeviceMetadataRequest(deviceID, correlationID2, nil, newTwinEnabled(false), 0))
 	require.NoError(t, err)
 
-	requestHandler := service.NewRequestHandler(cfg, eventstore, publisher, mockGetOwnerDevices)
+	requestHandler := service.NewRequestHandler(cfg, eventstore, publisher, mockGetOwnerDevices, logger)
 
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {

@@ -123,8 +123,7 @@ func TestAggregateHandlePublishResourceLinks(t *testing.T) {
 				assert.Equal(t, tt.want, s.Code())
 			} else {
 				require.NoError(t, err)
-				err = service.PublishEvents(publisher, tt.args.userID, tt.args.request.GetDeviceId(), ag.ResourceID(), events)
-				assert.NoError(t, err)
+				service.PublishEvents(publisher, tt.args.userID, tt.args.request.GetDeviceId(), ag.ResourceID(), events, logger)
 			}
 		}
 		t.Run(tt.name, tfunc)
@@ -138,8 +137,7 @@ func testHandlePublishResource(ctx context.Context, t *testing.T, publisher *pub
 	assert.NoError(t, err)
 	events, err := ag.PublishResourceLinks(ctx, pc)
 	require.NoError(t, err)
-	err = service.PublishEvents(publisher, userID, deviceID, ag.ResourceID(), events)
-	assert.NoError(t, err)
+	service.PublishEvents(publisher, userID, deviceID, ag.ResourceID(), events, log.Get())
 }
 
 func TestAggregateDuplicitPublishResource(t *testing.T) {
@@ -246,8 +244,7 @@ func TestAggregateHandleUnpublishResource(t *testing.T) {
 	events, err := ag.UnpublishResourceLinks(ctx, pc)
 	assert.NoError(t, err)
 
-	err = service.PublishEvents(publisher, userID, deviceID, ag.ResourceID(), events)
-	assert.NoError(t, err)
+	service.PublishEvents(publisher, userID, deviceID, ag.ResourceID(), events, logger)
 
 	_, err = ag.UnpublishResourceLinks(ctx, pc)
 	assert.NoError(t, err)
@@ -307,8 +304,7 @@ func TestAggregateHandleUnpublishAllResources(t *testing.T) {
 	assert.Equal(t, 3, len(unpublishedResourceLinks))
 	assert.Contains(t, unpublishedResourceLinks, resourceID1, resourceID2, resourceID3)
 
-	err = service.PublishEvents(publisher, userID, deviceID, ag.ResourceID(), events)
-	assert.NoError(t, err)
+	service.PublishEvents(publisher, userID, deviceID, ag.ResourceID(), events, logger)
 
 	events, err = ag.UnpublishResourceLinks(ctx, pc)
 	require.NoError(t, err)
@@ -366,8 +362,7 @@ func TestAggregateHandleUnpublishResourceSubset(t *testing.T) {
 	assert.Equal(t, 1, len(events))
 	assert.Equal(t, []string{resourceID1, resourceID3}, (events[0].(*raEvents.ResourceLinksUnpublished)).Hrefs)
 
-	err = service.PublishEvents(publisher, userID, deviceID, ag.ResourceID(), events)
-	assert.NoError(t, err)
+	service.PublishEvents(publisher, userID, deviceID, ag.ResourceID(), events, logger)
 
 	pc = testMakeUnpublishResourceRequest(deviceID, []string{resourceID1, resourceID4, resourceID4})
 	events, err = ag.UnpublishResourceLinks(ctx, pc)

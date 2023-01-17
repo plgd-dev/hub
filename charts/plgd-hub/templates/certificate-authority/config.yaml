@@ -10,6 +10,7 @@ data:
     {{- with .Values.certificateauthority }}
     log:
       level: {{ .log.level }}
+      dumpBody: {{ .log.dumpBody }}
       encoding: {{ .log.encoding }}
       stacktrace:
         enabled: {{ .log.stacktrace.enabled }}

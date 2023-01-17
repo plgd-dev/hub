@@ -13,12 +13,26 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/opentelemetry/propagation"
 	"github.com/plgd-dev/hub/v2/pkg/security/jwt"
 	pkgTime "github.com/plgd-dev/hub/v2/pkg/time"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/publisher"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/utils"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
-func (s *Service) publishDevicesRegistered(ctx context.Context, owner, userID string, deviceID []string) error {
+func (s *Service) publishEvent(subject string, event utils.ProtobufMarshaler) error {
+	data, err := utils.Marshal(event)
+	if err != nil {
+		return err
+	}
+	err = s.publisher.PublishData(subject, data)
+	if err != nil {
+		return err
+	}
+	// timeout si driven by flusherTimeout.
+	return s.publisher.Flush(context.Background())
+}
+
+func (s *Service) publishDevicesRegistered(ctx context.Context, owner, userID string, deviceID []string) {
 	v := events.Event{
 		Type: &events.Event_DevicesRegistered{
 			DevicesRegistered: &events.DevicesRegistered{
@@ -32,22 +46,9 @@ func (s *Service) publishDevicesRegistered(ctx context.Context, owner, userID st
 			},
 		},
 	}
-	data, err := utils.Marshal(&v)
-	if err != nil {
-		return err
-	}
-
-	err = s.publisher.PublishData(events.GetDevicesRegisteredSubject(owner), data)
-	if err != nil {
-		return err
-	}
-
-	// timeout si driven by flusherTimeout.
-	err = s.publisher.Flush(context.Background())
-	if err != nil {
-		return err
-	}
-	return nil
+	subject := events.GetDevicesRegisteredSubject(owner)
+	err := s.publishEvent(subject, &v)
+	publisher.LogPublish(s.logger, &v, []string{subject}, err)
 }
 
 func (s *Service) parseTokenMD(ctx context.Context) (owner, subject string, err error) {
@@ -104,10 +105,7 @@ func (s *Service) AddDevice(ctx context.Context, request *pb.AddDeviceRequest) (
 		return nil, log.LogAndReturnError(status.Errorf(codes.Internal, "cannot add device up: %v", err.Error()))
 	}
 
-	err = s.publishDevicesRegistered(ctx, owner, userID, []string{request.DeviceId})
-	if err != nil {
-		log.Errorf("cannot publish devices registered event with device('%v') and owner('%v'): %w", request.DeviceId, owner, err)
-	}
+	s.publishDevicesRegistered(ctx, owner, userID, []string{request.DeviceId})
 
 	return &pb.AddDeviceResponse{}, nil
 }

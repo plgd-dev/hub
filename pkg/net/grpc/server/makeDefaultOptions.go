@@ -7,7 +7,6 @@ import (
 	"time"
 
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
-	grpc_zap "github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
 	"github.com/grpc-ecosystem/go-grpc-middleware/logging/zap/ctxzap"
 	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
@@ -31,23 +30,23 @@ const (
 )
 
 var defaultCodeToLevel = map[codes.Code]zapcore.Level{
-	codes.OK:                 zap.DebugLevel,
-	codes.Canceled:           zap.DebugLevel,
-	codes.Unknown:            zap.ErrorLevel,
-	codes.InvalidArgument:    zap.DebugLevel,
-	codes.DeadlineExceeded:   zap.WarnLevel,
-	codes.NotFound:           zap.DebugLevel,
-	codes.AlreadyExists:      zap.DebugLevel,
-	codes.PermissionDenied:   zap.WarnLevel,
-	codes.Unauthenticated:    zap.DebugLevel,
-	codes.ResourceExhausted:  zap.WarnLevel,
-	codes.FailedPrecondition: zap.WarnLevel,
-	codes.Aborted:            zap.WarnLevel,
-	codes.OutOfRange:         zap.WarnLevel,
-	codes.Unimplemented:      zap.ErrorLevel,
-	codes.Internal:           zap.ErrorLevel,
-	codes.Unavailable:        zap.WarnLevel,
-	codes.DataLoss:           zap.ErrorLevel,
+	codes.OK:                 log.DebugLevel,
+	codes.Canceled:           log.DebugLevel,
+	codes.Unknown:            log.ErrorLevel,
+	codes.InvalidArgument:    log.DebugLevel,
+	codes.DeadlineExceeded:   log.WarnLevel,
+	codes.NotFound:           log.DebugLevel,
+	codes.AlreadyExists:      log.DebugLevel,
+	codes.PermissionDenied:   log.WarnLevel,
+	codes.Unauthenticated:    log.DebugLevel,
+	codes.ResourceExhausted:  log.WarnLevel,
+	codes.FailedPrecondition: log.WarnLevel,
+	codes.Aborted:            log.WarnLevel,
+	codes.OutOfRange:         log.WarnLevel,
+	codes.Unimplemented:      log.ErrorLevel,
+	codes.Internal:           log.ErrorLevel,
+	codes.Unavailable:        log.WarnLevel,
+	codes.DataLoss:           log.ErrorLevel,
 }
 
 // DefaultCodeToLevel is the default implementation of gRPC return codes and interceptor log level for server side.
@@ -56,7 +55,7 @@ func DefaultCodeToLevel(code codes.Code) zapcore.Level {
 	if ok {
 		return lvl
 	}
-	return zap.ErrorLevel
+	return log.ErrorLevel
 }
 
 func setLogBasicLabels(m map[string]interface{}, req interface{}) {
@@ -256,17 +255,14 @@ func MakeDefaultOptions(auth kitNetGrpc.AuthInterceptors, logger log.Logger, tra
 			return handler(ctx, req)
 		},
 	}
-	zapLogger, ok := logger.Unwrap().(*zap.SugaredLogger)
-	if ok {
-		cfg := logger.Config()
-		if cfg.EncoderConfig.EncodeTime.TimeEncoder == nil {
-			cfg.EncoderConfig.EncodeTime = log.MakeDefaultConfig().EncoderConfig.EncodeTime
-		}
-		streamInterceptors = append(streamInterceptors, grpc_ctxtags.StreamServerInterceptor(grpc_ctxtags.WithFieldExtractor(CodeGenRequestFieldExtractor)),
-			grpc_zap.StreamServerInterceptor(zapLogger.Desugar(), grpc_zap.WithTimestampFormat(cfg.EncoderConfig.EncodeTime.TimeEncoder.TimeString()), grpc_zap.WithLevels(DefaultCodeToLevel), grpc_zap.WithMessageProducer(MakeDefaultMessageProducer(zapLogger.Desugar()))))
-		unaryInterceptors = append(unaryInterceptors, grpc_ctxtags.UnaryServerInterceptor(grpc_ctxtags.WithFieldExtractor(CodeGenRequestFieldExtractor)),
-			grpc_zap.UnaryServerInterceptor(zapLogger.Desugar(), grpc_zap.WithTimestampFormat(cfg.EncoderConfig.EncodeTime.TimeEncoder.TimeString()), grpc_zap.WithLevels(DefaultCodeToLevel), grpc_zap.WithMessageProducer(MakeDefaultMessageProducer(zapLogger.Desugar()))))
+
+	cfg := logger.Config()
+	if cfg.EncoderConfig.EncodeTime.TimeEncoder == nil {
+		cfg.EncoderConfig.EncodeTime = log.MakeDefaultConfig().EncoderConfig.EncodeTime
 	}
+	streamInterceptors = append(streamInterceptors, NewLogStreamServerInterceptor(logger, cfg.DumpBody))
+	unaryInterceptors = append(unaryInterceptors, NewLogUnaryServerInterceptor(logger, cfg.DumpBody))
+
 	streamInterceptors = append(streamInterceptors, auth.Stream())
 	unaryInterceptors = append(unaryInterceptors, auth.Unary())
 

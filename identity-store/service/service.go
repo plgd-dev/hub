@@ -32,6 +32,7 @@ type Service struct {
 	persistence Persistence
 	publisher   *publisher.Publisher
 	ownerClaim  string
+	logger      log.Logger
 }
 
 // Server is an HTTP server for the Service.
@@ -41,11 +42,12 @@ type Server struct {
 	cfg        Config
 }
 
-func NewService(persistence Persistence, publisher *publisher.Publisher, ownerClaim string) *Service {
+func NewService(persistence Persistence, publisher *publisher.Publisher, ownerClaim string, logger log.Logger) *Service {
 	return &Service{
 		persistence: persistence,
 		ownerClaim:  ownerClaim,
 		publisher:   publisher,
+		logger:      logger,
 	}
 }
 
@@ -71,7 +73,7 @@ func NewServer(ctx context.Context, cfg Config, fileWatcher *fsnotify.Watcher, l
 		}
 	})
 
-	service := NewService(persistence, publisher, cfg.APIs.GRPC.Authorization.OwnerClaim)
+	service := NewService(persistence, publisher, cfg.APIs.GRPC.Authorization.OwnerClaim, logger)
 
 	pb.RegisterIdentityStoreServer(grpcServer.Server, service)
 

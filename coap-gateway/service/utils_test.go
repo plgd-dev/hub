@@ -272,6 +272,7 @@ func testPrepareDevice(t *testing.T, co *coapTcpClient.Conn) {
 	for _, tt := range publishResEl {
 		testPostHandler(t, uri.ResourceDirectory, tt, co)
 	}
+	time.Sleep(time.Second) // for publish content of device resources
 }
 
 func testCoapDial(t *testing.T, deviceID string, withTLS bool, validTo time.Time) *coapTcpClient.Conn {

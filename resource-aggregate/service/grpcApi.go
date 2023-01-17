@@ -3,12 +3,12 @@ package service
 import (
 	"context"
 
-	"github.com/hashicorp/go-multierror"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	cqrsAggregate "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/aggregate"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/publisher"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/utils"
 	raEvents "github.com/plgd-dev/hub/v2/resource-aggregate/events"
@@ -24,28 +24,27 @@ type RequestHandler struct {
 	eventstore          EventStore
 	publisher           eventbus.Publisher
 	getOwnerDevicesFunc getOwnerDevicesFunc
+	logger              log.Logger
 }
 
 // NewRequestHandler factory for new RequestHandler
-func NewRequestHandler(config Config, eventstore EventStore, publisher eventbus.Publisher, getOwnerDevicesFunc getOwnerDevicesFunc) *RequestHandler {
+func NewRequestHandler(config Config, eventstore EventStore, publisher eventbus.Publisher, getOwnerDevicesFunc getOwnerDevicesFunc, logger log.Logger) *RequestHandler {
 	return &RequestHandler{
 		config:              config,
 		eventstore:          eventstore,
 		publisher:           publisher,
 		getOwnerDevicesFunc: getOwnerDevicesFunc,
+		logger:              logger,
 	}
 }
 
-func PublishEvents(publisher eventbus.Publisher, owner, deviceID, resourceID string, events []eventbus.Event) error {
-	var errors *multierror.Error
+func PublishEvents(pub eventbus.Publisher, owner, deviceID, resourceID string, events []eventbus.Event, logger log.Logger) {
 	for _, event := range events {
 		// timeout si driven by flusherTimeout.
-		err := publisher.Publish(context.Background(), utils.GetPublishSubject(owner, event), deviceID, resourceID, event)
-		if err != nil {
-			errors = multierror.Append(errors, err)
-		}
+		subjects := utils.GetPublishSubject(owner, event)
+		err := pub.Publish(context.Background(), subjects, deviceID, resourceID, event)
+		publisher.LogPublish(logger, event, subjects, err)
 	}
-	return errors.ErrorOrNil()
 }
 
 // Check if device with given ID belongs to given owner
@@ -118,10 +117,7 @@ func (r RequestHandler) PublishResourceLinks(ctx context.Context, request *comma
 		return nil, log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot publish resource links: %v", err))
 	}
 
-	err = PublishEvents(r.publisher, owner, aggregate.DeviceID(), aggregate.ResourceID(), events)
-	if err != nil {
-		log.Errorf("cannot publish resource links published events: %v", err)
-	}
+	PublishEvents(r.publisher, owner, aggregate.DeviceID(), aggregate.ResourceID(), events, r.logger)
 	auditContext := commands.NewAuditContext(owner, "")
 	return newPublishResourceLinksResponse(events, aggregate.DeviceID(), auditContext), nil
 }
@@ -159,10 +155,7 @@ func (r RequestHandler) UnpublishResourceLinks(ctx context.Context, request *com
 		return nil, log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot unpublish resource links: %v", err))
 	}
 
-	err = PublishEvents(r.publisher, owner, aggregate.DeviceID(), aggregate.ResourceID(), events)
-	if err != nil {
-		log.Errorf("cannot publish resource links unpublished events: %v", err)
-	}
+	PublishEvents(r.publisher, owner, aggregate.DeviceID(), aggregate.ResourceID(), events, r.logger)
 	auditContext := commands.NewAuditContext(owner, "")
 
 	resp := newUnpublishResourceLinksResponse(events, aggregate.DeviceID(), auditContext)
@@ -210,10 +203,7 @@ func (r RequestHandler) notifyResourceChanged(ctx context.Context, request *comm
 		return log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot notify about resource content change: %v", err))
 	}
 
-	err = PublishEvents(r.publisher, owner, aggregate.DeviceID(), aggregate.ResourceID(), events)
-	if err != nil {
-		log.Errorf("cannot publish resource content changed notification events: %v", err)
-	}
+	PublishEvents(r.publisher, owner, aggregate.DeviceID(), aggregate.ResourceID(), events, r.logger)
 	return nil
 }
 
@@ -251,10 +241,7 @@ func (r RequestHandler) UpdateResource(ctx context.Context, request *commands.Up
 		return nil, log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot update resource content: %v", err))
 	}
 
-	err = PublishEvents(r.publisher, owner, aggregate.DeviceID(), aggregate.ResourceID(), events)
-	if err != nil {
-		log.Errorf("cannot publish resource content update events: %v", err)
-	}
+	PublishEvents(r.publisher, owner, aggregate.DeviceID(), aggregate.ResourceID(), events, r.logger)
 
 	var validUntil int64
 	for _, e := range events {
@@ -286,10 +273,7 @@ func (r RequestHandler) ConfirmResourceUpdate(ctx context.Context, request *comm
 		return nil, log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot confirm resource content update: %v", err))
 	}
 
-	err = PublishEvents(r.publisher, owner, aggregate.DeviceID(), aggregate.ResourceID(), events)
-	if err != nil {
-		log.Errorf("cannot publish resource content update confirmation events: %v", err)
-	}
+	PublishEvents(r.publisher, owner, aggregate.DeviceID(), aggregate.ResourceID(), events, r.logger)
 	auditContext := commands.NewAuditContext(owner, request.GetCorrelationId())
 	return &commands.ConfirmResourceUpdateResponse{
 		AuditContext: auditContext,
@@ -313,10 +297,7 @@ func (r RequestHandler) RetrieveResource(ctx context.Context, request *commands.
 		return nil, log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot retrieve resource content: %v", err))
 	}
 
-	err = PublishEvents(r.publisher, owner, aggregate.DeviceID(), aggregate.ResourceID(), events)
-	if err != nil {
-		log.Errorf("cannot publish resource content retrieve events: %v", err)
-	}
+	PublishEvents(r.publisher, owner, aggregate.DeviceID(), aggregate.ResourceID(), events, r.logger)
 
 	var validUntil int64
 	for _, e := range events {
@@ -348,10 +329,7 @@ func (r RequestHandler) ConfirmResourceRetrieve(ctx context.Context, request *co
 		return nil, log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot confirm resource content retrieve: %v", err))
 	}
 
-	err = PublishEvents(r.publisher, owner, aggregate.DeviceID(), aggregate.ResourceID(), events)
-	if err != nil {
-		log.Errorf("cannot publish resource content retrieve confirmation events: %v", err)
-	}
+	PublishEvents(r.publisher, owner, aggregate.DeviceID(), aggregate.ResourceID(), events, r.logger)
 
 	auditContext := commands.NewAuditContext(owner, request.GetCorrelationId())
 	return &commands.ConfirmResourceRetrieveResponse{
@@ -376,10 +354,7 @@ func (r RequestHandler) DeleteResource(ctx context.Context, request *commands.De
 		return nil, log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot delete resource: %v", err))
 	}
 
-	err = PublishEvents(r.publisher, owner, aggregate.DeviceID(), aggregate.ResourceID(), events)
-	if err != nil {
-		log.Errorf("cannot publish delete resource events: %v", err)
-	}
+	PublishEvents(r.publisher, owner, aggregate.DeviceID(), aggregate.ResourceID(), events, r.logger)
 
 	var validUntil int64
 	for _, e := range events {
@@ -412,10 +387,7 @@ func (r RequestHandler) ConfirmResourceDelete(ctx context.Context, request *comm
 		return nil, log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot confirm resource deletion: %v", err))
 	}
 
-	err = PublishEvents(r.publisher, owner, aggregate.DeviceID(), aggregate.ResourceID(), events)
-	if err != nil {
-		log.Errorf("cannot publish resource delete confirmation events: %v", err)
-	}
+	PublishEvents(r.publisher, owner, aggregate.DeviceID(), aggregate.ResourceID(), events, r.logger)
 
 	auditContext := commands.NewAuditContext(owner, request.GetCorrelationId())
 	return &commands.ConfirmResourceDeleteResponse{
@@ -440,10 +412,7 @@ func (r RequestHandler) CreateResource(ctx context.Context, request *commands.Cr
 		return nil, log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot create resource: %v", err))
 	}
 
-	err = PublishEvents(r.publisher, owner, aggregate.DeviceID(), aggregate.ResourceID(), events)
-	if err != nil {
-		log.Errorf("cannot publish resource create events: %v", err)
-	}
+	PublishEvents(r.publisher, owner, aggregate.DeviceID(), aggregate.ResourceID(), events, r.logger)
 
 	var validUntil int64
 	for _, e := range events {
@@ -476,10 +445,8 @@ func (r RequestHandler) ConfirmResourceCreate(ctx context.Context, request *comm
 		return nil, log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot confirm resource creation: %v", err))
 	}
 
-	err = PublishEvents(r.publisher, owner, aggregate.DeviceID(), aggregate.ResourceID(), events)
-	if err != nil {
-		log.Errorf("cannot publish resource create confirmation events: %v", err)
-	}
+	PublishEvents(r.publisher, owner, aggregate.DeviceID(), aggregate.ResourceID(), events, r.logger)
+
 	auditContext := commands.NewAuditContext(owner, request.GetCorrelationId())
 	return &commands.ConfirmResourceCreateResponse{
 		AuditContext: auditContext,

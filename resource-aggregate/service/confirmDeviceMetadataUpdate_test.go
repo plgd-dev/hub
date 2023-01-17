@@ -124,8 +124,7 @@ func TestAggregateHandleConfirmDeviceMetadataUpdate(t *testing.T) {
 				return
 			}
 			require.NoError(t, err)
-			err = service.PublishEvents(publisher, tt.args.userID, tt.args.request.GetDeviceId(), ag.ResourceID(), events)
-			assert.NoError(t, err)
+			service.PublishEvents(publisher, tt.args.userID, tt.args.request.GetDeviceId(), ag.ResourceID(), events, logger)
 		}
 		t.Run(tt.name, tfunc)
 	}
@@ -207,7 +206,7 @@ func TestRequestHandlerConfirmDeviceMetadataUpdate(t *testing.T) {
 		naClient.Close()
 	}()
 
-	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetOwnerDevices)
+	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetOwnerDevices, logger)
 
 	_, err = requestHandler.UpdateDeviceMetadata(ctx, testMakeUpdateDeviceMetadataRequest(deviceID, "", newConnectionStatus(commands.Connection_ONLINE), nil, time.Hour))
 	require.NoError(t, err)

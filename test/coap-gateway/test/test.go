@@ -10,12 +10,11 @@ import (
 	"github.com/plgd-dev/hub/v2/test/coap-gateway/service"
 	"github.com/plgd-dev/hub/v2/test/config"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap/zapcore"
 )
 
 func MakeConfig(t require.TestingT) service.Config {
 	var cfg service.Config
-	cfg.Log.Config.Level = zapcore.DebugLevel
+	cfg.Log.Config.Level = log.DebugLevel
 	cfg.Log.DumpCoapMessages = true
 	cfg.APIs.COAP.Addr = config.COAP_GW_HOST
 	cfg.APIs.COAP.TLS.Config = config.MakeTLSServerConfig()

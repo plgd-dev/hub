@@ -391,6 +391,8 @@ resourcedirectory:
   log:
     # -- Logging enabled from level 
     level: info
+    # -- Dump grpc messages
+    dumpBody: false
     # -- The supported values are: "json", "console"
     encoding: json
     stacktrace:
@@ -610,6 +612,8 @@ resourceaggregate:
   log:
     # -- Logging enabled from level 
     level: info
+    # -- Dump grpc messages
+    dumpBody: false
     # -- The supported values are: "json", "console"
     encoding: json
     stacktrace:
@@ -1029,6 +1033,8 @@ identitystore:
   log:
     # -- Logging enabled from level 
     level: info
+    # -- Dump grpc messages
+    dumpBody: false
     # -- The supported values are: "json", "console"
     encoding: json
     stacktrace:
@@ -1416,6 +1422,8 @@ grpcgateway:
   log:
     # -- Logging enabled from level 
     level: info
+    # -- Dump grpc messages
+    dumpBody: false
     # -- The supported values are: "json", "console"
     encoding: json
     stacktrace:
@@ -1686,6 +1694,8 @@ certificateauthority:
   log:
     # -- Logging enabled from level 
     level: info
+    # -- Dump grpc messages
+    dumpBody: false
     # -- The supported values are: "json", "console"
     encoding: json
     stacktrace:

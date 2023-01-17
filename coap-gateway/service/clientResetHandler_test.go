@@ -70,7 +70,6 @@ func TestClientResetHandler(t *testing.T) {
 	}
 
 	testPrepareDevice(t, co)
-	time.Sleep(time.Second)
 	messagePool := pool.New(0, 0)
 
 	for _, tt := range tests {
