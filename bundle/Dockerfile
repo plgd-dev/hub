@@ -83,9 +83,15 @@ RUN mkdir -p ./nats
 RUN unzip ./nats.zip -d ./nats
 RUN cp ./nats/*/nats /go/bin/nats
 
-FROM node:12 AS build-web
+FROM node:16 AS build-web
 COPY --from=build /go/src/github.com/plgd-dev/hub/http-gateway/web /web
-RUN cd /web && npm install && npm run build
+RUN cd /web && \
+    npm config set fetch-retries 3 && \
+    npm config set fetch-retry-mintimeout 600000 &&  \
+    npm config set fetch-retry-maxtimeout 1200000 && \
+    npm config set fetch-timeout 1800000 && \
+    npm install && \
+    npm run build
 
 FROM ubuntu:20.04 as service
 RUN apt update
