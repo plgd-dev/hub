@@ -17,7 +17,7 @@ jobs:
           fetch-depth: 0
       - name: Get the version
         id: get_version
-        run: echo ::set-output name=VERSION::${GITHUB_REF#refs/tags/v}
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
       - name: Publish Helm chart
         uses: stefanprodan/helm-gh-pages@master
         with:
