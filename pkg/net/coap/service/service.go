@@ -17,7 +17,7 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/service"
 )
 
-func blockWiseTransferSZXFromString(s string) (blockwise.SZX, error) {
+func BlockWiseTransferSZXFromString(s string) (blockwise.SZX, error) {
 	switch strings.ToLower(s) {
 	case "16":
 		return blockwise.SZX16, nil
@@ -93,7 +93,7 @@ func New(ctx context.Context, config Config, router *mux.Router, fileWatcher *fs
 
 	blockWiseTransferSZX := blockwise.SZX1024
 	if config.BlockwiseTransfer.Enabled {
-		blockWiseTransferSZX, err = blockWiseTransferSZXFromString(config.BlockwiseTransfer.SZX)
+		blockWiseTransferSZX, err = BlockWiseTransferSZXFromString(config.BlockwiseTransfer.SZX)
 		if err != nil {
 			return nil, fmt.Errorf("blockWiseTransferSZX error: %w", err)
 		}
