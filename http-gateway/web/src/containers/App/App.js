@@ -2,7 +2,7 @@ import { hot } from 'react-hot-loader/root'
 import { useContext, useState, useEffect } from 'react'
 import { useIntl } from 'react-intl'
 import PageLoader from '@shared-ui/components/new/PageLoader'
-import { security } from '@/common/services/security' // TODO: shared
+import { security } from '@/common/services/security' // @PM: shared
 import { openTelemetry } from '@shared-ui/common/services/opentelemetry'
 import { messages as t } from './App.i18n'
 import { AppContext } from './AppContext'
@@ -87,15 +87,17 @@ const App = () => {
     scope: wellKnownConfig.webOauthClient.scopes.join?.(' '),
   }
 
+  const onSignIn = async () => {
+    window.location.hash = ''
+    window.location.href = window.location.origin
+  }
+
   return (
     <AuthProvider
       {...oidcCommonSettings}
       clientId={wellKnownConfig.webOauthClient.clientId}
       redirectUri={window.location.origin}
-      onSignIn={async () => {
-        window.location.hash = ''
-        window.location.href = window.location.origin
-      }}
+      onSignIn={onSignIn}
       automaticSilentRenew={true}
       userManager={
         new UserManager({
