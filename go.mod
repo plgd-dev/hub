@@ -26,7 +26,7 @@ require (
 	github.com/pion/dtls/v2 v2.1.6-0.20230104045405-f40c61d83b5f
 	github.com/pion/logging v0.2.2
 	github.com/plgd-dev/device/v2 v2.0.2-0.20221202214050-f9f57f7c9a61
-	github.com/plgd-dev/go-coap/v3 v3.0.3-0.20230122154027-bfeffbfa2b34
+	github.com/plgd-dev/go-coap/v3 v3.0.3-0.20230123081541-5551a44c6a0c
 	github.com/plgd-dev/kit/v2 v2.0.0-20211006190727-057b33161b90
 	github.com/sirupsen/logrus v1.9.0
 	github.com/stretchr/testify v1.8.1
