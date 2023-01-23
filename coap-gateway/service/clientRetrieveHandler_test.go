@@ -1,3 +1,6 @@
+//go:build test
+// +build test
+
 package service_test
 
 import (
@@ -65,7 +68,6 @@ func TestClientRetrieveHandler(t *testing.T) {
 	}
 
 	testPrepareDevice(t, co)
-	time.Sleep(time.Second) // for publish content of device resources
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

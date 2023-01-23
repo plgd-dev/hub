@@ -67,30 +67,38 @@ func (i *iterator) parseDocument() bool {
 	return true
 }
 
-func (i *iterator) Next(ctx context.Context) (eventstore.EventUnmarshaler, bool) {
+func (i *iterator) getEvent() (bson.M, int64, error) {
+	ev, ok := i.events[i.idx].(bson.M)
+	if !ok {
+		return nil, 0, fmt.Errorf("invalid data, event %v is not a BSON document", i.idx)
+	}
+	version, ok := ev[versionKey].(int64)
+	if !ok {
+		return nil, 0, fmt.Errorf("invalid data, '%v' of event %v is not an int64", versionKey, i.idx)
+	}
+	return ev, version, nil
+}
+
+func (i *iterator) nextEvent(ctx context.Context) (bson.M, int64) {
 	var ev bson.M
 	var version int64
 	var ok bool
 	for {
 		if i.idx >= len(i.events) {
 			if !i.iter.Next(ctx) {
-				return nil, false
+				return nil, 0
 			}
 			i.idx = 0
 			ok = i.parseDocument()
 			if !ok {
-				return nil, false
+				return nil, 0
 			}
 		}
-		ev, ok = i.events[i.idx].(bson.M)
-		if !ok {
-			i.err = fmt.Errorf("invalid data, event %v is not a BSON document", i.idx)
-			return nil, false
-		}
-		version, ok = ev[versionKey].(int64)
-		if !ok {
-			i.err = fmt.Errorf("invalid data, '%v' of event %v is not an int64", versionKey, i.idx)
-			return nil, false
+		var err error
+		ev, version, err = i.getEvent()
+		if err != nil {
+			i.err = err
+			return nil, 0
 		}
 		if i.queryResolver == nil {
 			break
@@ -100,6 +108,14 @@ func (i *iterator) Next(ctx context.Context) (eventstore.EventUnmarshaler, bool)
 			continue
 		}
 		break
+	}
+	return ev, version
+}
+
+func (i *iterator) Next(ctx context.Context) (eventstore.EventUnmarshaler, bool) {
+	ev, version := i.nextEvent(ctx)
+	if ev == nil {
+		return nil, false
 	}
 	eventType, ok := ev[eventTypeKey].(string)
 	if !ok {

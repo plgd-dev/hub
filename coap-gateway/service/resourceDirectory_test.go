@@ -1,3 +1,6 @@
+//go:build test
+// +build test
+
 package service_test
 
 import (
@@ -16,9 +19,9 @@ type TestResource struct {
 	Href          string   `json:"href"`
 	ID            string   `json:"id,omitempty"`
 	Interfaces    []string `json:"if,omitempty"`
-	InstanceID    uint64   `json:"-"`
 	ResourceTypes []string `json:"rt,omitempty"`
 	Type          []string `json:"type,omitempty"`
+	InstanceID    uint64   `json:"-"`
 }
 
 type TestWkRD struct {

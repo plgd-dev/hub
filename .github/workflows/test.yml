@@ -18,7 +18,47 @@ jobs:
   test:
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # test with check race with coverage and sonarcloud
+          - name: test
+            cmd: test
+            checkRace: "true"
+            coapGateway:
+              log:
+                level: "debug"
+                dumpBody: "true"
 
+          # test without check race
+          - name: test/norace
+            cmd: test
+            coapGateway:
+              log:
+                level: "debug"
+                dumpBody: "true"
+          
+          # test without check race with logs from all services
+          - name: test/norace/logs
+            cmd: test
+            coapGateway:
+              log:
+                level: "debug"
+                dumpBody: "true"
+            grpcGateway:
+              log:
+                level: "debug"
+                dumpBody: "true"
+            resourceAggregate:
+              log:
+                level: "debug"
+                dumpBody: "true"
+            identityStore:
+              log:
+                level: "debug"
+                dumpBody: "true"
+ 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       - name: CPU Info
@@ -31,20 +71,49 @@ jobs:
         with:
           fetch-depth: 0 # Shallow clones should be disabled for a better relevancy of analysis
 
-      - name: Setup kernel for multicast messages, increase read buffer to 8MB
-        run: sudo sysctl -w net.core.rmem_max=8388608
-
-      - name: Get file limit
-        run: sudo sysctl fs.file-max
-
-      - name: Get hard ulimits
-        run: ulimit -a
-
-      - name: Get soft ulimits open files
-        run: ulimit -S
-
       - name: Run a test
-        run: make test
+        run: |
+          make ${{ matrix.cmd }} TEST_CHECK_RACE=${{ matrix.checkRace }} \
+          TEST_COAP_GATEWAY_LOG_LEVEL=${{ matrix.coapGateway.log.level }} TEST_COAP_GATEWAY_LOG_DUMP_BODY=${{ matrix.coapGateway.log.dumpBody }} \
+          TEST_RESOURCE_AGGREGATE_LOG_LEVEL=${{ matrix.resourceAggregate.log.level }} TEST_RESOURCE_AGGREGATE_LOG_DUMP_BODY=${{ matrix.resourceAggregate.log.dumpBody }} \
+          TEST_GRPC_GATEWAY_LOG_LEVEL=${{ matrix.grpcGateway.log.level }} TEST_GRPC_GATEWAY_LOG_DUMP_BODY=${{ matrix.grpcGateway.log.dumpBody }} \
+          TEST_IDENTITY_STORE_LOG_LEVEL=${{ matrix.identityStore.log.level }} TEST_IDENTITY_STORE_LOG_DUMP_BODY=${{ matrix.identityStore.log.dumpBody }}
+
+      - name: Prepare upload files
+        run: |
+          mkdir -p ./outputs
+          cp -r .tmp/coverage ./outputs/
+          cp -r .tmp/report ./outputs/
+      
+      - name: Upload coverage and report files
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ hashFiles('./outputs') || 'none' }}
+          path: ./outputs
+          retention-days: 1
+          if-no-files-found: warn
+
+  coverage-sonar-cloud-scan:
+    needs: test
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 # Shallow clones should be disabled for a better relevancy of analysis
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v3
+        with:
+          path: ./outputs
+
+      - name: Prepare coverage and report files
+        run: |
+          mkdir -p .tmp/coverage
+          mkdir -p .tmp/report
+          find ./outputs -name "*.coverage.txt" -exec sh -c 'cp $1 .tmp/coverage/$(echo $1 | sed "s/[\/.]/-/g" ).coverage.txt' _ {}  \;
+          find ./outputs -name "*.report.json" -exec sh -c 'cp $1 .tmp/report/$(echo $1 | sed "s/[\/.]/-/g" ).report.json' _ {}  \;
 
       - name: Publish the coverage for main branch
         if: ${{ github.ref == 'refs/heads/main' }}

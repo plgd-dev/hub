@@ -25,10 +25,10 @@ import (
 )
 
 type observerHandlerWithCoap struct {
-	coapgwTest.DefaultObserverHandler
 	t                     *testing.T
 	coapConn              *coapTcpClient.Conn
 	setInitializedHandler future.SetFunc
+	coapgwTest.DefaultObserverHandler
 }
 
 func (h *observerHandlerWithCoap) SignIn(req coapgwService.CoapSignInReq) (coapgwService.CoapSignInResp, error) {

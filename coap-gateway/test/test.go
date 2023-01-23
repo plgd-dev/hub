@@ -4,7 +4,6 @@ import (
 	"context"
 	"os"
 	"sync"
-	"testing"
 	"time"
 
 	"github.com/plgd-dev/hub/v2/coap-gateway/service"
@@ -13,14 +12,11 @@ import (
 	coapService "github.com/plgd-dev/hub/v2/pkg/net/coap/service"
 	"github.com/plgd-dev/hub/v2/test/config"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap/zapcore"
 )
 
-func MakeConfig(t *testing.T) service.Config {
+func MakeConfig(t require.TestingT) service.Config {
 	var cfg service.Config
-	cfg.Log.Config = log.MakeDefaultConfig()
-	cfg.Log.DumpBody = true
-	cfg.Log.Level = zapcore.DebugLevel
+	cfg.Log = config.MakeLogConfig(t, "TEST_COAP_GATEWAY_LOG_LEVEL", "TEST_COAP_GATEWAY_LOG_DUMP_BODY")
 	cfg.TaskQueue.GoPoolSize = 1600
 	cfg.TaskQueue.Size = 2 * 1024 * 1024
 	cfg.APIs.COAP.Addr = config.COAP_GW_HOST
@@ -65,14 +61,14 @@ func MakeConfig(t *testing.T) service.Config {
 	return cfg
 }
 
-func SetUp(t *testing.T) (tearDown func()) {
+func SetUp(t require.TestingT) (tearDown func()) {
 	return New(t, MakeConfig(t))
 }
 
 // New creates test coap-gateway.
-func New(t *testing.T, cfg service.Config) func() {
+func New(t require.TestingT, cfg service.Config) func() {
 	ctx := context.Background()
-	logger := log.NewLogger(cfg.Log.Config)
+	logger := log.NewLogger(cfg.Log)
 
 	fileWatcher, err := fsnotify.NewWatcher()
 	require.NoError(t, err)

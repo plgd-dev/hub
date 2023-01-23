@@ -506,9 +506,12 @@ func WaitForDevice(ctx context.Context, t *testing.T, client pb.GrpcGateway_Subs
 		CheckProtobufs(t, expectedEvent, ev, RequireToCheckFunc(require.Equal))
 		delete(expectedEvents, getID(ev))
 		if len(expectedEvents) == 0 {
-			return
+			break
 		}
 	}
+
+	// wait for sync RD
+	time.Sleep(500 * time.Millisecond)
 }
 
 func MustGetHostname() string {

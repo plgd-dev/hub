@@ -136,8 +136,8 @@ mongodb:
         - --eval
         - db.adminCommand('ping')
     initialDelaySeconds: 30
-    periodSeconds: 10
-    timeoutSeconds: 5
+    periodSeconds: 20
+    timeoutSeconds: 10
     successThreshold: 1
     failureThreshold: 6
   readinessProbe:
@@ -150,9 +150,9 @@ mongodb:
         - |
           TLS_OPTIONS='--tls --tlsCertificateKeyFile=/certs/cert.pem --tlsCAFile=/certs/ca.pem'
           mongosh $TLS_OPTIONS --eval 'db.hello().isWritablePrimary || db.hello().secondary' | grep -q 'true'
-    initialDelaySeconds: 5
-    periodSeconds: 10
-    timeoutSeconds: 5
+    initialDelaySeconds: 10
+    periodSeconds: 20
+    timeoutSeconds: 10
     successThreshold: 1
     failureThreshold: 6
 
@@ -391,6 +391,8 @@ resourcedirectory:
   log:
     # -- Logging enabled from level 
     level: info
+    # -- Dump grpc messages
+    dumpBody: false
     # -- The supported values are: "json", "console"
     encoding: json
     stacktrace:
@@ -405,6 +407,8 @@ resourcedirectory:
   apis:
     grpc:
       address:
+      sendMsgSize: 4194304
+      recvMsgSize: 4194304
       ownerCacheExpiration: 1m
       enforcementPolicy:
         minTime: 5s
@@ -476,6 +480,8 @@ resourcedirectory:
       ownerClaim:
       grpc:
         address: ""
+        sendMsgSize: 4194304
+        recvMsgSize: 4194304
         tls:
           caPool:
           keyFile:
@@ -606,6 +612,8 @@ resourceaggregate:
   log:
     # -- Logging enabled from level 
     level: info
+    # -- Dump grpc messages
+    dumpBody: false
     # -- The supported values are: "json", "console"
     encoding: json
     stacktrace:
@@ -621,6 +629,8 @@ resourceaggregate:
     grpc:
       ownerCacheExpiration: 1m
       address:
+      sendMsgSize: 4194304
+      recvMsgSize: 4194304
       enforcementPolicy:
         minTime: 5s
         permitWithoutStream: true
@@ -692,6 +702,8 @@ resourceaggregate:
     identityStore:
       grpc:
         address:
+        sendMsgSize: 4194304
+        recvMsgSize: 4194304
         tls:
           caPool:
           keyFile:
@@ -878,6 +890,8 @@ coapgateway:
       ownerClaim:
       grpc:
         address: ""
+        sendMsgSize: 4194304
+        recvMsgSize: 4194304
         keepAlive:
           time: 10s
           timeout: 20s
@@ -890,6 +904,8 @@ coapgateway:
     resourceAggregate:
       grpc:
         address: ""
+        sendMsgSize: 4194304
+        recvMsgSize: 4194304
         keepAlive:
           time: 10s
           timeout: 20s
@@ -905,6 +921,8 @@ coapgateway:
     resourceDirectory:
       grpc:
         address: ""
+        sendMsgSize: 4194304
+        recvMsgSize: 4194304
         keepAlive:
           time: 10s
           timeout: 20s
@@ -1015,6 +1033,8 @@ identitystore:
   log:
     # -- Logging enabled from level 
     level: info
+    # -- Dump grpc messages
+    dumpBody: false
     # -- The supported values are: "json", "console"
     encoding: json
     stacktrace:
@@ -1029,6 +1049,8 @@ identitystore:
   apis:
     grpc:
       address:
+      sendMsgSize: 4194304
+      recvMsgSize: 4194304
       enforcementPolicy:
         minTime: 5s
         permitWithoutStream: true
@@ -1261,6 +1283,8 @@ httpgateway:
     grpcGateway:
       grpc:
         address: ""
+        sendMsgSize: 4194304
+        recvMsgSize: 4194304
         keepAlive:
           time: 10s
           timeout: 20s
@@ -1398,6 +1422,8 @@ grpcgateway:
   log:
     # -- Logging enabled from level 
     level: info
+    # -- Dump grpc messages
+    dumpBody: false
     # -- The supported values are: "json", "console"
     encoding: json
     stacktrace:
@@ -1412,6 +1438,8 @@ grpcgateway:
   apis:
     grpc:
       address:
+      sendMsgSize: 4194304
+      recvMsgSize: 4194304
       ownerCacheExpiration: 1m
       subscriptionBufferSize: 1000
       enforcementPolicy:
@@ -1450,6 +1478,8 @@ grpcgateway:
     identityStore:
       grpc:
         address: ""
+        sendMsgSize: 4194304
+        recvMsgSize: 4194304
         tls:
           caPool:
           keyFile:
@@ -1476,6 +1506,8 @@ grpcgateway:
     resourceAggregate:
       grpc:
         address: ""
+        sendMsgSize: 4194304
+        recvMsgSize: 4194304
         keepAlive:
           time: 10s
           timeout: 20s
@@ -1488,6 +1520,8 @@ grpcgateway:
     resourceDirectory:
       grpc:
         address: ""
+        sendMsgSize: 4194304
+        recvMsgSize: 4194304
         keepAlive:
           time: 10s
           timeout: 20s
@@ -1660,6 +1694,8 @@ certificateauthority:
   log:
     # -- Logging enabled from level 
     level: info
+    # -- Dump grpc messages
+    dumpBody: false
     # -- The supported values are: "json", "console"
     encoding: json
     stacktrace:
@@ -1674,6 +1710,8 @@ certificateauthority:
   apis:
     grpc:
       address:
+      sendMsgSize: 4194304
+      recvMsgSize: 4194304
       enforcementPolicy:
         minTime: 5s
         permitWithoutStream: true

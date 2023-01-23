@@ -22,7 +22,7 @@ const (
 	testUser2    = "testUser2"
 )
 
-func makeConfig(t *testing.T) Config {
+func MakeConfig(t require.TestingT) Config {
 	var cfg Config
 
 	cfg.APIs.GRPC.Addr = config.IDENTITY_STORE_HOST
@@ -47,7 +47,7 @@ func makeConfig(t *testing.T) Config {
 }
 
 func newTestService(t *testing.T) (*Server, func()) {
-	cfg := makeConfig(t)
+	cfg := MakeConfig(t)
 
 	logger := log.NewLogger(cfg.Log)
 

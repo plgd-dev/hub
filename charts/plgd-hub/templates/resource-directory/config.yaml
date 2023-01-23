@@ -10,6 +10,7 @@ data:
     {{- with .Values.resourcedirectory }}
     log:
       level: {{ .log.level }}
+      dumpBody: {{ .log.dumpBody }}
       encoding: {{ .log.encoding }}
       stacktrace:
         enabled: {{ .log.stacktrace.enabled }}
@@ -19,6 +20,8 @@ data:
     apis:
       grpc:
         address: {{  .apis.grpc.address | default (printf "0.0.0.0:%v" .port) | quote }}
+        sendMsgSize: {{ int64 .apis.grpc.sendMsgSize | default 4194304 }}
+        recvMsgSize: {{ int64 .apis.grpc.recvMsgSize | default 4194304 }}
         ownerCacheExpiration: {{ .apis.grpc.ownerCacheExpiration | quote }}
         enforcementPolicy:
           minTime: {{ .apis.grpc.enforcementPolicy.minTime | quote }}
@@ -77,6 +80,8 @@ data:
         grpc:
           {{- $authorizationServer := .clients.identityStore.grpc.address }}
           address:{{ printf " " }}{{- include "plgd-hub.identityStoreAddress" (list $ $authorizationServer ) | quote }}
+          sendMsgSize: {{ int64 .clients.identityStore.grpc.sendMsgSize | default 4194304 }}
+          recvMsgSize: {{ int64 .clients.identityStore.grpc.recvMsgSize | default 4194304 }}
           keepAlive:
             time: {{ .clients.identityStore.grpc.keepAlive.timeout }}
             timeout: {{ .clients.identityStore.grpc.keepAlive.timeout }}

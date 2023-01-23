@@ -1,18 +1,15 @@
 package test
 
 import (
-	"testing"
-
 	"github.com/plgd-dev/hub/v2/identity-store/service"
-	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/test/config"
 	"github.com/stretchr/testify/require"
 )
 
-func MakeConfig(t *testing.T) service.Config {
+func MakeConfig(t require.TestingT) service.Config {
 	var cfg service.Config
 
-	cfg.Log = log.MakeDefaultConfig()
+	cfg.Log = config.MakeLogConfig(t, "TEST_IDENTITY_STORE_LOG_LEVEL", "TEST_IDENTITY_STORE_LOG_DUMP_BODY")
 
 	cfg.APIs.GRPC = config.MakeGrpcServerConfig(config.IDENTITY_STORE_HOST)
 

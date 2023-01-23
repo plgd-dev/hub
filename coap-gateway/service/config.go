@@ -39,11 +39,7 @@ func (c *Config) Validate() error {
 	return nil
 }
 
-// Config represent application configuration
-type LogConfig struct {
-	DumpBody   bool `yaml:"dumpBody" json:"dumpBody"`
-	log.Config `yaml:",inline"`
-}
+type LogConfig = log.Config
 
 type APIsConfig struct {
 	COAP COAPConfig `yaml:"coap" json:"coap"`
@@ -85,7 +81,7 @@ func (c *AuthorizationConfig) Validate() error {
 	if len(c.Providers) == 0 {
 		return fmt.Errorf("providers('%v')", c.Providers)
 	}
-	duplicitProviderNames := make(map[string]bool)
+	duplicitProviderNames := make(map[string]bool, 4)
 	for i := 0; i < len(c.Providers); i++ {
 		if c.Providers[i].GrantType == oauth.ClientCredentials && c.OwnerClaim == "sub" {
 			return fmt.Errorf("providers[%v].grantType - %w", i, fmt.Errorf("combination of ownerClaim set to '%v' is not compatible if at least one authorization provider uses grant type '%v'", c.OwnerClaim, c.Providers[i].GrantType))
@@ -98,12 +94,12 @@ func (c *AuthorizationConfig) Validate() error {
 }
 
 type COAPConfig struct {
+	coapService.Config         `yaml:",inline" json:",inline"`
 	ExternalAddress            string              `yaml:"externalAddress" json:"externalAddress"`
+	Authorization              AuthorizationConfig `yaml:"authorization" json:"authorization"`
 	OwnerCacheExpiration       time.Duration       `yaml:"ownerCacheExpiration" json:"ownerCacheExpiration"`
 	SubscriptionBufferSize     int                 `yaml:"subscriptionBufferSize" json:"subscriptionBufferSize"`
-	Authorization              AuthorizationConfig `yaml:"authorization" json:"authorization"`
 	RequireBatchObserveEnabled bool                `yaml:"requireBatchObserveEnabled" json:"requireBatchObserveEnabled"`
-	coapService.Config         `yaml:",inline" json:",inline"`
 }
 
 func (c *COAPConfig) Validate() error {
@@ -146,10 +142,10 @@ func (c *IdentityStoreConfig) Validate() error {
 
 type ClientsConfig struct {
 	Eventbus               EventBusConfig          `yaml:"eventBus" json:"eventBus"`
-	IdentityStore          IdentityStoreConfig     `yaml:"identityStore" json:"identityStore"`
-	ResourceAggregate      ResourceAggregateConfig `yaml:"resourceAggregate" json:"resourceAggregate"`
-	ResourceDirectory      GrpcServerConfig        `yaml:"resourceDirectory" json:"resourceDirectory"`
 	OpenTelemetryCollector otelClient.Config       `yaml:"openTelemetryCollector" json:"openTelemetryCollector"`
+	IdentityStore          IdentityStoreConfig     `yaml:"identityStore" json:"identityStore"`
+	ResourceDirectory      GrpcServerConfig        `yaml:"resourceDirectory" json:"resourceDirectory"`
+	ResourceAggregate      ResourceAggregateConfig `yaml:"resourceAggregate" json:"resourceAggregate"`
 }
 
 func (c *ClientsConfig) Validate() error {

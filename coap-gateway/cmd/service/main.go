@@ -35,7 +35,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("cannot load config: %v", err)
 	}
-	logger := log.NewLogger(cfg.Log.Config)
+	logger := log.NewLogger(cfg.Log)
 	log.Set(logger)
 	logger.Infof("config: %v", cfg.String())
 

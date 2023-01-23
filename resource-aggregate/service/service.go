@@ -149,7 +149,7 @@ func NewService(ctx context.Context, config Config, fileWatcher *fsnotify.Watche
 			return ownerCache.GetSelectedDevices(ctx, deviceIDs)
 		}
 		return ownerCache.GetDevices(ctx)
-	})
+	}, logger)
 	RegisterResourceAggregateServer(grpcServer.Server, requestHandler)
 
 	return service.New(grpcServer), nil

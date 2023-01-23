@@ -1,3 +1,6 @@
+//go:build test
+// +build test
+
 package service_test
 
 import (
@@ -26,10 +29,10 @@ func TestClientResetHandler(t *testing.T) {
 	}()
 
 	type args struct {
-		code    codes.Code
+		path    string
 		token   message.Token
 		observe uint32
-		path    string
+		code    codes.Code
 	}
 	tests := []struct {
 		name      string
@@ -67,7 +70,6 @@ func TestClientResetHandler(t *testing.T) {
 	}
 
 	testPrepareDevice(t, co)
-	time.Sleep(time.Second)
 	messagePool := pool.New(0, 0)
 
 	for _, tt := range tests {

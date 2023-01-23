@@ -27,7 +27,7 @@ import (
 	coapService "github.com/plgd-dev/hub/v2/pkg/net/coap/service"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"github.com/plgd-dev/hub/v2/pkg/opentelemetry/otelcoap"
-	pkgJwt "github.com/plgd-dev/hub/v2/pkg/security/jwt"
+	"github.com/plgd-dev/hub/v2/pkg/security/jwt"
 	"github.com/plgd-dev/hub/v2/pkg/sync/task/future"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
@@ -39,11 +39,10 @@ import (
 )
 
 type authorizationContext struct {
+	Expire      time.Time
 	DeviceID    string
 	AccessToken string
 	UserID      string
-	Expire      time.Time
-	JWTClaims   pkgJwt.Claims
 }
 
 func (a *authorizationContext) GetUserID() string {
@@ -67,11 +66,14 @@ func (a *authorizationContext) GetAccessToken() string {
 	return ""
 }
 
-func (a *authorizationContext) GetJWTClaims() pkgJwt.Claims {
+func (a *authorizationContext) GetJWTClaims() jwt.Claims {
 	if a != nil {
-		return a.JWTClaims
+		jwtClaims, err := jwt.ParseToken(a.AccessToken)
+		if err == nil {
+			return jwtClaims
+		}
 	}
-	return make(pkgJwt.Claims)
+	return make(jwt.Claims)
 }
 
 func (a *authorizationContext) IsValid() error {
@@ -93,21 +95,20 @@ func (a *authorizationContext) ToContext(ctx context.Context) context.Context {
 
 // session a setup of connection
 type session struct {
-	server        *Service
-	coapConn      mux.Conn
-	tlsDeviceID   string
-	tlsValidUntil time.Time
-
-	resourceSubscriptions *kitSync.Map // [token]
-
-	exchangeCache *ExchangeCache
-	refreshCache  *RefreshCache
-
-	mutex                   sync.Mutex
-	authCtx                 *authorizationContext
-	deviceSubscriber        *grpcClient.DeviceSubscriber
-	deviceObserver          *future.Future
-	closeEventSubscriptions func()
+	tlsValidUntil         time.Time
+	coapConn              mux.Conn
+	server                *Service
+	resourceSubscriptions *kitSync.Map
+	exchangeCache         *ExchangeCache
+	refreshCache          *RefreshCache
+	tlsDeviceID           string
+	private               struct { // guarded by mutex
+		mutex                   sync.Mutex
+		authCtx                 *authorizationContext
+		deviceSubscriber        *grpcClient.DeviceSubscriber
+		deviceObserver          *future.Future
+		closeEventSubscriptions func()
+	}
 }
 
 // newSession creates and initializes client
@@ -303,21 +304,36 @@ func (c *session) onGetResourceContent(ctx context.Context, deviceID, href strin
 		return fmt.Errorf("cannot get resource /%v%v content: %w", deviceID, href, err)
 	}
 	notification.Hijack()
+	x := struct {
+		ctx                           context.Context
+		notification                  *pool.Message
+		deviceID                      string
+		href                          string
+		c                             *session
+		cannotGetResourceContentError func(deviceID, href string, err error) error
+	}{
+		ctx:                           ctx,
+		notification:                  notification,
+		deviceID:                      deviceID,
+		href:                          href,
+		c:                             c,
+		cannotGetResourceContentError: cannotGetResourceContentError,
+	}
 	err := c.server.taskQueue.Submit(func() {
-		defer c.server.messagePool.ReleaseMessage(notification)
-		if notification.Code() == codes.NotFound {
-			c.unpublishResourceLinks(c.getUserAuthorizedContext(ctx), []string{href}, nil)
+		defer x.c.server.messagePool.ReleaseMessage(x.notification)
+		if x.notification.Code() == codes.NotFound {
+			x.c.unpublishResourceLinks(x.c.getUserAuthorizedContext(x.ctx), []string{x.href}, nil)
 		}
-		err2 := c.notifyContentChanged(deviceID, href, false, notification)
+		err2 := x.c.notifyContentChanged(x.deviceID, x.href, false, x.notification)
 		if err2 != nil {
 			// hub is out of sync with the device, for recovery, the device is disconnected from the hub
-			c.Close()
-			c.Errorf("%w", cannotGetResourceContentError(deviceID, href, err2))
+			x.c.Close()
+			x.c.Errorf("%w", x.cannotGetResourceContentError(x.deviceID, x.href, err2))
 			return
 		}
-		obs, err := c.getDeviceObserver(c.Context())
-		if err == nil {
-			obs.ResourceHasBeenSynchronized(ctx, href)
+		obs, err2 := x.c.getDeviceObserver(x.c.Context())
+		if err2 == nil {
+			obs.ResourceHasBeenSynchronized(x.ctx, x.href)
 		}
 	})
 	if err != nil {
@@ -341,21 +357,38 @@ func (c *session) onObserveResource(ctx context.Context, deviceID, href string, 
 		return fmt.Errorf("cannot handle resource observation: %w", err)
 	}
 	notification.Hijack()
+	x := struct {
+		ctx                      context.Context
+		notification             *pool.Message
+		deviceID                 string
+		href                     string
+		c                        *session
+		cannotObserResourceError func(err error) error
+		batch                    bool
+	}{
+		ctx:                      ctx,
+		notification:             notification,
+		deviceID:                 deviceID,
+		href:                     href,
+		c:                        c,
+		cannotObserResourceError: cannotObserResourceError,
+		batch:                    batch,
+	}
 	err := c.server.taskQueue.SubmitForOneWorker(resource.GetInstanceID(deviceID+href), func() {
-		defer c.server.messagePool.ReleaseMessage(notification)
-		if notification.Code() == codes.NotFound {
-			c.unpublishResourceLinks(c.getUserAuthorizedContext(notification.Context()), []string{href}, nil)
+		defer x.c.server.messagePool.ReleaseMessage(x.notification)
+		if x.notification.Code() == codes.NotFound {
+			x.c.unpublishResourceLinks(x.c.getUserAuthorizedContext(x.notification.Context()), []string{x.href}, nil)
 		}
-		err2 := c.notifyContentChanged(deviceID, href, batch, notification)
+		err2 := x.c.notifyContentChanged(x.deviceID, x.href, x.batch, x.notification)
 		if err2 != nil {
 			// hub is out of sync with the device, for recovery, the device is disconnected from the hub
-			c.Close()
-			c.Errorf("%w", cannotObserResourceError(err2))
+			x.c.Close()
+			x.c.Errorf("%w", x.cannotObserResourceError(err2))
 			return
 		}
-		obs, err := c.getDeviceObserver(c.Context())
-		if err == nil {
-			obs.ResourceHasBeenSynchronized(ctx, href)
+		obs, err2 := x.c.getDeviceObserver(x.c.Context())
+		if err2 == nil {
+			obs.ResourceHasBeenSynchronized(x.ctx, x.href)
 		}
 	})
 	if err != nil {
@@ -443,17 +476,17 @@ func (c *session) OnClose() {
 }
 
 func (c *session) SetAuthorizationContext(authCtx *authorizationContext) (oldDeviceID *authorizationContext) {
-	c.mutex.Lock()
-	defer c.mutex.Unlock()
-	oldAuthContext := c.authCtx
-	c.authCtx = authCtx
+	c.private.mutex.Lock()
+	defer c.private.mutex.Unlock()
+	oldAuthContext := c.private.authCtx
+	c.private.authCtx = authCtx
 	return oldAuthContext
 }
 
 func (c *session) GetAuthorizationContext() (*authorizationContext, error) {
-	c.mutex.Lock()
-	defer c.mutex.Unlock()
-	return c.authCtx, c.authCtx.IsValid()
+	c.private.mutex.Lock()
+	defer c.private.mutex.Unlock()
+	return c.private.authCtx, c.private.authCtx.IsValid()
 }
 
 func (c *session) batchNotifyContentChanged(ctx context.Context, deviceID string, notification *pool.Message) error {
@@ -901,7 +934,7 @@ func (c *session) UpdateDeviceMetadata(ctx context.Context, event *events.Device
 	return err
 }
 
-func (c *session) ValidateToken(ctx context.Context, token string) (pkgJwt.Claims, error) {
+func (c *session) ValidateToken(ctx context.Context, token string) (jwt.Claims, error) {
 	return c.server.ValidateToken(ctx, token)
 }
 
@@ -910,9 +943,9 @@ func (c *session) subscribeToDeviceEvents(owner string, onEvent func(e *idEvents
 	if err != nil {
 		return err
 	}
-	c.mutex.Lock()
-	defer c.mutex.Unlock()
-	c.closeEventSubscriptions = closeFn
+	c.private.mutex.Lock()
+	defer c.private.mutex.Unlock()
+	c.private.closeEventSubscriptions = closeFn
 	return nil
 }
 
@@ -920,16 +953,16 @@ func (c *session) unsubscribeFromDeviceEvents() {
 	closeFn := func() {
 		// default no-op
 	}
-	c.mutex.Lock()
-	if c.closeEventSubscriptions != nil {
-		closeFn = c.closeEventSubscriptions
-		c.closeEventSubscriptions = nil
+	c.private.mutex.Lock()
+	if c.private.closeEventSubscriptions != nil {
+		closeFn = c.private.closeEventSubscriptions
+		c.private.closeEventSubscriptions = nil
 	}
-	c.mutex.Unlock()
+	c.private.mutex.Unlock()
 	closeFn()
 }
 
-func (c *session) ResolveDeviceID(claim pkgJwt.Claims, paramDeviceID string) string {
+func (c *session) ResolveDeviceID(claim jwt.Claims, paramDeviceID string) string {
 	if c.server.config.APIs.COAP.Authorization.DeviceIDClaim != "" {
 		return claim.DeviceID(c.server.config.APIs.COAP.Authorization.DeviceIDClaim)
 	}

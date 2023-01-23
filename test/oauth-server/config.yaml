@@ -23,6 +23,8 @@ clients:
     grpc:
       enabled: false
       address: ""
+      sendMsgSize: 4194304
+      recvMsgSize: 4194304
       keepAlive:
         time: 10s
         timeout: 20s

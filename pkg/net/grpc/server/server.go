@@ -11,6 +11,10 @@ import (
 )
 
 func New(config Config, fileWatcher *fsnotify.Watcher, logger log.Logger, opts ...grpc.ServerOption) (*Server, error) {
+	err := config.Validate()
+	if err != nil {
+		return nil, fmt.Errorf("invalid config: %w", err)
+	}
 	tls, err := server.New(config.TLS, fileWatcher, logger)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create cert manager %w", err)
@@ -20,6 +24,8 @@ func New(config Config, fileWatcher *fsnotify.Watcher, logger log.Logger, opts .
 		grpc.Creds(credentials.NewTLS(tls.GetTLSConfig())),
 		grpc.KeepaliveEnforcementPolicy(config.EnforcementPolicy.ToGrpc()),
 		grpc.KeepaliveParams(config.KeepAlive.ToGrpc()),
+		grpc.MaxRecvMsgSize(config.RecvMsgSize),
+		grpc.MaxSendMsgSize(config.SendMsgSize),
 	}
 	if len(opts) > 0 {
 		v = append(v, opts...)

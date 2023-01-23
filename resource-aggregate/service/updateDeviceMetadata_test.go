@@ -130,8 +130,7 @@ func TestAggregateHandleUpdateDeviceMetadata(t *testing.T) {
 				return
 			}
 			require.NoError(t, err)
-			err = service.PublishEvents(publisher, tt.args.userID, tt.args.request.GetDeviceId(), ag.ResourceID(), events)
-			assert.NoError(t, err)
+			service.PublishEvents(publisher, tt.args.userID, tt.args.request.GetDeviceId(), ag.ResourceID(), events, logger)
 		}
 		t.Run(tt.name, tfunc)
 	}
@@ -243,7 +242,7 @@ func TestRequestHandlerUpdateDeviceMetadata(t *testing.T) {
 		naClient.Close()
 	}()
 
-	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetOwnerDevices)
+	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetOwnerDevices, logger)
 
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {

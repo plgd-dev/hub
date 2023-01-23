@@ -267,7 +267,7 @@ var filterOutEmptyResources = []string{
 // inaccessible oic/sec resources have empty content and should be skipped
 func filterOutEmptyResource(resource resources.BatchRepresentation) (isEmpty bool, filterOut bool) {
 	if len(resource.Content) == 2 {
-		var v map[interface{}]interface{}
+		v := make(map[interface{}]interface{}, 128)
 		if err := cbor.Decode(resource.Content, &v); err == nil && len(v) == 0 {
 			isEmpty = true
 			for _, f := range filterOutEmptyResources {

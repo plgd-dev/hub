@@ -10,6 +10,7 @@ data:
     {{- with .Values.identitystore }}
     log:
       level: {{ .log.level }}
+      dumpBody: {{ .log.dumpBody }}
       encoding: {{ .log.encoding }}
       stacktrace:
         enabled: {{ .log.stacktrace.enabled }}
@@ -19,6 +20,8 @@ data:
     apis:
       grpc:
         address: {{  .apis.grpc.address | default (printf "0.0.0.0:%v" .port ) | quote }}
+        sendMsgSize: {{ int64 .apis.grpc.sendMsgSize | default 4194304 }}
+        recvMsgSize: {{ int64 .apis.grpc.recvMsgSize | default 4194304 }}
         enforcementPolicy:
           minTime: {{ .apis.grpc.enforcementPolicy.minTime | quote }}
           permitWithoutStream: {{ .apis.grpc.enforcementPolicy.permitWithoutStream }}

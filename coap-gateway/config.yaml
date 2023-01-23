@@ -87,6 +87,8 @@ clients:
   identityStore:
     grpc:
       address: ""
+      sendMsgSize: 4194304
+      recvMsgSize: 4194304
       keepAlive:
         time: 10s
         timeout: 20s
@@ -99,6 +101,8 @@ clients:
   resourceAggregate:
     grpc:
       address: ""
+      sendMsgSize: 4194304
+      recvMsgSize: 4194304
       keepAlive:
         time: 10s
         timeout: 20s
@@ -114,6 +118,8 @@ clients:
   resourceDirectory:
     grpc:
       address: ""
+      sendMsgSize: 4194304
+      recvMsgSize: 4194304
       keepAlive:
         time: 10s
         timeout: 20s
@@ -127,6 +133,8 @@ clients:
     grpc:
       enabled: false
       address: ""
+      sendMsgSize: 4194304
+      recvMsgSize: 4194304
       keepAlive:
         time: 10s
         timeout: 20s

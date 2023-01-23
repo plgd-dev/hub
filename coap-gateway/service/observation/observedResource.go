@@ -17,11 +17,12 @@ type Observation = interface {
 type observedResource struct {
 	href         string
 	resInterface string
-	isObservable bool
 	synced       atomic.Bool
-
-	mutex       sync.Mutex
-	observation Observation
+	isObservable bool
+	private      struct { // guarded by mutex
+		mutex       sync.Mutex
+		observation Observation
+	}
 }
 
 func newObservedResource(href, resInterface string, isObservable bool) *observedResource {
@@ -45,16 +46,16 @@ func (r *observedResource) Interface() string {
 }
 
 func (r *observedResource) SetObservation(o Observation) {
-	r.mutex.Lock()
-	defer r.mutex.Unlock()
-	r.observation = o
+	r.private.mutex.Lock()
+	defer r.private.mutex.Unlock()
+	r.private.observation = o
 }
 
 func (r *observedResource) PopObservation() Observation {
-	r.mutex.Lock()
-	defer r.mutex.Unlock()
-	o := r.observation
-	r.observation = nil
+	r.private.mutex.Lock()
+	defer r.private.mutex.Unlock()
+	o := r.private.observation
+	r.private.observation = nil
 	return o
 }
 

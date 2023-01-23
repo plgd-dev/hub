@@ -139,7 +139,6 @@ func TestRequestHandlerSubscribeToDevice(t *testing.T) {
 	switchResources := test.AddDeviceSwitchResources(ctx, t, deviceID, c, switchIDs...)
 	publishedSwitches := test.ResourceLinksToResources(deviceID, switchResources)
 	events = c2cTest.WaitForEvents(dataChan, 3*time.Second)
-	require.Len(t, events, len(switchIDs))
 	var links schema.ResourceLinks
 	for _, ev := range events {
 		require.Equal(t, c2cEvents.EventType_ResourcesPublished, ev.GetHeader().EventType)

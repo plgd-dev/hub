@@ -22,13 +22,34 @@ import (
 
 var log atomic.Value
 
+const (
+	// DebugLevel logs are typically voluminous, and are usually disabled in
+	// production.
+	DebugLevel = zap.DebugLevel
+	// InfoLevel is the default logging priority.
+	InfoLevel = zap.InfoLevel
+	// WarnLevel logs are more important than Info, but don't need individual
+	// human review.
+	WarnLevel = zap.WarnLevel
+	// ErrorLevel logs are high-priority. If an application is running smoothly,
+	// it shouldn't generate any error-level logs.
+	ErrorLevel = zap.ErrorLevel
+	// DPanicLevel logs are particularly important errors. In development the
+	// logger panics after writing the message.
+	DPanicLevel = zap.DPanicLevel
+	// PanicLevel logs a message, then panics.
+	PanicLevel = zap.PanicLevel
+	// FatalLevel logs a message, then calls os.Exit(1).
+	FatalLevel = zap.FatalLevel
+)
+
 func MakeDefaultConfig() Config {
 	return Config{
-		Level:    zap.InfoLevel,
+		Level:    InfoLevel,
 		Encoding: "json",
 		Stacktrace: StacktraceConfig{
 			Enabled: false,
-			Level:   zap.WarnLevel,
+			Level:   WarnLevel,
 		},
 		EncoderConfig: EncoderConfig{
 			EncodeTime: TimeEncoderWrapper{
@@ -164,7 +185,7 @@ type StacktraceConfig struct {
 }
 
 func (c *StacktraceConfig) Validate() error {
-	if c.Level < zapcore.DebugLevel || c.Level > zap.FatalLevel {
+	if c.Level < DebugLevel || c.Level > FatalLevel {
 		return fmt.Errorf("level('%v')", c.Level)
 	}
 	return nil
@@ -185,10 +206,13 @@ type Config struct {
 	// zapcore.
 	EncoderConfig EncoderConfig `json:"encoderConfig" yaml:"encoderConfig"`
 	// zap.Config    `yaml:",inline"`
+
+	// DumpBody if true, dump request/response/stream body to log.
+	DumpBody bool `json:"dumpBody" yaml:"dumpBody"`
 }
 
 func (c *Config) Validate() error {
-	if c.Level < zapcore.DebugLevel || c.Level > zap.FatalLevel {
+	if c.Level < DebugLevel || c.Level > FatalLevel {
 		return fmt.Errorf("level('%v')", c.Level)
 	}
 	if err := c.Stacktrace.Validate(); err != nil {
@@ -224,6 +248,7 @@ type Logger interface {
 	LogAndReturnError(err error) error
 	Config() Config
 	Check(lvl zapcore.Level) bool
+	GetLogFunc(lvl zapcore.Level) func(args ...interface{})
 	DTLSLoggerFactory() logging.LoggerFactory
 }
 
@@ -255,6 +280,25 @@ func (l *WrapSuggarLogger) Config() Config {
 
 func (l *WrapSuggarLogger) Check(lvl zapcore.Level) bool {
 	return l.logger.Desugar().Core().Enabled(lvl)
+}
+
+var getLogFuncMap = map[zapcore.Level]func(l *WrapSuggarLogger) func(args ...interface{}){
+	DebugLevel: func(l *WrapSuggarLogger) func(args ...interface{}) { return l.Debug },
+	InfoLevel:  func(l *WrapSuggarLogger) func(args ...interface{}) { return l.Info },
+	WarnLevel:  func(l *WrapSuggarLogger) func(args ...interface{}) { return l.Warn },
+	ErrorLevel: func(l *WrapSuggarLogger) func(args ...interface{}) { return l.Error },
+	FatalLevel: func(l *WrapSuggarLogger) func(args ...interface{}) { return l.Fatal },
+}
+
+var emptyLogFunc = func(args ...interface{}) {
+	// do nothing
+}
+
+func (l *WrapSuggarLogger) GetLogFunc(lvl zapcore.Level) func(args ...interface{}) {
+	if f, ok := getLogFuncMap[lvl]; ok {
+		return f(l)
+	}
+	return emptyLogFunc
 }
 
 func (l *WrapSuggarLogger) with(args ...interface{}) *WrapSuggarLogger {
@@ -460,12 +504,12 @@ func NewLogger(config Config) *WrapSuggarLogger {
 	)
 	opts := make([]zap.Option, 0, 16)
 	if config.Stacktrace.Enabled {
-		opts = append(opts, zap.AddStacktrace(zap.NewAtomicLevelAt(zap.WarnLevel)))
+		opts = append(opts, zap.AddStacktrace(zap.NewAtomicLevelAt(WarnLevel)))
 	}
 
 	// From a zapcore.Core, it's easy to construct a Logger.
 	logger := zap.New(core, opts...)
-	return &WrapSuggarLogger{logger: logger.Sugar()}
+	return &WrapSuggarLogger{logger: logger.Sugar(), config: config}
 }
 
 func Get() Logger {

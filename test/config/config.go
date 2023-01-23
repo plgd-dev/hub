@@ -1,13 +1,16 @@
 package config
 
 import (
+	"fmt"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/plgd-dev/device/v2/schema"
 	c2curi "github.com/plgd-dev/hub/v2/cloud2cloud-connector/uri"
+	"github.com/plgd-dev/hub/v2/pkg/log"
 	pkgMongo "github.com/plgd-dev/hub/v2/pkg/mongodb"
 	grpcClient "github.com/plgd-dev/hub/v2/pkg/net/grpc/client"
 	grpcServer "github.com/plgd-dev/hub/v2/pkg/net/grpc/server"
@@ -25,6 +28,7 @@ import (
 	"github.com/plgd-dev/hub/v2/test/http"
 	"github.com/plgd-dev/hub/v2/test/oauth-server/uri"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
 )
 
 const (
@@ -47,6 +51,7 @@ const (
 	HTTP_GW_HOST                    = "localhost:20010"
 	DEVICE_PROVIDER                 = "plgd"
 	OPENTELEMETRY_COLLECTOR_HOST    = "localhost:55690"
+	TRUE_STRING                     = "true"
 )
 
 var (
@@ -56,9 +61,9 @@ var (
 	MONGODB_URI              = "mongodb://localhost:27017"
 	NATS_URL                 = "nats://localhost:4222"
 	OWNER_CLAIM              = "sub"
-	COAP_GATEWAY_UDP_ENABLED = os.Getenv("TEST_COAP_GATEWAY_UDP_ENABLED") == "true"
+	COAP_GATEWAY_UDP_ENABLED = os.Getenv("TEST_COAP_GATEWAY_UDP_ENABLED") == TRUE_STRING
 	ACTIVE_COAP_SCHEME       = func() string {
-		if os.Getenv("TEST_COAP_GATEWAY_UDP_ENABLED") == "true" {
+		if os.Getenv("TEST_COAP_GATEWAY_UDP_ENABLED") == TRUE_STRING {
 			return string(schema.UDPSecureScheme)
 		}
 		return string(schema.TCPSecureScheme)
@@ -91,10 +96,14 @@ func MakeOpenTelemetryCollectorClient() otelClient.Config {
 	}
 }
 
+const DefaultGrpcMaxMsgSize = 1024 * 1024 * 128
+
 func MakeGrpcClientConfig(address string) grpcClient.Config {
 	return grpcClient.Config{
-		Addr: address,
-		TLS:  MakeTLSClientConfig(),
+		Addr:        address,
+		SendMsgSize: DefaultGrpcMaxMsgSize,
+		RecvMsgSize: DefaultGrpcMaxMsgSize,
+		TLS:         MakeTLSClientConfig(),
 		KeepAlive: grpcClient.KeepAliveConfig{
 			Time:                time.Second * 10,
 			Timeout:             time.Second * 20,
@@ -114,8 +123,10 @@ func MakeTLSServerConfig() server.Config {
 
 func MakeGrpcServerConfig(address string) grpcServer.Config {
 	return grpcServer.Config{
-		Addr: address,
-		TLS:  MakeTLSServerConfig(),
+		Addr:        address,
+		SendMsgSize: DefaultGrpcMaxMsgSize,
+		RecvMsgSize: DefaultGrpcMaxMsgSize,
+		TLS:         MakeTLSServerConfig(),
 		Authorization: grpcServer.AuthorizationConfig{
 			OwnerClaim: OWNER_CLAIM,
 			Config:     MakeAuthorizationConfig(),
@@ -224,4 +235,26 @@ func CreateJwtToken(t *testing.T, claims jwt.MapClaims) string {
 	tokenString, err := token.SignedString([]byte(JWTSecret))
 	require.NoError(t, err)
 	return tokenString
+}
+
+func MakeLogConfig(t require.TestingT, envLogLevel, envLogDumpBody string) log.Config {
+	cfg := log.MakeDefaultConfig()
+	logLvlString := os.Getenv(envLogLevel)
+	logLvl := zap.NewAtomicLevelAt(log.InfoLevel)
+	if logLvlString != "" {
+		var err error
+		logLvl, err = zap.ParseAtomicLevel(logLvlString)
+		require.NoError(t, err)
+	}
+	cfg.Level = logLvl.Level()
+	logDumpBodyStr := strings.ToLower(os.Getenv(envLogDumpBody))
+	switch logDumpBodyStr {
+	case TRUE_STRING, "false":
+		cfg.DumpBody = logDumpBodyStr == TRUE_STRING
+	case "":
+		cfg.DumpBody = false
+	default:
+		require.NoError(t, fmt.Errorf("invalid value %v for %v", logDumpBodyStr, envLogDumpBody))
+	}
+	return cfg
 }
