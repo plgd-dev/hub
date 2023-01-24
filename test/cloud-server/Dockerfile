@@ -7,15 +7,20 @@ COPY . .
 RUN ( cd /usr/local/go && patch -p1 < $GOPATH/src/github.com/plgd-dev/hub/tools/docker/patches/shrink_tls_conn.patch )
 ARG root_directory=$GOPATH/src/github.com/plgd-dev/hub
 
+#certificate-generator
+ARG service=kit
+WORKDIR /
+RUN cd $GOPATH/pkg/mod/github.com/plgd-dev/kit/v2* && go build -ldflags "-linkmode external -extldflags -static" -o /go/bin/certificate-generator ./cmd/certificate-generator
+
 #grpc-gateway
 ARG service=grpc-gateway
 WORKDIR $root_directory/$service/service
 RUN go test -c -ldflags "-linkmode external -extldflags -static" -o /go/bin/grpc-gateway.test
 
-#certificate-generator
-ARG service=kit
-WORKDIR /
-RUN cd $GOPATH/pkg/mod/github.com/plgd-dev/kit/v2* && go build -ldflags "-linkmode external -extldflags -static" -o /go/bin/certificate-generator ./cmd/certificate-generator
+#test/iotivity-lite
+ARG service=test-iotivity-lite
+WORKDIR $root_directory/test/iotivity-lite/service
+RUN go test -c -ldflags "-linkmode external -extldflags -static" -o /go/bin/test-iotivity-lite.test
 
 #nats
 WORKDIR $root_directory
@@ -37,7 +42,7 @@ RUN mkdir -p ./nats
 RUN unzip ./nats.zip -d ./nats
 RUN cp ./nats/*/nats /go/bin/nats
 
-FROM ubuntu:20.04 as service
+FROM ubuntu:20.04 AS service
 RUN apt update
 RUN apt install -y wget gnupg iproute2 systemctl openssl nginx ca-certificates netcat
 RUN wget -qO - https://www.mongodb.org/static/pgp/server-4.4.asc | apt-key add -
@@ -48,6 +53,7 @@ RUN apt update
 RUN apt-get install -y mongodb-org-server mongodb-org
 COPY --from=build /go/bin/certificate-generator /usr/local/bin/certificate-generator
 COPY --from=build /go/bin/grpc-gateway.test /usr/local/bin/grpc-gateway.test
+COPY --from=build /go/bin/test-iotivity-lite.test /usr/local/bin/test-iotivity-lite.test
 COPY --from=build /go/bin/nats-server /usr/local/bin/nats-server
 COPY --from=build /go/bin/nats /usr/local/bin/nats
 COPY test/cloud-server/run.sh /usr/local/bin/run.sh

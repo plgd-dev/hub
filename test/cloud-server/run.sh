@@ -163,5 +163,8 @@ while true; do
   sleep 1
 done
 
-echo "starting test"
+echo "starting grpc-gateway test"
 grpc-gateway.test -test.v -test.timeout 600s
+
+echo "starting test/iotivity-lite test"
+test-iotivity-lite.test -test.v -test.timeout 600s

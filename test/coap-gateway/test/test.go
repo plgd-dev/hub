@@ -54,12 +54,12 @@ func New(t require.TestingT, cfg service.Config, makeHandler service.MakeService
 	return func() {
 		_ = s.Close()
 		wg.Wait()
-		if verifyOnClose == nil {
-			return
+		if verifyOnClose != nil {
+			for _, c := range s.GetClients() {
+				verifyOnClose(c.GetServiceHandler())
+			}
 		}
-		for _, c := range s.GetClients() {
-			verifyOnClose(c.GetServiceHandler())
-		}
+
 		err = fileWatcher.Close()
 		require.NoError(t, err)
 	}

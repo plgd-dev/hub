@@ -36,6 +36,7 @@ type MakeServiceHandler = func(service *Service, opts ...Option) ServiceHandler
 type VerifyServiceHandler = func(ServiceHandler)
 
 type ServiceHandler interface {
+	CloseOnError() bool
 	SignUp(req coapgwService.CoapSignUpRequest) (coapgwService.CoapSignUpResponse, error)
 	SignOff() error
 	SignIn(req coapgwService.CoapSignInReq) (coapgwService.CoapSignInResp, error)

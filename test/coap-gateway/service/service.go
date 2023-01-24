@@ -97,6 +97,7 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 		sigs:        make(chan os.Signal, 1),
 		taskQueue:   queue,
 		makeHandler: makeHandler,
+		clients:     nil,
 	}
 
 	if err := s.setupCoapServer(); err != nil {
