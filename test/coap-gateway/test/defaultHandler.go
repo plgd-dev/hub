@@ -19,11 +19,15 @@ import (
 // returning default response and no error (if required).
 type DefaultObserverHandler struct {
 	deviceID            string
-	accessTokenLifetime time.Duration
+	accessToken         string
+	refreshToken        string
+	accessTokenLifetime int64 // lifetime in seconds or <0 value for a token without expiration
 }
 
-func MakeDefaultObserverHandler(accessTokenLifetime time.Duration) DefaultObserverHandler {
+func MakeDefaultObserverHandler(accessTokenLifetime int64) DefaultObserverHandler {
 	return DefaultObserverHandler{
+		accessToken:         "access-token",
+		refreshToken:        oauthTest.ValidRefreshToken,
 		accessTokenLifetime: accessTokenLifetime,
 	}
 }
@@ -36,16 +40,28 @@ func (h *DefaultObserverHandler) SetDeviceID(deviceID string) {
 	h.deviceID = deviceID
 }
 
+func (h *DefaultObserverHandler) SetAccessToken(accessToken string) {
+	h.accessToken = accessToken
+}
+
+func (h *DefaultObserverHandler) SetRefreshToken(refreshToken string) {
+	h.refreshToken = refreshToken
+}
+
 func (h *DefaultObserverHandler) SignUp(req coapgwService.CoapSignUpRequest) (coapgwService.CoapSignUpResponse, error) {
 	log.Debugf("SignUp: %v", req)
 	h.SetDeviceID(req.DeviceID)
 	return coapgwService.CoapSignUpResponse{
-		AccessToken:  "access-token",
+		AccessToken:  h.accessToken,
 		UserID:       "1",
-		RefreshToken: oauthTest.ValidRefreshToken,
-		ExpiresIn:    int64(h.accessTokenLifetime.Seconds()),
+		RefreshToken: h.refreshToken,
+		ExpiresIn:    h.accessTokenLifetime,
 		RedirectURI:  "",
 	}, nil
+}
+
+func (h *DefaultObserverHandler) CloseOnError() bool {
+	return true
 }
 
 func (h *DefaultObserverHandler) SignOff() error {
@@ -56,7 +72,7 @@ func (h *DefaultObserverHandler) SignOff() error {
 func (h *DefaultObserverHandler) SignIn(req coapgwService.CoapSignInReq) (coapgwService.CoapSignInResp, error) {
 	log.Debugf("SignIn: %v", req)
 	return coapgwService.CoapSignInResp{
-		ExpiresIn: int64(h.accessTokenLifetime.Seconds()),
+		ExpiresIn: h.accessTokenLifetime,
 	}, nil
 }
 
@@ -78,9 +94,9 @@ func (h *DefaultObserverHandler) UnpublishResources(req coapgwTestService.Unpubl
 func (h *DefaultObserverHandler) RefreshToken(req coapgwService.CoapRefreshTokenReq) (coapgwService.CoapRefreshTokenResp, error) {
 	log.Debugf("RefreshToken: %v", req)
 	return coapgwService.CoapRefreshTokenResp{
-		RefreshToken: oauthTest.ValidRefreshToken,
-		AccessToken:  "access-token",
-		ExpiresIn:    int64(h.accessTokenLifetime.Seconds()),
+		RefreshToken: h.refreshToken,
+		AccessToken:  h.accessToken,
+		ExpiresIn:    h.accessTokenLifetime,
 	}, nil
 }
 

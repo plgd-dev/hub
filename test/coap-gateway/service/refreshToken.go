@@ -14,8 +14,10 @@ import (
 func refreshTokenPostHandler(req *mux.Message, client *Client) {
 	logErrorAndCloseClient := func(err error, code coapCodes.Code) {
 		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle refresh token: %w", err), code, req.Token())
-		if err := client.Close(); err != nil {
-			log.Errorf("refresh token error: %w", err)
+		if client.handler == nil || client.handler.CloseOnError() {
+			if err := client.Close(); err != nil {
+				log.Errorf("refresh token error: %w", err)
+			}
 		}
 	}
 

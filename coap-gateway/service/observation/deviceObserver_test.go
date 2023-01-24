@@ -400,7 +400,7 @@ func runTestDeviceObserverRegister(ctx context.Context, t *testing.T, deviceID s
 			o.Apply(&cfg)
 		}
 		h := &observerHandler{
-			DefaultObserverHandler: coapgwTest.MakeDefaultObserverHandler(tokenLifetime),
+			DefaultObserverHandler: coapgwTest.MakeDefaultObserverHandler(int64(tokenLifetime.Seconds())),
 			t:                      t,
 			ctx:                    ctx,
 			coapConn:               cfg.GetCoapConnection(),
