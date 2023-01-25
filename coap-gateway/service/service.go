@@ -16,11 +16,8 @@ import (
 	"github.com/plgd-dev/go-coap/v3/message/pool"
 	"github.com/plgd-dev/go-coap/v3/message/status"
 	"github.com/plgd-dev/go-coap/v3/mux"
-	coapOptionsConfig "github.com/plgd-dev/go-coap/v3/options/config"
 	"github.com/plgd-dev/go-coap/v3/pkg/cache"
 	"github.com/plgd-dev/go-coap/v3/pkg/runner/periodic"
-	coapTcpClient "github.com/plgd-dev/go-coap/v3/tcp/client"
-	coapUdpClient "github.com/plgd-dev/go-coap/v3/udp/client"
 	"github.com/plgd-dev/hub/v2/coap-gateway/uri"
 	pbGRPC "github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/subscription"
@@ -555,46 +552,6 @@ func (s *Service) createServices(fileWatcher *fsnotify.Watcher, logger log.Logge
 		return nil, setHandlerError(uri.RefreshToken, err)
 	}
 	return coapService.New(s.ctx, s.config.APIs.COAP.Config, m, fileWatcher, logger,
-		coapService.WithTCPGoPool(func(processReqFunc coapOptionsConfig.ProcessRequestFunc[*coapTcpClient.Conn], req *pool.Message, cc *coapTcpClient.Conn, handler coapOptionsConfig.HandlerFunc[*coapTcpClient.Conn]) error {
-			if s.config.APIs.COAP.Config.BlockwiseTransfer.Enabled {
-				x := struct {
-					processReqFunc coapOptionsConfig.ProcessRequestFunc[*coapTcpClient.Conn]
-					req            *pool.Message
-					cc             *coapTcpClient.Conn
-					handler        coapOptionsConfig.HandlerFunc[*coapTcpClient.Conn]
-				}{
-					processReqFunc: processReqFunc,
-					req:            req,
-					cc:             cc,
-					handler:        handler,
-				}
-				return s.taskQueue.Submit(func() {
-					x.processReqFunc(x.req, x.cc, x.handler)
-				})
-			}
-			processReqFunc(req, cc, handler)
-			return nil
-		}),
-		coapService.WithUDPGoPool(func(processReqFunc coapOptionsConfig.ProcessRequestFunc[*coapUdpClient.Conn], req *pool.Message, cc *coapUdpClient.Conn, handler coapOptionsConfig.HandlerFunc[*coapUdpClient.Conn]) error {
-			if s.config.APIs.COAP.Config.BlockwiseTransfer.Enabled {
-				x := struct {
-					processReqFunc coapOptionsConfig.ProcessRequestFunc[*coapUdpClient.Conn]
-					req            *pool.Message
-					cc             *coapUdpClient.Conn
-					handler        coapOptionsConfig.HandlerFunc[*coapUdpClient.Conn]
-				}{
-					processReqFunc: processReqFunc,
-					req:            req,
-					cc:             cc,
-					handler:        handler,
-				}
-				return s.taskQueue.Submit(func() {
-					x.processReqFunc(x.req, x.cc, x.handler)
-				})
-			}
-			processReqFunc(req, cc, handler)
-			return nil
-		}),
 		coapService.WithOnNewConnection(s.coapConnOnNew),
 		coapService.WithOnInactivityConnection(s.onInactivityConnection),
 		coapService.WithMessagePool(s.messagePool),

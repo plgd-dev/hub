@@ -8,9 +8,6 @@ import (
 
 	"github.com/plgd-dev/go-coap/v3/message/pool"
 	"github.com/plgd-dev/go-coap/v3/mux"
-	coapOptionsConfig "github.com/plgd-dev/go-coap/v3/options/config"
-	coapTcpClient "github.com/plgd-dev/go-coap/v3/tcp/client"
-	coapUdpClient "github.com/plgd-dev/go-coap/v3/udp/client"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/pkg/service"
@@ -60,14 +57,6 @@ func TestNew(t *testing.T) {
 					WithMessagePool(pool.New(uint32(1024), 1024)),
 					WithOnNewConnection(func(conn mux.Conn) {}),
 					WithOnInactivityConnection(func(conn mux.Conn) {}),
-					WithTCPGoPool(func(processReqFunc coapOptionsConfig.ProcessRequestFunc[*coapTcpClient.Conn], req *pool.Message, cc *coapTcpClient.Conn, handler coapOptionsConfig.HandlerFunc[*coapTcpClient.Conn]) error {
-						processReqFunc(req, cc, handler)
-						return nil
-					}),
-					WithUDPGoPool(func(processReqFunc coapOptionsConfig.ProcessRequestFunc[*coapUdpClient.Conn], req *pool.Message, cc *coapUdpClient.Conn, handler coapOptionsConfig.HandlerFunc[*coapUdpClient.Conn]) error {
-						processReqFunc(req, cc, handler)
-						return nil
-					}),
 					WithOverrideTLS(func(cfg *tls.Config) *tls.Config { return cfg }),
 				},
 			},
@@ -95,14 +84,6 @@ func TestNew(t *testing.T) {
 					WithMessagePool(pool.New(uint32(1024), 1024)),
 					WithOnNewConnection(func(conn mux.Conn) {}),
 					WithOnInactivityConnection(func(conn mux.Conn) {}),
-					WithTCPGoPool(func(processReqFunc coapOptionsConfig.ProcessRequestFunc[*coapTcpClient.Conn], req *pool.Message, cc *coapTcpClient.Conn, handler coapOptionsConfig.HandlerFunc[*coapTcpClient.Conn]) error {
-						processReqFunc(req, cc, handler)
-						return nil
-					}),
-					WithUDPGoPool(func(processReqFunc coapOptionsConfig.ProcessRequestFunc[*coapUdpClient.Conn], req *pool.Message, cc *coapUdpClient.Conn, handler coapOptionsConfig.HandlerFunc[*coapUdpClient.Conn]) error {
-						processReqFunc(req, cc, handler)
-						return nil
-					}),
 					WithOverrideTLS(func(cfg *tls.Config) *tls.Config { return cfg }),
 				},
 			},

@@ -856,6 +856,7 @@ coapgateway:
       subscriptionBufferSize: 1000
       messagePoolSize: 1000
       requireBatchObserveEnabled: true
+      messageQueueSize: 16
       keepAlive:
         timeout: 20s
       blockwiseTransfer:

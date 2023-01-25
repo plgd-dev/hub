@@ -119,13 +119,13 @@ func TestClientObserveHandlerCloseObservation(t *testing.T) {
 	defer shutdown()
 
 	co1 := testCoapDial(t, "", true, time.Now().Add(time.Minute))
-	require.NotEmpty(t, co1)
+	require.NotNil(t, co1)
 	defer func() {
 		_ = co1.Close()
 	}()
 	testPrepareDevice(t, co1)
 	co2 := testCoapDial(t, "", true, time.Now().Add(time.Minute))
-	require.NotEmpty(t, co1)
+	require.NotNil(t, co2)
 	defer func() {
 		_ = co2.Close()
 	}()

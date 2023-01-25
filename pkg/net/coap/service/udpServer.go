@@ -142,9 +142,6 @@ func newDTLSServer(config Config, serviceOpts Options, fileWatcher *fsnotify.Wat
 		return nil, fmt.Errorf("cannot create listener: %w", err)
 	}
 	dtlsOpts := make([]coapDtlsServer.Option, 0, 4)
-	if serviceOpts.UDPGoPool != nil {
-		dtlsOpts = append(dtlsOpts, options.WithGoPool(serviceOpts.UDPGoPool))
-	}
 	if serviceOpts.OnNewConnection != nil {
 		dtlsOpts = append(dtlsOpts, options.WithOnNewConn(func(coapConn *coapUdpClient.Conn) {
 			serviceOpts.OnNewConnection(coapConn)
@@ -181,9 +178,6 @@ func newUDPServer(config Config, serviceOpts Options, logger log.Logger, opts ..
 		return nil, fmt.Errorf("cannot create listener: %w", err)
 	}
 	udpOpts := make([]coapUdpServer.Option, 0, 4)
-	if serviceOpts.UDPGoPool != nil {
-		udpOpts = append(udpOpts, options.WithGoPool(serviceOpts.UDPGoPool))
-	}
 	if serviceOpts.OnNewConnection != nil {
 		udpOpts = append(udpOpts, options.WithOnNewConn(func(coapConn *coapUdpClient.Conn) {
 			serviceOpts.OnNewConnection(coapConn)

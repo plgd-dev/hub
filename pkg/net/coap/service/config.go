@@ -22,6 +22,7 @@ type Config struct {
 	Protocols         []Protocol              `yaml:"protocols" json:"protocols"`
 	MaxMessageSize    uint32                  `yaml:"maxMessageSize" json:"maxMessageSize"`
 	MessagePoolSize   int                     `yaml:"messagePoolSize" json:"messagePoolSize"`
+	MessageQueueSize  int                     `yaml:"messageQueueSize" json:"messageQueueSize"`
 	BlockwiseTransfer BlockwiseTransferConfig `yaml:"blockwiseTransfer" json:"blockwiseTransfer"`
 	TLS               TLSConfig               `yaml:"tls" json:"tls"`
 	InactivityMonitor *InactivityMonitor      `yaml:"inactivityMonitor,omitempty" json:"inactivityMonitor,omitempty"`

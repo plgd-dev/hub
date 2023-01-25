@@ -17,7 +17,7 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/service"
 )
 
-func blockWiseTransferSZXFromString(s string) (blockwise.SZX, error) {
+func BlockWiseTransferSZXFromString(s string) (blockwise.SZX, error) {
 	switch strings.ToLower(s) {
 	case "16":
 		return blockwise.SZX16, nil
@@ -93,7 +93,7 @@ func New(ctx context.Context, config Config, router *mux.Router, fileWatcher *fs
 
 	blockWiseTransferSZX := blockwise.SZX1024
 	if config.BlockwiseTransfer.Enabled {
-		blockWiseTransferSZX, err = blockWiseTransferSZXFromString(config.BlockwiseTransfer.SZX)
+		blockWiseTransferSZX, err = BlockWiseTransferSZXFromString(config.BlockwiseTransfer.SZX)
 		if err != nil {
 			return nil, fmt.Errorf("blockWiseTransferSZX error: %w", err)
 		}
@@ -109,6 +109,7 @@ func New(ctx context.Context, config Config, router *mux.Router, fileWatcher *fs
 	opts = append(opts, options.WithContext(ctx))
 	opts = append(opts, options.WithMessagePool(serviceOpts.MessagePool))
 	opts = append(opts, options.WithMaxMessageSize(config.MaxMessageSize))
+	opts = append(opts, options.WithReceivedMessageQueueSize(config.MessageQueueSize))
 	opts = append(opts, options.WithErrors(func(e error) {
 		logger.Errorf("plgd/go-coap: %w", e)
 	}))
