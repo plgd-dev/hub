@@ -109,7 +109,7 @@ func New(ctx context.Context, config Config, router *mux.Router, fileWatcher *fs
 	opts = append(opts, options.WithContext(ctx))
 	opts = append(opts, options.WithMessagePool(serviceOpts.MessagePool))
 	opts = append(opts, options.WithMaxMessageSize(config.MaxMessageSize))
-	opts = append(opts, options.WithReceivedMessageQueueSize(1))
+	opts = append(opts, options.WithReceivedMessageQueueSize(config.MessageQueueSize))
 	opts = append(opts, options.WithErrors(func(e error) {
 		logger.Errorf("plgd/go-coap: %w", e)
 	}))
