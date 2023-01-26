@@ -7,10 +7,10 @@ COPY . .
 RUN ( cd /usr/local/go && patch -p1 < $GOPATH/src/github.com/plgd-dev/hub/tools/docker/patches/shrink_tls_conn.patch )
 ARG root_directory=$GOPATH/src/github.com/plgd-dev/hub
 
-#certificate-generator
-ARG service=kit
-WORKDIR /
-RUN cd $GOPATH/pkg/mod/github.com/plgd-dev/kit/v2* && go build -ldflags "-linkmode external -extldflags -static" -o /go/bin/certificate-generator ./cmd/certificate-generator
+#cert-tool
+ARG tool=cert-tool
+WORKDIR $root_directory/tools/$tool/cmd
+RUN go build -ldflags "-linkmode external -extldflags -static" -o /go/bin/cert-tool
 
 #grpc-gateway
 ARG service=grpc-gateway
@@ -51,7 +51,7 @@ RUN ARCH="$(dpkg --print-architecture)" ; \
     echo "deb [ arch=${ARCH} ] https://repo.mongodb.org/apt/ubuntu focal/mongodb-org/4.4 multiverse" | tee /etc/apt/sources.list.d/mongodb-org-4.4.list
 RUN apt update
 RUN apt-get install -y mongodb-org-server mongodb-org
-COPY --from=build /go/bin/certificate-generator /usr/local/bin/certificate-generator
+COPY --from=build /go/bin/cert-tool /usr/local/bin/cert-tool
 COPY --from=build /go/bin/grpc-gateway.test /usr/local/bin/grpc-gateway.test
 COPY --from=build /go/bin/test-iotivity-lite.test /usr/local/bin/test-iotivity-lite.test
 COPY --from=build /go/bin/nats-server /usr/local/bin/nats-server

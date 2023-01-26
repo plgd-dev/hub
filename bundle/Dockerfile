@@ -57,11 +57,10 @@ ARG service=cloud2cloud-connector
 WORKDIR $root_directory/$service
 RUN go build -ldflags "-linkmode external -extldflags -static" -o /go/bin/$service ./cmd/service
 
-
-#certificate-generator
-ARG service=kit
-WORKDIR /
-RUN cd $GOPATH/pkg/mod/github.com/plgd-dev/kit/v2* && go build -ldflags "-linkmode external -extldflags -static" -o /go/bin/certificate-generator ./cmd/certificate-generator
+#cert-tool
+ARG tool=cert-tool
+WORKDIR $root_directory/tools/$tool
+RUN go build -ldflags "-linkmode external -extldflags -static" -o /go/bin/$tool ./cmd
 
 #nats
 WORKDIR $root_directory
@@ -116,7 +115,7 @@ COPY --from=build /go/bin/identity-store /usr/local/bin/identity-store
 COPY --from=build /go/src/github.com/plgd-dev/hub/identity-store/config.yaml /configs/identity-store.yaml
 COPY --from=build /go/bin/certificate-authority /usr/local/bin/certificate-authority
 COPY --from=build /go/src/github.com/plgd-dev/hub/certificate-authority/config.yaml /configs/certificate-authority.yaml
-COPY --from=build /go/bin/certificate-generator /usr/local/bin/certificate-generator
+COPY --from=build /go/bin/cert-tool /usr/local/bin/cert-tool
 COPY --from=build /go/bin/nats-server /usr/local/bin/nats-server
 COPY --from=build /go/bin/nats /usr/local/bin/nats
 COPY --from=build /go/src/github.com/plgd-dev/hub/bundle/jetstream.json /configs/jetstream.json
