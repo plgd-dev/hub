@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"github.com/plgd-dev/device/v2/pkg/codec/cbor"
+	"github.com/plgd-dev/device/v2/pkg/security/generateCertificate"
 	"github.com/plgd-dev/device/v2/schema"
 	"github.com/plgd-dev/device/v2/schema/device"
 	"github.com/plgd-dev/device/v2/schema/interfaces"
@@ -37,7 +38,6 @@ import (
 	"github.com/plgd-dev/hub/v2/test/config"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	"github.com/plgd-dev/kit/v2/security"
-	"github.com/plgd-dev/kit/v2/security/generateCertificate"
 )
 
 const (
