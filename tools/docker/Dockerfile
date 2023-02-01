@@ -1,4 +1,6 @@
-FROM golang:1.19.4-alpine AS build
+# with golang 1.19.4 we have issue with TLS handshake in coap-gateway
+# this issue is replicable with real devices that connects to AWS
+FROM golang:1.18.8-alpine AS build
 ARG DIRECTORY
 ARG NAME
 RUN apk add --no-cache curl git build-base
