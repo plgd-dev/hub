@@ -7,8 +7,8 @@ import (
 	"crypto/rand"
 	"testing"
 
+	"github.com/plgd-dev/device/v2/pkg/security/generateCertificate"
 	"github.com/plgd-dev/hub/v2/certificate-authority/pb"
-	"github.com/plgd-dev/kit/v2/security/generateCertificate"
 	"github.com/stretchr/testify/require"
 )
 

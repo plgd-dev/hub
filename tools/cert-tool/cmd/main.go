@@ -2,7 +2,6 @@ package main
 
 import (
 	"crypto/ecdsa"
-	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/x509"
 	"encoding/pem"
@@ -11,8 +10,8 @@ import (
 	"os"
 
 	flags "github.com/jessevdk/go-flags"
+	"github.com/plgd-dev/device/v2/pkg/security/generateCertificate"
 	"github.com/plgd-dev/kit/v2/security"
-	"github.com/plgd-dev/kit/v2/security/generateCertificate"
 )
 
 type Options struct {
@@ -126,8 +125,13 @@ func main() {
 		fmt.Println(err)
 		os.Exit(2)
 	}
+	curve, err := opts.Certificate.ToEllipticCurve()
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(2)
+	}
 
-	priv, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	priv, err := ecdsa.GenerateKey(curve, rand.Reader)
 	if err != nil {
 		log.Fatal(err)
 	}
