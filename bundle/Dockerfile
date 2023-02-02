@@ -92,7 +92,7 @@ RUN cd /web && \
     npm install && \
     npm run build
 
-FROM ubuntu:20.04 AS service
+FROM ubuntu:22.04 AS service
 RUN apt update
 RUN apt install -y wget gnupg iproute2 systemctl openssl nginx ca-certificates netcat
 RUN wget -qO - https://www.mongodb.org/static/pgp/server-4.4.asc | apt-key add -
