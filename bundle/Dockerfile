@@ -92,15 +92,19 @@ RUN cd /web && \
     npm install && \
     npm run build
 
-FROM ubuntu:20.04 AS service
+FROM ubuntu:22.04 AS service
 RUN apt update
-RUN apt install -y wget gnupg iproute2 systemctl openssl nginx ca-certificates netcat
-RUN wget -qO - https://www.mongodb.org/static/pgp/server-4.4.asc | apt-key add -
-RUN ARCH="$(dpkg --print-architecture)" ; \
-    wget https://github.com/mikefarah/yq/releases/download/v4.6.3/yq_linux_${ARCH} -O /usr/bin/yq && chmod +x /usr/bin/yq ; \
-    echo "deb [ arch=${ARCH} ] https://repo.mongodb.org/apt/ubuntu focal/mongodb-org/4.4 multiverse" | tee /etc/apt/sources.list.d/mongodb-org-4.4.list
-RUN apt update
-RUN apt-get install -y mongodb-org-server mongodb-org
+# iproute2 -> ip utility in run.sh
+# netcat -> nc utility in run.sh
+# nginx -> nginx server in run.sh
+# openssl -> openssl utility in run.sh
+RUN apt install -y ca-certificates gnupg iproute2 netcat nginx openssl wget
+# yq utility in run.sh
+RUN wget https://github.com/mikefarah/yq/releases/download/v4.6.3/yq_linux_$(dpkg --print-architecture) -O /usr/bin/yq && chmod +x /usr/bin/yq
+RUN wget -qO - https://pgp.mongodb.com/server-6.0.asc | gpg --dearmor -o /etc/apt/trusted.gpg.d/mongodb-6.0.gpg
+RUN echo "deb [ arch=$(dpkg --print-architecture) ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/6.0 multiverse" | tee /etc/apt/sources.list.d/mongodb-org-6.0.list
+RUN apt update && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y mongodb-org mongodb-org-server
 COPY --from=build /go/bin/coap-gateway /usr/local/bin/coap-gateway
 COPY --from=build /go/src/github.com/plgd-dev/hub/coap-gateway/config.yaml /configs/coap-gateway.yaml
 COPY --from=build /go/bin/grpc-gateway /usr/local/bin/grpc-gateway
