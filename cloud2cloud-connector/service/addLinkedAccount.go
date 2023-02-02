@@ -40,10 +40,6 @@ func generateRandomString(n int) (string, error) {
 }
 
 func (rh *RequestHandler) handleOAuth(w http.ResponseWriter, r *http.Request, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud) (int, error) {
-	linkedCloud, ok := rh.store.LoadCloud(linkedAccount.LinkedCloudID)
-	if !ok {
-		return http.StatusBadRequest, fmt.Errorf("cannot find linked cloud with ID %v: not found", linkedAccount.LinkedCloudID)
-	}
 	t, err := generateRandomString(32)
 	if err != nil {
 		return http.StatusInternalServerError, fmt.Errorf("cannot generate token")
