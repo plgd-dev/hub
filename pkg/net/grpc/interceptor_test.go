@@ -3,6 +3,7 @@ package grpc_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"github.com/stretchr/testify/assert"
@@ -18,7 +19,7 @@ func TestUnaryInterceptor(t *testing.T) {
 	go func() {
 		_ = svr.Serve()
 	}()
-
+	time.Sleep(100 * time.Millisecond)
 	c := StubGrpcClient(svr.Addr())
 	_, err := c.TestCall(context.Background(), &TestRequest{})
 	require.Error(t, err)
@@ -34,7 +35,7 @@ func TestStreamInterceptor(t *testing.T) {
 	go func() {
 		_ = svr.Serve()
 	}()
-
+	time.Sleep(100 * time.Millisecond)
 	c := StubGrpcClient(svr.Addr())
 	s, err := c.TestStream(context.Background())
 	require.NoError(t, err)
