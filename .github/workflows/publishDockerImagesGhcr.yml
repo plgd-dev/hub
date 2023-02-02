@@ -16,7 +16,34 @@ on:
   push:
     tags:
       - "*"
-
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "Choose target to build"
+        required: true
+        type: choice
+        default: "all"
+        options:
+          - all
+          - resource-aggregate
+          - resource-directory
+          - coap-gateway
+          - coap-gateway-go1-18
+          - cloud2cloud-connector
+          - cloud2cloud-gateway
+          - certificate-authority
+          - grpc-gateway
+          - http-gateway
+          - identity-store
+          - mock-oauth-server
+          - bundle
+          - test-cloud-server
+          - cert-tool
+      push:
+        description: "Push to container registry"
+        required: false
+        type: boolean
+        default: false
 env:
   REGISTRY: ghcr.io
   VNEXT_BRANCH: main
@@ -67,14 +94,14 @@ jobs:
           - name: cert-tool
             directory: tools/cert-tool
             file: tools/cert-tool/Dockerfile
-# coap-gateway builded by Golang 1.19.4 has an issue with TLS handshake.
-# This issue is reproducible with real devices that connect to AWS.
-# This seems to be caused by the device's old mbedtls library:
-# https://github.com/Mbed-TLS/mbedtls/tree/d81c11b8ab61fd5b2da8133aa73c5fe33a0633eb
+          # coap-gateway builded by Golang 1.19.4 has an issue with TLS handshake.
+          # This issue is reproducible with real devices that connect to AWS.
+          # This seems to be caused by the device's old mbedtls library:
+          # https://github.com/Mbed-TLS/mbedtls/tree/d81c11b8ab61fd5b2da8133aa73c5fe33a0633eb
           - name: coap-gateway-go1-18
             directory: coap-gateway
             file: tools/docker/Dockerfile.go1.18
-
+    if: $${{ github.event_name != 'workflow_dispatch' || inputs.target == 'all' || inputs.target == matrix.name }}
     permissions:
       contents: read
       packages: write
@@ -130,6 +157,6 @@ jobs:
             DIRECTORY=${{ matrix.directory }}
             NAME=${{ matrix.name }}
           file: ${{ matrix.file }}
-          push: true
+          push: ${{ github.event_name != 'workflow_dispatch' || inputs.push }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
