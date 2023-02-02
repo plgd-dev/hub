@@ -125,7 +125,7 @@ jobs:
             type=sha,enable=${{ startsWith(steps.vars.outputs.branch, env.VNEXT_BRANCH) }},prefix=vnext-,format=short
 
       - name: Build and push docker image
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v4
         with:
           context: ./
           platforms: linux/amd64,linux/arm64
