@@ -18,27 +18,6 @@ on:
       - "*"
   workflow_dispatch:
     inputs:
-      target:
-        description: "Choose target to build"
-        required: true
-        type: choice
-        default: "all"
-        options:
-          - all
-          - resource-aggregate
-          - resource-directory
-          - coap-gateway
-          - coap-gateway-go1-18
-          - cloud2cloud-connector
-          - cloud2cloud-gateway
-          - certificate-authority
-          - grpc-gateway
-          - http-gateway
-          - identity-store
-          - mock-oauth-server
-          - bundle
-          - test-cloud-server
-          - cert-tool
       push:
         description: "Push to container registry"
         required: false
@@ -101,7 +80,6 @@ jobs:
           - name: coap-gateway-go1-18
             directory: coap-gateway
             file: tools/docker/Dockerfile.go1.18
-    if: $${{ github.event_name != 'workflow_dispatch' || inputs.target == 'all' || inputs.target == matrix.name }}
     permissions:
       contents: read
       packages: write
