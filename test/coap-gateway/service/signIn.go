@@ -15,8 +15,10 @@ import (
 func signInPostHandler(req *mux.Message, client *Client, signIn coapgwService.CoapSignInReq) {
 	logErrorAndCloseClient := func(err error, code coapCodes.Code) {
 		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign in: %w", err), code, req.Token())
-		if err := client.Close(); err != nil {
-			log.Errorf("sign in error: %w", err)
+		if client.handler == nil || client.handler.CloseOnError() {
+			if err := client.Close(); err != nil {
+				log.Errorf("sign in error: %w", err)
+			}
 		}
 	}
 

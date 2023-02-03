@@ -13,7 +13,6 @@ import (
 	"github.com/plgd-dev/go-coap/v3/mux"
 	"github.com/plgd-dev/go-coap/v3/net"
 	"github.com/plgd-dev/go-coap/v3/options"
-	coapOptionsConfig "github.com/plgd-dev/go-coap/v3/options/config"
 	"github.com/plgd-dev/go-coap/v3/tcp"
 	coapTcpClient "github.com/plgd-dev/go-coap/v3/tcp/client"
 	coapTcpServer "github.com/plgd-dev/go-coap/v3/tcp/server"
@@ -98,6 +97,7 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 		sigs:        make(chan os.Signal, 1),
 		taskQueue:   queue,
 		makeHandler: makeHandler,
+		clients:     nil,
 	}
 
 	if err := s.setupCoapServer(); err != nil {
@@ -212,15 +212,6 @@ func (s *Service) setupCoapServer() error {
 	opts = append(opts, options.WithContext(s.ctx))
 	opts = append(opts, options.WithErrors(func(e error) {
 		log.Errorf("plgd/test-coap: %w", e)
-	}))
-	opts = append(opts, options.WithGoPool(func(processReqFunc coapOptionsConfig.ProcessRequestFunc[*coapTcpClient.Conn], req *pool.Message, cc *coapTcpClient.Conn, handler coapOptionsConfig.HandlerFunc[*coapTcpClient.Conn]) error {
-		// we call directly function in connection-goroutine because
-		// pairing request/response cannot be done in taskQueue for a observe resource.
-		// - the observe resource creates task which wait for the response and this wait can be infinite
-		// if all task goroutines are processing observations and they are waiting for the responses, which
-		// will be stored in task queue.  it happens when we use task queue here.
-		processReqFunc(req, cc, handler)
-		return nil
 	}))
 	s.coapServer = tcp.NewServer(opts...)
 	return nil

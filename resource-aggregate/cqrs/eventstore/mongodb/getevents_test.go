@@ -107,13 +107,13 @@ func runGetEvents(t *testing.T, cfg runGetEventsConfig) {
 
 	eventCount := addEventsForGetEventsToDB(ctx, t, store)
 
-	rand.Seed(time.Now().UnixNano())
+	weakRng := rand.New(rand.NewSource(time.Now().UnixNano()))
 	start := time.Now()
 	for i := 0; i < cfg.iterations; i++ {
 		if cfg.queries != nil {
-			getEventsByTimestamp(ctx, t, store, cfg.queries, int64(rand.Intn(eventCount+1)))
+			getEventsByTimestamp(ctx, t, store, cfg.queries, int64(weakRng.Intn(eventCount+1)))
 		} else {
-			getEventsByTimestamp(ctx, t, store, cfg.generator(), int64(rand.Intn(eventCount+1)))
+			getEventsByTimestamp(ctx, t, store, cfg.generator(), int64(weakRng.Intn(eventCount+1)))
 		}
 	}
 	end := time.Now()
@@ -152,11 +152,11 @@ func TestGetDeviceEventsByTimestamp(t *testing.T) {
 }
 
 func TestGetResourceEventsByTimestamp(t *testing.T) {
-	rand.Seed(time.Now().UnixNano())
+	weakRng := rand.New(rand.NewSource(time.Now().UnixNano()))
 	runGetEvents(t, runGetEventsConfig{
 		iterations: 5000,
 		generator: func() []eventstore.GetEventsQuery {
-			resourceIndex := rand.Intn(getEventsResourceCount + 1)
+			resourceIndex := weakRng.Intn(getEventsResourceCount + 1)
 			deviceIndex := resourceIndex % getEventsDeviceCount
 			return []eventstore.GetEventsQuery{
 				{
@@ -169,13 +169,13 @@ func TestGetResourceEventsByTimestamp(t *testing.T) {
 }
 
 func TestGetResourcesEventsByTimestamp(t *testing.T) {
-	rand.Seed(time.Now().UnixNano())
+	weakRng := rand.New(rand.NewSource(time.Now().UnixNano()))
 	runGetEvents(t, runGetEventsConfig{
 		iterations: 5000,
 		generator: func() []eventstore.GetEventsQuery {
 			queries := make([]eventstore.GetEventsQuery, 5)
 			for i := range queries {
-				resourceIndex := rand.Intn(getEventsResourceCount + 1)
+				resourceIndex := weakRng.Intn(getEventsResourceCount + 1)
 				deviceIndex := resourceIndex % getEventsDeviceCount
 				queries[i].GroupID = "device" + strconv.Itoa(deviceIndex)
 				queries[i].AggregateID = "resource" + strconv.Itoa(resourceIndex)

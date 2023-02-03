@@ -1,4 +1,4 @@
-FROM golang:1.19.4-alpine AS build
+FROM golang:1.19.5-alpine AS build
 RUN apk add --no-cache curl git build-base
 WORKDIR $GOPATH/src/github.com/plgd-dev/hub
 COPY go.mod go.sum ./
@@ -57,11 +57,10 @@ ARG service=cloud2cloud-connector
 WORKDIR $root_directory/$service
 RUN go build -ldflags "-linkmode external -extldflags -static" -o /go/bin/$service ./cmd/service
 
-
-#certificate-generator
-ARG service=kit
-WORKDIR /
-RUN cd $GOPATH/pkg/mod/github.com/plgd-dev/kit/v2* && go build -ldflags "-linkmode external -extldflags -static" -o /go/bin/certificate-generator ./cmd/certificate-generator
+#cert-tool
+ARG tool=cert-tool
+WORKDIR $root_directory/tools/$tool
+RUN go build -ldflags "-linkmode external -extldflags -static" -o /go/bin/$tool ./cmd
 
 #nats
 WORKDIR $root_directory
@@ -93,15 +92,19 @@ RUN cd /web && \
     npm install && \
     npm run build
 
-FROM ubuntu:20.04 as service
+FROM ubuntu:22.04 AS service
 RUN apt update
-RUN apt install -y wget gnupg iproute2 systemctl openssl nginx ca-certificates netcat
-RUN wget -qO - https://www.mongodb.org/static/pgp/server-4.4.asc | apt-key add -
-RUN ARCH="$(dpkg --print-architecture)" ; \
-    wget https://github.com/mikefarah/yq/releases/download/v4.6.3/yq_linux_${ARCH} -O /usr/bin/yq && chmod +x /usr/bin/yq ; \
-    echo "deb [ arch=${ARCH} ] https://repo.mongodb.org/apt/ubuntu focal/mongodb-org/4.4 multiverse" | tee /etc/apt/sources.list.d/mongodb-org-4.4.list
-RUN apt update
-RUN apt-get install -y mongodb-org-server mongodb-org
+# iproute2 -> ip utility in run.sh
+# netcat -> nc utility in run.sh
+# nginx -> nginx server in run.sh
+# openssl -> openssl utility in run.sh
+RUN apt install -y ca-certificates gnupg iproute2 netcat nginx openssl wget
+# yq utility in run.sh
+RUN wget https://github.com/mikefarah/yq/releases/download/v4.6.3/yq_linux_$(dpkg --print-architecture) -O /usr/bin/yq && chmod +x /usr/bin/yq
+RUN wget -qO - https://pgp.mongodb.com/server-6.0.asc | gpg --dearmor -o /etc/apt/trusted.gpg.d/mongodb-6.0.gpg
+RUN echo "deb [ arch=$(dpkg --print-architecture) ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/6.0 multiverse" | tee /etc/apt/sources.list.d/mongodb-org-6.0.list
+RUN apt update && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y mongodb-org mongodb-org-server
 COPY --from=build /go/bin/coap-gateway /usr/local/bin/coap-gateway
 COPY --from=build /go/src/github.com/plgd-dev/hub/coap-gateway/config.yaml /configs/coap-gateway.yaml
 COPY --from=build /go/bin/grpc-gateway /usr/local/bin/grpc-gateway
@@ -116,7 +119,7 @@ COPY --from=build /go/bin/identity-store /usr/local/bin/identity-store
 COPY --from=build /go/src/github.com/plgd-dev/hub/identity-store/config.yaml /configs/identity-store.yaml
 COPY --from=build /go/bin/certificate-authority /usr/local/bin/certificate-authority
 COPY --from=build /go/src/github.com/plgd-dev/hub/certificate-authority/config.yaml /configs/certificate-authority.yaml
-COPY --from=build /go/bin/certificate-generator /usr/local/bin/certificate-generator
+COPY --from=build /go/bin/cert-tool /usr/local/bin/cert-tool
 COPY --from=build /go/bin/nats-server /usr/local/bin/nats-server
 COPY --from=build /go/bin/nats /usr/local/bin/nats
 COPY --from=build /go/src/github.com/plgd-dev/hub/bundle/jetstream.json /configs/jetstream.json

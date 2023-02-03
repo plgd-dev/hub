@@ -78,9 +78,6 @@ func newTCPServer(config Config, serviceOpts Options, fileWatcher *fsnotify.Watc
 		return nil, fmt.Errorf("cannot create listener: %w", err)
 	}
 	tcpOpts := make([]coapTcpServer.Option, 0, 3)
-	if serviceOpts.TCPGoPool != nil {
-		tcpOpts = append(tcpOpts, options.WithGoPool(serviceOpts.TCPGoPool))
-	}
 	if serviceOpts.OnNewConnection != nil {
 		tcpOpts = append(tcpOpts, options.WithOnNewConn(func(cc *coapTcpClient.Conn) {
 			serviceOpts.OnNewConnection(cc)

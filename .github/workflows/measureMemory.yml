@@ -45,12 +45,14 @@ jobs:
             resourceDataSize=$(echo "scale=2 ; $(_jq '.ResourceDataSize') / 1024" | bc )
             echo "| $(_jq '.NumDevices') | $(_jq '.NumResources') | $resourceDataSize | $(_jq '.CurrentMemRSS') | $duration |" >> $GITHUB_STEP_SUMMARY
           done
-          
+
   coapGateway:
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
+      # max number of running jobs is 20 for a single organization, so lets keep at least 4 available to all other repositories
+      max-parallel: 16
       matrix:
         include:
           #1
@@ -94,7 +96,7 @@ jobs:
             numResources: 500
             resourceDataSize: 1024
             logLevel: info
-            logDumpBody: true            
+            logDumpBody: true
             timeout: 120m
           #1000
           - name: devices/1000/resources/1/size/16KB
@@ -277,14 +279,14 @@ jobs:
         continue-on-error: true
         run: |
           make test/mem TEST_MEMORY_COAP_GATEWAY_RESOURCE_DATA_SIZE=${{ matrix.resourceDataSize }} TEST_TIMEOUT=${{ matrix.timeout }} TEST_MEMORY_COAP_GATEWAY_NUM_DEVICES=${{ matrix.numDevices }} TEST_MEMORY_COAP_GATEWAY_NUM_RESOURCES=${{ matrix.numResources }} | tee >(grep "TestMemoryWithDevices.result:" | sed -e "s/.*TestMemoryWithDevices.result://g" | jq -r -c > out.json)
-      
+
       - name: Dump file
-        if: success() 
+        if: success()
         run: |
           jq -rc "." out.json
 
       - name: Upload file
-        if: success() 
+        if: success()
         uses: actions/upload-artifact@v3
         with:
           name: ${{ hashFiles('out.json') || 'none' }}

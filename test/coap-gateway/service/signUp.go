@@ -15,8 +15,10 @@ import (
 func signUpPostHandler(r *mux.Message, client *Client) {
 	logErrorAndCloseClient := func(err error, code coapCodes.Code) {
 		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign up: %w", err), code, r.Token())
-		if err := client.Close(); err != nil {
-			log.Errorf("sign up error: %w", err)
+		if client.handler == nil || client.handler.CloseOnError() {
+			if err := client.Close(); err != nil {
+				log.Errorf("sign up error: %w", err)
+			}
 		}
 	}
 

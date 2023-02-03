@@ -124,12 +124,26 @@ mongodb:
           cat /tmp/certs/tls.key >> /certs/cert.pem
           cp /tmp/certs/ca.crt  /certs/ca.pem
           EOF
+    # workaround for https://github.com/bitnami/charts/issues/10264, https://jira.mongodb.org/browse/MONGOSH-1240
+    - name: mongo-binary
+      image: docker.io/bitnami/mongodb:5.0.10-debian-11-r3
+      imagePullPolicy: "IfNotPresent"
+      volumeMounts:
+        - name: mongodb-crt
+          mountPath: "/certs"
+      command:
+        - sh
+        - "-c"
+        - |
+          /bin/bash <<'EOF'
+          cp /opt/bitnami/mongodb/bin/mongo /certs/mongo
+          EOF
   livenessProbe:
     enabled: false
   customLivenessProbe:
     exec:
       command:
-        - mongosh
+        - /certs/mongo
         - --tls
         - --tlsCertificateKeyFile=/certs/cert.pem
         - --tlsCAFile=/certs/ca.pem
@@ -149,7 +163,7 @@ mongodb:
         - -ec
         - |
           TLS_OPTIONS='--tls --tlsCertificateKeyFile=/certs/cert.pem --tlsCAFile=/certs/ca.pem'
-          mongosh $TLS_OPTIONS --eval 'db.hello().isWritablePrimary || db.hello().secondary' | grep -q 'true'
+          /certs/mongo $TLS_OPTIONS --eval 'db.hello().isWritablePrimary || db.hello().secondary' | grep -q 'true'
     initialDelaySeconds: 10
     periodSeconds: 20
     timeoutSeconds: 10
@@ -856,6 +870,7 @@ coapgateway:
       subscriptionBufferSize: 1000
       messagePoolSize: 1000
       requireBatchObserveEnabled: true
+      messageQueueSize: 16
       keepAlive:
         timeout: 20s
       blockwiseTransfer:

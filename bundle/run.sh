@@ -112,13 +112,13 @@ if ip route get $FQDN 2>/dev/null >/dev/null; then
   fqdnSAN="--cert.san.ip=$FQDN"
 fi
 echo "generating CA cert"
-certificate-generator --cmd.generateRootCA --outCert=$ROOT_CERT_PATH --outKey=$ROOT_KEY_PATH --cert.subject.cn="Root CA"
+cert-tool --cmd.generateRootCA --outCert=$ROOT_CERT_PATH --outKey=$ROOT_KEY_PATH --cert.subject.cn="Root CA"
 echo "generating GRPC internal cert"
-certificate-generator --cmd.generateCertificate --outCert=$INTERNAL_CERT_DIR_PATH/$GRPC_INTERNAL_CERT_NAME --outKey=$INTERNAL_CERT_DIR_PATH/$GRPC_INTERNAL_CERT_KEY_NAME --cert.subject.cn="localhost" --cert.san.domain="localhost" --cert.san.ip="0.0.0.0" --cert.san.ip="127.0.0.1" $fqdnSAN --signerCert=$ROOT_CERT_PATH --signerKey=$ROOT_KEY_PATH
+cert-tool --cmd.generateCertificate --outCert=$INTERNAL_CERT_DIR_PATH/$GRPC_INTERNAL_CERT_NAME --outKey=$INTERNAL_CERT_DIR_PATH/$GRPC_INTERNAL_CERT_KEY_NAME --cert.subject.cn="localhost" --cert.san.domain="localhost" --cert.san.ip="0.0.0.0" --cert.san.ip="127.0.0.1" $fqdnSAN --signerCert=$ROOT_CERT_PATH --signerKey=$ROOT_KEY_PATH
 echo "generating COAP-GW cert"
-certificate-generator --cmd.generateIdentityCertificate=$COAP_GATEWAY_HUB_ID --outCert=$EXTERNAL_CERT_DIR_PATH/$COAP_GATEWAY_FILE_CERT_NAME --outKey=$EXTERNAL_CERT_DIR_PATH/$COAP_GATEWAY_FILE_CERT_KEY_NAME --cert.san.domain=$COAP_GATEWAY_FQDN --signerCert=$ROOT_CERT_PATH --signerKey=$ROOT_KEY_PATH
+cert-tool --cmd.generateIdentityCertificate=$COAP_GATEWAY_HUB_ID --outCert=$EXTERNAL_CERT_DIR_PATH/$COAP_GATEWAY_FILE_CERT_NAME --outKey=$EXTERNAL_CERT_DIR_PATH/$COAP_GATEWAY_FILE_CERT_KEY_NAME --cert.san.domain=$COAP_GATEWAY_FQDN --signerCert=$ROOT_CERT_PATH --signerKey=$ROOT_KEY_PATH
 echo "generating NGINX cert"
-certificate-generator --cmd.generateCertificate --outCert=$EXTERNAL_CERT_DIR_PATH/$GRPC_INTERNAL_CERT_NAME --outKey=$EXTERNAL_CERT_DIR_PATH/$GRPC_INTERNAL_CERT_KEY_NAME --cert.subject.cn="localhost" --cert.san.domain="localhost" --cert.san.ip="0.0.0.0" --cert.san.ip="127.0.0.1" $fqdnSAN --signerCert=$ROOT_CERT_PATH --signerKey=$ROOT_KEY_PATH
+cert-tool --cmd.generateCertificate --outCert=$EXTERNAL_CERT_DIR_PATH/$GRPC_INTERNAL_CERT_NAME --outKey=$EXTERNAL_CERT_DIR_PATH/$GRPC_INTERNAL_CERT_KEY_NAME --cert.subject.cn="localhost" --cert.san.domain="localhost" --cert.san.ip="0.0.0.0" --cert.san.ip="127.0.0.1" $fqdnSAN --signerCert=$ROOT_CERT_PATH --signerKey=$ROOT_KEY_PATH
 
 echo "ROOT_CERT_PATH=${ROOT_CERT_PATH} CA_POOL=${CA_POOL}"
 cat ${ROOT_CERT_PATH} > ${CA_POOL}

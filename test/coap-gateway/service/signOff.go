@@ -14,12 +14,15 @@ import (
 func signOffHandler(req *mux.Message, client *Client) {
 	logErrorAndCloseClient := func(err error, code coapCodes.Code) {
 		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign off: %w", err), code, req.Token())
-		if err := client.Close(); err != nil {
-			log.Errorf("sign off error: %w", err)
+		if client.handler == nil || client.handler.CloseOnError() {
+			if err := client.Close(); err != nil {
+				log.Errorf("sign off error: %w", err)
+			}
 		}
 	}
 
-	if err := client.handler.SignOff(); err != nil {
+	err := client.handler.SignOff()
+	if err != nil {
 		logErrorAndCloseClient(err, coapCodes.InternalServerError)
 		return
 	}

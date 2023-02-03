@@ -319,6 +319,17 @@ func OnboardDevSim(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 	return OnboardDevSimForClient(ctx, t, c, config.OAUTH_MANAGER_CLIENT_ID, deviceID, hubEndpoint, expectedResources)
 }
 
+func OffBoardDevSim(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, deviceID string) {
+	devClient, err := NewSDKClient()
+	require.NoError(t, err)
+	defer func() {
+		_ = devClient.Close(ctx)
+	}()
+
+	err = devClient.OffboardDevice(ctx, deviceID)
+	require.NoError(t, err)
+}
+
 func WaitForDevice(ctx context.Context, t *testing.T, client pb.GrpcGateway_SubscribeToEventsClient, deviceID, subID, correlationID string, expectedResources []schema.ResourceLink) {
 	getID := func(ev *pb.Event) string {
 		switch v := ev.GetType().(type) {

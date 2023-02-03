@@ -20,6 +20,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/plgd-dev/device/v2/pkg/security/generateCertificate"
 	"github.com/plgd-dev/go-coap/v3/message"
 	"github.com/plgd-dev/go-coap/v3/message/codes"
 	"github.com/plgd-dev/go-coap/v3/message/pool"
@@ -41,7 +42,6 @@ import (
 	"github.com/plgd-dev/kit/v2/codec/cbor"
 	"github.com/plgd-dev/kit/v2/codec/json"
 	"github.com/plgd-dev/kit/v2/security"
-	"github.com/plgd-dev/kit/v2/security/generateCertificate"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

@@ -37,6 +37,7 @@ data:
         subscriptionBufferSize:  {{ .apis.coap.subscriptionBufferSize }}
         messagePoolSize: {{ .apis.coap.messagePoolSize }}
         requireBatchObserveEnabled: {{ .apis.coap.requireBatchObserveEnabled }}
+        messageQueueSize: {{ .apis.coap.messageQueueSize }}
         keepAlive:
           timeout: {{ .apis.coap.keepAlive.timeout }}
         blockwiseTransfer:

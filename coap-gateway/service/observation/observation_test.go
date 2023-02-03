@@ -57,7 +57,7 @@ func TestIsResourceObservableWithInterface(t *testing.T) {
 			o.Apply(&cfg)
 		}
 		h := &observerHandlerWithCoap{
-			DefaultObserverHandler: coapgwTest.MakeDefaultObserverHandler(tokenLifetime),
+			DefaultObserverHandler: coapgwTest.MakeDefaultObserverHandler(int64(tokenLifetime.Seconds())),
 			t:                      t,
 			coapConn:               cfg.GetCoapConnection(),
 			setInitializedHandler:  setHandler,

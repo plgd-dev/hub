@@ -15,12 +15,15 @@ import (
 func signOutPostHandler(req *mux.Message, client *Client, signOut coapgwService.CoapSignInReq) {
 	logErrorAndCloseClient := func(err error, code coapCodes.Code) {
 		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign out: %w", err), code, req.Token())
-		if err := client.Close(); err != nil {
-			log.Errorf("sign out error: %w", err)
+		if client.handler == nil || client.handler.CloseOnError() {
+			if err := client.Close(); err != nil {
+				log.Errorf("sign out error: %w", err)
+			}
 		}
 	}
 
-	if err := client.handler.SignOut(signOut); err != nil {
+	err := client.handler.SignOut(signOut)
+	if err != nil {
 		logErrorAndCloseClient(err, coapCodes.InternalServerError)
 		return
 	}
