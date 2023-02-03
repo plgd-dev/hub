@@ -42,7 +42,7 @@ RUN mkdir -p ./nats
 RUN unzip ./nats.zip -d ./nats
 RUN cp ./nats/*/nats /go/bin/nats
 
-FROM ubuntu:20.04 AS service
+FROM ubuntu:22.04 AS service
 RUN apt update
 # iproute2 -> ip utility in run.sh
 # netcat -> nc utility in run.sh
