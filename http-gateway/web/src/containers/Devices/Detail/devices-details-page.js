@@ -16,7 +16,7 @@ import { PendingCommandsExpandableList } from '@/containers/pending-commands'
 import DevicesDetails from './DevicesDetails'
 import { DevicesResources } from '../Resources/_devices-resources'
 import DevicesDetailsHeader from './DevicesDetailsHeader'
-import { DevicesDetailsTitle } from './_devices-details-title'
+import DevicesDetailsTitle from './DevicesDetailsTitle'
 import { DevicesResourcesModal } from '../Resources/_devices-resources-modal'
 import { CommanTimeoutControl } from '../_command-timeout-control'
 import {
