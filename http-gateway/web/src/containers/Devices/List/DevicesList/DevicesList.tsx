@@ -1,11 +1,10 @@
-import PropTypes from 'prop-types'
-import { useMemo } from 'react'
+import { FC, useMemo } from 'react'
 import { useIntl } from 'react-intl'
 import { Link, useHistory } from 'react-router-dom'
 import classNames from 'classnames'
-import { Button } from '@/components/button'
-import { Badge } from '@/components/badge'
-import { Table } from '@/components/table'
+import Button from '@shared-ui/components/new/Button'
+import Badge from '@shared-ui/components/new/Badge'
+import Table from '@shared-ui/components/new/Table'
 import { IndeterminateCheckbox } from '@/components/checkbox'
 import DevicesListActionButton from '../DevicesListActionButton'
 import {
@@ -13,19 +12,20 @@ import {
   DEVICES_DEFAULT_PAGE_SIZE,
   NO_DEVICE_NAME,
 } from '../../constants'
-import { deviceShape } from '../../shapes'
 import { messages as t } from '../../devices-i18n'
+import { Props, defaultProps } from './DevicesList.types'
 
 const { ONLINE, UNREGISTERED } = devicesStatuses
 
-export const DevicesList = ({
-  data,
-  loading,
-  setSelectedDevices,
-  selectedDevices,
-  onDeleteClick,
-  unselectRowsToken,
-}) => {
+export const DevicesList: FC<Props> = props => {
+  const {
+    data,
+    loading,
+    setSelectedDevices,
+    selectedDevices,
+    onDeleteClick,
+    unselectRowsToken,
+  } = { ...defaultProps, ...props }
   const { formatMessage: _ } = useIntl()
   const history = useHistory()
 
@@ -36,10 +36,10 @@ export const DevicesList = ({
         accessor: 'selection',
         disableSortBy: true,
         style: { width: '36px' },
-        Header: ({ getToggleAllRowsSelectedProps }) => (
+        Header: ({ getToggleAllRowsSelectedProps }: any) => (
           <IndeterminateCheckbox {...getToggleAllRowsSelectedProps()} />
         ),
-        Cell: ({ row }) => {
+        Cell: ({ row }: any) => {
           if (row.original?.metadata?.connection?.status === UNREGISTERED) {
             return null
           }
@@ -50,7 +50,7 @@ export const DevicesList = ({
       {
         Header: _(t.name),
         accessor: 'name',
-        Cell: ({ value, row }) => {
+        Cell: ({ value, row }: any) => {
           const deviceName = value || NO_DEVICE_NAME
 
           if (row.original?.metadata?.connection?.status === UNREGISTERED) {
@@ -68,14 +68,14 @@ export const DevicesList = ({
         Header: 'ID',
         accessor: 'id',
         style: { maxWidth: '350px', width: '100%' },
-        Cell: ({ value }) => {
+        Cell: ({ value }: { value: string | number }) => {
           return <span className="no-wrap-text">{value}</span>
         },
       },
       {
         Header: _(t.twinSynchronization),
         accessor: 'metadata.twinEnabled',
-        Cell: ({ value }) => {
+        Cell: ({ value }: { value: string | number }) => {
           const isTwinEnabled = value
           return (
             <Badge className={isTwinEnabled ? 'green' : 'red'}>
@@ -88,7 +88,7 @@ export const DevicesList = ({
         Header: _(t.status),
         accessor: 'metadata.connection.status',
         style: { width: '120px' },
-        Cell: ({ value }) => {
+        Cell: ({ value }: { value: string | number }) => {
           const isOnline = ONLINE === value
           return (
             <Badge className={isOnline ? 'green' : 'red'}>
@@ -101,7 +101,7 @@ export const DevicesList = ({
         Header: _(t.actions),
         accessor: 'actions',
         disableSortBy: true,
-        Cell: ({ row }) => {
+        Cell: ({ row }: any) => {
           const {
             original: { id },
           } = row
@@ -119,7 +119,7 @@ export const DevicesList = ({
     [] // eslint-disable-line
   )
 
-  const validData = data => (!data || data[0] === undefined ? [] : data)
+  const validData = (data: any) => (!data || data[0] === undefined ? [] : data)
 
   return (
     <Table
@@ -150,7 +150,7 @@ export const DevicesList = ({
       onRowsSelect={setSelectedDevices}
       bottomControls={
         <Button
-          onClick={onDeleteClick}
+          onClick={() => onDeleteClick()}
           variant="secondary"
           icon="fa-trash-alt"
           disabled={selectedDevices.length === 0 || loading}
@@ -163,16 +163,7 @@ export const DevicesList = ({
   )
 }
 
-DevicesList.propTypes = {
-  data: PropTypes.arrayOf(deviceShape),
-  selectedDevices: PropTypes.arrayOf(PropTypes.string).isRequired,
-  setSelectedDevices: PropTypes.func.isRequired,
-  loading: PropTypes.bool.isRequired,
-  onDeleteClick: PropTypes.func.isRequired,
-  unselectRowsToken: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-}
+DevicesList.displayName = 'DevicesList'
+DevicesList.defaultProps = defaultProps
 
-DevicesList.defaultProps = {
-  data: [],
-  unselectRowsToken: null,
-}
+export default DevicesList

@@ -1,10 +1,10 @@
-import { useEffect, useState } from 'react'
+import { FC, useEffect, useState } from 'react'
 import { useIntl } from 'react-intl'
 import { toast } from 'react-toastify'
 
 import { showSuccessToast } from '@/components/toast'
 import { ConfirmModal } from '@/components/confirm-modal'
-import { Layout } from '@/components/layout'
+import Layout from '@shared-ui/components/new/Layout'
 import { getApiErrorMessage } from '@/common/utils'
 import { useIsMounted } from '@/common/hooks'
 import { Emitter } from '@/common/services/emitter'
@@ -16,18 +16,18 @@ import {
   RESET_COUNTER,
 } from '../../constants'
 import { useDevicesList } from '../../hooks'
-import { DevicesList } from '../DevicesList/_devices-list'
+import { DevicesList } from '../DevicesList/DevicesList'
 import DevicesListHeader from '../DevicesListHeader/DevicesListHeader'
 import { deleteDevicesApi } from '../../rest'
 import { handleDeleteDevicesErrors, sleep } from '../../utils'
 import { messages as t } from '../../devices-i18n'
 
-export const DevicesListPage = () => {
+const DevicesListPage: FC<any> = () => {
   const { formatMessage: _ } = useIntl()
   const { data, loading, error: deviceError, refresh } = useDevicesList()
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
   const [selectedDevices, setSelectedDevices] = useState([])
-  const [singleDevice, setSingleDevice] = useState(null)
+  const [singleDevice, setSingleDevice] = useState<null | string>(null)
   const [deleting, setDeleting] = useState(false)
   const [unselectRowsToken, setUnselectRowsToken] = useState(1)
   const isMounted = useIsMounted()
@@ -41,7 +41,7 @@ export const DevicesListPage = () => {
     }
   }, [deviceError])
 
-  const handleOpenDeleteModal = deviceId => {
+  const handleOpenDeleteModal = (deviceId?: string) => {
     if (typeof deviceId === 'string') {
       setSingleDevice(deviceId)
     }
@@ -92,10 +92,13 @@ export const DevicesListPage = () => {
   const selectedDevicesCount = combinedSelectedDevices.length
   const selectedDeviceName =
     selectedDevicesCount === 1 && data
-      ? data?.find?.(d => d.id === combinedSelectedDevices[0])?.name
+      ? (data as any).find?.((d: any) => d.id === combinedSelectedDevices[0])
+          ?.name
       : null
 
   const loadingOrDeleting = loading || deleting
+
+  console.log({ data })
 
   return (
     <Layout
@@ -140,9 +143,16 @@ export const DevicesListPage = () => {
         confirmButtonText={_(t.delete)}
         loading={loadingOrDeleting}
         onClose={handleCloseDeleteModal}
+        cancelButtonText={undefined}
+        data={undefined}
+        confirmDisabled={undefined}
       >
         {_(t.delete)}
       </ConfirmModal>
     </Layout>
   )
 }
+
+DevicesListPage.displayName = 'DevicesListPage'
+
+export default DevicesListPage

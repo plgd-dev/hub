@@ -25,6 +25,7 @@ const DevicesListActionButton: FC<Props> = props => {
           icon: 'fa-trash-alt',
         },
       ]}
+      type={undefined}
     >
       <i className="fas fa-ellipsis-h" />
     </ActionButton>

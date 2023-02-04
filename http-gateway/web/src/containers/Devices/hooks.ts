@@ -1,6 +1,6 @@
+// @ts-nocheck
 import debounce from 'lodash/debounce'
 import { useStreamApi, useEmitter } from '@/common/hooks'
-import { useAppConfig } from '@/containers/App'
 
 import {
   devicesApiEndpoints,
@@ -11,18 +11,19 @@ import {
   updateDevicesDataStatus,
   getResourceRegistrationNotificationKey,
 } from './utils'
+import { security } from '@/common/services'
+import { SecurityConfig } from '@/containers/App/App.types'
+
+const getConfig = () => security.getGeneralConfig() as SecurityConfig
 
 export const useDevicesList = () => {
-  const { httpGatewayAddress } = useAppConfig()
-
-  // Fetch the data
   const { data, updateData, ...rest } = useStreamApi(
-    `${httpGatewayAddress}${devicesApiEndpoints.DEVICES}`,
+    `${getConfig().httpGatewayAddress}${devicesApiEndpoints.DEVICES}`,
     { telemetrySpan: 'get-devices' }
   )
 
   // Update the metadata when a WS event is emitted
-  useEmitter(DEVICES_STATUS_WS_KEY, newDeviceStatus => {
+  useEmitter(DEVICES_STATUS_WS_KEY, (newDeviceStatus: any) => {
     if (data) {
       // Update the data with the current device status and twinSynchronization
       updateData(updateDevicesDataStatus(data, newDeviceStatus))
@@ -32,12 +33,11 @@ export const useDevicesList = () => {
   return { data, updateData, ...rest }
 }
 
-export const useDeviceDetails = deviceId => {
-  const { httpGatewayAddress } = useAppConfig()
-
-  // Fetch the data
+export const useDeviceDetails = (deviceId: string) => {
   const { data, updateData, ...rest } = useStreamApi(
-    `${httpGatewayAddress}${devicesApiEndpoints.DEVICES}/${deviceId}`,
+    `${getConfig().httpGatewayAddress}${
+      devicesApiEndpoints.DEVICES
+    }/${deviceId}`,
     {
       streamApi: false,
       telemetrySpan: 'get-device-detail',
@@ -67,12 +67,11 @@ export const useDeviceDetails = deviceId => {
   return { data, updateData, ...rest }
 }
 
-export const useDevicesResources = deviceId => {
-  const { httpGatewayAddress } = useAppConfig()
-
-  // Fetch the data
+export const useDevicesResources = (deviceId: string) => {
   const { data, updateData, ...rest } = useStreamApi(
-    `${httpGatewayAddress}${devicesApiEndpoints.DEVICES_RESOURCES}?device_id_filter=${deviceId}`,
+    `${getConfig().httpGatewayAddress}${
+      devicesApiEndpoints.DEVICES_RESOURCES
+    }?device_id_filter=${deviceId}`,
     { telemetrySpan: 'get-device-resources' }
   )
 

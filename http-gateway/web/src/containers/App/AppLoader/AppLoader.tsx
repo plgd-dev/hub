@@ -1,4 +1,4 @@
-import { PageLoader } from '@/components/page-loader'
+import PageLoader from '@shared-ui/components/new/PageLoader'
 import { messages as t } from '../App.i18n'
 import { useIntl } from 'react-intl'
 

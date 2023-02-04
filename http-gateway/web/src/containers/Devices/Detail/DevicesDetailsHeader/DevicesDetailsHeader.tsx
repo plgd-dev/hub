@@ -1,28 +1,28 @@
-import { useEffect, useRef, useState } from 'react'
+import { FC, useEffect, useRef, useState } from 'react'
 import { useIntl } from 'react-intl'
 import { useSelector, useDispatch } from 'react-redux'
 import classNames from 'classnames'
-import PropTypes from 'prop-types'
 import { useHistory } from 'react-router-dom'
+import { Props } from './DevicesDetailsHeader.types'
 
-import { showSuccessToast } from '@/components/toast'
-import { ConfirmModal } from '@/components/confirm-modal'
-import { Button } from '@/components/button'
-import { WebSocketEventClient, eventFilters } from '@/common/services'
-import { Switch } from '@/components/switch'
-import { useIsMounted } from '@/common/hooks'
+import { showSuccessToast } from '@shared-ui/components/new/Toast'
+import ConfirmModal from '@shared-ui/components/new/ConfirmModal'
+import Button from '@shared-ui/components/new/Button'
+import { WebSocketEventClient, eventFilters } from '@shared-ui/common/services'
+import Switch from '@shared-ui/components/new/Switch'
+import { useIsMounted } from '@shared-ui/common/hooks'
 import {
   getDeviceNotificationKey,
   getResourceRegistrationNotificationKey,
   handleDeleteDevicesErrors,
   sleep,
-} from '../utils'
-import { isNotificationActive, toggleActiveNotification } from '../slice'
-import { deviceResourceRegistrationListener } from '../websockets'
-import { deleteDevicesApi } from '../rest'
-import { messages as t } from '../devices-i18n'
+} from '../../utils'
+import { isNotificationActive, toggleActiveNotification } from '../../slice'
+import { deviceResourceRegistrationListener } from '../../websockets'
+import { deleteDevicesApi } from '../../rest'
+import { messages as t } from '../../devices-i18n'
 
-export const DevicesDetailsHeader = ({
+const DevicesDetailsHeader: FC<Props> = ({
   deviceId,
   deviceName,
   isUnregistered,
@@ -170,13 +170,6 @@ export const DevicesDetailsHeader = ({
   )
 }
 
-DevicesDetailsHeader.propTypes = {
-  deviceId: PropTypes.string,
-  deviceName: PropTypes.string,
-  isUnregistered: PropTypes.bool.isRequired,
-}
+DevicesDetailsHeader.displayName = 'DevicesDetailsHeader'
 
-DevicesDetailsHeader.defaultProps = {
-  deviceId: null,
-  deviceName: null,
-}
+export default DevicesDetailsHeader

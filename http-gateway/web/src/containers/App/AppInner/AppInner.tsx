@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { AppContext } from '@/containers/App/AppContext'
 import { Router } from 'react-router-dom'
 import { history } from '@/store'
@@ -8,9 +9,9 @@ import Container from 'react-bootstrap/Container'
 import classNames from 'classnames'
 import { StatusBar } from '@/components/status-bar'
 import { LeftPanel } from '@/components/left-panel'
-import { Menu } from '@/components/menu'
+import Menu from '@shared-ui/components/new/Menu'
 import { Routes } from '@/routes'
-import { Footer } from '@shared-ui/components/old/footer'
+import Footer from '@shared-ui/components/new/Footer'
 import {
   BrowserNotificationsContainer,
   ToastContainer,
@@ -19,11 +20,22 @@ import { useLocalStorage } from '@shared-ui/common/hooks'
 import { useAuth } from 'oidc-react'
 import { security } from '@shared-ui/common/services'
 import AppLoader from '@/containers/App/AppLoader/AppLoader'
+import { Props } from './AppInner.types'
 
-const AppInner = props => {
+const AppInner = (props: Props) => {
   const { wellKnownConfig, openTelemetry } = props
   const { userData, userManager } = useAuth()
   const [collapsed, setCollapsed] = useLocalStorage('leftPanelCollapsed', true)
+
+  const contextValue = useMemo(
+    () => ({
+      collapsed,
+      ...wellKnownConfig,
+      wellKnownConfig,
+      telemetryWebTracer: openTelemetry.getWebTracer(),
+    }),
+    [collapsed, wellKnownConfig, openTelemetry]
+  )
 
   if (userData) {
     security.setAccessToken(userData.access_token)
@@ -36,14 +48,7 @@ const AppInner = props => {
   }
 
   return (
-    <AppContext.Provider
-      value={{
-        collapsed,
-        ...wellKnownConfig,
-        wellKnownConfig,
-        telemetryWebTracer: openTelemetry.getWebTracer(),
-      }}
-    >
+    <AppContext.Provider value={contextValue}>
       <Router history={history}>
         <InitServices />
         <Helmet
@@ -54,6 +59,14 @@ const AppInner = props => {
           <StatusBar />
           <LeftPanel>
             <Menu
+              menuItems={[
+                {
+                  to: '/',
+                  icon: 'fa-list',
+                  nameKey: 'devices',
+                  className: 'devices',
+                },
+              ]}
               collapsed={collapsed}
               toggleCollapsed={() => setCollapsed(!collapsed)}
             />
@@ -84,5 +97,7 @@ const AppInner = props => {
     </AppContext.Provider>
   )
 }
+
+AppInner.displayName = 'AppInner'
 
 export default AppInner

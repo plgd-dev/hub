@@ -1,10 +1,10 @@
 import { FC, useState } from 'react'
 import { useIntl } from 'react-intl'
 import { useSelector, useDispatch } from 'react-redux'
-import { useEmitter } from '@/common/hooks'
+import { useEmitter } from '@shared-ui/common/hooks'
 import Button from '@shared-ui/components/new/Button'
 import Switch from '@shared-ui/components/new/Switch'
-import { ProvisionNewDevice } from '../ProvisionNewDevice/provision-new-device'
+import ProvisionNewDevice from '../ProvisionNewDevice'
 import {
   DEVICES_STATUS_WS_KEY,
   DEVICES_REGISTERED_UNREGISTERED_COUNT_EVENT_KEY,

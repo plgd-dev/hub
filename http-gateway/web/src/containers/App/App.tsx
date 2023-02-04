@@ -13,9 +13,9 @@ import { AuthProvider, UserManager } from 'oidc-react'
 
 const App = () => {
   const { formatMessage: _ } = useIntl()
-  const [wellKnownConfig, setWellKnownConfig] = useState(null)
+  const [wellKnownConfig, setWellKnownConfig] = useState<any>(null)
   const [wellKnownConfigFetched, setWellKnownConfigFetched] = useState(false)
-  const [configError, setConfigError] = useState(null)
+  const [configError, setConfigError] = useState<any>(null)
 
   openTelemetry.init('hub')
 
