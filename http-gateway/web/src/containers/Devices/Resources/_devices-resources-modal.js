@@ -204,7 +204,7 @@ export const DevicesResourcesModal = ({
 DevicesResourcesModal.propTypes = {
   onClose: PropTypes.func,
   data: PropTypes.shape({
-    href: PropTypes.string.isRequired,
+    href: PropTypes.string,
     types: PropTypes.arrayOf(PropTypes.string),
     interfaces: PropTypes.arrayOf(PropTypes.string),
   }),

@@ -34,7 +34,7 @@ export const useDevicesList = () => {
 }
 
 export const useDeviceDetails = (deviceId: string) => {
-  const { data, updateData, ...rest } = useStreamApi(
+  const { data, updateData, ...rest }: StreamApiPropsType = useStreamApi(
     `${getConfig().httpGatewayAddress}${
       devicesApiEndpoints.DEVICES
     }/${deviceId}`,
@@ -68,7 +68,7 @@ export const useDeviceDetails = (deviceId: string) => {
 }
 
 export const useDevicesResources = (deviceId: string) => {
-  const { data, updateData, ...rest } = useStreamApi(
+  const { data, updateData, ...rest }: StreamApiPropsType = useStreamApi(
     `${getConfig().httpGatewayAddress}${
       devicesApiEndpoints.DEVICES_RESOURCES
     }?device_id_filter=${deviceId}`,

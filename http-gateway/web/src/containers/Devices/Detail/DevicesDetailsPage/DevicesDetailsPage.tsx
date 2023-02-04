@@ -4,58 +4,70 @@ import { useParams } from 'react-router-dom'
 import classNames from 'classnames'
 
 import { history } from '@/store'
-import { ConfirmModal } from '@/components/confirm-modal'
-import { Layout } from '@/components/layout'
+import ConfirmModal from '@shared-ui/components/new/ConfirmModal'
+import Layout from '@shared-ui/components/new/Layout'
 import { NotFoundPage } from '@/containers/not-found-page'
-import { useIsMounted } from '@/common/hooks'
+import { useIsMounted, WellKnownConfigType } from '@shared-ui/common/hooks'
 import { messages as menuT } from '@/components/menu/menu-i18n'
-import { showSuccessToast } from '@/components/toast'
-import { useAppConfig } from '@/containers/App'
+import { showSuccessToast } from '@shared-ui/components/new/Toast'
 import { PendingCommandsExpandableList } from '@/containers/pending-commands'
 
-import DevicesDetails from './DevicesDetails'
-import { DevicesResources } from '../Resources/_devices-resources'
-import DevicesDetailsHeader from './DevicesDetailsHeader'
-import DevicesDetailsTitle from './DevicesDetailsTitle'
-import { DevicesResourcesModal } from '../Resources/_devices-resources-modal'
-import { CommanTimeoutControl } from '../_command-timeout-control'
+import { DevicesResourcesModalParamsType } from '@/containers/Devices/Resources/DevicesResourcesModal/DevicesResourcesModal.types'
+import DevicesDetails from '../DevicesDetails'
+import { DevicesResources } from '../../Resources/_devices-resources'
+import DevicesDetailsHeader from '../DevicesDetailsHeader'
+import DevicesDetailsTitle from '../DevicesDetailsTitle'
+import { DevicesResourcesModal } from '../../Resources/_devices-resources-modal'
+import { CommanTimeoutControl } from '../../_command-timeout-control'
 import {
   devicesStatuses,
   defaultNewResource,
   resourceModalTypes,
   NO_DEVICE_NAME,
-} from '../constants'
+} from '../../constants'
 import {
   handleCreateResourceErrors,
   handleUpdateResourceErrors,
   handleFetchResourceErrors,
   handleDeleteResourceErrors,
   handleTwinSynchronizationErrors,
-} from '../utils'
+} from '../../utils'
 import {
   getDevicesResourcesApi,
   updateDevicesResourceApi,
   createDevicesResourceApi,
   deleteDevicesResourceApi,
   updateDeviceTwinSynchronizationApi,
-} from '../rest'
-import { useDeviceDetails, useDevicesResources } from '../hooks'
-import { messages as t } from '../devices-i18n'
+} from '../../rest'
+import { useDeviceDetails, useDevicesResources } from '../../hooks'
+import { messages as t } from '../../devices-i18n'
 
-import './DevicesDetailsPage/devices-details.scss'
+import './devices-details.scss'
+import { DevicesDetailsResourceModalData } from './DevicesDetailsPage.types'
+import { security } from '@/common/services'
+import omit from 'lodash/omit'
 
 export const DevicesDetailsPage = () => {
   const { formatMessage: _ } = useIntl()
-  const { id, href: hrefParam } = useParams()
+  const {
+    id,
+    href: hrefParam,
+  }: {
+    id: string
+    href: string
+  } = useParams()
   const [twinSyncLoading, setTwinSyncLoading] = useState(false)
-  const [resourceModalData, setResourceModalData] = useState(null)
+  const [resourceModalData, setResourceModalData] = useState<
+    DevicesDetailsResourceModalData | undefined
+  >(undefined)
   const [loadingResource, setLoadingResource] = useState(false)
   const [savingResource, setSavingResource] = useState(false)
-  const [deleteResourceHref, setDeleteResourceHref] = useState()
-  const {
-    wellKnownConfig: { defaultCommandTimeToLive },
-  } = useAppConfig()
-  const [ttl, setTtl] = useState(defaultCommandTimeToLive)
+  const [deleteResourceHref, setDeleteResourceHref] = useState<string>('')
+  const wellKnownConfig =
+    security.getWellKnowConfig() as WellKnownConfigType & {
+      defaultCommandTimeToLive: number
+    }
+  const [ttl, setTtl] = useState(wellKnownConfig.defaultCommandTimeToLive)
   const [ttlHasError, setTtlHasError] = useState(false)
   const isMounted = useIsMounted()
   const { data, updateData, loading, error: deviceError } = useDeviceDetails(id)
@@ -111,11 +123,17 @@ export const DevicesDetailsPage = () => {
   ]
 
   if (deviceName) {
-    breadcrumbs.push({ label: deviceName })
+    breadcrumbs.push({ label: deviceName, to: '#' })
   }
 
   // Fetches the resource and sets its values to the modal data, which opens the modal.
-  const openUpdateModal = async ({ href, currentInterface = '' }) => {
+  const openUpdateModal = async ({
+    href,
+    currentInterface = '',
+  }: {
+    href: string
+    currentInterface?: string
+  }) => {
     // If there is already a fetch for a resource, disable the next attempt for a fetch until the previous fetch finishes
     if (loadingResource) {
       return
@@ -124,16 +142,21 @@ export const DevicesDetailsPage = () => {
     setLoadingResource(true)
 
     try {
-      const {
-        data: { data: { content: { if: ifs, rt, ...resourceData } = {} } = {} }, // exclude the if and rt
-      } = await getDevicesResourcesApi({ deviceId: id, href, currentInterface })
+      const { data: resourceData } = await getDevicesResourcesApi({
+        deviceId: id,
+        href,
+        currentInterface,
+      })
+
+      omit(resourceData, ['data.content.if', 'data.content.rt'])
 
       if (isMounted.current) {
         setLoadingResource(false)
 
         // Retrieve the types and interfaces of this resource
         const { resourceTypes: types = [], interfaces = [] } =
-          resources?.find?.(link => link.href === href) || {}
+          resources?.find?.((link: { href: string }) => link.href === href) ||
+          {}
 
         // Setting the data and opening the modal
         setResourceModalData({
@@ -154,7 +177,7 @@ export const DevicesDetailsPage = () => {
   }
 
   // Fetches the resources supported types and sets its values to the modal data, which opens the modal.
-  const openCreateModal = async href => {
+  const openCreateModal = async (href: string) => {
     // If there is already a fetch for a resource, disable the next attempt for a fetch until the previous fetch finishes
     if (loadingResource) {
       return
@@ -193,18 +216,18 @@ export const DevicesDetailsPage = () => {
     }
   }
 
-  const openDeleteModal = href => {
+  const openDeleteModal = (href: string) => {
     setDeleteResourceHref(href)
   }
 
   const closeDeleteModal = () => {
-    setDeleteResourceHref(null)
+    setDeleteResourceHref('')
   }
 
   // Updates the resource through rest API
   const updateResource = async (
-    { href, currentInterface = '' },
-    resourceDataUpdate
+    { href, currentInterface = '' }: DevicesResourcesModalParamsType,
+    resourceDataUpdate: any
   ) => {
     setSavingResource(true)
 
@@ -233,8 +256,8 @@ export const DevicesDetailsPage = () => {
 
   // Created a new resource through rest API
   const createResource = async (
-    { href, currentInterface = '' },
-    resourceDataCreate
+    { href, currentInterface = '' }: DevicesResourcesModalParamsType,
+    resourceDataCreate: object
   ) => {
     setSavingResource(true)
 
@@ -250,7 +273,7 @@ export const DevicesDetailsPage = () => {
           message: _(t.resourceWasCreated),
         })
 
-        setResourceModalData(null) // close modal
+        setResourceModalData(undefined) // close modal
         setSavingResource(false)
       }
     } catch (error) {
@@ -291,7 +314,7 @@ export const DevicesDetailsPage = () => {
 
   // Handler which cleans up the resource modal data and updates the URL
   const handleCloseUpdateModal = () => {
-    setResourceModalData(null)
+    setResourceModalData(undefined)
 
     if (hrefParam) {
       // Remove the href from the URL when the update modal is closed
@@ -300,7 +323,7 @@ export const DevicesDetailsPage = () => {
   }
 
   // Update the device name in the data object
-  const updateDeviceNameInData = name => {
+  const updateDeviceNameInData = (name: string) => {
     updateData({
       ...data,
       name,
@@ -372,7 +395,6 @@ export const DevicesDetailsPage = () => {
         onDelete={openDeleteModal}
         deviceStatus={deviceStatus}
         loading={loadingResource}
-        deviceId={id}
       />
 
       <DevicesResourcesModal
@@ -391,7 +413,7 @@ export const DevicesDetailsPage = () => {
         ttlControl={
           <CommanTimeoutControl
             defaultValue={ttl}
-            defaultTtlValue={defaultCommandTimeToLive}
+            defaultTtlValue={wellKnownConfig.defaultCommandTimeToLive}
             onChange={setTtl}
             disabled={loadingResource || savingResource}
             ttlHasError={ttlHasError}
@@ -414,7 +436,7 @@ export const DevicesDetailsPage = () => {
             {_(t.deleteResourceMessage)}
             <CommanTimeoutControl
               defaultValue={ttl}
-              defaultTtlValue={defaultCommandTimeToLive}
+              defaultTtlValue={wellKnownConfig.defaultCommandTimeToLive}
               onChange={setTtl}
               disabled={loadingResource}
               ttlHasError={ttlHasError}

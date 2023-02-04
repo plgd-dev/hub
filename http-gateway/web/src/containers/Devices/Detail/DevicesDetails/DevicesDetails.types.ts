@@ -9,12 +9,7 @@ export type DevicesDetailMetaDataStatusValueType =
 
 export type Props = {
   data: DeviceDataType
-  deviceId: string
-  deviceOnboardingResourceData: any
-  isOwned: boolean
   loading: boolean
-  onboardResourceLoading: boolean
-  resources: ResourcesType[]
   setTwinSynchronization: () => void
   twinSyncLoading: boolean
 }
