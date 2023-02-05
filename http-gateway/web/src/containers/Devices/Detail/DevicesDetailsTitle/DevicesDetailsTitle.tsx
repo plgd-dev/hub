@@ -9,7 +9,7 @@ import { useIsMounted } from '@shared-ui/common/hooks'
 import { getApiErrorMessage } from '@shared-ui/common/utils'
 import { updateDevicesResourceApi } from '../../rest'
 import { canChangeDeviceName, getDeviceChangeResourceHref } from '../../utils'
-import { messages as t } from '../../devices-i18n'
+import { messages as t } from '../../Devices.i18n'
 import omit from 'lodash/omit'
 
 const DevicesDetailsTitle: FC<Props> = ({

@@ -1,16 +1,15 @@
-import { useMemo } from 'react'
-import PropTypes from 'prop-types'
+import { FC, useMemo } from 'react'
 import { useIntl } from 'react-intl'
 import classNames from 'classnames'
 
-import { Badge } from '@/components/badge'
-import { Table } from '@/components/table'
-import { DevicesResourcesActionButton } from './_devices-resources-action-button'
-import { RESOURCES_DEFAULT_PAGE_SIZE, devicesStatuses } from '../constants'
-import { deviceResourceShape } from '../shapes'
-import { messages as t } from '../devices-i18n'
+import Badge from '@shared-ui/components/new/Badge'
+import Table from '@shared-ui/components/new/Table'
+import DevicesResourcesActionButton from '../DevicesResourcesActionButton'
+import { RESOURCES_DEFAULT_PAGE_SIZE, devicesStatuses } from '../../constants'
+import { messages as t } from '../../Devices.i18n'
+import { Props } from './DevicesResourcesList.types'
 
-export const DevicesResourcesList = ({
+const DevicesResourcesList: FC<Props> = ({
   data,
   onUpdate,
   onCreate,
@@ -28,7 +27,7 @@ export const DevicesResourcesList = ({
       {
         Header: _(t.href),
         accessor: 'href',
-        Cell: ({ value, row }) => {
+        Cell: ({ value, row }: { value: any; row: any }) => {
           const {
             original: { deviceId, href },
           } = row
@@ -52,10 +51,10 @@ export const DevicesResourcesList = ({
       {
         Header: _(t.types),
         accessor: 'resourceTypes',
-        Cell: ({ value }) => {
+        Cell: ({ value }: { value: any }) => {
           return (
             <div className="badges-box-horizontal">
-              {value?.map?.(type => (
+              {value?.map?.((type: string) => (
                 <Badge key={type}>{type}</Badge>
               ))}
             </div>
@@ -66,7 +65,7 @@ export const DevicesResourcesList = ({
         Header: _(t.actions),
         accessor: 'actions',
         disableSortBy: true,
-        Cell: ({ row }) => {
+        Cell: ({ row }: { row: any }) => {
           const {
             original: { deviceId, href, interfaces },
           } = row
@@ -109,16 +108,6 @@ export const DevicesResourcesList = ({
   )
 }
 
-DevicesResourcesList.propTypes = {
-  data: PropTypes.arrayOf(deviceResourceShape),
-  onCreate: PropTypes.func.isRequired,
-  onUpdate: PropTypes.func.isRequired,
-  onDelete: PropTypes.func.isRequired,
-  loading: PropTypes.bool.isRequired,
-  deviceStatus: PropTypes.oneOf(Object.values(devicesStatuses)),
-}
+DevicesResourcesList.displayName = 'DevicesResourcesList'
 
-DevicesResourcesList.defaultProps = {
-  data: null,
-  deviceStatus: null,
-}
+export default DevicesResourcesList

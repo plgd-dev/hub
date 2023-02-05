@@ -1,18 +1,20 @@
-import { useMemo } from 'react'
-import PropTypes from 'prop-types'
+import { FC, useMemo } from 'react'
 import { useIntl } from 'react-intl'
 import classNames from 'classnames'
 
 import { TreeExpander } from '@/components/tree-expander'
 import { TreeTable } from '@/components/table'
 import { Badge } from '@/components/badge'
-import { DevicesResourcesActionButton } from './_devices-resources-action-button'
-import { devicesStatuses, RESOURCE_TREE_DEPTH_SIZE } from '../constants'
-import { createNestedResourceData, getLastPartOfAResourceHref } from '../utils'
-import { deviceResourceShape } from '../shapes'
-import { messages as t } from '../devices-i18n'
+import DevicesResourcesActionButton from '../DevicesResourcesActionButton'
+import { devicesStatuses, RESOURCE_TREE_DEPTH_SIZE } from '../../constants'
+import {
+  createNestedResourceData,
+  getLastPartOfAResourceHref,
+} from '../../utils'
+import { messages as t } from '../../Devices.i18n'
+import { Props } from './DevicesResourcesTree.types'
 
-export const DevicesResourcesTree = ({
+const DevicesResourcesTree: FC<Props> = ({
   data: rawData,
   onUpdate,
   onCreate,
@@ -30,14 +32,14 @@ export const DevicesResourcesTree = ({
       {
         Header: _(t.href),
         accessor: 'href',
-        Cell: ({ value, row }) => {
+        Cell: ({ value, row }: { value: any; row: any }) => {
           const {
             original: { deviceId, href },
           } = row
           const lastValue = getLastPartOfAResourceHref(value)
           const onLinkClick = deviceId
             ? () => onUpdate({ deviceId, href: href.replace(/\/$/, '') })
-            : null
+            : () => {}
 
           if (isUnregistered) {
             return <span>{lastValue}</span>
@@ -87,14 +89,14 @@ export const DevicesResourcesTree = ({
       {
         Header: _(t.types),
         accessor: 'resourceTypes',
-        Cell: ({ value, row }) => {
+        Cell: ({ value, row }: { value: any; row: any }) => {
           if (!row.original.deviceId) {
             return null
           }
 
           return (
             <div className="badges-box-horizontal">
-              {value?.map?.(type => (
+              {value?.map?.((type: string) => (
                 <Badge key={type}>{type}</Badge>
               ))}
             </div>
@@ -105,7 +107,7 @@ export const DevicesResourcesTree = ({
         Header: _(t.actions),
         accessor: 'actions',
         disableSortBy: true,
-        Cell: ({ row }) => {
+        Cell: ({ row }: { row: any }) => {
           if (!row.original.deviceId) {
             return null
           }
@@ -140,16 +142,6 @@ export const DevicesResourcesTree = ({
   )
 }
 
-DevicesResourcesTree.propTypes = {
-  data: PropTypes.arrayOf(deviceResourceShape),
-  onCreate: PropTypes.func.isRequired,
-  onUpdate: PropTypes.func.isRequired,
-  onDelete: PropTypes.func.isRequired,
-  loading: PropTypes.bool.isRequired,
-  deviceStatus: PropTypes.oneOf(Object.values(devicesStatuses)),
-}
+DevicesResourcesTree.displayName = 'DevicesResourcesTree'
 
-DevicesResourcesTree.defaultProps = {
-  data: null,
-  deviceStatus: null,
-}
+export default DevicesResourcesTree

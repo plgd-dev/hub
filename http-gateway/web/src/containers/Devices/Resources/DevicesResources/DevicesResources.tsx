@@ -1,16 +1,16 @@
-import PropTypes from 'prop-types'
+import { FC } from 'react'
 import { useIntl } from 'react-intl'
+
 import classNames from 'classnames'
+import Switch from '@shared-ui/components/new/Switch'
+import { useLocalStorage } from '@shared-ui/common/hooks'
+import DevicesResourcesList from '../DevicesResourcesList'
+import DevicesResourcesTree from '../DevicesResourcesTree'
+import { devicesStatuses } from '../../constants'
+import { messages as t } from '../../Devices.i18n'
+import { Props } from './DevicesResources.types'
 
-import { Switch } from '@/components/switch'
-import { useLocalStorage } from '@/common/hooks'
-import { DevicesResourcesList } from './_devices-resources-list'
-import { DevicesResourcesTree } from './_devices-resources-tree'
-import { devicesStatuses } from '../constants'
-import { deviceResourceShape } from '../shapes'
-import { messages as t } from '../devices-i18n'
-
-export const DevicesResources = ({
+const DevicesResources: FC<Props> = ({
   data,
   onUpdate,
   onCreate,
@@ -71,16 +71,6 @@ export const DevicesResources = ({
   )
 }
 
-DevicesResources.propTypes = {
-  data: PropTypes.arrayOf(deviceResourceShape),
-  onCreate: PropTypes.func.isRequired,
-  onUpdate: PropTypes.func.isRequired,
-  onDelete: PropTypes.func.isRequired,
-  loading: PropTypes.bool.isRequired,
-  deviceStatus: PropTypes.oneOf(Object.values(devicesStatuses)),
-}
+DevicesResources.displayName = 'DevicesResources'
 
-DevicesResources.defaultProps = {
-  data: null,
-  deviceStatus: null,
-}
+export default DevicesResources

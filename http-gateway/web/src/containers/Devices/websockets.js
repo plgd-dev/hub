@@ -14,7 +14,7 @@ import {
 } from './utils'
 import { isNotificationActive } from './slice'
 import { getDeviceApi } from './rest'
-import { messages as t } from './devices-i18n'
+import { messages as t } from './Devices.i18n'
 
 const { ONLINE, REGISTERED, UNREGISTERED } = devicesStatuses
 const DEFAULT_NOTIFICATION_DELAY = 500

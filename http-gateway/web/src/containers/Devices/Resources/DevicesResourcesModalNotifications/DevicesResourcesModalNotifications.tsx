@@ -1,16 +1,16 @@
-import { useEffect } from 'react'
+import { FC, useEffect } from 'react'
 import { useIntl } from 'react-intl'
 import { useSelector, useDispatch } from 'react-redux'
-import PropTypes from 'prop-types'
 
-import { WebSocketEventClient, eventFilters } from '@/common/services'
-import { Switch } from '@/components/switch'
-import { getResourceUpdateNotificationKey } from '../utils'
-import { isNotificationActive, toggleActiveNotification } from '../slice'
-import { deviceResourceUpdateListener } from '../websockets'
-import { messages as t } from '../devices-i18n'
+import { WebSocketEventClient, eventFilters } from '@shared-ui/common/services'
+import Switch from '@shared-ui/components/new/Switch'
+import { getResourceUpdateNotificationKey } from '../../utils'
+import { isNotificationActive, toggleActiveNotification } from '../../slice'
+import { deviceResourceUpdateListener } from '../../websockets'
+import { messages as t } from '../../Devices.i18n'
+import { Props } from './DevicesResourcesModalNotifications.types'
 
-export const DevicesResourcesModalNotifications = ({
+const DevicesResourcesModalNotifications: FC<Props> = ({
   deviceId,
   deviceName,
   href,
@@ -33,7 +33,7 @@ export const DevicesResourcesModalNotifications = ({
     }
   }, [isUnregistered, resourceUpdateObservationWSKey])
 
-  const toggleNotifications = e => {
+  const toggleNotifications = (e: any) => {
     if (e.target.checked) {
       // Request browser notifications
       // (browsers will explicitly disallow notification permission requests not triggered in response to a user gesture,
@@ -67,13 +67,7 @@ export const DevicesResourcesModalNotifications = ({
   )
 }
 
-DevicesResourcesModalNotifications.propTypes = {
-  deviceId: PropTypes.string,
-  deviceName: PropTypes.string,
-  isUnregistered: PropTypes.bool.isRequired,
-}
+DevicesResourcesModalNotifications.displayName =
+  'DevicesResourcesModalNotifications'
 
-DevicesResourcesModalNotifications.defaultProps = {
-  deviceId: null,
-  deviceName: null,
-}
+export default DevicesResourcesModalNotifications

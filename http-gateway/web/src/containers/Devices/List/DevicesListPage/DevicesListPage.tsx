@@ -20,7 +20,7 @@ import { DevicesList } from '../DevicesList/DevicesList'
 import DevicesListHeader from '../DevicesListHeader/DevicesListHeader'
 import { deleteDevicesApi } from '../../rest'
 import { handleDeleteDevicesErrors, sleep } from '../../utils'
-import { messages as t } from '../../devices-i18n'
+import { messages as t } from '../../Devices.i18n'
 
 const DevicesListPage: FC<any> = () => {
   const { formatMessage: _ } = useIntl()

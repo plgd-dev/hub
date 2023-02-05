@@ -1,7 +1,7 @@
 import { FC } from 'react'
 import { useIntl } from 'react-intl'
 import { ActionButton } from '@/components/action-button'
-import { messages as t } from '../../devices-i18n'
+import { messages as t } from '../../Devices.i18n'
 import { Props } from './DevicesListActionButton.types'
 
 const DevicesListActionButton: FC<Props> = props => {

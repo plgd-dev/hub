@@ -14,10 +14,10 @@ import { PendingCommandsExpandableList } from '@/containers/pending-commands'
 
 import { DevicesResourcesModalParamsType } from '@/containers/Devices/Resources/DevicesResourcesModal/DevicesResourcesModal.types'
 import DevicesDetails from '../DevicesDetails'
-import { DevicesResources } from '../../Resources/_devices-resources'
+import DevicesResources from '../../Resources/DevicesResources'
 import DevicesDetailsHeader from '../DevicesDetailsHeader'
 import DevicesDetailsTitle from '../DevicesDetailsTitle'
-import { DevicesResourcesModal } from '../../Resources/_devices-resources-modal'
+import DevicesResourcesModal from '../../Resources/DevicesResourcesModal'
 import { CommanTimeoutControl } from '../../_command-timeout-control'
 import {
   devicesStatuses,
@@ -40,14 +40,14 @@ import {
   updateDeviceTwinSynchronizationApi,
 } from '../../rest'
 import { useDeviceDetails, useDevicesResources } from '../../hooks'
-import { messages as t } from '../../devices-i18n'
+import { messages as t } from '../../Devices.i18n'
 
-import './devices-details.scss'
+import './DevicesDetailsPage.scss'
 import { DevicesDetailsResourceModalData } from './DevicesDetailsPage.types'
 import { security } from '@/common/services'
 import omit from 'lodash/omit'
 
-export const DevicesDetailsPage = () => {
+const DevicesDetailsPage = () => {
   const { formatMessage: _ } = useIntl()
   const {
     id,
@@ -455,3 +455,7 @@ export const DevicesDetailsPage = () => {
     </Layout>
   )
 }
+
+DevicesDetailsPage.displayName = 'DevicesDetailsPage'
+
+export default DevicesDetailsPage

@@ -15,7 +15,7 @@ import {
   normalizeToFixedFloatValue,
   findClosestUnit,
 } from './utils'
-import { messages as t } from './devices-i18n'
+import { messages as t } from './Devices.i18n'
 
 const { INFINITE, NS } = commandTimeoutUnits
 

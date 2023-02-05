@@ -20,7 +20,7 @@ import {
 import { isNotificationActive, toggleActiveNotification } from '../../slice'
 import { deviceResourceRegistrationListener } from '../../websockets'
 import { deleteDevicesApi } from '../../rest'
-import { messages as t } from '../../devices-i18n'
+import { messages as t } from '../../Devices.i18n'
 
 const DevicesDetailsHeader: FC<Props> = ({
   deviceId,

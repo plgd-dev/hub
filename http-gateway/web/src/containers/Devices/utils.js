@@ -12,7 +12,7 @@ import {
   commandTimeoutUnits,
   MINIMAL_TTL_VALUE_MS,
 } from './constants'
-import { messages as t } from './devices-i18n'
+import { messages as t } from './Devices.i18n'
 
 const { INFINITE, NS, MS, S, M, H } = commandTimeoutUnits
 

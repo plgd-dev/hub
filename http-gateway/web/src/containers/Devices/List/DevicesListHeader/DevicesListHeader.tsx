@@ -11,7 +11,7 @@ import {
   RESET_COUNTER,
 } from '../../constants'
 import { isNotificationActive, toggleActiveNotification } from '../../slice'
-import { messages as t } from '../../devices-i18n'
+import { messages as t } from '../../Devices.i18n'
 import { Props } from './DevicesListHeader.types'
 
 const DevicesListHeader: FC<Props> = ({ loading, refresh }) => {

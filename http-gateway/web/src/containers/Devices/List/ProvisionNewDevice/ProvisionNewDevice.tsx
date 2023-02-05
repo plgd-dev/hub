@@ -1,7 +1,7 @@
 import React, { useRef, useState } from 'react'
 import { getDeviceAuthCode } from '@/containers/Devices/rest'
 import { showErrorToast } from '@shared-ui/components/new/Toast/Toast'
-import { messages as t } from '@/containers/Devices/devices-i18n'
+import { messages as t } from '@/containers/Devices/Devices.i18n'
 import { useIntl } from 'react-intl'
 import Button from '@shared-ui/components/new/Button'
 import Modal from '@shared-ui/components/new/Modal'

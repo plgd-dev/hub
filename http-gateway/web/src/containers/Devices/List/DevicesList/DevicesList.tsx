@@ -12,7 +12,7 @@ import {
   DEVICES_DEFAULT_PAGE_SIZE,
   NO_DEVICE_NAME,
 } from '../../constants'
-import { messages as t } from '../../devices-i18n'
+import { messages as t } from '../../Devices.i18n'
 import { Props, defaultProps } from './DevicesList.types'
 
 const { ONLINE, UNREGISTERED } = devicesStatuses
