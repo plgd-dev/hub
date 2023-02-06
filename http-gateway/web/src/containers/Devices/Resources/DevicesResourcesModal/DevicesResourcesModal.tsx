@@ -204,5 +204,6 @@ const DevicesResourcesModal: FC<Props> = props => {
 }
 
 DevicesResourcesModal.displayName = 'DevicesResourcesModal'
+DevicesResourcesModal.defaultProps = defaultProps
 
 export default DevicesResourcesModal

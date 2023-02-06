@@ -1,7 +1,4 @@
-import {
-  DeviceDataType,
-  ResourcesType,
-} from '@/containers/Devices/Devices.types'
+import { DeviceDataType } from '@/containers/Devices/Devices.types'
 import { devicesStatuses } from '../../constants'
 
 export type DevicesDetailMetaDataStatusValueType =

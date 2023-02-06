@@ -23,9 +23,9 @@ const ProvisionNewDeviceCore = () => {
   const handleFetch = async () => {
     setFetching(true)
     try {
-      const code = await getDeviceAuthCode(deviceId)
+      const code = await getDeviceAuthCode(deviceId as string)
       setFetching(false)
-      setCode(code)
+      setCode(code as string)
     } catch (e: any) {
       showErrorToast({
         title: _(t.deviceAuthCodeError),

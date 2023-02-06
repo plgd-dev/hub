@@ -5,17 +5,19 @@ import { DEVICE_AUTH_CODE_SESSION_KEY } from '@/constants'
 import { devicesApiEndpoints, DEVICE_DELETE_CHUNK_SIZE } from './constants'
 import { interfaceGetParam } from './utils'
 import { withTelemetry } from '@/common/services/opentelemetry'
+import { SecurityConfig } from '@/containers/App/App.types'
+
+const getConfig = () => security.getGeneralConfig() as SecurityConfig
 
 /**
  * Get a single thing by its ID Rest Api endpoint
  * @param {*} params { deviceId }
- * @param {*} data
  */
-export const getDeviceApi = deviceId =>
+export const getDeviceApi = (deviceId: string) =>
   withTelemetry(
     () =>
       fetchApi(
-        `${security.getGeneralConfig().httpGatewayAddress}${
+        `${getConfig().httpGatewayAddress}${
           devicesApiEndpoints.DEVICES
         }/${deviceId}`
       ),
@@ -27,7 +29,7 @@ export const getDeviceApi = deviceId =>
  * @param {*} params deviceIds
  * @param {*} data
  */
-export const deleteDevicesApi = deviceIds => {
+export const deleteDevicesApi = (deviceIds: string[]) => {
   // We split the fetch into multiple chunks due to the URL being too long for the browser to handle
   const chunks = chunk(deviceIds, DEVICE_DELETE_CHUNK_SIZE)
 
@@ -36,7 +38,7 @@ export const deleteDevicesApi = deviceIds => {
       withTelemetry(
         () =>
           fetchApi(
-            `${security.getGeneralConfig().httpGatewayAddress}${
+            `${getConfig().httpGatewayAddress}${
               devicesApiEndpoints.DEVICES
             }?${ids.map(id => `deviceIdFilter=${id}`).join('&')}`,
             {
@@ -57,12 +59,16 @@ export const deleteDevicesApi = deviceIds => {
 export const getDevicesResourcesApi = ({
   deviceId,
   href,
-  currentInterface = null,
+  currentInterface = '',
+}: {
+  deviceId: string
+  href: string
+  currentInterface?: string
 }) =>
   withTelemetry(
     () =>
       fetchApi(
-        `${security.getGeneralConfig().httpGatewayAddress}${
+        `${getConfig().httpGatewayAddress}${
           devicesApiEndpoints.DEVICES
         }/${deviceId}/resources${href}?${interfaceGetParam(currentInterface)}`
       ),
@@ -75,13 +81,23 @@ export const getDevicesResourcesApi = ({
  * @param {*} data
  */
 export const updateDevicesResourceApi = (
-  { deviceId, href, currentInterface = null, ttl },
-  data
+  {
+    deviceId,
+    href,
+    currentInterface = '',
+    ttl,
+  }: {
+    deviceId: string
+    href: string
+    currentInterface?: string
+    ttl: any
+  },
+  data: any
 ) =>
   withTelemetry(
     () =>
       fetchApi(
-        `${security.getGeneralConfig().httpGatewayAddress}${
+        `${getConfig().httpGatewayAddress}${
           devicesApiEndpoints.DEVICES
         }/${deviceId}/resources${href}?timeToLive=${ttl}&${interfaceGetParam(
           currentInterface
@@ -97,13 +113,23 @@ export const updateDevicesResourceApi = (
  * @param {*} data
  */
 export const createDevicesResourceApi = (
-  { deviceId, href, currentInterface = null, ttl },
-  data
+  {
+    deviceId,
+    href,
+    currentInterface = '',
+    ttl,
+  }: {
+    deviceId: string
+    href: string
+    currentInterface?: string
+    ttl: any
+  },
+  data: any
 ) =>
   withTelemetry(
     () =>
       fetchApi(
-        `${security.getGeneralConfig().httpGatewayAddress}${
+        `${getConfig().httpGatewayAddress}${
           devicesApiEndpoints.DEVICES
         }/${deviceId}/resource-links${href}?timeToLive=${ttl}&${interfaceGetParam(
           currentInterface
@@ -118,11 +144,19 @@ export const createDevicesResourceApi = (
  * @param {*} params { deviceId, href - resource href, ttl - timeToLive }
  * @param {*} data
  */
-export const deleteDevicesResourceApi = ({ deviceId, href, ttl }) =>
+export const deleteDevicesResourceApi = ({
+  deviceId,
+  href,
+  ttl,
+}: {
+  deviceId: string
+  href: string
+  ttl: any
+}) =>
   withTelemetry(
     () =>
       fetchApi(
-        `${security.getGeneralConfig().httpGatewayAddress}${
+        `${getConfig().httpGatewayAddress}${
           devicesApiEndpoints.DEVICES
         }/${deviceId}/resource-links${href}?timeToLive=${ttl}`,
         { method: 'DELETE', timeToLive: ttl }
@@ -136,13 +170,13 @@ export const deleteDevicesResourceApi = ({ deviceId, href, ttl }) =>
  * @param {*} twinEnabled
  */
 export const updateDeviceTwinSynchronizationApi = (
-  deviceId,
-  twinEnabled
+  deviceId: string,
+  twinEnabled: boolean
 ) =>
   withTelemetry(
     () =>
       fetchApi(
-        `${security.getGeneralConfig().httpGatewayAddress}${
+        `${getConfig().httpGatewayAddress}${
           devicesApiEndpoints.DEVICES
         }/${deviceId}/metadata`,
         { method: 'PUT', body: { twinEnabled } }
@@ -150,13 +184,23 @@ export const updateDeviceTwinSynchronizationApi = (
     'update-device-metadata'
   )
 
+type DeviceOAuthConfigType = {
+  clientId: string
+  audience: string
+  scopes: string[]
+}
+
 /**
  * Returns an async function which resolves with a authorization code gathered from a rendered iframe, used for onboarding of a device.
  * @param {*} deviceId
  */
-export const getDeviceAuthCode = deviceId => {
+export const getDeviceAuthCode = (deviceId: string) => {
   return new Promise((resolve, reject) => {
-    const { clientId, audience, scopes = [] } = security.getDeviceOAuthConfig()
+    const {
+      clientId,
+      audience,
+      scopes = [],
+    } = security.getDeviceOAuthConfig() as DeviceOAuthConfigType
     const AuthUserManager = security.getUserManager()
 
     if (!clientId) {
@@ -169,18 +213,18 @@ export const getDeviceAuthCode = deviceId => {
 
     AuthUserManager.metadataService
       .getAuthorizationEndpoint()
-      .then(authorizationEndpoint => {
-        let timeout = null
+      .then((authorizationEndpoint: string) => {
+        let timeout: any = null
         const iframe = document.createElement('iframe')
         const audienceParam = audience ? `&audience=${audience}` : ''
         iframe.src = `${authorizationEndpoint}?response_type=code&client_id=${clientId}&scope=${scopes}${audienceParam}&redirect_uri=${window.location.origin}/devices&device_id=${deviceId}`
 
         const destroyIframe = () => {
           sessionStorage.removeItem(DEVICE_AUTH_CODE_SESSION_KEY)
-          iframe.parentNode.removeChild(iframe)
+          iframe.parentNode?.removeChild(iframe)
         }
 
-        const doResolve = value => {
+        const doResolve = (value: string) => {
           destroyIframe()
           clearTimeout(timeout)
           resolve(value)

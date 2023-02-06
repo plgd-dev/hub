@@ -2,7 +2,11 @@
 
 import { createSlice } from '@reduxjs/toolkit'
 
-const initialState = {
+type StoreType = {
+  activeNotifications: any
+}
+
+const initialState: StoreType = {
   activeNotifications: [],
 }
 
@@ -16,7 +20,7 @@ const { reducer, actions } = createSlice({
     deleteActiveNotification(state, { payload }) {
       state.activeNotifications.splice(
         state.activeNotifications.findIndex(
-          notification => notification === payload
+          (notification: any) => notification === payload
         ),
         1
       )
@@ -27,7 +31,7 @@ const { reducer, actions } = createSlice({
       } else {
         state.activeNotifications.splice(
           state.activeNotifications.findIndex(
-            notification => notification === payload
+            (notification: any) => notification === payload
           ),
           1
         )
@@ -47,8 +51,8 @@ export const {
 export default reducer
 
 // Selectors
-export const selectActiveNotifications = state =>
+export const selectActiveNotifications = (state: any) =>
   state.devices.activeNotifications
 
-export const isNotificationActive = key => state =>
+export const isNotificationActive = (key: any) => (state: any) =>
   state.devices.activeNotifications?.includes?.(key) || false

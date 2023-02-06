@@ -1,3 +1,4 @@
+// @ts-ignore
 import { time } from 'units-converter'
 import { getApiErrorMessage } from '@/common/utils'
 import { showErrorToast, showWarningToast } from '@/components/toast'
@@ -13,33 +14,39 @@ import {
   MINIMAL_TTL_VALUE_MS,
 } from './constants'
 import { messages as t } from './Devices.i18n'
+import { ResourcesType } from '@/containers/Devices/Devices.types'
 
 const { INFINITE, NS, MS, S, M, H } = commandTimeoutUnits
 
 // Returns the extension for resources API for the selected interface
-export const interfaceGetParam = currentInterface =>
-  currentInterface ? `resourceInterface=${currentInterface}` : ''
+export const interfaceGetParam = (
+  currentInterface: string | null,
+  join = '?'
+) =>
+  currentInterface && currentInterface !== ''
+    ? `${join}resourceInterface=${currentInterface}`
+    : ''
 
 // Return true if a resource contains the oic.if.create interface, meaning a new resource can be created from this resource
-export const canCreateResource = interfaces =>
+export const canCreateResource = (interfaces: string[]) =>
   interfaces.includes(knownInterfaces.OIC_IF_CREATE)
 
 // Returns true if a device has a resource oic.wk.con which holds the device name property
-export const canChangeDeviceName = links =>
+export const canChangeDeviceName = (links: ResourcesType[]) =>
   links.findIndex(link =>
     link.resourceTypes.includes(knownResourceTypes.OIC_WK_CON)
   ) !== -1
 
 // Returns the href for the resource which can do a device name change
-export const getDeviceChangeResourceHref = links =>
+export const getDeviceChangeResourceHref = (links: ResourcesType[]) =>
   links.find(link => link.resourceTypes.includes(knownResourceTypes.OIC_WK_CON))
     ?.href
 
 // Handle the errors occurred during resource update
 export const handleUpdateResourceErrors = (
-  error,
-  { id: deviceId, href },
-  _
+  error: any,
+  { id: deviceId, href }: { id: string; href: string },
+  _: any
 ) => {
   const errorMessage = getApiErrorMessage(error)
 
@@ -74,9 +81,9 @@ export const handleUpdateResourceErrors = (
 
 // Handle the errors occurred during resource create
 export const handleCreateResourceErrors = (
-  error,
-  { id: deviceId, href },
-  _
+  error: any,
+  { id: deviceId, href }: { id: string; href: string },
+  _: any
 ) => {
   const errorMessage = getApiErrorMessage(error)
 
@@ -110,7 +117,7 @@ export const handleCreateResourceErrors = (
 }
 
 // Handle the errors occurred twinSynchronization set
-export const handleTwinSynchronizationErrors = (error, _) => {
+export const handleTwinSynchronizationErrors = (error: any, _: any) => {
   const errorMessage = getApiErrorMessage(error)
 
   if (errorMessage?.includes?.(errorCodes.DEADLINE_EXCEEDED)) {
@@ -128,7 +135,7 @@ export const handleTwinSynchronizationErrors = (error, _) => {
 }
 
 // Handle the errors occurred during resource fetch
-export const handleFetchResourceErrors = (error, _) =>
+export const handleFetchResourceErrors = (error: any, _: any) =>
   showErrorToast({
     title: _(t.resourceRetrieveError),
     message: getApiErrorMessage(error),
@@ -136,9 +143,9 @@ export const handleFetchResourceErrors = (error, _) =>
 
 // Handle the errors occurred during resource fetch
 export const handleDeleteResourceErrors = (
-  error,
-  { id: deviceId, href },
-  _
+  error: any,
+  { id: deviceId, href }: { id: string; href: string },
+  _: any
 ) => {
   const errorMessage = getApiErrorMessage(error)
 
@@ -166,7 +173,11 @@ export const handleDeleteResourceErrors = (
 }
 
 // Handle the errors occurred during devices delete
-export const handleDeleteDevicesErrors = (error, _, singular = false) => {
+export const handleDeleteDevicesErrors = (
+  error: any,
+  _: any,
+  singular = false
+) => {
   const errorMessage = getApiErrorMessage(error)
 
   showErrorToast({
@@ -177,10 +188,14 @@ export const handleDeleteDevicesErrors = (error, _, singular = false) => {
 
 // Updates the device data with an object of { deviceId, status, twinEnabled } which came from the WS events.
 export const updateDevicesDataStatus = (
-  data,
-  { deviceId, status, twinEnabled }
+  data: any,
+  {
+    deviceId,
+    status,
+    twinEnabled,
+  }: { deviceId: string; status: string; twinEnabled: boolean }
 ) => {
-  return data?.map(device => {
+  return data?.map((device: any) => {
     if (device.id === deviceId) {
       return {
         ...device,
@@ -200,13 +215,14 @@ export const updateDevicesDataStatus = (
 }
 
 // Async function for waiting
-export const sleep = ms => new Promise(resolve => setTimeout(resolve, ms))
+export const sleep = (ms: number) =>
+  new Promise(resolve => setTimeout(resolve, ms))
 
 /** Tree Structure utilities **/
 // Shout out to @oskarbauer for creating this script :)
 
 // A recursive function which "densify" the subRows
-const deDensisfy = objectToDeDensify => {
+const deDensisfy = (objectToDeDensify: any) => {
   const { href, ...rest } = objectToDeDensify
 
   const keys = Object.keys(rest)
@@ -224,7 +240,7 @@ const deDensisfy = objectToDeDensify => {
 }
 
 // A recursive function for creating a tree structure from the href attribute
-const addItem = (objToAddTo, item, position) => {
+const addItem = (objToAddTo: any, item: any, position: number) => {
   const { href, ...rest } = item
   const parts = href.split('/')
   const isLast = position === parts.length - 1
@@ -245,11 +261,11 @@ const addItem = (objToAddTo, item, position) => {
   }
 }
 
-export const createNestedResourceData = data => {
+export const createNestedResourceData = (data: any) => {
   // Always construct the objects from scratch
   let firstSwipe = {}
   if (data) {
-    data.forEach(item => {
+    data.forEach((item: any) => {
       addItem(firstSwipe, item, 1)
     })
   }
@@ -264,7 +280,7 @@ export const createNestedResourceData = data => {
 /** End **/
 
 // Returns the last section of a resource href, no matter if it ends with a trailing slash or not
-export const getLastPartOfAResourceHref = href => {
+export const getLastPartOfAResourceHref = (href: string) => {
   if (!href) {
     return ''
   }
@@ -273,23 +289,27 @@ export const getLastPartOfAResourceHref = href => {
 }
 
 // Converts a value to ns (if the unit is Infinite, it defaults to ns)
-export const convertValueToNs = (value, unit) =>
+export const convertValueToNs = (value: number, unit: string) =>
   +time(value)
     .from(unit === INFINITE ? NS : unit)
     .to(NS)
     .value.toFixed(0)
 
 // Converts a value from a given unit to a provided unit (if the unit is Infinite, it defaults to ns)
-export const convertValueFromTo = (value, unitFrom, unitTo) =>
+export const convertValueFromTo = (
+  value: number,
+  unitFrom: string,
+  unitTo: string
+) =>
   time(value)
     .from(unitFrom === INFINITE ? NS : unitFrom)
     .to(unitTo === INFINITE ? NS : unitTo).value
 
 // Normalizes a given value to a fixed float number
-export const normalizeToFixedFloatValue = value => +value.toFixed(5)
+export const normalizeToFixedFloatValue = (value: any) => +value.toFixed(5)
 
 // Return a unit for the value which is the "nicest" after a conversion from ns
-export const findClosestUnit = value => {
+export const findClosestUnit = (value: number) => {
   const fromValue = time(value).from(NS)
 
   if (fromValue.to(MS).value < 1000) {
@@ -304,24 +324,29 @@ export const findClosestUnit = value => {
 }
 
 // Return true if there is a command timeout error based on the provided value and unit
-export const hasCommandTimeoutError = (value, unit) => {
+export const hasCommandTimeoutError = (value: number, unit: string) => {
   const baseUnit = unit === INFINITE ? NS : unit
 
   const valueMs = time(value).from(baseUnit).to(MS).value
   return valueMs < MINIMAL_TTL_VALUE_MS && value !== 0
 }
 
-export const convertAndNormalizeValueFromTo = (value, unitFrom, unitTo) =>
-  normalizeToFixedFloatValue(convertValueFromTo(value, unitFrom, unitTo))
+export const convertAndNormalizeValueFromTo = (
+  value: number,
+  unitFrom: string,
+  unitTo: string
+) => normalizeToFixedFloatValue(convertValueFromTo(value, unitFrom, unitTo))
 
 // Redux and event key for the notification state of a single device
-export const getDeviceNotificationKey = deviceId =>
+export const getDeviceNotificationKey = (deviceId: string) =>
   `${DEVICES_WS_KEY}.${deviceId}`
 
 // Redux and event key for the notification state for a registration or unregistration of a resource
-export const getResourceRegistrationNotificationKey = deviceId =>
+export const getResourceRegistrationNotificationKey = (deviceId: string) =>
   `${DEVICES_RESOURCE_REGISTRATION_WS_KEY}.${deviceId}`
 
 // Redux and event key for the notification state for an update of a single resource
-export const getResourceUpdateNotificationKey = (deviceId, href) =>
-  `${DEVICES_RESOURCE_UPDATE_WS_KEY}.${deviceId}.${href}`
+export const getResourceUpdateNotificationKey = (
+  deviceId: string,
+  href: string
+) => `${DEVICES_RESOURCE_UPDATE_WS_KEY}.${deviceId}.${href}`

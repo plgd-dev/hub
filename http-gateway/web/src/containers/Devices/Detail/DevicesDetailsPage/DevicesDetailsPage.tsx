@@ -18,7 +18,7 @@ import DevicesResources from '../../Resources/DevicesResources'
 import DevicesDetailsHeader from '../DevicesDetailsHeader'
 import DevicesDetailsTitle from '../DevicesDetailsTitle'
 import DevicesResourcesModal from '../../Resources/DevicesResourcesModal'
-import { CommanTimeoutControl } from '../../_command-timeout-control'
+import CommanTimeoutControl from '../DeviceCommandTimeoutControl'
 import {
   devicesStatuses,
   defaultNewResource,

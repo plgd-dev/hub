@@ -4,17 +4,11 @@ import { useIntl } from 'react-intl'
 import ActionButton from '@shared-ui/components/new/ActionButton'
 import { canCreateResource } from '../../utils'
 import { messages as t } from '../../Devices.i18n'
-import { Props } from './DevicesResourcesActionButton.types'
+import { Props, defaultProps } from './DevicesResourcesActionButton.types'
 
-const DevicesResourcesActionButton: FC<Props> = ({
-  disabled,
-  href,
-  deviceId,
-  interfaces,
-  onCreate,
-  onUpdate,
-  onDelete,
-}) => {
+const DevicesResourcesActionButton: FC<Props> = props => {
+  const { disabled, href, deviceId, interfaces, onCreate, onUpdate, onDelete } =
+    { ...defaultProps, ...props }
   const { formatMessage: _ } = useIntl()
 
   return (
@@ -48,5 +42,6 @@ const DevicesResourcesActionButton: FC<Props> = ({
 }
 
 DevicesResourcesActionButton.displayName = 'DevicesResourcesActionButton'
+DevicesResourcesActionButton.defaultProps = defaultProps
 
 export default DevicesResourcesActionButton
