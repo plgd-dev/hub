@@ -12,7 +12,7 @@ import {
   getResourceRegistrationNotificationKey,
 } from './utils'
 import { security } from '@/common/services'
-import { SecurityConfig } from '@/containers/App/App.types'
+import { SecurityConfig, StreamApiPropsType } from '@/containers/App/App.types'
 
 const getConfig = () => security.getGeneralConfig() as SecurityConfig
 

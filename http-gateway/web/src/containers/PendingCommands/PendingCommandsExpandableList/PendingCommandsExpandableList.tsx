@@ -1,13 +1,12 @@
-import { useEffect, useState } from 'react'
+import { FC, useEffect, useState } from 'react'
 import ReactDOM from 'react-dom'
 import { useIntl } from 'react-intl'
 import classNames from 'classnames'
-import PropTypes from 'prop-types'
+import { Props } from './PendingCommandsExpandableList.types'
+import PendingCommandsList from '../PendingCommandsList'
+import { messages as t } from '../PendingCommands.i18n'
 
-import { PendingCommandsList } from './_pending-commands-list'
-import { messages as t } from './pending-commands-i18n'
-
-export const PendingCommandsExpandableList = ({ deviceId }) => {
+const PendingCommandsExpandableList: FC<Props> = ({ deviceId }) => {
   const [domReady, setDomReady] = useState(false)
   const [expanded, setExpanded] = useState(false)
   const { formatMessage: _ } = useIntl()
@@ -33,7 +32,7 @@ export const PendingCommandsExpandableList = ({ deviceId }) => {
               })}
             />
           </span>,
-          document.querySelector('#footer .left')
+          document.querySelector('#footer .left') as Element
         )}
       {expanded && (
         <div id="pending-commands-expandable-box">
@@ -44,10 +43,6 @@ export const PendingCommandsExpandableList = ({ deviceId }) => {
   )
 }
 
-PendingCommandsExpandableList.propTypes = {
-  deviceId: PropTypes.string,
-}
+PendingCommandsExpandableList.displayName = 'PendingCommandsExpandableList'
 
-PendingCommandsExpandableList.defaultProps = {
-  deviceId: null,
-}
+export default PendingCommandsExpandableList

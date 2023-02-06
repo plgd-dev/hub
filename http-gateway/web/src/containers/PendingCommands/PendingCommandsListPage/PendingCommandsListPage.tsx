@@ -1,12 +1,12 @@
 import { useState } from 'react'
 import { useIntl } from 'react-intl'
 
-import { Layout } from '@/components/layout'
-import { messages as menuT } from '@/components/menu/menu-i18n'
+import Layout from '@shared-ui/components/new/Layout'
+import { messages as menuT } from '@shared-ui/components/new/Menu/Menu.i18n'
 
-import { PendingCommandsList } from './_pending-commands-list'
+import PendingCommandsList from '../PendingCommandsList'
 
-export const PendingCommandsListPage = () => {
+const PendingCommandsListPage = () => {
   const { formatMessage: _ } = useIntl()
   const [loading, setLoading] = useState(false)
 
@@ -24,3 +24,7 @@ export const PendingCommandsListPage = () => {
     </Layout>
   )
 }
+
+PendingCommandsListPage.displayName = 'PendingCommandsListPage'
+
+export default PendingCommandsListPage

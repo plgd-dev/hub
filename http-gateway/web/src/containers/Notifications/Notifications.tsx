@@ -1,9 +1,8 @@
 import { useIntl } from 'react-intl'
+import Layout from '@shared-ui/components/new/Layout'
+import { messages as menuT } from '@shared-ui/components/new/Menu/Menu.i18n'
 
-import { Layout } from '@/components/layout'
-import { messages as menuT } from '@/components/menu/menu-i18n'
-
-export const Notifications = () => {
+const Notifications = () => {
   const { formatMessage: _ } = useIntl()
 
   return (
@@ -23,3 +22,5 @@ export const Notifications = () => {
     </Layout>
   )
 }
+
+export default Notifications

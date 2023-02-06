@@ -8,7 +8,7 @@ import Layout from '@shared-ui/components/new/Layout'
 import { getApiErrorMessage } from '@/common/utils'
 import { useIsMounted } from '@/common/hooks'
 import { Emitter } from '@/common/services/emitter'
-import { PendingCommandsExpandableList } from '@/containers/pending-commands'
+import { PendingCommandsExpandableList } from '@/containers/PendingCommands'
 import { messages as menuT } from '@/components/menu/menu-i18n'
 
 import {

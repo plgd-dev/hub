@@ -1,9 +1,9 @@
 import { Switch, Route } from 'react-router-dom'
 import DevicesListPage from '@/containers/Devices/List/DevicesListPage'
 import DevicesDetailsPage from '@/containers/Devices/Detail/DevicesDetailsPage'
-import { PendingCommandsListPage } from '@/containers/pending-commands'
-import { Notifications } from '@/containers/notifications'
-import { NotFoundPage } from '@/containers/not-found-page'
+import { PendingCommandsListPage } from '@/containers/PendingCommands'
+import Notifications from '@/containers/Notifications'
+import NotFoundPage from '@/containers/NotFoundPage'
 
 export const Routes = () => (
   <Switch>

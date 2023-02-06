@@ -1,0 +1,50 @@
+@import '@/common/styles/colors.scss';
+
+.cancel-action {
+  color: $primary_100;
+  cursor: pointer;
+  padding: 10px;
+}
+
+.json-object-box {
+  padding: 10px;
+  background-color: $light_200;
+  max-height: 500px;
+  overflow: auto;
+
+  pre {
+    margin: 0;
+  }
+}
+
+#pending-commands-expandable-box {
+  position: fixed;
+  bottom: 50px;
+  right: 0;
+  width: calc(100% - 200px);
+  height: 230px;
+  overflow: hidden;
+  z-index: 4;
+  background-color: $light_100;
+
+  .plgd-table table.table thead th {
+    height: 30px;
+  }
+
+  .plgd-table table.table tbody tr, .plgd-table table.table tbody tr td {
+    height: 40px;
+  }
+}
+
+#app.collapsed {
+  #pending-commands-expandable-box {
+    width: calc(100% - 55px);
+  }
+}
+
+.expander-button {
+  i {
+    margin-left: 12px;
+    font-size: 10px;
+  }
+}
