@@ -7,6 +7,7 @@ import (
 	"github.com/panjf2000/ants/v2"
 	"github.com/plgd-dev/device/v2/schema/configuration"
 	"github.com/plgd-dev/device/v2/schema/device"
+	"github.com/plgd-dev/device/v2/schema/maintenance"
 	"github.com/plgd-dev/device/v2/schema/platform"
 	"github.com/plgd-dev/go-coap/v3/message"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
@@ -201,6 +202,17 @@ func getResourceChangedEvents(t *testing.T, deviceID, correlationID, subscriptio
 			Type: &pb.Event_ResourceChanged{
 				ResourceChanged: pbTest.MakeResourceChanged(t, deviceID, test.TestResourceSwitchesHref, "",
 					[]interface{}{},
+				),
+			},
+			CorrelationId: correlationID,
+		},
+		maintenance.ResourceURI: {
+			SubscriptionId: subscriptionID,
+			Type: &pb.Event_ResourceChanged{
+				ResourceChanged: pbTest.MakeResourceChanged(t, deviceID, maintenance.ResourceURI, "",
+					map[string]interface{}{
+						"fr": false,
+					},
 				),
 			},
 			CorrelationId: correlationID,

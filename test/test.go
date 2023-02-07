@@ -17,6 +17,7 @@ import (
 	"github.com/plgd-dev/device/v2/schema/configuration"
 	"github.com/plgd-dev/device/v2/schema/device"
 	"github.com/plgd-dev/device/v2/schema/interfaces"
+	"github.com/plgd-dev/device/v2/schema/maintenance"
 	"github.com/plgd-dev/device/v2/schema/platform"
 	"github.com/plgd-dev/device/v2/schema/resources"
 	"github.com/plgd-dev/device/v2/test/resource/types"
@@ -100,6 +101,15 @@ func init() {
 			Interfaces:    []string{interfaces.OC_IF_LL, interfaces.OC_IF_CREATE, interfaces.OC_IF_B, interfaces.OC_IF_BASELINE},
 			Policy: &schema.Policy{
 				BitMask: 3,
+			},
+		},
+
+		{
+			Href:          maintenance.ResourceURI,
+			ResourceTypes: []string{maintenance.ResourceType},
+			Interfaces:    []string{interfaces.OC_IF_RW, interfaces.OC_IF_BASELINE},
+			Policy: &schema.Policy{
+				BitMask: 1,
 			},
 		},
 	}
@@ -234,7 +244,13 @@ func setAccessForCloud(ctx context.Context, t *testing.T, c *deviceClient.Client
 
 	link, err := core.GetResourceLink(links, acl.ResourceURI)
 	require.NoError(t, err)
-
+	confResources := acl.AllResources
+	for _, href := range links.GetResourceHrefs(maintenance.ResourceType) {
+		confResources = append(confResources, acl.Resource{
+			Href:       href,
+			Interfaces: []string{"*"},
+		})
+	}
 	setAcl := acl.UpdateRequest{
 		AccessControlList: []acl.AccessControl{
 			{
@@ -244,7 +260,7 @@ func setAccessForCloud(ctx context.Context, t *testing.T, c *deviceClient.Client
 						DeviceID: cloudSID,
 					},
 				},
-				Resources: acl.AllResources,
+				Resources: confResources,
 			},
 		},
 	}

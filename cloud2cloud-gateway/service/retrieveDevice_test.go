@@ -12,6 +12,7 @@ import (
 	"github.com/plgd-dev/device/v2/schema/configuration"
 	"github.com/plgd-dev/device/v2/schema/device"
 	"github.com/plgd-dev/device/v2/schema/interfaces"
+	"github.com/plgd-dev/device/v2/schema/maintenance"
 	"github.com/plgd-dev/device/v2/schema/platform"
 	"github.com/plgd-dev/device/v2/test/resource/types"
 	"github.com/plgd-dev/go-coap/v3/message"
@@ -140,6 +141,15 @@ func getDevicesBaseRepresentation(deviceID, deviceName, switchID string) interfa
 		"device": getDeviceData(deviceID, deviceName),
 		"links": []interface{}{
 			getResourceBaseData(deviceID, configuration.ResourceURI, []interface{}{configuration.ResourceType}, nil),
+			getResourceBaseData(deviceID, maintenance.ResourceURI, []interface{}{maintenance.ResourceType}, map[interface{}]interface{}{
+				"p": map[interface{}]interface{}{
+					"bm":                 uint64(0x1),
+					"port":               uint64(0x0),
+					"sec":                false,
+					"x.org.iotivity.tcp": uint64(0x0),
+					"x.org.iotivity.tls": uint64(0x0),
+				},
+			}),
 			getResourceBaseData(deviceID, test.TestResourceLightInstanceHref("1"), []interface{}{types.CORE_LIGHT}, nil),
 			getResourceBaseData(deviceID, device.ResourceURI, []interface{}{types.DEVICE_CLOUD, device.ResourceType},
 				map[interface{}]interface{}{
@@ -206,6 +216,10 @@ func getDevicesAllRepresentation(deviceID, deviceName, switchID string) interfac
 			getResourceAllData(deviceID, test.TestResourceSwitchesInstanceHref(switchID),
 				map[interface{}]interface{}{
 					"value": false,
+				}),
+			getResourceAllData(deviceID, maintenance.ResourceURI,
+				map[interface{}]interface{}{
+					"fr": false,
 				}),
 		},
 		"status": "online",
