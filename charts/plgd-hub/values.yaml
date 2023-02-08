@@ -108,7 +108,7 @@ mongodb:
         secretName: mongodb-cm-crt
   initContainers:
     - name: convert-cm-crt
-      image: docker.io/bitnami/nginx:1.20.2-debian-10-r63
+      image: docker.io/bitnami/nginx:1.21.6-debian-10-r63
       imagePullPolicy: "IfNotPresent"
       volumeMounts:
         - name: mongodb-crt
