@@ -1,6 +1,6 @@
 // @ts-nocheck
 import debounce from 'lodash/debounce'
-import { useStreamApi, useEmitter } from '@/common/hooks'
+import { useStreamApi, useEmitter } from '@shared-ui/common/hooks'
 
 import {
   devicesApiEndpoints,
@@ -11,7 +11,7 @@ import {
   updateDevicesDataStatus,
   getResourceRegistrationNotificationKey,
 } from './utils'
-import { security } from '@/common/services'
+import { security } from '@shared-ui/common/services'
 import { SecurityConfig, StreamApiPropsType } from '@/containers/App/App.types'
 
 const getConfig = () => security.getGeneralConfig() as SecurityConfig

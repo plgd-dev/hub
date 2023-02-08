@@ -2,9 +2,9 @@ import { FC, useMemo } from 'react'
 import { useIntl } from 'react-intl'
 import classNames from 'classnames'
 
-import { TreeExpander } from '@/components/tree-expander'
-import { TreeTable } from '@/components/table'
-import { Badge } from '@/components/badge'
+import TreeExpander from '@shared-ui/components/new/TreeExpander'
+import { TreeTable } from '@shared-ui/components/new/Table'
+import Badge from '@shared-ui/components/new/Badge'
 import DevicesResourcesActionButton from '../DevicesResourcesActionButton'
 import { devicesStatuses, RESOURCE_TREE_DEPTH_SIZE } from '../../constants'
 import {

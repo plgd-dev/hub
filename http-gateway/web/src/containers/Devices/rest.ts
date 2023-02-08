@@ -1,10 +1,10 @@
 import chunk from 'lodash/chunk'
 
-import { fetchApi, security } from '@/common/services'
+import { fetchApi, security } from '@shared-ui/common/services'
 import { DEVICE_AUTH_CODE_SESSION_KEY } from '@/constants'
 import { devicesApiEndpoints, DEVICE_DELETE_CHUNK_SIZE } from './constants'
 import { interfaceGetParam } from './utils'
-import { withTelemetry } from '@/common/services/opentelemetry'
+import { withTelemetry } from '@shared-ui/common/services/opentelemetry'
 import { SecurityConfig } from '@/containers/App/App.types'
 
 const getConfig = () => security.getGeneralConfig() as SecurityConfig

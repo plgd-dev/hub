@@ -5,7 +5,7 @@ import classNames from 'classnames'
 import Button from '@shared-ui/components/new/Button'
 import Badge from '@shared-ui/components/new/Badge'
 import Table from '@shared-ui/components/new/Table'
-import { IndeterminateCheckbox } from '@/components/checkbox'
+import { IndeterminateCheckbox } from '@shared-ui/components/new/Checkbox'
 import DevicesListActionButton from '../DevicesListActionButton'
 import {
   devicesStatuses,

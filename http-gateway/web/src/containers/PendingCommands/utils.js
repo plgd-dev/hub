@@ -1,6 +1,6 @@
 import { time } from 'units-converter'
 
-import { Emitter } from '@/common/services/emitter'
+import { Emitter } from '@shared-ui/common/services/emitter'
 
 import {
   commandTypes,

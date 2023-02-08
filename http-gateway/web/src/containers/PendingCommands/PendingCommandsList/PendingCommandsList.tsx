@@ -11,8 +11,8 @@ import { useIsMounted } from '@shared-ui/common/hooks'
 import { getApiErrorMessage } from '@shared-ui/common/utils'
 import { WebSocketEventClient, eventFilters } from '@shared-ui/common/services'
 
-import { PendingCommandDetailsModal } from '../_pending-command-details-modal'
-import { DateTooltip } from '../_date-tooltip'
+import PendingCommandDetailsModal from '../PendingCommandDetailsModal'
+import DateTooltip from '../DateTooltip'
 import {
   PENDING_COMMANDS_DEFAULT_PAGE_SIZE,
   EMBEDDED_PENDING_COMMANDS_DEFAULT_PAGE_SIZE,
@@ -26,11 +26,12 @@ import {
   handleEmitNewPendingCommand,
   handleEmitUpdatedCommandEvents,
 } from '../utils'
+
 import { usePendingCommandsList } from '../hooks'
 import { cancelPendingCommandApi } from '../rest'
 import { messages as t } from '../PendingCommands.i18n'
 import { Props } from './PendingCommandsList.types'
-import './PendingCommands.scss'
+import '../PendingCommands.scss'
 
 type ModalData = {
   content: any
@@ -126,7 +127,7 @@ const PendingCommandsList: FC<Props> = ({ onLoading, embedded, deviceId }) => {
   const cancelCommand = async () => {
     try {
       setCanceling(true)
-      await cancelPendingCommandApi(confirmModalData)
+      await cancelPendingCommandApi(confirmModalData!)
 
       if (isMounted.current) {
         setCanceling(false)

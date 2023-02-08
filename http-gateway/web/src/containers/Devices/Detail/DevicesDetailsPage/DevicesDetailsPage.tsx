@@ -8,7 +8,7 @@ import ConfirmModal from '@shared-ui/components/new/ConfirmModal'
 import Layout from '@shared-ui/components/new/Layout'
 import NotFoundPage from '@/containers/NotFoundPage'
 import { useIsMounted, WellKnownConfigType } from '@shared-ui/common/hooks'
-import { messages as menuT } from '@/components/menu/menu-i18n'
+import { messages as menuT } from '@shared-ui/components/new/Menu/Menu.i18n'
 import { showSuccessToast } from '@shared-ui/components/new/Toast'
 import { PendingCommandsExpandableList } from '@/containers/PendingCommands'
 
@@ -44,7 +44,7 @@ import { messages as t } from '../../Devices.i18n'
 
 import './DevicesDetailsPage.scss'
 import { DevicesDetailsResourceModalData } from './DevicesDetailsPage.types'
-import { security } from '@/common/services'
+import { security } from '@shared-ui/common/services'
 import omit from 'lodash/omit'
 
 const DevicesDetailsPage = () => {

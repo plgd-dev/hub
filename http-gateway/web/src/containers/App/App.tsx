@@ -2,11 +2,11 @@ import { hot } from 'react-hot-loader/root'
 import { useContext, useState, useEffect } from 'react'
 import { useIntl } from 'react-intl'
 import PageLoader from '@shared-ui/components/new/PageLoader'
-import { security } from '@/common/services/security' // @PM: shared
+import { security } from '@shared-ui/common/services/security' // @PM: shared
 import { openTelemetry } from '@shared-ui/common/services/opentelemetry'
 import { messages as t } from './App.i18n'
 import { AppContext } from './AppContext'
-import './app.scss'
+import './App.scss'
 import { getAppWellKnownConfiguration } from '@/containers/App/AppRest'
 import AppInner from '@/containers/App/AppInner/AppInner'
 import { AuthProvider, UserManager } from 'oidc-react'

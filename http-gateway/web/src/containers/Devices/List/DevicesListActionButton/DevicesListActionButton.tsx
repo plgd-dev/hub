@@ -1,6 +1,6 @@
 import { FC } from 'react'
 import { useIntl } from 'react-intl'
-import { ActionButton } from '@/components/action-button'
+import ActionButton from '@shared-ui/components/new/ActionButton'
 import { messages as t } from '../../Devices.i18n'
 import { Props } from './DevicesListActionButton.types'
 
@@ -11,7 +11,7 @@ const DevicesListActionButton: FC<Props> = props => {
   return (
     <ActionButton
       menuProps={{
-        align: 'right',
+        align: 'end',
       }}
       items={[
         {

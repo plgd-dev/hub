@@ -1,0 +1,65 @@
+@import '~bootstrap/scss/bootstrap';
+@import '@/assets/fonts/fontawesome/css/all.min.css';
+@import 'react-toastify/dist/ReactToastify.css';
+
+@import '@shared-ui/common/styles/colors.scss';
+@import '@shared-ui/common/styles/default.scss';
+@import '@shared-ui/common/styles/animations.scss';
+@import '@shared-ui/common/styles/form.scss';
+@import '@shared-ui/components/new/PageLoader/PageLoader.scss';
+@import '@shared-ui/components/new/Breadcrumbs/Breadcrumbs.scss';
+@import '@shared-ui/components/new/Layout/Layout.scss';
+@import '@shared-ui/components/new/Table/Table.scss';
+@import '@shared-ui/components/new/Table/Pagination.scss';
+@import '@shared-ui/components/new/Badge/Badge.scss';
+@import '@shared-ui/components/new/Label/Label.scss';
+@import '@shared-ui/components/new/Modal/Modal.scss';
+@import '@shared-ui/components/new/Button/Button.scss';
+@import '@shared-ui/components/new/Select/Select.scss';
+@import '@shared-ui/components/new/Editor/Editor.scss';
+@import '@shared-ui/components/new/Toast/Toast.scss';
+@import '@shared-ui/components/new/Switch/Switch.scss';
+@import '@shared-ui/components/new/ActionButton/ActionButton.scss';
+@import '@shared-ui/components/new/Checkbox/Checkbox.scss';
+@import '@shared-ui/components/new/TextField/TextField.scss';
+@import '@shared-ui/components/new/TreeExpander/TreeExpander.scss';
+@import '@shared-ui/components/new/CopyBox/CopyBox.scss';
+
+#app {
+  padding: 0;
+  min-height: 100vh;
+  box-sizing: border-box;
+  display: flex;
+  position: relative;
+  overflow: hidden;
+}
+
+#content {
+  box-sizing: border-box;
+  width: 100%;
+  position: relative;
+  margin-left: $left_panel_expanded;
+  padding: 80px 40px 90px 40px;
+  min-height: 100vh;
+  overflow: auto;
+}
+
+// Collapsed menu state
+#app.collapsed {
+  #content {
+    margin-left: $left_panel_collapsed;
+  }
+}
+
+.client-error-message,
+.page-loading-text {
+  text-align: center;
+  margin: 10px;
+  padding: 10px;
+}
+
+.client-error-message {
+  background-color: $error_50;
+  border: 1px solid $error_100;
+  color: $error_100;
+}

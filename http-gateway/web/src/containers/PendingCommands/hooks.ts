@@ -1,5 +1,5 @@
-import { useStreamApi } from '@/common/hooks'
-import { useEmitter } from '@/common/hooks'
+import { useStreamApi } from '@shared-ui/common/hooks'
+import { useEmitter } from '@shared-ui/common/hooks'
 
 import {
   pendingCommandsApiEndpoints,
@@ -11,7 +11,7 @@ import {
   updatePendingCommandsDataStatus,
 } from './utils'
 import { SecurityConfig, StreamApiPropsType } from '@/containers/App/App.types'
-import { security } from '@/common/services'
+import { security } from '@shared-ui/common/services'
 
 const getConfig = () => security.getGeneralConfig() as SecurityConfig
 

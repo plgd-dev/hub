@@ -1,9 +1,12 @@
 // @ts-ignore
 import { time } from 'units-converter'
-import { getApiErrorMessage } from '@/common/utils'
-import { showErrorToast, showWarningToast } from '@/components/toast'
-import { compareIgnoreCase } from '@/components/table/utils'
-import { errorCodes } from '@/common/services/fetch-api'
+import { getApiErrorMessage } from '@shared-ui/common/utils'
+import {
+  showErrorToast,
+  showWarningToast,
+} from '@shared-ui/components/new/Toast'
+import { compareIgnoreCase } from '@shared-ui/components/new/Table/Utils'
+import { errorCodes } from '@shared-ui/common/services/fetch-api'
 import {
   knownInterfaces,
   knownResourceTypes,

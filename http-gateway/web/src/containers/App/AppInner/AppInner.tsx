@@ -2,25 +2,26 @@ import { useMemo } from 'react'
 import { AppContext } from '@/containers/App/AppContext'
 import { Router } from 'react-router-dom'
 import { history } from '@/store'
-import { InitServices } from '@/common/services/init-services'
+import { InitServices } from '@shared-ui/common/services/init-services'
 import { Helmet } from 'react-helmet'
 import appConfig from '@/config'
 import Container from 'react-bootstrap/Container'
 import classNames from 'classnames'
-import { StatusBar } from '@/components/status-bar'
-import { LeftPanel } from '@/components/left-panel'
+import StatusBar from '@shared-ui/components/new/StatusBar'
+import LeftPanel from '@shared-ui/components/new/LeftPanel'
 import Menu from '@shared-ui/components/new/Menu'
 import { Routes } from '@/routes'
 import Footer from '@shared-ui/components/new/Footer'
 import {
   BrowserNotificationsContainer,
   ToastContainer,
-} from '@/components/toast'
+} from '@shared-ui/components/new/Toast'
 import { useLocalStorage } from '@shared-ui/common/hooks'
 import { useAuth } from 'oidc-react'
 import { security } from '@shared-ui/common/services'
 import AppLoader from '@/containers/App/AppLoader/AppLoader'
 import { Props } from './AppInner.types'
+import { deviceStatusListener } from '../../Devices/websockets'
 
 const AppInner = (props: Props) => {
   const { wellKnownConfig, openTelemetry } = props
@@ -50,7 +51,7 @@ const AppInner = (props: Props) => {
   return (
     <AppContext.Provider value={contextValue}>
       <Router history={history}>
-        <InitServices />
+        <InitServices deviceStatusListener={deviceStatusListener} />
         <Helmet
           defaultTitle={appConfig.appName}
           titleTemplate={`%s | ${appConfig.appName}`}

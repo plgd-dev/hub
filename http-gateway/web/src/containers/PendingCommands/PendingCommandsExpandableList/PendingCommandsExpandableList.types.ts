@@ -1,3 +1,3 @@
 export type Props = {
-  deviceId: string
+  deviceId?: string
 }

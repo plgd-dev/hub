@@ -1,5 +1,4 @@
 import { useState, useMemo, FC } from 'react'
-import PropTypes from 'prop-types'
 import { useIntl } from 'react-intl'
 import isFinite from 'lodash/isFinite'
 import classNames from 'classnames'

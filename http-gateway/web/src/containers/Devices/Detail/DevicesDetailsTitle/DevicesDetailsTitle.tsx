@@ -54,7 +54,7 @@ const DevicesDetailsTitle: FC<Props> = ({
 
       try {
         const { data } = await updateDevicesResourceApi(
-          { deviceId, href, ttl },
+          { deviceId, href: href!, ttl },
           {
             n: inputTitle,
           }

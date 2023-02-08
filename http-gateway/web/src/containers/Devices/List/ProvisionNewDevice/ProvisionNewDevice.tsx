@@ -5,11 +5,11 @@ import { messages as t } from '@/containers/Devices/Devices.i18n'
 import { useIntl } from 'react-intl'
 import Button from '@shared-ui/components/new/Button'
 import Modal from '@shared-ui/components/new/Modal'
-import { isValidGuid } from '@/common/utils'
+import { isValidGuid } from '@shared-ui/common/utils'
 import Label from '@shared-ui/components/new/Label'
 import TextField from '@shared-ui/components/new/TextField'
 import CopyBox from '@shared-ui/components/new/CopyBox'
-import { security } from '@/common/services'
+import { security } from '@shared-ui/common/services'
 
 const ProvisionNewDeviceCore = () => {
   const [show, setShow] = useState(false)
