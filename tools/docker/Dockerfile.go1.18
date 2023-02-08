@@ -2,7 +2,7 @@
 # This issue is reproducible with real devices that connect to AWS.
 # This seems to be caused by the device's old mbedtls library:
 # https://github.com/Mbed-TLS/mbedtls/tree/d81c11b8ab61fd5b2da8133aa73c5fe33a0633eb
-FROM golang:1.18.8-alpine AS build
+FROM golang:1.20.0-alpine AS build
 ARG DIRECTORY
 ARG NAME
 RUN apk add --no-cache curl git build-base
