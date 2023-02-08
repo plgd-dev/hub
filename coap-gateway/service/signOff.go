@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"math"
 	"net/url"
 
 	"github.com/plgd-dev/go-coap/v3/message"
@@ -88,6 +89,11 @@ const errFmtSignOff = "cannot handle sign off: %w"
 // Sign-off
 // https://github.com/openconnectivityfoundation/security/blob/master/swagger2.0/oic.sec.account.swagger.json
 func signOffHandler(req *mux.Message, client *session) (*pool.Message, error) {
+	err := client.blockSignOff.Acquire(req.Context(), math.MaxInt64)
+	if err != nil {
+		return nil, statusErrorf(coapCodes.ServiceUnavailable, errFmtSignOff, fmt.Errorf("cannot acquire sign off lock: some commands are in progress"))
+	}
+	defer client.blockSignOff.Release(math.MaxInt64)
 	ctx, cancel := context.WithTimeout(client.server.ctx, client.server.config.APIs.COAP.KeepAlive.Timeout)
 	defer cancel()
 

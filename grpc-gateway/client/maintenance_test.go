@@ -34,11 +34,11 @@ func TestClientFactoryReset(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "factory reset - maintenance resource is not published",
+			name: "factory reset",
 			args: args{
 				deviceID: deviceID,
 			},
-			wantErr: true,
+			wantErr: false,
 		},
 		{
 			name: "not found",
@@ -57,8 +57,9 @@ func TestClientFactoryReset(t *testing.T) {
 		assert.NoError(t, err)
 	}()
 
-	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c.GrpcGatewayClient(), deviceID, config.ACTIVE_COAP_SCHEME+"://"+config.COAP_GW_HOST, test.GetAllBackendResourceLinks())
-	defer shutdownDevSim()
+	_, _ = test.OnboardDevSim(ctx, t, c.GrpcGatewayClient(), deviceID, config.ACTIVE_COAP_SCHEME+"://"+config.COAP_GW_HOST, test.GetAllBackendResourceLinks())
+	// shutdownDevSim is not needed because factory reset is called
+	// defer shutdownDevSim()
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

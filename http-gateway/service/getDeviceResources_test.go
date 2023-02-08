@@ -14,6 +14,7 @@ import (
 	"github.com/plgd-dev/device/v2/schema/configuration"
 	"github.com/plgd-dev/device/v2/schema/device"
 	"github.com/plgd-dev/device/v2/schema/interfaces"
+	"github.com/plgd-dev/device/v2/schema/maintenance"
 	"github.com/plgd-dev/device/v2/schema/platform"
 	"github.com/plgd-dev/device/v2/test/resource/types"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
@@ -30,6 +31,14 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )
+
+func makeMaintenanceResourceChanged(t *testing.T, deviceID string) *events.ResourceChanged {
+	return pbTest.MakeResourceChanged(t, deviceID, maintenance.ResourceURI, "",
+		map[string]interface{}{
+			"fr": false,
+		},
+	)
+}
 
 func makePlatformResourceChanged(t *testing.T, deviceID string) *events.ResourceChanged {
 	return pbTest.MakeResourceChanged(t, deviceID, platform.ResourceURI, "",
@@ -119,6 +128,10 @@ func TestRequestHandlerGetDeviceResources(t *testing.T) {
 				{
 					Types: []string{types.DEVICE_CLOUD, device.ResourceType},
 					Data:  makeCloudDeviceResourceChanged(t, deviceID),
+				},
+				{
+					Types: []string{maintenance.ResourceType},
+					Data:  makeMaintenanceResourceChanged(t, deviceID),
 				},
 			},
 		},

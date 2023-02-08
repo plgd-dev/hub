@@ -6,6 +6,7 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
+	"math"
 	"net"
 	"sync"
 	"time"
@@ -35,6 +36,7 @@ import (
 	otelCodes "go.opentelemetry.io/otel/codes"
 	semconv "go.opentelemetry.io/otel/semconv/v1.10.0"
 	"go.opentelemetry.io/otel/trace"
+	"golang.org/x/sync/semaphore"
 	"google.golang.org/grpc"
 )
 
@@ -109,6 +111,10 @@ type session struct {
 		deviceObserver          *future.Future
 		closeEventSubscriptions func()
 	}
+
+	// blockSignOff is used to block sign off until all commands from hub are finished.
+	// eg: factory reset was send via /oic/mnt resource and sign off are called in parallel.
+	blockSignOff *semaphore.Weighted
 }
 
 // newSession creates and initializes client
@@ -121,6 +127,7 @@ func newSession(server *Service, coapConn mux.Conn, tlsDeviceID string, tlsValid
 		exchangeCache:         NewExchangeCache(),
 		refreshCache:          NewRefreshCache(),
 		tlsValidUntil:         tlsValidUntil,
+		blockSignOff:          semaphore.NewWeighted(math.MaxInt64),
 	}
 }
 
@@ -501,6 +508,11 @@ func (c *session) batchNotifyContentChanged(ctx context.Context, deviceID string
 }
 
 func (c *session) notifyContentChanged(deviceID, href string, batch bool, notification *pool.Message) error {
+	if !c.blockSignOff.TryAcquire(1) {
+		c.getLogger().Debugf("cannot notify resource /%v%v content changed: signOff processing", deviceID, href)
+		return nil
+	}
+	defer c.blockSignOff.Release(1)
 	notifyError := func(deviceID, href string, err error) error {
 		return fmt.Errorf("cannot notify resource /%v%v content changed: %w", deviceID, href, err)
 	}
@@ -562,6 +574,10 @@ func (c *session) updateStatusResource(ctx context.Context, sendConfirmCtx conte
 }
 
 func (c *session) UpdateResource(ctx context.Context, event *events.ResourceUpdatePending) error {
+	if !c.blockSignOff.TryAcquire(1) {
+		return fmt.Errorf("cannot update resource /%v%v: signOff processing", event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref())
+	}
+	defer c.blockSignOff.Release(1)
 	setDeviceIDToTracerSpan(ctx, c.deviceID())
 	authCtx, err := c.GetAuthorizationContext()
 	if err != nil {
@@ -630,6 +646,10 @@ func (c *session) retrieveStatusResource(ctx context.Context, sendConfirmCtx con
 }
 
 func (c *session) RetrieveResource(ctx context.Context, event *events.ResourceRetrievePending) error {
+	if !c.blockSignOff.TryAcquire(1) {
+		return fmt.Errorf("cannot retrieve resource /%v%v: signOff processing", event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref())
+	}
+	defer c.blockSignOff.Release(1)
 	setDeviceIDToTracerSpan(ctx, c.deviceID())
 	authCtx, err := c.GetAuthorizationContext()
 	if err != nil {
@@ -698,6 +718,10 @@ func (c *session) deleteStatusResource(ctx context.Context, sendConfirmCtx conte
 }
 
 func (c *session) DeleteResource(ctx context.Context, event *events.ResourceDeletePending) error {
+	if !c.blockSignOff.TryAcquire(1) {
+		return fmt.Errorf("cannot delete resource /%v%v: signOff processing", event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref())
+	}
+	defer c.blockSignOff.Release(1)
 	setDeviceIDToTracerSpan(ctx, c.deviceID())
 	authCtx, err := c.GetAuthorizationContext()
 	if err != nil {
@@ -814,6 +838,10 @@ func (c *session) createStatusResource(ctx context.Context, sendConfirmCtx conte
 }
 
 func (c *session) CreateResource(ctx context.Context, event *events.ResourceCreatePending) error {
+	if !c.blockSignOff.TryAcquire(1) {
+		return fmt.Errorf("cannot create resource /%v%v: signOff processing", event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref())
+	}
+	defer c.blockSignOff.Release(1)
 	setDeviceIDToTracerSpan(ctx, c.deviceID())
 	authCtx, err := c.GetAuthorizationContext()
 	if err != nil {
@@ -896,6 +924,10 @@ func (c *session) confirmDeviceMetadataUpdate(ctx context.Context, event *events
 }
 
 func (c *session) UpdateDeviceMetadata(ctx context.Context, event *events.DeviceMetadataUpdatePending) error {
+	if !c.blockSignOff.TryAcquire(1) {
+		return fmt.Errorf("cannot update device('%v') metadata: signOff processing", event.GetDeviceId())
+	}
+	defer c.blockSignOff.Release(1)
 	setDeviceIDToTracerSpan(ctx, c.deviceID())
 	authCtx, err := c.GetAuthorizationContext()
 	if err != nil {

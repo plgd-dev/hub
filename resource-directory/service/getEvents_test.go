@@ -12,6 +12,7 @@ import (
 	"github.com/plgd-dev/device/v2/schema/configuration"
 	"github.com/plgd-dev/device/v2/schema/device"
 	"github.com/plgd-dev/device/v2/schema/interfaces"
+	"github.com/plgd-dev/device/v2/schema/maintenance"
 	"github.com/plgd-dev/device/v2/schema/platform"
 	"github.com/plgd-dev/device/v2/test/resource/types"
 	"github.com/plgd-dev/go-coap/v3/message"
@@ -34,6 +35,13 @@ func getOnboardEventForResource(t *testing.T, deviceID, href string) interface{}
 		return pbTest.MakeResourceChanged(t, deviceID, platform.ResourceURI, "",
 			map[string]interface{}{
 				"mnmn": "ocfcloud.com",
+			})
+	}
+
+	if href == maintenance.ResourceURI {
+		return pbTest.MakeResourceChanged(t, deviceID, maintenance.ResourceURI, "",
+			map[string]interface{}{
+				"fr": false,
 			})
 	}
 
@@ -81,6 +89,7 @@ func getAllOnboardEvents(t *testing.T, deviceID string, links []schema.ResourceL
 	expectedRCC := getOnboardEventForResource(t, deviceID, configuration.ResourceURI)
 	expectedRCL := getOnboardEventForResource(t, deviceID, test.TestResourceLightInstanceHref("1"))
 	expectedRCS := getOnboardEventForResource(t, deviceID, test.TestResourceSwitchesHref)
+	expectedRCM := getOnboardEventForResource(t, deviceID, maintenance.ResourceURI)
 	return []interface{}{
 		expectedDMU,
 		expectedDMU1,
@@ -91,6 +100,7 @@ func getAllOnboardEvents(t *testing.T, deviceID string, links []schema.ResourceL
 		expectedRCL,
 		expectedRCS,
 		expectedDMU2,
+		expectedRCM,
 	}
 }
 

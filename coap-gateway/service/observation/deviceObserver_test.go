@@ -196,10 +196,18 @@ func TestDeviceObserverRegisterForPublishedResources(t *testing.T) {
 	}
 
 	expectedObserved := strings.MakeSet()
-	for _, resID := range test.ResourceLinksToResourceIds(deviceID, test.TestDevsimResources) {
+	for _, resID := range test.ResourceLinksToResourceIds(deviceID, test.FilterResourceLink(func(rl schema.ResourceLink) bool {
+		return rl.Policy.BitMask.Has(schema.Observable)
+	}, test.TestDevsimResources)) {
 		expectedObserved.Add(resID.ToString())
 	}
-	runTestDeviceObserverRegister(ctx, t, deviceID, expectedObserved, nil, validateData, nil, nil, false)
+	expectedRetrieved := strings.MakeSet()
+	for _, resID := range test.ResourceLinksToResourceIds(deviceID, test.FilterResourceLink(func(rl schema.ResourceLink) bool {
+		return !rl.Policy.BitMask.Has(schema.Observable)
+	}, test.TestDevsimResources)) {
+		expectedRetrieved.Add(resID.ToString())
+	}
+	runTestDeviceObserverRegister(ctx, t, deviceID, expectedObserved, expectedRetrieved, validateData, nil, nil, false)
 }
 
 func TestDeviceObserverRegisterForPublishedResourcesWithAlreadyPublishedResources(t *testing.T) {
@@ -220,10 +228,18 @@ func TestDeviceObserverRegisterForPublishedResourcesWithAlreadyPublishedResource
 	}
 
 	expectedObserved := strings.MakeSet()
-	for _, resID := range test.ResourceLinksToResourceIds(deviceID, test.TestDevsimResources) {
+	for _, resID := range test.ResourceLinksToResourceIds(deviceID, test.FilterResourceLink(func(rl schema.ResourceLink) bool {
+		return rl.Policy.BitMask.Has(schema.Observable)
+	}, test.TestDevsimResources)) {
 		expectedObserved.Add(resID.ToString())
 	}
-	runTestDeviceObserverRegister(ctx, t, deviceID, expectedObserved, nil, validateData, testPreregisterVirtualDevice, testValidateResourceLinks, false)
+	expectedRetrieved := strings.MakeSet()
+	for _, resID := range test.ResourceLinksToResourceIds(deviceID, test.FilterResourceLink(func(rl schema.ResourceLink) bool {
+		return !rl.Policy.BitMask.Has(schema.Observable)
+	}, test.TestDevsimResources)) {
+		expectedRetrieved.Add(resID.ToString())
+	}
+	runTestDeviceObserverRegister(ctx, t, deviceID, expectedObserved, expectedRetrieved, validateData, testPreregisterVirtualDevice, testValidateResourceLinks, false)
 }
 
 func TestDeviceObserverRegisterForDiscoveryResource(t *testing.T) {
