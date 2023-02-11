@@ -55,7 +55,7 @@ func generateIdentityCert(deviceID string, signerCert []*x509.Certificate, signe
 
 	certData, err := generateCertificate.GenerateIdentityCert(generateCertificate.Configuration{
 		ValidFrom: time.Now().Add(-time.Hour).Format(time.RFC3339),
-		ValidFor:  time.Until(time.Now()) + time.Hour,
+		ValidFor:  24 * time.Hour,
 	}, deviceID, priv, signerCert, signerKey)
 	if err != nil {
 		return tls.Certificate{}, err
@@ -630,7 +630,7 @@ func main() {
 				defer c.Close()
 				break
 			}
-			fmt.Printf("cannot run device: %v", err)
+			fmt.Printf("cannot run device: %v\n", err)
 			time.Sleep(1 * time.Second)
 			continue
 		}
