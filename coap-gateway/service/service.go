@@ -363,11 +363,6 @@ func (s *Service) processCommandTask(req *mux.Message, client *session, span tra
 	if err != nil {
 		resp = client.createErrorResponse(err, req.Token())
 	}
-	if resp != nil {
-		client.WriteMessage(resp)
-		defer client.ReleaseMessage(resp)
-	}
-	client.logRequestResponse(req, resp, err)
 	if err != nil {
 		span.RecordError(err)
 		span.SetStatus(otelCodes.Error, err.Error())
@@ -375,6 +370,12 @@ func (s *Service) processCommandTask(req *mux.Message, client *session, span tra
 	if resp != nil {
 		otelcoap.MessageSentEvent(req.Context(), resp)
 		span.SetAttributes(otelcoap.StatusCodeAttr(resp.Code()))
+	}
+	client.logRequestResponse(req, resp, err)
+	if resp != nil {
+		// need to be the last action, because body of response could be used by another goroutine for block wise transfer
+		client.WriteMessage(resp)
+		defer client.ReleaseMessage(resp)
 	}
 }
 

@@ -145,7 +145,7 @@ func prepareSetupDeviceObserver(ctx context.Context, deviceID string, coapConn C
 		// the connection has been closed
 		return cfg, nil, err
 	default:
-		cfg.Logger.Debugf("cannot to get resource links from the device(%v): %w", deviceID, err)
+		cfg.Logger.Debugf("cannot to get resource links from the device(%v): %v", deviceID, err)
 		// the device doesn't have a /oic/res resource or a timeout has occurred
 		if cfg.ObservationType == ObservationType_Detect {
 			cfg.ObservationType = ObservationType_PerDevice
