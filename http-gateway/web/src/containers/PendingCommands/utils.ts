@@ -1,3 +1,4 @@
+// @ts-ignore
 import { time } from 'units-converter'
 
 import { Emitter } from '@shared-ui/common/services/emitter'
@@ -13,8 +14,8 @@ import { messages as t } from './PendingCommands.i18n'
 
 const { OK, ACCEPTED, CANCELED, CREATED } = pendingCommandStatuses
 
-export const convertPendingCommandsList = list =>
-  list?.map(command => {
+export const convertPendingCommandsList = (list: any) =>
+  list?.map((command: any) => {
     const commandType = Object.keys(command)[0]
     const { status, ...rest } = command[commandType]
 
@@ -25,17 +26,17 @@ export const convertPendingCommandsList = list =>
     }
   }) || []
 
-export const getCommandTypeFromEvent = event =>
+export const getCommandTypeFromEvent = (event: any) =>
   Object.values(commandTypes).find(type => event.hasOwnProperty(type))
 
-export const getUpdatedCommandTypeFromEvent = event =>
+export const getUpdatedCommandTypeFromEvent = (event: any) =>
   Object.values(updatedCommandTypes).find(type => event.hasOwnProperty(type))
 
-export const handleEmitNewPendingCommand = eventData => {
+export const handleEmitNewPendingCommand = (eventData: any) => {
   const commandType = getCommandTypeFromEvent(eventData)
-  const pendingCommand = eventData?.[commandType] || null
+  const pendingCommand = commandType ? eventData?.[commandType] || null : null
 
-  if (pendingCommand) {
+  if (pendingCommand && commandType) {
     // Emit new pending command event
     Emitter.emit(NEW_PENDING_COMMAND_WS_KEY, {
       [commandType]: pendingCommand,
@@ -43,9 +44,9 @@ export const handleEmitNewPendingCommand = eventData => {
   }
 }
 
-export const handleEmitUpdatedCommandEvents = eventData => {
+export const handleEmitUpdatedCommandEvents = (eventData: any) => {
   const commandType = getUpdatedCommandTypeFromEvent(eventData)
-  const updatedCommand = eventData?.[commandType] || null
+  const updatedCommand = commandType ? eventData?.[commandType] || null : null
 
   if (updatedCommand) {
     const { auditContext, resourceId, deviceId, status, canceled } =
@@ -64,10 +65,15 @@ export const handleEmitUpdatedCommandEvents = eventData => {
 // Updates the pending commands data with an object of
 // { deviceId, href, correlationId, status } which came from the WS events.
 export const updatePendingCommandsDataStatus = (
-  data,
-  { deviceId, href, correlationId, status }
+  data: any,
+  {
+    deviceId,
+    href,
+    correlationId,
+    status,
+  }: { deviceId: string; href: string; correlationId: string; status: string }
 ) => {
-  return data?.map(command => {
+  return data?.map((command: any) => {
     const commandType = Object.keys(command)[0]
 
     if (
@@ -89,7 +95,7 @@ export const updatePendingCommandsDataStatus = (
 }
 
 // validUntil - ns, currentTime - ms
-export const hasCommandExpired = (validUntil, currentTime) => {
+export const hasCommandExpired = (validUntil: any, currentTime: any) => {
   if (validUntil === '0') return false
 
   const validUntilMs = time(validUntil).from('ns').to('ms').value
@@ -98,9 +104,9 @@ export const hasCommandExpired = (validUntil, currentTime) => {
 }
 
 export const getPendingCommandStatusColorAndLabel = (
-  status,
-  validUntil,
-  currentTime
+  status: string,
+  validUntil: any,
+  currentTime: any
 ) => {
   if (
     ![OK, ACCEPTED, CREATED].includes(status) &&

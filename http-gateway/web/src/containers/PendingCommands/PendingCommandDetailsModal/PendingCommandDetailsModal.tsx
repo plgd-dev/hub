@@ -19,7 +19,7 @@ const PendingCommandDetailsModal: FC<Props> = ({
   )
 
   // @ts-ignore
-  const trans = _(t[commandType])
+  const trans = commandType ? _(t[commandType]) : null
   const title = commandType ? `${trans} ${_(t.commandContent)}` : null
 
   return (

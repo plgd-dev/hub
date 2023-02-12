@@ -18,7 +18,7 @@ import DevicesResources from '../../Resources/DevicesResources'
 import DevicesDetailsHeader from '../DevicesDetailsHeader'
 import DevicesDetailsTitle from '../DevicesDetailsTitle'
 import DevicesResourcesModal from '../../Resources/DevicesResourcesModal'
-import CommanTimeoutControl from '../DeviceCommandTimeoutControl'
+import CommandTimeoutControl from '../DeviceCommandTimeoutControl'
 import {
   devicesStatuses,
   defaultNewResource,
@@ -67,7 +67,8 @@ const DevicesDetailsPage = () => {
     security.getWellKnowConfig() as WellKnownConfigType & {
       defaultCommandTimeToLive: number
     }
-  const [ttl, setTtl] = useState(wellKnownConfig.defaultCommandTimeToLive)
+
+  const [ttl, setTtl] = useState(wellKnownConfig?.defaultCommandTimeToLive || 0)
   const [ttlHasError, setTtlHasError] = useState(false)
   const isMounted = useIsMounted()
   const { data, updateData, loading, error: deviceError } = useDeviceDetails(id)
@@ -411,9 +412,9 @@ const DevicesDetailsPage = () => {
         deviceName={deviceName}
         confirmDisabled={ttlHasError}
         ttlControl={
-          <CommanTimeoutControl
+          <CommandTimeoutControl
             defaultValue={ttl}
-            defaultTtlValue={wellKnownConfig.defaultCommandTimeToLive}
+            defaultTtlValue={wellKnownConfig?.defaultCommandTimeToLive || 0}
             onChange={setTtl}
             disabled={loadingResource || savingResource}
             ttlHasError={ttlHasError}
@@ -434,9 +435,9 @@ const DevicesDetailsPage = () => {
         body={
           <>
             {_(t.deleteResourceMessage)}
-            <CommanTimeoutControl
+            <CommandTimeoutControl
               defaultValue={ttl}
-              defaultTtlValue={wellKnownConfig.defaultCommandTimeToLive}
+              defaultTtlValue={wellKnownConfig?.defaultCommandTimeToLive || 0}
               onChange={setTtl}
               disabled={loadingResource}
               ttlHasError={ttlHasError}

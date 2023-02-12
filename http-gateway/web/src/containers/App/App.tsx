@@ -2,7 +2,7 @@ import { hot } from 'react-hot-loader/root'
 import { useContext, useState, useEffect } from 'react'
 import { useIntl } from 'react-intl'
 import PageLoader from '@shared-ui/components/new/PageLoader'
-import { security } from '@shared-ui/common/services/security' // @PM: shared
+import { security } from '@shared-ui/common/services/security'
 import { openTelemetry } from '@shared-ui/common/services/opentelemetry'
 import { messages as t } from './App.i18n'
 import { AppContext } from './AppContext'
@@ -48,6 +48,7 @@ const App = () => {
             security.setGeneralConfig(generalConfig)
             security.setWebOAuthConfig(webOauthClient)
             security.setDeviceOAuthConfig(deviceOauthClient)
+            security.setWellKnowConfig(wellKnown)
 
             setWellKnownConfigFetched(true)
             setWellKnownConfig(wellKnown)
