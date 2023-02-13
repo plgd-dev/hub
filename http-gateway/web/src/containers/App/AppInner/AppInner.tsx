@@ -16,16 +16,25 @@ import {
   BrowserNotificationsContainer,
   ToastContainer,
 } from '@shared-ui/components/new/Toast'
-import { useLocalStorage } from '@shared-ui/common/hooks'
+import { useLocalStorage, WellKnownConfigType } from '@shared-ui/common/hooks'
 import { useAuth } from 'oidc-react'
 import { security } from '@shared-ui/common/services'
 import AppLoader from '@/containers/App/AppLoader/AppLoader'
 import { Props } from './AppInner.types'
 import { deviceStatusListener } from '../../Devices/websockets'
 
+const getBuildInformation = (wellKnownConfig: WellKnownConfigType) => ({
+  buildDate: wellKnownConfig?.buildDate || '',
+  commitHash: wellKnownConfig?.commitHash || '',
+  commitDate: wellKnownConfig?.commitDate || '',
+  releaseUrl: wellKnownConfig?.releaseUrl || '',
+  version: wellKnownConfig?.version || '',
+})
+
 const AppInner = (props: Props) => {
   const { wellKnownConfig, openTelemetry } = props
   const { userData, userManager } = useAuth()
+  const buildInformation = getBuildInformation(wellKnownConfig)
   const [collapsed, setCollapsed] = useLocalStorage('leftPanelCollapsed', true)
 
   const contextValue = useMemo(
@@ -34,6 +43,7 @@ const AppInner = (props: Props) => {
       ...wellKnownConfig,
       wellKnownConfig,
       telemetryWebTracer: openTelemetry.getWebTracer(),
+      buildInformation: buildInformation || undefined,
     }),
     [collapsed, wellKnownConfig, openTelemetry]
   )

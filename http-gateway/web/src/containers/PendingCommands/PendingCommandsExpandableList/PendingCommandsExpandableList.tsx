@@ -32,7 +32,7 @@ const PendingCommandsExpandableList: FC<Props> = ({ deviceId }) => {
               })}
             />
           </span>,
-          document.querySelector('#footer .left') as Element
+          document.querySelector('#footer #pending-commands-wrapper') as Element
         )}
       {expanded && (
         <div id="pending-commands-expandable-box">

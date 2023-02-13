@@ -50,7 +50,7 @@ const PendingCommandsList: FC<Props> = ({ onLoading, embedded, deviceId }) => {
   const { formatMessage: _ } = useIntl()
   const [currentTime, setCurrentTime] = useState(Date.now())
 
-  const { data, loading, error } = usePendingCommandsList(deviceId!)
+  const { data, loading, error } = usePendingCommandsList(deviceId as string)
   const [canceling, setCanceling] = useState(false)
   const [confirmModalData, setConfirmModalData] =
     useState<null | ConfirmModalData>(null)
@@ -127,7 +127,7 @@ const PendingCommandsList: FC<Props> = ({ onLoading, embedded, deviceId }) => {
   const cancelCommand = async () => {
     try {
       setCanceling(true)
-      await cancelPendingCommandApi(confirmModalData!)
+      await cancelPendingCommandApi(confirmModalData as ConfirmModalData)
 
       if (isMounted.current) {
         setCanceling(false)

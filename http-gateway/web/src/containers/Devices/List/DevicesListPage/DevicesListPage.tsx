@@ -24,7 +24,17 @@ import { messages as t } from '../../Devices.i18n'
 
 const DevicesListPage: FC<any> = () => {
   const { formatMessage: _ } = useIntl()
-  const { data, loading, error: deviceError, refresh } = useDevicesList()
+  const {
+    data,
+    loading,
+    error: deviceError,
+    refresh,
+  }: {
+    data: any
+    loading: boolean
+    error: any
+    refresh: () => void
+  } = useDevicesList()
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
   const [selectedDevices, setSelectedDevices] = useState([])
   const [singleDevice, setSingleDevice] = useState<null | string>(null)
@@ -92,8 +102,7 @@ const DevicesListPage: FC<any> = () => {
   const selectedDevicesCount = combinedSelectedDevices.length
   const selectedDeviceName =
     selectedDevicesCount === 1 && data
-      ? (data as any).find?.((d: any) => d.id === combinedSelectedDevices[0])
-          ?.name
+      ? data.find?.((d: any) => d.id === combinedSelectedDevices[0])?.name
       : null
 
   const loadingOrDeleting = loading || deleting

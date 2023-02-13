@@ -34,20 +34,21 @@ export const deleteDevicesApi = (deviceIds: string[]) => {
   const chunks = chunk(deviceIds, DEVICE_DELETE_CHUNK_SIZE)
 
   return Promise.all(
-    chunks.map(ids =>
-      withTelemetry(
+    chunks.map(ids => {
+      const idsString = ids.map(id => `deviceIdFilter=${id}`).join('&')
+      return withTelemetry(
         () =>
           fetchApi(
             `${getConfig().httpGatewayAddress}${
               devicesApiEndpoints.DEVICES
-            }?${ids.map(id => `deviceIdFilter=${id}`).join('&')}`,
+            }?${idsString}`,
             {
               method: 'DELETE',
             }
           ),
         'delete-device'
       )
-    )
+    })
   )
 }
 

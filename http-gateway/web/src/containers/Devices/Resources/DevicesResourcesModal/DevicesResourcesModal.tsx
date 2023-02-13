@@ -13,7 +13,6 @@ import { resourceModalTypes } from '../../constants'
 import { messages as t } from '../../Devices.i18n'
 import { Props, defaultProps } from './DevicesResourcesModal.types'
 
-const NOOP = () => {}
 const { UPDATE_RESOURCE } = resourceModalTypes
 
 const DevicesResourcesModal: FC<Props> = props => {
@@ -193,7 +192,7 @@ const DevicesResourcesModal: FC<Props> = props => {
   return (
     <Modal
       show={!!data}
-      onClose={!disabled ? onClose : NOOP}
+      onClose={!disabled ? onClose : undefined}
       title={data?.href}
       renderBody={renderBody}
       renderFooter={renderFooter}

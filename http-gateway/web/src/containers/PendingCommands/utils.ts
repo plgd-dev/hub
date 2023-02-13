@@ -1,6 +1,5 @@
 // @ts-ignore
 import { time } from 'units-converter'
-
 import { Emitter } from '@shared-ui/common/services/emitter'
 
 import {
@@ -51,13 +50,13 @@ export const handleEmitUpdatedCommandEvents = (eventData: any) => {
   if (updatedCommand) {
     const { auditContext, resourceId, deviceId, status, canceled } =
       updatedCommand
+    const cancelBool = canceled ? CANCELED : OK
     // Emit update pending command event
     Emitter.emit(UPDATE_PENDING_COMMANDS_WS_KEY, {
       correlationId: auditContext?.correlationId,
       deviceId: resourceId?.deviceId || deviceId,
       href: resourceId?.href,
-      status:
-        typeof canceled === 'boolean' ? (canceled ? CANCELED : OK) : status,
+      status: typeof canceled === 'boolean' ? cancelBool : status,
     })
   }
 }

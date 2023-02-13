@@ -19,6 +19,48 @@ import { messages as t } from './Devices.i18n'
 const { ONLINE, REGISTERED, UNREGISTERED } = devicesStatuses
 const DEFAULT_NOTIFICATION_DELAY = 500
 
+const getDeviceIds = (deviceId, deviceRegistered, deviceUnregistered) => {
+  const _deviceRegistered = deviceRegistered
+    ? deviceRegistered.deviceIds
+    : deviceUnregistered.deviceIds
+
+  return deviceId ? [deviceId] : _deviceRegistered
+}
+
+const getEventType = deviceUnregistered => {
+  const _deviceUnregistered = deviceUnregistered ? UNREGISTERED : null
+
+  return _deviceUnregistered ? REGISTERED : _deviceUnregistered
+}
+
+const showToast = async (
+  notificationsEnabled,
+  currentDeviceNotificationsEnabled,
+  deviceId,
+  status
+) => {
+  if (
+    (notificationsEnabled || currentDeviceNotificationsEnabled) &&
+    status !== UNREGISTERED
+  ) {
+    const { data: { name } = {} } = await getDeviceApi(deviceId)
+    const toastMessage =
+      status === ONLINE ? t.deviceWentOnline : t.deviceWentOffline
+    showInfoToast(
+      {
+        title: t.devicestatusChange,
+        message: { message: toastMessage, params: { name } },
+      },
+      {
+        onClick: () => {
+          history.push(`/devices/${deviceId}`)
+        },
+        isNotification: true,
+      }
+    )
+  }
+}
+
 // WebSocket listener for device status change.
 export const deviceStatusListener = async ({
   deviceMetadataUpdated,
@@ -37,16 +79,12 @@ export const deviceStatusListener = async ({
           connection: { status: deviceStatus } = {},
           twinEnabled,
         } = deviceMetadataUpdated || {}
-        const eventType = deviceRegistered
-          ? REGISTERED
-          : deviceUnregistered
-          ? UNREGISTERED
-          : null
-        const deviceIds = deviceId
-          ? [deviceId]
-          : deviceRegistered
-          ? deviceRegistered.deviceIds
-          : deviceUnregistered.deviceIds
+        const eventType = getEventType(deviceUnregistered)
+        const deviceIds = getDeviceIds(
+          deviceId,
+          deviceRegistered,
+          deviceUnregistered
+        )
         const status = deviceStatus || eventType
 
         try {
@@ -64,26 +102,12 @@ export const deviceStatusListener = async ({
             )(store.getState())
 
             // Show toast
-            if (
-              (notificationsEnabled || currentDeviceNotificationsEnabled) &&
-              status !== UNREGISTERED
-            ) {
-              const { data: { name } = {} } = await getDeviceApi(deviceId)
-              const toastMessage =
-                status === ONLINE ? t.deviceWentOnline : t.deviceWentOffline
-              showInfoToast(
-                {
-                  title: t.devicestatusChange,
-                  message: { message: toastMessage, params: { name } },
-                },
-                {
-                  onClick: () => {
-                    history.push(`/devices/${deviceId}`)
-                  },
-                  isNotification: true,
-                }
-              )
-            }
+            showToast(
+              notificationsEnabled,
+              currentDeviceNotificationsEnabled,
+              deviceId,
+              status
+            )
           })
         } catch (error) {} // ignore error
 
