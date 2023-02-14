@@ -45,7 +45,7 @@ const AppInner = (props: Props) => {
       telemetryWebTracer: openTelemetry.getWebTracer(),
       buildInformation: buildInformation || undefined,
     }),
-    [collapsed, wellKnownConfig, openTelemetry]
+    [collapsed, wellKnownConfig, openTelemetry, buildInformation]
   )
 
   if (userData) {
