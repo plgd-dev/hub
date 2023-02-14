@@ -125,6 +125,27 @@ export const deviceStatusListener = async ({
   }
 }
 
+const showToastByResources = options => {
+  showInfoToast(
+    {
+      title: options.toastTitle,
+      message: {
+        message: options.toastMessage,
+        params: {
+          deviceName: options.deviceName,
+          deviceId: options.deviceId,
+          count: options.count,
+          href: options.href,
+        },
+      },
+    },
+    {
+      onClick: options.onClick,
+      isNotification: true,
+    }
+  )
+}
+
 export const deviceResourceRegistrationListener =
   ({ deviceId, deviceName }) =>
   ({ resourcePublished, resourceUnpublished }) => {
@@ -154,54 +175,38 @@ export const deviceResourceRegistrationListener =
 
         // If 5 or more resources came in the WS, show only one notification message
         if (resources.length >= 5) {
-          const toastTitle = isNew ? t.newResources : t.resourcesDeleted
-          const toastMessage = isNew ? t.resourcesAdded : t.resourcesWereDeleted
-          const onClickAction = () => {
-            history.push(`/devices/${deviceId}`)
-          }
           // Show toast
-          showInfoToast(
-            {
-              title: toastTitle,
-              message: {
-                message: toastMessage,
-                params: { deviceName, deviceId, count: resources.length },
-              },
+          showToastByResources({
+            toastTitle: isNew ? t.newResources : t.resourcesDeleted,
+            toastMessage: isNew ? t.resourcesAdded : t.resourcesWereDeleted,
+            deviceName,
+            deviceId,
+            count: resources.length,
+            onClick: () => {
+              history.push(`/devices/${deviceId}`)
             },
-            {
-              onClick: onClickAction,
-              isNotification: true,
-            }
-          )
+          })
         } else {
           resources.forEach(({ href }) => {
-            const toastTitle = isNew ? t.newResource : t.resourceDeleted
-            const toastMessage = isNew
-              ? t.resourceAdded
-              : t.resourceWithHrefWasDeleted
-            const onClickAction = () => {
-              if (isNew) {
-                // redirect to resource and open resource modal
-                history.push(`/devices/${deviceId}${href}`)
-              } else {
-                // redirect to device
-                history.push(`/devices/${deviceId}`)
-              }
-            }
-            // Show toast
-            showInfoToast(
-              {
-                title: toastTitle,
-                message: {
-                  message: toastMessage,
-                  params: { href, deviceName, deviceId },
-                },
+            showToastByResources({
+              toastTitle: isNew ? t.newResource : t.resourceDeleted,
+              toastMessage: isNew
+                ? t.resourceAdded
+                : t.resourceWithHrefWasDeleted,
+              deviceName,
+              deviceId,
+              count: undefined,
+              href: href,
+              onClick: () => {
+                if (isNew) {
+                  // redirect to resource and open resource modal
+                  history.push(`/devices/${deviceId}${href}`)
+                } else {
+                  // redirect to device
+                  history.push(`/devices/${deviceId}`)
+                }
               },
-              {
-                onClick: onClickAction,
-                isNotification: true,
-              }
-            )
+            })
           })
         }
       }
