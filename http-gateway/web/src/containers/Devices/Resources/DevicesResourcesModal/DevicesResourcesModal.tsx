@@ -48,16 +48,17 @@ const DevicesResourcesModal: FC<Props> = props => {
   )
 
   useEffect(() => {
-    setJsonData(resourceData)
+    const dataToDisplay = resourceData?.data?.content
+    setJsonData(dataToDisplay)
 
     if (resourceData) {
       // Set the retrieved JSON object to the editor
       if (typeof resourceData === 'object') {
         // @ts-ignore
-        editor?.current?.set(resourceData)
+        editor?.current?.set(dataToDisplay)
       } else if (typeof resourceData === 'string') {
         // @ts-ignore
-        editor?.current?.setText(resourceData)
+        editor?.current?.setText(dataToDisplay)
       }
     }
   }, [resourceData])

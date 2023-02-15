@@ -146,6 +146,26 @@ const showToastByResources = options => {
   )
 }
 
+const getToastTitleByResource = (multiMode, isNew) => {
+  if (multiMode) {
+    return isNew ? t.newResources : t.resourcesDeleted
+  } else {
+    return isNew ? t.newResource : t.resourceDeleted
+  }
+}
+const getToastMessageByResource = (multiMode, isNew) => {
+  if (multiMode) {
+    return isNew ? t.resourcesAdded : t.resourcesWereDeleted
+  } else {
+    return isNew ? t.resourceAdded : t.resourceWithHrefWasDeleted
+  }
+}
+
+const getResources = (resourcePublished, resourceUnpublished) =>
+  resourcePublished
+    ? resourcePublished.resources // if resource was published, use the resources list from the event
+    : resourceUnpublished.hrefs.map(href => ({ href })) // if the resource was unpublished, create an array of objects containing hrefs, so that it matches the resources object
+
 export const deviceResourceRegistrationListener =
   ({ deviceId, deviceName }) =>
   ({ resourcePublished, resourceUnpublished }) => {
@@ -155,9 +175,7 @@ export const deviceResourceRegistrationListener =
         getDeviceNotificationKey(deviceId)
       )(store.getState())
 
-      const resources = resourcePublished
-        ? resourcePublished.resources // if resource was published, use the resources list from the event
-        : resourceUnpublished.hrefs.map(href => ({ href })) // if the resource was unpublished, create an array of ojects contaning hrefs, so that it matches the resources object
+      const resources = getResources(resourcePublished, resourceUnpublished)
       const resourceRegistrationObservationWSKey =
         getResourceRegistrationNotificationKey(deviceId)
       const event = resourcePublished
@@ -172,13 +190,18 @@ export const deviceResourceRegistrationListener =
 
       if (notificationsEnabled) {
         const isNew = event === resourceEventTypes.ADDED
+        const toastTitle = getToastTitleByResource(resources.length >= 5, isNew)
+        const toastMessage = getToastMessageByResource(
+          resources.length >= 5,
+          isNew
+        )
 
         // If 5 or more resources came in the WS, show only one notification message
         if (resources.length >= 5) {
           // Show toast
           showToastByResources({
-            toastTitle: isNew ? t.newResources : t.resourcesDeleted,
-            toastMessage: isNew ? t.resourcesAdded : t.resourcesWereDeleted,
+            toastTitle,
+            toastMessage,
             deviceName,
             deviceId,
             count: resources.length,
@@ -189,22 +212,16 @@ export const deviceResourceRegistrationListener =
         } else {
           resources.forEach(({ href }) => {
             showToastByResources({
-              toastTitle: isNew ? t.newResource : t.resourceDeleted,
-              toastMessage: isNew
-                ? t.resourceAdded
-                : t.resourceWithHrefWasDeleted,
+              toastTitle,
+              toastMessage,
               deviceName,
               deviceId,
               count: undefined,
               href: href,
               onClick: () => {
-                if (isNew) {
-                  // redirect to resource and open resource modal
-                  history.push(`/devices/${deviceId}${href}`)
-                } else {
-                  // redirect to device
-                  history.push(`/devices/${deviceId}`)
-                }
+                // href -> redirect to resource and open resource modal
+                // redirect to device
+                history.push(`/devices/${deviceId}${isNew ? href : undefined}`)
               },
             })
           })

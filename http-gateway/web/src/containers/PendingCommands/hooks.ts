@@ -17,9 +17,9 @@ const getConfig = () => security.getGeneralConfig() as SecurityConfig
 export const usePendingCommandsList = (deviceId: string) => {
   // Fetch the data
   const { data, updateData, ...rest }: StreamApiPropsType = useStreamApi(
-    `${getConfig()}${pendingCommandsApiEndpoints.PENDING_COMMANDS}${
-      deviceId ? `?deviceIdFilter=${deviceId}` : ''
-    }`,
+    `${getConfig().httpGatewayAddress}${
+      pendingCommandsApiEndpoints.PENDING_COMMANDS
+    }${deviceId ? `?deviceIdFilter=${deviceId}` : ''}`,
     {
       telemetrySpan: 'get-pending-commands',
     }
