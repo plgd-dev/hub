@@ -15,11 +15,12 @@ import { security } from '@shared-ui/common/services'
 const getConfig = () => security.getGeneralConfig() as SecurityConfig
 
 export const usePendingCommandsList = (deviceId: string) => {
+  const filter = deviceId ? `?deviceIdFilter=${deviceId}` : ''
   // Fetch the data
   const { data, updateData, ...rest }: StreamApiPropsType = useStreamApi(
     `${getConfig().httpGatewayAddress}${
       pendingCommandsApiEndpoints.PENDING_COMMANDS
-    }${deviceId ? `?deviceIdFilter=${deviceId}` : ''}`,
+    }${filter}`,
     {
       telemetrySpan: 'get-pending-commands',
     }
