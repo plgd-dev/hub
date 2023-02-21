@@ -1,10 +1,12 @@
 import { useIntl } from 'react-intl'
 // @ts-ignore
-import { time } from 'units-converter'
+import * as converter from 'units-converter/dist/es/index'
 import OverlayTrigger from 'react-bootstrap/OverlayTrigger'
 import Tooltip from 'react-bootstrap/Tooltip'
 
 import { dateFormat, timeFormat, timeFormatLong } from '../constants'
+
+const time = converter.time
 
 const DateTooltip = ({ value }: { value: string | number }) => {
   const { formatDate, formatTime } = useIntl()

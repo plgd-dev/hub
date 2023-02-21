@@ -1,5 +1,5 @@
 // @ts-ignore
-import { time } from 'units-converter'
+import * as converter from 'units-converter/dist/es/index'
 import { getApiErrorMessage } from '@shared-ui/common/utils'
 import {
   showErrorToast,
@@ -18,6 +18,8 @@ import {
 } from './constants'
 import { messages as t } from './Devices.i18n'
 import { ResourcesType } from '@/containers/Devices/Devices.types'
+
+const time = converter.time
 
 const { INFINITE, NS, MS, S, M, H } = commandTimeoutUnits
 

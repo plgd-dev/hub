@@ -1,5 +1,5 @@
 // @ts-ignore
-import { time } from 'units-converter'
+import * as converter from 'units-converter/dist/es/index'
 import { Emitter } from '@shared-ui/common/services/emitter'
 
 import {
@@ -10,6 +10,8 @@ import {
   UPDATE_PENDING_COMMANDS_WS_KEY,
 } from './constants'
 import { messages as t } from './PendingCommands.i18n'
+
+const time = converter.time
 
 const { OK, ACCEPTED, CANCELED, CREATED } = pendingCommandStatuses
 
