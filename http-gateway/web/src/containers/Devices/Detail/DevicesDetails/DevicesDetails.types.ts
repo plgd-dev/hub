@@ -6,6 +6,7 @@ export type DevicesDetailMetaDataStatusValueType =
 
 export type Props = {
   data: DeviceDataType
+  isTwinEnabled: boolean
   loading: boolean
   setTwinSynchronization: () => void
   twinSyncLoading: boolean

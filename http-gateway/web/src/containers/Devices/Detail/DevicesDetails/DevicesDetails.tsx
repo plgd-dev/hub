@@ -12,12 +12,18 @@ import Switch from '@shared-ui/components/new/Switch'
 import { Props } from './DevicesDetails.types'
 
 const DevicesDetails: FC<Props> = memo(
-  ({ data, loading, setTwinSynchronization, twinSyncLoading }) => {
+  ({
+    data,
+    isTwinEnabled,
+    loading,
+    setTwinSynchronization,
+    twinSyncLoading,
+  }) => {
     const { formatMessage: _ } = useIntl()
     const deviceStatus = data?.metadata?.connection?.status
     const isOnline = devicesStatuses.ONLINE === deviceStatus
     const isUnregistered = devicesStatuses.UNREGISTERED === deviceStatus
-    const isTwinEnabled = data?.metadata?.twinEnabled
+
     const LabelWithLoading = (p: any) =>
       createElement(Label, {
         ...p,

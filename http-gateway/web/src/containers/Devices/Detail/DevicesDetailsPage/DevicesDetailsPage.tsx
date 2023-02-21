@@ -78,7 +78,19 @@ const DevicesDetailsPage = () => {
     error: resourcesError,
   } = useDevicesResources(id)
 
-  const isTwinEnabled = data?.metadata?.twinEnabled
+  const [isTwinEnabled, setIsTwinEnabled] = useState(
+    data?.metadata?.twinEnabled
+  )
+
+  useEffect(() => {
+    if (
+      data?.metadata?.twinEnabled &&
+      data?.metadata?.twinEnabled !== isTwinEnabled
+    ) {
+      setIsTwinEnabled(data?.metadata?.twinEnabled)
+    }
+  }, [data, loading])
+
   const resources = resourcesData?.[0]?.resources || []
 
   // Open the resource modal when href is present
@@ -341,6 +353,7 @@ const DevicesDetailsPage = () => {
 
       if (isMounted.current) {
         setTwinSyncLoading(false)
+        setIsTwinEnabled(setSync)
       }
     } catch (error) {
       if (error && isMounted.current) {
@@ -380,9 +393,11 @@ const DevicesDetailsPage = () => {
         links={resources}
         ttl={ttl}
       />
+
       <DevicesDetails
         data={data}
         loading={loading}
+        isTwinEnabled={isTwinEnabled}
         twinSyncLoading={twinSyncLoading}
         setTwinSynchronization={setTwinSynchronization}
       />
