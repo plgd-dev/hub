@@ -89,6 +89,7 @@ const DevicesDetailsPage = () => {
     ) {
       setIsTwinEnabled(data?.metadata?.twinEnabled)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data, loading])
 
   const resources = resourcesData?.[0]?.resources || []
