@@ -20,18 +20,17 @@ const { ONLINE, REGISTERED, UNREGISTERED } = devicesStatuses
 const DEFAULT_NOTIFICATION_DELAY = 500
 
 const getDeviceIds = (deviceId, deviceRegistered, deviceUnregistered) => {
-  const _deviceRegistered = deviceRegistered
-    ? deviceRegistered.deviceIds
-    : deviceUnregistered.deviceIds
-
-  return deviceId ? [deviceId] : _deviceRegistered
+  if (deviceId) {
+    return [deviceId]
+  } else {
+    return deviceRegistered
+      ? deviceRegistered.deviceIds
+      : deviceUnregistered.deviceIds
+  }
 }
 
-const getEventType = deviceUnregistered => {
-  const _deviceUnregistered = deviceUnregistered ? UNREGISTERED : null
-
-  return _deviceUnregistered ? REGISTERED : _deviceUnregistered
-}
+const getEventType = deviceUnregistered =>
+  deviceUnregistered ? UNREGISTERED : REGISTERED
 
 const showToast = async (
   notificationsEnabled,
