@@ -38,7 +38,12 @@ jobs:
               log:
                 level: "debug"
                 dumpBody: "true"
-          
+
+          # test without check race and with ECDSA-SHA256 signature and P384 elliptic curve certificates
+          - name: test/norace-384
+            cmd: test
+            args: CERT_TOOL_SIGN_ALG=ECDSA-SHA384 CERT_TOOL_ELLIPTIC_CURVE=P384
+
           # test without check race with logs from all services
           - name: test/norace/logs
             cmd: test
@@ -58,7 +63,7 @@ jobs:
               log:
                 level: "debug"
                 dumpBody: "true"
- 
+
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       - name: CPU Info
@@ -77,14 +82,15 @@ jobs:
           TEST_COAP_GATEWAY_LOG_LEVEL=${{ matrix.coapGateway.log.level }} TEST_COAP_GATEWAY_LOG_DUMP_BODY=${{ matrix.coapGateway.log.dumpBody }} \
           TEST_RESOURCE_AGGREGATE_LOG_LEVEL=${{ matrix.resourceAggregate.log.level }} TEST_RESOURCE_AGGREGATE_LOG_DUMP_BODY=${{ matrix.resourceAggregate.log.dumpBody }} \
           TEST_GRPC_GATEWAY_LOG_LEVEL=${{ matrix.grpcGateway.log.level }} TEST_GRPC_GATEWAY_LOG_DUMP_BODY=${{ matrix.grpcGateway.log.dumpBody }} \
-          TEST_IDENTITY_STORE_LOG_LEVEL=${{ matrix.identityStore.log.level }} TEST_IDENTITY_STORE_LOG_DUMP_BODY=${{ matrix.identityStore.log.dumpBody }}
+          TEST_IDENTITY_STORE_LOG_LEVEL=${{ matrix.identityStore.log.level }} TEST_IDENTITY_STORE_LOG_DUMP_BODY=${{ matrix.identityStore.log.dumpBody }} \
+          ${{ matrix.args }}
 
       - name: Prepare upload files
         run: |
           mkdir -p ./outputs
           cp -r .tmp/coverage ./outputs/
           cp -r .tmp/report ./outputs/
-      
+
       - name: Upload coverage and report files
         uses: actions/upload-artifact@v3
         with:

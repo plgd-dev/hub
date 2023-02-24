@@ -31,8 +31,10 @@ TEST_MEMORY_COAP_GATEWAY_NUM_DEVICES ?= 1
 TEST_MEMORY_COAP_GATEWAY_NUM_RESOURCES ?= 1
 TEST_MEMORY_COAP_GATEWAY_EXPECTED_RSS_IN_MB ?= 50
 TEST_MEMORY_COAP_GATEWAY_RESOURCE_DATA_SIZE ?= 200
-
-#$(error MY_FLAG=$(BUILD_TAG)AAA)
+# supported values: ECDSA-SHA256, ECDSA-SHA384, ECDSA-SHA512
+CERT_TOOL_SIGN_ALG ?= ECDSA-SHA256
+# supported values: P256, P384, P521
+CERT_TOOL_ELLIPTIC_CURVE ?= P256
 
 SUBDIRS := bundle certificate-authority cloud2cloud-connector cloud2cloud-gateway coap-gateway grpc-gateway resource-aggregate resource-directory http-gateway identity-store test/oauth-server tools/cert-tool
 .PHONY: $(SUBDIRS) push proto/generate clean build test env mongo nats certificates hub-build http-gateway-www simulators
@@ -53,7 +55,16 @@ certificates: hub-test
 		-v $(WORKING_DIRECTORY)/.tmp/certs:/certs \
 		--user $(USER_ID):$(GROUP_ID) \
 		hub-test \
-		/bin/bash -c "cert-tool --cmd.generateRootCA --outCert=/certs/root_ca.crt --outKey=/certs/root_ca.key --cert.subject.cn=RootCA && cert-tool --cmd.generateCertificate --outCert=/certs/http.crt --outKey=/certs/http.key --cert.subject.cn=localhost --cert.san.domain=localhost --signerCert=/certs/root_ca.crt --signerKey=/certs/root_ca.key && cert-tool --cmd.generateIdentityCertificate=$(CLOUD_SID) --outCert=/certs/coap.crt --outKey=/certs/coap.key --cert.san.domain=localhost --signerCert=/certs/root_ca.crt --signerKey=/certs/root_ca.key"
+		/bin/bash -c "\
+			cert-tool --cmd.generateRootCA --outCert=/certs/root_ca.crt --outKey=/certs/root_ca.key --cert.subject.cn=RootCA \
+				--cert.signatureAlgorithm=$(CERT_TOOL_SIGN_ALG) --cert.ellipticCurve=$(CERT_TOOL_ELLIPTIC_CURVE) && \
+			cert-tool --cmd.generateCertificate --outCert=/certs/http.crt --outKey=/certs/http.key	--cert.subject.cn=localhost \
+				--cert.san.domain=localhost --signerCert=/certs/root_ca.crt --signerKey=/certs/root_ca.key \
+				--cert.signatureAlgorithm=$(CERT_TOOL_SIGN_ALG) --cert.ellipticCurve=$(CERT_TOOL_ELLIPTIC_CURVE) && \
+			cert-tool --cmd.generateIdentityCertificate=$(CLOUD_SID) --outCert=/certs/coap.crt --outKey=/certs/coap.key \
+				--cert.san.domain=localhost --signerCert=/certs/root_ca.crt --signerKey=/certs/root_ca.key \
+				--cert.signatureAlgorithm=$(CERT_TOOL_SIGN_ALG) --cert.ellipticCurve=$(CERT_TOOL_ELLIPTIC_CURVE) \
+		"
 	cat $(WORKING_DIRECTORY)/.tmp/certs/http.crt > $(WORKING_DIRECTORY)/.tmp/certs/mongo.key
 	cat $(WORKING_DIRECTORY)/.tmp/certs/http.key >> $(WORKING_DIRECTORY)/.tmp/certs/mongo.key
 
