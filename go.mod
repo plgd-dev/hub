@@ -23,7 +23,7 @@ require (
 	github.com/lestrrat-go/jwx v1.2.25
 	github.com/nats-io/nats.go v1.23.0
 	github.com/panjf2000/ants/v2 v2.7.1
-	github.com/pion/dtls/v2 v2.1.6-0.20230201184248-11ea8c257a48
+	github.com/pion/dtls/v2 v2.2.4
 	github.com/pion/logging v0.2.2
 	github.com/plgd-dev/device/v2 v2.0.6-0.20230207123337-38ef68052803
 	github.com/plgd-dev/go-coap/v3 v3.1.2-0.20230202152709-d4fc0ce1262e
@@ -85,9 +85,8 @@ require (
 	github.com/nats-io/nats-server/v2 v2.9.3 // indirect
 	github.com/nats-io/nkeys v0.3.0 // indirect
 	github.com/nats-io/nuid v1.0.1 // indirect
-	github.com/pion/transport v0.14.1 // indirect
 	github.com/pion/transport/v2 v2.0.0 // indirect
-	github.com/pion/udp v0.1.2 // indirect
+	github.com/pion/udp v0.1.4 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
