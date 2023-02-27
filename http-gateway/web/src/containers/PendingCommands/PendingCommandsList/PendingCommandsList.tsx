@@ -174,7 +174,7 @@ const PendingCommandsList: FC<Props> = ({ onLoading, embedded, deviceId }) => {
             const {
               original: { content },
             } = row
-            const href = row.original.resourceId.href
+            const href = row.original?.resourceId?.href
             // @ts-ignore
             const text = _(t[value])
 
@@ -255,7 +255,7 @@ const PendingCommandsList: FC<Props> = ({ onLoading, embedded, deviceId }) => {
               },
             }: any = row
 
-            const href = row.original.resourceId.href
+            const href = row.original?.resourceId?.href
             const rowDeviceId =
               row?.original?.resourceId?.deviceId || row?.original?.deviceId
 
