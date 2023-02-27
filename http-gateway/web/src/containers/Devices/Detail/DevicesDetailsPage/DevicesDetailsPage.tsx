@@ -23,14 +23,14 @@ import {
   devicesStatuses,
   defaultNewResource,
   resourceModalTypes,
-  NO_DEVICE_NAME, commandTimeoutUnits
+  NO_DEVICE_NAME
 } from "../../constants";
 import {
   handleCreateResourceErrors,
   handleUpdateResourceErrors,
   handleFetchResourceErrors,
   handleDeleteResourceErrors,
-  handleTwinSynchronizationErrors, findClosestUnit, convertAndNormalizeValueFromTo
+  handleTwinSynchronizationErrors
 } from "../../utils";
 import {
   getDevicesResourcesApi,
