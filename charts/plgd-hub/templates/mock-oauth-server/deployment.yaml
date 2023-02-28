@@ -47,11 +47,14 @@ spec:
             - |
               /bin/bash <<'EOF'
               if [ ! -f "{{ $.Values.mockoauthserver.oauthSigner.idTokenKeyFile }}" ]; then
-                  openssl genrsa -out {{ $.Values.mockoauthserver.oauthSigner.idTokenKeyFile }} 4096
+                  openssl genrsa -out {{ $.Values.mockoauthserver.oauthSigner.idTokenKeyFile }} 4096  
               fi
+              chmod 0644 {{ $.Values.mockoauthserver.oauthSigner.idTokenKeyFile }}
               if [ ! -f "{{ $.Values.mockoauthserver.oauthSigner.accessTokenKeyFile }}" ]; then
                   openssl ecparam -name prime256v1 -genkey -noout -out {{ $.Values.mockoauthserver.oauthSigner.accessTokenKeyFile }}
+                  
               fi
+              chmod 0644 {{ $.Values.mockoauthserver.oauthSigner.accessTokenKeyFile }}
               EOF
           volumeMounts:
             - mountPath: /keys
