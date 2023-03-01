@@ -42,25 +42,35 @@ func ForwardFromError(code codes.Code, err error) error {
 	return ForwardErrorf(code, "%v", err)
 }
 
+func errToStatus(err error) *status.Status {
+	var gErr grpcErr
+	if errors.As(err, &gErr) {
+		return gErr.GRPCStatus()
+	}
+	if s := status.FromContextError(err); s.Code() != codes.Unknown {
+		return s
+	}
+	return nil
+}
+
 // ErrToGrpcStatus converts error to grpc status.
 func ErrToGrpcStatus(a interface{}) *status.Status {
-	var gErr grpcErr
 	switch val := a.(type) {
 	case *multierror.Error:
 		for _, err := range val.Errors {
-			if errors.As(err, &gErr) {
-				return gErr.GRPCStatus()
+			if s := ErrToGrpcStatus(err); s != nil {
+				return s
 			}
 		}
 	case []error:
 		for _, err := range val {
-			if errors.As(err, &gErr) {
-				return gErr.GRPCStatus()
+			if s := ErrToGrpcStatus(err); s != nil {
+				return s
 			}
 		}
 	case error:
-		if errors.As(val, &gErr) {
-			return gErr.GRPCStatus()
+		if s := errToStatus(val); s != nil {
+			return s
 		}
 	}
 
