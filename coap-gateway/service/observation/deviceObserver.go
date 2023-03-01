@@ -340,6 +340,10 @@ func (d *DeviceObserver) GetObservationType() ObservationType {
 }
 
 func (d *DeviceObserver) ResourceHasBeenSynchronized(ctx context.Context, href string) {
+	if !d.twinEnabled {
+		d.logger.Debugf("notify for resource %v in-sync has been skipped: device twin disabled")
+		return
+	}
 	d.resourcesObserver.resourceHasBeenSynchronized(ctx, href)
 }
 
