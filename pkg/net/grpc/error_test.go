@@ -1,6 +1,7 @@
 package grpc_test
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -47,6 +48,17 @@ func TestForwardErrorf(t *testing.T) {
 			wantCode:    codes.Internal,
 			wantDetails: []interface{}{},
 			wantMessage: "abc: def: 1",
+		},
+		{
+			name: "with context DeadlineExceeded",
+			args: args{
+				code:      codes.OK,
+				formatter: "abc: %v",
+				args:      []interface{}{fmt.Errorf("def: %w", context.DeadlineExceeded)},
+			},
+			wantCode:    codes.DeadlineExceeded,
+			wantDetails: []interface{}{},
+			wantMessage: "abc: def: context deadline exceeded",
 		},
 		{
 			name: "with composite error",
