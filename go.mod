@@ -31,7 +31,7 @@ require (
 	github.com/sirupsen/logrus v1.9.0
 	github.com/stretchr/testify v1.8.1
 	github.com/ugorji/go/codec v1.2.8
-	go.mongodb.org/mongo-driver v1.11.1
+	go.mongodb.org/mongo-driver v1.11.2
 	go.opentelemetry.io/contrib/instrumentation/go.mongodb.org/mongo-driver/mongo/otelmongo v0.38.0
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.38.0
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.38.0
@@ -45,7 +45,6 @@ require (
 	golang.org/x/net v0.5.0
 	golang.org/x/oauth2 v0.4.0
 	golang.org/x/sync v0.1.0
-	google.golang.org/api v0.109.0
 	google.golang.org/genproto v0.0.0-20230131230820-1c016267d619
 	google.golang.org/grpc v1.52.3
 	google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.2.0
@@ -65,10 +64,7 @@ require (
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/goccy/go-json v0.10.0 // indirect
 	github.com/golang/glog v1.0.0 // indirect
-	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
-	github.com/googleapis/enterprise-certificate-proxy v0.2.1 // indirect
-	github.com/googleapis/gax-go/v2 v2.7.0 // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.0.0-rc.2 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/jhump/protoreflect v1.14.1 // indirect
@@ -95,7 +91,6 @@ require (
 	github.com/xdg-go/scram v1.1.2 // indirect
 	github.com/xdg-go/stringprep v1.0.4 // indirect
 	github.com/youmark/pkcs8 v0.0.0-20201027041543-1326539a0a0a // indirect
-	go.opencensus.io v0.24.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/internal/retry v1.12.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.12.0 // indirect
 	go.opentelemetry.io/proto/otlp v0.19.0 // indirect
