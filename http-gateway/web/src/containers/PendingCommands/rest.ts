@@ -4,8 +4,6 @@ import { pendingCommandsApiEndpoints } from './constants'
 import { devicesApiEndpoints } from '@/containers/Devices/constants'
 import { SecurityConfig } from '@/containers/App/App.types'
 
-const getConfig = () => security.getGeneralConfig() as SecurityConfig
-
 /**
  * Cancel a pending command Rest Api endpoint
  * @param {*} params { deviceId, href, correlationId }
@@ -20,21 +18,22 @@ export const cancelPendingCommandApi = ({
   href?: string
   correlationId?: string
 }) => {
+  const { httpGatewayAddress, cancelRequestDeadlineTimeout } = security.getGeneralConfig() as SecurityConfig
   // If the href is provided, it is a resource pending command.
   // If the href is not provided, it is a metadata update pending command.
   if (href) {
     return fetchApi(
-      `${getConfig().httpGatewayAddress}${
+      `${httpGatewayAddress}${
         pendingCommandsApiEndpoints.PENDING_COMMANDS
       }?resourceId.deviceId=${deviceId}&resourceId.href=${href}&correlationIdFilter=${correlationId}`,
-      { method: 'DELETE' }
+      { method: 'DELETE', cancelRequestDeadlineTimeout }
     )
   }
 
   return fetchApi(
-    `${getConfig().httpGatewayAddress}${
+    `${httpGatewayAddress}${
       devicesApiEndpoints.DEVICES
     }/${deviceId}/pending-metadata-updates?correlationIdFilter=${correlationId}`,
-    { method: 'DELETE' }
+    { method: 'DELETE', cancelRequestDeadlineTimeout }
   )
 }

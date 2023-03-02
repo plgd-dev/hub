@@ -77,6 +77,7 @@ const DevicesDetailsPage = () => {
     loading: loadingResources,
     error: resourcesError,
   } = useDevicesResources(id)
+  const [resourceModal, setResourceModal] = useState(false)
 
   const [isTwinEnabled, setIsTwinEnabled] = useState(
     data?.metadata?.twinEnabled
@@ -181,6 +182,7 @@ const DevicesDetailsPage = () => {
           },
           resourceData,
         })
+        setResourceModal(true)
       }
     } catch (error) {
       if (error && isMounted.current) {
@@ -416,7 +418,7 @@ const DevicesDetailsPage = () => {
 
       <DevicesResourcesModal
         {...resourceModalData}
-        onClose={handleCloseUpdateModal}
+        onClose={() => setResourceModal(false)}
         fetchResource={openUpdateModal}
         updateResource={updateResource}
         createResource={createResource}
@@ -427,6 +429,7 @@ const DevicesDetailsPage = () => {
         deviceId={id}
         deviceName={deviceName}
         confirmDisabled={ttlHasError}
+        show={resourceModal}
         ttlControl={
           <CommandTimeoutControl
             defaultValue={ttl}

@@ -45,8 +45,10 @@ export type Props = {
     { href, currentInterface }: DevicesResourcesModalParamsType,
     jsonData?: any
   ) => void
+  show: boolean
 }
 
 export const defaultProps = {
   type: resourceModalTypes.UPDATE_RESOURCE,
+  show: false
 }

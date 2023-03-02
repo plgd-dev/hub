@@ -32,6 +32,7 @@ const DevicesResourcesModal: FC<Props> = props => {
     type,
     ttlControl,
     confirmDisabled,
+    show,
   } = { ...defaultProps, ...props }
   const { formatMessage: _ } = useIntl()
   const editor = useRef()
@@ -51,23 +52,20 @@ const DevicesResourcesModal: FC<Props> = props => {
     const dataToDisplay = resourceData?.data?.content
     setJsonData(dataToDisplay)
 
-    if (resourceData) {
+    if (resourceData && editor.current) {
       // Set the retrieved JSON object to the editor
       if (typeof resourceData === 'object') {
         // @ts-ignore
-        editor?.current?.set(dataToDisplay)
+        editor?.current?.current?.set(dataToDisplay)
       } else if (typeof resourceData === 'string') {
         // @ts-ignore
-        editor?.current?.setText(dataToDisplay)
+        editor?.current?.current?.setText(dataToDisplay)
       }
     }
   }, [resourceData])
 
   const handleRetrieve = () => {
-    fetchResource({
-      href: data?.href as string,
-      currentInterface: selectedInterface.value,
-    })
+    onClose()
   }
 
   const handleSubmit = () => {
@@ -137,6 +135,7 @@ const DevicesResourcesModal: FC<Props> = props => {
               onChange={handleOnEditorChange}
               onError={handleOnEditorError}
               editorRef={(node: any) => {
+                console.log('node', node)
                 editor.current = node
               }}
               disabled={disabled}
@@ -192,7 +191,7 @@ const DevicesResourcesModal: FC<Props> = props => {
 
   return (
     <Modal
-      show={!!data}
+      show={show && !!data}
       onClose={!disabled ? onClose : undefined}
       title={data?.href}
       renderBody={renderBody}

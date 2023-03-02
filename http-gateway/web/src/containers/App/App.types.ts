@@ -1,5 +1,6 @@
 export type SecurityConfig = {
   httpGatewayAddress: string
+  cancelRequestDeadlineTimeout: string
 }
 
 export type StreamApiPropsType = {

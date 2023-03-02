@@ -7,22 +7,24 @@ import { interfaceGetParam } from './utils'
 import { withTelemetry } from '@shared-ui/common/services/opentelemetry'
 import { SecurityConfig } from '@/containers/App/App.types'
 
-const getConfig = () => security.getGeneralConfig() as SecurityConfig
-
 /**
  * Get a single thing by its ID Rest Api endpoint
  * @param {*} params { deviceId }
  */
-export const getDeviceApi = (deviceId: string) =>
-  withTelemetry(
+export const getDeviceApi = (deviceId: string) => {
+  const { httpGatewayAddress, cancelRequestDeadlineTimeout } = security.getGeneralConfig() as SecurityConfig
+
+  return withTelemetry(
     () =>
       fetchApi(
-        `${getConfig().httpGatewayAddress}${
+        `${httpGatewayAddress}${
           devicesApiEndpoints.DEVICES
-        }/${deviceId}`
+        }/${deviceId}`,
+        { cancelRequestDeadlineTimeout }
       ),
     'get-device'
   )
+}
 
 /**
  * Delete a set of devices by their IDs Rest Api endpoint
@@ -32,6 +34,7 @@ export const getDeviceApi = (deviceId: string) =>
 export const deleteDevicesApi = (deviceIds: string[]) => {
   // We split the fetch into multiple chunks due to the URL being too long for the browser to handle
   const chunks = chunk(deviceIds, DEVICE_DELETE_CHUNK_SIZE)
+  const { httpGatewayAddress, cancelRequestDeadlineTimeout } = security.getGeneralConfig() as SecurityConfig
 
   return Promise.all(
     chunks.map(ids => {
@@ -39,11 +42,12 @@ export const deleteDevicesApi = (deviceIds: string[]) => {
       return withTelemetry(
         () =>
           fetchApi(
-            `${getConfig().httpGatewayAddress}${
+            `${httpGatewayAddress}${
               devicesApiEndpoints.DEVICES
             }?${idsString}`,
             {
               method: 'DELETE',
+              cancelRequestDeadlineTimeout
             }
           ),
         'delete-device'
@@ -65,16 +69,20 @@ export const getDevicesResourcesApi = ({
   deviceId: string
   href: string
   currentInterface?: string
-}) =>
-  withTelemetry(
+}) => {
+  const { httpGatewayAddress, cancelRequestDeadlineTimeout } = security.getGeneralConfig() as SecurityConfig
+  return withTelemetry(
     () =>
       fetchApi(
-        `${getConfig().httpGatewayAddress}${
+        `${httpGatewayAddress}${
           devicesApiEndpoints.DEVICES
-        }/${deviceId}/resources${href}?${interfaceGetParam(currentInterface)}`
+        }/${deviceId}/resources${href}?${interfaceGetParam(currentInterface)}`, {
+          cancelRequestDeadlineTimeout
+        }
       ),
-    'get-device-resource'
-  )
+    "get-device-resource"
+  );
+}
 
 /**
  * Update devices RESOURCE Rest Api endpoint
@@ -94,19 +102,21 @@ export const updateDevicesResourceApi = (
     ttl: any
   },
   data: any
-) =>
-  withTelemetry(
+) => {
+  const { httpGatewayAddress, cancelRequestDeadlineTimeout } = security.getGeneralConfig() as SecurityConfig
+  return withTelemetry(
     () =>
       fetchApi(
-        `${getConfig().httpGatewayAddress}${
+        `${httpGatewayAddress}${
           devicesApiEndpoints.DEVICES
         }/${deviceId}/resources${href}?timeToLive=${ttl}&${interfaceGetParam(
           currentInterface
         )}`,
-        { method: 'PUT', body: data, timeToLive: ttl }
+        { method: "PUT", body: data, timeToLive: ttl, cancelRequestDeadlineTimeout }
       ),
-    'update-device-resource'
-  )
+    "update-device-resource"
+  );
+}
 
 /**
  * Create devices RESOURCE Rest Api endpoint
@@ -126,19 +136,21 @@ export const createDevicesResourceApi = (
     ttl: any
   },
   data: any
-) =>
-  withTelemetry(
+) => {
+  const { httpGatewayAddress, cancelRequestDeadlineTimeout } = security.getGeneralConfig() as SecurityConfig
+  return withTelemetry(
     () =>
       fetchApi(
-        `${getConfig().httpGatewayAddress}${
+        `${httpGatewayAddress}${
           devicesApiEndpoints.DEVICES
         }/${deviceId}/resource-links${href}?timeToLive=${ttl}&${interfaceGetParam(
           currentInterface
         )}`,
-        { method: 'POST', body: data, timeToLive: ttl }
+        { method: "POST", body: data, timeToLive: ttl, cancelRequestDeadlineTimeout }
       ),
-    'create-device-resource'
-  )
+    "create-device-resource"
+  );
+}
 
 /**
  * Delete devices RESOURCE Rest Api endpoint
@@ -153,17 +165,19 @@ export const deleteDevicesResourceApi = ({
   deviceId: string
   href: string
   ttl: any
-}) =>
-  withTelemetry(
+}) => {
+  const { httpGatewayAddress, cancelRequestDeadlineTimeout } = security.getGeneralConfig() as SecurityConfig
+  return withTelemetry(
     () =>
       fetchApi(
-        `${getConfig().httpGatewayAddress}${
+        `${httpGatewayAddress}${
           devicesApiEndpoints.DEVICES
         }/${deviceId}/resource-links${href}?timeToLive=${ttl}`,
-        { method: 'DELETE', timeToLive: ttl }
+        { method: "DELETE", timeToLive: ttl, cancelRequestDeadlineTimeout }
       ),
-    'delete-device-resource'
-  )
+    "delete-device-resource"
+  );
+}
 
 /**
  * Update the twinEnabled of one Thing Rest Api endpoint
@@ -173,17 +187,19 @@ export const deleteDevicesResourceApi = ({
 export const updateDeviceTwinSynchronizationApi = (
   deviceId: string,
   twinEnabled: boolean
-) =>
-  withTelemetry(
+) => {
+  const { httpGatewayAddress, cancelRequestDeadlineTimeout } = security.getGeneralConfig() as SecurityConfig
+  return withTelemetry(
     () =>
       fetchApi(
-        `${getConfig().httpGatewayAddress}${
+        `${httpGatewayAddress}${
           devicesApiEndpoints.DEVICES
         }/${deviceId}/metadata`,
-        { method: 'PUT', body: { twinEnabled } }
+        { method: "PUT", body: { twinEnabled }, cancelRequestDeadlineTimeout }
       ),
-    'update-device-metadata'
-  )
+    "update-device-metadata"
+  );
+}
 
 type DeviceOAuthConfigType = {
   clientId: string

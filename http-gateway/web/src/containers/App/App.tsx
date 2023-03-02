@@ -44,6 +44,7 @@ const App = () => {
               'clientId, authority, audience and httpGatewayAddress must be set in webOauthClient of web_configuration.json'
             )
           } else {
+            generalConfig.cancelRequestDeadlineTimeout = 10000
             // Set the auth configurations
             security.setGeneralConfig(generalConfig)
             security.setWebOAuthConfig(webOauthClient)
