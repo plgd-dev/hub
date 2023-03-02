@@ -23,7 +23,6 @@ const DevicesResourcesModal: FC<Props> = props => {
     resourceData,
     onClose,
     retrieving,
-    fetchResource,
     isDeviceOnline,
     isUnregistered,
     loading,
