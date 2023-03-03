@@ -30,7 +30,8 @@ import {
   handleUpdateResourceErrors,
   handleFetchResourceErrors,
   handleDeleteResourceErrors,
-  handleTwinSynchronizationErrors
+  handleTwinSynchronizationErrors,
+  isDeviceOnline
 } from "../../utils";
 import {
   getDevicesResourcesApi,
@@ -124,7 +125,7 @@ const DevicesDetailsPage = () => {
   }
 
   const deviceStatus = data?.metadata?.connection?.status
-  const isOnline = devicesStatuses.ONLINE === deviceStatus
+  const isOnline = isDeviceOnline(data)
   const isUnregistered = devicesStatuses.UNREGISTERED === deviceStatus
   const greyedOutClassName = classNames({
     'grayed-out': isUnregistered,

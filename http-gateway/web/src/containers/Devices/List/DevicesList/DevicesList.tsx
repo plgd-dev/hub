@@ -14,8 +14,9 @@ import {
 } from '../../constants'
 import { messages as t } from '../../Devices.i18n'
 import { Props, defaultProps } from './DevicesList.types'
+import { isDeviceOnline } from "@/containers/Devices/utils";
 
-const { ONLINE, UNREGISTERED } = devicesStatuses
+const { UNREGISTERED } = devicesStatuses
 
 export const DevicesList: FC<Props> = props => {
   const {
@@ -88,8 +89,8 @@ export const DevicesList: FC<Props> = props => {
         Header: _(t.status),
         accessor: 'metadata.connection.status',
         style: { width: '120px' },
-        Cell: ({ value }: { value: string | number }) => {
-          const isOnline = ONLINE === value
+        Cell: ({ row }: {  row: any }) => {
+          const isOnline = isDeviceOnline(row.original)
           return (
             <Badge className={isOnline ? 'green' : 'red'}>
               {isOnline ? _(t.online) : _(t.offline)}

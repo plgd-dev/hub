@@ -14,10 +14,10 @@ import {
   DEVICES_RESOURCE_REGISTRATION_WS_KEY,
   DEVICES_RESOURCE_UPDATE_WS_KEY,
   commandTimeoutUnits,
-  MINIMAL_TTL_VALUE_MS,
-} from './constants'
+  MINIMAL_TTL_VALUE_MS, devicesStatuses
+} from "./constants";
 import { messages as t } from './Devices.i18n'
-import { ResourcesType } from '@/containers/Devices/Devices.types'
+import { DeviceDataType, ResourcesType } from "@/containers/Devices/Devices.types";
 
 const time = converter.time
 
@@ -355,3 +355,11 @@ export const getResourceUpdateNotificationKey = (
   deviceId: string,
   href: string
 ) => `${DEVICES_RESOURCE_UPDATE_WS_KEY}.${deviceId}.${href}`
+
+export const isDeviceOnline = (data: DeviceDataType) => {
+  const untilDate = new Date((data?.metadata?.connection?.onlineValidUntil || 0) / 100000)
+  const now = new Date()
+  const deviceStatus = data?.metadata?.connection?.status
+
+  return untilDate > now && devicesStatuses.ONLINE === deviceStatus
+}
