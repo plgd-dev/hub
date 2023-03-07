@@ -16,6 +16,7 @@ import (
 	"github.com/plgd-dev/device/v2/schema/interfaces"
 	"github.com/plgd-dev/device/v2/schema/maintenance"
 	"github.com/plgd-dev/device/v2/schema/platform"
+	"github.com/plgd-dev/device/v2/schema/plgdtime"
 	"github.com/plgd-dev/device/v2/test/resource/types"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	httpgwTest "github.com/plgd-dev/hub/v2/http-gateway/test"
@@ -118,6 +119,15 @@ func TestRequestHandlerGetDeviceResources(t *testing.T) {
 					Data: pbTest.MakeResourceChanged(t, deviceID, configuration.ResourceURI, "",
 						map[string]interface{}{
 							"n": test.TestDeviceName,
+						},
+					),
+				},
+				{
+					Types: []string{plgdtime.ResourceType},
+					Data: pbTest.MakeResourceChanged(t, deviceID, plgdtime.ResourceURI, "",
+						map[string]interface{}{
+							"time":           "",
+							"lastSyncedTime": "",
 						},
 					),
 				},

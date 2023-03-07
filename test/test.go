@@ -13,12 +13,14 @@ import (
 	"github.com/plgd-dev/device/v2/client/core"
 	"github.com/plgd-dev/device/v2/schema"
 	"github.com/plgd-dev/device/v2/schema/acl"
+	"github.com/plgd-dev/device/v2/schema/cloud"
 	"github.com/plgd-dev/device/v2/schema/collection"
 	"github.com/plgd-dev/device/v2/schema/configuration"
 	"github.com/plgd-dev/device/v2/schema/device"
 	"github.com/plgd-dev/device/v2/schema/interfaces"
 	"github.com/plgd-dev/device/v2/schema/maintenance"
 	"github.com/plgd-dev/device/v2/schema/platform"
+	"github.com/plgd-dev/device/v2/schema/plgdtime"
 	"github.com/plgd-dev/device/v2/schema/resources"
 	"github.com/plgd-dev/device/v2/test/resource/types"
 	"github.com/plgd-dev/go-coap/v3/message"
@@ -110,6 +112,15 @@ func init() {
 			Interfaces:    []string{interfaces.OC_IF_RW, interfaces.OC_IF_BASELINE},
 			Policy: &schema.Policy{
 				BitMask: 1,
+			},
+		},
+
+		{
+			Href:          plgdtime.ResourceURI,
+			ResourceTypes: []string{plgdtime.ResourceType},
+			Interfaces:    []string{interfaces.OC_IF_RW, interfaces.OC_IF_BASELINE},
+			Policy: &schema.Policy{
+				BitMask: 3,
 			},
 		},
 	}
@@ -251,6 +262,12 @@ func setAccessForCloud(ctx context.Context, t *testing.T, c *deviceClient.Client
 			Interfaces: []string{"*"},
 		})
 	}
+	for _, href := range links.GetResourceHrefs(plgdtime.ResourceType) {
+		confResources = append(confResources, acl.Resource{
+			Href:       href,
+			Interfaces: []string{"*"},
+		})
+	}
 	setAcl := acl.UpdateRequest{
 		AccessControlList: []acl.AccessControl{
 			{
@@ -285,6 +302,16 @@ func OnboardDevSimForClient(ctx context.Context, t *testing.T, c pb.GrpcGatewayC
 	code := oauthTest.GetAuthorizationCode(t, config.OAUTH_SERVER_HOST, clientID, deviceID, "")
 
 	onboard := func() {
+		var cloudRes cloud.Configuration
+		err = devClient.GetResource(ctx, deviceID, cloud.ResourceURI, &cloudRes)
+		require.NoError(t, err)
+
+		if cloudRes.ProvisioningStatus != cloud.ProvisioningStatus_UNINITIALIZED {
+			// device cloud is configured so we need to remove it first
+			err = devClient.OffboardDevice(ctx, deviceID)
+			require.NoError(t, err)
+		}
+
 		err = devClient.OnboardDevice(ctx, deviceID, config.DEVICE_PROVIDER, hubEndpoint, code, cloudSID)
 		require.NoError(t, err)
 	}
