@@ -25,7 +25,7 @@ require (
 	github.com/panjf2000/ants/v2 v2.7.3
 	github.com/pion/dtls/v2 v2.2.6
 	github.com/pion/logging v0.2.2
-	github.com/plgd-dev/device/v2 v2.1.1-0.20230503091447-8d6e6ec259df
+	github.com/plgd-dev/device/v2 v2.2.0
 	github.com/plgd-dev/go-coap/v3 v3.1.2-0.20230502085839-d07b10ac1104
 	github.com/plgd-dev/kit/v2 v2.0.0-20211006190727-057b33161b90
 	github.com/sirupsen/logrus v1.9.0

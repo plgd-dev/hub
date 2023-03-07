@@ -14,6 +14,7 @@ import (
 	"github.com/plgd-dev/device/v2/schema/interfaces"
 	"github.com/plgd-dev/device/v2/schema/maintenance"
 	"github.com/plgd-dev/device/v2/schema/platform"
+	"github.com/plgd-dev/device/v2/schema/plgdtime"
 	"github.com/plgd-dev/device/v2/test/resource/types"
 	"github.com/plgd-dev/go-coap/v3/message"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
@@ -76,6 +77,14 @@ func getOnboardEventForResource(t *testing.T, deviceID, href string) interface{}
 			[]map[string]interface{}{})
 	}
 
+	if href == plgdtime.ResourceURI {
+		return pbTest.MakeResourceChanged(t, deviceID, plgdtime.ResourceURI, "",
+			map[string]interface{}{
+				"time":           "",
+				"lastSyncedTime": "",
+			})
+	}
+
 	return nil
 }
 
@@ -90,6 +99,7 @@ func getAllOnboardEvents(t *testing.T, deviceID string, links []schema.ResourceL
 	expectedRCL := getOnboardEventForResource(t, deviceID, test.TestResourceLightInstanceHref("1"))
 	expectedRCS := getOnboardEventForResource(t, deviceID, test.TestResourceSwitchesHref)
 	expectedRCM := getOnboardEventForResource(t, deviceID, maintenance.ResourceURI)
+	expectedRPT := getOnboardEventForResource(t, deviceID, plgdtime.ResourceURI)
 	return []interface{}{
 		expectedDMU,
 		expectedDMU1,
@@ -101,6 +111,7 @@ func getAllOnboardEvents(t *testing.T, deviceID string, links []schema.ResourceL
 		expectedRCS,
 		expectedDMU2,
 		expectedRCM,
+		expectedRPT,
 	}
 }
 

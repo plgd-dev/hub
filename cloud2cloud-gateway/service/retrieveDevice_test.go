@@ -14,6 +14,7 @@ import (
 	"github.com/plgd-dev/device/v2/schema/interfaces"
 	"github.com/plgd-dev/device/v2/schema/maintenance"
 	"github.com/plgd-dev/device/v2/schema/platform"
+	"github.com/plgd-dev/device/v2/schema/plgdtime"
 	"github.com/plgd-dev/device/v2/test/resource/types"
 	"github.com/plgd-dev/go-coap/v3/message"
 	c2cService "github.com/plgd-dev/hub/v2/cloud2cloud-gateway/service"
@@ -155,6 +156,10 @@ func getDevicesBaseRepresentation(deviceID, deviceName, switchID string) interfa
 				map[interface{}]interface{}{
 					"if": []interface{}{interfaces.OC_IF_R, interfaces.OC_IF_BASELINE},
 				}),
+			getResourceBaseData(deviceID, plgdtime.ResourceURI, []interface{}{plgdtime.ResourceType},
+				map[interface{}]interface{}{
+					"if": []interface{}{interfaces.OC_IF_RW, interfaces.OC_IF_BASELINE},
+				}),
 			getResourceBaseData(deviceID, test.TestResourceSwitchesHref, []interface{}{collection.ResourceType},
 				map[interface{}]interface{}{
 					"if": []interface{}{interfaces.OC_IF_LL, interfaces.OC_IF_CREATE, interfaces.OC_IF_B, interfaces.OC_IF_BASELINE},
@@ -190,6 +195,11 @@ func getDevicesAllRepresentation(deviceID, deviceName, switchID string) interfac
 			getResourceAllData(deviceID, platform.ResourceURI,
 				map[interface{}]interface{}{
 					"mnmn": "ocfcloud.com",
+				}),
+			getResourceAllData(deviceID, plgdtime.ResourceURI,
+				map[interface{}]interface{}{
+					"lastSyncedTime": "",
+					"time":           "",
 				}),
 			getResourceAllData(deviceID, test.TestResourceLightInstanceHref("1"),
 				map[interface{}]interface{}{
