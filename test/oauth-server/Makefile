@@ -6,14 +6,15 @@ VERSION_TAG ?= $(LATEST_TAG)-$(shell git rev-parse --short=7 --verify HEAD)
 default: build
 
 define build-docker-image
-	cd ../.. && docker build \
+	cd ../.. && \
+		mkdir -p .tmp/docker/$(SERVICE_NAME) && \
+		awk '{gsub("@NAME@","$(SERVICE_NAME)")} {gsub("@DIRECTORY@","test/oauth-server")} {print}' tools/docker/Dockerfile.in > .tmp/docker/$(SERVICE_NAME)/Dockerfile && \
+		docker build \
 		--network=host \
-		--build-arg DIRECTORY=test/oauth-server \
-		--build-arg NAME=$(SERVICE_NAME) \
 		--tag plgd/$(SERVICE_NAME):$(VERSION_TAG) \
 		--tag plgd/$(SERVICE_NAME):$(LATEST_TAG) \
 		--target $(1) \
-		-f tools/docker/Dockerfile \
+		-f .tmp/docker/$(SERVICE_NAME)/Dockerfile \
 		.
 endef
 

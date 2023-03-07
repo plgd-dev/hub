@@ -3,6 +3,7 @@ package client
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
@@ -68,9 +69,14 @@ func (c *Client) SyncCreateResource(ctx context.Context, owner string, req *comm
 		}
 	}()
 
-	_, err = c.CreateResource(ctx, req)
+	resp, err := c.CreateResource(ctx, req)
 	if err != nil {
 		return nil, err
+	}
+	if resp.GetValidUntil() > 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithDeadline(ctx, time.Unix(0, resp.GetValidUntil()))
+		defer cancel()
 	}
 
 	return h.recv(ctx)

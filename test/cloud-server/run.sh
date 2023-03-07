@@ -82,18 +82,31 @@ export CA_POOL=$CA_POOL_CERT_PATH
 export CERT_FILE=$DIAL_FILE_CERT_DIR_PATH/$DIAL_FILE_CERT_NAME
 export KEY_FILE=$DIAL_FILE_CERT_DIR_PATH/$DIAL_FILE_CERT_KEY_NAME
 
+CERT_TOOL_SIGN_ALG=${CERT_TOOL_SIGN_ALG:-ECDSA-SHA256}
+CERT_TOOL_ELLIPTIC_CURVE=${CERT_TOOL_ELLIPTIC_CURVE:-P256}
+
 fqdnSAN="--cert.san.domain=$FQDN"
 if ip route get $FQDN 2>/dev/null >/dev/null; then
   fqdnSAN="--cert.san.ip=$FQDN"
 fi
 echo "generating CA cert"
-cert-tool --cmd.generateRootCA --outCert=$CA_POOL_CERT_PATH --outKey=$CA_POOL_CERT_KEY_PATH --cert.subject.cn="Root CA"
+cert-tool --cmd.generateRootCA --outCert=$CA_POOL_CERT_PATH --outKey=$CA_POOL_CERT_KEY_PATH --cert.subject.cn="Root CA" \
+  --cert.signatureAlgorithm=${CERT_TOOL_SIGN_ALG} --cert.ellipticCurve=${CERT_TOOL_ELLIPTIC_CURVE}
 echo "generating GRPC internal cert"
-cert-tool --cmd.generateCertificate --outCert=$DIAL_FILE_CERT_DIR_PATH/$DIAL_FILE_CERT_NAME --outKey=$DIAL_FILE_CERT_DIR_PATH/$DIAL_FILE_CERT_KEY_NAME --cert.subject.cn="localhost" --cert.san.domain="localhost" --cert.san.ip="0.0.0.0" --cert.san.ip="127.0.0.1" $fqdnSAN --signerCert=$CA_POOL_CERT_PATH --signerKey=$CA_POOL_CERT_KEY_PATH
+cert-tool --cmd.generateCertificate --outCert=$DIAL_FILE_CERT_DIR_PATH/$DIAL_FILE_CERT_NAME \
+  --outKey=$DIAL_FILE_CERT_DIR_PATH/$DIAL_FILE_CERT_KEY_NAME --cert.subject.cn="localhost" --cert.san.domain="localhost" \
+  --cert.san.ip="0.0.0.0" --cert.san.ip="127.0.0.1" $fqdnSAN --signerCert=$CA_POOL_CERT_PATH --signerKey=$CA_POOL_CERT_KEY_PATH \
+  --cert.signatureAlgorithm=${CERT_TOOL_SIGN_ALG} --cert.ellipticCurve=${CERT_TOOL_ELLIPTIC_CURVE}
 echo "generating COAP-GW cert"
-cert-tool --cmd.generateIdentityCertificate=$COAP_GATEWAY_CLOUD_ID --outCert=$EXTERNAL_CERT_DIR_PATH/$COAP_GATEWAY_FILE_CERT_NAME --outKey=$EXTERNAL_CERT_DIR_PATH/$COAP_GATEWAY_FILE_CERT_KEY_NAME --cert.san.domain=$COAP_GATEWAY_FQDN --signerCert=$CA_POOL_CERT_PATH --signerKey=$CA_POOL_CERT_KEY_PATH
+cert-tool --cmd.generateIdentityCertificate=$COAP_GATEWAY_CLOUD_ID --outCert=$EXTERNAL_CERT_DIR_PATH/$COAP_GATEWAY_FILE_CERT_NAME \
+  --outKey=$EXTERNAL_CERT_DIR_PATH/$COAP_GATEWAY_FILE_CERT_KEY_NAME --cert.san.domain=$COAP_GATEWAY_FQDN \
+  --signerCert=$CA_POOL_CERT_PATH --signerKey=$CA_POOL_CERT_KEY_PATH --cert.signatureAlgorithm=${CERT_TOOL_SIGN_ALG} \
+  --cert.ellipticCurve=${CERT_TOOL_ELLIPTIC_CURVE}
 echo "generating NGINX cert"
-cert-tool --cmd.generateCertificate --outCert=$EXTERNAL_CERT_DIR_PATH/$DIAL_FILE_CERT_NAME --outKey=$EXTERNAL_CERT_DIR_PATH/$DIAL_FILE_CERT_KEY_NAME --cert.subject.cn="localhost" --cert.san.domain="localhost" --cert.san.ip="0.0.0.0" --cert.san.ip="127.0.0.1" $fqdnSAN --signerCert=$CA_POOL_CERT_PATH --signerKey=$CA_POOL_CERT_KEY_PATH
+cert-tool --cmd.generateCertificate --outCert=$EXTERNAL_CERT_DIR_PATH/$DIAL_FILE_CERT_NAME \
+  --outKey=$EXTERNAL_CERT_DIR_PATH/$DIAL_FILE_CERT_KEY_NAME --cert.subject.cn="localhost" --cert.san.domain="localhost" \
+  --cert.san.ip="0.0.0.0" --cert.san.ip="127.0.0.1" $fqdnSAN --signerCert=$CA_POOL_CERT_PATH --signerKey=$CA_POOL_CERT_KEY_PATH \
+  --cert.signatureAlgorithm=${CERT_TOOL_SIGN_ALG} --cert.ellipticCurve=${CERT_TOOL_ELLIPTIC_CURVE}
 
 mkdir -p ${OAUTH_KEYS_PATH}
 openssl genrsa -out ${OAUTH_ID_TOKEN_KEY_PATH} 4096

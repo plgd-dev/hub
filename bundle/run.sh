@@ -107,18 +107,31 @@ ln -s ${SECRETS_DIRECTORY} /secrets
 export CERT_FILE=$INTERNAL_CERT_DIR_PATH/$GRPC_INTERNAL_CERT_NAME
 export KEY_FILE=$INTERNAL_CERT_DIR_PATH/$GRPC_INTERNAL_CERT_KEY_NAME
 
+CERT_TOOL_SIGN_ALG=${CERT_TOOL_SIGN_ALG:-ECDSA-SHA256}
+CERT_TOOL_ELLIPTIC_CURVE=${CERT_TOOL_ELLIPTIC_CURVE:-P256}
+
 fqdnSAN="--cert.san.domain=$FQDN"
 if ip route get $FQDN 2>/dev/null >/dev/null; then
   fqdnSAN="--cert.san.ip=$FQDN"
 fi
 echo "generating CA cert"
-cert-tool --cmd.generateRootCA --outCert=$ROOT_CERT_PATH --outKey=$ROOT_KEY_PATH --cert.subject.cn="Root CA"
+cert-tool --cmd.generateRootCA --outCert=$ROOT_CERT_PATH --outKey=$ROOT_KEY_PATH --cert.subject.cn="Root CA" \
+  --cert.signatureAlgorithm=${CERT_TOOL_SIGN_ALG} --cert.ellipticCurve=${CERT_TOOL_ELLIPTIC_CURVE}
 echo "generating GRPC internal cert"
-cert-tool --cmd.generateCertificate --outCert=$INTERNAL_CERT_DIR_PATH/$GRPC_INTERNAL_CERT_NAME --outKey=$INTERNAL_CERT_DIR_PATH/$GRPC_INTERNAL_CERT_KEY_NAME --cert.subject.cn="localhost" --cert.san.domain="localhost" --cert.san.ip="0.0.0.0" --cert.san.ip="127.0.0.1" $fqdnSAN --signerCert=$ROOT_CERT_PATH --signerKey=$ROOT_KEY_PATH
+cert-tool --cmd.generateCertificate --outCert=$INTERNAL_CERT_DIR_PATH/$GRPC_INTERNAL_CERT_NAME \
+  --outKey=$INTERNAL_CERT_DIR_PATH/$GRPC_INTERNAL_CERT_KEY_NAME --cert.subject.cn="localhost" --cert.san.domain="localhost" \
+  --cert.san.ip="0.0.0.0" --cert.san.ip="127.0.0.1" $fqdnSAN --signerCert=$ROOT_CERT_PATH --signerKey=$ROOT_KEY_PATH \
+  --cert.signatureAlgorithm=${CERT_TOOL_SIGN_ALG} --cert.ellipticCurve=${CERT_TOOL_ELLIPTIC_CURVE}
 echo "generating COAP-GW cert"
-cert-tool --cmd.generateIdentityCertificate=$COAP_GATEWAY_HUB_ID --outCert=$EXTERNAL_CERT_DIR_PATH/$COAP_GATEWAY_FILE_CERT_NAME --outKey=$EXTERNAL_CERT_DIR_PATH/$COAP_GATEWAY_FILE_CERT_KEY_NAME --cert.san.domain=$COAP_GATEWAY_FQDN --signerCert=$ROOT_CERT_PATH --signerKey=$ROOT_KEY_PATH
+cert-tool --cmd.generateIdentityCertificate=$COAP_GATEWAY_HUB_ID --outCert=$EXTERNAL_CERT_DIR_PATH/$COAP_GATEWAY_FILE_CERT_NAME \
+  --outKey=$EXTERNAL_CERT_DIR_PATH/$COAP_GATEWAY_FILE_CERT_KEY_NAME --cert.san.domain=$COAP_GATEWAY_FQDN \
+  --signerCert=$ROOT_CERT_PATH --signerKey=$ROOT_KEY_PATH --cert.signatureAlgorithm=${CERT_TOOL_SIGN_ALG} \
+  --cert.ellipticCurve=${CERT_TOOL_ELLIPTIC_CURVE}
 echo "generating NGINX cert"
-cert-tool --cmd.generateCertificate --outCert=$EXTERNAL_CERT_DIR_PATH/$GRPC_INTERNAL_CERT_NAME --outKey=$EXTERNAL_CERT_DIR_PATH/$GRPC_INTERNAL_CERT_KEY_NAME --cert.subject.cn="localhost" --cert.san.domain="localhost" --cert.san.ip="0.0.0.0" --cert.san.ip="127.0.0.1" $fqdnSAN --signerCert=$ROOT_CERT_PATH --signerKey=$ROOT_KEY_PATH
+cert-tool --cmd.generateCertificate --outCert=$EXTERNAL_CERT_DIR_PATH/$GRPC_INTERNAL_CERT_NAME \
+  --outKey=$EXTERNAL_CERT_DIR_PATH/$GRPC_INTERNAL_CERT_KEY_NAME --cert.subject.cn="localhost" --cert.san.domain="localhost" \
+  --cert.san.ip="0.0.0.0" --cert.san.ip="127.0.0.1" $fqdnSAN --signerCert=$ROOT_CERT_PATH --signerKey=$ROOT_KEY_PATH \
+  --cert.signatureAlgorithm=${CERT_TOOL_SIGN_ALG} --cert.ellipticCurve=${CERT_TOOL_ELLIPTIC_CURVE}
 
 echo "ROOT_CERT_PATH=${ROOT_CERT_PATH} CA_POOL=${CA_POOL}"
 cat ${ROOT_CERT_PATH} > ${CA_POOL}
