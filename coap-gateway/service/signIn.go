@@ -300,12 +300,12 @@ func signInPostHandler(req *mux.Message, client *session, signIn CoapSignInReq) 
 	expiresIn := validUntilToExpiresIn(validUntil)
 	accept, out, err := getSignInContent(expiresIn, req.Options())
 	if err != nil {
-		return nil, statusErrorf(coapCodes.InternalServerError, errFmtSignIn, err)
+		return nil, statusErrorf(coapCodes.ServiceUnavailable, errFmtSignIn, err)
 	}
 
 	updateDeviceMetadataResp, err := client.updateBySignInData(ctx, upd, deviceID, signIn.UserID)
 	if err != nil {
-		return nil, statusErrorf(coapCodes.InternalServerError, errFmtSignIn, err)
+		return nil, statusErrorf(coapCodes.ServiceUnavailable, errFmtSignIn, err)
 	}
 
 	setExpirationClientCache(client.server.expirationClientCache, deviceID, client, validUntil)
@@ -329,7 +329,7 @@ func signInPostHandler(req *mux.Message, client *session, signIn CoapSignInReq) 
 		// try to register observations to the device at the cloud.
 		setNewDeviceObserver(x.ctx, x.client, x.deviceID, x.resetObservationType, x.twinEnabled)
 	}); err != nil {
-		return nil, statusErrorf(coapCodes.InternalServerError, errFmtSignIn, fmt.Errorf("failed to register device observer: %w", err))
+		return nil, statusErrorf(coapCodes.ServiceUnavailable, errFmtSignIn, fmt.Errorf("failed to register device observer: %w", err))
 	}
 
 	return client.createResponse(coapCodes.Changed, req.Token(), accept, out), nil
@@ -367,7 +367,7 @@ func signOutPostHandler(req *mux.Message, client *session, signOut CoapSignInReq
 	if signOut.DeviceID == "" || signOut.UserID == "" || signOut.AccessToken == "" {
 		authCurrentCtx, err := client.GetAuthorizationContext()
 		if err != nil {
-			return nil, statusErrorf(coapCodes.InternalServerError, errFmtSignOut, err)
+			return nil, statusErrorf(coapCodes.BadRequest, errFmtSignOut, err)
 		}
 		signOut = signOut.updateOAUthRequestIfEmpty(authCurrentCtx.DeviceID, authCurrentCtx.UserID, authCurrentCtx.AccessToken)
 	}

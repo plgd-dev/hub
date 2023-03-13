@@ -124,7 +124,7 @@ func signUpPostHandler(req *mux.Message, client *session) (*pool.Message, error)
 
 	accept, out, err := getSignUpContent(token, owner, validUntil, req.Options())
 	if err != nil {
-		return nil, statusErrorf(coapCodes.InternalServerError, errFmtSignUP, err)
+		return nil, statusErrorf(coapCodes.BadRequest, errFmtSignUP, err)
 	}
 
 	return client.createResponse(coapCodes.Changed, req.Token(), accept, out), nil

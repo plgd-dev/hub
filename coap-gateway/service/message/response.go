@@ -4,13 +4,15 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"strings"
+	"net/http"
 
 	"github.com/plgd-dev/go-coap/v3/message"
 	"github.com/plgd-dev/go-coap/v3/message/codes"
 	"github.com/plgd-dev/go-coap/v3/message/pool"
+	"github.com/plgd-dev/go-coap/v3/message/status"
+	"golang.org/x/oauth2"
 	grpcCodes "google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
+	grpcStatus "google.golang.org/grpc/status"
 )
 
 func GetResponse(ctx context.Context, messagePool *pool.Pool, code codes.Code, token message.Token, contentFormat message.MediaType, payload []byte) (*pool.Message, func()) {
@@ -26,7 +28,11 @@ func GetResponse(ctx context.Context, messagePool *pool.Pool, code codes.Code, t
 	}
 }
 
+// IsTempError returns true if error is temporary. Only certain errors are not considered as temporary errors.
 func IsTempError(err error) bool {
+	if err == nil {
+		return false
+	}
 	var isTemporary interface {
 		Temporary() bool
 	}
@@ -39,29 +45,43 @@ func IsTempError(err error) bool {
 	if errors.As(err, &isTimeout) && isTimeout.Timeout() {
 		return true
 	}
+	if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+		return true
+	}
 	var grpcStatus interface {
-		GRPCStatus() *status.Status
+		GRPCStatus() *grpcStatus.Status
 	}
 	if errors.As(err, &grpcStatus) {
 		switch grpcStatus.GRPCStatus().Code() {
-		case grpcCodes.Unavailable, grpcCodes.DeadlineExceeded, grpcCodes.Canceled, grpcCodes.Aborted:
-			return true
+		case grpcCodes.PermissionDenied,
+			grpcCodes.Unauthenticated,
+			grpcCodes.NotFound,
+			grpcCodes.AlreadyExists,
+			grpcCodes.InvalidArgument:
+			return false
 		}
-	}
-	switch {
-	// TODO: We could optimize this by using error.Is to avoid string comparison.
-	case strings.Contains(err.Error(), "connect: connection refused"),
-		strings.Contains(err.Error(), "i/o timeout"),
-		strings.Contains(err.Error(), "TLS handshake timeout"),
-		strings.Contains(err.Error(), `http2:`), // any error at http2 protocol is considered as temporary error
-		strings.Contains(err.Error(), `write: broken pipe`),
-		strings.Contains(err.Error(), `request canceled while waiting for connection`),
-		strings.Contains(err.Error(), `authentication handshake failed`),
-		strings.Contains(err.Error(), context.DeadlineExceeded.Error()),
-		strings.Contains(err.Error(), context.Canceled.Error()):
 		return true
 	}
-	return false
+	oauth2Err := &oauth2.RetrieveError{}
+	if errors.As(err, &oauth2Err) {
+		if oauth2Err.Response != nil {
+			switch oauth2Err.Response.StatusCode {
+			case
+				http.StatusBadRequest,
+				http.StatusConflict,
+				http.StatusNotFound,
+				http.StatusForbidden,
+				http.StatusUnauthorized:
+				return false
+			}
+		}
+		return true
+	}
+	if _, ok := status.FromError(err); ok {
+		// coap status code is not temporary
+		return false
+	}
+	return true
 }
 
 func GetErrorResponse(ctx context.Context, messagePool *pool.Pool, code codes.Code, token message.Token, err error) (*pool.Message, func()) {
