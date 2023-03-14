@@ -4,8 +4,6 @@ import { useIntl } from 'react-intl'
 import Editor from '@shared-ui/components/new/Editor'
 import Select from '@shared-ui/components/new/Select'
 import Button from '@shared-ui/components/new/Button'
-import Badge from '@shared-ui/components/new/Badge'
-import Label from '@shared-ui/components/new/Label'
 import Modal from '@shared-ui/components/new/Modal'
 
 import DevicesResourcesModalNotifications from '../DevicesResourcesModalNotifications'

@@ -96,7 +96,11 @@ const AppInner = (props: Props) => {
                                 breadcrumbs={<div id='breadcrumbsPortalTarget'></div>}
                                 onCollapseToggle={() => setCollapsed(!collapsed)}
                                 userWidget={
-                                    <UserWidget description='2nd line' image={<img alt='roman' src='https://place-hold.it/300' />} name='Janko Hraško' />
+                                    <UserWidget
+                                        description={userData?.profile?.family_name}
+                                        image={userData?.profile?.picture}
+                                        name={userData?.profile?.name || ''}
+                                    />
                                 }
                             />
                         }
