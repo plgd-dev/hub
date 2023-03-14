@@ -5,19 +5,30 @@ import { PendingCommandsListPage } from '@/containers/PendingCommands'
 import Notifications from '@/containers/Notifications'
 import NotFoundPage from '@/containers/NotFoundPage'
 
+export const menu = [
+    {
+        title: 'Main menu',
+        items: [
+            {
+                icon: 'devices',
+                id: '1',
+                title: 'Devices',
+                link: '/',
+            },
+        ],
+    },
+]
+
 export const Routes = () => (
-  <Switch>
-    <Route exact path="/" component={DevicesListPage} />
-    <Route
-      path={['/devices/:id', '/devices/:id/:href*']}
-      component={DevicesDetailsPage}
-    />
-    <Route path="/pending-commands" component={PendingCommandsListPage} />
-    <Route path="/notifications">
-      <Notifications />
-    </Route>
-    <Route path="*">
-      <NotFoundPage />
-    </Route>
-  </Switch>
+    <Switch>
+        <Route exact component={DevicesListPage} path='/' />
+        <Route component={DevicesDetailsPage} path={['/devices/:id', '/devices/:id/:href*']} />
+        <Route component={PendingCommandsListPage} path='/pending-commands' />
+        <Route path='/notifications'>
+            <Notifications />
+        </Route>
+        <Route path='*'>
+            <NotFoundPage />
+        </Route>
+    </Switch>
 )

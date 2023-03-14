@@ -1,14 +1,14 @@
 export const devicesStatuses = {
-  ONLINE: 'ONLINE',
-  OFFLINE: 'OFFLINE',
-  REGISTERED: 'REGISTERED',
-  UNREGISTERED: 'UNREGISTERED',
+    ONLINE: 'ONLINE',
+    OFFLINE: 'OFFLINE',
+    REGISTERED: 'REGISTERED',
+    UNREGISTERED: 'UNREGISTERED',
 }
 
 export const devicesApiEndpoints = {
-  DEVICES: '/api/v1/devices',
-  DEVICES_RESOURCES: '/api/v1/resource-links',
-  DEVICES_WS: '/api/v1/ws/devices',
+    DEVICES: '/api/v1/devices',
+    DEVICES_RESOURCES: '/api/v1/resource-links',
+    DEVICES_WS: '/api/v1/ws/devices',
 }
 
 export const RESOURCES_DEFAULT_PAGE_SIZE = 5
@@ -18,46 +18,46 @@ export const DEVICES_DEFAULT_PAGE_SIZE = 10
 export const RESOURCE_TREE_DEPTH_SIZE = 15 // px
 
 export const errorCodes = {
-  DEADLINE_EXCEEDED: 'DeadlineExceeded',
-  INVALID_ARGUMENT: 'InvalidArgument',
+    DEADLINE_EXCEEDED: 'DeadlineExceeded',
+    INVALID_ARGUMENT: 'InvalidArgument',
 }
 
 export const resourceModalTypes = {
-  UPDATE_RESOURCE: 'update',
-  CREATE_RESOURCE: 'create',
+    UPDATE_RESOURCE: 'update',
+    CREATE_RESOURCE: 'create',
 }
 
 export const resourceEventTypes = {
-  ADDED: 'added',
-  REMOVED: 'removed',
+    ADDED: 'added',
+    REMOVED: 'removed',
 }
 
 export const knownInterfaces = {
-  OIC_IF_A: 'oic.if.a',
-  OIC_IF_BASELINE: 'oic.if.baseline',
-  OIC_IF_CREATE: 'oic.if.create',
+    OIC_IF_A: 'oic.if.a',
+    OIC_IF_BASELINE: 'oic.if.baseline',
+    OIC_IF_CREATE: 'oic.if.create',
 }
 
 export const knownResourceTypes = {
-  OIC_WK_CON: 'oic.wk.con', // contains device name
+    OIC_WK_CON: 'oic.wk.con', // contains device name
 }
 
 export const defaultNewResource = {
-  rt: [],
-  if: [knownInterfaces.OIC_IF_A, knownInterfaces.OIC_IF_BASELINE],
-  rep: {},
-  p: {
-    bm: 3,
-  },
+    rt: [],
+    if: [knownInterfaces.OIC_IF_A, knownInterfaces.OIC_IF_BASELINE],
+    rep: {},
+    p: {
+        bm: 3,
+    },
 }
 
 export const commandTimeoutUnits = {
-  INFINITE: 'infinite',
-  MS: 'ms',
-  S: 's',
-  M: 'min',
-  H: 'h',
-  NS: 'ns',
+    INFINITE: 'infinite',
+    MS: 'ms',
+    S: 's',
+    M: 'min',
+    H: 'h',
+    NS: 'ns',
 }
 
 export const MINIMAL_TTL_VALUE_MS = 100
@@ -77,8 +77,7 @@ export const DEVICES_RESOURCE_REGISTRATION_WS_KEY = `${DEVICES_WS_KEY}.${RESOURC
 export const DEVICES_RESOURCE_UPDATE_WS_KEY = `${DEVICES_WS_KEY}.${RESOURCE_WS_KEY}.update`
 
 // Emitter Event keys
-export const DEVICES_REGISTERED_UNREGISTERED_COUNT_EVENT_KEY =
-  'devices-registered-unregistered-count'
+export const DEVICES_REGISTERED_UNREGISTERED_COUNT_EVENT_KEY = 'devices-registered-unregistered-count'
 
 // Constant used in the DEVICES_REGISTERED_UNREGISTERED_COUNT_EVENT_KEY when reseting the counter
 export const RESET_COUNTER = 'reset-counter'

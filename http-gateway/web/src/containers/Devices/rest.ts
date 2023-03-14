@@ -12,18 +12,9 @@ import { SecurityConfig } from '@/containers/App/App.types'
  * @param {*} params { deviceId }
  */
 export const getDeviceApi = (deviceId: string) => {
-  const { httpGatewayAddress, cancelRequestDeadlineTimeout } = security.getGeneralConfig() as SecurityConfig
+    const { httpGatewayAddress, cancelRequestDeadlineTimeout } = security.getGeneralConfig() as SecurityConfig
 
-  return withTelemetry(
-    () =>
-      fetchApi(
-        `${httpGatewayAddress}${
-          devicesApiEndpoints.DEVICES
-        }/${deviceId}`,
-        { cancelRequestDeadlineTimeout }
-      ),
-    'get-device'
-  )
+    return withTelemetry(() => fetchApi(`${httpGatewayAddress}${devicesApiEndpoints.DEVICES}/${deviceId}`, { cancelRequestDeadlineTimeout }), 'get-device')
 }
 
 /**
@@ -32,28 +23,23 @@ export const getDeviceApi = (deviceId: string) => {
  * @param {*} data
  */
 export const deleteDevicesApi = (deviceIds: string[]) => {
-  // We split the fetch into multiple chunks due to the URL being too long for the browser to handle
-  const chunks = chunk(deviceIds, DEVICE_DELETE_CHUNK_SIZE)
-  const { httpGatewayAddress, cancelRequestDeadlineTimeout } = security.getGeneralConfig() as SecurityConfig
+    // We split the fetch into multiple chunks due to the URL being too long for the browser to handle
+    const chunks = chunk(deviceIds, DEVICE_DELETE_CHUNK_SIZE)
+    const { httpGatewayAddress, cancelRequestDeadlineTimeout } = security.getGeneralConfig() as SecurityConfig
 
-  return Promise.all(
-    chunks.map(ids => {
-      const idsString = ids.map(id => `deviceIdFilter=${id}`).join('&')
-      return withTelemetry(
-        () =>
-          fetchApi(
-            `${httpGatewayAddress}${
-              devicesApiEndpoints.DEVICES
-            }?${idsString}`,
-            {
-              method: 'DELETE',
-              cancelRequestDeadlineTimeout
-            }
-          ),
-        'delete-device'
-      )
-    })
-  )
+    return Promise.all(
+        chunks.map((ids) => {
+            const idsString = ids.map((id) => `deviceIdFilter=${id}`).join('&')
+            return withTelemetry(
+                () =>
+                    fetchApi(`${httpGatewayAddress}${devicesApiEndpoints.DEVICES}?${idsString}`, {
+                        method: 'DELETE',
+                        cancelRequestDeadlineTimeout,
+                    }),
+                'delete-device'
+            )
+        })
+    )
 }
 
 /**
@@ -61,27 +47,15 @@ export const deleteDevicesApi = (deviceIds: string[]) => {
  * @param {*} params { deviceId, href - resource href, currentInterface - interface }
  * @param {*} data
  */
-export const getDevicesResourcesApi = ({
-  deviceId,
-  href,
-  currentInterface = '',
-}: {
-  deviceId: string
-  href: string
-  currentInterface?: string
-}) => {
-  const { httpGatewayAddress, cancelRequestDeadlineTimeout } = security.getGeneralConfig() as SecurityConfig
-  return withTelemetry(
-    () =>
-      fetchApi(
-        `${httpGatewayAddress}${
-          devicesApiEndpoints.DEVICES
-        }/${deviceId}/resources${href}?${interfaceGetParam(currentInterface)}`, {
-          cancelRequestDeadlineTimeout
-        }
-      ),
-    "get-device-resource"
-  );
+export const getDevicesResourcesApi = ({ deviceId, href, currentInterface = '' }: { deviceId: string; href: string; currentInterface?: string }) => {
+    const { httpGatewayAddress, cancelRequestDeadlineTimeout } = security.getGeneralConfig() as SecurityConfig
+    return withTelemetry(
+        () =>
+            fetchApi(`${httpGatewayAddress}${devicesApiEndpoints.DEVICES}/${deviceId}/resources${href}?${interfaceGetParam(currentInterface)}`, {
+                cancelRequestDeadlineTimeout,
+            }),
+        'get-device-resource'
+    )
 }
 
 /**
@@ -90,32 +64,28 @@ export const getDevicesResourcesApi = ({
  * @param {*} data
  */
 export const updateDevicesResourceApi = (
-  {
-    deviceId,
-    href,
-    currentInterface = '',
-    ttl,
-  }: {
-    deviceId: string
-    href: string
-    currentInterface?: string
-    ttl: any
-  },
-  data: any
+    {
+        deviceId,
+        href,
+        currentInterface = '',
+        ttl,
+    }: {
+        deviceId: string
+        href: string
+        currentInterface?: string
+        ttl: any
+    },
+    data: any
 ) => {
-  const { httpGatewayAddress, cancelRequestDeadlineTimeout } = security.getGeneralConfig() as SecurityConfig
-  return withTelemetry(
-    () =>
-      fetchApi(
-        `${httpGatewayAddress}${
-          devicesApiEndpoints.DEVICES
-        }/${deviceId}/resources${href}?timeToLive=${ttl}&${interfaceGetParam(
-          currentInterface
-        )}`,
-        { method: "PUT", body: data, timeToLive: ttl, cancelRequestDeadlineTimeout }
-      ),
-    "update-device-resource"
-  );
+    const { httpGatewayAddress, cancelRequestDeadlineTimeout } = security.getGeneralConfig() as SecurityConfig
+    return withTelemetry(
+        () =>
+            fetchApi(
+                `${httpGatewayAddress}${devicesApiEndpoints.DEVICES}/${deviceId}/resources${href}?timeToLive=${ttl}&${interfaceGetParam(currentInterface)}`,
+                { method: 'PUT', body: data, timeToLive: ttl, cancelRequestDeadlineTimeout }
+            ),
+        'update-device-resource'
+    )
 }
 
 /**
@@ -124,32 +94,30 @@ export const updateDevicesResourceApi = (
  * @param {*} data
  */
 export const createDevicesResourceApi = (
-  {
-    deviceId,
-    href,
-    currentInterface = '',
-    ttl,
-  }: {
-    deviceId: string
-    href: string
-    currentInterface?: string
-    ttl: any
-  },
-  data: any
+    {
+        deviceId,
+        href,
+        currentInterface = '',
+        ttl,
+    }: {
+        deviceId: string
+        href: string
+        currentInterface?: string
+        ttl: any
+    },
+    data: any
 ) => {
-  const { httpGatewayAddress, cancelRequestDeadlineTimeout } = security.getGeneralConfig() as SecurityConfig
-  return withTelemetry(
-    () =>
-      fetchApi(
-        `${httpGatewayAddress}${
-          devicesApiEndpoints.DEVICES
-        }/${deviceId}/resource-links${href}?timeToLive=${ttl}&${interfaceGetParam(
-          currentInterface
-        )}`,
-        { method: "POST", body: data, timeToLive: ttl, cancelRequestDeadlineTimeout }
-      ),
-    "create-device-resource"
-  );
+    const { httpGatewayAddress, cancelRequestDeadlineTimeout } = security.getGeneralConfig() as SecurityConfig
+    return withTelemetry(
+        () =>
+            fetchApi(
+                `${httpGatewayAddress}${devicesApiEndpoints.DEVICES}/${deviceId}/resource-links${href}?timeToLive=${ttl}&${interfaceGetParam(
+                    currentInterface
+                )}`,
+                { method: 'POST', body: data, timeToLive: ttl, cancelRequestDeadlineTimeout }
+            ),
+        'create-device-resource'
+    )
 }
 
 /**
@@ -157,26 +125,17 @@ export const createDevicesResourceApi = (
  * @param {*} params { deviceId, href - resource href, ttl - timeToLive }
  * @param {*} data
  */
-export const deleteDevicesResourceApi = ({
-  deviceId,
-  href,
-  ttl,
-}: {
-  deviceId: string
-  href: string
-  ttl: any
-}) => {
-  const { httpGatewayAddress, cancelRequestDeadlineTimeout } = security.getGeneralConfig() as SecurityConfig
-  return withTelemetry(
-    () =>
-      fetchApi(
-        `${httpGatewayAddress}${
-          devicesApiEndpoints.DEVICES
-        }/${deviceId}/resource-links${href}?timeToLive=${ttl}`,
-        { method: "DELETE", timeToLive: ttl, cancelRequestDeadlineTimeout }
-      ),
-    "delete-device-resource"
-  );
+export const deleteDevicesResourceApi = ({ deviceId, href, ttl }: { deviceId: string; href: string; ttl: any }) => {
+    const { httpGatewayAddress, cancelRequestDeadlineTimeout } = security.getGeneralConfig() as SecurityConfig
+    return withTelemetry(
+        () =>
+            fetchApi(`${httpGatewayAddress}${devicesApiEndpoints.DEVICES}/${deviceId}/resource-links${href}?timeToLive=${ttl}`, {
+                method: 'DELETE',
+                timeToLive: ttl,
+                cancelRequestDeadlineTimeout,
+            }),
+        'delete-device-resource'
+    )
 }
 
 /**
@@ -184,27 +143,23 @@ export const deleteDevicesResourceApi = ({
  * @param {*} deviceId
  * @param {*} twinEnabled
  */
-export const updateDeviceTwinSynchronizationApi = (
-  deviceId: string,
-  twinEnabled: boolean
-) => {
-  const { httpGatewayAddress, cancelRequestDeadlineTimeout } = security.getGeneralConfig() as SecurityConfig
-  return withTelemetry(
-    () =>
-      fetchApi(
-        `${httpGatewayAddress}${
-          devicesApiEndpoints.DEVICES
-        }/${deviceId}/metadata`,
-        { method: "PUT", body: { twinEnabled }, cancelRequestDeadlineTimeout }
-      ),
-    "update-device-metadata"
-  );
+export const updateDeviceTwinSynchronizationApi = (deviceId: string, twinEnabled: boolean) => {
+    const { httpGatewayAddress, cancelRequestDeadlineTimeout } = security.getGeneralConfig() as SecurityConfig
+    return withTelemetry(
+        () =>
+            fetchApi(`${httpGatewayAddress}${devicesApiEndpoints.DEVICES}/${deviceId}/metadata`, {
+                method: 'PUT',
+                body: { twinEnabled },
+                cancelRequestDeadlineTimeout,
+            }),
+        'update-device-metadata'
+    )
 }
 
 type DeviceOAuthConfigType = {
-  clientId: string
-  audience: string
-  scopes: string[]
+    clientId: string
+    audience: string
+    scopes: string[]
 }
 
 /**
@@ -212,73 +167,63 @@ type DeviceOAuthConfigType = {
  * @param {*} deviceId
  */
 export const getDeviceAuthCode = (deviceId: string) => {
-  return new Promise((resolve, reject) => {
-    const {
-      clientId,
-      audience,
-      scopes = [],
-    } = security.getDeviceOAuthConfig() as DeviceOAuthConfigType
-    const AuthUserManager = security.getUserManager()
+    return new Promise((resolve, reject) => {
+        const { clientId, audience, scopes = [] } = security.getDeviceOAuthConfig() as DeviceOAuthConfigType
+        const AuthUserManager = security.getUserManager()
 
-    if (!clientId) {
-      return reject(
-        new Error(
-          'clientId is missing from the deviceOauthClient configuration'
-        )
-      )
-    }
-
-    AuthUserManager.metadataService
-      .getAuthorizationEndpoint()
-      .then((authorizationEndpoint: string) => {
-        let timeout: any = null
-        const iframe = document.createElement('iframe')
-        const audienceParam = audience ? `&audience=${audience}` : ''
-        iframe.src = `${authorizationEndpoint}?response_type=code&client_id=${clientId}&scope=${scopes}${audienceParam}&redirect_uri=${window.location.origin}/devices&device_id=${deviceId}`
-
-        const destroyIframe = () => {
-          sessionStorage.removeItem(DEVICE_AUTH_CODE_SESSION_KEY)
-          iframe.parentNode?.removeChild(iframe)
+        if (!clientId) {
+            return reject(new Error('clientId is missing from the deviceOauthClient configuration'))
         }
 
-        const doResolve = (value: string) => {
-          destroyIframe()
-          clearTimeout(timeout)
-          resolve(value)
-        }
+        AuthUserManager.metadataService.getAuthorizationEndpoint().then((authorizationEndpoint: string) => {
+            let timeout: any = null
+            const iframe = document.createElement('iframe')
+            const audienceParam = audience ? `&audience=${audience}` : ''
+            iframe.src = `${authorizationEndpoint}?response_type=code&client_id=${clientId}&scope=${scopes}${audienceParam}&redirect_uri=${window.location.origin}/devices&device_id=${deviceId}`
 
-        const doReject = () => {
-          destroyIframe()
-          clearTimeout(timeout)
-          reject(new Error('Failed to get the device auth code.'))
-        }
-
-        iframe.onload = () => {
-          let attempts = 0
-          const maxAttempts = 40
-          const getCode = () => {
-            attempts += 1
-            const code = sessionStorage.getItem(DEVICE_AUTH_CODE_SESSION_KEY)
-
-            if (code) {
-              return doResolve(code)
+            const destroyIframe = () => {
+                sessionStorage.removeItem(DEVICE_AUTH_CODE_SESSION_KEY)
+                iframe.parentNode?.removeChild(iframe)
             }
 
-            if (attempts > maxAttempts) {
-              return doReject()
+            const doResolve = (value: string) => {
+                destroyIframe()
+                clearTimeout(timeout)
+                resolve(value)
             }
 
-            timeout = setTimeout(getCode, 500)
-          }
+            const doReject = () => {
+                destroyIframe()
+                clearTimeout(timeout)
+                reject(new Error('Failed to get the device auth code.'))
+            }
 
-          getCode()
-        }
+            iframe.onload = () => {
+                let attempts = 0
+                const maxAttempts = 40
+                const getCode = () => {
+                    attempts += 1
+                    const code = sessionStorage.getItem(DEVICE_AUTH_CODE_SESSION_KEY)
 
-        iframe.onerror = () => {
-          doReject()
-        }
+                    if (code) {
+                        return doResolve(code)
+                    }
 
-        document.body.appendChild(iframe)
-      })
-  })
+                    if (attempts > maxAttempts) {
+                        return doReject()
+                    }
+
+                    timeout = setTimeout(getCode, 500)
+                }
+
+                getCode()
+            }
+
+            iframe.onerror = () => {
+                doReject()
+            }
+
+            document.body.appendChild(iframe)
+        })
+    })
 }

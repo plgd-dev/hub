@@ -4,4 +4,6 @@ export type AppContextType = {
     buildInformation?: BuildInformationType | null
     collapsed: boolean
     unauthorizedCallback?: () => void
+    footerExpanded: boolean
+    setFooterExpanded?: (expand: boolean) => void
 }

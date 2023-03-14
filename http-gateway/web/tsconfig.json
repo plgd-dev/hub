@@ -1,39 +1,30 @@
 {
-  "extends": "./tsconfig.paths.json",
   "compilerOptions": {
-    "target": "es5",
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "esnext"
-    ],
-    "allowJs": true,
-    "skipLibCheck": true,
-    "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
-    "strict": true,
-    "forceConsistentCasingInFileNames": true,
-    "noFallthroughCasesInSwitch": true,
     "module": "esnext",
+    "target": "es5",
+    "lib": ["es2020", "dom"],
+    "jsx": "preserve",
     "moduleResolution": "node",
-    "resolveJsonModule": true,
-    "isolatedModules": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
     "noEmit": true,
-    "jsx": "react-jsx",
-    "baseUrl": ".",
-    "plugins": [
-      {
-        "transform": "@formatjs/ts-transformer",
-        "import": "transform",
-        "type": "config",
-        "overrideIdFn": "[sha512:contenthash:base64:6]",
-        "ast": true
-      }
-    ]
+    "experimentalDecorators": true,
+    "baseUrl": "./",
+    "allowSyntheticDefaultImports": true,
+    "noErrorTruncation": false,
+    "allowJs": true,
+    "jsxImportSource": "@emotion/react",
+    "declaration": true,
+    "sourceMap": true,
+    "importHelpers": true,
+    "types": ["node", "react", "react-is/next", "@emotion/react/types/css-prop"],
+    "paths": {
+      "@/*": ["src/*"],
+      "@shared-ui": ["./packages/shared-ui/src"],
+      "@shared-ui/*": ["./packages/shared-ui/src/*"]
+    }
   },
-  "include": [
-    "src"
-  ],
+  "include": ["src/**/*", "test/**/*", "./packages/shared-ui/src/**/*"],
   "exclude": [
     "node_modules",
     "build"

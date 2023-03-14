@@ -1,0 +1,11 @@
+# Exclude everything by default
+/**/*
+
+# But don't exclude folders
+!/**/*/
+
+# Include specific file extensions if they appear unde a "src" folder
+!src/**/*.js
+!src/**/*.jsx
+!src/**/*.ts
+!src/**/*.tsx

@@ -8,8 +8,8 @@ import devicesReducer from '@/containers/Devices/slice'
  * Combines all reducers required by the app.
  */
 export const createRootReducer = () =>
-  enableBatching(
-    combineReducers({
-      devices: devicesReducer,
-    })
-  )
+    enableBatching(
+        combineReducers({
+            devices: devicesReducer,
+        })
+    )

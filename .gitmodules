@@ -1,6 +1,6 @@
 [submodule "dependency/googleapis"]
 	path = dependency/googleapis
 	url = https://github.com/googleapis/googleapis.git
-[submodule "http-gateway/web/shared-ui"]
-	path = http-gateway/web/shared-ui
+[submodule "http-gateway/web/packages/shared-ui"]
+	path = http-gateway/web/packages/shared-ui
 	url = https://github.com/plgd-dev/shared-ui.git
