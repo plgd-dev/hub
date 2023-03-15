@@ -130,11 +130,14 @@ export const DevicesList: FC<Props> = (props) => {
                         desc: false,
                     },
                 ]}
+                i18n={{
+                    search: _(t.search),
+                }}
                 onRowsSelect={(isAllRowsSelected, selection) => {
                     isAllRowsSelected !== isAllSelected && setIsAllSelected && setIsAllSelected(isAllRowsSelected)
                     setSelectedDevices(selection)
                 }}
-                paginationPortalTarget={document.getElementById('paginationPortalTarget')}
+                paginationPortalTargetId='paginationPortalTarget'
                 primaryAttribute='id'
                 unselectRowsToken={unselectRowsToken}
             />

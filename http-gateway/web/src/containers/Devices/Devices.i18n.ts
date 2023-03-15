@@ -297,10 +297,6 @@ export const messages = defineMessages({
         id: 'devices.saving',
         defaultMessage: 'Saving',
     },
-    enterdeviceName: {
-        id: 'devices.enterdeviceName',
-        defaultMessage: 'Enter device name',
-    },
     deviceNameChangeFailed: {
         id: 'devices.deviceNameChangeFailed',
         defaultMessage: 'device name change failed',
@@ -448,5 +444,29 @@ export const messages = defineMessages({
     deviceName: {
         id: 'devices.deviceName',
         defaultMessage: 'Device Name',
+    },
+    view: {
+        id: 'devices.view',
+        defaultMessage: 'View',
+    },
+    enterDeviceID: {
+        id: 'devices.enterDeviceID',
+        defaultMessage: 'Enter the device ID',
+    },
+    invalidUuidFormat: {
+        id: 'devices.invalidUuidFormat',
+        defaultMessage: 'Invalid uuid format',
+    },
+    getTheCode: {
+        id: 'devices.getTheCode',
+        defaultMessage: 'Get the code',
+    },
+    deviceInformation: {
+        id: 'devices.deviceInformation',
+        defaultMessage: 'Device information',
+    },
+    search: {
+        id: 'devices.search',
+        defaultMessage: 'Search',
     },
 })

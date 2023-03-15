@@ -52,7 +52,20 @@ const ProvisionNewDeviceCore = () => {
                 {_(t.addDevice)}
             </Button>
             <ProvisionDeviceModal
-                onClose={!fetching ? onClose : () => {}}
+                closeButtonText={_(t.cancel)}
+                deviceAuthCode={code}
+                deviceAuthLoading={fetching}
+                deviceInformation={
+                    code
+                        ? [
+                              { attribute: _(t.hubId), value: hubId },
+                              { attribute: _(t.deviceEndpoint), value: deviceEndpoint },
+                              { attribute: _(t.authorizationCode), value: '******', copyValue: code },
+                              { attribute: _(t.authorizationProvider), value: providerName },
+                              { attribute: _(t.certificateAuthorities), value: '...', copyValue: certificateAuthorities, certFormat: true },
+                          ]
+                        : undefined
+                }
                 footerActions={[
                     {
                         label: _(t.cancel),
@@ -65,23 +78,17 @@ const ProvisionNewDeviceCore = () => {
                         variant: 'primary',
                     },
                 ]}
-                deviceInformation={
-                    code
-                        ? [
-                              { attribute: _(t.hubId), value: hubId },
-                              { attribute: _(t.deviceEndpoint), value: deviceEndpoint },
-                              { attribute: _(t.authorizationCode), value: '******', copyValue: code },
-                              { attribute: _(t.authorizationProvider), value: providerName },
-                              { attribute: _(t.certificateAuthorities), value: '...', copyValue: certificateAuthorities, certFormat: true },
-                          ]
-                        : undefined
-                }
-                deviceAuthLoading={fetching}
-                deviceAuthCode={code}
                 getDeviceAuthCode={handleFetch}
+                i18n={{
+                    deviceId: _(t.deviceId),
+                    enterDeviceID: _(t.enterDeviceID),
+                    invalidUuidFormat: _(t.invalidUuidFormat),
+                    getTheCode: _(t.getTheCode),
+                    deviceInformation: _(t.deviceInformation),
+                }}
+                onClose={!fetching ? onClose : () => {}}
                 show={show}
                 title={_(t.provisionNewDevice)}
-                closeButtonText={_(t.cancel)}
             />
         </>
     )

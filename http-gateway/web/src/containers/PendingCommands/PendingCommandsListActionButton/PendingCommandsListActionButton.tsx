@@ -24,11 +24,9 @@ export const PendingCommandsListActionButton: FC<Props> = ({ deviceId, href, cor
                 },
             ]}
             menuProps={{
-                align: 'end',
+                placement: 'bottom-end',
             }}
-        >
-            <i className='fas fa-ellipsis-h' />
-        </ActionButton>
+        />
     )
 }
 

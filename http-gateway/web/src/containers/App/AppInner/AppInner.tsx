@@ -50,7 +50,7 @@ const AppInner = (props: Props) => {
             telemetryWebTracer: openTelemetry.getWebTracer(),
             buildInformation: buildInformation || undefined,
         }),
-        [collapsed, footerExpanded, wellKnownConfig, openTelemetry, buildInformation]
+        [collapsed, footerExpanded, wellKnownConfig, openTelemetry, buildInformation, setFooterExpanded]
     )
 
     if (userData) {
@@ -108,12 +108,12 @@ const AppInner = (props: Props) => {
                             <LeftPanel
                                 activeId={activeItem}
                                 collapsed={collapsed}
-                                onItemClick={handleItemClick}
                                 menu={menu}
                                 newFeature={{
                                     onClick: () => console.log('click'),
                                     onClose: () => console.log('close'),
                                 }}
+                                onItemClick={handleItemClick}
                                 versionMark={<VersionMark severity={severities.SUCCESS} versionText='Version 2.02' />}
                             />
                         }

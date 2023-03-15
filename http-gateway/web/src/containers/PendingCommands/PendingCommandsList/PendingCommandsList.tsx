@@ -290,6 +290,9 @@ const PendingCommandsList: FC<Props> = ({ onLoading, embedded, deviceId }) => {
                     },
                 ]}
                 globalSearch={false}
+                i18n={{
+                    search: _(t.search),
+                }}
             />
 
             <PendingCommandDetailsModal {...detailsModalData} onClose={onCloseViewModal} />

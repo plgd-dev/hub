@@ -32,6 +32,7 @@ const DevicesResourcesModal: FC<Props> = (props) => {
         type,
         ttlControl,
         confirmDisabled,
+        fetchResource,
         show,
     } = { ...defaultProps, ...props }
     const { formatMessage: _ } = useIntl()
@@ -63,7 +64,10 @@ const DevicesResourcesModal: FC<Props> = (props) => {
     }, [resourceData])
 
     const handleRetrieve = () => {
-        onClose()
+        fetchResource({
+            href: data?.href || '',
+            currentInterface: selectedInterface.value,
+        })
     }
 
     const handleSubmit = () => {
@@ -169,13 +173,13 @@ const DevicesResourcesModal: FC<Props> = (props) => {
         <Modal
             appRoot={document.getElementById('root')}
             closeButton={!disabled}
+            closeButtonText={_(t.close)}
             onClose={!disabled ? handleClose : undefined}
             portalTarget={document.getElementById('modal-root')}
             renderBody={renderBody}
             renderFooter={renderFooter}
             show={show && !!data && !!jsonData}
             title={data?.href}
-            closeButtonText={_(t.close)}
         />
     )
 }

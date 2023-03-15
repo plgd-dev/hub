@@ -34,26 +34,24 @@ const DevicesResourcesActionButton: FC<Props> = (props) => {
                 {
                     onClick: () => onCreate(href),
                     label: _(t.create),
-                    icon: 'fa-plus',
+                    icon: 'plus',
                     hidden: !canCreateResource(interfaces),
                 },
                 {
                     onClick: () => onUpdate({ deviceId, href }),
                     label: _(t.update),
-                    icon: 'fa-pen',
+                    icon: 'edit',
                 },
                 {
                     onClick: () => onDelete(href),
                     label: _(t.delete),
-                    icon: 'fa-trash-alt',
+                    icon: 'trash',
                 },
             ]}
             menuProps={{
-                align: 'end',
+                placement: 'bottom-end',
             }}
-        >
-            <i className='fas fa-ellipsis-h' />
-        </ActionButton>
+        />
     )
 }
 

@@ -9,7 +9,6 @@ import { DevicesDetailsResourceModalData } from '@/containers/Devices/Detail/Dev
 import { useIsMounted, WellKnownConfigType } from '@shared-ui/common/hooks'
 import omit from 'lodash/omit'
 import DevicesResourcesModal from '@/containers/Devices/Resources/DevicesResourcesModal'
-// import CommandTimeoutControl from '@/containers/Devices/Detail/DeviceCommandTimeoutControl/DeviceCommandTimeoutControl'
 import { DevicesResourcesModalParamsType } from '@/containers/Devices/Resources/DevicesResourcesModal/DevicesResourcesModal.types'
 import { showSuccessToast } from '@shared-ui/components/new'
 import { messages as t } from '@/containers/Devices/Devices.i18n'
@@ -262,7 +261,24 @@ const Tab2: FC<Props> = (props) => {
                 updateResource={updateResource}
             />
             <DeleteModal
-                onClose={closeDeleteModal}
+                deleteInformation={[
+                    { label: _(t.deviceName), value: deviceName },
+                    { label: _(t.deviceId), value: id },
+                    { label: _(t.href), value: deleteResourceHref },
+                    {
+                        label: _(t.commandTimeout),
+                        value: (
+                            <TimeoutControl
+                                defaultTtlValue={wellKnownConfig?.defaultCommandTimeToLive || 0}
+                                defaultValue={ttl}
+                                disabled={loadingResource}
+                                onChange={setTtl}
+                                onTtlHasError={setTtlHasError}
+                                ttlHasError={ttlHasError}
+                            />
+                        ),
+                    },
+                ]}
                 footerActions={[
                     {
                         label: _(t.cancel),
@@ -275,14 +291,10 @@ const Tab2: FC<Props> = (props) => {
                         variant: 'primary',
                     },
                 ]}
+                onClose={closeDeleteModal}
                 show={!!deleteResourceHref}
-                title={_(t.deleteResourceMessage)}
                 subTitle={_(t.deleteResourceMessageSubtitle)}
-                deleteInformation={[
-                    { label: _(t.deviceName), value: deviceName },
-                    { label: _(t.deviceId), value: id },
-                    { label: _(t.href), value: deleteResourceHref },
-                ]}
+                title={_(t.deleteResourceMessage)}
             />
         </div>
     )

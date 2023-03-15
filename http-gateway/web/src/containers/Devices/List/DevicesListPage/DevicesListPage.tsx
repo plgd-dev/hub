@@ -95,7 +95,7 @@ const DevicesListPage: FC<any> = () => {
         }
     }
 
-    const selectedDevicesCount = combinedSelectedDevices.length
+    const selectedDevicesCount = [combinedSelectedDevices].length
     const selectedDeviceName = selectedDevicesCount === 1 && data ? data.find?.((d: any) => d.id === combinedSelectedDevices[0])?.name : null
     const loadingOrDeleting = loading || deleting
 
@@ -124,7 +124,14 @@ const DevicesListPage: FC<any> = () => {
             <PendingCommandsExpandableList />
 
             <DeleteModal
-                onClose={handleCloseDeleteModal}
+                deleteInformation={
+                    selectedDevicesCount === 1
+                        ? [
+                              { label: _(t.deviceName), value: selectedDeviceName },
+                              { label: _(t.deviceId), value: combinedSelectedDevices[0] },
+                          ]
+                        : []
+                }
                 footerActions={[
                     {
                         label: _(t.cancel),
@@ -137,17 +144,10 @@ const DevicesListPage: FC<any> = () => {
                         variant: 'primary',
                     },
                 ]}
+                onClose={handleCloseDeleteModal}
                 show={deleteModalOpen}
-                title={_(t.deleteDeviceMessage)}
                 subTitle={_(t.deleteDeviceMessageSubTitle)}
-                deleteInformation={
-                    selectedDevicesCount === 1
-                        ? [
-                              { label: _(t.deviceName), value: selectedDeviceName },
-                              { label: _(t.deviceId), value: combinedSelectedDevices[0] },
-                          ]
-                        : []
-                }
+                title={_(t.deleteDeviceMessage)}
             />
         </PageLayout>
     )

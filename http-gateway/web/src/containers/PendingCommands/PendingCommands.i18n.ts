@@ -109,4 +109,8 @@ export const messages = defineMessages({
         id: 'pendingCommands.recentTasks',
         defaultMessage: 'Recent tasks',
     },
+    search: {
+        id: 'pendingCommands.search',
+        defaultMessage: 'Search',
+    },
 })

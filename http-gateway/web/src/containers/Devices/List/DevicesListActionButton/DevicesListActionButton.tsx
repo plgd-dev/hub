@@ -19,7 +19,7 @@ const DevicesListActionButton: FC<Props> = (props) => {
             <TableActions
                 items={[
                     { icon: 'trash', onClick: () => onDelete(deviceId), id: `delete-row-${deviceId}`, tooltipText: _(t.delete) },
-                    { icon: 'icon-show-password', onClick: () => onView(deviceId), id: `detail-row-${deviceId}`, tooltipText: _(t.details) },
+                    { icon: 'arrow-right', onClick: () => onView(deviceId), id: `detail-row-${deviceId}`, tooltipText: _(t.details), size: 14 },
                 ]}
             />
         )
@@ -29,23 +29,21 @@ const DevicesListActionButton: FC<Props> = (props) => {
         <ActionButton
             items={[
                 {
-                    onClick: () => onView(deviceId),
-                    label: _(t.details),
-                    icon: <Icon icon='icon-show-password' />,
-                },
-                {
                     onClick: () => onDelete(deviceId),
                     label: _(t.delete),
-                    icon: <Icon icon='trash' />,
+                    icon: 'trash',
+                },
+                {
+                    onClick: () => onView(deviceId),
+                    label: _(t.view),
+                    icon: 'icon-show-password',
                 },
             ]}
             menuProps={{
-                align: 'end',
+                placement: 'bottom-end',
             }}
             type={undefined}
-        >
-            <i className='fas fa-ellipsis-h' />
-        </ActionButton>
+        />
     )
 }
 

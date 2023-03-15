@@ -90,6 +90,9 @@ const DevicesResourcesList: FC<Props> = ({ data, onUpdate, onCreate, onDelete, d
                     desc: false,
                 },
             ]}
+            i18n={{
+                search: _(t.search),
+            }}
         />
     )
 }
