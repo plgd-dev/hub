@@ -100,7 +100,8 @@ func refreshTokenPostHandler(req *mux.Message, client *session) (*pool.Message, 
 
 	token, err := client.refreshCache.Execute(req.Context(), client.server.providers, client.server.taskQueue, refreshToken.RefreshToken, client.getLogger())
 	if err != nil {
-		return nil, statusErrorf(coapCodes.Unauthorized, "%w", fmt.Errorf(fmtErr, refreshToken.DeviceID, err))
+		// When OAuth server is not accessible, then return 503 Service Unavailable. If real error occurs them http code is mapped to code.
+		return nil, statusErrorf(coapCodes.ServiceUnavailable, "%w", fmt.Errorf(fmtErr, refreshToken.DeviceID, err))
 	}
 
 	if token.RefreshToken == "" {
@@ -144,7 +145,7 @@ func refreshTokenPostHandler(req *mux.Message, client *session) (*pool.Message, 
 	expiresIn := validUntilToExpiresIn(validUntil)
 	accept, out, err := getRefreshTokenContent(token, expiresIn, req.Options())
 	if err != nil {
-		return nil, statusErrorf(coapCodes.InternalServerError, "%w", fmt.Errorf(fmtErr, deviceID, err))
+		return nil, statusErrorf(coapCodes.ServiceUnavailable, "%w", fmt.Errorf(fmtErr, deviceID, err))
 	}
 
 	updateClient(client, deviceID, owner, token.AccessToken.String(), validUntil)
