@@ -7,6 +7,10 @@ BUILD_TAG := vnext
 else
 BUILD_TAG := $(LATEST_TAG)
 endif
+BRANCH_TAG ?= $(shell git rev-parse --abbrev-ref HEAD | sed 's/[^a-zA-Z0-9]/-/g')
+ifneq ($(BRANCH_TAG),main)
+	BUILD_TAG = $(BRANCH_TAG)
+endif
 GOPATH ?= $(shell go env GOPATH)
 WORKING_DIRECTORY := $(shell pwd)
 USER_ID := $(shell id -u)
