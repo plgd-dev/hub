@@ -1,6 +1,10 @@
 SHELL = /bin/bash
 SERVICE_NAME = $(notdir $(CURDIR))
 LATEST_TAG ?= vnext
+BRANCH_TAG ?= $(shell git rev-parse --abbrev-ref HEAD | sed 's/[^a-zA-Z0-9]/-/g')
+ifneq ($(BRANCH_TAG),main)
+	LATEST_TAG = $(BRANCH_TAG)
+endif
 VERSION_TAG ?= $(LATEST_TAG)-$(shell git rev-parse --short=7 --verify HEAD)
 
 default: build
@@ -11,8 +15,9 @@ define build-docker-image
 		awk '{gsub("@NAME@","$(SERVICE_NAME)")} {gsub("@DIRECTORY@","$(SERVICE_NAME)")} {print}' tools/docker/Dockerfile.in > .tmp/docker/$(SERVICE_NAME)/Dockerfile && \
 		docker build \
 		--network=host \
-		--tag plgd/$(SERVICE_NAME):$(VERSION_TAG) \
-		--tag plgd/$(SERVICE_NAME):$(LATEST_TAG) \
+		--tag ghcr.io/plgd-dev/hub/$(SERVICE_NAME):$(VERSION_TAG) \
+		--tag ghcr.io/plgd-dev/hub/$(SERVICE_NAME):$(LATEST_TAG) \
+		--tag ghcr.io/plgd-dev/hub/$(SERVICE_NAME):$(BRANCH_TAG) \
 		--target $(1) \
 		-f .tmp/docker/$(SERVICE_NAME)/Dockerfile \
 		.
