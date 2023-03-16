@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"strings"
 
 	"github.com/plgd-dev/go-coap/v3/message"
 	"github.com/plgd-dev/go-coap/v3/message/codes"
@@ -77,6 +78,18 @@ func IsTempError(err error) bool {
 		}
 		return true
 	}
+	switch {
+	// TODO: We could optimize this by using error.Is to avoid string comparison.
+	case strings.Contains(err.Error(), "connect: connection refused"),
+		strings.Contains(err.Error(), "i/o timeout"),
+		strings.Contains(err.Error(), "TLS handshake timeout"),
+		strings.Contains(err.Error(), `http2:`), // any error at http2 protocol is considered as temporary error
+		strings.Contains(err.Error(), `write: broken pipe`),
+		strings.Contains(err.Error(), `request canceled while waiting for connection`),
+		strings.Contains(err.Error(), `authentication handshake failed`):
+		return true
+	}
+
 	if _, ok := status.FromError(err); ok {
 		// coap status code is not temporary
 		return false

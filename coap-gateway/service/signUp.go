@@ -86,7 +86,8 @@ func signUpPostHandler(req *mux.Message, client *session) (*pool.Message, error)
 
 	token, err := client.exchangeCache.Execute(req.Context(), provider, signUp.AuthorizationCode)
 	if err != nil {
-		return nil, statusErrorf(coapCodes.Unauthorized, errFmtSignUP, err)
+		// When OAuth server is not accessible, then return 503 Service Unavailable. If real error occurs them http code is mapped to code.
+		return nil, statusErrorf(coapCodes.ServiceUnavailable, errFmtSignUP, err)
 	}
 	if token.RefreshToken == "" {
 		return nil, statusErrorf(coapCodes.Unauthorized, errFmtSignUP, fmt.Errorf("exchange didn't return a refresh token"))
