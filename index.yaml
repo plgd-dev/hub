@@ -124,7 +124,7 @@ entries:
   plgd-hub:
   - apiVersion: v2
     appVersion: 2.7.13
-    created: "2023-03-14T15:41:18.57703255Z"
+    created: "2023-03-16T10:23:37.68429395Z"
     dependencies:
     - condition: nats.enabled
       name: nats
@@ -135,7 +135,7 @@ entries:
       repository: https://charts.bitnami.com/bitnami
       version: 13.4.3
     description: A Helm chart for plgd-hub
-    digest: 95004ccb240633e7ff0e7b5c887dce107d9af2c5a60b2de16680bdc8ca112cf6
+    digest: 3e844dc62823708b9348e037e6f8329af512cfc136c4301c5cddfb27fadcfcf0
     name: plgd-hub
     type: application
     urls:
@@ -1015,4 +1015,4 @@ entries:
     urls:
     - https://charts.plgd.dev/plgd-hub-2.1.0.tgz
     version: 2.1.0
-generated: "2023-03-14T15:41:18.559433419Z"
+generated: "2023-03-16T10:23:37.66728307Z"
