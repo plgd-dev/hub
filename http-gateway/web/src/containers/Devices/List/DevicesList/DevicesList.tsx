@@ -142,12 +142,16 @@ export const DevicesList: FC<Props> = (props) => {
                 unselectRowsToken={unselectRowsToken}
             />
             <TableSelectionPanel
-                actionPrimary={<Button variant='primary'>Main Action</Button>}
-                actionSecondary={
-                    <Button htmlType='button' key={1}>
-                        Secondary Action
+                actionPrimary={
+                    <Button onClick={() => onDeleteClick()} variant='primary'>
+                        {_(t.delete)}
                     </Button>
                 }
+                // actionSecondary={
+                //     <Button htmlType='button' key={1}>
+                //         Secondary Action
+                //     </Button>
+                // }
                 selectionInfo={`${selectedCount} device${selectedCount > 1 ? 's' : ''} `}
                 show={selectedCount > 0}
             />

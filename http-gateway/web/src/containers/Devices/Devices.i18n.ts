@@ -123,7 +123,7 @@ export const messages = defineMessages({
     },
     deleteDevicesMessage: {
         id: 'devices.deleteDevicesMessage',
-        defaultMessage: 'Are you sure you want to delete these {count} devices? This action cannot be undone.',
+        defaultMessage: 'Are you sure you want to delete {count} devices?',
     },
     resourceWasUpdated: {
         id: 'devices.resourceWasUpdated',

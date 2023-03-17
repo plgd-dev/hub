@@ -18,6 +18,7 @@ import { handleDeleteDevicesErrors, sleep } from '../../utils'
 import { messages as t } from '../../Devices.i18n'
 import PageLayout from '@shared-ui/components/new/PageLayout'
 import { DeleteModal } from '@shared-ui/components/new/Modal'
+import { fullSizeButtons } from '@shared-ui/components/new/Modal/Modal.styles'
 
 const DevicesListPage: FC<any> = () => {
     const { formatMessage: _ } = useIntl()
@@ -50,6 +51,8 @@ const DevicesListPage: FC<any> = () => {
     const handleOpenDeleteModal = (deviceId?: string) => {
         if (typeof deviceId === 'string') {
             setSingleDevice(deviceId)
+        } else if (singleDevice && !deviceId) {
+            setSingleDevice(null)
         }
 
         setDeleteModalOpen(true)
@@ -95,9 +98,15 @@ const DevicesListPage: FC<any> = () => {
         }
     }
 
-    const selectedDevicesCount = [combinedSelectedDevices].length
+    const selectedDevicesCount = combinedSelectedDevices.length
     const selectedDeviceName = selectedDevicesCount === 1 && data ? data.find?.((d: any) => d.id === combinedSelectedDevices[0])?.name : null
     const loadingOrDeleting = loading || deleting
+
+    console.log(' ')
+    console.log({ selectedDevices })
+    console.log({ selectedDevicesCount })
+    console.log({ singleDevice })
+    console.log({ combinedSelectedDevices })
 
     return (
         <PageLayout
@@ -130,7 +139,7 @@ const DevicesListPage: FC<any> = () => {
                               { label: _(t.deviceName), value: selectedDeviceName },
                               { label: _(t.deviceId), value: combinedSelectedDevices[0] },
                           ]
-                        : []
+                        : undefined
                 }
                 footerActions={[
                     {
@@ -144,10 +153,13 @@ const DevicesListPage: FC<any> = () => {
                         variant: 'primary',
                     },
                 ]}
+                fullSizeButtons={selectedDevicesCount > 1}
+                maxWidth={440}
+                maxWidthTitle={320}
                 onClose={handleCloseDeleteModal}
                 show={deleteModalOpen}
                 subTitle={_(t.deleteDeviceMessageSubTitle)}
-                title={_(t.deleteDeviceMessage)}
+                title={selectedDevicesCount === 1 ? _(t.deleteDeviceMessage) : _(t.deleteDevicesMessage, { count: selectedDevicesCount })}
             />
         </PageLayout>
     )
