@@ -109,10 +109,10 @@ const AppInner = (props: Props) => {
                                 activeId={activeItem}
                                 collapsed={collapsed}
                                 menu={menu}
-                                newFeature={{
-                                    onClick: () => console.log('click'),
-                                    onClose: () => console.log('close'),
-                                }}
+                                // newFeature={{
+                                //     onClick: () => console.log('click'),
+                                //     onClose: () => console.log('close'),
+                                // }}
                                 onItemClick={handleItemClick}
                                 versionMark={<VersionMark severity={severities.SUCCESS} versionText='Version 2.02' />}
                             />
