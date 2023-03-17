@@ -6,8 +6,10 @@ package service_test
 import (
 	"context"
 	"crypto/tls"
+	"fmt"
 	"testing"
 
+	coapgwService "github.com/plgd-dev/hub/v2/coap-gateway/service"
 	coapgwTest "github.com/plgd-dev/hub/v2/coap-gateway/test"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/client"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
@@ -20,6 +22,7 @@ import (
 	"go.uber.org/atomic"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"gopkg.in/yaml.v3"
 )
 
 type testDevsObs struct {
@@ -37,6 +40,22 @@ func (t *testDevsObs) Handle(ctx context.Context, event client.DevicesObservatio
 }
 
 func (t *testDevsObs) OnClose() {}
+
+func TestServiceConfig(t *testing.T) {
+	cfg := coapgwTest.MakeConfig(t)
+	cfg.APIs.COAP.InjectedCOAPConfig.TLSConfig.IdentityPropertiesRequired = false
+	cfg.APIs.COAP.Authorization.DeviceIDClaim = "di"
+	require.Error(t, cfg.Validate())
+	cfg.APIs.COAP.InjectedCOAPConfig.TLSConfig.IdentityPropertiesRequired = true
+	cfg.APIs.COAP.Authorization.DeviceIDClaim = ""
+	require.NoError(t, cfg.Validate())
+	var cfg2 coapgwService.Config
+	fmt.Printf(cfg.String())
+	err := yaml.Unmarshal([]byte(cfg.String()), &cfg2)
+	require.NoError(t, err)
+	require.NoError(t, cfg2.Validate())
+	require.Equal(t, cfg.String(), cfg2.String())
+}
 
 func TestShutdownServiceWithDeviceIssue627(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)

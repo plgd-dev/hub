@@ -29,7 +29,7 @@ func TestClientCreateHandler(t *testing.T) {
 	shutdown := setUp(t, coapgwCfg)
 	defer shutdown()
 	log.Setup(coapgwCfg.Log)
-	co := testCoapDial(t, "", false, time.Now().Add(time.Minute))
+	co := testCoapDial(t, "", false, true, time.Now().Add(time.Minute))
 	if co == nil {
 		return
 	}

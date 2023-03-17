@@ -12,7 +12,9 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/security/oauth2"
 	"github.com/plgd-dev/hub/v2/pkg/security/oauth2/oauth"
 	"github.com/plgd-dev/hub/v2/pkg/sync/task/queue"
+	pkgYaml "github.com/plgd-dev/hub/v2/pkg/yaml"
 	natsClient "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/client"
+	"gopkg.in/yaml.v3"
 )
 
 // Config represent application configuration
@@ -42,7 +44,7 @@ func (c *Config) Validate() error {
 type LogConfig = log.Config
 
 type APIsConfig struct {
-	COAP COAPConfig `yaml:"coap" json:"coap"`
+	COAP COAPConfigMarshalerUnmarshaler `yaml:"coap" json:"coap"`
 }
 
 func (c *APIsConfig) Validate() error {
@@ -93,6 +95,18 @@ func (c *AuthorizationConfig) Validate() error {
 	return nil
 }
 
+type InjectedTLSConfig struct {
+	IdentityPropertiesRequired bool `yaml:"identityPropertiesRequired" json:"identityPropertiesRequired"`
+}
+
+type InjectedCOAPConfig struct {
+	TLSConfig InjectedTLSConfig `yaml:"tls" json:"tls"`
+}
+
+func (c *InjectedCOAPConfig) Validate() error {
+	return nil
+}
+
 type COAPConfig struct {
 	coapService.Config         `yaml:",inline" json:",inline"`
 	ExternalAddress            string              `yaml:"externalAddress" json:"externalAddress"`
@@ -100,6 +114,46 @@ type COAPConfig struct {
 	OwnerCacheExpiration       time.Duration       `yaml:"ownerCacheExpiration" json:"ownerCacheExpiration"`
 	SubscriptionBufferSize     int                 `yaml:"subscriptionBufferSize" json:"subscriptionBufferSize"`
 	RequireBatchObserveEnabled bool                `yaml:"requireBatchObserveEnabled" json:"requireBatchObserveEnabled"`
+	InjectedCOAPConfig         InjectedCOAPConfig  `yaml:"-" json:"-"`
+}
+
+type COAPConfigMarshalerUnmarshaler struct {
+	COAPConfig `yaml:",inline"`
+}
+
+func (c *COAPConfigMarshalerUnmarshaler) UnmarshalYAML(value *yaml.Node) error {
+	err := value.Decode(&c.COAPConfig)
+	if err != nil {
+		return err
+	}
+	return value.Decode(&c.InjectedCOAPConfig)
+}
+
+func (c COAPConfigMarshalerUnmarshaler) MarshalYAML() (interface{}, error) {
+	node := yaml.Node{}
+	err := node.Encode(c.COAPConfig)
+	if err != nil {
+		return nil, err
+	}
+	injectNode := yaml.Node{}
+	err = injectNode.Encode(c.InjectedCOAPConfig)
+	if err != nil {
+		return nil, err
+	}
+	return pkgYaml.MergeYamlNodes(&node, &injectNode)
+}
+
+func (c *COAPConfigMarshalerUnmarshaler) Validate() error {
+	if err := c.COAPConfig.Validate(); err != nil {
+		return err
+	}
+	if err := c.InjectedCOAPConfig.Validate(); err != nil {
+		return err
+	}
+	if !c.InjectedCOAPConfig.TLSConfig.IdentityPropertiesRequired && c.Authorization.DeviceIDClaim != "" {
+		return fmt.Errorf("tls.identityPropertiesRequired('%v') - %w", c.InjectedCOAPConfig.TLSConfig.IdentityPropertiesRequired, fmt.Errorf("combination with authorization.deviceIDClaim is not supported"))
+	}
+	return nil
 }
 
 func (c *COAPConfig) Validate() error {

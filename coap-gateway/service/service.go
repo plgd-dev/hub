@@ -452,7 +452,7 @@ func getTLSInfo(conn net.Conn, logger log.Logger) (deviceID string, validUntil t
 			if err == nil {
 				return deviceID, peerCertificates[0].NotAfter
 			}
-			logger.Errorf("cannot get deviceID from certificate %v: %v", peerCertificates[0].Subject.CommonName, err)
+			logger.Warnf("cannot get deviceID from certificate %v: %v", peerCertificates[0].Subject.CommonName, err)
 			return "", peerCertificates[0].NotAfter
 		}
 		logger.Debugf("cannot get deviceID from certificate: certificate is not set")
@@ -463,14 +463,14 @@ func getTLSInfo(conn net.Conn, logger log.Logger) (deviceID string, validUntil t
 		if len(peerCertificates) > 0 {
 			cert, err := x509.ParseCertificate(peerCertificates[0])
 			if err != nil {
-				logger.Errorf("cannot get deviceID from certificate: %w", err)
+				logger.Warnf("cannot get deviceID from certificate: %w", err)
 				return "", time.Time{}
 			}
 			deviceID, err := coap.GetDeviceIDFromIdentityCertificate(cert)
 			if err == nil {
 				return deviceID, cert.NotAfter
 			}
-			logger.Errorf("cannot get deviceID from certificate %v: %w", cert.Subject.CommonName, err)
+			logger.Warnf("cannot get deviceID from certificate %v: %w", cert.Subject.CommonName, err)
 			return "", cert.NotAfter
 		}
 		logger.Debugf("cannot get deviceID from certificate: certificate is not set")
@@ -557,7 +557,7 @@ func (s *Service) createServices(fileWatcher *fsnotify.Watcher, logger log.Logge
 		coapService.WithOnInactivityConnection(s.onInactivityConnection),
 		coapService.WithMessagePool(s.messagePool),
 		coapService.WithOverrideTLS(func(cfg *tls.Config) *tls.Config {
-			tlsCfg := MakeGetConfigForClient(cfg)
+			tlsCfg := MakeGetConfigForClient(cfg, s.config.APIs.COAP.InjectedCOAPConfig.TLSConfig.IdentityPropertiesRequired)
 			return &tlsCfg
 		}),
 	)

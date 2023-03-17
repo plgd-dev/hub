@@ -40,7 +40,7 @@ func TestRefreshTokenHandler(t *testing.T) {
 
 	for _, test := range tbl {
 		tf := func(t *testing.T) {
-			co := testCoapDial(t, "", true, time.Now().Add(time.Minute))
+			co := testCoapDial(t, "", true, true, time.Now().Add(time.Minute))
 			if co == nil {
 				return
 			}
@@ -66,7 +66,7 @@ func TestRefreshTokenHandlerWithRetry(t *testing.T) {
 	shutdown := setUp(t, coapgwCfg)
 	defer shutdown()
 
-	co := testCoapDial(t, "", true, time.Now().Add(time.Minute))
+	co := testCoapDial(t, "", true, true, time.Now().Add(time.Minute))
 	if co == nil {
 		return
 	}
@@ -99,7 +99,7 @@ func TestRefreshTokenWithOAuthNotWorking(t *testing.T) {
 	shutdown := testService.SetUpServices(ctx, t, testService.SetUpServicesId|testService.SetUpServicesCoapGateway|testService.SetUpServicesResourceAggregate|testService.SetUpServicesResourceDirectory, testService.WithCOAPGWConfig(coapgwCfg))
 	defer shutdown()
 
-	co := testCoapDial(t, "", true, time.Now().Add(time.Minute))
+	co := testCoapDial(t, "", true, true, time.Now().Add(time.Minute))
 	if co == nil {
 		return
 	}

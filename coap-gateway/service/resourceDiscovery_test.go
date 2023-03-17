@@ -19,7 +19,7 @@ func TestResourceDirectoryFind(t *testing.T) {
 	shutdown := setUp(t)
 	defer shutdown()
 
-	co := testCoapDial(t, "", true, time.Now().Add(time.Minute))
+	co := testCoapDial(t, "", true, true, time.Now().Add(time.Minute))
 	if co == nil {
 		return
 	}
