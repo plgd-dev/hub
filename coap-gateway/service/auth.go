@@ -70,7 +70,7 @@ func (s *Service) VerifyDeviceID(tlsDeviceID string, claim pkgJwt.Claims) error 
 	return nil
 }
 
-func verifyChain(chain []*x509.Certificate, capool *x509.CertPool) error {
+func verifyChain(chain []*x509.Certificate, capool *x509.CertPool, identityPropertiesRequired bool) error {
 	if len(chain) == 0 {
 		return fmt.Errorf("certificate chain is empty")
 	}
@@ -105,6 +105,9 @@ func verifyChain(chain []*x509.Certificate, capool *x509.CertPool) error {
 	if !ekuHasServer {
 		return fmt.Errorf("the extended key usage field in the device certificate does not contain server authentication")
 	}
+	if !identityPropertiesRequired {
+		return nil
+	}
 	_, err = coap.GetDeviceIDFromIdentityCertificate(certificate)
 	if err != nil {
 		return fmt.Errorf("the device ID is not part of the certificate's common name: %w", err)
@@ -112,7 +115,7 @@ func verifyChain(chain []*x509.Certificate, capool *x509.CertPool) error {
 	return nil
 }
 
-func MakeGetConfigForClient(tlsCfg *tls.Config) tls.Config {
+func MakeGetConfigForClient(tlsCfg *tls.Config, identityPropertiesRequired bool) tls.Config {
 	return tls.Config{
 		GetCertificate: tlsCfg.GetCertificate,
 		MinVersion:     tlsCfg.MinVersion,
@@ -121,7 +124,7 @@ func MakeGetConfigForClient(tlsCfg *tls.Config) tls.Config {
 		VerifyPeerCertificate: func(rawCerts [][]byte, chains [][]*x509.Certificate) error {
 			var errors *multierror.Error
 			for _, chain := range chains {
-				err := verifyChain(chain, tlsCfg.ClientCAs)
+				err := verifyChain(chain, tlsCfg.ClientCAs, identityPropertiesRequired)
 				if err == nil {
 					return nil
 				}
