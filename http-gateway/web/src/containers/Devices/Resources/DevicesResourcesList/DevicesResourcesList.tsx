@@ -42,15 +42,7 @@ const DevicesResourcesList: FC<Props> = ({ data, onUpdate, onCreate, onDelete, d
                 Header: _(t.types),
                 accessor: 'resourceTypes',
                 style: { width: '100%' },
-                Cell: ({ value }: { value: any }) => {
-                    return (
-                        <div className='badges-box-horizontal'>
-                            {value?.map?.((type: string) => (
-                                <Badge key={type}>{type}</Badge>
-                            ))}
-                        </div>
-                    )
-                },
+                Cell: ({ value }: { value: any }) => value.join(', '),
             },
             {
                 Header: _(t.actions),

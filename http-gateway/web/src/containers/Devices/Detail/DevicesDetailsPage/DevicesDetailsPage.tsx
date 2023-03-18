@@ -21,6 +21,7 @@ import Breadcrumbs from '@plgd/shared-ui/src/components/new/Layout/Header/Breadc
 import StatusTag from '@shared-ui/components/new/StatusTag'
 import Tab1 from './Tabs/Tab1'
 import Tab2 from '@/containers/Devices/Detail/DevicesDetailsPage/Tabs/Tab2'
+import { PendingCommandsExpandableList } from '@/containers/PendingCommands'
 
 const DevicesDetailsPage = () => {
     const { formatMessage: _ } = useIntl()
@@ -130,10 +131,9 @@ const DevicesDetailsPage = () => {
                 )}
 
             <Tabs
-                onItemChange={(activeItem) => console.log(`Active item: ${activeItem}`)}
                 tabs={[
                     {
-                        name: 'Device information',
+                        name: _(t.deviceInformation),
                         content: (
                             <Tab1
                                 deviceId={id}
@@ -145,7 +145,7 @@ const DevicesDetailsPage = () => {
                         ),
                     },
                     {
-                        name: 'Resources',
+                        name: _(t.resources),
                         content: (
                             <Tab2
                                 deviceName={deviceName}
@@ -161,7 +161,7 @@ const DevicesDetailsPage = () => {
                 ]}
             />
 
-            {/* <PendingCommandsExpandableList deviceId={id} />*/}
+            <PendingCommandsExpandableList deviceId={id} />
         </PageLayout>
     )
 }

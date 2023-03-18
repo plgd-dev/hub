@@ -102,12 +102,6 @@ const DevicesListPage: FC<any> = () => {
     const selectedDeviceName = selectedDevicesCount === 1 && data ? data.find?.((d: any) => d.id === combinedSelectedDevices[0])?.name : null
     const loadingOrDeleting = loading || deleting
 
-    console.log(' ')
-    console.log({ selectedDevices })
-    console.log({ selectedDevicesCount })
-    console.log({ singleDevice })
-    console.log({ combinedSelectedDevices })
-
     return (
         <PageLayout
             breadcrumbs={[

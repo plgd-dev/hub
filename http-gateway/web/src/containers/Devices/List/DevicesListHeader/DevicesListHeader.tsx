@@ -29,7 +29,7 @@ const DevicesListHeader: FC<Props> = ({ loading, refresh }) => {
 
     return (
         <div css={styles.devicesListHeader}>
-            <Button css={styles.item} disabled={loading} loading={loading} onClick={refreshDevices}>
+            <Button css={styles.item} disabled={loading || numberOfChanges === 0} loading={loading} onClick={refreshDevices}>
                 {numberOfChanges > 0 && !loading && <span css={styles.circleNumber}>{numberOfChanges}</span>}
                 {_(t.refresh)}
             </Button>

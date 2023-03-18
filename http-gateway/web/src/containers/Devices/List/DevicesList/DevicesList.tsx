@@ -1,4 +1,4 @@
-import React, { FC, useMemo } from 'react'
+import React, { FC, useContext, useMemo } from 'react'
 import { useIntl } from 'react-intl'
 import { Link, useHistory } from 'react-router-dom'
 import Button from '@shared-ui/components/new/Button'
@@ -13,6 +13,7 @@ import TableSelectionPanel from '@plgd/shared-ui/src/components/new/TableNew/Tab
 import StatusPill from '@shared-ui/components/new/StatusPill'
 import { states } from '@shared-ui/components/new/StatusPill/constants'
 import Tag from '@shared-ui/components/new/Tag'
+import { AppContext } from '@/containers/App/AppContext'
 
 const { UNREGISTERED } = devicesStatuses
 
@@ -23,6 +24,8 @@ export const DevicesList: FC<Props> = (props) => {
     }
     const { formatMessage: _ } = useIntl()
     const history = useHistory()
+    const { collapsed } = useContext(AppContext)
+    console.log({ collapsed })
 
     const columns = useMemo(
         () => [
@@ -147,6 +150,7 @@ export const DevicesList: FC<Props> = (props) => {
                         {_(t.delete)}
                     </Button>
                 }
+                leftPanelCollapsed={collapsed}
                 // actionSecondary={
                 //     <Button htmlType='button' key={1}>
                 //         Secondary Action
