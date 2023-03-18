@@ -10,7 +10,6 @@ import { isNotificationActive, toggleActiveNotification } from '../../slice'
 import { messages as t } from '../../Devices.i18n'
 import { Props } from './DevicesListHeader.types'
 import * as styles from './DevicesListHeader.styles'
-import { Icon } from '@shared-ui/components/new/Icon'
 
 const DevicesListHeader: FC<Props> = ({ loading, refresh }) => {
     const { formatMessage: _ } = useIntl()
@@ -30,9 +29,9 @@ const DevicesListHeader: FC<Props> = ({ loading, refresh }) => {
 
     return (
         <div css={styles.devicesListHeader}>
-            <Button css={styles.item} disabled={loading} icon={<Icon icon='refresh' />} onClick={refreshDevices}>
+            <Button css={styles.item} disabled={loading} loading={loading} onClick={refreshDevices}>
+                {numberOfChanges > 0 && !loading && <span css={styles.circleNumber}>{numberOfChanges}</span>}
                 {_(t.refresh)}
-                {/* <span className='m-l-5 yellow-circle'>{`${numberOfChanges > 9 ? '9+' : numberOfChanges}`}</span>*/}
             </Button>
             <div css={styles.item}>
                 <ProvisionNewDevice />
