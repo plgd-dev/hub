@@ -1,5 +1,4 @@
 import { useStreamApi, useEmitter } from '@shared-ui/common/hooks'
-
 import { pendingCommandsApiEndpoints, NEW_PENDING_COMMAND_WS_KEY, UPDATE_PENDING_COMMANDS_WS_KEY } from './constants'
 import { convertPendingCommandsList, updatePendingCommandsDataStatus } from './utils'
 import { SecurityConfig, StreamApiPropsType } from '@/containers/App/App.types'
@@ -7,9 +6,8 @@ import { security } from '@shared-ui/common/services'
 
 const getConfig = () => security.getGeneralConfig() as SecurityConfig
 
-export const usePendingCommandsList = (deviceId: string) => {
+export const usePendingCommandsList = (deviceId?: string) => {
     const filter = deviceId ? `?deviceIdFilter=${deviceId}` : ''
-    // Fetch the data
     const { data, updateData, ...rest }: StreamApiPropsType = useStreamApi(
         `${getConfig().httpGatewayAddress}${pendingCommandsApiEndpoints.PENDING_COMMANDS}${filter}`,
         {

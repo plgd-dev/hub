@@ -32,7 +32,6 @@ const DevicesResourcesList: FC<Props> = ({ data, onUpdate, onCreate, onDelete, d
                             <span className='link reveal-icon-on-hover' onClick={() => onUpdate({ deviceId, href })}>
                                 {value}
                             </span>
-                            <i className='fas fa-pen' />
                         </div>
                     )
                 },

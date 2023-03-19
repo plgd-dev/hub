@@ -82,9 +82,22 @@ const Tab2: FC<Props> = (props) => {
                     },
                     type: resourceModalTypes.CREATE_RESOURCE,
                 })
+                console.log('res', {
+                    data: {
+                        href,
+                        types: supportedTypes,
+                    },
+                    resourceData: {
+                        ...defaultNewResource,
+                        rt: supportedTypes,
+                    },
+                    type: resourceModalTypes.CREATE_RESOURCE,
+                })
+                setResourceModal(true)
             }
         } catch (error) {
             if (error && isMounted.current) {
+                console.log('ERROR')
                 setLoadingResource(false)
                 handleFetchResourceErrors(error, _)
             }

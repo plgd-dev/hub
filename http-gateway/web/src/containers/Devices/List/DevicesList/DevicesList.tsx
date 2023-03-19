@@ -25,7 +25,6 @@ export const DevicesList: FC<Props> = (props) => {
     const { formatMessage: _ } = useIntl()
     const history = useHistory()
     const { collapsed } = useContext(AppContext)
-    console.log({ collapsed })
 
     const columns = useMemo(
         () => [
@@ -151,11 +150,6 @@ export const DevicesList: FC<Props> = (props) => {
                     </Button>
                 }
                 leftPanelCollapsed={collapsed}
-                // actionSecondary={
-                //     <Button htmlType='button' key={1}>
-                //         Secondary Action
-                //     </Button>
-                // }
                 selectionInfo={`${selectedCount} device${selectedCount > 1 ? 's' : ''} `}
                 show={selectedCount > 0}
             />
