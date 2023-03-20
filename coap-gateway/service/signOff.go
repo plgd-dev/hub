@@ -147,7 +147,7 @@ func signOffHandler(req *mux.Message, client *session) (*pool.Message, error) {
 		return nil, statusErrorf(coapconv.GrpcErr2CoapCode(err, coapconv.Delete), errFmtSignOff, err)
 	}
 	if len(respIS.GetDeviceIds()) != 1 {
-		return nil, statusErrorf(coapCodes.InternalServerError, errFmtSignOff, fmt.Errorf("cannot remove device %v from user", deviceID))
+		return nil, statusErrorf(coapCodes.BadRequest, errFmtSignOff, fmt.Errorf("cannot remove device %v from user", deviceID))
 	}
 
 	client.CleanUp(true)
