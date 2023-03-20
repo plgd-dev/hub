@@ -12,7 +12,6 @@ import { isDeviceOnline } from '@/containers/Devices/utils'
 import TableSelectionPanel from '@plgd/shared-ui/src/components/new/TableNew/TableSelectionPanel'
 import StatusPill from '@shared-ui/components/new/StatusPill'
 import { states } from '@shared-ui/components/new/StatusPill/constants'
-import Tag from '@shared-ui/components/new/Tag'
 import { AppContext } from '@/containers/App/AppContext'
 
 const { UNREGISTERED } = devicesStatuses
@@ -57,6 +56,8 @@ export const DevicesList: FC<Props> = (props) => {
                 style: { width: '120px' },
                 Cell: ({ row }: { row: any }) => {
                     const isOnline = isDeviceOnline(row.original)
+                    console.log(row.original)
+                    const connectedAtDate = new Date(row.original?.metadata?.connection.connectedAt / 1000000)
 
                     return (
                         <StatusPill
@@ -65,7 +66,7 @@ export const DevicesList: FC<Props> = (props) => {
                             status={isOnline ? states.ONLINE : states.OFFLINE}
                             tooltipText={
                                 isOnline ? (
-                                    'Connected at: xxxxx'
+                                    `Connected at: ${connectedAtDate?.toLocaleDateString('en-US')}`
                                 ) : (
                                     <span style={{ whiteSpace: 'nowrap' }}>
                                         Last time online: <strong>31.9.2022 - 16:32</strong>
@@ -76,23 +77,23 @@ export const DevicesList: FC<Props> = (props) => {
                     )
                 },
             },
-            {
-                Header: 'Protocol',
-                accessor: 'protocol',
-                Cell: ({ row }: { row: any }) => {
-                    return 'Protocol'
-                },
-            },
-            {
-                Header: 'Shared',
-                accessor: 'shared',
-                style: { width: '120px' },
-                Cell: ({ row }: { row: any }) => (
-                    <Tag icon='link' onClick={console.log}>
-                        Yes
-                    </Tag>
-                ),
-            },
+            // {
+            //     Header: 'Protocol',
+            //     accessor: 'protocol',
+            //     Cell: ({ row }: { row: any }) => {
+            //         return 'Protocol'
+            //     },
+            // },
+            // {
+            //     Header: 'Shared',
+            //     accessor: 'shared',
+            //     style: { width: '120px' },
+            //     Cell: ({ row }: { row: any }) => (
+            //         <Tag icon='link' onClick={console.log}>
+            //             Yes
+            //         </Tag>
+            //     ),
+            // },
             {
                 Header: _(t.twinSynchronization),
                 accessor: 'metadata.twinEnabled',
