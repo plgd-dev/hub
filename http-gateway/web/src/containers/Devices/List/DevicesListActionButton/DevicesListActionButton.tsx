@@ -5,7 +5,6 @@ import { messages as t } from '../../Devices.i18n'
 import { Props } from './DevicesListActionButton.types'
 import { useMediaQuery } from 'react-responsive'
 import TableActions from '@plgd/shared-ui/src/components/new/TableNew/TableActions'
-import Icon from '@shared-ui/components/new/Icon'
 
 const DevicesListActionButton: FC<Props> = (props) => {
     const { deviceId, onView, onDelete } = props

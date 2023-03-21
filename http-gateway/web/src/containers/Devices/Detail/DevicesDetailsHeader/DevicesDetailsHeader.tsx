@@ -26,7 +26,7 @@ const DevicesDetailsHeader: FC<Props> = ({ deviceId, deviceName, isUnregistered 
     const notificationsEnabled = useRef(false)
     notificationsEnabled.current = useSelector(isNotificationActive(deviceNotificationKey))
     const [deleteModalOpen, setDeleteModalOpen] = useState(false)
-    const [deleting, setDeleting] = useState(false)
+    // const [deleting, setDeleting] = useState(false)
     const isMounted = useIsMounted()
     const history = useHistory()
 
@@ -80,7 +80,7 @@ const DevicesDetailsHeader: FC<Props> = ({ deviceId, deviceName, isUnregistered 
     const handleDeleteDevice = async () => {
         // api
         try {
-            setDeleting(true)
+            // setDeleting(true)
             await deleteDevicesApi([deviceId])
             await sleep(200)
 
@@ -97,9 +97,9 @@ const DevicesDetailsHeader: FC<Props> = ({ deviceId, deviceName, isUnregistered 
                 history.push(`/device`)
             }
         } catch (error) {
-            if (isMounted.current) {
-                setDeleting(false)
-            }
+            // if (isMounted.current) {
+            //     setDeleting(false)
+            // }
             handleDeleteDevicesErrors(error, _, true)
         }
     }
@@ -129,7 +129,10 @@ const DevicesDetailsHeader: FC<Props> = ({ deviceId, deviceName, isUnregistered 
             />
 
             <DeleteModal
-                onClose={handleCloseDeleteDeviceModal}
+                deleteInformation={[
+                    { label: 'Device Name', value: deviceName },
+                    { label: 'Device ID', value: deviceId },
+                ]}
                 footerActions={[
                     {
                         label: 'Cancel',
@@ -142,13 +145,10 @@ const DevicesDetailsHeader: FC<Props> = ({ deviceId, deviceName, isUnregistered 
                         variant: 'primary',
                     },
                 ]}
+                onClose={handleCloseDeleteDeviceModal}
                 show={deleteModalOpen}
-                title={_(t.deleteResourceMessage)}
                 subTitle={_(t.deleteResourceMessageSubtitle)}
-                deleteInformation={[
-                    { label: 'Device Name', value: deviceName },
-                    { label: 'Device ID', value: deviceId },
-                ]}
+                title={_(t.deleteResourceMessage)}
             />
         </div>
     )

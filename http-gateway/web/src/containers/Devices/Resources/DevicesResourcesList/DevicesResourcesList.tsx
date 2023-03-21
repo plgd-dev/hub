@@ -2,7 +2,6 @@ import { FC, useMemo } from 'react'
 import { useIntl } from 'react-intl'
 import classNames from 'classnames'
 
-import Badge from '@shared-ui/components/new/Badge'
 import Table from '@shared-ui/components/new/TableNew'
 import DevicesResourcesActionButton from '../DevicesResourcesActionButton'
 import { RESOURCES_DEFAULT_PAGE_SIZE, devicesStatuses } from '../../constants'

@@ -31,13 +31,13 @@ const Tab1: FC<Props> = (props) => {
                 <SimpleStripTable
                     rows={[
                         { attribute: _(t.id), value: deviceId },
-                        { attribute: _(t.model), value: 'doorbell-2020-11-03' },
+                        { attribute: _(t.model), value: 'TODO: doorbell-2020-11-03' },
                         {
                             attribute: _(t.types),
                             value: types ? (
                                 <TagGroup>
                                     {types.map((t, key) => (
-                                        <Tag key={key}>{t}</Tag>
+                                        <Tag key={`${key}-${t}`}>{t}</Tag>
                                     ))}
                                 </TagGroup>
                             ) : (
@@ -52,7 +52,7 @@ const Tab1: FC<Props> = (props) => {
                                 </div>
                             ),
                         },
-                        { attribute: _(t.status), value: '3 pending commands' },
+                        { attribute: _(t.status), value: 'TODO: 3 pending commands' },
                     ]}
                 />
             </div>

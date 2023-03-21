@@ -56,7 +56,7 @@ export const DevicesList: FC<Props> = (props) => {
                 style: { width: '120px' },
                 Cell: ({ row }: { row: any }) => {
                     const isOnline = isDeviceOnline(row.original)
-                    console.log(row.original)
+
                     const connectedAtDate = new Date(row.original?.metadata?.connection.connectedAt / 1000000)
 
                     return (
