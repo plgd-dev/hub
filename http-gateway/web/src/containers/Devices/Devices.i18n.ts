@@ -469,4 +469,16 @@ export const messages = defineMessages({
         id: 'devices.search',
         defaultMessage: 'Search',
     },
+    twinUpdateMessage: {
+        id: 'devices.twinUpdate',
+        defaultMessage: 'The ongoing status change in the "Twin State" may take a while.',
+    },
+    editName: {
+        id: 'devices.twinUpdate',
+        defaultMessage: 'Edit name',
+    },
+    copy: {
+        id: 'devices.copy',
+        defaultMessage: 'Copy to clipboard',
+    },
 })

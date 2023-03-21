@@ -106,6 +106,10 @@ const DevicesDetailsHeader: FC<Props> = ({ deviceId, deviceName, isUnregistered 
 
     return (
         <div className={classNames('d-flex align-items-center', greyedOutClassName)}>
+            <Button className='m-r-30' disabled={isUnregistered} icon={<Icon icon='edit' />} onClick={handleOpenDeleteDeviceModal} variant='tertiary'>
+                {_(t.editName)}
+            </Button>
+
             <Button className='m-r-30' disabled={isUnregistered} icon={<Icon icon='trash' />} onClick={handleOpenDeleteDeviceModal} variant='secondary'>
                 {_(t.delete)}
             </Button>

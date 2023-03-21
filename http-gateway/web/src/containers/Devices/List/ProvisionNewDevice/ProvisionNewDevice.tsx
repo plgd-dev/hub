@@ -80,6 +80,7 @@ const ProvisionNewDeviceCore = () => {
                 ]}
                 getDeviceAuthCode={handleFetch}
                 i18n={{
+                    copy: _(t.copy),
                     deviceId: _(t.deviceId),
                     enterDeviceID: _(t.enterDeviceID),
                     invalidUuidFormat: _(t.invalidUuidFormat),

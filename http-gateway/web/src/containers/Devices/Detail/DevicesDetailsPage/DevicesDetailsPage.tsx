@@ -22,6 +22,7 @@ import StatusTag from '@shared-ui/components/new/StatusTag'
 import Tab1 from './Tabs/Tab1'
 import Tab2 from '@/containers/Devices/Detail/DevicesDetailsPage/Tabs/Tab2'
 import { PendingCommandsExpandableList } from '@/containers/PendingCommands'
+import NotificationMessage from '@shared-ui/components/new/NotificationMessage'
 
 const DevicesDetailsPage = () => {
     const { formatMessage: _ } = useIntl()
@@ -31,6 +32,7 @@ const DevicesDetailsPage = () => {
         id: string
     } = useParams()
     const [domReady, setDomReady] = useState(false)
+    const [notificationMessage, setNotificationMessage] = useState<string | undefined>(undefined)
     const [twinSyncLoading, setTwinSyncLoading] = useState(false)
 
     const isMounted = useIsMounted()
@@ -76,6 +78,7 @@ const DevicesDetailsPage = () => {
     // Handler for setting the twin synchronization on a device
     const setTwinSynchronization = async (newTwinEnabled: boolean) => {
         setTwinSyncLoading(true)
+        setNotificationMessage(_(t.twinUpdateMessage))
 
         try {
             await updateDeviceTwinSynchronizationApi(id, newTwinEnabled)
@@ -160,6 +163,8 @@ const DevicesDetailsPage = () => {
                     },
                 ]}
             />
+
+            <NotificationMessage message={notificationMessage} onExit={() => setNotificationMessage(undefined)} show={!!notificationMessage} />
 
             <PendingCommandsExpandableList deviceId={id} />
         </PageLayout>
