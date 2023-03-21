@@ -74,7 +74,7 @@
     "babel-plugin-formatjs": "^10.3.12",
     "react-error-overlay": "6.0.9",
     "shelljs": "^0.8.5",
-    "webpack": "^5.75.0"
+    "webpack": "^5.76.2"
   },
   "overrides": {
     "react-error-overlay": "6.0.9"
