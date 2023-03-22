@@ -21,7 +21,7 @@ func NewResourceDirectory(projection *Projection, deviceIds []string) *ResourceD
 }
 
 func (rd *ResourceDirectory) sendResourceLinks(srv pb.GrpcGateway_GetResourceLinksServer, deviceIDs, typeFilter, toReloadDevices strings.Set) error {
-	return rd.projection.LoadResourceLinks(srv.Context(), deviceIDs, toReloadDevices, func(m *resourceLinksProjection) error {
+	return rd.projection.LoadResourceLinks(deviceIDs, toReloadDevices, func(m *resourceLinksProjection) error {
 		toSend := m.ToResourceLinksPublished(typeFilter)
 		if toSend == nil {
 			return nil

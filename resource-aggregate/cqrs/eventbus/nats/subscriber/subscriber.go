@@ -76,7 +76,7 @@ func (s *Subscriber) reconnectCopy() []reconnect {
 	return reconnect
 }
 
-func (s *Subscriber) reconnectedHandler(c *nats.Conn) {
+func (s *Subscriber) reconnectedHandler(*nats.Conn) {
 	reconnect := s.reconnectCopy()
 	for idx := range reconnect {
 		reconnect[idx].f()
@@ -228,7 +228,7 @@ func (o *Observer) cleanUp(topics map[string]bool) (map[string]bool, error) {
 }
 
 // SetTopics set new topics to observe.
-func (o *Observer) SetTopics(ctx context.Context, topics []string) error {
+func (o *Observer) SetTopics(_ context.Context, topics []string) error {
 	o.lock.Lock()
 	defer o.lock.Unlock()
 
@@ -342,7 +342,7 @@ type iter struct {
 	hasNext         bool
 }
 
-func (i *iter) Next(ctx context.Context) (eventbus.EventUnmarshaler, bool) {
+func (i *iter) Next(context.Context) (eventbus.EventUnmarshaler, bool) {
 	if i.hasNext {
 		i.hasNext = false
 		return &eventUnmarshaler{

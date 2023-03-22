@@ -173,11 +173,7 @@ func PerformMaintenance() error {
 		return err
 	}
 
-	if err = performMaintenanceWithEventStore(ctx, config, eventStore); err != nil {
-		return err
-	}
-
-	return nil
+	return performMaintenanceWithEventStore(ctx, config, eventStore)
 }
 
 func performMaintenanceWithEventStore(ctx context.Context, config Config, eventStore *mongodb.EventStore) error {
@@ -197,9 +193,5 @@ func performMaintenanceWithEventStore(ctx context.Context, config Config, eventS
 	}
 
 	log.Info("deleting events...")
-	if err := eventStore.RemoveUpToVersion(ctx, versionQueries); err != nil {
-		return err
-	}
-
-	return nil
+	return eventStore.RemoveUpToVersion(ctx, versionQueries)
 }

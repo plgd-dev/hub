@@ -1,7 +1,6 @@
 package service
 
 import (
-	"context"
 	"time"
 
 	"github.com/plgd-dev/device/v2/schema/device"
@@ -58,14 +57,14 @@ func (rd *ResourceTwin) convertToResourceIDs(resourceIDsFilter, deviceIdFilter [
 	return internalResourceIDsFilter
 }
 
-func (rd *ResourceTwin) filterResources(ctx context.Context, resourceIDsFilter []*commands.ResourceId, typeFilter []string, toReloadDevices strings.Set, onResource func(*Resource) error) error {
+func (rd *ResourceTwin) filterResources(resourceIDsFilter []*commands.ResourceId, typeFilter []string, toReloadDevices strings.Set, onResource func(*Resource) error) error {
 	mapTypeFilter := make(strings.Set)
 	mapTypeFilter.Add(typeFilter...)
-	return rd.projection.LoadResourcesWithLinks(ctx, resourceIDsFilter, mapTypeFilter, toReloadDevices, onResource)
+	return rd.projection.LoadResourcesWithLinks(resourceIDsFilter, mapTypeFilter, toReloadDevices, onResource)
 }
 
 func (rd *ResourceTwin) getResources(resourceIDsFilter []*commands.ResourceId, typeFilter []string, srv pb.GrpcGateway_GetResourcesServer, toReloadDevices strings.Set) error {
-	return rd.filterResources(srv.Context(), resourceIDsFilter, typeFilter, toReloadDevices, func(resource *Resource) error {
+	return rd.filterResources(resourceIDsFilter, typeFilter, toReloadDevices, func(resource *Resource) error {
 		val := toResourceValue(resource)
 		err := srv.Send(val)
 		if err != nil {
@@ -103,7 +102,7 @@ func toPendingCommands(resource *Resource, commandFilter subscription.FilterBitm
 }
 
 func (rd *ResourceTwin) sendPendingCommands(srv pb.GrpcGateway_GetPendingCommandsServer, resourceIDsFilter []*commands.ResourceId, typeFilter []string, filterCmds subscription.FilterBitmask, now time.Time, toReloadDevices strings.Set) error {
-	return rd.filterResources(srv.Context(), resourceIDsFilter, typeFilter, toReloadDevices, func(resource *Resource) error {
+	return rd.filterResources(resourceIDsFilter, typeFilter, toReloadDevices, func(resource *Resource) error {
 		for _, pendingCmd := range toPendingCommands(resource, filterCmds, now) {
 			err := srv.Send(pendingCmd)
 			if err != nil {
@@ -115,7 +114,7 @@ func (rd *ResourceTwin) sendPendingCommands(srv pb.GrpcGateway_GetPendingCommand
 }
 
 func (rd *ResourceTwin) sendDeviceMetadataUpdatePendingCommands(deviceIDs strings.Set, srv pb.GrpcGateway_GetPendingCommandsServer, now time.Time, toReloadDevices strings.Set) error {
-	return rd.projection.LoadDevicesMetadata(srv.Context(), deviceIDs, toReloadDevices, func(m *deviceMetadataProjection) error {
+	return rd.projection.LoadDevicesMetadata(deviceIDs, toReloadDevices, func(m *deviceMetadataProjection) error {
 		for _, pendingCmd := range m.GetDeviceUpdatePendings(now) {
 			err := srv.Send(&pb.PendingCommand{
 				Command: &pb.PendingCommand_DeviceMetadataUpdatePending{
@@ -176,7 +175,7 @@ func (rd *ResourceTwin) GetPendingCommands(req *pb.GetPendingCommandsRequest, sr
 }
 
 func (rd *ResourceTwin) sendDevicesMetadata(srv pb.GrpcGateway_GetDevicesMetadataServer, deviceIDFilter, typeFilter, toReloadDevices strings.Set) error {
-	return rd.projection.LoadResourceLinks(srv.Context(), deviceIDFilter, toReloadDevices, func(m *resourceLinksProjection) error {
+	return rd.projection.LoadResourceLinks(deviceIDFilter, toReloadDevices, func(m *resourceLinksProjection) error {
 		res := m.GetResource(device.ResourceURI)
 		if res == nil {
 			if toReloadDevices != nil {
@@ -187,7 +186,7 @@ func (rd *ResourceTwin) sendDevicesMetadata(srv pb.GrpcGateway_GetDevicesMetadat
 		if len(typeFilter) > 0 && !typeFilter.HasOneOf(res.ResourceTypes...) {
 			return nil
 		}
-		return rd.projection.LoadDevicesMetadata(srv.Context(), strings.MakeSet(m.GetDeviceID()), toReloadDevices, func(m *deviceMetadataProjection) error {
+		return rd.projection.LoadDevicesMetadata(strings.MakeSet(m.GetDeviceID()), toReloadDevices, func(m *deviceMetadataProjection) error {
 			data := m.GetDeviceMetadataUpdated()
 			if data == nil {
 				return nil

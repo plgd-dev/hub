@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/hashicorp/go-multierror"
 	clientIS "github.com/plgd-dev/hub/v2/identity-store/client"
 	pbIS "github.com/plgd-dev/hub/v2/identity-store/pb"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
@@ -116,25 +117,24 @@ func NewService(ctx context.Context, config Config, fileWatcher *fsnotify.Watche
 		return nil, err
 	}
 
+	closeGrpcServerOnError := func(err error) error {
+		var errors *multierror.Error
+		errors = multierror.Append(errors, err)
+		if err2 := grpcServer.Close(); err2 != nil {
+			errors = multierror.Append(errors, fmt.Errorf("cannot close server: %w", err2))
+		}
+		return errors.ErrorOrNil()
+	}
+
 	isClient, closeIsClient, err := newIdentityStoreClient(config.Clients.IdentityStore, fileWatcher, logger, tracerProvider)
 	if err != nil {
-		err = fmt.Errorf("cannot create identity-store client: %w", err)
-		err2 := grpcServer.Close()
-		if err2 != nil {
-			err = fmt.Errorf(`[%w, "cannot close server: %v"]`, err, err2)
-		}
-		return nil, err
+		return nil, closeGrpcServerOnError(fmt.Errorf("cannot create identity-store client: %w", err))
 	}
 	grpcServer.AddCloseFunc(closeIsClient)
 
 	nats, err := natsClient.New(config.Clients.Eventbus.NATS.Config, fileWatcher, logger)
 	if err != nil {
-		err = fmt.Errorf("cannot create nats client: %w", err)
-		err2 := grpcServer.Close()
-		if err2 != nil {
-			err = fmt.Errorf(`[%w, "cannot close server: %v"]`, err, err2)
-		}
-		return nil, err
+		return nil, closeGrpcServerOnError(fmt.Errorf("cannot create nats client: %w", err))
 	}
 	grpcServer.AddCloseFunc(nats.Close)
 

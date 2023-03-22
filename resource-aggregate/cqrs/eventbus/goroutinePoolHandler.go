@@ -184,7 +184,7 @@ type iter struct {
 	idx    int
 }
 
-func (i *iter) Next(ctx context.Context) (EventUnmarshaler, bool) {
+func (i *iter) Next(context.Context) (EventUnmarshaler, bool) {
 	if i.idx >= len(i.events) {
 		return nil, false
 	}

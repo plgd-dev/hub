@@ -98,8 +98,8 @@ func trimDeviceIDFromHref(deviceID, href string) string {
 	return href
 }
 
-// HandleResourcesPublished publish resources to resource aggregate and subscribes to resources.
-func (s *SubscriptionManager) HandleResourcesPublished(ctx context.Context, d SubscriptionData, header events.EventHeader, links events.ResourcesPublished) error {
+// handleResourcesPublished publish resources to resource aggregate and subscribes to resources.
+func (s *SubscriptionManager) handleResourcesPublished(ctx context.Context, d SubscriptionData, header events.EventHeader, links events.ResourcesPublished) error {
 	var errors *multierror.Error
 	for _, link := range links {
 		deviceID := d.subscription.DeviceID
@@ -148,8 +148,8 @@ func (s *SubscriptionManager) HandleResourcesPublished(ctx context.Context, d Su
 	return errors.ErrorOrNil()
 }
 
-// HandleResourcesUnpublished unpublish resources from resource aggregate and cancel resources subscriptions.
-func (s *SubscriptionManager) HandleResourcesUnpublished(ctx context.Context, d SubscriptionData, header events.EventHeader, links events.ResourcesUnpublished) error {
+// handleResourcesUnpublished unpublish resources from resource aggregate and cancel resources subscriptions.
+func (s *SubscriptionManager) handleResourcesUnpublished(ctx context.Context, d SubscriptionData, header events.EventHeader, links events.ResourcesUnpublished) error {
 	var errors *multierror.Error
 	for _, link := range links {
 		link.DeviceID = d.subscription.DeviceID
@@ -167,15 +167,15 @@ func (s *SubscriptionManager) HandleResourcesUnpublished(ctx context.Context, d 
 		}
 		_, ok := s.store.PullOutResource(d.linkedAccount.LinkedCloudID, d.linkedAccount.ID, link.DeviceID, href)
 		if !ok {
-			log.Debugf("HandleResourcesUnpublished: cannot remove device %v resource %v subscription: not found", link.DeviceID, href)
+			log.Debugf("handleResourcesUnpublished: cannot remove device %v resource %v subscription: not found", link.DeviceID, href)
 		}
 		s.cache.Delete(header.CorrelationID)
 	}
 	return errors.ErrorOrNil()
 }
 
-// HandleDeviceEvent handles device events.
-func (s *SubscriptionManager) HandleDeviceEvent(ctx context.Context, header events.EventHeader, body []byte, subscriptionData SubscriptionData) error {
+// handleDeviceEvent handles device events.
+func (s *SubscriptionManager) handleDeviceEvent(ctx context.Context, header events.EventHeader, body []byte, subscriptionData SubscriptionData) error {
 	contentReader, err := header.GetContentDecoder()
 	if err != nil {
 		return fmt.Errorf("cannot get content reader: %w", err)
@@ -187,14 +187,14 @@ func (s *SubscriptionManager) HandleDeviceEvent(ctx context.Context, header even
 		if err != nil {
 			return fmt.Errorf("cannot decode device event %v: %w", header.EventType, err)
 		}
-		return s.HandleResourcesPublished(ctx, subscriptionData, header, links)
+		return s.handleResourcesPublished(ctx, subscriptionData, header, links)
 	case events.EventType_ResourcesUnpublished:
 		var links events.ResourcesUnpublished
 		err := contentReader(body, &links)
 		if err != nil {
 			return fmt.Errorf("cannot decode device event %v: %w", header.EventType, err)
 		}
-		return s.HandleResourcesUnpublished(ctx, subscriptionData, header, links)
+		return s.handleResourcesUnpublished(ctx, subscriptionData, header, links)
 	}
 
 	return fmt.Errorf("cannot handle device: unsupported Event-Type %v", header.EventType)

@@ -19,7 +19,6 @@ func TestDummyForCoverage(t *testing.T) {
 	corID := "a"
 	userID := "u"
 
-	utils.TimeNowMs()
 	em := events.MakeEventMeta(connID, sequence, version)
 	assert.Equal(t, connID, em.ConnectionId)
 	assert.Equal(t, sequence, em.Sequence)

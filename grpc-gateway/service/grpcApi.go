@@ -1,7 +1,6 @@
 package service
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
@@ -35,8 +34,8 @@ type RequestHandler struct {
 	closeFunc               func()
 }
 
-func AddHandler(ctx context.Context, svr *server.Server, config Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider, goroutinePoolGo func(func()) error) error {
-	handler, err := NewRequestHandlerFromConfig(ctx, config, fileWatcher, logger, tracerProvider, goroutinePoolGo)
+func addHandler(svr *server.Server, config Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider, goroutinePoolGo func(func()) error) error {
+	handler, err := NewRequestHandlerFromConfig(config, fileWatcher, logger, tracerProvider, goroutinePoolGo)
 	if err != nil {
 		return err
 	}
@@ -92,7 +91,7 @@ func newResourceAggregateClient(config GrpcServerConfig, resourceSubscriber even
 	return raClient, closeRaConn, nil
 }
 
-func NewRequestHandlerFromConfig(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider, goroutinePoolGo func(func()) error) (*RequestHandler, error) {
+func NewRequestHandlerFromConfig(config Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider, goroutinePoolGo func(func()) error) (*RequestHandler, error) {
 	var closeFunc fn.FuncList
 	idClient, closeIdClient, err := newIdentityStoreClient(config.Clients.IdentityStore, fileWatcher, logger, tracerProvider)
 	if err != nil {

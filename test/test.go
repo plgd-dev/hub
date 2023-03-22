@@ -313,7 +313,7 @@ func OnboardDevSimForClient(ctx context.Context, t *testing.T, c pb.GrpcGatewayC
 		}
 		CheckProtobufs(t, expectedEvent, ev, RequireToCheckFunc(require.Equal))
 		onboard()
-		WaitForDevice(ctx, t, subClient, deviceID, ev.GetSubscriptionId(), ev.GetCorrelationId(), expectedResources)
+		WaitForDevice(t, subClient, deviceID, ev.GetSubscriptionId(), ev.GetCorrelationId(), expectedResources)
 		err = subClient.CloseSend()
 		require.NoError(t, err)
 	} else {
@@ -335,7 +335,7 @@ func OnboardDevSim(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 	return OnboardDevSimForClient(ctx, t, c, config.OAUTH_MANAGER_CLIENT_ID, deviceID, hubEndpoint, expectedResources)
 }
 
-func OffBoardDevSim(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, deviceID string) {
+func OffBoardDevSim(ctx context.Context, t *testing.T, deviceID string) {
 	devClient, err := NewSDKClient()
 	require.NoError(t, err)
 	defer func() {
@@ -346,7 +346,7 @@ func OffBoardDevSim(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, d
 	require.NoError(t, err)
 }
 
-func WaitForDevice(ctx context.Context, t *testing.T, client pb.GrpcGateway_SubscribeToEventsClient, deviceID, subID, correlationID string, expectedResources []schema.ResourceLink) {
+func WaitForDevice(t *testing.T, client pb.GrpcGateway_SubscribeToEventsClient, deviceID, subID, correlationID string, expectedResources []schema.ResourceLink) {
 	getID := func(ev *pb.Event) string {
 		switch v := ev.GetType().(type) {
 		case *pb.Event_DeviceRegistered_:
@@ -642,7 +642,7 @@ func IsDiscoveryResourceBatchObservable(ctx context.Context, t *testing.T, devic
 	return false
 }
 
-func CheckResource(ctx context.Context, t *testing.T, deviceID, href, resourceType string, checkFn func(schema.ResourceLink) bool) bool {
+func CheckResource(ctx context.Context, t *testing.T, deviceID, resourceURI, resourceType string, checkFn func(schema.ResourceLink) bool) bool {
 	devClient, err := NewSDKClient()
 	require.NoError(t, err)
 	defer func() {
@@ -650,14 +650,14 @@ func CheckResource(ctx context.Context, t *testing.T, deviceID, href, resourceTy
 	}()
 
 	var resp schema.ResourceLinks
-	err = devClient.GetResource(ctx, deviceID, resources.ResourceURI, &resp, deviceClient.WithResourceTypes(resources.ResourceType))
+	err = devClient.GetResource(ctx, deviceID, resourceURI, &resp, deviceClient.WithResourceTypes(resourceType))
 	require.NoError(t, err)
 
 	return len(resp) == 1 && checkFn(resp[0])
 }
 
-func ResourceIsBatchObservable(ctx context.Context, t *testing.T, deviceID, href, resourceType string) bool {
-	return CheckResource(ctx, t, deviceID, href, resourceType, func(rl schema.ResourceLink) bool {
+func ResourceIsBatchObservable(ctx context.Context, t *testing.T, deviceID, resourceURI, resourceType string) bool {
+	return CheckResource(ctx, t, deviceID, resourceURI, resourceType, func(rl schema.ResourceLink) bool {
 		return rl.Policy.BitMask.Has(schema.Observable) &&
 			pkgStrings.Contains(rl.Interfaces, interfaces.OC_IF_B)
 	})

@@ -1,7 +1,6 @@
 package http
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 	"regexp"
@@ -46,8 +45,8 @@ var authRules = map[string][]kitNetHttp.AuthArgs{
 }
 
 // New parses configuration and creates new Server with provided store and bus
-func New(ctx context.Context, serviceName string, config Config, ca *grpcService.CertificateAuthorityServer, validator *validator.Validator, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (*Service, error) {
-	service, err := httpService.New(ctx, httpService.Config{
+func New(serviceName string, config Config, ca *grpcService.CertificateAuthorityServer, validator *validator.Validator, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (*Service, error) {
+	service, err := httpService.New(httpService.Config{
 		HTTPConnection: config.Connection,
 		HTTPServer:     config.Server,
 		ServiceName:    serviceName,

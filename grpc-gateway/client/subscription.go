@@ -146,7 +146,7 @@ func (s *Sub) initEventSubscriptions(deviceIDs []string) []string {
 	return filteredDevices
 }
 
-func (s *Sub) sendDevicesRegistered(deviceIDs []string, validUntil *time.Time) error {
+func (s *Sub) sendDevicesRegistered(deviceIDs []string, _ *time.Time) error {
 	if !grpcSubscription.IsFilteredBit(s.filter, grpcSubscription.FilterBitmaskDeviceRegistered) {
 		return nil
 	}

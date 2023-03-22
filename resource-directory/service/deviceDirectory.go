@@ -132,13 +132,13 @@ func filterDevices(deviceIds strings.Set, deviceIDsFilter []string) strings.Set 
 func (dd *DeviceDirectory) sendDevices(deviceIDs strings.Set, req *pb.GetDevicesRequest, srv pb.GrpcGateway_GetDevicesServer, toReloadDevices strings.Set) (err error) {
 	typeFilter := make(strings.Set)
 	typeFilter.Add(req.TypeFilter...)
-	return dd.projection.LoadDevicesMetadata(srv.Context(), deviceIDs, toReloadDevices, func(m *deviceMetadataProjection) error {
+	return dd.projection.LoadDevicesMetadata(deviceIDs, toReloadDevices, func(m *deviceMetadataProjection) error {
 		deviceMetadataUpdated := m.GetDeviceMetadataUpdated()
 		if !hasMatchingStatus(deviceMetadataUpdated.GetConnection().IsOnline(), req.StatusFilter) {
 			return nil
 		}
 		resourceIdFilter := []*commands.ResourceId{commands.NewResourceID(m.GetDeviceID(), device.ResourceURI)}
-		return dd.projection.LoadResourcesWithLinks(srv.Context(), resourceIdFilter, typeFilter, toReloadDevices, func(resource *Resource) error {
+		return dd.projection.LoadResourcesWithLinks(resourceIdFilter, typeFilter, toReloadDevices, func(resource *Resource) error {
 			var device Device
 			err = updateDevice(&device, resource)
 			if err != nil {

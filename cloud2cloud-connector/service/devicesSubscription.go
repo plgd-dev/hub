@@ -86,7 +86,7 @@ func cancelDevicesSubscription(ctx context.Context, tracerProvider trace.TracerP
 	return nil
 }
 
-func (s *SubscriptionManager) HandleDevicesRegistered(ctx context.Context, d SubscriptionData, devices events.DevicesRegistered, header events.EventHeader) error {
+func (s *SubscriptionManager) handleDevicesRegistered(ctx context.Context, d SubscriptionData, devices events.DevicesRegistered) error {
 	var errors *multierror.Error
 	for _, device := range devices {
 		_, err := s.isClient.AddDevice(ctx, &pbIS.AddDeviceRequest{
@@ -118,13 +118,13 @@ func (s *SubscriptionManager) HandleDevicesRegistered(ctx context.Context, d Sub
 	return errors.ErrorOrNil()
 }
 
-func (s *SubscriptionManager) HandleDevicesUnregistered(ctx context.Context, subscriptionData SubscriptionData, correlationID string, devices events.DevicesUnregistered) error {
+func (s *SubscriptionManager) handleDevicesUnregistered(ctx context.Context, subscriptionData SubscriptionData, correlationID string, devices events.DevicesUnregistered) error {
 	userID := subscriptionData.linkedAccount.UserID
 	var errors *multierror.Error
 	for _, device := range devices {
 		_, ok := s.store.PullOutDevice(subscriptionData.linkedAccount.LinkedCloudID, subscriptionData.linkedAccount.ID, device.ID)
 		if !ok {
-			log.Debugf("HandleDevicesUnregistered: cannot remove device %v subscription: not found", device.ID)
+			log.Debugf("handleDevicesUnregistered: cannot remove device %v subscription: not found", device.ID)
 		}
 		s.cache.Delete(correlationID)
 		resp, err := s.isClient.DeleteDevices(ctx, &pbIS.DeleteDevicesRequest{
@@ -144,8 +144,8 @@ func (s *SubscriptionManager) HandleDevicesUnregistered(ctx context.Context, sub
 	return errors.ErrorOrNil()
 }
 
-// HandleDevicesOnline sets device online to resource aggregate and register device to projection.
-func (s *SubscriptionManager) HandleDevicesOnline(ctx context.Context, d SubscriptionData, header events.EventHeader, devices events.DevicesOnline) error {
+// handleDevicesOnline sets device online to resource aggregate and register device to projection.
+func (s *SubscriptionManager) handleDevicesOnline(ctx context.Context, d SubscriptionData, header events.EventHeader, devices events.DevicesOnline) error {
 	var errors *multierror.Error
 	for _, device := range devices {
 		_, err := s.raClient.UpdateDeviceMetadata(ctx, &commands.UpdateDeviceMetadataRequest{
@@ -169,8 +169,8 @@ func (s *SubscriptionManager) HandleDevicesOnline(ctx context.Context, d Subscri
 	return errors.ErrorOrNil()
 }
 
-// HandleDevicesOffline sets device off to resource aggregate and unregister device to projection.
-func (s *SubscriptionManager) HandleDevicesOffline(ctx context.Context, d SubscriptionData, header events.EventHeader, devices events.DevicesOffline) error {
+// handleDevicesOffline sets device off to resource aggregate and unregister device to projection.
+func (s *SubscriptionManager) handleDevicesOffline(ctx context.Context, d SubscriptionData, header events.EventHeader, devices events.DevicesOffline) error {
 	var errors *multierror.Error
 	for _, device := range devices {
 		_, err := s.raClient.UpdateDeviceMetadata(ctx, &commands.UpdateDeviceMetadataRequest{
@@ -196,7 +196,7 @@ func decodeError(err error) error {
 	return fmt.Errorf("cannot decode devices event: %w", err)
 }
 
-func (s *SubscriptionManager) HandleDevicesEvent(ctx context.Context, header events.EventHeader, body []byte, d SubscriptionData) error {
+func (s *SubscriptionManager) handleDevicesEvent(ctx context.Context, header events.EventHeader, body []byte, d SubscriptionData) error {
 	contentReader, err := header.GetContentDecoder()
 	if err != nil {
 		return fmt.Errorf("cannot handle device event: %w", err)
@@ -209,28 +209,28 @@ func (s *SubscriptionManager) HandleDevicesEvent(ctx context.Context, header eve
 		if err != nil {
 			return decodeError(err)
 		}
-		return s.HandleDevicesRegistered(ctx, d, devices, header)
+		return s.handleDevicesRegistered(ctx, d, devices)
 	case events.EventType_DevicesUnregistered:
 		var devices events.DevicesUnregistered
 		err = contentReader(body, &devices)
 		if err != nil {
 			return decodeError(err)
 		}
-		return s.HandleDevicesUnregistered(ctx, d, header.CorrelationID, devices)
+		return s.handleDevicesUnregistered(ctx, d, header.CorrelationID, devices)
 	case events.EventType_DevicesOnline:
 		var devices events.DevicesOnline
 		err = contentReader(body, &devices)
 		if err != nil {
 			return decodeError(err)
 		}
-		return s.HandleDevicesOnline(ctx, d, header, devices)
+		return s.handleDevicesOnline(ctx, d, header, devices)
 	case events.EventType_DevicesOffline:
 		var devices events.DevicesOffline
 		err = contentReader(body, &devices)
 		if err != nil {
 			return decodeError(err)
 		}
-		return s.HandleDevicesOffline(ctx, d, header, devices)
+		return s.handleDevicesOffline(ctx, d, header, devices)
 	}
 
 	return decodeError(fmt.Errorf("unsupported Event-Type %v", header.EventType))

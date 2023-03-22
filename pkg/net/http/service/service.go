@@ -21,7 +21,7 @@ type Service struct {
 }
 
 // New parses configuration and creates new http service
-func New(ctx context.Context, config Config) (*Service, error) {
+func New(config Config) (*Service, error) {
 	listener, err := listener.New(config.HTTPConnection, config.FileWatcher, config.Logger)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create grpc server: %w", err)

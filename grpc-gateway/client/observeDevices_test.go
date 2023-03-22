@@ -25,7 +25,7 @@ func TestObserveDevices(t *testing.T) {
 
 	c := NewTestClient(t)
 	defer func() {
-		err := c.Close(context.Background())
+		err := c.Close()
 		assert.NoError(t, err)
 	}()
 	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c.GrpcGatewayClient(), deviceID, config.ACTIVE_COAP_SCHEME+"://"+config.COAP_GW_HOST, test.GetAllBackendResourceLinks())
@@ -34,7 +34,7 @@ func TestObserveDevices(t *testing.T) {
 	id, err := c.ObserveDevices(ctx, h)
 	require.NoError(t, err)
 	defer func() {
-		err := c.StopObservingDevices(ctx, id)
+		err := c.StopObservingDevices(id)
 		require.NoError(t, err)
 	}()
 
@@ -81,7 +81,7 @@ type testDevicesObservationHandler struct {
 	res chan client.DevicesObservationEvent
 }
 
-func (h *testDevicesObservationHandler) Handle(ctx context.Context, body client.DevicesObservationEvent) error {
+func (h *testDevicesObservationHandler) Handle(_ context.Context, body client.DevicesObservationEvent) error {
 	h.res <- body
 	return nil
 }

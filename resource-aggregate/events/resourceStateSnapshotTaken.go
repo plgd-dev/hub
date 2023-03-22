@@ -136,7 +136,7 @@ func (e *ResourceStateSnapshotTaken) checkForDuplicitCorrelationID(correlationID
 	return nil
 }
 
-func (e *ResourceStateSnapshotTaken) HandleEventResourceCreatePending(ctx context.Context, createPending *ResourceCreatePending) error {
+func (e *ResourceStateSnapshotTaken) handleEventResourceCreatePending(createPending *ResourceCreatePending) error {
 	now := time.Now()
 	if ok := e.processValidUntil(createPending, now); !ok {
 		return nil
@@ -152,7 +152,7 @@ func (e *ResourceStateSnapshotTaken) HandleEventResourceCreatePending(ctx contex
 	return nil
 }
 
-func (e *ResourceStateSnapshotTaken) HandleEventResourceUpdatePending(ctx context.Context, updatePending *ResourceUpdatePending) error {
+func (e *ResourceStateSnapshotTaken) handleEventResourceUpdatePending(updatePending *ResourceUpdatePending) error {
 	now := time.Now()
 	if ok := e.processValidUntil(updatePending, now); !ok {
 		return nil
@@ -168,7 +168,7 @@ func (e *ResourceStateSnapshotTaken) HandleEventResourceUpdatePending(ctx contex
 	return nil
 }
 
-func (e *ResourceStateSnapshotTaken) HandleEventResourceRetrievePending(ctx context.Context, retrievePending *ResourceRetrievePending) error {
+func (e *ResourceStateSnapshotTaken) handleEventResourceRetrievePending(retrievePending *ResourceRetrievePending) error {
 	now := time.Now()
 	if ok := e.processValidUntil(retrievePending, now); !ok {
 		return nil
@@ -183,7 +183,7 @@ func (e *ResourceStateSnapshotTaken) HandleEventResourceRetrievePending(ctx cont
 	return nil
 }
 
-func (e *ResourceStateSnapshotTaken) HandleEventResourceDeletePending(ctx context.Context, deletePending *ResourceDeletePending) error {
+func (e *ResourceStateSnapshotTaken) handleEventResourceDeletePending(deletePending *ResourceDeletePending) error {
 	now := time.Now()
 	if ok := e.processValidUntil(deletePending, now); !ok {
 		return nil
@@ -203,7 +203,7 @@ func RemoveIndex(s []int, index int) []int {
 	return append(s[:index], s[index+1:]...)
 }
 
-func (e *ResourceStateSnapshotTaken) HandleEventResourceCreated(ctx context.Context, created *ResourceCreated) error {
+func (e *ResourceStateSnapshotTaken) handleEventResourceCreated(created *ResourceCreated) error {
 	index := -1
 	for i, event := range e.GetResourceCreatePendings() {
 		if event.GetAuditContext().GetCorrelationId() == created.GetAuditContext().GetCorrelationId() {
@@ -221,7 +221,7 @@ func (e *ResourceStateSnapshotTaken) HandleEventResourceCreated(ctx context.Cont
 	return nil
 }
 
-func (e *ResourceStateSnapshotTaken) HandleEventResourceUpdated(ctx context.Context, updated *ResourceUpdated) error {
+func (e *ResourceStateSnapshotTaken) handleEventResourceUpdated(updated *ResourceUpdated) error {
 	index := -1
 	for i, event := range e.GetResourceUpdatePendings() {
 		if event.GetAuditContext().GetCorrelationId() == updated.GetAuditContext().GetCorrelationId() {
@@ -239,7 +239,7 @@ func (e *ResourceStateSnapshotTaken) HandleEventResourceUpdated(ctx context.Cont
 	return nil
 }
 
-func (e *ResourceStateSnapshotTaken) HandleEventResourceRetrieved(ctx context.Context, retrieved *ResourceRetrieved) error {
+func (e *ResourceStateSnapshotTaken) handleEventResourceRetrieved(retrieved *ResourceRetrieved) error {
 	index := -1
 	for i, event := range e.GetResourceRetrievePendings() {
 		if event.GetAuditContext().GetCorrelationId() == retrieved.GetAuditContext().GetCorrelationId() {
@@ -267,18 +267,18 @@ func (e *ResourceStateSnapshotTaken) ValidateSequence(eventMetadata *EventMetada
 	return false
 }
 
-func (e *ResourceStateSnapshotTaken) HandleEventResourceChanged(ctx context.Context, changed *ResourceChanged) (bool, error) {
+func (e *ResourceStateSnapshotTaken) handleEventResourceChanged(changed *ResourceChanged) bool {
 	if e.GetLatestResourceChange() == nil ||
 		(e.ValidateSequence(changed.GetEventMetadata()) && !e.GetLatestResourceChange().Equal(changed)) {
 		e.ResourceId = changed.GetResourceId()
 		e.EventMetadata = changed.GetEventMetadata()
 		e.LatestResourceChange = changed
-		return true, nil
+		return true
 	}
-	return false, nil
+	return false
 }
 
-func (e *ResourceStateSnapshotTaken) HandleEventResourceDeleted(ctx context.Context, deleted *ResourceDeleted) error {
+func (e *ResourceStateSnapshotTaken) handleEventResourceDeleted(deleted *ResourceDeleted) error {
 	if deleted.GetStatus() == commands.Status_OK || deleted.GetStatus() == commands.Status_ACCEPTED {
 		e.ResourceCreatePendings = nil
 		e.ResourceRetrievePendings = nil
@@ -303,7 +303,7 @@ func (e *ResourceStateSnapshotTaken) HandleEventResourceDeleted(ctx context.Cont
 	return nil
 }
 
-func (e *ResourceStateSnapshotTaken) HandleEventResourceStateSnapshotTaken(ctx context.Context, snapshot *ResourceStateSnapshotTaken) {
+func (e *ResourceStateSnapshotTaken) handleEventResourceStateSnapshotTaken(snapshot *ResourceStateSnapshotTaken) {
 	e.CopyData(snapshot)
 }
 
@@ -322,61 +322,61 @@ func (e *ResourceStateSnapshotTaken) Handle(ctx context.Context, iter eventstore
 			if err := eu.Unmarshal(&s); err != nil {
 				return status.Errorf(codes.Internal, "%v", err)
 			}
-			e.HandleEventResourceStateSnapshotTaken(ctx, &s)
+			e.handleEventResourceStateSnapshotTaken(&s)
 		case (&ResourceUpdatePending{}).EventType():
 			var s ResourceUpdatePending
 			if err := eu.Unmarshal(&s); err != nil {
 				return status.Errorf(codes.Internal, "%v", err)
 			}
-			_ = e.HandleEventResourceUpdatePending(ctx, &s)
+			_ = e.handleEventResourceUpdatePending(&s)
 		case (&ResourceUpdated{}).EventType():
 			var s ResourceUpdated
 			if err := eu.Unmarshal(&s); err != nil {
 				return status.Errorf(codes.Internal, "%v", err)
 			}
-			_ = e.HandleEventResourceUpdated(ctx, &s)
+			_ = e.handleEventResourceUpdated(&s)
 		case (&ResourceCreatePending{}).EventType():
 			var s ResourceCreatePending
 			if err := eu.Unmarshal(&s); err != nil {
 				return status.Errorf(codes.Internal, "%v", err)
 			}
-			_ = e.HandleEventResourceCreatePending(ctx, &s)
+			_ = e.handleEventResourceCreatePending(&s)
 		case (&ResourceCreated{}).EventType():
 			var s ResourceCreated
 			if err := eu.Unmarshal(&s); err != nil {
 				return status.Errorf(codes.Internal, "%v", err)
 			}
-			_ = e.HandleEventResourceCreated(ctx, &s)
+			_ = e.handleEventResourceCreated(&s)
 		case (&ResourceChanged{}).EventType():
 			var s ResourceChanged
 			if err := eu.Unmarshal(&s); err != nil {
 				return status.Errorf(codes.Internal, "%v", err)
 			}
-			_, _ = e.HandleEventResourceChanged(ctx, &s)
+			_ = e.handleEventResourceChanged(&s)
 		case (&ResourceDeleted{}).EventType():
 			var s ResourceDeleted
 			if err := eu.Unmarshal(&s); err != nil {
 				return status.Errorf(codes.Internal, "%v", err)
 			}
-			_ = e.HandleEventResourceDeleted(ctx, &s)
+			_ = e.handleEventResourceDeleted(&s)
 		case (&ResourceDeletePending{}).EventType():
 			var s ResourceDeletePending
 			if err := eu.Unmarshal(&s); err != nil {
 				return status.Errorf(codes.Internal, "%v", err)
 			}
-			_ = e.HandleEventResourceDeletePending(ctx, &s)
+			_ = e.handleEventResourceDeletePending(&s)
 		case (&ResourceRetrieved{}).EventType():
 			var s ResourceRetrieved
 			if err := eu.Unmarshal(&s); err != nil {
 				return status.Errorf(codes.Internal, "%v", err)
 			}
-			_ = e.HandleEventResourceRetrieved(ctx, &s)
+			_ = e.handleEventResourceRetrieved(&s)
 		case (&ResourceRetrievePending{}).EventType():
 			var s ResourceRetrievePending
 			if err := eu.Unmarshal(&s); err != nil {
 				return status.Errorf(codes.Internal, "%v", err)
 			}
-			_ = e.HandleEventResourceRetrievePending(ctx, &s)
+			_ = e.handleEventResourceRetrievePending(&s)
 		}
 	}
 	return iter.Err()
@@ -441,7 +441,7 @@ func convertContent(content *commands.Content, supportedContentType string) (new
 	}, nil
 }
 
-func (e *ResourceStateSnapshotTaken) ConfirmResourceUpdateCommand(ctx context.Context, userID string, req *commands.ConfirmResourceUpdateRequest, newVersion uint64) ([]eventstore.Event, error) {
+func (e *ResourceStateSnapshotTaken) confirmResourceUpdateCommand(ctx context.Context, userID string, req *commands.ConfirmResourceUpdateRequest, newVersion uint64) ([]eventstore.Event, error) {
 	if req.CommandMetadata == nil {
 		return nil, status.Errorf(codes.InvalidArgument, errInvalidCommandMetadata)
 	}
@@ -456,13 +456,13 @@ func (e *ResourceStateSnapshotTaken) ConfirmResourceUpdateCommand(ctx context.Co
 		Status:               req.GetStatus(),
 		OpenTelemetryCarrier: propagation.TraceFromCtx(ctx),
 	}
-	if err := e.HandleEventResourceUpdated(ctx, &rc); err != nil {
+	if err := e.handleEventResourceUpdated(&rc); err != nil {
 		return nil, err
 	}
 	return []eventstore.Event{&rc}, nil
 }
 
-func (e *ResourceStateSnapshotTaken) ConfirmResourceRetrieveCommand(ctx context.Context, userID string, req *commands.ConfirmResourceRetrieveRequest, newVersion uint64) ([]eventstore.Event, error) {
+func (e *ResourceStateSnapshotTaken) confirmResourceRetrieveCommand(ctx context.Context, userID string, req *commands.ConfirmResourceRetrieveRequest, newVersion uint64) ([]eventstore.Event, error) {
 	if req.GetCommandMetadata() == nil {
 		return nil, status.Errorf(codes.InvalidArgument, errInvalidCommandMetadata)
 	}
@@ -477,13 +477,13 @@ func (e *ResourceStateSnapshotTaken) ConfirmResourceRetrieveCommand(ctx context.
 		Status:               req.GetStatus(),
 		OpenTelemetryCarrier: propagation.TraceFromCtx(ctx),
 	}
-	if err := e.HandleEventResourceRetrieved(ctx, &rc); err != nil {
+	if err := e.handleEventResourceRetrieved(&rc); err != nil {
 		return nil, err
 	}
 	return []eventstore.Event{&rc}, nil
 }
 
-func (e *ResourceStateSnapshotTaken) ConfirmResourceDeleteCommand(ctx context.Context, userID string, req *commands.ConfirmResourceDeleteRequest, newVersion uint64) ([]eventstore.Event, error) {
+func (e *ResourceStateSnapshotTaken) confirmResourceDeleteCommand(ctx context.Context, userID string, req *commands.ConfirmResourceDeleteRequest, newVersion uint64) ([]eventstore.Event, error) {
 	if req.GetCommandMetadata() == nil {
 		return nil, status.Errorf(codes.InvalidArgument, errInvalidCommandMetadata)
 	}
@@ -498,13 +498,13 @@ func (e *ResourceStateSnapshotTaken) ConfirmResourceDeleteCommand(ctx context.Co
 		Status:               req.GetStatus(),
 		OpenTelemetryCarrier: propagation.TraceFromCtx(ctx),
 	}
-	if err := e.HandleEventResourceDeleted(ctx, &rc); err != nil {
+	if err := e.handleEventResourceDeleted(&rc); err != nil {
 		return nil, err
 	}
 	return []eventstore.Event{&rc}, nil
 }
 
-func (e *ResourceStateSnapshotTaken) ConfirmResourceCreateCommand(ctx context.Context, userID string, req *commands.ConfirmResourceCreateRequest, newVersion uint64) ([]eventstore.Event, error) {
+func (e *ResourceStateSnapshotTaken) confirmResourceCreateCommand(ctx context.Context, userID string, req *commands.ConfirmResourceCreateRequest, newVersion uint64) ([]eventstore.Event, error) {
 	if req.GetCommandMetadata() == nil {
 		return nil, status.Errorf(codes.InvalidArgument, errInvalidCommandMetadata)
 	}
@@ -519,7 +519,7 @@ func (e *ResourceStateSnapshotTaken) ConfirmResourceCreateCommand(ctx context.Co
 		Status:               req.GetStatus(),
 		OpenTelemetryCarrier: propagation.TraceFromCtx(ctx),
 	}
-	if err := e.HandleEventResourceCreated(ctx, &rc); err != nil {
+	if err := e.handleEventResourceCreated(&rc); err != nil {
 		return nil, err
 	}
 	return []eventstore.Event{&rc}, nil
@@ -535,7 +535,7 @@ func (e *ResourceStateSnapshotTaken) CancelPendingCommands(ctx context.Context, 
 		if len(correlationIdFilter) != 0 && !correlationIdFilter.HasOneOf(event.GetAuditContext().GetCorrelationId()) {
 			continue
 		}
-		ev, err := e.ConfirmResourceCreateCommand(ctx, userID, &commands.ConfirmResourceCreateRequest{
+		ev, err := e.confirmResourceCreateCommand(ctx, userID, &commands.ConfirmResourceCreateRequest{
 			ResourceId:      req.GetResourceId(),
 			CorrelationId:   event.GetAuditContext().GetCorrelationId(),
 			Status:          commands.Status_CANCELED,
@@ -550,7 +550,7 @@ func (e *ResourceStateSnapshotTaken) CancelPendingCommands(ctx context.Context, 
 		if len(correlationIdFilter) != 0 && !correlationIdFilter.HasOneOf(event.GetAuditContext().GetCorrelationId()) {
 			continue
 		}
-		ev, err := e.ConfirmResourceUpdateCommand(ctx, userID, &commands.ConfirmResourceUpdateRequest{
+		ev, err := e.confirmResourceUpdateCommand(ctx, userID, &commands.ConfirmResourceUpdateRequest{
 			ResourceId:      req.GetResourceId(),
 			CorrelationId:   event.GetAuditContext().GetCorrelationId(),
 			Status:          commands.Status_CANCELED,
@@ -565,7 +565,7 @@ func (e *ResourceStateSnapshotTaken) CancelPendingCommands(ctx context.Context, 
 		if len(correlationIdFilter) != 0 && !correlationIdFilter.HasOneOf(event.GetAuditContext().GetCorrelationId()) {
 			continue
 		}
-		ev, err := e.ConfirmResourceRetrieveCommand(ctx, userID, &commands.ConfirmResourceRetrieveRequest{
+		ev, err := e.confirmResourceRetrieveCommand(ctx, userID, &commands.ConfirmResourceRetrieveRequest{
 			ResourceId:      req.GetResourceId(),
 			CorrelationId:   event.GetAuditContext().GetCorrelationId(),
 			Status:          commands.Status_CANCELED,
@@ -580,7 +580,7 @@ func (e *ResourceStateSnapshotTaken) CancelPendingCommands(ctx context.Context, 
 		if len(correlationIdFilter) != 0 && !correlationIdFilter.HasOneOf(event.GetAuditContext().GetCorrelationId()) {
 			continue
 		}
-		ev, err := e.ConfirmResourceDeleteCommand(ctx, userID, &commands.ConfirmResourceDeleteRequest{
+		ev, err := e.confirmResourceDeleteCommand(ctx, userID, &commands.ConfirmResourceDeleteRequest{
 			ResourceId:      req.GetResourceId(),
 			CorrelationId:   event.GetAuditContext().GetCorrelationId(),
 			Status:          commands.Status_CANCELED,
@@ -613,12 +613,8 @@ func (e *ResourceStateSnapshotTaken) handleNotifyResourceChangedRequest(ctx cont
 		Status:               req.GetStatus(),
 		OpenTelemetryCarrier: propagation.TraceFromCtx(ctx),
 	}
-	var ok bool
-	var err error
-	if ok, err = e.HandleEventResourceChanged(ctx, &rc); err != nil {
-		return nil, err
-	}
-	if ok {
+
+	if e.handleEventResourceChanged(&rc) {
 		return []eventstore.Event{&rc}, nil
 	}
 	return nil, nil
@@ -646,7 +642,7 @@ func (e *ResourceStateSnapshotTaken) handleUpdateResourceRequest(ctx context.Con
 		OpenTelemetryCarrier: propagation.TraceFromCtx(ctx),
 	}
 
-	if err = e.HandleEventResourceUpdatePending(ctx, &rc); err != nil {
+	if err = e.handleEventResourceUpdatePending(&rc); err != nil {
 		return nil, err
 	}
 	return []eventstore.Event{&rc}, nil
@@ -669,7 +665,7 @@ func (e *ResourceStateSnapshotTaken) handleRetrieveResourceRequest(ctx context.C
 		OpenTelemetryCarrier: propagation.TraceFromCtx(ctx),
 	}
 
-	if err := e.HandleEventResourceRetrievePending(ctx, &rc); err != nil {
+	if err := e.handleEventResourceRetrievePending(&rc); err != nil {
 		return nil, err
 	}
 	return []eventstore.Event{&rc}, nil
@@ -691,7 +687,7 @@ func (e *ResourceStateSnapshotTaken) handleDeleteResourceRequest(ctx context.Con
 		OpenTelemetryCarrier: propagation.TraceFromCtx(ctx),
 	}
 
-	if err := e.HandleEventResourceDeletePending(ctx, &rc); err != nil {
+	if err := e.handleEventResourceDeletePending(&rc); err != nil {
 		return nil, err
 	}
 	return []eventstore.Event{&rc}, nil
@@ -717,7 +713,7 @@ func (e *ResourceStateSnapshotTaken) handleCreateResourceRequest(ctx context.Con
 		OpenTelemetryCarrier: propagation.TraceFromCtx(ctx),
 	}
 
-	if err := e.HandleEventResourceCreatePending(ctx, &rc); err != nil {
+	if err := e.handleEventResourceCreatePending(&rc); err != nil {
 		return nil, err
 	}
 	return []eventstore.Event{&rc}, nil
@@ -739,19 +735,19 @@ func (e *ResourceStateSnapshotTaken) HandleCommand(ctx context.Context, cmd aggr
 	case *commands.UpdateResourceRequest:
 		return e.handleUpdateResourceRequest(ctx, userID, req, newVersion)
 	case *commands.ConfirmResourceUpdateRequest:
-		return e.ConfirmResourceUpdateCommand(ctx, userID, req, newVersion)
+		return e.confirmResourceUpdateCommand(ctx, userID, req, newVersion)
 	case *commands.RetrieveResourceRequest:
 		return e.handleRetrieveResourceRequest(ctx, userID, req, newVersion)
 	case *commands.ConfirmResourceRetrieveRequest:
-		return e.ConfirmResourceRetrieveCommand(ctx, userID, req, newVersion)
+		return e.confirmResourceRetrieveCommand(ctx, userID, req, newVersion)
 	case *commands.DeleteResourceRequest:
 		return e.handleDeleteResourceRequest(ctx, userID, req, newVersion)
 	case *commands.ConfirmResourceDeleteRequest:
-		return e.ConfirmResourceDeleteCommand(ctx, userID, req, newVersion)
+		return e.confirmResourceDeleteCommand(ctx, userID, req, newVersion)
 	case *commands.CreateResourceRequest:
 		return e.handleCreateResourceRequest(ctx, userID, req, newVersion)
 	case *commands.ConfirmResourceCreateRequest:
-		return e.ConfirmResourceCreateCommand(ctx, userID, req, newVersion)
+		return e.confirmResourceCreateCommand(ctx, userID, req, newVersion)
 	case *commands.CancelPendingCommandsRequest:
 		return e.CancelPendingCommands(ctx, userID, req, newVersion)
 	}

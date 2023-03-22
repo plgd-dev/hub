@@ -7,7 +7,7 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/log"
 )
 
-func (requestHandler *RequestHandler) getJWKs(w http.ResponseWriter, r *http.Request) {
+func (requestHandler *RequestHandler) getJWKs(w http.ResponseWriter, _ *http.Request) {
 	resp := map[string]interface{}{
 		"keys": []jwk.Key{
 			requestHandler.idTokenJwkKey,

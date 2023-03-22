@@ -104,7 +104,7 @@ func (c *Client) insertSubscription(id string, s subscription) {
 	c.subscriptions[id] = s
 }
 
-func (c *Client) Close(ctx context.Context) error {
+func (c *Client) Close() error {
 	var errors *multierror.Error
 	for _, s := range c.popSubscriptions() {
 		wait, err := s.Cancel()

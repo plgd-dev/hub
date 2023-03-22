@@ -67,7 +67,7 @@ func deleteSwitchResource(ctx context.Context, t *testing.T, c pb.GrpcGatewayCli
 		ResourceId: commands.NewResourceID(deviceID, test.TestResourceSwitchesInstanceHref(switchID)),
 	})
 	require.NoError(t, err)
-	want := pbTest.MakeResourceDeleted(t, deviceID, test.TestResourceSwitchesInstanceHref(switchID), "")
+	want := pbTest.MakeResourceDeleted(deviceID, test.TestResourceSwitchesInstanceHref(switchID), "")
 	pbTest.CmpResourceDeleted(t, want, got.GetData())
 }
 
@@ -219,7 +219,7 @@ func deleteSwitchResourceExpectedEvents(t *testing.T, deviceID, subID, correlati
 		SubscriptionId: subID,
 		CorrelationId:  correlationID,
 		Type: &pb.Event_ResourceDeleted{
-			ResourceDeleted: pbTest.MakeResourceDeleted(t, deviceID, test.TestResourceSwitchesInstanceHref(switchID), ""),
+			ResourceDeleted: pbTest.MakeResourceDeleted(deviceID, test.TestResourceSwitchesInstanceHref(switchID), ""),
 		},
 	}
 

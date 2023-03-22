@@ -7,7 +7,7 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/log"
 )
 
-func (requestHandler *RequestHandler) getUserInfo(w http.ResponseWriter, r *http.Request) {
+func (requestHandler *RequestHandler) getUserInfo(w http.ResponseWriter, _ *http.Request) {
 	resp := map[string]interface{}{
 		"sub": DeviceUserID,
 		"exp": time.Now().Add(time.Hour).Unix(),
