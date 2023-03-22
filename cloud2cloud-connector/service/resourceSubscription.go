@@ -85,7 +85,7 @@ func cancelResourceSubscription(ctx context.Context, traceProvider trace.TracerP
 	return nil
 }
 
-func (s *SubscriptionManager) HandleResourceChangedEvent(ctx context.Context, subscriptionData SubscriptionData, header events.EventHeader, body []byte) error {
+func (s *SubscriptionManager) handleResourceChangedEvent(ctx context.Context, subscriptionData SubscriptionData, header events.EventHeader, body []byte) error {
 	coapContentFormat := stringToSupportedMediaType(header.ContentType)
 	_, err := s.raClient.NotifyResourceChanged(ctx, &commands.NotifyResourceChangedRequest{
 		ResourceId: commands.NewResourceID(subscriptionData.subscription.DeviceID, kitHttp.CanonicalHref(subscriptionData.subscription.Href)),
@@ -106,9 +106,9 @@ func (s *SubscriptionManager) HandleResourceChangedEvent(ctx context.Context, su
 	return nil
 }
 
-func (s *SubscriptionManager) HandleResourceEvent(ctx context.Context, header events.EventHeader, body []byte, subscriptionData SubscriptionData) error {
+func (s *SubscriptionManager) handleResourceEvent(ctx context.Context, header events.EventHeader, body []byte, subscriptionData SubscriptionData) error {
 	if header.EventType == events.EventType_ResourceChanged {
-		return s.HandleResourceChangedEvent(ctx, subscriptionData, header, body)
+		return s.handleResourceChangedEvent(ctx, subscriptionData, header, body)
 	}
 	return fmt.Errorf("cannot handle resource event: unsupported Event-Type %v", header.EventType)
 }

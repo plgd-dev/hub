@@ -30,7 +30,7 @@ type CertificateAuthorityServer struct {
 	ownerClaim   string
 }
 
-func NewCertificateAuthorityServer(cfg Config, ownerClaim string, signerConfig SignerConfig, logger log.Logger) (*CertificateAuthorityServer, error) {
+func NewCertificateAuthorityServer(ownerClaim string, signerConfig SignerConfig, logger log.Logger) (*CertificateAuthorityServer, error) {
 	certificate, err := security.LoadX509(signerConfig.CertFile)
 	if err != nil {
 		return nil, err

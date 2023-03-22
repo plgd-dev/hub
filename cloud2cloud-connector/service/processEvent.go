@@ -20,7 +20,7 @@ func (rh *RequestHandler) notifyLinkedAccount(r *http.Request) (int, error) {
 		return http.StatusGone, err
 	}
 
-	return rh.subManager.HandleEvent(r.Context(), header, b.Bytes())
+	return rh.subManager.handleEvent(r.Context(), header, b.Bytes())
 }
 
 func (rh *RequestHandler) ProcessEvent(w http.ResponseWriter, r *http.Request) {

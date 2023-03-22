@@ -66,7 +66,7 @@ func (h *gatewayHandler) GetHubConfiguration(context.Context, *pb.HubConfigurati
 	}, nil
 }
 
-func (h *gatewayHandler) GetDevices(req *pb.GetDevicesRequest, srv pb.GrpcGateway_GetDevicesServer) error {
+func (h *gatewayHandler) GetDevices(_ *pb.GetDevicesRequest, srv pb.GrpcGateway_GetDevicesServer) error {
 	v := pb.Device{
 		Id:   h.deviceID,
 		Name: h.deviceName,
@@ -85,7 +85,7 @@ func (h *gatewayHandler) GetDevices(req *pb.GetDevicesRequest, srv pb.GrpcGatewa
 	return nil
 }
 
-func (h *gatewayHandler) GetResourceLinks(req *pb.GetResourceLinksRequest, srv pb.GrpcGateway_GetResourceLinksServer) error {
+func (h *gatewayHandler) GetResourceLinks(_ *pb.GetResourceLinksRequest, srv pb.GrpcGateway_GetResourceLinksServer) error {
 	err := srv.Send(&events.ResourceLinksPublished{
 		DeviceId: h.deviceID,
 		Resources: []*commands.Resource{
@@ -103,7 +103,7 @@ func (h *gatewayHandler) GetResourceLinks(req *pb.GetResourceLinksRequest, srv p
 	return nil
 }
 
-func (h *gatewayHandler) GetResources(req *pb.GetResourcesRequest, srv pb.GrpcGateway_GetResourcesServer) error {
+func (h *gatewayHandler) GetResources(_ *pb.GetResourcesRequest, srv pb.GrpcGateway_GetResourcesServer) error {
 	err := sendResourceValue(srv, h.deviceID, device.ResourceType, device.Device{
 		ID:   h.deviceID,
 		Name: h.deviceName,

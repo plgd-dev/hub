@@ -14,11 +14,11 @@ type MockEventStore struct {
 
 var errNotSupported = errors.New("not supported")
 
-func (s *MockEventStore) GetEvents(ctx context.Context, queries []eventstore.GetEventsQuery, timestamp int64, eventHandler eventstore.Handler) error {
+func (s *MockEventStore) GetEvents(context.Context, []eventstore.GetEventsQuery, int64, eventstore.Handler) error {
 	return errNotSupported
 }
 
-func (s *MockEventStore) Save(ctx context.Context, events ...eventstore.Event) (eventstore.SaveStatus, error) {
+func (s *MockEventStore) Save(context.Context, ...eventstore.Event) (eventstore.SaveStatus, error) {
 	return eventstore.Fail, errNotSupported
 }
 
@@ -46,7 +46,7 @@ func (s *MockEventStore) LoadFromVersion(ctx context.Context, queries []eventsto
 }
 
 // LoadUpToVersion loads aggregate events up to a specific version.
-func (s *MockEventStore) LoadUpToVersion(ctx context.Context, queries []eventstore.VersionQuery, eventHandler eventstore.Handler) error {
+func (s *MockEventStore) LoadUpToVersion(context.Context, []eventstore.VersionQuery, eventstore.Handler) error {
 	return errNotSupported
 }
 
@@ -139,12 +139,12 @@ func (s *MockEventStore) LoadFromSnapshot(ctx context.Context, queries []eventst
 }
 
 // RemoveUpToVersion deletes the aggregates events up to a specific version.
-func (s *MockEventStore) RemoveUpToVersion(ctx context.Context, queries []eventstore.VersionQuery) error {
+func (s *MockEventStore) RemoveUpToVersion(context.Context, []eventstore.VersionQuery) error {
 	return errNotSupported
 }
 
 // Delete aggregates events for specific group ids.
-func (s *MockEventStore) Delete(ctx context.Context, queries []eventstore.DeleteQuery) error {
+func (s *MockEventStore) Delete(context.Context, []eventstore.DeleteQuery) error {
 	return errNotSupported
 }
 
@@ -153,7 +153,7 @@ type iter struct {
 	events []eventstore.EventUnmarshaler
 }
 
-func (i *iter) Next(ctx context.Context) (eventstore.EventUnmarshaler, bool) {
+func (i *iter) Next(context.Context) (eventstore.EventUnmarshaler, bool) {
 	if i.idx >= len(i.events) {
 		return nil, false
 	}

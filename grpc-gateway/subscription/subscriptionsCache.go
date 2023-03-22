@@ -69,7 +69,7 @@ func sendToSenders(ev *pb.Event, bit FilterBitmask, senders []func(e *pb.Event, 
 	return errors.ErrorOrNil()
 }
 
-func (d *eventSubject) HandleRegistrationsEvent(msg *nats.Msg) error {
+func (d *eventSubject) handleRegistrationsEvent(msg *nats.Msg) error {
 	var e isEvents.Event
 	if err := utils.Unmarshal(msg.Data, &e); err != nil {
 		return err
@@ -267,7 +267,7 @@ func (d *eventSubject) copySenders() []SendEventWithTypeFunc {
 	return senders
 }
 
-func (d *eventSubject) HandleDevicesEvent(msg *nats.Msg) error {
+func (d *eventSubject) handleDevicesEvent(msg *nats.Msg) error {
 	var e eventbusPb.Event
 	if err := proto.Unmarshal(msg.Data, &e); err != nil {
 		return err
@@ -284,11 +284,11 @@ func (d *eventSubject) HandleDevicesEvent(msg *nats.Msg) error {
 	return sendToSenders(ev, bit, d.copySenders())
 }
 
-func (d *eventSubject) HandleEvent(msg *nats.Msg) error {
+func (d *eventSubject) handleEvent(msg *nats.Msg) error {
 	if strings.Contains(msg.Subject, "."+isEvents.Registrations) {
-		return d.HandleRegistrationsEvent(msg)
+		return d.handleRegistrationsEvent(msg)
 	} else if strings.Contains(msg.Subject, "."+utils.Devices) {
-		return d.HandleDevicesEvent(msg)
+		return d.handleDevicesEvent(msg)
 	}
 	return fmt.Errorf("cannot process event from unknown subject(%v)", msg.Subject)
 }
@@ -390,7 +390,7 @@ func (c *SubscriptionsCache) Subscribe(subject string, onEvent SendEventWithType
 		}
 		if s.subscription == nil {
 			err := s.subscribeLocked(subject, c.conn.Subscribe, func(msg *nats.Msg) {
-				if err := s.HandleEvent(msg); err != nil {
+				if err := s.handleEvent(msg); err != nil {
 					c.errFunc(err)
 				}
 			})

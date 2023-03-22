@@ -100,7 +100,7 @@ func (c *Client) stopObservingDevices(observationID string) (wait func(), err er
 	return s.Cancel()
 }
 
-func (c *Client) StopObservingDevices(ctx context.Context, observationID string) error {
+func (c *Client) StopObservingDevices(observationID string) error {
 	wait, err := c.stopObservingDevices(observationID)
 	if err != nil {
 		return err

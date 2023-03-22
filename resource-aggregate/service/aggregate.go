@@ -20,15 +20,15 @@ type Aggregate struct {
 	eventstore EventStore
 }
 
-func ResourceStateFactoryModel(ctx context.Context) (cqrsAggregate.AggregateModel, error) {
+func ResourceStateFactoryModel(context.Context) (cqrsAggregate.AggregateModel, error) {
 	return raEvents.NewResourceStateSnapshotTaken(), nil
 }
 
-func ResourceLinksFactoryModel(ctx context.Context) (cqrsAggregate.AggregateModel, error) {
+func ResourceLinksFactoryModel(context.Context) (cqrsAggregate.AggregateModel, error) {
 	return raEvents.NewResourceLinksSnapshotTaken(), nil
 }
 
-func DeviceMetadataFactoryModel(ctx context.Context) (cqrsAggregate.AggregateModel, error) {
+func DeviceMetadataFactoryModel(context.Context) (cqrsAggregate.AggregateModel, error) {
 	return raEvents.NewDeviceMetadataSnapshotTaken(), nil
 }
 

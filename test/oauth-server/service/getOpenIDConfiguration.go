@@ -8,7 +8,7 @@ import (
 	"github.com/plgd-dev/hub/v2/test/oauth-server/uri"
 )
 
-func (requestHandler *RequestHandler) getOpenIDConfiguration(w http.ResponseWriter, r *http.Request) {
+func (requestHandler *RequestHandler) getOpenIDConfiguration(w http.ResponseWriter, _ *http.Request) {
 	v := openid.Config{
 		Issuer:      requestHandler.getDomain() + "/",
 		AuthURL:     requestHandler.getDomain() + uri.Authorize,

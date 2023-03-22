@@ -71,7 +71,7 @@ func TestClient_GetDevices(t *testing.T) {
 
 	c := NewTestClient(t)
 	defer func() {
-		err := c.Close(context.Background())
+		err := c.Close()
 		assert.NoError(t, err)
 	}()
 

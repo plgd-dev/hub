@@ -147,7 +147,7 @@ func (a *CertManager) Close() {
 	a.fileWatcher.RemoveOnEventHandler(&a.onFileChangeFunc)
 }
 
-func (a *CertManager) getServerCertificate(hello *tls.ClientHelloInfo) (*tls.Certificate, error) {
+func (a *CertManager) getServerCertificate(*tls.ClientHelloInfo) (*tls.Certificate, error) {
 	a.private.mutex.Lock()
 	defer a.private.mutex.Unlock()
 	return &a.private.tlsKeyPair, nil

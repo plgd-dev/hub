@@ -56,7 +56,7 @@ func New(caCert []*x509.Certificate, caKey crypto.PrivateKey, opts ...Opt) *Cert
 	return &CertificateSigner{caCert: caCert, caKey: caKey, cfg: cfg}
 }
 
-func (s *CertificateSigner) Sign(ctx context.Context, csr []byte) (signedCsr []byte, err error) {
+func (s *CertificateSigner) Sign(_ context.Context, csr []byte) (signedCsr []byte, err error) {
 	if len(s.caCert) == 0 {
 		return nil, fmt.Errorf("cannot sign with empty signer CA certificates")
 	}

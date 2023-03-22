@@ -36,7 +36,7 @@ func CreateMakeQueryCaseInsensitiveMiddleware(queryCaseInsensitive map[string]st
 	}
 }
 
-func CreateTrailSlashSuffixMiddleware(queryCaseInsensitive map[string]string, opts ...LogOpt) func(next http.Handler) http.Handler {
+func CreateTrailSlashSuffixMiddleware(opts ...LogOpt) func(next http.Handler) http.Handler {
 	cfg := NewLogOptions()
 	for _, o := range opts {
 		o(cfg)

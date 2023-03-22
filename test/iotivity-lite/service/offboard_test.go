@@ -74,7 +74,7 @@ func TestOffboard(t *testing.T) {
 	_, _ = test.OnboardDevSim(ctx, t, c, deviceID, config.ACTIVE_COAP_SCHEME+"://"+config.COAP_GW_HOST, nil)
 	require.True(t, ch.WaitForFirstSignIn(time.Second*20))
 
-	test.OffBoardDevSim(ctx, t, c, deviceID)
+	test.OffBoardDevSim(ctx, t, deviceID)
 	require.True(t, ch.WaitForFirstSignOff(time.Second*20))
 }
 
@@ -226,7 +226,7 @@ func TestOffboardWithoutSignIn(t *testing.T) {
 	// first retry after failure is after 2 seconds, so hopefully it doesn't trigger, if this test
 	// behaves flakily then we will have to update simulator to have a configurable retry
 	sh.failSignIn.Store(false)
-	test.OffBoardDevSim(ctx, t, c, deviceID)
+	test.OffBoardDevSim(ctx, t, deviceID)
 	require.True(t, sh.WaitForFirstSignOff(time.Second*20))
 }
 
@@ -284,7 +284,7 @@ func TestOffboardWithSignIn(t *testing.T) {
 	// first retry after failure is after 2 seconds, so hopefully it doesn't trigger, if this test
 	// behaves flakily then we will have to update simulator to have a configurable retry
 	sh.failSignIn.Store(false)
-	test.OffBoardDevSim(ctx, t, c, deviceID)
+	test.OffBoardDevSim(ctx, t, deviceID)
 	require.True(t, sh.WaitForFirstSignOff(time.Second*20))
 }
 
@@ -343,7 +343,7 @@ func TestOffboardWithSignInByRefreshToken(t *testing.T) {
 	// first retry after failure is after 2 seconds, so hopefully it doesn't trigger, if this test
 	// behaves flakily then we will have to update simulator to have a configurable retry
 	sh.failSignIn.Store(false)
-	test.OffBoardDevSim(ctx, t, c, deviceID)
+	test.OffBoardDevSim(ctx, t, deviceID)
 	require.True(t, sh.WaitForFirstRefreshToken(time.Second*20))
 	require.True(t, sh.WaitForFirstSignOff(time.Second*20))
 }
@@ -393,9 +393,9 @@ func TestOffboardWithRepeat(t *testing.T) {
 	deviceID, _ = test.OnboardDevSim(ctx, t, c, deviceID, config.ACTIVE_COAP_SCHEME+"://"+config.COAP_GW_HOST, nil)
 	require.True(t, sh.WaitForFirstSignIn(time.Second*20))
 
-	test.OffBoardDevSim(ctx, t, c, deviceID)
-	test.OffBoardDevSim(ctx, t, c, deviceID)
-	test.OffBoardDevSim(ctx, t, c, deviceID)
+	test.OffBoardDevSim(ctx, t, deviceID)
+	test.OffBoardDevSim(ctx, t, deviceID)
+	test.OffBoardDevSim(ctx, t, deviceID)
 
 	require.True(t, sh.WaitForFirstSignOff(time.Second*20))
 	// first SignOff should timeout after 10 secs, we wait 10 additional seconds for the other
@@ -451,7 +451,7 @@ func TestOffboardInterrupt(t *testing.T) {
 	deviceID, _ = test.OnboardDevSim(ctx, t, c, deviceID, config.ACTIVE_COAP_SCHEME+"://"+config.COAP_GW_HOST, nil)
 	require.True(t, sh.WaitForFirstSignIn(time.Second*20))
 
-	test.OffBoardDevSim(ctx, t, c, deviceID)
+	test.OffBoardDevSim(ctx, t, deviceID)
 	require.True(t, sh.WaitForFirstRefreshToken(time.Second*20))
 
 	sh.failSignIn.Store(false)

@@ -52,7 +52,7 @@ func (e *eventUnmarshaler) Timestamp() time.Time {
 	return time.Unix(0, e.timestamp)
 }
 
-func (e *eventUnmarshaler) Unmarshal(v interface{}) error {
+func (e *eventUnmarshaler) Unmarshal(interface{}) error {
 	return nil
 }
 

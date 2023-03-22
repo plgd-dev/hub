@@ -13,10 +13,7 @@ type OpenTelemetryCollectorConfig struct {
 }
 
 func (c *OpenTelemetryCollectorConfig) Validate() error {
-	if err := c.Config.Validate(); err != nil {
-		return err
-	}
-	return nil
+	return c.Config.Validate()
 }
 
 func OpenTelemetryNewHandler(handler http.Handler, serviceName string, tracerProvider trace.TracerProvider) http.Handler {

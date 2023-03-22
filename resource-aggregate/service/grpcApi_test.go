@@ -1091,7 +1091,7 @@ func TestRequestHandlerConfirmResourceCreate(t *testing.T) {
 	}
 }
 
-func mockGetOwnerDevices(ctx context.Context, owner string, deviceIDs []string) ([]string, error) {
+func mockGetOwnerDevices(_ context.Context, owner string, deviceIDs []string) ([]string, error) {
 	ownedDevices, code, err := testListDevicesOfUserFunc(owner)
 	if err != nil {
 		return nil, status.Errorf(code, "%v", err)

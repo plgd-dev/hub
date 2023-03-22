@@ -125,10 +125,10 @@ func TestRequestHandlerGetEventsStateSnapshot(t *testing.T) {
 	}
 }
 
-func TestRequestHandlerGetEventsResourceLinksSnapshot(t *testing.T) {
+func TestRequestHandlerGetEventsResourceLinksSnapshot(*testing.T) {
 	// TODO
 }
 
-func TestRequestHandlerGetEventsDeviceMetadataSnapshot(t *testing.T) {
+func TestRequestHandlerGetEventsDeviceMetadataSnapshot(*testing.T) {
 	// TODO
 }

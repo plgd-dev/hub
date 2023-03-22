@@ -74,7 +74,7 @@ func TestShutdownServiceWithDeviceIssue627(t *testing.T) {
 	observationID, err := grpcClient.ObserveDevices(ctx, &v)
 	require.NoError(t, err)
 	defer func(observationID string) {
-		err := grpcClient.StopObservingDevices(ctx, observationID)
+		err := grpcClient.StopObservingDevices(observationID)
 		require.NoError(t, err)
 		require.NoError(t, v.err.Load())
 	}(observationID)

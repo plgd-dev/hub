@@ -17,6 +17,6 @@ func NewRouter(queryCaseInsensitive map[string]string, authInterceptor kitHttp.I
 		WriteError(w, fmt.Errorf("cannot access to %v: %w", r.RequestURI, err))
 	}))
 	r.Use(kitHttp.CreateMakeQueryCaseInsensitiveMiddleware(queryCaseInsensitive, opts...))
-	r.Use(kitHttp.CreateTrailSlashSuffixMiddleware(queryCaseInsensitive, opts...))
+	r.Use(kitHttp.CreateTrailSlashSuffixMiddleware(opts...))
 	return r
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/hashicorp/go-multierror"
 	"github.com/panjf2000/ants/v2"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
@@ -45,23 +46,22 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 	server.AddCloseFunc(otelClient.Close)
 	server.AddCloseFunc(validator.Close)
 
+	closeServerOnError := func(err error) error {
+		var errors *multierror.Error
+		errors = multierror.Append(errors, err)
+		if err2 := server.Close(); err2 != nil {
+			errors = multierror.Append(errors, fmt.Errorf("cannot close server: %w", err2))
+		}
+		return errors.ErrorOrNil()
+	}
 	pool, err := ants.NewPool(config.Clients.Eventbus.GoPoolSize)
 	if err != nil {
-		err = fmt.Errorf("cannot create goroutine pool: %w", err)
-		err2 := server.Close()
-		if err2 != nil {
-			err = fmt.Errorf(`[%w, "cannot close server: %v"]`, err, err2)
-		}
-		return nil, err
+		return nil, closeServerOnError(fmt.Errorf("cannot create goroutine pool: %w", err))
 	}
 	server.AddCloseFunc(pool.Release)
 
-	if err := AddHandler(ctx, server, config, fileWatcher, logger, tracerProvider, pool.Submit); err != nil {
-		err2 := server.Close()
-		if err2 != nil {
-			err = fmt.Errorf(`[%w, "cannot close server: %v"]`, err, err2)
-		}
-		return nil, err
+	if err := addHandler(server, config, fileWatcher, logger, tracerProvider, pool.Submit); err != nil {
+		return nil, closeServerOnError(err)
 	}
 
 	return &Service{

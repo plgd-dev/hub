@@ -89,7 +89,7 @@ func (e *Snapshot) Handle(ctx context.Context, iter eventstore.Iter) error {
 	return nil
 }
 
-func (e *Snapshot) HandleCommand(ctx context.Context, cmd Command, newVersion uint64) ([]eventstore.Event, error) {
+func (e *Snapshot) HandleCommand(_ context.Context, cmd Command, newVersion uint64) ([]eventstore.Event, error) {
 	switch req := cmd.(type) {
 	case *Publish:
 		e.IsPublished = true

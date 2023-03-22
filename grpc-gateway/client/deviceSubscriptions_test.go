@@ -85,7 +85,7 @@ func TestObserveDeviceResourcesRetrieve(t *testing.T) {
 
 	c := NewTestClient(t)
 	defer func() {
-		err := c.Close(context.Background())
+		err := c.Close()
 		assert.NoError(t, err)
 	}()
 	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c.GrpcGatewayClient(), deviceID, config.ACTIVE_COAP_SCHEME+"://"+config.COAP_GW_HOST, test.GetAllBackendResourceLinks())
@@ -146,12 +146,12 @@ func newTestDeviceResourcesRetrieveObservationHandler() *testDeviceResourcesRetr
 	}
 }
 
-func (h *testDeviceResourcesRetrieveObservationHandler) HandleResourceRetrievePending(ctx context.Context, val *events.ResourceRetrievePending) error {
+func (h *testDeviceResourcesRetrieveObservationHandler) HandleResourceRetrievePending(_ context.Context, val *events.ResourceRetrievePending) error {
 	h.res <- val
 	return nil
 }
 
-func (h *testDeviceResourcesRetrieveObservationHandler) HandleResourceRetrieved(ctx context.Context, val *events.ResourceRetrieved) error {
+func (h *testDeviceResourcesRetrieveObservationHandler) HandleResourceRetrieved(_ context.Context, val *events.ResourceRetrieved) error {
 	h.res <- val
 	return nil
 }
@@ -179,7 +179,7 @@ func TestObserveDeviceResourcesUpdate(t *testing.T) {
 
 	c := NewTestClient(t)
 	defer func() {
-		err := c.Close(context.Background())
+		err := c.Close()
 		assert.NoError(t, err)
 	}()
 	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c.GrpcGatewayClient(), deviceID, config.ACTIVE_COAP_SCHEME+"://"+config.COAP_GW_HOST, test.GetAllBackendResourceLinks())
@@ -274,12 +274,12 @@ func newTestDeviceResourcesUpdateObservationHandler() *testDeviceResourcesUpdate
 	}
 }
 
-func (h *testDeviceResourcesUpdateObservationHandler) HandleResourceUpdatePending(ctx context.Context, val *events.ResourceUpdatePending) error {
+func (h *testDeviceResourcesUpdateObservationHandler) HandleResourceUpdatePending(_ context.Context, val *events.ResourceUpdatePending) error {
 	h.res <- val
 	return nil
 }
 
-func (h *testDeviceResourcesUpdateObservationHandler) HandleResourceUpdated(ctx context.Context, val *events.ResourceUpdated) error {
+func (h *testDeviceResourcesUpdateObservationHandler) HandleResourceUpdated(_ context.Context, val *events.ResourceUpdated) error {
 	h.res <- val
 	return nil
 }
@@ -307,7 +307,7 @@ func TestObserveDeviceResourcesCreateAndDelete(t *testing.T) {
 
 	c := NewTestClient(t)
 	defer func() {
-		err := c.Close(context.Background())
+		err := c.Close()
 		assert.NoError(t, err)
 	}()
 	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c.GrpcGatewayClient(), deviceID, config.ACTIVE_COAP_SCHEME+"://"+config.COAP_GW_HOST, test.GetAllBackendResourceLinks())
@@ -390,7 +390,7 @@ func TestObserveDeviceResourcesCreateAndDelete(t *testing.T) {
 			SubscriptionId: sub.ID(),
 			CorrelationId:  delCorrelationID,
 			Type: &pb.Event_ResourceDeleted{
-				ResourceDeleted: pbTest.MakeResourceDeleted(t, deviceID, test.TestResourceSwitchesInstanceHref(switchID),
+				ResourceDeleted: pbTest.MakeResourceDeleted(deviceID, test.TestResourceSwitchesInstanceHref(switchID),
 					delCorrelationID),
 			},
 		},
@@ -412,22 +412,22 @@ func newTestDeviceResourcesCreateAndDeleteObservationHandler() *testDeviceResour
 	}
 }
 
-func (h *testDeviceResourcesCreateAndDeleteObservationHandler) HandleResourceCreatePending(ctx context.Context, val *events.ResourceCreatePending) error {
+func (h *testDeviceResourcesCreateAndDeleteObservationHandler) HandleResourceCreatePending(_ context.Context, val *events.ResourceCreatePending) error {
 	h.res <- val
 	return nil
 }
 
-func (h *testDeviceResourcesCreateAndDeleteObservationHandler) HandleResourceCreated(ctx context.Context, val *events.ResourceCreated) error {
+func (h *testDeviceResourcesCreateAndDeleteObservationHandler) HandleResourceCreated(_ context.Context, val *events.ResourceCreated) error {
 	h.res <- val
 	return nil
 }
 
-func (h *testDeviceResourcesCreateAndDeleteObservationHandler) HandleResourceDeletePending(ctx context.Context, val *events.ResourceDeletePending) error {
+func (h *testDeviceResourcesCreateAndDeleteObservationHandler) HandleResourceDeletePending(_ context.Context, val *events.ResourceDeletePending) error {
 	h.res <- val
 	return nil
 }
 
-func (h *testDeviceResourcesCreateAndDeleteObservationHandler) HandleResourceDeleted(ctx context.Context, val *events.ResourceDeleted) error {
+func (h *testDeviceResourcesCreateAndDeleteObservationHandler) HandleResourceDeleted(_ context.Context, val *events.ResourceDeleted) error {
 	h.res <- val
 	return nil
 }

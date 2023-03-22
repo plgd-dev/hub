@@ -187,7 +187,7 @@ func (s *SubscriptionManager) getSubscriptionData(subscriptionID, correlationID 
 	return newSubscription, nil
 }
 
-func (s *SubscriptionManager) HandleEvent(ctx context.Context, header events.EventHeader, body []byte) (int, error) {
+func (s *SubscriptionManager) handleEvent(ctx context.Context, header events.EventHeader, body []byte) (int, error) {
 	subData, err := s.getSubscriptionData(header.ID, header.CorrelationID)
 	if err != nil {
 		return http.StatusGone, err
@@ -211,7 +211,7 @@ func (s *SubscriptionManager) HandleEvent(ctx context.Context, header events.Eve
 
 	ctx = kitNetGrpc.CtxWithToken(ctx, subData.linkedAccount.Data.Origin().AccessToken.String())
 	if header.EventType == events.EventType_SubscriptionCanceled {
-		err := s.HandleCancelEvent(ctx, header, subData.linkedAccount)
+		err := s.handleCancelEvent(header)
 		if err != nil {
 			return http.StatusGone, fmt.Errorf("cannot cancel subscription: %w", err)
 		}
@@ -220,11 +220,11 @@ func (s *SubscriptionManager) HandleEvent(ctx context.Context, header events.Eve
 
 	switch subData.subscription.Type {
 	case Type_Devices:
-		err = s.HandleDevicesEvent(ctx, header, body, subData)
+		err = s.handleDevicesEvent(ctx, header, body, subData)
 	case Type_Device:
-		err = s.HandleDeviceEvent(ctx, header, body, subData)
+		err = s.handleDeviceEvent(ctx, header, body, subData)
 	case Type_Resource:
-		err = s.HandleResourceEvent(ctx, header, body, subData)
+		err = s.handleResourceEvent(ctx, header, body, subData)
 	default:
 		return http.StatusBadRequest, fmt.Errorf("cannot handle event %v: handler not found", header.EventType)
 	}
@@ -252,7 +252,7 @@ func (h *LinkedAccountHandler) Handle(ctx context.Context, iter store.LinkedAcco
 	return iter.Err()
 }
 
-func (s *SubscriptionManager) HandleCancelEvent(ctx context.Context, header events.EventHeader, linkedAccount store.LinkedAccount) error {
+func (s *SubscriptionManager) handleCancelEvent(header events.EventHeader) error {
 	_, ok := s.store.PullOutSubscription(header.ID)
 	if !ok {
 		return fmt.Errorf("cannot cancel subscription %v: not found", header.ID)

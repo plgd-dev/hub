@@ -100,21 +100,21 @@ func (h *DefaultObserverHandler) RefreshToken(req coapgwService.CoapRefreshToken
 	}, nil
 }
 
-func (h *DefaultObserverHandler) OnObserveResource(ctx context.Context, deviceID, resourceHref string, notification *pool.Message) error {
+func (h *DefaultObserverHandler) OnObserveResource(_ context.Context, deviceID, resourceHref string, notification *pool.Message) error {
 	log.Debugf("OnObserveResource: %v%v", deviceID, resourceHref)
 	msg := message.ToJson(notification, true, true)
 	log.Get().With("notification", msg).Debug("RECEIVED-OBSERVE")
 	return nil
 }
 
-func (h *DefaultObserverHandler) OnGetResourceContent(ctx context.Context, deviceID, resourceHref string, notification *pool.Message) error {
+func (h *DefaultObserverHandler) OnGetResourceContent(_ context.Context, deviceID, resourceHref string, notification *pool.Message) error {
 	log.Debugf("OnGetResourceContent: %v%v", deviceID, resourceHref)
 	msg := message.ToJson(notification, true, false)
 	log.Get().With("notification", msg).Debug("RECEIVED-GET")
 	return nil
 }
 
-func (h *DefaultObserverHandler) UpdateTwinSynchronization(ctx context.Context, deviceID string, status commands.TwinSynchronization_State, t time.Time) error {
+func (h *DefaultObserverHandler) UpdateTwinSynchronization(_ context.Context, deviceID string, status commands.TwinSynchronization_State, t time.Time) error {
 	log.Debugf("UpdateTwinSynchronizationStatus: %v %v %v", deviceID, status, t)
 	return nil
 }

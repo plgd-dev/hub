@@ -128,7 +128,7 @@ func TestRequestHandlerDeleteResource(t *testing.T) {
 			}
 			require.NoError(t, err)
 
-			want := pbTest.MakeResourceDeleted(t, deviceID, tt.args.href, "")
+			want := pbTest.MakeResourceDeleted(deviceID, tt.args.href, "")
 			pbTest.CmpResourceDeleted(t, want, got.GetData())
 		})
 	}

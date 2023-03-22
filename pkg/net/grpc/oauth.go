@@ -19,7 +19,7 @@ func NewOAuthAccess(getTokenFunc OAuthGetTokenFunc) credentials.PerRPCCredential
 	return oauthAccess{getTokenFunc: getTokenFunc}
 }
 
-func (oa oauthAccess) GetRequestMetadata(ctx context.Context, uri ...string) (map[string]string, error) {
+func (oa oauthAccess) GetRequestMetadata(ctx context.Context, _ ...string) (map[string]string, error) {
 	token, err := oa.getTokenFunc(ctx)
 	if err != nil {
 		return nil, err
