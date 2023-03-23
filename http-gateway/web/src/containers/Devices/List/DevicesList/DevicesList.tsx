@@ -14,7 +14,6 @@ import StatusPill from '@shared-ui/components/new/StatusPill'
 import { states } from '@shared-ui/components/new/StatusPill/constants'
 import { AppContext } from '@/containers/App/AppContext'
 import { useResizeDetector } from 'react-resize-detector'
-import { he } from 'date-fns/locale'
 
 const { UNREGISTERED } = devicesStatuses
 
@@ -27,7 +26,7 @@ export const DevicesList: FC<Props> = (props) => {
     const history = useHistory()
     const { collapsed } = useContext(AppContext)
 
-    const { ref, width, height } = useResizeDetector()
+    const { ref, height } = useResizeDetector()
 
     const columns = useMemo(
         () => [
