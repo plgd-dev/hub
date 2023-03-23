@@ -13,6 +13,8 @@ import TableSelectionPanel from '@plgd/shared-ui/src/components/new/TableNew/Tab
 import StatusPill from '@shared-ui/components/new/StatusPill'
 import { states } from '@shared-ui/components/new/StatusPill/constants'
 import { AppContext } from '@/containers/App/AppContext'
+import { useResizeDetector } from 'react-resize-detector'
+import { he } from 'date-fns/locale'
 
 const { UNREGISTERED } = devicesStatuses
 
@@ -24,6 +26,8 @@ export const DevicesList: FC<Props> = (props) => {
     const { formatMessage: _ } = useIntl()
     const history = useHistory()
     const { collapsed } = useContext(AppContext)
+
+    const { ref, width, height } = useResizeDetector()
 
     const columns = useMemo(
         () => [
@@ -122,7 +126,12 @@ export const DevicesList: FC<Props> = (props) => {
     const selectedCount = useMemo(() => Object.keys(selectedDevices).length, [selectedDevices])
 
     return (
-        <>
+        <div
+            ref={ref}
+            style={{
+                height: '100%',
+            }}
+        >
             <Table
                 columns={columns}
                 data={validData(data)}
@@ -133,6 +142,7 @@ export const DevicesList: FC<Props> = (props) => {
                         desc: false,
                     },
                 ]}
+                height={height}
                 i18n={{
                     search: _(t.search),
                 }}
@@ -154,7 +164,7 @@ export const DevicesList: FC<Props> = (props) => {
                 selectionInfo={`${selectedCount} device${selectedCount > 1 ? 's' : ''} `}
                 show={selectedCount > 0}
             />
-        </>
+        </div>
     )
 }
 

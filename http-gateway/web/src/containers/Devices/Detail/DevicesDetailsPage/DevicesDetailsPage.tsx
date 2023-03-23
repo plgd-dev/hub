@@ -167,22 +167,6 @@ const DevicesDetailsPage = () => {
             loading={loading || twinSyncLoading}
             title={deviceName}
         >
-            {/* <DevicesDetailsTitle*/}
-            {/*    className={classNames(*/}
-            {/*        {*/}
-            {/*            shimmering: loading,*/}
-            {/*        },*/}
-            {/*        greyedOutClassName*/}
-            {/*    )}*/}
-            {/*    deviceId={id}*/}
-            {/*    deviceName={deviceName}*/}
-            {/*    isOnline={isOnline}*/}
-            {/*    links={resources}*/}
-            {/*    loading={loading}*/}
-            {/*    ttl={ttl}*/}
-            {/*    updateDeviceName={updateDeviceNameInData}*/}
-            {/* />*/}
-
             {domReady &&
                 ReactDOM.createPortal(
                     <Breadcrumbs items={[{ label: _(menuT.devices), link: '/' }, { label: deviceName }]} />,
