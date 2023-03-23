@@ -3,14 +3,14 @@ import ReactDOM from 'react-dom'
 import { useIntl } from 'react-intl'
 import { useParams } from 'react-router-dom'
 import NotFoundPage from '@/containers/NotFoundPage'
-import { useIsMounted } from '@shared-ui/common/hooks'
+import { useIsMounted, WellKnownConfigType } from '@shared-ui/common/hooks'
 
 import { messages as menuT } from '@shared-ui/components/new/Menu/Menu.i18n'
 
 import DevicesDetailsHeader from '../DevicesDetailsHeader'
 import { devicesStatuses, NO_DEVICE_NAME } from '../../constants'
-import { handleTwinSynchronizationErrors, isDeviceOnline } from '../../utils'
-import { updateDeviceTwinSynchronizationApi } from '../../rest'
+import { getDeviceChangeResourceHref, handleTwinSynchronizationErrors, isDeviceOnline } from '../../utils'
+import { updateDevicesResourceApi, updateDeviceTwinSynchronizationApi } from '../../rest'
 import { useDeviceDetails, useDevicesResources } from '../../hooks'
 
 import { messages as t } from '../../Devices.i18n'
@@ -23,6 +23,10 @@ import Tab1 from './Tabs/Tab1'
 import Tab2 from '@/containers/Devices/Detail/DevicesDetailsPage/Tabs/Tab2'
 import { PendingCommandsExpandableList } from '@/containers/PendingCommands'
 import NotificationMessage from '@shared-ui/components/new/NotificationMessage'
+import EditNameModal from '@/containers/Devices/Detail/EditNameModal/EditNameModal'
+import { getApiErrorMessage } from '@shared-ui/common/utils'
+import { security } from '@shared-ui/common/services'
+import { showErrorToast } from '@shared-ui/components/new'
 
 const DevicesDetailsPage = () => {
     const { formatMessage: _ } = useIntl()
@@ -39,7 +43,14 @@ const DevicesDetailsPage = () => {
     const { data, updateData, loading, error: deviceError } = useDeviceDetails(id)
     const { data: resourcesData, loading: loadingResources, error: resourcesError } = useDevicesResources(id)
 
+    const wellKnownConfig = security.getWellKnowConfig() as WellKnownConfigType & {
+        defaultCommandTimeToLive: number
+    }
+    const [ttl] = useState(wellKnownConfig?.defaultCommandTimeToLive || 0)
+
     const [isTwinEnabled, setIsTwinEnabled] = useState<boolean>(data?.metadata?.twinEnabled || false)
+    const [showEditNameModal, setShowEditNameModal] = useState(false)
+    const [deviceNameLoading, setDeviceNameLoading] = useState(false)
 
     useEffect(() => {
         setDomReady(true)
@@ -60,6 +71,7 @@ const DevicesDetailsPage = () => {
         return <NotFoundPage message={_(t.deviceResourcesNotFoundMessage, { id })} title={_(t.deviceResourcesNotFound)} />
     }
 
+    const resources = resourcesData?.[0]?.resources || []
     const deviceStatus = data?.metadata?.connection?.status
     const isOnline = isDeviceOnline(data)
     const isUnregistered = devicesStatuses.UNREGISTERED === deviceStatus
@@ -101,12 +113,56 @@ const DevicesDetailsPage = () => {
             ...data,
             name,
         })
+        setShowEditNameModal(false)
+    }
+
+    const updateDeviceName = async (name: string) => {
+        if (name.trim() !== '' && name !== deviceName) {
+            const href = getDeviceChangeResourceHref(resources)
+
+            setDeviceNameLoading(true)
+
+            try {
+                const { data } = await updateDevicesResourceApi(
+                    { deviceId: id, href: href!, ttl },
+                    {
+                        n: name,
+                    }
+                )
+
+                if (isMounted.current) {
+                    setDeviceNameLoading(false)
+                    updateDeviceNameInData(data?.n || name)
+                }
+            } catch (error) {
+                if (error && isMounted.current) {
+                    showErrorToast({
+                        title: _(t.deviceNameChangeFailed),
+                        message: getApiErrorMessage(error),
+                    })
+                    setDeviceNameLoading(false)
+                    setShowEditNameModal(false)
+                }
+            }
+        } else {
+            setDeviceNameLoading(false)
+            setShowEditNameModal(false)
+        }
     }
 
     return (
         <PageLayout
             breadcrumbs={breadcrumbs}
-            header={<DevicesDetailsHeader deviceId={id} deviceName={deviceName} isUnregistered={isUnregistered} />}
+            header={
+                <DevicesDetailsHeader
+                    deviceId={id}
+                    deviceName={deviceName}
+                    handleOpenEditDeviceNameModal={() => setShowEditNameModal(true)}
+                    isOnline={isOnline}
+                    isUnregistered={isUnregistered}
+                    links={resources}
+                />
+            }
             headlineStatusTag={<StatusTag variant={isOnline ? 'success' : 'error'}>{isOnline ? _(t.online) : _(t.offline)}</StatusTag>}
             loading={loading || twinSyncLoading}
             title={deviceName}
@@ -134,6 +190,8 @@ const DevicesDetailsPage = () => {
                 )}
 
             <Tabs
+                activeItem={1}
+                fullHeight={true}
                 tabs={[
                     {
                         name: _(t.deviceInformation),
@@ -165,6 +223,14 @@ const DevicesDetailsPage = () => {
             />
 
             <NotificationMessage message={notificationMessage} onExit={() => setNotificationMessage(undefined)} show={!!notificationMessage} />
+
+            <EditNameModal
+                deviceName={deviceName}
+                deviceNameLoading={deviceNameLoading}
+                handleClose={() => setShowEditNameModal(false)}
+                handleSubmit={updateDeviceName}
+                show={showEditNameModal}
+            />
 
             <PendingCommandsExpandableList deviceId={id} />
         </PageLayout>

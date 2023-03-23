@@ -48,7 +48,18 @@ const DevicesResourcesModal: FC<Props> = (props) => {
 
     useEffect(() => {
         const dataToDisplay = resourceData?.data?.content
-        setJsonData(dataToDisplay)
+        setJsonData(
+            dataToDisplay || {
+                rt: ['oic.r.switch.binary'],
+                if: ['oic.if.a', 'oic.if.baseline'],
+                rep: {
+                    value: true,
+                },
+                p: {
+                    bm: 3,
+                },
+            }
+        )
 
         if (resourceData && editor.current) {
             // Set the retrieved JSON object to the editor
@@ -110,7 +121,9 @@ const DevicesResourcesModal: FC<Props> = (props) => {
 
                 <ModalStrippedLine component={deviceId} label={_(t.deviceId)} />
 
-                <ModalStrippedLine component={data?.types?.join(', ')} label={isUpdateModal ? _(t.types) : _(t.supportedTypes)} />
+                {(data?.types?.length || 0) > 0 ? (
+                    <ModalStrippedLine component={data?.types?.join(', ')} label={isUpdateModal ? _(t.types) : _(t.supportedTypes)} />
+                ) : undefined}
 
                 {isUpdateModal && <ModalStrippedLine component={data?.interfaces?.join(', ')} label={_(t.interfaces)} />}
 
@@ -182,6 +195,7 @@ const DevicesResourcesModal: FC<Props> = (props) => {
             appRoot={document.getElementById('root')}
             closeButton={!disabled}
             closeButtonText={_(t.close)}
+            contentPadding={false}
             onClose={!disabled ? handleClose : undefined}
             portalTarget={document.getElementById('modal-root')}
             renderBody={renderBody}

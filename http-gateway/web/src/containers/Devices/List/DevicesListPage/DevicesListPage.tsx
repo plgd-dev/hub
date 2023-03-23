@@ -18,7 +18,6 @@ import { handleDeleteDevicesErrors, sleep } from '../../utils'
 import { messages as t } from '../../Devices.i18n'
 import PageLayout from '@shared-ui/components/new/PageLayout'
 import { DeleteModal } from '@shared-ui/components/new/Modal'
-import { fullSizeButtons } from '@shared-ui/components/new/Modal/Modal.styles'
 
 const DevicesListPage: FC<any> = () => {
     const { formatMessage: _ } = useIntl()

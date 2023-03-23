@@ -10,7 +10,8 @@ import { devicesStatuses } from '../../constants'
 import { messages as t } from '../../Devices.i18n'
 import { Props } from './DevicesResources.types'
 
-const DevicesResources: FC<Props> = ({ data, onUpdate, onCreate, onDelete, deviceStatus, loading }) => {
+const DevicesResources: FC<Props> = (props) => {
+    const { data, onUpdate, onCreate, onDelete, deviceStatus, loading, pageSize } = props
     const { formatMessage: _ } = useIntl()
     const [treeViewActive, setTreeViewActive] = useLocalStorage('treeViewActive', false)
     const isUnregistered = devicesStatuses.UNREGISTERED === deviceStatus
@@ -41,7 +42,15 @@ const DevicesResources: FC<Props> = ({ data, onUpdate, onCreate, onDelete, devic
             {treeViewActive ? (
                 <DevicesResourcesTree data={data} deviceStatus={deviceStatus} loading={loading} onCreate={onCreate} onDelete={onDelete} onUpdate={onUpdate} />
             ) : (
-                <DevicesResourcesList data={data} deviceStatus={deviceStatus} loading={loading} onCreate={onCreate} onDelete={onDelete} onUpdate={onUpdate} />
+                <DevicesResourcesList
+                    data={data}
+                    deviceStatus={deviceStatus}
+                    loading={loading}
+                    onCreate={onCreate}
+                    onDelete={onDelete}
+                    onUpdate={onUpdate}
+                    pageSize={pageSize}
+                />
             )}
         </>
     )

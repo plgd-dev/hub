@@ -13,4 +13,8 @@ export type Props = {
     onCreate: (href: string) => void
     onDelete: (href: string) => void
     onUpdate: ({ deviceId, href }: { deviceId: string; href: string }) => void
+    pageSize: {
+        height?: number
+        width?: number
+    }
 } & DeviceResourcesCrudType

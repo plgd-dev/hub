@@ -473,6 +473,10 @@ export const messages = defineMessages({
         id: 'devices.twinUpdate',
         defaultMessage: 'The ongoing status change in the "Twin State" may take a while.',
     },
+    edit: {
+        id: 'devices.edit',
+        defaultMessage: 'Edit',
+    },
     editName: {
         id: 'devices.twinUpdate',
         defaultMessage: 'Edit name',
@@ -480,5 +484,17 @@ export const messages = defineMessages({
     copy: {
         id: 'devices.copy',
         defaultMessage: 'Copy to clipboard',
+    },
+    reset: {
+        id: 'devices.reset',
+        defaultMessage: 'Reset',
+    },
+    saveChange: {
+        id: 'devices.saveChange',
+        defaultMessage: 'Save change',
+    },
+    savingChanges: {
+        id: 'devices.savingChanges',
+        defaultMessage: 'Saving change',
     },
 })

@@ -77,11 +77,7 @@ const AppInner = (props: Props) => {
                     <Helmet defaultTitle={appConfig.appName} titleTemplate={`%s | ${appConfig.appName}`} />
                     <Layout
                         collapsedMenu={collapsed}
-                        content={
-                            <div id='content'>
-                                <Routes />
-                            </div>
-                        }
+                        content={<Routes />}
                         footer={
                             <Footer
                                 footerExpanded={footerExpanded}

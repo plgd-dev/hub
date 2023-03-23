@@ -17,6 +17,7 @@ import { security } from '@shared-ui/common/services'
 import { history } from '@/store'
 import TimeoutControl from '@shared-ui/components/new/TimeoutControl'
 import { DeleteModal } from '@shared-ui/components/new/Modal'
+import { useResizeDetector } from 'react-resize-detector'
 
 const Tab2: FC<Props> = (props) => {
     const { deviceStatus, deviceName, isOnline, isUnregistered, loading, resourcesData, loadingResources } = props
@@ -40,6 +41,8 @@ const Tab2: FC<Props> = (props) => {
         defaultCommandTimeToLive: number
     }
     const [ttl, setTtl] = useState(wellKnownConfig?.defaultCommandTimeToLive || 0)
+
+    const { ref, width, height } = useResizeDetector()
 
     // Open the resource modal when href is present
     useEffect(
@@ -72,17 +75,6 @@ const Tab2: FC<Props> = (props) => {
 
                 // Setting the data and opening the modal
                 setResourceModalData({
-                    data: {
-                        href,
-                        types: supportedTypes,
-                    },
-                    resourceData: {
-                        ...defaultNewResource,
-                        rt: supportedTypes,
-                    },
-                    type: resourceModalTypes.CREATE_RESOURCE,
-                })
-                console.log('res', {
                     data: {
                         href,
                         types: supportedTypes,
@@ -239,7 +231,12 @@ const Tab2: FC<Props> = (props) => {
     }
 
     return (
-        <div>
+        <div
+            ref={ref}
+            style={{
+                height: '100%',
+            }}
+        >
             <DevicesResources
                 data={resources}
                 deviceStatus={deviceStatus}
@@ -247,6 +244,7 @@ const Tab2: FC<Props> = (props) => {
                 onCreate={openCreateModal}
                 onDelete={openDeleteModal}
                 onUpdate={openUpdateModal}
+                pageSize={{ width, height: height ? height - 32 : 0 }} // tree switch
             />
             <DevicesResourcesModal
                 {...resourceModalData}
@@ -275,9 +273,6 @@ const Tab2: FC<Props> = (props) => {
             />
             <DeleteModal
                 deleteInformation={[
-                    { label: _(t.deviceName), value: deviceName },
-                    { label: _(t.deviceId), value: id },
-                    { label: _(t.href), value: deleteResourceHref },
                     {
                         label: _(t.commandTimeout),
                         value: (

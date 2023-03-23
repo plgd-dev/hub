@@ -8,7 +8,8 @@ import { RESOURCES_DEFAULT_PAGE_SIZE, devicesStatuses } from '../../constants'
 import { messages as t } from '../../Devices.i18n'
 import { Props } from './DevicesResourcesList.types'
 
-const DevicesResourcesList: FC<Props> = ({ data, onUpdate, onCreate, onDelete, deviceStatus, loading }) => {
+const DevicesResourcesList: FC<Props> = (props) => {
+    const { data, onUpdate, onCreate, onDelete, deviceStatus, loading, pageSize } = props
     const { formatMessage: _ } = useIntl()
 
     const isUnregistered = deviceStatus === devicesStatuses.UNREGISTERED
@@ -80,9 +81,11 @@ const DevicesResourcesList: FC<Props> = ({ data, onUpdate, onCreate, onDelete, d
                     desc: false,
                 },
             ]}
+            height={pageSize.height}
             i18n={{
                 search: _(t.search),
             }}
+            paginationPortalTargetId='paginationPortalTarget'
         />
     )
 }

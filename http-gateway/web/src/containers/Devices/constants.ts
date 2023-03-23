@@ -11,7 +11,7 @@ export const devicesApiEndpoints = {
     DEVICES_WS: '/api/v1/ws/devices',
 }
 
-export const RESOURCES_DEFAULT_PAGE_SIZE = 5
+export const RESOURCES_DEFAULT_PAGE_SIZE = 10
 
 export const DEVICES_DEFAULT_PAGE_SIZE = 10
 
