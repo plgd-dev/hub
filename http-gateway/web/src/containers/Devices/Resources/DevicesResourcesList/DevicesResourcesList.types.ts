@@ -9,6 +9,7 @@ export type Props = {
         resourceTypes: string[]
     }
     deviceStatus: DevicesResourcesDeviceStatusType
+    isActiveTab: boolean
     loading: boolean
     onCreate: (href: string) => void
     onDelete: (href: string) => void

@@ -20,7 +20,7 @@ import { DeleteModal } from '@shared-ui/components/new/Modal'
 import { useResizeDetector } from 'react-resize-detector'
 
 const Tab2: FC<Props> = (props) => {
-    const { deviceStatus, deviceName, isOnline, isUnregistered, loading, resourcesData, loadingResources } = props
+    const { deviceStatus, deviceName, isOnline, isActiveTab, isUnregistered, loading, resourcesData, loadingResources } = props
     const {
         id,
         href: hrefParam,
@@ -240,6 +240,7 @@ const Tab2: FC<Props> = (props) => {
             <DevicesResources
                 data={resources}
                 deviceStatus={deviceStatus}
+                isActiveTab={isActiveTab}
                 loading={loadingResource}
                 onCreate={openCreateModal}
                 onDelete={openDeleteModal}

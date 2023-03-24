@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import ReactDOM from 'react-dom'
 import { useIntl } from 'react-intl'
 import { useParams } from 'react-router-dom'
@@ -36,6 +36,7 @@ const DevicesDetailsPage = () => {
         id: string
     } = useParams()
     const [domReady, setDomReady] = useState(false)
+    const [activeTabItem, setActiveTabItem] = useState(0)
     const [notificationMessage, setNotificationMessage] = useState<string | undefined>(undefined)
     const [twinSyncLoading, setTwinSyncLoading] = useState(false)
 
@@ -174,14 +175,16 @@ const DevicesDetailsPage = () => {
                 )}
 
             <Tabs
-                activeItem={1}
                 fullHeight={true}
+                onItemChange={(i) => setActiveTabItem(i)}
                 tabs={[
                     {
                         name: _(t.deviceInformation),
                         content: (
                             <Tab1
                                 deviceId={id}
+                                deviceName={deviceName}
+                                isActiveTab={activeTabItem === 0}
                                 isTwinEnabled={isTwinEnabled}
                                 setTwinSynchronization={setTwinSynchronization}
                                 twinSyncLoading={twinSyncLoading}
@@ -195,6 +198,7 @@ const DevicesDetailsPage = () => {
                             <Tab2
                                 deviceName={deviceName}
                                 deviceStatus={deviceStatus}
+                                isActiveTab={activeTabItem === 1}
                                 isOnline={isOnline}
                                 isUnregistered={isUnregistered}
                                 loading={loading}

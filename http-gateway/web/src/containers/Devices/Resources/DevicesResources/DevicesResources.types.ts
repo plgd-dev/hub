@@ -12,6 +12,7 @@ export type Props = {
     }
     deviceStatus: DevicesResourcesDeviceStatusType
     loading: boolean
+    isActiveTab: boolean
     onCreate: (href: string) => void
     onUpdate: (data: { href: string; currentInterface?: string }) => void
     onDelete: (href: string) => void
