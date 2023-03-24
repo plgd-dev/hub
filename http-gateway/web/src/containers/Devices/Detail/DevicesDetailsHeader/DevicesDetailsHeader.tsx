@@ -27,7 +27,7 @@ const DevicesDetailsHeader: FC<Props> = (props) => {
     const notificationsEnabled = useRef(false)
     notificationsEnabled.current = useSelector(isNotificationActive(deviceNotificationKey))
     const [deleteModalOpen, setDeleteModalOpen] = useState(false)
-    // const [deleting, setDeleting] = useState(false)
+    const [deleting, setDeleting] = useState(false)
     const isMounted = useIsMounted()
     const history = useHistory()
     const canUpdate = useMemo(() => canChangeDeviceName(links) && isOnline, [links, isOnline])
@@ -82,7 +82,7 @@ const DevicesDetailsHeader: FC<Props> = (props) => {
     const handleDeleteDevice = async () => {
         // api
         try {
-            // setDeleting(true)
+            setDeleting(true)
             await deleteDevicesApi([deviceId])
             await sleep(200)
 
@@ -99,9 +99,9 @@ const DevicesDetailsHeader: FC<Props> = (props) => {
                 history.push(`/device`)
             }
         } catch (error) {
-            // if (isMounted.current) {
-            //     setDeleting(false)
-            // }
+            if (isMounted.current) {
+                setDeleting(false)
+            }
             handleDeleteDevicesErrors(error, _, true)
         }
     }
@@ -138,17 +138,19 @@ const DevicesDetailsHeader: FC<Props> = (props) => {
 
             <DeleteModal
                 deleteInformation={[
-                    { label: 'Device Name', value: deviceName },
-                    { label: 'Device ID', value: deviceId },
+                    { label: _(t.deviceName), value: deviceName },
+                    { label: _(t.deviceId), value: deviceId },
                 ]}
                 footerActions={[
                     {
-                        label: 'Cancel',
+                        label: _(t.cancel),
                         onClick: handleCloseDeleteDeviceModal,
                         variant: 'tertiary',
                     },
                     {
-                        label: 'Delete',
+                        label: _(t.delete),
+                        loading: deleting,
+                        loadingText: _(t.deleting),
                         onClick: handleDeleteDevice,
                         variant: 'primary',
                     },

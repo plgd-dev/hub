@@ -37,7 +37,7 @@ const Tab1: FC<Props> = (props) => {
                             value: types ? (
                                 <TagGroup>
                                     {types.map((t, key) => (
-                                        <Tag key={`${key}-${t}`}>{t}</Tag>
+                                        <Tag key={t}>{t}</Tag>
                                     ))}
                                 </TagGroup>
                             ) : (
