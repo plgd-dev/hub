@@ -41,16 +41,7 @@ func (request CoapSignUpRequest) checkOAuthRequest() error {
 	return nil
 }
 
-// Get data for sign up response
-func getSignUpContent(token *oauth2.Token, owner string, validUntil int64, options message.Options) (message.MediaType, []byte, error) {
-	resp := CoapSignUpResponse{
-		AccessToken:  token.AccessToken.String(),
-		UserID:       owner,
-		RefreshToken: token.RefreshToken,
-		ExpiresIn:    validUntilToExpiresIn(pkgTime.Unix(0, validUntil)),
-		RedirectURI:  "",
-	}
-
+func encodeResponse(resp interface{}, options message.Options) (message.MediaType, []byte, error) {
 	accept := coapconv.GetAccept(options)
 	encode, err := coapconv.GetEncoder(accept)
 	if err != nil {
@@ -61,6 +52,18 @@ func getSignUpContent(token *oauth2.Token, owner string, validUntil int64, optio
 		return 0, nil, err
 	}
 	return accept, out, nil
+}
+
+// Get data for sign up response
+func getSignUpContent(token *oauth2.Token, owner string, validUntil int64, options message.Options) (message.MediaType, []byte, error) {
+	resp := CoapSignUpResponse{
+		AccessToken:  token.AccessToken.String(),
+		UserID:       owner,
+		RefreshToken: token.RefreshToken,
+		ExpiresIn:    validUntilToExpiresIn(pkgTime.Unix(0, validUntil)),
+		RedirectURI:  "",
+	}
+	return encodeResponse(resp, options)
 }
 
 const errFmtSignUP = "cannot handle sign up: %w"
