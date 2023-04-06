@@ -26,7 +26,9 @@ import { usePendingCommandsList } from '../hooks'
 import { cancelPendingCommandApi } from '../rest'
 import { messages as t } from '../PendingCommands.i18n'
 import { Props } from './PendingCommandsList.types'
-import '../PendingCommands.scss'
+// import '../PendingCommands.scss'
+import DateFormat from '@/containers/PendingCommands/DateFormat'
+import TableActions from '@plgd/shared-ui/src/components/new/TableNew/TableActions'
 
 type ModalData = {
     content: any
@@ -153,7 +155,7 @@ const PendingCommandsList: FC<Props> = ({ onLoading, embedded, deviceId }) => {
                     Header: _(t.created),
                     accessor: 'eventMetadata.timestamp',
                     disableSortBy: true,
-                    Cell: ({ value }: { value: any }) => <DateTooltip value={value} />,
+                    Cell: ({ value }: { value: any }) => <DateFormat value={value} />,
                 },
                 {
                     Header: _(t.type),
@@ -221,7 +223,7 @@ const PendingCommandsList: FC<Props> = ({ onLoading, embedded, deviceId }) => {
                     Cell: ({ value }: { value: any }) => {
                         if (value === '0') return _(t.forever)
 
-                        return <DateTooltip value={value} />
+                        return <DateFormat value={value} />
                     },
                 },
                 {
@@ -245,15 +247,16 @@ const PendingCommandsList: FC<Props> = ({ onLoading, embedded, deviceId }) => {
                         }
 
                         return (
-                            <div
-                                className='dropdown action-button'
-                                onClick={() => onCancelClick({ deviceId: rowDeviceId, href, correlationId })}
-                                title={_(t.cancel)}
-                            >
-                                <button className='dropdown-toggle btn btn-empty'>
-                                    <i className='fas fa-times' />
-                                </button>
-                            </div>
+                            <TableActions
+                                items={[
+                                    {
+                                        icon: 'trash',
+                                        onClick: () => onCancelClick({ deviceId: rowDeviceId, href, correlationId }),
+                                        id: `delete-row-${deviceId}`,
+                                        tooltipText: _(t.cancel),
+                                    },
+                                ]}
+                            />
                         )
                     },
                     className: 'actions',

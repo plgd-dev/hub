@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, FC } from 'react'
+import React, { useEffect, useState, useRef, FC, useMemo } from 'react'
 import { useIntl } from 'react-intl'
 
 import Editor from '@shared-ui/components/new/Editor'
@@ -46,20 +46,26 @@ const DevicesResourcesModal: FC<Props> = (props) => {
     const initialInterfaceValue = { value: '', label: _(t.resourceInterfaces) }
     const [selectedInterface, setSelectedInterface] = useState(initialInterfaceValue)
 
+    const defaultData = useMemo(
+        () =>
+            isUpdateModal
+                ? {}
+                : {
+                      rt: ['oic.r.switch.binary'],
+                      if: ['oic.if.a', 'oic.if.baseline'],
+                      rep: {
+                          value: true,
+                      },
+                      p: {
+                          bm: 3,
+                      },
+                  },
+        [isUpdateModal]
+    )
+
     useEffect(() => {
         const dataToDisplay = resourceData?.data?.content
-        setJsonData(
-            dataToDisplay || {
-                rt: ['oic.r.switch.binary'],
-                if: ['oic.if.a', 'oic.if.baseline'],
-                rep: {
-                    value: true,
-                },
-                p: {
-                    bm: 3,
-                },
-            }
-        )
+        setJsonData(dataToDisplay || defaultData)
 
         if (resourceData && editor.current) {
             // Set the retrieved JSON object to the editor
@@ -71,7 +77,7 @@ const DevicesResourcesModal: FC<Props> = (props) => {
                 editor?.current?.current?.setText(dataToDisplay)
             }
         }
-    }, [resourceData])
+    }, [defaultData, resourceData])
 
     const handleRetrieve = () => {
         fetchResource({

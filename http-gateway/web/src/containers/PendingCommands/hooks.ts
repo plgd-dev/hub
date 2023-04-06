@@ -12,6 +12,7 @@ export const usePendingCommandsList = (deviceId?: string) => {
         `${getConfig().httpGatewayAddress}${pendingCommandsApiEndpoints.PENDING_COMMANDS}${filter}`,
         {
             telemetrySpan: 'get-pending-commands',
+            env: process.env,
         }
     )
 
@@ -25,8 +26,8 @@ export const usePendingCommandsList = (deviceId?: string) => {
     })
 
     return {
+        ...rest,
         data: convertPendingCommandsList(data),
         updateData,
-        ...rest,
     }
 }

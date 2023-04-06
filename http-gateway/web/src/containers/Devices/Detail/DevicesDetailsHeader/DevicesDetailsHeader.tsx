@@ -36,6 +36,7 @@ const DevicesDetailsHeader: FC<Props> = (props) => {
     }, [isUnregistered, resourceRegistrationObservationWSKey])
 
     const handleOpenDeleteDeviceModal = () => {
+        console.log('handleOpenDeleteDeviceModal')
         if (isMounted.current) {
             setDeleteModalOpen(true)
         }
@@ -76,15 +77,21 @@ const DevicesDetailsHeader: FC<Props> = (props) => {
 
     return (
         <div className={classNames('d-flex align-items-center', greyedOutClassName)}>
+            <Button disabled={isUnregistered} icon={<Icon icon='trash' />} onClick={handleOpenDeleteDeviceModal} variant='tertiary'>
+                {_(t.delete)}
+            </Button>
+
             {canUpdate && (
-                <Button className='m-r-30' disabled={isUnregistered} icon={<Icon icon='edit' />} onClick={handleOpenEditDeviceNameModal} variant='tertiary'>
+                <Button
+                    disabled={isUnregistered}
+                    icon={<Icon icon='edit' />}
+                    onClick={handleOpenEditDeviceNameModal}
+                    style={{ marginLeft: 8 }}
+                    variant='tertiary'
+                >
                     {_(t.editName)}
                 </Button>
             )}
-
-            <Button disabled={isUnregistered} icon={<Icon icon='trash' />} onClick={handleOpenDeleteDeviceModal} variant='secondary'>
-                {_(t.delete)}
-            </Button>
 
             <DeleteModal
                 deleteInformation={[
