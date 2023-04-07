@@ -8,8 +8,8 @@ import { handleCreateResourceErrors, handleDeleteResourceErrors, handleFetchReso
 import { DevicesDetailsResourceModalData } from '@/containers/Devices/Detail/DevicesDetailsPage/DevicesDetailsPage.types'
 import { useIsMounted, WellKnownConfigType } from '@shared-ui/common/hooks'
 import omit from 'lodash/omit'
-import DevicesResourcesModal from '@/containers/Devices/Resources/DevicesResourcesModal'
-import { DevicesResourcesModalParamsType } from '@/containers/Devices/Resources/DevicesResourcesModal/DevicesResourcesModal.types'
+import DevicesResourcesModal from '@shared-ui/components/organisms/DevicesResourcesModal'
+import { DevicesResourcesModalParamsType } from '@shared-ui/components/organisms/DevicesResourcesModal/DevicesResourcesModal.types'
 import { showSuccessToast } from '@shared-ui/components/new'
 import { messages as t } from '@/containers/Devices/Devices.i18n'
 import { useIntl } from 'react-intl'
@@ -18,6 +18,8 @@ import { history } from '@/store'
 import TimeoutControl from '@shared-ui/components/new/TimeoutControl'
 import { DeleteModal } from '@shared-ui/components/new/Modal'
 import { useResizeDetector } from 'react-resize-detector'
+import { isNotificationActive, toggleActiveNotification } from '@/containers/Devices/slice'
+import { deviceResourceUpdateListener } from '@/containers/Devices/websockets'
 
 const Tab2: FC<Props> = (props) => {
     const { deviceStatus, deviceName, isOnline, isActiveTab, isUnregistered, loading, resourcesData, loadingResources } = props
@@ -253,13 +255,34 @@ const Tab2: FC<Props> = (props) => {
                 createResource={createResource}
                 deviceId={id}
                 deviceName={deviceName}
+                deviceResourceUpdateListener={deviceResourceUpdateListener}
                 fetchResource={openUpdateModal}
+                i18n={{
+                    close: _(t.close),
+                    commandTimeout: _(t.commandTimeout),
+                    create: _(t.create),
+                    creating: _(t.creating),
+                    deviceId: _(t.deviceId),
+                    interfaces: _(t.interfaces),
+                    notifications: _(t.notifications),
+                    off: _(t.off),
+                    on: _(t.on),
+                    resourceInterfaces: _(t.resourceInterfaces),
+                    retrieve: _(t.retrieve),
+                    retrieving: _(t.retrieving),
+                    supportedTypes: _(t.supportedTypes),
+                    types: _(t.types),
+                    update: _(t.update),
+                    updating: _(t.updating),
+                }}
                 isDeviceOnline={isOnline}
+                isNotificationActive={isNotificationActive}
                 isUnregistered={isUnregistered}
                 loading={savingResource}
                 onClose={() => setResourceModal(false)}
                 retrieving={loadingResource}
                 show={resourceModal}
+                toggleActiveNotification={toggleActiveNotification}
                 ttlControl={
                     <TimeoutControl
                         defaultTtlValue={wellKnownConfig?.defaultCommandTimeToLive || 0}
