@@ -3,7 +3,7 @@ import { useIntl } from 'react-intl'
 import classNames from 'classnames'
 
 import Table from '@shared-ui/components/new/TableNew'
-import DevicesResourcesActionButton from '../DevicesResourcesActionButton'
+import DevicesResourcesActionButton from '@shared-ui/components/organisms/DevicesResourcesActionButton'
 import { RESOURCES_DEFAULT_PAGE_SIZE, devicesStatuses } from '../../constants'
 import { messages as t } from '../../Devices.i18n'
 import { Props } from './DevicesResourcesList.types'
@@ -56,6 +56,11 @@ const DevicesResourcesList: FC<Props> = (props) => {
                             deviceId={deviceId}
                             disabled={isUnregistered || loading}
                             href={href}
+                            i18n={{
+                                create: _(t.create),
+                                delete: _(t.delete),
+                                update: _(t.update),
+                            }}
                             interfaces={interfaces}
                             onCreate={onCreate}
                             onDelete={onDelete}

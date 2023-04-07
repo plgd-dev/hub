@@ -5,7 +5,7 @@ import classNames from 'classnames'
 import TreeExpander from '@shared-ui/components/new/TreeExpander'
 import { TreeTable } from '@shared-ui/components/new/Table'
 import Badge from '@shared-ui/components/new/Badge'
-import DevicesResourcesActionButton from '../DevicesResourcesActionButton'
+import DevicesResourcesActionButton from '@shared-ui//components/organisms/DevicesResourcesActionButton'
 import { devicesStatuses, RESOURCE_TREE_DEPTH_SIZE } from '../../constants'
 import { createNestedResourceData, getLastPartOfAResourceHref } from '../../utils'
 import { messages as t } from '../../Devices.i18n'
@@ -102,6 +102,11 @@ const DevicesResourcesTree: FC<Props> = ({ data: rawData, onUpdate, onCreate, on
                             deviceId={deviceId}
                             disabled={isUnregistered || loading}
                             href={cleanHref}
+                            i18n={{
+                                create: _(t.create),
+                                delete: _(t.delete),
+                                update: _(t.update),
+                            }}
                             interfaces={interfaces}
                             onCreate={onCreate}
                             onDelete={onDelete}
