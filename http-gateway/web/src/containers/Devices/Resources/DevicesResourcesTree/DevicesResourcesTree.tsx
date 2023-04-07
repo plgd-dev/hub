@@ -7,7 +7,7 @@ import { TreeTable } from '@shared-ui/components/new/Table'
 import Badge from '@shared-ui/components/new/Badge'
 import DevicesResourcesActionButton from '@shared-ui//components/organisms/DevicesResourcesActionButton'
 import { devicesStatuses, RESOURCE_TREE_DEPTH_SIZE } from '../../constants'
-import { createNestedResourceData, getLastPartOfAResourceHref } from '../../utils'
+import { canCreateResource, createNestedResourceData, getLastPartOfAResourceHref } from '../../utils'
 import { messages as t } from '../../Devices.i18n'
 import { Props } from './DevicesResourcesTree.types'
 
@@ -97,20 +97,28 @@ const DevicesResourcesTree: FC<Props> = ({ data: rawData, onUpdate, onCreate, on
                         original: { deviceId, href, interfaces },
                     } = row
                     const cleanHref = href.replace(/\/$/, '') // href without a trailing slash
+
                     return (
                         <DevicesResourcesActionButton
-                            deviceId={deviceId}
                             disabled={isUnregistered || loading}
-                            href={cleanHref}
-                            i18n={{
-                                create: _(t.create),
-                                delete: _(t.delete),
-                                update: _(t.update),
-                            }}
-                            interfaces={interfaces}
-                            onCreate={onCreate}
-                            onDelete={onDelete}
-                            onUpdate={onUpdate}
+                            items={[
+                                {
+                                    onClick: () => onCreate(cleanHref),
+                                    label: _(t.create),
+                                    icon: 'plus',
+                                    hidden: !canCreateResource(interfaces),
+                                },
+                                {
+                                    onClick: () => onUpdate({ deviceId, href: cleanHref }),
+                                    label: _(t.update),
+                                    icon: 'edit',
+                                },
+                                {
+                                    onClick: () => onDelete(cleanHref),
+                                    label: _(t.delete),
+                                    icon: 'trash',
+                                },
+                            ]}
                         />
                     )
                 },

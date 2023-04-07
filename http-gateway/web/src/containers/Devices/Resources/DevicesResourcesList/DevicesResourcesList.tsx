@@ -7,6 +7,7 @@ import DevicesResourcesActionButton from '@shared-ui/components/organisms/Device
 import { RESOURCES_DEFAULT_PAGE_SIZE, devicesStatuses } from '../../constants'
 import { messages as t } from '../../Devices.i18n'
 import { Props } from './DevicesResourcesList.types'
+import { canCreateResource } from '@/containers/Devices/utils'
 
 const DevicesResourcesList: FC<Props> = (props) => {
     const { data, onUpdate, onCreate, onDelete, deviceStatus, isActiveTab, loading, pageSize } = props
@@ -51,20 +52,28 @@ const DevicesResourcesList: FC<Props> = (props) => {
                     const {
                         original: { deviceId, href, interfaces },
                     } = row
+                    const cleanHref = href.replace(/\/$/, '') // href without a trailing slash
                     return (
                         <DevicesResourcesActionButton
-                            deviceId={deviceId}
                             disabled={isUnregistered || loading}
-                            href={href}
-                            i18n={{
-                                create: _(t.create),
-                                delete: _(t.delete),
-                                update: _(t.update),
-                            }}
-                            interfaces={interfaces}
-                            onCreate={onCreate}
-                            onDelete={onDelete}
-                            onUpdate={onUpdate}
+                            items={[
+                                {
+                                    onClick: () => onCreate(cleanHref),
+                                    label: _(t.create),
+                                    icon: 'plus',
+                                    hidden: !canCreateResource(interfaces),
+                                },
+                                {
+                                    onClick: () => onUpdate({ deviceId, href: cleanHref }),
+                                    label: _(t.update),
+                                    icon: 'edit',
+                                },
+                                {
+                                    onClick: () => onDelete(cleanHref),
+                                    label: _(t.delete),
+                                    icon: 'trash',
+                                },
+                            ]}
                         />
                     )
                 },
