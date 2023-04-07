@@ -12,7 +12,6 @@ import { getApiErrorMessage } from '@shared-ui/common/utils'
 import { WebSocketEventClient, eventFilters } from '@shared-ui/common/services'
 
 import PendingCommandDetailsModal from '../PendingCommandDetailsModal'
-import DateTooltip from '../DateTooltip'
 import {
     PENDING_COMMANDS_DEFAULT_PAGE_SIZE,
     EMBEDDED_PENDING_COMMANDS_DEFAULT_PAGE_SIZE,
@@ -26,7 +25,6 @@ import { usePendingCommandsList } from '../hooks'
 import { cancelPendingCommandApi } from '../rest'
 import { messages as t } from '../PendingCommands.i18n'
 import { Props } from './PendingCommandsList.types'
-// import '../PendingCommands.scss'
 import DateFormat from '@/containers/PendingCommands/DateFormat'
 import TableActions from '@plgd/shared-ui/src/components/new/TableNew/TableActions'
 
