@@ -3,7 +3,8 @@ import { useIntl } from 'react-intl'
 import classNames from 'classnames'
 
 import Table from '@shared-ui/components/new/TableNew'
-import DevicesResourcesActionButton from '@shared-ui/components/organisms/DevicesResourcesActionButton'
+import TableActionButton from '@shared-ui/components/organisms/TableActionButton'
+
 import { RESOURCES_DEFAULT_PAGE_SIZE, devicesStatuses } from '../../constants'
 import { messages as t } from '../../Devices.i18n'
 import { Props } from './DevicesResourcesList.types'
@@ -54,7 +55,7 @@ const DevicesResourcesList: FC<Props> = (props) => {
                     } = row
                     const cleanHref = href.replace(/\/$/, '') // href without a trailing slash
                     return (
-                        <DevicesResourcesActionButton
+                        <TableActionButton
                             disabled={isUnregistered || loading}
                             items={[
                                 {

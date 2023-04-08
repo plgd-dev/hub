@@ -5,7 +5,8 @@ import classNames from 'classnames'
 import TreeExpander from '@shared-ui/components/new/TreeExpander'
 import { TreeTable } from '@shared-ui/components/new/Table'
 import Badge from '@shared-ui/components/new/Badge'
-import DevicesResourcesActionButton from '@shared-ui//components/organisms/DevicesResourcesActionButton'
+import TableActionButton from '@shared-ui//components/organisms/TableActionButton'
+
 import { devicesStatuses, RESOURCE_TREE_DEPTH_SIZE } from '../../constants'
 import { canCreateResource, createNestedResourceData, getLastPartOfAResourceHref } from '../../utils'
 import { messages as t } from '../../Devices.i18n'
@@ -99,7 +100,7 @@ const DevicesResourcesTree: FC<Props> = ({ data: rawData, onUpdate, onCreate, on
                     const cleanHref = href.replace(/\/$/, '') // href without a trailing slash
 
                     return (
-                        <DevicesResourcesActionButton
+                        <TableActionButton
                             disabled={isUnregistered || loading}
                             items={[
                                 {

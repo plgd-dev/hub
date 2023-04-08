@@ -1,19 +1,21 @@
 import React, { FC, useContext, useMemo } from 'react'
 import { useIntl } from 'react-intl'
 import { Link, useHistory } from 'react-router-dom'
+import { useResizeDetector } from 'react-resize-detector'
+
 import Button from '@shared-ui/components/new/Button'
 import Badge from '@shared-ui/components/new/Badge'
 import Table from '@shared-ui/components/new/TableNew'
-import DevicesListActionButton from '../DevicesListActionButton'
+import TableSelectionPanel from '@shared-ui/components/new/TableNew/TableSelectionPanel'
+import StatusPill from '@shared-ui/components/new/StatusPill'
+import { states } from '@shared-ui/components/new/StatusPill/constants'
+import TableActionButton from '@shared-ui/components/organisms/TableActionButton'
+
 import { devicesStatuses, DEVICES_DEFAULT_PAGE_SIZE, NO_DEVICE_NAME } from '../../constants'
 import { messages as t } from '../../Devices.i18n'
 import { Props, defaultProps } from './DevicesList.types'
 import { isDeviceOnline } from '@/containers/Devices/utils'
-import TableSelectionPanel from '@plgd/shared-ui/src/components/new/TableNew/TableSelectionPanel'
-import StatusPill from '@shared-ui/components/new/StatusPill'
-import { states } from '@shared-ui/components/new/StatusPill/constants'
 import { AppContext } from '@/containers/App/AppContext'
-import { useResizeDetector } from 'react-resize-detector'
 
 const { UNREGISTERED } = devicesStatuses
 
@@ -113,7 +115,22 @@ export const DevicesList: FC<Props> = (props) => {
                     const {
                         original: { id },
                     } = row
-                    return <DevicesListActionButton deviceId={id} onDelete={onDeleteClick} onView={(deviceId) => history.push(`/devices/${deviceId}`)} />
+                    return (
+                        <TableActionButton
+                            items={[
+                                {
+                                    onClick: () => onDeleteClick(id),
+                                    label: _(t.delete),
+                                    icon: 'trash',
+                                },
+                                {
+                                    onClick: () => history.push(`/devices/${id}`),
+                                    label: _(t.view),
+                                    icon: 'icon-show-password',
+                                },
+                            ]}
+                        />
+                    )
                 },
                 className: 'actions',
             },
