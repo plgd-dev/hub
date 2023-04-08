@@ -11,7 +11,7 @@ export const messages = defineMessages({
     },
     pageTitle: {
         id: 'not-found-page.pageTitle',
-        defaultMessage: 'Page not found KKK',
+        defaultMessage: 'Page not found',
     },
     notFoundPageDefaultMessage: {
         id: 'not-found-page.notFoundPageDefaultMessage',
