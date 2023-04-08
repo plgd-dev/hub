@@ -1,6 +1,6 @@
 {
   "name": "plgd-dashboard",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": false,
   "dependencies": {
     "@babel/plugin-transform-react-jsx": "^7.21.0",
