@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useContext, useEffect, useState } from 'react'
 import ReactDOM from 'react-dom'
 import { useIntl } from 'react-intl'
 import { useParams } from 'react-router-dom'
@@ -26,6 +26,9 @@ import Tab1 from './Tabs/Tab1'
 import Tab2 from '@/containers/Devices/Detail/DevicesDetailsPage/Tabs/Tab2'
 import { PendingCommandsExpandableList } from '@/containers/PendingCommands'
 import EditNameModal from '@/containers/Devices/Detail/EditNameModal/EditNameModal'
+import Footer from '@plgd/shared-ui/src/components/new/Layout/Footer'
+import isFunction from 'lodash/isFunction'
+import { AppContext } from '@/containers/App/AppContext'
 
 const DevicesDetailsPage = () => {
     const { formatMessage: _ } = useIntl()
@@ -51,6 +54,8 @@ const DevicesDetailsPage = () => {
     const [isTwinEnabled, setIsTwinEnabled] = useState<boolean>(data?.metadata?.twinEnabled || false)
     const [showEditNameModal, setShowEditNameModal] = useState(false)
     const [deviceNameLoading, setDeviceNameLoading] = useState(false)
+
+    const { footerExpanded, setFooterExpanded } = useContext(AppContext)
 
     useEffect(() => {
         setDomReady(true)
@@ -153,6 +158,24 @@ const DevicesDetailsPage = () => {
     return (
         <PageLayout
             breadcrumbs={breadcrumbs}
+            footer={
+                <Footer
+                    footerExpanded={footerExpanded}
+                    paginationComponent={<div id='paginationPortalTarget'></div>}
+                    recentTasksPortal={<div id='recentTasksPortalTarget'></div>}
+                    recentTasksPortalTitle={
+                        <span
+                            id='recentTasksPortalTitleTarget'
+                            onClick={() => {
+                                isFunction(setFooterExpanded) && setFooterExpanded(!footerExpanded)
+                            }}
+                        >
+                            {_(t.recentTasks)}
+                        </span>
+                    }
+                    setFooterExpanded={setFooterExpanded!}
+                />
+            }
             header={
                 <DevicesDetailsHeader
                     deviceId={id}

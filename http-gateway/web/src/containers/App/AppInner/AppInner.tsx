@@ -1,28 +1,30 @@
 import { SyntheticEvent, useMemo, useState } from 'react'
-import { AppContext } from '@/containers/App/AppContext'
 import { Router } from 'react-router-dom'
-import { history } from '@/store'
-import { InitServices } from '@shared-ui/common/services/init-services'
-import { Helmet } from 'react-helmet'
-import appConfig from '@/config'
-import { menu, Routes } from '@/routes'
-import Footer from '@shared-ui/components/new/Layout/Footer'
-import { BrowserNotificationsContainer, ToastContainer } from '@shared-ui/components/new/Toast'
-import { useLocalStorage, WellKnownConfigType } from '@shared-ui/common/hooks'
 import { useAuth } from 'oidc-react'
-import { security } from '@shared-ui/common/services'
-import AppLoader from '@/containers/App/AppLoader/AppLoader'
-import { Props } from './AppInner.types'
-import { deviceStatusListener } from '../../Devices/websockets'
+import { ThemeProvider } from '@emotion/react'
+import { Helmet } from 'react-helmet'
+
 import Layout from '@shared-ui/components/new/Layout'
 import Header from '@shared-ui/components/new/Layout/Header'
 import UserWidget from '@shared-ui/components/new/Layout/Header/UserWidget'
-import LeftPanel from '@shared-ui/components/new/Layout/LeftPanel'
+import { parseActiveItem } from '@shared-ui/components/new/Layout/LeftPanel'
 import VersionMark from '@shared-ui/components/new/VersionMark'
 import { severities } from '@shared-ui/components/new/VersionMark/constants'
-import { ThemeProvider } from '@emotion/react'
+import { InitServices } from '@shared-ui/common/services/init-services'
+import { BrowserNotificationsContainer, ToastContainer } from '@shared-ui/components/new/Toast'
+import { useLocalStorage, WellKnownConfigType } from '@shared-ui/common/hooks'
 import light from '@shared-ui/components/new/_theme/light'
 import { MenuItem } from '@shared-ui/components/new/Layout/LeftPanel/LeftPanel.types'
+import { security } from '@shared-ui/common/services'
+
+import { AppContext } from '@/containers/App/AppContext'
+import { history } from '@/store'
+import appConfig from '@/config'
+import { mather, menu, Routes } from '@/routes'
+import AppLoader from '@/containers/App/AppLoader/AppLoader'
+import { Props } from './AppInner.types'
+import { deviceStatusListener } from '../../Devices/websockets'
+import LeftPanelWrapper from '@/containers/App/AppInner/LeftPanelWrapper/LeftPanelWrapper'
 
 const getBuildInformation = (wellKnownConfig: WellKnownConfigType) => ({
     buildDate: wellKnownConfig?.buildDate || '',
@@ -38,7 +40,7 @@ const AppInner = (props: Props) => {
     const buildInformation = getBuildInformation(wellKnownConfig)
     const [collapsed, setCollapsed] = useLocalStorage('leftPanelCollapsed', true)
     const [footerExpanded, setFooterExpanded] = useLocalStorage('footerPanelExpanded', false)
-    const [activeItem, setActiveItem] = useState('1')
+    const [activeItem, setActiveItem] = useState(parseActiveItem(history.location.pathname, menu, mather))
 
     const contextValue = useMemo(
         () => ({
@@ -65,8 +67,13 @@ const AppInner = (props: Props) => {
 
     const handleItemClick = (item: MenuItem, e: SyntheticEvent) => {
         e.preventDefault()
+
         setActiveItem(item.id)
         history.push(item.link)
+    }
+
+    const handleLocationChange = (id: string) => {
+        id !== activeItem && setActiveItem(id)
     }
 
     return (
@@ -78,15 +85,6 @@ const AppInner = (props: Props) => {
                     <Layout
                         collapsedMenu={collapsed}
                         content={<Routes />}
-                        footer={
-                            <Footer
-                                footerExpanded={footerExpanded}
-                                paginationComponent={<div id='paginationPortalTarget'></div>}
-                                recentTasksPortal={<div id='recentTasksPortalTarget'></div>}
-                                recentTasksPortalTitle={<span id='recentTasksPortalTitleTarget'></span>}
-                                setFooterExpanded={setFooterExpanded}
-                            />
-                        }
                         header={
                             <Header
                                 breadcrumbs={<div id='breadcrumbsPortalTarget'></div>}
@@ -101,15 +99,16 @@ const AppInner = (props: Props) => {
                             />
                         }
                         leftPanel={
-                            <LeftPanel
+                            <LeftPanelWrapper
                                 activeId={activeItem}
                                 collapsed={collapsed}
                                 menu={menu}
+                                onItemClick={handleItemClick}
                                 // newFeature={{
                                 //     onClick: () => console.log('click'),
                                 //     onClose: () => console.log('close'),
                                 // }}
-                                onItemClick={handleItemClick}
+                                onLocationChange={handleLocationChange}
                                 versionMark={<VersionMark severity={severities.SUCCESS} versionText='Version 2.02' />}
                             />
                         }

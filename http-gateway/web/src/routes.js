@@ -1,10 +1,12 @@
-import { Switch, Route } from 'react-router-dom'
+import { Switch, Route, matchPath } from 'react-router-dom'
+import { useIntl } from 'react-intl'
+
+import NotFoundPage from '@shared-ui/components/templates/NotFoundPage'
+
 import DevicesListPage from '@/containers/Devices/List/DevicesListPage'
 import DevicesDetailsPage from '@/containers/Devices/Detail/DevicesDetailsPage'
 import { PendingCommandsListPage } from '@/containers/PendingCommands'
 import Notifications from '@/containers/Notifications'
-import NotFoundPage from '@shared-ui/components/templates/NotFoundPage'
-import { useIntl } from 'react-intl'
 import { messages as t } from './containers/App/App.i18n'
 
 export const menu = [
@@ -16,10 +18,18 @@ export const menu = [
                 id: '1',
                 title: 'Devices',
                 link: '/',
+                paths: ['/', '/devices/:id', '/devices/:id/:href*'],
             },
         ],
     },
 ]
+
+export const mather = (location, item) =>
+    matchPath(location, {
+        path: item.paths,
+        exact: false,
+        strict: false,
+    })
 
 export const Routes = () => {
     const { formatMessage: _ } = useIntl()

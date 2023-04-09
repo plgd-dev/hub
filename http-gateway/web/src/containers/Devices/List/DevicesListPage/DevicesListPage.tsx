@@ -1,4 +1,4 @@
-import { FC, useEffect, useState } from 'react'
+import { FC, useContext, useEffect, useState } from 'react'
 import { useIntl } from 'react-intl'
 import { toast } from 'react-toastify'
 
@@ -18,6 +18,9 @@ import { handleDeleteDevicesErrors, sleep } from '../../utils'
 import { messages as t } from '../../Devices.i18n'
 import PageLayout from '@shared-ui/components/new/PageLayout'
 import { DeleteModal } from '@shared-ui/components/new/Modal'
+import Footer from '@plgd/shared-ui/src/components/new/Layout/Footer'
+import { AppContext } from '@/containers/App/AppContext'
+import isFunction from 'lodash/isFunction'
 
 const DevicesListPage: FC<any> = () => {
     const { formatMessage: _ } = useIntl()
@@ -40,6 +43,7 @@ const DevicesListPage: FC<any> = () => {
     const [unselectRowsToken, setUnselectRowsToken] = useState(1)
     const isMounted = useIsMounted()
     const combinedSelectedDevices = singleDevice ? [singleDevice] : selectedDevices
+    const { footerExpanded, setFooterExpanded } = useContext(AppContext)
 
     useEffect(() => {
         if (deviceError) {
@@ -108,6 +112,24 @@ const DevicesListPage: FC<any> = () => {
                     label: _(menuT.devices),
                 },
             ]}
+            footer={
+                <Footer
+                    footerExpanded={footerExpanded}
+                    paginationComponent={<div id='paginationPortalTarget'></div>}
+                    recentTasksPortal={<div id='recentTasksPortalTarget'></div>}
+                    recentTasksPortalTitle={
+                        <span
+                            id='recentTasksPortalTitleTarget'
+                            onClick={() => {
+                                isFunction(setFooterExpanded) && setFooterExpanded(!footerExpanded)
+                            }}
+                        >
+                            {_(t.recentTasks)}
+                        </span>
+                    }
+                    setFooterExpanded={setFooterExpanded!}
+                />
+            }
             header={<DevicesListHeader loading={loading} refresh={handleRefresh} />}
             loading={loading}
             title={_(menuT.devices)}

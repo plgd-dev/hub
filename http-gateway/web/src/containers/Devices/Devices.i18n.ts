@@ -497,4 +497,8 @@ export const messages = defineMessages({
         id: 'devices.savingChanges',
         defaultMessage: 'Saving change',
     },
+    recentTasks: {
+        id: 'pendingCommands.recentTasks',
+        defaultMessage: 'Recent tasks',
+    },
 })
