@@ -38,13 +38,12 @@ const AppInner = (props: Props) => {
     const { wellKnownConfig, openTelemetry } = props
     const { userData, userManager } = useAuth()
     const buildInformation = getBuildInformation(wellKnownConfig)
-    const [collapsed, setCollapsed] = useLocalStorage('leftPanelCollapsed', true)
+
     const [footerExpanded, setFooterExpanded] = useLocalStorage('footerPanelExpanded', false)
     const [activeItem, setActiveItem] = useState(parseActiveItem(history.location.pathname, menu, mather))
 
     const contextValue = useMemo(
         () => ({
-            collapsed,
             footerExpanded,
             setFooterExpanded,
             ...wellKnownConfig,
@@ -52,7 +51,7 @@ const AppInner = (props: Props) => {
             telemetryWebTracer: openTelemetry.getWebTracer(),
             buildInformation: buildInformation || undefined,
         }),
-        [collapsed, footerExpanded, wellKnownConfig, openTelemetry, buildInformation, setFooterExpanded]
+        [footerExpanded, wellKnownConfig, openTelemetry, buildInformation, setFooterExpanded]
     )
 
     if (userData) {
@@ -83,12 +82,10 @@ const AppInner = (props: Props) => {
                     <InitServices deviceStatusListener={deviceStatusListener} />
                     <Helmet defaultTitle={appConfig.appName} titleTemplate={`%s | ${appConfig.appName}`} />
                     <Layout
-                        collapsedMenu={collapsed}
                         content={<Routes />}
                         header={
                             <Header
                                 breadcrumbs={<div id='breadcrumbsPortalTarget'></div>}
-                                onCollapseToggle={() => setCollapsed(!collapsed)}
                                 userWidget={
                                     <UserWidget
                                         description={userData?.profile?.family_name}
@@ -101,7 +98,6 @@ const AppInner = (props: Props) => {
                         leftPanel={
                             <LeftPanelWrapper
                                 activeId={activeItem}
-                                collapsed={collapsed}
                                 menu={menu}
                                 onItemClick={handleItemClick}
                                 // newFeature={{
