@@ -25,7 +25,7 @@ require (
 	github.com/panjf2000/ants/v2 v2.7.2
 	github.com/pion/dtls/v2 v2.2.6
 	github.com/pion/logging v0.2.2
-	github.com/plgd-dev/device/v2 v2.1.1-0.20230411100938-1b7f1e6234d0
+	github.com/plgd-dev/device/v2 v2.1.1-0.20230411181406-3d5935ec187e
 	github.com/plgd-dev/go-coap/v3 v3.1.2-0.20230403145613-00cc495160f5
 	github.com/plgd-dev/kit/v2 v2.0.0-20211006190727-057b33161b90
 	github.com/sirupsen/logrus v1.9.0
@@ -100,7 +100,7 @@ require (
 	go.opentelemetry.io/otel/exporters/otlp/internal/retry v1.14.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.14.0 // indirect
 	go.opentelemetry.io/proto/otlp v0.19.0 // indirect
-	go.uber.org/multierr v1.11.0 // indirect
+	go.uber.org/multierr v1.9.0 // indirect
 	golang.org/x/crypto v0.8.0 // indirect
 	golang.org/x/exp v0.0.0-20230321023759-10a507213a29 // indirect
 	golang.org/x/sys v0.7.0 // indirect
