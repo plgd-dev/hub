@@ -2,6 +2,7 @@ import { Switch, Route, matchPath } from 'react-router-dom'
 import { useIntl } from 'react-intl'
 
 import NotFoundPage from '@shared-ui/components/templates/NotFoundPage'
+import { MenuItem } from '@shared-ui/components/new/Layout/LeftPanel/LeftPanel.types'
 
 import DevicesListPage from '@/containers/Devices/List/DevicesListPage'
 import DevicesDetailsPage from '@/containers/Devices/Detail/DevicesDetailsPage'
@@ -24,7 +25,7 @@ export const menu = [
     },
 ]
 
-export const mather = (location, item) =>
+export const mather = (location: string, item: MenuItem) =>
     matchPath(location, {
         path: item.paths,
         exact: false,
