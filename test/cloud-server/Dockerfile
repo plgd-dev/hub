@@ -1,5 +1,5 @@
 FROM golang:1.19.6-alpine AS build
-RUN apk add --no-cache curl git build-base
+RUN apk add --no-cache build-base curl git
 WORKDIR $GOPATH/src/github.com/plgd-dev/hub
 COPY go.mod go.sum ./
 RUN go mod download
@@ -48,11 +48,11 @@ RUN apt update
 # netcat -> nc utility in run.sh
 # nginx -> nginx server in run.sh
 # openssl -> openssl utility in run.sh
-RUN apt install -y ca-certificates gnupg iproute2 netcat nginx openssl wget
+RUN apt-get install -y --no-install-recommends ca-certificates gnupg iproute2 netcat nginx openssl wget
 RUN wget -qO - https://pgp.mongodb.com/server-6.0.asc | gpg --dearmor -o /etc/apt/trusted.gpg.d/mongodb-6.0.gpg
 RUN echo "deb [ arch=$(dpkg --print-architecture) ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/6.0 multiverse" | tee /etc/apt/sources.list.d/mongodb-org-6.0.list
 RUN apt update && \
-    DEBIAN_FRONTEND=noninteractive apt-get install -y mongodb-org mongodb-org-server
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends mongodb-org mongodb-org-server
 COPY --from=build /go/bin/cert-tool /usr/local/bin/cert-tool
 COPY --from=build /go/bin/grpc-gateway.test /usr/local/bin/grpc-gateway.test
 COPY --from=build /go/bin/test-iotivity-lite.test /usr/local/bin/test-iotivity-lite.test

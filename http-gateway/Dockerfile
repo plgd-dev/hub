@@ -17,7 +17,7 @@ RUN cd /web && \
     npm config set fetch-retry-mintimeout 600000 &&  \
     npm config set fetch-retry-maxtimeout 1200000 && \
     npm config set fetch-timeout 1800000 && \
-    npm install && \
+    npm install --ignore-scripts && \
     npm run build
 
 FROM alpine:3.17 AS security-provider
