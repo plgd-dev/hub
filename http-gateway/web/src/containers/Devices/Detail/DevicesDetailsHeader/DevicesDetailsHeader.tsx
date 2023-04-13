@@ -36,7 +36,6 @@ const DevicesDetailsHeader: FC<Props> = (props) => {
     }, [isUnregistered, resourceRegistrationObservationWSKey])
 
     const handleOpenDeleteDeviceModal = () => {
-        console.log('handleOpenDeleteDeviceModal')
         if (isMounted.current) {
             setDeleteModalOpen(true)
         }

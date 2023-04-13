@@ -478,7 +478,7 @@ export const messages = defineMessages({
         defaultMessage: 'Edit',
     },
     editName: {
-        id: 'devices.twinUpdate',
+        id: 'devices.editName',
         defaultMessage: 'Edit name',
     },
     copy: {

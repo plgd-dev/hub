@@ -1,14 +1,16 @@
 import React, { FC, useEffect, useState } from 'react'
-import { Props } from './EditNameModal.types'
-import * as styles from './EditNameModal.styles'
-import Modal from '@shared-ui/components/new/Modal'
-import { messages as t } from '@/containers/Devices/Devices.i18n'
 import { useIntl } from 'react-intl'
+import isFunction from 'lodash/isFunction'
+
 import Button from '@plgd/shared-ui/src/components/new/Button'
 import FormGroup from '@shared-ui/components/new/FormGroup'
 import FormLabel from '@shared-ui/components/new/FormLabel'
 import FormInput from '@shared-ui/components/new/FormInput'
-import isFunction from 'lodash/isFunction'
+import Modal from '@shared-ui/components/new/Modal'
+
+import { messages as t } from '@/containers/Devices/Devices.i18n'
+import { Props } from './EditNameModal.types'
+import * as styles from './EditNameModal.styles'
 
 const EditNameModal: FC<Props> = (props) => {
     const { deviceName, deviceNameLoading, show, handleClose, handleSubmit } = props
