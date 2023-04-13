@@ -26,9 +26,9 @@ import './DevicesDetailsPage.scss'
 import Tab1 from './Tabs/Tab1'
 import Tab2 from '@/containers/Devices/Detail/DevicesDetailsPage/Tabs/Tab2'
 import { PendingCommandsExpandableList } from '@/containers/PendingCommands'
-import EditNameModal from '@/containers/Devices/Detail/EditNameModal/EditNameModal'
 import isFunction from 'lodash/isFunction'
 import { AppContext } from '@/containers/App/AppContext'
+import EditDeviceNameModal from '@shared-ui/components/organisms/EditDeviceNameModal'
 
 const DevicesDetailsPage = () => {
     const { formatMessage: _ } = useIntl()
@@ -234,11 +234,20 @@ const DevicesDetailsPage = () => {
 
             <NotificationMessage message={notificationMessage} onExit={() => setNotificationMessage(undefined)} show={!!notificationMessage} />
 
-            <EditNameModal
+            <EditDeviceNameModal
                 deviceName={deviceName}
                 deviceNameLoading={deviceNameLoading}
                 handleClose={() => setShowEditNameModal(false)}
                 handleSubmit={updateDeviceName}
+                i18n={{
+                    close: _(t.close),
+                    deviceName: _(t.deviceName),
+                    edit: _(t.edit),
+                    name: _(t.name),
+                    reset: _(t.reset),
+                    saveChange: _(t.saveChange),
+                    savingChanges: _(t.savingChanges),
+                }}
                 show={showEditNameModal}
             />
 
