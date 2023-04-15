@@ -1,14 +1,17 @@
-import { FC } from 'react'
+import { FC, useMemo } from 'react'
 import { useIntl } from 'react-intl'
-
 import classNames from 'classnames'
+
 import Switch from '@shared-ui/components/new/Switch'
 import { useLocalStorage } from '@shared-ui/common/hooks'
-import DevicesResourcesList from '../DevicesResourcesList'
+import DevicesResourcesList from '@shared-ui/components/organisms/DevicesResourcesList'
+
 import DevicesResourcesTree from '../DevicesResourcesTree'
 import { devicesStatuses } from '../../constants'
 import { messages as t } from '../../Devices.i18n'
 import { Props } from './DevicesResources.types'
+import TableActionButton from '@shared-ui/components/organisms/TableActionButton'
+import { canCreateResource } from '@shared-ui/common/utils'
 
 const DevicesResources: FC<Props> = (props) => {
     const { data, onUpdate, onCreate, onDelete, deviceStatus, isActiveTab, loading, pageSize } = props
@@ -18,6 +21,73 @@ const DevicesResources: FC<Props> = (props) => {
     const greyedOutClassName = classNames({
         'grayed-out': isUnregistered,
     })
+
+    const columns = useMemo(
+        () => [
+            {
+                Header: _(t.href),
+                accessor: 'href',
+                Cell: ({ value, row }: { value: any; row: any }) => {
+                    const {
+                        original: { deviceId, href },
+                    } = row
+                    if (isUnregistered) {
+                        return <span>{value}</span>
+                    }
+                    return (
+                        <div className='tree-expander-container'>
+                            <span className='link reveal-icon-on-hover' onClick={() => onUpdate({ deviceId, href })}>
+                                {value}
+                            </span>
+                        </div>
+                    )
+                },
+                style: { width: '300px' },
+            },
+            {
+                Header: _(t.types),
+                accessor: 'resourceTypes',
+                style: { width: '100%' },
+                Cell: ({ value }: { value: any }) => value.join(', '),
+            },
+            {
+                Header: _(t.actions),
+                accessor: 'actions',
+                disableSortBy: true,
+                Cell: ({ row }: { row: any }) => {
+                    const {
+                        original: { deviceId, href, interfaces },
+                    } = row
+                    const cleanHref = href.replace(/\/$/, '') // href without a trailing slash
+                    return (
+                        <TableActionButton
+                            disabled={isUnregistered || loading}
+                            items={[
+                                {
+                                    onClick: () => onCreate(cleanHref),
+                                    label: _(t.create),
+                                    icon: 'plus',
+                                    hidden: !canCreateResource(interfaces),
+                                },
+                                {
+                                    onClick: () => onUpdate({ deviceId, href: cleanHref }),
+                                    label: _(t.update),
+                                    icon: 'edit',
+                                },
+                                {
+                                    onClick: () => onDelete(cleanHref),
+                                    label: _(t.delete),
+                                    icon: 'trash',
+                                },
+                            ]}
+                        />
+                    )
+                },
+                className: 'actions',
+            },
+        ],
+        [onUpdate, onCreate, onDelete, isUnregistered, loading] //eslint-disable-line
+    )
 
     return (
         <>
@@ -43,13 +113,12 @@ const DevicesResources: FC<Props> = (props) => {
                 <DevicesResourcesTree data={data} deviceStatus={deviceStatus} loading={loading} onCreate={onCreate} onDelete={onDelete} onUpdate={onUpdate} />
             ) : (
                 <DevicesResourcesList
+                    columns={columns}
                     data={data}
-                    deviceStatus={deviceStatus}
+                    i18n={{
+                        search: _(t.search),
+                    }}
                     isActiveTab={isActiveTab}
-                    loading={loading}
-                    onCreate={onCreate}
-                    onDelete={onDelete}
-                    onUpdate={onUpdate}
                     pageSize={pageSize}
                 />
             )}
