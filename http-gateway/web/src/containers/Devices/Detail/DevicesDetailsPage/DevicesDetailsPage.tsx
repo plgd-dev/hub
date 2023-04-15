@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from 'react'
+import React, { useCallback, useContext, useEffect, useState } from 'react'
 import ReactDOM from 'react-dom'
 import { useIntl } from 'react-intl'
 import { useParams } from 'react-router-dom'
@@ -67,6 +67,10 @@ const DevicesDetailsPage = () => {
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [data, loading])
+
+    const handleOpenEditDeviceNameModal = useCallback(() => {
+        setShowEditNameModal(true)
+    }, [])
 
     if (deviceError) {
         return <NotFoundPage message={_(t.deviceNotFoundMessage, { id })} title={_(t.deviceNotFound)} />
@@ -180,7 +184,7 @@ const DevicesDetailsPage = () => {
                 <DevicesDetailsHeader
                     deviceId={id}
                     deviceName={deviceName}
-                    handleOpenEditDeviceNameModal={() => setShowEditNameModal(true)}
+                    handleOpenEditDeviceNameModal={handleOpenEditDeviceNameModal}
                     isOnline={isOnline}
                     isUnregistered={isUnregistered}
                     links={resources}

@@ -1,4 +1,4 @@
-import React, { FC, useEffect, useMemo, useState } from 'react'
+import React, { FC, memo, useEffect, useMemo, useState } from 'react'
 import { useIntl } from 'react-intl'
 import classNames from 'classnames'
 import { useHistory } from 'react-router-dom'
@@ -14,7 +14,7 @@ import { messages as t } from '../../Devices.i18n'
 import Icon from '@shared-ui/components/new/Icon'
 import { DeleteModal } from '@shared-ui/components/new/Modal'
 
-const DevicesDetailsHeader: FC<Props> = (props) => {
+const DevicesDetailsHeader: FC<Props> = memo((props) => {
     const { deviceId, deviceName, isUnregistered, isOnline, handleOpenEditDeviceNameModal, links } = props
     const { formatMessage: _ } = useIntl()
     const resourceRegistrationObservationWSKey = getResourceRegistrationNotificationKey(deviceId)
@@ -118,7 +118,7 @@ const DevicesDetailsHeader: FC<Props> = (props) => {
             />
         </div>
     )
-}
+})
 
 DevicesDetailsHeader.displayName = 'DevicesDetailsHeader'
 
