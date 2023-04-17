@@ -294,6 +294,7 @@ const PendingCommandsList: FC<Props> = ({ onLoading, embedded, deviceId }) => {
                 i18n={{
                     search: _(t.search),
                 }}
+                rowHeight={40}
             />
 
             <PendingCommandDetailsModal {...detailsModalData} onClose={onCloseViewModal} />
