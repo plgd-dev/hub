@@ -51,7 +51,7 @@ export const getDevicesResourcesApi = ({ deviceId, href, currentInterface = '' }
     const { httpGatewayAddress, cancelRequestDeadlineTimeout } = security.getGeneralConfig() as SecurityConfig
     return withTelemetry(
         () =>
-            fetchApi(`${httpGatewayAddress}${devicesApiEndpoints.DEVICES}/${deviceId}/resources${href}?${interfaceGetParam(currentInterface)}`, {
+            fetchApi(`${httpGatewayAddress}${devicesApiEndpoints.DEVICES}/${deviceId}/resources${href}${interfaceGetParam(currentInterface)}`, {
                 cancelRequestDeadlineTimeout,
             }),
         'get-device-resource'
