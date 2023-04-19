@@ -92,7 +92,7 @@ RUN cd /web && \
     npm install --ignore-scripts && \
     npm run build
 
-FROM ubuntu:22.04 AS service
+FROM ubuntu:kinetic AS service
 RUN apt update
 # iproute2 -> ip utility in run.sh
 # netcat -> nc utility in run.sh
