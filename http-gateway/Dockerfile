@@ -10,7 +10,7 @@ RUN ( cd ./vendor/golang.org/x/oauth2 && patch -p1 < $GOPATH/src/github.com/plgd
 WORKDIR $GOPATH/src/github.com/plgd-dev/hub/http-gateway
 RUN CGO_ENABLED=0 go build -mod=vendor -o /go/bin/http-gateway ./cmd/service
 
-FROM node:16 AS build-web
+FROM node:19 AS build-web
 COPY http-gateway/web /web
 RUN cd /web && \
     npm config set fetch-retries 3 && \

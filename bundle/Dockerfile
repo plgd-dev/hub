@@ -82,7 +82,7 @@ RUN mkdir -p ./nats
 RUN unzip ./nats.zip -d ./nats
 RUN cp ./nats/*/nats /go/bin/nats
 
-FROM node:16 AS build-web
+FROM node:19 AS build-web
 COPY --from=build /go/src/github.com/plgd-dev/hub/http-gateway/web /web
 RUN cd /web && \
     npm config set fetch-retries 3 && \
