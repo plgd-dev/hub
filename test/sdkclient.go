@@ -83,9 +83,9 @@ func WithRootCA(certificate, key []byte) Option {
 	})
 }
 
-// WithValididity creates Option that overrides the ValidFrom timestamp and CertExpiry
+// WithValidity creates Option that overrides the ValidFrom timestamp and CertExpiry
 // interval used by the SDK client when generating certificates.
-func WithValididity(validFrom, validFor string) Option {
+func WithValidity(validFrom, validFor string) Option {
 	return optionFunc(func(cfg *sdkConfig) {
 		cfg.validFrom = validFrom
 		cfg.validFor = validFor
