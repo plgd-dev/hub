@@ -33,6 +33,10 @@ type CertificateAuthorityClient interface {
 	// SignCertificate sends a Certificate Signing Request to the certificate authority
 	// and obtains a signed certificate. Both in the PEM format.
 	SignCertificate(ctx context.Context, in *SignCertificateRequest, opts ...grpc.CallOption) (*SignCertificateResponse, error)
+	// Get signed certficate records.
+	GetSigningRecords(ctx context.Context, in *GetSigningRecordsRequest, opts ...grpc.CallOption) (CertificateAuthority_GetSigningRecordsClient, error)
+	// Get signed certficate records.
+	DeleteSigningRecords(ctx context.Context, in *DeleteSigningRecordsRequest, opts ...grpc.CallOption) (*DeletedSigningRecords, error)
 }
 
 type certificateAuthorityClient struct {
@@ -61,6 +65,47 @@ func (c *certificateAuthorityClient) SignCertificate(ctx context.Context, in *Si
 	return out, nil
 }
 
+func (c *certificateAuthorityClient) GetSigningRecords(ctx context.Context, in *GetSigningRecordsRequest, opts ...grpc.CallOption) (CertificateAuthority_GetSigningRecordsClient, error) {
+	stream, err := c.cc.NewStream(ctx, &CertificateAuthority_ServiceDesc.Streams[0], "/certificateauthority.pb.CertificateAuthority/GetSigningRecords", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &certificateAuthorityGetSigningRecordsClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type CertificateAuthority_GetSigningRecordsClient interface {
+	Recv() (*SigningRecord, error)
+	grpc.ClientStream
+}
+
+type certificateAuthorityGetSigningRecordsClient struct {
+	grpc.ClientStream
+}
+
+func (x *certificateAuthorityGetSigningRecordsClient) Recv() (*SigningRecord, error) {
+	m := new(SigningRecord)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func (c *certificateAuthorityClient) DeleteSigningRecords(ctx context.Context, in *DeleteSigningRecordsRequest, opts ...grpc.CallOption) (*DeletedSigningRecords, error) {
+	out := new(DeletedSigningRecords)
+	err := c.cc.Invoke(ctx, "/certificateauthority.pb.CertificateAuthority/DeleteSigningRecords", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // CertificateAuthorityServer is the server API for CertificateAuthority service.
 // All implementations must embed UnimplementedCertificateAuthorityServer
 // for forward compatibility
@@ -71,6 +116,10 @@ type CertificateAuthorityServer interface {
 	// SignCertificate sends a Certificate Signing Request to the certificate authority
 	// and obtains a signed certificate. Both in the PEM format.
 	SignCertificate(context.Context, *SignCertificateRequest) (*SignCertificateResponse, error)
+	// Get signed certficate records.
+	GetSigningRecords(*GetSigningRecordsRequest, CertificateAuthority_GetSigningRecordsServer) error
+	// Get signed certficate records.
+	DeleteSigningRecords(context.Context, *DeleteSigningRecordsRequest) (*DeletedSigningRecords, error)
 	mustEmbedUnimplementedCertificateAuthorityServer()
 }
 
@@ -83,6 +132,12 @@ func (UnimplementedCertificateAuthorityServer) SignIdentityCertificate(context.C
 }
 func (UnimplementedCertificateAuthorityServer) SignCertificate(context.Context, *SignCertificateRequest) (*SignCertificateResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SignCertificate not implemented")
+}
+func (UnimplementedCertificateAuthorityServer) GetSigningRecords(*GetSigningRecordsRequest, CertificateAuthority_GetSigningRecordsServer) error {
+	return status.Errorf(codes.Unimplemented, "method GetSigningRecords not implemented")
+}
+func (UnimplementedCertificateAuthorityServer) DeleteSigningRecords(context.Context, *DeleteSigningRecordsRequest) (*DeletedSigningRecords, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteSigningRecords not implemented")
 }
 func (UnimplementedCertificateAuthorityServer) mustEmbedUnimplementedCertificateAuthorityServer() {}
 
@@ -133,6 +188,45 @@ func _CertificateAuthority_SignCertificate_Handler(srv interface{}, ctx context.
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CertificateAuthority_GetSigningRecords_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(GetSigningRecordsRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(CertificateAuthorityServer).GetSigningRecords(m, &certificateAuthorityGetSigningRecordsServer{stream})
+}
+
+type CertificateAuthority_GetSigningRecordsServer interface {
+	Send(*SigningRecord) error
+	grpc.ServerStream
+}
+
+type certificateAuthorityGetSigningRecordsServer struct {
+	grpc.ServerStream
+}
+
+func (x *certificateAuthorityGetSigningRecordsServer) Send(m *SigningRecord) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func _CertificateAuthority_DeleteSigningRecords_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteSigningRecordsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CertificateAuthorityServer).DeleteSigningRecords(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/certificateauthority.pb.CertificateAuthority/DeleteSigningRecords",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CertificateAuthorityServer).DeleteSigningRecords(ctx, req.(*DeleteSigningRecordsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // CertificateAuthority_ServiceDesc is the grpc.ServiceDesc for CertificateAuthority service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -148,7 +242,17 @@ var CertificateAuthority_ServiceDesc = grpc.ServiceDesc{
 			MethodName: "SignCertificate",
 			Handler:    _CertificateAuthority_SignCertificate_Handler,
 		},
+		{
+			MethodName: "DeleteSigningRecords",
+			Handler:    _CertificateAuthority_DeleteSigningRecords_Handler,
+		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "GetSigningRecords",
+			Handler:       _CertificateAuthority_GetSigningRecords_Handler,
+			ServerStreams: true,
+		},
+	},
 	Metadata: "certificate-authority/pb/service.proto",
 }

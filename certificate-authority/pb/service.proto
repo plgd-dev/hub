@@ -6,6 +6,7 @@ import "google/api/annotations.proto";
 import "protoc-gen-openapiv2/options/annotations.proto";
 
 import "certificate-authority/pb/cert.proto";
+import "certificate-authority/pb/signingRecords.proto";
 
 
 option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
@@ -54,4 +55,24 @@ service CertificateAuthority {
       tags: [ "certificate-authority" ]
     };
   }
+
+  // Get signed certficate records.
+  rpc GetSigningRecords (GetSigningRecordsRequest) returns (stream SigningRecord) {
+    option (google.api.http) = {
+      get: "/api/v1/signing-records"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: [ "SigningRecords records" ]
+    };
+  };
+
+  // Get signed certficate records.
+  rpc DeleteSigningRecords (DeleteSigningRecordsRequest) returns (DeletedSigningRecords) {
+    option (google.api.http) = {
+      delete: "/api/v1/signing-records"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: [ "SigningRecords records" ]
+    };
+  };
 }

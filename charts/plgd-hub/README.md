@@ -60,6 +60,18 @@ global:
 | certificateauthority.ca.secret.name | string | `nil` | Name of secret |
 | certificateauthority.ca.volume.mountPath | string | `"/certs/coap-device-ca"` | CA certificate mount path |
 | certificateauthority.ca.volume.name | string | `"coap-device-ca"` | CA certificate volume name |
+| certificateauthority.clients.storage.cleanUpRecords | string | `"0 1 * * *"` | Remove any invalid entries in the cron format. If an empty string is provided, the cleanup function will be disabled. |
+| certificateauthority.clients.storage.mongoDB.bulkWrite.documentLimit | int | `1000` | The maximum number of documents to cache before an immediate write. |
+| certificateauthority.clients.storage.mongoDB.bulkWrite.throttleTime | string | `"500ms"` | The amount of time to wait until a record is written to mongodb. Any records collected during the throttle time will also be written. A throttle time of zero writes immediately. If recordLimit is reached, all records are written immediately |
+| certificateauthority.clients.storage.mongoDB.bulkWrite.timeout | string | `"1m0s"` | A time limit for write bulk to mongodb. A Timeout of zero means no timeout. |
+| certificateauthority.clients.storage.mongoDB.database | string | `"certificateAuthorityService"` |  |
+| certificateauthority.clients.storage.mongoDB.maxConnIdleTime | string | `"4m0s"` |  |
+| certificateauthority.clients.storage.mongoDB.maxPoolSize | int | `16` |  |
+| certificateauthority.clients.storage.mongoDB.tls.caPool | string | `nil` |  |
+| certificateauthority.clients.storage.mongoDB.tls.certFile | string | `nil` |  |
+| certificateauthority.clients.storage.mongoDB.tls.keyFile | string | `nil` |  |
+| certificateauthority.clients.storage.mongoDB.tls.useSystemCAPool | bool | `false` |  |
+| certificateauthority.clients.storage.mongoDB.uri | string | `nil` |  |
 | certificateauthority.config | object | `{"fileName":"service.yaml","mountPath":"/config","volume":"config"}` | Service configuration |
 | certificateauthority.config.fileName | string | `"service.yaml"` | File name for config file |
 | certificateauthority.config.mountPath | string | `"/config"` | Mount path |

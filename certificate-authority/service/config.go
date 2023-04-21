@@ -3,8 +3,11 @@ package service
 import (
 	"fmt"
 	"net"
+	"time"
 
+	gocron "github.com/go-co-op/gocron"
 	grpcService "github.com/plgd-dev/hub/v2/certificate-authority/service/grpc"
+	"github.com/plgd-dev/hub/v2/certificate-authority/store/mongodb"
 	"github.com/plgd-dev/hub/v2/pkg/config"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	httpServer "github.com/plgd-dev/hub/v2/pkg/net/http/server"
@@ -62,11 +65,43 @@ func (c *HTTPConfig) Validate() error {
 	return nil
 }
 
+type StorageConfig struct {
+	MongoDB                      mongodb.Config `yaml:"mongoDB" json:"mongoDb"`
+	ExtendCronParserAboutSeconds bool           `yaml:"-" json:"-"`
+	CleanUpRecords               string         `yaml:"cleanUpRecords" json:"cleanUpRecords"`
+}
+
+func (c *StorageConfig) Validate() error {
+	if err := c.MongoDB.Validate(); err != nil {
+		return fmt.Errorf("mongoDB.%w", err)
+	}
+	if c.CleanUpRecords == "" {
+		return nil
+	}
+	s := gocron.NewScheduler(time.Local)
+	if c.ExtendCronParserAboutSeconds {
+		s = s.CronWithSeconds(c.CleanUpRecords)
+	} else {
+		s = s.Cron(c.CleanUpRecords)
+	}
+	_, err := s.Do(func() {})
+	if err != nil {
+		return fmt.Errorf("cleanUpRecords('%v') - %w", c.CleanUpRecords, err)
+	}
+	s.Clear()
+	s.Stop()
+	return nil
+}
+
 type ClientsConfig struct {
+	Storage                StorageConfig     `yaml:"storage" json:"storage"`
 	OpenTelemetryCollector otelClient.Config `yaml:"openTelemetryCollector" json:"openTelemetryCollector"`
 }
 
 func (c *ClientsConfig) Validate() error {
+	if err := c.Storage.Validate(); err != nil {
+		return fmt.Errorf("storage.%w", err)
+	}
 	if err := c.OpenTelemetryCollector.Validate(); err != nil {
 		return fmt.Errorf("openTelemetryCollector.%w", err)
 	}

@@ -1,0 +1,52 @@
+syntax = "proto3";
+
+package certificateauthority.pb;
+
+option go_package = "github.com/plgd-dev/hub/v2/certificate-authority/pb;pb";
+
+message GetSigningRecordsRequest {
+  // Filter by id.
+  repeated string id_filter = 1;
+  // Filter by common_name.
+  repeated string common_name_filter = 2;
+  // Filter by device_id - provides only identity certificates.
+  repeated string device_id_filter = 3;
+}
+
+message CredentialStatus {
+  // Last time the device requested provisioning, in unix nanoseconds timestamp format.
+  int64 date = 1; // @gotags: bson:"date"
+  // Last certificate issued.
+  string certificate_pem = 2; // @gotags: bson:"identityCertificate"
+  // Record valid until date, in unix nanoseconds timestamp format
+  int64 valid_until_date = 3; // @gotags: bson:"validUntilDate"
+}
+
+message SigningRecord  {
+  // Registration id, calculated from the certificate public key info + common name. SHA256 - Must be unique in the database and for one private key there could be multiple certificates.
+  string id = 1; // @gotags: bson:"_id"
+  // Certificate owner.
+  string owner = 2; // @gotags: bson:"owner"
+  // Common name of the certificate.
+  string common_name = 3; // @gotags: bson:"commonName"
+  // DeviceID of the identity certificate.
+  string device_id = 4; // @gotags: bson:"deviceId,omitempty"
+  // Public key fingerprint in (SHA256) of the certificate.
+  string public_key = 5; // @gotags: bson:"publicKey"
+  // Record creation date, in unix nanoseconds timestamp format
+  int64 creation_date = 6; // @gotags: bson:"creationDate,omitempty"
+  // Last credential provision overview.
+  CredentialStatus credential = 7; // @gotags: bson:"credential"
+}
+
+message DeleteSigningRecordsRequest {
+  // Filter by id.
+  repeated string id_filter = 1;
+  // Filter by common_name.
+  repeated string device_id_filter = 2;
+}
+
+message DeletedSigningRecords {
+  // Number of deleted records.
+  int64 count = 1;
+}
