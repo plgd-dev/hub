@@ -289,6 +289,12 @@ const Tab2: FC<Props> = (props) => {
                         defaultTtlValue={wellKnownConfig?.defaultCommandTimeToLive || 0}
                         defaultValue={ttl}
                         disabled={loadingResource || savingResource}
+                        i18n={{
+                            default: _(t.default),
+                            duration: _(t.duration),
+                            placeholder: _(t.placeholder),
+                            unit: _(t.unit),
+                        }}
                         onChange={setTtl}
                         onTtlHasError={setTtlHasError}
                         ttlHasError={ttlHasError}
@@ -305,6 +311,12 @@ const Tab2: FC<Props> = (props) => {
                                 defaultTtlValue={wellKnownConfig?.defaultCommandTimeToLive || 0}
                                 defaultValue={ttl}
                                 disabled={loadingResource}
+                                i18n={{
+                                    default: _(t.default),
+                                    duration: _(t.duration),
+                                    placeholder: _(t.placeholder),
+                                    unit: _(t.unit),
+                                }}
                                 onChange={setTtl}
                                 onTtlHasError={setTtlHasError}
                                 ttlHasError={ttlHasError}

@@ -22,7 +22,7 @@ export const usePendingCommandsList = (deviceId?: string) => {
     })
 
     useEmitter(UPDATE_PENDING_COMMANDS_WS_KEY, (updated: { deviceId: string; href: string; correlationId: string; status: string }) => {
-        updateData(updatePendingCommandsDataStatus(data, updated))
+        updated.correlationId && updateData(updatePendingCommandsDataStatus(data, updated))
     })
 
     return {

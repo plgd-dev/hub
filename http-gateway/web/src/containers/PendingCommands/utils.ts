@@ -48,7 +48,6 @@ export const handleEmitUpdatedCommandEvents = (eventData: any) => {
         Emitter.emit(UPDATE_PENDING_COMMANDS_WS_KEY, {
             correlationId: auditContext?.correlationId,
             deviceId: resourceId?.deviceId || deviceId,
-            href: resourceId?.href,
             status: typeof canceled === 'boolean' ? cancelBool : status,
         })
     }
@@ -56,15 +55,11 @@ export const handleEmitUpdatedCommandEvents = (eventData: any) => {
 
 // Updates the pending commands data with an object of
 // { deviceId, href, correlationId, status } which came from the WS events.
-export const updatePendingCommandsDataStatus = (
-    data: any,
-    { deviceId, href, correlationId, status }: { deviceId: string; href: string; correlationId: string; status: string }
-) => {
-    return data?.map((command: any) => {
+export const updatePendingCommandsDataStatus = (data: any, { deviceId, correlationId, status }: { deviceId: string; correlationId: string; status: string }) =>
+    data?.map((command: any) => {
         const commandType = Object.keys(command)[0]
 
         if (
-            command[commandType]?.resourceId?.href === href &&
             (command[commandType]?.resourceId?.deviceId === deviceId || command[commandType]?.deviceId === deviceId) &&
             command[commandType].auditContext.correlationId === correlationId
         ) {
@@ -78,7 +73,6 @@ export const updatePendingCommandsDataStatus = (
 
         return command
     })
-}
 
 // validUntil - ns, currentTime - ms
 export const hasCommandExpired = (validUntil: any, currentTime: any) => {

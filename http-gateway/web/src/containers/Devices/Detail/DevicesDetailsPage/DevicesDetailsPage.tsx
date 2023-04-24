@@ -51,7 +51,7 @@ const DevicesDetailsPage = () => {
     }
     const [ttl] = useState(wellKnownConfig?.defaultCommandTimeToLive || 0)
 
-    const [isTwinEnabled, setIsTwinEnabled] = useState<boolean>(data?.metadata?.twinEnabled || false)
+    const [isTwinEnabled, setIsTwinEnabled] = useState<boolean>(data?.metadata?.twinEnabled ?? false)
     const [showEditNameModal, setShowEditNameModal] = useState(false)
     const [deviceNameLoading, setDeviceNameLoading] = useState(false)
 
@@ -62,8 +62,8 @@ const DevicesDetailsPage = () => {
     }, [])
 
     useEffect(() => {
-        if (data?.metadata?.twinEnabled && data?.metadata?.twinEnabled !== isTwinEnabled) {
-            setIsTwinEnabled(data?.metadata?.twinEnabled)
+        if (data?.metadata?.twinEnabled !== isTwinEnabled) {
+            setIsTwinEnabled(data?.metadata?.twinEnabled ?? false)
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [data, loading])

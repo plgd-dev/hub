@@ -1,7 +1,5 @@
 import { FC, useEffect, useMemo, useState } from 'react'
 import { useIntl } from 'react-intl'
-import OverlayTrigger from 'react-bootstrap/OverlayTrigger'
-import Tooltip from 'react-bootstrap/Tooltip'
 import { toast } from 'react-toastify'
 
 import ConfirmModal from '@shared-ui/components/new/ConfirmModal'
@@ -10,6 +8,7 @@ import Table from '@shared-ui/components/new/TableNew'
 import { useIsMounted } from '@shared-ui/common/hooks'
 import { getApiErrorMessage } from '@shared-ui/common/utils'
 import { WebSocketEventClient, eventFilters } from '@shared-ui/common/services'
+import TableActions from '@shared-ui/components/new/TableNew/TableActions'
 
 import PendingCommandDetailsModal from '../PendingCommandDetailsModal'
 import {
@@ -20,13 +19,11 @@ import {
     UPDATE_PENDING_COMMANDS_WS_KEY,
 } from '../constants'
 import { getPendingCommandStatusColorAndLabel, hasCommandExpired, handleEmitNewPendingCommand, handleEmitUpdatedCommandEvents } from '../utils'
-
 import { usePendingCommandsList } from '../hooks'
 import { cancelPendingCommandApi } from '../rest'
 import { messages as t } from '../PendingCommands.i18n'
 import { Props } from './PendingCommandsList.types'
 import DateFormat from '@/containers/PendingCommands/DateFormat'
-import TableActions from '@plgd/shared-ui/src/components/new/TableNew/TableActions'
 
 type ModalData = {
     content: any
@@ -46,6 +43,7 @@ const PendingCommandsList: FC<Props> = ({ onLoading, embedded, deviceId }) => {
     const [currentTime, setCurrentTime] = useState(Date.now())
 
     const { data, loading, error } = usePendingCommandsList(deviceId)
+
     const [canceling, setCanceling] = useState(false)
     const [confirmModalData, setConfirmModalData] = useState<null | ConfirmModalData>(null)
     const [detailsModalData, setDetailsModalData] = useState<null | ModalData>(null)
@@ -150,6 +148,12 @@ const PendingCommandsList: FC<Props> = ({ onLoading, embedded, deviceId }) => {
         () => {
             const cols = [
                 {
+                    Header: 'CI',
+                    accessor: 'auditContext.correlationId',
+                    disableSortBy: true,
+                    Cell: ({ value }: { value: any }) => value,
+                },
+                {
                     Header: _(t.created),
                     accessor: 'eventMetadata.timestamp',
                     disableSortBy: true,
@@ -207,11 +211,7 @@ const PendingCommandsList: FC<Props> = ({ onLoading, embedded, deviceId }) => {
                             return <Badge className={color}>{_(label)}</Badge>
                         }
 
-                        return (
-                            <OverlayTrigger overlay={<Tooltip className='plgd-tooltip'>{value}</Tooltip>} placement='top'>
-                                <Badge className={color}>{_(label)}</Badge>
-                            </OverlayTrigger>
-                        )
+                        return <Badge className={color}>{_(label)}</Badge>
                     },
                 },
                 {
@@ -291,6 +291,7 @@ const PendingCommandsList: FC<Props> = ({ onLoading, embedded, deviceId }) => {
                     },
                 ]}
                 globalSearch={false}
+                height={350}
                 i18n={{
                     search: _(t.search),
                 }}
@@ -307,12 +308,7 @@ const PendingCommandsList: FC<Props> = ({ onLoading, embedded, deviceId }) => {
                 onClose={onCloseCancelModal}
                 onConfirm={cancelCommand}
                 show={!!confirmModalData}
-                title={
-                    <>
-                        <i className='fas fa-times' />
-                        {_(t.cancelPendingCommand)}
-                    </>
-                }
+                title={<>{_(t.cancelPendingCommand)}</>}
             />
         </>
     )

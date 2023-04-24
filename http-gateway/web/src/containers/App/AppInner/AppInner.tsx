@@ -41,17 +41,20 @@ const AppInner = (props: Props) => {
 
     const [footerExpanded, setFooterExpanded] = useLocalStorage('footerPanelExpanded', false)
     const [activeItem, setActiveItem] = useState(parseActiveItem(history.location.pathname, menu, mather))
+    const [collapsed, setCollapsed] = useLocalStorage('leftPanelCollapsed', true)
 
     const contextValue = useMemo(
         () => ({
             footerExpanded,
+            collapsed,
+            setCollapsed,
             setFooterExpanded,
             ...wellKnownConfig,
             wellKnownConfig,
             telemetryWebTracer: openTelemetry.getWebTracer(),
             buildInformation: buildInformation || undefined,
         }),
-        [footerExpanded, wellKnownConfig, openTelemetry, buildInformation, setFooterExpanded]
+        [footerExpanded, collapsed, setCollapsed, setFooterExpanded, wellKnownConfig, openTelemetry, buildInformation]
     )
 
     if (userData) {

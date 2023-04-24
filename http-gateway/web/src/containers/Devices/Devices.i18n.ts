@@ -501,4 +501,16 @@ export const messages = defineMessages({
         id: 'pendingCommands.recentTasks',
         defaultMessage: 'Recent tasks',
     },
+    duration: {
+        id: 'devices.duration',
+        defaultMessage: 'duration',
+    },
+    placeholder: {
+        id: 'devices.placeholder',
+        defaultMessage: 'placeholder',
+    },
+    unit: {
+        id: 'devices.unit',
+        defaultMessage: 'ID',
+    },
 })

@@ -21,7 +21,6 @@ const DevicesListHeader: FC<Props> = ({ loading, refresh }) => {
         typeof numberOfNewChanges === 'number' && setNumberOfChanges(numberOfChanges + numberOfNewChanges)
         numberOfNewChanges === RESET_COUNTER && setNumberOfChanges(0)
     })
-
     const refreshDevices = () => {
         // Re-fetch the devices list
         refresh()
