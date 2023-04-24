@@ -4,7 +4,7 @@ import { useIntl } from 'react-intl'
 import Modal from '@shared-ui/components/new/Modal'
 import { messages as t } from '../PendingCommands.i18n'
 import { Props } from './PendingCommandDetailsModal.types'
-import Editor from '@plgd/shared-ui/src/components/new/Editor'
+import Editor from '@shared-ui/components/new/Editor'
 
 const PendingCommandDetailsModal: FC<Props> = ({ commandType, onClose, content }) => {
     const { formatMessage: _ } = useIntl()

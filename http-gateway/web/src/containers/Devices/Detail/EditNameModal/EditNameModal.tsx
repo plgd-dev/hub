@@ -2,7 +2,7 @@ import React, { FC, useEffect, useState } from 'react'
 import { useIntl } from 'react-intl'
 import isFunction from 'lodash/isFunction'
 
-import Button from '@plgd/shared-ui/src/components/new/Button'
+import Button from '@shared-ui/components/new/Button'
 import FormGroup from '@shared-ui/components/new/FormGroup'
 import FormLabel from '@shared-ui/components/new/FormLabel'
 import FormInput from '@shared-ui/components/new/FormInput'
