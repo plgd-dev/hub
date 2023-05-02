@@ -40,15 +40,15 @@ func (h deviceSubscriptionHandlers) RetrieveResource(ctx context.Context, event 
 	return h.onResourceRetrievePending(ctx, event)
 }
 
-func (h deviceSubscriptionHandlers) DeleteResource(ctx context.Context, event *raEvents.ResourceDeletePending) error {
+func (h deviceSubscriptionHandlers) DeleteResource(context.Context, *raEvents.ResourceDeletePending) error {
 	return fmt.Errorf(NOT_SUPPORTED_ERR)
 }
 
-func (h deviceSubscriptionHandlers) CreateResource(ctx context.Context, event *raEvents.ResourceCreatePending) error {
+func (h deviceSubscriptionHandlers) CreateResource(context.Context, *raEvents.ResourceCreatePending) error {
 	return fmt.Errorf(NOT_SUPPORTED_ERR)
 }
 
-func (h deviceSubscriptionHandlers) UpdateDeviceMetadata(ctx context.Context, event *raEvents.DeviceMetadataUpdatePending) error {
+func (h deviceSubscriptionHandlers) UpdateDeviceMetadata(context.Context, *raEvents.DeviceMetadataUpdatePending) error {
 	return fmt.Errorf(NOT_SUPPORTED_ERR)
 }
 

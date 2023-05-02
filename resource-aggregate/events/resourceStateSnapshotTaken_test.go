@@ -26,7 +26,7 @@ func newIterator(events []eventstore.EventUnmarshaler) *iterator {
 	}
 }
 
-func (i *iterator) Next(ctx context.Context) (eventstore.EventUnmarshaler, bool) {
+func (i *iterator) Next(context.Context) (eventstore.EventUnmarshaler, bool) {
 	if i.idx < len(i.events) {
 		e := i.events[i.idx]
 		i.idx++

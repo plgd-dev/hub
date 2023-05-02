@@ -10,26 +10,26 @@ import (
 
 type testOperations struct{}
 
-func (o testOperations) RetrieveResource(ctx context.Context, event *events.ResourceRetrievePending) error {
+func (o testOperations) RetrieveResource(context.Context, *events.ResourceRetrievePending) error {
 	return nil
 }
 
-func (o testOperations) UpdateResource(ctx context.Context, event *events.ResourceUpdatePending) error {
+func (o testOperations) UpdateResource(context.Context, *events.ResourceUpdatePending) error {
 	return nil
 }
 
-func (o testOperations) DeleteResource(ctx context.Context, event *events.ResourceDeletePending) error {
+func (o testOperations) DeleteResource(context.Context, *events.ResourceDeletePending) error {
 	return nil
 }
 
-func (o testOperations) CreateResource(ctx context.Context, event *events.ResourceCreatePending) error {
+func (o testOperations) CreateResource(context.Context, *events.ResourceCreatePending) error {
 	return nil
 }
 
-func (o testOperations) UpdateDeviceMetadata(ctx context.Context, event *events.DeviceMetadataUpdatePending) error {
+func (o testOperations) UpdateDeviceMetadata(context.Context, *events.DeviceMetadataUpdatePending) error {
 	return nil
 }
-func (o testOperations) OnDeviceSubscriberReconnectError(err error) {}
+func (o testOperations) OnDeviceSubscriberReconnectError(error) {}
 
 func TestDeviceSubscriptionHandlersWantToProcessEvent(t *testing.T) {
 	type args struct {

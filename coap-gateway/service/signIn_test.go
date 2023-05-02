@@ -46,7 +46,7 @@ func TestSignInPostHandler(t *testing.T) {
 
 	for _, test := range tbl {
 		tf := func(t *testing.T) {
-			co := testCoapDial(t, "", true, time.Now().Add(time.Minute))
+			co := testCoapDial(t, "", true, true, time.Now().Add(time.Minute))
 			if co == nil {
 				return
 			}
@@ -83,7 +83,7 @@ func TestSignInDeviceSubscriptionHandler(t *testing.T) {
 	cancelCtx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	defer cancel()
 
-	co := testCoapDial(t, "", true, time.Now().Add(time.Minute))
+	co := testCoapDial(t, "", true, true, time.Now().Add(time.Minute))
 	if co == nil {
 		return
 	}
@@ -105,7 +105,7 @@ func TestSignInDeviceSubscriptionHandler(t *testing.T) {
 	<-cancelCtx.Done()
 	require.True(t, errors.Is(cancelCtx.Err(), context.Canceled))
 
-	co1 := testCoapDial(t, "", true, time.Now().Add(time.Minute))
+	co1 := testCoapDial(t, "", true, true, time.Now().Add(time.Minute))
 	resp, err := doSignIn(t, CertIdentity, signUpResp, co1)
 	if err != nil {
 		require.Contains(t, err.Error(), "context canceled")
@@ -121,7 +121,7 @@ func TestSignInWithRequireBatchObserveEnabled(t *testing.T) {
 	shutdown := setUp(t, coapgwCfg)
 	defer shutdown()
 
-	co := testCoapDial(t, "", true, time.Now().Add(time.Minute))
+	co := testCoapDial(t, "", true, true, time.Now().Add(time.Minute))
 	if co == nil {
 		return
 	}
@@ -136,7 +136,7 @@ func TestSignOutPostHandler(t *testing.T) {
 	shutdown := setUp(t)
 	defer shutdown()
 
-	co := testCoapDial(t, "", true, time.Now().Add(time.Minute))
+	co := testCoapDial(t, "", true, true, time.Now().Add(time.Minute))
 	if co == nil {
 		return
 	}
@@ -170,7 +170,7 @@ func TestSignInWithMTLSAndDeviceIdClaim(t *testing.T) {
 	defer shutdown()
 
 	signUp := func(deviceID string) service.CoapSignUpResponse {
-		co := testCoapDial(t, deviceID, true, time.Now().Add(time.Minute))
+		co := testCoapDial(t, deviceID, true, true, time.Now().Add(time.Minute))
 		require.NotEmpty(t, co)
 		signUpResp := testSignUp(t, deviceID, co)
 		_ = co.Close()
@@ -181,7 +181,7 @@ func TestSignInWithMTLSAndDeviceIdClaim(t *testing.T) {
 	anotherDeviceID := uuid.New().String()
 
 	check := func(deviceID string, req testEl) {
-		co := testCoapDial(t, deviceID, true, time.Now().Add(time.Minute))
+		co := testCoapDial(t, deviceID, true, true, time.Now().Add(time.Minute))
 		require.NotEmpty(t, co)
 		testPostHandler(t, uri.SignIn, req, co)
 		_ = co.Close()
@@ -212,7 +212,7 @@ func TestCertificateExpiration(t *testing.T) {
 	defer shutdown()
 
 	signUp := func(deviceID string) service.CoapSignUpResponse {
-		co := testCoapDial(t, deviceID, true, time.Now().Add(time.Minute))
+		co := testCoapDial(t, deviceID, true, true, time.Now().Add(time.Minute))
 		require.NotEmpty(t, co)
 		signUpResp := testSignUp(t, deviceID, co)
 		_ = co.Close()
@@ -224,7 +224,7 @@ func TestCertificateExpiration(t *testing.T) {
 	duration := time.Second * 4
 
 	req := testEl{"OK", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "uid":"` + signUpResp.UserID + `", "accesstoken":"` + signUpResp.AccessToken + `", "login": true }`, nil}, output{coapCodes.Changed, TestCoapSignInResponse{}, nil}, false}
-	co := testCoapDial(t, CertIdentity, true, time.Now().Add(duration))
+	co := testCoapDial(t, CertIdentity, true, true, time.Now().Add(duration))
 	require.NotEmpty(t, co)
 	defer func() {
 		_ = co.Close()

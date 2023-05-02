@@ -7,6 +7,7 @@ import (
 	"io"
 	"sync"
 
+	"github.com/hashicorp/go-multierror"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/subscription"
 	"github.com/plgd-dev/hub/v2/pkg/log"
@@ -96,10 +97,12 @@ func (s *subscriptions) cancelSubscription(req *pb.SubscribeToEvents) error {
 				},
 			},
 		})
+		var errors *multierror.Error
+		errors = multierror.Append(errors, err)
 		if err2 != nil {
-			return fmt.Errorf("cannot send operation processed event for subscription('%v'): %v: %w", req.GetCancelSubscription().GetSubscriptionId(), err, err2)
+			errors = multierror.Append(errors, fmt.Errorf("cannot send operation processed event for subscription('%v'): %w", req.GetCancelSubscription().GetSubscriptionId(), err2))
 		}
-		return err
+		return errors.ErrorOrNil()
 	}
 	delete(s.subs, req.GetCancelSubscription().GetSubscriptionId())
 	err := sub.Close()

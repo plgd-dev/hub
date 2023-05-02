@@ -65,7 +65,7 @@ func (d *DeviceMetadataSnapshotTaken) CheckInitialized() bool {
 		d.GetEventMetadata() != nil
 }
 
-func (d *DeviceMetadataSnapshotTaken) HandleDeviceMetadataUpdated(ctx context.Context, upd *DeviceMetadataUpdated, confirm bool) (bool, error) {
+func (d *DeviceMetadataSnapshotTaken) HandleDeviceMetadataUpdated(_ context.Context, upd *DeviceMetadataUpdated, confirm bool) (bool, error) {
 	index := -1
 	for i, event := range d.GetUpdatePendings() {
 		if event.GetAuditContext().GetCorrelationId() == upd.GetAuditContext().GetCorrelationId() {
@@ -89,11 +89,11 @@ func (d *DeviceMetadataSnapshotTaken) HandleDeviceMetadataUpdated(ctx context.Co
 	return true, nil
 }
 
-func (d *DeviceMetadataSnapshotTaken) HandleDeviceMetadataSnapshotTaken(ctx context.Context, s *DeviceMetadataSnapshotTaken) {
+func (d *DeviceMetadataSnapshotTaken) HandleDeviceMetadataSnapshotTaken(_ context.Context, s *DeviceMetadataSnapshotTaken) {
 	d.CopyData(s)
 }
 
-func (d *DeviceMetadataSnapshotTaken) HandleDeviceMetadataUpdatePending(ctx context.Context, updatePending *DeviceMetadataUpdatePending) error {
+func (d *DeviceMetadataSnapshotTaken) HandleDeviceMetadataUpdatePending(_ context.Context, updatePending *DeviceMetadataUpdatePending) error {
 	now := time.Now()
 	if updatePending.IsExpired(now) {
 		d.DeviceId = updatePending.GetDeviceId()

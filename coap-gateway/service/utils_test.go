@@ -275,7 +275,7 @@ func testPrepareDevice(t *testing.T, co *coapTcpClient.Conn) {
 	time.Sleep(time.Second) // for publish content of device resources
 }
 
-func testCoapDial(t *testing.T, deviceID string, withTLS bool, validTo time.Time) *coapTcpClient.Conn {
+func testCoapDial(t *testing.T, deviceID string, withTLS, identityCert bool, validTo time.Time) *coapTcpClient.Conn {
 	var tlsConfig *tls.Config
 
 	if withTLS {
@@ -286,10 +286,22 @@ func testCoapDial(t *testing.T, deviceID string, withTLS bool, validTo time.Time
 		signerKey, err := security.LoadX509PrivateKey(os.Getenv("TEST_ROOT_CA_KEY"))
 		require.NoError(t, err)
 
-		certData, err := generateCertificate.GenerateIdentityCert(generateCertificate.Configuration{
-			ValidFrom: time.Now().Add(-time.Hour).Format(time.RFC3339),
-			ValidFor:  time.Until(validTo) + time.Hour,
-		}, deviceID, priv, signerCert, signerKey)
+		var certData []byte
+
+		if identityCert {
+			certData, err = generateCertificate.GenerateIdentityCert(generateCertificate.Configuration{
+				ValidFrom: time.Now().Add(-time.Hour).Format(time.RFC3339),
+				ValidFor:  time.Until(validTo) + time.Hour,
+			}, deviceID, priv, signerCert, signerKey)
+		} else {
+			c := generateCertificate.Configuration{
+				ValidFrom: time.Now().Add(-time.Hour).Format(time.RFC3339),
+				ValidFor:  time.Until(validTo) + time.Hour,
+			}
+			c.Subject.CommonName = "non-identity-cert"
+			c.ExtensionKeyUsages = []string{"client", "server"}
+			certData, err = generateCertificate.GenerateCert(c, priv, signerCert, signerKey)
+		}
 		require.NoError(t, err)
 		b, err := x509.MarshalECPrivateKey(priv)
 		require.NoError(t, err)

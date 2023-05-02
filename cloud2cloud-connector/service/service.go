@@ -339,7 +339,10 @@ func runDevicePulling(ctx context.Context, pdh *pullDevicesHandler, timeout time
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		for pdh.runDevicePulling(ctx, timeout) {
+		for {
+			if !pdh.runDevicePulling(ctx, timeout) {
+				break
+			}
 		}
 	}()
 }

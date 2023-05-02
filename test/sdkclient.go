@@ -52,6 +52,9 @@ type sdkConfig struct {
 		certificate []byte
 		key         []byte
 	}
+	// TODO: replace by notBefore and notAfter
+	validFrom string // RFC3339, or relative time such as now-1m
+	validFor  string // string parsable by time.ParseDuration
 }
 
 // Option interface used for setting optional sdkConfig properties.
@@ -77,6 +80,15 @@ func WithRootCA(certificate, key []byte) Option {
 	return optionFunc(func(cfg *sdkConfig) {
 		cfg.rootCA.certificate = certificate
 		cfg.rootCA.key = key
+	})
+}
+
+// WithValidity creates Option that overrides the ValidFrom timestamp and CertExpiry
+// interval used by the SDK client when generating certificates.
+func WithValidity(validFrom, validFor string) Option {
+	return optionFunc(func(cfg *sdkConfig) {
+		cfg.validFrom = validFrom
+		cfg.validFor = validFor
 	})
 }
 
@@ -144,16 +156,22 @@ func NewSDKClient(opts ...Option) (*client.Client, error) {
 	if err != nil {
 		return nil, fmt.Errorf("cannot X509KeyPair: %w", err)
 	}
+
+	devCfg := &client.DeviceOwnershipSDKConfig{
+		ID:      c.id,
+		Cert:    string(identityIntermediateCA),
+		CertKey: string(identityIntermediateCAKey),
+		CreateSignerFunc: func(caCert []*x509.Certificate, caKey crypto.PrivateKey, validNotBefore time.Time, validNotAfter time.Time) core.CertificateSigner {
+			return certificateSigner.NewIdentityCertificateSigner(caCert, caKey, certificateSigner.WithNotBefore(validNotBefore), certificateSigner.WithNotAfter(validNotAfter))
+		},
+		ValidFrom: c.validFrom,
+	}
+	if c.validFor != "" {
+		devCfg.CertExpiry = &c.validFor
+	}
 	cfg := client.Config{
 		DisablePeerTCPSignalMessageCSMs: true,
-		DeviceOwnershipSDK: &client.DeviceOwnershipSDKConfig{
-			ID:      c.id,
-			Cert:    string(identityIntermediateCA),
-			CertKey: string(identityIntermediateCAKey),
-			CreateSignerFunc: func(caCert []*x509.Certificate, caKey crypto.PrivateKey, validNotBefore time.Time, validNotAfter time.Time) core.CertificateSigner {
-				return certificateSigner.NewIdentityCertificateSigner(caCert, caKey, certificateSigner.WithNotBefore(validNotBefore), certificateSigner.WithNotAfter(validNotAfter))
-			},
-		},
+		DeviceOwnershipSDK:              devCfg,
 	}
 
 	client, err := client.NewClientFromConfig(&cfg, &testSetupSecureClient{

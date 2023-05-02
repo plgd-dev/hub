@@ -54,7 +54,7 @@ func (c *Client) stopObservingResource(observationID string) (func(), error) {
 	return s.Cancel()
 }
 
-func (c *Client) StopObservingResource(ctx context.Context, observationID string) error {
+func (c *Client) StopObservingResource(observationID string) error {
 	wait, err := c.stopObservingResource(observationID)
 	if err != nil {
 		return err

@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"regexp"
 
+	"github.com/hashicorp/go-multierror"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/client"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	"github.com/plgd-dev/hub/v2/http-gateway/uri"
@@ -76,7 +77,7 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 			URI:    regexp.MustCompile(AuthorizationWhiteListedEndpointsRegexp),
 		})
 	}
-	s, err := httpService.New(ctx, httpService.Config{
+	s, err := httpService.New(httpService.Config{
 		HTTPConnection:       config.APIs.HTTP.Connection,
 		HTTPServer:           config.APIs.HTTP.Server,
 		ServiceName:          serviceName,
@@ -110,12 +111,12 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 	client := client.New(grpcClient)
 	_, err = NewRequestHandler(&config, s.GetRouter(), client)
 	if err != nil {
-		err = fmt.Errorf("cannot create request handler: %w", err)
-		err2 := s.Close()
-		if err2 != nil {
-			err = fmt.Errorf(`[%w, "cannot close server: %v"]`, err, err2)
+		var errors *multierror.Error
+		errors = multierror.Append(errors, fmt.Errorf("cannot create request handler: %w", err))
+		if err2 := s.Close(); err2 != nil {
+			errors = multierror.Append(errors, fmt.Errorf("cannot close server: %w", err2))
 		}
-		return nil, err
+		return nil, errors.ErrorOrNil()
 	}
 
 	return service.New(s), nil

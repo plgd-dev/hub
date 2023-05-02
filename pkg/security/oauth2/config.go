@@ -19,7 +19,7 @@ func (c *Config) Validate() error {
 		return fmt.Errorf("authority('%v')", c.Authority)
 	}
 	if err := c.Config.Validate(); err != nil {
-		return fmt.Errorf("%w", err)
+		return err
 	}
 	if err := c.HTTP.Validate(); err != nil {
 		return fmt.Errorf("http.%w", err)

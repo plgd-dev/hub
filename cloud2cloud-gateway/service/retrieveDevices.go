@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/gorilla/mux"
 	"github.com/plgd-dev/device/v2/schema/device"
 	pbGRPC "github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	"github.com/plgd-dev/hub/v2/pkg/log"
@@ -76,7 +75,7 @@ func retrieveDevicesError(tag string, err error) error {
 	return fmt.Errorf("cannot retrieve all devices[%s]: %w", tag, err)
 }
 
-func (rh *RequestHandler) RetrieveDevicesBase(ctx context.Context, w http.ResponseWriter, encoder responseWriterEncoderFunc) (int, error) {
+func (rh *RequestHandler) retrieveDevicesBase(ctx context.Context, w http.ResponseWriter, encoder responseWriterEncoderFunc) (int, error) {
 	devices, err := rh.GetDevices(ctx, nil)
 	if err != nil {
 		return kitNetHttp.ErrToStatusWithDef(err, http.StatusForbidden), retrieveDevicesError("base", err)
@@ -104,7 +103,7 @@ func (rh *RequestHandler) RetrieveDevicesBase(ctx context.Context, w http.Respon
 	return http.StatusOK, nil
 }
 
-func (rh *RequestHandler) RetrieveDevicesAll(ctx context.Context, w http.ResponseWriter, encoder responseWriterEncoderFunc) (int, error) {
+func (rh *RequestHandler) retrieveDevicesAll(ctx context.Context, w http.ResponseWriter, encoder responseWriterEncoderFunc) (int, error) {
 	devices, err := rh.GetDevices(ctx, nil)
 	if err != nil {
 		return kitNetHttp.ErrToStatusWithDef(err, http.StatusForbidden), retrieveDevicesError("all", err)
@@ -132,12 +131,12 @@ func (rh *RequestHandler) RetrieveDevicesAll(ctx context.Context, w http.Respons
 	return http.StatusOK, nil
 }
 
-func (rh *RequestHandler) RetrieveDevicesWithContentQuery(ctx context.Context, w http.ResponseWriter, routeVars map[string]string, contentQuery string, encoder responseWriterEncoderFunc) (statusCode int, err error) {
+func (rh *RequestHandler) retrieveDevicesWithContentQuery(ctx context.Context, w http.ResponseWriter, contentQuery string, encoder responseWriterEncoderFunc) (statusCode int, err error) {
 	switch contentQuery {
 	case ContentQueryAllValue:
-		statusCode, err = rh.RetrieveDevicesAll(ctx, w, encoder)
+		statusCode, err = rh.retrieveDevicesAll(ctx, w, encoder)
 	case ContentQueryBaseValue:
-		statusCode, err = rh.RetrieveDevicesBase(ctx, w, encoder)
+		statusCode, err = rh.retrieveDevicesBase(ctx, w, encoder)
 	default:
 		return http.StatusBadRequest, fmt.Errorf("invalid value '%v' of '%v' query parameter", contentQuery, ContentQuery)
 	}
@@ -161,7 +160,7 @@ func (rh *RequestHandler) RetrieveDevices(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	statusCode, err := rh.RetrieveDevicesWithContentQuery(r.Context(), w, mux.Vars(r), getContentQueryValue(r.URL), encoder)
+	statusCode, err := rh.retrieveDevicesWithContentQuery(r.Context(), w, getContentQueryValue(r.URL), encoder)
 	if err != nil {
 		logAndWriteErrorResponse(fmt.Errorf("cannot retrieve all devices: %w", err), statusCode, w)
 	}

@@ -277,22 +277,22 @@ func (o *resourcesObserver) performObservationLocked(obs []*observedResource) er
 func (o *resourcesObserver) addResources(ctx context.Context, resources []*commands.Resource) error {
 	o.private.lock.Lock()
 	observedResources, err := o.addResourcesLocked(resources)
+	var errors *multierror.Error
+	if err != nil {
+		errors = multierror.Append(errors, err)
+	}
 	if len(observedResources) > 0 {
 		o.notifyAboutStartTwinSynchronization(ctx)
 		err2 := o.performObservationLocked(observedResources)
 		if err2 != nil {
-			if err == nil {
-				err = err2
-			} else {
-				err = fmt.Errorf("[%w, %v]", err, err2)
-			}
+			errors = multierror.Append(errors, err2)
 			if o.isSynchronizedLocked() {
 				defer o.notifyAboutFinishTwinSynchronization(ctx)
 			}
 		}
 	}
 	o.private.lock.Unlock()
-	return err
+	return errors.ErrorOrNil()
 }
 
 func (o *resourcesObserver) addResourcesLocked(resources []*commands.Resource) ([]*observedResource, error) {

@@ -27,7 +27,7 @@ func TestObserveDeviceResourcesPublish(t *testing.T) {
 
 	c := NewTestClient(t)
 	defer func() {
-		err := c.Close(context.Background())
+		err := c.Close()
 		assert.NoError(t, err)
 	}()
 	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c.GrpcGatewayClient(), deviceID, config.ACTIVE_COAP_SCHEME+"://"+config.COAP_GW_HOST, test.GetAllBackendResourceLinks())
@@ -37,7 +37,7 @@ func TestObserveDeviceResourcesPublish(t *testing.T) {
 	id, err := c.ObserveDeviceResources(ctx, deviceID, h)
 	require.NoError(t, err)
 	defer func() {
-		err := c.StopObservingDevices(ctx, id)
+		err := c.StopObservingDevices(id)
 		require.NoError(t, err)
 	}()
 
@@ -62,12 +62,12 @@ type testDeviceResourcesObservationHandler struct {
 	res chan interface{}
 }
 
-func (h *testDeviceResourcesObservationHandler) HandleResourcePublished(ctx context.Context, val *events.ResourceLinksPublished) error {
+func (h *testDeviceResourcesObservationHandler) HandleResourcePublished(_ context.Context, val *events.ResourceLinksPublished) error {
 	h.res <- val
 	return nil
 }
 
-func (h *testDeviceResourcesObservationHandler) HandleResourceUnpublished(ctx context.Context, val *events.ResourceLinksUnpublished) error {
+func (h *testDeviceResourcesObservationHandler) HandleResourceUnpublished(_ context.Context, val *events.ResourceLinksUnpublished) error {
 	h.res <- val
 	return nil
 }

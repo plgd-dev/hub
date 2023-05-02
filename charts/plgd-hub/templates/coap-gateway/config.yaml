@@ -50,6 +50,7 @@ data:
           {{- $tls := .apis.coap.tls }}
           {{- include "plgd-hub.certificateConfig" (list $ $tls $coapGatewayCertPath) | indent 8 }}
           clientCertificateRequired: {{ .apis.coap.tls.clientCertificateRequired }}
+          identityPropertiesRequired: {{ .apis.coap.tls.identityPropertiesRequired }}
           {{- end }}
         authorization:
           ownerClaim: {{ .apis.coap.authorization.ownerClaim | default $.Values.global.ownerClaim | quote }}

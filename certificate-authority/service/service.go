@@ -26,7 +26,7 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 	closerFn.AddFunc(otelClient.Close)
 	tracerProvider := otelClient.GetTracerProvider()
 
-	ca, err := grpcService.NewCertificateAuthorityServer(config.APIs.GRPC, config.APIs.GRPC.Authorization.OwnerClaim, config.Signer, logger)
+	ca, err := grpcService.NewCertificateAuthorityServer(config.APIs.GRPC.Authorization.OwnerClaim, config.Signer, logger)
 	if err != nil {
 		closerFn.Execute()
 		return nil, fmt.Errorf("cannot create open telemetry collector client: %w", err)
@@ -37,7 +37,7 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 		return nil, fmt.Errorf("cannot create http validator: %w", err)
 	}
 	closerFn.AddFunc(httpValidator.Close)
-	httpService, err := httpService.New(ctx, serviceName, httpService.Config{
+	httpService, err := httpService.New(serviceName, httpService.Config{
 		Connection: listener.Config{
 			Addr: config.APIs.HTTP.Addr,
 			TLS:  config.APIs.GRPC.TLS,
@@ -55,7 +55,7 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 		_ = httpService.Close()
 		return nil, fmt.Errorf("cannot create grpc validator: %w", err)
 	}
-	grpcService, err := grpcService.New(ctx, config.APIs.GRPC, ca, grpcValidator, fileWatcher, logger, tracerProvider)
+	grpcService, err := grpcService.New(config.APIs.GRPC, ca, grpcValidator, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		closerFn.Execute()
 		_ = httpService.Close()

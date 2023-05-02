@@ -154,7 +154,7 @@ func (h *observerHandler) PublishResources(req coapgwTestService.PublishRequest)
 	return nil
 }
 
-func (h *observerHandler) OnObserveResource(ctx context.Context, deviceID, resourceHref string, batch bool, notification *pool.Message) error {
+func (h *observerHandler) OnObserveResource(ctx context.Context, deviceID, resourceHref string, _ bool, notification *pool.Message) error {
 	err := h.DefaultObserverHandler.OnObserveResource(ctx, deviceID, resourceHref, notification)
 	require.NoError(h.t, err)
 	if !h.done.Load() {
@@ -246,7 +246,7 @@ func TestDeviceObserverRegisterForDiscoveryResource(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceNameWithOicResObservable)
 	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
 	defer cancel()
-	discoveryObservable := test.ResourceIsBatchObservable(ctx, t, deviceID, resources.ResourceURI, resources.ResourceURI)
+	discoveryObservable := test.ResourceIsBatchObservable(ctx, t, deviceID, resources.ResourceURI, resources.ResourceType)
 	if !discoveryObservable {
 		t.Logf("skipping test for device with %v non-observable", resources.ResourceURI)
 		return
@@ -299,10 +299,10 @@ func testPreregisterVirtualDevice(ctx context.Context, t *testing.T, deviceID st
 	for _, r := range resources {
 		links = append(links, r.ToSchema())
 	}
-	test.WaitForDevice(ctx, t, client, deviceID, ev.GetSubscriptionId(), ev.GetCorrelationId(), links)
+	test.WaitForDevice(t, client, deviceID, ev.GetSubscriptionId(), ev.GetCorrelationId(), links)
 }
 
-func testValidateResourceLinks(ctx context.Context, t *testing.T, deviceID string, grpcClient pb.GrpcGatewayClient, raClient raPb.ResourceAggregateClient) {
+func testValidateResourceLinks(ctx context.Context, t *testing.T, deviceID string, grpcClient pb.GrpcGatewayClient, _ raPb.ResourceAggregateClient) {
 	client, err := grpcClient.GetResourceLinks(ctx, &pb.GetResourceLinksRequest{
 		DeviceIdFilter: []string{deviceID},
 	})
@@ -345,7 +345,7 @@ func TestDeviceObserverRegisterForDiscoveryResourceWithAlreadyPublishedResources
 	deviceID := test.MustFindDeviceByName(test.TestDeviceNameWithOicResObservable)
 	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
 	defer cancel()
-	discoveryObservable := test.ResourceIsBatchObservable(ctx, t, deviceID, resources.ResourceURI, resources.ResourceURI)
+	discoveryObservable := test.ResourceIsBatchObservable(ctx, t, deviceID, resources.ResourceURI, resources.ResourceType)
 	if !discoveryObservable {
 		t.Logf("skipping test for device with %v non-observable", resources.ResourceURI)
 		return
@@ -367,7 +367,7 @@ type (
 	actioneHubFn    = func(ctx context.Context, t *testing.T, deviceID string, grpcClient pb.GrpcGatewayClient, raClient raPb.ResourceAggregateClient)
 )
 
-func runTestDeviceObserverRegister(ctx context.Context, t *testing.T, deviceID string, expectedObserved, expectedRetrieved strings.Set, verifyHandler verifyHandlerFn, prepareHub, postHub actioneHubFn, requireBatchObserveEnabled bool) { //nolint:unparam
+func runTestDeviceObserverRegister(ctx context.Context, t *testing.T, deviceID string, expectedObserved, expectedRetrieved strings.Set, verifyHandler verifyHandlerFn, prepareHub, postHub actioneHubFn, requireBatchObserveEnabled bool) {
 	// TODO: add test with expectedRetrieved
 	const services = service.SetUpServicesOAuth | service.SetUpServicesId | service.SetUpServicesResourceDirectory |
 		service.SetUpServicesGrpcGateway | service.SetUpServicesResourceAggregate

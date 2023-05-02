@@ -24,7 +24,7 @@ func TestClientUpdateHandler(t *testing.T) {
 	shutdown := setUp(t, coapgwCfg)
 	defer shutdown()
 
-	co := testCoapDial(t, "", false, time.Now().Add(time.Minute))
+	co := testCoapDial(t, "", false, true, time.Now().Add(time.Minute))
 	if co == nil {
 		return
 	}

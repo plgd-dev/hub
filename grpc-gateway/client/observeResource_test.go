@@ -27,7 +27,7 @@ func TestObservingResource(t *testing.T) {
 
 	c := NewTestClient(t)
 	defer func() {
-		err := c.Close(context.Background())
+		err := c.Close()
 		assert.NoError(t, err)
 	}()
 	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c.GrpcGatewayClient(), deviceID, config.ACTIVE_COAP_SCHEME+"://"+config.COAP_GW_HOST, test.GetAllBackendResourceLinks())
@@ -37,7 +37,7 @@ func TestObservingResource(t *testing.T) {
 	id, err := c.ObserveResource(ctx, deviceID, configuration.ResourceURI, h)
 	require.NoError(t, err)
 	defer func() {
-		err := c.StopObservingResource(ctx, id)
+		err := c.StopObservingResource(id)
 		require.NoError(t, err)
 	}()
 
@@ -71,7 +71,7 @@ type testObservationHandler struct {
 	res chan DecodeFunc
 }
 
-func (h *testObservationHandler) Handle(ctx context.Context, body DecodeFunc) {
+func (h *testObservationHandler) Handle(_ context.Context, body DecodeFunc) {
 	h.res <- body
 }
 

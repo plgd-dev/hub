@@ -884,6 +884,7 @@ coapgateway:
         keyFile:
         certFile:
         clientCertificateRequired: true
+        identityPropertiesRequired: true
       authorization:
         ownerClaim:
         deviceIdClaim:

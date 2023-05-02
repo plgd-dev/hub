@@ -55,7 +55,7 @@ func NewProjection(ctx context.Context, name string, store eventstore.EventStore
 	return &Projection{Projection: projection, cache: cache, expiration: expiration}, nil
 }
 
-func (p *Projection) LoadResourceLinks(ctx context.Context, deviceIDFilter, toReloadDevices strings.Set, onResourceLinkProjection func(m *resourceLinksProjection) error) error {
+func (p *Projection) LoadResourceLinks(deviceIDFilter, toReloadDevices strings.Set, onResourceLinkProjection func(m *resourceLinksProjection) error) error {
 	for deviceID := range deviceIDFilter {
 		reload := true
 		var err error
@@ -105,7 +105,7 @@ func (p *Projection) ReloadDevices(ctx context.Context, deviceIDFilter strings.S
 	}
 }
 
-func (p *Projection) LoadDevicesMetadata(ctx context.Context, deviceIDFilter, toReloadDevices strings.Set, onDeviceMetadataProjection func(m *deviceMetadataProjection) error) error {
+func (p *Projection) LoadDevicesMetadata(deviceIDFilter, toReloadDevices strings.Set, onDeviceMetadataProjection func(m *deviceMetadataProjection) error) error {
 	var err error
 	for deviceID := range deviceIDFilter {
 		reload := true
@@ -168,7 +168,7 @@ func (p *Projection) wantToReloadDevice(rl *resourceLinksProjection, hrefFilter 
 	return finalReload
 }
 
-func (p *Projection) loadResourceWithLinks(ctx context.Context, deviceID string, hrefFilter map[string]bool, typeFilter strings.Set, toReloadDevices strings.Set, onResource func(*Resource) error) error {
+func (p *Projection) loadResourceWithLinks(deviceID string, hrefFilter map[string]bool, typeFilter strings.Set, toReloadDevices strings.Set, onResource func(*Resource) error) error {
 	isMatchingResource := func(res *commands.Resource) bool {
 		if len(hrefFilter) > 0 && !hrefFilter[res.GetHref()] {
 			return false
@@ -210,7 +210,7 @@ func (p *Projection) loadResourceWithLinks(ctx context.Context, deviceID string,
 		return err
 	}
 
-	return p.LoadResourceLinks(ctx, strings.Set{deviceID: struct{}{}}, toReloadDevices, func(rl *resourceLinksProjection) error {
+	return p.LoadResourceLinks(strings.Set{deviceID: struct{}{}}, toReloadDevices, func(rl *resourceLinksProjection) error {
 		if p.wantToReloadDevice(rl, hrefFilter, typeFilter) && toReloadDevices != nil {
 			// if toReloadDevices == nil it means that Reload was executed but all resources are not available yet, we want to provide partial resoures then.
 			toReloadDevices.Add(rl.GetDeviceID())
@@ -220,10 +220,10 @@ func (p *Projection) loadResourceWithLinks(ctx context.Context, deviceID string,
 	})
 }
 
-func (p *Projection) LoadResourcesWithLinks(ctx context.Context, resourceIDFilter []*commands.ResourceId, typeFilter strings.Set, toReloadDevices strings.Set, onResource func(*Resource) error) error {
+func (p *Projection) LoadResourcesWithLinks(resourceIDFilter []*commands.ResourceId, typeFilter strings.Set, toReloadDevices strings.Set, onResource func(*Resource) error) error {
 	resourceIDMapFilter := getResourceIDMapFilter(resourceIDFilter)
 	for deviceID, hrefFilter := range resourceIDMapFilter { // filter duplicit load
-		err := p.loadResourceWithLinks(ctx, deviceID, hrefFilter, typeFilter, toReloadDevices, onResource)
+		err := p.loadResourceWithLinks(deviceID, hrefFilter, typeFilter, toReloadDevices, onResource)
 		if err != nil {
 			return err
 		}

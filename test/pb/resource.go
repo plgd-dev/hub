@@ -184,7 +184,7 @@ func MakeResourceChanged(t *testing.T, deviceID, href, correlationID string, dat
 	}
 }
 
-func MakeResourceDeleted(t *testing.T, deviceID, href, correlationID string) *events.ResourceDeleted {
+func MakeResourceDeleted(deviceID, href, correlationID string) *events.ResourceDeleted {
 	return &events.ResourceDeleted{
 		ResourceId: commands.NewResourceID(deviceID, href),
 		Status:     commands.Status_OK,

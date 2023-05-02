@@ -75,7 +75,7 @@ func TestClient_DeleteResource(t *testing.T) {
 
 	c := NewTestClient(t)
 	defer func() {
-		err := c.Close(context.Background())
+		err := c.Close()
 		assert.NoError(t, err)
 	}()
 	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c.GrpcGatewayClient(), deviceID, config.ACTIVE_COAP_SCHEME+"://"+config.COAP_GW_HOST, test.GetAllBackendResourceLinks())

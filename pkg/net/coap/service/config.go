@@ -136,10 +136,7 @@ func (c *TLSConfig) Validate() error {
 	if !c.IsEnabled() {
 		return nil
 	}
-	if err := c.Embedded.Validate(); err != nil {
-		return err
-	}
-	return nil
+	return c.Embedded.Validate()
 }
 
 // String return string representation of Config

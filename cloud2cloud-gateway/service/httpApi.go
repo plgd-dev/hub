@@ -134,7 +134,7 @@ func splitDevicePath(requestURI string) []string {
 	return strings.Split(p, "/")
 }
 
-func healthCheck(w http.ResponseWriter, r *http.Request) {
+func healthCheck(w http.ResponseWriter, _ *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 

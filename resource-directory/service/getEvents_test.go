@@ -342,7 +342,7 @@ func testDeleteResourceEvents(ctx context.Context, t *testing.T, c pb.GrpcGatewa
 	}()
 
 	rdp := pbTest.MakeResourceDeletePending(deviceID, switchHref, "")
-	rd := pbTest.MakeResourceDeleted(t, deviceID, switchHref, "")
+	rd := pbTest.MakeResourceDeleted(deviceID, switchHref, "")
 	ru := pbTest.MakeResourceLinksUnpublished(deviceID, []string{switchHref}, "")
 	rc := pbTest.MakeResourceChanged(t, deviceID, test.TestResourceSwitchesHref, "", []interface{}{})
 	changedRes := pbTest.MakeResourceChanged(t, deviceID, test.TestResourceSwitchesInstanceHref(switchID), "", nil)

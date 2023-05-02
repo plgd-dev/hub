@@ -89,7 +89,7 @@ RUN cd /web && \
     npm config set fetch-retry-mintimeout 600000 &&  \
     npm config set fetch-retry-maxtimeout 1200000 && \
     npm config set fetch-timeout 1800000 && \
-    npm install && \
+    npm install --ignore-scripts && \
     npm run build
 
 FROM ubuntu:22.04 AS service
@@ -98,13 +98,13 @@ RUN apt update
 # netcat -> nc utility in run.sh
 # nginx -> nginx server in run.sh
 # openssl -> openssl utility in run.sh
-RUN apt install -y ca-certificates gnupg iproute2 netcat nginx openssl wget
+RUN apt-get install -y --no-install-recommends ca-certificates gnupg iproute2 netcat nginx openssl wget
 # yq utility in run.sh
 RUN wget https://github.com/mikefarah/yq/releases/download/v4.6.3/yq_linux_$(dpkg --print-architecture) -O /usr/bin/yq && chmod +x /usr/bin/yq
 RUN wget -qO - https://pgp.mongodb.com/server-6.0.asc | gpg --dearmor -o /etc/apt/trusted.gpg.d/mongodb-6.0.gpg
 RUN echo "deb [ arch=$(dpkg --print-architecture) ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/6.0 multiverse" | tee /etc/apt/sources.list.d/mongodb-org-6.0.list
 RUN apt update && \
-    DEBIAN_FRONTEND=noninteractive apt-get install -y mongodb-org mongodb-org-server
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends mongodb-org mongodb-org-server
 COPY --from=build /go/bin/coap-gateway /usr/local/bin/coap-gateway
 COPY --from=build /go/src/github.com/plgd-dev/hub/coap-gateway/config.yaml /configs/coap-gateway.yaml
 COPY --from=build /go/bin/grpc-gateway /usr/local/bin/grpc-gateway
