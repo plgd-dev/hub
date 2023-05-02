@@ -55,7 +55,7 @@ export const deviceStatusListener = async (props) => {
 
                 try {
                     deviceIds.forEach(async (deviceId) => {
-                        // Emit an event: things.status.{deviceId}
+                        // Emit an event: devices.status.{deviceId}
                         Emitter.emit(`${DEVICES_STATUS_WS_KEY}.${deviceId}`, {
                             deviceId,
                             status,
