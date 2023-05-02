@@ -268,7 +268,8 @@
                 },
                 "timeToLive": {
                   "type": "string",
-                  "format": "int64"
+                  "format": "int64",
+                  "description": "command validity in nanoseconds. 0 means forever and minimal value is 100000000 (100ms)."
                 }
               }
             }
@@ -354,6 +355,7 @@
           },
           {
             "name": "timeToLive",
+            "description": "command validity in nanoseconds. 0 means forever and minimal value is 100000000 (100ms).",
             "in": "query",
             "required": false,
             "type": "string",
@@ -405,6 +407,7 @@
           },
           {
             "name": "timeToLive",
+            "description": "command validity in nanoseconds. 0 means forever and minimal value is 100000000 (100ms).",
             "in": "query",
             "required": false,
             "type": "string",
@@ -456,6 +459,7 @@
           },
           {
             "name": "timeToLive",
+            "description": "command validity in nanoseconds. 0 means forever and minimal value is 100000000 (100ms).",
             "in": "query",
             "required": false,
             "type": "string",
@@ -513,6 +517,7 @@
           },
           {
             "name": "timeToLive",
+            "description": "command validity in nanoseconds. 0 means forever and minimal value is 100000000 (100ms).",
             "in": "query",
             "required": false,
             "type": "string",
@@ -699,6 +704,7 @@
           },
           {
             "name": "correlationIdFilter",
+            "description": "empty array means all.",
             "in": "query",
             "required": false,
             "type": "array",
@@ -797,6 +803,7 @@
         "parameters": [
           {
             "name": "resourceIdFilter",
+            "description": "format {deviceID}{href}. eg \"ae424c58-e517-4494-6de7-583536c48213/oic/d\"",
             "in": "query",
             "required": false,
             "type": "array",
@@ -1023,7 +1030,8 @@
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "title": "format {deviceID}{href}. eg \"ae424c58-e517-4494-6de7-583536c48213/oic/d\""
         }
       }
     },
@@ -1056,7 +1064,8 @@
         "SYNCING",
         "IN_SYNC"
       ],
-      "default": "OUT_OF_SYNC"
+      "default": "OUT_OF_SYNC",
+      "description": " - OUT_OF_SYNC: As soon as it connects after it was offline or when it goes errorless offline or when twin enabled has been changed to true.\n - DISABLED: As soon as twin enabled is set to false.\n - SYNCING: As soon as device connects, successfully signs in and batch observe is called on device from the cloud.\n - IN_SYNC: As soon as current device resources values are received and applied to twin database. Twin was successfully reconciled after device reconnect and is kept up to date using an active subscription to device resource changes."
     },
     "googlerpcStatus": {
       "type": "object",
@@ -1071,6 +1080,7 @@
         "details": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/protobufAny"
           }
         }
@@ -1130,7 +1140,8 @@
       "type": "object",
       "properties": {
         "subscriptionId": {
-          "type": "string"
+          "type": "string",
+          "title": "subscription id provided by grpc"
         },
         "correlationId": {
           "type": "string"
@@ -1252,14 +1263,17 @@
           "format": "int64"
         },
         "id": {
-          "type": "string"
+          "type": "string",
+          "description": "when status is ONLINE, this field contains the connection id. To update state offline, this field must be same as the one in the previous message."
         },
         "connectedAt": {
           "type": "string",
-          "format": "int64"
+          "format": "int64",
+          "title": "timestamp when the device was connected"
         },
         "protocol": {
-          "$ref": "#/definitions/ConnectionProtocol"
+          "$ref": "#/definitions/ConnectionProtocol",
+          "description": "application protocol. It need to be set when the status is ONLINE."
         }
       }
     },
@@ -1292,6 +1306,7 @@
         "manufacturerName": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/pbLocalizedString"
           }
         },
@@ -1335,8 +1350,10 @@
         "updatePendings": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/pbDeviceMetadataUpdatePending"
-          }
+          },
+          "description": "expired events will be removed by creating a new snapshot."
         },
         "eventMetadata": {
           "$ref": "#/definitions/pbEventMetadata"
@@ -1360,7 +1377,8 @@
         },
         "validUntil": {
           "type": "string",
-          "format": "int64"
+          "format": "int64",
+          "description": "unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when pending event is considered as expired. 0 means forever."
         },
         "openTelemetryCarrier": {
           "type": "object",
@@ -1393,7 +1411,8 @@
           "$ref": "#/definitions/pbEventMetadata"
         },
         "canceled": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "it true then the command with audit_context.correlation_id was canceled."
         },
         "openTelemetryCarrier": {
           "type": "object",
@@ -1408,7 +1427,8 @@
       "type": "object",
       "properties": {
         "clientId": {
-          "type": "string"
+          "type": "string",
+          "title": "@gotags: yaml:\"clientID\""
         },
         "audience": {
           "type": "string"
@@ -1420,7 +1440,8 @@
           }
         },
         "providerName": {
-          "type": "string"
+          "type": "string",
+          "title": "@gotags: yaml:\"providerName\""
         }
       }
     },
@@ -1452,7 +1473,8 @@
         },
         "sequence": {
           "type": "string",
-          "format": "uint64"
+          "format": "uint64",
+          "title": "sequence number within the same connection_id; the ResourceChanged event uses the value to skip old events, other event types might not fill the value"
         }
       }
     },
@@ -1652,7 +1674,8 @@
         },
         "validUntil": {
           "type": "string",
-          "format": "int64"
+          "format": "int64",
+          "description": "unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when pending event is considered as expired. 0 means forever."
         },
         "openTelemetryCarrier": {
           "type": "object",
@@ -1704,7 +1727,8 @@
         },
         "validUntil": {
           "type": "string",
-          "format": "int64"
+          "format": "int64",
+          "description": "unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when pending event is considered as expired. 0 means forever."
         },
         "openTelemetryCarrier": {
           "type": "object",
@@ -1762,6 +1786,7 @@
         "resources": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/resourceaggregatepbResource"
           }
         },
@@ -1846,7 +1871,8 @@
         },
         "validUntil": {
           "type": "string",
-          "format": "int64"
+          "format": "int64",
+          "description": "unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when pending event is considered as expired. 0 means forever."
         },
         "openTelemetryCarrier": {
           "type": "object",
@@ -1896,26 +1922,34 @@
         "resourceCreatePendings": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/pbResourceCreatePending"
-          }
+          },
+          "description": "expired events will be removed by creating a new snapshot."
         },
         "resourceRetrievePendings": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/pbResourceRetrievePending"
-          }
+          },
+          "description": "expired events will be removed by creating a new snapshot."
         },
         "resourceUpdatePendings": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/pbResourceUpdatePending"
-          }
+          },
+          "description": "expired events will be removed by creating a new snapshot."
         },
         "resourceDeletePendings": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/pbResourceDeletePending"
-          }
+          },
+          "description": "expired events will be removed by creating a new snapshot."
         },
         "auditContext": {
           "$ref": "#/definitions/pbAuditContext"
@@ -1945,7 +1979,8 @@
         },
         "validUntil": {
           "type": "string",
-          "format": "int64"
+          "format": "int64",
+          "description": "unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when pending event is considered as expired. 0 means forever."
         },
         "openTelemetryCarrier": {
           "type": "object",
@@ -1993,7 +2028,8 @@
           "$ref": "#/definitions/SubscribeToEventsCancelSubscription"
         },
         "correlationId": {
-          "type": "string"
+          "type": "string",
+          "title": "for pairing request SubscribeToEvents with Event.OperationProcessed"
         }
       }
     },
@@ -2005,14 +2041,17 @@
         },
         "syncingAt": {
           "type": "string",
-          "format": "int64"
+          "format": "int64",
+          "description": "unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when synchronization started."
         },
         "inSyncAt": {
           "type": "string",
-          "format": "int64"
+          "format": "int64",
+          "description": "unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when synchronization finished."
         },
         "commandMetadata": {
-          "$ref": "#/definitions/pbCommandMetadata"
+          "$ref": "#/definitions/pbCommandMetadata",
+          "description": "when status is SYNCING, this field contains the connection id. To update state to IN_SYNC, this field must be same as the one in the previous message."
         }
       }
     },
@@ -2020,7 +2059,8 @@
       "type": "object",
       "properties": {
         "clientId": {
-          "type": "string"
+          "type": "string",
+          "title": "@gotags: yaml:\"clientID\""
         },
         "audience": {
           "type": "string"
@@ -2054,7 +2094,8 @@
         },
         "coapContentFormat": {
           "type": "integer",
-          "format": "int32"
+          "format": "int32",
+          "title": "-1 means content-format was not provided"
         }
       }
     },
@@ -2101,6 +2142,7 @@
         "endpointInformations": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/pbEndpointInformation"
           }
         }
@@ -2124,7 +2166,8 @@
         "CREATED",
         "CANCELED"
       ],
-      "default": "UNKNOWN"
+      "default": "UNKNOWN",
+      "description": " - CANCELED: Canceled indicates the operation was canceled (typically by the user)."
     }
   }
 }
