@@ -9,10 +9,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/lestrrat-go/jwx/jwa"
-	"github.com/lestrrat-go/jwx/jwk"
-	"github.com/lestrrat-go/jwx/jws"
-	"github.com/lestrrat-go/jwx/jwt"
+	"github.com/lestrrat-go/jwx/v2/jwk"
+	"github.com/lestrrat-go/jwx/v2/jws"
+	"github.com/lestrrat-go/jwx/v2/jwt"
 	"github.com/plgd-dev/go-coap/v3/pkg/cache"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/test/oauth-server/uri"
@@ -80,16 +79,14 @@ func makeAccessToken(clientID, host, deviceID, scopes string, issuedAt, expires 
 
 func makeJWTPayload(key interface{}, jwkKey jwk.Key, data []byte) ([]byte, error) {
 	hdr := jws.NewHeaders()
-	if err := hdr.Set(jws.AlgorithmKey, jwkKey.Algorithm()); err != nil {
-		return nil, setKeyError(jws.AlgorithmKey, err)
-	}
 	if err := hdr.Set(jws.TypeKey, `JWT`); err != nil {
 		return nil, setKeyError(jws.TypeKey, err)
 	}
 	if err := hdr.Set(jws.KeyIDKey, jwkKey.KeyID()); err != nil {
 		return nil, setKeyError(jws.KeyIDKey, err)
 	}
-	payload, err := jws.Sign(data, jwa.SignatureAlgorithm(jwkKey.Algorithm()), key, jws.WithHeaders(hdr))
+
+	payload, err := jws.Sign(data, jws.WithKey(jwkKey.Algorithm(), key, jws.WithProtectedHeaders(hdr)))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create UserToken: %w", err)
 	}
