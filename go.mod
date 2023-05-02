@@ -20,7 +20,7 @@ require (
 	github.com/json-iterator/go v1.1.12
 	github.com/jtacoma/uritemplates v1.0.0
 	github.com/karrick/tparse/v2 v2.8.2
-	github.com/lestrrat-go/jwx v1.2.25
+	github.com/lestrrat-go/jwx/v2 v2.0.9
 	github.com/nats-io/nats.go v1.25.0
 	github.com/panjf2000/ants/v2 v2.7.3
 	github.com/pion/dtls/v2 v2.2.6
@@ -78,9 +78,9 @@ require (
 	github.com/jhump/protoreflect v1.15.1 // indirect
 	github.com/kelseyhightower/envconfig v1.4.0 // indirect
 	github.com/klauspost/compress v1.16.5 // indirect
-	github.com/lestrrat-go/backoff/v2 v2.0.8 // indirect
 	github.com/lestrrat-go/blackmagic v1.0.1 // indirect
 	github.com/lestrrat-go/httpcc v1.0.1 // indirect
+	github.com/lestrrat-go/httprc v1.0.4 // indirect
 	github.com/lestrrat-go/iter v1.0.2 // indirect
 	github.com/lestrrat-go/option v1.0.1 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
