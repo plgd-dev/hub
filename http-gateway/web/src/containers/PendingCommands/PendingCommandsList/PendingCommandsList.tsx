@@ -148,12 +148,6 @@ const PendingCommandsList: FC<Props> = ({ onLoading, embedded, deviceId }) => {
         () => {
             const cols = [
                 {
-                    Header: 'CI',
-                    accessor: 'auditContext.correlationId',
-                    disableSortBy: true,
-                    Cell: ({ value }: { value: any }) => value,
-                },
-                {
                     Header: _(t.created),
                     accessor: 'eventMetadata.timestamp',
                     disableSortBy: true,

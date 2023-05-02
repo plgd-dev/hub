@@ -13,7 +13,6 @@ import StatusTag from '@shared-ui/components/new/StatusTag'
 import { getApiErrorMessage } from '@shared-ui/common/utils'
 import { security } from '@shared-ui/common/services'
 import { showErrorToast } from '@shared-ui/components/new'
-import NotificationMessage from '@shared-ui/components/new/NotificationMessage'
 import Footer from '@shared-ui/components/new/Layout/Footer'
 import EditDeviceNameModal from '@shared-ui/components/organisms/EditDeviceNameModal'
 
@@ -39,7 +38,6 @@ const DevicesDetailsPage = () => {
     } = useParams()
     const [domReady, setDomReady] = useState(false)
     const [activeTabItem, setActiveTabItem] = useState(0)
-    const [notificationMessage, setNotificationMessage] = useState<string | undefined>(undefined)
     const [twinSyncLoading, setTwinSyncLoading] = useState(false)
 
     const isMounted = useIsMounted()
@@ -99,7 +97,6 @@ const DevicesDetailsPage = () => {
     // Handler for setting the twin synchronization on a device
     const setTwinSynchronization = async (newTwinEnabled: boolean) => {
         setTwinSyncLoading(true)
-        setNotificationMessage(_(t.twinUpdateMessage))
 
         try {
             await updateDeviceTwinSynchronizationApi(id, newTwinEnabled)
@@ -235,8 +232,6 @@ const DevicesDetailsPage = () => {
                     },
                 ]}
             />
-
-            <NotificationMessage message={notificationMessage} onExit={() => setNotificationMessage(undefined)} show={!!notificationMessage} />
 
             <EditDeviceNameModal
                 deviceName={deviceName}

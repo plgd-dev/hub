@@ -25,12 +25,11 @@ const Tab1: FC<Props> = (props) => {
     const dispatch = useDispatch()
 
     const [state, setState] = useState({
-        tile2: false,
         tile3: true,
     })
 
     useEffect(() => {
-        if (deviceId) {
+        if (deviceId && notificationsEnabled.current) {
             // Register the WS if not already registered
             WebSocketEventClient.subscribe(
                 {
@@ -51,7 +50,7 @@ const Tab1: FC<Props> = (props) => {
                 WebSocketEventClient.unsubscribe(resourceRegistrationObservationWSKey)
             }
         }
-    }, [deviceId, deviceName, resourceRegistrationObservationWSKey])
+    }, [deviceId, deviceName, resourceRegistrationObservationWSKey, notificationsEnabled])
 
     return (
         <div
@@ -70,7 +69,21 @@ const Tab1: FC<Props> = (props) => {
                             // Request browser notifications
                             // (browsers will explicitly disallow notification permission requests not triggered in response to a user gesture,
                             // so we must call it to make sure the user has received a notification request)
-                            Notification?.requestPermission?.()
+                            Notification?.requestPermission?.().then()
+
+                            WebSocketEventClient.subscribe(
+                                {
+                                    eventFilter: [eventFilters.RESOURCE_PUBLISHED, eventFilters.RESOURCE_UNPUBLISHED],
+                                    deviceIdFilter: [deviceId],
+                                },
+                                resourceRegistrationObservationWSKey,
+                                deviceResourceRegistrationListener({
+                                    deviceId,
+                                    deviceName,
+                                })
+                            )
+                        } else {
+                            WebSocketEventClient.unsubscribe(resourceRegistrationObservationWSKey)
                         }
 
                         dispatch(toggleActiveNotification(deviceNotificationKey))

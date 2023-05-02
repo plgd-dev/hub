@@ -101,13 +101,15 @@ const AppInner = (props: Props) => {
                         leftPanel={
                             <LeftPanelWrapper
                                 activeId={activeItem}
+                                collapsed={collapsed}
                                 menu={menu}
                                 onItemClick={handleItemClick}
+                                onLocationChange={handleLocationChange}
+                                setCollapsed={setCollapsed}
                                 // newFeature={{
                                 //     onClick: () => console.log('click'),
                                 //     onClose: () => console.log('close'),
                                 // }}
-                                onLocationChange={handleLocationChange}
                                 versionMark={<VersionMark severity={severities.SUCCESS} versionText='Version 2.02' />}
                             />
                         }
