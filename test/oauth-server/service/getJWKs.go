@@ -3,7 +3,7 @@ package service
 import (
 	"net/http"
 
-	"github.com/lestrrat-go/jwx/jwk"
+	"github.com/lestrrat-go/jwx/v2/jwk"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 )
 

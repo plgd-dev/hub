@@ -11,8 +11,8 @@ import (
 
 	"github.com/google/uuid"
 	router "github.com/gorilla/mux"
-	"github.com/lestrrat-go/jwx/jwa"
-	"github.com/lestrrat-go/jwx/jwk"
+	"github.com/lestrrat-go/jwx/v2/jwa"
+	"github.com/lestrrat-go/jwx/v2/jwk"
 	"github.com/plgd-dev/go-coap/v3/pkg/cache"
 	"github.com/plgd-dev/go-coap/v3/pkg/runner/periodic"
 	"github.com/plgd-dev/hub/v2/pkg/log"
@@ -35,20 +35,23 @@ type RequestHandler struct {
 func createJwkKey(privateKey interface{}) (jwk.Key, error) {
 	var alg string
 	var publicKey interface{}
+	var publicKeyPtr any
 	switch v := privateKey.(type) {
 	case *rsa.PrivateKey:
 		alg = jwa.RS256.String()
-		publicKey = &v.PublicKey
+		publicKey = v.PublicKey
+		publicKeyPtr = &v.PublicKey
 	case *ecdsa.PrivateKey:
 		alg = jwa.ES256.String()
-		publicKey = &v.PublicKey
+		publicKey = v.PublicKey
+		publicKeyPtr = &v.PublicKey
 	}
 
-	jwkKey, err := jwk.New(publicKey)
+	jwkKey, err := jwk.FromRaw(publicKey)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create jwk: %w", err)
 	}
-	data, err := x509.MarshalPKIXPublicKey(publicKey)
+	data, err := x509.MarshalPKIXPublicKey(publicKeyPtr)
 	if err != nil {
 		return nil, fmt.Errorf("cannot marshal public key: %w", err)
 	}

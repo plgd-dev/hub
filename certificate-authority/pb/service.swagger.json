@@ -103,7 +103,8 @@
       "properties": {
         "certificateSigningRequest": {
           "type": "string",
-          "format": "byte"
+          "format": "byte",
+          "title": "PEM format"
         }
       }
     },
@@ -112,7 +113,8 @@
       "properties": {
         "certificate": {
           "type": "string",
-          "format": "byte"
+          "format": "byte",
+          "title": "PEM format"
         }
       }
     },
@@ -138,6 +140,7 @@
         "details": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/protobufAny"
           }
         }
