@@ -3,6 +3,7 @@ package service
 import (
 	"fmt"
 
+	pbCA "github.com/plgd-dev/hub/v2/certificate-authority/pb"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/subscription"
 	isClient "github.com/plgd-dev/hub/v2/identity-store/client"
@@ -24,14 +25,16 @@ import (
 // RequestHandler handles incoming requests.
 type RequestHandler struct {
 	pb.UnimplementedGrpcGatewayServer
-	idClient                pbIS.IdentityStoreClient
-	resourceDirectoryClient pb.GrpcGatewayClient
-	resourceAggregateClient *raClient.Client
-	resourceSubscriber      *subscriber.Subscriber
-	ownerCache              *isClient.OwnerCache
-	subscriptionsCache      *subscription.SubscriptionsCache
-	config                  Config
-	closeFunc               func()
+	idClient                   pbIS.IdentityStoreClient
+	resourceDirectoryClient    pb.GrpcGatewayClient
+	resourceAggregateClient    *raClient.Client
+	certificateAuthorityClient pbCA.CertificateAuthorityClient
+	resourceSubscriber         *subscriber.Subscriber
+	ownerCache                 *isClient.OwnerCache
+	subscriptionsCache         *subscription.SubscriptionsCache
+	logger                     log.Logger
+	config                     Config
+	closeFunc                  func()
 }
 
 func addHandler(svr *server.Server, config Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider, goroutinePoolGo func(func()) error) error {
@@ -77,6 +80,20 @@ func newResourceDirectoryClient(config GrpcServerConfig, fileWatcher *fsnotify.W
 	return resourceDirectoryClient, closeRdConn, nil
 }
 
+func newCertificateAuthorityClient(config GrpcServerConfig, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (pbCA.CertificateAuthorityClient, func(), error) {
+	caConn, err := client.New(config.Connection, fileWatcher, logger, tracerProvider)
+	if err != nil {
+		return nil, nil, fmt.Errorf("cannot connect to resource-directory: %w", err)
+	}
+	closeCaConn := func() {
+		if err := caConn.Close(); err != nil {
+			logger.Errorf("error occurs during close connection to resource-directory: %w", err)
+		}
+	}
+	certificateAuthorityClient := pbCA.NewCertificateAuthorityClient(caConn.GRPC())
+	return certificateAuthorityClient, closeCaConn, nil
+}
+
 func newResourceAggregateClient(config GrpcServerConfig, resourceSubscriber eventbus.Subscriber, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (*raClient.Client, func(), error) {
 	raConn, err := client.New(config.Connection, fileWatcher, logger, tracerProvider)
 	if err != nil {
@@ -108,7 +125,7 @@ func NewRequestHandlerFromConfig(config Config, fileWatcher *fsnotify.Watcher, l
 
 	ownerCache := isClient.NewOwnerCache(config.APIs.GRPC.Authorization.OwnerClaim, config.APIs.GRPC.OwnerCacheExpiration,
 		natsClient.GetConn(), idClient, func(err error) {
-			log.Errorf("error occurs during processing of event by ownerCache: %v", err)
+			logger.Errorf("error occurs during processing of event by ownerCache: %v", err)
 		})
 	closeFunc.AddFunc(ownerCache.Close)
 
@@ -139,19 +156,28 @@ func NewRequestHandlerFromConfig(config Config, fileWatcher *fsnotify.Watcher, l
 	}
 	closeFunc.AddFunc(closeResourceAggregateClient)
 
+	certificateAuthorityClient, closeCertificateAuthorityClient, err := newCertificateAuthorityClient(config.Clients.CertificateAuthority, fileWatcher, logger, tracerProvider)
+	if err != nil {
+		closeFunc.Execute()
+		return nil, fmt.Errorf("cannot create certificate-authority client: %w", err)
+	}
+	closeFunc.AddFunc(closeCertificateAuthorityClient)
+
 	subscriptionsCache := subscription.NewSubscriptionsCache(natsClient.GetConn(), func(err error) {
-		log.Errorf("error occurs during processing of event by subscriptionCache: %v", err)
+		logger.Errorf("error occurs during processing of event by subscriptionCache: %v", err)
 	})
 
 	return &RequestHandler{
-		idClient:                idClient,
-		resourceDirectoryClient: resourceDirectoryClient,
-		resourceAggregateClient: resourceAggregateClient,
-		resourceSubscriber:      resourceSubscriber,
-		ownerCache:              ownerCache,
-		subscriptionsCache:      subscriptionsCache,
-		config:                  config,
-		closeFunc:               closeFunc.ToFunction(),
+		idClient:                   idClient,
+		resourceDirectoryClient:    resourceDirectoryClient,
+		resourceAggregateClient:    resourceAggregateClient,
+		certificateAuthorityClient: certificateAuthorityClient,
+		resourceSubscriber:         resourceSubscriber,
+		ownerCache:                 ownerCache,
+		subscriptionsCache:         subscriptionsCache,
+		config:                     config,
+		closeFunc:                  closeFunc.ToFunction(),
+		logger:                     logger,
 	}, nil
 }
 

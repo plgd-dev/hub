@@ -54,14 +54,14 @@ clients:
     # cron expression, every day at 1 am
     cleanUpRecords: "0 1 * * *"
     mongoDB:
-      uri: mongodb://localhost:27017
+      uri:
       database: certificateAuthority
       maxPoolSize: 16
       maxConnIdleTime: 4m0s
       tls:
-        caPool: ""
-        keyFile: ""
-        certFile: ""
+        caPool: "/secrets/public/rootca.crt"
+        keyFile: "/secrets/private/cert.key"
+        certFile: "/secrets/public/cert.crt"
         useSystemCAPool: false
       bulkWrite:
         timeout: 1m0s

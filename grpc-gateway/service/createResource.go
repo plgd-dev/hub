@@ -4,14 +4,13 @@ import (
 	"context"
 
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
-	"github.com/plgd-dev/hub/v2/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"google.golang.org/grpc/codes"
 )
 
 func logAndReturnCreateResourceError(err error) error {
-	return log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot create resource: %v", err))
+	return kitNetGrpc.ForwardErrorf(codes.Internal, "cannot create resource: %v", err)
 }
 
 func (r *RequestHandler) CreateResource(ctx context.Context, req *pb.CreateResourceRequest) (*pb.CreateResourceResponse, error) {

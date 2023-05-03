@@ -1581,6 +1581,20 @@ grpcgateway:
           keyFile:
           certFile:
           useSystemCAPool: false
+    certificateAuthority:
+      grpc:
+        address: ""
+        sendMsgSize: 4194304
+        recvMsgSize: 4194304
+        keepAlive:
+          time: 10s
+          timeout: 20s
+          permitWithoutStream: true
+        tls:
+          caPool:
+          keyFile:
+          certFile:
+          useSystemCAPool: false
 
 
 certificateauthority:

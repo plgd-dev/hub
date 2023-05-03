@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
-	"github.com/plgd-dev/hub/v2/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"google.golang.org/grpc/codes"
@@ -25,7 +24,7 @@ func (r *RequestHandler) CancelPendingMetadataUpdates(ctx context.Context, req *
 		},
 	})
 	if err != nil {
-		return nil, log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "cannot cancel device('%v') metadata updates: %v", req.GetDeviceId(), err))
+		return nil, kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "cannot cancel device('%v') metadata updates: %v", req.GetDeviceId(), err)
 	}
 
 	return &pb.CancelPendingCommandsResponse{

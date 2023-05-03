@@ -735,6 +735,48 @@ if [ $status -ne 0 ]; then
   exit $status
 fi
 
+# certificate-authority
+echo "starting certificate-authority"
+## configuration
+cat /configs/certificate-authority.yaml | yq e "\
+  .log.level = \"${LOG_LEVEL}\" |
+  .apis.grpc.address = \"${CERTIFICATE_AUTHORITY_ADDRESS}\" |
+  .apis.grpc.authorization.audience = \"${SERVICE_OAUTH_AUDIENCE}\" |
+  .apis.grpc.authorization.http.tls.useSystemCAPool = true |
+  .apis.grpc.authorization.authority = \"https://${OAUTH_ENDPOINT}\" |
+  .apis.grpc.authorization.ownerClaim = \"${OWNER_CLAIM}\" |
+  .clients.storage.mongoDB.uri = \"${MONGODB_URI}\" |
+  .clients.openTelemetryCollector.grpc.enabled = ${OPEN_TELEMETRY_EXPORTER_ENABLED} |
+  .clients.openTelemetryCollector.grpc.address = \"${OPEN_TELEMETRY_EXPORTER_ADDRESS}\" |
+  .clients.openTelemetryCollector.grpc.tls.caPool = \"${OPEN_TELEMETRY_EXPORTER_CA_POOL}\" |
+  .clients.openTelemetryCollector.grpc.tls.keyFile = \"${OPEN_TELEMETRY_EXPORTER_KEY_FILE}\" |
+  .clients.openTelemetryCollector.grpc.tls.certFile = \"${OPEN_TELEMETRY_EXPORTER_CERT_FILE}\" |
+  .clients.openTelemetryCollector.grpc.tls.useSystemCAPool = true |
+  .signer.hubID = \"${COAP_GATEWAY_HUB_ID}\" |
+  .signer.keyFile = \"${ROOT_KEY_PATH}\" |
+  .signer.certFile = \"${ROOT_CERT_PATH}\"
+" - > /data/certificate-authority.yaml
+certificate-authority --config /data/certificate-authority.yaml >$LOGS_PATH/certificate-authority.log 2>&1 &
+status=$?
+certificate_authority_pid=$!
+if [ $status -ne 0 ]; then
+  echo "Failed to start certificate-authority: $status"
+  sync
+  cat $LOGS_PATH/certificate-authority.log
+  exit $status
+fi
+
+# waiting for ca. Without wait, sometimes auth service didn't connect.
+i=0
+while true; do
+  i=$((i+1))
+  if openssl s_client -connect ${CERTIFICATE_AUTHORITY_ADDRESS} -cert ${INTERNAL_CERT_DIR_PATH}/${GRPC_INTERNAL_CERT_NAME} -key ${INTERNAL_CERT_DIR_PATH}/${GRPC_INTERNAL_CERT_KEY_NAME} <<< "Q" 2>/dev/null > /dev/null; then
+    break
+  fi
+  echo "Try to reconnect to certificate-authority(${CERTIFICATE_AUTHORITY_ADDRESS}) $i"
+  sleep 1
+done
+
 # grpc-gateway
 echo "starting grpc-gateway"
 ## configuration
@@ -753,7 +795,8 @@ cat /configs/grpc-gateway.yaml | yq e "\
   .clients.identityStore.grpc.address = \"${IDENTITY_STORE_ADDRESS}\" |
   .clients.eventBus.nats.url = \"${NATS_URL}\" |
   .clients.resourceAggregate.grpc.address = \"${RESOURCE_AGGREGATE_ADDRESS}\" |
-  .clients.resourceDirectory.grpc.address = \"${RESOURCE_DIRECTORY_ADDRESS}\"
+  .clients.resourceDirectory.grpc.address = \"${RESOURCE_DIRECTORY_ADDRESS}\" |
+  .clients.certificateAuthority.grpc.address = \"${CERTIFICATE_AUTHORITY_ADDRESS}\"
 " - > /data/grpc-gateway.yaml
 grpc-gateway --config=/data/grpc-gateway.yaml >$LOGS_PATH/grpc-gateway.log 2>&1 &
 status=$?
@@ -822,47 +865,6 @@ while true; do
     break
   fi
   echo "Try to reconnect to http-gateway(${HTTP_GATEWAY_ADDRESS}) $i"
-  sleep 1
-done
-
-# certificate-authority
-echo "starting certificate-authority"
-## configuration
-cat /configs/certificate-authority.yaml | yq e "\
-  .log.level = \"${LOG_LEVEL}\" |
-  .apis.grpc.address = \"${CERTIFICATE_AUTHORITY_ADDRESS}\" |
-  .apis.grpc.authorization.audience = \"${SERVICE_OAUTH_AUDIENCE}\" |
-  .apis.grpc.authorization.http.tls.useSystemCAPool = true |
-  .apis.grpc.authorization.authority = \"https://${OAUTH_ENDPOINT}\" |
-  .apis.grpc.authorization.ownerClaim = \"${OWNER_CLAIM}\" |
-  .clients.openTelemetryCollector.grpc.enabled = ${OPEN_TELEMETRY_EXPORTER_ENABLED} |
-  .clients.openTelemetryCollector.grpc.address = \"${OPEN_TELEMETRY_EXPORTER_ADDRESS}\" |
-  .clients.openTelemetryCollector.grpc.tls.caPool = \"${OPEN_TELEMETRY_EXPORTER_CA_POOL}\" |
-  .clients.openTelemetryCollector.grpc.tls.keyFile = \"${OPEN_TELEMETRY_EXPORTER_KEY_FILE}\" |
-  .clients.openTelemetryCollector.grpc.tls.certFile = \"${OPEN_TELEMETRY_EXPORTER_CERT_FILE}\" |
-  .clients.openTelemetryCollector.grpc.tls.useSystemCAPool = true |
-  .signer.hubID = \"${COAP_GATEWAY_HUB_ID}\" |
-  .signer.keyFile = \"${ROOT_KEY_PATH}\" |
-  .signer.certFile = \"${ROOT_CERT_PATH}\"
-" - > /data/certificate-authority.yaml
-certificate-authority --config /data/certificate-authority.yaml >$LOGS_PATH/certificate-authority.log 2>&1 &
-status=$?
-certificate_authority_pid=$!
-if [ $status -ne 0 ]; then
-  echo "Failed to start certificate-authority: $status"
-  sync
-  cat $LOGS_PATH/certificate-authority.log
-  exit $status
-fi
-
-# waiting for grpc-gateway. Without wait, sometimes auth service didn't connect.
-i=0
-while true; do
-  i=$((i+1))
-  if openssl s_client -connect ${CERTIFICATE_AUTHORITY_ADDRESS} -cert ${INTERNAL_CERT_DIR_PATH}/${GRPC_INTERNAL_CERT_NAME} -key ${INTERNAL_CERT_DIR_PATH}/${GRPC_INTERNAL_CERT_KEY_NAME} <<< "Q" 2>/dev/null > /dev/null; then
-    break
-  fi
-  echo "Try to reconnect to certificate-authority(${CERTIFICATE_AUTHORITY_ADDRESS}) $i"
   sleep 1
 done
 
