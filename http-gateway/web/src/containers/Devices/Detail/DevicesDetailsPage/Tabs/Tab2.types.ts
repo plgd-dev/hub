@@ -5,6 +5,7 @@ export type Props = {
     isOnline: boolean
     isUnregistered: boolean
     loading: boolean
-    resourcesData?: any
     loadingResources?: boolean
+    refreshResources: () => void
+    resourcesData?: any
 }

@@ -114,7 +114,7 @@ const AppInner = (props: Props) => {
                             />
                         }
                     />
-                    <ToastContainer />
+                    <ToastContainer portalTarget={document.getElementById('toast-root')} />
                     <BrowserNotificationsContainer />
                 </Router>
             </ThemeProvider>

@@ -42,7 +42,7 @@ const DevicesDetailsPage = () => {
 
     const isMounted = useIsMounted()
     const { data, updateData, loading, error: deviceError } = useDeviceDetails(id)
-    const { data: resourcesData, loading: loadingResources, error: resourcesError } = useDevicesResources(id)
+    const { data: resourcesData, loading: loadingResources, error: resourcesError, refresh } = useDevicesResources(id)
 
     const wellKnownConfig = security.getWellKnowConfig() as WellKnownConfigType & {
         defaultCommandTimeToLive: number
@@ -65,6 +65,11 @@ const DevicesDetailsPage = () => {
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [data, loading])
+
+    const refreshResources = useCallback(() => {
+        refresh()
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
 
     const handleOpenEditDeviceNameModal = useCallback(() => {
         setShowEditNameModal(true)
@@ -226,6 +231,7 @@ const DevicesDetailsPage = () => {
                                 isUnregistered={isUnregistered}
                                 loading={loading}
                                 loadingResources={loadingResources}
+                                refreshResources={refreshResources}
                                 resourcesData={resourcesData}
                             />
                         ),

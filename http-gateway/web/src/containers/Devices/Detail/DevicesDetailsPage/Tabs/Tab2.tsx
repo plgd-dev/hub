@@ -22,7 +22,7 @@ import { isNotificationActive, toggleActiveNotification } from '@/containers/Dev
 import { deviceResourceUpdateListener } from '@/containers/Devices/websockets'
 
 const Tab2: FC<Props> = (props) => {
-    const { deviceStatus, deviceName, isOnline, isActiveTab, isUnregistered, loading, resourcesData, loadingResources } = props
+    const { deviceStatus, deviceName, isOnline, isActiveTab, isUnregistered, loading, resourcesData, loadingResources, refreshResources } = props
     const {
         id,
         href: hrefParam,
@@ -159,6 +159,7 @@ const Tab2: FC<Props> = (props) => {
 
                 setResourceModalData(undefined) // close modal
                 setSavingResource(false)
+                refreshResources()
             }
         } catch (error) {
             if (error && isMounted.current) {
