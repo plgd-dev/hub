@@ -40,9 +40,10 @@ func overrideSubject(ctx context.Context, subject pkix.Name, ownerClaim, hubID, 
 }
 
 func (s *CertificateAuthorityServer) SignIdentityCertificate(ctx context.Context, req *pb.SignCertificateRequest) (*pb.SignCertificateResponse, error) {
+	const fmtError = "cannot sign identity certificate: %v"
 	logger := s.logger.With("csr", string(req.GetCertificateSigningRequest()))
 	if err := s.validateRequest(req.GetCertificateSigningRequest()); err != nil {
-		return nil, logger.LogAndReturnError(status.Errorf(codes.InvalidArgument, "cannot sign identity certificate: %v", err))
+		return nil, logger.LogAndReturnError(status.Errorf(codes.InvalidArgument, fmtError, err))
 	}
 	notBefore := s.validFrom()
 	notAfter := notBefore.Add(s.validFor)
@@ -62,14 +63,14 @@ func (s *CertificateAuthorityServer) SignIdentityCertificate(ctx context.Context
 	}))
 	cert, err := signer.Sign(ctx, req.CertificateSigningRequest)
 	if err != nil {
-		return nil, logger.LogAndReturnError(status.Errorf(codes.InvalidArgument, "cannot sign identity certificate: %v", err))
+		return nil, logger.LogAndReturnError(status.Errorf(codes.InvalidArgument, fmtError, err))
 	}
 	if signingRecord.GetCredential() == nil {
-		return nil, logger.LogAndReturnError(status.Errorf(codes.InvalidArgument, "cannot sign identity certificate: cannot create signing record"))
+		return nil, logger.LogAndReturnError(status.Errorf(codes.InvalidArgument, fmtError, "cannot create signing record"))
 	}
 	signingRecord.Credential.CertificatePem = string(cert)
 	if err := s.updateSigningRecord(ctx, signingRecord); err != nil {
-		return nil, logger.LogAndReturnError(status.Errorf(codes.InvalidArgument, "cannot sign identity certificate: %v", err))
+		return nil, logger.LogAndReturnError(status.Errorf(codes.InvalidArgument, fmtError, err))
 	}
 	logger.With("crt", string(cert)).Debugf("CertificateAuthorityServer.SignIdentityCertificate")
 

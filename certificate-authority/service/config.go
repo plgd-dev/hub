@@ -84,7 +84,9 @@ func (c *StorageConfig) Validate() error {
 	} else {
 		s = s.Cron(c.CleanUpRecords)
 	}
-	_, err := s.Do(func() {})
+	_, err := s.Do(func() {
+		// do nothing
+	})
 	if err != nil {
 		return fmt.Errorf("cleanUpRecords('%v') - %w", c.CleanUpRecords, err)
 	}

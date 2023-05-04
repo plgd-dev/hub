@@ -99,9 +99,10 @@ func (s *CertificateAuthorityServer) updateSigningRecord(ctx context.Context, si
 }
 
 func (s *CertificateAuthorityServer) SignCertificate(ctx context.Context, req *pb.SignCertificateRequest) (*pb.SignCertificateResponse, error) {
+	const fmtError = "cannot sign certificate: %v"
 	logger := s.logger.With("csr", string(req.GetCertificateSigningRequest()))
 	if err := s.validateRequest(req.GetCertificateSigningRequest()); err != nil {
-		return nil, logger.LogAndReturnError(status.Errorf(codes.InvalidArgument, "cannot sign certificate: %v", err))
+		return nil, logger.LogAndReturnError(status.Errorf(codes.InvalidArgument, fmtError, err))
 	}
 
 	notBefore := s.validFrom()
@@ -122,14 +123,14 @@ func (s *CertificateAuthorityServer) SignCertificate(ctx context.Context, req *p
 	}))
 	cert, err := signer.Sign(ctx, req.CertificateSigningRequest)
 	if err != nil {
-		return nil, logger.LogAndReturnError(status.Errorf(codes.InvalidArgument, "cannot sign certificate: %v", err))
+		return nil, logger.LogAndReturnError(status.Errorf(codes.InvalidArgument, fmtError, err))
 	}
 	if signingRecord.GetCredential() == nil {
 		return nil, logger.LogAndReturnError(status.Errorf(codes.InvalidArgument, "cannot sign certificate: cannot create signing record"))
 	}
 	signingRecord.Credential.CertificatePem = string(cert)
 	if err := s.updateSigningRecord(ctx, signingRecord); err != nil {
-		return nil, logger.LogAndReturnError(status.Errorf(codes.InvalidArgument, "cannot sign certificate: %v", err))
+		return nil, logger.LogAndReturnError(status.Errorf(codes.InvalidArgument, fmtError, err))
 	}
 	logger.With("crt", string(cert)).Debugf("CertificateAuthorityServer.SignCertificate")
 
