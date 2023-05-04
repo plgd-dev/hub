@@ -163,7 +163,7 @@
         ]
       },
       "delete": {
-        "summary": "Get signed certficate records.",
+        "summary": "Delete signed certficate records.",
         "operationId": "CertificateAuthority_DeleteSigningRecords",
         "responses": {
           "200": {

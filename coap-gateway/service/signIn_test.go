@@ -166,6 +166,7 @@ func TestSignInWithMTLSAndDeviceIdClaim(t *testing.T) {
 	*coapgwCfg.APIs.COAP.TLS.Enabled = true
 	coapgwCfg.APIs.COAP.TLS.Embedded.ClientCertificateRequired = true
 	coapgwCfg.APIs.COAP.Authorization.DeviceIDClaim = oauthUri.DeviceIDClaimKey
+	coapgwCfg.APIs.COAP.InjectedCOAPConfig.TLSConfig.IdentityPropertiesRequired = true
 	shutdown := setUp(t, coapgwCfg)
 	defer shutdown()
 
@@ -207,6 +208,7 @@ func TestCertificateExpiration(t *testing.T) {
 	coapgwCfg.APIs.COAP.TLS.DisconnectOnExpiredCertificate = true
 	coapgwCfg.APIs.COAP.TLS.Embedded.ClientCertificateRequired = true
 	coapgwCfg.APIs.COAP.Authorization.DeviceIDClaim = oauthUri.DeviceIDClaimKey
+	coapgwCfg.APIs.COAP.InjectedCOAPConfig.TLSConfig.IdentityPropertiesRequired = true
 
 	shutdown := setUp(t, coapgwCfg)
 	defer shutdown()

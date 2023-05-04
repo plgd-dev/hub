@@ -979,6 +979,20 @@ coapgateway:
           keyFile:
           certFile:
           useSystemCAPool: false
+    certificateAuthority:
+      grpc:
+        address: ""
+        sendMsgSize: 4194304
+        recvMsgSize: 4194304
+        keepAlive:
+          time: 10s
+          timeout: 20s
+          permitWithoutStream: true
+        tls:
+          caPool:
+          keyFile:
+          certFile:
+          useSystemCAPool: false
   # -- For complete coap-gateway service configuration see [plgd/coap-gateway](https://github.com/plgd-dev/hub/tree/main/coap-gateway)
   taskQueue:
     goPoolSize: 1600

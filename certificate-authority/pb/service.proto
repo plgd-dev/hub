@@ -66,7 +66,7 @@ service CertificateAuthority {
     };
   };
 
-  // Get signed certficate records.
+  // Delete signed certficate records.
   rpc DeleteSigningRecords (DeleteSigningRecordsRequest) returns (DeletedSigningRecords) {
     option (google.api.http) = {
       delete: "/api/v1/signing-records"

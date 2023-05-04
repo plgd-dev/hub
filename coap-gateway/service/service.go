@@ -19,6 +19,7 @@ import (
 	"github.com/plgd-dev/go-coap/v3/mux"
 	"github.com/plgd-dev/go-coap/v3/pkg/cache"
 	"github.com/plgd-dev/go-coap/v3/pkg/runner/periodic"
+	pbCA "github.com/plgd-dev/hub/v2/certificate-authority/pb"
 	"github.com/plgd-dev/hub/v2/coap-gateway/uri"
 	pbGRPC "github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/subscription"
@@ -50,26 +51,27 @@ var authCtxKey = "AuthCtx"
 
 // Service is a configuration of coap-gateway
 type Service struct {
-	ctx                   context.Context
-	tracerProvider        trace.TracerProvider
-	logger                log.Logger
-	isClient              pbIS.IdentityStoreClient
-	rdClient              pbGRPC.GrpcGatewayClient
-	devicesStatusUpdater  *devicesStatusUpdater
-	providers             map[string]*oauth2.PlgdProvider
-	expirationClientCache *cache.Cache[string, *session]
-	cancel                context.CancelFunc
-	taskQueue             *queue.Queue
-	natsClient            *natsClient.Client
-	resourceSubscriber    *subscriber.Subscriber
-	authInterceptor       Interceptor
-	jwtValidator          *jwt.Validator
-	sigs                  chan os.Signal
-	ownerCache            *idClient.OwnerCache
-	subscriptionsCache    *subscription.SubscriptionsCache
-	messagePool           *pool.Pool
-	raClient              *raClient.Client
-	config                Config
+	ctx                        context.Context
+	tracerProvider             trace.TracerProvider
+	logger                     log.Logger
+	isClient                   pbIS.IdentityStoreClient
+	rdClient                   pbGRPC.GrpcGatewayClient
+	certificateAuthorityClient pbCA.CertificateAuthorityClient
+	devicesStatusUpdater       *devicesStatusUpdater
+	providers                  map[string]*oauth2.PlgdProvider
+	expirationClientCache      *cache.Cache[string, *session]
+	cancel                     context.CancelFunc
+	taskQueue                  *queue.Queue
+	natsClient                 *natsClient.Client
+	resourceSubscriber         *subscriber.Subscriber
+	authInterceptor            Interceptor
+	jwtValidator               *jwt.Validator
+	sigs                       chan os.Signal
+	ownerCache                 *idClient.OwnerCache
+	subscriptionsCache         *subscription.SubscriptionsCache
+	messagePool                *pool.Pool
+	raClient                   *raClient.Client
+	config                     Config
 }
 
 func setExpirationClientCache(c *cache.Cache[string, *session], deviceID string, client *session, validJWTUntil time.Time) {
@@ -156,6 +158,20 @@ func newResourceDirectoryClient(config GrpcServerConfig, fileWatcher *fsnotify.W
 	}
 	rdClient := pbGRPC.NewGrpcGatewayClient(rdConn.GRPC())
 	return rdClient, closeRdConn, nil
+}
+
+func newCertificateAuthorityClient(config GrpcServerConfig, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (pbCA.CertificateAuthorityClient, func(), error) {
+	caConn, err := grpcClient.New(config.Connection, fileWatcher, logger, tracerProvider)
+	if err != nil {
+		return nil, nil, fmt.Errorf("cannot connect to resource-directory: %w", err)
+	}
+	closeCaConn := func() {
+		if err := caConn.Close(); err != nil {
+			logger.Errorf("error occurs during close connection to resource-directory: %w", err)
+		}
+	}
+	certificateAuthorityClient := pbCA.NewCertificateAuthorityClient(caConn.GRPC())
+	return certificateAuthorityClient, closeCaConn, nil
 }
 
 func (s *Service) onInactivityConnection(cc mux.Conn) {
@@ -246,6 +262,13 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 	}
 	nats.AddCloseFunc(closeRdClient)
 
+	certificateAuthorityClient, closeCertificateAuthorityClient, err := newCertificateAuthorityClient(config.Clients.CertificateAuthority, fileWatcher, logger, tracerProvider)
+	if err != nil {
+		nats.Close()
+		return nil, fmt.Errorf("cannot create certificate-authority client: %w", err)
+	}
+	nats.AddCloseFunc(closeCertificateAuthorityClient)
+
 	providers, firstProvider, closeProviders, err := newProviders(ctx, config.APIs.COAP.Authorization, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		nats.Close()
@@ -276,13 +299,14 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 	s := Service{
 		config: config,
 
-		natsClient:            nats,
-		raClient:              raClient,
-		isClient:              isClient,
-		rdClient:              rdClient,
-		expirationClientCache: newExpirationClientCache(ctx, config.APIs.COAP.OwnerCacheExpiration),
-		authInterceptor:       newAuthInterceptor(),
-		devicesStatusUpdater:  newDevicesStatusUpdater(ctx, config.Clients.ResourceAggregate.DeviceStatusExpiration, logger),
+		natsClient:                 nats,
+		raClient:                   raClient,
+		isClient:                   isClient,
+		rdClient:                   rdClient,
+		certificateAuthorityClient: certificateAuthorityClient,
+		expirationClientCache:      newExpirationClientCache(ctx, config.APIs.COAP.OwnerCacheExpiration),
+		authInterceptor:            newAuthInterceptor(),
+		devicesStatusUpdater:       newDevicesStatusUpdater(ctx, config.Clients.ResourceAggregate.DeviceStatusExpiration, logger),
 
 		sigs: make(chan os.Signal, 1),
 

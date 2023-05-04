@@ -670,7 +670,8 @@ cat /configs/coap-gateway.yaml | yq e "\
   .clients.eventBus.nats.url = \"${NATS_URL}\" |
   .clients.identityStore.grpc.address = \"${IDENTITY_STORE_ADDRESS}\" |
   .clients.resourceAggregate.grpc.address = \"${RESOURCE_AGGREGATE_ADDRESS}\" |
-  .clients.resourceDirectory.grpc.address = \"${RESOURCE_DIRECTORY_ADDRESS}\"
+  .clients.resourceDirectory.grpc.address = \"${RESOURCE_DIRECTORY_ADDRESS}\" |
+  .clients.certificateAuthority.grpc.address = \"${CERTIFICATE_AUTHORITY_ADDRESS}\"
 " - > /data/coap-gateway-unsecure.yaml
 
 if [ "${COAP_GATEWAY_UNSECURE_ENABLED}" = "true" ]; then
@@ -722,7 +723,8 @@ cat /configs/coap-gateway.yaml | yq e "\
   .clients.eventBus.nats.url = \"${NATS_URL}\" |
   .clients.identityStore.grpc.address = \"${IDENTITY_STORE_ADDRESS}\" |
   .clients.resourceAggregate.grpc.address = \"${RESOURCE_AGGREGATE_ADDRESS}\" |
-  .clients.resourceDirectory.grpc.address = \"${RESOURCE_DIRECTORY_ADDRESS}\"
+  .clients.resourceDirectory.grpc.address = \"${RESOURCE_DIRECTORY_ADDRESS}\" |
+  .clients.certificateAuthority.grpc.address = \"${CERTIFICATE_AUTHORITY_ADDRESS}\"
 " - > /data/coap-gateway-secure.yaml
 
 coap-gateway --config /data/coap-gateway-secure.yaml >$LOGS_PATH/coap-gateway.log 2>&1 &

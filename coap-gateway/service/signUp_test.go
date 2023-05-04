@@ -13,6 +13,7 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/security/oauth2/oauth"
 	"github.com/plgd-dev/hub/v2/test/config"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
+	oauthUri "github.com/plgd-dev/hub/v2/test/oauth-server/uri"
 	"github.com/stretchr/testify/require"
 )
 
@@ -91,6 +92,9 @@ func TestSignUpClientCredentialPostHandler(t *testing.T) {
 	coapgwCfg.APIs.COAP.Authorization.Providers[0].GrantType = oauth.ClientCredentials
 	err := coapgwCfg.Validate()
 	require.Error(t, err)
+	coapgwCfg.APIs.COAP.Authorization.OwnerClaim = oauthUri.OwnerClaimKey
+	err = coapgwCfg.Validate()
+	require.NoError(t, err)
 	shutdown := setUp(t, coapgwCfg)
 	defer shutdown()
 	codeEl := oauthTest.GetDefaultAccessToken(t)

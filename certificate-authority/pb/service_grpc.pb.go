@@ -35,7 +35,7 @@ type CertificateAuthorityClient interface {
 	SignCertificate(ctx context.Context, in *SignCertificateRequest, opts ...grpc.CallOption) (*SignCertificateResponse, error)
 	// Get signed certficate records.
 	GetSigningRecords(ctx context.Context, in *GetSigningRecordsRequest, opts ...grpc.CallOption) (CertificateAuthority_GetSigningRecordsClient, error)
-	// Get signed certficate records.
+	// Delete signed certficate records.
 	DeleteSigningRecords(ctx context.Context, in *DeleteSigningRecordsRequest, opts ...grpc.CallOption) (*DeletedSigningRecords, error)
 }
 
@@ -118,7 +118,7 @@ type CertificateAuthorityServer interface {
 	SignCertificate(context.Context, *SignCertificateRequest) (*SignCertificateResponse, error)
 	// Get signed certficate records.
 	GetSigningRecords(*GetSigningRecordsRequest, CertificateAuthority_GetSigningRecordsServer) error
-	// Get signed certficate records.
+	// Delete signed certficate records.
 	DeleteSigningRecords(context.Context, *DeleteSigningRecordsRequest) (*DeletedSigningRecords, error)
 	mustEmbedUnimplementedCertificateAuthorityServer()
 }
