@@ -21,6 +21,8 @@ const _ = grpc.SupportPackageIsVersion7
 const (
 	CertificateAuthority_SignIdentityCertificate_FullMethodName = "/certificateauthority.pb.CertificateAuthority/SignIdentityCertificate"
 	CertificateAuthority_SignCertificate_FullMethodName         = "/certificateauthority.pb.CertificateAuthority/SignCertificate"
+	CertificateAuthority_GetSigningRecords_FullMethodName       = "/certificateauthority.pb.CertificateAuthority/GetSigningRecords"
+	CertificateAuthority_DeleteSigningRecords_FullMethodName    = "/certificateauthority.pb.CertificateAuthority/DeleteSigningRecords"
 )
 
 // CertificateAuthorityClient is the client API for CertificateAuthority service.
@@ -66,7 +68,7 @@ func (c *certificateAuthorityClient) SignCertificate(ctx context.Context, in *Si
 }
 
 func (c *certificateAuthorityClient) GetSigningRecords(ctx context.Context, in *GetSigningRecordsRequest, opts ...grpc.CallOption) (CertificateAuthority_GetSigningRecordsClient, error) {
-	stream, err := c.cc.NewStream(ctx, &CertificateAuthority_ServiceDesc.Streams[0], "/certificateauthority.pb.CertificateAuthority/GetSigningRecords", opts...)
+	stream, err := c.cc.NewStream(ctx, &CertificateAuthority_ServiceDesc.Streams[0], CertificateAuthority_GetSigningRecords_FullMethodName, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -99,7 +101,7 @@ func (x *certificateAuthorityGetSigningRecordsClient) Recv() (*SigningRecord, er
 
 func (c *certificateAuthorityClient) DeleteSigningRecords(ctx context.Context, in *DeleteSigningRecordsRequest, opts ...grpc.CallOption) (*DeletedSigningRecords, error) {
 	out := new(DeletedSigningRecords)
-	err := c.cc.Invoke(ctx, "/certificateauthority.pb.CertificateAuthority/DeleteSigningRecords", in, out, opts...)
+	err := c.cc.Invoke(ctx, CertificateAuthority_DeleteSigningRecords_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -219,7 +221,7 @@ func _CertificateAuthority_DeleteSigningRecords_Handler(srv interface{}, ctx con
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/certificateauthority.pb.CertificateAuthority/DeleteSigningRecords",
+		FullMethod: CertificateAuthority_DeleteSigningRecords_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(CertificateAuthorityServer).DeleteSigningRecords(ctx, req.(*DeleteSigningRecordsRequest))
