@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang-jwt/jwt/v4"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/plgd-dev/device/v2/schema"
 	c2curi "github.com/plgd-dev/hub/v2/cloud2cloud-connector/uri"
 	"github.com/plgd-dev/hub/v2/pkg/log"

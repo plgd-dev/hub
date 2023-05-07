@@ -42,13 +42,19 @@ func (p *ClientCredentialsPlgdProvider) Exchange(ctx context.Context, authorizat
 	m := jwt.Claims(claims)
 	c := p.Config.ToDefaultClientCredentials()
 	if p.deviceIDClaim != "" {
-		deviceID := m.DeviceID(p.deviceIDClaim)
+		deviceID, err := m.GetDeviceID(p.deviceIDClaim)
+		if err != nil {
+			return nil, err
+		}
 		if deviceID == "" {
 			return nil, fmt.Errorf("deviceIDClaim('%v') is not set in token", p.deviceIDClaim)
 		}
 		c.EndpointParams.Add(p.deviceIDClaim, deviceID)
 	}
-	owner := m.Owner(p.ownerClaim)
+	owner, err := m.GetOwner(p.ownerClaim)
+	if err != nil {
+		return nil, err
+	}
 	if owner == "" {
 		return nil, fmt.Errorf("ownerClaim('%v') is not set in token", p.ownerClaim)
 	}

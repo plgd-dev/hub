@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/hashicorp/go-multierror"
 	"github.com/panjf2000/ants/v2"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
@@ -12,7 +13,7 @@ import (
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"github.com/plgd-dev/hub/v2/pkg/net/grpc/server"
 	otelClient "github.com/plgd-dev/hub/v2/pkg/opentelemetry/collector/client"
-	"github.com/plgd-dev/hub/v2/pkg/security/jwt"
+	pkgJwt "github.com/plgd-dev/hub/v2/pkg/security/jwt"
 	"github.com/plgd-dev/hub/v2/pkg/security/jwt/validator"
 )
 
@@ -73,8 +74,8 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 }
 
 func makeAuthFunc(validator kitNetGrpc.Validator) func(ctx context.Context, method string) (context.Context, error) {
-	interceptor := kitNetGrpc.ValidateJWTWithValidator(validator, func(ctx context.Context, method string) kitNetGrpc.Claims {
-		return jwt.NewScopeClaims()
+	interceptor := kitNetGrpc.ValidateJWTWithValidator(validator, func(ctx context.Context, method string) jwt.ClaimsValidator {
+		return pkgJwt.NewScopeClaims()
 	})
 	return func(ctx context.Context, method string) (context.Context, error) {
 		if method == "/"+pb.GrpcGateway_ServiceDesc.ServiceName+"/GetHubConfiguration" {

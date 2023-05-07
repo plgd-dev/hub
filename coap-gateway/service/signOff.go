@@ -124,7 +124,10 @@ func signOffHandler(req *mux.Message, client *session) (*pool.Message, error) {
 		return nil, statusErrorf(coapCodes.Unauthorized, errFmtSignOff, err)
 	}
 
-	deviceID := client.ResolveDeviceID(jwtClaims, signOffData.deviceID)
+	deviceID, err := client.ResolveDeviceID(jwtClaims, signOffData.deviceID)
+	if err != nil {
+		return nil, statusErrorf(coapCodes.Unauthorized, errFmtSignOff, err)
+	}
 	setDeviceIDToTracerSpan(req.Context(), deviceID)
 
 	ctx = kitNetGrpc.CtxWithToken(ctx, signOffData.accessToken)

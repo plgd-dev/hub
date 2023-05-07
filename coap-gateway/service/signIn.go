@@ -279,11 +279,18 @@ func signInPostHandler(req *mux.Message, client *session, signIn CoapSignInReq) 
 		return nil, statusErrorf(coapCodes.Unauthorized, errFmtSignIn, err)
 	}
 
-	validUntil, err := jwtClaims.ExpiresAt()
+	expTime, err := jwtClaims.GetExpirationTime()
 	if err != nil {
 		return nil, statusErrorf(coapCodes.Unauthorized, errFmtSignIn, err)
 	}
-	deviceID := client.ResolveDeviceID(jwtClaims, signIn.DeviceID)
+	validUntil := time.Time{}
+	if expTime != nil {
+		validUntil = expTime.Time
+	}
+	deviceID, err := client.ResolveDeviceID(jwtClaims, signIn.DeviceID)
+	if err != nil {
+		return nil, statusErrorf(coapCodes.Unauthorized, errFmtSignIn, err)
+	}
 	setDeviceIDToTracerSpan(req.Context(), deviceID)
 
 	upd := client.updateAuthorizationContext(deviceID, signIn.UserID, signIn.AccessToken, validUntil)
@@ -390,7 +397,10 @@ func signOutPostHandler(req *mux.Message, client *session, signOut CoapSignInReq
 		return nil, statusErrorf(coapCodes.Unauthorized, errFmtSignOut, err)
 	}
 
-	deviceID := client.ResolveDeviceID(jwtClaims, signOut.DeviceID)
+	deviceID, err := client.ResolveDeviceID(jwtClaims, signOut.DeviceID)
+	if err != nil {
+		return nil, statusErrorf(coapCodes.Unauthorized, errFmtSignIn, err)
+	}
 	setDeviceIDToTracerSpan(req.Context(), deviceID)
 
 	if err := updateDeviceMetadata(req, client); err != nil {

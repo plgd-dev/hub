@@ -2,7 +2,7 @@ package strings
 
 func ToString(v interface{}) (string, bool) {
 	if v == nil {
-		return "", false
+		return "", true
 	}
 	val, ok := v.(string)
 	return val, ok

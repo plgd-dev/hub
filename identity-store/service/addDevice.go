@@ -60,11 +60,17 @@ func (s *Service) parseTokenMD(ctx context.Context) (owner, subject string, err 
 	if err != nil {
 		return "", "", grpc.ForwardFromError(codes.InvalidArgument, err)
 	}
-	owner = claims.Owner(s.ownerClaim)
+	owner, err = claims.GetOwner(s.ownerClaim)
+	if err != nil {
+		return "", "", grpc.ForwardFromError(codes.InvalidArgument, err)
+	}
 	if owner == "" {
 		return "", "", status.Errorf(codes.InvalidArgument, "%v", fmt.Errorf("claim '%v' was not found", s.ownerClaim))
 	}
-	subject = claims.Subject()
+	subject, err = claims.GetSubject()
+	if err != nil {
+		return "", "", grpc.ForwardFromError(codes.InvalidArgument, err)
+	}
 	if subject == "" {
 		return "", "", status.Errorf(codes.InvalidArgument, "%v", fmt.Errorf("claim '%v' was not found", "sub"))
 	}

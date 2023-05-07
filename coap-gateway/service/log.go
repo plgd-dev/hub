@@ -186,16 +186,14 @@ func (c *session) logRequestResponse(req *mux.Message, resp *pool.Message, err e
 
 func (c *session) msgToLogCoapMessage(req *pool.Message, withToken bool) logCoapMessage {
 	rq := coapgwMessage.ToJson(req, c.server.config.Log.DumpBody, withToken)
-	var sub string
-	if v, err := c.GetAuthorizationContext(); err == nil {
-		sub = v.GetJWTClaims().Subject()
-	}
 	dumpReq := logCoapMessage{
 		JsonCoapMessage: rq,
 	}
-	if sub != "" {
-		dumpReq.JWT = &jwtMember{
-			Sub: sub,
+	if v, err := c.GetAuthorizationContext(); err == nil {
+		if sub, err := v.GetJWTClaims().GetSubject(); err == nil && sub != "" {
+			dumpReq.JWT = &jwtMember{
+				Sub: sub,
+			}
 		}
 	}
 	if req.Code() >= codes.GET && req.Code() <= codes.DELETE {

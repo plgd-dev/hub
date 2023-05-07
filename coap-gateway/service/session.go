@@ -994,14 +994,14 @@ func (c *session) unsubscribeFromDeviceEvents() {
 	closeFn()
 }
 
-func (c *session) ResolveDeviceID(claim jwt.Claims, paramDeviceID string) string {
+func (c *session) ResolveDeviceID(claim jwt.Claims, paramDeviceID string) (string, error) {
 	if c.server.config.APIs.COAP.Authorization.DeviceIDClaim != "" {
-		return claim.DeviceID(c.server.config.APIs.COAP.Authorization.DeviceIDClaim)
+		return claim.GetDeviceID(c.server.config.APIs.COAP.Authorization.DeviceIDClaim)
 	}
 	if c.server.config.APIs.COAP.TLS.IsEnabled() && c.server.config.APIs.COAP.TLS.Embedded.ClientCertificateRequired {
-		return c.tlsDeviceID
+		return c.tlsDeviceID, nil
 	}
-	return paramDeviceID
+	return paramDeviceID, nil
 }
 
 func (c *session) UpdateTwinSynchronizationStatus(ctx context.Context, deviceID string, state commands.TwinSynchronization_State, t time.Time) error {

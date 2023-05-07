@@ -1,14 +1,21 @@
 package jwt
 
 import (
+	"errors"
 	"fmt"
 	"regexp"
 	"time"
+
+	pkgErrors "github.com/plgd-dev/hub/v2/pkg/errors"
 )
 
-type ScopeClaims Claims
+type ScopeClaims struct {
+	Claims
+}
 
 const PlgdRequiredScope = "plgd:required:scope"
+
+var ErrMissingRequiredScopes = errors.New("required scopes not found")
 
 func NewScopeClaims(scope ...string) *ScopeClaims {
 	requiredScopes := make([]*regexp.Regexp, 0, len(scope))
@@ -19,19 +26,19 @@ func NewScopeClaims(scope ...string) *ScopeClaims {
 }
 
 func NewRegexpScopeClaims(scope ...*regexp.Regexp) *ScopeClaims {
-	v := make(ScopeClaims)
-	v[PlgdRequiredScope] = scope
+	v := ScopeClaims{make(Claims)}
+	v.Claims[PlgdRequiredScope] = scope
 	return &v
 }
 
-func (c *ScopeClaims) Valid() error {
-	v := Claims(*c)
+func (c *ScopeClaims) Validate() error {
+	v := c.Claims
 	if err := v.ValidTimes(time.Now()); err != nil {
 		return err
 	}
 	rs, ok := v[PlgdRequiredScope]
 	if !ok {
-		return fmt.Errorf("required scope not found")
+		return pkgErrors.NewError("plgd:required:scope missing", ErrMissingRequiredScopes)
 	}
 	if rs == nil {
 		return nil
@@ -45,7 +52,12 @@ func (c *ScopeClaims) Valid() error {
 		notMatched[reg.String()] = true
 	}
 
-	for _, scope := range v.Scope() {
+	scopes, err := v.GetScope()
+	if err != nil {
+		return err
+	}
+
+	for _, scope := range scopes {
 		for _, requiredScope := range requiredScopes {
 			if requiredScope.MatchString(scope) {
 				delete(notMatched, requiredScope.String())
@@ -59,5 +71,5 @@ func (c *ScopeClaims) Valid() error {
 	for scope := range notMatched {
 		missingRequiredScopes = append(missingRequiredScopes, scope)
 	}
-	return fmt.Errorf("missing scopes: %+v", missingRequiredScopes)
+	return pkgErrors.NewError(fmt.Sprintf("%+v missing", missingRequiredScopes), ErrMissingRequiredScopes)
 }

@@ -117,7 +117,10 @@ func refreshTokenPostHandler(req *mux.Message, client *session) (*pool.Message, 
 	if err != nil {
 		return nil, statusErrorf(coapCodes.Unauthorized, "%w", fmt.Errorf(fmtErr, refreshToken.DeviceID, err))
 	}
-	deviceID := client.ResolveDeviceID(claim, refreshToken.DeviceID)
+	deviceID, err := client.ResolveDeviceID(claim, refreshToken.DeviceID)
+	if err != nil {
+		return nil, statusErrorf(coapCodes.Unauthorized, "%w", fmt.Errorf(fmtErr, refreshToken.DeviceID, err))
+	}
 	ctx := kitNetGrpc.CtxWithIncomingToken(kitNetGrpc.CtxWithToken(req.Context(), token.AccessToken.String()), token.AccessToken.String())
 	ok, err := client.server.ownerCache.OwnsDevice(ctx, deviceID)
 	if err != nil {
@@ -127,7 +130,10 @@ func refreshTokenPostHandler(req *mux.Message, client *session) (*pool.Message, 
 		return nil, statusErrorf(coapCodes.Unauthorized, "%w", fmt.Errorf(fmtErr, deviceID, fmt.Errorf("device is not registered")))
 	}
 
-	owner := claim.Owner(client.server.config.APIs.COAP.Authorization.OwnerClaim)
+	owner, err := claim.GetOwner(client.server.config.APIs.COAP.Authorization.OwnerClaim)
+	if err != nil {
+		return nil, statusErrorf(coapCodes.Unauthorized, "%w", fmt.Errorf(fmtErr, deviceID, err))
+	}
 	if owner == "" {
 		owner = refreshToken.UserID
 	}

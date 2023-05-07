@@ -6,18 +6,17 @@ import (
 	netHttp "net/http"
 	"strings"
 
-	extJwt "github.com/golang-jwt/jwt/v4"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
 type (
-	Claims                   = interface{ Valid() error }
-	ClaimsFunc               = func(ctx context.Context, method, uri string) Claims
+	ClaimsFunc               = func(ctx context.Context, method, uri string) jwt.ClaimsValidator
 	OnUnauthorizedAccessFunc = func(ctx context.Context, w netHttp.ResponseWriter, r *netHttp.Request, err error)
 	Validator                interface {
-		ParseWithClaims(token string, claims extJwt.Claims) error
+		ParseWithClaims(token string, claims jwt.Claims) error
 	}
 )
 

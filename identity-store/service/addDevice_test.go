@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/golang-jwt/jwt/v4"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/plgd-dev/hub/v2/identity-store/pb"
 	"github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"github.com/plgd-dev/hub/v2/test/config"

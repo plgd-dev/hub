@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 
-	extJwt "github.com/golang-jwt/jwt/v4"
+	"github.com/golang-jwt/jwt/v5"
 	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
 	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
-	"github.com/plgd-dev/hub/v2/pkg/security/jwt"
+	pkgJwt "github.com/plgd-dev/hub/v2/pkg/security/jwt"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -32,7 +32,7 @@ func MakeAuthInterceptors(authFunc Interceptor, whiteListedMethods ...string) Au
 	}
 }
 
-func MakeJWTInterceptors(keyCache *jwt.KeyCache, claims ClaimsFunc, whiteListedMethods ...string) AuthInterceptors {
+func MakeJWTInterceptors(keyCache *pkgJwt.KeyCache, claims ClaimsFunc, whiteListedMethods ...string) AuthInterceptors {
 	return MakeAuthInterceptors(ValidateJWT(keyCache, claims), whiteListedMethods...)
 }
 
@@ -45,10 +45,9 @@ func (f AuthInterceptors) Stream() grpc.StreamServerInterceptor {
 }
 
 type (
-	ClaimsFunc = func(ctx context.Context, method string) Claims
-	Claims     = interface{ Valid() error }
+	ClaimsFunc = func(ctx context.Context, method string) jwt.ClaimsValidator
 	Validator  interface {
-		ParseWithClaims(token string, claims extJwt.Claims) error
+		ParseWithClaims(token string, claims jwt.Claims) error
 	}
 )
 
@@ -66,8 +65,8 @@ func ValidateJWTWithValidator(validator Validator, claims ClaimsFunc) Intercepto
 	}
 }
 
-func ValidateJWT(keyCache *jwt.KeyCache, claims ClaimsFunc) Interceptor {
-	return ValidateJWTWithValidator(jwt.NewValidator(keyCache), claims)
+func ValidateJWT(keyCache *pkgJwt.KeyCache, claims ClaimsFunc) Interceptor {
+	return ValidateJWTWithValidator(pkgJwt.NewValidator(keyCache), claims)
 }
 
 // CtxWithToken stores token to ctx of request.
@@ -85,15 +84,17 @@ func CtxWithIncomingToken(ctx context.Context, token string) context.Context {
 }
 
 func ParseOwnerFromJwtToken(ownerClaim, rawJwtToken string) (string, error) {
-	claims, err := jwt.ParseToken(rawJwtToken)
+	claims, err := pkgJwt.ParseToken(rawJwtToken)
 	if err != nil {
 		return "", err
 	}
-	owner := claims.Owner(ownerClaim)
+	owner, err := claims.GetOwner(ownerClaim)
+	if err != nil {
+		return "", err
+	}
 	if owner == "" {
 		return "", fmt.Errorf("claim '%v' was not found", ownerClaim)
 	}
-
 	return owner, nil
 }
 
@@ -116,11 +117,14 @@ func SubjectFromTokenMD(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", ForwardFromError(codes.InvalidArgument, err)
 	}
-	claims, err := jwt.ParseToken(token)
+	claims, err := pkgJwt.ParseToken(token)
 	if err != nil {
 		return "", ForwardFromError(codes.InvalidArgument, err)
 	}
-	subject := claims.Subject()
+	subject, err := claims.GetSubject()
+	if err != nil {
+		return "", ForwardFromError(codes.InvalidArgument, err)
+	}
 	if subject == "" {
 		return "", status.Errorf(codes.InvalidArgument, "invalid subject in token")
 	}

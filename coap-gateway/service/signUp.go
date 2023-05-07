@@ -108,12 +108,18 @@ func signUpPostHandler(req *mux.Message, client *session) (*pool.Message, error)
 		return nil, statusErrorf(coapCodes.Unauthorized, errFmtSignUP, fmt.Errorf("expired access token"))
 	}
 
-	owner := claim.Owner(client.server.config.APIs.COAP.Authorization.OwnerClaim)
+	owner, err := claim.GetOwner(client.server.config.APIs.COAP.Authorization.OwnerClaim)
+	if err != nil {
+		return nil, statusErrorf(coapCodes.Unauthorized, errFmtSignUP, err)
+	}
 	if owner == "" {
 		return nil, statusErrorf(coapCodes.Unauthorized, errFmtSignUP, fmt.Errorf("cannot determine owner"))
 	}
 
-	deviceID := client.ResolveDeviceID(claim, signUp.DeviceID)
+	deviceID, err := client.ResolveDeviceID(claim, signUp.DeviceID)
+	if err != nil {
+		return nil, statusErrorf(coapCodes.Unauthorized, errFmtSignUP, err)
+	}
 	setDeviceIDToTracerSpan(req.Context(), deviceID)
 
 	ctx := kitNetGrpc.CtxWithToken(req.Context(), token.AccessToken.String())

@@ -7,8 +7,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/plgd-dev/hub/v2/pkg/log"
-	"github.com/plgd-dev/hub/v2/pkg/security/jwt"
+	pkgJwt "github.com/plgd-dev/hub/v2/pkg/security/jwt"
 	"github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -33,29 +34,41 @@ func TestClaims(t *testing.T) {
 	defer server.Close()
 
 	v := test.GetJWTValidator(server.URL + uri)
-	var c jwt.Claims
+	var c pkgJwt.Claims
 	err := v.ParseWithClaims(token, &c)
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "token is expired")
+	require.ErrorIs(t, err, pkgJwt.ErrTokenExpired)
 
-	assert.Equal(t, "test.client.id", c.ClientID())
-	assert.Equal(t, "user@example.com", c.Email())
-	assert.Contains(t, c.Scope(), "test.scope")
-
-	assert.Contains(t, c.Audience(), "http://identity-server:3001/resources")
-	assert.Contains(t, c.Audience(), "test.resource")
-	exp, err := c.ExpiresAt()
+	clientID, err := c.GetClientID()
+	assert.NoError(t, err)
+	assert.Equal(t, "test.client.id", clientID)
+	email, err := c.GetEmail()
+	assert.NoError(t, err)
+	assert.Equal(t, "user@example.com", email)
+	scope, err := c.GetScope()
+	assert.Contains(t, scope, "test.scope")
+	assert.NoError(t, err)
+	audience, err := c.GetAudience()
+	assert.NoError(t, err)
+	assert.Contains(t, audience, "http://identity-server:3001/resources")
+	assert.Contains(t, audience, "test.resource")
+	exp, err := c.GetExpirationTime()
 	assert.NoError(t, err)
 	assert.Equal(t, 2019, exp.Year())
-	assert.Empty(t, c.ID())
-	iat, err := c.IssuedAt()
+	id, err := c.GetID()
 	assert.NoError(t, err)
-	assert.Equal(t, time.Time{}, iat)
-	assert.Equal(t, c.Issuer(), "http://identity-server:3001")
-	nbf, err := c.NotBefore()
+	assert.Empty(t, id)
+	iat, err := c.GetIssuedAt()
+	assert.NoError(t, err)
+	assert.Nil(t, iat)
+	iss, err := c.GetIssuer()
+	assert.NoError(t, err)
+	assert.Equal(t, iss, "http://identity-server:3001")
+	nbf, err := c.GetNotBefore()
 	assert.NoError(t, err)
 	assert.Equal(t, 2019, nbf.Year())
-	assert.Equal(t, "1b87effa-34e2-4a44-82c6-6e0ab80209ff", c.Subject())
+	sub, err := c.GetSubject()
+	assert.NoError(t, err)
+	assert.Equal(t, "1b87effa-34e2-4a44-82c6-6e0ab80209ff", sub)
 }
 
 func TestParser(t *testing.T) {
@@ -64,22 +77,21 @@ func TestParser(t *testing.T) {
 
 	v := test.GetJWTValidator(server.URL + uri)
 	c, err := v.Parse(token)
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "Token is expired")
+	require.ErrorIs(t, err, jwt.ErrTokenExpired)
 
-	assert.Equal(t, "test.client.id", c[jwt.ClaimClientID])
-	assert.Equal(t, "user@example.com", c[jwt.ClaimEmail])
-	assert.Contains(t, c[jwt.ClaimScope], "test.scope")
+	assert.Equal(t, "test.client.id", c[pkgJwt.ClaimClientID])
+	assert.Equal(t, "user@example.com", c[pkgJwt.ClaimEmail])
+	assert.Contains(t, c[pkgJwt.ClaimScope], "test.scope")
 
 	assert.Equal(t, "local", c["idp"])
 	assert.Contains(t, c["amr"], "pwd")
-	assert.Contains(t, c[jwt.ClaimAudience], "http://identity-server:3001/resources")
-	assert.Contains(t, c[jwt.ClaimAudience], "test.resource")
-	assert.Equal(t, "http://identity-server:3001", c[jwt.ClaimIssuer])
-	assert.Equal(t, "1b87effa-34e2-4a44-82c6-6e0ab80209ff", c[jwt.ClaimSubject])
+	assert.Contains(t, c[pkgJwt.ClaimAudience], "http://identity-server:3001/resources")
+	assert.Contains(t, c[pkgJwt.ClaimAudience], "test.resource")
+	assert.Equal(t, "http://identity-server:3001", c[pkgJwt.ClaimIssuer])
+	assert.Equal(t, "1b87effa-34e2-4a44-82c6-6e0ab80209ff", c[pkgJwt.ClaimSubject])
 
-	assert.Equal(t, 2019, time.Unix(int64(c[jwt.ClaimNotBefore].(float64)), 0).Year())
-	assert.Equal(t, 2019, time.Unix(int64(c[jwt.ClaimExpiresAt].(float64)), 0).Year())
+	assert.Equal(t, 2019, time.Unix(int64(c[pkgJwt.ClaimNotBefore].(float64)), 0).Year())
+	assert.Equal(t, 2019, time.Unix(int64(c[pkgJwt.ClaimExpirationTime].(float64)), 0).Year())
 	assert.Equal(t, 2019, time.Unix(int64(c["auth_time"].(float64)), 0).Year())
 }
 
@@ -89,13 +101,11 @@ func TestEmptyToken(t *testing.T) {
 
 	v := test.GetJWTValidator(server.URL + uri)
 	_, err := v.Parse("")
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "missing token")
+	require.ErrorIs(t, err, pkgJwt.ErrMissingToken)
 
-	var c jwt.Claims
+	var c pkgJwt.Claims
 	err = v.ParseWithClaims("", &c)
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "missing token")
+	require.ErrorIs(t, err, pkgJwt.ErrMissingToken)
 }
 
 func TestInvalidToken(t *testing.T) {
@@ -104,13 +114,11 @@ func TestInvalidToken(t *testing.T) {
 
 	v := test.GetJWTValidator(server.URL + uri)
 	_, err := v.Parse("invalid")
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "could not parse token")
+	require.ErrorIs(t, err, pkgJwt.ErrCannotParseToken)
 
-	var c jwt.Claims
+	var c pkgJwt.Claims
 	err = v.ParseWithClaims("invalid", &c)
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "could not parse token")
+	require.ErrorIs(t, err, pkgJwt.ErrCannotParseToken)
 }
 
 func newTestJwks() *httptest.Server {
@@ -123,12 +131,13 @@ func newTestJwks() *httptest.Server {
 }
 
 type testClaims struct {
+	jwt.MapClaims
 	ClientID string   `json:"client_id"`
 	Email    string   `json:"email"`
 	Scope    []string `json:"scope"`
 }
 
-func (c testClaims) Valid() error {
+func (c testClaims) Validate() error {
 	return nil
 }
 

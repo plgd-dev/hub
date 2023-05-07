@@ -229,10 +229,16 @@ func createLogRequest(r *http.Request) *request {
 	}
 	token := strings.SplitN(bearer, " ", 2)
 	if len(token) == 2 && strings.ToLower(token[0]) == "bearer" {
-		if claims, err := jwt.ParseToken(token[1]); err == nil {
-			req.JWT = &jwtMember{
-				Sub: claims.Subject(),
-			}
+		claims, err := jwt.ParseToken(token[1])
+		if err != nil {
+			return &req
+		}
+		subject, err := claims.GetSubject()
+		if err != nil {
+			return &req
+		}
+		req.JWT = &jwtMember{
+			Sub: subject,
 		}
 	}
 	return &req

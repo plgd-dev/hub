@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang-jwt/jwt/v4"
+	"github.com/golang-jwt/jwt/v5"
 	grpcgwPb "github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	"github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	commands "github.com/plgd-dev/hub/v2/resource-aggregate/commands"

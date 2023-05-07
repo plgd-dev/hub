@@ -7,7 +7,7 @@ require (
 	github.com/felixge/httpsnoop v1.0.3
 	github.com/fsnotify/fsnotify v1.6.0
 	github.com/fullstorydev/grpchan v1.1.1
-	github.com/golang-jwt/jwt/v4 v4.5.0
+	github.com/golang-jwt/jwt/v5 v5.0.0
 	github.com/golang/snappy v0.0.4
 	github.com/google/go-querystring v1.1.0
 	github.com/google/uuid v1.3.0
@@ -66,7 +66,6 @@ require (
 	github.com/go-logr/logr v1.2.4 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/goccy/go-json v0.10.2 // indirect
-	github.com/golang-jwt/jwt/v5 v5.0.0 // indirect
 	github.com/golang/glog v1.0.0 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
