@@ -105,7 +105,7 @@ func (c Claims) GetDeviceID(deviceIDClaim string) (string, error) {
 	return c.parseString(deviceIDClaim)
 }
 
-func (c Claims) ValidTimes(now time.Time) error {
+func (c Claims) ValidateTimes(now time.Time) error {
 	exp, err := c.GetExpirationTime()
 	if err != nil {
 		return err
@@ -146,10 +146,6 @@ func (c Claims) ValidateOwnerClaim(ownerClaim string, userID string) error {
 		return pkgErrors.NewError(fmt.Sprintf("owner identifier from the token '%v' doesn't match userID '%v' from the device", owner, userID), ErrOwnerClaimInvalid)
 	}
 	return nil
-}
-
-func (c Claims) Validate() error {
-	return c.ValidTimes(time.Now())
 }
 
 func ParseToken(token string) (Claims, error) {

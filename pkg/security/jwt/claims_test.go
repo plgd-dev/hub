@@ -399,26 +399,26 @@ func TestValidate(t *testing.T) {
 	}
 
 	// Check that an expired token returns an error.
-	err := claims.Validate()
+	err := claims.ValidateTimes(time.Now())
 	require.Error(t, err, "Expected an error for an expired token")
 
 	// Set that the token is not expired.
 	claims[ClaimExpirationTime] = float64(futureTime.Unix())
 	// Check that a token used before issued returns an error.
 	claims[ClaimIssuedAt] = float64(futureTime.Unix())
-	err = claims.Validate()
+	err = claims.ValidateTimes(time.Now())
 	require.Error(t, err, "Expected an error for a token used before issued")
 
 	// Check that a token not yet valid returns an error.
 	claims[ClaimNotBefore] = float64(futureTime.Unix())
 	claims[ClaimIssuedAt] = float64(now.Unix())
-	err = claims.Validate()
+	err = claims.ValidateTimes(time.Now())
 	require.Error(t, err, "Expected an error for a token not yet valid")
 
 	// Check that a valid token does not return an error.
 	claims[ClaimNotBefore] = float64(expiredTime.Unix())
 	claims[ClaimIssuedAt] = float64(expiredTime.Unix())
-	err = claims.Validate()
+	err = claims.ValidateTimes(time.Now())
 	require.NoError(t, err, "Unexpected error")
 }
 

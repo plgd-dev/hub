@@ -84,7 +84,7 @@ func TestRequestHandlerRetrieveResourceSubscription(t *testing.T) {
 			},
 			wantCode:        http.StatusUnauthorized,
 			wantContentType: textPlain,
-			want:            "invalid token: could not parse token: token contains an invalid number of segments",
+			want:            "invalid token: could not parse token: token is malformed: token contains an invalid number of segments",
 		},
 		{
 			name: "expired token",
@@ -96,7 +96,7 @@ func TestRequestHandlerRetrieveResourceSubscription(t *testing.T) {
 			},
 			wantCode:        http.StatusUnauthorized,
 			wantContentType: textPlain,
-			want:            "invalid token: could not parse token: token is expired",
+			want:            "invalid token: could not parse token: token has invalid claims: token is expired",
 		},
 		{
 			name: "invalid deviceID",

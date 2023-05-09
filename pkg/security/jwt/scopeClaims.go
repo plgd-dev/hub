@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
-	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 	pkgErrors "github.com/plgd-dev/hub/v2/pkg/errors"
@@ -56,9 +55,6 @@ func (c *ScopeClaims) GetAudience() (jwt.ClaimStrings, error) {
 
 func (c *ScopeClaims) Validate() error {
 	v := Claims(*c)
-	if err := v.ValidTimes(time.Now()); err != nil {
-		return err
-	}
 	rs, ok := v[PlgdRequiredScope]
 	if !ok {
 		return pkgErrors.NewError("plgd:required:scope missing", ErrMissingRequiredScopes)
