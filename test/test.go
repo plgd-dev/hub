@@ -270,7 +270,7 @@ func GetAllBackendResourceRepresentations(deviceID, deviceName string) ResourceL
 	dev.ResourceTypes = nil
 	return ResourceLinkRepresentations{
 		{
-			Href: commands.NewResourceID(deviceID, TestResourceLightInstanceHref("1")).ToString(),
+			Href: "/" + commands.NewResourceID(deviceID, TestResourceLightInstanceHref("1")).ToString(),
 			Representation: LightResourceRepresentation{
 				Name:  "Light",
 				Power: 0,
@@ -278,31 +278,31 @@ func GetAllBackendResourceRepresentations(deviceID, deviceName string) ResourceL
 			},
 		},
 		{
-			Href: commands.NewResourceID(deviceID, configuration.ResourceURI).ToString(),
+			Href: "/" + commands.NewResourceID(deviceID, configuration.ResourceURI).ToString(),
 			Representation: configuration.Configuration{
 				Name: deviceName,
 			},
 		},
 		{
-			Href:           commands.NewResourceID(deviceID, device.ResourceURI).ToString(),
+			Href:           "/" + commands.NewResourceID(deviceID, device.ResourceURI).ToString(),
 			Representation: dev,
 		},
 		{
-			Href:           commands.NewResourceID(deviceID, maintenance.ResourceURI).ToString(),
+			Href:           "/" + commands.NewResourceID(deviceID, maintenance.ResourceURI).ToString(),
 			Representation: MaintenanceResourceRepresentation{},
 		},
 		{
-			Href: commands.NewResourceID(deviceID, platform.ResourceURI).ToString(),
+			Href: "/" + commands.NewResourceID(deviceID, platform.ResourceURI).ToString(),
 			Representation: platform.Platform{
 				ManufacturerName: "ocfcloud.com",
 			},
 		},
 		{
-			Href:           commands.NewResourceID(deviceID, TestResourceSwitchesHref).ToString(),
+			Href:           "/" + commands.NewResourceID(deviceID, TestResourceSwitchesHref).ToString(),
 			Representation: schema.ResourceLinks{},
 		},
 		{
-			Href:           commands.NewResourceID(deviceID, plgdtime.ResourceURI).ToString(),
+			Href:           "/" + commands.NewResourceID(deviceID, plgdtime.ResourceURI).ToString(),
 			Representation: PlgdTimeResourceRepresentation{},
 		},
 	}

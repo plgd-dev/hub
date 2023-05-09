@@ -149,7 +149,7 @@ func (r *ResourceId) ToString() string {
 }
 
 func ResourceIdFromString(v string) *ResourceId {
-	if v[0] == '/' {
+	if len(v) > 0 && v[0] == '/' {
 		v = v[1:]
 	}
 	val := strings.SplitN(v, "/", 2)

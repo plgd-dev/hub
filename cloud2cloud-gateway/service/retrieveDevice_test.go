@@ -45,7 +45,7 @@ func getDevicesBaseRepresentation(deviceID, deviceName, switchID string) Devices
 	links = append(links, test.DefaultSwitchResourceLink(deviceID, switchID))
 	for i := range links {
 		links[i].DeviceID = deviceID
-		links[i].Href = commands.NewResourceID(deviceID, links[i].Href).ToString()
+		links[i].Href = "/" + commands.NewResourceID(deviceID, links[i].Href).ToString()
 	}
 	return DevicesBaseRepresentation{
 		Device: GetDeviceResourceRepresentation(deviceID, deviceName),
@@ -71,7 +71,7 @@ func getDevicesAllRepresentation(deviceID, deviceName, switchID string) DevicesA
 		}
 	}
 	links = append(links, test.ResourceLinkRepresentation{
-		Href:           commands.NewResourceID(deviceID, test.TestResourceSwitchesInstanceHref(switchID)).ToString(),
+		Href:           "/" + commands.NewResourceID(deviceID, test.TestResourceSwitchesInstanceHref(switchID)).ToString(),
 		Representation: test.SwitchResourceRepresentation{},
 	})
 	return DevicesAllRepresentation{

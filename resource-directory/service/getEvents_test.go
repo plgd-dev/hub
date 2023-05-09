@@ -30,7 +30,7 @@ import (
 func getOnboardEventForResource(t *testing.T, deviceID, href string) interface{} {
 	rid := commands.NewResourceID(deviceID, href)
 	for _, r := range test.GetAllBackendResourceRepresentations(deviceID, test.TestDeviceName) {
-		if r.Href == rid.ToString() {
+		if rid.ToString() == commands.ResourceIdFromString(r.Href).ToString() {
 			return pbTest.MakeResourceChanged(t, deviceID, href, "", r.Representation)
 		}
 	}
