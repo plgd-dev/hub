@@ -163,7 +163,8 @@ func TestRequestHandlerRetrieveResource(t *testing.T) {
 				_ = resp.Body.Close()
 			}()
 			require.Equal(t, tt.wantContentType, resp.Header.Get("Content-Type"))
-			got := testHttp.ReadHTTPResponse(t, resp.Body, tt.wantContentType)
+			var got interface{}
+			testHttp.ReadHTTPResponse(t, resp.Body, tt.wantContentType, &got)
 			if tt.wantContentType == textPlain {
 				require.Contains(t, got, tt.want)
 				return
