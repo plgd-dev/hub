@@ -9,12 +9,12 @@ import (
 
 func testScopeClaims(scope ...string) *ScopeClaims {
 	c := NewScopeClaims(scope...)
-	c.Claims[ClaimClientID] = "testClientID"
-	c.Claims[ClaimEmail] = "testEmail"
-	c.Claims[ClaimScope] = []string{"testScope", "otherScope"}
-	c.Claims[ClaimExpirationTime] = float64(now.Add(time.Hour).Unix())
-	c.Claims[ClaimIssuedAt] = float64(now.Unix())
-	c.Claims[ClaimNotBefore] = float64(now.Unix())
+	(*c)[ClaimClientID] = "testClientID"
+	(*c)[ClaimEmail] = "testEmail"
+	(*c)[ClaimScope] = []string{"testScope", "otherScope"}
+	(*c)[ClaimExpirationTime] = float64(now.Add(time.Hour).Unix())
+	(*c)[ClaimIssuedAt] = float64(now.Unix())
+	(*c)[ClaimNotBefore] = float64(now.Unix())
 	return c
 }
 
@@ -39,21 +39,21 @@ func TestScopeClaimsMissingScope(t *testing.T) {
 
 func TestScopeClaimsExpiredScope(t *testing.T) {
 	c := testScopeClaims("testScope")
-	c.Claims[ClaimExpirationTime] = float64(now.Add(-time.Hour).Unix())
+	(*c)[ClaimExpirationTime] = float64(now.Add(-time.Hour).Unix())
 	err := c.Validate()
 	require.ErrorIs(t, err, ErrTokenExpired)
 }
 
 func TestScopeClaimsNotYetIssued(t *testing.T) {
 	c := testScopeClaims("testScope")
-	c.Claims[ClaimIssuedAt] = float64(now.Add(time.Hour).Unix())
+	(*c)[ClaimIssuedAt] = float64(now.Add(time.Hour).Unix())
 	err := c.Validate()
 	require.ErrorIs(t, err, ErrTokenNotYetIssued)
 }
 
 func TestScopeClaimsNotYetValid(t *testing.T) {
 	c := testScopeClaims("testScope")
-	c.Claims[ClaimNotBefore] = float64(now.Add(time.Hour).Unix())
+	(*c)[ClaimNotBefore] = float64(now.Add(time.Hour).Unix())
 	err := c.Validate()
 	require.ErrorIs(t, err, ErrTokenNotYetValid)
 }

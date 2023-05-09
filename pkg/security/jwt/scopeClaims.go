@@ -6,12 +6,11 @@ import (
 	"regexp"
 	"time"
 
+	"github.com/golang-jwt/jwt/v5"
 	pkgErrors "github.com/plgd-dev/hub/v2/pkg/errors"
 )
 
-type ScopeClaims struct {
-	Claims
-}
+type ScopeClaims Claims
 
 const PlgdRequiredScope = "plgd:required:scope"
 
@@ -26,13 +25,37 @@ func NewScopeClaims(scope ...string) *ScopeClaims {
 }
 
 func NewRegexpScopeClaims(scope ...*regexp.Regexp) *ScopeClaims {
-	v := ScopeClaims{make(Claims)}
-	v.Claims[PlgdRequiredScope] = scope
+	v := make(ScopeClaims)
+	v[PlgdRequiredScope] = scope
 	return &v
 }
 
+func (c *ScopeClaims) GetExpirationTime() (*jwt.NumericDate, error) {
+	return Claims(*c).GetExpirationTime()
+}
+
+func (c *ScopeClaims) GetIssuedAt() (*jwt.NumericDate, error) {
+	return Claims(*c).GetIssuedAt()
+}
+
+func (c *ScopeClaims) GetNotBefore() (*jwt.NumericDate, error) {
+	return Claims(*c).GetNotBefore()
+}
+
+func (c *ScopeClaims) GetIssuer() (string, error) {
+	return Claims(*c).GetIssuer()
+}
+
+func (c *ScopeClaims) GetSubject() (string, error) {
+	return Claims(*c).GetSubject()
+}
+
+func (c *ScopeClaims) GetAudience() (jwt.ClaimStrings, error) {
+	return Claims(*c).GetAudience()
+}
+
 func (c *ScopeClaims) Validate() error {
-	v := c.Claims
+	v := Claims(*c)
 	if err := v.ValidTimes(time.Now()); err != nil {
 		return err
 	}
