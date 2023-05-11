@@ -3,7 +3,6 @@ package mongodb
 import (
 	"context"
 	"crypto/tls"
-	"fmt"
 
 	"github.com/plgd-dev/hub/v2/certificate-authority/store"
 	"github.com/plgd-dev/hub/v2/pkg/log"
@@ -49,14 +48,7 @@ func NewStore(ctx context.Context, cfg Config, tls *tls.Config, logger log.Logge
 }
 
 func (s *Store) clearDatabases(ctx context.Context) error {
-	var errors []error
-	if err := s.Collection(signingRecordsCol).Drop(ctx); err != nil {
-		errors = append(errors, err)
-	}
-	if len(errors) > 0 {
-		return fmt.Errorf("cannot clear: %v", errors)
-	}
-	return nil
+	return s.Collection(signingRecordsCol).Drop(ctx)
 }
 
 func (s *Store) Close(ctx context.Context) error {

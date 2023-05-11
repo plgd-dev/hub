@@ -66,9 +66,9 @@ func (c *HTTPConfig) Validate() error {
 }
 
 type StorageConfig struct {
-	MongoDB                      mongodb.Config `yaml:"mongoDB" json:"mongoDb"`
-	ExtendCronParserAboutSeconds bool           `yaml:"-" json:"-"`
-	CleanUpRecords               string         `yaml:"cleanUpRecords" json:"cleanUpRecords"`
+	MongoDB                   mongodb.Config `yaml:"mongoDB" json:"mongoDb"`
+	ExtendCronParserBySeconds bool           `yaml:"-" json:"-"`
+	CleanUpRecords            string         `yaml:"cleanUpRecords" json:"cleanUpRecords"`
 }
 
 func (c *StorageConfig) Validate() error {
@@ -79,7 +79,7 @@ func (c *StorageConfig) Validate() error {
 		return nil
 	}
 	s := gocron.NewScheduler(time.Local)
-	if c.ExtendCronParserAboutSeconds {
+	if c.ExtendCronParserBySeconds {
 		s = s.CronWithSeconds(c.CleanUpRecords)
 	} else {
 		s = s.Cron(c.CleanUpRecords)

@@ -83,11 +83,11 @@ func newResourceDirectoryClient(config GrpcServerConfig, fileWatcher *fsnotify.W
 func newCertificateAuthorityClient(config GrpcServerConfig, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (pbCA.CertificateAuthorityClient, func(), error) {
 	caConn, err := client.New(config.Connection, fileWatcher, logger, tracerProvider)
 	if err != nil {
-		return nil, nil, fmt.Errorf("cannot connect to resource-directory: %w", err)
+		return nil, nil, fmt.Errorf("cannot connect to certificate-authority: %w", err)
 	}
 	closeCaConn := func() {
 		if err := caConn.Close(); err != nil {
-			logger.Errorf("error occurs during close connection to resource-directory: %w", err)
+			logger.Errorf("error occurs during close connection to certificate-authority: %w", err)
 		}
 	}
 	certificateAuthorityClient := pbCA.NewCertificateAuthorityClient(caConn.GRPC())

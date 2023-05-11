@@ -104,8 +104,11 @@ func TestStoreUpdateSigningRecord(t *testing.T) {
 }
 
 func TestStoreDeleteSigningRecord(t *testing.T) {
-	const id = "id"
-	const deviceID = "deviceID"
+	const id1 = "id1"
+	const deviceID1 = "deviceID1"
+	const id2 = "id2"
+	const deviceID2 = "deviceID2"
+	const owner = "owner"
 	type args struct {
 		owner string
 		query *store.DeleteSigningRecordsQuery
@@ -119,7 +122,7 @@ func TestStoreDeleteSigningRecord(t *testing.T) {
 		{
 			name: "invalid Id",
 			args: args{
-				owner: "owner",
+				owner: owner,
 				query: &store.DeleteSigningRecordsQuery{
 					IdFilter: []string{"invalid"},
 				},
@@ -131,17 +134,27 @@ func TestStoreDeleteSigningRecord(t *testing.T) {
 			args: args{
 				owner: "owner1",
 				query: &store.DeleteSigningRecordsQuery{
-					IdFilter: []string{id},
+					IdFilter: []string{id1},
 				},
 			},
 			want: 0,
 		},
 		{
-			name: "valid",
+			name: "valid - by deviceID",
 			args: args{
-				owner: "owner",
+				owner: owner,
 				query: &store.DeleteSigningRecordsQuery{
-					DeviceIdFilter: []string{deviceID},
+					DeviceIdFilter: []string{deviceID1},
+				},
+			},
+			want: 1,
+		},
+		{
+			name: "valid - by id",
+			args: args{
+				owner: owner,
+				query: &store.DeleteSigningRecordsQuery{
+					IdFilter: []string{id2},
 				},
 			},
 			want: 1,
@@ -149,7 +162,7 @@ func TestStoreDeleteSigningRecord(t *testing.T) {
 		{
 			name: "valid - empty",
 			args: args{
-				owner: "owner",
+				owner: owner,
 				query: &store.DeleteSigningRecordsQuery{},
 			},
 			want: 0,
@@ -161,11 +174,25 @@ func TestStoreDeleteSigningRecord(t *testing.T) {
 
 	ctx := context.Background()
 	err := s.CreateSigningRecord(ctx, &store.SigningRecord{
-		Id:           id,
-		Owner:        "owner",
+		Id:           id1,
+		Owner:        owner,
 		CommonName:   "commonName",
 		PublicKey:    "publicKey",
-		DeviceId:     deviceID,
+		DeviceId:     deviceID1,
+		CreationDate: constDate().UnixNano(),
+		Credential: &pb.CredentialStatus{
+			CertificatePem: "certificate",
+			Date:           constDate().UnixNano(),
+			ValidUntilDate: constDate().UnixNano(),
+		},
+	})
+	require.NoError(t, err)
+	err = s.CreateSigningRecord(ctx, &store.SigningRecord{
+		Id:           id2,
+		Owner:        owner,
+		CommonName:   "commonName",
+		PublicKey:    "publicKey",
+		DeviceId:     deviceID2,
 		CreationDate: constDate().UnixNano(),
 		Credential: &pb.CredentialStatus{
 			CertificatePem: "certificate",

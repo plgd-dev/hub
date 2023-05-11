@@ -2,10 +2,10 @@ package mongodb
 
 import (
 	"context"
-	"fmt"
 	"sync"
 	"time"
 
+	"github.com/hashicorp/go-multierror"
 	"github.com/plgd-dev/hub/v2/certificate-authority/store"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"go.mongodb.org/mongo-driver/bson"
@@ -193,13 +193,13 @@ func (b *bulkWriter) bulkWrite() (int, error) {
 	}
 	m := make([]mongo.WriteModel, 0, int(b.documentLimit)+1)
 
-	var errors []error
+	var errors *multierror.Error
 	for _, SigningRecord := range SigningRecords {
 		m = append(m, convertSigningRecordToWriteModel(SigningRecord))
 		if b.documentLimit == 0 || len(m)%int(b.documentLimit) == 0 {
 			_, err := b.col.BulkWrite(ctx, m, options.BulkWrite().SetOrdered(false))
 			if err != nil {
-				errors = append(errors, err)
+				errors = multierror.Append(errors, err)
 			}
 			m = m[:0]
 		}
@@ -208,16 +208,10 @@ func (b *bulkWriter) bulkWrite() (int, error) {
 	if len(m) > 0 {
 		_, err := b.col.BulkWrite(ctx, m, options.BulkWrite().SetOrdered(false))
 		if err != nil {
-			errors = append(errors, err)
+			errors = multierror.Append(errors, err)
 		}
 	}
-	var err error
-	if len(errors) == 1 {
-		err = errors[0]
-	} else if len(errors) > 0 {
-		err = fmt.Errorf("%v", errors)
-	}
-	return len(SigningRecords), err
+	return len(SigningRecords), errors.ErrorOrNil()
 }
 
 func (b *bulkWriter) tryBulkWrite() int {

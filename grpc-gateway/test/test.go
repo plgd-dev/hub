@@ -16,7 +16,6 @@ func MakeConfig(t require.TestingT) service.Config {
 	var cfg service.Config
 
 	cfg.Log = config.MakeLogConfig(t, "TEST_GRPC_GATEWAY_LOG_LEVEL", "TEST_GRPC_GATEWAY_LOG_DUMP_BODY")
-	cfg.Log.Level = log.DebugLevel
 	cfg.APIs.GRPC.Config = config.MakeGrpcServerConfig(config.GRPC_GW_HOST)
 	cfg.APIs.GRPC.OwnerCacheExpiration = time.Minute
 	cfg.APIs.GRPC.SubscriptionBufferSize = 1000

@@ -9,22 +9,22 @@ import (
 	"google.golang.org/grpc/codes"
 )
 
-func logAndReturnGetResourceFromDeviceError(err error) error {
+func getResourceFromDeviceError(err error) error {
 	return kitNetGrpc.ForwardErrorf(codes.Internal, "cannot retrieve resource: %v", err)
 }
 
 func (r *RequestHandler) GetResourceFromDevice(ctx context.Context, req *pb.GetResourceFromDeviceRequest) (*pb.GetResourceFromDeviceResponse, error) {
 	retrieveCommand, err := req.ToRACommand(ctx)
 	if err != nil {
-		return nil, logAndReturnGetResourceFromDeviceError(err)
+		return nil, getResourceFromDeviceError(err)
 	}
 	retrievedEvent, err := r.resourceAggregateClient.SyncRetrieveResource(ctx, "*", retrieveCommand)
 	if err != nil {
-		return nil, logAndReturnGetResourceFromDeviceError(err)
+		return nil, getResourceFromDeviceError(err)
 	}
 	err = commands.CheckEventContent(retrievedEvent)
 	if err != nil {
-		return nil, logAndReturnGetResourceFromDeviceError(err)
+		return nil, getResourceFromDeviceError(err)
 	}
 	return &pb.GetResourceFromDeviceResponse{Data: retrievedEvent}, nil
 }

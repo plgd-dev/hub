@@ -42,7 +42,7 @@ func TestCertificateAuthorityServerCleanUpSigningRecords(t *testing.T) {
 	}
 
 	cfg := test.MakeConfig(t)
-	cfg.Clients.Storage.ExtendCronParserAboutSeconds = true
+	cfg.Clients.Storage.ExtendCronParserBySeconds = true
 	cfg.Clients.Storage.CleanUpRecords = "*/2 * * * * *"
 
 	shutDown := testService.SetUpServices(context.Background(), t, testService.SetUpServicesCertificateAuthority|testService.SetUpServicesOAuth, testService.WithCAConfig(cfg))

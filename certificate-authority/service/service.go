@@ -45,7 +45,7 @@ func newStore(ctx context.Context, config StorageConfig, fileWatcher *fsnotify.W
 		return db, fl.ToFunction(), nil
 	}
 	s := gocron.NewScheduler(time.Local)
-	if config.ExtendCronParserAboutSeconds {
+	if config.ExtendCronParserBySeconds {
 		s = s.CronWithSeconds(config.CleanUpRecords)
 	} else {
 		s = s.Cron(config.CleanUpRecords)
@@ -60,8 +60,8 @@ func newStore(ctx context.Context, config StorageConfig, fileWatcher *fsnotify.W
 		fl.Execute()
 		return nil, nil, fmt.Errorf("cannot create cron job: %w", err)
 	}
-	fl.AddFunc(s.Stop)
 	fl.AddFunc(s.Clear)
+	fl.AddFunc(s.Stop)
 	s.StartAsync()
 
 	return db, fl.ToFunction(), nil

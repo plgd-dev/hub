@@ -92,7 +92,7 @@ func NewMongoStore(t require.TestingT) (*storeMongo.Store, func()) {
 	cfg := MakeConfig(t)
 	logger := log.NewLogger(cfg.Log)
 
-	fileWatcher, err := fsnotify.NewWatcher()
+	fileWatcher, err := fsnotify.NewWatcher(logger)
 	require.NoError(t, err)
 
 	certManager, err := cmClient.New(cfg.Clients.Storage.MongoDB.Mongo.TLS, fileWatcher, logger)

@@ -38,7 +38,6 @@ func (s *CertificateAuthorityServer) updateSigningIdentityCertificateRecord(ctx 
 			if !ok {
 				break
 			}
-			fmt.Printf("updateSigningRecord: %v, %v\n", updateSigningRecord.GetPublicKey(), signingRecord.GetPublicKey())
 			if updateSigningRecord.GetPublicKey() != signingRecord.GetPublicKey() && signingRecord.GetCredential().GetValidUntilDate() > now {
 				return fmt.Errorf("common name %v with different public key fingerprint exist", signingRecord.GetCommonName())
 			}
