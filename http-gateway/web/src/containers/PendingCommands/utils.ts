@@ -61,7 +61,6 @@ export const handleEmitUpdatedCommandEvents = (eventData: any) => {
     const updatedCommand = commandType ? eventData?.[commandType] || null : null
 
     if (updatedCommand) {
-        console.log({ updatedCommand })
         const { auditContext, resourceId, deviceId, status, canceled } = updatedCommand
         const cancelBool = canceled ? CANCELED : OK
 

@@ -201,7 +201,6 @@ const Tab2: FC<Props> = (props) => {
             if (error && isMounted.current) {
                 handleUpdateResourceErrors(error, { id, href }, _)
                 setSavingResource(false)
-                handleCloseUpdateModal()
             }
         }
     }
