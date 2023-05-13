@@ -19,7 +19,7 @@ Provides a simple docker cloud image for **testing purpose**.
 ### Pull the image
 
 ```bash
-docker pull plgd/bundle:vnext
+docker pull ghcr.io/plgd-dev/hub/bundle:vnext
 ```
 
 ### Configuration
@@ -60,7 +60,7 @@ All datas, confgurations and logs are stored under /data directory at the contai
 
 ```bash
 mkdir -p `pwd`/data
-docker run -d --network=host -v `pwd`/data:/data --name=cloud -t plgd/bundle:vnext
+docker run -d --network=host -v `pwd`/data:/data --name=cloud -t ghcr.io/plgd-dev/hub/bundle:vnext
 ```
 
 ### Access via HTTPS/GRPC
@@ -88,7 +88,7 @@ The onboarding values which should be set to the [coapcloudconf](https://github.
 
 ```bash
 # Start the cloud container with "unsecured" parameters
-docker run -d --network=host --name=cloud -t plgd/bundle:vnext \
+docker run -d --network=host --name=cloud -t ghcr.io/plgd-dev/hub/bundle:vnext \
 -e COAP_GATEWAY_CLOUD_ID="00000000-0000-0000-0000-000000000001" \
 -e COAP_GATEWAY_UNSECURE_PORT="5683"
 ```
@@ -143,7 +143,7 @@ go ob
 
 ```bash
 # Start the cloud container with "secured" parameters
-docker run -d --network=host --name=cloud -t plgd/bundle:vnext \
+docker run -d --network=host --name=cloud -t ghcr.io/plgd-dev/hub/bundle:vnext \
 -e COAP_GATEWAY_CLOUD_ID="00000000-0000-0000-0000-000000000001" \
 -e COAP_GATEWAY_PORT="5684"
 ```
@@ -227,7 +227,7 @@ docker run -d --network=host -v `pwd`/data:/data --name=cloud \
   -e LOG_DEBUG=true \
   -e OPEN_TELEMETRY_EXPORTER_ENABLED=true \
   -e OPEN_TELEMETRY_EXPORTER_ADDRESS=<OTEL_COLLECTOR_ADDRESS>:4317 \
-  -t plgd/bundle:vnext
+  -t ghcr.io/plgd-dev/hub/bundle:vnext
 ```
 
 With debug log messages, you can see the open telemetry *traceId* associated with the request.

@@ -113,12 +113,12 @@ http-gateway-www:
 
 # standard device
 DEVICE_SIMULATOR_NAME := devsim
-DEVICE_SIMULATOR_IMG := ghcr.io/iotivity/iotivity-lite/cloud-server-debug:master
+DEVICE_SIMULATOR_IMG := ghcr.io/iotivity/iotivity-lite/cloud-server-debug:vnext
 # device with /oic/res observable
 # note: iotivity-lite runs only grpc-gateway tests and this second device is not started; thus 
 # the grpc-gateway are expected to succeed with a single non-oic/rec observable device
 DEVICE_SIMULATOR_RES_OBSERVABLE_NAME := devsim-resobs
-DEVICE_SIMULATOR_RES_OBSERVABLE_IMG := ghcr.io/iotivity/iotivity-lite/cloud-server-discovery-resource-observable-debug:master
+DEVICE_SIMULATOR_RES_OBSERVABLE_IMG := ghcr.io/iotivity/iotivity-lite/cloud-server-discovery-resource-observable-debug:vnext
 
 # Pull latest device simulator with given name and run it
 #

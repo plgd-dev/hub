@@ -9,6 +9,7 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/plgd-dev/device/v2/pkg/net/coap"
+	"github.com/plgd-dev/device/v2/schema/plgdtime"
 	"github.com/plgd-dev/go-coap/v3/message/codes"
 	"github.com/plgd-dev/hub/v2/coap-gateway/uri"
 	"github.com/plgd-dev/hub/v2/pkg/net/grpc"
@@ -21,7 +22,7 @@ type Interceptor = func(ctx context.Context, code codes.Code, path string) (cont
 func newAuthInterceptor() Interceptor {
 	return func(ctx context.Context, code codes.Code, path string) (context.Context, error) {
 		switch path {
-		case uri.RefreshToken, uri.SignUp, uri.SignIn:
+		case uri.RefreshToken, uri.SignUp, uri.SignIn, plgdtime.ResourceURI:
 			return ctx, nil
 		}
 		e := ctx.Value(&authCtxKey)

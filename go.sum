@@ -310,8 +310,12 @@ github.com/pion/udp/v2 v2.0.1/go.mod h1:B7uvTMP00lzWdyMr/1PVZXtV3wpPIxBRd4Wl6Aks
 github.com/pkg/errors v0.8.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
 github.com/pkg/errors v0.9.1 h1:FEBLx1zS214owpjy7qsBeixbURkuhQAwrK5UwLGTwt4=
 github.com/pkg/errors v0.9.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
-github.com/plgd-dev/device/v2 v2.1.1-0.20230503091447-8d6e6ec259df h1:bcTt35QKfau8vnhTqUH8o3KUXAC30kxbBzrvPuEkTPo=
-github.com/plgd-dev/device/v2 v2.1.1-0.20230503091447-8d6e6ec259df/go.mod h1:DHu3RKPPT8KDFd2foCbQ7j0sD/lVLkycC5gBbf1xnuw=
+github.com/plgd-dev/device/v2 v2.2.1-0.20230505154727-15d6dd943f91 h1:ROTIkdZCVn56vZiUotYlPSzgrpU6+BeikBdpe7JmFRo=
+github.com/plgd-dev/device/v2 v2.2.1-0.20230505154727-15d6dd943f91/go.mod h1:DHu3RKPPT8KDFd2foCbQ7j0sD/lVLkycC5gBbf1xnuw=
+github.com/plgd-dev/device/v2 v2.2.1-0.20230509063201-5de544b46790 h1:8FUTtge65yhlharMNFP27kDH8PNziX+nfZfQruFIwT4=
+github.com/plgd-dev/device/v2 v2.2.1-0.20230509063201-5de544b46790/go.mod h1:DHu3RKPPT8KDFd2foCbQ7j0sD/lVLkycC5gBbf1xnuw=
+github.com/plgd-dev/device/v2 v2.2.1-0.20230509085510-2a60018de063 h1:LTTnX1P4Wk9GfWuGLfQ9c9lcFc951Da7+UfhTzpCiXc=
+github.com/plgd-dev/device/v2 v2.2.1-0.20230509085510-2a60018de063/go.mod h1:DHu3RKPPT8KDFd2foCbQ7j0sD/lVLkycC5gBbf1xnuw=
 github.com/plgd-dev/go-coap/v2 v2.0.4-0.20200819112225-8eb712b901bc/go.mod h1:+tCi9Q78H/orWRtpVWyBgrr4vKFo2zYtbbxUllerBp4=
 github.com/plgd-dev/go-coap/v2 v2.4.1-0.20210517130748-95c37ac8e1fa/go.mod h1:rA7fc7ar+B/qa+Q0hRqv7yj/EMtIlmo1l7vkQGSrHPU=
 github.com/plgd-dev/go-coap/v3 v3.1.2-0.20230502085839-d07b10ac1104 h1:SEgcDe0Pfvoe5z0+3O3ePI+TzHBY0INnheCIZQs829k=

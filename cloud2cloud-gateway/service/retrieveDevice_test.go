@@ -4,23 +4,18 @@ import (
 	"context"
 	"crypto/tls"
 	"net/http"
-	"sort"
+	"strings"
 	"testing"
 
 	"github.com/plgd-dev/device/v2/schema"
-	"github.com/plgd-dev/device/v2/schema/collection"
-	"github.com/plgd-dev/device/v2/schema/configuration"
 	"github.com/plgd-dev/device/v2/schema/device"
-	"github.com/plgd-dev/device/v2/schema/interfaces"
-	"github.com/plgd-dev/device/v2/schema/maintenance"
-	"github.com/plgd-dev/device/v2/schema/platform"
-	"github.com/plgd-dev/device/v2/test/resource/types"
 	"github.com/plgd-dev/go-coap/v3/message"
 	c2cService "github.com/plgd-dev/hub/v2/cloud2cloud-gateway/service"
 	c2cTest "github.com/plgd-dev/hub/v2/cloud2cloud-gateway/test"
 	"github.com/plgd-dev/hub/v2/cloud2cloud-gateway/uri"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/v2/test"
 	"github.com/plgd-dev/hub/v2/test/config"
 	testHttp "github.com/plgd-dev/hub/v2/test/http"
@@ -32,198 +27,58 @@ import (
 	"google.golang.org/grpc/credentials"
 )
 
-type sortLinksByHref []interface{}
-
-func (a sortLinksByHref) Len() int      { return len(a) }
-func (a sortLinksByHref) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
-func (a sortLinksByHref) Less(i, j int) bool {
-	e1 := a[i].(map[interface{}]interface{})
-	e2 := a[j].(map[interface{}]interface{})
-	return e1["href"].(string) < e2["href"].(string)
+type DevicesBaseRepresentation struct {
+	Device device.Device        `json:"device"`
+	Links  schema.ResourceLinks `json:"links"`
+	Status string               `json:"status"`
 }
 
-func sortLinks(s []interface{}) []interface{} {
-	v := sortLinksByHref(s)
-	sort.Sort(v)
-	return v
+func GetDeviceResourceRepresentation(deviceID, deviceName string) device.Device {
+	d := test.GetDeviceResourceRepresentation(deviceID, deviceName)
+	d.DataModelVersion = ""
+	d.SpecificationVersion = ""
+	return d
 }
 
-func cleanUpResourceData(v interface{}) interface{} {
-	cleanUpRep := func(rep map[interface{}]interface{}) {
-		delete(rep, "pi")
-		delete(rep, "piid")
-		delete(rep, "eps")
-		delete(rep, "ins")
+func getDevicesBaseRepresentation(deviceID, deviceName, switchID string) DevicesBaseRepresentation {
+	links := test.GetAllBackendResourceLinks()
+	links = append(links, test.DefaultSwitchResourceLink(deviceID, switchID))
+	for i := range links {
+		links[i].DeviceID = deviceID
+		links[i].Href = "/" + commands.NewResourceID(deviceID, links[i].Href).ToString()
 	}
+	return DevicesBaseRepresentation{
+		Device: GetDeviceResourceRepresentation(deviceID, deviceName),
+		Links:  links.Sort(),
+		Status: "online",
+	}
+}
 
-	d, ok := v.(map[interface{}]interface{})
-	if !ok {
-		return v
-	}
-	device, ok := d["device"].(map[interface{}]interface{})
-	if ok {
-		delete(device, "piid")
-	}
-	links, ok := d["links"].([]interface{})
-	if !ok {
-		return v
-	}
-	links = sortLinks(links)
-	for _, l := range links {
-		li, ok := l.(map[interface{}]interface{})
-		if !ok {
+type DevicesAllRepresentation struct {
+	Device device.Device                    `json:"device"`
+	Links  test.ResourceLinkRepresentations `json:"links"`
+	Status string                           `json:"status"`
+}
+
+func getDevicesAllRepresentation(deviceID, deviceName, switchID string) DevicesAllRepresentation {
+	links := test.GetAllBackendResourceRepresentations(deviceID, deviceName)
+	for i := range links {
+		if strings.HasSuffix(links[i].Href, test.TestResourceSwitchesHref) {
+			l := test.DefaultSwitchResourceLink(deviceID, switchID)
+			l.DeviceID = ""
+			links[i].Representation = schema.ResourceLinks{l}
 			continue
 		}
-		delete(li, "ins")
-
-		rep, ok := li["rep"].(map[interface{}]interface{})
-		if ok {
-			cleanUpRep(rep)
-			continue
-		}
-
-		repArr, ok := li["rep"].([]interface{})
-		if !ok {
-			continue
-		}
-		for _, repItem := range repArr {
-			rep, ok := repItem.(map[interface{}]interface{})
-			if ok {
-				cleanUpRep(rep)
-			}
-		}
 	}
-	d["links"] = links
-	return v
-}
-
-func getResourceBaseData(deviceID, href string, rt []interface{}, opts map[interface{}]interface{}) map[interface{}]interface{} {
-	res := map[interface{}]interface{}{
-		"di":   deviceID,
-		"href": "/" + deviceID + href,
-		"if":   []interface{}{interfaces.OC_IF_RW, interfaces.OC_IF_BASELINE},
-		"p": map[interface{}]interface{}{
-			"bm":                 uint64(0x3),
-			"port":               uint64(0x0),
-			"sec":                false,
-			"x.org.iotivity.tcp": uint64(0x0),
-			"x.org.iotivity.tls": uint64(0x0),
-		},
-		"rt": rt,
-	}
-
-	for k, v := range opts {
-		res[k] = v
-	}
-	return res
-}
-
-func getResourceAllData(deviceID, href string, rep interface{}) map[interface{}]interface{} {
-	return map[interface{}]interface{}{
-		"href": "/" + deviceID + href,
-		"rep":  rep,
-	}
-}
-
-func getDeviceData(deviceID, deviceName string) map[interface{}]interface{} {
-	return map[interface{}]interface{}{
-		"di":   deviceID,
-		"dmn":  []interface{}{},
-		"dmno": "",
-		"if":   []interface{}{interfaces.OC_IF_R, interfaces.OC_IF_BASELINE},
-		"n":    deviceName,
-		"rt":   []interface{}{types.DEVICE_CLOUD, device.ResourceType},
-	}
-}
-
-func getDevicesBaseRepresentation(deviceID, deviceName, switchID string) interface{} {
-	return cleanUpResourceData(map[interface{}]interface{}{
-		"device": getDeviceData(deviceID, deviceName),
-		"links": []interface{}{
-			getResourceBaseData(deviceID, configuration.ResourceURI, []interface{}{configuration.ResourceType}, nil),
-			getResourceBaseData(deviceID, maintenance.ResourceURI, []interface{}{maintenance.ResourceType}, map[interface{}]interface{}{
-				"p": map[interface{}]interface{}{
-					"bm":                 uint64(0x1),
-					"port":               uint64(0x0),
-					"sec":                false,
-					"x.org.iotivity.tcp": uint64(0x0),
-					"x.org.iotivity.tls": uint64(0x0),
-				},
-			}),
-			getResourceBaseData(deviceID, test.TestResourceLightInstanceHref("1"), []interface{}{types.CORE_LIGHT}, nil),
-			getResourceBaseData(deviceID, device.ResourceURI, []interface{}{types.DEVICE_CLOUD, device.ResourceType},
-				map[interface{}]interface{}{
-					"if": []interface{}{interfaces.OC_IF_R, interfaces.OC_IF_BASELINE},
-				}),
-			getResourceBaseData(deviceID, test.TestResourceSwitchesHref, []interface{}{collection.ResourceType},
-				map[interface{}]interface{}{
-					"if": []interface{}{interfaces.OC_IF_LL, interfaces.OC_IF_CREATE, interfaces.OC_IF_B, interfaces.OC_IF_BASELINE},
-				}),
-			getResourceBaseData(deviceID, platform.ResourceURI, []interface{}{platform.ResourceType},
-				map[interface{}]interface{}{
-					"if": []interface{}{interfaces.OC_IF_R, interfaces.OC_IF_BASELINE},
-				}),
-			getResourceBaseData(deviceID, test.TestResourceSwitchesInstanceHref(switchID), []interface{}{types.BINARY_SWITCH},
-				map[interface{}]interface{}{
-					"if": []interface{}{interfaces.OC_IF_A, interfaces.OC_IF_BASELINE},
-				}),
-		},
-		"status": "online",
+	links = append(links, test.ResourceLinkRepresentation{
+		Href:           "/" + commands.NewResourceID(deviceID, test.TestResourceSwitchesInstanceHref(switchID)).ToString(),
+		Representation: test.SwitchResourceRepresentation{},
 	})
-}
-
-func getDevicesAllRepresentation(deviceID, deviceName, switchID string) interface{} {
-	return cleanUpResourceData(map[interface{}]interface{}{
-		"device": getDeviceData(deviceID, deviceName),
-		"links": []interface{}{
-			getResourceAllData(deviceID, configuration.ResourceURI,
-				map[interface{}]interface{}{
-					"n": deviceName,
-				}),
-			getResourceAllData(deviceID, device.ResourceURI,
-				map[interface{}]interface{}{
-					"di":  deviceID,
-					"dmv": "ocf.res.1.3.0",
-					"icv": "ocf.2.0.5",
-					"n":   deviceName,
-				}),
-			getResourceAllData(deviceID, platform.ResourceURI,
-				map[interface{}]interface{}{
-					"mnmn": "ocfcloud.com",
-				}),
-			getResourceAllData(deviceID, test.TestResourceLightInstanceHref("1"),
-				map[interface{}]interface{}{
-					"name":  "Light",
-					"power": uint64(0),
-					"state": false,
-				}),
-			getResourceAllData(deviceID, test.TestResourceSwitchesHref,
-				[]interface{}{
-					map[interface{}]interface{}{
-						"href": test.TestResourceSwitchesInstanceHref(switchID),
-						"if":   []interface{}{interfaces.OC_IF_A, interfaces.OC_IF_BASELINE},
-						"p": map[interface{}]interface{}{
-							"bm": uint64(schema.Discoverable | schema.Observable),
-						},
-						"rel": []interface{}{
-							"hosts",
-						},
-						"rt": []interface{}{
-							types.BINARY_SWITCH,
-						},
-					},
-				}),
-			getResourceAllData(deviceID, test.TestResourceSwitchesInstanceHref(switchID),
-				map[interface{}]interface{}{
-					"value": false,
-				}),
-			getResourceAllData(deviceID, maintenance.ResourceURI,
-				map[interface{}]interface{}{
-					"fr": false,
-				}),
-		},
-		"status": "online",
-	})
+	return DevicesAllRepresentation{
+		Device: GetDeviceResourceRepresentation(deviceID, deviceName),
+		Links:  links.Sort(),
+		Status: "online",
+	}
 }
 
 func TestRequestHandlerRetrieveDevice(t *testing.T) {
@@ -407,13 +262,31 @@ func TestRequestHandlerRetrieveDevice(t *testing.T) {
 				_ = resp.Body.Close()
 			}()
 			require.Equal(t, tt.wantContentType, resp.Header.Get("Content-Type"))
-
-			got := testHttp.ReadHTTPResponse(t, resp.Body, tt.wantContentType)
+			var got interface{}
+			if _, ok := tt.want.(DevicesAllRepresentation); ok {
+				d := DevicesAllRepresentation{}
+				testHttp.ReadHTTPResponse(t, resp.Body, tt.wantContentType, &d)
+				require.NotEmpty(t, d.Device.ProtocolIndependentID)
+				d.Device.ProtocolIndependentID = ""
+				d.Device.ManufacturerName = nil
+				d.Links = d.Links.Sort()
+				got = d
+			} else if _, ok := tt.want.(DevicesBaseRepresentation); ok {
+				d := DevicesBaseRepresentation{}
+				testHttp.ReadHTTPResponse(t, resp.Body, tt.wantContentType, &d)
+				require.NotEmpty(t, d.Device.ProtocolIndependentID)
+				d.Device.ProtocolIndependentID = ""
+				d.Device.ManufacturerName = nil
+				d.Links = d.Links.Sort()
+				got = d
+			} else {
+				testHttp.ReadHTTPResponse(t, resp.Body, tt.wantContentType, &got)
+			}
 			if tt.wantContentType == textPlain {
 				require.Contains(t, got, tt.want)
 				return
 			}
-			require.Equal(t, tt.want, cleanUpResourceData(got))
+			require.Equal(t, tt.want, got)
 		})
 	}
 }

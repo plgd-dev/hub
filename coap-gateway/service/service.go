@@ -12,6 +12,7 @@ import (
 
 	"github.com/pion/dtls/v2"
 	"github.com/plgd-dev/device/v2/pkg/net/coap"
+	"github.com/plgd-dev/device/v2/schema/plgdtime"
 	coapCodes "github.com/plgd-dev/go-coap/v3/message/codes"
 	"github.com/plgd-dev/go-coap/v3/message/pool"
 	"github.com/plgd-dev/go-coap/v3/message/status"
@@ -551,6 +552,11 @@ func (s *Service) createServices(fileWatcher *fsnotify.Watcher, logger log.Logge
 		executeCommand(w, r, s, refreshTokenHandler)
 	})); err != nil {
 		return nil, setHandlerError(uri.RefreshToken, err)
+	}
+	if err := m.Handle(plgdtime.ResourceURI, mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
+		executeCommand(w, r, s, plgdTimeHandler)
+	})); err != nil {
+		return nil, setHandlerError(plgdtime.ResourceURI, err)
 	}
 	return coapService.New(s.ctx, s.config.APIs.COAP.Config, m, fileWatcher, logger,
 		coapService.WithOnNewConnection(s.coapConnOnNew),

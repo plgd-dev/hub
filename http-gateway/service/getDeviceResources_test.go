@@ -10,17 +10,15 @@ import (
 	"time"
 
 	"github.com/plgd-dev/device/v2/schema"
-	"github.com/plgd-dev/device/v2/schema/collection"
-	"github.com/plgd-dev/device/v2/schema/configuration"
 	"github.com/plgd-dev/device/v2/schema/device"
 	"github.com/plgd-dev/device/v2/schema/interfaces"
-	"github.com/plgd-dev/device/v2/schema/maintenance"
 	"github.com/plgd-dev/device/v2/schema/platform"
 	"github.com/plgd-dev/device/v2/test/resource/types"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	httpgwTest "github.com/plgd-dev/hub/v2/http-gateway/test"
 	"github.com/plgd-dev/hub/v2/http-gateway/uri"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 	"github.com/plgd-dev/hub/v2/test"
 	"github.com/plgd-dev/hub/v2/test/config"
@@ -32,35 +30,70 @@ import (
 	"google.golang.org/grpc/credentials"
 )
 
-func makeMaintenanceResourceChanged(t *testing.T, deviceID string) *events.ResourceChanged {
-	return pbTest.MakeResourceChanged(t, deviceID, maintenance.ResourceURI, "",
-		map[string]interface{}{
-			"fr": false,
-		},
-	)
+func getResourceChanged(t *testing.T, deviceID string, href string) *events.ResourceChanged {
+	for _, l := range test.GetAllBackendResourceRepresentations(deviceID, test.TestDeviceName) {
+		rid := commands.ResourceIdFromString(l.Href)
+		if rid.GetHref() == href {
+			return pbTest.MakeResourceChanged(t, deviceID, rid.GetHref(), "", l.Representation)
+		}
+	}
+	return nil
 }
 
 func makePlatformResourceChanged(t *testing.T, deviceID string) *events.ResourceChanged {
-	return pbTest.MakeResourceChanged(t, deviceID, platform.ResourceURI, "",
-		map[string]interface{}{
-			"mnmn": "ocfcloud.com",
-		},
-	)
+	return getResourceChanged(t, deviceID, platform.ResourceURI)
 }
 
 func makeCloudDeviceResourceChanged(t *testing.T, deviceID string) *events.ResourceChanged {
-	return pbTest.MakeResourceChanged(t, deviceID, device.ResourceURI, "",
-		map[string]interface{}{
-			"n":   test.TestDeviceName,
-			"di":  deviceID,
-			"dmv": "ocf.res.1.3.0",
-			"icv": "ocf.2.0.5",
-		},
-	)
+	return getResourceChanged(t, deviceID, device.ResourceURI)
+}
+
+func getResourceType(href string) []string {
+	for _, l := range test.GetAllBackendResourceLinks() {
+		if l.Href == href {
+			return l.ResourceTypes
+		}
+	}
+	return nil
+}
+
+func getResources(t *testing.T, deviceID, deviceName, switchID string) []*pb.Resource {
+	data := test.GetAllBackendResourceRepresentations(deviceID, deviceName)
+	resources := make([]*pb.Resource, 0, len(data))
+	for _, res := range data {
+		rid := commands.ResourceIdFromString(res.Href) // validate
+		if rid.GetHref() == test.TestResourceSwitchesHref {
+			resources = append(resources, &pb.Resource{
+				Types: getResourceType(rid.GetHref()),
+				Data: pbTest.MakeResourceChanged(t, deviceID, rid.GetHref(), "", []interface{}{
+					map[string]interface{}{
+						"href": test.TestResourceSwitchesInstanceHref(switchID),
+						"if":   []string{interfaces.OC_IF_A, interfaces.OC_IF_BASELINE},
+						"p": map[string]interface{}{
+							"bm": uint64(schema.Discoverable | schema.Observable),
+						},
+						"rel": []interface{}{"hosts"},
+						"rt":  []interface{}{types.BINARY_SWITCH},
+					},
+				}),
+			})
+		} else {
+			resources = append(resources, &pb.Resource{
+				Types: getResourceType(rid.GetHref()),
+				Data:  pbTest.MakeResourceChanged(t, deviceID, rid.GetHref(), "", res.Representation),
+			})
+		}
+	}
+	resources = append(resources, &pb.Resource{
+		Types: []string{types.BINARY_SWITCH},
+		Data:  pbTest.MakeResourceChanged(t, deviceID, test.TestResourceSwitchesInstanceHref(switchID), "", test.SwitchResourceRepresentation{}),
+	})
+	return resources
 }
 
 func TestRequestHandlerGetDeviceResources(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
+
 	const switchID = "1"
 	type args struct {
 		deviceID   string
@@ -79,61 +112,7 @@ func TestRequestHandlerGetDeviceResources(t *testing.T) {
 				deviceID: deviceID,
 				accept:   uri.ApplicationProtoJsonContentType,
 			},
-			want: []*pb.Resource{
-				{
-					Types: []string{types.CORE_LIGHT},
-					Data: pbTest.MakeResourceChanged(t, deviceID, test.TestResourceLightInstanceHref("1"), "",
-						map[string]interface{}{
-							"state": false,
-							"power": uint64(0),
-							"name":  "Light",
-						},
-					),
-				},
-				{
-					Types: []string{collection.ResourceType},
-					Data: pbTest.MakeResourceChanged(t, deviceID, test.TestResourceSwitchesHref, "",
-						[]interface{}{
-							map[string]interface{}{
-								"href": test.TestResourceSwitchesInstanceHref(switchID),
-								"if":   []string{interfaces.OC_IF_A, interfaces.OC_IF_BASELINE},
-								"p": map[string]interface{}{
-									"bm": uint64(schema.Discoverable | schema.Observable),
-								},
-								"rel": []interface{}{"hosts"},
-								"rt":  []interface{}{types.BINARY_SWITCH},
-							},
-						},
-					),
-				},
-				{
-					Types: []string{types.BINARY_SWITCH},
-					Data: pbTest.MakeResourceChanged(t, deviceID, test.TestResourceSwitchesInstanceHref(switchID), "",
-						map[string]interface{}{
-							"value": false,
-						}),
-				},
-				{
-					Types: []string{configuration.ResourceType},
-					Data: pbTest.MakeResourceChanged(t, deviceID, configuration.ResourceURI, "",
-						map[string]interface{}{
-							"n": test.TestDeviceName,
-						},
-					),
-				},
-				{
-					Types: []string{platform.ResourceType},
-					Data:  makePlatformResourceChanged(t, deviceID),
-				},
-				{
-					Types: []string{types.DEVICE_CLOUD, device.ResourceType},
-					Data:  makeCloudDeviceResourceChanged(t, deviceID),
-				},
-				{
-					Types: []string{maintenance.ResourceType},
-					Data:  makeMaintenanceResourceChanged(t, deviceID),
-				},
-			},
+			want: getResources(t, deviceID, test.TestDeviceName, switchID),
 		},
 		{
 			name: "get oic.wk.d and oic.wk.p of " + deviceID,

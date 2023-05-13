@@ -142,8 +142,7 @@ func DoHTTPRequest(t *testing.T, req *http.Request) *http.Response {
 	return resp
 }
 
-func ReadHTTPResponse(t *testing.T, w io.Reader, contentType string) interface{} {
-	var data interface{}
+func ReadHTTPResponse(t *testing.T, w io.Reader, contentType string, data interface{}) {
 	readFrom := func(w io.Reader, v interface{}) error {
 		return fmt.Errorf("not supported")
 	}
@@ -166,8 +165,6 @@ func ReadHTTPResponse(t *testing.T, w io.Reader, contentType string) interface{}
 			return nil
 		}
 	}
-	err := readFrom(w, &data)
+	err := readFrom(w, data)
 	require.NoError(t, err)
-
-	return data
 }
