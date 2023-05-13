@@ -6,6 +6,8 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"sort"
+	"strings"
 	"testing"
 	"time"
 
@@ -34,8 +36,103 @@ import (
 	"github.com/plgd-dev/kit/v2/codec/json"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/ugorji/go/codec"
 	"go.uber.org/atomic"
 )
+
+type ResourceLinkRepresentation struct {
+	Href           string      /*`json:"href"`*/
+	Representation interface{} /*`json:"rep"`*/
+}
+
+func (d *ResourceLinkRepresentation) MarshalJSON() ([]byte, error) {
+	v, err := json.Encode(d.Representation)
+	if err != nil {
+		return nil, err
+	}
+	return []byte(fmt.Sprintf(`{"href":"%v","rep":%s}`, d.Href, v)), nil
+}
+
+func (d *ResourceLinkRepresentation) UnmarshalJSON(data []byte) error {
+	reps := map[string]func(data []byte) (interface{}, error){
+		configuration.ResourceURI: func(data []byte) (interface{}, error) {
+			var r configuration.Configuration
+			err := json.Decode(data, &r)
+			return r, err
+		},
+		device.ResourceURI: func(data []byte) (interface{}, error) {
+			var r device.Device
+			err := json.Decode(data, &r)
+			r.ProtocolIndependentID = ""
+			return r, err
+		},
+		platform.ResourceURI: func(data []byte) (interface{}, error) {
+			var r platform.Platform
+			err := json.Decode(data, &r)
+			r.PlatformIdentifier = ""
+			return r, err
+		},
+		maintenance.ResourceURI: func(data []byte) (interface{}, error) {
+			var r MaintenanceResourceRepresentation
+			err := json.Decode(data, &r)
+			return r, err
+		},
+		plgdtime.ResourceURI: func(data []byte) (interface{}, error) {
+			var r PlgdTimeResourceRepresentation
+			err := json.Decode(data, &r)
+			return r, err
+		},
+		TestResourceLightInstanceHref("1"): func(data []byte) (interface{}, error) {
+			var r LightResourceRepresentation
+			err := json.Decode(data, &r)
+			return r, err
+		},
+		TestResourceSwitchesHref: func(data []byte) (interface{}, error) {
+			var r schema.ResourceLinks
+			err := json.Decode(data, &r)
+			if err != nil {
+				return nil, err
+			}
+			r.Sort()
+			for i := range r {
+				r[i].Endpoints = nil
+				r[i].InstanceID = 0
+			}
+
+			return r, err
+		},
+		TestResourceSwitchesInstanceHref("1"): func(data []byte) (interface{}, error) {
+			var r SwitchResourceRepresentation
+			err := json.Decode(data, &r)
+			return r, err
+		},
+	}
+	var rep struct {
+		Href string    `json:"href"`
+		Rep  codec.Raw `json:"rep"`
+	}
+	err := json.Decode(data, &rep)
+	if err != nil {
+		return err
+	}
+	dec := func(data []byte) (interface{}, error) {
+		var r interface{}
+		err := json.Decode(data, &r)
+		return r, err
+	}
+	for k, v := range reps {
+		if strings.HasSuffix(rep.Href, k) {
+			dec = v
+			break
+		}
+	}
+	d.Href = rep.Href
+	d.Representation, err = dec(rep.Rep)
+	if err != nil {
+		return err
+	}
+	return err
+}
 
 var (
 	TestDeviceName                     string
@@ -57,9 +154,30 @@ func TestResourceSwitchesInstanceHref(id string) string {
 	return TestResourceSwitchesHref + "/" + id
 }
 
+type LightResourceRepresentation struct {
+	Name  string `json:"name"`
+	Power uint64 `json:"power"`
+	State bool   `json:"state"`
+}
+
+type SwitchResourceRepresentation struct {
+	Value bool `json:"value"`
+}
+
+type MaintenanceResourceRepresentation struct {
+	FactoryReset bool `json:"fr"`
+}
+
+type PlgdTimeResourceRepresentation struct {
+	Time           string `json:"time"`
+	LastSyncedTime string `json:"lastSyncedTime"`
+}
+
 func init() {
 	TestDeviceName = "devsim-" + MustGetHostname()
 	TestDeviceNameWithOicResObservable = "devsim-resobs-" + MustGetHostname()
+
+	// when adding new resource, add also representation to GetAllBackendResourceRepresentations func
 	TestDevsimResources = []schema.ResourceLink{
 		{
 			Href:          platform.ResourceURI,
@@ -122,6 +240,70 @@ func init() {
 			Policy: &schema.Policy{
 				BitMask: 3,
 			},
+		},
+	}
+}
+
+func GetDeviceResourceRepresentation(deviceID, deviceName string) device.Device {
+	return device.Device{
+		ID:                   deviceID,
+		Interfaces:           []string{interfaces.OC_IF_R, interfaces.OC_IF_BASELINE},
+		Name:                 deviceName,
+		ResourceTypes:        []string{types.DEVICE_CLOUD, device.ResourceType},
+		DataModelVersion:     "ocf.res.1.3.0",
+		SpecificationVersion: "ocf.2.0.5",
+	}
+}
+
+type ResourceLinkRepresentations []ResourceLinkRepresentation
+
+func (r ResourceLinkRepresentations) Sort() ResourceLinkRepresentations {
+	sort.Slice(r, func(i, j int) bool {
+		return r[i].Href < r[j].Href
+	})
+	return r
+}
+
+func GetAllBackendResourceRepresentations(deviceID, deviceName string) ResourceLinkRepresentations {
+	dev := GetDeviceResourceRepresentation(deviceID, deviceName)
+	dev.Interfaces = nil
+	dev.ResourceTypes = nil
+	return ResourceLinkRepresentations{
+		{
+			Href: "/" + commands.NewResourceID(deviceID, TestResourceLightInstanceHref("1")).ToString(),
+			Representation: LightResourceRepresentation{
+				Name:  "Light",
+				Power: 0,
+				State: false,
+			},
+		},
+		{
+			Href: "/" + commands.NewResourceID(deviceID, configuration.ResourceURI).ToString(),
+			Representation: configuration.Configuration{
+				Name: deviceName,
+			},
+		},
+		{
+			Href:           "/" + commands.NewResourceID(deviceID, device.ResourceURI).ToString(),
+			Representation: dev,
+		},
+		{
+			Href:           "/" + commands.NewResourceID(deviceID, maintenance.ResourceURI).ToString(),
+			Representation: MaintenanceResourceRepresentation{},
+		},
+		{
+			Href: "/" + commands.NewResourceID(deviceID, platform.ResourceURI).ToString(),
+			Representation: platform.Platform{
+				ManufacturerName: "ocfcloud.com",
+			},
+		},
+		{
+			Href:           "/" + commands.NewResourceID(deviceID, TestResourceSwitchesHref).ToString(),
+			Representation: schema.ResourceLinks{},
+		},
+		{
+			Href:           "/" + commands.NewResourceID(deviceID, plgdtime.ResourceURI).ToString(),
+			Representation: PlgdTimeResourceRepresentation{},
 		},
 	}
 }
@@ -690,7 +872,7 @@ func ResourceIsBatchObservable(ctx context.Context, t *testing.T, deviceID, reso
 	})
 }
 
-func GetAllBackendResourceLinks() []schema.ResourceLink {
+func GetAllBackendResourceLinks() schema.ResourceLinks {
 	return append(TestDevsimResources, TestDevsimBackendResources...)
 }
 

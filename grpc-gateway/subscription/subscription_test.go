@@ -5,11 +5,6 @@ import (
 	"testing"
 
 	"github.com/panjf2000/ants/v2"
-	"github.com/plgd-dev/device/v2/schema/configuration"
-	"github.com/plgd-dev/device/v2/schema/device"
-	"github.com/plgd-dev/device/v2/schema/maintenance"
-	"github.com/plgd-dev/device/v2/schema/platform"
-	"github.com/plgd-dev/device/v2/schema/plgdtime"
 	"github.com/plgd-dev/go-coap/v3/message"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	subscription "github.com/plgd-dev/hub/v2/grpc-gateway/subscription"
@@ -103,10 +98,9 @@ func checkAndValidateUpdate(ctx context.Context, t *testing.T, rac raservice.Res
 				SubscriptionId: s.Id(),
 				Type: &pb.Event_ResourceChanged{
 					ResourceChanged: pbTest.MakeResourceChanged(t, deviceID, test.TestResourceLightInstanceHref("1"), "",
-						map[string]interface{}{
-							"name":  "Light",
-							"power": value,
-							"state": false,
+						test.LightResourceRepresentation{
+							Name:  "Light",
+							Power: value,
 						},
 					),
 				},
@@ -142,10 +136,8 @@ func checkAndValidateRetrieve(ctx context.Context, t *testing.T, rac raservice.R
 		Type: &pb.Event_ResourceRetrieved{
 			ResourceRetrieved: pbTest.MakeResourceRetrieved(t, deviceID, test.TestResourceLightInstanceHref("1"),
 				retrieveCorrelationID,
-				map[string]interface{}{
-					"name":  "Light",
-					"power": uint64(0),
-					"state": false,
+				test.LightResourceRepresentation{
+					Name: "Light",
 				},
 			),
 		},
@@ -154,83 +146,19 @@ func checkAndValidateRetrieve(ctx context.Context, t *testing.T, rac raservice.R
 }
 
 func getResourceChangedEvents(t *testing.T, deviceID, correlationID, subscriptionID string) map[string]*pb.Event {
-	return map[string]*pb.Event{
-		device.ResourceURI: {
+	resources := test.GetAllBackendResourceRepresentations(deviceID, test.TestDeviceName)
+	events := make(map[string]*pb.Event)
+	for _, res := range resources {
+		rid := commands.ResourceIdFromString(res.Href) // validate
+		events[rid.GetHref()] = &pb.Event{
 			SubscriptionId: subscriptionID,
 			Type: &pb.Event_ResourceChanged{
-				ResourceChanged: pbTest.MakeResourceChanged(t, deviceID, device.ResourceURI, "", map[string]interface{}{
-					"di":  deviceID,
-					"dmv": "ocf.res.1.3.0",
-					"icv": "ocf.2.0.5",
-					"n":   test.TestDeviceName,
-				}),
+				ResourceChanged: pbTest.MakeResourceChanged(t, deviceID, rid.GetHref(), "", res.Representation),
 			},
 			CorrelationId: correlationID,
-		},
-		platform.ResourceURI: {
-			SubscriptionId: subscriptionID,
-			Type: &pb.Event_ResourceChanged{
-				ResourceChanged: pbTest.MakeResourceChanged(t, deviceID, platform.ResourceURI, "", map[string]interface{}{
-					"mnmn": "ocfcloud.com",
-				}),
-			},
-			CorrelationId: correlationID,
-		},
-		configuration.ResourceURI: {
-			SubscriptionId: subscriptionID,
-			Type: &pb.Event_ResourceChanged{
-				ResourceChanged: pbTest.MakeResourceChanged(t, deviceID, configuration.ResourceURI, "", map[string]interface{}{
-					"n": test.TestDeviceName,
-				}),
-			},
-			CorrelationId: correlationID,
-		},
-		test.TestResourceLightInstanceHref("1"): {
-			SubscriptionId: subscriptionID,
-			Type: &pb.Event_ResourceChanged{
-				ResourceChanged: pbTest.MakeResourceChanged(t, deviceID, test.TestResourceLightInstanceHref("1"), "",
-					map[string]interface{}{
-						"name":  "Light",
-						"power": uint64(0),
-						"state": false,
-					},
-				),
-			},
-			CorrelationId: correlationID,
-		},
-		test.TestResourceSwitchesHref: {
-			SubscriptionId: subscriptionID,
-			Type: &pb.Event_ResourceChanged{
-				ResourceChanged: pbTest.MakeResourceChanged(t, deviceID, test.TestResourceSwitchesHref, "",
-					[]interface{}{},
-				),
-			},
-			CorrelationId: correlationID,
-		},
-		maintenance.ResourceURI: {
-			SubscriptionId: subscriptionID,
-			Type: &pb.Event_ResourceChanged{
-				ResourceChanged: pbTest.MakeResourceChanged(t, deviceID, maintenance.ResourceURI, "",
-					map[string]interface{}{
-						"fr": false,
-					},
-				),
-			},
-			CorrelationId: correlationID,
-		},
-		plgdtime.ResourceURI: {
-			SubscriptionId: subscriptionID,
-			Type: &pb.Event_ResourceChanged{
-				ResourceChanged: pbTest.MakeResourceChanged(t, deviceID, plgdtime.ResourceURI, "",
-					map[string]interface{}{
-						"time":           "",
-						"lastSyncedTime": "",
-					},
-				),
-			},
-			CorrelationId: correlationID,
-		},
+		}
 	}
+	return events
 }
 
 func TestRequestHandlerSubscribeToEvents(t *testing.T) {

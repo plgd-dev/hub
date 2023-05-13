@@ -149,6 +149,9 @@ func (r *ResourceId) ToString() string {
 }
 
 func ResourceIdFromString(v string) *ResourceId {
+	if len(v) > 0 && v[0] == '/' {
+		v = v[1:]
+	}
 	val := strings.SplitN(v, "/", 2)
 	if len(val) != 2 {
 		return nil
