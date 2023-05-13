@@ -3,14 +3,18 @@ import { pendingCommandsApiEndpoints, NEW_PENDING_COMMAND_WS_KEY, UPDATE_PENDING
 import { convertPendingCommandsList, updatePendingCommandsDataStatus } from './utils'
 import { SecurityConfig, StreamApiPropsType } from '@/containers/App/App.types'
 import { security } from '@shared-ui/common/services'
+import { useContext } from 'react'
+import { AppContext } from '@/containers/App/AppContext'
 
 const getConfig = () => security.getGeneralConfig() as SecurityConfig
 
 export const usePendingCommandsList = (deviceId?: string) => {
     const filter = deviceId ? `?deviceIdFilter=${deviceId}` : ''
+    const { telemetryWebTracer } = useContext(AppContext)
     const { data, updateData, ...rest }: StreamApiPropsType = useStreamApi(
         `${getConfig().httpGatewayAddress}${pendingCommandsApiEndpoints.PENDING_COMMANDS}${filter}`,
         {
+            telemetryWebTracer,
             telemetrySpan: 'get-pending-commands',
             env: process.env,
         }

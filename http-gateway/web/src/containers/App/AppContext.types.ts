@@ -5,5 +5,6 @@ export type AppContextType = {
     collapsed?: boolean
     unauthorizedCallback?: () => void
     footerExpanded: boolean
+    telemetryWebTracer?: any
     setFooterExpanded?: (expand: boolean) => void
 }

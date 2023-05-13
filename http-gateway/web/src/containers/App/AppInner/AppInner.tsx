@@ -27,6 +27,7 @@ import { Props } from './AppInner.types'
 import { deviceStatusListener } from '../../Devices/websockets'
 import LeftPanelWrapper from '@/containers/App/AppInner/LeftPanelWrapper/LeftPanelWrapper'
 import { globalStyle } from './AppInner.global.styles'
+import { AppContextType } from '@/containers/App/AppContext.types'
 
 const getBuildInformation = (wellKnownConfig: WellKnownConfigType) => ({
     buildDate: wellKnownConfig?.buildDate || '',
@@ -48,7 +49,7 @@ const AppInner = (props: Props) => {
     // TODO: redux store on user switch Notification
     const toastNotifications = false
 
-    const contextValue = useMemo(
+    const contextValue: AppContextType = useMemo(
         () => ({
             footerExpanded,
             collapsed,

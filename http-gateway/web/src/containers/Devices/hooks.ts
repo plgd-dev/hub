@@ -1,16 +1,23 @@
 // @ts-nocheck
+import { useContext } from 'react'
 import debounce from 'lodash/debounce'
+
 import { useStreamApi, useEmitter } from '@shared-ui/common/hooks'
+import { security } from '@shared-ui/common/services'
 
 import { devicesApiEndpoints, DEVICES_STATUS_WS_KEY, resourceEventTypes } from './constants'
 import { updateDevicesDataStatus, getResourceRegistrationNotificationKey } from './utils'
-import { security } from '@shared-ui/common/services'
 import { SecurityConfig, StreamApiPropsType } from '@/containers/App/App.types'
+import { AppContext } from '@/containers/App/AppContext'
 
 const getConfig = () => security.getGeneralConfig() as SecurityConfig
 
 export const useDevicesList = () => {
-    const { data, updateData, ...rest } = useStreamApi(`${getConfig().httpGatewayAddress}${devicesApiEndpoints.DEVICES}`, { telemetrySpan: 'get-devices' })
+    const { telemetryWebTracer } = useContext(AppContext)
+    const { data, updateData, ...rest } = useStreamApi(`${getConfig().httpGatewayAddress}${devicesApiEndpoints.DEVICES}`, {
+        telemetryWebTracer,
+        telemetrySpan: 'get-devices',
+    })
 
     // Update the metadata when a WS event is emitted
     useEmitter(DEVICES_STATUS_WS_KEY, (newDeviceStatus: any) => {
@@ -24,8 +31,10 @@ export const useDevicesList = () => {
 }
 
 export const useDeviceDetails = (deviceId: string) => {
+    const { telemetryWebTracer } = useContext(AppContext)
     const { data, updateData, ...rest }: StreamApiPropsType = useStreamApi(`${getConfig().httpGatewayAddress}${devicesApiEndpoints.DEVICES}/${deviceId}`, {
         streamApi: false,
+        telemetryWebTracer,
         telemetrySpan: 'get-device-detail',
     })
 
@@ -53,9 +62,10 @@ export const useDeviceDetails = (deviceId: string) => {
 }
 
 export const useDevicesResources = (deviceId: string) => {
+    const { telemetryWebTracer } = useContext(AppContext)
     const { data, updateData, ...rest }: StreamApiPropsType = useStreamApi(
         `${getConfig().httpGatewayAddress}${devicesApiEndpoints.DEVICES_RESOURCES}?device_id_filter=${deviceId}`,
-        { telemetrySpan: 'get-device-resources' }
+        { telemetryWebTracer, telemetrySpan: 'get-device-resources' }
     )
 
     useEmitter(getResourceRegistrationNotificationKey(deviceId), ({ event, resources: updatedResources }) => {
