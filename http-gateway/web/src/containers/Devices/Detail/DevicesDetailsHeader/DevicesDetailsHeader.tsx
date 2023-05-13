@@ -4,7 +4,6 @@ import classNames from 'classnames'
 import { useHistory } from 'react-router-dom'
 import { Props } from './DevicesDetailsHeader.types'
 
-import { showSuccessToast } from '@shared-ui/components/new/Toast'
 import Button from '@shared-ui/components/new/Button'
 import { WebSocketEventClient } from '@shared-ui/common/services'
 import { useIsMounted } from '@shared-ui/common/hooks'
@@ -13,6 +12,7 @@ import { deleteDevicesApi } from '../../rest'
 import { messages as t } from '../../Devices.i18n'
 import Icon from '@shared-ui/components/new/Icon'
 import { DeleteModal } from '@shared-ui/components/new/Modal'
+import Notification from '@shared-ui/components/new/Notification/Toast'
 
 const DevicesDetailsHeader: FC<Props> = memo((props) => {
     const { deviceId, deviceName, isUnregistered, isOnline, handleOpenEditDeviceNameModal, links } = props
@@ -55,10 +55,7 @@ const DevicesDetailsHeader: FC<Props> = memo((props) => {
             await sleep(200)
 
             if (isMounted.current) {
-                showSuccessToast({
-                    title: _(t.deviceDeleted),
-                    message: _(t.deviceWasDeleted, { name: deviceName }),
-                })
+                Notification.success({ title: t.deviceDeleted, message: _(t.deviceWasDeleted, { name: deviceName }) })
 
                 // Unregister the WS when the device is deleted
                 WebSocketEventClient.unsubscribe(resourceRegistrationObservationWSKey)

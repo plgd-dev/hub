@@ -2,6 +2,7 @@ import React, { useCallback, useContext, useEffect, useState } from 'react'
 import ReactDOM from 'react-dom'
 import { useIntl } from 'react-intl'
 import { useParams } from 'react-router-dom'
+import isFunction from 'lodash/isFunction'
 
 import NotFoundPage from '@shared-ui/components/templates/NotFoundPage'
 import { useIsMounted, WellKnownConfigType } from '@shared-ui/common/hooks'
@@ -12,9 +13,9 @@ import Breadcrumbs from '@shared-ui/components/new/Layout/Header/Breadcrumbs'
 import StatusTag from '@shared-ui/components/new/StatusTag'
 import { getApiErrorMessage } from '@shared-ui/common/utils'
 import { security } from '@shared-ui/common/services'
-import { showErrorToast } from '@shared-ui/components/new'
 import Footer from '@shared-ui/components/new/Layout/Footer'
 import EditDeviceNameModal from '@shared-ui/components/organisms/EditDeviceNameModal'
+import Notification from '@shared-ui/components/new/Notification/Toast'
 
 import DevicesDetailsHeader from '../DevicesDetailsHeader'
 import { devicesStatuses, NO_DEVICE_NAME } from '../../constants'
@@ -26,7 +27,6 @@ import './DevicesDetailsPage.scss'
 import Tab1 from './Tabs/Tab1'
 import Tab2 from '@/containers/Devices/Detail/DevicesDetailsPage/Tabs/Tab2'
 import { PendingCommandsExpandableList } from '@/containers/PendingCommands'
-import isFunction from 'lodash/isFunction'
 import { AppContext } from '@/containers/App/AppContext'
 
 const DevicesDetailsPage = () => {
@@ -147,10 +147,7 @@ const DevicesDetailsPage = () => {
                 }
             } catch (error) {
                 if (error && isMounted.current) {
-                    showErrorToast({
-                        title: _(t.deviceNameChangeFailed),
-                        message: getApiErrorMessage(error),
-                    })
+                    Notification.error({ title: _(t.deviceNameChangeFailed), message: getApiErrorMessage(error) })
                     setDeviceNameLoading(false)
                     setShowEditNameModal(false)
                 }

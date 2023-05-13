@@ -385,6 +385,14 @@ export const messages = defineMessages({
         id: 'devices.deviceEndpoint',
         defaultMessage: 'Device Endpoint',
     },
+    deviceError: {
+        id: 'devices.deviceError',
+        defaultMessage: 'Device error',
+    },
+    error: {
+        id: 'devices.error',
+        defaultMessage: 'Error',
+    },
     hubId: {
         id: 'devices.hubId',
         defaultMessage: 'Hub ID',

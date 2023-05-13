@@ -1,12 +1,15 @@
 import React, { useRef, useState } from 'react'
-import { getDeviceAuthCode } from '@/containers/Devices/rest'
-import { showErrorToast } from '@shared-ui/components/new/Toast/Toast'
-import { messages as t } from '@/containers/Devices/Devices.i18n'
 import { useIntl } from 'react-intl'
+
 import Button from '@shared-ui/components/new/Button'
 import { ProvisionDeviceModal } from '@shared-ui/components/new/Modal'
 import { security } from '@shared-ui/common/services'
 import { Icon } from '@shared-ui/components/new/Icon'
+import Notification from '@shared-ui/components/new/Notification/Toast'
+import { getApiErrorMessage } from '@shared-ui/common/utils'
+
+import { getDeviceAuthCode } from '@/containers/Devices/rest'
+import { messages as t } from '@/containers/Devices/Devices.i18n'
 
 const ProvisionNewDeviceCore = () => {
     const [show, setShow] = useState(false)
@@ -24,10 +27,11 @@ const ProvisionNewDeviceCore = () => {
             setFetching(false)
             setCode(code as string)
         } catch (e: any) {
-            showErrorToast({
+            Notification.error({
                 title: _(t.deviceAuthCodeError),
-                message: e.message,
+                message: getApiErrorMessage(e.message),
             })
+
             setFetching(false)
         }
     }

@@ -1,6 +1,5 @@
 import { FC, useEffect, useMemo, useState } from 'react'
 import { useIntl } from 'react-intl'
-import { toast } from 'react-toastify'
 
 import ConfirmModal from '@shared-ui/components/new/ConfirmModal'
 import Badge from '@shared-ui/components/new/Badge'
@@ -9,6 +8,7 @@ import { useIsMounted } from '@shared-ui/common/hooks'
 import { getApiErrorMessage } from '@shared-ui/common/utils'
 import { WebSocketEventClient, eventFilters } from '@shared-ui/common/services'
 import TableActions from '@shared-ui/components/new/TableNew/TableActions'
+import Notification from '@shared-ui/components/new/Notification/Toast'
 
 import PendingCommandDetailsModal from '../PendingCommandDetailsModal'
 import {
@@ -51,9 +51,11 @@ const PendingCommandsList: FC<Props> = ({ onLoading, embedded, deviceId }) => {
     const deviceIdWsFilters = useMemo(() => (deviceId ? { deviceIdFilter: [deviceId] } : {}), [deviceId])
 
     useEffect(() => {
-        if (error) {
-            toast.error(getApiErrorMessage(error))
-        }
+        error &&
+            Notification.error({
+                title: t.error,
+                message: getApiErrorMessage(error),
+            })
     }, [error])
 
     useEffect(() => {
@@ -122,7 +124,11 @@ const PendingCommandsList: FC<Props> = ({ onLoading, embedded, deviceId }) => {
             }
         } catch (error) {
             onCloseCancelModal()
-            toast.error(getApiErrorMessage(error))
+
+            Notification.error({
+                title: t.error,
+                message: getApiErrorMessage(error),
+            })
         }
     }
 

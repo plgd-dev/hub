@@ -1,25 +1,29 @@
 import React, { FC, useEffect, useState } from 'react'
-import { Props } from './Tab2.types'
-import DevicesResources from '@/containers/Devices/Resources/DevicesResources'
 import { useParams } from 'react-router-dom'
-import { createDevicesResourceApi, deleteDevicesResourceApi, getDevicesResourcesApi, updateDevicesResourceApi } from '@/containers/Devices/rest'
-import { defaultNewResource, resourceModalTypes } from '@/containers/Devices/constants'
-import { handleCreateResourceErrors, handleDeleteResourceErrors, handleFetchResourceErrors, handleUpdateResourceErrors } from '@/containers/Devices/utils'
-import { DevicesDetailsResourceModalData } from '@/containers/Devices/Detail/DevicesDetailsPage/DevicesDetailsPage.types'
-import { useIsMounted, WellKnownConfigType } from '@shared-ui/common/hooks'
-import omit from 'lodash/omit'
-import DevicesResourcesModal from '@shared-ui/components/organisms/DevicesResourcesModal'
-import { DevicesResourcesModalParamsType } from '@shared-ui/components/organisms/DevicesResourcesModal/DevicesResourcesModal.types'
-import { showSuccessToast } from '@shared-ui/components/new'
-import { messages as t } from '@/containers/Devices/Devices.i18n'
 import { useIntl } from 'react-intl'
-import { security } from '@shared-ui/common/services'
-import { history } from '@/store'
+import { useResizeDetector } from 'react-resize-detector'
+import omit from 'lodash/omit'
+
+import { useIsMounted, WellKnownConfigType } from '@shared-ui/common/hooks'
 import TimeoutControl from '@shared-ui/components/new/TimeoutControl'
 import { DeleteModal } from '@shared-ui/components/new/Modal'
-import { useResizeDetector } from 'react-resize-detector'
+import { security } from '@shared-ui/common/services'
+import DevicesResourcesModal from '@shared-ui/components/organisms/DevicesResourcesModal'
+import { DevicesResourcesModalParamsType } from '@shared-ui/components/organisms/DevicesResourcesModal/DevicesResourcesModal.types'
+import Notification from '@shared-ui/components/new/Notification/Toast'
+
+import { Props } from './Tab2.types'
+import DevicesResources from '@/containers/Devices/Resources/DevicesResources'
+import { createDevicesResourceApi, deleteDevicesResourceApi, getDevicesResourcesApi, updateDevicesResourceApi } from '@/containers/Devices/rest'
+import { defaultNewResource, resourceModalTypes } from '@/containers/Devices/constants'
+import { handleCreateResourceErrors, handleDeleteResourceErrors, handleUpdateResourceErrors } from '@/containers/Devices/utils'
+import { DevicesDetailsResourceModalData } from '@/containers/Devices/Detail/DevicesDetailsPage/DevicesDetailsPage.types'
+import { messages as t } from '@/containers/Devices/Devices.i18n'
+import { history } from '@/store'
 import { isNotificationActive, toggleActiveNotification } from '@/containers/Devices/slice'
 import { deviceResourceUpdateListener } from '@/containers/Devices/websockets'
+import { getApiErrorMessage } from '@shared-ui/common/utils'
+import { createResourceNotificationId } from '@/containers/PendingCommands/utils'
 
 const Tab2: FC<Props> = (props) => {
     const { deviceStatus, deviceName, isOnline, isActiveTab, isUnregistered, loading, resourcesData, loadingResources, refreshResources } = props
@@ -91,9 +95,11 @@ const Tab2: FC<Props> = (props) => {
             }
         } catch (error) {
             if (error && isMounted.current) {
-                console.log('ERROR')
                 setLoadingResource(false)
-                handleFetchResourceErrors(error, _)
+                Notification.error({
+                    title: _(t.resourceRetrieveError),
+                    message: getApiErrorMessage(error),
+                })
             }
         }
     }
@@ -140,7 +146,10 @@ const Tab2: FC<Props> = (props) => {
         } catch (error) {
             if (error && isMounted.current) {
                 setLoadingResource(false)
-                handleFetchResourceErrors(error, _)
+                Notification.error({
+                    title: _(t.resourceRetrieveError),
+                    message: getApiErrorMessage(error),
+                })
             }
         }
     }
@@ -149,14 +158,14 @@ const Tab2: FC<Props> = (props) => {
         setSavingResource(true)
 
         try {
-            await createDevicesResourceApi({ deviceId: id, href, currentInterface, ttl }, resourceDataCreate)
+            const ret = await createDevicesResourceApi({ deviceId: id, href, currentInterface, ttl }, resourceDataCreate)
+            const { auditContext } = ret.data.data
 
             if (isMounted.current) {
-                showSuccessToast({
-                    title: _(t.resourceCreateSuccess),
-                    message: _(t.resourceWasCreated),
-                })
-
+                Notification.success(
+                    { title: _(t.resourceCreateSuccess), message: _(t.resourceWasCreated) },
+                    { toastId: createResourceNotificationId(id, href, auditContext?.correlationId, auditContext?.userId) }
+                )
                 setResourceModalData(undefined) // close modal
                 setSavingResource(false)
                 refreshResources()
@@ -173,13 +182,17 @@ const Tab2: FC<Props> = (props) => {
         setSavingResource(true)
 
         try {
-            await updateDevicesResourceApi({ deviceId: id, href, currentInterface, ttl }, resourceDataUpdate)
+            const ret = await updateDevicesResourceApi({ deviceId: id, href, currentInterface, ttl }, resourceDataUpdate)
+            const { auditContext } = ret.data.data
 
             if (isMounted.current) {
-                showSuccessToast({
-                    title: _(t.resourceUpdateSuccess),
-                    message: _(t.resourceWasUpdated),
-                })
+                // console.log('update done, show toast!')
+                Notification.success(
+                    { title: _(t.resourceUpdateSuccess), message: _(t.resourceWasUpdated) },
+                    {
+                        toastId: createResourceNotificationId(id, href, auditContext?.correlationId, auditContext?.userId),
+                    }
+                )
 
                 handleCloseUpdateModal()
                 setSavingResource(false)
@@ -197,17 +210,20 @@ const Tab2: FC<Props> = (props) => {
         setLoadingResource(true)
 
         try {
-            await deleteDevicesResourceApi({
+            const ret = await deleteDevicesResourceApi({
                 deviceId: id,
                 href: deleteResourceHref,
                 ttl,
             })
+            const { auditContext } = ret.data.data
 
             if (isMounted.current) {
-                showSuccessToast({
-                    title: _(t.resourceDeleteSuccess),
-                    message: _(t.resourceWasDeleted),
-                })
+                Notification.success(
+                    { title: _(t.resourceDeleteSuccess), message: _(t.resourceWasDeleted) },
+                    {
+                        toastId: createResourceNotificationId(id, deleteResourceHref, auditContext?.correlationId, auditContext?.userId),
+                    }
+                )
 
                 setLoadingResource(false)
                 closeDeleteModal()

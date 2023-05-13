@@ -1,10 +1,8 @@
 import React, { FC, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { useIntl } from 'react-intl'
-import { toast } from 'react-toastify'
 import isFunction from 'lodash/isFunction'
 import { Link, useHistory } from 'react-router-dom'
 
-import { showSuccessToast } from '@shared-ui/components/new/Toast'
 import { getApiErrorMessage } from '@shared-ui/common/utils'
 import { useIsMounted } from '@shared-ui/common/hooks'
 import { Emitter } from '@shared-ui/common/services/emitter'
@@ -26,6 +24,7 @@ import { deleteDevicesApi } from '../../rest'
 import { handleDeleteDevicesErrors, isDeviceOnline, sleep } from '../../utils'
 import { messages as t } from '../../Devices.i18n'
 import { AppContext } from '@/containers/App/AppContext'
+import Notification from '@shared-ui/components/new/Notification/Toast'
 
 const { UNREGISTERED } = devicesStatuses
 
@@ -54,9 +53,8 @@ const DevicesListPage: FC<any> = () => {
     const { footerExpanded, setFooterExpanded, collapsed } = useContext(AppContext)
 
     useEffect(() => {
-        if (deviceError) {
-            toast.error(getApiErrorMessage(deviceError))
-        }
+        deviceError && Notification.error({ title: _(t.deviceError), message: getApiErrorMessage(deviceError) })
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [deviceError])
 
     const handleOpenDeleteModal = useCallback(
@@ -94,10 +92,7 @@ const DevicesListPage: FC<any> = () => {
             await sleep(200)
 
             if (isMounted.current) {
-                showSuccessToast({
-                    title: _(t.devicesDeleted),
-                    message: _(t.devicesDeletedMessage),
-                })
+                Notification.success({ title: _(t.devicesDeleted), message: _(t.devicesDeletedMessage) })
 
                 setDeleting(false)
                 setDeleteModalOpen(false)

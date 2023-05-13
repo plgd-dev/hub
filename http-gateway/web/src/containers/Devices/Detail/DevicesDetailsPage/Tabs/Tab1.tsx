@@ -63,7 +63,7 @@ const Tab1: FC<Props> = (props) => {
                 <TileToggle checked={isTwinEnabled} loading={twinSyncLoading} name={_(t.twinState)} onChange={() => setTwinSynchronization(!isTwinEnabled)} />
                 <TileToggle
                     checked={notificationsEnabled.current}
-                    name={_(t.subscribeNotify)}
+                    name={_(t.notifications)}
                     onChange={(e) => {
                         if (e.target.checked) {
                             // Request browser notifications

@@ -1,12 +1,14 @@
 import { store, history } from '@/store'
+
 import { Emitter } from '@shared-ui/common/services/emitter'
-import { showInfoToast } from '@shared-ui/components/new/Toast'
+import { notifications } from '@shared-ui/common/services'
+import Notification from '@shared-ui/components/new/Notification/Toast'
+
 import { devicesStatuses, resourceEventTypes, DEVICES_STATUS_WS_KEY, DEVICES_REGISTERED_UNREGISTERED_COUNT_EVENT_KEY } from './constants'
 import { getDeviceNotificationKey, getResourceRegistrationNotificationKey, getResourceUpdateNotificationKey } from './utils'
 import { isNotificationActive } from './slice'
 import { getDeviceApi } from './rest'
 import { messages as t } from './Devices.i18n'
-import { notifications } from '@shared-ui/common/services'
 
 const { ONLINE, REGISTERED, UNREGISTERED } = devicesStatuses
 const DEFAULT_NOTIFICATION_DELAY = 500
@@ -21,20 +23,22 @@ const getDeviceIds = (deviceId, deviceRegistered, deviceUnregistered) => {
 
 const getEventType = (deviceUnregistered) => (deviceUnregistered ? UNREGISTERED : REGISTERED)
 
-const showToast = async (notificationsEnabled, currentDeviceNotificationsEnabled, deviceId, status) => {
-    if ((notificationsEnabled || currentDeviceNotificationsEnabled) && status !== UNREGISTERED) {
+const showToast = async (currentDeviceNotificationsEnabled, deviceId, status) => {
+    if (status !== UNREGISTERED) {
         const { data: { name } = {} } = await getDeviceApi(deviceId)
         const toastMessage = status === ONLINE ? t.deviceWentOnline : t.deviceWentOffline
-        showInfoToast(
+
+        Notification.info(
             {
                 title: t.devicestatusChange,
                 message: { message: toastMessage, params: { name } },
             },
             {
+                variant: currentDeviceNotificationsEnabled ? 'toast' : 'notification',
                 onClick: () => {
                     history.push(`/devices/${deviceId}`)
                 },
-                isNotification: true,
+                toastId: `${deviceId}|status|${status}`,
             }
         )
     }
@@ -44,54 +48,52 @@ const showToast = async (notificationsEnabled, currentDeviceNotificationsEnabled
 export const deviceStatusListener = async (props) => {
     const { deviceMetadataUpdated, deviceRegistered, deviceUnregistered } = props
     if (deviceMetadataUpdated || deviceRegistered || deviceUnregistered) {
-        const notificationsEnabled = isNotificationActive(DEVICES_STATUS_WS_KEY)(store.getState())
+        // const notificationsEnabled = isNotificationActive(DEVICES_STATUS_WS_KEY)(store.getState())
 
-        setTimeout(
-            () => {
-                const { deviceId, connection: { status: deviceStatus } = {}, twinEnabled } = deviceMetadataUpdated || {}
-                const eventType = getEventType(deviceUnregistered)
-                const deviceIds = getDeviceIds(deviceId, deviceRegistered, deviceUnregistered)
-                const status = deviceStatus || eventType
+        setTimeout(() => {
+            const { deviceId, connection: { status: deviceStatus } = {}, twinEnabled } = deviceMetadataUpdated || {}
+            const eventType = getEventType(deviceUnregistered)
+            const deviceIds = getDeviceIds(deviceId, deviceRegistered, deviceUnregistered)
+            const status = deviceStatus || eventType
 
-                try {
-                    deviceIds.forEach(async (deviceId) => {
-                        // Emit an event: devices.status.{deviceId}
-                        Emitter.emit(`${DEVICES_STATUS_WS_KEY}.${deviceId}`, {
-                            deviceId,
-                            status,
-                            twinEnabled,
-                        })
-
-                        if (status !== UNREGISTERED) {
-                            const lastNotification = notifications.getLastNotification(deviceId)
-
-                            // show toast only if last change ( status ) is different from prev
-                            if (!lastNotification || lastNotification.type !== `status-${status}`) {
-                                notifications.addNotification({
-                                    deviceId,
-                                    type: `status-${status}`,
-                                })
-                                // Get the notification state of a single device from redux store
-                                const currentDeviceNotificationsEnabled = isNotificationActive(getDeviceNotificationKey(deviceId))(store.getState())
-                                showToast(notificationsEnabled, currentDeviceNotificationsEnabled, deviceId, status).then()
-                            }
-                        }
+            try {
+                deviceIds.forEach(async (deviceId) => {
+                    // Emit an event: devices.status.{deviceId}
+                    Emitter.emit(`${DEVICES_STATUS_WS_KEY}.${deviceId}`, {
+                        deviceId,
+                        status,
+                        twinEnabled,
                     })
-                } catch (error) {} // ignore error
 
-                // If the event was registered or unregistered, emit an event with the number to increment by
-                if ([REGISTERED].includes(status)) {
-                    // Emit an event: things-registered-unregistered-count
-                    Emitter.emit(DEVICES_REGISTERED_UNREGISTERED_COUNT_EVENT_KEY, deviceIds.length)
-                }
-            },
-            notificationsEnabled ? DEFAULT_NOTIFICATION_DELAY : 0
-        )
+                    if (status !== UNREGISTERED) {
+                        const lastNotification = notifications.getLastNotification(deviceId)
+
+                        // show toast only if last change ( status ) is different from prev
+                        if (!lastNotification || lastNotification.type !== `status-${status}`) {
+                            notifications.addNotification({
+                                deviceId,
+                                type: `status-${status}`,
+                            })
+                            // Get the notification state of a single device from redux store
+                            const currentDeviceNotificationsEnabled = isNotificationActive(getDeviceNotificationKey(deviceId))(store.getState())
+
+                            showToast(currentDeviceNotificationsEnabled, deviceId, status).then()
+                        }
+                    }
+                })
+            } catch (error) {} // ignore error
+
+            // If the event was registered or unregistered, emit an event with the number to increment by
+            if ([REGISTERED].includes(status)) {
+                // Emit an event: things-registered-unregistered-count
+                Emitter.emit(DEVICES_REGISTERED_UNREGISTERED_COUNT_EVENT_KEY, deviceIds.length)
+            }
+        }, DEFAULT_NOTIFICATION_DELAY)
     }
 }
 
 const showToastByResources = (options) => {
-    showInfoToast(
+    Notification.info(
         {
             title: options.toastTitle,
             message: {
@@ -106,7 +108,6 @@ const showToastByResources = (options) => {
         },
         {
             onClick: options.onClick,
-            isNotification: true,
         }
     )
 }
@@ -199,7 +200,7 @@ export const deviceResourceUpdateListener =
 
             if (notificationsEnabled) {
                 // Show toast
-                showInfoToast(
+                Notification.info(
                     {
                         title: t.resourceUpdated,
                         message: {
@@ -211,7 +212,6 @@ export const deviceResourceUpdateListener =
                         onClick: () => {
                             history.push(`/devices/${deviceId}${href}`)
                         },
-                        isNotification: true,
                     }
                 )
             }

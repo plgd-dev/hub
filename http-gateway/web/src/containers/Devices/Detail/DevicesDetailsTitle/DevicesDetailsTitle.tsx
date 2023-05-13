@@ -1,16 +1,18 @@
 import { useState, useMemo, FC } from 'react'
 import classNames from 'classnames'
 import Form from 'react-bootstrap/Form'
+import omit from 'lodash/omit'
 import { useIntl } from 'react-intl'
-import { Props } from './DevicesDetailsTitle.types'
+
 import Button from '@shared-ui/components/new/Button'
-import showErrorToast from '@shared-ui/components/new/Toast'
 import { useIsMounted } from '@shared-ui/common/hooks'
 import { getApiErrorMessage } from '@shared-ui/common/utils'
+import Notification from '@shared-ui/components/new/Notification/Toast'
+
+import { Props } from './DevicesDetailsTitle.types'
 import { updateDevicesResourceApi } from '../../rest'
 import { canChangeDeviceName, getDeviceChangeResourceHref } from '../../utils'
 import { messages as t } from '../../Devices.i18n'
-import omit from 'lodash/omit'
 
 const DevicesDetailsTitle: FC<Props> = ({ className, deviceName, deviceId, updateDeviceName, isOnline, links, ttl, ...rest }) => {
     const { formatMessage: _ } = useIntl()
@@ -54,10 +56,7 @@ const DevicesDetailsTitle: FC<Props> = ({ className, deviceName, deviceId, updat
                 }
             } catch (error) {
                 if (error && isMounted.current) {
-                    showErrorToast({
-                        title: _(t.deviceNameChangeFailed),
-                        message: getApiErrorMessage(error),
-                    })
+                    Notification.error({ title: _(t.deviceNameChangeFailed), message: getApiErrorMessage(error) })
                     cancelSave()
                 }
             }
