@@ -34,6 +34,12 @@ export const canChangeDeviceName = (links: ResourcesType[]) => links.findIndex((
 // Returns the href for the resource which can do a device name change
 export const getDeviceChangeResourceHref = (links: ResourcesType[]) => links.find((link) => link.resourceTypes.includes(knownResourceTypes.OIC_WK_CON))?.href
 
+export const isErrorOnlyWarning = (error: any) => {
+    const errorMessage = getApiErrorMessage(error)
+
+    return errorMessage?.includes?.(errorCodes.DEADLINE_EXCEEDED) || errorMessage?.includes?.(errorCodes.COMMAND_EXPIRED)
+}
+
 // Handle the errors occurred during resource update
 export const handleUpdateResourceErrors = (error: any, { id: deviceId, href }: { id: string; href: string }, _: any) => {
     const errorMessage = getApiErrorMessage(error)

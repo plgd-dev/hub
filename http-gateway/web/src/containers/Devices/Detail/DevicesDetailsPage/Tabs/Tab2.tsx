@@ -16,7 +16,7 @@ import { Props } from './Tab2.types'
 import DevicesResources from '@/containers/Devices/Resources/DevicesResources'
 import { createDevicesResourceApi, deleteDevicesResourceApi, getDevicesResourcesApi, updateDevicesResourceApi } from '@/containers/Devices/rest'
 import { defaultNewResource, resourceModalTypes } from '@/containers/Devices/constants'
-import { handleCreateResourceErrors, handleDeleteResourceErrors, handleUpdateResourceErrors } from '@/containers/Devices/utils'
+import { handleCreateResourceErrors, handleDeleteResourceErrors, handleUpdateResourceErrors, isErrorOnlyWarning } from '@/containers/Devices/utils'
 import { DevicesDetailsResourceModalData } from '@/containers/Devices/Detail/DevicesDetailsPage/DevicesDetailsPage.types'
 import { messages as t } from '@/containers/Devices/Devices.i18n'
 import { history } from '@/store'
@@ -200,6 +200,7 @@ const Tab2: FC<Props> = (props) => {
         } catch (error) {
             if (error && isMounted.current) {
                 handleUpdateResourceErrors(error, { id, href }, _)
+                isErrorOnlyWarning(error) && handleCloseUpdateModal()
                 setSavingResource(false)
             }
         }
