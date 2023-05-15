@@ -2,17 +2,18 @@ import React, { FC, memo, useEffect, useMemo, useState } from 'react'
 import { useIntl } from 'react-intl'
 import classNames from 'classnames'
 import { useHistory } from 'react-router-dom'
-import { Props } from './DevicesDetailsHeader.types'
 
-import Button from '@shared-ui/components/new/Button'
+import Button from '@shared-ui/components/Atomic/Button'
 import { WebSocketEventClient } from '@shared-ui/common/services'
 import { useIsMounted } from '@shared-ui/common/hooks'
+import Icon from '@shared-ui/components/Atomic/Icon'
+import { DeleteModal } from '@shared-ui/components/Atomic/Modal'
+import Notification from '@shared-ui/components/Atomic/Notification/Toast'
+
+import { Props } from './DevicesDetailsHeader.types'
 import { canChangeDeviceName, getResourceRegistrationNotificationKey, handleDeleteDevicesErrors, sleep } from '../../utils'
 import { deleteDevicesApi } from '../../rest'
 import { messages as t } from '../../Devices.i18n'
-import Icon from '@shared-ui/components/new/Icon'
-import { DeleteModal } from '@shared-ui/components/new/Modal'
-import Notification from '@shared-ui/components/new/Notification/Toast'
 
 const DevicesDetailsHeader: FC<Props> = memo((props) => {
     const { deviceId, deviceName, isUnregistered, isOnline, handleOpenEditDeviceNameModal, links } = props

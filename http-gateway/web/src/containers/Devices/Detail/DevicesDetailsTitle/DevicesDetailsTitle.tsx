@@ -4,10 +4,10 @@ import Form from 'react-bootstrap/Form'
 import omit from 'lodash/omit'
 import { useIntl } from 'react-intl'
 
-import Button from '@shared-ui/components/new/Button'
+import Button from '@shared-ui/components/Atomic/Button'
 import { useIsMounted } from '@shared-ui/common/hooks'
 import { getApiErrorMessage } from '@shared-ui/common/utils'
-import Notification from '@shared-ui/components/new/Notification/Toast'
+import Notification from '@shared-ui/components/Atomic/Notification/Toast'
 
 import { Props } from './DevicesDetailsTitle.types'
 import { updateDevicesResourceApi } from '../../rest'

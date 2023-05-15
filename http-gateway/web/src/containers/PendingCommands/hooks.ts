@@ -1,9 +1,11 @@
+import { useContext } from 'react'
+
 import { useStreamApi, useEmitter } from '@shared-ui/common/hooks'
+import { security } from '@shared-ui/common/services'
+
 import { pendingCommandsApiEndpoints, NEW_PENDING_COMMAND_WS_KEY, UPDATE_PENDING_COMMANDS_WS_KEY } from './constants'
 import { convertPendingCommandsList, updatePendingCommandsDataStatus } from './utils'
 import { SecurityConfig, StreamApiPropsType } from '@/containers/App/App.types'
-import { security } from '@shared-ui/common/services'
-import { useContext } from 'react'
 import { AppContext } from '@/containers/App/AppContext'
 
 const getConfig = () => security.getGeneralConfig() as SecurityConfig

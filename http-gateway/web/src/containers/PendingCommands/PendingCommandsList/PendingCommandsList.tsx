@@ -1,14 +1,14 @@
 import { FC, useEffect, useMemo, useState } from 'react'
 import { useIntl } from 'react-intl'
 
-import ConfirmModal from '@shared-ui/components/new/ConfirmModal'
-import Badge from '@shared-ui/components/new/Badge'
-import Table from '@shared-ui/components/new/TableNew'
+import ConfirmModal from '@shared-ui/components/Atomic/ConfirmModal'
+import Badge from '@shared-ui/components/Atomic/Badge'
+import Table from '@shared-ui/components/Atomic/TableNew'
 import { useIsMounted } from '@shared-ui/common/hooks'
 import { getApiErrorMessage } from '@shared-ui/common/utils'
 import { WebSocketEventClient, eventFilters } from '@shared-ui/common/services'
-import TableActions from '@shared-ui/components/new/TableNew/TableActions'
-import Notification from '@shared-ui/components/new/Notification/Toast'
+import TableActions from '@shared-ui/components/Atomic/TableNew/TableActions'
+import Notification from '@shared-ui/components/Atomic/Notification/Toast'
 
 import PendingCommandDetailsModal from '../PendingCommandDetailsModal'
 import {

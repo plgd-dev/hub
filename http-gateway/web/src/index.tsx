@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client'
 import { Provider } from 'react-redux'
 import { App } from '@/containers/App'
 import { store } from '@/store'
-import IntlProvider from '@shared-ui/components/new/IntlProvider'
+import IntlProvider from '@shared-ui/components/Atomic/IntlProvider'
 
 import { DEVICE_AUTH_CODE_SESSION_KEY } from './constants'
 import reportWebVitals from './reportWebVitals'

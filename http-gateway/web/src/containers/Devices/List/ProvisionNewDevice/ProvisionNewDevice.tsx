@@ -1,11 +1,11 @@
 import React, { useRef, useState } from 'react'
 import { useIntl } from 'react-intl'
 
-import Button from '@shared-ui/components/new/Button'
-import { ProvisionDeviceModal } from '@shared-ui/components/new/Modal'
+import Button from '@shared-ui/components/Atomic/Button'
+import { ProvisionDeviceModal } from '@shared-ui/components/Atomic/Modal'
 import { security } from '@shared-ui/common/services'
-import { Icon } from '@shared-ui/components/new/Icon'
-import Notification from '@shared-ui/components/new/Notification/Toast'
+import { Icon } from '@shared-ui/components/Atomic/Icon'
+import Notification from '@shared-ui/components/Atomic/Notification/Toast'
 import { getApiErrorMessage } from '@shared-ui/common/utils'
 
 import { getDeviceAuthCode } from '@/containers/Devices/rest'

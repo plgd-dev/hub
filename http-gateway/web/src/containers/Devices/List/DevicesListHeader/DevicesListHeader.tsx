@@ -2,7 +2,7 @@ import { FC, useState } from 'react'
 import { useIntl } from 'react-intl'
 
 import { useEmitter } from '@shared-ui/common/hooks'
-import Button from '@shared-ui/components/new/Button'
+import Button from '@shared-ui/components/Atomic/Button'
 
 import ProvisionNewDevice from '../ProvisionNewDevice'
 import { DEVICES_REGISTERED_UNREGISTERED_COUNT_EVENT_KEY, RESET_COUNTER } from '../../constants'

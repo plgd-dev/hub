@@ -1,5 +1,5 @@
 import { css } from '@emotion/react'
-import { colors } from '@shared-ui/components/new/_utils/colors'
+import { colors } from '@shared-ui/components/Atomic/_utils/colors'
 
 export const devicesListHeader = css`
     display: flex;

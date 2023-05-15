@@ -2,7 +2,7 @@ import { store, history } from '@/store'
 
 import { Emitter } from '@shared-ui/common/services/emitter'
 import { notifications } from '@shared-ui/common/services'
-import Notification from '@shared-ui/components/new/Notification/Toast'
+import Notification from '@shared-ui/components/Atomic/Notification/Toast'
 
 import { devicesStatuses, resourceEventTypes, DEVICES_STATUS_WS_KEY, DEVICES_REGISTERED_UNREGISTERED_COUNT_EVENT_KEY } from './constants'
 import { getDeviceNotificationKey, getResourceRegistrationNotificationKey, getResourceUpdateNotificationKey } from './utils'

@@ -1,6 +1,8 @@
-import PageLoader from '@shared-ui/components/new/PageLoader'
-import { messages as t } from '../App.i18n'
 import { useIntl } from 'react-intl'
+
+import PageLoader from '@shared-ui/components/Atomic/PageLoader'
+
+import { messages as t } from '../App.i18n'
 
 const AppLoader = () => {
     const { formatMessage: _ } = useIntl()

@@ -1,8 +1,8 @@
 import { Switch, Route, matchPath } from 'react-router-dom'
 import { useIntl } from 'react-intl'
 
-import NotFoundPage from '@shared-ui/components/templates/NotFoundPage'
-import { MenuItem } from '@shared-ui/components/new/Layout/LeftPanel/LeftPanel.types'
+import NotFoundPage from '@shared-ui/components/Templates/NotFoundPage'
+import { MenuItem } from '@shared-ui/components/Layout/LeftPanel/LeftPanel.types'
 
 import DevicesListPage from '@/containers/Devices/List/DevicesListPage'
 import DevicesDetailsPage from '@/containers/Devices/Detail/DevicesDetailsPage'

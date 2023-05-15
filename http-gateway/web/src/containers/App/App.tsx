@@ -1,14 +1,16 @@
 import { useContext, useState, useEffect } from 'react'
 import { useIntl } from 'react-intl'
-import PageLoader from '@shared-ui/components/new/PageLoader'
+import { AuthProvider, UserManager } from 'oidc-react'
+
+import PageLoader from '@shared-ui/components/Atomic/PageLoader'
 import { security } from '@shared-ui/common/services/security'
 import { openTelemetry } from '@shared-ui/common/services/opentelemetry'
+
 import { messages as t } from './App.i18n'
 import { AppContext } from './AppContext'
 import './App.scss'
 import { getAppWellKnownConfiguration } from '@/containers/App/AppRest'
 import AppInner from '@/containers/App/AppInner/AppInner'
-import { AuthProvider, UserManager } from 'oidc-react'
 
 const App = () => {
     const { formatMessage: _ } = useIntl()

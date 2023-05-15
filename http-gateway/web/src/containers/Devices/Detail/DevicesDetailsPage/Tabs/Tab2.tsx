@@ -5,12 +5,13 @@ import { useResizeDetector } from 'react-resize-detector'
 import omit from 'lodash/omit'
 
 import { useIsMounted, WellKnownConfigType } from '@shared-ui/common/hooks'
-import TimeoutControl from '@shared-ui/components/new/TimeoutControl'
-import { DeleteModal } from '@shared-ui/components/new/Modal'
+import TimeoutControl from '@shared-ui/components/Atomic/TimeoutControl'
+import { DeleteModal } from '@shared-ui/components/Atomic/Modal'
 import { security } from '@shared-ui/common/services'
-import DevicesResourcesModal from '@shared-ui/components/organisms/DevicesResourcesModal'
-import { DevicesResourcesModalParamsType } from '@shared-ui/components/organisms/DevicesResourcesModal/DevicesResourcesModal.types'
-import Notification from '@shared-ui/components/new/Notification/Toast'
+import DevicesResourcesModal from '@shared-ui/components/Organisms/DevicesResourcesModal'
+import { DevicesResourcesModalParamsType } from '@shared-ui/components/Organisms/DevicesResourcesModal/DevicesResourcesModal.types'
+import Notification from '@shared-ui/components/Atomic/Notification/Toast'
+import { getApiErrorMessage } from '@shared-ui/common/utils'
 
 import { Props } from './Tab2.types'
 import DevicesResources from '@/containers/Devices/Resources/DevicesResources'
@@ -22,7 +23,6 @@ import { messages as t } from '@/containers/Devices/Devices.i18n'
 import { history } from '@/store'
 import { isNotificationActive, toggleActiveNotification } from '@/containers/Devices/slice'
 import { deviceResourceUpdateListener } from '@/containers/Devices/websockets'
-import { getApiErrorMessage } from '@shared-ui/common/utils'
 import { createResourceNotificationId } from '@/containers/PendingCommands/utils'
 
 const Tab2: FC<Props> = (props) => {
@@ -186,7 +186,6 @@ const Tab2: FC<Props> = (props) => {
             const { auditContext } = ret.data.data
 
             if (isMounted.current) {
-                // console.log('update done, show toast!')
                 Notification.success(
                     { title: _(t.resourceUpdateSuccess), message: _(t.resourceWasUpdated) },
                     {

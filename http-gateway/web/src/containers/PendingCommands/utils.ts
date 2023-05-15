@@ -1,11 +1,12 @@
 // @ts-ignore
 import * as converter from 'units-converter/dist/es/index'
+
 import { Emitter } from '@shared-ui/common/services/emitter'
+import Notification from '@shared-ui/components/Atomic/Notification/Toast'
 
 import { commandTypes, updatedCommandTypes, pendingCommandStatuses, NEW_PENDING_COMMAND_WS_KEY, UPDATE_PENDING_COMMANDS_WS_KEY } from './constants'
 import { messages as t } from './PendingCommands.i18n'
 import { messages as d } from '../Devices/Devices.i18n'
-import Notification from '@shared-ui/components/new/Notification/Toast'
 import { isNotificationActive } from '@/containers/Devices/slice'
 import { getDeviceNotificationKey } from '@/containers/Devices/utils'
 import { store } from '@/store'

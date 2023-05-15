@@ -1,8 +1,10 @@
 // @ts-ignore
 import * as converter from 'units-converter/dist/es/index'
 import { getApiErrorMessage } from '@shared-ui/common/utils'
-import { compareIgnoreCase } from '@shared-ui/components/new/Table/Utils'
+import { compareIgnoreCase } from '@shared-ui/components/Atomic/Table/Utils'
 import { errorCodes } from '@shared-ui/common/services/fetch-api'
+import Notification from '@shared-ui/components/Atomic/Notification/Toast'
+
 import {
     knownInterfaces,
     knownResourceTypes,
@@ -15,7 +17,6 @@ import {
 } from './constants'
 import { messages as t } from './Devices.i18n'
 import { DeviceDataType, ResourcesType } from '@/containers/Devices/Devices.types'
-import Notification from '@shared-ui/components/new/Notification/Toast'
 
 const time = converter.time
 

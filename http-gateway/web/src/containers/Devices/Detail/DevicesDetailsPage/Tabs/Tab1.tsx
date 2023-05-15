@@ -1,17 +1,19 @@
 import React, { FC, useEffect, useRef, useState } from 'react'
-import TileToggleRow from '@shared-ui/components/new/TileToggle/TileToggleRow'
-import TileToggle from '@shared-ui/components/new/TileToggle'
+import { useIntl } from 'react-intl'
+import { useDispatch, useSelector } from 'react-redux'
+
+import TileToggleRow from '@shared-ui/components/Atomic/TileToggle/TileToggleRow'
+import TileToggle from '@shared-ui/components/Atomic/TileToggle'
+import SimpleStripTable from '@shared-ui/components/Atomic/SimpleStripTable'
+import TagGroup from '@shared-ui/components/Atomic/TagGroup'
+import Tag from '@shared-ui/components/Atomic/Tag'
+import Icon from '@shared-ui/components/Atomic/Icon'
+import { eventFilters, WebSocketEventClient } from '@shared-ui/common/services'
+
 import { Props } from './Tab1.types'
 import { messages as t } from '@/containers/Devices/Devices.i18n'
-import { useIntl } from 'react-intl'
-import SimpleStripTable from '@shared-ui/components/new/SimpleStripTable'
-import TagGroup from '@shared-ui/components/new/TagGroup'
-import Tag from '@shared-ui/components/new/Tag'
-import { Icon } from '@shared-ui/components/new/Icon'
 import { getDeviceNotificationKey, getResourceRegistrationNotificationKey } from '@/containers/Devices/utils'
-import { useDispatch, useSelector } from 'react-redux'
 import { isNotificationActive, toggleActiveNotification } from '@/containers/Devices/slice'
-import { eventFilters, WebSocketEventClient } from '@shared-ui/common/services'
 import { deviceResourceRegistrationListener } from '@/containers/Devices/websockets'
 
 const Tab1: FC<Props> = (props) => {

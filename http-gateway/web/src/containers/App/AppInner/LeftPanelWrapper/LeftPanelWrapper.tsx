@@ -1,8 +1,8 @@
 import { FC, useEffect } from 'react'
 import { useLocation } from 'react-router'
 
-import LeftPanel, { parseActiveItem } from '@shared-ui/components/new/Layout/LeftPanel'
-import { Props } from '@shared-ui/components/new/Layout/LeftPanel/LeftPanel.types'
+import LeftPanel, { parseActiveItem } from '@shared-ui/components/Layout/LeftPanel'
+import { Props } from '@shared-ui/components/Layout/LeftPanel/LeftPanel.types'
 
 import { mather } from '@/routes'
 

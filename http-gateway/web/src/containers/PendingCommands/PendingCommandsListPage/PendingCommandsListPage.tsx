@@ -1,10 +1,10 @@
 import { useState } from 'react'
 import { useIntl } from 'react-intl'
 
-import { messages as menuT } from '@shared-ui/components/new/Menu/Menu.i18n'
+import { messages as menuT } from '@shared-ui/components/Atomic/Menu/Menu.i18n'
+import PageLayout from '@shared-ui/components/Atomic/PageLayout'
 
 import PendingCommandsList from '../PendingCommandsList'
-import PageLayout from '@shared-ui/components/new/PageLayout'
 
 const PendingCommandsListPage = () => {
     const { formatMessage: _ } = useIntl()
