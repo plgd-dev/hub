@@ -10,7 +10,7 @@ VERSION_TAG ?= $(LATEST_TAG)-$(shell git rev-parse --short=7 --verify HEAD)
 default: build
 
 define build-docker-image
-	cd .. && docker build \
+	cd .. && DOCKER_BUILDKIT=1 docker build \
 		--network=host \
 		--tag ghcr.io/plgd-dev/hub/$(SERVICE_NAME):$(VERSION_TAG) \
 		--tag ghcr.io/plgd-dev/hub/$(SERVICE_NAME):$(LATEST_TAG) \
@@ -22,6 +22,7 @@ endef
 
 
 build-servicecontainer:
+	make -C ../http-gateway build-www
 	$(call build-docker-image,service)
 
 build: build-servicecontainer
