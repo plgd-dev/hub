@@ -6,11 +6,12 @@ ifneq ($(BRANCH_TAG),main)
 	LATEST_TAG = $(BRANCH_TAG)
 endif
 VERSION_TAG ?= $(LATEST_TAG)-$(shell git rev-parse --short=7 --verify HEAD)
+HTTP_BUILD_DIR ?= $(CURDIR)/web/build
 
 default: build
 
 define build-docker-image
-	cd .. && docker build \
+	cd .. && DOCKER_BUILDKIT=1 docker build \
 		--network=host \
 		--tag ghcr.io/plgd-dev/hub/$(SERVICE_NAME):$(VERSION_TAG) \
 		--tag ghcr.io/plgd-dev/hub/$(SERVICE_NAME):$(LATEST_TAG) \
@@ -20,7 +21,17 @@ define build-docker-image
 		.
 endef
 
-build-servicecontainer:
+build-www:
+	cd .. && mkdir -p $(HTTP_BUILD_DIR) && DOCKER_BUILDKIT=1 docker build \
+		--network=host \
+		--tag plgd/$(SERVICE_NAME)-ui:$(VERSION_TAG) \
+		--tag plgd/$(SERVICE_NAME)-ui:$(LATEST_TAG) \
+		--tag plgd/$(SERVICE_NAME)-ui:$(BRANCH_TAG) \
+		-f $(SERVICE_NAME)/Dockerfile.www \
+		.
+	docker run --rm -v $(HTTP_BUILD_DIR):/www plgd/$(SERVICE_NAME)-ui:$(VERSION_TAG) /bin/bash -c "cp -r /web/build/* /www"
+
+build-servicecontainer: build-www
 	$(call build-docker-image,service)
 
 build: build-servicecontainer
@@ -31,6 +42,6 @@ push: build-servicecontainer
 
 proto/generate:
 
-.PHONY: build-servicecontainer build push proto/generate
+.PHONY: build-servicecontainer build push proto/generate build-www
 
 
