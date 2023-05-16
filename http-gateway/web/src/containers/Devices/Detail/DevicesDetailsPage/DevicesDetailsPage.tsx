@@ -176,7 +176,7 @@ const DevicesDetailsPage = () => {
                             {_(t.recentTasks)}
                         </span>
                     }
-                    setFooterExpanded={setFooterExpanded!}
+                    setFooterExpanded={setFooterExpanded}
                 />
             }
             header={

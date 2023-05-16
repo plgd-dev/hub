@@ -1,4 +1,4 @@
-import { FC, useMemo } from 'react'
+import { FC, memo, useMemo } from 'react'
 import { useIntl } from 'react-intl'
 import classNames from 'classnames'
 
@@ -16,7 +16,7 @@ import { messages as t } from '../../Devices.i18n'
 import { Props } from './DevicesResources.types'
 import { getLastPartOfAResourceHref } from '@/containers/Devices/utils'
 
-const DevicesResources: FC<Props> = (props) => {
+const DevicesResources: FC<Props> = memo((props) => {
     const { data, onUpdate, onCreate, onDelete, deviceStatus, isActiveTab, loading, pageSize } = props
     const { formatMessage: _ } = useIntl()
     const [treeViewActive, setTreeViewActive] = useLocalStorage('treeViewActive', false)
@@ -237,7 +237,7 @@ const DevicesResources: FC<Props> = (props) => {
             )}
         </>
     )
-}
+})
 
 DevicesResources.displayName = 'DevicesResources'
 

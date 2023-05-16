@@ -77,7 +77,7 @@ export const deviceStatusListener = async (props) => {
                             // Get the notification state of a single device from redux store
                             const currentDeviceNotificationsEnabled = isNotificationActive(getDeviceNotificationKey(deviceId))(store.getState())
 
-                            showToast(currentDeviceNotificationsEnabled, deviceId, status).then()
+                            await showToast(currentDeviceNotificationsEnabled, deviceId, status).then()
                         }
                     }
                 })

@@ -241,7 +241,7 @@ const DevicesListPage: FC<any> = () => {
                             {_(t.recentTasks)}
                         </span>
                     }
-                    setFooterExpanded={setFooterExpanded!}
+                    setFooterExpanded={setFooterExpanded}
                 />
             }
             header={<DevicesListHeader loading={loading} refresh={handleRefresh} />}
