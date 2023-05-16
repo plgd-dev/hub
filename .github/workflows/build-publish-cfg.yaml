@@ -86,10 +86,6 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Set vars.branch
-        id: vars
-        run: BRANCH=${GITHUB_REF#refs/*/} && echo ${BRANCH} && echo "branch=${BRANCH}" >> $GITHUB_OUTPUT
-
       - name: Extract metadata (tags, labels) for docker image
         id: meta
         uses: docker/metadata-action@v4

@@ -5,6 +5,10 @@
 
 name: Create and publish a docker images to github
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 on:
   push:
     tags:

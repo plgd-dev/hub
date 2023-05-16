@@ -98,6 +98,11 @@ echo -n ${OAUTH_CLIENT_SECRET} > ${OAUTH_DEVICE_SECRET_PATH}
 export COAP_GATEWAY_UNSECURE_FQDN=$FQDN
 export COAP_GATEWAY_FQDN=$FQDN
 
+if [ -z "${COAP_GATEWAY_EXTERNAL_ADDRESS}" ]
+then
+  export COAP_GATEWAY_EXTERNAL_ADDRESS=${COAP_GATEWAY_FQDN}:${COAP_GATEWAY_PORT}
+fi
+
 mkdir -p $CERTIFICATES_PATH
 mkdir -p $INTERNAL_CERT_DIR_PATH
 mkdir -p $EXTERNAL_CERT_DIR_PATH
@@ -604,7 +609,7 @@ cat /configs/resource-directory.yaml | yq e "\
   .clients.identityStore.grpc.address = \"${IDENTITY_STORE_ADDRESS}\" |
   .publicConfiguration.authority = \"https://${OAUTH_ENDPOINT}\" |
   .publicConfiguration.hubID = \"${COAP_GATEWAY_HUB_ID}\" |
-  .publicConfiguration.coapGateway = \"${COAP_GATEWAY_SCHEME}://${COAP_GATEWAY_FQDN}:${COAP_GATEWAY_PORT}\" |
+  .publicConfiguration.coapGateway = \"${COAP_GATEWAY_SCHEME}://${COAP_GATEWAY_EXTERNAL_ADDRESS}\" |
   .publicConfiguration.ownerClaim = \"${OWNER_CLAIM}\"
 " - > /data/resource-directory.yaml
 
@@ -687,7 +692,7 @@ cat /configs/coap-gateway.yaml | yq e "\
   .log.level = \"${LOG_LEVEL}\" |
   .log.dumpBody =  ${COAP_GATEWAY_LOG_MESSAGES} |
   .apis.coap.address = \"${COAP_GATEWAY_ADDRESS}\" |
-  .apis.coap.externalAddress = \"${FQDN}:${COAP_GATEWAY_PORT}\" |
+  .apis.coap.externalAddress = \"${COAP_GATEWAY_EXTERNAL_ADDRESS}\" |
   .apis.coap.requireBatchObserveEnabled = false |
   .apis.coap.tls.enabled = true |
   .apis.coap.tls.keyFile = \"${EXTERNAL_CERT_DIR_PATH}/${COAP_GATEWAY_FILE_CERT_KEY_NAME}\" |
