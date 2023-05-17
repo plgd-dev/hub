@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1
 FROM golang:1.20.4-alpine AS build
 RUN apk add --no-cache curl git build-base
 WORKDIR $GOPATH/src/github.com/plgd-dev/hub
@@ -82,16 +83,6 @@ RUN mkdir -p ./nats
 RUN unzip ./nats.zip -d ./nats
 RUN cp ./nats/*/nats /go/bin/nats
 
-FROM node:16 AS build-web
-COPY --from=build /go/src/github.com/plgd-dev/hub/http-gateway/web /web
-RUN cd /web && \
-    npm config set fetch-retries 3 && \
-    npm config set fetch-retry-mintimeout 600000 &&  \
-    npm config set fetch-retry-maxtimeout 1200000 && \
-    npm config set fetch-timeout 1800000 && \
-    npm install --ignore-scripts && \
-    npm run build
-
 FROM ubuntu:22.04 AS service
 RUN apt update
 # iproute2 -> ip utility in run.sh
@@ -125,7 +116,7 @@ COPY --from=build /go/bin/nats /usr/local/bin/nats
 COPY --from=build /go/src/github.com/plgd-dev/hub/bundle/jetstream.json /configs/jetstream.json
 COPY --from=build /go/bin/oauth-server /usr/local/bin/oauth-server
 COPY --from=build /go/src/github.com/plgd-dev/hub/test/oauth-server/config.yaml /configs/oauth-server.yaml
-COPY --from=build-web /web/build /usr/local/var/www
+COPY http-gateway/web/build /usr/local/var/www
 COPY --from=build /go/bin/cloud2cloud-gateway /usr/local/bin/cloud2cloud-gateway
 COPY --from=build /go/src/github.com/plgd-dev/hub/cloud2cloud-gateway/config.yaml /configs/cloud2cloud-gateway.yaml
 COPY --from=build /go/bin/cloud2cloud-connector /usr/local/bin/cloud2cloud-connector
