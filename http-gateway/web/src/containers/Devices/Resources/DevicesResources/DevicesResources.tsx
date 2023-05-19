@@ -13,9 +13,180 @@ import { canCreateResource } from '@shared-ui/common/utils'
 
 import { devicesStatuses, RESOURCE_TREE_DEPTH_SIZE } from '../../constants'
 import { messages as t } from '../../Devices.i18n'
-import { Props } from './DevicesResources.types'
+import { GetColumnsType, Props } from './DevicesResources.types'
 import { getLastPartOfAResourceHref } from '@/containers/Devices/utils'
 import { IconPlus, IconEdit, IconTrash } from '@shared-ui/components/Atomic/Icon'
+
+const getColumns = ({ _, onUpdate, loading, isUnregistered, onCreate, onDelete }: GetColumnsType) => [
+    {
+        Header: _(t.href),
+        accessor: 'href',
+        Cell: ({ value, row }: { value: any; row: any }) => {
+            const {
+                original: { deviceId, href },
+            } = row
+            if (isUnregistered) {
+                return <span>{value}</span>
+            }
+            return (
+                <div className='tree-expander-container'>
+                    <span className='link reveal-icon-on-hover' onClick={() => onUpdate({ deviceId, href })}>
+                        {value}
+                    </span>
+                </div>
+            )
+        },
+        style: { width: '300px' },
+    },
+    {
+        Header: _(t.types),
+        accessor: 'resourceTypes',
+        style: { width: '100%' },
+        Cell: ({ value }: { value: any }) => value.join(', '),
+    },
+    {
+        Header: _(t.actions),
+        accessor: 'actions',
+        disableSortBy: true,
+        Cell: ({ row }: { row: any }) => {
+            const {
+                original: { deviceId, href, interfaces },
+            } = row
+            const cleanHref = href.replace(/\/$/, '') // href without a trailing slash
+            return (
+                <TableActionButton
+                    disabled={isUnregistered || loading}
+                    items={[
+                        {
+                            onClick: () => onCreate(cleanHref),
+                            label: _(t.create),
+                            icon: <IconPlus />,
+                            hidden: !canCreateResource(interfaces),
+                        },
+                        {
+                            onClick: () => onUpdate({ deviceId, href: cleanHref }),
+                            label: _(t.update),
+                            icon: <IconEdit />,
+                        },
+                        {
+                            onClick: () => onDelete(cleanHref),
+                            label: _(t.delete),
+                            icon: <IconTrash />,
+                        },
+                    ]}
+                />
+            )
+        },
+        className: 'actions',
+    },
+]
+
+const getTreeColumns = ({ _, onUpdate, onCreate, onDelete, isUnregistered, loading }: GetColumnsType) => [
+    {
+        Header: _(t.href),
+        accessor: 'href',
+        Cell: ({ value, row }: { value: any; row: any }) => {
+            const {
+                original: { deviceId, href },
+            } = row
+            const lastValue = getLastPartOfAResourceHref(value)
+            const onLinkClick = deviceId ? () => onUpdate({ deviceId, href: href.replace(/\/$/, '') }) : () => {}
+
+            if (isUnregistered) {
+                return <span>{lastValue}</span>
+            }
+
+            if (row.canExpand) {
+                return (
+                    <div className='tree-expander-container'>
+                        <TreeExpander
+                            {...row.getToggleRowExpandedProps({ title: null })}
+                            expanded={row.isExpanded}
+                            style={{
+                                marginLeft: `${row.depth * RESOURCE_TREE_DEPTH_SIZE}px`,
+                            }}
+                        />
+                        <span className={deviceId ? 'link reveal-icon-on-hover' : ''} onClick={onLinkClick}>
+                            {`/${lastValue}/`}
+                        </span>
+                        {deviceId && <i className='fas fa-pen' />}
+                    </div>
+                )
+            }
+
+            return (
+                <div
+                    className='tree-expander-container'
+                    style={{
+                        marginLeft: `${row.depth === 0 ? 0 : (row.depth + 1) * RESOURCE_TREE_DEPTH_SIZE}px`,
+                    }}
+                >
+                    <span className='link reveal-icon-on-hover' onClick={onLinkClick}>
+                        {`/${lastValue}`}
+                    </span>
+                    <i className='fas fa-pen' />
+                </div>
+            )
+        },
+        style: { width: '100%' },
+    },
+    {
+        Header: _(t.types),
+        accessor: 'resourceTypes',
+        Cell: ({ value, row }: { value: any; row: any }) => {
+            if (!row.original.deviceId) {
+                return null
+            }
+
+            return (
+                <div className='badges-box-horizontal'>
+                    {value?.map?.((type: string) => (
+                        <Badge key={type}>{type}</Badge>
+                    ))}
+                </div>
+            )
+        },
+    },
+    {
+        Header: _(t.actions),
+        accessor: 'actions',
+        disableSortBy: true,
+        Cell: ({ row }: { row: any }) => {
+            if (!row.original.deviceId) {
+                return null
+            }
+
+            const {
+                original: { deviceId, href, interfaces },
+            } = row
+            const cleanHref = href.replace(/\/$/, '') // href without a trailing slash
+
+            return (
+                <TableActionButton
+                    disabled={isUnregistered || loading}
+                    items={[
+                        {
+                            onClick: () => onCreate(cleanHref),
+                            label: _(t.create),
+                            icon: <IconPlus />,
+                            hidden: !canCreateResource(interfaces),
+                        },
+                        {
+                            onClick: () => onUpdate({ deviceId, href: cleanHref }),
+                            label: _(t.update),
+                            icon: <IconEdit />,
+                        },
+                        {
+                            onClick: () => onDelete(cleanHref),
+                            label: _(t.delete),
+                            icon: <IconTrash />,
+                        },
+                    ]}
+                />
+            )
+        },
+    },
+]
 
 const DevicesResources: FC<Props> = memo((props) => {
     const { data, onUpdate, onCreate, onDelete, deviceStatus, isActiveTab, loading, pageSize } = props
@@ -27,179 +198,12 @@ const DevicesResources: FC<Props> = memo((props) => {
     })
 
     const columns = useMemo(
-        () => [
-            {
-                Header: _(t.href),
-                accessor: 'href',
-                Cell: ({ value, row }: { value: any; row: any }) => {
-                    const {
-                        original: { deviceId, href },
-                    } = row
-                    if (isUnregistered) {
-                        return <span>{value}</span>
-                    }
-                    return (
-                        <div className='tree-expander-container'>
-                            <span className='link reveal-icon-on-hover' onClick={() => onUpdate({ deviceId, href })}>
-                                {value}
-                            </span>
-                        </div>
-                    )
-                },
-                style: { width: '300px' },
-            },
-            {
-                Header: _(t.types),
-                accessor: 'resourceTypes',
-                style: { width: '100%' },
-                Cell: ({ value }: { value: any }) => value.join(', '),
-            },
-            {
-                Header: _(t.actions),
-                accessor: 'actions',
-                disableSortBy: true,
-                Cell: ({ row }: { row: any }) => {
-                    const {
-                        original: { deviceId, href, interfaces },
-                    } = row
-                    const cleanHref = href.replace(/\/$/, '') // href without a trailing slash
-                    return (
-                        <TableActionButton
-                            disabled={isUnregistered || loading}
-                            items={[
-                                {
-                                    onClick: () => onCreate(cleanHref),
-                                    label: _(t.create),
-                                    icon: <IconPlus />,
-                                    hidden: !canCreateResource(interfaces),
-                                },
-                                {
-                                    onClick: () => onUpdate({ deviceId, href: cleanHref }),
-                                    label: _(t.update),
-                                    icon: <IconEdit />,
-                                },
-                                {
-                                    onClick: () => onDelete(cleanHref),
-                                    label: _(t.delete),
-                                    icon: <IconTrash />,
-                                },
-                            ]}
-                        />
-                    )
-                },
-                className: 'actions',
-            },
-        ],
+        () => getColumns({ _, onUpdate, loading, isUnregistered, onCreate, onDelete }),
         [onUpdate, onCreate, onDelete, isUnregistered, loading] //eslint-disable-line
     )
 
     const treeColumns = useMemo(
-        () => [
-            {
-                Header: _(t.href),
-                accessor: 'href',
-                Cell: ({ value, row }: { value: any; row: any }) => {
-                    const {
-                        original: { deviceId, href },
-                    } = row
-                    const lastValue = getLastPartOfAResourceHref(value)
-                    const onLinkClick = deviceId ? () => onUpdate({ deviceId, href: href.replace(/\/$/, '') }) : () => {}
-
-                    if (isUnregistered) {
-                        return <span>{lastValue}</span>
-                    }
-
-                    if (row.canExpand) {
-                        return (
-                            <div className='tree-expander-container'>
-                                <TreeExpander
-                                    {...row.getToggleRowExpandedProps({ title: null })}
-                                    expanded={!!row.isExpanded}
-                                    style={{
-                                        marginLeft: `${row.depth * RESOURCE_TREE_DEPTH_SIZE}px`,
-                                    }}
-                                />
-                                <span className={deviceId ? 'link reveal-icon-on-hover' : ''} onClick={onLinkClick}>
-                                    {`/${lastValue}/`}
-                                </span>
-                                {deviceId && <i className='fas fa-pen' />}
-                            </div>
-                        )
-                    }
-
-                    return (
-                        <div
-                            className='tree-expander-container'
-                            style={{
-                                marginLeft: `${row.depth === 0 ? 0 : (row.depth + 1) * RESOURCE_TREE_DEPTH_SIZE}px`,
-                            }}
-                        >
-                            <span className='link reveal-icon-on-hover' onClick={onLinkClick}>
-                                {`/${lastValue}`}
-                            </span>
-                            <i className='fas fa-pen' />
-                        </div>
-                    )
-                },
-                style: { width: '100%' },
-            },
-            {
-                Header: _(t.types),
-                accessor: 'resourceTypes',
-                Cell: ({ value, row }: { value: any; row: any }) => {
-                    if (!row.original.deviceId) {
-                        return null
-                    }
-
-                    return (
-                        <div className='badges-box-horizontal'>
-                            {value?.map?.((type: string) => (
-                                <Badge key={type}>{type}</Badge>
-                            ))}
-                        </div>
-                    )
-                },
-            },
-            {
-                Header: _(t.actions),
-                accessor: 'actions',
-                disableSortBy: true,
-                Cell: ({ row }: { row: any }) => {
-                    if (!row.original.deviceId) {
-                        return null
-                    }
-
-                    const {
-                        original: { deviceId, href, interfaces },
-                    } = row
-                    const cleanHref = href.replace(/\/$/, '') // href without a trailing slash
-
-                    return (
-                        <TableActionButton
-                            disabled={isUnregistered || loading}
-                            items={[
-                                {
-                                    onClick: () => onCreate(cleanHref),
-                                    label: _(t.create),
-                                    icon: <IconPlus />,
-                                    hidden: !canCreateResource(interfaces),
-                                },
-                                {
-                                    onClick: () => onUpdate({ deviceId, href: cleanHref }),
-                                    label: _(t.update),
-                                    icon: <IconEdit />,
-                                },
-                                {
-                                    onClick: () => onDelete(cleanHref),
-                                    label: _(t.delete),
-                                    icon: <IconTrash />,
-                                },
-                            ]}
-                        />
-                    )
-                },
-            },
-        ],
+        () => getTreeColumns({ _, onUpdate, onCreate, onDelete, isUnregistered, loading }),
         [onUpdate, onCreate, onDelete, isUnregistered, loading] //eslint-disable-line
     )
 
