@@ -6,7 +6,7 @@ import { useHistory } from 'react-router-dom'
 import Button from '@shared-ui/components/Atomic/Button'
 import { WebSocketEventClient } from '@shared-ui/common/services'
 import { useIsMounted } from '@shared-ui/common/hooks'
-import Icon from '@shared-ui/components/Atomic/Icon'
+import { IconEdit, IconTrash } from '@shared-ui/components/Atomic/Icon'
 import { DeleteModal } from '@shared-ui/components/Atomic/Modal'
 import Notification from '@shared-ui/components/Atomic/Notification/Toast'
 
@@ -74,18 +74,12 @@ const DevicesDetailsHeader: FC<Props> = memo((props) => {
 
     return (
         <div className={classNames('d-flex align-items-center', greyedOutClassName)}>
-            <Button disabled={isUnregistered} icon={<Icon icon='trash' />} onClick={handleOpenDeleteDeviceModal} variant='tertiary'>
+            <Button disabled={isUnregistered} icon={<IconTrash />} onClick={handleOpenDeleteDeviceModal} variant='tertiary'>
                 {_(t.delete)}
             </Button>
 
             {canUpdate && (
-                <Button
-                    disabled={isUnregistered}
-                    icon={<Icon icon='edit' />}
-                    onClick={handleOpenEditDeviceNameModal}
-                    style={{ marginLeft: 8 }}
-                    variant='tertiary'
-                >
+                <Button disabled={isUnregistered} icon={<IconEdit />} onClick={handleOpenEditDeviceNameModal} style={{ marginLeft: 8 }} variant='tertiary'>
                     {_(t.editName)}
                 </Button>
             )}
@@ -111,8 +105,8 @@ const DevicesDetailsHeader: FC<Props> = memo((props) => {
                 ]}
                 onClose={handleCloseDeleteDeviceModal}
                 show={deleteModalOpen}
-                subTitle={_(t.deleteResourceMessageSubtitle)}
-                title={_(t.deleteResourceMessage)}
+                subTitle={_(t.deleteDeviceMessageSubTitle)}
+                title={_(t.deleteDeviceMessage)}
             />
         </div>
     )

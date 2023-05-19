@@ -7,7 +7,7 @@ import TileToggle from '@shared-ui/components/Atomic/TileToggle'
 import SimpleStripTable from '@shared-ui/components/Atomic/SimpleStripTable'
 import TagGroup from '@shared-ui/components/Atomic/TagGroup'
 import Tag from '@shared-ui/components/Atomic/Tag'
-import Icon from '@shared-ui/components/Atomic/Icon'
+import { convertSize, IconCloudSuccess } from '@shared-ui/components/Atomic/Icon'
 import { eventFilters, WebSocketEventClient } from '@shared-ui/common/services'
 
 import { Props } from './Tab1.types'
@@ -114,7 +114,7 @@ const Tab1: FC<Props> = (props) => {
                             attribute: _(t.firmware),
                             value: (
                                 <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                                    <span style={{ marginRight: 6 }}>0.22.1</span> <Icon icon='cloud-success' size={24} />
+                                    <span style={{ marginRight: 6 }}>0.22.1</span> <IconCloudSuccess {...convertSize(24)} />
                                 </div>
                             ),
                         },

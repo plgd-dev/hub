@@ -9,13 +9,14 @@ import DevicesDetailsPage from '@/containers/Devices/Detail/DevicesDetailsPage'
 import { PendingCommandsListPage } from '@/containers/PendingCommands'
 import Notifications from '@/containers/Notifications'
 import { messages as t } from './containers/App/App.i18n'
+import IconDevices from '@shared-ui/components/Atomic/Icon/components/IconDevices'
 
 export const menu = [
     {
         title: 'Main menu',
         items: [
             {
-                icon: 'devices',
+                icon: <IconDevices />,
                 id: '1',
                 title: 'Devices',
                 link: '/',

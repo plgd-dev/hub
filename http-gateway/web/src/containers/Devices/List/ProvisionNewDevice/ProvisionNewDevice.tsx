@@ -4,7 +4,7 @@ import { useIntl } from 'react-intl'
 import Button from '@shared-ui/components/Atomic/Button'
 import { ProvisionDeviceModal } from '@shared-ui/components/Atomic/Modal'
 import { security } from '@shared-ui/common/services'
-import { Icon } from '@shared-ui/components/Atomic/Icon'
+import { IconPlus } from '@shared-ui/components/Atomic/Icon'
 import Notification from '@shared-ui/components/Atomic/Notification/Toast'
 import { getApiErrorMessage } from '@shared-ui/common/utils'
 
@@ -52,7 +52,7 @@ const ProvisionNewDeviceCore = () => {
 
     return (
         <>
-            <Button icon={<Icon icon='plus' />} onClick={openModal} variant='primary'>
+            <Button icon={<IconPlus />} onClick={openModal} variant='primary'>
                 {_(t.addDevice)}
             </Button>
             <ProvisionDeviceModal

@@ -24,6 +24,7 @@ import { cancelPendingCommandApi } from '../rest'
 import { messages as t } from '../PendingCommands.i18n'
 import { Props } from './PendingCommandsList.types'
 import DateFormat from '@/containers/PendingCommands/DateFormat'
+import { IconTrash } from '@shared-ui/components/Atomic'
 
 type ModalData = {
     content: any
@@ -248,7 +249,7 @@ const PendingCommandsList: FC<Props> = ({ onLoading, embedded, deviceId }) => {
                             <TableActions
                                 items={[
                                     {
-                                        icon: 'trash',
+                                        icon: <IconTrash />,
                                         onClick: () => onCancelClick({ deviceId: rowDeviceId, href, correlationId }),
                                         id: `delete-row-${deviceId}`,
                                         tooltipText: _(t.cancel),

@@ -15,6 +15,7 @@ import { devicesStatuses, RESOURCE_TREE_DEPTH_SIZE } from '../../constants'
 import { messages as t } from '../../Devices.i18n'
 import { Props } from './DevicesResources.types'
 import { getLastPartOfAResourceHref } from '@/containers/Devices/utils'
+import { IconPlus, IconEdit, IconTrash } from '@shared-ui/components/Atomic/Icon'
 
 const DevicesResources: FC<Props> = memo((props) => {
     const { data, onUpdate, onCreate, onDelete, deviceStatus, isActiveTab, loading, pageSize } = props
@@ -69,18 +70,18 @@ const DevicesResources: FC<Props> = memo((props) => {
                                 {
                                     onClick: () => onCreate(cleanHref),
                                     label: _(t.create),
-                                    icon: 'plus',
+                                    icon: <IconPlus />,
                                     hidden: !canCreateResource(interfaces),
                                 },
                                 {
                                     onClick: () => onUpdate({ deviceId, href: cleanHref }),
                                     label: _(t.update),
-                                    icon: 'edit',
+                                    icon: <IconEdit />,
                                 },
                                 {
                                     onClick: () => onDelete(cleanHref),
                                     label: _(t.delete),
-                                    icon: 'trash',
+                                    icon: <IconTrash />,
                                 },
                             ]}
                         />
@@ -180,18 +181,18 @@ const DevicesResources: FC<Props> = memo((props) => {
                                 {
                                     onClick: () => onCreate(cleanHref),
                                     label: _(t.create),
-                                    icon: 'plus',
+                                    icon: <IconPlus />,
                                     hidden: !canCreateResource(interfaces),
                                 },
                                 {
                                     onClick: () => onUpdate({ deviceId, href: cleanHref }),
                                     label: _(t.update),
-                                    icon: 'edit',
+                                    icon: <IconEdit />,
                                 },
                                 {
                                     onClick: () => onDelete(cleanHref),
                                     label: _(t.delete),
-                                    icon: 'trash',
+                                    icon: <IconTrash />,
                                 },
                             ]}
                         />
