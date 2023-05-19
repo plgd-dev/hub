@@ -10,13 +10,13 @@ import TableSelectionPanel from '@shared-ui/components/Atomic/TableNew/TableSele
 import StatusPill from '@shared-ui/components/Atomic/StatusPill'
 import { states } from '@shared-ui/components/Atomic/StatusPill/constants'
 import TableActionButton from '@shared-ui/components/Organisms/TableActionButton'
+import { IconShowPassword, IconTrash } from '@shared-ui/components/Atomic'
 
 import { devicesStatuses, DEVICES_DEFAULT_PAGE_SIZE, NO_DEVICE_NAME } from '../../constants'
 import { messages as t } from '../../Devices.i18n'
 import { Props, defaultProps } from './DevicesList.types'
 import { isDeviceOnline } from '@/containers/Devices/utils'
 import { AppContext } from '@/containers/App/AppContext'
-import { IconShowPassword, IconTrash } from '@shared-ui/components/Atomic'
 
 const { UNREGISTERED } = devicesStatuses
 

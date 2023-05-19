@@ -3,13 +3,13 @@ import { useIntl } from 'react-intl'
 
 import NotFoundPage from '@shared-ui/components/Templates/NotFoundPage'
 import { MenuItem } from '@shared-ui/components/Layout/LeftPanel/LeftPanel.types'
+import { IconDevices } from '@shared-ui/components/Atomic/Icon/'
 
 import DevicesListPage from '@/containers/Devices/List/DevicesListPage'
 import DevicesDetailsPage from '@/containers/Devices/Detail/DevicesDetailsPage'
 import { PendingCommandsListPage } from '@/containers/PendingCommands'
 import Notifications from '@/containers/Notifications'
 import { messages as t } from './containers/App/App.i18n'
-import IconDevices from '@shared-ui/components/Atomic/Icon/components/IconDevices'
 
 export const menu = [
     {
