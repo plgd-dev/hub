@@ -25,6 +25,7 @@ import { handleDeleteDevicesErrors, isDeviceOnline, sleep } from '../../utils'
 import { messages as t } from '../../Devices.i18n'
 import { AppContext } from '@/containers/App/AppContext'
 import Notification from '@shared-ui/components/Atomic/Notification/Toast'
+import { IconShowPassword, IconTrash } from '@shared-ui/components/Atomic'
 
 const { UNREGISTERED } = devicesStatuses
 
@@ -198,12 +199,12 @@ const DevicesListPage: FC<any> = () => {
                                 {
                                     onClick: () => handleOpenDeleteModal(id),
                                     label: _(t.delete),
-                                    icon: 'trash',
+                                    icon: <IconTrash />,
                                 },
                                 {
                                     onClick: () => history.push(`/devices/${id}`),
                                     label: _(t.view),
-                                    icon: 'icon-show-password',
+                                    icon: <IconShowPassword />,
                                 },
                             ]}
                         />

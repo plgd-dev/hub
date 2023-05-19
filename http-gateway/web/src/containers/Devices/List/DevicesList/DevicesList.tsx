@@ -16,6 +16,7 @@ import { messages as t } from '../../Devices.i18n'
 import { Props, defaultProps } from './DevicesList.types'
 import { isDeviceOnline } from '@/containers/Devices/utils'
 import { AppContext } from '@/containers/App/AppContext'
+import { IconShowPassword, IconTrash } from '@shared-ui/components/Atomic'
 
 const { UNREGISTERED } = devicesStatuses
 
@@ -121,12 +122,12 @@ export const DevicesList: FC<Props> = (props) => {
                                 {
                                     onClick: () => onDeleteClick(id),
                                     label: _(t.delete),
-                                    icon: 'trash',
+                                    icon: <IconTrash />,
                                 },
                                 {
                                     onClick: () => history.push(`/devices/${id}`),
                                     label: _(t.view),
-                                    icon: 'icon-show-password',
+                                    icon: <IconShowPassword />,
                                 },
                             ]}
                         />
