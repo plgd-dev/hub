@@ -23,6 +23,7 @@ export type Props = {
 } & DeviceResourcesCrudType
 
 export type GetColumnsType = {
+    _: any
     loading: boolean
     isUnregistered: boolean
 } & DeviceResourcesCrudType
