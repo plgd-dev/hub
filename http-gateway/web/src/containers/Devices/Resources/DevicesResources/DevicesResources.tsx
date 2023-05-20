@@ -17,6 +17,30 @@ import { GetColumnsType, Props } from './DevicesResources.types'
 import { getLastPartOfAResourceHref } from '@/containers/Devices/utils'
 import { IconPlus, IconEdit, IconTrash } from '@shared-ui/components/Atomic/Icon'
 
+const getTableAction = ({ _, isUnregistered, loading, onCreate, cleanHref, interfaces, onUpdate, deviceId, onDelete }: any) => (
+    <TableActionButton
+        disabled={isUnregistered || loading}
+        items={[
+            {
+                onClick: () => onCreate(cleanHref),
+                label: _(t.create),
+                icon: <IconPlus />,
+                hidden: !canCreateResource(interfaces),
+            },
+            {
+                onClick: () => onUpdate({ deviceId, href: cleanHref }),
+                label: _(t.update),
+                icon: <IconEdit />,
+            },
+            {
+                onClick: () => onDelete(cleanHref),
+                label: _(t.delete),
+                icon: <IconTrash />,
+            },
+        ]}
+    />
+)
+
 const getColumns = ({ _, onUpdate, loading, isUnregistered, onCreate, onDelete }: GetColumnsType) => [
     {
         Header: _(t.href),
@@ -52,30 +76,17 @@ const getColumns = ({ _, onUpdate, loading, isUnregistered, onCreate, onDelete }
             const {
                 original: { deviceId, href, interfaces },
             } = row
-            const cleanHref = href.replace(/\/$/, '') // href without a trailing slash
-            return (
-                <TableActionButton
-                    disabled={isUnregistered || loading}
-                    items={[
-                        {
-                            onClick: () => onCreate(cleanHref),
-                            label: _(t.create),
-                            icon: <IconPlus />,
-                            hidden: !canCreateResource(interfaces),
-                        },
-                        {
-                            onClick: () => onUpdate({ deviceId, href: cleanHref }),
-                            label: _(t.update),
-                            icon: <IconEdit />,
-                        },
-                        {
-                            onClick: () => onDelete(cleanHref),
-                            label: _(t.delete),
-                            icon: <IconTrash />,
-                        },
-                    ]}
-                />
-            )
+            return getTableAction({
+                _,
+                isUnregistered,
+                loading,
+                onCreate,
+                cleanHref: href.replace(/\/$/, ''),
+                interfaces,
+                onUpdate,
+                deviceId,
+                onDelete,
+            })
         },
         className: 'actions',
     },
@@ -152,38 +163,20 @@ const getTreeColumns = ({ _, onUpdate, onCreate, onDelete, isUnregistered, loadi
         accessor: 'actions',
         disableSortBy: true,
         Cell: ({ row }: { row: any }) => {
-            if (!row.original.deviceId) {
-                return null
-            }
-
             const {
                 original: { deviceId, href, interfaces },
             } = row
-            const cleanHref = href.replace(/\/$/, '') // href without a trailing slash
-
-            return (
-                <TableActionButton
-                    disabled={isUnregistered || loading}
-                    items={[
-                        {
-                            onClick: () => onCreate(cleanHref),
-                            label: _(t.create),
-                            icon: <IconPlus />,
-                            hidden: !canCreateResource(interfaces),
-                        },
-                        {
-                            onClick: () => onUpdate({ deviceId, href: cleanHref }),
-                            label: _(t.update),
-                            icon: <IconEdit />,
-                        },
-                        {
-                            onClick: () => onDelete(cleanHref),
-                            label: _(t.delete),
-                            icon: <IconTrash />,
-                        },
-                    ]}
-                />
-            )
+            return getTableAction({
+                _,
+                isUnregistered,
+                loading,
+                onCreate,
+                cleanHref: href.replace(/\/$/, ''),
+                interfaces,
+                onUpdate,
+                deviceId,
+                onDelete,
+            })
         },
     },
 ]
