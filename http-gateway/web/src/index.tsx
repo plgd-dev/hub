@@ -4,6 +4,9 @@ import { Provider } from 'react-redux'
 import { App } from '@/containers/App'
 import { store } from '@/store'
 import IntlProvider from '@shared-ui/components/Atomic/IntlProvider'
+// @ts-ignore
+import languages from './languages/languages.json'
+import appConfig from '@/config'
 
 import { DEVICE_AUTH_CODE_SESSION_KEY } from './constants'
 import reportWebVitals from './reportWebVitals'
@@ -21,7 +24,7 @@ const BaseComponent = () => {
 
     return (
         <Provider store={store}>
-            <IntlProvider>
+            <IntlProvider defaultLanguage={appConfig.defaultLanguage} languages={languages}>
                 <App />
             </IntlProvider>
         </Provider>

@@ -10,12 +10,12 @@ import TreeExpander from '@shared-ui/components/Atomic/TreeExpander'
 import Badge from '@shared-ui/components/Atomic/Badge'
 import TableActionButton from '@shared-ui/components/Organisms/TableActionButton'
 import { canCreateResource } from '@shared-ui/common/utils'
+import { IconPlus, IconEdit, IconTrash } from '@shared-ui/components/Atomic/Icon'
 
 import { devicesStatuses, RESOURCE_TREE_DEPTH_SIZE } from '../../constants'
 import { messages as t } from '../../Devices.i18n'
 import { GetColumnsType, Props } from './DevicesResources.types'
 import { getLastPartOfAResourceHref } from '@/containers/Devices/utils'
-import { IconPlus, IconEdit, IconTrash } from '@shared-ui/components/Atomic/Icon'
 
 const getTableAction = ({ _, isUnregistered, loading, onCreate, cleanHref, interfaces, onUpdate, deviceId, onDelete }: any) => (
     <TableActionButton
