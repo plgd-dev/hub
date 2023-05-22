@@ -61,7 +61,7 @@ RUN go build -ldflags "-linkmode external -extldflags -static" -o /go/bin/$servi
 #cert-tool
 ARG tool=cert-tool
 WORKDIR $root_directory/tools/$tool
-RUN go build -ldflags "-linkmode external -extldflags -static" -o /go/bin/$tool ./cmd
+RUN go build -ldflags "-linkmode external -extldflags -static" -o /go/bin/$tool ./
 
 #nats
 WORKDIR $root_directory
