@@ -12,7 +12,7 @@ COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
 
-WORKDIR $GOPATH/src/github.com/plgd-dev/hub/tools/cert-tool/cmd
+WORKDIR $GOPATH/src/github.com/plgd-dev/hub/tools/cert-tool
 RUN go build -o /usr/bin/cert-tool
 
 WORKDIR $GOPATH/src/github.com/plgd-dev/hub
