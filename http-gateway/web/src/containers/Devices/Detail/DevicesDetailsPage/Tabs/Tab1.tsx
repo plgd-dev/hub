@@ -17,7 +17,7 @@ import { isNotificationActive, toggleActiveNotification } from '@/containers/Dev
 import { deviceResourceRegistrationListener } from '@/containers/Devices/websockets'
 
 const Tab1: FC<Props> = (props) => {
-    const { isTwinEnabled, setTwinSynchronization, twinSyncLoading, deviceId, types, deviceName } = props
+    const { isTwinEnabled, setTwinSynchronization, twinSyncLoading, deviceId, types, deviceName, model, pendingCommandsData } = props
     const { formatMessage: _ } = useIntl()
 
     const resourceRegistrationObservationWSKey = getResourceRegistrationNotificationKey(deviceId)
@@ -97,7 +97,7 @@ const Tab1: FC<Props> = (props) => {
                 <SimpleStripTable
                     rows={[
                         { attribute: _(t.id), value: deviceId },
-                        { attribute: _(t.model), value: 'TODO: doorbell-2020-11-03' },
+                        { attribute: _(t.model), value: model || '-' },
                         {
                             attribute: _(t.types),
                             value: types ? (
@@ -118,7 +118,7 @@ const Tab1: FC<Props> = (props) => {
                                 </div>
                             ),
                         },
-                        { attribute: _(t.status), value: 'TODO: 3 pending commands' },
+                        { attribute: _(t.status), value: pendingCommandsData ? `${pendingCommandsData.length} pending commands` : '-' },
                     ]}
                 />
             </div>

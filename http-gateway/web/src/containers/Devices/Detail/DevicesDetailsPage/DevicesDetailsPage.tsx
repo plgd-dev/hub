@@ -21,7 +21,7 @@ import DevicesDetailsHeader from '../DevicesDetailsHeader'
 import { devicesStatuses, NO_DEVICE_NAME } from '../../constants'
 import { getDeviceChangeResourceHref, handleTwinSynchronizationErrors, isDeviceOnline } from '../../utils'
 import { updateDevicesResourceApi, updateDeviceTwinSynchronizationApi } from '../../rest'
-import { useDeviceDetails, useDevicesResources } from '../../hooks'
+import { useDeviceDetails, useDevicePendingCommands, useDevicesResources } from '../../hooks'
 import { messages as t } from '../../Devices.i18n'
 import './DevicesDetailsPage.scss'
 import Tab1 from './Tabs/Tab1'
@@ -43,6 +43,7 @@ const DevicesDetailsPage = () => {
     const isMounted = useIsMounted()
     const { data, updateData, loading, error: deviceError } = useDeviceDetails(id)
     const { data: resourcesData, loading: loadingResources, error: resourcesError, refresh } = useDevicesResources(id)
+    const { data: pendingCommandsData } = useDevicePendingCommands(id)
 
     const wellKnownConfig = security.getWellKnowConfig() as WellKnownConfigType & {
         defaultCommandTimeToLive: number
@@ -209,11 +210,14 @@ const DevicesDetailsPage = () => {
                             <Tab1
                                 deviceId={id}
                                 deviceName={deviceName}
+                                firmware={data?.types}
                                 isActiveTab={activeTabItem === 0}
                                 isTwinEnabled={isTwinEnabled}
+                                model={data?.data?.content?.dmno}
+                                pendingCommandsData={pendingCommandsData}
                                 setTwinSynchronization={setTwinSynchronization}
                                 twinSyncLoading={twinSyncLoading}
-                                types={data?.types}
+                                types={data?.data?.content?.sv}
                             />
                         ),
                     },

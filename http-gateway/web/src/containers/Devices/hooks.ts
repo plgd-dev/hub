@@ -99,3 +99,13 @@ export const useDevicesResources = (deviceId: string) => {
 
     return { data, updateData, ...rest }
 }
+
+export const useDevicePendingCommands = (deviceId: string) => {
+    const { telemetryWebTracer } = useContext(AppContext)
+    const { data, updateData, ...rest }: StreamApiPropsType = useStreamApi(
+        `${getConfig().httpGatewayAddress}${devicesApiEndpoints.DEVICES}/${deviceId}/pending-commands`,
+        { telemetryWebTracer, telemetrySpan: 'get-device-pending-commands' }
+    )
+
+    return { data, updateData, ...rest }
+}
