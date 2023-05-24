@@ -9,7 +9,7 @@ ARG root_directory=$GOPATH/src/github.com/plgd-dev/hub
 
 #cert-tool
 ARG tool=cert-tool
-WORKDIR $root_directory/tools/$tool/cmd
+WORKDIR $root_directory/tools/$tool
 RUN go build -ldflags "-linkmode external -extldflags -static" -o /go/bin/cert-tool
 
 #grpc-gateway

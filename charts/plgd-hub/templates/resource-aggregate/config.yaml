@@ -71,7 +71,7 @@ data:
           maxConnIdleTime: {{ .clients.eventStore.mongoDB.maxConnIdleTime }}
           tls:
             {{- $mongoTls := .clients.eventStore.mongoDB.tls }}
-            {{- include "plgd-hub.certificateConfig" (list $ $natsTls $resourceAggregateCertPath) | indent 10 }}
+            {{- include "plgd-hub.certificateConfig" (list $ $mongoTls $resourceAggregateCertPath) | indent 10 }}
             useSystemCAPool: {{ .clients.eventStore.mongoDB.tls.useSystemCAPool }}
       identityStore:
         grpc:
