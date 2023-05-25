@@ -43,7 +43,7 @@ const DevicesDetailsPage = () => {
     const isMounted = useIsMounted()
     const { data, updateData, loading, error: deviceError } = useDeviceDetails(id)
     const { data: resourcesData, loading: loadingResources, error: resourcesError, refresh } = useDevicesResources(id)
-    const { data: pendingCommandsData } = useDevicePendingCommands(id)
+    const { data: pendingCommandsData, refresh: refreshPendingCommands } = useDevicePendingCommands(id)
 
     const wellKnownConfig = security.getWellKnowConfig() as WellKnownConfigType & {
         defaultCommandTimeToLive: number
@@ -74,6 +74,13 @@ const DevicesDetailsPage = () => {
 
     const handleOpenEditDeviceNameModal = useCallback(() => {
         setShowEditNameModal(true)
+    }, [])
+
+    const handleTabChange = useCallback((i: number) => {
+        setActiveTabItem(i)
+
+        refreshPendingCommands()
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
     if (deviceError) {
@@ -202,7 +209,7 @@ const DevicesDetailsPage = () => {
 
             <Tabs
                 fullHeight={true}
-                onItemChange={(i) => setActiveTabItem(i)}
+                onItemChange={handleTabChange}
                 tabs={[
                     {
                         name: _(t.deviceInformation),
@@ -210,14 +217,14 @@ const DevicesDetailsPage = () => {
                             <Tab1
                                 deviceId={id}
                                 deviceName={deviceName}
-                                firmware={data?.types}
+                                firmware={data?.data?.content?.sv}
                                 isActiveTab={activeTabItem === 0}
                                 isTwinEnabled={isTwinEnabled}
                                 model={data?.data?.content?.dmno}
                                 pendingCommandsData={pendingCommandsData}
                                 setTwinSynchronization={setTwinSynchronization}
                                 twinSyncLoading={twinSyncLoading}
-                                types={data?.data?.content?.sv}
+                                types={data?.types}
                             />
                         ),
                     },
