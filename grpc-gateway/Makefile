@@ -55,7 +55,8 @@ proto/generate:
 		--grpc-gateway_opt logtostderr=true \
 		--grpc-gateway_opt paths=source_relative \
 		$(WORKING_DIRECTORY)/pb/service.proto
-
+	protoc  -I=. -I=$(REPOSITORY_DIRECTORY) -I=$(GOPATH)/src -I=$(GOOGLEAPIS_PATH) -I=$(GRPCGATEWAY_MODULE_PATH) --doc_out=$(WORKING_DIRECTORY)/pb --doc_opt=markdown,README.md $(WORKING_DIRECTORY)/pb/*.proto $(REPOSITORY_DIRECTORY)/resource-aggregate/pb/resources.proto $(REPOSITORY_DIRECTORY)/resource-aggregate/pb/events.proto
+	protoc  -I=. -I=$(REPOSITORY_DIRECTORY) -I=$(GOPATH)/src -I=$(GOOGLEAPIS_PATH) -I=$(GRPCGATEWAY_MODULE_PATH) --doc_out=$(WORKING_DIRECTORY)/pb --doc_opt=html,doc.html $(WORKING_DIRECTORY)/pb/*.proto $(REPOSITORY_DIRECTORY)/resource-aggregate/pb/resources.proto $(REPOSITORY_DIRECTORY)/resource-aggregate/pb/events.proto
 .PHONY: build-servicecontainer build push proto/generate
 
 
