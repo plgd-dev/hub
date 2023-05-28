@@ -83,7 +83,7 @@ RUN mkdir -p ./nats
 RUN unzip ./nats.zip -d ./nats
 RUN cp ./nats/*/nats /go/bin/nats
 
-FROM ubuntu:22.04 AS service
+FROM ubuntu:kinetic AS service
 RUN apt update
 # iproute2 -> ip utility in run.sh
 # netcat -> nc utility in run.sh
