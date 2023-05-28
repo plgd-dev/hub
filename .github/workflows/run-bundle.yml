@@ -23,10 +23,6 @@ on:
         description: 'Number of device resources'
         required: true
         default: '1'
-# TODO remove me after review
-  pull_request:
-    branches:
-      - main
 
 env:
   cloud_server_image: ghcr.io/iotivity/iotivity-lite/cloud-server-discovery-resource-observable-debug
@@ -37,8 +33,7 @@ env:
 
 jobs:
   run-bundle:
-    # The runner has received a shutdown signal.https://github.com/actions/runner-images/discussions/7188
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     concurrency:
       group: ${{ github.workflow }}
       cancel-in-progress: true
@@ -166,11 +161,9 @@ jobs:
       # wait for 5 hours and generate lines to prevent workflow from being killed
       run: |
         docker logs bundle
-        for ((i=0;i<900;i++)); do
-          sleep 20
+        for ((i=0;i<300;i++)); do
+          sleep 60
           echo "Workflow paused for $((i+1)) minutes from 300 minutes"
-          echo "Generating cpu usage to prevent workflow from being killed"
-          for ((j=0;j<10000;j++)); do true; done
         done
     
     - name: Stop simulators
