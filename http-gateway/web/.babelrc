@@ -1,0 +1,23 @@
+{
+  "presets": [
+    [
+      "react-app",
+      {
+        "flow": false,
+        "typescript": true,
+        "helpers": false
+      }
+    ]
+  ],
+  "plugins": [
+    "@emotion/babel-plugin",
+    [
+      "@babel/plugin-transform-react-jsx",
+      {
+        "runtime": "automatic",
+        "importSource": "@emotion/react"
+      }
+    ]
+  ],
+  "comments": false
+}

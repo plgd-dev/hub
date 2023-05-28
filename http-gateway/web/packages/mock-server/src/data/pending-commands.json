@@ -1,0 +1,191 @@
+[
+  {
+    "resourceUpdatePending": {
+      "resourceId": {
+        "deviceId": "9c387d90-6ca4-4473-4b6c-f4fb2f8ad0e9",
+        "href": "/light/1"
+      },
+      "content": {
+        "state": false,
+        "power": 1,
+        "name": "Light"
+      },
+      "auditContext": {
+        "correlationId": "a3e05bc0-205a-48b1-92ed-78ea0b23e78f",
+        "userId": "98120ad9-eefa-4b93-aa53-696420b639fd"
+      },
+      "eventMetadata": {
+        "connectionId": "10.1.65.233:38320",
+        "sequence": "0",
+        "version": "4",
+        "timestamp": "1679950925732370668"
+      },
+      "validUntil": "1679950935732388581",
+      "openTelemetryCarrier": {
+        "traceparent": "00-8177df6ddb079f50d1eef17eb893b048-992be580d42978b1-01"
+      }
+    }
+  },
+  {
+    "resourceUpdatePending": {
+      "resourceId": {
+        "deviceId": "9c387d90-6ca4-4473-4b6c-f4fb2f8ad0e9",
+        "href": "/light/1"
+      },
+      "content": {
+        "state": false,
+        "power": 1,
+        "name": "Light"
+      },
+      "auditContext": {
+        "correlationId": "a3e05bc0-205a-48b1-92ed-78ea0b23e78f",
+        "userId": "98120ad9-eefa-4b93-aa53-696420b639fd"
+      },
+      "eventMetadata": {
+        "connectionId": "10.1.65.233:38320",
+        "sequence": "0",
+        "version": "4",
+        "timestamp": "1679950925732370668"
+      },
+      "validUntil": "1679950935732388581",
+      "openTelemetryCarrier": {
+        "traceparent": "00-8177df6ddb079f50d1eef17eb893b048-992be580d42978b1-01"
+      }
+    }
+  },
+  {
+    "resourceUpdatePending": {
+      "resourceId": {
+        "deviceId": "9c387d90-6ca4-4473-4b6c-f4fb2f8ad0e9",
+        "href": "/light/1"
+      },
+      "content": {
+        "state": false,
+        "power": 1,
+        "name": "Light"
+      },
+      "auditContext": {
+        "correlationId": "a3e05bc0-205a-48b1-92ed-78ea0b23e78f",
+        "userId": "98120ad9-eefa-4b93-aa53-696420b639fd"
+      },
+      "eventMetadata": {
+        "connectionId": "10.1.65.233:38320",
+        "sequence": "0",
+        "version": "4",
+        "timestamp": "1679950925732370668"
+      },
+      "validUntil": "1679950935732388581",
+      "openTelemetryCarrier": {
+        "traceparent": "00-8177df6ddb079f50d1eef17eb893b048-992be580d42978b1-01"
+      }
+    }
+  },
+  {
+    "resourceUpdatePending": {
+      "resourceId": {
+        "deviceId": "9c387d90-6ca4-4473-4b6c-f4fb2f8ad0e9",
+        "href": "/light/1"
+      },
+      "content": {
+        "state": false,
+        "power": 1,
+        "name": "Light"
+      },
+      "auditContext": {
+        "correlationId": "a3e05bc0-205a-48b1-92ed-78ea0b23e78f",
+        "userId": "98120ad9-eefa-4b93-aa53-696420b639fd"
+      },
+      "eventMetadata": {
+        "connectionId": "10.1.65.233:38320",
+        "sequence": "0",
+        "version": "4",
+        "timestamp": "1679950925732370668"
+      },
+      "validUntil": "1679950935732388581",
+      "openTelemetryCarrier": {
+        "traceparent": "00-8177df6ddb079f50d1eef17eb893b048-992be580d42978b1-01"
+      }
+    }
+  },
+  {
+    "resourceUpdatePending": {
+      "resourceId": {
+        "deviceId": "9c387d90-6ca4-4473-4b6c-f4fb2f8ad0e9",
+        "href": "/light/1"
+      },
+      "content": {
+        "state": false,
+        "power": 1,
+        "name": "Light"
+      },
+      "auditContext": {
+        "correlationId": "a3e05bc0-205a-48b1-92ed-78ea0b23e78f",
+        "userId": "98120ad9-eefa-4b93-aa53-696420b639fd"
+      },
+      "eventMetadata": {
+        "connectionId": "10.1.65.233:38320",
+        "sequence": "0",
+        "version": "4",
+        "timestamp": "1679950925732370668"
+      },
+      "validUntil": "1679950935732388581",
+      "openTelemetryCarrier": {
+        "traceparent": "00-8177df6ddb079f50d1eef17eb893b048-992be580d42978b1-01"
+      }
+    }
+  },
+  {
+    "resourceUpdatePending": {
+      "resourceId": {
+        "deviceId": "9c387d90-6ca4-4473-4b6c-f4fb2f8ad0e9",
+        "href": "/light/1"
+      },
+      "content": {
+        "state": false,
+        "power": 1,
+        "name": "Light"
+      },
+      "auditContext": {
+        "correlationId": "a3e05bc0-205a-48b1-92ed-78ea0b23e78f",
+        "userId": "98120ad9-eefa-4b93-aa53-696420b639fd"
+      },
+      "eventMetadata": {
+        "connectionId": "10.1.65.233:38320",
+        "sequence": "0",
+        "version": "4",
+        "timestamp": "1679950925732370668"
+      },
+      "validUntil": "1679950935732388581",
+      "openTelemetryCarrier": {
+        "traceparent": "00-8177df6ddb079f50d1eef17eb893b048-992be580d42978b1-01"
+      }
+    }
+  },
+  {
+    "resourceUpdatePending": {
+      "resourceId": {
+        "deviceId": "9c387d90-6ca4-4473-4b6c-f4fb2f8ad0e9",
+        "href": "/light/1"
+      },
+      "content": {
+        "state": false,
+        "power": 1,
+        "name": "Light"
+      },
+      "auditContext": {
+        "correlationId": "a3e05bc0-205a-48b1-92ed-78ea0b23e78f",
+        "userId": "98120ad9-eefa-4b93-aa53-696420b639fd"
+      },
+      "eventMetadata": {
+        "connectionId": "10.1.65.233:38320",
+        "sequence": "0",
+        "version": "4",
+        "timestamp": "1679950925732370668"
+      },
+      "validUntil": "1679950935732388581",
+      "openTelemetryCarrier": {
+        "traceparent": "00-8177df6ddb079f50d1eef17eb893b048-992be580d42978b1-01"
+      }
+    }
+  }
+]
