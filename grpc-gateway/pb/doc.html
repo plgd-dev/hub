@@ -1,0 +1,4958 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <title>Protocol Documentation</title>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Ubuntu:400,700,400italic"/>
+    <style>
+      body {
+        width: 60em;
+        margin: 1em auto;
+        color: #222;
+        font-family: "Ubuntu", sans-serif;
+        padding-bottom: 4em;
+      }
+
+      h1 {
+        font-weight: normal;
+        border-bottom: 1px solid #aaa;
+        padding-bottom: 0.5ex;
+      }
+
+      h2 {
+        border-bottom: 1px solid #aaa;
+        padding-bottom: 0.5ex;
+        margin: 1.5em 0;
+      }
+
+      h3 {
+        font-weight: normal;
+        border-bottom: 1px solid #aaa;
+        padding-bottom: 0.5ex;
+      }
+
+      a {
+        text-decoration: none;
+        color: #567e25;
+      }
+
+      table {
+        width: 100%;
+        font-size: 80%;
+        border-collapse: collapse;
+      }
+
+      thead {
+        font-weight: 700;
+        background-color: #dcdcdc;
+      }
+
+      tbody tr:nth-child(even) {
+        background-color: #fbfbfb;
+      }
+
+      td {
+        border: 1px solid #ccc;
+        padding: 0.5ex 2ex;
+      }
+
+      td p {
+        text-indent: 1em;
+        margin: 0;
+      }
+
+      td p:nth-child(1) {
+        text-indent: 0;  
+      }
+
+       
+      .field-table td:nth-child(1) {  
+        width: 10em;
+      }
+      .field-table td:nth-child(2) {  
+        width: 10em;
+      }
+      .field-table td:nth-child(3) {  
+        width: 6em;
+      }
+      .field-table td:nth-child(4) {  
+        width: auto;
+      }
+
+       
+      .extension-table td:nth-child(1) {  
+        width: 10em;
+      }
+      .extension-table td:nth-child(2) {  
+        width: 10em;
+      }
+      .extension-table td:nth-child(3) {  
+        width: 10em;
+      }
+      .extension-table td:nth-child(4) {  
+        width: 5em;
+      }
+      .extension-table td:nth-child(5) {  
+        width: auto;
+      }
+
+       
+      .enum-table td:nth-child(1) {  
+        width: 10em;
+      }
+      .enum-table td:nth-child(2) {  
+        width: 10em;
+      }
+      .enum-table td:nth-child(3) {  
+        width: auto;
+      }
+
+       
+      .scalar-value-types-table tr {
+        height: 3em;
+      }
+
+       
+      #toc-container ul {
+        list-style-type: none;
+        padding-left: 1em;
+        line-height: 180%;
+        margin: 0;
+      }
+      #toc > li > a {
+        font-weight: bold;
+      }
+
+       
+      .file-heading {
+        width: 100%;
+        display: table;
+        border-bottom: 1px solid #aaa;
+        margin: 4em 0 1.5em 0;
+      }
+      .file-heading h2 {
+        border: none;
+        display: table-cell;
+      }
+      .file-heading a {
+        text-align: right;
+        display: table-cell;
+      }
+
+       
+      .badge {
+        width: 1.6em;
+        height: 1.6em;
+        display: inline-block;
+
+        line-height: 1.6em;
+        text-align: center;
+        font-weight: bold;
+        font-size: 60%;
+
+        color: #89ba48;
+        background-color: #dff0c8;
+
+        margin: 0.5ex 1em 0.5ex -1em;
+        border: 1px solid #fbfbfb;
+        border-radius: 1ex;
+      }
+    </style>
+
+    
+    <link rel="stylesheet" type="text/css" href="stylesheet.css"/>
+  </head>
+
+  <body>
+
+    <h1 id="title">Protocol Documentation</h1>
+
+    <h2>Table of Contents</h2>
+
+    <div id="toc-container">
+      <ul id="toc">
+        
+          
+          <li>
+            <a href="#grpc-gateway%2fpb%2fcancelCommands.proto">grpc-gateway/pb/cancelCommands.proto</a>
+            <ul>
+              
+                <li>
+                  <a href="#grpcgateway.pb.CancelPendingCommandsRequest"><span class="badge">M</span>CancelPendingCommandsRequest</a>
+                </li>
+              
+                <li>
+                  <a href="#grpcgateway.pb.CancelPendingCommandsResponse"><span class="badge">M</span>CancelPendingCommandsResponse</a>
+                </li>
+              
+                <li>
+                  <a href="#grpcgateway.pb.CancelPendingMetadataUpdatesRequest"><span class="badge">M</span>CancelPendingMetadataUpdatesRequest</a>
+                </li>
+              
+              
+              
+              
+            </ul>
+          </li>
+        
+          
+          <li>
+            <a href="#grpc-gateway%2fpb%2fdevices.proto">grpc-gateway/pb/devices.proto</a>
+            <ul>
+              
+                <li>
+                  <a href="#grpcgateway.pb.Content"><span class="badge">M</span>Content</a>
+                </li>
+              
+                <li>
+                  <a href="#grpcgateway.pb.CreateResourceRequest"><span class="badge">M</span>CreateResourceRequest</a>
+                </li>
+              
+                <li>
+                  <a href="#grpcgateway.pb.CreateResourceResponse"><span class="badge">M</span>CreateResourceResponse</a>
+                </li>
+              
+                <li>
+                  <a href="#grpcgateway.pb.DeleteDevicesRequest"><span class="badge">M</span>DeleteDevicesRequest</a>
+                </li>
+              
+                <li>
+                  <a href="#grpcgateway.pb.DeleteDevicesResponse"><span class="badge">M</span>DeleteDevicesResponse</a>
+                </li>
+              
+                <li>
+                  <a href="#grpcgateway.pb.DeleteResourceRequest"><span class="badge">M</span>DeleteResourceRequest</a>
+                </li>
+              
+                <li>
+                  <a href="#grpcgateway.pb.DeleteResourceResponse"><span class="badge">M</span>DeleteResourceResponse</a>
+                </li>
+              
+                <li>
+                  <a href="#grpcgateway.pb.Device"><span class="badge">M</span>Device</a>
+                </li>
+              
+                <li>
+                  <a href="#grpcgateway.pb.Device.Metadata"><span class="badge">M</span>Device.Metadata</a>
+                </li>
+              
+                <li>
+                  <a href="#grpcgateway.pb.Event"><span class="badge">M</span>Event</a>
+                </li>
+              
+                <li>
+                  <a href="#grpcgateway.pb.Event.DeviceRegistered"><span class="badge">M</span>Event.DeviceRegistered</a>
+                </li>
+              
+                <li>
+                  <a href="#grpcgateway.pb.Event.DeviceRegistered.OpenTelemetryCarrierEntry"><span class="badge">M</span>Event.DeviceRegistered.OpenTelemetryCarrierEntry</a>
+                </li>
+              
+                <li>
+                  <a href="#grpcgateway.pb.Event.DeviceUnregistered"><span class="badge">M</span>Event.DeviceUnregistered</a>
+                </li>
+              
+                <li>
+                  <a href="#grpcgateway.pb.Event.DeviceUnregistered.OpenTelemetryCarrierEntry"><span class="badge">M</span>Event.DeviceUnregistered.OpenTelemetryCarrierEntry</a>
+                </li>
+              
+                <li>
+                  <a href="#grpcgateway.pb.Event.OperationProcessed"><span class="badge">M</span>Event.OperationProcessed</a>
+                </li>
+              
+                <li>
+                  <a href="#grpcgateway.pb.Event.OperationProcessed.ErrorStatus"><span class="badge">M</span>Event.OperationProcessed.ErrorStatus</a>
+                </li>
+              
+                <li>
+                  <a href="#grpcgateway.pb.Event.SubscriptionCanceled"><span class="badge">M</span>Event.SubscriptionCanceled</a>
+                </li>
+              
+                <li>
+                  <a href="#grpcgateway.pb.GetDevicesRequest"><span class="badge">M</span>GetDevicesRequest</a>
+                </li>
+              
+                <li>
+                  <a href="#grpcgateway.pb.GetResourceFromDeviceRequest"><span class="badge">M</span>GetResourceFromDeviceRequest</a>
+                </li>
+              
+                <li>
+                  <a href="#grpcgateway.pb.GetResourceFromDeviceResponse"><span class="badge">M</span>GetResourceFromDeviceResponse</a>
+                </li>
+              
+                <li>
+                  <a href="#grpcgateway.pb.GetResourceLinksRequest"><span class="badge">M</span>GetResourceLinksRequest</a>
+                </li>
+              
+                <li>
+                  <a href="#grpcgateway.pb.GetResourcesRequest"><span class="badge">M</span>GetResourcesRequest</a>
+                </li>
+              
+                <li>
+                  <a href="#grpcgateway.pb.LocalizedString"><span class="badge">M</span>LocalizedString</a>
+                </li>
+              
+                <li>
+                  <a href="#grpcgateway.pb.Resource"><span class="badge">M</span>Resource</a>
+                </li>
+              
+                <li>
+                  <a href="#grpcgateway.pb.SubscribeToEvents"><span class="badge">M</span>SubscribeToEvents</a>
+                </li>
+              
+                <li>
+                  <a href="#grpcgateway.pb.SubscribeToEvents.CancelSubscription"><span class="badge">M</span>SubscribeToEvents.CancelSubscription</a>
+                </li>
+              
+                <li>
+                  <a href="#grpcgateway.pb.SubscribeToEvents.CreateSubscription"><span class="badge">M</span>SubscribeToEvents.CreateSubscription</a>
+                </li>
+              
+                <li>
+                  <a href="#grpcgateway.pb.UpdateResourceRequest"><span class="badge">M</span>UpdateResourceRequest</a>
+                </li>
+              
+                <li>
+                  <a href="#grpcgateway.pb.UpdateResourceResponse"><span class="badge">M</span>UpdateResourceResponse</a>
+                </li>
+              
+              
+                <li>
+                  <a href="#grpcgateway.pb.Device.OwnershipStatus"><span class="badge">E</span>Device.OwnershipStatus</a>
+                </li>
+              
+                <li>
+                  <a href="#grpcgateway.pb.Event.OperationProcessed.ErrorStatus.Code"><span class="badge">E</span>Event.OperationProcessed.ErrorStatus.Code</a>
+                </li>
+              
+                <li>
+                  <a href="#grpcgateway.pb.GetDevicesRequest.Status"><span class="badge">E</span>GetDevicesRequest.Status</a>
+                </li>
+              
+                <li>
+                  <a href="#grpcgateway.pb.SubscribeToEvents.CreateSubscription.Event"><span class="badge">E</span>SubscribeToEvents.CreateSubscription.Event</a>
+                </li>
+              
+              
+              
+            </ul>
+          </li>
+        
+          
+          <li>
+            <a href="#grpc-gateway%2fpb%2fevents.proto">grpc-gateway/pb/events.proto</a>
+            <ul>
+              
+                <li>
+                  <a href="#grpcgateway.pb.GetEventsRequest"><span class="badge">M</span>GetEventsRequest</a>
+                </li>
+              
+                <li>
+                  <a href="#grpcgateway.pb.GetEventsResponse"><span class="badge">M</span>GetEventsResponse</a>
+                </li>
+              
+              
+              
+              
+            </ul>
+          </li>
+        
+          
+          <li>
+            <a href="#grpc-gateway%2fpb%2fgetDevicesMetadata.proto">grpc-gateway/pb/getDevicesMetadata.proto</a>
+            <ul>
+              
+                <li>
+                  <a href="#grpcgateway.pb.GetDevicesMetadataRequest"><span class="badge">M</span>GetDevicesMetadataRequest</a>
+                </li>
+              
+              
+              
+              
+            </ul>
+          </li>
+        
+          
+          <li>
+            <a href="#grpc-gateway%2fpb%2fgetPendingCommands.proto">grpc-gateway/pb/getPendingCommands.proto</a>
+            <ul>
+              
+                <li>
+                  <a href="#grpcgateway.pb.GetPendingCommandsRequest"><span class="badge">M</span>GetPendingCommandsRequest</a>
+                </li>
+              
+                <li>
+                  <a href="#grpcgateway.pb.PendingCommand"><span class="badge">M</span>PendingCommand</a>
+                </li>
+              
+              
+                <li>
+                  <a href="#grpcgateway.pb.GetPendingCommandsRequest.Command"><span class="badge">E</span>GetPendingCommandsRequest.Command</a>
+                </li>
+              
+              
+              
+            </ul>
+          </li>
+        
+          
+          <li>
+            <a href="#grpc-gateway%2fpb%2fhubConfiguration.proto">grpc-gateway/pb/hubConfiguration.proto</a>
+            <ul>
+              
+                <li>
+                  <a href="#grpcgateway.pb.DeviceOAuthClient"><span class="badge">M</span>DeviceOAuthClient</a>
+                </li>
+              
+                <li>
+                  <a href="#grpcgateway.pb.HubConfigurationRequest"><span class="badge">M</span>HubConfigurationRequest</a>
+                </li>
+              
+                <li>
+                  <a href="#grpcgateway.pb.HubConfigurationResponse"><span class="badge">M</span>HubConfigurationResponse</a>
+                </li>
+              
+                <li>
+                  <a href="#grpcgateway.pb.WebOAuthClient"><span class="badge">M</span>WebOAuthClient</a>
+                </li>
+              
+              
+              
+              
+            </ul>
+          </li>
+        
+          
+          <li>
+            <a href="#grpc-gateway%2fpb%2fservice.proto">grpc-gateway/pb/service.proto</a>
+            <ul>
+              
+              
+              
+              
+                <li>
+                  <a href="#grpcgateway.pb.GrpcGateway"><span class="badge">S</span>GrpcGateway</a>
+                </li>
+              
+            </ul>
+          </li>
+        
+          
+          <li>
+            <a href="#grpc-gateway%2fpb%2fupdateDeviceMetadata.proto">grpc-gateway/pb/updateDeviceMetadata.proto</a>
+            <ul>
+              
+                <li>
+                  <a href="#grpcgateway.pb.UpdateDeviceMetadataRequest"><span class="badge">M</span>UpdateDeviceMetadataRequest</a>
+                </li>
+              
+                <li>
+                  <a href="#grpcgateway.pb.UpdateDeviceMetadataResponse"><span class="badge">M</span>UpdateDeviceMetadataResponse</a>
+                </li>
+              
+              
+              
+              
+            </ul>
+          </li>
+        
+          
+          <li>
+            <a href="#resource-aggregate%2fpb%2fresources.proto">resource-aggregate/pb/resources.proto</a>
+            <ul>
+              
+                <li>
+                  <a href="#resourceaggregate.pb.AuditContext"><span class="badge">M</span>AuditContext</a>
+                </li>
+              
+                <li>
+                  <a href="#resourceaggregate.pb.Content"><span class="badge">M</span>Content</a>
+                </li>
+              
+                <li>
+                  <a href="#resourceaggregate.pb.EndpointInformation"><span class="badge">M</span>EndpointInformation</a>
+                </li>
+              
+                <li>
+                  <a href="#resourceaggregate.pb.Policy"><span class="badge">M</span>Policy</a>
+                </li>
+              
+                <li>
+                  <a href="#resourceaggregate.pb.Resource"><span class="badge">M</span>Resource</a>
+                </li>
+              
+                <li>
+                  <a href="#resourceaggregate.pb.ResourceId"><span class="badge">M</span>ResourceId</a>
+                </li>
+              
+              
+                <li>
+                  <a href="#resourceaggregate.pb.Status"><span class="badge">E</span>Status</a>
+                </li>
+              
+              
+              
+            </ul>
+          </li>
+        
+          
+          <li>
+            <a href="#resource-aggregate%2fpb%2fevents.proto">resource-aggregate/pb/events.proto</a>
+            <ul>
+              
+                <li>
+                  <a href="#resourceaggregate.pb.DeviceMetadataSnapshotTaken"><span class="badge">M</span>DeviceMetadataSnapshotTaken</a>
+                </li>
+              
+                <li>
+                  <a href="#resourceaggregate.pb.DeviceMetadataUpdatePending"><span class="badge">M</span>DeviceMetadataUpdatePending</a>
+                </li>
+              
+                <li>
+                  <a href="#resourceaggregate.pb.DeviceMetadataUpdatePending.OpenTelemetryCarrierEntry"><span class="badge">M</span>DeviceMetadataUpdatePending.OpenTelemetryCarrierEntry</a>
+                </li>
+              
+                <li>
+                  <a href="#resourceaggregate.pb.DeviceMetadataUpdated"><span class="badge">M</span>DeviceMetadataUpdated</a>
+                </li>
+              
+                <li>
+                  <a href="#resourceaggregate.pb.DeviceMetadataUpdated.OpenTelemetryCarrierEntry"><span class="badge">M</span>DeviceMetadataUpdated.OpenTelemetryCarrierEntry</a>
+                </li>
+              
+                <li>
+                  <a href="#resourceaggregate.pb.EventMetadata"><span class="badge">M</span>EventMetadata</a>
+                </li>
+              
+                <li>
+                  <a href="#resourceaggregate.pb.ResourceChanged"><span class="badge">M</span>ResourceChanged</a>
+                </li>
+              
+                <li>
+                  <a href="#resourceaggregate.pb.ResourceChanged.OpenTelemetryCarrierEntry"><span class="badge">M</span>ResourceChanged.OpenTelemetryCarrierEntry</a>
+                </li>
+              
+                <li>
+                  <a href="#resourceaggregate.pb.ResourceCreatePending"><span class="badge">M</span>ResourceCreatePending</a>
+                </li>
+              
+                <li>
+                  <a href="#resourceaggregate.pb.ResourceCreatePending.OpenTelemetryCarrierEntry"><span class="badge">M</span>ResourceCreatePending.OpenTelemetryCarrierEntry</a>
+                </li>
+              
+                <li>
+                  <a href="#resourceaggregate.pb.ResourceCreated"><span class="badge">M</span>ResourceCreated</a>
+                </li>
+              
+                <li>
+                  <a href="#resourceaggregate.pb.ResourceCreated.OpenTelemetryCarrierEntry"><span class="badge">M</span>ResourceCreated.OpenTelemetryCarrierEntry</a>
+                </li>
+              
+                <li>
+                  <a href="#resourceaggregate.pb.ResourceDeletePending"><span class="badge">M</span>ResourceDeletePending</a>
+                </li>
+              
+                <li>
+                  <a href="#resourceaggregate.pb.ResourceDeletePending.OpenTelemetryCarrierEntry"><span class="badge">M</span>ResourceDeletePending.OpenTelemetryCarrierEntry</a>
+                </li>
+              
+                <li>
+                  <a href="#resourceaggregate.pb.ResourceDeleted"><span class="badge">M</span>ResourceDeleted</a>
+                </li>
+              
+                <li>
+                  <a href="#resourceaggregate.pb.ResourceDeleted.OpenTelemetryCarrierEntry"><span class="badge">M</span>ResourceDeleted.OpenTelemetryCarrierEntry</a>
+                </li>
+              
+                <li>
+                  <a href="#resourceaggregate.pb.ResourceLinksPublished"><span class="badge">M</span>ResourceLinksPublished</a>
+                </li>
+              
+                <li>
+                  <a href="#resourceaggregate.pb.ResourceLinksPublished.OpenTelemetryCarrierEntry"><span class="badge">M</span>ResourceLinksPublished.OpenTelemetryCarrierEntry</a>
+                </li>
+              
+                <li>
+                  <a href="#resourceaggregate.pb.ResourceLinksSnapshotTaken"><span class="badge">M</span>ResourceLinksSnapshotTaken</a>
+                </li>
+              
+                <li>
+                  <a href="#resourceaggregate.pb.ResourceLinksSnapshotTaken.ResourcesEntry"><span class="badge">M</span>ResourceLinksSnapshotTaken.ResourcesEntry</a>
+                </li>
+              
+                <li>
+                  <a href="#resourceaggregate.pb.ResourceLinksUnpublished"><span class="badge">M</span>ResourceLinksUnpublished</a>
+                </li>
+              
+                <li>
+                  <a href="#resourceaggregate.pb.ResourceLinksUnpublished.OpenTelemetryCarrierEntry"><span class="badge">M</span>ResourceLinksUnpublished.OpenTelemetryCarrierEntry</a>
+                </li>
+              
+                <li>
+                  <a href="#resourceaggregate.pb.ResourceRetrievePending"><span class="badge">M</span>ResourceRetrievePending</a>
+                </li>
+              
+                <li>
+                  <a href="#resourceaggregate.pb.ResourceRetrievePending.OpenTelemetryCarrierEntry"><span class="badge">M</span>ResourceRetrievePending.OpenTelemetryCarrierEntry</a>
+                </li>
+              
+                <li>
+                  <a href="#resourceaggregate.pb.ResourceRetrieved"><span class="badge">M</span>ResourceRetrieved</a>
+                </li>
+              
+                <li>
+                  <a href="#resourceaggregate.pb.ResourceRetrieved.OpenTelemetryCarrierEntry"><span class="badge">M</span>ResourceRetrieved.OpenTelemetryCarrierEntry</a>
+                </li>
+              
+                <li>
+                  <a href="#resourceaggregate.pb.ResourceStateSnapshotTaken"><span class="badge">M</span>ResourceStateSnapshotTaken</a>
+                </li>
+              
+                <li>
+                  <a href="#resourceaggregate.pb.ResourceUpdatePending"><span class="badge">M</span>ResourceUpdatePending</a>
+                </li>
+              
+                <li>
+                  <a href="#resourceaggregate.pb.ResourceUpdatePending.OpenTelemetryCarrierEntry"><span class="badge">M</span>ResourceUpdatePending.OpenTelemetryCarrierEntry</a>
+                </li>
+              
+                <li>
+                  <a href="#resourceaggregate.pb.ResourceUpdated"><span class="badge">M</span>ResourceUpdated</a>
+                </li>
+              
+                <li>
+                  <a href="#resourceaggregate.pb.ResourceUpdated.OpenTelemetryCarrierEntry"><span class="badge">M</span>ResourceUpdated.OpenTelemetryCarrierEntry</a>
+                </li>
+              
+              
+              
+              
+            </ul>
+          </li>
+        
+        <li><a href="#scalar-value-types">Scalar Value Types</a></li>
+      </ul>
+    </div>
+
+    
+      
+      <div class="file-heading">
+        <h2 id="grpc-gateway/pb/cancelCommands.proto">grpc-gateway/pb/cancelCommands.proto</h2><a href="#title">Top</a>
+      </div>
+      <p></p>
+
+      
+        <h3 id="grpcgateway.pb.CancelPendingCommandsRequest">CancelPendingCommandsRequest</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>resource_id</td>
+                  <td><a href="#resourceaggregate.pb.ResourceId">resourceaggregate.pb.ResourceId</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>correlation_id_filter</td>
+                  <td><a href="#string">string</a></td>
+                  <td>repeated</td>
+                  <td><p>empty array means all. </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="grpcgateway.pb.CancelPendingCommandsResponse">CancelPendingCommandsResponse</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>correlation_ids</td>
+                  <td><a href="#string">string</a></td>
+                  <td>repeated</td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="grpcgateway.pb.CancelPendingMetadataUpdatesRequest">CancelPendingMetadataUpdatesRequest</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>device_id</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>correlation_id_filter</td>
+                  <td><a href="#string">string</a></td>
+                  <td>repeated</td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+
+      
+
+      
+
+      
+    
+      
+      <div class="file-heading">
+        <h2 id="grpc-gateway/pb/devices.proto">grpc-gateway/pb/devices.proto</h2><a href="#title">Top</a>
+      </div>
+      <p></p>
+
+      
+        <h3 id="grpcgateway.pb.Content">Content</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>content_type</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>data</td>
+                  <td><a href="#bytes">bytes</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="grpcgateway.pb.CreateResourceRequest">CreateResourceRequest</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>resource_id</td>
+                  <td><a href="#resourceaggregate.pb.ResourceId">resourceaggregate.pb.ResourceId</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>content</td>
+                  <td><a href="#grpcgateway.pb.Content">Content</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>time_to_live</td>
+                  <td><a href="#int64">int64</a></td>
+                  <td></td>
+                  <td><p>command validity in nanoseconds. 0 means forever and minimal value is 100000000 (100ms). </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="grpcgateway.pb.CreateResourceResponse">CreateResourceResponse</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>data</td>
+                  <td><a href="#resourceaggregate.pb.ResourceCreated">resourceaggregate.pb.ResourceCreated</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="grpcgateway.pb.DeleteDevicesRequest">DeleteDevicesRequest</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>device_id_filter</td>
+                  <td><a href="#string">string</a></td>
+                  <td>repeated</td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="grpcgateway.pb.DeleteDevicesResponse">DeleteDevicesResponse</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>device_ids</td>
+                  <td><a href="#string">string</a></td>
+                  <td>repeated</td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="grpcgateway.pb.DeleteResourceRequest">DeleteResourceRequest</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>resource_id</td>
+                  <td><a href="#resourceaggregate.pb.ResourceId">resourceaggregate.pb.ResourceId</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>time_to_live</td>
+                  <td><a href="#int64">int64</a></td>
+                  <td></td>
+                  <td><p>command validity in nanoseconds. 0 means forever and minimal value is 100000000 (100ms). </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="grpcgateway.pb.DeleteResourceResponse">DeleteResourceResponse</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>data</td>
+                  <td><a href="#resourceaggregate.pb.ResourceDeleted">resourceaggregate.pb.ResourceDeleted</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="grpcgateway.pb.Device">Device</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>id</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>types</td>
+                  <td><a href="#string">string</a></td>
+                  <td>repeated</td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>name</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>metadata</td>
+                  <td><a href="#grpcgateway.pb.Device.Metadata">Device.Metadata</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>manufacturer_name</td>
+                  <td><a href="#grpcgateway.pb.LocalizedString">LocalizedString</a></td>
+                  <td>repeated</td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>model_number</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>interfaces</td>
+                  <td><a href="#string">string</a></td>
+                  <td>repeated</td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>protocol_independent_id</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>data</td>
+                  <td><a href="#resourceaggregate.pb.ResourceChanged">resourceaggregate.pb.ResourceChanged</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>ownership_status</td>
+                  <td><a href="#grpcgateway.pb.Device.OwnershipStatus">Device.OwnershipStatus</a></td>
+                  <td></td>
+                  <td><p>ownership status of the device </p></td>
+                </tr>
+              
+                <tr>
+                  <td>endpoints</td>
+                  <td><a href="#string">string</a></td>
+                  <td>repeated</td>
+                  <td><p>endpoints with schemas which are hosted by the device </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="grpcgateway.pb.Device.Metadata">Device.Metadata</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>connection</td>
+                  <td><a href="#resourceaggregate.pb.Connection">resourceaggregate.pb.Connection</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>twin_synchronization</td>
+                  <td><a href="#resourceaggregate.pb.TwinSynchronization">resourceaggregate.pb.TwinSynchronization</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>twin_enabled</td>
+                  <td><a href="#bool">bool</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="grpcgateway.pb.Event">Event</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>subscription_id</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>subscription id provided by grpc </p></td>
+                </tr>
+              
+                <tr>
+                  <td>correlation_id</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>device_registered</td>
+                  <td><a href="#grpcgateway.pb.Event.DeviceRegistered">Event.DeviceRegistered</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>device_unregistered</td>
+                  <td><a href="#grpcgateway.pb.Event.DeviceUnregistered">Event.DeviceUnregistered</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>resource_published</td>
+                  <td><a href="#resourceaggregate.pb.ResourceLinksPublished">resourceaggregate.pb.ResourceLinksPublished</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>resource_unpublished</td>
+                  <td><a href="#resourceaggregate.pb.ResourceLinksUnpublished">resourceaggregate.pb.ResourceLinksUnpublished</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>resource_changed</td>
+                  <td><a href="#resourceaggregate.pb.ResourceChanged">resourceaggregate.pb.ResourceChanged</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>operation_processed</td>
+                  <td><a href="#grpcgateway.pb.Event.OperationProcessed">Event.OperationProcessed</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>subscription_canceled</td>
+                  <td><a href="#grpcgateway.pb.Event.SubscriptionCanceled">Event.SubscriptionCanceled</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>resource_update_pending</td>
+                  <td><a href="#resourceaggregate.pb.ResourceUpdatePending">resourceaggregate.pb.ResourceUpdatePending</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>resource_updated</td>
+                  <td><a href="#resourceaggregate.pb.ResourceUpdated">resourceaggregate.pb.ResourceUpdated</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>resource_retrieve_pending</td>
+                  <td><a href="#resourceaggregate.pb.ResourceRetrievePending">resourceaggregate.pb.ResourceRetrievePending</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>resource_retrieved</td>
+                  <td><a href="#resourceaggregate.pb.ResourceRetrieved">resourceaggregate.pb.ResourceRetrieved</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>resource_delete_pending</td>
+                  <td><a href="#resourceaggregate.pb.ResourceDeletePending">resourceaggregate.pb.ResourceDeletePending</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>resource_deleted</td>
+                  <td><a href="#resourceaggregate.pb.ResourceDeleted">resourceaggregate.pb.ResourceDeleted</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>resource_create_pending</td>
+                  <td><a href="#resourceaggregate.pb.ResourceCreatePending">resourceaggregate.pb.ResourceCreatePending</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>resource_created</td>
+                  <td><a href="#resourceaggregate.pb.ResourceCreated">resourceaggregate.pb.ResourceCreated</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>device_metadata_update_pending</td>
+                  <td><a href="#resourceaggregate.pb.DeviceMetadataUpdatePending">resourceaggregate.pb.DeviceMetadataUpdatePending</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>device_metadata_updated</td>
+                  <td><a href="#resourceaggregate.pb.DeviceMetadataUpdated">resourceaggregate.pb.DeviceMetadataUpdated</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="grpcgateway.pb.Event.DeviceRegistered">Event.DeviceRegistered</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>device_ids</td>
+                  <td><a href="#string">string</a></td>
+                  <td>repeated</td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>open_telemetry_carrier</td>
+                  <td><a href="#grpcgateway.pb.Event.DeviceRegistered.OpenTelemetryCarrierEntry">Event.DeviceRegistered.OpenTelemetryCarrierEntry</a></td>
+                  <td>repeated</td>
+                  <td><p>Open telemetry data propagated to asynchronous events </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="grpcgateway.pb.Event.DeviceRegistered.OpenTelemetryCarrierEntry">Event.DeviceRegistered.OpenTelemetryCarrierEntry</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>key</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>value</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="grpcgateway.pb.Event.DeviceUnregistered">Event.DeviceUnregistered</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>device_ids</td>
+                  <td><a href="#string">string</a></td>
+                  <td>repeated</td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>open_telemetry_carrier</td>
+                  <td><a href="#grpcgateway.pb.Event.DeviceUnregistered.OpenTelemetryCarrierEntry">Event.DeviceUnregistered.OpenTelemetryCarrierEntry</a></td>
+                  <td>repeated</td>
+                  <td><p>Open telemetry data propagated to asynchronous events </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="grpcgateway.pb.Event.DeviceUnregistered.OpenTelemetryCarrierEntry">Event.DeviceUnregistered.OpenTelemetryCarrierEntry</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>key</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>value</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="grpcgateway.pb.Event.OperationProcessed">Event.OperationProcessed</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>error_status</td>
+                  <td><a href="#grpcgateway.pb.Event.OperationProcessed.ErrorStatus">Event.OperationProcessed.ErrorStatus</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="grpcgateway.pb.Event.OperationProcessed.ErrorStatus">Event.OperationProcessed.ErrorStatus</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>code</td>
+                  <td><a href="#grpcgateway.pb.Event.OperationProcessed.ErrorStatus.Code">Event.OperationProcessed.ErrorStatus.Code</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>message</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="grpcgateway.pb.Event.SubscriptionCanceled">Event.SubscriptionCanceled</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>reason</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="grpcgateway.pb.GetDevicesRequest">GetDevicesRequest</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>type_filter</td>
+                  <td><a href="#string">string</a></td>
+                  <td>repeated</td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>status_filter</td>
+                  <td><a href="#grpcgateway.pb.GetDevicesRequest.Status">GetDevicesRequest.Status</a></td>
+                  <td>repeated</td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>device_id_filter</td>
+                  <td><a href="#string">string</a></td>
+                  <td>repeated</td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="grpcgateway.pb.GetResourceFromDeviceRequest">GetResourceFromDeviceRequest</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>resource_id</td>
+                  <td><a href="#resourceaggregate.pb.ResourceId">resourceaggregate.pb.ResourceId</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>resource_interface</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>time_to_live</td>
+                  <td><a href="#int64">int64</a></td>
+                  <td></td>
+                  <td><p>command validity in nanoseconds. 0 means forever and minimal value is 100000000 (100ms). </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="grpcgateway.pb.GetResourceFromDeviceResponse">GetResourceFromDeviceResponse</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>data</td>
+                  <td><a href="#resourceaggregate.pb.ResourceRetrieved">resourceaggregate.pb.ResourceRetrieved</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="grpcgateway.pb.GetResourceLinksRequest">GetResourceLinksRequest</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>type_filter</td>
+                  <td><a href="#string">string</a></td>
+                  <td>repeated</td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>device_id_filter</td>
+                  <td><a href="#string">string</a></td>
+                  <td>repeated</td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="grpcgateway.pb.GetResourcesRequest">GetResourcesRequest</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>resource_id_filter</td>
+                  <td><a href="#string">string</a></td>
+                  <td>repeated</td>
+                  <td><p>format {deviceID}{href}. eg &#34;ae424c58-e517-4494-6de7-583536c48213/oic/d&#34; </p></td>
+                </tr>
+              
+                <tr>
+                  <td>device_id_filter</td>
+                  <td><a href="#string">string</a></td>
+                  <td>repeated</td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>type_filter</td>
+                  <td><a href="#string">string</a></td>
+                  <td>repeated</td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="grpcgateway.pb.LocalizedString">LocalizedString</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>language</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>value</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="grpcgateway.pb.Resource">Resource</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>types</td>
+                  <td><a href="#string">string</a></td>
+                  <td>repeated</td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>data</td>
+                  <td><a href="#resourceaggregate.pb.ResourceChanged">resourceaggregate.pb.ResourceChanged</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="grpcgateway.pb.SubscribeToEvents">SubscribeToEvents</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>create_subscription</td>
+                  <td><a href="#grpcgateway.pb.SubscribeToEvents.CreateSubscription">SubscribeToEvents.CreateSubscription</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>cancel_subscription</td>
+                  <td><a href="#grpcgateway.pb.SubscribeToEvents.CancelSubscription">SubscribeToEvents.CancelSubscription</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>correlation_id</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>for pairing request SubscribeToEvents with Event.OperationProcessed </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="grpcgateway.pb.SubscribeToEvents.CancelSubscription">SubscribeToEvents.CancelSubscription</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>subscription_id</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="grpcgateway.pb.SubscribeToEvents.CreateSubscription">SubscribeToEvents.CreateSubscription</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>event_filter</td>
+                  <td><a href="#grpcgateway.pb.SubscribeToEvents.CreateSubscription.Event">SubscribeToEvents.CreateSubscription.Event</a></td>
+                  <td>repeated</td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>device_id_filter</td>
+                  <td><a href="#string">string</a></td>
+                  <td>repeated</td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>resource_id_filter</td>
+                  <td><a href="#string">string</a></td>
+                  <td>repeated</td>
+                  <td><p>format {deviceID}{href}. eg &#34;ae424c58-e517-4494-6de7-583536c48213/oic/d&#34; </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="grpcgateway.pb.UpdateResourceRequest">UpdateResourceRequest</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>resource_id</td>
+                  <td><a href="#resourceaggregate.pb.ResourceId">resourceaggregate.pb.ResourceId</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>resource_interface</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>time_to_live</td>
+                  <td><a href="#int64">int64</a></td>
+                  <td></td>
+                  <td><p>command validity in nanoseconds. 0 means forever and minimal value is 100000000 (100ms). </p></td>
+                </tr>
+              
+                <tr>
+                  <td>content</td>
+                  <td><a href="#grpcgateway.pb.Content">Content</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="grpcgateway.pb.UpdateResourceResponse">UpdateResourceResponse</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>data</td>
+                  <td><a href="#resourceaggregate.pb.ResourceUpdated">resourceaggregate.pb.ResourceUpdated</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+
+      
+        <h3 id="grpcgateway.pb.Device.OwnershipStatus">Device.OwnershipStatus</h3>
+        <p></p>
+        <table class="enum-table">
+          <thead>
+            <tr><td>Name</td><td>Number</td><td>Description</td></tr>
+          </thead>
+          <tbody>
+            
+              <tr>
+                <td>UNKNOWN</td>
+                <td>0</td>
+                <td><p>cannot determine ownership status</p></td>
+              </tr>
+            
+              <tr>
+                <td>UNOWNED</td>
+                <td>1</td>
+                <td><p>device is ready to be owned the user</p></td>
+              </tr>
+            
+              <tr>
+                <td>OWNED</td>
+                <td>2</td>
+                <td><p>device is owned by the user. to determine who own the device you need to get ownership resource /oic/sec/doxm</p></td>
+              </tr>
+            
+              <tr>
+                <td>UNSUPPORTED</td>
+                <td>3</td>
+                <td><p>set when device is not secured. (iotivity-lite was built without security)</p></td>
+              </tr>
+            
+          </tbody>
+        </table>
+      
+        <h3 id="grpcgateway.pb.Event.OperationProcessed.ErrorStatus.Code">Event.OperationProcessed.ErrorStatus.Code</h3>
+        <p></p>
+        <table class="enum-table">
+          <thead>
+            <tr><td>Name</td><td>Number</td><td>Description</td></tr>
+          </thead>
+          <tbody>
+            
+              <tr>
+                <td>OK</td>
+                <td>0</td>
+                <td><p></p></td>
+              </tr>
+            
+              <tr>
+                <td>ERROR</td>
+                <td>1</td>
+                <td><p></p></td>
+              </tr>
+            
+              <tr>
+                <td>NOT_FOUND</td>
+                <td>2</td>
+                <td><p></p></td>
+              </tr>
+            
+          </tbody>
+        </table>
+      
+        <h3 id="grpcgateway.pb.GetDevicesRequest.Status">GetDevicesRequest.Status</h3>
+        <p></p>
+        <table class="enum-table">
+          <thead>
+            <tr><td>Name</td><td>Number</td><td>Description</td></tr>
+          </thead>
+          <tbody>
+            
+              <tr>
+                <td>ONLINE</td>
+                <td>0</td>
+                <td><p></p></td>
+              </tr>
+            
+              <tr>
+                <td>OFFLINE</td>
+                <td>1</td>
+                <td><p></p></td>
+              </tr>
+            
+          </tbody>
+        </table>
+      
+        <h3 id="grpcgateway.pb.SubscribeToEvents.CreateSubscription.Event">SubscribeToEvents.CreateSubscription.Event</h3>
+        <p></p>
+        <table class="enum-table">
+          <thead>
+            <tr><td>Name</td><td>Number</td><td>Description</td></tr>
+          </thead>
+          <tbody>
+            
+              <tr>
+                <td>REGISTERED</td>
+                <td>0</td>
+                <td><p></p></td>
+              </tr>
+            
+              <tr>
+                <td>UNREGISTERED</td>
+                <td>1</td>
+                <td><p></p></td>
+              </tr>
+            
+              <tr>
+                <td>DEVICE_METADATA_UPDATED</td>
+                <td>4</td>
+                <td><p></p></td>
+              </tr>
+            
+              <tr>
+                <td>DEVICE_METADATA_UPDATE_PENDING</td>
+                <td>5</td>
+                <td><p></p></td>
+              </tr>
+            
+              <tr>
+                <td>RESOURCE_PUBLISHED</td>
+                <td>6</td>
+                <td><p></p></td>
+              </tr>
+            
+              <tr>
+                <td>RESOURCE_UNPUBLISHED</td>
+                <td>7</td>
+                <td><p></p></td>
+              </tr>
+            
+              <tr>
+                <td>RESOURCE_UPDATE_PENDING</td>
+                <td>8</td>
+                <td><p></p></td>
+              </tr>
+            
+              <tr>
+                <td>RESOURCE_UPDATED</td>
+                <td>9</td>
+                <td><p></p></td>
+              </tr>
+            
+              <tr>
+                <td>RESOURCE_RETRIEVE_PENDING</td>
+                <td>10</td>
+                <td><p></p></td>
+              </tr>
+            
+              <tr>
+                <td>RESOURCE_RETRIEVED</td>
+                <td>11</td>
+                <td><p></p></td>
+              </tr>
+            
+              <tr>
+                <td>RESOURCE_DELETE_PENDING</td>
+                <td>12</td>
+                <td><p></p></td>
+              </tr>
+            
+              <tr>
+                <td>RESOURCE_DELETED</td>
+                <td>13</td>
+                <td><p></p></td>
+              </tr>
+            
+              <tr>
+                <td>RESOURCE_CREATE_PENDING</td>
+                <td>14</td>
+                <td><p></p></td>
+              </tr>
+            
+              <tr>
+                <td>RESOURCE_CREATED</td>
+                <td>15</td>
+                <td><p></p></td>
+              </tr>
+            
+              <tr>
+                <td>RESOURCE_CHANGED</td>
+                <td>16</td>
+                <td><p></p></td>
+              </tr>
+            
+          </tbody>
+        </table>
+      
+
+      
+
+      
+    
+      
+      <div class="file-heading">
+        <h2 id="grpc-gateway/pb/events.proto">grpc-gateway/pb/events.proto</h2><a href="#title">Top</a>
+      </div>
+      <p></p>
+
+      
+        <h3 id="grpcgateway.pb.GetEventsRequest">GetEventsRequest</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>device_id_filter</td>
+                  <td><a href="#string">string</a></td>
+                  <td>repeated</td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>resource_id_filter</td>
+                  <td><a href="#string">string</a></td>
+                  <td>repeated</td>
+                  <td><p>format {deviceID}{href}. eg &#34;ae424c58-e517-4494-6de7-583536c48213/oic/d&#34; </p></td>
+                </tr>
+              
+                <tr>
+                  <td>timestamp_filter</td>
+                  <td><a href="#int64">int64</a></td>
+                  <td></td>
+                  <td><p>filter events with timestamp &gt; than given value </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="grpcgateway.pb.GetEventsResponse">GetEventsResponse</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>resource_links_published</td>
+                  <td><a href="#resourceaggregate.pb.ResourceLinksPublished">resourceaggregate.pb.ResourceLinksPublished</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>resource_links_unpublished</td>
+                  <td><a href="#resourceaggregate.pb.ResourceLinksUnpublished">resourceaggregate.pb.ResourceLinksUnpublished</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>resource_links_snapshot_taken</td>
+                  <td><a href="#resourceaggregate.pb.ResourceLinksSnapshotTaken">resourceaggregate.pb.ResourceLinksSnapshotTaken</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>resource_changed</td>
+                  <td><a href="#resourceaggregate.pb.ResourceChanged">resourceaggregate.pb.ResourceChanged</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>resource_update_pending</td>
+                  <td><a href="#resourceaggregate.pb.ResourceUpdatePending">resourceaggregate.pb.ResourceUpdatePending</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>resource_updated</td>
+                  <td><a href="#resourceaggregate.pb.ResourceUpdated">resourceaggregate.pb.ResourceUpdated</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>resource_retrieve_pending</td>
+                  <td><a href="#resourceaggregate.pb.ResourceRetrievePending">resourceaggregate.pb.ResourceRetrievePending</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>resource_retrieved</td>
+                  <td><a href="#resourceaggregate.pb.ResourceRetrieved">resourceaggregate.pb.ResourceRetrieved</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>resource_delete_pending</td>
+                  <td><a href="#resourceaggregate.pb.ResourceDeletePending">resourceaggregate.pb.ResourceDeletePending</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>resource_deleted</td>
+                  <td><a href="#resourceaggregate.pb.ResourceDeleted">resourceaggregate.pb.ResourceDeleted</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>resource_create_pending</td>
+                  <td><a href="#resourceaggregate.pb.ResourceCreatePending">resourceaggregate.pb.ResourceCreatePending</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>resource_created</td>
+                  <td><a href="#resourceaggregate.pb.ResourceCreated">resourceaggregate.pb.ResourceCreated</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>resource_state_snapshot_taken</td>
+                  <td><a href="#resourceaggregate.pb.ResourceStateSnapshotTaken">resourceaggregate.pb.ResourceStateSnapshotTaken</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>device_metadata_update_pending</td>
+                  <td><a href="#resourceaggregate.pb.DeviceMetadataUpdatePending">resourceaggregate.pb.DeviceMetadataUpdatePending</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>device_metadata_updated</td>
+                  <td><a href="#resourceaggregate.pb.DeviceMetadataUpdated">resourceaggregate.pb.DeviceMetadataUpdated</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>device_metadata_snapshot_taken</td>
+                  <td><a href="#resourceaggregate.pb.DeviceMetadataSnapshotTaken">resourceaggregate.pb.DeviceMetadataSnapshotTaken</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+
+      
+
+      
+
+      
+    
+      
+      <div class="file-heading">
+        <h2 id="grpc-gateway/pb/getDevicesMetadata.proto">grpc-gateway/pb/getDevicesMetadata.proto</h2><a href="#title">Top</a>
+      </div>
+      <p></p>
+
+      
+        <h3 id="grpcgateway.pb.GetDevicesMetadataRequest">GetDevicesMetadataRequest</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>device_id_filter</td>
+                  <td><a href="#string">string</a></td>
+                  <td>repeated</td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>type_filter</td>
+                  <td><a href="#string">string</a></td>
+                  <td>repeated</td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+
+      
+
+      
+
+      
+    
+      
+      <div class="file-heading">
+        <h2 id="grpc-gateway/pb/getPendingCommands.proto">grpc-gateway/pb/getPendingCommands.proto</h2><a href="#title">Top</a>
+      </div>
+      <p></p>
+
+      
+        <h3 id="grpcgateway.pb.GetPendingCommandsRequest">GetPendingCommandsRequest</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>command_filter</td>
+                  <td><a href="#grpcgateway.pb.GetPendingCommandsRequest.Command">GetPendingCommandsRequest.Command</a></td>
+                  <td>repeated</td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>resource_id_filter</td>
+                  <td><a href="#string">string</a></td>
+                  <td>repeated</td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>device_id_filter</td>
+                  <td><a href="#string">string</a></td>
+                  <td>repeated</td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>type_filter</td>
+                  <td><a href="#string">string</a></td>
+                  <td>repeated</td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="grpcgateway.pb.PendingCommand">PendingCommand</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>resource_create_pending</td>
+                  <td><a href="#resourceaggregate.pb.ResourceCreatePending">resourceaggregate.pb.ResourceCreatePending</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>resource_retrieve_pending</td>
+                  <td><a href="#resourceaggregate.pb.ResourceRetrievePending">resourceaggregate.pb.ResourceRetrievePending</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>resource_update_pending</td>
+                  <td><a href="#resourceaggregate.pb.ResourceUpdatePending">resourceaggregate.pb.ResourceUpdatePending</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>resource_delete_pending</td>
+                  <td><a href="#resourceaggregate.pb.ResourceDeletePending">resourceaggregate.pb.ResourceDeletePending</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>device_metadata_update_pending</td>
+                  <td><a href="#resourceaggregate.pb.DeviceMetadataUpdatePending">resourceaggregate.pb.DeviceMetadataUpdatePending</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+
+      
+        <h3 id="grpcgateway.pb.GetPendingCommandsRequest.Command">GetPendingCommandsRequest.Command</h3>
+        <p></p>
+        <table class="enum-table">
+          <thead>
+            <tr><td>Name</td><td>Number</td><td>Description</td></tr>
+          </thead>
+          <tbody>
+            
+              <tr>
+                <td>RESOURCE_CREATE</td>
+                <td>0</td>
+                <td><p></p></td>
+              </tr>
+            
+              <tr>
+                <td>RESOURCE_RETRIEVE</td>
+                <td>1</td>
+                <td><p></p></td>
+              </tr>
+            
+              <tr>
+                <td>RESOURCE_UPDATE</td>
+                <td>2</td>
+                <td><p></p></td>
+              </tr>
+            
+              <tr>
+                <td>RESOURCE_DELETE</td>
+                <td>3</td>
+                <td><p></p></td>
+              </tr>
+            
+              <tr>
+                <td>DEVICE_METADATA_UPDATE</td>
+                <td>4</td>
+                <td><p></p></td>
+              </tr>
+            
+          </tbody>
+        </table>
+      
+
+      
+
+      
+    
+      
+      <div class="file-heading">
+        <h2 id="grpc-gateway/pb/hubConfiguration.proto">grpc-gateway/pb/hubConfiguration.proto</h2><a href="#title">Top</a>
+      </div>
+      <p></p>
+
+      
+        <h3 id="grpcgateway.pb.DeviceOAuthClient">DeviceOAuthClient</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>client_id</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>@gotags: yaml:&#34;clientID&#34; </p></td>
+                </tr>
+              
+                <tr>
+                  <td>audience</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>scopes</td>
+                  <td><a href="#string">string</a></td>
+                  <td>repeated</td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>provider_name</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>@gotags: yaml:&#34;providerName&#34; </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="grpcgateway.pb.HubConfigurationRequest">HubConfigurationRequest</h3>
+        <p></p>
+
+        
+
+        
+      
+        <h3 id="grpcgateway.pb.HubConfigurationResponse">HubConfigurationResponse</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>current_time</td>
+                  <td><a href="#int64">int64</a></td>
+                  <td></td>
+                  <td><p>provides a current time of server in nanoseconds. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>jwt_owner_claim</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>jwt_device_id_claim</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>id</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>coap_gateway</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>certificate_authorities</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>authority</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>default_command_time_to_live</td>
+                  <td><a href="#int64">int64</a></td>
+                  <td></td>
+                  <td><p>exposes default command time to live in nanoseconds for CreateResource, RetrieveResource, UpdateResource, DeleteResource, and UpdateDeviceMetadata commands when it is not set in the request. 0 - means forever. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>http_gateway_address</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>cfg for UI http-gateway </p></td>
+                </tr>
+              
+                <tr>
+                  <td>web_oauth_client</td>
+                  <td><a href="#grpcgateway.pb.WebOAuthClient">WebOAuthClient</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>device_oauth_client</td>
+                  <td><a href="#grpcgateway.pb.DeviceOAuthClient">DeviceOAuthClient</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="grpcgateway.pb.WebOAuthClient">WebOAuthClient</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>client_id</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>@gotags: yaml:&#34;clientID&#34; </p></td>
+                </tr>
+              
+                <tr>
+                  <td>audience</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>scopes</td>
+                  <td><a href="#string">string</a></td>
+                  <td>repeated</td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+
+      
+
+      
+
+      
+    
+      
+      <div class="file-heading">
+        <h2 id="grpc-gateway/pb/service.proto">grpc-gateway/pb/service.proto</h2><a href="#title">Top</a>
+      </div>
+      <p></p>
+
+      
+
+      
+
+      
+
+      
+        <h3 id="grpcgateway.pb.GrpcGateway">GrpcGateway</h3>
+        <p></p>
+        <table class="enum-table">
+          <thead>
+            <tr><td>Method Name</td><td>Request Type</td><td>Response Type</td><td>Description</td></tr>
+          </thead>
+          <tbody>
+            
+              <tr>
+                <td>GetDevices</td>
+                <td><a href="#grpcgateway.pb.GetDevicesRequest">GetDevicesRequest</a></td>
+                <td><a href="#grpcgateway.pb.Device">Device</a> stream</td>
+                <td><p>Get all devices</p></td>
+              </tr>
+            
+              <tr>
+                <td>DeleteDevices</td>
+                <td><a href="#grpcgateway.pb.DeleteDevicesRequest">DeleteDevicesRequest</a></td>
+                <td><a href="#grpcgateway.pb.DeleteDevicesResponse">DeleteDevicesResponse</a></td>
+                <td><p>Delete selected devices.</p></td>
+              </tr>
+            
+              <tr>
+                <td>GetResourceLinks</td>
+                <td><a href="#grpcgateway.pb.GetResourceLinksRequest">GetResourceLinksRequest</a></td>
+                <td><a href="#resourceaggregate.pb.ResourceLinksPublished">.resourceaggregate.pb.ResourceLinksPublished</a> stream</td>
+                <td><p>Get resource links of devices.</p></td>
+              </tr>
+            
+              <tr>
+                <td>GetResourceFromDevice</td>
+                <td><a href="#grpcgateway.pb.GetResourceFromDeviceRequest">GetResourceFromDeviceRequest</a></td>
+                <td><a href="#grpcgateway.pb.GetResourceFromDeviceResponse">GetResourceFromDeviceResponse</a></td>
+                <td><p>Get resource from the device.</p></td>
+              </tr>
+            
+              <tr>
+                <td>GetResources</td>
+                <td><a href="#grpcgateway.pb.GetResourcesRequest">GetResourcesRequest</a></td>
+                <td><a href="#grpcgateway.pb.Resource">Resource</a> stream</td>
+                <td><p>Get resources from the resource shadow.</p></td>
+              </tr>
+            
+              <tr>
+                <td>UpdateResource</td>
+                <td><a href="#grpcgateway.pb.UpdateResourceRequest">UpdateResourceRequest</a></td>
+                <td><a href="#grpcgateway.pb.UpdateResourceResponse">UpdateResourceResponse</a></td>
+                <td><p>Update resource at the device.</p></td>
+              </tr>
+            
+              <tr>
+                <td>SubscribeToEvents</td>
+                <td><a href="#grpcgateway.pb.SubscribeToEvents">SubscribeToEvents</a> stream</td>
+                <td><a href="#grpcgateway.pb.Event">Event</a> stream</td>
+                <td><p>When the client creates a subscription.
+Subscription doesn&#39;t guarantee that all events will be sent to the client. The client is responsible for synchronize events.</p></td>
+              </tr>
+            
+              <tr>
+                <td>GetHubConfiguration</td>
+                <td><a href="#grpcgateway.pb.HubConfigurationRequest">HubConfigurationRequest</a></td>
+                <td><a href="#grpcgateway.pb.HubConfigurationResponse">HubConfigurationResponse</a></td>
+                <td><p>Get cloud configuration</p></td>
+              </tr>
+            
+              <tr>
+                <td>DeleteResource</td>
+                <td><a href="#grpcgateway.pb.DeleteResourceRequest">DeleteResourceRequest</a></td>
+                <td><a href="#grpcgateway.pb.DeleteResourceResponse">DeleteResourceResponse</a></td>
+                <td><p>Delete resource at the device.</p></td>
+              </tr>
+            
+              <tr>
+                <td>CreateResource</td>
+                <td><a href="#grpcgateway.pb.CreateResourceRequest">CreateResourceRequest</a></td>
+                <td><a href="#grpcgateway.pb.CreateResourceResponse">CreateResourceResponse</a></td>
+                <td><p>Create resource at the device.</p></td>
+              </tr>
+            
+              <tr>
+                <td>UpdateDeviceMetadata</td>
+                <td><a href="#grpcgateway.pb.UpdateDeviceMetadataRequest">UpdateDeviceMetadataRequest</a></td>
+                <td><a href="#grpcgateway.pb.UpdateDeviceMetadataResponse">UpdateDeviceMetadataResponse</a></td>
+                <td><p>Enables/disables shadow synchronization for device.</p></td>
+              </tr>
+            
+              <tr>
+                <td>GetPendingCommands</td>
+                <td><a href="#grpcgateway.pb.GetPendingCommandsRequest">GetPendingCommandsRequest</a></td>
+                <td><a href="#grpcgateway.pb.PendingCommand">PendingCommand</a> stream</td>
+                <td><p>Gets pending commands for devices .</p></td>
+              </tr>
+            
+              <tr>
+                <td>CancelPendingCommands</td>
+                <td><a href="#grpcgateway.pb.CancelPendingCommandsRequest">CancelPendingCommandsRequest</a></td>
+                <td><a href="#grpcgateway.pb.CancelPendingCommandsResponse">CancelPendingCommandsResponse</a></td>
+                <td><p>Cancels resource commands.</p></td>
+              </tr>
+            
+              <tr>
+                <td>CancelPendingMetadataUpdates</td>
+                <td><a href="#grpcgateway.pb.CancelPendingMetadataUpdatesRequest">CancelPendingMetadataUpdatesRequest</a></td>
+                <td><a href="#grpcgateway.pb.CancelPendingCommandsResponse">CancelPendingCommandsResponse</a></td>
+                <td><p>Cancels device metadata updates.</p></td>
+              </tr>
+            
+              <tr>
+                <td>GetDevicesMetadata</td>
+                <td><a href="#grpcgateway.pb.GetDevicesMetadataRequest">GetDevicesMetadataRequest</a></td>
+                <td><a href="#resourceaggregate.pb.DeviceMetadataUpdated">.resourceaggregate.pb.DeviceMetadataUpdated</a> stream</td>
+                <td><p>Gets metadata of the devices. Is contains online/offline or shadown synchronization status.</p></td>
+              </tr>
+            
+              <tr>
+                <td>GetEvents</td>
+                <td><a href="#grpcgateway.pb.GetEventsRequest">GetEventsRequest</a></td>
+                <td><a href="#grpcgateway.pb.GetEventsResponse">GetEventsResponse</a> stream</td>
+                <td><p>Get events for given combination of device id, resource id and timestamp</p></td>
+              </tr>
+            
+          </tbody>
+        </table>
+
+        
+          
+          
+          <h4>Methods with HTTP bindings</h4>
+          <table>
+            <thead>
+              <tr>
+                <td>Method Name</td>
+                <td>Method</td>
+                <td>Pattern</td>
+                <td>Body</td>
+              </tr>
+            </thead>
+            <tbody>
+            
+              
+              
+              <tr>
+                <td>GetDevices</td>
+                <td>GET</td>
+                <td>/api/v1/devices</td>
+                <td></td>
+              </tr>
+              
+            
+              
+              
+              <tr>
+                <td>DeleteDevices</td>
+                <td>DELETE</td>
+                <td>/api/v1/devices</td>
+                <td></td>
+              </tr>
+              
+            
+              
+              
+              <tr>
+                <td>GetResourceLinks</td>
+                <td>GET</td>
+                <td>/api/v1/resource-links</td>
+                <td></td>
+              </tr>
+              
+            
+              
+              
+              <tr>
+                <td>GetResourceFromDevice</td>
+                <td>GET</td>
+                <td>/api/v1/devices/{resource_id.device_id}/resources/{resource_id.href=**}</td>
+                <td></td>
+              </tr>
+              
+            
+              
+              
+              <tr>
+                <td>GetResources</td>
+                <td>GET</td>
+                <td>/api/v1/resources</td>
+                <td></td>
+              </tr>
+              
+            
+              
+              
+              <tr>
+                <td>UpdateResource</td>
+                <td>PUT</td>
+                <td>/api/v1/devices/{resource_id.device_id}/resources/{resource_id.href=**}</td>
+                <td>content</td>
+              </tr>
+              
+            
+              
+              
+              <tr>
+                <td>SubscribeToEvents</td>
+                <td>POST</td>
+                <td>/api/v1/ws/events</td>
+                <td>*</td>
+              </tr>
+              
+            
+              
+              
+              <tr>
+                <td>GetHubConfiguration</td>
+                <td>GET</td>
+                <td>/.well-known/hub-configuration</td>
+                <td></td>
+              </tr>
+              
+              <tr>
+                <td>GetHubConfiguration</td>
+                <td>GET</td>
+                <td>/.well-known/configuration</td>
+                <td></td>
+              </tr>
+              
+            
+              
+              
+              <tr>
+                <td>DeleteResource</td>
+                <td>DELETE</td>
+                <td>/api/v1/devices/{resource_id.device_id}/resource-links/{resource_id.href=**}</td>
+                <td></td>
+              </tr>
+              
+            
+              
+              
+              <tr>
+                <td>CreateResource</td>
+                <td>POST</td>
+                <td>/api/v1/devices/{resource_id.device_id}/resource-links/{resource_id.href=**}</td>
+                <td>content</td>
+              </tr>
+              
+            
+              
+              
+              <tr>
+                <td>UpdateDeviceMetadata</td>
+                <td>PUT</td>
+                <td>/api/v1/devices/{device_id}/metadata</td>
+                <td>*</td>
+              </tr>
+              
+            
+              
+              
+              <tr>
+                <td>GetPendingCommands</td>
+                <td>GET</td>
+                <td>/api/v1/pending-commands</td>
+                <td></td>
+              </tr>
+              
+            
+              
+              
+              <tr>
+                <td>CancelPendingCommands</td>
+                <td>DELETE</td>
+                <td>/api/v1/pending-commands</td>
+                <td></td>
+              </tr>
+              
+            
+              
+              
+              <tr>
+                <td>CancelPendingMetadataUpdates</td>
+                <td>DELETE</td>
+                <td>/api/v1/devices/{device_id}/pending-metadata-updates</td>
+                <td></td>
+              </tr>
+              
+            
+              
+              
+              <tr>
+                <td>GetDevicesMetadata</td>
+                <td>GET</td>
+                <td>/api/v1/devices-metadata</td>
+                <td></td>
+              </tr>
+              
+            
+              
+              
+              <tr>
+                <td>GetEvents</td>
+                <td>GET</td>
+                <td>/api/v1/events</td>
+                <td></td>
+              </tr>
+              
+            
+            </tbody>
+          </table>
+          
+        
+    
+      
+      <div class="file-heading">
+        <h2 id="grpc-gateway/pb/updateDeviceMetadata.proto">grpc-gateway/pb/updateDeviceMetadata.proto</h2><a href="#title">Top</a>
+      </div>
+      <p></p>
+
+      
+        <h3 id="grpcgateway.pb.UpdateDeviceMetadataRequest">UpdateDeviceMetadataRequest</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>device_id</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>twin_enabled</td>
+                  <td><a href="#bool">bool</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>time_to_live</td>
+                  <td><a href="#int64">int64</a></td>
+                  <td></td>
+                  <td><p>command validity in nanoseconds. 0 means forever and minimal value is 100000000 (100ms). </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="grpcgateway.pb.UpdateDeviceMetadataResponse">UpdateDeviceMetadataResponse</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>data</td>
+                  <td><a href="#resourceaggregate.pb.DeviceMetadataUpdated">resourceaggregate.pb.DeviceMetadataUpdated</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+
+      
+
+      
+
+      
+    
+      
+      <div class="file-heading">
+        <h2 id="resource-aggregate/pb/resources.proto">resource-aggregate/pb/resources.proto</h2><a href="#title">Top</a>
+      </div>
+      <p></p>
+
+      
+        <h3 id="resourceaggregate.pb.AuditContext">AuditContext</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>user_id</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>correlation_id</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="resourceaggregate.pb.Content">Content</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>data</td>
+                  <td><a href="#bytes">bytes</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>content_type</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>coap_content_format</td>
+                  <td><a href="#int32">int32</a></td>
+                  <td></td>
+                  <td><p>-1 means content-format was not provided </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="resourceaggregate.pb.EndpointInformation">EndpointInformation</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>endpoint</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>priority</td>
+                  <td><a href="#int64">int64</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="resourceaggregate.pb.Policy">Policy</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>bit_flags</td>
+                  <td><a href="#int32">int32</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="resourceaggregate.pb.Resource">Resource</h3>
+        <p>https://github.com/openconnectivityfoundation/core/blob/master/schemas/oic.links.properties.core-schema.json</p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>href</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>device_id</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>resource_types</td>
+                  <td><a href="#string">string</a></td>
+                  <td>repeated</td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>interfaces</td>
+                  <td><a href="#string">string</a></td>
+                  <td>repeated</td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>anchor</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>title</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>supported_content_types</td>
+                  <td><a href="#string">string</a></td>
+                  <td>repeated</td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>valid_until</td>
+                  <td><a href="#int64">int64</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>policy</td>
+                  <td><a href="#resourceaggregate.pb.Policy">Policy</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>endpoint_informations</td>
+                  <td><a href="#resourceaggregate.pb.EndpointInformation">EndpointInformation</a></td>
+                  <td>repeated</td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="resourceaggregate.pb.ResourceId">ResourceId</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>device_id</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>href</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+
+      
+        <h3 id="resourceaggregate.pb.Status">Status</h3>
+        <p></p>
+        <table class="enum-table">
+          <thead>
+            <tr><td>Name</td><td>Number</td><td>Description</td></tr>
+          </thead>
+          <tbody>
+            
+              <tr>
+                <td>UNKNOWN</td>
+                <td>0</td>
+                <td><p></p></td>
+              </tr>
+            
+              <tr>
+                <td>OK</td>
+                <td>1</td>
+                <td><p></p></td>
+              </tr>
+            
+              <tr>
+                <td>BAD_REQUEST</td>
+                <td>2</td>
+                <td><p></p></td>
+              </tr>
+            
+              <tr>
+                <td>UNAUTHORIZED</td>
+                <td>3</td>
+                <td><p></p></td>
+              </tr>
+            
+              <tr>
+                <td>FORBIDDEN</td>
+                <td>4</td>
+                <td><p></p></td>
+              </tr>
+            
+              <tr>
+                <td>NOT_FOUND</td>
+                <td>5</td>
+                <td><p></p></td>
+              </tr>
+            
+              <tr>
+                <td>UNAVAILABLE</td>
+                <td>6</td>
+                <td><p></p></td>
+              </tr>
+            
+              <tr>
+                <td>NOT_IMPLEMENTED</td>
+                <td>7</td>
+                <td><p></p></td>
+              </tr>
+            
+              <tr>
+                <td>ACCEPTED</td>
+                <td>8</td>
+                <td><p></p></td>
+              </tr>
+            
+              <tr>
+                <td>ERROR</td>
+                <td>9</td>
+                <td><p></p></td>
+              </tr>
+            
+              <tr>
+                <td>METHOD_NOT_ALLOWED</td>
+                <td>10</td>
+                <td><p></p></td>
+              </tr>
+            
+              <tr>
+                <td>CREATED</td>
+                <td>11</td>
+                <td><p></p></td>
+              </tr>
+            
+              <tr>
+                <td>CANCELED</td>
+                <td>12</td>
+                <td><p>Canceled indicates the operation was canceled (typically by the user).</p></td>
+              </tr>
+            
+          </tbody>
+        </table>
+      
+
+      
+
+      
+    
+      
+      <div class="file-heading">
+        <h2 id="resource-aggregate/pb/events.proto">resource-aggregate/pb/events.proto</h2><a href="#title">Top</a>
+      </div>
+      <p></p>
+
+      
+        <h3 id="resourceaggregate.pb.DeviceMetadataSnapshotTaken">DeviceMetadataSnapshotTaken</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>device_id</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>device_metadata_updated</td>
+                  <td><a href="#resourceaggregate.pb.DeviceMetadataUpdated">DeviceMetadataUpdated</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>update_pendings</td>
+                  <td><a href="#resourceaggregate.pb.DeviceMetadataUpdatePending">DeviceMetadataUpdatePending</a></td>
+                  <td>repeated</td>
+                  <td><p>expired events will be removed by creating a new snapshot. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>event_metadata</td>
+                  <td><a href="#resourceaggregate.pb.EventMetadata">EventMetadata</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="resourceaggregate.pb.DeviceMetadataUpdatePending">DeviceMetadataUpdatePending</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>device_id</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>twin_enabled</td>
+                  <td><a href="#bool">bool</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>audit_context</td>
+                  <td><a href="#resourceaggregate.pb.AuditContext">AuditContext</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>event_metadata</td>
+                  <td><a href="#resourceaggregate.pb.EventMetadata">EventMetadata</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>valid_until</td>
+                  <td><a href="#int64">int64</a></td>
+                  <td></td>
+                  <td><p>unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when pending event is considered as expired. 0 means forever. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>open_telemetry_carrier</td>
+                  <td><a href="#resourceaggregate.pb.DeviceMetadataUpdatePending.OpenTelemetryCarrierEntry">DeviceMetadataUpdatePending.OpenTelemetryCarrierEntry</a></td>
+                  <td>repeated</td>
+                  <td><p>Open telemetry data propagated to asynchronous events </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="resourceaggregate.pb.DeviceMetadataUpdatePending.OpenTelemetryCarrierEntry">DeviceMetadataUpdatePending.OpenTelemetryCarrierEntry</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>key</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>value</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="resourceaggregate.pb.DeviceMetadataUpdated">DeviceMetadataUpdated</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>device_id</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>connection</td>
+                  <td><a href="#resourceaggregate.pb.Connection">Connection</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>twin_synchronization</td>
+                  <td><a href="#resourceaggregate.pb.TwinSynchronization">TwinSynchronization</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>twin_enabled</td>
+                  <td><a href="#bool">bool</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>audit_context</td>
+                  <td><a href="#resourceaggregate.pb.AuditContext">AuditContext</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>event_metadata</td>
+                  <td><a href="#resourceaggregate.pb.EventMetadata">EventMetadata</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>canceled</td>
+                  <td><a href="#bool">bool</a></td>
+                  <td></td>
+                  <td><p>it true then the command with audit_context.correlation_id was canceled. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>open_telemetry_carrier</td>
+                  <td><a href="#resourceaggregate.pb.DeviceMetadataUpdated.OpenTelemetryCarrierEntry">DeviceMetadataUpdated.OpenTelemetryCarrierEntry</a></td>
+                  <td>repeated</td>
+                  <td><p>Open telemetry data propagated to asynchronous events </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="resourceaggregate.pb.DeviceMetadataUpdated.OpenTelemetryCarrierEntry">DeviceMetadataUpdated.OpenTelemetryCarrierEntry</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>key</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>value</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="resourceaggregate.pb.EventMetadata">EventMetadata</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>version</td>
+                  <td><a href="#uint64">uint64</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>timestamp</td>
+                  <td><a href="#int64">int64</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>connection_id</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>sequence</td>
+                  <td><a href="#uint64">uint64</a></td>
+                  <td></td>
+                  <td><p>sequence number within the same connection_id; the ResourceChanged event uses the value to skip old events, other event types might not fill the value </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="resourceaggregate.pb.ResourceChanged">ResourceChanged</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>resource_id</td>
+                  <td><a href="#resourceaggregate.pb.ResourceId">ResourceId</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>content</td>
+                  <td><a href="#resourceaggregate.pb.Content">Content</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>status</td>
+                  <td><a href="#resourceaggregate.pb.Status">Status</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>audit_context</td>
+                  <td><a href="#resourceaggregate.pb.AuditContext">AuditContext</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>event_metadata</td>
+                  <td><a href="#resourceaggregate.pb.EventMetadata">EventMetadata</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>open_telemetry_carrier</td>
+                  <td><a href="#resourceaggregate.pb.ResourceChanged.OpenTelemetryCarrierEntry">ResourceChanged.OpenTelemetryCarrierEntry</a></td>
+                  <td>repeated</td>
+                  <td><p>Open telemetry data propagated to asynchronous events </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="resourceaggregate.pb.ResourceChanged.OpenTelemetryCarrierEntry">ResourceChanged.OpenTelemetryCarrierEntry</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>key</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>value</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="resourceaggregate.pb.ResourceCreatePending">ResourceCreatePending</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>resource_id</td>
+                  <td><a href="#resourceaggregate.pb.ResourceId">ResourceId</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>content</td>
+                  <td><a href="#resourceaggregate.pb.Content">Content</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>audit_context</td>
+                  <td><a href="#resourceaggregate.pb.AuditContext">AuditContext</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>event_metadata</td>
+                  <td><a href="#resourceaggregate.pb.EventMetadata">EventMetadata</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>valid_until</td>
+                  <td><a href="#int64">int64</a></td>
+                  <td></td>
+                  <td><p>unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when pending event is considered as expired. 0 means forever. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>open_telemetry_carrier</td>
+                  <td><a href="#resourceaggregate.pb.ResourceCreatePending.OpenTelemetryCarrierEntry">ResourceCreatePending.OpenTelemetryCarrierEntry</a></td>
+                  <td>repeated</td>
+                  <td><p>Open telemetry data propagated to asynchronous events </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="resourceaggregate.pb.ResourceCreatePending.OpenTelemetryCarrierEntry">ResourceCreatePending.OpenTelemetryCarrierEntry</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>key</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>value</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="resourceaggregate.pb.ResourceCreated">ResourceCreated</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>resource_id</td>
+                  <td><a href="#resourceaggregate.pb.ResourceId">ResourceId</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>status</td>
+                  <td><a href="#resourceaggregate.pb.Status">Status</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>content</td>
+                  <td><a href="#resourceaggregate.pb.Content">Content</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>audit_context</td>
+                  <td><a href="#resourceaggregate.pb.AuditContext">AuditContext</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>event_metadata</td>
+                  <td><a href="#resourceaggregate.pb.EventMetadata">EventMetadata</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>open_telemetry_carrier</td>
+                  <td><a href="#resourceaggregate.pb.ResourceCreated.OpenTelemetryCarrierEntry">ResourceCreated.OpenTelemetryCarrierEntry</a></td>
+                  <td>repeated</td>
+                  <td><p>Open telemetry data propagated to asynchronous events </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="resourceaggregate.pb.ResourceCreated.OpenTelemetryCarrierEntry">ResourceCreated.OpenTelemetryCarrierEntry</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>key</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>value</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="resourceaggregate.pb.ResourceDeletePending">ResourceDeletePending</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>resource_id</td>
+                  <td><a href="#resourceaggregate.pb.ResourceId">ResourceId</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>audit_context</td>
+                  <td><a href="#resourceaggregate.pb.AuditContext">AuditContext</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>event_metadata</td>
+                  <td><a href="#resourceaggregate.pb.EventMetadata">EventMetadata</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>valid_until</td>
+                  <td><a href="#int64">int64</a></td>
+                  <td></td>
+                  <td><p>unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when pending event is considered as expired. 0 means forever. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>open_telemetry_carrier</td>
+                  <td><a href="#resourceaggregate.pb.ResourceDeletePending.OpenTelemetryCarrierEntry">ResourceDeletePending.OpenTelemetryCarrierEntry</a></td>
+                  <td>repeated</td>
+                  <td><p>Open telemetry data propagated to asynchronous events </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="resourceaggregate.pb.ResourceDeletePending.OpenTelemetryCarrierEntry">ResourceDeletePending.OpenTelemetryCarrierEntry</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>key</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>value</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="resourceaggregate.pb.ResourceDeleted">ResourceDeleted</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>resource_id</td>
+                  <td><a href="#resourceaggregate.pb.ResourceId">ResourceId</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>status</td>
+                  <td><a href="#resourceaggregate.pb.Status">Status</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>content</td>
+                  <td><a href="#resourceaggregate.pb.Content">Content</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>audit_context</td>
+                  <td><a href="#resourceaggregate.pb.AuditContext">AuditContext</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>event_metadata</td>
+                  <td><a href="#resourceaggregate.pb.EventMetadata">EventMetadata</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>open_telemetry_carrier</td>
+                  <td><a href="#resourceaggregate.pb.ResourceDeleted.OpenTelemetryCarrierEntry">ResourceDeleted.OpenTelemetryCarrierEntry</a></td>
+                  <td>repeated</td>
+                  <td><p>Open telemetry data propagated to asynchronous events </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="resourceaggregate.pb.ResourceDeleted.OpenTelemetryCarrierEntry">ResourceDeleted.OpenTelemetryCarrierEntry</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>key</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>value</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="resourceaggregate.pb.ResourceLinksPublished">ResourceLinksPublished</h3>
+        <p>https://github.com/openconnectivityfoundation/cloud-services/blob/master/swagger2.0/oic.wk.rd.swagger.json#L173</p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>device_id</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>resources</td>
+                  <td><a href="#resourceaggregate.pb.Resource">Resource</a></td>
+                  <td>repeated</td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>audit_context</td>
+                  <td><a href="#resourceaggregate.pb.AuditContext">AuditContext</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>event_metadata</td>
+                  <td><a href="#resourceaggregate.pb.EventMetadata">EventMetadata</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>open_telemetry_carrier</td>
+                  <td><a href="#resourceaggregate.pb.ResourceLinksPublished.OpenTelemetryCarrierEntry">ResourceLinksPublished.OpenTelemetryCarrierEntry</a></td>
+                  <td>repeated</td>
+                  <td><p>Open telemetry data propagated to asynchronous events </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="resourceaggregate.pb.ResourceLinksPublished.OpenTelemetryCarrierEntry">ResourceLinksPublished.OpenTelemetryCarrierEntry</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>key</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>value</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="resourceaggregate.pb.ResourceLinksSnapshotTaken">ResourceLinksSnapshotTaken</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>device_id</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>resources</td>
+                  <td><a href="#resourceaggregate.pb.ResourceLinksSnapshotTaken.ResourcesEntry">ResourceLinksSnapshotTaken.ResourcesEntry</a></td>
+                  <td>repeated</td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>event_metadata</td>
+                  <td><a href="#resourceaggregate.pb.EventMetadata">EventMetadata</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>audit_context</td>
+                  <td><a href="#resourceaggregate.pb.AuditContext">AuditContext</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="resourceaggregate.pb.ResourceLinksSnapshotTaken.ResourcesEntry">ResourceLinksSnapshotTaken.ResourcesEntry</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>key</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>value</td>
+                  <td><a href="#resourceaggregate.pb.Resource">Resource</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="resourceaggregate.pb.ResourceLinksUnpublished">ResourceLinksUnpublished</h3>
+        <p>https://github.com/openconnectivityfoundation/cloud-services/blob/master/swagger2.0/oic.wk.rd.swagger.json #Specification CR needed</p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>device_id</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>hrefs</td>
+                  <td><a href="#string">string</a></td>
+                  <td>repeated</td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>audit_context</td>
+                  <td><a href="#resourceaggregate.pb.AuditContext">AuditContext</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>event_metadata</td>
+                  <td><a href="#resourceaggregate.pb.EventMetadata">EventMetadata</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>open_telemetry_carrier</td>
+                  <td><a href="#resourceaggregate.pb.ResourceLinksUnpublished.OpenTelemetryCarrierEntry">ResourceLinksUnpublished.OpenTelemetryCarrierEntry</a></td>
+                  <td>repeated</td>
+                  <td><p>Open telemetry data propagated to asynchronous events </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="resourceaggregate.pb.ResourceLinksUnpublished.OpenTelemetryCarrierEntry">ResourceLinksUnpublished.OpenTelemetryCarrierEntry</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>key</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>value</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="resourceaggregate.pb.ResourceRetrievePending">ResourceRetrievePending</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>resource_id</td>
+                  <td><a href="#resourceaggregate.pb.ResourceId">ResourceId</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>resource_interface</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>audit_context</td>
+                  <td><a href="#resourceaggregate.pb.AuditContext">AuditContext</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>event_metadata</td>
+                  <td><a href="#resourceaggregate.pb.EventMetadata">EventMetadata</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>valid_until</td>
+                  <td><a href="#int64">int64</a></td>
+                  <td></td>
+                  <td><p>unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when pending event is considered as expired. 0 means forever. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>open_telemetry_carrier</td>
+                  <td><a href="#resourceaggregate.pb.ResourceRetrievePending.OpenTelemetryCarrierEntry">ResourceRetrievePending.OpenTelemetryCarrierEntry</a></td>
+                  <td>repeated</td>
+                  <td><p>Open telemetry data propagated to asynchronous events </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="resourceaggregate.pb.ResourceRetrievePending.OpenTelemetryCarrierEntry">ResourceRetrievePending.OpenTelemetryCarrierEntry</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>key</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>value</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="resourceaggregate.pb.ResourceRetrieved">ResourceRetrieved</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>resource_id</td>
+                  <td><a href="#resourceaggregate.pb.ResourceId">ResourceId</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>status</td>
+                  <td><a href="#resourceaggregate.pb.Status">Status</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>content</td>
+                  <td><a href="#resourceaggregate.pb.Content">Content</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>audit_context</td>
+                  <td><a href="#resourceaggregate.pb.AuditContext">AuditContext</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>event_metadata</td>
+                  <td><a href="#resourceaggregate.pb.EventMetadata">EventMetadata</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>open_telemetry_carrier</td>
+                  <td><a href="#resourceaggregate.pb.ResourceRetrieved.OpenTelemetryCarrierEntry">ResourceRetrieved.OpenTelemetryCarrierEntry</a></td>
+                  <td>repeated</td>
+                  <td><p>Open telemetry data propagated to asynchronous events </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="resourceaggregate.pb.ResourceRetrieved.OpenTelemetryCarrierEntry">ResourceRetrieved.OpenTelemetryCarrierEntry</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>key</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>value</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="resourceaggregate.pb.ResourceStateSnapshotTaken">ResourceStateSnapshotTaken</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>resource_id</td>
+                  <td><a href="#resourceaggregate.pb.ResourceId">ResourceId</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>latest_resource_change</td>
+                  <td><a href="#resourceaggregate.pb.ResourceChanged">ResourceChanged</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>resource_create_pendings</td>
+                  <td><a href="#resourceaggregate.pb.ResourceCreatePending">ResourceCreatePending</a></td>
+                  <td>repeated</td>
+                  <td><p>expired events will be removed by creating a new snapshot. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>resource_retrieve_pendings</td>
+                  <td><a href="#resourceaggregate.pb.ResourceRetrievePending">ResourceRetrievePending</a></td>
+                  <td>repeated</td>
+                  <td><p>expired events will be removed by creating a new snapshot. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>resource_update_pendings</td>
+                  <td><a href="#resourceaggregate.pb.ResourceUpdatePending">ResourceUpdatePending</a></td>
+                  <td>repeated</td>
+                  <td><p>expired events will be removed by creating a new snapshot. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>resource_delete_pendings</td>
+                  <td><a href="#resourceaggregate.pb.ResourceDeletePending">ResourceDeletePending</a></td>
+                  <td>repeated</td>
+                  <td><p>expired events will be removed by creating a new snapshot. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>audit_context</td>
+                  <td><a href="#resourceaggregate.pb.AuditContext">AuditContext</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>event_metadata</td>
+                  <td><a href="#resourceaggregate.pb.EventMetadata">EventMetadata</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="resourceaggregate.pb.ResourceUpdatePending">ResourceUpdatePending</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>resource_id</td>
+                  <td><a href="#resourceaggregate.pb.ResourceId">ResourceId</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>resource_interface</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>content</td>
+                  <td><a href="#resourceaggregate.pb.Content">Content</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>audit_context</td>
+                  <td><a href="#resourceaggregate.pb.AuditContext">AuditContext</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>event_metadata</td>
+                  <td><a href="#resourceaggregate.pb.EventMetadata">EventMetadata</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>valid_until</td>
+                  <td><a href="#int64">int64</a></td>
+                  <td></td>
+                  <td><p>unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when pending event is considered as expired. 0 means forever. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>open_telemetry_carrier</td>
+                  <td><a href="#resourceaggregate.pb.ResourceUpdatePending.OpenTelemetryCarrierEntry">ResourceUpdatePending.OpenTelemetryCarrierEntry</a></td>
+                  <td>repeated</td>
+                  <td><p>Open telemetry data propagated to asynchronous events </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="resourceaggregate.pb.ResourceUpdatePending.OpenTelemetryCarrierEntry">ResourceUpdatePending.OpenTelemetryCarrierEntry</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>key</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>value</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="resourceaggregate.pb.ResourceUpdated">ResourceUpdated</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>resource_id</td>
+                  <td><a href="#resourceaggregate.pb.ResourceId">ResourceId</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>status</td>
+                  <td><a href="#resourceaggregate.pb.Status">Status</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>content</td>
+                  <td><a href="#resourceaggregate.pb.Content">Content</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>audit_context</td>
+                  <td><a href="#resourceaggregate.pb.AuditContext">AuditContext</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>event_metadata</td>
+                  <td><a href="#resourceaggregate.pb.EventMetadata">EventMetadata</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>open_telemetry_carrier</td>
+                  <td><a href="#resourceaggregate.pb.ResourceUpdated.OpenTelemetryCarrierEntry">ResourceUpdated.OpenTelemetryCarrierEntry</a></td>
+                  <td>repeated</td>
+                  <td><p>Open telemetry data propagated to asynchronous events </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="resourceaggregate.pb.ResourceUpdated.OpenTelemetryCarrierEntry">ResourceUpdated.OpenTelemetryCarrierEntry</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>key</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>value</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+
+      
+
+      
+
+      
+    
+
+    <h2 id="scalar-value-types">Scalar Value Types</h2>
+    <table class="scalar-value-types-table">
+      <thead>
+        <tr><td>.proto Type</td><td>Notes</td><td>C++</td><td>Java</td><td>Python</td><td>Go</td><td>C#</td><td>PHP</td><td>Ruby</td></tr>
+      </thead>
+      <tbody>
+        
+          <tr id="double">
+            <td>double</td>
+            <td></td>
+            <td>double</td>
+            <td>double</td>
+            <td>float</td>
+            <td>float64</td>
+            <td>double</td>
+            <td>float</td>
+            <td>Float</td>
+          </tr>
+        
+          <tr id="float">
+            <td>float</td>
+            <td></td>
+            <td>float</td>
+            <td>float</td>
+            <td>float</td>
+            <td>float32</td>
+            <td>float</td>
+            <td>float</td>
+            <td>Float</td>
+          </tr>
+        
+          <tr id="int32">
+            <td>int32</td>
+            <td>Uses variable-length encoding. Inefficient for encoding negative numbers – if your field is likely to have negative values, use sint32 instead.</td>
+            <td>int32</td>
+            <td>int</td>
+            <td>int</td>
+            <td>int32</td>
+            <td>int</td>
+            <td>integer</td>
+            <td>Bignum or Fixnum (as required)</td>
+          </tr>
+        
+          <tr id="int64">
+            <td>int64</td>
+            <td>Uses variable-length encoding. Inefficient for encoding negative numbers – if your field is likely to have negative values, use sint64 instead.</td>
+            <td>int64</td>
+            <td>long</td>
+            <td>int/long</td>
+            <td>int64</td>
+            <td>long</td>
+            <td>integer/string</td>
+            <td>Bignum</td>
+          </tr>
+        
+          <tr id="uint32">
+            <td>uint32</td>
+            <td>Uses variable-length encoding.</td>
+            <td>uint32</td>
+            <td>int</td>
+            <td>int/long</td>
+            <td>uint32</td>
+            <td>uint</td>
+            <td>integer</td>
+            <td>Bignum or Fixnum (as required)</td>
+          </tr>
+        
+          <tr id="uint64">
+            <td>uint64</td>
+            <td>Uses variable-length encoding.</td>
+            <td>uint64</td>
+            <td>long</td>
+            <td>int/long</td>
+            <td>uint64</td>
+            <td>ulong</td>
+            <td>integer/string</td>
+            <td>Bignum or Fixnum (as required)</td>
+          </tr>
+        
+          <tr id="sint32">
+            <td>sint32</td>
+            <td>Uses variable-length encoding. Signed int value. These more efficiently encode negative numbers than regular int32s.</td>
+            <td>int32</td>
+            <td>int</td>
+            <td>int</td>
+            <td>int32</td>
+            <td>int</td>
+            <td>integer</td>
+            <td>Bignum or Fixnum (as required)</td>
+          </tr>
+        
+          <tr id="sint64">
+            <td>sint64</td>
+            <td>Uses variable-length encoding. Signed int value. These more efficiently encode negative numbers than regular int64s.</td>
+            <td>int64</td>
+            <td>long</td>
+            <td>int/long</td>
+            <td>int64</td>
+            <td>long</td>
+            <td>integer/string</td>
+            <td>Bignum</td>
+          </tr>
+        
+          <tr id="fixed32">
+            <td>fixed32</td>
+            <td>Always four bytes. More efficient than uint32 if values are often greater than 2^28.</td>
+            <td>uint32</td>
+            <td>int</td>
+            <td>int</td>
+            <td>uint32</td>
+            <td>uint</td>
+            <td>integer</td>
+            <td>Bignum or Fixnum (as required)</td>
+          </tr>
+        
+          <tr id="fixed64">
+            <td>fixed64</td>
+            <td>Always eight bytes. More efficient than uint64 if values are often greater than 2^56.</td>
+            <td>uint64</td>
+            <td>long</td>
+            <td>int/long</td>
+            <td>uint64</td>
+            <td>ulong</td>
+            <td>integer/string</td>
+            <td>Bignum</td>
+          </tr>
+        
+          <tr id="sfixed32">
+            <td>sfixed32</td>
+            <td>Always four bytes.</td>
+            <td>int32</td>
+            <td>int</td>
+            <td>int</td>
+            <td>int32</td>
+            <td>int</td>
+            <td>integer</td>
+            <td>Bignum or Fixnum (as required)</td>
+          </tr>
+        
+          <tr id="sfixed64">
+            <td>sfixed64</td>
+            <td>Always eight bytes.</td>
+            <td>int64</td>
+            <td>long</td>
+            <td>int/long</td>
+            <td>int64</td>
+            <td>long</td>
+            <td>integer/string</td>
+            <td>Bignum</td>
+          </tr>
+        
+          <tr id="bool">
+            <td>bool</td>
+            <td></td>
+            <td>bool</td>
+            <td>boolean</td>
+            <td>boolean</td>
+            <td>bool</td>
+            <td>bool</td>
+            <td>boolean</td>
+            <td>TrueClass/FalseClass</td>
+          </tr>
+        
+          <tr id="string">
+            <td>string</td>
+            <td>A string must always contain UTF-8 encoded or 7-bit ASCII text.</td>
+            <td>string</td>
+            <td>String</td>
+            <td>str/unicode</td>
+            <td>string</td>
+            <td>string</td>
+            <td>string</td>
+            <td>String (UTF-8)</td>
+          </tr>
+        
+          <tr id="bytes">
+            <td>bytes</td>
+            <td>May contain any arbitrary sequence of bytes.</td>
+            <td>string</td>
+            <td>ByteString</td>
+            <td>str</td>
+            <td>[]byte</td>
+            <td>ByteString</td>
+            <td>string</td>
+            <td>String (ASCII-8BIT)</td>
+          </tr>
+        
+      </tbody>
+    </table>
+  </body>
+</html>
+

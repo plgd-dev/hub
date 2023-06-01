@@ -4,6 +4,16 @@ package resourceaggregate.pb;
 
 option go_package = "github.com/plgd-dev/hub/v2/resource-aggregate/commands;commands";
 
+message AuditContext {
+  string user_id = 1;
+  string correlation_id = 2;
+}
+
+message ResourceId {
+  string device_id = 1;
+  string href = 2;
+}
+
 // https://github.com/openconnectivityfoundation/core/blob/master/schemas/oic.links.properties.core-schema.json
 message Resource {
     string href = 1;

@@ -11,16 +11,6 @@ message CommandMetadata {
     uint64 sequence = 2;
 }
 
-message AuditContext {
-    string user_id = 1;
-    string correlation_id = 2;
-}
-
-message ResourceId {
-    string device_id = 1;
-    string href = 2;
-}
-
 //******************************************************************************************************************************************************
 // Publish / Unpublish Resources
 //
