@@ -7,7 +7,8 @@ import TileToggle from '@shared-ui/components/Atomic/TileToggle'
 import SimpleStripTable from '@shared-ui/components/Atomic/SimpleStripTable'
 import TagGroup from '@shared-ui/components/Atomic/TagGroup'
 import Tag from '@shared-ui/components/Atomic/Tag'
-import { convertSize, IconCloudSuccess } from '@shared-ui/components/Atomic/Icon'
+import Tooltip from '@shared-ui/components/Atomic/Tooltip'
+import { convertSize, IconCloudSuccess, IconCloudWarning } from '@shared-ui/components/Atomic/Icon'
 import { eventFilters, WebSocketEventClient } from '@shared-ui/common/services'
 
 import { Props } from './Tab1.types'
@@ -17,7 +18,8 @@ import { isNotificationActive, toggleActiveNotification } from '@/containers/Dev
 import { deviceResourceRegistrationListener } from '@/containers/Devices/websockets'
 
 const Tab1: FC<Props> = (props) => {
-    const { isTwinEnabled, setTwinSynchronization, twinSyncLoading, deviceId, types, deviceName, model, pendingCommandsData } = props
+    const { isTwinEnabled, setTwinSynchronization, twinSyncLoading, deviceId, types, deviceName, model, pendingCommandsData, firmware, softwareUpdateData } =
+        props
     const { formatMessage: _ } = useIntl()
 
     const resourceRegistrationObservationWSKey = getResourceRegistrationNotificationKey(deviceId)
@@ -110,12 +112,42 @@ const Tab1: FC<Props> = (props) => {
                                 <div>-</div>
                             ),
                         },
+                        /*
+                        https://github.com/openconnectivityfoundation/core-extensions/blob/master/swagger2.0/oic.r.softwareupdate.swagger.json
+                        softwareUpdateData = {
+                            "swupdateaction":"idle", https://github.com/plgd-dev/device/blob/2a60018de0639e7f225254ff9487bcf91bbb603f/schema/softwareupdate/swupdate.go#L49
+                            "swupdateresult":0,  // 
+                            "swupdatestate":"nsa", https://github.com/plgd-dev/device/blob/2a60018de0639e7f225254ff9487bcf91bbb603f/schema/softwareupdate/swupdate.go#L58
+                            "updatetime":"2023-06-02T07:37:00Z", // when the action will be performed
+                            "lastupdate":"2023-06-02T07:37:02.330206Z",  // when the upgrade was performed
+                            "nv":"0.0.12", // new available version
+                            "purl":"https://hosted.mender.io?device_type=ocf&tenant_token=eyJhbuqBM",
+                            "signed":"vendor"
+                        }
+                        // to upgrade send a POST request to swu resource with the following payload { swupdateaction: 'upgrade', updatetime: 'now+10sec', purl: 'same value as been received in the swupdate payload'}
+                        */
                         {
                             attribute: _(t.firmware),
-                            value: (
+                            value: firmware ? (
                                 <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                                    <span style={{ marginRight: 6 }}>0.22.1</span> <IconCloudSuccess {...convertSize(24)} />
+                                    <span style={{ marginRight: 6 }}>{firmware}</span>{' '}
+                                    {softwareUpdateData?.swupdatestate !== 'idle' ? (
+                                        <Tooltip
+                                            content={_(t.newDeviceFirmware, {
+                                                newVersion: softwareUpdateData?.nv,
+                                            })}
+                                            delay={200}
+                                        >
+                                            <IconCloudWarning {...convertSize(24)} />
+                                        </Tooltip>
+                                    ) : (
+                                        <Tooltip content={_(t.deviceFirmwareUpToDate, { lastUpdate: softwareUpdateData?.lastupdate })} delay={200}>
+                                            <IconCloudSuccess {...convertSize(24)} />
+                                        </Tooltip>
+                                    )}
                                 </div>
+                            ) : (
+                                <div>-</div>
                             ),
                         },
                         { attribute: _(t.status), value: pendingCommandsData ? `${pendingCommandsData.length} pending commands` : '-' },

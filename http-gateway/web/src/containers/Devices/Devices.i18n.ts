@@ -521,4 +521,12 @@ export const messages = defineMessages({
         id: 'devices.unit',
         defaultMessage: 'ID',
     },
+    newDeviceFirmware: {
+        id: 'devices.newDeviceFirmware',
+        defaultMessage: 'A new version of device firmware {newVersion} is now available for download.',
+    },
+    deviceFirmwareUpToDate: {
+        id: 'devices.deviceFirmwareUpToDate',
+        defaultMessage: 'The device firmware is current. It was last updated on {lastUpdate}',
+    },
 })
