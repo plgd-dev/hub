@@ -16,7 +16,7 @@ RUN ( cd ./vendor/golang.org/x/oauth2 && patch -p1 < $GOPATH/src/github.com/plgd
 WORKDIR $GOPATH/src/github.com/plgd-dev/hub/$DIRECTORY
 RUN go build -mod=vendor -o /go/bin/$NAME ./cmd/service
 
-FROM alpine:3.17 AS service
+FROM alpine:3.18 AS service
 ARG NAME
 RUN apk add --no-cache ca-certificates
 COPY --from=build /go/bin/$NAME /usr/local/bin/$NAME

@@ -10,7 +10,7 @@ RUN ( cd /usr/local/go && patch -p1 < $GOPATH/src/github.com/plgd-dev/hub/tools/
 WORKDIR $GOPATH/src/github.com/plgd-dev/hub/tools/cert-tool
 RUN CGO_ENABLED=0 go build -o /go/bin/cert-tool ./
 
-FROM alpine:3.17 AS security-provider
+FROM alpine:3.18 AS security-provider
 RUN addgroup -S nonroot \
     && adduser -S nonroot -G nonroot
 
