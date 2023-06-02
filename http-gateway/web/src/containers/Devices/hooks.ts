@@ -61,6 +61,20 @@ export const useDeviceDetails = (deviceId: string) => {
     return { data, updateData, ...rest }
 }
 
+export const useDeviceSoftwareUpdateDetails = (deviceId: string) => {
+    const { telemetryWebTracer } = useContext(AppContext)
+    const { data, updateData, ...rest }: StreamApiPropsType = useStreamApi(
+        `${getConfig().httpGatewayAddress}${devicesApiEndpoints.DEVICES}/${deviceId}/resources?type=oic.r.softwareupdate`,
+        {
+            streamApi: false,
+            telemetryWebTracer,
+            telemetrySpan: 'get-device-software-update-detail',
+        }
+    )
+
+    return { data, updateData, ...rest }
+}
+
 export const useDevicesResources = (deviceId: string) => {
     const { telemetryWebTracer } = useContext(AppContext)
     const { data, updateData, ...rest }: StreamApiPropsType = useStreamApi(

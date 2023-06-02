@@ -21,7 +21,7 @@ import DevicesDetailsHeader from '../DevicesDetailsHeader'
 import { devicesStatuses, NO_DEVICE_NAME } from '../../constants'
 import { getDeviceChangeResourceHref, handleTwinSynchronizationErrors, isDeviceOnline } from '../../utils'
 import { updateDevicesResourceApi, updateDeviceTwinSynchronizationApi } from '../../rest'
-import { useDeviceDetails, useDevicePendingCommands, useDevicesResources } from '../../hooks'
+import { useDeviceDetails, useDevicePendingCommands, useDevicesResources, useDeviceSoftwareUpdateDetails } from '../../hooks'
 import { messages as t } from '../../Devices.i18n'
 import './DevicesDetailsPage.scss'
 import Tab1 from './Tabs/Tab1'
@@ -42,6 +42,7 @@ const DevicesDetailsPage = () => {
 
     const isMounted = useIsMounted()
     const { data, updateData, loading, error: deviceError } = useDeviceDetails(id)
+    const { data: softwareUpdateData, refresh: refreshSoftwareUpdate } = useDeviceSoftwareUpdateDetails(id)
     const { data: resourcesData, loading: loadingResources, error: resourcesError, refresh } = useDevicesResources(id)
     const { data: pendingCommandsData, refresh: refreshPendingCommands } = useDevicePendingCommands(id)
 
@@ -80,6 +81,7 @@ const DevicesDetailsPage = () => {
         setActiveTabItem(i)
 
         refreshPendingCommands()
+        refreshSoftwareUpdate()
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
@@ -223,6 +225,7 @@ const DevicesDetailsPage = () => {
                                 model={data?.data?.content?.dmno}
                                 pendingCommandsData={pendingCommandsData}
                                 setTwinSynchronization={setTwinSynchronization}
+                                softwareUpdateData={softwareUpdateData?.result?.data?.content}
                                 twinSyncLoading={twinSyncLoading}
                                 types={data?.types}
                             />
