@@ -11,7 +11,7 @@ RUN ( cd ./vendor/golang.org/x/oauth2 && patch -p1 < $GOPATH/src/github.com/plgd
 WORKDIR $GOPATH/src/github.com/plgd-dev/hub/http-gateway
 RUN CGO_ENABLED=0 go build -mod=vendor -o /go/bin/http-gateway ./cmd/service
 
-FROM alpine:3.17 AS security-provider
+FROM alpine:3.18 AS security-provider
 RUN apk add -U --no-cache ca-certificates
 RUN addgroup -S nonroot \
     && adduser -S nonroot -G nonroot
