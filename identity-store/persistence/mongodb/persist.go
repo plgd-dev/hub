@@ -43,8 +43,7 @@ func (p *Store) NewTransaction(ctx context.Context) persistence.PersistenceTx {
 // Retrieve device's authorization details.
 func (p *PersistenceTx) Retrieve(deviceID, userID string) (_ *persistence.AuthorizedDevice, ok bool, err error) {
 	if p.err != nil {
-		err = p.err
-		return
+		return nil, false, p.err
 	}
 
 	col := p.tx.Client().Database(p.dbname).Collection(userDevicesCName)
@@ -53,11 +52,10 @@ func (p *PersistenceTx) Retrieve(deviceID, userID string) (_ *persistence.Author
 	})
 
 	if errors.Is(err, mongo.ErrNilDocument) {
-		err = nil
-		return
+		return nil, false, nil
 	}
 	if err != nil {
-		return
+		return nil, false, err
 	}
 
 	it := iterator{
@@ -68,8 +66,7 @@ func (p *PersistenceTx) Retrieve(deviceID, userID string) (_ *persistence.Author
 	var d persistence.AuthorizedDevice
 	ok = it.Next(&d)
 	if it.Err() != nil {
-		err = it.Err()
-		return
+		return nil, ok, it.Err()
 	}
 
 	return &d, ok, nil
