@@ -56,14 +56,13 @@ func New(caCert []*x509.Certificate, caKey crypto.PrivateKey, opts ...Opt) *Cert
 	return &CertificateSigner{caCert: caCert, caKey: caKey, cfg: cfg}
 }
 
-func (s *CertificateSigner) Sign(_ context.Context, csr []byte) (signedCsr []byte, err error) {
+func (s *CertificateSigner) Sign(_ context.Context, csr []byte) ([]byte, error) {
 	if len(s.caCert) == 0 {
 		return nil, fmt.Errorf("cannot sign with empty signer CA certificates")
 	}
 	csrBlock, _ := pem.Decode(csr)
 	if csrBlock == nil {
-		err = fmt.Errorf("pem not found")
-		return
+		return nil, fmt.Errorf("pem not found")
 	}
 
 	certificateRequest, err := x509.ParseCertificateRequest(csrBlock.Bytes)
@@ -111,7 +110,7 @@ func (s *CertificateSigner) Sign(_ context.Context, csr []byte) (signedCsr []byt
 			return nil, err
 		}
 	}
-	signedCsr, err = x509.CreateCertificate(rand.Reader, &template, s.caCert[0], certificateRequest.PublicKey, s.caKey)
+	signedCsr, err := x509.CreateCertificate(rand.Reader, &template, s.caCert[0], certificateRequest.PublicKey, s.caKey)
 	if err != nil {
 		return nil, err
 	}
