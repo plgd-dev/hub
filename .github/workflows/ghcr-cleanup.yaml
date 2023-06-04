@@ -4,6 +4,7 @@ on:
     - cron: "15 1 * * *" # every day at 1:15am
   pull_request:
     types: [closed]
+  push:
 
 jobs:
   pull-request-ghcr-cleanup:
@@ -19,9 +20,9 @@ jobs:
           account-type: org
           org-name: plgd-dev
           filter-tags: vnext-pr${{ github.event.pull_request.number }}*
-          token: ${{ secrets.GHCR_CLEANUP_PAT }}
+          token: ${{ secrets.TEST_GHCR_CLEANUP_PAT }}
   nightly-ghcr-cleanup:
-    if: ${{ github.event_name == 'schedule' }}
+    # if: ${{ github.event_name == 'schedule' }}
     name: Delete old vnext images
     runs-on: ubuntu-latest
     steps:
@@ -34,4 +35,4 @@ jobs:
           org-name: plgd-dev
           filter-tags: vnext-*
           skip-tags: vnext-pr*, main
-          token: ${{ secrets.GHCR_CLEANUP_PAT }}
+          token: ${{ secrets.TEST_GHCR_CLEANUP_PAT }}
