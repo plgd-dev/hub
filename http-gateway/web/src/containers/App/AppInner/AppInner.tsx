@@ -3,6 +3,7 @@ import { Router } from 'react-router-dom'
 import { useAuth } from 'oidc-react'
 import { Global, ThemeProvider } from '@emotion/react'
 import { Helmet } from 'react-helmet'
+import { useIntl } from 'react-intl'
 
 import Layout from '@shared-ui/components/Layout'
 import Header from '@shared-ui/components/Layout/Header'
@@ -17,6 +18,7 @@ import { useLocalStorage, WellKnownConfigType } from '@shared-ui/common/hooks'
 import light from '@shared-ui/components/Atomic/_theme/light'
 import { MenuItem } from '@shared-ui/components/Layout/LeftPanel/LeftPanel.types'
 import { security } from '@shared-ui/common/services'
+import NotificationCenter from '@shared-ui/components/Atomic/NotificationCenter'
 
 import { AppContext } from '@/containers/App/AppContext'
 import { history } from '@/store'
@@ -28,6 +30,7 @@ import { deviceStatusListener } from '../../Devices/websockets'
 import LeftPanelWrapper from '@/containers/App/AppInner/LeftPanelWrapper/LeftPanelWrapper'
 import { globalStyle } from './AppInner.global.styles'
 import { AppContextType } from '@/containers/App/AppContext.types'
+import { messages as t } from '../App.i18n'
 
 const getBuildInformation = (wellKnownConfig: WellKnownConfigType) => ({
     buildDate: wellKnownConfig?.buildDate || '',
@@ -41,12 +44,12 @@ const AppInner = (props: Props) => {
     const { wellKnownConfig, openTelemetry } = props
     const { userData, userManager } = useAuth()
     const buildInformation = getBuildInformation(wellKnownConfig)
+    const { formatMessage: _ } = useIntl()
 
     const [footerExpanded, setFooterExpanded] = useLocalStorage('footerPanelExpanded', false)
     const [activeItem, setActiveItem] = useState(parseActiveItem(history.location.pathname, menu, mather))
     const [collapsed, setCollapsed] = useLocalStorage('leftPanelCollapsed', true)
 
-    // TODO: redux store on user switch Notification
     const toastNotifications = false
 
     const contextValue: AppContextType = useMemo(
@@ -95,6 +98,15 @@ const AppInner = (props: Props) => {
                         header={
                             <Header
                                 breadcrumbs={<div id='breadcrumbsPortalTarget'></div>}
+                                notificationCenter={
+                                    <NotificationCenter
+                                        i18n={{
+                                            notifications: _(t.notifications),
+                                            noNotifications: _(t.noNotifications),
+                                            markAllAsRead: _(t.markAllAsRead),
+                                        }}
+                                    />
+                                }
                                 userWidget={
                                     <UserWidget
                                         description={userData?.profile?.family_name}

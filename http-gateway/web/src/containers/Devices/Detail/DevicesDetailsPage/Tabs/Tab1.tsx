@@ -1,4 +1,4 @@
-import React, { FC, useEffect, useRef, useState } from 'react'
+import React, { FC, useEffect, useRef } from 'react'
 import { useIntl } from 'react-intl'
 import { useDispatch, useSelector } from 'react-redux'
 
@@ -27,10 +27,6 @@ const Tab1: FC<Props> = (props) => {
     const notificationsEnabled = useRef(false)
     notificationsEnabled.current = useSelector(isNotificationActive(deviceNotificationKey))
     const dispatch = useDispatch()
-
-    const [state, setState] = useState({
-        tile3: true,
-    })
 
     useEffect(() => {
         if (deviceId && notificationsEnabled.current) {
@@ -93,7 +89,7 @@ const Tab1: FC<Props> = (props) => {
                         dispatch(toggleActiveNotification(deviceNotificationKey))
                     }}
                 />
-                <TileToggle checked={state.tile3} name={_(t.logging)} onChange={() => setState({ ...state, tile3: !state.tile3 })} />
+                {/* <TileToggle checked={state.tile3} name={_(t.logging)} onChange={() => setState({ ...state, tile3: !state.tile3 })} />*/}
             </TileToggleRow>
             <div style={{ paddingTop: 16 }}>
                 <SimpleStripTable
@@ -116,7 +112,7 @@ const Tab1: FC<Props> = (props) => {
                         https://github.com/openconnectivityfoundation/core-extensions/blob/master/swagger2.0/oic.r.softwareupdate.swagger.json
                         softwareUpdateData = {
                             "swupdateaction":"idle", https://github.com/plgd-dev/device/blob/2a60018de0639e7f225254ff9487bcf91bbb603f/schema/softwareupdate/swupdate.go#L49
-                            "swupdateresult":0,  // 
+                            "swupdateresult":0,  //
                             "swupdatestate":"nsa", https://github.com/plgd-dev/device/blob/2a60018de0639e7f225254ff9487bcf91bbb603f/schema/softwareupdate/swupdate.go#L58
                             "updatetime":"2023-06-02T07:37:00Z", // when the action will be performed
                             "lastupdate":"2023-06-02T07:37:02.330206Z",  // when the upgrade was performed
@@ -134,14 +130,19 @@ const Tab1: FC<Props> = (props) => {
                                     {softwareUpdateData?.swupdatestate !== 'idle' ? (
                                         <Tooltip
                                             content={_(t.newDeviceFirmware, {
-                                                newVersion: softwareUpdateData?.nv,
+                                                newVersion: new Date(softwareUpdateData?.nv!).toLocaleDateString('en-US'),
                                             })}
                                             delay={200}
                                         >
                                             <IconCloudWarning {...convertSize(24)} />
                                         </Tooltip>
                                     ) : (
-                                        <Tooltip content={_(t.deviceFirmwareUpToDate, { lastUpdate: softwareUpdateData?.lastupdate })} delay={200}>
+                                        <Tooltip
+                                            content={_(t.deviceFirmwareUpToDate, {
+                                                lastUpdate: new Date(softwareUpdateData?.lastupdate!).toLocaleDateString('en-US'),
+                                            })}
+                                            delay={200}
+                                        >
                                             <IconCloudSuccess {...convertSize(24)} />
                                         </Tooltip>
                                     )}
