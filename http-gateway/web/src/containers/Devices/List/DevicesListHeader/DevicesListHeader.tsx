@@ -9,6 +9,7 @@ import { DEVICES_REGISTERED_UNREGISTERED_COUNT_EVENT_KEY, RESET_COUNTER } from '
 import { messages as t } from '../../Devices.i18n'
 import { Props } from './DevicesListHeader.types'
 import * as styles from './DevicesListHeader.styles'
+import Notification from '@shared-ui/components/Atomic/Notification/Toast'
 
 const DevicesListHeader: FC<Props> = ({ loading, refresh }) => {
     const { formatMessage: _ } = useIntl()
@@ -26,6 +27,21 @@ const DevicesListHeader: FC<Props> = ({ loading, refresh }) => {
 
     return (
         <div css={styles.devicesListHeader}>
+            <button
+                onClick={() => {
+                    Notification.error(
+                        {
+                            title: 'Error title',
+                            message: 'Error message',
+                        },
+                        {
+                            toastId: new Date().toLocaleTimeString(),
+                        }
+                    )
+                }}
+            >
+                toast
+            </button>
             <Button css={styles.item} disabled={loading || numberOfChanges === 0} loading={loading} onClick={refreshDevices}>
                 {numberOfChanges > 0 && !loading && <span css={styles.circleNumber}>{numberOfChanges}</span>}
                 {_(t.refresh)}

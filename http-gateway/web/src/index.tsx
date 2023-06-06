@@ -1,6 +1,9 @@
 import React from 'react'
 import { createRoot } from 'react-dom/client'
 import { Provider } from 'react-redux'
+import { persistStore } from 'redux-persist'
+import { PersistGate } from 'redux-persist/integration/react'
+
 import { App } from '@/containers/App'
 import { store } from '@/store'
 import IntlProvider from '@shared-ui/components/Atomic/IntlProvider'
@@ -10,6 +13,8 @@ import appConfig from '@/config'
 
 import { DEVICE_AUTH_CODE_SESSION_KEY } from './constants'
 import reportWebVitals from './reportWebVitals'
+
+let persistor = persistStore(store)
 
 const BaseComponent = () => {
     // When the URL contains a get parameter called `code` and the pathname is set to `/devices`,
@@ -24,9 +29,11 @@ const BaseComponent = () => {
 
     return (
         <Provider store={store}>
-            <IntlProvider defaultLanguage={appConfig.defaultLanguage} languages={languages}>
-                <App />
-            </IntlProvider>
+            <PersistGate persistor={persistor}>
+                <IntlProvider defaultLanguage={appConfig.defaultLanguage} languages={languages}>
+                    <App />
+                </IntlProvider>
+            </PersistGate>
         </Provider>
     )
 }

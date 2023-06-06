@@ -4,6 +4,7 @@ import { useAuth } from 'oidc-react'
 import { Global, ThemeProvider } from '@emotion/react'
 import { Helmet } from 'react-helmet'
 import { useIntl } from 'react-intl'
+import { useDispatch, useSelector } from 'react-redux'
 
 import Layout from '@shared-ui/components/Layout'
 import Header from '@shared-ui/components/Layout/Header'
@@ -31,6 +32,8 @@ import LeftPanelWrapper from '@/containers/App/AppInner/LeftPanelWrapper/LeftPan
 import { globalStyle } from './AppInner.global.styles'
 import { AppContextType } from '@/containers/App/AppContext.types'
 import { messages as t } from '../App.i18n'
+import { readAllNotifications, setNotifications } from '@/containers/Notifications/slice'
+import { CombinatedStoreType } from '@/store/store'
 
 const getBuildInformation = (wellKnownConfig: WellKnownConfigType) => ({
     buildDate: wellKnownConfig?.buildDate || '',
@@ -45,6 +48,9 @@ const AppInner = (props: Props) => {
     const { userData, userManager } = useAuth()
     const buildInformation = getBuildInformation(wellKnownConfig)
     const { formatMessage: _ } = useIntl()
+    const dispatch = useDispatch()
+
+    const notifications = useSelector((state: CombinatedStoreType) => state.notifications)
 
     const [footerExpanded, setFooterExpanded] = useLocalStorage('footerPanelExpanded', false)
     const [activeItem, setActiveItem] = useState(parseActiveItem(history.location.pathname, menu, mather))
@@ -90,9 +96,9 @@ const AppInner = (props: Props) => {
     return (
         <AppContext.Provider value={contextValue}>
             <ThemeProvider theme={light}>
+                <InitServices deviceStatusListener={deviceStatusListener} />
+                <Helmet defaultTitle={appConfig.appName} titleTemplate={`%s | ${appConfig.appName}`} />
                 <Router history={history}>
-                    <InitServices deviceStatusListener={deviceStatusListener} />
-                    <Helmet defaultTitle={appConfig.appName} titleTemplate={`%s | ${appConfig.appName}`} />
                     <Layout
                         content={<Routes />}
                         header={
@@ -100,10 +106,17 @@ const AppInner = (props: Props) => {
                                 breadcrumbs={<div id='breadcrumbsPortalTarget'></div>}
                                 notificationCenter={
                                     <NotificationCenter
+                                        defaultNotification={notifications}
                                         i18n={{
                                             notifications: _(t.notifications),
                                             noNotifications: _(t.noNotifications),
                                             markAllAsRead: _(t.markAllAsRead),
+                                        }}
+                                        onNotification={(n: any) => {
+                                            dispatch(setNotifications(n))
+                                        }}
+                                        readAllNotifications={() => {
+                                            dispatch(readAllNotifications())
                                         }}
                                     />
                                 }
