@@ -98,6 +98,7 @@ const DevicesListPage: FC<any> = () => {
                 setDeleting(false)
                 setDeleteModalOpen(false)
                 setSingleDevice(null)
+                setUnselectRowsToken((prevValue) => prevValue + 1)
                 setSelectedDevices([])
                 handleCloseDeleteModal()
                 handleRefresh()

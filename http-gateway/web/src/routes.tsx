@@ -3,13 +3,14 @@ import { useIntl } from 'react-intl'
 
 import NotFoundPage from '@shared-ui/components/Templates/NotFoundPage'
 import { MenuItem } from '@shared-ui/components/Layout/LeftPanel/LeftPanel.types'
-import { IconDevices } from '@shared-ui/components/Atomic/Icon/'
+import { IconDevices, IconSettings } from '@shared-ui/components/Atomic/Icon/'
 
 import DevicesListPage from '@/containers/Devices/List/DevicesListPage'
 import DevicesDetailsPage from '@/containers/Devices/Detail/DevicesDetailsPage'
 import { PendingCommandsListPage } from '@/containers/PendingCommands'
 import Notifications from '@/containers/Notifications'
 import { messages as t } from './containers/App/App.i18n'
+import TestPage from './containers/Test'
 
 export const menu = [
     {
@@ -21,15 +22,27 @@ export const menu = [
                 title: 'Devices',
                 link: '/',
                 paths: ['/', '/devices/:id', '/devices/:id/:href*'],
+                exact: true,
             },
         ],
     },
 ]
 
+if (process.env?.REACT_APP_TEST_VIEW === 'true') {
+    menu[0].items.push({
+        icon: <IconSettings />,
+        id: '999',
+        title: 'Test',
+        link: '/test',
+        paths: ['/test'],
+        exact: false,
+    })
+}
+
 export const mather = (location: string, item: MenuItem) =>
     matchPath(location, {
         path: item.paths,
-        exact: false,
+        exact: item.exact || false,
         strict: false,
     })
 
@@ -40,6 +53,7 @@ export const Routes = () => {
             <Route exact component={DevicesListPage} path='/' />
             <Route component={DevicesDetailsPage} path={['/devices/:id', '/devices/:id/:href*']} />
             <Route component={PendingCommandsListPage} path='/pending-commands' />
+            {process.env?.REACT_APP_TEST_VIEW === 'true' && <Route component={TestPage} path='/test' />}
             <Route path='/notifications'>
                 <Notifications />
             </Route>
