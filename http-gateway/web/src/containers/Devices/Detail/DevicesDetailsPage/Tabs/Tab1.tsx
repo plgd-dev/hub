@@ -130,7 +130,7 @@ const Tab1: FC<Props> = (props) => {
                                     {softwareUpdateData?.swupdatestate !== 'idle' ? (
                                         <Tooltip
                                             content={_(t.newDeviceFirmware, {
-                                                newVersion: new Date(softwareUpdateData?.nv!).toLocaleDateString('en-US'),
+                                                newVersion: softwareUpdateData?.nv,
                                             })}
                                             delay={200}
                                         >
