@@ -17,7 +17,7 @@ type Watcher struct {
 		mutex           sync.Mutex
 		paths           map[string]uint32
 		w               *fsnotify.Watcher
-		onEventHandlers []*func(event fsnotify.Event)
+		onEventHandlers []*func(event Event)
 	}
 	done     chan struct{}
 	closed   atomic.Bool
@@ -25,15 +25,44 @@ type Watcher struct {
 	logger   log.Logger
 }
 
-type Event = fsnotify.Event
+// Event represents a file system notification.
+type Event struct {
+	// Path to the file or directory.
+	//
+	// Paths are relative to the input; for example with Add("dir") the Name
+	// will be set to "dir/file" if you create that file, but if you use
+	// Add("/path/to/dir") it will be "/path/to/dir/file".
+	Name string
+
+	// File operation that triggered the event.
+	//
+	// This is a bitmask and some systems may send multiple operations at once.
+	// Use the Event.Has() method instead of comparing with ==.
+	Op Op
+}
+
+// String returns a string representation of the event with their path.
+func (e Event) String() string {
+	return fmt.Sprintf("%-13s %q", e.Op.String(), e.Name)
+}
+
+// Op describes a set of file operations.
+type Op fsnotify.Op
+
+func (op Op) String() string {
+	if fsnotify.Op(op).Has(fsnotify.Op(WatchingResumed)) {
+		return "WATCHING_RESUMED"
+	}
+	return fsnotify.Op(op).String()
+}
 
 const (
-	Create          = fsnotify.Create
-	Remove          = fsnotify.Remove
-	Rename          = fsnotify.Rename
-	Chmod           = fsnotify.Chmod
-	Write           = fsnotify.Write
-	WatchingResumed = fsnotify.Op(1 << 31)
+	Create          = Op(fsnotify.Create)
+	Remove          = Op(fsnotify.Remove)
+	Rename          = Op(fsnotify.Rename)
+	Chmod           = Op(fsnotify.Chmod)
+	Write           = Op(fsnotify.Write)
+	WatchingResumed = Op(1 << 31)
 )
 
 // NewWatcher creates a new Watcher. It's allows to watch a single file or a directory multiple times.
@@ -89,7 +118,7 @@ func (w *Watcher) Remove(name string) error {
 	return err
 }
 
-func (w *Watcher) AddOnEventHandler(onEventHandler *func(event fsnotify.Event)) {
+func (w *Watcher) AddOnEventHandler(onEventHandler *func(event Event)) {
 	if onEventHandler == nil {
 		return
 	}
@@ -103,7 +132,7 @@ func (w *Watcher) AddOnEventHandler(onEventHandler *func(event fsnotify.Event)) 
 	w.private.onEventHandlers = append(w.private.onEventHandlers, onEventHandler)
 }
 
-func (w *Watcher) RemoveOnEventHandler(onEventHandler *func(event fsnotify.Event)) {
+func (w *Watcher) RemoveOnEventHandler(onEventHandler *func(event Event)) {
 	if onEventHandler == nil {
 		return
 	}
@@ -152,13 +181,13 @@ func (w *Watcher) run() {
 	}
 }
 
-func (w *Watcher) triggerHandlersLocked(event fsnotify.Event) {
+func (w *Watcher) triggerHandlersLocked(event Event) {
 	for _, handler := range w.private.onEventHandlers {
 		(*handler)(event)
 	}
 }
 
-func (w *Watcher) triggerHandlers(event fsnotify.Event) {
+func (w *Watcher) triggerHandlers(event Event) {
 	w.private.mutex.Lock()
 	defer w.private.mutex.Unlock()
 
@@ -167,7 +196,8 @@ func (w *Watcher) triggerHandlers(event fsnotify.Event) {
 
 func (w *Watcher) handleEvent(event fsnotify.Event, deletedPaths *[]string, ticksRunning *bool, ticks *time.Ticker) {
 	startTimer := false
-	if event.Op&Remove == Remove {
+
+	if event.Op&fsnotify.Remove == fsnotify.Remove {
 		*deletedPaths = append(*deletedPaths, event.Name)
 		startTimer = true
 	}
@@ -175,8 +205,11 @@ func (w *Watcher) handleEvent(event fsnotify.Event, deletedPaths *[]string, tick
 		ticks.Reset(time.Second)
 		*ticksRunning = true
 	}
-
-	w.triggerHandlers(event)
+	ev := Event{
+		Name: event.Name,
+		Op:   Op(event.Op),
+	}
+	w.triggerHandlers(ev)
 }
 
 func (w *Watcher) handleDeletedPaths(deletedPaths *[]string, ticks *time.Ticker) bool {
@@ -194,7 +227,7 @@ func (w *Watcher) handleDeletedPaths(deletedPaths *[]string, ticks *time.Ticker)
 			w.logger.Errorf("cannot add path %v to fsnotify: %w", path, err)
 			reDeletedPaths = append(reDeletedPaths, path)
 		} else {
-			w.triggerHandlersLocked(fsnotify.Event{
+			w.triggerHandlersLocked(Event{
 				Name: path,
 				Op:   WatchingResumed,
 			})

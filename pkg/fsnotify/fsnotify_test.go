@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/fsnotify/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/stretchr/testify/require"
 )
@@ -26,7 +25,7 @@ func TestWatcher(t *testing.T) {
 	err = w.Add("/tmp")
 	require.NoError(t, err)
 
-	onEventHandler := func(event fsnotify.Event) {}
+	onEventHandler := func(event Event) {}
 	w.AddOnEventHandler(&onEventHandler)
 	w.RemoveOnEventHandler(&onEventHandler)
 
@@ -37,14 +36,14 @@ func TestWatcher(t *testing.T) {
 }
 
 type testOnEvent struct {
-	ch chan fsnotify.Event
+	ch chan Event
 }
 
-func (o *testOnEvent) onEvent(event fsnotify.Event) {
+func (o *testOnEvent) onEvent(event Event) {
 	o.ch <- event
 }
 
-func (o *testOnEvent) waitEvent(timeout time.Duration, op fsnotify.Op) (fsnotify.Event, bool) {
+func (o *testOnEvent) waitEvent(timeout time.Duration, op Op) (Event, bool) {
 	for {
 		select {
 		case event := <-o.ch:
@@ -53,14 +52,14 @@ func (o *testOnEvent) waitEvent(timeout time.Duration, op fsnotify.Op) (fsnotify
 			}
 			return event, true
 		case <-time.After(timeout):
-			return fsnotify.Event{}, false
+			return Event{}, false
 		}
 	}
 }
 
 func newTestOnEvent() *testOnEvent {
 	return &testOnEvent{
-		ch: make(chan fsnotify.Event, 32),
+		ch: make(chan Event, 32),
 	}
 }
 
@@ -92,7 +91,7 @@ func TestWatcherFile(t *testing.T) {
 	err = os.Remove(file.Name())
 	require.NoError(t, err)
 
-	event, ok := h.waitEvent(time.Second, fsnotify.Remove)
+	event, ok := h.waitEvent(time.Second, Remove)
 	require.True(t, ok)
 	require.Equal(t, file.Name(), event.Name)
 
@@ -109,7 +108,7 @@ func TestWatcherFile(t *testing.T) {
 	// test remove watcher
 	err = os.Remove(file.Name())
 	require.NoError(t, err)
-	event, ok = h.waitEvent(time.Second, fsnotify.Remove)
+	event, ok = h.waitEvent(time.Second, Remove)
 	require.True(t, ok)
 	require.Equal(t, file.Name(), event.Name)
 

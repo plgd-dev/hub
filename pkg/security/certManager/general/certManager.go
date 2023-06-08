@@ -1,6 +1,7 @@
 package general
 
 import (
+	"bytes"
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
@@ -71,11 +72,11 @@ func New(config Config, fileWatcher *fsnotify.Watcher, logger log.Logger) (*Cert
 		verifyClientCertificate: verifyClientCertificate,
 		logger:                  logger,
 	}
-	err := c.loadCAs()
+	_, err := c.loadCAs()
 	if err != nil {
 		return nil, err
 	}
-	err = c.loadCerts()
+	_, err = c.loadCerts()
 	if err != nil {
 		return nil, err
 	}
@@ -106,7 +107,7 @@ func (a *CertManager) GetCertificateAuthorities() *x509.CertPool {
 	defer a.private.mutex.Unlock()
 	if !a.private.tlsCAPoolMinNotAfter.IsZero() && time.Now().After(a.private.tlsCAPoolMinNotAfter) {
 		// current CA is invalid - force reload
-		err := a.loadCAsLocked()
+		_, err := a.loadCAsLocked()
 		if err != nil {
 			a.logger.Error(err.Error())
 		}
@@ -162,7 +163,7 @@ func (a *CertManager) getTLSKeyPair() (*tls.Certificate, error) {
 	defer a.private.mutex.Unlock()
 	if !a.private.tlsCertNotAfter.IsZero() && time.Now().After(a.private.tlsCertNotAfter) {
 		// current certificate is invalid - force reload
-		err := a.loadCertsLocked()
+		_, err := a.loadCertsLocked()
 		if err != nil {
 			return nil, err
 		}
@@ -182,29 +183,29 @@ func (a *CertManager) getClientCertificate(*tls.CertificateRequestInfo) (*tls.Ce
 	return a.getTLSKeyPair()
 }
 
-func (a *CertManager) loadCertsLocked() error {
+func (a *CertManager) loadCertsLocked() (bool, error) {
 	if a.config.KeyFile != "" && a.config.CertFile != "" {
 		keyPath := a.config.KeyFile
 		tlsKey, err := os.ReadFile(keyPath)
 		if err != nil {
-			return fmt.Errorf("cannot load certificate key from '%v': %w", keyPath, err)
+			return false, fmt.Errorf("cannot load certificate key from '%v': %w", keyPath, err)
 		}
 		certPath := a.config.CertFile
 		tlsCert, err := os.ReadFile(certPath)
 		if err != nil {
-			return fmt.Errorf("cannot load certificate from '%v': %w", certPath, err)
+			return false, fmt.Errorf("cannot load certificate from '%v': %w", certPath, err)
 		}
 		cert, err := tls.X509KeyPair(tlsCert, tlsKey)
 		if err != nil {
-			return fmt.Errorf("cannot load certificate pair [%s,%s]: %w", keyPath, certPath, err)
+			return false, fmt.Errorf("cannot load certificate pair [%s,%s]: %w", keyPath, certPath, err)
 		}
 		var tlsCertNotAfter time.Time
 		certs, err := x509.ParseCertificates(cert.Certificate[0])
 		if err != nil {
-			return fmt.Errorf("cannot load certificate pair [%s,%s]: %w", keyPath, certPath, err)
+			return false, fmt.Errorf("cannot load certificate pair [%s,%s]: %w", keyPath, certPath, err)
 		}
 		if len(certs) == 0 {
-			return fmt.Errorf("cannot load certificate pair [%s,%s]: no certificates found", keyPath, certPath)
+			return false, fmt.Errorf("cannot load certificate pair [%s,%s]: no certificates found", keyPath, certPath)
 		}
 		tlsCertNotAfter = pkgTime.MaxTime
 		for _, c := range certs {
@@ -213,14 +214,14 @@ func (a *CertManager) loadCertsLocked() error {
 			}
 		}
 		if time.Now().After(tlsCertNotAfter) {
-			return fmt.Errorf("cannot load certificate pair [%s,%s]: certificate is expired", keyPath, certPath)
+			return false, fmt.Errorf("cannot load certificate pair [%s,%s]: certificate is expired", keyPath, certPath)
 		}
-		a.setTLSKeyPairLocked(cert, tlsCertNotAfter)
+		return a.setTLSKeyPairLocked(cert, tlsCertNotAfter), nil
 	}
-	return nil
+	return false, nil
 }
 
-func (a *CertManager) loadCAsLocked() error {
+func (a *CertManager) loadCAsLocked() (bool, error) {
 	var cas []*x509.Certificate
 	var errors *multierror.Error
 	tlsCAPoolMinNotAfter := pkgTime.MaxTime
@@ -242,26 +243,36 @@ func (a *CertManager) loadCAsLocked() error {
 			}
 		}
 	}
-	if a.config.UseSystemCAPool {
-		a.setCAPoolLocked(security.NewDefaultCertPool(cas), tlsCAPoolMinNotAfter)
-	} else {
-		p := x509.NewCertPool()
-		for _, c := range cas {
-			p.AddCert(c)
-		}
-		a.setCAPoolLocked(p, tlsCAPoolMinNotAfter)
+	if errors != nil {
+		return false, errors.ErrorOrNil()
 	}
-	return errors.ErrorOrNil()
+	if a.config.UseSystemCAPool {
+		return a.setCAPoolLocked(security.NewDefaultCertPool(cas), tlsCAPoolMinNotAfter), nil
+	}
+	p := x509.NewCertPool()
+	for _, c := range cas {
+		p.AddCert(c)
+	}
+	return a.setCAPoolLocked(p, tlsCAPoolMinNotAfter), nil
 }
 
-func (a *CertManager) setTLSKeyPairLocked(cert tls.Certificate, tlsCertNotAfter time.Time) {
+func (a *CertManager) setTLSKeyPairLocked(cert tls.Certificate, tlsCertNotAfter time.Time) bool {
+	if a.private.tlsKeyPair != nil && bytes.Equal(a.private.tlsKeyPair.Certificate[0], cert.Certificate[0]) {
+		return false
+	}
+
 	a.private.tlsKeyPair = &cert
 	a.private.tlsCertNotAfter = tlsCertNotAfter
+	return true
 }
 
-func (a *CertManager) setCAPoolLocked(capool *x509.CertPool, tlsCAPoolMinNotAfter time.Time) {
+func (a *CertManager) setCAPoolLocked(capool *x509.CertPool, tlsCAPoolMinNotAfter time.Time) bool {
+	if a.private.tlsCAPool != nil && capool.Equal(a.private.tlsCAPool) {
+		return false
+	}
 	a.private.tlsCAPool = capool
 	a.private.tlsCAPoolMinNotAfter = tlsCAPoolMinNotAfter
+	return true
 }
 
 func (a *CertManager) whatNeedToUpdate(event fsnotify.Event) (updateCert, updateKey, updateCAs bool) {
@@ -282,13 +293,13 @@ func (a *CertManager) whatNeedToUpdate(event fsnotify.Event) (updateCert, update
 	return
 }
 
-func (a *CertManager) loadCerts() error {
+func (a *CertManager) loadCerts() (bool, error) {
 	a.private.mutex.Lock()
 	defer a.private.mutex.Unlock()
 	return a.loadCertsLocked()
 }
 
-func (a *CertManager) loadCAs() error {
+func (a *CertManager) loadCAs() (bool, error) {
 	a.private.mutex.Lock()
 	defer a.private.mutex.Unlock()
 	return a.loadCAsLocked()
@@ -297,21 +308,21 @@ func (a *CertManager) loadCAs() error {
 func (a *CertManager) onFileChange(event fsnotify.Event) {
 	updateCert, updateKey, updateCAs := a.whatNeedToUpdate(event)
 	if updateCert || updateKey {
-		err := a.loadCerts()
-		reload := "OK"
+		refreshed, err := a.loadCerts()
 		if err != nil {
 			a.logger.Error(err.Error())
-			reload = "Failed"
 		}
-		a.logger.Debugf("Refreshing certificates due to modified file(%v): %s", reload)
+		if refreshed {
+			a.logger.Debugf("Refreshing certificates due to modified file(%v) via event %v", event.Name, event.Op)
+		}
 	}
 	if updateCAs {
-		reload := "OK"
-		err := a.loadCAs()
+		refreshed, err := a.loadCAs()
 		if err != nil {
 			a.logger.Error(err.Error())
-			reload = "Failed"
 		}
-		a.logger.Debugf("Refreshing certificate authorities due to modified file(%v): %v", event.Name, reload)
+		if refreshed {
+			a.logger.Debugf("Refreshing certificate authorities due to modified file(%v) vie event %v: %v", event.Name, event.Op)
+		}
 	}
 }

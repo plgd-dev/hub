@@ -100,6 +100,8 @@ mongodb:
   extraVolumeMounts:
     - name: mongodb-crt
       mountPath: "/certs"
+    - name: mongodb-cm-crt
+      mountPath: "/certs-original"
   extraVolumes:
     - name: mongodb-crt
       emptyDir: {}
@@ -107,23 +109,6 @@ mongodb:
       secret:
         secretName: mongodb-cm-crt
   initContainers:
-    - name: convert-cm-crt
-      image: docker.io/bitnami/nginx:1.20.2-debian-10-r63
-      imagePullPolicy: "IfNotPresent"
-      volumeMounts:
-        - name: mongodb-crt
-          mountPath: "/certs"
-        - name: mongodb-cm-crt
-          mountPath: "/tmp/certs"
-      command:
-        - sh
-        - "-c"
-        - |
-          /bin/bash <<'EOF'
-          cat /tmp/certs/tls.crt >> /certs/cert.pem
-          cat /tmp/certs/tls.key >> /certs/cert.pem
-          cp /tmp/certs/ca.crt  /certs/ca.pem
-          EOF
     # workaround for https://github.com/bitnami/charts/issues/10264, https://jira.mongodb.org/browse/MONGOSH-1240
     - name: mongo-binary
       image: docker.io/bitnami/mongodb:5.0.10-debian-11-r3
@@ -131,24 +116,69 @@ mongodb:
       volumeMounts:
         - name: mongodb-crt
           mountPath: "/certs"
+        - name: mongodb-cm-crt
+          mountPath: "/certs-original"
       command:
         - sh
         - "-c"
         - |
           /bin/bash <<'EOF'
+          #!/bin/bash
           cp /opt/bitnami/mongodb/bin/mongo /certs/mongo
+          echo '
+          INIT=0
+          while [[ $# -gt 0 ]]; do
+            case $1 in
+              --init)
+                INIT=1
+                shift
+                ;;
+            esac
+          done
+
+          CERT_CRT=/certs-original/tls.crt
+          CERT_SHA256=/certs/cert.sha256.$(sha256sum -z ${CERT_CRT} | cut -d " " -f 1)
+          CA=/certs-original/ca.crt
+          CA_SHA256=/certs/ca.sha256.$(sha256sum -z ${CA} | cut -d " " -f 1)
+          ROTATE_CERTIFICATES=0
+          if [ ! -f ${CERT_SHA256} ]; then
+            rm -f /certs/cert.sha256.*
+            cat ${CERT_CRT} > /certs/cert.pem
+            cat /certs-original/tls.key >> /certs/cert.pem
+            touch ${CERT_SHA256}
+            ROTATE_CERTIFICATES=1
+          fi
+
+          if [ ! -f ${CA_SHA256} ]; then
+            rm -f /certs/ca.sha256.*
+            cp ${CA} /certs/ca.pem
+            touch ${CA_SHA256}
+            ROTATE_CERTIFICATES=1
+          fi
+
+          if [ "${INIT}" == "1" ]; then
+            exit 0
+          fi
+
+          if [ "${ROTATE_CERTIFICATES}" == "1" ]; then
+            echo "Rotating certificates"
+            /certs/mongo --tls --tlsCertificateKeyFile=/certs/cert.pem --tlsCAFile=/certs/ca.pem --eval db.adminCommand\("{rotateCertificates: 1, message: \"Rotating certificates\"}"\)
+          else
+            echo "Ping database"
+            /certs/mongo --tls --tlsCertificateKeyFile=/certs/cert.pem --tlsCAFile=/certs/ca.pem --eval db.adminCommand\(\"ping\"\)
+          fi
+          ' > /certs/livenessProbe.sh
+          chmod u+x /certs/livenessProbe.sh
+          /certs/livenessProbe.sh --init
           EOF
   livenessProbe:
     enabled: false
   customLivenessProbe:
     exec:
       command:
-        - /certs/mongo
-        - --tls
-        - --tlsCertificateKeyFile=/certs/cert.pem
-        - --tlsCAFile=/certs/ca.pem
-        - --eval
-        - db.adminCommand('ping')
+        - /bin/bash
+        - "-c"
+        - /certs/livenessProbe.sh
     initialDelaySeconds: 30
     periodSeconds: 20
     timeoutSeconds: 10
