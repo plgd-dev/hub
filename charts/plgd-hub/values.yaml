@@ -1218,6 +1218,7 @@ httpgateway:
         nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
         ingress.kubernetes.io/force-ssl-redirect: "true"
         nginx.ingress.kubernetes.io/enable-cors: "true"
+        cert-manager.io/private-key-rotation-policy: always
       # -- Custom map of Ingress annotation
       customAnnotations: {}
       # -- Ingress path
@@ -1236,6 +1237,7 @@ httpgateway:
         nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
         ingress.kubernetes.io/force-ssl-redirect: "true"
         nginx.ingress.kubernetes.io/enable-cors: "true"
+        cert-manager.io/private-key-rotation-policy: always
       # -- Custom map of Ingress annotation
       customAnnotations: {}
       # -- Ingress path
@@ -1420,6 +1422,7 @@ grpcgateway:
       nginx.ingress.kubernetes.io/backend-protocol: "GRPCS"
       ingress.kubernetes.io/force-ssl-redirect: "true"
       nginx.ingress.kubernetes.io/enable-cors: "true"
+      cert-manager.io/private-key-rotation-policy: always
     # -- Custom map of Ingress annotation
     customAnnotations: {}
 
@@ -1660,6 +1663,7 @@ certificateauthority:
         nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
         ingress.kubernetes.io/force-ssl-redirect: "true"
         nginx.ingress.kubernetes.io/enable-cors: "true"
+        cert-manager.io/private-key-rotation-policy: always
       # -- Custom map of Ingress annotation
       customAnnotations: {}
       # -- Ingress path
@@ -1676,6 +1680,7 @@ certificateauthority:
         nginx.ingress.kubernetes.io/backend-protocol: "GRPCS"
         ingress.kubernetes.io/force-ssl-redirect: "true"
         nginx.ingress.kubernetes.io/enable-cors: "true"
+        cert-manager.io/private-key-rotation-policy: always
       # -- Custom map of Ingress annotation
       customAnnotations: { }
       # -- Paths
@@ -1862,6 +1867,7 @@ mockoauthserver:
       nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
       ingress.kubernetes.io/force-ssl-redirect: "true"
       nginx.ingress.kubernetes.io/enable-cors: "true"
+      cert-manager.io/private-key-rotation-policy: always
       nginx.ingress.kubernetes.io/configuration-snippet: |
         more_set_headers "Host $host";
         more_set_headers "X-Forwarded-Host $host";
