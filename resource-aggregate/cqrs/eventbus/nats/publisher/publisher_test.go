@@ -29,7 +29,7 @@ func TestPublisher(t *testing.T) {
 	waitForSubscription := time.Millisecond * 100
 
 	logger := log.NewLogger(log.MakeDefaultConfig())
-	fileWatcher, err := fsnotify.NewWatcher()
+	fileWatcher, err := fsnotify.NewWatcher(logger)
 	require.NoError(t, err)
 	defer func() {
 		errC := fileWatcher.Close()
@@ -71,7 +71,7 @@ func TestPublisherJetStream(t *testing.T) {
 	waitForSubscription := time.Millisecond * 100
 
 	logger := log.NewLogger(log.MakeDefaultConfig())
-	fileWatcher, err := fsnotify.NewWatcher()
+	fileWatcher, err := fsnotify.NewWatcher(logger)
 	require.NoError(t, err)
 	defer func() {
 		errC := fileWatcher.Close()

@@ -186,7 +186,7 @@ func TestNew(t *testing.T) {
 
 	logger := log.NewLogger(log.MakeDefaultConfig())
 	// cert manager
-	fileWatcher, err := fsnotify.NewWatcher()
+	fileWatcher, err := fsnotify.NewWatcher(logger)
 	require.NoError(t, err)
 	mng, err := server.New(config, fileWatcher, logger)
 	require.NoError(t, err)

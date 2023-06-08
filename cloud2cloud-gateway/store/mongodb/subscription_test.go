@@ -21,7 +21,7 @@ func newTestStore(t *testing.T) (*mongodb.Store, func()) {
 
 	logger := log.NewLogger(cfg.Log)
 
-	fileWatcher, err := fsnotify.NewWatcher()
+	fileWatcher, err := fsnotify.NewWatcher(logger)
 	require.NoError(t, err)
 
 	certManager, err := client.New(cfg.Clients.Storage.MongoDB.TLS, fileWatcher, logger)

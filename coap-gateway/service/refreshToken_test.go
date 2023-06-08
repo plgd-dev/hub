@@ -108,7 +108,7 @@ func TestRefreshTokenWithOAuthNotWorking(t *testing.T) {
 		_ = co.Close()
 	}()
 	oauthShutdown()
-	fileWatcher, err := fsnotify.NewWatcher()
+	fileWatcher, err := fsnotify.NewWatcher(log.Get())
 	require.NoError(t, err)
 	defer func() {
 		err = fileWatcher.Close()

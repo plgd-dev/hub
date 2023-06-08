@@ -38,7 +38,7 @@ func ClearDB(ctx context.Context, t require.TestingT) {
 	logCfg := log.MakeDefaultConfig()
 	logger := log.NewLogger(logCfg)
 	tlsConfig := config.MakeTLSClientConfig()
-	fileWatcher, err := fsnotify.NewWatcher()
+	fileWatcher, err := fsnotify.NewWatcher(logger)
 	require.NoError(t, err)
 	defer func() {
 		err = fileWatcher.Close()

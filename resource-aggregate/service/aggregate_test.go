@@ -81,7 +81,7 @@ func TestAggregateHandlePublishResourceLinks(t *testing.T) {
 	cfg := raTest.MakeConfig(t)
 	ctx := kitNetGrpc.CtxWithIncomingToken(context.Background(), "b")
 	logger := log.NewLogger(cfg.Log)
-	fileWatcher, err := fsnotify.NewWatcher()
+	fileWatcher, err := fsnotify.NewWatcher(logger)
 	require.NoError(t, err)
 	defer func() {
 		errC := fileWatcher.Close()
@@ -154,7 +154,7 @@ func TestAggregateDuplicitPublishResource(t *testing.T) {
 		"sub": userID,
 	}))
 	logger := log.NewLogger(cfg.Log)
-	fileWatcher, err := fsnotify.NewWatcher()
+	fileWatcher, err := fsnotify.NewWatcher(logger)
 	require.NoError(t, err)
 	defer func() {
 		errC := fileWatcher.Close()
@@ -210,7 +210,7 @@ func TestAggregateHandleUnpublishResource(t *testing.T) {
 		"sub": userID,
 	}))
 	logger := log.NewLogger(cfg.Log)
-	fileWatcher, err := fsnotify.NewWatcher()
+	fileWatcher, err := fsnotify.NewWatcher(logger)
 	require.NoError(t, err)
 	defer func() {
 		errC := fileWatcher.Close()
@@ -265,7 +265,7 @@ func TestAggregateHandleUnpublishAllResources(t *testing.T) {
 		"sub": userID,
 	}))
 	logger := log.NewLogger(cfg.Log)
-	fileWatcher, err := fsnotify.NewWatcher()
+	fileWatcher, err := fsnotify.NewWatcher(logger)
 	require.NoError(t, err)
 	defer func() {
 		errC := fileWatcher.Close()
@@ -327,7 +327,7 @@ func TestAggregateHandleUnpublishResourceSubset(t *testing.T) {
 		"sub": userID,
 	}))
 	logger := log.NewLogger(cfg.Log)
-	fileWatcher, err := fsnotify.NewWatcher()
+	fileWatcher, err := fsnotify.NewWatcher(logger)
 	require.NoError(t, err)
 	defer func() {
 		errC := fileWatcher.Close()
@@ -641,7 +641,7 @@ func TestAggregateHandleNotifyContentChanged(t *testing.T) {
 		"sub": userID,
 	}))
 	logger := log.NewLogger(cfg.Log)
-	fileWatcher, err := fsnotify.NewWatcher()
+	fileWatcher, err := fsnotify.NewWatcher(logger)
 	require.NoError(t, err)
 	defer func() {
 		errC := fileWatcher.Close()
@@ -760,7 +760,7 @@ func TestAggregateHandleUpdateResourceContent(t *testing.T) {
 		"sub": userID,
 	}))
 	logger := log.NewLogger(cfg.Log)
-	fileWatcher, err := fsnotify.NewWatcher()
+	fileWatcher, err := fsnotify.NewWatcher(logger)
 	require.NoError(t, err)
 	defer func() {
 		errC := fileWatcher.Close()
@@ -848,7 +848,7 @@ func TestAggregateHandleConfirmResourceUpdate(t *testing.T) {
 		"sub": userID,
 	}))
 	logger := log.NewLogger(cfg.Log)
-	fileWatcher, err := fsnotify.NewWatcher()
+	fileWatcher, err := fsnotify.NewWatcher(logger)
 	require.NoError(t, err)
 	defer func() {
 		errC := fileWatcher.Close()
@@ -959,7 +959,7 @@ func TestAggregateHandleRetrieveResource(t *testing.T) {
 		"sub": userID,
 	}))
 	logger := log.NewLogger(cfg.Log)
-	fileWatcher, err := fsnotify.NewWatcher()
+	fileWatcher, err := fsnotify.NewWatcher(logger)
 	require.NoError(t, err)
 	defer func() {
 		errC := fileWatcher.Close()
@@ -1046,7 +1046,7 @@ func TestAggregateHandleNotifyResourceContentResourceProcessed(t *testing.T) {
 		"sub": userID,
 	}))
 	logger := log.NewLogger(cfg.Log)
-	fileWatcher, err := fsnotify.NewWatcher()
+	fileWatcher, err := fsnotify.NewWatcher(logger)
 	require.NoError(t, err)
 	defer func() {
 		errC := fileWatcher.Close()
@@ -1165,7 +1165,7 @@ func TestAggregateHandleDeleteResource(t *testing.T) {
 		"sub": userID,
 	}))
 	logger := log.NewLogger(cfg.Log)
-	fileWatcher, err := fsnotify.NewWatcher()
+	fileWatcher, err := fsnotify.NewWatcher(logger)
 	require.NoError(t, err)
 	defer func() {
 		errC := fileWatcher.Close()
@@ -1253,7 +1253,7 @@ func TestAggregateHandleConfirmResourceDelete(t *testing.T) {
 		"sub": userID,
 	}))
 	logger := log.NewLogger(cfg.Log)
-	fileWatcher, err := fsnotify.NewWatcher()
+	fileWatcher, err := fsnotify.NewWatcher(logger)
 	require.NoError(t, err)
 	defer func() {
 		errC := fileWatcher.Close()
@@ -1365,7 +1365,7 @@ func TestAggregateHandleCreateResource(t *testing.T) {
 		"sub": userID,
 	}))
 	logger := log.NewLogger(cfg.Log)
-	fileWatcher, err := fsnotify.NewWatcher()
+	fileWatcher, err := fsnotify.NewWatcher(logger)
 	require.NoError(t, err)
 	defer func() {
 		errC := fileWatcher.Close()
@@ -1453,7 +1453,7 @@ func TestAggregateHandleConfirmResourceCreate(t *testing.T) {
 		"sub": userID,
 	}))
 	logger := log.NewLogger(cfg.Log)
-	fileWatcher, err := fsnotify.NewWatcher()
+	fileWatcher, err := fsnotify.NewWatcher(logger)
 	require.NoError(t, err)
 	defer func() {
 		errC := fileWatcher.Close()

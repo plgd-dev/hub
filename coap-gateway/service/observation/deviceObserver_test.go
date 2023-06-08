@@ -383,7 +383,7 @@ func runTestDeviceObserverRegister(ctx context.Context, t *testing.T, deviceID s
 
 	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
 
-	fileWatcher, err := fsnotify.NewWatcher()
+	fileWatcher, err := fsnotify.NewWatcher(log.Get())
 	require.NoError(t, err)
 	defer func() {
 		err = fileWatcher.Close()

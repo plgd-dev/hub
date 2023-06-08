@@ -163,7 +163,7 @@ func PerformMaintenance() error {
 		os.Exit(2)
 	}
 	log.Info(config.String())
-	fileWatcher, err := fsnotify.NewWatcher()
+	fileWatcher, err := fsnotify.NewWatcher(log.Get())
 	if err != nil {
 		log.Error(err)
 		os.Exit(2)

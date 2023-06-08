@@ -172,7 +172,7 @@ func TestRequestHandlerSubscribeToEvents(t *testing.T) {
 	token := oauthTest.GetDefaultAccessToken(t)
 	ctx = kitNetGrpc.CtxWithIncomingToken(kitNetGrpc.CtxWithToken(ctx, token), token)
 
-	fileWatcher, err := fsnotify.NewWatcher()
+	fileWatcher, err := fsnotify.NewWatcher(log.Get())
 	require.NoError(t, err)
 	defer func() {
 		errC := fileWatcher.Close()

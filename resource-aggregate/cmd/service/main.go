@@ -11,7 +11,7 @@ import (
 )
 
 func run(cfg service.Config, logger log.Logger) error {
-	fileWatcher, err := fsnotify.NewWatcher()
+	fileWatcher, err := fsnotify.NewWatcher(logger)
 	if err != nil {
 		return fmt.Errorf("cannot create file fileWatcher: %w", err)
 	}

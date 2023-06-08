@@ -93,7 +93,7 @@ func TestNew(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			router := mux.NewRouter()
 			logger := log.NewLogger(log.MakeDefaultConfig())
-			fileWatcher, err := fsnotify.NewWatcher()
+			fileWatcher, err := fsnotify.NewWatcher(logger)
 			require.NoError(t, err)
 			got, err := New(context.Background(), tt.args.config, router, fileWatcher, logger, tt.args.options...)
 			if tt.wantErr {

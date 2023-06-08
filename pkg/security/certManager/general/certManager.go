@@ -5,13 +5,14 @@ import (
 	"crypto/x509"
 	"fmt"
 	"os"
-	"path/filepath"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
+	pkgTime "github.com/plgd-dev/hub/v2/pkg/time"
 	"github.com/plgd-dev/kit/v2/security"
 	"go.uber.org/atomic"
 )
@@ -49,9 +50,11 @@ type CertManager struct {
 	done                    atomic.Bool
 
 	private struct {
-		mutex      sync.Mutex
-		tlsKeyPair tls.Certificate
-		tlsCAPool  *x509.CertPool
+		mutex                sync.Mutex
+		tlsKeyPair           *tls.Certificate
+		tlsCertNotAfter      time.Time
+		tlsCAPool            *x509.CertPool
+		tlsCAPoolMinNotAfter time.Time
 	}
 }
 
@@ -77,18 +80,18 @@ func New(config Config, fileWatcher *fsnotify.Watcher, logger log.Logger) (*Cert
 		return nil, err
 	}
 	for _, ca := range config.CAPool {
-		if err := c.fileWatcher.Add(filepath.Dir(ca)); err != nil {
-			return nil, fmt.Errorf("cannot watch CAPool directory(%v): %w", filepath.Dir(ca), err)
+		if err := c.fileWatcher.Add(ca); err != nil {
+			return nil, fmt.Errorf("cannot watch CAPool(%v): %w", ca, err)
 		}
 	}
 	if config.CertFile != "" {
-		if err := c.fileWatcher.Add(filepath.Dir(config.CertFile)); err != nil {
-			return nil, fmt.Errorf("cannot watch CertFile directory(%v): %w", filepath.Dir(config.CertFile), err)
+		if err := c.fileWatcher.Add(config.CertFile); err != nil {
+			return nil, fmt.Errorf("cannot watch CertFile(%v): %w", config.CertFile, err)
 		}
 	}
 	if config.KeyFile != "" {
-		if err := c.fileWatcher.Add(filepath.Dir(config.KeyFile)); err != nil {
-			return nil, fmt.Errorf("cannot watch KeyFile directory(%v): %w", filepath.Dir(config.KeyFile), err)
+		if err := c.fileWatcher.Add(config.KeyFile); err != nil {
+			return nil, fmt.Errorf("cannot watch KeyFile(%v): %w", config.CertFile, err)
 		}
 	}
 	c.onFileChangeFunc = c.onFileChange
@@ -101,6 +104,13 @@ func New(config Config, fileWatcher *fsnotify.Watcher, logger log.Logger) (*Cert
 func (a *CertManager) GetCertificateAuthorities() *x509.CertPool {
 	a.private.mutex.Lock()
 	defer a.private.mutex.Unlock()
+	if !a.private.tlsCAPoolMinNotAfter.IsZero() && time.Now().After(a.private.tlsCAPoolMinNotAfter) {
+		// current CA is invalid - force reload
+		err := a.loadCAsLocked()
+		if err != nil {
+			a.logger.Error(err.Error())
+		}
+	}
 	return a.private.tlsCAPool
 }
 
@@ -130,36 +140,49 @@ func (a *CertManager) Close() {
 		return
 	}
 	for _, ca := range a.config.CAPool {
-		if err := a.fileWatcher.Remove(filepath.Dir(ca)); err != nil {
-			a.logger.Errorf("cannot remove fileWatcher for CAPool directory(%v): %w", filepath.Dir(ca), err)
+		if err := a.fileWatcher.Remove(ca); err != nil {
+			a.logger.Errorf("cannot remove fileWatcher for CAPool(%v): %w", ca, err)
 		}
 	}
 	if a.config.CertFile != "" {
-		if err := a.fileWatcher.Remove(filepath.Dir(a.config.CertFile)); err != nil {
-			a.logger.Errorf("cannot remove fileWatcher for CertFile directory(%v): %w", filepath.Dir(a.config.CertFile), err)
+		if err := a.fileWatcher.Remove(a.config.CertFile); err != nil {
+			a.logger.Errorf("cannot remove fileWatcher for CertFile(%v): %w", a.config.CertFile, err)
 		}
 	}
 	if a.config.KeyFile != "" {
-		if err := a.fileWatcher.Remove(filepath.Dir(a.config.KeyFile)); err != nil {
-			a.logger.Errorf("cannot remove fileWatcher for KeyFile directory(%v): %w", filepath.Dir(a.config.KeyFile), err)
+		if err := a.fileWatcher.Remove(a.config.KeyFile); err != nil {
+			a.logger.Errorf("cannot remove fileWatcher for KeyFile(%v): %w", a.config.KeyFile, err)
 		}
 	}
 	a.fileWatcher.RemoveOnEventHandler(&a.onFileChangeFunc)
 }
 
-func (a *CertManager) getServerCertificate(*tls.ClientHelloInfo) (*tls.Certificate, error) {
+func (a *CertManager) getTLSKeyPair() (*tls.Certificate, error) {
 	a.private.mutex.Lock()
 	defer a.private.mutex.Unlock()
-	return &a.private.tlsKeyPair, nil
+	if !a.private.tlsCertNotAfter.IsZero() && time.Now().After(a.private.tlsCertNotAfter) {
+		// current certificate is invalid - force reload
+		err := a.loadCertsLocked()
+		if err != nil {
+			return nil, err
+		}
+	}
+	if a.private.tlsKeyPair == nil {
+		return nil, fmt.Errorf("certificate is not loaded")
+	}
+
+	return a.private.tlsKeyPair, nil
+}
+
+func (a *CertManager) getServerCertificate(*tls.ClientHelloInfo) (*tls.Certificate, error) {
+	return a.getTLSKeyPair()
 }
 
 func (a *CertManager) getClientCertificate(*tls.CertificateRequestInfo) (*tls.Certificate, error) {
-	a.private.mutex.Lock()
-	defer a.private.mutex.Unlock()
-	return &a.private.tlsKeyPair, nil
+	return a.getTLSKeyPair()
 }
 
-func (a *CertManager) loadCerts() error {
+func (a *CertManager) loadCertsLocked() error {
 	if a.config.KeyFile != "" && a.config.CertFile != "" {
 		keyPath := a.config.KeyFile
 		tlsKey, err := os.ReadFile(keyPath)
@@ -173,81 +196,122 @@ func (a *CertManager) loadCerts() error {
 		}
 		cert, err := tls.X509KeyPair(tlsCert, tlsKey)
 		if err != nil {
-			return fmt.Errorf("cannot load certificate pair: %w", err)
+			return fmt.Errorf("cannot load certificate pair [%s,%s]: %w", keyPath, certPath, err)
 		}
-		a.setTLSKeyPair(cert)
+		var tlsCertNotAfter time.Time
+		certs, err := x509.ParseCertificates(cert.Certificate[0])
+		if err != nil {
+			return fmt.Errorf("cannot load certificate pair [%s,%s]: %w", keyPath, certPath, err)
+		}
+		if len(certs) == 0 {
+			return fmt.Errorf("cannot load certificate pair [%s,%s]: no certificates found", keyPath, certPath)
+		}
+		tlsCertNotAfter = pkgTime.MaxTime
+		for _, c := range certs {
+			if tlsCertNotAfter.After(c.NotAfter) {
+				tlsCertNotAfter = c.NotAfter
+			}
+		}
+		if time.Now().After(tlsCertNotAfter) {
+			return fmt.Errorf("cannot load certificate pair [%s,%s]: certificate is expired", keyPath, certPath)
+		}
+		a.setTLSKeyPairLocked(cert, tlsCertNotAfter)
 	}
 	return nil
 }
 
-func (a *CertManager) loadCAs() error {
+func (a *CertManager) loadCAsLocked() error {
 	var cas []*x509.Certificate
 	var errors *multierror.Error
+	tlsCAPoolMinNotAfter := pkgTime.MaxTime
+	now := time.Now()
 	for _, ca := range a.config.CAPool {
 		certs, err := security.LoadX509(ca)
 		if err != nil {
 			errors = multierror.Append(errors, fmt.Errorf("cannot load CA from '%v': %w", ca, err))
 		} else {
-			cas = append(cas, certs...)
+			for _, c := range certs {
+				if now.After(c.NotAfter) {
+					// skip expired certificates
+					continue
+				}
+				if tlsCAPoolMinNotAfter.After(c.NotAfter) {
+					tlsCAPoolMinNotAfter = c.NotAfter
+				}
+				cas = append(cas, certs...)
+			}
 		}
 	}
 	if a.config.UseSystemCAPool {
-		a.setCAPool(security.NewDefaultCertPool(cas))
+		a.setCAPoolLocked(security.NewDefaultCertPool(cas), tlsCAPoolMinNotAfter)
 	} else {
 		p := x509.NewCertPool()
 		for _, c := range cas {
 			p.AddCert(c)
 		}
-		a.setCAPool(p)
+		a.setCAPoolLocked(p, tlsCAPoolMinNotAfter)
 	}
 	return errors.ErrorOrNil()
 }
 
-func (a *CertManager) setTLSKeyPair(cert tls.Certificate) {
-	a.private.mutex.Lock()
-	defer a.private.mutex.Unlock()
-	a.private.tlsKeyPair = cert
+func (a *CertManager) setTLSKeyPairLocked(cert tls.Certificate, tlsCertNotAfter time.Time) {
+	a.private.tlsKeyPair = &cert
+	a.private.tlsCertNotAfter = tlsCertNotAfter
 }
 
-func (a *CertManager) setCAPool(capool *x509.CertPool) {
-	a.private.mutex.Lock()
-	defer a.private.mutex.Unlock()
+func (a *CertManager) setCAPoolLocked(capool *x509.CertPool, tlsCAPoolMinNotAfter time.Time) {
 	a.private.tlsCAPool = capool
+	a.private.tlsCAPoolMinNotAfter = tlsCAPoolMinNotAfter
 }
 
 func (a *CertManager) whatNeedToUpdate(event fsnotify.Event) (updateCert, updateKey, updateCAs bool) {
-	switch event.Op {
-	case fsnotify.Create, fsnotify.Write, fsnotify.Rename:
-		if strings.Contains(event.Name, a.config.KeyFile) {
-			updateKey = true
-		}
+	if strings.Contains(event.Name, a.config.KeyFile) {
+		updateKey = true
+	}
 
-		if strings.Contains(event.Name, a.config.CertFile) {
-			updateCert = true
-		}
+	if strings.Contains(event.Name, a.config.CertFile) {
+		updateCert = true
+	}
 
-		for _, ca := range a.config.CAPool {
-			if strings.Contains(event.Name, ca) {
-				updateCAs = true
-				break
-			}
+	for _, ca := range a.config.CAPool {
+		if strings.Contains(event.Name, ca) {
+			updateCAs = true
+			break
 		}
 	}
 	return
 }
 
+func (a *CertManager) loadCerts() error {
+	a.private.mutex.Lock()
+	defer a.private.mutex.Unlock()
+	return a.loadCertsLocked()
+}
+
+func (a *CertManager) loadCAs() error {
+	a.private.mutex.Lock()
+	defer a.private.mutex.Unlock()
+	return a.loadCAsLocked()
+}
+
 func (a *CertManager) onFileChange(event fsnotify.Event) {
 	updateCert, updateKey, updateCAs := a.whatNeedToUpdate(event)
-	if updateCert && updateKey {
+	if updateCert || updateKey {
 		err := a.loadCerts()
+		reload := "OK"
 		if err != nil {
 			a.logger.Error(err.Error())
+			reload = "Failed"
 		}
+		a.logger.Debugf("Refreshing certificates due to modified file(%v): %s", reload)
 	}
 	if updateCAs {
+		reload := "OK"
 		err := a.loadCAs()
 		if err != nil {
 			a.logger.Error(err.Error())
+			reload = "Failed"
 		}
+		a.logger.Debugf("Refreshing certificate authorities due to modified file(%v): %v", event.Name, reload)
 	}
 }
