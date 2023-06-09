@@ -2,6 +2,7 @@ package general
 
 import (
 	"bytes"
+	"crypto/sha256"
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
@@ -56,6 +57,7 @@ type CertManager struct {
 		tlsCertNotAfter      time.Time
 		tlsCAPool            *x509.CertPool
 		tlsCAPoolMinNotAfter time.Time
+		tlsCAHash            []byte
 	}
 }
 
@@ -184,41 +186,41 @@ func (a *CertManager) getClientCertificate(*tls.CertificateRequestInfo) (*tls.Ce
 }
 
 func (a *CertManager) loadCertsLocked() (bool, error) {
-	if a.config.KeyFile != "" && a.config.CertFile != "" {
-		keyPath := a.config.KeyFile
-		tlsKey, err := os.ReadFile(keyPath)
-		if err != nil {
-			return false, fmt.Errorf("cannot load certificate key from '%v': %w", keyPath, err)
-		}
-		certPath := a.config.CertFile
-		tlsCert, err := os.ReadFile(certPath)
-		if err != nil {
-			return false, fmt.Errorf("cannot load certificate from '%v': %w", certPath, err)
-		}
-		cert, err := tls.X509KeyPair(tlsCert, tlsKey)
-		if err != nil {
-			return false, fmt.Errorf("cannot load certificate pair [%s,%s]: %w", keyPath, certPath, err)
-		}
-		var tlsCertNotAfter time.Time
-		certs, err := x509.ParseCertificates(cert.Certificate[0])
-		if err != nil {
-			return false, fmt.Errorf("cannot load certificate pair [%s,%s]: %w", keyPath, certPath, err)
-		}
-		if len(certs) == 0 {
-			return false, fmt.Errorf("cannot load certificate pair [%s,%s]: no certificates found", keyPath, certPath)
-		}
-		tlsCertNotAfter = pkgTime.MaxTime
-		for _, c := range certs {
-			if tlsCertNotAfter.After(c.NotAfter) {
-				tlsCertNotAfter = c.NotAfter
-			}
-		}
-		if time.Now().After(tlsCertNotAfter) {
-			return false, fmt.Errorf("cannot load certificate pair [%s,%s]: certificate is expired", keyPath, certPath)
-		}
-		return a.setTLSKeyPairLocked(cert, tlsCertNotAfter), nil
+	if a.config.KeyFile == "" || a.config.CertFile == "" {
+		return false, nil
 	}
-	return false, nil
+	keyPath := a.config.KeyFile
+	tlsKey, err := os.ReadFile(keyPath)
+	if err != nil {
+		return false, fmt.Errorf("cannot load certificate key from '%v': %w", keyPath, err)
+	}
+	certPath := a.config.CertFile
+	tlsCert, err := os.ReadFile(certPath)
+	if err != nil {
+		return false, fmt.Errorf("cannot load certificate from '%v': %w", certPath, err)
+	}
+	cert, err := tls.X509KeyPair(tlsCert, tlsKey)
+	if err != nil {
+		return false, fmt.Errorf("cannot load certificate pair [%s,%s]: %w", keyPath, certPath, err)
+	}
+	var tlsCertNotAfter time.Time
+	certs, err := x509.ParseCertificates(cert.Certificate[0])
+	if err != nil {
+		return false, fmt.Errorf("cannot load certificate pair [%s,%s]: %w", keyPath, certPath, err)
+	}
+	if len(certs) == 0 {
+		return false, fmt.Errorf("cannot load certificate pair [%s,%s]: no certificates found", keyPath, certPath)
+	}
+	tlsCertNotAfter = pkgTime.MaxTime
+	for _, c := range certs {
+		if tlsCertNotAfter.After(c.NotAfter) {
+			tlsCertNotAfter = c.NotAfter
+		}
+	}
+	if time.Now().After(tlsCertNotAfter) {
+		return false, fmt.Errorf("cannot load certificate pair [%s,%s]: certificate is expired", keyPath, certPath)
+	}
+	return a.setTLSKeyPairLocked(cert, tlsCertNotAfter), nil
 }
 
 func (a *CertManager) loadCAsLocked() (bool, error) {
@@ -226,6 +228,7 @@ func (a *CertManager) loadCAsLocked() (bool, error) {
 	var errors *multierror.Error
 	tlsCAPoolMinNotAfter := pkgTime.MaxTime
 	now := time.Now()
+	hash := sha256.New()
 	for _, ca := range a.config.CAPool {
 		certs, err := security.LoadX509(ca)
 		if err != nil {
@@ -239,7 +242,8 @@ func (a *CertManager) loadCAsLocked() (bool, error) {
 				if tlsCAPoolMinNotAfter.After(c.NotAfter) {
 					tlsCAPoolMinNotAfter = c.NotAfter
 				}
-				cas = append(cas, certs...)
+				_, _ = hash.Write(c.Raw)
+				cas = append(cas, c)
 			}
 		}
 	}
@@ -247,13 +251,13 @@ func (a *CertManager) loadCAsLocked() (bool, error) {
 		return false, errors.ErrorOrNil()
 	}
 	if a.config.UseSystemCAPool {
-		return a.setCAPoolLocked(security.NewDefaultCertPool(cas), tlsCAPoolMinNotAfter), nil
+		return a.setCAPoolLocked(security.NewDefaultCertPool(cas), tlsCAPoolMinNotAfter, hash.Sum(nil)), nil
 	}
 	p := x509.NewCertPool()
 	for _, c := range cas {
 		p.AddCert(c)
 	}
-	return a.setCAPoolLocked(p, tlsCAPoolMinNotAfter), nil
+	return a.setCAPoolLocked(p, tlsCAPoolMinNotAfter, hash.Sum(nil)), nil
 }
 
 func (a *CertManager) setTLSKeyPairLocked(cert tls.Certificate, tlsCertNotAfter time.Time) bool {
@@ -266,12 +270,13 @@ func (a *CertManager) setTLSKeyPairLocked(cert tls.Certificate, tlsCertNotAfter 
 	return true
 }
 
-func (a *CertManager) setCAPoolLocked(capool *x509.CertPool, tlsCAPoolMinNotAfter time.Time) bool {
-	if a.private.tlsCAPool != nil && capool.Equal(a.private.tlsCAPool) {
+func (a *CertManager) setCAPoolLocked(capool *x509.CertPool, tlsCAPoolMinNotAfter time.Time, hash []byte) bool {
+	if bytes.Equal(a.private.tlsCAHash, hash) {
 		return false
 	}
 	a.private.tlsCAPool = capool
 	a.private.tlsCAPoolMinNotAfter = tlsCAPoolMinNotAfter
+	a.private.tlsCAHash = hash
 	return true
 }
 
@@ -322,7 +327,7 @@ func (a *CertManager) onFileChange(event fsnotify.Event) {
 			a.logger.Error(err.Error())
 		}
 		if refreshed {
-			a.logger.Debugf("Refreshing certificate authorities due to modified file(%v) vie event %v: %v", event.Name, event.Op)
+			a.logger.Debugf("Refreshing certificate authorities due to modified file(%v) via event %v", event.Name, event.Op)
 		}
 	}
 }

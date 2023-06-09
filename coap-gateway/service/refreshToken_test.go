@@ -89,7 +89,7 @@ func TestRefreshTokenHandlerWithRetry(t *testing.T) {
 }
 
 func TestRefreshTokenWithOAuthNotWorking(t *testing.T) {
-	test := testEl{"ServiceUnavailable", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "uid":"` + AuthorizationUserID + `", "refreshtoken":"refresh-token"}`, nil}, output{coapCodes.ServiceUnavailable, `temporary error`, nil}, true}
+	test := testEl{"ServiceUnavailable", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "uid":"` + AuthorizationUserID + `", "refreshtoken":"refresh-token"}`, nil}, output{coapCodes.ServiceUnavailable, `ServiceUnavailable`, nil}, true}
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
 	defer cancel()
 	cfg := oauthTest.MakeConfig(t)
