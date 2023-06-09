@@ -5,9 +5,9 @@
 
 name: Create and publish a docker images to github
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: ${{ github.ref_name != 'main' }}
+# concurrency:
+#   group: ${{ github.workflow }}-${{ github.ref }}
+#   cancel-in-progress: ${{ github.ref_name != 'main' }}
 
 on:
   push:
@@ -27,67 +27,56 @@ jobs:
       fail-fast: false
       matrix:
         include:
-        # - name: resource-aggregate
-        #   directory: resource-aggregate
-        #   file: .tmp/docker/resource-aggregate/Dockerfile
-        #   template_file: tools/docker/Dockerfile.in
-        # - name: resource-directory
-        #   directory: resource-directory
-        #   file: .tmp/docker/resource-directory/Dockerfile
-        #   template_file: tools/docker/Dockerfile.in
-        # - name: coap-gateway
-        #   directory: coap-gateway
-        #   file: .tmp/docker/coap-gateway/Dockerfile
-        #   template_file: tools/docker/Dockerfile.in
-        # - name: cloud2cloud-connector
-        #   directory: cloud2cloud-connector
-        #   file: .tmp/docker/cloud2cloud-connector/Dockerfile
-        #   template_file: tools/docker/Dockerfile.in
-        # - name: cloud2cloud-gateway
-        #   directory: cloud2cloud-gateway
-        #   file: .tmp/docker/cloud2cloud-gateway/Dockerfile
-        #   template_file: tools/docker/Dockerfile.in
-        # - name: certificate-authority
-        #   directory: certificate-authority
-        #   file: .tmp/docker/certificate-authority/Dockerfile
-        #   template_file: tools/docker/Dockerfile.in
-        # - name: grpc-gateway
-        #   directory: grpc-gateway
-        #   file: .tmp/docker/grpc-gateway/Dockerfile
-        #   template_file: tools/docker/Dockerfile.in
-        - name: http-gateway
-          directory: http-gateway
-          file: http-gateway/Dockerfile
-        # - name: identity-store
-        #   directory: identity-store
-        #   file: .tmp/docker/identity-store/Dockerfile
-        #   template_file: tools/docker/Dockerfile.in
-        - name: mock-oauth-server
-          directory: test/oauth-server
-          file: .tmp/docker/mock-oauth-server/Dockerfile
-          template_file: tools/docker/Dockerfile.in
-        - name: bundle
-          directory: bundle
-          file: bundle/Dockerfile
-        - name: test-cloud-server
-          directory: test/cloud-server
-          file: test/cloud-server/Dockerfile
-        # - name: cert-tool
-        #   directory: tools/cert-tool
-        #   file: tools/cert-tool/Dockerfile
-        # coap-gateway builded by Golang 1.19.4 has an issue with TLS handshake.
-        # This issue is reproducible with real devices that connect to AWS.
-        # This seems to be caused by the device's old mbedtls library:
-        # https://github.com/Mbed-TLS/mbedtls/tree/d81c11b8ab61fd5b2da8133aa73c5fe33a0633eb
-        - name: coap-gateway-go1-18
-          directory: coap-gateway
-          file: tools/docker/Dockerfile.go1.18
+          # - name: resource-aggregate
+          #   directory: resource-aggregate
+          #   file: tools/docker/Dockerfile
+          # - name: resource-directory
+          #   directory: resource-directory
+          #   file: tools/docker/Dockerfile
+          # - name: coap-gateway
+          #   directory: coap-gateway
+          #   file: tools/docker/Dockerfile
+          # - name: cloud2cloud-connector
+          #   directory: cloud2cloud-connector
+          #   file: tools/docker/Dockerfile
+          # - name: cloud2cloud-gateway
+          #   directory: cloud2cloud-gateway
+          #   file: tools/docker/Dockerfile
+          # - name: certificate-authority
+          #   directory: certificate-authority
+          #   file: tools/docker/Dockerfile
+          # - name: grpc-gateway
+          #   directory: grpc-gateway
+          #   file: tools/docker/Dockerfile
+          # - name: http-gateway
+          #   directory: http-gateway
+          #   file: http-gateway/Dockerfile
+          # - name: identity-store
+          #   directory: identity-store
+          #   file: tools/docker/Dockerfile
+          # - name: mock-oauth-server
+          #   directory: test/oauth-server
+          #   file: tools/docker/Dockerfile
+          # - name: bundle
+          #   directory: bundle
+          #   file: bundle/Dockerfile
+          - name: test-cloud-server
+            directory: test/cloud-server
+            file: test/cloud-server/Dockerfile
+          # - name: cert-tool
+          #   directory: tools/cert-tool
+          #   file: tools/cert-tool/Dockerfile
+          # coap-gateway builded by Golang 1.19.4 has an issue with TLS handshake.
+          # This issue is reproducible with real devices that connect to AWS.
+          # This seems to be caused by the device's old mbedtls library:
+          # https://github.com/Mbed-TLS/mbedtls/tree/d81c11b8ab61fd5b2da8133aa73c5fe33a0633eb
+          # - name: coap-gateway-go1-18
+          #   directory: coap-gateway
+          #   file: tools/docker/Dockerfile.go1.18
 
     uses: ./.github/workflows/build-publish-cfg.yaml
     with:
       name: ${{ matrix.name }}
       directory: ${{ matrix.directory }}
       file: ${{ matrix.file }}
-      release: 2.7.12
-      template_file: ${{ matrix.template_file }}
-
+      release: 2.7.11
