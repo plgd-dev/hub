@@ -53,6 +53,7 @@ extraDeploy:
 # -- External nats dependency setup
 nats:
   enabled: true
+  image: ghcr.io/plgd-dev/hub/nats-server-config-reloader:vnext-pr956
   nats:
     tls:
       secret:
