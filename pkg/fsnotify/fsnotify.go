@@ -16,9 +16,9 @@ type Watcher struct {
 	private struct {
 		mutex           sync.Mutex
 		paths           map[string]uint32
-		w               *fsnotify.Watcher
 		onEventHandlers []*func(event Event)
 	}
+	w        *fsnotify.Watcher
 	done     chan struct{}
 	closed   atomic.Bool
 	finished sync.WaitGroup
@@ -75,7 +75,7 @@ func NewWatcher(logger log.Logger) (*Watcher, error) {
 		done:   make(chan struct{}),
 		logger: logger,
 	}
-	watcher.private.w = w
+	watcher.w = w
 	watcher.private.paths = make(map[string]uint32)
 	watcher.finished.Add(1)
 	go watcher.run()
@@ -91,7 +91,7 @@ func (w *Watcher) Add(name string) error {
 		w.private.paths[name]++
 		return nil
 	}
-	if err := w.private.w.Add(name); err != nil {
+	if err := w.w.Add(name); err != nil {
 		return err
 	}
 	w.private.paths[name] = 1
@@ -111,7 +111,7 @@ func (w *Watcher) Remove(name string) error {
 		return nil
 	}
 	delete(w.private.paths, name)
-	err := w.private.w.Remove(name)
+	err := w.w.Remove(name)
 	if errors.Is(err, fsnotify.ErrNonExistentWatch) {
 		return nil
 	}
@@ -152,7 +152,7 @@ func (w *Watcher) Close() error {
 	}
 	close(w.done)
 	w.finished.Wait()
-	err := w.private.w.Close()
+	err := w.w.Close()
 	w.private.mutex.Lock()
 	defer w.private.mutex.Unlock()
 	w.private.paths = make(map[string]uint32)
@@ -169,9 +169,9 @@ func (w *Watcher) run() {
 		select {
 		case <-w.done:
 			return
-		case event := <-w.private.w.Events:
+		case event := <-w.w.Events:
 			w.handleEvent(event, &deletedPaths, &ticksRunning, ticks)
-		case err := <-w.private.w.Errors:
+		case err := <-w.w.Errors:
 			if err != nil {
 				w.logger.Errorf("fsnotify error: %w", err)
 			}
@@ -222,7 +222,7 @@ func (w *Watcher) handleDeletedPaths(deletedPaths *[]string, ticks *time.Ticker)
 		if w.private.paths[path] == 0 {
 			continue
 		}
-		err := w.private.w.Add(path)
+		err := w.w.Add(path)
 		if err != nil {
 			w.logger.Errorf("cannot add path %v to fsnotify: %w", path, err)
 			reDeletedPaths = append(reDeletedPaths, path)
