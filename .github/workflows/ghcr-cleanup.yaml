@@ -4,6 +4,7 @@ on:
     - cron: "15 1 * * *" # every day at 1:15am
   pull_request:
     types: [closed]
+  workflow_dispatch:
 
 jobs:
   pull-request-ghcr-cleanup:
@@ -21,8 +22,8 @@ jobs:
           filter-tags: vnext-pr${{ github.event.pull_request.number }}*
           token: ${{ secrets.GHCR_CLEANUP_PAT }}
   nightly-ghcr-cleanup:
-    if: ${{ github.event_name == 'schedule' }}
-    name: Delete old vnext images
+    if: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
+    name: Delete old images
     runs-on: ubuntu-latest
     steps:
       - name: Delete older than a month vnext images
@@ -34,4 +35,13 @@ jobs:
           org-name: plgd-dev
           filter-tags: vnext-*
           skip-tags: vnext-pr*, main
+          token: ${{ secrets.GHCR_CLEANUP_PAT }}
+      - name: Delete untagged images older than a month
+        uses: snok/container-retention-policy@v2
+        with:
+          image-names: hub/*
+          cut-off: One month ago UTC
+          account-type: org
+          org-name: plgd-dev
+          untagged-only: true
           token: ${{ secrets.GHCR_CLEANUP_PAT }}
