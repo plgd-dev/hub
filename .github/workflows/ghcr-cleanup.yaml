@@ -36,12 +36,18 @@ jobs:
           filter-tags: vnext-*
           skip-tags: vnext-pr*, main
           token: ${{ secrets.GHCR_CLEANUP_PAT }}
-      - name: Delete untagged images older than a month
-        uses: snok/container-retention-policy@v2
-        with:
-          image-names: hub/*
-          cut-off: One month ago UTC
-          account-type: org
-          org-name: plgd-dev
-          untagged-only: true
-          token: ${{ secrets.GHCR_CLEANUP_PAT }}
+  # Cannot enable clean-up of untagged images until issue#63 is fixed
+  # https://github.com/snok/container-retention-policy/issues/63
+  # ghcr-delete-untagged:
+  #   if: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #   - name: Delete untagged images older than a month
+  #     uses: snok/container-retention-policy@v2
+  #     with:
+  #       image-names: hub/*
+  #       cut-off: One month ago UTC
+  #       account-type: org
+  #       org-name: plgd-dev
+  #       untagged-only: true
+  #       token: ${{ secrets.GHCR_CLEANUP_PAT }}

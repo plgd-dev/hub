@@ -1,0 +1,34 @@
+name: Check ghcr images
+on:
+  workflow_dispatch:
+    inputs:
+        package:
+            description: "Package to build"
+            required: true
+            type: choice
+            options:
+                - test-cloud-server
+                - cert-tool
+                - grpc-gateway
+                - coap-gateway
+                - resource-directory
+                - identity-store
+                - http-gateway
+                - mock-oauth-server
+                - bundle
+                - resource-aggregate
+                - cloud2cloud-connector
+                - cloud2cloud-gateway
+                - certificate-authority
+                - coap-gateway-go1-18
+jobs:
+    check_package:
+      name: Check released packages
+      runs-on: ubuntu-latest
+      steps:
+        - uses: actions/checkout@v3
+
+        - name: Check package
+          working-directory: tools/docker
+          run: |
+            PACKAGE="${{ inputs.package }}" ./check_releases.sh
