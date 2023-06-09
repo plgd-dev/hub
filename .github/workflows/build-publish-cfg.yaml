@@ -20,19 +20,14 @@ on:
         description: Dockerfile to build
         type: string
         required: true
-      template-file:
-        description: Template dockefile to resolve
+      template_file:
+        description: Template file to resolve
         type: string
         required: false
-      www-name:
-        description: Name of the www artifact
+      release:
+        description: "Release version"
+        required: true
         type: string
-        required: false
-      www-build-dir:
-        description: Directory destination to download the www artifact
-        type: string
-        required: false
-
 
 env:
   REGISTRY: ghcr.io
@@ -49,28 +44,17 @@ jobs:
           cat /proc/cpuinfo
           echo "Number of cores: $(nproc)"
           echo "Number of threads: $(nproc --all)"
+
       - name: Checkout repository
         uses: actions/checkout@v3
         with:
+          ref: v${{ inputs.release }}
           fetch-depth: 0
 
-      - name: Validate WWW Inputs
+      - name: Get revision
+        id: revision
         run: |
-          if [[ -n "${{ inputs.www-name }}" && -z "${{ inputs.www-build-dir }}" ]]; then
-            echo "inputs.www-build-dir is missing."
-            exit 1
-          fi
-          if [[ -z "${{ inputs.www-name }}" && -n "${{ inputs.www-build-dir }}" ]]; then
-            echo "inputs.www-name is missing."
-            exit 1
-          fi
-          echo "Both inputs are either empty or set. Validation successful."
-
-      - uses: actions/download-artifact@v3
-        if: ${{ inputs.www-name && inputs.www-build-dir }}
-        with:
-          name: ${{ inputs.www-name }}
-          path: ${{ inputs.www-build-dir }}
+            echo "value=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
@@ -92,20 +76,16 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ github.repository }}/${{ inputs.name }}
           tags: |
-            type=raw,enable={{is_default_branch}},value=vnext
-            type=sha,enable={{is_default_branch}},prefix=vnext-,format=short
-            type=ref,event=pr,prefix=vnext-pr,suffix=-{{sha}}
-            type=ref,event=pr,prefix=vnext-pr
-            type=ref,enable={{is_default_branch}},event=branch
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern={{major}}
-      
+            type=raw,value=${{ inputs.release }}
+          labels: |
+            org.opencontainers.image.version=${{ inputs.release }}
+            org.opencontainers.image.revision=${{ steps.revision.outputs.value }}
+
       - name: Resolve template file
-        if: ${{ inputs.template-file }}
+        if: ${{ inputs.template_file }}
         run: |
           mkdir -p $(dirname ${{ inputs.file }})
-          awk '{gsub("@NAME@","${{ inputs.name }}")} {gsub("@DIRECTORY@","${{ inputs.directory }}")} {print}' ${{ inputs.template-file }} > ${{ inputs.file }}
+          awk '{gsub("@NAME@","${{ inputs.name }}")} {gsub("@DIRECTORY@","${{ inputs.directory }}")} {print}' ${{ inputs.template_file }} > ${{ inputs.file }}
 
       - name: Build and push docker image
         uses: docker/build-push-action@v4
@@ -117,6 +97,8 @@ jobs:
             DIRECTORY=${{ inputs.directory }}
             NAME=${{ inputs.name }}
           file: ${{ inputs.file }}
-          push: true
+          push: true          
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          # required because of https://github.com/snok/container-retention-policy/issues/63
+          provenance: false
