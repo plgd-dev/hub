@@ -1,5 +1,10 @@
 name: Check ghcr images
 on:
+  pull_request:
+    branches:
+      - main
+    types: [opened, synchronize, reopened]
+
   workflow_dispatch:
     inputs:
         package:
@@ -22,13 +27,83 @@ on:
                 - certificate-authority
                 - coap-gateway-go1-18
 jobs:
-    check_package:
+    check_packages:
       name: Check released packages
       runs-on: ubuntu-latest
       steps:
         - uses: actions/checkout@v3
 
-        - name: Check package
+        # - name: Check package
+        #   working-directory: tools/docker
+        #   run: |
+        #     PACKAGE="${{ inputs.package }}" ./check_releases.sh
+
+        - name: Check test-cloud-server
           working-directory: tools/docker
           run: |
-            PACKAGE="${{ inputs.package }}" ./check_releases.sh
+            PACKAGE="test-cloud-server" ./check_releases.sh
+
+        - name: Check cert-tool
+          working-directory: tools/docker
+          run: |
+            PACKAGE="cert-tool" ./check_releases.sh
+
+        - name: Check grpc-gateway
+          working-directory: tools/docker
+          run: |
+            PACKAGE="grpc-gateway" ./check_releases.sh
+
+        - name: Check coap-gateway
+          working-directory: tools/docker
+          run: |
+            PACKAGE="coap-gateway" ./check_releases.sh
+
+        - name: Check resource-directory
+          working-directory: tools/docker
+          run: |
+            PACKAGE="resource-directory" ./check_releases.sh
+
+        - name: Check identity-store
+          working-directory: tools/docker
+          run: |
+            PACKAGE="identity-store" ./check_releases.sh
+
+        - name: Check http-gateway
+          working-directory: tools/docker
+          run: |
+            PACKAGE="http-gateway" ./check_releases.sh
+
+        - name: Check mock-oauth-server
+          working-directory: tools/docker
+          run: |
+            PACKAGE="mock-oauth-server" ./check_releases.sh
+
+        - name: Check bundle
+          working-directory: tools/docker
+          run: |
+            PACKAGE="bundle" ./check_releases.sh
+
+        - name: Check resource-aggregate
+          working-directory: tools/docker
+          run: |
+            PACKAGE="resource-aggregate" ./check_releases.sh
+
+        - name: Check cloud2cloud-connector
+          working-directory: tools/docker
+          run: |
+            PACKAGE="cloud2cloud-connector" ./check_releases.sh
+
+        - name: Check cloud2cloud-gateway
+          working-directory: tools/docker
+          run: |
+            PACKAGE="cloud2cloud-gateway" ./check_releases.sh
+
+        - name: Check certificate-authority
+          working-directory: tools/docker
+          run: |
+            PACKAGE="certificate-authority" ./check_releases.sh
+
+        - name: Check coap-gateway-go1-18
+          working-directory: tools/docker
+          run: |
+            PACKAGE="coap-gateway-go1-18" ./check_releases.sh
