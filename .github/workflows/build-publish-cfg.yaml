@@ -73,7 +73,6 @@ jobs:
           images: ${{ env.REGISTRY }}/${{ github.repository }}/${{ inputs.name }}
           tags: |
             type=raw,value=${{ inputs.release }}
-            type=raw,value=2.1
           labels: |
             org.opencontainers.image.version=${{ inputs.release }}
             org.opencontainers.image.revision=${{ steps.revision.outputs.value }}
