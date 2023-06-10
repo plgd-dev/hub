@@ -57,9 +57,9 @@ jobs:
           - name: mock-oauth-server
             directory: test/oauth-server
             file: tools/docker/Dockerfile
-          - name: bundle
-            directory: bundle
-            file: bundle/Dockerfile
+          # - name: bundle
+          #   directory: bundle
+          #   file: bundle/Dockerfile
           # - name: test-cloud-server
           #   directory: test/cloud-server
           #   file: test/cloud-server/Dockerfile
@@ -79,4 +79,4 @@ jobs:
       name: ${{ matrix.name }}
       directory: ${{ matrix.directory }}
       file: ${{ matrix.file }}
-      release: 2.4.1
+      release: 2.4.0
