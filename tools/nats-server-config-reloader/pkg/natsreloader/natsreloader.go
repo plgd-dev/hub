@@ -201,6 +201,7 @@ func (r *Reloader) Run(ctx context.Context) error {
 		if err := configWatcher.Add(r.ConfigFiles[i]); err != nil {
 			return err
 		}
+		log.Printf("watching file: %v", r.ConfigFiles[i])
 	}
 
 	attempts := 0

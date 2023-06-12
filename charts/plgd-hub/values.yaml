@@ -53,7 +53,6 @@ extraDeploy:
 # -- External nats dependency setup
 nats:
   enabled: true
-  image: ghcr.io/plgd-dev/hub/nats-server-config-reloader:vnext-pr956
   nats:
     tls:
       secret:
@@ -65,13 +64,13 @@ nats:
   cluster:
     enabled: false
     noAdvertise: false
-
   leafnodes:
     enabled: false
     noAdvertise: false
-
   natsbox:
     enabled: false
+  reloader:
+    image: ghcr.io/plgd-dev/hub/nats-server-config-reloader:vnext-pr956
 
 
 # -- External mongodb-replica dependency setup
