@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/go-multierror"
+	"github.com/plgd-dev/hub/v2/pkg/fn"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	pkgTime "github.com/plgd-dev/hub/v2/pkg/time"
@@ -82,18 +83,29 @@ func New(config Config, fileWatcher *fsnotify.Watcher, logger log.Logger) (*Cert
 	if err != nil {
 		return nil, err
 	}
+	var removeFilesOnError fn.FuncList
+
 	for _, ca := range config.CAPool {
 		if err := c.fileWatcher.Add(ca); err != nil {
+			removeFilesOnError.Execute()
 			return nil, fmt.Errorf("cannot watch CAPool(%v): %w", ca, err)
 		}
+		removeFilesOnError.AddFunc(func() {
+			_ = c.fileWatcher.Remove(ca)
+		})
 	}
 	if config.CertFile != "" {
 		if err := c.fileWatcher.Add(config.CertFile); err != nil {
+			removeFilesOnError.Execute()
 			return nil, fmt.Errorf("cannot watch CertFile(%v): %w", config.CertFile, err)
 		}
+		removeFilesOnError.AddFunc(func() {
+			_ = c.fileWatcher.Remove(config.CertFile)
+		})
 	}
 	if config.KeyFile != "" {
 		if err := c.fileWatcher.Add(config.KeyFile); err != nil {
+			removeFilesOnError.Execute()
 			return nil, fmt.Errorf("cannot watch KeyFile(%v): %w", config.CertFile, err)
 		}
 	}
@@ -223,41 +235,48 @@ func (a *CertManager) loadCertsLocked() (bool, error) {
 	return a.setTLSKeyPairLocked(cert, tlsCertNotAfter), nil
 }
 
-func (a *CertManager) loadCAsLocked() (bool, error) {
-	var cas []*x509.Certificate
+func loadCAs(caPool []string) (cas []*x509.Certificate, tlsCAPoolMinNotAfter time.Time, hash []byte, err error) {
 	var errors *multierror.Error
-	tlsCAPoolMinNotAfter := pkgTime.MaxTime
+	tlsCAPoolMinNotAfter = pkgTime.MaxTime
 	now := time.Now()
-	hash := sha256.New()
-	for _, ca := range a.config.CAPool {
+	h := sha256.New()
+	for _, ca := range caPool {
 		certs, err := security.LoadX509(ca)
 		if err != nil {
 			errors = multierror.Append(errors, fmt.Errorf("cannot load CA from '%v': %w", ca, err))
-		} else {
-			for _, c := range certs {
-				if now.After(c.NotAfter) {
-					// skip expired certificates
-					continue
-				}
-				if tlsCAPoolMinNotAfter.After(c.NotAfter) {
-					tlsCAPoolMinNotAfter = c.NotAfter
-				}
-				_, _ = hash.Write(c.Raw)
-				cas = append(cas, c)
+			continue
+		}
+		for _, c := range certs {
+			if now.After(c.NotAfter) {
+				// skip expired certificates
+				continue
 			}
+			if tlsCAPoolMinNotAfter.After(c.NotAfter) {
+				tlsCAPoolMinNotAfter = c.NotAfter
+			}
+			_, _ = h.Write(c.Raw)
+			cas = append(cas, c)
 		}
 	}
-	if errors != nil {
-		return false, errors.ErrorOrNil()
+	if errors.ErrorOrNil() != nil {
+		return nil, time.Time{}, nil, errors.ErrorOrNil()
+	}
+	return cas, tlsCAPoolMinNotAfter, h.Sum(nil), nil
+}
+
+func (a *CertManager) loadCAsLocked() (bool, error) {
+	cas, tlsCAPoolMinNotAfter, hash, err := loadCAs(a.config.CAPool)
+	if err != nil {
+		return false, err
 	}
 	if a.config.UseSystemCAPool {
-		return a.setCAPoolLocked(security.NewDefaultCertPool(cas), tlsCAPoolMinNotAfter, hash.Sum(nil)), nil
+		return a.setCAPoolLocked(security.NewDefaultCertPool(cas), tlsCAPoolMinNotAfter, hash), nil
 	}
 	p := x509.NewCertPool()
 	for _, c := range cas {
 		p.AddCert(c)
 	}
-	return a.setCAPoolLocked(p, tlsCAPoolMinNotAfter, hash.Sum(nil)), nil
+	return a.setCAPoolLocked(p, tlsCAPoolMinNotAfter, hash), nil
 }
 
 func (a *CertManager) setTLSKeyPairLocked(cert tls.Certificate, tlsCertNotAfter time.Time) bool {

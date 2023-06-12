@@ -59,8 +59,7 @@ func TestReloader(t *testing.T) {
 
 	r, err := natsreloader.NewReloader(nconfig)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %s\n", err)
-		os.Exit(1)
+		t.Fatal(err)
 	}
 
 	signals := 0

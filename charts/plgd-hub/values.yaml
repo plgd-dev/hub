@@ -70,7 +70,8 @@ nats:
   natsbox:
     enabled: false
   reloader:
-    image: ghcr.io/plgd-dev/hub/nats-server-config-reloader:vnext-pr956
+    image: ghcr.io/plgd-dev/hub/nats-server-config-reloader:vnext
+    pullPolicy: Always
 
 
 # -- External mongodb-replica dependency setup

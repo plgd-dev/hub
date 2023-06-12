@@ -123,6 +123,10 @@ issues:
         - gocognit
         - gocyclo
         - gosec
+    - path: tools/nats-server-config-reloader/pkg/natsreloader/natsreloader.go
+      text: "G404:"
+      linters:
+        - gosec
     - path: pkg/time/delay.go
       text: "G404:"
       linters:

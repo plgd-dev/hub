@@ -20,6 +20,8 @@ var (
 	Version   = "version-not-set"
 )
 
+const errorFmt = natsreloader.ErrorFmt
+
 // StringSet is a wrapper for []string to allow using it with the flags package.
 type StringSet []string
 
@@ -65,7 +67,7 @@ func main() {
 
 	err := fs.Parse(os.Args[1:])
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %s\n", err)
+		fmt.Fprintf(os.Stderr, errorFmt, err)
 		os.Exit(1)
 	}
 
@@ -85,7 +87,7 @@ func main() {
 	}
 	r, err := natsreloader.NewReloader(nconfig)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %s\n", err)
+		fmt.Fprintf(os.Stderr, errorFmt, err)
 		os.Exit(1)
 	}
 
@@ -102,7 +104,7 @@ func main() {
 				os.Exit(0)
 				return
 			case syscall.SIGTERM:
-				r.Stop()
+				_ = r.Stop()
 				return
 			}
 		}
@@ -111,7 +113,7 @@ func main() {
 	log.Printf("Starting NATS Server Reloader v%s\n", Version)
 	err = r.Run(context.Background())
 	if err != nil && !errors.Is(err, context.Canceled) {
-		fmt.Fprintf(os.Stderr, "Error: %s\n", err.Error())
+		fmt.Fprintf(os.Stderr, errorFmt, err.Error())
 		os.Exit(1)
 	}
 }

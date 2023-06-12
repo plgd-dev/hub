@@ -177,18 +177,18 @@ func TestCertManagerWithExpiredCA(t *testing.T) {
 	defer mng.Close()
 	pool := mng.GetCertificateAuthorities()
 	require.NotNil(t, pool)
-	require.Equal(t, 1, len(pool.Subjects()))
+	require.Equal(t, 1, len(pool.Subjects())) //nolint:staticcheck
 	time.Sleep(time.Second * 2)
 	pool = mng.GetCertificateAuthorities()
 	require.NotNil(t, pool)
-	require.Equal(t, 0, len(pool.Subjects()))
+	require.Equal(t, 0, len(pool.Subjects())) //nolint:staticcheck
 	caPem, _ = getCA(t, time.Now(), time.Second*100)
 	err = os.WriteFile(caFile.Name(), caPem, os.FileMode(os.O_RDWR))
 	require.NoError(t, err)
 	time.Sleep(time.Second * 1)
 	pool = mng.GetCertificateAuthorities()
 	require.NotNil(t, pool)
-	require.Equal(t, 1, len(pool.Subjects()))
+	require.Equal(t, 1, len(pool.Subjects())) //nolint:staticcheck
 }
 
 // Check when cert expires
