@@ -236,7 +236,7 @@ func testDevices(t *testing.T, numDevices, numResources, expRSSInMB int, resourc
 
 	logger := log.NewLogger(cfg.Log)
 
-	fileWatcher, err := fsnotify.NewWatcher()
+	fileWatcher, err := fsnotify.NewWatcher(logger)
 	require.NoError(t, err)
 
 	s, err := coapService.New(ctx, cfg, fileWatcher, logger)

@@ -71,7 +71,7 @@ func TestAggregateHandleConfirmDeviceMetadataUpdate(t *testing.T) {
 	cfg := raTest.MakeConfig(t)
 	ctx := context.Background()
 	logger := log.NewLogger(cfg.Log)
-	fileWatcher, err := fsnotify.NewWatcher()
+	fileWatcher, err := fsnotify.NewWatcher(logger)
 	require.NoError(t, err)
 	defer func() {
 		errC := fileWatcher.Close()
@@ -181,7 +181,7 @@ func TestRequestHandlerConfirmDeviceMetadataUpdate(t *testing.T) {
 	}))
 	config := raTest.MakeConfig(t)
 	logger := log.NewLogger(config.Log)
-	fileWatcher, err := fsnotify.NewWatcher()
+	fileWatcher, err := fsnotify.NewWatcher(logger)
 	require.NoError(t, err)
 	defer func() {
 		errC := fileWatcher.Close()

@@ -43,7 +43,7 @@ func TestOwnerCacheSubscribe(t *testing.T) {
 
 	token := oauthService.GetDefaultAccessToken(t)
 
-	fileWatcher, err := fsnotify.NewWatcher()
+	fileWatcher, err := fsnotify.NewWatcher(log.Get())
 	require.NoError(t, err)
 	defer func() {
 		errC := fileWatcher.Close()

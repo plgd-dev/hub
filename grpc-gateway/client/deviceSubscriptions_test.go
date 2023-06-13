@@ -69,7 +69,7 @@ func TestObserveDeviceResourcesRetrieve(t *testing.T) {
 	tearDown := service.SetUp(ctx, t)
 	defer tearDown()
 	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
-	fileWatcher, err := fsnotify.NewWatcher()
+	fileWatcher, err := fsnotify.NewWatcher(log.Get())
 	require.NoError(t, err)
 	defer func() {
 		errC := fileWatcher.Close()
@@ -163,7 +163,7 @@ func TestObserveDeviceResourcesUpdate(t *testing.T) {
 	tearDown := service.SetUp(ctx, t)
 	defer tearDown()
 	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
-	fileWatcher, err := fsnotify.NewWatcher()
+	fileWatcher, err := fsnotify.NewWatcher(log.Get())
 	require.NoError(t, err)
 	defer func() {
 		errC := fileWatcher.Close()
@@ -291,7 +291,7 @@ func TestObserveDeviceResourcesCreateAndDelete(t *testing.T) {
 	tearDown := service.SetUp(ctx, t)
 	defer tearDown()
 	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
-	fileWatcher, err := fsnotify.NewWatcher()
+	fileWatcher, err := fsnotify.NewWatcher(log.Get())
 	require.NoError(t, err)
 	defer func() {
 		errC := fileWatcher.Close()

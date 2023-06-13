@@ -74,7 +74,7 @@ func New(config Config, fileWatcher *fsnotify.Watcher, logger log.Logger) (*Cert
 		CertFile:                  config.CertFile,
 		ClientCertificateRequired: false,
 		UseSystemCAPool:           config.UseSystemCAPool,
-	}, fileWatcher, logger)
+	}, fileWatcher, logger.With(log.CertManagerKey, "client"))
 	if err != nil {
 		return nil, err
 	}

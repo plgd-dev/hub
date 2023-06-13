@@ -37,7 +37,7 @@ func TestPublishUnpublish(t *testing.T) {
 
 	ctx := kitNetGrpc.CtxWithToken(context.Background(), oauthTest.GetDefaultAccessToken(t))
 
-	fileWatcher, err := fsnotify.NewWatcher()
+	fileWatcher, err := fsnotify.NewWatcher(log.Get())
 	require.NoError(t, err)
 	defer func() {
 		errC := fileWatcher.Close()

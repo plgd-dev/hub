@@ -160,7 +160,7 @@ func TestRequestHandlerDeleteResourceAfterUnpublish(t *testing.T) {
 	// for update resource-directory cache
 	time.Sleep(time.Second)
 
-	fileWatcher, err := fsnotify.NewWatcher()
+	fileWatcher, err := fsnotify.NewWatcher(log.Get())
 	require.NoError(t, err)
 	defer func() {
 		errC := fileWatcher.Close()

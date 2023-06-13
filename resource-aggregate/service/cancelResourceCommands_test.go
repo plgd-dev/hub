@@ -144,7 +144,7 @@ func TestRequestHandlerCancelPendingCommands(t *testing.T) {
 		"sub": userID,
 	}))
 	logger := log.NewLogger(cfg.Log)
-	fileWatcher, err := fsnotify.NewWatcher()
+	fileWatcher, err := fsnotify.NewWatcher(logger)
 	require.NoError(t, err)
 	defer func() {
 		errC := fileWatcher.Close()

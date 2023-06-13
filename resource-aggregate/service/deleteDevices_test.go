@@ -30,7 +30,7 @@ func TestRequestHandler_DeleteDevices(t *testing.T) {
 	}))
 	cfg := raTest.MakeConfig(t)
 	logger := log.NewLogger(cfg.Log)
-	fileWatcher, err := fsnotify.NewWatcher()
+	fileWatcher, err := fsnotify.NewWatcher(logger)
 	require.NoError(t, err)
 	defer func() {
 		errC := fileWatcher.Close()

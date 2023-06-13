@@ -88,7 +88,7 @@ func SetUp(t require.TestingT) (tearDown func()) {
 func New(t require.TestingT, cfg service.Config) func() {
 	logger := log.NewLogger(cfg.Log)
 
-	fileWatcher, err := fsnotify.NewWatcher()
+	fileWatcher, err := fsnotify.NewWatcher(logger)
 	require.NoError(t, err)
 
 	s, err := service.New(context.Background(), cfg, fileWatcher, logger)
