@@ -165,7 +165,7 @@ data:
             permitWithoutStream: {{ .clients.certificateAuthority.grpc.keepAlive.permitWithoutStream }}
           tls:
             {{- $caClientTls := .clients.certificateAuthority.grpc.tls }}
-            {{- include "plgd-hub.certificateConfig" (list $ $caClientTls $grpcGatewayCertPath ) | indent 10 }}
+            {{- include "plgd-hub.certificateConfig" (list $ $caClientTls $coapGatewayCertPath ) | indent 10 }}
             useSystemCAPool: {{ .clients.certificateAuthority.grpc.tls.useSystemCAPool }}
       {{- include "plgd-hub.openTelemetryExporterConfig" (list $ $coapGatewayCertPath) | nindent 6 }}
     taskQueue:
