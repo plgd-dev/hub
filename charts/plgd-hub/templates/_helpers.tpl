@@ -295,7 +295,7 @@ app.kubernetes.io/instance: {{ .Release.Name }}
   {{- printf "%s" $address }}
   {{- else }}
   {{- $raServer := include "plgd-hub.certificateauthority.fullname" $ }}
-  {{- printf "%s.%s.svc.%s:%v" $raServer $.Release.Namespace $.Values.cluster.dns $.Values.certificateauthority.port }}
+  {{- printf "%s-grpc.%s.svc.%s:%v" $raServer $.Release.Namespace $.Values.cluster.dns $.Values.certificateauthority.port }}
   {{- end }}
 {{- end }}
 
