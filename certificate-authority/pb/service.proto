@@ -40,7 +40,7 @@ service CertificateAuthority {
       body: "*"
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      tags: [ "certificate-authority", "sign csr" ]
+      tags: [ "sign csr" ]
     };
   }
   
@@ -52,7 +52,7 @@ service CertificateAuthority {
       body: "*"
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      tags: [ "certificate-authority", "sign csr" ]
+      tags: [ "sign csr" ]
     };
   }
 
@@ -62,7 +62,7 @@ service CertificateAuthority {
       get: "/api/v1/signing/records"
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      tags: [ "certificate-authority", "signing records" ]
+      tags: [ "signing records" ]
     };
   };
 
@@ -72,7 +72,7 @@ service CertificateAuthority {
       delete: "/api/v1/signing/records"
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      tags: [ "certificate-authority", "signing records" ]
+      tags: [ "signing records" ]
     };
   };
 }

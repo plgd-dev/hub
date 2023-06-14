@@ -59,8 +59,7 @@
           }
         ],
         "tags": [
-          "certificate-authority",
-          "signing csr"
+          "sign csr"
         ]
       }
     },
@@ -93,8 +92,7 @@
           }
         ],
         "tags": [
-          "certificate-authority",
-          "signing csr"
+          "sign csr"
         ]
       }
     },
@@ -161,7 +159,6 @@
           }
         ],
         "tags": [
-          "certificate-authority",
           "signing records"
         ]
       },
@@ -207,7 +204,6 @@
           }
         ],
         "tags": [
-          "certificate-authority",
           "signing records"
         ]
       }
