@@ -234,7 +234,7 @@ func RegisterCertificateAuthorityHandlerServer(ctx context.Context, mux *runtime
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/certificateauthority.pb.CertificateAuthority/DeleteSigningRecords", runtime.WithHTTPPathPattern("/api/v1/signing-records"))
+		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/certificateauthority.pb.CertificateAuthority/DeleteSigningRecords", runtime.WithHTTPPathPattern("/api/v1/signing/records"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -342,7 +342,7 @@ func RegisterCertificateAuthorityHandlerClient(ctx context.Context, mux *runtime
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/certificateauthority.pb.CertificateAuthority/GetSigningRecords", runtime.WithHTTPPathPattern("/api/v1/signing-records"))
+		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/certificateauthority.pb.CertificateAuthority/GetSigningRecords", runtime.WithHTTPPathPattern("/api/v1/signing/records"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -364,7 +364,7 @@ func RegisterCertificateAuthorityHandlerClient(ctx context.Context, mux *runtime
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/certificateauthority.pb.CertificateAuthority/DeleteSigningRecords", runtime.WithHTTPPathPattern("/api/v1/signing-records"))
+		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/certificateauthority.pb.CertificateAuthority/DeleteSigningRecords", runtime.WithHTTPPathPattern("/api/v1/signing/records"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -388,9 +388,9 @@ var (
 
 	pattern_CertificateAuthority_SignCertificate_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"api", "v1", "sign", "csr"}, ""))
 
-	pattern_CertificateAuthority_GetSigningRecords_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"api", "v1", "signing-records"}, ""))
+	pattern_CertificateAuthority_GetSigningRecords_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"api", "v1", "signing", "records"}, ""))
 
-	pattern_CertificateAuthority_DeleteSigningRecords_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"api", "v1", "signing-records"}, ""))
+	pattern_CertificateAuthority_DeleteSigningRecords_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"api", "v1", "signing", "records"}, ""))
 )
 
 var (

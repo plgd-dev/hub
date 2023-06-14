@@ -59,7 +59,8 @@
           }
         ],
         "tags": [
-          "certificate-authority"
+          "certificate-authority",
+          "signing csr"
         ]
       }
     },
@@ -92,11 +93,12 @@
           }
         ],
         "tags": [
-          "certificate-authority"
+          "certificate-authority",
+          "signing csr"
         ]
       }
     },
-    "/api/v1/signing-records": {
+    "/api/v1/signing/records": {
       "get": {
         "summary": "Get signed certficate records.",
         "operationId": "CertificateAuthority_GetSigningRecords",
@@ -159,7 +161,8 @@
           }
         ],
         "tags": [
-          "SigningRecords records"
+          "certificate-authority",
+          "signing records"
         ]
       },
       "delete": {
@@ -204,7 +207,8 @@
           }
         ],
         "tags": [
-          "SigningRecords records"
+          "certificate-authority",
+          "signing records"
         ]
       }
     }

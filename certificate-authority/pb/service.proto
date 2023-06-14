@@ -40,7 +40,7 @@ service CertificateAuthority {
       body: "*"
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      tags: [ "certificate-authority" ]
+      tags: [ "certificate-authority", "sign csr" ]
     };
   }
   
@@ -52,27 +52,27 @@ service CertificateAuthority {
       body: "*"
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      tags: [ "certificate-authority" ]
+      tags: [ "certificate-authority", "sign csr" ]
     };
   }
 
   // Get signed certficate records.
   rpc GetSigningRecords (GetSigningRecordsRequest) returns (stream SigningRecord) {
     option (google.api.http) = {
-      get: "/api/v1/signing-records"
+      get: "/api/v1/signing/records"
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      tags: [ "SigningRecords records" ]
+      tags: [ "certificate-authority", "signing records" ]
     };
   };
 
   // Delete signed certficate records.
   rpc DeleteSigningRecords (DeleteSigningRecordsRequest) returns (DeletedSigningRecords) {
     option (google.api.http) = {
-      delete: "/api/v1/signing-records"
+      delete: "/api/v1/signing/records"
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      tags: [ "SigningRecords records" ]
+      tags: [ "certificate-authority", "signing records" ]
     };
   };
 }

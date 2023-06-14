@@ -1728,7 +1728,7 @@ certificateauthority:
       # -- Ingress path
       paths:
         - /api/v1/sign
-        - /api/v1/signing-records
+        - /api/v1/signing
     grpc:
       # -- Enable ingress
       enabled: true
