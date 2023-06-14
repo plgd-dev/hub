@@ -107,6 +107,20 @@ data:
             {{- $rdClientTls := .clients.resourceDirectory.grpc.tls }}
             {{- include "plgd-hub.certificateConfig" (list $ $rdClientTls $grpcGatewayCertPath ) | indent 10 }}
             useSystemCAPool: {{ .clients.resourceDirectory.grpc.tls.useSystemCAPool }}
+      certificateAuthority:
+        grpc:
+          {{- $certificateAuthority := .clients.certificateAuthority.grpc.address }}
+          address:{{ printf " " }}{{- include "plgd-hub.certificateAuthorityAddress" (list $ $certificateAuthority ) | quote }}
+          sendMsgSize: {{ int64 .clients.certificateAuthority.grpc.sendMsgSize | default 4194304 }}
+          recvMsgSize: {{ int64 .clients.certificateAuthority.grpc.recvMsgSize | default 4194304 }}
+          keepAlive:
+            time: {{ .clients.certificateAuthority.grpc.keepAlive.time }}
+            timeout: {{ .clients.certificateAuthority.grpc.keepAlive.timeout }}
+            permitWithoutStream: {{ .clients.certificateAuthority.grpc.keepAlive.permitWithoutStream }}
+          tls:
+            {{- $caClientTls := .clients.certificateAuthority.grpc.tls }}
+            {{- include "plgd-hub.certificateConfig" (list $ $caClientTls $grpcGatewayCertPath ) | indent 10 }}
+            useSystemCAPool: {{ .clients.certificateAuthority.grpc.tls.useSystemCAPool }}
       {{- include "plgd-hub.openTelemetryExporterConfig" (list $ $grpcGatewayCertPath) | nindent 6 }}
   {{- end }}
 {{- end }}

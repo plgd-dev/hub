@@ -107,7 +107,27 @@ jobs:
           mkdir -p $(dirname ${{ inputs.file }})
           awk '{gsub("@NAME@","${{ inputs.name }}")} {gsub("@DIRECTORY@","${{ inputs.directory }}")} {print}' ${{ inputs.template-file }} > ${{ inputs.file }}
 
-      - name: Build and push docker image
+      - name: First try to build and push docker image
+        uses: docker/build-push-action@v4
+        # This needs to be true to proceed to the next step of failure
+        continue-on-error: true
+        # You need to specify an id to be able to tell what the status of this action was
+        id: BuildAndPush1
+        with:
+          context: ./
+          platforms: linux/amd64,linux/arm64
+          builder: ${{ steps.buildx.outputs.name }}
+          build-args: |
+            DIRECTORY=${{ inputs.directory }}
+            NAME=${{ inputs.name }}
+          file: ${{ inputs.file }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+      
+      - name: Second try to build and push docker image when first build fails
+        # Only run this step if step 1 fails. It knows that step one failed because we specified an `id` for the first step
+        if: steps.BuildAndPush1.outcome == 'failure'
         uses: docker/build-push-action@v4
         with:
           context: ./

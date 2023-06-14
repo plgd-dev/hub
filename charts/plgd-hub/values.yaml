@@ -979,6 +979,20 @@ coapgateway:
           keyFile:
           certFile:
           useSystemCAPool: false
+    certificateAuthority:
+      grpc:
+        address: ""
+        sendMsgSize: 4194304
+        recvMsgSize: 4194304
+        keepAlive:
+          time: 10s
+          timeout: 20s
+          permitWithoutStream: true
+        tls:
+          caPool:
+          keyFile:
+          certFile:
+          useSystemCAPool: false
   # -- For complete coap-gateway service configuration see [plgd/coap-gateway](https://github.com/plgd-dev/hub/tree/main/coap-gateway)
   taskQueue:
     goPoolSize: 1600
@@ -1581,6 +1595,20 @@ grpcgateway:
           keyFile:
           certFile:
           useSystemCAPool: false
+    certificateAuthority:
+      grpc:
+        address: ""
+        sendMsgSize: 4194304
+        recvMsgSize: 4194304
+        keepAlive:
+          time: 10s
+          timeout: 20s
+          permitWithoutStream: true
+        tls:
+          caPool:
+          keyFile:
+          certFile:
+          useSystemCAPool: false
 
 
 certificateauthority:
@@ -1700,6 +1728,7 @@ certificateauthority:
       # -- Ingress path
       paths:
         - /api/v1/sign
+        - /api/v1/signing
     grpc:
       # -- Enable ingress
       enabled: true
@@ -1802,6 +1831,27 @@ certificateauthority:
       readHeaderTimeout: 4s
       writeTimeout: 16s
       idleTimeout: 30s
+  clients:
+    storage:
+      # -- Remove any invalid entries in the cron format. If an empty string is provided, the cleanup function will be disabled.
+      cleanUpRecords: "0 1 * * *"
+      mongoDB:
+        uri:
+        database: certificateAuthorityService
+        maxPoolSize: 16
+        maxConnIdleTime: 4m0s
+        tls:
+          caPool:
+          keyFile:
+          certFile:
+          useSystemCAPool: false
+        bulkWrite:
+          # -- A time limit for write bulk to mongodb. A Timeout of zero means no timeout.
+          timeout: 1m0s
+          # -- The amount of time to wait until a record is written to mongodb. Any records collected during the throttle time will also be written. A throttle time of zero writes immediately. If recordLimit is reached, all records are written immediately
+          throttleTime: 500ms
+          # -- The maximum number of documents to cache before an immediate write.
+          documentLimit: 1000
   # -- For complete certificate-authority service configuration see [plgd/certificate-authority](https://github.com/plgd-dev/hub/tree/main/certificate-authority)
   signer:
     keyFile:

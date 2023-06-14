@@ -8,7 +8,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/plgd-dev/hub/v2/certificate-authority/pb"
-	grpcService "github.com/plgd-dev/hub/v2/certificate-authority/service/grpc" //	"github.com/tmc/grpc-websocket-proxy/wsproxy"
+	grpcService "github.com/plgd-dev/hub/v2/certificate-authority/service/grpc"
 	"github.com/plgd-dev/hub/v2/http-gateway/serverMux"
 )
 

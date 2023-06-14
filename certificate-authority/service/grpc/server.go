@@ -8,6 +8,7 @@ import (
 
 	"github.com/karrick/tparse/v2"
 	"github.com/plgd-dev/hub/v2/certificate-authority/pb"
+	"github.com/plgd-dev/hub/v2/certificate-authority/store/mongodb"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/kit/v2/security"
 )
@@ -28,9 +29,10 @@ type CertificateAuthorityServer struct {
 	signerConfig SignerConfig
 	logger       log.Logger
 	ownerClaim   string
+	store        *mongodb.Store
 }
 
-func NewCertificateAuthorityServer(ownerClaim string, signerConfig SignerConfig, logger log.Logger) (*CertificateAuthorityServer, error) {
+func NewCertificateAuthorityServer(ownerClaim string, signerConfig SignerConfig, store *mongodb.Store, logger log.Logger) (*CertificateAuthorityServer, error) {
 	certificate, err := security.LoadX509(signerConfig.CertFile)
 	if err != nil {
 		return nil, err
@@ -51,5 +53,6 @@ func NewCertificateAuthorityServer(ownerClaim string, signerConfig SignerConfig,
 		signerConfig: signerConfig,
 		logger:       logger,
 		ownerClaim:   ownerClaim,
+		store:        store,
 	}, nil
 }

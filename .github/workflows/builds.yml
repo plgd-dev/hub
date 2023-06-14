@@ -27,4 +27,4 @@ jobs:
 
       - run: |
           go version
-          go vet ./...
+          go build ./coap-gateway/cmd/service

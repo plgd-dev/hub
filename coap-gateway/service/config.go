@@ -199,6 +199,7 @@ type ClientsConfig struct {
 	OpenTelemetryCollector otelClient.Config       `yaml:"openTelemetryCollector" json:"openTelemetryCollector"`
 	IdentityStore          IdentityStoreConfig     `yaml:"identityStore" json:"identityStore"`
 	ResourceDirectory      GrpcServerConfig        `yaml:"resourceDirectory" json:"resourceDirectory"`
+	CertificateAuthority   GrpcServerConfig        `yaml:"certificateAuthority" json:"certificateAuthority"`
 	ResourceAggregate      ResourceAggregateConfig `yaml:"resourceAggregate" json:"resourceAggregate"`
 }
 
@@ -214,6 +215,9 @@ func (c *ClientsConfig) Validate() error {
 	}
 	if err := c.ResourceDirectory.Validate(); err != nil {
 		return fmt.Errorf("resourceDirectory.%w", err)
+	}
+	if err := c.CertificateAuthority.Validate(); err != nil {
+		return fmt.Errorf("certificateAuthority.%w", err)
 	}
 	if err := c.OpenTelemetryCollector.Validate(); err != nil {
 		return fmt.Errorf("openTelemetryCollector.%w", err)

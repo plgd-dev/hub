@@ -101,6 +101,20 @@ clients:
         keyFile: "/secrets/private/cert.key"
         certFile: "/secrets/public/cert.crt"
         useSystemCAPool: false
+  certificateAuthority:
+    grpc:
+      address: ""
+      sendMsgSize: 4194304
+      recvMsgSize: 4194304
+      keepAlive:
+        time: 10s
+        timeout: 20s
+        permitWithoutStream: true
+      tls:
+        caPool: "/secrets/public/rootca.crt"
+        keyFile: "/secrets/private/cert.key"
+        certFile: "/secrets/public/cert.crt"
+        useSystemCAPool: false
   openTelemetryCollector:
     grpc:
       enabled: false

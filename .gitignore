@@ -8,6 +8,8 @@ debug
 .tmp/
 authsvc.db
 v2/
+coap-gateway/service/services
+coap-gateway/service/vd
 
 # Test binary, build with `go test -c`
 *.test

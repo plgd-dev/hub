@@ -31,11 +31,7 @@ import (
 	"github.com/plgd-dev/hub/v2/coap-gateway/service"
 	coapgwTest "github.com/plgd-dev/hub/v2/coap-gateway/test"
 	"github.com/plgd-dev/hub/v2/coap-gateway/uri"
-	grpcgwTest "github.com/plgd-dev/hub/v2/grpc-gateway/test"
-	idTest "github.com/plgd-dev/hub/v2/identity-store/test"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
-	raTest "github.com/plgd-dev/hub/v2/resource-aggregate/test"
-	rdTest "github.com/plgd-dev/hub/v2/resource-directory/test"
 	"github.com/plgd-dev/hub/v2/test/config"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	testService "github.com/plgd-dev/hub/v2/test/service"
@@ -374,24 +370,11 @@ func setUp(t *testing.T, coapgwCfgs ...service.Config) func() {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 	testService.ClearDB(ctx, t)
-	oauthShutdown := oauthTest.SetUp(t)
-	auShutdown := idTest.SetUp(t)
-	raShutdown := raTest.SetUp(t)
-	rdShutdown := rdTest.SetUp(t)
-	grpcShutdown := grpcgwTest.New(t, grpcgwTest.MakeConfig(t))
 	coapgwCfg := coapgwTest.MakeConfig(t)
 	if len(coapgwCfgs) > 0 {
 		coapgwCfg = coapgwCfgs[0]
 	}
-	gwShutdown := coapgwTest.New(t, coapgwCfg)
-	return func() {
-		gwShutdown()
-		grpcShutdown()
-		rdShutdown()
-		raShutdown()
-		auShutdown()
-		oauthShutdown()
-	}
+	return testService.SetUpServices(context.Background(), t, testService.SetUpServicesCertificateAuthority|testService.SetUpServicesOAuth|testService.SetUpServicesId|testService.SetUpServicesResourceAggregate|testService.SetUpServicesResourceDirectory|testService.SetUpServicesCoapGateway|testService.SetUpServicesGrpcGateway, testService.WithCOAPGWConfig(coapgwCfg))
 }
 
 var (

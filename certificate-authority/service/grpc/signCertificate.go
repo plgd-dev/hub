@@ -4,8 +4,12 @@ import (
 	"context"
 	"crypto/x509"
 	"fmt"
+	"regexp"
+	"time"
 
+	"github.com/google/uuid"
 	"github.com/plgd-dev/hub/v2/certificate-authority/pb"
+	"github.com/plgd-dev/hub/v2/certificate-authority/store"
 	"github.com/plgd-dev/hub/v2/pkg/security/certificateSigner"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -22,25 +26,110 @@ func (s *CertificateAuthorityServer) validateRequest(csr []byte) error {
 	return nil
 }
 
+func (s *CertificateAuthorityServer) updateSigningIdentityCertificateRecord(ctx context.Context, updateSigningRecord *pb.SigningRecord) error {
+	var found bool
+	now := time.Now().UnixNano()
+	err := s.store.LoadSigningRecords(ctx, updateSigningRecord.GetOwner(), &store.SigningRecordsQuery{
+		CommonNameFilter: []string{updateSigningRecord.GetCommonName()},
+	}, func(ctx context.Context, iter store.SigningRecordIter) (err error) {
+		for {
+			var signingRecord pb.SigningRecord
+			ok := iter.Next(ctx, &signingRecord)
+			if !ok {
+				break
+			}
+			if updateSigningRecord.GetPublicKey() != signingRecord.GetPublicKey() && signingRecord.GetCredential().GetValidUntilDate() > now {
+				return fmt.Errorf("common name %v with different public key fingerprint exist", signingRecord.GetCommonName())
+			}
+			found = true
+		}
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+	if found {
+		return s.store.UpdateSigningRecord(ctx, updateSigningRecord)
+	}
+	return s.store.CreateSigningRecord(ctx, updateSigningRecord)
+}
+
+func toSigningRecord(owner string, template *x509.Certificate) (*pb.SigningRecord, error) {
+	publicKeyRaw, err := x509.MarshalPKIXPublicKey(template.PublicKey)
+	if err != nil {
+		return nil, err
+	}
+
+	publicKey := uuid.NewSHA1(uuid.NameSpaceX500, publicKeyRaw).String()
+	id := uuid.NewSHA1(uuid.NameSpaceX500, append([]byte(template.Subject.CommonName), publicKeyRaw...)).String()
+	now := time.Now().UnixNano()
+
+	m := regexp.MustCompile("uuid:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")
+	deviceIDCommonName := m.FindString(template.Subject.CommonName)
+	deviceID := ""
+	if deviceIDCommonName != "" {
+		deviceID = deviceIDCommonName[5:]
+	}
+
+	return &pb.SigningRecord{
+		Id:           id,
+		Owner:        owner,
+		CommonName:   template.Subject.CommonName,
+		PublicKey:    publicKey,
+		CreationDate: now,
+		DeviceId:     deviceID,
+		Credential: &pb.CredentialStatus{
+			CertificatePem: "",
+			Date:           now,
+			ValidUntilDate: template.NotAfter.UnixNano(),
+		},
+	}, nil
+}
+
+func (s *CertificateAuthorityServer) updateSigningRecord(ctx context.Context, signingRecord *pb.SigningRecord) error {
+	var checkForIdentity bool
+	if signingRecord.GetDeviceId() != "" && signingRecord.GetDeviceId() != signingRecord.GetOwner() {
+		checkForIdentity = true
+	}
+	if checkForIdentity {
+		return s.updateSigningIdentityCertificateRecord(ctx, signingRecord)
+	}
+	return s.store.UpdateSigningRecord(ctx, signingRecord)
+}
+
 func (s *CertificateAuthorityServer) SignCertificate(ctx context.Context, req *pb.SignCertificateRequest) (*pb.SignCertificateResponse, error) {
+	const fmtError = "cannot sign certificate: %v"
 	logger := s.logger.With("csr", string(req.GetCertificateSigningRequest()))
 	if err := s.validateRequest(req.GetCertificateSigningRequest()); err != nil {
-		return nil, logger.LogAndReturnError(status.Errorf(codes.InvalidArgument, "cannot sign certificate: %v", err))
+		return nil, logger.LogAndReturnError(status.Errorf(codes.InvalidArgument, fmtError, err))
 	}
 
 	notBefore := s.validFrom()
 	notAfter := notBefore.Add(s.validFor)
+	var signingRecord *pb.SigningRecord
 	signer := certificateSigner.New(s.certificate, s.privateKey, certificateSigner.WithNotBefore(notBefore), certificateSigner.WithNotAfter(notAfter), certificateSigner.WithOverrideCertTemplate(func(template *x509.Certificate) error {
 		subject, err := overrideSubject(ctx, template.Subject, s.ownerClaim, s.signerConfig.HubID, "")
 		if err != nil {
 			return err
 		}
 		template.Subject = subject
-		return nil
+		owner, err := ownerToUUID(ctx, s.ownerClaim)
+		if err != nil {
+			return err
+		}
+		signingRecord, err = toSigningRecord(owner, template)
+		return err
 	}))
 	cert, err := signer.Sign(ctx, req.CertificateSigningRequest)
 	if err != nil {
-		return nil, logger.LogAndReturnError(status.Errorf(codes.InvalidArgument, "cannot sign certificate: %v", err))
+		return nil, logger.LogAndReturnError(status.Errorf(codes.InvalidArgument, fmtError, err))
+	}
+	if signingRecord.GetCredential() == nil {
+		return nil, logger.LogAndReturnError(status.Errorf(codes.InvalidArgument, "cannot sign certificate: cannot create signing record"))
+	}
+	signingRecord.Credential.CertificatePem = string(cert)
+	if err := s.updateSigningRecord(ctx, signingRecord); err != nil {
+		return nil, logger.LogAndReturnError(status.Errorf(codes.InvalidArgument, fmtError, err))
 	}
 	logger.With("crt", string(cert)).Debugf("CertificateAuthorityServer.SignCertificate")
 

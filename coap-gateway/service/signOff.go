@@ -10,6 +10,7 @@ import (
 	coapCodes "github.com/plgd-dev/go-coap/v3/message/codes"
 	"github.com/plgd-dev/go-coap/v3/message/pool"
 	"github.com/plgd-dev/go-coap/v3/mux"
+	pbCA "github.com/plgd-dev/hub/v2/certificate-authority/pb"
 	"github.com/plgd-dev/hub/v2/coap-gateway/coapconv"
 	"github.com/plgd-dev/hub/v2/identity-store/pb"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
@@ -138,6 +139,14 @@ func signOffHandler(req *mux.Message, client *session) (*pool.Message, error) {
 	if len(respRA.GetDeviceIds()) != 1 {
 		client.Errorf("sign off error: failed to remove documents for device('%v') from eventstore", deviceID)
 	}
+	// CertificateAuthority
+	respCA, err := client.server.certificateAuthorityClient.DeleteSigningRecords(ctx, &pbCA.DeleteSigningRecordsRequest{
+		DeviceIdFilter: deviceIds,
+	})
+	if err != nil {
+		return nil, statusErrorf(coapCodes.BadRequest, errFmtSignOff, fmt.Errorf("cannot delete certificates linked to devices %v from CertificateAuthority: %w", deviceIds, err))
+	}
+	client.getLogger().Debugf("certificate records(num: %v) linked to %v devices has been deleted", respCA.GetCount(), deviceIds)
 
 	client.unsubscribeFromDeviceEvents()
 	respIS, err := client.server.isClient.DeleteDevices(ctx, &pb.DeleteDevicesRequest{

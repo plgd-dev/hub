@@ -139,7 +139,7 @@ func processNextRequest(srv pb.GrpcGateway_SubscribeToEventsServer, subs *subscr
 		return false, nil
 	}
 	if err != nil {
-		return false, log.LogAndReturnError(grpc.ForwardErrorf(codes.Internal, "cannot receive events: %v", err))
+		return false, grpc.ForwardErrorf(codes.Internal, "cannot receive events: %v", err)
 	}
 	switch v := req.GetAction().(type) {
 	case (*pb.SubscribeToEvents_CreateSubscription_):

@@ -59,7 +59,8 @@
           }
         ],
         "tags": [
-          "certificate-authority"
+          "certificate-authority",
+          "signing csr"
         ]
       }
     },
@@ -92,12 +93,157 @@
           }
         ],
         "tags": [
-          "certificate-authority"
+          "certificate-authority",
+          "signing csr"
+        ]
+      }
+    },
+    "/api/v1/signing/records": {
+      "get": {
+        "summary": "Get signed certficate records.",
+        "operationId": "CertificateAuthority_GetSigningRecords",
+        "responses": {
+          "200": {
+            "description": "A successful response.(streaming responses)",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "result": {
+                  "$ref": "#/definitions/pbSigningRecord"
+                },
+                "error": {
+                  "$ref": "#/definitions/rpcStatus"
+                }
+              },
+              "title": "Stream result of pbSigningRecord"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "idFilter",
+            "description": "Filter by id.",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          },
+          {
+            "name": "commonNameFilter",
+            "description": "Filter by common_name.",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          },
+          {
+            "name": "deviceIdFilter",
+            "description": "Filter by device_id - provides only identity certificates.",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          }
+        ],
+        "tags": [
+          "certificate-authority",
+          "signing records"
+        ]
+      },
+      "delete": {
+        "summary": "Delete signed certficate records.",
+        "operationId": "CertificateAuthority_DeleteSigningRecords",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbDeletedSigningRecords"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "idFilter",
+            "description": "Filter by id.",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          },
+          {
+            "name": "deviceIdFilter",
+            "description": "Filter by common_name.",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          }
+        ],
+        "tags": [
+          "certificate-authority",
+          "signing records"
         ]
       }
     }
   },
   "definitions": {
+    "pbCredentialStatus": {
+      "type": "object",
+      "properties": {
+        "date": {
+          "type": "string",
+          "format": "int64",
+          "description": "Last time the device requested provisioning, in unix nanoseconds timestamp format.\n\n@gotags: bson:\"date\""
+        },
+        "certificatePem": {
+          "type": "string",
+          "description": "Last certificate issued.\n\n@gotags: bson:\"identityCertificate\""
+        },
+        "validUntilDate": {
+          "type": "string",
+          "format": "int64",
+          "description": "@gotags: bson:\"validUntilDate\"",
+          "title": "Record valid until date, in unix nanoseconds timestamp format"
+        }
+      }
+    },
+    "pbDeletedSigningRecords": {
+      "type": "object",
+      "properties": {
+        "count": {
+          "type": "string",
+          "format": "int64",
+          "description": "Number of deleted records."
+        }
+      }
+    },
     "pbSignCertificateRequest": {
       "type": "object",
       "properties": {
@@ -115,6 +261,41 @@
           "type": "string",
           "format": "byte",
           "title": "PEM format"
+        }
+      }
+    },
+    "pbSigningRecord": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Registration id, calculated from the certificate public key info + common name. SHA256 - Must be unique in the database and for one private key there could be multiple certificates.\n\n@gotags: bson:\"_id\""
+        },
+        "owner": {
+          "type": "string",
+          "description": "Certificate owner.\n\n@gotags: bson:\"owner\""
+        },
+        "commonName": {
+          "type": "string",
+          "description": "Common name of the certificate.\n\n@gotags: bson:\"commonName\""
+        },
+        "deviceId": {
+          "type": "string",
+          "description": "DeviceID of the identity certificate.\n\n@gotags: bson:\"deviceId,omitempty\""
+        },
+        "publicKey": {
+          "type": "string",
+          "description": "Public key fingerprint in (SHA256) of the certificate.\n\n@gotags: bson:\"publicKey\""
+        },
+        "creationDate": {
+          "type": "string",
+          "format": "int64",
+          "description": "@gotags: bson:\"creationDate,omitempty\"",
+          "title": "Record creation date, in unix nanoseconds timestamp format"
+        },
+        "credential": {
+          "$ref": "#/definitions/pbCredentialStatus",
+          "description": "Last credential provision overview.\n\n@gotags: bson:\"credential\""
         }
       }
     },
