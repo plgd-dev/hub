@@ -41,6 +41,6 @@ func main() {
 	log.Infof("config: %v", cfg.String())
 
 	if err := run(cfg, logger); err != nil {
-		log.Fatalf("cannot run service: %w", err)
+		log.Fatalf("cannot run service: %v", err)
 	}
 }
