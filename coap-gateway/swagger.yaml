@@ -1,0 +1,786 @@
+openapi: 3.1.0
+info:
+  title: CoAP Gateway
+  version: '2023-06-16'
+  license:
+    name: OCF Data Model License
+    url: https://github.com/openconnectivityfoundation/core/blob/e28a9e0a92e17042ba3e83661e4c0fbce8bdc4ba/LICENSE.md
+    x-copyright: copyright 2016-2017, 2019 Open Connectivity Foundation, Inc. All rights reserved.
+  termsOfService: https://openconnectivityfoundation.github.io/core/DISCLAIMER.md
+schemes:
+  - coap
+consumes:
+  - application/vnd.ocf+cbor
+  - application/cbor
+produces:
+  - application/vnd.ocf+cbor
+paths:
+  /oic/sec/account:
+    post:
+      tags:
+        - Authorization
+      summary: Register device to IoT Hub.
+      description: |
+        Sign-up using generic account provider.
+      requestBody: 
+        required: true
+        content:
+          application/vnd.ocf+cbor:
+            schema:
+              $ref: '#/components/schemas/Account-request'
+            example:
+              di: 9cfbeb8e-5a1e-4d1c-9d01-00c04fd430c8
+              authprovider: github
+              accesstoken: 8802f2eaf8b5e147a936
+      responses:
+        '200':
+          description: |
+            2.04 Changed respond with required and optional information
+          content:
+            application/vnd.ocf+cbor:
+              example:
+                rt:
+                  - oic.r.account
+                accesstoken: 0f3d9f7fe5491d54077d
+                refreshtoken: 00fe4644a6fbe5324eec
+                expiresin: 3600
+                uid: 123e4567-e89b-12d3-a456-d6e313b71d9f
+                redirecturi: coaps+tcp://example.com:443
+              schema:
+                $ref: '#/components/schemas/Account-response'
+    delete:
+      tags:
+        - Authorization
+      summary: Deregister device from IoT Hub.
+      description: |
+        Delete a device. This also removes all resources in the device on cloud side. In case the session is already created - TLS connection is already authorized (see oic.sec.session); no additional properties are required.
+        example: /oic/account?di=9cfbeb8e-5a1e-4d1c-9d01-00c04fd430c8&accesstoken=0f3d9f7fe5491d54077d
+      responses:
+        '204':
+          description: |
+            2.04 Deleted response informing the device is successfully deleted.
+  /oic/sec/session:
+    post:
+      summary: Authorize/Deauthorize the device to/from the IoT Hub.
+      description: Resource that manages the persistent session between a Device and IoT Hub.
+      tags:
+        - Authorization
+      requestBody: 
+        required: true
+        content:
+          application/vnd.ocf+cbor:
+            schema:
+              $ref: '#/components/schemas/Account-Session-Request'
+            example:
+              uid: 123e4567-e89b-12d3-a456-d6e313b71d9f
+              di: 9cfbeb8e-5a1e-4d1c-9d01-00c04fd430c8
+              accesstoken: 0f3d9f7fe5491d54077d
+              login: true
+      responses:
+        '200':
+          description: ''
+          content:
+            application/vnd.ocf+cbor:
+              example:
+                rt:
+                  - oic.r.session
+                expiresin: 3600
+              schema:
+                $ref: '#/components/schemas/Account-Session-Response'
+  /oic/sec/tokenrefresh:
+    post:
+      description: |
+        Obtain fresh Access Token using the refresh token, client should refresh Access Token before it expires.
+      summary: Refresh JWT Access Token.
+      tags:
+        - Authorization
+      requestBody: 
+        required: true
+        content:
+          application/vnd.ocf+cbor:
+            schema:
+              $ref: '#/components/schemas/TokenRefresh-Request'
+            example:
+              uid: 123e4567-e89b-12d3-a456-d6e313b71d9f
+              di: 9cfbeb8e-5a1e-4d1c-9d01-00c04fd430c8
+              refreshtoken: 00fe4644a6fbe5324eec
+      responses:
+        '200':
+          description: |
+            2.04 Changed respond with new access-token.
+          content:
+            application/vnd.ocf+cbor:
+              example:
+                rt:
+                  - oic.r.tokenrefresh
+                accesstoken: 8ce598980761869837be
+                refreshtoken: d4922312b6df0518e146
+                expiresin: 3600
+              schema:
+                $ref: '#/components/schemas/TokenRefresh-Response'
+  /oic/rd:
+    get:
+      summary: Provide the selector criteria to the Resource Directory.
+      description: |
+        Resource to be exposed by any Device that can act as a Resource Directory.
+        1) Provides selector criteria (e.g., integer) with GET request
+        2) Publish a Link in /oic/res with POST request
+      tags:
+        - Resource Directory
+      responses:
+        '200':
+          description: |
+            Respond with the selector criteria - either the set of attributes or the bias factor
+          content:
+            application/vnd.ocf+cbor:
+              example:
+                rt:
+                  - oic.wk.rd
+                if:
+                  - oic.if.baseline
+                sel: 50
+              schema:
+                $ref: '#/components/schemas/rdSelection'
+    post:
+      summary: Publish resource links to the Resource Directory.
+      description: |
+        Publish the Resource information for the first time in /oic/res. Updates to existing entries are not allowed.
+        Appropriates parts of the information, i.e., Links of the published Resources will be discovered through /oic/res.
+        1) When a Device first publishes a Link, the request payload to RD may include the Links without an "ins" Parameter.
+        2) Upon granting the request, the RD assigns a unique instance value identifying the Link among all the Links it advertises
+           and sends back the instance value in the "ins" Parameter in the Link to the publishing Device.
+      tags:
+        - Resource Directory
+      requestBody: 
+        required: true
+        content:
+          application/vnd.ocf+cbor:
+            schema:
+              $ref: '#/components/schemas/rdPublish'
+            example:
+              di: e61c3e6b-9c54-4b81-8ce5-f9039c1d04d9
+              links:
+                - anchor: ocf://e61c3e6b-9c54-4b81-8ce5-f9039c1d04d9
+                  href: /myLightSwitch
+                  rt:
+                    - oic.r.switch.binary
+                  if:
+                    - oic.if.a
+                    - oic.if.baseline
+                  p:
+                    bm: 3
+                  eps:
+                    - ep: coaps://[2001:db8:a::b1d6]:1111
+                      pri: 2
+                    - ep: coaps://[2001:db8:a::b1d6]:1122
+                    - ep: coaps+tcp://[2001:db8:a::123]:2222
+                      pri: 3
+                - anchor: ocf://e61c3e6b-9c54-4b81-8ce5-f9039c1d04d9
+                  href: /myLightBrightness
+                  rt:
+                    - oic.r.brightness
+                  if:
+                    - oic.if.a
+                    - oic.if.baseline
+                  p:
+                    bm: 3
+                  eps:
+                    - ep: coaps://[[2001:db8:a::123]:2222
+              ttl: 600
+      responses:
+        '200':
+          description: |
+            Respond with the same schema as publish with the additional "ins" Parameter in the Link.
+          content:
+            application/vnd.ocf+cbor:
+              example:
+                di: e61c3e6b-9c54-4b81-8ce5-f9039c1d04d9
+                links:
+                  - anchor: ocf://e61c3e6b-9c54-4b81-8ce5-f9039c1d04d9
+                    href: /myLightSwitch
+                    rt:
+                      - oic.r.switch.binary
+                    if:
+                      - oic.if.a
+                      - oic.if.baseline
+                    p:
+                      bm: 3
+                    eps:
+                      - ep: coaps://[2001:db8:a::b1d6]:1111
+                        pri: 2
+                      - ep: coaps://[2001:db8:a::b1d6]:1122
+                      - ep: coaps+tcp://[2001:db8:a::123]:2222
+                        pri: 3
+                    ins: 11235
+                  - anchor: ocf://e61c3e6b-9c54-4b81-8ce5-f9039c1d04d9
+                    href: /myLightBrightness
+                    rt:
+                      - oic.r.brightness
+                    if:
+                      - oic.if.a
+                      - oic.if.baseline
+                    p:
+                      bm: 3
+                    eps:
+                      - ep: coaps://[2001:db8:a::123]:2222
+                    ins: 112358
+                ttl: 600
+              schema:
+                $ref: '#/components/schemas/rdPublish'
+  /oic/res:
+    get:
+      summary: |
+        List device resource links.
+      description: |
+        Links list representation of /oic/res; list of discoverable Resources
+      tags:
+        - Resource Directory
+      parameters:
+      - $ref: '#/components/parameters/diQuery'
+      - $ref: '#/components/parameters/rtQuery'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/vnd.ocf+cbor:
+              example:
+              - href: /oic/res
+                rt:
+                  - oic.wk.res
+                if:
+                  - oic.if.ll
+                  - oic.if.b
+                  - oic.if.baseline
+                rel:
+                  - self
+                p:
+                  bm: 3
+                eps:
+                  - ep: coaps://[fe80::b1d6]:1122
+              - href: /humidity
+                rt:
+                  - oic.r.humidity
+                if:
+                  - oic.if.s
+                  - oic.if.baseline
+                p:
+                  bm: 3
+                eps:
+                  - ep: coaps://[fe80::b1d6]:1111
+                    pri: 2
+                  - ep: coaps://[fe80::b1d6]:1122
+                  - ep: coaps+tcp://[2001:db8:a::123]:2222
+                    pri: 3
+              - href: /temperature
+                rt:
+                  - oic.r.temperature
+                if:
+                  - oic.if.s
+                  - oic.if.baseline
+                p:
+                  bm: 3
+                eps:
+                  - ep: coaps://[[2001:db8:a::123]:2222
+              schema:
+                $ref: '#/components/schemas/slinklist'
+  /api/v1/devices/{deviceId}/{href}:
+    get:
+      tags:
+        - Device Resource
+      summary: Get or observer device resource from IoT Hub.
+      parameters:
+      - $ref: '#/components/parameters/diPath'
+      - $ref: '#/components/parameters/hrefPath'
+      - $ref: '#/components/parameters/observe'
+      - $ref: '#/components/parameters/interface'
+      responses:
+        200:
+          description: OK
+          content:
+            application/vnd.ocf+cbor:
+              schema:
+                type: object
+    post:
+      parameters:
+        - $ref: '#/components/parameters/diPath'
+        - $ref: '#/components/parameters/hrefPath'
+        - $ref: '#/components/parameters/interface'
+      tags:
+        - Device Resource
+      summary: Update/Create device resource through IoT Hub.
+      requestBody: 
+        required: true
+        content:
+          application/vnd.ocf+cbor:
+            schema:
+              type: object
+      responses:
+        200:
+          description: OK
+          content:
+            application/vnd.ocf+cbor:
+              schema:
+                type: object
+    delete:
+      parameters:
+        - $ref: '#/components/parameters/diPath'
+        - $ref: '#/components/parameters/hrefPath'
+      tags:
+        - Device Resource
+      summary: Delete device resource through IoT Hub.
+      responses:
+        200:
+          description: OK
+          content:
+            application/vnd.ocf+cbor:
+              schema:
+                type: object
+  /x.plgd.dev/time:
+    get:
+      tags:
+        - Time
+      summary: Get the current time
+      responses:
+        200:
+          description: OK
+          content:
+            application/vnd.ocf+cbor:
+              schema:
+                $ref: "#/components/schemas/TimeResponse"
+components:
+  parameters:
+    interface:
+      in: query
+      name: if
+      schema:
+        type: string
+        enum:
+        - oic.if.baseline
+        - oic.if.rw
+        - oic.if.r
+        - oic.if.ll
+        - oic.if.b
+        - oic.if.create
+    diPath:
+      name: deviceId
+      in: path
+      required: true
+      description: Device ID
+      schema:
+        type: string
+    hrefPath:
+      name: href
+      in: path
+      required: true
+      description: Resource href
+      schema:
+        type: string
+    observe:
+      name: observe
+      in: header
+      description: >-
+        A value of 0 indicates registering an observation, while 1 signifies
+        deregistering an observation. As the resource undergoes changes, the
+        response observation will be transmitted as a sequence in the observe
+        header of the responses.
+      schema:
+        type: integer
+    diQuery:
+      name: di[]
+      in: query
+      description: Device ID
+      schema:
+        type: array
+        items:
+          type: string
+    rtQuery:
+      name: rt[]
+      in: query
+      description: Resource Type
+      schema:
+        type: array
+        items:
+          type: string
+  schemas:
+    Account-request:
+      properties:
+        authprovider:
+          description: The name of Authorization Provider through which Access Token was obtained.
+          type: string
+        accesstoken:
+          description: Access Token used to authorize and associate the TLS connection for communication with the IoT Hub with the Device ID, or the Authorization Code which is then verified and exchanged for the Access Token during Device Registration.
+          type: string
+        di:
+          description: Unique Device identifier. Format pattern according to IETF RFC 4122.
+          pattern: ^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$
+          type: string
+      type: object
+      required:
+        - di
+        - accesstoken
+    Account-response:
+      properties:
+        expiresin:
+          description: Access Token life time in seconds (-1 if permanent).
+          readOnly: true
+          type: integer
+        rt:
+          description: Resource Type of the Resource
+          items:
+            maxLength: 64
+            type: string
+            enum:
+              - oic.r.account
+          minItems: 1
+          maxItems: 1
+          readOnly: true
+          type: array
+        refreshtoken:
+          description: Refresh token can be used to refresh the Access Token before getting expired.
+          readOnly: true
+          type: string
+        uid:
+          description: Unique IoT Hub User identifier. Format pattern according to IETF RFC 4122.
+          pattern: ^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$
+          readOnly: true
+          type: string
+        accesstoken:
+          description: Access Token used to authorize and associate the TLS connection for communication with the IoT Hub with the Device ID.
+          readOnly: true
+          type: string
+        'n':
+          $ref: https://openconnectivityfoundation.github.io/core/schemas/oic.common.properties.core-schema.json#/definitions/n
+        id:
+          $ref: https://openconnectivityfoundation.github.io/core/schemas/oic.common.properties.core-schema.json#/definitions/id
+        redirecturi:
+          description: Using this URI, the Client needs to reconnect to a redirected IoT Hub. If provided, this value shall be used by the Device instead of Mediator-provided URI during the Device Registration.
+          readOnly: true
+          type: string
+        if:
+          description: The interface set supported by this resource
+          items:
+            enum:
+              - oic.if.baseline
+            type: string
+          minItems: 1
+          maxItems: 1
+          uniqueItems: true
+          readOnly: true
+          type: array
+      type: object
+      required:
+        - accesstoken
+        - refreshtoken
+        - expiresin
+        - uid
+    Account-Session-Request:
+      properties:
+        uid:
+          description: User ID provided by Device Registration process. Format pattern according to IETF RFC 4122.
+          pattern: ^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$
+          type: string
+        di:
+          description: Unique device id registered for a Device. Format pattern according to IETF RFC 4122.
+          pattern: ^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$
+          type: string
+        accesstoken:
+          description: Access Token used to authorize and associate the TLS connection for communication with the IoT Hub with the Device ID.
+          type: string
+        login:
+          description: 'Action for the request: true = login, false = logout.'
+          type: boolean
+      type: object
+      required:
+        - uid
+        - di
+        - accesstoken
+        - login
+    Account-Session-Response:
+      properties:
+        expiresin:
+          description: Remaining Access Token life time in seconds (-1 if permanent). This Property is only provided to Device during connection establishment (when "login" Property Value equals "true"), it’s not available otherwise.
+          readOnly: true
+          type: integer
+        rt:
+          description: Resource Type of the Resource.
+          items:
+            maxLength: 64
+            type: string
+            enum:
+              - oic.r.session
+          minItems: 1
+          readOnly: true
+          type: array
+        'n':
+          $ref: https://openconnectivityfoundation.github.io/core/schemas/oic.common.properties.core-schema.json#/definitions/n
+        id:
+          $ref: https://openconnectivityfoundation.github.io/core/schemas/oic.common.properties.core-schema.json#/definitions/id
+        if:
+          description: The interface set supported by this Resource.
+          items:
+            enum:
+              - oic.if.baseline
+            type: string
+          minItems: 1
+          readOnly: true
+          type: array
+      type: object
+      required:
+        - expiresin
+    TokenRefresh-Request:
+      properties:
+        refreshtoken:
+          description: Refresh token can be used to refresh the Access Token before getting expired.
+          type: string
+        uid:
+          description: User ID provided by Sign-up process. Format pattern according to IETF RFC 4122.
+          pattern: ^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$
+          type: string
+        di:
+          description: Unique device id registered for an IoT Hub User account. Format pattern according to IETF RFC 4122.
+          pattern: ^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$
+          type: string
+      type: object
+      required:
+        - uid
+        - di
+        - refreshtoken
+    TokenRefresh-Response:
+      properties:
+        expiresin:
+          description: Access Token life time in seconds (-1 if permanent).
+          readOnly: true
+          type: integer
+        rt:
+          description: Resource Type of the Resource.
+          items:
+            maxLength: 64
+            type: string
+            enum:
+              - oic.r.tokenrefresh
+          minItems: 1
+          readOnly: true
+          type: array
+        refreshtoken:
+          description: Refresh token can be used to refresh the Access Token before getting expired.
+          readOnly: true
+          type: string
+        accesstoken:
+          description: Access Token used to authorize and associate the TLS connection for communication with the IoT Hub with the Device ID.
+          readOnly: true
+          type: string
+        'n':
+          $ref: https://openconnectivityfoundation.github.io/core/schemas/oic.common.properties.core-schema.json#/definitions/n
+        id:
+          $ref: https://openconnectivityfoundation.github.io/core/schemas/oic.common.properties.core-schema.json#/definitions/id
+        if:
+          description: The interface set supported by this Resource.
+          items:
+            enum:
+              - oic.if.baseline
+            type: string
+          minItems: 1
+          readOnly: true
+          type: array
+      type: object
+      required:
+        - accesstoken
+        - refreshtoken
+        - expiresin
+    rdSelection:
+      properties:
+        rt:
+          description: Resource Type of the Resource
+          items:
+            enum:
+              - oic.wk.rd
+            type: string
+            maxLength: 64
+          minItems: 1
+          uniqueItems: true
+          readOnly: true
+          type: array
+        'n':
+          $ref: https://openconnectivityfoundation.github.io/core/schemas/oic.common.properties.core-schema.json#/definitions/n
+        sel:
+          description: A bias factor calculated by the Resource Directory
+          maximum: 100
+          minimum: 0
+          readOnly: true
+          type: integer
+        id:
+          $ref: https://openconnectivityfoundation.github.io/core/schemas/oic.common.properties.core-schema.json#/definitions/id
+        if:
+          description: The OCF Interfaces supported by this Resource
+          items:
+            enum:
+              - oic.if.baseline
+            type: string
+            maxLength: 64
+          minItems: 1
+          readOnly: true
+          uniqueItems: true
+          type: array
+      type: object
+      required:
+        - sel
+    rdPublish:
+      properties:
+        di:
+          $ref: https://openconnectivityfoundation.github.io/core/schemas/oic.links.properties.core-schema.json#/definitions/di
+        ttl:
+          description: Time to indicate a RD, i.e. how long to keep this published item.
+          type: integer
+        links:
+          description: A set of simple or individual OCF Links.
+          items:
+            properties:
+              anchor:
+                $ref: https://openconnectivityfoundation.github.io/core/schemas/oic.links.properties.core-schema.json#/definitions/anchor
+              di:
+                $ref: https://openconnectivityfoundation.github.io/core/schemas/oic.links.properties.core-schema.json#/definitions/di
+              eps:
+                $ref: https://openconnectivityfoundation.github.io/core/schemas/oic.links.properties.core-schema.json#/definitions/eps
+              href:
+                $ref: https://openconnectivityfoundation.github.io/core/schemas/oic.links.properties.core-schema.json#/definitions/href
+              if:
+                description: The interface set supported by the published resource
+                items:
+                  enum:
+                    - oic.if.baseline
+                    - oic.if.ll
+                    - oic.if.b
+                    - oic.if.rw
+                    - oic.if.r
+                    - oic.if.a
+                    - oic.if.s
+                  type: string
+                  maxLength: 64
+                minItems: 1
+                uniqueItems: true
+                type: array
+              ins:
+                $ref: https://openconnectivityfoundation.github.io/core/schemas/oic.links.properties.core-schema.json#/definitions/ins
+              p:
+                $ref: https://openconnectivityfoundation.github.io/core/schemas/oic.links.properties.core-schema.json#/definitions/p
+              rel:
+                description: The relation of the target URI referenced by the Link to the context URI
+                oneOf:
+                  - default:
+                      - hosts
+                    items:
+                      maxLength: 64
+                      type: string
+                    minItems: 1
+                    type: array
+                  - default: hosts
+                    maxLength: 64
+                    type: string
+              rt:
+                description: Resource Type of the published Resource
+                items:
+                  maxLength: 64
+                  type: string
+                minItems: 1
+                maxItems: 1
+                uniqueItems: true
+                type: array
+              title:
+                $ref: https://openconnectivityfoundation.github.io/core/schemas/oic.links.properties.core-schema.json#/definitions/title
+              type:
+                $ref: https://openconnectivityfoundation.github.io/core/schemas/oic.links.properties.core-schema.json#/definitions/type
+            required:
+              - href
+              - rt
+              - if
+            type: object
+          type: array
+      type: object
+      required:
+        - di
+        - links
+        - ttl
+    TimeResponse:
+      type: object
+      properties:
+        time:
+          type: string
+          format: date-time
+          description: The UTC current time in RFC 3339 format. Update of this property doesn't trigger notification for observers.
+    oic.oic-link:
+      type: object
+      properties:
+        anchor:
+          $ref: https://openconnectivityfoundation.github.io/core/schemas/oic.links.properties.core-schema.json#/definitions/anchor
+        di:
+          $ref: https://openconnectivityfoundation.github.io/core/schemas/oic.links.properties.core-schema.json#/definitions/di
+        eps:
+          $ref: https://openconnectivityfoundation.github.io/core/schemas/oic.links.properties.core-schema.json#/definitions/eps
+        href:
+          $ref: https://openconnectivityfoundation.github.io/core/schemas/oic.links.properties.core-schema.json#/definitions/href
+        if:
+          description: The OCF Interfaces supported by the Linked Resource
+          items:
+            enum:
+              - oic.if.baseline
+              - oic.if.ll
+              - oic.if.b
+              - oic.if.rw
+              - oic.if.r
+              - oic.if.a
+              - oic.if.s
+              - oic.if.w
+              - oic.if.startup
+              - oic.if.startup.revert
+            type: string
+            maxLength: 64
+          minItems: 1
+          uniqueItems: true
+          type: array
+        ins:
+          $ref: >-
+            https://openconnectivityfoundation.github.io/core/schemas/oic.links.properties.core-schema.json#/definitions/ins
+        p:
+          $ref: >-
+            https://openconnectivityfoundation.github.io/core/schemas/oic.links.properties.core-schema.json#/definitions/p
+        rel:
+          description: >-
+            The relation of the target URI referenced by the Link to the context
+            URI
+          oneOf:
+            - $ref: >-
+                https://openconnectivityfoundation.github.io/core/schemas/oic.links.properties.core-schema.json#/definitions/rel_array
+            - $ref: >-
+                https://openconnectivityfoundation.github.io/core/schemas/oic.links.properties.core-schema.json#/definitions/rel_string
+        rt:
+          description: Resource Type of the Linked Resource
+          items:
+            maxLength: 64
+            type: string
+          minItems: 1
+          uniqueItems: true
+          type: array
+        title:
+          $ref: >-
+            https://openconnectivityfoundation.github.io/core/schemas/oic.links.properties.core-schema.json#/definitions/title
+        type:
+          $ref: >-
+            https://openconnectivityfoundation.github.io/core/schemas/oic.links.properties.core-schema.json#/definitions/type
+        tag-pos-desc:
+          $ref: >-
+            https://openconnectivityfoundation.github.io/core/schemas/oic.links.properties.core-schema.json#/definitions/tag-pos-desc
+        tag-pos-rel:
+          $ref: >-
+            https://openconnectivityfoundation.github.io/core/schemas/oic.links.properties.core-schema.json#/definitions/tag-pos-rel
+        tag-func-desc:
+          $ref: >-
+            https://openconnectivityfoundation.github.io/core/schemas/oic.links.properties.core-schema.json#/definitions/tag-func-desc
+      required:
+        - href
+        - rt
+        - if
+    slinklist:
+      type: array
+      readOnly: true
+      items:
+        $ref: '#/components/schemas/oic.oic-link'
