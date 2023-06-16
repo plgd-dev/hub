@@ -15,6 +15,8 @@ import StatusPill from '@shared-ui/components/Atomic/StatusPill'
 import { states } from '@shared-ui/components/Atomic/StatusPill/constants'
 import Badge from '@shared-ui/components/Atomic/Badge'
 import TableActionButton from '@shared-ui/components/Organisms/TableActionButton'
+import Notification from '@shared-ui/components/Atomic/Notification/Toast'
+import { IconShowPassword, IconTrash } from '@shared-ui/components/Atomic'
 
 import { PendingCommandsExpandableList } from '@/containers/PendingCommands'
 import { DEVICES_REGISTERED_UNREGISTERED_COUNT_EVENT_KEY, devicesStatuses, NO_DEVICE_NAME, RESET_COUNTER } from '../../constants'
@@ -24,8 +26,7 @@ import { deleteDevicesApi } from '../../rest'
 import { handleDeleteDevicesErrors, isDeviceOnline, sleep } from '../../utils'
 import { messages as t } from '../../Devices.i18n'
 import { AppContext } from '@/containers/App/AppContext'
-import Notification from '@shared-ui/components/Atomic/Notification/Toast'
-import { IconShowPassword, IconTrash } from '@shared-ui/components/Atomic'
+import DateFormat from '@/containers/PendingCommands/DateFormat'
 
 const { UNREGISTERED } = devicesStatuses
 
@@ -140,22 +141,16 @@ const DevicesListPage: FC<any> = () => {
                 style: { width: '120px' },
                 Cell: ({ row }: { row: any }) => {
                     const isOnline = isDeviceOnline(row.original)
-
-                    const connectedAtDate = new Date(row.original?.metadata?.connection.connectedAt / 1000000)
-
                     return (
                         <StatusPill
                             label={isOnline ? 'Online' : 'Offline'}
                             // pending={value.pending.show ? { text: `${value.pending.number} pending commands`, onClick: console.log } : undefined}
                             status={isOnline ? states.ONLINE : states.OFFLINE}
                             tooltipText={
-                                isOnline ? (
-                                    `Connected at: ${connectedAtDate?.toLocaleDateString('en-US')}`
-                                ) : (
-                                    <span style={{ whiteSpace: 'nowrap' }}>
-                                        Last time online: <strong>31.9.2022 - 16:32</strong>
-                                    </span>
-                                )
+                                <DateFormat
+                                    prefixTest={isOnline ? `${_(t.connectedAt)}: ` : `${_(t.lastTimeOnline)}: `}
+                                    value={row.original?.metadata?.connection.connectedAt}
+                                />
                             }
                         />
                     )

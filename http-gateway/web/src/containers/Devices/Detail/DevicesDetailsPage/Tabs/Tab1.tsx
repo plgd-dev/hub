@@ -16,6 +16,7 @@ import { messages as t } from '@/containers/Devices/Devices.i18n'
 import { getDeviceNotificationKey, getResourceRegistrationNotificationKey } from '@/containers/Devices/utils'
 import { isNotificationActive, toggleActiveNotification } from '@/containers/Devices/slice'
 import { deviceResourceRegistrationListener } from '@/containers/Devices/websockets'
+import DateFormat from '@/containers/PendingCommands/DateFormat'
 
 const Tab1: FC<Props> = (props) => {
     const { isTwinEnabled, setTwinSynchronization, twinSyncLoading, deviceId, types, deviceName, model, pendingCommandsData, firmware, softwareUpdateData } =
@@ -108,20 +109,7 @@ const Tab1: FC<Props> = (props) => {
                                 <div>-</div>
                             ),
                         },
-                        /*
-                        https://github.com/openconnectivityfoundation/core-extensions/blob/master/swagger2.0/oic.r.softwareupdate.swagger.json
-                        softwareUpdateData = {
-                            "swupdateaction":"idle", https://github.com/plgd-dev/device/blob/2a60018de0639e7f225254ff9487bcf91bbb603f/schema/softwareupdate/swupdate.go#L49
-                            "swupdateresult":0,  //
-                            "swupdatestate":"nsa", https://github.com/plgd-dev/device/blob/2a60018de0639e7f225254ff9487bcf91bbb603f/schema/softwareupdate/swupdate.go#L58
-                            "updatetime":"2023-06-02T07:37:00Z", // when the action will be performed
-                            "lastupdate":"2023-06-02T07:37:02.330206Z",  // when the upgrade was performed
-                            "nv":"0.0.12", // new available version
-                            "purl":"https://hosted.mender.io?device_type=ocf&tenant_token=eyJhbuqBM",
-                            "signed":"vendor"
-                        }
-                        // to upgrade send a POST request to swu resource with the following payload { swupdateaction: 'upgrade', updatetime: 'now+10sec', purl: 'same value as been received in the swupdate payload'}
-                        */
+
                         {
                             attribute: _(t.firmware),
                             value: firmware ? (
@@ -138,9 +126,13 @@ const Tab1: FC<Props> = (props) => {
                                         </Tooltip>
                                     ) : (
                                         <Tooltip
-                                            content={_(t.deviceFirmwareUpToDate, {
-                                                lastUpdate: new Date(softwareUpdateData?.lastupdate!).toLocaleDateString('en-US'),
-                                            })}
+                                            content={
+                                                <DateFormat
+                                                    prefixTest={`${_(t.deviceFirmwareUpToDate)}: `}
+                                                    rawValue={true}
+                                                    value={softwareUpdateData?.lastupdate}
+                                                />
+                                            }
                                             delay={200}
                                         >
                                             <IconCloudSuccess {...convertSize(24)} />

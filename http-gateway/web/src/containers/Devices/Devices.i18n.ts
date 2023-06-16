@@ -527,6 +527,14 @@ export const messages = defineMessages({
     },
     deviceFirmwareUpToDate: {
         id: 'devices.deviceFirmwareUpToDate',
-        defaultMessage: 'The device firmware is current. It was last updated on {lastUpdate}',
+        defaultMessage: 'The device firmware is current. It was last updated on',
+    },
+    connectedAt: {
+        id: 'devices.connectedAt',
+        defaultMessage: 'Connected at',
+    },
+    lastTimeOnline: {
+        id: 'devices.lastTimeOnline',
+        defaultMessage: 'Last time online',
     },
 })
