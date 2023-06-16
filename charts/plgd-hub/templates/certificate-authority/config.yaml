@@ -67,7 +67,7 @@ data:
           maxConnIdleTime: {{ .clients.storage.mongoDB.maxConnIdleTime }}
           tls:
             {{- $mongoDbTls := .clients.storage.mongoDB.tls }}
-            {{- include "plgd-hub.certificateConfig" (list $ $tls $cert ) | indent 10 }}
+            {{- include "plgd-hub.certificateConfig" (list $ $mongoDbTls $cert ) | indent 10 }}
             useSystemCAPool: {{ .clients.storage.mongoDB.tls.useSystemCAPool }}
           bulkWrite:
             timeout: {{ .clients.storage.mongoDB.bulkWrite.timeout  | quote }}
