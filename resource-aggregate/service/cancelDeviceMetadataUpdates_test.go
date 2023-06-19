@@ -72,7 +72,7 @@ func TestAggregateHandleCancelPendingMetadataUpdates(t *testing.T) {
 	cfg := raTest.MakeConfig(t)
 	ctx := context.Background()
 	logger := log.NewLogger(cfg.Log)
-	fileWatcher, err := fsnotify.NewWatcher()
+	fileWatcher, err := fsnotify.NewWatcher(logger)
 	require.NoError(t, err)
 	defer func() {
 		errC := fileWatcher.Close()
@@ -199,7 +199,7 @@ func TestRequestHandlerCancelPendingMetadataUpdates(t *testing.T) {
 	cfg := raTest.MakeConfig(t)
 	ctx := context.Background()
 	logger := log.NewLogger(cfg.Log)
-	fileWatcher, err := fsnotify.NewWatcher()
+	fileWatcher, err := fsnotify.NewWatcher(logger)
 	require.NoError(t, err)
 	defer func() {
 		errC := fileWatcher.Close()

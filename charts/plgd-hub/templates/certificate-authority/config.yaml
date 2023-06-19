@@ -57,6 +57,23 @@ data:
         readHeaderTimeout: {{ .apis.http.readHeaderTimeout }}
         writeTimeout: {{ .apis.http.writeTimeout }}
         idleTimeout: {{ .apis.http.idleTimeout }}
+    clients:
+      storage:
+        cleanUpRecords: {{ .clients.storage.cleanUpRecords | quote }}
+        mongoDB:
+          uri: {{- printf " " }}{{- include "plgd-hub.mongoDBUri" (list $ .clients.storage.mongoDB.uri )  | quote }}
+          database: {{ .clients.storage.mongoDB.database }}
+          maxPoolSize: {{ .clients.storage.mongoDB.maxPoolSize }}
+          maxConnIdleTime: {{ .clients.storage.mongoDB.maxConnIdleTime }}
+          tls:
+            {{- $mongoDbTls := .clients.storage.mongoDB.tls }}
+            {{- include "plgd-hub.certificateConfig" (list $ $mongoDbTls $cert ) | indent 10 }}
+            useSystemCAPool: {{ .clients.storage.mongoDB.tls.useSystemCAPool }}
+          bulkWrite:
+            timeout: {{ .clients.storage.mongoDB.bulkWrite.timeout  | quote }}
+            throttleTime: {{ .clients.storage.mongoDB.bulkWrite.throttleTime  | quote }}
+            documentLimit: {{ .clients.storage.mongoDB.bulkWrite.documentLimit  }}
+      {{- include "plgd-hub.openTelemetryExporterConfig" (list $ $cert ) | nindent 6 }}
     signer:
       certFile: {{ .signer.certFile | default ( printf "%s/%s" $.Values.certificateauthority.ca.volume.mountPath $.Values.certificateauthority.ca.cert ) | quote }}
       keyFile: {{ .signer.keyFile | default ( printf "%s/%s" $.Values.certificateauthority.ca.volume.mountPath $.Values.certificateauthority.ca.key ) | quote }}

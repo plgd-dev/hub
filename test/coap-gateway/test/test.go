@@ -39,7 +39,7 @@ func New(t require.TestingT, cfg service.Config, makeHandler service.MakeService
 	ctx := context.Background()
 	logger := log.NewLogger(cfg.Log.Config)
 
-	fileWatcher, err := fsnotify.NewWatcher()
+	fileWatcher, err := fsnotify.NewWatcher(logger)
 	require.NoError(t, err)
 
 	s, err := service.New(ctx, cfg, fileWatcher, logger, makeHandler)

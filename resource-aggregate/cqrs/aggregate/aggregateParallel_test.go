@@ -24,7 +24,7 @@ import (
 
 func testNewEventstore(ctx context.Context, t *testing.T) *mongodb.EventStore {
 	logger := log.NewLogger(log.MakeDefaultConfig())
-	fileWatcher, err := fsnotify.NewWatcher()
+	fileWatcher, err := fsnotify.NewWatcher(logger)
 	require.NoError(t, err)
 	defer func() {
 		errC := fileWatcher.Close()

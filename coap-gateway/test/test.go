@@ -52,6 +52,7 @@ func MakeConfig(t require.TestingT) service.Config {
 	cfg.Clients.IdentityStore.Connection = config.MakeGrpcClientConfig(config.IDENTITY_STORE_HOST)
 	cfg.Clients.ResourceAggregate.Connection = config.MakeGrpcClientConfig(config.RESOURCE_AGGREGATE_HOST)
 	cfg.Clients.ResourceDirectory.Connection = config.MakeGrpcClientConfig(config.RESOURCE_DIRECTORY_HOST)
+	cfg.Clients.CertificateAuthority.Connection = config.MakeGrpcClientConfig(config.CERTIFICATE_AUTHORITY_HOST)
 	cfg.Clients.Eventbus.NATS = config.MakeSubscriberConfig()
 	cfg.Clients.OpenTelemetryCollector = config.MakeOpenTelemetryCollectorClient()
 
@@ -70,7 +71,7 @@ func New(t require.TestingT, cfg service.Config) func() {
 	ctx := context.Background()
 	logger := log.NewLogger(cfg.Log)
 
-	fileWatcher, err := fsnotify.NewWatcher()
+	fileWatcher, err := fsnotify.NewWatcher(logger)
 	require.NoError(t, err)
 
 	s, err := service.New(ctx, cfg, fileWatcher, logger)

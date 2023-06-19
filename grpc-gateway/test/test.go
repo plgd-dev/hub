@@ -16,7 +16,6 @@ func MakeConfig(t require.TestingT) service.Config {
 	var cfg service.Config
 
 	cfg.Log = config.MakeLogConfig(t, "TEST_GRPC_GATEWAY_LOG_LEVEL", "TEST_GRPC_GATEWAY_LOG_DUMP_BODY")
-
 	cfg.APIs.GRPC.Config = config.MakeGrpcServerConfig(config.GRPC_GW_HOST)
 	cfg.APIs.GRPC.OwnerCacheExpiration = time.Minute
 	cfg.APIs.GRPC.SubscriptionBufferSize = 1000
@@ -27,6 +26,7 @@ func MakeConfig(t require.TestingT) service.Config {
 	cfg.Clients.Eventbus.GoPoolSize = 16
 	cfg.Clients.ResourceAggregate.Connection = config.MakeGrpcClientConfig(config.RESOURCE_AGGREGATE_HOST)
 	cfg.Clients.ResourceDirectory.Connection = config.MakeGrpcClientConfig(config.RESOURCE_DIRECTORY_HOST)
+	cfg.Clients.CertificateAuthority.Connection = config.MakeGrpcClientConfig(config.CERTIFICATE_AUTHORITY_HOST)
 	cfg.Clients.OpenTelemetryCollector = config.MakeOpenTelemetryCollectorClient()
 
 	err := cfg.Validate()
@@ -42,7 +42,7 @@ func SetUp(t require.TestingT) (tearDown func()) {
 func New(t require.TestingT, cfg service.Config) func() {
 	ctx := context.Background()
 	logger := log.NewLogger(cfg.Log)
-	fileWatcher, err := fsnotify.NewWatcher()
+	fileWatcher, err := fsnotify.NewWatcher(logger)
 	require.NoError(t, err)
 
 	s, err := service.New(ctx, cfg, fileWatcher, logger)

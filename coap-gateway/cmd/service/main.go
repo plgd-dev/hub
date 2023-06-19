@@ -11,7 +11,7 @@ import (
 )
 
 func run(cfg service.Config, logger log.Logger) error {
-	fileWatcher, err := fsnotify.NewWatcher()
+	fileWatcher, err := fsnotify.NewWatcher(logger)
 	if err != nil {
 		return fmt.Errorf("cannot create file fileWatcher: %w", err)
 	}
@@ -40,6 +40,6 @@ func main() {
 	logger.Infof("config: %v", cfg.String())
 
 	if err := run(cfg, logger); err != nil {
-		log.Fatalf("cannot run service: %w", err)
+		log.Fatalf("cannot run service: %v", err)
 	}
 }

@@ -99,7 +99,7 @@ func NewEventsServer(t *testing.T, uri string) *EventsServer {
 	listenCfg := config.MakeListenerConfig("localhost:")
 	listenCfg.TLS.ClientCertificateRequired = false
 
-	fileWatcher, err := fsnotify.NewWatcher()
+	fileWatcher, err := fsnotify.NewWatcher(logger)
 	require.NoError(t, err)
 
 	certManager, err := server.New(listenCfg.TLS, fileWatcher, logger)

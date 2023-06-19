@@ -23,6 +23,7 @@ import (
 
 	"github.com/plgd-dev/hub/v2/certificate-authority/test"
 	testService "github.com/plgd-dev/hub/v2/test/service"
+	"github.com/stretchr/testify/require"
 )
 
 func TestServiceServe(t *testing.T) {
@@ -30,4 +31,8 @@ func TestServiceServe(t *testing.T) {
 
 	shutDown := testService.SetUpServices(context.Background(), t, testService.SetUpServicesCertificateAuthority|testService.SetUpServicesOAuth)
 	defer shutDown()
+
+	cfg := test.MakeConfig(t)
+	cfg.Clients.Storage.CleanUpRecords = "/2 * * * *"
+	require.Error(t, cfg.Validate())
 }

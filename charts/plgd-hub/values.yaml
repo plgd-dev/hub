@@ -64,13 +64,14 @@ nats:
   cluster:
     enabled: false
     noAdvertise: false
-
   leafnodes:
     enabled: false
     noAdvertise: false
-
   natsbox:
     enabled: false
+  reloader:
+    image: ghcr.io/plgd-dev/hub/nats-server-config-reloader:vnext
+    pullPolicy: Always
 
 
 # -- External mongodb-replica dependency setup
@@ -100,6 +101,8 @@ mongodb:
   extraVolumeMounts:
     - name: mongodb-crt
       mountPath: "/certs"
+    - name: mongodb-cm-crt
+      mountPath: "/certs-original"
   extraVolumes:
     - name: mongodb-crt
       emptyDir: {}
@@ -107,23 +110,6 @@ mongodb:
       secret:
         secretName: mongodb-cm-crt
   initContainers:
-    - name: convert-cm-crt
-      image: docker.io/bitnami/nginx:1.20.2-debian-10-r63
-      imagePullPolicy: "IfNotPresent"
-      volumeMounts:
-        - name: mongodb-crt
-          mountPath: "/certs"
-        - name: mongodb-cm-crt
-          mountPath: "/tmp/certs"
-      command:
-        - sh
-        - "-c"
-        - |
-          /bin/bash <<'EOF'
-          cat /tmp/certs/tls.crt >> /certs/cert.pem
-          cat /tmp/certs/tls.key >> /certs/cert.pem
-          cp /tmp/certs/ca.crt  /certs/ca.pem
-          EOF
     # workaround for https://github.com/bitnami/charts/issues/10264, https://jira.mongodb.org/browse/MONGOSH-1240
     - name: mongo-binary
       image: docker.io/bitnami/mongodb:5.0.10-debian-11-r3
@@ -131,24 +117,69 @@ mongodb:
       volumeMounts:
         - name: mongodb-crt
           mountPath: "/certs"
+        - name: mongodb-cm-crt
+          mountPath: "/certs-original"
       command:
         - sh
         - "-c"
         - |
           /bin/bash <<'EOF'
+          #!/bin/bash
           cp /opt/bitnami/mongodb/bin/mongo /certs/mongo
+          echo '
+          INIT=0
+          while [[ $# -gt 0 ]]; do
+            case $1 in
+              --init)
+                INIT=1
+                shift
+                ;;
+            esac
+          done
+
+          CERT_CRT=/certs-original/tls.crt
+          CERT_SHA256=/certs/cert.sha256.$(sha256sum -z ${CERT_CRT} | cut -d " " -f 1)
+          CA=/certs-original/ca.crt
+          CA_SHA256=/certs/ca.sha256.$(sha256sum -z ${CA} | cut -d " " -f 1)
+          ROTATE_CERTIFICATES=0
+          if [ ! -f ${CERT_SHA256} ]; then
+            rm -f /certs/cert.sha256.*
+            cat ${CERT_CRT} > /certs/cert.pem
+            cat /certs-original/tls.key >> /certs/cert.pem
+            touch ${CERT_SHA256}
+            ROTATE_CERTIFICATES=1
+          fi
+
+          if [ ! -f ${CA_SHA256} ]; then
+            rm -f /certs/ca.sha256.*
+            cp ${CA} /certs/ca.pem
+            touch ${CA_SHA256}
+            ROTATE_CERTIFICATES=1
+          fi
+
+          if [ "${INIT}" == "1" ]; then
+            exit 0
+          fi
+
+          if [ "${ROTATE_CERTIFICATES}" == "1" ]; then
+            echo "Rotating certificates"
+            /certs/mongo --tls --tlsCertificateKeyFile=/certs/cert.pem --tlsCAFile=/certs/ca.pem --eval db.adminCommand\("{rotateCertificates: 1, message: \"Rotating certificates\"}"\)
+          else
+            echo "Ping database"
+            /certs/mongo --tls --tlsCertificateKeyFile=/certs/cert.pem --tlsCAFile=/certs/ca.pem --eval db.adminCommand\(\"ping\"\)
+          fi
+          ' > /certs/livenessProbe.sh
+          chmod u+x /certs/livenessProbe.sh
+          /certs/livenessProbe.sh --init
           EOF
   livenessProbe:
     enabled: false
   customLivenessProbe:
     exec:
       command:
-        - /certs/mongo
-        - --tls
-        - --tlsCertificateKeyFile=/certs/cert.pem
-        - --tlsCAFile=/certs/ca.pem
-        - --eval
-        - db.adminCommand('ping')
+        - /bin/bash
+        - "-c"
+        - /certs/livenessProbe.sh
     initialDelaySeconds: 30
     periodSeconds: 20
     timeoutSeconds: 10
@@ -948,6 +979,20 @@ coapgateway:
           keyFile:
           certFile:
           useSystemCAPool: false
+    certificateAuthority:
+      grpc:
+        address: ""
+        sendMsgSize: 4194304
+        recvMsgSize: 4194304
+        keepAlive:
+          time: 10s
+          timeout: 20s
+          permitWithoutStream: true
+        tls:
+          caPool:
+          keyFile:
+          certFile:
+          useSystemCAPool: false
   # -- For complete coap-gateway service configuration see [plgd/coap-gateway](https://github.com/plgd-dev/hub/tree/main/coap-gateway)
   taskQueue:
     goPoolSize: 1600
@@ -1218,6 +1263,7 @@ httpgateway:
         nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
         ingress.kubernetes.io/force-ssl-redirect: "true"
         nginx.ingress.kubernetes.io/enable-cors: "true"
+        cert-manager.io/private-key-rotation-policy: always
       # -- Custom map of Ingress annotation
       customAnnotations: {}
       # -- Ingress path
@@ -1236,6 +1282,7 @@ httpgateway:
         nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
         ingress.kubernetes.io/force-ssl-redirect: "true"
         nginx.ingress.kubernetes.io/enable-cors: "true"
+        cert-manager.io/private-key-rotation-policy: always
       # -- Custom map of Ingress annotation
       customAnnotations: {}
       # -- Ingress path
@@ -1420,6 +1467,7 @@ grpcgateway:
       nginx.ingress.kubernetes.io/backend-protocol: "GRPCS"
       ingress.kubernetes.io/force-ssl-redirect: "true"
       nginx.ingress.kubernetes.io/enable-cors: "true"
+      cert-manager.io/private-key-rotation-policy: always
     # -- Custom map of Ingress annotation
     customAnnotations: {}
 
@@ -1547,6 +1595,20 @@ grpcgateway:
           keyFile:
           certFile:
           useSystemCAPool: false
+    certificateAuthority:
+      grpc:
+        address: ""
+        sendMsgSize: 4194304
+        recvMsgSize: 4194304
+        keepAlive:
+          time: 10s
+          timeout: 20s
+          permitWithoutStream: true
+        tls:
+          caPool:
+          keyFile:
+          certFile:
+          useSystemCAPool: false
 
 
 certificateauthority:
@@ -1660,11 +1722,13 @@ certificateauthority:
         nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
         ingress.kubernetes.io/force-ssl-redirect: "true"
         nginx.ingress.kubernetes.io/enable-cors: "true"
+        cert-manager.io/private-key-rotation-policy: always
       # -- Custom map of Ingress annotation
       customAnnotations: {}
       # -- Ingress path
       paths:
         - /api/v1/sign
+        - /api/v1/signing
     grpc:
       # -- Enable ingress
       enabled: true
@@ -1676,6 +1740,7 @@ certificateauthority:
         nginx.ingress.kubernetes.io/backend-protocol: "GRPCS"
         ingress.kubernetes.io/force-ssl-redirect: "true"
         nginx.ingress.kubernetes.io/enable-cors: "true"
+        cert-manager.io/private-key-rotation-policy: always
       # -- Custom map of Ingress annotation
       customAnnotations: { }
       # -- Paths
@@ -1766,6 +1831,27 @@ certificateauthority:
       readHeaderTimeout: 4s
       writeTimeout: 16s
       idleTimeout: 30s
+  clients:
+    storage:
+      # -- Remove any invalid entries in the cron format. If an empty string is provided, the cleanup function will be disabled.
+      cleanUpRecords: "0 1 * * *"
+      mongoDB:
+        uri:
+        database: certificateAuthorityService
+        maxPoolSize: 16
+        maxConnIdleTime: 4m0s
+        tls:
+          caPool:
+          keyFile:
+          certFile:
+          useSystemCAPool: false
+        bulkWrite:
+          # -- A time limit for write bulk to mongodb. A Timeout of zero means no timeout.
+          timeout: 1m0s
+          # -- The amount of time to wait until a record is written to mongodb. Any records collected during the throttle time will also be written. A throttle time of zero writes immediately. If recordLimit is reached, all records are written immediately
+          throttleTime: 500ms
+          # -- The maximum number of documents to cache before an immediate write.
+          documentLimit: 1000
   # -- For complete certificate-authority service configuration see [plgd/certificate-authority](https://github.com/plgd-dev/hub/tree/main/certificate-authority)
   signer:
     keyFile:
@@ -1862,6 +1948,7 @@ mockoauthserver:
       nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
       ingress.kubernetes.io/force-ssl-redirect: "true"
       nginx.ingress.kubernetes.io/enable-cors: "true"
+      cert-manager.io/private-key-rotation-policy: always
       nginx.ingress.kubernetes.io/configuration-snippet: |
         more_set_headers "Host $host";
         more_set_headers "X-Forwarded-Host $host";

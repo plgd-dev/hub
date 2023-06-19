@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	ca "github.com/plgd-dev/hub/v2/certificate-authority/service"
 	caService "github.com/plgd-dev/hub/v2/certificate-authority/test"
 	c2cgwService "github.com/plgd-dev/hub/v2/cloud2cloud-gateway/test"
 	coapgw "github.com/plgd-dev/hub/v2/coap-gateway/service"
@@ -38,7 +39,7 @@ func ClearDB(ctx context.Context, t require.TestingT) {
 	logCfg := log.MakeDefaultConfig()
 	logger := log.NewLogger(logCfg)
 	tlsConfig := config.MakeTLSClientConfig()
-	fileWatcher, err := fsnotify.NewWatcher()
+	fileWatcher, err := fsnotify.NewWatcher(logger)
 	require.NoError(t, err)
 	defer func() {
 		err = fileWatcher.Close()
@@ -72,6 +73,7 @@ type Config struct {
 	GRPCGW grpcgwConfig.Config
 	RA     raService.Config
 	IS     isService.Config
+	CA     ca.Config
 }
 
 func WithCOAPGWConfig(coapgwCfg coapgw.Config) SetUpOption {
@@ -104,6 +106,12 @@ func WithISConfig(is isService.Config) SetUpOption {
 	}
 }
 
+func WithCAConfig(ca ca.Config) SetUpOption {
+	return func(cfg *Config) {
+		cfg.CA = ca
+	}
+}
+
 type SetUpOption = func(cfg *Config)
 
 func SetUp(ctx context.Context, t require.TestingT, opts ...SetUpOption) (tearDown func()) {
@@ -113,6 +121,7 @@ func SetUp(ctx context.Context, t require.TestingT, opts ...SetUpOption) (tearDo
 		GRPCGW: grpcgwTest.MakeConfig(t),
 		RA:     raTest.MakeConfig(t),
 		IS:     isTest.MakeConfig(t),
+		CA:     caService.MakeConfig(t),
 	}
 
 	for _, o := range opts {
@@ -126,7 +135,7 @@ func SetUp(ctx context.Context, t require.TestingT, opts ...SetUpOption) (tearDo
 	rdShutdown := rdTest.New(t, config.RD)
 	grpcShutdown := grpcgwTest.New(t, config.GRPCGW)
 	c2cgwShutdown := c2cgwService.SetUp(t)
-	caShutdown := caService.SetUp(t)
+	caShutdown := caService.New(t, config.CA)
 	secureGWShutdown := coapgwTest.New(t, config.COAPGW)
 
 	return func() {
@@ -173,6 +182,8 @@ var setupServicesMap = map[SetUpServicesConfig]func(t require.TestingT, tearDown
 		for _, o := range opts {
 			o(&config)
 		}
+		err := config.IS.Validate()
+		require.NoError(t, err)
 		isShutdown := isTest.New(t, config.IS)
 		tearDown.AddFunc(isShutdown)
 	},
@@ -183,6 +194,8 @@ var setupServicesMap = map[SetUpServicesConfig]func(t require.TestingT, tearDown
 		for _, o := range opts {
 			o(&config)
 		}
+		err := config.RA.Validate()
+		require.NoError(t, err)
 		raShutdown := raTest.New(t, config.RA)
 		tearDown.AddFunc(raShutdown)
 	},
@@ -193,6 +206,8 @@ var setupServicesMap = map[SetUpServicesConfig]func(t require.TestingT, tearDown
 		for _, o := range opts {
 			o(&config)
 		}
+		err := config.RD.Validate()
+		require.NoError(t, err)
 		rdShutdown := rdTest.New(t, config.RD)
 		tearDown.AddFunc(rdShutdown)
 	},
@@ -203,6 +218,8 @@ var setupServicesMap = map[SetUpServicesConfig]func(t require.TestingT, tearDown
 		for _, o := range opts {
 			o(&config)
 		}
+		err := config.GRPCGW.Validate()
+		require.NoError(t, err)
 		grpcShutdown := grpcgwTest.New(t, config.GRPCGW)
 		tearDown.AddFunc(grpcShutdown)
 	},
@@ -216,12 +233,15 @@ var setupServicesMap = map[SetUpServicesConfig]func(t require.TestingT, tearDown
 		tearDown.AddFunc(c2cgwShutdown)
 	},
 	SetUpServicesCertificateAuthority: func(t require.TestingT, tearDown *fn.FuncList, opts ...SetUpOption) {
-		// to fix `opts` is unused
-		config := Config{}
+		config := Config{
+			CA: caService.MakeConfig(t),
+		}
 		for _, o := range opts {
 			o(&config)
 		}
-		caShutdown := caService.SetUp(t)
+		err := config.CA.Validate()
+		require.NoError(t, err)
+		caShutdown := caService.New(t, config.CA)
 		tearDown.AddFunc(caShutdown)
 	},
 	SetUpServicesCoapGateway: func(t require.TestingT, tearDown *fn.FuncList, opts ...SetUpOption) {
@@ -231,6 +251,8 @@ var setupServicesMap = map[SetUpServicesConfig]func(t require.TestingT, tearDown
 		for _, o := range opts {
 			o(&config)
 		}
+		err := config.COAPGW.Validate()
+		require.NoError(t, err)
 		secureGWShutdown := coapgwTest.New(t, config.COAPGW)
 		tearDown.AddFunc(secureGWShutdown)
 	},

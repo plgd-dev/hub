@@ -288,6 +288,17 @@ app.kubernetes.io/instance: {{ .Release.Name }}
   {{- end }}
 {{- end }}
 
+{{- define "plgd-hub.certificateAuthorityAddress" }}
+  {{- $ := index . 0 }}
+  {{- $address := index . 1 }}
+  {{- if $address }}
+  {{- printf "%s" $address }}
+  {{- else }}
+  {{- $raServer := include "plgd-hub.certificateauthority.fullname" $ }}
+  {{- printf "%s-grpc.%s.svc.%s:%v" $raServer $.Release.Namespace $.Values.cluster.dns $.Values.certificateauthority.port }}
+  {{- end }}
+{{- end }}
+
 {{- define "plgd-hub.grpcGatewayAddress" }}
   {{- $ := index . 0 }}
   {{- $address := index . 1 }}

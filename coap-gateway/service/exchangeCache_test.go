@@ -21,7 +21,7 @@ import (
 func TestExchangeCacheExecute(t *testing.T) {
 	logger := log.NewLogger(log.MakeDefaultConfig())
 
-	fileWatcher, err := fsnotify.NewWatcher()
+	fileWatcher, err := fsnotify.NewWatcher(logger)
 	require.NoError(t, err)
 	defer func() {
 		errC := fileWatcher.Close()

@@ -3,9 +3,9 @@ package service
 import (
 	"context"
 
+	pbCA "github.com/plgd-dev/hub/v2/certificate-authority/pb"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	pbIS "github.com/plgd-dev/hub/v2/identity-store/pb"
-	"github.com/plgd-dev/hub/v2/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"github.com/plgd-dev/hub/v2/pkg/strings"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
@@ -37,16 +37,25 @@ func (r *RequestHandler) DeleteDevices(ctx context.Context, req *pb.DeleteDevice
 	cmdRA := commands.DeleteDevicesRequest{DeviceIds: deviceIDs}
 	respRA, err := r.resourceAggregateClient.DeleteDevices(ctx, &cmdRA)
 	if err != nil {
-		return nil, log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot delete devices from ResourceAggregate: %v", err))
+		return nil, kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "cannot delete devices from ResourceAggregate: %v", err)
 	}
 	if !deleteAllOwned {
 		_, notDeleted := partitionDeletedDevices(deviceIDs, respRA.GetDeviceIds())
 		if len(notDeleted) > 0 {
 			for _, deviceID := range notDeleted {
-				log.Debugf("failed to delete device('%v') in ResourceAggregate", deviceID)
+				r.logger.Debugf("failed to delete device('%v') in ResourceAggregate", deviceID)
 			}
 		}
 	}
+
+	// CertificateAuthority
+	respCA, err := r.certificateAuthorityClient.DeleteSigningRecords(ctx, &pbCA.DeleteSigningRecordsRequest{
+		DeviceIdFilter: deviceIDs,
+	})
+	if err != nil {
+		return nil, kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "cannot delete certificates linked to devices %v from CertificateAuthority: %v", deviceIDs, err)
+	}
+	r.logger.Debugf("certificate records(num: %v) linked to %v devices has been deleted", respCA.GetCount(), deviceIDs)
 
 	// IdentityStore
 	cmdAS := pbIS.DeleteDevicesRequest{
@@ -54,13 +63,13 @@ func (r *RequestHandler) DeleteDevices(ctx context.Context, req *pb.DeleteDevice
 	}
 	respIS, err := r.idClient.DeleteDevices(ctx, &cmdAS)
 	if err != nil {
-		return nil, log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot delete devices from identity-store: %v", err))
+		return nil, kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "cannot delete devices from identity-store: %v", err)
 	}
 	if !deleteAllOwned {
 		_, notDeleted := partitionDeletedDevices(deviceIDs, respIS.GetDeviceIds())
 		if len(notDeleted) > 0 {
 			for _, deviceID := range notDeleted {
-				log.Debugf("failed to delete device('%v') from identity-store", deviceID)
+				r.logger.Debugf("failed to delete device('%v') from identity-store", deviceID)
 			}
 		}
 	}

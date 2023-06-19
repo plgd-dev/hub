@@ -28,6 +28,7 @@ var (
 	TraceIDKey          = "traceId"
 	MessageKey          = "message"
 	SubjectsKey         = "subjects"
+	CertManagerKey      = "certManager"
 )
 
 func DurationToMilliseconds(duration time.Duration) float32 {

@@ -100,7 +100,7 @@ func TestRequestHandlerPublishResource(t *testing.T) {
 	}))
 	config := raTest.MakeConfig(t)
 	logger := log.NewLogger(config.Log)
-	fileWatcher, err := fsnotify.NewWatcher()
+	fileWatcher, err := fsnotify.NewWatcher(logger)
 	require.NoError(t, err)
 	defer func() {
 		errC := fileWatcher.Close()
@@ -215,7 +215,7 @@ func TestRequestHandlerUnpublishResource(t *testing.T) {
 	}))
 	cfg := raTest.MakeConfig(t)
 	logger := log.NewLogger(cfg.Log)
-	fileWatcher, err := fsnotify.NewWatcher()
+	fileWatcher, err := fsnotify.NewWatcher(logger)
 	require.NoError(t, err)
 	defer func() {
 		errC := fileWatcher.Close()
@@ -300,7 +300,7 @@ func TestRequestHandlerNotifyResourceChanged(t *testing.T) {
 	}))
 	config := raTest.MakeConfig(t)
 	logger := log.NewLogger(config.Log)
-	fileWatcher, err := fsnotify.NewWatcher()
+	fileWatcher, err := fsnotify.NewWatcher(logger)
 	require.NoError(t, err)
 	defer func() {
 		errC := fileWatcher.Close()
@@ -395,7 +395,7 @@ func TestRequestHandlerUpdateResourceContent(t *testing.T) {
 	}))
 	config := raTest.MakeConfig(t)
 	logger := log.NewLogger(config.Log)
-	fileWatcher, err := fsnotify.NewWatcher()
+	fileWatcher, err := fsnotify.NewWatcher(logger)
 	require.NoError(t, err)
 	defer func() {
 		errC := fileWatcher.Close()
@@ -488,7 +488,7 @@ func TestRequestHandlerConfirmResourceUpdate(t *testing.T) {
 	}))
 	config := raTest.MakeConfig(t)
 	logger := log.NewLogger(config.Log)
-	fileWatcher, err := fsnotify.NewWatcher()
+	fileWatcher, err := fsnotify.NewWatcher(logger)
 	require.NoError(t, err)
 	defer func() {
 		errC := fileWatcher.Close()
@@ -578,7 +578,7 @@ func TestRequestHandlerRetrieveResource(t *testing.T) {
 	}))
 	config := raTest.MakeConfig(t)
 	logger := log.NewLogger(config.Log)
-	fileWatcher, err := fsnotify.NewWatcher()
+	fileWatcher, err := fsnotify.NewWatcher(logger)
 	require.NoError(t, err)
 	defer func() {
 		errC := fileWatcher.Close()
@@ -671,7 +671,7 @@ func TestRequestHandlerConfirmResourceRetrieve(t *testing.T) {
 	}))
 	config := raTest.MakeConfig(t)
 	logger := log.NewLogger(config.Log)
-	fileWatcher, err := fsnotify.NewWatcher()
+	fileWatcher, err := fsnotify.NewWatcher(logger)
 	require.NoError(t, err)
 	defer func() {
 		errC := fileWatcher.Close()
@@ -764,7 +764,7 @@ func TestRequestHandlerDeleteResource(t *testing.T) {
 	}))
 	config := raTest.MakeConfig(t)
 	logger := log.NewLogger(config.Log)
-	fileWatcher, err := fsnotify.NewWatcher()
+	fileWatcher, err := fsnotify.NewWatcher(logger)
 	require.NoError(t, err)
 	defer func() {
 		errC := fileWatcher.Close()
@@ -857,7 +857,7 @@ func TestRequestHandlerConfirmResourceDelete(t *testing.T) {
 	}))
 	config := raTest.MakeConfig(t)
 	logger := log.NewLogger(config.Log)
-	fileWatcher, err := fsnotify.NewWatcher()
+	fileWatcher, err := fsnotify.NewWatcher(logger)
 	require.NoError(t, err)
 	defer func() {
 		errC := fileWatcher.Close()
@@ -950,7 +950,7 @@ func TestRequestHandlerCreateResource(t *testing.T) {
 	}))
 	config := raTest.MakeConfig(t)
 	logger := log.NewLogger(config.Log)
-	fileWatcher, err := fsnotify.NewWatcher()
+	fileWatcher, err := fsnotify.NewWatcher(logger)
 	require.NoError(t, err)
 	defer func() {
 		errC := fileWatcher.Close()
@@ -1043,7 +1043,7 @@ func TestRequestHandlerConfirmResourceCreate(t *testing.T) {
 	}))
 	config := raTest.MakeConfig(t)
 	logger := log.NewLogger(config.Log)
-	fileWatcher, err := fsnotify.NewWatcher()
+	fileWatcher, err := fsnotify.NewWatcher(logger)
 	require.NoError(t, err)
 	defer func() {
 		errC := fileWatcher.Close()

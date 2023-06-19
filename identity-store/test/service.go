@@ -18,7 +18,7 @@ func New(t require.TestingT, config service.Config) func() {
 	ctx := context.Background()
 	logger := log.NewLogger(config.Log)
 
-	fileWatcher, err := fsnotify.NewWatcher()
+	fileWatcher, err := fsnotify.NewWatcher(logger)
 	require.NoError(t, err)
 
 	idServer, err := service.New(ctx, config, fileWatcher, logger)
