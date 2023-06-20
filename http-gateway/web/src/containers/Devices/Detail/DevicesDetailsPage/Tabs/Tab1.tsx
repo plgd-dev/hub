@@ -127,11 +127,15 @@ const Tab1: FC<Props> = (props) => {
                                     ) : (
                                         <Tooltip
                                             content={
-                                                <DateFormat
-                                                    prefixTest={`${_(t.deviceFirmwareUpToDate)}: `}
-                                                    rawValue={true}
-                                                    value={softwareUpdateData?.lastupdate}
-                                                />
+                                                softwareUpdateData?.lastupdate ? (
+                                                    <DateFormat
+                                                        prefixTest={`${_(t.deviceFirmwareUpToDate)}: `}
+                                                        rawValue={true}
+                                                        value={softwareUpdateData?.lastupdate}
+                                                    />
+                                                ) : (
+                                                    `${_(t.deviceFirmwareUpToDate)}: -`
+                                                )
                                             }
                                             delay={200}
                                         >
