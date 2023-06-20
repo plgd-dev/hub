@@ -1,4 +1,4 @@
-import { SyntheticEvent, useMemo, useState } from 'react'
+import { SyntheticEvent, useEffect, useMemo, useState } from 'react'
 import { Router } from 'react-router-dom'
 import { useAuth } from 'oidc-react'
 import { Global, ThemeProvider } from '@emotion/react'
@@ -44,13 +44,14 @@ const getBuildInformation = (wellKnownConfig: WellKnownConfigType) => ({
 })
 
 const AppInner = (props: Props) => {
-    const { wellKnownConfig, openTelemetry } = props
+    const { wellKnownConfig, openTelemetry, userSignedIn } = props
     const { userData, userManager } = useAuth()
     const buildInformation = getBuildInformation(wellKnownConfig)
     const { formatMessage: _ } = useIntl()
     const dispatch = useDispatch()
 
     const notifications = useSelector((state: CombinatedStoreType) => state.notifications)
+    const appStore = useSelector((state: CombinatedStoreType) => state.app)
 
     const [footerExpanded, setFooterExpanded] = useLocalStorage('footerPanelExpanded', false)
     const [activeItem, setActiveItem] = useState(parseActiveItem(history.location.pathname, menu, mather))
@@ -71,6 +72,17 @@ const AppInner = (props: Props) => {
         }),
         [footerExpanded, collapsed, setCollapsed, setFooterExpanded, wellKnownConfig, openTelemetry, buildInformation]
     )
+
+    useEffect(() => {
+        if (userSignedIn) {
+            if (appStore?.routeBeforeSingIn) {
+                history.push(appStore?.routeBeforeSingIn)
+            } else {
+                window.location.hash = ''
+                window.location.href = window.location.origin
+            }
+        }
+    }, [appStore, userSignedIn])
 
     if (userData) {
         security.setAccessToken(userData.access_token)
