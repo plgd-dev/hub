@@ -2,6 +2,7 @@ package test
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -805,6 +806,9 @@ func (h *findDeviceIDByNameHandler) Handle(ctx context.Context, dev *core.Device
 }
 
 func (h *findDeviceIDByNameHandler) Error(err error) {
+	if errors.Is(err, context.Canceled) {
+		return
+	}
 	log.Printf("find device ID by name handler error: %v", err.Error())
 }
 

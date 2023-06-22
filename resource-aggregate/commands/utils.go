@@ -17,16 +17,16 @@ const (
 )
 
 // ToUUID converts resource href and device id to unique resource ID
-func (r *ResourceId) ToUUID() string {
+func (r *ResourceId) ToUUID() uuid.UUID {
 	if len(r.Href) == 0 {
-		return ""
+		return uuid.Nil
 	}
-	return uuid.NewSHA1(uuid.NameSpaceURL, []byte(r.DeviceId+r.Href)).String()
+	return uuid.NewSHA1(uuid.NameSpaceURL, []byte(r.DeviceId+r.Href))
 }
 
 // ToUUID converts resource href and device id to unique resource ID
-func (r *Resource) ToUUID() string {
-	return uuid.NewSHA1(uuid.NameSpaceURL, []byte(r.DeviceId+r.Href)).String()
+func (r *Resource) ToUUID() uuid.UUID {
+	return uuid.NewSHA1(uuid.NameSpaceURL, []byte(r.DeviceId+r.Href))
 }
 
 // GetResourceID converts resource href and device id to resource id struct
@@ -34,12 +34,12 @@ func (r *Resource) GetResourceID() *ResourceId {
 	return &ResourceId{DeviceId: r.DeviceId, Href: r.Href}
 }
 
-func MakeLinksResourceUUID(deviceID string) string {
-	return uuid.NewSHA1(uuid.NameSpaceURL, []byte(deviceID+ResourceLinksHref)).String()
+func MakeLinksResourceUUID(deviceID string) uuid.UUID {
+	return uuid.NewSHA1(uuid.NameSpaceURL, []byte(deviceID+ResourceLinksHref))
 }
 
-func MakeStatusResourceUUID(deviceID string) string {
-	return uuid.NewSHA1(uuid.NameSpaceURL, []byte(deviceID+StatusHref)).String()
+func MakeStatusResourceUUID(deviceID string) uuid.UUID {
+	return uuid.NewSHA1(uuid.NameSpaceURL, []byte(deviceID+StatusHref))
 }
 
 func NewResourceID(deviceID, href string) *ResourceId {

@@ -28,7 +28,7 @@ func (rc *ResourceChanged) EventType() string {
 }
 
 func (rc *ResourceChanged) AggregateID() string {
-	return rc.GetResourceId().ToUUID()
+	return rc.GetResourceId().ToUUID().String()
 }
 
 func (rc *ResourceChanged) GroupID() string {

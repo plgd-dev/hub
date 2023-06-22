@@ -104,7 +104,7 @@ func toCRC64(v string) uint64 {
 }
 
 func (h *DeviceSubscriptionHandlers) HandleResourceUpdatePending(ctx context.Context, val *events.ResourceUpdatePending, fromDB bool) error {
-	if !h.wantToProcessEvent(toCRC64(val.GetResourceId().ToUUID()+val.EventType()), val.Version(), fromDB) {
+	if !h.wantToProcessEvent(toCRC64(val.GetResourceId().ToUUID().String()+val.EventType()), val.Version(), fromDB) {
 		return nil
 	}
 
@@ -116,7 +116,7 @@ func (h *DeviceSubscriptionHandlers) HandleResourceUpdatePending(ctx context.Con
 }
 
 func (h *DeviceSubscriptionHandlers) HandleResourceRetrievePending(ctx context.Context, val *events.ResourceRetrievePending, fromDB bool) error {
-	if !h.wantToProcessEvent(toCRC64(val.GetResourceId().ToUUID()+val.EventType()), val.Version(), fromDB) {
+	if !h.wantToProcessEvent(toCRC64(val.GetResourceId().ToUUID().String()+val.EventType()), val.Version(), fromDB) {
 		return nil
 	}
 
@@ -128,7 +128,7 @@ func (h *DeviceSubscriptionHandlers) HandleResourceRetrievePending(ctx context.C
 }
 
 func (h *DeviceSubscriptionHandlers) HandleResourceDeletePending(ctx context.Context, val *events.ResourceDeletePending, fromDB bool) error {
-	if !h.wantToProcessEvent(toCRC64(val.GetResourceId().ToUUID()+val.EventType()), val.Version(), fromDB) {
+	if !h.wantToProcessEvent(toCRC64(val.GetResourceId().ToUUID().String()+val.EventType()), val.Version(), fromDB) {
 		return nil
 	}
 
@@ -140,7 +140,7 @@ func (h *DeviceSubscriptionHandlers) HandleResourceDeletePending(ctx context.Con
 }
 
 func (h *DeviceSubscriptionHandlers) HandleResourceCreatePending(ctx context.Context, val *events.ResourceCreatePending, fromDB bool) error {
-	if !h.wantToProcessEvent(toCRC64(val.GetResourceId().ToUUID()+val.EventType()), val.Version(), fromDB) {
+	if !h.wantToProcessEvent(toCRC64(val.GetResourceId().ToUUID().String()+val.EventType()), val.Version(), fromDB) {
 		return nil
 	}
 

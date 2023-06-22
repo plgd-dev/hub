@@ -38,7 +38,7 @@ func NewAggregate(resourceID *commands.ResourceId, snapshotThreshold int, events
 		eventstore: eventstore,
 	}
 	cqrsAg, err := cqrsAggregate.NewAggregate(resourceID.GetDeviceId(),
-		resourceID.ToUUID(),
+		resourceID.ToUUID().String(),
 		retry,
 		snapshotThreshold,
 		eventstore,

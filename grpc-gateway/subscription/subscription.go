@@ -2,42 +2,66 @@ package subscription
 
 import (
 	"fmt"
+	"sort"
 
 	"github.com/google/uuid"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	"github.com/plgd-dev/hub/v2/pkg/fn"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
-	"github.com/plgd-dev/kit/v2/strings"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/utils"
 	"go.uber.org/atomic"
 )
 
 type SendEventFunc = func(e *pb.Event) error
 
+type set map[uuid.UUID]struct{}
+
+func (s set) Has(a uuid.UUID) bool {
+	if len(a) == 0 {
+		return true
+	}
+	_, ok := s[a]
+	return ok
+}
+
+type subInit struct {
+	deviceHrefFilters map[uuid.UUID]*commands.ResourceId
+}
+
 type Sub struct {
-	filter              FilterBitmask
-	send                SendEventFunc
-	req                 *pb.SubscribeToEvents_CreateSubscription
-	id                  string
-	correlationID       string
-	filteredDeviceIDs   strings.Set
-	filteredResourceIDs strings.Set
+	filter        FilterBitmask
+	send          SendEventFunc
+	req           *pb.SubscribeToEvents_CreateSubscription
+	id            string
+	correlationID string
+	init          *subInit
+
+	filteredDeviceIDs   set
+	filteredHrefIDs     set
+	filteredResourceIDs set
 
 	closed      atomic.Bool
 	closeAtomic atomic.Value
 }
 
-func isFilteredDevice(filteredDeviceIDs strings.Set, deviceID string) bool {
+func isFilteredDevice(filteredDeviceIDs set, deviceID string) bool {
 	if len(filteredDeviceIDs) == 0 {
 		return true
 	}
-	return filteredDeviceIDs.HasOneOf(deviceID)
+	if v, err := uuid.Parse(deviceID); err == nil {
+		return filteredDeviceIDs.Has(v)
+	}
+	return false
 }
 
-func isFilteredResourceIDs(filteredResourceIDs strings.Set, resourceID string) bool {
-	if len(filteredResourceIDs) == 0 {
+func isFilteredResourceIDs(filteredResourceIDs set, filteredHrefs set, resourceID *commands.ResourceId) bool {
+	if len(filteredHrefs) == 0 && len(filteredResourceIDs) == 0 {
 		return true
 	}
-	return filteredResourceIDs.HasOneOf(resourceID)
+	if resourceID == nil {
+		return false
+	}
+	return filteredHrefs.Has(utils.HrefToID(resourceID.GetHref())) || filteredResourceIDs.Has(resourceID.ToUUID())
 }
 
 func (s *Sub) Id() string {
@@ -49,7 +73,37 @@ func (s *Sub) CorrelationId() string {
 }
 
 func (s *Sub) Init(owner string, subCache *SubscriptionsCache) error {
-	subjects := ConvertToSubjects(owner, s.filteredDeviceIDs, s.filteredResourceIDs, s.filter)
+	init := s.init
+	s.init = nil
+	for _, filter := range init.deviceHrefFilters {
+		if filter.GetDeviceId() == "*" && filter.GetHref() == "*" {
+			s.filteredHrefIDs = make(set)
+			s.filteredDeviceIDs = make(set)
+			s.filteredResourceIDs = make(set)
+			break
+		}
+		if filter.GetDeviceId() != "*" && filter.GetHref() != "*" {
+			d, err := uuid.Parse(filter.GetDeviceId())
+			if err != nil {
+				return fmt.Errorf("invalid deviceId('%v'): %w", filter.GetDeviceId(), err)
+			}
+			s.filteredResourceIDs[filter.ToUUID()] = struct{}{}
+			s.filteredDeviceIDs[d] = struct{}{}
+			continue
+		}
+		if filter.GetHref() != "*" {
+			h := utils.HrefToID(filter.GetHref())
+			s.filteredHrefIDs[h] = struct{}{}
+		}
+		if filter.GetDeviceId() != "*" {
+			d, err := uuid.Parse(filter.GetDeviceId())
+			if err != nil {
+				return fmt.Errorf("invalid deviceId('%v'): %w", filter.GetDeviceId(), err)
+			}
+			s.filteredDeviceIDs[d] = struct{}{}
+		}
+	}
+	subjects := ConvertToSubjects(owner, init.deviceHrefFilters, s.filter)
 	var closeFn fn.FuncList
 
 	for _, subject := range subjects {
@@ -82,25 +136,25 @@ func (s *Sub) isFilteredEvent(e *pb.Event, eventType FilterBitmask) (bool, error
 	case *pb.Event_ResourceUnpublished:
 		return isFilteredDevice(s.filteredDeviceIDs, ev.ResourceUnpublished.GetDeviceId()), nil
 	case *pb.Event_ResourceChanged:
-		return isFilteredDevice(s.filteredDeviceIDs, ev.ResourceChanged.GroupID()) && isFilteredResourceIDs(s.filteredResourceIDs, ev.ResourceChanged.AggregateID()), nil
+		return isFilteredDevice(s.filteredDeviceIDs, ev.ResourceChanged.GroupID()) && isFilteredResourceIDs(s.filteredResourceIDs, s.filteredHrefIDs, ev.ResourceChanged.GetResourceId()), nil
 	// case *pb.Event_OperationProcessed_:
 	// case *pb.Event_SubscriptionCanceled_:
 	case *pb.Event_ResourceUpdatePending:
-		return isFilteredDevice(s.filteredDeviceIDs, ev.ResourceUpdatePending.GroupID()) && isFilteredResourceIDs(s.filteredResourceIDs, ev.ResourceUpdatePending.AggregateID()), nil
+		return isFilteredDevice(s.filteredDeviceIDs, ev.ResourceUpdatePending.GroupID()) && isFilteredResourceIDs(s.filteredResourceIDs, s.filteredHrefIDs, ev.ResourceUpdatePending.GetResourceId()), nil
 	case *pb.Event_ResourceUpdated:
-		return isFilteredDevice(s.filteredDeviceIDs, ev.ResourceUpdated.GroupID()) && isFilteredResourceIDs(s.filteredResourceIDs, ev.ResourceUpdated.AggregateID()), nil
+		return isFilteredDevice(s.filteredDeviceIDs, ev.ResourceUpdated.GroupID()) && isFilteredResourceIDs(s.filteredResourceIDs, s.filteredHrefIDs, ev.ResourceUpdated.GetResourceId()), nil
 	case *pb.Event_ResourceRetrievePending:
-		return isFilteredDevice(s.filteredDeviceIDs, ev.ResourceRetrievePending.GroupID()) && isFilteredResourceIDs(s.filteredResourceIDs, ev.ResourceRetrievePending.AggregateID()), nil
+		return isFilteredDevice(s.filteredDeviceIDs, ev.ResourceRetrievePending.GroupID()) && isFilteredResourceIDs(s.filteredResourceIDs, s.filteredHrefIDs, ev.ResourceRetrievePending.GetResourceId()), nil
 	case *pb.Event_ResourceRetrieved:
-		return isFilteredDevice(s.filteredDeviceIDs, ev.ResourceRetrieved.GroupID()) && isFilteredResourceIDs(s.filteredResourceIDs, ev.ResourceRetrieved.AggregateID()), nil
+		return isFilteredDevice(s.filteredDeviceIDs, ev.ResourceRetrieved.GroupID()) && isFilteredResourceIDs(s.filteredResourceIDs, s.filteredHrefIDs, ev.ResourceRetrieved.GetResourceId()), nil
 	case *pb.Event_ResourceDeletePending:
-		return isFilteredDevice(s.filteredDeviceIDs, ev.ResourceDeletePending.GroupID()) && isFilteredResourceIDs(s.filteredResourceIDs, ev.ResourceDeletePending.AggregateID()), nil
+		return isFilteredDevice(s.filteredDeviceIDs, ev.ResourceDeletePending.GroupID()) && isFilteredResourceIDs(s.filteredResourceIDs, s.filteredHrefIDs, ev.ResourceDeletePending.GetResourceId()), nil
 	case *pb.Event_ResourceDeleted:
-		return isFilteredDevice(s.filteredDeviceIDs, ev.ResourceDeleted.GroupID()) && isFilteredResourceIDs(s.filteredResourceIDs, ev.ResourceDeleted.AggregateID()), nil
+		return isFilteredDevice(s.filteredDeviceIDs, ev.ResourceDeleted.GroupID()) && isFilteredResourceIDs(s.filteredResourceIDs, s.filteredHrefIDs, ev.ResourceDeleted.GetResourceId()), nil
 	case *pb.Event_ResourceCreatePending:
-		return isFilteredDevice(s.filteredDeviceIDs, ev.ResourceCreatePending.GroupID()) && isFilteredResourceIDs(s.filteredResourceIDs, ev.ResourceCreatePending.AggregateID()), nil
+		return isFilteredDevice(s.filteredDeviceIDs, ev.ResourceCreatePending.GroupID()) && isFilteredResourceIDs(s.filteredResourceIDs, s.filteredHrefIDs, ev.ResourceCreatePending.GetResourceId()), nil
 	case *pb.Event_ResourceCreated:
-		return isFilteredDevice(s.filteredDeviceIDs, ev.ResourceCreated.GroupID()) && isFilteredResourceIDs(s.filteredResourceIDs, ev.ResourceCreated.AggregateID()), nil
+		return isFilteredDevice(s.filteredDeviceIDs, ev.ResourceCreated.GroupID()) && isFilteredResourceIDs(s.filteredResourceIDs, s.filteredHrefIDs, ev.ResourceCreated.GetResourceId()), nil
 	case *pb.Event_DeviceMetadataUpdatePending:
 		return isFilteredDevice(s.filteredDeviceIDs, ev.DeviceMetadataUpdatePending.GroupID()), nil
 	case *pb.Event_DeviceMetadataUpdated:
@@ -139,38 +193,162 @@ func (s *Sub) Close() error {
 	return nil
 }
 
-func New(send SendEventFunc, correlationID string, req *pb.SubscribeToEvents_CreateSubscription) *Sub {
+func removeDuplicateStrings(s []string) []string {
+	if len(s) < 1 {
+		return s
+	}
+
+	sort.Strings(s)
+	prev := 1
+	for curr := 1; curr < len(s); curr++ {
+		if s[curr-1] != s[curr] {
+			s[prev] = s[curr]
+			prev++
+		}
+	}
+
+	return s[:prev]
+}
+
+func normalizeFilters(req *pb.SubscribeToEvents_CreateSubscription) ([]string, []string, []string, FilterBitmask) {
 	bitmask := EventsFilterToBitmask(req.GetEventFilter())
-	filteredResourceIDs := strings.MakeSet()
-	filteredDeviceIDs := strings.MakeSet(req.GetDeviceIdFilter()...)
+	filterDeviceIDs := make([]string, 0, len(req.GetDeviceIdFilter())+len(req.GetResourceIdFilter()))
+	filterHrefs := make([]string, 0, len(req.GetHrefFilter())+len(req.GetResourceIdFilter()))
+	filterResourceIDs := make([]string, 0, len(req.GetResourceIdFilter()))
+	for _, r := range req.GetResourceIdFilter() {
+		v := commands.ResourceIdFromString(r)
+		if v != nil {
+			switch {
+			case v.GetDeviceId() == "*" && v.GetHref() == "*":
+				continue
+			case v.GetDeviceId() == "*":
+				filterHrefs = append(filterHrefs, v.GetHref())
+			case v.GetHref() == "*":
+				filterDeviceIDs = append(filterDeviceIDs, v.GetDeviceId())
+			default:
+				filterResourceIDs = append(filterResourceIDs, r)
+			}
+		}
+	}
+	for _, d := range req.GetDeviceIdFilter() {
+		if d != "*" {
+			filterDeviceIDs = append(filterDeviceIDs, d)
+		}
+	}
+	for _, h := range req.GetHrefFilter() {
+		if h != "*" {
+			filterHrefs = append(filterHrefs, h)
+		}
+	}
+	if len(filterResourceIDs) == 0 {
+		filterResourceIDs = nil
+	}
+	if len(filterDeviceIDs) == 0 {
+		filterDeviceIDs = nil
+	}
+	if len(filterHrefs) == 0 {
+		filterHrefs = nil
+	}
+
+	return removeDuplicateStrings(filterDeviceIDs), removeDuplicateStrings(filterHrefs), removeDuplicateStrings(filterResourceIDs), bitmask
+}
+
+func getFilters(req *pb.SubscribeToEvents_CreateSubscription) (map[uuid.UUID]*commands.ResourceId, FilterBitmask) {
+	filterDeviceIDs, filterHrefs, filterResourceIDs, bitmask := normalizeFilters(req)
+	// all events
+	if len(filterDeviceIDs) == 0 && len(filterHrefs) == 0 && len(filterResourceIDs) == 0 {
+		return nil, bitmask
+	}
+	deviceHrefFilters := make(map[uuid.UUID]*commands.ResourceId)
+	if len(filterDeviceIDs) == 0 && len(req.GetResourceIdFilter()) == 0 {
+		for _, h := range filterHrefs {
+			deviceHrefFilters[utils.HrefToID(h)] = commands.NewResourceID("*", h)
+		}
+		return deviceHrefFilters, bitmask
+	}
+	if len(filterHrefs) == 0 && len(req.GetResourceIdFilter()) == 0 {
+		for _, d := range filterDeviceIDs {
+			deviceHrefFilters[utils.HrefToID(d)] = commands.NewResourceID(d, "*")
+		}
+		return deviceHrefFilters, bitmask
+	}
+	if len(filterDeviceIDs) == 0 && len(filterHrefs) == 0 {
+		for _, r := range req.GetResourceIdFilter() {
+			v := commands.ResourceIdFromString(r)
+			if v == nil {
+				continue
+			}
+			deviceHrefFilters[v.ToUUID()] = v
+		}
+		return deviceHrefFilters, bitmask
+	}
+	if len(filterDeviceIDs) == 0 {
+		for _, h := range filterHrefs {
+			deviceHrefFilters[utils.HrefToID(h)] = commands.NewResourceID("*", h)
+		}
+		for _, r := range req.GetResourceIdFilter() {
+			v := commands.ResourceIdFromString(r)
+			if v == nil {
+				continue
+			}
+			if _, ok := deviceHrefFilters[utils.HrefToID(v.GetHref())]; ok {
+				// already added
+				continue
+			}
+			deviceHrefFilters[v.ToUUID()] = v
+		}
+		return deviceHrefFilters, bitmask
+	}
+	if len(filterHrefs) == 0 {
+		for _, d := range filterDeviceIDs {
+			deviceHrefFilters[utils.HrefToID(d)] = commands.NewResourceID(d, "*")
+		}
+		for _, r := range req.GetResourceIdFilter() {
+			v := commands.ResourceIdFromString(r)
+			if v == nil {
+				continue
+			}
+			if _, ok := deviceHrefFilters[utils.HrefToID(v.GetDeviceId())]; ok {
+				// already added
+				continue
+			}
+			deviceHrefFilters[v.ToUUID()] = v
+		}
+		return deviceHrefFilters, bitmask
+	}
+	for _, d := range filterDeviceIDs {
+		for _, h := range filterHrefs {
+			deviceHrefFilters[commands.NewResourceID(d, h).ToUUID()] = commands.NewResourceID(d, h)
+		}
+	}
 	for _, r := range req.GetResourceIdFilter() {
 		v := commands.ResourceIdFromString(r)
 		if v == nil {
 			continue
 		}
-		filteredResourceIDs.Add(v.ToUUID())
-		filteredDeviceIDs.Add(v.GetDeviceId())
-		if len(req.GetEventFilter()) > 0 {
-			if bitmask&(FilterBitmaskDeviceMetadataUpdatePending|FilterBitmaskDeviceMetadataUpdated) != 0 {
-				filteredResourceIDs.Add(commands.MakeStatusResourceUUID(v.GetDeviceId()))
-			}
-			if bitmask&(FilterBitmaskResourcesPublished|FilterBitmaskResourcesUnpublished) != 0 {
-				filteredResourceIDs.Add(commands.MakeLinksResourceUUID(v.GetDeviceId()))
-			}
-		}
+		deviceHrefFilters[v.ToUUID()] = v
 	}
+	return deviceHrefFilters, bitmask
+}
+
+func New(send SendEventFunc, correlationID string, req *pb.SubscribeToEvents_CreateSubscription) *Sub {
+	deviceHrefFilters, bitmask := getFilters(req)
 	id := uuid.NewString()
 	var closeAtomic atomic.Value
 	closeAtomic.Store(func() {
 		// Do nothing because it will be replaced in Init function.
 	})
 	return &Sub{
-		filter:              EventsFilterToBitmask(req.GetEventFilter()),
-		send:                send,
-		req:                 req,
-		id:                  id,
-		filteredDeviceIDs:   strings.MakeSet(req.GetDeviceIdFilter()...),
-		filteredResourceIDs: filteredResourceIDs,
+		filter: bitmask,
+		send:   send,
+		req:    req,
+		id:     id,
+		init: &subInit{
+			deviceHrefFilters: deviceHrefFilters,
+		},
+		filteredHrefIDs:     make(set),
+		filteredDeviceIDs:   make(set),
+		filteredResourceIDs: make(set),
 		correlationID:       correlationID,
 		closeAtomic:         closeAtomic,
 	}

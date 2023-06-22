@@ -26,7 +26,7 @@ func (e *ResourceUpdatePending) EventType() string {
 }
 
 func (e *ResourceUpdatePending) AggregateID() string {
-	return e.GetResourceId().ToUUID()
+	return e.GetResourceId().ToUUID().String()
 }
 
 func (e *ResourceUpdatePending) GroupID() string {

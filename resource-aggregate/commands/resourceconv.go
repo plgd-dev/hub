@@ -38,7 +38,7 @@ func (p *Policy) ToSchema() *schema.Policy {
 
 func (r *Resource) ToSchema() schema.ResourceLink {
 	return schema.ResourceLink{
-		ID:                    r.ToUUID(),
+		ID:                    r.ToUUID().String(),
 		Anchor:                r.GetAnchor(),
 		DeviceID:              r.GetDeviceId(),
 		Endpoints:             EndpointInformations(r.GetEndpointInformations()).ToSchema(),

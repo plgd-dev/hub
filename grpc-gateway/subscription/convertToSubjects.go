@@ -1,10 +1,11 @@
 package subscription
 
 import (
+	"github.com/google/uuid"
 	isEvents "github.com/plgd-dev/hub/v2/identity-store/events"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/utils"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
-	kitStrings "github.com/plgd-dev/kit/v2/strings"
 )
 
 const (
@@ -53,7 +54,7 @@ var bitmaskToSubjectsTemplate = []subject{
 	{bitmask: FilterBitmaskResourceUpdated, subject: isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceResourcesResourceEvent, isEvents.WithEventType((&events.ResourceUpdated{}).EventType()))},
 }
 
-func ConvertToSubjects(owner string, filterDeviceIDs kitStrings.Set, filterResourceIDs kitStrings.Set, bitmask FilterBitmask) []string {
+func ConvertToSubjects(owner string, filters map[uuid.UUID]*commands.ResourceId, bitmask FilterBitmask) []string {
 	var rawTemplates []string
 	for _, s := range bitmaskToSubjectsTemplate {
 		if s.bitmask&bitmask == s.bitmask {
@@ -64,17 +65,24 @@ func ConvertToSubjects(owner string, filterDeviceIDs kitStrings.Set, filterResou
 
 	intTemplates := make(map[string]bool)
 	for _, rawTemplate := range rawTemplates {
-		switch {
-		case len(filterResourceIDs) > 0:
-			for resID := range filterResourceIDs {
-				intTemplates[isEvents.ToSubject(rawTemplate, isEvents.WithOwner(owner), utils.WithDeviceID("*"), utils.WithResourceId(resID))] = true
+		if len(filters) == 0 {
+			intTemplates[isEvents.ToSubject(rawTemplate, isEvents.WithOwner(owner), utils.WithDeviceID("*"), utils.WithHrefId("*"))] = true
+			continue
+		}
+		for _, v := range filters {
+			deviceID := v.GetDeviceId()
+			if deviceID == "" {
+				deviceID = "*"
 			}
-		case len(filterDeviceIDs) > 0:
-			for devID := range filterDeviceIDs {
-				intTemplates[isEvents.ToSubject(rawTemplate, isEvents.WithOwner(owner), utils.WithDeviceID(devID), utils.WithResourceId("*"))] = true
+			hrefID := v.GetHref()
+			switch hrefID {
+			case "":
+				hrefID = "*"
+			case "*":
+			default:
+				hrefID = utils.HrefToID(hrefID).String()
 			}
-		default:
-			intTemplates[isEvents.ToSubject(rawTemplate, isEvents.WithOwner(owner), utils.WithDeviceID("*"), utils.WithResourceId("*"))] = true
+			intTemplates[isEvents.ToSubject(rawTemplate, isEvents.WithOwner(owner), utils.WithDeviceID(deviceID), utils.WithHrefId(hrefID))] = true
 		}
 	}
 
