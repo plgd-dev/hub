@@ -6,12 +6,10 @@ import storage from 'redux-persist/lib/storage'
 import { createRootReducer } from './reducers'
 import { StoreType as NotificationStoreType } from '../containers/Notifications/slice'
 import { StoreType as DeviceStoreType } from '../containers/Devices/slice'
-import { StoreType as AppStoreType } from '../containers/App/slice'
 
 export type CombinatedStoreType = {
     notifications: NotificationStoreType
     activeNotifications: DeviceStoreType
-    app: AppStoreType
 }
 
 const persistConfig = {

@@ -1,7 +1,6 @@
 import { useContext, useState, useEffect } from 'react'
 import { useIntl } from 'react-intl'
 import { AuthProvider, UserManager } from 'oidc-react'
-import { useDispatch } from 'react-redux'
 
 import PageLoader from '@shared-ui/components/Atomic/PageLoader'
 import { security } from '@shared-ui/common/services/security'
@@ -12,15 +11,12 @@ import { messages as t } from './App.i18n'
 import { AppContext } from './AppContext'
 import { getAppWellKnownConfiguration } from '@/containers/App/AppRest'
 import AppInner from '@/containers/App/AppInner/AppInner'
-import { setRouterBeforeSignIn } from '@/containers/App/slice'
 
 const App = () => {
     const { formatMessage: _ } = useIntl()
     const [wellKnownConfig, setWellKnownConfig] = useState<any>(null)
     const [wellKnownConfigFetched, setWellKnownConfigFetched] = useState(false)
     const [configError, setConfigError] = useState<any>(null)
-    const [userSignedIn, setUserSugnedIn] = useState<boolean>(false)
-    const dispatch = useDispatch()
 
     openTelemetry.init('hub')
 
@@ -82,7 +78,7 @@ const App = () => {
     }
 
     const onSignIn = async () => {
-        setUserSugnedIn(true)
+        window.location.href = window.location.href.split('?')[0]
     }
 
     return (
@@ -90,23 +86,20 @@ const App = () => {
             {...oidcCommonSettings}
             automaticSilentRenew={true}
             clientId={wellKnownConfig.webOauthClient.clientId}
-            onBeforeSignIn={() => {
-                dispatch(setRouterBeforeSignIn(window.location.pathname))
-            }}
             onSignIn={onSignIn}
-            redirectUri={window.location.origin}
+            redirectUri={window.location.href}
             userManager={
                 new UserManager({
                     ...oidcCommonSettings,
                     client_id: wellKnownConfig.webOauthClient.clientId,
-                    redirect_uri: window.location.origin,
+                    redirect_uri: window.location.href,
                     extraQueryParams: {
                         audience: wellKnownConfig.webOauthClient.audience || undefined,
                     },
                 })
             }
         >
-            <AppInner openTelemetry={openTelemetry} userSignedIn={userSignedIn} wellKnownConfig={wellKnownConfig} />
+            <AppInner openTelemetry={openTelemetry} wellKnownConfig={wellKnownConfig} />
         </AuthProvider>
     )
 }
