@@ -7,10 +7,12 @@ import { useLocalStorage } from '@shared-ui/common/hooks'
 import DevicesResourcesList from '@shared-ui/components/Organisms/DevicesResourcesList'
 import DevicesResourcesTree from '@shared-ui/components/Organisms/DevicesResourcesTree'
 import TreeExpander from '@shared-ui/components/Atomic/TreeExpander'
-import Badge from '@shared-ui/components/Atomic/Badge'
 import TableActionButton from '@shared-ui/components/Organisms/TableActionButton'
 import { canCreateResource } from '@shared-ui/common/utils'
 import { IconPlus, IconEdit, IconTrash } from '@shared-ui/components/Atomic/Icon'
+import { tagVariants } from '@shared-ui/components/Atomic/Tag/constants'
+import TagGroup from '@shared-ui/components/Atomic/TagGroup'
+import Tag from '@shared-ui/components/Atomic/Tag'
 
 import { devicesStatuses, RESOURCE_TREE_DEPTH_SIZE } from '../../constants'
 import { messages as t } from '../../Devices.i18n'
@@ -100,6 +102,7 @@ const getTreeColumns = ({ _, onUpdate, onCreate, onDelete, isUnregistered, loadi
             const {
                 original: { deviceId, href },
             } = row
+
             const lastValue = getLastPartOfAResourceHref(value)
             const onLinkClick = deviceId ? () => onUpdate({ deviceId, href: href.replace(/\/$/, '') }) : () => {}
 
@@ -129,9 +132,17 @@ const getTreeColumns = ({ _, onUpdate, onCreate, onDelete, isUnregistered, loadi
                 <div
                     className='tree-expander-container'
                     style={{
-                        marginLeft: `${row.depth === 0 ? 0 : (row.depth + 1) * RESOURCE_TREE_DEPTH_SIZE}px`,
+                        marginLeft: `${row.depth === 0 ? 0 : row.depth * RESOURCE_TREE_DEPTH_SIZE}px`,
                     }}
                 >
+                    {row.depth > 0 && (
+                        <span
+                            style={{
+                                display: 'block',
+                                width: 15,
+                            }}
+                        ></span>
+                    )}
                     <span className='link reveal-icon-on-hover' onClick={onLinkClick}>
                         {`/${lastValue}`}
                     </span>
@@ -139,7 +150,7 @@ const getTreeColumns = ({ _, onUpdate, onCreate, onDelete, isUnregistered, loadi
                 </div>
             )
         },
-        style: { width: '100%' },
+        style: { width: '40%' },
     },
     {
         Header: _(t.types),
@@ -150,17 +161,20 @@ const getTreeColumns = ({ _, onUpdate, onCreate, onDelete, isUnregistered, loadi
             }
 
             return (
-                <div className='badges-box-horizontal'>
+                <TagGroup>
                     {value?.map?.((type: string) => (
-                        <Badge key={type}>{type}</Badge>
+                        <Tag className='tree-custom-tag' key={type} variant={tagVariants.DEFAULT}>
+                            {type}
+                        </Tag>
                     ))}
-                </div>
+                </TagGroup>
             )
         },
     },
     {
         Header: _(t.actions),
         accessor: 'actions',
+        className: 'actions',
         disableSortBy: true,
         Cell: ({ row }: { row: any }) => {
             const {

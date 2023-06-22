@@ -15,7 +15,7 @@ export const RESOURCES_DEFAULT_PAGE_SIZE = 10
 
 export const DEVICES_DEFAULT_PAGE_SIZE = 10
 
-export const RESOURCE_TREE_DEPTH_SIZE = 15 // px
+export const RESOURCE_TREE_DEPTH_SIZE = 24 // px
 
 export const errorCodes = {
     DEADLINE_EXCEEDED: 'DeadlineExceeded',
