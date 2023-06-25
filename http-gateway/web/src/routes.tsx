@@ -21,7 +21,7 @@ export const menu = [
                 id: '1',
                 title: 'Devices',
                 link: '/',
-                paths: ['/', '/devices/:id', '/devices/:id/:href*'],
+                paths: ['/', '/devices/:id', '/devices/:id/:href'],
                 exact: true,
             },
         ],
@@ -51,7 +51,7 @@ export const Routes = () => {
     return (
         <Switch>
             <Route exact component={DevicesListPage} path='/' />
-            <Route component={DevicesDetailsPage} path={['/devices/:id', '/devices/:id/:href*']} />
+            <Route component={DevicesDetailsPage} path={['/devices/:id/:href*']} />
             <Route component={PendingCommandsListPage} path='/pending-commands' />
             {process.env?.REACT_APP_TEST_VIEW === 'true' && <Route component={TestPage} path='/test' />}
             <Route path='/notifications'>

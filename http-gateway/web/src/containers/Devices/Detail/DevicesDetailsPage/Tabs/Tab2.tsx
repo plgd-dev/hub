@@ -142,6 +142,7 @@ const Tab2: FC<Props> = (props) => {
                     resourceData,
                 })
                 setResourceModal(true)
+                history.replace(`/devices/${id}${href}`)
             }
         } catch (error) {
             if (error && isMounted.current) {
@@ -296,7 +297,7 @@ const Tab2: FC<Props> = (props) => {
                 isNotificationActive={isNotificationActive}
                 isUnregistered={isUnregistered}
                 loading={savingResource}
-                onClose={() => setResourceModal(false)}
+                onClose={handleCloseUpdateModal}
                 retrieving={loadingResource}
                 show={resourceModal}
                 toggleActiveNotification={toggleActiveNotification}

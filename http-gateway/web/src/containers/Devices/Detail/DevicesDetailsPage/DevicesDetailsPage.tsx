@@ -33,11 +33,14 @@ const DevicesDetailsPage = () => {
     const { formatMessage: _ } = useIntl()
     const {
         id,
+        href: hrefParam,
     }: {
         id: string
+        href: string
     } = useParams()
+
     const [domReady, setDomReady] = useState(false)
-    const [activeTabItem, setActiveTabItem] = useState(0)
+    const [activeTabItem, setActiveTabItem] = useState(hrefParam ? 1 : 0)
     const [twinSyncLoading, setTwinSyncLoading] = useState(false)
 
     const isMounted = useIsMounted()
@@ -210,6 +213,7 @@ const DevicesDetailsPage = () => {
                 )}
 
             <Tabs
+                activeItem={activeTabItem}
                 fullHeight={true}
                 onItemChange={handleTabChange}
                 tabs={[
