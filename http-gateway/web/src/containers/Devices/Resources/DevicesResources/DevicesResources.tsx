@@ -120,10 +120,9 @@ const getTreeColumns = ({ _, onUpdate, onCreate, onDelete, isUnregistered, loadi
                                 marginLeft: `${row.depth * RESOURCE_TREE_DEPTH_SIZE}px`,
                             }}
                         />
-                        <span className={deviceId ? 'link reveal-icon-on-hover' : ''} onClick={onLinkClick}>
+                        <span className={classNames(deviceId && 'link')} onClick={onLinkClick}>
                             {`/${lastValue}/`}
                         </span>
-                        {deviceId && <i className='fas fa-pen' />}
                     </div>
                 )
             }
@@ -143,10 +142,9 @@ const getTreeColumns = ({ _, onUpdate, onCreate, onDelete, isUnregistered, loadi
                             }}
                         ></span>
                     )}
-                    <span className='link reveal-icon-on-hover' onClick={onLinkClick}>
+                    <span className='link' onClick={onLinkClick}>
                         {`/${lastValue}`}
                     </span>
-                    <i className='fas fa-pen' />
                 </div>
             )
         },
