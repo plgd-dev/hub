@@ -54,6 +54,28 @@ var bitmaskToSubjectsTemplate = []subject{
 	{bitmask: FilterBitmaskResourceUpdated, subject: isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceResourcesResourceEvent, isEvents.WithEventType((&events.ResourceUpdated{}).EventType()))},
 }
 
+func convertTemplateToSubjects(owner string, filters map[uuid.UUID]*commands.ResourceId, rawTemplate string, subjects map[string]bool) {
+	if len(filters) == 0 {
+		subjects[isEvents.ToSubject(rawTemplate, isEvents.WithOwner(owner), utils.WithDeviceID("*"), utils.WithHrefId("*"))] = true
+		return
+	}
+	for _, v := range filters {
+		deviceID := v.GetDeviceId()
+		if deviceID == "" {
+			deviceID = "*"
+		}
+		hrefID := v.GetHref()
+		switch hrefID {
+		case "":
+			hrefID = "*"
+		case "*":
+		default:
+			hrefID = utils.HrefToID(hrefID).String()
+		}
+		subjects[isEvents.ToSubject(rawTemplate, isEvents.WithOwner(owner), utils.WithDeviceID(deviceID), utils.WithHrefId(hrefID))] = true
+	}
+}
+
 func ConvertToSubjects(owner string, filters map[uuid.UUID]*commands.ResourceId, bitmask FilterBitmask) []string {
 	var rawTemplates []string
 	for _, s := range bitmaskToSubjectsTemplate {
@@ -63,34 +85,16 @@ func ConvertToSubjects(owner string, filters map[uuid.UUID]*commands.ResourceId,
 		}
 	}
 
-	intTemplates := make(map[string]bool)
+	subjects := make(map[string]bool)
 	for _, rawTemplate := range rawTemplates {
-		if len(filters) == 0 {
-			intTemplates[isEvents.ToSubject(rawTemplate, isEvents.WithOwner(owner), utils.WithDeviceID("*"), utils.WithHrefId("*"))] = true
-			continue
-		}
-		for _, v := range filters {
-			deviceID := v.GetDeviceId()
-			if deviceID == "" {
-				deviceID = "*"
-			}
-			hrefID := v.GetHref()
-			switch hrefID {
-			case "":
-				hrefID = "*"
-			case "*":
-			default:
-				hrefID = utils.HrefToID(hrefID).String()
-			}
-			intTemplates[isEvents.ToSubject(rawTemplate, isEvents.WithOwner(owner), utils.WithDeviceID(deviceID), utils.WithHrefId(hrefID))] = true
-		}
+		convertTemplateToSubjects(owner, filters, rawTemplate, subjects)
 	}
 
-	if len(intTemplates) == 0 {
+	if len(subjects) == 0 {
 		return nil
 	}
-	templates := make([]string, 0, len(intTemplates))
-	for template := range intTemplates {
+	templates := make([]string, 0, len(subjects))
+	for template := range subjects {
 		templates = append(templates, template)
 	}
 	return templates

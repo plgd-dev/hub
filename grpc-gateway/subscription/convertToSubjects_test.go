@@ -168,6 +168,43 @@ func TestConvertToSubjects(t *testing.T) {
 				isEvents.ToSubject(isEvents.PlgdOwnersOwnerRegistrations+".>", isEvents.WithOwner("c")),
 			},
 		},
+		{
+			name: "device and resourceID",
+			args: args{
+				req: &pb.SubscribeToEvents_CreateSubscription{
+					DeviceIdFilter:   []string{resourceID.GetDeviceId()},
+					ResourceIdFilter: []string{resourceID.ToString()},
+					EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
+						pb.SubscribeToEvents_CreateSubscription_DEVICE_METADATA_UPDATED, pb.SubscribeToEvents_CreateSubscription_REGISTERED, pb.SubscribeToEvents_CreateSubscription_UNREGISTERED, pb.SubscribeToEvents_CreateSubscription_RESOURCE_CHANGED,
+					},
+				},
+				owner: "c",
+			},
+			want: []string{
+				isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceMetadataEvent, isEvents.WithOwner("c"), utils.WithDeviceID(resourceID.GetDeviceId()), isEvents.WithEventType((&events.DeviceMetadataUpdated{}).EventType())),
+				isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceResourcesResourceEvent, isEvents.WithOwner("c"), utils.WithDeviceID(resourceID.GetDeviceId()), utils.WithHrefId("*"), isEvents.WithEventType((&events.ResourceChanged{}).EventType())),
+				isEvents.ToSubject(isEvents.PlgdOwnersOwnerRegistrations+".>", isEvents.WithOwner("c")),
+			},
+		},
+		{
+			name: "device, href and resourceID",
+			args: args{
+				req: &pb.SubscribeToEvents_CreateSubscription{
+					DeviceIdFilter:   []string{resourceID.GetDeviceId()},
+					HrefFilter:       []string{resourceID.GetHref()},
+					ResourceIdFilter: []string{resourceID.ToString()},
+					EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
+						pb.SubscribeToEvents_CreateSubscription_DEVICE_METADATA_UPDATED, pb.SubscribeToEvents_CreateSubscription_REGISTERED, pb.SubscribeToEvents_CreateSubscription_UNREGISTERED, pb.SubscribeToEvents_CreateSubscription_RESOURCE_CHANGED,
+					},
+				},
+				owner: "c",
+			},
+			want: []string{
+				isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceMetadataEvent, isEvents.WithOwner("c"), utils.WithDeviceID(resourceID.GetDeviceId()), isEvents.WithEventType((&events.DeviceMetadataUpdated{}).EventType())),
+				isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceResourcesResourceEvent, isEvents.WithOwner("c"), utils.WithDeviceID(resourceID.GetDeviceId()), utils.WithHrefId(utils.HrefToID(resourceID.GetHref()).String()), isEvents.WithEventType((&events.ResourceChanged{}).EventType())),
+				isEvents.ToSubject(isEvents.PlgdOwnersOwnerRegistrations+".>", isEvents.WithOwner("c")),
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

@@ -72,40 +72,50 @@ func (s *Sub) CorrelationId() string {
 	return s.correlationID
 }
 
+func (s *Sub) setFilters(filter *commands.ResourceId) (bool, error) {
+	if filter.GetDeviceId() == "*" && filter.GetHref() == "*" {
+		s.filteredHrefIDs = make(set)
+		s.filteredDeviceIDs = make(set)
+		s.filteredResourceIDs = make(set)
+		return false, nil
+	}
+	if filter.GetDeviceId() != "*" && filter.GetHref() != "*" {
+		d, err := uuid.Parse(filter.GetDeviceId())
+		if err != nil {
+			return false, fmt.Errorf("invalid deviceId('%v'): %w", filter.GetDeviceId(), err)
+		}
+		s.filteredResourceIDs[filter.ToUUID()] = struct{}{}
+		s.filteredDeviceIDs[d] = struct{}{}
+		return true, nil
+	}
+	if filter.GetHref() != "*" {
+		h := utils.HrefToID(filter.GetHref())
+		s.filteredHrefIDs[h] = struct{}{}
+	}
+	if filter.GetDeviceId() != "*" {
+		d, err := uuid.Parse(filter.GetDeviceId())
+		if err != nil {
+			return false, fmt.Errorf("invalid deviceId('%v'): %w", filter.GetDeviceId(), err)
+		}
+		s.filteredDeviceIDs[d] = struct{}{}
+	}
+	return true, nil
+}
+
 func (s *Sub) Init(owner string, subCache *SubscriptionsCache) error {
 	init := s.init
 	s.init = nil
 	for _, filter := range init.deviceHrefFilters {
-		if filter.GetDeviceId() == "*" && filter.GetHref() == "*" {
-			s.filteredHrefIDs = make(set)
-			s.filteredDeviceIDs = make(set)
-			s.filteredResourceIDs = make(set)
+		wantContinue, err := s.setFilters(filter)
+		if err != nil {
+			return err
+		}
+		if !wantContinue {
 			break
-		}
-		if filter.GetDeviceId() != "*" && filter.GetHref() != "*" {
-			d, err := uuid.Parse(filter.GetDeviceId())
-			if err != nil {
-				return fmt.Errorf("invalid deviceId('%v'): %w", filter.GetDeviceId(), err)
-			}
-			s.filteredResourceIDs[filter.ToUUID()] = struct{}{}
-			s.filteredDeviceIDs[d] = struct{}{}
-			continue
-		}
-		if filter.GetHref() != "*" {
-			h := utils.HrefToID(filter.GetHref())
-			s.filteredHrefIDs[h] = struct{}{}
-		}
-		if filter.GetDeviceId() != "*" {
-			d, err := uuid.Parse(filter.GetDeviceId())
-			if err != nil {
-				return fmt.Errorf("invalid deviceId('%v'): %w", filter.GetDeviceId(), err)
-			}
-			s.filteredDeviceIDs[d] = struct{}{}
 		}
 	}
 	subjects := ConvertToSubjects(owner, init.deviceHrefFilters, s.filter)
 	var closeFn fn.FuncList
-
 	for _, subject := range subjects {
 		closeSub, err := subCache.Subscribe(subject, s.ProcessEvent)
 		if err != nil {
@@ -210,8 +220,7 @@ func removeDuplicateStrings(s []string) []string {
 	return s[:prev]
 }
 
-func normalizeFilters(req *pb.SubscribeToEvents_CreateSubscription) ([]string, []string, []string, FilterBitmask) {
-	bitmask := EventsFilterToBitmask(req.GetEventFilter())
+func toFilters(req *pb.SubscribeToEvents_CreateSubscription) ([]string, []string, []string) {
 	filterDeviceIDs := make([]string, 0, len(req.GetDeviceIdFilter())+len(req.GetResourceIdFilter()))
 	filterHrefs := make([]string, 0, len(req.GetHrefFilter())+len(req.GetResourceIdFilter()))
 	filterResourceIDs := make([]string, 0, len(req.GetResourceIdFilter()))
@@ -230,6 +239,13 @@ func normalizeFilters(req *pb.SubscribeToEvents_CreateSubscription) ([]string, [
 			}
 		}
 	}
+	return filterDeviceIDs, filterHrefs, filterResourceIDs
+}
+
+func normalizeFilters(req *pb.SubscribeToEvents_CreateSubscription) ([]string, []string, []string, FilterBitmask) {
+	bitmask := EventsFilterToBitmask(req.GetEventFilter())
+	filterDeviceIDs, filterHrefs, filterResourceIDs := toFilters(req)
+
 	for _, d := range req.GetDeviceIdFilter() {
 		if d != "*" {
 			filterDeviceIDs = append(filterDeviceIDs, d)
@@ -253,6 +269,37 @@ func normalizeFilters(req *pb.SubscribeToEvents_CreateSubscription) ([]string, [
 	return removeDuplicateStrings(filterDeviceIDs), removeDuplicateStrings(filterHrefs), removeDuplicateStrings(filterResourceIDs), bitmask
 }
 
+func addHrefFilters(filterSlice []string, deviceHrefFilters map[uuid.UUID]*commands.ResourceId) {
+	for _, h := range filterSlice {
+		deviceHrefFilters[utils.HrefToID(h)] = commands.NewResourceID("*", h)
+	}
+}
+
+func addDeviceFilters(filterSlice []string, deviceHrefFilters map[uuid.UUID]*commands.ResourceId) {
+	for _, d := range filterSlice {
+		deviceHrefFilters[utils.HrefToID(d+"/*")] = commands.NewResourceID(d, "*")
+	}
+}
+
+func addResourceIdFilters(filterSlice []string, deviceHrefFilters map[uuid.UUID]*commands.ResourceId) {
+	for _, r := range filterSlice {
+		v := commands.ResourceIdFromString(r)
+		if v == nil {
+			// invalid resource id - skip
+			continue
+		}
+		if _, ok := deviceHrefFilters[utils.HrefToID(v.GetHref())]; ok {
+			// already added - skip because it is more specific than '*/href' subscription
+			continue
+		}
+		if _, ok := deviceHrefFilters[utils.HrefToID(v.GetDeviceId()+"/*")]; ok {
+			// already added - skip because it is more specific than 'deviceId/*' subscription
+			continue
+		}
+		deviceHrefFilters[v.ToUUID()] = v
+	}
+}
+
 func getFilters(req *pb.SubscribeToEvents_CreateSubscription) (map[uuid.UUID]*commands.ResourceId, FilterBitmask) {
 	filterDeviceIDs, filterHrefs, filterResourceIDs, bitmask := normalizeFilters(req)
 	// all events
@@ -260,74 +307,42 @@ func getFilters(req *pb.SubscribeToEvents_CreateSubscription) (map[uuid.UUID]*co
 		return nil, bitmask
 	}
 	deviceHrefFilters := make(map[uuid.UUID]*commands.ResourceId)
+
 	if len(filterDeviceIDs) == 0 && len(req.GetResourceIdFilter()) == 0 {
-		for _, h := range filterHrefs {
-			deviceHrefFilters[utils.HrefToID(h)] = commands.NewResourceID("*", h)
-		}
+		addHrefFilters(filterHrefs, deviceHrefFilters)
 		return deviceHrefFilters, bitmask
 	}
+
 	if len(filterHrefs) == 0 && len(req.GetResourceIdFilter()) == 0 {
-		for _, d := range filterDeviceIDs {
-			deviceHrefFilters[utils.HrefToID(d)] = commands.NewResourceID(d, "*")
-		}
+		addDeviceFilters(filterDeviceIDs, deviceHrefFilters)
 		return deviceHrefFilters, bitmask
 	}
+
 	if len(filterDeviceIDs) == 0 && len(filterHrefs) == 0 {
-		for _, r := range req.GetResourceIdFilter() {
-			v := commands.ResourceIdFromString(r)
-			if v == nil {
-				continue
-			}
-			deviceHrefFilters[v.ToUUID()] = v
-		}
+		addResourceIdFilters(req.GetResourceIdFilter(), deviceHrefFilters)
 		return deviceHrefFilters, bitmask
 	}
+
 	if len(filterDeviceIDs) == 0 {
-		for _, h := range filterHrefs {
-			deviceHrefFilters[utils.HrefToID(h)] = commands.NewResourceID("*", h)
-		}
-		for _, r := range req.GetResourceIdFilter() {
-			v := commands.ResourceIdFromString(r)
-			if v == nil {
-				continue
-			}
-			if _, ok := deviceHrefFilters[utils.HrefToID(v.GetHref())]; ok {
-				// already added
-				continue
-			}
-			deviceHrefFilters[v.ToUUID()] = v
-		}
+		addHrefFilters(filterHrefs, deviceHrefFilters)
+		addResourceIdFilters(req.GetResourceIdFilter(), deviceHrefFilters)
 		return deviceHrefFilters, bitmask
 	}
+
 	if len(filterHrefs) == 0 {
-		for _, d := range filterDeviceIDs {
-			deviceHrefFilters[utils.HrefToID(d)] = commands.NewResourceID(d, "*")
-		}
-		for _, r := range req.GetResourceIdFilter() {
-			v := commands.ResourceIdFromString(r)
-			if v == nil {
-				continue
-			}
-			if _, ok := deviceHrefFilters[utils.HrefToID(v.GetDeviceId())]; ok {
-				// already added
-				continue
-			}
-			deviceHrefFilters[v.ToUUID()] = v
-		}
+		addDeviceFilters(filterDeviceIDs, deviceHrefFilters)
+		addResourceIdFilters(req.GetResourceIdFilter(), deviceHrefFilters)
 		return deviceHrefFilters, bitmask
 	}
+
 	for _, d := range filterDeviceIDs {
 		for _, h := range filterHrefs {
 			deviceHrefFilters[commands.NewResourceID(d, h).ToUUID()] = commands.NewResourceID(d, h)
 		}
 	}
-	for _, r := range req.GetResourceIdFilter() {
-		v := commands.ResourceIdFromString(r)
-		if v == nil {
-			continue
-		}
-		deviceHrefFilters[v.ToUUID()] = v
-	}
+
+	addResourceIdFilters(req.GetResourceIdFilter(), deviceHrefFilters)
+
 	return deviceHrefFilters, bitmask
 }
 
