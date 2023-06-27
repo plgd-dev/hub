@@ -2,11 +2,11 @@ package subscription
 
 import (
 	"fmt"
-	"sort"
 
 	"github.com/google/uuid"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	"github.com/plgd-dev/hub/v2/pkg/fn"
+	"github.com/plgd-dev/hub/v2/pkg/strings"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/utils"
 	"go.uber.org/atomic"
@@ -203,23 +203,6 @@ func (s *Sub) Close() error {
 	return nil
 }
 
-func removeDuplicateStrings(s []string) []string {
-	if len(s) < 1 {
-		return s
-	}
-
-	sort.Strings(s)
-	prev := 1
-	for curr := 1; curr < len(s); curr++ {
-		if s[curr-1] != s[curr] {
-			s[prev] = s[curr]
-			prev++
-		}
-	}
-
-	return s[:prev]
-}
-
 func toFilters(req *pb.SubscribeToEvents_CreateSubscription) ([]string, []string, []string) {
 	filterDeviceIDs := make([]string, 0, len(req.GetDeviceIdFilter())+len(req.GetResourceIdFilter()))
 	filterHrefs := make([]string, 0, len(req.GetHrefFilter())+len(req.GetResourceIdFilter()))
@@ -266,7 +249,7 @@ func normalizeFilters(req *pb.SubscribeToEvents_CreateSubscription) ([]string, [
 		filterHrefs = nil
 	}
 
-	return removeDuplicateStrings(filterDeviceIDs), removeDuplicateStrings(filterHrefs), removeDuplicateStrings(filterResourceIDs), bitmask
+	return strings.Unique(filterDeviceIDs), strings.Unique(filterHrefs), strings.Unique(filterResourceIDs), bitmask
 }
 
 func addHrefFilters(filterSlice []string, deviceHrefFilters map[uuid.UUID]*commands.ResourceId) {
