@@ -1,5 +1,5 @@
 import React, { FC, useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import { useIntl } from 'react-intl'
 import { useResizeDetector } from 'react-resize-detector'
 import omit from 'lodash/omit'
@@ -20,20 +20,15 @@ import { defaultNewResource, resourceModalTypes } from '@/containers/Devices/con
 import { handleCreateResourceErrors, handleDeleteResourceErrors, handleUpdateResourceErrors, isErrorOnlyWarning } from '@/containers/Devices/utils'
 import { DevicesDetailsResourceModalData } from '@/containers/Devices/Detail/DevicesDetailsPage/DevicesDetailsPage.types'
 import { messages as t } from '@/containers/Devices/Devices.i18n'
-import { history } from '@/store'
 import { isNotificationActive, toggleActiveNotification } from '@/containers/Devices/slice'
 import { deviceResourceUpdateListener } from '@/containers/Devices/websockets'
 import { createResourceNotificationId } from '@/containers/PendingCommands/utils'
 
 const Tab2: FC<Props> = (props) => {
     const { deviceStatus, deviceName, isOnline, isActiveTab, isUnregistered, loading, resourcesData, loadingResources, refreshResources } = props
-    const {
-        id,
-        href: hrefParam,
-    }: {
-        id: string
-        href: string
-    } = useParams()
+    const { id: routerId, ...others } = useParams()
+    const id = routerId || ''
+    const hrefParam = others['*'] || ''
     const [resourceModalData, setResourceModalData] = useState<DevicesDetailsResourceModalData | undefined>(undefined)
     const [loadingResource, setLoadingResource] = useState(false)
     const [savingResource, setSavingResource] = useState(false)
@@ -43,6 +38,8 @@ const Tab2: FC<Props> = (props) => {
     const resources = resourcesData?.[0]?.resources || []
     const { formatMessage: _ } = useIntl()
     const isMounted = useIsMounted()
+    const navigate = useNavigate()
+
     const wellKnownConfig = security.getWellKnowConfig() as WellKnownConfigType & {
         defaultCommandTimeToLive: number
     }
@@ -142,7 +139,7 @@ const Tab2: FC<Props> = (props) => {
                     resourceData,
                 })
                 setResourceModal(true)
-                history.replace(`/devices/${id}${href}`)
+                navigate(`/devices/${id}/resources${href}`, { replace: true })
             }
         } catch (error) {
             if (error && isMounted.current) {
@@ -151,6 +148,7 @@ const Tab2: FC<Props> = (props) => {
                     title: _(t.resourceRetrieveError),
                     message: getApiErrorMessage(error),
                 })
+                navigate(`/devices/${id}/resources`, { replace: true })
             }
         }
     }
@@ -240,10 +238,7 @@ const Tab2: FC<Props> = (props) => {
     const handleCloseUpdateModal = () => {
         setResourceModalData(undefined)
 
-        if (hrefParam) {
-            // Remove the href from the URL when the update modal is closed
-            history.replace(window.location.pathname.replace(`/${hrefParam}`, ''))
-        }
+        navigate(`/devices/${id}/resources`, { replace: true })
     }
 
     const closeDeleteModal = () => {

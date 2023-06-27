@@ -1,7 +1,7 @@
 import React, { FC, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { useIntl } from 'react-intl'
 import isFunction from 'lodash/isFunction'
-import { Link, useHistory } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 
 import { getApiErrorMessage } from '@shared-ui/common/utils'
 import { useIsMounted } from '@shared-ui/common/hooks'
@@ -50,7 +50,8 @@ const DevicesListPage: FC<any> = () => {
     const [deleting, setDeleting] = useState(false)
     const [unselectRowsToken, setUnselectRowsToken] = useState(1)
     const isMounted = useIsMounted()
-    const history = useHistory()
+    const navigate = useNavigate()
+
     const combinedSelectedDevices = singleDevice ? [singleDevice] : selectedDevices
     const { footerExpanded, setFooterExpanded, collapsed } = useContext(AppContext)
 
@@ -198,7 +199,7 @@ const DevicesListPage: FC<any> = () => {
                                     icon: <IconTrash />,
                                 },
                                 {
-                                    onClick: () => history.push(`/devices/${id}`),
+                                    onClick: () => navigate(`/devices/${id}`),
                                     label: _(t.view),
                                     icon: <IconShowPassword />,
                                 },

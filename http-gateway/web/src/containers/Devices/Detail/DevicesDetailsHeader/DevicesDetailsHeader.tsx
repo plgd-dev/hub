@@ -1,7 +1,7 @@
 import React, { FC, memo, useEffect, useMemo, useState } from 'react'
 import { useIntl } from 'react-intl'
 import classNames from 'classnames'
-import { useHistory } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 
 import Button from '@shared-ui/components/Atomic/Button'
 import { WebSocketEventClient } from '@shared-ui/common/services'
@@ -22,7 +22,7 @@ const DevicesDetailsHeader: FC<Props> = memo((props) => {
     const [deleteModalOpen, setDeleteModalOpen] = useState(false)
     const [deleting, setDeleting] = useState(false)
     const isMounted = useIsMounted()
-    const history = useHistory()
+    const navigate = useNavigate()
     const canUpdate = useMemo(() => canChangeDeviceName(links) && isOnline, [links, isOnline])
 
     const greyedOutClassName = classNames({
@@ -62,7 +62,7 @@ const DevicesDetailsHeader: FC<Props> = memo((props) => {
                 WebSocketEventClient.unsubscribe(resourceRegistrationObservationWSKey)
 
                 // Redirect to the device page after a deletion
-                history.push(`/device`)
+                navigate(`/device`)
             }
         } catch (error) {
             if (isMounted.current) {

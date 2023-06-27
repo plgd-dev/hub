@@ -1,5 +1,5 @@
 import { FC, useEffect } from 'react'
-import { useLocation } from 'react-router'
+import { useLocation } from 'react-router-dom'
 
 import LeftPanel, { parseActiveItem } from '@shared-ui/components/Layout/LeftPanel'
 import { Props } from '@shared-ui/components/Layout/LeftPanel/LeftPanel.types'

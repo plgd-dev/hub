@@ -1,39 +1,24 @@
-import { SyntheticEvent, useMemo, useState } from 'react'
-import { Router } from 'react-router-dom'
+import { useMemo } from 'react'
+import { BrowserRouter } from 'react-router-dom'
 import { useAuth } from 'oidc-react'
 import { Global, ThemeProvider } from '@emotion/react'
 import { Helmet } from 'react-helmet'
-import { useIntl } from 'react-intl'
-import { useDispatch, useSelector } from 'react-redux'
 
-import Layout from '@shared-ui/components/Layout'
-import Header from '@shared-ui/components/Layout/Header'
-import UserWidget from '@shared-ui/components/Layout/Header/UserWidget'
-import { parseActiveItem } from '@shared-ui/components/Layout/LeftPanel'
-import VersionMark from '@shared-ui/components/Atomic/VersionMark'
-import { severities } from '@shared-ui/components/Atomic/VersionMark/constants'
 import { InitServices } from '@shared-ui/common/services/init-services'
 import { BrowserNotificationsContainer } from '@shared-ui/components/Atomic/Toast'
 import { ToastContainer } from '@shared-ui/components/Atomic/Notification'
 import { useLocalStorage, WellKnownConfigType } from '@shared-ui/common/hooks'
 import light from '@shared-ui/components/Atomic/_theme/light'
-import { MenuItem } from '@shared-ui/components/Layout/LeftPanel/LeftPanel.types'
 import { security } from '@shared-ui/common/services'
-import NotificationCenter from '@shared-ui/components/Atomic/NotificationCenter'
 
 import { AppContext } from '@/containers/App/AppContext'
-import { history } from '@/store'
 import appConfig from '@/config'
-import { mather, menu, Routes } from '@/routes'
 import AppLoader from '@/containers/App/AppLoader/AppLoader'
 import { Props } from './AppInner.types'
 import { deviceStatusListener } from '../../Devices/websockets'
-import LeftPanelWrapper from '@/containers/App/AppInner/LeftPanelWrapper/LeftPanelWrapper'
 import { globalStyle } from './AppInner.global.styles'
 import { AppContextType } from '@/containers/App/AppContext.types'
-import { messages as t } from '../App.i18n'
-import { readAllNotifications, setNotifications } from '@/containers/Notifications/slice'
-import { CombinatedStoreType } from '@/store/store'
+import AppLayout from '@/containers/App/AppLayout/AppLayout'
 
 const getBuildInformation = (wellKnownConfig: WellKnownConfigType) => ({
     buildDate: wellKnownConfig?.buildDate || '',
@@ -47,13 +32,8 @@ const AppInner = (props: Props) => {
     const { wellKnownConfig, openTelemetry } = props
     const { userData, userManager } = useAuth()
     const buildInformation = getBuildInformation(wellKnownConfig)
-    const { formatMessage: _ } = useIntl()
-    const dispatch = useDispatch()
-
-    const notifications = useSelector((state: CombinatedStoreType) => state.notifications)
 
     const [footerExpanded, setFooterExpanded] = useLocalStorage('footerPanelExpanded', false)
-    const [activeItem, setActiveItem] = useState(parseActiveItem(history.location.pathname, menu, mather))
     const [collapsed, setCollapsed] = useLocalStorage('leftPanelCollapsed', true)
 
     const toastNotifications = false
@@ -82,75 +62,17 @@ const AppInner = (props: Props) => {
         return <AppLoader />
     }
 
-    const handleItemClick = (item: MenuItem, e: SyntheticEvent) => {
-        e.preventDefault()
-
-        setActiveItem(item.id)
-        item.link && history.push(item.link)
-    }
-
-    const handleLocationChange = (id: string) => {
-        id !== activeItem && setActiveItem(id)
-    }
-
     return (
         <AppContext.Provider value={contextValue}>
             <ThemeProvider theme={light}>
                 <InitServices deviceStatusListener={deviceStatusListener} />
                 <Helmet defaultTitle={appConfig.appName} titleTemplate={`%s | ${appConfig.appName}`} />
-                <Router history={history}>
-                    <Layout
-                        content={<Routes />}
-                        header={
-                            <Header
-                                breadcrumbs={<div id='breadcrumbsPortalTarget'></div>}
-                                notificationCenter={
-                                    <NotificationCenter
-                                        defaultNotification={notifications}
-                                        i18n={{
-                                            notifications: _(t.notifications),
-                                            noNotifications: _(t.noNotifications),
-                                            markAllAsRead: _(t.markAllAsRead),
-                                        }}
-                                        onNotification={(n: any) => {
-                                            dispatch(setNotifications(n))
-                                        }}
-                                        readAllNotifications={() => {
-                                            dispatch(readAllNotifications())
-                                        }}
-                                    />
-                                }
-                                userWidget={
-                                    <UserWidget
-                                        description={userData?.profile?.family_name}
-                                        image={userData?.profile?.picture}
-                                        name={userData?.profile?.name || ''}
-                                    />
-                                }
-                            />
-                        }
-                        leftPanel={
-                            <LeftPanelWrapper
-                                activeId={activeItem}
-                                collapsed={collapsed}
-                                menu={menu}
-                                onItemClick={handleItemClick}
-                                onLocationChange={handleLocationChange}
-                                setCollapsed={setCollapsed}
-                                // newFeature={{
-                                //     onClick: () => console.log('click'),
-                                //     onClose: () => console.log('close'),
-                                // }}
-                                versionMark={<VersionMark severity={severities.SUCCESS} versionText='Version 2.02' />}
-                            />
-                        }
-                    />
+                <BrowserRouter>
+                    <AppLayout collapsed={collapsed} setCollapsed={setCollapsed} userData={userData} />
                     <Global styles={globalStyle(toastNotifications)} />
-
                     <ToastContainer portalTarget={document.getElementById('toast-root')} showNotifications={true} />
-
                     <BrowserNotificationsContainer />
-                </Router>
+                </BrowserRouter>
             </ThemeProvider>
         </AppContext.Provider>
     )

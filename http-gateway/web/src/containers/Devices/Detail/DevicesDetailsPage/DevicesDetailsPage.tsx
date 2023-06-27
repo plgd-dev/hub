@@ -1,7 +1,7 @@
-import React, { useCallback, useContext, useEffect, useState } from 'react'
+import React, { FC, useCallback, useContext, useEffect, useState } from 'react'
 import ReactDOM from 'react-dom'
 import { useIntl } from 'react-intl'
-import { useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import isFunction from 'lodash/isFunction'
 
 import NotFoundPage from '@shared-ui/components/Templates/NotFoundPage'
@@ -25,22 +25,20 @@ import { useDeviceDetails, useDevicePendingCommands, useDevicesResources, useDev
 import { messages as t } from '../../Devices.i18n'
 import './DevicesDetailsPage.scss'
 import Tab1 from './Tabs/Tab1'
-import Tab2 from '@/containers/Devices/Detail/DevicesDetailsPage/Tabs/Tab2'
+import Tab2 from './Tabs/Tab2'
 import { PendingCommandsExpandableList } from '@/containers/PendingCommands'
 import { AppContext } from '@/containers/App/AppContext'
+import { Props } from './DevicesDetailsPage.types'
 
-const DevicesDetailsPage = () => {
+const DevicesDetailsPage: FC<Props> = (props) => {
+    const { defaultActiveTab } = props
     const { formatMessage: _ } = useIntl()
-    const {
-        id,
-        href: hrefParam,
-    }: {
-        id: string
-        href: string
-    } = useParams()
+    const { id: routerId } = useParams()
+    const navigate = useNavigate()
+    const id = routerId || ''
 
     const [domReady, setDomReady] = useState(false)
-    const [activeTabItem, setActiveTabItem] = useState(hrefParam ? 1 : 0)
+    const [activeTabItem, setActiveTabItem] = useState(defaultActiveTab ?? 0)
     const [twinSyncLoading, setTwinSyncLoading] = useState(false)
 
     const isMounted = useIsMounted()
@@ -82,6 +80,8 @@ const DevicesDetailsPage = () => {
 
     const handleTabChange = useCallback((i: number) => {
         setActiveTabItem(i)
+
+        navigate(`/devices/${id}${i === 1 ? '/resources' : ''}`, { replace: true })
 
         refreshPendingCommands()
         refreshSoftwareUpdate()
