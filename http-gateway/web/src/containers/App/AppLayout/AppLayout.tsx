@@ -26,7 +26,7 @@ const AppLayout: FC<Props> = (props) => {
     const dispatch = useDispatch()
     const navigate = useNavigate()
 
-    const [activeItem, setActiveItem] = useState(parseActiveItem(location.pathname, menu!, mather))
+    const [activeItem, setActiveItem] = useState(parseActiveItem(location.pathname, menu, mather))
     const notifications = useSelector((state: CombinatedStoreType) => state.notifications)
 
     const handleItemClick = (item: MenuItem, e: SyntheticEvent) => {
