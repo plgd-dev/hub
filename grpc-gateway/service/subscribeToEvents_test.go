@@ -302,6 +302,105 @@ func TestRequestHandlerSubscribeForCreateEvents(t *testing.T) {
 	}, ev, "")
 }
 
+func TestRequestHandlerSubscribeForHrefEvents(t *testing.T) {
+	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
+	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
+	defer cancel()
+
+	tearDown := serviceTest.SetUp(ctx, t)
+	defer tearDown()
+	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
+
+	conn, err := grpc.Dial(config.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+		RootCAs: test.GetRootCertificatePool(t),
+	})))
+	require.NoError(t, err)
+	defer func() {
+		_ = conn.Close()
+	}()
+	c := pb.NewGrpcGatewayClient(conn)
+
+	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.ACTIVE_COAP_SCHEME+"://"+config.COAP_GW_HOST, test.GetAllBackendResourceLinks())
+	defer shutdownDevSim()
+
+	client, err := client.New(c).GrpcGatewayClient().SubscribeToEvents(ctx)
+	require.NoError(t, err)
+
+	err = client.Send(&pb.SubscribeToEvents{
+		CorrelationId: "testToken",
+		Action: &pb.SubscribeToEvents_CreateSubscription_{
+			CreateSubscription: &pb.SubscribeToEvents_CreateSubscription{
+				HrefFilter: []string{
+					test.TestResourceSwitchesHref,
+				},
+			},
+		},
+	})
+	require.NoError(t, err)
+
+	ev, err := client.Recv()
+	require.NoError(t, err)
+	expectedEvent := &pb.Event{
+		SubscriptionId: ev.SubscriptionId,
+		Type:           pbTest.OperationProcessedOK(),
+		CorrelationId:  "testToken",
+	}
+	test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
+
+	const switchID = "1"
+	switchData := test.MakeSwitchResourceDefaultData()
+	test.AddDeviceSwitchResources(ctx, t, deviceID, c, switchID)
+
+	for {
+		ev, err = client.Recv()
+		require.NoError(t, err)
+		if v, ok := ev.GetType().(interface{ GetResourceId() *commands.ResourceId }); ok {
+			require.Equal(t, test.TestResourceSwitchesHref, v.GetResourceId().GetHref())
+		}
+		if ev.GetResourceCreatePending() != nil {
+			pbTest.CmpEvent(t, &pb.Event{
+				SubscriptionId: ev.SubscriptionId,
+				CorrelationId:  "testToken",
+				Type: &pb.Event_ResourceCreatePending{
+					ResourceCreatePending: pbTest.MakeResourceCreatePending(t, deviceID, test.TestResourceSwitchesHref, "",
+						switchData),
+				},
+			}, ev, "")
+			break
+		}
+	}
+
+	time.Sleep(time.Second)
+
+	switchLink := test.DefaultSwitchResourceLink("", switchID)
+	switchData = test.MakeSwitchResourceData(map[string]interface{}{
+		"href": switchLink.Href,
+		"rep": map[string]interface{}{
+			"if":    switchLink.Interfaces,
+			"rt":    switchLink.ResourceTypes,
+			"value": false,
+		},
+	})
+
+	for {
+		ev, err = client.Recv()
+		require.NoError(t, err)
+		if v, ok := ev.GetType().(interface{ GetResourceId() *commands.ResourceId }); ok {
+			require.Equal(t, test.TestResourceSwitchesHref, v.GetResourceId().GetHref())
+		}
+		if ev.GetResourceCreated() != nil {
+			pbTest.CmpEvent(t, &pb.Event{
+				SubscriptionId: ev.SubscriptionId,
+				CorrelationId:  "testToken",
+				Type: &pb.Event_ResourceCreated{
+					ResourceCreated: pbTest.MakeResourceCreated(t, deviceID, test.TestResourceSwitchesHref, "", switchData),
+				},
+			}, ev, "")
+			break
+		}
+	}
+}
+
 func TestRequestHandlerSubscribeForPendingCommands(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	type args struct {

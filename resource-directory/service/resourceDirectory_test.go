@@ -108,14 +108,14 @@ var (
 
 func testCreateEventstore() *mockEvents.MockEventStore {
 	store := mockEvents.NewMockEventStore()
-	store.Append(Resource0.DeviceId, commands.MakeLinksResourceUUID(Resource0.DeviceId), mockEvents.MakeResourceLinksPublishedEvent([]*commands.Resource{Resource0.Resource}, Resource0.GetDeviceId(), events.MakeEventMeta("a", 0, 0)))
-	store.Append(Resource1.DeviceId, commands.MakeLinksResourceUUID(Resource1.DeviceId), mockEvents.MakeResourceLinksPublishedEvent([]*commands.Resource{Resource1.Resource}, Resource1.GetDeviceId(), events.MakeEventMeta("a", 0, 0)))
-	store.Append(Resource2.DeviceId, commands.MakeLinksResourceUUID(Resource2.DeviceId), mockEvents.MakeResourceLinksPublishedEvent([]*commands.Resource{Resource2.Resource}, Resource2.GetDeviceId(), events.MakeEventMeta("a", 0, 0)))
-	store.Append(Resource3.DeviceId, commands.MakeLinksResourceUUID(Resource3.DeviceId), mockEvents.MakeResourceLinksPublishedEvent([]*commands.Resource{Resource3.Resource}, Resource3.GetDeviceId(), events.MakeEventMeta("a", 0, 0)))
-	store.Append(Resource0.DeviceId, Resource0.ToUUID(), mockEvents.MakeResourceChangedEvent(Resource0.Resource.GetResourceID(), Resource0.Content, events.MakeEventMeta("a", 0, 0), mockEvents.MakeAuditContext("userId", "0")))
-	store.Append(Resource1.DeviceId, Resource1.ToUUID(), mockEvents.MakeResourceChangedEvent(Resource1.Resource.GetResourceID(), Resource1.Content, events.MakeEventMeta("a", 0, 0), mockEvents.MakeAuditContext("userId", "0")))
-	store.Append(Resource2.DeviceId, Resource2.ToUUID(), mockEvents.MakeResourceChangedEvent(Resource2.Resource.GetResourceID(), Resource2.Content, events.MakeEventMeta("a", 0, 0), mockEvents.MakeAuditContext("userId", "0")))
-	store.Append(Resource3.DeviceId, Resource3.ToUUID(), mockEvents.MakeResourceChangedEvent(Resource3.Resource.GetResourceID(), Resource3.Content, events.MakeEventMeta("a", 0, 0), mockEvents.MakeAuditContext("userId", "0")))
+	store.Append(Resource0.DeviceId, commands.MakeLinksResourceUUID(Resource0.DeviceId).String(), mockEvents.MakeResourceLinksPublishedEvent([]*commands.Resource{Resource0.Resource}, Resource0.GetDeviceId(), events.MakeEventMeta("a", 0, 0)))
+	store.Append(Resource1.DeviceId, commands.MakeLinksResourceUUID(Resource1.DeviceId).String(), mockEvents.MakeResourceLinksPublishedEvent([]*commands.Resource{Resource1.Resource}, Resource1.GetDeviceId(), events.MakeEventMeta("a", 0, 0)))
+	store.Append(Resource2.DeviceId, commands.MakeLinksResourceUUID(Resource2.DeviceId).String(), mockEvents.MakeResourceLinksPublishedEvent([]*commands.Resource{Resource2.Resource}, Resource2.GetDeviceId(), events.MakeEventMeta("a", 0, 0)))
+	store.Append(Resource3.DeviceId, commands.MakeLinksResourceUUID(Resource3.DeviceId).String(), mockEvents.MakeResourceLinksPublishedEvent([]*commands.Resource{Resource3.Resource}, Resource3.GetDeviceId(), events.MakeEventMeta("a", 0, 0)))
+	store.Append(Resource0.DeviceId, Resource0.ToUUID().String(), mockEvents.MakeResourceChangedEvent(Resource0.Resource.GetResourceID(), Resource0.Content, events.MakeEventMeta("a", 0, 0), mockEvents.MakeAuditContext("userId", "0")))
+	store.Append(Resource1.DeviceId, Resource1.ToUUID().String(), mockEvents.MakeResourceChangedEvent(Resource1.Resource.GetResourceID(), Resource1.Content, events.MakeEventMeta("a", 0, 0), mockEvents.MakeAuditContext("userId", "0")))
+	store.Append(Resource2.DeviceId, Resource2.ToUUID().String(), mockEvents.MakeResourceChangedEvent(Resource2.Resource.GetResourceID(), Resource2.Content, events.MakeEventMeta("a", 0, 0), mockEvents.MakeAuditContext("userId", "0")))
+	store.Append(Resource3.DeviceId, Resource3.ToUUID().String(), mockEvents.MakeResourceChangedEvent(Resource3.Resource.GetResourceID(), Resource3.Content, events.MakeEventMeta("a", 0, 0), mockEvents.MakeAuditContext("userId", "0")))
 	return store
 }
 

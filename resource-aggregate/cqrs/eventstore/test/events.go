@@ -33,7 +33,7 @@ func MakeResourceLinksPublishedEvent(resources []*commands.Resource, deviceID st
 	return eventstore.NewLoadedEvent(
 		e.GetEventMetadata().GetVersion(),
 		(&events.ResourceLinksPublished{}).EventType(),
-		commands.MakeLinksResourceUUID(e.GetDeviceId()),
+		commands.MakeLinksResourceUUID(e.GetDeviceId()).String(),
 		e.GetDeviceId(),
 		false,
 		time.Unix(0, e.GetEventMetadata().GetTimestamp()),
@@ -57,7 +57,7 @@ func MakeResourceLinksUnpublishedEvent(hrefs []string, deviceID string, eventMet
 	return eventstore.NewLoadedEvent(
 		e.GetEventMetadata().GetVersion(),
 		(&events.ResourceLinksUnpublished{}).EventType(),
-		commands.MakeLinksResourceUUID(e.GetDeviceId()),
+		commands.MakeLinksResourceUUID(e.GetDeviceId()).String(),
 		e.GetDeviceId(),
 		false,
 		time.Unix(0, e.GetEventMetadata().GetTimestamp()),
@@ -80,7 +80,7 @@ func MakeResourceLinksSnapshotTaken(resources map[string]*commands.Resource, dev
 	return eventstore.NewLoadedEvent(
 		e.GetEventMetadata().GetVersion(),
 		(&events.ResourceLinksSnapshotTaken{}).EventType(),
-		commands.MakeLinksResourceUUID(e.GetDeviceId()),
+		commands.MakeLinksResourceUUID(e.GetDeviceId()).String(),
 		e.GetDeviceId(),
 		true,
 		time.Unix(0, e.GetEventMetadata().GetTimestamp()),
@@ -112,7 +112,7 @@ func MakeResourceUpdatePending(resourceID *commands.ResourceId, content *command
 	return eventstore.NewLoadedEvent(
 		e.GetEventMetadata().GetVersion(),
 		(&events.ResourceUpdatePending{}).EventType(),
-		e.GetResourceId().ToUUID(),
+		e.GetResourceId().ToUUID().String(),
 		e.GetResourceId().GetDeviceId(),
 		false,
 		time.Unix(0, e.GetEventMetadata().GetTimestamp()),
@@ -137,7 +137,7 @@ func MakeResourceUpdated(resourceID *commands.ResourceId, status commands.Status
 	return eventstore.NewLoadedEvent(
 		e.GetEventMetadata().GetVersion(),
 		(&events.ResourceUpdated{}).EventType(),
-		e.GetResourceId().ToUUID(),
+		e.GetResourceId().ToUUID().String(),
 		e.GetResourceId().GetDeviceId(),
 		false,
 		time.Unix(0, e.GetEventMetadata().GetTimestamp()),
@@ -162,7 +162,7 @@ func MakeResourceCreatePending(resourceID *commands.ResourceId, content *command
 	return eventstore.NewLoadedEvent(
 		e.GetEventMetadata().GetVersion(),
 		(&events.ResourceCreatePending{}).EventType(),
-		e.GetResourceId().ToUUID(),
+		e.GetResourceId().ToUUID().String(),
 		e.GetResourceId().GetDeviceId(),
 		false,
 		time.Unix(0, e.GetEventMetadata().GetTimestamp()),
@@ -187,7 +187,7 @@ func MakeResourceCreated(resourceID *commands.ResourceId, status commands.Status
 	return eventstore.NewLoadedEvent(
 		e.GetEventMetadata().GetVersion(),
 		(&events.ResourceCreated{}).EventType(),
-		e.GetResourceId().ToUUID(),
+		e.GetResourceId().ToUUID().String(),
 		e.GetResourceId().GetDeviceId(),
 		false,
 		time.Unix(0, e.GetEventMetadata().GetTimestamp()),
@@ -211,7 +211,7 @@ func MakeResourceChangedEvent(resourceID *commands.ResourceId, content *commands
 	return eventstore.NewLoadedEvent(
 		e.GetEventMetadata().GetVersion(),
 		(&events.ResourceChanged{}).EventType(),
-		e.GetResourceId().ToUUID(),
+		e.GetResourceId().ToUUID().String(),
 		e.GetResourceId().GetDeviceId(),
 		false,
 		time.Unix(0, e.GetEventMetadata().GetTimestamp()),
@@ -236,7 +236,7 @@ func MakeResourceRetrievePending(resourceID *commands.ResourceId, resourceInterf
 	return eventstore.NewLoadedEvent(
 		e.GetEventMetadata().GetVersion(),
 		(&events.ResourceRetrievePending{}).EventType(),
-		e.GetResourceId().ToUUID(),
+		e.GetResourceId().ToUUID().String(),
 		e.GetResourceId().GetDeviceId(),
 		false,
 		time.Unix(0, e.GetEventMetadata().GetTimestamp()),
@@ -261,7 +261,7 @@ func MakeResourceRetrieved(resourceID *commands.ResourceId, status commands.Stat
 	return eventstore.NewLoadedEvent(
 		e.GetEventMetadata().GetVersion(),
 		(&events.ResourceRetrieved{}).EventType(),
-		e.GetResourceId().ToUUID(),
+		e.GetResourceId().ToUUID().String(),
 		e.GetResourceId().GetDeviceId(),
 		false,
 		time.Unix(0, e.GetEventMetadata().GetTimestamp()),
@@ -285,7 +285,7 @@ func MakeResourceDeletePending(resourceID *commands.ResourceId, eventMetadata *e
 	return eventstore.NewLoadedEvent(
 		e.GetEventMetadata().GetVersion(),
 		(&events.ResourceDeletePending{}).EventType(),
-		e.GetResourceId().ToUUID(),
+		e.GetResourceId().ToUUID().String(),
 		e.GetResourceId().GetDeviceId(),
 		false,
 		time.Unix(0, e.GetEventMetadata().GetTimestamp()),
@@ -310,7 +310,7 @@ func MakeResourceDeleted(resourceID *commands.ResourceId, status commands.Status
 	return eventstore.NewLoadedEvent(
 		e.GetEventMetadata().GetVersion(),
 		(&events.ResourceDeleted{}).EventType(),
-		e.GetResourceId().ToUUID(),
+		e.GetResourceId().ToUUID().String(),
 		e.GetResourceId().GetDeviceId(),
 		false,
 		time.Unix(0, e.GetEventMetadata().GetTimestamp()),
@@ -334,7 +334,7 @@ func MakeResourceStateSnapshotTaken(resourceID *commands.ResourceId, latestResou
 	return eventstore.NewLoadedEvent(
 		e.GetEventMetadata().GetVersion(),
 		(&events.ResourceStateSnapshotTaken{}).EventType(),
-		e.GetResourceId().ToUUID(),
+		e.GetResourceId().ToUUID().String(),
 		e.GetResourceId().GetDeviceId(),
 		true,
 		time.Unix(0, e.GetEventMetadata().GetTimestamp()),
@@ -359,7 +359,7 @@ func MakeDeviceMetadataUpdatePending(deviceID string, twinEnabled *events.Device
 	return eventstore.NewLoadedEvent(
 		e.GetEventMetadata().GetVersion(),
 		(&events.DeviceMetadataUpdatePending{}).EventType(),
-		commands.MakeStatusResourceUUID(deviceID),
+		commands.MakeStatusResourceUUID(deviceID).String(),
 		e.GetDeviceId(),
 		false,
 		time.Unix(0, e.GetEventMetadata().GetTimestamp()),
@@ -385,7 +385,7 @@ func MakeDeviceMetadataUpdated(deviceID string, connection *commands.Connection,
 	return eventstore.NewLoadedEvent(
 		e.GetEventMetadata().GetVersion(),
 		(&events.DeviceMetadataUpdated{}).EventType(),
-		commands.MakeStatusResourceUUID(deviceID),
+		commands.MakeStatusResourceUUID(deviceID).String(),
 		e.GetDeviceId(),
 		false,
 		time.Unix(0, e.GetEventMetadata().GetTimestamp()),
@@ -408,7 +408,7 @@ func MakeDeviceMetadata(deviceID string, deviceMetadataUpdated *events.DeviceMet
 	return eventstore.NewLoadedEvent(
 		e.GetEventMetadata().GetVersion(),
 		(&events.DeviceMetadataSnapshotTaken{}).EventType(),
-		commands.MakeStatusResourceUUID(deviceID),
+		commands.MakeStatusResourceUUID(deviceID).String(),
 		e.GetDeviceId(),
 		false,
 		time.Unix(0, e.GetEventMetadata().GetTimestamp()),

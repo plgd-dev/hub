@@ -630,14 +630,22 @@
 <a name="grpcgateway-pb-SubscribeToEvents-CreateSubscription"></a>
 
 ### SubscribeToEvents.CreateSubscription
-
+If you want to subscribe to all events, leave the filter unset.
+Use the event_filter in conjunction with other filters to filter events by type. If event_filter is set, only events with the specified type will be received.
+To filter devices, use the device_id_filter. It follows the format {deviceID[0]&#43;&#34;/&#34;&#43;&#34;*&#34;, deviceID[1]&#43;&#34;/&#34;&#43;&#34;*&#34;, ...}.
+To filter resources, use the href_filter. It follows the format {&#34;*&#34;&#43;href[0], &#34;*&#34;&#43;href[1], ...}.
+When both device_id_filter and href_filter are set, the href_filter is applied to each device. {deviceID[0]&#43;href[0], ..., deviceID[1]&#43;href[0], ...}.
+To filter resources of specific devices, use the resource_id_filter.
+You can use either device_id_filter or resource_id_filter or both. In this case, the result is the union of both filters.
+Certain filters perform a logical &#34;or&#34; operation among the elements of the filter.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| event_filter | [SubscribeToEvents.CreateSubscription.Event](#grpcgateway-pb-SubscribeToEvents-CreateSubscription-Event) | repeated |  |
-| device_id_filter | [string](#string) | repeated |  |
-| resource_id_filter | [string](#string) | repeated | format {deviceID}{href}. eg &#34;ae424c58-e517-4494-6de7-583536c48213/oic/d&#34; |
+| event_filter | [SubscribeToEvents.CreateSubscription.Event](#grpcgateway-pb-SubscribeToEvents-CreateSubscription-Event) | repeated | array of events. eg: [ REGISTERED, UNREGISTERED ] |
+| device_id_filter | [string](#string) | repeated | array of format {deviceID}. eg [ &#34;ae424c58-e517-4494-6de7-583536c48213&#34; ] |
+| resource_id_filter | [string](#string) | repeated | array of format {deviceID}{href}. eg [ &#34;ae424c58-e517-4494-6de7-583536c48213/oic/d&#34;, &#34;ae424c58-e517-4494-6de7-583536c48213/oic/p&#34; ] |
+| href_filter | [string](#string) | repeated | array of format {href}. eg [ &#34;/oic/d&#34;, &#34;/oic/p&#34; ] |
 
 
 

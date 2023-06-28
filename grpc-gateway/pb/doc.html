@@ -1718,7 +1718,7 @@
         
       
         <h3 id="grpcgateway.pb.SubscribeToEvents.CreateSubscription">SubscribeToEvents.CreateSubscription</h3>
-        <p></p>
+        <p>If you want to subscribe to all events, leave the filter unset.</p><p>Use the event_filter in conjunction with other filters to filter events by type. If event_filter is set, only events with the specified type will be received.</p><p>To filter devices, use the device_id_filter. It follows the format {deviceID[0]+"/"+"*", deviceID[1]+"/"+"*", ...}.</p><p>To filter resources, use the href_filter. It follows the format {"*"+href[0], "*"+href[1], ...}.</p><p>When both device_id_filter and href_filter are set, the href_filter is applied to each device. {deviceID[0]+href[0], ..., deviceID[1]+href[0], ...}.</p><p>To filter resources of specific devices, use the resource_id_filter.</p><p>You can use either device_id_filter or resource_id_filter or both. In this case, the result is the union of both filters.</p><p>Certain filters perform a logical "or" operation among the elements of the filter.</p>
 
         
           <table class="field-table">
@@ -1731,21 +1731,28 @@
                   <td>event_filter</td>
                   <td><a href="#grpcgateway.pb.SubscribeToEvents.CreateSubscription.Event">SubscribeToEvents.CreateSubscription.Event</a></td>
                   <td>repeated</td>
-                  <td><p> </p></td>
+                  <td><p>array of events. eg: [ REGISTERED, UNREGISTERED  ] </p></td>
                 </tr>
               
                 <tr>
                   <td>device_id_filter</td>
                   <td><a href="#string">string</a></td>
                   <td>repeated</td>
-                  <td><p> </p></td>
+                  <td><p>array of format {deviceID}. eg [ &#34;ae424c58-e517-4494-6de7-583536c48213&#34; ] </p></td>
                 </tr>
               
                 <tr>
                   <td>resource_id_filter</td>
                   <td><a href="#string">string</a></td>
                   <td>repeated</td>
-                  <td><p>format {deviceID}{href}. eg &#34;ae424c58-e517-4494-6de7-583536c48213/oic/d&#34; </p></td>
+                  <td><p>array of format {deviceID}{href}. eg [ &#34;ae424c58-e517-4494-6de7-583536c48213/oic/d&#34;, &#34;ae424c58-e517-4494-6de7-583536c48213/oic/p&#34; ] </p></td>
+                </tr>
+              
+                <tr>
+                  <td>href_filter</td>
+                  <td><a href="#string">string</a></td>
+                  <td>repeated</td>
+                  <td><p>array of format {href}. eg [ &#34;/oic/d&#34;, &#34;/oic/p&#34; ] </p></td>
                 </tr>
               
             </tbody>

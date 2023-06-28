@@ -76,14 +76,14 @@ func getEventsToSave(groupID, aggregateID string) []eventstore.Event {
 		},
 		mockEvent{
 			groupID:      resId.GetDeviceId(),
-			AggregateIDI: resId.ToUUID(),
+			AggregateIDI: resId.ToUUID().String(),
 			VersionI:     1,
 			EventTypeI:   "test1",
 			timestamp:    timestamp,
 		},
 		mockEvent{
 			groupID:      resId.GetDeviceId(),
-			AggregateIDI: resId.ToUUID(),
+			AggregateIDI: resId.ToUUID().String(),
 			VersionI:     2,
 			EventTypeI:   "test2",
 			timestamp:    timestamp,
@@ -91,7 +91,7 @@ func getEventsToSave(groupID, aggregateID string) []eventstore.Event {
 		},
 		mockEvent{
 			groupID:      resId.GetDeviceId(),
-			AggregateIDI: resId.ToUUID(),
+			AggregateIDI: resId.ToUUID().String(),
 			VersionI:     3,
 			EventTypeI:   "test3",
 			timestamp:    timestamp,
@@ -99,7 +99,7 @@ func getEventsToSave(groupID, aggregateID string) []eventstore.Event {
 		},
 		mockEvent{
 			groupID:      resId.GetDeviceId(),
-			AggregateIDI: resId.ToUUID(),
+			AggregateIDI: resId.ToUUID().String(),
 			VersionI:     4,
 			EventTypeI:   "test4",
 			timestamp:    timestamp,
@@ -112,7 +112,7 @@ func getTaskToSave(groupID, aggregateID string, version uint64) maintenance.Task
 	resId := commands.NewResourceID(groupID, aggregateID)
 	return maintenance.Task{
 		GroupID:     resId.GetDeviceId(),
-		AggregateID: resId.ToUUID(),
+		AggregateID: resId.ToUUID().String(),
 		Version:     version,
 	}
 }

@@ -27,7 +27,7 @@ func (d *DeviceMetadataUpdatePending) EventType() string {
 }
 
 func (d *DeviceMetadataUpdatePending) AggregateID() string {
-	return commands.MakeStatusResourceUUID(d.GetDeviceId())
+	return commands.MakeStatusResourceUUID(d.GetDeviceId()).String()
 }
 
 func (d *DeviceMetadataUpdatePending) GroupID() string {

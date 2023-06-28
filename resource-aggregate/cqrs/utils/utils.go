@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/golang/snappy"
+	"github.com/google/uuid"
 	isEvents "github.com/plgd-dev/hub/v2/identity-store/events"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus"
@@ -12,8 +13,8 @@ import (
 )
 
 const (
-	DeviceIDKey   = "deviceId"
-	ResourceIDKey = "resourceId"
+	DeviceIDKey = "deviceId"
+	HrefIDKey   = "hrefId"
 )
 
 const (
@@ -25,13 +26,17 @@ const (
 	PlgdOwnersOwnerDevicesDeviceMetadata               = PlgdOwnersOwnerDevicesDevice + ".metadata"
 	PlgdOwnersOwnerDevicesDeviceMetadataEvent          = PlgdOwnersOwnerDevicesDeviceMetadata + ".{" + isEvents.EventTypeKey + "}"
 	PlgdOwnersOwnerDevicesDeviceResources              = PlgdOwnersOwnerDevicesDevice + ".resources"
-	PlgdOwnersOwnerDevicesDeviceResourcesResource      = PlgdOwnersOwnerDevicesDeviceResources + ".{" + ResourceIDKey + "}"
+	PlgdOwnersOwnerDevicesDeviceResourcesResource      = PlgdOwnersOwnerDevicesDeviceResources + ".{" + HrefIDKey + "}"
 	PlgdOwnersOwnerDevicesDeviceResourcesResourceEvent = PlgdOwnersOwnerDevicesDeviceResourcesResource + ".{" + isEvents.EventTypeKey + "}"
 )
 
-func WithResourceId(resourceID string) func(values map[string]string) {
+func HrefToID(href string) uuid.UUID {
+	return uuid.NewSHA1(uuid.NameSpaceURL, []byte(href))
+}
+
+func WithHrefId(hrefId string) func(values map[string]string) {
 	return func(values map[string]string) {
-		values[ResourceIDKey] = resourceID
+		values[HrefIDKey] = hrefId
 	}
 }
 
@@ -50,7 +55,7 @@ func GetDeviceMetadataEventSubject(owner, deviceID, eventType string) []string {
 }
 
 func GetResourceEventSubject(owner string, resourceID *commands.ResourceId, eventType string) []string {
-	return []string{isEvents.ToSubject(PlgdOwnersOwnerDevicesDeviceResourcesResourceEvent, isEvents.WithOwner(owner), WithDeviceID(resourceID.GetDeviceId()), isEvents.WithEventType(eventType), WithResourceId(resourceID.ToUUID()))}
+	return []string{isEvents.ToSubject(PlgdOwnersOwnerDevicesDeviceResourcesResourceEvent, isEvents.WithOwner(owner), WithDeviceID(resourceID.GetDeviceId()), isEvents.WithEventType(eventType), WithHrefId(HrefToID(resourceID.GetHref()).String()))}
 }
 
 func GetPublishSubject(owner string, event eventbus.Event) []string {
@@ -60,7 +65,10 @@ func GetPublishSubject(owner string, event eventbus.Event) []string {
 	case (&events.DeviceMetadataUpdatePending{}).EventType(), (&events.DeviceMetadataUpdated{}).EventType(), (&events.DeviceMetadataSnapshotTaken{}).EventType():
 		return []string{isEvents.ToSubject(PlgdOwnersOwnerDevicesDeviceMetadataEvent, isEvents.WithOwner(owner), WithDeviceID(event.GroupID()), isEvents.WithEventType(event.EventType()))}
 	}
-	return []string{isEvents.ToSubject(PlgdOwnersOwnerDevicesDeviceResourcesResourceEvent, isEvents.WithOwner(owner), WithDeviceID(event.GroupID()), WithResourceId(event.AggregateID()), isEvents.WithEventType(event.EventType()))}
+	if ev, ok := event.(interface{ GetResourceId() *commands.ResourceId }); ok {
+		return []string{isEvents.ToSubject(PlgdOwnersOwnerDevicesDeviceResourcesResourceEvent, isEvents.WithOwner(owner), WithDeviceID(event.GroupID()), WithHrefId(HrefToID(ev.GetResourceId().GetHref()).String()), isEvents.WithEventType(event.EventType()))}
+	}
+	return nil
 }
 
 func TimeNowMs() uint64 {
