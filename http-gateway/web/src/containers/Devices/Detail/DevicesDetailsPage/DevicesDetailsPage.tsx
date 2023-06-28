@@ -219,6 +219,7 @@ const DevicesDetailsPage: FC<Props> = (props) => {
                 tabs={[
                     {
                         name: _(t.deviceInformation),
+                        id: 0,
                         content: (
                             <Tab1
                                 deviceId={id}
@@ -237,6 +238,7 @@ const DevicesDetailsPage: FC<Props> = (props) => {
                     },
                     {
                         name: _(t.resources),
+                        id: 1,
                         content: (
                             <Tab2
                                 deviceName={deviceName}
