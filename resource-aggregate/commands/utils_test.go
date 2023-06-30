@@ -33,6 +33,26 @@ func TestResourceIdFromString(t *testing.T) {
 				Href:     "/href",
 			},
 		},
+		{
+			name: "deviceId",
+			args: args{
+				v: "deviceId/",
+			},
+			want: &ResourceId{
+				DeviceId: "deviceId",
+				Href:     "/",
+			},
+		},
+		{
+			name: "hrefId",
+			args: args{
+				v: "//hrefId",
+			},
+			want: &ResourceId{
+				DeviceId: "",
+				Href:     "/hrefId",
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

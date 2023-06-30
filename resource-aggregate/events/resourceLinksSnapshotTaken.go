@@ -20,7 +20,7 @@ import (
 const eventTypeResourceLinksSnapshotTaken = "resourcelinkssnapshottaken"
 
 func (e *ResourceLinksSnapshotTaken) AggregateID() string {
-	return commands.MakeLinksResourceUUID(e.GetDeviceId())
+	return commands.MakeLinksResourceUUID(e.GetDeviceId()).String()
 }
 
 func (e *ResourceLinksSnapshotTaken) GroupID() string {

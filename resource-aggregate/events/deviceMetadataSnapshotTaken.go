@@ -36,7 +36,7 @@ func (d *DeviceMetadataSnapshotTaken) EventType() string {
 }
 
 func (d *DeviceMetadataSnapshotTaken) AggregateID() string {
-	return commands.MakeStatusResourceUUID(d.GetDeviceId())
+	return commands.MakeStatusResourceUUID(d.GetDeviceId()).String()
 }
 
 func (d *DeviceMetadataSnapshotTaken) GroupID() string {

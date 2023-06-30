@@ -313,7 +313,7 @@ func getResourceQueries(resourceFilter []string, userDeviceIDs strings.Set) []ev
 		}
 		queries = append(queries, eventstore.GetEventsQuery{
 			GroupID:     res.GetDeviceId(),
-			AggregateID: res.ToUUID(),
+			AggregateID: res.ToUUID().String(),
 		})
 	}
 	return queries

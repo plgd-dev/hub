@@ -490,14 +490,14 @@ func NewSub(ctx context.Context, grpcClient pb.GrpcGatewayClient, send SendEvent
 		if v == nil {
 			continue
 		}
-		filteredResourceIDs.Add(v.ToUUID())
+		filteredResourceIDs.Add(v.ToUUID().String())
 		filteredDeviceIDs.Add(v.GetDeviceId())
 		if len(req.GetEventFilter()) > 0 {
 			if bitmask&(grpcSubscription.FilterBitmaskDeviceMetadataUpdatePending|grpcSubscription.FilterBitmaskDeviceMetadataUpdated) != 0 {
-				filteredResourceIDs.Add(commands.MakeStatusResourceUUID(v.GetDeviceId()))
+				filteredResourceIDs.Add(commands.MakeStatusResourceUUID(v.GetDeviceId()).String())
 			}
 			if bitmask&(grpcSubscription.FilterBitmaskResourcesPublished|grpcSubscription.FilterBitmaskResourcesUnpublished) != 0 {
-				filteredResourceIDs.Add(commands.MakeLinksResourceUUID(v.GetDeviceId()))
+				filteredResourceIDs.Add(commands.MakeLinksResourceUUID(v.GetDeviceId()).String())
 			}
 		}
 	}

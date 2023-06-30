@@ -1,10 +1,11 @@
 package subscription
 
 import (
+	"github.com/google/uuid"
 	isEvents "github.com/plgd-dev/hub/v2/identity-store/events"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/utils"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
-	kitStrings "github.com/plgd-dev/kit/v2/strings"
 )
 
 const (
@@ -53,7 +54,29 @@ var bitmaskToSubjectsTemplate = []subject{
 	{bitmask: FilterBitmaskResourceUpdated, subject: isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceResourcesResourceEvent, isEvents.WithEventType((&events.ResourceUpdated{}).EventType()))},
 }
 
-func ConvertToSubjects(owner string, filterDeviceIDs kitStrings.Set, filterResourceIDs kitStrings.Set, bitmask FilterBitmask) []string {
+func convertTemplateToSubjects(owner string, filters map[uuid.UUID]*commands.ResourceId, rawTemplate string, subjects map[string]bool) {
+	if len(filters) == 0 {
+		subjects[isEvents.ToSubject(rawTemplate, isEvents.WithOwner(owner), utils.WithDeviceID("*"), utils.WithHrefId("*"))] = true
+		return
+	}
+	for _, v := range filters {
+		deviceID := v.GetDeviceId()
+		if deviceID == "" {
+			deviceID = "*"
+		}
+		hrefID := v.GetHref()
+		switch hrefID {
+		case "":
+			hrefID = "*"
+		case "*":
+		default:
+			hrefID = utils.HrefToID(hrefID).String()
+		}
+		subjects[isEvents.ToSubject(rawTemplate, isEvents.WithOwner(owner), utils.WithDeviceID(deviceID), utils.WithHrefId(hrefID))] = true
+	}
+}
+
+func ConvertToSubjects(owner string, filters map[uuid.UUID]*commands.ResourceId, bitmask FilterBitmask) []string {
 	var rawTemplates []string
 	for _, s := range bitmaskToSubjectsTemplate {
 		if s.bitmask&bitmask == s.bitmask {
@@ -62,27 +85,16 @@ func ConvertToSubjects(owner string, filterDeviceIDs kitStrings.Set, filterResou
 		}
 	}
 
-	intTemplates := make(map[string]bool)
+	subjects := make(map[string]bool)
 	for _, rawTemplate := range rawTemplates {
-		switch {
-		case len(filterResourceIDs) > 0:
-			for resID := range filterResourceIDs {
-				intTemplates[isEvents.ToSubject(rawTemplate, isEvents.WithOwner(owner), utils.WithDeviceID("*"), utils.WithResourceId(resID))] = true
-			}
-		case len(filterDeviceIDs) > 0:
-			for devID := range filterDeviceIDs {
-				intTemplates[isEvents.ToSubject(rawTemplate, isEvents.WithOwner(owner), utils.WithDeviceID(devID), utils.WithResourceId("*"))] = true
-			}
-		default:
-			intTemplates[isEvents.ToSubject(rawTemplate, isEvents.WithOwner(owner), utils.WithDeviceID("*"), utils.WithResourceId("*"))] = true
-		}
+		convertTemplateToSubjects(owner, filters, rawTemplate, subjects)
 	}
 
-	if len(intTemplates) == 0 {
+	if len(subjects) == 0 {
 		return nil
 	}
-	templates := make([]string, 0, len(intTemplates))
-	for template := range intTemplates {
+	templates := make([]string, 0, len(subjects))
+	for template := range subjects {
 		templates = append(templates, template)
 	}
 	return templates

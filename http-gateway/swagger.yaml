@@ -1506,12 +1506,25 @@ components:
           type: string
     SubscribeToEventsCreateSubscription:
       type: object
+      description: |
+        If you want to subscribe to all events, leave the filter unset.  
+        Use the eventFilter in conjunction with other filters to filter events by type. If eventFilter is set, only events with the specified type will be received.  
+        To filter devices, use the deviceIdFilter. It follows the format {deviceID[0]+\"/&#42;\", deviceID[1]+\"/&#42;\", ...}.  
+        To filter resources, use the hrefFilter. It follows the format {\"&#42;\"+href[0], \"&#42;\"+href[1], ...}.  
+        When both deviceIdFilter and hrefFilter are set, the hrefFilter is applied to each device. {deviceID[0]+href[0], ..., deviceID[1]+href[0], ...}.  
+        To filter resources of specific devices, use the resourceIdFilter.  
+        You can use either deviceIdFilter or resourceIdFilter or both. In this case, the result is the union of both filters.  
+        Certain filters perform a logical \"or\" operation among the elements of the filter.  
       properties:
         eventFilter:
           type: array
           items:
-            $ref: "#/components/schemas/SubscribeToEventsCreateSubscriptionEvent"
+            $ref: "#/components/schemas/SubscribeToEventsCreateSubscriptionEvent"       
         deviceIdFilter:
+          type: array
+          items:
+            type: string
+        hrefFilter:
           type: array
           items:
             type: string
@@ -1519,6 +1532,7 @@ components:
           type: array
           items:
             type: string
+            format: "{deviceId}{href}"
     SubscribeToEventsCreateSubscriptionEvent:
       type: string
       default: "REGISTERED"

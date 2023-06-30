@@ -27,7 +27,7 @@ func (e *ResourceDeleted) EventType() string {
 }
 
 func (e *ResourceDeleted) AggregateID() string {
-	return e.GetResourceId().ToUUID()
+	return e.GetResourceId().ToUUID().String()
 }
 
 func (e *ResourceDeleted) GroupID() string {

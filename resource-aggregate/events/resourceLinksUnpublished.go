@@ -27,7 +27,7 @@ func (e *ResourceLinksUnpublished) EventType() string {
 }
 
 func (e *ResourceLinksUnpublished) AggregateID() string {
-	return commands.MakeLinksResourceUUID(e.GetDeviceId())
+	return commands.MakeLinksResourceUUID(e.GetDeviceId()).String()
 }
 
 func (e *ResourceLinksUnpublished) GroupID() string {
