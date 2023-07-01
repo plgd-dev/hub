@@ -2,7 +2,7 @@
 
 import { createSlice } from '@reduxjs/toolkit'
 
-type StoreType = {
+export type StoreType = {
     activeNotifications: any
 }
 

@@ -17,4 +17,16 @@ export const messages = defineMessages({
         id: 'not-found-page.notFoundPageDefaultMessage',
         defaultMessage: 'The page you are looking for does not exist.',
     },
+    notifications: {
+        id: 'app.notifications',
+        defaultMessage: 'Notifications',
+    },
+    noNotifications: {
+        id: 'app.noNotifications',
+        defaultMessage: 'Empty Notifications',
+    },
+    markAllAsRead: {
+        id: 'app.markAllAsRead',
+        defaultMessage: 'mark all as read',
+    },
 })

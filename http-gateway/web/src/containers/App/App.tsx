@@ -6,9 +6,9 @@ import PageLoader from '@shared-ui/components/Atomic/PageLoader'
 import { security } from '@shared-ui/common/services/security'
 import { openTelemetry } from '@shared-ui/common/services/opentelemetry'
 
+import './App.scss'
 import { messages as t } from './App.i18n'
 import { AppContext } from './AppContext'
-import './App.scss'
 import { getAppWellKnownConfiguration } from '@/containers/App/AppRest'
 import AppInner from '@/containers/App/AppInner/AppInner'
 
@@ -78,8 +78,7 @@ const App = () => {
     }
 
     const onSignIn = async () => {
-        window.location.hash = ''
-        window.location.href = window.location.origin
+        window.location.href = window.location.href.split('?')[0]
     }
 
     return (
@@ -88,12 +87,12 @@ const App = () => {
             automaticSilentRenew={true}
             clientId={wellKnownConfig.webOauthClient.clientId}
             onSignIn={onSignIn}
-            redirectUri={window.location.origin}
+            redirectUri={window.location.href}
             userManager={
                 new UserManager({
                     ...oidcCommonSettings,
                     client_id: wellKnownConfig.webOauthClient.clientId,
-                    redirect_uri: window.location.origin,
+                    redirect_uri: window.location.href,
                     extraQueryParams: {
                         audience: wellKnownConfig.webOauthClient.audience || undefined,
                     },
