@@ -25,7 +25,7 @@ const getBuildInformation = (wellKnownConfig: WellKnownConfigType) => ({
     commitHash: wellKnownConfig?.commitHash || '',
     commitDate: wellKnownConfig?.commitDate || '',
     releaseUrl: wellKnownConfig?.releaseUrl || '',
-    version: wellKnownConfig?.version || '',
+    version: wellKnownConfig?.version || '0.0.0',
 })
 
 const AppInner = (props: Props) => {
@@ -68,7 +68,7 @@ const AppInner = (props: Props) => {
                 <InitServices deviceStatusListener={deviceStatusListener} />
                 <Helmet defaultTitle={appConfig.appName} titleTemplate={`%s | ${appConfig.appName}`} />
                 <BrowserRouter>
-                    <AppLayout collapsed={collapsed} setCollapsed={setCollapsed} userData={userData} />
+                    <AppLayout buildInformation={buildInformation} collapsed={collapsed} setCollapsed={setCollapsed} userData={userData} />
                     <Global styles={globalStyle(toastNotifications)} />
                     <ToastContainer portalTarget={document.getElementById('toast-root')} showNotifications={true} />
                     <BrowserNotificationsContainer />

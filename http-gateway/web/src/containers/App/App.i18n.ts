@@ -29,4 +29,12 @@ export const messages = defineMessages({
         id: 'app.markAllAsRead',
         defaultMessage: 'mark all as read',
     },
+    version: {
+        id: 'app.version',
+        defaultMessage: 'Version',
+    },
+    newUpdateIsAvailable: {
+        id: 'app.newUpdateIsAvailable',
+        defaultMessage: 'New update is available.',
+    },
 })

@@ -23,7 +23,7 @@ import { setVersion } from '@/containers/App/slice'
 import { getVersionNumberFromGithub } from '@/containers/App/AppRest'
 
 const AppLayout: FC<Props> = (props) => {
-    const { collapsed, userData, setCollapsed } = props
+    const { buildInformation, collapsed, userData, setCollapsed } = props
     const { formatMessage: _ } = useIntl()
     const location = useLocation()
     const dispatch = useDispatch()
@@ -38,7 +38,7 @@ const AppLayout: FC<Props> = (props) => {
             dispatch(
                 setVersion({
                     requestedDatetime: now,
-                    latest: ret.data.tag_name,
+                    latest: ret.data.tag_name.replace('v', ''),
                 })
             )
         })
@@ -65,6 +65,27 @@ const AppLayout: FC<Props> = (props) => {
 
     const handleLocationChange = (id: string) => {
         id !== activeItem && setActiveItem(id)
+    }
+
+    const getVersionMarkSeverity = () => {
+        if (appStore.version === buildInformation.version) {
+            return severities.SUCCESS
+        } else {
+            const latestA = appStore.version.latest?.split('.') || []
+            const versionA = buildInformation.version.split('.')
+
+            return latestA[0] !== versionA[0] ? severities.ERROR : severities.WARNING
+        }
+    }
+
+    const getVersionMarkText = () => {
+        let base = `${_(t.version)} ${buildInformation.version}`
+
+        if (appStore.version !== buildInformation.version) {
+            base += ` • ${_(t.newUpdateIsAvailable)}`
+        }
+
+        return base
     }
 
     return (
@@ -106,11 +127,7 @@ const AppLayout: FC<Props> = (props) => {
                     //     onClick: () => console.log('click'),
                     //     onClose: () => console.log('close'),
                     // }}
-                    versionMark={
-                        appStore.version.latest && (
-                            <VersionMark severity={severities.SUCCESS} versionText={`Version ${appStore.version.latest?.replace('v', '')}`} />
-                        )
-                    }
+                    versionMark={appStore.version.latest && <VersionMark severity={getVersionMarkSeverity()} versionText={getVersionMarkText()} />}
                 />
             }
         />
