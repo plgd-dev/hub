@@ -8,3 +8,5 @@ export const getAppWellKnownConfiguration = (wellKnowConfigUrl: string) => {
         cancelRequestDeadlineTimeout,
     })
 }
+
+export const getVersionNumberFromGithub = () => fetchApi(`https://api.github.com/repos/plgd-dev/hub/releases/latest`, { useToken: false })
