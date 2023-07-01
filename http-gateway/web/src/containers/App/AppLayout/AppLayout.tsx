@@ -106,7 +106,11 @@ const AppLayout: FC<Props> = (props) => {
                     //     onClick: () => console.log('click'),
                     //     onClose: () => console.log('close'),
                     // }}
-                    versionMark={<VersionMark severity={severities.SUCCESS} versionText={`Version ${appStore.version.latest?.replace('v', '')}`} />}
+                    versionMark={
+                        appStore.version.latest && (
+                            <VersionMark severity={severities.SUCCESS} versionText={`Version ${appStore.version.latest?.replace('v', '')}`} />
+                        )
+                    }
                 />
             }
         />
