@@ -21,6 +21,7 @@ import LeftPanelWrapper from '@/containers/App/AppInner/LeftPanelWrapper/LeftPan
 import { CombinedStoreType } from '@/store/store'
 import { setVersion } from '@/containers/App/slice'
 import { getVersionNumberFromGithub } from '@/containers/App/AppRest'
+import { VersionMarkSeverityType } from '@shared-ui/components/Atomic/VersionMark/VersionMark.types'
 
 const AppLayout: FC<Props> = (props) => {
     const { buildInformation, collapsed, userData, setCollapsed } = props
@@ -38,6 +39,7 @@ const AppLayout: FC<Props> = (props) => {
             dispatch(
                 setVersion({
                     requestedDatetime: now,
+                    releaseUrl: ret.data.releaseUrl,
                     latest: ret.data.tag_name.replace('v', ''),
                 })
             )
@@ -67,25 +69,28 @@ const AppLayout: FC<Props> = (props) => {
         id !== activeItem && setActiveItem(id)
     }
 
-    const getVersionMarkSeverity = () => {
+    const versionMarkData = (): { severity: VersionMarkSeverityType; text: string } => {
+        let text = `${_(t.version)} ${buildInformation.version}`
+
         if (appStore.version === buildInformation.version) {
-            return severities.SUCCESS
+            return {
+                severity: severities.SUCCESS,
+                text,
+            }
         } else {
-            const latestA = appStore.version.latest?.split('.') || []
-            const versionA = buildInformation.version.split('.')
+            text += ` • ${_(t.newUpdateIsAvailable)}`
+            const [latestMajor, latestMinor, latestPatch] = appStore.version.latest?.split('-') || []
+            const [currentMajor, currentMinor, currentPath] = buildInformation.version.split('-')[0].split('.')
+            const hasError =
+                Math.abs(parseInt(latestMinor) - parseInt(currentMinor)) > 3 ||
+                Math.abs(parseInt(latestPatch) - parseInt(currentPath)) > 3 ||
+                latestMajor !== currentMajor
 
-            return latestA[0] !== versionA[0] ? severities.ERROR : severities.WARNING
+            return {
+                severity: hasError ? severities.ERROR : severities.WARNING,
+                text,
+            }
         }
-    }
-
-    const getVersionMarkText = () => {
-        let base = `${_(t.version)} ${buildInformation.version}`
-
-        if (appStore.version !== buildInformation.version) {
-            base += ` • ${_(t.newUpdateIsAvailable)}`
-        }
-
-        return base
     }
 
     return (
@@ -127,7 +132,25 @@ const AppLayout: FC<Props> = (props) => {
                     //     onClick: () => console.log('click'),
                     //     onClose: () => console.log('close'),
                     // }}
-                    versionMark={appStore.version.latest && <VersionMark severity={getVersionMarkSeverity()} versionText={getVersionMarkText()} />}
+                    versionMark={
+                        appStore.version.latest && (
+                            <VersionMark
+                                severity={versionMarkData().severity}
+                                update={
+                                    appStore.version.releaseUrl
+                                        ? {
+                                              text: _(t.clickHere),
+                                              onClick: (e) => {
+                                                  e.preventDefault()
+                                                  window.location.href = appStore.version.releaseUrl as string
+                                              },
+                                          }
+                                        : undefined
+                                }
+                                versionText={versionMarkData().text}
+                            />
+                        )
+                    }
                 />
             }
         />

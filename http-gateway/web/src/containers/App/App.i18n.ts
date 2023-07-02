@@ -37,4 +37,8 @@ export const messages = defineMessages({
         id: 'app.newUpdateIsAvailable',
         defaultMessage: 'New update is available.',
     },
+    clickHere: {
+        id: 'app.clickHere',
+        defaultMessage: 'Click here!',
+    },
 })
