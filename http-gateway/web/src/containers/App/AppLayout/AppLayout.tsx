@@ -82,8 +82,8 @@ const AppLayout: FC<Props> = (props) => {
             const [latestMajor, latestMinor, latestPatch] = appStore.version.latest?.split('-') || []
             const [currentMajor, currentMinor, currentPath] = buildInformation.version.split('-')[0].split('.')
             const hasError =
-                Math.abs(parseInt(latestMinor) - parseInt(currentMinor)) > 3 ||
-                Math.abs(parseInt(latestPatch) - parseInt(currentPath)) > 3 ||
+                Math.abs(parseInt(latestMinor) - parseInt(currentMinor)) >= 3 ||
+                Math.abs(parseInt(latestPatch) - parseInt(currentPath)) >= 3 ||
                 latestMajor !== currentMajor
 
             return {
