@@ -58,6 +58,7 @@
     - [GetPendingCommandsRequest.Command](#grpcgateway-pb-GetPendingCommandsRequest-Command)
   
 - [grpc-gateway/pb/hubConfiguration.proto](#grpc-gateway_pb_hubConfiguration-proto)
+    - [BuildInfo](#grpcgateway-pb-BuildInfo)
     - [DeviceOAuthClient](#grpcgateway-pb-DeviceOAuthClient)
     - [HubConfigurationRequest](#grpcgateway-pb-HubConfigurationRequest)
     - [HubConfigurationResponse](#grpcgateway-pb-HubConfigurationResponse)
@@ -928,6 +929,25 @@ Certain filters perform a logical &#34;or&#34; operation among the elements of t
 
 
 
+<a name="grpcgateway-pb-BuildInfo"></a>
+
+### BuildInfo
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| version | [string](#string) |  | version of the service |
+| build_date | [string](#string) |  | build date of the service |
+| commit_hash | [string](#string) |  | commit hash of the service |
+| commit_date | [string](#string) |  | commit date of the service |
+| release_url | [string](#string) |  | release url of the service |
+
+
+
+
+
+
 <a name="grpcgateway-pb-DeviceOAuthClient"></a>
 
 ### DeviceOAuthClient
@@ -975,6 +995,7 @@ Certain filters perform a logical &#34;or&#34; operation among the elements of t
 | http_gateway_address | [string](#string) |  | cfg for UI http-gateway |
 | web_oauth_client | [WebOAuthClient](#grpcgateway-pb-WebOAuthClient) |  |  |
 | device_oauth_client | [DeviceOAuthClient](#grpcgateway-pb-DeviceOAuthClient) |  |  |
+| build_info | [BuildInfo](#grpcgateway-pb-BuildInfo) |  | build info |
 
 
 

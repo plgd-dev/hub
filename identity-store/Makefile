@@ -9,6 +9,10 @@ VERSION_TAG ?= $(LATEST_TAG)-$(shell git rev-parse --short=7 --verify HEAD)
 GOPATH ?= $(shell go env GOPATH)
 WORKING_DIRECTORY := $(shell pwd)
 REPOSITORY_DIRECTORY := $(shell cd .. && pwd)
+BUILD_COMMIT_DATE ?= $(shell date -u +%FT%TZ --date=@`git show --format='%ct' HEAD --quiet`)
+BUILD_SHORT_COMMIT ?= $(shell git show --format=%h HEAD --quiet)
+BUILD_DATE ?= $(shell date -u +%FT%TZ)
+BUILD_VERSION ?= $(shell git tag --sort version:refname | tail -1 | sed -e "s/^v//")
 
 default: build
 
