@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
+	"github.com/plgd-dev/hub/v2/pkg/build"
 	"github.com/plgd-dev/hub/v2/pkg/config"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/pkg/net/grpc/client"
@@ -167,6 +168,12 @@ func (c PublicConfiguration) ToProto() *pb.HubConfigurationResponse {
 		DefaultCommandTimeToLive: int64(c.DefaultCommandTimeToLive),
 		CurrentTime:              pkgTime.UnixNano(time.Now()),
 		Authority:                c.Authority,
+		BuildInfo: &pb.BuildInfo{
+			Version:    build.Version,
+			CommitHash: build.CommitHash,
+			BuildDate:  build.BuildDate,
+			CommitDate: build.CommitDate,
+		},
 	}
 }
 

@@ -107,6 +107,19 @@ jobs:
           mkdir -p $(dirname ${{ inputs.file }})
           awk '{gsub("@NAME@","${{ inputs.name }}")} {gsub("@DIRECTORY@","${{ inputs.directory }}")} {print}' ${{ inputs.template-file }} > ${{ inputs.file }}
 
+      - name: Set build args
+        id: build-args
+        run: |
+          echo "commit_date=$(date -u +%FT%TZ --date=@$(git show --format=%ct HEAD --quiet))" >> $GITHUB_OUTPUT
+          short_commit=$(git show --format=%h HEAD --quiet)
+          echo "short_commit=${short_commit}" >> $GITHUB_OUTPUT
+          echo "date=$(date -u +%FT%TZ)" >> $GITHUB_OUTPUT
+          version=$(git describe --tags --abbrev=0 | sed 's/^v//')
+          if [[ "${{ github.ref }}" != "refs/tags/"* ]]; then
+            version="${version}-pr${{ github.event.number }}"
+          fi
+          echo "version=$version" >> $GITHUB_OUTPUT
+
       - name: First try to build and push docker image
         uses: docker/build-push-action@v4
         # This needs to be true to proceed to the next step of failure
@@ -120,6 +133,10 @@ jobs:
           build-args: |
             DIRECTORY=${{ inputs.directory }}
             NAME=${{ inputs.name }}
+            COMMIT_DATE=${{ steps.build-args.outputs.commit_date }}
+            SHORT_COMMIT=${{ steps.build-args.outputs.short_commit }}
+            DATE=${{ steps.build-args.outputs.date }}
+            VERSION=${{ steps.build-args.outputs.version }}
           file: ${{ inputs.file }}
           push: true
           tags: ${{ steps.meta.outputs.tags }}
@@ -136,6 +153,10 @@ jobs:
           build-args: |
             DIRECTORY=${{ inputs.directory }}
             NAME=${{ inputs.name }}
+            COMMIT_DATE=${{ steps.build-args.outputs.commit-date }}
+            SHORT_COMMIT=${{ steps.build-args.outputs.short-commit }}
+            DATE=${{ steps.build-args.outputs.date }}
+            VERSION=${{ steps.build-args.outputs.version }}
           file: ${{ inputs.file }}
           push: true
           tags: ${{ steps.meta.outputs.tags }}

@@ -1,6 +1,10 @@
 FROM golang:1.20.4-alpine AS build
 ARG DIRECTORY
 ARG NAME
+ARG VERSION
+ARG COMMIT_DATE
+ARG SHORT_COMMIT
+ARG DATE
 RUN apk add --no-cache curl git build-base
 WORKDIR $GOPATH/src/github.com/plgd-dev/hub
 COPY go.mod go.sum ./
@@ -8,7 +12,7 @@ RUN go mod download
 COPY . .
 RUN ( cd /usr/local/go && patch -p1 < $GOPATH/src/github.com/plgd-dev/hub/tools/docker/patches/shrink_tls_conn.patch )
 WORKDIR $GOPATH/src/github.com/plgd-dev/hub/tools/cert-tool
-RUN CGO_ENABLED=0 go build -o /go/bin/cert-tool ./
+RUN CGO_ENABLED=0 go build -ldflags "-X github.com/plgd-dev/hub/v2/pkg/build.CommitDate=$COMMIT_DATE -X github.com/plgd-dev/hub/v2/pkg/build.CommitHash=$SHORT_COMMIT -X github.com/plgd-dev/hub/v2/pkg/build.BuildDate=$DATE -X github.com/plgd-dev/hub/v2/pkg/build.Version=$VERSION" -o /go/bin/cert-tool ./
 
 FROM alpine:3.18 AS security-provider
 RUN addgroup -S nonroot \
