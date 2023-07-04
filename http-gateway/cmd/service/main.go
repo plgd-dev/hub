@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/plgd-dev/hub/v2/http-gateway/service"
+	"github.com/plgd-dev/hub/v2/pkg/build"
 	"github.com/plgd-dev/hub/v2/pkg/config"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
@@ -37,6 +38,7 @@ func main() {
 		log.Fatalf("cannot load config: %v", err)
 	}
 	logger := log.NewLogger(cfg.Log)
+	logger.Debugf("version: %v, buildDate: %v, buildRevision %v", build.Version, build.BuildDate, build.CommitHash)
 	log.Set(logger)
 	log.Infof("config: %v", cfg.String())
 

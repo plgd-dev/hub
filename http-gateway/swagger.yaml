@@ -1,7 +1,7 @@
 openapi: 3.0.1
 info:
   title: plgd HTTP Gateway
-  version: 2.0.0
+  version: 2.7.19
 servers:
   - url: "https://try.plgd.cloud"
 paths:
@@ -762,6 +762,8 @@ components:
           $ref: '#/components/schemas/webOAuthClient'
         deviceOauthClient:
           $ref: '#/components/schemas/deviceOAuthClient'
+        buildInfo:
+          $ref: '#/components/schemas/buildInfo'
       example:
         jwtOwnerClaim: "sub"
         authority: "https://auth.plgd.cloud/realms/shared"
@@ -790,6 +792,11 @@ components:
           audience: "https://try.plgd.cloud"
           clientId: "LXZ9OhKWWRYqf12W0B5OXduqt02q0zjS"
           scopes: [ "openid"]
+        buildInfo:
+          version: "2.7.19"
+          commitHash: "abfe0011"
+          commitDate: "2023-07-04T15:30:33Z"
+          buildDate: "2023-07-04T15:31:17Z"
     webOAuthClient:
       type: object
       properties:
@@ -821,6 +828,23 @@ components:
           type: array
           items:
             type: string
+    buildInfo:
+      type: object
+      properties:
+        version:
+          type: string
+          description: Version of the hub
+        buildDate:
+          type: string
+          format: date-time
+          description: build date of the hub
+        commitHash:
+          type: string
+          description: commit hash of the hub
+        commitDate:
+          type: string
+          format: date-time
+          description: commit date of the hub
     CommandType:
       type: string
       enum:

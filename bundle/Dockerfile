@@ -8,60 +8,66 @@ COPY . .
 RUN ( cd /usr/local/go && patch -p1 < $GOPATH/src/github.com/plgd-dev/hub/tools/docker/patches/shrink_tls_conn.patch )
 ARG root_directory=$GOPATH/src/github.com/plgd-dev/hub
 
+ARG COMMIT_DATE
+ARG SHORT_COMMIT
+ARG DATE
+ARG VERSION
+ARG RELEASE_URL
+
 #coap-gateway
 ARG service=coap-gateway
 WORKDIR $root_directory/$service
-RUN go build -ldflags "-linkmode external -extldflags -static" -o /go/bin/$service ./cmd/service
+RUN go build -ldflags "-linkmode external -extldflags -static -X github.com/plgd-dev/hub/v2/pkg/build.CommitDate=$COMMIT_DATE -X github.com/plgd-dev/hub/v2/pkg/build.CommitHash=$SHORT_COMMIT -X github.com/plgd-dev/hub/v2/pkg/build.BuildDate=$DATE -X github.com/plgd-dev/hub/v2/pkg/build.Version=$VERSION -X github.com/plgd-dev/hub/v2/pkg/build.ReleaseURL=$RELEASE_URL" -o /go/bin/$service ./cmd/service
 
 #grpc-gateway
 ARG service=grpc-gateway
 WORKDIR $root_directory/$service
-RUN go build -ldflags "-linkmode external -extldflags -static" -o /go/bin/$service ./cmd/service
+RUN go build -ldflags "-linkmode external -extldflags -static -X github.com/plgd-dev/hub/v2/pkg/build.CommitDate=$COMMIT_DATE -X github.com/plgd-dev/hub/v2/pkg/build.CommitHash=$SHORT_COMMIT -X github.com/plgd-dev/hub/v2/pkg/build.BuildDate=$DATE -X github.com/plgd-dev/hub/v2/pkg/build.Version=$VERSION -X github.com/plgd-dev/hub/v2/pkg/build.ReleaseURL=$RELEASE_URL" -o /go/bin/$service ./cmd/service
 
 #http-gateway
 ARG service=http-gateway
 WORKDIR $root_directory/$service
-RUN go build -ldflags "-linkmode external -extldflags -static" -o /go/bin/$service ./cmd/service
+RUN go build -ldflags "-linkmode external -extldflags -static -X github.com/plgd-dev/hub/v2/pkg/build.CommitDate=$COMMIT_DATE -X github.com/plgd-dev/hub/v2/pkg/build.CommitHash=$SHORT_COMMIT -X github.com/plgd-dev/hub/v2/pkg/build.BuildDate=$DATE -X github.com/plgd-dev/hub/v2/pkg/build.Version=$VERSION -X github.com/plgd-dev/hub/v2/pkg/build.ReleaseURL=$RELEASE_URL" -o /go/bin/$service ./cmd/service
 
 #resource-directory
 ARG service=resource-directory
 WORKDIR $root_directory/$service
-RUN go build -ldflags "-linkmode external -extldflags -static" -o /go/bin/$service ./cmd/service
+RUN go build -ldflags "-linkmode external -extldflags -static -X github.com/plgd-dev/hub/v2/pkg/build.CommitDate=$COMMIT_DATE -X github.com/plgd-dev/hub/v2/pkg/build.CommitHash=$SHORT_COMMIT -X github.com/plgd-dev/hub/v2/pkg/build.BuildDate=$DATE -X github.com/plgd-dev/hub/v2/pkg/build.Version=$VERSION -X github.com/plgd-dev/hub/v2/pkg/build.ReleaseURL=$RELEASE_URL" -o /go/bin/$service ./cmd/service
 
 #resource-aggregate
 ARG service=resource-aggregate
 WORKDIR $root_directory/$service
-RUN go build -ldflags "-linkmode external -extldflags -static" -o /go/bin/$service ./cmd/service
+RUN go build -ldflags "-linkmode external -extldflags -static -X github.com/plgd-dev/hub/v2/pkg/build.CommitDate=$COMMIT_DATE -X github.com/plgd-dev/hub/v2/pkg/build.CommitHash=$SHORT_COMMIT -X github.com/plgd-dev/hub/v2/pkg/build.BuildDate=$DATE -X github.com/plgd-dev/hub/v2/pkg/build.Version=$VERSION -X github.com/plgd-dev/hub/v2/pkg/build.ReleaseURL=$RELEASE_URL" -o /go/bin/$service ./cmd/service
 
 #identity-store
 ARG service=identity-store
 WORKDIR $root_directory/$service
-RUN go build -ldflags "-linkmode external -extldflags -static" -o /go/bin/$service ./cmd/service
+RUN go build -ldflags "-linkmode external -extldflags -static -X github.com/plgd-dev/hub/v2/pkg/build.CommitDate=$COMMIT_DATE -X github.com/plgd-dev/hub/v2/pkg/build.CommitHash=$SHORT_COMMIT -X github.com/plgd-dev/hub/v2/pkg/build.BuildDate=$DATE -X github.com/plgd-dev/hub/v2/pkg/build.Version=$VERSION -X github.com/plgd-dev/hub/v2/pkg/build.ReleaseURL=$RELEASE_URL" -o /go/bin/$service ./cmd/service
 
 #certificate-authority
 ARG service=certificate-authority
 WORKDIR $root_directory/$service
-RUN go build -ldflags "-linkmode external -extldflags -static" -o /go/bin/$service ./cmd/service
+RUN go build -ldflags "-linkmode external -extldflags -static -X github.com/plgd-dev/hub/v2/pkg/build.CommitDate=$COMMIT_DATE -X github.com/plgd-dev/hub/v2/pkg/build.CommitHash=$SHORT_COMMIT -X github.com/plgd-dev/hub/v2/pkg/build.BuildDate=$DATE -X github.com/plgd-dev/hub/v2/pkg/build.Version=$VERSION -X github.com/plgd-dev/hub/v2/pkg/build.ReleaseURL=$RELEASE_URL" -o /go/bin/$service ./cmd/service
 
 #oauth-server
 ARG service=oauth-server
 WORKDIR $root_directory/test/$service
-RUN go build -ldflags "-linkmode external -extldflags -static" -o /go/bin/$service ./cmd/service
+RUN go build -ldflags "-linkmode external -extldflags -static -X github.com/plgd-dev/hub/v2/pkg/build.CommitDate=$COMMIT_DATE -X github.com/plgd-dev/hub/v2/pkg/build.CommitHash=$SHORT_COMMIT -X github.com/plgd-dev/hub/v2/pkg/build.BuildDate=$DATE -X github.com/plgd-dev/hub/v2/pkg/build.Version=$VERSION -X github.com/plgd-dev/hub/v2/pkg/build.ReleaseURL=$RELEASE_URL" -o /go/bin/$service ./cmd/service
 
 #cloud2cloud-gateway
 ARG service=cloud2cloud-gateway
 WORKDIR $root_directory/$service
-RUN go build -ldflags "-linkmode external -extldflags -static" -o /go/bin/$service ./cmd/service
+RUN go build -ldflags "-linkmode external -extldflags -static -X github.com/plgd-dev/hub/v2/pkg/build.CommitDate=$COMMIT_DATE -X github.com/plgd-dev/hub/v2/pkg/build.CommitHash=$SHORT_COMMIT -X github.com/plgd-dev/hub/v2/pkg/build.BuildDate=$DATE -X github.com/plgd-dev/hub/v2/pkg/build.Version=$VERSION -X github.com/plgd-dev/hub/v2/pkg/build.ReleaseURL=$RELEASE_URL" -o /go/bin/$service ./cmd/service
 
 #cloud2cloud-connector
 ARG service=cloud2cloud-connector
 WORKDIR $root_directory/$service
-RUN go build -ldflags "-linkmode external -extldflags -static" -o /go/bin/$service ./cmd/service
+RUN go build -ldflags "-linkmode external -extldflags -static -X github.com/plgd-dev/hub/v2/pkg/build.CommitDate=$COMMIT_DATE -X github.com/plgd-dev/hub/v2/pkg/build.CommitHash=$SHORT_COMMIT -X github.com/plgd-dev/hub/v2/pkg/build.BuildDate=$DATE -X github.com/plgd-dev/hub/v2/pkg/build.Version=$VERSION -X github.com/plgd-dev/hub/v2/pkg/build.ReleaseURL=$RELEASE_URL" -o /go/bin/$service ./cmd/service
 
 #cert-tool
 ARG tool=cert-tool
 WORKDIR $root_directory/tools/$tool
-RUN go build -ldflags "-linkmode external -extldflags -static" -o /go/bin/$tool ./
+RUN go build -ldflags "-linkmode external -extldflags -static -X github.com/plgd-dev/hub/v2/pkg/build.CommitDate=$COMMIT_DATE -X github.com/plgd-dev/hub/v2/pkg/build.CommitHash=$SHORT_COMMIT -X github.com/plgd-dev/hub/v2/pkg/build.BuildDate=$DATE -X github.com/plgd-dev/hub/v2/pkg/build.Version=$VERSION -X github.com/plgd-dev/hub/v2/pkg/build.ReleaseURL=$RELEASE_URL" -o /go/bin/$tool ./
 
 #nats
 WORKDIR $root_directory

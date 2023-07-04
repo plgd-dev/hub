@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/plgd-dev/hub/v2/pkg/build"
 	"github.com/plgd-dev/hub/v2/pkg/config"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
@@ -38,7 +39,8 @@ func main() {
 	}
 	logger := log.NewLogger(cfg.Log)
 	log.Set(logger)
-	log.Infof("config: %v", cfg.String())
+	logger.Debugf("version: %v, buildDate: %v, buildRevision %v", build.Version, build.BuildDate, build.CommitHash)
+	logger.Infof("config: %v", cfg.String())
 
 	if err := run(cfg, logger); err != nil {
 		log.Fatalf("cannot run service: %v", err)
