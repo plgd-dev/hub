@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/hashicorp/go-multierror"
 	"github.com/plgd-dev/hub/v2/certificate-authority/store"
-	pkgErrors "github.com/plgd-dev/hub/v2/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -89,7 +89,7 @@ func toIDQueryFilter(owner string, id string) bson.D {
 	return f
 }
 
-func toSigningRecordsQueryFilter(owner string, queries *store.SigningRecordsQuery) (bson.M, error) {
+func toSigningRecordsQueryFilter(owner string, queries *store.SigningRecordsQuery) interface{} {
 	or := []bson.D{}
 	for _, q := range queries.GetIdFilter() {
 		or = append(or, toIDQueryFilter(owner, q))
@@ -102,20 +102,11 @@ func toSigningRecordsQueryFilter(owner string, queries *store.SigningRecordsQuer
 	}
 	switch len(or) {
 	case 0:
-		return bson.M{}, nil
+		return bson.D{}
 	case 1:
-		data, err := bson.Marshal(or[0])
-		if err != nil {
-			return nil, err
-		}
-		var orMap bson.M
-		err = bson.Unmarshal(data, &orMap)
-		if err != nil {
-			return nil, err
-		}
-		return orMap, nil
+		return or[0]
 	}
-	return bson.M{"$or": or}, nil
+	return bson.M{"$or": or}
 }
 
 func (s *Store) DeleteSigningRecords(ctx context.Context, owner string, query *store.DeleteSigningRecordsQuery) (int64, error) {
@@ -123,13 +114,9 @@ func (s *Store) DeleteSigningRecords(ctx context.Context, owner string, query *s
 		IdFilter:       query.GetIdFilter(),
 		DeviceIdFilter: query.GetDeviceIdFilter(),
 	}
-	filter, err := toSigningRecordsQueryFilter(owner, &q)
+	res, err := s.Collection(signingRecordsCol).DeleteOne(ctx, toSigningRecordsQueryFilter(owner, &q))
 	if err != nil {
-		return -1, pkgErrors.NewError(ErrCannotRemoveSigningRecord, err)
-	}
-	res, err := s.Collection(signingRecordsCol).DeleteOne(ctx, filter)
-	if err != nil {
-		return -1, pkgErrors.NewError(ErrCannotRemoveSigningRecord, err)
+		return -1, multierror.Append(ErrCannotRemoveSigningRecord, err)
 	}
 	return res.DeletedCount, nil
 }
@@ -141,7 +128,7 @@ func (s *Store) DeleteNonDeviceExpiredRecords(ctx context.Context, now time.Time
 		store.DeviceIDKey: bson.M{"$exists": false},
 	})
 	if err != nil {
-		return -1, pkgErrors.NewError(ErrCannotRemoveSigningRecord, err)
+		return -1, multierror.Append(ErrCannotRemoveSigningRecord, err)
 	}
 
 	return res.DeletedCount, nil
@@ -149,11 +136,7 @@ func (s *Store) DeleteNonDeviceExpiredRecords(ctx context.Context, now time.Time
 
 func (s *Store) LoadSigningRecords(ctx context.Context, owner string, query *store.SigningRecordsQuery, h store.LoadSigningRecordsFunc) error {
 	col := s.Collection(signingRecordsCol)
-	filter, err := toSigningRecordsQueryFilter(owner, query)
-	if err != nil {
-		return err
-	}
-	iter, err := col.Find(ctx, filter)
+	iter, err := col.Find(ctx, toSigningRecordsQueryFilter(owner, query))
 	if errors.Is(err, mongo.ErrNilDocument) {
 		return nil
 	}
