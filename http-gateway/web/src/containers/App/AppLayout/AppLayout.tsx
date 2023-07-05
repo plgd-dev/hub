@@ -12,6 +12,7 @@ import { MenuItem } from '@shared-ui/components/Layout/LeftPanel/LeftPanel.types
 import { parseActiveItem } from '@shared-ui/components/Layout/LeftPanel/utils'
 import { getMinutesBetweenDates } from '@shared-ui/common/utils'
 import { getVersionMarkData } from '@shared-ui/components/Atomic/VersionMark/utils'
+import { severities } from '@shared-ui/components/Atomic/VersionMark/constants'
 
 import { Props } from './AppLayout.types'
 import { mather, menu, Routes } from '@/routes'
@@ -21,6 +22,7 @@ import LeftPanelWrapper from '@/containers/App/AppInner/LeftPanelWrapper/LeftPan
 import { CombinedStoreType } from '@/store/store'
 import { setVersion } from '@/containers/App/slice'
 import { getVersionNumberFromGithub } from '@/containers/App/AppRest'
+import { GITHUB_VERSION_URL } from '@/constants'
 
 const AppLayout: FC<Props> = (props) => {
     const { buildInformation, collapsed, userData, setCollapsed } = props
@@ -38,7 +40,6 @@ const AppLayout: FC<Props> = (props) => {
             dispatch(
                 setVersion({
                     requestedDatetime: now,
-                    releaseUrl: ret.data.releaseUrl,
                     latest: ret.data.tag_name.replace('v', ''),
                 })
             )
@@ -126,12 +127,12 @@ const AppLayout: FC<Props> = (props) => {
                             <VersionMark
                                 severity={versionMarkData.severity}
                                 update={
-                                    appStore.version.releaseUrl
+                                    versionMarkData.severity !== severities.SUCCESS
                                         ? {
                                               text: _(t.clickHere),
                                               onClick: (e) => {
                                                   e.preventDefault()
-                                                  window.location.href = appStore.version.releaseUrl as string
+                                                  window.open(GITHUB_VERSION_URL, '_blank')
                                               },
                                           }
                                         : undefined

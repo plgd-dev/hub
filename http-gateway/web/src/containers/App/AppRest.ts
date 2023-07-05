@@ -1,5 +1,6 @@
 import { fetchApi, security } from '@shared-ui/common/services'
 import { SecurityConfig } from '@/containers/App/App.types'
+import { GITHUB_VERSION_URL } from '@/constants'
 
 export const getAppWellKnownConfiguration = (wellKnowConfigUrl: string) => {
     const { cancelRequestDeadlineTimeout } = security.getGeneralConfig() as SecurityConfig
@@ -9,4 +10,4 @@ export const getAppWellKnownConfiguration = (wellKnowConfigUrl: string) => {
     })
 }
 
-export const getVersionNumberFromGithub = () => fetchApi(`https://api.github.com/repos/plgd-dev/hub/releases/latest`, { useToken: false })
+export const getVersionNumberFromGithub = () => fetchApi(GITHUB_VERSION_URL, { useToken: false })

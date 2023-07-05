@@ -3,7 +3,6 @@ import { createSlice } from '@reduxjs/toolkit'
 export type StoreType = {
     version: {
         latest?: string
-        releaseUrl?: string
         requestedDatetime?: string
     }
 }
