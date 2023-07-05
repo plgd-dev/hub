@@ -1,4 +1,4 @@
-import { FC, SyntheticEvent, useCallback, useEffect, useState } from 'react'
+import { FC, SyntheticEvent, useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useIntl } from 'react-intl'
 import { useDispatch, useSelector } from 'react-redux'
@@ -7,11 +7,11 @@ import Header from '@shared-ui/components/Layout/Header'
 import NotificationCenter from '@shared-ui/components/Atomic/NotificationCenter'
 import UserWidget from '@shared-ui/components/Layout/Header/UserWidget'
 import VersionMark from '@shared-ui/components/Atomic/VersionMark'
-import { severities } from '@shared-ui/components/Atomic/VersionMark/constants'
 import Layout from '@shared-ui/components/Layout'
 import { MenuItem } from '@shared-ui/components/Layout/LeftPanel/LeftPanel.types'
 import { parseActiveItem } from '@shared-ui/components/Layout/LeftPanel/utils'
 import { getMinutesBetweenDates } from '@shared-ui/common/utils'
+import { getVersionMarkData } from '@shared-ui/components/Atomic/VersionMark/utils'
 
 import { Props } from './AppLayout.types'
 import { mather, menu, Routes } from '@/routes'
@@ -21,7 +21,6 @@ import LeftPanelWrapper from '@/containers/App/AppInner/LeftPanelWrapper/LeftPan
 import { CombinedStoreType } from '@/store/store'
 import { setVersion } from '@/containers/App/slice'
 import { getVersionNumberFromGithub } from '@/containers/App/AppRest'
-import { VersionMarkSeverityType } from '@shared-ui/components/Atomic/VersionMark/VersionMark.types'
 
 const AppLayout: FC<Props> = (props) => {
     const { buildInformation, collapsed, userData, setCollapsed } = props
@@ -69,29 +68,19 @@ const AppLayout: FC<Props> = (props) => {
         id !== activeItem && setActiveItem(id)
     }
 
-    const versionMarkData = (): { severity: VersionMarkSeverityType; text: string } => {
-        let text = `${_(t.version)} ${buildInformation.version}`
-
-        if (appStore.version === buildInformation.version) {
-            return {
-                severity: severities.SUCCESS,
-                text,
-            }
-        } else {
-            text += ` • ${_(t.newUpdateIsAvailable)}`
-            const [latestMajor, latestMinor, latestPatch] = appStore.version.latest?.split('-') || []
-            const [currentMajor, currentMinor, currentPath] = buildInformation.version.split('-')[0].split('.')
-            const hasError =
-                Math.abs(parseInt(latestMinor) - parseInt(currentMinor)) >= 3 ||
-                Math.abs(parseInt(latestPatch) - parseInt(currentPath)) >= 3 ||
-                latestMajor !== currentMajor
-
-            return {
-                severity: hasError ? severities.ERROR : severities.WARNING,
-                text,
-            }
-        }
-    }
+    const versionMarkData = useMemo(
+        () =>
+            getVersionMarkData({
+                buildVersion: buildInformation.version,
+                githubVersion: appStore.version.latest || '',
+                i18n: {
+                    version: _(t.version),
+                    newUpdateIsAvailable: _(t.newUpdateIsAvailable),
+                },
+            }),
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [appStore.version.latest, buildInformation.version]
+    )
 
     return (
         <Layout
@@ -135,7 +124,7 @@ const AppLayout: FC<Props> = (props) => {
                     versionMark={
                         appStore.version.latest && (
                             <VersionMark
-                                severity={versionMarkData().severity}
+                                severity={versionMarkData.severity}
                                 update={
                                     appStore.version.releaseUrl
                                         ? {
@@ -147,7 +136,7 @@ const AppLayout: FC<Props> = (props) => {
                                           }
                                         : undefined
                                 }
-                                versionText={versionMarkData().text}
+                                versionText={versionMarkData.text}
                             />
                         )
                     }
