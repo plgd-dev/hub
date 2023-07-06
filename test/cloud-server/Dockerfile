@@ -1,4 +1,4 @@
-FROM golang:1.20.4-alpine AS build
+FROM golang:1.20.5-alpine AS build
 RUN apk add --no-cache build-base curl git
 WORKDIR $GOPATH/src/github.com/plgd-dev/hub
 COPY go.mod go.sum ./
