@@ -115,8 +115,11 @@ jobs:
           echo "short_commit=${short_commit}" >> $GITHUB_OUTPUT
           echo "date=$(date -u +%FT%TZ)" >> $GITHUB_OUTPUT
           version=$(git describe --tags --abbrev=0 | sed 's/^v//')
+          release_url="${{ github.server_url }}/${{ github.repository }}/releases/tag/${{ github.ref_name }}"
           if [[ "${{ github.ref }}" != "refs/tags/"* ]]; then
             version="${version}-pr${{ github.event.number }}"
+          elif curl --fail-with-body -s "$release_url" > /dev/null; then 
+            echo "release_url=$release_url" >> $GITHUB_OUTPUT
           fi
           echo "version=$version" >> $GITHUB_OUTPUT
 
@@ -137,6 +140,7 @@ jobs:
             SHORT_COMMIT=${{ steps.build-args.outputs.short_commit }}
             DATE=${{ steps.build-args.outputs.date }}
             VERSION=${{ steps.build-args.outputs.version }}
+            RELEASE_URL=${{ steps.build-args.outputs.release_url }}
           file: ${{ inputs.file }}
           push: true
           tags: ${{ steps.meta.outputs.tags }}

@@ -173,6 +173,7 @@ func (c PublicConfiguration) ToProto() *pb.HubConfigurationResponse {
 			CommitHash: build.CommitHash,
 			BuildDate:  build.BuildDate,
 			CommitDate: build.CommitDate,
+			ReleaseUrl: build.ReleaseURL,
 		},
 	}
 }
