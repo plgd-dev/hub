@@ -45,6 +45,13 @@ const App = () => {
                         security.setDeviceOAuthConfig(deviceOauthClient)
                         security.setWellKnowConfig(wellKnown)
 
+                        // tmp fix
+                        if (!wellKnown.hasOwnProperty('buildInfo')) {
+                            wellKnown.buildInfo = {
+                                version: '0.0.0',
+                            }
+                        }
+
                         setWellKnownConfigFetched(true)
                         setWellKnownConfig(wellKnown)
                     }

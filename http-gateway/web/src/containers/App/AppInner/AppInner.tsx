@@ -25,7 +25,7 @@ const getBuildInformation = (wellKnownConfig: WellKnownConfigType) => ({
     commitHash: wellKnownConfig?.commitHash || '',
     commitDate: wellKnownConfig?.commitDate || '',
     releaseUrl: wellKnownConfig?.releaseUrl || '',
-    version: wellKnownConfig?.version || '0.0.0',
+    version: wellKnownConfig?.buildInfo.version || '0.0.0',
 })
 
 const AppInner = (props: Props) => {
