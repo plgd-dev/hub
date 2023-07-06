@@ -1,4 +1,10 @@
-FROM golang:1.20.4-alpine AS build
+# syntax=docker/dockerfile:1
+FROM golang:1.20.5-alpine AS build
+ARG VERSION
+ARG COMMIT_DATE
+ARG SHORT_COMMIT
+ARG DATE
+ARG RELEASE_URL
 RUN apk add --no-cache build-base curl git
 WORKDIR $GOPATH/src/github.com/plgd-dev/hub
 COPY go.mod go.sum ./
@@ -10,17 +16,17 @@ ARG root_directory=$GOPATH/src/github.com/plgd-dev/hub
 #cert-tool
 ARG tool=cert-tool
 WORKDIR $root_directory/tools/$tool
-RUN go build -ldflags "-linkmode external -extldflags -static" -o /go/bin/cert-tool
+RUN go build -ldflags "-linkmode external -extldflags -static -X github.com/plgd-dev/hub/v2/pkg/build.CommitDate=$COMMIT_DATE -X github.com/plgd-dev/hub/v2/pkg/build.CommitHash=$SHORT_COMMIT -X github.com/plgd-dev/hub/v2/pkg/build.BuildDate=$DATE -X github.com/plgd-dev/hub/v2/pkg/build.Version=$VERSION -X github.com/plgd-dev/hub/v2/pkg/build.ReleaseURL=$RELEASE_URL" -o /go/bin/cert-tool
 
 #grpc-gateway
 ARG service=grpc-gateway
 WORKDIR $root_directory/$service/service
-RUN go test -c -ldflags "-linkmode external -extldflags -static" -o /go/bin/grpc-gateway.test
+RUN go test -c -ldflags "-linkmode external -extldflags -static -X github.com/plgd-dev/hub/v2/pkg/build.CommitDate=$COMMIT_DATE -X github.com/plgd-dev/hub/v2/pkg/build.CommitHash=$SHORT_COMMIT -X github.com/plgd-dev/hub/v2/pkg/build.BuildDate=$DATE -X github.com/plgd-dev/hub/v2/pkg/build.Version=$VERSION -X github.com/plgd-dev/hub/v2/pkg/build.ReleaseURL=$RELEASE_URL" -o /go/bin/grpc-gateway.test
 
 #test/iotivity-lite
 ARG service=test-iotivity-lite
 WORKDIR $root_directory/test/iotivity-lite/service
-RUN go test -c -ldflags "-linkmode external -extldflags -static" -o /go/bin/test-iotivity-lite.test
+RUN go test -c -ldflags "-linkmode external -extldflags -static -X github.com/plgd-dev/hub/v2/pkg/build.CommitDate=$COMMIT_DATE -X github.com/plgd-dev/hub/v2/pkg/build.CommitHash=$SHORT_COMMIT -X github.com/plgd-dev/hub/v2/pkg/build.BuildDate=$DATE -X github.com/plgd-dev/hub/v2/pkg/build.Version=$VERSION -X github.com/plgd-dev/hub/v2/pkg/build.ReleaseURL=$RELEASE_URL" -o /go/bin/test-iotivity-lite.test
 
 #nats
 WORKDIR $root_directory
