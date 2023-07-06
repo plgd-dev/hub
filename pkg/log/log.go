@@ -172,6 +172,9 @@ func (t *TimeEncoderWrapper) UnmarshalText(text []byte) error {
 }
 
 func (t TimeEncoderWrapper) MarshalText() ([]byte, error) {
+	if t.TimeEncoder == nil {
+		return []byte(EpochTimeEncoder{}.String()), nil
+	}
 	return []byte(t.TimeEncoder.String()), nil
 }
 
