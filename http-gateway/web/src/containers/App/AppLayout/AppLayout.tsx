@@ -22,7 +22,6 @@ import LeftPanelWrapper from '@/containers/App/AppInner/LeftPanelWrapper/LeftPan
 import { CombinedStoreType } from '@/store/store'
 import { setVersion } from '@/containers/App/slice'
 import { getVersionNumberFromGithub } from '@/containers/App/AppRest'
-import { GITHUB_VERSION_URL } from '@/constants'
 
 const AppLayout: FC<Props> = (props) => {
     const { buildInformation, collapsed, userData, setCollapsed } = props
@@ -41,6 +40,7 @@ const AppLayout: FC<Props> = (props) => {
                 setVersion({
                     requestedDatetime: now,
                     latest: ret.data.tag_name.replace('v', ''),
+                    latest_url: ret.data.html_url,
                 })
             )
         })
@@ -127,12 +127,12 @@ const AppLayout: FC<Props> = (props) => {
                             <VersionMark
                                 severity={versionMarkData.severity}
                                 update={
-                                    versionMarkData.severity !== severities.SUCCESS
+                                    versionMarkData.severity !== severities.SUCCESS && appStore.version.latest_url
                                         ? {
                                               text: _(t.clickHere),
                                               onClick: (e) => {
                                                   e.preventDefault()
-                                                  window.open(GITHUB_VERSION_URL, '_blank')
+                                                  window.open(appStore.version.latest_url, '_blank')
                                               },
                                           }
                                         : undefined
