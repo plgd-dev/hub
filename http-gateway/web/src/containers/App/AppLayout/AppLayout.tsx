@@ -22,6 +22,7 @@ import LeftPanelWrapper from '@/containers/App/AppInner/LeftPanelWrapper/LeftPan
 import { CombinedStoreType } from '@/store/store'
 import { setVersion } from '@/containers/App/slice'
 import { getVersionNumberFromGithub } from '@/containers/App/AppRest'
+import { GITHUB_VERSION_REQUEST_INTERVAL } from '@/constants'
 
 const AppLayout: FC<Props> = (props) => {
     const { buildInformation, collapsed, userData, setCollapsed } = props
@@ -51,7 +52,10 @@ const AppLayout: FC<Props> = (props) => {
     useEffect(() => {
         const now: Date = new Date()
 
-        if (!appStore.version.requestedDatetime || getMinutesBetweenDates(new Date(appStore.version.requestedDatetime), now) > 30) {
+        if (
+            !appStore.version.requestedDatetime ||
+            getMinutesBetweenDates(new Date(appStore.version.requestedDatetime), now) > GITHUB_VERSION_REQUEST_INTERVAL
+        ) {
             requestVersion(now)
         }
 
