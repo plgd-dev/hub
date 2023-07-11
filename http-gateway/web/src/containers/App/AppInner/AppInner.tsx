@@ -7,7 +7,7 @@ import { Helmet } from 'react-helmet'
 import { InitServices } from '@shared-ui/common/services/init-services'
 import { BrowserNotificationsContainer } from '@shared-ui/components/Atomic/Toast'
 import { ToastContainer } from '@shared-ui/components/Atomic/Notification'
-import { useLocalStorage, WellKnownConfigType } from '@shared-ui/common/hooks'
+import { useLocalStorage } from '@shared-ui/common/hooks'
 import light from '@shared-ui/components/Atomic/_theme/light'
 import { security } from '@shared-ui/common/services'
 
@@ -20,18 +20,9 @@ import { globalStyle } from './AppInner.global.styles'
 import { AppContextType } from '@/containers/App/AppContext.types'
 import AppLayout from '@/containers/App/AppLayout/AppLayout'
 
-const getBuildInformation = (wellKnownConfig: WellKnownConfigType) => ({
-    buildDate: wellKnownConfig?.buildDate || '',
-    commitHash: wellKnownConfig?.commitHash || '',
-    commitDate: wellKnownConfig?.commitDate || '',
-    releaseUrl: wellKnownConfig?.releaseUrl || '',
-    version: wellKnownConfig?.version || '',
-})
-
 const AppInner = (props: Props) => {
     const { wellKnownConfig, openTelemetry } = props
     const { userData, userManager } = useAuth()
-    const buildInformation = getBuildInformation(wellKnownConfig)
 
     const [footerExpanded, setFooterExpanded] = useLocalStorage('footerPanelExpanded', false)
     const [collapsed, setCollapsed] = useLocalStorage('leftPanelCollapsed', true)
@@ -47,9 +38,9 @@ const AppInner = (props: Props) => {
             ...wellKnownConfig,
             wellKnownConfig,
             telemetryWebTracer: openTelemetry.getWebTracer(),
-            buildInformation: buildInformation || undefined,
+            buildInformation: wellKnownConfig?.buildInfo,
         }),
-        [footerExpanded, collapsed, setCollapsed, setFooterExpanded, wellKnownConfig, openTelemetry, buildInformation]
+        [footerExpanded, collapsed, setCollapsed, setFooterExpanded, wellKnownConfig, openTelemetry]
     )
 
     if (userData) {
@@ -68,7 +59,7 @@ const AppInner = (props: Props) => {
                 <InitServices deviceStatusListener={deviceStatusListener} />
                 <Helmet defaultTitle={appConfig.appName} titleTemplate={`%s | ${appConfig.appName}`} />
                 <BrowserRouter>
-                    <AppLayout collapsed={collapsed} setCollapsed={setCollapsed} userData={userData} />
+                    <AppLayout buildInformation={wellKnownConfig?.buildInfo} collapsed={collapsed} setCollapsed={setCollapsed} userData={userData} />
                     <Global styles={globalStyle(toastNotifications)} />
                     <ToastContainer portalTarget={document.getElementById('toast-root')} showNotifications={true} />
                     <BrowserNotificationsContainer />

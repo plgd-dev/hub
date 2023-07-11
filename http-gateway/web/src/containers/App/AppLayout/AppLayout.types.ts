@@ -1,4 +1,11 @@
 export type Props = {
+    buildInformation: {
+        buildDate: string
+        commitHash: string
+        commitDate: string
+        releaseUrl: string
+        version: string
+    }
     collapsed: boolean
     userData?: {
         profile?: {
