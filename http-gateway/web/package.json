@@ -61,7 +61,7 @@
     "typescript": "^4.9.4",
     "units-converter": "^1.0.3",
     "uuid": "^8.3.2",
-    "web-vitals": "^2.1.2"
+    "web-vitals": "^2.1.4"
   },
   "devDependencies": {
     "@babel/cli": "^7.22.5",
