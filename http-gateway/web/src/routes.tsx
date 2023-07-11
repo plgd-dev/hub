@@ -2,31 +2,177 @@ import { Routes as RoutesGroup, Route, matchPath } from 'react-router-dom'
 import { useIntl } from 'react-intl'
 
 import NotFoundPage from '@shared-ui/components/Templates/NotFoundPage'
-import { IconDevices, IconSettings } from '@shared-ui/components/Atomic/Icon/'
+import {
+    IconDevices,
+    IconSettings,
+    IconDashboard,
+    IconIntegrations,
+    IconRemoteClients,
+    IconPendingCommands,
+    IconNetwork,
+    IconDeviceUpdate,
+    IconLog,
+    IconLock,
+    IconNet,
+    IconDocs,
+    IconChat,
+} from '@shared-ui/components/Atomic/Icon/'
 
 import DevicesListPage from '@/containers/Devices/List/DevicesListPage'
 import DevicesDetailsPage from '@/containers/Devices/Detail/DevicesDetailsPage'
 import { messages as t } from './containers/App/App.i18n'
 import TestPage from './containers/Test'
+import { MenuGroup } from '@shared-ui/components/Layout/LeftPanel/LeftPanel.types'
 
-export const menu = [
+const MenuTranslate = (props: { id: string }) => {
+    const { id } = props
+    const { formatMessage: _ } = useIntl()
+
+    // @ts-ignore
+    return <span>{_(t[id])}</span>
+}
+
+export const menu: MenuGroup[] = [
     {
-        title: 'Main menu',
+        title: <MenuTranslate id='menuMainMenu' />,
         items: [
+            {
+                icon: <IconDashboard />,
+                id: '0',
+                title: <MenuTranslate id='menuDashboard' />,
+                link: '/dashboard',
+                paths: ['/dashboard'],
+                exact: true,
+                disabled: true,
+            },
             {
                 icon: <IconDevices />,
                 id: '1',
-                title: 'Devices',
+                title: <MenuTranslate id='menuDevices' />,
                 link: '/',
                 paths: ['/', '/devices/:id', '/devices/:id/resources', '/devices/:id/resources/:href'],
                 exact: true,
+            },
+            {
+                icon: <IconIntegrations />,
+                id: '2',
+                title: <MenuTranslate id='menuIntegrations' />,
+                link: '/integrations',
+                paths: ['/integrations'],
+                exact: true,
+                disabled: true,
+            },
+            {
+                icon: <IconRemoteClients />,
+                id: '3',
+                title: <MenuTranslate id='menuRemoteClients' />,
+                link: '/remote-clients',
+                paths: ['/remote-clients'],
+                exact: true,
+                disabled: true,
+            },
+            {
+                icon: <IconPendingCommands />,
+                id: '3',
+                title: <MenuTranslate id='menuPendingCommands' />,
+                link: '/pending-commands',
+                paths: ['/pending-commands'],
+                exact: true,
+                disabled: true,
+            },
+        ],
+    },
+    {
+        title: <MenuTranslate id='menuOthers' />,
+        items: [
+            {
+                icon: <IconNetwork />,
+                id: '10',
+                title: <MenuTranslate id='menuDeviceProvisioning' />,
+                link: '/device-provisioning',
+                paths: ['/device-provisioning'],
+                exact: true,
+                disabled: true,
+                children: [
+                    { id: '101', title: <MenuTranslate id='menuQuickstart' />, tag: { variant: 'success', text: 'New' } },
+                    { id: '102', title: <MenuTranslate id='menuManageEnrollments' /> },
+                    { id: '103', title: <MenuTranslate id='menuLinkedHubs' /> },
+                    { id: '104', title: <MenuTranslate id='menuCertificates' />, tag: { variant: 'info', text: 'Soon!' } },
+                    { id: '105', title: <MenuTranslate id='menuRegistrationRecords' /> },
+                ],
+            },
+            {
+                icon: <IconDeviceUpdate />,
+                id: '11',
+                title: <MenuTranslate id='menuDeviceFirmwareUpdate' />,
+                link: '/device-firmware-update',
+                paths: ['/device-firmware-update'],
+                exact: true,
+                disabled: true,
+                children: [
+                    { id: '111', title: 'Quickstart 2', tag: { variant: 'success', text: 'New 2' } },
+                    { id: '112', title: 'Manage enrollments 2' },
+                    { id: '113', title: 'Linked hubs 2' },
+                    { id: '114', title: 'Certificates 2', tag: { variant: 'info', text: 'Soon!' } },
+                    { id: '115', title: 'Registration records 2' },
+                ],
+            },
+            {
+                icon: <IconLog />,
+                id: '12',
+                title: <MenuTranslate id='menuDeviceLogs' />,
+                link: '/device-firmware-update',
+                paths: ['/device-firmware-update'],
+                exact: true,
+                disabled: true,
+            },
+            {
+                icon: <IconLock />,
+                id: '13',
+                title: <MenuTranslate id='menuApiTokens' />,
+                link: '/api-tokens',
+                paths: ['/api-tokens'],
+                exact: true,
+                disabled: true,
+            },
+            {
+                icon: <IconNet />,
+                id: '14',
+                title: <MenuTranslate id='menuSchemaHub' />,
+                link: '/schema-hub',
+                paths: ['/schema-hub'],
+                exact: true,
+                disabled: true,
+            },
+        ],
+    },
+    {
+        title: <MenuTranslate id='menuSupport' />,
+        items: [
+            {
+                icon: <IconDocs />,
+                id: '20',
+                title: <MenuTranslate id='menuDocs' />,
+                link: '/docs',
+                paths: ['/docs'],
+                exact: true,
+                disabled: true,
+            },
+            {
+                icon: <IconChat />,
+                id: '21',
+                title: <MenuTranslate id='menuChatRoom' />,
+                link: '/chat-room',
+                paths: ['/hat-room'],
+                exact: true,
+                disabled: true,
             },
         ],
     },
 ]
 
 if (process.env?.REACT_APP_TEST_VIEW === 'true') {
-    menu[0].items.push({
+    menu[0]?.items?.push({
         icon: <IconSettings />,
         id: '999',
         title: 'Test',

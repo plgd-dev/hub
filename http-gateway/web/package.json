@@ -104,7 +104,8 @@
     "generate-language-files": "node ./scripts/generate-language-files.js",
     "lint": "npm-run-all :lint:eslint :lint:prettier",
     ":lint:eslint": "eslint --ext .js,.jsx,.ts,.tsx -c .eslintrc.js --max-warnings 0 --format=pretty ./src",
-    ":lint:prettier": "prettier ./src --check"
+    ":lint:prettier": "prettier ./src --check",
+    ":clean:node:modules": "rimraf ./node_modules packages/**/node_modules"
   },
   "scriptComments": {
     "generate-pot": "Examines all src js files and extracts the translate keys into a .pot file, to be used in a translation tool outside of this app.",

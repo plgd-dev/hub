@@ -53,7 +53,7 @@ const App = () => {
                 }
             }
 
-            fetchWellKnownConfig()
+            fetchWellKnownConfig().then()
         }
     }, [wellKnownConfig, wellKnownConfigFetched])
 
