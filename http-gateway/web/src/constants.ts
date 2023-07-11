@@ -5,3 +5,7 @@ export const shadowSynchronizationStates = {
     ENABLED: 'ENABLED',
     DISABLED: 'DISABLED',
 }
+
+export const GITHUB_VERSION_URL = 'https://api.github.com/repos/plgd-dev/hub/releases/latest'
+
+export const GITHUB_VERSION_REQUEST_INTERVAL = 30 // in minutes
