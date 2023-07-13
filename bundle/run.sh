@@ -93,7 +93,9 @@ if [ -z "${OAUTH_CLIENT_SECRET}" ]
 then
   export OAUTH_CLIENT_SECRET="secret"
 fi
-echo -n ${OAUTH_CLIENT_SECRET} > ${OAUTH_DEVICE_SECRET_PATH}
+if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "${OAUTH_DEVICE_SECRET_PATH}" ]; then
+  echo -n ${OAUTH_CLIENT_SECRET} > ${OAUTH_DEVICE_SECRET_PATH}
+fi
 
 export COAP_GATEWAY_UNSECURE_FQDN=$FQDN
 export COAP_GATEWAY_FQDN=$FQDN
@@ -119,30 +121,44 @@ fqdnSAN="--cert.san.domain=$FQDN"
 if ip route get $FQDN 2>/dev/null >/dev/null; then
   fqdnSAN="--cert.san.ip=$FQDN"
 fi
-echo "generating CA cert"
-cert-tool --cmd.generateRootCA --outCert=$ROOT_CERT_PATH --outKey=$ROOT_KEY_PATH --cert.subject.cn="Root CA" \
-  --cert.signatureAlgorithm=${CERT_TOOL_SIGN_ALG} --cert.ellipticCurve=${CERT_TOOL_ELLIPTIC_CURVE}
-echo "generating GRPC internal cert"
-cert-tool --cmd.generateCertificate --outCert=$INTERNAL_CERT_DIR_PATH/$GRPC_INTERNAL_CERT_NAME \
-  --outKey=$INTERNAL_CERT_DIR_PATH/$GRPC_INTERNAL_CERT_KEY_NAME --cert.subject.cn="localhost" --cert.san.domain="localhost" \
-  --cert.san.ip="0.0.0.0" --cert.san.ip="127.0.0.1" $fqdnSAN --signerCert=$ROOT_CERT_PATH --signerKey=$ROOT_KEY_PATH \
-  --cert.signatureAlgorithm=${CERT_TOOL_SIGN_ALG} --cert.ellipticCurve=${CERT_TOOL_ELLIPTIC_CURVE}
-echo "generating COAP-GW cert"
-cert-tool --cmd.generateIdentityCertificate=$COAP_GATEWAY_HUB_ID --outCert=$EXTERNAL_CERT_DIR_PATH/$COAP_GATEWAY_FILE_CERT_NAME \
-  --outKey=$EXTERNAL_CERT_DIR_PATH/$COAP_GATEWAY_FILE_CERT_KEY_NAME --cert.san.domain=$COAP_GATEWAY_FQDN \
-  --signerCert=$ROOT_CERT_PATH --signerKey=$ROOT_KEY_PATH --cert.signatureAlgorithm=${CERT_TOOL_SIGN_ALG} \
-  --cert.ellipticCurve=${CERT_TOOL_ELLIPTIC_CURVE}
-echo "generating NGINX cert"
-cert-tool --cmd.generateCertificate --outCert=$EXTERNAL_CERT_DIR_PATH/$GRPC_INTERNAL_CERT_NAME \
-  --outKey=$EXTERNAL_CERT_DIR_PATH/$GRPC_INTERNAL_CERT_KEY_NAME --cert.subject.cn="localhost" --cert.san.domain="localhost" \
-  --cert.san.ip="0.0.0.0" --cert.san.ip="127.0.0.1" $fqdnSAN --signerCert=$ROOT_CERT_PATH --signerKey=$ROOT_KEY_PATH \
-  --cert.signatureAlgorithm=${CERT_TOOL_SIGN_ALG} --cert.ellipticCurve=${CERT_TOOL_ELLIPTIC_CURVE}
 
-echo "ROOT_CERT_PATH=${ROOT_CERT_PATH} CA_POOL=${CA_POOL}"
-cat ${ROOT_CERT_PATH} > ${CA_POOL}
-if [ -f ${CA_POOL_CUSTOM_PATH} ]; then
-echo "CA_POOL_CUSTOM_PATH=${CA_POOL_CUSTOM_PATH} CA_POOL=${CA_POOL}"
-  cat ${CA_POOL_CUSTOM_PATH} >> ${CA_POOL}
+REGENERATE_CERT="false"
+if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "$ROOT_CERT_PATH" ] || [ ! -f "$ROOT_KEY_PATH" ]; then
+  echo "generating CA cert"
+  REGENERATE_CERT="true"
+  cert-tool --cmd.generateRootCA --outCert=$ROOT_CERT_PATH --outKey=$ROOT_KEY_PATH --cert.subject.cn="Root CA" \
+    --cert.signatureAlgorithm=${CERT_TOOL_SIGN_ALG} --cert.ellipticCurve=${CERT_TOOL_ELLIPTIC_CURVE}
+fi
+
+if [ "${OVERRIDE_FILES}" = "true" ] || [ "${REGENERATE_CERT}" = "true" ] || [ ! -f "$INTERNAL_CERT_DIR_PATH/$GRPC_INTERNAL_CERT_NAME" ] || [ ! -f "$INTERNAL_CERT_DIR_PATH/$GRPC_INTERNAL_CERT_KEY_NAME" ]; then
+  echo "generating GRPC internal cert"
+  cert-tool --cmd.generateCertificate --outCert=$INTERNAL_CERT_DIR_PATH/$GRPC_INTERNAL_CERT_NAME \
+    --outKey=$INTERNAL_CERT_DIR_PATH/$GRPC_INTERNAL_CERT_KEY_NAME --cert.subject.cn="localhost" --cert.san.domain="localhost" \
+    --cert.san.ip="0.0.0.0" --cert.san.ip="127.0.0.1" $fqdnSAN --signerCert=$ROOT_CERT_PATH --signerKey=$ROOT_KEY_PATH \
+    --cert.signatureAlgorithm=${CERT_TOOL_SIGN_ALG} --cert.ellipticCurve=${CERT_TOOL_ELLIPTIC_CURVE}
+fi
+if [ "${OVERRIDE_FILES}" = "true" ] || [ "${REGENERATE_CERT}" = "true" ] || [ ! -f "$EXTERNAL_CERT_DIR_PATH/$COAP_GATEWAY_FILE_CERT_NAME" ] || [ ! -f "$EXTERNAL_CERT_DIR_PATH/$COAP_GATEWAY_FILE_CERT_KEY_NAME" ]; then
+  echo "generating COAP-GW cert"
+  cert-tool --cmd.generateIdentityCertificate=$COAP_GATEWAY_HUB_ID --outCert=$EXTERNAL_CERT_DIR_PATH/$COAP_GATEWAY_FILE_CERT_NAME \
+    --outKey=$EXTERNAL_CERT_DIR_PATH/$COAP_GATEWAY_FILE_CERT_KEY_NAME --cert.san.domain=$COAP_GATEWAY_FQDN \
+    --signerCert=$ROOT_CERT_PATH --signerKey=$ROOT_KEY_PATH --cert.signatureAlgorithm=${CERT_TOOL_SIGN_ALG} \
+    --cert.ellipticCurve=${CERT_TOOL_ELLIPTIC_CURVE}
+fi
+if [ "${OVERRIDE_FILES}" = "true" ] || [ "${REGENERATE_CERT}" = "true" ] || [ ! -f "$EXTERNAL_CERT_DIR_PATH/$GRPC_INTERNAL_CERT_NAME" ] || [ ! -f "$EXTERNAL_CERT_DIR_PATH/$GRPC_INTERNAL_CERT_KEY_NAME" ]; then
+  echo "generating NGINX cert"
+  cert-tool --cmd.generateCertificate --outCert=$EXTERNAL_CERT_DIR_PATH/$GRPC_INTERNAL_CERT_NAME \
+    --outKey=$EXTERNAL_CERT_DIR_PATH/$GRPC_INTERNAL_CERT_KEY_NAME --cert.subject.cn="localhost" --cert.san.domain="localhost" \
+    --cert.san.ip="0.0.0.0" --cert.san.ip="127.0.0.1" $fqdnSAN --signerCert=$ROOT_CERT_PATH --signerKey=$ROOT_KEY_PATH \
+    --cert.signatureAlgorithm=${CERT_TOOL_SIGN_ALG} --cert.ellipticCurve=${CERT_TOOL_ELLIPTIC_CURVE}
+fi
+
+if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "${CA_POOL}" ]; then
+  echo "ROOT_CERT_PATH=${ROOT_CERT_PATH} CA_POOL=${CA_POOL}"
+  cat ${ROOT_CERT_PATH} > ${CA_POOL}
+  if [ -f ${CA_POOL_CUSTOM_PATH} ]; then
+  echo "CA_POOL_CUSTOM_PATH=${CA_POOL_CUSTOM_PATH} CA_POOL=${CA_POOL}"
+    cat ${CA_POOL_CUSTOM_PATH} >> ${CA_POOL}
+  fi
 fi
 
 # copy ceritficates to paths
@@ -150,38 +166,50 @@ fi
 while read -r line; do
   file=`echo $line | yq e '.[0]' - `
   mkdir -p `dirname ${file}`
-  cp $CA_POOL ${file}
+  if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "${file}" ]; then
+     cp $CA_POOL ${file}
+  fi
 done < <(yq e '[.. | select(has("caPool")) | .caPool]' /configs/oauth-server.yaml | sort | uniq)
 ### setup certificates
 while read -r line; do
   file=`echo $line | yq e '.[0]' - `
   mkdir -p `dirname ${file}`
-  cp $CERT_FILE ${file}
+  if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "${file}" ]; then
+     cp $CERT_FILE ${file}
+  fi
 done < <(yq e '[.. | select(has("certFile")) | .certFile]' /configs/oauth-server.yaml | sort | uniq)
 ### setup private keys
 while read -r line; do
   file=`echo $line | yq e '.[0]' - `
   mkdir -p `dirname ${file}`
-  cp $KEY_FILE ${file}
+  if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "${file}" ]; then
+     cp $KEY_FILE ${file}
+  fi
 done < <(yq e '[.. | select(has("keyFile")) | .keyFile]' /configs/oauth-server.yaml | sort | uniq)
 
 ## identity-store
 while read -r line; do
   file=`echo $line | yq e '.[0]' - `
   mkdir -p `dirname ${file}`
-  cp $CA_POOL ${file}
+  if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "${file}" ]; then
+    cp $CA_POOL ${file}
+  fi
 done < <(yq e '[.. | select(has("caPool")) | .caPool]' /configs/identity-store.yaml | sort | uniq)
 ### setup certificates
 while read -r line; do
   file=`echo $line | yq e '.[0]' - `
   mkdir -p `dirname ${file}`
-  cp $CERT_FILE ${file}
+  if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "${file}" ]; then
+     cp $CERT_FILE ${file}
+  fi
 done < <(yq e '[.. | select(has("certFile")) | .certFile]' /configs/identity-store.yaml | sort | uniq)
 ### setup private keys
 while read -r line; do
   file=`echo $line | yq e '.[0]' - `
   mkdir -p `dirname ${file}`
-  cp $KEY_FILE ${file}
+  if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "${file}" ]; then
+     cp $KEY_FILE ${file}
+  fi
 done < <(yq e '[.. | select(has("keyFile")) | .keyFile]' /configs/identity-store.yaml | sort | uniq)
 
 ## resource-aggregate
@@ -189,19 +217,25 @@ done < <(yq e '[.. | select(has("keyFile")) | .keyFile]' /configs/identity-store
 while read -r line; do
   file=`echo $line | yq e '.[0]' - `
   mkdir -p `dirname ${file}`
-  cp $CA_POOL ${file}
+  if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "${file}" ]; then
+    cp $CA_POOL ${file}
+  fi
 done < <(yq e '[.. | select(has("caPool")) | .caPool]' /configs/resource-aggregate.yaml | sort | uniq)
 ### setup certificates
 while read -r line; do
   file=`echo $line | yq e '.[0]' - `
   mkdir -p `dirname ${file}`
-  cp $CERT_FILE ${file}
+  if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "${file}" ]; then
+     cp $CERT_FILE ${file}
+  fi
 done < <(yq e '[.. | select(has("certFile")) | .certFile]' /configs/resource-aggregate.yaml | sort | uniq)
 ### setup private keys
 while read -r line; do
   file=`echo $line | yq e '.[0]' - `
   mkdir -p `dirname ${file}`
-  cp $KEY_FILE ${file}
+  if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "${file}" ]; then
+     cp $KEY_FILE ${file}
+  fi
 done < <(yq e '[.. | select(has("keyFile")) | .keyFile]' /configs/resource-aggregate.yaml | sort | uniq)
 
 ## resource-directory
@@ -209,19 +243,25 @@ done < <(yq e '[.. | select(has("keyFile")) | .keyFile]' /configs/resource-aggre
 while read -r line; do
   file=`echo $line | yq e '.[0]' - `
   mkdir -p `dirname ${file}`
-  cp $CA_POOL ${file}
+  if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "${file}" ]; then
+    cp $CA_POOL ${file}
+  fi
 done < <(yq e '[.. | select(has("caPool")) | .caPool]' /configs/resource-directory.yaml | sort | uniq)
 ### setup certificates
 while read -r line; do
   file=`echo $line | yq e '.[0]' - `
   mkdir -p `dirname ${file}`
-  cp $CERT_FILE ${file}
+  if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "${file}" ]; then
+     cp $CERT_FILE ${file}
+  fi
 done < <(yq e '[.. | select(has("certFile")) | .certFile]' /configs/resource-directory.yaml | sort | uniq)
 ### setup private keys
 while read -r line; do
   file=`echo $line | yq e '.[0]' - `
   mkdir -p `dirname ${file}`
-  cp $KEY_FILE ${file}
+  if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "${file}" ]; then
+     cp $KEY_FILE ${file}
+  fi
 done < <(yq e '[.. | select(has("keyFile")) | .keyFile]' /configs/resource-directory.yaml | sort | uniq)
 
 ## coap-gateway
@@ -229,19 +269,25 @@ done < <(yq e '[.. | select(has("keyFile")) | .keyFile]' /configs/resource-direc
 while read -r line; do
   file=`echo $line | yq e '.[0]' - `
   mkdir -p `dirname ${file}`
-  cp $CA_POOL ${file}
+  if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "${file}" ]; then
+    cp $CA_POOL ${file}
+  fi
 done < <(yq e '[.. | select(has("caPool")) | .caPool]' /configs/coap-gateway.yaml | sort | uniq)
 ### setup certificates
 while read -r line; do
   file=`echo $line | yq e '.[0]' - `
   mkdir -p `dirname ${file}`
-  cp $CERT_FILE ${file}
+  if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "${file}" ]; then
+     cp $CERT_FILE ${file}
+  fi
 done < <(yq e '[.. | select(has("certFile")) | .certFile]' /configs/coap-gateway.yaml | sort | uniq)
 ### setup private keys
 while read -r line; do
   file=`echo $line | yq e '.[0]' - `
   mkdir -p `dirname ${file}`
-  cp $KEY_FILE ${file}
+  if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "${file}" ]; then
+     cp $KEY_FILE ${file}
+  fi
 done < <(yq e '[.. | select(has("keyFile")) | .keyFile]' /configs/coap-gateway.yaml | sort | uniq)
 
 ## grpc-gateway
@@ -249,19 +295,25 @@ done < <(yq e '[.. | select(has("keyFile")) | .keyFile]' /configs/coap-gateway.y
 while read -r line; do
   file=`echo $line | yq e '.[0]' - `
   mkdir -p `dirname ${file}`
-  cp $CA_POOL ${file}
+  if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "${file}" ]; then
+    cp $CA_POOL ${file}
+  fi
 done < <(yq e '[.. | select(has("caPool")) | .caPool]' /configs/grpc-gateway.yaml | sort | uniq)
 ### setup certificates
 while read -r line; do
   file=`echo $line | yq e '.[0]' - `
   mkdir -p `dirname ${file}`
-  cp $CERT_FILE ${file}
+  if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "${file}" ]; then
+     cp $CERT_FILE ${file}
+  fi
 done < <(yq e '[.. | select(has("certFile")) | .certFile]' /configs/grpc-gateway.yaml | sort | uniq)
 ### setup private keys
 while read -r line; do
   file=`echo $line | yq e '.[0]' - `
   mkdir -p `dirname ${file}`
-  cp $KEY_FILE ${file}
+  if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "${file}" ]; then
+     cp $KEY_FILE ${file}
+  fi
 done < <(yq e '[.. | select(has("keyFile")) | .keyFile]' /configs/grpc-gateway.yaml | sort | uniq)
 
 ## http-gateway
@@ -269,19 +321,25 @@ done < <(yq e '[.. | select(has("keyFile")) | .keyFile]' /configs/grpc-gateway.y
 while read -r line; do
   file=`echo $line | yq e '.[0]' - `
   mkdir -p `dirname ${file}`
-  cp $CA_POOL ${file}
+  if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "${file}" ]; then
+    cp $CA_POOL ${file}
+  fi
 done < <(yq e '[.. | select(has("caPool")) | .caPool]' /configs/http-gateway.yaml | sort | uniq)
 ### setup certificates
 while read -r line; do
   file=`echo $line | yq e '.[0]' - `
   mkdir -p `dirname ${file}`
-  cp $CERT_FILE ${file}
+  if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "${file}" ]; then
+     cp $CERT_FILE ${file}
+  fi
 done < <(yq e '[.. | select(has("certFile")) | .certFile]' /configs/http-gateway.yaml | sort | uniq)
 ### setup private keys
 while read -r line; do
   file=`echo $line | yq e '.[0]' - `
   mkdir -p `dirname ${file}`
-  cp $KEY_FILE ${file}
+  if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "${file}" ]; then
+     cp $KEY_FILE ${file}
+  fi
 done < <(yq e '[.. | select(has("keyFile")) | .keyFile]' /configs/http-gateway.yaml | sort | uniq)
 
 ## certificate-authority
@@ -289,19 +347,25 @@ done < <(yq e '[.. | select(has("keyFile")) | .keyFile]' /configs/http-gateway.y
 while read -r line; do
   file=`echo $line | yq e '.[0]' - `
   mkdir -p `dirname ${file}`
-  cp $CA_POOL ${file}
+  if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "${file}" ]; then
+    cp $CA_POOL ${file}
+  fi
 done < <(yq e '[.. | select(has("caPool")) | .caPool]' /configs/certificate-authority.yaml | sort | uniq)
 ### setup certificates
 while read -r line; do
   file=`echo $line | yq e '.[0]' - `
   mkdir -p `dirname ${file}`
-  cp $CERT_FILE ${file}
+  if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "${file}" ]; then
+     cp $CERT_FILE ${file}
+  fi
 done < <(yq e '[.. | select(has("certFile")) | .certFile]' /configs/certificate-authority.yaml | sort | uniq)
 ### setup private keys
 while read -r line; do
   file=`echo $line | yq e '.[0]' - `
   mkdir -p `dirname ${file}`
-  cp $KEY_FILE ${file}
+  if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "${file}" ]; then
+     cp $KEY_FILE ${file}
+  fi
 done < <(yq e '[.. | select(has("keyFile")) | .keyFile]' /configs/certificate-authority.yaml | sort | uniq)
 
 ## cloud2cloud-gateway
@@ -309,19 +373,25 @@ done < <(yq e '[.. | select(has("keyFile")) | .keyFile]' /configs/certificate-au
 while read -r line; do
   file=`echo $line | yq e '.[0]' - `
   mkdir -p `dirname ${file}`
-  cp $CA_POOL ${file}
+  if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "${file}" ]; then
+    cp $CA_POOL ${file}
+  fi
 done < <(yq e '[.. | select(has("caPool")) | .caPool]' /configs/cloud2cloud-gateway.yaml | sort | uniq)
 ### setup certificates
 while read -r line; do
   file=`echo $line | yq e '.[0]' - `
   mkdir -p `dirname ${file}`
-  cp $CERT_FILE ${file}
+  if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "${file}" ]; then
+     cp $CERT_FILE ${file}
+  fi
 done < <(yq e '[.. | select(has("certFile")) | .certFile]' /configs/cloud2cloud-gateway.yaml | sort | uniq)
 ### setup private keys
 while read -r line; do
   file=`echo $line | yq e '.[0]' - `
   mkdir -p `dirname ${file}`
-  cp $KEY_FILE ${file}
+  if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "${file}" ]; then
+     cp $KEY_FILE ${file}
+  fi
 done < <(yq e '[.. | select(has("keyFile")) | .keyFile]' /configs/cloud2cloud-gateway.yaml | sort | uniq)
 
 ## cloud2cloud-connector
@@ -329,44 +399,57 @@ done < <(yq e '[.. | select(has("keyFile")) | .keyFile]' /configs/cloud2cloud-ga
 while read -r line; do
   file=`echo $line | yq e '.[0]' - `
   mkdir -p `dirname ${file}`
-  cp $CA_POOL ${file}
+  if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "${file}" ]; then
+    cp $CA_POOL ${file}
+  fi
 done < <(yq e '[.. | select(has("caPool")) | .caPool]' /configs/cloud2cloud-connector.yaml | sort | uniq)
 ### setup certificates
 while read -r line; do
   file=`echo $line | yq e '.[0]' - `
   mkdir -p `dirname ${file}`
-  cp $CERT_FILE ${file}
+  if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "${file}" ]; then
+     cp $CERT_FILE ${file}
+  fi
 done < <(yq e '[.. | select(has("certFile")) | .certFile]' /configs/cloud2cloud-connector.yaml | sort | uniq)
 ### setup private keys
 while read -r line; do
   file=`echo $line | yq e '.[0]' - `
   mkdir -p `dirname ${file}`
-  cp $KEY_FILE ${file}
+  if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "${file}" ]; then
+     cp $KEY_FILE ${file}
+  fi
 done < <(yq e '[.. | select(has("keyFile")) | .keyFile]' /configs/cloud2cloud-connector.yaml | sort | uniq)
 
 
 
 mkdir -p ${OAUTH_KEYS_PATH}
-openssl genrsa -out ${OAUTH_ID_TOKEN_KEY_PATH} 4096
-openssl ecparam -name prime256v1 -genkey -noout -out ${OAUTH_ACCESS_TOKEN_KEY_PATH}
+if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "${OAUTH_ID_TOKEN_KEY_PATH}" ]; then
+  openssl genrsa -out ${OAUTH_ID_TOKEN_KEY_PATH} 4096
+fi
+if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "${OAUTH_ACCESS_TOKEN_KEY_PATH}" ]; then
+  openssl ecparam -name prime256v1 -genkey -noout -out ${OAUTH_ACCESS_TOKEN_KEY_PATH}
+fi
 
 mkdir -p $MONGO_PATH
 mkdir -p $CERTIFICATES_PATH
 mkdir -p $LOGS_PATH
 mkdir -p ${NGINX_PATH}
-cp /nginx/nginx.conf.template ${NGINX_PATH}/nginx.conf
-sed -i "s/REPLACE_NGINX_PORT/$NGINX_PORT/g" ${NGINX_PATH}/nginx.conf
-sed -i "s/REPLACE_HTTP_GATEWAY_PORT/$HTTP_GATEWAY_PORT/g" ${NGINX_PATH}/nginx.conf
-sed -i "s/REPLACE_GRPC_GATEWAY_PORT/$GRPC_GATEWAY_PORT/g" ${NGINX_PATH}/nginx.conf
-sed -i "s/REPLACE_MOCK_OAUTH_SERVER_PORT/$MOCK_OAUTH_SERVER_PORT/g" ${NGINX_PATH}/nginx.conf
-sed -i "s/REPLACE_CERTIFICATE_AUTHORITY_PORT/$CERTIFICATE_AUTHORITY_PORT/g" ${NGINX_PATH}/nginx.conf
-sed -i "s/REPLACE_CLOUD2CLOUD_GATEWAY_PORT/$CLOUD2CLOUD_GATEWAY_PORT/g" ${NGINX_PATH}/nginx.conf
-sed -i "s/REPLACE_CLOUD2CLOUD_CONNECTOR_PORT/$CLOUD2CLOUD_CONNECTOR_PORT/g" ${NGINX_PATH}/nginx.conf
-sed -i "s/REPLACE_HTTP_CERTIFICATE_AUTHORITY_PORT/$HTTP_CERTIFICATE_AUTHORITY_PORT/g" ${NGINX_PATH}/nginx.conf
+if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "${NGINX_PATH}/nginx.conf" ]; then
+  cp /nginx/nginx.conf.template ${NGINX_PATH}/nginx.conf
+  sed -i "s/REPLACE_NGINX_PORT/$NGINX_PORT/g" ${NGINX_PATH}/nginx.conf
+  sed -i "s/REPLACE_HTTP_GATEWAY_PORT/$HTTP_GATEWAY_PORT/g" ${NGINX_PATH}/nginx.conf
+  sed -i "s/REPLACE_GRPC_GATEWAY_PORT/$GRPC_GATEWAY_PORT/g" ${NGINX_PATH}/nginx.conf
+  sed -i "s/REPLACE_MOCK_OAUTH_SERVER_PORT/$MOCK_OAUTH_SERVER_PORT/g" ${NGINX_PATH}/nginx.conf
+  sed -i "s/REPLACE_CERTIFICATE_AUTHORITY_PORT/$CERTIFICATE_AUTHORITY_PORT/g" ${NGINX_PATH}/nginx.conf
+  sed -i "s/REPLACE_CLOUD2CLOUD_GATEWAY_PORT/$CLOUD2CLOUD_GATEWAY_PORT/g" ${NGINX_PATH}/nginx.conf
+  sed -i "s/REPLACE_CLOUD2CLOUD_CONNECTOR_PORT/$CLOUD2CLOUD_CONNECTOR_PORT/g" ${NGINX_PATH}/nginx.conf
+  sed -i "s/REPLACE_HTTP_CERTIFICATE_AUTHORITY_PORT/$HTTP_CERTIFICATE_AUTHORITY_PORT/g" ${NGINX_PATH}/nginx.conf
+fi
 
 # nats
 echo "starting nats-server"
-cat > /data/nats.config <<EOF
+if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "/data/nats.config" ]; then
+  cat > /data/nats.config <<EOF
 port: $NATS_PORT
 max_pending: 128Mb
 write_deadline: 10s
@@ -377,9 +460,10 @@ tls: {
   ca_file: "$CA_POOL"
 }
 EOF
-# Enable jetstream
-if [ "${JETSTREAM}" = "true" ]; then
-  cat >> /data/nats.config <<EOF
+
+  # Enable jetstream
+  if [ "${JETSTREAM}" = "true" ]; then
+    cat >> /data/nats.config <<EOF
 jetstream: {
   store_dir: "$JETSTREAM_PATH"
   // 1GB
@@ -389,7 +473,9 @@ jetstream: {
   max_file_store: 10737418240
 }
 EOF
+  fi
 fi
+
 nats-server -c /data/nats.config >$LOGS_PATH/nats-server.log 2>&1 &
 status=$?
 nats_server_pid=$!
@@ -418,8 +504,10 @@ fi
 
 # mongo
 echo "starting mongod"
-cat $INTERNAL_CERT_DIR_PATH/$GRPC_INTERNAL_CERT_NAME > $INTERNAL_CERT_DIR_PATH/mongo.key
-cat $INTERNAL_CERT_DIR_PATH/$GRPC_INTERNAL_CERT_KEY_NAME >> $INTERNAL_CERT_DIR_PATH/mongo.key
+if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "$INTERNAL_CERT_DIR_PATH/mongo.key" ]; then
+  cat $INTERNAL_CERT_DIR_PATH/$GRPC_INTERNAL_CERT_NAME > $INTERNAL_CERT_DIR_PATH/mongo.key
+  cat $INTERNAL_CERT_DIR_PATH/$GRPC_INTERNAL_CERT_KEY_NAME >> $INTERNAL_CERT_DIR_PATH/mongo.key
+fi
 mongod --setParameter maxNumActiveUserIndexBuilds=64 --port $MONGO_PORT --dbpath $MONGO_PATH --sslMode requireSSL --sslCAFile $CA_POOL --sslPEMKeyFile $INTERNAL_CERT_DIR_PATH/mongo.key >$LOGS_PATH/mongod.log 2>&1 &
 status=$?
 mongo_pid=$!
@@ -467,6 +555,7 @@ done
 echo "starting oauth-server"
 
 ## setup cfg
+if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "/data/oauth-server.yaml" ]; then
 cat /configs/oauth-server.yaml | yq e "\
   .log.level = \"${LOG_LEVEL}\" |
   .apis.http.address = \"${MOCK_OAUTH_SERVER_ADDRESS}\" |
@@ -482,6 +571,7 @@ cat /configs/oauth-server.yaml | yq e "\
   .clients.openTelemetryCollector.grpc.tls.useSystemCAPool = true |
   .oauthSigner.clients[0].accessTokenLifetime= \"${MOCK_OAUTH_SERVER_ACCESS_TOKEN_LIFETIME}\"
 " - > /data/oauth-server.yaml
+fi
 
 oauth-server --config /data/oauth-server.yaml >$LOGS_PATH/oauth-server.log 2>&1 &
 status=$?
@@ -505,6 +595,7 @@ done
 
 # identity-store
 ## configuration
+if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "/data/identity-store.yaml" ]; then
 cat /configs/identity-store.yaml | yq e "\
   .log.level = \"${LOG_LEVEL}\" |
   .apis.grpc.address = \"${IDENTITY_STORE_ADDRESS}\" |
@@ -522,6 +613,7 @@ cat /configs/identity-store.yaml | yq e "\
   .clients.eventBus.nats.url = \"${NATS_URL}\" |
   .clients.eventBus.nats.jetstream = ${JETSTREAM}
 " - > /data/identity-store.yaml
+fi
 
 echo "starting identity-store"
 identity-store --config /data/identity-store.yaml >$LOGS_PATH/identity-store.log 2>&1 &
@@ -548,6 +640,7 @@ done
 
 # resource-aggregate
 ## configuration
+if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "/data/resource-aggregate.yaml" ]; then
 cat /configs/resource-aggregate.yaml | yq e "\
   .log.level = \"${LOG_LEVEL}\" |
   .apis.grpc.address = \"${RESOURCE_AGGREGATE_ADDRESS}\" |
@@ -566,6 +659,7 @@ cat /configs/resource-aggregate.yaml | yq e "\
   .clients.eventBus.nats.jetstream = ${JETSTREAM} |
   .clients.identityStore.grpc.address = \"${IDENTITY_STORE_ADDRESS}\"
 " - > /data/resource-aggregate.yaml
+fi
 
 echo "starting resource-aggregate"
 resource-aggregate --config /data/resource-aggregate.yaml >$LOGS_PATH/resource-aggregate.log 2>&1 &
@@ -591,6 +685,7 @@ done
 
 # resource-directory
 ## configuration
+if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "/data/resource-directory.yaml" ]; then
 cat /configs/resource-directory.yaml | yq e "\
   .log.level = \"${LOG_LEVEL}\" |
   .apis.grpc.address = \"${RESOURCE_DIRECTORY_ADDRESS}\" |
@@ -612,6 +707,7 @@ cat /configs/resource-directory.yaml | yq e "\
   .publicConfiguration.coapGateway = \"${COAP_GATEWAY_SCHEME}://${COAP_GATEWAY_EXTERNAL_ADDRESS}\" |
   .publicConfiguration.ownerClaim = \"${OWNER_CLAIM}\"
 " - > /data/resource-directory.yaml
+fi
 
 echo "starting resource-directory"
 resource-directory --config /data/resource-directory.yaml >$LOGS_PATH/resource-directory.log 2>&1 &
@@ -638,6 +734,7 @@ done
 # coap-gateway-unsecure
 echo "starting coap-gateway-unsecure"
 ## configuration
+if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "/data/coap-gateway-unsecure.yaml" ]; then
 cat /configs/coap-gateway.yaml | yq e "\
   .log.level = \"${LOG_LEVEL}\" |
   .log.dumpBody = ${COAP_GATEWAY_LOG_MESSAGES} |
@@ -673,6 +770,7 @@ cat /configs/coap-gateway.yaml | yq e "\
   .clients.resourceDirectory.grpc.address = \"${RESOURCE_DIRECTORY_ADDRESS}\" |
   .clients.certificateAuthority.grpc.address = \"${CERTIFICATE_AUTHORITY_ADDRESS}\"
 " - > /data/coap-gateway-unsecure.yaml
+fi
 
 if [ "${COAP_GATEWAY_UNSECURE_ENABLED}" = "true" ]; then
   coap-gateway --config /data/coap-gateway-unsecure.yaml >$LOGS_PATH/coap-gateway-unsecure.log 2>&1 &
@@ -689,6 +787,7 @@ fi
 # coap-gateway-secure
 echo "starting coap-gateway-secure"
 ### setup cfgs from env
+if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "/data/coap-gateway-secure.yaml" ]; then
 cat /configs/coap-gateway.yaml | yq e "\
   .log.level = \"${LOG_LEVEL}\" |
   .log.dumpBody =  ${COAP_GATEWAY_LOG_MESSAGES} |
@@ -726,6 +825,7 @@ cat /configs/coap-gateway.yaml | yq e "\
   .clients.resourceDirectory.grpc.address = \"${RESOURCE_DIRECTORY_ADDRESS}\" |
   .clients.certificateAuthority.grpc.address = \"${CERTIFICATE_AUTHORITY_ADDRESS}\"
 " - > /data/coap-gateway-secure.yaml
+fi
 
 coap-gateway --config /data/coap-gateway-secure.yaml >$LOGS_PATH/coap-gateway.log 2>&1 &
 status=$?
@@ -740,6 +840,7 @@ fi
 # certificate-authority
 echo "starting certificate-authority"
 ## configuration
+if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "/data/certificate-authority.yaml" ]; then
 cat /configs/certificate-authority.yaml | yq e "\
   .log.level = \"${LOG_LEVEL}\" |
   .apis.grpc.address = \"${CERTIFICATE_AUTHORITY_ADDRESS}\" |
@@ -758,6 +859,7 @@ cat /configs/certificate-authority.yaml | yq e "\
   .signer.keyFile = \"${ROOT_KEY_PATH}\" |
   .signer.certFile = \"${ROOT_CERT_PATH}\"
 " - > /data/certificate-authority.yaml
+fi
 certificate-authority --config /data/certificate-authority.yaml >$LOGS_PATH/certificate-authority.log 2>&1 &
 status=$?
 certificate_authority_pid=$!
@@ -782,6 +884,7 @@ done
 # grpc-gateway
 echo "starting grpc-gateway"
 ## configuration
+if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "/data/grpc-gateway.yaml" ]; then
 cat /configs/grpc-gateway.yaml | yq e "\
   .log.level = \"${LOG_LEVEL}\" |
   .apis.grpc.address = \"${GRPC_GATEWAY_ADDRESS}\" |
@@ -800,6 +903,7 @@ cat /configs/grpc-gateway.yaml | yq e "\
   .clients.resourceDirectory.grpc.address = \"${RESOURCE_DIRECTORY_ADDRESS}\" |
   .clients.certificateAuthority.grpc.address = \"${CERTIFICATE_AUTHORITY_ADDRESS}\"
 " - > /data/grpc-gateway.yaml
+fi
 grpc-gateway --config=/data/grpc-gateway.yaml >$LOGS_PATH/grpc-gateway.log 2>&1 &
 status=$?
 grpc_gw_pid=$!
@@ -824,6 +928,7 @@ done
 
 # http-gateway
 ## configuration
+if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "/data/http-gateway.yaml" ]; then
 cat /configs/http-gateway.yaml | yq e "\
   .log.level = \"${LOG_LEVEL}\" |
   .apis.http.address = \"${HTTP_GATEWAY_ADDRESS}\" |
@@ -847,6 +952,7 @@ cat /configs/http-gateway.yaml | yq e "\
   .ui.webConfiguration.deviceOAuthClient.audience = \"${DEVICE_OAUTH_AUDIENCE}\" |
   .ui.webConfiguration.deviceOAuthClient.providerName = \"${DEVICE_PROVIDER}\"
 " - > /data/http-gateway.yaml
+fi
 
 echo "starting http-gateway"
 http-gateway --config=/data/http-gateway.yaml >$LOGS_PATH/http-gateway.log 2>&1 &
@@ -872,6 +978,7 @@ done
 
 # cloud2cloud-gateway
 ## configuration
+if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "/data/cloud2cloud-gateway.yaml" ]; then
 cat /configs/cloud2cloud-gateway.yaml | yq e "\
   .log.level = \"${LOG_LEVEL}\" |
   .apis.http.address = \"${CLOUD2CLOUD_GATEWAY_ADDRESS}\" |
@@ -890,6 +997,7 @@ cat /configs/cloud2cloud-gateway.yaml | yq e "\
   .clients.storage.mongoDB.uri = \"${MONGODB_URI}\" |
   .clients.subscription.http.tls.useSystemCAPool = true
 " - > /data/cloud2cloud-gateway.yaml
+fi
 
 echo "starting cloud2cloud-gateway"
 cloud2cloud-gateway --config=/data/cloud2cloud-gateway.yaml >$LOGS_PATH/cloud2cloud-gateway.log 2>&1 &
@@ -915,6 +1023,7 @@ done
 
 # cloud2cloud-connector
 ## configuration
+if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "/data/cloud2cloud-connector.yaml" ]; then
 cat /configs/cloud2cloud-connector.yaml | yq e "\
   .log.level = \"${LOG_LEVEL}\" |
   .apis.http.address = \"${CLOUD2CLOUD_CONNECTOR_ADDRESS}\" |
@@ -940,6 +1049,7 @@ cat /configs/cloud2cloud-connector.yaml | yq e "\
   .clients.resourceAggregate.grpc.address = \"${RESOURCE_AGGREGATE_ADDRESS}\" |
   .clients.storage.mongoDB.uri = \"${MONGODB_URI}\"
 " - > /data/cloud2cloud-connector.yaml
+fi
 
 echo "starting cloud2cloud-connector"
 cloud2cloud-connector --config=/data/cloud2cloud-connector.yaml >$LOGS_PATH/cloud2cloud-connector.log 2>&1 &
