@@ -1,7 +1,6 @@
 import { devicesStatuses } from '@/containers/Devices/constants'
 
 export type DevicesDetailMetaDataStatusValueType = (typeof devicesStatuses)[keyof typeof devicesStatuses]
-export type DevicesDetailMetaDataStatusValueType = (typeof devicesStatuses)[keyof typeof devicesStatuses]
 
 export type ResourcesType = {
     deviceId: string
