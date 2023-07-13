@@ -1394,6 +1394,7 @@ https://github.com/openconnectivityfoundation/core/blob/master/schemas/oic.links
 | status | [Status](#resourceaggregate-pb-Status) |  |  |
 | audit_context | [AuditContext](#resourceaggregate-pb-AuditContext) |  |  |
 | event_metadata | [EventMetadata](#resourceaggregate-pb-EventMetadata) |  |  |
+| etag | [bytes](#bytes) |  | etag of the resource used by twin synchronization |
 | open_telemetry_carrier | [ResourceChanged.OpenTelemetryCarrierEntry](#resourceaggregate-pb-ResourceChanged-OpenTelemetryCarrierEntry) | repeated | Open telemetry data propagated to asynchronous events |
 
 
@@ -1677,6 +1678,7 @@ https://github.com/openconnectivityfoundation/cloud-services/blob/master/swagger
 | audit_context | [AuditContext](#resourceaggregate-pb-AuditContext) |  |  |
 | event_metadata | [EventMetadata](#resourceaggregate-pb-EventMetadata) |  |  |
 | valid_until | [int64](#int64) |  | unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when pending event is considered as expired. 0 means forever. |
+| etag | [bytes](#bytes) |  |  |
 | open_telemetry_carrier | [ResourceRetrievePending.OpenTelemetryCarrierEntry](#resourceaggregate-pb-ResourceRetrievePending-OpenTelemetryCarrierEntry) | repeated | Open telemetry data propagated to asynchronous events |
 
 
@@ -1713,6 +1715,7 @@ https://github.com/openconnectivityfoundation/cloud-services/blob/master/swagger
 | content | [Content](#resourceaggregate-pb-Content) |  |  |
 | audit_context | [AuditContext](#resourceaggregate-pb-AuditContext) |  |  |
 | event_metadata | [EventMetadata](#resourceaggregate-pb-EventMetadata) |  |  |
+| etag | [bytes](#bytes) |  |  |
 | open_telemetry_carrier | [ResourceRetrieved.OpenTelemetryCarrierEntry](#resourceaggregate-pb-ResourceRetrieved-OpenTelemetryCarrierEntry) | repeated | Open telemetry data propagated to asynchronous events |
 
 

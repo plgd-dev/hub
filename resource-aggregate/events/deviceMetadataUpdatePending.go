@@ -5,6 +5,7 @@ import (
 
 	pkgTime "github.com/plgd-dev/hub/v2/pkg/time"
 	commands "github.com/plgd-dev/hub/v2/resource-aggregate/commands"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -40,6 +41,10 @@ func (d *DeviceMetadataUpdatePending) IsSnapshot() bool {
 
 func (d *DeviceMetadataUpdatePending) Timestamp() time.Time {
 	return pkgTime.Unix(0, d.GetEventMetadata().GetTimestamp())
+}
+
+func (d *DeviceMetadataUpdatePending) ETag() *eventstore.ETagData {
+	return nil
 }
 
 func (d *DeviceMetadataUpdatePending) CopyData(event *DeviceMetadataUpdatePending) {

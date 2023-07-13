@@ -21,6 +21,7 @@ func MakeConfig(t require.TestingT) service.Config {
 	cfg.TaskQueue.Size = 2 * 1024 * 1024
 	cfg.APIs.COAP.Addr = config.COAP_GW_HOST
 	cfg.APIs.COAP.RequireBatchObserveEnabled = false
+	cfg.APIs.COAP.LimitBatchObserveLatestETags = 3
 	cfg.APIs.COAP.ExternalAddress = config.COAP_GW_HOST
 	cfg.APIs.COAP.Protocols = []coapService.Protocol{coapService.TCP}
 	if config.COAP_GATEWAY_UDP_ENABLED {

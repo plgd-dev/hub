@@ -108,13 +108,14 @@ func (c *InjectedCOAPConfig) Validate() error {
 }
 
 type COAPConfig struct {
-	coapService.Config         `yaml:",inline" json:",inline"`
-	ExternalAddress            string              `yaml:"externalAddress" json:"externalAddress"`
-	Authorization              AuthorizationConfig `yaml:"authorization" json:"authorization"`
-	OwnerCacheExpiration       time.Duration       `yaml:"ownerCacheExpiration" json:"ownerCacheExpiration"`
-	SubscriptionBufferSize     int                 `yaml:"subscriptionBufferSize" json:"subscriptionBufferSize"`
-	RequireBatchObserveEnabled bool                `yaml:"requireBatchObserveEnabled" json:"requireBatchObserveEnabled"`
-	InjectedCOAPConfig         InjectedCOAPConfig  `yaml:"-" json:"-"`
+	coapService.Config           `yaml:",inline" json:",inline"`
+	ExternalAddress              string              `yaml:"externalAddress" json:"externalAddress"`
+	Authorization                AuthorizationConfig `yaml:"authorization" json:"authorization"`
+	OwnerCacheExpiration         time.Duration       `yaml:"ownerCacheExpiration" json:"ownerCacheExpiration"`
+	SubscriptionBufferSize       int                 `yaml:"subscriptionBufferSize" json:"subscriptionBufferSize"`
+	RequireBatchObserveEnabled   bool                `yaml:"requireBatchObserveEnabled" json:"requireBatchObserveEnabled"`
+	LimitBatchObserveLatestETags uint32              `yaml:"limitBatchObserveLatestETags " json:"limitBatchObserveLatestETags"`
+	InjectedCOAPConfig           InjectedCOAPConfig  `yaml:"-" json:"-"`
 }
 
 type COAPConfigMarshalerUnmarshaler struct {

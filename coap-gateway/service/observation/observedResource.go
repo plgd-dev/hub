@@ -2,7 +2,9 @@ package observation
 
 import (
 	"context"
+	"encoding/hex"
 	"sort"
+	"strings"
 	"sync"
 
 	"go.uber.org/atomic"
@@ -17,6 +19,7 @@ type Observation = interface {
 type observedResource struct {
 	href         string
 	resInterface string
+	etags        [][]byte
 	synced       atomic.Bool
 	isObservable bool
 	private      struct { // guarded by mutex
@@ -25,11 +28,12 @@ type observedResource struct {
 	}
 }
 
-func newObservedResource(href, resInterface string, isObservable bool) *observedResource {
+func newObservedResource(href, resInterface string, etags [][]byte, isObservable bool) *observedResource {
 	return &observedResource{
 		href:         href,
 		resInterface: resInterface,
 		isObservable: isObservable,
+		etags:        etags,
 	}
 }
 
@@ -43,6 +47,51 @@ func (r *observedResource) Href() string {
 
 func (r *observedResource) Interface() string {
 	return r.resInterface
+}
+
+func (r *observedResource) ETag() []byte {
+	if len(r.etags) == 0 {
+		return nil
+	}
+	return r.etags[0]
+}
+
+const (
+	// maxURIQueryLen is the maximum length of a URI query. See https://datatracker.ietf.org/doc/html/rfc7252#section-5.10
+	maxURIQueryLen = 255
+	// maxETagLen is the maximum length of an ETag. See https://datatracker.ietf.org/doc/html/rfc7252#section-5.10
+	maxETagLen = 8
+	// prefixQueryIncChanged is the prefix of the URI query for the "incremental changed" option. See https://docs.plgd.dev/docs/features/control-plane/entity-tag/#etag-batch-interface-for-oicres
+	prefixQueryIncChanged = "incChanged="
+)
+
+func (r *observedResource) EncodeETagsForIncrementChanged() []string {
+	if len(r.etags) <= 1 {
+		return nil
+	}
+	etags := r.etags[1:]
+	etagsStr := make([]string, 0, (len(etags)/15)+1)
+	var b strings.Builder
+	for _, etag := range etags {
+		if len(etag) > maxETagLen {
+			continue
+		}
+		if b.Len() == 0 {
+			b.WriteString(prefixQueryIncChanged)
+		} else {
+			b.WriteString(",")
+		}
+		b.WriteString(hex.EncodeToString(etag))
+		//
+		if b.Len() >= maxURIQueryLen-(maxETagLen*2) {
+			etagsStr = append(etagsStr, b.String())
+			b.Reset()
+		}
+	}
+	if b.Len() > 0 {
+		etagsStr = append(etagsStr, b.String())
+	}
+	return etagsStr
 }
 
 func (r *observedResource) SetObservation(o Observation) {

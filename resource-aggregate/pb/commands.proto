@@ -94,6 +94,7 @@ message NotifyResourceChangedRequest {
     Content content = 2;
     CommandMetadata command_metadata = 3;
     Status status = 4;
+    bytes etag = 5;
 }
 
 message NotifyResourceChangedResponse {
@@ -229,6 +230,7 @@ message RetrieveResourceRequest {
     string resource_interface = 3;
     int64 time_to_live = 4; // command validity in nanoseconds. 0 means forever and minimal value is 100000000 (100ms).
     CommandMetadata command_metadata = 5;
+    bytes etag = 6;
 }
 
 message RetrieveResourceResponse {
@@ -242,6 +244,7 @@ message ConfirmResourceRetrieveRequest {
     Status status = 3;
     Content content = 4;
     CommandMetadata command_metadata = 5;
+    bytes etag = 6;
 }
 
 message ConfirmResourceRetrieveResponse {

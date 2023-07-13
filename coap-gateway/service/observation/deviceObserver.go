@@ -17,6 +17,7 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	pkgStrings "github.com/plgd-dev/hub/v2/pkg/strings"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
+	pbRD "github.com/plgd-dev/hub/v2/resource-directory/pb"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -27,6 +28,7 @@ type ObservationType int
 type GrpcGatewayClient interface {
 	GetDevicesMetadata(ctx context.Context, in *pb.GetDevicesMetadataRequest, opts ...grpc.CallOption) (pb.GrpcGateway_GetDevicesMetadataClient, error)
 	GetResourceLinks(ctx context.Context, in *pb.GetResourceLinksRequest, opts ...grpc.CallOption) (pb.GrpcGateway_GetResourceLinksClient, error)
+	GetLatestDeviceETags(ctx context.Context, in *pbRD.GetLatestDeviceETagsRequest, opts ...grpc.CallOption) (*pbRD.GetLatestDeviceETagsResponse, error)
 }
 
 type ResourceAggregateClient interface {
@@ -51,11 +53,12 @@ type DeviceObserver struct {
 }
 
 type DeviceObserverConfig struct {
-	Logger                     log.Logger
-	ObservationType            ObservationType
-	TwinEnabled                bool
-	TwinEnabledSet             bool
-	RequireBatchObserveEnabled bool
+	Logger                       log.Logger
+	ObservationType              ObservationType
+	TwinEnabled                  bool
+	TwinEnabledSet               bool
+	RequireBatchObserveEnabled   bool
+	LimitBatchObserveLatestETags uint32
 }
 
 type ClientConn interface {
@@ -130,6 +133,21 @@ func (o LoggerOpt) Apply(opts *DeviceObserverConfig) {
 	opts.Logger = o.logger
 }
 
+// Limit of the number of latest etags acquired from event store.
+type LimitBatchObserveLatestETagsOpt struct {
+	limitBatchObserveLatestETags uint32
+}
+
+func (o LimitBatchObserveLatestETagsOpt) Apply(opts *DeviceObserverConfig) {
+	opts.LimitBatchObserveLatestETags = o.limitBatchObserveLatestETags
+}
+
+func WithLimitBatchObserveLatestETags(v uint32) LimitBatchObserveLatestETagsOpt {
+	return LimitBatchObserveLatestETagsOpt{
+		limitBatchObserveLatestETags: v,
+	}
+}
+
 func prepareSetupDeviceObserver(ctx context.Context, deviceID string, coapConn ClientConn, rdClient GrpcGatewayClient, raClient ResourceAggregateClient, cfg DeviceObserverConfig) (DeviceObserverConfig, []*commands.Resource, error) {
 	links, sequence, err := GetResourceLinks(ctx, coapConn, resources.ResourceURI)
 	switch {
@@ -174,7 +192,8 @@ func NewDeviceObserver(ctx context.Context, deviceID string, coapConn ClientConn
 	}
 
 	cfg := DeviceObserverConfig{
-		Logger: log.Get(),
+		Logger:                       log.Get(),
+		LimitBatchObserveLatestETags: 8,
 	}
 	for _, o := range opts {
 		o.Apply(&cfg)
@@ -202,7 +221,18 @@ func NewDeviceObserver(ctx context.Context, deviceID string, coapConn ClientConn
 	}
 
 	if cfg.ObservationType == ObservationType_PerDevice {
-		resourcesObserver, err := createDiscoveryResourceObserver(ctx, deviceID, coapConn, callbacks, cfg.Logger)
+		var etags [][]byte
+		r, err := rdClient.GetLatestDeviceETags(ctx, &pbRD.GetLatestDeviceETagsRequest{
+			DeviceId: deviceID,
+			Limit:    cfg.LimitBatchObserveLatestETags,
+		})
+		if err != nil {
+			cfg.Logger.Debugf("NewDeviceObserver: failed to get latest device(%v) etag: %v", deviceID, err)
+		} else {
+			etags = r.GetEtags()
+		}
+
+		resourcesObserver, err := createDiscoveryResourceObserver(ctx, deviceID, coapConn, callbacks, etags, cfg.Logger)
 		if err == nil {
 			return &DeviceObserver{
 				deviceID:          deviceID,
@@ -305,13 +335,13 @@ func loadTwinEnabled(ctx context.Context, rdClient GrpcGatewayClient, deviceID s
 }
 
 // Create observer with a single observation for /oic/res resource.
-func createDiscoveryResourceObserver(ctx context.Context, deviceID string, coapConn ClientConn, callbacks ResourcesObserverCallbacks, logger log.Logger) (*resourcesObserver, error) {
+func createDiscoveryResourceObserver(ctx context.Context, deviceID string, coapConn ClientConn, callbacks ResourcesObserverCallbacks, etags [][]byte, logger log.Logger) (*resourcesObserver, error) {
 	resourcesObserver := newResourcesObserver(deviceID, coapConn, callbacks, logger)
 	err := resourcesObserver.addResource(ctx, &commands.Resource{
 		DeviceId: resourcesObserver.deviceID,
 		Href:     resources.ResourceURI,
 		Policy:   &commands.Policy{BitFlags: int32(schema.Observable)},
-	}, interfaces.OC_IF_B)
+	}, interfaces.OC_IF_B, etags)
 	if err != nil {
 		resourcesObserver.CleanObservedResources(ctx)
 		return nil, err

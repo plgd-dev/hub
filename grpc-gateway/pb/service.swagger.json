@@ -1676,6 +1676,11 @@
         "eventMetadata": {
           "$ref": "#/definitions/resourceaggregatepbEventMetadata"
         },
+        "etag": {
+          "type": "string",
+          "format": "byte",
+          "title": "etag of the resource used by twin synchronization"
+        },
         "openTelemetryCarrier": {
           "type": "object",
           "additionalProperties": {
@@ -1902,6 +1907,10 @@
           "format": "int64",
           "description": "unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when pending event is considered as expired. 0 means forever."
         },
+        "etag": {
+          "type": "string",
+          "format": "byte"
+        },
         "openTelemetryCarrier": {
           "type": "object",
           "additionalProperties": {
@@ -1928,6 +1937,10 @@
         },
         "eventMetadata": {
           "$ref": "#/definitions/resourceaggregatepbEventMetadata"
+        },
+        "etag": {
+          "type": "string",
+          "format": "byte"
         },
         "openTelemetryCarrier": {
           "type": "object",

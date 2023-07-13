@@ -29,6 +29,7 @@ import (
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	raPb "github.com/plgd-dev/hub/v2/resource-aggregate/service"
 	raTest "github.com/plgd-dev/hub/v2/resource-aggregate/test"
+	pbRD "github.com/plgd-dev/hub/v2/resource-directory/pb"
 	"github.com/plgd-dev/hub/v2/test"
 	coapgwTestService "github.com/plgd-dev/hub/v2/test/coap-gateway/service"
 	coapgwTest "github.com/plgd-dev/hub/v2/test/coap-gateway/test"
@@ -46,8 +47,13 @@ import (
 	"google.golang.org/grpc/credentials"
 )
 
+type RDClient struct {
+	pb.GrpcGatewayClient
+	pbRD.ResourceDirectoryClient
+}
+
 type deviceObserverFactory struct {
-	rdClient pb.GrpcGatewayClient
+	rdClient RDClient
 	raClient raPb.ResourceAggregateClient
 	deviceID string
 }
@@ -395,7 +401,12 @@ func runTestDeviceObserverRegister(ctx context.Context, t *testing.T, deviceID s
 	defer func() {
 		_ = rdConn.Close()
 	}()
-	rdClient := pb.NewGrpcGatewayClient(rdConn.GRPC())
+	grpcC := pb.NewGrpcGatewayClient(rdConn.GRPC())
+	rdC := pbRD.NewResourceDirectoryClient(rdConn.GRPC())
+	rdClient := RDClient{
+		GrpcGatewayClient:       grpcC,
+		ResourceDirectoryClient: rdC,
+	}
 
 	raConn, err := grpcClient.New(config.MakeGrpcClientConfig(config.RESOURCE_AGGREGATE_HOST), fileWatcher, log.Get(), trace.NewNoopTracerProvider())
 	require.NoError(t, err)

@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package resourcedirectory.pb;
+
+import "resource-directory/pb/getLatestDeviceETags.proto";
+
+option go_package = "github.com/plgd-dev/hub/v2/resource-directory/pb;pb";
+
+// Internal API for Resource Directory
+service ResourceDirectory {
+  // Get the most recent device etags, each corresponding to a different resource in order of most recent to least recent.
+  rpc GetLatestDeviceETags(GetLatestDeviceETagsRequest) returns (GetLatestDeviceETagsResponse);
+}

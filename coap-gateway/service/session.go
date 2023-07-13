@@ -32,6 +32,7 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/sync/task/future"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
+	pbRD "github.com/plgd-dev/hub/v2/resource-directory/pb"
 	kitSync "github.com/plgd-dev/kit/v2/sync"
 	otelCodes "go.opentelemetry.io/otel/codes"
 	semconv "go.opentelemetry.io/otel/semconv/v1.10.0"
@@ -258,6 +259,15 @@ func (c *session) GetDevicesMetadata(ctx context.Context, in *pb.GetDevicesMetad
 	}
 	ctx = kitNetGrpc.CtxWithToken(ctx, authCtx.GetAccessToken())
 	return c.server.rdClient.GetDevicesMetadata(ctx, in, opts...)
+}
+
+func (c *session) GetLatestDeviceETags(ctx context.Context, in *pbRD.GetLatestDeviceETagsRequest, opts ...grpc.CallOption) (*pbRD.GetLatestDeviceETagsResponse, error) {
+	authCtx, err := c.GetAuthorizationContext()
+	if err != nil {
+		return nil, err
+	}
+	ctx = kitNetGrpc.CtxWithToken(ctx, authCtx.GetAccessToken())
+	return c.server.rdClient.GetLatestDeviceETags(ctx, in, opts...)
 }
 
 func (c *session) GetResourceLinks(ctx context.Context, in *pb.GetResourceLinksRequest, opts ...grpc.CallOption) (pb.GrpcGateway_GetResourceLinksClient, error) {
@@ -523,6 +533,15 @@ func (c *session) notifyContentChanged(deviceID, href string, batch bool, notifi
 	if _, err = notification.Observe(); err == nil {
 		// we want to log only observations
 		c.logNotificationFromClient(href, notification)
+	}
+	// the content of the resource is up to date, codes.Valid is used to indicate that the resource has not changed for GET with the etag.
+	bodySize, err := notification.BodySize()
+	if err != nil {
+		return notifyError(deviceID, href, err)
+	}
+	if notification.Code() == codes.Valid && bodySize == 0 {
+		c.Debugf("resource /%v%v content is up to date", deviceID, href)
+		return nil
 	}
 	ctx := kitNetGrpc.CtxWithToken(c.Context(), authCtx.GetAccessToken())
 	if batch && href == resources.ResourceURI {

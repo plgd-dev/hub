@@ -47,6 +47,10 @@ func (d *DeviceMetadataSnapshotTaken) IsSnapshot() bool {
 	return true
 }
 
+func (d *DeviceMetadataSnapshotTaken) ETag() *eventstore.ETagData {
+	return nil
+}
+
 func (d *DeviceMetadataSnapshotTaken) Timestamp() time.Time {
 	return pkgTime.Unix(0, d.GetEventMetadata().GetTimestamp())
 }

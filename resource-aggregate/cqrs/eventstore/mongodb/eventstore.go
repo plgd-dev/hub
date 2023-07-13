@@ -39,14 +39,17 @@ const (
 const aggregateIDKey = "aggregateid"
 
 const (
-	idKey                    = "_id"
-	firstVersionKey          = "firstversion"
-	latestVersionKey         = "latestversion"
-	latestSnapshotVersionKey = "latestsnapshotversion"
-	latestTimestampKey       = "latesttimestamp"
-	eventsKey                = "events"
-	groupIDKey               = "groupid"
-	isActiveKey              = "isactive"
+	idKey                     = "_id"
+	firstVersionKey           = "firstversion"
+	latestVersionKey          = "latestversion"
+	latestSnapshotVersionKey  = "latestsnapshotversion"
+	latestTimestampKey        = "latesttimestamp"
+	eventsKey                 = "events"
+	groupIDKey                = "groupid"
+	isActiveKey               = "isactive"
+	latestETagKey             = "latestetag"
+	etagKey                   = "etag"
+	latestETagKeyTimestampKey = latestETagKey + "." + timestampKey
 )
 
 var aggregateIDLastVersionQueryIndex = bson.D{
@@ -78,6 +81,11 @@ var groupIDLatestTimestampQueryIndex = bson.D{
 var aggregateIDLatestTimestampQueryIndex = bson.D{
 	{Key: aggregateIDKey, Value: 1},
 	{Key: latestTimestampKey, Value: 1},
+}
+
+var groupIDETagLatestTimestampQueryIndex = bson.D{
+	{Key: groupIDKey, Value: 1},
+	{Key: latestETagKeyTimestampKey, Value: -1},
 }
 
 type signOperator string
@@ -192,6 +200,7 @@ func newEventStoreWithClient(ctx context.Context, client *mongo.Client, dbPrefix
 		groupIDaggregateIDQueryIndex,
 		groupIDLatestTimestampQueryIndex,
 		aggregateIDLatestTimestampQueryIndex,
+		groupIDETagLatestTimestampQueryIndex,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("cannot save events: %w", err)
@@ -251,8 +260,18 @@ func getLatestSnapshotVersion(events []eventstore.Event) (uint64, error) {
 	return latestSnapshotVersion, err
 }
 
+func makeDBETag(etag *eventstore.ETagData) bson.M {
+	if etag == nil {
+		return nil
+	}
+	return bson.M{
+		etagKey:      etag.ETag,
+		timestampKey: etag.Timestamp,
+	}
+}
+
 func makeDBDoc(events []eventstore.Event, marshaler MarshalerFunc) (bson.M, error) {
-	e, err := makeDBEvents(events, marshaler)
+	etag, e, err := makeDBEvents(events, marshaler)
 	if err != nil {
 		return nil, fmt.Errorf("cannot insert first events('%v'): %w", events, err)
 	}
@@ -260,7 +279,7 @@ func makeDBDoc(events []eventstore.Event, marshaler MarshalerFunc) (bson.M, erro
 	if err != nil {
 		return nil, fmt.Errorf("cannot get latestSnapshotVersion from events('%v'): %w", events, err)
 	}
-	return bson.M{
+	d := bson.M{
 		idKey:                    getDocID(events[0]),
 		groupIDKey:               events[0].GroupID(),
 		aggregateIDKey:           events[0].AggregateID(),
@@ -270,7 +289,12 @@ func makeDBDoc(events []eventstore.Event, marshaler MarshalerFunc) (bson.M, erro
 		latestTimestampKey:       events[len(events)-1].Timestamp().UnixNano(),
 		isActiveKey:              true,
 		eventsKey:                e,
-	}, nil
+		latestETagKey:            makeDBETag(etag),
+	}
+	if etag != nil {
+		d[etagKey] = etag.ETag
+	}
+	return d, nil
 }
 
 // DBName returns db name
@@ -315,13 +339,14 @@ func (s *EventStore) Close(ctx context.Context) error {
 }
 
 // newDBEvent returns a new dbEvent for an eventstore.
-func makeDBEvents(events []eventstore.Event, marshaler MarshalerFunc) ([]bson.M, error) {
+func makeDBEvents(events []eventstore.Event, marshaler MarshalerFunc) (*eventstore.ETagData, []bson.M, error) {
 	dbEvents := make([]bson.M, 0, len(events))
+	var etag *eventstore.ETagData
 	for idx, event := range events {
 		// Marshal event data if there is any.
 		raw, err := marshaler(event)
 		if err != nil {
-			return nil, fmt.Errorf("cannot create db event from event[%v]: %w", idx, err)
+			return nil, nil, fmt.Errorf("cannot create db event from event[%v]: %w", idx, err)
 		}
 		dbEvents = append(dbEvents, bson.M{
 			versionKey:    event.Version(),
@@ -330,6 +355,10 @@ func makeDBEvents(events []eventstore.Event, marshaler MarshalerFunc) ([]bson.M,
 			isSnapshotKey: event.IsSnapshot(),
 			timestampKey:  pkgTime.UnixNano(event.Timestamp()),
 		})
+		et := event.ETag()
+		if et != nil {
+			etag = et
+		}
 	}
-	return dbEvents, nil
+	return etag, dbEvents, nil
 }

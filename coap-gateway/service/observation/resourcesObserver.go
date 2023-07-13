@@ -90,10 +90,10 @@ func newResourcesObserver(deviceID string, coapConn ClientConn, callbacks Resour
 }
 
 // Add resource to observer with given interface and wait for initialization message.
-func (o *resourcesObserver) addResource(ctx context.Context, res *commands.Resource, obsInterface string) error {
+func (o *resourcesObserver) addResource(ctx context.Context, res *commands.Resource, obsInterface string, etags [][]byte) error {
 	o.private.lock.Lock()
 	defer o.private.lock.Unlock()
-	obs, err := o.addResourceLocked(res, obsInterface)
+	obs, err := o.addResourceLocked(res, obsInterface, etags)
 	if err == nil && obs != nil {
 		o.notifyAboutStartTwinSynchronization(ctx)
 		err = o.performObservationLocked([]*observedResource{obs})
@@ -140,7 +140,7 @@ func (o *resourcesObserver) setSynchronizedAtResource(href string) bool {
 	return false
 }
 
-func (o *resourcesObserver) addResourceLocked(res *commands.Resource, obsInterface string) (*observedResource, error) {
+func (o *resourcesObserver) addResourceLocked(res *commands.Resource, obsInterface string, etags [][]byte) (*observedResource, error) {
 	resID := res.GetResourceID()
 	addObservationError := func(err error) error {
 		return fmt.Errorf("cannot add resource observation: %w", err)
@@ -155,7 +155,7 @@ func (o *resourcesObserver) addResourceLocked(res *commands.Resource, obsInterfa
 	if o.private.resources.contains(href) {
 		return nil, nil
 	}
-	obsRes := newObservedResource(href, obsInterface, res.IsObservable())
+	obsRes := newObservedResource(href, obsInterface, etags, res.IsObservable())
 	o.private.resources = o.private.resources.insert(obsRes)
 	return obsRes, nil
 }
@@ -177,7 +177,7 @@ func (o *resourcesObserver) handleResource(ctx context.Context, obsRes *observed
 		obsRes.SetObservation(obs)
 		return nil
 	}
-	return o.getResourceContent(ctx, obsRes.Href())
+	return o.getResourceContent(ctx, obsRes.Href(), obsRes.ETag())
 }
 
 // Register to COAP-GW resource observation for given resource
@@ -189,7 +189,13 @@ func (o *resourcesObserver) observeResource(ctx context.Context, obsRes *observe
 		return nil, cannotObserveResourceError(o.deviceID, obsRes.Href(), emptyDeviceIDError())
 	}
 
-	var opts []message.Option
+	opts := make([]message.Option, 0, 2)
+	if obsRes.ETag() != nil {
+		opts = append(opts, message.Option{
+			ID:    message.ETag,
+			Value: obsRes.ETag(),
+		})
+	}
 	if obsRes.Interface() != "" {
 		opts = append(opts, message.Option{
 			ID:    message.URIQuery,
@@ -199,6 +205,14 @@ func (o *resourcesObserver) observeResource(ctx context.Context, obsRes *observe
 
 	batchObservation := obsRes.resInterface == interfaces.OC_IF_B
 	returnIfNonObservable := batchObservation && obsRes.Href() == resources.ResourceURI
+	if batchObservation {
+		for _, q := range obsRes.EncodeETagsForIncrementChanged() {
+			opts = append(opts, message.Option{
+				ID:    message.URIQuery,
+				Value: []byte(q),
+			})
+		}
+	}
 
 	obs, err := o.coapConn.Observe(ctx, obsRes.Href(), func(msg *pool.Message) {
 		if returnIfNonObservable {
@@ -223,14 +237,22 @@ func (o *resourcesObserver) observeResource(ctx context.Context, obsRes *observe
 }
 
 // Request resource content form COAP-GW
-func (o *resourcesObserver) getResourceContent(ctx context.Context, href string) error {
+func (o *resourcesObserver) getResourceContent(ctx context.Context, href string, etags []byte) error {
 	cannotGetResourceError := func(deviceID, href string, err error) error {
 		return fmt.Errorf("cannot get resource /%v%v content: %w", deviceID, href, err)
 	}
 	if o.deviceID == "" {
 		return cannotGetResourceError(o.deviceID, href, emptyDeviceIDError())
 	}
-	resp, err := o.coapConn.Get(ctx, href)
+	opts := make([]message.Option, 0, 1)
+	if etags != nil {
+		// we use only first etag
+		opts = append(opts, message.Option{
+			ID:    message.ETag,
+			Value: etags,
+		})
+	}
+	resp, err := o.coapConn.Get(ctx, href, opts...)
 	if err != nil {
 		return cannotGetResourceError(o.deviceID, href, err)
 	}
@@ -299,7 +321,7 @@ func (o *resourcesObserver) addResourcesLocked(resources []*commands.Resource) (
 	var errors *multierror.Error
 	observedResources := make([]*observedResource, 0, len(resources))
 	for _, resource := range resources {
-		observedResource, err := o.addResourceLocked(resource, "")
+		observedResource, err := o.addResourceLocked(resource, "", nil)
 		if err != nil {
 			errors = multierror.Append(errors, err)
 		} else if observedResource != nil {
