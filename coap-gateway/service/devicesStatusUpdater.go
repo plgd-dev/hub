@@ -77,7 +77,8 @@ func (u *devicesStatusUpdater) updateOnlineStatus(ctx context.Context, client *s
 		return nil, time.Time{}, err
 	}
 	ctx = kitNetGrpc.CtxWithToken(ctx, authCtx.GetAccessToken())
-	if !u.cfg.Enabled || authCtx.Expire.UnixNano() < validUntil.UnixNano() {
+	// When authCtx.Expire is zero, the token will never expire
+	if !u.cfg.Enabled || (!authCtx.Expire.IsZero() && authCtx.Expire.UnixNano() < validUntil.UnixNano()) {
 		validUntil = authCtx.Expire
 	}
 	resp, err := client.server.raClient.UpdateDeviceMetadata(ctx, &commands.UpdateDeviceMetadataRequest{
