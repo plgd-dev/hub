@@ -134,6 +134,7 @@ COPY --from=build /go/src/github.com/plgd-dev/hub/bundle/nginx /nginx
 ENV FQDN="localhost"
 ENV LOG_DEBUG=false
 ENV JETSTREAM=false
+ENV OVERRIDE_FILES=false
 
 # global - open telemetry collector client
 ENV OPEN_TELEMETRY_EXPORTER_ENABLED=false
