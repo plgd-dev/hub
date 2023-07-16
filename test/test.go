@@ -586,6 +586,7 @@ func WaitForDevice(t *testing.T, client pb.GrpcGateway_SubscribeToEventsClient, 
 				val.DeviceMetadataUpdated.GetConnection().Id = ""
 				require.NotZero(t, val.DeviceMetadataUpdated.GetConnection().GetConnectedAt())
 				val.DeviceMetadataUpdated.GetConnection().ConnectedAt = 0
+				val.DeviceMetadataUpdated.GetConnection().OnlineValidUntil = 0
 			}
 			if val.DeviceMetadataUpdated.GetTwinSynchronization() != nil {
 				val.DeviceMetadataUpdated.GetTwinSynchronization().CommandMetadata = nil

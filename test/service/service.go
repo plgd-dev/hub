@@ -22,6 +22,7 @@ import (
 	rdService "github.com/plgd-dev/hub/v2/resource-directory/service"
 	rdTest "github.com/plgd-dev/hub/v2/resource-directory/test"
 	"github.com/plgd-dev/hub/v2/test/config"
+	oauthService "github.com/plgd-dev/hub/v2/test/oauth-server/service"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	"github.com/stretchr/testify/require"
 	"go.mongodb.org/mongo-driver/bson"
@@ -74,6 +75,7 @@ type Config struct {
 	RA     raService.Config
 	IS     isService.Config
 	CA     ca.Config
+	OAUTH  oauthService.Config
 }
 
 func WithCOAPGWConfig(coapgwCfg coapgw.Config) SetUpOption {
@@ -112,6 +114,12 @@ func WithCAConfig(ca ca.Config) SetUpOption {
 	}
 }
 
+func WithOAuthConfig(oauth oauthService.Config) SetUpOption {
+	return func(cfg *Config) {
+		cfg.OAUTH = oauth
+	}
+}
+
 type SetUpOption = func(cfg *Config)
 
 func SetUp(ctx context.Context, t require.TestingT, opts ...SetUpOption) (tearDown func()) {
@@ -122,6 +130,7 @@ func SetUp(ctx context.Context, t require.TestingT, opts ...SetUpOption) (tearDo
 		RA:     raTest.MakeConfig(t),
 		IS:     isTest.MakeConfig(t),
 		CA:     caService.MakeConfig(t),
+		OAUTH:  oauthTest.MakeConfig(t),
 	}
 
 	for _, o := range opts {
@@ -129,7 +138,7 @@ func SetUp(ctx context.Context, t require.TestingT, opts ...SetUpOption) (tearDo
 	}
 
 	ClearDB(ctx, t)
-	oauthShutdown := oauthTest.SetUp(t)
+	oauthShutdown := oauthTest.New(t, config.OAUTH)
 	isShutdown := isTest.New(t, config.IS)
 	raShutdown := raTest.New(t, config.RA)
 	rdShutdown := rdTest.New(t, config.RD)
