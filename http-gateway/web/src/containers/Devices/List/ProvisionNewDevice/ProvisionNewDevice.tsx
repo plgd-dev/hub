@@ -62,11 +62,17 @@ const ProvisionNewDeviceCore = () => {
                 deviceInformation={
                     code
                         ? [
-                              { attribute: _(t.hubId), value: hubId },
-                              { attribute: _(t.deviceEndpoint), value: deviceEndpoint },
-                              { attribute: _(t.authorizationCode), value: '******', copyValue: code },
-                              { attribute: _(t.authorizationProvider), value: providerName },
-                              { attribute: _(t.certificateAuthorities), value: '...', copyValue: certificateAuthorities, certFormat: true },
+                              { attribute: _(t.hubId), value: hubId, attributeKey: 'hubId' },
+                              { attribute: _(t.deviceEndpoint), value: deviceEndpoint, attributeKey: 'deviceEndpoint' },
+                              { attribute: _(t.authorizationCode), value: '******', copyValue: code, attributeKey: 'authorizationCode' },
+                              { attribute: _(t.authorizationProvider), value: providerName, attributeKey: 'authorizationProvider' },
+                              {
+                                  attribute: _(t.certificateAuthorities),
+                                  value: '...',
+                                  copyValue: certificateAuthorities,
+                                  certFormat: true,
+                                  attributeKey: 'certificateAuthorities',
+                              },
                           ]
                         : undefined
                 }
