@@ -70,7 +70,7 @@
     "@emotion/babel-preset-css-prop": "^11.11.0",
     "@formatjs/cli": "^6.1.3",
     "@testing-library/jest-dom": "^5.16.5",
-    "@testing-library/react": "^12.1.2",
+    "@testing-library/react": "^12.1.5",
     "@testing-library/user-event": "^13.5.0",
     "babel-plugin-formatjs": "^10.5.3",
     "eslint": "8.43.0",
