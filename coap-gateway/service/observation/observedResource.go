@@ -7,6 +7,8 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/plgd-dev/device/v2/schema/interfaces"
+	"github.com/plgd-dev/go-coap/v3/message"
 	"go.uber.org/atomic"
 )
 
@@ -106,6 +108,36 @@ func (r *observedResource) PopObservation() Observation {
 	o := r.private.observation
 	r.private.observation = nil
 	return o
+}
+
+func (r *observedResource) isBatchObservation() bool {
+	return r.resInterface == interfaces.OC_IF_B
+}
+
+func (r *observedResource) toCoapOptions() []message.Option {
+	opts := make([]message.Option, 0, 2)
+	if r.ETag() != nil {
+		opts = append(opts, message.Option{
+			ID:    message.ETag,
+			Value: r.ETag(),
+		})
+	}
+	if r.Interface() != "" {
+		opts = append(opts, message.Option{
+			ID:    message.URIQuery,
+			Value: []byte("if=" + r.Interface()),
+		})
+	}
+
+	if r.isBatchObservation() {
+		for _, q := range r.EncodeETagsForIncrementChanged() {
+			opts = append(opts, message.Option{
+				ID:    message.URIQuery,
+				Value: []byte(q),
+			})
+		}
+	}
+	return opts
 }
 
 type observedResources []*observedResource

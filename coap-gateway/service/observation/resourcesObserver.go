@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/hashicorp/go-multierror"
-	"github.com/plgd-dev/device/v2/schema/interfaces"
 	"github.com/plgd-dev/device/v2/schema/resources"
 	"github.com/plgd-dev/go-coap/v3/message"
 	"github.com/plgd-dev/go-coap/v3/message/pool"
@@ -189,30 +188,9 @@ func (o *resourcesObserver) observeResource(ctx context.Context, obsRes *observe
 		return nil, cannotObserveResourceError(o.deviceID, obsRes.Href(), emptyDeviceIDError())
 	}
 
-	opts := make([]message.Option, 0, 2)
-	if obsRes.ETag() != nil {
-		opts = append(opts, message.Option{
-			ID:    message.ETag,
-			Value: obsRes.ETag(),
-		})
-	}
-	if obsRes.Interface() != "" {
-		opts = append(opts, message.Option{
-			ID:    message.URIQuery,
-			Value: []byte("if=" + obsRes.Interface()),
-		})
-	}
-
-	batchObservation := obsRes.resInterface == interfaces.OC_IF_B
+	opts := obsRes.toCoapOptions()
+	batchObservation := obsRes.isBatchObservation()
 	returnIfNonObservable := batchObservation && obsRes.Href() == resources.ResourceURI
-	if batchObservation {
-		for _, q := range obsRes.EncodeETagsForIncrementChanged() {
-			opts = append(opts, message.Option{
-				ID:    message.URIQuery,
-				Value: []byte(q),
-			})
-		}
-	}
 
 	obs, err := o.coapConn.Observe(ctx, obsRes.Href(), func(msg *pool.Message) {
 		if returnIfNonObservable {
@@ -237,7 +215,7 @@ func (o *resourcesObserver) observeResource(ctx context.Context, obsRes *observe
 }
 
 // Request resource content form COAP-GW
-func (o *resourcesObserver) getResourceContent(ctx context.Context, href string, etags []byte) error {
+func (o *resourcesObserver) getResourceContent(ctx context.Context, href string, etag []byte) error {
 	cannotGetResourceError := func(deviceID, href string, err error) error {
 		return fmt.Errorf("cannot get resource /%v%v content: %w", deviceID, href, err)
 	}
@@ -245,11 +223,11 @@ func (o *resourcesObserver) getResourceContent(ctx context.Context, href string,
 		return cannotGetResourceError(o.deviceID, href, emptyDeviceIDError())
 	}
 	opts := make([]message.Option, 0, 1)
-	if etags != nil {
+	if etag != nil {
 		// we use only first etag
 		opts = append(opts, message.Option{
 			ID:    message.ETag,
-			Value: etags,
+			Value: etag,
 		})
 	}
 	resp, err := o.coapConn.Get(ctx, href, opts...)

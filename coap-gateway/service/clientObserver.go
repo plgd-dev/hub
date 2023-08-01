@@ -45,7 +45,7 @@ func (c *session) replaceDeviceObserver(deviceObserverFuture *future.Future) *fu
 }
 
 // Replace deviceObserver instance in the client if Device Twin setting was changed for the device.
-func (c *session) replaceDeviceObserverWithDeviceTwin(ctx context.Context, twinEnabled bool) (bool, error) {
+func (c *session) replaceDeviceObserverWithDeviceTwin(ctx context.Context, twinEnabled, forceResynchronization bool) (bool, error) {
 	obs, err := c.getDeviceObserver(ctx)
 	if err != nil {
 		return false, err
@@ -53,7 +53,8 @@ func (c *session) replaceDeviceObserverWithDeviceTwin(ctx context.Context, twinE
 	prevTwinEnabled := obs.GetTwinEnabled()
 	deviceID := obs.GetDeviceID()
 	observationType := obs.GetObservationType()
-	if prevTwinEnabled == twinEnabled {
+	twinEnabled = twinEnabled || forceResynchronization
+	if !forceResynchronization && prevTwinEnabled == twinEnabled {
 		return prevTwinEnabled, nil
 	}
 	deviceObserverFuture, setDeviceObserver := future.New()
@@ -68,6 +69,7 @@ func (c *session) replaceDeviceObserverWithDeviceTwin(ctx context.Context, twinE
 		observation.WithLogger(c.getLogger()),
 		observation.WithRequireBatchObserveEnabled(c.server.config.APIs.COAP.RequireBatchObserveEnabled),
 		observation.WithLimitBatchObserveLatestETags(c.server.config.APIs.COAP.LimitBatchObserveLatestETags),
+		observation.WithTwinForceResynchronization(forceResynchronization),
 	)
 	if err != nil {
 		setDeviceObserver(nil, err)

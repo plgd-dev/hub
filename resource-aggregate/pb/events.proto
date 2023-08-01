@@ -184,6 +184,7 @@ message DeviceMetadataUpdatePending {
     string device_id = 1;
     oneof update_pending {
         bool twin_enabled = 6;
+        bool twin_force_resynchronization = 7;
 
         // ShadowSynchronization shadow_synchronization = 2; replaced by twin_enabled
     };

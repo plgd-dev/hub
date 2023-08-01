@@ -57,6 +57,7 @@ type DeviceObserverConfig struct {
 	ObservationType              ObservationType
 	TwinEnabled                  bool
 	TwinEnabledSet               bool
+	TwinForceResynchronization   bool
 	RequireBatchObserveEnabled   bool
 	LimitBatchObserveLatestETags uint32
 }
@@ -115,6 +116,21 @@ func (o TwinEnabledOpt) Apply(opts *DeviceObserverConfig) {
 func WithTwinEnabled(twinEnabled bool) TwinEnabledOpt {
 	return TwinEnabledOpt{
 		twinEnabled: twinEnabled,
+	}
+}
+
+// Force twinEnabled value
+type TwinForceResynchronizationOpt struct {
+	forceResynchronization bool
+}
+
+func (o TwinForceResynchronizationOpt) Apply(opts *DeviceObserverConfig) {
+	opts.TwinForceResynchronization = o.forceResynchronization
+}
+
+func WithTwinForceResynchronization(forceResynchronization bool) TwinForceResynchronizationOpt {
+	return TwinForceResynchronizationOpt{
+		forceResynchronization: forceResynchronization,
 	}
 }
 
@@ -182,6 +198,21 @@ func prepareSetupDeviceObserver(ctx context.Context, deviceID string, coapConn C
 	return cfg, published, nil
 }
 
+func getETags(ctx context.Context, deviceID string, rdClient GrpcGatewayClient, cfg DeviceObserverConfig) [][]byte {
+	if cfg.TwinForceResynchronization {
+		return nil
+	}
+	r, err := rdClient.GetLatestDeviceETags(ctx, &pbRD.GetLatestDeviceETagsRequest{
+		DeviceId: deviceID,
+		Limit:    cfg.LimitBatchObserveLatestETags,
+	})
+	if err != nil {
+		cfg.Logger.Debugf("NewDeviceObserver: failed to get latest device(%v) etag: %v", deviceID, err)
+		return nil
+	}
+	return r.GetEtags()
+}
+
 // Create new deviceObserver with given settings
 func NewDeviceObserver(ctx context.Context, deviceID string, coapConn ClientConn, rdClient GrpcGatewayClient, raClient ResourceAggregateClient, callbacks ResourcesObserverCallbacks, opts ...Option) (*DeviceObserver, error) {
 	createError := func(err error) error {
@@ -221,17 +252,7 @@ func NewDeviceObserver(ctx context.Context, deviceID string, coapConn ClientConn
 	}
 
 	if cfg.ObservationType == ObservationType_PerDevice {
-		var etags [][]byte
-		r, err := rdClient.GetLatestDeviceETags(ctx, &pbRD.GetLatestDeviceETagsRequest{
-			DeviceId: deviceID,
-			Limit:    cfg.LimitBatchObserveLatestETags,
-		})
-		if err != nil {
-			cfg.Logger.Debugf("NewDeviceObserver: failed to get latest device(%v) etag: %v", deviceID, err)
-		} else {
-			etags = r.GetEtags()
-		}
-
+		etags := getETags(ctx, deviceID, rdClient, cfg)
 		resourcesObserver, err := createDiscoveryResourceObserver(ctx, deviceID, coapConn, callbacks, etags, cfg.Logger)
 		if err == nil {
 			return &DeviceObserver{

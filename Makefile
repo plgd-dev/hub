@@ -147,9 +147,15 @@ define CLEAN-DOCKER-DEVICE
 	sudo rm -rf $(WORKING_DIRECTORY)/.tmp/$(1) || true
 endef
 
-simulators:
+simulators/clean:
+	$(call CLEAN-DOCKER-DEVICE,$(DEVICE_SIMULATOR_NAME))
+	$(call CLEAN-DOCKER-DEVICE,$(DEVICE_SIMULATOR_RES_OBSERVABLE_NAME))
+.PHONY: simulators/clean
+
+simulators: simulators/clean
 	$(call RUN-DOCKER-DEVICE,$(DEVICE_SIMULATOR_NAME),$(DEVICE_SIMULATOR_IMG))
 	$(call RUN-DOCKER-DEVICE,$(DEVICE_SIMULATOR_RES_OBSERVABLE_NAME),$(DEVICE_SIMULATOR_RES_OBSERVABLE_IMG))
+.PHONY: simulators
 
 env/test/mem: clean certificates nats mongo privateKeys
 .PHONY: env/test/mem
@@ -292,12 +298,10 @@ $(test-targets): %: env
 
 build: $(SUBDIRS)
 
-clean:
+clean: simulators/clean
 	docker rm -f mongo || true
 	docker rm -f nats || true
 	docker rm -f nats-cloud-connector || true
-	$(call CLEAN-DOCKER-DEVICE,$(DEVICE_SIMULATOR_NAME))
-	$(call CLEAN-DOCKER-DEVICE,$(DEVICE_SIMULATOR_RES_OBSERVABLE_NAME))
 	sudo rm -rf ./.tmp/certs || true
 	sudo rm -rf ./.tmp/mongo || true
 	sudo rm -rf ./.tmp/home || true

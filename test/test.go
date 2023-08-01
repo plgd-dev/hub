@@ -608,6 +608,7 @@ func WaitForDevice(t *testing.T, client pb.GrpcGateway_SubscribeToEventsClient, 
 			require.NotZero(t, val.ResourceChanged.GetEventMetadata().GetTimestamp())
 			val.ResourceChanged.EventMetadata = nil
 			require.NotEmpty(t, val.ResourceChanged.GetContent().GetData())
+			val.ResourceChanged.Etag = nil
 			val.ResourceChanged.Content = nil
 			val.ResourceChanged.OpenTelemetryCarrier = nil
 		}

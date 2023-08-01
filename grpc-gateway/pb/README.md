@@ -1089,6 +1089,7 @@ Certain filters perform a logical &#34;or&#34; operation among the elements of t
 | ----- | ---- | ----- | ----------- |
 | device_id | [string](#string) |  |  |
 | twin_enabled | [bool](#bool) |  |  |
+| twin_force_resynchronization | [bool](#bool) |  | force resynchronization IoT hub with the device resources and set twin_enabled to true. Use to address potential synchronization issues and prevent operational discrepancies. |
 | time_to_live | [int64](#int64) |  | command validity in nanoseconds. 0 means forever and minimal value is 100000000 (100ms). |
 
 
@@ -1298,6 +1299,7 @@ https://github.com/openconnectivityfoundation/core/blob/master/schemas/oic.links
 | ----- | ---- | ----- | ----------- |
 | device_id | [string](#string) |  |  |
 | twin_enabled | [bool](#bool) |  |  |
+| twin_force_resynchronization | [bool](#bool) |  |  |
 | audit_context | [AuditContext](#resourceaggregate-pb-AuditContext) |  |  |
 | event_metadata | [EventMetadata](#resourceaggregate-pb-EventMetadata) |  |  |
 | valid_until | [int64](#int64) |  | unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when pending event is considered as expired. 0 means forever. |

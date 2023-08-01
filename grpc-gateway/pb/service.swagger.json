@@ -266,6 +266,10 @@
                 "twinEnabled": {
                   "type": "boolean"
                 },
+                "twinForceResynchronization": {
+                  "type": "boolean",
+                  "description": "// force resynchronization IoT hub with the device resources and set twin_enabled to true. Use to address potential synchronization issues and prevent operational discrepancies."
+                },
                 "timeToLive": {
                   "type": "string",
                   "format": "int64",
@@ -1410,6 +1414,9 @@
         "twinEnabled": {
           "type": "boolean"
         },
+        "twinForceResynchronization": {
+          "type": "boolean"
+        },
         "auditContext": {
           "$ref": "#/definitions/resourceaggregatepbAuditContext"
         },
@@ -2093,6 +2100,11 @@
         "commandMetadata": {
           "$ref": "#/definitions/pbCommandMetadata",
           "description": "when status is SYNCING, this field contains the connection id. To update state to IN_SYNC, this field must be same as the one in the previous message."
+        },
+        "forceResynchronizationAt": {
+          "type": "string",
+          "format": "int64",
+          "description": "unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when the force resynchronization has been started. 0 means force resynchronization has never started."
         }
       }
     },

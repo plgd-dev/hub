@@ -19,6 +19,7 @@ func validateConfirmDeviceMetadataUpdate(request *commands.ConfirmDeviceMetadata
 	}
 	switch v := request.GetConfirm().(type) {
 	case *commands.ConfirmDeviceMetadataUpdateRequest_TwinEnabled:
+	case *commands.ConfirmDeviceMetadataUpdateRequest_TwinForceResynchronization:
 	default:
 		return status.Errorf(codes.InvalidArgument, "confirm has invalid type (%T)", v)
 	}

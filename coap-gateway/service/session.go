@@ -927,18 +927,25 @@ func (c *session) GetContext() context.Context {
 }
 
 func (c *session) confirmDeviceMetadataUpdate(ctx context.Context, event *events.DeviceMetadataUpdatePending) error {
-	_, err := c.server.raClient.ConfirmDeviceMetadataUpdate(ctx, &commands.ConfirmDeviceMetadataUpdateRequest{
+	r := &commands.ConfirmDeviceMetadataUpdateRequest{
 		DeviceId:      event.GetDeviceId(),
 		CorrelationId: event.GetAuditContext().GetCorrelationId(),
-		Confirm: &commands.ConfirmDeviceMetadataUpdateRequest_TwinEnabled{
-			TwinEnabled: event.GetTwinEnabled(),
-		},
 		CommandMetadata: &commands.CommandMetadata{
 			ConnectionId: c.RemoteAddr().String(),
 			Sequence:     c.coapConn.Sequence(),
 		},
 		Status: commands.Status_OK,
-	})
+	}
+	if event.GetTwinForceResynchronization() {
+		r.Confirm = &commands.ConfirmDeviceMetadataUpdateRequest_TwinForceResynchronization{
+			TwinForceResynchronization: true,
+		}
+	} else {
+		r.Confirm = &commands.ConfirmDeviceMetadataUpdateRequest_TwinEnabled{
+			TwinEnabled: event.GetTwinEnabled(),
+		}
+	}
+	_, err := c.server.raClient.ConfirmDeviceMetadataUpdate(ctx, r)
 	return err
 }
 
@@ -953,21 +960,24 @@ func (c *session) UpdateDeviceMetadata(ctx context.Context, event *events.Device
 		c.Close()
 		return fmt.Errorf("cannot update device('%v') metadata: %w", event.GetDeviceId(), err)
 	}
-	if _, ok := event.GetUpdatePending().(*events.DeviceMetadataUpdatePending_TwinEnabled); !ok {
+	switch event.GetUpdatePending().(type) {
+	case *events.DeviceMetadataUpdatePending_TwinEnabled:
+	case *events.DeviceMetadataUpdatePending_TwinForceResynchronization:
+	default:
 		return nil
 	}
 	sendConfirmCtx := authCtx.ToContext(ctx)
 
 	var errObs error
 	var previous bool
-	if event.GetTwinEnabled() {
+	if event.GetTwinEnabled() || event.GetTwinForceResynchronization() {
 		// if twin is enabled, we need to first update twin synchronization state to sync out
 		// and then synchronization state will be updated by other replaceDeviceObserverWithDeviceTwin
 		err = c.confirmDeviceMetadataUpdate(sendConfirmCtx, event)
-		previous, errObs = c.replaceDeviceObserverWithDeviceTwin(sendConfirmCtx, event.GetTwinEnabled())
+		previous, errObs = c.replaceDeviceObserverWithDeviceTwin(sendConfirmCtx, event.GetTwinEnabled(), event.GetTwinForceResynchronization())
 	} else {
 		// if twin is disabled, we to stop observation resources to disable all update twin synchronization state
-		previous, errObs = c.replaceDeviceObserverWithDeviceTwin(sendConfirmCtx, event.GetTwinEnabled())
+		previous, errObs = c.replaceDeviceObserverWithDeviceTwin(sendConfirmCtx, event.GetTwinEnabled(), false)
 		// and then we need to update twin synchronization state to disabled
 		err = c.confirmDeviceMetadataUpdate(sendConfirmCtx, event)
 	}
@@ -976,7 +986,7 @@ func (c *session) UpdateDeviceMetadata(ctx context.Context, event *events.Device
 		return fmt.Errorf("cannot update device('%v') metadata: %w", event.GetDeviceId(), errObs)
 	}
 	if err != nil && !errors.Is(err, context.Canceled) {
-		_, errObs := c.replaceDeviceObserverWithDeviceTwin(sendConfirmCtx, previous)
+		_, errObs := c.replaceDeviceObserverWithDeviceTwin(sendConfirmCtx, previous, false)
 		if errObs != nil {
 			c.Close()
 			c.Errorf("update device('%v') metadata error: %w", event.GetDeviceId(), errObs)
