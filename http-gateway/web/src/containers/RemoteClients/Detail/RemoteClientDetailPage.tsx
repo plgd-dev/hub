@@ -1,4 +1,4 @@
-import { FC, useCallback, useMemo, useRef } from 'react'
+import { FC, useCallback, useMemo } from 'react'
 import { useParams } from 'react-router-dom'
 import { useSelector } from 'react-redux'
 import { useIntl } from 'react-intl'
@@ -15,18 +15,10 @@ import { messages as g } from '../../Global.i18n'
 import * as styles from './RemoteClientDetailPage.styles'
 import { remoteClientStatuses } from '@/containers/RemoteClients/contacts'
 
-const wellKnownConfigStates = {
-    UNUSED: 'UNUSED',
-    FORWARDED: 'FORWARDED',
-}
-
 const RemoteClientDetailPage: FC<any> = () => {
     const { formatMessage: _ } = useIntl()
     const { id: routerId } = useParams()
     const id = routerId || ''
-
-    // const [wellKnownConfigForwarded, setWellKnownConfigForwarded] = useState(false)
-    const wellKnownConfigState = useRef(wellKnownConfigStates.UNUSED)
 
     const wellKnownConfig = security.getWellKnowConfig() as WellKnownConfigType
 
@@ -38,7 +30,6 @@ const RemoteClientDetailPage: FC<any> = () => {
         // @ts-ignore
         const iframeWindow = document?.getElementById('iframe_id')?.contentWindow
         iframeWindow && iframeWindow.postMessage({ PLGD_HUB_REMOTE_PROVISIONING_DATA: wellKnownConfig, key: 'PLGD_EVENT_MESSAGE' }, '*')
-        wellKnownConfigState.current = wellKnownConfigStates.FORWARDED
     }, [wellKnownConfig])
 
     if (notFoundPage) {
@@ -47,7 +38,7 @@ const RemoteClientDetailPage: FC<any> = () => {
 
     window.onmessage = (event) => {
         if (event.data.hasOwnProperty('key') && event.data.key === 'PLGD_EVENT_MESSAGE') {
-            if (event.data.hasOwnProperty('clientReady') && event.data.clientReady && wellKnownConfigState.current === wellKnownConfigStates.UNUSED) {
+            if (event.data.hasOwnProperty('clientReady') && event.data.clientReady) {
                 forwardDataToClientApp()
             }
         }

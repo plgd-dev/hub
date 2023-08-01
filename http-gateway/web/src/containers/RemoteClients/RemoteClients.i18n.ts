@@ -21,37 +21,25 @@ export const messages = defineMessages({
         id: 'remoteClients.client',
         defaultMessage: 'Client',
     },
-    deviceName: {
-        id: 'remoteClients.deviceName',
-        defaultMessage: 'Device name',
-    },
     clientName: {
         id: 'remoteClients.deviceName',
         defaultMessage: 'Client name',
     },
     clientNameError: {
-        id: 'remoteClients.deviceNameError',
-        defaultMessage: 'Device name error message',
-    },
-    clientNamePlaceholder: {
-        id: 'remoteClients.deviceNamePlaceholder',
-        defaultMessage: 'Device name',
+        id: 'remoteClients.clientNameError',
+        defaultMessage: 'Client name error message',
     },
     addNewClient: {
         id: 'remoteClients.addNewClient',
         defaultMessage: 'Add a new client',
     },
     clientIP: {
-        id: 'remoteClients.deviceIp',
-        defaultMessage: 'Device IP',
+        id: 'remoteClients.clientIP',
+        defaultMessage: 'Client IP',
     },
     clientIPError: {
-        id: 'remoteClients.deviceIpError',
-        defaultMessage: 'Device IP error message',
-    },
-    clientIPPlaceholder: {
-        id: 'remoteClients.deviceIpPlaceholder',
-        defaultMessage: 'Device IP',
+        id: 'remoteClients.clientIPError',
+        defaultMessage: 'Client IP error message',
     },
     addClientButton: {
         id: 'remoteClients.addClientButton',
@@ -114,11 +102,11 @@ export const messages = defineMessages({
         defaultMessage: 'Are you sure you want to delete {count} remote UI clients?',
     },
     clientsDeleted: {
-        id: 'remoteClients.devicesDeleted',
+        id: 'remoteClients.clientsDeleted',
         defaultMessage: 'remote clients deleted',
     },
     clientsDeletedMessage: {
-        id: 'remoteClients.devicesDeletedMessage',
+        id: 'remoteClients.clientsDeletedMessage',
         defaultMessage: 'The selected remote clients were successfully deleted.',
     },
     notFoundRemoteClientMessage: {
