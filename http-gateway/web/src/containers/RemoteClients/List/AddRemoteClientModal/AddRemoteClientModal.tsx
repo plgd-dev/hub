@@ -144,9 +144,9 @@ const AddRemoteClientModal: FC<Props> = (props) => {
             <Row>
                 <Column size={6}>
                     <FormGroup error={errors.clientName ? _(t.clientNameError) : undefined} id='device-name'>
-                        <FormLabel text={_(t.deviceName)} />
+                        <FormLabel text={_(t.clientName)} />
                         <FormInput
-                            placeholder={_(t.clientNamePlaceholder)}
+                            placeholder={_(t.clientName)}
                             {...register('clientName', { validate: (val) => val !== '' })}
                             disabled={!!versionLoading || !!clientInformation}
                         />
@@ -156,7 +156,7 @@ const AddRemoteClientModal: FC<Props> = (props) => {
                     <FormGroup error={errors.clientIP ? _(t.clientIPError) : undefined} id='device-ip'>
                         <FormLabel text={_(t.clientIP)} />
                         <FormInput
-                            placeholder={_(t.clientIPPlaceholder)}
+                            placeholder={_(t.clientIP)}
                             {...register('clientIP', { validate: (val) => val !== '' })}
                             disabled={!!versionLoading || !!clientInformation}
                         />
