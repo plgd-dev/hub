@@ -45,6 +45,7 @@
     "react-dom": "^18.2.0",
     "react-error-overlay": "6.0.9",
     "react-helmet": "^6.1.0",
+    "react-hook-form": "^7.45.2",
     "react-intl": "^5.25.1",
     "react-intl-po": "^2.2.2",
     "react-redux": "^8.1.1",

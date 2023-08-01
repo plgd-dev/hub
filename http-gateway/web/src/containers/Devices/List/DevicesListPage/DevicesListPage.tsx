@@ -27,6 +27,7 @@ import { handleDeleteDevicesErrors, isDeviceOnline, sleep } from '../../utils'
 import { messages as t } from '../../Devices.i18n'
 import { AppContext } from '@/containers/App/AppContext'
 import DateFormat from '@/containers/PendingCommands/DateFormat'
+import { messages as g } from '@/containers/Global.i18n'
 
 const { UNREGISTERED } = devicesStatuses
 
@@ -144,7 +145,7 @@ const DevicesListPage: FC<any> = () => {
                     const isOnline = isDeviceOnline(row.original)
                     return (
                         <StatusPill
-                            label={isOnline ? 'Online' : 'Offline'}
+                            label={isOnline ? _(t.online) : _(t.offline)}
                             // pending={value.pending.show ? { text: `${value.pending.number} pending commands`, onClick: console.log } : undefined}
                             status={isOnline ? states.ONLINE : states.OFFLINE}
                             tooltipText={
@@ -251,8 +252,9 @@ const DevicesListPage: FC<any> = () => {
                 columns={columns}
                 data={data}
                 i18n={{
-                    delete: _(t.delete),
-                    search: _(t.search),
+                    delete: _(g.delete),
+                    search: _(g.search),
+                    select: _(g.select),
                 }}
                 isAllSelected={isAllSelected}
                 loading={loadingOrDeleting}
