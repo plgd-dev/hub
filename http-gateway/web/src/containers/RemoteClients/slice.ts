@@ -1,5 +1,6 @@
 import { createSlice } from '@reduxjs/toolkit'
 import { remoteClientStatuses } from '@/containers/RemoteClients/contacts'
+import get from 'lodash/get'
 
 export type RemoteClientStatusType = (typeof remoteClientStatuses)[keyof typeof remoteClientStatuses]
 
@@ -16,33 +17,37 @@ export type StoreType = {
     remoteClients: RemoteClientType[]
 }
 
+const isDev = get(process.env, 'REACT_APP_TEST_REMOTE_CLIENTS_MOCK_DATA', false)
+
 const initialState: StoreType = {
-    remoteClients: [
-        {
-            id: 'FAj9X1Gxs9rLm-62r6yGJ',
-            created: '2023-07-22T17:58:11.427Z',
-            version: '0.6.0',
-            clientName: 'Test',
-            clientIP: 'http://212.89.237.161:50080',
-            status: remoteClientStatuses.REACHABLE,
-        },
-        {
-            id: 'ascaa-62r6yGJ',
-            created: '2023-07-22T17:58:11.427Z',
-            version: '0.6.0',
-            clientName: 'Test no working',
-            clientIP: 'http://localhost:50080',
-            status: remoteClientStatuses.REACHABLE,
-        },
-        {
-            id: 'ascaa-62r6yGJpop',
-            created: '2023-07-22T17:58:11.427Z',
-            version: '0.6.0',
-            clientName: 'PM local',
-            clientIP: 'http://localhost:3001',
-            status: remoteClientStatuses.REACHABLE,
-        },
-    ],
+    remoteClients: isDev
+        ? [
+              {
+                  id: 'FAj9X1Gxs9rLm-62r6yGJ',
+                  created: '2023-07-22T17:58:11.427Z',
+                  version: '0.6.0',
+                  clientName: 'Test',
+                  clientIP: 'https://212.89.237.161:50080',
+                  status: remoteClientStatuses.REACHABLE,
+              },
+              {
+                  id: 'ascaa-62r6yGJ',
+                  created: '2023-07-22T17:58:11.427Z',
+                  version: '0.6.0',
+                  clientName: 'Test no working',
+                  clientIP: 'https://localhost:50080',
+                  status: remoteClientStatuses.REACHABLE,
+              },
+              {
+                  id: 'ascaa-62r6yGJpop',
+                  created: '2023-07-22T17:58:11.427Z',
+                  version: '0.6.0',
+                  clientName: 'PM local',
+                  clientIP: 'https://localhost:3001',
+                  status: remoteClientStatuses.REACHABLE,
+              },
+          ]
+        : [],
 }
 
 const { reducer, actions } = createSlice({
