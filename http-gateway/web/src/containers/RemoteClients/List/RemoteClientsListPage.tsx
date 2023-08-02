@@ -90,8 +90,6 @@ const RemoteClientsListPage: FC<any> = () => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [combinedSelectedClients])
 
-    console.log(storedRemoteStore)
-
     useEffect(() => {
         setDataLoading(true)
         const dataForUpdate: RemoteClientType[] = []
