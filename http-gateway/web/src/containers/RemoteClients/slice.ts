@@ -43,7 +43,7 @@ const initialState: StoreType = {
                   created: '2023-07-22T17:58:11.427Z',
                   version: '0.6.0',
                   clientName: 'PM local',
-                  clientIP: 'https://localhost:3001',
+                  clientIP: 'http://localhost:3001',
                   status: remoteClientStatuses.REACHABLE,
               },
           ]
