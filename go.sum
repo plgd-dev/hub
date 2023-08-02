@@ -252,12 +252,12 @@ github.com/pkg/diff v0.0.0-20210226163009-20ebb0f2a09e/go.mod h1:pJLUxLENpZxwdsK
 github.com/pkg/errors v0.8.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
 github.com/pkg/errors v0.9.1 h1:FEBLx1zS214owpjy7qsBeixbURkuhQAwrK5UwLGTwt4=
 github.com/pkg/errors v0.9.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
-github.com/plgd-dev/device/v2 v2.2.1-0.20230801152246-ed8e1d9e3c9b h1:6gMLO4Napzqi+hBR0R1dJRBO91Q1QAf8IIsJsHhnkXA=
-github.com/plgd-dev/device/v2 v2.2.1-0.20230801152246-ed8e1d9e3c9b/go.mod h1:cU8sxTa4eNMVz/I1ooo6eLiGv9CtAdnsveI8dgmXqMQ=
+github.com/plgd-dev/device/v2 v2.2.1-0.20230802115723-ba0b9a78abfd h1:jGNpQzY5gswbvCdPJj8voZktfA3w404YDSWi/AAFzZ0=
+github.com/plgd-dev/device/v2 v2.2.1-0.20230802115723-ba0b9a78abfd/go.mod h1:lv93I6qbzHIDtXYdNBUkfTxpa7CdRia92OfVnjdU6ls=
 github.com/plgd-dev/go-coap/v2 v2.0.4-0.20200819112225-8eb712b901bc/go.mod h1:+tCi9Q78H/orWRtpVWyBgrr4vKFo2zYtbbxUllerBp4=
 github.com/plgd-dev/go-coap/v2 v2.4.1-0.20210517130748-95c37ac8e1fa/go.mod h1:rA7fc7ar+B/qa+Q0hRqv7yj/EMtIlmo1l7vkQGSrHPU=
-github.com/plgd-dev/go-coap/v3 v3.1.4-0.20230801150122-b52290eae102 h1:yXIvnCdtlYKLYtPII48soEAOzSXmWRxpMNdNR/RGm48=
-github.com/plgd-dev/go-coap/v3 v3.1.4-0.20230801150122-b52290eae102/go.mod h1:c8mgkHn3lV9NJMuNWUrvput76olbeOblGrtoRsmzZzs=
+github.com/plgd-dev/go-coap/v3 v3.1.4-0.20230802114331-351cd00bab2d h1:dHabSkw9dQxuphK8s0lkm3EMlkyPo5C3ESQKbVrKT18=
+github.com/plgd-dev/go-coap/v3 v3.1.4-0.20230802114331-351cd00bab2d/go.mod h1:qJihIo3PI5NCzvMUE4eE0/T38PUw6Zg0JDq50Z8bQ2k=
 github.com/plgd-dev/kit v0.0.0-20200819113605-d5fcf3e94f63/go.mod h1:Yl9zisyXfPdtP9hTWlJqjJYXmgU/jtSDKttz9/CeD90=
 github.com/plgd-dev/kit/v2 v2.0.0-20211006190727-057b33161b90 h1:TC1HJ/UbyflJFPvaOdGmNZ5TeFGex1/dyr9urNGLy7M=
 github.com/plgd-dev/kit/v2 v2.0.0-20211006190727-057b33161b90/go.mod h1:Z7oKFLSGQjdi8eInxwFCs0tSApuEM1o0qNck+sJYp4M=
@@ -419,8 +419,8 @@ golang.org/x/net v0.0.0-20220722155237-a158d28d115b/go.mod h1:XRhObCWvk6IyKnWLug
 golang.org/x/net v0.6.0/go.mod h1:2Tu9+aMcznHK/AK1HMvgo6xiTLG5rD5rZLDS+rp2Bjs=
 golang.org/x/net v0.9.0/go.mod h1:d48xBJpPfHeWQsugry2m+kC02ZBRGRgulfHnEXEuWns=
 golang.org/x/net v0.10.0/go.mod h1:0qNGK6F8kojg2nk9dLZ2mShWaEBan6FAoqfSigmmuDg=
-golang.org/x/net v0.12.0 h1:cfawfvKITfUsFCeJIHJrbSxpeu/E81khclypR0GVT50=
-golang.org/x/net v0.12.0/go.mod h1:zEVYFnQC7m/vmpQFELhcD1EWkZlX69l4oqgmer6hfKA=
+golang.org/x/net v0.13.0 h1:Nvo8UFsZ8X3BhAC9699Z1j7XQ3rsZnUUm7jfBEk1ueY=
+golang.org/x/net v0.13.0/go.mod h1:zEVYFnQC7m/vmpQFELhcD1EWkZlX69l4oqgmer6hfKA=
 golang.org/x/oauth2 v0.0.0-20180821212333-d2e6202438be/go.mod h1:N/0e6XlmueqKjAGxoOufVs8QHGRruUQn6yWY3a++T0U=
 golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d/go.mod h1:gOpvHmFTYa4IltrdGE7lF6nIHvwfUNPOp7c8zoXwtLw=
 golang.org/x/oauth2 v0.10.0 h1:zHCpF2Khkwy4mMB4bv0U37YtJdTGW8jI0glAApi0Kh8=
