@@ -14,7 +14,7 @@ import (
 )
 
 type provider interface {
-	Exchange(ctx context.Context, authorizationCode string) (*Token, error)
+	Exchange(ctx context.Context, authorizationCode, redirectURI string) (*Token, error)
 	Refresh(ctx context.Context, refreshToken string) (*Token, error)
 	HTTP() *http.Client
 	Close()

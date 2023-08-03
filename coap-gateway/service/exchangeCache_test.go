@@ -33,16 +33,21 @@ func TestExchangeCacheExecute(t *testing.T) {
 
 	cfg := config.MakeDeviceAuthorization()
 	cfg.ClientID = oauthTest.ClientTestRestrictedAuth
-	provider, err := oauth2.NewPlgdProvider(context.Background(), cfg, fileWatcher, logger, trace.NewNoopTracerProvider(), "", "")
+	plgdProvider, err := oauth2.NewPlgdProvider(context.Background(), cfg, fileWatcher, logger, trace.NewNoopTracerProvider(), "", "")
 	require.NoError(t, err)
+	defer plgdProvider.Close()
+
+	provider := &service.Provider{
+		PlgdProvider: plgdProvider,
+	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
 	defer cancel()
 	code := oauthTest.GetDefaultDeviceAuthorizationCode(t, "")
 	// repeated use of the same auth code within a minute should return an error
-	_, err = provider.Exchange(ctx, code)
+	_, err = provider.Exchange(ctx, code, "")
 	require.NoError(t, err)
-	_, err = provider.Exchange(ctx, code)
+	_, err = provider.Exchange(ctx, code, "")
 	require.Error(t, err)
 
 	code = oauthTest.GetDefaultDeviceAuthorizationCode(t, "")
@@ -66,7 +71,7 @@ func TestExchangeCacheExecute(t *testing.T) {
 		wg.Add(1)
 		go func(idx int) {
 			defer wg.Done()
-			results[idx].token, results[idx].err = ec.Execute(ctx, provider, code)
+			results[idx].token, results[idx].err = ec.Execute(ctx, provider, code, "")
 		}(i)
 	}
 	wg.Wait()
@@ -78,12 +83,12 @@ func TestExchangeCacheExecute(t *testing.T) {
 
 	// remove code from token cache, code will be send to the auth server and should return an error
 	ec.Clear()
-	_, err = ec.Execute(ctx, provider, code)
+	_, err = ec.Execute(ctx, provider, code, "")
 	require.Error(t, err)
 
 	// get a new code and auth server should give us a new access token
 	code = oauthTest.GetDefaultDeviceAuthorizationCode(t, "")
-	token3, err := ec.Execute(ctx, provider, code)
+	token3, err := ec.Execute(ctx, provider, code, "")
 	require.NoError(t, err)
 	require.NotEqual(t, results[0].token, token3)
 }

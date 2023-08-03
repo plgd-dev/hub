@@ -37,6 +37,7 @@ apis:
       deviceIDClaim: ""
       providers:
         - name: "plgd.web"
+          useDeviceRedirectURL: false
           clientID: ""
           clientSecretFile: ""
           scopes: []
@@ -56,6 +57,7 @@ apis:
               certFile: "/secrets/public/cert.crt"
               useSystemCAPool: false
         - name: "plgd.mobile"
+          useDeviceRedirectURL: false
           clientID: ""
           clientSecretFile: ""
           scopes: []

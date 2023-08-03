@@ -23,10 +23,13 @@ type AuthCodePlgdProvider struct {
 }
 
 // Exchange Auth Code for Access Token via OAuth
-func (p *AuthCodePlgdProvider) Exchange(ctx context.Context, authorizationCode string) (*Token, error) {
+func (p *AuthCodePlgdProvider) Exchange(ctx context.Context, authorizationCode string, redirectURI string) (*Token, error) {
 	ctx = context.WithValue(ctx, oauth2.HTTPClient, p.HTTPClient.HTTP())
 
 	oauth := p.Config.ToDefaultOAuth2()
+	if redirectURI != "" {
+		oauth.RedirectURL = redirectURI
+	}
 	token, err := oauth.Exchange(ctx, authorizationCode)
 	if err != nil {
 		return nil, err

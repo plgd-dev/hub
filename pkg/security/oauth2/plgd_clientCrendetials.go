@@ -34,7 +34,7 @@ type ClientCredentialsPlgdProvider struct {
 }
 
 // Exchange Auth Code for Access Token via OAuth
-func (p *ClientCredentialsPlgdProvider) Exchange(ctx context.Context, authorizationCode string) (*Token, error) {
+func (p *ClientCredentialsPlgdProvider) Exchange(ctx context.Context, authorizationCode string, _ string) (*Token, error) {
 	claims, err := p.jwtValidator.ParseWithContext(ctx, authorizationCode)
 	if err != nil {
 		return nil, fmt.Errorf("cannot verify authorization code: %w", err)
@@ -68,7 +68,7 @@ func (p *ClientCredentialsPlgdProvider) Exchange(ctx context.Context, authorizat
 
 // Refresh gets new Access Token via OAuth.
 func (p *ClientCredentialsPlgdProvider) Refresh(ctx context.Context, refreshToken string) (*Token, error) {
-	return p.Exchange(ctx, refreshToken)
+	return p.Exchange(ctx, refreshToken, "")
 }
 
 func (p *ClientCredentialsPlgdProvider) Close() {

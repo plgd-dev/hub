@@ -11,7 +11,7 @@ import (
 
 func (rh *RequestHandler) handleLinkedData(ctx context.Context, data ProvisionCacheData, authCode string) (ProvisionCacheData, error) {
 	if !data.linkedAccount.Data.HasOrigin() {
-		token, err := rh.provider.Exchange(ctx, authCode)
+		token, err := rh.provider.Exchange(ctx, authCode, "")
 		if err != nil {
 			return data, fmt.Errorf("cannot exchange origin cloud authorization code for access token: %w", err)
 		}

@@ -38,7 +38,7 @@ func (e *ExchangeCache) getFutureToken(authorizationCode string) (*future.Future
 }
 
 // Execute Exchange or returned cached value.
-func (e *ExchangeCache) Execute(ctx context.Context, provider *oauth2.PlgdProvider, authorizationCode string) (*oauth2.Token, error) {
+func (e *ExchangeCache) Execute(ctx context.Context, provider *Provider, authorizationCode string, redirectURI string) (*oauth2.Token, error) {
 	if authorizationCode == "" {
 		return nil, fmt.Errorf("invalid authorization code")
 	}
@@ -53,7 +53,7 @@ func (e *ExchangeCache) Execute(ctx context.Context, provider *oauth2.PlgdProvid
 		return v.(*oauth2.Token), nil
 	}
 
-	token, err := provider.Exchange(ctx, authorizationCode)
+	token, err := provider.Exchange(ctx, authorizationCode, redirectURI)
 	set(token, err)
 	if err != nil {
 		return nil, err

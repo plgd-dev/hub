@@ -17,9 +17,10 @@ import (
 )
 
 type CoapRefreshTokenReq struct {
-	DeviceID     string `json:"di"`
-	UserID       string `json:"uid"`
-	RefreshToken string `json:"refreshtoken"`
+	DeviceID              string `json:"di"`
+	UserID                string `json:"uid"`
+	RefreshToken          string `json:"refreshtoken"`
+	AuthorizationProvider string `json:"authprovider"`
 }
 
 type CoapRefreshTokenResp struct {
@@ -98,7 +99,18 @@ func refreshTokenPostHandler(req *mux.Message, client *session) (*pool.Message, 
 		return nil, statusErrorf(coapCodes.BadRequest, "%w", fmt.Errorf(fmtErr, refreshToken.DeviceID, err))
 	}
 
-	token, err := client.refreshCache.Execute(req.Context(), client.server.providers, client.server.taskQueue, refreshToken.RefreshToken, client.getLogger())
+	// use provider for request
+	providers := client.server.providers
+	if refreshToken.AuthorizationProvider != "" {
+		provider, ok := client.server.providers[refreshToken.AuthorizationProvider]
+		if !ok {
+			return nil, statusErrorf(coapCodes.Unauthorized, "%w", fmt.Errorf(fmtErr, refreshToken.DeviceID, fmt.Errorf("unknown authorization provider('%v')", refreshToken.AuthorizationProvider)))
+		}
+		providers := make(map[string]*Provider)
+		providers[refreshToken.AuthorizationProvider] = provider
+	}
+
+	token, err := client.refreshCache.Execute(req.Context(), providers, client.server.taskQueue, refreshToken.RefreshToken, client.getLogger())
 	if err != nil {
 		// When OAuth server is not accessible, then return 503 Service Unavailable. If real error occurs them http code is mapped to code.
 		return nil, statusErrorf(coapCodes.ServiceUnavailable, "%w", fmt.Errorf(fmtErr, refreshToken.DeviceID, err))

@@ -20,6 +20,7 @@ global:
   oauth:
    device: []
 #     - name:
+#       useDeviceRedirectURL: false
 #       clientID:
 #       clientSecret:
 #       scopes: []

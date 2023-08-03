@@ -20,6 +20,7 @@ type CoapSignUpRequest struct {
 	AuthorizationCode       string `json:"accesstoken"`
 	AuthorizationCodeLegacy string `json:"authcode"`
 	AuthorizationProvider   string `json:"authprovider"`
+	RedirectURI             string `json:"redirecturi"`
 }
 
 type CoapSignUpResponse struct {
@@ -86,8 +87,12 @@ func signUpPostHandler(req *mux.Message, client *session) (*pool.Message, error)
 	if !ok {
 		return nil, statusErrorf(coapCodes.Unauthorized, errFmtSignUP, fmt.Errorf("unknown authorization provider('%v')", signUp.AuthorizationProvider))
 	}
+	redirectURI := ""
+	if provider.UseDeviceRedirectURL {
+		redirectURI = signUp.RedirectURI
+	}
 
-	token, err := client.exchangeCache.Execute(req.Context(), provider, signUp.AuthorizationCode)
+	token, err := client.exchangeCache.Execute(req.Context(), provider, signUp.AuthorizationCode, redirectURI)
 	if err != nil {
 		// When OAuth server is not accessible, then return 503 Service Unavailable. If real error occurs them http code is mapped to code.
 		return nil, statusErrorf(coapCodes.ServiceUnavailable, errFmtSignUP, err)

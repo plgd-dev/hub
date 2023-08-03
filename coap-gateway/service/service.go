@@ -49,6 +49,12 @@ import (
 
 var authCtxKey = "AuthCtx"
 
+type Provider struct {
+	*oauth2.PlgdProvider
+	Name                 string
+	UseDeviceRedirectURL bool
+}
+
 // Service is a configuration of coap-gateway
 type Service struct {
 	ctx                        context.Context
@@ -58,7 +64,7 @@ type Service struct {
 	rdClient                   pbGRPC.GrpcGatewayClient
 	certificateAuthorityClient pbCA.CertificateAuthorityClient
 	devicesStatusUpdater       *devicesStatusUpdater
-	providers                  map[string]*oauth2.PlgdProvider
+	providers                  map[string]*Provider
 	expirationClientCache      *cache.Cache[string, *session]
 	cancel                     context.CancelFunc
 	taskQueue                  *queue.Queue
@@ -187,17 +193,22 @@ func (s *Service) onInactivityConnection(cc mux.Conn) {
 	}
 }
 
-func newProviders(ctx context.Context, config AuthorizationConfig, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (map[string]*oauth2.PlgdProvider, *oauth2.PlgdProvider, func(), error) {
+func newProviders(ctx context.Context, config AuthorizationConfig, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (map[string]*Provider, *Provider, func(), error) {
 	var closeProviders fn.FuncList
-	var firstProvider *oauth2.PlgdProvider
-	providers := make(map[string]*oauth2.PlgdProvider, 4)
+	var firstProvider *Provider
+	providers := make(map[string]*Provider, 4)
 	for _, p := range config.Providers {
-		provider, err := oauth2.NewPlgdProvider(ctx, p.Config, fileWatcher, logger, tracerProvider, config.OwnerClaim, config.DeviceIDClaim)
+		plgdProvider, err := oauth2.NewPlgdProvider(ctx, p.Config, fileWatcher, logger, tracerProvider, config.OwnerClaim, config.DeviceIDClaim)
 		if err != nil {
 			closeProviders.Execute()
 			return nil, nil, nil, fmt.Errorf("cannot create device provider: %w", err)
 		}
-		closeProviders.AddFunc(provider.Close)
+		closeProviders.AddFunc(plgdProvider.Close)
+		provider := &Provider{
+			PlgdProvider:         plgdProvider,
+			Name:                 p.Name,
+			UseDeviceRedirectURL: p.UseDeviceRedirectURL,
+		}
 		providers[p.Name] = provider
 		if firstProvider == nil {
 			firstProvider = provider

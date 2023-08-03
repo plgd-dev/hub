@@ -27,7 +27,7 @@ func NewRefreshCache() *RefreshCache {
 	return &RefreshCache{}
 }
 
-func refresh(ctx context.Context, providers map[string]*oauth2.PlgdProvider, queue *queue.Queue, refreshToken string, logger log.Logger) (*oauth2.Token, error) {
+func refresh(ctx context.Context, providers map[string]*Provider, queue *queue.Queue, refreshToken string, logger log.Logger) (*oauth2.Token, error) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 	var wg sync.WaitGroup
@@ -36,7 +36,7 @@ func refresh(ctx context.Context, providers map[string]*oauth2.PlgdProvider, que
 	var err error
 	for name, p := range providers {
 		wg.Add(1)
-		task := func(provider *oauth2.PlgdProvider) func() {
+		task := func(provider *Provider) func() {
 			return func() {
 				defer wg.Done()
 				tokenTmp, errTmp := provider.Refresh(ctx, refreshToken)
@@ -81,7 +81,7 @@ func (r *RefreshCache) getFutureToken(refreshToken string) (*future.Future, futu
 	return r.token, nil
 }
 
-func (r *RefreshCache) Execute(ctx context.Context, providers map[string]*oauth2.PlgdProvider, queue *queue.Queue, refreshToken string, logger log.Logger) (*oauth2.Token, error) {
+func (r *RefreshCache) Execute(ctx context.Context, providers map[string]*Provider, queue *queue.Queue, refreshToken string, logger log.Logger) (*oauth2.Token, error) {
 	if refreshToken == "" {
 		return nil, fmt.Errorf("invalid refreshToken")
 	}

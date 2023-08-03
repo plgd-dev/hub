@@ -19,12 +19,14 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-func getProvider(t *testing.T, fileWatcher *fsnotify.Watcher, logger log.Logger) *oauth2.PlgdProvider {
+func getProvider(t *testing.T, fileWatcher *fsnotify.Watcher, logger log.Logger) *service.Provider {
 	cfg := config.MakeDeviceAuthorization()
 	cfg.ClientID = oauthTest.ClientTestRestrictedAuth
-	provider, err := oauth2.NewPlgdProvider(context.Background(), cfg, fileWatcher, logger, trace.NewNoopTracerProvider(), "", "")
+	plgdProvider, err := oauth2.NewPlgdProvider(context.Background(), cfg, fileWatcher, logger, trace.NewNoopTracerProvider(), "", "")
 	require.NoError(t, err)
-	return provider
+	return &service.Provider{
+		PlgdProvider: plgdProvider,
+	}
 }
 
 func TestRefreshCacheExecute(t *testing.T) {
@@ -45,7 +47,7 @@ func TestRefreshCacheExecute(t *testing.T) {
 	code := oauthTest.GetAuthorizationCode(t, config.OAUTH_SERVER_HOST, oauthTest.ClientTestRestrictedAuth, "", "")
 	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
 	defer cancel()
-	token1, err := provider1.Exchange(ctx, code)
+	token1, err := provider1.Exchange(ctx, code, "")
 	require.NoError(t, err)
 	require.NotEmpty(t, token1.RefreshToken)
 
@@ -55,7 +57,7 @@ func TestRefreshCacheExecute(t *testing.T) {
 	require.Error(t, err)
 
 	code = oauthTest.GetAuthorizationCode(t, config.OAUTH_SERVER_HOST, oauthTest.ClientTestRestrictedAuth, "", "")
-	token2, err := provider1.Exchange(ctx, code)
+	token2, err := provider1.Exchange(ctx, code, "")
 	require.NoError(t, err)
 	require.NotEmpty(t, token2.RefreshToken)
 	require.NotEqual(t, token1.RefreshToken, token2.RefreshToken)
@@ -64,7 +66,7 @@ func TestRefreshCacheExecute(t *testing.T) {
 	defer provider2.Close()
 	provider3 := getProvider(t, fileWatcher, logger)
 	defer provider3.Close()
-	providers := map[string]*oauth2.PlgdProvider{
+	providers := map[string]*service.Provider{
 		"1": provider1,
 		"2": provider2,
 		"3": provider3,
@@ -77,7 +79,7 @@ func TestRefreshCacheExecute(t *testing.T) {
 	require.NoError(t, err)
 
 	code = oauthTest.GetAuthorizationCode(t, config.OAUTH_SERVER_HOST, oauthTest.ClientTestRestrictedAuth, "", "")
-	token3, err := provider2.Exchange(ctx, code)
+	token3, err := provider2.Exchange(ctx, code, "")
 	require.NoError(t, err)
 	require.NotEqual(t, token3.RefreshToken, token1.RefreshToken)
 	require.NotEqual(t, token3.RefreshToken, token2.RefreshToken)
@@ -115,7 +117,7 @@ func TestRefreshCacheExecute(t *testing.T) {
 	require.Error(t, err)
 
 	code = oauthTest.GetAuthorizationCode(t, config.OAUTH_SERVER_HOST, oauthTest.ClientTestRestrictedAuth, "", "")
-	token6, err := provider3.Exchange(ctx, code)
+	token6, err := provider3.Exchange(ctx, code, "")
 	require.NoError(t, err)
 	require.NotEqual(t, token6.RefreshToken, token1.RefreshToken)
 	require.NotEqual(t, token6.RefreshToken, token2.RefreshToken)

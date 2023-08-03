@@ -55,8 +55,9 @@ func (c *APIsConfig) Validate() error {
 }
 
 type ProvidersConfig struct {
-	Name          string `yaml:"name" json:"name"`
-	oauth2.Config `yaml:",inline"`
+	Name                 string `yaml:"name" json:"name"`
+	UseDeviceRedirectURL bool   `yaml:"useDeviceRedirectURL" json:"useDeviceRedirectURL"`
+	oauth2.Config        `yaml:",inline"`
 }
 
 func (c *ProvidersConfig) Validate(firstAuthority string, providerNames map[string]bool) error {
