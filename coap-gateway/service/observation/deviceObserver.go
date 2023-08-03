@@ -158,7 +158,7 @@ func (o LimitBatchObserveLatestETagsOpt) Apply(opts *DeviceObserverConfig) {
 	opts.LimitBatchObserveLatestETags = o.limitBatchObserveLatestETags
 }
 
-func WithLimitBatchObserveLatestETags(v uint32) LimitBatchObserveLatestETagsOpt {
+func WithLatestETAGsForNumbersOfResource(v uint32) LimitBatchObserveLatestETagsOpt {
 	return LimitBatchObserveLatestETagsOpt{
 		limitBatchObserveLatestETags: v,
 	}

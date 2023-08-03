@@ -18,7 +18,6 @@ apis:
     subscriptionBufferSize: 1000
     messagePoolSize: 1000
     requireBatchObserveEnabled: true
-    limitBatchObserveLatestETags: 8
     messageQueueSize: 16
     keepAlive:
       timeout: 20s
@@ -161,6 +160,9 @@ clients:
         keyFile: "/secrets/private/cert.key"
         certFile: "/secrets/public/cert.crt"
         useSystemCAPool: false
+deviceTwin:
+  latestETAGsForNumbersOfResource:  8
+  forceResynchronization: false
 taskQueue:
   goPoolSize: 1600
   size: 2097152
