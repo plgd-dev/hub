@@ -1,4 +1,4 @@
-{{- if .Values.grpcgateway.enabled }}
+{{- if and .Values.grpcgateway.enabled .Values.grpcgateway.ingress.enabled }}
 {{- $fullname := include "plgd-hub.grpcgateway.fullname" . }}
 {{- $port := .Values.grpcgateway.port }}
 apiVersion: networking.k8s.io/v1

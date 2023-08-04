@@ -1,4 +1,4 @@
-{{- if .Values.httpgateway.enabled }}
+{{- if and .Values.httpgateway.enabled .Values.httpgateway.ingress.api.enabled }}
 {{- $fullname := include "plgd-hub.httpgateway.fullname" . }}
 {{- $port := .Values.httpgateway.port }}
 apiVersion: networking.k8s.io/v1
