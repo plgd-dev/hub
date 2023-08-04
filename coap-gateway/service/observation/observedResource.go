@@ -2,7 +2,7 @@ package observation
 
 import (
 	"context"
-	"encoding/hex"
+	"encoding/base64"
 	"sort"
 	"strings"
 	"sync"
@@ -64,10 +64,10 @@ const (
 	// maxETagLen is the maximum length of an ETag. See https://datatracker.ietf.org/doc/html/rfc7252#section-5.10
 	maxETagLen = 8
 	// prefixQueryIncChanged is the prefix of the URI query for the "incremental changed" option. See https://docs.plgd.dev/docs/features/control-plane/entity-tag/#etag-batch-interface-for-oicres
-	prefixQueryIncChanged = "incChanged="
+	prefixQueryIncChanges = "incChanges="
 )
 
-func (r *observedResource) EncodeETagsForIncrementChanged() []string {
+func (r *observedResource) EncodeETagsForIncrementChanges() []string {
 	if len(r.etags) <= 1 {
 		return nil
 	}
@@ -79,12 +79,11 @@ func (r *observedResource) EncodeETagsForIncrementChanged() []string {
 			continue
 		}
 		if b.Len() == 0 {
-			b.WriteString(prefixQueryIncChanged)
+			b.WriteString(prefixQueryIncChanges)
 		} else {
 			b.WriteString(",")
 		}
-		b.WriteString(hex.EncodeToString(etag))
-		//
+		b.WriteString(base64.RawURLEncoding.EncodeToString(etag))
 		if b.Len() >= maxURIQueryLen-(maxETagLen*2) {
 			etagsStr = append(etagsStr, b.String())
 			b.Reset()
@@ -130,7 +129,7 @@ func (r *observedResource) toCoapOptions() []message.Option {
 	}
 
 	if r.isBatchObservation() {
-		for _, q := range r.EncodeETagsForIncrementChanged() {
+		for _, q := range r.EncodeETagsForIncrementChanges() {
 			opts = append(opts, message.Option{
 				ID:    message.URIQuery,
 				Value: []byte(q),

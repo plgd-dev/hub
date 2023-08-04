@@ -38,7 +38,7 @@ func TestObservedResourceEncodeETagsForIncrementChanged(t *testing.T) {
 				},
 			},
 			want: []string{
-				prefixQueryIncChanged + "3031323334353637",
+				prefixQueryIncChanges + "MDEyMzQ1Njc",
 			},
 		},
 		{
@@ -51,7 +51,7 @@ func TestObservedResourceEncodeETagsForIncrementChanged(t *testing.T) {
 				},
 			},
 			want: []string{
-				prefixQueryIncChanged + "31,32",
+				prefixQueryIncChanges + "MQ,Mg",
 			},
 		},
 		{
@@ -65,7 +65,7 @@ func TestObservedResourceEncodeETagsForIncrementChanged(t *testing.T) {
 				},
 			},
 			want: []string{
-				prefixQueryIncChanged + "31,32",
+				prefixQueryIncChanges + "MQ,Mg",
 			},
 		},
 		{
@@ -86,13 +86,19 @@ func TestObservedResourceEncodeETagsForIncrementChanged(t *testing.T) {
 					[]byte("01234567"),
 					[]byte("01234567"),
 					[]byte("01234567"),
-					[]byte("01234567"), // 15
 					[]byte("01234567"),
+					[]byte("01234567"),
+					[]byte("01234567"),
+					[]byte("01234567"),
+					[]byte("01234567"),
+					[]byte("01234567"),
+					[]byte("01234567"),
+					[]byte("01234567"), // 22
 				},
 			},
 			want: []string{
-				prefixQueryIncChanged + "3031323334353637,3031323334353637,3031323334353637,3031323334353637,3031323334353637,3031323334353637,3031323334353637,3031323334353637,3031323334353637,3031323334353637,3031323334353637,3031323334353637,3031323334353637,3031323334353637",
-				prefixQueryIncChanged + "3031323334353637",
+				prefixQueryIncChanges + "MDEyMzQ1Njc,MDEyMzQ1Njc,MDEyMzQ1Njc,MDEyMzQ1Njc,MDEyMzQ1Njc,MDEyMzQ1Njc,MDEyMzQ1Njc,MDEyMzQ1Njc,MDEyMzQ1Njc,MDEyMzQ1Njc,MDEyMzQ1Njc,MDEyMzQ1Njc,MDEyMzQ1Njc,MDEyMzQ1Njc,MDEyMzQ1Njc,MDEyMzQ1Njc,MDEyMzQ1Njc,MDEyMzQ1Njc,MDEyMzQ1Njc,MDEyMzQ1Njc",
+				prefixQueryIncChanges + "MDEyMzQ1Njc",
 			},
 		},
 	}
@@ -101,7 +107,7 @@ func TestObservedResourceEncodeETagsForIncrementChanged(t *testing.T) {
 			r := &observedResource{
 				etags: tt.fields.etags,
 			}
-			got := r.EncodeETagsForIncrementChanged()
+			got := r.EncodeETagsForIncrementChanges()
 			for _, g := range got {
 				assert.Less(t, len(g), 255) // RFC 7641 - Uri-query length
 			}
