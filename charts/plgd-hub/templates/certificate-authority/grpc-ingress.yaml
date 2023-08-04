@@ -1,4 +1,4 @@
-{{- if .Values.certificateauthority.enabled }}
+{{- if and .Values.certificateauthority.enabled .Values.certificateauthority.ingress.grpc.enabled }}
 {{- $fullname := include "plgd-hub.certificateauthority.fullname" . }}
 {{- $port := .Values.certificateauthority.port }}
 apiVersion: networking.k8s.io/v1

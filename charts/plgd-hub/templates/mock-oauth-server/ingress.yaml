@@ -1,4 +1,4 @@
-{{- if .Values.mockoauthserver.enabled }}
+{{- if and .Values.mockoauthserver.enabled .Values.mockoauthserver.ingress.enabled }}
 {{- $fullname := include "plgd-hub.mockoauthserver.fullname" . }}
 {{- $domainCrt := include "plgd-hub.mockoauthserver.domainCertName" . }}
 {{- $port := .Values.mockoauthserver.port }}
