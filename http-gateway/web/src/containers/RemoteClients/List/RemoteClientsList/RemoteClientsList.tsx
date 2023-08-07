@@ -1,6 +1,7 @@
-import React, { FC, useContext, useMemo } from 'react'
+import React, { FC, useContext, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useIntl } from 'react-intl'
+import ReactDOM from 'react-dom'
 
 import Table, { TableSelectionPanel } from '@shared-ui/components/Atomic/TableNew'
 import { DEVICES_DEFAULT_PAGE_SIZE } from '@shared-ui/common/constants'
@@ -9,6 +10,7 @@ import StatusPill from '@shared-ui/components/Atomic/StatusPill'
 import { states } from '@shared-ui/components/Atomic/StatusPill/constants'
 import TableActionButton from '@shared-ui/components/Organisms/TableActionButton'
 import { IconTrash } from '@shared-ui/components/Atomic'
+import Breadcrumbs from '@shared-ui/components/Layout/Header/Breadcrumbs'
 
 import { Props } from './RemoteClientsList.types'
 import { messages as t } from '../../RemoteClients.i18n'
@@ -20,10 +22,14 @@ import { AppContext } from '@/containers/App/AppContext'
 const RemoteClientsList: FC<Props> = (props) => {
     const { data, isAllSelected, selectedClients, setIsAllSelected, setSelectedClients, handleOpenDeleteModal } = props
     const { formatMessage: _ } = useIntl()
-
+    const [isDomReady, setIsDomReady] = useState(false)
     const selectedCount = useMemo(() => Object.keys(selectedClients).length, [selectedClients])
 
     const { collapsed } = useContext(AppContext)
+
+    useEffect(() => {
+        setIsDomReady(true)
+    }, [])
 
     const columns = useMemo(
         () => [
@@ -94,6 +100,11 @@ const RemoteClientsList: FC<Props> = (props) => {
     )
     return (
         <>
+            {isDomReady &&
+                ReactDOM.createPortal(
+                    <Breadcrumbs items={[{ label: _(t.remoteClients), link: '/' }]} />,
+                    document.querySelector('#breadcrumbsPortalTarget') as Element
+                )}
             <Table
                 autoHeight={true}
                 columns={columns}

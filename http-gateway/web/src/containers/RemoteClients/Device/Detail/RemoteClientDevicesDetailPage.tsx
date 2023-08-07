@@ -1,19 +1,23 @@
 import { FC } from 'react'
 import { Helmet } from 'react-helmet'
+import { useParams } from 'react-router-dom'
 import { useIntl } from 'react-intl'
 
-import DevicesListPage from '@shared-ui/app/clientApp/Devices/List/DevicesListPage'
+import DevicesDetailsPage from '@shared-ui/app/clientApp/Devices/Detail/DevicesDetailsPage'
 import { clientAppSetings } from '@shared-ui/common/services'
 
-import * as styles from './RemoteClientDetailPage.styles'
-import { getClientIp } from '../utils'
+import { Props } from './RemoteClientDevicesDetailPage.types'
 import { useClientAppPage } from '@/containers/RemoteClients/use-client-app-page'
-import { messages as t } from '@/containers/RemoteClients/RemoteClients.i18n'
-import { messages as menuT } from '@shared-ui/components/Atomic/Menu/Menu.i18n'
+import { getClientIp } from '@/containers/RemoteClients/utils'
+import * as styles from './RemoteClientDevicesDetailPage.styles'
+import { messages as t } from '../../RemoteClients.i18n'
 
-const RemoteClientDetailPage: FC<any> = () => {
+const RemoteClientDevicesDetailPage: FC<Props> = (props) => {
+    const { defaultActiveTab } = props
     const { formatMessage: _ } = useIntl()
     const [clientData, error, errorElement] = useClientAppPage()
+    const { deviceId: routerDeviceId } = useParams()
+    const deviceId = routerDeviceId || ''
 
     if (error) {
         return errorElement
@@ -26,7 +30,7 @@ const RemoteClientDetailPage: FC<any> = () => {
     return (
         <div css={styles.detailPage}>
             <Helmet title={`${clientData.clientName}`} />
-            <DevicesListPage
+            <DevicesDetailsPage
                 breadcrumbs={[
                     {
                         link: '/remote-clients',
@@ -37,13 +41,14 @@ const RemoteClientDetailPage: FC<any> = () => {
                         label: clientData.clientName,
                     },
                 ]}
-                detailLinkPrefix={`/remote-clients/${clientData?.id}`}
-                title={`${_(t.remoteClients)} | ${clientData.clientName} | ${_(menuT.devices)}`}
+                defaultActiveTab={defaultActiveTab}
+                defaultDeviceId={deviceId}
+                detailLinkPrefix={`/remote-clients/${clientData.id}`}
             />
         </div>
     )
 }
 
-RemoteClientDetailPage.displayName = 'RemoteClientDetailPage'
+RemoteClientDevicesDetailPage.displayName = 'RemoteClientDevicesDetailPage'
 
-export default RemoteClientDetailPage
+export default RemoteClientDevicesDetailPage

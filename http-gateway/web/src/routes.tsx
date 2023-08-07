@@ -17,14 +17,15 @@ import {
     IconDocs,
     IconChat,
 } from '@shared-ui/components/Atomic/Icon/'
+import { MenuGroup } from '@shared-ui/components/Layout/LeftPanel/LeftPanel.types'
 
 import DevicesListPage from '@/containers/Devices/List/DevicesListPage'
 import DevicesDetailsPage from '@/containers/Devices/Detail/DevicesDetailsPage'
 import { messages as t } from './containers/App/App.i18n'
 import TestPage from './containers/Test'
-import { MenuGroup } from '@shared-ui/components/Layout/LeftPanel/LeftPanel.types'
 import RemoteClientsListPage from '@/containers/RemoteClients/List/RemoteClientsListPage'
 import RemoteClientDetailPage from '@/containers/RemoteClients/Detail/RemoteClientDetailPage'
+import RemoteClientDevicesDetailPage from '@/containers/RemoteClients/Device/Detail/RemoteClientDevicesDetailPage'
 
 const MenuTranslate = (props: { id: string }) => {
     const { id } = props
@@ -69,7 +70,13 @@ export const menu: MenuGroup[] = [
                 id: '3',
                 title: <MenuTranslate id='menuRemoteClients' />,
                 link: '/remote-clients',
-                paths: ['/remote-clients', '/remote-clients/:id'],
+                paths: [
+                    '/remote-clients',
+                    '/remote-clients/:id',
+                    '/remote-clients/:id/devices/:deviceId',
+                    '/remote-clients/:id/devices/:deviceId/resources',
+                    '/remote-clients/:id/devices/:deviceId/resources/:href',
+                ],
                 exact: true,
             },
             {
@@ -193,8 +200,13 @@ export const Routes = () => {
             <Route element={<DevicesDetailsPage defaultActiveTab={0} />} path='/devices/:id' />
             <Route element={<DevicesDetailsPage defaultActiveTab={1} />} path='/devices/:id/resources' />
             <Route element={<DevicesDetailsPage defaultActiveTab={1} />} path='/devices/:id/resources/*' />
+
             <Route element={<RemoteClientsListPage />} path='/remote-clients' />
             <Route element={<RemoteClientDetailPage />} path='/remote-clients/:id' />
+            <Route element={<RemoteClientDevicesDetailPage defaultActiveTab={0} />} path='/remote-clients/:id/devices/:deviceId' />
+            <Route element={<RemoteClientDevicesDetailPage defaultActiveTab={1} />} path='/remote-clients/:id/devices/:deviceId/resources' />
+            <Route element={<RemoteClientDevicesDetailPage defaultActiveTab={1} />} path='/remote-clients/:id/devices/:deviceId/resources/*' />
+
             {process.env?.REACT_APP_TEST_VIEW === 'true' && <Route element={<TestPage />} path='/test' />}
             <Route element={<NotFoundPage message={_(t.notFoundPageDefaultMessage)} title={_(t.pageTitle)} />} path='*' />
         </RoutesGroup>
