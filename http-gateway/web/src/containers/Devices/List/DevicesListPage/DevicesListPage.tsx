@@ -2,6 +2,7 @@ import React, { FC, useCallback, useContext, useEffect, useMemo, useState } from
 import { useIntl } from 'react-intl'
 import isFunction from 'lodash/isFunction'
 import { Link, useNavigate } from 'react-router-dom'
+import ReactDOM from 'react-dom'
 
 import { getApiErrorMessage } from '@shared-ui/common/utils'
 import { useIsMounted } from '@shared-ui/common/hooks'
@@ -17,6 +18,7 @@ import Badge from '@shared-ui/components/Atomic/Badge'
 import TableActionButton from '@shared-ui/components/Organisms/TableActionButton'
 import Notification from '@shared-ui/components/Atomic/Notification/Toast'
 import { IconShowPassword, IconTrash } from '@shared-ui/components/Atomic'
+import Breadcrumbs from '@shared-ui/components/Layout/Header/Breadcrumbs'
 
 import { PendingCommandsExpandableList } from '@/containers/PendingCommands'
 import { DEVICES_REGISTERED_UNREGISTERED_COUNT_EVENT_KEY, devicesStatuses, NO_DEVICE_NAME, RESET_COUNTER } from '../../constants'
@@ -51,6 +53,7 @@ const DevicesListPage: FC<any> = () => {
     const [deleting, setDeleting] = useState(false)
     const [unselectRowsToken, setUnselectRowsToken] = useState(1)
     const isMounted = useIsMounted()
+    const [isDomReady, setIsDomReady] = useState(false)
     const navigate = useNavigate()
 
     const combinedSelectedDevices = singleDevice ? [singleDevice] : selectedDevices
@@ -60,6 +63,10 @@ const DevicesListPage: FC<any> = () => {
         deviceError && Notification.error({ title: _(t.deviceError), message: getApiErrorMessage(deviceError) })
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [deviceError])
+
+    useEffect(() => {
+        setIsDomReady(true)
+    }, [])
 
     const handleOpenDeleteModal = useCallback(
         (deviceId?: string) => {
@@ -220,11 +227,6 @@ const DevicesListPage: FC<any> = () => {
 
     return (
         <PageLayout
-            breadcrumbs={[
-                {
-                    label: _(menuT.devices),
-                },
-            ]}
             footer={
                 <Footer
                     footerExpanded={footerExpanded}
@@ -247,6 +249,11 @@ const DevicesListPage: FC<any> = () => {
             loading={loading}
             title={_(menuT.devices)}
         >
+            {isDomReady &&
+                ReactDOM.createPortal(
+                    <Breadcrumbs items={[{ label: _(menuT.devices), link: '/' }]} />,
+                    document.querySelector('#breadcrumbsPortalTarget') as Element
+                )}
             <DevicesList
                 collapsed={collapsed ?? false}
                 columns={columns}

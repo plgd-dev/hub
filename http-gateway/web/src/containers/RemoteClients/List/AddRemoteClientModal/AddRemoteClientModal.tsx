@@ -11,7 +11,7 @@ import FormInput from '@shared-ui/components/Atomic/FormInput'
 import { Column, Row } from '@shared-ui/components/Atomic/Grid'
 import Button from '@shared-ui/components/Atomic/Button'
 import * as styles from '@shared-ui/components/Atomic/Modal/components/ProvisionDeviceModal/ProvisionDeviceModal.styles'
-import { fetchApi } from '@shared-ui/common/services'
+import { fetchApi, security } from '@shared-ui/common/services'
 import Notification from '@shared-ui/components/Atomic/Notification/Toast'
 import CopyElement from '@shared-ui/components/Atomic/CopyElement'
 import { IconCopy } from '@shared-ui/components/Atomic'
@@ -68,6 +68,8 @@ const AddRemoteClientModal: FC<Props> = (props) => {
         isFunction(onClose) && onClose()
     }, [onClose, reset])
 
+    const wellKnownConfig = security.getWellKnowConfig()
+
     const onSubmit: SubmitHandler<Inputs> = (data) => {
         setVersionLoading(true)
         const url = data.clientIP.endsWith('/') ? data.clientIP.slice(0, -1) : data.clientIP
@@ -76,14 +78,47 @@ const AddRemoteClientModal: FC<Props> = (props) => {
             useToken: false,
         })
             .then((result) => {
-                setVersionLoading(false)
-                setClientInformation([
-                    {
-                        attribute: _(t.version),
-                        attributeKey: 'version',
-                        value: result.data?.version,
-                    },
-                ])
+                const version = result.data?.version
+                // setVersionLoading(false)
+
+                if (version) {
+                    console.log(wellKnownConfig)
+                    const { clientId, scopes = [], audience } = wellKnownConfig.deviceOauthClient
+                    const audienceParam = audience ? `&audience=${audience}` : ''
+                    const deviceId = '00000000-0000-0000-0000-000000000000'
+
+                    const AuthUserManager = security.getUserManager()
+
+                    AuthUserManager.metadataService.getAuthorizationEndpoint().then((authorizationEndpoint: string) => {
+                        console.log(authorizationEndpoint)
+                        console.log(
+                            // https://auth.plgd.cloud/realms/shared/protocol/openid-connect/auth?response_type=code&client_id=cYN3p6lwNcNlOvvUhz55KvDZLQbJeDr5&scope=offline_access&redirect_uri=https://212.89.237.161:50080/devices&device_id=606bc01c-445a-4335-88f3-504b65c14f14
+                            `${authorizationEndpoint}?response_type=code&client_id=${clientId}&scope=${scopes}${audienceParam}&redirect_uri=${url}/devices&device_id=${deviceId}`
+                        )
+
+                        fetchApi(
+                            `${authorizationEndpoint}?response_type=code&client_id=${clientId}&scope=${scopes}${audienceParam}&redirect_uri=${url}/devices&device_id=${deviceId}`
+                        )
+                            .then((result) => {
+                                console.log('result')
+                                console.log(result)
+                            })
+                            .catch((e) => {
+                                setVersionLoading(false)
+                                console.log('!!!Error')
+                                console.log(e)
+                                // Notification.error({ title: _(t.error), message: _(t.clientError) })
+                            })
+                    })
+
+                    // setClientInformation([
+                    //     {
+                    //         attribute: _(t.version),
+                    //         attributeKey: 'version',
+                    //         value: version,
+                    //     },
+                    // ])
+                }
 
                 Notification.success({ title: _(t.success), message: _(t.clientSuccess) })
             })
