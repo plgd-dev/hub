@@ -10,7 +10,7 @@ export type ClientInformationLineType = {
 
 export type Props = ModalProps & {
     defaultClientName?: string
-    defaultClientIP?: string
+    defaultClientUrl?: string
     onFormSubmit: (clientInformation: ClientInformationLineType[]) => void
 }
 
@@ -20,5 +20,5 @@ export const defaultProps = {
 
 export type Inputs = {
     clientName: string
-    clientIP: string
+    clientUrl: string
 }

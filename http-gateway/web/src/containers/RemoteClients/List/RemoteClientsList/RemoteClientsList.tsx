@@ -51,7 +51,7 @@ const RemoteClientsList: FC<Props> = (props) => {
             },
             {
                 Header: _(t.ipAddress),
-                accessor: 'clientIP',
+                accessor: 'clientUrl',
                 style: { width: '350px' },
                 Cell: ({ value }: { value: string }) => {
                     return <span className='no-wrap-text'>{value}</span>

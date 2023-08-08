@@ -8,7 +8,7 @@ import { clientAppSetings } from '@shared-ui/common/services'
 
 import { Props } from './RemoteClientDevicesDetailPage.types'
 import { useClientAppPage } from '@/containers/RemoteClients/use-client-app-page'
-import { getClientIp } from '@/containers/RemoteClients/utils'
+import { getClientUrl } from '@/containers/RemoteClients/utils'
 import * as styles from './RemoteClientDevicesDetailPage.styles'
 import { messages as t } from '../../RemoteClients.i18n'
 
@@ -24,7 +24,7 @@ const RemoteClientDevicesDetailPage: FC<Props> = (props) => {
     }
 
     clientAppSetings.setGeneralConfig({
-        httpGatewayAddress: getClientIp(clientData?.clientIP),
+        httpGatewayAddress: getClientUrl(clientData?.clientUrl),
     })
 
     return (

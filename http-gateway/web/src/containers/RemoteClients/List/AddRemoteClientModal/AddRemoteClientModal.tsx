@@ -11,7 +11,7 @@ import FormInput from '@shared-ui/components/Atomic/FormInput'
 import { Column, Row } from '@shared-ui/components/Atomic/Grid'
 import Button from '@shared-ui/components/Atomic/Button'
 import * as styles from '@shared-ui/components/Atomic/Modal/components/ProvisionDeviceModal/ProvisionDeviceModal.styles'
-import { fetchApi, security } from '@shared-ui/common/services'
+import { fetchApi } from '@shared-ui/common/services'
 import Notification from '@shared-ui/components/Atomic/Notification/Toast'
 import CopyElement from '@shared-ui/components/Atomic/CopyElement'
 import { IconCopy } from '@shared-ui/components/Atomic'
@@ -22,7 +22,7 @@ import { Props, defaultProps, Inputs, ClientInformationLineType } from './AddRem
 import { messages as t } from '../../RemoteClients.i18n'
 
 const AddRemoteClientModal: FC<Props> = (props) => {
-    const { footerActions, defaultClientIP, defaultClientName, onClose, onFormSubmit, ...rest } = { ...defaultProps, ...props }
+    const { footerActions, defaultClientUrl, defaultClientName, onClose, onFormSubmit, ...rest } = { ...defaultProps, ...props }
     const { formatMessage: _ } = useIntl()
     const [versionLoading, setVersionLoading] = useState(false)
     const [clientInformation, setClientInformation] = useState<ClientInformationLineType[] | undefined>(undefined)
@@ -37,7 +37,7 @@ const AddRemoteClientModal: FC<Props> = (props) => {
         mode: 'all',
         values: {
             clientName: defaultClientName || '',
-            clientIP: defaultClientIP || '',
+            clientUrl: defaultClientUrl || '',
         },
     })
 
@@ -52,9 +52,9 @@ const AddRemoteClientModal: FC<Props> = (props) => {
                 value: formValues.clientName,
             },
             {
-                attribute: _(t.clientIP),
-                attributeKey: 'clientIP',
-                value: formValues.clientIP,
+                attribute: _(t.clientUrl),
+                attributeKey: 'clientUrl',
+                value: formValues.clientUrl,
             }
         )
 
@@ -68,57 +68,27 @@ const AddRemoteClientModal: FC<Props> = (props) => {
         isFunction(onClose) && onClose()
     }, [onClose, reset])
 
-    const wellKnownConfig = security.getWellKnowConfig()
-
     const onSubmit: SubmitHandler<Inputs> = (data) => {
         setVersionLoading(true)
-        const url = data.clientIP.endsWith('/') ? data.clientIP.slice(0, -1) : data.clientIP
+        const url = data.clientUrl.endsWith('/') ? data.clientUrl.slice(0, -1) : data.clientUrl
 
         fetchApi(`${url}/.well-known/configuration`, {
             useToken: false,
         })
             .then((result) => {
                 const version = result.data?.version
-                // setVersionLoading(false)
 
                 if (version) {
-                    console.log(wellKnownConfig)
-                    const { clientId, scopes = [], audience } = wellKnownConfig.deviceOauthClient
-                    const audienceParam = audience ? `&audience=${audience}` : ''
-                    const deviceId = '00000000-0000-0000-0000-000000000000'
-
-                    const AuthUserManager = security.getUserManager()
-
-                    AuthUserManager.metadataService.getAuthorizationEndpoint().then((authorizationEndpoint: string) => {
-                        console.log(authorizationEndpoint)
-                        console.log(
-                            // https://auth.plgd.cloud/realms/shared/protocol/openid-connect/auth?response_type=code&client_id=cYN3p6lwNcNlOvvUhz55KvDZLQbJeDr5&scope=offline_access&redirect_uri=https://212.89.237.161:50080/devices&device_id=606bc01c-445a-4335-88f3-504b65c14f14
-                            `${authorizationEndpoint}?response_type=code&client_id=${clientId}&scope=${scopes}${audienceParam}&redirect_uri=${url}/devices&device_id=${deviceId}`
-                        )
-
-                        fetchApi(
-                            `${authorizationEndpoint}?response_type=code&client_id=${clientId}&scope=${scopes}${audienceParam}&redirect_uri=${url}/devices&device_id=${deviceId}`
-                        )
-                            .then((result) => {
-                                console.log('result')
-                                console.log(result)
-                            })
-                            .catch((e) => {
-                                setVersionLoading(false)
-                                console.log('!!!Error')
-                                console.log(e)
-                                // Notification.error({ title: _(t.error), message: _(t.clientError) })
-                            })
-                    })
-
-                    // setClientInformation([
-                    //     {
-                    //         attribute: _(t.version),
-                    //         attributeKey: 'version',
-                    //         value: version,
-                    //     },
-                    // ])
+                    setClientInformation([
+                        {
+                            attribute: _(t.version),
+                            attributeKey: 'version',
+                            value: version,
+                        },
+                    ])
                 }
+
+                setVersionLoading(false)
 
                 Notification.success({ title: _(t.success), message: _(t.clientSuccess) })
             })
@@ -160,7 +130,7 @@ const AddRemoteClientModal: FC<Props> = (props) => {
             return (
                 <div css={styles.getCodeBox}>
                     <Button
-                        disabled={!!errors.clientIP || !!errors.clientName}
+                        disabled={!!errors.clientUrl || !!errors.clientName}
                         htmlType='submit'
                         loading={versionLoading}
                         loadingText={_(t.addClientButtonLoading)}
@@ -178,7 +148,7 @@ const AddRemoteClientModal: FC<Props> = (props) => {
         <form onSubmit={handleSubmit(onSubmit)}>
             <Row>
                 <Column size={6}>
-                    <FormGroup error={errors.clientName ? _(t.clientNameError) : undefined} id='device-name'>
+                    <FormGroup error={errors.clientName ? _(t.clientNameError) : undefined} id='client-name'>
                         <FormLabel text={_(t.clientName)} />
                         <FormInput
                             placeholder={_(t.clientName)}
@@ -188,11 +158,11 @@ const AddRemoteClientModal: FC<Props> = (props) => {
                     </FormGroup>
                 </Column>
                 <Column size={6}>
-                    <FormGroup error={errors.clientIP ? _(t.clientIPError) : undefined} id='device-ip'>
-                        <FormLabel text={_(t.clientIP)} />
+                    <FormGroup error={errors.clientUrl ? _(t.clientUrlError) : undefined} id='client-url'>
+                        <FormLabel text={_(t.clientUrl)} />
                         <FormInput
-                            placeholder={_(t.clientIP)}
-                            {...register('clientIP', { validate: (val) => val !== '' })}
+                            placeholder={_(t.clientUrl)}
+                            {...register('clientUrl', { validate: (val) => val !== '' })}
                             disabled={!!versionLoading || !!clientInformation}
                         />
                     </FormGroup>
