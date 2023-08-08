@@ -33,13 +33,13 @@ export const messages = defineMessages({
         id: 'remoteClients.addNewClient',
         defaultMessage: 'Add a new client',
     },
-    clientIP: {
-        id: 'remoteClients.clientIP',
-        defaultMessage: 'Client IP',
+    clientUrl: {
+        id: 'remoteClients.clientUrl',
+        defaultMessage: 'Client Url',
     },
-    clientIPError: {
-        id: 'remoteClients.clientIPError',
-        defaultMessage: 'Client IP error message',
+    clientUrlError: {
+        id: 'remoteClients.clientUrlError',
+        defaultMessage: 'Client Url error message',
     },
     addClientButton: {
         id: 'remoteClients.addClientButton',

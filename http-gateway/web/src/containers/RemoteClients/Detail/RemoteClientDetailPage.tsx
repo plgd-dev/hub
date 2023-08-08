@@ -6,7 +6,7 @@ import DevicesListPage from '@shared-ui/app/clientApp/Devices/List/DevicesListPa
 import { clientAppSetings } from '@shared-ui/common/services'
 
 import * as styles from './RemoteClientDetailPage.styles'
-import { getClientIp } from '../utils'
+import { getClientUrl } from '../utils'
 import { useClientAppPage } from '@/containers/RemoteClients/use-client-app-page'
 import { messages as t } from '@/containers/RemoteClients/RemoteClients.i18n'
 import { messages as menuT } from '@shared-ui/components/Atomic/Menu/Menu.i18n'
@@ -20,7 +20,7 @@ const RemoteClientDetailPage: FC<any> = () => {
     }
 
     clientAppSetings.setGeneralConfig({
-        httpGatewayAddress: getClientIp(clientData?.clientIP),
+        httpGatewayAddress: getClientUrl(clientData?.clientUrl),
     })
 
     return (

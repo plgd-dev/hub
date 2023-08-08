@@ -94,7 +94,7 @@ const RemoteClientsListPage: FC<any> = () => {
         setDataLoading(true)
         const dataForUpdate: RemoteClientType[] = []
         const viewData = storedRemoteStore.remoteClients.map((remoteClient: RemoteClientType) => {
-            return fetchApi(`${remoteClient.clientIP}/.well-known/configuration`, {
+            return fetchApi(`${remoteClient.clientUrl}/.well-known/configuration`, {
                 useToken: false,
             }).catch((_e) => {
                 if (remoteClient.status === remoteClientStatuses.REACHABLE) {

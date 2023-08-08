@@ -35,6 +35,8 @@ const AppLayout: FC<Props> = (props) => {
     const notifications = useSelector((state: CombinedStoreType) => state.notifications)
     const appStore = useSelector((state: CombinedStoreType) => state.app)
 
+    console.log(notifications)
+
     const requestVersion = useCallback((now: Date) => {
         getVersionNumberFromGithub().then((ret) => {
             dispatch(

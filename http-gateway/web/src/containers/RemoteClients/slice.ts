@@ -7,7 +7,7 @@ export type RemoteClientStatusType = (typeof remoteClientStatuses)[keyof typeof 
 export type RemoteClientType = {
     id: string
     clientName: string
-    clientIP: string
+    clientUrl: string
     created: string
     status: RemoteClientStatusType
     version: string
@@ -27,7 +27,7 @@ const initialState: StoreType = {
                   created: '2023-07-22T17:58:11.427Z',
                   version: '0.6.0',
                   clientName: 'Test',
-                  clientIP: 'https://212.89.237.161:50080',
+                  clientUrl: 'https://212.89.237.161:50080',
                   status: remoteClientStatuses.REACHABLE,
               },
               {
@@ -35,7 +35,7 @@ const initialState: StoreType = {
                   created: '2023-07-22T17:58:11.427Z',
                   version: '0.6.0',
                   clientName: 'Test no working',
-                  clientIP: 'https://localhost:50080',
+                  clientUrl: 'https://localhost:50080',
                   status: remoteClientStatuses.REACHABLE,
               },
               {
@@ -43,7 +43,7 @@ const initialState: StoreType = {
                   created: '2023-07-22T17:58:11.427Z',
                   version: '0.6.0',
                   clientName: 'PM local',
-                  clientIP: 'http://localhost:3001',
+                  clientUrl: 'http://localhost:3001',
                   status: remoteClientStatuses.REACHABLE,
               },
           ]

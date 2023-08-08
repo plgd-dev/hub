@@ -1,1 +1,1 @@
-export const getClientIp = (clientIp: string) => (clientIp.endsWith('/') ? clientIp.slice(0, -1) : clientIp)
+export const getClientUrl = (clientUrl: string) => (clientUrl.endsWith('/') ? clientUrl.slice(0, -1) : clientUrl)
