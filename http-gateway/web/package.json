@@ -12,7 +12,7 @@
     "@opentelemetry/api": "^1.4.1",
     "@opentelemetry/context-zone": "^1.14.0",
     "@opentelemetry/core": "^1.14.0",
-    "@opentelemetry/instrumentation": "^0.40.0",
+    "@opentelemetry/instrumentation": "^0.41.2",
     "@opentelemetry/instrumentation-fetch": "^0.40.0",
     "@opentelemetry/instrumentation-xml-http-request": "^0.40.0",
     "@opentelemetry/sdk-trace-base": "^1.14.0",
