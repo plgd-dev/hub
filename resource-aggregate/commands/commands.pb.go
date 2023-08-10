@@ -2235,7 +2235,7 @@ type isConfirmDeviceMetadataUpdateRequest_Confirm interface {
 }
 
 type ConfirmDeviceMetadataUpdateRequest_TwinEnabled struct {
-	TwinEnabled bool `protobuf:"varint,6,opt,name=twin_enabled,json=twinEnabled,proto3,oneof"` // // will set twin_enabled to true and TwinSynchronization.state to OUT_OF_SYNC.
+	TwinEnabled bool `protobuf:"varint,6,opt,name=twin_enabled,json=twinEnabled,proto3,oneof"` // will set twin_enabled to true and TwinSynchronization.state to OUT_OF_SYNC.
 }
 
 type ConfirmDeviceMetadataUpdateRequest_TwinForceResynchronization struct {

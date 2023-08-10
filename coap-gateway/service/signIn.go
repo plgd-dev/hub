@@ -227,7 +227,7 @@ func asyncCreateDeviceObserver(x asyncCreateDeviceObserverArg) {
 		observation.WithLogger(x.client.getLogger()),
 		observation.WithRequireBatchObserveEnabled(x.client.server.config.APIs.COAP.RequireBatchObserveEnabled),
 		observation.WithTwinEnabled(x.twinEnabled),
-		observation.WithLatestETAGsForNumbersOfResource(x.client.server.config.DeviceTwin.LatestETAGsForNumbersOfResource),
+		observation.WithNumberOfETAGsForBatchObservation(x.client.server.config.DeviceTwin.NumberOfETAGsForBatchObservation),
 		observation.WithTwinForceResynchronization(x.client.server.config.DeviceTwin.ForceResynchronization),
 	)
 	if err != nil {

@@ -39,7 +39,7 @@ func IsDup(err error) bool {
 }
 
 func (s *EventStore) saveEvent(ctx context.Context, col *mongo.Collection, events []eventstore.Event) (status eventstore.SaveStatus, err error) {
-	etag, e, err := makeDBEvents(events, s.dataMarshaler)
+	etag, e, err := makeDBEventsAndGetETag(events, s.dataMarshaler)
 	if err != nil {
 		return eventstore.Fail, err
 	}

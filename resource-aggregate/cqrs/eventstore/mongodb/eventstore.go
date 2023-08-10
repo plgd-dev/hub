@@ -271,7 +271,7 @@ func makeDBETag(etag *eventstore.ETagData) bson.M {
 }
 
 func makeDBDoc(events []eventstore.Event, marshaler MarshalerFunc) (bson.M, error) {
-	etag, e, err := makeDBEvents(events, marshaler)
+	etag, e, err := makeDBEventsAndGetETag(events, marshaler)
 	if err != nil {
 		return nil, fmt.Errorf("cannot insert first events('%v'): %w", events, err)
 	}
@@ -339,7 +339,7 @@ func (s *EventStore) Close(ctx context.Context) error {
 }
 
 // newDBEvent returns a new dbEvent for an eventstore.
-func makeDBEvents(events []eventstore.Event, marshaler MarshalerFunc) (*eventstore.ETagData, []bson.M, error) {
+func makeDBEventsAndGetETag(events []eventstore.Event, marshaler MarshalerFunc) (*eventstore.ETagData, []bson.M, error) {
 	dbEvents := make([]bson.M, 0, len(events))
 	var etag *eventstore.ETagData
 	for idx, event := range events {

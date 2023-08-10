@@ -158,7 +158,7 @@ func (o LimitBatchObserveLatestETagsOpt) Apply(opts *DeviceObserverConfig) {
 	opts.LimitBatchObserveLatestETags = o.limitBatchObserveLatestETags
 }
 
-func WithLatestETAGsForNumbersOfResource(v uint32) LimitBatchObserveLatestETagsOpt {
+func WithNumberOfETAGsForBatchObservation(v uint32) LimitBatchObserveLatestETagsOpt {
 	return LimitBatchObserveLatestETagsOpt{
 		limitBatchObserveLatestETags: v,
 	}
@@ -373,7 +373,7 @@ func createDiscoveryResourceObserver(ctx context.Context, deviceID string, coapC
 // Create observer with a single observations for all published resources.
 func createPublishedResourcesObserver(ctx context.Context, deviceID string, coapConn ClientConn, callbacks ResourcesObserverCallbacks, published []*commands.Resource, logger log.Logger) (*resourcesObserver, error) {
 	resourcesObserver := newResourcesObserver(deviceID, coapConn, callbacks, logger)
-
+	// TODO get ETAG for each resource
 	err := resourcesObserver.addResources(ctx, published)
 	if err != nil {
 		resourcesObserver.CleanObservedResources(ctx)

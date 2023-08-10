@@ -7,35 +7,23 @@ import (
 )
 
 func TestObservedResourceEncodeETagsForIncrementChanged(t *testing.T) {
-	type fields struct {
-		etags [][]byte
-	}
 	tests := []struct {
-		name   string
-		fields fields
-		want   []string
+		name  string
+		etags [][]byte
+		want  []string
 	}{
 		{
-			name: "empty",
-			fields: fields{
-				etags: nil,
-			},
+			name:  "empty",
+			etags: nil,
 		},
 		{
-			name: "only-latest-etag",
-			fields: fields{
-				etags: [][]byte{
-					[]byte("0"),
-				},
-			},
+			name:  "not-nil",
+			etags: [][]byte{},
 		},
 		{
 			name: "one-etag",
-			fields: fields{
-				etags: [][]byte{
-					[]byte("0"),
-					[]byte("01234567"),
-				},
+			etags: [][]byte{
+				[]byte("01234567"),
 			},
 			want: []string{
 				prefixQueryIncChanges + "MDEyMzQ1Njc",
@@ -43,12 +31,9 @@ func TestObservedResourceEncodeETagsForIncrementChanged(t *testing.T) {
 		},
 		{
 			name: "two-etags",
-			fields: fields{
-				etags: [][]byte{
-					[]byte("0"),
-					[]byte("1"),
-					[]byte("2"),
-				},
+			etags: [][]byte{
+				[]byte("1"),
+				[]byte("2"),
 			},
 			want: []string{
 				prefixQueryIncChanges + "MQ,Mg",
@@ -56,13 +41,10 @@ func TestObservedResourceEncodeETagsForIncrementChanged(t *testing.T) {
 		},
 		{
 			name: "two-etags-invalid-etag",
-			fields: fields{
-				etags: [][]byte{
-					[]byte("0"),
-					[]byte("1"),
-					[]byte("2"),
-					[]byte("invalid-etag-is-ignored"),
-				},
+			etags: [][]byte{
+				[]byte("1"),
+				[]byte("2"),
+				[]byte("invalid-etag-is-ignored"),
 			},
 			want: []string{
 				prefixQueryIncChanges + "MQ,Mg",
@@ -70,31 +52,28 @@ func TestObservedResourceEncodeETagsForIncrementChanged(t *testing.T) {
 		},
 		{
 			name: "multiple-etags",
-			fields: fields{
-				etags: [][]byte{
-					[]byte("01234567"),
-					[]byte("01234567"),
-					[]byte("01234567"),
-					[]byte("01234567"),
-					[]byte("01234567"),
-					[]byte("01234567"),
-					[]byte("01234567"),
-					[]byte("01234567"),
-					[]byte("01234567"),
-					[]byte("01234567"),
-					[]byte("01234567"),
-					[]byte("01234567"),
-					[]byte("01234567"),
-					[]byte("01234567"),
-					[]byte("01234567"),
-					[]byte("01234567"),
-					[]byte("01234567"),
-					[]byte("01234567"),
-					[]byte("01234567"),
-					[]byte("01234567"),
-					[]byte("01234567"),
-					[]byte("01234567"), // 22
-				},
+			etags: [][]byte{
+				[]byte("01234567"),
+				[]byte("01234567"),
+				[]byte("01234567"),
+				[]byte("01234567"),
+				[]byte("01234567"),
+				[]byte("01234567"),
+				[]byte("01234567"),
+				[]byte("01234567"),
+				[]byte("01234567"),
+				[]byte("01234567"),
+				[]byte("01234567"),
+				[]byte("01234567"),
+				[]byte("01234567"),
+				[]byte("01234567"),
+				[]byte("01234567"),
+				[]byte("01234567"),
+				[]byte("01234567"),
+				[]byte("01234567"),
+				[]byte("01234567"),
+				[]byte("01234567"),
+				[]byte("01234567"), // 21
 			},
 			want: []string{
 				prefixQueryIncChanges + "MDEyMzQ1Njc,MDEyMzQ1Njc,MDEyMzQ1Njc,MDEyMzQ1Njc,MDEyMzQ1Njc,MDEyMzQ1Njc,MDEyMzQ1Njc,MDEyMzQ1Njc,MDEyMzQ1Njc,MDEyMzQ1Njc,MDEyMzQ1Njc,MDEyMzQ1Njc,MDEyMzQ1Njc,MDEyMzQ1Njc,MDEyMzQ1Njc,MDEyMzQ1Njc,MDEyMzQ1Njc,MDEyMzQ1Njc,MDEyMzQ1Njc,MDEyMzQ1Njc",
@@ -104,10 +83,7 @@ func TestObservedResourceEncodeETagsForIncrementChanged(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			r := &observedResource{
-				etags: tt.fields.etags,
-			}
-			got := r.EncodeETagsForIncrementChanges()
+			got := encodeETagsForIncrementChanges(tt.etags)
 			for _, g := range got {
 				assert.Less(t, len(g), 255) // RFC 7641 - Uri-query length
 			}

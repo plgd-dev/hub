@@ -28,7 +28,7 @@ type UpdateDeviceMetadataRequest struct {
 
 	DeviceId                   string `protobuf:"bytes,1,opt,name=device_id,json=deviceId,proto3" json:"device_id,omitempty"`
 	TwinEnabled                bool   `protobuf:"varint,4,opt,name=twin_enabled,json=twinEnabled,proto3" json:"twin_enabled,omitempty"`
-	TwinForceResynchronization bool   `protobuf:"varint,5,opt,name=twin_force_resynchronization,json=twinForceResynchronization,proto3" json:"twin_force_resynchronization,omitempty"` // // force resynchronization IoT hub with the device resources and set twin_enabled to true. Use to address potential synchronization issues and prevent operational discrepancies.
+	TwinForceResynchronization bool   `protobuf:"varint,5,opt,name=twin_force_resynchronization,json=twinForceResynchronization,proto3" json:"twin_force_resynchronization,omitempty"` // force resynchronization IoT hub with the device resources and set twin_enabled to true. Use to address potential synchronization issues and prevent operational discrepancies.
 	TimeToLive                 int64  `protobuf:"varint,3,opt,name=time_to_live,json=timeToLive,proto3" json:"time_to_live,omitempty"`                                                 // command validity in nanoseconds. 0 means forever and minimal value is 100000000 (100ms).
 }
 

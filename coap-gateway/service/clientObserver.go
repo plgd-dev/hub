@@ -68,7 +68,7 @@ func (c *session) replaceDeviceObserverWithDeviceTwin(ctx context.Context, twinE
 		observation.WithTwinEnabled(twinEnabled), observation.WithObservationType(observationType),
 		observation.WithLogger(c.getLogger()),
 		observation.WithRequireBatchObserveEnabled(c.server.config.APIs.COAP.RequireBatchObserveEnabled),
-		observation.WithLatestETAGsForNumbersOfResource(c.server.config.DeviceTwin.LatestETAGsForNumbersOfResource),
+		observation.WithNumberOfETAGsForBatchObservation(c.server.config.DeviceTwin.NumberOfETAGsForBatchObservation),
 		observation.WithTwinForceResynchronization(forceResynchronization || c.server.config.DeviceTwin.ForceResynchronization),
 	)
 	if err != nil {

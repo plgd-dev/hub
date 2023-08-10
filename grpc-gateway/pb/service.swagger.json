@@ -268,7 +268,7 @@
                 },
                 "twinForceResynchronization": {
                   "type": "boolean",
-                  "description": "// force resynchronization IoT hub with the device resources and set twin_enabled to true. Use to address potential synchronization issues and prevent operational discrepancies."
+                  "description": "force resynchronization IoT hub with the device resources and set twin_enabled to true. Use to address potential synchronization issues and prevent operational discrepancies."
                 },
                 "timeToLive": {
                   "type": "string",

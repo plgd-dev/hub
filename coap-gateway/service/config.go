@@ -109,8 +109,8 @@ func (c *InjectedCOAPConfig) Validate() error {
 }
 
 type DeviceTwinConfig struct {
-	LatestETAGsForNumbersOfResource uint32 `yaml:"latestETAGsForNumbersOfResource" json:"latestETAGsForNumbersOfResource"`
-	ForceResynchronization          bool   `yaml:"forceResynchronization" json:"forceResynchronization"`
+	NumberOfETAGsForBatchObservation uint32 `yaml:"numberOfETAGsForBatchObservation" json:"numberOfETAGsForBatchObservation"`
+	ForceResynchronization           bool   `yaml:"forceResynchronization" json:"forceResynchronization"`
 }
 
 type COAPConfig struct {

@@ -21,7 +21,6 @@ type Observation = interface {
 type observedResource struct {
 	href         string
 	resInterface string
-	etags        [][]byte
 	synced       atomic.Bool
 	isObservable bool
 	private      struct { // guarded by mutex
@@ -30,12 +29,11 @@ type observedResource struct {
 	}
 }
 
-func newObservedResource(href, resInterface string, etags [][]byte, isObservable bool) *observedResource {
+func newObservedResource(href, resInterface string, isObservable bool) *observedResource {
 	return &observedResource{
 		href:         href,
 		resInterface: resInterface,
 		isObservable: isObservable,
-		etags:        etags,
 	}
 }
 
@@ -51,13 +49,6 @@ func (r *observedResource) Interface() string {
 	return r.resInterface
 }
 
-func (r *observedResource) ETag() []byte {
-	if len(r.etags) == 0 {
-		return nil
-	}
-	return r.etags[0]
-}
-
 const (
 	// maxURIQueryLen is the maximum length of a URI query. See https://datatracker.ietf.org/doc/html/rfc7252#section-5.10
 	maxURIQueryLen = 255
@@ -67,11 +58,10 @@ const (
 	prefixQueryIncChanges = "incChanges="
 )
 
-func (r *observedResource) EncodeETagsForIncrementChanges() []string {
-	if len(r.etags) <= 1 {
+func encodeETagsForIncrementChanges(etags [][]byte) []string {
+	if len(etags) < 1 {
 		return nil
 	}
-	etags := r.etags[1:]
 	etagsStr := make([]string, 0, (len(etags)/15)+1)
 	var b strings.Builder
 	for _, etag := range etags {
@@ -113,13 +103,14 @@ func (r *observedResource) isBatchObservation() bool {
 	return r.resInterface == interfaces.OC_IF_B
 }
 
-func (r *observedResource) toCoapOptions() []message.Option {
+func (r *observedResource) toCoapOptions(etags [][]byte) []message.Option {
 	opts := make([]message.Option, 0, 2)
-	if r.ETag() != nil {
+	if len(etags) > 0 {
 		opts = append(opts, message.Option{
 			ID:    message.ETag,
-			Value: r.ETag(),
+			Value: etags[0],
 		})
+		etags = etags[1:]
 	}
 	if r.Interface() != "" {
 		opts = append(opts, message.Option{
@@ -129,7 +120,7 @@ func (r *observedResource) toCoapOptions() []message.Option {
 	}
 
 	if r.isBatchObservation() {
-		for _, q := range r.EncodeETagsForIncrementChanges() {
+		for _, q := range encodeETagsForIncrementChanges(etags) {
 			opts = append(opts, message.Option{
 				ID:    message.URIQuery,
 				Value: []byte(q),

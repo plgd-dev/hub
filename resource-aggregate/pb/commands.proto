@@ -516,7 +516,7 @@ message ConfirmDeviceMetadataUpdateRequest {
     string correlation_id = 2;
     Status status = 3;
     oneof confirm {
-        bool twin_enabled = 6; // // will set twin_enabled to true and TwinSynchronization.state to OUT_OF_SYNC.
+        bool twin_enabled = 6; // will set twin_enabled to true and TwinSynchronization.state to OUT_OF_SYNC.
         bool twin_force_resynchronization = 7; // will set twin_enabled to true, set time TwinSynchronization.force_resynchronization_at and TwinSynchronization.state to OUT_OF_SYNC.
 
         // ShadowSynchronization shadow_synchronization = 4; replaced by twin_enabled

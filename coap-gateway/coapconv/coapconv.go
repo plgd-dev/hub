@@ -350,10 +350,6 @@ func NewNotifyResourceChangedRequestsFromBatchResourceDiscovery(deviceID, connec
 	// so latestETagResource is the last resource in the batch
 	if latestETagResource != nil {
 		requests = append(requests, latestETagResource)
-	} else if len(requests) > 0 && len(etag) > 0 {
-		// if there is no latestETagResource we need to set etag to the last resource in the batch
-		// to make sure that the one resource contains the etag
-		requests[len(requests)-1].Etag = etag
 	}
 	return requests, nil
 }
