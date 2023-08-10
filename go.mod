@@ -26,8 +26,8 @@ require (
 	github.com/panjf2000/ants/v2 v2.8.1
 	github.com/pion/dtls/v2 v2.2.7
 	github.com/pion/logging v0.2.2
-	github.com/plgd-dev/device/v2 v2.2.1-0.20230801152246-ed8e1d9e3c9b
-	github.com/plgd-dev/go-coap/v3 v3.1.4-0.20230801150122-b52290eae102
+	github.com/plgd-dev/device/v2 v2.2.1-0.20230802115723-ba0b9a78abfd
+	github.com/plgd-dev/go-coap/v3 v3.1.4-0.20230802114331-351cd00bab2d
 	github.com/plgd-dev/kit/v2 v2.0.0-20211006190727-057b33161b90
 	github.com/pseudomuto/protoc-gen-doc v1.5.1
 	github.com/sirupsen/logrus v1.9.3
@@ -44,7 +44,7 @@ require (
 	go.opentelemetry.io/otel/trace v1.14.0
 	go.uber.org/atomic v1.11.0
 	go.uber.org/zap v1.24.0
-	golang.org/x/net v0.12.0
+	golang.org/x/net v0.13.0
 	golang.org/x/oauth2 v0.10.0
 	golang.org/x/sync v0.3.0
 	google.golang.org/api v0.134.0
@@ -159,4 +159,6 @@ exclude (
 	// note: go.uber.org/multierr must be kept at v1.9.0 as long as golang1.18 is supported
 	go.uber.org/multierr v1.10.0
 	go.uber.org/multierr v1.11.0
+	// note: go.uber.org/zap must be kept at v1.24.0 as long as golang1.18 is supported
+	go.uber.org/zap v1.25.0
 )
