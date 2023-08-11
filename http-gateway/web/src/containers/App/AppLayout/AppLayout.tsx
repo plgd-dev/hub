@@ -13,6 +13,8 @@ import { parseActiveItem } from '@shared-ui/components/Layout/LeftPanel/utils'
 import { getMinutesBetweenDates } from '@shared-ui/common/utils'
 import { getVersionMarkData } from '@shared-ui/components/Atomic/VersionMark/utils'
 import { severities } from '@shared-ui/components/Atomic/VersionMark/constants'
+import { flushDevices } from '@shared-ui/app/clientApp/Devices/slice'
+import { reset } from '@shared-ui/app/clientApp/App/AppRest'
 
 import { Props } from './AppLayout.types'
 import { mather, menu, Routes } from '@/routes'
@@ -23,9 +25,10 @@ import { CombinedStoreType } from '@/store/store'
 import { setVersion } from '@/containers/App/slice'
 import { getVersionNumberFromGithub } from '@/containers/App/AppRest'
 import { GITHUB_VERSION_REQUEST_INTERVAL } from '@/constants'
+import { deleteAllRemoteClients } from '@/containers/RemoteClients/slice'
 
 const AppLayout: FC<Props> = (props) => {
-    const { buildInformation, collapsed, userData, setCollapsed } = props
+    const { buildInformation, collapsed, userData, signOutRedirect, setCollapsed } = props
     const { formatMessage: _ } = useIntl()
     const location = useLocation()
     const dispatch = useDispatch()
@@ -34,8 +37,7 @@ const AppLayout: FC<Props> = (props) => {
     const [activeItem, setActiveItem] = useState(parseActiveItem(location.pathname, menu, mather))
     const notifications = useSelector((state: CombinedStoreType) => state.notifications)
     const appStore = useSelector((state: CombinedStoreType) => state.app)
-
-    console.log(notifications)
+    const storedRemoteStore = useSelector((state: CombinedStoreType) => state.remoteClients)
 
     const requestVersion = useCallback((now: Date) => {
         getVersionNumberFromGithub().then((ret) => {
@@ -89,6 +91,29 @@ const AppLayout: FC<Props> = (props) => {
         [appStore.version.latest, buildInformation.version]
     )
 
+    const logout = useCallback(() => {
+        if (storedRemoteStore.remoteClients.length) {
+            const promises = storedRemoteStore.remoteClients.map((remoteClient) => reset(remoteClient.clientUrl))
+
+            Promise.all(promises)
+                .then(() => {})
+                .catch((e) => {
+                    console.log(e)
+                })
+                .finally(() => {
+                    dispatch(deleteAllRemoteClients())
+                    dispatch(flushDevices())
+                    signOutRedirect({
+                        post_logout_redirect_uri: window.location.origin,
+                    })
+                })
+        } else {
+            signOutRedirect({
+                post_logout_redirect_uri: window.location.origin,
+            })
+        }
+    }, [signOutRedirect])
+
     return (
         <Layout
             content={<Routes />}
@@ -112,7 +137,12 @@ const AppLayout: FC<Props> = (props) => {
                         />
                     }
                     userWidget={
-                        <UserWidget description={userData?.profile?.family_name} image={userData?.profile?.picture} name={userData?.profile?.name || ''} />
+                        <UserWidget
+                            description={userData?.profile?.family_name}
+                            dropdownItems={[{ title: _(t.logOut), onClick: logout }]}
+                            image={userData?.profile?.picture}
+                            name={userData?.profile?.name || ''}
+                        />
                     }
                 />
             }
