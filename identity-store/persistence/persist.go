@@ -4,6 +4,7 @@ package persistence
 type AuthorizedDevice struct {
 	DeviceID string `db:"device_id"`
 	Owner    string `db:"owner"`
+	HubID    string `db:"hub_id"`
 }
 
 type Iterator interface {

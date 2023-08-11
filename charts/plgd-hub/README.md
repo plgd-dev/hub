@@ -85,6 +85,7 @@ global:
 | certificateauthority.extraVolumes | string | `nil` | Optional extra volumes |
 | certificateauthority.fullnameOverride | string | `nil` | Full name to override |
 | certificateauthority.httpPort | int | `9101` |  |
+| certificateauthority.hubId | string | `nil` | Hub ID. Can be override via global.hubId or coapgateway.hubId |
 | certificateauthority.image.imagePullSecrets | string | `nil` | Image pull secrets |
 | certificateauthority.image.pullPolicy | string | `"Always"` | Image pull policy |
 | certificateauthority.image.registry | string | `"ghcr.io/"` | Image registry |
@@ -138,7 +139,7 @@ global:
 | certificateauthority.service.http.protocol | string | `"TCP"` | Protocol |
 | certificateauthority.service.http.targetPort | string | `"http"` | Target port |
 | certificateauthority.service.http.type | string | `"ClusterIP"` | Service type |
-| certificateauthority.signer | object | `{"certFile":null,"expiresIn":"87600h","hubId":null,"keyFile":null,"validFrom":"now-1h"}` | For complete certificate-authority service configuration see [plgd/certificate-authority](https://github.com/plgd-dev/hub/tree/main/certificate-authority) |
+| certificateauthority.signer | object | `{"certFile":null,"expiresIn":"87600h","keyFile":null,"validFrom":"now-1h"}` | For complete certificate-authority service configuration see [plgd/certificate-authority](https://github.com/plgd-dev/hub/tree/main/certificate-authority) |
 | certificateauthority.tolerations | string | `nil` | Toleration definition |
 | certmanager | object | `{"coap":{"cert":{"duration":null,"key":{"algorithm":null,"size":null},"renewBefore":null},"issuer":{"annotations":{},"kind":null,"labels":{},"name":null,"spec":null}},"default":{"ca":{"commonName":"plgd-ca","enabled":true,"issuer":{"annotations":{},"enabled":true,"kind":"Issuer","labels":{},"name":"ca-issuer","spec":{"selfSigned":{}}},"secret":{"name":"plgd-ca"}},"cert":{"annotations":{},"duration":"8760h0m0s","key":{"algorithm":"ECDSA","size":256},"labels":{},"renewBefore":"360h0m0s"},"issuer":{"annotations":{},"enabled":true,"kind":"Issuer","labels":{},"name":"default-issuer","spec":{"selfSigned":{}}}},"enabled":true,"external":{"cert":{"duration":null,"key":{"algorithm":null,"size":null},"renewBefore":null},"issuer":{"annotations":{},"kind":null,"labels":{},"name":null,"spec":null}},"internal":{"cert":{"duration":null,"key":{"algorithm":null,"size":null},"renewBefore":null},"issuer":{"annotations":{},"kind":null,"labels":{},"name":null,"spec":null}}}` | Cert-manager integration section |
 | certmanager.coap.cert.duration | string | `nil` | Certificate duration |
@@ -275,7 +276,7 @@ global:
 | global.deviceIdClaim | string | `nil` | Device ID claim |
 | global.domain | string | `nil` | Global domain |
 | global.enableWildCartCert | bool | `true` | Enable *.{{ global.domain }} for all external domain |
-| global.hubId | string | `nil` | hubId. Used by coap-gateway. It must be unique |
+| global.hubId | string | `nil` | hubId. Used by coap-gateway, resource-aggregate, indentity-store, certificate-authority. It must be unique |
 | global.oauth | object | `{"device":[],"web":{"clientID":null}}` | Global OAuth configuration used by multiple services |
 | global.openTelemetryExporter | object | `{"address":null,"enabled":false,"keepAlive":{"permitWithoutStream":true,"time":"10s","timeout":"20s"},"tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false}}` | Global Open Telemetry exporter configuration |
 | global.openTelemetryExporter.address | string | `nil` | The gRPC collector to which the exporter is going to send data |
@@ -418,6 +419,7 @@ global:
 | identitystore.extraVolumeMounts | object | `{}` | Extra volume mounts |
 | identitystore.extraVolumes | object | `{}` | Extra volumes |
 | identitystore.fullnameOverride | string | `nil` | Full name to override |
+| identitystore.hubId | string | `nil` | Hub ID. Can be override via global.hubId or coapgateway.hubId |
 | identitystore.image | object | `{"imagePullSecrets":{},"pullPolicy":"Always","registry":"ghcr.io/","repository":"plgd-dev/hub/identity-store","tag":null}` | Identity service image section |
 | identitystore.image.imagePullSecrets | object | `{}` | Image pull secrets |
 | identitystore.image.pullPolicy | string | `"Always"` | Image pull policy |
@@ -565,6 +567,7 @@ global:
 | resourceaggregate.extraVolumeMounts | object | `{}` | Optional extra volume mounts |
 | resourceaggregate.extraVolumes | object | `{}` | Optional extra volumes |
 | resourceaggregate.fullnameOverride | string | `nil` | Full name to override |
+| resourceaggregate.hubId | string | `nil` | Hub ID. Can be override via global.hubId or coapgateway.hubId |
 | resourceaggregate.image.imagePullSecrets | object | `{}` | Image pull secrets |
 | resourceaggregate.image.pullPolicy | string | `"Always"` | Image pull policy |
 | resourceaggregate.image.registry | string | `"ghcr.io/"` | Image registry |

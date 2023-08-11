@@ -59,6 +59,7 @@ data:
             {{- include "plgd-hub.certificateConfig" (list $ $natsTls $identityStoreCertPath ) | indent 10 }}
             useSystemCAPool: false
       storage:
+        hubID: {{ required "identitystore.hubId or coapgateway.hubId or global.hubId is required" ( .hubId | default ( $.Values.coapgateway.hubId | default $.Values.global.hubId)) | quote }}
         mongoDB:
           uri: {{- printf " " }}{{- include "plgd-hub.mongoDBUri" (list $ .clients.storage.mongoDB.uri )  | quote }}
           database: {{ .clients.storage.mongoDB.database }}

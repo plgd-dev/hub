@@ -74,11 +74,15 @@ func (c *EventBusConfig) Validate() error {
 
 type StorageConfig struct {
 	MongoDB mongodb.Config `yaml:"mongoDB" json:"mongoDb"`
+	HubID   string         `yaml:"hubID" json:"hubID"`
 }
 
 func (c *StorageConfig) Validate() error {
 	if err := c.MongoDB.Validate(); err != nil {
 		return fmt.Errorf("mongoDB.%w", err)
+	}
+	if c.HubID == "" {
+		return fmt.Errorf("hubID('%v')", c.HubID)
 	}
 	return nil
 }

@@ -30,7 +30,7 @@ func (a *Aggregate) CancelResourceCommand(ctx context.Context, request *commands
 		return
 	}
 
-	events, err = a.ag.HandleCommand(ctx, request)
+	events, err = a.HandleCommand(ctx, request)
 	if err != nil {
 		err = fmt.Errorf("unable to process cancel resource command: %w", err)
 		return
@@ -47,7 +47,7 @@ func (r RequestHandler) CancelPendingCommands(ctx context.Context, request *comm
 	}
 
 	resID := request.GetResourceId()
-	aggregate, err := NewAggregate(resID, r.config.Clients.Eventstore.SnapshotThreshold, r.eventstore, ResourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(r.config.Clients.Eventstore.ConcurrencyExceptionMaxRetry))
+	aggregate, err := NewAggregate(resID, r.config.Clients.Eventstore.SnapshotThreshold, r.config.Clients.Eventstore.HubID, r.eventstore, ResourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(r.config.Clients.Eventstore.ConcurrencyExceptionMaxRetry))
 	if err != nil {
 		return nil, log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "cannot cancel resource('%v') command: %v", request.GetResourceId().ToString(), err))
 	}

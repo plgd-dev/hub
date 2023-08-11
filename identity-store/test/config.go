@@ -13,6 +13,7 @@ func MakeConfig(t require.TestingT) service.Config {
 
 	cfg.APIs.GRPC = config.MakeGrpcServerConfig(config.IDENTITY_STORE_HOST)
 
+	cfg.Clients.Storage.HubID = config.HubID()
 	cfg.Clients.Storage.MongoDB.URI = config.MONGODB_URI
 	cfg.Clients.Storage.MongoDB.TLS = config.MakeTLSClientConfig()
 	cfg.Clients.Storage.MongoDB.Database = config.IDENTITY_STORE_DB

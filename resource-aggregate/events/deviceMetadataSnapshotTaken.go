@@ -210,12 +210,12 @@ func (d *DeviceMetadataSnapshotTaken) updateTwinEnabled(ctx context.Context, req
 	return []eventstore.Event{&ev}, nil
 }
 
-func (d *DeviceMetadataSnapshotTaken) ConfirmDeviceMetadataUpdate(ctx context.Context, userID string, req *commands.ConfirmDeviceMetadataUpdateRequest, newVersion uint64, cancel bool) ([]eventstore.Event, error) {
+func (d *DeviceMetadataSnapshotTaken) ConfirmDeviceMetadataUpdate(ctx context.Context, userID, hubID string, req *commands.ConfirmDeviceMetadataUpdateRequest, newVersion uint64, cancel bool) ([]eventstore.Event, error) {
 	if req.GetCommandMetadata() == nil {
 		return nil, status.Errorf(codes.InvalidArgument, errInvalidCommandMetadata)
 	}
 
-	em := MakeEventMeta(req.GetCommandMetadata().GetConnectionId(), req.GetCommandMetadata().GetSequence(), newVersion)
+	em := MakeEventMeta(req.GetCommandMetadata().GetConnectionId(), req.GetCommandMetadata().GetSequence(), newVersion, hubID)
 	ac := commands.NewAuditContext(userID, req.GetCorrelationId())
 	_, is_confirm_twin_enabled := req.GetConfirm().(*commands.ConfirmDeviceMetadataUpdateRequest_TwinEnabled)
 	switch {
@@ -228,7 +228,7 @@ func (d *DeviceMetadataSnapshotTaken) ConfirmDeviceMetadataUpdate(ctx context.Co
 	}
 }
 
-func (d *DeviceMetadataSnapshotTaken) CancelPendingMetadataUpdates(ctx context.Context, userID string, req *commands.CancelPendingMetadataUpdatesRequest, newVersion uint64) ([]eventstore.Event, error) {
+func (d *DeviceMetadataSnapshotTaken) CancelPendingMetadataUpdates(ctx context.Context, userID, hubID string, req *commands.CancelPendingMetadataUpdatesRequest, newVersion uint64) ([]eventstore.Event, error) {
 	if req.GetCommandMetadata() == nil {
 		return nil, status.Errorf(codes.InvalidArgument, errInvalidCommandMetadata)
 	}
@@ -238,7 +238,7 @@ func (d *DeviceMetadataSnapshotTaken) CancelPendingMetadataUpdates(ctx context.C
 		if len(correlationIdFilter) != 0 && !correlationIdFilter.HasOneOf(event.GetAuditContext().GetCorrelationId()) {
 			continue
 		}
-		ev, err := d.ConfirmDeviceMetadataUpdate(ctx, userID, &commands.ConfirmDeviceMetadataUpdateRequest{
+		ev, err := d.ConfirmDeviceMetadataUpdate(ctx, userID, hubID, &commands.ConfirmDeviceMetadataUpdateRequest{
 			DeviceId:        req.GetDeviceId(),
 			CorrelationId:   event.GetAuditContext().GetCorrelationId(),
 			Status:          commands.Status_CANCELED,
@@ -447,12 +447,12 @@ func (d *DeviceMetadataSnapshotTaken) updateDeviceTwinEnabled(ctx context.Contex
 	return []eventstore.Event{&ev}, nil
 }
 
-func (d *DeviceMetadataSnapshotTaken) updateDeviceMetadata(ctx context.Context, userID string, req *commands.UpdateDeviceMetadataRequest, newVersion uint64) ([]eventstore.Event, error) {
+func (d *DeviceMetadataSnapshotTaken) updateDeviceMetadata(ctx context.Context, userID, hubID string, req *commands.UpdateDeviceMetadataRequest, newVersion uint64) ([]eventstore.Event, error) {
 	if req.GetCommandMetadata() == nil {
 		return nil, status.Errorf(codes.InvalidArgument, errInvalidCommandMetadata)
 	}
 
-	em := MakeEventMeta(req.GetCommandMetadata().GetConnectionId(), req.GetCommandMetadata().GetSequence(), newVersion)
+	em := MakeEventMeta(req.GetCommandMetadata().GetConnectionId(), req.GetCommandMetadata().GetSequence(), newVersion, hubID)
 	ac := commands.NewAuditContext(userID, req.GetCorrelationId())
 
 	_, is_update_twin_enabled := req.GetUpdate().(*commands.UpdateDeviceMetadataRequest_TwinEnabled)
@@ -473,14 +473,18 @@ func (d *DeviceMetadataSnapshotTaken) HandleCommand(ctx context.Context, cmd agg
 	if err != nil {
 		return nil, err
 	}
+	hubID := HubIDFromCtx(ctx)
+	if hubID == "" {
+		return nil, fmt.Errorf("hubID not found")
+	}
 
 	switch req := cmd.(type) {
 	case *commands.UpdateDeviceMetadataRequest:
-		return d.updateDeviceMetadata(ctx, userID, req, newVersion)
+		return d.updateDeviceMetadata(ctx, userID, hubID, req, newVersion)
 	case *commands.ConfirmDeviceMetadataUpdateRequest:
-		return d.ConfirmDeviceMetadataUpdate(ctx, userID, req, newVersion, false)
+		return d.ConfirmDeviceMetadataUpdate(ctx, userID, hubID, req, newVersion, false)
 	case *commands.CancelPendingMetadataUpdatesRequest:
-		return d.CancelPendingMetadataUpdates(ctx, userID, req, newVersion)
+		return d.CancelPendingMetadataUpdates(ctx, userID, hubID, req, newVersion)
 	}
 
 	return nil, fmt.Errorf("unknown command (%T)", cmd)
@@ -489,7 +493,7 @@ func (d *DeviceMetadataSnapshotTaken) HandleCommand(ctx context.Context, cmd agg
 func (d *DeviceMetadataSnapshotTaken) TakeSnapshot(version uint64) (eventstore.Event, bool) {
 	return &DeviceMetadataSnapshotTaken{
 		DeviceId:              d.GetDeviceId(),
-		EventMetadata:         MakeEventMeta(d.GetEventMetadata().GetConnectionId(), d.GetEventMetadata().GetSequence(), version),
+		EventMetadata:         MakeEventMeta(d.GetEventMetadata().GetConnectionId(), d.GetEventMetadata().GetSequence(), version, d.GetEventMetadata().GetHubId()),
 		DeviceMetadataUpdated: d.GetDeviceMetadataUpdated(),
 	}, true
 }

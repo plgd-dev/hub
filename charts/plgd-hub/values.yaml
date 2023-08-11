@@ -2,7 +2,7 @@
 global:
   # -- Global domain
   domain:
-  # -- hubId. Used by coap-gateway. It must be unique
+  # -- hubId. Used by coap-gateway, resource-aggregate, indentity-store, certificate-authority. It must be unique
   hubId:
   # -- OAuth owner Claim
   ownerClaim: "sub"
@@ -655,6 +655,8 @@ resourceaggregate:
     mountPath: /config
   # -- Service and POD port
   port: 9100
+  # -- Hub ID. Can be override via global.hubId or coapgateway.hubId
+  hubId:
   log:
     # -- Logging enabled from level 
     level: info
@@ -1092,6 +1094,8 @@ identitystore:
     volume: config
     # -- Service configuration mount path
     mountPath: /config
+  # -- Hub ID. Can be override via global.hubId or coapgateway.hubId
+  hubId:
   log:
     # -- Logging enabled from level 
     level: info
@@ -1773,6 +1777,8 @@ certificateauthority:
   # -- Service and POD port
   port: 9100
   httpPort: 9101
+  # -- Hub ID. Can be override via global.hubId or coapgateway.hubId
+  hubId:
   log:
     # -- Logging enabled from level 
     level: info
@@ -1859,7 +1865,6 @@ certificateauthority:
     certFile:
     validFrom: "now-1h"
     expiresIn: "87600h"
-    hubId:
 
 
 mockoauthserver:

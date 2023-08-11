@@ -9,12 +9,17 @@ message AuditContext {
     string user_id = 1;
 }
 
+message EventMetadata {
+    string hub_id = 1;
+}
+
 // devices was registered to owner.
 message DevicesRegistered {
     string owner = 1; // new owner of devices.
     repeated string device_ids = 2; // list of device ids added to owner.
     int64 timestamp = 3; // unix timestamp in nanoseconds of creation event.
     AuditContext audit_context = 4; // provides who register/unregister the device
+    EventMetadata event_metadata = 5; // provides metadata of event
 
     // Open telemetry data propagated to asynchronous events
     map<string,string> open_telemetry_carrier = 100;
@@ -26,6 +31,7 @@ message DevicesUnregistered {
     repeated string device_ids = 2; // list of device ids deleted from owner.
     int64 timestamp = 3; // unix timestamp in nanoseconds of creation event.
     AuditContext audit_context = 4; // provides who register/unregister the device
+    EventMetadata event_metadata = 5; // provides metadata of event
     
     // Open telemetry data propagated to asynchronous events
     map<string,string> open_telemetry_carrier = 100;

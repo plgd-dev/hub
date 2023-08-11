@@ -1510,6 +1510,9 @@
           "type": "string",
           "format": "uint64",
           "title": "sequence number within the same connection_id; the ResourceChanged event uses the value to skip old events, other event types might not fill the value"
+        },
+        "hubId": {
+          "type": "string"
         }
       }
     },

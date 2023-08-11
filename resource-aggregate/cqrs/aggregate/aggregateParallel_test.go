@@ -61,7 +61,7 @@ func Test_parallelRequest(t *testing.T) {
 	token := config.CreateJwtToken(t, jwt.MapClaims{
 		"sub": "test",
 	})
-	ctx = grpc.CtxWithIncomingToken(ctx, token)
+	ctx = events.CtxWithHubID(grpc.CtxWithIncomingToken(ctx, token), "hubID")
 	store := testNewEventstore(ctx, t)
 	defer func() {
 		errC := store.Clear(ctx)

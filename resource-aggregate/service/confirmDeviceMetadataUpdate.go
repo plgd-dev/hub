@@ -32,7 +32,7 @@ func (a *Aggregate) ConfirmDeviceMetadataUpdate(ctx context.Context, request *co
 		return
 	}
 
-	events, err = a.ag.HandleCommand(ctx, request)
+	events, err = a.HandleCommand(ctx, request)
 	if err != nil {
 		err = fmt.Errorf("unable to process confirm device metadata update command: %w", err)
 		return
@@ -49,7 +49,7 @@ func (r RequestHandler) ConfirmDeviceMetadataUpdate(ctx context.Context, request
 	}
 
 	resID := commands.NewResourceID(request.DeviceId, commands.StatusHref)
-	aggregate, err := NewAggregate(resID, r.config.Clients.Eventstore.SnapshotThreshold, r.eventstore, DeviceMetadataFactoryModel, cqrsAggregate.NewDefaultRetryFunc(r.config.Clients.Eventstore.ConcurrencyExceptionMaxRetry))
+	aggregate, err := NewAggregate(resID, r.config.Clients.Eventstore.SnapshotThreshold, r.config.Clients.Eventstore.HubID, r.eventstore, DeviceMetadataFactoryModel, cqrsAggregate.NewDefaultRetryFunc(r.config.Clients.Eventstore.ConcurrencyExceptionMaxRetry))
 	if err != nil {
 		return nil, log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "cannot confirm device('%v') metadata update: %v", request.GetDeviceId(), err))
 	}

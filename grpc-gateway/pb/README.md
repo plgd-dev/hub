@@ -1372,6 +1372,7 @@ https://github.com/openconnectivityfoundation/core/blob/master/schemas/oic.links
 | timestamp | [int64](#int64) |  |  |
 | connection_id | [string](#string) |  |  |
 | sequence | [uint64](#uint64) |  | sequence number within the same connection_id; the ResourceChanged event uses the value to skip old events, other event types might not fill the value |
+| hub_id | [string](#string) |  |  |
 
 
 
