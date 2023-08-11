@@ -20,8 +20,6 @@ const RemoteClientsAuthProvider = forwardRef<AppAuthProviderRefType, Props>((pro
         getUserData: () => userData,
     }))
 
-    console.log(wellKnownConfig)
-
     useEffect(() => {
         if (wellKnownConfig && !wellKnownConfig.isInitialized && wellKnownConfig.remoteProvisioning?.mode === REMOTE_PROVISIONING_MODE.USER_AGENT) {
             try {

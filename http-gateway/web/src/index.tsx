@@ -22,6 +22,10 @@ const BaseComponent = () => {
     // only set the code to the session storage, so that the caller can process it.
     const urlParams = new URLSearchParams(window.location.search)
     const code = urlParams.get('code')
+    const isMockApp = window.location.pathname === '/devices-code-redirect' && !!code
+
+    console.log({ isMockApp })
+
     if (window.location.pathname === '/devices' && code) {
         sessionStorage.setItem(DEVICE_AUTH_CODE_SESSION_KEY, code)
         return null
