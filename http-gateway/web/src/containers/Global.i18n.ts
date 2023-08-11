@@ -33,4 +33,8 @@ export const messages = defineMessages({
         id: 'global.pageNotFound',
         defaultMessage: 'Page not found',
     },
+    loading: {
+        id: 'app.loading',
+        defaultMessage: 'Loading',
+    },
 })

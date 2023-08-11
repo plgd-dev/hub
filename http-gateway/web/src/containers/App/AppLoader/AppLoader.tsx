@@ -2,7 +2,7 @@ import { useIntl } from 'react-intl'
 
 import PageLoader from '@shared-ui/components/Atomic/PageLoader'
 
-import { messages as t } from '../App.i18n'
+import { messages as g } from '../../Global.i18n'
 
 const AppLoader = () => {
     const { formatMessage: _ } = useIntl()
@@ -10,7 +10,7 @@ const AppLoader = () => {
     return (
         <>
             <PageLoader loading className='auth-loader' />
-            <div className='page-loading-text'>{`${_(t.loading)}...`}</div>
+            <div className='page-loading-text'>{`${_(g.loading)}...`}</div>
         </>
     )
 }

@@ -113,4 +113,8 @@ export const messages = defineMessages({
         id: 'remoteClients.notFoundRemoteClientMessage',
         defaultMessage: 'The remote client you are looking for does not exist.',
     },
+    authError: {
+        id: 'remoteClients.authError',
+        defaultMessage: 'Authorization server error',
+    },
 })

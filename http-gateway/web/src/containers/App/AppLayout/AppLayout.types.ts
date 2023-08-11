@@ -15,4 +15,5 @@ export type Props = {
         }
     }
     setCollapsed: () => boolean
+    signOutRedirect: (data: any) => void
 }

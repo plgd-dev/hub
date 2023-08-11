@@ -8,6 +8,7 @@ import { openTelemetry } from '@shared-ui/common/services/opentelemetry'
 
 import './App.scss'
 import { messages as t } from './App.i18n'
+import { messages as g } from '@/containers/Global.i18n'
 import { AppContext } from './AppContext'
 import { getAppWellKnownConfiguration } from '@/containers/App/AppRest'
 import AppInner from '@/containers/App/AppInner/AppInner'
@@ -67,7 +68,7 @@ const App = () => {
         return (
             <>
                 <PageLoader loading className='auth-loader' />
-                <div className='page-loading-text'>{`${_(t.loading)}...`}</div>
+                <div className='page-loading-text'>{`${_(g.loading)}...`}</div>
             </>
         )
     }

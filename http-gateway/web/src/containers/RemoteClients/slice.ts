@@ -65,6 +65,9 @@ const { reducer, actions } = createSlice({
                 )
             })
         },
+        deleteAllRemoteClients(state) {
+            state.remoteClients = []
+        },
         updateRemoteClients(state, { payload }) {
             payload.forEach((remoteClient: RemoteClientType) => {
                 const index = state.remoteClients.findIndex((originRemoteClient) => originRemoteClient.id === remoteClient.id)
@@ -78,7 +81,7 @@ const { reducer, actions } = createSlice({
 })
 
 // Actions
-export const { addRemoteClient, deleteRemoteClients, updateRemoteClients } = actions
+export const { addRemoteClient, deleteRemoteClients, deleteAllRemoteClients, updateRemoteClients } = actions
 
 // Reducer
 export default reducer
