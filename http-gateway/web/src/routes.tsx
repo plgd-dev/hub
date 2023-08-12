@@ -18,6 +18,7 @@ import {
     IconChat,
 } from '@shared-ui/components/Atomic/Icon/'
 import { MenuGroup } from '@shared-ui/components/Layout/LeftPanel/LeftPanel.types'
+import MockApp from '@shared-ui/app/clientApp/MockApp'
 
 import DevicesListPage from '@/containers/Devices/List/DevicesListPage'
 import DevicesDetailsPage from '@/containers/Devices/Detail/DevicesDetailsPage'
@@ -207,7 +208,7 @@ export const Routes = () => {
             <Route element={<RemoteClientDevicesDetailPage defaultActiveTab={1} />} path='/remote-clients/:id/devices/:deviceId/resources' />
             <Route element={<RemoteClientDevicesDetailPage defaultActiveTab={1} />} path='/remote-clients/:id/devices/:deviceId/resources/*' />
 
-            {/* <Route element={<MockApp />} path='/devices-code-redirect' />*/}
+            <Route element={<MockApp />} path='/devices-code-redirect' />
 
             {process.env?.REACT_APP_TEST_VIEW === 'true' && <Route element={<TestPage />} path='/test' />}
             <Route element={<NotFoundPage message={_(t.notFoundPageDefaultMessage)} title={_(t.pageTitle)} />} path='*' />

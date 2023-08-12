@@ -4,13 +4,13 @@ import { Provider } from 'react-redux'
 import { persistStore } from 'redux-persist'
 import { PersistGate } from 'redux-persist/integration/react'
 
+import IntlProvider from '@shared-ui/components/Atomic/IntlProvider'
+
 import { App } from '@/containers/App'
 import { store } from '@/store'
-import IntlProvider from '@shared-ui/components/Atomic/IntlProvider'
 // @ts-ignore
 import languages from './languages/languages.json'
 import appConfig from '@/config'
-
 import { DEVICE_AUTH_CODE_SESSION_KEY } from './constants'
 import reportWebVitals from './reportWebVitals'
 
@@ -24,18 +24,32 @@ const BaseComponent = () => {
     const code = urlParams.get('code')
     const isMockApp = window.location.pathname === '/devices-code-redirect' && !!code
 
-    console.log({ isMockApp })
-
     if (window.location.pathname === '/devices' && code) {
-        sessionStorage.setItem(DEVICE_AUTH_CODE_SESSION_KEY, code)
+        localStorage.setItem(DEVICE_AUTH_CODE_SESSION_KEY, code)
+
+        window.location.hash = ''
+        window.location.href = `${window.location.origin}/devices-code-redirect?code=${code}`
+
         return null
+    }
+
+    if (isMockApp) {
+        localStorage.setItem(DEVICE_AUTH_CODE_SESSION_KEY, code)
+
+        window.addEventListener('load', function () {
+            setInterval(() => {
+                if (localStorage.getItem(DEVICE_AUTH_CODE_SESSION_KEY)) {
+                    window.close()
+                }
+            }, 200)
+        })
     }
 
     return (
         <Provider store={store}>
             <PersistGate persistor={persistor}>
                 <IntlProvider defaultLanguage={appConfig.defaultLanguage} languages={languages}>
-                    <App />
+                    <App mockApp={isMockApp} />
                 </IntlProvider>
             </PersistGate>
         </Provider>
