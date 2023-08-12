@@ -2,6 +2,7 @@ import { FC, SyntheticEvent, useCallback, useEffect, useMemo, useState } from 'r
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useIntl } from 'react-intl'
 import { useDispatch, useSelector } from 'react-redux'
+import isFunction from 'lodash/isFunction'
 
 import Header from '@shared-ui/components/Layout/Header'
 import NotificationCenter from '@shared-ui/components/Atomic/NotificationCenter'
@@ -103,14 +104,16 @@ const AppLayout: FC<Props> = (props) => {
                 .finally(() => {
                     dispatch(deleteAllRemoteClients())
                     dispatch(flushDevices())
-                    signOutRedirect({
-                        post_logout_redirect_uri: window.location.origin,
-                    })
+                    isFunction(signOutRedirect) &&
+                        signOutRedirect({
+                            post_logout_redirect_uri: window.location.origin,
+                        })
                 })
         } else {
-            signOutRedirect({
-                post_logout_redirect_uri: window.location.origin,
-            })
+            isFunction(signOutRedirect) &&
+                signOutRedirect({
+                    post_logout_redirect_uri: window.location.origin,
+                })
         }
     }, [signOutRedirect])
 

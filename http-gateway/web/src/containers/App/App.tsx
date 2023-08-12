@@ -1,10 +1,12 @@
 import { useContext, useState, useEffect } from 'react'
 import { useIntl } from 'react-intl'
 import { AuthProvider, UserManager } from 'oidc-react'
+import { BrowserRouter } from 'react-router-dom'
 
 import PageLoader from '@shared-ui/components/Atomic/PageLoader'
 import { security } from '@shared-ui/common/services/security'
 import { openTelemetry } from '@shared-ui/common/services/opentelemetry'
+import ConditionalWrapper from '@shared-ui/components/Atomic/ConditionalWrapper'
 
 import './App.scss'
 import { messages as t } from './App.i18n'
@@ -12,12 +14,16 @@ import { messages as g } from '@/containers/Global.i18n'
 import { AppContext } from './AppContext'
 import { getAppWellKnownConfiguration } from '@/containers/App/AppRest'
 import AppInner from '@/containers/App/AppInner/AppInner'
+import AppLayout from '@/containers/App/AppLayout/AppLayout'
+import { useLocalStorage } from '@shared-ui/common/hooks'
 
-const App = () => {
+const App = (props: { mockApp: boolean }) => {
     const { formatMessage: _ } = useIntl()
     const [wellKnownConfig, setWellKnownConfig] = useState<any>(null)
     const [wellKnownConfigFetched, setWellKnownConfigFetched] = useState(false)
     const [configError, setConfigError] = useState<any>(null)
+
+    const [collapsed, setCollapsed] = useLocalStorage('leftPanelCollapsed', true)
 
     openTelemetry.init('hub')
 
@@ -82,7 +88,7 @@ const App = () => {
         window.location.href = window.location.href.split('?')[0]
     }
 
-    return (
+    const Wrapper = (child: any) => (
         <AuthProvider
             {...oidcCommonSettings}
             automaticSilentRenew={true}
@@ -100,8 +106,22 @@ const App = () => {
                 })
             }
         >
-            <AppInner openTelemetry={openTelemetry} wellKnownConfig={wellKnownConfig} />
+            {child}
         </AuthProvider>
+    )
+
+    if (props.mockApp) {
+        return (
+            <BrowserRouter>
+                <AppLayout buildInformation={wellKnownConfig?.buildInfo} collapsed={collapsed} setCollapsed={setCollapsed} />
+            </BrowserRouter>
+        )
+    }
+
+    return (
+        <ConditionalWrapper condition={!props.mockApp} wrapper={Wrapper}>
+            <AppInner collapsed={collapsed} openTelemetry={openTelemetry} setCollapsed={setCollapsed} wellKnownConfig={wellKnownConfig} />
+        </ConditionalWrapper>
     )
 }
 

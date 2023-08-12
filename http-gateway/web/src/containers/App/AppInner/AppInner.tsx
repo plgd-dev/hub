@@ -21,11 +21,10 @@ import { AppContextType } from '@/containers/App/AppContext.types'
 import AppLayout from '@/containers/App/AppLayout/AppLayout'
 
 const AppInner = (props: Props) => {
-    const { wellKnownConfig, openTelemetry } = props
+    const { wellKnownConfig, openTelemetry, collapsed, setCollapsed } = props
     const { userData, userManager, signOutRedirect } = useAuth()
 
     const [footerExpanded, setFooterExpanded] = useLocalStorage('footerPanelExpanded', false)
-    const [collapsed, setCollapsed] = useLocalStorage('leftPanelCollapsed', true)
 
     const toastNotifications = false
 

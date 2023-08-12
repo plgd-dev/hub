@@ -11,10 +11,10 @@ import { messages as g } from '../Global.i18n'
 import { remoteClientStatuses } from './contacts'
 import { CombinedStoreType } from '@/store/store'
 
-export const useClientAppPage = (): [clientData: any, error: boolean, errorElement: ReactElement] => {
+export const useClientAppPage = (clientId?: string): [clientData: any, error: boolean, errorElement: ReactElement] => {
     const { formatMessage: _ } = useIntl()
     const { id: routerId } = useParams()
-    const id = routerId || ''
+    const id = clientId || routerId || ''
 
     const clientData = useSelector((state: CombinedStoreType) => state.remoteClients.remoteClients.filter((remoteClient) => remoteClient.id === id)?.[0])
     const isTestPage = get(process.env, 'REACT_APP_TEST_REMOTE_CLIENT_DETAIL', false)
