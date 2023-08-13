@@ -11,11 +11,11 @@ import ConditionalWrapper from '@shared-ui/components/Atomic/ConditionalWrapper'
 import { DEVICE_AUTH_MODE } from '@shared-ui/app/clientApp/constants'
 import AppContext from '@shared-ui/app/clientApp/App/AppContext'
 import InitializedByAnother from '@shared-ui/app/clientApp/App/InitializedByAnother'
+import { getClientUrl } from '@shared-ui/app/clientApp/utils'
+import { useClientAppPage } from '@shared-ui/app/clientApp/RemoteClients/use-client-app-page'
 
 import { Props } from './RemoteClientsPage.types'
 import * as styles from './RemoteClientsPage.styles'
-import { useClientAppPage } from '@/containers/RemoteClients/use-client-app-page'
-import { getClientUrl } from '@/containers/RemoteClients/utils'
 import { messages as g } from '@/containers/Global.i18n'
 import { messages as t } from '../RemoteClients.i18n'
 import RemoteClientsAuthProvider from '@/containers/RemoteClients/RemoteClientsAuthProvider'
@@ -27,7 +27,12 @@ const RemoteClientsPage: FC<Props> = (props) => {
 
     const hubWellKnownConfig = security.getWellKnowConfig()
 
-    const [clientData, error, errorElement] = useClientAppPage()
+    const [clientData, error, errorElement] = useClientAppPage({
+        i18n: {
+            notFoundRemoteClientMessage: _(t.notFoundRemoteClientMessage),
+            pageNotFound: _(g.pageNotFound),
+        },
+    })
     const [httpGatewayAddress] = useState(getClientUrl(clientData?.clientUrl))
     const [wellKnownConfig, setWellKnownConfig, reFetchConfig, wellKnownConfigError] = useWellKnownConfiguration(httpGatewayAddress, hubWellKnownConfig)
 

@@ -11,12 +11,12 @@ import { states } from '@shared-ui/components/Atomic/StatusPill/constants'
 import TableActionButton from '@shared-ui/components/Organisms/TableActionButton'
 import { IconTrash } from '@shared-ui/components/Atomic'
 import Breadcrumbs from '@shared-ui/components/Layout/Header/Breadcrumbs'
+import { remoteClientStatuses } from '@shared-ui/app/clientApp/RemoteClients/constants'
 
 import { Props } from './RemoteClientsList.types'
 import { messages as t } from '../../RemoteClients.i18n'
 import { messages as g } from '../../../Global.i18n'
 import { NO_DEVICE_NAME } from '@/containers/Devices/constants'
-import { remoteClientStatuses } from '@/containers/RemoteClients/contacts'
 import { AppContext } from '@/containers/App/AppContext'
 
 const RemoteClientsList: FC<Props> = (props) => {

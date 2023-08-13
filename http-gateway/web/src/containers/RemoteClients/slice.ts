@@ -1,17 +1,8 @@
 import { createSlice } from '@reduxjs/toolkit'
-import { remoteClientStatuses } from '@/containers/RemoteClients/contacts'
 import get from 'lodash/get'
 
-export type RemoteClientStatusType = (typeof remoteClientStatuses)[keyof typeof remoteClientStatuses]
-
-export type RemoteClientType = {
-    id: string
-    clientName: string
-    clientUrl: string
-    created: string
-    status: RemoteClientStatusType
-    version: string
-}
+import { RemoteClientType } from '@shared-ui/app/clientApp/RemoteClients/RemoteClients.types'
+import { remoteClientStatuses } from '@shared-ui/app/clientApp/RemoteClients/constants'
 
 export type StoreType = {
     remoteClients: RemoteClientType[]
