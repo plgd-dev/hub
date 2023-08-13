@@ -1,4 +1,4 @@
-import { RemoteClientType } from '@/containers/RemoteClients/slice'
+import { RemoteClientType } from '@shared-ui/app/clientApp/RemoteClients/RemoteClients.types'
 
 export type Props = {
     data: RemoteClientType[]

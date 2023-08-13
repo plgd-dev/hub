@@ -9,6 +9,8 @@ import Footer from '@shared-ui/components/Layout/Footer'
 import { fetchApi } from '@shared-ui/common/services'
 import { DeleteModal } from '@shared-ui/components/Atomic'
 import Notification from '@shared-ui/components/Atomic/Notification/Toast'
+import { RemoteClientType } from '@shared-ui/app/clientApp/RemoteClients/RemoteClients.types'
+import { remoteClientStatuses } from '@shared-ui/app/clientApp/RemoteClients/constants'
 
 import { messages as t } from '../RemoteClients.i18n'
 import { messages as g } from '../../Global.i18n'
@@ -16,10 +18,9 @@ import { AppContext } from '@/containers/App/AppContext'
 import RemoteClientsListHeader from './RemoteClientsListHeader'
 import AddRemoteClientModal from '@/containers/RemoteClients/List/AddRemoteClientModal/AddRemoteClientModal'
 import { ClientInformationLineType } from '@/containers/RemoteClients/List/AddRemoteClientModal/AddRemoteClientModal.types'
-import { addRemoteClient, deleteRemoteClients, RemoteClientType, updateRemoteClients } from '@/containers/RemoteClients/slice'
+import { addRemoteClient, deleteRemoteClients, updateRemoteClients } from '@/containers/RemoteClients/slice'
 import { CombinedStoreType } from '@/store/store'
 import RemoteClientsList from '@/containers/RemoteClients/List/RemoteClientsList'
-import { remoteClientStatuses } from '../contacts'
 
 const RemoteClientsListPage: FC<any> = () => {
     const { formatMessage: _ } = useIntl()
