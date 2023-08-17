@@ -17,6 +17,7 @@ import {
 } from './constants'
 import { messages as t } from './Devices.i18n'
 import { DeviceDataType, ResourcesType } from '@/containers/Devices/Devices.types'
+import notificationId from '@/notificationId'
 
 const time = converter.time
 
@@ -47,30 +48,50 @@ export const handleUpdateResourceErrors = (error: any, { id: deviceId, href }: {
 
     if (errorMessage?.includes?.(errorCodes.DEADLINE_EXCEEDED)) {
         // Resource update went through, but it will be applied once the device comes online
-        Notification.warning({
-            title: _(t.resourceUpdate),
-            message: _(t.resourceWasUpdatedOffline),
-        })
+        Notification.warning(
+            {
+                title: _(t.resourceUpdate),
+                message: _(t.resourceWasUpdatedOffline),
+            },
+            {
+                notificationId: notificationId.HUB_HANDLE_UPDATE_RESOURCE_ERRORS_DEADLINE_EXCEEDED,
+            }
+        )
     } else if (errorMessage?.includes?.(errorCodes.COMMAND_EXPIRED)) {
         // Command timeout
-        Notification.warning({
-            title: _(t.resourceUpdate),
-            message: `${_(t.update)} ${_(t.commandOnResourceExpired, {
-                deviceId,
-                href,
-            })}`,
-        })
+        Notification.warning(
+            {
+                title: _(t.resourceUpdate),
+                message: `${_(t.update)} ${_(t.commandOnResourceExpired, {
+                    deviceId,
+                    href,
+                })}`,
+            },
+            {
+                notificationId: notificationId.HUB_HANDLE_UPDATE_RESOURCE_ERRORS_COMMAND_EXPIRED,
+            }
+        )
     } else if (errorMessage?.includes?.(errorCodes.INVALID_ARGUMENT)) {
         // JSON validation error
-        Notification.error({
-            title: _(t.resourceUpdateError),
-            message: _(t.invalidArgument),
-        })
+        Notification.error(
+            {
+                title: _(t.resourceUpdateError),
+                message: _(t.invalidArgument),
+            },
+            {
+                notificationId: notificationId.HUB_HANDLE_UPDATE_RESOURCE_ERRORS_INVALID_ARGUMENT,
+            }
+        )
     } else {
-        Notification.error({
-            title: _(t.resourceUpdateError),
-            message: errorMessage,
-        })
+        Notification.error(
+            {
+                title: _(t.resourceUpdateError),
+                message: errorMessage,
+            },
+            {
+                notificationId: notificationId.HUB_HANDLE_UPDATE_RESOURCE_ERRORS,
+            }
+        )
     }
 }
 
@@ -80,30 +101,50 @@ export const handleCreateResourceErrors = (error: any, { id: deviceId, href }: {
 
     if (errorMessage?.includes?.(errorCodes.DEADLINE_EXCEEDED)) {
         // Resource create went through, but it will be applied once the device comes online
-        Notification.warning({
-            title: _(t.resourceCreate),
-            message: _(t.resourceWasCreatedOffline),
-        })
+        Notification.warning(
+            {
+                title: _(t.resourceCreate),
+                message: _(t.resourceWasCreatedOffline),
+            },
+            {
+                notificationId: notificationId.HUB_HANDLE_CREATE_RESOURCE_ERRORS_DEADLINE_EXCEEDED,
+            }
+        )
     } else if (errorMessage?.includes?.(errorCodes.COMMAND_EXPIRED)) {
         // Command timeout
-        Notification.warning({
-            title: _(t.resourceCreate),
-            message: `${_(t.create)} ${_(t.commandOnResourceExpired, {
-                deviceId,
-                href,
-            })}`,
-        })
+        Notification.warning(
+            {
+                title: _(t.resourceCreate),
+                message: `${_(t.create)} ${_(t.commandOnResourceExpired, {
+                    deviceId,
+                    href,
+                })}`,
+            },
+            {
+                notificationId: notificationId.HUB_HANDLE_CREATE_RESOURCE_ERRORS_COMMAND_EXPIRED,
+            }
+        )
     } else if (errorMessage?.includes?.(errorCodes.INVALID_ARGUMENT)) {
         // JSON validation error
-        Notification.error({
-            title: _(t.resourceCreateError),
-            message: _(t.invalidArgument),
-        })
+        Notification.error(
+            {
+                title: _(t.resourceCreateError),
+                message: _(t.invalidArgument),
+            },
+            {
+                notificationId: notificationId.HUB_HANDLE_CREATE_RESOURCE_ERRORS_INVALID_ARGUMENT,
+            }
+        )
     } else {
-        Notification.error({
-            title: _(t.resourceCreateError),
-            message: errorMessage,
-        })
+        Notification.error(
+            {
+                title: _(t.resourceCreateError),
+                message: errorMessage,
+            },
+            {
+                notificationId: notificationId.HUB_HANDLE_CREATE_RESOURCE_ERRORS,
+            }
+        )
     }
 }
 
@@ -113,15 +154,25 @@ export const handleTwinSynchronizationErrors = (error: any, _: any) => {
 
     if (errorMessage?.includes?.(errorCodes.DEADLINE_EXCEEDED)) {
         // Twin synchronization set went through, but it will be applied once the device comes online
-        Notification.warning({
-            title: _(t.twinSynchronization),
-            message: _(t.twinSynchronizationWasSetOffline),
-        })
+        Notification.warning(
+            {
+                title: _(t.twinSynchronization),
+                message: _(t.twinSynchronizationWasSetOffline),
+            },
+            {
+                notificationId: notificationId.HUB_HANDLE_TWIN_SYNCHRONIZATION_ERRORS,
+            }
+        )
     } else {
-        Notification.error({
-            title: _(t.twinSynchronizationError),
-            message: errorMessage,
-        })
+        Notification.error(
+            {
+                title: _(t.twinSynchronizationError),
+                message: errorMessage,
+            },
+            {
+                notificationId: notificationId.HUB_HANDLE_TWIN_SYNCHRONIZATION_ERRORS,
+            }
+        )
     }
 }
 
@@ -131,24 +182,39 @@ export const handleDeleteResourceErrors = (error: any, { id: deviceId, href }: {
 
     if (errorMessage?.includes?.(errorCodes.DEADLINE_EXCEEDED)) {
         // Resource update went through, but it will be applied once the device comes online
-        Notification.warning({
-            title: _(t.resourceDelete),
-            message: _(t.resourceWasDeletedOffline),
-        })
+        Notification.warning(
+            {
+                title: _(t.resourceDelete),
+                message: _(t.resourceWasDeletedOffline),
+            },
+            {
+                notificationId: notificationId.HUB_HANDLE_DELETE_RESOURCE_ERRORS_DEADLINE_EXCEEDED,
+            }
+        )
     } else if (errorMessage?.includes?.(errorCodes.COMMAND_EXPIRED)) {
         // Command timeout
-        Notification.warning({
-            title: _(t.resourceDelete),
-            message: `${_(t.delete)} ${_(t.commandOnResourceExpired, {
-                deviceId,
-                href,
-            })}`,
-        })
+        Notification.warning(
+            {
+                title: _(t.resourceDelete),
+                message: `${_(t.delete)} ${_(t.commandOnResourceExpired, {
+                    deviceId,
+                    href,
+                })}`,
+            },
+            {
+                notificationId: notificationId.HUB_HANDLE_DELETE_RESOURCE_ERRORS_COMMAND_EXPIRED,
+            }
+        )
     } else {
-        Notification.error({
-            title: _(t.resourceDeleteError),
-            message: errorMessage,
-        })
+        Notification.error(
+            {
+                title: _(t.resourceDeleteError),
+                message: errorMessage,
+            },
+            {
+                notificationId: notificationId.HUB_HANDLE_DELETE_RESOURCE_ERRORS,
+            }
+        )
     }
 }
 
@@ -156,10 +222,15 @@ export const handleDeleteResourceErrors = (error: any, { id: deviceId, href }: {
 export const handleDeleteDevicesErrors = (error: any, _: any, singular = false) => {
     const errorMessage = getApiErrorMessage(error)
 
-    Notification.error({
-        title: !singular ? _(t.devicesDeletionError) : _(t.deviceDeletionError),
-        message: errorMessage,
-    })
+    Notification.error(
+        {
+            title: !singular ? _(t.devicesDeletionError) : _(t.deviceDeletionError),
+            message: errorMessage,
+        },
+        {
+            notificationId: notificationId.HUB_HANDLE_DELETE_DEVICES_ERRORS,
+        }
+    )
 }
 
 // Updates the device data with an object of { deviceId, status, twinEnabled } which came from the WS events.

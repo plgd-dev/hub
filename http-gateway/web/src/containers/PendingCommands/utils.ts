@@ -10,6 +10,7 @@ import { messages as d } from '../Devices/Devices.i18n'
 import { isNotificationActive } from '@/containers/Devices/slice'
 import { getDeviceNotificationKey } from '@/containers/Devices/utils'
 import { store } from '@/store'
+import notificationId from '@/notificationId'
 
 const time = converter.time
 
@@ -78,17 +79,23 @@ export const handleEmitUpdatedCommandEvents = (eventData: any) => {
         setTimeout(() => {
             if (!Notification.isActive(toastId) && status) {
                 if (status === OK) {
-                    Notification.success({ title: d.resourceUpdateSuccess, message: d.resourceWasUpdated }, { variant, toastId })
+                    Notification.success(
+                        { title: d.resourceUpdateSuccess, message: d.resourceWasUpdated },
+                        { variant, toastId, notificationId: notificationId.HUB_HANDLE_EMIT_UPDATED_COMMAND_EVENTS_OK }
+                    )
                 } else {
                     if (status === BAD_REQUEST) {
-                        Notification.error({ title: d.resourceUpdateError, message: d.invalidArgument }, { variant })
+                        Notification.error(
+                            { title: d.resourceUpdateError, message: d.invalidArgument },
+                            { variant, notificationId: notificationId.HUB_HANDLE_EMIT_UPDATED_COMMAND_EVENTS_BAD_REQUEST }
+                        )
                     } else {
                         Notification.error(
                             {
                                 title: d.error,
                                 message: d.resourceUpdateError,
                             },
-                            { variant }
+                            { variant, notificationId: notificationId.HUB_HANDLE_EMIT_UPDATED_COMMAND_EVENTS }
                         )
                     }
                 }

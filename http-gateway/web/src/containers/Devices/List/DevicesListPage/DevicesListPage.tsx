@@ -30,6 +30,7 @@ import { messages as t } from '../../Devices.i18n'
 import { AppContext } from '@/containers/App/AppContext'
 import DateFormat from '@/containers/PendingCommands/DateFormat'
 import { messages as g } from '@/containers/Global.i18n'
+import notificationId from '@/notificationId'
 
 const { UNREGISTERED } = devicesStatuses
 
@@ -60,7 +61,11 @@ const DevicesListPage: FC<any> = () => {
     const { footerExpanded, setFooterExpanded, collapsed } = useContext(AppContext)
 
     useEffect(() => {
-        deviceError && Notification.error({ title: _(t.deviceError), message: getApiErrorMessage(deviceError) })
+        deviceError &&
+            Notification.error(
+                { title: _(t.deviceError), message: getApiErrorMessage(deviceError) },
+                { notificationId: notificationId.HUB_DEVICES_LIST_PAGE_DEVICE_ERROR }
+            )
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [deviceError])
 
@@ -103,7 +108,10 @@ const DevicesListPage: FC<any> = () => {
             await sleep(200)
 
             if (isMounted.current) {
-                Notification.success({ title: _(t.devicesDeleted), message: _(t.devicesDeletedMessage) })
+                Notification.success(
+                    { title: _(t.devicesDeleted), message: _(t.devicesDeletedMessage) },
+                    { notificationId: notificationId.HUB_DEVICES_LIST_PAGE_DELETE_DEVICES }
+                )
 
                 setDeleting(false)
                 setDeleteModalOpen(false)

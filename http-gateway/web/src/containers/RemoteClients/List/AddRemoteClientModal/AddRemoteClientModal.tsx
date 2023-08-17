@@ -21,6 +21,7 @@ import { DEVICE_AUTH_MODE } from '@shared-ui/app/clientApp/constants'
 
 import { Props, defaultProps, Inputs, ClientInformationLineType } from './AddRemoteClientModal.types'
 import { messages as t } from '../../RemoteClients.i18n'
+import notificationId from '@/notificationId'
 
 const AddRemoteClientModal: FC<Props> = (props) => {
     const { footerActions, defaultClientUrl, defaultClientName, onClose, onFormSubmit, ...rest } = { ...defaultProps, ...props }
@@ -128,11 +129,14 @@ const AddRemoteClientModal: FC<Props> = (props) => {
                 }
 
                 setVersionLoading(false)
-                Notification.success({ title: _(t.success), message: _(t.clientSuccess) })
+                Notification.success(
+                    { title: _(t.success), message: _(t.clientSuccess) },
+                    { notificationId: notificationId.HUB_ADD_REMOTE_CLIENT_MODAL_ON_SUBMIT }
+                )
             })
             .catch(() => {
                 setVersionLoading(false)
-                Notification.error({ title: _(t.error), message: _(t.clientError) })
+                Notification.error({ title: _(t.error), message: _(t.clientError) }, { notificationId: notificationId.HUB_ADD_REMOTE_CLIENT_MODAL_ON_SUBMIT })
             })
     }
 

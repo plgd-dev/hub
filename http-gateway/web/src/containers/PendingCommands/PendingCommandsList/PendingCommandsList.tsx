@@ -25,6 +25,7 @@ import { messages as t } from '../PendingCommands.i18n'
 import { Props } from './PendingCommandsList.types'
 import DateFormat from '@/containers/PendingCommands/DateFormat'
 import { IconTrash } from '@shared-ui/components/Atomic'
+import notificationId from '@/notificationId'
 
 type ModalData = {
     content: any
@@ -53,10 +54,13 @@ const PendingCommandsList: FC<Props> = ({ onLoading, embedded, deviceId }) => {
 
     useEffect(() => {
         error &&
-            Notification.error({
-                title: t.error,
-                message: getApiErrorMessage(error),
-            })
+            Notification.error(
+                {
+                    title: t.error,
+                    message: getApiErrorMessage(error),
+                },
+                { notificationId: notificationId.HUB_PENDING_COMMANDS_LIST_ERROR }
+            )
     }, [error])
 
     useEffect(() => {
@@ -126,10 +130,13 @@ const PendingCommandsList: FC<Props> = ({ onLoading, embedded, deviceId }) => {
         } catch (error) {
             onCloseCancelModal()
 
-            Notification.error({
-                title: t.error,
-                message: getApiErrorMessage(error),
-            })
+            Notification.error(
+                {
+                    title: t.error,
+                    message: getApiErrorMessage(error),
+                },
+                { notificationId: notificationId.HUB_PENDING_COMMANDS_LIST_CANCEL_COMMAND }
+            )
         }
     }
 

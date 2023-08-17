@@ -21,6 +21,7 @@ import { ClientInformationLineType } from '@/containers/RemoteClients/List/AddRe
 import { addRemoteClient, deleteRemoteClients, updateRemoteClients } from '@/containers/RemoteClients/slice'
 import { CombinedStoreType } from '@/store/store'
 import RemoteClientsList from '@/containers/RemoteClients/List/RemoteClientsList'
+import notificationId from '@/notificationId'
 
 const RemoteClientsListPage: FC<any> = () => {
     const { formatMessage: _ } = useIntl()
@@ -82,7 +83,10 @@ const RemoteClientsListPage: FC<any> = () => {
     const deleteClients = useCallback(() => {
         dispatch(deleteRemoteClients(combinedSelectedClients))
 
-        Notification.success({ title: _(t.clientsDeleted), message: _(t.clientsDeletedMessage) })
+        Notification.success(
+            { title: _(t.clientsDeleted), message: _(t.clientsDeletedMessage) },
+            { notificationId: notificationId.HUB_REMOTE_CLIENTS_LIST_PAGE_DELETE_CLIENTS }
+        )
 
         setSingleDelete(null)
         setDeleteModalOpen(false)
