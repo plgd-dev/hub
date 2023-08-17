@@ -16,6 +16,7 @@ import Notification from '@shared-ui/components/Atomic/Notification/Toast'
 
 import { messages as t } from '../RemoteClients.i18n'
 import { AppAuthProviderRefType, Props } from './RemoteClientsAuthProvider.types'
+import notificationId from '@/notificationId'
 
 const RemoteClientsAuthProvider = forwardRef<AppAuthProviderRefType, Props>((props, ref) => {
     const { wellKnownConfig, clientData, children, setAuthError, setInitialize } = props
@@ -66,10 +67,13 @@ const RemoteClientsAuthProvider = forwardRef<AppAuthProviderRefType, Props>((pro
                                 }
                             })
                             .catch((e) => {
-                                Notification.error({
-                                    title: _(t.error),
-                                    message: e.response.data.message,
-                                })
+                                Notification.error(
+                                    {
+                                        title: _(t.error),
+                                        message: e.response.data.message,
+                                    },
+                                    { notificationId: notificationId.HUB_REMOTE_CLIENTS_AUTH_PROVIDER_PRE_SHARED_KEY }
+                                )
                             })
                     } catch (e) {
                         console.error(e)

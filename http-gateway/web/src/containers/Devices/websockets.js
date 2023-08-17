@@ -9,6 +9,7 @@ import { getDeviceNotificationKey, getResourceRegistrationNotificationKey, getRe
 import { isNotificationActive } from './slice'
 import { getDeviceApi } from './rest'
 import { messages as t } from './Devices.i18n'
+import notificationId from '@/notificationId'
 
 const { ONLINE, REGISTERED, UNREGISTERED } = devicesStatuses
 const DEFAULT_NOTIFICATION_DELAY = 500
@@ -39,6 +40,7 @@ const showToast = async (currentDeviceNotificationsEnabled, deviceId, status) =>
                     history.push(`/devices/${deviceId}`)
                 },
                 toastId: `${deviceId}|status|${status}`,
+                notificationId: notificationId.HUB_SHOW_TOAST,
             }
         )
     }
@@ -70,10 +72,15 @@ export const deviceStatusListener = async (props) => {
 
                         // show toast only if last change ( status ) is different from prev
                         if (!lastNotification || lastNotification.type !== `status-${status}`) {
-                            notifications.addNotification({
-                                deviceId,
-                                type: `status-${status}`,
-                            })
+                            notifications.addNotification(
+                                {
+                                    deviceId,
+                                    type: `status-${status}`,
+                                },
+                                {
+                                    notificationId: notificationId.HUB_DEVICE_STATUS_LISTENER,
+                                }
+                            )
                             // Get the notification state of a single device from redux store
                             const currentDeviceNotificationsEnabled = isNotificationActive(getDeviceNotificationKey(deviceId))(store.getState())
 
@@ -108,6 +115,7 @@ const showToastByResources = (options) => {
         },
         {
             onClick: options.onClick,
+            notificationId: notificationId.HUB_SHOW_TOAST_BY_RESOURCES,
         }
     )
 }
@@ -212,6 +220,7 @@ export const deviceResourceUpdateListener =
                         onClick: () => {
                             history.push(`/devices/${deviceId}${href}`)
                         },
+                        notificationId: notificationId.HUB_DEVICE_RESOURCE_UPDATE_LISTENER,
                     }
                 )
             }

@@ -29,6 +29,7 @@ import Tab2 from './Tabs/Tab2'
 import { PendingCommandsExpandableList } from '@/containers/PendingCommands'
 import { AppContext } from '@/containers/App/AppContext'
 import { Props } from './DevicesDetailsPage.types'
+import notificationId from '@/notificationId'
 
 const DevicesDetailsPage: FC<Props> = (props) => {
     const { defaultActiveTab } = props
@@ -160,7 +161,10 @@ const DevicesDetailsPage: FC<Props> = (props) => {
                 }
             } catch (error) {
                 if (error && isMounted.current) {
-                    Notification.error({ title: _(t.deviceNameChangeFailed), message: getApiErrorMessage(error) })
+                    Notification.error(
+                        { title: _(t.deviceNameChangeFailed), message: getApiErrorMessage(error) },
+                        { notificationId: notificationId.HUB_DEVICES_DETAILS_PAGE_UPDATE_DEVICE_NAME }
+                    )
                     setDeviceNameLoading(false)
                     setShowEditNameModal(false)
                 }

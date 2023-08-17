@@ -14,6 +14,7 @@ import { Props } from './DevicesDetailsHeader.types'
 import { canChangeDeviceName, getResourceRegistrationNotificationKey, handleDeleteDevicesErrors, sleep } from '../../utils'
 import { deleteDevicesApi } from '../../rest'
 import { messages as t } from '../../Devices.i18n'
+import notificationId from '@/notificationId'
 
 const DevicesDetailsHeader: FC<Props> = memo((props) => {
     const { deviceId, deviceName, isUnregistered, isOnline, handleOpenEditDeviceNameModal, links } = props
@@ -56,7 +57,10 @@ const DevicesDetailsHeader: FC<Props> = memo((props) => {
             await sleep(200)
 
             if (isMounted.current) {
-                Notification.success({ title: t.deviceDeleted, message: _(t.deviceWasDeleted, { name: deviceName }) })
+                Notification.success(
+                    { title: t.deviceDeleted, message: _(t.deviceWasDeleted, { name: deviceName }) },
+                    { notificationId: notificationId.HUB_DEVICES_DETAILS_HEADER_HANDLE_DELETE_DEVICE }
+                )
 
                 // Unregister the WS when the device is deleted
                 WebSocketEventClient.unsubscribe(resourceRegistrationObservationWSKey)
