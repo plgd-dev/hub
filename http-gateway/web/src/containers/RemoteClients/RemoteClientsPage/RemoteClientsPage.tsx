@@ -1,4 +1,4 @@
-import { FC, ReactElement, useCallback, useMemo, useRef, useState } from 'react'
+import { FC, useCallback, useMemo, useRef, useState } from 'react'
 import { useIntl } from 'react-intl'
 import { Helmet } from 'react-helmet'
 import jwtDecode from 'jwt-decode'
@@ -7,8 +7,6 @@ import get from 'lodash/get'
 import { useWellKnownConfiguration, WellKnownConfigType } from '@shared-ui/common/hooks'
 import { clientAppSetings, security } from '@shared-ui/common/services'
 import PageLoader from '@shared-ui/components/Atomic/PageLoader'
-import ConditionalWrapper from '@shared-ui/components/Atomic/ConditionalWrapper'
-import { DEVICE_AUTH_MODE } from '@shared-ui/app/clientApp/constants'
 import AppContext from '@shared-ui/app/clientApp/App/AppContext'
 import InitializedByAnother from '@shared-ui/app/clientApp/App/InitializedByAnother'
 import { getClientUrl } from '@shared-ui/app/clientApp/utils'
@@ -113,22 +111,18 @@ const RemoteClientsPage: FC<Props> = (props) => {
         <AppContext.Provider value={contextValue}>
             <div css={styles.detailPage}>
                 <Helmet title={`${clientData.clientName}`} />
-                <ConditionalWrapper
-                    condition={wellKnownConfig?.deviceAuthenticationMode === DEVICE_AUTH_MODE.X509}
-                    wrapper={(child: ReactElement) => (
-                        <RemoteClientsAuthProvider
-                            ref={authProviderRef}
-                            setAuthError={setAuthError}
-                            setInitialize={setInitialize}
-                            wellKnownConfig={wellKnownConfig}
-                        >
-                            {child}
-                        </RemoteClientsAuthProvider>
-                    )}
+                <RemoteClientsAuthProvider
+                    clientData={clientData}
+                    ref={authProviderRef}
+                    setAuthError={setAuthError}
+                    setInitialize={setInitialize}
+                    wellKnownConfig={wellKnownConfig}
                 >
-                    <InitializedByAnother show={initializedByAnother} />
-                    {!initializedByAnother && !suspectedUnauthorized ? children(clientData) : <div />}
-                </ConditionalWrapper>
+                    <>
+                        <InitializedByAnother show={initializedByAnother} />
+                        {!initializedByAnother && !suspectedUnauthorized ? children(clientData) : <div />}
+                    </>
+                </RemoteClientsAuthProvider>
             </div>
         </AppContext.Provider>
     )

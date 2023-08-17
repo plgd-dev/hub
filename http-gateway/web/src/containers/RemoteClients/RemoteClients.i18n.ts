@@ -25,6 +25,22 @@ export const messages = defineMessages({
         id: 'remoteClients.deviceName',
         defaultMessage: 'Client name',
     },
+    deviceAuthenticationMode: {
+        id: 'remoteClients.deviceAuthenticationMode',
+        defaultMessage: 'Device Authentication Mode',
+    },
+    subjectId: {
+        id: 'remoteClients.subjectId',
+        defaultMessage: 'Subject ID',
+    },
+    key: {
+        id: 'remoteClients.key',
+        defaultMessage: 'Key',
+    },
+    config: {
+        id: 'remoteClients.config',
+        defaultMessage: 'Config',
+    },
     clientNameError: {
         id: 'remoteClients.clientNameError',
         defaultMessage: 'Client name error message',
@@ -32,6 +48,14 @@ export const messages = defineMessages({
     addNewClient: {
         id: 'remoteClients.addNewClient',
         defaultMessage: 'Add a new client',
+    },
+    preSharedSubjectIdError: {
+        id: 'remoteClients.preSharedSubjectIdError',
+        defaultMessage: 'SharedSubjectIdError error message',
+    },
+    preSharedKeyError: {
+        id: 'remoteClients.preSharedKeyError',
+        defaultMessage: 'preSharedKeyError error message',
     },
     clientUrl: {
         id: 'remoteClients.clientUrl',

@@ -21,4 +21,7 @@ export const defaultProps = {
 export type Inputs = {
     clientName: string
     clientUrl: string
+    authMode: { value: string; label: string }
+    preSharedSubjectId: string
+    preSharedKey?: string
 }
