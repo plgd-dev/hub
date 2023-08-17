@@ -1,5 +1,5 @@
-import React, { FC, useCallback, useState } from 'react'
-import { SubmitHandler, useForm } from 'react-hook-form'
+import React, { FC, useCallback, useEffect, useMemo, useState } from 'react'
+import { Controller, SubmitHandler, useForm } from 'react-hook-form'
 import { useIntl } from 'react-intl'
 import cloneDeep from 'lodash/cloneDeep'
 import isFunction from 'lodash/isFunction'
@@ -14,9 +14,10 @@ import * as styles from '@shared-ui/components/Atomic/Modal/components/Provision
 import { fetchApi } from '@shared-ui/common/services'
 import Notification from '@shared-ui/components/Atomic/Notification/Toast'
 import CopyElement from '@shared-ui/components/Atomic/CopyElement'
-import { IconCopy } from '@shared-ui/components/Atomic'
+import { FormSelect, IconCopy } from '@shared-ui/components/Atomic'
 import { copyToClipboard } from '@shared-ui/common/utils'
 import Tooltip from '@shared-ui/components/Atomic/Tooltip'
+import { DEVICE_AUTH_MODE } from '@shared-ui/app/clientApp/constants'
 
 import { Props, defaultProps, Inputs, ClientInformationLineType } from './AddRemoteClientModal.types'
 import { messages as t } from '../../RemoteClients.i18n'
@@ -27,23 +28,44 @@ const AddRemoteClientModal: FC<Props> = (props) => {
     const [versionLoading, setVersionLoading] = useState(false)
     const [clientInformation, setClientInformation] = useState<ClientInformationLineType[] | undefined>(undefined)
 
+    const options = useMemo(
+        () => [
+            { value: DEVICE_AUTH_MODE.X509, label: DEVICE_AUTH_MODE.X509 },
+            { value: DEVICE_AUTH_MODE.PRE_SHARED_KEY, label: DEVICE_AUTH_MODE.PRE_SHARED_KEY },
+        ],
+        []
+    )
+
     const {
         register,
         handleSubmit,
         formState: { errors },
         getValues,
         reset,
+        watch,
+        control,
+        trigger,
     } = useForm<Inputs>({
         mode: 'all',
+        reValidateMode: 'onSubmit',
         values: {
             clientName: defaultClientName || '',
             clientUrl: defaultClientUrl || '',
+            authMode: options[0],
+            preSharedSubjectId: '',
+            preSharedKey: '',
         },
     })
 
     const handleDone = useCallback(() => {
         const formValues = getValues()
-        const finalData = cloneDeep(clientInformation)
+        const finalData = clientInformation ? cloneDeep(clientInformation) : []
+
+        const authenticationModeIndex = finalData?.findIndex((i) => i.attributeKey === 'authenticationMode')
+
+        if (authenticationModeIndex >= 0) {
+            finalData[authenticationModeIndex].value = formValues.authMode.value
+        }
 
         finalData?.push(
             {
@@ -55,6 +77,16 @@ const AddRemoteClientModal: FC<Props> = (props) => {
                 attribute: _(t.clientUrl),
                 attributeKey: 'clientUrl',
                 value: formValues.clientUrl,
+            },
+            {
+                attribute: _(t.subjectId),
+                attributeKey: 'preSharedSubjectId',
+                value: formValues.preSharedSubjectId,
+            },
+            {
+                attribute: _(t.key),
+                attributeKey: 'preSharedKey',
+                value: formValues.preSharedKey || '',
             }
         )
 
@@ -78,6 +110,8 @@ const AddRemoteClientModal: FC<Props> = (props) => {
             .then((result) => {
                 const version = result.data?.version
 
+                console.log(result.data)
+
                 if (version) {
                     setClientInformation([
                         {
@@ -85,14 +119,18 @@ const AddRemoteClientModal: FC<Props> = (props) => {
                             attributeKey: 'version',
                             value: version,
                         },
+                        {
+                            attribute: _(t.deviceAuthenticationMode),
+                            attributeKey: 'authenticationMode',
+                            value: result.data?.deviceAuthenticationMode,
+                        },
                     ])
                 }
 
                 setVersionLoading(false)
-
                 Notification.success({ title: _(t.success), message: _(t.clientSuccess) })
             })
-            .catch((e) => {
+            .catch(() => {
                 setVersionLoading(false)
                 Notification.error({ title: _(t.error), message: _(t.clientError) })
             })
@@ -120,9 +158,12 @@ const AddRemoteClientModal: FC<Props> = (props) => {
                         <CopyElement textToCopy={JSON.stringify(dataForCopy)} />
                     </div>
                     <div css={[styles.getCodeBox, styles.codeBoxWithLines]}>
-                        {clientInformation?.map((info: ClientInformationLineType) => (
-                            <DeviceInformationLine key={info.attributeKey} {...info} />
-                        ))}
+                        {clientInformation?.map((info: ClientInformationLineType) => {
+                            if (info.attributeKey !== 'authenticationMode') {
+                                return <DeviceInformationLine key={info.attributeKey} {...info} />
+                            }
+                            return null
+                        })}
                     </div>
                 </div>
             )
@@ -143,6 +184,17 @@ const AddRemoteClientModal: FC<Props> = (props) => {
             )
         }
     }
+
+    const isUninitialized = useMemo(
+        () => clientInformation && clientInformation.find((item) => item.attributeKey === 'authenticationMode')?.value === DEVICE_AUTH_MODE.UNINITIALIZED,
+        [clientInformation]
+    )
+
+    const authMode = watch('authMode')
+
+    useEffect(() => {
+        trigger().then()
+    }, [authMode])
 
     const renderBody = () => (
         <form onSubmit={handleSubmit(onSubmit)}>
@@ -168,6 +220,43 @@ const AddRemoteClientModal: FC<Props> = (props) => {
                     </FormGroup>
                 </Column>
             </Row>
+            {isUninitialized && (
+                <>
+                    <div css={styles.codeInfoHeader}>
+                        <h3 css={styles.title}>{_(t.config)}</h3>
+                    </div>
+                    <Row>
+                        <Column size={6}>
+                            <FormGroup id='client-auth'>
+                                <FormLabel text={_(t.deviceAuthenticationMode)} />
+                                <Controller
+                                    control={control}
+                                    name='authMode'
+                                    render={({ field: { onChange, onBlur, name, ref }, fieldState: { invalid, isTouched, isDirty, error } }) => (
+                                        <FormSelect defaultValue={options[0]} name={name} onChange={onChange} options={options} ref={ref} />
+                                    )}
+                                />
+                            </FormGroup>
+                        </Column>
+                    </Row>
+                </>
+            )}
+            {isUninitialized && authMode?.value === DEVICE_AUTH_MODE.PRE_SHARED_KEY && (
+                <Row>
+                    <Column size={6}>
+                        <FormGroup error={errors.preSharedSubjectId ? _(t.preSharedSubjectIdError) : undefined} id='subject-id'>
+                            <FormLabel text={_(t.subjectId)} />
+                            <FormInput placeholder={_(t.subjectId)} {...register('preSharedSubjectId', { validate: (val) => val !== '' })} />
+                        </FormGroup>
+                    </Column>
+                    <Column size={6}>
+                        <FormGroup error={errors.preSharedKey ? _(t.preSharedKeyError) : undefined} id='key'>
+                            <FormLabel text={_(t.key)} />
+                            <FormInput placeholder={_(t.key)} {...register('preSharedKey', { required: true, validate: (val) => val !== '' })} />
+                        </FormGroup>
+                    </Column>
+                </Row>
+            )}
             <RenderBoxInfo />
         </form>
     )
@@ -183,6 +272,7 @@ const AddRemoteClientModal: FC<Props> = (props) => {
                               label: _(t.done),
                               onClick: handleDone,
                               variant: 'primary',
+                              disabled: Object.keys(errors).length > 0,
                           },
                       ]
                     : undefined

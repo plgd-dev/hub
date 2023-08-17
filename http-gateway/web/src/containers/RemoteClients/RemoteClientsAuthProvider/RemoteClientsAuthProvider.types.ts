@@ -1,5 +1,7 @@
-import { WellKnownConfigType } from '@shared-ui/common/hooks'
 import { ReactElement } from 'react'
+
+import { WellKnownConfigType } from '@shared-ui/common/hooks'
+import { RemoteClientType } from '@shared-ui/app/clientApp/RemoteClients/RemoteClients.types'
 
 export type AppAuthProviderRefType = {
     getSignOutMethod(): any
@@ -8,6 +10,7 @@ export type AppAuthProviderRefType = {
 
 export type Props = {
     children: ReactElement
+    clientData: RemoteClientType
     setAuthError: (error: string) => void
     setInitialize: (isInitialize?: boolean) => void
     wellKnownConfig?: WellKnownConfigType
