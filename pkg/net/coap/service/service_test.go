@@ -6,13 +6,18 @@ import (
 	"testing"
 	"time"
 
+	"github.com/pion/dtls/v2"
+	coapDtls "github.com/plgd-dev/go-coap/v3/dtls"
 	"github.com/plgd-dev/go-coap/v3/message/pool"
 	"github.com/plgd-dev/go-coap/v3/mux"
+	"github.com/plgd-dev/go-coap/v3/options"
+	"github.com/plgd-dev/go-coap/v3/tcp"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/pkg/service"
 	"github.com/plgd-dev/hub/v2/test/config"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/atomic"
 )
 
 func TestNew(t *testing.T) {
@@ -109,4 +114,144 @@ func TestNew(t *testing.T) {
 			require.NoError(t, err)
 		})
 	}
+}
+
+func TestOnClientInactivity(t *testing.T) {
+	router := mux.NewRouter()
+	logCfg := log.MakeDefaultConfig()
+	logCfg.Level = log.DebugLevel
+	logger := log.NewLogger(logCfg)
+	fileWatcher, err := fsnotify.NewWatcher(logger)
+	require.NoError(t, err)
+	tlsCfg := config.MakeTLSServerConfig()
+	tlsCfg.ClientCertificateRequired = false
+	cfg := Config{
+		Addr:            "127.0.0.1:23456",
+		Protocols:       []Protocol{TCP, UDP},
+		MaxMessageSize:  1024,
+		MessagePoolSize: 1024,
+		BlockwiseTransfer: BlockwiseTransferConfig{
+			Enabled: true,
+			SZX:     "1024",
+		},
+		InactivityMonitor: &InactivityMonitor{
+			Timeout: time.Second * 1,
+		},
+		TLS: TLSConfig{
+			Embedded: tlsCfg,
+		},
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
+	defer cancel()
+
+	got, err := New(ctx, cfg, router, fileWatcher, logger)
+	require.NoError(t, err)
+	go func() {
+		err := got.Serve()
+		require.NoError(t, err)
+	}()
+	time.Sleep(time.Second * 3)
+
+	// test TCP
+	c, err := tcp.Dial(cfg.Addr, options.WithTLS(&tls.Config{
+		InsecureSkipVerify: true,
+	}), options.WithContext(ctx))
+	require.NoError(t, err)
+	_, err = c.Get(ctx, "/a")
+	require.NoError(t, err)
+	select {
+	case <-c.Done():
+	case <-ctx.Done():
+		require.NoError(t, ctx.Err())
+	}
+
+	// test DTLS
+	cUDP, err := coapDtls.Dial(cfg.Addr, &dtls.Config{
+		InsecureSkipVerify: true,
+	}, options.WithContext(ctx))
+	require.NoError(t, err)
+	_, err = cUDP.Get(ctx, "/a")
+	require.NoError(t, err)
+	select {
+	case <-cUDP.Done():
+	case <-ctx.Done():
+		require.NoError(t, ctx.Err())
+	}
+
+	// clean up
+	err = got.Close()
+	require.NoError(t, err)
+}
+
+func TestOnClientInactivityCustom(t *testing.T) {
+	router := mux.NewRouter()
+	logCfg := log.MakeDefaultConfig()
+	logCfg.Level = log.DebugLevel
+	logger := log.NewLogger(logCfg)
+	fileWatcher, err := fsnotify.NewWatcher(logger)
+	require.NoError(t, err)
+	tlsCfg := config.MakeTLSServerConfig()
+	tlsCfg.ClientCertificateRequired = false
+	cfg := Config{
+		Addr:            "127.0.0.1:23456",
+		Protocols:       []Protocol{TCP, UDP},
+		MaxMessageSize:  1024,
+		MessagePoolSize: 1024,
+		BlockwiseTransfer: BlockwiseTransferConfig{
+			Enabled: true,
+			SZX:     "1024",
+		},
+		InactivityMonitor: &InactivityMonitor{
+			Timeout: time.Second * 1,
+		},
+		TLS: TLSConfig{
+			Embedded: tlsCfg,
+		},
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
+	defer cancel()
+
+	var numInactiveClients atomic.Int32
+	got, err := New(ctx, cfg, router, fileWatcher, logger, WithOnInactivityConnection(func(conn mux.Conn) {
+		err := conn.Close()
+		require.NoError(t, err)
+		numInactiveClients.Inc()
+	}))
+	require.NoError(t, err)
+	go func() {
+		err := got.Serve()
+		require.NoError(t, err)
+	}()
+	time.Sleep(time.Second * 3)
+
+	// test TCP
+	c, err := tcp.Dial(cfg.Addr, options.WithTLS(&tls.Config{
+		InsecureSkipVerify: true,
+	}), options.WithContext(ctx))
+	require.NoError(t, err)
+	_, err = c.Get(ctx, "/a")
+	require.NoError(t, err)
+	select {
+	case <-c.Done():
+	case <-ctx.Done():
+		require.NoError(t, ctx.Err())
+	}
+
+	// test DTLS
+	cUDP, err := coapDtls.Dial(cfg.Addr, &dtls.Config{
+		InsecureSkipVerify: true,
+	}, options.WithContext(ctx))
+	require.NoError(t, err)
+	_, err = cUDP.Get(ctx, "/a")
+	require.NoError(t, err)
+	select {
+	case <-cUDP.Done():
+	case <-ctx.Done():
+		require.NoError(t, ctx.Err())
+	}
+
+	// clean up
+	err = got.Close()
+	require.NoError(t, err)
+	require.Equal(t, int32(2), numInactiveClients.Load())
 }

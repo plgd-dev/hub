@@ -85,7 +85,7 @@ func newTCPServer(config Config, serviceOpts Options, fileWatcher *fsnotify.Watc
 	}
 	if config.InactivityMonitor != nil {
 		tcpOpts = append(tcpOpts, options.WithInactivityMonitor(config.InactivityMonitor.Timeout, func(cc *coapTcpClient.Conn) {
-			serviceOpts.OnNewConnection(cc)
+			serviceOpts.OnInactivityConnection(cc)
 		}))
 	}
 	if config.KeepAlive != nil {
