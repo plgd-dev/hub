@@ -381,6 +381,7 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | device_ids | [string](#string) | repeated |  |
+| event_metadata | [identitystore.pb.EventMetadata](#identitystore-pb-EventMetadata) |  | provides metadata of event |
 | open_telemetry_carrier | [Event.DeviceRegistered.OpenTelemetryCarrierEntry](#grpcgateway-pb-Event-DeviceRegistered-OpenTelemetryCarrierEntry) | repeated | Open telemetry data propagated to asynchronous events |
 
 
@@ -413,6 +414,7 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | device_ids | [string](#string) | repeated |  |
+| event_metadata | [identitystore.pb.EventMetadata](#identitystore-pb-EventMetadata) |  | provides metadata of event |
 | open_telemetry_carrier | [Event.DeviceUnregistered.OpenTelemetryCarrierEntry](#grpcgateway-pb-Event-DeviceUnregistered-OpenTelemetryCarrierEntry) | repeated | Open telemetry data propagated to asynchronous events |
 
 
