@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -78,6 +79,16 @@ func newService(protocol Protocol, config Config, serviceOpts Options, fileWatch
 	return nil, nil
 }
 
+func makeOnInactivityConnection(logger log.Logger) func(conn mux.Conn) {
+	return func(conn mux.Conn) {
+		logger.Debugf("closing connection for inactivity: %v", conn.RemoteAddr())
+		err := conn.Close()
+		if err != nil && !errors.Is(err, context.Canceled) {
+			logger.Errorf("cannot close connection %v for inactivity: %v", conn.RemoteAddr(), err)
+		}
+	}
+}
+
 // New creates server.
 func New(ctx context.Context, config Config, router *mux.Router, fileWatcher *fsnotify.Watcher, logger log.Logger, opt ...func(*Options)) (*service.Service, error) {
 	err := config.Validate()
@@ -85,7 +96,8 @@ func New(ctx context.Context, config Config, router *mux.Router, fileWatcher *fs
 		return nil, err
 	}
 	serviceOpts := Options{
-		MessagePool: pool.New(uint32(config.MessagePoolSize), 1024),
+		MessagePool:            pool.New(uint32(config.MessagePoolSize), 1024),
+		OnInactivityConnection: makeOnInactivityConnection(logger),
 	}
 	for _, o := range opt {
 		o(&serviceOpts)
