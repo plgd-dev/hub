@@ -40,13 +40,13 @@ const RemoteClientsAuthProvider = forwardRef<AppAuthProviderRefType, Props>((pro
                     getOpenIdConfiguration(wellKnownConfig.remoteProvisioning?.authority!).then((result) => {
                         getJwksData(result.data.jwks_uri).then((result) => {
                             initializeJwksData(result.data).then((result) => {
-                                const state = result.data.identityCertificateChallenge.state
+                                const identityCertificateChallenge = result.data.identityCertificateChallenge
 
                                 signIdentityCsr(
                                     wellKnownConfig.remoteProvisioning?.certificateAuthority as string,
-                                    result.data.identityCertificateChallenge.certificateSigningRequest
+                                    identityCertificateChallenge.certificateSigningRequest
                                 ).then((result) => {
-                                    initializeFinal(state, result.data.certificate).then(() => {
+                                    initializeFinal(identityCertificateChallenge.state, result.data.certificate).then(() => {
                                         setInitialize(true)
                                     })
                                 })
@@ -84,6 +84,7 @@ const RemoteClientsAuthProvider = forwardRef<AppAuthProviderRefType, Props>((pro
                 }
             }
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [wellKnownConfig, setAuthError, setInitialize])
 
     if (!wellKnownConfig || !wellKnownConfig?.isInitialized) {
