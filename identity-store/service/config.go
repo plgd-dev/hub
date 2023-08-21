@@ -3,6 +3,7 @@ package service
 import (
 	"fmt"
 
+	"github.com/google/uuid"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/pkg/mongodb"
 	"github.com/plgd-dev/hub/v2/pkg/net/grpc/server"
@@ -13,6 +14,7 @@ import (
 
 // Config provides defaults and enables configuring via env variables.
 type Config struct {
+	HubID   string        `yaml:"hubID" json:"hubId"`
 	Log     log.Config    `yaml:"log" json:"log"`
 	APIs    APIsConfig    `yaml:"apis" json:"apis"`
 	Clients ClientsConfig `yaml:"clients" json:"clients"`
@@ -27,6 +29,9 @@ func (c *Config) Validate() error {
 	}
 	if err := c.APIs.Validate(); err != nil {
 		return fmt.Errorf("apis.%w", err)
+	}
+	if _, err := uuid.Parse(c.HubID); err != nil {
+		return fmt.Errorf("hubID('%v') - %w", c.HubID, err)
 	}
 	return nil
 }
@@ -74,15 +79,11 @@ func (c *EventBusConfig) Validate() error {
 
 type StorageConfig struct {
 	MongoDB mongodb.Config `yaml:"mongoDB" json:"mongoDb"`
-	HubID   string         `yaml:"hubID" json:"hubID"`
 }
 
 func (c *StorageConfig) Validate() error {
 	if err := c.MongoDB.Validate(); err != nil {
 		return fmt.Errorf("mongoDB.%w", err)
-	}
-	if c.HubID == "" {
-		return fmt.Errorf("hubID('%v')", c.HubID)
 	}
 	return nil
 }

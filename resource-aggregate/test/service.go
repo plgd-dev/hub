@@ -15,6 +15,7 @@ import (
 func MakeConfig(t require.TestingT) service.Config {
 	var cfg service.Config
 
+	cfg.HubID = config.HubID()
 	cfg.Log = config.MakeLogConfig(t, "TEST_RESOURCE_AGGREGATE_LOG_LEVEL", "TEST_RESOURCE_AGGREGATE_LOG_DUMP_BODY")
 
 	cfg.APIs.GRPC.OwnerCacheExpiration = time.Minute
@@ -27,7 +28,6 @@ func MakeConfig(t require.TestingT) service.Config {
 	cfg.Clients.Eventstore.Connection.MongoDB = config.MakeEventsStoreMongoDBConfig()
 	cfg.Clients.Eventstore.ConcurrencyExceptionMaxRetry = 8
 	cfg.Clients.Eventstore.SnapshotThreshold = 16
-	cfg.Clients.Eventstore.HubID = config.HubID()
 	cfg.Clients.OpenTelemetryCollector = config.MakeOpenTelemetryCollectorClient()
 
 	err := cfg.Validate()

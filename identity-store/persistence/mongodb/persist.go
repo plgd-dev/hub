@@ -14,7 +14,6 @@ import (
 const (
 	deviceIDKey = "_id"
 	ownerKey    = "owner"
-	hubIDKey    = "hubId"
 )
 
 // PersistenceTx prevents data race for a sequence of read and write operations.
@@ -175,7 +174,6 @@ func (i *iterator) Next(s *persistence.AuthorizedDevice) bool {
 	}
 	s.DeviceID = sub[deviceIDKey].(string)
 	s.Owner = sub[ownerKey].(string)
-	s.HubID = sub[hubIDKey].(string)
 
 	return true
 }
@@ -197,7 +195,6 @@ func makeRecord(d *persistence.AuthorizedDevice) bson.M {
 	return bson.M{
 		deviceIDKey: d.DeviceID,
 		ownerKey:    d.Owner,
-		hubIDKey:    d.HubID,
 	}
 }
 

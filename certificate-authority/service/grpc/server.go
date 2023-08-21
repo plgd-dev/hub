@@ -30,9 +30,10 @@ type CertificateAuthorityServer struct {
 	logger       log.Logger
 	ownerClaim   string
 	store        *mongodb.Store
+	hubID        string
 }
 
-func NewCertificateAuthorityServer(ownerClaim string, signerConfig SignerConfig, store *mongodb.Store, logger log.Logger) (*CertificateAuthorityServer, error) {
+func NewCertificateAuthorityServer(ownerClaim string, hubID string, signerConfig SignerConfig, store *mongodb.Store, logger log.Logger) (*CertificateAuthorityServer, error) {
 	certificate, err := security.LoadX509(signerConfig.CertFile)
 	if err != nil {
 		return nil, err
@@ -54,5 +55,6 @@ func NewCertificateAuthorityServer(ownerClaim string, signerConfig SignerConfig,
 		logger:       logger,
 		ownerClaim:   ownerClaim,
 		store:        store,
+		hubID:        hubID,
 	}, nil
 }

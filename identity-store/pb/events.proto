@@ -10,7 +10,7 @@ message AuditContext {
 }
 
 message EventMetadata {
-    string hub_id = 1;
+    string hub_id = 1; // the hub which sent the event
 }
 
 // devices was registered to owner.

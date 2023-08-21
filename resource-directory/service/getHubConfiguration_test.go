@@ -16,7 +16,7 @@ import (
 )
 
 func TestRequestHandlerGetHubConfiguration(t *testing.T) {
-	expected := rdTest.MakeConfig(t).ExposedHubConfiguration.ToProto()
+	expected := rdTest.MakeConfig(t).ExposedHubConfiguration.ToProto(config.HubID())
 	expected.CurrentTime = 0
 	tests := []struct {
 		name    string

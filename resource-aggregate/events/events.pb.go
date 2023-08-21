@@ -29,8 +29,8 @@ type EventMetadata struct {
 	Version      uint64 `protobuf:"varint,1,opt,name=version,proto3" json:"version,omitempty"`
 	Timestamp    int64  `protobuf:"varint,2,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
 	ConnectionId string `protobuf:"bytes,3,opt,name=connection_id,json=connectionId,proto3" json:"connection_id,omitempty"`
-	Sequence     uint64 `protobuf:"varint,4,opt,name=sequence,proto3" json:"sequence,omitempty"` // sequence number within the same connection_id; the ResourceChanged event uses the value to skip old events, other event types might not fill the value
-	HubId        string `protobuf:"bytes,5,opt,name=hub_id,json=hubId,proto3" json:"hub_id,omitempty"`
+	Sequence     uint64 `protobuf:"varint,4,opt,name=sequence,proto3" json:"sequence,omitempty"`       // sequence number within the same connection_id; the ResourceChanged event uses the value to skip old events, other event types might not fill the value
+	HubId        string `protobuf:"bytes,5,opt,name=hub_id,json=hubId,proto3" json:"hub_id,omitempty"` // the hub which sent the event
 }
 
 func (x *EventMetadata) Reset() {

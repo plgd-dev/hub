@@ -6,6 +6,7 @@ import (
 	"time"
 
 	gocron "github.com/go-co-op/gocron"
+	"github.com/google/uuid"
 	grpcService "github.com/plgd-dev/hub/v2/certificate-authority/service/grpc"
 	"github.com/plgd-dev/hub/v2/certificate-authority/store/mongodb"
 	"github.com/plgd-dev/hub/v2/pkg/config"
@@ -15,6 +16,7 @@ import (
 )
 
 type Config struct {
+	HubID   string                   `yaml:"hubID" json:"hubId"`
 	Log     log.Config               `yaml:"log" json:"log"`
 	APIs    APIsConfig               `yaml:"apis" json:"apis"`
 	Signer  grpcService.SignerConfig `yaml:"signer" json:"signer"`
@@ -33,6 +35,9 @@ func (c *Config) Validate() error {
 	}
 	if err := c.Clients.Validate(); err != nil {
 		return fmt.Errorf("clients.%w", err)
+	}
+	if _, err := uuid.Parse(c.HubID); err != nil {
+		return fmt.Errorf("hubID('%v') - %w", c.HubID, err)
 	}
 	return nil
 }

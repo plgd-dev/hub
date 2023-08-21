@@ -102,7 +102,6 @@ func (s *Service) AddDevice(ctx context.Context, request *pb.AddDeviceRequest) (
 	d := persistence.AuthorizedDevice{
 		DeviceID: request.DeviceId,
 		Owner:    owner,
-		HubID:    s.hubID,
 	}
 
 	if err = tx.Persist(&d); err != nil {

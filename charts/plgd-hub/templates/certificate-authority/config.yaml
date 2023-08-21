@@ -8,6 +8,7 @@ metadata:
 data:
   {{ .Values.certificateauthority.config.fileName }}: |
     {{- with .Values.certificateauthority }}
+    hubID: {{ required "certificateauthority.hubId or global.hubId is required" ( .hubId | default $.Values.global.hubId) | quote }}
     log:
       level: {{ .log.level }}
       dumpBody: {{ .log.dumpBody }}
@@ -79,6 +80,5 @@ data:
       keyFile: {{ .signer.keyFile | default ( printf "%s/%s" $.Values.certificateauthority.ca.volume.mountPath $.Values.certificateauthority.ca.key ) | quote }}
       validFrom: {{ .signer.validFrom | quote }}
       expiresIn: {{ .signer.expiresIn | quote }}
-      hubID: {{ required "certificateauthority.hubId or coapgateway.hubId or global.hubId is required" ( .hubId | default ( $.Values.coapgateway.hubId | default $.Values.global.hubId)) | quote }}
   {{- end }}
 {{- end }}

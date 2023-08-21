@@ -75,7 +75,7 @@ func NewServer(ctx context.Context, cfg Config, fileWatcher *fsnotify.Watcher, l
 		}
 	})
 
-	service := NewService(persistence, publisher, cfg.APIs.GRPC.Authorization.OwnerClaim, cfg.Clients.Storage.HubID, logger)
+	service := NewService(persistence, publisher, cfg.APIs.GRPC.Authorization.OwnerClaim, cfg.HubID, logger)
 
 	pb.RegisterIdentityStoreServer(grpcServer.Server, service)
 

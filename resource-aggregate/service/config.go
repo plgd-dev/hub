@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/plgd-dev/hub/v2/pkg/config"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/pkg/net/grpc/client"
@@ -15,6 +16,7 @@ import (
 
 // Config represent application configuration
 type Config struct {
+	HubID   string        `yaml:"hubID" json:"hubId"`
 	Log     log.Config    `yaml:"log" json:"log"`
 	APIs    APIsConfig    `yaml:"apis" json:"apis"`
 	Clients ClientsConfig `yaml:"clients" json:"clients"`
@@ -29,6 +31,9 @@ func (c *Config) Validate() error {
 	}
 	if err := c.Clients.Validate(); err != nil {
 		return fmt.Errorf("clients.%w", err)
+	}
+	if _, err := uuid.Parse(c.HubID); err != nil {
+		return fmt.Errorf("hubID('%v') - %w", c.HubID, err)
 	}
 	return nil
 }
@@ -71,7 +76,6 @@ type EventStoreConfig struct {
 	SnapshotThreshold            int                     `yaml:"snapshotThreshold" json:"snapshotThreshold"`
 	ConcurrencyExceptionMaxRetry int                     `yaml:"occMaxRetry" json:"occMaxRetry"`
 	DefaultCommandTimeToLive     time.Duration           `yaml:"defaultCommandTimeToLive" json:"defaultCommandTimeToLive"`
-	HubID                        string                  `yaml:"hubID" json:"hubID"`
 	Connection                   eventstoreConfig.Config `yaml:",inline" json:",inline"`
 }
 
@@ -81,9 +85,6 @@ func (c *EventStoreConfig) Validate() error {
 	}
 	if c.ConcurrencyExceptionMaxRetry <= 0 {
 		return fmt.Errorf("occMaxRetry('%v')", c.ConcurrencyExceptionMaxRetry)
-	}
-	if c.HubID == "" {
-		return fmt.Errorf("hubID('%v')", c.HubID)
 	}
 	return c.Connection.Validate()
 }

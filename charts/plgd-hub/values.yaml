@@ -2,7 +2,7 @@
 global:
   # -- Global domain
   domain:
-  # -- hubId. Used by coap-gateway, resource-aggregate, indentity-store, certificate-authority. It must be unique
+  # -- hubId. Used by coapgateway, resourceaggregate, resourcedirectory, indentitystore, certificateauthority. It must be unique
   hubId:
   # -- OAuth owner Claim
   ownerClaim: "sub"
@@ -432,6 +432,8 @@ resourcedirectory:
     mountPath: /config
   # -- Service and POD port
   port: 9100
+  # -- Hub ID. Can be override via global.hubId
+  hubId:
   # -- Log section
   log:
     # -- Logging enabled from level 
@@ -560,7 +562,6 @@ resourcedirectory:
     authority:
     ownerClaim:
     deviceIdClaim:
-    hubId:
     coapGateway:
     defaultCommandTimeToLive:
     certificateAuthority:
@@ -655,8 +656,9 @@ resourceaggregate:
     mountPath: /config
   # -- Service and POD port
   port: 9100
-  # -- Hub ID. Can be override via global.hubId or coapgateway.hubId
+  # -- Hub ID. Can be override via global.hubId
   hubId:
+  # -- Log section
   log:
     # -- Logging enabled from level 
     level: info
@@ -877,6 +879,9 @@ coapgateway:
     mountPath: /config
   # -- Service and POD port
   port: 5684
+  # -- Hub ID. Can be override via global.hubId
+  hubId:
+  # -- Log section
   log:
     # -- Dump coap messages
     dumpBody: false
@@ -892,8 +897,6 @@ coapgateway:
     encoderConfig:
         # -- Time format for logs. The supported values are: "rfc3339nano", "rfc3339"
         timeEncoder: rfc3339nano
-  # -- Hub ID. Can be override via global.hubId
-  hubId:
   # -- For complete coap-gateway service configuration see [plgd/coap-gateway](https://github.com/plgd-dev/hub/tree/main/coap-gateway)
   apis:
     coap:
@@ -1094,8 +1097,9 @@ identitystore:
     volume: config
     # -- Service configuration mount path
     mountPath: /config
-  # -- Hub ID. Can be override via global.hubId or coapgateway.hubId
+  # -- Hub ID. Can be override via global.hubId
   hubId:
+  # -- Log section
   log:
     # -- Logging enabled from level 
     level: info
@@ -1777,8 +1781,9 @@ certificateauthority:
   # -- Service and POD port
   port: 9100
   httpPort: 9101
-  # -- Hub ID. Can be override via global.hubId or coapgateway.hubId
+  # -- Hub ID. Can be override via global.hubId
   hubId:
+  # -- Log section
   log:
     # -- Logging enabled from level 
     level: info

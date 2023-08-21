@@ -1,3 +1,4 @@
+hubID: ""
 log:
   level: info
   encoding: json
@@ -62,7 +63,6 @@ clients:
     snapshotThreshold: 16
     # limits number of try to store event
     occMaxRetry: 8
-    hubID: ""
     mongoDB:
       uri:
       database: eventStore

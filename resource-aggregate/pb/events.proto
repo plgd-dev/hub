@@ -12,7 +12,7 @@ message EventMetadata {
    int64 timestamp = 2;
    string connection_id = 3;
    uint64 sequence = 4; // sequence number within the same connection_id; the ResourceChanged event uses the value to skip old events, other event types might not fill the value
-   string hub_id = 5;
+   string hub_id = 5; // the hub which sent the event
 }
 
 // https://github.com/openconnectivityfoundation/cloud-services/blob/master/swagger2.0/oic.wk.rd.swagger.json#L173

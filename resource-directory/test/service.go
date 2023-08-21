@@ -28,9 +28,9 @@ func MakeConfig(t require.TestingT) service.Config {
 	cfg.Clients.Eventstore.Connection.MongoDB = config.MakeEventsStoreMongoDBConfig()
 	cfg.Clients.Eventstore.ProjectionCacheExpiration = time.Second * 120
 
+	cfg.HubID = config.HubID()
 	cfg.ExposedHubConfiguration.CAPool = config.CA_POOL
 	cfg.ExposedHubConfiguration.Authority = "https://" + config.OAUTH_SERVER_HOST
-	cfg.ExposedHubConfiguration.HubID = config.HubID()
 	cfg.ExposedHubConfiguration.CoapGateway = config.COAP_GW_HOST
 	cfg.ExposedHubConfiguration.OwnerClaim = config.OWNER_CLAIM
 	cfg.ExposedHubConfiguration.CertificateAuthority = "https://" + config.CERTIFICATE_AUTHORITY_HTTP_HOST
