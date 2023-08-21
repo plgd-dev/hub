@@ -25,6 +25,8 @@ const RemoteClientsPage: FC<Props> = (props) => {
 
     const hubWellKnownConfig = security.getWellKnowConfig()
 
+    console.log(hubWellKnownConfig)
+
     const [clientData, error, errorElement] = useClientAppPage({
         i18n: {
             notFoundRemoteClientMessage: _(t.notFoundRemoteClientMessage),
@@ -33,6 +35,8 @@ const RemoteClientsPage: FC<Props> = (props) => {
     })
     const [httpGatewayAddress] = useState(getClientUrl(clientData?.clientUrl))
     const [wellKnownConfig, setWellKnownConfig, reFetchConfig, wellKnownConfigError] = useWellKnownConfiguration(httpGatewayAddress, hubWellKnownConfig)
+
+    console.log(wellKnownConfig)
 
     const [authError, setAuthError] = useState<string | undefined>(undefined)
     const [initializedByAnother, setInitializedByAnother] = useState(false)
@@ -44,6 +48,7 @@ const RemoteClientsPage: FC<Props> = (props) => {
             ...wellKnownConfig,
             isInitialized: value,
         } as WellKnownConfigType)
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
     clientAppSetings.setGeneralConfig({

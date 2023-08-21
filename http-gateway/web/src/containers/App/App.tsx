@@ -32,7 +32,7 @@ const App = (props: { mockApp: boolean }) => {
             const fetchWellKnownConfig = async () => {
                 try {
                     const { data: wellKnown } = await openTelemetry.withTelemetry(
-                        () => getAppWellKnownConfiguration(process.env.REACT_APP_HTTP_WELL_NOW_CONFIGURATION_ADDRESS || window.location.origin),
+                        () => getAppWellKnownConfiguration(process.env.REACT_APP_HTTP_WELL_KNOW_CONFIGURATION_ADDRESS || window.location.origin),
                         'get-hub-configuration'
                     )
 

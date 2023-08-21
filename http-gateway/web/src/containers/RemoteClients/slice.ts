@@ -14,15 +14,26 @@ const initialState: StoreType = {
     remoteClients: isDev
         ? [
               {
-                  id: 'FAj9X1Gxs9rLm-62r6yGJ',
+                  id: '123',
                   created: '2023-07-22T17:58:11.427Z',
                   version: '0.6.0',
-                  clientName: 'Test',
+                  clientName: 'Test PRE_SHARED_KEY',
                   clientUrl: 'https://212.89.237.161:50080',
                   status: remoteClientStatuses.REACHABLE,
                   authenticationMode: 'PRE_SHARED_KEY',
                   preSharedSubjectId: 'a',
                   preSharedKey: 'a',
+              },
+              {
+                  id: '456',
+                  created: '2023-07-22T17:58:11.427Z',
+                  version: '0.6.0',
+                  clientName: 'Test X509',
+                  clientUrl: 'https://212.89.237.161:50080',
+                  status: remoteClientStatuses.REACHABLE,
+                  authenticationMode: 'X509',
+                  preSharedSubjectId: '',
+                  preSharedKey: '',
               },
           ]
         : [],

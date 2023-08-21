@@ -27,6 +27,7 @@ import { setVersion } from '@/containers/App/slice'
 import { getVersionNumberFromGithub } from '@/containers/App/AppRest'
 import { GITHUB_VERSION_REQUEST_INTERVAL } from '@/constants'
 import { deleteAllRemoteClients } from '@/containers/RemoteClients/slice'
+import testId from '@/testId'
 
 const AppLayout: FC<Props> = (props) => {
     const { buildInformation, collapsed, userData, signOutRedirect, setCollapsed } = props
@@ -115,6 +116,7 @@ const AppLayout: FC<Props> = (props) => {
                     post_logout_redirect_uri: window.location.origin,
                 })
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [signOutRedirect])
 
     return (
@@ -141,8 +143,9 @@ const AppLayout: FC<Props> = (props) => {
                     }
                     userWidget={
                         <UserWidget
+                            dataTestId={testId.app.logout}
                             description={userData?.profile?.family_name}
-                            dropdownItems={[{ title: _(t.logOut), onClick: logout }]}
+                            dropdownItems={[{ title: _(t.logOut), onClick: logout, dataTestId: testId.app.logoutBtn }]}
                             image={userData?.profile?.picture}
                             name={userData?.profile?.name || ''}
                         />

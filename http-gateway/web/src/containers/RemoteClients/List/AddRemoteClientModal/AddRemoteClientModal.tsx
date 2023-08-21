@@ -198,6 +198,7 @@ const AddRemoteClientModal: FC<Props> = (props) => {
 
     useEffect(() => {
         trigger().then()
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [authMode])
 
     const renderBody = () => (
