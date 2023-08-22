@@ -1613,6 +1613,10 @@
           "format": "int64",
           "description": "exposes default command time to live in nanoseconds for CreateResource, RetrieveResource, UpdateResource, DeleteResource, and UpdateDeviceMetadata commands when it is not set in the request. 0 - means forever."
         },
+        "certificateAuthority": {
+          "type": "string",
+          "title": "certificate_authority in format https://host:port"
+        },
         "httpGatewayAddress": {
           "type": "string",
           "title": "cfg for UI http-gateway"
