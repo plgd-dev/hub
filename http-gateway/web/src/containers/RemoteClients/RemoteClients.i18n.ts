@@ -49,6 +49,10 @@ export const messages = defineMessages({
         id: 'remoteClients.addNewClient',
         defaultMessage: 'Add a new client',
     },
+    editClient: {
+        id: 'remoteClients.editClient',
+        defaultMessage: 'Edit client',
+    },
     preSharedSubjectIdError: {
         id: 'remoteClients.preSharedSubjectIdError',
         defaultMessage: 'SharedSubjectIdError error message',
@@ -140,5 +144,13 @@ export const messages = defineMessages({
     authError: {
         id: 'remoteClients.authError',
         defaultMessage: 'Authorization server error',
+    },
+    clientsUpdated: {
+        id: 'remoteClients.clientsDeleted',
+        defaultMessage: 'remote client updated',
+    },
+    clientsUpdatedMessage: {
+        id: 'remoteClients.clientsDeletedMessage',
+        defaultMessage: 'The remote client were successfully updated.',
     },
 })

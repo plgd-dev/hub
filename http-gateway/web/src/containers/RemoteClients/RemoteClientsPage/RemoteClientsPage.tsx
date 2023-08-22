@@ -6,11 +6,11 @@ import get from 'lodash/get'
 
 import { useWellKnownConfiguration, WellKnownConfigType } from '@shared-ui/common/hooks'
 import { clientAppSetings, security } from '@shared-ui/common/services'
-import PageLoader from '@shared-ui/components/Atomic/PageLoader'
 import AppContext from '@shared-ui/app/clientApp/App/AppContext'
 import InitializedByAnother from '@shared-ui/app/clientApp/App/InitializedByAnother'
 import { getClientUrl } from '@shared-ui/app/clientApp/utils'
 import { useClientAppPage } from '@shared-ui/app/clientApp/RemoteClients/use-client-app-page'
+import FullPageLoader from '@shared-ui/components/Atomic/FullPageLoader'
 
 import { Props } from './RemoteClientsPage.types'
 import * as styles from './RemoteClientsPage.styles'
@@ -25,8 +25,6 @@ const RemoteClientsPage: FC<Props> = (props) => {
 
     const hubWellKnownConfig = security.getWellKnowConfig()
 
-    console.log(hubWellKnownConfig)
-
     const [clientData, error, errorElement] = useClientAppPage({
         i18n: {
             notFoundRemoteClientMessage: _(t.notFoundRemoteClientMessage),
@@ -36,20 +34,21 @@ const RemoteClientsPage: FC<Props> = (props) => {
     const [httpGatewayAddress] = useState(getClientUrl(clientData?.clientUrl))
     const [wellKnownConfig, setWellKnownConfig, reFetchConfig, wellKnownConfigError] = useWellKnownConfiguration(httpGatewayAddress, hubWellKnownConfig)
 
-    console.log(wellKnownConfig)
-
     const [authError, setAuthError] = useState<string | undefined>(undefined)
     const [initializedByAnother, setInitializedByAnother] = useState(false)
     const [suspectedUnauthorized, setSuspectedUnauthorized] = useState(false)
     const authProviderRef = useRef<AppAuthProviderRefType | null>(null)
 
-    const setInitialize = useCallback((value = true) => {
-        setWellKnownConfig({
-            ...wellKnownConfig,
-            isInitialized: value,
-        } as WellKnownConfigType)
+    const setInitialize = useCallback(
+        (value = true) => {
+            setWellKnownConfig({
+                ...wellKnownConfig,
+                isInitialized: value,
+            } as WellKnownConfigType)
+        },
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [])
+        [wellKnownConfig]
+    )
 
     clientAppSetings.setGeneralConfig({
         httpGatewayAddress,
@@ -89,12 +88,7 @@ const RemoteClientsPage: FC<Props> = (props) => {
     }
 
     if (!wellKnownConfig) {
-        return (
-            <>
-                <PageLoader loading className='auth-loader' />
-                <div className='page-loading-text'>{`${_(g.loading)}...`}</div>
-            </>
-        )
+        return <FullPageLoader i18n={{ loading: _(g.loading) }} />
     } else {
         clientAppSetings.setWellKnowConfig(wellKnownConfig)
 
@@ -112,6 +106,18 @@ const RemoteClientsPage: FC<Props> = (props) => {
         return <div className='client-error-message'>{`${_(t.authError)}: ${authError}`}</div>
     }
 
+    const getContent = () => {
+        if (clientData.reInitialization) {
+            return <FullPageLoader i18n={{ loading: _(g.loading) }} />
+        } else if (initializedByAnother) {
+            return <InitializedByAnother show={initializedByAnother} />
+        } else if (!suspectedUnauthorized) {
+            return children(clientData)
+        }
+
+        return <div />
+    }
+
     return (
         <AppContext.Provider value={contextValue}>
             <div css={styles.detailPage}>
@@ -123,10 +129,7 @@ const RemoteClientsPage: FC<Props> = (props) => {
                     setInitialize={setInitialize}
                     wellKnownConfig={wellKnownConfig}
                 >
-                    <>
-                        <InitializedByAnother show={initializedByAnother} />
-                        {!initializedByAnother && !suspectedUnauthorized ? children(clientData) : <div />}
-                    </>
+                    {getContent()}
                 </RemoteClientsAuthProvider>
             </div>
         </AppContext.Provider>

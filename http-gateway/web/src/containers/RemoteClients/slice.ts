@@ -35,6 +35,18 @@ const initialState: StoreType = {
                   preSharedSubjectId: '',
                   preSharedKey: '',
               },
+              {
+                  id: '789',
+                  created: '2023-07-22T17:58:11.427Z',
+                  version: '0.6.0',
+                  clientName: 'Test X509 RE',
+                  clientUrl: 'https://212.89.237.161:50080',
+                  status: remoteClientStatuses.REACHABLE,
+                  authenticationMode: 'X509',
+                  preSharedSubjectId: '',
+                  preSharedKey: '',
+                  reInitialization: true,
+              },
           ]
         : [],
 }
@@ -57,6 +69,31 @@ const { reducer, actions } = createSlice({
         deleteAllRemoteClients(state) {
             state.remoteClients = []
         },
+        updateRemoteClient(state, { payload }) {
+            const index = state.remoteClients.findIndex((originRemoteClient) => originRemoteClient.id === payload.id)
+
+            if (index) {
+                const remoteClient = state.remoteClients[index]
+                state.remoteClients[index] = {
+                    ...state.remoteClients[index],
+                    ...payload,
+                    reInitialization:
+                        remoteClient.authenticationMode !== payload.authenticationMode ||
+                        remoteClient.preSharedSubjectId !== payload.preSharedSubjectId ||
+                        remoteClient.preSharedKey !== payload.preSharedKey,
+                }
+            }
+        },
+        unInitializeRemoteClient(state, { payload }) {
+            const index = state.remoteClients.findIndex((originRemoteClient) => originRemoteClient.id === payload)
+
+            if (index) {
+                state.remoteClients[index] = {
+                    ...state.remoteClients[index],
+                    reInitialization: false,
+                }
+            }
+        },
         updateRemoteClients(state, { payload }) {
             payload.forEach((remoteClient: RemoteClientType) => {
                 const index = state.remoteClients.findIndex((originRemoteClient) => originRemoteClient.id === remoteClient.id)
@@ -70,7 +107,7 @@ const { reducer, actions } = createSlice({
 })
 
 // Actions
-export const { addRemoteClient, deleteRemoteClients, deleteAllRemoteClients, updateRemoteClients } = actions
+export const { addRemoteClient, deleteRemoteClients, deleteAllRemoteClients, updateRemoteClients, updateRemoteClient, unInitializeRemoteClient } = actions
 
 // Reducer
 export default reducer

@@ -37,4 +37,8 @@ export const messages = defineMessages({
         id: 'app.loading',
         defaultMessage: 'Loading',
     },
+    edit: {
+        id: 'app.edit',
+        defaultMessage: 'Edit',
+    },
 })

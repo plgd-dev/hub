@@ -1,5 +1,6 @@
 import { forwardRef, useEffect, useImperativeHandle, useState } from 'react'
 import { useIntl } from 'react-intl'
+import { useDispatch } from 'react-redux'
 
 import { clientAppSetings } from '@shared-ui/common/services'
 import {
@@ -8,6 +9,7 @@ import {
     initializedByPreShared,
     initializeFinal,
     initializeJwksData,
+    reset,
     signIdentityCsr,
 } from '@shared-ui/app/clientApp/App/AppRest'
 import { DEVICE_AUTH_MODE } from '@shared-ui/app/clientApp/constants'
@@ -17,13 +19,15 @@ import Notification from '@shared-ui/components/Atomic/Notification/Toast'
 import { messages as t } from '../RemoteClients.i18n'
 import { AppAuthProviderRefType, Props } from './RemoteClientsAuthProvider.types'
 import notificationId from '@/notificationId'
+import { unInitializeRemoteClient } from '@/containers/RemoteClients/slice'
 
 const RemoteClientsAuthProvider = forwardRef<AppAuthProviderRefType, Props>((props, ref) => {
     const { wellKnownConfig, clientData, children, setAuthError, setInitialize } = props
-    const { authenticationMode, preSharedSubjectId, preSharedKey } = clientData
+    const { id, clientUrl, authenticationMode, preSharedSubjectId, preSharedKey, reInitialization } = clientData
     const { formatMessage: _ } = useIntl()
     const [userData] = useState(clientAppSetings.getUserData())
     const [signOutRedirect] = useState(clientAppSetings.getSignOutRedirect())
+    const dispatch = useDispatch()
 
     useImperativeHandle(ref, () => ({
         getSignOutMethod: () =>
@@ -32,6 +36,15 @@ const RemoteClientsAuthProvider = forwardRef<AppAuthProviderRefType, Props>((pro
             }),
         getUserData: () => userData,
     }))
+
+    useEffect(() => {
+        if (reInitialization) {
+            reset(clientUrl).then(() => {
+                dispatch(unInitializeRemoteClient(id))
+                setInitialize(false)
+            })
+        }
+    }, [reInitialization, clientUrl, id, setInitialize])
 
     useEffect(() => {
         if (wellKnownConfig && !wellKnownConfig.isInitialized) {

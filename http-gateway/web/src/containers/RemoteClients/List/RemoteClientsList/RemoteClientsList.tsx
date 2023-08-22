@@ -18,9 +18,10 @@ import { messages as t } from '../../RemoteClients.i18n'
 import { messages as g } from '../../../Global.i18n'
 import { NO_DEVICE_NAME } from '@/containers/Devices/constants'
 import { AppContext } from '@/containers/App/AppContext'
+import IconEdit from '@shared-ui/components/Atomic/Icon/components/IconEdit'
 
 const RemoteClientsList: FC<Props> = (props) => {
-    const { data, isAllSelected, selectedClients, setIsAllSelected, setSelectedClients, handleOpenDeleteModal } = props
+    const { data, isAllSelected, selectedClients, setIsAllSelected, setSelectedClients, handleOpenDeleteModal, handleOpenEditModal } = props
     const { formatMessage: _ } = useIntl()
     const [isDomReady, setIsDomReady] = useState(false)
     const selectedCount = useMemo(() => Object.keys(selectedClients).length, [selectedClients])
@@ -83,6 +84,11 @@ const RemoteClientsList: FC<Props> = (props) => {
                     return (
                         <TableActionButton
                             items={[
+                                {
+                                    onClick: () => handleOpenEditModal(row.original.id),
+                                    label: _(g.edit),
+                                    icon: <IconEdit />,
+                                },
                                 {
                                     onClick: () => handleOpenDeleteModal(row.original.id),
                                     label: _(g.delete),

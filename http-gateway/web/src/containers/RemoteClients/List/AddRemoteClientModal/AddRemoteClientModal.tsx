@@ -24,10 +24,24 @@ import { messages as t } from '../../RemoteClients.i18n'
 import notificationId from '@/notificationId'
 
 const AddRemoteClientModal: FC<Props> = (props) => {
-    const { footerActions, defaultClientUrl, defaultClientName, onClose, onFormSubmit, ...rest } = { ...defaultProps, ...props }
+    const {
+        defaultAuthMode,
+        defaultClientInformation,
+        defaultClientName,
+        defaultClientUrl,
+        defaultPreSharedKey,
+        defaultPreSharedSubjectId,
+        footerActions,
+        onClose,
+        onFormSubmit,
+        ...rest
+    } = {
+        ...defaultProps,
+        ...props,
+    }
     const { formatMessage: _ } = useIntl()
     const [versionLoading, setVersionLoading] = useState(false)
-    const [clientInformation, setClientInformation] = useState<ClientInformationLineType[] | undefined>(undefined)
+    const [clientInformation, setClientInformation] = useState<ClientInformationLineType[] | undefined>(defaultClientInformation)
 
     const options = useMemo(
         () => [
@@ -36,6 +50,12 @@ const AddRemoteClientModal: FC<Props> = (props) => {
         ],
         []
     )
+
+    useEffect(() => {
+        setClientInformation(defaultClientInformation)
+    }, [defaultClientInformation])
+
+    const defAuthMode = useMemo(() => options.find((o) => o.value === defaultAuthMode) || options[0], [defaultAuthMode, options])
 
     const {
         register,
@@ -46,17 +66,20 @@ const AddRemoteClientModal: FC<Props> = (props) => {
         watch,
         control,
         trigger,
+        setValue,
     } = useForm<Inputs>({
         mode: 'all',
         reValidateMode: 'onSubmit',
         values: {
             clientName: defaultClientName || '',
             clientUrl: defaultClientUrl || '',
-            authMode: options[0],
-            preSharedSubjectId: '',
-            preSharedKey: '',
+            authMode: defaultAuthMode ? defAuthMode : options[0],
+            preSharedSubjectId: defaultPreSharedSubjectId || '',
+            preSharedKey: defaultPreSharedKey || '',
         },
     })
+
+    const isEditMode = useMemo(() => !!defaultClientInformation, [defaultClientInformation])
 
     const handleDone = useCallback(() => {
         const formValues = getValues()
@@ -110,8 +133,6 @@ const AddRemoteClientModal: FC<Props> = (props) => {
         })
             .then((result) => {
                 const version = result.data?.version
-
-                console.log(result.data)
 
                 if (version) {
                     setClientInformation([
@@ -190,14 +211,22 @@ const AddRemoteClientModal: FC<Props> = (props) => {
     }
 
     const isUninitialized = useMemo(
-        () => clientInformation && clientInformation.find((item) => item.attributeKey === 'authenticationMode')?.value === DEVICE_AUTH_MODE.UNINITIALIZED,
-        [clientInformation]
+        () =>
+            (clientInformation && clientInformation.find((item) => item.attributeKey === 'authenticationMode')?.value === DEVICE_AUTH_MODE.UNINITIALIZED) ||
+            isEditMode,
+        [clientInformation, isEditMode]
     )
 
     const authMode = watch('authMode')
 
     useEffect(() => {
         trigger().then()
+
+        if (authMode?.value === DEVICE_AUTH_MODE.X509) {
+            setValue('preSharedSubjectId', '')
+            setValue('preSharedKey', '')
+        }
+
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [authMode])
 
@@ -210,7 +239,7 @@ const AddRemoteClientModal: FC<Props> = (props) => {
                         <FormInput
                             placeholder={_(t.clientName)}
                             {...register('clientName', { validate: (val) => val !== '' })}
-                            disabled={!!versionLoading || !!clientInformation}
+                            disabled={versionLoading || (!!clientInformation && !isEditMode)}
                         />
                     </FormGroup>
                 </Column>
@@ -220,7 +249,7 @@ const AddRemoteClientModal: FC<Props> = (props) => {
                         <FormInput
                             placeholder={_(t.clientUrl)}
                             {...register('clientUrl', { validate: (val) => val !== '' })}
-                            disabled={!!versionLoading || !!clientInformation}
+                            disabled={versionLoading || (!!clientInformation && !isEditMode)}
                         />
                     </FormGroup>
                 </Column>
@@ -237,8 +266,14 @@ const AddRemoteClientModal: FC<Props> = (props) => {
                                 <Controller
                                     control={control}
                                     name='authMode'
-                                    render={({ field: { onChange, onBlur, name, ref }, fieldState: { invalid, isTouched, isDirty, error } }) => (
-                                        <FormSelect defaultValue={options[0]} name={name} onChange={onChange} options={options} ref={ref} />
+                                    render={({ field: { onChange, name, ref } }) => (
+                                        <FormSelect
+                                            defaultValue={defaultAuthMode ? defAuthMode : options[0]}
+                                            name={name}
+                                            onChange={onChange}
+                                            options={options}
+                                            ref={ref}
+                                        />
                                     )}
                                 />
                             </FormGroup>
@@ -285,7 +320,7 @@ const AddRemoteClientModal: FC<Props> = (props) => {
             onClose={handleClose}
             portalTarget={document.getElementById('modal-root')}
             renderBody={renderBody}
-            title={_(t.addNewClient)}
+            title={isEditMode ? _(t.editClient) : _(t.addNewClient)}
         />
     )
 }

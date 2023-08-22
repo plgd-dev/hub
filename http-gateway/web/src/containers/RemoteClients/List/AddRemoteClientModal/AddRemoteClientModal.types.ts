@@ -9,8 +9,12 @@ export type ClientInformationLineType = {
 }
 
 export type Props = ModalProps & {
+    defaultAuthMode?: string
+    defaultClientInformation?: ClientInformationLineType[]
     defaultClientName?: string
     defaultClientUrl?: string
+    defaultPreSharedKey?: string
+    defaultPreSharedSubjectId?: string
     onFormSubmit: (clientInformation: ClientInformationLineType[]) => void
 }
 
