@@ -14,6 +14,7 @@ import (
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	httpgwTest "github.com/plgd-dev/hub/v2/http-gateway/test"
 	"github.com/plgd-dev/hub/v2/http-gateway/uri"
+	isEvents "github.com/plgd-dev/hub/v2/identity-store/events"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
@@ -209,6 +210,9 @@ func TestRequestHandlerSubscribeToEvents(t *testing.T) {
 		Type: &pb.Event_DeviceRegistered_{
 			DeviceRegistered: &pb.Event_DeviceRegistered{
 				DeviceIds: []string{deviceID},
+				EventMetadata: &isEvents.EventMetadata{
+					HubId: config.HubID(),
+				},
 			},
 		},
 		CorrelationId: "testToken",
@@ -343,6 +347,9 @@ func TestRequestHandlerSubscribeToEvents(t *testing.T) {
 				Type: &pb.Event_DeviceUnregistered_{
 					DeviceUnregistered: &pb.Event_DeviceUnregistered{
 						DeviceIds: []string{deviceID},
+						EventMetadata: &isEvents.EventMetadata{
+							HubId: config.HubID(),
+						},
 					},
 				},
 				CorrelationId: "testToken",

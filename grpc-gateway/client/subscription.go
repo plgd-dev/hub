@@ -5,13 +5,17 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"sort"
+	"strings"
 	"time"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	grpcSubscription "github.com/plgd-dev/hub/v2/grpc-gateway/subscription"
+	isEvents "github.com/plgd-dev/hub/v2/identity-store/events"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
-	"github.com/plgd-dev/kit/v2/strings"
+	"github.com/plgd-dev/hub/v2/test/config"
+	kitStrings "github.com/plgd-dev/kit/v2/strings"
 	"go.uber.org/atomic"
 )
 
@@ -31,13 +35,13 @@ type Sub struct {
 	id                  string
 	expiration          time.Duration
 	devicesInitialized  map[string]bool
-	filteredDeviceIDs   strings.Set
-	filteredResourceIDs strings.Set
+	filteredDeviceIDs   kitStrings.Set
+	filteredResourceIDs kitStrings.Set
 	grpcClient          pb.GrpcGatewayClient
 	deduplicateEvents   map[string]deduplicateEvent
 }
 
-func isFilteredDevice(filteredDeviceIDs strings.Set, deviceID string) bool {
+func isFilteredDevice(filteredDeviceIDs kitStrings.Set, deviceID string) bool {
 	if len(filteredDeviceIDs) == 0 {
 		return true
 	}
@@ -56,7 +60,7 @@ func (s *Sub) Context() context.Context {
 	return s.ctx.Load().(context.Context)
 }
 
-func (s *Sub) initDevices() ([]string, error) {
+func (s *Sub) initDevices() ([]*pb.Device, error) {
 	devicesClient, err := s.grpcClient.GetDevices(s.Context(), &pb.GetDevicesRequest{
 		DeviceIdFilter: s.req.GetDeviceIdFilter(),
 	})
@@ -66,7 +70,7 @@ func (s *Sub) initDevices() ([]string, error) {
 	if err != nil {
 		return nil, errFunc(fmt.Errorf("cannot get devices: %w", err))
 	}
-	devices := make([]string, 0, 32)
+	devices := make([]*pb.Device, 0, 32)
 	for {
 		recv, err := devicesClient.Recv()
 		if errors.Is(err, io.EOF) {
@@ -75,22 +79,74 @@ func (s *Sub) initDevices() ([]string, error) {
 		if err != nil {
 			return nil, errFunc(fmt.Errorf("cannot receive resource: %w", err))
 		}
-		devices = append(devices, recv.GetId())
+		devices = append(devices, recv)
 	}
 }
 
-func (s *Sub) initSubscription() ([]string, error) {
+type devicesByHub struct {
+	deviceIDs []string
+	hubID     string
+}
+
+// Find returns the smallest index i in [0, n) at which f(i) is true, assuming that on the range [0, n),
+// for go1.18 - it is not implemented there
+func find(n int, cmp func(int) int) (i int, found bool) {
+	// The invariants here are similar to the ones in Search.
+	// Define cmp(-1) > 0 and cmp(n) <= 0
+	// Invariant: cmp(i-1) > 0, cmp(j) <= 0
+	i, j := 0, n
+	for i < j {
+		h := int(uint(i+j) >> 1) // avoid overflow when computing h
+		// i ≤ h < j
+		if cmp(h) > 0 {
+			i = h + 1 // preserves cmp(i-1) > 0
+		} else {
+			j = h // preserves cmp(j) <= 0
+		}
+	}
+	// i == j, cmp(i-1) > 0 and cmp(j) <= 0
+	return i, i < n && cmp(i) == 0
+}
+
+func convDevicesToDevicesByHub(devices []*pb.Device) []devicesByHub {
+	list := make([]devicesByHub, 0, 32)
+	for _, d := range devices {
+		sort.Slice(list, func(i, j int) bool {
+			return list[i].hubID < list[j].hubID
+		})
+		i, ok := find(len(list), func(i int) int {
+			return strings.Compare(d.GetData().GetEventMetadata().GetHubId(), list[i].hubID)
+		})
+		if ok {
+			list[i].deviceIDs = append(list[i].deviceIDs, d.GetId())
+			continue
+		}
+		list = append(list, devicesByHub{
+			deviceIDs: []string{d.GetId()},
+			hubID:     d.GetData().GetEventMetadata().GetHubId(),
+		})
+	}
+	return list
+}
+
+func (s *Sub) initSubscription() ([]devicesByHub, error) {
 	devices, err := s.initDevices()
 	if err != nil {
 		return nil, err
 	}
-
-	devices = s.initEventSubscriptions(devices)
-	return devices, nil
+	hubs := convDevicesToDevicesByHub(devices)
+	filteredDevicesByHUb := make([]devicesByHub, 0, len(hubs))
+	for idx := range hubs {
+		hubs[idx].deviceIDs = s.initEventSubscriptions(hubs[idx].deviceIDs)
+		if len(hubs[idx].deviceIDs) > 0 {
+			filteredDevicesByHUb = append(filteredDevicesByHUb, hubs[idx])
+		}
+	}
+	return filteredDevicesByHUb, nil
 }
 
-func (s *Sub) initEvents(devices []string) error {
-	initEventFuncs := []func(devices []string, validUntil *time.Time) error{
+func (s *Sub) initEvents(devices []string, hubID string) error {
+	initEventFuncs := []func(devices []string, hubID string, validUntil *time.Time) error{
 		s.sendDevicesRegistered,
 		s.initDeviceMetadataUpdated,
 		s.initResourcesPublished,
@@ -101,7 +157,7 @@ func (s *Sub) initEvents(devices []string) error {
 	var validUntil time.Time
 	start := time.Now()
 	for _, f := range initEventFuncs {
-		err := f(devices, &validUntil)
+		err := f(devices, hubID, &validUntil)
 		if err != nil {
 			errors = multierror.Append(errors, err)
 		}
@@ -113,13 +169,18 @@ func (s *Sub) initEvents(devices []string) error {
 
 func (s *Sub) Init(id string) error {
 	s.id = id
-	devices, err := s.initSubscription()
+	hubs, err := s.initSubscription()
 	if err != nil {
 		return err
 	}
-	err = s.initEvents(devices)
-	if err != nil {
-		return err
+	if len(hubs) == 0 {
+		return s.initEvents([]string{}, "")
+	}
+	for _, h := range hubs {
+		err = s.initEvents(h.deviceIDs, h.hubID)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -134,9 +195,9 @@ func (s *Sub) filterDevices(devices []string) []string {
 	return filteredDevices
 }
 
-func (s *Sub) initEventSubscriptions(deviceIDs []string) []string {
-	filteredDevices := make([]string, 0, len(deviceIDs))
-	for _, deviceID := range deviceIDs {
+func (s *Sub) initEventSubscriptions(devices []string) []string {
+	filteredDevices := make([]string, 0, len(devices))
+	for _, deviceID := range devices {
 		if _, ok := s.devicesInitialized[deviceID]; ok {
 			continue
 		}
@@ -146,9 +207,15 @@ func (s *Sub) initEventSubscriptions(deviceIDs []string) []string {
 	return filteredDevices
 }
 
-func (s *Sub) sendDevicesRegistered(deviceIDs []string, _ *time.Time) error {
+func (s *Sub) sendDevicesRegistered(deviceIDs []string, hubID string, _ *time.Time) error {
 	if !grpcSubscription.IsFilteredBit(s.filter, grpcSubscription.FilterBitmaskDeviceRegistered) {
 		return nil
+	}
+	var em *isEvents.EventMetadata
+	if hubID != "" {
+		em = &isEvents.EventMetadata{
+			HubId: hubID,
+		}
 	}
 
 	err := s.send(&pb.Event{
@@ -156,7 +223,8 @@ func (s *Sub) sendDevicesRegistered(deviceIDs []string, _ *time.Time) error {
 		CorrelationId:  s.correlationID,
 		Type: &pb.Event_DeviceRegistered_{
 			DeviceRegistered: &pb.Event_DeviceRegistered{
-				DeviceIds: deviceIDs,
+				DeviceIds:     deviceIDs,
+				EventMetadata: em,
 			},
 		},
 	})
@@ -166,7 +234,7 @@ func (s *Sub) sendDevicesRegistered(deviceIDs []string, _ *time.Time) error {
 	return nil
 }
 
-func (s *Sub) initResourceChanged(deviceIDs []string, validUntil *time.Time) error {
+func (s *Sub) initResourceChanged(deviceIDs []string, _ string, validUntil *time.Time) error {
 	if !grpcSubscription.IsFilteredBit(s.filter, grpcSubscription.FilterBitmaskResourceChanged) {
 		return nil
 	}
@@ -211,7 +279,7 @@ func (s *Sub) initResourceChanged(deviceIDs []string, validUntil *time.Time) err
 	}
 }
 
-func (s *Sub) initDeviceMetadataUpdated(deviceIDs []string, validUntil *time.Time) error {
+func (s *Sub) initDeviceMetadataUpdated(deviceIDs []string, _ string, validUntil *time.Time) error {
 	if !grpcSubscription.IsFilteredBit(s.filter, grpcSubscription.FilterBitmaskDeviceMetadataUpdated) {
 		return nil
 	}
@@ -247,7 +315,7 @@ func (s *Sub) initDeviceMetadataUpdated(deviceIDs []string, validUntil *time.Tim
 	}
 }
 
-func (s *Sub) initResourcesPublished(deviceIDs []string, validUntil *time.Time) error {
+func (s *Sub) initResourcesPublished(deviceIDs []string, _ string, validUntil *time.Time) error {
 	if !grpcSubscription.IsFilteredBit(s.filter, grpcSubscription.FilterBitmaskResourcesPublished) {
 		return nil
 	}
@@ -352,7 +420,7 @@ func (s *Sub) fillDeduplicateEvent(v event, validUntil *time.Time) {
 	}
 }
 
-func (s *Sub) initPendingCommands(deviceIDs []string, validUntil *time.Time) error {
+func (s *Sub) initPendingCommands(deviceIDs []string, _ string, validUntil *time.Time) error {
 	if !grpcSubscription.IsFilteredBit(s.filter,
 		grpcSubscription.FilterBitmaskDeviceMetadataUpdatePending|
 			grpcSubscription.FilterBitmaskResourceCreatePending|
@@ -408,7 +476,7 @@ func (s *Sub) onRegisteredEvent(e *pb.Event_DeviceRegistered) error {
 	if len(devices) == 0 {
 		return nil
 	}
-	return s.initEvents(devices)
+	return s.initEvents(devices, e.GetEventMetadata().GetHubId())
 }
 
 func (s *Sub) onUnregisteredEvent(e *pb.Event_DeviceUnregistered) error {
@@ -428,6 +496,9 @@ func (s *Sub) onUnregisteredEvent(e *pb.Event_DeviceUnregistered) error {
 		Type: &pb.Event_DeviceUnregistered_{
 			DeviceUnregistered: &pb.Event_DeviceUnregistered{
 				DeviceIds: devices,
+				EventMetadata: &isEvents.EventMetadata{
+					HubId: config.HubID(),
+				},
 			},
 		},
 	})
@@ -483,8 +554,8 @@ func (s *Sub) ProcessEvent(e *pb.Event) error {
 
 func NewSub(ctx context.Context, grpcClient pb.GrpcGatewayClient, send SendEventFunc, correlationID string, expiration time.Duration, req *pb.SubscribeToEvents_CreateSubscription) *Sub {
 	bitmask := grpcSubscription.EventsFilterToBitmask(req.GetEventFilter())
-	filteredResourceIDs := strings.MakeSet()
-	filteredDeviceIDs := strings.MakeSet(req.GetDeviceIdFilter()...)
+	filteredResourceIDs := kitStrings.MakeSet()
+	filteredDeviceIDs := kitStrings.MakeSet(req.GetDeviceIdFilter()...)
 	for _, r := range req.GetResourceIdFilter() {
 		v := commands.ResourceIdFromString(r)
 		if v == nil {
@@ -512,7 +583,7 @@ func NewSub(ctx context.Context, grpcClient pb.GrpcGatewayClient, send SendEvent
 		filter:              grpcSubscription.EventsFilterToBitmask(req.GetEventFilter()),
 		send:                send,
 		req:                 req,
-		filteredDeviceIDs:   strings.MakeSet(req.GetDeviceIdFilter()...),
+		filteredDeviceIDs:   kitStrings.MakeSet(req.GetDeviceIdFilter()...),
 		filteredResourceIDs: filteredResourceIDs,
 		grpcClient:          grpcClient,
 		correlationID:       correlationID,

@@ -8,6 +8,7 @@ import (
 	"github.com/plgd-dev/go-coap/v3/message"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	subscription "github.com/plgd-dev/hub/v2/grpc-gateway/subscription"
+	isEvents "github.com/plgd-dev/hub/v2/identity-store/events"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
@@ -227,6 +228,9 @@ func TestRequestHandlerSubscribeToEvents(t *testing.T) {
 		Type: &pb.Event_DeviceRegistered_{
 			DeviceRegistered: &pb.Event_DeviceRegistered{
 				DeviceIds: []string{deviceID},
+				EventMetadata: &isEvents.EventMetadata{
+					HubId: config.HubID(),
+				},
 			},
 		},
 		CorrelationId: correlationID,
@@ -314,6 +318,9 @@ LOOP:
 				Type: &pb.Event_DeviceUnregistered_{
 					DeviceUnregistered: &pb.Event_DeviceUnregistered{
 						DeviceIds: []string{deviceID},
+						EventMetadata: &isEvents.EventMetadata{
+							HubId: config.HubID(),
+						},
 					},
 				},
 				CorrelationId: correlationID,
