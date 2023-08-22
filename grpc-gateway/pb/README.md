@@ -992,6 +992,7 @@ Certain filters perform a logical &#34;or&#34; operation among the elements of t
 | certificate_authorities | [string](#string) |  |  |
 | authority | [string](#string) |  |  |
 | default_command_time_to_live | [int64](#int64) |  | exposes default command time to live in nanoseconds for CreateResource, RetrieveResource, UpdateResource, DeleteResource, and UpdateDeviceMetadata commands when it is not set in the request. 0 - means forever. |
+| certificate_authority | [string](#string) |  | certificate_authority in format https://host:port |
 | http_gateway_address | [string](#string) |  | cfg for UI http-gateway |
 | web_oauth_client | [WebOAuthClient](#grpcgateway-pb-WebOAuthClient) |  |  |
 | device_oauth_client | [DeviceOAuthClient](#grpcgateway-pb-DeviceOAuthClient) |  |  |

@@ -33,6 +33,7 @@ func MakeConfig(t require.TestingT) service.Config {
 	cfg.ExposedHubConfiguration.HubID = config.HubID()
 	cfg.ExposedHubConfiguration.CoapGateway = config.COAP_GW_HOST
 	cfg.ExposedHubConfiguration.OwnerClaim = config.OWNER_CLAIM
+	cfg.ExposedHubConfiguration.CertificateAuthority = "https://" + config.CERTIFICATE_AUTHORITY_HTTP_HOST
 
 	cfg.Clients.OpenTelemetryCollector = config.MakeOpenTelemetryCollectorClient()
 

@@ -45,6 +45,8 @@ message HubConfigurationResponse {
     string authority = 7;
     // exposes default command time to live in nanoseconds for CreateResource, RetrieveResource, UpdateResource, DeleteResource, and UpdateDeviceMetadata commands when it is not set in the request. 0 - means forever.
     int64 default_command_time_to_live = 8;
+    // certificate_authority in format https://host:port
+    string certificate_authority = 9;
 
     // cfg for UI http-gateway
     string http_gateway_address = 10;

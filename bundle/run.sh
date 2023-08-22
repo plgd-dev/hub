@@ -705,6 +705,7 @@ cat /configs/resource-directory.yaml | yq e "\
   .publicConfiguration.authority = \"https://${OAUTH_ENDPOINT}\" |
   .publicConfiguration.hubID = \"${COAP_GATEWAY_HUB_ID}\" |
   .publicConfiguration.coapGateway = \"${COAP_GATEWAY_SCHEME}://${COAP_GATEWAY_EXTERNAL_ADDRESS}\" |
+  .publicConfiguration.certificateAuthority = \"https://${DOMAIN}\" |
   .publicConfiguration.ownerClaim = \"${OWNER_CLAIM}\"
 " - > /data/resource-directory.yaml
 fi
