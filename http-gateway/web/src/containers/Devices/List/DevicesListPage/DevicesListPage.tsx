@@ -14,10 +14,9 @@ import Footer from '@shared-ui/components/Layout/Footer'
 import DevicesList from '@shared-ui/components/Organisms/DevicesList/DevicesList'
 import StatusPill from '@shared-ui/components/Atomic/StatusPill'
 import { states } from '@shared-ui/components/Atomic/StatusPill/constants'
-import Badge from '@shared-ui/components/Atomic/Badge'
 import TableActionButton from '@shared-ui/components/Organisms/TableActionButton'
 import Notification from '@shared-ui/components/Atomic/Notification/Toast'
-import { IconShowPassword, IconTrash } from '@shared-ui/components/Atomic'
+import { IconShowPassword, IconTrash, StatusTag } from '@shared-ui/components/Atomic'
 import Breadcrumbs from '@shared-ui/components/Layout/Header/Breadcrumbs'
 
 import { PendingCommandsExpandableList } from '@/containers/PendingCommands'
@@ -195,7 +194,7 @@ const DevicesListPage: FC<any> = () => {
                 accessor: 'metadata.twinEnabled',
                 Cell: ({ value }: { value: string | number }) => {
                     const isTwinEnabled = value
-                    return <Badge className={isTwinEnabled ? 'green' : 'red'}>{isTwinEnabled ? _(t.enabled) : _(t.disabled)}</Badge>
+                    return <StatusTag variant={isTwinEnabled ? 'success' : 'error'}>{isTwinEnabled ? _(t.enabled) : _(t.disabled)}</StatusTag>
                 },
             },
             {
