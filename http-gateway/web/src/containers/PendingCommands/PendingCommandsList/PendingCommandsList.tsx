@@ -2,13 +2,15 @@ import { FC, useEffect, useMemo, useState } from 'react'
 import { useIntl } from 'react-intl'
 
 import ConfirmModal from '@shared-ui/components/Atomic/ConfirmModal'
-import Badge from '@shared-ui/components/Atomic/Badge'
 import Table from '@shared-ui/components/Atomic/TableNew'
 import { useIsMounted } from '@shared-ui/common/hooks'
 import { getApiErrorMessage } from '@shared-ui/common/utils'
 import { WebSocketEventClient, eventFilters } from '@shared-ui/common/services'
 import TableActions from '@shared-ui/components/Atomic/TableNew/TableActions'
 import Notification from '@shared-ui/components/Atomic/Notification/Toast'
+import { IconTrash } from '@shared-ui/components/Atomic'
+import StatusTag from '@shared-ui/components/Atomic/StatusTag'
+import { TagTypeType } from '@shared-ui/components/Atomic/StatusTag/StatusTag.types'
 
 import PendingCommandDetailsModal from '../PendingCommandDetailsModal'
 import {
@@ -24,7 +26,6 @@ import { cancelPendingCommandApi } from '../rest'
 import { messages as t } from '../PendingCommands.i18n'
 import { Props } from './PendingCommandsList.types'
 import DateFormat from '@/containers/PendingCommands/DateFormat'
-import { IconTrash } from '@shared-ui/components/Atomic'
 import notificationId from '@/notificationId'
 
 type ModalData = {
@@ -216,10 +217,10 @@ const PendingCommandsList: FC<Props> = ({ onLoading, embedded, deviceId }) => {
                         const { color, label } = getPendingCommandStatusColorAndLabel(value, validUntil, currentTime)
 
                         if (!value) {
-                            return <Badge className={color}>{_(label)}</Badge>
+                            return <StatusTag variant={color as TagTypeType}>{_(label)}</StatusTag>
                         }
 
-                        return <Badge className={color}>{_(label)}</Badge>
+                        return <StatusTag variant={color as TagTypeType}>{_(label)}</StatusTag>
                     },
                 },
                 {
