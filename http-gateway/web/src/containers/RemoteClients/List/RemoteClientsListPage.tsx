@@ -34,7 +34,8 @@ const RemoteClientsListPage: FC<any> = () => {
     const [singleDelete, setSingleDelete] = useState<null | string>(null)
     const [selectedClients, setSelectedClients] = useState([])
     const [unselectRowsToken, setUnselectRowsToken] = useState(1)
-    const [editRemoteClientData, setEditRemoteClientData] = useState<undefined | RemoteClientType>(undefined)
+
+    const [editRemoteClientId, setEditRemoteClientId] = useState<undefined | string>(undefined)
 
     const dispatch = useDispatch()
     const storedRemoteStore = useSelector((state: CombinedStoreType) => state.remoteClients)
@@ -45,6 +46,17 @@ const RemoteClientsListPage: FC<any> = () => {
     const selectedRemoteClient =
         selectedClientsCount === 1 && remoteClients ? remoteClients.find?.((remoteClient) => remoteClient.id === combinedSelectedClients[0]) : null
 
+    const editRemoteClientData = useMemo(() => {
+        const remoteClientData = remoteClients?.find((remoteClient) => remoteClient.id === editRemoteClientId)
+        if (remoteClientData) {
+            setAddClientModal(true)
+
+            return remoteClientData
+        }
+
+        return undefined
+    }, [editRemoteClientId, remoteClients])
+
     const handleClientAdd = useCallback(
         (clientInformation: ClientInformationLineType[]) => {
             setAddClientModal(false)
@@ -54,7 +66,7 @@ const RemoteClientsListPage: FC<any> = () => {
 
             if (editRemoteClientData) {
                 dispatch(updateRemoteClient({ ...editRemoteClientData, ...dataForSave }))
-                setEditRemoteClientData(undefined)
+                setEditRemoteClientId(undefined)
 
                 Notification.success(
                     { title: _(t.clientsUpdated), message: _(t.clientsUpdatedMessage) },
@@ -86,18 +98,6 @@ const RemoteClientsListPage: FC<any> = () => {
             setDeleteModalOpen(true)
         },
         [singleDelete]
-    )
-
-    const handleOpenEditModal = useCallback(
-        (clientId: string) => {
-            const remoteClientData = storedRemoteStore.remoteClients.find((remoteClient) => remoteClient.id === clientId)
-
-            if (remoteClientData) {
-                setEditRemoteClientData(remoteClientData)
-                setAddClientModal(true)
-            }
-        },
-        [storedRemoteStore.remoteClients]
     )
 
     const handleCloseDeleteModal = useCallback(() => {
@@ -174,7 +174,7 @@ const RemoteClientsListPage: FC<any> = () => {
             })
 
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [])
+    }, [storedRemoteStore.remoteClients])
 
     return (
         <PageLayout
@@ -234,7 +234,7 @@ const RemoteClientsListPage: FC<any> = () => {
             <RemoteClientsList
                 data={remoteClients || []}
                 handleOpenDeleteModal={handleOpenDeleteModal}
-                handleOpenEditModal={handleOpenEditModal}
+                handleOpenEditModal={setEditRemoteClientId}
                 isAllSelected={isAllSelected}
                 selectedClients={selectedClients}
                 setIsAllSelected={setIsAllSelected}

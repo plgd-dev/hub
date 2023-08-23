@@ -40,6 +40,7 @@ const RemoteClientsAuthProvider = forwardRef<AppAuthProviderRefType, Props>((pro
     useEffect(() => {
         if (reInitialization) {
             reset(clientUrl).then(() => {
+                console.log('reset done')
                 dispatch(unInitializeRemoteClient(id))
                 setInitialize(false)
             })
@@ -60,6 +61,7 @@ const RemoteClientsAuthProvider = forwardRef<AppAuthProviderRefType, Props>((pro
                                     identityCertificateChallenge.certificateSigningRequest
                                 ).then((result) => {
                                     initializeFinal(identityCertificateChallenge.state, result.data.certificate).then(() => {
+                                        console.log('init done')
                                         setInitialize(true)
                                     })
                                 })
@@ -76,6 +78,7 @@ const RemoteClientsAuthProvider = forwardRef<AppAuthProviderRefType, Props>((pro
                         initializedByPreShared(preSharedSubjectId, preSharedKey)
                             .then((r) => {
                                 if (r.status === 200) {
+                                    console.log('init done')
                                     setInitialize(true)
                                 }
                             })
