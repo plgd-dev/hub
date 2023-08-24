@@ -151,6 +151,6 @@ export const messages = defineMessages({
     },
     clientsUpdatedMessage: {
         id: 'remoteClients.clientsDeletedMessage',
-        defaultMessage: 'The remote client were successfully updated.',
+        defaultMessage: 'The remote client was successfully updated.',
     },
 })
