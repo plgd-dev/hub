@@ -227,7 +227,10 @@ const RemoteClientsListPage: FC<any> = () => {
                 defaultClientUrl={editRemoteClientData?.clientUrl}
                 defaultPreSharedKey={editRemoteClientData?.preSharedKey}
                 defaultPreSharedSubjectId={editRemoteClientData?.preSharedSubjectId}
-                onClose={() => setAddClientModal(false)}
+                onClose={() => {
+                    setAddClientModal(false)
+                    setEditRemoteClientId(undefined)
+                }}
                 onFormSubmit={handleClientAdd}
                 show={addClientModal}
             />
