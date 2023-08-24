@@ -18,6 +18,7 @@ import { FormSelect, IconCopy } from '@shared-ui/components/Atomic'
 import { copyToClipboard } from '@shared-ui/common/utils'
 import Tooltip from '@shared-ui/components/Atomic/Tooltip'
 import { DEVICE_AUTH_MODE } from '@shared-ui/app/clientApp/constants'
+import Alert from '@shared-ui/components/Atomic/Alert'
 
 import { Props, defaultProps, Inputs, ClientInformationLineType } from './AddRemoteClientModal.types'
 import { messages as t } from '../../RemoteClients.i18n'
@@ -155,7 +156,7 @@ const AddRemoteClientModal: FC<Props> = (props) => {
                     { notificationId: notificationId.HUB_ADD_REMOTE_CLIENT_MODAL_ON_SUBMIT }
                 )
             })
-            .catch(() => {
+            .catch((e) => {
                 setVersionLoading(false)
                 Notification.error({ title: _(t.error), message: _(t.clientError) }, { notificationId: notificationId.HUB_ADD_REMOTE_CLIENT_MODAL_ON_SUBMIT })
             })
@@ -232,6 +233,11 @@ const AddRemoteClientModal: FC<Props> = (props) => {
 
     const renderBody = () => (
         <form onSubmit={handleSubmit(onSubmit)}>
+            {!isEditMode && (
+                <div style={{ marginBottom: '12px' }}>
+                    <Alert>Nutnost akceptovat certifikat</Alert>
+                </div>
+            )}
             <Row>
                 <Column size={6}>
                     <FormGroup error={errors.clientName ? _(t.clientNameError) : undefined} id='client-name'>

@@ -45,6 +45,7 @@ const RemoteClientsAuthProvider = forwardRef<AppAuthProviderRefType, Props>((pro
                 setInitialize(false)
             })
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [reInitialization, clientUrl, id, setInitialize])
 
     useEffect(() => {
@@ -61,7 +62,7 @@ const RemoteClientsAuthProvider = forwardRef<AppAuthProviderRefType, Props>((pro
                                     identityCertificateChallenge.certificateSigningRequest
                                 ).then((result) => {
                                     initializeFinal(identityCertificateChallenge.state, result.data.certificate).then(() => {
-                                        console.log('init done')
+                                        console.log('init done x509')
                                         setInitialize(true)
                                     })
                                 })
@@ -78,7 +79,7 @@ const RemoteClientsAuthProvider = forwardRef<AppAuthProviderRefType, Props>((pro
                         initializedByPreShared(preSharedSubjectId, preSharedKey)
                             .then((r) => {
                                 if (r.status === 200) {
-                                    console.log('init done')
+                                    console.log('init done PSK')
                                     setInitialize(true)
                                 }
                             })
