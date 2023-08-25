@@ -11,6 +11,7 @@ import InitializedByAnother from '@shared-ui/app/clientApp/App/InitializedByAnot
 import { getClientUrl } from '@shared-ui/app/clientApp/utils'
 import { useClientAppPage } from '@shared-ui/app/clientApp/RemoteClients/use-client-app-page'
 import FullPageLoader from '@shared-ui/components/Atomic/FullPageLoader'
+import { DEVICE_AUTH_MODE } from '@shared-ui/app/clientApp/constants'
 
 import { Props } from './RemoteClientsPage.types'
 import * as styles from './RemoteClientsPage.styles'
@@ -55,22 +56,24 @@ const RemoteClientsPage: FC<Props> = (props) => {
     })
 
     const unauthorizedCallback = useCallback(() => {
-        setSuspectedUnauthorized(true)
+        if (clientData.authenticationMode === DEVICE_AUTH_MODE.PRE_SHARED_KEY) {
+            setSuspectedUnauthorized(true)
 
-        reFetchConfig().then((newWellKnownConfig: WellKnownConfigType) => {
-            const userData = clientAppSetings.getUserData()
-            if (userData) {
-                const parsedData = jwtDecode(userData.access_token)
-                const ownerId = get(parsedData, newWellKnownConfig.remoteProvisioning?.jwtOwnerClaim as string, '')
+            reFetchConfig().then((newWellKnownConfig: WellKnownConfigType) => {
+                const userData = clientAppSetings.getUserData()
+                if (userData) {
+                    const parsedData = jwtDecode(userData.access_token)
+                    const ownerId = get(parsedData, newWellKnownConfig.remoteProvisioning?.jwtOwnerClaim as string, '')
 
-                if (ownerId !== newWellKnownConfig?.owner) {
-                    setInitializedByAnother(true)
+                    if (ownerId !== newWellKnownConfig?.owner) {
+                        setInitializedByAnother(true)
+                    }
                 }
-            }
 
-            setSuspectedUnauthorized(false)
-        })
-    }, [reFetchConfig])
+                setSuspectedUnauthorized(false)
+            })
+        }
+    }, [clientData.authenticationMode, reFetchConfig])
 
     const contextValue = useMemo(
         () => ({
