@@ -27,6 +27,7 @@ import TestPage from './containers/Test'
 import RemoteClientsListPage from '@/containers/RemoteClients/List/RemoteClientsListPage'
 import RemoteClientDetailPage from '@/containers/RemoteClients/Detail/RemoteClientDetailPage'
 import RemoteClientDevicesDetailPage from '@/containers/RemoteClients/Device/Detail/RemoteClientDevicesDetailPage'
+import testId from '@/testId'
 
 const MenuTranslate = (props: { id: string }) => {
     const { id } = props
@@ -56,6 +57,7 @@ export const menu: MenuGroup[] = [
                 link: '/',
                 paths: ['/', '/devices/:id', '/devices/:id/resources', '/devices/:id/resources/:href'],
                 exact: true,
+                dataTestId: testId.menu.devices,
             },
             {
                 icon: <IconIntegrations />,

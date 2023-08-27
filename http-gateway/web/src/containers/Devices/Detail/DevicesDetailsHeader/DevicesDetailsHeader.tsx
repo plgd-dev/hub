@@ -15,6 +15,7 @@ import { canChangeDeviceName, getResourceRegistrationNotificationKey, handleDele
 import { deleteDevicesApi } from '../../rest'
 import { messages as t } from '../../Devices.i18n'
 import notificationId from '@/notificationId'
+import testId from '@/testId'
 
 const DevicesDetailsHeader: FC<Props> = memo((props) => {
     const { deviceId, deviceName, isUnregistered, isOnline, handleOpenEditDeviceNameModal, links } = props
@@ -83,7 +84,14 @@ const DevicesDetailsHeader: FC<Props> = memo((props) => {
             </Button>
 
             {canUpdate && (
-                <Button disabled={isUnregistered} icon={<IconEdit />} onClick={handleOpenEditDeviceNameModal} style={{ marginLeft: 8 }} variant='tertiary'>
+                <Button
+                    dataTestId={testId.devices.detail.editNameButton}
+                    disabled={isUnregistered}
+                    icon={<IconEdit />}
+                    onClick={handleOpenEditDeviceNameModal}
+                    style={{ marginLeft: 8 }}
+                    variant='tertiary'
+                >
                     {_(t.editName)}
                 </Button>
             )}
