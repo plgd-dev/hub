@@ -14,6 +14,10 @@ const testId = {
             informationTableId: 'hub-devices-detail-information-table-id',
             editNameButton: 'hub-devices-detail-edit-name-button',
             editNameModal: 'hub-devices-detail-edit-name-modal',
+            deleteDeviceButton: 'hub-devices-detail-delete-device-button',
+            deleteDeviceModal: 'hub-devices-detail-delete-device-modal',
+            deleteDeviceButtonCancel: 'hub-devices-detail-delete-device-button-cancel',
+            deleteDeviceButtonDelete: 'hub-devices-detail-delete-device-button-delete',
         },
     },
 }
