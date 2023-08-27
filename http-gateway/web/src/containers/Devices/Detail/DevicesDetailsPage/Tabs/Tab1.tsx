@@ -17,6 +17,7 @@ import { getDeviceNotificationKey, getResourceRegistrationNotificationKey } from
 import { isNotificationActive, toggleActiveNotification } from '@/containers/Devices/slice'
 import { deviceResourceRegistrationListener } from '@/containers/Devices/websockets'
 import DateFormat from '@/containers/PendingCommands/DateFormat'
+import testId from '@/testId'
 
 const Tab1: FC<Props> = (props) => {
     const { isTwinEnabled, setTwinSynchronization, twinSyncLoading, deviceId, types, deviceName, model, pendingCommandsData, firmware, softwareUpdateData } =
@@ -95,7 +96,7 @@ const Tab1: FC<Props> = (props) => {
             <div style={{ paddingTop: 16 }}>
                 <SimpleStripTable
                     rows={[
-                        { attribute: _(t.id), value: deviceId },
+                        { attribute: _(t.id), value: deviceId, dataTestId: testId.devices.detail.informationTableId },
                         { attribute: _(t.model), value: model || '-' },
                         {
                             attribute: _(t.types),

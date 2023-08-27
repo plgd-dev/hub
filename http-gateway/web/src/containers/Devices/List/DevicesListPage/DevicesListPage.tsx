@@ -138,9 +138,16 @@ const DevicesListPage: FC<any> = () => {
                         return <span>{deviceName}</span>
                     }
                     return (
-                        <Link to={`/devices/${row.original?.id}`}>
+                        <a
+                            data-test-id={`device-row-${row.id}`}
+                            href={`/devices/${row.original?.id}`}
+                            onClick={(e) => {
+                                e.preventDefault()
+                                navigate(`/devices/${row.original?.id}`)
+                            }}
+                        >
                             <span className='no-wrap-text'>{deviceName}</span>
-                        </Link>
+                        </a>
                     )
                 },
             },

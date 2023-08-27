@@ -30,6 +30,7 @@ import { PendingCommandsExpandableList } from '@/containers/PendingCommands'
 import { AppContext } from '@/containers/App/AppContext'
 import { Props } from './DevicesDetailsPage.types'
 import notificationId from '@/notificationId'
+import testId from '@/testId'
 
 const DevicesDetailsPage: FC<Props> = (props) => {
     const { defaultActiveTab } = props
@@ -178,6 +179,7 @@ const DevicesDetailsPage: FC<Props> = (props) => {
     return (
         <PageLayout
             breadcrumbs={breadcrumbs}
+            dataTestId={testId.devices.detail.layout}
             footer={
                 <Footer
                     footerExpanded={footerExpanded}
@@ -224,6 +226,7 @@ const DevicesDetailsPage: FC<Props> = (props) => {
                     {
                         name: _(t.deviceInformation),
                         id: 0,
+                        dataTestId: testId.devices.detail.tabInformation,
                         content: (
                             <Tab1
                                 deviceId={id}
@@ -243,6 +246,7 @@ const DevicesDetailsPage: FC<Props> = (props) => {
                     {
                         name: _(t.resources),
                         id: 1,
+                        dataTestId: testId.devices.detail.tabResources,
                         content: (
                             <Tab2
                                 deviceName={deviceName}
@@ -261,6 +265,7 @@ const DevicesDetailsPage: FC<Props> = (props) => {
             />
 
             <EditDeviceNameModal
+                dataTestId={testId.devices.detail.editNameModal}
                 deviceName={deviceName}
                 deviceNameLoading={deviceNameLoading}
                 handleClose={() => setShowEditNameModal(false)}
