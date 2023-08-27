@@ -67,7 +67,7 @@ const DevicesDetailsHeader: FC<Props> = memo((props) => {
                 WebSocketEventClient.unsubscribe(resourceRegistrationObservationWSKey)
 
                 // Redirect to the device page after a deletion
-                navigate(`/device`)
+                navigate(`/`)
             }
         } catch (error) {
             if (isMounted.current) {
@@ -79,7 +79,13 @@ const DevicesDetailsHeader: FC<Props> = memo((props) => {
 
     return (
         <div className={classNames('d-flex align-items-center', greyedOutClassName)}>
-            <Button disabled={isUnregistered} icon={<IconTrash />} onClick={handleOpenDeleteDeviceModal} variant='tertiary'>
+            <Button
+                dataTestId={testId.devices.detail.deleteDeviceButton}
+                disabled={isUnregistered}
+                icon={<IconTrash />}
+                onClick={handleOpenDeleteDeviceModal}
+                variant='tertiary'
+            >
                 {_(t.delete)}
             </Button>
 
@@ -97,17 +103,20 @@ const DevicesDetailsHeader: FC<Props> = memo((props) => {
             )}
 
             <DeleteModal
+                dataTestId={testId.devices.detail.deleteDeviceModal}
                 deleteInformation={[
                     { label: _(t.deviceName), value: deviceName },
                     { label: _(t.deviceId), value: deviceId },
                 ]}
                 footerActions={[
                     {
+                        dataTestId: testId.devices.detail.deleteDeviceButtonCancel,
                         label: _(t.cancel),
                         onClick: handleCloseDeleteDeviceModal,
                         variant: 'tertiary',
                     },
                     {
+                        dataTestId: testId.devices.detail.deleteDeviceButtonDelete,
                         label: _(t.delete),
                         loading: deleting,
                         loadingText: _(t.deleting),
