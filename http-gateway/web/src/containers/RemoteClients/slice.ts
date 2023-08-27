@@ -72,7 +72,7 @@ const { reducer, actions } = createSlice({
         updateRemoteClient(state, { payload }) {
             const index = state.remoteClients.findIndex((originRemoteClient) => originRemoteClient.id === payload.id)
 
-            if (index) {
+            if (index >= 0) {
                 const remoteClient = state.remoteClients[index]
                 state.remoteClients[index] = {
                     ...state.remoteClients[index],
@@ -87,7 +87,7 @@ const { reducer, actions } = createSlice({
         unInitializeRemoteClient(state, { payload }) {
             const index = state.remoteClients.findIndex((originRemoteClient) => originRemoteClient.id === payload)
 
-            if (index) {
+            if (index >= 0) {
                 state.remoteClients[index] = {
                     ...state.remoteClients[index],
                     reInitialization: false,
