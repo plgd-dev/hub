@@ -1,4 +1,4 @@
-import { FC, useCallback, useMemo, useRef, useState } from 'react'
+import { FC, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useIntl } from 'react-intl'
 import { Helmet } from 'react-helmet'
 import jwtDecode from 'jwt-decode'
@@ -42,13 +42,15 @@ const RemoteClientsPage: FC<Props> = (props) => {
 
     const setInitialize = useCallback(
         (value = true) => {
-            setWellKnownConfig({
-                ...wellKnownConfig,
-                isInitialized: value,
-            } as WellKnownConfigType)
+            console.log('setInitialize', value)
+            setWellKnownConfig(
+                {
+                    isInitialized: value,
+                } as WellKnownConfigType,
+                'update'
+            )
         },
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-        [wellKnownConfig]
+        [setWellKnownConfig]
     )
 
     clientAppSetings.setGeneralConfig({
@@ -82,6 +84,18 @@ const RemoteClientsPage: FC<Props> = (props) => {
         [unauthorizedCallback]
     )
 
+    const getContent = useCallback(() => {
+        if (clientData.reInitialization) {
+            return <FullPageLoader i18n={{ loading: _(g.loading) }} />
+        } else if (initializedByAnother) {
+            return <InitializedByAnother show={initializedByAnother} />
+        } else if (!suspectedUnauthorized) {
+            return children(clientData, wellKnownConfig)
+        }
+
+        return <div />
+    }, [wellKnownConfig])
+
     if (error) {
         return errorElement
     }
@@ -107,18 +121,6 @@ const RemoteClientsPage: FC<Props> = (props) => {
 
     if (authError) {
         return <div className='client-error-message'>{`${_(t.authError)}: ${authError}`}</div>
-    }
-
-    const getContent = () => {
-        if (clientData.reInitialization) {
-            return <FullPageLoader i18n={{ loading: _(g.loading) }} />
-        } else if (initializedByAnother) {
-            return <InitializedByAnother show={initializedByAnother} />
-        } else if (!suspectedUnauthorized) {
-            return children(clientData)
-        }
-
-        return <div />
     }
 
     return (
