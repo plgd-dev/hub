@@ -80,8 +80,9 @@ const RemoteClientsPage: FC<Props> = (props) => {
     const contextValue = useMemo(
         () => ({
             unauthorizedCallback,
+            remoteClientAuthenticationMode: clientData.authenticationMode,
         }),
-        [unauthorizedCallback]
+        [clientData.authenticationMode, unauthorizedCallback]
     )
 
     const getContent = useCallback(() => {
@@ -94,6 +95,7 @@ const RemoteClientsPage: FC<Props> = (props) => {
         }
 
         return <div />
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [wellKnownConfig])
 
     if (error) {
