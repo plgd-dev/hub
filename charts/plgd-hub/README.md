@@ -85,7 +85,7 @@ global:
 | certificateauthority.extraVolumes | string | `nil` | Optional extra volumes |
 | certificateauthority.fullnameOverride | string | `nil` | Full name to override |
 | certificateauthority.httpPort | int | `9101` |  |
-| certificateauthority.hubId | string | `nil` | Hub ID. Can be override via global.hubId or coapgateway.hubId |
+| certificateauthority.hubId | string | `nil` | Hub ID. Can be overriden via global.hubId |
 | certificateauthority.image.imagePullSecrets | string | `nil` | Image pull secrets |
 | certificateauthority.image.pullPolicy | string | `"Always"` | Image pull policy |
 | certificateauthority.image.registry | string | `"ghcr.io/"` | Image registry |
@@ -104,6 +104,7 @@ global:
 | certificateauthority.ingress.http.secretName | string | `nil` | Override name of host/tls secret. If not specified, it will be generated |
 | certificateauthority.initContainersTpl | string | `nil` | Init containers definition |
 | certificateauthority.livenessProbe | string | `nil` | Liveness probe. certificate-authority doesn't have any default liveness probe |
+| certificateauthority.log | object | `{"dumpBody":false,"encoderConfig":{"timeEncoder":"rfc3339nano"},"encoding":"json","level":"info","stacktrace":{"enabled":false,"level":"warn"}}` | Log section |
 | certificateauthority.log.dumpBody | bool | `false` | Dump grpc messages |
 | certificateauthority.log.encoderConfig.timeEncoder | string | `"rfc3339nano"` | Time format for logs. The supported values are: "rfc3339nano", "rfc3339" |
 | certificateauthority.log.encoding | string | `"json"` | The supported values are: "json", "console" |
@@ -211,7 +212,7 @@ global:
 | coapgateway.extraVolumeMounts | object | `{}` | Optional extra volume mounts |
 | coapgateway.extraVolumes | object | `{}` | Optional extra volumes |
 | coapgateway.fullnameOverride | string | `nil` | Full name to override |
-| coapgateway.hubId | string | `nil` | Hub ID. Can be override via global.hubId |
+| coapgateway.hubId | string | `nil` | Hub ID. Can be overriden via global.hubId |
 | coapgateway.image.imagePullSecrets | object | `{}` | Image pull secrets |
 | coapgateway.image.pullPolicy | string | `"Always"` | Image pull policy |
 | coapgateway.image.registry | string | `"ghcr.io/"` | Image registry |
@@ -220,6 +221,7 @@ global:
 | coapgateway.imagePullSecrets | object | `{}` | Image pull secrets |
 | coapgateway.initContainersTpl | object | `{}` | Init containers definition |
 | coapgateway.livenessProbe | object | `{}` | Liveness probe. coap-gateway doesn't have any default liveness probe |
+| coapgateway.log | object | `{"dumpBody":false,"encoderConfig":{"timeEncoder":"rfc3339nano"},"encoding":"json","level":"info","stacktrace":{"enabled":false,"level":"warn"}}` | Log section |
 | coapgateway.log.dumpBody | bool | `false` | Dump coap messages |
 | coapgateway.log.encoderConfig.timeEncoder | string | `"rfc3339nano"` | Time format for logs. The supported values are: "rfc3339nano", "rfc3339" |
 | coapgateway.log.encoding | string | `"json"` | The supported values are: "json", "console" |
@@ -276,7 +278,7 @@ global:
 | global.deviceIdClaim | string | `nil` | Device ID claim |
 | global.domain | string | `nil` | Global domain |
 | global.enableWildCartCert | bool | `true` | Enable *.{{ global.domain }} for all external domain |
-| global.hubId | string | `nil` | hubId. Used by coap-gateway, resource-aggregate, indentity-store, certificate-authority. It must be unique |
+| global.hubId | string | `nil` | hubId. Used by coapgateway, resourceaggregate, resourcedirectory, indentitystore, certificateauthority. It must be unique |
 | global.oauth | object | `{"device":[],"web":{"clientID":null}}` | Global OAuth configuration used by multiple services |
 | global.openTelemetryExporter | object | `{"address":null,"enabled":false,"keepAlive":{"permitWithoutStream":true,"time":"10s","timeout":"20s"},"tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false}}` | Global Open Telemetry exporter configuration |
 | global.openTelemetryExporter.address | string | `nil` | The gRPC collector to which the exporter is going to send data |
@@ -419,7 +421,7 @@ global:
 | identitystore.extraVolumeMounts | object | `{}` | Extra volume mounts |
 | identitystore.extraVolumes | object | `{}` | Extra volumes |
 | identitystore.fullnameOverride | string | `nil` | Full name to override |
-| identitystore.hubId | string | `nil` | Hub ID. Can be override via global.hubId or coapgateway.hubId |
+| identitystore.hubId | string | `nil` | Hub ID. Can be overriden via global.hubId |
 | identitystore.image | object | `{"imagePullSecrets":{},"pullPolicy":"Always","registry":"ghcr.io/","repository":"plgd-dev/hub/identity-store","tag":null}` | Identity service image section |
 | identitystore.image.imagePullSecrets | object | `{}` | Image pull secrets |
 | identitystore.image.pullPolicy | string | `"Always"` | Image pull policy |
@@ -429,6 +431,7 @@ global:
 | identitystore.imagePullSecrets | object | `{}` | Image pull secrets |
 | identitystore.initContainersTpl | object | `{}` | Init containers definition. Resolved as template |
 | identitystore.livenessProbe | object | `{}` | Liveness probe. Identity doesn't have any default liveness probe |
+| identitystore.log | object | `{"dumpBody":false,"encoderConfig":{"timeEncoder":"rfc3339nano"},"encoding":"json","level":"info","stacktrace":{"enabled":false,"level":"warn"}}` | Log section |
 | identitystore.log.dumpBody | bool | `false` | Dump grpc messages |
 | identitystore.log.encoderConfig.timeEncoder | string | `"rfc3339nano"` | Time format for logs. The supported values are: "rfc3339nano", "rfc3339" |
 | identitystore.log.encoding | string | `"json"` | The supported values are: "json", "console" |
@@ -567,7 +570,7 @@ global:
 | resourceaggregate.extraVolumeMounts | object | `{}` | Optional extra volume mounts |
 | resourceaggregate.extraVolumes | object | `{}` | Optional extra volumes |
 | resourceaggregate.fullnameOverride | string | `nil` | Full name to override |
-| resourceaggregate.hubId | string | `nil` | Hub ID. Can be override via global.hubId or coapgateway.hubId |
+| resourceaggregate.hubId | string | `nil` | Hub ID. Can be overriden via global.hubId |
 | resourceaggregate.image.imagePullSecrets | object | `{}` | Image pull secrets |
 | resourceaggregate.image.pullPolicy | string | `"Always"` | Image pull policy |
 | resourceaggregate.image.registry | string | `"ghcr.io/"` | Image registry |
@@ -576,6 +579,7 @@ global:
 | resourceaggregate.imagePullSecrets | object | `{}` | Image pull secrets |
 | resourceaggregate.initContainersTpl | object | `{}` | Init containers definition. Resolved as template |
 | resourceaggregate.livenessProbe | object | `{}` | Liveness probe. resource-aggregate doesn't have any default liveness probe |
+| resourceaggregate.log | object | `{"dumpBody":false,"encoderConfig":{"timeEncoder":"rfc3339nano"},"encoding":"json","level":"info","stacktrace":{"enabled":false,"level":"warn"}}` | Log section |
 | resourceaggregate.log.dumpBody | bool | `false` | Dump grpc messages |
 | resourceaggregate.log.encoderConfig.timeEncoder | string | `"rfc3339nano"` | Time format for logs. The supported values are: "rfc3339nano", "rfc3339" |
 | resourceaggregate.log.encoding | string | `"json"` | The supported values are: "json", "console" |
@@ -619,6 +623,7 @@ global:
 | resourcedirectory.extraVolumeMounts | object | `{}` | Optional extra volume mounts |
 | resourcedirectory.extraVolumes | object | `{}` | Optional extra volumes |
 | resourcedirectory.fullnameOverride | string | `nil` | Full name to override |
+| resourcedirectory.hubId | string | `nil` | Hub ID. Can be overriden via global.hubId |
 | resourcedirectory.image.command | string | `nil` | Container command |
 | resourcedirectory.image.imagePullSecrets | object | `{}` | Image pull secrets |
 | resourcedirectory.image.pullPolicy | string | `"Always"` | Image pull policy |

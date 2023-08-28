@@ -432,7 +432,7 @@ resourcedirectory:
     mountPath: /config
   # -- Service and POD port
   port: 9100
-  # -- Hub ID. Can be override via global.hubId
+  # -- Hub ID. Can be overriden via global.hubId
   hubId:
   # -- Log section
   log:
@@ -656,7 +656,7 @@ resourceaggregate:
     mountPath: /config
   # -- Service and POD port
   port: 9100
-  # -- Hub ID. Can be override via global.hubId
+  # -- Hub ID. Can be overriden via global.hubId
   hubId:
   # -- Log section
   log:
@@ -879,7 +879,7 @@ coapgateway:
     mountPath: /config
   # -- Service and POD port
   port: 5684
-  # -- Hub ID. Can be override via global.hubId
+  # -- Hub ID. Can be overriden via global.hubId
   hubId:
   # -- Log section
   log:
@@ -1097,7 +1097,7 @@ identitystore:
     volume: config
     # -- Service configuration mount path
     mountPath: /config
-  # -- Hub ID. Can be override via global.hubId
+  # -- Hub ID. Can be overriden via global.hubId
   hubId:
   # -- Log section
   log:
@@ -1781,7 +1781,7 @@ certificateauthority:
   # -- Service and POD port
   port: 9100
   httpPort: 9101
-  # -- Hub ID. Can be override via global.hubId
+  # -- Hub ID. Can be overriden via global.hubId
   hubId:
   # -- Log section
   log:

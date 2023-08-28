@@ -113,13 +113,13 @@ message SubscribeToEvents {
 message Event {
   message DeviceRegistered {
     repeated string device_ids = 1;
-    identitystore.pb.EventMetadata event_metadata = 5; // provides metadata of event
+    identitystore.pb.EventMetadata event_metadata = 2; // provides metadata of event
      // Open telemetry data propagated to asynchronous events
      map<string,string> open_telemetry_carrier = 100;
   }
   message DeviceUnregistered {
     repeated string device_ids = 1;
-    identitystore.pb.EventMetadata event_metadata = 5; // provides metadata of event
+    identitystore.pb.EventMetadata event_metadata = 2; // provides metadata of event
     // Open telemetry data propagated to asynchronous events
     map<string,string> open_telemetry_carrier = 100;
   }
