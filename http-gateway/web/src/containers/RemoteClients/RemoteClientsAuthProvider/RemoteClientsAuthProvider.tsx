@@ -2,7 +2,7 @@ import { forwardRef, useEffect, useImperativeHandle, useState } from 'react'
 import { useIntl } from 'react-intl'
 import { useDispatch } from 'react-redux'
 
-import { clientAppSetings } from '@shared-ui/common/services'
+import { clientAppSettings } from '@shared-ui/common/services'
 import {
     getJwksData,
     getOpenIdConfiguration,
@@ -25,8 +25,8 @@ const RemoteClientsAuthProvider = forwardRef<AppAuthProviderRefType, Props>((pro
     const { wellKnownConfig, clientData, children, setAuthError, setInitialize, unauthorizedCallback } = props
     const { id, clientUrl, authenticationMode, preSharedSubjectId, preSharedKey, reInitialization } = clientData
     const { formatMessage: _ } = useIntl()
-    const [userData] = useState(clientAppSetings.getUserData())
-    const [signOutRedirect] = useState(clientAppSetings.getSignOutRedirect())
+    const [userData] = useState(clientAppSettings.getUserData())
+    const [signOutRedirect] = useState(clientAppSettings.getSignOutRedirect())
     const dispatch = useDispatch()
 
     useImperativeHandle(ref, () => ({

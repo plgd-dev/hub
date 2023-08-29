@@ -5,7 +5,7 @@ import jwtDecode from 'jwt-decode'
 import get from 'lodash/get'
 
 import { useWellKnownConfiguration, WellKnownConfigType } from '@shared-ui/common/hooks'
-import { clientAppSetings, security } from '@shared-ui/common/services'
+import { clientAppSettings, security } from '@shared-ui/common/services'
 import AppContext from '@shared-ui/app/clientApp/App/AppContext'
 import InitializedByAnother from '@shared-ui/app/clientApp/App/InitializedByAnother'
 import { getClientUrl } from '@shared-ui/app/clientApp/utils'
@@ -52,36 +52,44 @@ const RemoteClientsPage: FC<Props> = (props) => {
         [setWellKnownConfig]
     )
 
-    clientAppSetings.setGeneralConfig({
+    clientAppSettings.setGeneralConfig({
         httpGatewayAddress,
     })
+
+    const compareOwners = useCallback((wellKnownConfig?: WellKnownConfigType) => {
+        const userData = clientAppSettings.getUserData()
+        if (userData && wellKnownConfig) {
+            const parsedData = jwtDecode(userData.access_token)
+            const ownerId = get(parsedData, wellKnownConfig?.remoteProvisioning?.jwtOwnerClaim as string, '')
+
+            if (ownerId === wellKnownConfig?.owner) {
+                return true
+            }
+        }
+
+        return false
+    }, [])
 
     const unauthorizedCallback = useCallback(() => {
         if (clientData.authenticationMode === DEVICE_AUTH_MODE.PRE_SHARED_KEY) {
             setSuspectedUnauthorized(true)
 
             reFetchConfig().then((newWellKnownConfig: WellKnownConfigType) => {
-                const userData = clientAppSetings.getUserData()
-                if (userData) {
-                    const parsedData = jwtDecode(userData.access_token)
-                    const ownerId = get(parsedData, newWellKnownConfig.remoteProvisioning?.jwtOwnerClaim as string, '')
-
-                    if (ownerId !== newWellKnownConfig?.owner) {
-                        setInitializedByAnother(true)
-                    }
+                if (compareOwners(newWellKnownConfig)) {
+                    setSuspectedUnauthorized(false)
+                } else {
+                    setInitializedByAnother(true)
                 }
-
-                setSuspectedUnauthorized(false)
             })
         }
-    }, [clientData.authenticationMode, reFetchConfig])
+    }, [clientData.authenticationMode, compareOwners, reFetchConfig])
 
     const contextValue = useMemo(
         () => ({
             unauthorizedCallback,
-            remoteClientAuthenticationMode: clientData.authenticationMode,
+            useToken: compareOwners(wellKnownConfig) && clientData.authenticationMode === DEVICE_AUTH_MODE.X509,
         }),
-        [clientData.authenticationMode, unauthorizedCallback]
+        [clientData.authenticationMode, compareOwners, unauthorizedCallback, wellKnownConfig]
     )
 
     if (error) {
@@ -95,10 +103,10 @@ const RemoteClientsPage: FC<Props> = (props) => {
     if (!wellKnownConfig) {
         return <FullPageLoader i18n={{ loading: _(g.loading) }} />
     } else {
-        clientAppSetings.setWellKnowConfig(wellKnownConfig)
+        clientAppSettings.setWellKnowConfig(wellKnownConfig)
 
         if (wellKnownConfig.remoteProvisioning) {
-            clientAppSetings.setWebOAuthConfig({
+            clientAppSettings.setWebOAuthConfig({
                 authority: wellKnownConfig.remoteProvisioning.authority,
                 certificateAuthority: wellKnownConfig.remoteProvisioning.certificateAuthority,
                 clientId: wellKnownConfig.remoteProvisioning.webOauthClient?.clientId,
@@ -115,8 +123,8 @@ const RemoteClientsPage: FC<Props> = (props) => {
         <AppContext.Provider value={contextValue}>
             <div css={styles.detailPage}>
                 <Helmet title={`${clientData.clientName}`} />
-                {initializedByAnother && <InitializedByAnother show={true} />}
-                {suspectedUnauthorized && <FullPageLoader i18n={{ loading: _(g.loading) }} />}
+                {initializedByAnother && <InitializedByAnother description={_(t.initializedByAnotherDesc)} show={true} />}
+                {!suspectedUnauthorized && suspectedUnauthorized && <FullPageLoader i18n={{ loading: _(g.loading) }} />}
                 {!initializedByAnother && !suspectedUnauthorized && (
                     <RemoteClientsAuthProvider
                         clientData={clientData}

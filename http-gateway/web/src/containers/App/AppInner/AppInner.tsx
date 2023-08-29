@@ -9,7 +9,7 @@ import { BrowserNotificationsContainer } from '@shared-ui/components/Atomic/Toas
 import { ToastContainer } from '@shared-ui/components/Atomic/Notification'
 import { useLocalStorage } from '@shared-ui/common/hooks'
 import light from '@shared-ui/components/Atomic/_theme/light'
-import { clientAppSetings, security } from '@shared-ui/common/services'
+import { clientAppSettings, security } from '@shared-ui/common/services'
 
 import { AppContext } from '@/containers/App/AppContext'
 import appConfig from '@/config'
@@ -46,8 +46,8 @@ const AppInner = (props: Props) => {
         security.setAccessToken(userData.access_token)
 
         // for remote clients
-        clientAppSetings.setUserData(userData)
-        clientAppSetings.setSignOutRedirect(signOutRedirect)
+        clientAppSettings.setUserData(userData)
+        clientAppSettings.setSignOutRedirect(signOutRedirect)
 
         if (userManager) {
             security.setUserManager(userManager)
