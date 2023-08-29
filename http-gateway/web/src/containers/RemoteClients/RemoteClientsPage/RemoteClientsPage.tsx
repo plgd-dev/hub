@@ -124,7 +124,7 @@ const RemoteClientsPage: FC<Props> = (props) => {
             <div css={styles.detailPage}>
                 <Helmet title={`${clientData.clientName}`} />
                 {initializedByAnother && <InitializedByAnother description={_(t.initializedByAnotherDesc)} show={true} />}
-                {!suspectedUnauthorized && suspectedUnauthorized && <FullPageLoader i18n={{ loading: _(g.loading) }} />}
+                {!initializedByAnother && suspectedUnauthorized && <FullPageLoader i18n={{ loading: _(g.loading) }} />}
                 {!initializedByAnother && !suspectedUnauthorized && (
                     <RemoteClientsAuthProvider
                         clientData={clientData}
