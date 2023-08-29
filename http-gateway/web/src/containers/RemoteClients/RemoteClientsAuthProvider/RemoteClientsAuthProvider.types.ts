@@ -13,5 +13,6 @@ export type Props = {
     clientData: RemoteClientType
     setAuthError: (error: string) => void
     setInitialize: (isInitialize?: boolean) => void
+    unauthorizedCallback: () => void
     wellKnownConfig?: WellKnownConfigType
 }

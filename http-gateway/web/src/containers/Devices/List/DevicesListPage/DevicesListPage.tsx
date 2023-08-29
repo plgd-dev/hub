@@ -1,7 +1,7 @@
 import React, { FC, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { useIntl } from 'react-intl'
 import isFunction from 'lodash/isFunction'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import ReactDOM from 'react-dom'
 
 import { getApiErrorMessage } from '@shared-ui/common/utils'

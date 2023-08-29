@@ -22,7 +22,7 @@ import notificationId from '@/notificationId'
 import { unInitializeRemoteClient } from '@/containers/RemoteClients/slice'
 
 const RemoteClientsAuthProvider = forwardRef<AppAuthProviderRefType, Props>((props, ref) => {
-    const { wellKnownConfig, clientData, children, setAuthError, setInitialize } = props
+    const { wellKnownConfig, clientData, children, setAuthError, setInitialize, unauthorizedCallback } = props
     const { id, clientUrl, authenticationMode, preSharedSubjectId, preSharedKey, reInitialization } = clientData
     const { formatMessage: _ } = useIntl()
     const [userData] = useState(clientAppSetings.getUserData())
@@ -39,11 +39,13 @@ const RemoteClientsAuthProvider = forwardRef<AppAuthProviderRefType, Props>((pro
 
     useEffect(() => {
         if (reInitialization) {
-            reset(clientUrl).then(() => {
-                console.log('reset done')
-                dispatch(unInitializeRemoteClient(id))
-                setInitialize(false)
-            })
+            reset(clientUrl, unauthorizedCallback)
+                .then(() => {
+                    console.log('reset done')
+                    dispatch(unInitializeRemoteClient(id))
+                    setInitialize(false)
+                })
+                .catch(() => {})
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [reInitialization, clientUrl, id, setInitialize])
