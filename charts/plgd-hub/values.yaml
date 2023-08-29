@@ -563,6 +563,7 @@ resourcedirectory:
     hubId:
     coapGateway:
     defaultCommandTimeToLive:
+    certificateAuthority:
 
 resourceaggregate:
   # -- Enable resource-aggregate service

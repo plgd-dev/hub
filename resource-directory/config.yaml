@@ -110,3 +110,4 @@ publicConfiguration:
   hubID: ""
   coapGateway: ""
   defaultCommandTimeToLive: "0s"
+  certificateAuthority: ""
