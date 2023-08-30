@@ -85,7 +85,7 @@ global:
 | certificateauthority.extraVolumes | string | `nil` | Optional extra volumes |
 | certificateauthority.fullnameOverride | string | `nil` | Full name to override |
 | certificateauthority.httpPort | int | `9101` |  |
-| certificateauthority.hubId | string | `nil` | Hub ID. Can be overriden via global.hubId |
+| certificateauthority.hubId | string | `nil` | Hub ID. Overrides the global.hubId |
 | certificateauthority.image.imagePullSecrets | string | `nil` | Image pull secrets |
 | certificateauthority.image.pullPolicy | string | `"Always"` | Image pull policy |
 | certificateauthority.image.registry | string | `"ghcr.io/"` | Image registry |
@@ -212,7 +212,7 @@ global:
 | coapgateway.extraVolumeMounts | object | `{}` | Optional extra volume mounts |
 | coapgateway.extraVolumes | object | `{}` | Optional extra volumes |
 | coapgateway.fullnameOverride | string | `nil` | Full name to override |
-| coapgateway.hubId | string | `nil` | Hub ID. Can be overriden via global.hubId |
+| coapgateway.hubId | string | `nil` | Hub ID. Overrides the global.hubId |
 | coapgateway.image.imagePullSecrets | object | `{}` | Image pull secrets |
 | coapgateway.image.pullPolicy | string | `"Always"` | Image pull policy |
 | coapgateway.image.registry | string | `"ghcr.io/"` | Image registry |
@@ -421,7 +421,7 @@ global:
 | identitystore.extraVolumeMounts | object | `{}` | Extra volume mounts |
 | identitystore.extraVolumes | object | `{}` | Extra volumes |
 | identitystore.fullnameOverride | string | `nil` | Full name to override |
-| identitystore.hubId | string | `nil` | Hub ID. Can be overriden via global.hubId |
+| identitystore.hubId | string | `nil` | Hub ID. Overrides the global.hubId |
 | identitystore.image | object | `{"imagePullSecrets":{},"pullPolicy":"Always","registry":"ghcr.io/","repository":"plgd-dev/hub/identity-store","tag":null}` | Identity service image section |
 | identitystore.image.imagePullSecrets | object | `{}` | Image pull secrets |
 | identitystore.image.pullPolicy | string | `"Always"` | Image pull policy |
@@ -570,7 +570,7 @@ global:
 | resourceaggregate.extraVolumeMounts | object | `{}` | Optional extra volume mounts |
 | resourceaggregate.extraVolumes | object | `{}` | Optional extra volumes |
 | resourceaggregate.fullnameOverride | string | `nil` | Full name to override |
-| resourceaggregate.hubId | string | `nil` | Hub ID. Can be overriden via global.hubId |
+| resourceaggregate.hubId | string | `nil` | Hub ID. Overrides the global.hubId |
 | resourceaggregate.image.imagePullSecrets | object | `{}` | Image pull secrets |
 | resourceaggregate.image.pullPolicy | string | `"Always"` | Image pull policy |
 | resourceaggregate.image.registry | string | `"ghcr.io/"` | Image registry |
@@ -623,7 +623,7 @@ global:
 | resourcedirectory.extraVolumeMounts | object | `{}` | Optional extra volume mounts |
 | resourcedirectory.extraVolumes | object | `{}` | Optional extra volumes |
 | resourcedirectory.fullnameOverride | string | `nil` | Full name to override |
-| resourcedirectory.hubId | string | `nil` | Hub ID. Can be overriden via global.hubId |
+| resourcedirectory.hubId | string | `nil` | Hub ID. Overrides the global.hubId |
 | resourcedirectory.image.command | string | `nil` | Container command |
 | resourcedirectory.image.imagePullSecrets | object | `{}` | Image pull secrets |
 | resourcedirectory.image.pullPolicy | string | `"Always"` | Image pull policy |
@@ -645,7 +645,7 @@ global:
 | resourcedirectory.podLabels | object | `{}` | Labels for resource-directory pod |
 | resourcedirectory.podSecurityContext | object | `{}` | Pod security context |
 | resourcedirectory.port | int | `9100` | Service and POD port |
-| resourcedirectory.publicConfiguration | object | `{"authority":null,"caPool":null,"certificateAuthority":null,"coapGateway":null,"defaultCommandTimeToLive":null,"deviceIdClaim":null,"hubId":null,"ownerClaim":null}` | For complete resource-directory service configuration see [plgd/resource-directory](https://github.com/plgd-dev/hub/tree/main/resource-directory) |
+| resourcedirectory.publicConfiguration | object | `{"authority":null,"caPool":null,"certificateAuthority":null,"coapGateway":null,"defaultCommandTimeToLive":null,"deviceIdClaim":null,"ownerClaim":null}` | For complete resource-directory service configuration see [plgd/resource-directory](https://github.com/plgd-dev/hub/tree/main/resource-directory) |
 | resourcedirectory.rbac | object | `{"enabled":false,"roleBindingDefitionTpl":null,"serviceAccountName":"resource-directory"}` | RBAC configuration |
 | resourcedirectory.rbac.roleBindingDefitionTpl | string | `nil` | template definition for Role/binding etc.. |
 | resourcedirectory.rbac.serviceAccountName | string | `"resource-directory"` | Name of resource-directory SA |
