@@ -144,7 +144,12 @@ func TestOnClientInactivity(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
 	defer cancel()
 
-	got, err := New(ctx, cfg, router, fileWatcher, logger)
+	closeChan := make(chan struct{}, 2)
+	got, err := New(ctx, cfg, router, fileWatcher, logger, WithOnNewConnection(func(conn mux.Conn) {
+		conn.AddOnClose(func() {
+			closeChan <- struct{}{}
+		})
+	}))
 	require.NoError(t, err)
 	go func() {
 		err := got.Serve()
@@ -155,12 +160,15 @@ func TestOnClientInactivity(t *testing.T) {
 	// test TCP
 	c, err := tcp.Dial(cfg.Addr, options.WithTLS(&tls.Config{
 		InsecureSkipVerify: true,
-	}), options.WithContext(ctx))
+	}), options.WithContext(ctx), options.WithNetwork("tcp4"))
 	require.NoError(t, err)
 	_, err = c.Get(ctx, "/a")
 	require.NoError(t, err)
 	select {
 	case <-c.Done():
+		t.Log("TCP client closed in client")
+	case <-closeChan:
+		t.Log("TCP client closed in server")
 	case <-ctx.Done():
 		require.NoError(t, ctx.Err())
 	}
@@ -168,12 +176,15 @@ func TestOnClientInactivity(t *testing.T) {
 	// test DTLS
 	cUDP, err := coapDtls.Dial(cfg.Addr, &dtls.Config{
 		InsecureSkipVerify: true,
-	}, options.WithContext(ctx))
+	}, options.WithContext(ctx), options.WithNetwork("udp4"))
 	require.NoError(t, err)
 	_, err = cUDP.Get(ctx, "/a")
 	require.NoError(t, err)
 	select {
 	case <-cUDP.Done():
+		t.Log("UDP client closed in client")
+	case <-closeChan:
+		t.Log("UDP client closed in server")
 	case <-ctx.Done():
 		require.NoError(t, ctx.Err())
 	}
@@ -212,10 +223,15 @@ func TestOnClientInactivityCustom(t *testing.T) {
 	defer cancel()
 
 	var numInactiveClients atomic.Int32
+	closeChan := make(chan struct{}, 2)
 	got, err := New(ctx, cfg, router, fileWatcher, logger, WithOnInactivityConnection(func(conn mux.Conn) {
+		numInactiveClients.Inc()
 		err := conn.Close()
 		require.NoError(t, err)
-		numInactiveClients.Inc()
+	}), WithOnNewConnection(func(conn mux.Conn) {
+		conn.AddOnClose(func() {
+			closeChan <- struct{}{}
+		})
 	}))
 	require.NoError(t, err)
 	go func() {
@@ -227,12 +243,15 @@ func TestOnClientInactivityCustom(t *testing.T) {
 	// test TCP
 	c, err := tcp.Dial(cfg.Addr, options.WithTLS(&tls.Config{
 		InsecureSkipVerify: true,
-	}), options.WithContext(ctx))
+	}), options.WithContext(ctx), options.WithNetwork("tcp4"))
 	require.NoError(t, err)
 	_, err = c.Get(ctx, "/a")
 	require.NoError(t, err)
 	select {
 	case <-c.Done():
+		t.Log("TCP client closed in client")
+	case <-closeChan:
+		t.Log("TCP client closed in server")
 	case <-ctx.Done():
 		require.NoError(t, ctx.Err())
 	}
@@ -240,12 +259,15 @@ func TestOnClientInactivityCustom(t *testing.T) {
 	// test DTLS
 	cUDP, err := coapDtls.Dial(cfg.Addr, &dtls.Config{
 		InsecureSkipVerify: true,
-	}, options.WithContext(ctx))
+	}, options.WithContext(ctx), options.WithNetwork("udp4"))
 	require.NoError(t, err)
 	_, err = cUDP.Get(ctx, "/a")
 	require.NoError(t, err)
 	select {
 	case <-cUDP.Done():
+		t.Log("UDP client closed in client")
+	case <-closeChan:
+		t.Log("UDP client closed in server")
 	case <-ctx.Done():
 		require.NoError(t, ctx.Err())
 	}
