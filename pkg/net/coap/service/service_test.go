@@ -160,7 +160,7 @@ func TestOnClientInactivity(t *testing.T) {
 	// test TCP
 	c, err := tcp.Dial(cfg.Addr, options.WithTLS(&tls.Config{
 		InsecureSkipVerify: true,
-	}), options.WithContext(ctx), options.WithNetwork("tcp4"))
+	}), options.WithContext(ctx))
 	require.NoError(t, err)
 	_, err = c.Get(ctx, "/a")
 	require.NoError(t, err)
@@ -176,7 +176,7 @@ func TestOnClientInactivity(t *testing.T) {
 	// test DTLS
 	cUDP, err := coapDtls.Dial(cfg.Addr, &dtls.Config{
 		InsecureSkipVerify: true,
-	}, options.WithContext(ctx), options.WithNetwork("udp4"))
+	}, options.WithContext(ctx))
 	require.NoError(t, err)
 	_, err = cUDP.Get(ctx, "/a")
 	require.NoError(t, err)
@@ -243,7 +243,7 @@ func TestOnClientInactivityCustom(t *testing.T) {
 	// test TCP
 	c, err := tcp.Dial(cfg.Addr, options.WithTLS(&tls.Config{
 		InsecureSkipVerify: true,
-	}), options.WithContext(ctx), options.WithNetwork("tcp4"))
+	}), options.WithContext(ctx))
 	require.NoError(t, err)
 	_, err = c.Get(ctx, "/a")
 	require.NoError(t, err)
@@ -259,7 +259,7 @@ func TestOnClientInactivityCustom(t *testing.T) {
 	// test DTLS
 	cUDP, err := coapDtls.Dial(cfg.Addr, &dtls.Config{
 		InsecureSkipVerify: true,
-	}, options.WithContext(ctx), options.WithNetwork("udp4"))
+	}, options.WithContext(ctx))
 	require.NoError(t, err)
 	_, err = cUDP.Get(ctx, "/a")
 	require.NoError(t, err)
