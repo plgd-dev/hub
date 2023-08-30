@@ -8,6 +8,7 @@ metadata:
 data:
   {{ .Values.coapgateway.config.fileName }}: |
     {{- with .Values.resourceaggregate }}
+    hubID: {{ required "resourceaggregate.hubId or global.hubId is required" ( .hubId | default $.Values.global.hubId) | quote }}
     log:
       level: {{ .log.level }}
       dumpBody: {{ .log.dumpBody }}

@@ -19,6 +19,10 @@ import (
 
 func MakeConfig(t require.TestingT) service.Config {
 	var cfg service.Config
+
+	cfg.HubID = config.HubID()
+	cfg.Log = log.MakeDefaultConfig()
+
 	cfg.APIs.GRPC = config.MakeGrpcServerConfig(config.CERTIFICATE_AUTHORITY_HOST)
 	cfg.APIs.HTTP.Addr = config.CERTIFICATE_AUTHORITY_HTTP_HOST
 	cfg.APIs.HTTP.Server = config.MakeHttpServerConfig()
@@ -27,9 +31,7 @@ func MakeConfig(t require.TestingT) service.Config {
 	cfg.Signer.CertFile = os.Getenv("TEST_ROOT_CA_CERT")
 	cfg.Signer.ValidFrom = "now-1h"
 	cfg.Signer.ExpiresIn = time.Hour * 2
-	cfg.Signer.HubID = config.HubID()
 
-	cfg.Log = log.MakeDefaultConfig()
 	cfg.Clients.OpenTelemetryCollector = config.MakeOpenTelemetryCollectorClient()
 	cfg.Clients.Storage = MakeStorageConfig()
 

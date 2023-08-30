@@ -18,6 +18,7 @@ import (
 	"github.com/plgd-dev/hub/v2/grpc-gateway/client"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	grpcgwService "github.com/plgd-dev/hub/v2/grpc-gateway/test"
+	isEvents "github.com/plgd-dev/hub/v2/identity-store/events"
 	idService "github.com/plgd-dev/hub/v2/identity-store/test"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
@@ -120,6 +121,9 @@ func TestRequestHandlerSubscribeToEvents(t *testing.T) {
 					Type: &pb.Event_DeviceRegistered_{
 						DeviceRegistered: &pb.Event_DeviceRegistered{
 							DeviceIds: []string{deviceID},
+							EventMetadata: &isEvents.EventMetadata{
+								HubId: config.HubID(),
+							},
 						},
 					},
 					CorrelationId: "testToken1",
@@ -884,6 +888,9 @@ func TestRequestHandlerIssue270(t *testing.T) {
 		Type: &pb.Event_DeviceRegistered_{
 			DeviceRegistered: &pb.Event_DeviceRegistered{
 				DeviceIds: []string{deviceID},
+				EventMetadata: &isEvents.EventMetadata{
+					HubId: config.HubID(),
+				},
 			},
 		},
 		CorrelationId: "testToken",
@@ -925,6 +932,9 @@ func TestRequestHandlerIssue270(t *testing.T) {
 				Type: &pb.Event_DeviceUnregistered_{
 					DeviceUnregistered: &pb.Event_DeviceUnregistered{
 						DeviceIds: []string{deviceID},
+						EventMetadata: &isEvents.EventMetadata{
+							HubId: config.HubID(),
+						},
 					},
 				},
 				CorrelationId: "testToken",

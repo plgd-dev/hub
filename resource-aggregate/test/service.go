@@ -15,6 +15,7 @@ import (
 func MakeConfig(t require.TestingT) service.Config {
 	var cfg service.Config
 
+	cfg.HubID = config.HubID()
 	cfg.Log = config.MakeLogConfig(t, "TEST_RESOURCE_AGGREGATE_LOG_LEVEL", "TEST_RESOURCE_AGGREGATE_LOG_DUMP_BODY")
 
 	cfg.APIs.GRPC.OwnerCacheExpiration = time.Minute

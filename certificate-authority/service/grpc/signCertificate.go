@@ -20,8 +20,8 @@ func (s *CertificateAuthorityServer) validateRequest(csr []byte) error {
 	if err != nil {
 		return err
 	}
-	if infoData.CertificateCommonNameID == s.signerConfig.HubID {
-		return fmt.Errorf("common name contains same value as hub id(%v)", s.signerConfig.HubID)
+	if infoData.CertificateCommonNameID == s.hubID {
+		return fmt.Errorf("common name contains same value as hub id(%v)", s.hubID)
 	}
 	return nil
 }
@@ -108,7 +108,7 @@ func (s *CertificateAuthorityServer) SignCertificate(ctx context.Context, req *p
 	notAfter := notBefore.Add(s.validFor)
 	var signingRecord *pb.SigningRecord
 	signer := certificateSigner.New(s.certificate, s.privateKey, certificateSigner.WithNotBefore(notBefore), certificateSigner.WithNotAfter(notAfter), certificateSigner.WithOverrideCertTemplate(func(template *x509.Certificate) error {
-		subject, err := overrideSubject(ctx, template.Subject, s.ownerClaim, s.signerConfig.HubID, "")
+		subject, err := overrideSubject(ctx, template.Subject, s.ownerClaim, s.hubID, "")
 		if err != nil {
 			return err
 		}

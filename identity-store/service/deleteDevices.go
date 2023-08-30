@@ -39,7 +39,7 @@ func getOwnerDevices(tx persistence.PersistenceTx, owner string) ([]string, erro
 	return deviceIds, nil
 }
 
-func (s *Service) publishDevicesUnregistered(ctx context.Context, owner, userID string, deviceIDs []string) {
+func (s *Service) publishDevicesUnregistered(ctx context.Context, owner, userID, hubID string, deviceIDs []string) {
 	v := events.Event{
 		Type: &events.Event_DevicesUnregistered{
 			DevicesUnregistered: &events.DevicesUnregistered{
@@ -50,6 +50,9 @@ func (s *Service) publishDevicesUnregistered(ctx context.Context, owner, userID 
 				},
 				Timestamp:            pkgTime.UnixNano(time.Now()),
 				OpenTelemetryCarrier: propagation.TraceFromCtx(ctx),
+				EventMetadata: &events.EventMetadata{
+					HubId: hubID,
+				},
 			},
 		},
 	}
@@ -121,7 +124,7 @@ func (s *Service) DeleteDevices(ctx context.Context, request *pb.DeleteDevicesRe
 		deletedDeviceIDs = append(deletedDeviceIDs, deviceID)
 	}
 
-	s.publishDevicesUnregistered(ctx, owner, userID, deletedDeviceIDs)
+	s.publishDevicesUnregistered(ctx, owner, userID, s.hubID, deletedDeviceIDs)
 
 	return &pb.DeleteDevicesResponse{
 		DeviceIds: deletedDeviceIDs,

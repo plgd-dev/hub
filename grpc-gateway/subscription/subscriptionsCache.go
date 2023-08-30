@@ -42,6 +42,7 @@ func registrationEventToGrpcEvent(e *isEvents.Event) (*pb.Event, FilterBitmask) 
 				DeviceRegistered: &pb.Event_DeviceRegistered{
 					DeviceIds:            e.GetDevicesRegistered().GetDeviceIds(),
 					OpenTelemetryCarrier: e.GetDevicesRegistered().GetOpenTelemetryCarrier(),
+					EventMetadata:        e.GetDevicesRegistered().GetEventMetadata(),
 				},
 			},
 		}, FilterBitmaskDeviceRegistered
@@ -51,6 +52,7 @@ func registrationEventToGrpcEvent(e *isEvents.Event) (*pb.Event, FilterBitmask) 
 				DeviceUnregistered: &pb.Event_DeviceUnregistered{
 					DeviceIds:            e.GetDevicesUnregistered().GetDeviceIds(),
 					OpenTelemetryCarrier: e.GetDevicesUnregistered().GetOpenTelemetryCarrier(),
+					EventMetadata:        e.GetDevicesUnregistered().GetEventMetadata(),
 				},
 			},
 		}, FilterBitmaskDeviceUnregistered

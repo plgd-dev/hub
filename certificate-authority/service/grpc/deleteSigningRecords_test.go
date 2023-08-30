@@ -68,7 +68,7 @@ func TestCertificateAuthorityServerDeleteSigningRecords(t *testing.T) {
 	require.NoError(t, err)
 
 	ch := new(inprocgrpc.Channel)
-	ca, err := grpc.NewCertificateAuthorityServer(ownerClaim, test.MakeConfig(t).Signer, store, log.NewLogger(log.MakeDefaultConfig()))
+	ca, err := grpc.NewCertificateAuthorityServer(ownerClaim, config.HubID(), test.MakeConfig(t).Signer, store, log.NewLogger(log.MakeDefaultConfig()))
 	require.NoError(t, err)
 	pb.RegisterCertificateAuthorityServer(ch, ca)
 	grpcClient := pb.NewCertificateAuthorityClient(ch)

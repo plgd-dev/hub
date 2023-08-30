@@ -7,5 +7,5 @@ import (
 )
 
 func (r *RequestHandler) GetHubConfiguration(context.Context, *pb.HubConfigurationRequest) (*pb.HubConfigurationResponse, error) {
-	return r.publicConfiguration.ToProto(), nil
+	return r.publicConfiguration.ToProto(r.hubID), nil
 }

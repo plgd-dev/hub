@@ -8,6 +8,7 @@ import (
 
 	"github.com/plgd-dev/hub/v2/grpc-gateway/client"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
+	isEvents "github.com/plgd-dev/hub/v2/identity-store/events"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"github.com/plgd-dev/hub/v2/test"
 	"github.com/plgd-dev/hub/v2/test/config"
@@ -108,6 +109,9 @@ func waitForStopEvent(t *testing.T, subClient pb.GrpcGateway_SubscribeToEventsCl
 		Type: &pb.Event_DeviceUnregistered_{
 			DeviceUnregistered: &pb.Event_DeviceUnregistered{
 				DeviceIds: []string{deviceID},
+				EventMetadata: &isEvents.EventMetadata{
+					HubId: config.HubID(),
+				},
 			},
 		},
 	}
