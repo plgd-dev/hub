@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/plgd-dev/hub/v2/coap-gateway/resource"
-	"github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"github.com/plgd-dev/hub/v2/pkg/opentelemetry/propagation"
 	pkgTime "github.com/plgd-dev/hub/v2/pkg/time"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
@@ -53,6 +52,10 @@ func (e *ResourceLinksSnapshotTaken) ETag() *eventstore.ETagData {
 
 func (e *ResourceLinksSnapshotTaken) Timestamp() time.Time {
 	return pkgTime.Unix(0, e.GetEventMetadata().GetTimestamp())
+}
+
+func (e *ResourceLinksSnapshotTaken) ServiceID() (string, bool) {
+	return "", false
 }
 
 func (e *ResourceLinksSnapshotTaken) CloneData(event *ResourceLinksSnapshotTaken) {
@@ -196,24 +199,15 @@ func (e *ResourceLinksSnapshotTaken) Handle(ctx context.Context, iter eventstore
 	return iter.Err()
 }
 
-func (e *ResourceLinksSnapshotTaken) HandleCommand(ctx context.Context, cmd aggregate.Command, newVersion uint64) ([]eventstore.Event, error) {
-	userID, err := grpc.SubjectFromTokenMD(ctx)
-	if err != nil {
-		return nil, err
-	}
-	hubID := HubIDFromCtx(ctx)
-	if hubID == "" {
-		return nil, fmt.Errorf("hubID not found")
-	}
-
+func (e *ResourceLinksSnapshotTakenForCommand) HandleCommand(ctx context.Context, cmd aggregate.Command, newVersion uint64) ([]eventstore.Event, error) {
 	switch req := cmd.(type) {
 	case *commands.PublishResourceLinksRequest:
 		if req.GetCommandMetadata() == nil {
 			return nil, status.Errorf(codes.InvalidArgument, errInvalidCommandMetadata)
 		}
 
-		em := MakeEventMeta(req.GetCommandMetadata().GetConnectionId(), req.GetCommandMetadata().GetSequence(), newVersion, hubID)
-		ac := commands.NewAuditContext(userID, "")
+		em := MakeEventMeta(req.GetCommandMetadata().GetConnectionId(), req.GetCommandMetadata().GetSequence(), newVersion, e.hubID)
+		ac := commands.NewAuditContext(e.userID, "", e.owner)
 
 		rlp := ResourceLinksPublished{
 			Resources:            req.GetResources(),
@@ -236,8 +230,8 @@ func (e *ResourceLinksSnapshotTaken) HandleCommand(ctx context.Context, cmd aggr
 			return nil, status.Errorf(codes.InvalidArgument, errInvalidCommandMetadata)
 		}
 
-		em := MakeEventMeta(req.GetCommandMetadata().GetConnectionId(), req.GetCommandMetadata().GetSequence(), newVersion, hubID)
-		ac := commands.NewAuditContext(userID, "")
+		em := MakeEventMeta(req.GetCommandMetadata().GetConnectionId(), req.GetCommandMetadata().GetSequence(), newVersion, e.hubID)
+		ac := commands.NewAuditContext(e.userID, "", e.owner)
 		rlu := ResourceLinksUnpublished{
 			DeviceId:             req.GetDeviceId(),
 			Hrefs:                req.GetHrefs(),
@@ -269,6 +263,22 @@ func (e *ResourceLinksSnapshotTaken) TakeSnapshot(version uint64) (eventstore.Ev
 		Resources:     resources,
 		AuditContext:  e.GetAuditContext(),
 	}, true
+}
+
+type ResourceLinksSnapshotTakenForCommand struct {
+	userID string
+	owner  string
+	hubID  string
+	*ResourceLinksSnapshotTaken
+}
+
+func NewResourceLinksSnapshotTakenForCommand(userID string, owner string, hubID string) *ResourceLinksSnapshotTakenForCommand {
+	return &ResourceLinksSnapshotTakenForCommand{
+		ResourceLinksSnapshotTaken: NewResourceLinksSnapshotTaken(),
+		userID:                     userID,
+		owner:                      owner,
+		hubID:                      hubID,
+	}
 }
 
 func NewResourceLinksSnapshotTaken() *ResourceLinksSnapshotTaken {

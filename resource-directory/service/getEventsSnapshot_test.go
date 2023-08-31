@@ -113,7 +113,7 @@ func TestRequestHandlerGetEventsStateSnapshot(t *testing.T) {
 				ResourceUpdatePendings: []*events.ResourceUpdatePending{
 					pbTest.MakeResourceUpdatePending(t, deviceID, lightHref, "", map[string]interface{}{"power": 0}),
 				},
-				AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, ""),
+				AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, "", oauthService.DeviceUserID),
 			}, event)
 		case *events.ResourceChanged:
 			pbTest.CmpResourceChanged(t, pbTest.MakeResourceChanged(t, deviceID, lightHref, "", makeLightData(0)), event, "")

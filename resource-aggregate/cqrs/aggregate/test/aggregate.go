@@ -21,6 +21,7 @@ func (e *Published) GroupID() string            { return e.DeviceId }
 func (e *Published) IsSnapshot() bool           { return false }
 func (e *Published) Timestamp() time.Time       { return time.Unix(0, e.EventTimestamp) }
 func (e *Published) ETag() *eventstore.ETagData { return nil }
+func (e *Published) ServiceID() (string, bool)  { return "", false }
 
 func (e *Unpublished) Version() uint64            { return e.EventVersion }
 func (e *Unpublished) EventType() string          { return "unpublished" }
@@ -31,6 +32,7 @@ func (e *Unpublished) GroupID() string            { return e.DeviceId }
 func (e *Unpublished) IsSnapshot() bool           { return false }
 func (e *Unpublished) Timestamp() time.Time       { return time.Unix(0, e.EventTimestamp) }
 func (e *Unpublished) ETag() *eventstore.ETagData { return nil }
+func (e *Unpublished) ServiceID() (string, bool)  { return "", false }
 
 func (e *Snapshot) Version() uint64            { return e.EventVersion }
 func (e *Snapshot) EventType() string          { return "snapshot" }
@@ -42,6 +44,7 @@ func (e *Snapshot) GroupID() string            { return e.DeviceId }
 func (e *Snapshot) IsSnapshot() bool           { return true }
 func (e *Snapshot) Timestamp() time.Time       { return time.Unix(0, e.EventTimestamp) }
 func (e *Snapshot) ETag() *eventstore.ETagData { return nil }
+func (e *Snapshot) ServiceID() (string, bool)  { return "", false }
 
 func (e *Snapshot) handleEvent(eu eventstore.EventUnmarshaler) error {
 	if eu.EventType() == "" {

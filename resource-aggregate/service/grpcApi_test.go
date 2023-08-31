@@ -47,6 +47,7 @@ func TestRequestHandlerPublishResource(t *testing.T) {
 			want: &commands.PublishResourceLinksResponse{
 				AuditContext: &commands.AuditContext{
 					UserId: user0,
+					Owner:  user0,
 				},
 				PublishedResources: []*commands.Resource{testNewResource(href, deviceID)},
 				DeviceId:           deviceID,
@@ -60,6 +61,7 @@ func TestRequestHandlerPublishResource(t *testing.T) {
 			want: &commands.PublishResourceLinksResponse{
 				AuditContext: &commands.AuditContext{
 					UserId: user0,
+					Owner:  user0,
 				},
 				PublishedResources: []*commands.Resource{},
 				DeviceId:           deviceID,
@@ -125,7 +127,11 @@ func TestRequestHandlerPublishResource(t *testing.T) {
 		naClient.Close()
 	}()
 
-	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetOwnerDevices, logger)
+	serviceStatus, err := service.NewServiceStatus(config, eventstore, publisher, logger)
+	require.NoError(t, err)
+	defer serviceStatus.Close()
+
+	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetOwnerDevices, serviceStatus, logger)
 
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {
@@ -167,6 +173,7 @@ func TestRequestHandlerUnpublishResource(t *testing.T) {
 			want: &commands.UnpublishResourceLinksResponse{
 				AuditContext: &commands.AuditContext{
 					UserId: user0,
+					Owner:  user0,
 				},
 				UnpublishedHrefs: []string{href},
 				DeviceId:         deviceID,
@@ -240,7 +247,11 @@ func TestRequestHandlerUnpublishResource(t *testing.T) {
 		naClient.Close()
 	}()
 
-	requestHandler := service.NewRequestHandler(cfg, eventstore, publisher, mockGetOwnerDevices, logger)
+	serviceStatus, err := service.NewServiceStatus(cfg, eventstore, publisher, logger)
+	require.NoError(t, err)
+	defer serviceStatus.Close()
+
+	requestHandler := service.NewRequestHandler(cfg, eventstore, publisher, mockGetOwnerDevices, serviceStatus, logger)
 
 	pubReq := testMakePublishResourceRequest(deviceID, []string{href})
 	_, err = requestHandler.PublishResourceLinks(ctx, pubReq)
@@ -283,6 +294,7 @@ func TestRequestHandlerNotifyResourceChanged(t *testing.T) {
 			want: &commands.NotifyResourceChangedResponse{
 				AuditContext: &commands.AuditContext{
 					UserId: user0,
+					Owner:  user0,
 				},
 			},
 		},
@@ -325,7 +337,12 @@ func TestRequestHandlerNotifyResourceChanged(t *testing.T) {
 		naClient.Close()
 	}()
 
-	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetOwnerDevices, logger)
+	serviceStatus, err := service.NewServiceStatus(config, eventstore, publisher, logger)
+	require.NoError(t, err)
+	defer serviceStatus.Close()
+
+	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetOwnerDevices, serviceStatus, logger)
+
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {
 			response, err := requestHandler.NotifyResourceChanged(ctx, tt.args.request)
@@ -361,6 +378,7 @@ func TestRequestHandlerUpdateResourceContent(t *testing.T) {
 				AuditContext: &commands.AuditContext{
 					UserId:        user0,
 					CorrelationId: "123",
+					Owner:         user0,
 				},
 				ValidUntil: pkgTime.UnixNano(time.Now().Add(time.Hour)),
 			},
@@ -377,6 +395,7 @@ func TestRequestHandlerUpdateResourceContent(t *testing.T) {
 				AuditContext: &commands.AuditContext{
 					UserId:        user0,
 					CorrelationId: "456",
+					Owner:         user0,
 				},
 				ValidUntil: pkgTime.UnixNano(time.Now().Add(time.Hour)),
 			},
@@ -420,7 +439,11 @@ func TestRequestHandlerUpdateResourceContent(t *testing.T) {
 		naClient.Close()
 	}()
 
-	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetOwnerDevices, logger)
+	serviceStatus, err := service.NewServiceStatus(config, eventstore, publisher, logger)
+	require.NoError(t, err)
+	defer serviceStatus.Close()
+
+	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetOwnerDevices, serviceStatus, logger)
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {
 			if tt.args.request.GetResourceId().GetDeviceId() != "" && tt.args.request.GetResourceId().GetHref() != "" {
@@ -465,6 +488,7 @@ func TestRequestHandlerConfirmResourceUpdate(t *testing.T) {
 			want: &commands.ConfirmResourceUpdateResponse{
 				AuditContext: &commands.AuditContext{
 					UserId:        user0,
+					Owner:         user0,
 					CorrelationId: correlationID,
 				},
 			},
@@ -513,7 +537,12 @@ func TestRequestHandlerConfirmResourceUpdate(t *testing.T) {
 		naClient.Close()
 	}()
 
-	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetOwnerDevices, logger)
+	serviceStatus, err := service.NewServiceStatus(config, eventstore, publisher, logger)
+	require.NoError(t, err)
+	defer serviceStatus.Close()
+
+	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetOwnerDevices, serviceStatus, logger)
+
 	_, err = requestHandler.NotifyResourceChanged(ctx, testMakeNotifyResourceChangedRequest(deviceID, resID, 0))
 	require.NoError(t, err)
 	_, err = requestHandler.UpdateResource(ctx, testMakeUpdateResourceRequest(deviceID, resID, "", correlationID, time.Hour))
@@ -554,6 +583,7 @@ func TestRequestHandlerRetrieveResource(t *testing.T) {
 			want: &commands.RetrieveResourceResponse{
 				AuditContext: &commands.AuditContext{
 					UserId:        user0,
+					Owner:         user0,
 					CorrelationId: correlationID,
 				},
 				ValidUntil: pkgTime.UnixNano(time.Now().Add(time.Hour)),
@@ -602,8 +632,12 @@ func TestRequestHandlerRetrieveResource(t *testing.T) {
 		publisher.Close()
 		naClient.Close()
 	}()
+	serviceStatus, err := service.NewServiceStatus(config, eventstore, publisher, logger)
+	require.NoError(t, err)
+	defer serviceStatus.Close()
 
-	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetOwnerDevices, logger)
+	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetOwnerDevices, serviceStatus, logger)
+
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {
 			if tt.args.request.GetResourceId().GetDeviceId() != "" && tt.args.request.GetResourceId().GetHref() != "" {
@@ -648,6 +682,7 @@ func TestRequestHandlerConfirmResourceRetrieve(t *testing.T) {
 			want: &commands.ConfirmResourceRetrieveResponse{
 				AuditContext: &commands.AuditContext{
 					UserId:        user0,
+					Owner:         user0,
 					CorrelationId: correlationID,
 				},
 			},
@@ -696,7 +731,12 @@ func TestRequestHandlerConfirmResourceRetrieve(t *testing.T) {
 		naClient.Close()
 	}()
 
-	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetOwnerDevices, logger)
+	serviceStatus, err := service.NewServiceStatus(config, eventstore, publisher, logger)
+	require.NoError(t, err)
+	defer serviceStatus.Close()
+
+	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetOwnerDevices, serviceStatus, logger)
+
 	_, err = requestHandler.NotifyResourceChanged(ctx, testMakeNotifyResourceChangedRequest(deviceID, resID, 0))
 	require.NoError(t, err)
 	_, err = requestHandler.RetrieveResource(ctx, testMakeRetrieveResourceRequest(deviceID, resID, correlationID, time.Hour))
@@ -740,6 +780,7 @@ func TestRequestHandlerDeleteResource(t *testing.T) {
 			want: &commands.DeleteResourceResponse{
 				AuditContext: &commands.AuditContext{
 					UserId:        user0,
+					Owner:         user0,
 					CorrelationId: correlationID,
 				},
 				ValidUntil: pkgTime.UnixNano(time.Now().Add(time.Hour)),
@@ -789,7 +830,12 @@ func TestRequestHandlerDeleteResource(t *testing.T) {
 		naClient.Close()
 	}()
 
-	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetOwnerDevices, logger)
+	serviceStatus, err := service.NewServiceStatus(config, eventstore, publisher, logger)
+	require.NoError(t, err)
+	defer serviceStatus.Close()
+
+	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetOwnerDevices, serviceStatus, logger)
+
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {
 			if tt.args.request.GetResourceId().GetDeviceId() != "" && tt.args.request.GetResourceId().GetHref() != "" {
@@ -834,6 +880,7 @@ func TestRequestHandlerConfirmResourceDelete(t *testing.T) {
 			want: &commands.ConfirmResourceDeleteResponse{
 				AuditContext: &commands.AuditContext{
 					UserId:        user0,
+					Owner:         user0,
 					CorrelationId: correlationID,
 				},
 			},
@@ -882,7 +929,12 @@ func TestRequestHandlerConfirmResourceDelete(t *testing.T) {
 		naClient.Close()
 	}()
 
-	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetOwnerDevices, logger)
+	serviceStatus, err := service.NewServiceStatus(config, eventstore, publisher, logger)
+	require.NoError(t, err)
+	defer serviceStatus.Close()
+
+	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetOwnerDevices, serviceStatus, logger)
+
 	_, err = requestHandler.NotifyResourceChanged(ctx, testMakeNotifyResourceChangedRequest(deviceID, resID, 0))
 	require.NoError(t, err)
 	_, err = requestHandler.DeleteResource(ctx, testMakeDeleteResourceRequest(deviceID, resID, correlationID, time.Hour))
@@ -926,6 +978,7 @@ func TestRequestHandlerCreateResource(t *testing.T) {
 			want: &commands.CreateResourceResponse{
 				AuditContext: &commands.AuditContext{
 					UserId:        user0,
+					Owner:         user0,
 					CorrelationId: correlationID,
 				},
 				ValidUntil: pkgTime.UnixNano(time.Now().Add(time.Hour)),
@@ -975,7 +1028,12 @@ func TestRequestHandlerCreateResource(t *testing.T) {
 		naClient.Close()
 	}()
 
-	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetOwnerDevices, logger)
+	serviceStatus, err := service.NewServiceStatus(config, eventstore, publisher, logger)
+	require.NoError(t, err)
+	defer serviceStatus.Close()
+
+	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetOwnerDevices, serviceStatus, logger)
+
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {
 			if tt.args.request.GetResourceId().GetDeviceId() != "" && tt.args.request.GetResourceId().GetHref() != "" {
@@ -1020,6 +1078,7 @@ func TestRequestHandlerConfirmResourceCreate(t *testing.T) {
 			want: &commands.ConfirmResourceCreateResponse{
 				AuditContext: &commands.AuditContext{
 					UserId:        user0,
+					Owner:         user0,
 					CorrelationId: correlationID,
 				},
 			},
@@ -1068,7 +1127,12 @@ func TestRequestHandlerConfirmResourceCreate(t *testing.T) {
 		naClient.Close()
 	}()
 
-	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetOwnerDevices, logger)
+	serviceStatus, err := service.NewServiceStatus(config, eventstore, publisher, logger)
+	require.NoError(t, err)
+	defer serviceStatus.Close()
+
+	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetOwnerDevices, serviceStatus, logger)
+
 	_, err = requestHandler.NotifyResourceChanged(ctx, testMakeNotifyResourceChangedRequest(deviceID, resID, 0))
 	require.NoError(t, err)
 	_, err = requestHandler.CreateResource(ctx, testMakeCreateResourceRequest(deviceID, resID, correlationID, time.Hour))

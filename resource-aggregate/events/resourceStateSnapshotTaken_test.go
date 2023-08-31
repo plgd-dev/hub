@@ -52,8 +52,8 @@ func TestResourceStateSnapshotTaken_Handle(t *testing.T) {
 			name: "createPending, created",
 			args: args{
 				events: newIterator([]eventstore.EventUnmarshaler{
-					test.MakeResourceCreatePending(commands.NewResourceID("a", "/a"), &commands.Content{}, events.MakeEventMeta("", 0, 0, "hubID"), commands.NewAuditContext("userID", "0"), time.Now().Add(-time.Second)),
-					test.MakeResourceCreated(commands.NewResourceID("a", "/a"), commands.Status_OK, &commands.Content{}, events.MakeEventMeta("", 0, 0, "hubID"), commands.NewAuditContext("userID", "0")),
+					test.MakeResourceCreatePending(commands.NewResourceID("a", "/a"), &commands.Content{}, events.MakeEventMeta("", 0, 0, "hubID"), commands.NewAuditContext("userID", "0", "userID"), time.Now().Add(-time.Second)),
+					test.MakeResourceCreated(commands.NewResourceID("a", "/a"), commands.Status_OK, &commands.Content{}, events.MakeEventMeta("", 0, 0, "hubID"), commands.NewAuditContext("userID", "0", "userID")),
 				}),
 			},
 		},
@@ -61,8 +61,8 @@ func TestResourceStateSnapshotTaken_Handle(t *testing.T) {
 			name: "retrievePending, retrieved",
 			args: args{
 				events: newIterator([]eventstore.EventUnmarshaler{
-					test.MakeResourceRetrievePending(commands.NewResourceID("a", "/a"), "", events.MakeEventMeta("", 0, 0, "hubID"), commands.NewAuditContext("userID", "1"), time.Now().Add(-time.Second)),
-					test.MakeResourceRetrieved(commands.NewResourceID("a", "/a"), commands.Status_OK, &commands.Content{}, events.MakeEventMeta("", 0, 0, "hubID"), commands.NewAuditContext("userID", "1")),
+					test.MakeResourceRetrievePending(commands.NewResourceID("a", "/a"), "", events.MakeEventMeta("", 0, 0, "hubID"), commands.NewAuditContext("userID", "1", "userID"), time.Now().Add(-time.Second)),
+					test.MakeResourceRetrieved(commands.NewResourceID("a", "/a"), commands.Status_OK, &commands.Content{}, events.MakeEventMeta("", 0, 0, "hubID"), commands.NewAuditContext("userID", "1", "userID")),
 				}),
 			},
 		},
@@ -70,8 +70,8 @@ func TestResourceStateSnapshotTaken_Handle(t *testing.T) {
 			name: "updatePending, updated",
 			args: args{
 				events: newIterator([]eventstore.EventUnmarshaler{
-					test.MakeResourceUpdatePending(commands.NewResourceID("a", "/a"), &commands.Content{}, events.MakeEventMeta("", 0, 0, "hubID"), commands.NewAuditContext("userID", "2"), time.Now().Add(-time.Second)),
-					test.MakeResourceUpdated(commands.NewResourceID("a", "/a"), commands.Status_OK, &commands.Content{}, events.MakeEventMeta("", 0, 0, "hubID"), commands.NewAuditContext("userID", "2")),
+					test.MakeResourceUpdatePending(commands.NewResourceID("a", "/a"), &commands.Content{}, events.MakeEventMeta("", 0, 0, "hubID"), commands.NewAuditContext("userID", "2", "userID"), time.Now().Add(-time.Second)),
+					test.MakeResourceUpdated(commands.NewResourceID("a", "/a"), commands.Status_OK, &commands.Content{}, events.MakeEventMeta("", 0, 0, "hubID"), commands.NewAuditContext("userID", "2", "userID")),
 				}),
 			},
 		},
@@ -79,8 +79,8 @@ func TestResourceStateSnapshotTaken_Handle(t *testing.T) {
 			name: "retrievePending, retrieved",
 			args: args{
 				events: newIterator([]eventstore.EventUnmarshaler{
-					test.MakeResourceDeletePending(commands.NewResourceID("a", "/a"), events.MakeEventMeta("", 0, 0, "hubID"), commands.NewAuditContext("userID", "3"), time.Now().Add(-time.Second)),
-					test.MakeResourceDeleted(commands.NewResourceID("a", "/a"), commands.Status_OK, &commands.Content{}, events.MakeEventMeta("", 0, 0, "hubID"), commands.NewAuditContext("userID", "3")),
+					test.MakeResourceDeletePending(commands.NewResourceID("a", "/a"), events.MakeEventMeta("", 0, 0, "hubID"), commands.NewAuditContext("userID", "3", "userID"), time.Now().Add(-time.Second)),
+					test.MakeResourceDeleted(commands.NewResourceID("a", "/a"), commands.Status_OK, &commands.Content{}, events.MakeEventMeta("", 0, 0, "hubID"), commands.NewAuditContext("userID", "3", "userID")),
 				}),
 			},
 		},

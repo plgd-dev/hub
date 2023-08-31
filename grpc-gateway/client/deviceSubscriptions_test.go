@@ -252,7 +252,7 @@ func TestObserveDeviceResourcesUpdate(t *testing.T) {
 							return d
 						}(),
 					},
-					AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, updCorrelationID),
+					AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, updCorrelationID, oauthService.DeviceUserID),
 				},
 			},
 		},

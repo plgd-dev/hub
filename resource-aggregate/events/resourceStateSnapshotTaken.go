@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/plgd-dev/go-coap/v3/message"
-	"github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"github.com/plgd-dev/hub/v2/pkg/opentelemetry/propagation"
 	pkgTime "github.com/plgd-dev/hub/v2/pkg/time"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
@@ -61,6 +60,10 @@ func (e *ResourceStateSnapshotTaken) ETag() *eventstore.ETagData {
 
 func (e *ResourceStateSnapshotTaken) Timestamp() time.Time {
 	return pkgTime.Unix(0, e.GetEventMetadata().GetTimestamp())
+}
+
+func (e *ResourceStateSnapshotTaken) ServiceID() (string, bool) {
+	return "", false
 }
 
 func (e *ResourceStateSnapshotTaken) CopyData(event *ResourceStateSnapshotTaken) {
@@ -445,13 +448,13 @@ func convertContent(content *commands.Content, supportedContentType string) (new
 	}, nil
 }
 
-func (e *ResourceStateSnapshotTaken) confirmResourceUpdateCommand(ctx context.Context, userID, hubID string, req *commands.ConfirmResourceUpdateRequest, newVersion uint64) ([]eventstore.Event, error) {
+func (e *ResourceStateSnapshotTakenForCommand) confirmResourceUpdateRequest(ctx context.Context, req *commands.ConfirmResourceUpdateRequest, newVersion uint64) ([]eventstore.Event, error) {
 	if req.CommandMetadata == nil {
 		return nil, status.Errorf(codes.InvalidArgument, errInvalidCommandMetadata)
 	}
 
-	em := MakeEventMeta(req.GetCommandMetadata().GetConnectionId(), req.GetCommandMetadata().GetSequence(), newVersion, hubID)
-	ac := commands.NewAuditContext(userID, req.GetCorrelationId())
+	em := MakeEventMeta(req.GetCommandMetadata().GetConnectionId(), req.GetCommandMetadata().GetSequence(), newVersion, e.hubID)
+	ac := commands.NewAuditContext(e.userID, req.GetCorrelationId(), e.owner)
 	rc := ResourceUpdated{
 		ResourceId:           req.GetResourceId(),
 		AuditContext:         ac,
@@ -466,13 +469,13 @@ func (e *ResourceStateSnapshotTaken) confirmResourceUpdateCommand(ctx context.Co
 	return []eventstore.Event{&rc}, nil
 }
 
-func (e *ResourceStateSnapshotTaken) confirmResourceRetrieveCommand(ctx context.Context, userID, hubID string, req *commands.ConfirmResourceRetrieveRequest, newVersion uint64) ([]eventstore.Event, error) {
+func (e *ResourceStateSnapshotTakenForCommand) confirmResourceRetrieveRequest(ctx context.Context, req *commands.ConfirmResourceRetrieveRequest, newVersion uint64) ([]eventstore.Event, error) {
 	if req.GetCommandMetadata() == nil {
 		return nil, status.Errorf(codes.InvalidArgument, errInvalidCommandMetadata)
 	}
 
-	em := MakeEventMeta(req.GetCommandMetadata().GetConnectionId(), req.GetCommandMetadata().GetSequence(), newVersion, hubID)
-	ac := commands.NewAuditContext(userID, req.GetCorrelationId())
+	em := MakeEventMeta(req.GetCommandMetadata().GetConnectionId(), req.GetCommandMetadata().GetSequence(), newVersion, e.hubID)
+	ac := commands.NewAuditContext(e.userID, req.GetCorrelationId(), e.owner)
 	rc := ResourceRetrieved{
 		ResourceId:           req.GetResourceId(),
 		AuditContext:         ac,
@@ -488,13 +491,13 @@ func (e *ResourceStateSnapshotTaken) confirmResourceRetrieveCommand(ctx context.
 	return []eventstore.Event{&rc}, nil
 }
 
-func (e *ResourceStateSnapshotTaken) confirmResourceDeleteCommand(ctx context.Context, userID, hubID string, req *commands.ConfirmResourceDeleteRequest, newVersion uint64) ([]eventstore.Event, error) {
+func (e *ResourceStateSnapshotTakenForCommand) confirmResourceDeleteRequest(ctx context.Context, req *commands.ConfirmResourceDeleteRequest, newVersion uint64) ([]eventstore.Event, error) {
 	if req.GetCommandMetadata() == nil {
 		return nil, status.Errorf(codes.InvalidArgument, errInvalidCommandMetadata)
 	}
 
-	em := MakeEventMeta(req.GetCommandMetadata().GetConnectionId(), req.GetCommandMetadata().GetSequence(), newVersion, hubID)
-	ac := commands.NewAuditContext(userID, req.GetCorrelationId())
+	em := MakeEventMeta(req.GetCommandMetadata().GetConnectionId(), req.GetCommandMetadata().GetSequence(), newVersion, e.hubID)
+	ac := commands.NewAuditContext(e.userID, req.GetCorrelationId(), e.owner)
 	rc := ResourceDeleted{
 		ResourceId:           req.GetResourceId(),
 		AuditContext:         ac,
@@ -509,13 +512,13 @@ func (e *ResourceStateSnapshotTaken) confirmResourceDeleteCommand(ctx context.Co
 	return []eventstore.Event{&rc}, nil
 }
 
-func (e *ResourceStateSnapshotTaken) confirmResourceCreateCommand(ctx context.Context, userID, hubID string, req *commands.ConfirmResourceCreateRequest, newVersion uint64) ([]eventstore.Event, error) {
+func (e *ResourceStateSnapshotTakenForCommand) confirmResourceCreateRequest(ctx context.Context, req *commands.ConfirmResourceCreateRequest, newVersion uint64) ([]eventstore.Event, error) {
 	if req.GetCommandMetadata() == nil {
 		return nil, status.Errorf(codes.InvalidArgument, errInvalidCommandMetadata)
 	}
 
-	em := MakeEventMeta(req.GetCommandMetadata().GetConnectionId(), req.GetCommandMetadata().GetSequence(), newVersion, hubID)
-	ac := commands.NewAuditContext(userID, req.GetCorrelationId())
+	em := MakeEventMeta(req.GetCommandMetadata().GetConnectionId(), req.GetCommandMetadata().GetSequence(), newVersion, e.hubID)
+	ac := commands.NewAuditContext(e.userID, req.GetCorrelationId(), e.owner)
 	rc := ResourceCreated{
 		ResourceId:           req.GetResourceId(),
 		AuditContext:         ac,
@@ -530,7 +533,7 @@ func (e *ResourceStateSnapshotTaken) confirmResourceCreateCommand(ctx context.Co
 	return []eventstore.Event{&rc}, nil
 }
 
-func (e *ResourceStateSnapshotTaken) CancelPendingCommands(ctx context.Context, userID, hubID string, req *commands.CancelPendingCommandsRequest, newVersion uint64) ([]eventstore.Event, error) {
+func (e *ResourceStateSnapshotTakenForCommand) CancelPendingCommandsRequest(ctx context.Context, req *commands.CancelPendingCommandsRequest, newVersion uint64) ([]eventstore.Event, error) {
 	if req.GetCommandMetadata() == nil {
 		return nil, status.Errorf(codes.InvalidArgument, errInvalidCommandMetadata)
 	}
@@ -540,7 +543,7 @@ func (e *ResourceStateSnapshotTaken) CancelPendingCommands(ctx context.Context, 
 		if len(correlationIdFilter) != 0 && !correlationIdFilter.HasOneOf(event.GetAuditContext().GetCorrelationId()) {
 			continue
 		}
-		ev, err := e.confirmResourceCreateCommand(ctx, userID, hubID, &commands.ConfirmResourceCreateRequest{
+		ev, err := e.confirmResourceCreateRequest(ctx, &commands.ConfirmResourceCreateRequest{
 			ResourceId:      req.GetResourceId(),
 			CorrelationId:   event.GetAuditContext().GetCorrelationId(),
 			Status:          commands.Status_CANCELED,
@@ -555,7 +558,7 @@ func (e *ResourceStateSnapshotTaken) CancelPendingCommands(ctx context.Context, 
 		if len(correlationIdFilter) != 0 && !correlationIdFilter.HasOneOf(event.GetAuditContext().GetCorrelationId()) {
 			continue
 		}
-		ev, err := e.confirmResourceUpdateCommand(ctx, userID, hubID, &commands.ConfirmResourceUpdateRequest{
+		ev, err := e.confirmResourceUpdateRequest(ctx, &commands.ConfirmResourceUpdateRequest{
 			ResourceId:      req.GetResourceId(),
 			CorrelationId:   event.GetAuditContext().GetCorrelationId(),
 			Status:          commands.Status_CANCELED,
@@ -570,7 +573,7 @@ func (e *ResourceStateSnapshotTaken) CancelPendingCommands(ctx context.Context, 
 		if len(correlationIdFilter) != 0 && !correlationIdFilter.HasOneOf(event.GetAuditContext().GetCorrelationId()) {
 			continue
 		}
-		ev, err := e.confirmResourceRetrieveCommand(ctx, userID, hubID, &commands.ConfirmResourceRetrieveRequest{
+		ev, err := e.confirmResourceRetrieveRequest(ctx, &commands.ConfirmResourceRetrieveRequest{
 			ResourceId:      req.GetResourceId(),
 			CorrelationId:   event.GetAuditContext().GetCorrelationId(),
 			Status:          commands.Status_CANCELED,
@@ -585,7 +588,7 @@ func (e *ResourceStateSnapshotTaken) CancelPendingCommands(ctx context.Context, 
 		if len(correlationIdFilter) != 0 && !correlationIdFilter.HasOneOf(event.GetAuditContext().GetCorrelationId()) {
 			continue
 		}
-		ev, err := e.confirmResourceDeleteCommand(ctx, userID, hubID, &commands.ConfirmResourceDeleteRequest{
+		ev, err := e.confirmResourceDeleteRequest(ctx, &commands.ConfirmResourceDeleteRequest{
 			ResourceId:      req.GetResourceId(),
 			CorrelationId:   event.GetAuditContext().GetCorrelationId(),
 			Status:          commands.Status_CANCELED,
@@ -602,13 +605,13 @@ func (e *ResourceStateSnapshotTaken) CancelPendingCommands(ctx context.Context, 
 	return events, nil
 }
 
-func (e *ResourceStateSnapshotTaken) handleNotifyResourceChangedRequest(ctx context.Context, userID, hubID string, req *commands.NotifyResourceChangedRequest, newVersion uint64) ([]eventstore.Event, error) {
+func (e *ResourceStateSnapshotTakenForCommand) handleNotifyResourceChangedRequest(ctx context.Context, req *commands.NotifyResourceChangedRequest, newVersion uint64) ([]eventstore.Event, error) {
 	if req.CommandMetadata == nil {
 		return nil, status.Errorf(codes.InvalidArgument, errInvalidCommandMetadata)
 	}
 
-	em := MakeEventMeta(req.GetCommandMetadata().GetConnectionId(), req.GetCommandMetadata().GetSequence(), newVersion, hubID)
-	ac := commands.NewAuditContext(userID, "")
+	em := MakeEventMeta(req.GetCommandMetadata().GetConnectionId(), req.GetCommandMetadata().GetSequence(), newVersion, e.hubID)
+	ac := commands.NewAuditContext(e.userID, "", e.owner)
 
 	rc := ResourceChanged{
 		ResourceId:           req.GetResourceId(),
@@ -626,13 +629,13 @@ func (e *ResourceStateSnapshotTaken) handleNotifyResourceChangedRequest(ctx cont
 	return nil, nil
 }
 
-func (e *ResourceStateSnapshotTaken) handleUpdateResourceRequest(ctx context.Context, userID, hubID string, req *commands.UpdateResourceRequest, newVersion uint64) ([]eventstore.Event, error) {
+func (e *ResourceStateSnapshotTakenForCommand) handleUpdateResourceRequest(ctx context.Context, req *commands.UpdateResourceRequest, newVersion uint64) ([]eventstore.Event, error) {
 	if req.GetCommandMetadata() == nil {
 		return nil, status.Errorf(codes.InvalidArgument, errInvalidCommandMetadata)
 	}
 
-	em := MakeEventMeta(req.GetCommandMetadata().GetConnectionId(), req.GetCommandMetadata().GetSequence(), newVersion, hubID)
-	ac := commands.NewAuditContext(userID, req.GetCorrelationId())
+	em := MakeEventMeta(req.GetCommandMetadata().GetConnectionId(), req.GetCommandMetadata().GetSequence(), newVersion, e.hubID)
+	ac := commands.NewAuditContext(e.userID, req.GetCorrelationId(), e.owner)
 	content, err := convertContent(req.GetContent(), e.GetLatestResourceChange().GetContent().GetContentType())
 	if err != nil {
 		return nil, err
@@ -654,13 +657,13 @@ func (e *ResourceStateSnapshotTaken) handleUpdateResourceRequest(ctx context.Con
 	return []eventstore.Event{&rc}, nil
 }
 
-func (e *ResourceStateSnapshotTaken) handleRetrieveResourceRequest(ctx context.Context, userID, hubID string, req *commands.RetrieveResourceRequest, newVersion uint64) ([]eventstore.Event, error) {
+func (e *ResourceStateSnapshotTakenForCommand) handleRetrieveResourceRequest(ctx context.Context, req *commands.RetrieveResourceRequest, newVersion uint64) ([]eventstore.Event, error) {
 	if req.GetCommandMetadata() == nil {
 		return nil, status.Errorf(codes.InvalidArgument, errInvalidCommandMetadata)
 	}
 
-	em := MakeEventMeta(req.GetCommandMetadata().GetConnectionId(), req.GetCommandMetadata().GetSequence(), newVersion, hubID)
-	ac := commands.NewAuditContext(userID, req.GetCorrelationId())
+	em := MakeEventMeta(req.GetCommandMetadata().GetConnectionId(), req.GetCommandMetadata().GetSequence(), newVersion, e.hubID)
+	ac := commands.NewAuditContext(e.userID, req.GetCorrelationId(), e.owner)
 
 	rc := ResourceRetrievePending{
 		ResourceId:           req.GetResourceId(),
@@ -678,13 +681,13 @@ func (e *ResourceStateSnapshotTaken) handleRetrieveResourceRequest(ctx context.C
 	return []eventstore.Event{&rc}, nil
 }
 
-func (e *ResourceStateSnapshotTaken) handleDeleteResourceRequest(ctx context.Context, userID, hubID string, req *commands.DeleteResourceRequest, newVersion uint64) ([]eventstore.Event, error) {
+func (e *ResourceStateSnapshotTakenForCommand) handleDeleteResourceRequest(ctx context.Context, req *commands.DeleteResourceRequest, newVersion uint64) ([]eventstore.Event, error) {
 	if req.GetCommandMetadata() == nil {
 		return nil, status.Errorf(codes.InvalidArgument, errInvalidCommandMetadata)
 	}
 
-	em := MakeEventMeta(req.GetCommandMetadata().GetConnectionId(), req.GetCommandMetadata().GetSequence(), newVersion, hubID)
-	ac := commands.NewAuditContext(userID, req.GetCorrelationId())
+	em := MakeEventMeta(req.GetCommandMetadata().GetConnectionId(), req.GetCommandMetadata().GetSequence(), newVersion, e.hubID)
+	ac := commands.NewAuditContext(e.userID, req.GetCorrelationId(), e.owner)
 
 	rc := ResourceDeletePending{
 		ResourceId:           req.GetResourceId(),
@@ -700,13 +703,13 @@ func (e *ResourceStateSnapshotTaken) handleDeleteResourceRequest(ctx context.Con
 	return []eventstore.Event{&rc}, nil
 }
 
-func (e *ResourceStateSnapshotTaken) handleCreateResourceRequest(ctx context.Context, userID, hubID string, req *commands.CreateResourceRequest, newVersion uint64) ([]eventstore.Event, error) {
+func (e *ResourceStateSnapshotTakenForCommand) handleCreateResourceRequest(ctx context.Context, req *commands.CreateResourceRequest, newVersion uint64) ([]eventstore.Event, error) {
 	if req.GetCommandMetadata() == nil {
 		return nil, status.Errorf(codes.InvalidArgument, errInvalidCommandMetadata)
 	}
 
-	em := MakeEventMeta(req.GetCommandMetadata().GetConnectionId(), req.GetCommandMetadata().GetSequence(), newVersion, hubID)
-	ac := commands.NewAuditContext(userID, req.GetCorrelationId())
+	em := MakeEventMeta(req.GetCommandMetadata().GetConnectionId(), req.GetCommandMetadata().GetSequence(), newVersion, e.hubID)
+	ac := commands.NewAuditContext(e.userID, req.GetCorrelationId(), e.owner)
 	content, err := convertContent(req.GetContent(), e.GetLatestResourceChange().GetContent().GetContentType())
 	if err != nil {
 		return nil, err
@@ -726,15 +729,7 @@ func (e *ResourceStateSnapshotTaken) handleCreateResourceRequest(ctx context.Con
 	return []eventstore.Event{&rc}, nil
 }
 
-func (e *ResourceStateSnapshotTaken) HandleCommand(ctx context.Context, cmd aggregate.Command, newVersion uint64) ([]eventstore.Event, error) {
-	userID, err := grpc.SubjectFromTokenMD(ctx)
-	if err != nil {
-		return nil, err
-	}
-	hubID := HubIDFromCtx(ctx)
-	if hubID == "" {
-		return nil, fmt.Errorf("hubID not found")
-	}
+func (e *ResourceStateSnapshotTakenForCommand) HandleCommand(ctx context.Context, cmd aggregate.Command, newVersion uint64) ([]eventstore.Event, error) {
 	// only NotifyResourceChangedRequest can have version 0
 	if _, ok := cmd.(*commands.NotifyResourceChangedRequest); !ok && newVersion == 0 {
 		return nil, status.Errorf(codes.NotFound, errInvalidVersion)
@@ -742,25 +737,25 @@ func (e *ResourceStateSnapshotTaken) HandleCommand(ctx context.Context, cmd aggr
 
 	switch req := cmd.(type) {
 	case *commands.NotifyResourceChangedRequest:
-		return e.handleNotifyResourceChangedRequest(ctx, userID, hubID, req, newVersion)
+		return e.handleNotifyResourceChangedRequest(ctx, req, newVersion)
 	case *commands.UpdateResourceRequest:
-		return e.handleUpdateResourceRequest(ctx, userID, hubID, req, newVersion)
+		return e.handleUpdateResourceRequest(ctx, req, newVersion)
 	case *commands.ConfirmResourceUpdateRequest:
-		return e.confirmResourceUpdateCommand(ctx, userID, hubID, req, newVersion)
+		return e.confirmResourceUpdateRequest(ctx, req, newVersion)
 	case *commands.RetrieveResourceRequest:
-		return e.handleRetrieveResourceRequest(ctx, userID, hubID, req, newVersion)
+		return e.handleRetrieveResourceRequest(ctx, req, newVersion)
 	case *commands.ConfirmResourceRetrieveRequest:
-		return e.confirmResourceRetrieveCommand(ctx, userID, hubID, req, newVersion)
+		return e.confirmResourceRetrieveRequest(ctx, req, newVersion)
 	case *commands.DeleteResourceRequest:
-		return e.handleDeleteResourceRequest(ctx, userID, hubID, req, newVersion)
+		return e.handleDeleteResourceRequest(ctx, req, newVersion)
 	case *commands.ConfirmResourceDeleteRequest:
-		return e.confirmResourceDeleteCommand(ctx, userID, hubID, req, newVersion)
+		return e.confirmResourceDeleteRequest(ctx, req, newVersion)
 	case *commands.CreateResourceRequest:
-		return e.handleCreateResourceRequest(ctx, userID, hubID, req, newVersion)
+		return e.handleCreateResourceRequest(ctx, req, newVersion)
 	case *commands.ConfirmResourceCreateRequest:
-		return e.confirmResourceCreateCommand(ctx, userID, hubID, req, newVersion)
+		return e.confirmResourceCreateRequest(ctx, req, newVersion)
 	case *commands.CancelPendingCommandsRequest:
-		return e.CancelPendingCommands(ctx, userID, hubID, req, newVersion)
+		return e.CancelPendingCommandsRequest(ctx, req, newVersion)
 	}
 
 	return nil, fmt.Errorf("unknown command(%T)", cmd)
@@ -777,6 +772,22 @@ func (e *ResourceStateSnapshotTaken) TakeSnapshot(version uint64) (eventstore.Ev
 		ResourceDeletePendings:   e.GetResourceDeletePendings(),
 		AuditContext:             e.GetAuditContext(),
 	}, true
+}
+
+type ResourceStateSnapshotTakenForCommand struct {
+	owner  string
+	hubID  string
+	userID string
+	*ResourceStateSnapshotTaken
+}
+
+func NewResourceStateSnapshotTakenForCommand(userID string, owner string, hubID string) *ResourceStateSnapshotTakenForCommand {
+	return &ResourceStateSnapshotTakenForCommand{
+		ResourceStateSnapshotTaken: NewResourceStateSnapshotTaken(),
+		userID:                     userID,
+		owner:                      owner,
+		hubID:                      hubID,
+	}
 }
 
 func NewResourceStateSnapshotTaken() *ResourceStateSnapshotTaken {

@@ -8,6 +8,7 @@ import (
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	cqrsAggregate "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/aggregate"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore/mongodb"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -17,27 +18,37 @@ type LogPublishErrFunc func(err error)
 
 type Aggregate struct {
 	ag         *cqrsAggregate.Aggregate
-	hubID      string
-	eventstore EventStore
+	eventstore *mongodb.EventStore
 }
 
-func ResourceStateFactoryModel(context.Context) (cqrsAggregate.AggregateModel, error) {
-	return events.NewResourceStateSnapshotTaken(), nil
+func NewResourceStateFactoryModel(userID, owner, hubID string) func(ctx context.Context) (cqrsAggregate.AggregateModel, error) {
+	return func(ctx context.Context) (cqrsAggregate.AggregateModel, error) {
+		return events.NewResourceStateSnapshotTakenForCommand(userID, owner, hubID), nil
+	}
 }
 
-func ResourceLinksFactoryModel(context.Context) (cqrsAggregate.AggregateModel, error) {
-	return events.NewResourceLinksSnapshotTaken(), nil
+func NewResourceLinksFactoryModel(userID, owner, hubID string) func(ctx context.Context) (cqrsAggregate.AggregateModel, error) {
+	return func(ctx context.Context) (cqrsAggregate.AggregateModel, error) {
+		return events.NewResourceLinksSnapshotTakenForCommand(userID, owner, hubID), nil
+	}
 }
 
-func DeviceMetadataFactoryModel(context.Context) (cqrsAggregate.AggregateModel, error) {
-	return events.NewDeviceMetadataSnapshotTaken(), nil
+func NewDeviceMetadataFactoryModel(userID, owner, hubID string) func(ctx context.Context) (cqrsAggregate.AggregateModel, error) {
+	return func(ctx context.Context) (cqrsAggregate.AggregateModel, error) {
+		return events.NewDeviceMetadataSnapshotTakenForCommand(userID, owner, hubID), nil
+	}
+}
+
+func NewServicesMetadataFactoryModel(userID, owner, hubID string) func(ctx context.Context) (cqrsAggregate.AggregateModel, error) {
+	return func(ctx context.Context) (cqrsAggregate.AggregateModel, error) {
+		return events.NewServicesMetadataSnapshotTakenForCommand(userID, owner, hubID), nil
+	}
 }
 
 // NewAggregate creates new resource aggreate - it must be created for every run command.
-func NewAggregate(resourceID *commands.ResourceId, snapshotThreshold int, hubID string, eventstore EventStore, factoryModel cqrsAggregate.FactoryModelFunc, retry cqrsAggregate.RetryFunc) (*Aggregate, error) {
+func NewAggregate(resourceID *commands.ResourceId, snapshotThreshold int, eventstore *mongodb.EventStore, factoryModel cqrsAggregate.FactoryModelFunc, retry cqrsAggregate.RetryFunc) (*Aggregate, error) {
 	a := &Aggregate{
 		eventstore: eventstore,
-		hubID:      hubID,
 	}
 	cqrsAg, err := cqrsAggregate.NewAggregate(resourceID.GetDeviceId(),
 		resourceID.ToUUID().String(),
@@ -56,7 +67,7 @@ func NewAggregate(resourceID *commands.ResourceId, snapshotThreshold int, hubID 
 }
 
 func (a *Aggregate) HandleCommand(ctx context.Context, cmd cqrsAggregate.Command) ([]eventstore.Event, error) {
-	return a.ag.HandleCommand(events.CtxWithHubID(ctx, a.hubID), cmd)
+	return a.ag.HandleCommand(ctx, cmd)
 }
 
 var (

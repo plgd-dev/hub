@@ -171,7 +171,7 @@ func TestUpdateResource(t *testing.T) {
 					}),
 				},
 				Status:       commands.Status_OK,
-				AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, ""),
+				AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, "", oauthService.DeviceUserID),
 			},
 		},
 	}

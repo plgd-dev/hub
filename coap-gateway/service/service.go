@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/pion/dtls/v2"
 	"github.com/plgd-dev/device/v2/pkg/net/coap"
 	"github.com/plgd-dev/device/v2/schema/plgdtime"
@@ -58,6 +59,7 @@ type resourceDirectoryClient struct {
 // Service is a configuration of coap-gateway
 type Service struct {
 	ctx                        context.Context
+	instanceID                 uuid.UUID
 	tracerProvider             trace.TracerProvider
 	logger                     log.Logger
 	isClient                   pbIS.IdentityStoreClient
@@ -305,8 +307,10 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 
 	ctx, cancel := context.WithCancel(ctx)
 
+	instanceID := uuid.New()
 	s := Service{
-		config: config,
+		config:     config,
+		instanceID: instanceID,
 
 		natsClient:                 nats,
 		raClient:                   raClient,
@@ -315,7 +319,7 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 		certificateAuthorityClient: certificateAuthorityClient,
 		expirationClientCache:      newExpirationClientCache(ctx, config.APIs.COAP.OwnerCacheExpiration),
 		authInterceptor:            newAuthInterceptor(),
-		devicesStatusUpdater:       newDevicesStatusUpdater(ctx, config.Clients.ResourceAggregate.DeviceStatusExpiration, logger),
+		devicesStatusUpdater:       newDevicesStatusUpdater(ctx, instanceID, logger),
 
 		sigs: make(chan os.Signal, 1),
 
@@ -591,7 +595,7 @@ func (s *Service) createServices(fileWatcher *fsnotify.Watcher, logger log.Logge
 	})); err != nil {
 		return nil, setHandlerError(plgdtime.ResourceURI, err)
 	}
-	return coapService.New(s.ctx, s.config.APIs.COAP.Config, m, fileWatcher, logger,
+	services, err := coapService.New(s.ctx, s.config.APIs.COAP.Config, m, fileWatcher, logger,
 		coapService.WithOnNewConnection(s.coapConnOnNew),
 		coapService.WithOnInactivityConnection(s.onInactivityConnection),
 		coapService.WithMessagePool(s.messagePool),
@@ -600,4 +604,9 @@ func (s *Service) createServices(fileWatcher *fsnotify.Watcher, logger log.Logge
 			return &tlsCfg
 		}),
 	)
+	if err != nil {
+		return nil, fmt.Errorf("cannot create coap-gateway service: %w", err)
+	}
+	services.Add(newServiceStatus(s.instanceID, s.config.ServiceStatus.TimeToLive, s.raClient, logger))
+	return services, err
 }

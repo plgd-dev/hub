@@ -40,7 +40,7 @@ func (r RequestHandler) DeleteDevices(ctx context.Context, request *commands.Del
 	if len(ownedDevices) == 0 {
 		return &commands.DeleteDevicesResponse{
 			DeviceIds:    nil,
-			AuditContext: commands.NewAuditContext(owner, ""),
+			AuditContext: commands.NewAuditContext(owner, "", owner),
 		}, nil
 	}
 
@@ -55,6 +55,6 @@ func (r RequestHandler) DeleteDevices(ctx context.Context, request *commands.Del
 
 	return &commands.DeleteDevicesResponse{
 		DeviceIds:    ownedDevices,
-		AuditContext: commands.NewAuditContext(owner, ""),
+		AuditContext: commands.NewAuditContext(owner, "", owner),
 	}, nil
 }

@@ -50,7 +50,11 @@ func TestRequestHandler_DeleteDevices(t *testing.T) {
 		naClient.Close()
 	}()
 
-	requestHandler := service.NewRequestHandler(cfg, eventstore, publisher, mockGetOwnerDevices, logger)
+	serviceStatus, err := service.NewServiceStatus(cfg, eventstore, publisher, logger)
+	require.NoError(t, err)
+	defer serviceStatus.Close()
+
+	requestHandler := service.NewRequestHandler(cfg, eventstore, publisher, mockGetOwnerDevices, serviceStatus, logger)
 
 	type args struct {
 		req   *commands.DeleteDevicesRequest
@@ -84,6 +88,7 @@ func TestRequestHandler_DeleteDevices(t *testing.T) {
 				DeviceIds: nil,
 				AuditContext: &commands.AuditContext{
 					UserId: user0,
+					Owner:  user0,
 				},
 			},
 			wantError: false,
@@ -100,6 +105,7 @@ func TestRequestHandler_DeleteDevices(t *testing.T) {
 				DeviceIds: []string{deviceID},
 				AuditContext: &commands.AuditContext{
 					UserId: user0,
+					Owner:  user0,
 				},
 			},
 			wantError: false,
@@ -116,6 +122,7 @@ func TestRequestHandler_DeleteDevices(t *testing.T) {
 				DeviceIds: testUserDevices,
 				AuditContext: &commands.AuditContext{
 					UserId: user0,
+					Owner:  user0,
 				},
 			},
 			wantError: false,

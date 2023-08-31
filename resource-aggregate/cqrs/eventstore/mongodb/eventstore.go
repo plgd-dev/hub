@@ -50,6 +50,7 @@ const (
 	latestETagKey             = "latestetag"
 	etagKey                   = "etag"
 	latestETagKeyTimestampKey = latestETagKey + "." + timestampKey
+	serviceIDKey              = "serviceid"
 )
 
 var aggregateIDLastVersionQueryIndex = bson.D{
@@ -64,6 +65,11 @@ var aggregateIDFirstVersionQueryIndex = bson.D{
 
 var groupIDQueryIndex = bson.D{
 	{Key: groupIDKey, Value: 1},
+	{Key: isActiveKey, Value: 1},
+}
+
+var serviceIDQueryIndex = bson.D{
+	{Key: serviceIDKey, Value: 1},
 	{Key: isActiveKey, Value: 1},
 }
 
@@ -201,6 +207,7 @@ func newEventStoreWithClient(ctx context.Context, client *mongo.Client, dbPrefix
 		groupIDLatestTimestampQueryIndex,
 		aggregateIDLatestTimestampQueryIndex,
 		groupIDETagLatestTimestampQueryIndex,
+		serviceIDQueryIndex,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("cannot save events: %w", err)
@@ -270,6 +277,18 @@ func makeDBETag(etag *eventstore.ETagData) bson.M {
 	}
 }
 
+func tryToSetServiceID(doc bson.M, events []eventstore.Event) bson.M {
+	var serviceID string
+	var ok bool
+	for _, e := range events {
+		serviceID, ok = e.ServiceID()
+	}
+	if ok {
+		doc[serviceIDKey] = serviceID
+	}
+	return doc
+}
+
 func makeDBDoc(events []eventstore.Event, marshaler MarshalerFunc) (bson.M, error) {
 	etag, e, err := makeDBEventsAndGetETag(events, marshaler)
 	if err != nil {
@@ -294,7 +313,7 @@ func makeDBDoc(events []eventstore.Event, marshaler MarshalerFunc) (bson.M, erro
 	if etag != nil {
 		d[etagKey] = etag.ETag
 	}
-	return d, nil
+	return tryToSetServiceID(d, events), nil
 }
 
 // DBName returns db name

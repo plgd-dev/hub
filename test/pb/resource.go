@@ -68,7 +68,7 @@ func MakeResourceCreated(t *testing.T, deviceID, href, correlationID string, dat
 				return test.EncodeToCbor(t, data)
 			}(),
 		},
-		AuditContext: commands.NewAuditContext(service.DeviceUserID, correlationID),
+		AuditContext: commands.NewAuditContext(service.DeviceUserID, correlationID, service.DeviceUserID),
 	}
 }
 
@@ -181,7 +181,7 @@ func MakeResourceChanged(t *testing.T, deviceID, href, correlationID string, dat
 				return test.EncodeToCbor(t, data)
 			}(),
 		},
-		AuditContext: commands.NewAuditContext(service.DeviceUserID, correlationID),
+		AuditContext: commands.NewAuditContext(service.DeviceUserID, correlationID, service.DeviceUserID),
 	}
 }
 
@@ -192,7 +192,7 @@ func MakeResourceDeleted(deviceID, href, correlationID string) *events.ResourceD
 		Content: &commands.Content{
 			CoapContentFormat: int32(-1),
 		},
-		AuditContext: commands.NewAuditContext(service.DeviceUserID, correlationID),
+		AuditContext: commands.NewAuditContext(service.DeviceUserID, correlationID, service.DeviceUserID),
 	}
 }
 
@@ -231,7 +231,7 @@ func MakeResourceRetrieved(t *testing.T, deviceID, href, correlationID string, d
 				return test.EncodeToCbor(t, data)
 			}(),
 		},
-		AuditContext: commands.NewAuditContext(service.DeviceUserID, correlationID),
+		AuditContext: commands.NewAuditContext(service.DeviceUserID, correlationID, service.DeviceUserID),
 	}
 }
 
@@ -310,7 +310,7 @@ func MakeResourceUpdated(t *testing.T, deviceID, href, correlationID string, dat
 				Data:              test.EncodeToCbor(t, data),
 			}
 		}(),
-		AuditContext: commands.NewAuditContext(service.DeviceUserID, correlationID),
+		AuditContext: commands.NewAuditContext(service.DeviceUserID, correlationID, service.DeviceUserID),
 	}
 }
 
@@ -446,7 +446,7 @@ func MakeResourceLinksPublished(deviceID string, resources []*commands.Resource,
 	return &events.ResourceLinksPublished{
 		DeviceId:     deviceID,
 		Resources:    resources,
-		AuditContext: commands.NewAuditContext(service.DeviceUserID, correlationID),
+		AuditContext: commands.NewAuditContext(service.DeviceUserID, correlationID, service.DeviceUserID),
 	}
 }
 
@@ -464,6 +464,6 @@ func MakeResourceLinksUnpublished(deviceID string, resources []string, correlati
 	return &events.ResourceLinksUnpublished{
 		DeviceId:     deviceID,
 		Hrefs:        resources,
-		AuditContext: commands.NewAuditContext(service.DeviceUserID, correlationID),
+		AuditContext: commands.NewAuditContext(service.DeviceUserID, correlationID, service.DeviceUserID),
 	}
 }

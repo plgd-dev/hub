@@ -46,6 +46,10 @@ func (e *ResourceUpdatePending) Timestamp() time.Time {
 	return pkgTime.Unix(0, e.GetEventMetadata().GetTimestamp())
 }
 
+func (e *ResourceUpdatePending) ServiceID() (string, bool) {
+	return "", false
+}
+
 func (e *ResourceUpdatePending) CopyData(event *ResourceUpdatePending) {
 	e.ResourceId = event.GetResourceId()
 	e.ResourceInterface = event.GetResourceInterface()

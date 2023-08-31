@@ -42,6 +42,7 @@ func NewTestDeviceSimulator(deviceID, deviceName string, withResources bool) cli
 				Connection: &commands.Connection{
 					Status:   commands.Connection_ONLINE,
 					Protocol: test.StringToApplicationProtocol(config.ACTIVE_COAP_SCHEME),
+					Service:  &commands.Connection_Service{},
 				},
 				TwinEnabled: true,
 				TwinSynchronization: &commands.TwinSynchronization{
@@ -117,6 +118,7 @@ func TestClient_GetDevice(t *testing.T) {
 			got.Device.Metadata.Connection.OnlineValidUntil = 0
 			got.Device.Metadata.Connection.Id = ""
 			got.Device.Metadata.Connection.ConnectedAt = 0
+			got.Device.Metadata.Connection.Service.Id = ""
 			got.Device.Metadata.TwinSynchronization.SyncingAt = 0
 			got.Device.Metadata.TwinSynchronization.InSyncAt = 0
 			got.Device.Metadata.TwinSynchronization.CommandMetadata = nil

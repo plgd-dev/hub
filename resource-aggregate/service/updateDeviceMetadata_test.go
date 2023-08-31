@@ -38,9 +38,11 @@ func newTwinEnabled(v bool) *bool {
 func TestAggregateHandleUpdateDeviceMetadata(t *testing.T) {
 	const deviceID = "dev1"
 	const userID = "user1"
+	const owner = "owner1"
 	type args struct {
 		request *commands.UpdateDeviceMetadataRequest
 		userID  string
+		owner   string
 	}
 	test := []struct {
 		name    string
@@ -53,6 +55,7 @@ func TestAggregateHandleUpdateDeviceMetadata(t *testing.T) {
 			args: args{
 				request: testMakeUpdateDeviceMetadataRequest(deviceID, "", newConnectionStatus(commands.Connection_ONLINE), nil, time.Hour),
 				userID:  userID,
+				owner:   owner,
 			},
 			want: codes.OK,
 		},
@@ -61,6 +64,7 @@ func TestAggregateHandleUpdateDeviceMetadata(t *testing.T) {
 			args: args{
 				request: testMakeUpdateDeviceMetadataRequest(deviceID, "", nil, newTwinEnabled(false), time.Hour),
 				userID:  userID,
+				owner:   owner,
 			},
 			want: codes.OK,
 		},
@@ -69,6 +73,7 @@ func TestAggregateHandleUpdateDeviceMetadata(t *testing.T) {
 			args: args{
 				request: testMakeUpdateDeviceMetadataRequest(deviceID, "", nil, newTwinEnabled(false), -time.Hour),
 				userID:  userID,
+				owner:   owner,
 			},
 			want:    codes.InvalidArgument,
 			wantErr: true,
@@ -78,6 +83,7 @@ func TestAggregateHandleUpdateDeviceMetadata(t *testing.T) {
 			args: args{
 				request: testMakeUpdateDeviceMetadataRequest(deviceID, "", nil, nil, time.Hour),
 				userID:  userID,
+				owner:   owner,
 			},
 			want:    codes.InvalidArgument,
 			wantErr: true,
@@ -116,11 +122,8 @@ func TestAggregateHandleUpdateDeviceMetadata(t *testing.T) {
 	assert.NoError(t, err)
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {
-			ag, err := service.NewAggregate(commands.NewResourceID(tt.args.request.GetDeviceId(), commands.StatusHref), 10, cfg.HubID, eventstore, service.DeviceMetadataFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
+			ag, err := service.NewAggregate(commands.NewResourceID(tt.args.request.GetDeviceId(), commands.StatusHref), 10, eventstore, service.NewDeviceMetadataFactoryModel(userID, owner, cfg.HubID), cqrsAggregate.NewDefaultRetryFunc(1))
 			require.NoError(t, err)
-			ctx := kitNetGrpc.CtxWithIncomingToken(ctx, config.CreateJwtToken(t, jwt.MapClaims{
-				"sub": tt.args.userID,
-			}))
 			events, err := ag.UpdateDeviceMetadata(ctx, tt.args.request)
 			if tt.wantErr {
 				require.Error(t, err)
@@ -157,6 +160,7 @@ func TestRequestHandlerUpdateDeviceMetadata(t *testing.T) {
 			want: &commands.UpdateDeviceMetadataResponse{
 				AuditContext: &commands.AuditContext{
 					UserId: user0,
+					Owner:  user0,
 				},
 			},
 		},
@@ -168,6 +172,7 @@ func TestRequestHandlerUpdateDeviceMetadata(t *testing.T) {
 			want: &commands.UpdateDeviceMetadataResponse{
 				AuditContext: &commands.AuditContext{
 					UserId: user0,
+					Owner:  user0,
 				},
 			},
 		},
@@ -180,6 +185,7 @@ func TestRequestHandlerUpdateDeviceMetadata(t *testing.T) {
 			want: &commands.UpdateDeviceMetadataResponse{
 				AuditContext: &commands.AuditContext{
 					UserId: user0,
+					Owner:  user0,
 				},
 				ValidUntil: pkgTime.UnixNano(time.Now().Add(time.Millisecond * 250)),
 			},
@@ -192,6 +198,7 @@ func TestRequestHandlerUpdateDeviceMetadata(t *testing.T) {
 			want: &commands.UpdateDeviceMetadataResponse{
 				AuditContext: &commands.AuditContext{
 					UserId: user0,
+					Owner:  user0,
 				},
 				ValidUntil: pkgTime.UnixNano(time.Now().Add(time.Hour)),
 			},
@@ -242,7 +249,11 @@ func TestRequestHandlerUpdateDeviceMetadata(t *testing.T) {
 		naClient.Close()
 	}()
 
-	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetOwnerDevices, logger)
+	serviceStatus, err := service.NewServiceStatus(config, eventstore, publisher, logger)
+	require.NoError(t, err)
+	defer serviceStatus.Close()
+
+	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetOwnerDevices, serviceStatus, logger)
 
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {

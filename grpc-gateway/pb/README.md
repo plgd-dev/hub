@@ -113,6 +113,11 @@
     - [ResourceUpdatePending.OpenTelemetryCarrierEntry](#resourceaggregate-pb-ResourceUpdatePending-OpenTelemetryCarrierEntry)
     - [ResourceUpdated](#resourceaggregate-pb-ResourceUpdated)
     - [ResourceUpdated.OpenTelemetryCarrierEntry](#resourceaggregate-pb-ResourceUpdated-OpenTelemetryCarrierEntry)
+    - [ServicesMetadataSnapshotTaken](#resourceaggregate-pb-ServicesMetadataSnapshotTaken)
+    - [ServicesMetadataUpdated](#resourceaggregate-pb-ServicesMetadataUpdated)
+    - [ServicesMetadataUpdated.OpenTelemetryCarrierEntry](#resourceaggregate-pb-ServicesMetadataUpdated-OpenTelemetryCarrierEntry)
+    - [ServicesStatus](#resourceaggregate-pb-ServicesStatus)
+    - [ServicesStatus.Status](#resourceaggregate-pb-ServicesStatus-Status)
   
 - [Scalar Value Types](#scalar-value-types)
 
@@ -1138,6 +1143,7 @@ Certain filters perform a logical &#34;or&#34; operation among the elements of t
 | ----- | ---- | ----- | ----------- |
 | user_id | [string](#string) |  |  |
 | correlation_id | [string](#string) |  |  |
+| owner | [string](#string) |  |  |
 
 
 
@@ -1830,6 +1836,88 @@ https://github.com/openconnectivityfoundation/cloud-services/blob/master/swagger
 | ----- | ---- | ----- | ----------- |
 | key | [string](#string) |  |  |
 | value | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="resourceaggregate-pb-ServicesMetadataSnapshotTaken"></a>
+
+### ServicesMetadataSnapshotTaken
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| services_metadata_updated | [ServicesMetadataUpdated](#resourceaggregate-pb-ServicesMetadataUpdated) |  |  |
+| event_metadata | [EventMetadata](#resourceaggregate-pb-EventMetadata) |  |  |
+
+
+
+
+
+
+<a name="resourceaggregate-pb-ServicesMetadataUpdated"></a>
+
+### ServicesMetadataUpdated
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| status | [ServicesStatus](#resourceaggregate-pb-ServicesStatus) |  |  |
+| event_metadata | [EventMetadata](#resourceaggregate-pb-EventMetadata) |  |  |
+| audit_context | [AuditContext](#resourceaggregate-pb-AuditContext) |  |  |
+| open_telemetry_carrier | [ServicesMetadataUpdated.OpenTelemetryCarrierEntry](#resourceaggregate-pb-ServicesMetadataUpdated-OpenTelemetryCarrierEntry) | repeated | Open telemetry data propagated to asynchronous events |
+
+
+
+
+
+
+<a name="resourceaggregate-pb-ServicesMetadataUpdated-OpenTelemetryCarrierEntry"></a>
+
+### ServicesMetadataUpdated.OpenTelemetryCarrierEntry
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| key | [string](#string) |  |  |
+| value | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="resourceaggregate-pb-ServicesStatus"></a>
+
+### ServicesStatus
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| online | [ServicesStatus.Status](#resourceaggregate-pb-ServicesStatus-Status) | repeated | services which are online |
+| offline | [ServicesStatus.Status](#resourceaggregate-pb-ServicesStatus-Status) | repeated | services which are offline |
+
+
+
+
+
+
+<a name="resourceaggregate-pb-ServicesStatus-Status"></a>
+
+### ServicesStatus.Status
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [string](#string) |  | generated unique id during start the service |
+| online_valid_until | [int64](#int64) |  | unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when service status is considered as expired. |
 
 
 

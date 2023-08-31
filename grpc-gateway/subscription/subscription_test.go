@@ -127,7 +127,7 @@ func checkAndValidateRetrieve(ctx context.Context, t *testing.T, rac raservice.R
 		Type: &pb.Event_ResourceRetrievePending{
 			ResourceRetrievePending: &events.ResourceRetrievePending{
 				ResourceId:   commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
-				AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, retrieveCorrelationID),
+				AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, retrieveCorrelationID, oauthService.DeviceUserID),
 			},
 		},
 		CorrelationId: correlationID,
@@ -307,7 +307,7 @@ LOOP:
 						},
 						TwinSynchronization: &commands.TwinSynchronization{},
 						TwinEnabled:         true,
-						AuditContext:        commands.NewAuditContext(oauthService.DeviceUserID, ""),
+						AuditContext:        commands.NewAuditContext(oauthService.DeviceUserID, "", oauthService.DeviceUserID),
 					},
 				},
 				CorrelationId: correlationID,

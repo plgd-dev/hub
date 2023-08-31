@@ -25,7 +25,7 @@ func TestDummyForCoverage(t *testing.T) {
 	assert.Equal(t, sequence, em.Sequence)
 	assert.Equal(t, version, em.Version)
 	assert.Equal(t, hubID, em.HubId)
-	ac := commands.NewAuditContext(userID, corID)
+	ac := commands.NewAuditContext(userID, corID, userID)
 	assert.Equal(t, corID, ac.CorrelationId)
 	assert.Equal(t, userID, ac.UserId)
 }

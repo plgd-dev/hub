@@ -42,6 +42,7 @@ func TestAggregateHandlePublishResourceLinks(t *testing.T) {
 	type args struct {
 		request *commands.PublishResourceLinksRequest
 		userID  string
+		owner   string
 	}
 	test := []struct {
 		name    string
@@ -110,11 +111,8 @@ func TestAggregateHandlePublishResourceLinks(t *testing.T) {
 	assert.NoError(t, err)
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {
-			ag, err := service.NewAggregate(commands.NewResourceID(tt.args.request.GetDeviceId(), commands.ResourceLinksHref), 10, cfg.HubID, eventstore, service.ResourceLinksFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
+			ag, err := service.NewAggregate(commands.NewResourceID(tt.args.request.GetDeviceId(), commands.ResourceLinksHref), 10, eventstore, service.NewResourceLinksFactoryModel(tt.args.userID, tt.args.owner, cfg.HubID), cqrsAggregate.NewDefaultRetryFunc(1))
 			require.NoError(t, err)
-			ctx = kitNetGrpc.CtxWithIncomingToken(ctx, config.CreateJwtToken(t, jwt.MapClaims{
-				"sub": tt.args.userID,
-			}))
 			events, err := ag.PublishResourceLinks(ctx, tt.args.request)
 			if tt.wantErr {
 				require.Error(t, err)
@@ -130,10 +128,10 @@ func TestAggregateHandlePublishResourceLinks(t *testing.T) {
 	}
 }
 
-func testHandlePublishResource(ctx context.Context, t *testing.T, publisher *publisher.Publisher, eventstore service.EventStore, userID, deviceID, hubID string, hrefs []string) {
+func testHandlePublishResource(ctx context.Context, t *testing.T, publisher *publisher.Publisher, eventstore *mongodb.EventStore, userID, deviceID, owner, hubID string, hrefs []string) {
 	pc := testMakePublishResourceRequest(deviceID, hrefs)
 
-	ag, err := service.NewAggregate(commands.NewResourceID(pc.GetDeviceId(), commands.ResourceLinksHref), 10, hubID, eventstore, service.ResourceLinksFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
+	ag, err := service.NewAggregate(commands.NewResourceID(pc.GetDeviceId(), commands.ResourceLinksHref), 10, eventstore, service.NewResourceLinksFactoryModel(userID, owner, hubID), cqrsAggregate.NewDefaultRetryFunc(1))
 	assert.NoError(t, err)
 	events, err := ag.PublishResourceLinks(ctx, pc)
 	require.NoError(t, err)
@@ -144,15 +142,14 @@ func TestAggregateDuplicitPublishResource(t *testing.T) {
 	const deviceID = "dupDeviceId"
 	const resourceID = "/dupResourceId"
 	const userID = "dupResourceId"
+	const owner = "owner"
 
 	pool, err := ants.NewPool(16)
 	assert.NoError(t, err)
 	defer pool.Release()
 
 	cfg := raTest.MakeConfig(t)
-	ctx := kitNetGrpc.CtxWithIncomingToken(context.Background(), config.CreateJwtToken(t, jwt.MapClaims{
-		"sub": userID,
-	}))
+	ctx := context.Background()
 	logger := log.NewLogger(cfg.Log)
 	fileWatcher, err := fsnotify.NewWatcher(logger)
 	require.NoError(t, err)
@@ -173,7 +170,7 @@ func TestAggregateDuplicitPublishResource(t *testing.T) {
 		assert.NoError(t, errC)
 	}()
 
-	ag, err := service.NewAggregate(commands.NewResourceID(deviceID, commands.ResourceLinksHref), 10, cfg.HubID, eventstore, service.ResourceLinksFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
+	ag, err := service.NewAggregate(commands.NewResourceID(deviceID, commands.ResourceLinksHref), 10, eventstore, service.NewResourceLinksFactoryModel(userID, owner, cfg.HubID), cqrsAggregate.NewDefaultRetryFunc(1))
 	require.NoError(t, err)
 	pc1 := testMakePublishResourceRequest(deviceID, []string{resourceID})
 
@@ -181,14 +178,14 @@ func TestAggregateDuplicitPublishResource(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, 1, len(events))
 
-	ag2, err := service.NewAggregate(commands.NewResourceID(deviceID, commands.ResourceLinksHref), 10, cfg.HubID, eventstore, service.ResourceLinksFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
+	ag2, err := service.NewAggregate(commands.NewResourceID(deviceID, commands.ResourceLinksHref), 10, eventstore, service.NewResourceLinksFactoryModel(userID, owner, cfg.HubID), cqrsAggregate.NewDefaultRetryFunc(1))
 	require.NoError(t, err)
 	pc2 := testMakePublishResourceRequest(deviceID, []string{resourceID})
 	events, err = ag2.PublishResourceLinks(ctx, pc2)
 	require.NoError(t, err)
 	assert.Empty(t, events)
 
-	ag3, err := service.NewAggregate(commands.NewResourceID(deviceID, commands.ResourceLinksHref), 10, cfg.HubID, eventstore, service.ResourceLinksFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
+	ag3, err := service.NewAggregate(commands.NewResourceID(deviceID, commands.ResourceLinksHref), 10, eventstore, service.NewResourceLinksFactoryModel(userID, owner, cfg.HubID), cqrsAggregate.NewDefaultRetryFunc(1))
 	require.NoError(t, err)
 	pc3 := testMakePublishResourceRequest(deviceID, []string{resourceID, resourceID, resourceID})
 	events, err = ag3.PublishResourceLinks(ctx, pc3)
@@ -200,6 +197,7 @@ func TestAggregateHandleUnpublishResource(t *testing.T) {
 	const deviceID = "dev0"
 	const resourceID = platform.ResourceURI
 	const userID = "user0"
+	const owner = "owner0"
 
 	pool, err := ants.NewPool(16)
 	require.NoError(t, err)
@@ -235,11 +233,11 @@ func TestAggregateHandleUnpublishResource(t *testing.T) {
 		naClient.Close()
 	}()
 
-	testHandlePublishResource(ctx, t, publisher, eventstore, userID, deviceID, cfg.HubID, []string{resourceID})
+	testHandlePublishResource(ctx, t, publisher, eventstore, userID, deviceID, owner, cfg.HubID, []string{resourceID})
 
 	pc := testMakeUnpublishResourceRequest(deviceID, []string{resourceID})
 
-	ag, err := service.NewAggregate(commands.NewResourceID(pc.GetDeviceId(), commands.ResourceLinksHref), 10, cfg.HubID, eventstore, service.ResourceLinksFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
+	ag, err := service.NewAggregate(commands.NewResourceID(pc.GetDeviceId(), commands.ResourceLinksHref), 10, eventstore, service.NewResourceLinksFactoryModel(userID, owner, cfg.HubID), cqrsAggregate.NewDefaultRetryFunc(1))
 	assert.NoError(t, err)
 	events, err := ag.UnpublishResourceLinks(ctx, pc)
 	assert.NoError(t, err)
@@ -256,14 +254,13 @@ func TestAggregateHandleUnpublishAllResources(t *testing.T) {
 	const resourceID2 = "/res2"
 	const resourceID3 = "/res3"
 	const userID = "user1"
+	const owner = "owner1"
 	pool, err := ants.NewPool(16)
 	require.NoError(t, err)
 	defer pool.Release()
 
 	cfg := raTest.MakeConfig(t)
-	ctx := kitNetGrpc.CtxWithIncomingToken(context.Background(), config.CreateJwtToken(t, jwt.MapClaims{
-		"sub": userID,
-	}))
+	ctx := context.Background()
 	logger := log.NewLogger(cfg.Log)
 	fileWatcher, err := fsnotify.NewWatcher(logger)
 	require.NoError(t, err)
@@ -290,11 +287,11 @@ func TestAggregateHandleUnpublishAllResources(t *testing.T) {
 		naClient.Close()
 	}()
 
-	testHandlePublishResource(ctx, t, publisher, eventstore, userID, deviceID, cfg.HubID, []string{resourceID1, resourceID2, resourceID3})
+	testHandlePublishResource(ctx, t, publisher, eventstore, userID, deviceID, owner, cfg.HubID, []string{resourceID1, resourceID2, resourceID3})
 
 	pc := testMakeUnpublishResourceRequest(deviceID, []string{})
 
-	ag, err := service.NewAggregate(commands.NewResourceID(pc.GetDeviceId(), commands.ResourceLinksHref), 10, cfg.HubID, eventstore, service.ResourceLinksFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
+	ag, err := service.NewAggregate(commands.NewResourceID(pc.GetDeviceId(), commands.ResourceLinksHref), 10, eventstore, service.NewResourceLinksFactoryModel(userID, owner, cfg.HubID), cqrsAggregate.NewDefaultRetryFunc(1))
 	assert.NoError(t, err)
 	events, err := ag.UnpublishResourceLinks(ctx, pc)
 	assert.NoError(t, err)
@@ -318,14 +315,13 @@ func TestAggregateHandleUnpublishResourceSubset(t *testing.T) {
 	const resourceID3 = "/res3"
 	const resourceID4 = "/res4"
 	const userID = "user2"
+	const owner = "owner2"
 	pool, err := ants.NewPool(16)
 	require.NoError(t, err)
 	defer pool.Release()
 
 	cfg := raTest.MakeConfig(t)
-	ctx := kitNetGrpc.CtxWithIncomingToken(context.Background(), config.CreateJwtToken(t, jwt.MapClaims{
-		"sub": userID,
-	}))
+	ctx := context.Background()
 	logger := log.NewLogger(cfg.Log)
 	fileWatcher, err := fsnotify.NewWatcher(logger)
 	require.NoError(t, err)
@@ -352,9 +348,9 @@ func TestAggregateHandleUnpublishResourceSubset(t *testing.T) {
 		naClient.Close()
 	}()
 
-	testHandlePublishResource(ctx, t, publisher, eventstore, userID, deviceID, cfg.HubID, []string{resourceID1, resourceID2, resourceID3, resourceID4})
+	testHandlePublishResource(ctx, t, publisher, eventstore, userID, deviceID, owner, cfg.HubID, []string{resourceID1, resourceID2, resourceID3, resourceID4})
 
-	ag, err := service.NewAggregate(commands.NewResourceID(deviceID, commands.ResourceLinksHref), 10, cfg.HubID, eventstore, service.ResourceLinksFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
+	ag, err := service.NewAggregate(commands.NewResourceID(deviceID, commands.ResourceLinksHref), 10, eventstore, service.NewResourceLinksFactoryModel(userID, owner, cfg.HubID), cqrsAggregate.NewDefaultRetryFunc(1))
 	assert.NoError(t, err)
 	pc := testMakeUnpublishResourceRequest(deviceID, []string{resourceID1, resourceID3})
 	events, err := ag.UnpublishResourceLinks(ctx, pc)
@@ -585,6 +581,7 @@ func TestAggregateHandleNotifyContentChanged(t *testing.T) {
 	const deviceID = "dev0"
 	const resourceID = platform.ResourceURI
 	const userID = "user0"
+	const owner = "owner0"
 
 	type args struct {
 		req *commands.NotifyResourceChangedRequest
@@ -637,9 +634,7 @@ func TestAggregateHandleNotifyContentChanged(t *testing.T) {
 	}
 
 	cfg := raTest.MakeConfig(t)
-	ctx := kitNetGrpc.CtxWithIncomingToken(context.Background(), config.CreateJwtToken(t, jwt.MapClaims{
-		"sub": userID,
-	}))
+	ctx := context.Background()
 	logger := log.NewLogger(cfg.Log)
 	fileWatcher, err := fsnotify.NewWatcher(logger)
 	require.NoError(t, err)
@@ -666,9 +661,9 @@ func TestAggregateHandleNotifyContentChanged(t *testing.T) {
 		naClient.Close()
 	}()
 
-	testHandlePublishResource(ctx, t, publisher, eventstore, userID, deviceID, cfg.HubID, []string{resourceID})
+	testHandlePublishResource(ctx, t, publisher, eventstore, userID, deviceID, owner, cfg.HubID, []string{resourceID})
 
-	ag, err := service.NewAggregate(commands.NewResourceID(deviceID, resourceID), 10, cfg.HubID, eventstore, service.ResourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
+	ag, err := service.NewAggregate(commands.NewResourceID(deviceID, resourceID), 10, eventstore, service.NewResourceStateFactoryModel(userID, owner, cfg.HubID), cqrsAggregate.NewDefaultRetryFunc(1))
 	assert.NoError(t, err)
 
 	for _, tt := range tests {
@@ -693,6 +688,7 @@ func TestAggregateHandleUpdateResourceContent(t *testing.T) {
 	const deviceID = "dev1"
 	const resourceID = platform.ResourceURI
 	const userID = "user1"
+	const owner = "owner1"
 
 	type args struct {
 		req   *commands.UpdateResourceRequest
@@ -756,9 +752,7 @@ func TestAggregateHandleUpdateResourceContent(t *testing.T) {
 	}
 
 	cfg := raTest.MakeConfig(t)
-	ctx := kitNetGrpc.CtxWithIncomingToken(context.Background(), config.CreateJwtToken(t, jwt.MapClaims{
-		"sub": userID,
-	}))
+	ctx := context.Background()
 	logger := log.NewLogger(cfg.Log)
 	fileWatcher, err := fsnotify.NewWatcher(logger)
 	require.NoError(t, err)
@@ -779,7 +773,7 @@ func TestAggregateHandleUpdateResourceContent(t *testing.T) {
 		assert.NoError(t, errC)
 	}()
 
-	ag, err := service.NewAggregate(commands.NewResourceID(deviceID, resourceID), 10, cfg.HubID, eventstore, service.ResourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
+	ag, err := service.NewAggregate(commands.NewResourceID(deviceID, resourceID), 10, eventstore, service.NewResourceStateFactoryModel(userID, owner, cfg.HubID), cqrsAggregate.NewDefaultRetryFunc(1))
 	assert.NoError(t, err)
 
 	for _, tt := range tests {
@@ -810,6 +804,7 @@ func TestAggregateHandleConfirmResourceUpdate(t *testing.T) {
 	const deviceID = "dev0"
 	const resourceID = platform.ResourceURI
 	const userID = "user0"
+	const owner = "owner0"
 
 	type args struct {
 		req *commands.ConfirmResourceUpdateRequest
@@ -844,9 +839,7 @@ func TestAggregateHandleConfirmResourceUpdate(t *testing.T) {
 	}
 
 	cfg := raTest.MakeConfig(t)
-	ctx := kitNetGrpc.CtxWithIncomingToken(context.Background(), config.CreateJwtToken(t, jwt.MapClaims{
-		"sub": userID,
-	}))
+	ctx := context.Background()
 	logger := log.NewLogger(cfg.Log)
 	fileWatcher, err := fsnotify.NewWatcher(logger)
 	require.NoError(t, err)
@@ -867,7 +860,7 @@ func TestAggregateHandleConfirmResourceUpdate(t *testing.T) {
 		assert.NoError(t, errC)
 	}()
 
-	ag, err := service.NewAggregate(commands.NewResourceID(deviceID, resourceID), 10, cfg.HubID, eventstore, service.ResourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
+	ag, err := service.NewAggregate(commands.NewResourceID(deviceID, resourceID), 10, eventstore, service.NewResourceStateFactoryModel(userID, owner, cfg.HubID), cqrsAggregate.NewDefaultRetryFunc(1))
 	require.NoError(t, err)
 
 	_, err = ag.NotifyResourceChanged(ctx, testMakeNotifyResourceChangedRequest(deviceID, resourceID, 0))
@@ -901,6 +894,7 @@ func TestAggregateHandleRetrieveResource(t *testing.T) {
 	const deviceID = "dev1"
 	const resourceID = platform.ResourceURI
 	const userID = "user1"
+	const owner = "owner1"
 
 	type args struct {
 		req   *commands.RetrieveResourceRequest
@@ -955,9 +949,7 @@ func TestAggregateHandleRetrieveResource(t *testing.T) {
 	}
 
 	cfg := raTest.MakeConfig(t)
-	ctx := kitNetGrpc.CtxWithIncomingToken(context.Background(), config.CreateJwtToken(t, jwt.MapClaims{
-		"sub": userID,
-	}))
+	ctx := context.Background()
 	logger := log.NewLogger(cfg.Log)
 	fileWatcher, err := fsnotify.NewWatcher(logger)
 	require.NoError(t, err)
@@ -978,7 +970,7 @@ func TestAggregateHandleRetrieveResource(t *testing.T) {
 		assert.NoError(t, errC)
 	}()
 
-	ag, err := service.NewAggregate(commands.NewResourceID(deviceID, resourceID), 10, cfg.HubID, eventstore, service.ResourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
+	ag, err := service.NewAggregate(commands.NewResourceID(deviceID, resourceID), 10, eventstore, service.NewResourceStateFactoryModel(userID, owner, cfg.HubID), cqrsAggregate.NewDefaultRetryFunc(1))
 	assert.NoError(t, err)
 
 	for _, tt := range tests {
@@ -1008,6 +1000,7 @@ func TestAggregateHandleNotifyResourceContentResourceProcessed(t *testing.T) {
 	const deviceID = "dev0"
 	const resourceID = platform.ResourceURI
 	const userID = "user0"
+	const owner = "owner0"
 
 	type args struct {
 		req *commands.ConfirmResourceRetrieveRequest
@@ -1042,9 +1035,7 @@ func TestAggregateHandleNotifyResourceContentResourceProcessed(t *testing.T) {
 	}
 
 	cfg := raTest.MakeConfig(t)
-	ctx := kitNetGrpc.CtxWithIncomingToken(context.Background(), config.CreateJwtToken(t, jwt.MapClaims{
-		"sub": userID,
-	}))
+	ctx := context.Background()
 	logger := log.NewLogger(cfg.Log)
 	fileWatcher, err := fsnotify.NewWatcher(logger)
 	require.NoError(t, err)
@@ -1065,7 +1056,7 @@ func TestAggregateHandleNotifyResourceContentResourceProcessed(t *testing.T) {
 		assert.NoError(t, errC)
 	}()
 
-	ag, err := service.NewAggregate(commands.NewResourceID(deviceID, resourceID), 10, cfg.HubID, eventstore, service.ResourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
+	ag, err := service.NewAggregate(commands.NewResourceID(deviceID, resourceID), 10, eventstore, service.NewResourceStateFactoryModel(userID, owner, cfg.HubID), cqrsAggregate.NewDefaultRetryFunc(1))
 	assert.NoError(t, err)
 
 	_, err = ag.NotifyResourceChanged(ctx, testMakeNotifyResourceChangedRequest(deviceID, resourceID, 0))
@@ -1106,6 +1097,7 @@ func TestAggregateHandleDeleteResource(t *testing.T) {
 	const deviceID = "dev1"
 	const resourceID = platform.ResourceURI
 	const userID = "user1"
+	const owner = "owner1"
 
 	type args struct {
 		req   *commands.DeleteResourceRequest
@@ -1161,9 +1153,7 @@ func TestAggregateHandleDeleteResource(t *testing.T) {
 	}
 
 	cfg := raTest.MakeConfig(t)
-	ctx := kitNetGrpc.CtxWithIncomingToken(context.Background(), config.CreateJwtToken(t, jwt.MapClaims{
-		"sub": userID,
-	}))
+	ctx := context.Background()
 	logger := log.NewLogger(cfg.Log)
 	fileWatcher, err := fsnotify.NewWatcher(logger)
 	require.NoError(t, err)
@@ -1184,7 +1174,7 @@ func TestAggregateHandleDeleteResource(t *testing.T) {
 		assert.NoError(t, errC)
 	}()
 
-	ag, err := service.NewAggregate(commands.NewResourceID(deviceID, resourceID), 10, cfg.HubID, eventstore, service.ResourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
+	ag, err := service.NewAggregate(commands.NewResourceID(deviceID, resourceID), 10, eventstore, service.NewResourceStateFactoryModel(userID, owner, cfg.HubID), cqrsAggregate.NewDefaultRetryFunc(1))
 	assert.NoError(t, err)
 
 	for _, tt := range tests {
@@ -1214,6 +1204,7 @@ func TestAggregateHandleConfirmResourceDelete(t *testing.T) {
 	const deviceID = "dev0"
 	const resourceID = platform.ResourceURI
 	const userID = "user0"
+	const owner = "owner0"
 
 	type args struct {
 		req *commands.ConfirmResourceDeleteRequest
@@ -1249,9 +1240,7 @@ func TestAggregateHandleConfirmResourceDelete(t *testing.T) {
 	}
 
 	cfg := raTest.MakeConfig(t)
-	ctx := kitNetGrpc.CtxWithIncomingToken(context.Background(), config.CreateJwtToken(t, jwt.MapClaims{
-		"sub": userID,
-	}))
+	ctx := context.Background()
 	logger := log.NewLogger(cfg.Log)
 	fileWatcher, err := fsnotify.NewWatcher(logger)
 	require.NoError(t, err)
@@ -1272,7 +1261,7 @@ func TestAggregateHandleConfirmResourceDelete(t *testing.T) {
 		assert.NoError(t, errC)
 	}()
 
-	ag, err := service.NewAggregate(commands.NewResourceID(deviceID, resourceID), 10, cfg.HubID, eventstore, service.ResourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
+	ag, err := service.NewAggregate(commands.NewResourceID(deviceID, resourceID), 10, eventstore, service.NewResourceStateFactoryModel(userID, owner, cfg.HubID), cqrsAggregate.NewDefaultRetryFunc(1))
 	assert.NoError(t, err)
 
 	_, err = ag.NotifyResourceChanged(ctx, testMakeNotifyResourceChangedRequest(deviceID, resourceID, 0))
@@ -1307,6 +1296,7 @@ func TestAggregateHandleCreateResource(t *testing.T) {
 	const deviceID = "dev1"
 	const resourceID = platform.ResourceURI
 	const userID = "user1"
+	const owner = "owner1"
 
 	type args struct {
 		req   *commands.CreateResourceRequest
@@ -1361,9 +1351,7 @@ func TestAggregateHandleCreateResource(t *testing.T) {
 	}
 
 	cfg := raTest.MakeConfig(t)
-	ctx := kitNetGrpc.CtxWithIncomingToken(context.Background(), config.CreateJwtToken(t, jwt.MapClaims{
-		"sub": userID,
-	}))
+	ctx := context.Background()
 	logger := log.NewLogger(cfg.Log)
 	fileWatcher, err := fsnotify.NewWatcher(logger)
 	require.NoError(t, err)
@@ -1384,7 +1372,7 @@ func TestAggregateHandleCreateResource(t *testing.T) {
 		assert.NoError(t, errC)
 	}()
 
-	ag, err := service.NewAggregate(commands.NewResourceID(deviceID, resourceID), 10, cfg.HubID, eventstore, service.ResourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
+	ag, err := service.NewAggregate(commands.NewResourceID(deviceID, resourceID), 10, eventstore, service.NewResourceStateFactoryModel(userID, owner, cfg.HubID), cqrsAggregate.NewDefaultRetryFunc(1))
 	assert.NoError(t, err)
 
 	for _, tt := range tests {
@@ -1414,6 +1402,7 @@ func TestAggregateHandleConfirmResourceCreate(t *testing.T) {
 	const deviceID = "dev0"
 	const resourceID = platform.ResourceURI
 	const userID = "user0"
+	const owner = "owner0"
 
 	type args struct {
 		req *commands.ConfirmResourceCreateRequest
@@ -1449,9 +1438,7 @@ func TestAggregateHandleConfirmResourceCreate(t *testing.T) {
 	}
 
 	cfg := raTest.MakeConfig(t)
-	ctx := kitNetGrpc.CtxWithIncomingToken(context.Background(), config.CreateJwtToken(t, jwt.MapClaims{
-		"sub": userID,
-	}))
+	ctx := context.Background()
 	logger := log.NewLogger(cfg.Log)
 	fileWatcher, err := fsnotify.NewWatcher(logger)
 	require.NoError(t, err)
@@ -1472,7 +1459,7 @@ func TestAggregateHandleConfirmResourceCreate(t *testing.T) {
 		assert.NoError(t, errC)
 	}()
 
-	ag, err := service.NewAggregate(commands.NewResourceID(deviceID, resourceID), 10, cfg.HubID, eventstore, service.ResourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
+	ag, err := service.NewAggregate(commands.NewResourceID(deviceID, resourceID), 10, eventstore, service.NewResourceStateFactoryModel(userID, owner, cfg.HubID), cqrsAggregate.NewDefaultRetryFunc(1))
 	assert.NoError(t, err)
 
 	_, err = ag.NotifyResourceChanged(ctx, testMakeNotifyResourceChangedRequest(deviceID, resourceID, 0))

@@ -48,7 +48,7 @@ func TestResourceDirectoryGetResourceLinks(t *testing.T) {
 						Resource1.Resource,
 						Resource3.Resource,
 					},
-					AuditContext: commands.NewAuditContext("userId", ""),
+					AuditContext: commands.NewAuditContext("userId", "", ""),
 				},
 			},
 		},

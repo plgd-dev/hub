@@ -74,6 +74,7 @@ func (h *gatewayHandler) GetDevices(_ *pb.GetDevicesRequest, srv pb.GrpcGateway_
 			Connection: &commands.Connection{
 				Status:   commands.Connection_ONLINE,
 				Protocol: test.StringToApplicationProtocol(config.ACTIVE_COAP_SCHEME),
+				Service:  &commands.Connection_Service{},
 			},
 		},
 		ManufacturerName: []*pb.LocalizedString{{Value: TestManufacturer, Language: "en"}},

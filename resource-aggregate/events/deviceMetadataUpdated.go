@@ -47,6 +47,10 @@ func (d *DeviceMetadataUpdated) Timestamp() time.Time {
 	return pkgTime.Unix(0, d.GetEventMetadata().GetTimestamp())
 }
 
+func (d *DeviceMetadataUpdated) ServiceID() (string, bool) {
+	return d.GetConnection().GetService().GetId(), true
+}
+
 func (d *DeviceMetadataUpdated) CopyData(event *DeviceMetadataUpdated) {
 	d.DeviceId = event.GetDeviceId()
 	d.Connection = event.GetConnection()

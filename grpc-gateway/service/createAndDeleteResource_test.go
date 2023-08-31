@@ -135,7 +135,7 @@ func createSwitchResourceExpectedEvents(t *testing.T, deviceID, subID, correlati
 						},
 					},
 				},
-				AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, ""),
+				AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, "", oauthService.DeviceUserID),
 			},
 		},
 	}
@@ -169,12 +169,13 @@ func createSwitchResourceExpectedEvents(t *testing.T, deviceID, subID, correlati
 					Connection: &commands.Connection{
 						Status:   commands.Connection_ONLINE,
 						Protocol: test.StringToApplicationProtocol(config.ACTIVE_COAP_SCHEME),
+						Service:  &commands.Connection_Service{},
 					},
 					TwinEnabled: true,
 					TwinSynchronization: &commands.TwinSynchronization{
 						State: commands.TwinSynchronization_SYNCING,
 					},
-					AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, ""),
+					AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, "", oauthService.DeviceUserID),
 				},
 			},
 		}
@@ -188,12 +189,13 @@ func createSwitchResourceExpectedEvents(t *testing.T, deviceID, subID, correlati
 					Connection: &commands.Connection{
 						Status:   commands.Connection_ONLINE,
 						Protocol: test.StringToApplicationProtocol(config.ACTIVE_COAP_SCHEME),
+						Service:  &commands.Connection_Service{},
 					},
 					TwinEnabled: true,
 					TwinSynchronization: &commands.TwinSynchronization{
 						State: commands.TwinSynchronization_IN_SYNC,
 					},
-					AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, ""),
+					AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, "", oauthService.DeviceUserID),
 				},
 			},
 		}
@@ -210,7 +212,7 @@ func deleteSwitchResourceExpectedEvents(t *testing.T, deviceID, subID, correlati
 		Type: &pb.Event_ResourceDeletePending{
 			ResourceDeletePending: &events.ResourceDeletePending{
 				ResourceId:   commands.NewResourceID(deviceID, test.TestResourceSwitchesInstanceHref(switchID)),
-				AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, ""),
+				AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, "", oauthService.DeviceUserID),
 			},
 		},
 	}
@@ -230,7 +232,7 @@ func deleteSwitchResourceExpectedEvents(t *testing.T, deviceID, subID, correlati
 			ResourceUnpublished: &events.ResourceLinksUnpublished{
 				DeviceId:     deviceID,
 				Hrefs:        []string{test.TestResourceSwitchesInstanceHref(switchID)},
-				AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, ""),
+				AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, "", oauthService.DeviceUserID),
 			},
 		},
 	}

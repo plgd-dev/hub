@@ -50,6 +50,7 @@ func TestRequestHandlerGetDevices(t *testing.T) {
 						Connection: &commands.Connection{
 							Status:   commands.Connection_ONLINE,
 							Protocol: test.StringToApplicationProtocol(config.ACTIVE_COAP_SCHEME),
+							Service:  &commands.Connection_Service{},
 						},
 						TwinSynchronization: &commands.TwinSynchronization{
 							State: commands.TwinSynchronization_IN_SYNC,
@@ -97,6 +98,7 @@ func TestRequestHandlerGetDevices(t *testing.T) {
 				require.NoError(t, err)
 				assert.NotEmpty(t, dev.ProtocolIndependentId)
 				assert.NotEmpty(t, dev.GetData().GetContent().GetData())
+				assert.NotEmpty(t, dev.GetMetadata().GetConnection().GetService().GetId())
 				devices = append(devices, dev)
 			}
 			pbTest.CmpDeviceValues(t, tt.want, devices)

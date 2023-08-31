@@ -17,6 +17,7 @@ type Event = interface {
 	AggregateID() string
 	GroupID() string
 	IsSnapshot() bool
+	ServiceID() (string, bool)
 	Timestamp() time.Time
 	ETag() *ETagData
 }

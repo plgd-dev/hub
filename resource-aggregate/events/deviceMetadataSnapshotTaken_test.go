@@ -5,15 +5,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang-jwt/jwt/v4"
 	grpcgwPb "github.com/plgd-dev/hub/v2/grpc-gateway/pb"
-	"github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	commands "github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/aggregate"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore/test"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
-	"github.com/plgd-dev/hub/v2/test/config"
 	"github.com/plgd-dev/hub/v2/test/pb"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
@@ -123,8 +120,8 @@ func TestDeviceMetadataSnapshotTakenHandle(t *testing.T) {
 				events: newIterator([]eventstore.EventUnmarshaler{
 					test.MakeDeviceMetadataUpdatePending("a", &events.DeviceMetadataUpdatePending_TwinEnabled{
 						TwinEnabled: true,
-					}, events.MakeEventMeta("", 0, 0, "hubID"), commands.NewAuditContext("userID", "0"), time.Now().Add(-time.Second)),
-					test.MakeDeviceMetadataUpdated("a", &commands.Connection{Id: "123"}, true, events.MakeEventMeta("", 0, 0, "hubID"), commands.NewAuditContext("userID", "0"), false),
+					}, events.MakeEventMeta("", 0, 0, "hubID"), commands.NewAuditContext("userID", "0", "userID"), time.Now().Add(-time.Second)),
+					test.MakeDeviceMetadataUpdated("a", &commands.Connection{Id: "123"}, true, events.MakeEventMeta("", 0, 0, "hubID"), commands.NewAuditContext("userID", "0", "userID"), false),
 				}),
 			},
 		},
@@ -148,9 +145,6 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 	connectionID := "connectionID"
 	userID := "userID"
 	connectedAt := int64(1235)
-	jwtWithSubUserID := config.CreateJwtToken(t, jwt.MapClaims{
-		"sub": userID,
-	})
 	hubID := "hubID"
 
 	type cmd struct {
@@ -168,7 +162,7 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 			name: "online,online,offline",
 			cmds: []cmd{
 				{
-					ctx: events.CtxWithHubID(grpc.CtxWithIncomingToken(context.Background(), jwtWithSubUserID), hubID),
+					ctx: context.Background(),
 					cmd: &commands.UpdateDeviceMetadataRequest{
 						DeviceId: deviceID,
 						CommandMetadata: &commands.CommandMetadata{
@@ -196,13 +190,13 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 							},
 							TwinEnabled:          true,
 							TwinSynchronization:  &commands.TwinSynchronization{},
-							AuditContext:         commands.NewAuditContext(userID, correlationID),
+							AuditContext:         commands.NewAuditContext(userID, correlationID, userID),
 							OpenTelemetryCarrier: map[string]string{},
 						}),
 					},
 				},
 				{
-					ctx: events.CtxWithHubID(grpc.CtxWithIncomingToken(context.Background(), jwtWithSubUserID), hubID),
+					ctx: context.Background(),
 					cmd: &commands.UpdateDeviceMetadataRequest{
 						DeviceId: deviceID,
 						CommandMetadata: &commands.CommandMetadata{
@@ -222,7 +216,7 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 				},
 				{
 					newVersion: 1,
-					ctx:        events.CtxWithHubID(grpc.CtxWithIncomingToken(context.Background(), jwtWithSubUserID), hubID),
+					ctx:        context.Background(),
 					cmd: &commands.UpdateDeviceMetadataRequest{
 						DeviceId: deviceID,
 						CommandMetadata: &commands.CommandMetadata{
@@ -244,10 +238,11 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 								Status:      commands.Connection_OFFLINE,
 								ConnectedAt: connectedAt,
 								Protocol:    commands.Connection_COAPS,
+								Service:     &commands.Connection_Service{},
 							},
 							TwinEnabled:          true,
 							TwinSynchronization:  &commands.TwinSynchronization{},
-							AuditContext:         commands.NewAuditContext(userID, correlationID),
+							AuditContext:         commands.NewAuditContext(userID, correlationID, userID),
 							OpenTelemetryCarrier: map[string]string{},
 						}),
 					},
@@ -258,7 +253,7 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 			name: "online-old-connection,online,offline-old-connection",
 			cmds: []cmd{
 				{
-					ctx: events.CtxWithHubID(grpc.CtxWithIncomingToken(context.Background(), jwtWithSubUserID), hubID),
+					ctx: context.Background(),
 					cmd: &commands.UpdateDeviceMetadataRequest{
 						DeviceId: deviceID,
 						CommandMetadata: &commands.CommandMetadata{
@@ -284,13 +279,13 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 							},
 							TwinEnabled:          true,
 							TwinSynchronization:  &commands.TwinSynchronization{},
-							AuditContext:         commands.NewAuditContext(userID, correlationID),
+							AuditContext:         commands.NewAuditContext(userID, correlationID, userID),
 							OpenTelemetryCarrier: map[string]string{},
 						}),
 					},
 				},
 				{
-					ctx: events.CtxWithHubID(grpc.CtxWithIncomingToken(context.Background(), jwtWithSubUserID), hubID),
+					ctx: context.Background(),
 					cmd: &commands.UpdateDeviceMetadataRequest{
 						DeviceId: deviceID,
 						CommandMetadata: &commands.CommandMetadata{
@@ -315,14 +310,14 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 							},
 							TwinEnabled:          true,
 							TwinSynchronization:  &commands.TwinSynchronization{},
-							AuditContext:         commands.NewAuditContext(userID, correlationID),
+							AuditContext:         commands.NewAuditContext(userID, correlationID, userID),
 							OpenTelemetryCarrier: map[string]string{},
 						}),
 					},
 				},
 				{
 					newVersion: 2,
-					ctx:        events.CtxWithHubID(grpc.CtxWithIncomingToken(context.Background(), jwtWithSubUserID), hubID),
+					ctx:        context.Background(),
 					cmd: &commands.UpdateDeviceMetadataRequest{
 						DeviceId: deviceID,
 						CommandMetadata: &commands.CommandMetadata{
@@ -346,7 +341,7 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 			cmds: []cmd{
 				{
 					newVersion: 1,
-					ctx:        events.CtxWithHubID(grpc.CtxWithIncomingToken(context.Background(), jwtWithSubUserID), hubID),
+					ctx:        context.Background(),
 					cmd: &commands.UpdateDeviceMetadataRequest{
 						DeviceId: deviceID,
 						CommandMetadata: &commands.CommandMetadata{
@@ -368,7 +363,7 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 			name: "online,twin-sync-started,twin-sync-started,twin-sync-finished,twin-sync-finished",
 			cmds: []cmd{
 				{
-					ctx: events.CtxWithHubID(grpc.CtxWithIncomingToken(context.Background(), jwtWithSubUserID), hubID),
+					ctx: context.Background(),
 					cmd: &commands.UpdateDeviceMetadataRequest{
 						DeviceId: deviceID,
 						CommandMetadata: &commands.CommandMetadata{
@@ -393,13 +388,13 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 							},
 							TwinEnabled:          true,
 							TwinSynchronization:  &commands.TwinSynchronization{},
-							AuditContext:         commands.NewAuditContext(userID, correlationID),
+							AuditContext:         commands.NewAuditContext(userID, correlationID, userID),
 							OpenTelemetryCarrier: map[string]string{},
 						}),
 					},
 				},
 				{
-					ctx: events.CtxWithHubID(grpc.CtxWithIncomingToken(context.Background(), jwtWithSubUserID), hubID),
+					ctx: context.Background(),
 					cmd: &commands.UpdateDeviceMetadataRequest{
 						DeviceId: deviceID,
 						CommandMetadata: &commands.CommandMetadata{
@@ -427,13 +422,13 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 								State:     commands.TwinSynchronization_SYNCING,
 								SyncingAt: 1,
 							},
-							AuditContext:         commands.NewAuditContext(userID, correlationID),
+							AuditContext:         commands.NewAuditContext(userID, correlationID, userID),
 							OpenTelemetryCarrier: map[string]string{},
 						}),
 					},
 				},
 				{
-					ctx: events.CtxWithHubID(grpc.CtxWithIncomingToken(context.Background(), jwtWithSubUserID), hubID),
+					ctx: context.Background(),
 					cmd: &commands.UpdateDeviceMetadataRequest{
 						DeviceId: deviceID,
 						CommandMetadata: &commands.CommandMetadata{
@@ -451,7 +446,7 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 					newVersion: 2,
 				},
 				{
-					ctx: events.CtxWithHubID(grpc.CtxWithIncomingToken(context.Background(), jwtWithSubUserID), hubID),
+					ctx: context.Background(),
 					cmd: &commands.UpdateDeviceMetadataRequest{
 						DeviceId: deviceID,
 						CommandMetadata: &commands.CommandMetadata{
@@ -480,14 +475,14 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 								SyncingAt: 1,
 								InSyncAt:  3,
 							},
-							AuditContext:         commands.NewAuditContext(userID, correlationID),
+							AuditContext:         commands.NewAuditContext(userID, correlationID, userID),
 							OpenTelemetryCarrier: map[string]string{},
 						}),
 					},
 				},
 				{
 					newVersion: 4,
-					ctx:        events.CtxWithHubID(grpc.CtxWithIncomingToken(context.Background(), jwtWithSubUserID), hubID),
+					ctx:        context.Background(),
 					cmd: &commands.UpdateDeviceMetadataRequest{
 						DeviceId: deviceID,
 						CommandMetadata: &commands.CommandMetadata{
@@ -515,7 +510,7 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 								InSyncAt:  4,
 								State:     commands.TwinSynchronization_IN_SYNC,
 							},
-							AuditContext:         commands.NewAuditContext(userID, correlationID),
+							AuditContext:         commands.NewAuditContext(userID, correlationID, userID),
 							OpenTelemetryCarrier: map[string]string{},
 						}),
 					},
@@ -526,7 +521,7 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 			name: "online-old,twin-sync-started-old,online,twin-sync-started,twin-sync-finished-old,twin-sync-finished",
 			cmds: []cmd{
 				{
-					ctx: events.CtxWithHubID(grpc.CtxWithIncomingToken(context.Background(), jwtWithSubUserID), hubID),
+					ctx: context.Background(),
 					cmd: &commands.UpdateDeviceMetadataRequest{
 						DeviceId: deviceID,
 						CommandMetadata: &commands.CommandMetadata{
@@ -551,13 +546,13 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 							},
 							TwinEnabled:          true,
 							TwinSynchronization:  &commands.TwinSynchronization{},
-							AuditContext:         commands.NewAuditContext(userID, correlationID),
+							AuditContext:         commands.NewAuditContext(userID, correlationID, userID),
 							OpenTelemetryCarrier: map[string]string{},
 						}),
 					},
 				},
 				{
-					ctx: events.CtxWithHubID(grpc.CtxWithIncomingToken(context.Background(), jwtWithSubUserID), hubID),
+					ctx: context.Background(),
 					cmd: &commands.UpdateDeviceMetadataRequest{
 						DeviceId: deviceID,
 						CommandMetadata: &commands.CommandMetadata{
@@ -585,13 +580,13 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 								State:     commands.TwinSynchronization_SYNCING,
 								SyncingAt: 1,
 							},
-							AuditContext:         commands.NewAuditContext(userID, correlationID),
+							AuditContext:         commands.NewAuditContext(userID, correlationID, userID),
 							OpenTelemetryCarrier: map[string]string{},
 						}),
 					},
 				},
 				{
-					ctx: events.CtxWithHubID(grpc.CtxWithIncomingToken(context.Background(), jwtWithSubUserID), hubID),
+					ctx: context.Background(),
 					cmd: &commands.UpdateDeviceMetadataRequest{
 						DeviceId: deviceID,
 						CommandMetadata: &commands.CommandMetadata{
@@ -616,13 +611,13 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 							},
 							TwinEnabled:          true,
 							TwinSynchronization:  &commands.TwinSynchronization{},
-							AuditContext:         commands.NewAuditContext(userID, correlationID),
+							AuditContext:         commands.NewAuditContext(userID, correlationID, userID),
 							OpenTelemetryCarrier: map[string]string{},
 						}),
 					},
 				},
 				{
-					ctx: events.CtxWithHubID(grpc.CtxWithIncomingToken(context.Background(), jwtWithSubUserID), hubID),
+					ctx: context.Background(),
 					cmd: &commands.UpdateDeviceMetadataRequest{
 						DeviceId: deviceID,
 						CommandMetadata: &commands.CommandMetadata{
@@ -650,13 +645,13 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 								State:     commands.TwinSynchronization_SYNCING,
 								SyncingAt: 1,
 							},
-							AuditContext:         commands.NewAuditContext(userID, correlationID),
+							AuditContext:         commands.NewAuditContext(userID, correlationID, userID),
 							OpenTelemetryCarrier: map[string]string{},
 						}),
 					},
 				},
 				{
-					ctx: events.CtxWithHubID(grpc.CtxWithIncomingToken(context.Background(), jwtWithSubUserID), hubID),
+					ctx: context.Background(),
 					cmd: &commands.UpdateDeviceMetadataRequest{
 						DeviceId: deviceID,
 						CommandMetadata: &commands.CommandMetadata{
@@ -674,7 +669,7 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 					newVersion: 3,
 				},
 				{
-					ctx: events.CtxWithHubID(grpc.CtxWithIncomingToken(context.Background(), jwtWithSubUserID), hubID),
+					ctx: context.Background(),
 					cmd: &commands.UpdateDeviceMetadataRequest{
 						DeviceId: deviceID,
 						CommandMetadata: &commands.CommandMetadata{
@@ -694,7 +689,7 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 				},
 				{
 					newVersion: 3,
-					ctx:        events.CtxWithHubID(grpc.CtxWithIncomingToken(context.Background(), jwtWithSubUserID), hubID),
+					ctx:        context.Background(),
 					cmd: &commands.UpdateDeviceMetadataRequest{
 						DeviceId: deviceID,
 						CommandMetadata: &commands.CommandMetadata{
@@ -722,7 +717,7 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 								InSyncAt:  3,
 								State:     commands.TwinSynchronization_IN_SYNC,
 							},
-							AuditContext:         commands.NewAuditContext(userID, correlationID),
+							AuditContext:         commands.NewAuditContext(userID, correlationID, userID),
 							OpenTelemetryCarrier: map[string]string{},
 						}),
 					},
@@ -733,7 +728,7 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			e := events.NewDeviceMetadataSnapshotTaken()
+			e := events.NewDeviceMetadataSnapshotTakenForCommand(userID, userID, hubID)
 			for idx, cmd := range tt.cmds {
 				res, err := e.HandleCommand(cmd.ctx, cmd.cmd, cmd.newVersion)
 				if cmd.wantErr {

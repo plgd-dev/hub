@@ -205,3 +205,28 @@ message DeviceMetadataSnapshotTaken {
     // Open telemetry data propagated to asynchronous events
    // map<string,string> open_telemetry_carrier = 100;
 }
+
+
+message ServicesStatus {
+    message Status {
+        string id = 1; // generated unique id during start the service
+        int64 online_valid_until = 2; // unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when service status is considered as expired.
+    }
+    repeated Status online = 1; // services which are online
+    repeated Status offline = 2; // services which are offline
+}
+
+message ServicesMetadataUpdated {
+    ServicesStatus status = 1;
+    EventMetadata event_metadata = 2;
+    AuditContext audit_context = 3;
+
+    // Open telemetry data propagated to asynchronous events
+    map<string,string> open_telemetry_carrier = 100;
+}
+
+
+message ServicesMetadataSnapshotTaken {
+    ServicesMetadataUpdated services_metadata_updated = 1;
+    EventMetadata event_metadata = 2;
+}

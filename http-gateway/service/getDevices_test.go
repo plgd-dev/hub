@@ -39,6 +39,7 @@ func makeDefaultDevice(deviceID string) *pb.Device {
 			Connection: &commands.Connection{
 				Status:   commands.Connection_ONLINE,
 				Protocol: test.StringToApplicationProtocol(config.ACTIVE_COAP_SCHEME),
+				Service:  &commands.Connection_Service{},
 			},
 			TwinEnabled: true,
 			TwinSynchronization: &commands.TwinSynchronization{

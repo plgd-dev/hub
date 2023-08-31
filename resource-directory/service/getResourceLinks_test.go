@@ -43,7 +43,7 @@ func TestRequestHandlerGetResourceLinks(t *testing.T) {
 				{
 					DeviceId:     deviceID,
 					Resources:    test.ResourceLinksToResources(deviceID, test.GetAllBackendResourceLinks()),
-					AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, ""),
+					AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, "", oauthService.DeviceUserID),
 				},
 			},
 		},

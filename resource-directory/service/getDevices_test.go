@@ -115,6 +115,7 @@ func TestRequestHandlerGetDevices(t *testing.T) {
 						Connection: &commands.Connection{
 							Status:   commands.Connection_ONLINE,
 							Protocol: test.StringToApplicationProtocol(config.ACTIVE_COAP_SCHEME),
+							Service:  &commands.Connection_Service{},
 						},
 						TwinEnabled: true,
 						TwinSynchronization: &commands.TwinSynchronization{
@@ -166,6 +167,7 @@ func TestRequestHandlerGetDevices(t *testing.T) {
 					dev.Metadata.Connection.OnlineValidUntil = 0
 					dev.Metadata.Connection.Id = ""
 					dev.Metadata.Connection.ConnectedAt = 0
+					dev.Metadata.Connection.Service.Id = ""
 					dev.Metadata.TwinSynchronization.SyncingAt = 0
 					dev.Metadata.TwinSynchronization.InSyncAt = 0
 					dev.Metadata.TwinSynchronization.CommandMetadata = nil

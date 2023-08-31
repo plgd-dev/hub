@@ -83,6 +83,9 @@ func CreateDevice(ctx context.Context, t *testing.T, name string, deviceID strin
 					Status:      commands.Connection_ONLINE,
 					ConnectedAt: time.Now().UnixNano(),
 					Protocol:    protocol,
+					Service: &commands.Connection_Service{
+						Id: "service-id",
+					},
 				},
 			},
 			TimeToLive: time.Now().Add(time.Hour).UnixNano(),

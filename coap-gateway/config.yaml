@@ -114,9 +114,6 @@ clients:
         keyFile: "/secrets/private/cert.key"
         certFile: "/secrets/public/cert.crt"
         useSystemCAPool: false
-    deviceStatusExpiration:
-      enabled: false
-      expiresIn: 0s
   resourceDirectory:
     grpc:
       address: ""
@@ -167,3 +164,5 @@ taskQueue:
   goPoolSize: 1600
   size: 2097152
   maxIdleTime: "10m"
+serviceStatus:
+  timeToLive: 10m

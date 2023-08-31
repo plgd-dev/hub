@@ -24,4 +24,8 @@ service ResourceAggregate {
   rpc CancelPendingCommands(CancelPendingCommandsRequest) returns (CancelPendingCommandsResponse) {}
   rpc DeleteDevices (DeleteDevicesRequest) returns (DeleteDevicesResponse) {}
   rpc BatchNotifyResourceChanged (BatchNotifyResourceChangedRequest) returns (BatchNotifyResourceChangedResponse) {}
+
+  // Service management
+  // This command is used to update the status of the service. It doesn't validate JWT token.
+  rpc UpdateServiceMetadata(UpdateServiceMetadataRequest) returns (UpdateServiceMetadataResponse) {}
 }

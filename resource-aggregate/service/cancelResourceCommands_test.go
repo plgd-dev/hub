@@ -66,6 +66,7 @@ func TestRequestHandlerCancelPendingCommands(t *testing.T) {
 				CorrelationIds: []string{correlationID0},
 				AuditContext: &commands.AuditContext{
 					UserId: userID,
+					Owner:  userID,
 				},
 			},
 		},
@@ -78,6 +79,7 @@ func TestRequestHandlerCancelPendingCommands(t *testing.T) {
 				CorrelationIds: []string{correlationID0, correlationID1},
 				AuditContext: &commands.AuditContext{
 					UserId: userID,
+					Owner:  userID,
 				},
 			},
 		},
@@ -90,6 +92,7 @@ func TestRequestHandlerCancelPendingCommands(t *testing.T) {
 				CorrelationIds: []string{correlationID1},
 				AuditContext: &commands.AuditContext{
 					UserId: userID,
+					Owner:  userID,
 				},
 			},
 		},
@@ -102,6 +105,7 @@ func TestRequestHandlerCancelPendingCommands(t *testing.T) {
 				CorrelationIds: []string{correlationID2},
 				AuditContext: &commands.AuditContext{
 					UserId: userID,
+					Owner:  userID,
 				},
 			},
 		},
@@ -114,6 +118,7 @@ func TestRequestHandlerCancelPendingCommands(t *testing.T) {
 				CorrelationIds: []string{correlationID3},
 				AuditContext: &commands.AuditContext{
 					UserId: userID,
+					Owner:  userID,
 				},
 			},
 		},
@@ -126,6 +131,7 @@ func TestRequestHandlerCancelPendingCommands(t *testing.T) {
 				CorrelationIds: []string{correlationID2, correlationID3},
 				AuditContext: &commands.AuditContext{
 					UserId: userID,
+					Owner:  userID,
 				},
 			},
 		},
@@ -170,9 +176,9 @@ func TestRequestHandlerCancelPendingCommands(t *testing.T) {
 		naClient.Close()
 	}()
 
-	ag0, err := service.NewAggregate(commands.NewResourceID(deviceID, resID0), 10, cfg.HubID, eventstore, service.ResourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
+	ag0, err := service.NewAggregate(commands.NewResourceID(deviceID, resID0), 10, eventstore, service.NewResourceStateFactoryModel(userID, userID, cfg.HubID), cqrsAggregate.NewDefaultRetryFunc(1))
 	require.NoError(t, err)
-	ag1, err := service.NewAggregate(commands.NewResourceID(deviceID, resID1), 10, cfg.HubID, eventstore, service.ResourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
+	ag1, err := service.NewAggregate(commands.NewResourceID(deviceID, resID1), 10, eventstore, service.NewResourceStateFactoryModel(userID, userID, cfg.HubID), cqrsAggregate.NewDefaultRetryFunc(1))
 	require.NoError(t, err)
 	_, err = ag0.NotifyResourceChanged(ctx, testMakeNotifyResourceChangedRequest(deviceID, resID0, 0, []byte(resID0)...))
 	require.NoError(t, err)
@@ -195,7 +201,10 @@ func TestRequestHandlerCancelPendingCommands(t *testing.T) {
 	_, err = ag1.DeleteResource(ctx, testMakeDeleteResourceRequest(deviceID, resID1, correlationID3, 0))
 	require.NoError(t, err)
 
-	requestHandler := service.NewRequestHandler(cfg, eventstore, publisher, mockGetOwnerDevices, logger)
+	serviceStatus, err := service.NewServiceStatus(cfg, eventstore, publisher, logger)
+	require.NoError(t, err)
+
+	requestHandler := service.NewRequestHandler(cfg, eventstore, publisher, mockGetOwnerDevices, serviceStatus, logger)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

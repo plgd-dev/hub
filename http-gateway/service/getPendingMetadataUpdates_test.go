@@ -60,7 +60,7 @@ func TestRequestHandlerGetPendingMetadataUpdates(t *testing.T) {
 							UpdatePending: &events.DeviceMetadataUpdatePending_TwinEnabled{
 								TwinEnabled: false,
 							},
-							AuditContext: commands.NewAuditContext(service.DeviceUserID, ""),
+							AuditContext: commands.NewAuditContext(service.DeviceUserID, "", service.DeviceUserID),
 						},
 					},
 				},

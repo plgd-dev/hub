@@ -467,6 +467,10 @@ func (e MockEvent) Timestamp() time.Time {
 	return time.Unix(0, e.TimestampI)
 }
 
+func (e MockEvent) ServiceID() (string, bool) {
+	return "", false
+}
+
 type MockEventHandler struct {
 	lock   sync.Mutex
 	events map[string]map[string][]eventstore.Event
