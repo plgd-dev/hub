@@ -33,7 +33,12 @@ const RemoteClientsPage: FC<Props> = (props) => {
         },
     })
     const [httpGatewayAddress] = useState(getClientUrl(clientData?.clientUrl))
-    const [wellKnownConfig, setWellKnownConfig, reFetchConfig, wellKnownConfigError] = useWellKnownConfiguration(httpGatewayAddress, hubWellKnownConfig)
+    const [loading, setLoading] = useState(false)
+    const [wellKnownConfig, setWellKnownConfig, reFetchConfig, wellKnownConfigError] = useWellKnownConfiguration(
+        httpGatewayAddress,
+        hubWellKnownConfig,
+        () => loading && setLoading(false)
+    )
 
     const [authError, setAuthError] = useState<string | undefined>(undefined)
     const [initializedByAnother, setInitializedByAnother] = useState(false)
@@ -42,23 +47,38 @@ const RemoteClientsPage: FC<Props> = (props) => {
 
     const setInitialize = useCallback(
         (value = true) => {
+            setLoading(true)
             setWellKnownConfig(
                 {
                     isInitialized: value,
                 } as WellKnownConfigType,
                 'update'
             )
+
+            reFetchConfig().then(() => setLoading(false))
         },
-        [setWellKnownConfig]
+        [reFetchConfig, setWellKnownConfig]
     )
 
     clientAppSettings.setGeneralConfig({
         httpGatewayAddress,
     })
 
+    const reInitialization = useMemo(
+        () =>
+            wellKnownConfig &&
+            wellKnownConfig.deviceAuthenticationMode !== DEVICE_AUTH_MODE.UNINITIALIZED &&
+            wellKnownConfig.deviceAuthenticationMode !== clientData.authenticationMode,
+        [wellKnownConfig, clientData]
+    )
+
     const compareOwners = useCallback((wellKnownConfig?: WellKnownConfigType) => {
         const userData = clientAppSettings.getUserData()
         if (userData && wellKnownConfig) {
+            if (!wellKnownConfig.isInitialized) {
+                return true
+            }
+
             const parsedData = jwtDecode(userData.access_token)
             const ownerId = get(parsedData, wellKnownConfig?.remoteProvisioning?.jwtOwnerClaim as string, '')
 
@@ -67,29 +87,28 @@ const RemoteClientsPage: FC<Props> = (props) => {
             }
         }
 
+        // TODO!
+        // setInitializedByAnother(true)
         return false
     }, [])
 
     const unauthorizedCallback = useCallback(() => {
-        if (clientData.authenticationMode === DEVICE_AUTH_MODE.PRE_SHARED_KEY) {
-            setSuspectedUnauthorized(true)
+        setSuspectedUnauthorized(true)
 
-            reFetchConfig().then((newWellKnownConfig: WellKnownConfigType) => {
-                if (compareOwners(newWellKnownConfig)) {
-                    setSuspectedUnauthorized(false)
-                } else {
-                    setInitializedByAnother(true)
-                }
-            })
-        }
-    }, [clientData.authenticationMode, compareOwners, reFetchConfig])
+        reFetchConfig().then((newWellKnownConfig: WellKnownConfigType) => {
+            if (compareOwners(newWellKnownConfig)) {
+                setSuspectedUnauthorized(false)
+            } else {
+                setInitializedByAnother(true)
+            }
+        })
+    }, [compareOwners, reFetchConfig])
 
     const contextValue = useMemo(
         () => ({
             unauthorizedCallback,
-            useToken: compareOwners(wellKnownConfig) && clientData.authenticationMode === DEVICE_AUTH_MODE.X509,
         }),
-        [clientData.authenticationMode, compareOwners, unauthorizedCallback, wellKnownConfig]
+        [unauthorizedCallback]
     )
 
     if (error) {
@@ -100,10 +119,13 @@ const RemoteClientsPage: FC<Props> = (props) => {
         return <div className='client-error-message'>{wellKnownConfigError?.message}</div>
     }
 
-    if (!wellKnownConfig) {
+    if (!wellKnownConfig || !clientData || loading) {
         return <FullPageLoader i18n={{ loading: _(g.loading) }} />
     } else {
         clientAppSettings.setWellKnowConfig(wellKnownConfig)
+        clientAppSettings.setUseToken(compareOwners(wellKnownConfig) && clientData.authenticationMode === DEVICE_AUTH_MODE.X509)
+
+        console.log({ setUseToken: compareOwners(wellKnownConfig) && clientData.authenticationMode === DEVICE_AUTH_MODE.X509 })
 
         if (wellKnownConfig.remoteProvisioning) {
             clientAppSettings.setWebOAuthConfig({
@@ -128,13 +150,14 @@ const RemoteClientsPage: FC<Props> = (props) => {
                 {!initializedByAnother && !suspectedUnauthorized && (
                     <RemoteClientsAuthProvider
                         clientData={clientData}
+                        reInitialization={reInitialization}
                         ref={authProviderRef}
                         setAuthError={setAuthError}
                         setInitialize={setInitialize}
                         unauthorizedCallback={unauthorizedCallback}
                         wellKnownConfig={wellKnownConfig}
                     >
-                        {clientData.reInitialization ? <FullPageLoader i18n={{ loading: _(g.loading) }} /> : children(clientData, wellKnownConfig)}
+                        {reInitialization ? <FullPageLoader i18n={{ loading: _(g.loading) }} /> : children(clientData, wellKnownConfig)}
                     </RemoteClientsAuthProvider>
                 )}
             </div>

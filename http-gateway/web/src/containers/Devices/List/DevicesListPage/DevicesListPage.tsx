@@ -18,6 +18,7 @@ import TableActionButton from '@shared-ui/components/Organisms/TableActionButton
 import Notification from '@shared-ui/components/Atomic/Notification/Toast'
 import { IconShowPassword, IconTrash, StatusTag } from '@shared-ui/components/Atomic'
 import Breadcrumbs from '@shared-ui/components/Layout/Header/Breadcrumbs'
+import { clientAppSettings } from '@shared-ui/common/services'
 
 import { PendingCommandsExpandableList } from '@/containers/PendingCommands'
 import { DEVICES_REGISTERED_UNREGISTERED_COUNT_EVENT_KEY, devicesStatuses, NO_DEVICE_NAME, RESET_COUNTER } from '../../constants'
@@ -58,6 +59,8 @@ const DevicesListPage: FC<any> = () => {
 
     const combinedSelectedDevices = singleDevice ? [singleDevice] : selectedDevices
     const { footerExpanded, setFooterExpanded, collapsed } = useContext(AppContext)
+
+    clientAppSettings.reset()
 
     useEffect(() => {
         deviceError &&

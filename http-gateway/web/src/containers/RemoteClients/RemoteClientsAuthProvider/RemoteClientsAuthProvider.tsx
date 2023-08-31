@@ -1,6 +1,5 @@
 import { forwardRef, useEffect, useImperativeHandle, useState } from 'react'
 import { useIntl } from 'react-intl'
-import { useDispatch } from 'react-redux'
 
 import { clientAppSettings } from '@shared-ui/common/services'
 import {
@@ -19,15 +18,15 @@ import Notification from '@shared-ui/components/Atomic/Notification/Toast'
 import { messages as t } from '../RemoteClients.i18n'
 import { AppAuthProviderRefType, Props } from './RemoteClientsAuthProvider.types'
 import notificationId from '@/notificationId'
-import { unInitializeRemoteClient } from '@/containers/RemoteClients/slice'
 
 const RemoteClientsAuthProvider = forwardRef<AppAuthProviderRefType, Props>((props, ref) => {
-    const { wellKnownConfig, clientData, children, setAuthError, setInitialize, unauthorizedCallback } = props
-    const { id, clientUrl, authenticationMode, preSharedSubjectId, preSharedKey, reInitialization } = clientData
+    const { wellKnownConfig, reInitialization, clientData, children, setAuthError, setInitialize, unauthorizedCallback } = props
+    const { id, clientUrl, authenticationMode, preSharedSubjectId, preSharedKey } = clientData
     const { formatMessage: _ } = useIntl()
     const [userData] = useState(clientAppSettings.getUserData())
     const [signOutRedirect] = useState(clientAppSettings.getSignOutRedirect())
-    const dispatch = useDispatch()
+    const [reInitializationLoading, setReInitializationLoading] = useState(false)
+    const [initializationLoading, setInitializationLoading] = useState(false)
 
     useImperativeHandle(ref, () => ({
         getSignOutMethod: () =>
@@ -38,22 +37,25 @@ const RemoteClientsAuthProvider = forwardRef<AppAuthProviderRefType, Props>((pro
     }))
 
     useEffect(() => {
-        if (reInitialization) {
+        if (reInitialization && !reInitializationLoading) {
+            setReInitializationLoading(true)
+            console.log('%c reInitializationProp start! ', 'background: #f0000; color: #bada55')
             reset(clientUrl, unauthorizedCallback)
                 .then(() => {
-                    console.log('reset done')
-                    dispatch(unInitializeRemoteClient(id))
+                    console.log('%c reset done! ', 'background: #222; color: #bada55')
                     setInitialize(false)
+                    setReInitializationLoading(false)
                 })
                 .catch(() => {})
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [reInitialization, clientUrl, id, setInitialize])
+    }, [reInitialization, clientUrl, id, setInitialize, wellKnownConfig?.isInitialized, reInitializationLoading, unauthorizedCallback])
 
     useEffect(() => {
-        if (wellKnownConfig && !wellKnownConfig.isInitialized) {
+        if (wellKnownConfig && !wellKnownConfig.isInitialized && !initializationLoading) {
             if (authenticationMode === DEVICE_AUTH_MODE.X509) {
                 try {
+                    setInitializationLoading(true)
                     getOpenIdConfiguration(wellKnownConfig.remoteProvisioning?.authority!).then((result) => {
                         getJwksData(result.data.jwks_uri).then((result) => {
                             initializeJwksData(result.data).then((result) => {
@@ -64,8 +66,9 @@ const RemoteClientsAuthProvider = forwardRef<AppAuthProviderRefType, Props>((pro
                                     identityCertificateChallenge.certificateSigningRequest
                                 ).then((result) => {
                                     initializeFinal(identityCertificateChallenge.state, result.data.certificate).then(() => {
-                                        console.log('init done x509')
+                                        console.log('%c init done x509! ', 'background: #bada55; color: #1a1a1a')
                                         setInitialize(true)
+                                        setInitializationLoading(false)
                                     })
                                 })
                             })
@@ -73,6 +76,7 @@ const RemoteClientsAuthProvider = forwardRef<AppAuthProviderRefType, Props>((pro
                     })
                 } catch (e) {
                     console.error(e)
+                    setInitializationLoading(false)
                     setAuthError(e as string)
                 }
             } else if (authenticationMode === DEVICE_AUTH_MODE.PRE_SHARED_KEY) {
@@ -81,8 +85,9 @@ const RemoteClientsAuthProvider = forwardRef<AppAuthProviderRefType, Props>((pro
                         initializedByPreShared(preSharedSubjectId, preSharedKey)
                             .then((r) => {
                                 if (r.status === 200) {
-                                    console.log('init done PSK')
+                                    console.log('%c init done PSK! ', 'background: #bada55; color: #1a1a1a')
                                     setInitialize(true)
+                                    setInitializationLoading(false)
                                 }
                             })
                             .catch((e) => {
@@ -97,16 +102,17 @@ const RemoteClientsAuthProvider = forwardRef<AppAuthProviderRefType, Props>((pro
                     } catch (e) {
                         console.error(e)
                         setAuthError(e as string)
+                        setInitializationLoading(false)
                     }
                 } else {
-                    setAuthError('Bad parameters for PRE_SHARED_KEY mode')
+                    setAuthError('Wrong parameters for PRE_SHARED_KEY mode')
                 }
             }
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [wellKnownConfig, setAuthError, setInitialize])
 
-    if (!wellKnownConfig || !wellKnownConfig?.isInitialized) {
+    if (!wellKnownConfig || !wellKnownConfig?.isInitialized || initializationLoading) {
         return (
             <AppLoader
                 i18n={{

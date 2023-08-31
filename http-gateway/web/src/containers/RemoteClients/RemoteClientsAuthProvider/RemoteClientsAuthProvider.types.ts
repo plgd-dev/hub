@@ -12,7 +12,8 @@ export type Props = {
     children: ReactElement
     clientData: RemoteClientType
     setAuthError: (error: string) => void
-    setInitialize: (isInitialize?: boolean) => void
+    setInitialize: (isInitialize: boolean) => void
     unauthorizedCallback: () => void
     wellKnownConfig?: WellKnownConfigType
+    reInitialization?: boolean
 }

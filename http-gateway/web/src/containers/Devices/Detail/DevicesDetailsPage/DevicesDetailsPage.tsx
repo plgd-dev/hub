@@ -12,7 +12,7 @@ import Tabs from '@shared-ui/components/Atomic/Tabs'
 import Breadcrumbs from '@shared-ui/components/Layout/Header/Breadcrumbs'
 import StatusTag from '@shared-ui/components/Atomic/StatusTag'
 import { getApiErrorMessage } from '@shared-ui/common/utils'
-import { security } from '@shared-ui/common/services'
+import { clientAppSettings, security } from '@shared-ui/common/services'
 import Footer from '@shared-ui/components/Layout/Footer'
 import EditDeviceNameModal from '@shared-ui/components/Organisms/EditDeviceNameModal'
 import Notification from '@shared-ui/components/Atomic/Notification/Toast'
@@ -59,6 +59,8 @@ const DevicesDetailsPage: FC<Props> = (props) => {
     const [deviceNameLoading, setDeviceNameLoading] = useState(false)
 
     const { footerExpanded, setFooterExpanded } = useContext(AppContext)
+
+    clientAppSettings.reset()
 
     useEffect(() => {
         setDomReady(true)

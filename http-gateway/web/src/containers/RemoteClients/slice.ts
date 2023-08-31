@@ -39,13 +39,12 @@ const initialState: StoreType = {
                   id: '789',
                   created: '2023-07-22T17:58:11.427Z',
                   version: '0.6.0',
-                  clientName: 'Test X509 RE',
+                  clientName: 'Test X509 ffff',
                   clientUrl: 'https://212.89.237.161:50080',
                   status: remoteClientStatuses.REACHABLE,
                   authenticationMode: 'X509',
                   preSharedSubjectId: '',
                   preSharedKey: '',
-                  reInitialization: true,
               },
           ]
         : [],
@@ -73,24 +72,10 @@ const { reducer, actions } = createSlice({
             const index = state.remoteClients.findIndex((originRemoteClient) => originRemoteClient.id === payload.id)
 
             if (index >= 0) {
-                const remoteClient = state.remoteClients[index]
+                // const remoteClient = state.remoteClients[index]
                 state.remoteClients[index] = {
                     ...state.remoteClients[index],
                     ...payload,
-                    reInitialization:
-                        remoteClient.authenticationMode !== payload.authenticationMode ||
-                        remoteClient.preSharedSubjectId !== payload.preSharedSubjectId ||
-                        remoteClient.preSharedKey !== payload.preSharedKey,
-                }
-            }
-        },
-        unInitializeRemoteClient(state, { payload }) {
-            const index = state.remoteClients.findIndex((originRemoteClient) => originRemoteClient.id === payload)
-
-            if (index >= 0) {
-                state.remoteClients[index] = {
-                    ...state.remoteClients[index],
-                    reInitialization: false,
                 }
             }
         },
@@ -107,7 +92,7 @@ const { reducer, actions } = createSlice({
 })
 
 // Actions
-export const { addRemoteClient, deleteRemoteClients, deleteAllRemoteClients, updateRemoteClients, updateRemoteClient, unInitializeRemoteClient } = actions
+export const { addRemoteClient, deleteRemoteClients, deleteAllRemoteClients, updateRemoteClients, updateRemoteClient } = actions
 
 // Reducer
 export default reducer
