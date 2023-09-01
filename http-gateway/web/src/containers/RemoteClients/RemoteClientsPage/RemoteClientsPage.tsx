@@ -1,4 +1,4 @@
-import { FC, useCallback, useMemo, useRef, useState } from 'react'
+import { FC, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useIntl } from 'react-intl'
 import { Helmet } from 'react-helmet'
 import jwtDecode from 'jwt-decode'
@@ -32,7 +32,7 @@ const RemoteClientsPage: FC<Props> = (props) => {
             pageNotFound: _(g.pageNotFound),
         },
     })
-    const [httpGatewayAddress] = useState(getClientUrl(clientData?.clientUrl))
+    const [httpGatewayAddress] = useState(clientData ? getClientUrl(clientData?.clientUrl) : '')
     const [loading, setLoading] = useState(false)
     const [wellKnownConfig, setWellKnownConfig, reFetchConfig, wellKnownConfigError] = useWellKnownConfiguration(
         httpGatewayAddress,
@@ -87,10 +87,14 @@ const RemoteClientsPage: FC<Props> = (props) => {
             }
         }
 
-        // TODO!
-        // setInitializedByAnother(true)
         return false
     }, [])
+
+    useEffect(() => {
+        if (!compareOwners(wellKnownConfig) && !initializedByAnother) {
+            setInitializedByAnother(true)
+        }
+    }, [compareOwners, initializedByAnother, wellKnownConfig])
 
     const unauthorizedCallback = useCallback(() => {
         setSuspectedUnauthorized(true)
@@ -124,8 +128,6 @@ const RemoteClientsPage: FC<Props> = (props) => {
     } else {
         clientAppSettings.setWellKnowConfig(wellKnownConfig)
         clientAppSettings.setUseToken(compareOwners(wellKnownConfig) && clientData.authenticationMode === DEVICE_AUTH_MODE.X509)
-
-        console.log({ setUseToken: compareOwners(wellKnownConfig) && clientData.authenticationMode === DEVICE_AUTH_MODE.X509 })
 
         if (wellKnownConfig.remoteProvisioning) {
             clientAppSettings.setWebOAuthConfig({

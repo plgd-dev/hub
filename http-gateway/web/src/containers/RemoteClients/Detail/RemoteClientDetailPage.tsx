@@ -15,13 +15,6 @@ const RemoteClientDetailPage: FC<any> = () => {
     return (
         <RemoteClientsPage>
             {(clientData, wellKnownConfig) => {
-                // console.group('render Props')
-                // console.log(wellKnownConfig)
-                // console.log(clientData)
-                // console.log({ isInitialized: wellKnownConfig?.isInitialized })
-                // console.log({ reInitialization: clientData.reInitialization })
-                // console.groupEnd()
-
                 if (!wellKnownConfig || !wellKnownConfig.isInitialized) {
                     return <FullPageLoader i18n={{ loading: _(g.loading) }} />
                 }
