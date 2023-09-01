@@ -72,17 +72,17 @@ const RemoteClientsPage: FC<Props> = (props) => {
         [wellKnownConfig, clientData]
     )
 
-    const compareOwners = useCallback((wellKnownConfig?: WellKnownConfigType) => {
+    const unCompareOwners = useCallback((wellKnownConfig?: WellKnownConfigType) => {
         const userData = clientAppSettings.getUserData()
-        if (userData && wellKnownConfig) {
-            if (!wellKnownConfig.isInitialized) {
-                return true
-            }
+        if (!wellKnownConfig?.isInitialized) {
+            return false
+        }
 
+        if (userData && wellKnownConfig) {
             const parsedData = jwtDecode(userData.access_token)
             const ownerId = get(parsedData, wellKnownConfig?.remoteProvisioning?.jwtOwnerClaim as string, '')
 
-            if (ownerId === wellKnownConfig?.owner) {
+            if (ownerId !== wellKnownConfig?.owner) {
                 return true
             }
         }
@@ -91,22 +91,22 @@ const RemoteClientsPage: FC<Props> = (props) => {
     }, [])
 
     useEffect(() => {
-        if (!compareOwners(wellKnownConfig) && !initializedByAnother) {
+        if (wellKnownConfig && unCompareOwners(wellKnownConfig) && !initializedByAnother) {
             setInitializedByAnother(true)
         }
-    }, [compareOwners, initializedByAnother, wellKnownConfig])
+    }, [unCompareOwners, initializedByAnother, wellKnownConfig])
 
     const unauthorizedCallback = useCallback(() => {
         setSuspectedUnauthorized(true)
 
         reFetchConfig().then((newWellKnownConfig: WellKnownConfigType) => {
-            if (compareOwners(newWellKnownConfig)) {
+            if (!unCompareOwners(newWellKnownConfig)) {
                 setSuspectedUnauthorized(false)
             } else {
                 setInitializedByAnother(true)
             }
         })
-    }, [compareOwners, reFetchConfig])
+    }, [unCompareOwners, reFetchConfig])
 
     const contextValue = useMemo(
         () => ({
@@ -127,7 +127,7 @@ const RemoteClientsPage: FC<Props> = (props) => {
         return <FullPageLoader i18n={{ loading: _(g.loading) }} />
     } else {
         clientAppSettings.setWellKnowConfig(wellKnownConfig)
-        clientAppSettings.setUseToken(compareOwners(wellKnownConfig) && clientData.authenticationMode === DEVICE_AUTH_MODE.X509)
+        clientAppSettings.setUseToken(!unCompareOwners(wellKnownConfig) && clientData.authenticationMode === DEVICE_AUTH_MODE.X509)
 
         if (wellKnownConfig.remoteProvisioning) {
             clientAppSettings.setWebOAuthConfig({
