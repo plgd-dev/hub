@@ -1,7 +1,6 @@
-import { forwardRef, useEffect, useImperativeHandle, useState } from 'react'
+import { FC, useEffect, useState } from 'react'
 import { useIntl } from 'react-intl'
 
-import { clientAppSettings } from '@shared-ui/common/services'
 import {
     getJwksData,
     getOpenIdConfiguration,
@@ -16,40 +15,27 @@ import AppLoader from '@shared-ui/app/clientApp/App/AppLoader'
 import Notification from '@shared-ui/components/Atomic/Notification/Toast'
 
 import { messages as t } from '../RemoteClients.i18n'
-import { AppAuthProviderRefType, Props } from './RemoteClientsAuthProvider.types'
+import { Props } from './RemoteClientsAuthProvider.types'
 import notificationId from '@/notificationId'
 
-const RemoteClientsAuthProvider = forwardRef<AppAuthProviderRefType, Props>((props, ref) => {
+const RemoteClientsAuthProvider: FC<Props> = (props) => {
     const { wellKnownConfig, reInitialization, clientData, children, setAuthError, setInitialize, unauthorizedCallback } = props
-    const { id, clientUrl, authenticationMode, preSharedSubjectId, preSharedKey } = clientData
+    const { clientUrl, authenticationMode, preSharedSubjectId, preSharedKey } = clientData
     const { formatMessage: _ } = useIntl()
-    const [userData] = useState(clientAppSettings.getUserData())
-    const [signOutRedirect] = useState(clientAppSettings.getSignOutRedirect())
     const [reInitializationLoading, setReInitializationLoading] = useState(false)
     const [initializationLoading, setInitializationLoading] = useState(false)
-
-    useImperativeHandle(ref, () => ({
-        getSignOutMethod: () =>
-            signOutRedirect({
-                post_logout_redirect_uri: window.location.origin,
-            }),
-        getUserData: () => userData,
-    }))
 
     useEffect(() => {
         if (reInitialization && !reInitializationLoading) {
             setReInitializationLoading(true)
-            console.log('%c reInitializationProp start! ', 'background: #f0000; color: #bada55')
             reset(clientUrl, unauthorizedCallback)
                 .then(() => {
-                    console.log('%c reset done! ', 'background: #222; color: #bada55')
                     setInitialize(false)
                     setReInitializationLoading(false)
                 })
                 .catch(() => {})
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [reInitialization, clientUrl, id, setInitialize, wellKnownConfig?.isInitialized, reInitializationLoading, unauthorizedCallback])
+    }, [reInitialization, clientUrl, setInitialize, reInitializationLoading, unauthorizedCallback])
 
     useEffect(() => {
         if (wellKnownConfig && !wellKnownConfig.isInitialized && !initializationLoading) {
@@ -66,7 +52,6 @@ const RemoteClientsAuthProvider = forwardRef<AppAuthProviderRefType, Props>((pro
                                     identityCertificateChallenge.certificateSigningRequest
                                 ).then((result) => {
                                     initializeFinal(identityCertificateChallenge.state, result.data.certificate).then(() => {
-                                        console.log('%c init done x509! ', 'background: #bada55; color: #1a1a1a')
                                         setInitialize(true)
                                         setInitializationLoading(false)
                                     })
@@ -85,7 +70,6 @@ const RemoteClientsAuthProvider = forwardRef<AppAuthProviderRefType, Props>((pro
                         initializedByPreShared(preSharedSubjectId, preSharedKey)
                             .then((r) => {
                                 if (r.status === 200) {
-                                    console.log('%c init done PSK! ', 'background: #bada55; color: #1a1a1a')
                                     setInitialize(true)
                                     setInitializationLoading(false)
                                 }
@@ -123,7 +107,7 @@ const RemoteClientsAuthProvider = forwardRef<AppAuthProviderRefType, Props>((pro
     }
 
     return children
-})
+}
 
 RemoteClientsAuthProvider.displayName = 'RemoteClientsAuthProvider'
 

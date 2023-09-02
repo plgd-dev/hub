@@ -22,7 +22,7 @@ import AppLayout from '@/containers/App/AppLayout/AppLayout'
 
 const AppInner = (props: Props) => {
     const { wellKnownConfig, openTelemetry, collapsed, setCollapsed } = props
-    const { userData, userManager, signOutRedirect } = useAuth()
+    const { userData, userManager, signOutRedirect, isLoading } = useAuth()
 
     const [footerExpanded, setFooterExpanded] = useLocalStorage('footerPanelExpanded', false)
 
@@ -42,18 +42,18 @@ const AppInner = (props: Props) => {
         [footerExpanded, collapsed, setCollapsed, setFooterExpanded, wellKnownConfig, openTelemetry]
     )
 
-    if (userData) {
+    if (!userData || isLoading) {
+        return <AppLoader />
+    } else {
         security.setAccessToken(userData.access_token)
+        // security.setUserData(userData)
 
         // for remote clients
-        clientAppSettings.setUserData(userData)
         clientAppSettings.setSignOutRedirect(signOutRedirect)
 
         if (userManager) {
             security.setUserManager(userManager)
         }
-    } else {
-        return <AppLoader />
     }
 
     return (

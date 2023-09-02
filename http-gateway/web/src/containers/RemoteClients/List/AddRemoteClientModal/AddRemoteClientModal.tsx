@@ -158,7 +158,10 @@ const AddRemoteClientModal: FC<Props> = (props) => {
             })
             .catch((e) => {
                 setVersionLoading(false)
-                Notification.error({ title: _(t.error), message: _(t.clientError) }, { notificationId: notificationId.HUB_ADD_REMOTE_CLIENT_MODAL_ON_SUBMIT })
+                Notification.error(
+                    { title: _(t.error), message: _(t.clientError, { remoteClientUrl: url }) },
+                    { notificationId: notificationId.HUB_ADD_REMOTE_CLIENT_MODAL_ON_SUBMIT, onClick: () => window.open(url, '_blank') }
+                )
             })
     }
 
@@ -235,7 +238,7 @@ const AddRemoteClientModal: FC<Props> = (props) => {
         <form onSubmit={handleSubmit(onSubmit)}>
             {!isEditMode && (
                 <div style={{ marginBottom: '12px' }}>
-                    <Alert>Nutnost akceptovat certifikat</Alert>
+                    <Alert>{_(t.certificateAcceptDescription)}</Alert>
                 </div>
             )}
             <Row>
@@ -323,6 +326,7 @@ const AddRemoteClientModal: FC<Props> = (props) => {
                       ]
                     : undefined
             }
+            maxWidth={600}
             onClose={handleClose}
             portalTarget={document.getElementById('modal-root')}
             renderBody={renderBody}

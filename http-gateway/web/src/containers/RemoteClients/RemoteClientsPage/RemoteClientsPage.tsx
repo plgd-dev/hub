@@ -1,4 +1,4 @@
-import { FC, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { FC, useCallback, useEffect, useMemo, useState } from 'react'
 import { useIntl } from 'react-intl'
 import { Helmet } from 'react-helmet'
 import jwtDecode from 'jwt-decode'
@@ -18,7 +18,6 @@ import * as styles from './RemoteClientsPage.styles'
 import { messages as g } from '@/containers/Global.i18n'
 import { messages as t } from '../RemoteClients.i18n'
 import RemoteClientsAuthProvider from '@/containers/RemoteClients/RemoteClientsAuthProvider'
-import { AppAuthProviderRefType } from '../RemoteClientsAuthProvider/RemoteClientsAuthProvider.types'
 
 const RemoteClientsPage: FC<Props> = (props) => {
     const { children } = props
@@ -43,7 +42,6 @@ const RemoteClientsPage: FC<Props> = (props) => {
     const [authError, setAuthError] = useState<string | undefined>(undefined)
     const [initializedByAnother, setInitializedByAnother] = useState(false)
     const [suspectedUnauthorized, setSuspectedUnauthorized] = useState(false)
-    const authProviderRef = useRef<AppAuthProviderRefType | null>(null)
 
     const setInitialize = useCallback(
         (value = true) => {
@@ -72,14 +70,15 @@ const RemoteClientsPage: FC<Props> = (props) => {
         [wellKnownConfig, clientData]
     )
 
-    const unCompareOwners = useCallback((wellKnownConfig?: WellKnownConfigType) => {
-        const userData = clientAppSettings.getUserData()
+    const differentOwner = useCallback((wellKnownConfig?: WellKnownConfigType) => {
         if (!wellKnownConfig?.isInitialized) {
             return false
         }
 
-        if (userData && wellKnownConfig) {
-            const parsedData = jwtDecode(userData.access_token)
+        const accessToken = security.getAccessToken()
+
+        if (accessToken && wellKnownConfig) {
+            const parsedData = jwtDecode(accessToken)
             const ownerId = get(parsedData, wellKnownConfig?.remoteProvisioning?.jwtOwnerClaim as string, '')
 
             if (ownerId !== wellKnownConfig?.owner) {
@@ -91,22 +90,26 @@ const RemoteClientsPage: FC<Props> = (props) => {
     }, [])
 
     useEffect(() => {
-        if (wellKnownConfig && unCompareOwners(wellKnownConfig) && !initializedByAnother) {
+        clientAppSettings.setUseToken(!differentOwner(wellKnownConfig) && clientData.authenticationMode === DEVICE_AUTH_MODE.X509)
+    }, [wellKnownConfig, clientData.authenticationMode, differentOwner])
+
+    useEffect(() => {
+        if (wellKnownConfig && differentOwner(wellKnownConfig) && !initializedByAnother) {
             setInitializedByAnother(true)
         }
-    }, [unCompareOwners, initializedByAnother, wellKnownConfig])
+    }, [differentOwner, initializedByAnother, wellKnownConfig])
 
     const unauthorizedCallback = useCallback(() => {
         setSuspectedUnauthorized(true)
 
         reFetchConfig().then((newWellKnownConfig: WellKnownConfigType) => {
-            if (!unCompareOwners(newWellKnownConfig)) {
-                setSuspectedUnauthorized(false)
-            } else {
+            if (differentOwner(newWellKnownConfig)) {
                 setInitializedByAnother(true)
+            } else {
+                setSuspectedUnauthorized(false)
             }
         })
-    }, [unCompareOwners, reFetchConfig])
+    }, [differentOwner, reFetchConfig])
 
     const contextValue = useMemo(
         () => ({
@@ -127,7 +130,6 @@ const RemoteClientsPage: FC<Props> = (props) => {
         return <FullPageLoader i18n={{ loading: _(g.loading) }} />
     } else {
         clientAppSettings.setWellKnowConfig(wellKnownConfig)
-        clientAppSettings.setUseToken(!unCompareOwners(wellKnownConfig) && clientData.authenticationMode === DEVICE_AUTH_MODE.X509)
 
         if (wellKnownConfig.remoteProvisioning) {
             clientAppSettings.setWebOAuthConfig({
@@ -153,7 +155,6 @@ const RemoteClientsPage: FC<Props> = (props) => {
                     <RemoteClientsAuthProvider
                         clientData={clientData}
                         reInitialization={reInitialization}
-                        ref={authProviderRef}
                         setAuthError={setAuthError}
                         setInitialize={setInitialize}
                         unauthorizedCallback={unauthorizedCallback}

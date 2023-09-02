@@ -103,7 +103,8 @@ export const messages = defineMessages({
     },
     clientError: {
         id: 'remoteClients.clientError',
-        defaultMessage: 'No client is reachable on the IP address',
+        defaultMessage:
+            'Failed to add the remote client. The certificate for the provided URL may not have been accepted by browser. Please ensure you open the {remoteClientUrl} in your browser, verify and accept the certificate before attempting to add the client.',
     },
     version: {
         id: 'remoteClients.version',
@@ -157,5 +158,10 @@ export const messages = defineMessages({
         id: 'remoteClients.initializedByAnotherDesc',
         defaultMessage:
             'Application Initialization Restricted. Please ensure the remote client user logs out before proceeding. Only after the different user has logged out, will you be able to utilize the application.',
+    },
+    certificateAcceptDescription: {
+        id: 'remoteClients.certificateAcceptDescription',
+        defaultMessage:
+            'Before adding a remote client, verify their TLS certificate for security. To proceed, open the URL in your browser, verify and accept the certificate. Adding a client involves sharing credentials, so ensure you trust them.',
     },
 })
