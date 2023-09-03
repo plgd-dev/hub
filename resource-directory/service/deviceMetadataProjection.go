@@ -62,7 +62,7 @@ func (p *deviceMetadataProjection) handleEventLocked(ctx context.Context, eu eve
 	if p.private.snapshot == nil {
 		p.private.snapshot = &events.DeviceMetadataSnapshotTaken{
 			DeviceId:      eu.GroupID(),
-			EventMetadata: events.MakeEventMeta("", 0, eu.Version()),
+			EventMetadata: events.MakeEventMeta("", 0, eu.Version(), "hubID"),
 		}
 	}
 	eventMetadata := p.private.snapshot.GetEventMetadata().Clone()

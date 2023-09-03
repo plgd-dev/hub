@@ -98,7 +98,7 @@ func TestAggregateHandleCancelPendingMetadataUpdates(t *testing.T) {
 		naClient.Close()
 	}()
 
-	ag, err := service.NewAggregate(commands.NewResourceID(deviceID, commands.StatusHref), 10, eventstore, service.DeviceMetadataFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
+	ag, err := service.NewAggregate(commands.NewResourceID(deviceID, commands.StatusHref), 10, cfg.HubID, eventstore, service.DeviceMetadataFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
 	require.NoError(t, err)
 	_, err = ag.UpdateDeviceMetadata(kitNetGrpc.CtxWithIncomingToken(context.Background(), config.CreateJwtToken(t, jwt.MapClaims{
 		"sub": userID,
@@ -119,7 +119,7 @@ func TestAggregateHandleCancelPendingMetadataUpdates(t *testing.T) {
 
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {
-			ag, err := service.NewAggregate(commands.NewResourceID(tt.args.request.GetDeviceId(), commands.StatusHref), 10, eventstore, service.DeviceMetadataFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
+			ag, err := service.NewAggregate(commands.NewResourceID(tt.args.request.GetDeviceId(), commands.StatusHref), 10, cfg.HubID, eventstore, service.DeviceMetadataFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
 			require.NoError(t, err)
 			ctx := kitNetGrpc.CtxWithIncomingToken(ctx, config.CreateJwtToken(t, jwt.MapClaims{
 				"sub": tt.args.userID,
@@ -225,7 +225,7 @@ func TestRequestHandlerCancelPendingMetadataUpdates(t *testing.T) {
 		naClient.Close()
 	}()
 
-	ag, err := service.NewAggregate(commands.NewResourceID(deviceID, commands.StatusHref), 10, eventstore, service.DeviceMetadataFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
+	ag, err := service.NewAggregate(commands.NewResourceID(deviceID, commands.StatusHref), 10, cfg.HubID, eventstore, service.DeviceMetadataFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
 	require.NoError(t, err)
 	_, err = ag.UpdateDeviceMetadata(kitNetGrpc.CtxWithIncomingToken(context.Background(), config.CreateJwtToken(t, jwt.MapClaims{
 		"sub": userID,

@@ -33,6 +33,7 @@ type RequestHandler struct {
 	publicConfiguration PublicConfiguration
 	ownerCache          *clientIS.OwnerCache
 	closeFunc           fn.FuncList
+	hubID               string
 }
 
 func (r *RequestHandler) Close() {
@@ -138,6 +139,7 @@ func newRequestHandlerFromConfig(ctx context.Context, config Config, publicConfi
 		})
 
 	h := NewRequestHandler(
+		config.HubID,
 		resourceProjection,
 		eventstore,
 		publicConfiguration,
@@ -149,6 +151,7 @@ func newRequestHandlerFromConfig(ctx context.Context, config Config, publicConfi
 
 // NewRequestHandler factory for new RequestHandler.
 func NewRequestHandler(
+	hubID string,
 	resourceProjection *Projection,
 	eventstore eventstore.EventStore,
 	publicConfiguration PublicConfiguration,
@@ -156,6 +159,7 @@ func NewRequestHandler(
 	closeFunc fn.FuncList,
 ) *RequestHandler {
 	return &RequestHandler{
+		hubID:               hubID,
 		resourceProjection:  resourceProjection,
 		eventStore:          eventstore,
 		publicConfiguration: publicConfiguration,

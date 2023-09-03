@@ -197,13 +197,18 @@ func (e *ResourceLinksSnapshotTaken) HandleCommand(ctx context.Context, cmd aggr
 	if err != nil {
 		return nil, err
 	}
+	hubID := HubIDFromCtx(ctx)
+	if hubID == "" {
+		return nil, fmt.Errorf("hubID not found")
+	}
+
 	switch req := cmd.(type) {
 	case *commands.PublishResourceLinksRequest:
 		if req.GetCommandMetadata() == nil {
 			return nil, status.Errorf(codes.InvalidArgument, errInvalidCommandMetadata)
 		}
 
-		em := MakeEventMeta(req.GetCommandMetadata().GetConnectionId(), req.GetCommandMetadata().GetSequence(), newVersion)
+		em := MakeEventMeta(req.GetCommandMetadata().GetConnectionId(), req.GetCommandMetadata().GetSequence(), newVersion, hubID)
 		ac := commands.NewAuditContext(userID, "")
 
 		rlp := ResourceLinksPublished{
@@ -227,7 +232,7 @@ func (e *ResourceLinksSnapshotTaken) HandleCommand(ctx context.Context, cmd aggr
 			return nil, status.Errorf(codes.InvalidArgument, errInvalidCommandMetadata)
 		}
 
-		em := MakeEventMeta(req.GetCommandMetadata().GetConnectionId(), req.GetCommandMetadata().GetSequence(), newVersion)
+		em := MakeEventMeta(req.GetCommandMetadata().GetConnectionId(), req.GetCommandMetadata().GetSequence(), newVersion, hubID)
 		ac := commands.NewAuditContext(userID, "")
 		rlu := ResourceLinksUnpublished{
 			DeviceId:             req.GetDeviceId(),
@@ -256,7 +261,7 @@ func (e *ResourceLinksSnapshotTaken) TakeSnapshot(version uint64) (eventstore.Ev
 	}
 	return &ResourceLinksSnapshotTaken{
 		DeviceId:      e.GetDeviceId(),
-		EventMetadata: MakeEventMeta(e.GetEventMetadata().GetConnectionId(), e.GetEventMetadata().GetSequence(), version),
+		EventMetadata: MakeEventMeta(e.GetEventMetadata().GetConnectionId(), e.GetEventMetadata().GetSequence(), version, e.GetEventMetadata().GetHubId()),
 		Resources:     resources,
 		AuditContext:  e.GetAuditContext(),
 	}, true

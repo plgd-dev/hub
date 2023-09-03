@@ -8,6 +8,7 @@ metadata:
 data:
   {{ .Values.resourcedirectory.config.fileName }}: |
     {{- with .Values.resourcedirectory }}
+    hubID: {{ required "resourcedirectory.hubId or global.hubId is required" ( .hubId | default $.Values.global.hubId) | quote }}
     log:
       level: {{ .log.level }}
       dumpBody: {{ .log.dumpBody }}

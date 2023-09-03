@@ -32,7 +32,7 @@ func (s *Service) publishEvent(subject string, event utils.ProtobufMarshaler) er
 	return s.publisher.Flush(context.Background())
 }
 
-func (s *Service) publishDevicesRegistered(ctx context.Context, owner, userID string, deviceID []string) {
+func (s *Service) publishDevicesRegistered(ctx context.Context, owner, userID, hubID string, deviceID []string) {
 	v := events.Event{
 		Type: &events.Event_DevicesRegistered{
 			DevicesRegistered: &events.DevicesRegistered{
@@ -43,6 +43,9 @@ func (s *Service) publishDevicesRegistered(ctx context.Context, owner, userID st
 				},
 				Timestamp:            pkgTime.UnixNano(time.Now()),
 				OpenTelemetryCarrier: propagation.TraceFromCtx(ctx),
+				EventMetadata: &events.EventMetadata{
+					HubId: hubID,
+				},
 			},
 		},
 	}
@@ -105,7 +108,7 @@ func (s *Service) AddDevice(ctx context.Context, request *pb.AddDeviceRequest) (
 		return nil, log.LogAndReturnError(status.Errorf(codes.Internal, "cannot add device up: %v", err.Error()))
 	}
 
-	s.publishDevicesRegistered(ctx, owner, userID, []string{request.DeviceId})
+	s.publishDevicesRegistered(ctx, owner, userID, s.hubID, []string{request.DeviceId})
 
 	return &pb.AddDeviceResponse{}, nil
 }

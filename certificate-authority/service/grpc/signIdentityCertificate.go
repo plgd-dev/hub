@@ -49,7 +49,7 @@ func (s *CertificateAuthorityServer) SignIdentityCertificate(ctx context.Context
 	notAfter := notBefore.Add(s.validFor)
 	var signingRecord *pb.SigningRecord
 	signer := certificateSigner.NewIdentityCertificateSigner(s.certificate, s.privateKey, certificateSigner.WithNotBefore(notBefore), certificateSigner.WithNotAfter(notAfter), certificateSigner.WithOverrideCertTemplate(func(template *x509.Certificate) error {
-		subject, err := overrideSubject(ctx, template.Subject, s.ownerClaim, s.signerConfig.HubID, "uuid:")
+		subject, err := overrideSubject(ctx, template.Subject, s.ownerClaim, s.hubID, "uuid:")
 		if err != nil {
 			return err
 		}

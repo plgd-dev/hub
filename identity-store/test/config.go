@@ -9,6 +9,8 @@ import (
 func MakeConfig(t require.TestingT) service.Config {
 	var cfg service.Config
 
+	cfg.HubID = config.HubID()
+
 	cfg.Log = config.MakeLogConfig(t, "TEST_IDENTITY_STORE_LOG_LEVEL", "TEST_IDENTITY_STORE_LOG_DUMP_BODY")
 
 	cfg.APIs.GRPC = config.MakeGrpcServerConfig(config.IDENTITY_STORE_HOST)

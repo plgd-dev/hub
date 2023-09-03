@@ -84,9 +84,9 @@ func TestProjection(t *testing.T) {
 	}()
 
 	ctx := context.Background()
-	ctx = kitNetGrpc.CtxWithIncomingToken(ctx, config.CreateJwtToken(t, jwt.MapClaims{
+	ctx = events.CtxWithHubID(kitNetGrpc.CtxWithIncomingToken(ctx, config.CreateJwtToken(t, jwt.MapClaims{
 		"sub": "test",
-	}))
+	})), "hubID")
 
 	store, err := mongodb.New(
 		ctx,

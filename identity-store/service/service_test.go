@@ -32,6 +32,7 @@ func MakeConfig(t require.TestingT) Config {
 	cfg.APIs.GRPC.Authorization.OwnerClaim = config.OWNER_CLAIM
 	cfg.APIs.GRPC.Authorization.Config = config.MakeAuthorizationConfig()
 
+	cfg.HubID = config.HubID()
 	cfg.Clients.Storage.MongoDB.URI = config.MONGODB_URI
 	cfg.Clients.Storage.MongoDB.Database = config.IDENTITY_STORE_DB
 	cfg.Clients.Storage.MongoDB.TLS.CAPool = config.CA_POOL

@@ -81,7 +81,7 @@ var d5res2 = commands.Resource{
 }
 
 func makeEventMeta(connectionID string, version uint64) *events.EventMetadata {
-	e := events.MakeEventMeta(connectionID, 0, version)
+	e := events.MakeEventMeta(connectionID, 0, version, "")
 	e.Timestamp = 12345
 	return e
 }

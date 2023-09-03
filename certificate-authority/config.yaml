@@ -1,3 +1,4 @@
+hubID: ""
 log:
   level: info
   encoding: json
@@ -87,5 +88,5 @@ signer:
   certFile: "/secrets/public/intermediateca.crt"
   validFrom: "now-1h"
   expiresIn: "87600h"
-  hubID: ""
+
 

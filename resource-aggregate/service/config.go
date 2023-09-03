@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/plgd-dev/hub/v2/pkg/config"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/pkg/net/grpc/client"
@@ -15,6 +16,7 @@ import (
 
 // Config represent application configuration
 type Config struct {
+	HubID   string        `yaml:"hubID" json:"hubId"`
 	Log     log.Config    `yaml:"log" json:"log"`
 	APIs    APIsConfig    `yaml:"apis" json:"apis"`
 	Clients ClientsConfig `yaml:"clients" json:"clients"`
@@ -29,6 +31,9 @@ func (c *Config) Validate() error {
 	}
 	if err := c.Clients.Validate(); err != nil {
 		return fmt.Errorf("clients.%w", err)
+	}
+	if _, err := uuid.Parse(c.HubID); err != nil {
+		return fmt.Errorf("hubID('%v') - %w", c.HubID, err)
 	}
 	return nil
 }

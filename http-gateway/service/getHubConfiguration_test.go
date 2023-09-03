@@ -19,7 +19,7 @@ func TestRequestHandlerGetHubConfiguration(t *testing.T) {
 	rdCfg := rdTest.MakeConfig(t)
 	rdCfg.ExposedHubConfiguration.Authority = "https://" + config.OAUTH_SERVER_HOST + "?escape=test&test=escape"
 	httpCfg := httpgwTest.MakeConfig(t, true)
-	expected := rdCfg.ExposedHubConfiguration.ToProto()
+	expected := rdCfg.ExposedHubConfiguration.ToProto(config.HubID())
 	expected.CurrentTime = 0
 	expected.WebOauthClient = httpCfg.UI.WebConfiguration.WebOAuthClient.ToProto()
 	expected.DeviceOauthClient = httpCfg.UI.WebConfiguration.DeviceOAuthClient.ToProto()

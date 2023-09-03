@@ -1243,6 +1243,13 @@
                 </tr>
               
                 <tr>
+                  <td>event_metadata</td>
+                  <td><a href="#identitystore.pb.EventMetadata">identitystore.pb.EventMetadata</a></td>
+                  <td></td>
+                  <td><p>provides metadata of event </p></td>
+                </tr>
+              
+                <tr>
                   <td>open_telemetry_carrier</td>
                   <td><a href="#grpcgateway.pb.Event.DeviceRegistered.OpenTelemetryCarrierEntry">Event.DeviceRegistered.OpenTelemetryCarrierEntry</a></td>
                   <td>repeated</td>
@@ -1302,6 +1309,13 @@
                   <td><a href="#string">string</a></td>
                   <td>repeated</td>
                   <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>event_metadata</td>
+                  <td><a href="#identitystore.pb.EventMetadata">identitystore.pb.EventMetadata</a></td>
+                  <td></td>
+                  <td><p>provides metadata of event </p></td>
                 </tr>
               
                 <tr>
@@ -3699,6 +3713,13 @@ Subscription doesn&#39;t guarantee that all events will be sent to the client. T
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
                   <td><p>sequence number within the same connection_id; the ResourceChanged event uses the value to skip old events, other event types might not fill the value </p></td>
+                </tr>
+              
+                <tr>
+                  <td>hub_id</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>the hub which sent the event </p></td>
                 </tr>
               
             </tbody>

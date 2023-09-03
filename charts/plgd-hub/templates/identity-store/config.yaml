@@ -8,6 +8,7 @@ metadata:
 data:
   {{ .Values.identitystore.config.fileName }}: |
     {{- with .Values.identitystore }}
+    hubID: {{ required "identitystore.hubId or global.hubId is required" ( .hubId | default $.Values.global.hubId) | quote }}
     log:
       level: {{ .log.level }}
       dumpBody: {{ .log.dumpBody }}

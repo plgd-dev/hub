@@ -8,7 +8,7 @@ import (
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	cqrsAggregate "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/aggregate"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore"
-	raEvents "github.com/plgd-dev/hub/v2/resource-aggregate/events"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -17,25 +17,27 @@ type LogPublishErrFunc func(err error)
 
 type Aggregate struct {
 	ag         *cqrsAggregate.Aggregate
+	hubID      string
 	eventstore EventStore
 }
 
 func ResourceStateFactoryModel(context.Context) (cqrsAggregate.AggregateModel, error) {
-	return raEvents.NewResourceStateSnapshotTaken(), nil
+	return events.NewResourceStateSnapshotTaken(), nil
 }
 
 func ResourceLinksFactoryModel(context.Context) (cqrsAggregate.AggregateModel, error) {
-	return raEvents.NewResourceLinksSnapshotTaken(), nil
+	return events.NewResourceLinksSnapshotTaken(), nil
 }
 
 func DeviceMetadataFactoryModel(context.Context) (cqrsAggregate.AggregateModel, error) {
-	return raEvents.NewDeviceMetadataSnapshotTaken(), nil
+	return events.NewDeviceMetadataSnapshotTaken(), nil
 }
 
 // NewAggregate creates new resource aggreate - it must be created for every run command.
-func NewAggregate(resourceID *commands.ResourceId, snapshotThreshold int, eventstore EventStore, factoryModel cqrsAggregate.FactoryModelFunc, retry cqrsAggregate.RetryFunc) (*Aggregate, error) {
+func NewAggregate(resourceID *commands.ResourceId, snapshotThreshold int, hubID string, eventstore EventStore, factoryModel cqrsAggregate.FactoryModelFunc, retry cqrsAggregate.RetryFunc) (*Aggregate, error) {
 	a := &Aggregate{
 		eventstore: eventstore,
+		hubID:      hubID,
 	}
 	cqrsAg, err := cqrsAggregate.NewAggregate(resourceID.GetDeviceId(),
 		resourceID.ToUUID().String(),
@@ -51,6 +53,10 @@ func NewAggregate(resourceID *commands.ResourceId, snapshotThreshold int, events
 	}
 	a.ag = cqrsAg
 	return a, nil
+}
+
+func (a *Aggregate) HandleCommand(ctx context.Context, cmd cqrsAggregate.Command) ([]eventstore.Event, error) {
+	return a.ag.HandleCommand(events.CtxWithHubID(ctx, a.hubID), cmd)
 }
 
 var (
@@ -273,7 +279,7 @@ func (a *Aggregate) PublishResourceLinks(ctx context.Context, request *commands.
 		return
 	}
 
-	events, err = a.ag.HandleCommand(ctx, request)
+	events, err = a.HandleCommand(ctx, request)
 	if err != nil {
 		err = fmt.Errorf("unable to process publish resource links command: %w", err)
 		return
@@ -291,7 +297,7 @@ func (a *Aggregate) UnpublishResourceLinks(ctx context.Context, request *command
 		return
 	}
 
-	events, err = a.ag.HandleCommand(ctx, request)
+	events, err = a.HandleCommand(ctx, request)
 	if err != nil {
 		err = fmt.Errorf("unable to process unpublish resource links command: %w", err)
 		return
@@ -308,7 +314,7 @@ func (a *Aggregate) NotifyResourceChanged(ctx context.Context, request *commands
 		return
 	}
 
-	events, err = a.ag.HandleCommand(ctx, request)
+	events, err = a.HandleCommand(ctx, request)
 	if err != nil {
 		err = fmt.Errorf("unable to process notify content changed command: %w", err)
 		return
@@ -324,7 +330,7 @@ func (a *Aggregate) UpdateResource(ctx context.Context, request *commands.Update
 		return
 	}
 
-	events, err = a.ag.HandleCommand(ctx, request)
+	events, err = a.HandleCommand(ctx, request)
 	if err != nil {
 		err = fmt.Errorf("unable to process update resource content command: %w", err)
 		return
@@ -340,7 +346,7 @@ func (a *Aggregate) ConfirmResourceUpdate(ctx context.Context, request *commands
 		return
 	}
 
-	events, err = a.ag.HandleCommand(ctx, request)
+	events, err = a.HandleCommand(ctx, request)
 	if err != nil {
 		err = fmt.Errorf("unable to process update resource content notification command: %w", err)
 		return
@@ -357,7 +363,7 @@ func (a *Aggregate) RetrieveResource(ctx context.Context, request *commands.Retr
 		return
 	}
 
-	events, err = a.ag.HandleCommand(ctx, request)
+	events, err = a.HandleCommand(ctx, request)
 	if err != nil {
 		err = fmt.Errorf("unable to process retrieve resource content command: %w", err)
 		return
@@ -373,7 +379,7 @@ func (a *Aggregate) ConfirmResourceRetrieve(ctx context.Context, request *comman
 		return
 	}
 
-	events, err = a.ag.HandleCommand(ctx, request)
+	events, err = a.HandleCommand(ctx, request)
 	if err != nil {
 		err = fmt.Errorf("unable to process retrieve resource content notification command: %w", err)
 		return
@@ -389,7 +395,7 @@ func (a *Aggregate) DeleteResource(ctx context.Context, request *commands.Delete
 		return
 	}
 
-	events, err = a.ag.HandleCommand(ctx, request)
+	events, err = a.HandleCommand(ctx, request)
 	if err != nil {
 		err = fmt.Errorf("unable to process delete resource content command: %w", err)
 		return
@@ -405,7 +411,7 @@ func (a *Aggregate) ConfirmResourceDelete(ctx context.Context, request *commands
 		return
 	}
 
-	events, err = a.ag.HandleCommand(ctx, request)
+	events, err = a.HandleCommand(ctx, request)
 	if err != nil {
 		err = fmt.Errorf("unable to process delete resource content notification command: %w", err)
 		return
@@ -422,7 +428,7 @@ func (a *Aggregate) CreateResource(ctx context.Context, request *commands.Create
 		return
 	}
 
-	events, err = a.ag.HandleCommand(ctx, request)
+	events, err = a.HandleCommand(ctx, request)
 	if err != nil {
 		err = fmt.Errorf("unable to process create resource content command: %w", err)
 		return
@@ -438,7 +444,7 @@ func (a *Aggregate) ConfirmResourceCreate(ctx context.Context, request *commands
 		return
 	}
 
-	events, err = a.ag.HandleCommand(ctx, request)
+	events, err = a.HandleCommand(ctx, request)
 	if err != nil {
 		err = fmt.Errorf("unable to process create resource content notification command: %w", err)
 		return

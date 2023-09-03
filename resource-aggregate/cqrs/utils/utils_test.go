@@ -18,11 +18,13 @@ func TestDummyForCoverage(t *testing.T) {
 	connID := "c"
 	corID := "a"
 	userID := "u"
+	hubID := "h"
 
-	em := events.MakeEventMeta(connID, sequence, version)
+	em := events.MakeEventMeta(connID, sequence, version, hubID)
 	assert.Equal(t, connID, em.ConnectionId)
 	assert.Equal(t, sequence, em.Sequence)
 	assert.Equal(t, version, em.Version)
+	assert.Equal(t, hubID, em.HubId)
 	ac := commands.NewAuditContext(userID, corID)
 	assert.Equal(t, corID, ac.CorrelationId)
 	assert.Equal(t, userID, ac.UserId)

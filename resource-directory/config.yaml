@@ -1,3 +1,4 @@
+hubID: ""
 log:
   level: info
   encoding: json
@@ -107,7 +108,6 @@ publicConfiguration:
   authority: ""
   ownerClaim: "sub"
   deviceIDClaim: ""
-  hubID: ""
   coapGateway: ""
   defaultCommandTimeToLive: "0s"
   certificateAuthority: ""

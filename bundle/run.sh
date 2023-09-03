@@ -52,6 +52,12 @@ export NATS_HOST="localhost:$NATS_PORT"
 export NATS_URL="nats://${NATS_HOST}"
 
 export FQDN_NGINX_HTTPS=${FQDN}:${NGINX_PORT}
+
+# handle deprecated env variables
+if [ "${COAP_GATEWAY_HUB_ID}" != "" ]; then
+  export HUB_ID=${COAP_GATEWAY_HUB_ID}
+fi
+
 export DOMAIN=${FQDN_NGINX_HTTPS}
 if [ "$NGINX_PORT" = "443" ]; then
   export DOMAIN=${FQDN}
@@ -139,7 +145,7 @@ if [ "${OVERRIDE_FILES}" = "true" ] || [ "${REGENERATE_CERT}" = "true" ] || [ ! 
 fi
 if [ "${OVERRIDE_FILES}" = "true" ] || [ "${REGENERATE_CERT}" = "true" ] || [ ! -f "$EXTERNAL_CERT_DIR_PATH/$COAP_GATEWAY_FILE_CERT_NAME" ] || [ ! -f "$EXTERNAL_CERT_DIR_PATH/$COAP_GATEWAY_FILE_CERT_KEY_NAME" ]; then
   echo "generating COAP-GW cert"
-  cert-tool --cmd.generateIdentityCertificate=$COAP_GATEWAY_HUB_ID --outCert=$EXTERNAL_CERT_DIR_PATH/$COAP_GATEWAY_FILE_CERT_NAME \
+  cert-tool --cmd.generateIdentityCertificate=$HUB_ID --outCert=$EXTERNAL_CERT_DIR_PATH/$COAP_GATEWAY_FILE_CERT_NAME \
     --outKey=$EXTERNAL_CERT_DIR_PATH/$COAP_GATEWAY_FILE_CERT_KEY_NAME --cert.san.domain=$COAP_GATEWAY_FQDN \
     --signerCert=$ROOT_CERT_PATH --signerKey=$ROOT_KEY_PATH --cert.signatureAlgorithm=${CERT_TOOL_SIGN_ALG} \
     --cert.ellipticCurve=${CERT_TOOL_ELLIPTIC_CURVE}
@@ -597,6 +603,7 @@ done
 ## configuration
 if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "/data/identity-store.yaml" ]; then
 cat /configs/identity-store.yaml | yq e "\
+  .hubID = \"${HUB_ID}\" |
   .log.level = \"${LOG_LEVEL}\" |
   .apis.grpc.address = \"${IDENTITY_STORE_ADDRESS}\" |
   .apis.grpc.authorization.http.tls.useSystemCAPool = true |
@@ -642,6 +649,7 @@ done
 ## configuration
 if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "/data/resource-aggregate.yaml" ]; then
 cat /configs/resource-aggregate.yaml | yq e "\
+  .hubID = \"${HUB_ID}\" |
   .log.level = \"${LOG_LEVEL}\" |
   .apis.grpc.address = \"${RESOURCE_AGGREGATE_ADDRESS}\" |
   .apis.grpc.authorization.http.tls.useSystemCAPool = true |
@@ -687,6 +695,7 @@ done
 ## configuration
 if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "/data/resource-directory.yaml" ]; then
 cat /configs/resource-directory.yaml | yq e "\
+  .hubID = \"${HUB_ID}\" |
   .log.level = \"${LOG_LEVEL}\" |
   .apis.grpc.address = \"${RESOURCE_DIRECTORY_ADDRESS}\" |
   .apis.grpc.authorization.ownerClaim = \"${OWNER_CLAIM}\" |
@@ -703,7 +712,6 @@ cat /configs/resource-directory.yaml | yq e "\
   .clients.eventBus.nats.url = \"${NATS_URL}\" |
   .clients.identityStore.grpc.address = \"${IDENTITY_STORE_ADDRESS}\" |
   .publicConfiguration.authority = \"https://${OAUTH_ENDPOINT}\" |
-  .publicConfiguration.hubID = \"${COAP_GATEWAY_HUB_ID}\" |
   .publicConfiguration.coapGateway = \"${COAP_GATEWAY_SCHEME}://${COAP_GATEWAY_EXTERNAL_ADDRESS}\" |
   .publicConfiguration.certificateAuthority = \"https://${DOMAIN}\" |
   .publicConfiguration.ownerClaim = \"${OWNER_CLAIM}\"
@@ -843,6 +851,7 @@ echo "starting certificate-authority"
 ## configuration
 if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "/data/certificate-authority.yaml" ]; then
 cat /configs/certificate-authority.yaml | yq e "\
+  .hubID = \"${HUB_ID}\" |
   .log.level = \"${LOG_LEVEL}\" |
   .apis.grpc.address = \"${CERTIFICATE_AUTHORITY_ADDRESS}\" |
   .apis.grpc.authorization.audience = \"${SERVICE_OAUTH_AUDIENCE}\" |
@@ -856,7 +865,6 @@ cat /configs/certificate-authority.yaml | yq e "\
   .clients.openTelemetryCollector.grpc.tls.keyFile = \"${OPEN_TELEMETRY_EXPORTER_KEY_FILE}\" |
   .clients.openTelemetryCollector.grpc.tls.certFile = \"${OPEN_TELEMETRY_EXPORTER_CERT_FILE}\" |
   .clients.openTelemetryCollector.grpc.tls.useSystemCAPool = true |
-  .signer.hubID = \"${COAP_GATEWAY_HUB_ID}\" |
   .signer.keyFile = \"${ROOT_KEY_PATH}\" |
   .signer.certFile = \"${ROOT_CERT_PATH}\"
 " - > /data/certificate-authority.yaml
