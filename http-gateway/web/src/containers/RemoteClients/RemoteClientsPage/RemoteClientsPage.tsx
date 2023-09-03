@@ -1,8 +1,6 @@
 import { FC, useCallback, useEffect, useMemo, useState } from 'react'
 import { useIntl } from 'react-intl'
 import { Helmet } from 'react-helmet'
-import jwtDecode from 'jwt-decode'
-import get from 'lodash/get'
 
 import { useWellKnownConfiguration, WellKnownConfigType } from '@shared-ui/common/hooks'
 import { clientAppSettings, security } from '@shared-ui/common/services'
@@ -12,6 +10,7 @@ import { getClientUrl } from '@shared-ui/app/clientApp/utils'
 import { useClientAppPage } from '@shared-ui/app/clientApp/RemoteClients/use-client-app-page'
 import FullPageLoader from '@shared-ui/components/Atomic/FullPageLoader'
 import { DEVICE_AUTH_MODE } from '@shared-ui/app/clientApp/constants'
+import { hasDifferentOwner } from '@shared-ui/common/services/api-utils'
 
 import { Props } from './RemoteClientsPage.types'
 import * as styles from './RemoteClientsPage.styles'
@@ -70,33 +69,7 @@ const RemoteClientsPage: FC<Props> = (props) => {
         [wellKnownConfig, clientData]
     )
 
-    const differentOwner = useCallback(
-        (wellKnownConfig?: WellKnownConfigType) => {
-            if (!wellKnownConfig || !wellKnownConfig?.isInitialized) {
-                return false
-            }
-
-            if (wellKnownConfig?.deviceAuthenticationMode === DEVICE_AUTH_MODE.PRE_SHARED_KEY && clientData.preSharedSubjectId) {
-                if (wellKnownConfig.owner !== clientData.preSharedSubjectId) {
-                    return true
-                }
-            } else if (wellKnownConfig?.deviceAuthenticationMode === DEVICE_AUTH_MODE.X509) {
-                const accessToken = security.getAccessToken()
-
-                if (accessToken) {
-                    const parsedData = jwtDecode(accessToken)
-                    const ownerId = get(parsedData, wellKnownConfig?.remoteProvisioning?.jwtOwnerClaim as string, '')
-
-                    if (ownerId !== wellKnownConfig?.owner) {
-                        return true
-                    }
-                }
-            }
-
-            return false
-        },
-        [clientData.preSharedSubjectId]
-    )
+    const differentOwner = useCallback((wellKnownConfig?: WellKnownConfigType) => hasDifferentOwner(wellKnownConfig, clientData), [clientData])
 
     useEffect(() => {
         clientAppSettings.setUseToken(!differentOwner(wellKnownConfig) && clientData.authenticationMode === DEVICE_AUTH_MODE.X509)
@@ -139,6 +112,7 @@ const RemoteClientsPage: FC<Props> = (props) => {
         return <FullPageLoader i18n={{ loading: _(g.loading) }} />
     } else {
         clientAppSettings.setWellKnowConfig(wellKnownConfig)
+        clientAppSettings.setClientData(clientData)
 
         if (wellKnownConfig.remoteProvisioning) {
             clientAppSettings.setWebOAuthConfig({

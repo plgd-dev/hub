@@ -46,7 +46,6 @@ const AppInner = (props: Props) => {
         return <AppLoader />
     } else {
         security.setAccessToken(userData.access_token)
-        // security.setUserData(userData)
 
         // for remote clients
         clientAppSettings.setSignOutRedirect(signOutRedirect)
