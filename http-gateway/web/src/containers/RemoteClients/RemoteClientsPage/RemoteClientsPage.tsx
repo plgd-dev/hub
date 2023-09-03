@@ -70,24 +70,33 @@ const RemoteClientsPage: FC<Props> = (props) => {
         [wellKnownConfig, clientData]
     )
 
-    const differentOwner = useCallback((wellKnownConfig?: WellKnownConfigType) => {
-        if (!wellKnownConfig?.isInitialized) {
-            return false
-        }
-
-        const accessToken = security.getAccessToken()
-
-        if (accessToken && wellKnownConfig) {
-            const parsedData = jwtDecode(accessToken)
-            const ownerId = get(parsedData, wellKnownConfig?.remoteProvisioning?.jwtOwnerClaim as string, '')
-
-            if (ownerId !== wellKnownConfig?.owner) {
-                return true
+    const differentOwner = useCallback(
+        (wellKnownConfig?: WellKnownConfigType) => {
+            if (!wellKnownConfig || !wellKnownConfig?.isInitialized) {
+                return false
             }
-        }
 
-        return false
-    }, [])
+            if (wellKnownConfig?.deviceAuthenticationMode === DEVICE_AUTH_MODE.PRE_SHARED_KEY && clientData.preSharedSubjectId) {
+                if (wellKnownConfig.owner !== clientData.preSharedSubjectId) {
+                    return true
+                }
+            } else if (wellKnownConfig?.deviceAuthenticationMode === DEVICE_AUTH_MODE.X509) {
+                const accessToken = security.getAccessToken()
+
+                if (accessToken) {
+                    const parsedData = jwtDecode(accessToken)
+                    const ownerId = get(parsedData, wellKnownConfig?.remoteProvisioning?.jwtOwnerClaim as string, '')
+
+                    if (ownerId !== wellKnownConfig?.owner) {
+                        return true
+                    }
+                }
+            }
+
+            return false
+        },
+        [clientData.preSharedSubjectId]
+    )
 
     useEffect(() => {
         clientAppSettings.setUseToken(!differentOwner(wellKnownConfig) && clientData.authenticationMode === DEVICE_AUTH_MODE.X509)
