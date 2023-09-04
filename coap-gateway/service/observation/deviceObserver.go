@@ -57,7 +57,7 @@ type DeviceObserverConfig struct {
 	ObservationType              ObservationType
 	TwinEnabled                  bool
 	TwinEnabledSet               bool
-	TwinForceResynchronization   bool
+	UseETags                     bool
 	RequireBatchObserveEnabled   bool
 	LimitBatchObserveLatestETags uint32
 }
@@ -120,17 +120,17 @@ func WithTwinEnabled(twinEnabled bool) TwinEnabledOpt {
 }
 
 // Force twinEnabled value
-type TwinForceResynchronizationOpt struct {
-	forceResynchronization bool
+type UseETagsOpt struct {
+	useETags bool
 }
 
-func (o TwinForceResynchronizationOpt) Apply(opts *DeviceObserverConfig) {
-	opts.TwinForceResynchronization = o.forceResynchronization
+func (o UseETagsOpt) Apply(opts *DeviceObserverConfig) {
+	opts.UseETags = o.useETags
 }
 
-func WithTwinForceResynchronization(forceResynchronization bool) TwinForceResynchronizationOpt {
-	return TwinForceResynchronizationOpt{
-		forceResynchronization: forceResynchronization,
+func WithUseETags(useETags bool) UseETagsOpt {
+	return UseETagsOpt{
+		useETags: useETags,
 	}
 }
 
@@ -158,7 +158,7 @@ func (o LimitBatchObserveLatestETagsOpt) Apply(opts *DeviceObserverConfig) {
 	opts.LimitBatchObserveLatestETags = o.limitBatchObserveLatestETags
 }
 
-func WithNumberOfETAGsForBatchObservation(v uint32) LimitBatchObserveLatestETagsOpt {
+func WithMaxETagsCountInRequest(v uint32) LimitBatchObserveLatestETagsOpt {
 	return LimitBatchObserveLatestETagsOpt{
 		limitBatchObserveLatestETags: v,
 	}
@@ -199,7 +199,7 @@ func prepareSetupDeviceObserver(ctx context.Context, deviceID string, coapConn C
 }
 
 func getETags(ctx context.Context, deviceID string, rdClient GrpcGatewayClient, cfg DeviceObserverConfig) [][]byte {
-	if cfg.TwinForceResynchronization {
+	if !cfg.UseETags {
 		return nil
 	}
 	r, err := rdClient.GetLatestDeviceETags(ctx, &pbRD.GetLatestDeviceETagsRequest{
@@ -225,6 +225,7 @@ func NewDeviceObserver(ctx context.Context, deviceID string, coapConn ClientConn
 	cfg := DeviceObserverConfig{
 		Logger:                       log.Get(),
 		LimitBatchObserveLatestETags: 8,
+		UseETags:                     true,
 	}
 	for _, o := range opts {
 		o.Apply(&cfg)

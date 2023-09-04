@@ -1005,8 +1005,8 @@ coapgateway:
     size: "2097152"
     maxIdleTime: "10m"
   deviceTwin:
-    numberOfETAGsForBatchObservation:  8
-    forceResynchronization: false
+    maxETagsCountInRequest:  8
+    useETags: true
 
 identitystore:
   # -- Enable identity service

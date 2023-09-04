@@ -173,7 +173,7 @@ data:
       size: {{ .taskQueue.size }}
       maxIdleTime: {{ .taskQueue.maxIdleTime | quote }}
     deviceTwin:
-      numberOfETAGsForBatchObservation: {{ deviceTwin.numberOfETAGsForBatchObservation }}
-      forceResynchronization: {{ deviceTwin.forceResynchronization }}
+      maxETagsCountInRequest: {{ deviceTwin.maxETagsCountInRequest }}
+      useETags: {{ deviceTwin.useETags }}
   {{- end }}
 {{- end }}

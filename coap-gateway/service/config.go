@@ -109,8 +109,8 @@ func (c *InjectedCOAPConfig) Validate() error {
 }
 
 type DeviceTwinConfig struct {
-	NumberOfETAGsForBatchObservation uint32 `yaml:"numberOfETAGsForBatchObservation" json:"numberOfETAGsForBatchObservation"`
-	ForceResynchronization           bool   `yaml:"forceResynchronization" json:"forceResynchronization"`
+	MaxETagsCountInRequest uint32 `yaml:"maxETagsCountInRequest" json:"maxETagsCountInRequest"`
+	UseETags               bool   `yaml:"useETags" json:"useETags"`
 }
 
 type COAPConfig struct {

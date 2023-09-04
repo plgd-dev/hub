@@ -3,6 +3,8 @@ package service_test
 import (
 	"context"
 	"crypto/tls"
+	"errors"
+	"io"
 	"testing"
 	"time"
 
@@ -178,47 +180,49 @@ func validateETags(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 		require.NoError(t, err)
 	}()
 
+	// get resource from device via SDK
 	cfg1 := coap.DetailedResponse[interface{}]{}
 	err = sdkClient.GetResource(ctx, deviceID, href, &cfg1)
 	require.NoError(t, err)
 
+	// get resource from device via HUB
 	cfg2, err := c.GetResourceFromDevice(ctx, &pb.GetResourceFromDeviceRequest{
 		ResourceId: commands.NewResourceID(deviceID, href),
 		TimeToLive: int64(time.Hour),
 	})
 	require.NoError(t, err)
+	// compare SDK and HUB ETags
 	require.Equal(t, cfg1.ETag, cfg2.GetData().GetEtag())
 	var body2 interface{}
 	err = cbor.Decode(cfg2.GetData().GetContent().GetData(), &body2)
 	require.NoError(t, err)
 	require.Equal(t, cfg1.Body, body2)
-	/*
-		TODO: uncomment this block when etag will be supported in by coap notifications
-		clients, err := c.GetResources(ctx, &pb.GetResourcesRequest{
-			ResourceIdFilter: []string{
-				commands.NewResourceID(deviceID, href).ToString(),
-			},
-		})
+
+	// get resource from device twin
+	clients, err := c.GetResources(ctx, &pb.GetResourcesRequest{
+		ResourceIdFilter: []string{
+			commands.NewResourceID(deviceID, href).ToString(),
+		},
+	})
+	require.NoError(t, err)
+
+	var etag3 []byte
+	var body3 interface{}
+
+	for {
+		res, err := clients.Recv()
+		if errors.Is(err, io.EOF) {
+			break
+		}
 		require.NoError(t, err)
+		etag3 = res.GetData().GetEtag()
+		err = cbor.Decode(res.GetData().GetContent().GetData(), &body3)
+		require.NoError(t, err)
+	}
 
-
-		   var etag3 []byte
-		   var body3 interface{}
-
-		   	for {
-		   		res, err := clients.Recv()
-		   		if errors.Is(err, io.EOF) {
-		   			break
-		   		}
-		   		require.NoError(t, err)
-		   		etag3 = res.GetData().GetEtag()
-		   		err = cbor.Decode(res.GetData().GetContent().GetData(), &body3)
-		   		require.NoError(t, err)
-		   	}
-
-		   require.Equal(t, cfg1.Body, body3)
-		   require.Equal(t, cfg1.ETag, etag3)
-	*/
+	require.Equal(t, cfg1.Body, body3)
+	// compare SDK and DeviceTwin ETags
+	require.Equal(t, cfg1.ETag, etag3)
 }
 
 func TestRequestHandlerCheckResourceETag(t *testing.T) {

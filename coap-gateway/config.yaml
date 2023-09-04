@@ -161,8 +161,8 @@ clients:
         certFile: "/secrets/public/cert.crt"
         useSystemCAPool: false
 deviceTwin:
-  numberOfETAGsForBatchObservation: 8
-  forceResynchronization: false
+  maxETagsCountInRequest: 8
+  useETags: false
 taskQueue:
   goPoolSize: 1600
   size: 2097152
