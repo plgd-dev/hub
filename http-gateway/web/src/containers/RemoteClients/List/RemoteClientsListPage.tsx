@@ -257,9 +257,10 @@ const RemoteClientsListPage: FC<any> = () => {
                         variant: 'primary',
                     },
                 ]}
-                fullSizeButtons={selectedClientsCount > 1}
+                fullSizeButtons={true}
                 maxWidth={440}
                 maxWidthTitle={320}
+                minWidth={440}
                 onClose={handleCloseDeleteModal}
                 show={deleteModalOpen}
                 subTitle={selectedClientsCount === 1 && selectedRemoteClient ? selectedRemoteClient?.clientName : null}
