@@ -34,8 +34,6 @@ const BaseComponent = () => {
     }
 
     if (isMockApp) {
-        localStorage.setItem(DEVICE_AUTH_CODE_SESSION_KEY, code)
-
         window.addEventListener('load', function () {
             setInterval(() => {
                 if (localStorage.getItem(DEVICE_AUTH_CODE_SESSION_KEY)) {

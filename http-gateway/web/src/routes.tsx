@@ -28,6 +28,7 @@ import RemoteClientsListPage from '@/containers/RemoteClients/List/RemoteClients
 import RemoteClientDetailPage from '@/containers/RemoteClients/Detail/RemoteClientDetailPage'
 import RemoteClientDevicesDetailPage from '@/containers/RemoteClients/Device/Detail/RemoteClientDevicesDetailPage'
 import testId from '@/testId'
+import PendingCommandsListPage from '@/containers/PendingCommands/PendingCommandsListPage'
 
 const MenuTranslate = (props: { id: string }) => {
     const { id } = props
@@ -210,7 +211,9 @@ export const Routes = () => {
             <Route element={<RemoteClientDevicesDetailPage defaultActiveTab={1} />} path='/remote-clients/:id/devices/:deviceId/resources' />
             <Route element={<RemoteClientDevicesDetailPage defaultActiveTab={1} />} path='/remote-clients/:id/devices/:deviceId/resources/*' />
 
-            <Route element={<MockApp />} path='/devices-code-redirect' />
+            <Route element={<PendingCommandsListPage />} path='/pending-commands' />
+
+            <Route element={<MockApp />} path='/devices-code-redirect/*' />
 
             {process.env?.REACT_APP_TEST_VIEW === 'true' && <Route element={<TestPage />} path='/test' />}
             <Route element={<NotFoundPage message={_(t.notFoundPageDefaultMessage)} title={_(t.pageTitle)} />} path='*' />

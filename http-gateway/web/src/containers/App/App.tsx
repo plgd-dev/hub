@@ -23,7 +23,7 @@ const App = (props: { mockApp: boolean }) => {
     const [wellKnownConfigFetched, setWellKnownConfigFetched] = useState(false)
     const [configError, setConfigError] = useState<any>(null)
 
-    const [collapsed, setCollapsed] = useLocalStorage('leftPanelCollapsed', true)
+    const [collapsed, setCollapsed] = useLocalStorage('leftPanelCollapsed', false)
 
     openTelemetry.init('hub')
 

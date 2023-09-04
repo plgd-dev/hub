@@ -204,7 +204,7 @@ export const getDeviceAuthCode = (deviceId: string) => {
                 const maxAttempts = 40
                 const getCode = () => {
                     attempts += 1
-                    const code = sessionStorage.getItem(DEVICE_AUTH_CODE_SESSION_KEY)
+                    const code = sessionStorage.getItem(DEVICE_AUTH_CODE_SESSION_KEY) || localStorage.getItem(DEVICE_AUTH_CODE_SESSION_KEY)
 
                     if (code) {
                         return doResolve(code)
