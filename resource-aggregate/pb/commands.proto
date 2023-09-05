@@ -486,7 +486,7 @@ message TwinSynchronization {
     int64 syncing_at = 2;  // unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when synchronization started.
     int64 in_sync_at = 3; // unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when synchronization finished.
     CommandMetadata command_metadata = 4; // when status is SYNCING, this field contains the connection id. To update state to IN_SYNC, this field must be same as the one in the previous message.
-    int64 force_resynchronization_at = 5; // unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when the force resynchronization has been started. 0 means force resynchronization has never started.
+    int64 force_synchronization_at = 5; // unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when the force synchronization has been started. 0 means force synchronization has never started.
 }
 
 message UpdateDeviceMetadataRequest {
@@ -497,7 +497,7 @@ message UpdateDeviceMetadataRequest {
         Connection connection = 3;
         TwinSynchronization twin_synchronization = 7;
         bool twin_enabled = 8; // by default true
-        bool twin_force_resynchronization = 9; // Force resynchronization IoT hub with the device resources and set twin_enabled to true. Use to address potential synchronization issues and prevent operational discrepancies.
+        bool twin_force_synchronization = 9; // Force synchronization IoT hub with the device resources and set twin_enabled to true. Use to address potential synchronization issues and prevent operational discrepancies.
         // ShadowSynchronization shadow_synchronization = 4; replaced by twin_enabled
     };
     int64 time_to_live = 5;  // command validity in nanoseconds. 0 means forever and minimal value is 100000000 (100ms).
@@ -517,7 +517,7 @@ message ConfirmDeviceMetadataUpdateRequest {
     Status status = 3;
     oneof confirm {
         bool twin_enabled = 6; // will set twin_enabled to true and TwinSynchronization.state to OUT_OF_SYNC.
-        bool twin_force_resynchronization = 7; // will set twin_enabled to true, set time TwinSynchronization.force_resynchronization_at and TwinSynchronization.state to OUT_OF_SYNC.
+        bool twin_force_synchronization = 7; // will set twin_enabled to true, set time TwinSynchronization.force_synchronization_at and TwinSynchronization.state to OUT_OF_SYNC.
 
         // ShadowSynchronization shadow_synchronization = 4; replaced by twin_enabled
     };

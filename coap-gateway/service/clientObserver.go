@@ -45,7 +45,7 @@ func (c *session) replaceDeviceObserver(deviceObserverFuture *future.Future) *fu
 }
 
 // Replace deviceObserver instance in the client if Device Twin setting was changed for the device.
-func (c *session) replaceDeviceObserverWithDeviceTwin(ctx context.Context, twinEnabled, forceResynchronization bool) (bool, error) {
+func (c *session) replaceDeviceObserverWithDeviceTwin(ctx context.Context, twinEnabled, twinForceSynchronization bool) (bool, error) {
 	obs, err := c.getDeviceObserver(ctx)
 	if err != nil {
 		return false, err
@@ -53,8 +53,8 @@ func (c *session) replaceDeviceObserverWithDeviceTwin(ctx context.Context, twinE
 	prevTwinEnabled := obs.GetTwinEnabled()
 	deviceID := obs.GetDeviceID()
 	observationType := obs.GetObservationType()
-	twinEnabled = twinEnabled || forceResynchronization
-	if !forceResynchronization && prevTwinEnabled == twinEnabled {
+	twinEnabled = twinEnabled || twinForceSynchronization
+	if !twinForceSynchronization && prevTwinEnabled == twinEnabled {
 		return prevTwinEnabled, nil
 	}
 	deviceObserverFuture, setDeviceObserver := future.New()
@@ -69,7 +69,7 @@ func (c *session) replaceDeviceObserverWithDeviceTwin(ctx context.Context, twinE
 		observation.WithLogger(c.getLogger()),
 		observation.WithRequireBatchObserveEnabled(c.server.config.APIs.COAP.RequireBatchObserveEnabled),
 		observation.WithMaxETagsCountInRequest(c.server.config.DeviceTwin.MaxETagsCountInRequest),
-		observation.WithUseETags(!forceResynchronization && c.server.config.DeviceTwin.UseETags),
+		observation.WithUseETags(!twinForceSynchronization && c.server.config.DeviceTwin.UseETags),
 	)
 	if err != nil {
 		setDeviceObserver(nil, err)

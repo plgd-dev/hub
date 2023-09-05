@@ -23,7 +23,7 @@ func validateUpdateDeviceMetadata(request *commands.UpdateDeviceMetadataRequest)
 		return status.Errorf(codes.InvalidArgument, "invalid DeviceId")
 	}
 	switch v := request.GetUpdate().(type) {
-	case *commands.UpdateDeviceMetadataRequest_Connection, *commands.UpdateDeviceMetadataRequest_TwinEnabled, *commands.UpdateDeviceMetadataRequest_TwinSynchronization, *commands.UpdateDeviceMetadataRequest_TwinForceResynchronization:
+	case *commands.UpdateDeviceMetadataRequest_Connection, *commands.UpdateDeviceMetadataRequest_TwinEnabled, *commands.UpdateDeviceMetadataRequest_TwinSynchronization, *commands.UpdateDeviceMetadataRequest_TwinForceSynchronization:
 	default:
 		return status.Errorf(codes.InvalidArgument, "update type (%T) invalid", v)
 	}

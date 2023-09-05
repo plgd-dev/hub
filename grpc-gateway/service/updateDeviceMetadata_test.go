@@ -257,7 +257,7 @@ func TestRequestHandlerUpdateDeviceMetadataTwinEnabled(t *testing.T) {
 	require.NotEmpty(t, evResourceChanged)
 }
 
-func TestRequestHandlerUpdateDeviceMetadataTwinForceResynchronization(t *testing.T) {
+func TestRequestHandlerUpdateDeviceMetadataTwinForceSynchronization(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 
 	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
@@ -320,16 +320,16 @@ func TestRequestHandlerUpdateDeviceMetadataTwinForceResynchronization(t *testing
 	require.NoError(t, err)
 	require.False(t, deviceMetadataUpdated.GetTwinEnabled())
 	require.Equal(t, deviceMetadataUpdated.GetTwinSynchronization().GetState(), commands.TwinSynchronization_DISABLED)
-	require.Equal(t, int64(0), ev.GetData().GetTwinSynchronization().GetForceResynchronizationAt())
+	require.Equal(t, int64(0), ev.GetData().GetTwinSynchronization().GetForceSynchronizationAt())
 
 	evResourceChanged := v.WaitForResourceChanged(time.Second)
 	require.Empty(t, evResourceChanged)
 
-	// TwinForceResynchronization - enable twin
+	// TwinForceSynchronization - enable twin
 	checkTwin := time.Now().UnixNano()
 	ev, err = c.UpdateDeviceMetadata(ctx, &pb.UpdateDeviceMetadataRequest{
-		DeviceId:                   deviceID,
-		TwinForceResynchronization: true,
+		DeviceId:                 deviceID,
+		TwinForceSynchronization: true,
 	})
 	require.NoError(t, err)
 	require.True(t, ev.GetData().GetTwinEnabled())
@@ -339,14 +339,14 @@ func TestRequestHandlerUpdateDeviceMetadataTwinForceResynchronization(t *testing
 	require.NoError(t, err)
 	require.True(t, deviceMetadataUpdated.GetTwinEnabled())
 	require.NotEqual(t, deviceMetadataUpdated.GetTwinSynchronization().GetState(), commands.TwinSynchronization_DISABLED)
-	require.Greater(t, ev.GetData().GetTwinSynchronization().GetForceResynchronizationAt(), checkTwin)
-	checkTwin = ev.GetData().GetTwinSynchronization().GetForceResynchronizationAt()
+	require.Greater(t, ev.GetData().GetTwinSynchronization().GetForceSynchronizationAt(), checkTwin)
+	checkTwin = ev.GetData().GetTwinSynchronization().GetForceSynchronizationAt()
 
 	for {
 		deviceMetadataUpdated, err = deviceMetadataUpdatedFilter.WaitForEvent(time.Second, "")
 		require.NoError(t, err)
 		require.True(t, deviceMetadataUpdated.GetTwinEnabled())
-		require.Equal(t, checkTwin, ev.GetData().GetTwinSynchronization().GetForceResynchronizationAt())
+		require.Equal(t, checkTwin, ev.GetData().GetTwinSynchronization().GetForceSynchronizationAt())
 		if deviceMetadataUpdated.GetTwinSynchronization().GetState() == commands.TwinSynchronization_IN_SYNC {
 			break
 		}
@@ -382,11 +382,11 @@ func TestRequestHandlerUpdateDeviceMetadataTwinForceResynchronization(t *testing
 	evResourceChanged = v.WaitForResourceChanged(time.Second)
 	require.NotEmpty(t, evResourceChanged)
 
-	// TwinForceResynchronization - twin is already enabled
+	// TwinForceSynchronization - twin is already enabled
 	checkTwin = time.Now().UnixNano()
 	ev, err = c.UpdateDeviceMetadata(ctx, &pb.UpdateDeviceMetadataRequest{
-		DeviceId:                   deviceID,
-		TwinForceResynchronization: true,
+		DeviceId:                 deviceID,
+		TwinForceSynchronization: true,
 	})
 	require.NoError(t, err)
 	require.True(t, ev.GetData().GetTwinEnabled())
@@ -396,8 +396,8 @@ func TestRequestHandlerUpdateDeviceMetadataTwinForceResynchronization(t *testing
 	require.NoError(t, err)
 	require.True(t, deviceMetadataUpdated.GetTwinEnabled())
 	require.NotEqual(t, deviceMetadataUpdated.GetTwinSynchronization().GetState(), commands.TwinSynchronization_DISABLED)
-	require.Greater(t, ev.GetData().GetTwinSynchronization().GetForceResynchronizationAt(), checkTwin)
-	checkTwin = ev.GetData().GetTwinSynchronization().GetForceResynchronizationAt()
+	require.Greater(t, ev.GetData().GetTwinSynchronization().GetForceSynchronizationAt(), checkTwin)
+	checkTwin = ev.GetData().GetTwinSynchronization().GetForceSynchronizationAt()
 
 	evResourceChanged = v.WaitForResourceChanged(time.Second)
 	require.Empty(t, evResourceChanged)
@@ -406,7 +406,7 @@ func TestRequestHandlerUpdateDeviceMetadataTwinForceResynchronization(t *testing
 		deviceMetadataUpdated, err = deviceMetadataUpdatedFilter.WaitForEvent(time.Second, "")
 		require.NoError(t, err)
 		require.True(t, deviceMetadataUpdated.GetTwinEnabled())
-		require.Equal(t, checkTwin, ev.GetData().GetTwinSynchronization().GetForceResynchronizationAt())
+		require.Equal(t, checkTwin, ev.GetData().GetTwinSynchronization().GetForceSynchronizationAt())
 		if deviceMetadataUpdated.GetTwinSynchronization().GetState() == commands.TwinSynchronization_IN_SYNC {
 			break
 		}

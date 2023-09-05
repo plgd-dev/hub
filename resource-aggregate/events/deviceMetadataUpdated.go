@@ -79,5 +79,5 @@ func (d *DeviceMetadataUpdated) Equal(upd *DeviceMetadataUpdated) bool {
 		d.GetTwinSynchronization().GetSyncingAt() == upd.GetTwinSynchronization().GetSyncingAt() &&
 		d.GetTwinSynchronization().GetInSyncAt() == upd.GetTwinSynchronization().GetInSyncAt() &&
 		d.GetTwinSynchronization().GetState() == upd.GetTwinSynchronization().GetState() &&
-		d.GetTwinSynchronization().GetForceResynchronizationAt() == upd.GetTwinSynchronization().GetForceResynchronizationAt()
+		d.GetTwinSynchronization().GetForceSynchronizationAt() == upd.GetTwinSynchronization().GetForceSynchronizationAt()
 }

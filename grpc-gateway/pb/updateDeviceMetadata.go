@@ -27,9 +27,9 @@ func (req *UpdateDeviceMetadataRequest) ToRACommand(ctx context.Context) (*comma
 		},
 	}
 
-	if req.GetTwinForceResynchronization() {
-		r.Update = &commands.UpdateDeviceMetadataRequest_TwinForceResynchronization{
-			TwinForceResynchronization: req.GetTwinForceResynchronization(),
+	if req.GetTwinForceSynchronization() {
+		r.Update = &commands.UpdateDeviceMetadataRequest_TwinForceSynchronization{
+			TwinForceSynchronization: req.GetTwinForceSynchronization(),
 		}
 	} else {
 		r.Update = &commands.UpdateDeviceMetadataRequest_TwinEnabled{

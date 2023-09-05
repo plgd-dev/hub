@@ -53,13 +53,13 @@ type DeviceObserver struct {
 }
 
 type DeviceObserverConfig struct {
-	Logger                       log.Logger
-	ObservationType              ObservationType
-	TwinEnabled                  bool
-	TwinEnabledSet               bool
-	UseETags                     bool
-	RequireBatchObserveEnabled   bool
-	LimitBatchObserveLatestETags uint32
+	Logger                     log.Logger
+	ObservationType            ObservationType
+	TwinEnabled                bool
+	TwinEnabledSet             bool
+	UseETags                   bool
+	RequireBatchObserveEnabled bool
+	MaxETagsCountInRequest     uint32
 }
 
 type ClientConn interface {
@@ -150,17 +150,17 @@ func (o LoggerOpt) Apply(opts *DeviceObserverConfig) {
 }
 
 // Limit of the number of latest etags acquired from event store.
-type LimitBatchObserveLatestETagsOpt struct {
-	limitBatchObserveLatestETags uint32
+type MaxETagsCountInRequestOpt struct {
+	maxETagsCountInRequest uint32
 }
 
-func (o LimitBatchObserveLatestETagsOpt) Apply(opts *DeviceObserverConfig) {
-	opts.LimitBatchObserveLatestETags = o.limitBatchObserveLatestETags
+func (o MaxETagsCountInRequestOpt) Apply(opts *DeviceObserverConfig) {
+	opts.MaxETagsCountInRequest = o.maxETagsCountInRequest
 }
 
-func WithMaxETagsCountInRequest(v uint32) LimitBatchObserveLatestETagsOpt {
-	return LimitBatchObserveLatestETagsOpt{
-		limitBatchObserveLatestETags: v,
+func WithMaxETagsCountInRequest(v uint32) MaxETagsCountInRequestOpt {
+	return MaxETagsCountInRequestOpt{
+		maxETagsCountInRequest: v,
 	}
 }
 
@@ -204,7 +204,7 @@ func getETags(ctx context.Context, deviceID string, rdClient GrpcGatewayClient, 
 	}
 	r, err := rdClient.GetLatestDeviceETags(ctx, &pbRD.GetLatestDeviceETagsRequest{
 		DeviceId: deviceID,
-		Limit:    cfg.LimitBatchObserveLatestETags,
+		Limit:    cfg.MaxETagsCountInRequest,
 	})
 	if err != nil {
 		cfg.Logger.Debugf("NewDeviceObserver: failed to get latest device(%v) etag: %v", deviceID, err)
@@ -223,9 +223,9 @@ func NewDeviceObserver(ctx context.Context, deviceID string, coapConn ClientConn
 	}
 
 	cfg := DeviceObserverConfig{
-		Logger:                       log.Get(),
-		LimitBatchObserveLatestETags: 8,
-		UseETags:                     true,
+		Logger:                 log.Get(),
+		MaxETagsCountInRequest: 8,
+		UseETags:               true,
 	}
 	for _, o := range opts {
 		o.Apply(&cfg)
