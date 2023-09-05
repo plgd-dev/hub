@@ -13,7 +13,7 @@ import (
 )
 
 type Observation = interface {
-	Cancel(context.Context) error
+	Cancel(context.Context, ...message.Option) error
 	Canceled() bool
 }
 
