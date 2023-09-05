@@ -90,7 +90,6 @@ export const menu: MenuGroup[] = [
                 link: '/pending-commands',
                 paths: ['/pending-commands'],
                 exact: true,
-                disabled: true,
             },
         ],
     },

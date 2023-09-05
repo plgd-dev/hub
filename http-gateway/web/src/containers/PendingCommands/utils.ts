@@ -3,6 +3,7 @@ import * as converter from 'units-converter/dist/es/index'
 
 import { Emitter } from '@shared-ui/common/services/emitter'
 import Notification from '@shared-ui/components/Atomic/Notification/Toast'
+import { tagVariants } from '@shared-ui/components/Atomic/StatusTag/constants'
 
 import { commandTypes, updatedCommandTypes, pendingCommandStatuses, NEW_PENDING_COMMAND_WS_KEY, UPDATE_PENDING_COMMANDS_WS_KEY } from './constants'
 import { messages as t } from './PendingCommands.i18n'
@@ -141,7 +142,7 @@ export const hasCommandExpired = (validUntil: any, currentTime: any) => {
 export const getPendingCommandStatusColorAndLabel = (status: string, validUntil: any, currentTime: any) => {
     if (!status && hasCommandExpired(validUntil, currentTime)) {
         return {
-            color: 'red',
+            color: tagVariants.ERROR,
             label: t.expired,
         }
     }
@@ -149,24 +150,24 @@ export const getPendingCommandStatusColorAndLabel = (status: string, validUntil:
     switch (status) {
         case null:
             return {
-                color: 'orange',
+                color: tagVariants.WARNING,
                 label: t.pending,
             }
         case OK:
         case ACCEPTED:
         case CREATED:
             return {
-                color: 'green',
+                color: tagVariants.SUCCESS,
                 label: t.successful,
             }
         case CANCELED:
             return {
-                color: 'red',
+                color: tagVariants.ERROR,
                 label: t.canceled,
             }
         default:
             return {
-                color: 'red',
+                color: tagVariants.ERROR,
                 label: t.error,
             }
     }
