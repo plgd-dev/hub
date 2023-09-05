@@ -55,6 +55,10 @@ func (e *ResourceStateSnapshotTaken) IsSnapshot() bool {
 	return true
 }
 
+func (e *ResourceStateSnapshotTaken) ETag() *eventstore.ETagData {
+	return e.GetLatestResourceChange().ETag()
+}
+
 func (e *ResourceStateSnapshotTaken) Timestamp() time.Time {
 	return pkgTime.Unix(0, e.GetEventMetadata().GetTimestamp())
 }
@@ -476,6 +480,7 @@ func (e *ResourceStateSnapshotTaken) confirmResourceRetrieveCommand(ctx context.
 		Content:              req.GetContent(),
 		Status:               req.GetStatus(),
 		OpenTelemetryCarrier: propagation.TraceFromCtx(ctx),
+		Etag:                 req.GetEtag(),
 	}
 	if err := e.handleEventResourceRetrieved(&rc); err != nil {
 		return nil, err
@@ -612,6 +617,7 @@ func (e *ResourceStateSnapshotTaken) handleNotifyResourceChangedRequest(ctx cont
 		Content:              req.GetContent(),
 		Status:               req.GetStatus(),
 		OpenTelemetryCarrier: propagation.TraceFromCtx(ctx),
+		Etag:                 req.GetEtag(),
 	}
 
 	if e.handleEventResourceChanged(&rc) {
@@ -663,6 +669,7 @@ func (e *ResourceStateSnapshotTaken) handleRetrieveResourceRequest(ctx context.C
 		EventMetadata:        em,
 		ValidUntil:           timeToLive2ValidUntil(req.GetTimeToLive()),
 		OpenTelemetryCarrier: propagation.TraceFromCtx(ctx),
+		Etag:                 req.GetEtag(),
 	}
 
 	if err := e.handleEventResourceRetrievePending(&rc); err != nil {

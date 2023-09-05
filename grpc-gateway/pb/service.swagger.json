@@ -266,6 +266,10 @@
                 "twinEnabled": {
                   "type": "boolean"
                 },
+                "twinForceSynchronization": {
+                  "type": "boolean",
+                  "description": "force synchronization IoT hub with the device resources and set twin_enabled to true. Use to address potential synchronization issues and prevent operational discrepancies."
+                },
                 "timeToLive": {
                   "type": "string",
                   "format": "int64",
@@ -1410,6 +1414,9 @@
         "twinEnabled": {
           "type": "boolean"
         },
+        "twinForceSynchronization": {
+          "type": "boolean"
+        },
         "auditContext": {
           "$ref": "#/definitions/resourceaggregatepbAuditContext"
         },
@@ -1676,6 +1683,11 @@
         "eventMetadata": {
           "$ref": "#/definitions/resourceaggregatepbEventMetadata"
         },
+        "etag": {
+          "type": "string",
+          "format": "byte",
+          "title": "etag of the resource used by twin synchronization"
+        },
         "openTelemetryCarrier": {
           "type": "object",
           "additionalProperties": {
@@ -1902,6 +1914,10 @@
           "format": "int64",
           "description": "unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when pending event is considered as expired. 0 means forever."
         },
+        "etag": {
+          "type": "string",
+          "format": "byte"
+        },
         "openTelemetryCarrier": {
           "type": "object",
           "additionalProperties": {
@@ -1928,6 +1944,10 @@
         },
         "eventMetadata": {
           "$ref": "#/definitions/resourceaggregatepbEventMetadata"
+        },
+        "etag": {
+          "type": "string",
+          "format": "byte"
         },
         "openTelemetryCarrier": {
           "type": "object",
@@ -2080,6 +2100,11 @@
         "commandMetadata": {
           "$ref": "#/definitions/pbCommandMetadata",
           "description": "when status is SYNCING, this field contains the connection id. To update state to IN_SYNC, this field must be same as the one in the previous message."
+        },
+        "forceSynchronizationAt": {
+          "type": "string",
+          "format": "int64",
+          "description": "unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when the force synchronization has been started. 0 means force synchronization has never started."
         }
       }
     },

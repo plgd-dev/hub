@@ -5,6 +5,7 @@ import (
 
 	pkgTime "github.com/plgd-dev/hub/v2/pkg/time"
 	commands "github.com/plgd-dev/hub/v2/resource-aggregate/commands"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -36,6 +37,10 @@ func (d *DeviceMetadataUpdated) GroupID() string {
 
 func (d *DeviceMetadataUpdated) IsSnapshot() bool {
 	return false
+}
+
+func (d *DeviceMetadataUpdated) ETag() *eventstore.ETagData {
+	return nil
 }
 
 func (d *DeviceMetadataUpdated) Timestamp() time.Time {
@@ -73,5 +78,6 @@ func (d *DeviceMetadataUpdated) Equal(upd *DeviceMetadataUpdated) bool {
 		d.GetTwinSynchronization().GetCommandMetadata().GetConnectionId() == upd.GetTwinSynchronization().GetCommandMetadata().GetConnectionId() &&
 		d.GetTwinSynchronization().GetSyncingAt() == upd.GetTwinSynchronization().GetSyncingAt() &&
 		d.GetTwinSynchronization().GetInSyncAt() == upd.GetTwinSynchronization().GetInSyncAt() &&
-		d.GetTwinSynchronization().GetState() == upd.GetTwinSynchronization().GetState()
+		d.GetTwinSynchronization().GetState() == upd.GetTwinSynchronization().GetState() &&
+		d.GetTwinSynchronization().GetForceSynchronizationAt() == upd.GetTwinSynchronization().GetForceSynchronizationAt()
 }

@@ -37,6 +37,25 @@ const (
 	getEventsResourceCount = 2000
 )
 
+func getDeviceID(deviceIndex int) string {
+	return "device" + strconv.Itoa(deviceIndex)
+}
+
+func getETag(deviceIndex int, resourceIndex int) []byte {
+	return []byte("device" + strconv.Itoa(deviceIndex) + ".resource" + strconv.Itoa(resourceIndex))
+}
+
+func getNLatestETag(deviceIndex int, limit int) [][]byte {
+	if limit == 0 {
+		limit = getEventsResourceCount / getEventsDeviceCount
+	}
+	etags := make([][]byte, 0, limit)
+	for i := 1; i <= limit; i++ {
+		etags = append(etags, getETag(deviceIndex, getEventsResourceCount-(i*getEventsDeviceCount)+deviceIndex))
+	}
+	return etags
+}
+
 func addEventsForGetEventsToDB(ctx context.Context, t *testing.T, store *mongodb.EventStore) int {
 	const eventCount = 100000
 	var resourceVersion [getEventsResourceCount]uint64
@@ -54,8 +73,9 @@ func addEventsForGetEventsToDB(ctx context.Context, t *testing.T, store *mongodb
 			EventTypeI:   "testType",
 			IsSnapshotI:  false,
 			AggregateIDI: "resource" + strconv.Itoa(resourceIndex),
-			GroupIDI:     "device" + strconv.Itoa(deviceIndex),
+			GroupIDI:     getDeviceID(deviceIndex),
 			TimestampI:   1 + resourceTimestamp[resourceIndex],
+			ETagI:        getETag(deviceIndex, resourceIndex),
 		})
 
 		resourceVersion[resourceIndex]++

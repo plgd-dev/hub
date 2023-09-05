@@ -1,6 +1,7 @@
 package service
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -39,14 +40,17 @@ func clientRetrieveHandler(req *mux.Message, client *session) (*pool.Message, er
 	var content *commands.Content
 	var code coapCodes.Code
 	resourceInterface := message.GetResourceInterface(req)
+	etag, err := req.ETag()
+	if err != nil {
+		etag = nil
+	}
 	if resourceInterface == "" {
-		content, code, err = clientRetrieveFromResourceTwinHandler(req.Context(), client, deviceID, href)
+		content, code, err = clientRetrieveFromResourceTwinHandler(req.Context(), client, deviceID, href, etag)
 		if err != nil {
 			return nil, statusErrorf(code, errFmtRetrieveResource, fmt.Sprintf(" /%v%v from resource twin", deviceID, href), err)
 		}
 	} else {
-		code = coapCodes.Content
-		content, err = clientRetrieveFromDeviceHandler(req, client, deviceID, href)
+		content, code, err = clientRetrieveFromDeviceHandler(req, client, deviceID, href)
 		if err != nil {
 			code = coapconv.GrpcErr2CoapCode(err, coapconv.Retrieve)
 			return nil, statusErrorf(code, errFmtRetrieveResource, fmt.Sprintf(" /%v%v from device", deviceID, href), err)
@@ -63,7 +67,7 @@ func clientRetrieveHandler(req *mux.Message, client *session) (*pool.Message, er
 	return client.createResponse(code, req.Token(), mediaType, content.Data), nil
 }
 
-func clientRetrieveFromResourceTwinHandler(ctx context.Context, client *session, deviceID, href string) (*commands.Content, coapCodes.Code, error) {
+func clientRetrieveFromResourceTwinHandler(ctx context.Context, client *session, deviceID, href string, etag []byte) (*commands.Content, coapCodes.Code, error) {
 	RetrieveResourcesClient, err := client.server.rdClient.GetResources(ctx, &pbGRPC.GetResourcesRequest{
 		ResourceIdFilter: []string{
 			commands.NewResourceID(deviceID, href).ToString(),
@@ -86,26 +90,29 @@ func clientRetrieveFromResourceTwinHandler(ctx context.Context, client *session,
 			return nil, coapconv.GrpcErr2CoapCode(err, coapconv.Retrieve), err
 		}
 		if resourceValue.GetData().GetResourceId().GetDeviceId() == deviceID && resourceValue.GetData().GetResourceId().GetHref() == href && resourceValue.GetData().Content != nil {
+			if etag != nil && bytes.Equal(etag, resourceValue.GetData().GetEtag()) {
+				return nil, coapCodes.Valid, nil
+			}
 			return resourceValue.GetData().Content, coapCodes.Content, nil
 		}
 	}
 	return nil, coapCodes.NotFound, fmt.Errorf("not found")
 }
 
-func clientRetrieveFromDeviceHandler(req *mux.Message, client *session, deviceID, href string) (*commands.Content, error) {
+func clientRetrieveFromDeviceHandler(req *mux.Message, client *session, deviceID, href string) (*commands.Content, coapCodes.Code, error) {
 	retrieveCommand, err := coapconv.NewRetrieveResourceRequest(commands.NewResourceID(deviceID, href), req, client.RemoteAddr().String())
 	if err != nil {
-		return nil, err
+		return nil, coapCodes.ServiceUnavailable, err
 	}
 
 	retrievedEvent, err := client.server.raClient.SyncRetrieveResource(req.Context(), "*", retrieveCommand)
 	if err != nil {
-		return nil, err
+		return nil, coapCodes.ServiceUnavailable, err
 	}
 	content, err := commands.EventContentToContent(retrievedEvent)
 	if err != nil {
-		return nil, err
+		return nil, coapCodes.ServiceUnavailable, err
 	}
 
-	return content, nil
+	return content, coapconv.StatusToCoapCode(retrievedEvent.GetStatus(), coapconv.Retrieve), nil
 }

@@ -10,6 +10,7 @@ message UpdateDeviceMetadataRequest{
     reserved 2;
     string device_id = 1;
     bool twin_enabled = 4;
+    bool twin_force_synchronization = 5; // force synchronization IoT hub with the device resources and set twin_enabled to true. Use to address potential synchronization issues and prevent operational discrepancies.
     int64 time_to_live = 3;  // command validity in nanoseconds. 0 means forever and minimal value is 100000000 (100ms).
 
     // ShadowSynchronization shadow_synchronization = 2; replaced by twin_enabled

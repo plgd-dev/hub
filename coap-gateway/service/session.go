@@ -32,6 +32,7 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/sync/task/future"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
+	pbRD "github.com/plgd-dev/hub/v2/resource-directory/pb"
 	kitSync "github.com/plgd-dev/kit/v2/sync"
 	otelCodes "go.opentelemetry.io/otel/codes"
 	semconv "go.opentelemetry.io/otel/semconv/v1.10.0"
@@ -258,6 +259,15 @@ func (c *session) GetDevicesMetadata(ctx context.Context, in *pb.GetDevicesMetad
 	}
 	ctx = kitNetGrpc.CtxWithToken(ctx, authCtx.GetAccessToken())
 	return c.server.rdClient.GetDevicesMetadata(ctx, in, opts...)
+}
+
+func (c *session) GetLatestDeviceETags(ctx context.Context, in *pbRD.GetLatestDeviceETagsRequest, opts ...grpc.CallOption) (*pbRD.GetLatestDeviceETagsResponse, error) {
+	authCtx, err := c.GetAuthorizationContext()
+	if err != nil {
+		return nil, err
+	}
+	ctx = kitNetGrpc.CtxWithToken(ctx, authCtx.GetAccessToken())
+	return c.server.rdClient.GetLatestDeviceETags(ctx, in, opts...)
 }
 
 func (c *session) GetResourceLinks(ctx context.Context, in *pb.GetResourceLinksRequest, opts ...grpc.CallOption) (pb.GrpcGateway_GetResourceLinksClient, error) {
@@ -523,6 +533,15 @@ func (c *session) notifyContentChanged(deviceID, href string, batch bool, notifi
 	if _, err = notification.Observe(); err == nil {
 		// we want to log only observations
 		c.logNotificationFromClient(href, notification)
+	}
+	// the content of the resource is up to date, codes.Valid is used to indicate that the resource has not changed for GET with the etag.
+	bodySize, err := notification.BodySize()
+	if err != nil {
+		return notifyError(deviceID, href, err)
+	}
+	if notification.Code() == codes.Valid && bodySize == 0 {
+		c.Debugf("resource /%v%v content is up to date", deviceID, href)
+		return nil
 	}
 	ctx := kitNetGrpc.CtxWithToken(c.Context(), authCtx.GetAccessToken())
 	if batch && href == resources.ResourceURI {
@@ -908,18 +927,25 @@ func (c *session) GetContext() context.Context {
 }
 
 func (c *session) confirmDeviceMetadataUpdate(ctx context.Context, event *events.DeviceMetadataUpdatePending) error {
-	_, err := c.server.raClient.ConfirmDeviceMetadataUpdate(ctx, &commands.ConfirmDeviceMetadataUpdateRequest{
+	r := &commands.ConfirmDeviceMetadataUpdateRequest{
 		DeviceId:      event.GetDeviceId(),
 		CorrelationId: event.GetAuditContext().GetCorrelationId(),
-		Confirm: &commands.ConfirmDeviceMetadataUpdateRequest_TwinEnabled{
-			TwinEnabled: event.GetTwinEnabled(),
-		},
 		CommandMetadata: &commands.CommandMetadata{
 			ConnectionId: c.RemoteAddr().String(),
 			Sequence:     c.coapConn.Sequence(),
 		},
 		Status: commands.Status_OK,
-	})
+	}
+	if event.GetTwinForceSynchronization() {
+		r.Confirm = &commands.ConfirmDeviceMetadataUpdateRequest_TwinForceSynchronization{
+			TwinForceSynchronization: true,
+		}
+	} else {
+		r.Confirm = &commands.ConfirmDeviceMetadataUpdateRequest_TwinEnabled{
+			TwinEnabled: event.GetTwinEnabled(),
+		}
+	}
+	_, err := c.server.raClient.ConfirmDeviceMetadataUpdate(ctx, r)
 	return err
 }
 
@@ -934,21 +960,24 @@ func (c *session) UpdateDeviceMetadata(ctx context.Context, event *events.Device
 		c.Close()
 		return fmt.Errorf("cannot update device('%v') metadata: %w", event.GetDeviceId(), err)
 	}
-	if _, ok := event.GetUpdatePending().(*events.DeviceMetadataUpdatePending_TwinEnabled); !ok {
+	switch event.GetUpdatePending().(type) {
+	case *events.DeviceMetadataUpdatePending_TwinEnabled:
+	case *events.DeviceMetadataUpdatePending_TwinForceSynchronization:
+	default:
 		return nil
 	}
 	sendConfirmCtx := authCtx.ToContext(ctx)
 
 	var errObs error
 	var previous bool
-	if event.GetTwinEnabled() {
+	if event.GetTwinEnabled() || event.GetTwinForceSynchronization() {
 		// if twin is enabled, we need to first update twin synchronization state to sync out
 		// and then synchronization state will be updated by other replaceDeviceObserverWithDeviceTwin
 		err = c.confirmDeviceMetadataUpdate(sendConfirmCtx, event)
-		previous, errObs = c.replaceDeviceObserverWithDeviceTwin(sendConfirmCtx, event.GetTwinEnabled())
+		previous, errObs = c.replaceDeviceObserverWithDeviceTwin(sendConfirmCtx, event.GetTwinEnabled(), event.GetTwinForceSynchronization())
 	} else {
 		// if twin is disabled, we to stop observation resources to disable all update twin synchronization state
-		previous, errObs = c.replaceDeviceObserverWithDeviceTwin(sendConfirmCtx, event.GetTwinEnabled())
+		previous, errObs = c.replaceDeviceObserverWithDeviceTwin(sendConfirmCtx, event.GetTwinEnabled(), false)
 		// and then we need to update twin synchronization state to disabled
 		err = c.confirmDeviceMetadataUpdate(sendConfirmCtx, event)
 	}
@@ -957,7 +986,7 @@ func (c *session) UpdateDeviceMetadata(ctx context.Context, event *events.Device
 		return fmt.Errorf("cannot update device('%v') metadata: %w", event.GetDeviceId(), errObs)
 	}
 	if err != nil && !errors.Is(err, context.Canceled) {
-		_, errObs := c.replaceDeviceObserverWithDeviceTwin(sendConfirmCtx, previous)
+		_, errObs := c.replaceDeviceObserverWithDeviceTwin(sendConfirmCtx, previous, false)
 		if errObs != nil {
 			c.Close()
 			c.Errorf("update device('%v') metadata error: %w", event.GetDeviceId(), errObs)

@@ -20,6 +20,7 @@ import (
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore"
 	mongodb "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore/mongodb"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/utils"
+	pbRD "github.com/plgd-dev/hub/v2/resource-directory/pb"
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
 )
@@ -27,9 +28,10 @@ import (
 // RequestHandler handles incoming requests.
 type RequestHandler struct {
 	pb.UnimplementedGrpcGatewayServer
+	pbRD.UnimplementedResourceDirectoryServer
 
 	resourceProjection  *Projection
-	eventStore          eventstore.EventStore
+	eventStore          *mongodb.EventStore
 	publicConfiguration PublicConfiguration
 	ownerCache          *clientIS.OwnerCache
 	closeFunc           fn.FuncList
@@ -47,6 +49,7 @@ func AddHandler(ctx context.Context, svr *server.Server, config Config, publicCo
 	}
 	svr.AddCloseFunc(handler.Close)
 	pb.RegisterGrpcGatewayServer(svr.Server, handler)
+	pbRD.RegisterResourceDirectoryServer(svr.Server, handler)
 	return nil
 }
 
@@ -153,7 +156,7 @@ func newRequestHandlerFromConfig(ctx context.Context, config Config, publicConfi
 func NewRequestHandler(
 	hubID string,
 	resourceProjection *Projection,
-	eventstore eventstore.EventStore,
+	eventstore *mongodb.EventStore,
 	publicConfiguration PublicConfiguration,
 	ownerCache *clientIS.OwnerCache,
 	closeFunc fn.FuncList,

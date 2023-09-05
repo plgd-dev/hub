@@ -10,6 +10,8 @@ BUILD_COMMIT_DATE ?= $(shell date -u +%FT%TZ --date=@`git show --format='%ct' HE
 BUILD_SHORT_COMMIT ?= $(shell git show --format=%h HEAD --quiet)
 BUILD_DATE ?= $(shell date -u +%FT%TZ)
 BUILD_VERSION ?= $(shell git tag --sort version:refname | tail -1 | sed -e "s/^v//")
+REPOSITORY_DIRECTORY := $(shell cd .. && pwd)
+WORKING_DIRECTORY := $(shell pwd)
 
 default: build
 
@@ -42,6 +44,9 @@ push: build-servicecontainer
 	docker push plgd/$(SERVICE_NAME):$(LATEST_TAG)
 
 proto/generate:
-.PHONY: proto/generate
+	protoc -I=. -I=$(REPOSITORY_DIRECTORY) -I=$(GOPATH)/src --go_out=$(GOPATH)/src $(WORKING_DIRECTORY)/pb/getLatestDeviceETags.proto
+	protoc -I=. -I=$(REPOSITORY_DIRECTORY) -I=$(GOPATH)/src --go-grpc_out=$(GOPATH)/src $(WORKING_DIRECTORY)/pb/service.proto
+	protoc  -I=. -I=$(REPOSITORY_DIRECTORY) -I=$(GOPATH)/src --doc_out=$(WORKING_DIRECTORY)/pb --doc_opt=markdown,README.md $(WORKING_DIRECTORY)/pb/*.proto
+	protoc  -I=. -I=$(REPOSITORY_DIRECTORY) -I=$(GOPATH)/src --doc_out=$(WORKING_DIRECTORY)/pb --doc_opt=html,doc.html $(WORKING_DIRECTORY)/pb/*.proto
 
 .PHONY: build-servicecontainer build push proto/generate

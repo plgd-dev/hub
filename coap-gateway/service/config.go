@@ -19,10 +19,11 @@ import (
 
 // Config represent application configuration
 type Config struct {
-	Log       LogConfig     `yaml:"log" json:"log"`
-	APIs      APIsConfig    `yaml:"apis" json:"apis"`
-	Clients   ClientsConfig `yaml:"clients" json:"clients"`
-	TaskQueue queue.Config  `yaml:"taskQueue" json:"taskQueue"`
+	Log        LogConfig        `yaml:"log" json:"log"`
+	APIs       APIsConfig       `yaml:"apis" json:"apis"`
+	Clients    ClientsConfig    `yaml:"clients" json:"clients"`
+	DeviceTwin DeviceTwinConfig `yaml:"deviceTwin" json:"deviceTwin"`
+	TaskQueue  queue.Config     `yaml:"taskQueue" json:"taskQueue"`
 }
 
 func (c *Config) Validate() error {
@@ -107,6 +108,11 @@ func (c *InjectedCOAPConfig) Validate() error {
 	return nil
 }
 
+type DeviceTwinConfig struct {
+	MaxETagsCountInRequest uint32 `yaml:"maxETagsCountInRequest" json:"maxETagsCountInRequest"`
+	UseETags               bool   `yaml:"useETags" json:"useETags"`
+}
+
 type COAPConfig struct {
 	coapService.Config         `yaml:",inline" json:",inline"`
 	ExternalAddress            string              `yaml:"externalAddress" json:"externalAddress"`
@@ -114,7 +120,8 @@ type COAPConfig struct {
 	OwnerCacheExpiration       time.Duration       `yaml:"ownerCacheExpiration" json:"ownerCacheExpiration"`
 	SubscriptionBufferSize     int                 `yaml:"subscriptionBufferSize" json:"subscriptionBufferSize"`
 	RequireBatchObserveEnabled bool                `yaml:"requireBatchObserveEnabled" json:"requireBatchObserveEnabled"`
-	InjectedCOAPConfig         InjectedCOAPConfig  `yaml:"-" json:"-"`
+
+	InjectedCOAPConfig InjectedCOAPConfig `yaml:"-" json:"-"`
 }
 
 type COAPConfigMarshalerUnmarshaler struct {

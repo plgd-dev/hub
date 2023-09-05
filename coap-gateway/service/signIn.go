@@ -227,6 +227,8 @@ func asyncCreateDeviceObserver(x asyncCreateDeviceObserverArg) {
 		observation.WithLogger(x.client.getLogger()),
 		observation.WithRequireBatchObserveEnabled(x.client.server.config.APIs.COAP.RequireBatchObserveEnabled),
 		observation.WithTwinEnabled(x.twinEnabled),
+		observation.WithMaxETagsCountInRequest(x.client.server.config.DeviceTwin.MaxETagsCountInRequest),
+		observation.WithUseETags(x.client.server.config.DeviceTwin.UseETags),
 	)
 	if err != nil {
 		x.client.Close()

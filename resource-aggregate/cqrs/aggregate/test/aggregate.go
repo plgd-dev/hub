@@ -12,33 +12,36 @@ import (
 
 type Command = interface{}
 
-func (e *Published) Version() uint64          { return e.EventVersion }
-func (e *Published) EventType() string        { return "published" }
-func (e *Published) Marshal() ([]byte, error) { return proto.Marshal(e) }
-func (e *Published) Unmarshal(b []byte) error { return proto.Unmarshal(b, e) }
-func (e *Published) AggregateID() string      { return e.DeviceId + e.Href }
-func (e *Published) GroupID() string          { return e.DeviceId }
-func (e *Published) IsSnapshot() bool         { return false }
-func (e *Published) Timestamp() time.Time     { return time.Unix(0, e.EventTimestamp) }
+func (e *Published) Version() uint64            { return e.EventVersion }
+func (e *Published) EventType() string          { return "published" }
+func (e *Published) Marshal() ([]byte, error)   { return proto.Marshal(e) }
+func (e *Published) Unmarshal(b []byte) error   { return proto.Unmarshal(b, e) }
+func (e *Published) AggregateID() string        { return e.DeviceId + e.Href }
+func (e *Published) GroupID() string            { return e.DeviceId }
+func (e *Published) IsSnapshot() bool           { return false }
+func (e *Published) Timestamp() time.Time       { return time.Unix(0, e.EventTimestamp) }
+func (e *Published) ETag() *eventstore.ETagData { return nil }
 
-func (e *Unpublished) Version() uint64          { return e.EventVersion }
-func (e *Unpublished) EventType() string        { return "unpublished" }
-func (e *Unpublished) Marshal() ([]byte, error) { return proto.Marshal(e) }
-func (e *Unpublished) Unmarshal(b []byte) error { return proto.Unmarshal(b, e) }
-func (e *Unpublished) AggregateID() string      { return e.DeviceId + e.Href }
-func (e *Unpublished) GroupID() string          { return e.DeviceId }
-func (e *Unpublished) IsSnapshot() bool         { return false }
-func (e *Unpublished) Timestamp() time.Time     { return time.Unix(0, e.EventTimestamp) }
+func (e *Unpublished) Version() uint64            { return e.EventVersion }
+func (e *Unpublished) EventType() string          { return "unpublished" }
+func (e *Unpublished) Marshal() ([]byte, error)   { return proto.Marshal(e) }
+func (e *Unpublished) Unmarshal(b []byte) error   { return proto.Unmarshal(b, e) }
+func (e *Unpublished) AggregateID() string        { return e.DeviceId + e.Href }
+func (e *Unpublished) GroupID() string            { return e.DeviceId }
+func (e *Unpublished) IsSnapshot() bool           { return false }
+func (e *Unpublished) Timestamp() time.Time       { return time.Unix(0, e.EventTimestamp) }
+func (e *Unpublished) ETag() *eventstore.ETagData { return nil }
 
-func (e *Snapshot) Version() uint64          { return e.EventVersion }
-func (e *Snapshot) EventType() string        { return "snapshot" }
-func (e *Snapshot) Marshal() ([]byte, error) { return proto.Marshal(e) }
-func (e *Snapshot) Unmarshal(b []byte) error { return proto.Unmarshal(b, e) }
-func (e *Snapshot) AggregateID() string      { return e.DeviceId + e.Href }
-func (e *Snapshot) GroupId() string          { return e.DeviceId }
-func (e *Snapshot) GroupID() string          { return e.DeviceId }
-func (e *Snapshot) IsSnapshot() bool         { return true }
-func (e *Snapshot) Timestamp() time.Time     { return time.Unix(0, e.EventTimestamp) }
+func (e *Snapshot) Version() uint64            { return e.EventVersion }
+func (e *Snapshot) EventType() string          { return "snapshot" }
+func (e *Snapshot) Marshal() ([]byte, error)   { return proto.Marshal(e) }
+func (e *Snapshot) Unmarshal(b []byte) error   { return proto.Unmarshal(b, e) }
+func (e *Snapshot) AggregateID() string        { return e.DeviceId + e.Href }
+func (e *Snapshot) GroupId() string            { return e.DeviceId }
+func (e *Snapshot) GroupID() string            { return e.DeviceId }
+func (e *Snapshot) IsSnapshot() bool           { return true }
+func (e *Snapshot) Timestamp() time.Time       { return time.Unix(0, e.EventTimestamp) }
+func (e *Snapshot) ETag() *eventstore.ETagData { return nil }
 
 func (e *Snapshot) handleEvent(eu eventstore.EventUnmarshaler) error {
 	if eu.EventType() == "" {

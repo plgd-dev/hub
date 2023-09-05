@@ -160,6 +160,9 @@ clients:
         keyFile: "/secrets/private/cert.key"
         certFile: "/secrets/public/cert.crt"
         useSystemCAPool: false
+deviceTwin:
+  maxETagsCountInRequest: 8
+  useETags: false
 taskQueue:
   goPoolSize: 1600
   size: 2097152

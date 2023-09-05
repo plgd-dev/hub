@@ -3,13 +3,18 @@ package service_test
 import (
 	"context"
 	"crypto/tls"
+	"errors"
+	"io"
 	"testing"
 	"time"
 
+	"github.com/plgd-dev/device/v2/pkg/codec/cbor"
+	"github.com/plgd-dev/device/v2/pkg/net/coap"
 	"github.com/plgd-dev/device/v2/schema"
 	"github.com/plgd-dev/device/v2/schema/device"
 	"github.com/plgd-dev/device/v2/schema/interfaces"
 	"github.com/plgd-dev/device/v2/test/resource/types"
+	"github.com/plgd-dev/go-coap/v3/message"
 	coapTest "github.com/plgd-dev/hub/v2/coap-gateway/test"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
@@ -164,4 +169,108 @@ func TestRequestHandlerGetResourceFromDevice(t *testing.T) {
 			pbTest.CmpResourceRetrieved(t, tt.want, got.GetData())
 		})
 	}
+}
+
+func validateETags(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, deviceID, href string) {
+	sdkClient, err := test.NewSDKClient()
+	require.NoError(t, err)
+
+	defer func() {
+		err := sdkClient.Close(context.Background())
+		require.NoError(t, err)
+	}()
+
+	// get resource from device via SDK
+	cfg1 := coap.DetailedResponse[interface{}]{}
+	err = sdkClient.GetResource(ctx, deviceID, href, &cfg1)
+	require.NoError(t, err)
+
+	// get resource from device via HUB
+	cfg2, err := c.GetResourceFromDevice(ctx, &pb.GetResourceFromDeviceRequest{
+		ResourceId: commands.NewResourceID(deviceID, href),
+		TimeToLive: int64(time.Hour),
+	})
+	require.NoError(t, err)
+	// compare SDK and HUB ETags
+	require.Equal(t, cfg1.ETag, cfg2.GetData().GetEtag())
+	var body2 interface{}
+	err = cbor.Decode(cfg2.GetData().GetContent().GetData(), &body2)
+	require.NoError(t, err)
+	require.Equal(t, cfg1.Body, body2)
+
+	// get resource from device twin
+	clients, err := c.GetResources(ctx, &pb.GetResourcesRequest{
+		ResourceIdFilter: []string{
+			commands.NewResourceID(deviceID, href).ToString(),
+		},
+	})
+	require.NoError(t, err)
+
+	var etag3 []byte
+	var body3 interface{}
+
+	for {
+		res, err := clients.Recv()
+		if errors.Is(err, io.EOF) {
+			break
+		}
+		require.NoError(t, err)
+		etag3 = res.GetData().GetEtag()
+		err = cbor.Decode(res.GetData().GetContent().GetData(), &body3)
+		require.NoError(t, err)
+	}
+
+	require.Equal(t, cfg1.Body, body3)
+	// compare SDK and DeviceTwin ETags
+	require.Equal(t, cfg1.ETag, etag3)
+}
+
+func TestRequestHandlerCheckResourceETag(t *testing.T) {
+	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
+
+	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
+	defer cancel()
+
+	coapCfg := coapTest.MakeConfig(t)
+	tearDown := service.SetUp(ctx, t, service.WithCOAPGWConfig(coapCfg))
+	defer tearDown()
+
+	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
+
+	conn, err := grpc.Dial(config.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+		RootCAs: test.GetRootCertificatePool(t),
+	})))
+	require.NoError(t, err)
+	defer func() {
+		_ = conn.Close()
+	}()
+	c := pb.NewGrpcGatewayClient(conn)
+
+	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.ACTIVE_COAP_SCHEME+"://"+config.COAP_GW_HOST, test.GetAllBackendResourceLinks())
+	defer shutdownDevSim()
+
+	href := test.TestResourceLightInstanceHref("1")
+	validateETags(ctx, t, c, deviceID, href)
+	v := test.LightResourceRepresentation{Power: 99}
+	_, err = c.UpdateResource(ctx, &pb.UpdateResourceRequest{
+		ResourceId: commands.NewResourceID(deviceID, href),
+		Content: &pb.Content{
+			ContentType: message.AppOcfCbor.String(),
+			Data:        test.EncodeToCbor(t, v),
+		},
+	})
+	require.NoError(t, err)
+	time.Sleep(time.Second)
+	validateETags(ctx, t, c, deviceID, href)
+	v = test.LightResourceRepresentation{Power: 0}
+	_, err = c.UpdateResource(ctx, &pb.UpdateResourceRequest{
+		ResourceId: commands.NewResourceID(deviceID, href),
+		Content: &pb.Content{
+			ContentType: message.AppOcfCbor.String(),
+			Data:        test.EncodeToCbor(t, v),
+		},
+	})
+	require.NoError(t, err)
+	time.Sleep(time.Second)
+	validateETags(ctx, t, c, deviceID, href)
 }

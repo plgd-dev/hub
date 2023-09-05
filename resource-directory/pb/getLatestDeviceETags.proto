@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package resourcedirectory.pb;
+
+option go_package = "github.com/plgd-dev/hub/v2/resource-directory/pb;pb";
+
+
+message GetLatestDeviceETagsRequest {
+	string device_id = 1; // device id
+	uint32 limit = 2; // limit of the number of etags, 0 means no limit
+}
+
+message GetLatestDeviceETagsResponse {
+	repeated bytes etags = 1; // the most recent device etags, each corresponding to a different resource in order of most recent to least recent.
+}

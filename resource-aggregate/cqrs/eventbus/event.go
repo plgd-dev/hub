@@ -3,6 +3,8 @@ package eventbus
 import (
 	"context"
 	"time"
+
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore"
 )
 
 // Event interface over event created by user.
@@ -13,6 +15,7 @@ type Event = interface {
 	GroupID() string
 	IsSnapshot() bool
 	Timestamp() time.Time
+	ETag() *eventstore.ETagData
 }
 
 // EventUnmarshaler provides event.

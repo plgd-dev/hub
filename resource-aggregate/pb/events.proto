@@ -53,6 +53,7 @@ message ResourceChanged {
     Status status = 3;
     AuditContext audit_context = 4;
     EventMetadata event_metadata = 5;
+    bytes etag = 6; // etag of the resource used by twin synchronization
 
     // Open telemetry data propagated to asynchronous events
     map<string,string> open_telemetry_carrier = 100;
@@ -87,6 +88,7 @@ message ResourceRetrievePending {
     AuditContext audit_context = 3;
     EventMetadata event_metadata = 4;
     int64 valid_until = 5;  // unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when pending event is considered as expired. 0 means forever.
+    bytes etag = 6;
 
     // Open telemetry data propagated to asynchronous events
     map<string,string> open_telemetry_carrier = 100;
@@ -98,6 +100,7 @@ message ResourceRetrieved {
     Content content = 3;
     AuditContext audit_context = 4;
     EventMetadata event_metadata = 5;
+    bytes etag = 6;
 
     // Open telemetry data propagated to asynchronous events
     map<string,string> open_telemetry_carrier = 100;
@@ -181,6 +184,7 @@ message DeviceMetadataUpdatePending {
     string device_id = 1;
     oneof update_pending {
         bool twin_enabled = 6;
+        bool twin_force_synchronization = 7;
 
         // ShadowSynchronization shadow_synchronization = 2; replaced by twin_enabled
     };
