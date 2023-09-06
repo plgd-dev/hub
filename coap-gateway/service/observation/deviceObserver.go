@@ -225,7 +225,7 @@ func NewDeviceObserver(ctx context.Context, deviceID string, coapConn ClientConn
 	cfg := DeviceObserverConfig{
 		Logger:                 log.Get(),
 		MaxETagsCountInRequest: 8,
-		UseETags:               true,
+		UseETags:               false,
 	}
 	for _, o := range opts {
 		o.Apply(&cfg)

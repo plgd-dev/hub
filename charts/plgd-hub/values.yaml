@@ -1006,7 +1006,7 @@ coapgateway:
     maxIdleTime: "10m"
   deviceTwin:
     maxETagsCountInRequest:  8
-    useETags: true
+    useETags: false
 
 identitystore:
   # -- Enable identity service
