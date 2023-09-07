@@ -9,6 +9,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/plgd-dev/device/v2/schema/interfaces"
+	"github.com/plgd-dev/device/v2/schema/plgdtime"
 	"github.com/plgd-dev/go-coap/v3/message"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
@@ -257,6 +258,22 @@ func TestRequestHandlerUpdateDeviceMetadataTwinEnabled(t *testing.T) {
 	require.NotEmpty(t, evResourceChanged)
 }
 
+func waitForResourceChanged(filter *contentChangedFilter, ignoreHrefs ...string) eventbus.EventUnmarshaler {
+	ev := filter.WaitForResourceChanged(time.Second)
+	if ev != nil {
+		evChanged := events.ResourceChanged{}
+		if err := ev.Unmarshal(&evChanged); err != nil {
+			return ev
+		}
+		for _, ignoreHref := range ignoreHrefs {
+			if ignoreHref == evChanged.GetResourceId().Href {
+				return waitForResourceChanged(filter, ignoreHrefs...)
+			}
+		}
+	}
+	return ev
+}
+
 func TestRequestHandlerUpdateDeviceMetadataTwinForceSynchronization(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 
@@ -322,7 +339,7 @@ func TestRequestHandlerUpdateDeviceMetadataTwinForceSynchronization(t *testing.T
 	require.Equal(t, deviceMetadataUpdated.GetTwinSynchronization().GetState(), commands.TwinSynchronization_DISABLED)
 	require.Equal(t, int64(0), ev.GetData().GetTwinSynchronization().GetForceSynchronizationAt())
 
-	evResourceChanged := v.WaitForResourceChanged(time.Second)
+	evResourceChanged := waitForResourceChanged(v, plgdtime.ResourceURI)
 	require.Empty(t, evResourceChanged)
 
 	// TwinForceSynchronization - enable twin
@@ -364,7 +381,7 @@ func TestRequestHandlerUpdateDeviceMetadataTwinForceSynchronization(t *testing.T
 		},
 	})
 	require.NoError(t, err)
-	evResourceChanged = v.WaitForResourceChanged(time.Second)
+	evResourceChanged = waitForResourceChanged(v, plgdtime.ResourceURI)
 	require.NotEmpty(t, evResourceChanged)
 
 	// revert update resource
@@ -379,7 +396,7 @@ func TestRequestHandlerUpdateDeviceMetadataTwinForceSynchronization(t *testing.T
 		},
 	})
 	require.NoError(t, err)
-	evResourceChanged = v.WaitForResourceChanged(time.Second)
+	evResourceChanged = waitForResourceChanged(v, plgdtime.ResourceURI)
 	require.NotEmpty(t, evResourceChanged)
 
 	// TwinForceSynchronization - twin is already enabled
@@ -399,7 +416,7 @@ func TestRequestHandlerUpdateDeviceMetadataTwinForceSynchronization(t *testing.T
 	require.Greater(t, ev.GetData().GetTwinSynchronization().GetForceSynchronizationAt(), checkTwin)
 	checkTwin = ev.GetData().GetTwinSynchronization().GetForceSynchronizationAt()
 
-	evResourceChanged = v.WaitForResourceChanged(time.Second)
+	evResourceChanged = waitForResourceChanged(v, plgdtime.ResourceURI)
 	require.Empty(t, evResourceChanged)
 
 	for {
