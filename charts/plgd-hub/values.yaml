@@ -1776,6 +1776,8 @@ certificateauthority:
     cert: tls.crt
     # -- Cert key file name
     key: tls.key
+    # -- CA file name in case of external CA
+    ca:
     volume:
       # -- CA certificate volume name
       name: coap-device-ca
@@ -1869,6 +1871,7 @@ certificateauthority:
           documentLimit: 1000
   # -- For complete certificate-authority service configuration see [plgd/certificate-authority](https://github.com/plgd-dev/hub/tree/main/certificate-authority)
   signer:
+    caPool:
     keyFile:
     certFile:
     validFrom: "now-1h"

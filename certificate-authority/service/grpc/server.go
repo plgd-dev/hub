@@ -1,60 +1,113 @@
 package grpc
 
 import (
-	"context"
-	"crypto"
-	"crypto/x509"
-	"time"
+	"bytes"
+	"fmt"
 
-	"github.com/karrick/tparse/v2"
 	"github.com/plgd-dev/hub/v2/certificate-authority/pb"
 	"github.com/plgd-dev/hub/v2/certificate-authority/store/mongodb"
+	"github.com/plgd-dev/hub/v2/pkg/fn"
+	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
-	"github.com/plgd-dev/kit/v2/security"
+	"go.uber.org/atomic"
 )
-
-type CertificateSigner interface {
-	// csr is encoded by PEM and returns PEM
-	Sign(ctx context.Context, csr []byte) ([]byte, error)
-}
 
 // CertificateAuthorityServer handles incoming requests.
 type CertificateAuthorityServer struct {
 	pb.UnimplementedCertificateAuthorityServer
 
-	validFrom    func() time.Time
-	validFor     time.Duration
-	certificate  []*x509.Certificate
-	privateKey   crypto.PrivateKey
-	signerConfig SignerConfig
-	logger       log.Logger
-	ownerClaim   string
-	store        *mongodb.Store
-	hubID        string
+	signerConfig     SignerConfig
+	logger           log.Logger
+	ownerClaim       string
+	store            *mongodb.Store
+	hubID            string
+	fileWatcher      *fsnotify.Watcher
+	onFileChangeFunc func(event fsnotify.Event)
+
+	signer atomic.Pointer[Signer]
 }
 
-func NewCertificateAuthorityServer(ownerClaim string, hubID string, signerConfig SignerConfig, store *mongodb.Store, logger log.Logger) (*CertificateAuthorityServer, error) {
-	certificate, err := security.LoadX509(signerConfig.CertFile)
-	if err != nil {
-		return nil, err
-	}
-	privateKey, err := security.LoadX509PrivateKey(signerConfig.KeyFile)
-	if err != nil {
-		return nil, err
-	}
-
-	return &CertificateAuthorityServer{
-		validFrom: func() time.Time {
-			t, _ := tparse.ParseNow(time.RFC3339, signerConfig.ValidFrom)
-			return t
-		},
-		validFor:     signerConfig.ExpiresIn,
-		certificate:  certificate,
-		privateKey:   privateKey,
+func NewCertificateAuthorityServer(ownerClaim string, hubID string, signerConfig SignerConfig, store *mongodb.Store, fileWatcher *fsnotify.Watcher, logger log.Logger) (*CertificateAuthorityServer, error) {
+	s := &CertificateAuthorityServer{
 		signerConfig: signerConfig,
 		logger:       logger,
 		ownerClaim:   ownerClaim,
 		store:        store,
 		hubID:        hubID,
-	}, nil
+		fileWatcher:  fileWatcher,
+	}
+
+	_, err := s.load()
+	if err != nil {
+		return nil, err
+	}
+
+	var removeFilesOnError fn.FuncList
+	for _, ca := range signerConfig.caPoolArray {
+		if err := fileWatcher.Add(ca); err != nil {
+			removeFilesOnError.Execute()
+			return nil, fmt.Errorf("cannot watch CAPool(%v): %w", ca, err)
+		}
+		caToRemove := ca
+		removeFilesOnError.AddFunc(func() {
+			_ = fileWatcher.Remove(caToRemove)
+		})
+	}
+	if err := fileWatcher.Add(signerConfig.CertFile); err != nil {
+		removeFilesOnError.Execute()
+		return nil, fmt.Errorf("cannot watch CertFile(%v): %w", signerConfig.CertFile, err)
+	}
+	removeFilesOnError.AddFunc(func() {
+		_ = fileWatcher.Remove(signerConfig.CertFile)
+	})
+	if err := fileWatcher.Add(signerConfig.KeyFile); err != nil {
+		removeFilesOnError.Execute()
+		return nil, fmt.Errorf("cannot watch KeyFile(%v): %w", signerConfig.CertFile, err)
+	}
+	s.onFileChangeFunc = s.onFileChange
+	fileWatcher.AddOnEventHandler(&s.onFileChangeFunc)
+
+	return s, nil
+}
+
+func (s *CertificateAuthorityServer) Close() {
+	for _, ca := range s.signerConfig.caPoolArray {
+		if err := s.fileWatcher.Remove(ca); err != nil {
+			s.logger.Errorf("cannot remove fileWatcher for CAPool(%v): %w", ca, err)
+		}
+	}
+	if err := s.fileWatcher.Remove(s.signerConfig.CertFile); err != nil {
+		s.logger.Errorf("cannot remove fileWatcher for CertFile(%v): %w", s.signerConfig.CertFile, err)
+	}
+	if err := s.fileWatcher.Remove(s.signerConfig.KeyFile); err != nil {
+		s.logger.Errorf("cannot remove fileWatcher for KeyFile(%v): %w", s.signerConfig.KeyFile, err)
+	}
+}
+
+func (s *CertificateAuthorityServer) load() (bool, error) {
+	signer, err := NewSigner(s.ownerClaim, s.hubID, s.signerConfig)
+	if err != nil {
+		return false, fmt.Errorf("cannot create signer: %w", err)
+	}
+
+	oldSigner := s.signer.Load()
+	if oldSigner != nil && len(signer.certificate) == len(oldSigner.certificate) && bytes.Equal(signer.certificate[0].Raw, oldSigner.certificate[0].Raw) {
+		return false, nil
+	}
+	return s.signer.CompareAndSwap(oldSigner, signer), nil
+}
+
+func (s *CertificateAuthorityServer) onFileChange(event fsnotify.Event) {
+	ok, err := s.load()
+	if err != nil {
+		s.logger.Errorf("cannot refresh signer: %v", err)
+		return
+	}
+	if ok {
+		s.logger.Debugf("Refreshing signer certificates due to modified file(%v) via event %v", event.Name, event.Op)
+	}
+}
+
+func (s *CertificateAuthorityServer) GetSigner() *Signer {
+	return s.signer.Load()
 }

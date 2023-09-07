@@ -27,6 +27,7 @@ func MakeConfig(t require.TestingT) service.Config {
 	cfg.APIs.HTTP.Addr = config.CERTIFICATE_AUTHORITY_HTTP_HOST
 	cfg.APIs.HTTP.Server = config.MakeHttpServerConfig()
 	cfg.APIs.GRPC.TLS.ClientCertificateRequired = false
+	cfg.Signer.CAPool = []string{os.Getenv("TEST_ROOT_CA_CERT")}
 	cfg.Signer.KeyFile = os.Getenv("TEST_ROOT_CA_KEY")
 	cfg.Signer.CertFile = os.Getenv("TEST_ROOT_CA_CERT")
 	cfg.Signer.ValidFrom = "now-1h"

@@ -84,6 +84,7 @@ clients:
         certFile: "/secrets/public/cert.crt"
         useSystemCAPool: false
 signer:
+  caPool: "/secrets/public/rootca.crt"
   keyFile: "/secrets/private/intermediateca.key"
   certFile: "/secrets/public/intermediateca.crt"
   validFrom: "now-1h"

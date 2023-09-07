@@ -39,6 +39,12 @@ func (c *Config) Validate() error {
 	if _, err := uuid.Parse(c.HubID); err != nil {
 		return fmt.Errorf("hubID('%v') - %w", c.HubID, err)
 	}
+
+	_, err := grpcService.NewSigner(c.APIs.GRPC.Authorization.OwnerClaim, c.HubID, c.Signer)
+	if err != nil {
+		return fmt.Errorf("signer('%v') - %w", c.Signer, err)
+	}
+
 	return nil
 }
 
