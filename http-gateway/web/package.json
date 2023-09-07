@@ -73,7 +73,7 @@
     "@testing-library/react": "^12.1.2",
     "@testing-library/user-event": "^13.5.0",
     "babel-plugin-formatjs": "^10.5.3",
-    "eslint": "8.43.0",
+    "eslint": "8.47.0",
     "eslint-config-prettier": "^8.8.0",
     "eslint-config-react-app": "^7.0.1",
     "eslint-formatter-pretty": "^5.0.0",
