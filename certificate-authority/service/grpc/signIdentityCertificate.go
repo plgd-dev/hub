@@ -2,14 +2,12 @@ package grpc
 
 import (
 	"context"
-	"crypto/x509"
 	"crypto/x509/pkix"
 	"fmt"
 
 	"github.com/plgd-dev/hub/v2/certificate-authority/pb"
 	"github.com/plgd-dev/hub/v2/identity-store/events"
 	"github.com/plgd-dev/hub/v2/pkg/net/grpc"
-	"github.com/plgd-dev/hub/v2/pkg/security/certificateSigner"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -45,23 +43,11 @@ func (s *CertificateAuthorityServer) SignIdentityCertificate(ctx context.Context
 	if err := s.validateRequest(req.GetCertificateSigningRequest()); err != nil {
 		return nil, logger.LogAndReturnError(status.Errorf(codes.InvalidArgument, fmtError, err))
 	}
-	notBefore := s.validFrom()
-	notAfter := notBefore.Add(s.validFor)
-	var signingRecord *pb.SigningRecord
-	signer := certificateSigner.NewIdentityCertificateSigner(s.certificate, s.privateKey, certificateSigner.WithNotBefore(notBefore), certificateSigner.WithNotAfter(notAfter), certificateSigner.WithOverrideCertTemplate(func(template *x509.Certificate) error {
-		subject, err := overrideSubject(ctx, template.Subject, s.ownerClaim, s.hubID, "uuid:")
-		if err != nil {
-			return err
-		}
-		template.Subject = subject
-		owner, err := ownerToUUID(ctx, s.ownerClaim)
-		if err != nil {
-			return err
-		}
-		signingRecord, err = toSigningRecord(owner, template)
-		return err
-	}))
-	cert, err := signer.Sign(ctx, req.CertificateSigningRequest)
+	signer := s.GetSigner()
+	if signer == nil {
+		return nil, logger.LogAndReturnError(status.Errorf(codes.InvalidArgument, fmtError, fmt.Errorf("signer is empty")))
+	}
+	cert, signingRecord, err := signer.SignIdentityCSR(ctx, req.GetCertificateSigningRequest())
 	if err != nil {
 		return nil, logger.LogAndReturnError(status.Errorf(codes.InvalidArgument, fmtError, err))
 	}

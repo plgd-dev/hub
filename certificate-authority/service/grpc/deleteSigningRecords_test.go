@@ -11,6 +11,7 @@ import (
 	"github.com/plgd-dev/hub/v2/certificate-authority/store"
 	"github.com/plgd-dev/hub/v2/certificate-authority/test"
 	"github.com/plgd-dev/hub/v2/identity-store/events"
+	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"github.com/plgd-dev/hub/v2/test/config"
@@ -67,9 +68,20 @@ func TestCertificateAuthorityServerDeleteSigningRecords(t *testing.T) {
 	err := store.CreateSigningRecord(context.Background(), r)
 	require.NoError(t, err)
 
-	ch := new(inprocgrpc.Channel)
-	ca, err := grpc.NewCertificateAuthorityServer(ownerClaim, config.HubID(), test.MakeConfig(t).Signer, store, log.NewLogger(log.MakeDefaultConfig()))
+	logger := log.NewLogger(log.MakeDefaultConfig())
+
+	fileWatcher, err := fsnotify.NewWatcher(logger)
 	require.NoError(t, err)
+	defer func() {
+		err = fileWatcher.Close()
+		require.NoError(t, err)
+	}()
+
+	ch := new(inprocgrpc.Channel)
+	ca, err := grpc.NewCertificateAuthorityServer(ownerClaim, config.HubID(), test.MakeConfig(t).Signer, store, fileWatcher, logger)
+	require.NoError(t, err)
+	defer ca.Close()
+
 	pb.RegisterCertificateAuthorityServer(ch, ca)
 	grpcClient := pb.NewCertificateAuthorityClient(ch)
 	token := config.CreateJwtToken(t, jwt.MapClaims{
