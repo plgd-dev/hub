@@ -31,7 +31,9 @@ const PendingCommandsExpandableList: FC<Props> = ({ deviceId }) => {
                                     duration: 0.3,
                                 }}
                             >
-                                <PendingCommandsList deviceId={deviceId} />
+                                <div style={{ marginTop: 12 }}>
+                                    <PendingCommandsList deviceId={deviceId} />
+                                </div>
                             </motion.div>
                         )}
                     </AnimatePresence>,
