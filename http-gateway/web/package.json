@@ -4,7 +4,7 @@
   "private": false,
   "dependencies": {
     "@babel/plugin-transform-react-jsx": "^7.22.5",
-    "@babel/preset-env": "^7.22.5",
+    "@babel/preset-env": "^7.22.10",
     "@babel/preset-react": "^7.22.5",
     "@babel/preset-typescript": "^7.22.5",
     "@emotion/eslint-plugin": "^11.11.0",
@@ -64,7 +64,7 @@
     "web-vitals": "^2.1.4"
   },
   "devDependencies": {
-    "@babel/cli": "^7.22.5",
+    "@babel/cli": "^7.22.10",
     "@craco/craco": "^7.1.0",
     "@emotion/babel-plugin": "^11.11.0",
     "@emotion/babel-preset-css-prop": "^11.11.0",
