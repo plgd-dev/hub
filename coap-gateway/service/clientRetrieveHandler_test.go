@@ -10,13 +10,18 @@ import (
 
 	"github.com/plgd-dev/go-coap/v3/message"
 	coapCodes "github.com/plgd-dev/go-coap/v3/message/codes"
+	coapgwTest "github.com/plgd-dev/hub/v2/coap-gateway/test"
 	"github.com/plgd-dev/hub/v2/coap-gateway/uri"
+	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestClientRetrieveHandler(t *testing.T) {
-	shutdown := setUp(t)
+	coapgwCfg := coapgwTest.MakeConfig(t)
+	coapgwCfg.Log.DumpBody = true
+	coapgwCfg.Log.Level = log.DebugLevel
+	shutdown := setUp(t, coapgwCfg)
 	defer shutdown()
 
 	co := testCoapDial(t, "", true, true, time.Now().Add(time.Minute))
@@ -30,6 +35,7 @@ func TestClientRetrieveHandler(t *testing.T) {
 	type args struct {
 		path  string
 		query string
+		etag  []byte
 	}
 	tests := []struct {
 		name      string
@@ -65,6 +71,24 @@ func TestClientRetrieveHandler(t *testing.T) {
 			},
 			wantsCode: coapCodes.Content,
 		},
+		{
+			name: "found with etag",
+			args: args{
+				path: uri.ResourceRoute + "/" + CertIdentity + TestAResourceHref,
+				etag: []byte(TestETag),
+			},
+			wantsCode: coapCodes.Valid,
+		},
+
+		{
+			name: "found with with interface,etag",
+			args: args{
+				path:  uri.ResourceRoute + "/" + CertIdentity + TestAResourceHref,
+				etag:  []byte(TestETag),
+				query: "if=oic.if.baseline",
+			},
+			wantsCode: coapCodes.Valid,
+		},
 	}
 
 	testPrepareDevice(t, co)
@@ -75,6 +99,9 @@ func TestClientRetrieveHandler(t *testing.T) {
 			defer cancel()
 			req, err := co.NewGetRequest(ctx, tt.args.path)
 			require.NoError(t, err)
+			if tt.args.etag != nil {
+				req.SetOptionBytes(message.ETag, tt.args.etag)
+			}
 			if tt.args.query != "" {
 				req.SetOptionString(message.URIQuery, tt.args.query)
 			}

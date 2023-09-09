@@ -47,6 +47,10 @@ func (e *ResourceLinksSnapshotTaken) IsSnapshot() bool {
 	return true
 }
 
+func (e *ResourceLinksSnapshotTaken) ETag() *eventstore.ETagData {
+	return nil
+}
+
 func (e *ResourceLinksSnapshotTaken) Timestamp() time.Time {
 	return pkgTime.Unix(0, e.GetEventMetadata().GetTimestamp())
 }

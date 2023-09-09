@@ -5,6 +5,11 @@ import (
 	"time"
 )
 
+type ETagData struct {
+	ETag      []byte
+	Timestamp int64
+}
+
 // Event interface over event created by user.
 type Event = interface {
 	Version() uint64
@@ -13,6 +18,7 @@ type Event = interface {
 	GroupID() string
 	IsSnapshot() bool
 	Timestamp() time.Time
+	ETag() *ETagData
 }
 
 // EventUnmarshaler provides event.

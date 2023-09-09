@@ -17,6 +17,7 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	pkgStrings "github.com/plgd-dev/hub/v2/pkg/strings"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
+	pbRD "github.com/plgd-dev/hub/v2/resource-directory/pb"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -27,6 +28,7 @@ type ObservationType int
 type GrpcGatewayClient interface {
 	GetDevicesMetadata(ctx context.Context, in *pb.GetDevicesMetadataRequest, opts ...grpc.CallOption) (pb.GrpcGateway_GetDevicesMetadataClient, error)
 	GetResourceLinks(ctx context.Context, in *pb.GetResourceLinksRequest, opts ...grpc.CallOption) (pb.GrpcGateway_GetResourceLinksClient, error)
+	GetLatestDeviceETags(ctx context.Context, in *pbRD.GetLatestDeviceETagsRequest, opts ...grpc.CallOption) (*pbRD.GetLatestDeviceETagsResponse, error)
 }
 
 type ResourceAggregateClient interface {
@@ -55,7 +57,9 @@ type DeviceObserverConfig struct {
 	ObservationType            ObservationType
 	TwinEnabled                bool
 	TwinEnabledSet             bool
+	UseETags                   bool
 	RequireBatchObserveEnabled bool
+	MaxETagsCountInRequest     uint32
 }
 
 type ClientConn interface {
@@ -115,6 +119,21 @@ func WithTwinEnabled(twinEnabled bool) TwinEnabledOpt {
 	}
 }
 
+// Force twinEnabled value
+type UseETagsOpt struct {
+	useETags bool
+}
+
+func (o UseETagsOpt) Apply(opts *DeviceObserverConfig) {
+	opts.UseETags = o.useETags
+}
+
+func WithUseETags(useETags bool) UseETagsOpt {
+	return UseETagsOpt{
+		useETags: useETags,
+	}
+}
+
 // Set logger option
 type LoggerOpt struct {
 	logger log.Logger
@@ -128,6 +147,21 @@ func WithLogger(logger log.Logger) LoggerOpt {
 
 func (o LoggerOpt) Apply(opts *DeviceObserverConfig) {
 	opts.Logger = o.logger
+}
+
+// Limit of the number of latest etags acquired from event store.
+type MaxETagsCountInRequestOpt struct {
+	maxETagsCountInRequest uint32
+}
+
+func (o MaxETagsCountInRequestOpt) Apply(opts *DeviceObserverConfig) {
+	opts.MaxETagsCountInRequest = o.maxETagsCountInRequest
+}
+
+func WithMaxETagsCountInRequest(v uint32) MaxETagsCountInRequestOpt {
+	return MaxETagsCountInRequestOpt{
+		maxETagsCountInRequest: v,
+	}
 }
 
 func prepareSetupDeviceObserver(ctx context.Context, deviceID string, coapConn ClientConn, rdClient GrpcGatewayClient, raClient ResourceAggregateClient, cfg DeviceObserverConfig) (DeviceObserverConfig, []*commands.Resource, error) {
@@ -164,6 +198,21 @@ func prepareSetupDeviceObserver(ctx context.Context, deviceID string, coapConn C
 	return cfg, published, nil
 }
 
+func getETags(ctx context.Context, deviceID string, rdClient GrpcGatewayClient, cfg DeviceObserverConfig) [][]byte {
+	if !cfg.UseETags {
+		return nil
+	}
+	r, err := rdClient.GetLatestDeviceETags(ctx, &pbRD.GetLatestDeviceETagsRequest{
+		DeviceId: deviceID,
+		Limit:    cfg.MaxETagsCountInRequest,
+	})
+	if err != nil {
+		cfg.Logger.Debugf("NewDeviceObserver: failed to get latest device(%v) etag: %v", deviceID, err)
+		return nil
+	}
+	return r.GetEtags()
+}
+
 // Create new deviceObserver with given settings
 func NewDeviceObserver(ctx context.Context, deviceID string, coapConn ClientConn, rdClient GrpcGatewayClient, raClient ResourceAggregateClient, callbacks ResourcesObserverCallbacks, opts ...Option) (*DeviceObserver, error) {
 	createError := func(err error) error {
@@ -174,7 +223,9 @@ func NewDeviceObserver(ctx context.Context, deviceID string, coapConn ClientConn
 	}
 
 	cfg := DeviceObserverConfig{
-		Logger: log.Get(),
+		Logger:                 log.Get(),
+		MaxETagsCountInRequest: 8,
+		UseETags:               false,
 	}
 	for _, o := range opts {
 		o.Apply(&cfg)
@@ -202,7 +253,8 @@ func NewDeviceObserver(ctx context.Context, deviceID string, coapConn ClientConn
 	}
 
 	if cfg.ObservationType == ObservationType_PerDevice {
-		resourcesObserver, err := createDiscoveryResourceObserver(ctx, deviceID, coapConn, callbacks, cfg.Logger)
+		etags := getETags(ctx, deviceID, rdClient, cfg)
+		resourcesObserver, err := createDiscoveryResourceObserver(ctx, deviceID, coapConn, callbacks, etags, cfg.Logger)
 		if err == nil {
 			return &DeviceObserver{
 				deviceID:          deviceID,
@@ -305,13 +357,13 @@ func loadTwinEnabled(ctx context.Context, rdClient GrpcGatewayClient, deviceID s
 }
 
 // Create observer with a single observation for /oic/res resource.
-func createDiscoveryResourceObserver(ctx context.Context, deviceID string, coapConn ClientConn, callbacks ResourcesObserverCallbacks, logger log.Logger) (*resourcesObserver, error) {
+func createDiscoveryResourceObserver(ctx context.Context, deviceID string, coapConn ClientConn, callbacks ResourcesObserverCallbacks, etags [][]byte, logger log.Logger) (*resourcesObserver, error) {
 	resourcesObserver := newResourcesObserver(deviceID, coapConn, callbacks, logger)
 	err := resourcesObserver.addResource(ctx, &commands.Resource{
 		DeviceId: resourcesObserver.deviceID,
 		Href:     resources.ResourceURI,
 		Policy:   &commands.Policy{BitFlags: int32(schema.Observable)},
-	}, interfaces.OC_IF_B)
+	}, interfaces.OC_IF_B, etags)
 	if err != nil {
 		resourcesObserver.CleanObservedResources(ctx)
 		return nil, err
@@ -322,7 +374,7 @@ func createDiscoveryResourceObserver(ctx context.Context, deviceID string, coapC
 // Create observer with a single observations for all published resources.
 func createPublishedResourcesObserver(ctx context.Context, deviceID string, coapConn ClientConn, callbacks ResourcesObserverCallbacks, published []*commands.Resource, logger log.Logger) (*resourcesObserver, error) {
 	resourcesObserver := newResourcesObserver(deviceID, coapConn, callbacks, logger)
-
+	// TODO get ETAG for each resource
 	err := resourcesObserver.addResources(ctx, published)
 	if err != nil {
 		resourcesObserver.CleanObservedResources(ctx)

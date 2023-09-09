@@ -133,6 +133,11 @@ func NewCoapResourceRetrieveRequest(ctx context.Context, messagePool *pool.Pool,
 	if event.GetResourceInterface() != "" {
 		req.AddOptionString(message.URIQuery, "if="+event.GetResourceInterface())
 	}
+	if len(event.GetEtag()) > 0 {
+		if err := req.AddETag(event.GetEtag()); err != nil {
+			return nil, err
+		}
+	}
 	return req, nil
 }
 
@@ -186,6 +191,14 @@ func NewCommandMetadata(sequenceNumber uint64, connectionID string) *commands.Co
 	}
 }
 
+func getETagFromMessage(msg interface{ ETag() ([]byte, error) }) []byte {
+	etag, err := msg.ETag()
+	if err != nil {
+		etag = nil
+	}
+	return etag
+}
+
 func NewConfirmResourceRetrieveRequest(resourceID *commands.ResourceId, correlationID, connectionID string, req *pool.Message) *commands.ConfirmResourceRetrieveRequest {
 	content := NewContent(req.Options(), req.Body())
 	metadata := NewCommandMetadata(req.Sequence(), connectionID)
@@ -196,6 +209,7 @@ func NewConfirmResourceRetrieveRequest(resourceID *commands.ResourceId, correlat
 		Status:          CoapCodeToStatus(req.Code()),
 		Content:         content,
 		CommandMetadata: metadata,
+		Etag:            getETagFromMessage(req),
 	}
 }
 
@@ -256,6 +270,7 @@ func NewNotifyResourceChangedRequest(resourceID *commands.ResourceId, connection
 		Content:         content,
 		CommandMetadata: metadata,
 		Status:          CoapCodeToStatus(req.Code()),
+		Etag:            getETagFromMessage(req),
 	}
 }
 
@@ -298,6 +313,8 @@ func NewNotifyResourceChangedRequestsFromBatchResourceDiscovery(deviceID, connec
 	}
 
 	requests := make([]*commands.NotifyResourceChangedRequest, 0, len(rs))
+	etag := getETagFromMessage(req)
+	var latestETagResource *commands.NotifyResourceChangedRequest
 	for _, r := range rs {
 		isEmpty, filterOut := filterOutEmptyResource(r)
 		if filterOut {
@@ -312,8 +329,7 @@ func NewNotifyResourceChangedRequestsFromBatchResourceDiscovery(deviceID, connec
 			data = nil
 			code = commands.Status_NOT_FOUND
 		}
-
-		requests = append(requests, &commands.NotifyResourceChangedRequest{
+		resourceChangedReq := &commands.NotifyResourceChangedRequest{
 			ResourceId: commands.NewResourceID(deviceID, r.Href()),
 			Content: &commands.Content{
 				ContentType:       getContentFormatString(ct),
@@ -322,7 +338,18 @@ func NewNotifyResourceChangedRequestsFromBatchResourceDiscovery(deviceID, connec
 			},
 			CommandMetadata: metadata,
 			Status:          code,
-		})
+			Etag:            r.ETag,
+		}
+		if len(etag) > 0 && bytes.Equal(etag, r.ETag) {
+			latestETagResource = resourceChangedReq
+			continue
+		}
+		requests = append(requests, resourceChangedReq)
+	}
+	// send latestETagResource need to be send as last because the resource are applied in order in resource aggregate
+	// so latestETagResource is the last resource in the batch
+	if latestETagResource != nil {
+		requests = append(requests, latestETagResource)
 	}
 	return requests, nil
 }
@@ -379,6 +406,7 @@ func NewRetrieveResourceRequest(resourceID *commands.ResourceId, req *mux.Messag
 		CorrelationId:     correlationID,
 		ResourceInterface: resourceInterface,
 		CommandMetadata:   metadata,
+		Etag:              getETagFromMessage(req),
 	}, nil
 }
 

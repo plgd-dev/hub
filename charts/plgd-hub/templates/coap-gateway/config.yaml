@@ -172,5 +172,8 @@ data:
       goPoolSize: {{ .taskQueue.goPoolSize }}
       size: {{ .taskQueue.size }}
       maxIdleTime: {{ .taskQueue.maxIdleTime | quote }}
+    deviceTwin:
+      maxETagsCountInRequest: {{ .deviceTwin.maxETagsCountInRequest }}
+      useETags: {{ .deviceTwin.useETags }}
   {{- end }}
 {{- end }}

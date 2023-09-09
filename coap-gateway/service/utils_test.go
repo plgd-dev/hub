@@ -354,7 +354,12 @@ func testCoapDial(t *testing.T, deviceID string, withTLS, identityCert bool, val
 		case codes.POST:
 			err = w.SetResponse(codes.Changed, message.TextPlain, bytes.NewReader(resp))
 		case codes.GET:
-			err = w.SetResponse(codes.Content, message.TextPlain, bytes.NewReader(resp))
+			etag, err := r.ETag()
+			if err == nil && bytes.Equal(etag, []byte(TestETag)) {
+				err = w.SetResponse(codes.Valid, message.TextPlain, nil)
+			} else {
+				err = w.SetResponse(codes.Content, message.TextPlain, bytes.NewReader(resp), message.Option{ID: message.ETag, Value: []byte(TestETag)})
+			}
 		case codes.PUT:
 			err = w.SetResponse(codes.Created, message.TextPlain, bytes.NewReader(resp))
 		case codes.DELETE:
@@ -391,4 +396,5 @@ var (
 
 	TestExchangeTimeout = time.Second * 15
 	TestLogDebug        = true
+	TestETag            = "12345678"
 )

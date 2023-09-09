@@ -430,6 +430,7 @@ type MockEvent struct {
 	GroupIDI     string `bson:"groupid"`
 	DataI        []byte `bson:"data"`
 	TimestampI   int64  `bson:"timestamp"`
+	ETagI        []byte `bson:"etag"`
 }
 
 func (e MockEvent) Version() uint64 {
@@ -450,6 +451,16 @@ func (e MockEvent) GroupID() string {
 
 func (e MockEvent) IsSnapshot() bool {
 	return e.IsSnapshotI
+}
+
+func (e MockEvent) ETag() *eventstore.ETagData {
+	if len(e.ETagI) == 0 {
+		return nil
+	}
+	return &eventstore.ETagData{
+		ETag:      e.ETagI,
+		Timestamp: e.TimestampI,
+	}
 }
 
 func (e MockEvent) Timestamp() time.Time {

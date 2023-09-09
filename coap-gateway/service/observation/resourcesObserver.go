@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/hashicorp/go-multierror"
-	"github.com/plgd-dev/device/v2/schema/interfaces"
 	"github.com/plgd-dev/device/v2/schema/resources"
 	"github.com/plgd-dev/go-coap/v3/message"
 	"github.com/plgd-dev/go-coap/v3/message/pool"
@@ -90,13 +89,13 @@ func newResourcesObserver(deviceID string, coapConn ClientConn, callbacks Resour
 }
 
 // Add resource to observer with given interface and wait for initialization message.
-func (o *resourcesObserver) addResource(ctx context.Context, res *commands.Resource, obsInterface string) error {
+func (o *resourcesObserver) addResource(ctx context.Context, res *commands.Resource, obsInterface string, etags [][]byte) error {
 	o.private.lock.Lock()
 	defer o.private.lock.Unlock()
 	obs, err := o.addResourceLocked(res, obsInterface)
 	if err == nil && obs != nil {
 		o.notifyAboutStartTwinSynchronization(ctx)
-		err = o.performObservationLocked([]*observedResource{obs})
+		err = o.performObservationLocked([]*observedResourceWithETags{{observedResource: obs, etags: etags}})
 		if err != nil {
 			o.private.resources, _ = o.private.resources.removeByHref(obs.Href())
 			defer o.notifyAboutFinishTwinSynchronization(ctx)
@@ -164,24 +163,28 @@ func (o *resourcesObserver) addResourceLocked(res *commands.Resource, obsInterfa
 //
 // For observable resources subscribe to observations, for unobservable resources retrieve
 // their content.
-func (o *resourcesObserver) handleResource(ctx context.Context, obsRes *observedResource) error {
+func (o *resourcesObserver) handleResource(ctx context.Context, obsRes *observedResource, etags [][]byte) error {
 	if obsRes.Href() == commands.StatusHref {
 		return nil
 	}
 
 	if obsRes.isObservable {
-		obs, err := o.observeResource(ctx, obsRes)
+		obs, err := o.observeResource(ctx, obsRes, etags)
 		if err != nil {
 			return err
 		}
 		obsRes.SetObservation(obs)
 		return nil
 	}
-	return o.getResourceContent(ctx, obsRes.Href())
+	var etag []byte
+	if len(etags) > 0 {
+		etag = etags[0]
+	}
+	return o.getResourceContent(ctx, obsRes.Href(), etag)
 }
 
 // Register to COAP-GW resource observation for given resource
-func (o *resourcesObserver) observeResource(ctx context.Context, obsRes *observedResource) (Observation, error) {
+func (o *resourcesObserver) observeResource(ctx context.Context, obsRes *observedResource, etags [][]byte) (Observation, error) {
 	cannotObserveResourceError := func(deviceID, href string, err error) error {
 		return fmt.Errorf("cannot observe resource /%v%v: %w", deviceID, href, err)
 	}
@@ -189,15 +192,8 @@ func (o *resourcesObserver) observeResource(ctx context.Context, obsRes *observe
 		return nil, cannotObserveResourceError(o.deviceID, obsRes.Href(), emptyDeviceIDError())
 	}
 
-	var opts []message.Option
-	if obsRes.Interface() != "" {
-		opts = append(opts, message.Option{
-			ID:    message.URIQuery,
-			Value: []byte("if=" + obsRes.Interface()),
-		})
-	}
-
-	batchObservation := obsRes.resInterface == interfaces.OC_IF_B
+	opts := obsRes.toCoapOptions(etags)
+	batchObservation := obsRes.isBatchObservation()
 	returnIfNonObservable := batchObservation && obsRes.Href() == resources.ResourceURI
 
 	obs, err := o.coapConn.Observe(ctx, obsRes.Href(), func(msg *pool.Message) {
@@ -223,14 +219,22 @@ func (o *resourcesObserver) observeResource(ctx context.Context, obsRes *observe
 }
 
 // Request resource content form COAP-GW
-func (o *resourcesObserver) getResourceContent(ctx context.Context, href string) error {
+func (o *resourcesObserver) getResourceContent(ctx context.Context, href string, etag []byte) error {
 	cannotGetResourceError := func(deviceID, href string, err error) error {
 		return fmt.Errorf("cannot get resource /%v%v content: %w", deviceID, href, err)
 	}
 	if o.deviceID == "" {
 		return cannotGetResourceError(o.deviceID, href, emptyDeviceIDError())
 	}
-	resp, err := o.coapConn.Get(ctx, href)
+	opts := make([]message.Option, 0, 1)
+	if etag != nil {
+		// we use only first etag
+		opts = append(opts, message.Option{
+			ID:    message.ETag,
+			Value: etag,
+		})
+	}
+	resp, err := o.coapConn.Get(ctx, href, opts...)
 	if err != nil {
 		return cannotGetResourceError(o.deviceID, href, err)
 	}
@@ -259,10 +263,15 @@ func (o *resourcesObserver) notifyAboutFinishTwinSynchronization(ctx context.Con
 	}
 }
 
-func (o *resourcesObserver) performObservationLocked(obs []*observedResource) error {
+type observedResourceWithETags struct {
+	*observedResource
+	etags [][]byte
+}
+
+func (o *resourcesObserver) performObservationLocked(obs []*observedResourceWithETags) error {
 	var errors *multierror.Error
 	for _, obsRes := range obs {
-		if err := o.handleResource(context.Background(), obsRes); err != nil {
+		if err := o.handleResource(context.Background(), obsRes.observedResource, obsRes.etags); err != nil {
 			o.private.resources, _ = o.private.resources.removeByHref(obsRes.Href())
 			errors = multierror.Append(errors, err)
 		}
@@ -295,15 +304,15 @@ func (o *resourcesObserver) addResources(ctx context.Context, resources []*comma
 	return errors.ErrorOrNil()
 }
 
-func (o *resourcesObserver) addResourcesLocked(resources []*commands.Resource) ([]*observedResource, error) {
+func (o *resourcesObserver) addResourcesLocked(resources []*commands.Resource) ([]*observedResourceWithETags, error) {
 	var errors *multierror.Error
-	observedResources := make([]*observedResource, 0, len(resources))
+	observedResources := make([]*observedResourceWithETags, 0, len(resources))
 	for _, resource := range resources {
 		observedResource, err := o.addResourceLocked(resource, "")
 		if err != nil {
 			errors = multierror.Append(errors, err)
 		} else if observedResource != nil {
-			observedResources = append(observedResources, observedResource)
+			observedResources = append(observedResources, &observedResourceWithETags{observedResource: observedResource})
 		}
 	}
 	if errors.ErrorOrNil() != nil {

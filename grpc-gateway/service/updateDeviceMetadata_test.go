@@ -9,6 +9,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/plgd-dev/device/v2/schema/interfaces"
+	"github.com/plgd-dev/device/v2/schema/plgdtime"
 	"github.com/plgd-dev/go-coap/v3/message"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
@@ -111,7 +112,7 @@ func (f *deviceMetadataUpdatedFilter) WaitForEvent(t time.Duration, correlationI
 	}
 }
 
-func TestRequestHandler_UpdateDeviceMetadata(t *testing.T) {
+func TestRequestHandlerUpdateDeviceMetadataTwinEnabled(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 
 	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
@@ -255,4 +256,176 @@ func TestRequestHandler_UpdateDeviceMetadata(t *testing.T) {
 
 	evResourceChanged = v.WaitForResourceChanged(time.Second)
 	require.NotEmpty(t, evResourceChanged)
+}
+
+func waitForResourceChanged(filter *contentChangedFilter, ignoreHrefs ...string) eventbus.EventUnmarshaler {
+	ev := filter.WaitForResourceChanged(time.Second)
+	if ev != nil {
+		evChanged := events.ResourceChanged{}
+		if err := ev.Unmarshal(&evChanged); err != nil {
+			return ev
+		}
+		for _, ignoreHref := range ignoreHrefs {
+			if ignoreHref == evChanged.GetResourceId().Href {
+				return waitForResourceChanged(filter, ignoreHrefs...)
+			}
+		}
+	}
+	return ev
+}
+
+func TestRequestHandlerUpdateDeviceMetadataTwinForceSynchronization(t *testing.T) {
+	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
+
+	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
+	defer cancel()
+
+	tearDown := service.SetUp(ctx, t)
+	defer tearDown()
+	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
+
+	conn, err := grpc.Dial(config.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+		RootCAs: test.GetRootCertificatePool(t),
+	})))
+	require.NoError(t, err)
+	defer func() {
+		_ = conn.Close()
+	}()
+	c := pb.NewGrpcGatewayClient(conn)
+
+	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.ACTIVE_COAP_SCHEME+"://"+config.COAP_GW_HOST, test.GetAllBackendResourceLinks())
+	defer shutdownDevSim()
+
+	logger := log.NewLogger(log.MakeDefaultConfig())
+
+	fileWatcher, err := fsnotify.NewWatcher(logger)
+	require.NoError(t, err)
+	defer func() {
+		errC := fileWatcher.Close()
+		require.NoError(t, errC)
+	}()
+
+	naClient, s, err := natsTest.NewClientAndSubscriber(config.MakeSubscriberConfig(), fileWatcher, logger, subscriber.WithUnmarshaler(utils.Unmarshal))
+	require.NoError(t, err)
+	defer func() {
+		s.Close()
+		naClient.Close()
+	}()
+	tmp := uuid.New()
+	v := newContentChangedFilter()
+	deviceMetadataUpdatedFilter := newDeviceMetadataUpdatedFilter()
+	obs, err := s.Subscribe(ctx, tmp.String(), utils.GetDeviceSubject("*", deviceID), v)
+	require.NoError(t, err)
+	obsDeviceMetadataUpdated, err := s.Subscribe(ctx, uuid.New().String(), utils.GetDeviceMetadataEventSubject("*", deviceID, (&events.DeviceMetadataUpdated{}).EventType()), deviceMetadataUpdatedFilter)
+	require.NoError(t, err)
+	defer func() {
+		err := obs.Close()
+		assert.NoError(t, err)
+		err = obsDeviceMetadataUpdated.Close()
+		assert.NoError(t, err)
+	}()
+
+	ev, err := c.UpdateDeviceMetadata(ctx, &pb.UpdateDeviceMetadataRequest{
+		DeviceId:    deviceID,
+		TwinEnabled: false,
+	})
+	require.NoError(t, err)
+	require.False(t, ev.GetData().GetTwinEnabled())
+	require.Equal(t, commands.TwinSynchronization_DISABLED, ev.GetData().GetTwinSynchronization().GetState())
+
+	deviceMetadataUpdated, err := deviceMetadataUpdatedFilter.WaitForEvent(time.Second, ev.GetData().GetAuditContext().GetCorrelationId())
+	require.NoError(t, err)
+	require.False(t, deviceMetadataUpdated.GetTwinEnabled())
+	require.Equal(t, deviceMetadataUpdated.GetTwinSynchronization().GetState(), commands.TwinSynchronization_DISABLED)
+	require.Equal(t, int64(0), ev.GetData().GetTwinSynchronization().GetForceSynchronizationAt())
+
+	evResourceChanged := waitForResourceChanged(v, plgdtime.ResourceURI)
+	require.Empty(t, evResourceChanged)
+
+	// TwinForceSynchronization - enable twin
+	checkTwin := time.Now().UnixNano()
+	ev, err = c.UpdateDeviceMetadata(ctx, &pb.UpdateDeviceMetadataRequest{
+		DeviceId:                 deviceID,
+		TwinForceSynchronization: true,
+	})
+	require.NoError(t, err)
+	require.True(t, ev.GetData().GetTwinEnabled())
+	require.NotEqual(t, commands.TwinSynchronization_DISABLED, ev.GetData().GetTwinSynchronization().GetState())
+
+	deviceMetadataUpdated, err = deviceMetadataUpdatedFilter.WaitForEvent(time.Second, ev.GetData().GetAuditContext().GetCorrelationId())
+	require.NoError(t, err)
+	require.True(t, deviceMetadataUpdated.GetTwinEnabled())
+	require.NotEqual(t, deviceMetadataUpdated.GetTwinSynchronization().GetState(), commands.TwinSynchronization_DISABLED)
+	require.Greater(t, ev.GetData().GetTwinSynchronization().GetForceSynchronizationAt(), checkTwin)
+	checkTwin = ev.GetData().GetTwinSynchronization().GetForceSynchronizationAt()
+
+	for {
+		deviceMetadataUpdated, err = deviceMetadataUpdatedFilter.WaitForEvent(time.Second, "")
+		require.NoError(t, err)
+		require.True(t, deviceMetadataUpdated.GetTwinEnabled())
+		require.Equal(t, checkTwin, ev.GetData().GetTwinSynchronization().GetForceSynchronizationAt())
+		if deviceMetadataUpdated.GetTwinSynchronization().GetState() == commands.TwinSynchronization_IN_SYNC {
+			break
+		}
+	}
+
+	// update resource
+	_, err = c.UpdateResource(ctx, &pb.UpdateResourceRequest{
+		ResourceInterface: interfaces.OC_IF_BASELINE,
+		ResourceId:        commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
+		Content: &pb.Content{
+			ContentType: message.AppOcfCbor.String(),
+			Data: test.EncodeToCbor(t, map[string]interface{}{
+				"power": 2,
+			}),
+		},
+	})
+	require.NoError(t, err)
+	evResourceChanged = waitForResourceChanged(v, plgdtime.ResourceURI)
+	require.NotEmpty(t, evResourceChanged)
+
+	// revert update resource
+	_, err = c.UpdateResource(ctx, &pb.UpdateResourceRequest{
+		ResourceInterface: interfaces.OC_IF_BASELINE,
+		ResourceId:        commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
+		Content: &pb.Content{
+			ContentType: message.AppOcfCbor.String(),
+			Data: test.EncodeToCbor(t, map[string]interface{}{
+				"power": 0,
+			}),
+		},
+	})
+	require.NoError(t, err)
+	evResourceChanged = waitForResourceChanged(v, plgdtime.ResourceURI)
+	require.NotEmpty(t, evResourceChanged)
+
+	// TwinForceSynchronization - twin is already enabled
+	checkTwin = time.Now().UnixNano()
+	ev, err = c.UpdateDeviceMetadata(ctx, &pb.UpdateDeviceMetadataRequest{
+		DeviceId:                 deviceID,
+		TwinForceSynchronization: true,
+	})
+	require.NoError(t, err)
+	require.True(t, ev.GetData().GetTwinEnabled())
+	require.NotEqual(t, commands.TwinSynchronization_DISABLED, ev.GetData().GetTwinSynchronization().GetState())
+
+	deviceMetadataUpdated, err = deviceMetadataUpdatedFilter.WaitForEvent(time.Second, ev.GetData().GetAuditContext().GetCorrelationId())
+	require.NoError(t, err)
+	require.True(t, deviceMetadataUpdated.GetTwinEnabled())
+	require.NotEqual(t, deviceMetadataUpdated.GetTwinSynchronization().GetState(), commands.TwinSynchronization_DISABLED)
+	require.Greater(t, ev.GetData().GetTwinSynchronization().GetForceSynchronizationAt(), checkTwin)
+	checkTwin = ev.GetData().GetTwinSynchronization().GetForceSynchronizationAt()
+
+	evResourceChanged = waitForResourceChanged(v, plgdtime.ResourceURI)
+	require.Empty(t, evResourceChanged)
+
+	for {
+		deviceMetadataUpdated, err = deviceMetadataUpdatedFilter.WaitForEvent(time.Second, "")
+		require.NoError(t, err)
+		require.True(t, deviceMetadataUpdated.GetTwinEnabled())
+		require.Equal(t, checkTwin, ev.GetData().GetTwinSynchronization().GetForceSynchronizationAt())
+		if deviceMetadataUpdated.GetTwinSynchronization().GetState() == commands.TwinSynchronization_IN_SYNC {
+			break
+		}
+	}
 }

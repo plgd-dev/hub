@@ -42,6 +42,7 @@ import (
 	natsClient "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/client"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/subscriber"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/utils"
+	pbRD "github.com/plgd-dev/hub/v2/resource-directory/pb"
 	otelCodes "go.opentelemetry.io/otel/codes"
 	semconv "go.opentelemetry.io/otel/semconv/v1.10.0"
 	"go.opentelemetry.io/otel/trace"
@@ -49,13 +50,18 @@ import (
 
 var authCtxKey = "AuthCtx"
 
+type resourceDirectoryClient struct {
+	pbGRPC.GrpcGatewayClient
+	pbRD.ResourceDirectoryClient
+}
+
 // Service is a configuration of coap-gateway
 type Service struct {
 	ctx                        context.Context
 	tracerProvider             trace.TracerProvider
 	logger                     log.Logger
 	isClient                   pbIS.IdentityStoreClient
-	rdClient                   pbGRPC.GrpcGatewayClient
+	rdClient                   *resourceDirectoryClient
 	certificateAuthorityClient pbCA.CertificateAuthorityClient
 	devicesStatusUpdater       *devicesStatusUpdater
 	providers                  map[string]*oauth2.PlgdProvider
@@ -143,7 +149,7 @@ func newIdentityStoreClient(config IdentityStoreConfig, fileWatcher *fsnotify.Wa
 	return isClient, closeIsConn, nil
 }
 
-func newResourceDirectoryClient(config GrpcServerConfig, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (pbGRPC.GrpcGatewayClient, func(), error) {
+func newResourceDirectoryClient(config GrpcServerConfig, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (*resourceDirectoryClient, func(), error) {
 	rdConn, err := grpcClient.New(config.Connection, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		return nil, nil, fmt.Errorf("cannot create connection to resource-directory: %w", err)
@@ -156,8 +162,11 @@ func newResourceDirectoryClient(config GrpcServerConfig, fileWatcher *fsnotify.W
 			logger.Errorf("error occurs during close connection to resource-directory: %v", err)
 		}
 	}
-	rdClient := pbGRPC.NewGrpcGatewayClient(rdConn.GRPC())
-	return rdClient, closeRdConn, nil
+
+	return &resourceDirectoryClient{
+		GrpcGatewayClient:       pbGRPC.NewGrpcGatewayClient(rdConn.GRPC()),
+		ResourceDirectoryClient: pbRD.NewResourceDirectoryClient(rdConn.GRPC()),
+	}, closeRdConn, nil
 }
 
 func newCertificateAuthorityClient(config GrpcServerConfig, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (pbCA.CertificateAuthorityClient, func(), error) {

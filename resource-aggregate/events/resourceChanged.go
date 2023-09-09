@@ -6,6 +6,7 @@ import (
 
 	pkgTime "github.com/plgd-dev/hub/v2/pkg/time"
 	commands "github.com/plgd-dev/hub/v2/resource-aggregate/commands"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -39,6 +40,16 @@ func (rc *ResourceChanged) IsSnapshot() bool {
 	return false
 }
 
+func (rc *ResourceChanged) ETag() *eventstore.ETagData {
+	if len(rc.GetEtag()) == 0 {
+		return nil
+	}
+	return &eventstore.ETagData{
+		ETag:      rc.GetEtag(),
+		Timestamp: rc.GetEventMetadata().GetTimestamp(),
+	}
+}
+
 func (rc *ResourceChanged) Timestamp() time.Time {
 	return pkgTime.Unix(0, rc.GetEventMetadata().GetTimestamp())
 }
@@ -50,6 +61,7 @@ func (rc *ResourceChanged) CopyData(event *ResourceChanged) {
 	rc.EventMetadata = event.GetEventMetadata()
 	rc.Status = event.GetStatus()
 	rc.OpenTelemetryCarrier = event.GetOpenTelemetryCarrier()
+	rc.Etag = event.GetEtag()
 }
 
 func (rc *ResourceChanged) CheckInitialized() bool {

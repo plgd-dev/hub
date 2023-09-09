@@ -302,6 +302,8 @@ func TestOffboardWithSignIn(t *testing.T) {
 	// first retry after failure is after 2 seconds, so hopefully it doesn't trigger, if this test
 	// behaves flakily then we will have to update simulator to have a configurable retry
 	sh.failSignIn.Store(false)
+	// wait for sign-in to be called again
+	time.Sleep(time.Second * 3)
 	test.OffBoardDevSim(ctx, t, deviceID)
 	require.True(t, sh.WaitForFirstSignOff(time.Second*20))
 }

@@ -5,6 +5,7 @@ import (
 
 	pkgTime "github.com/plgd-dev/hub/v2/pkg/time"
 	commands "github.com/plgd-dev/hub/v2/resource-aggregate/commands"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -36,6 +37,10 @@ func (e *ResourceCreated) GroupID() string {
 
 func (e *ResourceCreated) IsSnapshot() bool {
 	return false
+}
+
+func (e *ResourceCreated) ETag() *eventstore.ETagData {
+	return nil
 }
 
 func (e *ResourceCreated) Timestamp() time.Time {

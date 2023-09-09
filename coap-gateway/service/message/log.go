@@ -17,10 +17,11 @@ type JsonCoapMessage struct {
 	Observe       *uint32     `json:"observe,omitempty"`
 	ContentFormat string      `json:"contentFormat,omitempty"`
 	Body          interface{} `json:"body,omitempty"`
+	Etag          []byte      `json:"etag,omitempty"`
 }
 
 func (c JsonCoapMessage) IsEmpty() bool {
-	return c.Code == "" && c.Path == "" && c.Token == "" && len(c.Queries) == 0 && c.Observe == nil && c.ContentFormat == "" && c.Body == nil
+	return c.Code == "" && c.Path == "" && c.Token == "" && len(c.Queries) == 0 && c.Observe == nil && c.ContentFormat == "" && c.Body == nil && c.Etag == nil
 }
 
 func readBody(r io.ReadSeeker) []byte {
@@ -102,6 +103,11 @@ func ToJson(m *pool.Message, withBody, withToken bool) JsonCoapMessage {
 	if withToken {
 		token = m.Token().String()
 	}
+	var etag []byte
+	e, err := m.ETag()
+	if err == nil {
+		etag = e
+	}
 
 	msg := JsonCoapMessage{
 		Code:    m.Code().String(),
@@ -110,6 +116,7 @@ func ToJson(m *pool.Message, withBody, withToken bool) JsonCoapMessage {
 		Queries: queries,
 		Observe: obs,
 		Body:    body,
+		Etag:    etag,
 	}
 	return msg
 }

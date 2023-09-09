@@ -1004,6 +1004,9 @@ coapgateway:
     goPoolSize: 1600
     size: "2097152"
     maxIdleTime: "10m"
+  deviceTwin:
+    maxETagsCountInRequest:  8
+    useETags: false
 
 identitystore:
   # -- Enable identity service

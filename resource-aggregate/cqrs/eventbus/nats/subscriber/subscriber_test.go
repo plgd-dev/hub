@@ -15,6 +15,7 @@ import (
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/publisher"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/subscriber"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/test"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore"
 	"github.com/plgd-dev/hub/v2/test/config"
 	"github.com/stretchr/testify/require"
 )
@@ -65,6 +66,7 @@ type mockEvent struct {
 	isSnapshot   bool
 	timestamp    int64
 	Data         string
+	ETagI        []byte
 }
 
 func (e mockEvent) Version() uint64 {
@@ -85,6 +87,16 @@ func (e mockEvent) GroupID() string {
 
 func (e mockEvent) IsSnapshot() bool {
 	return e.isSnapshot
+}
+
+func (e mockEvent) ETag() *eventstore.ETagData {
+	if e.ETagI == nil {
+		return nil
+	}
+	return &eventstore.ETagData{
+		ETag:      e.ETagI,
+		Timestamp: e.timestamp,
+	}
 }
 
 func (e mockEvent) Timestamp() time.Time {

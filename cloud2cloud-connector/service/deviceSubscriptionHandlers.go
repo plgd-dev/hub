@@ -58,7 +58,7 @@ func (h deviceSubscriptionHandlers) OnDeviceSubscriberReconnectError(err error) 
 
 type DevicesSubscription struct {
 	ctx               context.Context
-	data              *kitSync.Map // //[deviceID]*deviceSubscription
+	data              *kitSync.Map // [deviceID]*deviceSubscription
 	rdClient          pb.GrpcGatewayClient
 	raClient          raService.ResourceAggregateClient
 	subscriber        *subscriber.Subscriber

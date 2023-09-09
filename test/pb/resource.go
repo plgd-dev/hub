@@ -113,6 +113,7 @@ func CleanUpResourceChanged(e *events.ResourceChanged, resetCorrelationID bool) 
 	}
 	e.EventMetadata = nil
 	e.OpenTelemetryCarrier = nil
+	e.Etag = nil
 	return e
 }
 
@@ -240,6 +241,7 @@ func CleanUpResourceRetrieved(e *events.ResourceRetrieved, resetCorrelationID bo
 	}
 	e.EventMetadata = nil
 	e.OpenTelemetryCarrier = nil
+	e.Etag = nil
 	return e
 }
 
