@@ -2,7 +2,6 @@ import { FC } from 'react'
 import { useIntl } from 'react-intl'
 
 import DevicesListPage from '@shared-ui/app/clientApp/Devices/List/DevicesListPage'
-import { messages as menuT } from '@shared-ui/components/Atomic/Menu/Menu.i18n'
 import FullPageLoader from '@shared-ui/components/Atomic/FullPageLoader'
 
 import { messages as t } from '@/containers/RemoteClients/RemoteClients.i18n'
