@@ -32,7 +32,7 @@ const RemoteClientDetailPage: FC<any> = () => {
                             },
                         ]}
                         detailLinkPrefix={`/remote-clients/${clientData?.id}`}
-                        title={`${_(t.remoteClients)} | ${clientData.clientName} | ${_(menuT.devices)}`}
+                        title={clientData.clientName}
                     />
                 )
             }}
