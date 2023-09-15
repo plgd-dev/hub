@@ -9,6 +9,7 @@ import { BrowserNotificationsContainer } from '@shared-ui/components/Atomic/Toas
 import { ToastContainer } from '@shared-ui/components/Atomic/Notification'
 import { useLocalStorage } from '@shared-ui/common/hooks'
 import light from '@shared-ui/components/Atomic/_theme/light'
+import siemens from '@shared-ui/components/Atomic/_theme/siemens'
 import { clientAppSettings, security } from '@shared-ui/common/services'
 
 import { AppContext } from '@/containers/App/AppContext'
@@ -57,7 +58,7 @@ const AppInner = (props: Props) => {
 
     return (
         <AppContext.Provider value={contextValue}>
-            <ThemeProvider theme={light}>
+            <ThemeProvider theme={siemens}>
                 <InitServices deviceStatusListener={deviceStatusListener} />
                 <Helmet defaultTitle={appConfig.appName} titleTemplate={`%s | ${appConfig.appName}`} />
                 <BrowserRouter>
