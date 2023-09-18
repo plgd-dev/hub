@@ -9,7 +9,6 @@ import { BrowserNotificationsContainer } from '@shared-ui/components/Atomic/Toas
 import { ToastContainer } from '@shared-ui/components/Atomic/Notification'
 import { useLocalStorage } from '@shared-ui/common/hooks'
 import light from '@shared-ui/components/Atomic/_theme/light'
-// import siemens from '@shared-ui/components/Atomic/_theme/siemens'
 import { clientAppSettings, security } from '@shared-ui/common/services'
 
 import { AppContext } from '@/containers/App/AppContext'
