@@ -237,7 +237,7 @@ const AddRemoteClientModal: FC<Props> = (props) => {
     const renderBody = () => (
         <form onSubmit={handleSubmit(onSubmit)}>
             {!isEditMode && (
-                <div style={{ marginBottom: '12px' }}>
+                <div style={{ marginBottom: '24px' }}>
                     <Alert>{_(t.certificateAcceptDescription)}</Alert>
                 </div>
             )}
