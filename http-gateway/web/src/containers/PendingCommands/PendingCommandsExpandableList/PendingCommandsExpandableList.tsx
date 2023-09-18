@@ -175,11 +175,12 @@ const PendingCommandsExpandableList: FC<Props> = ({ deviceId }) => {
                         {footerExpanded && (
                             <motion.div
                                 layout
-                                animate={{ opacity: 1 }}
+                                animate={{ opacity: 1, paddingTop: 12 }}
                                 exit={{
                                     opacity: 0,
+                                    paddingTop: 0,
                                 }}
-                                initial={{ opacity: 0 }}
+                                initial={{ opacity: 0, paddingTop: 0 }}
                                 transition={{
                                     duration: 0.3,
                                 }}

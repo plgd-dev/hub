@@ -145,7 +145,7 @@ const PendingCommandsList = forwardRef<PendingCommandsListRefType, Props>((props
                 i18n={{
                     search: _(t.search),
                 }}
-                paginationPortalTargetId='paginationPortalTarget'
+                paginationPortalTargetId={deviceId ? 'paginationPortalTarget' : undefined}
                 rowHeight={deviceId ? 40 : 54}
             />
 
