@@ -1,4 +1,4 @@
-import { FC, SyntheticEvent, useCallback, useEffect, useMemo, useState } from 'react'
+import React, { FC, SyntheticEvent, useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useIntl } from 'react-intl'
 import { useDispatch, useSelector } from 'react-redux'
@@ -16,6 +16,8 @@ import { getVersionMarkData } from '@shared-ui/components/Atomic/VersionMark/uti
 import { severities } from '@shared-ui/components/Atomic/VersionMark/constants'
 import { flushDevices } from '@shared-ui/app/clientApp/Devices/slice'
 import { reset } from '@shared-ui/app/clientApp/App/AppRest'
+import Logo from '@shared-ui/components/Layout/LeftPanel/components/Logo'
+import LogoSiemens from '@shared-ui/components/Layout/LeftPanel/components/LogoSiemens'
 
 import { Props } from './AppLayout.types'
 import { mather, menu, Routes } from '@/routes'
@@ -30,7 +32,7 @@ import { deleteAllRemoteClients } from '@/containers/RemoteClients/slice'
 import testId from '@/testId'
 
 const AppLayout: FC<Props> = (props) => {
-    const { buildInformation, collapsed, userData, signOutRedirect, setCollapsed } = props
+    const { buildInformation, collapsed, userData, signOutRedirect, setCollapsed, theme } = props
     const { formatMessage: _ } = useIntl()
     const location = useLocation()
     const dispatch = useDispatch()
@@ -119,6 +121,14 @@ const AppLayout: FC<Props> = (props) => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [signOutRedirect])
 
+    const getLogoByTheme = useCallback(() => {
+        if (theme === 'light') {
+            return <Logo height={32} width={147} />
+        } else if (theme === 'siemens') {
+            return <LogoSiemens width={180} height={48} />
+        }
+    }, [theme])
+
     return (
         <Layout
             content={<Routes />}
@@ -156,6 +166,7 @@ const AppLayout: FC<Props> = (props) => {
                 <LeftPanelWrapper
                     activeId={activeItem}
                     collapsed={collapsed}
+                    logo={getLogoByTheme()}
                     menu={menu}
                     onItemClick={handleItemClick}
                     onLocationChange={handleLocationChange}

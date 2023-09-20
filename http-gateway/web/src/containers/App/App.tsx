@@ -1,4 +1,4 @@
-import { useContext, useState, useEffect } from 'react'
+import { useContext, useState, useEffect, useMemo } from 'react'
 import { useIntl } from 'react-intl'
 import { AuthProvider, UserManager } from 'oidc-react'
 import { BrowserRouter } from 'react-router-dom'
@@ -7,6 +7,8 @@ import PageLoader from '@shared-ui/components/Atomic/PageLoader'
 import { security } from '@shared-ui/common/services/security'
 import { openTelemetry } from '@shared-ui/common/services/opentelemetry'
 import ConditionalWrapper from '@shared-ui/components/Atomic/ConditionalWrapper'
+import { useLocalStorage } from '@shared-ui/common/hooks'
+import { PlgdThemeType } from '@shared-ui/components/Atomic/_theme'
 
 import './App.scss'
 import { messages as t } from './App.i18n'
@@ -15,7 +17,6 @@ import { AppContext } from './AppContext'
 import { getAppWellKnownConfiguration } from '@/containers/App/AppRest'
 import AppInner from '@/containers/App/AppInner/AppInner'
 import AppLayout from '@/containers/App/AppLayout/AppLayout'
-import { useLocalStorage } from '@shared-ui/common/hooks'
 
 const App = (props: { mockApp: boolean }) => {
     const { formatMessage: _ } = useIntl()
@@ -24,6 +25,8 @@ const App = (props: { mockApp: boolean }) => {
     const [configError, setConfigError] = useState<any>(null)
 
     const [collapsed, setCollapsed] = useLocalStorage('leftPanelCollapsed', false)
+
+    const theme: PlgdThemeType = useMemo(() => 'siemens', [])
 
     openTelemetry.init('hub')
 
@@ -113,14 +116,14 @@ const App = (props: { mockApp: boolean }) => {
     if (props.mockApp) {
         return (
             <BrowserRouter>
-                <AppLayout buildInformation={wellKnownConfig?.buildInfo} collapsed={collapsed} setCollapsed={setCollapsed} />
+                <AppLayout buildInformation={wellKnownConfig?.buildInfo} collapsed={collapsed} setCollapsed={setCollapsed} theme={theme} />
             </BrowserRouter>
         )
     }
 
     return (
         <ConditionalWrapper condition={!props.mockApp} wrapper={Wrapper}>
-            <AppInner collapsed={collapsed} openTelemetry={openTelemetry} setCollapsed={setCollapsed} wellKnownConfig={wellKnownConfig} />
+            <AppInner collapsed={collapsed} openTelemetry={openTelemetry} setCollapsed={setCollapsed} wellKnownConfig={wellKnownConfig} theme={theme} />
         </ConditionalWrapper>
     )
 }

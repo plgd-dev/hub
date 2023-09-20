@@ -1,3 +1,5 @@
+import { PlgdThemeType } from '@shared-ui/components/Atomic/_theme'
+
 export type Props = {
     buildInformation: {
         buildDate: string
@@ -7,6 +9,9 @@ export type Props = {
         version: string
     }
     collapsed: boolean
+    setCollapsed: () => {}
+    signOutRedirect?: (data: any) => {}
+    theme: PlgdThemeType
     userData?: {
         profile?: {
             family_name?: string
@@ -14,6 +19,4 @@ export type Props = {
             name?: string
         }
     }
-    setCollapsed: () => {}
-    signOutRedirect?: (data: any) => {}
 }

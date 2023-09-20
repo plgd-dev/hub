@@ -8,8 +8,8 @@ import { InitServices } from '@shared-ui/common/services/init-services'
 import { BrowserNotificationsContainer } from '@shared-ui/components/Atomic/Toast'
 import { ToastContainer } from '@shared-ui/components/Atomic/Notification'
 import { useLocalStorage } from '@shared-ui/common/hooks'
-import light from '@shared-ui/components/Atomic/_theme/light'
 import { clientAppSettings, security } from '@shared-ui/common/services'
+import siemens from '@shared-ui/components/Atomic/_theme/siemens'
 
 import { AppContext } from '@/containers/App/AppContext'
 import appConfig from '@/config'
@@ -21,7 +21,7 @@ import { AppContextType } from '@/containers/App/AppContext.types'
 import AppLayout from '@/containers/App/AppLayout/AppLayout'
 
 const AppInner = (props: Props) => {
-    const { wellKnownConfig, openTelemetry, collapsed, setCollapsed } = props
+    const { wellKnownConfig, openTelemetry, collapsed, setCollapsed, theme } = props
     const { userData, userManager, signOutRedirect, isLoading } = useAuth()
 
     const [footerExpanded, setFooterExpanded] = useLocalStorage('footerPanelExpanded', false)
@@ -38,8 +38,9 @@ const AppInner = (props: Props) => {
             wellKnownConfig,
             telemetryWebTracer: openTelemetry.getWebTracer(),
             buildInformation: wellKnownConfig?.buildInfo,
+            theme,
         }),
-        [footerExpanded, collapsed, setCollapsed, setFooterExpanded, wellKnownConfig, openTelemetry]
+        [footerExpanded, collapsed, setCollapsed, setFooterExpanded, wellKnownConfig, openTelemetry, theme]
     )
 
     if (!userData || isLoading) {
@@ -57,7 +58,7 @@ const AppInner = (props: Props) => {
 
     return (
         <AppContext.Provider value={contextValue}>
-            <ThemeProvider theme={light}>
+            <ThemeProvider theme={siemens}>
                 <InitServices deviceStatusListener={deviceStatusListener} />
                 <Helmet defaultTitle={appConfig.appName} titleTemplate={`%s | ${appConfig.appName}`} />
                 <BrowserRouter>
@@ -66,6 +67,7 @@ const AppInner = (props: Props) => {
                         collapsed={collapsed}
                         setCollapsed={setCollapsed}
                         signOutRedirect={signOutRedirect}
+                        theme={theme}
                         userData={userData}
                     />
                     <Global styles={globalStyle(toastNotifications)} />
