@@ -123,7 +123,7 @@ const App = (props: { mockApp: boolean }) => {
 
     return (
         <ConditionalWrapper condition={!props.mockApp} wrapper={Wrapper}>
-            <AppInner collapsed={collapsed} openTelemetry={openTelemetry} setCollapsed={setCollapsed} wellKnownConfig={wellKnownConfig} theme={theme} />
+            <AppInner collapsed={collapsed} openTelemetry={openTelemetry} setCollapsed={setCollapsed} theme={theme} wellKnownConfig={wellKnownConfig} />
         </ConditionalWrapper>
     )
 }

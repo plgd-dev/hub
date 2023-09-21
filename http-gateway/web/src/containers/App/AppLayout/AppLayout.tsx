@@ -125,7 +125,7 @@ const AppLayout: FC<Props> = (props) => {
         if (theme === 'light') {
             return <Logo height={32} width={147} />
         } else if (theme === 'siemens') {
-            return <LogoSiemens width={180} height={48} />
+            return <LogoSiemens height={48} width={180} />
         }
     }, [theme])
 

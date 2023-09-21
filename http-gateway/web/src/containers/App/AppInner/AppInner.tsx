@@ -19,6 +19,7 @@ import { deviceStatusListener } from '../../Devices/websockets'
 import { globalStyle } from './AppInner.global.styles'
 import { AppContextType } from '@/containers/App/AppContext.types'
 import AppLayout from '@/containers/App/AppLayout/AppLayout'
+import light from '@shared-ui/components/Atomic/_theme/light'
 
 const AppInner = (props: Props) => {
     const { wellKnownConfig, openTelemetry, collapsed, setCollapsed, theme } = props
@@ -58,7 +59,7 @@ const AppInner = (props: Props) => {
 
     return (
         <AppContext.Provider value={contextValue}>
-            <ThemeProvider theme={siemens}>
+            <ThemeProvider theme={theme === 'light' ? light : siemens}>
                 <InitServices deviceStatusListener={deviceStatusListener} />
                 <Helmet defaultTitle={appConfig.appName} titleTemplate={`%s | ${appConfig.appName}`} />
                 <BrowserRouter>
