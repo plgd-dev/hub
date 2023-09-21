@@ -2,13 +2,14 @@ import { useContext, useState, useEffect, useMemo } from 'react'
 import { useIntl } from 'react-intl'
 import { AuthProvider, UserManager } from 'oidc-react'
 import { BrowserRouter } from 'react-router-dom'
+import { ThemeProvider } from '@emotion/react'
 
 import PageLoader from '@shared-ui/components/Atomic/PageLoader'
 import { security } from '@shared-ui/common/services/security'
 import { openTelemetry } from '@shared-ui/common/services/opentelemetry'
 import ConditionalWrapper from '@shared-ui/components/Atomic/ConditionalWrapper'
 import { useLocalStorage } from '@shared-ui/common/hooks'
-import { PlgdThemeType } from '@shared-ui/components/Atomic/_theme'
+import { getTheme, PlgdThemeType } from '@shared-ui/components/Atomic/_theme'
 
 import './App.scss'
 import { messages as t } from './App.i18n'
@@ -116,7 +117,9 @@ const App = (props: { mockApp: boolean }) => {
     if (props.mockApp) {
         return (
             <BrowserRouter>
-                <AppLayout buildInformation={wellKnownConfig?.buildInfo} collapsed={collapsed} setCollapsed={setCollapsed} theme={theme} />
+                <ThemeProvider theme={getTheme(theme)}>
+                    <AppLayout buildInformation={wellKnownConfig?.buildInfo} collapsed={collapsed} mockApp={true} setCollapsed={setCollapsed} theme={theme} />
+                </ThemeProvider>
             </BrowserRouter>
         )
     }

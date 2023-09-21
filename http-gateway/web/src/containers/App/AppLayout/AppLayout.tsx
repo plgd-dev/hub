@@ -32,7 +32,7 @@ import { deleteAllRemoteClients } from '@/containers/RemoteClients/slice'
 import testId from '@/testId'
 
 const AppLayout: FC<Props> = (props) => {
-    const { buildInformation, collapsed, userData, signOutRedirect, setCollapsed, theme } = props
+    const { buildInformation, collapsed, mockApp, userData, signOutRedirect, setCollapsed, theme } = props
     const { formatMessage: _ } = useIntl()
     const location = useLocation()
     const dispatch = useDispatch()
@@ -96,7 +96,7 @@ const AppLayout: FC<Props> = (props) => {
     )
 
     const logout = useCallback(() => {
-        if (storedRemoteStore.remoteClients.length) {
+        if (storedRemoteStore.remoteClients.length && !mockApp) {
             const promises = storedRemoteStore.remoteClients.map((remoteClient) => reset(remoteClient.clientUrl))
 
             Promise.all(promises)

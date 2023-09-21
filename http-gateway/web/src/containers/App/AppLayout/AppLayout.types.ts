@@ -9,6 +9,7 @@ export type Props = {
         version: string
     }
     collapsed: boolean
+    mockApp?: boolean
     setCollapsed: () => {}
     signOutRedirect?: (data: any) => {}
     theme: PlgdThemeType
