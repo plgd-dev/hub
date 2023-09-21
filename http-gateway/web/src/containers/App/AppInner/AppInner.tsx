@@ -10,6 +10,7 @@ import { ToastContainer } from '@shared-ui/components/Atomic/Notification'
 import { useLocalStorage } from '@shared-ui/common/hooks'
 import { clientAppSettings, security } from '@shared-ui/common/services'
 import siemens from '@shared-ui/components/Atomic/_theme/siemens'
+import light from '@shared-ui/components/Atomic/_theme/light'
 
 import { AppContext } from '@/containers/App/AppContext'
 import appConfig from '@/config'
@@ -19,7 +20,6 @@ import { deviceStatusListener } from '../../Devices/websockets'
 import { globalStyle } from './AppInner.global.styles'
 import { AppContextType } from '@/containers/App/AppContext.types'
 import AppLayout from '@/containers/App/AppLayout/AppLayout'
-import light from '@shared-ui/components/Atomic/_theme/light'
 
 const AppInner = (props: Props) => {
     const { wellKnownConfig, openTelemetry, collapsed, setCollapsed, theme } = props
