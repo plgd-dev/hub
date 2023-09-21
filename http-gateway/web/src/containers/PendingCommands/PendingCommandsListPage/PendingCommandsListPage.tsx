@@ -197,7 +197,7 @@ const PendingCommandsListPage = () => {
             title={_(menuT.pendingCommands)}
         >
             {domReady && ReactDOM.createPortal(<Breadcrumbs items={breadcrumbs} />, document.querySelector('#breadcrumbsPortalTarget') as Element)}
-            <PendingCommandsList columns={columns} onLoading={setLoading} ref={pendingCommandsListRef} />
+            <PendingCommandsList columns={columns} onLoading={setLoading} ref={pendingCommandsListRef} isPage={true} />
         </PageLayout>
     )
 }

@@ -27,8 +27,6 @@ const PendingCommandsExpandableList: FC<Props> = ({ deviceId }) => {
 
     const pendingCommandsListRef = useRef<PendingCommandsListRefType>(null)
 
-    console.log(pendingCommandsListRef)
-
     useEffect(() => {
         setDomReady(true)
         const timeout = setInterval(() => {

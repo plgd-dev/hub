@@ -12,7 +12,7 @@ const PendingCommandDetailsModal: FC<Props> = ({ commandType, onClose, content }
 
     const renderBody = () => (
         <div className='json-object-box'>
-            <Editor disabled={true} height='auto' json={content} />
+            <Editor disabled={true} height='300px' json={content} />
         </div>
     )
 

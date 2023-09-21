@@ -23,7 +23,7 @@ import { ConfirmModalData, ModalData, PendingCommandsListRefType, Props } from '
 import notificationId from '@/notificationId'
 
 const PendingCommandsList = forwardRef<PendingCommandsListRefType, Props>((props, ref) => {
-    const { columns, onLoading, embedded, deviceId } = props
+    const { columns, onLoading, embedded, deviceId, isPage } = props
     const { formatMessage: _ } = useIntl()
 
     const { data, loading, error } = usePendingCommandsList(deviceId)
@@ -132,7 +132,7 @@ const PendingCommandsList = forwardRef<PendingCommandsListRefType, Props>((props
             <Table
                 autoHeight={!deviceId}
                 columns={columns}
-                data={data || []}
+                data={(isPage ? data.slice(0, 10) : data) || []}
                 defaultPageSize={embedded ? EMBEDDED_PENDING_COMMANDS_DEFAULT_PAGE_SIZE : PENDING_COMMANDS_DEFAULT_PAGE_SIZE}
                 defaultSortBy={[
                     {
@@ -140,13 +140,13 @@ const PendingCommandsList = forwardRef<PendingCommandsListRefType, Props>((props
                         desc: true,
                     },
                 ]}
-                globalSearch={!deviceId}
-                height={deviceId ? 350 : undefined}
+                globalSearch={!isPage}
+                height={isPage ? undefined : 350}
                 i18n={{
                     search: _(t.search),
                 }}
-                paginationPortalTargetId={deviceId ? 'paginationPortalTarget' : undefined}
-                rowHeight={deviceId ? 40 : 54}
+                paginationPortalTargetId={isPage ? 'paginationPortalTarget' : undefined}
+                rowHeight={!isPage ? 40 : 54}
             />
 
             <PendingCommandDetailsModal {...detailsModalData} onClose={onCloseViewModal} />

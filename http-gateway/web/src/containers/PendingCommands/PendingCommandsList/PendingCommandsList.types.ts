@@ -16,7 +16,8 @@ export type ConfirmModalData = {
 
 export type Props = {
     columns: any
-    embedded?: boolean
     deviceId?: string
+    embedded?: boolean
+    isPage?: boolean
     onLoading?: (loadingPendingCommands: boolean) => void
 }
