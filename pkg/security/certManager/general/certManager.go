@@ -90,8 +90,9 @@ func New(config Config, fileWatcher *fsnotify.Watcher, logger log.Logger) (*Cert
 			removeFilesOnError.Execute()
 			return nil, fmt.Errorf("cannot watch CAPool(%v): %w", ca, err)
 		}
+		caToRemove := ca
 		removeFilesOnError.AddFunc(func() {
-			_ = c.fileWatcher.Remove(ca)
+			_ = c.fileWatcher.Remove(caToRemove)
 		})
 	}
 	if config.CertFile != "" {

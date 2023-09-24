@@ -76,6 +76,11 @@ data:
             documentLimit: {{ .clients.storage.mongoDB.bulkWrite.documentLimit  }}
       {{- include "plgd-hub.openTelemetryExporterConfig" (list $ $cert ) | nindent 6 }}
     signer:
+    {{- if .signer.caPool }}
+      caPool: {{ .signer.caPool | quote }}
+    {{- else if $.Values.certificateauthority.ca.ca }}
+      caPool: {{ printf "%s/%s" $.Values.certificateauthority.ca.volume.mountPath $.Values.certificateauthority.ca.ca | quote }}
+    {{- end }}
       certFile: {{ .signer.certFile | default ( printf "%s/%s" $.Values.certificateauthority.ca.volume.mountPath $.Values.certificateauthority.ca.cert ) | quote }}
       keyFile: {{ .signer.keyFile | default ( printf "%s/%s" $.Values.certificateauthority.ca.volume.mountPath $.Values.certificateauthority.ca.key ) | quote }}
       validFrom: {{ .signer.validFrom | quote }}

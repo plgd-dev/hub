@@ -83,11 +83,12 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 	}
 	closerFn.AddFunc(closeStore)
 
-	ca, err := grpcService.NewCertificateAuthorityServer(config.APIs.GRPC.Authorization.OwnerClaim, config.HubID, config.Signer, dbStorage, logger)
+	ca, err := grpcService.NewCertificateAuthorityServer(config.APIs.GRPC.Authorization.OwnerClaim, config.HubID, config.Signer, dbStorage, fileWatcher, logger)
 	if err != nil {
 		closerFn.Execute()
-		return nil, fmt.Errorf("cannot create open telemetry collector client: %w", err)
+		return nil, fmt.Errorf("cannot create grpc certificate authority server: %w", err)
 	}
+	closerFn.AddFunc(ca.Close)
 	httpValidator, err := validator.New(ctx, config.APIs.GRPC.Authorization.Config, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		closerFn.Execute()

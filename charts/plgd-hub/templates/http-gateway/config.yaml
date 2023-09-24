@@ -64,6 +64,7 @@ data:
       {{- include "plgd-hub.openTelemetryExporterConfig" (list $ $httpGatewayCertPath) | nindent 6 }}
     ui:
       enabled: {{ .ui.enabled }}
+      {{- if .ui.enabled  }}
       directory: {{ .ui.directory | quote }}
       webConfiguration:
         httpGatewayAddress: {{ .ui.webConfiguration.httpGatewayAddress | default ( printf "https://%s" ( include "plgd-hub.httpgateway.apiDomain" $)) | quote }}
@@ -106,4 +107,5 @@ data:
           providerName: {{ .name | quote }}
           {{- end }}
         {{- end }}
+      {{- end }}
 {{- end }}
