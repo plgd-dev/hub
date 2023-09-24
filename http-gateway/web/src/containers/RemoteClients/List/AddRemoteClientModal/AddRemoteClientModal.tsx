@@ -68,6 +68,7 @@ const AddRemoteClientModal: FC<Props> = (props) => {
         control,
         trigger,
         setValue,
+        resetField,
     } = useForm<Inputs>({
         mode: 'all',
         reValidateMode: 'onSubmit',
@@ -117,6 +118,8 @@ const AddRemoteClientModal: FC<Props> = (props) => {
 
         finalData && onFormSubmit(finalData)
         setClientInformation(undefined)
+
+        reset()
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [clientInformation, getValues])
 
