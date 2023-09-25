@@ -29,6 +29,8 @@ type iterator struct {
 	err         error
 }
 
+const errFmtDataIsNotStringType = "invalid data['%v'] type ('%T'), expected string type"
+
 func newIterator(iter *mongo.Cursor, queryResolver *queryResolver, dataUnmarshaler UnmarshalerFunc, logDebugfFunc LogDebugfFunc) *iterator {
 	return &iterator{
 		queryResolver:   queryResolver,
@@ -56,12 +58,12 @@ func (i *iterator) parseDocument() bool {
 	}
 	i.groupID, ok = doc[groupIDKey].(string)
 	if !ok {
-		i.err = fmt.Errorf("invalid data, %v is not a string", groupIDKey)
+		i.err = fmt.Errorf(errFmtDataIsNotStringType, groupIDKey, doc[groupIDKey])
 		return false
 	}
 	i.aggregateID, ok = doc[aggregateIDKey].(string)
 	if !ok {
-		i.err = fmt.Errorf("invalid data, %v is not a string", aggregateIDKey)
+		i.err = fmt.Errorf(errFmtDataIsNotStringType, aggregateIDKey, doc[aggregateIDKey])
 		return false
 	}
 
@@ -419,11 +421,11 @@ func (s *EventStore) LoadDeviceMetadataByServiceIDs(ctx context.Context, service
 		}
 		groupID, ok := doc[groupIDKey].(string)
 		if !ok {
-			return nil, fmt.Errorf("invalid data, %v is not a string", groupIDKey)
+			return nil, fmt.Errorf(errFmtDataIsNotStringType, groupIDKey, doc[groupIDKey])
 		}
 		aggregateID, ok := doc[serviceIDKey].(string)
 		if !ok {
-			return nil, fmt.Errorf("invalid data, %v is not a string", aggregateIDKey)
+			return nil, fmt.Errorf(errFmtDataIsNotStringType, aggregateIDKey, doc[serviceIDKey])
 		}
 		ret = append(ret, DeviceDocumentMetadata{
 			DeviceID:  groupID,

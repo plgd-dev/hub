@@ -595,6 +595,11 @@ func (s *Service) createServices(fileWatcher *fsnotify.Watcher, logger log.Logge
 	})); err != nil {
 		return nil, setHandlerError(plgdtime.ResourceURI, err)
 	}
+	serviceStatus, err := newServiceStatus(s.instanceID, s.config.ServiceStatus.TimeToLive, s.raClient, logger)
+	if err != nil {
+		return nil, fmt.Errorf("cannot create service status: %w", err)
+	}
+
 	services, err := coapService.New(s.ctx, s.config.APIs.COAP.Config, m, fileWatcher, logger,
 		coapService.WithOnNewConnection(s.coapConnOnNew),
 		coapService.WithOnInactivityConnection(s.onInactivityConnection),
@@ -607,6 +612,6 @@ func (s *Service) createServices(fileWatcher *fsnotify.Watcher, logger log.Logge
 	if err != nil {
 		return nil, fmt.Errorf("cannot create coap-gateway service: %w", err)
 	}
-	services.Add(newServiceStatus(s.instanceID, s.config.ServiceStatus.TimeToLive, s.raClient, logger))
+	services.Add(serviceStatus)
 	return services, err
 }

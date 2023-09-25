@@ -533,12 +533,9 @@ func (e *ResourceStateSnapshotTakenForCommand) confirmResourceCreateRequest(ctx 
 	return []eventstore.Event{&rc}, nil
 }
 
-func (e *ResourceStateSnapshotTakenForCommand) CancelPendingCommandsRequest(ctx context.Context, req *commands.CancelPendingCommandsRequest, newVersion uint64) ([]eventstore.Event, error) {
-	if req.GetCommandMetadata() == nil {
-		return nil, status.Errorf(codes.InvalidArgument, errInvalidCommandMetadata)
-	}
-	correlationIdFilter := strings.MakeSet(req.GetCorrelationIdFilter()...)
+func (e *ResourceStateSnapshotTakenForCommand) cancelResourceCreatePendings(ctx context.Context, req *commands.CancelPendingCommandsRequest, newVersion uint64) []eventstore.Event {
 	events := make([]eventstore.Event, 0, 4)
+	correlationIdFilter := strings.MakeSet(req.GetCorrelationIdFilter()...)
 	for _, event := range e.GetResourceCreatePendings() {
 		if len(correlationIdFilter) != 0 && !correlationIdFilter.HasOneOf(event.GetAuditContext().GetCorrelationId()) {
 			continue
@@ -554,6 +551,12 @@ func (e *ResourceStateSnapshotTakenForCommand) CancelPendingCommandsRequest(ctx 
 			events = append(events, ev...)
 		}
 	}
+	return events
+}
+
+func (e *ResourceStateSnapshotTakenForCommand) cancelResourceUpdatePendings(ctx context.Context, req *commands.CancelPendingCommandsRequest, newVersion uint64) []eventstore.Event {
+	events := make([]eventstore.Event, 0, 4)
+	correlationIdFilter := strings.MakeSet(req.GetCorrelationIdFilter()...)
 	for _, event := range e.GetResourceUpdatePendings() {
 		if len(correlationIdFilter) != 0 && !correlationIdFilter.HasOneOf(event.GetAuditContext().GetCorrelationId()) {
 			continue
@@ -569,6 +572,12 @@ func (e *ResourceStateSnapshotTakenForCommand) CancelPendingCommandsRequest(ctx 
 			events = append(events, ev...)
 		}
 	}
+	return events
+}
+
+func (e *ResourceStateSnapshotTakenForCommand) cancelResourceRetrievePendings(ctx context.Context, req *commands.CancelPendingCommandsRequest, newVersion uint64) []eventstore.Event {
+	events := make([]eventstore.Event, 0, 4)
+	correlationIdFilter := strings.MakeSet(req.GetCorrelationIdFilter()...)
 	for _, event := range e.GetResourceRetrievePendings() {
 		if len(correlationIdFilter) != 0 && !correlationIdFilter.HasOneOf(event.GetAuditContext().GetCorrelationId()) {
 			continue
@@ -584,6 +593,12 @@ func (e *ResourceStateSnapshotTakenForCommand) CancelPendingCommandsRequest(ctx 
 			events = append(events, ev...)
 		}
 	}
+	return events
+}
+
+func (e *ResourceStateSnapshotTakenForCommand) cancelResourceDeletePendings(ctx context.Context, req *commands.CancelPendingCommandsRequest, newVersion uint64) []eventstore.Event {
+	events := make([]eventstore.Event, 0, 4)
+	correlationIdFilter := strings.MakeSet(req.GetCorrelationIdFilter()...)
 	for _, event := range e.GetResourceDeletePendings() {
 		if len(correlationIdFilter) != 0 && !correlationIdFilter.HasOneOf(event.GetAuditContext().GetCorrelationId()) {
 			continue
@@ -599,6 +614,17 @@ func (e *ResourceStateSnapshotTakenForCommand) CancelPendingCommandsRequest(ctx 
 			events = append(events, ev...)
 		}
 	}
+	return events
+}
+
+func (e *ResourceStateSnapshotTakenForCommand) CancelPendingCommandsRequest(ctx context.Context, req *commands.CancelPendingCommandsRequest, newVersion uint64) ([]eventstore.Event, error) {
+	if req.GetCommandMetadata() == nil {
+		return nil, status.Errorf(codes.InvalidArgument, errInvalidCommandMetadata)
+	}
+	events := e.cancelResourceCreatePendings(ctx, req, newVersion)
+	events = append(events, e.cancelResourceUpdatePendings(ctx, req, newVersion+uint64(len(events)))...)
+	events = append(events, e.cancelResourceRetrievePendings(ctx, req, newVersion+uint64(len(events)))...)
+	events = append(events, e.cancelResourceDeletePendings(ctx, req, newVersion+uint64(len(events)))...)
 	if len(events) == 0 {
 		return nil, status.Errorf(codes.NotFound, "cannot find commands with correlationID(%v)", req.GetCorrelationIdFilter())
 	}

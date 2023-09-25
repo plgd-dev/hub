@@ -675,4 +675,5 @@ message UpdateServiceMetadataRequest {
 }
 
 message UpdateServiceMetadataResponse {
+    int64 online_valid_until = 1;  // unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when service is considered as expired. 0 means forever.
 }

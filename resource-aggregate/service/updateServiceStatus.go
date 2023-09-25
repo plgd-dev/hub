@@ -19,7 +19,10 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-const ServiceUserID = "x.plgd.dev.service.user"
+const (
+	ServiceUserID               = "x.plgd.dev.service.user"
+	errFmtUpdateServiceMetadata = "cannot update service metadata: %w"
+)
 
 func validateUpdateServiceMetadata(request *commands.UpdateServiceMetadataRequest) error {
 	if request.GetUpdate() == nil {
@@ -75,20 +78,29 @@ func (r RequestHandler) UpdateServiceMetadata(ctx context.Context, request *comm
 
 	aggregate, err := NewAggregate(resID, r.config.Clients.Eventstore.SnapshotThreshold, r.eventstore, NewServicesMetadataFactoryModel(ServiceUserID, ServiceUserID, r.config.HubID), cqrsAggregate.NewDefaultRetryFunc(r.config.Clients.Eventstore.ConcurrencyExceptionMaxRetry))
 	if err != nil {
-		return nil, log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "cannot update services metadata: %v", err))
+		return nil, log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.InvalidArgument, errFmtUpdateServiceMetadata, err))
 	}
 
 	publishEvents, err := aggregate.UpdateServiceMetadata(ctx, request)
 	if err != nil {
-		return nil, log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "cannot update services metadata: %v", err))
+		return nil, log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.InvalidArgument, errFmtUpdateServiceMetadata, err))
 	}
 
+	var online_valid_until int64
 	for _, e := range publishEvents {
 		if ev, ok := e.(*events.ServicesMetadataUpdated); ok {
+			for _, s := range ev.GetStatus().GetOnline() {
+				if s.GetId() == request.GetStatus().GetId() {
+					online_valid_until = s.GetOnlineValidUntil()
+					break
+				}
+			}
 			r.serviceStatus.SetOfflineServices(ev.GetStatus().GetOffline())
 		}
 	}
-	return &commands.UpdateServiceMetadataResponse{}, nil
+	return &commands.UpdateServiceMetadataResponse{
+		OnlineValidUntil: online_valid_until,
+	}, nil
 }
 
 type ServiceStatus struct {
@@ -150,12 +162,12 @@ func (s *ServiceStatus) task() {
 	ctx := context.Background()
 	aggregate, err := NewAggregate(resID, s.config.Clients.Eventstore.SnapshotThreshold, s.eventstore, NewServicesMetadataFactoryModel(ServiceUserID, ServiceUserID, s.config.HubID), cqrsAggregate.NewDefaultRetryFunc(s.config.Clients.Eventstore.ConcurrencyExceptionMaxRetry))
 	if err != nil {
-		s.logger.Errorf("cannot update services metadata: %v", err)
+		s.logger.Errorf(errFmtUpdateServiceMetadata, err)
 	}
 	for _, off := range offlineServices {
 		err := s.handleOfflineService(ctx, aggregate, off)
 		if err != nil {
-			s.logger.Errorf("cannot handle offline service %v: %v", off.GetId(), err)
+			s.logger.Errorf("cannot handle offline service %v: %w", off.GetId(), err)
 		} else {
 			s.offlineServices.Delete(off.GetId())
 			s.logger.Infof("all devices associated with offline service %v have been marked as offline", off.GetId())
