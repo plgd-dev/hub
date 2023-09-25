@@ -22,13 +22,6 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-/*
-type EventStore interface {
-	cqrsEventStore.EventStore
-	cqrsMaintenance.EventStore
-}
-*/
-
 func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logger log.Logger) (*service.Service, error) {
 	otelClient, err := otelClient.New(ctx, config.Clients.OpenTelemetryCollector, "resource-aggregate", fileWatcher, logger)
 	if err != nil {

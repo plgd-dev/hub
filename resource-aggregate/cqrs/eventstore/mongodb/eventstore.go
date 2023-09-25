@@ -278,13 +278,11 @@ func makeDBETag(etag *eventstore.ETagData) bson.M {
 }
 
 func tryToSetServiceID(doc bson.M, events []eventstore.Event) bson.M {
-	var serviceID string
-	var ok bool
 	for _, e := range events {
-		serviceID, ok = e.ServiceID()
-	}
-	if ok {
-		doc[serviceIDKey] = serviceID
+		serviceID, ok := e.ServiceID()
+		if ok {
+			doc[serviceIDKey] = serviceID
+		}
 	}
 	return doc
 }

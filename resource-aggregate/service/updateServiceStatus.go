@@ -86,12 +86,12 @@ func (r RequestHandler) UpdateServiceMetadata(ctx context.Context, request *comm
 		return nil, log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.InvalidArgument, errFmtUpdateServiceMetadata, err))
 	}
 
-	var online_valid_until int64
+	var onlineValidUntil int64
 	for _, e := range publishEvents {
 		if ev, ok := e.(*events.ServicesMetadataUpdated); ok {
 			for _, s := range ev.GetStatus().GetOnline() {
 				if s.GetId() == request.GetStatus().GetId() {
-					online_valid_until = s.GetOnlineValidUntil()
+					onlineValidUntil = s.GetOnlineValidUntil()
 					break
 				}
 			}
@@ -99,7 +99,7 @@ func (r RequestHandler) UpdateServiceMetadata(ctx context.Context, request *comm
 		}
 	}
 	return &commands.UpdateServiceMetadataResponse{
-		OnlineValidUntil: online_valid_until,
+		OnlineValidUntil: onlineValidUntil,
 	}, nil
 }
 
