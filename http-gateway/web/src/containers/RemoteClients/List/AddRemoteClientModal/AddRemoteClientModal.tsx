@@ -68,7 +68,6 @@ const AddRemoteClientModal: FC<Props> = (props) => {
         control,
         trigger,
         setValue,
-        resetField,
     } = useForm<Inputs>({
         mode: 'all',
         reValidateMode: 'onSubmit',
