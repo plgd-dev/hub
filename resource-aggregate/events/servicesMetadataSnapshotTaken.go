@@ -229,7 +229,11 @@ func (d *ServicesMetadataSnapshotTaken) confirmOfflineServices(ctx context.Conte
 		AuditContext:         ac,
 	}
 	d.EventMetadata = em
-	return []eventstore.Event{d}, nil
+	snapshot, ok := d.TakeSnapshot(em.GetVersion())
+	if !ok {
+		return nil, fmt.Errorf("cannot take snapshot")
+	}
+	return []eventstore.Event{snapshot}, nil
 }
 
 func (d *ServicesMetadataSnapshotTakenForCommand) updateServiceMetadataRequest(ctx context.Context, req *commands.UpdateServiceMetadataRequest, newVersion uint64) ([]eventstore.Event, error) {

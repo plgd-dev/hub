@@ -431,6 +431,7 @@ type MockEvent struct {
 	DataI        []byte `bson:"data"`
 	TimestampI   int64  `bson:"timestamp"`
 	ETagI        []byte `bson:"etag"`
+	ServiceIDI   string `bson:"serviceid"`
 }
 
 func (e MockEvent) Version() uint64 {
@@ -468,7 +469,7 @@ func (e MockEvent) Timestamp() time.Time {
 }
 
 func (e MockEvent) ServiceID() (string, bool) {
-	return "", false
+	return e.ServiceIDI, true
 }
 
 type MockEventHandler struct {
@@ -582,4 +583,49 @@ func (eh *MockEventHandler) Count() int {
 		}
 	}
 	return count
+}
+
+func MakeServicesMetadataSnapshotTaken(hubID string, servicesMetadataUpdated *events.ServicesMetadataUpdated, eventMetadata *events.EventMetadata) eventstore.EventUnmarshaler {
+	e := events.ServicesMetadataSnapshotTaken{
+		ServicesMetadataUpdated: servicesMetadataUpdated,
+		EventMetadata:           eventMetadata,
+	}
+	return eventstore.NewLoadedEvent(
+		e.GetEventMetadata().GetVersion(),
+		(&events.ServicesMetadataSnapshotTaken{}).EventType(),
+		commands.MakeServicesResourceUUID(hubID).String(),
+		hubID,
+		false,
+		time.Unix(0, e.GetEventMetadata().GetTimestamp()),
+		func(v interface{}) error {
+			if x, ok := v.(*events.ServicesMetadataSnapshotTaken); ok {
+				x.CopyData(&e)
+				return nil
+			}
+			return errCannotUnmarshalEvent
+		},
+	)
+}
+
+func MakeServicesMetadataUpdated(hubID string, servicesStatus *events.ServicesStatus, eventMetadata *events.EventMetadata, auditContext *commands.AuditContext) eventstore.EventUnmarshaler {
+	e := events.ServicesMetadataUpdated{
+		AuditContext:  auditContext,
+		EventMetadata: eventMetadata,
+		Status:        servicesStatus,
+	}
+	return eventstore.NewLoadedEvent(
+		e.GetEventMetadata().GetVersion(),
+		(&events.ServicesMetadataUpdated{}).EventType(),
+		commands.MakeServicesResourceUUID(hubID).String(),
+		hubID,
+		false,
+		time.Unix(0, e.GetEventMetadata().GetTimestamp()),
+		func(v interface{}) error {
+			if x, ok := v.(*events.ServicesMetadataUpdated); ok {
+				x.CopyData(&e)
+				return nil
+			}
+			return errCannotUnmarshalEvent
+		},
+	)
 }
