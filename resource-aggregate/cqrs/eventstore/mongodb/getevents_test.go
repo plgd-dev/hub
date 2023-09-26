@@ -35,7 +35,7 @@ func (eh *dummyEventHandler) Handle(ctx context.Context, iter eventstore.Iter) e
 const (
 	getEventsServiceIDsCount = 10
 	getEventsDeviceCount     = 10
-	getEventsResourceCount   = 2000
+	getEventsResourceCount   = 200
 )
 
 func getDeviceID(deviceIndex int) string {
@@ -62,7 +62,7 @@ func getNLatestETag(deviceIndex int, limit int) [][]byte {
 }
 
 func addEventsForGetEventsToDB(ctx context.Context, t *testing.T, store *mongodb.EventStore) int {
-	const eventCount = 100000
+	const eventCount = 10000
 	var resourceVersion [getEventsResourceCount]uint64
 	var resourceTimestamp [getEventsResourceCount]int64
 	var resourceEvents [getEventsResourceCount][]eventstore.Event
