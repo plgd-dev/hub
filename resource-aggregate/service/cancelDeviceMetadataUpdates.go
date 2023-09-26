@@ -64,7 +64,7 @@ func (r RequestHandler) CancelPendingMetadataUpdates(ctx context.Context, reques
 	}
 
 	return &commands.CancelPendingMetadataUpdatesResponse{
-		AuditContext:   commands.NewAuditContext(owner, "", owner),
+		AuditContext:   commands.NewAuditContext(userID, "", owner),
 		CorrelationIds: correlationIDs,
 	}, nil
 }

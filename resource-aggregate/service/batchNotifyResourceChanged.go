@@ -35,7 +35,7 @@ func (r RequestHandler) BatchNotifyResourceChanged(ctx context.Context, request 
 	if errors.ErrorOrNil() != nil {
 		return nil, grpc.ForwardErrorf(codes.InvalidArgument, "cannot process batch notify resource changed: %w", errors)
 	}
-	auditContext := commands.NewAuditContext(owner, "", owner)
+	auditContext := commands.NewAuditContext(userID, "", owner)
 	return &commands.BatchNotifyResourceChangedResponse{
 		AuditContext: auditContext,
 	}, nil

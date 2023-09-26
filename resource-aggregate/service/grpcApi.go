@@ -91,17 +91,22 @@ func (r RequestHandler) validateAccessToDeviceWithOwner(ctx context.Context, dev
 //
 // Function iterates over input slice of device IDs and returns owner name, and the intersection
 // of the input device IDs with owned devices.
-func (r RequestHandler) getOwnedDevices(ctx context.Context, deviceIDs []string) (string, []string, error) {
+func (r RequestHandler) getOwnedDevices(ctx context.Context, deviceIDs []string) (string, string, []string, error) {
+	userID, err := grpc.SubjectFromTokenMD(ctx)
+	if err != nil {
+		return "", "", nil, grpc.ForwardErrorf(codes.InvalidArgument, "invalid userID: %v", err)
+	}
+
 	owner, err := grpc.OwnerFromTokenMD(ctx, r.config.APIs.GRPC.Authorization.OwnerClaim)
 	if err != nil {
-		return "", nil, grpc.ForwardErrorf(codes.InvalidArgument, "invalid owner: %v", err)
+		return "", "", nil, grpc.ForwardErrorf(codes.InvalidArgument, "invalid owner: %v", err)
 	}
 
 	ownedDevices, err := r.getOwnerDevicesFunc(ctx, owner, deviceIDs)
 	if err != nil {
-		return "", nil, grpc.ForwardErrorf(codes.InvalidArgument, "cannot validate: %v", err)
+		return "", "", nil, grpc.ForwardErrorf(codes.InvalidArgument, "cannot validate: %v", err)
 	}
-	return owner, ownedDevices, nil
+	return userID, owner, ownedDevices, nil
 }
 
 func cannotValidateAccessError(err error) error {
@@ -126,7 +131,7 @@ func (r RequestHandler) PublishResourceLinks(ctx context.Context, request *comma
 	}
 
 	PublishEvents(r.publisher, owner, aggregate.DeviceID(), aggregate.ResourceID(), events, r.logger)
-	auditContext := commands.NewAuditContext(owner, "", owner)
+	auditContext := commands.NewAuditContext(userID, "", owner)
 	return newPublishResourceLinksResponse(events, aggregate.DeviceID(), auditContext), nil
 }
 
@@ -164,7 +169,7 @@ func (r RequestHandler) UnpublishResourceLinks(ctx context.Context, request *com
 	}
 
 	PublishEvents(r.publisher, owner, aggregate.DeviceID(), aggregate.ResourceID(), events, r.logger)
-	auditContext := commands.NewAuditContext(owner, "", owner)
+	auditContext := commands.NewAuditContext(userID, "", owner)
 
 	resp := newUnpublishResourceLinksResponse(events, aggregate.DeviceID(), auditContext)
 	for _, href := range resp.GetUnpublishedHrefs() {
@@ -226,7 +231,7 @@ func (r RequestHandler) NotifyResourceChanged(ctx context.Context, request *comm
 		return nil, err
 	}
 
-	auditContext := commands.NewAuditContext(owner, "", owner)
+	auditContext := commands.NewAuditContext(userID, "", owner)
 	return &commands.NotifyResourceChangedResponse{
 		AuditContext: auditContext,
 	}, nil

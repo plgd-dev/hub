@@ -63,6 +63,6 @@ func (r RequestHandler) ConfirmDeviceMetadataUpdate(ctx context.Context, request
 	PublishEvents(r.publisher, owner, aggregate.DeviceID(), aggregate.ResourceID(), events, r.logger)
 
 	return &commands.ConfirmDeviceMetadataUpdateResponse{
-		AuditContext: commands.NewAuditContext(owner, "", owner),
+		AuditContext: commands.NewAuditContext(userID, "", owner),
 	}, nil
 }

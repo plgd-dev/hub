@@ -74,7 +74,7 @@ func (r RequestHandler) CancelPendingCommands(ctx context.Context, request *comm
 	}
 
 	return &commands.CancelPendingCommandsResponse{
-		AuditContext:   commands.NewAuditContext(owner, "", owner),
+		AuditContext:   commands.NewAuditContext(userID, "", owner),
 		CorrelationIds: correlationIDs,
 	}, nil
 }

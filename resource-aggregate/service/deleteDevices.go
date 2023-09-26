@@ -32,7 +32,7 @@ func getUniqueDeviceIdsFromDeleteRequest(request *commands.DeleteDevicesRequest)
 // ids it filters out devices that are not owned by the user).
 func (r RequestHandler) DeleteDevices(ctx context.Context, request *commands.DeleteDevicesRequest) (*commands.DeleteDevicesResponse, error) {
 	deviceIds := getUniqueDeviceIdsFromDeleteRequest(request)
-	owner, ownedDevices, err := r.getOwnedDevices(ctx, deviceIds)
+	userID, owner, ownedDevices, err := r.getOwnedDevices(ctx, deviceIds)
 	if err != nil {
 		return nil, log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot validate user access: %v", err))
 	}
@@ -40,7 +40,7 @@ func (r RequestHandler) DeleteDevices(ctx context.Context, request *commands.Del
 	if len(ownedDevices) == 0 {
 		return &commands.DeleteDevicesResponse{
 			DeviceIds:    nil,
-			AuditContext: commands.NewAuditContext(owner, "", owner),
+			AuditContext: commands.NewAuditContext(userID, "", owner),
 		}, nil
 	}
 
@@ -55,6 +55,6 @@ func (r RequestHandler) DeleteDevices(ctx context.Context, request *commands.Del
 
 	return &commands.DeleteDevicesResponse{
 		DeviceIds:    ownedDevices,
-		AuditContext: commands.NewAuditContext(owner, "", owner),
+		AuditContext: commands.NewAuditContext(userID, "", owner),
 	}, nil
 }
