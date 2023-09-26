@@ -148,7 +148,6 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 	hubID := "hubID"
 
 	type cmd struct {
-		ctx        context.Context
 		cmd        aggregate.Command
 		newVersion uint64
 		wantErr    bool
@@ -162,7 +161,6 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 			name: "online,online,offline",
 			cmds: []cmd{
 				{
-					ctx: context.Background(),
 					cmd: &commands.UpdateDeviceMetadataRequest{
 						DeviceId: deviceID,
 						CommandMetadata: &commands.CommandMetadata{
@@ -196,7 +194,6 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 					},
 				},
 				{
-					ctx: context.Background(),
 					cmd: &commands.UpdateDeviceMetadataRequest{
 						DeviceId: deviceID,
 						CommandMetadata: &commands.CommandMetadata{
@@ -216,7 +213,6 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 				},
 				{
 					newVersion: 1,
-					ctx:        context.Background(),
 					cmd: &commands.UpdateDeviceMetadataRequest{
 						DeviceId: deviceID,
 						CommandMetadata: &commands.CommandMetadata{
@@ -253,7 +249,6 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 			name: "online-old-connection,online,offline-old-connection",
 			cmds: []cmd{
 				{
-					ctx: context.Background(),
 					cmd: &commands.UpdateDeviceMetadataRequest{
 						DeviceId: deviceID,
 						CommandMetadata: &commands.CommandMetadata{
@@ -285,7 +280,6 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 					},
 				},
 				{
-					ctx: context.Background(),
 					cmd: &commands.UpdateDeviceMetadataRequest{
 						DeviceId: deviceID,
 						CommandMetadata: &commands.CommandMetadata{
@@ -317,7 +311,6 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 				},
 				{
 					newVersion: 2,
-					ctx:        context.Background(),
 					cmd: &commands.UpdateDeviceMetadataRequest{
 						DeviceId: deviceID,
 						CommandMetadata: &commands.CommandMetadata{
@@ -341,7 +334,6 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 			cmds: []cmd{
 				{
 					newVersion: 1,
-					ctx:        context.Background(),
 					cmd: &commands.UpdateDeviceMetadataRequest{
 						DeviceId: deviceID,
 						CommandMetadata: &commands.CommandMetadata{
@@ -363,7 +355,6 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 			name: "online,twin-sync-started,twin-sync-started,twin-sync-finished,twin-sync-finished",
 			cmds: []cmd{
 				{
-					ctx: context.Background(),
 					cmd: &commands.UpdateDeviceMetadataRequest{
 						DeviceId: deviceID,
 						CommandMetadata: &commands.CommandMetadata{
@@ -394,7 +385,6 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 					},
 				},
 				{
-					ctx: context.Background(),
 					cmd: &commands.UpdateDeviceMetadataRequest{
 						DeviceId: deviceID,
 						CommandMetadata: &commands.CommandMetadata{
@@ -428,7 +418,6 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 					},
 				},
 				{
-					ctx: context.Background(),
 					cmd: &commands.UpdateDeviceMetadataRequest{
 						DeviceId: deviceID,
 						CommandMetadata: &commands.CommandMetadata{
@@ -446,7 +435,6 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 					newVersion: 2,
 				},
 				{
-					ctx: context.Background(),
 					cmd: &commands.UpdateDeviceMetadataRequest{
 						DeviceId: deviceID,
 						CommandMetadata: &commands.CommandMetadata{
@@ -482,7 +470,6 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 				},
 				{
 					newVersion: 4,
-					ctx:        context.Background(),
 					cmd: &commands.UpdateDeviceMetadataRequest{
 						DeviceId: deviceID,
 						CommandMetadata: &commands.CommandMetadata{
@@ -521,7 +508,6 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 			name: "online-old,twin-sync-started-old,online,twin-sync-started,twin-sync-finished-old,twin-sync-finished",
 			cmds: []cmd{
 				{
-					ctx: context.Background(),
 					cmd: &commands.UpdateDeviceMetadataRequest{
 						DeviceId: deviceID,
 						CommandMetadata: &commands.CommandMetadata{
@@ -552,7 +538,6 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 					},
 				},
 				{
-					ctx: context.Background(),
 					cmd: &commands.UpdateDeviceMetadataRequest{
 						DeviceId: deviceID,
 						CommandMetadata: &commands.CommandMetadata{
@@ -586,7 +571,6 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 					},
 				},
 				{
-					ctx: context.Background(),
 					cmd: &commands.UpdateDeviceMetadataRequest{
 						DeviceId: deviceID,
 						CommandMetadata: &commands.CommandMetadata{
@@ -617,7 +601,6 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 					},
 				},
 				{
-					ctx: context.Background(),
 					cmd: &commands.UpdateDeviceMetadataRequest{
 						DeviceId: deviceID,
 						CommandMetadata: &commands.CommandMetadata{
@@ -651,7 +634,6 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 					},
 				},
 				{
-					ctx: context.Background(),
 					cmd: &commands.UpdateDeviceMetadataRequest{
 						DeviceId: deviceID,
 						CommandMetadata: &commands.CommandMetadata{
@@ -669,7 +651,6 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 					newVersion: 3,
 				},
 				{
-					ctx: context.Background(),
 					cmd: &commands.UpdateDeviceMetadataRequest{
 						DeviceId: deviceID,
 						CommandMetadata: &commands.CommandMetadata{
@@ -689,7 +670,6 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 				},
 				{
 					newVersion: 3,
-					ctx:        context.Background(),
 					cmd: &commands.UpdateDeviceMetadataRequest{
 						DeviceId: deviceID,
 						CommandMetadata: &commands.CommandMetadata{
@@ -730,7 +710,7 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			e := events.NewDeviceMetadataSnapshotTakenForCommand(userID, userID, hubID)
 			for idx, cmd := range tt.cmds {
-				res, err := e.HandleCommand(cmd.ctx, cmd.cmd, cmd.newVersion)
+				res, err := e.HandleCommand(context.TODO(), cmd.cmd, cmd.newVersion)
 				if cmd.wantErr {
 					require.Error(t, err, "cmd: %v", idx)
 				} else {

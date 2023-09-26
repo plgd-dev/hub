@@ -69,17 +69,27 @@ func (s *ServicesStatus) CopyData(s1 *ServicesStatus) {
 	s.Offline = s1.GetOffline()
 }
 
-func (s *ServicesStatus) Equal(upd *ServicesStatus) bool {
-	if len(s.GetOnline()) != len(upd.GetOnline()) {
+func equalServicesStatuses(v1, v2 []*ServicesStatus_Status) bool {
+	if len(v1) != len(v2) {
 		return false
 	}
-	for idx := range s.GetOnline() {
-		if s.GetOnline()[idx].GetId() != upd.GetOnline()[idx].GetId() {
+	for idx := range v1 {
+		if v1[idx].GetId() != v2[idx].GetId() {
 			return false
 		}
-		if s.GetOnline()[idx].GetOnlineValidUntil() != upd.GetOnline()[idx].GetOnlineValidUntil() {
+		if v1[idx].GetOnlineValidUntil() != v2[idx].GetOnlineValidUntil() {
 			return false
 		}
+	}
+	return true
+}
+
+func (s *ServicesStatus) Equal(upd *ServicesStatus) bool {
+	if !equalServicesStatuses(s.GetOnline(), upd.GetOnline()) {
+		return false
+	}
+	if !equalServicesStatuses(s.GetOffline(), upd.GetOffline()) {
+		return false
 	}
 	return true
 }

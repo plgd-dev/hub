@@ -231,7 +231,6 @@ func TestServicesMetadataSnapshotTakenHandleCommand(t *testing.T) {
 	hubID := "hubID"
 
 	type cmd struct {
-		ctx        context.Context
 		cmd        aggregate.Command
 		newVersion uint64
 		wantErr    bool
@@ -246,7 +245,6 @@ func TestServicesMetadataSnapshotTakenHandleCommand(t *testing.T) {
 			name: "online",
 			cmds: []cmd{
 				{
-					ctx: context.Background(),
 					cmd: &commands.UpdateServiceMetadataRequest{
 						Update: &commands.UpdateServiceMetadataRequest_Status{
 							Status: &commands.ServiceStatus{
@@ -277,7 +275,6 @@ func TestServicesMetadataSnapshotTakenHandleCommand(t *testing.T) {
 			name: "online,online",
 			cmds: []cmd{
 				{
-					ctx: context.Background(),
 					cmd: &commands.UpdateServiceMetadataRequest{
 						Update: &commands.UpdateServiceMetadataRequest_Status{
 							Status: &commands.ServiceStatus{
@@ -304,7 +301,6 @@ func TestServicesMetadataSnapshotTakenHandleCommand(t *testing.T) {
 				},
 				{
 					sleep: time.Millisecond * 500,
-					ctx:   context.Background(),
 					cmd: &commands.UpdateServiceMetadataRequest{
 						Update: &commands.UpdateServiceMetadataRequest_Status{
 							Status: &commands.ServiceStatus{
@@ -335,7 +331,6 @@ func TestServicesMetadataSnapshotTakenHandleCommand(t *testing.T) {
 			name: "online,offline",
 			cmds: []cmd{
 				{
-					ctx: context.Background(),
 					cmd: &commands.UpdateServiceMetadataRequest{
 						Update: &commands.UpdateServiceMetadataRequest_Status{
 							Status: &commands.ServiceStatus{
@@ -362,7 +357,6 @@ func TestServicesMetadataSnapshotTakenHandleCommand(t *testing.T) {
 				},
 				{
 					sleep: time.Second,
-					ctx:   context.Background(),
 					cmd: &commands.UpdateServiceMetadataRequest{
 						Update: &commands.UpdateServiceMetadataRequest_Status{
 							Status: &commands.ServiceStatus{
@@ -397,7 +391,6 @@ func TestServicesMetadataSnapshotTakenHandleCommand(t *testing.T) {
 			name: "online,offline,online-fail",
 			cmds: []cmd{
 				{
-					ctx: context.Background(),
 					cmd: &commands.UpdateServiceMetadataRequest{
 						Update: &commands.UpdateServiceMetadataRequest_Status{
 							Status: &commands.ServiceStatus{
@@ -424,7 +417,6 @@ func TestServicesMetadataSnapshotTakenHandleCommand(t *testing.T) {
 				},
 				{
 					sleep: time.Second,
-					ctx:   context.Background(),
 					cmd: &commands.UpdateServiceMetadataRequest{
 						Update: &commands.UpdateServiceMetadataRequest_Status{
 							Status: &commands.ServiceStatus{
@@ -454,7 +446,6 @@ func TestServicesMetadataSnapshotTakenHandleCommand(t *testing.T) {
 					},
 				},
 				{
-					ctx: context.Background(),
 					cmd: &commands.UpdateServiceMetadataRequest{
 						Update: &commands.UpdateServiceMetadataRequest_Status{
 							Status: &commands.ServiceStatus{
@@ -472,7 +463,6 @@ func TestServicesMetadataSnapshotTakenHandleCommand(t *testing.T) {
 			name: "online,offline,confirmOffline",
 			cmds: []cmd{
 				{
-					ctx: context.Background(),
 					cmd: &commands.UpdateServiceMetadataRequest{
 						Update: &commands.UpdateServiceMetadataRequest_Status{
 							Status: &commands.ServiceStatus{
@@ -499,7 +489,6 @@ func TestServicesMetadataSnapshotTakenHandleCommand(t *testing.T) {
 				},
 				{
 					sleep: time.Second,
-					ctx:   context.Background(),
 					cmd: &commands.UpdateServiceMetadataRequest{
 						Update: &commands.UpdateServiceMetadataRequest_Status{
 							Status: &commands.ServiceStatus{
@@ -529,7 +518,6 @@ func TestServicesMetadataSnapshotTakenHandleCommand(t *testing.T) {
 					},
 				},
 				{
-					ctx: context.Background(),
 					cmd: &events.ConfirmOfflineServicesRequest{
 						Status: []*events.ServicesStatus_Status{
 							{
@@ -566,7 +554,7 @@ func TestServicesMetadataSnapshotTakenHandleCommand(t *testing.T) {
 				if cmd.sleep > 0 {
 					time.Sleep(cmd.sleep)
 				}
-				got, err := e.HandleCommand(cmd.ctx, cmd.cmd, cmd.newVersion)
+				got, err := e.HandleCommand(context.TODO(), cmd.cmd, cmd.newVersion)
 				if cmd.wantErr {
 					require.Error(t, err, "cmd: %v", idx)
 					return
