@@ -229,6 +229,10 @@ export const messages = defineMessages({
         id: 'devices.deviceWasUnregistered',
         defaultMessage: 'Device "{name}" was unregistered.',
     },
+    deviceWasRegistered: {
+        id: 'devices.deviceWasUnregistered',
+        defaultMessage: 'Device "{name}" was registered.',
+    },
     devicestatusChange: {
         id: 'devices.devicestatusChange',
         defaultMessage: 'Device status change',

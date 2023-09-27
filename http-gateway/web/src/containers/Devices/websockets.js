@@ -11,7 +11,7 @@ import { getDeviceApi } from './rest'
 import { messages as t } from './Devices.i18n'
 import notificationId from '@/notificationId'
 
-const { ONLINE, REGISTERED, UNREGISTERED } = devicesStatuses
+const { ONLINE, REGISTERED, UNREGISTERED, OFFLINE } = devicesStatuses
 const DEFAULT_NOTIFICATION_DELAY = 500
 
 const getDeviceIds = (deviceId, deviceRegistered, deviceUnregistered) => {
@@ -27,12 +27,24 @@ const getEventType = (deviceUnregistered) => (deviceUnregistered ? UNREGISTERED 
 const showToast = async (currentDeviceNotificationsEnabled, deviceId, status) => {
     if (status !== UNREGISTERED) {
         const { data: { name } = {} } = await getDeviceApi(deviceId)
-        const toastMessage = status === ONLINE ? t.deviceWentOnline : t.deviceWentOffline
+
+        const getToastMessage = () => {
+            switch (status) {
+                case ONLINE:
+                    return { message: t.deviceWentOnline, params: { name } }
+                case OFFLINE:
+                    return { message: t.deviceWentOffline, params: { name } }
+                case REGISTERED:
+                    return { message: t.deviceWasRegistered, params: { name } }
+                default:
+                    return `Device state: ${status}`
+            }
+        }
 
         Notification.info(
             {
                 title: t.devicestatusChange,
-                message: { message: toastMessage, params: { name } },
+                message: getToastMessage(),
             },
             {
                 variant: currentDeviceNotificationsEnabled ? 'toast' : 'notification',
@@ -52,12 +64,17 @@ export const deviceStatusListener = async (props) => {
     if (deviceMetadataUpdated || deviceRegistered || deviceUnregistered) {
         // const notificationsEnabled = isNotificationActive(DEVICES_STATUS_WS_KEY)(store.getState())
 
-        setTimeout(() => {
-            const { deviceId, connection: { status: deviceStatus } = {}, twinEnabled } = deviceMetadataUpdated || {}
-            const eventType = getEventType(deviceUnregistered)
-            const deviceIds = getDeviceIds(deviceId, deviceRegistered, deviceUnregistered)
-            const status = deviceStatus || eventType
+        const { deviceId, connection: { status: deviceStatus } = {}, twinEnabled } = deviceMetadataUpdated || {}
+        const eventType = getEventType(deviceUnregistered)
+        const status = deviceStatus || eventType
+        const deviceIds = getDeviceIds(deviceId, deviceRegistered, deviceUnregistered)
 
+        if ([REGISTERED, UNREGISTERED].includes(status)) {
+            // If the event was registered or unregistered, emit an event with the number to increment by
+            Emitter.emit(DEVICES_REGISTERED_UNREGISTERED_COUNT_EVENT_KEY, deviceIds.length)
+        }
+
+        setTimeout(() => {
             try {
                 deviceIds.forEach(async (deviceId) => {
                     // Emit an event: devices.status.{deviceId}
@@ -72,15 +89,11 @@ export const deviceStatusListener = async (props) => {
 
                         // show toast only if last change ( status ) is different from prev
                         if (!lastNotification || lastNotification.type !== `status-${status}`) {
-                            notifications.addNotification(
-                                {
-                                    deviceId,
-                                    type: `status-${status}`,
-                                },
-                                {
-                                    notificationId: notificationId.HUB_DEVICE_STATUS_LISTENER,
-                                }
-                            )
+                            notifications.addNotification({
+                                deviceId,
+                                type: `status-${status}`,
+                            })
+
                             // Get the notification state of a single device from redux store
                             const currentDeviceNotificationsEnabled = isNotificationActive(getDeviceNotificationKey(deviceId))(store.getState())
 
@@ -89,12 +102,6 @@ export const deviceStatusListener = async (props) => {
                     }
                 })
             } catch (error) {} // ignore error
-
-            // If the event was registered or unregistered, emit an event with the number to increment by
-            if ([REGISTERED].includes(status)) {
-                // Emit an event: things-registered-unregistered-count
-                Emitter.emit(DEVICES_REGISTERED_UNREGISTERED_COUNT_EVENT_KEY, deviceIds.length)
-            }
         }, DEFAULT_NOTIFICATION_DELAY)
     }
 }
