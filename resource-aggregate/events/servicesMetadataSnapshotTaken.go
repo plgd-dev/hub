@@ -17,7 +17,10 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-const eventTypeServicesMetadataSnapshotTaken = "servicesmetadatasnapshottaken"
+const (
+	eventTypeServicesMetadataSnapshotTaken = "servicesmetadatasnapshottaken"
+	writeCostAgainstRead                   = 10
+)
 
 func (d *ServicesMetadataSnapshotTaken) Version() uint64 {
 	return d.GetEventMetadata().GetVersion()
@@ -179,9 +182,23 @@ func (d *ServicesMetadataSnapshotTaken) updateStatus(ctx context.Context, req *c
 		}
 	}
 	key := req.GetStatus().GetId()
+
+	// When the processing time exceeds the timeToLive, we must extend the timeToLive.
+	// During processing, several tasks are performed: receiving requests, loading data from the database, and processing requests.
+	// Writing to the database is an expensive operation, so if the processing time is more than 10 times the timeToLive, we should extend it.
+	// During idle times, the processing time is typically around 10 milliseconds.
+	// Under heavy load, the processing time can increase to approximately 5 minutes.
+	timeToLive := time.Duration(req.GetStatus().GetTimeToLive())
+	if req.GetStatus().GetTimestamp() >= 0 {
+		processingTime := time.Since(pkgTime.Unix(0, req.GetStatus().GetTimestamp()))
+		if processingTime*writeCostAgainstRead > timeToLive {
+			timeToLive = processingTime * writeCostAgainstRead
+		}
+	}
+
 	online[key] = &ServicesStatus_Status{
 		Id:               req.GetStatus().GetId(),
-		OnlineValidUntil: now.Add(time.Duration(req.GetStatus().GetTimeToLive())).UnixNano(),
+		OnlineValidUntil: now.Add(timeToLive).UnixNano(),
 	}
 	delete(offline, key)
 

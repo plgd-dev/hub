@@ -127,8 +127,7 @@ func TestRequestHandlerPublishResource(t *testing.T) {
 		naClient.Close()
 	}()
 
-	serviceStatus, err := service.NewServiceStatus(config, eventstore, publisher, logger)
-	require.NoError(t, err)
+	serviceStatus := service.NewServiceStatus(config, eventstore, publisher, logger)
 	defer serviceStatus.Close()
 
 	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetOwnerDevices, serviceStatus, logger)
@@ -247,8 +246,7 @@ func TestRequestHandlerUnpublishResource(t *testing.T) {
 		naClient.Close()
 	}()
 
-	serviceStatus, err := service.NewServiceStatus(cfg, eventstore, publisher, logger)
-	require.NoError(t, err)
+	serviceStatus := service.NewServiceStatus(cfg, eventstore, publisher, logger)
 	defer serviceStatus.Close()
 
 	requestHandler := service.NewRequestHandler(cfg, eventstore, publisher, mockGetOwnerDevices, serviceStatus, logger)
@@ -337,8 +335,7 @@ func TestRequestHandlerNotifyResourceChanged(t *testing.T) {
 		naClient.Close()
 	}()
 
-	serviceStatus, err := service.NewServiceStatus(config, eventstore, publisher, logger)
-	require.NoError(t, err)
+	serviceStatus := service.NewServiceStatus(config, eventstore, publisher, logger)
 	defer serviceStatus.Close()
 
 	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetOwnerDevices, serviceStatus, logger)
@@ -439,8 +436,7 @@ func TestRequestHandlerUpdateResourceContent(t *testing.T) {
 		naClient.Close()
 	}()
 
-	serviceStatus, err := service.NewServiceStatus(config, eventstore, publisher, logger)
-	require.NoError(t, err)
+	serviceStatus := service.NewServiceStatus(config, eventstore, publisher, logger)
 	defer serviceStatus.Close()
 
 	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetOwnerDevices, serviceStatus, logger)
@@ -537,8 +533,7 @@ func TestRequestHandlerConfirmResourceUpdate(t *testing.T) {
 		naClient.Close()
 	}()
 
-	serviceStatus, err := service.NewServiceStatus(config, eventstore, publisher, logger)
-	require.NoError(t, err)
+	serviceStatus := service.NewServiceStatus(config, eventstore, publisher, logger)
 	defer serviceStatus.Close()
 
 	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetOwnerDevices, serviceStatus, logger)
@@ -632,8 +627,7 @@ func TestRequestHandlerRetrieveResource(t *testing.T) {
 		publisher.Close()
 		naClient.Close()
 	}()
-	serviceStatus, err := service.NewServiceStatus(config, eventstore, publisher, logger)
-	require.NoError(t, err)
+	serviceStatus := service.NewServiceStatus(config, eventstore, publisher, logger)
 	defer serviceStatus.Close()
 
 	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetOwnerDevices, serviceStatus, logger)
@@ -731,8 +725,7 @@ func TestRequestHandlerConfirmResourceRetrieve(t *testing.T) {
 		naClient.Close()
 	}()
 
-	serviceStatus, err := service.NewServiceStatus(config, eventstore, publisher, logger)
-	require.NoError(t, err)
+	serviceStatus := service.NewServiceStatus(config, eventstore, publisher, logger)
 	defer serviceStatus.Close()
 
 	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetOwnerDevices, serviceStatus, logger)
@@ -830,8 +823,7 @@ func TestRequestHandlerDeleteResource(t *testing.T) {
 		naClient.Close()
 	}()
 
-	serviceStatus, err := service.NewServiceStatus(config, eventstore, publisher, logger)
-	require.NoError(t, err)
+	serviceStatus := service.NewServiceStatus(config, eventstore, publisher, logger)
 	defer serviceStatus.Close()
 
 	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetOwnerDevices, serviceStatus, logger)
@@ -929,8 +921,7 @@ func TestRequestHandlerConfirmResourceDelete(t *testing.T) {
 		naClient.Close()
 	}()
 
-	serviceStatus, err := service.NewServiceStatus(config, eventstore, publisher, logger)
-	require.NoError(t, err)
+	serviceStatus := service.NewServiceStatus(config, eventstore, publisher, logger)
 	defer serviceStatus.Close()
 
 	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetOwnerDevices, serviceStatus, logger)
@@ -1028,8 +1019,7 @@ func TestRequestHandlerCreateResource(t *testing.T) {
 		naClient.Close()
 	}()
 
-	serviceStatus, err := service.NewServiceStatus(config, eventstore, publisher, logger)
-	require.NoError(t, err)
+	serviceStatus := service.NewServiceStatus(config, eventstore, publisher, logger)
 	defer serviceStatus.Close()
 
 	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetOwnerDevices, serviceStatus, logger)
@@ -1127,8 +1117,7 @@ func TestRequestHandlerConfirmResourceCreate(t *testing.T) {
 		naClient.Close()
 	}()
 
-	serviceStatus, err := service.NewServiceStatus(config, eventstore, publisher, logger)
-	require.NoError(t, err)
+	serviceStatus := service.NewServiceStatus(config, eventstore, publisher, logger)
 	defer serviceStatus.Close()
 
 	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetOwnerDevices, serviceStatus, logger)

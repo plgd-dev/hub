@@ -3,17 +3,18 @@ package service_test
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"sync"
 	"testing"
 	"time"
 
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/publisher"
 	natsTest "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/test"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore/mongodb"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/utils"
-	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/service"
 	raTest "github.com/plgd-dev/hub/v2/resource-aggregate/test"
 	"github.com/stretchr/testify/assert"
@@ -50,27 +51,51 @@ func TestNewServiceStatus(t *testing.T) {
 		naClient.Close()
 	}()
 
-	serviceStatus, err := service.NewServiceStatus(config, eventstore, publisher, logger)
-	require.NoError(t, err)
+	serviceStatus := service.NewServiceStatus(config, eventstore, publisher, logger)
 	defer serviceStatus.Close()
 
 	const num = 100
 	var wg sync.WaitGroup
-	wg.Add(100)
+	wg.Add(num)
+	chans := make([]chan service.UpdateServiceMetadataResponseChanData, num)
 	for i := 0; i < num; i++ {
 		time.Sleep(time.Millisecond)
+		chans[i] = make(chan service.UpdateServiceMetadataResponseChanData, 1)
 		go func(j int) {
 			defer wg.Done()
-			serviceStatus.SetOfflineServices([]*events.ServicesStatus_Status{{
-				Id: fmt.Sprintf("instanceId-%v", j),
-			}})
+			err := serviceStatus.ProcessRequest(service.UpdateServiceMetadataReqResp{
+				Request: &commands.UpdateServiceMetadataRequest{
+					Update: &commands.UpdateServiceMetadataRequest_Status{
+						Status: &commands.ServiceStatus{
+							Id: fmt.Sprintf("instanceId-%v", j),
+						},
+					},
+				},
+				ResponseChan: chans[j],
+			})
+			assert.NoError(t, err)
 		}(i)
 	}
 	wg.Wait()
-	for {
-		if serviceStatus.NumOfflineServices() == 0 {
+	cases := make([]reflect.SelectCase, len(chans)+1)
+	cases[0] = reflect.SelectCase{Dir: reflect.SelectRecv, Chan: reflect.ValueOf(ctx.Done())}
+	for i, ch := range chans {
+		cases[i+1] = reflect.SelectCase{Dir: reflect.SelectRecv, Chan: reflect.ValueOf(ch)}
+	}
+	for range chans {
+		chosen, value, ok := reflect.Select(cases)
+		if ok {
+			if chosen == 0 {
+				assert.Fail(t, "context canceled")
+			}
+			if chosen != 0 {
+				data := value.Interface().(service.UpdateServiceMetadataResponseChanData)
+				assert.NoError(t, data.Err)
+			}
+		}
+		if !ok {
+			assert.Fail(t, "channel closed")
 			break
 		}
-		time.Sleep(time.Millisecond * 500)
 	}
 }

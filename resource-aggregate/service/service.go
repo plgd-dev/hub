@@ -136,10 +136,7 @@ func NewService(ctx context.Context, config Config, fileWatcher *fsnotify.Watche
 	})
 	grpcServer.AddCloseFunc(ownerCache.Close)
 
-	serviceStatus, err := NewServiceStatus(config, eventStore, publisher, logger)
-	if err != nil {
-		return nil, closeGrpcServerOnError(fmt.Errorf("cannot create service status: %w", err))
-	}
+	serviceStatus := NewServiceStatus(config, eventStore, publisher, logger)
 	grpcServer.AddCloseFunc(serviceStatus.Close)
 
 	requestHandler := NewRequestHandler(config, eventStore, publisher, func(ctx context.Context, owner string, deviceIDs []string) ([]string, error) {

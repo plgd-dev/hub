@@ -201,8 +201,8 @@ func TestRequestHandlerCancelPendingCommands(t *testing.T) {
 	_, err = ag1.DeleteResource(ctx, testMakeDeleteResourceRequest(deviceID, resID1, correlationID3, 0))
 	require.NoError(t, err)
 
-	serviceStatus, err := service.NewServiceStatus(cfg, eventstore, publisher, logger)
-	require.NoError(t, err)
+	serviceStatus := service.NewServiceStatus(cfg, eventstore, publisher, logger)
+	defer serviceStatus.Close()
 
 	requestHandler := service.NewRequestHandler(cfg, eventstore, publisher, mockGetOwnerDevices, serviceStatus, logger)
 

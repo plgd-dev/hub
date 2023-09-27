@@ -237,8 +237,8 @@ func TestRequestHandlerCancelPendingMetadataUpdates(t *testing.T) {
 	_, err = ag.UpdateDeviceMetadata(context.Background(), testMakeUpdateDeviceMetadataRequest(deviceID, correlationID2, nil, newTwinEnabled(false), 0))
 	require.NoError(t, err)
 
-	serviceStatus, err := service.NewServiceStatus(cfg, eventstore, publisher, logger)
-	require.NoError(t, err)
+	serviceStatus := service.NewServiceStatus(cfg, eventstore, publisher, logger)
+	defer serviceStatus.Close()
 
 	requestHandler := service.NewRequestHandler(cfg, eventstore, publisher, mockGetOwnerDevices, serviceStatus, logger)
 

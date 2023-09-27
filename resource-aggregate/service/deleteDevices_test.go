@@ -50,8 +50,7 @@ func TestRequestHandler_DeleteDevices(t *testing.T) {
 		naClient.Close()
 	}()
 
-	serviceStatus, err := service.NewServiceStatus(cfg, eventstore, publisher, logger)
-	require.NoError(t, err)
+	serviceStatus := service.NewServiceStatus(cfg, eventstore, publisher, logger)
 	defer serviceStatus.Close()
 
 	requestHandler := service.NewRequestHandler(cfg, eventstore, publisher, mockGetOwnerDevices, serviceStatus, logger)

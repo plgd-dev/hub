@@ -46,9 +46,13 @@ func newServiceStatus(instanceID uuid.UUID, timeToLive time.Duration, raClient *
 	return s, nil
 }
 
-// updateServiceMetadata updates service metadata in resource aggregate with timeout = timeToLive/2.
+// updateServiceMetadata updates service metadata in resource aggregate.
 func (s *serviceStatus) updateServiceMetadata() (time.Time, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), s.timeToLive/numberUpdatesInTimeToLive)
+	deadline := s.onlineValidUntil
+	if s.onlineValidUntil.IsZero() {
+		deadline = time.Now().Add(s.timeToLive)
+	}
+	ctx, cancel := context.WithDeadline(context.Background(), deadline)
 	defer cancel()
 
 	resp, err := s.raClient.UpdateServiceMetadata(ctx, &commands.UpdateServiceMetadataRequest{
@@ -56,6 +60,7 @@ func (s *serviceStatus) updateServiceMetadata() (time.Time, error) {
 			Status: &commands.ServiceStatus{
 				Id:         s.instanceID.String(),
 				TimeToLive: s.timeToLive.Nanoseconds(),
+				Timestamp:  time.Now().UnixNano(),
 			},
 		},
 	})

@@ -249,8 +249,7 @@ func TestRequestHandlerUpdateDeviceMetadata(t *testing.T) {
 		naClient.Close()
 	}()
 
-	serviceStatus, err := service.NewServiceStatus(config, eventstore, publisher, logger)
-	require.NoError(t, err)
+	serviceStatus := service.NewServiceStatus(config, eventstore, publisher, logger)
 	defer serviceStatus.Close()
 
 	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetOwnerDevices, serviceStatus, logger)
