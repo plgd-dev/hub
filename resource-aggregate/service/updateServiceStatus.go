@@ -293,6 +293,7 @@ func (s *ServiceStatus) updateDeviceToOffline(ctx context.Context, serviceID, de
 		return log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot set device('%v') to offline state: %v", deviceID, err))
 	}
 
+	// TODO: In the future, we need to retrieve the owner from the identity-store service.
 	PublishEvents(s.publisher, latestSnapshot.GetDeviceMetadataUpdated().GetAuditContext().GetOwner(), aggregate.DeviceID(), aggregate.ResourceID(), publishEvents, s.logger)
 	return nil
 }
