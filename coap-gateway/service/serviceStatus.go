@@ -15,7 +15,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-const numberUpdatesInTimeToLive = 2
+const numberUpdatesInTimeToLive = 3
 
 type serviceStatus struct {
 	timeToLive       time.Duration
@@ -79,51 +79,48 @@ func needToShutdownService(err error) bool {
 	return false
 }
 
-func (s *serviceStatus) tryUpdateServiceMetadata(failures int, now time.Time) (int, error) {
+func (s *serviceStatus) tryUpdateServiceMetadata(now time.Time) error {
 	var err error
+	var isOffline bool
 	switch {
-	case failures >= numberUpdatesInTimeToLive:
-		err = fmt.Errorf("service is in inconsistent state")
 	case now.After(s.onlineValidUntil):
 		err = fmt.Errorf("service is offline from time %v", s.onlineValidUntil)
+		isOffline = true
 	default:
 		var onlineValidUntil time.Time
 		onlineValidUntil, err = s.updateServiceMetadata()
 		if err == nil {
 			s.logger.Debugf("service metadata updated, online valid until: %v", onlineValidUntil)
 			s.onlineValidUntil = onlineValidUntil
-			return 0, nil
+			return nil
 		}
 	}
 	err = fmt.Errorf("cannot update service metadata: %w", err)
-	failures++
-	if failures >= numberUpdatesInTimeToLive || needToShutdownService(err) {
-		// if needToShutdownService is true, it means that the service is in inconsistent state.
-		failures += numberUpdatesInTimeToLive
+	if isOffline || needToShutdownService(err) {
 		// Kill the service to prevent inconsistent state propagation of connected devices through this service.
 		s.logger.Infof("killing the service to prevent inconsistent state: %v", err)
-		errKill := syscall.Kill(syscall.Getpid(), syscall.SIGINT)
+		errKill := syscall.Kill(syscall.Getpid(), syscall.SIGTERM)
 		if errKill == nil {
-			return failures, err
+			return err
 		}
 		s.logger.Errorf("cannot kill service: %w", errKill)
+		// to prevent too frequent killing the service
+		time.Sleep(time.Second)
 	} else {
 		s.logger.Warnf("%v", err)
 	}
-	return failures, nil
+	return nil
 }
 
 // Serve starts serviceStatus. It will update service metadata in two times in timeToLive.
 func (s *serviceStatus) Serve() error {
-	failures := 0
 	now := time.Now()
 	timer := time.NewTimer(0)
 	if !timer.Stop() {
 		<-timer.C
 	}
 	for {
-		var err error
-		failures, err = s.tryUpdateServiceMetadata(failures, now)
+		err := s.tryUpdateServiceMetadata(now)
 		if err != nil {
 			// the error is set only when sigkill has been sent
 			return err

@@ -884,7 +884,7 @@ coapgateway:
   # -- Service status section
   serviceStatus:
     # -- Time to update the service status of the service. Must be greater than 1s.
-    timeToLive: 10m
+    timeToLive: 1m
   # -- Log section
   log:
     # -- Dump coap messages

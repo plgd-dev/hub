@@ -165,4 +165,4 @@ taskQueue:
   size: 2097152
   maxIdleTime: "10m"
 serviceStatus:
-  timeToLive: 10m
+  timeToLive: 1m
