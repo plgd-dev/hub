@@ -62,18 +62,18 @@ func (a *Aggregate) ConfirmOfflineServices(ctx context.Context, request *events.
 
 func (r RequestHandler) UpdateServiceMetadata(ctx context.Context, request *commands.UpdateServiceMetadataRequest) (*commands.UpdateServiceMetadataResponse, error) {
 	if err := validateUpdateServiceMetadata(request); err != nil {
-		return nil, log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "cannot update service metadata: %w", err))
+		return nil, log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.InvalidArgument, errFmtUpdateServiceMetadata, err))
 	}
 	respChan := make(chan UpdateServiceMetadataResponseChanData, 1)
 	if err := r.serviceStatus.ProcessRequest(UpdateServiceMetadataReqResp{
 		Request:      request,
 		ResponseChan: respChan,
 	}); err != nil {
-		return nil, log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot update service metadata: %w", err))
+		return nil, log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, errFmtUpdateServiceMetadata, err))
 	}
 	select {
 	case <-ctx.Done():
-		return nil, log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Canceled, "cannot update service metadata: %w", ctx.Err()))
+		return nil, log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Canceled, errFmtUpdateServiceMetadata, ctx.Err()))
 	case resp := <-respChan:
 		if resp.Err != nil {
 			return nil, resp.Err
