@@ -94,11 +94,6 @@ func (d *ServicesMetadataSnapshotTaken) HandleServicesMetadataUpdated(_ context.
 		delete(online, v.GetId())
 	}
 	// check if there is no service which is online and offline at the same time
-	for key := range online {
-		if _, ok := offline[key]; ok {
-			return false, fmt.Errorf("invalid status: service %v is online and offline", key)
-		}
-	}
 	for key := range offline {
 		if _, ok := online[key]; ok {
 			return false, fmt.Errorf("invalid status: service %v is online and offline", key)
@@ -227,15 +222,15 @@ func (d *ServicesMetadataSnapshotTaken) confirmOfflineServices(ctx context.Conte
 		offline[key] = v
 	}
 
-	removed := make([]*ServicesStatus_Status, 0, len(req.Status))
+	var exist bool
 	for _, v := range req.Status {
 		key := v.GetId()
 		if _, ok := offline[key]; ok {
 			delete(offline, key)
-			removed = append(removed, v)
+			exist = true
 		}
 	}
-	if len(removed) == 0 {
+	if !exist {
 		return nil, nil
 	}
 	// take snapshot to dump full state of services
