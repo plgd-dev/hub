@@ -1555,8 +1555,8 @@ type ServicesHeartbeat struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Valid   []*ServicesHeartbeat_Heartbeat `protobuf:"bytes,1,rep,name=valid,proto3" json:"valid,omitempty"`     // services which are valid
-	Expired []*ServicesHeartbeat_Heartbeat `protobuf:"bytes,2,rep,name=expired,proto3" json:"expired,omitempty"` // services which are expired
+	Valid   []*ServicesHeartbeat_Heartbeat `protobuf:"bytes,1,rep,name=valid,proto3" json:"valid,omitempty"`     // services which heartbeat is still valid
+	Expired []*ServicesHeartbeat_Heartbeat `protobuf:"bytes,2,rep,name=expired,proto3" json:"expired,omitempty"` // services which heartbeat is already expired
 }
 
 func (x *ServicesHeartbeat) Reset() {

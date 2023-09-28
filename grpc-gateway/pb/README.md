@@ -1900,8 +1900,8 @@ https://github.com/openconnectivityfoundation/cloud-services/blob/master/swagger
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| valid | [ServicesHeartbeat.Heartbeat](#resourceaggregate-pb-ServicesHeartbeat-Heartbeat) | repeated | services which are valid |
-| expired | [ServicesHeartbeat.Heartbeat](#resourceaggregate-pb-ServicesHeartbeat-Heartbeat) | repeated | services which are expired |
+| valid | [ServicesHeartbeat.Heartbeat](#resourceaggregate-pb-ServicesHeartbeat-Heartbeat) | repeated | services which heartbeat is still valid |
+| expired | [ServicesHeartbeat.Heartbeat](#resourceaggregate-pb-ServicesHeartbeat-Heartbeat) | repeated | services which heartbeat is already expired |
 
 
 
