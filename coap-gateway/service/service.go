@@ -610,6 +610,7 @@ func (s *Service) createServices(fileWatcher *fsnotify.Watcher, logger log.Logge
 		}),
 	)
 	if err != nil {
+		_ = serviceHeartbeat.Close()
 		return nil, fmt.Errorf("cannot create coap-gateway service: %w", err)
 	}
 	services.Add(serviceHeartbeat)

@@ -272,7 +272,7 @@ func (s *ServiceHeartbeat) Close() {
 }
 
 func (s *ServiceHeartbeat) updateDeviceToOffline(ctx context.Context, serviceID, deviceID, userID string) error {
-	resID := commands.NewResourceID(deviceID, commands.ServicesResourceHref)
+	resID := commands.NewResourceID(deviceID, commands.StatusHref)
 
 	var latestSnapshot *events.DeviceMetadataSnapshotTakenForCommand
 	deviceMetadataFactoryModel := func(ctx context.Context) (cqrsAggregate.AggregateModel, error) {
