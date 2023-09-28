@@ -234,8 +234,8 @@ export const handleDeleteDevicesErrors = (error: any, _: any, singular = false) 
 }
 
 // Updates the device data with an object of { deviceId, status, twinEnabled } which came from the WS events.
-export const updateDevicesDataStatus = (data: any, { deviceId, status, twinEnabled }: { deviceId: string; status: string; twinEnabled: boolean }) => {
-    return data?.map((device: any) => {
+export const updateDevicesDataStatus = (data: any, { deviceId, status, twinEnabled }: { deviceId: string; status: string; twinEnabled: boolean }) =>
+    data?.map((device: any) => {
         if (device.id === deviceId && device.metadata.connection.status !== status) {
             return {
                 ...device,
@@ -252,7 +252,6 @@ export const updateDevicesDataStatus = (data: any, { deviceId, status, twinEnabl
 
         return device
     })
-}
 
 // Async function for waiting
 export const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
