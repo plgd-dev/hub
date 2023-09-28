@@ -18,12 +18,12 @@ import (
 const numberUpdatesInTimeToLive = 3
 
 type serviceHeartbeat struct {
-	timeToLive       time.Duration
-	raClient         *raClient.Client
-	done             chan struct{}
-	instanceID       uuid.UUID
-	logger           log.Logger
-	onlineValidUntil time.Time
+	timeToLive          time.Duration
+	raClient            *raClient.Client
+	done                chan struct{}
+	instanceID          uuid.UUID
+	logger              log.Logger
+	heartbeatValidUntil time.Time
 }
 
 // NewServiceHeartbeat creates new serviceHeartbeat instance. It will update service metadata in two times in timeToLive.
@@ -38,19 +38,19 @@ func newServiceHeartbeat(instanceID uuid.UUID, timeToLive time.Duration, raClien
 		done:       make(chan struct{}, 1),
 		logger:     logger.With("service-id", instanceID.String()),
 	}
-	onlineValidUntil, err := s.updateServiceMetadata()
+	heartbeatValidUntil, err := s.updateServiceMetadata()
 	if err != nil {
 		return nil, fmt.Errorf("cannot update service metadata: %w", err)
 	}
-	s.onlineValidUntil = onlineValidUntil
+	s.heartbeatValidUntil = heartbeatValidUntil
 	return s, nil
 }
 
 // updateServiceMetadata updates service metadata in resource aggregate.
 func (s *serviceHeartbeat) updateServiceMetadata() (time.Time, error) {
 	// set deadline to prevent blocking the service
-	deadline := s.onlineValidUntil.Add(s.timeToLive)
-	if s.onlineValidUntil.IsZero() {
+	deadline := s.heartbeatValidUntil.Add(s.timeToLive)
+	if s.heartbeatValidUntil.IsZero() {
 		deadline = time.Now().Add(s.timeToLive)
 	}
 	ctx, cancel := context.WithDeadline(context.Background(), deadline)
@@ -66,8 +66,8 @@ func (s *serviceHeartbeat) updateServiceMetadata() (time.Time, error) {
 		},
 	})
 	if err == nil {
-		s.onlineValidUntil = pkgTime.Unix(0, resp.GetHeartbeatValidUntil())
-		return s.onlineValidUntil, nil
+		s.heartbeatValidUntil = pkgTime.Unix(0, resp.GetHeartbeatValidUntil())
+		return s.heartbeatValidUntil, nil
 	}
 	return time.Time{}, err
 }
@@ -84,15 +84,15 @@ func (s *serviceHeartbeat) tryUpdateServiceMetadata(now time.Time) error {
 	var err error
 	var isOffline bool
 	switch {
-	case now.After(s.onlineValidUntil):
-		err = fmt.Errorf("service is offline from time %v", s.onlineValidUntil)
+	case now.After(s.heartbeatValidUntil):
+		err = fmt.Errorf("service is offline from time %v", s.heartbeatValidUntil)
 		isOffline = true
 	default:
-		var onlineValidUntil time.Time
-		onlineValidUntil, err = s.updateServiceMetadata()
+		var heartbeatValidUntil time.Time
+		heartbeatValidUntil, err = s.updateServiceMetadata()
 		if err == nil {
-			s.logger.Debugf("service metadata updated, online valid until: %v", onlineValidUntil)
-			s.onlineValidUntil = onlineValidUntil
+			s.logger.Debugf("service metadata updated, heartbeat valid until: %v", heartbeatValidUntil)
+			s.heartbeatValidUntil = heartbeatValidUntil
 			return nil
 		}
 	}
@@ -126,7 +126,7 @@ func (s *serviceHeartbeat) Serve() error {
 			// the error is set only when sigkill has been sent
 			return err
 		}
-		nextWake := time.Until(s.onlineValidUntil) / numberUpdatesInTimeToLive
+		nextWake := time.Until(s.heartbeatValidUntil) / numberUpdatesInTimeToLive
 		if nextWake < 0 {
 			nextWake = 0
 		}
