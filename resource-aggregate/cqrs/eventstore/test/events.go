@@ -585,9 +585,9 @@ func (eh *MockEventHandler) Count() int {
 	return count
 }
 
-func MakeServiceMetadataSnapshotTaken(hubID string, ServiceMetadataUpdated *events.ServiceMetadataUpdated, eventMetadata *events.EventMetadata) eventstore.EventUnmarshaler {
+func MakeServiceMetadataSnapshotTaken(hubID string, serviceMetadataUpdated *events.ServiceMetadataUpdated, eventMetadata *events.EventMetadata) eventstore.EventUnmarshaler {
 	e := events.ServiceMetadataSnapshotTaken{
-		ServiceMetadataUpdated: ServiceMetadataUpdated,
+		ServiceMetadataUpdated: serviceMetadataUpdated,
 		EventMetadata:          eventMetadata,
 	}
 	return eventstore.NewLoadedEvent(
