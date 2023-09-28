@@ -178,16 +178,18 @@ func (d *ServicesMetadataSnapshotTaken) updateStatus(ctx context.Context, req *c
 	}
 	key := req.GetStatus().GetId()
 
-	// When the processing time exceeds the timeToLive, we must extend the timeToLive.
-	// During processing, several tasks are performed: receiving requests, loading data from the database, and processing requests.
-	// Writing to the database is an expensive operation, so if the processing time is more than 10 times the timeToLive, we should extend it.
-	// During idle times, the processing time is typically around 10 milliseconds.
-	// Under heavy load, the processing time can increase to approximately 5 minutes.
 	timeToLive := time.Duration(req.GetStatus().GetTimeToLive())
+	// If the request has a valid timestamp, calculate the additional TTL based on processing time.
 	if req.GetStatus().GetTimestamp() >= 0 {
+		// Calculate the time passed since the request's timestamp and adjust it by a cost factor. In worst case, the timeToLive will be adjusted by 20 minutes.
 		processingTime := time.Since(pkgTime.Unix(0, req.GetStatus().GetTimestamp()))
-		if processingTime*writeCostAgainstRead > timeToLive {
-			timeToLive = processingTime * writeCostAgainstRead
+		// Limit the processing time to two minutes, because it will by multiplied by a cost factor.
+		if processingTime > time.Minute*2 {
+			processingTime = time.Minute * 2
+		}
+		// If the processing time is positive, add it to the TTL. If it is negative, it means that the service hasn't synced time.
+		if processingTime > 0 {
+			timeToLive += (processingTime * writeCostAgainstRead)
 		}
 	}
 
