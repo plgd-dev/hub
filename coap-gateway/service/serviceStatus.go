@@ -48,7 +48,8 @@ func newServiceStatus(instanceID uuid.UUID, timeToLive time.Duration, raClient *
 
 // updateServiceMetadata updates service metadata in resource aggregate.
 func (s *serviceStatus) updateServiceMetadata() (time.Time, error) {
-	deadline := s.onlineValidUntil
+	// set deadline to prevent blocking the service
+	deadline := s.onlineValidUntil.Add(s.timeToLive)
 	if s.onlineValidUntil.IsZero() {
 		deadline = time.Now().Add(s.timeToLive)
 	}

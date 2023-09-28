@@ -164,6 +164,9 @@ func TestOnClientInactivity(t *testing.T) {
 	require.NoError(t, err)
 	_, err = c.Get(ctx, "/a")
 	require.NoError(t, err)
+
+	time.Sleep(time.Millisecond * 1500)
+
 	select {
 	case <-c.Done():
 		t.Log("TCP client closed in client")
@@ -180,6 +183,9 @@ func TestOnClientInactivity(t *testing.T) {
 	require.NoError(t, err)
 	_, err = cUDP.Get(ctx, "/a")
 	require.NoError(t, err)
+
+	time.Sleep(time.Millisecond * 1500)
+
 	select {
 	case <-cUDP.Done():
 		t.Log("UDP client closed in client")
@@ -247,6 +253,9 @@ func TestOnClientInactivityCustom(t *testing.T) {
 	require.NoError(t, err)
 	_, err = c.Get(ctx, "/a")
 	require.NoError(t, err)
+
+	time.Sleep(time.Millisecond * 1500)
+
 	select {
 	case <-c.Done():
 		t.Log("TCP client closed in client")
@@ -263,6 +272,9 @@ func TestOnClientInactivityCustom(t *testing.T) {
 	require.NoError(t, err)
 	_, err = cUDP.Get(ctx, "/a")
 	require.NoError(t, err)
+
+	time.Sleep(time.Millisecond * 1500)
+
 	select {
 	case <-cUDP.Done():
 		t.Log("UDP client closed in client")
