@@ -226,7 +226,7 @@ message ServiceMetadataUpdated  {
 }
 
 
-message ServicesMetadataSnapshotTaken {
+message ServiceMetadataSnapshotTaken {
     ServiceMetadataUpdated service_metadata_updated = 1;
     EventMetadata event_metadata = 2;
 }
