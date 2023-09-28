@@ -630,23 +630,23 @@
                 </li>
               
                 <li>
+                  <a href="#resourceaggregate.pb.ServiceMetadataSnapshotTaken"><span class="badge">M</span>ServiceMetadataSnapshotTaken</a>
+                </li>
+              
+                <li>
+                  <a href="#resourceaggregate.pb.ServiceMetadataUpdated"><span class="badge">M</span>ServiceMetadataUpdated</a>
+                </li>
+              
+                <li>
+                  <a href="#resourceaggregate.pb.ServiceMetadataUpdated.OpenTelemetryCarrierEntry"><span class="badge">M</span>ServiceMetadataUpdated.OpenTelemetryCarrierEntry</a>
+                </li>
+              
+                <li>
                   <a href="#resourceaggregate.pb.ServicesHeartbeat"><span class="badge">M</span>ServicesHeartbeat</a>
                 </li>
               
                 <li>
                   <a href="#resourceaggregate.pb.ServicesHeartbeat.Heartbeat"><span class="badge">M</span>ServicesHeartbeat.Heartbeat</a>
-                </li>
-              
-                <li>
-                  <a href="#resourceaggregate.pb.ServicesMetadataSnapshotTaken"><span class="badge">M</span>ServicesMetadataSnapshotTaken</a>
-                </li>
-              
-                <li>
-                  <a href="#resourceaggregate.pb.ServicesMetadataUpdated"><span class="badge">M</span>ServicesMetadataUpdated</a>
-                </li>
-              
-                <li>
-                  <a href="#resourceaggregate.pb.ServicesMetadataUpdated.OpenTelemetryCarrierEntry"><span class="badge">M</span>ServicesMetadataUpdated.OpenTelemetryCarrierEntry</a>
                 </li>
               
               
@@ -4916,6 +4916,113 @@ Subscription doesn&#39;t guarantee that all events will be sent to the client. T
 
         
       
+        <h3 id="resourceaggregate.pb.ServiceMetadataSnapshotTaken">ServiceMetadataSnapshotTaken</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>service_metadata_updated</td>
+                  <td><a href="#resourceaggregate.pb.ServiceMetadataUpdated">ServiceMetadataUpdated</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>event_metadata</td>
+                  <td><a href="#resourceaggregate.pb.EventMetadata">EventMetadata</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="resourceaggregate.pb.ServiceMetadataUpdated">ServiceMetadataUpdated</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>services_heartbeat</td>
+                  <td><a href="#resourceaggregate.pb.ServicesHeartbeat">ServicesHeartbeat</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>event_metadata</td>
+                  <td><a href="#resourceaggregate.pb.EventMetadata">EventMetadata</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>audit_context</td>
+                  <td><a href="#resourceaggregate.pb.AuditContext">AuditContext</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>open_telemetry_carrier</td>
+                  <td><a href="#resourceaggregate.pb.ServiceMetadataUpdated.OpenTelemetryCarrierEntry">ServiceMetadataUpdated.OpenTelemetryCarrierEntry</a></td>
+                  <td>repeated</td>
+                  <td><p>Open telemetry data propagated to asynchronous events </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="resourceaggregate.pb.ServiceMetadataUpdated.OpenTelemetryCarrierEntry">ServiceMetadataUpdated.OpenTelemetryCarrierEntry</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>key</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>value</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
         <h3 id="resourceaggregate.pb.ServicesHeartbeat">ServicesHeartbeat</h3>
         <p></p>
 
@@ -4927,17 +5034,17 @@ Subscription doesn&#39;t guarantee that all events will be sent to the client. T
             <tbody>
               
                 <tr>
-                  <td>online</td>
+                  <td>valid</td>
                   <td><a href="#resourceaggregate.pb.ServicesHeartbeat.Heartbeat">ServicesHeartbeat.Heartbeat</a></td>
                   <td>repeated</td>
-                  <td><p>services which are online </p></td>
+                  <td><p>services which are valid </p></td>
                 </tr>
               
                 <tr>
-                  <td>offline</td>
+                  <td>expired</td>
                   <td><a href="#resourceaggregate.pb.ServicesHeartbeat.Heartbeat">ServicesHeartbeat.Heartbeat</a></td>
                   <td>repeated</td>
-                  <td><p>services which are offline </p></td>
+                  <td><p>services which are expired </p></td>
                 </tr>
               
             </tbody>
@@ -4965,117 +5072,10 @@ Subscription doesn&#39;t guarantee that all events will be sent to the client. T
                 </tr>
               
                 <tr>
-                  <td>heartbeat_valid_until</td>
+                  <td>valid_until</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
                   <td><p>unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when service heartbeat is considered as expired. </p></td>
-                </tr>
-              
-            </tbody>
-          </table>
-
-          
-
-        
-      
-        <h3 id="resourceaggregate.pb.ServicesMetadataSnapshotTaken">ServicesMetadataSnapshotTaken</h3>
-        <p></p>
-
-        
-          <table class="field-table">
-            <thead>
-              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
-            </thead>
-            <tbody>
-              
-                <tr>
-                  <td>services_metadata_updated</td>
-                  <td><a href="#resourceaggregate.pb.ServicesMetadataUpdated">ServicesMetadataUpdated</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-              
-                <tr>
-                  <td>event_metadata</td>
-                  <td><a href="#resourceaggregate.pb.EventMetadata">EventMetadata</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-              
-            </tbody>
-          </table>
-
-          
-
-        
-      
-        <h3 id="resourceaggregate.pb.ServicesMetadataUpdated">ServicesMetadataUpdated</h3>
-        <p></p>
-
-        
-          <table class="field-table">
-            <thead>
-              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
-            </thead>
-            <tbody>
-              
-                <tr>
-                  <td>heartbeat</td>
-                  <td><a href="#resourceaggregate.pb.ServicesHeartbeat">ServicesHeartbeat</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-              
-                <tr>
-                  <td>event_metadata</td>
-                  <td><a href="#resourceaggregate.pb.EventMetadata">EventMetadata</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-              
-                <tr>
-                  <td>audit_context</td>
-                  <td><a href="#resourceaggregate.pb.AuditContext">AuditContext</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-              
-                <tr>
-                  <td>open_telemetry_carrier</td>
-                  <td><a href="#resourceaggregate.pb.ServicesMetadataUpdated.OpenTelemetryCarrierEntry">ServicesMetadataUpdated.OpenTelemetryCarrierEntry</a></td>
-                  <td>repeated</td>
-                  <td><p>Open telemetry data propagated to asynchronous events </p></td>
-                </tr>
-              
-            </tbody>
-          </table>
-
-          
-
-        
-      
-        <h3 id="resourceaggregate.pb.ServicesMetadataUpdated.OpenTelemetryCarrierEntry">ServicesMetadataUpdated.OpenTelemetryCarrierEntry</h3>
-        <p></p>
-
-        
-          <table class="field-table">
-            <thead>
-              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
-            </thead>
-            <tbody>
-              
-                <tr>
-                  <td>key</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-              
-                <tr>
-                  <td>value</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p> </p></td>
                 </tr>
               
             </tbody>

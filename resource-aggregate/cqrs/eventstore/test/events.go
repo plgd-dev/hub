@@ -585,20 +585,20 @@ func (eh *MockEventHandler) Count() int {
 	return count
 }
 
-func MakeServicesMetadataSnapshotTaken(hubID string, servicesMetadataUpdated *events.ServicesMetadataUpdated, eventMetadata *events.EventMetadata) eventstore.EventUnmarshaler {
-	e := events.ServicesMetadataSnapshotTaken{
-		ServicesMetadataUpdated: servicesMetadataUpdated,
-		EventMetadata:           eventMetadata,
+func MakeServiceMetadataSnapshotTaken(hubID string, ServiceMetadataUpdated *events.ServiceMetadataUpdated, eventMetadata *events.EventMetadata) eventstore.EventUnmarshaler {
+	e := events.ServiceMetadataSnapshotTaken{
+		ServiceMetadataUpdated: ServiceMetadataUpdated,
+		EventMetadata:          eventMetadata,
 	}
 	return eventstore.NewLoadedEvent(
 		e.GetEventMetadata().GetVersion(),
-		(&events.ServicesMetadataSnapshotTaken{}).EventType(),
+		(&events.ServiceMetadataSnapshotTaken{}).EventType(),
 		commands.MakeServicesResourceUUID(hubID).String(),
 		hubID,
 		false,
 		time.Unix(0, e.GetEventMetadata().GetTimestamp()),
 		func(v interface{}) error {
-			if x, ok := v.(*events.ServicesMetadataSnapshotTaken); ok {
+			if x, ok := v.(*events.ServiceMetadataSnapshotTaken); ok {
 				x.CopyData(&e)
 				return nil
 			}
@@ -607,21 +607,21 @@ func MakeServicesMetadataSnapshotTaken(hubID string, servicesMetadataUpdated *ev
 	)
 }
 
-func MakeServicesMetadataUpdated(hubID string, serviceHeartbeat *events.ServicesHeartbeat, eventMetadata *events.EventMetadata, auditContext *commands.AuditContext) eventstore.EventUnmarshaler {
-	e := events.ServicesMetadataUpdated{
-		AuditContext:  auditContext,
-		EventMetadata: eventMetadata,
-		Heartbeat:     serviceHeartbeat,
+func MakeServiceMetadataUpdated(hubID string, servicesHeartbeat *events.ServicesHeartbeat, eventMetadata *events.EventMetadata, auditContext *commands.AuditContext) eventstore.EventUnmarshaler {
+	e := events.ServiceMetadataUpdated{
+		AuditContext:      auditContext,
+		EventMetadata:     eventMetadata,
+		ServicesHeartbeat: servicesHeartbeat,
 	}
 	return eventstore.NewLoadedEvent(
 		e.GetEventMetadata().GetVersion(),
-		(&events.ServicesMetadataUpdated{}).EventType(),
+		(&events.ServiceMetadataUpdated{}).EventType(),
 		commands.MakeServicesResourceUUID(hubID).String(),
 		hubID,
 		false,
 		time.Unix(0, e.GetEventMetadata().GetTimestamp()),
 		func(v interface{}) error {
-			if x, ok := v.(*events.ServicesMetadataUpdated); ok {
+			if x, ok := v.(*events.ServiceMetadataUpdated); ok {
 				x.CopyData(&e)
 				return nil
 			}

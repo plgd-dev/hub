@@ -32,10 +32,10 @@ func validateUpdateServiceMetadata(request *commands.UpdateServiceMetadataReques
 		return status.Errorf(codes.InvalidArgument, "unexpected update %T", request.GetUpdate())
 	}
 	if request.GetHeartbeat().GetServiceId() == "" {
-		return status.Errorf(codes.InvalidArgument, "invalid status.id")
+		return status.Errorf(codes.InvalidArgument, "invalid heartbeat.id")
 	}
 	if request.GetHeartbeat().GetTimeToLive() < int64(time.Second) {
-		return status.Errorf(codes.InvalidArgument, "invalid status.timeToLive(%v): is less than 1s", time.Duration(request.GetHeartbeat().GetTimeToLive()))
+		return status.Errorf(codes.InvalidArgument, "invalid heartbeat.timeToLive(%v): is less than 1s", time.Duration(request.GetHeartbeat().GetTimeToLive()))
 	}
 	return nil
 }
@@ -50,7 +50,7 @@ func (a *Aggregate) UpdateServiceMetadata(ctx context.Context, request *commands
 	return
 }
 
-func (a *Aggregate) ConfirmOfflineServices(ctx context.Context, request *events.ConfirmOfflineServicesRequest) (events []eventstore.Event, err error) {
+func (a *Aggregate) ConfirmExpiredServices(ctx context.Context, request *events.ConfirmExpiredServicesRequest) (events []eventstore.Event, err error) {
 	events, err = a.HandleCommand(ctx, request)
 	if err != nil {
 		err = fmt.Errorf("unable to process update service metadata command command: %w", err)
@@ -124,26 +124,26 @@ func NewServiceHeartbeat(config Config, eventstore *mongodb.EventStore, publishe
 	return s
 }
 
-func (s *ServiceHeartbeat) handleOfflineService(ctx context.Context, aggregate *Aggregate, service *events.ServicesHeartbeat_Heartbeat) error {
+func (s *ServiceHeartbeat) handleExpiredService(ctx context.Context, aggregate *Aggregate, service *events.ServicesHeartbeat_Heartbeat) error {
 	const limitNumDevices = 256
 	for {
 		devices, err := s.eventstore.LoadDeviceMetadataByServiceIDs(ctx, []string{service.GetServiceId()}, limitNumDevices)
 		if err != nil {
-			return fmt.Errorf("cannot load devices for offline services %v: %w", service.GetServiceId(), err)
+			return fmt.Errorf("cannot load devices for expired services %v: %w", service.GetServiceId(), err)
 		}
 		if len(devices) == 0 {
-			_, err := aggregate.ConfirmOfflineServices(ctx, &events.ConfirmOfflineServicesRequest{
+			_, err := aggregate.ConfirmExpiredServices(ctx, &events.ConfirmExpiredServicesRequest{
 				Heartbeat: []*events.ServicesHeartbeat_Heartbeat{service},
 			})
 			if err != nil {
-				return fmt.Errorf("cannot confirm offline services metadata: %w", err)
+				return fmt.Errorf("cannot confirm expired services metadata: %w", err)
 			}
 			return nil
 		}
 		for _, d := range devices {
 			err := s.updateDeviceToOffline(ctx, d.ServiceID, d.DeviceID, ServiceUserID)
 			if err != nil {
-				return fmt.Errorf("cannot update device %v to offline because service %v is offline: %w", d.DeviceID, d.ServiceID, err)
+				return fmt.Errorf("cannot update device %v to expired because service %v is expired: %w", d.DeviceID, d.ServiceID, err)
 			}
 		}
 	}
@@ -167,16 +167,16 @@ func (s *ServiceHeartbeat) updateServiceMetadata(aggregate *Aggregate, r UpdateS
 	}
 
 	var heartbeatValidUntil int64
-	var offlineServices []*events.ServicesHeartbeat_Heartbeat
+	var expiredServices []*events.ServicesHeartbeat_Heartbeat
 	for _, e := range publishEvents {
-		if ev, ok := e.(*events.ServicesMetadataUpdated); ok {
-			for _, s := range ev.GetHeartbeat().GetOnline() {
+		if ev, ok := e.(*events.ServiceMetadataUpdated); ok {
+			for _, s := range ev.GetServicesHeartbeat().GetValid() {
 				if s.GetServiceId() == r.Request.GetHeartbeat().GetServiceId() {
-					heartbeatValidUntil = s.GetHeartbeatValidUntil()
+					heartbeatValidUntil = s.GetValidUntil()
 					break
 				}
 			}
-			offlineServices = ev.GetHeartbeat().GetOffline()
+			expiredServices = ev.GetServicesHeartbeat().GetExpired()
 		}
 	}
 	select {
@@ -187,7 +187,7 @@ func (s *ServiceHeartbeat) updateServiceMetadata(aggregate *Aggregate, r UpdateS
 	}: // sent
 	default:
 	}
-	return offlineServices
+	return expiredServices
 }
 
 func (s *ServiceHeartbeat) processRequest(r UpdateServiceMetadataReqResp) {
@@ -198,13 +198,13 @@ func (s *ServiceHeartbeat) processRequest(r UpdateServiceMetadataReqResp) {
 		s.logger.Errorf(errFmtUpdateServiceMetadata, err)
 		return
 	}
-	offlineServices := s.updateServiceMetadata(aggregate, r)
-	for _, off := range offlineServices {
-		err := s.handleOfflineService(ctx, aggregate, off)
+	expiredServices := s.updateServiceMetadata(aggregate, r)
+	for _, off := range expiredServices {
+		err := s.handleExpiredService(ctx, aggregate, off)
 		if err != nil {
-			s.logger.Errorf("cannot handle offline service %v: %w", off.GetServiceId(), err)
+			s.logger.Errorf("cannot handle expired service %v: %w", off.GetServiceId(), err)
 		} else {
-			s.logger.Infof("all devices associated with offline service %v have been marked as offline", off.GetServiceId())
+			s.logger.Infof("all devices associated with expired service %v have been marked as offline", off.GetServiceId())
 		}
 	}
 }

@@ -16,19 +16,19 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-var testEventServicesMetadataSnapshotTaken events.ServicesMetadataSnapshotTaken = events.ServicesMetadataSnapshotTaken{
-	ServicesMetadataUpdated: &events.ServicesMetadataUpdated{
-		Heartbeat: &events.ServicesHeartbeat{
-			Online: []*events.ServicesHeartbeat_Heartbeat{
+var testEventServiceMetadataSnapshotTaken events.ServiceMetadataSnapshotTaken = events.ServiceMetadataSnapshotTaken{
+	ServiceMetadataUpdated: &events.ServiceMetadataUpdated{
+		ServicesHeartbeat: &events.ServicesHeartbeat{
+			Valid: []*events.ServicesHeartbeat_Heartbeat{
 				{
-					ServiceId:           "0",
-					HeartbeatValidUntil: pkgTime.MaxTime.Unix(),
+					ServiceId:  "0",
+					ValidUntil: pkgTime.MaxTime.Unix(),
 				},
 			},
-			Offline: []*events.ServicesHeartbeat_Heartbeat{
+			Expired: []*events.ServicesHeartbeat_Heartbeat{
 				{
-					ServiceId:           "1",
-					HeartbeatValidUntil: pkgTime.MinTime.Unix(),
+					ServiceId:  "1",
+					ValidUntil: pkgTime.MinTime.Unix(),
 				},
 			},
 		},
@@ -51,9 +51,9 @@ var testEventServicesMetadataSnapshotTaken events.ServicesMetadataSnapshotTaken 
 	},
 }
 
-func TestServicesMetadataSnapshotTakenCopyData(t *testing.T) {
+func TestServiceMetadataSnapshotTakenCopyData(t *testing.T) {
 	type args struct {
-		event *events.ServicesMetadataSnapshotTaken
+		event *events.ServiceMetadataSnapshotTaken
 	}
 	tests := []struct {
 		name string
@@ -62,22 +62,22 @@ func TestServicesMetadataSnapshotTakenCopyData(t *testing.T) {
 		{
 			name: "Identity",
 			args: args{
-				event: &testEventServicesMetadataSnapshotTaken,
+				event: &testEventServiceMetadataSnapshotTaken,
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var e events.ServicesMetadataSnapshotTaken
+			var e events.ServiceMetadataSnapshotTaken
 			e.CopyData(tt.args.event)
 			require.True(t, proto.Equal(tt.args.event, &e))
 		})
 	}
 }
 
-func TestServicesMetadataSnapshotTakenCheckInitialized(t *testing.T) {
+func TestServiceMetadataSnapshotTakenCheckInitialized(t *testing.T) {
 	type args struct {
-		event *events.ServicesMetadataSnapshotTaken
+		event *events.ServiceMetadataSnapshotTaken
 	}
 	tests := []struct {
 		name string
@@ -87,14 +87,14 @@ func TestServicesMetadataSnapshotTakenCheckInitialized(t *testing.T) {
 		{
 			name: "Uninitialized",
 			args: args{
-				event: &events.ServicesMetadataSnapshotTaken{},
+				event: &events.ServiceMetadataSnapshotTaken{},
 			},
 			want: false,
 		},
 		{
 			name: "Initialized",
 			args: args{
-				event: &testEventServicesMetadataSnapshotTaken,
+				event: &testEventServiceMetadataSnapshotTaken,
 			},
 			want: true,
 		},
@@ -106,7 +106,7 @@ func TestServicesMetadataSnapshotTakenCheckInitialized(t *testing.T) {
 	}
 }
 
-func TestServicesMetadataSnapshotTakenHandle(t *testing.T) {
+func TestServiceMetadataSnapshotTakenHandle(t *testing.T) {
 	type args struct {
 		events *iterator
 	}
@@ -116,22 +116,22 @@ func TestServicesMetadataSnapshotTakenHandle(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "online,online-duplicity",
+			name: "valid,valid-duplicity",
 			args: args{
 				events: newIterator([]eventstore.EventUnmarshaler{
-					test.MakeServicesMetadataUpdated("a", &events.ServicesHeartbeat{
-						Online: []*events.ServicesHeartbeat_Heartbeat{
+					test.MakeServiceMetadataUpdated("a", &events.ServicesHeartbeat{
+						Valid: []*events.ServicesHeartbeat_Heartbeat{
 							{
-								ServiceId:           "0",
-								HeartbeatValidUntil: pkgTime.MaxTime.Unix(),
+								ServiceId:  "0",
+								ValidUntil: pkgTime.MaxTime.Unix(),
 							},
 						},
 					}, events.MakeEventMeta("", 0, 0, "hubID"), commands.NewAuditContext("userID", "0", "userID")),
-					test.MakeServicesMetadataUpdated("a", &events.ServicesHeartbeat{
-						Online: []*events.ServicesHeartbeat_Heartbeat{
+					test.MakeServiceMetadataUpdated("a", &events.ServicesHeartbeat{
+						Valid: []*events.ServicesHeartbeat_Heartbeat{
 							{
-								ServiceId:           "0",
-								HeartbeatValidUntil: pkgTime.MaxTime.Unix(),
+								ServiceId:  "0",
+								ValidUntil: pkgTime.MaxTime.Unix(),
 							},
 						},
 					}, events.MakeEventMeta("", 0, 0, "hubID"), commands.NewAuditContext("userID", "0", "userID")),
@@ -139,22 +139,22 @@ func TestServicesMetadataSnapshotTakenHandle(t *testing.T) {
 			},
 		},
 		{
-			name: "online-1,online-2",
+			name: "valid-1,valid-2",
 			args: args{
 				events: newIterator([]eventstore.EventUnmarshaler{
-					test.MakeServicesMetadataUpdated("a", &events.ServicesHeartbeat{
-						Online: []*events.ServicesHeartbeat_Heartbeat{
+					test.MakeServiceMetadataUpdated("a", &events.ServicesHeartbeat{
+						Valid: []*events.ServicesHeartbeat_Heartbeat{
 							{
-								ServiceId:           "0",
-								HeartbeatValidUntil: pkgTime.MaxTime.Unix(),
+								ServiceId:  "0",
+								ValidUntil: pkgTime.MaxTime.Unix(),
 							},
 						},
 					}, events.MakeEventMeta("", 0, 0, "hubID"), commands.NewAuditContext("userID", "0", "userID")),
-					test.MakeServicesMetadataUpdated("a", &events.ServicesHeartbeat{
-						Online: []*events.ServicesHeartbeat_Heartbeat{
+					test.MakeServiceMetadataUpdated("a", &events.ServicesHeartbeat{
+						Valid: []*events.ServicesHeartbeat_Heartbeat{
 							{
-								ServiceId:           "1",
-								HeartbeatValidUntil: pkgTime.MaxTime.Unix(),
+								ServiceId:  "1",
+								ValidUntil: pkgTime.MaxTime.Unix(),
 							},
 						},
 					}, events.MakeEventMeta("", 0, 0, "hubID"), commands.NewAuditContext("userID", "0", "userID")),
@@ -162,22 +162,22 @@ func TestServicesMetadataSnapshotTakenHandle(t *testing.T) {
 			},
 		},
 		{
-			name: "online-1,offline-1",
+			name: "valid-1,expired-1",
 			args: args{
 				events: newIterator([]eventstore.EventUnmarshaler{
-					test.MakeServicesMetadataUpdated("a", &events.ServicesHeartbeat{
-						Online: []*events.ServicesHeartbeat_Heartbeat{
+					test.MakeServiceMetadataUpdated("a", &events.ServicesHeartbeat{
+						Valid: []*events.ServicesHeartbeat_Heartbeat{
 							{
-								ServiceId:           "0",
-								HeartbeatValidUntil: pkgTime.MaxTime.Unix(),
+								ServiceId:  "0",
+								ValidUntil: pkgTime.MaxTime.Unix(),
 							},
 						},
 					}, events.MakeEventMeta("", 0, 0, "hubID"), commands.NewAuditContext("userID", "0", "userID")),
-					test.MakeServicesMetadataUpdated("a", &events.ServicesHeartbeat{
-						Offline: []*events.ServicesHeartbeat_Heartbeat{
+					test.MakeServiceMetadataUpdated("a", &events.ServicesHeartbeat{
+						Expired: []*events.ServicesHeartbeat_Heartbeat{
 							{
-								ServiceId:           "0",
-								HeartbeatValidUntil: pkgTime.MaxTime.Unix(),
+								ServiceId:  "0",
+								ValidUntil: pkgTime.MaxTime.Unix(),
 							},
 						},
 					}, events.MakeEventMeta("", 0, 0, "hubID"), commands.NewAuditContext("userID", "0", "userID")),
@@ -185,25 +185,25 @@ func TestServicesMetadataSnapshotTakenHandle(t *testing.T) {
 			},
 		},
 		{
-			name: "snapshot,online",
+			name: "snapshot,valid",
 			args: args{
 				events: newIterator([]eventstore.EventUnmarshaler{
-					test.MakeServicesMetadataSnapshotTaken("a", &events.ServicesMetadataUpdated{
+					test.MakeServiceMetadataSnapshotTaken("a", &events.ServiceMetadataUpdated{
 						EventMetadata: events.MakeEventMeta("", 0, 0, "hubID"),
-						Heartbeat: &events.ServicesHeartbeat{
-							Online: []*events.ServicesHeartbeat_Heartbeat{
+						ServicesHeartbeat: &events.ServicesHeartbeat{
+							Valid: []*events.ServicesHeartbeat_Heartbeat{
 								{
-									ServiceId:           "0",
-									HeartbeatValidUntil: pkgTime.MaxTime.Unix(),
+									ServiceId:  "0",
+									ValidUntil: pkgTime.MaxTime.Unix(),
 								},
 							},
 						},
 					}, events.MakeEventMeta("", 0, 0, "hubID")),
-					test.MakeServicesMetadataUpdated("a", &events.ServicesHeartbeat{
-						Online: []*events.ServicesHeartbeat_Heartbeat{
+					test.MakeServiceMetadataUpdated("a", &events.ServicesHeartbeat{
+						Valid: []*events.ServicesHeartbeat_Heartbeat{
 							{
-								ServiceId:           "1",
-								HeartbeatValidUntil: pkgTime.MaxTime.Unix(),
+								ServiceId:  "1",
+								ValidUntil: pkgTime.MaxTime.Unix(),
 							},
 						},
 					}, events.MakeEventMeta("", 0, 0, "hubID"), commands.NewAuditContext("userID", "0", "userID")),
@@ -213,7 +213,7 @@ func TestServicesMetadataSnapshotTakenHandle(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			e := events.NewServicesMetadataSnapshotTaken()
+			e := events.NewServiceMetadataSnapshotTaken()
 			err := e.Handle(context.TODO(), tt.args.events)
 			if tt.wantErr {
 				require.Error(t, err)
@@ -224,7 +224,7 @@ func TestServicesMetadataSnapshotTakenHandle(t *testing.T) {
 	}
 }
 
-func TestServicesMetadataSnapshotTakenHandleCommand(t *testing.T) {
+func TestServiceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 	serviceID := "serviceID"
 	correlationID := "correlationID"
 	userID := "userID"
@@ -242,7 +242,7 @@ func TestServicesMetadataSnapshotTakenHandleCommand(t *testing.T) {
 		cmds []cmd
 	}{
 		{
-			name: "online",
+			name: "valid",
 			cmds: []cmd{
 				{
 					cmd: &commands.UpdateServiceMetadataRequest{
@@ -255,14 +255,14 @@ func TestServicesMetadataSnapshotTakenHandleCommand(t *testing.T) {
 					},
 					newVersion: 0,
 					want: []eventstore.Event{
-						&events.ServicesMetadataUpdated{
-							Heartbeat: &events.ServicesHeartbeat{
-								Online: []*events.ServicesHeartbeat_Heartbeat{
+						&events.ServiceMetadataUpdated{
+							ServicesHeartbeat: &events.ServicesHeartbeat{
+								Valid: []*events.ServicesHeartbeat_Heartbeat{
 									{
 										ServiceId: serviceID,
 									},
 								},
-								Offline: []*events.ServicesHeartbeat_Heartbeat{},
+								Expired: []*events.ServicesHeartbeat_Heartbeat{},
 							},
 							AuditContext:         commands.NewAuditContext(userID, correlationID, userID),
 							OpenTelemetryCarrier: map[string]string{},
@@ -272,7 +272,7 @@ func TestServicesMetadataSnapshotTakenHandleCommand(t *testing.T) {
 			},
 		},
 		{
-			name: "online,online",
+			name: "valid,valid",
 			cmds: []cmd{
 				{
 					cmd: &commands.UpdateServiceMetadataRequest{
@@ -285,14 +285,14 @@ func TestServicesMetadataSnapshotTakenHandleCommand(t *testing.T) {
 					},
 					newVersion: 0,
 					want: []eventstore.Event{
-						&events.ServicesMetadataUpdated{
-							Heartbeat: &events.ServicesHeartbeat{
-								Online: []*events.ServicesHeartbeat_Heartbeat{
+						&events.ServiceMetadataUpdated{
+							ServicesHeartbeat: &events.ServicesHeartbeat{
+								Valid: []*events.ServicesHeartbeat_Heartbeat{
 									{
 										ServiceId: serviceID,
 									},
 								},
-								Offline: []*events.ServicesHeartbeat_Heartbeat{},
+								Expired: []*events.ServicesHeartbeat_Heartbeat{},
 							},
 							AuditContext:         commands.NewAuditContext(userID, correlationID, userID),
 							OpenTelemetryCarrier: map[string]string{},
@@ -311,14 +311,14 @@ func TestServicesMetadataSnapshotTakenHandleCommand(t *testing.T) {
 					},
 					newVersion: 1,
 					want: []eventstore.Event{
-						&events.ServicesMetadataUpdated{
-							Heartbeat: &events.ServicesHeartbeat{
-								Online: []*events.ServicesHeartbeat_Heartbeat{
+						&events.ServiceMetadataUpdated{
+							ServicesHeartbeat: &events.ServicesHeartbeat{
+								Valid: []*events.ServicesHeartbeat_Heartbeat{
 									{
 										ServiceId: serviceID,
 									},
 								},
-								Offline: []*events.ServicesHeartbeat_Heartbeat{},
+								Expired: []*events.ServicesHeartbeat_Heartbeat{},
 							},
 							AuditContext:         commands.NewAuditContext(userID, correlationID, userID),
 							OpenTelemetryCarrier: map[string]string{},
@@ -328,7 +328,7 @@ func TestServicesMetadataSnapshotTakenHandleCommand(t *testing.T) {
 			},
 		},
 		{
-			name: "online,offline",
+			name: "valid,expired",
 			cmds: []cmd{
 				{
 					cmd: &commands.UpdateServiceMetadataRequest{
@@ -341,14 +341,14 @@ func TestServicesMetadataSnapshotTakenHandleCommand(t *testing.T) {
 					},
 					newVersion: 0,
 					want: []eventstore.Event{
-						&events.ServicesMetadataUpdated{
-							Heartbeat: &events.ServicesHeartbeat{
-								Online: []*events.ServicesHeartbeat_Heartbeat{
+						&events.ServiceMetadataUpdated{
+							ServicesHeartbeat: &events.ServicesHeartbeat{
+								Valid: []*events.ServicesHeartbeat_Heartbeat{
 									{
 										ServiceId: serviceID,
 									},
 								},
-								Offline: []*events.ServicesHeartbeat_Heartbeat{},
+								Expired: []*events.ServicesHeartbeat_Heartbeat{},
 							},
 							AuditContext:         commands.NewAuditContext(userID, correlationID, userID),
 							OpenTelemetryCarrier: map[string]string{},
@@ -367,14 +367,14 @@ func TestServicesMetadataSnapshotTakenHandleCommand(t *testing.T) {
 					},
 					newVersion: 1,
 					want: []eventstore.Event{
-						&events.ServicesMetadataUpdated{
-							Heartbeat: &events.ServicesHeartbeat{
-								Online: []*events.ServicesHeartbeat_Heartbeat{
+						&events.ServiceMetadataUpdated{
+							ServicesHeartbeat: &events.ServicesHeartbeat{
+								Valid: []*events.ServicesHeartbeat_Heartbeat{
 									{
 										ServiceId: serviceID + "1",
 									},
 								},
-								Offline: []*events.ServicesHeartbeat_Heartbeat{
+								Expired: []*events.ServicesHeartbeat_Heartbeat{
 									{
 										ServiceId: serviceID,
 									},
@@ -388,7 +388,7 @@ func TestServicesMetadataSnapshotTakenHandleCommand(t *testing.T) {
 			},
 		},
 		{
-			name: "online,offline,online-fail",
+			name: "valid,expired,valid-fail",
 			cmds: []cmd{
 				{
 					cmd: &commands.UpdateServiceMetadataRequest{
@@ -401,14 +401,14 @@ func TestServicesMetadataSnapshotTakenHandleCommand(t *testing.T) {
 					},
 					newVersion: 0,
 					want: []eventstore.Event{
-						&events.ServicesMetadataUpdated{
-							Heartbeat: &events.ServicesHeartbeat{
-								Online: []*events.ServicesHeartbeat_Heartbeat{
+						&events.ServiceMetadataUpdated{
+							ServicesHeartbeat: &events.ServicesHeartbeat{
+								Valid: []*events.ServicesHeartbeat_Heartbeat{
 									{
 										ServiceId: serviceID,
 									},
 								},
-								Offline: []*events.ServicesHeartbeat_Heartbeat{},
+								Expired: []*events.ServicesHeartbeat_Heartbeat{},
 							},
 							AuditContext:         commands.NewAuditContext(userID, correlationID, userID),
 							OpenTelemetryCarrier: map[string]string{},
@@ -427,14 +427,14 @@ func TestServicesMetadataSnapshotTakenHandleCommand(t *testing.T) {
 					},
 					newVersion: 1,
 					want: []eventstore.Event{
-						&events.ServicesMetadataUpdated{
-							Heartbeat: &events.ServicesHeartbeat{
-								Online: []*events.ServicesHeartbeat_Heartbeat{
+						&events.ServiceMetadataUpdated{
+							ServicesHeartbeat: &events.ServicesHeartbeat{
+								Valid: []*events.ServicesHeartbeat_Heartbeat{
 									{
 										ServiceId: serviceID + "1",
 									},
 								},
-								Offline: []*events.ServicesHeartbeat_Heartbeat{
+								Expired: []*events.ServicesHeartbeat_Heartbeat{
 									{
 										ServiceId: serviceID,
 									},
@@ -460,7 +460,7 @@ func TestServicesMetadataSnapshotTakenHandleCommand(t *testing.T) {
 			},
 		},
 		{
-			name: "online,offline,confirmOffline",
+			name: "valid,expired,confirmExpired",
 			cmds: []cmd{
 				{
 					cmd: &commands.UpdateServiceMetadataRequest{
@@ -473,14 +473,14 @@ func TestServicesMetadataSnapshotTakenHandleCommand(t *testing.T) {
 					},
 					newVersion: 0,
 					want: []eventstore.Event{
-						&events.ServicesMetadataUpdated{
-							Heartbeat: &events.ServicesHeartbeat{
-								Online: []*events.ServicesHeartbeat_Heartbeat{
+						&events.ServiceMetadataUpdated{
+							ServicesHeartbeat: &events.ServicesHeartbeat{
+								Valid: []*events.ServicesHeartbeat_Heartbeat{
 									{
 										ServiceId: serviceID,
 									},
 								},
-								Offline: []*events.ServicesHeartbeat_Heartbeat{},
+								Expired: []*events.ServicesHeartbeat_Heartbeat{},
 							},
 							AuditContext:         commands.NewAuditContext(userID, correlationID, userID),
 							OpenTelemetryCarrier: map[string]string{},
@@ -499,14 +499,14 @@ func TestServicesMetadataSnapshotTakenHandleCommand(t *testing.T) {
 					},
 					newVersion: 1,
 					want: []eventstore.Event{
-						&events.ServicesMetadataUpdated{
-							Heartbeat: &events.ServicesHeartbeat{
-								Online: []*events.ServicesHeartbeat_Heartbeat{
+						&events.ServiceMetadataUpdated{
+							ServicesHeartbeat: &events.ServicesHeartbeat{
+								Valid: []*events.ServicesHeartbeat_Heartbeat{
 									{
 										ServiceId: serviceID + "1",
 									},
 								},
-								Offline: []*events.ServicesHeartbeat_Heartbeat{
+								Expired: []*events.ServicesHeartbeat_Heartbeat{
 									{
 										ServiceId: serviceID,
 									},
@@ -518,7 +518,7 @@ func TestServicesMetadataSnapshotTakenHandleCommand(t *testing.T) {
 					},
 				},
 				{
-					cmd: &events.ConfirmOfflineServicesRequest{
+					cmd: &events.ConfirmExpiredServicesRequest{
 						Heartbeat: []*events.ServicesHeartbeat_Heartbeat{
 							{
 								ServiceId: serviceID,
@@ -527,15 +527,15 @@ func TestServicesMetadataSnapshotTakenHandleCommand(t *testing.T) {
 					},
 					newVersion: 2,
 					want: []eventstore.Event{
-						&events.ServicesMetadataSnapshotTaken{
-							ServicesMetadataUpdated: &events.ServicesMetadataUpdated{
-								Heartbeat: &events.ServicesHeartbeat{
-									Online: []*events.ServicesHeartbeat_Heartbeat{
+						&events.ServiceMetadataSnapshotTaken{
+							ServiceMetadataUpdated: &events.ServiceMetadataUpdated{
+								ServicesHeartbeat: &events.ServicesHeartbeat{
+									Valid: []*events.ServicesHeartbeat_Heartbeat{
 										{
 											ServiceId: serviceID + "1",
 										},
 									},
-									Offline: []*events.ServicesHeartbeat_Heartbeat{},
+									Expired: []*events.ServicesHeartbeat_Heartbeat{},
 								},
 								AuditContext:         commands.NewAuditContext(userID, correlationID, userID),
 								OpenTelemetryCarrier: map[string]string{},
@@ -549,7 +549,7 @@ func TestServicesMetadataSnapshotTakenHandleCommand(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			e := events.NewServicesMetadataSnapshotTakenForCommand(userID, userID, hubID)
+			e := events.NewServiceMetadataSnapshotTakenForCommand(userID, userID, hubID)
 			for idx, cmd := range tt.cmds {
 				if cmd.sleep > 0 {
 					time.Sleep(cmd.sleep)

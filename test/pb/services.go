@@ -11,60 +11,60 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func MakeServicesMetadataUpdated(heartbeat *events.ServicesHeartbeat, correlationID string) *events.ServicesMetadataUpdated {
-	return &events.ServicesMetadataUpdated{
-		Heartbeat:    heartbeat,
-		AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, correlationID, oauthService.DeviceUserID),
+func MakeServiceMetadataUpdated(servicesHeartbeat *events.ServicesHeartbeat, correlationID string) *events.ServiceMetadataUpdated {
+	return &events.ServiceMetadataUpdated{
+		ServicesHeartbeat: servicesHeartbeat,
+		AuditContext:      commands.NewAuditContext(oauthService.DeviceUserID, correlationID, oauthService.DeviceUserID),
 	}
 }
 
-func CleanUpServicesMetadataUpdated(e *events.ServicesMetadataUpdated, resetCorrelationID bool) *events.ServicesMetadataUpdated {
+func CleanUpServiceMetadataUpdated(e *events.ServiceMetadataUpdated, resetCorrelationID bool) *events.ServiceMetadataUpdated {
 	if e.GetAuditContext() != nil && resetCorrelationID {
 		e.GetAuditContext().CorrelationId = ""
 	}
 	e.EventMetadata = nil
 	e.OpenTelemetryCarrier = nil
-	if e.GetHeartbeat() != nil {
-		for i := range e.GetHeartbeat().GetOnline() {
-			if e.GetHeartbeat().GetOnline()[i] != nil {
-				e.GetHeartbeat().GetOnline()[i].HeartbeatValidUntil = 0
+	if e.GetServicesHeartbeat() != nil {
+		for i := range e.GetServicesHeartbeat().GetValid() {
+			if e.GetServicesHeartbeat().GetValid()[i] != nil {
+				e.GetServicesHeartbeat().GetValid()[i].ValidUntil = 0
 			}
 		}
-		for i := range e.GetHeartbeat().GetOffline() {
-			if e.GetHeartbeat().GetOffline()[i] != nil {
-				e.GetHeartbeat().GetOffline()[i].HeartbeatValidUntil = 0
+		for i := range e.GetServicesHeartbeat().GetExpired() {
+			if e.GetServicesHeartbeat().GetExpired()[i] != nil {
+				e.GetServicesHeartbeat().GetExpired()[i].ValidUntil = 0
 			}
 		}
 	}
 	return e
 }
 
-func CmpServicesMetadataUpdated(t *testing.T, expected, got *events.ServicesMetadataUpdated) {
+func CmpServiceMetadataUpdated(t *testing.T, expected, got *events.ServiceMetadataUpdated) {
 	resetCorrelationID := expected.GetAuditContext().GetCorrelationId() == ""
-	CleanUpServicesMetadataUpdated(expected, resetCorrelationID)
-	CleanUpServicesMetadataUpdated(got, resetCorrelationID)
+	CleanUpServiceMetadataUpdated(expected, resetCorrelationID)
+	CleanUpServiceMetadataUpdated(got, resetCorrelationID)
 	test.CheckProtobufs(t, expected, got, test.RequireToCheckFunc(require.Equal))
 }
 
-func CmpServicesMetadataUpdatedSlice(t *testing.T, expected, got []*events.ServicesMetadataUpdated) {
+func CmpServiceMetadataUpdatedSlice(t *testing.T, expected, got []*events.ServiceMetadataUpdated) {
 	require.Len(t, got, len(expected))
 	for idx := range expected {
 		resetCorrelationID := expected[idx].GetAuditContext().GetCorrelationId() == ""
-		CleanUpServicesMetadataUpdated(expected[idx], resetCorrelationID)
-		CleanUpServicesMetadataUpdated(got[idx], resetCorrelationID)
+		CleanUpServiceMetadataUpdated(expected[idx], resetCorrelationID)
+		CleanUpServiceMetadataUpdated(got[idx], resetCorrelationID)
 	}
 	test.CheckProtobufs(t, expected, got, test.RequireToCheckFunc(require.Equal))
 }
 
 var cleanupServicesEventFn = map[string]func(ev eventstore.Event){
-	getTypeName(&events.ServicesMetadataUpdated{}): func(ev eventstore.Event) {
-		if v, ok := ev.(*events.ServicesMetadataUpdated); ok {
-			CleanUpServicesMetadataUpdated(v, true)
+	getTypeName(&events.ServiceMetadataUpdated{}): func(ev eventstore.Event) {
+		if v, ok := ev.(*events.ServiceMetadataUpdated); ok {
+			CleanUpServiceMetadataUpdated(v, true)
 		}
 	},
-	getTypeName(&events.ServicesMetadataSnapshotTaken{}): func(ev eventstore.Event) {
-		if v, ok := ev.(*events.ServicesMetadataSnapshotTaken); ok {
-			CleanUpServicesMetadataUpdated(v.GetServicesMetadataUpdated(), true)
+	getTypeName(&events.ServiceMetadataSnapshotTaken{}): func(ev eventstore.Event) {
+		if v, ok := ev.(*events.ServiceMetadataSnapshotTaken); ok {
+			CleanUpServiceMetadataUpdated(v.GetServiceMetadataUpdated(), true)
 			v.EventMetadata = nil
 		}
 	},

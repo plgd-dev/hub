@@ -2765,7 +2765,7 @@ type isUpdateServiceMetadataRequest_Update interface {
 }
 
 type UpdateServiceMetadataRequest_Heartbeat struct {
-	// Add or update service in the online services list and move online expired services to offline services list
+	// Include or modify services within the valid services heartbeat list and transfer expired services from the valid list to the expired list.
 	Heartbeat *ServiceHeartbeat `protobuf:"bytes,1,opt,name=heartbeat,proto3,oneof"`
 }
 

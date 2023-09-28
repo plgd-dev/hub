@@ -41,7 +41,7 @@ func NewDeviceMetadataFactoryModel(userID, owner, hubID string) func(ctx context
 
 func NewServicesMetadataFactoryModel(userID, owner, hubID string) func(ctx context.Context) (cqrsAggregate.AggregateModel, error) {
 	return func(ctx context.Context) (cqrsAggregate.AggregateModel, error) {
-		return events.NewServicesMetadataSnapshotTakenForCommand(userID, owner, hubID), nil
+		return events.NewServiceMetadataSnapshotTakenForCommand(userID, owner, hubID), nil
 	}
 }
 
