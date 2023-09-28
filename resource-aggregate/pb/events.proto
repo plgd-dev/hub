@@ -210,14 +210,14 @@ message DeviceMetadataSnapshotTaken {
 message ServicesHeartbeat {
     message Heartbeat {
         string service_id = 1; // generated unique id during start the service
-        int64 heartbeat_valid_until = 2; // unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when service heartbeat is considered as expired.
+        int64 valid_until = 2; // unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when service heartbeat is considered as expired.
     }
-    repeated Heartbeat online = 1; // services which are online
-    repeated Heartbeat offline = 2; // services which are offline
+    repeated Heartbeat valid = 1; // services which are valid
+    repeated Heartbeat expired = 2; // services which are expired
 }
 
-message ServicesMetadataUpdated {
-    ServicesHeartbeat heartbeat  = 1;
+message ServiceMetadataUpdated  {
+    ServicesHeartbeat services_heartbeat  = 1;
     EventMetadata event_metadata = 2;
     AuditContext audit_context = 3;
 
@@ -227,6 +227,6 @@ message ServicesMetadataUpdated {
 
 
 message ServicesMetadataSnapshotTaken {
-    ServicesMetadataUpdated services_metadata_updated = 1;
+    ServiceMetadataUpdated service_metadata_updated = 1;
     EventMetadata event_metadata = 2;
 }
