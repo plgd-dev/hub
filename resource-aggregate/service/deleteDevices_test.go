@@ -50,10 +50,10 @@ func TestRequestHandler_DeleteDevices(t *testing.T) {
 		naClient.Close()
 	}()
 
-	serviceStatus := service.NewServiceStatus(cfg, eventstore, publisher, logger)
-	defer serviceStatus.Close()
+	serviceHeartbeat := service.NewServiceHeartbeat(cfg, eventstore, publisher, logger)
+	defer serviceHeartbeat.Close()
 
-	requestHandler := service.NewRequestHandler(cfg, eventstore, publisher, mockGetOwnerDevices, serviceStatus, logger)
+	requestHandler := service.NewRequestHandler(cfg, eventstore, publisher, mockGetOwnerDevices, serviceHeartbeat, logger)
 
 	type args struct {
 		req   *commands.DeleteDevicesRequest

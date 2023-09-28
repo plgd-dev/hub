@@ -164,5 +164,5 @@ taskQueue:
   goPoolSize: 1600
   size: 2097152
   maxIdleTime: "10m"
-serviceStatus:
+serviceHeartbeat:
   timeToLive: 1m

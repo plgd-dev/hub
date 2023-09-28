@@ -207,17 +207,17 @@ message DeviceMetadataSnapshotTaken {
 }
 
 
-message ServicesStatus {
-    message Status {
-        string id = 1; // generated unique id during start the service
-        int64 online_valid_until = 2; // unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when service status is considered as expired.
+message ServicesHeartbeat {
+    message Heartbeat {
+        string service_id = 1; // generated unique id during start the service
+        int64 heartbeat_valid_until = 2; // unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when service heartbeat is considered as expired.
     }
-    repeated Status online = 1; // services which are online
-    repeated Status offline = 2; // services which are offline
+    repeated Heartbeat online = 1; // services which are online
+    repeated Heartbeat offline = 2; // services which are offline
 }
 
 message ServicesMetadataUpdated {
-    ServicesStatus status = 1;
+    ServicesHeartbeat heartbeat  = 1;
     EventMetadata event_metadata = 2;
     AuditContext audit_context = 3;
 

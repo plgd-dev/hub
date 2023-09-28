@@ -899,15 +899,6 @@
       ],
       "default": "UNKNOWN"
     },
-    "ConnectionService": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "string",
-          "title": "generated unique id during start the service"
-        }
-      }
-    },
     "DeviceMetadata": {
       "type": "object",
       "properties": {
@@ -1329,8 +1320,8 @@
           "$ref": "#/definitions/ConnectionProtocol",
           "description": "application protocol. It need to be set when the status is ONLINE."
         },
-        "service": {
-          "$ref": "#/definitions/ConnectionService",
+        "serviceId": {
+          "type": "string",
           "description": "The service.ID, which identify the device being served, must be set when the status is ONLINE. However, during an OFFLINE event, they will be sed to empty values."
         }
       }

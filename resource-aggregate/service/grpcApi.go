@@ -26,18 +26,18 @@ type RequestHandler struct {
 	publisher           eventbus.Publisher
 	getOwnerDevicesFunc getOwnerDevicesFunc
 	logger              log.Logger
-	serviceStatus       *ServiceStatus
+	serviceHeartbeat    *ServiceHeartbeat
 }
 
 // NewRequestHandler factory for new RequestHandler
-func NewRequestHandler(config Config, eventstore *mongodb.EventStore, publisher eventbus.Publisher, getOwnerDevicesFunc getOwnerDevicesFunc, serviceStatus *ServiceStatus, logger log.Logger) *RequestHandler {
+func NewRequestHandler(config Config, eventstore *mongodb.EventStore, publisher eventbus.Publisher, getOwnerDevicesFunc getOwnerDevicesFunc, serviceHeartbeat *ServiceHeartbeat, logger log.Logger) *RequestHandler {
 	return &RequestHandler{
 		config:              config,
 		eventstore:          eventstore,
 		publisher:           publisher,
 		getOwnerDevicesFunc: getOwnerDevicesFunc,
 		logger:              logger,
-		serviceStatus:       serviceStatus,
+		serviceHeartbeat:    serviceHeartbeat,
 	}
 }
 

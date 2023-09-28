@@ -881,9 +881,9 @@ coapgateway:
   port: 5684
   # -- Hub ID. Overrides the global.hubId
   hubId:
-  # -- Service status section
-  serviceStatus:
-    # -- Time to update the service status of the service. Must be greater than 1s.
+  # -- service heartbeat section
+  serviceHeartbeat:
+    # -- Specifies validity of the presence record created by the gateway. Must be greater than 1s.
     timeToLive: 1m
   # -- Log section
   log:

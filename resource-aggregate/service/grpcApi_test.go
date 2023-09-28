@@ -127,10 +127,10 @@ func TestRequestHandlerPublishResource(t *testing.T) {
 		naClient.Close()
 	}()
 
-	serviceStatus := service.NewServiceStatus(config, eventstore, publisher, logger)
-	defer serviceStatus.Close()
+	serviceHeartbeat := service.NewServiceHeartbeat(config, eventstore, publisher, logger)
+	defer serviceHeartbeat.Close()
 
-	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetOwnerDevices, serviceStatus, logger)
+	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetOwnerDevices, serviceHeartbeat, logger)
 
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {
@@ -246,10 +246,10 @@ func TestRequestHandlerUnpublishResource(t *testing.T) {
 		naClient.Close()
 	}()
 
-	serviceStatus := service.NewServiceStatus(cfg, eventstore, publisher, logger)
-	defer serviceStatus.Close()
+	serviceHeartbeat := service.NewServiceHeartbeat(cfg, eventstore, publisher, logger)
+	defer serviceHeartbeat.Close()
 
-	requestHandler := service.NewRequestHandler(cfg, eventstore, publisher, mockGetOwnerDevices, serviceStatus, logger)
+	requestHandler := service.NewRequestHandler(cfg, eventstore, publisher, mockGetOwnerDevices, serviceHeartbeat, logger)
 
 	pubReq := testMakePublishResourceRequest(deviceID, []string{href})
 	_, err = requestHandler.PublishResourceLinks(ctx, pubReq)
@@ -335,10 +335,10 @@ func TestRequestHandlerNotifyResourceChanged(t *testing.T) {
 		naClient.Close()
 	}()
 
-	serviceStatus := service.NewServiceStatus(config, eventstore, publisher, logger)
-	defer serviceStatus.Close()
+	serviceHeartbeat := service.NewServiceHeartbeat(config, eventstore, publisher, logger)
+	defer serviceHeartbeat.Close()
 
-	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetOwnerDevices, serviceStatus, logger)
+	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetOwnerDevices, serviceHeartbeat, logger)
 
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {
@@ -436,10 +436,10 @@ func TestRequestHandlerUpdateResourceContent(t *testing.T) {
 		naClient.Close()
 	}()
 
-	serviceStatus := service.NewServiceStatus(config, eventstore, publisher, logger)
-	defer serviceStatus.Close()
+	serviceHeartbeat := service.NewServiceHeartbeat(config, eventstore, publisher, logger)
+	defer serviceHeartbeat.Close()
 
-	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetOwnerDevices, serviceStatus, logger)
+	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetOwnerDevices, serviceHeartbeat, logger)
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {
 			if tt.args.request.GetResourceId().GetDeviceId() != "" && tt.args.request.GetResourceId().GetHref() != "" {
@@ -533,10 +533,10 @@ func TestRequestHandlerConfirmResourceUpdate(t *testing.T) {
 		naClient.Close()
 	}()
 
-	serviceStatus := service.NewServiceStatus(config, eventstore, publisher, logger)
-	defer serviceStatus.Close()
+	serviceHeartbeat := service.NewServiceHeartbeat(config, eventstore, publisher, logger)
+	defer serviceHeartbeat.Close()
 
-	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetOwnerDevices, serviceStatus, logger)
+	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetOwnerDevices, serviceHeartbeat, logger)
 
 	_, err = requestHandler.NotifyResourceChanged(ctx, testMakeNotifyResourceChangedRequest(deviceID, resID, 0))
 	require.NoError(t, err)
@@ -627,10 +627,10 @@ func TestRequestHandlerRetrieveResource(t *testing.T) {
 		publisher.Close()
 		naClient.Close()
 	}()
-	serviceStatus := service.NewServiceStatus(config, eventstore, publisher, logger)
-	defer serviceStatus.Close()
+	serviceHeartbeat := service.NewServiceHeartbeat(config, eventstore, publisher, logger)
+	defer serviceHeartbeat.Close()
 
-	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetOwnerDevices, serviceStatus, logger)
+	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetOwnerDevices, serviceHeartbeat, logger)
 
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {
@@ -725,10 +725,10 @@ func TestRequestHandlerConfirmResourceRetrieve(t *testing.T) {
 		naClient.Close()
 	}()
 
-	serviceStatus := service.NewServiceStatus(config, eventstore, publisher, logger)
-	defer serviceStatus.Close()
+	serviceHeartbeat := service.NewServiceHeartbeat(config, eventstore, publisher, logger)
+	defer serviceHeartbeat.Close()
 
-	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetOwnerDevices, serviceStatus, logger)
+	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetOwnerDevices, serviceHeartbeat, logger)
 
 	_, err = requestHandler.NotifyResourceChanged(ctx, testMakeNotifyResourceChangedRequest(deviceID, resID, 0))
 	require.NoError(t, err)
@@ -823,10 +823,10 @@ func TestRequestHandlerDeleteResource(t *testing.T) {
 		naClient.Close()
 	}()
 
-	serviceStatus := service.NewServiceStatus(config, eventstore, publisher, logger)
-	defer serviceStatus.Close()
+	serviceHeartbeat := service.NewServiceHeartbeat(config, eventstore, publisher, logger)
+	defer serviceHeartbeat.Close()
 
-	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetOwnerDevices, serviceStatus, logger)
+	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetOwnerDevices, serviceHeartbeat, logger)
 
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {
@@ -921,10 +921,10 @@ func TestRequestHandlerConfirmResourceDelete(t *testing.T) {
 		naClient.Close()
 	}()
 
-	serviceStatus := service.NewServiceStatus(config, eventstore, publisher, logger)
-	defer serviceStatus.Close()
+	serviceHeartbeat := service.NewServiceHeartbeat(config, eventstore, publisher, logger)
+	defer serviceHeartbeat.Close()
 
-	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetOwnerDevices, serviceStatus, logger)
+	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetOwnerDevices, serviceHeartbeat, logger)
 
 	_, err = requestHandler.NotifyResourceChanged(ctx, testMakeNotifyResourceChangedRequest(deviceID, resID, 0))
 	require.NoError(t, err)
@@ -1019,10 +1019,10 @@ func TestRequestHandlerCreateResource(t *testing.T) {
 		naClient.Close()
 	}()
 
-	serviceStatus := service.NewServiceStatus(config, eventstore, publisher, logger)
-	defer serviceStatus.Close()
+	serviceHeartbeat := service.NewServiceHeartbeat(config, eventstore, publisher, logger)
+	defer serviceHeartbeat.Close()
 
-	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetOwnerDevices, serviceStatus, logger)
+	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetOwnerDevices, serviceHeartbeat, logger)
 
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {
@@ -1117,10 +1117,10 @@ func TestRequestHandlerConfirmResourceCreate(t *testing.T) {
 		naClient.Close()
 	}()
 
-	serviceStatus := service.NewServiceStatus(config, eventstore, publisher, logger)
-	defer serviceStatus.Close()
+	serviceHeartbeat := service.NewServiceHeartbeat(config, eventstore, publisher, logger)
+	defer serviceHeartbeat.Close()
 
-	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetOwnerDevices, serviceStatus, logger)
+	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetOwnerDevices, serviceHeartbeat, logger)
 
 	_, err = requestHandler.NotifyResourceChanged(ctx, testMakeNotifyResourceChangedRequest(deviceID, resID, 0))
 	require.NoError(t, err)

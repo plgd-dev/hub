@@ -48,7 +48,7 @@ func (d *DeviceMetadataUpdated) Timestamp() time.Time {
 }
 
 func (d *DeviceMetadataUpdated) ServiceID() (string, bool) {
-	return d.GetConnection().GetService().GetId(), true
+	return d.GetConnection().GetServiceId(), true
 }
 
 func (d *DeviceMetadataUpdated) CopyData(event *DeviceMetadataUpdated) {

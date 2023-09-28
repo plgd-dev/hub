@@ -630,6 +630,14 @@
                 </li>
               
                 <li>
+                  <a href="#resourceaggregate.pb.ServicesHeartbeat"><span class="badge">M</span>ServicesHeartbeat</a>
+                </li>
+              
+                <li>
+                  <a href="#resourceaggregate.pb.ServicesHeartbeat.Heartbeat"><span class="badge">M</span>ServicesHeartbeat.Heartbeat</a>
+                </li>
+              
+                <li>
                   <a href="#resourceaggregate.pb.ServicesMetadataSnapshotTaken"><span class="badge">M</span>ServicesMetadataSnapshotTaken</a>
                 </li>
               
@@ -639,14 +647,6 @@
               
                 <li>
                   <a href="#resourceaggregate.pb.ServicesMetadataUpdated.OpenTelemetryCarrierEntry"><span class="badge">M</span>ServicesMetadataUpdated.OpenTelemetryCarrierEntry</a>
-                </li>
-              
-                <li>
-                  <a href="#resourceaggregate.pb.ServicesStatus"><span class="badge">M</span>ServicesStatus</a>
-                </li>
-              
-                <li>
-                  <a href="#resourceaggregate.pb.ServicesStatus.Status"><span class="badge">M</span>ServicesStatus.Status</a>
                 </li>
               
               
@@ -4916,6 +4916,68 @@ Subscription doesn&#39;t guarantee that all events will be sent to the client. T
 
         
       
+        <h3 id="resourceaggregate.pb.ServicesHeartbeat">ServicesHeartbeat</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>online</td>
+                  <td><a href="#resourceaggregate.pb.ServicesHeartbeat.Heartbeat">ServicesHeartbeat.Heartbeat</a></td>
+                  <td>repeated</td>
+                  <td><p>services which are online </p></td>
+                </tr>
+              
+                <tr>
+                  <td>offline</td>
+                  <td><a href="#resourceaggregate.pb.ServicesHeartbeat.Heartbeat">ServicesHeartbeat.Heartbeat</a></td>
+                  <td>repeated</td>
+                  <td><p>services which are offline </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="resourceaggregate.pb.ServicesHeartbeat.Heartbeat">ServicesHeartbeat.Heartbeat</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>service_id</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>generated unique id during start the service </p></td>
+                </tr>
+              
+                <tr>
+                  <td>heartbeat_valid_until</td>
+                  <td><a href="#int64">int64</a></td>
+                  <td></td>
+                  <td><p>unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when service heartbeat is considered as expired. </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
         <h3 id="resourceaggregate.pb.ServicesMetadataSnapshotTaken">ServicesMetadataSnapshotTaken</h3>
         <p></p>
 
@@ -4958,8 +5020,8 @@ Subscription doesn&#39;t guarantee that all events will be sent to the client. T
             <tbody>
               
                 <tr>
-                  <td>status</td>
-                  <td><a href="#resourceaggregate.pb.ServicesStatus">ServicesStatus</a></td>
+                  <td>heartbeat</td>
+                  <td><a href="#resourceaggregate.pb.ServicesHeartbeat">ServicesHeartbeat</a></td>
                   <td></td>
                   <td><p> </p></td>
                 </tr>
@@ -5014,68 +5076,6 @@ Subscription doesn&#39;t guarantee that all events will be sent to the client. T
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p> </p></td>
-                </tr>
-              
-            </tbody>
-          </table>
-
-          
-
-        
-      
-        <h3 id="resourceaggregate.pb.ServicesStatus">ServicesStatus</h3>
-        <p></p>
-
-        
-          <table class="field-table">
-            <thead>
-              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
-            </thead>
-            <tbody>
-              
-                <tr>
-                  <td>online</td>
-                  <td><a href="#resourceaggregate.pb.ServicesStatus.Status">ServicesStatus.Status</a></td>
-                  <td>repeated</td>
-                  <td><p>services which are online </p></td>
-                </tr>
-              
-                <tr>
-                  <td>offline</td>
-                  <td><a href="#resourceaggregate.pb.ServicesStatus.Status">ServicesStatus.Status</a></td>
-                  <td>repeated</td>
-                  <td><p>services which are offline </p></td>
-                </tr>
-              
-            </tbody>
-          </table>
-
-          
-
-        
-      
-        <h3 id="resourceaggregate.pb.ServicesStatus.Status">ServicesStatus.Status</h3>
-        <p></p>
-
-        
-          <table class="field-table">
-            <thead>
-              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
-            </thead>
-            <tbody>
-              
-                <tr>
-                  <td>id</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p>generated unique id during start the service </p></td>
-                </tr>
-              
-                <tr>
-                  <td>online_valid_until</td>
-                  <td><a href="#int64">int64</a></td>
-                  <td></td>
-                  <td><p>unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when service status is considered as expired. </p></td>
                 </tr>
               
             </tbody>

@@ -249,10 +249,10 @@ func TestRequestHandlerUpdateDeviceMetadata(t *testing.T) {
 		naClient.Close()
 	}()
 
-	serviceStatus := service.NewServiceStatus(config, eventstore, publisher, logger)
-	defer serviceStatus.Close()
+	serviceHeartbeat := service.NewServiceHeartbeat(config, eventstore, publisher, logger)
+	defer serviceHeartbeat.Close()
 
-	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetOwnerDevices, serviceStatus, logger)
+	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetOwnerDevices, serviceHeartbeat, logger)
 
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {

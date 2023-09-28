@@ -22,7 +22,7 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-func TestNewServiceStatus(t *testing.T) {
+func TestNewServiceHeartbeat(t *testing.T) {
 	ctx := context.Background()
 	config := raTest.MakeConfig(t)
 	logger := log.NewLogger(config.Log)
@@ -51,8 +51,8 @@ func TestNewServiceStatus(t *testing.T) {
 		naClient.Close()
 	}()
 
-	serviceStatus := service.NewServiceStatus(config, eventstore, publisher, logger)
-	defer serviceStatus.Close()
+	serviceHeartbeat := service.NewServiceHeartbeat(config, eventstore, publisher, logger)
+	defer serviceHeartbeat.Close()
 
 	const num = 100
 	var wg sync.WaitGroup
@@ -63,11 +63,11 @@ func TestNewServiceStatus(t *testing.T) {
 		chans[i] = make(chan service.UpdateServiceMetadataResponseChanData, 1)
 		go func(j int) {
 			defer wg.Done()
-			err := serviceStatus.ProcessRequest(service.UpdateServiceMetadataReqResp{
+			err := serviceHeartbeat.ProcessRequest(service.UpdateServiceMetadataReqResp{
 				Request: &commands.UpdateServiceMetadataRequest{
-					Update: &commands.UpdateServiceMetadataRequest_Status{
-						Status: &commands.ServiceStatus{
-							Id: fmt.Sprintf("instanceId-%v", j),
+					Update: &commands.UpdateServiceMetadataRequest_Heartbeat{
+						Heartbeat: &commands.ServiceHeartbeat{
+							ServiceId: fmt.Sprintf("instanceId-%v", j),
 						},
 					},
 				},

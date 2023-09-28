@@ -237,10 +237,10 @@ func TestRequestHandlerCancelPendingMetadataUpdates(t *testing.T) {
 	_, err = ag.UpdateDeviceMetadata(context.Background(), testMakeUpdateDeviceMetadataRequest(deviceID, correlationID2, nil, newTwinEnabled(false), 0))
 	require.NoError(t, err)
 
-	serviceStatus := service.NewServiceStatus(cfg, eventstore, publisher, logger)
-	defer serviceStatus.Close()
+	serviceHeartbeat := service.NewServiceHeartbeat(cfg, eventstore, publisher, logger)
+	defer serviceHeartbeat.Close()
 
-	requestHandler := service.NewRequestHandler(cfg, eventstore, publisher, mockGetOwnerDevices, serviceStatus, logger)
+	requestHandler := service.NewRequestHandler(cfg, eventstore, publisher, mockGetOwnerDevices, serviceHeartbeat, logger)
 
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {

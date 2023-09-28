@@ -11,9 +11,9 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func MakeServicesMetadataUpdated(status *events.ServicesStatus, correlationID string) *events.ServicesMetadataUpdated {
+func MakeServicesMetadataUpdated(heartbeat *events.ServicesHeartbeat, correlationID string) *events.ServicesMetadataUpdated {
 	return &events.ServicesMetadataUpdated{
-		Status:       status,
+		Heartbeat:    heartbeat,
 		AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, correlationID, oauthService.DeviceUserID),
 	}
 }
@@ -24,15 +24,15 @@ func CleanUpServicesMetadataUpdated(e *events.ServicesMetadataUpdated, resetCorr
 	}
 	e.EventMetadata = nil
 	e.OpenTelemetryCarrier = nil
-	if e.GetStatus() != nil {
-		for i := range e.GetStatus().GetOnline() {
-			if e.GetStatus().GetOnline()[i] != nil {
-				e.GetStatus().GetOnline()[i].OnlineValidUntil = 0
+	if e.GetHeartbeat() != nil {
+		for i := range e.GetHeartbeat().GetOnline() {
+			if e.GetHeartbeat().GetOnline()[i] != nil {
+				e.GetHeartbeat().GetOnline()[i].HeartbeatValidUntil = 0
 			}
 		}
-		for i := range e.GetStatus().GetOffline() {
-			if e.GetStatus().GetOffline()[i] != nil {
-				e.GetStatus().GetOffline()[i].OnlineValidUntil = 0
+		for i := range e.GetHeartbeat().GetOffline() {
+			if e.GetHeartbeat().GetOffline()[i] != nil {
+				e.GetHeartbeat().GetOffline()[i].HeartbeatValidUntil = 0
 			}
 		}
 	}

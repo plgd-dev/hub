@@ -113,11 +113,11 @@
     - [ResourceUpdatePending.OpenTelemetryCarrierEntry](#resourceaggregate-pb-ResourceUpdatePending-OpenTelemetryCarrierEntry)
     - [ResourceUpdated](#resourceaggregate-pb-ResourceUpdated)
     - [ResourceUpdated.OpenTelemetryCarrierEntry](#resourceaggregate-pb-ResourceUpdated-OpenTelemetryCarrierEntry)
+    - [ServicesHeartbeat](#resourceaggregate-pb-ServicesHeartbeat)
+    - [ServicesHeartbeat.Heartbeat](#resourceaggregate-pb-ServicesHeartbeat-Heartbeat)
     - [ServicesMetadataSnapshotTaken](#resourceaggregate-pb-ServicesMetadataSnapshotTaken)
     - [ServicesMetadataUpdated](#resourceaggregate-pb-ServicesMetadataUpdated)
     - [ServicesMetadataUpdated.OpenTelemetryCarrierEntry](#resourceaggregate-pb-ServicesMetadataUpdated-OpenTelemetryCarrierEntry)
-    - [ServicesStatus](#resourceaggregate-pb-ServicesStatus)
-    - [ServicesStatus.Status](#resourceaggregate-pb-ServicesStatus-Status)
   
 - [Scalar Value Types](#scalar-value-types)
 
@@ -1842,6 +1842,38 @@ https://github.com/openconnectivityfoundation/cloud-services/blob/master/swagger
 
 
 
+<a name="resourceaggregate-pb-ServicesHeartbeat"></a>
+
+### ServicesHeartbeat
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| online | [ServicesHeartbeat.Heartbeat](#resourceaggregate-pb-ServicesHeartbeat-Heartbeat) | repeated | services which are online |
+| offline | [ServicesHeartbeat.Heartbeat](#resourceaggregate-pb-ServicesHeartbeat-Heartbeat) | repeated | services which are offline |
+
+
+
+
+
+
+<a name="resourceaggregate-pb-ServicesHeartbeat-Heartbeat"></a>
+
+### ServicesHeartbeat.Heartbeat
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| service_id | [string](#string) |  | generated unique id during start the service |
+| heartbeat_valid_until | [int64](#int64) |  | unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when service heartbeat is considered as expired. |
+
+
+
+
+
+
 <a name="resourceaggregate-pb-ServicesMetadataSnapshotTaken"></a>
 
 ### ServicesMetadataSnapshotTaken
@@ -1866,7 +1898,7 @@ https://github.com/openconnectivityfoundation/cloud-services/blob/master/swagger
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| status | [ServicesStatus](#resourceaggregate-pb-ServicesStatus) |  |  |
+| heartbeat | [ServicesHeartbeat](#resourceaggregate-pb-ServicesHeartbeat) |  |  |
 | event_metadata | [EventMetadata](#resourceaggregate-pb-EventMetadata) |  |  |
 | audit_context | [AuditContext](#resourceaggregate-pb-AuditContext) |  |  |
 | open_telemetry_carrier | [ServicesMetadataUpdated.OpenTelemetryCarrierEntry](#resourceaggregate-pb-ServicesMetadataUpdated-OpenTelemetryCarrierEntry) | repeated | Open telemetry data propagated to asynchronous events |
@@ -1886,38 +1918,6 @@ https://github.com/openconnectivityfoundation/cloud-services/blob/master/swagger
 | ----- | ---- | ----- | ----------- |
 | key | [string](#string) |  |  |
 | value | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="resourceaggregate-pb-ServicesStatus"></a>
-
-### ServicesStatus
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| online | [ServicesStatus.Status](#resourceaggregate-pb-ServicesStatus-Status) | repeated | services which are online |
-| offline | [ServicesStatus.Status](#resourceaggregate-pb-ServicesStatus-Status) | repeated | services which are offline |
-
-
-
-
-
-
-<a name="resourceaggregate-pb-ServicesStatus-Status"></a>
-
-### ServicesStatus.Status
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| id | [string](#string) |  | generated unique id during start the service |
-| online_valid_until | [int64](#int64) |  | unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when service status is considered as expired. |
 
 
 

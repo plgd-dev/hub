@@ -588,8 +588,8 @@ func WaitForDevice(t *testing.T, client pb.GrpcGateway_SubscribeToEventsClient, 
 				require.NotZero(t, val.DeviceMetadataUpdated.GetConnection().GetConnectedAt())
 				val.DeviceMetadataUpdated.GetConnection().ConnectedAt = 0
 				val.DeviceMetadataUpdated.GetConnection().OnlineValidUntil = 0
-				require.NotZero(t, val.DeviceMetadataUpdated.GetConnection().GetService().GetId())
-				val.DeviceMetadataUpdated.GetConnection().GetService().Id = ""
+				require.NotEmpty(t, val.DeviceMetadataUpdated.GetConnection().GetServiceId())
+				val.DeviceMetadataUpdated.GetConnection().ServiceId = ""
 			}
 			if val.DeviceMetadataUpdated.GetTwinSynchronization() != nil {
 				val.DeviceMetadataUpdated.GetTwinSynchronization().CommandMetadata = nil
@@ -634,7 +634,6 @@ func WaitForDevice(t *testing.T, client pb.GrpcGateway_SubscribeToEventsClient, 
 				Connection: &commands.Connection{
 					Status:   commands.Connection_ONLINE,
 					Protocol: StringToApplicationProtocol(config.ACTIVE_COAP_SCHEME),
-					Service:  &commands.Connection_Service{},
 				},
 				TwinEnabled: true,
 			},
@@ -647,7 +646,6 @@ func WaitForDevice(t *testing.T, client pb.GrpcGateway_SubscribeToEventsClient, 
 					Connection: &commands.Connection{
 						Status:   commands.Connection_ONLINE,
 						Protocol: StringToApplicationProtocol(config.ACTIVE_COAP_SCHEME),
-						Service:  &commands.Connection_Service{},
 					},
 					TwinSynchronization: &commands.TwinSynchronization{
 						State: commands.TwinSynchronization_OUT_OF_SYNC,
@@ -661,7 +659,6 @@ func WaitForDevice(t *testing.T, client pb.GrpcGateway_SubscribeToEventsClient, 
 				Connection: &commands.Connection{
 					Status:   commands.Connection_ONLINE,
 					Protocol: StringToApplicationProtocol(config.ACTIVE_COAP_SCHEME),
-					Service:  &commands.Connection_Service{},
 				},
 				TwinSynchronization: &commands.TwinSynchronization{
 					State: commands.TwinSynchronization_SYNCING,
@@ -677,7 +674,6 @@ func WaitForDevice(t *testing.T, client pb.GrpcGateway_SubscribeToEventsClient, 
 					Connection: &commands.Connection{
 						Status:   commands.Connection_ONLINE,
 						Protocol: StringToApplicationProtocol(config.ACTIVE_COAP_SCHEME),
-						Service:  &commands.Connection_Service{},
 					},
 					TwinSynchronization: &commands.TwinSynchronization{
 						State: commands.TwinSynchronization_SYNCING,
@@ -691,7 +687,6 @@ func WaitForDevice(t *testing.T, client pb.GrpcGateway_SubscribeToEventsClient, 
 				Connection: &commands.Connection{
 					Status:   commands.Connection_ONLINE,
 					Protocol: StringToApplicationProtocol(config.ACTIVE_COAP_SCHEME),
-					Service:  &commands.Connection_Service{},
 				},
 				TwinSynchronization: &commands.TwinSynchronization{
 					State: commands.TwinSynchronization_IN_SYNC,
@@ -707,7 +702,6 @@ func WaitForDevice(t *testing.T, client pb.GrpcGateway_SubscribeToEventsClient, 
 					Connection: &commands.Connection{
 						Status:   commands.Connection_ONLINE,
 						Protocol: StringToApplicationProtocol(config.ACTIVE_COAP_SCHEME),
-						Service:  &commands.Connection_Service{},
 					},
 					TwinSynchronization: &commands.TwinSynchronization{
 						State: commands.TwinSynchronization_IN_SYNC,

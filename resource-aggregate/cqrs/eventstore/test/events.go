@@ -607,11 +607,11 @@ func MakeServicesMetadataSnapshotTaken(hubID string, servicesMetadataUpdated *ev
 	)
 }
 
-func MakeServicesMetadataUpdated(hubID string, servicesStatus *events.ServicesStatus, eventMetadata *events.EventMetadata, auditContext *commands.AuditContext) eventstore.EventUnmarshaler {
+func MakeServicesMetadataUpdated(hubID string, serviceHeartbeat *events.ServicesHeartbeat, eventMetadata *events.EventMetadata, auditContext *commands.AuditContext) eventstore.EventUnmarshaler {
 	e := events.ServicesMetadataUpdated{
 		AuditContext:  auditContext,
 		EventMetadata: eventMetadata,
-		Status:        servicesStatus,
+		Heartbeat:     serviceHeartbeat,
 	}
 	return eventstore.NewLoadedEvent(
 		e.GetEventMetadata().GetVersion(),

@@ -55,40 +55,40 @@ func (d *ServicesMetadataUpdated) CopyData(event *ServicesMetadataUpdated) {
 	d.EventMetadata = event.GetEventMetadata()
 	d.OpenTelemetryCarrier = event.GetOpenTelemetryCarrier()
 
-	d.Status = &ServicesStatus{}
-	d.Status.CopyData(event.GetStatus())
+	d.Heartbeat = &ServicesHeartbeat{}
+	d.Heartbeat.CopyData(event.GetHeartbeat())
 }
 
 func (d *ServicesMetadataUpdated) CheckInitialized() bool {
-	return d.GetStatus() != nil &&
+	return d.GetHeartbeat() != nil &&
 		d.GetEventMetadata() != nil
 }
 
-func (s *ServicesStatus) CopyData(s1 *ServicesStatus) {
+func (s *ServicesHeartbeat) CopyData(s1 *ServicesHeartbeat) {
 	s.Online = s1.GetOnline()
 	s.Offline = s1.GetOffline()
 }
 
-func equalServicesStatuses(v1, v2 []*ServicesStatus_Status) bool {
+func equalServicesHeartbeates(v1, v2 []*ServicesHeartbeat_Heartbeat) bool {
 	if len(v1) != len(v2) {
 		return false
 	}
 	for idx := range v1 {
-		if v1[idx].GetId() != v2[idx].GetId() {
+		if v1[idx].GetServiceId() != v2[idx].GetServiceId() {
 			return false
 		}
-		if v1[idx].GetOnlineValidUntil() != v2[idx].GetOnlineValidUntil() {
+		if v1[idx].GetHeartbeatValidUntil() != v2[idx].GetHeartbeatValidUntil() {
 			return false
 		}
 	}
 	return true
 }
 
-func (s *ServicesStatus) Equal(upd *ServicesStatus) bool {
-	if !equalServicesStatuses(s.GetOnline(), upd.GetOnline()) {
+func (s *ServicesHeartbeat) Equal(upd *ServicesHeartbeat) bool {
+	if !equalServicesHeartbeates(s.GetOnline(), upd.GetOnline()) {
 		return false
 	}
-	if !equalServicesStatuses(s.GetOffline(), upd.GetOffline()) {
+	if !equalServicesHeartbeates(s.GetOffline(), upd.GetOffline()) {
 		return false
 	}
 	return true
@@ -96,8 +96,8 @@ func (s *ServicesStatus) Equal(upd *ServicesStatus) bool {
 
 // Equal checks if two ServicesMetadataUpdated events are equal.
 func (d *ServicesMetadataUpdated) Equal(upd *ServicesMetadataUpdated) bool {
-	if d.GetStatus() == nil {
+	if d.GetHeartbeat() == nil {
 		return false
 	}
-	return d.GetStatus().Equal(upd.GetStatus())
+	return d.GetHeartbeat().Equal(upd.GetHeartbeat())
 }

@@ -49,9 +49,7 @@ func (u *devicesStatusUpdater) updateOnlineStatus(ctx context.Context, client *s
 				OnlineValidUntil: pkgTime.UnixNano(authCtx.Expire),
 				ConnectedAt:      pkgTime.UnixNano(connectedAt),
 				Protocol:         client.GetApplicationProtocol(),
-				Service: &commands.Connection_Service{
-					Id: u.serviceInstanceID.String(),
-				},
+				ServiceId:        u.serviceInstanceID.String(),
 			},
 		},
 		CommandMetadata: &commands.CommandMetadata{

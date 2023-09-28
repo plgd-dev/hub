@@ -15,8 +15,8 @@ metadata:
 data:
   {{ .Values.coapgateway.config.fileName }}: |
     {{- with .Values.coapgateway }}
-    serviceStatus:
-      timeToLive: {{ .serviceStatus.timeToLive }}
+    serviceHeartbeat:
+      timeToLive: {{ .serviceHeartbeat.timeToLive }}
     log:
       dumpBody: {{ .log.dumpBody }}
       level: {{ .log.level }}

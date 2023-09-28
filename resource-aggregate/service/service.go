@@ -136,8 +136,8 @@ func NewService(ctx context.Context, config Config, fileWatcher *fsnotify.Watche
 	})
 	grpcServer.AddCloseFunc(ownerCache.Close)
 
-	serviceStatus := NewServiceStatus(config, eventStore, publisher, logger)
-	grpcServer.AddCloseFunc(serviceStatus.Close)
+	serviceHeartbeat := NewServiceHeartbeat(config, eventStore, publisher, logger)
+	grpcServer.AddCloseFunc(serviceHeartbeat.Close)
 
 	requestHandler := NewRequestHandler(config, eventStore, publisher, func(ctx context.Context, owner string, deviceIDs []string) ([]string, error) {
 		getAllDevices := len(deviceIDs) == 0
@@ -145,7 +145,7 @@ func NewService(ctx context.Context, config Config, fileWatcher *fsnotify.Watche
 			return ownerCache.GetSelectedDevices(ctx, deviceIDs)
 		}
 		return ownerCache.GetDevices(ctx)
-	}, serviceStatus, logger)
+	}, serviceHeartbeat, logger)
 	RegisterResourceAggregateServer(grpcServer.Server, requestHandler)
 
 	return service.New(grpcServer), nil

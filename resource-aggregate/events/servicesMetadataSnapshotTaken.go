@@ -76,22 +76,22 @@ func (d *ServicesMetadataSnapshotTaken) HandleServicesMetadataUpdated(_ context.
 	if d.ServicesMetadataUpdated.Equal(upd) {
 		return false, nil
 	}
-	online := make(map[string]*ServicesStatus_Status, len(d.GetServicesMetadataUpdated().GetStatus().GetOnline())+len(upd.GetStatus().GetOnline()))
-	for _, v := range d.GetServicesMetadataUpdated().GetStatus().GetOnline() {
-		online[v.GetId()] = v
+	online := make(map[string]*ServicesHeartbeat_Heartbeat, len(d.GetServicesMetadataUpdated().GetHeartbeat().GetOnline())+len(upd.GetHeartbeat().GetOnline()))
+	for _, v := range d.GetServicesMetadataUpdated().GetHeartbeat().GetOnline() {
+		online[v.GetServiceId()] = v
 	}
-	offline := make(map[string]*ServicesStatus_Status, len(d.GetServicesMetadataUpdated().GetStatus().GetOffline())+len(upd.GetStatus().GetOffline()))
-	for _, v := range d.GetServicesMetadataUpdated().GetStatus().GetOffline() {
-		offline[v.GetId()] = v
+	offline := make(map[string]*ServicesHeartbeat_Heartbeat, len(d.GetServicesMetadataUpdated().GetHeartbeat().GetOffline())+len(upd.GetHeartbeat().GetOffline()))
+	for _, v := range d.GetServicesMetadataUpdated().GetHeartbeat().GetOffline() {
+		offline[v.GetServiceId()] = v
 	}
 	// update current state
-	for _, v := range upd.GetStatus().GetOnline() {
-		online[v.GetId()] = v
-		delete(offline, v.GetId())
+	for _, v := range upd.GetHeartbeat().GetOnline() {
+		online[v.GetServiceId()] = v
+		delete(offline, v.GetServiceId())
 	}
-	for _, v := range upd.GetStatus().GetOffline() {
-		offline[v.GetId()] = v
-		delete(online, v.GetId())
+	for _, v := range upd.GetHeartbeat().GetOffline() {
+		offline[v.GetServiceId()] = v
+		delete(online, v.GetServiceId())
 	}
 	// check if there is no service which is online and offline at the same time
 	for key := range offline {
@@ -101,7 +101,7 @@ func (d *ServicesMetadataSnapshotTaken) HandleServicesMetadataUpdated(_ context.
 	}
 	// update snapshot
 	d.ServicesMetadataUpdated = &ServicesMetadataUpdated{
-		Status:               &ServicesStatus{Online: serviceStatusMapToArray(online), Offline: serviceStatusMapToArray(offline)},
+		Heartbeat:            &ServicesHeartbeat{Online: serviceHeartbeatMapToArray(online), Offline: serviceHeartbeatMapToArray(offline)},
 		EventMetadata:        upd.GetEventMetadata(),
 		OpenTelemetryCarrier: upd.GetOpenTelemetryCarrier(),
 	}
@@ -140,49 +140,49 @@ func (d *ServicesMetadataSnapshotTaken) Handle(ctx context.Context, iter eventst
 	return iter.Err()
 }
 
-func serviceStatusMapToArray(m map[string]*ServicesStatus_Status) []*ServicesStatus_Status {
-	arr := make([]*ServicesStatus_Status, 0, len(m))
+func serviceHeartbeatMapToArray(m map[string]*ServicesHeartbeat_Heartbeat) []*ServicesHeartbeat_Heartbeat {
+	arr := make([]*ServicesHeartbeat_Heartbeat, 0, len(m))
 	for _, v := range m {
 		arr = append(arr, v)
 	}
 	// sort by serviceId and instanceId to make sure that order of services is always the same
 	sort.Slice(arr, func(i, j int) bool {
-		return arr[i].GetId() < arr[j].GetId()
+		return arr[i].GetServiceId() < arr[j].GetServiceId()
 	})
 	return arr
 }
 
-func (d *ServicesMetadataSnapshotTaken) updateStatus(ctx context.Context, req *commands.UpdateServiceMetadataRequest, em *EventMetadata, ac *commands.AuditContext) ([]eventstore.Event, error) {
-	if req.GetStatus().GetId() == "" {
-		return nil, status.Errorf(codes.InvalidArgument, "cannot update status for device %v: invalid instanceId", req.GetStatus().GetId())
+func (d *ServicesMetadataSnapshotTaken) updateHeartbeat(ctx context.Context, req *commands.UpdateServiceMetadataRequest, em *EventMetadata, ac *commands.AuditContext) ([]eventstore.Event, error) {
+	if req.GetHeartbeat().GetServiceId() == "" {
+		return nil, status.Errorf(codes.InvalidArgument, "cannot update status for device %v: invalid instanceId", req.GetHeartbeat().GetServiceId())
 	}
 	now := time.Now()
-	servicesStatus := d.GetServicesMetadataUpdated().GetStatus()
-	offline := make(map[string]*ServicesStatus_Status, len(servicesStatus.GetOnline())+len(servicesStatus.GetOffline()))
-	for _, v := range servicesStatus.GetOffline() {
-		key := v.GetId()
+	servicesHeartbeat := d.GetServicesMetadataUpdated().GetHeartbeat()
+	offline := make(map[string]*ServicesHeartbeat_Heartbeat, len(servicesHeartbeat.GetOnline())+len(servicesHeartbeat.GetOffline()))
+	for _, v := range servicesHeartbeat.GetOffline() {
+		key := v.GetServiceId()
 		offline[key] = v
 	}
 
-	if offline[req.GetStatus().GetId()] != nil {
+	if offline[req.GetHeartbeat().GetServiceId()] != nil {
 		// The service is already offline, and the service needs to be shut down to avoid conflicts in device connection status (ONLINE/OFFLINE).
-		return nil, status.Errorf(codes.FailedPrecondition, "cannot update status for device %v: already offline", req.GetStatus().GetId())
+		return nil, status.Errorf(codes.FailedPrecondition, "cannot update status for device %v: already offline", req.GetHeartbeat().GetServiceId())
 	}
 
-	online := make(map[string]*ServicesStatus_Status, 1)
-	for _, v := range servicesStatus.GetOnline() {
-		key := v.GetId()
-		if v.GetOnlineValidUntil() < now.UnixNano() {
+	online := make(map[string]*ServicesHeartbeat_Heartbeat, 1)
+	for _, v := range servicesHeartbeat.GetOnline() {
+		key := v.GetServiceId()
+		if v.GetHeartbeatValidUntil() < now.UnixNano() {
 			offline[key] = v
 		}
 	}
-	key := req.GetStatus().GetId()
+	key := req.GetHeartbeat().GetServiceId()
 
-	timeToLive := time.Duration(req.GetStatus().GetTimeToLive())
+	timeToLive := time.Duration(req.GetHeartbeat().GetTimeToLive())
 	// If the request has a valid timestamp, calculate the additional TTL based on processing time.
-	if req.GetStatus().GetTimestamp() >= 0 {
+	if req.GetHeartbeat().GetTimestamp() >= 0 {
 		// Calculate the time passed since the request's timestamp and adjust it by a cost factor. In worst case, the timeToLive will be adjusted by 20 minutes.
-		processingTime := time.Since(pkgTime.Unix(0, req.GetStatus().GetTimestamp()))
+		processingTime := time.Since(pkgTime.Unix(0, req.GetHeartbeat().GetTimestamp()))
 		// Limit the processing time to two minutes, because it will by multiplied by a cost factor.
 		if processingTime > time.Minute*2 {
 			processingTime = time.Minute * 2
@@ -193,14 +193,14 @@ func (d *ServicesMetadataSnapshotTaken) updateStatus(ctx context.Context, req *c
 		}
 	}
 
-	online[key] = &ServicesStatus_Status{
-		Id:               req.GetStatus().GetId(),
-		OnlineValidUntil: now.Add(timeToLive).UnixNano(),
+	online[key] = &ServicesHeartbeat_Heartbeat{
+		ServiceId:           req.GetHeartbeat().GetServiceId(),
+		HeartbeatValidUntil: now.Add(timeToLive).UnixNano(),
 	}
 	delete(offline, key)
 
 	ev := ServicesMetadataUpdated{
-		Status:               &ServicesStatus{Online: serviceStatusMapToArray(online), Offline: serviceStatusMapToArray(offline)},
+		Heartbeat:            &ServicesHeartbeat{Online: serviceHeartbeatMapToArray(online), Offline: serviceHeartbeatMapToArray(offline)},
 		EventMetadata:        em,
 		OpenTelemetryCarrier: propagation.TraceFromCtx(ctx),
 		AuditContext:         ac,
@@ -217,16 +217,16 @@ func (d *ServicesMetadataSnapshotTaken) updateStatus(ctx context.Context, req *c
 
 // return snapshot as event if any service was confirmed offline
 func (d *ServicesMetadataSnapshotTaken) confirmOfflineServices(ctx context.Context, req *ConfirmOfflineServicesRequest, em *EventMetadata, ac *commands.AuditContext) ([]eventstore.Event, error) {
-	servicesStatus := d.GetServicesMetadataUpdated().GetStatus()
-	offline := make(map[string]*ServicesStatus_Status, len(servicesStatus.GetOffline()))
-	for _, v := range servicesStatus.GetOffline() {
-		key := v.GetId()
+	servicesHeartbeat := d.GetServicesMetadataUpdated().GetHeartbeat()
+	offline := make(map[string]*ServicesHeartbeat_Heartbeat, len(servicesHeartbeat.GetOffline()))
+	for _, v := range servicesHeartbeat.GetOffline() {
+		key := v.GetServiceId()
 		offline[key] = v
 	}
 
 	var exist bool
-	for _, v := range req.Status {
-		key := v.GetId()
+	for _, v := range req.Heartbeat {
+		key := v.GetServiceId()
 		if _, ok := offline[key]; ok {
 			delete(offline, key)
 			exist = true
@@ -237,7 +237,7 @@ func (d *ServicesMetadataSnapshotTaken) confirmOfflineServices(ctx context.Conte
 	}
 	// take snapshot to dump full state of services
 	d.ServicesMetadataUpdated = &ServicesMetadataUpdated{
-		Status:               &ServicesStatus{Online: d.GetServicesMetadataUpdated().GetStatus().GetOnline(), Offline: serviceStatusMapToArray(offline)},
+		Heartbeat:            &ServicesHeartbeat{Online: d.GetServicesMetadataUpdated().GetHeartbeat().GetOnline(), Offline: serviceHeartbeatMapToArray(offline)},
 		EventMetadata:        em,
 		OpenTelemetryCarrier: propagation.TraceFromCtx(ctx),
 		AuditContext:         ac,
@@ -260,8 +260,8 @@ func (d *ServicesMetadataSnapshotTakenForCommand) updateServiceMetadataRequest(c
 	ac := commands.NewAuditContext(d.userID, "", d.owner)
 
 	switch {
-	case req.GetStatus() != nil:
-		return d.updateStatus(ctx, req, em, ac)
+	case req.GetHeartbeat() != nil:
+		return d.updateHeartbeat(ctx, req, em, ac)
 	default:
 		return nil, status.Errorf(codes.InvalidArgument, "unknown update type(%T)", req.GetUpdate())
 	}
@@ -280,7 +280,7 @@ func (d *ServicesMetadataSnapshotTakenForCommand) confirmOfflineServicesRequest(
 }
 
 type ConfirmOfflineServicesRequest struct {
-	Status []*ServicesStatus_Status
+	Heartbeat []*ServicesHeartbeat_Heartbeat
 }
 
 func (d *ServicesMetadataSnapshotTakenForCommand) HandleCommand(ctx context.Context, cmd aggregate.Command, newVersion uint64) ([]eventstore.Event, error) {

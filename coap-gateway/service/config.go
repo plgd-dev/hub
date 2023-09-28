@@ -19,12 +19,12 @@ import (
 
 // Config represent application configuration
 type Config struct {
-	Log           LogConfig           `yaml:"log" json:"log"`
-	APIs          APIsConfig          `yaml:"apis" json:"apis"`
-	Clients       ClientsConfig       `yaml:"clients" json:"clients"`
-	DeviceTwin    DeviceTwinConfig    `yaml:"deviceTwin" json:"deviceTwin"`
-	TaskQueue     queue.Config        `yaml:"taskQueue" json:"taskQueue"`
-	ServiceStatus ServiceStatusConfig `yaml:"serviceStatus" json:"serviceStatus"`
+	Log              LogConfig              `yaml:"log" json:"log"`
+	APIs             APIsConfig             `yaml:"apis" json:"apis"`
+	Clients          ClientsConfig          `yaml:"clients" json:"clients"`
+	DeviceTwin       DeviceTwinConfig       `yaml:"deviceTwin" json:"deviceTwin"`
+	TaskQueue        queue.Config           `yaml:"taskQueue" json:"taskQueue"`
+	ServiceHeartbeat ServiceHeartbeatConfig `yaml:"serviceHeartbeat" json:"serviceHeartbeat"`
 }
 
 func (c *Config) Validate() error {
@@ -40,17 +40,17 @@ func (c *Config) Validate() error {
 	if err := c.TaskQueue.Validate(); err != nil {
 		return fmt.Errorf("taskQueue.%w", err)
 	}
-	if err := c.ServiceStatus.Validate(); err != nil {
-		return fmt.Errorf("serviceStatus.%w", err)
+	if err := c.ServiceHeartbeat.Validate(); err != nil {
+		return fmt.Errorf("serviceHeartbeat.%w", err)
 	}
 	return nil
 }
 
-type ServiceStatusConfig struct {
+type ServiceHeartbeatConfig struct {
 	TimeToLive time.Duration `yaml:"timeToLive" json:"timeToLive"`
 }
 
-func (c *ServiceStatusConfig) Validate() error {
+func (c *ServiceHeartbeatConfig) Validate() error {
 	minTimeToLive := time.Second
 	if c.TimeToLive < minTimeToLive {
 		return fmt.Errorf("timeToLive('%v') - is less than %v", c.TimeToLive, minTimeToLive)

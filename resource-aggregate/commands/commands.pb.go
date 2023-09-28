@@ -1780,7 +1780,7 @@ type Connection struct {
 	Id               string              `protobuf:"bytes,3,opt,name=id,proto3" json:"id,omitempty"`                                                            // when status is ONLINE, this field contains the connection id. To update state offline, this field must be same as the one in the previous message.
 	ConnectedAt      int64               `protobuf:"varint,4,opt,name=connected_at,json=connectedAt,proto3" json:"connected_at,omitempty"`                      // timestamp when the device was connected
 	Protocol         Connection_Protocol `protobuf:"varint,5,opt,name=protocol,proto3,enum=resourceaggregate.pb.Connection_Protocol" json:"protocol,omitempty"` // application protocol. It need to be set when the status is ONLINE.
-	Service          *Connection_Service `protobuf:"bytes,6,opt,name=service,proto3" json:"service,omitempty"`                                                  // The service.ID, which identify the device being served, must be set when the status is ONLINE. However, during an OFFLINE event, they will be sed to empty values.
+	ServiceId        string              `protobuf:"bytes,6,opt,name=service_id,json=serviceId,proto3" json:"service_id,omitempty"`                             // The service.ID, which identify the device being served, must be set when the status is ONLINE. However, during an OFFLINE event, they will be sed to empty values.
 }
 
 func (x *Connection) Reset() {
@@ -1850,11 +1850,11 @@ func (x *Connection) GetProtocol() Connection_Protocol {
 	return Connection_UNKNOWN
 }
 
-func (x *Connection) GetService() *Connection_Service {
+func (x *Connection) GetServiceId() string {
 	if x != nil {
-		return x.Service
+		return x.ServiceId
 	}
-	return nil
+	return ""
 }
 
 type TwinSynchronization struct {
@@ -2640,18 +2640,18 @@ func (x *DeleteDevicesResponse) GetAuditContext() *AuditContext {
 	return nil
 }
 
-type ServiceStatus struct {
+type ServiceHeartbeat struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Id         string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`                                      // generated unique id during start the service
+	ServiceId  string `protobuf:"bytes,1,opt,name=service_id,json=serviceId,proto3" json:"service_id,omitempty"`       // generated unique id during start the service
 	TimeToLive int64  `protobuf:"varint,2,opt,name=time_to_live,json=timeToLive,proto3" json:"time_to_live,omitempty"` // validity in nanoseconds. minimal value is 1000000000 (1s).
 	Timestamp  int64  `protobuf:"varint,3,opt,name=timestamp,proto3" json:"timestamp,omitempty"`                       // unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano)
 }
 
-func (x *ServiceStatus) Reset() {
-	*x = ServiceStatus{}
+func (x *ServiceHeartbeat) Reset() {
+	*x = ServiceHeartbeat{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_resource_aggregate_pb_commands_proto_msgTypes[37]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2659,13 +2659,13 @@ func (x *ServiceStatus) Reset() {
 	}
 }
 
-func (x *ServiceStatus) String() string {
+func (x *ServiceHeartbeat) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ServiceStatus) ProtoMessage() {}
+func (*ServiceHeartbeat) ProtoMessage() {}
 
-func (x *ServiceStatus) ProtoReflect() protoreflect.Message {
+func (x *ServiceHeartbeat) ProtoReflect() protoreflect.Message {
 	mi := &file_resource_aggregate_pb_commands_proto_msgTypes[37]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2677,26 +2677,26 @@ func (x *ServiceStatus) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ServiceStatus.ProtoReflect.Descriptor instead.
-func (*ServiceStatus) Descriptor() ([]byte, []int) {
+// Deprecated: Use ServiceHeartbeat.ProtoReflect.Descriptor instead.
+func (*ServiceHeartbeat) Descriptor() ([]byte, []int) {
 	return file_resource_aggregate_pb_commands_proto_rawDescGZIP(), []int{37}
 }
 
-func (x *ServiceStatus) GetId() string {
+func (x *ServiceHeartbeat) GetServiceId() string {
 	if x != nil {
-		return x.Id
+		return x.ServiceId
 	}
 	return ""
 }
 
-func (x *ServiceStatus) GetTimeToLive() int64 {
+func (x *ServiceHeartbeat) GetTimeToLive() int64 {
 	if x != nil {
 		return x.TimeToLive
 	}
 	return 0
 }
 
-func (x *ServiceStatus) GetTimestamp() int64 {
+func (x *ServiceHeartbeat) GetTimestamp() int64 {
 	if x != nil {
 		return x.Timestamp
 	}
@@ -2710,7 +2710,7 @@ type UpdateServiceMetadataRequest struct {
 
 	// Types that are assignable to Update:
 	//
-	//	*UpdateServiceMetadataRequest_Status
+	//	*UpdateServiceMetadataRequest_Heartbeat
 	Update isUpdateServiceMetadataRequest_Update `protobuf_oneof:"update"`
 }
 
@@ -2753,9 +2753,9 @@ func (m *UpdateServiceMetadataRequest) GetUpdate() isUpdateServiceMetadataReques
 	return nil
 }
 
-func (x *UpdateServiceMetadataRequest) GetStatus() *ServiceStatus {
-	if x, ok := x.GetUpdate().(*UpdateServiceMetadataRequest_Status); ok {
-		return x.Status
+func (x *UpdateServiceMetadataRequest) GetHeartbeat() *ServiceHeartbeat {
+	if x, ok := x.GetUpdate().(*UpdateServiceMetadataRequest_Heartbeat); ok {
+		return x.Heartbeat
 	}
 	return nil
 }
@@ -2764,19 +2764,19 @@ type isUpdateServiceMetadataRequest_Update interface {
 	isUpdateServiceMetadataRequest_Update()
 }
 
-type UpdateServiceMetadataRequest_Status struct {
+type UpdateServiceMetadataRequest_Heartbeat struct {
 	// Add or update service in the online services list and move online expired services to offline services list
-	Status *ServiceStatus `protobuf:"bytes,1,opt,name=status,proto3,oneof"`
+	Heartbeat *ServiceHeartbeat `protobuf:"bytes,1,opt,name=heartbeat,proto3,oneof"`
 }
 
-func (*UpdateServiceMetadataRequest_Status) isUpdateServiceMetadataRequest_Update() {}
+func (*UpdateServiceMetadataRequest_Heartbeat) isUpdateServiceMetadataRequest_Update() {}
 
 type UpdateServiceMetadataResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	OnlineValidUntil int64 `protobuf:"varint,1,opt,name=online_valid_until,json=onlineValidUntil,proto3" json:"online_valid_until,omitempty"` // unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when service is considered as expired. 0 means forever.
+	HeartbeatValidUntil int64 `protobuf:"varint,1,opt,name=heartbeat_valid_until,json=heartbeatValidUntil,proto3" json:"heartbeat_valid_until,omitempty"` // unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when service is considered as expired. 0 means forever.
 }
 
 func (x *UpdateServiceMetadataResponse) Reset() {
@@ -2811,58 +2811,11 @@ func (*UpdateServiceMetadataResponse) Descriptor() ([]byte, []int) {
 	return file_resource_aggregate_pb_commands_proto_rawDescGZIP(), []int{39}
 }
 
-func (x *UpdateServiceMetadataResponse) GetOnlineValidUntil() int64 {
+func (x *UpdateServiceMetadataResponse) GetHeartbeatValidUntil() int64 {
 	if x != nil {
-		return x.OnlineValidUntil
+		return x.HeartbeatValidUntil
 	}
 	return 0
-}
-
-type Connection_Service struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"` // generated unique id during start the service
-}
-
-func (x *Connection_Service) Reset() {
-	*x = Connection_Service{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_resource_aggregate_pb_commands_proto_msgTypes[40]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *Connection_Service) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*Connection_Service) ProtoMessage() {}
-
-func (x *Connection_Service) ProtoReflect() protoreflect.Message {
-	mi := &file_resource_aggregate_pb_commands_proto_msgTypes[40]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use Connection_Service.ProtoReflect.Descriptor instead.
-func (*Connection_Service) Descriptor() ([]byte, []int) {
-	return file_resource_aggregate_pb_commands_proto_rawDescGZIP(), []int{25, 0}
-}
-
-func (x *Connection_Service) GetId() string {
-	if x != nil {
-		return x.Id
-	}
-	return ""
 }
 
 var File_resource_aggregate_pb_commands_proto protoreflect.FileDescriptor
@@ -3190,7 +3143,7 @@ var file_resource_aggregate_pb_commands_proto_rawDesc = []byte{
 	0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x22, 0x2e, 0x72, 0x65, 0x73, 0x6f, 0x75, 0x72,
 	0x63, 0x65, 0x61, 0x67, 0x67, 0x72, 0x65, 0x67, 0x61, 0x74, 0x65, 0x2e, 0x70, 0x62, 0x2e, 0x41,
 	0x75, 0x64, 0x69, 0x74, 0x43, 0x6f, 0x6e, 0x74, 0x65, 0x78, 0x74, 0x52, 0x0c, 0x61, 0x75, 0x64,
-	0x69, 0x74, 0x43, 0x6f, 0x6e, 0x74, 0x65, 0x78, 0x74, 0x22, 0xcb, 0x03, 0x0a, 0x0a, 0x43, 0x6f,
+	0x69, 0x74, 0x43, 0x6f, 0x6e, 0x74, 0x65, 0x78, 0x74, 0x22, 0x8b, 0x03, 0x0a, 0x0a, 0x43, 0x6f,
 	0x6e, 0x6e, 0x65, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x3f, 0x0a, 0x06, 0x73, 0x74, 0x61, 0x74,
 	0x75, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x27, 0x2e, 0x72, 0x65, 0x73, 0x6f, 0x75,
 	0x72, 0x63, 0x65, 0x61, 0x67, 0x67, 0x72, 0x65, 0x67, 0x61, 0x74, 0x65, 0x2e, 0x70, 0x62, 0x2e,
@@ -3206,12 +3159,8 @@ var file_resource_aggregate_pb_commands_proto_rawDesc = []byte{
 	0x65, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x61, 0x67, 0x67, 0x72, 0x65, 0x67, 0x61, 0x74, 0x65,
 	0x2e, 0x70, 0x62, 0x2e, 0x43, 0x6f, 0x6e, 0x6e, 0x65, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x50,
 	0x72, 0x6f, 0x74, 0x6f, 0x63, 0x6f, 0x6c, 0x52, 0x08, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x63, 0x6f,
-	0x6c, 0x12, 0x42, 0x0a, 0x07, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x18, 0x06, 0x20, 0x01,
-	0x28, 0x0b, 0x32, 0x28, 0x2e, 0x72, 0x65, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x61, 0x67, 0x67,
-	0x72, 0x65, 0x67, 0x61, 0x74, 0x65, 0x2e, 0x70, 0x62, 0x2e, 0x43, 0x6f, 0x6e, 0x6e, 0x65, 0x63,
-	0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x52, 0x07, 0x73, 0x65,
-	0x72, 0x76, 0x69, 0x63, 0x65, 0x1a, 0x19, 0x0a, 0x07, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65,
-	0x12, 0x0e, 0x0a, 0x02, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x02, 0x69, 0x64,
+	0x6c, 0x12, 0x1d, 0x0a, 0x0a, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x5f, 0x69, 0x64, 0x18,
+	0x06, 0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x49, 0x64,
 	0x22, 0x21, 0x0a, 0x06, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x12, 0x0b, 0x0a, 0x07, 0x4f, 0x46,
 	0x46, 0x4c, 0x49, 0x4e, 0x45, 0x10, 0x00, 0x12, 0x0a, 0x0a, 0x06, 0x4f, 0x4e, 0x4c, 0x49, 0x4e,
 	0x45, 0x10, 0x01, 0x22, 0x52, 0x0a, 0x08, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x63, 0x6f, 0x6c, 0x12,
@@ -3371,29 +3320,31 @@ var file_resource_aggregate_pb_commands_proto_rawDesc = []byte{
 	0x01, 0x28, 0x0b, 0x32, 0x22, 0x2e, 0x72, 0x65, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x61, 0x67,
 	0x67, 0x72, 0x65, 0x67, 0x61, 0x74, 0x65, 0x2e, 0x70, 0x62, 0x2e, 0x41, 0x75, 0x64, 0x69, 0x74,
 	0x43, 0x6f, 0x6e, 0x74, 0x65, 0x78, 0x74, 0x52, 0x0c, 0x61, 0x75, 0x64, 0x69, 0x74, 0x43, 0x6f,
-	0x6e, 0x74, 0x65, 0x78, 0x74, 0x22, 0x5f, 0x0a, 0x0d, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65,
-	0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x12, 0x0e, 0x0a, 0x02, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01,
-	0x28, 0x09, 0x52, 0x02, 0x69, 0x64, 0x12, 0x20, 0x0a, 0x0c, 0x74, 0x69, 0x6d, 0x65, 0x5f, 0x74,
-	0x6f, 0x5f, 0x6c, 0x69, 0x76, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x03, 0x52, 0x0a, 0x74, 0x69,
-	0x6d, 0x65, 0x54, 0x6f, 0x4c, 0x69, 0x76, 0x65, 0x12, 0x1c, 0x0a, 0x09, 0x74, 0x69, 0x6d, 0x65,
-	0x73, 0x74, 0x61, 0x6d, 0x70, 0x18, 0x03, 0x20, 0x01, 0x28, 0x03, 0x52, 0x09, 0x74, 0x69, 0x6d,
-	0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x22, 0x67, 0x0a, 0x1c, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65,
-	0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x52,
-	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x3d, 0x0a, 0x06, 0x73, 0x74, 0x61, 0x74, 0x75, 0x73,
-	0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x23, 0x2e, 0x72, 0x65, 0x73, 0x6f, 0x75, 0x72, 0x63,
-	0x65, 0x61, 0x67, 0x67, 0x72, 0x65, 0x67, 0x61, 0x74, 0x65, 0x2e, 0x70, 0x62, 0x2e, 0x53, 0x65,
-	0x72, 0x76, 0x69, 0x63, 0x65, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x48, 0x00, 0x52, 0x06, 0x73,
-	0x74, 0x61, 0x74, 0x75, 0x73, 0x42, 0x08, 0x0a, 0x06, 0x75, 0x70, 0x64, 0x61, 0x74, 0x65, 0x22,
-	0x4d, 0x0a, 0x1d, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65,
-	0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
-	0x12, 0x2c, 0x0a, 0x12, 0x6f, 0x6e, 0x6c, 0x69, 0x6e, 0x65, 0x5f, 0x76, 0x61, 0x6c, 0x69, 0x64,
-	0x5f, 0x75, 0x6e, 0x74, 0x69, 0x6c, 0x18, 0x01, 0x20, 0x01, 0x28, 0x03, 0x52, 0x10, 0x6f, 0x6e,
-	0x6c, 0x69, 0x6e, 0x65, 0x56, 0x61, 0x6c, 0x69, 0x64, 0x55, 0x6e, 0x74, 0x69, 0x6c, 0x42, 0x41,
-	0x5a, 0x3f, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x70, 0x6c, 0x67,
-	0x64, 0x2d, 0x64, 0x65, 0x76, 0x2f, 0x68, 0x75, 0x62, 0x2f, 0x76, 0x32, 0x2f, 0x72, 0x65, 0x73,
-	0x6f, 0x75, 0x72, 0x63, 0x65, 0x2d, 0x61, 0x67, 0x67, 0x72, 0x65, 0x67, 0x61, 0x74, 0x65, 0x2f,
-	0x63, 0x6f, 0x6d, 0x6d, 0x61, 0x6e, 0x64, 0x73, 0x3b, 0x63, 0x6f, 0x6d, 0x6d, 0x61, 0x6e, 0x64,
-	0x73, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x6e, 0x74, 0x65, 0x78, 0x74, 0x22, 0x71, 0x0a, 0x10, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65,
+	0x48, 0x65, 0x61, 0x72, 0x74, 0x62, 0x65, 0x61, 0x74, 0x12, 0x1d, 0x0a, 0x0a, 0x73, 0x65, 0x72,
+	0x76, 0x69, 0x63, 0x65, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x73,
+	0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x49, 0x64, 0x12, 0x20, 0x0a, 0x0c, 0x74, 0x69, 0x6d, 0x65,
+	0x5f, 0x74, 0x6f, 0x5f, 0x6c, 0x69, 0x76, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x03, 0x52, 0x0a,
+	0x74, 0x69, 0x6d, 0x65, 0x54, 0x6f, 0x4c, 0x69, 0x76, 0x65, 0x12, 0x1c, 0x0a, 0x09, 0x74, 0x69,
+	0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x18, 0x03, 0x20, 0x01, 0x28, 0x03, 0x52, 0x09, 0x74,
+	0x69, 0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x22, 0x70, 0x0a, 0x1c, 0x55, 0x70, 0x64, 0x61,
+	0x74, 0x65, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74,
+	0x61, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x46, 0x0a, 0x09, 0x68, 0x65, 0x61, 0x72,
+	0x74, 0x62, 0x65, 0x61, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x26, 0x2e, 0x72, 0x65,
+	0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x61, 0x67, 0x67, 0x72, 0x65, 0x67, 0x61, 0x74, 0x65, 0x2e,
+	0x70, 0x62, 0x2e, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x48, 0x65, 0x61, 0x72, 0x74, 0x62,
+	0x65, 0x61, 0x74, 0x48, 0x00, 0x52, 0x09, 0x68, 0x65, 0x61, 0x72, 0x74, 0x62, 0x65, 0x61, 0x74,
+	0x42, 0x08, 0x0a, 0x06, 0x75, 0x70, 0x64, 0x61, 0x74, 0x65, 0x22, 0x53, 0x0a, 0x1d, 0x55, 0x70,
+	0x64, 0x61, 0x74, 0x65, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x4d, 0x65, 0x74, 0x61, 0x64,
+	0x61, 0x74, 0x61, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x32, 0x0a, 0x15, 0x68,
+	0x65, 0x61, 0x72, 0x74, 0x62, 0x65, 0x61, 0x74, 0x5f, 0x76, 0x61, 0x6c, 0x69, 0x64, 0x5f, 0x75,
+	0x6e, 0x74, 0x69, 0x6c, 0x18, 0x01, 0x20, 0x01, 0x28, 0x03, 0x52, 0x13, 0x68, 0x65, 0x61, 0x72,
+	0x74, 0x62, 0x65, 0x61, 0x74, 0x56, 0x61, 0x6c, 0x69, 0x64, 0x55, 0x6e, 0x74, 0x69, 0x6c, 0x42,
+	0x41, 0x5a, 0x3f, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x70, 0x6c,
+	0x67, 0x64, 0x2d, 0x64, 0x65, 0x76, 0x2f, 0x68, 0x75, 0x62, 0x2f, 0x76, 0x32, 0x2f, 0x72, 0x65,
+	0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x2d, 0x61, 0x67, 0x67, 0x72, 0x65, 0x67, 0x61, 0x74, 0x65,
+	0x2f, 0x63, 0x6f, 0x6d, 0x6d, 0x61, 0x6e, 0x64, 0x73, 0x3b, 0x63, 0x6f, 0x6d, 0x6d, 0x61, 0x6e,
+	0x64, 0x73, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -3409,7 +3360,7 @@ func file_resource_aggregate_pb_commands_proto_rawDescGZIP() []byte {
 }
 
 var file_resource_aggregate_pb_commands_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
-var file_resource_aggregate_pb_commands_proto_msgTypes = make([]protoimpl.MessageInfo, 41)
+var file_resource_aggregate_pb_commands_proto_msgTypes = make([]protoimpl.MessageInfo, 40)
 var file_resource_aggregate_pb_commands_proto_goTypes = []interface{}{
 	(Connection_Status)(0),                       // 0: resourceaggregate.pb.Connection.Status
 	(Connection_Protocol)(0),                     // 1: resourceaggregate.pb.Connection.Protocol
@@ -3451,88 +3402,86 @@ var file_resource_aggregate_pb_commands_proto_goTypes = []interface{}{
 	(*CancelPendingMetadataUpdatesResponse)(nil), // 37: resourceaggregate.pb.CancelPendingMetadataUpdatesResponse
 	(*DeleteDevicesRequest)(nil),                 // 38: resourceaggregate.pb.DeleteDevicesRequest
 	(*DeleteDevicesResponse)(nil),                // 39: resourceaggregate.pb.DeleteDevicesResponse
-	(*ServiceStatus)(nil),                        // 40: resourceaggregate.pb.ServiceStatus
+	(*ServiceHeartbeat)(nil),                     // 40: resourceaggregate.pb.ServiceHeartbeat
 	(*UpdateServiceMetadataRequest)(nil),         // 41: resourceaggregate.pb.UpdateServiceMetadataRequest
 	(*UpdateServiceMetadataResponse)(nil),        // 42: resourceaggregate.pb.UpdateServiceMetadataResponse
-	(*Connection_Service)(nil),                   // 43: resourceaggregate.pb.Connection.Service
-	(*Resource)(nil),                             // 44: resourceaggregate.pb.Resource
-	(*AuditContext)(nil),                         // 45: resourceaggregate.pb.AuditContext
-	(*ResourceId)(nil),                           // 46: resourceaggregate.pb.ResourceId
-	(*Content)(nil),                              // 47: resourceaggregate.pb.Content
-	(Status)(0),                                  // 48: resourceaggregate.pb.Status
+	(*Resource)(nil),                             // 43: resourceaggregate.pb.Resource
+	(*AuditContext)(nil),                         // 44: resourceaggregate.pb.AuditContext
+	(*ResourceId)(nil),                           // 45: resourceaggregate.pb.ResourceId
+	(*Content)(nil),                              // 46: resourceaggregate.pb.Content
+	(Status)(0),                                  // 47: resourceaggregate.pb.Status
 }
 var file_resource_aggregate_pb_commands_proto_depIdxs = []int32{
-	44, // 0: resourceaggregate.pb.PublishResourceLinksRequest.resources:type_name -> resourceaggregate.pb.Resource
+	43, // 0: resourceaggregate.pb.PublishResourceLinksRequest.resources:type_name -> resourceaggregate.pb.Resource
 	3,  // 1: resourceaggregate.pb.PublishResourceLinksRequest.command_metadata:type_name -> resourceaggregate.pb.CommandMetadata
-	44, // 2: resourceaggregate.pb.PublishResourceLinksResponse.published_resources:type_name -> resourceaggregate.pb.Resource
-	45, // 3: resourceaggregate.pb.PublishResourceLinksResponse.audit_context:type_name -> resourceaggregate.pb.AuditContext
+	43, // 2: resourceaggregate.pb.PublishResourceLinksResponse.published_resources:type_name -> resourceaggregate.pb.Resource
+	44, // 3: resourceaggregate.pb.PublishResourceLinksResponse.audit_context:type_name -> resourceaggregate.pb.AuditContext
 	3,  // 4: resourceaggregate.pb.UnpublishResourceLinksRequest.command_metadata:type_name -> resourceaggregate.pb.CommandMetadata
-	45, // 5: resourceaggregate.pb.UnpublishResourceLinksResponse.audit_context:type_name -> resourceaggregate.pb.AuditContext
-	46, // 6: resourceaggregate.pb.NotifyResourceChangedRequest.resource_id:type_name -> resourceaggregate.pb.ResourceId
-	47, // 7: resourceaggregate.pb.NotifyResourceChangedRequest.content:type_name -> resourceaggregate.pb.Content
+	44, // 5: resourceaggregate.pb.UnpublishResourceLinksResponse.audit_context:type_name -> resourceaggregate.pb.AuditContext
+	45, // 6: resourceaggregate.pb.NotifyResourceChangedRequest.resource_id:type_name -> resourceaggregate.pb.ResourceId
+	46, // 7: resourceaggregate.pb.NotifyResourceChangedRequest.content:type_name -> resourceaggregate.pb.Content
 	3,  // 8: resourceaggregate.pb.NotifyResourceChangedRequest.command_metadata:type_name -> resourceaggregate.pb.CommandMetadata
-	48, // 9: resourceaggregate.pb.NotifyResourceChangedRequest.status:type_name -> resourceaggregate.pb.Status
-	45, // 10: resourceaggregate.pb.NotifyResourceChangedResponse.audit_context:type_name -> resourceaggregate.pb.AuditContext
+	47, // 9: resourceaggregate.pb.NotifyResourceChangedRequest.status:type_name -> resourceaggregate.pb.Status
+	44, // 10: resourceaggregate.pb.NotifyResourceChangedResponse.audit_context:type_name -> resourceaggregate.pb.AuditContext
 	8,  // 11: resourceaggregate.pb.BatchNotifyResourceChangedRequest.batch:type_name -> resourceaggregate.pb.NotifyResourceChangedRequest
-	45, // 12: resourceaggregate.pb.BatchNotifyResourceChangedResponse.audit_context:type_name -> resourceaggregate.pb.AuditContext
-	46, // 13: resourceaggregate.pb.UpdateResourceRequest.resource_id:type_name -> resourceaggregate.pb.ResourceId
-	47, // 14: resourceaggregate.pb.UpdateResourceRequest.content:type_name -> resourceaggregate.pb.Content
+	44, // 12: resourceaggregate.pb.BatchNotifyResourceChangedResponse.audit_context:type_name -> resourceaggregate.pb.AuditContext
+	45, // 13: resourceaggregate.pb.UpdateResourceRequest.resource_id:type_name -> resourceaggregate.pb.ResourceId
+	46, // 14: resourceaggregate.pb.UpdateResourceRequest.content:type_name -> resourceaggregate.pb.Content
 	3,  // 15: resourceaggregate.pb.UpdateResourceRequest.command_metadata:type_name -> resourceaggregate.pb.CommandMetadata
-	45, // 16: resourceaggregate.pb.UpdateResourceResponse.audit_context:type_name -> resourceaggregate.pb.AuditContext
-	46, // 17: resourceaggregate.pb.ConfirmResourceUpdateRequest.resource_id:type_name -> resourceaggregate.pb.ResourceId
-	48, // 18: resourceaggregate.pb.ConfirmResourceUpdateRequest.status:type_name -> resourceaggregate.pb.Status
-	47, // 19: resourceaggregate.pb.ConfirmResourceUpdateRequest.content:type_name -> resourceaggregate.pb.Content
+	44, // 16: resourceaggregate.pb.UpdateResourceResponse.audit_context:type_name -> resourceaggregate.pb.AuditContext
+	45, // 17: resourceaggregate.pb.ConfirmResourceUpdateRequest.resource_id:type_name -> resourceaggregate.pb.ResourceId
+	47, // 18: resourceaggregate.pb.ConfirmResourceUpdateRequest.status:type_name -> resourceaggregate.pb.Status
+	46, // 19: resourceaggregate.pb.ConfirmResourceUpdateRequest.content:type_name -> resourceaggregate.pb.Content
 	3,  // 20: resourceaggregate.pb.ConfirmResourceUpdateRequest.command_metadata:type_name -> resourceaggregate.pb.CommandMetadata
-	45, // 21: resourceaggregate.pb.ConfirmResourceUpdateResponse.audit_context:type_name -> resourceaggregate.pb.AuditContext
-	46, // 22: resourceaggregate.pb.RetrieveResourceRequest.resource_id:type_name -> resourceaggregate.pb.ResourceId
+	44, // 21: resourceaggregate.pb.ConfirmResourceUpdateResponse.audit_context:type_name -> resourceaggregate.pb.AuditContext
+	45, // 22: resourceaggregate.pb.RetrieveResourceRequest.resource_id:type_name -> resourceaggregate.pb.ResourceId
 	3,  // 23: resourceaggregate.pb.RetrieveResourceRequest.command_metadata:type_name -> resourceaggregate.pb.CommandMetadata
-	45, // 24: resourceaggregate.pb.RetrieveResourceResponse.audit_context:type_name -> resourceaggregate.pb.AuditContext
-	46, // 25: resourceaggregate.pb.ConfirmResourceRetrieveRequest.resource_id:type_name -> resourceaggregate.pb.ResourceId
-	48, // 26: resourceaggregate.pb.ConfirmResourceRetrieveRequest.status:type_name -> resourceaggregate.pb.Status
-	47, // 27: resourceaggregate.pb.ConfirmResourceRetrieveRequest.content:type_name -> resourceaggregate.pb.Content
+	44, // 24: resourceaggregate.pb.RetrieveResourceResponse.audit_context:type_name -> resourceaggregate.pb.AuditContext
+	45, // 25: resourceaggregate.pb.ConfirmResourceRetrieveRequest.resource_id:type_name -> resourceaggregate.pb.ResourceId
+	47, // 26: resourceaggregate.pb.ConfirmResourceRetrieveRequest.status:type_name -> resourceaggregate.pb.Status
+	46, // 27: resourceaggregate.pb.ConfirmResourceRetrieveRequest.content:type_name -> resourceaggregate.pb.Content
 	3,  // 28: resourceaggregate.pb.ConfirmResourceRetrieveRequest.command_metadata:type_name -> resourceaggregate.pb.CommandMetadata
-	45, // 29: resourceaggregate.pb.ConfirmResourceRetrieveResponse.audit_context:type_name -> resourceaggregate.pb.AuditContext
-	46, // 30: resourceaggregate.pb.DeleteResourceRequest.resource_id:type_name -> resourceaggregate.pb.ResourceId
+	44, // 29: resourceaggregate.pb.ConfirmResourceRetrieveResponse.audit_context:type_name -> resourceaggregate.pb.AuditContext
+	45, // 30: resourceaggregate.pb.DeleteResourceRequest.resource_id:type_name -> resourceaggregate.pb.ResourceId
 	3,  // 31: resourceaggregate.pb.DeleteResourceRequest.command_metadata:type_name -> resourceaggregate.pb.CommandMetadata
-	45, // 32: resourceaggregate.pb.DeleteResourceResponse.audit_context:type_name -> resourceaggregate.pb.AuditContext
-	46, // 33: resourceaggregate.pb.ConfirmResourceDeleteRequest.resource_id:type_name -> resourceaggregate.pb.ResourceId
-	48, // 34: resourceaggregate.pb.ConfirmResourceDeleteRequest.status:type_name -> resourceaggregate.pb.Status
-	47, // 35: resourceaggregate.pb.ConfirmResourceDeleteRequest.content:type_name -> resourceaggregate.pb.Content
+	44, // 32: resourceaggregate.pb.DeleteResourceResponse.audit_context:type_name -> resourceaggregate.pb.AuditContext
+	45, // 33: resourceaggregate.pb.ConfirmResourceDeleteRequest.resource_id:type_name -> resourceaggregate.pb.ResourceId
+	47, // 34: resourceaggregate.pb.ConfirmResourceDeleteRequest.status:type_name -> resourceaggregate.pb.Status
+	46, // 35: resourceaggregate.pb.ConfirmResourceDeleteRequest.content:type_name -> resourceaggregate.pb.Content
 	3,  // 36: resourceaggregate.pb.ConfirmResourceDeleteRequest.command_metadata:type_name -> resourceaggregate.pb.CommandMetadata
-	45, // 37: resourceaggregate.pb.ConfirmResourceDeleteResponse.audit_context:type_name -> resourceaggregate.pb.AuditContext
-	46, // 38: resourceaggregate.pb.CreateResourceRequest.resource_id:type_name -> resourceaggregate.pb.ResourceId
-	47, // 39: resourceaggregate.pb.CreateResourceRequest.content:type_name -> resourceaggregate.pb.Content
+	44, // 37: resourceaggregate.pb.ConfirmResourceDeleteResponse.audit_context:type_name -> resourceaggregate.pb.AuditContext
+	45, // 38: resourceaggregate.pb.CreateResourceRequest.resource_id:type_name -> resourceaggregate.pb.ResourceId
+	46, // 39: resourceaggregate.pb.CreateResourceRequest.content:type_name -> resourceaggregate.pb.Content
 	3,  // 40: resourceaggregate.pb.CreateResourceRequest.command_metadata:type_name -> resourceaggregate.pb.CommandMetadata
-	45, // 41: resourceaggregate.pb.CreateResourceResponse.audit_context:type_name -> resourceaggregate.pb.AuditContext
-	46, // 42: resourceaggregate.pb.ConfirmResourceCreateRequest.resource_id:type_name -> resourceaggregate.pb.ResourceId
-	48, // 43: resourceaggregate.pb.ConfirmResourceCreateRequest.status:type_name -> resourceaggregate.pb.Status
-	47, // 44: resourceaggregate.pb.ConfirmResourceCreateRequest.content:type_name -> resourceaggregate.pb.Content
+	44, // 41: resourceaggregate.pb.CreateResourceResponse.audit_context:type_name -> resourceaggregate.pb.AuditContext
+	45, // 42: resourceaggregate.pb.ConfirmResourceCreateRequest.resource_id:type_name -> resourceaggregate.pb.ResourceId
+	47, // 43: resourceaggregate.pb.ConfirmResourceCreateRequest.status:type_name -> resourceaggregate.pb.Status
+	46, // 44: resourceaggregate.pb.ConfirmResourceCreateRequest.content:type_name -> resourceaggregate.pb.Content
 	3,  // 45: resourceaggregate.pb.ConfirmResourceCreateRequest.command_metadata:type_name -> resourceaggregate.pb.CommandMetadata
-	45, // 46: resourceaggregate.pb.ConfirmResourceCreateResponse.audit_context:type_name -> resourceaggregate.pb.AuditContext
+	44, // 46: resourceaggregate.pb.ConfirmResourceCreateResponse.audit_context:type_name -> resourceaggregate.pb.AuditContext
 	0,  // 47: resourceaggregate.pb.Connection.status:type_name -> resourceaggregate.pb.Connection.Status
 	1,  // 48: resourceaggregate.pb.Connection.protocol:type_name -> resourceaggregate.pb.Connection.Protocol
-	43, // 49: resourceaggregate.pb.Connection.service:type_name -> resourceaggregate.pb.Connection.Service
-	2,  // 50: resourceaggregate.pb.TwinSynchronization.state:type_name -> resourceaggregate.pb.TwinSynchronization.State
-	3,  // 51: resourceaggregate.pb.TwinSynchronization.command_metadata:type_name -> resourceaggregate.pb.CommandMetadata
-	28, // 52: resourceaggregate.pb.UpdateDeviceMetadataRequest.connection:type_name -> resourceaggregate.pb.Connection
-	29, // 53: resourceaggregate.pb.UpdateDeviceMetadataRequest.twin_synchronization:type_name -> resourceaggregate.pb.TwinSynchronization
-	3,  // 54: resourceaggregate.pb.UpdateDeviceMetadataRequest.command_metadata:type_name -> resourceaggregate.pb.CommandMetadata
-	45, // 55: resourceaggregate.pb.UpdateDeviceMetadataResponse.audit_context:type_name -> resourceaggregate.pb.AuditContext
-	48, // 56: resourceaggregate.pb.ConfirmDeviceMetadataUpdateRequest.status:type_name -> resourceaggregate.pb.Status
-	3,  // 57: resourceaggregate.pb.ConfirmDeviceMetadataUpdateRequest.command_metadata:type_name -> resourceaggregate.pb.CommandMetadata
-	45, // 58: resourceaggregate.pb.ConfirmDeviceMetadataUpdateResponse.audit_context:type_name -> resourceaggregate.pb.AuditContext
-	46, // 59: resourceaggregate.pb.CancelPendingCommandsRequest.resource_id:type_name -> resourceaggregate.pb.ResourceId
-	3,  // 60: resourceaggregate.pb.CancelPendingCommandsRequest.command_metadata:type_name -> resourceaggregate.pb.CommandMetadata
-	45, // 61: resourceaggregate.pb.CancelPendingCommandsResponse.audit_context:type_name -> resourceaggregate.pb.AuditContext
-	3,  // 62: resourceaggregate.pb.CancelPendingMetadataUpdatesRequest.command_metadata:type_name -> resourceaggregate.pb.CommandMetadata
-	45, // 63: resourceaggregate.pb.CancelPendingMetadataUpdatesResponse.audit_context:type_name -> resourceaggregate.pb.AuditContext
-	45, // 64: resourceaggregate.pb.DeleteDevicesResponse.audit_context:type_name -> resourceaggregate.pb.AuditContext
-	40, // 65: resourceaggregate.pb.UpdateServiceMetadataRequest.status:type_name -> resourceaggregate.pb.ServiceStatus
-	66, // [66:66] is the sub-list for method output_type
-	66, // [66:66] is the sub-list for method input_type
-	66, // [66:66] is the sub-list for extension type_name
-	66, // [66:66] is the sub-list for extension extendee
-	0,  // [0:66] is the sub-list for field type_name
+	2,  // 49: resourceaggregate.pb.TwinSynchronization.state:type_name -> resourceaggregate.pb.TwinSynchronization.State
+	3,  // 50: resourceaggregate.pb.TwinSynchronization.command_metadata:type_name -> resourceaggregate.pb.CommandMetadata
+	28, // 51: resourceaggregate.pb.UpdateDeviceMetadataRequest.connection:type_name -> resourceaggregate.pb.Connection
+	29, // 52: resourceaggregate.pb.UpdateDeviceMetadataRequest.twin_synchronization:type_name -> resourceaggregate.pb.TwinSynchronization
+	3,  // 53: resourceaggregate.pb.UpdateDeviceMetadataRequest.command_metadata:type_name -> resourceaggregate.pb.CommandMetadata
+	44, // 54: resourceaggregate.pb.UpdateDeviceMetadataResponse.audit_context:type_name -> resourceaggregate.pb.AuditContext
+	47, // 55: resourceaggregate.pb.ConfirmDeviceMetadataUpdateRequest.status:type_name -> resourceaggregate.pb.Status
+	3,  // 56: resourceaggregate.pb.ConfirmDeviceMetadataUpdateRequest.command_metadata:type_name -> resourceaggregate.pb.CommandMetadata
+	44, // 57: resourceaggregate.pb.ConfirmDeviceMetadataUpdateResponse.audit_context:type_name -> resourceaggregate.pb.AuditContext
+	45, // 58: resourceaggregate.pb.CancelPendingCommandsRequest.resource_id:type_name -> resourceaggregate.pb.ResourceId
+	3,  // 59: resourceaggregate.pb.CancelPendingCommandsRequest.command_metadata:type_name -> resourceaggregate.pb.CommandMetadata
+	44, // 60: resourceaggregate.pb.CancelPendingCommandsResponse.audit_context:type_name -> resourceaggregate.pb.AuditContext
+	3,  // 61: resourceaggregate.pb.CancelPendingMetadataUpdatesRequest.command_metadata:type_name -> resourceaggregate.pb.CommandMetadata
+	44, // 62: resourceaggregate.pb.CancelPendingMetadataUpdatesResponse.audit_context:type_name -> resourceaggregate.pb.AuditContext
+	44, // 63: resourceaggregate.pb.DeleteDevicesResponse.audit_context:type_name -> resourceaggregate.pb.AuditContext
+	40, // 64: resourceaggregate.pb.UpdateServiceMetadataRequest.heartbeat:type_name -> resourceaggregate.pb.ServiceHeartbeat
+	65, // [65:65] is the sub-list for method output_type
+	65, // [65:65] is the sub-list for method input_type
+	65, // [65:65] is the sub-list for extension type_name
+	65, // [65:65] is the sub-list for extension extendee
+	0,  // [0:65] is the sub-list for field type_name
 }
 
 func init() { file_resource_aggregate_pb_commands_proto_init() }
@@ -3987,7 +3936,7 @@ func file_resource_aggregate_pb_commands_proto_init() {
 			}
 		}
 		file_resource_aggregate_pb_commands_proto_msgTypes[37].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ServiceStatus); i {
+			switch v := v.(*ServiceHeartbeat); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -4022,18 +3971,6 @@ func file_resource_aggregate_pb_commands_proto_init() {
 				return nil
 			}
 		}
-		file_resource_aggregate_pb_commands_proto_msgTypes[40].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*Connection_Service); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
 	}
 	file_resource_aggregate_pb_commands_proto_msgTypes[27].OneofWrappers = []interface{}{
 		(*UpdateDeviceMetadataRequest_Connection)(nil),
@@ -4046,7 +3983,7 @@ func file_resource_aggregate_pb_commands_proto_init() {
 		(*ConfirmDeviceMetadataUpdateRequest_TwinForceSynchronization)(nil),
 	}
 	file_resource_aggregate_pb_commands_proto_msgTypes[38].OneofWrappers = []interface{}{
-		(*UpdateServiceMetadataRequest_Status)(nil),
+		(*UpdateServiceMetadataRequest_Heartbeat)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -4054,7 +3991,7 @@ func file_resource_aggregate_pb_commands_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_resource_aggregate_pb_commands_proto_rawDesc,
 			NumEnums:      3,
-			NumMessages:   41,
+			NumMessages:   40,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

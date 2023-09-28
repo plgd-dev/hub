@@ -423,9 +423,6 @@ message ConfirmResourceCreateResponse {
 //*******************************************************************************************************************************************************
 
 message Connection {
-    message Service {
-        string id = 1; // generated unique id during start the service
-    }
     enum Status {
         OFFLINE = 0;
         ONLINE = 1;
@@ -443,7 +440,7 @@ message Connection {
         C2C = 5;
     }
     Protocol protocol = 5; // application protocol. It need to be set when the status is ONLINE.
-    Service service = 6; // The service.ID, which identify the device being served, must be set when the status is ONLINE. However, during an OFFLINE event, they will be sed to empty values.
+    string service_id = 6; // The service.ID, which identify the device being served, must be set when the status is ONLINE. However, during an OFFLINE event, they will be sed to empty values.
 }
 //*******************************************************************************************************************************************************
 // Update Device Metadata - Twin Synchronization State
@@ -662,8 +659,8 @@ message DeleteDevicesResponse {
     AuditContext audit_context = 100;
 }
 
-message ServiceStatus {
-    string id = 1; // generated unique id during start the service
+message ServiceHeartbeat {
+    string service_id = 1; // generated unique id during start the service
     int64 time_to_live = 2; // validity in nanoseconds. minimal value is 1000000000 (1s).
     int64 timestamp = 3; // unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano)
 }
@@ -671,10 +668,10 @@ message ServiceStatus {
 message UpdateServiceMetadataRequest {
     oneof update {
         // Add or update service in the online services list and move online expired services to offline services list
-        ServiceStatus status = 1;
+        ServiceHeartbeat heartbeat = 1;
     }
 }
 
 message UpdateServiceMetadataResponse {
-    int64 online_valid_until = 1;  // unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when service is considered as expired. 0 means forever.
+    int64 heartbeat_valid_until = 1;  // unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when service is considered as expired. 0 means forever.
 }

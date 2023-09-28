@@ -55,7 +55,7 @@ func (d *DeviceMetadataSnapshotTaken) Timestamp() time.Time {
 }
 
 func (d *DeviceMetadataSnapshotTaken) ServiceID() (string, bool) {
-	return d.GetDeviceMetadataUpdated().GetConnection().GetService().GetId(), true
+	return d.GetDeviceMetadataUpdated().GetConnection().GetServiceId(), true
 }
 
 func (d *DeviceMetadataSnapshotTaken) CopyData(event *DeviceMetadataSnapshotTaken) {
@@ -344,10 +344,8 @@ func (d *DeviceMetadataSnapshotTaken) updateDeviceConnection(ctx context.Context
 		if em.GetVersion() == 0 {
 			return nil, status.Errorf(codes.InvalidArgument, "cannot update connection status to offline for not existing device %v", req.GetDeviceId())
 		}
-		// set instance service instanceId to empty
-		req.GetConnection().Service = &commands.Connection_Service{
-			Id: "", // instanceId is not available for offline devices
-		}
+		// set instance service id to empty
+		req.GetConnection().ServiceId = ""
 		// set protocol to previous value
 		req.GetConnection().Protocol = d.GetDeviceMetadataUpdated().GetConnection().GetProtocol()
 	}
@@ -544,7 +542,7 @@ func (d *DeviceMetadataSnapshotTakenForCommand) updateToOfflineRequest(ctx conte
 	if req.GetDeviceId() == "" {
 		return nil, status.Errorf(codes.InvalidArgument, "cannot update device to offline for empty deviceId")
 	}
-	if d.GetDeviceMetadataUpdated().GetConnection().GetService().GetId() != req.ServiceID {
+	if d.GetDeviceMetadataUpdated().GetConnection().GetServiceId() != req.ServiceID {
 		// ignore request from different service
 		return nil, nil
 	}

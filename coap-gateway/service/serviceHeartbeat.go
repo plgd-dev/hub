@@ -17,7 +17,7 @@ import (
 
 const numberUpdatesInTimeToLive = 3
 
-type serviceStatus struct {
+type serviceHeartbeat struct {
 	timeToLive       time.Duration
 	raClient         *raClient.Client
 	done             chan struct{}
@@ -26,12 +26,12 @@ type serviceStatus struct {
 	onlineValidUntil time.Time
 }
 
-// NewServiceStatus creates new serviceStatus instance. It will update service metadata in two times in timeToLive.
+// NewServiceHeartbeat creates new serviceHeartbeat instance. It will update service metadata in two times in timeToLive.
 // If it fails to update service metadata in two times in row, it will kill the service. Because resource aggregate
 // can't be sure if the service is still alive. If any other services updates service metadata, it can consider this
 // service as dead. And all devices connected to this service will be marked as offline.
-func newServiceStatus(instanceID uuid.UUID, timeToLive time.Duration, raClient *raClient.Client, logger log.Logger) (*serviceStatus, error) {
-	s := &serviceStatus{
+func newServiceHeartbeat(instanceID uuid.UUID, timeToLive time.Duration, raClient *raClient.Client, logger log.Logger) (*serviceHeartbeat, error) {
+	s := &serviceHeartbeat{
 		instanceID: instanceID,
 		timeToLive: timeToLive,
 		raClient:   raClient,
@@ -47,7 +47,7 @@ func newServiceStatus(instanceID uuid.UUID, timeToLive time.Duration, raClient *
 }
 
 // updateServiceMetadata updates service metadata in resource aggregate.
-func (s *serviceStatus) updateServiceMetadata() (time.Time, error) {
+func (s *serviceHeartbeat) updateServiceMetadata() (time.Time, error) {
 	// set deadline to prevent blocking the service
 	deadline := s.onlineValidUntil.Add(s.timeToLive)
 	if s.onlineValidUntil.IsZero() {
@@ -57,16 +57,16 @@ func (s *serviceStatus) updateServiceMetadata() (time.Time, error) {
 	defer cancel()
 
 	resp, err := s.raClient.UpdateServiceMetadata(ctx, &commands.UpdateServiceMetadataRequest{
-		Update: &commands.UpdateServiceMetadataRequest_Status{
-			Status: &commands.ServiceStatus{
-				Id:         s.instanceID.String(),
+		Update: &commands.UpdateServiceMetadataRequest_Heartbeat{
+			Heartbeat: &commands.ServiceHeartbeat{
+				ServiceId:  s.instanceID.String(),
 				TimeToLive: s.timeToLive.Nanoseconds(),
 				Timestamp:  time.Now().UnixNano(),
 			},
 		},
 	})
 	if err == nil {
-		s.onlineValidUntil = pkgTime.Unix(0, resp.GetOnlineValidUntil())
+		s.onlineValidUntil = pkgTime.Unix(0, resp.GetHeartbeatValidUntil())
 		return s.onlineValidUntil, nil
 	}
 	return time.Time{}, err
@@ -80,7 +80,7 @@ func needToShutdownService(err error) bool {
 	return false
 }
 
-func (s *serviceStatus) tryUpdateServiceMetadata(now time.Time) error {
+func (s *serviceHeartbeat) tryUpdateServiceMetadata(now time.Time) error {
 	var err error
 	var isOffline bool
 	switch {
@@ -113,8 +113,8 @@ func (s *serviceStatus) tryUpdateServiceMetadata(now time.Time) error {
 	return nil
 }
 
-// Serve starts serviceStatus. It will update service metadata in two times in timeToLive.
-func (s *serviceStatus) Serve() error {
+// Serve starts serviceHeartbeat. It will update service metadata in two times in timeToLive.
+func (s *serviceHeartbeat) Serve() error {
 	now := time.Now()
 	timer := time.NewTimer(0)
 	if !timer.Stop() {
@@ -140,8 +140,8 @@ func (s *serviceStatus) Serve() error {
 	}
 }
 
-// Close stops serviceStatus.
-func (s *serviceStatus) Close() error {
+// Close stops serviceHeartbeat.
+func (s *serviceHeartbeat) Close() error {
 	select {
 	case s.done <- struct{}{}:
 	default:

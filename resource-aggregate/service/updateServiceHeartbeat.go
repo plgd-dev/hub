@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
@@ -19,23 +20,22 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-const (
-	ServiceUserID               = "x.plgd.dev.service.user"
-	errFmtUpdateServiceMetadata = "cannot update service metadata: %w"
-)
+var ServiceUserID = uuid.NullUUID{Valid: true}.UUID.String()
+
+const errFmtUpdateServiceMetadata = "cannot update service metadata: %w"
 
 func validateUpdateServiceMetadata(request *commands.UpdateServiceMetadataRequest) error {
 	if request.GetUpdate() == nil {
 		return status.Errorf(codes.InvalidArgument, "invalid update")
 	}
-	if request.GetStatus() == nil {
+	if request.GetHeartbeat() == nil {
 		return status.Errorf(codes.InvalidArgument, "unexpected update %T", request.GetUpdate())
 	}
-	if request.GetStatus().GetId() == "" {
+	if request.GetHeartbeat().GetServiceId() == "" {
 		return status.Errorf(codes.InvalidArgument, "invalid status.id")
 	}
-	if request.GetStatus().GetTimeToLive() < int64(time.Second) {
-		return status.Errorf(codes.InvalidArgument, "invalid status.timeToLive(%v): is less than 1s", time.Duration(request.GetStatus().GetTimeToLive()))
+	if request.GetHeartbeat().GetTimeToLive() < int64(time.Second) {
+		return status.Errorf(codes.InvalidArgument, "invalid status.timeToLive(%v): is less than 1s", time.Duration(request.GetHeartbeat().GetTimeToLive()))
 	}
 	return nil
 }
@@ -65,7 +65,7 @@ func (r RequestHandler) UpdateServiceMetadata(ctx context.Context, request *comm
 		return nil, log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.InvalidArgument, errFmtUpdateServiceMetadata, err))
 	}
 	respChan := make(chan UpdateServiceMetadataResponseChanData, 1)
-	if err := r.serviceStatus.ProcessRequest(UpdateServiceMetadataReqResp{
+	if err := r.serviceHeartbeat.ProcessRequest(UpdateServiceMetadataReqResp{
 		Request:      request,
 		ResponseChan: respChan,
 	}); err != nil {
@@ -87,7 +87,7 @@ type UpdateServiceMetadataReqResp struct {
 	ResponseChan chan UpdateServiceMetadataResponseChanData
 }
 
-type ServiceStatus struct {
+type ServiceHeartbeat struct {
 	logger     log.Logger
 	config     Config
 	eventstore *mongodb.EventStore
@@ -102,8 +102,8 @@ type ServiceStatus struct {
 	}
 }
 
-func NewServiceStatus(config Config, eventstore *mongodb.EventStore, publisher eventbus.Publisher, logger log.Logger) *ServiceStatus {
-	s := &ServiceStatus{
+func NewServiceHeartbeat(config Config, eventstore *mongodb.EventStore, publisher eventbus.Publisher, logger log.Logger) *ServiceHeartbeat {
+	s := &ServiceHeartbeat{
 		logger:     logger,
 		config:     config,
 		eventstore: eventstore,
@@ -124,16 +124,16 @@ func NewServiceStatus(config Config, eventstore *mongodb.EventStore, publisher e
 	return s
 }
 
-func (s *ServiceStatus) handleOfflineService(ctx context.Context, aggregate *Aggregate, service *events.ServicesStatus_Status) error {
+func (s *ServiceHeartbeat) handleOfflineService(ctx context.Context, aggregate *Aggregate, service *events.ServicesHeartbeat_Heartbeat) error {
 	const limitNumDevices = 256
 	for {
-		devices, err := s.eventstore.LoadDeviceMetadataByServiceIDs(ctx, []string{service.GetId()}, limitNumDevices)
+		devices, err := s.eventstore.LoadDeviceMetadataByServiceIDs(ctx, []string{service.GetServiceId()}, limitNumDevices)
 		if err != nil {
-			return fmt.Errorf("cannot load devices for offline services %v: %w", service.GetId(), err)
+			return fmt.Errorf("cannot load devices for offline services %v: %w", service.GetServiceId(), err)
 		}
 		if len(devices) == 0 {
 			_, err := aggregate.ConfirmOfflineServices(ctx, &events.ConfirmOfflineServicesRequest{
-				Status: []*events.ServicesStatus_Status{service},
+				Heartbeat: []*events.ServicesHeartbeat_Heartbeat{service},
 			})
 			if err != nil {
 				return fmt.Errorf("cannot confirm offline services metadata: %w", err)
@@ -154,7 +154,7 @@ type UpdateServiceMetadataResponseChanData struct {
 	Err      error
 }
 
-func (s *ServiceStatus) updateServiceMetadata(aggregate *Aggregate, r UpdateServiceMetadataReqResp) []*events.ServicesStatus_Status {
+func (s *ServiceHeartbeat) updateServiceMetadata(aggregate *Aggregate, r UpdateServiceMetadataReqResp) []*events.ServicesHeartbeat_Heartbeat {
 	publishEvents, err := aggregate.UpdateServiceMetadata(context.Background(), r.Request)
 	if err != nil {
 		select {
@@ -166,23 +166,23 @@ func (s *ServiceStatus) updateServiceMetadata(aggregate *Aggregate, r UpdateServ
 		return nil
 	}
 
-	var onlineValidUntil int64
-	var offlineServices []*events.ServicesStatus_Status
+	var heartbeatValidUntil int64
+	var offlineServices []*events.ServicesHeartbeat_Heartbeat
 	for _, e := range publishEvents {
 		if ev, ok := e.(*events.ServicesMetadataUpdated); ok {
-			for _, s := range ev.GetStatus().GetOnline() {
-				if s.GetId() == r.Request.GetStatus().GetId() {
-					onlineValidUntil = s.GetOnlineValidUntil()
+			for _, s := range ev.GetHeartbeat().GetOnline() {
+				if s.GetServiceId() == r.Request.GetHeartbeat().GetServiceId() {
+					heartbeatValidUntil = s.GetHeartbeatValidUntil()
 					break
 				}
 			}
-			offlineServices = ev.GetStatus().GetOffline()
+			offlineServices = ev.GetHeartbeat().GetOffline()
 		}
 	}
 	select {
 	case r.ResponseChan <- UpdateServiceMetadataResponseChanData{
 		Response: &commands.UpdateServiceMetadataResponse{
-			OnlineValidUntil: onlineValidUntil,
+			HeartbeatValidUntil: heartbeatValidUntil,
 		},
 	}: // sent
 	default:
@@ -190,7 +190,7 @@ func (s *ServiceStatus) updateServiceMetadata(aggregate *Aggregate, r UpdateServ
 	return offlineServices
 }
 
-func (s *ServiceStatus) processRequest(r UpdateServiceMetadataReqResp) {
+func (s *ServiceHeartbeat) processRequest(r UpdateServiceMetadataReqResp) {
 	ctx := context.Background()
 	resID := commands.NewResourceID(s.config.HubID, commands.ServicesResourceHref)
 	aggregate, err := NewAggregate(resID, s.config.Clients.Eventstore.SnapshotThreshold, s.eventstore, NewServicesMetadataFactoryModel(ServiceUserID, ServiceUserID, s.config.HubID), cqrsAggregate.NewDefaultRetryFunc(s.config.Clients.Eventstore.ConcurrencyExceptionMaxRetry))
@@ -202,14 +202,14 @@ func (s *ServiceStatus) processRequest(r UpdateServiceMetadataReqResp) {
 	for _, off := range offlineServices {
 		err := s.handleOfflineService(ctx, aggregate, off)
 		if err != nil {
-			s.logger.Errorf("cannot handle offline service %v: %w", off.GetId(), err)
+			s.logger.Errorf("cannot handle offline service %v: %w", off.GetServiceId(), err)
 		} else {
-			s.logger.Infof("all devices associated with offline service %v have been marked as offline", off.GetId())
+			s.logger.Infof("all devices associated with offline service %v have been marked as offline", off.GetServiceId())
 		}
 	}
 }
 
-func (s *ServiceStatus) processRequests() {
+func (s *ServiceHeartbeat) processRequests() {
 	for {
 		reqs := s.pop()
 		if len(reqs) == 0 {
@@ -221,7 +221,7 @@ func (s *ServiceStatus) processRequests() {
 	}
 }
 
-func (s *ServiceStatus) run() {
+func (s *ServiceHeartbeat) run() {
 	for {
 		if s.closed.Load() {
 			return
@@ -231,13 +231,13 @@ func (s *ServiceStatus) run() {
 	}
 }
 
-func (s *ServiceStatus) push(req UpdateServiceMetadataReqResp) {
+func (s *ServiceHeartbeat) push(req UpdateServiceMetadataReqResp) {
 	s.private.mutex.Lock()
 	defer s.private.mutex.Unlock()
 	s.private.requestQueue = append(s.private.requestQueue, req)
 }
 
-func (s *ServiceStatus) pop() []UpdateServiceMetadataReqResp {
+func (s *ServiceHeartbeat) pop() []UpdateServiceMetadataReqResp {
 	s.private.mutex.Lock()
 	defer s.private.mutex.Unlock()
 	reqs := s.private.requestQueue
@@ -245,7 +245,7 @@ func (s *ServiceStatus) pop() []UpdateServiceMetadataReqResp {
 	return reqs
 }
 
-func (s *ServiceStatus) ProcessRequest(r UpdateServiceMetadataReqResp) error {
+func (s *ServiceHeartbeat) ProcessRequest(r UpdateServiceMetadataReqResp) error {
 	if r.Request == nil {
 		return fmt.Errorf("invalid request")
 	}
@@ -257,22 +257,22 @@ func (s *ServiceStatus) ProcessRequest(r UpdateServiceMetadataReqResp) error {
 	return nil
 }
 
-func (s *ServiceStatus) wakeUp() {
+func (s *ServiceHeartbeat) wakeUp() {
 	select {
 	case s.wake <- struct{}{}:
 	default:
 	}
 }
 
-func (s *ServiceStatus) Close() {
+func (s *ServiceHeartbeat) Close() {
 	if s.closed.CompareAndSwap(false, true) {
 		s.wakeUp()
 		s.wg.Wait()
 	}
 }
 
-func (s *ServiceStatus) updateDeviceToOffline(ctx context.Context, serviceID, deviceID, userID string) error {
-	resID := commands.NewResourceID(deviceID, commands.StatusHref)
+func (s *ServiceHeartbeat) updateDeviceToOffline(ctx context.Context, serviceID, deviceID, userID string) error {
+	resID := commands.NewResourceID(deviceID, commands.ServicesResourceHref)
 
 	var latestSnapshot *events.DeviceMetadataSnapshotTakenForCommand
 	deviceMetadataFactoryModel := func(ctx context.Context) (cqrsAggregate.AggregateModel, error) {

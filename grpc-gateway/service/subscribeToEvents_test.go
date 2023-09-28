@@ -157,7 +157,6 @@ func TestRequestHandlerSubscribeToEvents(t *testing.T) {
 							Connection: &commands.Connection{
 								Status:   commands.Connection_ONLINE,
 								Protocol: test.StringToApplicationProtocol(config.ACTIVE_COAP_SCHEME),
-								Service:  &commands.Connection_Service{},
 							},
 							TwinEnabled: true,
 							TwinSynchronization: &commands.TwinSynchronization{
@@ -909,7 +908,6 @@ func TestRequestHandlerIssue270(t *testing.T) {
 				Connection: &commands.Connection{
 					Status:   commands.Connection_ONLINE,
 					Protocol: test.StringToApplicationProtocol(config.ACTIVE_COAP_SCHEME),
-					Service:  &commands.Connection_Service{},
 				},
 				TwinEnabled: true,
 				TwinSynchronization: &commands.TwinSynchronization{
@@ -955,9 +953,9 @@ func waitForDevice(t *testing.T, client pb.GrpcGateway_SubscribeToEventsClient, 
 		ev, err := client.Recv()
 		require.NoError(t, err)
 		if firstCoapGWInstanceID == "" {
-			firstCoapGWInstanceID = ev.GetDeviceMetadataUpdated().GetConnection().GetService().GetId()
+			firstCoapGWInstanceID = ev.GetDeviceMetadataUpdated().GetConnection().GetServiceId()
 		}
-		require.Equal(t, firstCoapGWInstanceID, ev.GetDeviceMetadataUpdated().GetConnection().GetService().GetId())
+		require.Equal(t, firstCoapGWInstanceID, ev.GetDeviceMetadataUpdated().GetConnection().GetServiceId())
 		wantBreak := ev.GetDeviceMetadataUpdated().GetTwinSynchronization().GetState() == commands.TwinSynchronization_IN_SYNC
 		// this alternate to multiple values
 		ev.GetDeviceMetadataUpdated().TwinSynchronization = nil
@@ -969,7 +967,6 @@ func waitForDevice(t *testing.T, client pb.GrpcGateway_SubscribeToEventsClient, 
 					Connection: &commands.Connection{
 						Status:   commands.Connection_ONLINE,
 						Protocol: test.StringToApplicationProtocol(config.ACTIVE_COAP_SCHEME),
-						Service:  &commands.Connection_Service{},
 					},
 					TwinEnabled:  true,
 					AuditContext: commands.NewAuditContext(service.DeviceUserID, "", service.DeviceUserID),
@@ -983,7 +980,7 @@ func waitForDevice(t *testing.T, client pb.GrpcGateway_SubscribeToEventsClient, 
 	}
 }
 
-func TestCoAPGatewayServiceStatus(t *testing.T) {
+func TestCoAPGatewayServiceHeartbeat(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
 	defer cancel()
@@ -995,7 +992,7 @@ func TestCoAPGatewayServiceStatus(t *testing.T) {
 	raTearDown := raTest.New(t, racfg)
 
 	coapgwCfg := coapgwTest.MakeConfig(t)
-	coapgwCfg.ServiceStatus.TimeToLive = time.Second * 2
+	coapgwCfg.ServiceHeartbeat.TimeToLive = time.Second * 2
 	coapgwTearDown := coapgwTest.New(t, coapgwCfg)
 
 	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
@@ -1070,7 +1067,6 @@ func TestCoAPGatewayServiceStatus(t *testing.T) {
 				Connection: &commands.Connection{
 					Status:   commands.Connection_OFFLINE,
 					Protocol: test.StringToApplicationProtocol(config.ACTIVE_COAP_SCHEME),
-					Service:  &commands.Connection_Service{},
 				},
 				TwinEnabled:         true,
 				TwinSynchronization: &commands.TwinSynchronization{},

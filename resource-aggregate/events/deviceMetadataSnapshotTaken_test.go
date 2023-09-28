@@ -234,7 +234,6 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 								Status:      commands.Connection_OFFLINE,
 								ConnectedAt: connectedAt,
 								Protocol:    commands.Connection_COAPS,
-								Service:     &commands.Connection_Service{},
 							},
 							TwinEnabled:          true,
 							TwinSynchronization:  &commands.TwinSynchronization{},
