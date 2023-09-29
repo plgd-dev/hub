@@ -1,6 +1,7 @@
 package service
 
 import (
+	"fmt"
 	"os"
 	"os/signal"
 	"sync"
@@ -8,6 +9,7 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/plgd-dev/hub/v2/pkg/fn"
+	"go.uber.org/atomic"
 )
 
 type Service struct {
@@ -15,6 +17,7 @@ type Service struct {
 	done     chan struct{}
 	sigs     chan os.Signal
 	closeFn  fn.FuncList
+	serving  atomic.Bool
 }
 
 type APIService interface {
@@ -36,6 +39,9 @@ func (s *Service) Add(services ...APIService) {
 }
 
 func (s *Service) Serve() error {
+	if !s.serving.CompareAndSwap(false, true) {
+		return fmt.Errorf("already serving")
+	}
 	defer close(s.done)
 	var wg sync.WaitGroup
 	errCh := make(chan error, len(s.services)*2)
@@ -87,6 +93,9 @@ func (s *Service) SigTerm() {
 // Shutdown turn off server.
 func (s *Service) Close() error {
 	s.SigTerm()
+	if !s.serving.Load() {
+		return nil
+	}
 	<-s.done
 	return nil
 }
