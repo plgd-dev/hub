@@ -68,6 +68,7 @@ func TestNewServiceHeartbeat(t *testing.T) {
 					Update: &commands.UpdateServiceMetadataRequest_Heartbeat{
 						Heartbeat: &commands.ServiceHeartbeat{
 							ServiceId: fmt.Sprintf("instanceId-%v", j),
+							Register:  true,
 						},
 					},
 				},

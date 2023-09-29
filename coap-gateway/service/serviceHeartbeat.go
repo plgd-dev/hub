@@ -3,11 +3,11 @@ package service
 import (
 	"context"
 	"fmt"
-	"syscall"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/plgd-dev/hub/v2/pkg/log"
+	"github.com/plgd-dev/hub/v2/pkg/service"
 	pkgTime "github.com/plgd-dev/hub/v2/pkg/time"
 	raClient "github.com/plgd-dev/hub/v2/resource-aggregate/client"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
@@ -24,21 +24,23 @@ type serviceHeartbeat struct {
 	instanceID          uuid.UUID
 	logger              log.Logger
 	heartbeatValidUntil time.Time
+	service             *service.Service
 }
 
 // NewServiceHeartbeat creates new serviceHeartbeat instance. It will update service metadata in two times in timeToLive.
 // If it fails to update service metadata in two times in row, it will kill the service. Because resource aggregate
 // can't be sure if the service is still alive. If any other services updates service metadata, it can consider this
 // service as dead. And all devices connected to this service will be marked as offline.
-func newServiceHeartbeat(instanceID uuid.UUID, timeToLive time.Duration, raClient *raClient.Client, logger log.Logger) (*serviceHeartbeat, error) {
+func newServiceHeartbeat(instanceID uuid.UUID, timeToLive time.Duration, raClient *raClient.Client, logger log.Logger, service *service.Service) (*serviceHeartbeat, error) {
 	s := &serviceHeartbeat{
 		instanceID: instanceID,
 		timeToLive: timeToLive,
 		raClient:   raClient,
 		done:       make(chan struct{}, 1),
 		logger:     logger.With("service-id", instanceID.String()),
+		service:    service,
 	}
-	heartbeatValidUntil, err := s.updateServiceMetadata()
+	heartbeatValidUntil, err := s.updateServiceMetadata(true)
 	if err != nil {
 		return nil, fmt.Errorf("cannot update service metadata: %w", err)
 	}
@@ -47,7 +49,7 @@ func newServiceHeartbeat(instanceID uuid.UUID, timeToLive time.Duration, raClien
 }
 
 // updateServiceMetadata updates service metadata in resource aggregate.
-func (s *serviceHeartbeat) updateServiceMetadata() (time.Time, error) {
+func (s *serviceHeartbeat) updateServiceMetadata(register bool) (time.Time, error) {
 	// set deadline to prevent blocking the service
 	deadline := s.heartbeatValidUntil.Add(s.timeToLive)
 	if s.heartbeatValidUntil.IsZero() {
@@ -62,6 +64,7 @@ func (s *serviceHeartbeat) updateServiceMetadata() (time.Time, error) {
 				ServiceId:  s.instanceID.String(),
 				TimeToLive: s.timeToLive.Nanoseconds(),
 				Timestamp:  time.Now().UnixNano(),
+				Register:   register,
 			},
 		},
 	})
@@ -89,7 +92,7 @@ func (s *serviceHeartbeat) tryUpdateServiceMetadata(now time.Time) error {
 		isOffline = true
 	default:
 		var heartbeatValidUntil time.Time
-		heartbeatValidUntil, err = s.updateServiceMetadata()
+		heartbeatValidUntil, err = s.updateServiceMetadata(false)
 		if err == nil {
 			s.logger.Debugf("service metadata updated, heartbeat valid until: %v", heartbeatValidUntil)
 			s.heartbeatValidUntil = heartbeatValidUntil
@@ -100,11 +103,7 @@ func (s *serviceHeartbeat) tryUpdateServiceMetadata(now time.Time) error {
 	if isOffline || needToShutdownService(err) {
 		// Kill the service to prevent inconsistent state propagation of connected devices through this service.
 		s.logger.Infof("killing the service to prevent inconsistent state: %v", err)
-		errKill := syscall.Kill(syscall.Getpid(), syscall.SIGTERM)
-		if errKill == nil {
-			return err
-		}
-		s.logger.Errorf("cannot kill service: %w", errKill)
+		s.service.SigTerm()
 		// to prevent too frequent killing the service
 		time.Sleep(time.Second)
 	} else {

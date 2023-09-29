@@ -153,8 +153,13 @@ func serviceHeartbeatMapToArray(m map[string]*ServicesHeartbeat_Heartbeat) []*Se
 }
 
 func (d *ServiceMetadataSnapshotTaken) updateHeartbeat(ctx context.Context, req *commands.UpdateServiceMetadataRequest, em *EventMetadata, ac *commands.AuditContext) ([]eventstore.Event, error) {
+	errActionStr := "update"
+	if req.GetHeartbeat().GetRegister() {
+		errActionStr = "register"
+	}
+
 	if req.GetHeartbeat().GetServiceId() == "" {
-		return nil, status.Errorf(codes.InvalidArgument, "cannot update status for device %v: invalid instanceId", req.GetHeartbeat().GetServiceId())
+		return nil, status.Errorf(codes.InvalidArgument, "cannot %v heartbeat for service %v: invalid serviceId", errActionStr, req.GetHeartbeat().GetServiceId())
 	}
 	now := time.Now()
 	servicesHeartbeat := d.GetServiceMetadataUpdated().GetServicesHeartbeat()
@@ -166,17 +171,30 @@ func (d *ServiceMetadataSnapshotTaken) updateHeartbeat(ctx context.Context, req 
 
 	if expired[req.GetHeartbeat().GetServiceId()] != nil {
 		// The service is already expired, and the service needs to be shut down to avoid conflicts in device connection status (ONLINE/OFFLINE).
-		return nil, status.Errorf(codes.FailedPrecondition, "cannot update status for device %v: already expired", req.GetHeartbeat().GetServiceId())
+		return nil, status.Errorf(codes.FailedPrecondition, "cannot %v heartbeat for service %v: already expired", errActionStr, req.GetHeartbeat().GetServiceId())
 	}
 
 	valid := make(map[string]*ServicesHeartbeat_Heartbeat, 1)
 	for _, v := range servicesHeartbeat.GetValid() {
-		key := v.GetServiceId()
 		if v.GetValidUntil() < now.UnixNano() {
-			expired[key] = v
+			expired[v.GetServiceId()] = v
+		} else {
+			valid[v.GetServiceId()] = v
 		}
 	}
 	key := req.GetHeartbeat().GetServiceId()
+
+	// register == true - only insert is allowed
+	if req.GetHeartbeat().GetRegister() && (valid[key] != nil || expired[key] != nil) {
+		// The service is already registered, and the service needs to be shut down to avoid conflicts in device connection status (ONLINE/OFFLINE).
+		return nil, status.Errorf(codes.FailedPrecondition, "cannot %v heartbeat for service %v: already registered", errActionStr, req.GetHeartbeat().GetServiceId())
+	}
+
+	// register == false - only update is allowed
+	if !req.GetHeartbeat().GetRegister() && (valid[key] == nil && expired[key] == nil) {
+		// The service is not registered, and the service needs to be shut down to avoid conflicts in device connection status (ONLINE/OFFLINE).
+		return nil, status.Errorf(codes.FailedPrecondition, "cannot %v heartbeat for service %v: not registered", errActionStr, req.GetHeartbeat().GetServiceId())
+	}
 
 	timeToLive := time.Duration(req.GetHeartbeat().GetTimeToLive())
 	// If the request has a valid timestamp, calculate the additional TTL based on processing time.

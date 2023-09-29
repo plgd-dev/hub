@@ -242,7 +242,7 @@ func TestServiceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 		cmds []cmd
 	}{
 		{
-			name: "valid",
+			name: "register",
 			cmds: []cmd{
 				{
 					cmd: &commands.UpdateServiceMetadataRequest{
@@ -250,6 +250,7 @@ func TestServiceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 							Heartbeat: &commands.ServiceHeartbeat{
 								ServiceId:  serviceID,
 								TimeToLive: time.Second.Nanoseconds(),
+								Register:   true,
 							},
 						},
 					},
@@ -272,7 +273,7 @@ func TestServiceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 			},
 		},
 		{
-			name: "valid,valid",
+			name: "register,register-fail",
 			cmds: []cmd{
 				{
 					cmd: &commands.UpdateServiceMetadataRequest{
@@ -280,6 +281,69 @@ func TestServiceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 							Heartbeat: &commands.ServiceHeartbeat{
 								ServiceId:  serviceID,
 								TimeToLive: time.Second.Nanoseconds(),
+								Register:   true,
+							},
+						},
+					},
+					newVersion: 0,
+					want: []eventstore.Event{
+						&events.ServiceMetadataUpdated{
+							ServicesHeartbeat: &events.ServicesHeartbeat{
+								Valid: []*events.ServicesHeartbeat_Heartbeat{
+									{
+										ServiceId: serviceID,
+									},
+								},
+								Expired: []*events.ServicesHeartbeat_Heartbeat{},
+							},
+							AuditContext:         commands.NewAuditContext(userID, correlationID, userID),
+							OpenTelemetryCarrier: map[string]string{},
+						},
+					},
+				},
+				{
+					sleep: time.Millisecond * 500,
+					cmd: &commands.UpdateServiceMetadataRequest{
+						Update: &commands.UpdateServiceMetadataRequest_Heartbeat{
+							Heartbeat: &commands.ServiceHeartbeat{
+								ServiceId:  serviceID,
+								TimeToLive: time.Second.Nanoseconds(),
+								Register:   true,
+							},
+						},
+					},
+					newVersion: 1,
+					wantErr:    true,
+				},
+			},
+		},
+		{
+			name: "update-fail",
+			cmds: []cmd{
+				{
+					cmd: &commands.UpdateServiceMetadataRequest{
+						Update: &commands.UpdateServiceMetadataRequest_Heartbeat{
+							Heartbeat: &commands.ServiceHeartbeat{
+								ServiceId:  serviceID,
+								TimeToLive: time.Second.Nanoseconds(),
+							},
+						},
+					},
+					newVersion: 1,
+					wantErr:    true,
+				},
+			},
+		},
+		{
+			name: "register,update",
+			cmds: []cmd{
+				{
+					cmd: &commands.UpdateServiceMetadataRequest{
+						Update: &commands.UpdateServiceMetadataRequest_Heartbeat{
+							Heartbeat: &commands.ServiceHeartbeat{
+								ServiceId:  serviceID,
+								TimeToLive: time.Second.Nanoseconds(),
+								Register:   true,
 							},
 						},
 					},
@@ -328,7 +392,7 @@ func TestServiceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 			},
 		},
 		{
-			name: "valid,expired",
+			name: "register,register-1-expired",
 			cmds: []cmd{
 				{
 					cmd: &commands.UpdateServiceMetadataRequest{
@@ -336,6 +400,7 @@ func TestServiceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 							Heartbeat: &commands.ServiceHeartbeat{
 								ServiceId:  serviceID,
 								TimeToLive: time.Second.Nanoseconds(),
+								Register:   true,
 							},
 						},
 					},
@@ -362,6 +427,7 @@ func TestServiceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 							Heartbeat: &commands.ServiceHeartbeat{
 								ServiceId:  serviceID + "1",
 								TimeToLive: time.Second.Nanoseconds(),
+								Register:   true,
 							},
 						},
 					},
@@ -388,7 +454,7 @@ func TestServiceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 			},
 		},
 		{
-			name: "valid,expired,valid-fail",
+			name: "register,register-1-expired,update-fail",
 			cmds: []cmd{
 				{
 					cmd: &commands.UpdateServiceMetadataRequest{
@@ -396,6 +462,7 @@ func TestServiceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 							Heartbeat: &commands.ServiceHeartbeat{
 								ServiceId:  serviceID,
 								TimeToLive: time.Second.Nanoseconds(),
+								Register:   true,
 							},
 						},
 					},
@@ -422,6 +489,7 @@ func TestServiceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 							Heartbeat: &commands.ServiceHeartbeat{
 								ServiceId:  serviceID + "1",
 								TimeToLive: time.Second.Nanoseconds(),
+								Register:   true,
 							},
 						},
 					},
@@ -460,7 +528,7 @@ func TestServiceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 			},
 		},
 		{
-			name: "valid,expired,confirmExpired",
+			name: "register,register-1-expired,confirmExpired",
 			cmds: []cmd{
 				{
 					cmd: &commands.UpdateServiceMetadataRequest{
@@ -468,6 +536,7 @@ func TestServiceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 							Heartbeat: &commands.ServiceHeartbeat{
 								ServiceId:  serviceID,
 								TimeToLive: time.Second.Nanoseconds(),
+								Register:   true,
 							},
 						},
 					},
@@ -494,6 +563,7 @@ func TestServiceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 							Heartbeat: &commands.ServiceHeartbeat{
 								ServiceId:  serviceID + "1",
 								TimeToLive: time.Second.Nanoseconds(),
+								Register:   true,
 							},
 						},
 					},

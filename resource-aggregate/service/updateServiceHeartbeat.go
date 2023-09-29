@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	coapSync "github.com/plgd-dev/go-coap/v3/pkg/sync"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
@@ -32,7 +33,7 @@ func validateUpdateServiceMetadata(request *commands.UpdateServiceMetadataReques
 		return status.Errorf(codes.InvalidArgument, "unexpected update %T", request.GetUpdate())
 	}
 	if request.GetHeartbeat().GetServiceId() == "" {
-		return status.Errorf(codes.InvalidArgument, "invalid heartbeat.id")
+		return status.Errorf(codes.InvalidArgument, "invalid heartbeat.serviceId")
 	}
 	if request.GetHeartbeat().GetTimeToLive() < int64(time.Second) {
 		return status.Errorf(codes.InvalidArgument, "invalid heartbeat.timeToLive(%v): is less than 1s", time.Duration(request.GetHeartbeat().GetTimeToLive()))
@@ -88,13 +89,16 @@ type UpdateServiceMetadataReqResp struct {
 }
 
 type ServiceHeartbeat struct {
-	logger     log.Logger
-	config     Config
-	eventstore *mongodb.EventStore
-	publisher  eventbus.Publisher
-	wake       chan struct{}
-	closed     atomic.Bool
-	wg         sync.WaitGroup
+	logger      log.Logger
+	config      Config
+	eventstore  *mongodb.EventStore
+	publisher   eventbus.Publisher
+	wake        chan struct{}
+	wakeExpired chan struct{}
+	closed      atomic.Bool
+	wg          sync.WaitGroup
+
+	offlineServices *coapSync.Map[string, *events.ServicesHeartbeat_Heartbeat]
 
 	private struct {
 		mutex        sync.Mutex
@@ -104,11 +108,13 @@ type ServiceHeartbeat struct {
 
 func NewServiceHeartbeat(config Config, eventstore *mongodb.EventStore, publisher eventbus.Publisher, logger log.Logger) *ServiceHeartbeat {
 	s := &ServiceHeartbeat{
-		logger:     logger,
-		config:     config,
-		eventstore: eventstore,
-		publisher:  publisher,
-		wake:       make(chan struct{}, 1),
+		logger:          logger,
+		config:          config,
+		eventstore:      eventstore,
+		publisher:       publisher,
+		wake:            make(chan struct{}, 1),
+		wakeExpired:     make(chan struct{}, 1),
+		offlineServices: coapSync.NewMap[string, *events.ServicesHeartbeat_Heartbeat](),
 		private: struct {
 			mutex        sync.Mutex
 			requestQueue []UpdateServiceMetadataReqResp
@@ -116,10 +122,14 @@ func NewServiceHeartbeat(config Config, eventstore *mongodb.EventStore, publishe
 			requestQueue: make([]UpdateServiceMetadataReqResp, 0, 8),
 		},
 	}
-	s.wg.Add(1)
+	s.wg.Add(2)
 	go func() {
 		defer s.wg.Done()
 		s.run()
+	}()
+	go func() {
+		defer s.wg.Done()
+		s.runProcessExpiredServices()
 	}()
 	return s
 }
@@ -141,7 +151,7 @@ func (s *ServiceHeartbeat) handleExpiredService(ctx context.Context, aggregate *
 			return nil
 		}
 		for _, d := range devices {
-			err := s.updateDeviceToOffline(ctx, d.ServiceID, d.DeviceID, ServiceUserID)
+			err := s.updateDeviceToExpired(ctx, d.ServiceID, d.DeviceID, ServiceUserID)
 			if err != nil {
 				return fmt.Errorf("cannot update device %v to expired because service %v is expired: %w", d.DeviceID, d.ServiceID, err)
 			}
@@ -154,7 +164,7 @@ type UpdateServiceMetadataResponseChanData struct {
 	Err      error
 }
 
-func (s *ServiceHeartbeat) updateServiceMetadata(aggregate *Aggregate, r UpdateServiceMetadataReqResp) []*events.ServicesHeartbeat_Heartbeat {
+func (s *ServiceHeartbeat) updateServiceMetadata(aggregate *Aggregate, r UpdateServiceMetadataReqResp) {
 	publishEvents, err := aggregate.UpdateServiceMetadata(context.Background(), r.Request)
 	if err != nil {
 		select {
@@ -163,11 +173,9 @@ func (s *ServiceHeartbeat) updateServiceMetadata(aggregate *Aggregate, r UpdateS
 		}: // sent
 		default:
 		}
-		return nil
 	}
 
 	var heartbeatValidUntil int64
-	var expiredServices []*events.ServicesHeartbeat_Heartbeat
 	for _, e := range publishEvents {
 		if ev, ok := e.(*events.ServiceMetadataUpdated); ok {
 			for _, s := range ev.GetServicesHeartbeat().GetValid() {
@@ -176,7 +184,6 @@ func (s *ServiceHeartbeat) updateServiceMetadata(aggregate *Aggregate, r UpdateS
 					break
 				}
 			}
-			expiredServices = ev.GetServicesHeartbeat().GetExpired()
 		}
 	}
 	select {
@@ -187,25 +194,28 @@ func (s *ServiceHeartbeat) updateServiceMetadata(aggregate *Aggregate, r UpdateS
 	}: // sent
 	default:
 	}
-	return expiredServices
 }
 
 func (s *ServiceHeartbeat) processRequest(r UpdateServiceMetadataReqResp) {
-	ctx := context.Background()
 	resID := commands.NewResourceID(s.config.HubID, commands.ServicesResourceHref)
-	aggregate, err := NewAggregate(resID, s.config.Clients.Eventstore.SnapshotThreshold, s.eventstore, NewServicesMetadataFactoryModel(ServiceUserID, ServiceUserID, s.config.HubID), cqrsAggregate.NewDefaultRetryFunc(s.config.Clients.Eventstore.ConcurrencyExceptionMaxRetry))
+	var snapshot *events.ServiceMetadataSnapshotTakenForCommand
+	newServicesMetadataFactoryModelFunc := func(ctx context.Context) (cqrsAggregate.AggregateModel, error) {
+		snapshot = events.NewServiceMetadataSnapshotTakenForCommand(ServiceUserID, ServiceUserID, s.config.HubID)
+		return snapshot, nil
+	}
+
+	aggregate, err := NewAggregate(resID, s.config.Clients.Eventstore.SnapshotThreshold, s.eventstore, newServicesMetadataFactoryModelFunc, cqrsAggregate.NewDefaultRetryFunc(s.config.Clients.Eventstore.ConcurrencyExceptionMaxRetry))
 	if err != nil {
 		s.logger.Errorf(errFmtUpdateServiceMetadata, err)
 		return
 	}
-	expiredServices := s.updateServiceMetadata(aggregate, r)
-	for _, off := range expiredServices {
-		err := s.handleExpiredService(ctx, aggregate, off)
-		if err != nil {
-			s.logger.Errorf("cannot handle expired service %v: %w", off.GetServiceId(), err)
-		} else {
-			s.logger.Infof("all devices associated with expired service %v have been marked as offline", off.GetServiceId())
-		}
+	s.updateServiceMetadata(aggregate, r)
+
+	for _, off := range snapshot.GetServiceMetadataUpdated().GetServicesHeartbeat().GetExpired() {
+		s.offlineServices.Store(off.GetServiceId(), off)
+	}
+	if s.offlineServices.Length() > 0 {
+		s.wakeUpProcessingExpired()
 	}
 }
 
@@ -221,7 +231,37 @@ func (s *ServiceHeartbeat) processRequests() {
 	}
 }
 
+func (s *ServiceHeartbeat) processExpiredServices() {
+	offlineServices := s.offlineServices.CopyData()
+	ctx := context.Background()
+	resID := commands.NewResourceID(s.config.HubID, commands.ServicesResourceHref)
+	aggregate, err := NewAggregate(resID, s.config.Clients.Eventstore.SnapshotThreshold, s.eventstore, NewServicesMetadataFactoryModel(ServiceUserID, ServiceUserID, s.config.HubID), cqrsAggregate.NewDefaultRetryFunc(s.config.Clients.Eventstore.ConcurrencyExceptionMaxRetry))
+	if err != nil {
+		s.logger.Errorf(errFmtUpdateServiceMetadata, err)
+		return
+	}
+	for _, off := range offlineServices {
+		err := s.handleExpiredService(ctx, aggregate, off)
+		if err != nil {
+			s.logger.Errorf("cannot handle expired service %v: %w", off.GetServiceId(), err)
+		} else {
+			s.logger.Infof("all devices associated with expired service %v have been marked as offline", off.GetServiceId())
+			s.offlineServices.Delete(off.GetServiceId())
+		}
+	}
+}
+
 func (s *ServiceHeartbeat) run() {
+	for {
+		if s.closed.Load() {
+			return
+		}
+		<-s.wakeExpired
+		s.processExpiredServices()
+	}
+}
+
+func (s *ServiceHeartbeat) runProcessExpiredServices() {
 	for {
 		if s.closed.Load() {
 			return
@@ -257,6 +297,13 @@ func (s *ServiceHeartbeat) ProcessRequest(r UpdateServiceMetadataReqResp) error 
 	return nil
 }
 
+func (s *ServiceHeartbeat) wakeUpProcessingExpired() {
+	select {
+	case s.wakeExpired <- struct{}{}:
+	default:
+	}
+}
+
 func (s *ServiceHeartbeat) wakeUp() {
 	select {
 	case s.wake <- struct{}{}:
@@ -267,11 +314,12 @@ func (s *ServiceHeartbeat) wakeUp() {
 func (s *ServiceHeartbeat) Close() {
 	if s.closed.CompareAndSwap(false, true) {
 		s.wakeUp()
+		s.wakeUpProcessingExpired()
 		s.wg.Wait()
 	}
 }
 
-func (s *ServiceHeartbeat) updateDeviceToOffline(ctx context.Context, serviceID, deviceID, userID string) error {
+func (s *ServiceHeartbeat) updateDeviceToExpired(ctx context.Context, serviceID, deviceID, userID string) error {
 	resID := commands.NewResourceID(deviceID, commands.StatusHref)
 
 	var latestSnapshot *events.DeviceMetadataSnapshotTakenForCommand

@@ -13,6 +13,7 @@ import (
 	otelClient "github.com/plgd-dev/hub/v2/pkg/opentelemetry/collector/client"
 	cmClient "github.com/plgd-dev/hub/v2/pkg/security/certManager/client"
 	"github.com/plgd-dev/hub/v2/pkg/security/jwt/validator"
+	"github.com/plgd-dev/hub/v2/pkg/service"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/client"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/publisher"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/utils"
@@ -83,7 +84,7 @@ func NewServer(ctx context.Context, cfg Config, fileWatcher *fsnotify.Watcher, l
 }
 
 // New creates the service's HTTP server.
-func New(ctx context.Context, cfg Config, fileWatcher *fsnotify.Watcher, logger log.Logger) (*Server, error) {
+func New(ctx context.Context, cfg Config, fileWatcher *fsnotify.Watcher, logger log.Logger) (*service.Service, error) {
 	otelClient, err := otelClient.New(ctx, cfg.Clients.OpenTelemetryCollector, "identity-store", fileWatcher, logger)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create open telemetry collector client: %w", err)
@@ -124,7 +125,7 @@ func New(ctx context.Context, cfg Config, fileWatcher *fsnotify.Watcher, logger 
 	}
 	s.grpcServer.AddCloseFunc(validator.Close)
 	s.grpcServer.AddCloseFunc(naClient.Close)
-	return s, nil
+	return service.New(s), nil
 }
 
 // Serve starts the service's GRPC and HTTP server and blocks.

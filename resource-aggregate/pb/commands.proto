@@ -663,6 +663,7 @@ message ServiceHeartbeat {
     string service_id = 1; // generated unique id during start the service
     int64 time_to_live = 2; // validity in nanoseconds. minimal value is 1000000000 (1s).
     int64 timestamp = 3; // unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano)
+    bool register = 4;// Set to true to attempt service registration; it will fail if the service is already registered. Set to false to attempt service update; it will fail if the service is not registered.
 }
 
 message UpdateServiceMetadataRequest {

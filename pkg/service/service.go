@@ -73,12 +73,20 @@ func (s *Service) Serve() error {
 	}
 }
 
-// Shutdown turn off server.
-func (s *Service) Close() error {
+func (s *Service) Signal(sig os.Signal) {
 	select {
-	case s.sigs <- syscall.SIGTERM:
+	case s.sigs <- sig:
 	default:
 	}
+}
+
+func (s *Service) SigTerm() {
+	s.Signal(syscall.SIGTERM)
+}
+
+// Shutdown turn off server.
+func (s *Service) Close() error {
+	s.SigTerm()
 	<-s.done
 	return nil
 }

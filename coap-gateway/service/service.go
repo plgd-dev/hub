@@ -595,10 +595,6 @@ func (s *Service) createServices(fileWatcher *fsnotify.Watcher, logger log.Logge
 	})); err != nil {
 		return nil, setHandlerError(plgdtime.ResourceURI, err)
 	}
-	serviceHeartbeat, err := newServiceHeartbeat(s.instanceID, s.config.ServiceHeartbeat.TimeToLive, s.raClient, logger)
-	if err != nil {
-		return nil, fmt.Errorf("cannot create service heartbeat: %w", err)
-	}
 
 	services, err := coapService.New(s.ctx, s.config.APIs.COAP.Config, m, fileWatcher, logger,
 		coapService.WithOnNewConnection(s.coapConnOnNew),
@@ -610,9 +606,14 @@ func (s *Service) createServices(fileWatcher *fsnotify.Watcher, logger log.Logge
 		}),
 	)
 	if err != nil {
-		_ = serviceHeartbeat.Close()
 		return nil, fmt.Errorf("cannot create coap-gateway service: %w", err)
 	}
+	serviceHeartbeat, err := newServiceHeartbeat(s.instanceID, s.config.ServiceHeartbeat.TimeToLive, s.raClient, logger, services)
+	if err != nil {
+		_ = services.Close()
+		return nil, fmt.Errorf("cannot create service heartbeat: %w", err)
+	}
+
 	services.Add(serviceHeartbeat)
 	return services, err
 }
