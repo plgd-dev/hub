@@ -47,6 +47,10 @@ func (e *ResourceRetrieved) Timestamp() time.Time {
 	return pkgTime.Unix(0, e.GetEventMetadata().GetTimestamp())
 }
 
+func (e *ResourceRetrieved) ServiceID() (string, bool) {
+	return "", false
+}
+
 func (e *ResourceRetrieved) CopyData(event *ResourceRetrieved) {
 	e.ResourceId = event.GetResourceId()
 	e.Content = event.GetContent()

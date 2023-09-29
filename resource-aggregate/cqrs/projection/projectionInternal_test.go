@@ -6,12 +6,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang-jwt/jwt/v4"
 	"github.com/google/uuid"
 	"github.com/panjf2000/ants/v2"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
-	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/aggregate"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/publisher"
@@ -84,9 +82,6 @@ func TestProjection(t *testing.T) {
 	}()
 
 	ctx := context.Background()
-	ctx = events.CtxWithHubID(kitNetGrpc.CtxWithIncomingToken(ctx, config.CreateJwtToken(t, jwt.MapClaims{
-		"sub": "test",
-	})), "hubID")
 
 	store, err := mongodb.New(
 		ctx,
@@ -139,10 +134,9 @@ func TestProjection(t *testing.T) {
 	}
 
 	a1, err := aggregate.NewAggregate(res1.DeviceId, res1.ToUUID().String(), aggregate.NewDefaultRetryFunc(1), numEventsInSnapshot, store, func(context.Context) (aggregate.AggregateModel, error) {
-		return &events.ResourceStateSnapshotTaken{
-			ResourceId:    &res1,
-			EventMetadata: &events.EventMetadata{},
-		}, nil
+		s := events.NewResourceStateSnapshotTakenForCommand("test", "test", "hubID")
+		s.ResourceId = &res1
+		return s, nil
 	}, nil)
 	require.NoError(t, err)
 
@@ -151,10 +145,9 @@ func TestProjection(t *testing.T) {
 	require.NotNil(t, evs)
 
 	a2, err := aggregate.NewAggregate(res2.DeviceId, res2.ToUUID().String(), aggregate.NewDefaultRetryFunc(1), numEventsInSnapshot, store, func(context.Context) (aggregate.AggregateModel, error) {
-		return &events.ResourceStateSnapshotTaken{
-			ResourceId:    &res2,
-			EventMetadata: &events.EventMetadata{},
-		}, nil
+		s := events.NewResourceStateSnapshotTakenForCommand("test", "test", "hubID")
+		s.ResourceId = &res2
+		return s, nil
 	}, nil)
 	require.NoError(t, err)
 
@@ -195,10 +188,9 @@ func TestProjection(t *testing.T) {
 	time.Sleep(waitForSubscription)
 
 	a3, err := aggregate.NewAggregate(res3.DeviceId, res3.ToUUID().String(), aggregate.NewDefaultRetryFunc(1), numEventsInSnapshot, store, func(context.Context) (aggregate.AggregateModel, error) {
-		return &events.ResourceStateSnapshotTaken{
-			ResourceId:    &res3,
-			EventMetadata: &events.EventMetadata{},
-		}, nil
+		s := events.NewResourceStateSnapshotTakenForCommand("test", "test", "hubID")
+		s.ResourceId = &res3
+		return s, nil
 	}, nil)
 	require.NoError(t, err)
 

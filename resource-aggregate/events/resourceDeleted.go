@@ -47,6 +47,10 @@ func (e *ResourceDeleted) Timestamp() time.Time {
 	return pkgTime.Unix(0, e.GetEventMetadata().GetTimestamp())
 }
 
+func (e *ResourceDeleted) ServiceID() (string, bool) {
+	return "", false
+}
+
 func (e *ResourceDeleted) CopyData(event *ResourceDeleted) {
 	e.ResourceId = event.GetResourceId()
 	e.Status = event.GetStatus()

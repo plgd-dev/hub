@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"github.com/plgd-dev/hub/v2/pkg/opentelemetry/propagation"
 	pkgTime "github.com/plgd-dev/hub/v2/pkg/time"
 	commands "github.com/plgd-dev/hub/v2/resource-aggregate/commands"
@@ -53,6 +52,10 @@ func (d *DeviceMetadataSnapshotTaken) ETag() *eventstore.ETagData {
 
 func (d *DeviceMetadataSnapshotTaken) Timestamp() time.Time {
 	return pkgTime.Unix(0, d.GetEventMetadata().GetTimestamp())
+}
+
+func (d *DeviceMetadataSnapshotTaken) ServiceID() (string, bool) {
+	return d.GetDeviceMetadataUpdated().GetConnection().GetServiceId(), true
 }
 
 func (d *DeviceMetadataSnapshotTaken) CopyData(event *DeviceMetadataSnapshotTaken) {
@@ -214,7 +217,7 @@ func (d *DeviceMetadataSnapshotTaken) updateTwinEnabled(ctx context.Context, req
 	return []eventstore.Event{&ev}, nil
 }
 
-func (d *DeviceMetadataSnapshotTaken) updateTwinForceSynchronization(ctx context.Context, req *commands.ConfirmDeviceMetadataUpdateRequest, em *EventMetadata, ac *commands.AuditContext) ([]eventstore.Event, error) {
+func (d *DeviceMetadataSnapshotTakenForCommand) updateTwinForceSynchronization(ctx context.Context, req *commands.ConfirmDeviceMetadataUpdateRequest, em *EventMetadata, ac *commands.AuditContext) ([]eventstore.Event, error) {
 	if !req.GetTwinForceSynchronization() {
 		return nil, status.Errorf(codes.InvalidArgument, "cannot update twin synchronization with invalid forceSynchronization(%v)", req.GetTwinForceSynchronization())
 	}
@@ -245,13 +248,13 @@ func (d *DeviceMetadataSnapshotTaken) updateTwinForceSynchronization(ctx context
 	return []eventstore.Event{&ev}, nil
 }
 
-func (d *DeviceMetadataSnapshotTaken) ConfirmDeviceMetadataUpdate(ctx context.Context, userID, hubID string, req *commands.ConfirmDeviceMetadataUpdateRequest, newVersion uint64, cancel bool) ([]eventstore.Event, error) {
+func (d *DeviceMetadataSnapshotTakenForCommand) ConfirmDeviceMetadataUpdateRequest(ctx context.Context, req *commands.ConfirmDeviceMetadataUpdateRequest, newVersion uint64, cancel bool) ([]eventstore.Event, error) {
 	if req.GetCommandMetadata() == nil {
 		return nil, status.Errorf(codes.InvalidArgument, errInvalidCommandMetadata)
 	}
 
-	em := MakeEventMeta(req.GetCommandMetadata().GetConnectionId(), req.GetCommandMetadata().GetSequence(), newVersion, hubID)
-	ac := commands.NewAuditContext(userID, req.GetCorrelationId())
+	em := MakeEventMeta(req.GetCommandMetadata().GetConnectionId(), req.GetCommandMetadata().GetSequence(), newVersion, d.hubID)
+	ac := commands.NewAuditContext(d.userID, req.GetCorrelationId(), d.owner)
 	_, is_confirm_twin_enabled := req.GetConfirm().(*commands.ConfirmDeviceMetadataUpdateRequest_TwinEnabled)
 	_, is_confirm_twin_force_synchronization := req.GetConfirm().(*commands.ConfirmDeviceMetadataUpdateRequest_TwinForceSynchronization)
 	switch {
@@ -266,7 +269,7 @@ func (d *DeviceMetadataSnapshotTaken) ConfirmDeviceMetadataUpdate(ctx context.Co
 	}
 }
 
-func (d *DeviceMetadataSnapshotTaken) CancelPendingMetadataUpdates(ctx context.Context, userID, hubID string, req *commands.CancelPendingMetadataUpdatesRequest, newVersion uint64) ([]eventstore.Event, error) {
+func (d *DeviceMetadataSnapshotTakenForCommand) CancelPendingMetadataUpdatesRequest(ctx context.Context, req *commands.CancelPendingMetadataUpdatesRequest, newVersion uint64) ([]eventstore.Event, error) {
 	if req.GetCommandMetadata() == nil {
 		return nil, status.Errorf(codes.InvalidArgument, errInvalidCommandMetadata)
 	}
@@ -276,7 +279,7 @@ func (d *DeviceMetadataSnapshotTaken) CancelPendingMetadataUpdates(ctx context.C
 		if len(correlationIdFilter) != 0 && !correlationIdFilter.HasOneOf(event.GetAuditContext().GetCorrelationId()) {
 			continue
 		}
-		ev, err := d.ConfirmDeviceMetadataUpdate(ctx, userID, hubID, &commands.ConfirmDeviceMetadataUpdateRequest{
+		ev, err := d.ConfirmDeviceMetadataUpdateRequest(ctx, &commands.ConfirmDeviceMetadataUpdateRequest{
 			DeviceId:        req.GetDeviceId(),
 			CorrelationId:   event.GetAuditContext().GetCorrelationId(),
 			Status:          commands.Status_CANCELED,
@@ -341,7 +344,9 @@ func (d *DeviceMetadataSnapshotTaken) updateDeviceConnection(ctx context.Context
 		if em.GetVersion() == 0 {
 			return nil, status.Errorf(codes.InvalidArgument, "cannot update connection status to offline for not existing device %v", req.GetDeviceId())
 		}
-		// only online status can update protocol
+		// set instance service id to empty
+		req.GetConnection().ServiceId = ""
+		// set protocol to previous value
 		req.GetConnection().Protocol = d.GetDeviceMetadataUpdated().GetConnection().GetProtocol()
 	}
 
@@ -485,7 +490,7 @@ func (d *DeviceMetadataSnapshotTaken) updateDeviceTwinEnabled(ctx context.Contex
 	return []eventstore.Event{&ev}, nil
 }
 
-func (d *DeviceMetadataSnapshotTaken) updateDeviceTwinForceSynchronization(ctx context.Context, req *commands.UpdateDeviceMetadataRequest, em *EventMetadata, ac *commands.AuditContext) ([]eventstore.Event, error) {
+func (d *DeviceMetadataSnapshotTakenForCommand) updateDeviceTwinForceSynchronization(ctx context.Context, req *commands.UpdateDeviceMetadataRequest, em *EventMetadata, ac *commands.AuditContext) ([]eventstore.Event, error) {
 	if em.GetVersion() == 0 {
 		return nil, status.Errorf(codes.InvalidArgument, "cannot update twin enabled for not existing device %v", req.GetDeviceId())
 	}
@@ -509,13 +514,13 @@ func (d *DeviceMetadataSnapshotTaken) updateDeviceTwinForceSynchronization(ctx c
 	return []eventstore.Event{&ev}, nil
 }
 
-func (d *DeviceMetadataSnapshotTaken) updateDeviceMetadata(ctx context.Context, userID, hubID string, req *commands.UpdateDeviceMetadataRequest, newVersion uint64) ([]eventstore.Event, error) {
+func (d *DeviceMetadataSnapshotTakenForCommand) updateDeviceMetadataRequest(ctx context.Context, req *commands.UpdateDeviceMetadataRequest, newVersion uint64) ([]eventstore.Event, error) {
 	if req.GetCommandMetadata() == nil {
 		return nil, status.Errorf(codes.InvalidArgument, errInvalidCommandMetadata)
 	}
 
-	em := MakeEventMeta(req.GetCommandMetadata().GetConnectionId(), req.GetCommandMetadata().GetSequence(), newVersion, hubID)
-	ac := commands.NewAuditContext(userID, req.GetCorrelationId())
+	em := MakeEventMeta(req.GetCommandMetadata().GetConnectionId(), req.GetCommandMetadata().GetSequence(), newVersion, d.hubID)
+	ac := commands.NewAuditContext(d.userID, req.GetCorrelationId(), d.owner)
 
 	_, is_update_twin_enabled := req.GetUpdate().(*commands.UpdateDeviceMetadataRequest_TwinEnabled)
 	_, is_process_twin_force_synchronization := req.GetUpdate().(*commands.UpdateDeviceMetadataRequest_TwinForceSynchronization)
@@ -533,23 +538,51 @@ func (d *DeviceMetadataSnapshotTaken) updateDeviceMetadata(ctx context.Context, 
 	}
 }
 
-func (d *DeviceMetadataSnapshotTaken) HandleCommand(ctx context.Context, cmd aggregate.Command, newVersion uint64) ([]eventstore.Event, error) {
-	userID, err := grpc.SubjectFromTokenMD(ctx)
-	if err != nil {
-		return nil, err
+func (d *DeviceMetadataSnapshotTakenForCommand) updateToOfflineRequest(ctx context.Context, req *UpdateDeviceToOfflineRequest, newVersion uint64) ([]eventstore.Event, error) {
+	if req.GetDeviceId() == "" {
+		return nil, status.Errorf(codes.InvalidArgument, "cannot update device to offline for empty deviceId")
 	}
-	hubID := HubIDFromCtx(ctx)
-	if hubID == "" {
-		return nil, fmt.Errorf("hubID not found")
+	if d.GetDeviceMetadataUpdated().GetConnection().GetServiceId() != req.ServiceID {
+		// ignore request from different service
+		return nil, nil
 	}
+	em := MakeEventMeta(d.GetDeviceMetadataUpdated().GetConnection().GetId(), d.GetEventMetadata().GetSequence()+1, newVersion, d.hubID)
+	// we need to use owner from previous event, because it's determine event-bus subject where the event will be published
+	ac := commands.NewAuditContext(d.userID, "", d.GetDeviceMetadataUpdated().GetAuditContext().GetOwner())
 
+	return d.updateDeviceConnection(ctx, &commands.UpdateDeviceMetadataRequest{
+		DeviceId: req.GetDeviceId(),
+		Update: &commands.UpdateDeviceMetadataRequest_Connection{
+			Connection: &commands.Connection{
+				Status: commands.Connection_OFFLINE,
+			},
+		},
+		CommandMetadata: &commands.CommandMetadata{
+			Sequence:     em.GetSequence(),
+			ConnectionId: em.GetConnectionId(),
+		},
+	}, em, ac)
+}
+
+type UpdateDeviceToOfflineRequest struct {
+	DeviceID  string
+	ServiceID string
+}
+
+func (r *UpdateDeviceToOfflineRequest) GetDeviceId() string {
+	return r.DeviceID
+}
+
+func (d *DeviceMetadataSnapshotTakenForCommand) HandleCommand(ctx context.Context, cmd aggregate.Command, newVersion uint64) ([]eventstore.Event, error) {
 	switch req := cmd.(type) {
 	case *commands.UpdateDeviceMetadataRequest:
-		return d.updateDeviceMetadata(ctx, userID, hubID, req, newVersion)
+		return d.updateDeviceMetadataRequest(ctx, req, newVersion)
+	case *UpdateDeviceToOfflineRequest:
+		return d.updateToOfflineRequest(ctx, req, newVersion)
 	case *commands.ConfirmDeviceMetadataUpdateRequest:
-		return d.ConfirmDeviceMetadataUpdate(ctx, userID, hubID, req, newVersion, false)
+		return d.ConfirmDeviceMetadataUpdateRequest(ctx, req, newVersion, false)
 	case *commands.CancelPendingMetadataUpdatesRequest:
-		return d.CancelPendingMetadataUpdates(ctx, userID, hubID, req, newVersion)
+		return d.CancelPendingMetadataUpdatesRequest(ctx, req, newVersion)
 	}
 
 	return nil, fmt.Errorf("unknown command (%T)", cmd)
@@ -561,6 +594,22 @@ func (d *DeviceMetadataSnapshotTaken) TakeSnapshot(version uint64) (eventstore.E
 		EventMetadata:         MakeEventMeta(d.GetEventMetadata().GetConnectionId(), d.GetEventMetadata().GetSequence(), version, d.GetEventMetadata().GetHubId()),
 		DeviceMetadataUpdated: d.GetDeviceMetadataUpdated(),
 	}, true
+}
+
+type DeviceMetadataSnapshotTakenForCommand struct {
+	userID string
+	owner  string
+	hubID  string
+	*DeviceMetadataSnapshotTaken
+}
+
+func NewDeviceMetadataSnapshotTakenForCommand(userID string, owner string, hubID string) *DeviceMetadataSnapshotTakenForCommand {
+	return &DeviceMetadataSnapshotTakenForCommand{
+		DeviceMetadataSnapshotTaken: NewDeviceMetadataSnapshotTaken(),
+		userID:                      userID,
+		owner:                       owner,
+		hubID:                       hubID,
+	}
 }
 
 func NewDeviceMetadataSnapshotTaken() *DeviceMetadataSnapshotTaken {

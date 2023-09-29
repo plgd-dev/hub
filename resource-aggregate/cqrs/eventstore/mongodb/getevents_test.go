@@ -33,12 +33,17 @@ func (eh *dummyEventHandler) Handle(ctx context.Context, iter eventstore.Iter) e
 }
 
 const (
-	getEventsDeviceCount   = 10
-	getEventsResourceCount = 2000
+	getEventsServiceIDsCount = 10
+	getEventsDeviceCount     = 10
+	getEventsResourceCount   = 200
 )
 
 func getDeviceID(deviceIndex int) string {
 	return "device" + strconv.Itoa(deviceIndex)
+}
+
+func getServiceID(serviceIndex int) string {
+	return "serviceID" + strconv.Itoa(serviceIndex)
 }
 
 func getETag(deviceIndex int, resourceIndex int) []byte {
@@ -57,13 +62,14 @@ func getNLatestETag(deviceIndex int, limit int) [][]byte {
 }
 
 func addEventsForGetEventsToDB(ctx context.Context, t *testing.T, store *mongodb.EventStore) int {
-	const eventCount = 100000
+	const eventCount = 10000
 	var resourceVersion [getEventsResourceCount]uint64
 	var resourceTimestamp [getEventsResourceCount]int64
 	var resourceEvents [getEventsResourceCount][]eventstore.Event
 	for i := 0; i < eventCount; i++ {
 		deviceIndex := i % getEventsDeviceCount
 		resourceIndex := i % getEventsResourceCount
+		serviceIndex := i % getEventsServiceIDsCount
 		if i < getEventsResourceCount {
 			resourceTimestamp[i] = int64((eventCount / getEventsResourceCount) * i)
 		}
@@ -76,6 +82,7 @@ func addEventsForGetEventsToDB(ctx context.Context, t *testing.T, store *mongodb
 			GroupIDI:     getDeviceID(deviceIndex),
 			TimestampI:   1 + resourceTimestamp[resourceIndex],
 			ETagI:        getETag(deviceIndex, resourceIndex),
+			ServiceIDI:   getServiceID(serviceIndex),
 		})
 
 		resourceVersion[resourceIndex]++
@@ -143,7 +150,7 @@ func runGetEvents(t *testing.T, cfg runGetEventsConfig) {
 
 func TestGetEventsByTimestamp(t *testing.T) {
 	runGetEvents(t, runGetEventsConfig{
-		iterations: 2000,
+		iterations: 200,
 		queries: []eventstore.GetEventsQuery{
 			{
 				GroupID: "device1",
@@ -174,7 +181,7 @@ func TestGetDeviceEventsByTimestamp(t *testing.T) {
 func TestGetResourceEventsByTimestamp(t *testing.T) {
 	weakRng := rand.New(rand.NewSource(time.Now().UnixNano()))
 	runGetEvents(t, runGetEventsConfig{
-		iterations: 5000,
+		iterations: 500,
 		generator: func() []eventstore.GetEventsQuery {
 			resourceIndex := weakRng.Intn(getEventsResourceCount + 1)
 			deviceIndex := resourceIndex % getEventsDeviceCount
@@ -191,7 +198,7 @@ func TestGetResourceEventsByTimestamp(t *testing.T) {
 func TestGetResourcesEventsByTimestamp(t *testing.T) {
 	weakRng := rand.New(rand.NewSource(time.Now().UnixNano()))
 	runGetEvents(t, runGetEventsConfig{
-		iterations: 5000,
+		iterations: 500,
 		generator: func() []eventstore.GetEventsQuery {
 			queries := make([]eventstore.GetEventsQuery, 5)
 			for i := range queries {

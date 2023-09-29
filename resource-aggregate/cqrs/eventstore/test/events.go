@@ -431,6 +431,7 @@ type MockEvent struct {
 	DataI        []byte `bson:"data"`
 	TimestampI   int64  `bson:"timestamp"`
 	ETagI        []byte `bson:"etag"`
+	ServiceIDI   string `bson:"serviceid"`
 }
 
 func (e MockEvent) Version() uint64 {
@@ -465,6 +466,10 @@ func (e MockEvent) ETag() *eventstore.ETagData {
 
 func (e MockEvent) Timestamp() time.Time {
 	return time.Unix(0, e.TimestampI)
+}
+
+func (e MockEvent) ServiceID() (string, bool) {
+	return e.ServiceIDI, true
 }
 
 type MockEventHandler struct {
@@ -578,4 +583,49 @@ func (eh *MockEventHandler) Count() int {
 		}
 	}
 	return count
+}
+
+func MakeServiceMetadataSnapshotTaken(hubID string, serviceMetadataUpdated *events.ServiceMetadataUpdated, eventMetadata *events.EventMetadata) eventstore.EventUnmarshaler {
+	e := events.ServiceMetadataSnapshotTaken{
+		ServiceMetadataUpdated: serviceMetadataUpdated,
+		EventMetadata:          eventMetadata,
+	}
+	return eventstore.NewLoadedEvent(
+		e.GetEventMetadata().GetVersion(),
+		(&events.ServiceMetadataSnapshotTaken{}).EventType(),
+		commands.MakeServicesResourceUUID(hubID).String(),
+		hubID,
+		false,
+		time.Unix(0, e.GetEventMetadata().GetTimestamp()),
+		func(v interface{}) error {
+			if x, ok := v.(*events.ServiceMetadataSnapshotTaken); ok {
+				x.CopyData(&e)
+				return nil
+			}
+			return errCannotUnmarshalEvent
+		},
+	)
+}
+
+func MakeServiceMetadataUpdated(hubID string, servicesHeartbeat *events.ServicesHeartbeat, eventMetadata *events.EventMetadata, auditContext *commands.AuditContext) eventstore.EventUnmarshaler {
+	e := events.ServiceMetadataUpdated{
+		AuditContext:      auditContext,
+		EventMetadata:     eventMetadata,
+		ServicesHeartbeat: servicesHeartbeat,
+	}
+	return eventstore.NewLoadedEvent(
+		e.GetEventMetadata().GetVersion(),
+		(&events.ServiceMetadataUpdated{}).EventType(),
+		commands.MakeServicesResourceUUID(hubID).String(),
+		hubID,
+		false,
+		time.Unix(0, e.GetEventMetadata().GetTimestamp()),
+		func(v interface{}) error {
+			if x, ok := v.(*events.ServiceMetadataUpdated); ok {
+				x.CopyData(&e)
+				return nil
+			}
+			return errCannotUnmarshalEvent
+		},
+	)
 }

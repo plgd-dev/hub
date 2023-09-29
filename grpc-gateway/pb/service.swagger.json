@@ -1319,6 +1319,10 @@
         "protocol": {
           "$ref": "#/definitions/ConnectionProtocol",
           "description": "application protocol. It need to be set when the status is ONLINE."
+        },
+        "serviceId": {
+          "type": "string",
+          "description": "The service.ID, which identify the device being served, must be set when the status is ONLINE. However, during an OFFLINE event, they will be sed to empty values."
         }
       }
     },
@@ -2142,6 +2146,9 @@
           "type": "string"
         },
         "correlationId": {
+          "type": "string"
+        },
+        "owner": {
           "type": "string"
         }
       }

@@ -19,6 +19,7 @@ func CmpDeviceValues(t *testing.T, expected, got []*pbGrpc.Device) {
 		dev.Metadata.Connection.OnlineValidUntil = 0
 		dev.Metadata.Connection.Id = ""
 		dev.Metadata.Connection.ConnectedAt = 0
+		dev.Metadata.Connection.ServiceId = ""
 		if dev.Metadata.TwinSynchronization != nil {
 			dev.Metadata.TwinSynchronization.SyncingAt = 0
 			dev.Metadata.TwinSynchronization.InSyncAt = 0
@@ -45,7 +46,7 @@ func MakeDeviceMetadataUpdated(deviceID string, connectionStatus commands.Connec
 			State: twinSynchronizationState,
 		},
 		TwinEnabled:  twinEnabled,
-		AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, correlationID),
+		AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, correlationID, oauthService.DeviceUserID),
 	}
 }
 
@@ -56,6 +57,9 @@ func CleanUpDeviceMetadataUpdated(e *events.DeviceMetadataUpdated, resetCorrelat
 	e.EventMetadata = nil
 	e.OpenTelemetryCarrier = nil
 	if e.GetConnection() != nil {
+		if e.GetConnection().IsOnline() {
+			e.GetConnection().ServiceId = ""
+		}
 		e.GetConnection().OnlineValidUntil = 0
 		e.GetConnection().Id = ""
 		e.GetConnection().ConnectedAt = 0

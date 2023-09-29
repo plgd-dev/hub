@@ -26,7 +26,8 @@ import (
 	grpcClient "github.com/plgd-dev/hub/v2/pkg/net/grpc/client"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
-	raService "github.com/plgd-dev/hub/v2/resource-aggregate/test"
+	raService "github.com/plgd-dev/hub/v2/resource-aggregate/service"
+	raTest "github.com/plgd-dev/hub/v2/resource-aggregate/test"
 	rdTest "github.com/plgd-dev/hub/v2/resource-directory/test"
 	"github.com/plgd-dev/hub/v2/test"
 	"github.com/plgd-dev/hub/v2/test/config"
@@ -161,7 +162,7 @@ func TestRequestHandlerSubscribeToEvents(t *testing.T) {
 							TwinSynchronization: &commands.TwinSynchronization{
 								State: commands.TwinSynchronization_IN_SYNC,
 							},
-							AuditContext: commands.NewAuditContext(service.DeviceUserID, ""),
+							AuditContext: commands.NewAuditContext(service.DeviceUserID, "", service.DeviceUserID),
 						},
 					},
 					CorrelationId: "testToken2",
@@ -465,7 +466,7 @@ func TestRequestHandlerSubscribeForPendingCommands(t *testing.T) {
 							UpdatePending: &events.DeviceMetadataUpdatePending_TwinEnabled{
 								TwinEnabled: false,
 							},
-							AuditContext: commands.NewAuditContext(service.DeviceUserID, ""),
+							AuditContext: commands.NewAuditContext(service.DeviceUserID, "", service.DeviceUserID),
 						},
 					},
 				},
@@ -476,7 +477,7 @@ func TestRequestHandlerSubscribeForPendingCommands(t *testing.T) {
 								DeviceId: deviceID,
 								Href:     platform.ResourceURI,
 							},
-							AuditContext: commands.NewAuditContext(service.DeviceUserID, ""),
+							AuditContext: commands.NewAuditContext(service.DeviceUserID, "", service.DeviceUserID),
 						},
 					},
 				},
@@ -495,7 +496,7 @@ func TestRequestHandlerSubscribeForPendingCommands(t *testing.T) {
 								DeviceId: deviceID,
 								Href:     device.ResourceURI,
 							},
-							AuditContext: commands.NewAuditContext(service.DeviceUserID, ""),
+							AuditContext: commands.NewAuditContext(service.DeviceUserID, "", service.DeviceUserID),
 						},
 					},
 				},
@@ -526,7 +527,7 @@ func TestRequestHandlerSubscribeForPendingCommands(t *testing.T) {
 								DeviceId: deviceID,
 								Href:     platform.ResourceURI,
 							},
-							AuditContext: commands.NewAuditContext(service.DeviceUserID, ""),
+							AuditContext: commands.NewAuditContext(service.DeviceUserID, "", service.DeviceUserID),
 						},
 					},
 				},
@@ -570,7 +571,7 @@ func TestRequestHandlerSubscribeForPendingCommands(t *testing.T) {
 								DeviceId: deviceID,
 								Href:     device.ResourceURI,
 							},
-							AuditContext: commands.NewAuditContext(service.DeviceUserID, ""),
+							AuditContext: commands.NewAuditContext(service.DeviceUserID, "", service.DeviceUserID),
 						},
 					},
 				},
@@ -613,7 +614,7 @@ func TestRequestHandlerSubscribeForPendingCommands(t *testing.T) {
 							UpdatePending: &events.DeviceMetadataUpdatePending_TwinEnabled{
 								TwinEnabled: false,
 							},
-							AuditContext: commands.NewAuditContext(service.DeviceUserID, ""),
+							AuditContext: commands.NewAuditContext(service.DeviceUserID, "", service.DeviceUserID),
 						},
 					},
 				},
@@ -627,7 +628,7 @@ func TestRequestHandlerSubscribeForPendingCommands(t *testing.T) {
 	serviceTest.ClearDB(ctx, t)
 	oauthShutdown := oauthTest.SetUp(t)
 	authShutdown := idService.SetUp(t)
-	raShutdown := raService.SetUp(t)
+	raShutdown := raTest.SetUp(t)
 	rdShutdown := rdTest.SetUp(t)
 	grpcShutdown := grpcgwService.SetUp(t)
 	caShutdown := caService.SetUp(t)
@@ -912,7 +913,7 @@ func TestRequestHandlerIssue270(t *testing.T) {
 				TwinSynchronization: &commands.TwinSynchronization{
 					State: commands.TwinSynchronization_IN_SYNC,
 				},
-				AuditContext: commands.NewAuditContext(service.DeviceUserID, ""),
+				AuditContext: commands.NewAuditContext(service.DeviceUserID, "", service.DeviceUserID),
 			},
 		},
 		CorrelationId: "testToken",
@@ -943,4 +944,147 @@ func TestRequestHandlerIssue270(t *testing.T) {
 			run = false
 		}
 	}
+}
+
+func waitForDevice(t *testing.T, client pb.GrpcGateway_SubscribeToEventsClient, deviceID string) string {
+	// device should be online
+	var firstCoapGWInstanceID string
+	for {
+		ev, err := client.Recv()
+		require.NoError(t, err)
+		if firstCoapGWInstanceID == "" {
+			firstCoapGWInstanceID = ev.GetDeviceMetadataUpdated().GetConnection().GetServiceId()
+		}
+		require.Equal(t, firstCoapGWInstanceID, ev.GetDeviceMetadataUpdated().GetConnection().GetServiceId())
+		wantBreak := ev.GetDeviceMetadataUpdated().GetTwinSynchronization().GetState() == commands.TwinSynchronization_IN_SYNC
+		// this alternate to multiple values
+		ev.GetDeviceMetadataUpdated().TwinSynchronization = nil
+		pbTest.CmpEvent(t, &pb.Event{
+			SubscriptionId: ev.SubscriptionId,
+			Type: &pb.Event_DeviceMetadataUpdated{
+				DeviceMetadataUpdated: &events.DeviceMetadataUpdated{
+					DeviceId: deviceID,
+					Connection: &commands.Connection{
+						Status:   commands.Connection_ONLINE,
+						Protocol: test.StringToApplicationProtocol(config.ACTIVE_COAP_SCHEME),
+					},
+					TwinEnabled:  true,
+					AuditContext: commands.NewAuditContext(service.DeviceUserID, "", service.DeviceUserID),
+				},
+			},
+			CorrelationId: "testToken",
+		}, ev, "")
+		if wantBreak {
+			return firstCoapGWInstanceID
+		}
+	}
+}
+
+func TestCoAPGatewayServiceHeartbeat(t *testing.T) {
+	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
+	defer cancel()
+
+	tearDown := serviceTest.SetUpServices(ctx, t, serviceTest.SetUpServicesCertificateAuthority|serviceTest.SetUpServicesGrpcGateway|serviceTest.SetUpServicesId|serviceTest.SetUpServicesResourceDirectory|serviceTest.SetUpServicesOAuth)
+	defer tearDown()
+
+	racfg := raTest.MakeConfig(t)
+	raTearDown := raTest.New(t, racfg)
+
+	coapgwCfg := coapgwTest.MakeConfig(t)
+	coapgwCfg.ServiceHeartbeat.TimeToLive = time.Second * 2
+	coapgwTearDown := coapgwTest.New(t, coapgwCfg)
+
+	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
+
+	fileWatcher, err := fsnotify.NewWatcher(log.Get())
+	require.NoError(t, err)
+	defer func() {
+		errC := fileWatcher.Close()
+		require.NoError(t, errC)
+	}()
+
+	rdConn, err := grpcClient.New(config.MakeGrpcClientConfig(config.GRPC_GW_HOST), fileWatcher, log.Get(), trace.NewNoopTracerProvider())
+	require.NoError(t, err)
+	defer func() {
+		_ = rdConn.Close()
+	}()
+	c := pb.NewGrpcGatewayClient(rdConn.GRPC())
+
+	client, err := client.New(c).SubscribeToEventsWithCurrentState(ctx, time.Minute)
+	require.NoError(t, err)
+
+	err = client.Send(&pb.SubscribeToEvents{
+		CorrelationId: "testToken",
+		Action: &pb.SubscribeToEvents_CreateSubscription_{
+			CreateSubscription: &pb.SubscribeToEvents_CreateSubscription{
+				EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
+					pb.SubscribeToEvents_CreateSubscription_DEVICE_METADATA_UPDATED,
+				},
+			},
+		},
+	})
+	require.NoError(t, err)
+
+	ev, err := client.Recv()
+	require.NoError(t, err)
+	expectedEvent := &pb.Event{
+		SubscriptionId: ev.SubscriptionId,
+		Type:           pbTest.OperationProcessedOK(),
+		CorrelationId:  "testToken",
+	}
+	test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
+
+	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.ACTIVE_COAP_SCHEME+"://"+config.COAP_GW_HOST, test.GetAllBackendResourceLinks())
+	defer shutdownDevSim()
+
+	// wait for device to be online
+	firstCoapGWInstanceID := waitForDevice(t, client, deviceID)
+	require.NotEmpty(t, firstCoapGWInstanceID)
+
+	// need to turn off RA to don't allow update device status to offline
+	raTearDown()
+	// turn off coapgw - devices status will still be online
+	coapgwTearDown()
+	time.Sleep(time.Second)
+
+	// turn on resource-aggregate
+	raTearDown = raTest.New(t, racfg)
+	defer raTearDown()
+
+	// turn on coapgw on different port to avoid connecting device to hub
+	// in this case this coapgw will move device to offline
+	coapgwCfg.APIs.COAP.Addr = "localhost:55555"
+	coapgwTearDown = coapgwTest.New(t, coapgwCfg)
+
+	ev, err = client.Recv()
+	require.NoError(t, err)
+	pbTest.CmpEvent(t, &pb.Event{
+		SubscriptionId: ev.SubscriptionId,
+		Type: &pb.Event_DeviceMetadataUpdated{
+			DeviceMetadataUpdated: &events.DeviceMetadataUpdated{
+				DeviceId: deviceID,
+				Connection: &commands.Connection{
+					Status:   commands.Connection_OFFLINE,
+					Protocol: test.StringToApplicationProtocol(config.ACTIVE_COAP_SCHEME),
+				},
+				TwinEnabled:         true,
+				TwinSynchronization: &commands.TwinSynchronization{},
+				AuditContext:        commands.NewAuditContext(raService.ServiceUserID, "", service.DeviceUserID),
+			},
+		},
+		CorrelationId: "testToken",
+	}, ev, "")
+
+	// turn off coap-gw and return back correct port
+	coapgwTearDown()
+	time.Sleep(time.Second)
+	coapgwCfg.APIs.COAP.Addr = config.COAP_GW_HOST
+	coapgwTearDown = coapgwTest.New(t, coapgwCfg)
+	defer coapgwTearDown()
+
+	// device should be online again
+	secondCoapGWInstanceID := waitForDevice(t, client, deviceID)
+	require.NotEmpty(t, secondCoapGWInstanceID)
+	require.NotEqual(t, firstCoapGWInstanceID, secondCoapGWInstanceID)
 }

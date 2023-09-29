@@ -1550,6 +1550,243 @@ func (x *DeviceMetadataSnapshotTaken) GetEventMetadata() *EventMetadata {
 	return nil
 }
 
+type ServicesHeartbeat struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Valid   []*ServicesHeartbeat_Heartbeat `protobuf:"bytes,1,rep,name=valid,proto3" json:"valid,omitempty"`     // services which heartbeat is still valid
+	Expired []*ServicesHeartbeat_Heartbeat `protobuf:"bytes,2,rep,name=expired,proto3" json:"expired,omitempty"` // services which heartbeat is already expired
+}
+
+func (x *ServicesHeartbeat) Reset() {
+	*x = ServicesHeartbeat{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_resource_aggregate_pb_events_proto_msgTypes[17]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ServicesHeartbeat) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ServicesHeartbeat) ProtoMessage() {}
+
+func (x *ServicesHeartbeat) ProtoReflect() protoreflect.Message {
+	mi := &file_resource_aggregate_pb_events_proto_msgTypes[17]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ServicesHeartbeat.ProtoReflect.Descriptor instead.
+func (*ServicesHeartbeat) Descriptor() ([]byte, []int) {
+	return file_resource_aggregate_pb_events_proto_rawDescGZIP(), []int{17}
+}
+
+func (x *ServicesHeartbeat) GetValid() []*ServicesHeartbeat_Heartbeat {
+	if x != nil {
+		return x.Valid
+	}
+	return nil
+}
+
+func (x *ServicesHeartbeat) GetExpired() []*ServicesHeartbeat_Heartbeat {
+	if x != nil {
+		return x.Expired
+	}
+	return nil
+}
+
+type ServiceMetadataUpdated struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	ServicesHeartbeat *ServicesHeartbeat     `protobuf:"bytes,1,opt,name=services_heartbeat,json=servicesHeartbeat,proto3" json:"services_heartbeat,omitempty"`
+	EventMetadata     *EventMetadata         `protobuf:"bytes,2,opt,name=event_metadata,json=eventMetadata,proto3" json:"event_metadata,omitempty"`
+	AuditContext      *commands.AuditContext `protobuf:"bytes,3,opt,name=audit_context,json=auditContext,proto3" json:"audit_context,omitempty"`
+	// Open telemetry data propagated to asynchronous events
+	OpenTelemetryCarrier map[string]string `protobuf:"bytes,100,rep,name=open_telemetry_carrier,json=openTelemetryCarrier,proto3" json:"open_telemetry_carrier,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
+}
+
+func (x *ServiceMetadataUpdated) Reset() {
+	*x = ServiceMetadataUpdated{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_resource_aggregate_pb_events_proto_msgTypes[18]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ServiceMetadataUpdated) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ServiceMetadataUpdated) ProtoMessage() {}
+
+func (x *ServiceMetadataUpdated) ProtoReflect() protoreflect.Message {
+	mi := &file_resource_aggregate_pb_events_proto_msgTypes[18]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ServiceMetadataUpdated.ProtoReflect.Descriptor instead.
+func (*ServiceMetadataUpdated) Descriptor() ([]byte, []int) {
+	return file_resource_aggregate_pb_events_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *ServiceMetadataUpdated) GetServicesHeartbeat() *ServicesHeartbeat {
+	if x != nil {
+		return x.ServicesHeartbeat
+	}
+	return nil
+}
+
+func (x *ServiceMetadataUpdated) GetEventMetadata() *EventMetadata {
+	if x != nil {
+		return x.EventMetadata
+	}
+	return nil
+}
+
+func (x *ServiceMetadataUpdated) GetAuditContext() *commands.AuditContext {
+	if x != nil {
+		return x.AuditContext
+	}
+	return nil
+}
+
+func (x *ServiceMetadataUpdated) GetOpenTelemetryCarrier() map[string]string {
+	if x != nil {
+		return x.OpenTelemetryCarrier
+	}
+	return nil
+}
+
+type ServiceMetadataSnapshotTaken struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	ServiceMetadataUpdated *ServiceMetadataUpdated `protobuf:"bytes,1,opt,name=service_metadata_updated,json=serviceMetadataUpdated,proto3" json:"service_metadata_updated,omitempty"`
+	EventMetadata          *EventMetadata          `protobuf:"bytes,2,opt,name=event_metadata,json=eventMetadata,proto3" json:"event_metadata,omitempty"`
+}
+
+func (x *ServiceMetadataSnapshotTaken) Reset() {
+	*x = ServiceMetadataSnapshotTaken{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_resource_aggregate_pb_events_proto_msgTypes[19]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ServiceMetadataSnapshotTaken) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ServiceMetadataSnapshotTaken) ProtoMessage() {}
+
+func (x *ServiceMetadataSnapshotTaken) ProtoReflect() protoreflect.Message {
+	mi := &file_resource_aggregate_pb_events_proto_msgTypes[19]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ServiceMetadataSnapshotTaken.ProtoReflect.Descriptor instead.
+func (*ServiceMetadataSnapshotTaken) Descriptor() ([]byte, []int) {
+	return file_resource_aggregate_pb_events_proto_rawDescGZIP(), []int{19}
+}
+
+func (x *ServiceMetadataSnapshotTaken) GetServiceMetadataUpdated() *ServiceMetadataUpdated {
+	if x != nil {
+		return x.ServiceMetadataUpdated
+	}
+	return nil
+}
+
+func (x *ServiceMetadataSnapshotTaken) GetEventMetadata() *EventMetadata {
+	if x != nil {
+		return x.EventMetadata
+	}
+	return nil
+}
+
+type ServicesHeartbeat_Heartbeat struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	ServiceId  string `protobuf:"bytes,1,opt,name=service_id,json=serviceId,proto3" json:"service_id,omitempty"`     // generated unique id during start the service
+	ValidUntil int64  `protobuf:"varint,2,opt,name=valid_until,json=validUntil,proto3" json:"valid_until,omitempty"` // unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when service heartbeat is considered as expired.
+}
+
+func (x *ServicesHeartbeat_Heartbeat) Reset() {
+	*x = ServicesHeartbeat_Heartbeat{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_resource_aggregate_pb_events_proto_msgTypes[34]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ServicesHeartbeat_Heartbeat) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ServicesHeartbeat_Heartbeat) ProtoMessage() {}
+
+func (x *ServicesHeartbeat_Heartbeat) ProtoReflect() protoreflect.Message {
+	mi := &file_resource_aggregate_pb_events_proto_msgTypes[34]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ServicesHeartbeat_Heartbeat.ProtoReflect.Descriptor instead.
+func (*ServicesHeartbeat_Heartbeat) Descriptor() ([]byte, []int) {
+	return file_resource_aggregate_pb_events_proto_rawDescGZIP(), []int{17, 0}
+}
+
+func (x *ServicesHeartbeat_Heartbeat) GetServiceId() string {
+	if x != nil {
+		return x.ServiceId
+	}
+	return ""
+}
+
+func (x *ServicesHeartbeat_Heartbeat) GetValidUntil() int64 {
+	if x != nil {
+		return x.ValidUntil
+	}
+	return 0
+}
+
 var File_resource_aggregate_pb_events_proto protoreflect.FileDescriptor
 
 var file_resource_aggregate_pb_events_proto_rawDesc = []byte{
@@ -2099,12 +2336,69 @@ var file_resource_aggregate_pb_events_proto_rawDesc = []byte{
 	0x18, 0x04, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x23, 0x2e, 0x72, 0x65, 0x73, 0x6f, 0x75, 0x72, 0x63,
 	0x65, 0x61, 0x67, 0x67, 0x72, 0x65, 0x67, 0x61, 0x74, 0x65, 0x2e, 0x70, 0x62, 0x2e, 0x45, 0x76,
 	0x65, 0x6e, 0x74, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x52, 0x0d, 0x65, 0x76, 0x65,
-	0x6e, 0x74, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x42, 0x3d, 0x5a, 0x3b, 0x67, 0x69,
-	0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x70, 0x6c, 0x67, 0x64, 0x2d, 0x64, 0x65,
-	0x76, 0x2f, 0x68, 0x75, 0x62, 0x2f, 0x76, 0x32, 0x2f, 0x72, 0x65, 0x73, 0x6f, 0x75, 0x72, 0x63,
-	0x65, 0x2d, 0x61, 0x67, 0x67, 0x72, 0x65, 0x67, 0x61, 0x74, 0x65, 0x2f, 0x65, 0x76, 0x65, 0x6e,
-	0x74, 0x73, 0x3b, 0x65, 0x76, 0x65, 0x6e, 0x74, 0x73, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f,
-	0x33,
+	0x6e, 0x74, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x22, 0xf6, 0x01, 0x0a, 0x11, 0x53,
+	0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x73, 0x48, 0x65, 0x61, 0x72, 0x74, 0x62, 0x65, 0x61, 0x74,
+	0x12, 0x47, 0x0a, 0x05, 0x76, 0x61, 0x6c, 0x69, 0x64, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32,
+	0x31, 0x2e, 0x72, 0x65, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x61, 0x67, 0x67, 0x72, 0x65, 0x67,
+	0x61, 0x74, 0x65, 0x2e, 0x70, 0x62, 0x2e, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x73, 0x48,
+	0x65, 0x61, 0x72, 0x74, 0x62, 0x65, 0x61, 0x74, 0x2e, 0x48, 0x65, 0x61, 0x72, 0x74, 0x62, 0x65,
+	0x61, 0x74, 0x52, 0x05, 0x76, 0x61, 0x6c, 0x69, 0x64, 0x12, 0x4b, 0x0a, 0x07, 0x65, 0x78, 0x70,
+	0x69, 0x72, 0x65, 0x64, 0x18, 0x02, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x31, 0x2e, 0x72, 0x65, 0x73,
+	0x6f, 0x75, 0x72, 0x63, 0x65, 0x61, 0x67, 0x67, 0x72, 0x65, 0x67, 0x61, 0x74, 0x65, 0x2e, 0x70,
+	0x62, 0x2e, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x73, 0x48, 0x65, 0x61, 0x72, 0x74, 0x62,
+	0x65, 0x61, 0x74, 0x2e, 0x48, 0x65, 0x61, 0x72, 0x74, 0x62, 0x65, 0x61, 0x74, 0x52, 0x07, 0x65,
+	0x78, 0x70, 0x69, 0x72, 0x65, 0x64, 0x1a, 0x4b, 0x0a, 0x09, 0x48, 0x65, 0x61, 0x72, 0x74, 0x62,
+	0x65, 0x61, 0x74, 0x12, 0x1d, 0x0a, 0x0a, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x5f, 0x69,
+	0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65,
+	0x49, 0x64, 0x12, 0x1f, 0x0a, 0x0b, 0x76, 0x61, 0x6c, 0x69, 0x64, 0x5f, 0x75, 0x6e, 0x74, 0x69,
+	0x6c, 0x18, 0x02, 0x20, 0x01, 0x28, 0x03, 0x52, 0x0a, 0x76, 0x61, 0x6c, 0x69, 0x64, 0x55, 0x6e,
+	0x74, 0x69, 0x6c, 0x22, 0xcc, 0x03, 0x0a, 0x16, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x4d,
+	0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x64, 0x12, 0x56,
+	0x0a, 0x12, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x73, 0x5f, 0x68, 0x65, 0x61, 0x72, 0x74,
+	0x62, 0x65, 0x61, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x27, 0x2e, 0x72, 0x65, 0x73,
+	0x6f, 0x75, 0x72, 0x63, 0x65, 0x61, 0x67, 0x67, 0x72, 0x65, 0x67, 0x61, 0x74, 0x65, 0x2e, 0x70,
+	0x62, 0x2e, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x73, 0x48, 0x65, 0x61, 0x72, 0x74, 0x62,
+	0x65, 0x61, 0x74, 0x52, 0x11, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x73, 0x48, 0x65, 0x61,
+	0x72, 0x74, 0x62, 0x65, 0x61, 0x74, 0x12, 0x4a, 0x0a, 0x0e, 0x65, 0x76, 0x65, 0x6e, 0x74, 0x5f,
+	0x6d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x23,
+	0x2e, 0x72, 0x65, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x61, 0x67, 0x67, 0x72, 0x65, 0x67, 0x61,
+	0x74, 0x65, 0x2e, 0x70, 0x62, 0x2e, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x4d, 0x65, 0x74, 0x61, 0x64,
+	0x61, 0x74, 0x61, 0x52, 0x0d, 0x65, 0x76, 0x65, 0x6e, 0x74, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61,
+	0x74, 0x61, 0x12, 0x47, 0x0a, 0x0d, 0x61, 0x75, 0x64, 0x69, 0x74, 0x5f, 0x63, 0x6f, 0x6e, 0x74,
+	0x65, 0x78, 0x74, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x22, 0x2e, 0x72, 0x65, 0x73, 0x6f,
+	0x75, 0x72, 0x63, 0x65, 0x61, 0x67, 0x67, 0x72, 0x65, 0x67, 0x61, 0x74, 0x65, 0x2e, 0x70, 0x62,
+	0x2e, 0x41, 0x75, 0x64, 0x69, 0x74, 0x43, 0x6f, 0x6e, 0x74, 0x65, 0x78, 0x74, 0x52, 0x0c, 0x61,
+	0x75, 0x64, 0x69, 0x74, 0x43, 0x6f, 0x6e, 0x74, 0x65, 0x78, 0x74, 0x12, 0x7c, 0x0a, 0x16, 0x6f,
+	0x70, 0x65, 0x6e, 0x5f, 0x74, 0x65, 0x6c, 0x65, 0x6d, 0x65, 0x74, 0x72, 0x79, 0x5f, 0x63, 0x61,
+	0x72, 0x72, 0x69, 0x65, 0x72, 0x18, 0x64, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x46, 0x2e, 0x72, 0x65,
+	0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x61, 0x67, 0x67, 0x72, 0x65, 0x67, 0x61, 0x74, 0x65, 0x2e,
+	0x70, 0x62, 0x2e, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61,
+	0x74, 0x61, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x64, 0x2e, 0x4f, 0x70, 0x65, 0x6e, 0x54, 0x65,
+	0x6c, 0x65, 0x6d, 0x65, 0x74, 0x72, 0x79, 0x43, 0x61, 0x72, 0x72, 0x69, 0x65, 0x72, 0x45, 0x6e,
+	0x74, 0x72, 0x79, 0x52, 0x14, 0x6f, 0x70, 0x65, 0x6e, 0x54, 0x65, 0x6c, 0x65, 0x6d, 0x65, 0x74,
+	0x72, 0x79, 0x43, 0x61, 0x72, 0x72, 0x69, 0x65, 0x72, 0x1a, 0x47, 0x0a, 0x19, 0x4f, 0x70, 0x65,
+	0x6e, 0x54, 0x65, 0x6c, 0x65, 0x6d, 0x65, 0x74, 0x72, 0x79, 0x43, 0x61, 0x72, 0x72, 0x69, 0x65,
+	0x72, 0x45, 0x6e, 0x74, 0x72, 0x79, 0x12, 0x10, 0x0a, 0x03, 0x6b, 0x65, 0x79, 0x18, 0x01, 0x20,
+	0x01, 0x28, 0x09, 0x52, 0x03, 0x6b, 0x65, 0x79, 0x12, 0x14, 0x0a, 0x05, 0x76, 0x61, 0x6c, 0x75,
+	0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x3a, 0x02,
+	0x38, 0x01, 0x22, 0xd2, 0x01, 0x0a, 0x1c, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x4d, 0x65,
+	0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x53, 0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f, 0x74, 0x54, 0x61,
+	0x6b, 0x65, 0x6e, 0x12, 0x66, 0x0a, 0x18, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x5f, 0x6d,
+	0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x5f, 0x75, 0x70, 0x64, 0x61, 0x74, 0x65, 0x64, 0x18,
+	0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x2c, 0x2e, 0x72, 0x65, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65,
+	0x61, 0x67, 0x67, 0x72, 0x65, 0x67, 0x61, 0x74, 0x65, 0x2e, 0x70, 0x62, 0x2e, 0x53, 0x65, 0x72,
+	0x76, 0x69, 0x63, 0x65, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x55, 0x70, 0x64, 0x61,
+	0x74, 0x65, 0x64, 0x52, 0x16, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x4d, 0x65, 0x74, 0x61,
+	0x64, 0x61, 0x74, 0x61, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x64, 0x12, 0x4a, 0x0a, 0x0e, 0x65,
+	0x76, 0x65, 0x6e, 0x74, 0x5f, 0x6d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x18, 0x02, 0x20,
+	0x01, 0x28, 0x0b, 0x32, 0x23, 0x2e, 0x72, 0x65, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x61, 0x67,
+	0x67, 0x72, 0x65, 0x67, 0x61, 0x74, 0x65, 0x2e, 0x70, 0x62, 0x2e, 0x45, 0x76, 0x65, 0x6e, 0x74,
+	0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x52, 0x0d, 0x65, 0x76, 0x65, 0x6e, 0x74, 0x4d,
+	0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x42, 0x3d, 0x5a, 0x3b, 0x67, 0x69, 0x74, 0x68, 0x75,
+	0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x70, 0x6c, 0x67, 0x64, 0x2d, 0x64, 0x65, 0x76, 0x2f, 0x68,
+	0x75, 0x62, 0x2f, 0x76, 0x32, 0x2f, 0x72, 0x65, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x2d, 0x61,
+	0x67, 0x67, 0x72, 0x65, 0x67, 0x61, 0x74, 0x65, 0x2f, 0x65, 0x76, 0x65, 0x6e, 0x74, 0x73, 0x3b,
+	0x65, 0x76, 0x65, 0x6e, 0x74, 0x73, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -2119,7 +2413,7 @@ func file_resource_aggregate_pb_events_proto_rawDescGZIP() []byte {
 	return file_resource_aggregate_pb_events_proto_rawDescData
 }
 
-var file_resource_aggregate_pb_events_proto_msgTypes = make([]protoimpl.MessageInfo, 31)
+var file_resource_aggregate_pb_events_proto_msgTypes = make([]protoimpl.MessageInfo, 36)
 var file_resource_aggregate_pb_events_proto_goTypes = []interface{}{
 	(*EventMetadata)(nil),                // 0: resourceaggregate.pb.EventMetadata
 	(*ResourceLinksPublished)(nil),       // 1: resourceaggregate.pb.ResourceLinksPublished
@@ -2138,112 +2432,125 @@ var file_resource_aggregate_pb_events_proto_goTypes = []interface{}{
 	(*DeviceMetadataUpdated)(nil),        // 14: resourceaggregate.pb.DeviceMetadataUpdated
 	(*DeviceMetadataUpdatePending)(nil),  // 15: resourceaggregate.pb.DeviceMetadataUpdatePending
 	(*DeviceMetadataSnapshotTaken)(nil),  // 16: resourceaggregate.pb.DeviceMetadataSnapshotTaken
-	nil,                                  // 17: resourceaggregate.pb.ResourceLinksPublished.OpenTelemetryCarrierEntry
-	nil,                                  // 18: resourceaggregate.pb.ResourceLinksUnpublished.OpenTelemetryCarrierEntry
-	nil,                                  // 19: resourceaggregate.pb.ResourceLinksSnapshotTaken.ResourcesEntry
-	nil,                                  // 20: resourceaggregate.pb.ResourceChanged.OpenTelemetryCarrierEntry
-	nil,                                  // 21: resourceaggregate.pb.ResourceUpdatePending.OpenTelemetryCarrierEntry
-	nil,                                  // 22: resourceaggregate.pb.ResourceUpdated.OpenTelemetryCarrierEntry
-	nil,                                  // 23: resourceaggregate.pb.ResourceRetrievePending.OpenTelemetryCarrierEntry
-	nil,                                  // 24: resourceaggregate.pb.ResourceRetrieved.OpenTelemetryCarrierEntry
-	nil,                                  // 25: resourceaggregate.pb.ResourceDeletePending.OpenTelemetryCarrierEntry
-	nil,                                  // 26: resourceaggregate.pb.ResourceDeleted.OpenTelemetryCarrierEntry
-	nil,                                  // 27: resourceaggregate.pb.ResourceCreatePending.OpenTelemetryCarrierEntry
-	nil,                                  // 28: resourceaggregate.pb.ResourceCreated.OpenTelemetryCarrierEntry
-	nil,                                  // 29: resourceaggregate.pb.DeviceMetadataUpdated.OpenTelemetryCarrierEntry
-	nil,                                  // 30: resourceaggregate.pb.DeviceMetadataUpdatePending.OpenTelemetryCarrierEntry
-	(*commands.Resource)(nil),            // 31: resourceaggregate.pb.Resource
-	(*commands.AuditContext)(nil),        // 32: resourceaggregate.pb.AuditContext
-	(*commands.ResourceId)(nil),          // 33: resourceaggregate.pb.ResourceId
-	(*commands.Content)(nil),             // 34: resourceaggregate.pb.Content
-	(commands.Status)(0),                 // 35: resourceaggregate.pb.Status
-	(*commands.Connection)(nil),          // 36: resourceaggregate.pb.Connection
-	(*commands.TwinSynchronization)(nil), // 37: resourceaggregate.pb.TwinSynchronization
+	(*ServicesHeartbeat)(nil),            // 17: resourceaggregate.pb.ServicesHeartbeat
+	(*ServiceMetadataUpdated)(nil),       // 18: resourceaggregate.pb.ServiceMetadataUpdated
+	(*ServiceMetadataSnapshotTaken)(nil), // 19: resourceaggregate.pb.ServiceMetadataSnapshotTaken
+	nil,                                  // 20: resourceaggregate.pb.ResourceLinksPublished.OpenTelemetryCarrierEntry
+	nil,                                  // 21: resourceaggregate.pb.ResourceLinksUnpublished.OpenTelemetryCarrierEntry
+	nil,                                  // 22: resourceaggregate.pb.ResourceLinksSnapshotTaken.ResourcesEntry
+	nil,                                  // 23: resourceaggregate.pb.ResourceChanged.OpenTelemetryCarrierEntry
+	nil,                                  // 24: resourceaggregate.pb.ResourceUpdatePending.OpenTelemetryCarrierEntry
+	nil,                                  // 25: resourceaggregate.pb.ResourceUpdated.OpenTelemetryCarrierEntry
+	nil,                                  // 26: resourceaggregate.pb.ResourceRetrievePending.OpenTelemetryCarrierEntry
+	nil,                                  // 27: resourceaggregate.pb.ResourceRetrieved.OpenTelemetryCarrierEntry
+	nil,                                  // 28: resourceaggregate.pb.ResourceDeletePending.OpenTelemetryCarrierEntry
+	nil,                                  // 29: resourceaggregate.pb.ResourceDeleted.OpenTelemetryCarrierEntry
+	nil,                                  // 30: resourceaggregate.pb.ResourceCreatePending.OpenTelemetryCarrierEntry
+	nil,                                  // 31: resourceaggregate.pb.ResourceCreated.OpenTelemetryCarrierEntry
+	nil,                                  // 32: resourceaggregate.pb.DeviceMetadataUpdated.OpenTelemetryCarrierEntry
+	nil,                                  // 33: resourceaggregate.pb.DeviceMetadataUpdatePending.OpenTelemetryCarrierEntry
+	(*ServicesHeartbeat_Heartbeat)(nil),  // 34: resourceaggregate.pb.ServicesHeartbeat.Heartbeat
+	nil,                                  // 35: resourceaggregate.pb.ServiceMetadataUpdated.OpenTelemetryCarrierEntry
+	(*commands.Resource)(nil),            // 36: resourceaggregate.pb.Resource
+	(*commands.AuditContext)(nil),        // 37: resourceaggregate.pb.AuditContext
+	(*commands.ResourceId)(nil),          // 38: resourceaggregate.pb.ResourceId
+	(*commands.Content)(nil),             // 39: resourceaggregate.pb.Content
+	(commands.Status)(0),                 // 40: resourceaggregate.pb.Status
+	(*commands.Connection)(nil),          // 41: resourceaggregate.pb.Connection
+	(*commands.TwinSynchronization)(nil), // 42: resourceaggregate.pb.TwinSynchronization
 }
 var file_resource_aggregate_pb_events_proto_depIdxs = []int32{
-	31, // 0: resourceaggregate.pb.ResourceLinksPublished.resources:type_name -> resourceaggregate.pb.Resource
-	32, // 1: resourceaggregate.pb.ResourceLinksPublished.audit_context:type_name -> resourceaggregate.pb.AuditContext
+	36, // 0: resourceaggregate.pb.ResourceLinksPublished.resources:type_name -> resourceaggregate.pb.Resource
+	37, // 1: resourceaggregate.pb.ResourceLinksPublished.audit_context:type_name -> resourceaggregate.pb.AuditContext
 	0,  // 2: resourceaggregate.pb.ResourceLinksPublished.event_metadata:type_name -> resourceaggregate.pb.EventMetadata
-	17, // 3: resourceaggregate.pb.ResourceLinksPublished.open_telemetry_carrier:type_name -> resourceaggregate.pb.ResourceLinksPublished.OpenTelemetryCarrierEntry
-	32, // 4: resourceaggregate.pb.ResourceLinksUnpublished.audit_context:type_name -> resourceaggregate.pb.AuditContext
+	20, // 3: resourceaggregate.pb.ResourceLinksPublished.open_telemetry_carrier:type_name -> resourceaggregate.pb.ResourceLinksPublished.OpenTelemetryCarrierEntry
+	37, // 4: resourceaggregate.pb.ResourceLinksUnpublished.audit_context:type_name -> resourceaggregate.pb.AuditContext
 	0,  // 5: resourceaggregate.pb.ResourceLinksUnpublished.event_metadata:type_name -> resourceaggregate.pb.EventMetadata
-	18, // 6: resourceaggregate.pb.ResourceLinksUnpublished.open_telemetry_carrier:type_name -> resourceaggregate.pb.ResourceLinksUnpublished.OpenTelemetryCarrierEntry
-	19, // 7: resourceaggregate.pb.ResourceLinksSnapshotTaken.resources:type_name -> resourceaggregate.pb.ResourceLinksSnapshotTaken.ResourcesEntry
+	21, // 6: resourceaggregate.pb.ResourceLinksUnpublished.open_telemetry_carrier:type_name -> resourceaggregate.pb.ResourceLinksUnpublished.OpenTelemetryCarrierEntry
+	22, // 7: resourceaggregate.pb.ResourceLinksSnapshotTaken.resources:type_name -> resourceaggregate.pb.ResourceLinksSnapshotTaken.ResourcesEntry
 	0,  // 8: resourceaggregate.pb.ResourceLinksSnapshotTaken.event_metadata:type_name -> resourceaggregate.pb.EventMetadata
-	32, // 9: resourceaggregate.pb.ResourceLinksSnapshotTaken.audit_context:type_name -> resourceaggregate.pb.AuditContext
-	33, // 10: resourceaggregate.pb.ResourceChanged.resource_id:type_name -> resourceaggregate.pb.ResourceId
-	34, // 11: resourceaggregate.pb.ResourceChanged.content:type_name -> resourceaggregate.pb.Content
-	35, // 12: resourceaggregate.pb.ResourceChanged.status:type_name -> resourceaggregate.pb.Status
-	32, // 13: resourceaggregate.pb.ResourceChanged.audit_context:type_name -> resourceaggregate.pb.AuditContext
+	37, // 9: resourceaggregate.pb.ResourceLinksSnapshotTaken.audit_context:type_name -> resourceaggregate.pb.AuditContext
+	38, // 10: resourceaggregate.pb.ResourceChanged.resource_id:type_name -> resourceaggregate.pb.ResourceId
+	39, // 11: resourceaggregate.pb.ResourceChanged.content:type_name -> resourceaggregate.pb.Content
+	40, // 12: resourceaggregate.pb.ResourceChanged.status:type_name -> resourceaggregate.pb.Status
+	37, // 13: resourceaggregate.pb.ResourceChanged.audit_context:type_name -> resourceaggregate.pb.AuditContext
 	0,  // 14: resourceaggregate.pb.ResourceChanged.event_metadata:type_name -> resourceaggregate.pb.EventMetadata
-	20, // 15: resourceaggregate.pb.ResourceChanged.open_telemetry_carrier:type_name -> resourceaggregate.pb.ResourceChanged.OpenTelemetryCarrierEntry
-	33, // 16: resourceaggregate.pb.ResourceUpdatePending.resource_id:type_name -> resourceaggregate.pb.ResourceId
-	34, // 17: resourceaggregate.pb.ResourceUpdatePending.content:type_name -> resourceaggregate.pb.Content
-	32, // 18: resourceaggregate.pb.ResourceUpdatePending.audit_context:type_name -> resourceaggregate.pb.AuditContext
+	23, // 15: resourceaggregate.pb.ResourceChanged.open_telemetry_carrier:type_name -> resourceaggregate.pb.ResourceChanged.OpenTelemetryCarrierEntry
+	38, // 16: resourceaggregate.pb.ResourceUpdatePending.resource_id:type_name -> resourceaggregate.pb.ResourceId
+	39, // 17: resourceaggregate.pb.ResourceUpdatePending.content:type_name -> resourceaggregate.pb.Content
+	37, // 18: resourceaggregate.pb.ResourceUpdatePending.audit_context:type_name -> resourceaggregate.pb.AuditContext
 	0,  // 19: resourceaggregate.pb.ResourceUpdatePending.event_metadata:type_name -> resourceaggregate.pb.EventMetadata
-	21, // 20: resourceaggregate.pb.ResourceUpdatePending.open_telemetry_carrier:type_name -> resourceaggregate.pb.ResourceUpdatePending.OpenTelemetryCarrierEntry
-	33, // 21: resourceaggregate.pb.ResourceUpdated.resource_id:type_name -> resourceaggregate.pb.ResourceId
-	35, // 22: resourceaggregate.pb.ResourceUpdated.status:type_name -> resourceaggregate.pb.Status
-	34, // 23: resourceaggregate.pb.ResourceUpdated.content:type_name -> resourceaggregate.pb.Content
-	32, // 24: resourceaggregate.pb.ResourceUpdated.audit_context:type_name -> resourceaggregate.pb.AuditContext
+	24, // 20: resourceaggregate.pb.ResourceUpdatePending.open_telemetry_carrier:type_name -> resourceaggregate.pb.ResourceUpdatePending.OpenTelemetryCarrierEntry
+	38, // 21: resourceaggregate.pb.ResourceUpdated.resource_id:type_name -> resourceaggregate.pb.ResourceId
+	40, // 22: resourceaggregate.pb.ResourceUpdated.status:type_name -> resourceaggregate.pb.Status
+	39, // 23: resourceaggregate.pb.ResourceUpdated.content:type_name -> resourceaggregate.pb.Content
+	37, // 24: resourceaggregate.pb.ResourceUpdated.audit_context:type_name -> resourceaggregate.pb.AuditContext
 	0,  // 25: resourceaggregate.pb.ResourceUpdated.event_metadata:type_name -> resourceaggregate.pb.EventMetadata
-	22, // 26: resourceaggregate.pb.ResourceUpdated.open_telemetry_carrier:type_name -> resourceaggregate.pb.ResourceUpdated.OpenTelemetryCarrierEntry
-	33, // 27: resourceaggregate.pb.ResourceRetrievePending.resource_id:type_name -> resourceaggregate.pb.ResourceId
-	32, // 28: resourceaggregate.pb.ResourceRetrievePending.audit_context:type_name -> resourceaggregate.pb.AuditContext
+	25, // 26: resourceaggregate.pb.ResourceUpdated.open_telemetry_carrier:type_name -> resourceaggregate.pb.ResourceUpdated.OpenTelemetryCarrierEntry
+	38, // 27: resourceaggregate.pb.ResourceRetrievePending.resource_id:type_name -> resourceaggregate.pb.ResourceId
+	37, // 28: resourceaggregate.pb.ResourceRetrievePending.audit_context:type_name -> resourceaggregate.pb.AuditContext
 	0,  // 29: resourceaggregate.pb.ResourceRetrievePending.event_metadata:type_name -> resourceaggregate.pb.EventMetadata
-	23, // 30: resourceaggregate.pb.ResourceRetrievePending.open_telemetry_carrier:type_name -> resourceaggregate.pb.ResourceRetrievePending.OpenTelemetryCarrierEntry
-	33, // 31: resourceaggregate.pb.ResourceRetrieved.resource_id:type_name -> resourceaggregate.pb.ResourceId
-	35, // 32: resourceaggregate.pb.ResourceRetrieved.status:type_name -> resourceaggregate.pb.Status
-	34, // 33: resourceaggregate.pb.ResourceRetrieved.content:type_name -> resourceaggregate.pb.Content
-	32, // 34: resourceaggregate.pb.ResourceRetrieved.audit_context:type_name -> resourceaggregate.pb.AuditContext
+	26, // 30: resourceaggregate.pb.ResourceRetrievePending.open_telemetry_carrier:type_name -> resourceaggregate.pb.ResourceRetrievePending.OpenTelemetryCarrierEntry
+	38, // 31: resourceaggregate.pb.ResourceRetrieved.resource_id:type_name -> resourceaggregate.pb.ResourceId
+	40, // 32: resourceaggregate.pb.ResourceRetrieved.status:type_name -> resourceaggregate.pb.Status
+	39, // 33: resourceaggregate.pb.ResourceRetrieved.content:type_name -> resourceaggregate.pb.Content
+	37, // 34: resourceaggregate.pb.ResourceRetrieved.audit_context:type_name -> resourceaggregate.pb.AuditContext
 	0,  // 35: resourceaggregate.pb.ResourceRetrieved.event_metadata:type_name -> resourceaggregate.pb.EventMetadata
-	24, // 36: resourceaggregate.pb.ResourceRetrieved.open_telemetry_carrier:type_name -> resourceaggregate.pb.ResourceRetrieved.OpenTelemetryCarrierEntry
-	33, // 37: resourceaggregate.pb.ResourceDeletePending.resource_id:type_name -> resourceaggregate.pb.ResourceId
-	32, // 38: resourceaggregate.pb.ResourceDeletePending.audit_context:type_name -> resourceaggregate.pb.AuditContext
+	27, // 36: resourceaggregate.pb.ResourceRetrieved.open_telemetry_carrier:type_name -> resourceaggregate.pb.ResourceRetrieved.OpenTelemetryCarrierEntry
+	38, // 37: resourceaggregate.pb.ResourceDeletePending.resource_id:type_name -> resourceaggregate.pb.ResourceId
+	37, // 38: resourceaggregate.pb.ResourceDeletePending.audit_context:type_name -> resourceaggregate.pb.AuditContext
 	0,  // 39: resourceaggregate.pb.ResourceDeletePending.event_metadata:type_name -> resourceaggregate.pb.EventMetadata
-	25, // 40: resourceaggregate.pb.ResourceDeletePending.open_telemetry_carrier:type_name -> resourceaggregate.pb.ResourceDeletePending.OpenTelemetryCarrierEntry
-	33, // 41: resourceaggregate.pb.ResourceDeleted.resource_id:type_name -> resourceaggregate.pb.ResourceId
-	35, // 42: resourceaggregate.pb.ResourceDeleted.status:type_name -> resourceaggregate.pb.Status
-	34, // 43: resourceaggregate.pb.ResourceDeleted.content:type_name -> resourceaggregate.pb.Content
-	32, // 44: resourceaggregate.pb.ResourceDeleted.audit_context:type_name -> resourceaggregate.pb.AuditContext
+	28, // 40: resourceaggregate.pb.ResourceDeletePending.open_telemetry_carrier:type_name -> resourceaggregate.pb.ResourceDeletePending.OpenTelemetryCarrierEntry
+	38, // 41: resourceaggregate.pb.ResourceDeleted.resource_id:type_name -> resourceaggregate.pb.ResourceId
+	40, // 42: resourceaggregate.pb.ResourceDeleted.status:type_name -> resourceaggregate.pb.Status
+	39, // 43: resourceaggregate.pb.ResourceDeleted.content:type_name -> resourceaggregate.pb.Content
+	37, // 44: resourceaggregate.pb.ResourceDeleted.audit_context:type_name -> resourceaggregate.pb.AuditContext
 	0,  // 45: resourceaggregate.pb.ResourceDeleted.event_metadata:type_name -> resourceaggregate.pb.EventMetadata
-	26, // 46: resourceaggregate.pb.ResourceDeleted.open_telemetry_carrier:type_name -> resourceaggregate.pb.ResourceDeleted.OpenTelemetryCarrierEntry
-	33, // 47: resourceaggregate.pb.ResourceCreatePending.resource_id:type_name -> resourceaggregate.pb.ResourceId
-	34, // 48: resourceaggregate.pb.ResourceCreatePending.content:type_name -> resourceaggregate.pb.Content
-	32, // 49: resourceaggregate.pb.ResourceCreatePending.audit_context:type_name -> resourceaggregate.pb.AuditContext
+	29, // 46: resourceaggregate.pb.ResourceDeleted.open_telemetry_carrier:type_name -> resourceaggregate.pb.ResourceDeleted.OpenTelemetryCarrierEntry
+	38, // 47: resourceaggregate.pb.ResourceCreatePending.resource_id:type_name -> resourceaggregate.pb.ResourceId
+	39, // 48: resourceaggregate.pb.ResourceCreatePending.content:type_name -> resourceaggregate.pb.Content
+	37, // 49: resourceaggregate.pb.ResourceCreatePending.audit_context:type_name -> resourceaggregate.pb.AuditContext
 	0,  // 50: resourceaggregate.pb.ResourceCreatePending.event_metadata:type_name -> resourceaggregate.pb.EventMetadata
-	27, // 51: resourceaggregate.pb.ResourceCreatePending.open_telemetry_carrier:type_name -> resourceaggregate.pb.ResourceCreatePending.OpenTelemetryCarrierEntry
-	33, // 52: resourceaggregate.pb.ResourceCreated.resource_id:type_name -> resourceaggregate.pb.ResourceId
-	35, // 53: resourceaggregate.pb.ResourceCreated.status:type_name -> resourceaggregate.pb.Status
-	34, // 54: resourceaggregate.pb.ResourceCreated.content:type_name -> resourceaggregate.pb.Content
-	32, // 55: resourceaggregate.pb.ResourceCreated.audit_context:type_name -> resourceaggregate.pb.AuditContext
+	30, // 51: resourceaggregate.pb.ResourceCreatePending.open_telemetry_carrier:type_name -> resourceaggregate.pb.ResourceCreatePending.OpenTelemetryCarrierEntry
+	38, // 52: resourceaggregate.pb.ResourceCreated.resource_id:type_name -> resourceaggregate.pb.ResourceId
+	40, // 53: resourceaggregate.pb.ResourceCreated.status:type_name -> resourceaggregate.pb.Status
+	39, // 54: resourceaggregate.pb.ResourceCreated.content:type_name -> resourceaggregate.pb.Content
+	37, // 55: resourceaggregate.pb.ResourceCreated.audit_context:type_name -> resourceaggregate.pb.AuditContext
 	0,  // 56: resourceaggregate.pb.ResourceCreated.event_metadata:type_name -> resourceaggregate.pb.EventMetadata
-	28, // 57: resourceaggregate.pb.ResourceCreated.open_telemetry_carrier:type_name -> resourceaggregate.pb.ResourceCreated.OpenTelemetryCarrierEntry
-	33, // 58: resourceaggregate.pb.ResourceStateSnapshotTaken.resource_id:type_name -> resourceaggregate.pb.ResourceId
+	31, // 57: resourceaggregate.pb.ResourceCreated.open_telemetry_carrier:type_name -> resourceaggregate.pb.ResourceCreated.OpenTelemetryCarrierEntry
+	38, // 58: resourceaggregate.pb.ResourceStateSnapshotTaken.resource_id:type_name -> resourceaggregate.pb.ResourceId
 	4,  // 59: resourceaggregate.pb.ResourceStateSnapshotTaken.latest_resource_change:type_name -> resourceaggregate.pb.ResourceChanged
 	11, // 60: resourceaggregate.pb.ResourceStateSnapshotTaken.resource_create_pendings:type_name -> resourceaggregate.pb.ResourceCreatePending
 	7,  // 61: resourceaggregate.pb.ResourceStateSnapshotTaken.resource_retrieve_pendings:type_name -> resourceaggregate.pb.ResourceRetrievePending
 	5,  // 62: resourceaggregate.pb.ResourceStateSnapshotTaken.resource_update_pendings:type_name -> resourceaggregate.pb.ResourceUpdatePending
 	9,  // 63: resourceaggregate.pb.ResourceStateSnapshotTaken.resource_delete_pendings:type_name -> resourceaggregate.pb.ResourceDeletePending
-	32, // 64: resourceaggregate.pb.ResourceStateSnapshotTaken.audit_context:type_name -> resourceaggregate.pb.AuditContext
+	37, // 64: resourceaggregate.pb.ResourceStateSnapshotTaken.audit_context:type_name -> resourceaggregate.pb.AuditContext
 	0,  // 65: resourceaggregate.pb.ResourceStateSnapshotTaken.event_metadata:type_name -> resourceaggregate.pb.EventMetadata
-	36, // 66: resourceaggregate.pb.DeviceMetadataUpdated.connection:type_name -> resourceaggregate.pb.Connection
-	37, // 67: resourceaggregate.pb.DeviceMetadataUpdated.twin_synchronization:type_name -> resourceaggregate.pb.TwinSynchronization
-	32, // 68: resourceaggregate.pb.DeviceMetadataUpdated.audit_context:type_name -> resourceaggregate.pb.AuditContext
+	41, // 66: resourceaggregate.pb.DeviceMetadataUpdated.connection:type_name -> resourceaggregate.pb.Connection
+	42, // 67: resourceaggregate.pb.DeviceMetadataUpdated.twin_synchronization:type_name -> resourceaggregate.pb.TwinSynchronization
+	37, // 68: resourceaggregate.pb.DeviceMetadataUpdated.audit_context:type_name -> resourceaggregate.pb.AuditContext
 	0,  // 69: resourceaggregate.pb.DeviceMetadataUpdated.event_metadata:type_name -> resourceaggregate.pb.EventMetadata
-	29, // 70: resourceaggregate.pb.DeviceMetadataUpdated.open_telemetry_carrier:type_name -> resourceaggregate.pb.DeviceMetadataUpdated.OpenTelemetryCarrierEntry
-	32, // 71: resourceaggregate.pb.DeviceMetadataUpdatePending.audit_context:type_name -> resourceaggregate.pb.AuditContext
+	32, // 70: resourceaggregate.pb.DeviceMetadataUpdated.open_telemetry_carrier:type_name -> resourceaggregate.pb.DeviceMetadataUpdated.OpenTelemetryCarrierEntry
+	37, // 71: resourceaggregate.pb.DeviceMetadataUpdatePending.audit_context:type_name -> resourceaggregate.pb.AuditContext
 	0,  // 72: resourceaggregate.pb.DeviceMetadataUpdatePending.event_metadata:type_name -> resourceaggregate.pb.EventMetadata
-	30, // 73: resourceaggregate.pb.DeviceMetadataUpdatePending.open_telemetry_carrier:type_name -> resourceaggregate.pb.DeviceMetadataUpdatePending.OpenTelemetryCarrierEntry
+	33, // 73: resourceaggregate.pb.DeviceMetadataUpdatePending.open_telemetry_carrier:type_name -> resourceaggregate.pb.DeviceMetadataUpdatePending.OpenTelemetryCarrierEntry
 	14, // 74: resourceaggregate.pb.DeviceMetadataSnapshotTaken.device_metadata_updated:type_name -> resourceaggregate.pb.DeviceMetadataUpdated
 	15, // 75: resourceaggregate.pb.DeviceMetadataSnapshotTaken.update_pendings:type_name -> resourceaggregate.pb.DeviceMetadataUpdatePending
 	0,  // 76: resourceaggregate.pb.DeviceMetadataSnapshotTaken.event_metadata:type_name -> resourceaggregate.pb.EventMetadata
-	31, // 77: resourceaggregate.pb.ResourceLinksSnapshotTaken.ResourcesEntry.value:type_name -> resourceaggregate.pb.Resource
-	78, // [78:78] is the sub-list for method output_type
-	78, // [78:78] is the sub-list for method input_type
-	78, // [78:78] is the sub-list for extension type_name
-	78, // [78:78] is the sub-list for extension extendee
-	0,  // [0:78] is the sub-list for field type_name
+	34, // 77: resourceaggregate.pb.ServicesHeartbeat.valid:type_name -> resourceaggregate.pb.ServicesHeartbeat.Heartbeat
+	34, // 78: resourceaggregate.pb.ServicesHeartbeat.expired:type_name -> resourceaggregate.pb.ServicesHeartbeat.Heartbeat
+	17, // 79: resourceaggregate.pb.ServiceMetadataUpdated.services_heartbeat:type_name -> resourceaggregate.pb.ServicesHeartbeat
+	0,  // 80: resourceaggregate.pb.ServiceMetadataUpdated.event_metadata:type_name -> resourceaggregate.pb.EventMetadata
+	37, // 81: resourceaggregate.pb.ServiceMetadataUpdated.audit_context:type_name -> resourceaggregate.pb.AuditContext
+	35, // 82: resourceaggregate.pb.ServiceMetadataUpdated.open_telemetry_carrier:type_name -> resourceaggregate.pb.ServiceMetadataUpdated.OpenTelemetryCarrierEntry
+	18, // 83: resourceaggregate.pb.ServiceMetadataSnapshotTaken.service_metadata_updated:type_name -> resourceaggregate.pb.ServiceMetadataUpdated
+	0,  // 84: resourceaggregate.pb.ServiceMetadataSnapshotTaken.event_metadata:type_name -> resourceaggregate.pb.EventMetadata
+	36, // 85: resourceaggregate.pb.ResourceLinksSnapshotTaken.ResourcesEntry.value:type_name -> resourceaggregate.pb.Resource
+	86, // [86:86] is the sub-list for method output_type
+	86, // [86:86] is the sub-list for method input_type
+	86, // [86:86] is the sub-list for extension type_name
+	86, // [86:86] is the sub-list for extension extendee
+	0,  // [0:86] is the sub-list for field type_name
 }
 
 func init() { file_resource_aggregate_pb_events_proto_init() }
@@ -2456,6 +2763,54 @@ func file_resource_aggregate_pb_events_proto_init() {
 				return nil
 			}
 		}
+		file_resource_aggregate_pb_events_proto_msgTypes[17].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*ServicesHeartbeat); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_resource_aggregate_pb_events_proto_msgTypes[18].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*ServiceMetadataUpdated); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_resource_aggregate_pb_events_proto_msgTypes[19].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*ServiceMetadataSnapshotTaken); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_resource_aggregate_pb_events_proto_msgTypes[34].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*ServicesHeartbeat_Heartbeat); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	file_resource_aggregate_pb_events_proto_msgTypes[15].OneofWrappers = []interface{}{
 		(*DeviceMetadataUpdatePending_TwinEnabled)(nil),
@@ -2467,7 +2822,7 @@ func file_resource_aggregate_pb_events_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_resource_aggregate_pb_events_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   31,
+			NumMessages:   36,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

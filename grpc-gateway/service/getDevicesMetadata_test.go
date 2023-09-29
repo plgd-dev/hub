@@ -51,7 +51,7 @@ func TestRequestHandlerGetDevicesMetadata(t *testing.T) {
 					TwinSynchronization: &commands.TwinSynchronization{
 						State: commands.TwinSynchronization_IN_SYNC,
 					},
-					AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, ""),
+					AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, "", oauthService.DeviceUserID),
 				},
 			},
 		},
@@ -73,7 +73,7 @@ func TestRequestHandlerGetDevicesMetadata(t *testing.T) {
 					TwinSynchronization: &commands.TwinSynchronization{
 						State: commands.TwinSynchronization_IN_SYNC,
 					},
-					AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, ""),
+					AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, "", oauthService.DeviceUserID),
 				},
 			},
 		},
@@ -95,7 +95,7 @@ func TestRequestHandlerGetDevicesMetadata(t *testing.T) {
 					TwinSynchronization: &commands.TwinSynchronization{
 						State: commands.TwinSynchronization_IN_SYNC,
 					},
-					AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, ""),
+					AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, "", oauthService.DeviceUserID),
 				},
 			},
 		},

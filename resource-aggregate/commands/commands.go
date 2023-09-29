@@ -4,10 +4,11 @@ import (
 	"sort"
 )
 
-func NewAuditContext(userID, correlationID string) *AuditContext {
+func NewAuditContext(userID, correlationID, owner string) *AuditContext {
 	return &AuditContext{
 		UserId:        userID,
 		CorrelationId: correlationID,
+		Owner:         owner,
 	}
 }
 
@@ -15,7 +16,7 @@ func (c *AuditContext) Clone() *AuditContext {
 	if c == nil {
 		return c
 	}
-	return NewAuditContext(c.GetUserId(), c.GetCorrelationId())
+	return NewAuditContext(c.GetUserId(), c.GetCorrelationId(), c.GetOwner())
 }
 
 func NewConnection(status Connection_Status, onlineValidUntil int64, connectionID string, connectedAt int64) *Connection {

@@ -66,25 +66,6 @@ func onboardDeviceAndGetDevice(ctx context.Context, t *testing.T, deviceID strin
 	return devices[0], startOnboard, deltaOnboard
 }
 
-func TestDevicesStatusUpdaterEnabledAndDeviceAccessTokenHasNoExpiration(t *testing.T) {
-	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
-	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
-	defer cancel()
-
-	oauthCfg := oauthTest.MakeConfig(t)
-	oauthCfg.OAuthSigner.Clients.Find(config.OAUTH_MANAGER_CLIENT_ID).AccessTokenLifetime = 0
-	coapCfg := coapgwTest.MakeConfig(t)
-	expiresIn := time.Second * 20
-	coapCfg.Clients.ResourceAggregate.DeviceStatusExpiration.Enabled = true
-	coapCfg.Clients.ResourceAggregate.DeviceStatusExpiration.ExpiresIn = expiresIn
-
-	device, startOnboard, deltaOnboard := onboardDeviceAndGetDevice(ctx, t, deviceID, oauthCfg, coapCfg)
-	expectedOnlineValidUntil := startOnboard.Add(expiresIn + deltaOnboard).UnixNano()
-
-	assert.Equal(t, commands.Connection_ONLINE, device.Metadata.Connection.Status)
-	assert.InDelta(t, expectedOnlineValidUntil, device.Metadata.Connection.OnlineValidUntil, float64(deltaOnboard))
-}
-
 func TestDevicesStatusUpdaterDisabledAndDeviceAccessTokenHasNoExpiration(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
@@ -93,7 +74,6 @@ func TestDevicesStatusUpdaterDisabledAndDeviceAccessTokenHasNoExpiration(t *test
 	oauthCfg := oauthTest.MakeConfig(t)
 	oauthCfg.OAuthSigner.Clients.Find(config.OAUTH_MANAGER_CLIENT_ID).AccessTokenLifetime = 0
 	coapCfg := coapgwTest.MakeConfig(t)
-	coapCfg.Clients.ResourceAggregate.DeviceStatusExpiration.Enabled = false
 
 	device, _, _ := onboardDeviceAndGetDevice(ctx, t, deviceID, oauthCfg, coapCfg)
 
@@ -110,29 +90,9 @@ func TestDevicesStatusUpdaterDisabledAndDeviceAccessTokenHasExpiration(t *testin
 	accessTokenLifetime := time.Second * 10
 	oauthCfg.OAuthSigner.Clients.Find(config.OAUTH_MANAGER_CLIENT_ID).AccessTokenLifetime = accessTokenLifetime
 	coapCfg := coapgwTest.MakeConfig(t)
-	coapCfg.Clients.ResourceAggregate.DeviceStatusExpiration.Enabled = false
 
 	device, startOnboard, deltaOnboard := onboardDeviceAndGetDevice(ctx, t, deviceID, oauthCfg, coapCfg)
 	expectedOnlineValidUntil := startOnboard.Add(accessTokenLifetime + deltaOnboard).UnixNano()
-
-	assert.Equal(t, commands.Connection_ONLINE, device.Metadata.Connection.Status)
-	assert.InDelta(t, expectedOnlineValidUntil, device.Metadata.Connection.OnlineValidUntil, float64(deltaOnboard))
-}
-
-func TestDevicesStatusUpdaterEnabledAndDeviceAccessTokenHasExpiration(t *testing.T) {
-	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
-	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
-	defer cancel()
-
-	oauthCfg := oauthTest.MakeConfig(t)
-	oauthCfg.OAuthSigner.Clients.Find(config.OAUTH_MANAGER_CLIENT_ID).AccessTokenLifetime = time.Hour
-	coapCfg := coapgwTest.MakeConfig(t)
-	expiresIn := time.Second * 20
-	coapCfg.Clients.ResourceAggregate.DeviceStatusExpiration.Enabled = true
-	coapCfg.Clients.ResourceAggregate.DeviceStatusExpiration.ExpiresIn = expiresIn
-
-	device, startOnboard, deltaOnboard := onboardDeviceAndGetDevice(ctx, t, deviceID, oauthCfg, coapCfg)
-	expectedOnlineValidUntil := startOnboard.Add(expiresIn + deltaOnboard).UnixNano()
 
 	assert.Equal(t, commands.Connection_ONLINE, device.Metadata.Connection.Status)
 	assert.InDelta(t, expectedOnlineValidUntil, device.Metadata.Connection.OnlineValidUntil, float64(deltaOnboard))

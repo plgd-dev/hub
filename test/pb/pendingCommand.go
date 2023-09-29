@@ -284,7 +284,7 @@ func MakeResourceCreatePending(t *testing.T, deviceID, href, correlationID strin
 			CoapContentFormat: -1,
 			Data:              test.EncodeToCbor(t, data),
 		},
-		AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, correlationID),
+		AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, correlationID, oauthService.DeviceUserID),
 	}
 }
 
@@ -324,7 +324,7 @@ func MakeResourceUpdatePending(t *testing.T, deviceID, href, correlationID strin
 			CoapContentFormat: -1,
 			Data:              test.EncodeToCbor(t, data),
 		},
-		AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, correlationID),
+		AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, correlationID, oauthService.DeviceUserID),
 	}
 }
 
@@ -352,7 +352,7 @@ func MakeResourceRetrievePending(deviceID, href, correlationID string) *events.R
 			DeviceId: deviceID,
 			Href:     href,
 		},
-		AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, correlationID),
+		AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, correlationID, oauthService.DeviceUserID),
 	}
 }
 
@@ -377,7 +377,7 @@ func CmpResourceDeletePending(t *testing.T, expected, got *events.ResourceDelete
 func MakeResourceDeletePending(deviceID, href, correlationID string) *events.ResourceDeletePending {
 	return &events.ResourceDeletePending{
 		ResourceId:   &commands.ResourceId{DeviceId: deviceID, Href: href},
-		AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, correlationID),
+		AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, correlationID, oauthService.DeviceUserID),
 	}
 }
 
@@ -405,6 +405,6 @@ func MakeDeviceMetadataUpdatePending(deviceID string, twinEnabled bool, correlat
 		UpdatePending: &events.DeviceMetadataUpdatePending_TwinEnabled{
 			TwinEnabled: twinEnabled,
 		},
-		AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, correlationID),
+		AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, correlationID, oauthService.DeviceUserID),
 	}
 }

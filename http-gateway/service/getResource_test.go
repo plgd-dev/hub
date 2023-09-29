@@ -58,7 +58,7 @@ func TestRequestHandlerGetResource(t *testing.T) {
 				},
 				Status:       commands.Status_OK,
 				Content:      &commands.Content{}, // content is encoded as json
-				AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, ""),
+				AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, "", oauthService.DeviceUserID),
 			},
 		},
 		{

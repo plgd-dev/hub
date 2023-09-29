@@ -32,6 +32,7 @@ func TestStreamInterceptor(t *testing.T) {
 	defer func() {
 		_ = svr.Close()
 	}()
+
 	go func() {
 		_ = svr.Serve()
 	}()

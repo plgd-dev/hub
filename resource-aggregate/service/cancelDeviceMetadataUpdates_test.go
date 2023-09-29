@@ -28,12 +28,14 @@ import (
 func TestAggregateHandleCancelPendingMetadataUpdates(t *testing.T) {
 	const deviceID = "dev0"
 	const userID = "user0"
+	const owner = "owner0"
 	const correlationID0 = "0"
 	const correlationID1 = "1"
 	const correlationID2 = "2"
 	type args struct {
 		request *commands.CancelPendingMetadataUpdatesRequest
 		userID  string
+		owner   string
 	}
 
 	test := []struct {
@@ -47,6 +49,7 @@ func TestAggregateHandleCancelPendingMetadataUpdates(t *testing.T) {
 			args: args{
 				request: testMakeCancelPendingMetadataUpdatesRequest(deviceID, []string{correlationID0}),
 				userID:  userID,
+				owner:   owner,
 			},
 			wantCode: codes.OK,
 		},
@@ -55,6 +58,7 @@ func TestAggregateHandleCancelPendingMetadataUpdates(t *testing.T) {
 			args: args{
 				request: testMakeCancelPendingMetadataUpdatesRequest(deviceID, nil),
 				userID:  userID,
+				owner:   owner,
 			},
 			wantCode: codes.OK,
 		},
@@ -63,6 +67,7 @@ func TestAggregateHandleCancelPendingMetadataUpdates(t *testing.T) {
 			args: args{
 				request: testMakeCancelPendingMetadataUpdatesRequest(deviceID, nil),
 				userID:  userID,
+				owner:   owner,
 			},
 			wantCode: codes.NotFound,
 			wantErr:  true,
@@ -98,32 +103,21 @@ func TestAggregateHandleCancelPendingMetadataUpdates(t *testing.T) {
 		naClient.Close()
 	}()
 
-	ag, err := service.NewAggregate(commands.NewResourceID(deviceID, commands.StatusHref), 10, cfg.HubID, eventstore, service.DeviceMetadataFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
+	ag, err := service.NewAggregate(commands.NewResourceID(deviceID, commands.StatusHref), 10, eventstore, service.NewDeviceMetadataFactoryModel(userID, owner, cfg.HubID), cqrsAggregate.NewDefaultRetryFunc(1))
 	require.NoError(t, err)
-	_, err = ag.UpdateDeviceMetadata(kitNetGrpc.CtxWithIncomingToken(context.Background(), config.CreateJwtToken(t, jwt.MapClaims{
-		"sub": userID,
-	})), testMakeUpdateDeviceMetadataRequest(deviceID, correlationID0, newConnectionStatus(commands.Connection_ONLINE), nil, 0))
+	_, err = ag.UpdateDeviceMetadata(context.Background(), testMakeUpdateDeviceMetadataRequest(deviceID, correlationID0, newConnectionStatus(commands.Connection_ONLINE), nil, 0))
 	require.NoError(t, err)
-	_, err = ag.UpdateDeviceMetadata(kitNetGrpc.CtxWithIncomingToken(context.Background(), config.CreateJwtToken(t, jwt.MapClaims{
-		"sub": userID,
-	})), testMakeUpdateDeviceMetadataRequest(deviceID, correlationID0, nil, newTwinEnabled(false), 0))
+	_, err = ag.UpdateDeviceMetadata(context.Background(), testMakeUpdateDeviceMetadataRequest(deviceID, correlationID0, nil, newTwinEnabled(false), 0))
 	require.NoError(t, err)
-	_, err = ag.UpdateDeviceMetadata(kitNetGrpc.CtxWithIncomingToken(context.Background(), config.CreateJwtToken(t, jwt.MapClaims{
-		"sub": userID,
-	})), testMakeUpdateDeviceMetadataRequest(deviceID, correlationID1, nil, newTwinEnabled(true), 0))
+	_, err = ag.UpdateDeviceMetadata(context.Background(), testMakeUpdateDeviceMetadataRequest(deviceID, correlationID1, nil, newTwinEnabled(true), 0))
 	require.NoError(t, err)
-	_, err = ag.UpdateDeviceMetadata(kitNetGrpc.CtxWithIncomingToken(context.Background(), config.CreateJwtToken(t, jwt.MapClaims{
-		"sub": userID,
-	})), testMakeUpdateDeviceMetadataRequest(deviceID, correlationID2, nil, newTwinEnabled(false), 0))
+	_, err = ag.UpdateDeviceMetadata(context.Background(), testMakeUpdateDeviceMetadataRequest(deviceID, correlationID2, nil, newTwinEnabled(false), 0))
 	require.NoError(t, err)
 
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {
-			ag, err := service.NewAggregate(commands.NewResourceID(tt.args.request.GetDeviceId(), commands.StatusHref), 10, cfg.HubID, eventstore, service.DeviceMetadataFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
+			ag, err := service.NewAggregate(commands.NewResourceID(tt.args.request.GetDeviceId(), commands.StatusHref), 10, eventstore, service.NewDeviceMetadataFactoryModel(tt.args.userID, tt.args.owner, cfg.HubID), cqrsAggregate.NewDefaultRetryFunc(1))
 			require.NoError(t, err)
-			ctx := kitNetGrpc.CtxWithIncomingToken(ctx, config.CreateJwtToken(t, jwt.MapClaims{
-				"sub": tt.args.userID,
-			}))
 			events, err := ag.CancelPendingMetadataUpdates(ctx, tt.args.request)
 			if tt.wantErr {
 				require.Error(t, err)
@@ -142,12 +136,14 @@ func TestAggregateHandleCancelPendingMetadataUpdates(t *testing.T) {
 func TestRequestHandlerCancelPendingMetadataUpdates(t *testing.T) {
 	const deviceID = "dev1"
 	const userID = "user1"
+	const owner = userID
 	const correlationID0 = "0"
 	const correlationID1 = "1"
 	const correlationID2 = "2"
 	type args struct {
 		request *commands.CancelPendingMetadataUpdatesRequest
 		userID  string
+		owner   string
 	}
 
 	test := []struct {
@@ -162,10 +158,12 @@ func TestRequestHandlerCancelPendingMetadataUpdates(t *testing.T) {
 			args: args{
 				request: testMakeCancelPendingMetadataUpdatesRequest(deviceID, []string{correlationID0}),
 				userID:  userID,
+				owner:   owner,
 			},
 			want: &commands.CancelPendingMetadataUpdatesResponse{
 				AuditContext: &commands.AuditContext{
 					UserId: userID,
+					Owner:  owner,
 				},
 				CorrelationIds: []string{correlationID0},
 			},
@@ -176,10 +174,12 @@ func TestRequestHandlerCancelPendingMetadataUpdates(t *testing.T) {
 			args: args{
 				request: testMakeCancelPendingMetadataUpdatesRequest(deviceID, nil),
 				userID:  userID,
+				owner:   owner,
 			},
 			want: &commands.CancelPendingMetadataUpdatesResponse{
 				AuditContext: &commands.AuditContext{
 					UserId: userID,
+					Owner:  owner,
 				},
 				CorrelationIds: []string{correlationID1, correlationID2},
 			},
@@ -190,6 +190,7 @@ func TestRequestHandlerCancelPendingMetadataUpdates(t *testing.T) {
 			args: args{
 				request: testMakeCancelPendingMetadataUpdatesRequest(deviceID, nil),
 				userID:  userID,
+				owner:   owner,
 			},
 			wantCode: codes.NotFound,
 			wantErr:  true,
@@ -225,26 +226,21 @@ func TestRequestHandlerCancelPendingMetadataUpdates(t *testing.T) {
 		naClient.Close()
 	}()
 
-	ag, err := service.NewAggregate(commands.NewResourceID(deviceID, commands.StatusHref), 10, cfg.HubID, eventstore, service.DeviceMetadataFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
+	ag, err := service.NewAggregate(commands.NewResourceID(deviceID, commands.StatusHref), 10, eventstore, service.NewDeviceMetadataFactoryModel(userID, owner, cfg.HubID), cqrsAggregate.NewDefaultRetryFunc(1))
 	require.NoError(t, err)
-	_, err = ag.UpdateDeviceMetadata(kitNetGrpc.CtxWithIncomingToken(context.Background(), config.CreateJwtToken(t, jwt.MapClaims{
-		"sub": userID,
-	})), testMakeUpdateDeviceMetadataRequest(deviceID, correlationID0, newConnectionStatus(commands.Connection_ONLINE), nil, 0))
+	_, err = ag.UpdateDeviceMetadata(context.Background(), testMakeUpdateDeviceMetadataRequest(deviceID, correlationID0, newConnectionStatus(commands.Connection_ONLINE), nil, 0))
 	require.NoError(t, err)
-	_, err = ag.UpdateDeviceMetadata(kitNetGrpc.CtxWithIncomingToken(ctx, config.CreateJwtToken(t, jwt.MapClaims{
-		"sub": userID,
-	})), testMakeUpdateDeviceMetadataRequest(deviceID, correlationID0, nil, newTwinEnabled(false), 0))
+	_, err = ag.UpdateDeviceMetadata(context.Background(), testMakeUpdateDeviceMetadataRequest(deviceID, correlationID0, nil, newTwinEnabled(false), 0))
 	require.NoError(t, err)
-	_, err = ag.UpdateDeviceMetadata(kitNetGrpc.CtxWithIncomingToken(ctx, config.CreateJwtToken(t, jwt.MapClaims{
-		"sub": userID,
-	})), testMakeUpdateDeviceMetadataRequest(deviceID, correlationID1, nil, newTwinEnabled(true), 0))
+	_, err = ag.UpdateDeviceMetadata(context.Background(), testMakeUpdateDeviceMetadataRequest(deviceID, correlationID1, nil, newTwinEnabled(true), 0))
 	require.NoError(t, err)
-	_, err = ag.UpdateDeviceMetadata(kitNetGrpc.CtxWithIncomingToken(ctx, config.CreateJwtToken(t, jwt.MapClaims{
-		"sub": userID,
-	})), testMakeUpdateDeviceMetadataRequest(deviceID, correlationID2, nil, newTwinEnabled(false), 0))
+	_, err = ag.UpdateDeviceMetadata(context.Background(), testMakeUpdateDeviceMetadataRequest(deviceID, correlationID2, nil, newTwinEnabled(false), 0))
 	require.NoError(t, err)
 
-	requestHandler := service.NewRequestHandler(cfg, eventstore, publisher, mockGetOwnerDevices, logger)
+	serviceHeartbeat := service.NewServiceHeartbeat(cfg, eventstore, publisher, logger)
+	defer serviceHeartbeat.Close()
+
+	requestHandler := service.NewRequestHandler(cfg, eventstore, publisher, mockGetOwnerDevices, serviceHeartbeat, logger)
 
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {

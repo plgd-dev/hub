@@ -74,6 +74,10 @@ func (e mockEvent) Marshal() ([]byte, error) {
 	return snappy.Encode(dst, src), nil
 }
 
+func (e mockEvent) ServiceID() (string, bool) {
+	return "", false
+}
+
 func getEventsToSave(groupID, aggregateID string) []eventstore.Event {
 	resId := commands.NewResourceID(groupID, aggregateID)
 	const timestamp = 12345

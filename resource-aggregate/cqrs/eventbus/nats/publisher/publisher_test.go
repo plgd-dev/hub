@@ -169,6 +169,10 @@ func (e mockEvent) Timestamp() time.Time {
 	return time.Unix(0, e.timestamp)
 }
 
+func (e mockEvent) ServiceID() (string, bool) {
+	return "", false
+}
+
 type mockEventHandler struct {
 	newEvent chan mockEvent
 }

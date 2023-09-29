@@ -443,7 +443,6 @@ func (c *session) cancelResourceSubscriptions(wantWait bool) {
 
 func (c *session) CleanUp(resetAuthContext bool) *authorizationContext {
 	authCtx, _ := c.GetAuthorizationContext()
-	c.server.devicesStatusUpdater.Remove(c)
 	if err := c.closeDeviceObserver(c.Context()); err != nil {
 		c.Errorf("cleanUp error: failed to close observer for device %v: %w", authCtx.GetDeviceID(), err)
 	}

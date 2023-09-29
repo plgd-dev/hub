@@ -154,7 +154,7 @@ func (c *session) updateBySignInData(ctx context.Context, upd updateType, device
 		}
 	}
 
-	resp, err := c.server.devicesStatusUpdater.Add(ctx, c, upd == updateTypeNew)
+	resp, err := c.server.devicesStatusUpdater.UpdateOnlineStatus(ctx, c, upd == updateTypeNew)
 	if err != nil {
 		return nil, fmt.Errorf("cannot update cloud device status: %w", err)
 	}

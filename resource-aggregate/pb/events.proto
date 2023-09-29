@@ -205,3 +205,28 @@ message DeviceMetadataSnapshotTaken {
     // Open telemetry data propagated to asynchronous events
    // map<string,string> open_telemetry_carrier = 100;
 }
+
+
+message ServicesHeartbeat {
+    message Heartbeat {
+        string service_id = 1; // generated unique id during start the service
+        int64 valid_until = 2; // unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when service heartbeat is considered as expired.
+    }
+    repeated Heartbeat valid = 1; // services which heartbeat is still valid
+    repeated Heartbeat expired = 2; // services which heartbeat is already expired
+}
+
+message ServiceMetadataUpdated  {
+    ServicesHeartbeat services_heartbeat  = 1;
+    EventMetadata event_metadata = 2;
+    AuditContext audit_context = 3;
+
+    // Open telemetry data propagated to asynchronous events
+    map<string,string> open_telemetry_carrier = 100;
+}
+
+
+message ServiceMetadataSnapshotTaken {
+    ServiceMetadataUpdated service_metadata_updated = 1;
+    EventMetadata event_metadata = 2;
+}

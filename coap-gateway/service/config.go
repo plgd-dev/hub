@@ -19,11 +19,12 @@ import (
 
 // Config represent application configuration
 type Config struct {
-	Log        LogConfig        `yaml:"log" json:"log"`
-	APIs       APIsConfig       `yaml:"apis" json:"apis"`
-	Clients    ClientsConfig    `yaml:"clients" json:"clients"`
-	DeviceTwin DeviceTwinConfig `yaml:"deviceTwin" json:"deviceTwin"`
-	TaskQueue  queue.Config     `yaml:"taskQueue" json:"taskQueue"`
+	Log              LogConfig              `yaml:"log" json:"log"`
+	APIs             APIsConfig             `yaml:"apis" json:"apis"`
+	Clients          ClientsConfig          `yaml:"clients" json:"clients"`
+	DeviceTwin       DeviceTwinConfig       `yaml:"deviceTwin" json:"deviceTwin"`
+	TaskQueue        queue.Config           `yaml:"taskQueue" json:"taskQueue"`
+	ServiceHeartbeat ServiceHeartbeatConfig `yaml:"serviceHeartbeat" json:"serviceHeartbeat"`
 }
 
 func (c *Config) Validate() error {
@@ -38,6 +39,21 @@ func (c *Config) Validate() error {
 	}
 	if err := c.TaskQueue.Validate(); err != nil {
 		return fmt.Errorf("taskQueue.%w", err)
+	}
+	if err := c.ServiceHeartbeat.Validate(); err != nil {
+		return fmt.Errorf("serviceHeartbeat.%w", err)
+	}
+	return nil
+}
+
+type ServiceHeartbeatConfig struct {
+	TimeToLive time.Duration `yaml:"timeToLive" json:"timeToLive"`
+}
+
+func (c *ServiceHeartbeatConfig) Validate() error {
+	minTimeToLive := time.Second
+	if c.TimeToLive < minTimeToLive {
+		return fmt.Errorf("timeToLive('%v') - is less than %v", c.TimeToLive, minTimeToLive)
 	}
 	return nil
 }
@@ -244,31 +260,12 @@ func (c *GrpcServerConfig) Validate() error {
 }
 
 type ResourceAggregateConfig struct {
-	Connection             client.Config                `yaml:"grpc" json:"grpc"`
-	DeviceStatusExpiration DeviceStatusExpirationConfig `yaml:"deviceStatusExpiration" json:"deviceStatusExpiration"`
+	Connection client.Config `yaml:"grpc" json:"grpc"`
 }
 
 func (c *ResourceAggregateConfig) Validate() error {
 	if err := c.Connection.Validate(); err != nil {
 		return fmt.Errorf("grpc.%w", err)
-	}
-	if err := c.DeviceStatusExpiration.Validate(); err != nil {
-		return fmt.Errorf("deviceStatusExpiration.%w", err)
-	}
-	return nil
-}
-
-type DeviceStatusExpirationConfig struct {
-	Enabled   bool          `yaml:"enabled" json:"enabled"`
-	ExpiresIn time.Duration `yaml:"expiresIn" json:"expiresIn"`
-}
-
-func (c *DeviceStatusExpirationConfig) Validate() error {
-	if !c.Enabled {
-		return nil
-	}
-	if c.ExpiresIn < time.Second {
-		return fmt.Errorf("expiresIn('%v')", c.ExpiresIn)
 	}
 	return nil
 }

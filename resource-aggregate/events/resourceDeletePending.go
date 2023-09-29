@@ -46,6 +46,10 @@ func (e *ResourceDeletePending) Timestamp() time.Time {
 	return pkgTime.Unix(0, e.GetEventMetadata().GetTimestamp())
 }
 
+func (e *ResourceDeletePending) ServiceID() (string, bool) {
+	return "", false
+}
+
 func (e *ResourceDeletePending) CopyData(event *ResourceDeletePending) {
 	e.ResourceId = event.GetResourceId()
 	e.AuditContext = event.GetAuditContext()

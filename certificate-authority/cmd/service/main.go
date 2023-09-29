@@ -28,6 +28,7 @@ func run(cfg service.Config, logger log.Logger) error {
 	if err != nil {
 		return fmt.Errorf("cannot serve service: %w", err)
 	}
+
 	return nil
 }
 
