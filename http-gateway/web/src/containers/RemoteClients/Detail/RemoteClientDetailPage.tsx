@@ -30,6 +30,7 @@ const RemoteClientDetailPage: FC<any> = () => {
                                 label: clientData.clientName,
                             },
                         ]}
+                        clientData={clientData}
                         detailLinkPrefix={`/remote-clients/${clientData?.id}`}
                         title={clientData.clientName}
                     />

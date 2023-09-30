@@ -20,6 +20,12 @@ const testId = {
             deleteDeviceButtonDelete: 'hub-devices-detail-delete-device-button-delete',
         },
     },
+    remoteClients: {
+        detail: {
+            tabInformation: 'hub-remote-clients-detail-tab-information',
+            tabConfiguration: 'hub-remote-clients-detail-tab-configuration',
+        },
+    },
 }
 
 export default testId
