@@ -73,14 +73,14 @@ jobs:
           path: ${{ inputs.www-build-dir }}
 
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
+        uses: docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx
         id: buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
 
       - name: Log in to the Container registry
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
@@ -88,7 +88,7 @@ jobs:
 
       - name: Extract metadata (tags, labels) for docker image
         id: meta
-        uses: docker/metadata-action@v4
+        uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ github.repository }}/${{ inputs.name }}
           tags: |
@@ -124,7 +124,7 @@ jobs:
           echo "version=$version" >> $GITHUB_OUTPUT
 
       - name: First try to build and push docker image
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@v5
         # This needs to be true to proceed to the next step of failure
         continue-on-error: true
         # You need to specify an id to be able to tell what the status of this action was
@@ -149,7 +149,7 @@ jobs:
       - name: Second try to build and push docker image when first build fails
         # Only run this step if step 1 fails. It knows that step one failed because we specified an `id` for the first step
         if: steps.BuildAndPush1.outcome == 'failure'
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@v5
         with:
           context: ./
           platforms: linux/amd64,linux/arm64
