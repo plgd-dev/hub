@@ -10,6 +10,7 @@ import (
 	coapSync "github.com/plgd-dev/go-coap/v3/pkg/sync"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	pkgTime "github.com/plgd-dev/hub/v2/pkg/time"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	cqrsAggregate "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/aggregate"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus"
@@ -196,37 +197,47 @@ func (s *ServiceHeartbeat) updateServiceMetadata(aggregate *Aggregate, r UpdateS
 	}
 }
 
-func (s *ServiceHeartbeat) processRequest(r UpdateServiceMetadataReqResp) {
+func (s *ServiceHeartbeat) processRequest(r UpdateServiceMetadataReqResp) time.Time {
 	resID := commands.NewResourceID(s.config.HubID, commands.ServicesResourceHref)
 	var snapshot *events.ServiceMetadataSnapshotTakenForCommand
 	newServicesMetadataFactoryModelFunc := func(ctx context.Context) (cqrsAggregate.AggregateModel, error) {
 		snapshot = events.NewServiceMetadataSnapshotTakenForCommand(ServiceUserID, ServiceUserID, s.config.HubID)
 		return snapshot, nil
 	}
-
+	nextWakeUp := pkgTime.MaxTime
 	aggregate, err := NewAggregate(resID, s.config.Clients.Eventstore.SnapshotThreshold, s.eventstore, newServicesMetadataFactoryModelFunc, cqrsAggregate.NewDefaultRetryFunc(s.config.Clients.Eventstore.ConcurrencyExceptionMaxRetry))
 	if err != nil {
 		s.logger.Errorf(errFmtUpdateServiceMetadata, err)
-		return
+		return nextWakeUp
 	}
 	s.updateServiceMetadata(aggregate, r)
 
-	for _, off := range snapshot.GetServiceMetadataUpdated().GetServicesHeartbeat().GetExpired() {
-		s.offlineServices.Store(off.GetServiceId(), off)
+	for _, expired := range snapshot.GetServiceMetadataUpdated().GetServicesHeartbeat().GetExpired() {
+		s.offlineServices.Store(expired.GetServiceId(), expired)
+	}
+	for _, valid := range snapshot.GetServiceMetadataUpdated().GetServicesHeartbeat().GetValid() {
+		validUntil := pkgTime.Unix(0, valid.GetValidUntil())
+		if validUntil.Before(nextWakeUp) {
+			nextWakeUp = time.Unix(0, valid.GetValidUntil())
+		}
 	}
 	if s.offlineServices.Length() > 0 {
 		s.wakeUpProcessingExpired()
 	}
+	return nextWakeUp
 }
 
-func (s *ServiceHeartbeat) processRequests() {
+func (s *ServiceHeartbeat) processRequests() time.Time {
+	nextWakeUp := pkgTime.MaxTime
 	for {
 		reqs := s.pop()
 		if len(reqs) == 0 {
-			return
+			return nextWakeUp
 		}
 		for _, r := range reqs {
-			s.processRequest(r)
+			if t := s.processRequest(r); t.Before(nextWakeUp) {
+				nextWakeUp = t
+			}
 		}
 	}
 }
@@ -251,7 +262,7 @@ func (s *ServiceHeartbeat) processExpiredServices() {
 	}
 }
 
-func (s *ServiceHeartbeat) run() {
+func (s *ServiceHeartbeat) runProcessExpiredServices() {
 	for {
 		if s.closed.Load() {
 			return
@@ -261,13 +272,54 @@ func (s *ServiceHeartbeat) run() {
 	}
 }
 
-func (s *ServiceHeartbeat) runProcessExpiredServices() {
+func (s *ServiceHeartbeat) pushCheckExpiredServices() {
+	s.private.mutex.Lock()
+	defer s.private.mutex.Unlock()
+
+	for _, req := range s.private.requestQueue {
+		// check if request is already in queue
+		if req.Request.GetHeartbeat() != nil && req.Request.GetHeartbeat().GetServiceId() == "" && req.Request.GetHeartbeat().GetTimeToLive() == 0 {
+			return
+		}
+	}
+
+	s.private.requestQueue = append(s.private.requestQueue, UpdateServiceMetadataReqResp{
+		Request: &commands.UpdateServiceMetadataRequest{
+			Update: &commands.UpdateServiceMetadataRequest_Heartbeat{
+				Heartbeat: &commands.ServiceHeartbeat{},
+			},
+		},
+		ResponseChan: make(chan UpdateServiceMetadataResponseChanData, 1),
+	})
+}
+
+func (s *ServiceHeartbeat) run() {
+	// wake up immediately to check expired services
+	timer := time.NewTimer(0)
+	defer timer.Stop()
 	for {
 		if s.closed.Load() {
 			return
 		}
-		<-s.wake
-		s.processRequests()
+		select {
+		case <-s.wake:
+		case <-timer.C:
+			// push heartbeat to check expired services
+			s.pushCheckExpiredServices()
+		}
+		nextWakeUp := s.processRequests()
+		d := time.Until(nextWakeUp)
+		if d < 0 {
+			d = time.Hour
+		}
+		// stop timer and drain if it was not already expired
+		if !timer.Stop() {
+			select {
+			case <-timer.C:
+			default:
+			}
+		}
+		timer.Reset(d)
 	}
 }
 

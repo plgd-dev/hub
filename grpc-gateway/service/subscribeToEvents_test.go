@@ -1050,7 +1050,6 @@ func TestCoAPGatewayServiceHeartbeat(t *testing.T) {
 
 	// turn on resource-aggregate
 	raTearDown = raTest.New(t, racfg)
-	defer raTearDown()
 
 	// turn on coapgw on different port to avoid connecting device to hub
 	// in this case this coapgw will move device to offline
@@ -1081,10 +1080,48 @@ func TestCoAPGatewayServiceHeartbeat(t *testing.T) {
 	time.Sleep(time.Second)
 	coapgwCfg.APIs.COAP.Addr = config.COAP_GW_HOST
 	coapgwTearDown = coapgwTest.New(t, coapgwCfg)
-	defer coapgwTearDown()
 
 	// device should be online again
 	secondCoapGWInstanceID := waitForDevice(t, client, deviceID)
 	require.NotEmpty(t, secondCoapGWInstanceID)
 	require.NotEqual(t, firstCoapGWInstanceID, secondCoapGWInstanceID)
+
+	// set device to offline by resource-aggregate without restart the coap-gw
+	// turn off resource-aggregate
+	raTearDown()
+	coapgwTearDown()
+	time.Sleep(time.Second)
+
+	// turn on resource-aggregate
+	raTearDown = raTest.New(t, racfg)
+	defer raTearDown()
+
+	// device should go to offline
+	ev, err = client.Recv()
+	require.NoError(t, err)
+	pbTest.CmpEvent(t, &pb.Event{
+		SubscriptionId: ev.SubscriptionId,
+		Type: &pb.Event_DeviceMetadataUpdated{
+			DeviceMetadataUpdated: &events.DeviceMetadataUpdated{
+				DeviceId: deviceID,
+				Connection: &commands.Connection{
+					Status:   commands.Connection_OFFLINE,
+					Protocol: test.StringToApplicationProtocol(config.ACTIVE_COAP_SCHEME),
+				},
+				TwinEnabled:         true,
+				TwinSynchronization: &commands.TwinSynchronization{},
+				AuditContext:        commands.NewAuditContext(raService.ServiceUserID, "", service.DeviceUserID),
+			},
+		},
+		CorrelationId: "testToken",
+	}, ev, "")
+
+	// turn on coap-gw
+	coapgwTearDown = coapgwTest.New(t, coapgwCfg)
+	defer coapgwTearDown()
+
+	// device should be online again
+	thirdCoapGWInstanceID := waitForDevice(t, client, deviceID)
+	require.NotEmpty(t, thirdCoapGWInstanceID)
+	require.NotEqual(t, firstCoapGWInstanceID, thirdCoapGWInstanceID)
 }
