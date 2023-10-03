@@ -56,6 +56,7 @@ func (r *Resource) IsObservable() bool {
 
 var http2status = map[int]Status{
 	http.StatusAccepted:           Status_ACCEPTED,
+	http.StatusNotModified:        Status_NOT_MODIFIED,
 	http.StatusOK:                 Status_OK,
 	http.StatusBadRequest:         Status_BAD_REQUEST,
 	http.StatusNotFound:           Status_NOT_FOUND,
@@ -71,6 +72,7 @@ var http2status = map[int]Status{
 var status2http = map[Status]int{
 	Status_ACCEPTED:           http.StatusAccepted,
 	Status_OK:                 http.StatusOK,
+	Status_NOT_MODIFIED:       http.StatusNotModified,
 	Status_BAD_REQUEST:        http.StatusBadRequest,
 	Status_NOT_FOUND:          http.StatusNotFound,
 	Status_NOT_IMPLEMENTED:    http.StatusNotImplemented,
@@ -110,6 +112,7 @@ var status2grpcCode = map[Status]codes.Code{
 	Status_ERROR:              codes.Internal,
 	Status_METHOD_NOT_ALLOWED: codes.Code(extCodes.MethodNotAllowed),
 	Status_CREATED:            codes.Code(extCodes.Created),
+	Status_NOT_MODIFIED:       codes.Code(extCodes.Valid),
 }
 
 func (s Status) ToGrpcCode() codes.Code {
@@ -126,6 +129,16 @@ func (s Status) ToHTTPCode() int {
 		return v
 	}
 	return http.StatusInternalServerError
+}
+
+func (r *ResourceId) Equal(r1 *ResourceId) bool {
+	if r == nil && r1 == nil {
+		return true
+	}
+	if r == nil || r1 == nil {
+		return false
+	}
+	return r.DeviceId == r1.DeviceId && r.Href == r1.Href
 }
 
 func (r *ResourceId) ToString() string {
@@ -149,12 +162,12 @@ func ResourceIdFromString(v string) *ResourceId {
 	if len(v) > 0 && v[0] == '/' {
 		v = v[1:]
 	}
-	val := strings.SplitN(v, "/", 2)
-	if len(val) != 2 {
+	deviceIDHref := strings.SplitN(v, "/", 2)
+	if len(deviceIDHref) != 2 {
 		return nil
 	}
 	return &ResourceId{
-		DeviceId: val[0],
-		Href:     "/" + val[1],
+		DeviceId: deviceIDHref[0],
+		Href:     "/" + deviceIDHref[1],
 	}
 }

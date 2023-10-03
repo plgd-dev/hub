@@ -109,8 +109,12 @@ func TestRequestHandlerGetEvents(t *testing.T) {
 			name: "First resource (resource filter)",
 			args: args{
 				&pb.GetEventsRequest{
-					ResourceIdFilter: []string{commands.NewResourceID(deviceID, test.GetAllBackendResourceLinks()[0].Href).ToString()},
-					TimestampFilter:  beforeOnBoard,
+					ResourceIdFilter: []*pb.ResourceIdFilter{
+						{
+							ResourceId: commands.NewResourceID(deviceID, test.GetAllBackendResourceLinks()[0].Href),
+						},
+					},
+					TimestampFilter: beforeOnBoard,
 				},
 			},
 			wantLen: 1,

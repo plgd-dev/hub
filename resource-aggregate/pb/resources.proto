@@ -58,4 +58,5 @@ enum Status {
   METHOD_NOT_ALLOWED = 10;
   CREATED = 11;
   CANCELED = 12; // Canceled indicates the operation was canceled (typically by the user).
+  NOT_MODIFIED = 13; // Valid indicates the content hasn't changed. (provided etag in GET request is same as the resource etag).
 }

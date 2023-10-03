@@ -31,6 +31,8 @@ func statusToHttpStatus(status commands.Status) int {
 		return http.StatusServiceUnavailable
 	case commands.Status_NOT_IMPLEMENTED:
 		return http.StatusNotImplemented
+	case commands.Status_NOT_MODIFIED:
+		return http.StatusNotModified
 	case commands.Status_ACCEPTED:
 		return http.StatusAccepted
 	case commands.Status_ERROR:

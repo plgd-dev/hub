@@ -319,8 +319,12 @@ func TestRequestHandlerRunMultipleUpdateResource(t *testing.T) {
 
 			err = subClient.Send(&pb.SubscribeToEvents{Action: &pb.SubscribeToEvents_CreateSubscription_{
 				CreateSubscription: &pb.SubscribeToEvents_CreateSubscription{
-					EventFilter:      []pb.SubscribeToEvents_CreateSubscription_Event{pb.SubscribeToEvents_CreateSubscription_RESOURCE_CHANGED},
-					ResourceIdFilter: []string{commands.NewResourceID(deviceID, lightHref).ToString()},
+					EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{pb.SubscribeToEvents_CreateSubscription_RESOURCE_CHANGED},
+					ResourceIdFilter: []*pb.ResourceIdFilter{
+						{
+							ResourceId: commands.NewResourceID(deviceID, lightHref),
+						},
+					},
 				},
 			}})
 			require.NoError(t, err)

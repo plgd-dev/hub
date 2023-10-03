@@ -24,6 +24,7 @@ import (
 	pbTest "github.com/plgd-dev/hub/v2/test/pb"
 	"github.com/plgd-dev/hub/v2/test/service"
 	"github.com/stretchr/testify/require"
+	"github.com/tidwall/sjson"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )
@@ -114,8 +115,13 @@ func (u *updateChecker) checkUpdateLightResource(ctx context.Context, t *testing
 	}
 }
 
-func TestRequestHandlerSubscribeToEvents(t *testing.T) {
-	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
+type resourceFilter struct {
+	httpResourceIdFilter     []string
+	resourceIdFilter         []*pb.ResourceIdFilter
+	backwardResourceIdFilter []string
+}
+
+func testRequestHandlerSubscribeToEvents(t *testing.T, deviceID string, resourceFilter resourceFilter) {
 	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
 	defer cancel()
 
@@ -158,6 +164,17 @@ func TestRequestHandlerSubscribeToEvents(t *testing.T) {
 		require.NoError(t, err)
 		return wsConn.WriteMessage(websocket.TextMessage, data)
 	}
+	sendBackwardResourceIDFilter := func(req *pb.SubscribeToEvents, resourceIDFilter []string) error {
+		marshaler := runtime.JSONPb{}
+		data, err := marshaler.Marshal(req)
+		require.NoError(t, err)
+
+		newData, err := sjson.Delete(string(data), "createSubscription.resourceIdFilter")
+		require.NoError(t, err)
+		newData, err = sjson.Set(newData, "createSubscription.resourceIdFilter", resourceIDFilter)
+		require.NoError(t, err)
+		return wsConn.WriteMessage(websocket.TextMessage, []byte(newData))
+	}
 
 	recv := func() (*pb.Event, error) {
 		_, reader, err := wsConn.NextReader()
@@ -168,8 +185,7 @@ func TestRequestHandlerSubscribeToEvents(t *testing.T) {
 		err = httpgwTest.Unmarshal(http.StatusOK, reader, &event)
 		return &event, err
 	}
-
-	err = send(&pb.SubscribeToEvents{
+	createResourceSub := &pb.SubscribeToEvents{
 		CorrelationId: "testToken",
 		Action: &pb.SubscribeToEvents_CreateSubscription_{
 			CreateSubscription: &pb.SubscribeToEvents_CreateSubscription{
@@ -179,10 +195,18 @@ func TestRequestHandlerSubscribeToEvents(t *testing.T) {
 					pb.SubscribeToEvents_CreateSubscription_UNREGISTERED,
 					pb.SubscribeToEvents_CreateSubscription_RESOURCE_CHANGED,
 				},
-				ResourceIdFilter: []string{commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")).ToString()},
+				ResourceIdFilter:     resourceFilter.resourceIdFilter,
+				HttpResourceIdFilter: resourceFilter.httpResourceIdFilter,
 			},
 		},
-	})
+	}
+
+	if len(resourceFilter.backwardResourceIdFilter) > 0 {
+		err = sendBackwardResourceIDFilter(createResourceSub, resourceFilter.backwardResourceIdFilter)
+	} else {
+		err = send(createResourceSub)
+	}
+
 	require.NoError(t, err)
 
 	ev, err := recv()
@@ -358,4 +382,29 @@ func TestRequestHandlerSubscribeToEvents(t *testing.T) {
 			run = false
 		}
 	}
+}
+
+func TestRequestHandlerSubscribeToEventsResourceIDFilter(t *testing.T) {
+	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
+	testRequestHandlerSubscribeToEvents(t, deviceID, resourceFilter{
+		resourceIdFilter: []*pb.ResourceIdFilter{
+			{
+				ResourceId: commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
+			},
+		},
+	})
+}
+
+func TestRequestHandlerSubscribeToEventsHTTPResourceIDFilter(t *testing.T) {
+	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
+	testRequestHandlerSubscribeToEvents(t, deviceID, resourceFilter{
+		httpResourceIdFilter: []string{commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")).ToString()},
+	})
+}
+
+func TestRequestHandlerSubscribeToEventsBackwardResourceIDFilter(t *testing.T) {
+	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
+	testRequestHandlerSubscribeToEvents(t, deviceID, resourceFilter{
+		backwardResourceIdFilter: []string{commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")).ToString()},
+	})
 }

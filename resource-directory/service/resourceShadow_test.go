@@ -46,9 +46,13 @@ func TestResourceTwinGetResources(t *testing.T) {
 			name: "filter by resource Id",
 			args: args{
 				req: &pb.GetResourcesRequest{
-					ResourceIdFilter: []string{
-						Resource1.ToResourceIDString(),
-						Resource2.ToResourceIDString(),
+					ResourceIdFilter: []*pb.ResourceIdFilter{
+						{
+							ResourceId: Resource1.GetResourceID(),
+						},
+						{
+							ResourceId: Resource2.GetResourceID(),
+						},
 					},
 				},
 			},

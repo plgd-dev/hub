@@ -230,7 +230,7 @@ message RetrieveResourceRequest {
     string resource_interface = 3;
     int64 time_to_live = 4; // command validity in nanoseconds. 0 means forever and minimal value is 100000000 (100ms).
     CommandMetadata command_metadata = 5;
-    bytes etag = 6;
+    repeated bytes etag = 6;
 }
 
 message RetrieveResourceResponse {

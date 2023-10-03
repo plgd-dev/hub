@@ -36,8 +36,10 @@ func TestRequestHandlerGetResources(t *testing.T) {
 			name: "valid",
 			args: args{
 				req: &pb.GetResourcesRequest{
-					ResourceIdFilter: []string{
-						commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")).ToString(),
+					ResourceIdFilter: []*pb.ResourceIdFilter{
+						{
+							ResourceId: commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
+						},
 					},
 				},
 			},

@@ -7,12 +7,17 @@ import (
 	"strings"
 
 	"github.com/gorilla/mux"
+	pbGRPC "github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	kitNetHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 )
 
 func (rh *RequestHandler) RetrieveResourceBase(ctx context.Context, w http.ResponseWriter, resourceID *commands.ResourceId, encoder responseWriterEncoderFunc) (int, error) {
-	allResources, err := rh.RetrieveResources(ctx, []string{resourceID.ToString()}, nil)
+	allResources, err := rh.RetrieveResources(ctx, []*pbGRPC.ResourceIdFilter{
+		{
+			ResourceId: resourceID,
+		},
+	}, nil)
 	if err != nil {
 		return kitNetHttp.ErrToStatusWithDef(err, http.StatusForbidden), err
 	}

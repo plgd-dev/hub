@@ -421,8 +421,10 @@ func TestRequestHandlerSubscribeForPendingCommands(t *testing.T) {
 			name: "retrieve by resourceIdFilter",
 			args: args{
 				req: &pb.SubscribeToEvents_CreateSubscription{
-					ResourceIdFilter: []string{
-						commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")).ToString(),
+					ResourceIdFilter: []*pb.ResourceIdFilter{
+						{
+							ResourceId: commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
+						},
 					},
 					EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
 						pb.SubscribeToEvents_CreateSubscription_RESOURCE_CREATE_PENDING,

@@ -7,18 +7,20 @@ const (
 	ResourceHrefKey  = "resourceHref"
 	CorrelationIDKey = "correlationId"
 
-	ResourceInterfaceQueryKey   = "resourceInterface"
-	TwinQueryKey                = "twin"
-	CommandFilterQueryKey       = "commandFilter"
-	TypeFilterQueryKey          = "typeFilter"
-	StatusFilterQueryKey        = "statusFilter"
-	DeviceIdFilterQueryKey      = "deviceIdFilter"
-	TimeToLiveQueryKey          = "timeToLive"
-	ResourceIdFilterQueryKey    = "resourceIdFilter"
-	AcceptQueryKey              = "accept" // for websocket
-	CorrelationIDQueryKey       = "correlationId"
-	TimestampFilterQueryKey     = "timestampFilter"
-	CorrelationIdFilterQueryKey = "correlationIdFilter"
+	ResourceInterfaceQueryKey    = "resourceInterface"
+	TwinQueryKey                 = "twin"
+	CommandFilterQueryKey        = "commandFilter"
+	TypeFilterQueryKey           = "typeFilter"
+	StatusFilterQueryKey         = "statusFilter"
+	DeviceIdFilterQueryKey       = "deviceIdFilter"
+	TimeToLiveQueryKey           = "timeToLive"
+	ResourceIdFilterQueryKey     = "resourceIdFilter"
+	HttpResourceIdFilterQueryKey = "httpResourceIdFilter"
+	AcceptQueryKey               = "accept" // for websocket
+	CorrelationIDQueryKey        = "correlationId"
+	TimestampFilterQueryKey      = "timestampFilter"
+	CorrelationIdFilterQueryKey  = "correlationIdFilter"
+	ETagQueryKey                 = "etag"
 
 	AliasInterfaceQueryKey        = "interface"
 	AliasCommandFilterQueryKey    = "command"
@@ -30,6 +32,7 @@ const (
 	CorrelationIDHeaderKey = "Correlation-Id"
 	ContentTypeHeaderKey   = "Content-Type"
 	AcceptHeaderKey        = "Accept"
+	ETagHeaderKey          = "ETag"
 
 	ResourcesPathKey              = "resources"
 	ResourceLinksPathKey          = "resource-links"
@@ -39,8 +42,9 @@ const (
 
 	ApplicationProtoJsonContentType = "application/protojson"
 
-	API   string = "/api/v1"
-	APIWS string = API + "/ws"
+	API               string = "/api/v1"
+	APIWS             string = API + "/ws"
+	SubscribeToEvents string = APIWS + "/" + EventsPathKey
 
 	// hub configuration
 	HubConfiguration = "/.well-known/hub-configuration"
@@ -114,13 +118,13 @@ var QueryCaseInsensitive = map[string]string{
 	strings.ToLower(AliasInterfaceQueryKey):        ResourceInterfaceQueryKey,
 	strings.ToLower(CommandFilterQueryKey):         CommandFilterQueryKey,
 	strings.ToLower(DeviceIdFilterQueryKey):        DeviceIdFilterQueryKey,
-	strings.ToLower(ResourceIdFilterQueryKey):      ResourceIdFilterQueryKey,
+	strings.ToLower(ResourceIdFilterQueryKey):      HttpResourceIdFilterQueryKey,
 	strings.ToLower(ResourceInterfaceQueryKey):     ResourceInterfaceQueryKey,
 	strings.ToLower(TwinQueryKey):                  TwinQueryKey,
 	strings.ToLower(TypeFilterQueryKey):            TypeFilterQueryKey,
 	strings.ToLower(AliasCommandFilterQueryKey):    CommandFilterQueryKey,
 	strings.ToLower(AliasDeviceIdFilterQueryKey):   DeviceIdFilterQueryKey,
-	strings.ToLower(AliasResourceIdFilterQueryKey): ResourceIdFilterQueryKey,
+	strings.ToLower(AliasResourceIdFilterQueryKey): HttpResourceIdFilterQueryKey,
 	strings.ToLower(AliasTypeFilterQueryKey):       TypeFilterQueryKey,
 	strings.ToLower(AcceptQueryKey):                AcceptQueryKey,
 	strings.ToLower(StatusFilterQueryKey):          StatusFilterQueryKey,

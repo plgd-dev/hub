@@ -16,6 +16,8 @@ const (
 	MethodNotAllowed
 	// Created success status response code indicates that the request has succeeded and has led to the creation of a resource.
 	Created
+	// Valid indicates the that the get request with etag is same as resource etag (resource is not modified)
+	Valid
 
 	// InvalidCode cannot determines result from device code.
 	InvalidCode Code = iota + (2 * 4096)

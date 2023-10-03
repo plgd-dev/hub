@@ -134,5 +134,9 @@ issues:
     - text: "var-naming:|exported:"
       linters:
         - revive
+    - path: grpc-gateway/client/subscription.go
+      text: "SA1019:"
+      linters:
+        - staticcheck
   # Fix found issues (if it's supported by the linter).
   # fix: true

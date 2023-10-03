@@ -246,8 +246,9 @@ func (s *Sub) initResourceChanged(deviceIDs []string, _ string, validUntil *time
 		deviceIdFilter = nil
 	}
 	resourcesClient, err := s.grpcClient.GetResources(s.Context(), &pb.GetResourcesRequest{
-		DeviceIdFilter:   deviceIdFilter,
-		ResourceIdFilter: s.req.GetResourceIdFilter(),
+		DeviceIdFilter:       deviceIdFilter,
+		HttpResourceIdFilter: s.req.GetHttpResourceIdFilter(),
+		ResourceIdFilter:     s.req.GetResourceIdFilter(),
 	})
 	if err != nil {
 		return errFunc(fmt.Errorf("cannot get resources: %w", err))
@@ -434,14 +435,15 @@ func (s *Sub) initPendingCommands(deviceIDs []string, _ string, validUntil *time
 	}
 
 	deviceIdFilter := deviceIDs
-	if len(s.req.GetResourceIdFilter()) > 0 {
+	if len(s.req.GetResourceIdFilter()) > 0 || len(s.req.GetHttpResourceIdFilter()) > 0 {
 		deviceIdFilter = nil
 	}
 
 	pendingCommands, err := s.grpcClient.GetPendingCommands(s.Context(), &pb.GetPendingCommandsRequest{
-		DeviceIdFilter:   deviceIdFilter,
-		ResourceIdFilter: s.req.GetResourceIdFilter(),
-		CommandFilter:    grpcSubscription.BitmaskToFilterPendingsCommands(s.filter),
+		DeviceIdFilter:       deviceIdFilter,
+		ResourceIdFilter:     s.req.GetResourceIdFilter(),
+		HttpResourceIdFilter: s.req.GetHttpResourceIdFilter(),
+		CommandFilter:        grpcSubscription.BitmaskToFilterPendingsCommands(s.filter),
 	})
 	if err != nil {
 		return errFunc(fmt.Errorf("cannot get pending commands: %w", err))
@@ -557,7 +559,7 @@ func NewSub(ctx context.Context, grpcClient pb.GrpcGatewayClient, send SendEvent
 	filteredResourceIDs := kitStrings.MakeSet()
 	filteredDeviceIDs := kitStrings.MakeSet(req.GetDeviceIdFilter()...)
 	for _, r := range req.GetResourceIdFilter() {
-		v := commands.ResourceIdFromString(r)
+		v := r.GetResourceId()
 		if v == nil {
 			continue
 		}

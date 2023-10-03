@@ -111,6 +111,7 @@ func TestRequestHandlerSubscribeToResourceTokenTimeout(t *testing.T) {
 	time.Sleep(time.Second * 10)
 	// stop and start c2c-gw and let it try reestablish resource subscription with expired token
 	c2cgwShutdown()
+	time.Sleep(time.Second)
 	c2cgwShutdown = c2cTest.SetUp(t)
 	defer c2cgwShutdown()
 

@@ -181,9 +181,11 @@ func getResource(ctx context.Context, client pbGW.GrpcGatewayClient, deviceID, h
 	if deviceID != "" {
 		deviceIdFilter = append(deviceIdFilter, deviceID)
 	}
-	var resourceIdFilter []string
+	var resourceIdFilter []*pbGW.ResourceIdFilter
 	if href != "" {
-		resourceIdFilter = append(resourceIdFilter, commands.NewResourceID(deviceID, href).ToString())
+		resourceIdFilter = append(resourceIdFilter, &pbGW.ResourceIdFilter{
+			ResourceId: commands.NewResourceID(deviceID, href),
+		})
 	}
 	getClient, err := client.GetResources(ctx, &pbGW.GetResourcesRequest{
 		ResourceIdFilter: resourceIdFilter,

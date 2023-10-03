@@ -104,7 +104,7 @@ func unmarshalContent(c *commands.Content) (interface{}, error) {
 	return m, nil
 }
 
-func (rh *RequestHandler) RetrieveResources(ctx context.Context, resourceIdFilter []string, deviceIdFilter []string) (map[string][]Representation, error) {
+func (rh *RequestHandler) RetrieveResources(ctx context.Context, resourceIdFilter []*pbGRPC.ResourceIdFilter, deviceIdFilter []string) (map[string][]Representation, error) {
 	client, err := rh.gwClient.GetResources(ctx, &pbGRPC.GetResourcesRequest{
 		DeviceIdFilter:   deviceIdFilter,
 		ResourceIdFilter: resourceIdFilter,

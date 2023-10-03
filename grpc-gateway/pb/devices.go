@@ -1,6 +1,11 @@
 package pb
 
-import commands "github.com/plgd-dev/hub/v2/resource-aggregate/commands"
+import (
+	"encoding/base64"
+	"strings"
+
+	commands "github.com/plgd-dev/hub/v2/resource-aggregate/commands"
+)
 
 func (e *Event_ResourceChanged) GetResourceId() *commands.ResourceId {
 	if e == nil {
@@ -63,4 +68,29 @@ func (e *Event_ResourceCreated) GetResourceId() *commands.ResourceId {
 		return nil
 	}
 	return e.ResourceCreated.GetResourceId()
+}
+
+func (f *ResourceIdFilter) ToString() string {
+	if f == nil {
+		return ""
+	}
+	var sb strings.Builder
+	sb.WriteString(f.GetResourceId().GetDeviceId())
+	if f.GetResourceId().GetHref() == "" {
+		return sb.String()
+	}
+	sb.WriteString(f.GetResourceId().GetHref())
+	if len(f.GetEtag()) == 0 {
+		return sb.String()
+	}
+	for i, etag := range f.GetEtag() {
+		if i == 0 {
+			sb.WriteString("?")
+		} else {
+			sb.WriteString("&")
+		}
+		sb.WriteString("etag=")
+		sb.WriteString(base64.StdEncoding.EncodeToString(etag))
+	}
+	return sb.String()
 }

@@ -208,7 +208,7 @@ func toFilters(req *pb.SubscribeToEvents_CreateSubscription) ([]string, []string
 	filterHrefs := make([]string, 0, len(req.GetHrefFilter())+len(req.GetResourceIdFilter()))
 	filterResourceIDs := make([]string, 0, len(req.GetResourceIdFilter()))
 	for _, r := range req.GetResourceIdFilter() {
-		v := commands.ResourceIdFromString(r)
+		v := r.GetResourceId()
 		if v != nil {
 			switch {
 			case v.GetDeviceId() == "*" && v.GetHref() == "*":
@@ -218,7 +218,7 @@ func toFilters(req *pb.SubscribeToEvents_CreateSubscription) ([]string, []string
 			case v.GetHref() == "*":
 				filterDeviceIDs = append(filterDeviceIDs, v.GetDeviceId())
 			default:
-				filterResourceIDs = append(filterResourceIDs, r)
+				filterResourceIDs = append(filterResourceIDs, v.ToString())
 			}
 		}
 	}
@@ -264,9 +264,9 @@ func addDeviceFilters(filterSlice []string, deviceHrefFilters map[uuid.UUID]*com
 	}
 }
 
-func addResourceIdFilters(filterSlice []string, deviceHrefFilters map[uuid.UUID]*commands.ResourceId) {
+func addResourceIdFilters(filterSlice []*pb.ResourceIdFilter, deviceHrefFilters map[uuid.UUID]*commands.ResourceId) {
 	for _, r := range filterSlice {
-		v := commands.ResourceIdFromString(r)
+		v := r.GetResourceId()
 		if v == nil {
 			// invalid resource id - skip
 			continue
@@ -330,6 +330,9 @@ func getFilters(req *pb.SubscribeToEvents_CreateSubscription) (map[uuid.UUID]*co
 }
 
 func New(send SendEventFunc, correlationID string, req *pb.SubscribeToEvents_CreateSubscription) *Sub {
+	// for backward compatibility and http api
+	req.ResourceIdFilter = append(req.ResourceIdFilter, req.ConvertHTTPResourceIDFilter()...)
+
 	deviceHrefFilters, bitmask := getFilters(req)
 	id := uuid.NewString()
 	var closeAtomic atomic.Value

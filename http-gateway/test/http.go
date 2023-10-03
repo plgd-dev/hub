@@ -2,6 +2,7 @@ package test
 
 import (
 	"crypto/tls"
+	"encoding/base64"
 	"fmt"
 	"io"
 	"net/http"
@@ -12,6 +13,7 @@ import (
 	"time"
 
 	"github.com/jtacoma/uritemplates"
+	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	"github.com/plgd-dev/hub/v2/http-gateway/uri"
 	"github.com/plgd-dev/hub/v2/test/config"
 	"github.com/stretchr/testify/require"
@@ -73,6 +75,24 @@ func (c *RequestBuilder) ResourceInterface(v string) *RequestBuilder {
 	return c
 }
 
+func (c *RequestBuilder) ETag(v []byte) *RequestBuilder {
+	if len(v) == 0 {
+		return c
+	}
+	c.header[uri.ETagHeaderKey] = base64.StdEncoding.EncodeToString(v)
+	return c
+}
+
+func (c *RequestBuilder) ETags(v [][]byte) *RequestBuilder {
+	if len(v) == 0 {
+		return c
+	}
+	for _, e := range v {
+		c.AddQuery(uri.ETagQueryKey, base64.StdEncoding.EncodeToString(e))
+	}
+	return c
+}
+
 func (c *RequestBuilder) ResourceHref(resourceHref string) *RequestBuilder {
 	if len(resourceHref) > 0 && resourceHref[0] == '/' {
 		resourceHref = resourceHref[1:]
@@ -115,11 +135,15 @@ func (c *RequestBuilder) AddDeviceIdFilter(deviceFilter []string) *RequestBuilde
 	return c
 }
 
-func (c *RequestBuilder) AddResourceIdFilter(resourcefilter []string) *RequestBuilder {
-	if len(resourcefilter) == 0 {
+func (c *RequestBuilder) AddResourceIdFilter(resourceFilter []*pb.ResourceIdFilter) *RequestBuilder {
+	if len(resourceFilter) == 0 {
 		return c
 	}
-	c.AddQuery(uri.ResourceIdFilterQueryKey, resourcefilter...)
+	resourceFilterStr := make([]string, 0, len(resourceFilter))
+	for _, f := range resourceFilter {
+		resourceFilterStr = append(resourceFilterStr, f.ToString())
+	}
+	c.AddQuery(uri.ResourceIdFilterQueryKey, resourceFilterStr...)
 	return c
 }
 
