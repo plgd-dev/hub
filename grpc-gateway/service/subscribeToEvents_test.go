@@ -992,7 +992,7 @@ func TestCoAPGatewayServiceHeartbeat(t *testing.T) {
 	raTearDown := raTest.New(t, racfg)
 
 	coapgwCfg := coapgwTest.MakeConfig(t)
-	coapgwCfg.ServiceHeartbeat.TimeToLive = time.Second * 2
+	coapgwCfg.ServiceHeartbeat.TimeToLive = time.Second * 3
 	coapgwTearDown := coapgwTest.New(t, coapgwCfg)
 
 	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
@@ -1086,7 +1086,7 @@ func TestCoAPGatewayServiceHeartbeat(t *testing.T) {
 	require.NotEmpty(t, secondCoapGWInstanceID)
 	require.NotEqual(t, firstCoapGWInstanceID, secondCoapGWInstanceID)
 
-	// set device to offline by resource-aggregate without restart the coap-gw
+	// ---- Set the device to offline via the resource-aggregate without updating the service metadata through the CoAP gateway. ---
 	// turn off resource-aggregate
 	raTearDown()
 	coapgwTearDown()

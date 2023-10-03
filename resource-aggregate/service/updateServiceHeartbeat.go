@@ -309,8 +309,8 @@ func (s *ServiceHeartbeat) run() {
 		}
 		nextWakeUp := s.processRequests()
 		d := time.Until(nextWakeUp)
-		if d < 0 {
-			d = time.Hour
+		if d <= 0 {
+			d = time.Minute * 10
 		}
 		// stop timer and drain if it was not already expired
 		if !timer.Stop() {
