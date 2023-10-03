@@ -298,6 +298,10 @@
                 </li>
               
                 <li>
+                  <a href="#grpcgateway.pb.ResourceIdFilter"><span class="badge">M</span>ResourceIdFilter</a>
+                </li>
+              
+                <li>
                   <a href="#grpcgateway.pb.SubscribeToEvents"><span class="badge">M</span>SubscribeToEvents</a>
                 </li>
               
@@ -1531,6 +1535,13 @@
                   <td><p>command validity in nanoseconds. 0 means forever and minimal value is 100000000 (100ms). </p></td>
                 </tr>
               
+                <tr>
+                  <td>etag</td>
+                  <td><a href="#bytes">bytes</a></td>
+                  <td>repeated</td>
+                  <td><p>optional </p></td>
+                </tr>
+              
             </tbody>
           </table>
 
@@ -1604,29 +1615,57 @@
             <tbody>
               
                 <tr>
-                  <td>resource_id_filter</td>
+                  <td>http_resource_id_filter</td>
                   <td><a href="#string">string</a></td>
                   <td>repeated</td>
-                  <td><p>format {deviceID}{href}. eg &#34;ae424c58-e517-4494-6de7-583536c48213/oic/d&#34; </p></td>
+                  <td><p><strong>Deprecated.</strong> Format: {deviceID}{href}(?etag=abc), e.g., &#34;ae424c58-e517-4494-6de7-583536c48213/oic/d?etag=abc&#34; </p></td>
                 </tr>
               
                 <tr>
                   <td>device_id_filter</td>
                   <td><a href="#string">string</a></td>
                   <td>repeated</td>
-                  <td><p> </p></td>
+                  <td><p>Filter devices by deviceID </p></td>
                 </tr>
               
                 <tr>
                   <td>type_filter</td>
                   <td><a href="#string">string</a></td>
                   <td>repeated</td>
-                  <td><p> </p></td>
+                  <td><p>Filter devices by resource types in the oic/d resource </p></td>
+                </tr>
+              
+                <tr>
+                  <td>resource_id_filter</td>
+                  <td><a href="#grpcgateway.pb.ResourceIdFilter">ResourceIdFilter</a></td>
+                  <td>repeated</td>
+                  <td><p>New resource ID filter. For HTTP requests, use it multiple times as a query parameter like &#34;resourceIdFilter={deviceID}{href}(?etag=abc)&#34; </p></td>
                 </tr>
               
             </tbody>
           </table>
 
+          
+            
+            
+            <h4>Fields with deprecated option</h4>
+            <table>
+              <thead>
+                <tr>
+                  <td>Name</td>
+                  <td>Option</td>
+                </tr>
+              </thead>
+              <tbody>
+              
+                <tr>
+                  <td>http_resource_id_filter</td>
+                  <td><p>true</p></td>
+                </tr>
+              
+              </tbody>
+            </table>
+            
           
 
         
@@ -1684,6 +1723,37 @@
                   <td><a href="#resourceaggregate.pb.ResourceChanged">resourceaggregate.pb.ResourceChanged</a></td>
                   <td></td>
                   <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="grpcgateway.pb.ResourceIdFilter">ResourceIdFilter</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>resource_id</td>
+                  <td><a href="#resourceaggregate.pb.ResourceId">resourceaggregate.pb.ResourceId</a></td>
+                  <td></td>
+                  <td><p>Filter specific resources </p></td>
+                </tr>
+              
+                <tr>
+                  <td>etag</td>
+                  <td><a href="#bytes">bytes</a></td>
+                  <td>repeated</td>
+                  <td><p>Optional; resource_id.{deviceId, href} must not be empty </p></td>
                 </tr>
               
             </tbody>
@@ -1780,10 +1850,10 @@
                 </tr>
               
                 <tr>
-                  <td>resource_id_filter</td>
+                  <td>http_resource_id_filter</td>
                   <td><a href="#string">string</a></td>
                   <td>repeated</td>
-                  <td><p>array of format {deviceID}{href}. eg [ &#34;ae424c58-e517-4494-6de7-583536c48213/oic/d&#34;, &#34;ae424c58-e517-4494-6de7-583536c48213/oic/p&#34; ] </p></td>
+                  <td><p><strong>Deprecated.</strong> array of format {deviceID}{href}. eg [ &#34;ae424c58-e517-4494-6de7-583536c48213/oic/d&#34;, &#34;ae424c58-e517-4494-6de7-583536c48213/oic/p&#34; ] </p></td>
                 </tr>
               
                 <tr>
@@ -1793,9 +1863,37 @@
                   <td><p>array of format {href}. eg [ &#34;/oic/d&#34;, &#34;/oic/p&#34; ] </p></td>
                 </tr>
               
+                <tr>
+                  <td>resource_id_filter</td>
+                  <td><a href="#grpcgateway.pb.ResourceIdFilter">ResourceIdFilter</a></td>
+                  <td>repeated</td>
+                  <td><p> </p></td>
+                </tr>
+              
             </tbody>
           </table>
 
+          
+            
+            
+            <h4>Fields with deprecated option</h4>
+            <table>
+              <thead>
+                <tr>
+                  <td>Name</td>
+                  <td>Option</td>
+                </tr>
+              </thead>
+              <tbody>
+              
+                <tr>
+                  <td>http_resource_id_filter</td>
+                  <td><p>true</p></td>
+                </tr>
+              
+              </tbody>
+            </table>
+            
           
 
         
@@ -2089,10 +2187,10 @@
                 </tr>
               
                 <tr>
-                  <td>resource_id_filter</td>
+                  <td>http_resource_id_filter</td>
                   <td><a href="#string">string</a></td>
                   <td>repeated</td>
-                  <td><p>format {deviceID}{href}. eg &#34;ae424c58-e517-4494-6de7-583536c48213/oic/d&#34; </p></td>
+                  <td><p><strong>Deprecated.</strong> format {deviceID}{href}. eg &#34;ae424c58-e517-4494-6de7-583536c48213/oic/d&#34; </p></td>
                 </tr>
               
                 <tr>
@@ -2102,9 +2200,37 @@
                   <td><p>filter events with timestamp &gt; than given value </p></td>
                 </tr>
               
+                <tr>
+                  <td>resource_id_filter</td>
+                  <td><a href="#grpcgateway.pb.ResourceIdFilter">ResourceIdFilter</a></td>
+                  <td>repeated</td>
+                  <td><p>New resource ID filter. For HTTP requests, use it multiple times as a query parameter like &#34;resourceIdFilter={deviceID}{href}&#34;. </p></td>
+                </tr>
+              
             </tbody>
           </table>
 
+          
+            
+            
+            <h4>Fields with deprecated option</h4>
+            <table>
+              <thead>
+                <tr>
+                  <td>Name</td>
+                  <td>Option</td>
+                </tr>
+              </thead>
+              <tbody>
+              
+                <tr>
+                  <td>http_resource_id_filter</td>
+                  <td><p>true</p></td>
+                </tr>
+              
+              </tbody>
+            </table>
+            
           
 
         
@@ -2315,10 +2441,10 @@
                 </tr>
               
                 <tr>
-                  <td>resource_id_filter</td>
+                  <td>http_resource_id_filter</td>
                   <td><a href="#string">string</a></td>
                   <td>repeated</td>
-                  <td><p> </p></td>
+                  <td><p><strong>Deprecated.</strong>  </p></td>
                 </tr>
               
                 <tr>
@@ -2335,9 +2461,37 @@
                   <td><p> </p></td>
                 </tr>
               
+                <tr>
+                  <td>resource_id_filter</td>
+                  <td><a href="#grpcgateway.pb.ResourceIdFilter">ResourceIdFilter</a></td>
+                  <td>repeated</td>
+                  <td><p>New resource ID filter. For HTTP requests, use it multiple times as a query parameter like &#34;resourceIdFilter={deviceID}{href}&#34;. </p></td>
+                </tr>
+              
             </tbody>
           </table>
 
+          
+            
+            
+            <h4>Fields with deprecated option</h4>
+            <table>
+              <thead>
+                <tr>
+                  <td>Name</td>
+                  <td>Option</td>
+                </tr>
+              </thead>
+              <tbody>
+              
+                <tr>
+                  <td>http_resource_id_filter</td>
+                  <td><p>true</p></td>
+                </tr>
+              
+              </tbody>
+            </table>
+            
           
 
         
@@ -3457,6 +3611,12 @@ Subscription doesn&#39;t guarantee that all events will be sent to the client. T
                 <td><p>Canceled indicates the operation was canceled (typically by the user).</p></td>
               </tr>
             
+              <tr>
+                <td>NOT_MODIFIED</td>
+                <td>13</td>
+                <td><p>Valid indicates the content hasn&#39;t changed. (provided etag in GET request is same as the resource etag).</p></td>
+              </tr>
+            
           </tbody>
         </table>
       
@@ -4510,7 +4670,7 @@ Subscription doesn&#39;t guarantee that all events will be sent to the client. T
                 <tr>
                   <td>etag</td>
                   <td><a href="#bytes">bytes</a></td>
-                  <td></td>
+                  <td>repeated</td>
                   <td><p> </p></td>
                 </tr>
               

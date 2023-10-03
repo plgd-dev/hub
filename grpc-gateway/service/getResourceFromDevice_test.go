@@ -191,6 +191,18 @@ func validateETags(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 		TimeToLive: int64(time.Hour),
 	})
 	require.NoError(t, err)
+
+	checkTag, err := c.GetResourceFromDevice(ctx, &pb.GetResourceFromDeviceRequest{
+		ResourceId: commands.NewResourceID(deviceID, href),
+		TimeToLive: int64(time.Hour),
+		Etag:       [][]byte{cfg2.GetData().GetEtag()},
+	})
+	require.NoError(t, err)
+	require.Equal(t, checkTag.GetData().GetStatus(), commands.Status_NOT_MODIFIED)
+	require.Empty(t, checkTag.GetData().GetContent().GetData())
+	require.Empty(t, checkTag.GetData().GetContent().GetContentType())
+	require.Equal(t, int32(-1), checkTag.GetData().GetContent().GetCoapContentFormat())
+
 	// compare SDK and HUB ETags
 	require.Equal(t, cfg1.ETag, cfg2.GetData().GetEtag())
 	var body2 interface{}
@@ -200,8 +212,10 @@ func validateETags(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 
 	// get resource from device twin
 	clients, err := c.GetResources(ctx, &pb.GetResourcesRequest{
-		ResourceIdFilter: []string{
-			commands.NewResourceID(deviceID, href).ToString(),
+		ResourceIdFilter: []*pb.ResourceIdFilter{
+			{
+				ResourceId: commands.NewResourceID(deviceID, href),
+			},
 		},
 	})
 	require.NoError(t, err)

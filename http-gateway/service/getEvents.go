@@ -31,7 +31,7 @@ func (requestHandler *RequestHandler) getEvents(w http.ResponseWriter, r *http.R
 	resourceID := commands.NewResourceID(deviceID, href).ToString()
 	type Options struct {
 		DeviceIDFilter   []string `url:"deviceIdFilter,omitempty"`
-		ResourceIDFilter []string `url:"resourceIdFilter,omitempty"`
+		ResourceIDFilter []string `url:"httpResourceIdFilter,omitempty"`
 		TimestampFilter  int64    `url:"timestampFilter,omitempty"`
 	}
 	opt := Options{}

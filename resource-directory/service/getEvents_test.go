@@ -30,7 +30,8 @@ import (
 func getOnboardEventForResource(t *testing.T, deviceID, href string) interface{} {
 	rid := commands.NewResourceID(deviceID, href)
 	for _, r := range test.GetAllBackendResourceRepresentations(deviceID, test.TestDeviceName) {
-		if rid.ToString() == commands.ResourceIdFromString(r.Href).ToString() {
+		resourceID := commands.ResourceIdFromString(r.Href)
+		if rid.ToString() == resourceID.ToString() {
 			return pbTest.MakeResourceChanged(t, deviceID, href, "", r.Representation)
 		}
 	}
@@ -116,7 +117,11 @@ func TestRequestHandlerGetEventsOnOnboard(t *testing.T) {
 
 	for _, res := range resources {
 		client, err := c.GetEvents(ctx, &pb.GetEventsRequest{
-			ResourceIdFilter: []string{deviceID + res.Href},
+			ResourceIdFilter: []*pb.ResourceIdFilter{
+				{
+					ResourceId: commands.NewResourceID(deviceID, res.Href),
+				},
+			},
 		})
 		require.NoError(t, err)
 		defer func() {

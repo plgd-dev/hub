@@ -105,12 +105,53 @@ func resourceEventsMatcher(r *http.Request, rm *mux.RouteMatch) bool {
 	return false
 }
 
+func wsRequestMutator(incoming, outgoing *http.Request) *http.Request {
+	outgoing.Method = http.MethodPost
+	accept := getAccept(incoming)
+	if accept != "" {
+		outgoing.Header.Set(uri.AcceptHeaderKey, accept)
+	}
+	if incoming.RequestURI == uri.SubscribeToEvents {
+		contentType := incoming.Header.Get(uri.ContentTypeHeaderKey)
+		if contentType == uri.ApplicationProtoJsonContentType {
+			outgoing.Header.Set(uri.ContentTypeHeaderKey, ApplicationSubscribeToEventsProtoJsonContentType)
+		} else {
+			outgoing.Header.Set(uri.ContentTypeHeaderKey, ApplicationSubscribeToEventsMIMEWildcard)
+		}
+	}
+	return outgoing
+}
+
+func (requestHandler *RequestHandler) setupUIHandler(r *mux.Router) {
+	r.HandleFunc(uri.WebConfiguration, requestHandler.getWebConfiguration).Methods(http.MethodGet)
+	fs := http.FileServer(http.Dir(requestHandler.config.UI.Directory))
+	r.PathPrefix("/").Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		c := httptest.NewRecorder()
+		fs.ServeHTTP(c, r)
+		if c.Code == http.StatusNotFound {
+			c = httptest.NewRecorder()
+			r.URL.Path = "/"
+			fs.ServeHTTP(c, r)
+		}
+		for k, v := range c.Header() {
+			w.Header().Set(k, strings.Join(v, ""))
+		}
+		w.WriteHeader(c.Code)
+		if _, err := c.Body.WriteTo(w); err != nil {
+			log.Errorf("failed to write response body: %w", err)
+		}
+	}))
+}
+
 // NewHTTP returns HTTP handler
 func NewRequestHandler(config *Config, r *mux.Router, client *client.Client) (*RequestHandler, error) {
 	requestHandler := &RequestHandler{
 		client: client,
 		config: config,
-		mux:    serverMux.New(),
+		mux: serverMux.New(
+			runtime.WithMarshalerOption(ApplicationSubscribeToEventsMIMEWildcard, newSubscribeToEventsMarshaler(serverMux.NewJsonMarshaler())),
+			runtime.WithMarshalerOption(ApplicationSubscribeToEventsProtoJsonContentType, serverMux.NewJsonpbMarshaler()),
+		),
 	}
 	// Aliases
 	r.HandleFunc(uri.AliasDevice, requestHandler.getDevice).Methods(http.MethodGet)
@@ -140,14 +181,7 @@ func NewRequestHandler(config *Config, r *mux.Router, client *client.Client) (*R
 	ws := wsproxy.WebsocketProxy(requestHandler.mux,
 		wsproxy.WithMaxRespBodyBufferSize(requestHandler.config.APIs.HTTP.WebSocket.StreamBodyLimit),
 		wsproxy.WithPingControl(requestHandler.config.APIs.HTTP.WebSocket.PingFrequency),
-		wsproxy.WithRequestMutator(func(incoming, outgoing *http.Request) *http.Request {
-			outgoing.Method = http.MethodPost
-			accept := getAccept(incoming)
-			if accept != "" {
-				outgoing.Header.Set(uri.AcceptHeaderKey, accept)
-			}
-			return outgoing
-		}))
+		wsproxy.WithRequestMutator(wsRequestMutator))
 	r.PathPrefix(uri.APIWS + "/").HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 		ws.ServeHTTP(rw, r)
 	})
@@ -160,24 +194,7 @@ func NewRequestHandler(config *Config, r *mux.Router, client *client.Client) (*R
 
 	// serve www directory
 	if requestHandler.config.UI.Enabled {
-		r.HandleFunc(uri.WebConfiguration, requestHandler.getWebConfiguration).Methods(http.MethodGet)
-		fs := http.FileServer(http.Dir(requestHandler.config.UI.Directory))
-		r.PathPrefix("/").Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			c := httptest.NewRecorder()
-			fs.ServeHTTP(c, r)
-			if c.Code == http.StatusNotFound {
-				c = httptest.NewRecorder()
-				r.URL.Path = "/"
-				fs.ServeHTTP(c, r)
-			}
-			for k, v := range c.Header() {
-				w.Header().Set(k, strings.Join(v, ""))
-			}
-			w.WriteHeader(c.Code)
-			if _, err := c.Body.WriteTo(w); err != nil {
-				log.Errorf("failed to write response body: %w", err)
-			}
-		}))
+		requestHandler.setupUIHandler(r)
 	}
 
 	return requestHandler, nil

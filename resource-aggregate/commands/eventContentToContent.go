@@ -36,6 +36,7 @@ func EventContentToContent(ec EventContent) (*Content, error) {
 	switch statusCode {
 	case codes.OK:
 	case codes.Code(extCodes.Accepted):
+	case codes.Code(extCodes.Valid):
 	case codes.Code(extCodes.Created):
 	default:
 		s := status.New(statusCode, "error response from device")

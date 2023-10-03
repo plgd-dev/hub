@@ -69,8 +69,10 @@ func clientRetrieveHandler(req *mux.Message, client *session) (*pool.Message, er
 
 func clientRetrieveFromResourceTwinHandler(ctx context.Context, client *session, deviceID, href string, etag []byte) (*commands.Content, coapCodes.Code, error) {
 	RetrieveResourcesClient, err := client.server.rdClient.GetResources(ctx, &pbGRPC.GetResourcesRequest{
-		ResourceIdFilter: []string{
-			commands.NewResourceID(deviceID, href).ToString(),
+		ResourceIdFilter: []*pbGRPC.ResourceIdFilter{
+			{
+				ResourceId: commands.NewResourceID(deviceID, href),
+			},
 		},
 	})
 	if err != nil {

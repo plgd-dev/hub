@@ -3,6 +3,7 @@ package service_test
 import (
 	"context"
 	"crypto/tls"
+	"encoding/base64"
 	"errors"
 	"io"
 	"net/http"
@@ -10,13 +11,16 @@ import (
 	"time"
 
 	"github.com/plgd-dev/device/v2/test/resource/types"
+	coapTest "github.com/plgd-dev/hub/v2/coap-gateway/test"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	httpgwTest "github.com/plgd-dev/hub/v2/http-gateway/test"
 	"github.com/plgd-dev/hub/v2/http-gateway/uri"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 	"github.com/plgd-dev/hub/v2/test"
 	"github.com/plgd-dev/hub/v2/test/config"
+	oauthService "github.com/plgd-dev/hub/v2/test/oauth-server/service"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	pbTest "github.com/plgd-dev/hub/v2/test/pb"
 	"github.com/plgd-dev/hub/v2/test/service"
@@ -30,7 +34,11 @@ func TestRequestHandlerGetResources(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
 	defer cancel()
 
-	tearDown := service.SetUp(ctx, t)
+	coapCfg := coapTest.MakeConfig(t)
+	// coapCfg.Log.DumpBody = true
+	// coapCfg.Log.Level = log.DebugLevel
+
+	tearDown := service.SetUp(ctx, t, service.WithCOAPGWConfig(coapCfg))
 	defer tearDown()
 
 	shutdownHttp := httpgwTest.SetUp(t)
@@ -55,10 +63,16 @@ func TestRequestHandlerGetResources(t *testing.T) {
 	resourceLinks = append(resourceLinks, test.AddDeviceSwitchResources(ctx, t, deviceID, c, switchID)...)
 	time.Sleep(200 * time.Millisecond)
 
+	// get resource from device via HUB
+	lightResourceData, err := c.GetResourceFromDevice(ctx, &pb.GetResourceFromDeviceRequest{
+		ResourceId: commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
+	})
+	require.NoError(t, err)
+
 	type args struct {
 		accept           string
 		deviceIdFilter   []string
-		resourceIdFilter []string
+		resourceIdFilter []*pb.ResourceIdFilter
 		typeFilter       []string
 	}
 	tests := []struct {
@@ -77,8 +91,12 @@ func TestRequestHandlerGetResources(t *testing.T) {
 		{
 			name: "invalid resourceIdFilter",
 			args: args{
-				accept:           uri.ApplicationProtoJsonContentType,
-				resourceIdFilter: []string{"unknown"},
+				accept: uri.ApplicationProtoJsonContentType,
+				resourceIdFilter: []*pb.ResourceIdFilter{
+					{
+						ResourceId: commands.NewResourceID("unknown", ""),
+					},
+				},
 			},
 		},
 		{
@@ -101,8 +119,10 @@ func TestRequestHandlerGetResources(t *testing.T) {
 			name: "valid resourceIdFilter",
 			args: args{
 				accept: uri.ApplicationProtoJsonContentType,
-				resourceIdFilter: []string{
-					commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")).ToString(),
+				resourceIdFilter: []*pb.ResourceIdFilter{
+					{
+						ResourceId: commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
+					},
 				},
 			},
 			want: []*pb.Resource{
@@ -132,6 +152,62 @@ func TestRequestHandlerGetResources(t *testing.T) {
 							"value": false,
 						},
 					),
+				},
+			},
+		},
+		{
+			name: "valid resourceIdFilter with ETag",
+			args: args{
+				accept: uri.ApplicationProtoJsonContentType,
+				resourceIdFilter: []*pb.ResourceIdFilter{
+					{
+						ResourceId: commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
+						Etag:       [][]byte{lightResourceData.GetData().GetEtag()},
+					},
+				},
+			},
+			want: []*pb.Resource{
+				{
+					Types: []string{types.CORE_LIGHT},
+					Data: &events.ResourceChanged{
+						ResourceId: &commands.ResourceId{
+							DeviceId: deviceID,
+							Href:     test.TestResourceLightInstanceHref("1"),
+						},
+						Status: commands.Status_NOT_MODIFIED,
+						Content: &commands.Content{
+							CoapContentFormat: -1,
+						},
+						AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, "", oauthService.DeviceUserID),
+					},
+				},
+			},
+		},
+		{
+			name: "valid resourceIdFilter with multiple ETags",
+			args: args{
+				accept: uri.ApplicationProtoJsonContentType,
+				resourceIdFilter: []*pb.ResourceIdFilter{
+					{
+						ResourceId: commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
+						Etag:       [][]byte{[]byte(base64.StdEncoding.EncodeToString([]byte("123"))), []byte(base64.StdEncoding.EncodeToString([]byte("456"))), lightResourceData.GetData().GetEtag()},
+					},
+				},
+			},
+			want: []*pb.Resource{
+				{
+					Types: []string{types.CORE_LIGHT},
+					Data: &events.ResourceChanged{
+						ResourceId: &commands.ResourceId{
+							DeviceId: deviceID,
+							Href:     test.TestResourceLightInstanceHref("1"),
+						},
+						Status: commands.Status_NOT_MODIFIED,
+						Content: &commands.Content{
+							CoapContentFormat: -1,
+						},
+						AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, "", oauthService.DeviceUserID),
+					},
 				},
 			},
 		},

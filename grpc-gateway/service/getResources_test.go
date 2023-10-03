@@ -12,8 +12,10 @@ import (
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 	"github.com/plgd-dev/hub/v2/test"
 	"github.com/plgd-dev/hub/v2/test/config"
+	oauthService "github.com/plgd-dev/hub/v2/test/oauth-server/service"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	pbTest "github.com/plgd-dev/hub/v2/test/pb"
 	"github.com/plgd-dev/hub/v2/test/service"
@@ -49,6 +51,12 @@ func TestRequestHandlerGetResources(t *testing.T) {
 	// for update resource-directory cache
 	time.Sleep(time.Second)
 
+	// get resource from device via HUB
+	lightResourceData, err := c.GetResourceFromDevice(ctx, &pb.GetResourceFromDeviceRequest{
+		ResourceId: commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
+	})
+	require.NoError(t, err)
+
 	type args struct {
 		req *pb.GetResourcesRequest
 	}
@@ -70,7 +78,11 @@ func TestRequestHandlerGetResources(t *testing.T) {
 			name: "invalid resourceIdFilter",
 			args: args{
 				req: &pb.GetResourcesRequest{
-					ResourceIdFilter: []string{"unknown"},
+					ResourceIdFilter: []*pb.ResourceIdFilter{
+						{
+							ResourceId: commands.NewResourceID("unknown", ""),
+						},
+					},
 				},
 			},
 		},
@@ -96,8 +108,10 @@ func TestRequestHandlerGetResources(t *testing.T) {
 			name: "valid resourceIdFilter",
 			args: args{
 				req: &pb.GetResourcesRequest{
-					ResourceIdFilter: []string{
-						commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")).ToString(),
+					ResourceIdFilter: []*pb.ResourceIdFilter{
+						{
+							ResourceId: commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
+						},
 					},
 				},
 			},
@@ -110,6 +124,37 @@ func TestRequestHandlerGetResources(t *testing.T) {
 							"power": uint64(0),
 							"name":  "Light",
 						}),
+				},
+			},
+		},
+		{
+			name: "valid resourceIdFilter with ETag",
+			args: args{
+				req: &pb.GetResourcesRequest{
+					ResourceIdFilter: []*pb.ResourceIdFilter{
+						{
+							ResourceId: commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
+							Etag: [][]byte{
+								lightResourceData.GetData().GetEtag(),
+							},
+						},
+					},
+				},
+			},
+			want: []*pb.Resource{
+				{
+					Types: []string{types.CORE_LIGHT},
+					Data: &events.ResourceChanged{
+						ResourceId: &commands.ResourceId{
+							DeviceId: deviceID,
+							Href:     test.TestResourceLightInstanceHref("1"),
+						},
+						Status: commands.Status_NOT_MODIFIED,
+						Content: &commands.Content{
+							CoapContentFormat: -1,
+						},
+						AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, "", oauthService.DeviceUserID),
+					},
 				},
 			},
 		},

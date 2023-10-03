@@ -143,11 +143,20 @@ define RUN-DOCKER-DEVICE
 endef
 
 define CLEAN-DOCKER-DEVICE
-	docker rm -f $(1) || true
 	sudo rm -rf $(WORKING_DIRECTORY)/.tmp/$(1) || true
 endef
 
-simulators/clean:
+define REMOVE-DOCKER-DEVICE
+	docker stop --time 300 $(1) || true
+	docker rm -f $(1) || true
+endef
+
+simulators/remove:
+	$(call REMOVE-DOCKER-DEVICE,$(DEVICE_SIMULATOR_NAME))
+	$(call REMOVE-DOCKER-DEVICE,$(DEVICE_SIMULATOR_RES_OBSERVABLE_NAME))
+.PHONY: simulators/remove
+
+simulators/clean: simulators/remove
 	$(call CLEAN-DOCKER-DEVICE,$(DEVICE_SIMULATOR_NAME))
 	$(call CLEAN-DOCKER-DEVICE,$(DEVICE_SIMULATOR_RES_OBSERVABLE_NAME))
 .PHONY: simulators/clean

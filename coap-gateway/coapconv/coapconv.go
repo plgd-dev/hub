@@ -3,6 +3,7 @@ package coapconv
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"strings"
@@ -35,6 +36,8 @@ func StatusToCoapCode(status commands.Status, operation Operation) codes.Code {
 		}
 	case commands.Status_CREATED:
 		return codes.Created
+	case commands.Status_NOT_MODIFIED:
+		return codes.Valid
 	case commands.Status_ACCEPTED:
 		return codes.Valid
 	case commands.Status_BAD_REQUEST:
@@ -53,11 +56,14 @@ func StatusToCoapCode(status commands.Status, operation Operation) codes.Code {
 	return codes.BadRequest
 }
 
-func CoapCodeToStatus(code codes.Code) commands.Status {
+func CoapCodeToStatus(code codes.Code, operation Operation) commands.Status {
 	switch code {
 	case codes.Changed, codes.Content, codes.Deleted:
 		return commands.Status_OK
 	case codes.Valid:
+		if operation == Retrieve {
+			return commands.Status_NOT_MODIFIED
+		}
 		return commands.Status_ACCEPTED
 	case codes.BadRequest:
 		return commands.Status_BAD_REQUEST
@@ -134,8 +140,8 @@ func NewCoapResourceRetrieveRequest(ctx context.Context, messagePool *pool.Pool,
 	if event.GetResourceInterface() != "" {
 		req.AddOptionString(message.URIQuery, uri.InterfaceQueryKeyPrefix+event.GetResourceInterface())
 	}
-	if len(event.GetEtag()) > 0 {
-		if err := req.AddETag(event.GetEtag()); err != nil {
+	for _, etag := range event.GetEtag() {
+		if err := req.AddETag(etag); err != nil {
 			return nil, err
 		}
 	}
@@ -200,6 +206,26 @@ func getETagFromMessage(msg interface{ ETag() ([]byte, error) }) []byte {
 	return etag
 }
 
+func getETagsFromMessage(msg interface{ ETags(b [][]byte) (int, error) }) [][]byte {
+	if msg == nil {
+		return nil
+	}
+	etags := make([][]byte, 32)
+	for {
+		n, err := msg.ETags(etags)
+		if errors.Is(err, message.ErrTooSmall) {
+			etags = make([][]byte, len(etags)*2)
+			continue
+		}
+		if err != nil {
+			return nil
+		}
+		etags = etags[:n]
+		break
+	}
+	return etags
+}
+
 func NewConfirmResourceRetrieveRequest(resourceID *commands.ResourceId, correlationID, connectionID string, req *pool.Message) *commands.ConfirmResourceRetrieveRequest {
 	content := NewContent(req.Options(), req.Body())
 	metadata := NewCommandMetadata(req.Sequence(), connectionID)
@@ -207,7 +233,7 @@ func NewConfirmResourceRetrieveRequest(resourceID *commands.ResourceId, correlat
 	return &commands.ConfirmResourceRetrieveRequest{
 		ResourceId:      resourceID,
 		CorrelationId:   correlationID,
-		Status:          CoapCodeToStatus(req.Code()),
+		Status:          CoapCodeToStatus(req.Code(), Retrieve),
 		Content:         content,
 		CommandMetadata: metadata,
 		Etag:            getETagFromMessage(req),
@@ -221,7 +247,7 @@ func NewConfirmResourceUpdateRequest(resourceID *commands.ResourceId, correlatio
 	return &commands.ConfirmResourceUpdateRequest{
 		ResourceId:      resourceID,
 		CorrelationId:   correlationID,
-		Status:          CoapCodeToStatus(req.Code()),
+		Status:          CoapCodeToStatus(req.Code(), Update),
 		Content:         content,
 		CommandMetadata: metadata,
 	}
@@ -256,7 +282,7 @@ func NewConfirmResourceDeleteRequest(resourceID *commands.ResourceId, correlatio
 	return &commands.ConfirmResourceDeleteRequest{
 		ResourceId:      resourceID,
 		CorrelationId:   correlationID,
-		Status:          CoapCodeToStatus(req.Code()),
+		Status:          CoapCodeToStatus(req.Code(), Delete),
 		Content:         content,
 		CommandMetadata: metadata,
 	}
@@ -270,7 +296,7 @@ func NewNotifyResourceChangedRequest(resourceID *commands.ResourceId, connection
 		ResourceId:      resourceID,
 		Content:         content,
 		CommandMetadata: metadata,
-		Status:          CoapCodeToStatus(req.Code()),
+		Status:          CoapCodeToStatus(req.Code(), Update),
 		Etag:            getETagFromMessage(req),
 	}
 }
@@ -323,7 +349,7 @@ func NewNotifyResourceChangedRequestsFromBatchResourceDiscovery(deviceID, connec
 		}
 		ct := contentFormat
 		data := r.Content
-		code := CoapCodeToStatus(req.Code())
+		code := CoapCodeToStatus(req.Code(), Retrieve)
 		if isEmpty {
 			// if we gets empty content we consider it as not found. Empty message is send when resource is deleted/acls don't allows as to access.
 			ct = -1
@@ -407,7 +433,7 @@ func NewRetrieveResourceRequest(resourceID *commands.ResourceId, req *mux.Messag
 		CorrelationId:     correlationID,
 		ResourceInterface: resourceInterface,
 		CommandMetadata:   metadata,
-		Etag:              getETagFromMessage(req),
+		Etag:              getETagsFromMessage(req),
 	}, nil
 }
 
@@ -435,7 +461,7 @@ func NewConfirmResourceCreateRequest(resourceID *commands.ResourceId, correlatio
 	return &commands.ConfirmResourceCreateRequest{
 		ResourceId:      resourceID,
 		CorrelationId:   correlationID,
-		Status:          CoapCodeToStatus(req.Code()),
+		Status:          CoapCodeToStatus(req.Code(), Create),
 		Content:         content,
 		CommandMetadata: metadata,
 	}

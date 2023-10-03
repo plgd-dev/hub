@@ -40,7 +40,7 @@ func TestRequestHandlerGetPendingCommands(t *testing.T) {
 	type args struct {
 		accept           string
 		typeFilter       []string
-		resourceIdFilter []string
+		resourceIdFilter []*pb.ResourceIdFilter
 		deviceIdFilter   []string
 		commandFilter    []pb.GetPendingCommandsRequest_Command
 	}
@@ -54,8 +54,10 @@ func TestRequestHandlerGetPendingCommands(t *testing.T) {
 			name: "retrieve by resourceIdFilter",
 			args: args{
 				accept: uri.ApplicationProtoJsonContentType,
-				resourceIdFilter: []string{
-					commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")).ToString(),
+				resourceIdFilter: []*pb.ResourceIdFilter{
+					{
+						ResourceId: commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
+					},
 				},
 			},
 			want: []*pb.PendingCommand{

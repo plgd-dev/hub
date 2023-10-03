@@ -362,6 +362,9 @@ func CmpResourceValues(t *testing.T, expected, got []*pb.Resource) {
 	}
 
 	getData := func(t *testing.T, res *pb.Resource) interface{} {
+		if res.GetData().GetContent().GetData() == nil && res.GetData().GetContent().GetContentType() == "" && res.GetData().GetContent().GetCoapContentFormat() == -1 {
+			return nil
+		}
 		d := test.DecodeCbor(t, res.GetData().GetContent().GetData())
 		if m, ok := d.(map[interface{}]interface{}); ok {
 			cleanUpData(m)

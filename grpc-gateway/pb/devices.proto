@@ -6,6 +6,7 @@ import "resource-aggregate/pb/commands.proto";
 import "resource-aggregate/pb/events.proto";
 import "resource-aggregate/pb/resources.proto";
 import "identity-store/pb/events.proto";
+import "google/protobuf/struct.proto";
 
 option go_package = "github.com/plgd-dev/hub/v2/grpc-gateway/pb;pb";
 
@@ -37,16 +38,24 @@ message GetResourceFromDeviceRequest {
   resourceaggregate.pb.ResourceId resource_id = 1;
   string resource_interface = 2;
   int64 time_to_live = 3;  // command validity in nanoseconds. 0 means forever and minimal value is 100000000 (100ms).
+  repeated bytes etag = 4; // optional
 }
 
 message GetResourceFromDeviceResponse {
   resourceaggregate.pb.ResourceRetrieved data = 1;
 }
 
+message ResourceIdFilter {
+  resourceaggregate.pb.ResourceId resource_id = 1; // Filter specific resources
+  repeated bytes etag = 2; // Optional; resource_id.{deviceId, href} must not be empty
+}
+
 message GetResourcesRequest {
-  repeated string resource_id_filter = 1; // format {deviceID}{href}. eg "ae424c58-e517-4494-6de7-583536c48213/oic/d"
-  repeated string device_id_filter = 2;
-  repeated string type_filter = 3;
+  repeated string http_resource_id_filter = 1 [ deprecated = true ];  // Format: {deviceID}{href}(?etag=abc), e.g., "ae424c58-e517-4494-6de7-583536c48213/oic/d?etag=abc"
+  repeated string device_id_filter = 2; // Filter devices by deviceID
+  repeated string type_filter = 3; // Filter devices by resource types in the oic/d resource
+
+  repeated ResourceIdFilter resource_id_filter = 4; // New resource ID filter. For HTTP requests, use it multiple times as a query parameter like "resourceIdFilter={deviceID}{href}(?etag=abc)"
 }
 
 message Resource {
@@ -97,8 +106,9 @@ message SubscribeToEvents {
     }
     repeated Event event_filter = 1;// array of events. eg: [ REGISTERED, UNREGISTERED  ]
     repeated string device_id_filter = 2; // array of format {deviceID}. eg [ "ae424c58-e517-4494-6de7-583536c48213" ]
-    repeated string resource_id_filter = 3; // array of format {deviceID}{href}. eg [ "ae424c58-e517-4494-6de7-583536c48213/oic/d", "ae424c58-e517-4494-6de7-583536c48213/oic/p" ]
+    repeated string http_resource_id_filter = 3 [deprecated = true]; // array of format {deviceID}{href}. eg [ "ae424c58-e517-4494-6de7-583536c48213/oic/d", "ae424c58-e517-4494-6de7-583536c48213/oic/p" ]
     repeated string href_filter = 4; // array of format {href}. eg [ "/oic/d", "/oic/p" ]
+    repeated ResourceIdFilter resource_id_filter = 5;
   }
   message CancelSubscription {
     string subscription_id = 1;

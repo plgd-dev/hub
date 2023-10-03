@@ -33,6 +33,7 @@
     - [GetResourcesRequest](#grpcgateway-pb-GetResourcesRequest)
     - [LocalizedString](#grpcgateway-pb-LocalizedString)
     - [Resource](#grpcgateway-pb-Resource)
+    - [ResourceIdFilter](#grpcgateway-pb-ResourceIdFilter)
     - [SubscribeToEvents](#grpcgateway-pb-SubscribeToEvents)
     - [SubscribeToEvents.CancelSubscription](#grpcgateway-pb-SubscribeToEvents-CancelSubscription)
     - [SubscribeToEvents.CreateSubscription](#grpcgateway-pb-SubscribeToEvents-CreateSubscription)
@@ -517,6 +518,7 @@
 | resource_id | [resourceaggregate.pb.ResourceId](#resourceaggregate-pb-ResourceId) |  |  |
 | resource_interface | [string](#string) |  |  |
 | time_to_live | [int64](#int64) |  | command validity in nanoseconds. 0 means forever and minimal value is 100000000 (100ms). |
+| etag | [bytes](#bytes) | repeated | optional |
 
 
 
@@ -562,9 +564,10 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| resource_id_filter | [string](#string) | repeated | format {deviceID}{href}. eg &#34;ae424c58-e517-4494-6de7-583536c48213/oic/d&#34; |
-| device_id_filter | [string](#string) | repeated |  |
-| type_filter | [string](#string) | repeated |  |
+| http_resource_id_filter | [string](#string) | repeated | **Deprecated.** Format: {deviceID}{href}(?etag=abc), e.g., &#34;ae424c58-e517-4494-6de7-583536c48213/oic/d?etag=abc&#34; |
+| device_id_filter | [string](#string) | repeated | Filter devices by deviceID |
+| type_filter | [string](#string) | repeated | Filter devices by resource types in the oic/d resource |
+| resource_id_filter | [ResourceIdFilter](#grpcgateway-pb-ResourceIdFilter) | repeated | New resource ID filter. For HTTP requests, use it multiple times as a query parameter like &#34;resourceIdFilter={deviceID}{href}(?etag=abc)&#34; |
 
 
 
@@ -597,6 +600,22 @@
 | ----- | ---- | ----- | ----------- |
 | types | [string](#string) | repeated |  |
 | data | [resourceaggregate.pb.ResourceChanged](#resourceaggregate-pb-ResourceChanged) |  |  |
+
+
+
+
+
+
+<a name="grpcgateway-pb-ResourceIdFilter"></a>
+
+### ResourceIdFilter
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| resource_id | [resourceaggregate.pb.ResourceId](#resourceaggregate-pb-ResourceId) |  | Filter specific resources |
+| etag | [bytes](#bytes) | repeated | Optional; resource_id.{deviceId, href} must not be empty |
 
 
 
@@ -652,8 +671,9 @@ Certain filters perform a logical &#34;or&#34; operation among the elements of t
 | ----- | ---- | ----- | ----------- |
 | event_filter | [SubscribeToEvents.CreateSubscription.Event](#grpcgateway-pb-SubscribeToEvents-CreateSubscription-Event) | repeated | array of events. eg: [ REGISTERED, UNREGISTERED ] |
 | device_id_filter | [string](#string) | repeated | array of format {deviceID}. eg [ &#34;ae424c58-e517-4494-6de7-583536c48213&#34; ] |
-| resource_id_filter | [string](#string) | repeated | array of format {deviceID}{href}. eg [ &#34;ae424c58-e517-4494-6de7-583536c48213/oic/d&#34;, &#34;ae424c58-e517-4494-6de7-583536c48213/oic/p&#34; ] |
+| http_resource_id_filter | [string](#string) | repeated | **Deprecated.** array of format {deviceID}{href}. eg [ &#34;ae424c58-e517-4494-6de7-583536c48213/oic/d&#34;, &#34;ae424c58-e517-4494-6de7-583536c48213/oic/p&#34; ] |
 | href_filter | [string](#string) | repeated | array of format {href}. eg [ &#34;/oic/d&#34;, &#34;/oic/p&#34; ] |
+| resource_id_filter | [ResourceIdFilter](#grpcgateway-pb-ResourceIdFilter) | repeated |  |
 
 
 
@@ -782,8 +802,9 @@ Certain filters perform a logical &#34;or&#34; operation among the elements of t
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | device_id_filter | [string](#string) | repeated |  |
-| resource_id_filter | [string](#string) | repeated | format {deviceID}{href}. eg &#34;ae424c58-e517-4494-6de7-583536c48213/oic/d&#34; |
+| http_resource_id_filter | [string](#string) | repeated | **Deprecated.** format {deviceID}{href}. eg &#34;ae424c58-e517-4494-6de7-583536c48213/oic/d&#34; |
 | timestamp_filter | [int64](#int64) |  | filter events with timestamp &gt; than given value |
+| resource_id_filter | [ResourceIdFilter](#grpcgateway-pb-ResourceIdFilter) | repeated | New resource ID filter. For HTTP requests, use it multiple times as a query parameter like &#34;resourceIdFilter={deviceID}{href}&#34;. |
 
 
 
@@ -877,9 +898,10 @@ Certain filters perform a logical &#34;or&#34; operation among the elements of t
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | command_filter | [GetPendingCommandsRequest.Command](#grpcgateway-pb-GetPendingCommandsRequest-Command) | repeated |  |
-| resource_id_filter | [string](#string) | repeated |  |
+| http_resource_id_filter | [string](#string) | repeated | **Deprecated.**  |
 | device_id_filter | [string](#string) | repeated |  |
 | type_filter | [string](#string) | repeated |  |
+| resource_id_filter | [ResourceIdFilter](#grpcgateway-pb-ResourceIdFilter) | repeated | New resource ID filter. For HTTP requests, use it multiple times as a query parameter like &#34;resourceIdFilter={deviceID}{href}&#34;. |
 
 
 
@@ -1260,6 +1282,7 @@ https://github.com/openconnectivityfoundation/core/blob/master/schemas/oic.links
 | METHOD_NOT_ALLOWED | 10 |  |
 | CREATED | 11 |  |
 | CANCELED | 12 | Canceled indicates the operation was canceled (typically by the user). |
+| NOT_MODIFIED | 13 | Valid indicates the content hasn&#39;t changed. (provided etag in GET request is same as the resource etag). |
 
 
  
@@ -1686,7 +1709,7 @@ https://github.com/openconnectivityfoundation/cloud-services/blob/master/swagger
 | audit_context | [AuditContext](#resourceaggregate-pb-AuditContext) |  |  |
 | event_metadata | [EventMetadata](#resourceaggregate-pb-EventMetadata) |  |  |
 | valid_until | [int64](#int64) |  | unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when pending event is considered as expired. 0 means forever. |
-| etag | [bytes](#bytes) |  |  |
+| etag | [bytes](#bytes) | repeated |  |
 | open_telemetry_carrier | [ResourceRetrievePending.OpenTelemetryCarrierEntry](#resourceaggregate-pb-ResourceRetrievePending-OpenTelemetryCarrierEntry) | repeated | Open telemetry data propagated to asynchronous events |
 
 

@@ -58,7 +58,14 @@ func TestConvertToSubjects(t *testing.T) {
 			name: "all - ResourceIdFilter *",
 			args: args{
 				req: &pb.SubscribeToEvents_CreateSubscription{
-					ResourceIdFilter: []string{"*/*", "*/*"},
+					ResourceIdFilter: []*pb.ResourceIdFilter{
+						{
+							ResourceId: commands.NewResourceID("*", "*"),
+						},
+						{
+							ResourceId: commands.NewResourceID("*", "*"),
+						},
+					},
 				},
 			},
 			want: []string{
@@ -69,9 +76,17 @@ func TestConvertToSubjects(t *testing.T) {
 			name: "all - All filters *",
 			args: args{
 				req: &pb.SubscribeToEvents_CreateSubscription{
-					DeviceIdFilter:   []string{"*", "*"},
-					HrefFilter:       []string{"*", "*"},
-					ResourceIdFilter: []string{"*/*", "*/*"},
+					DeviceIdFilter: []string{"*", "*"},
+					HrefFilter:     []string{"*", "*"},
+					ResourceIdFilter: []*pb.ResourceIdFilter{
+						{
+							ResourceId: commands.NewResourceID("*", "*"),
+						},
+						{
+							ResourceId: commands.NewResourceID("*", "*"),
+						},
+					},
+					HttpResourceIdFilter: []string{"*/*", "*/*"},
 				},
 			},
 			want: []string{
@@ -138,7 +153,11 @@ func TestConvertToSubjects(t *testing.T) {
 			name: "device and href",
 			args: args{
 				req: &pb.SubscribeToEvents_CreateSubscription{
-					ResourceIdFilter: []string{resourceID.ToString()},
+					ResourceIdFilter: []*pb.ResourceIdFilter{
+						{
+							ResourceId: resourceID,
+						},
+					},
 					EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
 						pb.SubscribeToEvents_CreateSubscription_DEVICE_METADATA_UPDATED, pb.SubscribeToEvents_CreateSubscription_REGISTERED, pb.SubscribeToEvents_CreateSubscription_UNREGISTERED, pb.SubscribeToEvents_CreateSubscription_RESOURCE_CHANGED,
 					},
@@ -172,8 +191,12 @@ func TestConvertToSubjects(t *testing.T) {
 			name: "device and resourceID",
 			args: args{
 				req: &pb.SubscribeToEvents_CreateSubscription{
-					DeviceIdFilter:   []string{resourceID.GetDeviceId()},
-					ResourceIdFilter: []string{resourceID.ToString()},
+					DeviceIdFilter: []string{resourceID.GetDeviceId()},
+					ResourceIdFilter: []*pb.ResourceIdFilter{
+						{
+							ResourceId: resourceID,
+						},
+					},
 					EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
 						pb.SubscribeToEvents_CreateSubscription_DEVICE_METADATA_UPDATED, pb.SubscribeToEvents_CreateSubscription_REGISTERED, pb.SubscribeToEvents_CreateSubscription_UNREGISTERED, pb.SubscribeToEvents_CreateSubscription_RESOURCE_CHANGED,
 					},
@@ -190,9 +213,13 @@ func TestConvertToSubjects(t *testing.T) {
 			name: "device, href and resourceID",
 			args: args{
 				req: &pb.SubscribeToEvents_CreateSubscription{
-					DeviceIdFilter:   []string{resourceID.GetDeviceId()},
-					HrefFilter:       []string{resourceID.GetHref()},
-					ResourceIdFilter: []string{resourceID.ToString()},
+					DeviceIdFilter: []string{resourceID.GetDeviceId()},
+					HrefFilter:     []string{resourceID.GetHref()},
+					ResourceIdFilter: []*pb.ResourceIdFilter{
+						{
+							ResourceId: resourceID,
+						},
+					},
 					EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
 						pb.SubscribeToEvents_CreateSubscription_DEVICE_METADATA_UPDATED, pb.SubscribeToEvents_CreateSubscription_REGISTERED, pb.SubscribeToEvents_CreateSubscription_UNREGISTERED, pb.SubscribeToEvents_CreateSubscription_RESOURCE_CHANGED,
 					},
