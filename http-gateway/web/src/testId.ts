@@ -1,7 +1,6 @@
 const testId = {
     app: {
         logout: 'hub-app-logout',
-        logoutBtn: 'hub-app-logout-btn',
     },
     menu: {
         devices: 'hub-menu-item-devices',

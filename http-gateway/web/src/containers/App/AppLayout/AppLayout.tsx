@@ -155,9 +155,10 @@ const AppLayout: FC<Props> = (props) => {
                         <UserWidget
                             dataTestId={testId.app.logout}
                             description={userData?.profile?.family_name}
-                            dropdownItems={[{ title: _(t.logOut), onClick: logout, dataTestId: testId.app.logoutBtn }]}
                             image={userData?.profile?.picture}
+                            logoutTitle={_(t.logOut)}
                             name={userData?.profile?.name || ''}
+                            onLogout={logout}
                         />
                     }
                 />
