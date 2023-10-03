@@ -162,7 +162,7 @@ func serviceHeartbeatMapToArray(m map[string]*ServicesHeartbeat_Heartbeat) []*Se
 func calculateTimeToLive(now time.Time, req *commands.UpdateServiceMetadataRequest) time.Duration {
 	timeToLive := time.Duration(req.GetHeartbeat().GetTimeToLive())
 	// If the request has a valid timestamp, calculate the additional TTL based on processing time.
-	if req.GetHeartbeat().GetTimestamp() >= 0 {
+	if req.GetHeartbeat().GetTimestamp() != 0 {
 		timestamp := pkgTime.Unix(0, req.GetHeartbeat().GetTimestamp())
 		if timestamp.IsZero() || now.Before(timestamp) {
 			// If the timestamp is invalid or in the future, return the TTL as is.
@@ -182,13 +182,13 @@ func calculateTimeToLive(now time.Time, req *commands.UpdateServiceMetadataReque
 	return timeToLive
 }
 
-func (d *ServiceMetadataSnapshotTaken) updateHeartbeatForService(ctx context.Context, req *commands.UpdateServiceMetadataRequest, now time.Time, em *EventMetadata, ac *commands.AuditContext) ([]eventstore.Event, error) {
+func (d *ServiceMetadataSnapshotTaken) prepareHeartbeatForService(req *commands.UpdateServiceMetadataRequest, now time.Time) (timeToLive time.Duration, expiredServices []*ServicesHeartbeat_Heartbeat, err error) {
 	errActionStr := "update"
 	if req.GetHeartbeat().GetRegister() {
 		errActionStr = "register"
 	}
 	if req.GetHeartbeat().GetServiceId() == "" {
-		return nil, status.Errorf(codes.InvalidArgument, "cannot %v heartbeat for service %v: invalid serviceId", errActionStr, req.GetHeartbeat().GetServiceId())
+		return 0, nil, status.Errorf(codes.InvalidArgument, "cannot %v heartbeat for service %v: invalid serviceId", errActionStr, req.GetHeartbeat().GetServiceId())
 	}
 	servicesHeartbeat := d.GetServiceMetadataUpdated().GetServicesHeartbeat()
 	expired := make(map[string]*ServicesHeartbeat_Heartbeat, len(servicesHeartbeat.GetValid())+len(servicesHeartbeat.GetExpired()))
@@ -198,7 +198,7 @@ func (d *ServiceMetadataSnapshotTaken) updateHeartbeatForService(ctx context.Con
 
 	if expired[req.GetHeartbeat().GetServiceId()] != nil {
 		// The service is already expired, and the service needs to be shut down to avoid conflicts in device connection status (ONLINE/OFFLINE).
-		return nil, status.Errorf(codes.FailedPrecondition, "cannot %v heartbeat for service %v: already expired", errActionStr, req.GetHeartbeat().GetServiceId())
+		return 0, nil, status.Errorf(codes.FailedPrecondition, "cannot %v heartbeat for service %v: already expired", errActionStr, req.GetHeartbeat().GetServiceId())
 	}
 
 	valid := make(map[string]*ServicesHeartbeat_Heartbeat, 1)
@@ -216,17 +216,24 @@ func (d *ServiceMetadataSnapshotTaken) updateHeartbeatForService(ctx context.Con
 	// register == true - only insert is allowed
 	if req.GetHeartbeat().GetRegister() && (valid[req.GetHeartbeat().GetServiceId()] != nil || expired[req.GetHeartbeat().GetServiceId()] != nil) {
 		// The service is already registered, and the service needs to be shut down to avoid conflicts in device connection status (ONLINE/OFFLINE).
-		return nil, status.Errorf(codes.FailedPrecondition, "cannot %v heartbeat for service %v: already registered", errActionStr, req.GetHeartbeat().GetServiceId())
+		return 0, nil, status.Errorf(codes.FailedPrecondition, "cannot %v heartbeat for service %v: already registered", errActionStr, req.GetHeartbeat().GetServiceId())
 	}
 
 	// register == false - only update is allowed
 	if !req.GetHeartbeat().GetRegister() && (valid[req.GetHeartbeat().GetServiceId()] == nil && expired[req.GetHeartbeat().GetServiceId()] == nil) {
 		// The service is not registered, and the service needs to be shut down to avoid conflicts in device connection status (ONLINE/OFFLINE).
-		return nil, status.Errorf(codes.FailedPrecondition, "cannot %v heartbeat for service %v: not registered", errActionStr, req.GetHeartbeat().GetServiceId())
+		return 0, nil, status.Errorf(codes.FailedPrecondition, "cannot %v heartbeat for service %v: not registered", errActionStr, req.GetHeartbeat().GetServiceId())
 	}
 
-	timeToLive := calculateTimeToLive(now, req)
 	delete(newExpired, req.GetHeartbeat().GetServiceId())
+	return calculateTimeToLive(now, req), serviceHeartbeatMapToArray(newExpired), nil
+}
+
+func (d *ServiceMetadataSnapshotTaken) updateHeartbeatForService(ctx context.Context, req *commands.UpdateServiceMetadataRequest, now time.Time, em *EventMetadata, ac *commands.AuditContext) ([]eventstore.Event, error) {
+	timeToLive, newExpired, err := d.prepareHeartbeatForService(req, now)
+	if err != nil {
+		return nil, err
+	}
 
 	ev := ServiceMetadataUpdated{
 		ServicesHeartbeat: &ServicesHeartbeat{Valid: []*ServicesHeartbeat_Heartbeat{
@@ -234,7 +241,7 @@ func (d *ServiceMetadataSnapshotTaken) updateHeartbeatForService(ctx context.Con
 				ServiceId:  req.GetHeartbeat().GetServiceId(),
 				ValidUntil: now.Add(timeToLive).UnixNano(),
 			},
-		}, Expired: serviceHeartbeatMapToArray(newExpired)},
+		}, Expired: newExpired},
 		EventMetadata:        em,
 		OpenTelemetryCarrier: propagation.TraceFromCtx(ctx),
 		AuditContext:         ac,
