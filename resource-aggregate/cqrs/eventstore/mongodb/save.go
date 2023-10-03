@@ -56,6 +56,7 @@ func (s *EventStore) saveEvent(ctx context.Context, col *mongo.Collection, event
 	if etag != nil {
 		updateSet[latestETagKey] = makeDBETag(etag)
 	}
+	tryToSetServiceID(updateSet, events)
 
 	// find document of aggregate with previous version
 	// latestVersion shall be lower by 1 as new event otherwise other event was stored (occ).

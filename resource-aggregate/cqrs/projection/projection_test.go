@@ -562,7 +562,7 @@ func TestResourceStateProjection_Models(t *testing.T) {
 						Timestamp:    12345,
 						ConnectionId: "a",
 					},
-					AuditContext: commands.NewAuditContext("userId", "2"),
+					AuditContext: commands.NewAuditContext("userId", "2", ""),
 				},
 			},
 		},

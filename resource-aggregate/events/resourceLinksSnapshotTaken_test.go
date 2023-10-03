@@ -205,7 +205,7 @@ var (
 			ConnectionId: "con1",
 			Sequence:     1,
 		},
-		AuditContext: commands.NewAuditContext("userID", ""),
+		AuditContext: commands.NewAuditContext("userID", "", "userID"),
 	}
 )
 

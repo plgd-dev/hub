@@ -12,8 +12,9 @@ import (
 )
 
 const (
-	ResourceLinksHref string = "/plgd/res"
-	StatusHref        string = "/plgd/s"
+	ResourceLinksHref    string = "/plgd/res"
+	StatusHref           string = "/plgd/s"
+	ServicesResourceHref string = "/plgd/services"
 )
 
 // ToUUID converts resource href and device id to unique resource ID
@@ -40,6 +41,10 @@ func MakeLinksResourceUUID(deviceID string) uuid.UUID {
 
 func MakeStatusResourceUUID(deviceID string) uuid.UUID {
 	return uuid.NewSHA1(uuid.NameSpaceURL, []byte(deviceID+StatusHref))
+}
+
+func MakeServicesResourceUUID(hubID string) uuid.UUID {
+	return uuid.NewSHA1(uuid.NameSpaceURL, []byte(hubID+ServicesResourceHref))
 }
 
 func NewResourceID(deviceID, href string) *ResourceId {

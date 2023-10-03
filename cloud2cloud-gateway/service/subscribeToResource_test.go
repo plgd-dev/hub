@@ -114,7 +114,7 @@ func TestRequestHandlerSubscribeToResourceTokenTimeout(t *testing.T) {
 	c2cgwShutdown = c2cTest.SetUp(t)
 	defer c2cgwShutdown()
 
-	events = c2cTest.WaitForEvents(dataChan, 3*time.Second)
+	events = c2cTest.WaitForEvents(dataChan, 6*time.Second)
 	require.Len(t, events, 1)
 	assert.Equal(t, c2cEvents.EventType_SubscriptionCanceled, events[0].GetHeader().EventType)
 }

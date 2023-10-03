@@ -16,6 +16,7 @@ type Event = interface {
 	IsSnapshot() bool
 	Timestamp() time.Time
 	ETag() *eventstore.ETagData
+	ServiceID() (string, bool)
 }
 
 // EventUnmarshaler provides event.

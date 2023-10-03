@@ -70,7 +70,7 @@ func TestRequestHandlerGetResourceLinks(t *testing.T) {
 				{
 					DeviceId:     deviceID,
 					Resources:    test.ResourceLinksToResources(deviceID, resourceLinks),
-					AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, ""),
+					AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, "", oauthService.DeviceUserID),
 				},
 			},
 		},
@@ -94,7 +94,7 @@ func TestRequestHandlerGetResourceLinks(t *testing.T) {
 				{
 					DeviceId:     deviceID,
 					Resources:    test.ResourceLinksToResources(deviceID, resourceLinks),
-					AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, ""),
+					AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, "", oauthService.DeviceUserID),
 				},
 			},
 		},
@@ -118,7 +118,7 @@ func TestRequestHandlerGetResourceLinks(t *testing.T) {
 				{
 					DeviceId:     deviceID,
 					Resources:    test.ResourceLinksToResources(deviceID, resourceLinks[0:3]),
-					AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, ""),
+					AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, "", oauthService.DeviceUserID),
 				},
 			},
 		},

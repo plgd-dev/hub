@@ -168,7 +168,7 @@ func TestRequestHandlerUpdateResourcesValues(t *testing.T) {
 						"value": true,
 					}),
 				},
-				AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, ""),
+				AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, "", oauthService.DeviceUserID),
 			},
 			wantHTTPCode: http.StatusOK,
 		},

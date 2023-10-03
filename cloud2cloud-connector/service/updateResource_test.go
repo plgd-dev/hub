@@ -55,7 +55,7 @@ func testRequestHandlerUpdateResource(t *testing.T, events store.Events) {
 					CoapContentFormat: -1,
 				},
 				Status:       commands.Status_OK,
-				AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, ""),
+				AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, "", oauthService.DeviceUserID),
 			},
 		},
 		{
@@ -78,7 +78,7 @@ func testRequestHandlerUpdateResource(t *testing.T, events store.Events) {
 					CoapContentFormat: -1,
 				},
 				Status:       commands.Status_OK,
-				AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, ""),
+				AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, "", oauthService.DeviceUserID),
 			},
 		},
 		{
@@ -101,7 +101,7 @@ func testRequestHandlerUpdateResource(t *testing.T, events store.Events) {
 					CoapContentFormat: -1,
 				},
 				Status:       commands.Status_OK,
-				AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, ""),
+				AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, "", oauthService.DeviceUserID),
 			},
 		},
 		{

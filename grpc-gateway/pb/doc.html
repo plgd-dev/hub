@@ -629,6 +629,26 @@
                   <a href="#resourceaggregate.pb.ResourceUpdated.OpenTelemetryCarrierEntry"><span class="badge">M</span>ResourceUpdated.OpenTelemetryCarrierEntry</a>
                 </li>
               
+                <li>
+                  <a href="#resourceaggregate.pb.ServiceMetadataSnapshotTaken"><span class="badge">M</span>ServiceMetadataSnapshotTaken</a>
+                </li>
+              
+                <li>
+                  <a href="#resourceaggregate.pb.ServiceMetadataUpdated"><span class="badge">M</span>ServiceMetadataUpdated</a>
+                </li>
+              
+                <li>
+                  <a href="#resourceaggregate.pb.ServiceMetadataUpdated.OpenTelemetryCarrierEntry"><span class="badge">M</span>ServiceMetadataUpdated.OpenTelemetryCarrierEntry</a>
+                </li>
+              
+                <li>
+                  <a href="#resourceaggregate.pb.ServicesHeartbeat"><span class="badge">M</span>ServicesHeartbeat</a>
+                </li>
+              
+                <li>
+                  <a href="#resourceaggregate.pb.ServicesHeartbeat.Heartbeat"><span class="badge">M</span>ServicesHeartbeat.Heartbeat</a>
+                </li>
+              
               
               
               
@@ -3124,6 +3144,13 @@ Subscription doesn&#39;t guarantee that all events will be sent to the client. T
                   <td><p> </p></td>
                 </tr>
               
+                <tr>
+                  <td>owner</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
             </tbody>
           </table>
 
@@ -4880,6 +4907,175 @@ Subscription doesn&#39;t guarantee that all events will be sent to the client. T
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="resourceaggregate.pb.ServiceMetadataSnapshotTaken">ServiceMetadataSnapshotTaken</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>service_metadata_updated</td>
+                  <td><a href="#resourceaggregate.pb.ServiceMetadataUpdated">ServiceMetadataUpdated</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>event_metadata</td>
+                  <td><a href="#resourceaggregate.pb.EventMetadata">EventMetadata</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="resourceaggregate.pb.ServiceMetadataUpdated">ServiceMetadataUpdated</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>services_heartbeat</td>
+                  <td><a href="#resourceaggregate.pb.ServicesHeartbeat">ServicesHeartbeat</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>event_metadata</td>
+                  <td><a href="#resourceaggregate.pb.EventMetadata">EventMetadata</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>audit_context</td>
+                  <td><a href="#resourceaggregate.pb.AuditContext">AuditContext</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>open_telemetry_carrier</td>
+                  <td><a href="#resourceaggregate.pb.ServiceMetadataUpdated.OpenTelemetryCarrierEntry">ServiceMetadataUpdated.OpenTelemetryCarrierEntry</a></td>
+                  <td>repeated</td>
+                  <td><p>Open telemetry data propagated to asynchronous events </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="resourceaggregate.pb.ServiceMetadataUpdated.OpenTelemetryCarrierEntry">ServiceMetadataUpdated.OpenTelemetryCarrierEntry</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>key</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>value</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="resourceaggregate.pb.ServicesHeartbeat">ServicesHeartbeat</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>valid</td>
+                  <td><a href="#resourceaggregate.pb.ServicesHeartbeat.Heartbeat">ServicesHeartbeat.Heartbeat</a></td>
+                  <td>repeated</td>
+                  <td><p>services which heartbeat is still valid </p></td>
+                </tr>
+              
+                <tr>
+                  <td>expired</td>
+                  <td><a href="#resourceaggregate.pb.ServicesHeartbeat.Heartbeat">ServicesHeartbeat.Heartbeat</a></td>
+                  <td>repeated</td>
+                  <td><p>services which heartbeat is already expired </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="resourceaggregate.pb.ServicesHeartbeat.Heartbeat">ServicesHeartbeat.Heartbeat</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>service_id</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>generated unique id during start the service </p></td>
+                </tr>
+              
+                <tr>
+                  <td>valid_until</td>
+                  <td><a href="#int64">int64</a></td>
+                  <td></td>
+                  <td><p>unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when service heartbeat is considered as expired. </p></td>
                 </tr>
               
             </tbody>

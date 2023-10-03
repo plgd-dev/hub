@@ -17,17 +17,10 @@ import (
 	cqrsEventBus "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus"
 	natsClient "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/client"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/publisher"
-	cqrsEventStore "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore"
-	cqrsMaintenance "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore/maintenance"
-	mongodb "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore/mongodb"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore/mongodb"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/utils"
 	"go.opentelemetry.io/otel/trace"
 )
-
-type EventStore interface {
-	cqrsEventStore.EventStore
-	cqrsMaintenance.EventStore
-}
 
 func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logger log.Logger) (*service.Service, error) {
 	otelClient, err := otelClient.New(ctx, config.Clients.OpenTelemetryCollector, "resource-aggregate", fileWatcher, logger)
@@ -80,7 +73,7 @@ func newGrpcServer(ctx context.Context, config GRPCConfig, fileWatcher *fsnotify
 	if err != nil {
 		return nil, fmt.Errorf("cannot create validator: %w", err)
 	}
-	authInterceptor := server.NewAuth(validator)
+	authInterceptor := server.NewAuth(validator, server.WithWhiteListedMethods(ResourceAggregate_UpdateServiceMetadata_FullMethodName))
 	opts, err := server.MakeDefaultOptions(authInterceptor, logger, tracerProvider)
 	if err != nil {
 		validator.Close()
@@ -111,7 +104,7 @@ func newIdentityStoreClient(config IdentityStoreConfig, fileWatcher *fsnotify.Wa
 }
 
 // New creates new Server with provided store and publisher.
-func NewService(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider, eventStore EventStore, publisher cqrsEventBus.Publisher) (*service.Service, error) {
+func NewService(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider, eventStore *mongodb.EventStore, publisher cqrsEventBus.Publisher) (*service.Service, error) {
 	grpcServer, err := newGrpcServer(ctx, config.APIs.GRPC, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		return nil, err
@@ -143,13 +136,16 @@ func NewService(ctx context.Context, config Config, fileWatcher *fsnotify.Watche
 	})
 	grpcServer.AddCloseFunc(ownerCache.Close)
 
+	serviceHeartbeat := NewServiceHeartbeat(config, eventStore, publisher, logger)
+	grpcServer.AddCloseFunc(serviceHeartbeat.Close)
+
 	requestHandler := NewRequestHandler(config, eventStore, publisher, func(ctx context.Context, owner string, deviceIDs []string) ([]string, error) {
 		getAllDevices := len(deviceIDs) == 0
 		if !getAllDevices {
 			return ownerCache.GetSelectedDevices(ctx, deviceIDs)
 		}
 		return ownerCache.GetDevices(ctx)
-	}, logger)
+	}, serviceHeartbeat, logger)
 	RegisterResourceAggregateServer(grpcServer.Server, requestHandler)
 
 	return service.New(grpcServer), nil

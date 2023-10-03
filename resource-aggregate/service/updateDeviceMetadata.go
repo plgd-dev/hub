@@ -47,6 +47,16 @@ func (a *Aggregate) UpdateDeviceMetadata(ctx context.Context, request *commands.
 	return
 }
 
+func (a *Aggregate) UpdateDeviceToOffline(ctx context.Context, request *events.UpdateDeviceToOfflineRequest) (events []eventstore.Event, err error) {
+	events, err = a.HandleCommand(ctx, request)
+	if err != nil {
+		err = fmt.Errorf("unable to process update device metadata command command: %w", err)
+		return
+	}
+	cleanUpToSnapshot(ctx, a, events)
+	return
+}
+
 func checkTimeToLiveForDefault(defaultTimeToLive time.Duration, reqTimeToLive int64) int64 {
 	if defaultTimeToLive == 0 {
 		return reqTimeToLive
@@ -57,22 +67,18 @@ func checkTimeToLiveForDefault(defaultTimeToLive time.Duration, reqTimeToLive in
 	return int64(defaultTimeToLive)
 }
 
-func (r RequestHandler) UpdateDeviceMetadata(ctx context.Context, request *commands.UpdateDeviceMetadataRequest) (*commands.UpdateDeviceMetadataResponse, error) {
-	owner, err := r.validateAccessToDevice(ctx, request.GetDeviceId())
-	if err != nil {
-		return nil, log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot validate user access: %v", err))
-	}
+func (r RequestHandler) updateDeviceMetadata(ctx context.Context, request *commands.UpdateDeviceMetadataRequest, userID, owner string) (*commands.UpdateDeviceMetadataResponse, error) {
 	request.TimeToLive = checkTimeToLiveForDefault(r.config.Clients.Eventstore.DefaultCommandTimeToLive, request.GetTimeToLive())
 
 	resID := commands.NewResourceID(request.GetDeviceId(), commands.StatusHref)
 
-	var latestSnapshot *events.DeviceMetadataSnapshotTaken
+	var latestSnapshot *events.DeviceMetadataSnapshotTakenForCommand
 	deviceMetadataFactoryModel := func(ctx context.Context) (cqrsAggregate.AggregateModel, error) {
-		latestSnapshot = events.NewDeviceMetadataSnapshotTaken()
+		latestSnapshot = events.NewDeviceMetadataSnapshotTakenForCommand(userID, owner, r.config.HubID)
 		return latestSnapshot, nil
 	}
 
-	aggregate, err := NewAggregate(resID, r.config.Clients.Eventstore.SnapshotThreshold, r.config.HubID, r.eventstore, deviceMetadataFactoryModel, cqrsAggregate.NewDefaultRetryFunc(r.config.Clients.Eventstore.ConcurrencyExceptionMaxRetry))
+	aggregate, err := NewAggregate(resID, r.config.Clients.Eventstore.SnapshotThreshold, r.eventstore, deviceMetadataFactoryModel, cqrsAggregate.NewDefaultRetryFunc(r.config.Clients.Eventstore.ConcurrencyExceptionMaxRetry))
 	if err != nil {
 		return nil, log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "cannot update device('%v') metadata: %v", request.GetDeviceId(), err))
 	}
@@ -93,8 +99,16 @@ func (r RequestHandler) UpdateDeviceMetadata(ctx context.Context, request *comma
 	}
 
 	return &commands.UpdateDeviceMetadataResponse{
-		AuditContext: commands.NewAuditContext(owner, ""),
+		AuditContext: commands.NewAuditContext(userID, "", owner),
 		TwinEnabled:  latestSnapshot.GetDeviceMetadataUpdated().GetTwinEnabled(),
 		ValidUntil:   validUntil,
 	}, nil
+}
+
+func (r RequestHandler) UpdateDeviceMetadata(ctx context.Context, request *commands.UpdateDeviceMetadataRequest) (*commands.UpdateDeviceMetadataResponse, error) {
+	userID, owner, err := r.validateAccessToDevice(ctx, request.GetDeviceId())
+	if err != nil {
+		return nil, log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot validate user access: %v", err))
+	}
+	return r.updateDeviceMetadata(ctx, request, userID, owner)
 }

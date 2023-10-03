@@ -1,7 +1,5 @@
 package events
 
-import "context"
-
 func (e *EventMetadata) Clone() *EventMetadata {
 	if e == nil {
 		return nil
@@ -55,21 +53,4 @@ func (d *DeviceMetadataSnapshotTaken) Clone() *DeviceMetadataSnapshotTaken {
 		UpdatePendings:        append([]*DeviceMetadataUpdatePending(nil), d.GetUpdatePendings()...),
 		EventMetadata:         d.GetEventMetadata().Clone(),
 	}
-}
-
-var hubIDKey struct{}
-
-func CtxWithHubID(ctx context.Context, hubID string) context.Context {
-	return context.WithValue(ctx, &hubIDKey, hubID)
-}
-
-func HubIDFromCtx(ctx context.Context) string {
-	v := ctx.Value(&hubIDKey)
-	if v == nil {
-		return ""
-	}
-	if hubID, ok := v.(string); ok {
-		return hubID
-	}
-	return ""
 }

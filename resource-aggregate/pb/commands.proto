@@ -440,6 +440,7 @@ message Connection {
         C2C = 5;
     }
     Protocol protocol = 5; // application protocol. It need to be set when the status is ONLINE.
+    string service_id = 6; // The service.ID, which identify the device being served, must be set when the status is ONLINE. However, during an OFFLINE event, they will be sed to empty values.
 }
 //*******************************************************************************************************************************************************
 // Update Device Metadata - Twin Synchronization State
@@ -656,4 +657,22 @@ message DeleteDevicesRequest {
 message DeleteDevicesResponse {
     repeated string device_ids = 1;
     AuditContext audit_context = 100;
+}
+
+message ServiceHeartbeat {
+    string service_id = 1; // generated unique id during start the service
+    int64 time_to_live = 2; // validity in nanoseconds. minimal value is 1000000000 (1s).
+    int64 timestamp = 3; // unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano)
+    bool register = 4;// Set to true to attempt service registration; it will fail if the service is already registered. Set to false to attempt service update; it will fail if the service is not registered.
+}
+
+message UpdateServiceMetadataRequest {
+    oneof update {
+        // Include or modify services within the valid services heartbeat list and transfer expired services from the valid list to the expired list.
+        ServiceHeartbeat heartbeat = 1;
+    }
+}
+
+message UpdateServiceMetadataResponse {
+    int64 heartbeat_valid_until = 1;  // unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when service is considered as expired. 0 means forever.
 }

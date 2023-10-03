@@ -37,7 +37,7 @@ func ResourceLinkToPublishEvent(deviceID, token string, links []schema.ResourceL
 			ResourcePublished: &events.ResourceLinksPublished{
 				DeviceId:     deviceID,
 				Resources:    out,
-				AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, ""),
+				AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, "", oauthService.DeviceUserID),
 			},
 		},
 		CorrelationId: token,

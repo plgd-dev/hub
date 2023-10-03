@@ -7,6 +7,7 @@ option go_package = "github.com/plgd-dev/hub/v2/resource-aggregate/commands;comm
 message AuditContext {
   string user_id = 1;
   string correlation_id = 2;
+  string owner = 3;
 }
 
 message ResourceId {

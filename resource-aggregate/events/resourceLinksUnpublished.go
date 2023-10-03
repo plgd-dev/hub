@@ -47,6 +47,10 @@ func (e *ResourceLinksUnpublished) Timestamp() time.Time {
 	return pkgTime.Unix(0, e.GetEventMetadata().GetTimestamp())
 }
 
+func (e *ResourceLinksUnpublished) ServiceID() (string, bool) {
+	return "", false
+}
+
 func (e *ResourceLinksUnpublished) CopyData(event *ResourceLinksUnpublished) {
 	e.Hrefs = event.GetHrefs()
 	e.DeviceId = event.GetDeviceId()

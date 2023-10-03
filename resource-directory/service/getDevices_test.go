@@ -166,6 +166,7 @@ func TestRequestHandlerGetDevices(t *testing.T) {
 					dev.Metadata.Connection.OnlineValidUntil = 0
 					dev.Metadata.Connection.Id = ""
 					dev.Metadata.Connection.ConnectedAt = 0
+					dev.Metadata.Connection.ServiceId = ""
 					dev.Metadata.TwinSynchronization.SyncingAt = 0
 					dev.Metadata.TwinSynchronization.InSyncAt = 0
 					dev.Metadata.TwinSynchronization.CommandMetadata = nil

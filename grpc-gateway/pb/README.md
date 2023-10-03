@@ -113,6 +113,11 @@
     - [ResourceUpdatePending.OpenTelemetryCarrierEntry](#resourceaggregate-pb-ResourceUpdatePending-OpenTelemetryCarrierEntry)
     - [ResourceUpdated](#resourceaggregate-pb-ResourceUpdated)
     - [ResourceUpdated.OpenTelemetryCarrierEntry](#resourceaggregate-pb-ResourceUpdated-OpenTelemetryCarrierEntry)
+    - [ServiceMetadataSnapshotTaken](#resourceaggregate-pb-ServiceMetadataSnapshotTaken)
+    - [ServiceMetadataUpdated](#resourceaggregate-pb-ServiceMetadataUpdated)
+    - [ServiceMetadataUpdated.OpenTelemetryCarrierEntry](#resourceaggregate-pb-ServiceMetadataUpdated-OpenTelemetryCarrierEntry)
+    - [ServicesHeartbeat](#resourceaggregate-pb-ServicesHeartbeat)
+    - [ServicesHeartbeat.Heartbeat](#resourceaggregate-pb-ServicesHeartbeat-Heartbeat)
   
 - [Scalar Value Types](#scalar-value-types)
 
@@ -1138,6 +1143,7 @@ Certain filters perform a logical &#34;or&#34; operation among the elements of t
 | ----- | ---- | ----- | ----------- |
 | user_id | [string](#string) |  |  |
 | correlation_id | [string](#string) |  |  |
+| owner | [string](#string) |  |  |
 
 
 
@@ -1830,6 +1836,88 @@ https://github.com/openconnectivityfoundation/cloud-services/blob/master/swagger
 | ----- | ---- | ----- | ----------- |
 | key | [string](#string) |  |  |
 | value | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="resourceaggregate-pb-ServiceMetadataSnapshotTaken"></a>
+
+### ServiceMetadataSnapshotTaken
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| service_metadata_updated | [ServiceMetadataUpdated](#resourceaggregate-pb-ServiceMetadataUpdated) |  |  |
+| event_metadata | [EventMetadata](#resourceaggregate-pb-EventMetadata) |  |  |
+
+
+
+
+
+
+<a name="resourceaggregate-pb-ServiceMetadataUpdated"></a>
+
+### ServiceMetadataUpdated
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| services_heartbeat | [ServicesHeartbeat](#resourceaggregate-pb-ServicesHeartbeat) |  |  |
+| event_metadata | [EventMetadata](#resourceaggregate-pb-EventMetadata) |  |  |
+| audit_context | [AuditContext](#resourceaggregate-pb-AuditContext) |  |  |
+| open_telemetry_carrier | [ServiceMetadataUpdated.OpenTelemetryCarrierEntry](#resourceaggregate-pb-ServiceMetadataUpdated-OpenTelemetryCarrierEntry) | repeated | Open telemetry data propagated to asynchronous events |
+
+
+
+
+
+
+<a name="resourceaggregate-pb-ServiceMetadataUpdated-OpenTelemetryCarrierEntry"></a>
+
+### ServiceMetadataUpdated.OpenTelemetryCarrierEntry
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| key | [string](#string) |  |  |
+| value | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="resourceaggregate-pb-ServicesHeartbeat"></a>
+
+### ServicesHeartbeat
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| valid | [ServicesHeartbeat.Heartbeat](#resourceaggregate-pb-ServicesHeartbeat-Heartbeat) | repeated | services which heartbeat is still valid |
+| expired | [ServicesHeartbeat.Heartbeat](#resourceaggregate-pb-ServicesHeartbeat-Heartbeat) | repeated | services which heartbeat is already expired |
+
+
+
+
+
+
+<a name="resourceaggregate-pb-ServicesHeartbeat-Heartbeat"></a>
+
+### ServicesHeartbeat.Heartbeat
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| service_id | [string](#string) |  | generated unique id during start the service |
+| valid_until | [int64](#int64) |  | unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when service heartbeat is considered as expired. |
 
 
 

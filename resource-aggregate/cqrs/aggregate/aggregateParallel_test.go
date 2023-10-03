@@ -6,11 +6,9 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/golang-jwt/jwt/v4"
 	"github.com/google/uuid"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
-	"github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/aggregate"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore"
@@ -58,10 +56,6 @@ func cleanUpToSnapshot(ctx context.Context, t *testing.T, store *mongodb.EventSt
 
 func Test_parallelRequest(t *testing.T) {
 	ctx := context.Background()
-	token := config.CreateJwtToken(t, jwt.MapClaims{
-		"sub": "test",
-	})
-	ctx = events.CtxWithHubID(grpc.CtxWithIncomingToken(ctx, token), "hubID")
 	store := testNewEventstore(ctx, t)
 	defer func() {
 		errC := store.Clear(ctx)
@@ -74,7 +68,7 @@ func Test_parallelRequest(t *testing.T) {
 
 	newAggregate := func(deviceID, href string) *aggregate.Aggregate {
 		a, err := aggregate.NewAggregate(deviceID, commands.NewResourceID(deviceID, href).ToUUID().String(), aggregate.NewDefaultRetryFunc(64), 16, store, func(context.Context) (aggregate.AggregateModel, error) {
-			ev := events.NewResourceStateSnapshotTaken()
+			ev := events.NewResourceStateSnapshotTakenForCommand("test", "test", "hubID")
 			ev.ResourceId = commands.NewResourceID(deviceID, href)
 			return ev, nil
 		}, nil)

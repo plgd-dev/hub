@@ -70,3 +70,7 @@ func (d *DeviceMetadataUpdatePending) ValidUntilTime() time.Time {
 func (d *DeviceMetadataUpdatePending) IsExpired(now time.Time) bool {
 	return IsExpired(now, d.ValidUntilTime())
 }
+
+func (d *DeviceMetadataUpdatePending) ServiceID() (string, bool) {
+	return "", false
+}

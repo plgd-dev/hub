@@ -35,6 +35,7 @@ func TestJsonMarshalerMarshal(t *testing.T) {
 				"auditContext": map[interface{}]interface{}{
 					"correlationId": "correlationID",
 					"userId":        "1",
+					"owner":         "1",
 				},
 				"content": map[interface{}]interface{}{
 					"key": "value",
