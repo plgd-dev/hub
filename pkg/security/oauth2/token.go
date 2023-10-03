@@ -40,7 +40,7 @@ func (o Token) Refresh(ctx context.Context, cfg oauth2.Config) (Token, bool, err
 }
 
 func (o Token) IsValidAccessToken() bool {
-	if o.Expiry.IsZero() || o.Expiry.UnixNano() > time.Now().UnixNano() {
+	if o.Expiry.IsZero() || o.Expiry.After(time.Now()) {
 		return true
 	}
 	return false
