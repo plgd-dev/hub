@@ -12,13 +12,13 @@ import TableActionButton from '@shared-ui/components/Organisms/TableActionButton
 import { IconTrash } from '@shared-ui/components/Atomic'
 import Breadcrumbs from '@shared-ui/components/Layout/Header/Breadcrumbs'
 import { remoteClientStatuses } from '@shared-ui/app/clientApp/RemoteClients/constants'
+import IconEdit from '@shared-ui/components/Atomic/Icon/components/IconEdit'
 
 import { Props } from './RemoteClientsList.types'
 import { messages as t } from '../../RemoteClients.i18n'
 import { messages as g } from '../../../Global.i18n'
 import { NO_DEVICE_NAME } from '@/containers/Devices/constants'
 import { AppContext } from '@/containers/App/AppContext'
-import IconEdit from '@shared-ui/components/Atomic/Icon/components/IconEdit'
 
 const RemoteClientsList: FC<Props> = (props) => {
     const { data, isAllSelected, selectedClients, setIsAllSelected, setSelectedClients, handleOpenDeleteModal, handleOpenEditModal } = props

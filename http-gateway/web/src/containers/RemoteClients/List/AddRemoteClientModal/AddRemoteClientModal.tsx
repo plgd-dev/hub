@@ -238,11 +238,7 @@ const AddRemoteClientModal: FC<Props> = (props) => {
 
     const renderBody = () => (
         <form onSubmit={handleSubmit(onSubmit)}>
-            {!isEditMode && (
-                <div style={{ marginBottom: '24px' }}>
-                    <Alert>{_(t.certificateAcceptDescription)}</Alert>
-                </div>
-            )}
+            {!isEditMode && <Alert css={styles.alert}>{_(t.certificateAcceptDescription)}</Alert>}
             <Row>
                 <Column size={6}>
                     <FormGroup error={errors.clientName ? _(t.clientNameError) : undefined} id='client-name'>
