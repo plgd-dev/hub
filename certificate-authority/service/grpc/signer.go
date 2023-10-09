@@ -1,7 +1,6 @@
 package grpc
 
 import (
-	"bytes"
 	"context"
 	"crypto"
 	"crypto/ecdsa"
@@ -13,6 +12,7 @@ import (
 	"github.com/karrick/tparse/v2"
 	"github.com/plgd-dev/hub/v2/certificate-authority/pb"
 	"github.com/plgd-dev/hub/v2/pkg/security/certificateSigner"
+	pkgX509 "github.com/plgd-dev/hub/v2/pkg/security/x509"
 	"github.com/plgd-dev/kit/v2/security"
 )
 
@@ -23,23 +23,6 @@ type Signer struct {
 	privateKey  crypto.PrivateKey
 	ownerClaim  string
 	hubID       string
-}
-
-func isRootCA(cert *x509.Certificate) bool {
-	return cert.IsCA && bytes.Equal(cert.RawIssuer, cert.RawSubject) && cert.CheckSignature(cert.SignatureAlgorithm, cert.RawTBSCertificate, cert.Signature) == nil
-}
-
-func setCAPools(roots *x509.CertPool, intermediates *x509.CertPool, certs []*x509.Certificate) {
-	for _, cert := range certs {
-		if !cert.IsCA {
-			continue
-		}
-		if isRootCA(cert) {
-			roots.AddCert(cert)
-			continue
-		}
-		intermediates.AddCert(cert)
-	}
 }
 
 func checkCertificatePrivateKey(cert []*x509.Certificate, priv *ecdsa.PrivateKey) error {
@@ -70,7 +53,7 @@ func NewSigner(ownerClaim string, hubID string, signerConfig SignerConfig) (*Sig
 	if err := checkCertificatePrivateKey(certificate, privateKey); err != nil {
 		return nil, err
 	}
-	if len(certificate) == 1 && isRootCA(certificate[0]) {
+	if len(certificate) == 1 && pkgX509.IsRootCA(certificate[0]) {
 		return &Signer{
 			validFrom: func() time.Time {
 				t, _ := tparse.ParseNow(time.RFC3339, signerConfig.ValidFrom)
@@ -84,24 +67,19 @@ func NewSigner(ownerClaim string, hubID string, signerConfig SignerConfig) (*Sig
 		}, nil
 	}
 
-	intermediateCA := x509.NewCertPool()
-	rootCA := x509.NewCertPool()
+	certificateAuthorities := make([]*x509.Certificate, 0, len(signerConfig.caPoolArray)*4)
 	for _, caFile := range signerConfig.caPoolArray {
 		certs, err := security.LoadX509(caFile)
 		if err != nil {
 			return nil, err
 		}
-		setCAPools(rootCA, intermediateCA, certs)
+		certificateAuthorities = append(certificateAuthorities, certs...)
 	}
-	setCAPools(rootCA, intermediateCA, certificate[1:])
-
+	certificateAuthorities = append(certificateAuthorities, certificate[1:]...)
 	verifyOpts := x509.VerifyOptions{
-		Roots:         rootCA,
-		Intermediates: intermediateCA,
-		CurrentTime:   time.Now(),
+		CurrentTime: time.Now(),
 	}
-
-	chains, err := certificate[0].Verify(verifyOpts)
+	chains, err := pkgX509.Verify(certificate, certificateAuthorities, false, verifyOpts)
 	if err != nil {
 		return nil, err
 	}
