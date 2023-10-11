@@ -6,6 +6,7 @@ package service_test
 import (
 	"context"
 	"crypto/tls"
+	"encoding/base64"
 	"fmt"
 	"testing"
 
@@ -13,6 +14,7 @@ import (
 	coapgwTest "github.com/plgd-dev/hub/v2/coap-gateway/test"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/client"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
+	"github.com/plgd-dev/hub/v2/pkg/config/property/urischeme"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	test "github.com/plgd-dev/hub/v2/test"
 	"github.com/plgd-dev/hub/v2/test/config"
@@ -55,6 +57,29 @@ func TestServiceConfig(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, cfg2.Validate())
 	require.Equal(t, cfg.String(), cfg2.String())
+}
+
+func TestServiceConfigWithDataScheme(t *testing.T) {
+	cfg := coapgwTest.MakeConfig(t)
+	data, err := cfg.APIs.COAP.Config.TLS.Embedded.CertFile.Read()
+	require.NoError(t, err)
+	cfg.APIs.COAP.Config.TLS.Embedded.CertFile = urischeme.URIScheme("data:;base64," + base64.StdEncoding.EncodeToString(data))
+	fmt.Printf("cfg: %v\n", cfg.String())
+	require.NoError(t, cfg.Validate())
+	var cfg2 coapgwService.Config
+	err = yaml.Unmarshal([]byte(cfg.String()), &cfg2)
+	require.NoError(t, cfg2.Validate())
+	require.Equal(t, cfg.String(), cfg2.String())
+
+	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
+	defer cancel()
+	const services = service.SetUpServicesOAuth | service.SetUpServicesId | service.SetUpServicesResourceDirectory |
+		service.SetUpServicesGrpcGateway | service.SetUpServicesResourceAggregate
+	tearDown := service.SetUpServices(ctx, t, services)
+	defer tearDown()
+
+	coapShutdown := coapgwTest.New(t, cfg)
+	defer coapShutdown()
 }
 
 func TestShutdownServiceWithDeviceIssue627(t *testing.T) {

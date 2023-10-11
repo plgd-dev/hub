@@ -44,25 +44,33 @@ func NewCertificateAuthorityServer(ownerClaim string, hubID string, signerConfig
 
 	var removeFilesOnError fn.FuncList
 	for _, ca := range signerConfig.caPoolArray {
-		if err := fileWatcher.Add(ca); err != nil {
+		if !ca.IsFile() {
+			continue
+		}
+		if err := fileWatcher.Add(ca.FilePath()); err != nil {
 			removeFilesOnError.Execute()
 			return nil, fmt.Errorf("cannot watch CAPool(%v): %w", ca, err)
 		}
-		caToRemove := ca
+		caToRemove := ca.FilePath()
 		removeFilesOnError.AddFunc(func() {
 			_ = fileWatcher.Remove(caToRemove)
 		})
 	}
-	if err := fileWatcher.Add(signerConfig.CertFile); err != nil {
-		removeFilesOnError.Execute()
-		return nil, fmt.Errorf("cannot watch CertFile(%v): %w", signerConfig.CertFile, err)
+	if signerConfig.CertFile.IsFile() {
+		if err := fileWatcher.Add(signerConfig.CertFile.FilePath()); err != nil {
+			removeFilesOnError.Execute()
+			return nil, fmt.Errorf("cannot watch CertFile(%v): %w", signerConfig.CertFile, err)
+		}
+		removeFilesOnError.AddFunc(func() {
+			_ = fileWatcher.Remove(signerConfig.CertFile.FilePath())
+		})
 	}
-	removeFilesOnError.AddFunc(func() {
-		_ = fileWatcher.Remove(signerConfig.CertFile)
-	})
-	if err := fileWatcher.Add(signerConfig.KeyFile); err != nil {
-		removeFilesOnError.Execute()
-		return nil, fmt.Errorf("cannot watch KeyFile(%v): %w", signerConfig.CertFile, err)
+
+	if signerConfig.KeyFile.IsFile() {
+		if err := fileWatcher.Add(signerConfig.KeyFile.FilePath()); err != nil {
+			removeFilesOnError.Execute()
+			return nil, fmt.Errorf("cannot watch KeyFile(%v): %w", signerConfig.KeyFile, err)
+		}
 	}
 	s.onFileChangeFunc = s.onFileChange
 	fileWatcher.AddOnEventHandler(&s.onFileChangeFunc)
@@ -72,15 +80,22 @@ func NewCertificateAuthorityServer(ownerClaim string, hubID string, signerConfig
 
 func (s *CertificateAuthorityServer) Close() {
 	for _, ca := range s.signerConfig.caPoolArray {
-		if err := s.fileWatcher.Remove(ca); err != nil {
+		if !ca.IsFile() {
+			continue
+		}
+		if err := s.fileWatcher.Remove(ca.FilePath()); err != nil {
 			s.logger.Errorf("cannot remove fileWatcher for CAPool(%v): %w", ca, err)
 		}
 	}
-	if err := s.fileWatcher.Remove(s.signerConfig.CertFile); err != nil {
-		s.logger.Errorf("cannot remove fileWatcher for CertFile(%v): %w", s.signerConfig.CertFile, err)
+	if s.signerConfig.CertFile.IsFile() {
+		if err := s.fileWatcher.Remove(s.signerConfig.CertFile.FilePath()); err != nil {
+			s.logger.Errorf("cannot remove fileWatcher for CertFile(%v): %w", s.signerConfig.CertFile, err)
+		}
 	}
-	if err := s.fileWatcher.Remove(s.signerConfig.KeyFile); err != nil {
-		s.logger.Errorf("cannot remove fileWatcher for KeyFile(%v): %w", s.signerConfig.KeyFile, err)
+	if s.signerConfig.KeyFile.IsFile() {
+		if err := s.fileWatcher.Remove(s.signerConfig.KeyFile.FilePath()); err != nil {
+			s.logger.Errorf("cannot remove fileWatcher for KeyFile(%v): %w", s.signerConfig.KeyFile, err)
+		}
 	}
 }
 

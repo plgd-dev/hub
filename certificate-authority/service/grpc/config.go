@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/karrick/tparse/v2"
+	"github.com/plgd-dev/hub/v2/pkg/config/property/urischeme"
 	"github.com/plgd-dev/hub/v2/pkg/net/grpc/server"
 	"github.com/plgd-dev/hub/v2/pkg/strings"
 	"gopkg.in/yaml.v3"
@@ -13,13 +14,13 @@ import (
 type Config = server.Config
 
 type SignerConfig struct {
-	CAPool    interface{}   `yaml:"caPool" json:"caPool" description:"file path to the root certificates in PEM format"`
-	KeyFile   string        `yaml:"keyFile" json:"keyFile" description:"file name of CA private key in PEM format"`
-	CertFile  string        `yaml:"certFile" json:"certFile" description:"file name of CA certificate in PEM format"`
-	ValidFrom string        `yaml:"validFrom" json:"validFrom" description:"format https://github.com/karrick/tparse"`
-	ExpiresIn time.Duration `yaml:"expiresIn" json:"expiresIn"`
+	CAPool    interface{}         `yaml:"caPool" json:"caPool" description:"file path to the root certificates in PEM format"`
+	KeyFile   urischeme.URIScheme `yaml:"keyFile" json:"keyFile" description:"file name of CA private key in PEM format"`
+	CertFile  urischeme.URIScheme `yaml:"certFile" json:"certFile" description:"file name of CA certificate in PEM format"`
+	ValidFrom string              `yaml:"validFrom" json:"validFrom" description:"format https://github.com/karrick/tparse"`
+	ExpiresIn time.Duration       `yaml:"expiresIn" json:"expiresIn"`
 
-	caPoolArray []string `yaml:"-" json:"-"`
+	caPoolArray []urischeme.URIScheme `yaml:"-" json:"-"`
 }
 
 func (c *SignerConfig) Validate() error {
@@ -27,7 +28,7 @@ func (c *SignerConfig) Validate() error {
 	if !ok {
 		return fmt.Errorf("caPool('%v')", c.CAPool)
 	}
-	c.caPoolArray = caPoolArray
+	c.caPoolArray = urischeme.ToURISchemeArray(caPoolArray)
 	if c.CertFile == "" {
 		return fmt.Errorf("certFile('%v')", c.CertFile)
 	}

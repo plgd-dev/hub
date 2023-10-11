@@ -5,6 +5,7 @@ import (
 	"os"
 	"sync"
 
+	"github.com/plgd-dev/hub/v2/pkg/config/property/urischeme"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/test/coap-gateway/service"
@@ -19,8 +20,8 @@ func MakeConfig(t require.TestingT) service.Config {
 	cfg.APIs.COAP.Addr = config.COAP_GW_HOST
 	cfg.APIs.COAP.TLS.Config = config.MakeTLSServerConfig()
 	cfg.APIs.COAP.TLS.Config.ClientCertificateRequired = false
-	cfg.APIs.COAP.TLS.Config.CertFile = os.Getenv("TEST_COAP_GW_CERT_FILE")
-	cfg.APIs.COAP.TLS.Config.KeyFile = os.Getenv("TEST_COAP_GW_KEY_FILE")
+	cfg.APIs.COAP.TLS.Config.CertFile = urischeme.URIScheme(os.Getenv("TEST_COAP_GW_CERT_FILE"))
+	cfg.APIs.COAP.TLS.Config.KeyFile = urischeme.URIScheme(os.Getenv("TEST_COAP_GW_KEY_FILE"))
 	cfg.APIs.COAP.TLS.Enabled = true
 	cfg.TaskQueue.GoPoolSize = 1600
 	cfg.TaskQueue.Size = 2 * 1024 * 1024

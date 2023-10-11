@@ -116,7 +116,7 @@ func TestNew(t *testing.T) {
 	}
 }
 
-func TestOnClientInactivity(t *testing.T) {
+func TestOnClientInactivityTCP(t *testing.T) {
 	router := mux.NewRouter()
 	logCfg := log.MakeDefaultConfig()
 	logCfg.Level = log.DebugLevel
@@ -127,7 +127,7 @@ func TestOnClientInactivity(t *testing.T) {
 	tlsCfg.ClientCertificateRequired = false
 	cfg := Config{
 		Addr:            "127.0.0.1:23456",
-		Protocols:       []Protocol{TCP, UDP},
+		Protocols:       []Protocol{TCP},
 		MaxMessageSize:  1024,
 		MessagePoolSize: 1024,
 		BlockwiseTransfer: BlockwiseTransferConfig{
@@ -176,6 +176,52 @@ func TestOnClientInactivity(t *testing.T) {
 		require.NoError(t, ctx.Err())
 	}
 
+	// clean up
+	err = got.Close()
+	require.NoError(t, err)
+}
+
+func TestOnClientInactivityUDP(t *testing.T) {
+	router := mux.NewRouter()
+	logCfg := log.MakeDefaultConfig()
+	logCfg.Level = log.DebugLevel
+	logger := log.NewLogger(logCfg)
+	fileWatcher, err := fsnotify.NewWatcher(logger)
+	require.NoError(t, err)
+	tlsCfg := config.MakeTLSServerConfig()
+	tlsCfg.ClientCertificateRequired = false
+	cfg := Config{
+		Addr:            "127.0.0.1:23456",
+		Protocols:       []Protocol{UDP},
+		MaxMessageSize:  1024,
+		MessagePoolSize: 1024,
+		BlockwiseTransfer: BlockwiseTransferConfig{
+			Enabled: true,
+			SZX:     "1024",
+		},
+		InactivityMonitor: &InactivityMonitor{
+			Timeout: time.Second * 1,
+		},
+		TLS: TLSConfig{
+			Embedded: tlsCfg,
+		},
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
+	defer cancel()
+
+	closeChan := make(chan struct{}, 2)
+	got, err := New(ctx, cfg, router, fileWatcher, logger, WithOnNewConnection(func(conn mux.Conn) {
+		conn.AddOnClose(func() {
+			closeChan <- struct{}{}
+		})
+	}))
+	require.NoError(t, err)
+	go func() {
+		err := got.Serve()
+		require.NoError(t, err)
+	}()
+	time.Sleep(time.Second * 3)
+
 	// test DTLS
 	cUDP, err := coapDtls.Dial(cfg.Addr, &dtls.Config{
 		InsecureSkipVerify: true,
@@ -200,7 +246,7 @@ func TestOnClientInactivity(t *testing.T) {
 	require.NoError(t, err)
 }
 
-func TestOnClientInactivityCustom(t *testing.T) {
+func TestOnClientInactivityCustomTCP(t *testing.T) {
 	router := mux.NewRouter()
 	logCfg := log.MakeDefaultConfig()
 	logCfg.Level = log.DebugLevel
@@ -211,7 +257,7 @@ func TestOnClientInactivityCustom(t *testing.T) {
 	tlsCfg.ClientCertificateRequired = false
 	cfg := Config{
 		Addr:            "127.0.0.1:23456",
-		Protocols:       []Protocol{TCP, UDP},
+		Protocols:       []Protocol{TCP},
 		MaxMessageSize:  1024,
 		MessagePoolSize: 1024,
 		BlockwiseTransfer: BlockwiseTransferConfig{
@@ -265,6 +311,58 @@ func TestOnClientInactivityCustom(t *testing.T) {
 		require.NoError(t, ctx.Err())
 	}
 
+	// clean up
+	err = got.Close()
+	require.NoError(t, err)
+	require.Equal(t, int32(1), numInactiveClients.Load())
+}
+
+func TestOnClientInactivityCustomUDP(t *testing.T) {
+	router := mux.NewRouter()
+	logCfg := log.MakeDefaultConfig()
+	logCfg.Level = log.DebugLevel
+	logger := log.NewLogger(logCfg)
+	fileWatcher, err := fsnotify.NewWatcher(logger)
+	require.NoError(t, err)
+	tlsCfg := config.MakeTLSServerConfig()
+	tlsCfg.ClientCertificateRequired = false
+	cfg := Config{
+		Addr:            "127.0.0.1:23456",
+		Protocols:       []Protocol{UDP},
+		MaxMessageSize:  1024,
+		MessagePoolSize: 1024,
+		BlockwiseTransfer: BlockwiseTransferConfig{
+			Enabled: true,
+			SZX:     "1024",
+		},
+		InactivityMonitor: &InactivityMonitor{
+			Timeout: time.Second * 1,
+		},
+		TLS: TLSConfig{
+			Embedded: tlsCfg,
+		},
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
+	defer cancel()
+
+	var numInactiveClients atomic.Int32
+	closeChan := make(chan struct{}, 2)
+	got, err := New(ctx, cfg, router, fileWatcher, logger, WithOnInactivityConnection(func(conn mux.Conn) {
+		numInactiveClients.Inc()
+		err := conn.Close()
+		require.NoError(t, err)
+	}), WithOnNewConnection(func(conn mux.Conn) {
+		conn.AddOnClose(func() {
+			closeChan <- struct{}{}
+		})
+	}))
+	require.NoError(t, err)
+	go func() {
+		err := got.Serve()
+		require.NoError(t, err)
+	}()
+	time.Sleep(time.Second * 3)
+
 	// test DTLS
 	cUDP, err := coapDtls.Dial(cfg.Addr, &dtls.Config{
 		InsecureSkipVerify: true,
@@ -287,5 +385,5 @@ func TestOnClientInactivityCustom(t *testing.T) {
 	// clean up
 	err = got.Close()
 	require.NoError(t, err)
-	require.Equal(t, int32(2), numInactiveClients.Load())
+	require.Equal(t, int32(1), numInactiveClients.Load())
 }

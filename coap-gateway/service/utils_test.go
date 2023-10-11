@@ -31,13 +31,13 @@ import (
 	"github.com/plgd-dev/hub/v2/coap-gateway/service"
 	coapgwTest "github.com/plgd-dev/hub/v2/coap-gateway/test"
 	"github.com/plgd-dev/hub/v2/coap-gateway/uri"
+	pkgX509 "github.com/plgd-dev/hub/v2/pkg/security/x509"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/v2/test/config"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	testService "github.com/plgd-dev/hub/v2/test/service"
 	"github.com/plgd-dev/kit/v2/codec/cbor"
 	"github.com/plgd-dev/kit/v2/codec/json"
-	"github.com/plgd-dev/kit/v2/security"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -277,9 +277,9 @@ func testCoapDial(t *testing.T, deviceID string, withTLS, identityCert bool, val
 	if withTLS {
 		priv, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 		require.NoError(t, err)
-		signerCert, err := security.LoadX509(os.Getenv("TEST_ROOT_CA_CERT"))
+		signerCert, err := pkgX509.ReadX509(os.Getenv("TEST_ROOT_CA_CERT"))
 		require.NoError(t, err)
-		signerKey, err := security.LoadX509PrivateKey(os.Getenv("TEST_ROOT_CA_KEY"))
+		signerKey, err := pkgX509.ReadPrivateKey(os.Getenv("TEST_ROOT_CA_KEY"))
 		require.NoError(t, err)
 
 		var certData []byte

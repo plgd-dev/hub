@@ -11,7 +11,7 @@ import (
 
 	flags "github.com/jessevdk/go-flags"
 	"github.com/plgd-dev/device/v2/pkg/security/generateCertificate"
-	"github.com/plgd-dev/kit/v2/security"
+	pkgX509 "github.com/plgd-dev/hub/v2/pkg/security/x509"
 )
 
 type Options struct {
@@ -49,11 +49,11 @@ func cmdGenerateRootCA(opts Options, priv *ecdsa.PrivateKey) {
 }
 
 func cmdGenerateIntermediateCA(opts Options, priv *ecdsa.PrivateKey) {
-	signerCert, err := security.LoadX509(opts.SignerCert)
+	signerCert, err := pkgX509.ReadX509(opts.SignerCert)
 	if err != nil {
 		log.Fatal(err)
 	}
-	signerKey, err := security.LoadX509PrivateKey(opts.SignerKey)
+	signerKey, err := pkgX509.ReadPrivateKey(opts.SignerKey)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -66,11 +66,11 @@ func cmdGenerateIntermediateCA(opts Options, priv *ecdsa.PrivateKey) {
 }
 
 func cmdGenerateCert(opts Options, priv *ecdsa.PrivateKey) {
-	signerCert, err := security.LoadX509(opts.SignerCert)
+	signerCert, err := pkgX509.ReadX509(opts.SignerCert)
 	if err != nil {
 		log.Fatal(err)
 	}
-	signerKey, err := security.LoadX509PrivateKey(opts.SignerKey)
+	signerKey, err := pkgX509.ReadPrivateKey(opts.SignerKey)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -83,11 +83,11 @@ func cmdGenerateCert(opts Options, priv *ecdsa.PrivateKey) {
 }
 
 func cmdGenerateIdentityCert(opts Options, priv *ecdsa.PrivateKey) {
-	signerCert, err := security.LoadX509(opts.SignerCert)
+	signerCert, err := pkgX509.ReadX509(opts.SignerCert)
 	if err != nil {
 		log.Fatal(err)
 	}
-	signerKey, err := security.LoadX509PrivateKey(opts.SignerKey)
+	signerKey, err := pkgX509.ReadPrivateKey(opts.SignerKey)
 	if err != nil {
 		log.Fatal(err)
 	}

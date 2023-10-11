@@ -10,6 +10,7 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/plgd-dev/device/v2/schema"
 	c2curi "github.com/plgd-dev/hub/v2/cloud2cloud-connector/uri"
+	"github.com/plgd-dev/hub/v2/pkg/config/property/urischeme"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	pkgMongo "github.com/plgd-dev/hub/v2/pkg/mongodb"
 	grpcClient "github.com/plgd-dev/hub/v2/pkg/net/grpc/client"
@@ -55,9 +56,9 @@ const (
 )
 
 var (
-	CA_POOL                  = os.Getenv("LISTEN_FILE_CA_POOL")
-	KEY_FILE                 = os.Getenv("LISTEN_FILE_CERT_DIR_PATH") + "/" + os.Getenv("LISTEN_FILE_CERT_KEY_NAME")
-	CERT_FILE                = os.Getenv("LISTEN_FILE_CERT_DIR_PATH") + "/" + os.Getenv("LISTEN_FILE_CERT_NAME")
+	CA_POOL                  = urischeme.URIScheme(os.Getenv("LISTEN_FILE_CA_POOL"))
+	KEY_FILE                 = urischeme.URIScheme(os.Getenv("LISTEN_FILE_CERT_DIR_PATH") + "/" + os.Getenv("LISTEN_FILE_CERT_KEY_NAME"))
+	CERT_FILE                = urischeme.URIScheme(os.Getenv("LISTEN_FILE_CERT_DIR_PATH") + "/" + os.Getenv("LISTEN_FILE_CERT_NAME"))
 	MONGODB_URI              = "mongodb://localhost:27017"
 	NATS_URL                 = "nats://localhost:4222"
 	OWNER_CLAIM              = "sub"

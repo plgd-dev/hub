@@ -13,6 +13,7 @@ import (
 	"github.com/plgd-dev/device/v2/pkg/security/generateCertificate"
 	"github.com/plgd-dev/hub/v2/certificate-authority/service/grpc"
 	"github.com/plgd-dev/hub/v2/certificate-authority/test"
+	"github.com/plgd-dev/hub/v2/pkg/config/property/urischeme"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/test/config"
@@ -79,8 +80,8 @@ func TestReloadCerts(t *testing.T) {
 
 	s := test.MakeConfig(t).Signer
 	s.CAPool = []string{crt.Name()}
-	s.CertFile = crt.Name()
-	s.KeyFile = key.Name()
+	s.CertFile = urischeme.URIScheme(crt.Name())
+	s.KeyFile = urischeme.URIScheme(key.Name())
 	err = s.Validate()
 	require.NoError(t, err)
 

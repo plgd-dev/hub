@@ -8,6 +8,7 @@ import (
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	"github.com/plgd-dev/hub/v2/pkg/build"
 	"github.com/plgd-dev/hub/v2/pkg/config"
+	"github.com/plgd-dev/hub/v2/pkg/config/property/urischeme"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/pkg/net/grpc/client"
 	"github.com/plgd-dev/hub/v2/pkg/net/grpc/server"
@@ -130,9 +131,9 @@ func (c *IdentityStoreConfig) Validate() error {
 }
 
 type PublicConfiguration struct {
-	CAPool        string `yaml:"caPool" json:"caPool" description:"file path to the root certificate in PEM format"`
-	OwnerClaim    string `yaml:"ownerClaim" json:"ownerClaim"`
-	DeviceIDClaim string `yaml:"deviceIDClaim" json:"deviceIdClaim"`
+	CAPool        urischeme.URIScheme `yaml:"caPool" json:"caPool" description:"file path to the root certificate in PEM format"`
+	OwnerClaim    string              `yaml:"ownerClaim" json:"ownerClaim"`
+	DeviceIDClaim string              `yaml:"deviceIDClaim" json:"deviceIdClaim"`
 
 	CoapGateway              string        `yaml:"coapGateway" json:"coapGateway"`
 	DefaultCommandTimeToLive time.Duration `yaml:"defaultCommandTimeToLive" json:"defaultCommandTimeToLive"`
