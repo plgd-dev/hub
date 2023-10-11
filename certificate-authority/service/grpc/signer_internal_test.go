@@ -5,6 +5,7 @@ import (
 	"path"
 	"testing"
 
+	"github.com/plgd-dev/hub/v2/pkg/config/property/urischeme"
 	"github.com/plgd-dev/hub/v2/test/security/x509"
 	"github.com/stretchr/testify/require"
 )
@@ -62,8 +63,8 @@ func TestNewSigner(t *testing.T) {
 			name: "root",
 			args: args{
 				signerConfig: SignerConfig{
-					CertFile: rootCrt,
-					KeyFile:  rootKey,
+					CertFile: urischeme.URIScheme(rootCrt),
+					KeyFile:  urischeme.URIScheme(rootKey),
 				},
 			},
 			wantCertificates: x509.JoinPems(rootCert),
@@ -72,8 +73,8 @@ func TestNewSigner(t *testing.T) {
 			name: "fullChain",
 			args: args{
 				signerConfig: SignerConfig{
-					CertFile: fullChainCrt,
-					KeyFile:  intermediate2Key,
+					CertFile: urischeme.URIScheme(fullChainCrt),
+					KeyFile:  urischeme.URIScheme(intermediate2Key),
 				},
 			},
 			wantCertificates: x509.JoinPems(intermediateCert2, intermediateCert1, rootCert),
@@ -82,9 +83,9 @@ func TestNewSigner(t *testing.T) {
 			name: "intermediate2Crt",
 			args: args{
 				signerConfig: SignerConfig{
-					caPoolArray: []string{rootIntermediate1Crt},
-					CertFile:    intermediate2Crt,
-					KeyFile:     intermediate2Key,
+					caPoolArray: []urischeme.URIScheme{urischeme.URIScheme(rootIntermediate1Crt)},
+					CertFile:    urischeme.URIScheme(intermediate2Crt),
+					KeyFile:     urischeme.URIScheme(intermediate2Key),
 				},
 			},
 			wantCertificates: x509.JoinPems(intermediateCert2, intermediateCert1, rootCert),
@@ -93,9 +94,9 @@ func TestNewSigner(t *testing.T) {
 			name: "intermediate2intermediate1",
 			args: args{
 				signerConfig: SignerConfig{
-					caPoolArray: []string{rootCrt},
-					CertFile:    intermediate2intermediate1,
-					KeyFile:     intermediate2Key,
+					caPoolArray: []urischeme.URIScheme{urischeme.URIScheme(rootCrt)},
+					CertFile:    urischeme.URIScheme(intermediate2intermediate1),
+					KeyFile:     urischeme.URIScheme(intermediate2Key),
 				},
 			},
 			wantCertificates: x509.JoinPems(intermediateCert2, intermediateCert1, rootCert),
@@ -104,9 +105,9 @@ func TestNewSigner(t *testing.T) {
 			name: "intermediate2Crt - fail",
 			args: args{
 				signerConfig: SignerConfig{
-					caPoolArray: []string{rootCrt},
-					CertFile:    intermediate2Crt,
-					KeyFile:     intermediate2Key,
+					caPoolArray: []urischeme.URIScheme{urischeme.URIScheme(rootCrt)},
+					CertFile:    urischeme.URIScheme(intermediate2Crt),
+					KeyFile:     urischeme.URIScheme(intermediate2Key),
 				},
 			},
 			wantErr: true,

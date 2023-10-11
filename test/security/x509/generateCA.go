@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/plgd-dev/device/v2/pkg/security/generateCertificate"
-	"github.com/plgd-dev/kit/v2/security"
+	pkgX509 "github.com/plgd-dev/hub/v2/pkg/security/x509"
 	"github.com/stretchr/testify/require"
 )
 
@@ -33,7 +33,7 @@ func CreateCACertificate(t *testing.T) ([]byte, *ecdsa.PrivateKey) {
 }
 
 func CreateIntermediateCACertificate(t *testing.T, signerCerts []byte, signerPriv *ecdsa.PrivateKey) ([]byte, *ecdsa.PrivateKey) {
-	certs, err := security.ParseX509FromPEM(signerCerts)
+	certs, err := pkgX509.ParseX509(signerCerts)
 	require.NoError(t, err)
 	priv, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	require.NoError(t, err)
@@ -63,7 +63,7 @@ func CertificatesToPems(certs []*x509.Certificate) []byte {
 }
 
 func GetLeafCertificate(pem []byte) []byte {
-	certs, err := security.ParseX509FromPEM(pem)
+	certs, err := pkgX509.ParseX509(pem)
 	if err != nil {
 		panic(err)
 	}

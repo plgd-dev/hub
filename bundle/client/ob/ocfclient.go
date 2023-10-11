@@ -13,7 +13,7 @@ import (
 	"github.com/plgd-dev/hub/v2/certificate-authority/signer"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	"github.com/plgd-dev/hub/v2/pkg/log"
-	"github.com/plgd-dev/kit/v2/security"
+	pkgX509 "github.com/plgd-dev/hub/v2/pkg/security/x509"
 )
 
 type OcfClient struct {
@@ -111,7 +111,7 @@ func (c *OcfClient) SetAccessForCloud(ctx context.Context, deviceID string) erro
 		return err
 	}
 	caCert := []byte(c.hubConfiguration.GetCertificateAuthorities())
-	certs, err := security.ParseX509FromPEM(caCert)
+	certs, err := pkgX509.ParseX509(caCert)
 	if err != nil {
 		return err
 	}

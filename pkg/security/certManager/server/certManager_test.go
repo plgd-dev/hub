@@ -1,51 +1,18 @@
 package server_test
 
 import (
-	"fmt"
 	"os"
 	"testing"
+	"time"
 
+	"github.com/plgd-dev/hub/v2/pkg/config/property/urischeme"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/pkg/security/certManager/server"
+	testX509 "github.com/plgd-dev/hub/v2/test/security/x509"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
 )
-
-var TestCaCrt = `-----BEGIN CERTIFICATE-----
-MIIBvzCCAWSgAwIBAgIRAKhVk049hVtC24ohZqzXSHAwCgYIKoZIzj0EAwIwTjEN
-MAsGA1UEBhMEVGVzdDENMAsGA1UEBxMEVGVzdDENMAsGA1UEChMEVGVzdDENMAsG
-A1UECxMEVGVzdDEQMA4GA1UEAxMHVGVzdCBDQTAeFw0yMDAyMDYxMTA1NTRaFw0z
-MDAyMDMxMTA1NTRaME4xDTALBgNVBAYTBFRlc3QxDTALBgNVBAcTBFRlc3QxDTAL
-BgNVBAoTBFRlc3QxDTALBgNVBAsTBFRlc3QxEDAOBgNVBAMTB1Rlc3QgQ0EwWTAT
-BgcqhkjOPQIBBggqhkjOPQMBBwNCAAQ1JZwVjcOn0qxLr1rCQN5cYBdePoV+i2ie
-ri+6dRt8JEqpR1+694+yWllCu+ldTlYVduU/pUOrUJ4oyYU3c6floyMwITAOBgNV
-HQ8BAf8EBAMCAQYwDwYDVR0TAQH/BAUwAwEB/zAKBggqhkjOPQQDAgNJADBGAiEA
-2xvxZ7EYxhUusLpZiKJmzKg2CZCAP4v8uzlI1JqePqACIQDJQlUwrVdARpC02v+J
-3CcezG3lWHuMG1sTW4zekKuFiA==
------END CERTIFICATE-----
-`
-
-var TestCrt = `-----BEGIN CERTIFICATE-----
-MIIB2jCCAYGgAwIBAgIRAP5nV3phj3WbAHFiT/cY7vwwCgYIKoZIzj0EAwIwTjEN
-MAsGA1UEBhMEVGVzdDENMAsGA1UEBxMEVGVzdDENMAsGA1UEChMEVGVzdDENMAsG
-A1UECxMEVGVzdDEQMA4GA1UEAxMHVGVzdCBDQTAeFw0yMDAyMDYxMTA2MzZaFw0z
-MDAyMDMxMTA2MzZaMC0xDTALBgNVBAYTBFRlc3QxDTALBgNVBAoTBFRlc3QxDTAL
-BgNVBAMTBHRlc3QwWTATBgcqhkjOPQIBBggqhkjOPQMBBwNCAAQn+5ei51r7pUNt
-VKfn2rRsUsLROk0rDOQG9oEvzqjARiZwGEEumSkCdDV5MYpMYt0BmxX42dk8vXue
-K3VxuI3ao2EwXzAjBgNVHREEHDAaggR0ZXN0ggxodHRwczovL3Rlc3SHBH8AAAEw
-DAYDVR0TBAUwAwEBADALBgNVHQ8EBAMCA4gwHQYDVR0lBBYwFAYIKwYBBQUHAwIG
-CCsGAQUFBwMBMAoGCCqGSM49BAMCA0cAMEQCIAOm/45P8C/njZZrs8iYEotOk3oQ
-f7d8FwSKAagbNWomAiABQBEb9CvfG3so04yKmIMd/2XB5LXM2SQfBKdg/nMD8A==
------END CERTIFICATE-----
-`
-
-var TestCrtKey = `-----BEGIN EC PRIVATE KEY-----
-MHcCAQEEIAqNQjvFqI95fIE/2UOMBM+mOJq0mCCkZTj/clWsa5VCoAoGCCqGSM49
-AwEHoUQDQgAEJ/uXouda+6VDbVSn59q0bFLC0TpNKwzkBvaBL86owEYmcBhBLpkp
-AnQ1eTGKTGLdAZsV+NnZPL17nit1cbiN2g==
------END EC PRIVATE KEY-----
-`
 
 func TestValidateConfig(t *testing.T) {
 	type args struct {
@@ -57,7 +24,7 @@ func TestValidateConfig(t *testing.T) {
 		args            args
 		wantErr         bool
 		want            server.Config
-		wantCAPoolArray []string
+		wantCAPoolArray []urischeme.URIScheme
 	}{
 		{
 			name: "caPool as string",
@@ -72,7 +39,7 @@ certFile: /tmp/test3570354545/crt4065348335
 				KeyFile:  "/tmp/test3570354545/key3658110735",
 				CertFile: "/tmp/test3570354545/crt4065348335",
 			},
-			wantCAPoolArray: []string{
+			wantCAPoolArray: []urischeme.URIScheme{
 				"/tmp/test3570354545/ca3202122454",
 			},
 		},
@@ -93,7 +60,7 @@ certFile: /tmp/test3570354545/crt4065348335
 				KeyFile:  "/tmp/test3570354545/key3658110735",
 				CertFile: "/tmp/test3570354545/crt4065348335",
 			},
-			wantCAPoolArray: []string{
+			wantCAPoolArray: []urischeme.URIScheme{
 				"/tmp/test3570354545/ca3202122454",
 			},
 		},
@@ -175,8 +142,6 @@ func TestNew(t *testing.T) {
 	configYaml, err := yaml.Marshal(config)
 	require.NoError(t, err)
 
-	fmt.Printf("%s\n", configYaml)
-
 	var cfg server.Config
 	err = yaml.Unmarshal(configYaml, &cfg)
 	require.NoError(t, err)
@@ -201,6 +166,8 @@ func TestNew(t *testing.T) {
 	deleteTmpCertFiles(t, config)
 	// create new crt/key files
 	createTmpCertFiles(t, caFile.Name(), crtFile.Name(), keyFile.Name())
+	// to be sure that file watcher will detect changes
+	time.Sleep(time.Second * 4)
 	tlsConfig = mng.GetTLSConfig()
 
 	require.NotNil(t, tlsConfig.GetCertificate)
@@ -208,26 +175,29 @@ func TestNew(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, secondCrt)
 
-	require.Equal(t, firstCrt.Certificate, secondCrt.Certificate)
+	require.NotEqual(t, firstCrt.Certificate, secondCrt.Certificate)
 }
 
 func createTmpCertFiles(t *testing.T, caFile, crtFile, keyFile string) server.Config {
+	caPEM, caPrivKey := testX509.CreateCACertificate(t)
+	inCAPEM, inCAPrivKey := testX509.CreateIntermediateCACertificate(t, caPEM, caPrivKey)
+
 	// ca
-	err := os.WriteFile(caFile, []byte(TestCaCrt), os.FileMode(os.O_RDWR))
+	err := os.WriteFile(caFile, caPEM, 0o600)
 	require.NoError(t, err)
 
 	// crt
-	err = os.WriteFile(crtFile, []byte(TestCrt), os.FileMode(os.O_RDWR))
+	err = os.WriteFile(crtFile, inCAPEM, 0o600)
 	require.NoError(t, err)
 
 	// key
-	err = os.WriteFile(keyFile, []byte(TestCrtKey), os.FileMode(os.O_RDWR))
+	err = os.WriteFile(keyFile, testX509.PrivateKeyToPem(t, inCAPrivKey), 0o600)
 	require.NoError(t, err)
 
 	cfg := server.Config{
 		CAPool:   caFile,
-		KeyFile:  keyFile,
-		CertFile: crtFile,
+		KeyFile:  urischeme.URIScheme(keyFile),
+		CertFile: urischeme.URIScheme(crtFile),
 	}
 	return cfg
 }
@@ -236,12 +206,12 @@ func deleteTmpCertFiles(t *testing.T, cfg server.Config) {
 	caPoolArray, err := cfg.CAPoolArray()
 	require.NoError(t, err)
 	for _, ca := range caPoolArray {
-		err = os.Remove(ca)
+		err = os.Remove(ca.FilePath())
 		require.NoError(t, err)
 	}
-	err = os.Remove(cfg.CertFile)
+	err = os.Remove(cfg.CertFile.FilePath())
 	require.NoError(t, err)
-	err = os.Remove(cfg.KeyFile)
+	err = os.Remove(cfg.KeyFile.FilePath())
 	require.NoError(t, err)
 }
 

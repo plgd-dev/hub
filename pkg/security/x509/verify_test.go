@@ -1,24 +1,24 @@
-package x509
+package x509_test
 
 import (
 	"crypto/x509"
 	"testing"
 
-	textX509 "github.com/plgd-dev/hub/v2/test/security/x509"
-	"github.com/plgd-dev/kit/v2/security"
+	pkgX509 "github.com/plgd-dev/hub/v2/pkg/security/x509"
+	testX509 "github.com/plgd-dev/hub/v2/test/security/x509"
 	"github.com/stretchr/testify/require"
 )
 
 func TestVerify(t *testing.T) {
-	rootCert, rootPrivKey := textX509.CreateCACertificate(t)
-	intermediateCert1, intermediatePrivKey1 := textX509.CreateIntermediateCACertificate(t, rootCert, rootPrivKey)
-	intermediateCert2, _ := textX509.CreateIntermediateCACertificate(t, intermediateCert1, intermediatePrivKey1)
+	rootCert, rootPrivKey := testX509.CreateCACertificate(t)
+	intermediateCert1, intermediatePrivKey1 := testX509.CreateIntermediateCACertificate(t, rootCert, rootPrivKey)
+	intermediateCert2, _ := testX509.CreateIntermediateCACertificate(t, intermediateCert1, intermediatePrivKey1)
 
-	rootCert1, _ := textX509.CreateCACertificate(t)
-	rootCert1x509, err := security.ParseX509FromPEM(rootCert1)
+	rootCert1, _ := testX509.CreateCACertificate(t)
+	rootCert1x509, err := pkgX509.ParseX509(rootCert1)
 	require.NoError(t, err)
 
-	intermediateCert2x509, err := security.ParseX509FromPEM(intermediateCert2)
+	intermediateCert2x509, err := pkgX509.ParseX509(intermediateCert2)
 	require.NoError(t, err)
 
 	type args struct {
@@ -76,7 +76,7 @@ func TestVerify(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err = Verify(tt.args.certificates, tt.args.certificateAuthorities, tt.args.useSystemRoots, x509.VerifyOptions{})
+			_, err = pkgX509.Verify(tt.args.certificates, tt.args.certificateAuthorities, tt.args.useSystemRoots, x509.VerifyOptions{})
 			if tt.wantErr {
 				require.Error(t, err)
 				return

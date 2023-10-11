@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"fmt"
 
+	"github.com/plgd-dev/hub/v2/pkg/config/property/urischeme"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/pkg/security/certManager/general"
@@ -12,22 +13,22 @@ import (
 
 // Config provides configuration of a file based Server Certificate manager. CAPool can be a string or an array of strings.
 type Config struct {
-	CAPool          interface{} `yaml:"caPool" json:"caPool" description:"file path to the root certificates in PEM format"`
-	KeyFile         string      `yaml:"keyFile" json:"keyFile" description:"file name of private key in PEM format"`
-	CertFile        string      `yaml:"certFile" json:"certFile" description:"file name of certificate in PEM format"`
-	UseSystemCAPool bool        `yaml:"useSystemCAPool" json:"useSystemCaPool" description:"use system certification pool"`
-	caPoolArray     []string    `yaml:"-" json:"-"`
+	CAPool          interface{}           `yaml:"caPool" json:"caPool" description:"file path to the root certificates in PEM format"`
+	KeyFile         urischeme.URIScheme   `yaml:"keyFile" json:"keyFile" description:"file name of private key in PEM format"`
+	CertFile        urischeme.URIScheme   `yaml:"certFile" json:"certFile" description:"file name of certificate in PEM format"`
+	UseSystemCAPool bool                  `yaml:"useSystemCAPool" json:"useSystemCaPool" description:"use system certification pool"`
+	caPoolArray     []urischeme.URIScheme `yaml:"-" json:"-"`
 	validated       bool
 }
 
 func (c *Config) Validate() error {
 	caPoolArray, ok := strings.ToStringArray(c.CAPool)
 	if !ok {
-		return fmt.Errorf("caPool('%v')", c.CAPool)
+		return fmt.Errorf("caPool('%v') - unsupported", c.CAPool)
 	}
-	c.caPoolArray = caPoolArray
+	c.caPoolArray = urischeme.ToURISchemeArray(caPoolArray)
 	if !c.UseSystemCAPool && len(c.caPoolArray) == 0 {
-		return fmt.Errorf("caPool('%v')", c.CAPool)
+		return fmt.Errorf("caPool('%v') - is empty", c.CAPool)
 	}
 	if c.CertFile == "" {
 		return fmt.Errorf("certFile('%v')", c.CertFile)
@@ -39,11 +40,19 @@ func (c *Config) Validate() error {
 	return nil
 }
 
-func (c *Config) CAPoolArray() ([]string, error) {
+func (c *Config) CAPoolArray() ([]urischeme.URIScheme, error) {
 	if !c.validated {
 		return nil, fmt.Errorf("call Validate() first")
 	}
 	return c.caPoolArray, nil
+}
+
+func (c *Config) CAPoolFilePathArray() ([]string, error) {
+	a, err := c.CAPoolArray()
+	if err != nil {
+		return nil, err
+	}
+	return urischeme.ToFilePathArray(a), nil
 }
 
 // CertManager holds certificates from filesystem watched for changes

@@ -13,7 +13,6 @@ import (
 	"github.com/plgd-dev/hub/v2/certificate-authority/pb"
 	"github.com/plgd-dev/hub/v2/pkg/security/certificateSigner"
 	pkgX509 "github.com/plgd-dev/hub/v2/pkg/security/x509"
-	"github.com/plgd-dev/kit/v2/security"
 )
 
 type Signer struct {
@@ -42,11 +41,19 @@ func checkCertificatePrivateKey(cert []*x509.Certificate, priv *ecdsa.PrivateKey
 }
 
 func NewSigner(ownerClaim string, hubID string, signerConfig SignerConfig) (*Signer, error) {
-	certificate, err := security.LoadX509(signerConfig.CertFile)
+	data, err := signerConfig.CertFile.Read()
 	if err != nil {
 		return nil, err
 	}
-	privateKey, err := security.LoadX509PrivateKey(signerConfig.KeyFile)
+	certificate, err := pkgX509.ParseX509(data)
+	if err != nil {
+		return nil, err
+	}
+	data, err = signerConfig.KeyFile.Read()
+	if err != nil {
+		return nil, err
+	}
+	privateKey, err := pkgX509.ParsePrivateKey(data)
 	if err != nil {
 		return nil, err
 	}
@@ -69,7 +76,11 @@ func NewSigner(ownerClaim string, hubID string, signerConfig SignerConfig) (*Sig
 
 	certificateAuthorities := make([]*x509.Certificate, 0, len(signerConfig.caPoolArray)*4)
 	for _, caFile := range signerConfig.caPoolArray {
-		certs, err := security.LoadX509(caFile)
+		data, err := caFile.Read()
+		if err != nil {
+			return nil, err
+		}
+		certs, err := pkgX509.ParseX509(data)
 		if err != nil {
 			return nil, err
 		}

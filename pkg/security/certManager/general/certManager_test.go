@@ -12,10 +12,11 @@ import (
 	"time"
 
 	"github.com/plgd-dev/device/v2/pkg/security/generateCertificate"
+	"github.com/plgd-dev/hub/v2/pkg/config/property/urischeme"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/pkg/security/certManager/general"
-	"github.com/plgd-dev/kit/v2/security"
+	pkgX509 "github.com/plgd-dev/hub/v2/pkg/security/x509"
 	"github.com/stretchr/testify/require"
 )
 
@@ -30,7 +31,7 @@ func getCA(t *testing.T, validFrom time.Time, validFor time.Duration) ([]byte, *
 }
 
 func getCert(t *testing.T, signerCA []byte, signerCAKey *ecdsa.PrivateKey, validFrom time.Time, validFor time.Duration) ([]byte, []byte) {
-	signerCACerts, err := security.ParseX509FromPEM(signerCA)
+	signerCACerts, err := pkgX509.ParseX509(signerCA)
 	require.NoError(t, err)
 	cfg := generateCertificate.Configuration{ValidFrom: validFrom.Format(time.RFC3339Nano), ValidFor: validFor}
 	cfg.Subject.CommonName = "Cert"
@@ -115,21 +116,21 @@ func createTmpCertFiles(t *testing.T, caFile string, caPem []byte, crtFile strin
 	require.NoError(t, err)
 
 	cfg := general.Config{
-		CAPool:   []string{caFile},
-		KeyFile:  keyFile,
-		CertFile: crtFile,
+		CAPool:   []urischeme.URIScheme{urischeme.URIScheme(caFile)},
+		KeyFile:  urischeme.URIScheme(keyFile),
+		CertFile: urischeme.URIScheme(crtFile),
 	}
 	return cfg
 }
 
 func deleteTmpCertFiles(t *testing.T, cfg general.Config) {
 	for _, ca := range cfg.CAPool {
-		err := os.Remove(ca)
+		err := os.Remove(ca.FilePath())
 		require.NoError(t, err)
 	}
-	err := os.Remove(cfg.CertFile)
+	err := os.Remove(cfg.CertFile.FilePath())
 	require.NoError(t, err)
-	err = os.Remove(cfg.KeyFile)
+	err = os.Remove(cfg.KeyFile.FilePath())
 	require.NoError(t, err)
 }
 

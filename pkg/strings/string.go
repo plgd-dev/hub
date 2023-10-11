@@ -1,5 +1,7 @@
 package strings
 
+import "github.com/plgd-dev/hub/v2/pkg/config/property/urischeme"
+
 func ToString(v interface{}) (string, bool) {
 	if v == nil {
 		return "", false
@@ -12,6 +14,14 @@ func ToStringArray(v interface{}) ([]string, bool) {
 	switch val := v.(type) {
 	case []string:
 		return val, true
+	case urischeme.URIScheme:
+		return []string{string(val)}, true
+	case []urischeme.URIScheme:
+		var result []string
+		for _, v := range val {
+			result = append(result, string(v))
+		}
+		return result, true
 	case []interface{}:
 		var result []string
 		for _, v := range val {

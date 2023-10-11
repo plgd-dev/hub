@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"fmt"
-	"os"
 
 	"github.com/google/uuid"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
@@ -79,7 +78,7 @@ func newIdentityStoreClient(config IdentityStoreConfig, fileWatcher *fsnotify.Wa
 func newRequestHandlerFromConfig(ctx context.Context, config Config, publicConfiguration PublicConfiguration, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider, goroutinePoolGo func(func()) error) (*RequestHandler, error) {
 	var closeFunc fn.FuncList
 	if publicConfiguration.CAPool != "" {
-		content, err := os.ReadFile(publicConfiguration.CAPool)
+		content, err := publicConfiguration.CAPool.Read()
 		if err != nil {
 			return nil, fmt.Errorf("cannot read file %v: %w", publicConfiguration.CAPool, err)
 		}

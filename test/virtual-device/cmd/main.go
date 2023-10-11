@@ -34,10 +34,10 @@ import (
 	"github.com/plgd-dev/go-coap/v3/tcp/client"
 	"github.com/plgd-dev/hub/v2/coap-gateway/service"
 	"github.com/plgd-dev/hub/v2/coap-gateway/uri"
+	pkgX509 "github.com/plgd-dev/hub/v2/pkg/security/x509"
 	"github.com/plgd-dev/hub/v2/test"
 	"github.com/plgd-dev/hub/v2/test/config"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
-	"github.com/plgd-dev/kit/v2/security"
 )
 
 const (
@@ -610,12 +610,12 @@ func main() {
 	numResource := flag.Int("numResources", 1, "number of resources per device")
 	resourceDataSize := flag.Int("resourceDataSize", 200, "size of resource data property in bytes")
 	flag.Parse()
-	signerCert, err := security.LoadX509(os.Getenv("TEST_ROOT_CA_CERT"))
+	signerCert, err := pkgX509.ReadX509(os.Getenv("TEST_ROOT_CA_CERT"))
 	if err != nil {
 		fmt.Printf("cannot load signer cert: %v", err)
 		os.Exit(1)
 	}
-	signerKey, err := security.LoadX509PrivateKey(os.Getenv("TEST_ROOT_CA_KEY"))
+	signerKey, err := pkgX509.ReadPrivateKey(os.Getenv("TEST_ROOT_CA_KEY"))
 	if err != nil {
 		fmt.Printf("cannot load signer key: %v", err)
 		os.Exit(1)

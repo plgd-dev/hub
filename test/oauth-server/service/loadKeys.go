@@ -4,11 +4,12 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
-	"os"
+
+	"github.com/plgd-dev/hub/v2/pkg/config/property/urischeme"
 )
 
-func LoadPrivateKey(path string) (interface{}, error) {
-	certPEMBlock, err := os.ReadFile(path)
+func LoadPrivateKey(path urischeme.URIScheme) (interface{}, error) {
+	certPEMBlock, err := path.Read()
 	if err != nil {
 		return nil, err
 	}
