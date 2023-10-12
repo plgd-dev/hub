@@ -95,13 +95,14 @@ RUN apt update
 # netcat -> nc utility in run.sh
 # nginx -> nginx server in run.sh
 # openssl -> openssl utility in run.sh
-RUN apt-get install -y --no-install-recommends ca-certificates gnupg iproute2 netcat nginx openssl wget
+RUN apt-get install -y --no-install-recommends ca-certificates gnupg iproute2 netcat nginx openssl wget curl sudo coreutils
 # yq utility in run.sh
 RUN wget https://github.com/mikefarah/yq/releases/download/v4.6.3/yq_linux_$(dpkg --print-architecture) -O /usr/bin/yq && chmod +x /usr/bin/yq
 RUN wget -qO - https://pgp.mongodb.com/server-6.0.asc | gpg --dearmor -o /etc/apt/trusted.gpg.d/mongodb-6.0.gpg
 RUN echo "deb [ arch=$(dpkg --print-architecture) ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/6.0 multiverse" | tee /etc/apt/sources.list.d/mongodb-org-6.0.list
 RUN apt update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends mongodb-org mongodb-org-server
+
 COPY --from=build /go/bin/coap-gateway /usr/local/bin/coap-gateway
 COPY --from=build /go/src/github.com/plgd-dev/hub/coap-gateway/config.yaml /configs/coap-gateway.yaml
 COPY --from=build /go/bin/grpc-gateway /usr/local/bin/grpc-gateway
@@ -130,10 +131,16 @@ COPY --from=build /go/src/github.com/plgd-dev/hub/cloud2cloud-connector/config.y
 COPY --from=build /go/src/github.com/plgd-dev/hub/bundle/run.sh /usr/local/bin/run.sh
 COPY --from=build /go/src/github.com/plgd-dev/hub/bundle/nginx /nginx
 
+# install scylla
+RUN curl -sSf get.scylladb.com/server | sudo bash -s -- --scylla-version 5.2
+COPY bundle/scylla /scylla
+
 # global
 ENV FQDN="localhost"
 ENV LOG_DEBUG=false
 ENV JETSTREAM=false
+# supported values: mongo, scylla
+ENV DATABASE=mongo
 ENV OVERRIDE_FILES=false
 ENV HUB_ID="afd434f8-bf61-4729-a258-3c1a67fb0287"
 
@@ -174,6 +181,9 @@ ENV CLOUD2CLOUD_GATEWAY_PORT=9085
 ENV CLOUD2CLOUD_CONNECTOR_PORT=9089
 ENV MONGO_PORT=10000
 ENV NATS_PORT=10001
+ENV SCYLLA_SMP=1
+ENV SCYLLA_DEVELOPER_MODE=true
+ENV SCYLLA_PORT=29142
 
 # OAuth
 ENV DEVICE_PROVIDER=plgd

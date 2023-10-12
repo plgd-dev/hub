@@ -12,7 +12,7 @@ import (
 
 var testEventResourceCreated events.ResourceCreated = events.ResourceCreated{
 	ResourceId: &commands.ResourceId{
-		DeviceId: "dev1",
+		DeviceId: dev1,
 		Href:     "/dev1",
 	},
 	Status: commands.Status_BAD_REQUEST,

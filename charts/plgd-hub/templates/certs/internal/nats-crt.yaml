@@ -18,9 +18,9 @@ spec:
     - "127.0.0.1"
   dnsNames:
     - "localhost"
-    - "*.{{ .Release.Name }}-nats.{{ .Release.Namespace }}.svc.cluster.local"
-    - "*.{{ .Release.Namespace }}.pod.cluster.local"
-    - "{{ .Release.Name }}-nats.{{ .Release.Namespace }}.svc.cluster.local"
+    - "*.{{ .Release.Name }}-nats.{{ .Release.Namespace }}.svc.{{ $.Values.cluster.dns }}"
+    - "*.{{ .Release.Namespace }}.pod.{{ $.Values.cluster.dns }}"
+    - "{{ .Release.Name }}-nats.{{ .Release.Namespace }}.svc.{{ $.Values.cluster.dns }}"
     - "{{ .Release.Name }}-nats"
   duration: {{ .Values.certmanager.internal.cert.duration | default .Values.certmanager.default.cert.duration }}
   renewBefore: {{ .Values.certmanager.internal.cert.renewBefore | default .Values.certmanager.default.cert.renewBefore }}

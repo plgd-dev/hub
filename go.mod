@@ -7,7 +7,9 @@ require (
 	github.com/felixge/httpsnoop v1.0.4
 	github.com/fsnotify/fsnotify v1.7.0
 	github.com/fullstorydev/grpchan v1.1.1
+	github.com/fxamacker/cbor/v2 v2.5.0
 	github.com/go-co-op/gocron v1.36.0
+	github.com/gocql/gocql v1.6.0
 	github.com/golang-jwt/jwt/v4 v4.5.0
 	github.com/golang/snappy v0.0.4
 	github.com/google/go-querystring v1.1.0
@@ -71,7 +73,6 @@ require (
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.2.0 // indirect
 	github.com/dsnet/golib/memfile v1.0.0 // indirect
 	github.com/envoyproxy/protoc-gen-validate v1.0.2 // indirect
-	github.com/fxamacker/cbor/v2 v2.5.0 // indirect
 	github.com/go-logr/logr v1.3.0 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/goccy/go-json v0.10.2 // indirect
@@ -83,11 +84,11 @@ require (
 	github.com/googleapis/enterprise-certificate-proxy v0.3.2 // indirect
 	github.com/googleapis/gax-go/v2 v2.12.0 // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.0.1 // indirect
+	github.com/hailocab/go-hostpool v0.0.0-20160125115350-e80d13ce29ed // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/huandu/xstrings v1.0.0 // indirect
 	github.com/imdario/mergo v0.3.4 // indirect
 	github.com/jhump/protoreflect v1.15.3 // indirect
-	github.com/kelseyhightower/envconfig v1.4.0 // indirect
 	github.com/klauspost/compress v1.16.7 // indirect
 	github.com/lestrrat-go/blackmagic v1.0.2 // indirect
 	github.com/lestrrat-go/httpcc v1.0.1 // indirect
@@ -124,7 +125,7 @@ require (
 	google.golang.org/appengine v1.6.8 // indirect
 	google.golang.org/genproto v0.0.0-20231120223509-83a465c0220f // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20231127180814-3a041ad873d4 // indirect
-	gopkg.in/yaml.v2 v2.4.0 // indirect
+	gopkg.in/inf.v0 v0.9.1 // indirect
 )
 
 exclude (

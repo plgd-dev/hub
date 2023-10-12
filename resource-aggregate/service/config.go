@@ -73,16 +73,12 @@ func (c *EventBusConfig) Validate() error {
 }
 
 type EventStoreConfig struct {
-	SnapshotThreshold            int                     `yaml:"snapshotThreshold" json:"snapshotThreshold"`
 	ConcurrencyExceptionMaxRetry int                     `yaml:"occMaxRetry" json:"occMaxRetry"`
 	DefaultCommandTimeToLive     time.Duration           `yaml:"defaultCommandTimeToLive" json:"defaultCommandTimeToLive"`
 	Connection                   eventstoreConfig.Config `yaml:",inline" json:",inline"`
 }
 
 func (c *EventStoreConfig) Validate() error {
-	if c.SnapshotThreshold <= 0 {
-		return fmt.Errorf("snapshotThreshold('%v')", c.SnapshotThreshold)
-	}
 	if c.ConcurrencyExceptionMaxRetry <= 0 {
 		return fmt.Errorf("occMaxRetry('%v')", c.ConcurrencyExceptionMaxRetry)
 	}

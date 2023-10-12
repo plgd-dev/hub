@@ -52,7 +52,7 @@ func TestStoreUpdateSigningRecord(t *testing.T) {
 			name: "first update",
 			args: args{
 				sub: &store.SigningRecord{
-					Id:           "id",
+					Id:           "9d017fad-2961-4fcc-94a9-1e1291a88ffc",
 					Owner:        "owner",
 					CommonName:   "commonName",
 					PublicKey:    "publicKey",
@@ -69,7 +69,7 @@ func TestStoreUpdateSigningRecord(t *testing.T) {
 			name: "second update",
 			args: args{
 				sub: &store.SigningRecord{
-					Id:           "id",
+					Id:           "9d017fad-2961-4fcc-94a9-1e1291a88ffc",
 					Owner:        "owner",
 					CommonName:   "commonName",
 					PublicKey:    "publicKey",
@@ -104,10 +104,10 @@ func TestStoreUpdateSigningRecord(t *testing.T) {
 }
 
 func TestStoreDeleteSigningRecord(t *testing.T) {
-	const id1 = "id1"
-	const deviceID1 = "deviceID1"
-	const id2 = "id2"
-	const deviceID2 = "deviceID2"
+	const id1 = "9d017fad-2961-4fcc-94a9-1e1291a88ffc"
+	deviceID1 := hubTest.GenerateDeviceIDbyIdx(1)
+	const id2 = "9d017fad-2961-4fcc-94a9-1e1291a88ffd"
+	deviceID2 := hubTest.GenerateDeviceIDbyIdx(2)
 	const owner = "owner"
 	type args struct {
 		owner string
@@ -220,34 +220,30 @@ func TestStoreDeleteExpiredRecords(t *testing.T) {
 		now time.Time
 	}
 	tests := []struct {
-		name    string
-		args    args
-		wantErr bool
-		want    int64
+		name string
+		args args
+		want int64
 	}{
 		{
 			name: "nothing to delete",
 			args: args{
 				now: constDate().Add(-time.Hour),
 			},
-			wantErr: false,
-			want:    0,
+			want: 0,
 		},
 		{
 			name: "delete one",
 			args: args{
 				now: constDate().Add(time.Hour),
 			},
-			wantErr: false,
-			want:    1,
+			want: 1,
 		},
 		{
 			name: "delete but db is empty",
 			args: args{
 				now: constDate().Add(time.Hour),
 			},
-			wantErr: false,
-			want:    0,
+			want: 0,
 		},
 	}
 
@@ -256,7 +252,7 @@ func TestStoreDeleteExpiredRecords(t *testing.T) {
 
 	ctx := context.Background()
 	err := s.CreateSigningRecord(ctx, &store.SigningRecord{
-		Id:           "id",
+		Id:           "9d017fad-2961-4fcc-94a9-1e1291a88ffc",
 		Owner:        "owner",
 		CommonName:   "commonName",
 		PublicKey:    "publicKey",
@@ -272,10 +268,6 @@ func TestStoreDeleteExpiredRecords(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := s.DeleteNonDeviceExpiredRecords(ctx, tt.args.now)
-			if tt.wantErr {
-				assert.Error(t, err)
-				return
-			}
 			assert.NoError(t, err)
 			assert.Equal(t, tt.want, got)
 		})
@@ -298,13 +290,16 @@ func (h *testSigningRecordHandler) Handle(ctx context.Context, iter store.Signin
 }
 
 func TestStoreLoadSigningRecords(t *testing.T) {
+	const id = "9d017fad-2961-4fcc-94a9-1e1291a88ffc"
+	const id1 = "9d017fad-2961-4fcc-94a9-1e1291a88ffd"
+	const id2 = "9d017fad-2961-4fcc-94a9-1e1291a88ffe"
 	upds := pb.SigningRecords{
 		{
-			Id:           "id",
+			Id:           id,
 			Owner:        "owner",
 			CommonName:   "commonName",
 			PublicKey:    "publicKey",
-			DeviceId:     "deviceID",
+			DeviceId:     hubTest.GenerateDeviceIDbyIdx(0),
 			CreationDate: constDate().UnixNano(),
 			Credential: &pb.CredentialStatus{
 				CertificatePem: "certificate",
@@ -313,12 +308,12 @@ func TestStoreLoadSigningRecords(t *testing.T) {
 			},
 		},
 		{
-			Id:           "id1",
+			Id:           id1,
 			Owner:        "owner",
 			CommonName:   "commonName1",
 			CreationDate: constDate().UnixNano(),
 			PublicKey:    "publicKey",
-			DeviceId:     "deviceID1",
+			DeviceId:     hubTest.GenerateDeviceIDbyIdx(1),
 			Credential: &pb.CredentialStatus{
 				CertificatePem: "certificate",
 				Date:           constDate().UnixNano(),
@@ -326,12 +321,12 @@ func TestStoreLoadSigningRecords(t *testing.T) {
 			},
 		},
 		{
-			Id:           "id2",
+			Id:           id2,
 			Owner:        "owner",
 			CommonName:   "commonName2",
 			CreationDate: constDate().UnixNano(),
 			PublicKey:    "publicKey",
-			DeviceId:     "deviceID2",
+			DeviceId:     hubTest.GenerateDeviceIDbyIdx(2),
 			Credential: &pb.CredentialStatus{
 				CertificatePem: "certificate",
 				Date:           constDate().UnixNano(),
@@ -347,10 +342,9 @@ func TestStoreLoadSigningRecords(t *testing.T) {
 		query *store.SigningRecordsQuery
 	}
 	tests := []struct {
-		name    string
-		args    args
-		wantErr bool
-		want    pb.SigningRecords
+		name string
+		args args
+		want pb.SigningRecords
 	}{
 		{
 			name: "all",
@@ -428,11 +422,7 @@ func TestStoreLoadSigningRecords(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			var h testSigningRecordHandler
 			err := s.LoadSigningRecords(ctx, "owner", tt.args.query, h.Handle)
-			if tt.wantErr {
-				assert.Error(t, err)
-				return
-			}
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			require.Len(t, h.lcs, len(tt.want))
 			h.lcs.Sort()
 			tt.want.Sort()
@@ -449,7 +439,7 @@ func BenchmarkSigningRecords(b *testing.B) {
 	dataCap := cap(data)
 	for i := 0; i < dataCap; i++ {
 		data = append(data, &store.SigningRecord{
-			Id:           "id" + strconv.Itoa(i),
+			Id:           hubTest.GenerateDeviceIDbyIdx(i),
 			Owner:        "owner",
 			CommonName:   "commonName" + strconv.Itoa(i),
 			CreationDate: constDate().UnixNano(),

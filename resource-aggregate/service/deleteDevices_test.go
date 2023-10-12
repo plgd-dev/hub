@@ -22,7 +22,7 @@ import (
 )
 
 func TestRequestHandler_DeleteDevices(t *testing.T) {
-	const deviceID = "dev0"
+	deviceID := dev0
 	const user0 = "user0"
 
 	ctx := kitNetGrpc.CtxWithIncomingToken(context.Background(), config.CreateJwtToken(t, jwt.MapClaims{

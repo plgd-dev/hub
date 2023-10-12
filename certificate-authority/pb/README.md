@@ -182,19 +182,19 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| id | [string](#string) |  | Registration id, calculated from the certificate public key info &#43; common name. SHA256 - Must be unique in the database and for one private key there could be multiple certificates.
+| id | [string](#string) |  | The registration ID is determined by applying a formula that utilizes the certificate properties, and it is computed as uuid.NewSHA1(uuid.NameSpaceX500, common_name &#43; uuid.NewSHA1(uuid.NameSpaceX500, publicKeyRaw)).
 
 @gotags: bson:&#34;_id&#34; |
 | owner | [string](#string) |  | Certificate owner.
 
 @gotags: bson:&#34;owner&#34; |
-| common_name | [string](#string) |  | Common name of the certificate.
+| common_name | [string](#string) |  | Common name of the certificate. If device_id is provided in the common name, then for update public key must be same.
 
 @gotags: bson:&#34;commonName&#34; |
 | device_id | [string](#string) |  | DeviceID of the identity certificate.
 
 @gotags: bson:&#34;deviceId,omitempty&#34; |
-| public_key | [string](#string) |  | Public key fingerprint in (SHA256) of the certificate.
+| public_key | [string](#string) |  | Public key fingerprint in uuid.NewSHA1(uuid.NameSpaceX500, publicKeyRaw) of the certificate.
 
 @gotags: bson:&#34;publicKey&#34; |
 | creation_date | [int64](#int64) |  | Record creation date, in unix nanoseconds timestamp format

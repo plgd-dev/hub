@@ -3,7 +3,6 @@ package mongodb
 import (
 	"context"
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/hashicorp/go-multierror"
@@ -16,30 +15,8 @@ const signingRecordsCol = "signedCertificateRecords"
 
 var ErrCannotRemoveSigningRecord = errors.New("cannot remove signing record")
 
-func validateSigningRecord(signingRecord *store.SigningRecord) error {
-	if signingRecord.GetId() == "" {
-		return fmt.Errorf("empty signing record ID")
-	}
-	if signingRecord.GetCommonName() == "" {
-		return fmt.Errorf("empty signing record %s", store.CommonNameKey)
-	}
-	if signingRecord.GetOwner() == "" {
-		return fmt.Errorf("empty signing record %s", store.OwnerKey)
-	}
-	if signingRecord.GetCredential() != nil && signingRecord.GetCredential().GetDate() == 0 {
-		return fmt.Errorf("empty signing credential date")
-	}
-	if signingRecord.GetCredential() != nil && signingRecord.GetCredential().GetValidUntilDate() == 0 {
-		return fmt.Errorf("empty signing record credential expiration date")
-	}
-	if signingRecord.GetCredential() != nil && signingRecord.GetCredential().GetCertificatePem() == "" {
-		return fmt.Errorf("empty signing record credential certificate")
-	}
-	return nil
-}
-
 func (s *Store) CreateSigningRecord(ctx context.Context, signingRecord *store.SigningRecord) error {
-	if err := validateSigningRecord(signingRecord); err != nil {
+	if err := signingRecord.Validate(); err != nil {
 		return err
 	}
 	_, err := s.Collection(signingRecordsCol).InsertOne(ctx, signingRecord)
@@ -51,7 +28,7 @@ func (s *Store) CreateSigningRecord(ctx context.Context, signingRecord *store.Si
 }
 
 func (s *Store) UpdateSigningRecord(_ context.Context, signingRecord *store.SigningRecord) error {
-	if err := validateSigningRecord(signingRecord); err != nil {
+	if err := signingRecord.Validate(); err != nil {
 		return err
 	}
 

@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/hashicorp/go-multierror"
+	"github.com/plgd-dev/hub/v2/pkg/fn"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -22,11 +23,16 @@ type Store struct {
 	client   *mongo.Client
 	dbPrefix string
 
-	onClear OnClearFn
+	onClear   OnClearFn
+	closeFunc fn.FuncList
+}
+
+func (s *Store) AddCloseFunc(f func()) {
+	s.closeFunc.AddFunc(f)
 }
 
 // NewStore creates a new Store.
-func NewStore(ctx context.Context, cfg Config, tls *tls.Config, tracerProvider trace.TracerProvider) (*Store, error) {
+func NewStore(ctx context.Context, cfg *Config, tls *tls.Config, tracerProvider trace.TracerProvider) (*Store, error) {
 	client, err := mongo.Connect(ctx, options.Client().SetMaxPoolSize(cfg.MaxPoolSize).SetMaxConnIdleTime(cfg.MaxConnIdleTime).ApplyURI(cfg.URI).SetTLSConfig(tls).SetMonitor(otelmongo.NewMonitor(otelmongo.WithTracerProvider(tracerProvider))))
 	if err != nil {
 		return nil, fmt.Errorf("failed to dial database: %w", err)
@@ -53,7 +59,7 @@ func NewStore(ctx context.Context, cfg Config, tls *tls.Config, tracerProvider t
 	return s, nil
 }
 
-func NewStoreWithCollection(ctx context.Context, cfg Config, tls *tls.Config, tracerProvider trace.TracerProvider, collection string, indexes ...bson.D) (*Store, error) {
+func NewStoreWithCollection(ctx context.Context, cfg *Config, tls *tls.Config, tracerProvider trace.TracerProvider, collection string, indexes ...bson.D) (*Store, error) {
 	s, err := NewStore(ctx, cfg, tls, tracerProvider)
 	if err != nil {
 		return nil, err
@@ -126,7 +132,9 @@ func (s *Store) Client() *mongo.Client {
 
 // Close closes the database session.
 func (s *Store) Close(ctx context.Context) error {
-	return s.client.Disconnect(ctx)
+	err := s.client.Disconnect(ctx)
+	s.closeFunc.Execute()
+	return err
 }
 
 // Get collection with given name

@@ -34,7 +34,7 @@ func TestRequestHandlerDeleteDevices(t *testing.T) {
 			name: "not owned device",
 			args: args{
 				req: &pb.DeleteDevicesRequest{
-					DeviceIdFilter: []string{"badId"},
+					DeviceIdFilter: []string{test.GenerateDeviceIDbyIdx(0)},
 				},
 			},
 			want: &pb.DeleteDevicesResponse{

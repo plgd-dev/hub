@@ -14,7 +14,7 @@ type Store struct {
 }
 
 func NewStore(ctx context.Context, cfg pkgMongo.Config, tls *tls.Config, tracerProvider trace.TracerProvider) (*Store, error) {
-	m, err := pkgMongo.NewStore(ctx, cfg, tls, tracerProvider)
+	m, err := pkgMongo.NewStore(ctx, &cfg, tls, tracerProvider)
 	if err != nil {
 		return nil, err
 	}

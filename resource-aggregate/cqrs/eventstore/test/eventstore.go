@@ -148,6 +148,23 @@ func (s *MockEventStore) Delete(context.Context, []eventstore.DeleteQuery) error
 	return errNotSupported
 }
 
+func (s *MockEventStore) LoadDeviceMetadataByServiceIDs(context.Context, []string, int64) ([]eventstore.DeviceDocumentMetadata, error) {
+	return nil, errNotSupported
+}
+
+func (s *MockEventStore) Close(context.Context) error {
+	return nil
+}
+
+func (s *MockEventStore) Clear(context.Context) error {
+	s.events = make(map[string]map[string][]eventstore.EventUnmarshaler)
+	return nil
+}
+
+func (s *MockEventStore) GetLatestDeviceETags(context.Context, string, uint32) ([][]byte, error) {
+	return nil, errNotSupported
+}
+
 type iter struct {
 	idx    int
 	events []eventstore.EventUnmarshaler

@@ -11,42 +11,48 @@ import (
 	cqrsEventStore "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore"
 	mockEvents "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore/test"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
+	"github.com/plgd-dev/hub/v2/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
+var (
+	dev1 = test.GenerateDeviceIDbyIdx(1)
+	dev2 = test.GenerateDeviceIDbyIdx(2)
+)
+
 var d1res1 = commands.Resource{
-	DeviceId: "dev1",
+	DeviceId: dev1,
 	Href:     "/res1",
 }
 
 var d1res2 = commands.Resource{
-	DeviceId: "dev1",
+	DeviceId: dev1,
 	Href:     "/res2",
 }
 
 var d1res3 = commands.Resource{
-	DeviceId: "dev1",
+	DeviceId: dev1,
 	Href:     "/res3",
 }
 
 var d1res4 = commands.Resource{
-	DeviceId: "dev1",
+	DeviceId: dev1,
 	Href:     "/res4",
 }
 
 var d1res5 = commands.Resource{
-	DeviceId: "dev1",
+	DeviceId: dev1,
 	Href:     "/res5",
 }
 
 var d2res1 = commands.Resource{
-	DeviceId: "dev2",
+	DeviceId: dev2,
 	Href:     "/res1",
 }
 
 var d2res2 = commands.Resource{
-	DeviceId: "dev2",
+	DeviceId: dev2,
 	Href:     "/res2",
 }
 
@@ -701,7 +707,7 @@ func TestResourceStateProjection_Models(t *testing.T) {
 					},
 					AuditContext: &commands.AuditContext{
 						UserId:        "userId",
-						CorrelationId: "1",
+						CorrelationId: "2",
 					},
 					ResourceUpdatePendings: []*events.ResourceUpdatePending{},
 				},

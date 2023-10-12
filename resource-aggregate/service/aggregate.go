@@ -2,13 +2,13 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	cqrsAggregate "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/aggregate"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore"
-	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore/mongodb"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -18,7 +18,7 @@ type LogPublishErrFunc func(err error)
 
 type Aggregate struct {
 	ag         *cqrsAggregate.Aggregate
-	eventstore *mongodb.EventStore
+	eventstore eventstore.EventStore
 }
 
 func NewResourceStateFactoryModel(userID, owner, hubID string) func(ctx context.Context) (cqrsAggregate.AggregateModel, error) {
@@ -46,15 +46,14 @@ func NewServicesMetadataFactoryModel(userID, owner, hubID string) func(ctx conte
 }
 
 // NewAggregate creates new resource aggreate - it must be created for every run command.
-func NewAggregate(resourceID *commands.ResourceId, snapshotThreshold int, eventstore *mongodb.EventStore, factoryModel cqrsAggregate.FactoryModelFunc, retry cqrsAggregate.RetryFunc) (*Aggregate, error) {
+func NewAggregate(resourceID *commands.ResourceId, store eventstore.EventStore, factoryModel cqrsAggregate.FactoryModelFunc, retry cqrsAggregate.RetryFunc) (*Aggregate, error) {
 	a := &Aggregate{
-		eventstore: eventstore,
+		eventstore: store,
 	}
 	cqrsAg, err := cqrsAggregate.NewAggregate(resourceID.GetDeviceId(),
 		resourceID.ToUUID().String(),
 		retry,
-		snapshotThreshold,
-		eventstore,
+		store,
 		factoryModel,
 		func(template string, args ...interface{}) {
 			// TODO: add debug log
@@ -67,7 +66,11 @@ func NewAggregate(resourceID *commands.ResourceId, snapshotThreshold int, events
 }
 
 func (a *Aggregate) HandleCommand(ctx context.Context, cmd cqrsAggregate.Command) ([]eventstore.Event, error) {
-	return a.ag.HandleCommand(ctx, cmd)
+	events, err := a.ag.HandleCommand(ctx, cmd)
+	if err == nil {
+		a.cleanUpToSnapshot(ctx, events)
+	}
+	return events, err
 }
 
 var (
@@ -259,18 +262,24 @@ func validateConfirmResourceDelete(request *commands.ConfirmResourceDeleteReques
 	return nil
 }
 
-func cleanUpToSnapshot(ctx context.Context, aggregate *Aggregate, events []eventstore.Event) {
+// cleanUpToSnapshot removes events up to latest snapshot, the database can contains only snapshots if it is supports multiple snapshots.
+func (a *Aggregate) cleanUpToSnapshot(ctx context.Context, events []eventstore.Event) {
+	cleanUp := make(map[string]eventstore.Event)
+	// deduplicate events
 	for _, event := range events {
-		if event.IsSnapshot() {
-			err := aggregate.eventstore.RemoveUpToVersion(ctx, []eventstore.VersionQuery{{GroupID: event.GroupID(), AggregateID: event.AggregateID(), Version: event.Version()}})
-			if err != nil {
-				if ru, ok := event.(interface{ GetResourceId() *commands.ResourceId }); ok {
-					log.Info("unable to remove events up to snapshot with version('%v') for resource('%v')", event.Version(), ru.GetResourceId())
-				} else {
-					log.Info("unable to remove events up to snapshot(%v) with version('%v') of deviceId('%v')", event.EventType(), event.Version(), event.GroupID())
-				}
+		e, ok := cleanUp[event.AggregateID()]
+		if !ok || e.Version() < event.Version() {
+			cleanUp[event.AggregateID()] = event
+		}
+	}
+	for _, event := range cleanUp {
+		err := a.eventstore.RemoveUpToVersion(ctx, []eventstore.VersionQuery{{GroupID: event.GroupID(), AggregateID: event.AggregateID(), Version: event.Version()}})
+		if err != nil && !errors.Is(err, eventstore.ErrNotSupported) {
+			if ru, ok := event.(interface{ GetResourceId() *commands.ResourceId }); ok {
+				log.Info("unable to remove events up to snapshot with version('%v') for resource('%v')", event.Version(), ru.GetResourceId())
+			} else {
+				log.Info("unable to remove events up to snapshot(%v) with version('%v') of deviceId('%v')", event.EventType(), event.Version(), event.GroupID())
 			}
-			break
 		}
 	}
 }
@@ -296,8 +305,6 @@ func (a *Aggregate) PublishResourceLinks(ctx context.Context, request *commands.
 		return
 	}
 
-	cleanUpToSnapshot(ctx, a, events)
-
 	return
 }
 
@@ -313,8 +320,6 @@ func (a *Aggregate) UnpublishResourceLinks(ctx context.Context, request *command
 		err = fmt.Errorf("unable to process unpublish resource links command: %w", err)
 		return
 	}
-	cleanUpToSnapshot(ctx, a, events)
-
 	return
 }
 
@@ -330,7 +335,6 @@ func (a *Aggregate) NotifyResourceChanged(ctx context.Context, request *commands
 		err = fmt.Errorf("unable to process notify content changed command: %w", err)
 		return
 	}
-	cleanUpToSnapshot(ctx, a, events)
 	return
 }
 
@@ -346,8 +350,6 @@ func (a *Aggregate) UpdateResource(ctx context.Context, request *commands.Update
 		err = fmt.Errorf("unable to process update resource content command: %w", err)
 		return
 	}
-	cleanUpToSnapshot(ctx, a, events)
-
 	return
 }
 
@@ -362,8 +364,6 @@ func (a *Aggregate) ConfirmResourceUpdate(ctx context.Context, request *commands
 		err = fmt.Errorf("unable to process update resource content notification command: %w", err)
 		return
 	}
-	cleanUpToSnapshot(ctx, a, events)
-
 	return
 }
 
@@ -379,8 +379,6 @@ func (a *Aggregate) RetrieveResource(ctx context.Context, request *commands.Retr
 		err = fmt.Errorf("unable to process retrieve resource content command: %w", err)
 		return
 	}
-	cleanUpToSnapshot(ctx, a, events)
-
 	return
 }
 
@@ -395,7 +393,6 @@ func (a *Aggregate) ConfirmResourceRetrieve(ctx context.Context, request *comman
 		err = fmt.Errorf("unable to process retrieve resource content notification command: %w", err)
 		return
 	}
-	cleanUpToSnapshot(ctx, a, events)
 	return
 }
 
@@ -411,8 +408,6 @@ func (a *Aggregate) DeleteResource(ctx context.Context, request *commands.Delete
 		err = fmt.Errorf("unable to process delete resource content command: %w", err)
 		return
 	}
-	cleanUpToSnapshot(ctx, a, events)
-
 	return
 }
 
@@ -427,8 +422,6 @@ func (a *Aggregate) ConfirmResourceDelete(ctx context.Context, request *commands
 		err = fmt.Errorf("unable to process delete resource content notification command: %w", err)
 		return
 	}
-	cleanUpToSnapshot(ctx, a, events)
-
 	return
 }
 
@@ -444,8 +437,6 @@ func (a *Aggregate) CreateResource(ctx context.Context, request *commands.Create
 		err = fmt.Errorf("unable to process create resource content command: %w", err)
 		return
 	}
-	cleanUpToSnapshot(ctx, a, events)
-
 	return
 }
 
@@ -460,7 +451,5 @@ func (a *Aggregate) ConfirmResourceCreate(ctx context.Context, request *commands
 		err = fmt.Errorf("unable to process create resource content notification command: %w", err)
 		return
 	}
-	cleanUpToSnapshot(ctx, a, events)
-
 	return
 }

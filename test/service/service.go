@@ -13,6 +13,7 @@ import (
 	grpcgwTest "github.com/plgd-dev/hub/v2/grpc-gateway/test"
 	isService "github.com/plgd-dev/hub/v2/identity-store/service"
 	isTest "github.com/plgd-dev/hub/v2/identity-store/test"
+	"github.com/plgd-dev/hub/v2/pkg/cqldb"
 	"github.com/plgd-dev/hub/v2/pkg/fn"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
@@ -28,6 +29,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.opentelemetry.io/otel/trace"
 )
 
 var filterOutClearDB = map[string]bool{
@@ -65,6 +67,16 @@ func ClearDB(ctx context.Context, t require.TestingT) {
 		require.NoError(t, err)
 	}
 	err = client.Disconnect(ctx)
+	require.NoError(t, err)
+
+	// clear cqlDB
+	cqlCfg := config.MakeEventsStoreCqlDBConfig()
+	cql, err := cqldb.New(ctx, cqlCfg.Embedded, certManager.GetTLSConfig(), logger, trace.NewNoopTracerProvider())
+	require.NoError(t, err)
+	defer cql.Close()
+
+	// we need to use same key-space for all services
+	err = cql.DropKeyspace(ctx)
 	require.NoError(t, err)
 }
 

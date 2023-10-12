@@ -9,6 +9,7 @@ import (
 	"github.com/plgd-dev/device/v2/schema"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 	"github.com/plgd-dev/hub/v2/test"
 	oauthService "github.com/plgd-dev/hub/v2/test/oauth-server/service"
@@ -214,6 +215,60 @@ var cleanupEventFn = map[string]func(ev *pb.Event){
 	},
 	getTypeName(&pb.Event_DeviceMetadataUpdated{}): func(ev *pb.Event) {
 		CleanUpDeviceMetadataUpdated(ev.GetDeviceMetadataUpdated(), false)
+	},
+}
+
+// Remove fields with unpredictable values
+func CleanUpEventStoreEvent(t *testing.T, ev eventstore.Event) {
+	handler, ok := cleanupEventStoreEventFn[ev.EventType()]
+	require.True(t, ok)
+	handler(t, ev)
+}
+
+func CmpUpGetEventsResponses(t *testing.T, expected, got []*pb.GetEventsResponse) {
+	require.Len(t, got, len(expected))
+	exp := make(map[string]eventstore.Event)
+	for _, e := range expected {
+		f := GetWrappedEvent(e)
+		ev, ok := f.(eventstore.Event)
+		require.True(t, ok)
+		CleanUpEventStoreEvent(t, ev)
+		exp[ev.AggregateID()] = ev
+	}
+	for _, e := range got {
+		f := GetWrappedEvent(e)
+		ev, ok := f.(eventstore.Event)
+		require.True(t, ok)
+		CleanUpEventStoreEvent(t, ev)
+		v, ok := exp[ev.AggregateID()]
+		require.True(t, ok)
+		test.CheckProtobufs(t, v, ev, test.RequireToCheckFunc(require.Equal))
+		delete(exp, ev.AggregateID())
+	}
+	require.Empty(t, exp)
+}
+
+var cleanupEventStoreEventFn = map[string]func(t *testing.T, ev eventstore.Event){
+	(&events.DeviceMetadataSnapshotTaken{}).EventType(): func(t *testing.T, ev eventstore.Event) {
+		e, ok := ev.(*events.DeviceMetadataSnapshotTaken)
+		require.True(t, ok)
+		CleanUpDeviceMetadataSnapshotTaken(e, false)
+	},
+	(&events.ResourceLinksSnapshotTaken{}).EventType(): func(t *testing.T, ev eventstore.Event) {
+		e, ok := ev.(*events.ResourceLinksSnapshotTaken)
+		require.True(t, ok)
+		CleanUpResourceLinksSnapshotTaken(e)
+	},
+	(&events.ResourceStateSnapshotTaken{}).EventType(): func(t *testing.T, ev eventstore.Event) {
+		e, ok := ev.(*events.ResourceStateSnapshotTaken)
+		require.True(t, ok)
+		CleanUpResourceStateSnapshotTaken(e, false)
+	},
+	(&events.ServiceMetadataSnapshotTaken{}).EventType(): func(t *testing.T, ev eventstore.Event) {
+		e, ok := ev.(*events.ServiceMetadataSnapshotTaken)
+		require.True(t, ok)
+		CleanUpServiceMetadataUpdated(e.GetServiceMetadataUpdated(), false)
+		e.EventMetadata = nil
 	},
 }
 

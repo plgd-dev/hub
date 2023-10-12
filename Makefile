@@ -35,10 +35,12 @@ TEST_MEMORY_COAP_GATEWAY_NUM_DEVICES ?= 1
 TEST_MEMORY_COAP_GATEWAY_NUM_RESOURCES ?= 1
 TEST_MEMORY_COAP_GATEWAY_EXPECTED_RSS_IN_MB ?= 50
 TEST_MEMORY_COAP_GATEWAY_RESOURCE_DATA_SIZE ?= 200
+TEST_DATABASE ?= mongodb
 # supported values: ECDSA-SHA256, ECDSA-SHA384, ECDSA-SHA512
 CERT_TOOL_SIGN_ALG ?= ECDSA-SHA256
 # supported values: P256, P384, P521
 CERT_TOOL_ELLIPTIC_CURVE ?= P256
+CERT_TOOL_IMAGE=ghcr.io/plgd-dev/hub/cert-tool:vnext
 
 SUBDIRS := bundle certificate-authority cloud2cloud-connector cloud2cloud-gateway coap-gateway grpc-gateway resource-aggregate resource-directory http-gateway identity-store test/oauth-server tools/cert-tool
 .PHONY: $(SUBDIRS) push proto/generate clean build test env mongo nats certificates hub-build http-gateway-www simulators
@@ -52,23 +54,28 @@ hub-test:
 		-f Dockerfile.test \
 		.
 
-certificates: hub-test
+certificates:
 	mkdir -p $(WORKING_DIRECTORY)/.tmp/certs
 	docker run \
-		--network=host \
-		-v $(WORKING_DIRECTORY)/.tmp/certs:/certs \
+		--rm -v $(WORKING_DIRECTORY)/.tmp/certs:/certs \
 		--user $(USER_ID):$(GROUP_ID) \
-		hub-test \
-		/bin/bash -c "\
-			cert-tool --cmd.generateRootCA --outCert=/certs/root_ca.crt --outKey=/certs/root_ca.key --cert.subject.cn=RootCA \
-				--cert.signatureAlgorithm=$(CERT_TOOL_SIGN_ALG) --cert.ellipticCurve=$(CERT_TOOL_ELLIPTIC_CURVE) && \
-			cert-tool --cmd.generateCertificate --outCert=/certs/http.crt --outKey=/certs/http.key	--cert.subject.cn=localhost \
-				--cert.san.domain=localhost --signerCert=/certs/root_ca.crt --signerKey=/certs/root_ca.key \
-				--cert.signatureAlgorithm=$(CERT_TOOL_SIGN_ALG) --cert.ellipticCurve=$(CERT_TOOL_ELLIPTIC_CURVE) && \
-			cert-tool --cmd.generateIdentityCertificate=$(CLOUD_SID) --outCert=/certs/coap.crt --outKey=/certs/coap.key \
-				--cert.san.domain=localhost --signerCert=/certs/root_ca.crt --signerKey=/certs/root_ca.key \
-				--cert.signatureAlgorithm=$(CERT_TOOL_SIGN_ALG) --cert.ellipticCurve=$(CERT_TOOL_ELLIPTIC_CURVE) \
-		"
+		${CERT_TOOL_IMAGE} \
+		--cmd.generateRootCA --outCert=/certs/root_ca.crt --outKey=/certs/root_ca.key --cert.subject.cn=RootCA \
+				--cert.signatureAlgorithm=$(CERT_TOOL_SIGN_ALG) --cert.ellipticCurve=$(CERT_TOOL_ELLIPTIC_CURVE)
+	docker run \
+		--rm -v $(WORKING_DIRECTORY)/.tmp/certs:/certs \
+		--user $(USER_ID):$(GROUP_ID) \
+		${CERT_TOOL_IMAGE} \
+		--cmd.generateCertificate --outCert=/certs/http.crt --outKey=/certs/http.key	--cert.subject.cn=localhost \
+				--cert.san.domain=localhost --cert.san.ip=127.0.0.1 --signerCert=/certs/root_ca.crt --signerKey=/certs/root_ca.key \
+				--cert.signatureAlgorithm=$(CERT_TOOL_SIGN_ALG) --cert.ellipticCurve=$(CERT_TOOL_ELLIPTIC_CURVE)
+	docker run \
+		--rm -v $(WORKING_DIRECTORY)/.tmp/certs:/certs \
+		--user $(USER_ID):$(GROUP_ID) \
+		${CERT_TOOL_IMAGE} \
+		--cmd.generateIdentityCertificate=$(CLOUD_SID) --outCert=/certs/coap.crt --outKey=/certs/coap.key \
+				--cert.san.domain=localhost --cert.san.ip=127.0.0.1 --signerCert=/certs/root_ca.crt --signerKey=/certs/root_ca.key \
+				--cert.signatureAlgorithm=$(CERT_TOOL_SIGN_ALG) --cert.ellipticCurve=$(CERT_TOOL_ELLIPTIC_CURVE)
 	cat $(WORKING_DIRECTORY)/.tmp/certs/http.crt > $(WORKING_DIRECTORY)/.tmp/certs/mongo.key
 	cat $(WORKING_DIRECTORY)/.tmp/certs/http.key >> $(WORKING_DIRECTORY)/.tmp/certs/mongo.key
 
@@ -96,6 +103,58 @@ nats: certificates
 		-v $(WORKING_DIRECTORY)/.tmp/jetstream/cloud-connector:/data \
 		--user $(USER_ID):$(GROUP_ID) \
 		nats --jetstream --store_dir /data --port 34222 --tls --tlsverify --tlscert=/certs/http.crt --tlskey=/certs/http.key --tlscacert=/certs/root_ca.crt
+
+scylla/clean:
+	docker rm -f scylla || true
+	sudo rm -rf $(WORKING_DIRECTORY)/.tmp/scylla || true
+
+scylla: scylla/clean
+	mkdir -p $(WORKING_DIRECTORY)/.tmp/scylla/data $(WORKING_DIRECTORY)/.tmp/scylla/commitlog $(WORKING_DIRECTORY)/.tmp/scylla/hints $(WORKING_DIRECTORY)/.tmp/scylla/view_hints $(WORKING_DIRECTORY)/.tmp/scylla/etc
+	docker run --rm \
+		-v $(WORKING_DIRECTORY)/.tmp/scylla/etc:/etc-scylla-tmp \
+		--entrypoint /bin/cp \
+		scylladb/scylla \
+		/etc/scylla/scylla.yaml /etc-scylla-tmp/scylla.yaml
+	yq -i '.server_encryption_options.internode_encryption="all"' $(WORKING_DIRECTORY)/.tmp/scylla/etc/scylla.yaml
+	yq -i '.server_encryption_options.certificate="/certs/http.crt"' $(WORKING_DIRECTORY)/.tmp/scylla/etc/scylla.yaml
+	yq -i '.server_encryption_options.keyfile="/certs/http.key"' $(WORKING_DIRECTORY)/.tmp/scylla/etc/scylla.yaml
+	yq -i '.server_encryption_options.truststore="/certs/root_ca.crt"' $(WORKING_DIRECTORY)/.tmp/scylla/etc/scylla.yaml
+	yq -i '.server_encryption_options.require_client_auth=true' $(WORKING_DIRECTORY)/.tmp/scylla/etc/scylla.yaml
+
+	yq -i '.client_encryption_options.enabled=true' $(WORKING_DIRECTORY)/.tmp/scylla/etc/scylla.yaml
+	yq -i '.client_encryption_options.certificate="/certs/http.crt"' $(WORKING_DIRECTORY)/.tmp/scylla/etc/scylla.yaml
+	yq -i '.client_encryption_options.keyfile="/certs/http.key"' $(WORKING_DIRECTORY)/.tmp/scylla/etc/scylla.yaml
+	yq -i '.client_encryption_options.truststore="/certs/root_ca.crt"' $(WORKING_DIRECTORY)/.tmp/scylla/etc/scylla.yaml
+	yq -i '.client_encryption_options.require_client_auth=true' $(WORKING_DIRECTORY)/.tmp/scylla/etc/scylla.yaml
+
+	yq -i '.api_port=11000' $(WORKING_DIRECTORY)/.tmp/scylla/etc/scylla.yaml
+	yq -i '.prometheus_port=0' $(WORKING_DIRECTORY)/.tmp/scylla/etc/scylla.yaml
+
+	yq -i 'del(.native_transport_port)' $(WORKING_DIRECTORY)/.tmp/scylla/etc/scylla.yaml
+	yq -i '.native_transport_port_ssl=9142' $(WORKING_DIRECTORY)/.tmp/scylla/etc/scylla.yaml
+
+	yq -i 'del(.native_shard_aware_transport_port)' $(WORKING_DIRECTORY)/.tmp/scylla/etc/scylla.yaml
+	yq -i '.native_shard_aware_transport_port_ssl=19142' $(WORKING_DIRECTORY)/.tmp/scylla/etc/scylla.yaml
+
+	docker run \
+		-d \
+		--network=host \
+		--name=scylla \
+		-v $(WORKING_DIRECTORY)/.tmp/scylla/etc/scylla.yaml:/etc/scylla/scylla.yaml \
+		-v $(WORKING_DIRECTORY)/.tmp/scylla:/var/lib/scylla \
+		-v $(WORKING_DIRECTORY)/.tmp/certs:/certs \
+		scylladb/scylla --developer-mode 1 --listen-address 127.0.0.1
+
+	while true; do \
+		i=$$((i+1)); \
+		if openssl s_client -connect 127.0.0.1:9142 -cert $(WORKING_DIRECTORY)/.tmp/certs/http.crt -key $(WORKING_DIRECTORY)/.tmp/certs/http.key <<< "Q" 2>/dev/null > /dev/null; then \
+			break; \
+		fi; \
+		echo "Try to reconnect to scylla(127.0.0.1:9142) $$i"; \
+		sleep 1; \
+	done
+
+.PHONY: scylla
 
 mongo: certificates
 	mkdir -p $(WORKING_DIRECTORY)/.tmp/mongo
@@ -166,7 +225,7 @@ simulators: simulators/clean
 	$(call RUN-DOCKER-DEVICE,$(DEVICE_SIMULATOR_RES_OBSERVABLE_NAME),$(DEVICE_SIMULATOR_RES_OBSERVABLE_IMG))
 .PHONY: simulators
 
-env/test/mem: clean certificates nats mongo privateKeys
+env/test/mem: clean certificates nats mongo privateKeys scylla
 .PHONY: env/test/mem
 
 env: env/test/mem http-gateway-www simulators
@@ -248,16 +307,18 @@ define RUN-TESTS-UDP
 		TEST_COAP_GATEWAY_LOG_LEVEL=$(TEST_COAP_GATEWAY_LOG_LEVEL) TEST_COAP_GATEWAY_LOG_DUMP_BODY=$(TEST_COAP_GATEWAY_LOG_DUMP_BODY) \
 		TEST_RESOURCE_AGGREGATE_LEVEL=$(TEST_RESOURCE_AGGREGATE_LEVEL) TEST_RESOURCE_AGGREGATE_LOG_DUMP_BODY=$(TEST_RESOURCE_AGGREGATE_LOG_DUMP_BODY) \
 		TEST_GRPC_GATEWAY_LOG_LEVEL=$(TEST_GRPC_GATEWAY_LOG_LEVEL) TEST_GRPC_GATEWAY_LOG_DUMP_BODY=$(TEST_GRPC_GATEWAY_LOG_DUMP_BODY) \
-		TEST_IDENTITY_STORE_LOG_LEVEL=$(TEST_IDENTITY_STORE_LOG_LEVEL) TEST_IDENTITY_STORE_LOG_DUMP_BODY=$(TEST_IDENTITY_STORE_LOG_DUMP_BODY))
+		TEST_IDENTITY_STORE_LOG_LEVEL=$(TEST_IDENTITY_STORE_LOG_LEVEL) TEST_IDENTITY_STORE_LOG_DUMP_BODY=$(TEST_IDENTITY_STORE_LOG_DUMP_BODY) \
+		TEST_DATABASE=$(TEST_DATABASE))
 	$(call RUN-TESTS,iotivity-lite-dtls,./test/iotivity-lite/service,-timeout=$(TEST_TIMEOUT) $(GO_BUILD_ARG) -p 1 -v -tags=test,\
 		TEST_COAP_GATEWAY_UDP_ENABLED=$(TEST_COAP_GATEWAY_UDP_ENABLED) \
 		TEST_COAP_GATEWAY_LOG_LEVEL=$(TEST_COAP_GATEWAY_LOG_LEVEL) TEST_COAP_GATEWAY_LOG_DUMP_BODY=$(TEST_COAP_GATEWAY_LOG_DUMP_BODY) \
 		TEST_RESOURCE_AGGREGATE_LEVEL=$(TEST_RESOURCE_AGGREGATE_LEVEL) TEST_RESOURCE_AGGREGATE_LOG_DUMP_BODY=$(TEST_RESOURCE_AGGREGATE_LOG_DUMP_BODY) \
 		TEST_GRPC_GATEWAY_LOG_LEVEL=$(TEST_GRPC_GATEWAY_LOG_LEVEL) TEST_GRPC_GATEWAY_LOG_DUMP_BODY=$(TEST_GRPC_GATEWAY_LOG_DUMP_BODY) \
-		TEST_IDENTITY_STORE_LOG_LEVEL=$(TEST_IDENTITY_STORE_LOG_LEVEL) TEST_IDENTITY_STORE_LOG_DUMP_BODY=$(TEST_IDENTITY_STORE_LOG_DUMP_BODY))
+		TEST_IDENTITY_STORE_LOG_LEVEL=$(TEST_IDENTITY_STORE_LOG_LEVEL) TEST_IDENTITY_STORE_LOG_DUMP_BODY=$(TEST_IDENTITY_STORE_LOG_DUMP_BODY) \
+		TEST_DATABASE=$(TEST_DATABASE))
 endef
 
-test: env
+test: env hub-test
 	@mkdir -p $(WORKING_DIRECTORY)/.tmp/home
 	@mkdir -p $(WORKING_DIRECTORY)/.tmp/home/certificate-authority
 	@mkdir -p $(WORKING_DIRECTORY)/.tmp/report
@@ -265,14 +326,15 @@ test: env
 		TEST_COAP_GATEWAY_LOG_LEVEL=$(TEST_COAP_GATEWAY_LOG_LEVEL) TEST_COAP_GATEWAY_LOG_DUMP_BODY=$(TEST_COAP_GATEWAY_LOG_DUMP_BODY) \
 		TEST_RESOURCE_AGGREGATE_LEVEL=$(TEST_RESOURCE_AGGREGATE_LEVEL) TEST_RESOURCE_AGGREGATE_LOG_DUMP_BODY=$(TEST_RESOURCE_AGGREGATE_LOG_DUMP_BODY) \
 		TEST_GRPC_GATEWAY_LOG_LEVEL=$(TEST_GRPC_GATEWAY_LOG_LEVEL) TEST_GRPC_GATEWAY_LOG_DUMP_BODY=$(TEST_GRPC_GATEWAY_LOG_DUMP_BODY) \
-		TEST_IDENTITY_STORE_LOG_LEVEL=$(TEST_IDENTITY_STORE_LOG_LEVEL) TEST_IDENTITY_STORE_LOG_DUMP_BODY=$(TEST_IDENTITY_STORE_LOG_DUMP_BODY))
+		TEST_IDENTITY_STORE_LOG_LEVEL=$(TEST_IDENTITY_STORE_LOG_LEVEL) TEST_IDENTITY_STORE_LOG_DUMP_BODY=$(TEST_IDENTITY_STORE_LOG_DUMP_BODY) \
+		TEST_DATABASE=$(TEST_DATABASE))
 ifeq ($(TEST_COAP_GATEWAY_UDP_ENABLED),true)
 	@$(call RUN-TESTS-UDP)
 endif
 
 .PHONY: test
 
-test/mem: env/test/mem
+test/mem: env/test/mem hub-test
 	@mkdir -p $(WORKING_DIRECTORY)/.tmp/home
 	@mkdir -p $(WORKING_DIRECTORY)/.tmp/home/certificate-authority
 	@mkdir -p $(WORKING_DIRECTORY)/.tmp/report
@@ -284,7 +346,8 @@ test/mem: env/test/mem
 		TEST_COAP_GATEWAY_LOG_LEVEL=$(TEST_COAP_GATEWAY_LOG_LEVEL) TEST_COAP_GATEWAY_LOG_DUMP_BODY=$(TEST_COAP_GATEWAY_LOG_DUMP_BODY) \
 		TEST_RESOURCE_AGGREGATE_LEVEL=$(TEST_RESOURCE_AGGREGATE_LEVEL) TEST_RESOURCE_AGGREGATE_LOG_DUMP_BODY=$(TEST_RESOURCE_AGGREGATE_LOG_DUMP_BODY) \
 		TEST_GRPC_GATEWAY_LOG_LEVEL=$(TEST_GRPC_GATEWAY_LOG_LEVEL) TEST_GRPC_GATEWAY_LOG_DUMP_BODY=$(TEST_GRPC_GATEWAY_LOG_DUMP_BODY) \
-		TEST_IDENTITY_STORE_LOG_LEVEL=$(TEST_IDENTITY_STORE_LOG_LEVEL) TEST_IDENTITY_STORE_LOG_DUMP_BODY=$(TEST_IDENTITY_STORE_LOG_DUMP_BODY))
+		TEST_IDENTITY_STORE_LOG_LEVEL=$(TEST_IDENTITY_STORE_LOG_LEVEL) TEST_IDENTITY_STORE_LOG_DUMP_BODY=$(TEST_IDENTITY_STORE_LOG_DUMP_BODY)\
+		TEST_DATABASE=$(TEST_DATABASE))
 .PHONY: test/mem
 
 DIRECTORIES:=$(shell ls -d ./*/)

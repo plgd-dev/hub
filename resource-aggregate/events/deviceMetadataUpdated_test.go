@@ -11,7 +11,7 @@ import (
 )
 
 var testEventDeviceMetadataUpdated events.DeviceMetadataUpdated = events.DeviceMetadataUpdated{
-	DeviceId: "dev1",
+	DeviceId: dev1,
 	Connection: &commands.Connection{
 		Status: commands.Connection_ONLINE,
 	},

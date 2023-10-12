@@ -32,7 +32,7 @@ func (s *EventStore) Delete(ctx context.Context, queries []eventstore.DeleteQuer
 		return fmt.Errorf("failed to delete documents: invalid query")
 	}
 
-	col := s.client.Database(s.DBName()).Collection(getEventCollectionName())
+	col := s.client().Database(s.DBName()).Collection(getEventCollectionName())
 
 	_, err := col.DeleteMany(ctx, bson.M{
 		groupIDKey: bson.M{

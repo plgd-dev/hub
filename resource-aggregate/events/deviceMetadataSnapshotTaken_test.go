@@ -17,9 +17,9 @@ import (
 )
 
 var testEventDeviceMetadataSnapshotTaken events.DeviceMetadataSnapshotTaken = events.DeviceMetadataSnapshotTaken{
-	DeviceId: "dev1",
+	DeviceId: dev1,
 	DeviceMetadataUpdated: &events.DeviceMetadataUpdated{
-		DeviceId: "dev1",
+		DeviceId: dev1,
 		Connection: &commands.Connection{
 			Status: commands.Connection_ONLINE,
 			Id:     "con1",
@@ -38,7 +38,7 @@ var testEventDeviceMetadataSnapshotTaken events.DeviceMetadataSnapshotTaken = ev
 	},
 	UpdatePendings: []*events.DeviceMetadataUpdatePending{
 		{
-			DeviceId: "dev1",
+			DeviceId: dev1,
 		},
 	},
 	EventMetadata: &events.EventMetadata{

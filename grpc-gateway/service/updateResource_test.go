@@ -286,7 +286,6 @@ func TestRequestHandlerRunMultipleUpdateResource(t *testing.T) {
 	defer cancel()
 
 	raCfg := raTest.MakeConfig(t)
-	raCfg.Clients.Eventstore.SnapshotThreshold = 5
 	tearDown := service.SetUp(ctx, t, service.WithRAConfig(raCfg))
 	defer tearDown()
 	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
@@ -367,7 +366,6 @@ func TestRequestHandlerRunMultipleParallelUpdateResource(t *testing.T) {
 	defer cancel()
 
 	raCfg := raTest.MakeConfig(t)
-	raCfg.Clients.Eventstore.SnapshotThreshold = 5
 	raCfg.Clients.Eventstore.ConcurrencyExceptionMaxRetry = 40
 
 	coapCfg := coapTest.MakeConfig(t)

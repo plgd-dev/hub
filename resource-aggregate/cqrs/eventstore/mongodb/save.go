@@ -95,58 +95,6 @@ func (s *EventStore) saveEvent(ctx context.Context, col *mongo.Collection, event
 	}
 }
 
-// Validate events before saving them in the database
-// Prerequisites that must hold:
-//  1. AggregateID, GroupID and EventType are not empty
-//  2. Version for each event is by 1 greater than the version of the previous event
-//  3. Only the first event can be a snapshot
-//  4. All events have the same AggregateID and GroupID
-//  5. Timestamps are non-zero
-//  6. Timestamps are non-decreasing
-func checkBeforeSave(events ...eventstore.Event) error {
-	if len(events) == 0 || events[0] == nil {
-		return fmt.Errorf("invalid events('%v')", events)
-	}
-	aggregateID := events[0].AggregateID()
-	groupID := events[0].GroupID()
-	version := events[0].Version()
-	timestamp := events[0].Timestamp()
-	for idx, event := range events {
-		if event == nil {
-			return fmt.Errorf("invalid events[%v]('%v')", idx, event)
-		}
-		if event.AggregateID() == "" {
-			return fmt.Errorf("invalid events[%v].AggregateID('%v')", idx, event.AggregateID())
-		}
-		if event.GroupID() == "" {
-			return fmt.Errorf("invalid events[%v].GroupID('%v')", idx, event.GroupID())
-		}
-		if event.EventType() == "" {
-			return fmt.Errorf("invalid events[%v].EventType('%v')", idx, event.EventType())
-		}
-		if event.Timestamp().IsZero() {
-			return fmt.Errorf("invalid zero events[%v].Timestamp", idx)
-		}
-		if idx > 0 {
-			if event.Version() != version+uint64(idx) {
-				return fmt.Errorf("invalid continues ascending events[%v].Version(%v))", idx, event.Version())
-			}
-			if event.AggregateID() != aggregateID {
-				return fmt.Errorf("invalid events[%v].AggregateID('%v') != events[0].AggregateID('%v')", idx, event.AggregateID(), aggregateID)
-			}
-			if event.GroupID() != groupID {
-				return fmt.Errorf("invalid events[%v].GroupID('%v') != events[0].GroupID('%v')", idx, event.GroupID(), groupID)
-			}
-			// timestamp values must be non-decreasing
-			if timestamp.After(event.Timestamp()) {
-				return fmt.Errorf("invalid decreasing events[%v].Timestamp(%v))", idx, event.Timestamp())
-			}
-			timestamp = event.Timestamp()
-		}
-	}
-	return nil
-}
-
 // Save save events to eventstore.
 // AggregateID, GroupID and EventType are required.
 // All events within one Save operation shall have the same AggregateID and GroupID.
@@ -159,11 +107,11 @@ func (s *EventStore) Save(ctx context.Context, events ...eventstore.Event) (even
 		s.LogDebugfFunc("mongodb.Evenstore.Save takes %v", time.Since(t))
 	}()
 
-	if err := checkBeforeSave(events...); err != nil {
+	if err := eventstore.ValidateEventsBeforeSave(events); err != nil {
 		return eventstore.Fail, err
 	}
 
-	col := s.client.Database(s.DBName()).Collection(getEventCollectionName())
+	col := s.client().Database(s.DBName()).Collection(getEventCollectionName())
 	if events[0].Version() == 0 {
 		doc, err := makeDBDoc(events, s.dataMarshaler)
 		if err != nil {
@@ -194,7 +142,7 @@ func (s *EventStore) saveSnapshot(ctx context.Context, events []eventstore.Event
 	if err != nil {
 		return eventstore.Fail, err
 	}
-	tx, err := s.client.StartSession()
+	tx, err := s.client().StartSession()
 	if err != nil {
 		return eventstore.Fail, err
 	}

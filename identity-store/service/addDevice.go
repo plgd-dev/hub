@@ -90,13 +90,13 @@ func (s *Service) AddDevice(ctx context.Context, request *pb.AddDeviceRequest) (
 
 	dev, ok, err := tx.RetrieveByDevice(request.DeviceId)
 	if err != nil {
-		return nil, log.LogAndReturnError(status.Errorf(codes.Internal, "cannot add device: %v", err.Error()))
+		return nil, log.LogAndReturnError(status.Errorf(codes.Internal, "cannot add device %v: %v", request.DeviceId, err.Error()))
 	}
 	if ok {
 		if dev.Owner == owner {
 			return &pb.AddDeviceResponse{}, nil
 		}
-		return nil, log.LogAndReturnError(status.Errorf(codes.Unauthenticated, "cannot add device: devices is owned by another user '%+v'", dev))
+		return nil, log.LogAndReturnError(status.Errorf(codes.Unauthenticated, "cannot add device: device %v is owned by another user", dev.DeviceID))
 	}
 
 	d := persistence.AuthorizedDevice{

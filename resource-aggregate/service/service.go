@@ -7,6 +7,7 @@ import (
 	"github.com/hashicorp/go-multierror"
 	clientIS "github.com/plgd-dev/hub/v2/identity-store/client"
 	pbIS "github.com/plgd-dev/hub/v2/identity-store/pb"
+	"github.com/plgd-dev/hub/v2/pkg/config/database"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/pkg/net/grpc/client"
@@ -17,10 +18,31 @@ import (
 	cqrsEventBus "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus"
 	natsClient "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/client"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/publisher"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore"
+	eventstoreConfig "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore/config"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore/cqldb"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore/mongodb"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/utils"
 	"go.opentelemetry.io/otel/trace"
 )
+
+func createEvenstore(ctx context.Context, config eventstoreConfig.Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (eventstore.EventStore, error) {
+	switch config.Use {
+	case database.MongoDB:
+		s, err := mongodb.New(ctx, config.MongoDB, fileWatcher, logger, tracerProvider, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
+		if err != nil {
+			return nil, fmt.Errorf("mongodb: %w", err)
+		}
+		return s, nil
+	case database.CqlDB:
+		s, err := cqldb.New(ctx, config.CqlDB, fileWatcher, logger, tracerProvider, cqldb.WithUnmarshaler(utils.Unmarshal), cqldb.WithMarshaler(utils.Marshal))
+		if err != nil {
+			return nil, fmt.Errorf("cqldb: %w", err)
+		}
+		return s, nil
+	}
+	return nil, fmt.Errorf("invalid eventstore use('%v')", config.Use)
+}
 
 func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logger log.Logger) (*service.Service, error) {
 	ctx, cancel := context.WithCancel(ctx)
@@ -32,15 +54,15 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 	otelClient.AddCloseFunc(cancel)
 	tracerProvider := otelClient.GetTracerProvider()
 
-	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, fileWatcher, logger, tracerProvider, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
+	eventstore, err := createEvenstore(ctx, config.Clients.Eventstore.Connection, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		otelClient.Close()
-		return nil, fmt.Errorf("cannot create mongodb eventstore %w", err)
+		return nil, fmt.Errorf("cannot create eventstore %w", err)
 	}
 	closeEventStore := func() {
 		errC := eventstore.Close(ctx)
 		if errC != nil {
-			logger.Errorf("error occurs during closing of connection to mongodb: %w", errC)
+			logger.Errorf("error occurs during closing of connection to eventstore: %w", errC)
 		}
 	}
 	naClient, err := natsClient.New(config.Clients.Eventbus.NATS.Config, fileWatcher, logger)
@@ -107,7 +129,7 @@ func newIdentityStoreClient(ctx context.Context, config IdentityStoreConfig, fil
 }
 
 // New creates new Server with provided store and publisher.
-func NewService(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider, eventStore *mongodb.EventStore, publisher cqrsEventBus.Publisher) (*service.Service, error) {
+func NewService(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider, eventStore eventstore.EventStore, publisher cqrsEventBus.Publisher) (*service.Service, error) {
 	grpcServer, err := newGrpcServer(ctx, config.APIs.GRPC, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		return nil, err

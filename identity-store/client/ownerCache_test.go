@@ -18,6 +18,7 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/net/grpc/client"
 	clientCertManager "github.com/plgd-dev/hub/v2/pkg/security/certManager/client"
 	natsTest "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/test"
+	"github.com/plgd-dev/hub/v2/test"
 	"github.com/plgd-dev/hub/v2/test/config"
 	oauthService "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	"github.com/plgd-dev/hub/v2/test/service"
@@ -32,7 +33,7 @@ func TestOwnerCacheSubscribe(t *testing.T) {
 	ctx := context.Background()
 	service.ClearDB(ctx, t)
 
-	devices := []string{"device1", "device2", "device3"}
+	devices := []string{test.GenerateDeviceIDbyIdx(1), test.GenerateDeviceIDbyIdx(2), test.GenerateDeviceIDbyIdx(3)}
 	cfg := idService.MakeConfig(t)
 	cfg.APIs.GRPC.Addr = "localhost:1234"
 

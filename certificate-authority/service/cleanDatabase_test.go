@@ -22,37 +22,34 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func constDate() time.Time {
-	return time.Date(2006, time.January, 2, 15, 4, 5, 0, time.UTC)
-}
-
 func TestCertificateAuthorityServerCleanUpSigningRecords(t *testing.T) {
-	owner := events.OwnerToUUID("owner")
-	const ownerClaim = "sub"
-	r := &store.SigningRecord{
-		Id:           "id",
-		Owner:        owner,
-		CommonName:   "commonName",
-		PublicKey:    "publicKey",
-		CreationDate: constDate().UnixNano(),
-		Credential: &pb.CredentialStatus{
-			CertificatePem: "certificate1",
-			Date:           constDate().UnixNano(),
-			ValidUntilDate: constDate().UnixNano(),
-		},
-	}
-
 	cfg := test.MakeConfig(t)
 	cfg.Clients.Storage.ExtendCronParserBySeconds = true
-	cfg.Clients.Storage.CleanUpRecords = "*/2 * * * * *"
+	cfg.Clients.Storage.CleanUpRecords = "*/1 * * * * *"
 
 	shutDown := testService.SetUpServices(context.Background(), t, testService.SetUpServicesCertificateAuthority|testService.SetUpServicesOAuth, testService.WithCAConfig(cfg))
 	defer shutDown()
 
-	store, closeStore := test.NewMongoStore(t)
+	storeDB, closeStore := test.NewStore(t)
 	defer closeStore()
 
-	err := store.CreateSigningRecord(context.Background(), r)
+	date := time.Now().Add(time.Second * 2)
+	owner := events.OwnerToUUID("owner")
+	const ownerClaim = "sub"
+	r := &store.SigningRecord{
+		Id:           "9d017fad-2961-4fcc-94a9-1e1291a88ffc",
+		Owner:        owner,
+		CommonName:   "commonName",
+		PublicKey:    "publicKey",
+		CreationDate: date.UnixNano(),
+		Credential: &pb.CredentialStatus{
+			CertificatePem: "certificate1",
+			Date:           date.UnixNano(),
+			ValidUntilDate: date.UnixNano(),
+		},
+	}
+
+	err := storeDB.CreateSigningRecord(context.Background(), r)
 	require.NoError(t, err)
 
 	logger := log.NewLogger(log.MakeDefaultConfig())
@@ -65,7 +62,7 @@ func TestCertificateAuthorityServerCleanUpSigningRecords(t *testing.T) {
 	}()
 
 	ch := new(inprocgrpc.Channel)
-	ca, err := grpc.NewCertificateAuthorityServer(ownerClaim, config.HubID(), test.MakeConfig(t).Signer, store, fileWatcher, logger)
+	ca, err := grpc.NewCertificateAuthorityServer(ownerClaim, config.HubID(), test.MakeConfig(t).Signer, storeDB, fileWatcher, logger)
 	require.NoError(t, err)
 	defer ca.Close()
 

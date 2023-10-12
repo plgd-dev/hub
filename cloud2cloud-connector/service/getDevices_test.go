@@ -97,9 +97,12 @@ func testRequestHandlerGetDevices(t *testing.T, events store.Events) {
 				dev.ProtocolIndependentId = ""
 				if dev.GetMetadata().GetConnection() != nil {
 					dev.GetMetadata().GetConnection().Id = ""
+					dev.GetMetadata().GetConnection().ConnectedAt = 0
 				}
 				if dev.GetMetadata().GetTwinSynchronization() != nil {
 					dev.GetMetadata().GetTwinSynchronization().CommandMetadata = nil
+					dev.GetMetadata().GetTwinSynchronization().InSyncAt = 0
+					dev.GetMetadata().GetTwinSynchronization().SyncingAt = 0
 				}
 				assert.NotEmpty(t, dev.GetData().GetContent().GetData())
 				dev.Data = nil

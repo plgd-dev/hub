@@ -8,15 +8,16 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/plgd-dev/hub/v2/identity-store/pb"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	"github.com/plgd-dev/hub/v2/test"
 	"github.com/plgd-dev/hub/v2/test/config"
 	"github.com/stretchr/testify/require"
 )
 
 func TestServiceDeleteDevices(t *testing.T) {
-	const testDevID1 = "testDeviceID1"
-	const testDevID2 = "testDeviceID2"
-	const testDevID3 = "testDeviceID3"
-	const testDevID4 = "testDeviceID4"
+	testDevID1 := test.GenerateDeviceIDbyIdx(1)
+	testDevID2 := test.GenerateDeviceIDbyIdx(2)
+	testDevID3 := test.GenerateDeviceIDbyIdx(3)
+	testDevID4 := test.GenerateDeviceIDbyIdx(4)
 	jwtWithSubUserID := config.CreateJwtToken(t, jwt.MapClaims{
 		"sub": "userId",
 	})
@@ -29,9 +30,9 @@ func TestServiceDeleteDevices(t *testing.T) {
 	jwtWithSubTestUser2 := config.CreateJwtToken(t, jwt.MapClaims{
 		"sub": testUser2,
 	})
-	const testUser2DevID1 = "test2DeviceID1"
-	const testUser2DevID2 = "test2DeviceID2"
-	const testUser2DevID3 = "test2DeviceID3"
+	testUser2DevID1 := test.GenerateDeviceIDbyIdx(21)
+	testUser2DevID2 := test.GenerateDeviceIDbyIdx(22)
+	testUser2DevID3 := test.GenerateDeviceIDbyIdx(23)
 
 	type args struct {
 		ctx     context.Context
@@ -56,7 +57,7 @@ func TestServiceDeleteDevices(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				request: &pb.DeleteDevicesRequest{
-					DeviceIds: []string{"deviceId"},
+					DeviceIds: []string{testDevID1},
 				},
 			},
 			wantErr: true,
@@ -141,12 +142,12 @@ func TestServiceDeleteDevices(t *testing.T) {
 			got, err := s.service.DeleteDevices(tt.args.ctx, tt.args.request)
 			if tt.wantErr {
 				require.Error(t, err)
-			} else {
-				require.NoError(t, err)
-				sort.Strings(tt.want.DeviceIds)
-				sort.Strings(got.DeviceIds)
-				require.Equal(t, tt.want, got)
+				return
 			}
+			require.NoError(t, err)
+			sort.Strings(tt.want.DeviceIds)
+			sort.Strings(got.DeviceIds)
+			require.Equal(t, tt.want, got)
 		})
 	}
 }

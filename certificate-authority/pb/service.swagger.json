@@ -265,7 +265,7 @@
       "properties": {
         "id": {
           "type": "string",
-          "description": "Registration id, calculated from the certificate public key info + common name. SHA256 - Must be unique in the database and for one private key there could be multiple certificates.\n\n@gotags: bson:\"_id\""
+          "description": "The registration ID is determined by applying a formula that utilizes the certificate properties, and it is computed as uuid.NewSHA1(uuid.NameSpaceX500, common_name + uuid.NewSHA1(uuid.NameSpaceX500, publicKeyRaw)).\n\n@gotags: bson:\"_id\""
         },
         "owner": {
           "type": "string",
@@ -273,7 +273,7 @@
         },
         "commonName": {
           "type": "string",
-          "description": "Common name of the certificate.\n\n@gotags: bson:\"commonName\""
+          "description": "Common name of the certificate. If device_id is provided in the common name, then for update public key must be same.\n\n@gotags: bson:\"commonName\""
         },
         "deviceId": {
           "type": "string",
@@ -281,7 +281,7 @@
         },
         "publicKey": {
           "type": "string",
-          "description": "Public key fingerprint in (SHA256) of the certificate.\n\n@gotags: bson:\"publicKey\""
+          "description": "Public key fingerprint in uuid.NewSHA1(uuid.NameSpaceX500, publicKeyRaw) of the certificate.\n\n@gotags: bson:\"publicKey\""
         },
         "creationDate": {
           "type": "string",

@@ -30,7 +30,7 @@ func TestCertificateAuthorityServerGetSigningRecords(t *testing.T) {
 	owner := events.OwnerToUUID("owner")
 	const ownerClaim = "sub"
 	r := &store.SigningRecord{
-		Id:           "id",
+		Id:           "9d017fad-2961-4fcc-94a9-1e1291a88ffc",
 		Owner:        owner,
 		CommonName:   "commonName",
 		PublicKey:    "publicKey",

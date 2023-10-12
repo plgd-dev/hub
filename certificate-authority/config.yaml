@@ -54,6 +54,7 @@ clients:
   storage:
     # cron expression, every day at 1 am
     cleanUpRecords: "0 1 * * *"
+    use: mongoDB
     mongoDB:
       uri:
       database: certificateAuthority
@@ -68,6 +69,28 @@ clients:
         timeout: 1m0s
         throttleTime: 500ms
         documentLimit: 1000
+    cqlDB:
+      table: "signedCertificateRecords"
+      hosts: []
+      port: 9142
+      numConnections: 16
+      connectTimeout: 10s
+      useHostnameResolution: true
+      reconnectionPolicy:
+        constant:
+          interval: 3s
+          maxRetries: 3
+      keyspace:
+        name: plgdhub
+        create: true
+        replication:
+          class: SimpleStrategy
+          replication_factor: 1
+      tls:
+        caPool: "/secrets/public/rootca.crt"
+        keyFile: "/secrets/private/cert.key"
+        certFile: "/secrets/public/cert.crt"
+        useSystemCAPool: false
   openTelemetryCollector:
     grpc:
       enabled: false

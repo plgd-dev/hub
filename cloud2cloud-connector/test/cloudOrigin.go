@@ -6,6 +6,7 @@ import (
 	c2curi "github.com/plgd-dev/hub/v2/cloud2cloud-connector/uri"
 	grpcService "github.com/plgd-dev/hub/v2/grpc-gateway/test"
 	idService "github.com/plgd-dev/hub/v2/identity-store/test"
+	"github.com/plgd-dev/hub/v2/pkg/config/database"
 	kitNetHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
 	raService "github.com/plgd-dev/hub/v2/resource-aggregate/test"
 	rdService "github.com/plgd-dev/hub/v2/resource-directory/test"
@@ -48,6 +49,7 @@ func SetUpCloudWithConnector(t *testing.T) (tearDown func()) {
 	raCfg := raService.MakeConfig(t)
 	raCfg.APIs.GRPC.Addr = RESOURCE_AGGREGATE_HOST
 	raCfg.APIs.GRPC.Authorization.Authority = http.HTTPS_SCHEME + OAUTH_HOST
+	raCfg.Clients.Eventstore.Connection.Use = database.MongoDB
 	raCfg.Clients.Eventstore.Connection.MongoDB.Embedded.Database = C2C_CONNECTOR_DB
 	raCfg.Clients.IdentityStore.Connection.Addr = IDENTITY_STORE_HOST
 	raCfg.Clients.Eventbus.NATS.URL = C2C_CONNECTOR_NATS_URL
@@ -56,6 +58,7 @@ func SetUpCloudWithConnector(t *testing.T) (tearDown func()) {
 	rdCfg := rdService.MakeConfig(t)
 	rdCfg.APIs.GRPC.Addr = RESOURCE_DIRECTORY_HOST
 	rdCfg.APIs.GRPC.Authorization.Authority = http.HTTPS_SCHEME + OAUTH_HOST
+	rdCfg.Clients.Eventstore.Connection.Use = database.MongoDB
 	rdCfg.Clients.Eventstore.Connection.MongoDB.Embedded.Database = C2C_CONNECTOR_DB
 	rdCfg.Clients.Eventbus.NATS.URL = C2C_CONNECTOR_NATS_URL
 	rdCfg.Clients.IdentityStore.Connection.Addr = IDENTITY_STORE_HOST

@@ -61,8 +61,9 @@ data:
     clients:
       storage:
         cleanUpRecords: {{ .clients.storage.cleanUpRecords | quote }}
+        use: {{ include "plgd-hub.useDatabase" (list $ . .clients.storage.use)  | quote }}
         mongoDB:
-          uri: {{- printf " " }}{{- include "plgd-hub.mongoDBUri" (list $ .clients.storage.mongoDB.uri )  | quote }}
+          uri: {{ include "plgd-hub.mongoDBUri" (list $ .clients.storage.mongoDB.uri )  | quote }}
           database: {{ .clients.storage.mongoDB.database }}
           maxPoolSize: {{ .clients.storage.mongoDB.maxPoolSize }}
           maxConnIdleTime: {{ .clients.storage.mongoDB.maxConnIdleTime }}
@@ -74,6 +75,27 @@ data:
             timeout: {{ .clients.storage.mongoDB.bulkWrite.timeout  | quote }}
             throttleTime: {{ .clients.storage.mongoDB.bulkWrite.throttleTime  | quote }}
             documentLimit: {{ .clients.storage.mongoDB.bulkWrite.documentLimit  }}
+        cqlDB:
+          hosts:
+          {{- include "plgd-hub.cqlDBHosts" (list $ .clients.storage.cqlDB.hosts ) | indent 8 }}
+          port: {{ .clients.storage.cqlDB.port | default 9142 }}
+          table: {{ .clients.storage.cqlDB.table | quote }}
+          numConnections: {{ .clients.storage.cqlDB.numConnections }}
+          connectTimeout: {{ .clients.storage.cqlDB.connectTimeout }}
+          useHostnameResolution: {{ .clients.storage.cqlDB.useHostnameResolution }}
+          reconnectionPolicy:
+            constant:
+              interval: {{ .clients.storage.cqlDB.reconnectionPolicy.constant.interval }}
+              maxRetries: {{ .clients.storage.cqlDB.reconnectionPolicy.constant.maxRetries }}
+          keyspace:
+            name: {{ .clients.storage.cqlDB.keyspace.name }}
+            create: {{ .clients.storage.cqlDB.keyspace.create }}
+            replication:
+              {{- toYaml .clients.storage.cqlDB.keyspace.replication | nindent 14 }}
+          tls:
+            {{- $cqlDbTls := .clients.storage.cqlDB.tls }}
+            {{- include "plgd-hub.certificateConfig" (list $ $cqlDbTls $cert ) | indent 10 }}
+            useSystemCAPool: {{ .clients.storage.cqlDB.tls.useSystemCAPool }}
       {{- include "plgd-hub.openTelemetryExporterConfig" (list $ $cert ) | nindent 6 }}
     signer:
     {{- if .signer.caPool }}

@@ -108,6 +108,9 @@ func CmpResourceCreated(t *testing.T, expected, got *events.ResourceCreated) {
 }
 
 func CleanUpResourceChanged(e *events.ResourceChanged, resetCorrelationID bool) *events.ResourceChanged {
+	if e == nil {
+		return nil
+	}
 	if e.GetAuditContext() != nil && resetCorrelationID {
 		e.GetAuditContext().CorrelationId = ""
 	}

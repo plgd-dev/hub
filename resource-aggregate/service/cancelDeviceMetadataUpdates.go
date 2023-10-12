@@ -32,8 +32,6 @@ func (a *Aggregate) CancelPendingMetadataUpdates(ctx context.Context, request *c
 		err = fmt.Errorf("unable to process cancel resource command: %w", err)
 		return
 	}
-	cleanUpToSnapshot(ctx, a, events)
-
 	return
 }
 
@@ -44,7 +42,7 @@ func (r RequestHandler) CancelPendingMetadataUpdates(ctx context.Context, reques
 	}
 
 	resID := commands.NewResourceID(request.GetDeviceId(), commands.StatusHref)
-	aggregate, err := NewAggregate(resID, r.config.Clients.Eventstore.SnapshotThreshold, r.eventstore, NewDeviceMetadataFactoryModel(userID, owner, r.config.HubID), cqrsAggregate.NewDefaultRetryFunc(r.config.Clients.Eventstore.ConcurrencyExceptionMaxRetry))
+	aggregate, err := NewAggregate(resID, r.eventstore, NewDeviceMetadataFactoryModel(userID, owner, r.config.HubID), cqrsAggregate.NewDefaultRetryFunc(r.config.Clients.Eventstore.ConcurrencyExceptionMaxRetry))
 	if err != nil {
 		return nil, log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "cannot cancel device ('%v') metadata updates: %v", request.GetDeviceId(), err))
 	}

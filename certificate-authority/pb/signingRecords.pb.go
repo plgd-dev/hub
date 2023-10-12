@@ -157,15 +157,15 @@ type SigningRecord struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Registration id, calculated from the certificate public key info + common name. SHA256 - Must be unique in the database and for one private key there could be multiple certificates.
+	// The registration ID is determined by applying a formula that utilizes the certificate properties, and it is computed as uuid.NewSHA1(uuid.NameSpaceX500, common_name + uuid.NewSHA1(uuid.NameSpaceX500, publicKeyRaw)).
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" bson:"_id"` // @gotags: bson:"_id"
 	// Certificate owner.
 	Owner string `protobuf:"bytes,2,opt,name=owner,proto3" json:"owner,omitempty" bson:"owner"` // @gotags: bson:"owner"
-	// Common name of the certificate.
+	// Common name of the certificate. If device_id is provided in the common name, then for update public key must be same.
 	CommonName string `protobuf:"bytes,3,opt,name=common_name,json=commonName,proto3" json:"common_name,omitempty" bson:"commonName"` // @gotags: bson:"commonName"
 	// DeviceID of the identity certificate.
 	DeviceId string `protobuf:"bytes,4,opt,name=device_id,json=deviceId,proto3" json:"device_id,omitempty" bson:"deviceId,omitempty"` // @gotags: bson:"deviceId,omitempty"
-	// Public key fingerprint in (SHA256) of the certificate.
+	// Public key fingerprint in uuid.NewSHA1(uuid.NameSpaceX500, publicKeyRaw) of the certificate.
 	PublicKey string `protobuf:"bytes,5,opt,name=public_key,json=publicKey,proto3" json:"public_key,omitempty" bson:"publicKey"` // @gotags: bson:"publicKey"
 	// Record creation date, in unix nanoseconds timestamp format
 	CreationDate int64 `protobuf:"varint,6,opt,name=creation_date,json=creationDate,proto3" json:"creation_date,omitempty" bson:"creationDate,omitempty"` // @gotags: bson:"creationDate,omitempty"

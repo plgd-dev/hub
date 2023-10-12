@@ -25,9 +25,11 @@ func MakeConfig(t require.TestingT) service.Config {
 
 	cfg.Clients.Eventbus.NATS = config.MakePublisherConfig()
 
+	cfg.Clients.Eventstore.Connection.Use = config.ACTIVE_DATABASE()
 	cfg.Clients.Eventstore.Connection.MongoDB = config.MakeEventsStoreMongoDBConfig()
+	cfg.Clients.Eventstore.Connection.CqlDB = config.MakeEventsStoreCqlDBConfig()
+
 	cfg.Clients.Eventstore.ConcurrencyExceptionMaxRetry = 8
-	cfg.Clients.Eventstore.SnapshotThreshold = 16
 	cfg.Clients.OpenTelemetryCollector = config.MakeOpenTelemetryCollectorClient()
 
 	err := cfg.Validate()

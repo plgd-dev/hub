@@ -63,7 +63,7 @@ func TestMaintenance(t *testing.T) {
 
 	store, err := mongodb.New(
 		ctx,
-		mongodb.Config{
+		&mongodb.Config{
 			Embedded: pkgMongo.Config{
 				URI: "mongodb://localhost:27017",
 				TLS: config.MakeTLSClientConfig(),

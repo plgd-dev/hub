@@ -48,7 +48,7 @@ func (requestHandler *RequestHandler) updateResource(w http.ResponseWriter, r *h
 
 	newBody, err := createContentBody(r.Body)
 	if err != nil {
-		serverMux.WriteError(w, kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "cannot update resource('%v%v'): %v", deviceID, href, err))
+		serverMux.WriteError(w, kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "cannot update resource('/%v%v'): %v", deviceID, href, err))
 		return
 	}
 

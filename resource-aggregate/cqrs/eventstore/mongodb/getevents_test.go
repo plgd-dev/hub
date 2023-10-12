@@ -13,6 +13,7 @@ import (
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore/mongodb"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore/test"
+	hubTest "github.com/plgd-dev/hub/v2/test"
 	"github.com/plgd-dev/kit/v2/strings"
 	"github.com/stretchr/testify/require"
 )
@@ -39,11 +40,15 @@ const (
 )
 
 func getDeviceID(deviceIndex int) string {
-	return "device" + strconv.Itoa(deviceIndex)
+	return hubTest.GenerateDeviceIDbyIdx(deviceIndex)
 }
 
 func getServiceID(serviceIndex int) string {
-	return "serviceID" + strconv.Itoa(serviceIndex)
+	return hubTest.GenerateIDbyIdx("e", serviceIndex)
+}
+
+func getAggregateID(resourceIndex int) string {
+	return hubTest.GenerateIDbyIdx("a", resourceIndex)
 }
 
 func getETag(deviceIndex int, resourceIndex int) []byte {
@@ -77,8 +82,8 @@ func addEventsForGetEventsToDB(ctx context.Context, t *testing.T, store *mongodb
 		resourceEvents[resourceIndex] = append(resourceEvents[resourceIndex], test.MockEvent{
 			VersionI:     resourceVersion[resourceIndex],
 			EventTypeI:   "testType",
-			IsSnapshotI:  false,
-			AggregateIDI: "resource" + strconv.Itoa(resourceIndex),
+			IsSnapshotI:  true,
+			AggregateIDI: getAggregateID(resourceIndex),
 			GroupIDI:     getDeviceID(deviceIndex),
 			TimestampI:   1 + resourceTimestamp[resourceIndex],
 			ETagI:        getETag(deviceIndex, resourceIndex),
@@ -153,7 +158,7 @@ func TestGetEventsByTimestamp(t *testing.T) {
 		iterations: 200,
 		queries: []eventstore.GetEventsQuery{
 			{
-				GroupID: "device1",
+				GroupID: getDeviceID(1),
 			},
 		},
 	})
@@ -164,15 +169,15 @@ func TestGetDeviceEventsByTimestamp(t *testing.T) {
 		iterations: 200,
 		queries: []eventstore.GetEventsQuery{
 			{
-				GroupID: "device0",
+				GroupID: getDeviceID(0),
 			}, {
-				GroupID: "device2",
+				GroupID: getDeviceID(2),
 			}, {
-				GroupID: "device4",
+				GroupID: getDeviceID(4),
 			}, {
-				GroupID: "device6",
+				GroupID: getDeviceID(6),
 			}, {
-				GroupID: "device8",
+				GroupID: getDeviceID(8),
 			},
 		},
 	})
@@ -187,8 +192,8 @@ func TestGetResourceEventsByTimestamp(t *testing.T) {
 			deviceIndex := resourceIndex % getEventsDeviceCount
 			return []eventstore.GetEventsQuery{
 				{
-					GroupID:     "device" + strconv.Itoa(deviceIndex),
-					AggregateID: "resource" + strconv.Itoa(resourceIndex),
+					GroupID:     getDeviceID(deviceIndex),
+					AggregateID: getAggregateID(resourceIndex),
 				},
 			}
 		},
@@ -204,8 +209,8 @@ func TestGetResourcesEventsByTimestamp(t *testing.T) {
 			for i := range queries {
 				resourceIndex := weakRng.Intn(getEventsResourceCount + 1)
 				deviceIndex := resourceIndex % getEventsDeviceCount
-				queries[i].GroupID = "device" + strconv.Itoa(deviceIndex)
-				queries[i].AggregateID = "resource" + strconv.Itoa(resourceIndex)
+				queries[i].GroupID = getDeviceID(deviceIndex)
+				queries[i].AggregateID = getAggregateID(resourceIndex)
 			}
 			return queries
 		},
@@ -213,9 +218,9 @@ func TestGetResourcesEventsByTimestamp(t *testing.T) {
 }
 
 func Test_getNormalizedGetEventsFilter(t *testing.T) {
-	const groupID1 = "groupID1"
-	const aggregateID1 = "aggregateID1"
-	const aggregateID2 = "aggregateID2"
+	groupID1 := getDeviceID(1)
+	aggregateID1 := getAggregateID(1)
+	aggregateID2 := getAggregateID(2)
 
 	type args struct {
 		queries []eventstore.GetEventsQuery

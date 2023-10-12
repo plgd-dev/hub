@@ -12,7 +12,7 @@ import (
 
 var testEventResourceDeletePending events.ResourceDeletePending = events.ResourceDeletePending{
 	ResourceId: &commands.ResourceId{
-		DeviceId: "dev1",
+		DeviceId: dev1,
 		Href:     "/dev1",
 	},
 	AuditContext: &commands.AuditContext{

@@ -54,7 +54,7 @@ func (s *EventStore) GetLatestDeviceETags(ctx context.Context, deviceID string, 
 	filter := bson.D{
 		bson.E{Key: groupIDKey, Value: deviceID},
 	}
-	col := s.client.Database(s.DBName()).Collection(getEventCollectionName())
+	col := s.client().Database(s.DBName()).Collection(getEventCollectionName())
 	opts := options.Find().SetSort(bson.D{{Key: latestETagKeyTimestampKey, Value: -1}}).SetProjection(bson.D{{Key: latestETagKey, Value: 1}}).SetHint(groupIDETagLatestTimestampQueryIndex)
 	if limit > 0 {
 		opts.SetLimit(int64(limit))

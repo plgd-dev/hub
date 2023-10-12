@@ -13,7 +13,7 @@ var testEventResourceLinksPublished events.ResourceLinksPublished = events.Resou
 	Resources: []*commands.Resource{
 		{
 			Href:                  "/res1",
-			DeviceId:              "dev1",
+			DeviceId:              dev1,
 			ResourceTypes:         []string{"type1", "type2"},
 			Interfaces:            []string{"if1", "if2"},
 			Anchor:                "anchor1",
@@ -31,7 +31,7 @@ var testEventResourceLinksPublished events.ResourceLinksPublished = events.Resou
 			},
 		},
 	},
-	DeviceId: "dev1",
+	DeviceId: dev1,
 	AuditContext: &commands.AuditContext{
 		UserId:        "501",
 		CorrelationId: "1",

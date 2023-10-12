@@ -1,0 +1,26 @@
+{{- if and .Values.scylla.enabled .Values.certmanager.enabled }}
+{{- range .Values.scylla.racks }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .scyllaConfig }}
+  namespace: {{ $.Release.Namespace }}
+data:
+  scylla.yaml: |
+    native_transport_port: 0
+    native_shard_aware_transport_port: 0
+    server_encryption_options:
+      internode_encryption: all
+      require_client_auth: true
+      truststore: /certs/ca.crt
+      keyfile: /certs/tls.key
+      certificate: /certs/tls.crt
+    client_encryption_options:
+      enabled: true
+      require_client_auth: true
+      truststore: /certs/ca.crt
+      keyfile: /certs/tls.key
+      certificate: /certs/tls.crt
+      priority_string: SECURE128:+SECURE192:-VERS-ALL:+VERS-TLS1.2:+VERS-TLS1.3
+{{- end }}
+{{- end }}

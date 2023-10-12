@@ -11,7 +11,7 @@ import (
 
 var testEventResourceRetrievePending events.ResourceRetrievePending = events.ResourceRetrievePending{
 	ResourceId: &commands.ResourceId{
-		DeviceId: "dev1",
+		DeviceId: dev1,
 		Href:     "/dev1",
 	},
 	ResourceInterface: "if1",

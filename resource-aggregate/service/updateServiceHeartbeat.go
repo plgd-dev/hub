@@ -15,7 +15,6 @@ import (
 	cqrsAggregate "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/aggregate"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore"
-	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore/mongodb"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 	"go.uber.org/atomic"
 	"google.golang.org/grpc/codes"
@@ -48,7 +47,6 @@ func (a *Aggregate) UpdateServiceMetadata(ctx context.Context, request *commands
 		err = fmt.Errorf("unable to process update service metadata command command: %w", err)
 		return
 	}
-	cleanUpToSnapshot(ctx, a, events)
 	return
 }
 
@@ -58,7 +56,6 @@ func (a *Aggregate) ConfirmExpiredServices(ctx context.Context, request *events.
 		err = fmt.Errorf("unable to process update service metadata command command: %w", err)
 		return
 	}
-	cleanUpToSnapshot(ctx, a, events)
 	return
 }
 
@@ -92,7 +89,7 @@ type UpdateServiceMetadataReqResp struct {
 type ServiceHeartbeat struct {
 	logger      log.Logger
 	config      Config
-	eventstore  *mongodb.EventStore
+	eventstore  eventstore.EventStore
 	publisher   eventbus.Publisher
 	wake        chan struct{}
 	wakeExpired chan struct{}
@@ -107,7 +104,7 @@ type ServiceHeartbeat struct {
 	}
 }
 
-func NewServiceHeartbeat(config Config, eventstore *mongodb.EventStore, publisher eventbus.Publisher, logger log.Logger) *ServiceHeartbeat {
+func NewServiceHeartbeat(config Config, eventstore eventstore.EventStore, publisher eventbus.Publisher, logger log.Logger) *ServiceHeartbeat {
 	s := &ServiceHeartbeat{
 		logger:          logger,
 		config:          config,
@@ -205,7 +202,7 @@ func (s *ServiceHeartbeat) processRequest(r UpdateServiceMetadataReqResp) time.T
 		return snapshot, nil
 	}
 	nextWakeUp := pkgTime.MaxTime
-	aggregate, err := NewAggregate(resID, s.config.Clients.Eventstore.SnapshotThreshold, s.eventstore, newServicesMetadataFactoryModelFunc, cqrsAggregate.NewDefaultRetryFunc(s.config.Clients.Eventstore.ConcurrencyExceptionMaxRetry))
+	aggregate, err := NewAggregate(resID, s.eventstore, newServicesMetadataFactoryModelFunc, cqrsAggregate.NewDefaultRetryFunc(s.config.Clients.Eventstore.ConcurrencyExceptionMaxRetry))
 	if err != nil {
 		s.logger.Errorf(errFmtUpdateServiceMetadata, err)
 		return nextWakeUp
@@ -246,7 +243,7 @@ func (s *ServiceHeartbeat) processExpiredServices() {
 	offlineServices := s.offlineServices.CopyData()
 	ctx := context.Background()
 	resID := commands.NewResourceID(s.config.HubID, commands.ServicesResourceHref)
-	aggregate, err := NewAggregate(resID, s.config.Clients.Eventstore.SnapshotThreshold, s.eventstore, NewServicesMetadataFactoryModel(ServiceUserID, ServiceUserID, s.config.HubID), cqrsAggregate.NewDefaultRetryFunc(s.config.Clients.Eventstore.ConcurrencyExceptionMaxRetry))
+	aggregate, err := NewAggregate(resID, s.eventstore, NewServicesMetadataFactoryModel(ServiceUserID, ServiceUserID, s.config.HubID), cqrsAggregate.NewDefaultRetryFunc(s.config.Clients.Eventstore.ConcurrencyExceptionMaxRetry))
 	if err != nil {
 		s.logger.Errorf(errFmtUpdateServiceMetadata, err)
 		return
@@ -380,7 +377,7 @@ func (s *ServiceHeartbeat) updateDeviceToExpired(ctx context.Context, serviceID,
 		return latestSnapshot, nil
 	}
 
-	aggregate, err := NewAggregate(resID, s.config.Clients.Eventstore.SnapshotThreshold, s.eventstore, deviceMetadataFactoryModel, cqrsAggregate.NewDefaultRetryFunc(s.config.Clients.Eventstore.ConcurrencyExceptionMaxRetry))
+	aggregate, err := NewAggregate(resID, s.eventstore, deviceMetadataFactoryModel, cqrsAggregate.NewDefaultRetryFunc(s.config.Clients.Eventstore.ConcurrencyExceptionMaxRetry))
 	if err != nil {
 		return log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "cannot set device('%v') to offline state: %v", deviceID, err))
 	}

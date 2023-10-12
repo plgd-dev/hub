@@ -18,8 +18,8 @@ spec:
     - "127.0.0.1"
   dnsNames:
     - "localhost"
-    - "mongodb-headless.{{ .Release.Namespace }}.svc.cluster.local"
-    - "*.mongodb-headless.{{ .Release.Namespace }}.svc.cluster.local"
+    - "mongodb-headless.{{ .Release.Namespace }}.svc.{{ $.Values.cluster.dns }}"
+    - "*.mongodb-headless.{{ .Release.Namespace }}.svc.{{ $.Values.cluster.dns }}"
   duration: {{ .Values.certmanager.internal.cert.duration | default .Values.certmanager.default.cert.duration }}
   renewBefore: {{ .Values.certmanager.internal.cert.renewBefore | default .Values.certmanager.default.cert.renewBefore }}
   issuerRef:

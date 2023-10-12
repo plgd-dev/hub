@@ -7,6 +7,7 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/plgd-dev/hub/v2/identity-store/pb"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	"github.com/plgd-dev/hub/v2/test"
 	"github.com/plgd-dev/hub/v2/test/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -48,7 +49,7 @@ func TestListingMoreDevices(t *testing.T) {
 	}()
 	persistDevice(t, s.service.persistence, newTestDevice())
 	d := newTestDevice()
-	d.DeviceID = "anotherDeviceID"
+	d.DeviceID = test.GenerateDeviceIDbyIdx(1)
 	persistDevice(t, s.service.persistence, d)
 
 	err := s.service.GetDevices(newGetDevicesRequest(), srv)

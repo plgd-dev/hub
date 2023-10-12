@@ -12,7 +12,7 @@ import (
 
 var testEventResourceCreatePending events.ResourceCreatePending = events.ResourceCreatePending{
 	ResourceId: &commands.ResourceId{
-		DeviceId: "dev1",
+		DeviceId: dev1,
 		Href:     "/dev1",
 	},
 	Content: &commands.Content{

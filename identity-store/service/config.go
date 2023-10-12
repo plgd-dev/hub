@@ -4,12 +4,12 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
+	"github.com/plgd-dev/hub/v2/identity-store/persistence/config"
+	pkgConfig "github.com/plgd-dev/hub/v2/pkg/config"
 	"github.com/plgd-dev/hub/v2/pkg/log"
-	"github.com/plgd-dev/hub/v2/pkg/mongodb"
 	"github.com/plgd-dev/hub/v2/pkg/net/grpc/server"
 	otelClient "github.com/plgd-dev/hub/v2/pkg/opentelemetry/collector/client"
 	natsClient "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/client"
-	"github.com/plgd-dev/kit/v2/config"
 )
 
 // Config provides defaults and enables configuring via env variables.
@@ -77,18 +77,9 @@ func (c *EventBusConfig) Validate() error {
 	return nil
 }
 
-type StorageConfig struct {
-	MongoDB mongodb.Config `yaml:"mongoDB" json:"mongoDb"`
-}
-
-func (c *StorageConfig) Validate() error {
-	if err := c.MongoDB.Validate(); err != nil {
-		return fmt.Errorf("mongoDB.%w", err)
-	}
-	return nil
-}
+type StorageConfig = config.Config
 
 // String return string representation of Config
 func (c Config) String() string {
-	return config.ToString(c)
+	return pkgConfig.ToString(c)
 }

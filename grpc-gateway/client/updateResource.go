@@ -39,7 +39,7 @@ func (c *Client) UpdateResource(
 
 	resp, err := c.gateway.UpdateResource(ctx, &r)
 	if err != nil {
-		return fmt.Errorf("cannot update resource /%v/%v: %w", deviceID, href, err)
+		return fmt.Errorf("cannot update resource /%v%v: %w", deviceID, href, err)
 	}
 
 	content := resp.GetData().GetContent()

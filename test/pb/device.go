@@ -70,6 +70,11 @@ func CleanUpDeviceMetadataUpdated(e *events.DeviceMetadataUpdated, resetCorrelat
 	return e
 }
 
+func CleanUpDeviceMetadataSnapshotTaken(e *events.DeviceMetadataSnapshotTaken, resetCorrelationID bool) {
+	CleanUpDeviceMetadataUpdated(e.DeviceMetadataUpdated, resetCorrelationID)
+	e.EventMetadata = nil
+}
+
 func CmpDeviceMetadataUpdated(t *testing.T, expected, got *events.DeviceMetadataUpdated) {
 	resetCorrelationID := expected.GetAuditContext().GetCorrelationId() == ""
 	CleanUpDeviceMetadataUpdated(expected, resetCorrelationID)

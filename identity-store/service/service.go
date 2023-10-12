@@ -6,12 +6,14 @@ import (
 
 	"github.com/plgd-dev/hub/v2/identity-store/pb"
 	"github.com/plgd-dev/hub/v2/identity-store/persistence"
+	"github.com/plgd-dev/hub/v2/identity-store/persistence/config"
+	"github.com/plgd-dev/hub/v2/identity-store/persistence/cqldb"
 	"github.com/plgd-dev/hub/v2/identity-store/persistence/mongodb"
+	"github.com/plgd-dev/hub/v2/pkg/config/database"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/pkg/net/grpc/server"
 	otelClient "github.com/plgd-dev/hub/v2/pkg/opentelemetry/collector/client"
-	cmClient "github.com/plgd-dev/hub/v2/pkg/security/certManager/client"
 	"github.com/plgd-dev/hub/v2/pkg/security/jwt/validator"
 	"github.com/plgd-dev/hub/v2/pkg/service"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/client"
@@ -25,6 +27,24 @@ type Persistence = interface {
 	NewTransaction(ctx context.Context) persistence.PersistenceTx
 	Clear(ctx context.Context) error
 	Close(ctx context.Context) error
+}
+
+func newPersistence(ctx context.Context, config config.Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (Persistence, error) {
+	switch config.Use {
+	case database.MongoDB:
+		s, err := mongodb.New(ctx, config.MongoDB, fileWatcher, logger, tracerProvider)
+		if err != nil {
+			return nil, fmt.Errorf("mongodb: %w", err)
+		}
+		return s, nil
+	case database.CqlDB:
+		s, err := cqldb.New(ctx, config.CqlDB, fileWatcher, logger, tracerProvider)
+		if err != nil {
+			return nil, fmt.Errorf("cqldb: %w", err)
+		}
+		return s, nil
+	}
+	return nil, fmt.Errorf("invalid eventstore use('%v')", config.Use)
 }
 
 // Service holds dependencies of IdentityStore.
@@ -60,19 +80,13 @@ func NewServer(ctx context.Context, cfg Config, fileWatcher *fsnotify.Watcher, l
 		return nil, fmt.Errorf("cannot create grpc listener: %w", err)
 	}
 
-	certManager, err := cmClient.New(cfg.Clients.Storage.MongoDB.TLS, fileWatcher, logger)
+	persistence, err := newPersistence(ctx, cfg.Clients.Storage, fileWatcher, logger, tracerProvider)
 	if err != nil {
-		return nil, fmt.Errorf("cannot create cert manager %w", err)
-	}
-	grpcServer.AddCloseFunc(certManager.Close)
-
-	persistence, err := mongodb.NewStore(ctx, cfg.Clients.Storage.MongoDB, certManager.GetTLSConfig(), tracerProvider)
-	if err != nil {
-		return nil, fmt.Errorf("cannot create connector to mongo: %w", err)
+		return nil, fmt.Errorf("cannot create connector to persistent storage: %w", err)
 	}
 	grpcServer.AddCloseFunc(func() {
 		if err := persistence.Close(ctx); err != nil {
-			log.Debugf("failed to close mongodb connector: %w", err)
+			log.Debugf("failed to close persistent storage: %w", err)
 		}
 	})
 

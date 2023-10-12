@@ -67,9 +67,9 @@ func (d *DeviceMetadataSnapshotTaken) CopyData(event *DeviceMetadataSnapshotTake
 
 func (d *DeviceMetadataSnapshotTaken) CheckInitialized() bool {
 	return d.GetDeviceId() != "" &&
-		d.GetDeviceMetadataUpdated() != nil &&
-		d.GetUpdatePendings() != nil &&
-		d.GetEventMetadata() != nil
+		d.GetEventMetadata() != nil &&
+		(d.GetDeviceMetadataUpdated() != nil ||
+			d.GetUpdatePendings() != nil)
 }
 
 func (d *DeviceMetadataSnapshotTaken) HandleDeviceMetadataUpdated(_ context.Context, upd *DeviceMetadataUpdated, confirm bool) (bool, error) {

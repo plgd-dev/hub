@@ -187,7 +187,7 @@ func TestEqual(t *testing.T) {
 
 var testEventResourceStateSnapshotTaken events.ResourceStateSnapshotTaken = events.ResourceStateSnapshotTaken{
 	ResourceId: &commands.ResourceId{
-		DeviceId: "dev1",
+		DeviceId: dev1,
 		Href:     "/dev1",
 	},
 	LatestResourceChange: &events.ResourceChanged{

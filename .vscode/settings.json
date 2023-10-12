@@ -34,6 +34,7 @@
         "TEST_GRPC_GATEWAY_LOG_DUMP_BODY":  "false",
         "TEST_IDENTITY_STORE_LOG_LEVEL": "info",
         "TEST_IDENTITY_STORE_LOG_DUMP_BODY":  "false",
+        "TEST_DATABASE": "mongoDB",
         // "GODEBUG": "scavtrace=1",
         // "TEST_COAP_GATEWAY_UDP_ENABLED": "true",
         // "GOMAXPROCS": 1,

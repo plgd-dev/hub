@@ -2,9 +2,12 @@ package mongodb
 
 import (
 	"context"
-	"crypto/tls"
+	"fmt"
 
+	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
+	"github.com/plgd-dev/hub/v2/pkg/log"
 	pkgMongo "github.com/plgd-dev/hub/v2/pkg/mongodb"
+	"github.com/plgd-dev/hub/v2/pkg/security/certManager/client"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.opentelemetry.io/otel/trace"
 )
@@ -24,10 +27,16 @@ type Store struct {
 	*pkgMongo.Store
 }
 
-func NewStore(ctx context.Context, cfg pkgMongo.Config, tls *tls.Config, tracerProvider trace.TracerProvider) (*Store, error) {
-	s, err := pkgMongo.NewStoreWithCollection(ctx, cfg, tls, tracerProvider, userDevicesCName, userDeviceQueryIndex, userDevicesQueryIndex)
+func New(ctx context.Context, config *Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (*Store, error) {
+	certManager, err := client.New(config.TLS, fileWatcher, logger)
 	if err != nil {
+		return nil, fmt.Errorf("could not create cert manager: %w", err)
+	}
+	s, err := pkgMongo.NewStoreWithCollection(ctx, config, certManager.GetTLSConfig(), tracerProvider, userDevicesCName, userDeviceQueryIndex, userDevicesQueryIndex)
+	if err != nil {
+		certManager.Close()
 		return nil, err
 	}
+	s.AddCloseFunc(certManager.Close)
 	return &Store{s}, nil
 }

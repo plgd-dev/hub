@@ -79,13 +79,12 @@ func (e *ResourceStateSnapshotTaken) CopyData(event *ResourceStateSnapshotTaken)
 
 func (e *ResourceStateSnapshotTaken) CheckInitialized() bool {
 	return e.GetResourceId() != nil &&
-		e.GetLatestResourceChange() != nil &&
-		e.GetResourceCreatePendings() != nil &&
-		e.GetResourceRetrievePendings() != nil &&
-		e.GetResourceUpdatePendings() != nil &&
-		e.GetResourceDeletePendings() != nil &&
 		e.GetAuditContext() != nil &&
-		e.GetEventMetadata() != nil
+		e.GetEventMetadata() != nil && (e.GetLatestResourceChange() != nil ||
+		e.GetResourceCreatePendings() != nil ||
+		e.GetResourceRetrievePendings() != nil ||
+		e.GetResourceUpdatePendings() != nil ||
+		e.GetResourceDeletePendings() != nil)
 }
 
 type resourceValidUntilValidator interface {
@@ -187,6 +186,7 @@ func (e *ResourceStateSnapshotTaken) handleEventResourceRetrievePending(retrieve
 	e.ResourceId = retrievePending.GetResourceId()
 	e.EventMetadata = retrievePending.GetEventMetadata()
 	e.ResourceRetrievePendings = append(e.ResourceRetrievePendings, retrievePending)
+	e.AuditContext = retrievePending.GetAuditContext()
 	return nil
 }
 
@@ -280,6 +280,7 @@ func (e *ResourceStateSnapshotTaken) handleEventResourceChanged(changed *Resourc
 		e.ResourceId = changed.GetResourceId()
 		e.EventMetadata = changed.GetEventMetadata()
 		e.LatestResourceChange = changed
+		e.AuditContext = changed.GetAuditContext()
 		return true
 	}
 	return false

@@ -1,18 +1,9 @@
 package config
 
 import (
-	"fmt"
-
+	"github.com/plgd-dev/hub/v2/pkg/config/database"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore/cqldb"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore/mongodb"
 )
 
-type Config struct {
-	MongoDB mongodb.Config `yaml:"mongoDB" json:"mongoDb"`
-}
-
-func (c *Config) Validate() error {
-	if err := c.MongoDB.Validate(); err != nil {
-		return fmt.Errorf("mongoDB.%w", err)
-	}
-	return nil
-}
+type Config = database.Config[*mongodb.Config, *cqldb.Config]

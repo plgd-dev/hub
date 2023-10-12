@@ -25,7 +25,9 @@ func MakeConfig(t require.TestingT) service.Config {
 	cfg.Clients.Eventbus.NATS = config.MakeSubscriberConfig()
 	cfg.Clients.Eventbus.GoPoolSize = 16
 
+	cfg.Clients.Eventstore.Connection.Use = config.ACTIVE_DATABASE()
 	cfg.Clients.Eventstore.Connection.MongoDB = config.MakeEventsStoreMongoDBConfig()
+	cfg.Clients.Eventstore.Connection.CqlDB = config.MakeEventsStoreCqlDBConfig()
 	cfg.Clients.Eventstore.ProjectionCacheExpiration = time.Second * 120
 
 	cfg.HubID = config.HubID()

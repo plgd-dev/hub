@@ -76,7 +76,7 @@ func updateResource(ctx context.Context, tracerProvider trace.TracerProvider, ra
 	href := e.GetResourceId().GetHref()
 	contentType, content, status, err := updateDeviceResource(ctx, tracerProvider, deviceID, href, e.GetContent().GetContentType(), e.GetContent().GetData(), linkedAccount, linkedCloud)
 	if err != nil {
-		log.Errorf("cannot update resource %v/%v: %w", deviceID, href, err)
+		log.Errorf("cannot update resource /%v%v: %w", deviceID, href, err)
 	}
 	coapContentFormat := stringToSupportedMediaType(contentType)
 	ctx = kitNetGrpc.CtxWithToken(ctx, linkedAccount.Data.Origin().AccessToken.String())

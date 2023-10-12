@@ -38,7 +38,7 @@ func (c *Client) CreateResource(
 
 	resp, err := c.gateway.CreateResource(ctx, &r)
 	if err != nil {
-		return fmt.Errorf("cannot create resource /%v/%v: %w", deviceID, href, err)
+		return fmt.Errorf("cannot create resource /%v%v: %w", deviceID, href, err)
 	}
 	content := resp.GetData().GetContent()
 	return DecodeContentWithCodec(cfg.codec, content.GetContentType(), content.GetData(), response)

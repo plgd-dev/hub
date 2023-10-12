@@ -7,6 +7,7 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/plgd-dev/hub/v2/identity-store/pb"
 	"github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	"github.com/plgd-dev/hub/v2/test"
 	"github.com/plgd-dev/hub/v2/test/config"
 	"github.com/stretchr/testify/require"
 )
@@ -59,17 +60,17 @@ func TestServiceAddDevice(t *testing.T) {
 			args: args{
 				ctx: grpc.CtxWithIncomingToken(context.Background(), jwtWithSubUserID),
 				request: &pb.AddDeviceRequest{
-					DeviceId: "deviceId",
+					DeviceId: test.GenerateDeviceIDbyIdx(0),
 				},
 			},
 			want: &pb.AddDeviceResponse{},
 		},
 		{
-			name: "duplicit",
+			name: "duplicity",
 			args: args{
 				ctx: grpc.CtxWithIncomingToken(context.Background(), jwtWithSubUserID),
 				request: &pb.AddDeviceRequest{
-					DeviceId: "deviceId",
+					DeviceId: test.GenerateDeviceIDbyIdx(0),
 				},
 			},
 			want: &pb.AddDeviceResponse{},

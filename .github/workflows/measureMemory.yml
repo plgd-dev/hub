@@ -10,6 +10,12 @@ on:
     tags:
       - "*"
   workflow_dispatch:
+    inputs:
+      cql:
+        description: "Run with CQL database(scylla)"
+        required: false
+        type: boolean
+        default: false
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -279,10 +285,19 @@ jobs:
         with:
           fetch-depth: 0 # Shallow clones should be disabled for a better relevancy of analysis
 
+      - name: Resolve database
+        id: db
+        run: |
+          if [ "${{ github.event_name != 'workflow_dispatch' || inputs.cql }}" == "true" ]; then
+            echo "name=cqldb" >> $GITHUB_OUTPUT
+          else
+            echo "name=mongodb" >> $GITHUB_OUTPUT
+          fi
+
       - name: Run a test
         continue-on-error: true
         run: |
-          make test/mem TEST_MEMORY_COAP_GATEWAY_RESOURCE_DATA_SIZE=${{ matrix.resourceDataSize }} TEST_TIMEOUT=${{ matrix.timeout }} TEST_MEMORY_COAP_GATEWAY_NUM_DEVICES=${{ matrix.numDevices }} TEST_MEMORY_COAP_GATEWAY_NUM_RESOURCES=${{ matrix.numResources }} | tee >(grep "TestMemoryWithDevices.result:" | sed -e "s/.*TestMemoryWithDevices.result://g" | jq -r -c > out.json)
+          make test/mem TEST_DATABASE=${{ steps.db.outputs.name }} TEST_MEMORY_COAP_GATEWAY_RESOURCE_DATA_SIZE=${{ matrix.resourceDataSize }} TEST_TIMEOUT=${{ matrix.timeout }} TEST_MEMORY_COAP_GATEWAY_NUM_DEVICES=${{ matrix.numDevices }} TEST_MEMORY_COAP_GATEWAY_NUM_RESOURCES=${{ matrix.numResources }} | tee >(grep "TestMemoryWithDevices.result:" | sed -e "s/.*TestMemoryWithDevices.result://g" | jq -r -c > out.json)
 
       - name: Dump file
         if: success()

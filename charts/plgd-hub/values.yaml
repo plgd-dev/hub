@@ -10,6 +10,8 @@ global:
   deviceIdClaim:
   # -- Global Default command time to live for resource-aggregate and resource-directory
   defaultCommandTimeToLive: "10s"
+  # -- Use database. Supported values: "mongoDB", "cqlDB"
+  useDatabase: "mongoDB"
   # -- OAuth authority
   authority:
   # -- OAuth audience
@@ -201,6 +203,41 @@ mongodb:
     timeoutSeconds: 10
     successThreshold: 1
     failureThreshold: 6
+  
+scylla:
+  # -- Enable scylla service. Required scylla operator: https://github.com/scylladb/scylla-operator/blob/master/docs/source/generic.md#deploy-scylla-operator
+  enabled: false
+  scyllaImage:
+    tag: "5.2.9"  
+  # Name of datacenter
+  datacenter: "dc-1"
+  sysctls:
+  - "fs.aio-max-nr=2097152"
+  # List of racks
+  racks:
+  - name: "dc-1a"
+    # Name of additional scylla config configMap
+    scyllaConfig: "scylla-cfg"
+    # Storage definition
+    storage:
+      capacity: 10Gi
+    volumes:
+    - name: scylla-certs-volume
+      secret:
+        # scylla certificate secret name in format scylla-{{ scylla.racks[].name}}-crt
+        secretName: scylla-dc-1a-crt
+    volumeMounts:
+    - name: scylla-certs-volume
+      mountPath: /certs
+    # Number of rack members (nodes)
+    members: 3
+    resources:
+      limits:
+        cpu: 1
+        memory: 4Gi
+      requests:
+        cpu: 1
+        memory: 4Gi
 
 cluster:
   # -- Cluster internal DNS prefix
@@ -525,6 +562,7 @@ resourcedirectory:
     eventStore:
       # expiration time of cached resource in projection
       cacheExpiration: 20m
+      use: mongoDB
       mongoDB:
         uri: ""
         database: eventStore
@@ -534,6 +572,30 @@ resourcedirectory:
         maxPoolSize: 16
         # close connection when idle time reach the value.
         maxConnIdleTime: 4m0s
+        tls:
+          caPool:
+          keyFile:
+          certFile:
+          useSystemCAPool: false
+      cqlDB:
+        table: events
+        hosts: []
+        port: 9142
+        numConnections: 16
+        connectTimeout: 10s
+        # -- Resolve IP address to hostname before validate certificate. If false, the TLS validator will use ip/hostname advertised by the Cassandra node.
+        useHostnameResolution: true
+        reconnectionPolicy:
+          constant:
+            interval: 3s 
+            # 0 - means infinity
+            maxRetries: 3 
+        keyspace:
+          name: plgdhub
+          create: true
+          replication:
+            class: SimpleStrategy
+            replication_factor: 1
         tls:
           caPool:
           keyFile:
@@ -749,10 +811,9 @@ resourceaggregate:
     eventStore:
       # replaces time to live in CreateResource, RetrieveResource, UpdateResource, DeleteResource and UpdateDeviceMetadata commands when it is zero value. 0s - means forever.
       defaultCommandTimeToLive:
-      # tries to create the snapshot event after n events
-      snapshotThreshold: 16
       # limits number of try to store event
       occMaxRetry: 8
+      use: mongoDB
       mongoDB:
         uri:
         database: eventStore
@@ -762,6 +823,30 @@ resourceaggregate:
         maxPoolSize: 16
         # close connection when idle time reach the value.
         maxConnIdleTime: 4m0s
+        tls:
+          caPool:
+          keyFile:
+          certFile:
+          useSystemCAPool: false
+      cqlDB:
+        table: events
+        hosts: []
+        port: 9142
+        numConnections: 16
+        connectTimeout: 10s
+        # -- Resolve IP address to hostname before validate certificate. If false, the TLS validator will use ip/hostname advertised by the Cassandra node.
+        useHostnameResolution: true
+        reconnectionPolicy:
+          constant:
+            interval: 3s 
+            # 0 - means infinity
+            maxRetries: 3 
+        keyspace:
+          name: plgdhub
+          create: true
+          replication:
+            class: SimpleStrategy
+            replication_factor: 1
         tls:
           caPool:
           keyFile:
@@ -1185,6 +1270,7 @@ identitystore:
         tls:
           useSystemCAPool: false
     storage:
+      use: mongoDB
       mongoDB:
         uri:
         database: "ownersDevices"
@@ -1192,6 +1278,30 @@ identitystore:
         maxPoolSize: 16
         # close connection when idle time reach the value.
         maxConnIdleTime: 4m0s
+        tls:
+          caPool:
+          keyFile:
+          certFile:
+          useSystemCAPool: false
+      cqlDB:
+        table: deviceOwners
+        hosts: []
+        port: 9142
+        numConnections: 16
+        connectTimeout: 10s
+        # -- Resolve IP address to hostname before validate certificate. If false, the TLS validator will use ip/hostname advertised by the Cassandra node.
+        useHostnameResolution: true
+        reconnectionPolicy:
+          constant:
+            interval: 3s 
+            # 0 - means infinity
+            maxRetries: 3 
+        keyspace:
+          name: plgdhub
+          create: true
+          replication:
+            class: SimpleStrategy
+            replication_factor: 1
         tls:
           caPool:
           keyFile:
@@ -1872,6 +1982,7 @@ certificateauthority:
     storage:
       # -- Remove any invalid entries in the cron format. If an empty string is provided, the cleanup function will be disabled.
       cleanUpRecords: "0 1 * * *"
+      use: mongoDB
       mongoDB:
         uri:
         database: certificateAuthorityService
@@ -1889,6 +2000,30 @@ certificateauthority:
           throttleTime: 500ms
           # -- The maximum number of documents to cache before an immediate write.
           documentLimit: 1000
+      cqlDB:
+        table: signedCertificateRecords
+        hosts: []
+        port: 9142
+        numConnections: 16
+        connectTimeout: 10s
+        # -- Resolve IP address to hostname before validate certificate. If false, the TLS validator will use ip/hostname advertised by the Cassandra node.
+        useHostnameResolution: true
+        reconnectionPolicy:
+          constant:
+            interval: 3s 
+            # 0 - means infinity
+            maxRetries: 3 
+        keyspace:
+          name: plgdhub
+          create: true
+          replication:
+            class: SimpleStrategy
+            replication_factor: 1
+        tls:
+          caPool:
+          keyFile:
+          certFile:
+          useSystemCAPool: false
   # -- For complete certificate-authority service configuration see [plgd/certificate-authority](https://github.com/plgd-dev/hub/tree/main/certificate-authority)
   signer:
     caPool:

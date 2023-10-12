@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/plgd-dev/hub/v2/certificate-authority/pb"
-	"github.com/plgd-dev/hub/v2/certificate-authority/store/mongodb"
+	"github.com/plgd-dev/hub/v2/certificate-authority/store"
 	"github.com/plgd-dev/hub/v2/pkg/fn"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
@@ -19,7 +19,7 @@ type CertificateAuthorityServer struct {
 	signerConfig     SignerConfig
 	logger           log.Logger
 	ownerClaim       string
-	store            *mongodb.Store
+	store            store.Store
 	hubID            string
 	fileWatcher      *fsnotify.Watcher
 	onFileChangeFunc func(event fsnotify.Event)
@@ -27,7 +27,7 @@ type CertificateAuthorityServer struct {
 	signer atomic.Pointer[Signer]
 }
 
-func NewCertificateAuthorityServer(ownerClaim string, hubID string, signerConfig SignerConfig, store *mongodb.Store, fileWatcher *fsnotify.Watcher, logger log.Logger) (*CertificateAuthorityServer, error) {
+func NewCertificateAuthorityServer(ownerClaim string, hubID string, signerConfig SignerConfig, store store.Store, fileWatcher *fsnotify.Watcher, logger log.Logger) (*CertificateAuthorityServer, error) {
 	s := &CertificateAuthorityServer{
 		signerConfig: signerConfig,
 		logger:       logger,

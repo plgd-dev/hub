@@ -129,7 +129,7 @@ func TestResourceLinksSnapshotTakenGetNewPublishedLinks(t *testing.T) {
 	}
 }
 
-const testEventResourceLinksSnapshotTakenDevice = "dev1"
+var testEventResourceLinksSnapshotTakenDevice = dev1
 
 var (
 	testEventResourceLinksSnapshotTakenRes1 = &commands.Resource{
