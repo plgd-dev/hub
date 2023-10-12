@@ -27,7 +27,7 @@ import (
 )
 
 func TestRequestHandlerPublishResource(t *testing.T) {
-	const deviceID = "dev0"
+	deviceID := dev0
 	const href = "/res0"
 	const user0 = "user0"
 	type args struct {
@@ -149,7 +149,7 @@ func TestRequestHandlerPublishResource(t *testing.T) {
 }
 
 func TestRequestHandlerUnpublishResource(t *testing.T) {
-	const deviceID = "dev0"
+	deviceID := dev0
 	const href = "/res0"
 	const user0 = "user0"
 
@@ -273,7 +273,7 @@ func TestRequestHandlerUnpublishResource(t *testing.T) {
 }
 
 func TestRequestHandlerNotifyResourceChanged(t *testing.T) {
-	const deviceID = "dev0"
+	deviceID := dev0
 	const resID = "/res0"
 	const user0 = "user0"
 
@@ -355,7 +355,7 @@ func TestRequestHandlerNotifyResourceChanged(t *testing.T) {
 }
 
 func TestRequestHandlerUpdateResourceContent(t *testing.T) {
-	const deviceID = "dev0"
+	deviceID := dev0
 	const resID = "/res0"
 	const user0 = "user0"
 
@@ -464,7 +464,7 @@ func TestRequestHandlerUpdateResourceContent(t *testing.T) {
 }
 
 func TestRequestHandlerConfirmResourceUpdate(t *testing.T) {
-	const deviceID = "dev0"
+	deviceID := dev0
 	const resID = "/res0"
 	const user0 = "user0"
 	const correlationID = "123"
@@ -558,7 +558,7 @@ func TestRequestHandlerConfirmResourceUpdate(t *testing.T) {
 }
 
 func TestRequestHandlerRetrieveResource(t *testing.T) {
-	const deviceID = "dev0"
+	deviceID := dev0
 	const resID = "/res0"
 	const user0 = "user0"
 	const correlationID = "123"
@@ -656,7 +656,7 @@ func TestRequestHandlerRetrieveResource(t *testing.T) {
 }
 
 func TestRequestHandlerConfirmResourceRetrieve(t *testing.T) {
-	const deviceID = "dev0"
+	deviceID := dev0
 	const resID = "/res0"
 	const user0 = "user0"
 	const correlationID = "123"
@@ -753,7 +753,7 @@ func TestRequestHandlerConfirmResourceRetrieve(t *testing.T) {
 }
 
 func TestRequestHandlerDeleteResource(t *testing.T) {
-	const deviceID = "dev0"
+	deviceID := dev0
 	const resID = "/res0"
 	const user0 = "user0"
 	const correlationID = "123"
@@ -852,7 +852,7 @@ func TestRequestHandlerDeleteResource(t *testing.T) {
 }
 
 func TestRequestHandlerConfirmResourceDelete(t *testing.T) {
-	const deviceID = "dev0"
+	deviceID := dev0
 	const resID = "/res0"
 	const user0 = "user0"
 	const correlationID = "123"
@@ -949,7 +949,7 @@ func TestRequestHandlerConfirmResourceDelete(t *testing.T) {
 }
 
 func TestRequestHandlerCreateResource(t *testing.T) {
-	const deviceID = "dev0"
+	deviceID := dev0
 	const resID = "/res0"
 	const user0 = "user0"
 	const correlationID = "123"
@@ -1048,7 +1048,7 @@ func TestRequestHandlerCreateResource(t *testing.T) {
 }
 
 func TestRequestHandlerConfirmResourceCreate(t *testing.T) {
-	const deviceID = "dev0"
+	deviceID := dev0
 	const resID = "/res0"
 	const user0 = "user0"
 	const correlationID = "123"

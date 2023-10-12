@@ -7,17 +7,13 @@ import (
 	"time"
 
 	"github.com/plgd-dev/hub/v2/pkg/strings"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-type DeviceDocumentMetadata struct {
-	DeviceID  string
-	ServiceID string
-}
-
-func (s *EventStore) LoadDeviceMetadataByServiceIDs(ctx context.Context, serviceIDs []string, limit int64) ([]DeviceDocumentMetadata, error) {
+func (s *EventStore) LoadDeviceMetadataByServiceIDs(ctx context.Context, serviceIDs []string, limit int64) ([]eventstore.DeviceDocumentMetadata, error) {
 	s.LogDebugfFunc("mongodb.Evenstore.LoadDocMetadataFromByServiceIDs start")
 	t := time.Now()
 	defer func() {
@@ -44,7 +40,7 @@ func (s *EventStore) LoadDeviceMetadataByServiceIDs(ctx context.Context, service
 	filter := bson.M{
 		"$or": filterService,
 	}
-	col := s.client.Database(s.DBName()).Collection(getEventCollectionName())
+	col := s.client().Database(s.DBName()).Collection(getEventCollectionName())
 	iter, err := col.Find(ctx, filter, opts)
 	if errors.Is(err, mongo.ErrNilDocument) {
 		return nil, nil
@@ -52,7 +48,7 @@ func (s *EventStore) LoadDeviceMetadataByServiceIDs(ctx context.Context, service
 	if err != nil {
 		return nil, err
 	}
-	ret := make([]DeviceDocumentMetadata, 0, iter.RemainingBatchLength())
+	ret := make([]eventstore.DeviceDocumentMetadata, 0, iter.RemainingBatchLength())
 	for iter.Next(ctx) {
 		var doc bson.M
 		err := iter.Decode(&doc)
@@ -67,7 +63,7 @@ func (s *EventStore) LoadDeviceMetadataByServiceIDs(ctx context.Context, service
 		if !ok {
 			return nil, fmt.Errorf(errFmtDataIsNotStringType, aggregateIDKey, doc[serviceIDKey])
 		}
-		ret = append(ret, DeviceDocumentMetadata{
+		ret = append(ret, eventstore.DeviceDocumentMetadata{
 			DeviceID:  groupID,
 			ServiceID: aggregateID,
 		})

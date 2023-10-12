@@ -15,7 +15,7 @@ import (
 	"github.com/plgd-dev/hub/v2/coap-gateway/uri"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
-	test "github.com/plgd-dev/hub/v2/test"
+	"github.com/plgd-dev/hub/v2/test"
 	"github.com/plgd-dev/hub/v2/test/config"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	"github.com/stretchr/testify/assert"
@@ -129,7 +129,7 @@ func TestClientObserveHandlerCloseObservation(t *testing.T) {
 	defer func() {
 		_ = co2.Close()
 	}()
-	testSignUpIn(t, "observeClient", co2)
+	testSignUpIn(t, test.GenerateDeviceIDbyIdx(42), co2)
 
 	time.Sleep(time.Second)
 

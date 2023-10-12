@@ -34,10 +34,28 @@ jobs:
               log:
                 level: "debug"
                 dumpBody: "true"
+          
+          - name: test/cqldb
+            cmd: test
+            checkRace: "true"
+            database: "cqldb"
+            coapGateway:
+              log:
+                level: "debug"
+                dumpBody: "true"
+    
 
           # test without check race
           - name: test/norace
             cmd: test
+            coapGateway:
+              log:
+                level: "debug"
+                dumpBody: "true"
+          
+          - name: test/norace/cqldb
+            cmd: test
+            database: "cqldb"
             coapGateway:
               log:
                 level: "debug"
@@ -87,6 +105,7 @@ jobs:
           TEST_RESOURCE_AGGREGATE_LOG_LEVEL=${{ matrix.resourceAggregate.log.level }} TEST_RESOURCE_AGGREGATE_LOG_DUMP_BODY=${{ matrix.resourceAggregate.log.dumpBody }} \
           TEST_GRPC_GATEWAY_LOG_LEVEL=${{ matrix.grpcGateway.log.level }} TEST_GRPC_GATEWAY_LOG_DUMP_BODY=${{ matrix.grpcGateway.log.dumpBody }} \
           TEST_IDENTITY_STORE_LOG_LEVEL=${{ matrix.identityStore.log.level }} TEST_IDENTITY_STORE_LOG_DUMP_BODY=${{ matrix.identityStore.log.dumpBody }} \
+          TEST_DATABASE=${{ matrix.database }} \
           ${{ matrix.args }}
 
       - name: Remove simulators container

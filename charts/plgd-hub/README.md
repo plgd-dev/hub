@@ -47,6 +47,7 @@ global:
 |------------|------|---------|
 | https://charts.bitnami.com/bitnami | mongodb | 13.4.3 |
 | https://nats-io.github.io/k8s/helm/charts/ | nats | 0.19.14 |
+| https://scylla-operator-charts.storage.googleapis.com/stable | scylla | 1.10.0 |
 
 ## Values
 
@@ -62,6 +63,18 @@ global:
 | certificateauthority.ca.volume.mountPath | string | `"/certs/coap-device-ca"` | CA certificate mount path |
 | certificateauthority.ca.volume.name | string | `"coap-device-ca"` | CA certificate volume name |
 | certificateauthority.clients.storage.cleanUpRecords | string | `"0 1 * * *"` | Remove any invalid entries in the cron format. If an empty string is provided, the cleanup function will be disabled. |
+| certificateauthority.clients.storage.cqlDB.connectTimeout | string | `"10s"` |  |
+| certificateauthority.clients.storage.cqlDB.hosts | list | `[]` |  |
+| certificateauthority.clients.storage.cqlDB.keyspace.create | bool | `true` |  |
+| certificateauthority.clients.storage.cqlDB.keyspace.name | string | `"plgdhub"` |  |
+| certificateauthority.clients.storage.cqlDB.keyspace.replication.class | string | `"SimpleStrategy"` |  |
+| certificateauthority.clients.storage.cqlDB.keyspace.replication.replication_factor | int | `1` |  |
+| certificateauthority.clients.storage.cqlDB.numConnections | int | `16` |  |
+| certificateauthority.clients.storage.cqlDB.table | string | `"signedCertificateRecords"` |  |
+| certificateauthority.clients.storage.cqlDB.tls.caPool | string | `nil` |  |
+| certificateauthority.clients.storage.cqlDB.tls.certFile | string | `nil` |  |
+| certificateauthority.clients.storage.cqlDB.tls.keyFile | string | `nil` |  |
+| certificateauthority.clients.storage.cqlDB.tls.useSystemCAPool | bool | `false` |  |
 | certificateauthority.clients.storage.mongoDB.bulkWrite.documentLimit | int | `1000` | The maximum number of documents to cache before an immediate write. |
 | certificateauthority.clients.storage.mongoDB.bulkWrite.throttleTime | string | `"500ms"` | The amount of time to wait until a record is written to mongodb. Any records collected during the throttle time will also be written. A throttle time of zero writes immediately. If recordLimit is reached, all records are written immediately |
 | certificateauthority.clients.storage.mongoDB.bulkWrite.timeout | string | `"1m0s"` | A time limit for write bulk to mongodb. A Timeout of zero means no timeout. |
@@ -73,6 +86,7 @@ global:
 | certificateauthority.clients.storage.mongoDB.tls.keyFile | string | `nil` |  |
 | certificateauthority.clients.storage.mongoDB.tls.useSystemCAPool | bool | `false` |  |
 | certificateauthority.clients.storage.mongoDB.uri | string | `nil` |  |
+| certificateauthority.clients.storage.use | string | `"mongoDB"` |  |
 | certificateauthority.config | object | `{"fileName":"service.yaml","mountPath":"/config","volume":"config"}` | Service configuration |
 | certificateauthority.config.fileName | string | `"service.yaml"` | File name for config file |
 | certificateauthority.config.mountPath | string | `"/config"` | Mount path |
@@ -420,7 +434,7 @@ global:
 | httpgateway.uiDomain | string | `nil` | Domain for UI Default: {{ global.domain }} |
 | identitystore.affinity | object | `{}` | Affinity definition |
 | identitystore.apis | object | `{"grpc":{"address":null,"authorization":{"audience":null,"authority":null,"http":{"idleConnTimeout":"30s","maxConnsPerHost":32,"maxIdleConns":16,"maxIdleConnsPerHost":16,"timeout":"10s","tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":true}},"ownerClaim":null},"enforcementPolicy":{"minTime":"5s","permitWithoutStream":true},"keepAlive":{"maxConnectionAge":"0s","maxConnectionAgeGrace":"0s","maxConnectionIdle":"0s","time":"2h","timeout":"20s"},"recvMsgSize":4194304,"sendMsgSize":4194304,"tls":{"caPool":null,"certFile":null,"clientCertificateRequired":true,"keyFile":null}}}` | For complete identity service configuration see [plgd/identity](https://github.com/plgd-dev/hub/tree/main/identity) |
-| identitystore.clients | object | `{"eventBus":{"nats":{"flusherTimeout":"30s","jetstream":false,"tls":{"useSystemCAPool":false},"url":""}},"storage":{"mongoDB":{"database":"ownersDevices","maxConnIdleTime":"4m0s","maxPoolSize":16,"tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false},"uri":null}}}` | For complete identity service configuration see [plgd/authorization](https://github.com/plgd-dev/hub/tree/main/identity) |
+| identitystore.clients | object | `{"eventBus":{"nats":{"flusherTimeout":"30s","jetstream":false,"tls":{"useSystemCAPool":false},"url":""}},"storage":{"cqlDB":{"connectTimeout":"10s","hosts":[],"keyspace":{"create":true,"name":"plgdhub","replication":{"class":"SimpleStrategy","replication_factor":1}},"numConnections":16,"table":"deviceOwners","tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false}},"mongoDB":{"database":"ownersDevices","maxConnIdleTime":"4m0s","maxPoolSize":16,"tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false},"uri":null},"use":"mongoDB"}}` | For complete identity service configuration see [plgd/authorization](https://github.com/plgd-dev/hub/tree/main/identity) |
 | identitystore.config | object | `{"fileName":"service.yaml","mountPath":"/config","volume":"config"}` | yaml configuration |
 | identitystore.config.fileName | string | `"service.yaml"` | File name |
 | identitystore.config.mountPath | string | `"/config"` | Service configuration mount path |
@@ -569,7 +583,7 @@ global:
 | resourceaggregate.apis.grpc.tls.certFile | string | `nil` |  |
 | resourceaggregate.apis.grpc.tls.clientCertificateRequired | bool | `true` |  |
 | resourceaggregate.apis.grpc.tls.keyFile | string | `nil` |  |
-| resourceaggregate.clients | object | `{"eventBus":{"nats":{"flusherTimeout":"30s","jetstream":false,"pendingLimits":{"bytesLimit":"67108864","msgLimit":524288},"tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false},"url":null}},"eventStore":{"defaultCommandTimeToLive":null,"mongoDB":{"batchSize":128,"database":"eventStore","maxConnIdleTime":"4m0s","maxPoolSize":16,"tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false},"uri":null},"occMaxRetry":8,"snapshotThreshold":16},"identityStore":{"grpc":{"address":null,"keepAlive":{"permitWithoutStream":true,"time":"10s","timeout":"20s"},"recvMsgSize":4194304,"sendMsgSize":4194304,"tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false}}}}` | For complete resource-aggregate service configuration see [plgd/resource-aggregate](https://github.com/plgd-dev/hub/tree/main/resource-aggregate) |
+| resourceaggregate.clients | object | `{"eventBus":{"nats":{"flusherTimeout":"30s","jetstream":false,"pendingLimits":{"bytesLimit":"67108864","msgLimit":524288},"tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false},"url":null}},"eventStore":{"cqlDB":{"connectTimeout":"10s","hosts":[],"keyspace":{"create":true,"name":"plgdhub","replication":{"class":"SimpleStrategy","replication_factor":1}},"numConnections":16,"table":"events","tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false}},"defaultCommandTimeToLive":null,"mongoDB":{"batchSize":128,"database":"eventStore","maxConnIdleTime":"4m0s","maxPoolSize":16,"tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false},"uri":null},"occMaxRetry":8,"use":"mongoDB"},"identityStore":{"grpc":{"address":null,"keepAlive":{"permitWithoutStream":true,"time":"10s","timeout":"20s"},"recvMsgSize":4194304,"sendMsgSize":4194304,"tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false}}}}` | For complete resource-aggregate service configuration see [plgd/resource-aggregate](https://github.com/plgd-dev/hub/tree/main/resource-aggregate) |
 | resourceaggregate.config | object | `{"fileName":"service.yaml","mountPath":"/config","volume":"config"}` | Service configuration |
 | resourceaggregate.config.fileName | string | `"service.yaml"` | Service configuration file name |
 | resourceaggregate.config.mountPath | string | `"/config"` | Configuration mount path |
@@ -622,7 +636,7 @@ global:
 | resourceaggregate.tolerations | object | `{}` | Toleration definition |
 | resourcedirectory.affinity | object | `{}` | Affinity definition |
 | resourcedirectory.apis | object | `{"grpc":{"address":null,"authorization":{"audience":null,"authority":null,"http":{"idleConnTimeout":"30s","maxConnsPerHost":32,"maxIdleConns":16,"maxIdleConnsPerHost":16,"timeout":"10s","tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":true}},"ownerClaim":null},"enforcementPolicy":{"minTime":"5s","permitWithoutStream":true},"keepAlive":{"maxConnectionAge":"0s","maxConnectionAgeGrace":"0s","maxConnectionIdle":"0s","time":"2h","timeout":"20s"},"ownerCacheExpiration":"1m","recvMsgSize":4194304,"sendMsgSize":4194304,"tls":{"caPool":null,"certFile":null,"clientCertificateRequired":true,"keyFile":null}}}` | For complete resource-directory service configuration see [plgd/resource-directory](https://github.com/plgd-dev/hub/tree/main/resource-directory) |
-| resourcedirectory.clients | object | `{"eventBus":{"goPoolSize":16,"nats":{"pendingLimits":{"bytesLimit":"67108864","msgLimit":"524288"},"tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false},"url":""}},"eventStore":{"cacheExpiration":"20m","mongoDB":{"batchSize":128,"database":"eventStore","maxConnIdleTime":"4m0s","maxPoolSize":16,"tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false},"uri":""}},"identityStore":{"cacheExpiration":"1m","grpc":{"address":"","keepAlive":{"permitWithoutStream":true,"time":"10s","timeout":"20s"},"recvMsgSize":4194304,"sendMsgSize":4194304,"tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false}},"oauth":{"audience":"","clientID":null,"clientSecret":null,"http":{"idleConnTimeout":"30s","maxConnsPerHost":32,"maxIdleConns":16,"maxIdleConnsPerHost":16,"timeout":"10s","tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false}},"scopes":[],"tokenURL":"","verifyServiceTokenFrequency":"10s"},"ownerClaim":null,"pullFrequency":"15s"}}` | For complete resource-directory service configuration see [plgd/resource-directory](https://github.com/plgd-dev/hub/tree/main/resource-directory) |
+| resourcedirectory.clients | object | `{"eventBus":{"goPoolSize":16,"nats":{"pendingLimits":{"bytesLimit":"67108864","msgLimit":"524288"},"tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false},"url":""}},"eventStore":{"cacheExpiration":"20m","cqlDB":{"connectTimeout":"10s","hosts":[],"keyspace":{"create":true,"name":"plgdhub","replication":{"class":"SimpleStrategy","replication_factor":1}},"numConnections":16,"table":"events","tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false}},"mongoDB":{"batchSize":128,"database":"eventStore","maxConnIdleTime":"4m0s","maxPoolSize":16,"tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false},"uri":""},"use":"mongoDB"},"identityStore":{"cacheExpiration":"1m","grpc":{"address":"","keepAlive":{"permitWithoutStream":true,"time":"10s","timeout":"20s"},"recvMsgSize":4194304,"sendMsgSize":4194304,"tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false}},"oauth":{"audience":"","clientID":null,"clientSecret":null,"http":{"idleConnTimeout":"30s","maxConnsPerHost":32,"maxIdleConns":16,"maxIdleConnsPerHost":16,"timeout":"10s","tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false}},"scopes":[],"tokenURL":"","verifyServiceTokenFrequency":"10s"},"ownerClaim":null,"pullFrequency":"15s"}}` | For complete resource-directory service configuration see [plgd/resource-directory](https://github.com/plgd-dev/hub/tree/main/resource-directory) |
 | resourcedirectory.config | object | `{"fileName":"service.yaml","mountPath":"/config","volume":"config"}` | Service configuration |
 | resourcedirectory.config.fileName | string | `"service.yaml"` | Service configuration file |
 | resourcedirectory.config.mountPath | string | `"/config"` | Configuration mount path |
@@ -673,6 +687,8 @@ global:
 | resourcedirectory.service.targetPort | string | `"grpc"` | Target port |
 | resourcedirectory.service.type | string | `"ClusterIP"` | resource-directory service type |
 | resourcedirectory.tolerations | object | `{}` | Toleration definition |
+| scylla.datacenter | string | `"dc1"` |  |
+| scylla.enabled | bool | `false` |  |
 
 ----------------------------------------------
 Autogenerated from chart metadata using [helm-docs v1.11.3](https://github.com/norwoodj/helm-docs/releases/v1.11.3)

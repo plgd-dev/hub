@@ -11,7 +11,7 @@ import (
 
 var testEventResourceLinksUnpublished events.ResourceLinksUnpublished = events.ResourceLinksUnpublished{
 	Hrefs:    []string{"/res1", "/res2"},
-	DeviceId: "dev1",
+	DeviceId: dev1,
 	AuditContext: &commands.AuditContext{
 		UserId:        "501",
 		CorrelationId: "1",

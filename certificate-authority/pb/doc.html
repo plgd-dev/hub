@@ -577,7 +577,7 @@ and obtains a signed certificate. Both in the PEM format.</p></td>
                   <td>id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p>Registration id, calculated from the certificate public key info &#43; common name. SHA256 - Must be unique in the database and for one private key there could be multiple certificates.
+                  <td><p>The registration ID is determined by applying a formula that utilizes the certificate properties, and it is computed as uuid.NewSHA1(uuid.NameSpaceX500, common_name &#43; uuid.NewSHA1(uuid.NameSpaceX500, publicKeyRaw)).
 
 @gotags: bson:&#34;_id&#34; </p></td>
                 </tr>
@@ -595,7 +595,7 @@ and obtains a signed certificate. Both in the PEM format.</p></td>
                   <td>common_name</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p>Common name of the certificate.
+                  <td><p>Common name of the certificate. If device_id is provided in the common name, then for update public key must be same.
 
 @gotags: bson:&#34;commonName&#34; </p></td>
                 </tr>
@@ -613,7 +613,7 @@ and obtains a signed certificate. Both in the PEM format.</p></td>
                   <td>public_key</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p>Public key fingerprint in (SHA256) of the certificate.
+                  <td><p>Public key fingerprint in uuid.NewSHA1(uuid.NameSpaceX500, publicKeyRaw) of the certificate.
 
 @gotags: bson:&#34;publicKey&#34; </p></td>
                 </tr>

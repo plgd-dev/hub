@@ -9,8 +9,15 @@ import (
 )
 
 func CleanUpResourceStateSnapshotTaken(e *events.ResourceStateSnapshotTaken, resetCorrelationID bool) *events.ResourceStateSnapshotTaken {
+	if e == nil {
+		return nil
+	}
 	if e.GetAuditContext() != nil && resetCorrelationID {
 		e.GetAuditContext().CorrelationId = ""
+	}
+	CleanUpResourceChanged(e.LatestResourceChange, resetCorrelationID)
+	if e.GetLatestResourceChange().GetContent().GetData() != nil {
+		e.LatestResourceChange.Content.Data = nil
 	}
 	e.EventMetadata = nil
 	return e

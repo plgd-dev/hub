@@ -53,6 +53,10 @@ Image can be configured via environment variables as argument `-e ENV=VALUE` of 
 | `OPEN_TELEMETRY_EXPORTER_CERT_FILE` | string | File path to certificate in PEM format | `"/certs/otel/cert.crt"` |
 | `OPEN_TELEMETRY_EXPORTER_KEY_FILE` | string | File path to private key in PEM format | `"/certs/otel/cert.key"` |
 | `OPEN_TELEMETRY_EXPORTER_CA_POOL` | string | File path to the root certificate in PEM format which might contain multiple certificates in a single file | `"/certs/otel/rootca.crt"` |
+| `DATABASE` | string | Database type. Supported values are: [ "mongo", "scylla" ] | `"mongo"` |
+| `SCYLLA_SMP` | uint16 | Associate number of cpu's with the Scylla DB | `1` |
+| `SCYLLA_DEVELOPER_MODE` | bool | Enable the Scylla developer mode | `true` |
+| `SCYLLA_PORT` | uint16 | scylla listen port for localhost | `29142` |
 
 ### Run
 

@@ -6,9 +6,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/aggregate"
-	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/aggregate/test"
+	raTest "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/aggregate/test"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore"
+	"github.com/plgd-dev/hub/v2/test"
 	"github.com/stretchr/testify/require"
 )
 
@@ -32,11 +34,9 @@ func (eh *mockEventHandler) Handle(ctx context.Context, iter eventstore.Iter) er
 
 func TestAggregate(t *testing.T) {
 	ctx := context.Background()
-	store := testNewEventstore(ctx, t)
+	store, tearDown := testNewEventstore(ctx, t)
 	defer func() {
-		errC := store.Clear(ctx)
-		require.NoError(t, errC)
-		_ = store.Close(ctx)
+		tearDown()
 	}()
 
 	type Resource struct {
@@ -45,38 +45,38 @@ func TestAggregate(t *testing.T) {
 	}
 
 	res1 := Resource{
-		DeviceID: "1",
+		DeviceID: test.GenerateDeviceIDbyIdx(1),
 		Href:     "ID0",
 	}
 
 	res2 := Resource{
-		DeviceID: "1",
+		DeviceID: test.GenerateDeviceIDbyIdx(1),
 		Href:     "ID1",
 	}
 
-	commandPub1 := test.Publish{
+	commandPub1 := raTest.Publish{
 		DeviceId: res1.DeviceID,
 		Href:     res1.Href,
 	}
 
-	commandUnpub1 := test.Unpublish{
+	commandUnpub1 := raTest.Unpublish{
 		DeviceId: res1.DeviceID,
 		Href:     res1.Href,
 	}
 
-	commandPub2 := test.Publish{
+	commandPub2 := raTest.Publish{
 		DeviceId: res2.DeviceID,
 		Href:     res2.Href,
 	}
 
-	commandUnpub2 := test.Unpublish{
+	commandUnpub2 := raTest.Unpublish{
 		DeviceId: res2.DeviceID,
 		Href:     res2.Href,
 	}
 
 	newAggregate := func(deviceID, href string) *aggregate.Aggregate {
-		a, err := aggregate.NewAggregate(deviceID, deviceID+href, aggregate.NewDefaultRetryFunc(1), 2, store, func(context.Context) (aggregate.AggregateModel, error) {
-			return &test.Snapshot{DeviceId: deviceID, Href: href, IsPublished: true}, nil
+		a, err := aggregate.NewAggregate(deviceID, commands.NewResourceID(deviceID, href).ToUUID().String(), aggregate.NewDefaultRetryFunc(1), store, func(context.Context) (aggregate.AggregateModel, error) {
+			return &raTest.Snapshot{DeviceId: deviceID, Href: href, IsPublished: true}, nil
 		}, nil)
 		require.NoError(t, err)
 		return a
@@ -128,7 +128,7 @@ func TestAggregate(t *testing.T) {
 	err = p.Project(ctx, []eventstore.SnapshotQuery{
 		{
 			GroupID:     res1.DeviceID,
-			AggregateID: res1.DeviceID + res1.Href,
+			AggregateID: commands.NewResourceID(res1.DeviceID, res1.Href).ToUUID().String(),
 		},
 	})
 	require.NoError(t, err)

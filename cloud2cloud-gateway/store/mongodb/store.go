@@ -17,7 +17,7 @@ type Store struct {
 }
 
 func NewStore(ctx context.Context, cfg pkgMongo.Config, tls *tls.Config, tracerProvider trace.TracerProvider) (*Store, error) {
-	s, err := pkgMongo.NewStoreWithCollection(ctx, cfg, tls, tracerProvider, subscriptionsCName, typeQueryIndex, typeDeviceIDQueryIndex,
+	s, err := pkgMongo.NewStoreWithCollection(ctx, &cfg, tls, tracerProvider, subscriptionsCName, typeQueryIndex, typeDeviceIDQueryIndex,
 		typeResourceIDQueryIndex, typeInitializedIDQueryIndex)
 	if err != nil {
 		return nil, err

@@ -200,7 +200,7 @@ func (r *queryResolver) check(aggregateID string, version int64) bool {
 
 // Create mongodb find query to load events
 func (s *EventStore) loadEventsQuery(ctx context.Context, eh eventstore.Handler, queryResolver *queryResolver, filter interface{}, opts ...*options.FindOptions) error {
-	col := s.client.Database(s.DBName()).Collection(getEventCollectionName())
+	col := s.client().Database(s.DBName()).Collection(getEventCollectionName())
 	iter, err := col.Find(ctx, filter, opts...)
 	if errors.Is(err, mongo.ErrNilDocument) {
 		return nil

@@ -8,7 +8,6 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	pkgMongo "github.com/plgd-dev/hub/v2/pkg/mongodb"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore/mongodb"
-	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore/test"
 	"github.com/plgd-dev/hub/v2/test/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -19,7 +18,7 @@ import (
 func NewTestEventStore(ctx context.Context, fileWatcher *fsnotify.Watcher, logger log.Logger) (*mongodb.EventStore, error) {
 	store, err := mongodb.New(
 		ctx,
-		mongodb.Config{
+		&mongodb.Config{
 			Embedded: pkgMongo.Config{
 				URI: "mongodb://localhost:27017",
 				TLS: config.MakeTLSClientConfig(),
@@ -55,10 +54,10 @@ func TestEventStore(t *testing.T) {
 	}()
 
 	t.Log("event store with default namespace")
-	test.AcceptanceTest(ctx, t, store)
+	AcceptanceTest(ctx, t, store)
 
 	t.Log("clearing collections")
 	err = store.ClearCollections(ctx)
 	require.NoError(t, err)
-	test.GetEventsTest(ctx, t, store)
+	GetEventsTest(ctx, t, store)
 }

@@ -89,7 +89,7 @@ func deleteDevice(tx persistence.PersistenceTx, deviceId, owner string) (bool, e
 	}
 
 	if err = tx.Delete(deviceId, owner); err != nil {
-		return false, status.Errorf(codes.NotFound, "cannot delete device('%v'): not found", deviceId)
+		return false, status.Errorf(codes.NotFound, "cannot delete device('%v'): %v", deviceId, err)
 	}
 	return true, nil
 }

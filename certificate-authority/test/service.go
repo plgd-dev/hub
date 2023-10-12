@@ -7,12 +7,15 @@ import (
 	"time"
 
 	"github.com/plgd-dev/hub/v2/certificate-authority/service"
+	"github.com/plgd-dev/hub/v2/certificate-authority/store"
+	storeConfig "github.com/plgd-dev/hub/v2/certificate-authority/store/config"
+	storeCqlDB "github.com/plgd-dev/hub/v2/certificate-authority/store/cqldb"
 	storeMongo "github.com/plgd-dev/hub/v2/certificate-authority/store/mongodb"
+	"github.com/plgd-dev/hub/v2/pkg/config/database"
 	"github.com/plgd-dev/hub/v2/pkg/config/property/urischeme"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/pkg/mongodb"
-	cmClient "github.com/plgd-dev/hub/v2/pkg/security/certManager/client"
 	"github.com/plgd-dev/hub/v2/test/config"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace"
@@ -75,21 +78,59 @@ func New(t require.TestingT, cfg service.Config) func() {
 func MakeStorageConfig() service.StorageConfig {
 	return service.StorageConfig{
 		CleanUpRecords: "0 1 * * *",
-		MongoDB: storeMongo.Config{
-			Mongo: mongodb.Config{
-				MaxPoolSize:     16,
-				MaxConnIdleTime: time.Minute * 4,
-				URI:             config.MONGODB_URI,
-				Database:        "certificateAuthority",
-				TLS:             config.MakeTLSClientConfig(),
+		Embedded: storeConfig.Config{
+			Use: config.ACTIVE_DATABASE(),
+			MongoDB: &storeMongo.Config{
+				Mongo: mongodb.Config{
+					MaxPoolSize:     16,
+					MaxConnIdleTime: time.Minute * 4,
+					URI:             config.MONGODB_URI,
+					Database:        "certificateAuthority",
+					TLS:             config.MakeTLSClientConfig(),
+				},
+				BulkWrite: storeMongo.BulkWriteConfig{
+					Timeout:       time.Minute,
+					ThrottleTime:  time.Millisecond * 500,
+					DocumentLimit: 1000,
+				},
 			},
-			BulkWrite: storeMongo.BulkWriteConfig{
-				Timeout:       time.Minute,
-				ThrottleTime:  time.Millisecond * 500,
-				DocumentLimit: 1000,
+			CqlDB: &storeCqlDB.Config{
+				Embedded: config.MakeCqlDBConfig(),
+				Table:    "signedCertificateRecords",
 			},
 		},
 	}
+}
+
+func NewCQLStore(t require.TestingT) (*storeCqlDB.Store, func()) {
+	cfg := MakeConfig(t)
+	logger := log.NewLogger(cfg.Log)
+
+	fileWatcher, err := fsnotify.NewWatcher(logger)
+	require.NoError(t, err)
+
+	ctx := context.Background()
+	store, err := storeCqlDB.New(ctx, cfg.Clients.Storage.Embedded.CqlDB, fileWatcher, logger, trace.NewNoopTracerProvider())
+	require.NoError(t, err)
+
+	cleanUp := func() {
+		err := store.Clear(ctx)
+		require.NoError(t, err)
+		_ = store.Close(ctx)
+
+		err = fileWatcher.Close()
+		require.NoError(t, err)
+	}
+
+	return store, cleanUp
+}
+
+func NewStore(t require.TestingT) (store.Store, func()) {
+	cfg := MakeConfig(t)
+	if cfg.Clients.Storage.Embedded.Use == database.CqlDB {
+		return NewCQLStore(t)
+	}
+	return NewMongoStore(t)
 }
 
 func NewMongoStore(t require.TestingT) (*storeMongo.Store, func()) {
@@ -99,18 +140,14 @@ func NewMongoStore(t require.TestingT) (*storeMongo.Store, func()) {
 	fileWatcher, err := fsnotify.NewWatcher(logger)
 	require.NoError(t, err)
 
-	certManager, err := cmClient.New(cfg.Clients.Storage.MongoDB.Mongo.TLS, fileWatcher, logger)
-	require.NoError(t, err)
-
 	ctx := context.Background()
-	store, err := storeMongo.NewStore(ctx, cfg.Clients.Storage.MongoDB, certManager.GetTLSConfig(), logger, trace.NewNoopTracerProvider())
+	store, err := storeMongo.New(ctx, cfg.Clients.Storage.Embedded.MongoDB, fileWatcher, logger, trace.NewNoopTracerProvider())
 	require.NoError(t, err)
 
 	cleanUp := func() {
 		err := store.Clear(ctx)
 		require.NoError(t, err)
 		_ = store.Close(ctx)
-		certManager.Close()
 
 		err = fileWatcher.Close()
 		require.NoError(t, err)

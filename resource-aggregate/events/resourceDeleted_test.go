@@ -12,7 +12,7 @@ import (
 
 var testEventResourceDeleted events.ResourceDeleted = events.ResourceDeleted{
 	ResourceId: &commands.ResourceId{
-		DeviceId: "dev1",
+		DeviceId: dev1,
 		Href:     "/dev1",
 	},
 	Status: commands.Status_ERROR,

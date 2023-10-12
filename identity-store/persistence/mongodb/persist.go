@@ -129,28 +129,6 @@ func (p *PersistenceTx) RetrieveByOwner(owner string) persistence.Iterator {
 	}
 }
 
-// RetrieveAll retrieves all user's authorized devices.
-func (p *PersistenceTx) RetrieveAll() persistence.Iterator {
-	if p.err != nil {
-		return &iterator{err: p.err}
-	}
-
-	col := p.tx.Client().Database(p.dbname).Collection(userDevicesCName)
-	iter, err := col.Find(p.ctx, bson.M{})
-
-	if errors.Is(err, mongo.ErrNilDocument) {
-		return &iterator{}
-	}
-	if err != nil {
-		return &iterator{err: fmt.Errorf("cannot load all devices subscription: %w", err)}
-	}
-
-	return &iterator{
-		iter: iter,
-		ctx:  p.ctx,
-	}
-}
-
 type iterator struct {
 	err  error
 	iter *mongo.Cursor

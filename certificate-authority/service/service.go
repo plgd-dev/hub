@@ -2,19 +2,23 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
 	gocron "github.com/go-co-op/gocron"
 	grpcService "github.com/plgd-dev/hub/v2/certificate-authority/service/grpc"
 	httpService "github.com/plgd-dev/hub/v2/certificate-authority/service/http"
+	"github.com/plgd-dev/hub/v2/certificate-authority/store"
+	storeConfig "github.com/plgd-dev/hub/v2/certificate-authority/store/config"
+	"github.com/plgd-dev/hub/v2/certificate-authority/store/cqldb"
 	"github.com/plgd-dev/hub/v2/certificate-authority/store/mongodb"
+	"github.com/plgd-dev/hub/v2/pkg/config/database"
 	"github.com/plgd-dev/hub/v2/pkg/fn"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/pkg/net/listener"
 	otelClient "github.com/plgd-dev/hub/v2/pkg/opentelemetry/collector/client"
-	cmClient "github.com/plgd-dev/hub/v2/pkg/security/certManager/client"
 	"github.com/plgd-dev/hub/v2/pkg/security/jwt/validator"
 	"github.com/plgd-dev/hub/v2/pkg/service"
 	"go.opentelemetry.io/otel/trace"
@@ -22,19 +26,30 @@ import (
 
 const serviceName = "certificate-authority"
 
-func newStore(ctx context.Context, config StorageConfig, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (*mongodb.Store, func(), error) {
-	var fl fn.FuncList
-
-	certManager, err := cmClient.New(config.MongoDB.Mongo.TLS, fileWatcher, logger)
-	if err != nil {
-		return nil, nil, fmt.Errorf("cannot create cert manager: %w", err)
+func createStore(ctx context.Context, config storeConfig.Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (store.Store, error) {
+	switch config.Use {
+	case database.MongoDB:
+		s, err := mongodb.New(ctx, config.MongoDB, fileWatcher, logger, tracerProvider)
+		if err != nil {
+			return nil, fmt.Errorf("mongodb: %w", err)
+		}
+		return s, nil
+	case database.CqlDB:
+		s, err := cqldb.New(ctx, config.CqlDB, fileWatcher, logger, tracerProvider)
+		if err != nil {
+			return nil, fmt.Errorf("cqldb: %w", err)
+		}
+		return s, nil
 	}
-	fl.AddFunc(certManager.Close)
+	return nil, fmt.Errorf("invalid store use('%v')", config.Use)
+}
 
-	db, err := mongodb.NewStore(ctx, config.MongoDB, certManager.GetTLSConfig(), logger, tracerProvider)
+func newStore(ctx context.Context, config StorageConfig, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (store.Store, func(), error) {
+	var fl fn.FuncList
+	db, err := createStore(ctx, config.Embedded, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		fl.Execute()
-		return nil, nil, fmt.Errorf("cannot create mongodb store: %w", err)
+		return nil, nil, err
 	}
 	fl.AddFunc(func() {
 		if err := db.Close(ctx); err != nil {
@@ -52,7 +67,7 @@ func newStore(ctx context.Context, config StorageConfig, fileWatcher *fsnotify.W
 	}
 	_, err = s.Do(func() {
 		_, errDel := db.DeleteNonDeviceExpiredRecords(ctx, time.Now())
-		if errDel != nil {
+		if errDel != nil && !errors.Is(errDel, store.ErrNotSupported) {
 			log.Errorf("failed to delete expired signing records: %w", errDel)
 		}
 	})

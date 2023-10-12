@@ -62,6 +62,7 @@ clients:
   eventStore:
     # expiration time of cached resource in projection
     cacheExpiration: 20m
+    use: mongoDB
     mongoDB:
       uri: ""
       database: eventStore
@@ -69,6 +70,28 @@ clients:
       maxPoolSize: 16
       # close connection when idle time reach the value.
       maxConnIdleTime: 4m0s
+      tls:
+        caPool: "/secrets/public/rootca.crt"
+        keyFile: "/secrets/private/cert.key"
+        certFile: "/secrets/public/cert.crt"
+        useSystemCAPool: false
+    cqlDB:
+      table: events
+      hosts: []
+      port: 9142
+      numConnections: 16
+      connectTimeout: 10s
+      useHostnameResolution: true
+      reconnectionPolicy:
+        constant:
+          interval: 3s
+          maxRetries: 3
+      keyspace:
+        name: plgdhub
+        create: true
+        replication:
+          class: SimpleStrategy
+          replication_factor: 1
       tls:
         caPool: "/secrets/public/rootca.crt"
         keyFile: "/secrets/private/cert.key"

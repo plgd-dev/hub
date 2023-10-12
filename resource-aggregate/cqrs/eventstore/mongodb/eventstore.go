@@ -11,7 +11,6 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/plgd-dev/go-coap/v3/pkg/cache"
 	"github.com/plgd-dev/go-coap/v3/pkg/runner/periodic"
-	"github.com/plgd-dev/hub/v2/pkg/fn"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	pkgMongo "github.com/plgd-dev/hub/v2/pkg/mongodb"
@@ -112,36 +111,34 @@ type UnmarshalerFunc = func(b []byte, v interface{}) error
 
 // EventStore implements an EventStore for MongoDB.
 type EventStore struct {
-	client          *mongo.Client
+	store           *pkgMongo.Store
 	LogDebugfFunc   LogDebugfFunc
 	dbPrefix        string
 	colPrefix       string
 	dataMarshaler   MarshalerFunc
 	dataUnmarshaler UnmarshalerFunc
 	ensuredIndexes  *cache.Cache[string, bool]
-	closeFunc       fn.FuncList
 }
 
 func (s *EventStore) AddCloseFunc(f func()) {
-	s.closeFunc.AddFunc(f)
+	s.store.AddCloseFunc(f)
 }
 
-func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider, opts ...Option) (*EventStore, error) {
+func New(ctx context.Context, config *Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider, opts ...Option) (*EventStore, error) {
 	config.marshalerFunc = json.Marshal
 	config.unmarshalerFunc = json.Unmarshal
 	for _, o := range opts {
-		o.apply(&config)
+		o.apply(config)
 	}
 	certManager, err := client.New(config.Embedded.TLS, fileWatcher, logger)
 	if err != nil {
 		return nil, fmt.Errorf("could not create cert manager: %w", err)
 	}
-	mgoStore, err := pkgMongo.NewStore(ctx, config.Embedded, certManager.GetTLSConfig(), tracerProvider)
+	mgoStore, err := pkgMongo.NewStore(ctx, &config.Embedded, certManager.GetTLSConfig(), tracerProvider)
 	if err != nil {
 		return nil, err
 	}
-	client := mgoStore.Client()
-	store, err := newEventStoreWithClient(ctx, client, config.Embedded.Database, "events", config.marshalerFunc, config.unmarshalerFunc, nil)
+	store, err := newEventStoreWithClient(ctx, mgoStore, config.Embedded.Database, "events", config.marshalerFunc, config.unmarshalerFunc, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -150,8 +147,8 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 }
 
 // NewEventStoreWithClient creates a new EventStore with a session.
-func newEventStoreWithClient(ctx context.Context, client *mongo.Client, dbPrefix string, colPrefix string, eventMarshaler MarshalerFunc, eventUnmarshaler UnmarshalerFunc, logDebugfFunc LogDebugfFunc) (*EventStore, error) {
-	if client == nil {
+func newEventStoreWithClient(ctx context.Context, store *pkgMongo.Store, dbPrefix string, colPrefix string, eventMarshaler MarshalerFunc, eventUnmarshaler UnmarshalerFunc, logDebugfFunc LogDebugfFunc) (*EventStore, error) {
+	if store == nil {
 		return nil, errors.New("invalid client")
 	}
 
@@ -183,7 +180,7 @@ func newEventStoreWithClient(ctx context.Context, client *mongo.Client, dbPrefix
 	})
 
 	s := &EventStore{
-		client:          client,
+		store:           store,
 		dbPrefix:        dbPrefix,
 		colPrefix:       colPrefix,
 		dataMarshaler:   eventMarshaler,
@@ -192,13 +189,13 @@ func newEventStoreWithClient(ctx context.Context, client *mongo.Client, dbPrefix
 		ensuredIndexes:  ensuredIndexes,
 	}
 
-	colAv := s.client.Database(s.DBName()).Collection(maintenanceCName)
+	colAv := s.client().Database(s.DBName()).Collection(maintenanceCName)
 	err := s.ensureIndex(ctx, colAv)
 	if err != nil {
 		return nil, fmt.Errorf("cannot save maintenance query: %w", err)
 	}
 
-	col := s.client.Database(s.DBName()).Collection(getEventCollectionName())
+	col := s.client().Database(s.DBName()).Collection(getEventCollectionName())
 	err = s.ensureIndex(ctx,
 		col,
 		aggregateIDLastVersionQueryIndex,
@@ -215,6 +212,10 @@ func newEventStoreWithClient(ctx context.Context, client *mongo.Client, dbPrefix
 	}
 
 	return s, nil
+}
+
+func (s *EventStore) client() *mongo.Client {
+	return s.store.Client()
 }
 
 func (s *EventStore) ensureIndex(ctx context.Context, col *mongo.Collection, indexes ...bson.D) error {
@@ -323,7 +324,7 @@ func (s *EventStore) DBName() string {
 
 // Clear clears the event storage.
 func (s *EventStore) Clear(ctx context.Context) error {
-	err := s.client.Database(s.DBName()).Drop(ctx)
+	err := s.client().Database(s.DBName()).Drop(ctx)
 	if err != nil {
 		return fmt.Errorf("cannot clear: %w", err)
 	}
@@ -333,13 +334,13 @@ func (s *EventStore) Clear(ctx context.Context) error {
 
 // Clear documents in collections, but don't drop the database or the collections
 func (s *EventStore) ClearCollections(ctx context.Context) error {
-	cols, err := s.client.Database(s.DBName()).ListCollectionNames(ctx, bson.D{})
+	cols, err := s.client().Database(s.DBName()).ListCollectionNames(ctx, bson.D{})
 	if err != nil {
 		return fmt.Errorf("failed to obtain collection names: %w", err)
 	}
 	var errors *multierror.Error
 	for _, col := range cols {
-		if _, err2 := s.client.Database(s.DBName()).Collection(col).DeleteMany(ctx, bson.D{}); err2 != nil {
+		if _, err2 := s.client().Database(s.DBName()).Collection(col).DeleteMany(ctx, bson.D{}); err2 != nil {
 			errors = multierror.Append(errors, fmt.Errorf("failed to clear collection %v: %w", col, err2))
 		}
 	}
@@ -349,9 +350,7 @@ func (s *EventStore) ClearCollections(ctx context.Context) error {
 // Close closes the database session.
 func (s *EventStore) Close(ctx context.Context) error {
 	_ = s.ensuredIndexes.LoadAndDeleteAll()
-	err := s.client.Disconnect(ctx)
-	s.closeFunc.Execute()
-	return err
+	return s.store.Close(ctx)
 }
 
 // newDBEvent returns a new dbEvent for an eventstore.

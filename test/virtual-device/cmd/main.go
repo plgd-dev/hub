@@ -625,7 +625,7 @@ func main() {
 	defer cancel()
 	for i := 0; i < *numDevices; i++ {
 		for {
-			c, err := runDevice(ctx, signerCert, signerKey, "device-"+strconv.Itoa(i), *numResource, *resourceDataSize)
+			c, err := runDevice(ctx, signerCert, signerKey, test.GenerateDeviceIDbyIdx(i), *numResource, *resourceDataSize)
 			if err == nil {
 				defer c.Close()
 				break

@@ -37,7 +37,7 @@ func (s *EventStore) Insert(ctx context.Context, task maintenance.Task) error {
 
 	record := makeDbAggregateVersion(task)
 
-	col := s.client.Database(s.DBName()).Collection(maintenanceCName)
+	col := s.client().Database(s.DBName()).Collection(maintenanceCName)
 
 	opts := options.UpdateOptions{}
 	opts.SetUpsert(true)
@@ -98,7 +98,7 @@ func (i *dbAggregateVersionIterator) Err() error {
 func (s *EventStore) Query(ctx context.Context, limit int, taskHandler maintenance.TaskHandler) error {
 	opts := options.FindOptions{}
 	opts.SetLimit(int64(limit))
-	iter, err := s.client.Database(s.DBName()).Collection(maintenanceCName).Find(ctx, bson.M{}, &opts)
+	iter, err := s.client().Database(s.DBName()).Collection(maintenanceCName).Find(ctx, bson.M{}, &opts)
 	if errors.Is(err, mongo.ErrNilDocument) {
 		return nil
 	}
@@ -122,7 +122,7 @@ func (s *EventStore) Query(ctx context.Context, limit int, taskHandler maintenan
 func (s *EventStore) Remove(ctx context.Context, task maintenance.Task) error {
 	record := makeDbAggregateVersion(task)
 
-	col := s.client.Database(s.DBName()).Collection(maintenanceCName)
+	col := s.client().Database(s.DBName()).Collection(maintenanceCName)
 
 	res, err := col.DeleteOne(ctx, record)
 	if err != nil {

@@ -2,14 +2,15 @@ package mongodb_test
 
 import (
 	"context"
-	"strconv"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore/mongodb"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore/test"
+	hubTest "github.com/plgd-dev/hub/v2/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -32,8 +33,8 @@ func addEventsForDeleteToDB(ctx context.Context, t *testing.T, store *mongodb.Ev
 			VersionI:     resourceVersion[resourceIndex],
 			EventTypeI:   "testType",
 			IsSnapshotI:  false,
-			AggregateIDI: "resource" + strconv.Itoa(resourceIndex),
-			GroupIDI:     "device" + strconv.Itoa(deviceIndex),
+			AggregateIDI: hubTest.GenerateIDbyIdx("a", resourceIndex),
+			GroupIDI:     hubTest.GenerateDeviceIDbyIdx(deviceIndex),
 			TimestampI:   1 + resourceTimestamp[resourceIndex],
 		})
 
@@ -50,7 +51,7 @@ func addEventsForDeleteToDB(ctx context.Context, t *testing.T, store *mongodb.Ev
 	return eventCount
 }
 
-func TestEventStore_Delete(t *testing.T) {
+func TestEventStoreDelete(t *testing.T) {
 	logger := log.NewLogger(log.MakeDefaultConfig())
 	fileWatcher, err := fsnotify.NewWatcher(logger)
 	require.NoError(t, err)
@@ -89,7 +90,7 @@ func TestEventStore_Delete(t *testing.T) {
 			name: "Invalid groupID",
 			args: args{
 				query: []eventstore.DeleteQuery{{
-					GroupID: "badId",
+					GroupID: uuid.Nil.String(),
 				}},
 			},
 			wantErr: false,
@@ -98,9 +99,9 @@ func TestEventStore_Delete(t *testing.T) {
 			name: "Invalid and valid groupID",
 			args: args{
 				query: []eventstore.DeleteQuery{{
-					GroupID: "badId",
+					GroupID: uuid.Nil.String(),
 				}, {
-					GroupID: "device1",
+					GroupID: hubTest.GenerateDeviceIDbyIdx(1),
 				}},
 			},
 			wantErr: false,
@@ -109,7 +110,7 @@ func TestEventStore_Delete(t *testing.T) {
 			name: "Delete single device",
 			args: args{
 				query: []eventstore.DeleteQuery{{
-					GroupID: "device5",
+					GroupID: hubTest.GenerateDeviceIDbyIdx(5),
 				}},
 			},
 			wantErr: false,
@@ -118,13 +119,13 @@ func TestEventStore_Delete(t *testing.T) {
 			name: "Delete multiple devices",
 			args: args{
 				query: []eventstore.DeleteQuery{{
-					GroupID: "device2",
+					GroupID: hubTest.GenerateDeviceIDbyIdx(2),
 				}, {
-					GroupID: "device3",
+					GroupID: hubTest.GenerateDeviceIDbyIdx(3),
 				}, {
-					GroupID: "device5",
+					GroupID: hubTest.GenerateDeviceIDbyIdx(5),
 				}, {
-					GroupID: "device7",
+					GroupID: hubTest.GenerateDeviceIDbyIdx(7),
 				}},
 			},
 			wantErr: false,

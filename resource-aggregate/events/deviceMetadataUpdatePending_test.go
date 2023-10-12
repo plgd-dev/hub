@@ -10,7 +10,7 @@ import (
 )
 
 var testEventDeviceMetadataUpdatePending events.DeviceMetadataUpdatePending = events.DeviceMetadataUpdatePending{
-	DeviceId: "dev1",
+	DeviceId: dev1,
 	UpdatePending: &events.DeviceMetadataUpdatePending_TwinEnabled{
 		TwinEnabled: true,
 	},

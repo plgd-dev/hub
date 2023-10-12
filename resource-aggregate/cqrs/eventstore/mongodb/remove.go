@@ -25,7 +25,7 @@ func (s *EventStore) removeDocumentsUpToVersion(ctx context.Context, queries []e
 	filter, hint := queryResolver.toMongoQuery(latestVersionKey)
 	opts := options.Delete()
 	opts.SetHint(hint)
-	_, err := s.client.Database(s.DBName()).Collection(getEventCollectionName()).DeleteMany(ctx, filter, opts)
+	_, err := s.client().Database(s.DBName()).Collection(getEventCollectionName()).DeleteMany(ctx, filter, opts)
 	if err != nil {
 		errors = multierror.Append(errors, err)
 	}
@@ -45,7 +45,7 @@ func (s *EventStore) removeEventsUpToVersion(ctx context.Context, queries []even
 		filter, hint := queryResolver.toMongoQuery(firstVersionKey)
 		updOpts := options.Update()
 		updOpts.SetHint(hint)
-		_, err = s.client.Database(s.DBName()).Collection(getEventCollectionName()).UpdateMany(ctx, filter, bson.M{
+		_, err = s.client().Database(s.DBName()).Collection(getEventCollectionName()).UpdateMany(ctx, filter, bson.M{
 			"$set": bson.M{
 				firstVersionKey: q.Version,
 			},

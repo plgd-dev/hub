@@ -2,7 +2,10 @@ package eventstore
 
 import (
 	"context"
+	"fmt"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 type ETagData struct {
@@ -100,4 +103,95 @@ func (e LoadedEvent) IsSnapshot() bool {
 
 func (e LoadedEvent) Timestamp() time.Time {
 	return e.timestamp
+}
+
+// Validate events before saving them in the database
+// Prerequisites that must hold:
+//  1. AggregateID, GroupID and EventType are not empty
+//  2. Version for each event is by 1 greater than the version of the previous event
+//  3. Only the first event can be a snapshot
+//  4. All events have the same AggregateID and GroupID
+//  5. Timestamps are non-zero
+//  6. Timestamps are non-decreasing
+func ValidateEventsBeforeSave(events []Event) error {
+	if len(events) == 0 || events[0] == nil {
+		return fmt.Errorf("invalid events('%v')", events)
+	}
+
+	firstEvent := events[0]
+	if err := validateFirstEvent(firstEvent); err != nil {
+		return err
+	}
+
+	aggregateID := firstEvent.AggregateID()
+	groupID := firstEvent.GroupID()
+	version := firstEvent.Version()
+	timestamp := firstEvent.Timestamp()
+
+	for idx, event := range events {
+		if event == nil {
+			return fmt.Errorf("invalid events[%v]('%v')", idx, event)
+		}
+		if err := validateEvent(event, idx, aggregateID, groupID, version, timestamp); err != nil {
+			return err
+		}
+		timestamp = event.Timestamp()
+	}
+
+	return nil
+}
+
+func validateFirstEvent(event Event) error {
+	_, err := uuid.Parse(event.AggregateID())
+	if err != nil {
+		return fmt.Errorf("invalid events[0].AggregateID('%v'): %w", event.AggregateID(), err)
+	}
+
+	_, err = uuid.Parse(event.GroupID())
+	if err != nil {
+		return fmt.Errorf("invalid events[0].GroupID('%v'): %w", event.GroupID(), err)
+	}
+
+	if event.Timestamp().IsZero() {
+		return fmt.Errorf("invalid zero events[0].Timestamp")
+	}
+
+	return nil
+}
+
+func validateEvent(event Event, idx int, aggregateID, groupID string, version uint64, timestamp time.Time) error {
+	if event.AggregateID() != aggregateID {
+		return fmt.Errorf("invalid events[%v].AggregateID('%v') != events[0].AggregateID('%v')", idx, event.AggregateID(), aggregateID)
+	}
+
+	if event.GroupID() != groupID {
+		return fmt.Errorf("invalid events[%v].GroupID('%v') != events[0].GroupID('%v')", idx, event.GroupID(), groupID)
+	}
+
+	if event.EventType() == "" {
+		return fmt.Errorf("invalid events[%v].EventType('%v')", idx, event.EventType())
+	}
+
+	if event.Timestamp().IsZero() {
+		return fmt.Errorf("invalid zero events[%v].Timestamp", idx)
+	}
+
+	if idx > 0 {
+		if event.Version() != version+uint64(idx) {
+			return fmt.Errorf("invalid continues ascending events[%v].Version(%v))", idx, event.Version())
+		}
+
+		if timestamp.After(event.Timestamp()) {
+			return fmt.Errorf("invalid decreasing events[%v].Timestamp(%v))", idx, event.Timestamp())
+		}
+	}
+
+	if serviceID, ok := event.ServiceID(); ok && serviceID != "" {
+		_, err := uuid.Parse(serviceID)
+		if err != nil {
+			return fmt.Errorf("invalid events[%v].ServiceID('%v'): %w", idx, serviceID, err)
+		}
+	}
+
+	return nil
 }

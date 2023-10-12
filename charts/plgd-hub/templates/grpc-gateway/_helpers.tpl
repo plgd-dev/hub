@@ -58,7 +58,7 @@
 
 {{- define "plgd-hub.grpcgateway.internalDns" -}}
   {{- $fullName := include "plgd-hub.grpcgateway.fullname" . -}}
-  {{- printf "%s.%s.svc.cluster.local" $fullName .Release.Namespace }}
+  {{- printf "%s.%s.svc.%s" $fullName .Release.Namespace .cluster.dns }}
 {{- end }}
 
 

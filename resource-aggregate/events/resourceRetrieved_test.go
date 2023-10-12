@@ -12,7 +12,7 @@ import (
 
 var testEventResourceRetrieved events.ResourceRetrieved = events.ResourceRetrieved{
 	ResourceId: &commands.ResourceId{
-		DeviceId: "dev1",
+		DeviceId: dev1,
 		Href:     "/dev1",
 	},
 	Content: &commands.Content{

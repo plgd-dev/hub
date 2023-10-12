@@ -8,7 +8,7 @@ import (
 	gocron "github.com/go-co-op/gocron"
 	"github.com/google/uuid"
 	grpcService "github.com/plgd-dev/hub/v2/certificate-authority/service/grpc"
-	"github.com/plgd-dev/hub/v2/certificate-authority/store/mongodb"
+	storeConfig "github.com/plgd-dev/hub/v2/certificate-authority/store/config"
 	"github.com/plgd-dev/hub/v2/pkg/config"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	httpServer "github.com/plgd-dev/hub/v2/pkg/net/http/server"
@@ -77,14 +77,14 @@ func (c *HTTPConfig) Validate() error {
 }
 
 type StorageConfig struct {
-	MongoDB                   mongodb.Config `yaml:"mongoDB" json:"mongoDb"`
-	ExtendCronParserBySeconds bool           `yaml:"-" json:"-"`
-	CleanUpRecords            string         `yaml:"cleanUpRecords" json:"cleanUpRecords"`
+	Embedded                  storeConfig.Config `yaml:",inline" json:",inline"`
+	ExtendCronParserBySeconds bool               `yaml:"-" json:"-"`
+	CleanUpRecords            string             `yaml:"cleanUpRecords" json:"cleanUpRecords"`
 }
 
 func (c *StorageConfig) Validate() error {
-	if err := c.MongoDB.Validate(); err != nil {
-		return fmt.Errorf("mongoDB.%w", err)
+	if err := c.Embedded.Validate(); err != nil {
+		return err
 	}
 	if c.CleanUpRecords == "" {
 		return nil

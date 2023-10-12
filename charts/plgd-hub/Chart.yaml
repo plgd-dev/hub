@@ -18,3 +18,7 @@ dependencies:
     version: "13.4.3"
     repository: "https://charts.bitnami.com/bitnami"
     condition: mongodb.enabled
+  - name: "scylla"
+    version: "1.10.0"
+    repository: "https://scylla-operator-charts.storage.googleapis.com/stable"
+    condition: scylla.enabled

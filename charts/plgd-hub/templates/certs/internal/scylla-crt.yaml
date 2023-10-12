@@ -1,0 +1,39 @@
+{{- if and .Values.scylla.enabled .Values.certmanager.enabled }}
+{{- range .Values.scylla.racks }}
+{{- $resourceName := printf "scylla-%s-crt" .name -}}
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ $resourceName }}
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    {{- include "plgd-hub.labels" $ | nindent 4 }}
+spec:
+  secretName: {{ $resourceName }}
+  privateKey:
+    algorithm: {{ $.Values.certmanager.internal.cert.key.algorithm | default $.Values.certmanager.default.cert.key.algorithm }}
+    size: {{ $.Values.certmanager.internal.cert.key.size | default $.Values.certmanager.default.cert.key.size }}
+  usages:
+    - client auth
+    - server auth
+  ipAddresses:
+    - "127.0.0.1"
+  dnsNames:
+    - "localhost"
+    - "{{ $.Release.Name }}-scylla-client"
+    - "{{ $.Release.Name }}-scylla-client.{{ $.Release.Namespace }}.svc.{{ $.Values.cluster.dns }}"
+    {{- $rack := . }}
+    {{- range $i := until (int .members) }}
+    - {{$.Release.Name}}-scylla-{{$.Values.scylla.datacenter}}-{{ $rack.name }}-{{$i}}
+    - {{$.Release.Name}}-scylla-{{$.Values.scylla.datacenter}}-{{ $rack.name }}-{{$i}}.{{$.Release.Namespace}}.svc.{{ $.Values.cluster.dns }}
+    - "*.{{$.Release.Name}}-scylla-{{$.Values.scylla.datacenter}}-{{ $rack.name }}-{{$i}}"
+    - "*.{{$.Release.Name}}-scylla-{{$.Values.scylla.datacenter}}-{{ $rack.name }}-{{$i}}.{{$.Release.Namespace}}.svc.{{ $.Values.cluster.dns }}"
+    {{- end }}
+  duration: {{ $.Values.certmanager.internal.cert.duration | default $.Values.certmanager.default.cert.duration }}
+  renewBefore: {{ $.Values.certmanager.internal.cert.renewBefore | default $.Values.certmanager.default.cert.renewBefore }}
+  issuerRef:
+    name: {{ $.Values.certmanager.internal.issuer.name | default $.Values.certmanager.default.issuer.name }}
+    kind: {{ $.Values.certmanager.internal.issuer.kind | default $.Values.certmanager.default.issuer.kind }}
+    group: cert-manager.io
+{{- end }}
+{{- end }}

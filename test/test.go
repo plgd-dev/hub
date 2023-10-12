@@ -753,6 +753,9 @@ func WaitForDevice(t *testing.T, client pb.GrpcGateway_SubscribeToEventsClient, 
 
 	for {
 		ev, err := client.Recv()
+		if err != nil {
+			fmt.Printf("expectedEvents: %+v", expectedEvents)
+		}
 		require.NoError(t, err)
 
 		expectedEvent, ok := expectedEvents[getID(ev)]
@@ -953,4 +956,18 @@ func NATSSStart(ctx context.Context, t *testing.T) {
 func NATSSStop(ctx context.Context, t *testing.T) {
 	err := exec.CommandContext(ctx, "docker", "stop", "nats").Run()
 	require.NoError(t, err)
+}
+
+func GenerateIDbyIdx(prefix string, deviceIndex int) string {
+	if len(prefix) == 0 {
+		prefix = "0"
+	}
+	if len(prefix) > 1 {
+		prefix = prefix[:1]
+	}
+	return fmt.Sprintf("%s0000000-0000-0000-0000-%012v", prefix, deviceIndex)
+}
+
+func GenerateDeviceIDbyIdx(deviceIndex int) string {
+	return GenerateIDbyIdx("d", deviceIndex)
 }

@@ -27,7 +27,7 @@ import (
 )
 
 func TestAggregateHandleConfirmDeviceMetadataUpdate(t *testing.T) {
-	const deviceID = "dev1"
+	deviceID := dev1
 	const userID = "user1"
 	const owner = userID
 	type args struct {
@@ -98,7 +98,7 @@ func TestAggregateHandleConfirmDeviceMetadataUpdate(t *testing.T) {
 		naClient.Close()
 	}()
 
-	ag, err := service.NewAggregate(commands.NewResourceID(deviceID, commands.StatusHref), 10, eventstore, service.NewDeviceMetadataFactoryModel(userID, owner, cfg.HubID), cqrsAggregate.NewDefaultRetryFunc(1))
+	ag, err := service.NewAggregate(commands.NewResourceID(deviceID, commands.StatusHref), eventstore, service.NewDeviceMetadataFactoryModel(userID, owner, cfg.HubID), cqrsAggregate.NewDefaultRetryFunc(1))
 	require.NoError(t, err)
 	_, err = ag.UpdateDeviceMetadata(ctx, testMakeUpdateDeviceMetadataRequest(deviceID, "a", newConnectionStatus(commands.Connection_ONLINE), nil, 0))
 	require.NoError(t, err)
@@ -107,7 +107,7 @@ func TestAggregateHandleConfirmDeviceMetadataUpdate(t *testing.T) {
 
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {
-			ag, err := service.NewAggregate(commands.NewResourceID(tt.args.request.GetDeviceId(), commands.StatusHref), 10, eventstore, service.NewDeviceMetadataFactoryModel(userID, owner, cfg.HubID), cqrsAggregate.NewDefaultRetryFunc(1))
+			ag, err := service.NewAggregate(commands.NewResourceID(tt.args.request.GetDeviceId(), commands.StatusHref), eventstore, service.NewDeviceMetadataFactoryModel(userID, owner, cfg.HubID), cqrsAggregate.NewDefaultRetryFunc(1))
 			require.NoError(t, err)
 			events, err := ag.ConfirmDeviceMetadataUpdate(ctx, tt.args.request)
 			if tt.wantErr {
@@ -125,7 +125,7 @@ func TestAggregateHandleConfirmDeviceMetadataUpdate(t *testing.T) {
 }
 
 func TestRequestHandlerConfirmDeviceMetadataUpdate(t *testing.T) {
-	const deviceID = "dev0"
+	deviceID := dev0
 	const userID = "user0"
 	type args struct {
 		request *commands.ConfirmDeviceMetadataUpdateRequest

@@ -2,6 +2,7 @@ package eventstore
 
 import (
 	"context"
+	"fmt"
 )
 
 // VersionQuery used to load events from version.
@@ -38,6 +39,11 @@ const (
 	Fail                 SaveStatus = -1 // error occurred
 )
 
+type DeviceDocumentMetadata struct {
+	DeviceID  string
+	ServiceID string
+}
+
 // EventStore provides interface over eventstore. More aggregates can be grouped by groupID,
 // but aggregateID of aggregates must be unique against whole DB.
 type EventStore interface {
@@ -55,4 +61,12 @@ type EventStore interface {
 	LoadFromSnapshot(ctx context.Context, queries []SnapshotQuery, eventHandler Handler) error
 	RemoveUpToVersion(ctx context.Context, queries []VersionQuery) error
 	Delete(ctx context.Context, queries []DeleteQuery) error
+
+	LoadDeviceMetadataByServiceIDs(ctx context.Context, serviceIDs []string, limit int64) ([]DeviceDocumentMetadata, error)
+	GetLatestDeviceETags(ctx context.Context, deviceID string, limit uint32) ([][]byte, error)
+	Close(ctx context.Context) error
+	Clear(ctx context.Context) error
 }
+
+// ErrNotSupported is returned when the operation is not supported.
+var ErrNotSupported = fmt.Errorf("not supported")

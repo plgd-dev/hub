@@ -81,19 +81,19 @@ If release name contains chart name it will be used as a full name.
   {{- $certDefinition := index . 1 }}
   {{- $certPath := index . 2 }}
   {{- if $certDefinition.caPool }}
-  caPool:{{- printf " " }}{{- printf "%s" $certDefinition.caPool | quote }}
+  caPool: {{ printf "%s" $certDefinition.caPool | quote }}
   {{- else if $.Values.certmanager.enabled }}
-  caPool:{{- printf " " }}{{- printf "%s/ca.crt" $certPath | quote  }}
+  caPool: {{ printf "%s/ca.crt" $certPath | quote  }}
   {{- end }}
   {{- if $certDefinition.keyFile }}
-  keyFile:{{- printf " " }}{{- printf "%s" $certDefinition.keyFile | quote }}
+  keyFile: {{ printf "%s" $certDefinition.keyFile | quote }}
   {{- else if $.Values.certmanager.enabled }}
-  keyFile:{{- printf " " }}{{- printf "%s/tls.key" $certPath  | quote  }}
+  keyFile: {{ printf "%s/tls.key" $certPath  | quote  }}
   {{- end }}
   {{- if $certDefinition.certFile }}
-  certFile:{{- printf " " }}{{- printf "%s" $certDefinition.certFile | quote }}
+  certFile: {{ printf "%s" $certDefinition.certFile | quote }}
   {{- else if $.Values.certmanager.enabled }}
-  certFile:{{- printf " " }}{{- printf "%s/tls.crt" $certPath | quote }}
+  certFile: {{ printf "%s/tls.crt" $certPath | quote }}
   {{- end }}
 {{- end }}
 
@@ -103,7 +103,7 @@ If release name contains chart name it will be used as a full name.
   {{- $certPath := index . 2 }}
   {{- $caPool := list (printf "%s/%s" $.Values.extraAuthorizationCAPool.mountPath $.Values.extraAuthorizationCAPool.fileName | quote) (printf "%s/ca.crt" $certPath | quote) }}
   {{- if $certDefinition.caPool }}
-  caPool:{{- printf " " }}{{- printf "%s" $certDefinition.caPool | quote }}
+  caPool: {{ printf "%s" $certDefinition.caPool | quote }}
   {{- else if $.Values.certmanager.enabled }}
   {{- if $.Values.global.authorizationCAPool }}
   caPool:
@@ -111,18 +111,18 @@ If release name contains chart name it will be used as a full name.
     - {{ printf "%s" . }}
     {{- end }}
   {{- else }}
-  caPool:{{- printf " " }}{{- printf "%s/ca.crt" $certPath | quote  }}
+  caPool: {{ printf "%s/ca.crt" $certPath | quote  }}
   {{- end }}
   {{- end }}
   {{- if $certDefinition.keyFile }}
-  keyFile:{{- printf " " }}{{- printf "%s" $certDefinition.keyFile | quote }}
+  keyFile: {{ printf "%s" $certDefinition.keyFile | quote }}
   {{- else if $.Values.certmanager.enabled }}
-  keyFile:{{- printf " " }}{{- printf "%s/tls.key" $certPath  | quote  }}
+  keyFile: {{ printf "%s/tls.key" $certPath  | quote  }}
   {{- end }}
   {{- if $certDefinition.certFile }}
-  certFile:{{- printf " " }}{{- printf "%s" $certDefinition.certFile | quote }}
+  certFile: {{ printf "%s" $certDefinition.certFile | quote }}
   {{- else if $.Values.certmanager.enabled }}
-  certFile:{{- printf " " }}{{- printf "%s/tls.crt" $certPath | quote }}
+  certFile: {{ printf "%s/tls.crt" $certPath | quote }}
   {{- end }}
 {{- end }}
 
@@ -252,6 +252,22 @@ app.kubernetes.io/instance: {{ .Release.Name }}
   {{- printf "%s" $mongoUri }}
   {{- else }}
   {{- printf "mongodb://mongodb-headless.%s.svc.%s:27017/?replicaSet=%s" $.Release.Namespace $.Values.cluster.dns $.Values.mongodb.replicaSetName }}
+  {{- end }}
+{{- end }}
+
+{{- define "plgd-hub.cqlDBHosts" }}
+  {{- $ := index . 0 }}
+  {{- $cqlDBHosts := index . 1 }}
+  {{- if $.Values.global.cqlDBHosts }}
+  {{- range $.Values.global.cqlDBHosts }}
+  - {{- printf " %s" . }}
+  {{- end }}
+  {{- else if $cqlDBHosts }}
+  {{- range $cqlDBHosts }}
+  - {{- printf " %s" . }}
+  {{- end }}
+  {{- else }}
+  - {{ printf "%s-scylla-client.%s.svc.%s" $.Release.Name $.Release.Namespace $.Values.cluster.dns }}
   {{- end }}
 {{- end }}
 
@@ -389,3 +405,15 @@ openTelemetryCollector:
       {{- include "plgd-hub.certificateConfig" (list $ $cfg.tls $certPath ) | indent 4 }}
       useSystemCAPool: {{ $cfg.tls.useSystemCAPool }}
 {{- end -}}
+
+{{- define "plgd-hub.useDatabase" }}
+  {{- $ := index . 0 }}
+  {{- $useDatabase := index . 1 }}
+  {{- if $.Values.global.useDatabase }}
+  {{- printf "%s" $.Values.global.useDatabase }}
+  {{- else if $useDatabase }}
+  {{- printf "%s" $useDatabase }}
+  {{- else }}
+  {{- printf "mongoDB" }}
+  {{- end }}
+{{- end }}

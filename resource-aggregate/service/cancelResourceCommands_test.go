@@ -26,7 +26,7 @@ import (
 )
 
 func TestRequestHandlerCancelPendingCommands(t *testing.T) {
-	const deviceID = "dev0"
+	deviceID := dev0
 	const resID0 = "res0"
 	const resID1 = "res1"
 	const userID = "user0"
@@ -176,9 +176,9 @@ func TestRequestHandlerCancelPendingCommands(t *testing.T) {
 		naClient.Close()
 	}()
 
-	ag0, err := service.NewAggregate(commands.NewResourceID(deviceID, resID0), 10, eventstore, service.NewResourceStateFactoryModel(userID, userID, cfg.HubID), cqrsAggregate.NewDefaultRetryFunc(1))
+	ag0, err := service.NewAggregate(commands.NewResourceID(deviceID, resID0), eventstore, service.NewResourceStateFactoryModel(userID, userID, cfg.HubID), cqrsAggregate.NewDefaultRetryFunc(1))
 	require.NoError(t, err)
-	ag1, err := service.NewAggregate(commands.NewResourceID(deviceID, resID1), 10, eventstore, service.NewResourceStateFactoryModel(userID, userID, cfg.HubID), cqrsAggregate.NewDefaultRetryFunc(1))
+	ag1, err := service.NewAggregate(commands.NewResourceID(deviceID, resID1), eventstore, service.NewResourceStateFactoryModel(userID, userID, cfg.HubID), cqrsAggregate.NewDefaultRetryFunc(1))
 	require.NoError(t, err)
 	_, err = ag0.NotifyResourceChanged(ctx, testMakeNotifyResourceChangedRequest(deviceID, resID0, 0, []byte(resID0)...))
 	require.NoError(t, err)

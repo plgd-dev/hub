@@ -2,16 +2,20 @@ package aggregate_test
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 	"testing"
 
 	"github.com/google/uuid"
+	"github.com/plgd-dev/hub/v2/pkg/config/database"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/aggregate"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore"
+	eventstoreConfig "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore/config"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore/cqldb"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore/mongodb"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 	"github.com/plgd-dev/hub/v2/test/config"
@@ -20,54 +24,65 @@ import (
 	"go.uber.org/atomic"
 )
 
-func testNewEventstore(ctx context.Context, t *testing.T) *mongodb.EventStore {
+func testNewEventstore(ctx context.Context, t *testing.T) (eventstore.EventStore, func()) {
 	logger := log.NewLogger(log.MakeDefaultConfig())
 	fileWatcher, err := fsnotify.NewWatcher(logger)
 	require.NoError(t, err)
-	defer func() {
-		errC := fileWatcher.Close()
-		require.NoError(t, errC)
-	}()
-	cfg := config.MakeEventsStoreMongoDBConfig()
-	store, err := mongodb.New(
-		ctx,
-		cfg,
-		fileWatcher,
-		logger,
-		trace.NewNoopTracerProvider(),
-	)
-	require.NoError(t, err)
-	require.NotNil(t, store)
 
-	return store
+	config := eventstoreConfig.Config{
+		Use:     config.ACTIVE_DATABASE(),
+		MongoDB: config.MakeEventsStoreMongoDBConfig(),
+		CqlDB:   config.MakeEventsStoreCqlDBConfig(),
+	}
+	switch config.Use {
+	case database.MongoDB:
+		s, err := mongodb.New(ctx, config.MongoDB, fileWatcher, logger, trace.NewNoopTracerProvider())
+		require.NoError(t, err)
+		return s, func() {
+			errC := s.Clear(ctx)
+			require.NoError(t, errC)
+			errC = s.Close(ctx)
+			require.NoError(t, errC)
+			errC = fileWatcher.Close()
+			require.NoError(t, errC)
+		}
+	case database.CqlDB:
+		s, err := cqldb.New(ctx, config.CqlDB, fileWatcher, logger, trace.NewNoopTracerProvider())
+		require.NoError(t, err)
+		return s, func() {
+			errC := s.Clear(ctx)
+			require.NoError(t, errC)
+			errC = s.Close(ctx)
+			require.NoError(t, errC)
+			errC = fileWatcher.Close()
+			require.NoError(t, errC)
+		}
+	}
+	require.NoError(t, fmt.Errorf("invalid eventstore use('%v')", config.Use))
+	return nil, func() {}
 }
 
-func cleanUpToSnapshot(ctx context.Context, t *testing.T, store *mongodb.EventStore, evs []eventstore.Event) {
+func cleanUpToSnapshot(ctx context.Context, t *testing.T, store eventstore.EventStore, evs []eventstore.Event) {
 	for _, event := range evs {
-		if event.IsSnapshot() {
-			if err := store.RemoveUpToVersion(ctx, []eventstore.VersionQuery{{GroupID: event.GroupID(), AggregateID: event.AggregateID(), Version: event.Version()}}); err != nil {
-				require.NoError(t, err)
-			}
-			fmt.Printf("snapshot at version %v\n", event.Version())
-			break
+		if err := store.RemoveUpToVersion(ctx, []eventstore.VersionQuery{{GroupID: event.GroupID(), AggregateID: event.AggregateID(), Version: event.Version()}}); err != nil && !errors.Is(err, eventstore.ErrNotSupported) {
+			require.NoError(t, err)
 		}
+		fmt.Printf("snapshot at version %v\n", event.Version())
 	}
 }
 
-func Test_parallelRequest(t *testing.T) {
+func TestParallelRequest(t *testing.T) {
 	ctx := context.Background()
-	store := testNewEventstore(ctx, t)
+	store, tearDown := testNewEventstore(ctx, t)
 	defer func() {
-		errC := store.Clear(ctx)
-		require.NoError(t, errC)
-		_ = store.Close(ctx)
+		tearDown()
 	}()
 
 	deviceID := "7397398d-3ae8-4d9a-62d6-511f7b736a60"
 	href := "/test/resource/1"
 
 	newAggregate := func(deviceID, href string) *aggregate.Aggregate {
-		a, err := aggregate.NewAggregate(deviceID, commands.NewResourceID(deviceID, href).ToUUID().String(), aggregate.NewDefaultRetryFunc(64), 16, store, func(context.Context) (aggregate.AggregateModel, error) {
+		a, err := aggregate.NewAggregate(deviceID, commands.NewResourceID(deviceID, href).ToUUID().String(), aggregate.NewDefaultRetryFunc(64), store, func(context.Context) (aggregate.AggregateModel, error) {
 			ev := events.NewResourceStateSnapshotTakenForCommand("test", "test", "hubID")
 			ev.ResourceId = commands.NewResourceID(deviceID, href)
 			return ev, nil

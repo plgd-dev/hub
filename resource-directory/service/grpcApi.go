@@ -8,6 +8,7 @@ import (
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	clientIS "github.com/plgd-dev/hub/v2/identity-store/client"
 	pbIS "github.com/plgd-dev/hub/v2/identity-store/pb"
+	"github.com/plgd-dev/hub/v2/pkg/config/database"
 	"github.com/plgd-dev/hub/v2/pkg/fn"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
@@ -17,6 +18,8 @@ import (
 	naClient "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/client"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/subscriber"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore"
+	eventstoreConfig "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore/config"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore/cqldb"
 	mongodb "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore/mongodb"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/utils"
 	pbRD "github.com/plgd-dev/hub/v2/resource-directory/pb"
@@ -30,7 +33,7 @@ type RequestHandler struct {
 	pbRD.UnimplementedResourceDirectoryServer
 
 	resourceProjection  *Projection
-	eventStore          *mongodb.EventStore
+	eventStore          eventstore.EventStore
 	publicConfiguration PublicConfiguration
 	ownerCache          *clientIS.OwnerCache
 	closeFunc           fn.FuncList
@@ -75,6 +78,24 @@ func newIdentityStoreClient(ctx context.Context, config IdentityStoreConfig, fil
 	return isClient, closeIsClient.ToFunction(), nil
 }
 
+func createEventStore(ctx context.Context, config eventstoreConfig.Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (eventstore.EventStore, error) {
+	switch config.Use {
+	case database.MongoDB:
+		s, err := mongodb.New(ctx, config.MongoDB, fileWatcher, logger, tracerProvider, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
+		if err != nil {
+			return nil, fmt.Errorf("mongodb: %w", err)
+		}
+		return s, nil
+	case database.CqlDB:
+		s, err := cqldb.New(ctx, config.CqlDB, fileWatcher, logger, tracerProvider, cqldb.WithUnmarshaler(utils.Unmarshal), cqldb.WithMarshaler(utils.Marshal))
+		if err != nil {
+			return nil, fmt.Errorf("cqldb: %w", err)
+		}
+		return s, nil
+	}
+	return nil, fmt.Errorf("invalid eventstore use('%v')", config.Use)
+}
+
 func newRequestHandlerFromConfig(ctx context.Context, config Config, publicConfiguration PublicConfiguration, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider, goroutinePoolGo func(func()) error) (*RequestHandler, error) {
 	var closeFunc fn.FuncList
 	if publicConfiguration.CAPool != "" {
@@ -91,14 +112,14 @@ func newRequestHandlerFromConfig(ctx context.Context, config Config, publicConfi
 	}
 	closeFunc.AddFunc(closeIsClient)
 
-	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, fileWatcher, logger, tracerProvider, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
+	eventstore, err := createEventStore(ctx, config.Clients.Eventstore.Connection, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		closeFunc.Execute()
-		return nil, fmt.Errorf("cannot create resource mongodb eventstore %w", err)
+		return nil, fmt.Errorf("cannot create resource eventstore %w", err)
 	}
 	closeFunc.AddFunc(func() {
 		if errC := eventstore.Close(ctx); errC != nil {
-			logger.Errorf("error occurs during close connection to mongodb: %w", errC)
+			logger.Errorf("error occurs during close connection to eventstore: %w", errC)
 		}
 	})
 
@@ -158,7 +179,7 @@ func newRequestHandlerFromConfig(ctx context.Context, config Config, publicConfi
 func NewRequestHandler(
 	hubID string,
 	resourceProjection *Projection,
-	eventstore *mongodb.EventStore,
+	eventstore eventstore.EventStore,
 	publicConfiguration PublicConfiguration,
 	ownerCache *clientIS.OwnerCache,
 	closeFunc fn.FuncList,

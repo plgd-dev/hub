@@ -58,7 +58,7 @@ func TestRequestHandlerDeleteDevices(t *testing.T) {
 		{
 			name: "not found",
 			args: args{
-				deviceID: "notFound",
+				deviceID: test.GenerateDeviceIDbyIdx(0),
 			},
 			want: &pb.DeleteDevicesResponse{
 				DeviceIds: nil,

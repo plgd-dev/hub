@@ -42,8 +42,6 @@ func (a *Aggregate) UpdateDeviceMetadata(ctx context.Context, request *commands.
 		err = fmt.Errorf("unable to process update device metadata command command: %w", err)
 		return
 	}
-	cleanUpToSnapshot(ctx, a, events)
-
 	return
 }
 
@@ -53,7 +51,6 @@ func (a *Aggregate) UpdateDeviceToOffline(ctx context.Context, request *events.U
 		err = fmt.Errorf("unable to process update device metadata command command: %w", err)
 		return
 	}
-	cleanUpToSnapshot(ctx, a, events)
 	return
 }
 
@@ -78,7 +75,7 @@ func (r RequestHandler) updateDeviceMetadata(ctx context.Context, request *comma
 		return latestSnapshot, nil
 	}
 
-	aggregate, err := NewAggregate(resID, r.config.Clients.Eventstore.SnapshotThreshold, r.eventstore, deviceMetadataFactoryModel, cqrsAggregate.NewDefaultRetryFunc(r.config.Clients.Eventstore.ConcurrencyExceptionMaxRetry))
+	aggregate, err := NewAggregate(resID, r.eventstore, deviceMetadataFactoryModel, cqrsAggregate.NewDefaultRetryFunc(r.config.Clients.Eventstore.ConcurrencyExceptionMaxRetry))
 	if err != nil {
 		return nil, log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "cannot update device('%v') metadata: %v", request.GetDeviceId(), err))
 	}

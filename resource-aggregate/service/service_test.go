@@ -2,6 +2,7 @@ package service_test
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/plgd-dev/device/v2/schema/platform"
@@ -12,7 +13,8 @@ import (
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"github.com/plgd-dev/hub/v2/pkg/net/grpc/client"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/service"
-	"github.com/plgd-dev/hub/v2/resource-aggregate/test"
+	raTest "github.com/plgd-dev/hub/v2/resource-aggregate/test"
+	"github.com/plgd-dev/hub/v2/test"
 	"github.com/plgd-dev/hub/v2/test/config"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	"github.com/stretchr/testify/require"
@@ -20,9 +22,10 @@ import (
 )
 
 func TestPublishUnpublish(t *testing.T) {
-	cfg := test.MakeConfig(t)
+	cfg := raTest.MakeConfig(t)
 	cfg.APIs.GRPC.Addr = "localhost:9888"
-	cfg.Clients.Eventstore.SnapshotThreshold = 1
+
+	fmt.Println("cfg: ", cfg)
 
 	oauthShutdown := oauthTest.SetUp(t)
 	defer oauthShutdown()
@@ -32,7 +35,7 @@ func TestPublishUnpublish(t *testing.T) {
 	logCfg := log.MakeDefaultConfig()
 	logCfg.Level = log.DebugLevel
 	log.Setup(logCfg)
-	raShutdown := test.New(t, cfg)
+	raShutdown := raTest.New(t, cfg)
 	defer raShutdown()
 
 	ctx := kitNetGrpc.CtxWithToken(context.Background(), oauthTest.GetDefaultAccessToken(t))
@@ -58,7 +61,7 @@ func TestPublishUnpublish(t *testing.T) {
 	}()
 	raClient := service.NewResourceAggregateClient(raConn.GRPC())
 
-	deviceID := "dev0"
+	deviceID := test.GenerateDeviceIDbyIdx(0)
 	href := platform.ResourceURI
 	_, err = idClient.AddDevice(ctx, &pbIS.AddDeviceRequest{
 		DeviceId: deviceID,

@@ -2,14 +2,18 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"testing"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/plgd-dev/hub/v2/identity-store/persistence"
+	"github.com/plgd-dev/hub/v2/identity-store/persistence/cqldb"
+	"github.com/plgd-dev/hub/v2/identity-store/persistence/mongodb"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
-	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/test"
+	natsTest "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/test"
+	"github.com/plgd-dev/hub/v2/test"
 	"github.com/plgd-dev/hub/v2/test/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -17,10 +21,11 @@ import (
 )
 
 const (
-	testUserID   = "testUserID"
-	testDeviceID = "testDeviceID"
-	testUser2    = "testUser2"
+	testUserID = "testUserID"
+	testUser2  = "testUser2"
 )
+
+var testDeviceID = test.GenerateDeviceIDbyIdx(123456)
 
 func MakeConfig(t require.TestingT) Config {
 	var cfg Config
@@ -33,11 +38,14 @@ func MakeConfig(t require.TestingT) Config {
 	cfg.APIs.GRPC.Authorization.Config = config.MakeAuthorizationConfig()
 
 	cfg.HubID = config.HubID()
+
+	cfg.Clients.Storage.Use = config.ACTIVE_DATABASE()
+	cfg.Clients.Storage.MongoDB = &mongodb.Config{}
 	cfg.Clients.Storage.MongoDB.URI = config.MONGODB_URI
+	cfg.Clients.Storage.MongoDB.TLS = config.MakeTLSClientConfig()
 	cfg.Clients.Storage.MongoDB.Database = config.IDENTITY_STORE_DB
-	cfg.Clients.Storage.MongoDB.TLS.CAPool = config.CA_POOL
-	cfg.Clients.Storage.MongoDB.TLS.CertFile = config.CERT_FILE
-	cfg.Clients.Storage.MongoDB.TLS.KeyFile = config.KEY_FILE
+	cfg.Clients.Storage.CqlDB = &cqldb.Config{}
+	cfg.Clients.Storage.CqlDB.Embedded = config.MakeCqlDBConfig()
 
 	cfg.Clients.Eventbus.NATS = config.MakePublisherConfig()
 
@@ -50,12 +58,14 @@ func MakeConfig(t require.TestingT) Config {
 func newTestService(t *testing.T) (*Server, func()) {
 	cfg := MakeConfig(t)
 
+	fmt.Printf("cfg: %v\n", cfg.String())
+
 	logger := log.NewLogger(cfg.Log)
 
 	fileWatcher, err := fsnotify.NewWatcher(logger)
 	require.NoError(t, err)
 
-	naClient, publisher, err := test.NewClientAndPublisher(cfg.Clients.Eventbus.NATS, fileWatcher, logger)
+	naClient, publisher, err := natsTest.NewClientAndPublisher(cfg.Clients.Eventbus.NATS, fileWatcher, logger)
 	require.NoError(t, err)
 
 	s, err := NewServer(context.Background(), cfg, fileWatcher, logger, trace.NewNoopTracerProvider(), publisher)

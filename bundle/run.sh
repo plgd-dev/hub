@@ -46,6 +46,8 @@ export OAUTH_ACCESS_TOKEN_KEY_PATH=${OAUTH_KEYS_PATH}/access-token.pem
 export OAUTH_DEVICE_SECRET_PATH=${OAUTH_SECRETS_PATH}/device.secret
 
 #ENDPOINTS
+export SCYLLA_HOSTNAME="localhost"
+export SCYLLA_HOST="$SCYLLA_HOSTNAME:$SCYLLA_PORT"
 export MONGODB_HOST="localhost:$MONGO_PORT"
 export MONGODB_URI="mongodb://$MONGODB_HOST"
 export NATS_HOST="localhost:$NATS_PORT"
@@ -135,7 +137,6 @@ if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "$ROOT_CERT_PATH" ] || [ ! -f "$RO
   cert-tool --cmd.generateRootCA --outCert=$ROOT_CERT_PATH --outKey=$ROOT_KEY_PATH --cert.subject.cn="Root CA" \
     --cert.signatureAlgorithm=${CERT_TOOL_SIGN_ALG} --cert.ellipticCurve=${CERT_TOOL_ELLIPTIC_CURVE}
 fi
-
 if [ "${OVERRIDE_FILES}" = "true" ] || [ "${REGENERATE_CERT}" = "true" ] || [ ! -f "$INTERNAL_CERT_DIR_PATH/$GRPC_INTERNAL_CERT_NAME" ] || [ ! -f "$INTERNAL_CERT_DIR_PATH/$GRPC_INTERNAL_CERT_KEY_NAME" ]; then
   echo "generating GRPC internal cert"
   cert-tool --cmd.generateCertificate --outCert=$INTERNAL_CERT_DIR_PATH/$GRPC_INTERNAL_CERT_NAME \
@@ -508,6 +509,55 @@ if [ "${JETSTREAM}" = "true" ]; then
   nats --tlscert="$INTERNAL_CERT_DIR_PATH/$GRPC_INTERNAL_CERT_NAME" --tlskey="$INTERNAL_CERT_DIR_PATH/$GRPC_INTERNAL_CERT_KEY_NAME" --tlsca="$CA_POOL" str add EVENTS --config /configs/jetstream.json
 fi
 
+export DATABASE_USE=mongodb
+# scylla
+if [ "${DATABASE}" = "scylla" ]; then
+  echo "starting scylla"
+  if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "/data/scylla.yaml" ]; then
+    cat /scylla/scylla.yaml | yq e "\
+      .native_transport_port_ssl = $SCYLLA_PORT
+    " - > /data/scylla.yaml
+  fi
+  SCYLLA_INT_ARGS=""
+  if [ "${SCYLLA_DEVELOPER_MODE}" = "false" ]; then
+    SCYLLA_DEVELOPER_MODE=0
+    if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "/data/scylla_io_properties.yaml" ]; then
+      echo "starting scylla_io_setup"
+      scylla_io_setup >$LOGS_PATH/scylla.log 2>&1
+      cp /etc/scylla.d/io_properties.yaml /data/scylla_io_properties.yaml
+    fi
+    SCYLLA_INT_ARGS=--io-properties-file=/data/scylla_io_properties.yaml
+  else
+    SCYLLA_DEVELOPER_MODE=1
+  fi
+  scylla --log-to-syslog 0 --log-to-stdout 1 --default-log-level info --network-stack posix --options-file=/data/scylla.yaml --developer-mode=${SCYLLA_DEVELOPER_MODE} --smp ${SCYLLA_SMP} ${SCYLLA_INT_ARGS} >$LOGS_PATH/scylla.log 2>&1 &
+  status=$?
+  scylla_pid=$!
+  if [ $status -ne 0 ]; then
+    echo "Failed to start scylla: $status"
+    sync
+    cat $LOGS_PATH/scylla.log
+    exit $status
+  fi
+  i=0
+  while true; do
+    i=$((i+1))
+    if openssl s_client -connect ${SCYLLA_HOST} -cert ${INTERNAL_CERT_DIR_PATH}/${GRPC_INTERNAL_CERT_NAME} -key ${INTERNAL_CERT_DIR_PATH}/${GRPC_INTERNAL_CERT_KEY_NAME} <<< "Q" 2>/dev/null > /dev/null; then
+      break
+    fi
+    ps aux |grep $scylla_pid |grep -q -v grep
+    if [ $? -ne 0 ]; then
+      echo "scylla has already exited."
+      sync
+      cat $LOGS_PATH/scylla.log
+      exit 1
+    fi
+    echo "Try to reconnect to scylla(${SCYLLA_HOST}) $i"
+    sleep 1
+  done
+  export DATABASE_USE=cqlDB
+fi
+
 # mongo
 echo "starting mongod"
 if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "$INTERNAL_CERT_DIR_PATH/mongo.key" ]; then
@@ -616,7 +666,10 @@ cat /configs/identity-store.yaml | yq e "\
   .clients.openTelemetryCollector.grpc.tls.keyFile = \"${OPEN_TELEMETRY_EXPORTER_KEY_FILE}\" |
   .clients.openTelemetryCollector.grpc.tls.certFile = \"${OPEN_TELEMETRY_EXPORTER_CERT_FILE}\" |
   .clients.openTelemetryCollector.grpc.tls.useSystemCAPool = true |
+  .clients.storage.use = \"${DATABASE_USE}\" |
   .clients.storage.mongoDB.uri = \"${MONGODB_URI}\" |
+  .clients.storage.cqlDB.hosts = [ \"${SCYLLA_HOSTNAME}\" ] |
+  .clients.storage.cqlDB.port = ${SCYLLA_PORT} |
   .clients.eventBus.nats.url = \"${NATS_URL}\" |
   .clients.eventBus.nats.jetstream = ${JETSTREAM}
 " - > /data/identity-store.yaml
@@ -662,7 +715,10 @@ cat /configs/resource-aggregate.yaml | yq e "\
   .clients.openTelemetryCollector.grpc.tls.keyFile = \"${OPEN_TELEMETRY_EXPORTER_KEY_FILE}\" |
   .clients.openTelemetryCollector.grpc.tls.certFile = \"${OPEN_TELEMETRY_EXPORTER_CERT_FILE}\" |
   .clients.openTelemetryCollector.grpc.tls.useSystemCAPool = true |
+  .clients.eventStore.use = \"${DATABASE_USE}\" |
   .clients.eventStore.mongoDB.uri = \"${MONGODB_URI}\" |
+  .clients.eventStore.cqlDB.hosts = [ \"${SCYLLA_HOSTNAME}\" ] |
+  .clients.eventStore.cqlDB.port = ${SCYLLA_PORT} |
   .clients.eventBus.nats.url = \"${NATS_URL}\" |
   .clients.eventBus.nats.jetstream = ${JETSTREAM} |
   .clients.identityStore.grpc.address = \"${IDENTITY_STORE_ADDRESS}\"
@@ -708,7 +764,10 @@ cat /configs/resource-directory.yaml | yq e "\
   .clients.openTelemetryCollector.grpc.tls.keyFile = \"${OPEN_TELEMETRY_EXPORTER_KEY_FILE}\" |
   .clients.openTelemetryCollector.grpc.tls.certFile = \"${OPEN_TELEMETRY_EXPORTER_CERT_FILE}\" |
   .clients.openTelemetryCollector.grpc.tls.useSystemCAPool = true |
+  .clients.eventStore.use = \"${DATABASE_USE}\" |
   .clients.eventStore.mongoDB.uri = \"${MONGODB_URI}\" |
+  .clients.eventStore.cqlDB.hosts = [ \"${SCYLLA_HOSTNAME}\" ] |
+  .clients.eventStore.cqlDB.port = ${SCYLLA_PORT} |
   .clients.eventBus.nats.url = \"${NATS_URL}\" |
   .clients.identityStore.grpc.address = \"${IDENTITY_STORE_ADDRESS}\" |
   .publicConfiguration.authority = \"https://${OAUTH_ENDPOINT}\" |
@@ -858,7 +917,10 @@ cat /configs/certificate-authority.yaml | yq e "\
   .apis.grpc.authorization.http.tls.useSystemCAPool = true |
   .apis.grpc.authorization.authority = \"https://${OAUTH_ENDPOINT}\" |
   .apis.grpc.authorization.ownerClaim = \"${OWNER_CLAIM}\" |
+  .clients.storage.use = \"${DATABASE_USE}\" |
   .clients.storage.mongoDB.uri = \"${MONGODB_URI}\" |
+  .clients.storage.cqlDB.hosts = [ \"${SCYLLA_HOSTNAME}\" ] |
+  .clients.storage.cqlDB.port = ${SCYLLA_PORT} |
   .clients.openTelemetryCollector.grpc.enabled = ${OPEN_TELEMETRY_EXPORTER_ENABLED} |
   .clients.openTelemetryCollector.grpc.address = \"${OPEN_TELEMETRY_EXPORTER_ADDRESS}\" |
   .clients.openTelemetryCollector.grpc.tls.caPool = \"${OPEN_TELEMETRY_EXPORTER_CA_POOL}\" |
@@ -1191,5 +1253,14 @@ while sleep 10; do
     sync
     cat $LOGS_PATH/cloud2cloud_connector.log
    exit 1
+  fi
+  if  [ ! -z "${scylla_pid}" ]; then
+    ps aux |grep $scylla_pid |grep -q -v grep
+    if [ $? -ne 0 ]; then
+      echo "scylla has already exited."
+      sync
+      cat $LOGS_PATH/scylla.log
+      exit 1
+    fi
   fi
 done

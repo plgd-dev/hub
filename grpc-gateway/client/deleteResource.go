@@ -30,7 +30,7 @@ func (c *Client) DeleteResource(
 
 	resp, err := c.gateway.DeleteResource(ctx, &r)
 	if err != nil {
-		return fmt.Errorf("cannot delete resource /%v/%v: %w", deviceID, href, err)
+		return fmt.Errorf("cannot delete resource /%v%v: %w", deviceID, href, err)
 	}
 
 	content := resp.GetData().GetContent()

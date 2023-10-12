@@ -10,7 +10,9 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/plgd-dev/device/v2/schema"
 	c2curi "github.com/plgd-dev/hub/v2/cloud2cloud-connector/uri"
+	"github.com/plgd-dev/hub/v2/pkg/config/database"
 	"github.com/plgd-dev/hub/v2/pkg/config/property/urischeme"
+	pkgCqldb "github.com/plgd-dev/hub/v2/pkg/cqldb"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	pkgMongo "github.com/plgd-dev/hub/v2/pkg/mongodb"
 	grpcClient "github.com/plgd-dev/hub/v2/pkg/net/grpc/client"
@@ -25,6 +27,7 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/security/oauth2"
 	"github.com/plgd-dev/hub/v2/pkg/security/oauth2/oauth"
 	natsClient "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/client"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore/cqldb"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore/mongodb"
 	"github.com/plgd-dev/hub/v2/test/http"
 	"github.com/plgd-dev/hub/v2/test/oauth-server/uri"
@@ -69,6 +72,14 @@ var (
 		}
 		return string(schema.TCPSecureScheme)
 	}()
+	SCYLLA_HOSTS    = []string{"127.0.0.1"}
+	SCYLLA_PORT     = pkgCqldb.DefaultPort
+	ACTIVE_DATABASE = func() database.DBUse {
+		if database.DBUse(os.Getenv("TEST_DATABASE")).ToLower() == database.CqlDB.ToLower() {
+			return database.CqlDB
+		}
+		return database.MongoDB
+	}
 )
 
 var (
@@ -187,8 +198,8 @@ func MakeSubscriberConfig() natsClient.Config {
 	}
 }
 
-func MakeEventsStoreMongoDBConfig() mongodb.Config {
-	return mongodb.Config{
+func MakeEventsStoreMongoDBConfig() *mongodb.Config {
+	return &mongodb.Config{
 		Embedded: pkgMongo.Config{
 			MaxPoolSize:     16,
 			MaxConnIdleTime: 4 * time.Minute,
@@ -196,6 +207,38 @@ func MakeEventsStoreMongoDBConfig() mongodb.Config {
 			Database:        "eventStore",
 			TLS:             MakeTLSClientConfig(),
 		},
+	}
+}
+
+func MakeCqlDBConfig() pkgCqldb.Config {
+	return pkgCqldb.Config{
+		Hosts:                 SCYLLA_HOSTS,
+		TLS:                   MakeTLSClientConfig(),
+		NumConns:              16,
+		Port:                  SCYLLA_PORT,
+		ConnectTimeout:        time.Second * 10,
+		UseHostnameResolution: true,
+		ReconnectionPolicy: pkgCqldb.ReconnectionPolicyConfig{
+			Constant: pkgCqldb.ConstantReconnectionPolicyConfig{
+				Interval:   time.Second * 3,
+				MaxRetries: 3,
+			},
+		},
+		Keyspace: pkgCqldb.KeyspaceConfig{
+			Name:   "plgdhub",
+			Create: true,
+			Replication: map[string]interface{}{
+				"class":              "SimpleStrategy",
+				"replication_factor": 1,
+			},
+		},
+	}
+}
+
+func MakeEventsStoreCqlDBConfig() *cqldb.Config {
+	return &cqldb.Config{
+		Table:    "events",
+		Embedded: MakeCqlDBConfig(),
 	}
 }
 

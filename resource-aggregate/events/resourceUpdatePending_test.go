@@ -6,13 +6,16 @@ import (
 	"github.com/plgd-dev/go-coap/v3/message"
 	commands "github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
+	"github.com/plgd-dev/hub/v2/test"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
 )
 
+var dev1 = test.GenerateDeviceIDbyIdx(1)
+
 var testEventResourceUpdatePending events.ResourceUpdatePending = events.ResourceUpdatePending{
 	ResourceId: &commands.ResourceId{
-		DeviceId: "dev1",
+		DeviceId: dev1,
 		Href:     "/dev1",
 	},
 	ResourceInterface: "if1",
