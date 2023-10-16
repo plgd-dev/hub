@@ -982,7 +982,13 @@ func waitForDevice(t *testing.T, client pb.GrpcGateway_SubscribeToEventsClient, 
 
 func TestCoAPGatewayServiceHeartbeat(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
+	// This test should be constrained to a 3-minute time limit.
+	// The reason for this limit is that the device's DTLS system identifies
+	// a connection loss within 20 seconds for the initial ping, and subsequently,
+	// there are 5 more pings, each separated by 4 seconds, with a timeout of 4 seconds.
+	// Therefore, the total time for this sequence is 20 + 4 + (5 * (4 + 4)) = 64 seconds,
+	// plus an additional 10 seconds for waiting for the device to come online.
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*3)
 	defer cancel()
 
 	tearDown := serviceTest.SetUpServices(ctx, t, serviceTest.SetUpServicesCertificateAuthority|serviceTest.SetUpServicesGrpcGateway|serviceTest.SetUpServicesId|serviceTest.SetUpServicesResourceDirectory|serviceTest.SetUpServicesOAuth)
