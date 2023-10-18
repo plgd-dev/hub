@@ -589,11 +589,10 @@ func (d *DeviceMetadataSnapshotTakenForCommand) HandleCommand(ctx context.Contex
 }
 
 func (d *DeviceMetadataSnapshotTaken) TakeSnapshot(version uint64) (eventstore.Event, bool) {
-	return &DeviceMetadataSnapshotTaken{
-		DeviceId:              d.GetDeviceId(),
-		EventMetadata:         MakeEventMeta(d.GetEventMetadata().GetConnectionId(), d.GetEventMetadata().GetSequence(), version, d.GetEventMetadata().GetHubId()),
-		DeviceMetadataUpdated: d.GetDeviceMetadataUpdated(),
-	}, true
+	var s DeviceMetadataSnapshotTaken
+	s.CopyData(d)
+	s.EventMetadata = MakeEventMeta(d.GetEventMetadata().GetConnectionId(), d.GetEventMetadata().GetSequence(), version, d.GetEventMetadata().GetHubId())
+	return &s, true
 }
 
 type DeviceMetadataSnapshotTakenForCommand struct {
