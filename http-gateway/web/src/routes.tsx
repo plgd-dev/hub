@@ -206,6 +206,7 @@ export const Routes = () => {
 
             <Route element={<RemoteClientsListPage />} path='/remote-clients' />
             <Route element={<RemoteClientDetailPage />} path='/remote-clients/:id' />
+            <Route element={<RemoteClientDetailPage defaultActiveTab={1} />} path='/remote-clients/:id/configuration' />
             <Route element={<RemoteClientDevicesDetailPage defaultActiveTab={0} />} path='/remote-clients/:id/devices/:deviceId' />
             <Route element={<RemoteClientDevicesDetailPage defaultActiveTab={1} />} path='/remote-clients/:id/devices/:deviceId/resources' />
             <Route element={<RemoteClientDevicesDetailPage defaultActiveTab={1} />} path='/remote-clients/:id/devices/:deviceId/resources/*' />

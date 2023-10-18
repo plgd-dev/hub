@@ -1,6 +1,6 @@
 import React from 'react'
-import Footer from '@plgd/shared-ui/src/components/Layout/Footer'
-import PageLayout from '@plgd/shared-ui/src/components/Atomic/PageLayout'
+import Footer from '@shared-ui/components/Layout/Footer'
+import PageLayout from '@shared-ui/components/Atomic/PageLayout'
 import Notification from '@shared-ui/components/Atomic/Notification/Toast'
 
 const TestPage = () => {

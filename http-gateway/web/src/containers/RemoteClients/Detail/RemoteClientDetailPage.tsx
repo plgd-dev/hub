@@ -8,7 +8,11 @@ import { messages as t } from '@/containers/RemoteClients/RemoteClients.i18n'
 import RemoteClientsPage from '@/containers/RemoteClients/RemoteClientsPage/RemoteClientsPage'
 import { messages as g } from '@/containers/Global.i18n'
 
-const RemoteClientDetailPage: FC<any> = () => {
+type Props = {
+    defaultActiveTab?: number
+}
+
+const RemoteClientDetailPage: FC<Props> = (props) => {
     const { formatMessage: _ } = useIntl()
 
     return (
@@ -31,6 +35,7 @@ const RemoteClientDetailPage: FC<any> = () => {
                             },
                         ]}
                         clientData={clientData}
+                        defaultActiveTab={props.defaultActiveTab}
                         detailLinkPrefix={`/remote-clients/${clientData?.id}`}
                         title={clientData.clientName}
                     />
