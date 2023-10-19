@@ -80,9 +80,9 @@ func TestPublisherJetStream(t *testing.T) {
 	}()
 
 	cfg := config.MakeTLSClientConfig()
-	caPoolArray, err := cfg.CAPoolArray()
+	caPoolArray, err := cfg.CAPoolFilePathArray()
 	require.NoError(t, err)
-	conn, err := nats.Connect("nats://localhost:4222", nats.ClientCert(cfg.CertFile, cfg.KeyFile), nats.RootCAs(caPoolArray...))
+	conn, err := nats.Connect("nats://localhost:4222", nats.ClientCert(cfg.CertFile.FilePath(), cfg.KeyFile.FilePath()), nats.RootCAs(caPoolArray...))
 	require.NoError(t, err)
 	defer conn.Close()
 	js, err := conn.JetStream()

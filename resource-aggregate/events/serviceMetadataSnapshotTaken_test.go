@@ -392,6 +392,68 @@ func TestServiceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 			},
 		},
 		{
+			name: "register,check,check-expired",
+			cmds: []cmd{
+				{
+					cmd: &commands.UpdateServiceMetadataRequest{
+						Update: &commands.UpdateServiceMetadataRequest_Heartbeat{
+							Heartbeat: &commands.ServiceHeartbeat{
+								ServiceId:  serviceID,
+								TimeToLive: time.Second.Nanoseconds(),
+								Register:   true,
+							},
+						},
+					},
+					newVersion: 0,
+					want: []eventstore.Event{
+						&events.ServiceMetadataUpdated{
+							ServicesHeartbeat: &events.ServicesHeartbeat{
+								Valid: []*events.ServicesHeartbeat_Heartbeat{
+									{
+										ServiceId: serviceID,
+									},
+								},
+								Expired: []*events.ServicesHeartbeat_Heartbeat{},
+							},
+							AuditContext:         commands.NewAuditContext(userID, correlationID, userID),
+							OpenTelemetryCarrier: map[string]string{},
+						},
+					},
+				},
+				{
+					cmd: &commands.UpdateServiceMetadataRequest{
+						Update: &commands.UpdateServiceMetadataRequest_Heartbeat{
+							Heartbeat: &commands.ServiceHeartbeat{},
+						},
+					},
+					newVersion: 1,
+					want:       nil,
+				},
+				{
+					sleep: time.Millisecond * 1500,
+					cmd: &commands.UpdateServiceMetadataRequest{
+						Update: &commands.UpdateServiceMetadataRequest_Heartbeat{
+							Heartbeat: &commands.ServiceHeartbeat{},
+						},
+					},
+					newVersion: 1,
+					want: []eventstore.Event{
+						&events.ServiceMetadataUpdated{
+							ServicesHeartbeat: &events.ServicesHeartbeat{
+								Expired: []*events.ServicesHeartbeat_Heartbeat{
+									{
+										ServiceId: serviceID,
+									},
+								},
+							},
+							AuditContext:         commands.NewAuditContext(userID, correlationID, userID),
+							OpenTelemetryCarrier: map[string]string{},
+						},
+					},
+				},
+			},
+		},
+		{
 			name: "register,register-1-expired",
 			cmds: []cmd{
 				{
@@ -421,7 +483,7 @@ func TestServiceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 					},
 				},
 				{
-					sleep: time.Second,
+					sleep: time.Millisecond * 1500,
 					cmd: &commands.UpdateServiceMetadataRequest{
 						Update: &commands.UpdateServiceMetadataRequest_Heartbeat{
 							Heartbeat: &commands.ServiceHeartbeat{
@@ -483,7 +545,7 @@ func TestServiceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 					},
 				},
 				{
-					sleep: time.Second,
+					sleep: time.Millisecond * 1500,
 					cmd: &commands.UpdateServiceMetadataRequest{
 						Update: &commands.UpdateServiceMetadataRequest_Heartbeat{
 							Heartbeat: &commands.ServiceHeartbeat{

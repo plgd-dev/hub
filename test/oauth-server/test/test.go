@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/jtacoma/uritemplates"
+	"github.com/plgd-dev/hub/v2/pkg/config/property/urischeme"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	kitNetHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
@@ -55,8 +56,8 @@ func MakeConfig(t require.TestingT) service.Config {
 		Config: config.MakeOpenTelemetryCollectorClient(),
 	}
 
-	cfg.OAuthSigner.IDTokenKeyFile = os.Getenv("TEST_OAUTH_SERVER_ID_TOKEN_PRIVATE_KEY")
-	cfg.OAuthSigner.AccessTokenKeyFile = os.Getenv("TEST_OAUTH_SERVER_ACCESS_TOKEN_PRIVATE_KEY")
+	cfg.OAuthSigner.IDTokenKeyFile = urischeme.URIScheme(os.Getenv("TEST_OAUTH_SERVER_ID_TOKEN_PRIVATE_KEY"))
+	cfg.OAuthSigner.AccessTokenKeyFile = urischeme.URIScheme(os.Getenv("TEST_OAUTH_SERVER_ACCESS_TOKEN_PRIVATE_KEY"))
 	cfg.OAuthSigner.Domain = config.OAUTH_SERVER_HOST
 	cfg.OAuthSigner.Clients = service.OAuthClientsConfig{
 		{

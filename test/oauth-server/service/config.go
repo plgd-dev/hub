@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/plgd-dev/hub/v2/pkg/config"
+	"github.com/plgd-dev/hub/v2/pkg/config/property/urischeme"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/pkg/net/http"
 	"github.com/plgd-dev/hub/v2/pkg/net/http/server"
@@ -118,10 +119,10 @@ func (c *HTTPConfig) Validate() error {
 }
 
 type OAuthSignerConfig struct {
-	IDTokenKeyFile     string             `yaml:"idTokenKeyFile" json:"idTokenKeyFile"`
-	AccessTokenKeyFile string             `yaml:"accessTokenKeyFile" json:"accessTokenKeyFile"`
-	Domain             string             `yaml:"domain" json:"domain"`
-	Clients            OAuthClientsConfig `yaml:"clients" json:"clients"`
+	IDTokenKeyFile     urischeme.URIScheme `yaml:"idTokenKeyFile" json:"idTokenKeyFile"`
+	AccessTokenKeyFile urischeme.URIScheme `yaml:"accessTokenKeyFile" json:"accessTokenKeyFile"`
+	Domain             string              `yaml:"domain" json:"domain"`
+	Clients            OAuthClientsConfig  `yaml:"clients" json:"clients"`
 }
 
 func (c *OAuthSignerConfig) Validate() error {

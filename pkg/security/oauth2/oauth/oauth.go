@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/url"
 
+	"github.com/plgd-dev/hub/v2/pkg/config/property/urischeme"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/clientcredentials"
 )
@@ -44,19 +45,19 @@ func (a AuthStyle) ToOAuth2() oauth2.AuthStyle {
 
 // TODO cleanup settings AccessType, ResponseType, ResponseMode, AuthStyle - be careful it is used by c2c.
 type Config struct {
-	ClientID         string    `yaml:"clientID" json:"clientId"`
-	ClientSecretFile string    `yaml:"clientSecretFile" json:"clientSecretFile"`
-	Scopes           []string  `yaml:"scopes" json:"scopes"`
-	AuthURL          string    `yaml:"-" json:"authUrl"`
-	TokenURL         string    `yaml:"-" json:"tokenUrl"`
-	AuthStyle        AuthStyle `yaml:"authStyle" json:"authStyle"`
-	Audience         string    `yaml:"audience" json:"audience"`
-	RedirectURL      string    `yaml:"redirectURL" json:"redirectUrl"`
-	AccessType       string    `yaml:"accessType" json:"accessType"`
-	ResponseType     string    `yaml:"responseType" json:"responseType"`
-	ResponseMode     string    `yaml:"responseMode" json:"responseMode"`
-	ClientSecret     string    `yaml:"-" json:"clientSecret"`
-	GrantType        GrantType `yaml:"grantType" json:"grantType"`
+	ClientID         string              `yaml:"clientID" json:"clientId"`
+	ClientSecretFile urischeme.URIScheme `yaml:"clientSecretFile" json:"clientSecretFile"`
+	Scopes           []string            `yaml:"scopes" json:"scopes"`
+	AuthURL          string              `yaml:"-" json:"authUrl"`
+	TokenURL         string              `yaml:"-" json:"tokenUrl"`
+	AuthStyle        AuthStyle           `yaml:"authStyle" json:"authStyle"`
+	Audience         string              `yaml:"audience" json:"audience"`
+	RedirectURL      string              `yaml:"redirectURL" json:"redirectUrl"`
+	AccessType       string              `yaml:"accessType" json:"accessType"`
+	ResponseType     string              `yaml:"responseType" json:"responseType"`
+	ResponseMode     string              `yaml:"responseMode" json:"responseMode"`
+	ClientSecret     string              `yaml:"-" json:"clientSecret"`
+	GrantType        GrantType           `yaml:"grantType" json:"grantType"`
 }
 
 func (c *Config) Validate() error {

@@ -17,7 +17,7 @@ spec:
   duration: {{ .Values.certmanager.default.cert.duration }}
   renewBefore: {{ .Values.certmanager.default.cert.renewBefore }}
   issuerRef:
-    name: {{ .Values.certmanager.default.ca.issuer.name }}
-    kind: {{ .Values.certmanager.default.ca.issuer.kind }}
+    name: {{ .Values.certmanager.default.ca.issuerRef.name | default .Values.certmanager.default.ca.issuer.name }}
+    kind: {{ .Values.certmanager.default.ca.issuerRef.kind | default .Values.certmanager.default.ca.issuer.kind }}
     group: cert-manager.io
 {{- end }}

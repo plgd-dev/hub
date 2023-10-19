@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/plgd-dev/hub/v2/coap-gateway/service"
+	"github.com/plgd-dev/hub/v2/pkg/config/property/urischeme"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	coapService "github.com/plgd-dev/hub/v2/pkg/net/coap/service"
@@ -40,8 +41,8 @@ func MakeConfig(t require.TestingT) service.Config {
 	cfg.APIs.COAP.TLS.Enabled = new(bool)
 	*cfg.APIs.COAP.TLS.Enabled = true
 	cfg.APIs.COAP.TLS.Embedded.ClientCertificateRequired = false
-	cfg.APIs.COAP.TLS.Embedded.CertFile = os.Getenv("TEST_COAP_GW_CERT_FILE")
-	cfg.APIs.COAP.TLS.Embedded.KeyFile = os.Getenv("TEST_COAP_GW_KEY_FILE")
+	cfg.APIs.COAP.TLS.Embedded.CertFile = urischeme.URIScheme(os.Getenv("TEST_COAP_GW_CERT_FILE"))
+	cfg.APIs.COAP.TLS.Embedded.KeyFile = urischeme.URIScheme(os.Getenv("TEST_COAP_GW_KEY_FILE"))
 	cfg.APIs.COAP.Authorization = service.AuthorizationConfig{
 		OwnerClaim: config.OWNER_CLAIM,
 		Providers: []service.ProvidersConfig{

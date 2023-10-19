@@ -6,15 +6,16 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
-	"os"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/hashicorp/go-multierror"
+	"github.com/plgd-dev/hub/v2/pkg/config/property/urischeme"
 	"github.com/plgd-dev/hub/v2/pkg/fn"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
+	pkgX509 "github.com/plgd-dev/hub/v2/pkg/security/x509"
 	pkgTime "github.com/plgd-dev/hub/v2/pkg/time"
 	"github.com/plgd-dev/kit/v2/security"
 	"go.uber.org/atomic"
@@ -22,11 +23,11 @@ import (
 
 // Config provides configuration of a file based Server Certificate manager
 type Config struct {
-	CAPool                    []string `yaml:"caPool" json:"caPool" description:"file path to the root certificates in PEM format"`
-	KeyFile                   string   `yaml:"keyFile" json:"keyFile" description:"file name of private key in PEM format"`
-	CertFile                  string   `yaml:"certFile" json:"certFile" description:"file name of certificate in PEM format"`
-	ClientCertificateRequired bool     `yaml:"clientCertificateRequired" json:"clientCertificateRequired" description:"require client certificate"`
-	UseSystemCAPool           bool     `yaml:"useSystemCAPool" json:"useSystemCaPool" description:"use system certification pool"`
+	CAPool                    []urischeme.URIScheme `yaml:"caPool" json:"caPool" description:"file path to the root certificates in PEM format"`
+	KeyFile                   urischeme.URIScheme   `yaml:"keyFile" json:"keyFile" description:"file name of private key in PEM format"`
+	CertFile                  urischeme.URIScheme   `yaml:"certFile" json:"certFile" description:"file name of certificate in PEM format"`
+	ClientCertificateRequired bool                  `yaml:"clientCertificateRequired" json:"clientCertificateRequired" description:"require client certificate"`
+	UseSystemCAPool           bool                  `yaml:"useSystemCAPool" json:"useSystemCaPool" description:"use system certification pool"`
 }
 
 func (c Config) Validate() error {
@@ -62,6 +63,19 @@ type CertManager struct {
 	}
 }
 
+func tryToWatchFile(file urischeme.URIScheme, fileWatcher *fsnotify.Watcher, removeFilesOnError fn.FuncList) error {
+	if file == "" || !file.IsFile() {
+		return nil
+	}
+	if err := fileWatcher.Add(file.FilePath()); err != nil {
+		return fmt.Errorf("cannot add file(%v) to file watcher: %w", file, err)
+	}
+	removeFilesOnError.AddFunc(func() {
+		_ = fileWatcher.Remove(file.FilePath())
+	})
+	return nil
+}
+
 // New creates a new certificate manager which watches for certs in a filesystem
 func New(config Config, fileWatcher *fsnotify.Watcher, logger log.Logger) (*CertManager, error) {
 	verifyClientCertificate := tls.RequireAndVerifyClientCert
@@ -86,30 +100,20 @@ func New(config Config, fileWatcher *fsnotify.Watcher, logger log.Logger) (*Cert
 	var removeFilesOnError fn.FuncList
 
 	for _, ca := range config.CAPool {
-		if err := c.fileWatcher.Add(ca); err != nil {
+		if err = tryToWatchFile(ca, fileWatcher, removeFilesOnError); err != nil {
 			removeFilesOnError.Execute()
-			return nil, fmt.Errorf("cannot watch CAPool(%v): %w", ca, err)
-		}
-		caToRemove := ca
-		removeFilesOnError.AddFunc(func() {
-			_ = c.fileWatcher.Remove(caToRemove)
-		})
-	}
-	if config.CertFile != "" {
-		if err := c.fileWatcher.Add(config.CertFile); err != nil {
-			removeFilesOnError.Execute()
-			return nil, fmt.Errorf("cannot watch CertFile(%v): %w", config.CertFile, err)
-		}
-		removeFilesOnError.AddFunc(func() {
-			_ = c.fileWatcher.Remove(config.CertFile)
-		})
-	}
-	if config.KeyFile != "" {
-		if err := c.fileWatcher.Add(config.KeyFile); err != nil {
-			removeFilesOnError.Execute()
-			return nil, fmt.Errorf("cannot watch KeyFile(%v): %w", config.CertFile, err)
+			return nil, fmt.Errorf("cannot watch CAPool: %w", err)
 		}
 	}
+	if err = tryToWatchFile(config.CertFile, fileWatcher, removeFilesOnError); err != nil {
+		removeFilesOnError.Execute()
+		return nil, fmt.Errorf("cannot watch CertFile: %w", err)
+	}
+	if err = tryToWatchFile(config.KeyFile, fileWatcher, removeFilesOnError); err != nil {
+		removeFilesOnError.Execute()
+		return nil, fmt.Errorf("cannot watch KeyFile: %w", err)
+	}
+
 	c.onFileChangeFunc = c.onFileChange
 	c.fileWatcher.AddOnEventHandler(&c.onFileChangeFunc)
 
@@ -156,17 +160,20 @@ func (a *CertManager) Close() {
 		return
 	}
 	for _, ca := range a.config.CAPool {
-		if err := a.fileWatcher.Remove(ca); err != nil {
+		if !ca.IsFile() {
+			continue
+		}
+		if err := a.fileWatcher.Remove(ca.FilePath()); err != nil {
 			a.logger.Errorf("cannot remove fileWatcher for CAPool(%v): %w", ca, err)
 		}
 	}
-	if a.config.CertFile != "" {
-		if err := a.fileWatcher.Remove(a.config.CertFile); err != nil {
+	if a.config.CertFile != "" && a.config.CertFile.IsFile() {
+		if err := a.fileWatcher.Remove(a.config.CertFile.FilePath()); err != nil {
 			a.logger.Errorf("cannot remove fileWatcher for CertFile(%v): %w", a.config.CertFile, err)
 		}
 	}
 	if a.config.KeyFile != "" {
-		if err := a.fileWatcher.Remove(a.config.KeyFile); err != nil {
+		if err := a.fileWatcher.Remove(a.config.KeyFile.FilePath()); err != nil {
 			a.logger.Errorf("cannot remove fileWatcher for KeyFile(%v): %w", a.config.KeyFile, err)
 		}
 	}
@@ -203,12 +210,12 @@ func (a *CertManager) loadCertsLocked() (bool, error) {
 		return false, nil
 	}
 	keyPath := a.config.KeyFile
-	tlsKey, err := os.ReadFile(keyPath)
+	tlsKey, err := a.config.KeyFile.Read()
 	if err != nil {
 		return false, fmt.Errorf("cannot load certificate key from '%v': %w", keyPath, err)
 	}
 	certPath := a.config.CertFile
-	tlsCert, err := os.ReadFile(certPath)
+	tlsCert, err := a.config.CertFile.Read()
 	if err != nil {
 		return false, fmt.Errorf("cannot load certificate from '%v': %w", certPath, err)
 	}
@@ -236,15 +243,20 @@ func (a *CertManager) loadCertsLocked() (bool, error) {
 	return a.setTLSKeyPairLocked(cert, tlsCertNotAfter), nil
 }
 
-func loadCAs(caPool []string) (cas []*x509.Certificate, tlsCAPoolMinNotAfter time.Time, hash []byte, err error) {
+func loadCAs(caPool []urischeme.URIScheme) (cas []*x509.Certificate, tlsCAPoolMinNotAfter time.Time, hash []byte, err error) {
 	var errors *multierror.Error
 	tlsCAPoolMinNotAfter = pkgTime.MaxTime
 	now := time.Now()
 	h := sha256.New()
 	for _, ca := range caPool {
-		certs, err := security.LoadX509(ca)
+		data, err := ca.Read()
 		if err != nil {
-			errors = multierror.Append(errors, fmt.Errorf("cannot load CA from '%v': %w", ca, err))
+			errors = multierror.Append(errors, fmt.Errorf("cannot load CA from '%v': %w", ca.FilePath(), err))
+			continue
+		}
+		certs, err := pkgX509.ParseX509(data)
+		if err != nil {
+			errors = multierror.Append(errors, fmt.Errorf("cannot load CA from '%v': %w", ca.FilePath(), err))
 			continue
 		}
 		for _, c := range certs {
@@ -301,16 +313,16 @@ func (a *CertManager) setCAPoolLocked(capool *x509.CertPool, tlsCAPoolMinNotAfte
 }
 
 func (a *CertManager) whatNeedToUpdate(event fsnotify.Event) (updateCert, updateKey, updateCAs bool) {
-	if strings.Contains(event.Name, a.config.KeyFile) {
+	if strings.Contains(event.Name, a.config.KeyFile.FilePath()) {
 		updateKey = true
 	}
 
-	if strings.Contains(event.Name, a.config.CertFile) {
+	if strings.Contains(event.Name, a.config.CertFile.FilePath()) {
 		updateCert = true
 	}
 
 	for _, ca := range a.config.CAPool {
-		if strings.Contains(event.Name, ca) {
+		if strings.Contains(event.Name, ca.FilePath()) {
 			updateCAs = true
 			break
 		}

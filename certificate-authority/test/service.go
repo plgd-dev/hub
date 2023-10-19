@@ -8,6 +8,7 @@ import (
 
 	"github.com/plgd-dev/hub/v2/certificate-authority/service"
 	storeMongo "github.com/plgd-dev/hub/v2/certificate-authority/store/mongodb"
+	"github.com/plgd-dev/hub/v2/pkg/config/property/urischeme"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/pkg/mongodb"
@@ -27,9 +28,9 @@ func MakeConfig(t require.TestingT) service.Config {
 	cfg.APIs.HTTP.Addr = config.CERTIFICATE_AUTHORITY_HTTP_HOST
 	cfg.APIs.HTTP.Server = config.MakeHttpServerConfig()
 	cfg.APIs.GRPC.TLS.ClientCertificateRequired = false
-	cfg.Signer.CAPool = []string{os.Getenv("TEST_ROOT_CA_CERT")}
-	cfg.Signer.KeyFile = os.Getenv("TEST_ROOT_CA_KEY")
-	cfg.Signer.CertFile = os.Getenv("TEST_ROOT_CA_CERT")
+	cfg.Signer.CAPool = []urischeme.URIScheme{urischeme.URIScheme(os.Getenv("TEST_ROOT_CA_CERT"))}
+	cfg.Signer.KeyFile = urischeme.URIScheme(os.Getenv("TEST_ROOT_CA_KEY"))
+	cfg.Signer.CertFile = urischeme.URIScheme(os.Getenv("TEST_ROOT_CA_CERT"))
 	cfg.Signer.ValidFrom = "now-1h"
 	cfg.Signer.ExpiresIn = time.Hour * 2
 

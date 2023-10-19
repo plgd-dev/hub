@@ -54,8 +54,8 @@ global:
 |-----|------|---------|-------------|
 | certificateauthority.affinity | string | `nil` | Affinity definition |
 | certificateauthority.apis | object | `{"grpc":{"address":null,"authorization":{"audience":null,"authority":null,"http":{"idleConnTimeout":"30s","maxConnsPerHost":32,"maxIdleConns":16,"maxIdleConnsPerHost":16,"timeout":"10s","tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":true}},"ownerClaim":null},"enforcementPolicy":{"minTime":"5s","permitWithoutStream":true},"keepAlive":{"maxConnectionAge":"0s","maxConnectionAgeGrace":"0s","maxConnectionIdle":"0s","time":"2h","timeout":"20s"},"recvMsgSize":4194304,"sendMsgSize":4194304,"tls":{"caPool":null,"certFile":null,"clientCertificateRequired":false,"keyFile":null}},"http":{"address":null,"idleTimeout":"30s","readHeaderTimeout":"4s","readTimeout":"8s","writeTimeout":"16s"}}` | For complete certificate-authority service configuration see [plgd/certificate-authority](https://github.com/plgd-dev/hub/tree/main/certificate-authority) |
-| certificateauthority.ca | object | `{"ca":null,"cert":"tls.crt","key":"tls.key","secret":{"name":null},"volume":{"mountPath":"/certs/coap-device-ca","name":"coap-device-ca"}}` | CA section |
-| certificateauthority.ca.ca | string | `nil` | CA file name in case of external CA |
+| certificateauthority.ca | object | `{"ca":"ca.crt","cert":"tls.crt","key":"tls.key","secret":{"name":null},"volume":{"mountPath":"/certs/coap-device-ca","name":"coap-device-ca"}}` | CA section |
+| certificateauthority.ca.ca | string | `"ca.crt"` | CA file name in case of external CA |
 | certificateauthority.ca.cert | string | `"tls.crt"` | Cert file name |
 | certificateauthority.ca.key | string | `"tls.key"` | Cert key file name |
 | certificateauthority.ca.secret.name | string | `nil` | Name of secret |
@@ -143,7 +143,7 @@ global:
 | certificateauthority.service.http.type | string | `"ClusterIP"` | Service type |
 | certificateauthority.signer | object | `{"caPool":null,"certFile":null,"expiresIn":"87600h","keyFile":null,"validFrom":"now-1h"}` | For complete certificate-authority service configuration see [plgd/certificate-authority](https://github.com/plgd-dev/hub/tree/main/certificate-authority) |
 | certificateauthority.tolerations | string | `nil` | Toleration definition |
-| certmanager | object | `{"coap":{"cert":{"duration":null,"key":{"algorithm":null,"size":null},"renewBefore":null},"issuer":{"annotations":{},"kind":null,"labels":{},"name":null,"spec":null}},"default":{"ca":{"commonName":"plgd-ca","enabled":true,"issuer":{"annotations":{},"enabled":true,"kind":"Issuer","labels":{},"name":"ca-issuer","spec":{"selfSigned":{}}},"secret":{"name":"plgd-ca"}},"cert":{"annotations":{},"duration":"8760h0m0s","key":{"algorithm":"ECDSA","size":256},"labels":{},"renewBefore":"360h0m0s"},"issuer":{"annotations":{},"enabled":true,"kind":"Issuer","labels":{},"name":"default-issuer","spec":{"selfSigned":{}}}},"enabled":true,"external":{"cert":{"duration":null,"key":{"algorithm":null,"size":null},"renewBefore":null},"issuer":{"annotations":{},"kind":null,"labels":{},"name":null,"spec":null}},"internal":{"cert":{"duration":null,"key":{"algorithm":null,"size":null},"renewBefore":null},"issuer":{"annotations":{},"kind":null,"labels":{},"name":null,"spec":null}}}` | Cert-manager integration section |
+| certmanager | object | `{"coap":{"cert":{"duration":null,"key":{"algorithm":null,"size":null},"renewBefore":null},"issuer":{"annotations":{},"kind":null,"labels":{},"name":null,"spec":null}},"default":{"ca":{"commonName":"plgd-ca","enabled":true,"issuer":{"annotations":{},"enabled":true,"kind":"Issuer","labels":{},"name":"ca-issuer","spec":{"selfSigned":{}}},"issuerRef":{"kind":null,"name":null},"secret":{"name":"plgd-ca"}},"cert":{"annotations":{},"duration":"8760h0m0s","key":{"algorithm":"ECDSA","size":256},"labels":{},"renewBefore":"360h0m0s"},"issuer":{"annotations":{},"enabled":true,"kind":"Issuer","labels":{},"name":"default-issuer","spec":{"selfSigned":{}}}},"enabled":true,"external":{"cert":{"duration":null,"key":{"algorithm":null,"size":null},"renewBefore":null},"issuer":{"annotations":{},"kind":null,"labels":{},"name":null,"spec":null}},"internal":{"cert":{"duration":null,"key":{"algorithm":null,"size":null},"renewBefore":null},"issuer":{"annotations":{},"kind":null,"labels":{},"name":null,"spec":null}}}` | Cert-manager integration section |
 | certmanager.coap.cert.duration | string | `nil` | Certificate duration |
 | certmanager.coap.cert.key.algorithm | string | `nil` | Certificate key algorithm |
 | certmanager.coap.cert.key.size | string | `nil` | Certificate key size |
@@ -153,7 +153,7 @@ global:
 | certmanager.coap.issuer.labels | object | `{}` | Labels |
 | certmanager.coap.issuer.name | string | `nil` | Name |
 | certmanager.coap.issuer.spec | string | `nil` | cert-manager issuer spec |
-| certmanager.default | object | `{"ca":{"commonName":"plgd-ca","enabled":true,"issuer":{"annotations":{},"enabled":true,"kind":"Issuer","labels":{},"name":"ca-issuer","spec":{"selfSigned":{}}},"secret":{"name":"plgd-ca"}},"cert":{"annotations":{},"duration":"8760h0m0s","key":{"algorithm":"ECDSA","size":256},"labels":{},"renewBefore":"360h0m0s"},"issuer":{"annotations":{},"enabled":true,"kind":"Issuer","labels":{},"name":"default-issuer","spec":{"selfSigned":{}}}}` | Default cert-manager section |
+| certmanager.default | object | `{"ca":{"commonName":"plgd-ca","enabled":true,"issuer":{"annotations":{},"enabled":true,"kind":"Issuer","labels":{},"name":"ca-issuer","spec":{"selfSigned":{}}},"issuerRef":{"kind":null,"name":null},"secret":{"name":"plgd-ca"}},"cert":{"annotations":{},"duration":"8760h0m0s","key":{"algorithm":"ECDSA","size":256},"labels":{},"renewBefore":"360h0m0s"},"issuer":{"annotations":{},"enabled":true,"kind":"Issuer","labels":{},"name":"default-issuer","spec":{"selfSigned":{}}}}` | Default cert-manager section |
 | certmanager.default.ca.commonName | string | `"plgd-ca"` | Common name for CA created as default issuer |
 | certmanager.default.ca.issuer.annotations | object | `{}` | Annotation for root issuer |
 | certmanager.default.ca.issuer.enabled | bool | `true` | Enable root issuer |
@@ -161,6 +161,8 @@ global:
 | certmanager.default.ca.issuer.labels | object | `{}` | Labels for root issuer |
 | certmanager.default.ca.issuer.name | string | `"ca-issuer"` | Name of root issuer |
 | certmanager.default.ca.issuer.spec | object | `{"selfSigned":{}}` | Default issuer specification. |
+| certmanager.default.ca.issuerRef.kind | string | `nil` | Kind of CA issuer |
+| certmanager.default.ca.issuerRef.name | string | `nil` | Name of issuer for sign CA |
 | certmanager.default.ca.secret.name | string | `"plgd-ca"` | Name of secret |
 | certmanager.default.cert | object | `{"annotations":{},"duration":"8760h0m0s","key":{"algorithm":"ECDSA","size":256},"labels":{},"renewBefore":"360h0m0s"}` | Default certificate specification |
 | certmanager.default.cert.annotations | object | `{}` | Certificate annotations |
@@ -667,5 +669,5 @@ global:
 | resourcedirectory.tolerations | object | `{}` | Toleration definition |
 
 ----------------------------------------------
-Autogenerated from chart metadata using [helm-docs v1.11.0](https://github.com/norwoodj/helm-docs/releases/v1.11.0)
+Autogenerated from chart metadata using [helm-docs v1.11.3](https://github.com/norwoodj/helm-docs/releases/v1.11.3)
 

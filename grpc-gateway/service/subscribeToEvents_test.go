@@ -982,7 +982,13 @@ func waitForDevice(t *testing.T, client pb.GrpcGateway_SubscribeToEventsClient, 
 
 func TestCoAPGatewayServiceHeartbeat(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
+	// This test should be constrained to a 3-minute time limit.
+	// The reason for this limit is that the device's DTLS system identifies
+	// a connection loss within 20 seconds for the initial ping, and subsequently,
+	// there are 5 more pings, each separated by 4 seconds, with a timeout of 4 seconds.
+	// Therefore, the total time for this sequence is 20 + 4 + (5 * (4 + 4)) = 64 seconds,
+	// plus an additional 10 seconds for waiting for the device to come online.
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*3)
 	defer cancel()
 
 	tearDown := serviceTest.SetUpServices(ctx, t, serviceTest.SetUpServicesCertificateAuthority|serviceTest.SetUpServicesGrpcGateway|serviceTest.SetUpServicesId|serviceTest.SetUpServicesResourceDirectory|serviceTest.SetUpServicesOAuth)
@@ -992,7 +998,7 @@ func TestCoAPGatewayServiceHeartbeat(t *testing.T) {
 	raTearDown := raTest.New(t, racfg)
 
 	coapgwCfg := coapgwTest.MakeConfig(t)
-	coapgwCfg.ServiceHeartbeat.TimeToLive = time.Second * 2
+	coapgwCfg.ServiceHeartbeat.TimeToLive = time.Second * 3
 	coapgwTearDown := coapgwTest.New(t, coapgwCfg)
 
 	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
@@ -1050,7 +1056,6 @@ func TestCoAPGatewayServiceHeartbeat(t *testing.T) {
 
 	// turn on resource-aggregate
 	raTearDown = raTest.New(t, racfg)
-	defer raTearDown()
 
 	// turn on coapgw on different port to avoid connecting device to hub
 	// in this case this coapgw will move device to offline
@@ -1081,10 +1086,48 @@ func TestCoAPGatewayServiceHeartbeat(t *testing.T) {
 	time.Sleep(time.Second)
 	coapgwCfg.APIs.COAP.Addr = config.COAP_GW_HOST
 	coapgwTearDown = coapgwTest.New(t, coapgwCfg)
-	defer coapgwTearDown()
 
 	// device should be online again
 	secondCoapGWInstanceID := waitForDevice(t, client, deviceID)
 	require.NotEmpty(t, secondCoapGWInstanceID)
 	require.NotEqual(t, firstCoapGWInstanceID, secondCoapGWInstanceID)
+
+	// ---- Set the device to offline via the resource-aggregate without updating the service metadata through the CoAP gateway. ---
+	// turn off resource-aggregate
+	raTearDown()
+	coapgwTearDown()
+	time.Sleep(time.Second)
+
+	// turn on resource-aggregate
+	raTearDown = raTest.New(t, racfg)
+	defer raTearDown()
+
+	// device should go to offline
+	ev, err = client.Recv()
+	require.NoError(t, err)
+	pbTest.CmpEvent(t, &pb.Event{
+		SubscriptionId: ev.SubscriptionId,
+		Type: &pb.Event_DeviceMetadataUpdated{
+			DeviceMetadataUpdated: &events.DeviceMetadataUpdated{
+				DeviceId: deviceID,
+				Connection: &commands.Connection{
+					Status:   commands.Connection_OFFLINE,
+					Protocol: test.StringToApplicationProtocol(config.ACTIVE_COAP_SCHEME),
+				},
+				TwinEnabled:         true,
+				TwinSynchronization: &commands.TwinSynchronization{},
+				AuditContext:        commands.NewAuditContext(raService.ServiceUserID, "", service.DeviceUserID),
+			},
+		},
+		CorrelationId: "testToken",
+	}, ev, "")
+
+	// turn on coap-gw
+	coapgwTearDown = coapgwTest.New(t, coapgwCfg)
+	defer coapgwTearDown()
+
+	// device should be online again
+	thirdCoapGWInstanceID := waitForDevice(t, client, deviceID)
+	require.NotEmpty(t, thirdCoapGWInstanceID)
+	require.NotEqual(t, firstCoapGWInstanceID, thirdCoapGWInstanceID)
 }

@@ -249,6 +249,11 @@ certmanager:
       secret:
         # -- Name of secret
         name: plgd-ca
+      issuerRef:
+        # -- Kind of CA issuer
+        kind:
+        # -- Name of issuer for sign CA
+        name:
       issuer:
         # -- Enable root issuer
         enabled: true
@@ -1778,7 +1783,7 @@ certificateauthority:
     # -- Cert key file name
     key: tls.key
     # -- CA file name in case of external CA
-    ca:
+    ca: ca.crt
     volume:
       # -- CA certificate volume name
       name: coap-device-ca

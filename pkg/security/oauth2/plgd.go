@@ -4,7 +4,6 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/plgd-dev/hub/v2/pkg/file"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/pkg/net/http/client"
@@ -26,7 +25,7 @@ func NewPlgdProvider(ctx context.Context, config Config, fileWatcher *fsnotify.W
 	config.AccessType = "offline"
 	config.ResponseType = "code"
 
-	clientSecret, err := file.Load(config.ClientSecretFile, make([]byte, 4096))
+	clientSecret, err := config.ClientSecretFile.Read()
 	if err != nil {
 		return nil, err
 	}
