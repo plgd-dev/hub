@@ -350,6 +350,10 @@ func (r *RequestHandler) GetEvents(req *pb.GetEventsRequest, srv pb.GrpcGateway_
 	} else {
 		queries = getDeviceQueries(req.DeviceIdFilter, mapUserDeviceIDs)
 		queries = append(queries, getResourceQueries(req.GetResourceIdFilter(), mapUserDeviceIDs)...)
+		if len(queries) == 0 {
+			log.Debugf("None of the filters are satisfied for user %v", owner)
+			return nil
+		}
 	}
 
 	err = r.eventStore.GetEvents(srv.Context(), queries, req.TimestampFilter, &resourceEvent{srv: srv})
