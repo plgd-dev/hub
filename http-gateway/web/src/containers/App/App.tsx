@@ -27,7 +27,7 @@ const App = (props: { mockApp: boolean }) => {
 
     const [collapsed, setCollapsed] = useLocalStorage('leftPanelCollapsed', false)
 
-    const theme: PlgdThemeType = useMemo(() => 'siemens', [])
+    const theme: PlgdThemeType = useMemo(() => 'light', [])
 
     openTelemetry.init('hub')
 

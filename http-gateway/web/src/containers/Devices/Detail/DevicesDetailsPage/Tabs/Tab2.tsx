@@ -303,6 +303,8 @@ const Tab2: FC<Props> = (props) => {
                     types: _(t.types),
                     update: _(t.update),
                     updating: _(t.updating),
+                    fullView: _(t.fullView),
+                    compactView: _(t.compactView),
                 }}
                 isDeviceOnline={isOnline}
                 isNotificationActive={isNotificationActive}
