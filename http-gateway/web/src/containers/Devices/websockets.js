@@ -30,21 +30,20 @@ const showToast = async (currentDeviceNotificationsEnabled, deviceId, status) =>
 
         const getToastMessage = () => {
             switch (status) {
+                default:
                 case ONLINE:
                     return { message: t.deviceWentOnline, params: { name } }
                 case OFFLINE:
                     return { message: t.deviceWentOffline, params: { name } }
                 case REGISTERED:
                     return { message: t.deviceWasRegistered, params: { name } }
-                default:
-                    return `Device state: ${status}`
             }
         }
 
         Notification.info(
             {
                 title: t.devicestatusChange,
-                message: getToastMessage(),
+                message: [ONLINE, ONLINE, REGISTERED].includes(status) ? getToastMessage() : `Device state: ${status}`,
             },
             {
                 variant: currentDeviceNotificationsEnabled ? 'toast' : 'notification',

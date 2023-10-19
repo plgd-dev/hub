@@ -14,7 +14,7 @@ const { reducer, actions } = createSlice({
         readAllNotifications: (state) => state?.map((notification: any) => ({ ...notification, read: true })),
         setNotifications: (state, { payload }) => payload.slice(0, maxNotificationCount).map((n: any) => ({ ...n, content: undefined })),
         cleanNotifications(state) {
-            state = []
+            state = initialState
         },
     },
 })
