@@ -13,5 +13,11 @@ metadata:
   {{- end }}
   {{- end }}
 spec:
+{{- if or (and .Values.certmanager.default.ca.issuerRef.name (ne .Values.certmanager.default.ca.issuerRef.name .Values.certmanager.default.ca.issuer.name))
+          (and .Values.certmanager.default.ca.issuerRef.kind (ne .Values.certmanager.default.ca.issuerRef.kind .Values.certmanager.default.ca.issuer.kind))}}
+  ca:
+    secretName: {{ .Values.certmanager.default.ca.secret.name }}
+{{- else }}
 {{- .Values.certmanager.default.ca.issuer.spec | toYaml | nindent 2 }}
+{{- end }}
 {{- end }}
