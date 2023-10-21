@@ -20,6 +20,7 @@ import { reset } from '@shared-ui/app/clientApp/App/AppRest'
 import Logo from '@shared-ui/components/Layout/LeftPanel/components/Logo'
 import LogoSiemens from '@shared-ui/components/Layout/LeftPanel/components/LogoSiemens'
 import { getTheme } from '@shared-ui/components/Atomic/_theme'
+import { ToastContainer } from '@shared-ui/components/Atomic'
 
 import { Props } from './AppLayout.types'
 import { mather, menu, Routes } from '@/routes'
@@ -32,7 +33,6 @@ import { getVersionNumberFromGithub } from '@/containers/App/AppRest'
 import { GITHUB_VERSION_REQUEST_INTERVAL } from '@/constants'
 import { deleteAllRemoteClients } from '@/containers/RemoteClients/slice'
 import testId from '@/testId'
-import { ToastContainer } from '@shared-ui/components/Atomic'
 
 const AppLayout: FC<Props> = (props) => {
     const { buildInformation, collapsed, mockApp, userData, signOutRedirect, setCollapsed } = props
@@ -45,7 +45,7 @@ const AppLayout: FC<Props> = (props) => {
     const notifications = useSelector((state: CombinedStoreType) => state.notifications)
     const appStore = useSelector((state: CombinedStoreType) => state.app)
     const storedRemoteStore = useSelector((state: CombinedStoreType) => state.remoteClients)
-    const theme = appStore.configuration.theme
+    const theme = appStore.configuration?.theme ?? 'light'
 
     const requestVersion = useCallback((now: Date) => {
         getVersionNumberFromGithub().then((ret) => {

@@ -9,6 +9,7 @@ export type StoreType = {
     }
     configuration: {
         theme: PlgdThemeType
+        storeVersion: string
     }
 }
 
@@ -16,6 +17,7 @@ const initialState: StoreType = {
     version: {},
     configuration: {
         theme: 'light',
+        storeVersion: '1.1.0',
     },
 }
 
