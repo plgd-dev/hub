@@ -1,15 +1,13 @@
-import { useContext, useState, useEffect, useMemo } from 'react'
+import { useContext, useState, useEffect } from 'react'
 import { useIntl } from 'react-intl'
 import { AuthProvider, UserManager } from 'oidc-react'
 import { BrowserRouter } from 'react-router-dom'
-import { ThemeProvider } from '@emotion/react'
 
 import PageLoader from '@shared-ui/components/Atomic/PageLoader'
 import { security } from '@shared-ui/common/services/security'
 import { openTelemetry } from '@shared-ui/common/services/opentelemetry'
 import ConditionalWrapper from '@shared-ui/components/Atomic/ConditionalWrapper'
 import { useLocalStorage } from '@shared-ui/common/hooks'
-import { getTheme, PlgdThemeType } from '@shared-ui/components/Atomic/_theme'
 
 import './App.scss'
 import { messages as t } from './App.i18n'
@@ -26,8 +24,6 @@ const App = (props: { mockApp: boolean }) => {
     const [configError, setConfigError] = useState<any>(null)
 
     const [collapsed, setCollapsed] = useLocalStorage('leftPanelCollapsed', false)
-
-    const theme: PlgdThemeType = useMemo(() => 'light', [])
 
     openTelemetry.init('hub')
 
@@ -117,16 +113,14 @@ const App = (props: { mockApp: boolean }) => {
     if (props.mockApp) {
         return (
             <BrowserRouter>
-                <ThemeProvider theme={getTheme(theme)}>
-                    <AppLayout buildInformation={wellKnownConfig?.buildInfo} collapsed={collapsed} mockApp={true} setCollapsed={setCollapsed} theme={theme} />
-                </ThemeProvider>
+                <AppLayout buildInformation={wellKnownConfig?.buildInfo} collapsed={collapsed} mockApp={true} setCollapsed={setCollapsed} />
             </BrowserRouter>
         )
     }
 
     return (
         <ConditionalWrapper condition={!props.mockApp} wrapper={Wrapper}>
-            <AppInner collapsed={collapsed} openTelemetry={openTelemetry} setCollapsed={setCollapsed} theme={theme} wellKnownConfig={wellKnownConfig} />
+            <AppInner collapsed={collapsed} openTelemetry={openTelemetry} setCollapsed={setCollapsed} wellKnownConfig={wellKnownConfig} />
         </ConditionalWrapper>
     )
 }

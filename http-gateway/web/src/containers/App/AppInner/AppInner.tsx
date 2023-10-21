@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { BrowserRouter } from 'react-router-dom'
 import { useAuth } from 'oidc-react'
-import { Global, ThemeProvider } from '@emotion/react'
+import { Global } from '@emotion/react'
 import { Helmet } from 'react-helmet'
 
 import { InitServices } from '@shared-ui/common/services/init-services'
@@ -9,7 +9,6 @@ import { BrowserNotificationsContainer } from '@shared-ui/components/Atomic/Toas
 import { ToastContainer } from '@shared-ui/components/Atomic/Notification'
 import { useLocalStorage } from '@shared-ui/common/hooks'
 import { clientAppSettings, security } from '@shared-ui/common/services'
-import { getTheme } from '@shared-ui/components/Atomic/_theme'
 
 import { AppContext } from '@/containers/App/AppContext'
 import appConfig from '@/config'
@@ -21,7 +20,7 @@ import { AppContextType } from '@/containers/App/AppContext.types'
 import AppLayout from '@/containers/App/AppLayout/AppLayout'
 
 const AppInner = (props: Props) => {
-    const { wellKnownConfig, openTelemetry, collapsed, setCollapsed, theme } = props
+    const { wellKnownConfig, openTelemetry, collapsed, setCollapsed } = props
     const { userData, userManager, signOutRedirect, isLoading } = useAuth()
 
     const [footerExpanded, setFooterExpanded] = useLocalStorage('footerPanelExpanded', false)
@@ -38,9 +37,9 @@ const AppInner = (props: Props) => {
             wellKnownConfig,
             telemetryWebTracer: openTelemetry.getWebTracer(),
             buildInformation: wellKnownConfig?.buildInfo,
-            theme,
+            // theme,
         }),
-        [footerExpanded, collapsed, setCollapsed, setFooterExpanded, wellKnownConfig, openTelemetry, theme]
+        [footerExpanded, collapsed, setCollapsed, setFooterExpanded, wellKnownConfig, openTelemetry]
     )
 
     if (!userData || isLoading) {
@@ -58,23 +57,19 @@ const AppInner = (props: Props) => {
 
     return (
         <AppContext.Provider value={contextValue}>
-            <ThemeProvider theme={getTheme(theme)}>
-                <InitServices deviceStatusListener={deviceStatusListener} />
-                <Helmet defaultTitle={appConfig.appName} titleTemplate={`%s | ${appConfig.appName}`} />
-                <BrowserRouter>
-                    <AppLayout
-                        buildInformation={wellKnownConfig?.buildInfo}
-                        collapsed={collapsed}
-                        setCollapsed={setCollapsed}
-                        signOutRedirect={signOutRedirect}
-                        theme={theme}
-                        userData={userData}
-                    />
-                    <Global styles={globalStyle(toastNotifications)} />
-                    <ToastContainer portalTarget={document.getElementById('toast-root')} showNotifications={true} />
-                    <BrowserNotificationsContainer />
-                </BrowserRouter>
-            </ThemeProvider>
+            <InitServices deviceStatusListener={deviceStatusListener} />
+            <Helmet defaultTitle={appConfig.appName} titleTemplate={`%s | ${appConfig.appName}`} />
+            <BrowserRouter>
+                <AppLayout
+                    buildInformation={wellKnownConfig?.buildInfo}
+                    collapsed={collapsed}
+                    setCollapsed={setCollapsed}
+                    signOutRedirect={signOutRedirect}
+                    userData={userData}
+                />
+                <Global styles={globalStyle(toastNotifications)} />
+                <BrowserNotificationsContainer />
+            </BrowserRouter>
         </AppContext.Provider>
     )
 }

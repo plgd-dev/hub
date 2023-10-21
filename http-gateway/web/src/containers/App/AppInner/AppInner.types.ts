@@ -5,6 +5,5 @@ export type Props = {
     collapsed: boolean
     openTelemetry: any
     setCollapsed: () => {}
-    theme: PlgdThemeType
     wellKnownConfig: WellKnownConfigType
 }

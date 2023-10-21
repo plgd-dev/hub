@@ -24,6 +24,7 @@ import DevicesListPage from '@/containers/Devices/List/DevicesListPage'
 import DevicesDetailsPage from '@/containers/Devices/Detail/DevicesDetailsPage'
 import { messages as t } from './containers/App/App.i18n'
 import TestPage from './containers/Test'
+import ConfigurationPage from './containers/Configuration'
 import RemoteClientsListPage from '@/containers/RemoteClients/List/RemoteClientsListPage'
 import RemoteClientDetailPage from '@/containers/RemoteClients/Detail/RemoteClientDetailPage'
 import RemoteClientDevicesDetailPage from '@/containers/RemoteClients/Device/Detail/RemoteClientDevicesDetailPage'
@@ -80,6 +81,7 @@ export const menu: MenuGroup[] = [
                     '/remote-clients/:id/devices/:deviceId',
                     '/remote-clients/:id/devices/:deviceId/resources',
                     '/remote-clients/:id/devices/:deviceId/resources/:href',
+                    '/remote-clients/:id/configuration',
                 ],
                 exact: true,
             },
@@ -155,6 +157,14 @@ export const menu: MenuGroup[] = [
                 exact: true,
                 disabled: true,
             },
+            {
+                icon: <IconSettings />,
+                id: '15',
+                title: <MenuTranslate id='menuConfiguration' />,
+                link: '/configuration',
+                paths: ['/configuration'],
+                exact: true,
+            },
         ],
     },
     {
@@ -214,6 +224,8 @@ export const Routes = () => {
             <Route element={<PendingCommandsListPage />} path='/pending-commands' />
 
             <Route element={<MockApp />} path='/devices-code-redirect/*' />
+
+            <Route element={<ConfigurationPage />} path='/configuration' />
 
             {process.env?.REACT_APP_TEST_VIEW === 'true' && <Route element={<TestPage />} path='/test' />}
             <Route element={<NotFoundPage message={_(t.notFoundPageDefaultMessage)} title={_(t.pageTitle)} />} path='*' />

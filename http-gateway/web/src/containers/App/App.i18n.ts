@@ -117,6 +117,10 @@ export const messages = defineMessages({
         id: 'app.menuChatRoom',
         defaultMessage: 'Chat room',
     },
+    menuConfiguration: {
+        id: 'app.menuConfiguration',
+        defaultMessage: 'Configuration',
+    },
     logOut: {
         id: 'app.logOut',
         defaultMessage: 'Log out',
