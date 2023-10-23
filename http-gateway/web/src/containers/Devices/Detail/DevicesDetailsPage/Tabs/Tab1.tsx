@@ -10,6 +10,7 @@ import Tag from '@shared-ui/components/Atomic/Tag'
 import Tooltip from '@shared-ui/components/Atomic/Tooltip'
 import { convertSize, IconCloudSuccess, IconCloudWarning } from '@shared-ui/components/Atomic/Icon'
 import { eventFilters, WebSocketEventClient } from '@shared-ui/common/services'
+import { messages as app } from '@shared-ui/app/clientApp/App/App.i18n'
 
 import { Props } from './Tab1.types'
 import { messages as t } from '@/containers/Devices/Devices.i18n'
@@ -101,9 +102,14 @@ const Tab1: FC<Props> = (props) => {
                         {
                             attribute: _(t.types),
                             value: types ? (
-                                <TagGroup>
+                                <TagGroup
+                                    i18n={{
+                                        more: _(app.more),
+                                        types: _(app.types),
+                                    }}
+                                >
                                     {types.map((t, key) => (
-                                        <Tag key={t}>{t}</Tag>
+                                        <Tag key={key}>{t}</Tag>
                                     ))}
                                 </TagGroup>
                             ) : (

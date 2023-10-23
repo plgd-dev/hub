@@ -12,6 +12,7 @@ import { canCreateResource } from '@shared-ui/common/utils'
 import { IconPlus, IconEdit, IconTrash } from '@shared-ui/components/Atomic/Icon'
 import { tagVariants } from '@shared-ui/components/Atomic/Tag/constants'
 import TagGroup from '@shared-ui/components/Atomic/TagGroup'
+import { messages as app } from '@shared-ui/app/clientApp/App/App.i18n'
 import Tag from '@shared-ui/components/Atomic/Tag'
 
 import { devicesStatuses, RESOURCE_TREE_DEPTH_SIZE } from '../../constants'
@@ -159,7 +160,12 @@ const getTreeColumns = ({ _, onUpdate, onCreate, onDelete, isUnregistered, loadi
             }
 
             return (
-                <TagGroup>
+                <TagGroup
+                    i18n={{
+                        more: _(app.more),
+                        types: _(app.types),
+                    }}
+                >
                     {value?.map?.((type: string) => (
                         <Tag className='tree-custom-tag' key={type} variant={tagVariants.DEFAULT}>
                             {type}
