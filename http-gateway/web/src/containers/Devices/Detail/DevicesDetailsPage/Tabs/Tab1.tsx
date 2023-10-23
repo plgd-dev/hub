@@ -5,7 +5,7 @@ import { useDispatch, useSelector } from 'react-redux'
 import TileToggleRow from '@shared-ui/components/Atomic/TileToggle/TileToggleRow'
 import TileToggle from '@shared-ui/components/Atomic/TileToggle'
 import SimpleStripTable from '@shared-ui/components/Atomic/SimpleStripTable'
-import TagGroup from '@shared-ui/components/Atomic/TagGroup'
+import TagGroup, { justifyContent } from '@shared-ui/components/Atomic/TagGroup'
 import Tag from '@shared-ui/components/Atomic/Tag'
 import Tooltip from '@shared-ui/components/Atomic/Tooltip'
 import { convertSize, IconCloudSuccess, IconCloudWarning } from '@shared-ui/components/Atomic/Icon'
@@ -107,6 +107,7 @@ const Tab1: FC<Props> = (props) => {
                                         more: _(app.more),
                                         types: _(app.types),
                                     }}
+                                    justifyContent={justifyContent.END}
                                 >
                                     {types.map((t, key) => (
                                         <Tag key={key}>{t}</Tag>

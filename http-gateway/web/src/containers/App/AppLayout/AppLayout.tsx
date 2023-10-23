@@ -178,6 +178,7 @@ const AppLayout: FC<Props> = (props) => {
                         onItemClick={handleItemClick}
                         onLocationChange={handleLocationChange}
                         setCollapsed={setCollapsed}
+                        onLogoClick={() => navigate(`/`)}
                         // newFeature={{
                         //     onClick: () => console.log('click'),
                         //     onClose: () => console.log('close'),

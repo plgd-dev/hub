@@ -41,7 +41,7 @@ const ConfigurationPage = () => {
         []
     )
 
-    const defTheme = useMemo(() => options.find((o) => o.value === appStore.configuration.theme) || options[0], [appStore, options])
+    const defTheme = useMemo(() => options.find((o) => o.value === appStore.configuration?.theme) || options[0], [appStore, options])
 
     const {
         handleSubmit,
