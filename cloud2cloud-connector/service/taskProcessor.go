@@ -69,7 +69,7 @@ func (h *TaskProcessor) pullDevice(ctx context.Context, e Task) error {
 		return nil
 	}
 	var device RetrieveDeviceWithLinksResponse
-	err := Get(ctx, h.tracerProvider, e.linkedCloud.Endpoint.URL+"/devices/"+e.deviceID, e.linkedAccount, e.linkedCloud, &device)
+	err := Get(ctx, h.tracerProvider, e.linkedCloud.Endpoint.URL+prefixDevicesPath+e.deviceID, e.linkedAccount, e.linkedCloud, &device)
 	if err != nil {
 		h.pulledDevices.Delete(key)
 		return fmt.Errorf("cannot pull device %v for linked linkedAccount(%v): %w", e.deviceID, e.linkedAccount, err)

@@ -14,6 +14,7 @@ import (
 	"github.com/plgd-dev/go-coap/v3/message/codes"
 	"github.com/plgd-dev/go-coap/v3/message/pool"
 	"github.com/plgd-dev/go-coap/v3/mux"
+	"github.com/plgd-dev/hub/v2/coap-gateway/uri"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 	"github.com/plgd-dev/kit/v2/codec/cbor"
@@ -115,7 +116,7 @@ func NewCoapResourceUpdateRequest(ctx context.Context, messagePool *pool.Pool, e
 		return nil, err
 	}
 	if event.GetResourceInterface() != "" {
-		req.AddOptionString(message.URIQuery, "if="+event.GetResourceInterface())
+		req.AddOptionString(message.URIQuery, uri.InterfaceQueryKeyPrefix+event.GetResourceInterface())
 	}
 	return req, nil
 }
@@ -131,7 +132,7 @@ func NewCoapResourceRetrieveRequest(ctx context.Context, messagePool *pool.Pool,
 		return nil, err
 	}
 	if event.GetResourceInterface() != "" {
-		req.AddOptionString(message.URIQuery, "if="+event.GetResourceInterface())
+		req.AddOptionString(message.URIQuery, uri.InterfaceQueryKeyPrefix+event.GetResourceInterface())
 	}
 	if len(event.GetEtag()) > 0 {
 		if err := req.AddETag(event.GetEtag()); err != nil {
@@ -366,8 +367,8 @@ func NewUpdateResourceRequest(resourceID *commands.ResourceId, req *mux.Message,
 	qs, err := req.Options().Queries()
 	if err == nil {
 		for _, q := range qs {
-			if strings.HasPrefix(q, "if=") {
-				resourceInterface = strings.TrimPrefix(q, "if=")
+			if strings.HasPrefix(q, uri.InterfaceQueryKeyPrefix) {
+				resourceInterface = strings.TrimPrefix(q, uri.InterfaceQueryKeyPrefix)
 				break
 			}
 		}
@@ -395,8 +396,8 @@ func NewRetrieveResourceRequest(resourceID *commands.ResourceId, req *mux.Messag
 	qs, err := req.Options().Queries()
 	if err == nil {
 		for _, q := range qs {
-			if strings.HasPrefix(q, "if=") {
-				resourceInterface = strings.TrimPrefix(q, "if=")
+			if strings.HasPrefix(q, uri.InterfaceQueryKeyPrefix) {
+				resourceInterface = strings.TrimPrefix(q, uri.InterfaceQueryKeyPrefix)
 				break
 			}
 		}
@@ -457,7 +458,7 @@ func NewCoapResourceCreateRequest(ctx context.Context, messagePool *pool.Pool, e
 	if err != nil {
 		return nil, err
 	}
-	req.AddOptionString(message.URIQuery, "if="+interfaces.OC_IF_CREATE)
+	req.AddOptionString(message.URIQuery, uri.InterfaceQueryKeyPrefix+interfaces.OC_IF_CREATE)
 
 	return req, nil
 }

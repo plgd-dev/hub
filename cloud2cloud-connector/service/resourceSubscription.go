@@ -66,7 +66,7 @@ func (s *SubscriptionManager) SubscribeToResource(ctx context.Context, deviceID,
 }
 
 func (s *SubscriptionManager) subscribeToResource(ctx context.Context, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud, correlationID, signingSecret, deviceID, href string) (string, error) {
-	resp, err := subscribe(ctx, s.tracerProvider, "/devices/"+deviceID+href+"/subscriptions", correlationID, events.SubscriptionRequest{
+	resp, err := subscribe(ctx, s.tracerProvider, prefixDevicesPath+deviceID+href+"/subscriptions", correlationID, events.SubscriptionRequest{
 		EventsURL:     s.eventsURL,
 		EventTypes:    []events.EventType{events.EventType_ResourceChanged},
 		SigningSecret: signingSecret,
@@ -78,7 +78,7 @@ func (s *SubscriptionManager) subscribeToResource(ctx context.Context, linkedAcc
 }
 
 func cancelResourceSubscription(ctx context.Context, traceProvider trace.TracerProvider, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud, deviceID, href, subscriptionID string) error {
-	err := cancelSubscription(ctx, traceProvider, "/devices/"+deviceID+href+"/subscriptions/"+subscriptionID, linkedAccount, linkedCloud)
+	err := cancelSubscription(ctx, traceProvider, prefixDevicesPath+deviceID+href+"/subscriptions/"+subscriptionID, linkedAccount, linkedCloud)
 	if err != nil {
 		return fmt.Errorf("cannot cancel resource subscription for %v: %w", linkedAccount.ID, err)
 	}

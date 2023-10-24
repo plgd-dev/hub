@@ -25,7 +25,7 @@ func retrieveDeviceResource(ctx context.Context, traceProvider trace.TracerProvi
 		return "", nil, commands.Status_BAD_REQUEST, fmt.Errorf("cannot create post request: %w", err)
 	}
 	req.Header.Set(AcceptHeader, events.ContentType_JSON+","+events.ContentType_VNDOCFCBOR)
-	req.Header.Set(AuthorizationHeader, "Bearer "+string(linkedAccount.Data.Target().AccessToken))
+	req.Header.Set(AuthorizationHeader, AuthorizationBearerPrefix+string(linkedAccount.Data.Target().AccessToken))
 	req.Header.Set("Connection", "close")
 	req.Close = true
 

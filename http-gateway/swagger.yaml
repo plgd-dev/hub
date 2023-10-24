@@ -916,7 +916,6 @@ components:
         metadata:
           connection:
             status: "ONLINE"
-            onlineValidUntil: 1625262498747539632
           twinEnabled: true
         manufacturerName:
           - language: "en-US"

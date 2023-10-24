@@ -23,6 +23,7 @@ import (
 	"github.com/plgd-dev/go-coap/v3/options"
 	coap "github.com/plgd-dev/go-coap/v3/tcp"
 	"github.com/plgd-dev/go-coap/v3/tcp/client"
+	"github.com/plgd-dev/hub/v2/coap-gateway/uri"
 	"github.com/plgd-dev/kit/v2/codec/cbor"
 	"github.com/plgd-dev/kit/v2/codec/json"
 	"github.com/plgd-dev/kit/v2/net"
@@ -213,7 +214,7 @@ func createResource(co *client.Conn, href string, contentFormat int) {
 	if err != nil {
 		createError(err)
 	}
-	req.SetOptionString(message.URIQuery, "if="+interfaces.OC_IF_CREATE)
+	req.SetOptionString(message.URIQuery, uri.InterfaceQueryKeyPrefix+interfaces.OC_IF_CREATE)
 	resp, err := co.Do(req)
 	if err != nil {
 		createError(err)
@@ -244,7 +245,7 @@ func observerResource(co *client.Conn, href string) {
 func getResource(co *client.Conn, href, resIf, resRt string) {
 	var opts message.Options
 	if resIf != "" {
-		v := "if=" + resIf
+		v := uri.InterfaceQueryKeyPrefix + resIf
 		buf := make([]byte, len(v))
 		opts, _, _ = opts.AddString(buf, message.URIQuery, v)
 	}

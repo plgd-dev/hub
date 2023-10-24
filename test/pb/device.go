@@ -16,7 +16,6 @@ func CmpDeviceValues(t *testing.T, expected, got []*pbGrpc.Device) {
 
 	cleanUp := func(dev *pbGrpc.Device) {
 		dev.ProtocolIndependentId = ""
-		dev.Metadata.Connection.OnlineValidUntil = 0
 		dev.Metadata.Connection.Id = ""
 		dev.Metadata.Connection.ConnectedAt = 0
 		dev.Metadata.Connection.ServiceId = ""
@@ -60,7 +59,6 @@ func CleanUpDeviceMetadataUpdated(e *events.DeviceMetadataUpdated, resetCorrelat
 		if e.GetConnection().IsOnline() {
 			e.GetConnection().ServiceId = ""
 		}
-		e.GetConnection().OnlineValidUntil = 0
 		e.GetConnection().Id = ""
 		e.GetConnection().ConnectedAt = 0
 	}

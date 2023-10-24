@@ -3,7 +3,6 @@ package commands
 import (
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/plgd-dev/device/v2/schema"
@@ -96,14 +95,7 @@ func (c *Connection) IsOnline() bool {
 	if c == nil {
 		return false
 	}
-	if c.GetStatus() == Connection_OFFLINE {
-		return false
-	}
-	if c.GetOnlineValidUntil() <= 0 {
-		// s.ValidUntil <= 0 means infinite
-		return c.GetStatus() == Connection_ONLINE
-	}
-	return time.Now().UnixNano() < c.GetOnlineValidUntil()
+	return c.GetStatus() == Connection_ONLINE
 }
 
 var status2grpcCode = map[Status]codes.Code{

@@ -154,12 +154,15 @@ func (c *session) updateBySignInData(ctx context.Context, upd updateType, device
 		}
 	}
 
-	resp, err := c.server.devicesStatusUpdater.UpdateOnlineStatus(ctx, c, upd == updateTypeNew)
-	if err != nil {
-		return nil, fmt.Errorf("cannot update cloud device status: %w", err)
+	if upd == updateTypeNew {
+		resp, err := c.server.devicesStatusUpdater.UpdateOnlineStatus(ctx, c)
+		if err != nil {
+			return nil, fmt.Errorf("cannot update cloud device status: %w", err)
+		}
+		return resp, nil
 	}
 
-	return resp, nil
+	return nil, nil
 }
 
 func subscribeToDeviceEvents(client *session, owner, deviceID string) error {
@@ -261,6 +264,19 @@ func setNewDeviceObserver(ctx context.Context, client *session, deviceID string,
 
 const errFmtSignIn = "cannot handle sign in: %w"
 
+func (c *session) resolveTwinEnabled(ctx context.Context, updateDeviceMetadataResp *commands.UpdateDeviceMetadataResponse) bool {
+	twinEnabled := true
+	if updateDeviceMetadataResp != nil {
+		twinEnabled = updateDeviceMetadataResp.GetTwinEnabled()
+	} else {
+		deviceObs, err := c.getDeviceObserver(ctx)
+		if err == nil {
+			twinEnabled = deviceObs.GetTwinEnabled()
+		}
+	}
+	return twinEnabled
+}
+
 // https://github.com/openconnectivityfoundation/security/blob/master/swagger2.0/oic.sec.session.swagger.json
 func signInPostHandler(req *mux.Message, client *session, signIn CoapSignInReq) (*pool.Message, error) {
 	if err := signIn.checkOAuthRequest(); err != nil {
@@ -309,6 +325,7 @@ func signInPostHandler(req *mux.Message, client *session, signIn CoapSignInReq) 
 	if err != nil {
 		return nil, statusErrorf(coapCodes.ServiceUnavailable, errFmtSignIn, err)
 	}
+	twinEnabled := client.resolveTwinEnabled(ctx, updateDeviceMetadataResp)
 
 	setExpirationClientCache(client.server.expirationClientCache, deviceID, client, validUntil)
 	client.exchangeCache.Clear()
@@ -325,7 +342,7 @@ func signInPostHandler(req *mux.Message, client *session, signIn CoapSignInReq) 
 		client:               client,
 		deviceID:             deviceID,
 		resetObservationType: upd == updateTypeChanged,
-		twinEnabled:          updateDeviceMetadataResp.GetTwinEnabled(),
+		twinEnabled:          twinEnabled,
 	}
 	if err := client.server.taskQueue.Submit(func() {
 		// try to register observations to the device at the cloud.
