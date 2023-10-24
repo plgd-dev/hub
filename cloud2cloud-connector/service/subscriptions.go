@@ -22,8 +22,9 @@ import (
 )
 
 const (
-	AuthorizationHeader string = "Authorization"
-	AcceptHeader        string = "Accept"
+	AuthorizationHeader       string = "Authorization"
+	AcceptHeader              string = "Accept"
+	AuthorizationBearerPrefix string = "Bearer "
 )
 
 type Type string
@@ -100,7 +101,7 @@ func subscribe(ctx context.Context, tracerProvider trace.TracerProvider, href, c
 	req.Header.Set(events.CorrelationIDKey, correlationID)
 	req.Header.Set("Accept", events.ContentType_JSON+","+events.ContentType_VNDOCFCBOR)
 	req.Header.Set(events.ContentTypeKey, events.ContentType_JSON)
-	req.Header.Set(AuthorizationHeader, "Bearer "+string(linkedAccount.Data.Target().AccessToken))
+	req.Header.Set(AuthorizationHeader, AuthorizationBearerPrefix+string(linkedAccount.Data.Target().AccessToken))
 	req.Header.Set("Connection", "close")
 	req.Close = true
 
@@ -143,7 +144,7 @@ func cancelSubscription(ctx context.Context, tracerProvider trace.TracerProvider
 	}
 	req.Header.Set("Token", linkedAccount.ID)
 	req.Header.Set("Accept", events.ContentType_JSON+","+events.ContentType_VNDOCFCBOR)
-	req.Header.Set(AuthorizationHeader, "Bearer "+string(linkedAccount.Data.Target().AccessToken))
+	req.Header.Set(AuthorizationHeader, AuthorizationBearerPrefix+string(linkedAccount.Data.Target().AccessToken))
 	req.Header.Set("Connection", "close")
 	req.Close = true
 

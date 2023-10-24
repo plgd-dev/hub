@@ -58,28 +58,7 @@ func newAuthInterceptor(ctx context.Context, config validator.Config, fileWatche
 	}
 	fl.AddFunc(validator.Close)
 
-	authRules := map[string][]kitNetHttp.AuthArgs{
-		http.MethodGet: {
-			{
-				URI: regexp.MustCompile(regexp.QuoteMeta(uri.API) + `\/.*`),
-			},
-		},
-		http.MethodPost: {
-			{
-				URI: regexp.MustCompile(regexp.QuoteMeta(uri.API) + `\/.*`),
-			},
-		},
-		http.MethodDelete: {
-			{
-				URI: regexp.MustCompile(regexp.QuoteMeta(uri.API) + `\/.*`),
-			},
-		},
-		http.MethodPut: {
-			{
-				URI: regexp.MustCompile(regexp.QuoteMeta(uri.API) + `\/.*`),
-			},
-		},
-	}
+	authRules := kitNetHttp.NewDefaultAuthorizationRules(uri.API)
 
 	whiteList := []kitNetHttp.RequestMatcher{
 		{

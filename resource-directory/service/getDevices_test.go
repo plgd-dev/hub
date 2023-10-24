@@ -163,7 +163,6 @@ func TestRequestHandlerGetDevices(t *testing.T) {
 					assert.NotEmpty(t, dev.ProtocolIndependentId)
 					assert.NotEmpty(t, dev.GetData().GetContent().GetData())
 					dev.ProtocolIndependentId = ""
-					dev.Metadata.Connection.OnlineValidUntil = 0
 					dev.Metadata.Connection.Id = ""
 					dev.Metadata.Connection.ConnectedAt = 0
 					dev.Metadata.Connection.ServiceId = ""

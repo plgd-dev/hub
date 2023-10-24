@@ -88,7 +88,7 @@ func TestClientCreateHandler(t *testing.T) {
 			}
 			req, err := co.NewPostRequest(ctx, tt.args.href, tt.args.contentFormat, body)
 			require.NoError(t, err)
-			req.SetOptionString(message.URIQuery, "if="+interfaces.OC_IF_CREATE)
+			req.SetOptionString(message.URIQuery, uri.InterfaceQueryKeyPrefix+interfaces.OC_IF_CREATE)
 			resp, err := co.Do(req)
 			require.NoError(t, err)
 			assert.Equal(t, tt.wantsCode.String(), resp.Code().String())

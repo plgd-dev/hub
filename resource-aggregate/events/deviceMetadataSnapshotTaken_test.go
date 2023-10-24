@@ -21,9 +21,8 @@ var testEventDeviceMetadataSnapshotTaken events.DeviceMetadataSnapshotTaken = ev
 	DeviceMetadataUpdated: &events.DeviceMetadataUpdated{
 		DeviceId: "dev1",
 		Connection: &commands.Connection{
-			Status:           commands.Connection_ONLINE,
-			OnlineValidUntil: 12345,
-			Id:               "con1",
+			Status: commands.Connection_ONLINE,
+			Id:     "con1",
 		},
 		TwinEnabled: true,
 		AuditContext: &commands.AuditContext{

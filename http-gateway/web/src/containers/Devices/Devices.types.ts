@@ -26,7 +26,6 @@ export type DeviceDataType = {
         }
         connection?: {
             status?: string
-            onlineValidUntil: number | string
         }
         twinEnabled?: boolean
     }

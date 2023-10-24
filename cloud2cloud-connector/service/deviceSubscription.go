@@ -69,7 +69,7 @@ func (s *SubscriptionManager) SubscribeToDevice(ctx context.Context, deviceID st
 }
 
 func (s *SubscriptionManager) subscribeToDevice(ctx context.Context, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud, correlationID, signingSecret, deviceID string) (string, error) {
-	resp, err := subscribe(ctx, s.tracerProvider, "/devices/"+deviceID+"/subscriptions", correlationID, events.SubscriptionRequest{
+	resp, err := subscribe(ctx, s.tracerProvider, prefixDevicesPath+deviceID+"/subscriptions", correlationID, events.SubscriptionRequest{
 		EventsURL: s.eventsURL,
 		EventTypes: []events.EventType{
 			events.EventType_ResourcesPublished,
@@ -84,7 +84,7 @@ func (s *SubscriptionManager) subscribeToDevice(ctx context.Context, linkedAccou
 }
 
 func cancelDeviceSubscription(ctx context.Context, tracerProvider trace.TracerProvider, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud, deviceID, subscriptionID string) error {
-	err := cancelSubscription(ctx, tracerProvider, "/devices/"+deviceID+"/subscriptions/"+subscriptionID, linkedAccount, linkedCloud)
+	err := cancelSubscription(ctx, tracerProvider, prefixDevicesPath+deviceID+"/subscriptions/"+subscriptionID, linkedAccount, linkedCloud)
 	if err != nil {
 		return fmt.Errorf("cannot cancel device subscription for %v: %w", linkedAccount.ID, err)
 	}

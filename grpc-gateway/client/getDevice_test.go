@@ -114,7 +114,6 @@ func TestClient_GetDevice(t *testing.T) {
 			got.Resources = test.CleanUpResourcesArray(got.Resources)
 			require.NotEmpty(t, got.Device.GetProtocolIndependentId())
 			got.Device.ProtocolIndependentId = ""
-			got.Device.Metadata.Connection.OnlineValidUntil = 0
 			got.Device.Metadata.Connection.Id = ""
 			got.Device.Metadata.Connection.ConnectedAt = 0
 			got.Device.Metadata.Connection.ServiceId = ""

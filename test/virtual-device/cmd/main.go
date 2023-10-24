@@ -527,11 +527,11 @@ func processGetResourceLinks(w *responsewriter.ResponseWriter[*client.Conn], dev
 }
 
 func processGetDiscovery(w *responsewriter.ResponseWriter[*client.Conn], query string, deviceID string, numResources, resourceDataSize int) {
-	if query == "if="+interfaces.OC_IF_B {
+	if query == uri.InterfaceQueryKeyPrefix+interfaces.OC_IF_B {
 		processBatchResourceLinks(w, deviceID, numResources, resourceDataSize)
 		return
 	}
-	if query == "if="+interfaces.OC_IF_LL {
+	if query == uri.InterfaceQueryKeyPrefix+interfaces.OC_IF_LL {
 		processGetResourceLinks(w, deviceID, numResources)
 		return
 	}

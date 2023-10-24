@@ -30,8 +30,8 @@ func URIToDeviceIDHref(msg *mux.Message) (deviceID, href string, err error) {
 func GetResourceInterface(msg *mux.Message) string {
 	queries, _ := msg.Options().Queries()
 	for _, query := range queries {
-		if strings.HasPrefix(query, "if=") {
-			return strings.TrimLeft(query, "if=")
+		if strings.HasPrefix(query, uri.InterfaceQueryKeyPrefix) {
+			return strings.TrimLeft(query, uri.InterfaceQueryKeyPrefix)
 		}
 	}
 	return ""
