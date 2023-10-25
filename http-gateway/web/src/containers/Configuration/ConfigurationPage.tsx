@@ -10,7 +10,7 @@ import AppContext from '@shared-ui/app/clientApp/App/AppContext'
 import Footer from '@shared-ui/components/Layout/Footer'
 import PageLayout from '@shared-ui/components/Atomic/PageLayout'
 import SimpleStripTable from '@shared-ui/components/Atomic/SimpleStripTable'
-import FormSelect from '@shared-ui/components/Atomic/FormSelect'
+import FormSelect, { selectAligns } from '@shared-ui/components/Atomic/FormSelect'
 import Notification from '@shared-ui/components/Atomic/Notification/Toast'
 import { useIsMounted } from '@shared-ui/common/hooks'
 
@@ -65,7 +65,15 @@ const ConfigurationPage = () => {
                     control={control}
                     name='theme'
                     render={({ field: { onChange, name, ref } }) => (
-                        <FormSelect inlineStyle defaultValue={defTheme} name={name} onChange={onChange} options={options} ref={ref} />
+                        <FormSelect
+                            inlineStyle
+                            align={selectAligns.RIGHT}
+                            defaultValue={defTheme}
+                            name={name}
+                            onChange={onChange}
+                            options={options}
+                            ref={ref}
+                        />
                     )}
                 />
             ),
