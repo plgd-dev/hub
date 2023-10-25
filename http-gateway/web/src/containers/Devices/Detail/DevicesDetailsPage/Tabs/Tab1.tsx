@@ -109,8 +109,8 @@ const Tab1: FC<Props> = (props) => {
                                     }}
                                     justifyContent={justifyContent.END}
                                 >
-                                    {types.map((t, key) => (
-                                        <Tag key={key}>{t}</Tag>
+                                    {types.map((t) => (
+                                        <Tag key={t}>{t}</Tag>
                                     ))}
                                 </TagGroup>
                             ) : (

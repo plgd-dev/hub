@@ -6,7 +6,6 @@ import { Helmet } from 'react-helmet'
 
 import { InitServices } from '@shared-ui/common/services/init-services'
 import { BrowserNotificationsContainer } from '@shared-ui/components/Atomic/Toast'
-import { ToastContainer } from '@shared-ui/components/Atomic/Notification'
 import { useLocalStorage } from '@shared-ui/common/hooks'
 import { clientAppSettings, security } from '@shared-ui/common/services'
 
