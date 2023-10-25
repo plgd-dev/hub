@@ -17,8 +17,6 @@ import { getVersionMarkData } from '@shared-ui/components/Atomic/VersionMark/uti
 import { severities } from '@shared-ui/components/Atomic/VersionMark/constants'
 import { flushDevices } from '@shared-ui/app/clientApp/Devices/slice'
 import { reset } from '@shared-ui/app/clientApp/App/AppRest'
-import Logo from '@shared-ui/components/Layout/LeftPanel/components/Logo'
-import LogoSiemens from '@shared-ui/components/Layout/LeftPanel/components/LogoSiemens'
 import { getTheme } from '@shared-ui/components/Atomic/_theme'
 import { ToastContainer } from '@shared-ui/components/Atomic'
 
@@ -33,6 +31,11 @@ import { getVersionNumberFromGithub } from '@/containers/App/AppRest'
 import { GITHUB_VERSION_REQUEST_INTERVAL } from '@/constants'
 import { deleteAllRemoteClients } from '@/containers/RemoteClients/slice'
 import testId from '@/testId'
+
+const LogoElement = (props: any) => {
+    const { css, logo, className, onClick } = props
+    return <img alt='' className={className} css={css} height={logo.height} onClick={onClick} src={logo.source} width={logo.width} />
+}
 
 const AppLayout: FC<Props> = (props) => {
     const { buildInformation, collapsed, mockApp, userData, signOutRedirect, setCollapsed } = props
@@ -125,16 +128,10 @@ const AppLayout: FC<Props> = (props) => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [signOutRedirect])
 
-    const getLogoByTheme = useCallback(() => {
-        if (theme === 'light') {
-            return <Logo height={32} width={147} />
-        } else if (theme === 'siemens') {
-            return <LogoSiemens height={48} width={180} />
-        }
-    }, [theme])
+    const themeData = useMemo(() => getTheme(theme), [theme])
 
     return (
-        <ThemeProvider theme={getTheme(theme)}>
+        <ThemeProvider theme={themeData}>
             <ToastContainer portalTarget={document.getElementById('toast-root')} showNotifications={true} />
             <Layout
                 content={<Routes />}
@@ -163,7 +160,7 @@ const AppLayout: FC<Props> = (props) => {
                                 description={userData?.profile?.family_name}
                                 image={userData?.profile?.picture}
                                 logoutTitle={_(t.logOut)}
-                                name={userData?.profile?.name || ''}
+                                name={userData?.profile?.name ?? ''}
                                 onLogout={logout}
                             />
                         }
@@ -173,12 +170,11 @@ const AppLayout: FC<Props> = (props) => {
                     <LeftPanelWrapper
                         activeId={activeItem}
                         collapsed={collapsed}
-                        logo={getLogoByTheme()}
+                        logo={<LogoElement logo={themeData.logo} onClick={() => navigate(`/`)} />}
                         menu={menu}
                         onItemClick={handleItemClick}
                         onLocationChange={handleLocationChange}
                         setCollapsed={setCollapsed}
-                        onLogoClick={() => navigate(`/`)}
                         // newFeature={{
                         //     onClick: () => console.log('click'),
                         //     onClose: () => console.log('close'),
