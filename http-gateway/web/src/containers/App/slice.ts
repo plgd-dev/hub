@@ -29,6 +29,7 @@ const { reducer, actions } = createSlice({
             state.version = payload
         },
         setTheme(state, { payload }) {
+            console.log(payload)
             state.configuration.theme = payload
         },
     },
