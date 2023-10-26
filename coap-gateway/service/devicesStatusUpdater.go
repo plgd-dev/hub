@@ -26,13 +26,8 @@ func newDevicesStatusUpdater(ctx context.Context, serviceInstanceID uuid.UUID, l
 	return &u
 }
 
-func (u *devicesStatusUpdater) UpdateOnlineStatus(ctx context.Context, c *session, isNewDevice bool) (*commands.UpdateDeviceMetadataResponse, error) {
-	now := time.Now()
-	connectedAt := time.Time{}
-	if isNewDevice {
-		connectedAt = now
-	}
-	return u.updateOnlineStatus(ctx, c, connectedAt)
+func (u *devicesStatusUpdater) UpdateOnlineStatus(ctx context.Context, c *session) (*commands.UpdateDeviceMetadataResponse, error) {
+	return u.updateOnlineStatus(ctx, c, time.Now())
 }
 
 func (u *devicesStatusUpdater) updateOnlineStatus(ctx context.Context, client *session, connectedAt time.Time) (*commands.UpdateDeviceMetadataResponse, error) {
@@ -45,11 +40,10 @@ func (u *devicesStatusUpdater) updateOnlineStatus(ctx context.Context, client *s
 		DeviceId: authCtx.GetDeviceID(),
 		Update: &commands.UpdateDeviceMetadataRequest_Connection{
 			Connection: &commands.Connection{
-				Status:           commands.Connection_ONLINE,
-				OnlineValidUntil: pkgTime.UnixNano(authCtx.Expire),
-				ConnectedAt:      pkgTime.UnixNano(connectedAt),
-				Protocol:         client.GetApplicationProtocol(),
-				ServiceId:        u.serviceInstanceID.String(),
+				Status:      commands.Connection_ONLINE,
+				ConnectedAt: pkgTime.UnixNano(connectedAt),
+				Protocol:    client.GetApplicationProtocol(),
+				ServiceId:   u.serviceInstanceID.String(),
 			},
 		},
 		CommandMetadata: &commands.CommandMetadata{

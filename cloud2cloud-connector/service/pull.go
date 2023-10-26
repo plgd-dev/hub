@@ -83,7 +83,7 @@ func Get(ctx context.Context, tracerProvider trace.TracerProvider, url string, l
 		return err
 	}
 
-	req.Header.Set("Authorization", "Bearer "+string(linkedAccount.Data.Target().AccessToken))
+	req.Header.Set(AuthorizationHeader, AuthorizationBearerPrefix+string(linkedAccount.Data.Target().AccessToken))
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("Connection", "close")
 	req.Close = true

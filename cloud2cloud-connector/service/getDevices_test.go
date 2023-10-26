@@ -96,7 +96,6 @@ func testRequestHandlerGetDevices(t *testing.T, events store.Events) {
 				assert.NotEmpty(t, dev.ProtocolIndependentId)
 				dev.ProtocolIndependentId = ""
 				if dev.GetMetadata().GetConnection() != nil {
-					dev.GetMetadata().GetConnection().OnlineValidUntil = 0
 					dev.GetMetadata().GetConnection().Id = ""
 				}
 				if dev.GetMetadata().GetTwinSynchronization() != nil {

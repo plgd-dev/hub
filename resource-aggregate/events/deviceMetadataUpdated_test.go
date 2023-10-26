@@ -13,8 +13,7 @@ import (
 var testEventDeviceMetadataUpdated events.DeviceMetadataUpdated = events.DeviceMetadataUpdated{
 	DeviceId: "dev1",
 	Connection: &commands.Connection{
-		Status:           commands.Connection_ONLINE,
-		OnlineValidUntil: 12345,
+		Status: commands.Connection_ONLINE,
 	},
 	TwinEnabled: true,
 	AuditContext: &commands.AuditContext{
@@ -60,21 +59,7 @@ func TestDeviceMetadataUpdated_Equal(t *testing.T) {
 			name: "Changed Connection.Value",
 			fields: fields{
 				Connection: &commands.Connection{
-					Status:           commands.Connection_OFFLINE,
-					OnlineValidUntil: upd.Connection.OnlineValidUntil,
-				},
-				TwinEnabled:  upd.TwinEnabled,
-				AuditContext: upd.AuditContext,
-			},
-			args: args{upd},
-			want: false,
-		},
-		{
-			name: "Changed Connection.ValidUntil",
-			fields: fields{
-				Connection: &commands.Connection{
-					Status:           upd.Connection.Status,
-					OnlineValidUntil: upd.Connection.OnlineValidUntil + 1,
+					Status: commands.Connection_OFFLINE,
 				},
 				TwinEnabled:  upd.TwinEnabled,
 				AuditContext: upd.AuditContext,

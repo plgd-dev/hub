@@ -19,7 +19,6 @@ func sortDevices(s map[string]*client.DeviceDetails) map[string]*client.DeviceDe
 	for key, x := range s {
 		x.Resources = test.CleanUpResourcesArray(x.Resources)
 		x.Device.ProtocolIndependentId = ""
-		x.Device.Metadata.Connection.OnlineValidUntil = 0
 		x.Device.Metadata.Connection.Id = ""
 		x.Device.Metadata.Connection.ConnectedAt = 0
 		x.Device.Metadata.Connection.ServiceId = ""

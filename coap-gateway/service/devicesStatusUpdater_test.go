@@ -78,7 +78,6 @@ func TestDevicesStatusUpdaterDisabledAndDeviceAccessTokenHasNoExpiration(t *test
 	device, _, _ := onboardDeviceAndGetDevice(ctx, t, deviceID, oauthCfg, coapCfg)
 
 	assert.Equal(t, commands.Connection_ONLINE, device.Metadata.Connection.Status)
-	assert.Equal(t, int64(0), device.Metadata.Connection.OnlineValidUntil)
 }
 
 func TestDevicesStatusUpdaterDisabledAndDeviceAccessTokenHasExpiration(t *testing.T) {
@@ -91,9 +90,7 @@ func TestDevicesStatusUpdaterDisabledAndDeviceAccessTokenHasExpiration(t *testin
 	oauthCfg.OAuthSigner.Clients.Find(config.OAUTH_MANAGER_CLIENT_ID).AccessTokenLifetime = accessTokenLifetime
 	coapCfg := coapgwTest.MakeConfig(t)
 
-	device, startOnboard, deltaOnboard := onboardDeviceAndGetDevice(ctx, t, deviceID, oauthCfg, coapCfg)
-	expectedOnlineValidUntil := startOnboard.Add(accessTokenLifetime + deltaOnboard).UnixNano()
+	device, _, _ := onboardDeviceAndGetDevice(ctx, t, deviceID, oauthCfg, coapCfg)
 
 	assert.Equal(t, commands.Connection_ONLINE, device.Metadata.Connection.Status)
-	assert.InDelta(t, expectedOnlineValidUntil, device.Metadata.Connection.OnlineValidUntil, float64(deltaOnboard))
 }

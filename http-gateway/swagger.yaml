@@ -297,6 +297,7 @@ paths:
       summary: "Get all resources"
       description: |
         The plgd hub builds an up to date [Twin](https%3A%2F%2Fplgd.dev%2Ffeatures%2Fdevice-shadow%2F) for each published resource. This API allows you to retrieve shadow contents of all resources published by all device. Response is sent in form of a stream, chunk by chunk. Error response might be returned immediately, but also anytime during the stream reading.
+        If you specify a `resourceIdFilter` that also contains an `etag`, then the response for an unmodified resource will include `data.status = NOT_MODIFIED` without `data.content.data`.
       parameters:
         - $ref: "#/components/parameters/deviceIdFilter"
         - $ref: "#/components/parameters/typeFilter"
@@ -376,7 +377,10 @@ paths:
         - "Resources"
       summary: "Retrieve a resource"
       description: |
-        The plgd hub builds an up to date [Twin](https%3A%2F%2Fplgd.dev%2Ffeatures%2Fdevice-shadow%2F) for each published resource. Retrieving it's content using this API returnes an eventually consistent shadow content of the resource. There is a possibility to bypass the shadow by setting the query parameter `shadow` to `false` or by setting the interface query parameter, which allows you to set the command expiration.
+        The plgd hub builds an up to date [Twin](https%3A%2F%2Fplgd.dev%2Ffeatures%2Fdevice-shadow%2F) for each published resource.
+        Retrieving it's content using this API returnes an eventually consistent shadow content of the resource.
+        There is a possibility to bypass the shadow by setting the query parameter `shadow` to `false` or by setting the interface query parameter, which allows you to set the command expiration.
+        If etag is provided, the response will be 304 Not Modified if the resource has not changed otherwise the resource will be returned.
       security:
         - oauth2:
             - "plgd.devices"
@@ -384,6 +388,7 @@ paths:
         - $ref: "#/components/parameters/interface"
         - $ref: "#/components/parameters/shadow"
         - $ref: "#/components/parameters/timeToLive"
+        - $ref: "#/components/parameters/etag"
       responses:
         200:
           description: "Resource content."
@@ -394,6 +399,8 @@ paths:
                 properties:
                   data:
                     $ref: "#/components/schemas/Resource"
+        304:
+          description: "Resource content not modified."
         400:
           $ref: "#/components/responses/badRequest"
         401:
@@ -916,7 +923,6 @@ components:
         metadata:
           connection:
             status: "ONLINE"
-            onlineValidUntil: 1625262498747539632
           twinEnabled: true
         manufacturerName:
           - language: "en-US"
@@ -1514,6 +1520,7 @@ components:
         - "ERROR"
         - "METHOD_NOT_ALLOWED"
         - "CREATED"
+        - "NOT_MODIFIED"
     SubscribeToEvents:
       type: object
       properties:
@@ -1535,7 +1542,7 @@ components:
         Use the eventFilter in conjunction with other filters to filter events by type. If eventFilter is set, only events with the specified type will be received.  
         To filter devices, use the deviceIdFilter. It follows the format {deviceID[0]+\"/&#42;\", deviceID[1]+\"/&#42;\", ...}.  
         To filter resources, use the hrefFilter. It follows the format {\"&#42;\"+href[0], \"&#42;\"+href[1], ...}.  
-        When both deviceIdFilter and hrefFilter are set, the hrefFilter is applied to each device. {deviceID[0]+href[0], ..., deviceID[1]+href[0], ...}.  
+        When both deviceIdFilter and hrefFilter are set, the hrefFilter is applied to each device. {deviceID[0]href[0], ..., deviceID[1]href[0], ...}.  
         To filter resources of specific devices, use the resourceIdFilter.  
         You can use either deviceIdFilter or resourceIdFilter or both. In this case, the result is the union of both filters.  
         Certain filters perform a logical \"or\" operation among the elements of the filter.  
@@ -1631,12 +1638,14 @@ components:
     resourceIdFilter:
       name: resourceId
       in: query
-      description: "Filter by resource id specified in format `{deviceId}+{resourceHref}`"
+      description: |
+        Filter by resource id specified in format `{deviceId}{resourceHref}(?etag={etag})`.
+        ETag is optional and it is supported only for GET resources.
       schema:
         type: array
         items:
           type: string
-          format: url
+          format: urlEncoded
     commandFilter:
       name: command
       in: query
@@ -1676,6 +1685,13 @@ components:
       schema:
         type: string
         format: uuid
+    etag:
+      name: ETag
+      in: header
+      description: "ETag of the resource."
+      schema:
+        type: string
+        format: base64
   responses:
     ok:
       description: Content is stored in body.

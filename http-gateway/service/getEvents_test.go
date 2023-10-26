@@ -116,8 +116,7 @@ func TestRequestHandlerGetEvents(t *testing.T) {
 				accept:   uri.ApplicationProtoJsonContentType,
 				deviceID: "test",
 			},
-			wantErr:      true,
-			wantHTTPCode: http.StatusInternalServerError,
+			wantHTTPCode: http.StatusOK,
 		},
 		{
 			name: "Device filter (All devices)",
@@ -136,7 +135,6 @@ func TestRequestHandlerGetEvents(t *testing.T) {
 				deviceID: deviceID,
 				href:     "test",
 			},
-			wantErr:      true,
 			wantHTTPCode: http.StatusOK,
 		},
 		{

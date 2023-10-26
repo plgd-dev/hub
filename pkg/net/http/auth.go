@@ -3,7 +3,8 @@ package http
 import (
 	"context"
 	"fmt"
-	netHttp "net/http"
+	"net/http"
+	"regexp"
 	"strings"
 
 	extJwt "github.com/golang-jwt/jwt/v4"
@@ -15,13 +16,46 @@ import (
 type (
 	Claims                   = interface{ Valid() error }
 	ClaimsFunc               = func(ctx context.Context, method, uri string) Claims
-	OnUnauthorizedAccessFunc = func(ctx context.Context, w netHttp.ResponseWriter, r *netHttp.Request, err error)
+	OnUnauthorizedAccessFunc = func(ctx context.Context, w http.ResponseWriter, r *http.Request, err error)
 	Validator                interface {
 		ParseWithClaims(token string, claims extJwt.Claims) error
 	}
 )
 
-const bearerKey = "bearer"
+// NewDefaultAuthorizationRules returns a map of HTTP methods to a slice of AuthArgs.
+// The AuthArgs contain a URI field that is a regular expression matching the given apiPath
+// with any path suffix. This function is used to create default authorization rules for
+// HTTP methods GET, POST, DELETE, and PUT.
+func NewDefaultAuthorizationRules(apiPath string) map[string][]AuthArgs {
+	return map[string][]AuthArgs{
+		http.MethodGet: {
+			{
+				URI: regexp.MustCompile(regexp.QuoteMeta(apiPath) + AnyPathSuffixRegex),
+			},
+		},
+		http.MethodPost: {
+			{
+				URI: regexp.MustCompile(regexp.QuoteMeta(apiPath) + AnyPathSuffixRegex),
+			},
+		},
+		http.MethodDelete: {
+			{
+				URI: regexp.MustCompile(regexp.QuoteMeta(apiPath) + AnyPathSuffixRegex),
+			},
+		},
+		http.MethodPut: {
+			{
+				URI: regexp.MustCompile(regexp.QuoteMeta(apiPath) + AnyPathSuffixRegex),
+			},
+		},
+	}
+}
+
+const (
+	AnyPathSuffixRegex = `\/.*`
+
+	bearerKey = "bearer"
+)
 
 type key int
 
@@ -70,9 +104,9 @@ func validateJWTWithValidator(validator Validator, claims ClaimsFunc) Intercepto
 }
 
 // CreateAuthMiddleware creates middleware for authorization
-func CreateAuthMiddleware(authInterceptor Interceptor, onUnauthorizedAccessFunc OnUnauthorizedAccessFunc) func(next netHttp.Handler) netHttp.Handler {
-	return func(next netHttp.Handler) netHttp.Handler {
-		return netHttp.HandlerFunc(func(w netHttp.ResponseWriter, r *netHttp.Request) {
+func CreateAuthMiddleware(authInterceptor Interceptor, onUnauthorizedAccessFunc OnUnauthorizedAccessFunc) func(next http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			switch r.RequestURI {
 			case "/": // health check
 				next.ServeHTTP(w, r)

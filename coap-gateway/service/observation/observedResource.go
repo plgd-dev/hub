@@ -9,6 +9,7 @@ import (
 
 	"github.com/plgd-dev/device/v2/schema/interfaces"
 	"github.com/plgd-dev/go-coap/v3/message"
+	"github.com/plgd-dev/hub/v2/coap-gateway/uri"
 	"go.uber.org/atomic"
 )
 
@@ -115,7 +116,7 @@ func (r *observedResource) toCoapOptions(etags [][]byte) []message.Option {
 	if r.Interface() != "" {
 		opts = append(opts, message.Option{
 			ID:    message.URIQuery,
-			Value: []byte("if=" + r.Interface()),
+			Value: []byte(uri.InterfaceQueryKeyPrefix + r.Interface()),
 		})
 	}
 

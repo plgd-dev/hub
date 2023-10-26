@@ -25,29 +25,6 @@ const (
 	AuthorizationWhiteListedEndpointsRegexp = `^\/(a$|[^a].*|ap$|a[^p].*|ap[^i].*|api[^/])`
 )
 
-var authRules = map[string][]kitNetHttp.AuthArgs{
-	http.MethodGet: {
-		{
-			URI: regexp.MustCompile(regexp.QuoteMeta(uri.API) + `\/.*`),
-		},
-	},
-	http.MethodPost: {
-		{
-			URI: regexp.MustCompile(regexp.QuoteMeta(uri.API) + `\/.*`),
-		},
-	},
-	http.MethodDelete: {
-		{
-			URI: regexp.MustCompile(regexp.QuoteMeta(uri.API) + `\/.*`),
-		},
-	},
-	http.MethodPut: {
-		{
-			URI: regexp.MustCompile(regexp.QuoteMeta(uri.API) + `\/.*`),
-		},
-	},
-}
-
 // New parses configuration and creates new Server with provided store and bus
 func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logger log.Logger) (*service.Service, error) {
 	otelClient, err := otelClient.New(ctx, config.Clients.OpenTelemetryCollector.Config, serviceName, fileWatcher, logger)
@@ -81,7 +58,7 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 		HTTPConnection:       config.APIs.HTTP.Connection,
 		HTTPServer:           config.APIs.HTTP.Server,
 		ServiceName:          serviceName,
-		AuthRules:            authRules,
+		AuthRules:            kitNetHttp.NewDefaultAuthorizationRules(uri.API),
 		WhiteEndpointList:    whiteList,
 		FileWatcher:          fileWatcher,
 		Logger:               logger,

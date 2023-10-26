@@ -16,6 +16,8 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
+const prefixDevicesPath = "/devices/"
+
 func (s *SubscriptionManager) SubscribeToDevices(ctx context.Context, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud) error {
 	if _, loaded := s.store.LoadDevicesSubscription(linkedAccount.LinkedCloudID, linkedAccount.ID); loaded {
 		return nil
@@ -64,7 +66,7 @@ func (s *SubscriptionManager) SubscribeToDevices(ctx context.Context, linkedAcco
 }
 
 func (s *SubscriptionManager) subscribeToDevices(ctx context.Context, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud, correlationID, signingSecret string) (string, error) {
-	resp, err := subscribe(ctx, s.tracerProvider, "/devices/subscriptions", correlationID, events.SubscriptionRequest{
+	resp, err := subscribe(ctx, s.tracerProvider, prefixDevicesPath+"subscriptions", correlationID, events.SubscriptionRequest{
 		EventsURL: s.eventsURL,
 		EventTypes: []events.EventType{
 			events.EventType_DevicesRegistered, events.EventType_DevicesUnregistered,
@@ -79,7 +81,7 @@ func (s *SubscriptionManager) subscribeToDevices(ctx context.Context, linkedAcco
 }
 
 func cancelDevicesSubscription(ctx context.Context, tracerProvider trace.TracerProvider, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud, subscriptionID string) error {
-	err := cancelSubscription(ctx, tracerProvider, "/devices/subscriptions/"+subscriptionID, linkedAccount, linkedCloud)
+	err := cancelSubscription(ctx, tracerProvider, prefixDevicesPath+"subscriptions/"+subscriptionID, linkedAccount, linkedCloud)
 	if err != nil {
 		return fmt.Errorf("cannot cancel devices subscription for %v: %w", linkedAccount.ID, err)
 	}

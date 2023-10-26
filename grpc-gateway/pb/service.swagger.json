@@ -468,6 +468,18 @@
             "required": false,
             "type": "string",
             "format": "int64"
+          },
+          {
+            "name": "etag",
+            "description": "optional",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "byte"
+            },
+            "collectionFormat": "multi"
           }
         ],
         "tags": [
@@ -572,7 +584,7 @@
             "collectionFormat": "multi"
           },
           {
-            "name": "resourceIdFilter",
+            "name": "httpResourceIdFilter",
             "description": "format {deviceID}{href}. eg \"ae424c58-e517-4494-6de7-583536c48213/oic/d\"",
             "in": "query",
             "required": false,
@@ -642,7 +654,7 @@
             "collectionFormat": "multi"
           },
           {
-            "name": "resourceIdFilter",
+            "name": "httpResourceIdFilter",
             "in": "query",
             "required": false,
             "type": "array",
@@ -806,8 +818,8 @@
         },
         "parameters": [
           {
-            "name": "resourceIdFilter",
-            "description": "format {deviceID}{href}. eg \"ae424c58-e517-4494-6de7-583536c48213/oic/d\"",
+            "name": "httpResourceIdFilter",
+            "description": "Format: {deviceID}{href}(?etag=abc), e.g., \"ae424c58-e517-4494-6de7-583536c48213/oic/d?etag=abc\"",
             "in": "query",
             "required": false,
             "type": "array",
@@ -818,6 +830,7 @@
           },
           {
             "name": "deviceIdFilter",
+            "description": "Filter devices by deviceID",
             "in": "query",
             "required": false,
             "type": "array",
@@ -828,6 +841,7 @@
           },
           {
             "name": "typeFilter",
+            "description": "Filter devices by resource types in the oic/d resource",
             "in": "query",
             "required": false,
             "type": "array",
@@ -1040,7 +1054,7 @@
           },
           "title": "array of format {deviceID}. eg [ \"ae424c58-e517-4494-6de7-583536c48213\" ]"
         },
-        "resourceIdFilter": {
+        "httpResourceIdFilter": {
           "type": "array",
           "items": {
             "type": "string"
@@ -1053,6 +1067,13 @@
             "type": "string"
           },
           "title": "array of format {href}. eg [ \"/oic/d\", \"/oic/p\" ]"
+        },
+        "resourceIdFilter": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/pbResourceIdFilter"
+          }
         }
       },
       "description": "If you want to subscribe to all events, leave the filter unset.\nUse the event_filter in conjunction with other filters to filter events by type. If event_filter is set, only events with the specified type will be received.\nTo filter devices, use the device_id_filter. It follows the format {deviceID[0]+\"/\"+\"*\", deviceID[1]+\"/\"+\"*\", ...}.\nTo filter resources, use the href_filter. It follows the format {\"*\"+href[0], \"*\"+href[1], ...}.\nWhen both device_id_filter and href_filter are set, the href_filter is applied to each device. {deviceID[0]+href[0], ..., deviceID[1]+href[0], ...}.\nTo filter resources of specific devices, use the resource_id_filter.\nYou can use either device_id_filter or resource_id_filter or both. In this case, the result is the union of both filters.\nCertain filters perform a logical \"or\" operation among the elements of the filter."
@@ -1302,10 +1323,6 @@
       "properties": {
         "status": {
           "$ref": "#/definitions/pbConnectionStatus"
-        },
-        "onlineValidUntil": {
-          "type": "string",
-          "format": "int64"
         },
         "id": {
           "type": "string",
@@ -1821,6 +1838,23 @@
         }
       }
     },
+    "pbResourceIdFilter": {
+      "type": "object",
+      "properties": {
+        "resourceId": {
+          "$ref": "#/definitions/pbResourceId",
+          "title": "Filter specific resources"
+        },
+        "etag": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "byte"
+          },
+          "title": "Optional; resource_id.{deviceId, href} must not be empty"
+        }
+      }
+    },
     "pbResourceLinksPublished": {
       "type": "object",
       "properties": {
@@ -1919,8 +1953,11 @@
           "description": "unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when pending event is considered as expired. 0 means forever."
         },
         "etag": {
-          "type": "string",
-          "format": "byte"
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "byte"
+          }
         },
         "openTelemetryCarrier": {
           "type": "object",
@@ -2260,10 +2297,11 @@
         "ERROR",
         "METHOD_NOT_ALLOWED",
         "CREATED",
-        "CANCELED"
+        "CANCELED",
+        "NOT_MODIFIED"
       ],
       "default": "UNKNOWN",
-      "description": " - CANCELED: Canceled indicates the operation was canceled (typically by the user)."
+      "description": " - CANCELED: Canceled indicates the operation was canceled (typically by the user).\n - NOT_MODIFIED: Valid indicates the content hasn't changed. (provided etag in GET request is same as the resource etag)."
     }
   }
 }

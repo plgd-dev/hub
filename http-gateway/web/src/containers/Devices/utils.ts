@@ -378,20 +378,6 @@ export const getResourceRegistrationNotificationKey = (deviceId: string) => `${D
 export const getResourceUpdateNotificationKey = (deviceId: string, href: string) => `${DEVICES_RESOURCE_UPDATE_WS_KEY}.${deviceId}.${href}`
 
 export const isDeviceOnline = (data: DeviceDataType) => {
-    let validUntil = data?.metadata?.connection?.onlineValidUntil || 0
-
-    if (typeof validUntil === 'string') {
-        validUntil = parseInt(validUntil, 10)
-    }
-
     const deviceStatus = data?.metadata?.connection?.status
-
-    if (validUntil && validUntil !== 0) {
-        const untilDate = new Date(validUntil / 100000)
-        const now = new Date()
-
-        return untilDate > now && devicesStatuses.ONLINE === deviceStatus
-    } else {
-        return devicesStatuses.ONLINE === deviceStatus
-    }
+    return devicesStatuses.ONLINE === deviceStatus
 }

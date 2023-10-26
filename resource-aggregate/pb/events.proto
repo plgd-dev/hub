@@ -88,7 +88,7 @@ message ResourceRetrievePending {
     AuditContext audit_context = 3;
     EventMetadata event_metadata = 4;
     int64 valid_until = 5;  // unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when pending event is considered as expired. 0 means forever.
-    bytes etag = 6;
+    repeated bytes etag = 6;
 
     // Open telemetry data propagated to asynchronous events
     map<string,string> open_telemetry_carrier = 100;

@@ -8,6 +8,7 @@ import (
 	"github.com/plgd-dev/device/v2/schema/interfaces"
 	coapMessage "github.com/plgd-dev/go-coap/v3/message"
 	"github.com/plgd-dev/go-coap/v3/message/codes"
+	"github.com/plgd-dev/hub/v2/coap-gateway/uri"
 	"github.com/plgd-dev/kit/v2/codec/cbor"
 )
 
@@ -15,7 +16,7 @@ import (
 func GetResourceLinks(ctx context.Context, coapConn ClientConn, href string) (schema.ResourceLinks, uint64, error) {
 	msg, err := coapConn.Get(ctx, href, coapMessage.Option{
 		ID:    coapMessage.URIQuery,
-		Value: []byte("if=" + interfaces.OC_IF_LL),
+		Value: []byte(uri.InterfaceQueryKeyPrefix + interfaces.OC_IF_LL),
 	})
 	if err != nil {
 		return schema.ResourceLinks{}, 0, err

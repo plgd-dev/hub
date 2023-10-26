@@ -14,8 +14,55 @@ import (
 	"github.com/plgd-dev/hub/v2/http-gateway/serverMux"
 	"github.com/plgd-dev/hub/v2/http-gateway/uri"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"google.golang.org/grpc/codes"
 )
+
+func isNotModifiedResponse(result interface{}) bool {
+	m, ok := result.(map[string]interface{})
+	if !ok {
+		return false
+	}
+	data, ok := m["data"]
+	if ok {
+		tmp, ok := data.(map[string]interface{})
+		if !ok {
+			return false
+		}
+		_, ok = tmp["status"]
+		if ok {
+			m = tmp
+		}
+	}
+	v, ok := m["status"]
+	if !ok {
+		return false
+	}
+	statusVal, ok := v.(string)
+	if !ok {
+		return false
+	}
+	return statusVal == commands.Status_NOT_MODIFIED.String()
+}
+
+func writeSimpleResponse(w http.ResponseWriter, rec *httptest.ResponseRecorder, bodyForEncode interface{}, writeError func(w http.ResponseWriter, err error)) {
+	if isNotModifiedResponse(bodyForEncode) {
+		w.WriteHeader(http.StatusNotModified)
+		return
+	}
+
+	encoder := jsoniter.NewEncoder(w)
+	// copy everything from response recorder
+	// to actual response writer
+	for k, v := range rec.Header() {
+		w.Header()[k] = v
+	}
+	w.WriteHeader(rec.Code)
+	err := encoder.Encode(bodyForEncode)
+	if err != nil {
+		writeError(w, kitNetGrpc.ForwardErrorf(codes.Internal, "cannot encode response: %v", err))
+	}
+}
 
 func toSimpleResponse(w http.ResponseWriter, rec *httptest.ResponseRecorder, writeError func(w http.ResponseWriter, err error), responseKeys ...string) {
 	iter := json.NewDecoder(bytes.NewReader(rec.Body.Bytes()))
@@ -40,7 +87,6 @@ func toSimpleResponse(w http.ResponseWriter, rec *httptest.ResponseRecorder, wri
 		writeError(w, kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "invalid number of responses"))
 		return
 	}
-	encoder := jsoniter.NewEncoder(w)
 	var result interface{}
 	result = datas[0]
 	for _, key := range responseKeys {
@@ -55,17 +101,7 @@ func toSimpleResponse(w http.ResponseWriter, rec *httptest.ResponseRecorder, wri
 			break
 		}
 	}
-
-	// copy everything from response recorder
-	// to actual response writer
-	for k, v := range rec.Header() {
-		w.Header()[k] = v
-	}
-	w.WriteHeader(rec.Code)
-	err := encoder.Encode(result)
-	if err != nil {
-		writeError(w, kitNetGrpc.ForwardErrorf(codes.Internal, "cannot encode response: %v", err))
-	}
+	writeSimpleResponse(w, rec, result, writeError)
 }
 
 func (requestHandler *RequestHandler) getDevice(w http.ResponseWriter, r *http.Request) {

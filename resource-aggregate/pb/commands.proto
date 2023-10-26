@@ -230,7 +230,7 @@ message RetrieveResourceRequest {
     string resource_interface = 3;
     int64 time_to_live = 4; // command validity in nanoseconds. 0 means forever and minimal value is 100000000 (100ms).
     CommandMetadata command_metadata = 5;
-    bytes etag = 6;
+    repeated bytes etag = 6;
 }
 
 message RetrieveResourceResponse {
@@ -423,12 +423,13 @@ message ConfirmResourceCreateResponse {
 //*******************************************************************************************************************************************************
 
 message Connection {
+    reserved 2; 
+    reserved "online_valid_until"; // not used anymore, since the connection status is changed to offline by the service heartbeat
     enum Status {
         OFFLINE = 0;
         ONLINE = 1;
     };
     Status status = 1;
-    int64 online_valid_until = 2;
     string id = 3; // when status is ONLINE, this field contains the connection id. To update state offline, this field must be same as the one in the previous message.
     int64 connected_at = 4; // timestamp when the device was connected
     enum Protocol {

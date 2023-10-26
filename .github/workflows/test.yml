@@ -89,6 +89,16 @@ jobs:
           TEST_IDENTITY_STORE_LOG_LEVEL=${{ matrix.identityStore.log.level }} TEST_IDENTITY_STORE_LOG_DUMP_BODY=${{ matrix.identityStore.log.dumpBody }} \
           ${{ matrix.args }}
 
+      - name: Remove simulators container
+        if: ${{ always() }}
+        run: |
+          make simulators/remove
+  
+      - name: Collect cloud server logs when the test fails
+        if: ${{ failure() }}
+        run: |
+          cat .tmp/devsim*/*.log
+
       - name: Prepare upload files
         run: |
           mkdir -p ./outputs

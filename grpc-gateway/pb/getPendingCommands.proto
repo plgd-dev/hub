@@ -3,6 +3,7 @@ syntax = "proto3";
 package grpcgateway.pb;
 
 import "resource-aggregate/pb/events.proto";
+import "grpc-gateway/pb/devices.proto";
 
 option go_package = "github.com/plgd-dev/hub/v2/grpc-gateway/pb;pb";
 
@@ -15,9 +16,10 @@ message GetPendingCommandsRequest {
       DEVICE_METADATA_UPDATE = 4;
     }
     repeated Command command_filter = 1;
-    repeated string resource_id_filter = 2;
+    repeated string http_resource_id_filter = 2 [deprecated = true];
     repeated string device_id_filter = 3;
     repeated string type_filter = 4;
+    repeated ResourceIdFilter resource_id_filter = 5; // New resource ID filter. For HTTP requests, use it multiple times as a query parameter like "resourceIdFilter={deviceID}{href}".
 }
 
 message PendingCommand {

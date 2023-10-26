@@ -7,7 +7,6 @@ import (
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
-	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 	"github.com/plgd-dev/kit/v2/strings"
@@ -299,21 +298,16 @@ func getDeviceQueries(deviceIDFilter []string, userDeviceIDs strings.Set) []even
 	return queries
 }
 
-func getResourceQueries(resourceFilter []string, userDeviceIDs strings.Set) []eventstore.GetEventsQuery {
+func getResourceQueries(resourceFilter []*pb.ResourceIdFilter, userDeviceIDs strings.Set) []eventstore.GetEventsQuery {
 	var queries []eventstore.GetEventsQuery
-	for _, resourceID := range resourceFilter {
-		res := commands.ResourceIdFromString(resourceID)
-		if res == nil {
-			log.Errorf("invalid resourceIdFilter value %v", resourceFilter)
-			continue
-		}
-		if !userDeviceIDs.HasOneOf(res.GetDeviceId()) {
-			log.Debugf("permission denied, resource belonging to device %v skipped", res.GetDeviceId())
+	for _, filter := range resourceFilter {
+		if !userDeviceIDs.HasOneOf(filter.GetResourceId().GetDeviceId()) {
+			log.Debugf("permission denied, resource belonging to device %v skipped", filter.GetResourceId().GetDeviceId())
 			continue
 		}
 		queries = append(queries, eventstore.GetEventsQuery{
-			GroupID:     res.GetDeviceId(),
-			AggregateID: res.ToUUID().String(),
+			GroupID:     filter.GetResourceId().GetDeviceId(),
+			AggregateID: filter.GetResourceId().ToUUID().String(),
 		})
 	}
 	return queries
@@ -347,12 +341,19 @@ func (r *RequestHandler) GetEvents(req *pb.GetEventsRequest, srv pb.GrpcGateway_
 		mapUserDeviceIDs[userDeviceID] = struct{}{}
 	}
 
+	// for backward compatibility and http api
+	req.ResourceIdFilter = append(req.ResourceIdFilter, req.ConvertHTTPResourceIDFilter()...)
+
 	var queries []eventstore.GetEventsQuery
-	if len(req.DeviceIdFilter) == 0 && len(req.ResourceIdFilter) == 0 {
+	if len(req.DeviceIdFilter) == 0 && len(req.GetResourceIdFilter()) == 0 {
 		queries = getUserDeviceQueries(mapUserDeviceIDs)
 	} else {
 		queries = getDeviceQueries(req.DeviceIdFilter, mapUserDeviceIDs)
-		queries = append(queries, getResourceQueries(req.ResourceIdFilter, mapUserDeviceIDs)...)
+		queries = append(queries, getResourceQueries(req.GetResourceIdFilter(), mapUserDeviceIDs)...)
+		if len(queries) == 0 {
+			log.Debugf("None of the filters are satisfied for user %v", owner)
+			return nil
+		}
 	}
 
 	err = r.eventStore.GetEvents(srv.Context(), queries, req.TimestampFilter, &resourceEvent{srv: srv})

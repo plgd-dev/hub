@@ -166,7 +166,11 @@ func (s *resourceSubscription) eventHandler(e *pb.Event) error {
 func (s *resourceSubscription) Init(ctx context.Context) error {
 	res := &commands.ResourceId{DeviceId: s.deviceID, Href: s.href}
 	client, err := s.client.server.rdClient.GetResources(ctx, &pb.GetResourcesRequest{
-		ResourceIdFilter: []string{res.ToString()},
+		ResourceIdFilter: []*pb.ResourceIdFilter{
+			{
+				ResourceId: res,
+			},
+		},
 	})
 	if err != nil {
 		return err
@@ -222,10 +226,13 @@ func newResourceSubscription(req *mux.Message, client *session, authCtx *authori
 		seqNum:   2,
 	}
 
-	res := &commands.ResourceId{DeviceId: deviceID, Href: href}
 	sub := subscription.New(r.eventHandler, req.Token().String(), &pb.SubscribeToEvents_CreateSubscription{
-		ResourceIdFilter: []string{res.ToString()},
-		EventFilter:      []pb.SubscribeToEvents_CreateSubscription_Event{pb.SubscribeToEvents_CreateSubscription_RESOURCE_CHANGED, pb.SubscribeToEvents_CreateSubscription_UNREGISTERED, pb.SubscribeToEvents_CreateSubscription_RESOURCE_UNPUBLISHED},
+		ResourceIdFilter: []*pb.ResourceIdFilter{
+			{
+				ResourceId: &commands.ResourceId{DeviceId: deviceID, Href: href},
+			},
+		},
+		EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{pb.SubscribeToEvents_CreateSubscription_RESOURCE_CHANGED, pb.SubscribeToEvents_CreateSubscription_UNREGISTERED, pb.SubscribeToEvents_CreateSubscription_RESOURCE_UNPUBLISHED},
 	})
 	r.sub = sub
 

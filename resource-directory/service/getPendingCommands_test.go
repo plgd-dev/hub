@@ -47,8 +47,10 @@ func TestRequestHandlerGetPendingCommands(t *testing.T) {
 			name: "retrieve by resourceIdFilter",
 			args: args{
 				req: &pb.GetPendingCommandsRequest{
-					ResourceIdFilter: []string{
-						commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")).ToString(),
+					ResourceIdFilter: []*pb.ResourceIdFilter{
+						{
+							ResourceId: commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
+						},
 					},
 				},
 			},
