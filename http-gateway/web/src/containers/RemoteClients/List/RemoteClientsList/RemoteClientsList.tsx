@@ -1,5 +1,5 @@
 import React, { FC, useContext, useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useIntl } from 'react-intl'
 import ReactDOM from 'react-dom'
 
@@ -21,10 +21,11 @@ import { NO_DEVICE_NAME } from '@/containers/Devices/constants'
 import { AppContext } from '@/containers/App/AppContext'
 
 const RemoteClientsList: FC<Props> = (props) => {
-    const { data, isAllSelected, selectedClients, setIsAllSelected, setSelectedClients, handleOpenDeleteModal, handleOpenEditModal } = props
+    const { data, isAllSelected, selectedClients, setIsAllSelected, setSelectedClients, handleOpenDeleteModal } = props
     const { formatMessage: _ } = useIntl()
     const [isDomReady, setIsDomReady] = useState(false)
     const selectedCount = useMemo(() => Object.keys(selectedClients).length, [selectedClients])
+    const navigate = useNavigate()
 
     const { collapsed } = useContext(AppContext)
 
@@ -85,7 +86,7 @@ const RemoteClientsList: FC<Props> = (props) => {
                         <TableActionButton
                             items={[
                                 {
-                                    onClick: () => handleOpenEditModal(row.original.id),
+                                    onClick: () => navigate(`/remote-clients/${row.original.id}/configuration`),
                                     label: _(g.edit),
                                     icon: <IconEdit />,
                                 },

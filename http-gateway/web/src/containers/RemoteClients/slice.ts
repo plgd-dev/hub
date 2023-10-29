@@ -35,17 +35,6 @@ const initialState: StoreType = {
                   preSharedSubjectId: '',
                   preSharedKey: '',
               },
-              {
-                  id: '789',
-                  created: '2023-07-22T17:58:11.427Z',
-                  version: '0.6.0',
-                  clientName: 'Test X509 ffff',
-                  clientUrl: 'https://212.89.237.161:50080',
-                  status: remoteClientStatuses.REACHABLE,
-                  authenticationMode: 'X509',
-                  preSharedSubjectId: '',
-                  preSharedKey: '',
-              },
           ]
         : [],
 }

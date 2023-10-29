@@ -173,6 +173,8 @@ const RemoteClientsListPage: FC<any> = () => {
                 }
             })
 
+        setDataLoading(false)
+
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [storedRemoteStore.remoteClients])
 
@@ -237,7 +239,6 @@ const RemoteClientsListPage: FC<any> = () => {
             <RemoteClientsList
                 data={remoteClients || []}
                 handleOpenDeleteModal={handleOpenDeleteModal}
-                handleOpenEditModal={setEditRemoteClientId}
                 isAllSelected={isAllSelected}
                 selectedClients={selectedClients}
                 setIsAllSelected={setIsAllSelected}

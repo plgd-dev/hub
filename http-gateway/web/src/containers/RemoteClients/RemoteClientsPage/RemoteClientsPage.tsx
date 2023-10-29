@@ -1,6 +1,7 @@
 import { FC, useCallback, useEffect, useMemo, useState } from 'react'
 import { useIntl } from 'react-intl'
 import { Helmet } from 'react-helmet'
+import { useDispatch } from 'react-redux'
 
 import { useWellKnownConfiguration, WellKnownConfigType } from '@shared-ui/common/hooks'
 import { clientAppSettings, security } from '@shared-ui/common/services'
@@ -11,18 +12,21 @@ import { useClientAppPage } from '@shared-ui/app/clientApp/RemoteClients/use-cli
 import FullPageLoader from '@shared-ui/components/Atomic/FullPageLoader'
 import { DEVICE_AUTH_MODE } from '@shared-ui/app/clientApp/constants'
 import { hasDifferentOwner } from '@shared-ui/common/services/api-utils'
+import { remoteClientStatuses } from '@shared-ui/app/clientApp/RemoteClients/constants'
 
 import { Props } from './RemoteClientsPage.types'
 import * as styles from './RemoteClientsPage.styles'
 import { messages as g } from '@/containers/Global.i18n'
 import { messages as t } from '../RemoteClients.i18n'
 import RemoteClientsAuthProvider from '@/containers/RemoteClients/RemoteClientsAuthProvider'
+import { updateRemoteClient } from '@/containers/RemoteClients/slice'
 
 const RemoteClientsPage: FC<Props> = (props) => {
     const { children } = props
     const { formatMessage: _ } = useIntl()
 
     const hubWellKnownConfig = security.getWellKnowConfig()
+    const dispatch = useDispatch()
 
     const [clientData, error, errorElement] = useClientAppPage({
         i18n: {
@@ -32,11 +36,23 @@ const RemoteClientsPage: FC<Props> = (props) => {
     })
     const [httpGatewayAddress] = useState(clientData ? getClientUrl(clientData?.clientUrl) : '')
     const [loading, setLoading] = useState(false)
-    const [wellKnownConfig, setWellKnownConfig, reFetchConfig, wellKnownConfigError] = useWellKnownConfiguration(
-        httpGatewayAddress,
-        hubWellKnownConfig,
-        () => loading && setLoading(false)
-    )
+
+    const [wellKnownConfig, setWellKnownConfig, reFetchConfig, wellKnownConfigError] = useWellKnownConfiguration(httpGatewayAddress, {
+        defaultRemoteProvisioningData: hubWellKnownConfig,
+        onConfigurationChange: () => {
+            loading && setLoading(false)
+        },
+        onError: () => {
+            if (clientData.status === remoteClientStatuses.REACHABLE) {
+                dispatch(updateRemoteClient({ status: remoteClientStatuses.UNREACHABLE, id: clientData?.id }))
+            }
+        },
+        onSuccess: () => {
+            if (clientData.status === remoteClientStatuses.UNREACHABLE) {
+                dispatch(updateRemoteClient({ status: remoteClientStatuses.REACHABLE, id: clientData?.id }))
+            }
+        },
+    })
 
     const [authError, setAuthError] = useState<string | undefined>(undefined)
     const [initializedByAnother, setInitializedByAnother] = useState(false)
@@ -100,6 +116,11 @@ const RemoteClientsPage: FC<Props> = (props) => {
         [unauthorizedCallback]
     )
 
+    // just config page
+    if (clientData.status === remoteClientStatuses.UNREACHABLE) {
+        return children(clientData, false)
+    }
+
     if (error) {
         return errorElement
     }
@@ -143,7 +164,11 @@ const RemoteClientsPage: FC<Props> = (props) => {
                         unauthorizedCallback={unauthorizedCallback}
                         wellKnownConfig={wellKnownConfig}
                     >
-                        {reInitialization ? <FullPageLoader i18n={{ loading: _(g.loading) }} /> : children(clientData, wellKnownConfig)}
+                        {reInitialization ? (
+                            <FullPageLoader i18n={{ loading: _(g.loading) }} />
+                        ) : (
+                            children(clientData, !wellKnownConfig || !wellKnownConfig.isInitialized)
+                        )}
                     </RemoteClientsAuthProvider>
                 )}
             </div>

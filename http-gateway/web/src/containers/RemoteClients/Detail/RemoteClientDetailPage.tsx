@@ -7,6 +7,7 @@ import FullPageLoader from '@shared-ui/components/Atomic/FullPageLoader'
 import { messages as t } from '@/containers/RemoteClients/RemoteClients.i18n'
 import RemoteClientsPage from '@/containers/RemoteClients/RemoteClientsPage/RemoteClientsPage'
 import { messages as g } from '@/containers/Global.i18n'
+import { remoteClientStatuses } from '@shared-ui/app/clientApp/RemoteClients/constants'
 
 type Props = {
     defaultActiveTab?: number
@@ -17,8 +18,8 @@ const RemoteClientDetailPage: FC<Props> = (props) => {
 
     return (
         <RemoteClientsPage>
-            {(clientData, wellKnownConfig) => {
-                if (!wellKnownConfig || !wellKnownConfig.isInitialized) {
+            {(clientData, loading) => {
+                if (clientData?.status === remoteClientStatuses.REACHABLE && loading) {
                     return <FullPageLoader i18n={{ loading: _(g.loading) }} />
                 }
 
