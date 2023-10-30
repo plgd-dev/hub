@@ -4,11 +4,11 @@ import debounce from 'lodash/debounce'
 
 import { useStreamApi, useEmitter } from '@shared-ui/common/hooks'
 import { security } from '@shared-ui/common/services'
+import AppContext from '@shared-ui/app/share/AppContext'
 
 import { devicesApiEndpoints, DEVICES_STATUS_WS_KEY, resourceEventTypes } from './constants'
 import { updateDevicesDataStatus, getResourceRegistrationNotificationKey } from './utils'
 import { SecurityConfig, StreamApiPropsType } from '@/containers/App/App.types'
-import { AppContext } from '@/containers/App/AppContext'
 
 const getConfig = () => security.getGeneralConfig() as SecurityConfig
 

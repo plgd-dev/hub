@@ -6,7 +6,7 @@ import ReactDOM from 'react-dom'
 
 import BottomPanel from '@shared-ui/components/Layout/BottomPanel/BottomPanel'
 import Button from '@shared-ui/components/Atomic/Button'
-import AppContext from '@shared-ui/app/clientApp/App/AppContext'
+import AppContext from '@shared-ui/app/share/AppContext'
 import Footer from '@shared-ui/components/Layout/Footer'
 import PageLayout from '@shared-ui/components/Atomic/PageLayout'
 import SimpleStripTable from '@shared-ui/components/Atomic/SimpleStripTable'

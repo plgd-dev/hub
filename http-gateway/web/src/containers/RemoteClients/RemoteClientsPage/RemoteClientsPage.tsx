@@ -1,11 +1,11 @@
-import { FC, useCallback, useEffect, useMemo, useState } from 'react'
+import { FC, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { useIntl } from 'react-intl'
 import { Helmet } from 'react-helmet'
 import { useDispatch } from 'react-redux'
 
 import { useWellKnownConfiguration, WellKnownConfigType } from '@shared-ui/common/hooks'
 import { clientAppSettings, security } from '@shared-ui/common/services'
-import AppContext from '@shared-ui/app/clientApp/App/AppContext'
+import AppContext from '@shared-ui/app/share/AppContext'
 import InitializedByAnother from '@shared-ui/app/clientApp/App/InitializedByAnother'
 import { getClientUrl } from '@shared-ui/app/clientApp/utils'
 import { useClientAppPage } from '@shared-ui/app/clientApp/RemoteClients/use-client-app-page'
@@ -27,6 +27,7 @@ const RemoteClientsPage: FC<Props> = (props) => {
 
     const hubWellKnownConfig = security.getWellKnowConfig()
     const dispatch = useDispatch()
+    const parentalContext = useContext(AppContext)
 
     const [clientData, error, errorElement] = useClientAppPage({
         i18n: {
@@ -111,14 +112,16 @@ const RemoteClientsPage: FC<Props> = (props) => {
 
     const contextValue = useMemo(
         () => ({
+            ...parentalContext,
             unauthorizedCallback,
+            updateRemoteClient: updateRemoteClient,
         }),
-        [unauthorizedCallback]
+        [parentalContext, unauthorizedCallback]
     )
 
-    // just config page
+    // just config page with context ( isHub and updateRemoteClient)
     if (clientData.status === remoteClientStatuses.UNREACHABLE) {
-        return children(clientData, false)
+        return <AppContext.Provider value={contextValue}>{children(clientData, false)}</AppContext.Provider>
     }
 
     if (error) {

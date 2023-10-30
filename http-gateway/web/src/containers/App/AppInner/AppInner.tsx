@@ -8,14 +8,14 @@ import { InitServices } from '@shared-ui/common/services/init-services'
 import { BrowserNotificationsContainer } from '@shared-ui/components/Atomic/Toast'
 import { useLocalStorage } from '@shared-ui/common/hooks'
 import { clientAppSettings, security } from '@shared-ui/common/services'
+import { AppContextType } from '@shared-ui/app/share/AppContext.types'
+import AppContext from '@shared-ui/app/share/AppContext'
 
-import { AppContext } from '@/containers/App/AppContext'
 import appConfig from '@/config'
 import AppLoader from '@/containers/App/AppLoader/AppLoader'
 import { Props } from './AppInner.types'
 import { deviceStatusListener } from '../../Devices/websockets'
 import { globalStyle } from './AppInner.global.styles'
-import { AppContextType } from '@/containers/App/AppContext.types'
 import AppLayout from '@/containers/App/AppLayout/AppLayout'
 
 const AppInner = (props: Props) => {
@@ -32,11 +32,9 @@ const AppInner = (props: Props) => {
             collapsed,
             setCollapsed,
             setFooterExpanded,
-            ...wellKnownConfig,
-            wellKnownConfig,
             telemetryWebTracer: openTelemetry.getWebTracer(),
             buildInformation: wellKnownConfig?.buildInfo,
-            // theme,
+            isHub: true,
         }),
         [footerExpanded, collapsed, setCollapsed, setFooterExpanded, wellKnownConfig, openTelemetry]
     )
