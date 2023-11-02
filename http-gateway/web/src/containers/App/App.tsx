@@ -25,7 +25,7 @@ const App = (props: { mockApp: boolean }) => {
 
     const [collapsed, setCollapsed] = useLocalStorage('leftPanelCollapsed', false)
 
-    openTelemetry.init('hub')
+    process.env.NODE_ENV !== 'development' && openTelemetry.init('hub')
 
     useEffect(() => {
         if (!wellKnownConfig && !wellKnownConfigFetched) {

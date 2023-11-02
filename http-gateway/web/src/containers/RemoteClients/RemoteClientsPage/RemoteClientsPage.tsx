@@ -6,7 +6,6 @@ import { useDispatch } from 'react-redux'
 import { useWellKnownConfiguration, WellKnownConfigType } from '@shared-ui/common/hooks'
 import { clientAppSettings, security } from '@shared-ui/common/services'
 import AppContext from '@shared-ui/app/share/AppContext'
-import InitializedByAnother from '@shared-ui/app/clientApp/App/InitializedByAnother'
 import { getClientUrl } from '@shared-ui/app/clientApp/utils'
 import { useClientAppPage } from '@shared-ui/app/clientApp/RemoteClients/use-client-app-page'
 import FullPageLoader from '@shared-ui/components/Atomic/FullPageLoader'
@@ -82,8 +81,10 @@ const RemoteClientsPage: FC<Props> = (props) => {
         () =>
             wellKnownConfig &&
             wellKnownConfig.deviceAuthenticationMode !== DEVICE_AUTH_MODE.UNINITIALIZED &&
-            wellKnownConfig.deviceAuthenticationMode !== clientData.authenticationMode,
-        [wellKnownConfig, clientData]
+            wellKnownConfig.deviceAuthenticationMode !== clientData.authenticationMode &&
+            !initializedByAnother,
+
+        [wellKnownConfig, clientData, initializedByAnother]
     )
 
     const differentOwner = useCallback((wellKnownConfig?: WellKnownConfigType) => hasDifferentOwner(wellKnownConfig, clientData), [clientData])
@@ -101,13 +102,15 @@ const RemoteClientsPage: FC<Props> = (props) => {
     const unauthorizedCallback = useCallback(() => {
         setSuspectedUnauthorized(true)
 
-        reFetchConfig().then((newWellKnownConfig: WellKnownConfigType) => {
-            if (differentOwner(newWellKnownConfig)) {
-                setInitializedByAnother(true)
-            } else {
+        reFetchConfig()
+            .then((newWellKnownConfig: WellKnownConfigType) => {
+                if (differentOwner(newWellKnownConfig)) {
+                    setInitializedByAnother(true)
+                }
+            })
+            .then(() => {
                 setSuspectedUnauthorized(false)
-            }
-        })
+            })
     }, [differentOwner, reFetchConfig])
 
     const contextValue = useMemo(
@@ -121,7 +124,7 @@ const RemoteClientsPage: FC<Props> = (props) => {
 
     // just config page with context ( isHub and updateRemoteClient)
     if (clientData.status === remoteClientStatuses.UNREACHABLE) {
-        return <AppContext.Provider value={contextValue}>{children(clientData, false)}</AppContext.Provider>
+        return <AppContext.Provider value={contextValue}>{children(clientData, false, initializedByAnother)}</AppContext.Provider>
     }
 
     if (error) {
@@ -152,28 +155,34 @@ const RemoteClientsPage: FC<Props> = (props) => {
         return <div className='client-error-message'>{`${_(t.authError)}: ${authError}`}</div>
     }
 
+    const getInnerContent = () => {
+        if (suspectedUnauthorized && !initializedByAnother) {
+            return <FullPageLoader i18n={{ loading: _(g.loading) }} />
+        } else {
+            return (
+                <RemoteClientsAuthProvider
+                    clientData={clientData}
+                    reInitialization={reInitialization}
+                    setAuthError={setAuthError}
+                    setInitialize={setInitialize}
+                    unauthorizedCallback={unauthorizedCallback}
+                    wellKnownConfig={wellKnownConfig}
+                >
+                    {reInitialization ? (
+                        <FullPageLoader i18n={{ loading: _(g.loading) }} />
+                    ) : (
+                        children(clientData, !wellKnownConfig || !wellKnownConfig.isInitialized, initializedByAnother)
+                    )}
+                </RemoteClientsAuthProvider>
+            )
+        }
+    }
+
     return (
         <AppContext.Provider value={contextValue}>
             <div css={styles.detailPage}>
                 <Helmet title={`${clientData.clientName}`} />
-                {initializedByAnother && <InitializedByAnother description={_(t.initializedByAnotherDesc)} show={true} />}
-                {!initializedByAnother && suspectedUnauthorized && <FullPageLoader i18n={{ loading: _(g.loading) }} />}
-                {!initializedByAnother && !suspectedUnauthorized && (
-                    <RemoteClientsAuthProvider
-                        clientData={clientData}
-                        reInitialization={reInitialization}
-                        setAuthError={setAuthError}
-                        setInitialize={setInitialize}
-                        unauthorizedCallback={unauthorizedCallback}
-                        wellKnownConfig={wellKnownConfig}
-                    >
-                        {reInitialization ? (
-                            <FullPageLoader i18n={{ loading: _(g.loading) }} />
-                        ) : (
-                            children(clientData, !wellKnownConfig || !wellKnownConfig.isInitialized)
-                        )}
-                    </RemoteClientsAuthProvider>
-                )}
+                {getInnerContent()}
             </div>
         </AppContext.Provider>
     )
