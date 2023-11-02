@@ -124,7 +124,7 @@ const RemoteClientsPage: FC<Props> = (props) => {
 
     // just config page with context ( isHub and updateRemoteClient)
     if (clientData.status === remoteClientStatuses.UNREACHABLE) {
-        return <AppContext.Provider value={contextValue}>{children(clientData, false, initializedByAnother)}</AppContext.Provider>
+        return <AppContext.Provider value={contextValue}>{children(clientData, false, false, initializedByAnother)}</AppContext.Provider>
     }
 
     if (error) {
@@ -155,11 +155,10 @@ const RemoteClientsPage: FC<Props> = (props) => {
         return <div className='client-error-message'>{`${_(t.authError)}: ${authError}`}</div>
     }
 
-    const getInnerContent = () => {
-        if (suspectedUnauthorized && !initializedByAnother) {
-            return <FullPageLoader i18n={{ loading: _(g.loading) }} />
-        } else {
-            return (
+    return (
+        <AppContext.Provider value={contextValue}>
+            <div css={styles.detailPage}>
+                <Helmet title={`${clientData.clientName}`} />
                 <RemoteClientsAuthProvider
                     clientData={clientData}
                     reInitialization={reInitialization}
@@ -168,21 +167,14 @@ const RemoteClientsPage: FC<Props> = (props) => {
                     unauthorizedCallback={unauthorizedCallback}
                     wellKnownConfig={wellKnownConfig}
                 >
-                    {reInitialization ? (
-                        <FullPageLoader i18n={{ loading: _(g.loading) }} />
-                    ) : (
-                        children(clientData, !wellKnownConfig || !wellKnownConfig.isInitialized, initializedByAnother)
-                    )}
+                    {(reInitializationLoading, reInitializationError) => {
+                        if (reInitializationLoading || suspectedUnauthorized) {
+                            return <FullPageLoader i18n={{ loading: _(g.loading) }} />
+                        } else {
+                            return children(clientData, reInitializationError, reInitializationLoading, initializedByAnother)
+                        }
+                    }}
                 </RemoteClientsAuthProvider>
-            )
-        }
-    }
-
-    return (
-        <AppContext.Provider value={contextValue}>
-            <div css={styles.detailPage}>
-                <Helmet title={`${clientData.clientName}`} />
-                {getInnerContent()}
             </div>
         </AppContext.Provider>
     )

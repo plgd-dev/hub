@@ -1,5 +1,5 @@
 import { ReactElement } from 'react'
 
 export type Props = {
-    children: (clientData: any, wellKnownConfig: any, initializedByAnother: boolean) => ReactElement
+    children: (clientData: any, reInitializationError: boolean, reInitializationLoading: boolean, initializedByAnother: boolean) => ReactElement
 }

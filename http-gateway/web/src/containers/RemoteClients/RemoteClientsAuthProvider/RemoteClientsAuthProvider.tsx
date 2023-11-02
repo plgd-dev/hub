@@ -1,5 +1,6 @@
 import { FC, useEffect, useState } from 'react'
 import { useIntl } from 'react-intl'
+import isEqual from 'lodash/isEqual'
 
 import {
     getJwksData,
@@ -13,6 +14,7 @@ import {
 import { DEVICE_AUTH_MODE } from '@shared-ui/app/clientApp/constants'
 import AppLoader from '@shared-ui/app/clientApp/App/AppLoader'
 import Notification from '@shared-ui/components/Atomic/Notification/Toast'
+import { RemoteClientType } from '@shared-ui/app/clientApp/RemoteClients/RemoteClients.types'
 
 import { messages as t } from '../RemoteClients.i18n'
 import { Props } from './RemoteClientsAuthProvider.types'
@@ -24,21 +26,40 @@ const RemoteClientsAuthProvider: FC<Props> = (props) => {
     const { formatMessage: _ } = useIntl()
     const [reInitializationLoading, setReInitializationLoading] = useState(false)
     const [initializationLoading, setInitializationLoading] = useState(false)
+    const [reInitializationError, setReInitializationError] = useState(false)
+
+    const getData = (data: RemoteClientType) => ({
+        authenticationMode: data.authenticationMode,
+        preSharedKey: data.preSharedKey,
+        preSharedSubjectId: data.preSharedSubjectId,
+    })
+
+    const [prevClientData, setPrevClientData] = useState(getData(clientData))
 
     useEffect(() => {
-        if (reInitialization && !reInitializationLoading) {
+        if (!isEqual(prevClientData, getData(clientData))) {
+            setPrevClientData(getData(clientData))
+            reInitializationError && setReInitializationError(false)
+        }
+    }, [clientData, prevClientData, reInitializationError])
+
+    useEffect(() => {
+        if (reInitialization && !reInitializationLoading && !reInitializationError) {
             setReInitializationLoading(true)
             reset(clientUrl, unauthorizedCallback)
                 .then(() => {
                     setInitialize(false)
                     setReInitializationLoading(false)
                 })
-                .catch(() => {})
+                .catch(() => {
+                    setReInitializationLoading(false)
+                    setReInitializationError(true)
+                })
         }
-    }, [reInitialization, clientUrl, setInitialize, reInitializationLoading, unauthorizedCallback])
+    }, [reInitialization, clientUrl, setInitialize, reInitializationLoading, unauthorizedCallback, reInitializationError])
 
     useEffect(() => {
-        if (wellKnownConfig && !wellKnownConfig.isInitialized && !initializationLoading) {
+        if (wellKnownConfig && !wellKnownConfig.isInitialized && !initializationLoading && !reInitializationError) {
             if (authenticationMode === DEVICE_AUTH_MODE.X509) {
                 try {
                     setInitializationLoading(true)
@@ -106,7 +127,7 @@ const RemoteClientsAuthProvider: FC<Props> = (props) => {
         )
     }
 
-    return children
+    return children(reInitializationLoading, reInitializationError)
 }
 
 RemoteClientsAuthProvider.displayName = 'RemoteClientsAuthProvider'

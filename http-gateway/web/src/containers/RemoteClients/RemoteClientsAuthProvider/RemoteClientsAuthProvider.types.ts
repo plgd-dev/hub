@@ -4,7 +4,7 @@ import { WellKnownConfigType } from '@shared-ui/common/hooks'
 import { RemoteClientType } from '@shared-ui/app/clientApp/RemoteClients/RemoteClients.types'
 
 export type Props = {
-    children: ReactElement
+    children: (reInitializationLoading: boolean, reInitializationError: boolean) => ReactElement
     clientData: RemoteClientType
     setAuthError: (error: string) => void
     setInitialize: (isInitialize: boolean) => void
