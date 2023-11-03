@@ -2,6 +2,7 @@ package pb
 
 import (
 	"encoding/base64"
+	"fmt"
 	"net/url"
 	"strings"
 
@@ -9,6 +10,26 @@ import (
 )
 
 const etagQueryKey = "etag"
+
+func parseQuery(m url.Values, query string) (err error) {
+	for query != "" {
+		var key string
+		key, query, _ = strings.Cut(query, "&")
+		if strings.Contains(key, ";") {
+			err = fmt.Errorf("invalid semicolon separator in query")
+			continue
+		}
+		if key == "" {
+			continue
+		}
+		key, value, _ := strings.Cut(key, "=")
+		if key == "" {
+			continue
+		}
+		m[key] = append(m[key], value)
+	}
+	return err
+}
 
 // we are permissive in parsing resource id filter
 func resourceIdFilterFromString(v string) *ResourceIdFilter {
@@ -36,7 +57,9 @@ func resourceIdFilterFromString(v string) *ResourceIdFilter {
 			},
 		}
 	}
-	values, err := url.ParseQuery(hrefQuery[1])
+	values := make(url.Values)
+	// we cannot use url.ParseQuery because it will unescape values because they are not escaped
+	err := parseQuery(values, hrefQuery[1])
 	if err != nil {
 		return &ResourceIdFilter{
 			ResourceId: &commands.ResourceId{

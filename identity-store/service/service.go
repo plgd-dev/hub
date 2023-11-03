@@ -125,6 +125,10 @@ func New(ctx context.Context, cfg Config, fileWatcher *fsnotify.Watcher, logger 
 	}
 	s.grpcServer.AddCloseFunc(validator.Close)
 	s.grpcServer.AddCloseFunc(naClient.Close)
+
+	// IdentityStore needs to stop gracefully to ensure that all commands are processed.
+	s.grpcServer.SetGracefulStop(true)
+
 	return service.New(s), nil
 }
 

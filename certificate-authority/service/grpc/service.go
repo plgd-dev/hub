@@ -26,6 +26,9 @@ func New(config Config, clientApplicationServer *CertificateAuthorityServer, val
 	}
 	pb.RegisterCertificateAuthorityServer(server.Server, clientApplicationServer)
 
+	// CertificateAuthority needs to stop gracefully to ensure that all commands are processed.
+	server.SetGracefulStop(true)
+
 	return &Service{
 		Server: server,
 	}, nil
