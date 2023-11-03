@@ -224,6 +224,7 @@ const DevicesResources: FC<Props> = memo((props) => {
                 className={classNames('d-flex justify-content-between align-items-center', greyedOutClassName)}
                 style={{
                     paddingBottom: 12,
+                    flex: '0 0 40px',
                 }}
             >
                 <div></div>

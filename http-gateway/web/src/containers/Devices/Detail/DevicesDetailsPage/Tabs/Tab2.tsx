@@ -266,6 +266,8 @@ const Tab2: FC<Props> = (props) => {
             ref={ref}
             style={{
                 height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
             }}
         >
             <DevicesResources
