@@ -168,7 +168,7 @@ const RemoteClientsPage: FC<Props> = (props) => {
                     wellKnownConfig={wellKnownConfig}
                 >
                     {(reInitializationLoading, reInitializationError) => {
-                        if (reInitializationLoading || suspectedUnauthorized) {
+                        if (suspectedUnauthorized) {
                             return <FullPageLoader i18n={{ loading: _(g.loading) }} />
                         } else {
                             return children(clientData, reInitializationError, reInitializationLoading, initializedByAnother)
