@@ -148,5 +148,8 @@ func NewService(ctx context.Context, config Config, fileWatcher *fsnotify.Watche
 	}, serviceHeartbeat, logger)
 	RegisterResourceAggregateServer(grpcServer.Server, requestHandler)
 
+	// ResourceAggregate needs to stop gracefully to ensure that all commands are processed.
+	grpcServer.SetGracefulStop(true)
+
 	return service.New(grpcServer), nil
 }

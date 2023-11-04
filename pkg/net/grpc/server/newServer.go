@@ -10,8 +10,9 @@ import (
 // Server handles gRPC requests to the service.
 type Server struct {
 	*grpc.Server
-	listener  net.Listener
-	closeFunc []func()
+	listener     net.Listener
+	gracefulStop bool
+	closeFunc    []func()
 }
 
 // NewServer instantiates a gRPC server.
@@ -30,6 +31,10 @@ func NewServer(addr string, opts ...grpc.ServerOption) (*Server, error) {
 // This eliminates the need for wrapping the Server.
 func (s *Server) AddCloseFunc(f func()) {
 	s.closeFunc = append(s.closeFunc, f)
+}
+
+func (s *Server) SetGracefulStop(gracefulStop bool) {
+	s.gracefulStop = gracefulStop
 }
 
 func (s *Server) Addr() string {
@@ -51,7 +56,11 @@ func (s *Server) Serve() error {
 // pending RPCs on the client side will get notified by connection
 // errors.
 func (s *Server) Close() error {
-	s.Server.Stop()
+	if s.gracefulStop {
+		s.Server.GracefulStop()
+	} else {
+		s.Server.Stop()
+	}
 	for _, f := range s.closeFunc {
 		f()
 	}
