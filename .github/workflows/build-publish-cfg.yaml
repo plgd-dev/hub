@@ -20,6 +20,10 @@ on:
         description: Dockerfile to build
         type: string
         required: true
+      template_file:
+        description: Template file to resolve
+        type: string
+        required: false
       release:
         description: "Release version"
         required: true
@@ -76,6 +80,12 @@ jobs:
           labels: |
             org.opencontainers.image.version=${{ inputs.release }}
             org.opencontainers.image.revision=${{ steps.revision.outputs.value }}
+
+      - name: Resolve template file
+        if: ${{ inputs.template_file }}
+        run: |
+          mkdir -p $(dirname ${{ inputs.file }})
+          awk '{gsub("@NAME@","${{ inputs.name }}")} {gsub("@DIRECTORY@","${{ inputs.directory }}")} {print}' ${{ inputs.template_file }} > ${{ inputs.file }}
 
       - name: Build and push docker image
         uses: docker/build-push-action@v4
