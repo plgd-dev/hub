@@ -48,18 +48,18 @@ jobs:
           # - name: grpc-gateway
           #   directory: grpc-gateway
           #   file: tools/docker/Dockerfile
-          - name: http-gateway
-            directory: http-gateway
-            file: http-gateway/Dockerfile
+          # - name: http-gateway
+          #   directory: http-gateway
+          #   file: http-gateway/Dockerfile
           # - name: identity-store
           #   directory: identity-store
           #   file: tools/docker/Dockerfile
           # - name: mock-oauth-server
           #   directory: test/oauth-server
           #   file: tools/docker/Dockerfile
-          # - name: bundle
-          #   directory: bundle
-          #   file: bundle/Dockerfile
+          - name: bundle
+            directory: bundle
+            file: bundle/Dockerfile
           # - name: test-cloud-server
           #   directory: test/cloud-server
           #   file: test/cloud-server/Dockerfile
@@ -79,4 +79,4 @@ jobs:
       name: ${{ matrix.name }}
       directory: ${{ matrix.directory }}
       file: ${{ matrix.file }}
-      release: 2.4.4
+      release: 2.6.0
