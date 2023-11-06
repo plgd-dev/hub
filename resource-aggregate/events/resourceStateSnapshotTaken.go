@@ -720,6 +720,7 @@ func (e *ResourceStateSnapshotTakenForCommand) handleDeleteResourceRequest(ctx c
 		AuditContext:         ac,
 		EventMetadata:        em,
 		ValidUntil:           timeToLive2ValidUntil(req.GetTimeToLive()),
+		ResourceInterface:    req.GetResourceInterface(),
 		OpenTelemetryCarrier: propagation.TraceFromCtx(ctx),
 	}
 

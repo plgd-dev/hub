@@ -29,5 +29,6 @@ func (req *DeleteResourceRequest) ToRACommand(ctx context.Context) (*commands.De
 		CommandMetadata: &commands.CommandMetadata{
 			ConnectionId: connectionID,
 		},
+		ResourceInterface: req.GetResourceInterface(),
 	}, nil
 }

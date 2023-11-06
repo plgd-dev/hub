@@ -220,6 +220,7 @@ message Content {
 message DeleteResourceRequest {
   resourceaggregate.pb.ResourceId resource_id = 1;
   int64 time_to_live = 2;  // command validity in nanoseconds. 0 means forever and minimal value is 100000000 (100ms).
+  string resource_interface = 3;
 }
 
 message DeleteResourceResponse {
