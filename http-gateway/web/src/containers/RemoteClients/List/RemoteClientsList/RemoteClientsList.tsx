@@ -76,9 +76,7 @@ const RemoteClientsList: FC<Props> = (props) => {
                 Header: _(t.ipAddress),
                 accessor: 'clientUrl',
                 style: { width: '350px' },
-                Cell: ({ value }: { value: string }) => {
-                    return <span className='no-wrap-text'>{value}</span>
-                },
+                Cell: ({ value }: { value: string }) => <span className='no-wrap-text'>{value}</span>,
             },
             {
                 Header: _(g.status),
@@ -93,33 +91,29 @@ const RemoteClientsList: FC<Props> = (props) => {
                 Header: _(t.version),
                 accessor: 'version',
                 style: { width: '200px' },
-                Cell: ({ value }: { value: string }) => {
-                    return <span className='no-wrap-text'>{value}</span>
-                },
+                Cell: ({ value }: { value: string }) => <span className='no-wrap-text'>{value}</span>,
             },
             {
                 Header: _(g.action),
                 accessor: 'action',
                 style: { width: '66px' },
                 disableSortBy: true,
-                Cell: ({ row }: any) => {
-                    return (
-                        <TableActionButton
-                            items={[
-                                {
-                                    onClick: () => navigate(`/remote-clients/${row.original.id}/configuration`),
-                                    label: _(g.edit),
-                                    icon: <IconEdit />,
-                                },
-                                {
-                                    onClick: () => handleOpenDeleteModal(row.original.id),
-                                    label: _(g.delete),
-                                    icon: <IconTrash />,
-                                },
-                            ]}
-                        />
-                    )
-                },
+                Cell: ({ row }: any) => (
+                    <TableActionButton
+                        items={[
+                            {
+                                onClick: () => navigate(`/remote-clients/${row.original.id}/configuration`),
+                                label: _(g.edit),
+                                icon: <IconEdit />,
+                            },
+                            {
+                                onClick: () => handleOpenDeleteModal(row.original.id),
+                                label: _(g.delete),
+                                icon: <IconTrash />,
+                            },
+                        ]}
+                    />
+                ),
                 className: 'actions',
             },
         ],
