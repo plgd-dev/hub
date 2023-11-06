@@ -60,8 +60,8 @@ type DevicesAllRepresentation struct {
 	Status string                           `json:"status"`
 }
 
-func getDevicesAllRepresentation(deviceID, deviceName, switchID string) DevicesAllRepresentation {
-	links := test.GetAllBackendResourceRepresentations(deviceID, deviceName)
+func getDevicesAllRepresentation(t *testing.T, deviceID, deviceName, switchID string) DevicesAllRepresentation {
+	links := test.GetAllBackendResourceRepresentations(t, deviceID, deviceName)
 	for i := range links {
 		if strings.HasSuffix(links[i].Href, test.TestResourceSwitchesHref) {
 			l := test.DefaultSwitchResourceLink(deviceID, switchID)
@@ -246,7 +246,7 @@ func TestRequestHandlerRetrieveDevice(t *testing.T) {
 			},
 			wantCode:        http.StatusOK,
 			wantContentType: message.AppJSON.String(),
-			want:            getDevicesAllRepresentation(deviceID, test.TestDeviceName, switchID),
+			want:            getDevicesAllRepresentation(t, deviceID, test.TestDeviceName, switchID),
 		},
 	}
 

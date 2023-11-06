@@ -31,7 +31,7 @@ import (
 )
 
 func getResourceChanged(t *testing.T, deviceID string, href string) *events.ResourceChanged {
-	for _, l := range test.GetAllBackendResourceRepresentations(deviceID, test.TestDeviceName) {
+	for _, l := range test.GetAllBackendResourceRepresentations(t, deviceID, test.TestDeviceName) {
 		rid := commands.ResourceIdFromString(l.Href)
 		if rid.GetHref() == href {
 			return pbTest.MakeResourceChanged(t, deviceID, rid.GetHref(), "", l.Representation)
@@ -58,7 +58,7 @@ func getResourceType(href string) []string {
 }
 
 func getResources(t *testing.T, deviceID, deviceName, switchID string) []*pb.Resource {
-	data := test.GetAllBackendResourceRepresentations(deviceID, deviceName)
+	data := test.GetAllBackendResourceRepresentations(t, deviceID, deviceName)
 	resources := make([]*pb.Resource, 0, len(data))
 	for _, res := range data {
 		rid := commands.ResourceIdFromString(res.Href) // validate
