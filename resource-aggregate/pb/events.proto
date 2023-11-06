@@ -111,6 +111,7 @@ message ResourceDeletePending {
     AuditContext audit_context = 2;
     EventMetadata event_metadata = 3;
     int64 valid_until = 4;  // unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when pending event is considered as expired. 0 means forever.
+    string resource_interface = 5;
 
     // Open telemetry data propagated to asynchronous events
     map<string,string> open_telemetry_carrier = 100;

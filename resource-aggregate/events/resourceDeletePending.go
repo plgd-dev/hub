@@ -55,6 +55,7 @@ func (e *ResourceDeletePending) CopyData(event *ResourceDeletePending) {
 	e.AuditContext = event.GetAuditContext()
 	e.EventMetadata = event.GetEventMetadata()
 	e.ValidUntil = event.GetValidUntil()
+	e.ResourceInterface = event.GetResourceInterface()
 	e.OpenTelemetryCarrier = event.GetOpenTelemetryCarrier()
 }
 

@@ -3,6 +3,7 @@ package events_test
 import (
 	"testing"
 
+	"github.com/plgd-dev/device/v2/schema/interfaces"
 	commands "github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 	"github.com/stretchr/testify/require"
@@ -24,6 +25,7 @@ var testEventResourceDeletePending events.ResourceDeletePending = events.Resourc
 		ConnectionId: "con1",
 		Sequence:     1,
 	},
+	ResourceInterface: interfaces.OC_IF_BASELINE,
 }
 
 func TestResourceDeletePending_CopyData(t *testing.T) {

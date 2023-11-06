@@ -282,6 +282,7 @@
 | ----- | ---- | ----- | ----------- |
 | resource_id | [resourceaggregate.pb.ResourceId](#resourceaggregate-pb-ResourceId) |  |  |
 | time_to_live | [int64](#int64) |  | command validity in nanoseconds. 0 means forever and minimal value is 100000000 (100ms). |
+| resource_interface | [string](#string) |  |  |
 
 
 
@@ -1533,6 +1534,7 @@ https://github.com/openconnectivityfoundation/core/blob/master/schemas/oic.links
 | audit_context | [AuditContext](#resourceaggregate-pb-AuditContext) |  |  |
 | event_metadata | [EventMetadata](#resourceaggregate-pb-EventMetadata) |  |  |
 | valid_until | [int64](#int64) |  | unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when pending event is considered as expired. 0 means forever. |
+| resource_interface | [string](#string) |  |  |
 | open_telemetry_carrier | [ResourceDeletePending.OpenTelemetryCarrierEntry](#resourceaggregate-pb-ResourceDeletePending-OpenTelemetryCarrierEntry) | repeated | Open telemetry data propagated to asynchronous events |
 
 

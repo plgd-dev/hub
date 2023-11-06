@@ -178,6 +178,13 @@ type PlgdTimeResourceRepresentation struct {
 	LastSyncedTime string `json:"lastSyncedTime"`
 }
 
+type CollectionLinkRepresentation struct {
+	Href           string      `json:"href"`
+	Representation interface{} `json:"rep"`
+}
+
+type CollectionLinkRepresentations []CollectionLinkRepresentation
+
 func init() {
 	TestDeviceName = "devsim-" + MustGetHostname()
 	TestDeviceNameWithOicResObservable = "devsim-resobs-" + MustGetHostname()

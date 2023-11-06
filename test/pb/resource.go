@@ -164,23 +164,27 @@ func CmpResourceChanged(t *testing.T, expected, got *events.ResourceChanged, cmp
 	test.CheckProtobufs(t, expected, got, test.RequireToCheckFunc(require.Equal))
 }
 
+func makeCborContent(t *testing.T, data interface{}) *commands.Content {
+	return &commands.Content{
+		CoapContentFormat: int32(message.AppOcfCbor),
+		ContentType:       message.AppOcfCbor.String(),
+		Data: func() []byte {
+			if data == nil {
+				return nil
+			}
+			return test.EncodeToCbor(t, data)
+		}(),
+	}
+}
+
 func MakeResourceChanged(t *testing.T, deviceID, href, correlationID string, data interface{}) *events.ResourceChanged {
 	return &events.ResourceChanged{
 		ResourceId: &commands.ResourceId{
 			DeviceId: deviceID,
 			Href:     href,
 		},
-		Status: commands.Status_OK,
-		Content: &commands.Content{
-			CoapContentFormat: int32(message.AppOcfCbor),
-			ContentType:       message.AppOcfCbor.String(),
-			Data: func() []byte {
-				if data == nil {
-					return nil
-				}
-				return test.EncodeToCbor(t, data)
-			}(),
-		},
+		Status:       commands.Status_OK,
+		Content:      makeCborContent(t, data),
 		AuditContext: commands.NewAuditContext(service.DeviceUserID, correlationID, service.DeviceUserID),
 	}
 }
@@ -205,9 +209,50 @@ func CleanResourceDeleted(e *events.ResourceDeleted, resetCorrelationID bool) *e
 	return e
 }
 
+type resourceData map[interface{}]interface{}
+
+func getResourceData(t *testing.T, content *commands.Content) map[string]resourceData {
+	resData := make(map[string]resourceData)
+	addData := func(v interface{}) {
+		res, ok := v.(map[interface{}]interface{})
+		require.True(t, ok)
+		href, _ := res["href"].(string)
+		delete(res, "eps")
+		delete(res, "ins")
+		delete(res, "pi")
+		delete(res, "piid")
+		resData[href] = res
+	}
+
+	data := test.DecodeCbor(t, content.GetData())
+	resources, ok := data.([]interface{})
+	if ok {
+		for _, resource := range resources {
+			addData(resource)
+		}
+		return resData
+	}
+
+	addData(data)
+	return resData
+}
+
+func checkContent(t *testing.T, expected, got *commands.Content) {
+	if expected.GetData() != nil && got.GetData() != nil {
+		gotData := getResourceData(t, got)
+		require.NotEmpty(t, gotData)
+		expectedData := getResourceData(t, expected)
+		require.NotEmpty(t, expectedData)
+		require.Equal(t, expectedData, gotData)
+		got.Data = nil
+		expected.Data = nil
+	}
+}
+
 func CmpResourceDeleted(t *testing.T, expected, got *events.ResourceDeleted) {
 	require.NotEmpty(t, expected)
 	require.NotEmpty(t, got)
+	checkContent(t, expected.GetContent(), got.GetContent())
 	resetCorrelationID := expected.GetAuditContext().GetCorrelationId() == ""
 	CleanResourceDeleted(expected, resetCorrelationID)
 	CleanResourceDeleted(got, resetCorrelationID)
@@ -220,17 +265,8 @@ func MakeResourceRetrieved(t *testing.T, deviceID, href, correlationID string, d
 			DeviceId: deviceID,
 			Href:     href,
 		},
-		Status: commands.Status_OK,
-		Content: &commands.Content{
-			CoapContentFormat: int32(message.AppOcfCbor),
-			ContentType:       message.AppOcfCbor.String(),
-			Data: func() []byte {
-				if data == nil {
-					return nil
-				}
-				return test.EncodeToCbor(t, data)
-			}(),
-		},
+		Status:       commands.Status_OK,
+		Content:      makeCborContent(t, data),
 		AuditContext: commands.NewAuditContext(service.DeviceUserID, correlationID, service.DeviceUserID),
 	}
 }
@@ -245,46 +281,10 @@ func CleanUpResourceRetrieved(e *events.ResourceRetrieved, resetCorrelationID bo
 	return e
 }
 
-type resourceData map[interface{}]interface{}
-
-func getResourceRetrievedData(t *testing.T, d *events.ResourceRetrieved) map[string]resourceData {
-	resData := make(map[string]resourceData)
-	addData := func(v interface{}) {
-		res, ok := v.(map[interface{}]interface{})
-		require.True(t, ok)
-		href, _ := res["href"].(string)
-		delete(res, "eps")
-		delete(res, "ins")
-		delete(res, "pi")
-		delete(res, "piid")
-		resData[href] = res
-	}
-
-	data := test.DecodeCbor(t, d.GetContent().GetData())
-	resources, ok := data.([]interface{})
-	if ok {
-		for _, resource := range resources {
-			addData(resource)
-		}
-		return resData
-	}
-
-	addData(data)
-	return resData
-}
-
 func CmpResourceRetrieved(t *testing.T, expected, got *events.ResourceRetrieved) {
 	require.NotEmpty(t, expected)
 	require.NotEmpty(t, got)
-	if expected.GetContent().GetData() != nil && got.GetContent().GetData() != nil {
-		gotData := getResourceRetrievedData(t, got)
-		require.NotEmpty(t, gotData)
-		expectedData := getResourceRetrievedData(t, expected)
-		require.NotEmpty(t, expectedData)
-		require.Equal(t, expectedData, gotData)
-		got.GetContent().Data = nil
-		expected.GetContent().Data = nil
-	}
+	checkContent(t, expected.GetContent(), got.GetContent())
 	resetCorrelationID := expected.GetAuditContext().GetCorrelationId() == ""
 	CleanUpResourceRetrieved(expected, resetCorrelationID)
 	CleanUpResourceRetrieved(got, resetCorrelationID)
@@ -304,11 +304,7 @@ func MakeResourceUpdated(t *testing.T, deviceID, href, correlationID string, dat
 					CoapContentFormat: -1,
 				}
 			}
-			return &commands.Content{
-				CoapContentFormat: int32(message.AppOcfCbor),
-				ContentType:       message.AppOcfCbor.String(),
-				Data:              test.EncodeToCbor(t, data),
-			}
+			return makeCborContent(t, data)
 		}(),
 		AuditContext: commands.NewAuditContext(service.DeviceUserID, correlationID, service.DeviceUserID),
 	}
