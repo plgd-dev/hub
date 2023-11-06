@@ -22,6 +22,7 @@ import { addRemoteClient, deleteRemoteClients, updateRemoteClients, updateRemote
 import { CombinedStoreType } from '@/store/store'
 import RemoteClientsList from '@/containers/RemoteClients/List/RemoteClientsList'
 import notificationId from '@/notificationId'
+import { hasDifferentOwner } from '@shared-ui/common/services/api-utils'
 
 const RemoteClientsListPage: FC<any> = () => {
     const { formatMessage: _ } = useIntl()
@@ -149,6 +150,17 @@ const RemoteClientsListPage: FC<any> = () => {
 
                         if (remoteClient.version !== value.data?.version || remoteClient.status === remoteClientStatuses.UNREACHABLE) {
                             dataForUpdate.push({ ...remoteClient, version: value.data?.version, status: remoteClientStatuses.REACHABLE })
+                        }
+
+                        if (hasDifferentOwner(value.data, remoteClient)) {
+                            if (remoteClient.status !== remoteClientStatuses.DIFFERENT_OWNER) {
+                                dataForUpdate.push({ ...remoteClient, status: remoteClientStatuses.DIFFERENT_OWNER })
+                            }
+
+                            return {
+                                ...remoteClient,
+                                status: remoteClientStatuses.DIFFERENT_OWNER,
+                            }
                         }
 
                         return {

@@ -1,4 +1,4 @@
-import React, { FC, useContext, useEffect, useMemo, useState } from 'react'
+import React, { FC, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useIntl } from 'react-intl'
 import ReactDOM from 'react-dom'
@@ -11,7 +11,7 @@ import { states } from '@shared-ui/components/Atomic/StatusPill/constants'
 import TableActionButton from '@shared-ui/components/Organisms/TableActionButton'
 import { IconTrash } from '@shared-ui/components/Atomic'
 import Breadcrumbs from '@shared-ui/components/Layout/Header/Breadcrumbs'
-import { remoteClientStatuses } from '@shared-ui/app/clientApp/RemoteClients/constants'
+import { remoteClientStatuses, RemoteClientStatusesType } from '@shared-ui/app/clientApp/RemoteClients/constants'
 import IconEdit from '@shared-ui/components/Atomic/Icon/components/IconEdit'
 import AppContext from '@shared-ui/app/share/AppContext'
 
@@ -31,6 +31,27 @@ const RemoteClientsList: FC<Props> = (props) => {
 
     useEffect(() => {
         setIsDomReady(true)
+    }, [])
+
+    const getStatusData = useCallback((status: RemoteClientStatusesType) => {
+        switch (status) {
+            case remoteClientStatuses.DIFFERENT_OWNER:
+                return {
+                    message: _(t.occupied),
+                    status: states.OCCUPIED,
+                }
+            case remoteClientStatuses.UNREACHABLE:
+                return {
+                    message: _(t.unReachable),
+                    status: states.OFFLINE,
+                }
+            case remoteClientStatuses.REACHABLE:
+            default:
+                return {
+                    message: _(t.reachable),
+                    status: states.ONLINE,
+                }
+        }
     }, [])
 
     const columns = useMemo(
@@ -64,8 +85,8 @@ const RemoteClientsList: FC<Props> = (props) => {
                 accessor: 'status',
                 style: { width: '200px' },
                 Cell: ({ row }: { row: any }) => {
-                    const isReachable = row.original.status === remoteClientStatuses.REACHABLE
-                    return <StatusPill label={isReachable ? _(t.reachable) : _(t.unReachable)} status={isReachable ? states.ONLINE : states.OFFLINE} />
+                    const statusData = getStatusData(row.original.status)
+                    return <StatusPill label={statusData.message} status={statusData.status} />
                 },
             },
             {

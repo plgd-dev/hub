@@ -122,6 +122,10 @@ export const messages = defineMessages({
         id: 'remoteClients.unReachable',
         defaultMessage: 'Unreachable',
     },
+    occupied: {
+        id: 'remoteClients.occupied',
+        defaultMessage: 'Occupied',
+    },
     deleteClientMessage: {
         id: 'remoteClients.deleteClientMessage',
         defaultMessage: 'Are you sure you want to delete this remote UI client?',
