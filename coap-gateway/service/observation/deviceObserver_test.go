@@ -188,7 +188,7 @@ func TestDeviceObserverRegisterForPublishedResources(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
 	defer cancel()
-	discoveryObservable := test.ResourceIsBatchObservable(ctx, t, deviceID, resources.ResourceURI, resources.ResourceType)
+	discoveryObservable := test.DeviceIsBatchObservable(ctx, t, deviceID)
 	if discoveryObservable {
 		t.Logf("skipping test for device with %v observable", resources.ResourceURI)
 		return
@@ -220,7 +220,7 @@ func TestDeviceObserverRegisterForPublishedResourcesWithAlreadyPublishedResource
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
 	defer cancel()
-	discoveryObservable := test.ResourceIsBatchObservable(ctx, t, deviceID, resources.ResourceURI, resources.ResourceType)
+	discoveryObservable := test.DeviceIsBatchObservable(ctx, t, deviceID)
 	if discoveryObservable {
 		t.Logf("skipping test for device with %v observable", resources.ResourceURI)
 		return
@@ -252,7 +252,7 @@ func TestDeviceObserverRegisterForDiscoveryResource(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceNameWithOicResObservable)
 	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
 	defer cancel()
-	discoveryObservable := test.ResourceIsBatchObservable(ctx, t, deviceID, resources.ResourceURI, resources.ResourceType)
+	discoveryObservable := test.DeviceIsBatchObservable(ctx, t, deviceID)
 	if !discoveryObservable {
 		t.Logf("skipping test for device with %v non-observable", resources.ResourceURI)
 		return
@@ -351,7 +351,7 @@ func TestDeviceObserverRegisterForDiscoveryResourceWithAlreadyPublishedResources
 	deviceID := test.MustFindDeviceByName(test.TestDeviceNameWithOicResObservable)
 	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
 	defer cancel()
-	discoveryObservable := test.ResourceIsBatchObservable(ctx, t, deviceID, resources.ResourceURI, resources.ResourceType)
+	discoveryObservable := test.DeviceIsBatchObservable(ctx, t, deviceID)
 	if !discoveryObservable {
 		t.Logf("skipping test for device with %v non-observable", resources.ResourceURI)
 		return

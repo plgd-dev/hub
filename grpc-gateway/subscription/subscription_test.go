@@ -147,7 +147,7 @@ func checkAndValidateRetrieve(ctx context.Context, t *testing.T, rac raservice.R
 }
 
 func getResourceChangedEvents(t *testing.T, deviceID, correlationID, subscriptionID string) map[string]*pb.Event {
-	resources := test.GetAllBackendResourceRepresentations(deviceID, test.TestDeviceName)
+	resources := test.GetAllBackendResourceRepresentations(t, deviceID, test.TestDeviceName)
 	events := make(map[string]*pb.Event)
 	for _, res := range resources {
 		rid := commands.ResourceIdFromString(res.Href) // validate

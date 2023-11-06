@@ -27,6 +27,7 @@ import (
 	"github.com/plgd-dev/device/v2/schema/resources"
 	"github.com/plgd-dev/device/v2/test/resource/types"
 	"github.com/plgd-dev/go-coap/v3/message"
+	"github.com/plgd-dev/go-coap/v3/pkg/sync"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/client"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	isEvents "github.com/plgd-dev/hub/v2/identity-store/events"
@@ -142,6 +143,8 @@ var (
 
 	TestDevsimResources        []schema.ResourceLink
 	TestDevsimBackendResources []schema.ResourceLink
+
+	testIovityLiteVersion *sync.Map[string, uint32]
 )
 
 const (
@@ -244,6 +247,8 @@ func init() {
 			},
 		},
 	}
+
+	testIovityLiteVersion = sync.NewMap[string, uint32]()
 }
 
 func GetDeviceResourceRepresentation(deviceID, deviceName string) device.Device {
@@ -266,10 +271,11 @@ func (r ResourceLinkRepresentations) Sort() ResourceLinkRepresentations {
 	return r
 }
 
-func GetAllBackendResourceRepresentations(deviceID, deviceName string) ResourceLinkRepresentations {
+func GetAllBackendResourceRepresentations(t *testing.T, deviceID, deviceName string) ResourceLinkRepresentations {
 	dev := GetDeviceResourceRepresentation(deviceID, deviceName)
 	dev.Interfaces = nil
 	dev.ResourceTypes = nil
+	iotVersion := GetIotivityLiteVersion(t, deviceID)
 	return ResourceLinkRepresentations{
 		{
 			Href: "/" + commands.NewResourceID(deviceID, TestResourceLightInstanceHref("1")).ToString(),
@@ -297,6 +303,7 @@ func GetAllBackendResourceRepresentations(deviceID, deviceName string) ResourceL
 			Href: "/" + commands.NewResourceID(deviceID, platform.ResourceURI).ToString(),
 			Representation: platform.Platform{
 				ManufacturerName: "ocfcloud.com",
+				Version:          iotVersion,
 			},
 		},
 		{
@@ -862,25 +869,42 @@ func IsDiscoveryResourceBatchObservable(ctx context.Context, t *testing.T, devic
 	return false
 }
 
-func CheckResource(ctx context.Context, t *testing.T, deviceID, resourceURI, resourceType string, checkFn func(schema.ResourceLink) bool) bool {
+func GetResource(ctx context.Context, deviceID, resourceURI, resourceType string, resp interface{}) error {
 	devClient, err := NewSDKClient()
-	require.NoError(t, err)
 	defer func() {
 		_ = devClient.Close(ctx)
 	}()
-
-	var resp schema.ResourceLinks
-	err = devClient.GetResource(ctx, deviceID, resourceURI, &resp, deviceClient.WithResourceTypes(resourceType))
-	require.NoError(t, err)
-
-	return len(resp) == 1 && checkFn(resp[0])
+	if err != nil {
+		return err
+	}
+	err = devClient.GetResource(ctx, deviceID, resourceURI, resp, deviceClient.WithResourceTypes(resourceType))
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
-func ResourceIsBatchObservable(ctx context.Context, t *testing.T, deviceID, resourceURI, resourceType string) bool {
-	return CheckResource(ctx, t, deviceID, resourceURI, resourceType, func(rl schema.ResourceLink) bool {
-		return rl.Policy.BitMask.Has(schema.Observable) &&
-			pkgStrings.Contains(rl.Interfaces, interfaces.OC_IF_B)
-	})
+func GetIotivityLiteVersion(t *testing.T, deviceID string) uint32 {
+	version, ok := testIovityLiteVersion.Load(deviceID)
+	if ok {
+		return version
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	defer cancel()
+	plt := platform.Platform{}
+	err := GetResource(ctx, deviceID, platform.ResourceURI, platform.ResourceType, &plt)
+	require.NoError(t, err)
+	testIovityLiteVersion.Store(deviceID, plt.Version)
+	return plt.Version
+}
+
+func DeviceIsBatchObservable(ctx context.Context, t *testing.T, deviceID string) bool {
+	var links schema.ResourceLinks
+	err := GetResource(ctx, deviceID, resources.ResourceURI, resources.ResourceType, &links)
+	require.NoError(t, err)
+	require.Equal(t, 1, len(links))
+	return links[0].Policy.BitMask.Has(schema.Observable) &&
+		pkgStrings.Contains(links[0].Interfaces, interfaces.OC_IF_B)
 }
 
 func GetAllBackendResourceLinks() schema.ResourceLinks {
