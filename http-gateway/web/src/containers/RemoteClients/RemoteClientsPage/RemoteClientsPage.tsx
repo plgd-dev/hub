@@ -48,7 +48,7 @@ const RemoteClientsPage: FC<Props> = (props) => {
             }
         },
         onSuccess: () => {
-            if (clientData.status === remoteClientStatuses.UNREACHABLE) {
+            if (clientData.status === remoteClientStatuses.UNREACHABLE || clientData.status === remoteClientStatuses.DIFFERENT_OWNER) {
                 dispatch(updateRemoteClient({ status: remoteClientStatuses.REACHABLE, id: clientData?.id }))
             }
         },
@@ -81,10 +81,8 @@ const RemoteClientsPage: FC<Props> = (props) => {
         () =>
             wellKnownConfig &&
             wellKnownConfig.deviceAuthenticationMode !== DEVICE_AUTH_MODE.UNINITIALIZED &&
-            wellKnownConfig.deviceAuthenticationMode !== clientData.authenticationMode &&
-            !initializedByAnother,
-
-        [wellKnownConfig, clientData, initializedByAnother]
+            wellKnownConfig.deviceAuthenticationMode !== clientData.authenticationMode,
+        [wellKnownConfig, clientData]
     )
 
     const differentOwner = useCallback((wellKnownConfig?: WellKnownConfigType) => hasDifferentOwner(wellKnownConfig, clientData), [clientData])
@@ -98,6 +96,12 @@ const RemoteClientsPage: FC<Props> = (props) => {
             setInitializedByAnother(true)
         }
     }, [differentOwner, initializedByAnother, wellKnownConfig])
+
+    useEffect(() => {
+        if (initializedByAnother) {
+            setInitializedByAnother(false)
+        }
+    }, [clientData])
 
     const unauthorizedCallback = useCallback(() => {
         setSuspectedUnauthorized(true)

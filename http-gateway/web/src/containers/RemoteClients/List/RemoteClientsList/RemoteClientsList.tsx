@@ -14,11 +14,13 @@ import Breadcrumbs from '@shared-ui/components/Layout/Header/Breadcrumbs'
 import { remoteClientStatuses, RemoteClientStatusesType } from '@shared-ui/app/clientApp/RemoteClients/constants'
 import IconEdit from '@shared-ui/components/Atomic/Icon/components/IconEdit'
 import AppContext from '@shared-ui/app/share/AppContext'
+import IconRefresh from '@shared-ui/components/Atomic/Icon/components/IconRefresh'
 
 import { Props } from './RemoteClientsList.types'
 import { messages as t } from '../../RemoteClients.i18n'
 import { messages as g } from '../../../Global.i18n'
 import { NO_DEVICE_NAME } from '@/containers/Devices/constants'
+import { reset } from '@shared-ui/app/clientApp/App/AppRest'
 
 const RemoteClientsList: FC<Props> = (props) => {
     const { data, isAllSelected, selectedClients, setIsAllSelected, setSelectedClients, handleOpenDeleteModal } = props
@@ -52,6 +54,10 @@ const RemoteClientsList: FC<Props> = (props) => {
                     status: states.ONLINE,
                 }
         }
+    }, [])
+
+    const handleResetClient = useCallback((clientUrl: string) => {
+        reset(clientUrl).then(() => console.log('done!'))
     }, [])
 
     const columns = useMemo(
@@ -101,6 +107,12 @@ const RemoteClientsList: FC<Props> = (props) => {
                 Cell: ({ row }: any) => (
                     <TableActionButton
                         items={[
+                            {
+                                onClick: () => handleResetClient(row.original.clientUrl),
+                                label: _(g.reset),
+                                icon: <IconRefresh />,
+                                hidden: process.env.NODE_ENV !== 'development',
+                            },
                             {
                                 onClick: () => navigate(`/remote-clients/${row.original.id}/configuration`),
                                 label: _(g.edit),

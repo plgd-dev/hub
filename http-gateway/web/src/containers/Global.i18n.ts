@@ -41,4 +41,8 @@ export const messages = defineMessages({
         id: 'app.edit',
         defaultMessage: 'Edit',
     },
+    reset: {
+        id: 'app.reset',
+        defaultMessage: 'Reset',
+    },
 })
