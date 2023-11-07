@@ -15,12 +15,12 @@ import { remoteClientStatuses, RemoteClientStatusesType } from '@shared-ui/app/c
 import IconEdit from '@shared-ui/components/Atomic/Icon/components/IconEdit'
 import AppContext from '@shared-ui/app/share/AppContext'
 import IconRefresh from '@shared-ui/components/Atomic/Icon/components/IconRefresh'
+import { reset } from '@shared-ui/app/clientApp/App/AppRest'
 
 import { Props } from './RemoteClientsList.types'
 import { messages as t } from '../../RemoteClients.i18n'
 import { messages as g } from '../../../Global.i18n'
 import { NO_DEVICE_NAME } from '@/containers/Devices/constants'
-import { reset } from '@shared-ui/app/clientApp/App/AppRest'
 
 const RemoteClientsList: FC<Props> = (props) => {
     const { data, isAllSelected, selectedClients, setIsAllSelected, setSelectedClients, handleOpenDeleteModal } = props
@@ -54,6 +54,7 @@ const RemoteClientsList: FC<Props> = (props) => {
                     status: states.ONLINE,
                 }
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
     const handleResetClient = useCallback((clientUrl: string) => {

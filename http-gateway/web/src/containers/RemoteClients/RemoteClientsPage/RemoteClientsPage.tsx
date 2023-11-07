@@ -101,6 +101,7 @@ const RemoteClientsPage: FC<Props> = (props) => {
         if (initializedByAnother) {
             setInitializedByAnother(false)
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [clientData])
 
     const unauthorizedCallback = useCallback(() => {
