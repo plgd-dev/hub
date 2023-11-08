@@ -159,7 +159,7 @@ func NewCoapResourceDeleteRequest(ctx context.Context, messagePool *pool.Pool, e
 		return nil, err
 	}
 	if event.GetResourceInterface() != "" {
-		req.AddOptionString(message.URIQuery, "if="+event.GetResourceInterface())
+		req.AddOptionString(message.URIQuery, uri.InterfaceQueryKeyPrefix+event.GetResourceInterface())
 	}
 	return req, nil
 }

@@ -31,9 +31,9 @@ func WithCoapConnectionOpt(c *client.Conn) CoapConnectionOpt {
 	}
 }
 
-type MakeServiceHandler = func(service *Service, opts ...Option) ServiceHandler
+type GetServiceHandler = func(service *Service, opts ...Option) ServiceHandler
 
-type VerifyServiceHandler = func(ServiceHandler)
+type OnShutdown = func(ServiceHandler)
 
 type ServiceHandler interface {
 	CloseOnError() bool
