@@ -124,7 +124,8 @@ func TestObserveDeviceResourcesRetrieve(t *testing.T) {
 			Type: &pb.Event_ResourceRetrieved{
 				ResourceRetrieved: pbTest.MakeResourceRetrieved(t, deviceID, platform.ResourceURI, retrieveCorrelationID,
 					map[string]interface{}{
-						"mnmn": "ocfcloud.com",
+						"mnmn":                   "ocfcloud.com",
+						"x.org.iotivity.version": test.GetIotivityLiteVersion(t, deviceID),
 					}),
 			},
 		},

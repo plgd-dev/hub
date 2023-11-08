@@ -29,7 +29,7 @@ import (
 
 func getOnboardEventForResource(t *testing.T, deviceID, href string) interface{} {
 	rid := commands.NewResourceID(deviceID, href)
-	for _, r := range test.GetAllBackendResourceRepresentations(deviceID, test.TestDeviceName) {
+	for _, r := range test.GetAllBackendResourceRepresentations(t, deviceID, test.TestDeviceName) {
 		resourceID := commands.ResourceIdFromString(r.Href)
 		if rid.ToString() == resourceID.ToString() {
 			return pbTest.MakeResourceChanged(t, deviceID, href, "", r.Representation)
@@ -45,7 +45,7 @@ func getAllOnboardEvents(t *testing.T, deviceID string, links []schema.ResourceL
 	expectedRLP := pbTest.MakeResourceLinksPublished(deviceID, test.ResourceLinksToResources(deviceID, links), "")
 	events := make([]interface{}, 0, 8)
 	events = append(events, expectedDMU, expectedDMU1, expectedDMU2, expectedRLP)
-	for _, r := range test.GetAllBackendResourceRepresentations(deviceID, test.TestDeviceName) {
+	for _, r := range test.GetAllBackendResourceRepresentations(t, deviceID, test.TestDeviceName) {
 		rid := commands.ResourceIdFromString(r.Href) // validate
 		events = append(events, pbTest.MakeResourceChanged(t, deviceID, rid.GetHref(), "", r.Representation))
 	}

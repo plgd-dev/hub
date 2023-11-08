@@ -26,7 +26,7 @@ require (
 	github.com/panjf2000/ants/v2 v2.8.2
 	github.com/pion/dtls/v2 v2.2.8-0.20231026152330-9cc3df9c3369
 	github.com/pion/logging v0.2.2
-	github.com/plgd-dev/device/v2 v2.2.3-0.20231102140441-be15c594982e
+	github.com/plgd-dev/device/v2 v2.2.3-0.20231106150043-7b96f633d7e9
 	github.com/plgd-dev/go-coap/v3 v3.1.6
 	github.com/plgd-dev/kit/v2 v2.0.0-20211006190727-057b33161b90
 	github.com/pseudomuto/protoc-gen-doc v1.5.1
