@@ -19,7 +19,7 @@
     "@opentelemetry/sdk-trace-web": "^1.14.0",
     "@reduxjs/toolkit": "^1.9.5",
     "@types/jest": "^29.5.2",
-    "@types/lodash": "^4.14.195",
+    "@types/lodash": "^4.14.200",
     "@types/node": "^18.11.18",
     "@types/react": "^18.2.14",
     "@types/react-dom": "^18.2.6",
