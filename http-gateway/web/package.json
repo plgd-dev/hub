@@ -10,7 +10,7 @@
     "@emotion/eslint-plugin": "^11.11.0",
     "@emotion/react": "^11.11.1",
     "@opentelemetry/api": "^1.4.1",
-    "@opentelemetry/context-zone": "^1.14.0",
+    "@opentelemetry/context-zone": "^1.17.1",
     "@opentelemetry/core": "^1.14.0",
     "@opentelemetry/instrumentation": "^0.40.0",
     "@opentelemetry/instrumentation-fetch": "^0.40.0",
