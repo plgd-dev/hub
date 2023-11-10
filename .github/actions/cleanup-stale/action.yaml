@@ -1,0 +1,53 @@
+name: Delete stale images
+
+description: Delete stale images
+
+inputs:
+  delay:
+    description: Delay before running the action (in seconds)
+    required: false
+    default: "0" # seconds
+  token:
+    description: A Github PAT token to fetch repository and delete packages (needs delete:packages permissions).
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Delay # needed in case of retry to avoid triggering the rate limit of the Github API
+      if: ${{ inputs.delay != '0' }}
+      shell: bash
+      run: |
+        sleep ${{ inputs.delay }}
+
+    - name: Delete older than a month vnext and vnext-pr images
+      uses: snok/container-retention-policy@v2
+      with:
+        image-names: hub/*
+        cut-off: One month ago UTC
+        account-type: org
+        org-name: plgd-dev
+        # matches both vnext-* and vnext-pr-* tags
+        filter-tags: vnext-*
+        skip-tags: main
+        token: ${{ inputs.token }}
+
+    - name: Set up Docker Buildx for delete untagged images action
+      uses: docker/setup-buildx-action@v3
+
+    - name: Login to GitHub Container Registry for delete untagged images action
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ inputs.token }}
+
+    - name: Delete untagged images with no dependency
+      uses: Chizkiyahu/delete-untagged-ghcr-action@v3
+      with:
+        repository: ${{ github.repository }}
+        repository_owner: ${{ github.repository_owner }}
+        token: ${{ inputs.token }}
+        owner_type: org
+        untagged_only: true
+        except_untagged_multiplatform: true
