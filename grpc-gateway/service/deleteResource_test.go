@@ -10,6 +10,9 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/plgd-dev/device/v2/schema/device"
+	"github.com/plgd-dev/device/v2/schema/interfaces"
+	"github.com/plgd-dev/device/v2/schema/resources"
+	"github.com/plgd-dev/go-coap/v3/message"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	exCodes "github.com/plgd-dev/hub/v2/grpc-gateway/pb/codes"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
@@ -222,4 +225,97 @@ func TestRequestHandlerDeleteResourceAfterUnpublish(t *testing.T) {
 	}
 	require.Len(t, links, 1)
 	require.NotEmpty(t, pbTest.FindResourceInResourceLinksPublishedByHref(links[0], test.TestResourceSwitchesInstanceHref(switchID2)))
+}
+
+func TestRequestHandlerBatchDeleteResource(t *testing.T) {
+	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
+	switchIDs := []string{"1", "2", "3", "4", "5", "6", "7", "8"}
+
+	type args struct {
+		href string
+		ttl  int64
+	}
+	tests := []struct {
+		name        string
+		args        args
+		wantErr     bool
+		wantErrCode codes.Code
+		want        *events.ResourceDeleted
+	}{
+		{
+			name: "/oic/res - Delete not supported",
+			args: args{
+				href: resources.ResourceURI,
+			},
+			wantErr:     true,
+			wantErrCode: codes.NotFound,
+		},
+		{
+			name: "/switches/1 - Batch delete not supported",
+			args: args{
+				href: test.TestResourceSwitchesInstanceHref("1"),
+			},
+			wantErr:     true,
+			wantErrCode: codes.PermissionDenied,
+		},
+		{
+			name: "/switches",
+			args: args{
+				href: test.TestResourceSwitchesHref,
+			},
+			want: func() *events.ResourceDeleted {
+				rdel := pbTest.MakeResourceDeleted(deviceID, test.TestResourceSwitchesHref, "")
+				links := test.CollectionLinkRepresentations{}
+				for _, switchID := range switchIDs {
+					links = append(links, test.CollectionLinkRepresentation{
+						Href:           test.TestResourceSwitchesInstanceHref(switchID),
+						Representation: map[interface{}]interface{}{},
+					})
+				}
+				rdel.Content = &commands.Content{
+					CoapContentFormat: int32(message.AppOcfCbor),
+					ContentType:       message.AppOcfCbor.String(),
+					Data:              test.EncodeToCbor(t, links),
+				}
+				return rdel
+			}(),
+		},
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
+	defer cancel()
+
+	tearDown := service.SetUp(ctx, t)
+	defer tearDown()
+	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
+
+	conn, err := grpc.Dial(config.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+		RootCAs: test.GetRootCertificatePool(t),
+	})))
+	require.NoError(t, err)
+	defer func() {
+		_ = conn.Close()
+	}()
+	c := pb.NewGrpcGatewayClient(conn)
+	_, shutdown := test.OnboardDevSim(ctx, t, c, deviceID, config.ACTIVE_COAP_SCHEME+"://"+config.COAP_GW_HOST, test.GetAllBackendResourceLinks())
+	defer shutdown()
+	test.AddDeviceSwitchResources(ctx, t, deviceID, c, switchIDs...)
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req := &pb.DeleteResourceRequest{
+				ResourceId:        commands.NewResourceID(deviceID, tt.args.href),
+				TimeToLive:        tt.args.ttl,
+				ResourceInterface: interfaces.OC_IF_B,
+			}
+			got, err := c.DeleteResource(ctx, req)
+			if tt.wantErr {
+				require.Error(t, err)
+				require.Equal(t, tt.wantErrCode, status.Convert(err).Code())
+				return
+			}
+			require.NoError(t, err)
+			pbTest.CmpResourceDeleted(t, tt.want, got.GetData())
+		})
+	}
 }

@@ -1,6 +1,6 @@
 package client
 
-// WithInterface updates/gets resource with interface directly from a device.
+// WithInterface updates/gets/deletes resource with interface directly from a device.
 func WithInterface(resourceInterface string) ResourceInterfaceOption {
 	return ResourceInterfaceOption{
 		resourceInterface: resourceInterface,
@@ -24,6 +24,13 @@ func (r ResourceInterfaceOption) applyOnGet(opts getOptions) getOptions {
 }
 
 func (r ResourceInterfaceOption) applyOnUpdate(opts updateOptions) updateOptions {
+	if r.resourceInterface != "" {
+		opts.resourceInterface = r.resourceInterface
+	}
+	return opts
+}
+
+func (r ResourceInterfaceOption) applyOnDelete(opts deleteOptions) deleteOptions {
 	if r.resourceInterface != "" {
 		opts.resourceInterface = r.resourceInterface
 	}
@@ -152,7 +159,8 @@ type ObserveOption = interface {
 }
 
 type deleteOptions struct {
-	codec Codec
+	resourceInterface string
+	codec             Codec
 }
 
 // DeleteOption option definition.

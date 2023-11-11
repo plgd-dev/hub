@@ -12,7 +12,9 @@ jobs:
     name: Delete images related to closed PR
     runs-on: ubuntu-latest
     steps:
-      - name: Delete images related to closed PR
+      - name: Delete images related to closed PR (1)
+        id: run-1
+        continue-on-error: true
         uses: snok/container-retention-policy@v2
         with:
           image-names: hub/*
@@ -21,39 +23,52 @@ jobs:
           org-name: plgd-dev
           filter-tags: vnext-pr${{ github.event.pull_request.number }}*
           token: ${{ secrets.GHCR_CLEANUP_PAT }}
-
-  nightly-ghcr-cleanup:
-    if: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
-    name: Delete old vnext images
-    runs-on: ubuntu-latest
-    steps:
-      - name: Delete older than a month vnext images
+      - name: Delete images related to closed PR (2)
+        id: run-2
+        if: ${{ steps.run-1.outcome == 'failure' }}
+        continue-on-error: true
         uses: snok/container-retention-policy@v2
         with:
           image-names: hub/*
-          cut-off: One month ago UTC
+          cut-off: now UTC
           account-type: org
           org-name: plgd-dev
-          filter-tags: vnext-*
-          skip-tags: vnext-pr*, main
+          filter-tags: vnext-pr${{ github.event.pull_request.number }}*
           token: ${{ secrets.GHCR_CLEANUP_PAT }}
-
-      - name: Set up Docker Buildx for delete untagged images action
-        uses: docker/setup-buildx-action@v3
-
-      - name: Login to GitHub Container Registry for delete untagged images action
-        uses: docker/login-action@v3
+      - name: Delete images related to closed PR (3)
+        if: ${{ steps.run-2.outcome == 'failure' }}
+        uses: snok/container-retention-policy@v2
         with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GHCR_CLEANUP_PAT }}
-
-      - name: Delete untagged images with no dependency
-        uses: Chizkiyahu/delete-untagged-ghcr-action@v3
-        with:
-          repository: ${{ github.repository }}
-          repository_owner: ${{ github.repository_owner }}
+          image-names: hub/*
+          cut-off: now UTC
+          account-type: org
+          org-name: plgd-dev
+          filter-tags: vnext-pr${{ github.event.pull_request.number }}*
           token: ${{ secrets.GHCR_CLEANUP_PAT }}
-          owner_type: org
-          untagged_only: true
-          except_untagged_multiplatform: true
+  nightly-ghcr-cleanup:
+    if: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
+    name: Delete stale or untagged images
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout local actions
+        uses: actions/checkout@v4
+      - name: Delete stale or untagged images (1)
+        id: run-1
+        continue-on-error: true
+        uses: ./.github/actions/cleanup-stale
+        with:
+          token: ${{ secrets.GHCR_CLEANUP_PAT }}
+      - name: Delete stale or untagged images (2)
+        id: run-2
+        if: ${{ steps.run-1.outcome == 'failure' }}
+        with:
+          token: ${{ secrets.GHCR_CLEANUP_PAT }}
+          delay: 60
+        continue-on-error: true
+        uses: ./.github/actions/cleanup-stale
+      - name: Delete stale or untagged images (3)
+        if: ${{ steps.run-2.outcome == 'failure' }}
+        uses: ./.github/actions/cleanup-stale
+        with:
+          token: ${{ secrets.GHCR_CLEANUP_PAT }}
+          delay: 60

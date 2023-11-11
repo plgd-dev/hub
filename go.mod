@@ -26,7 +26,7 @@ require (
 	github.com/panjf2000/ants/v2 v2.8.2
 	github.com/pion/dtls/v2 v2.2.8-0.20231026152330-9cc3df9c3369
 	github.com/pion/logging v0.2.2
-	github.com/plgd-dev/device/v2 v2.2.3-0.20231106150043-7b96f633d7e9
+	github.com/plgd-dev/device/v2 v2.2.3-0.20231108134455-0959ef99dc70
 	github.com/plgd-dev/go-coap/v3 v3.1.6
 	github.com/plgd-dev/kit/v2 v2.0.0-20211006190727-057b33161b90
 	github.com/pseudomuto/protoc-gen-doc v1.5.1
@@ -47,6 +47,7 @@ require (
 	go.opentelemetry.io/otel/trace v1.14.0
 	go.uber.org/atomic v1.11.0
 	go.uber.org/zap v1.24.0
+	golang.org/x/exp v0.0.0-20231006140011-7918f672742d
 	golang.org/x/net v0.17.0
 	golang.org/x/oauth2 v0.13.0
 	golang.org/x/sync v0.4.0
@@ -119,7 +120,6 @@ require (
 	go.opentelemetry.io/proto/otlp v1.0.0 // indirect
 	go.uber.org/multierr v1.9.0 // indirect
 	golang.org/x/crypto v0.14.0 // indirect
-	golang.org/x/exp v0.0.0-20231006140011-7918f672742d // indirect
 	golang.org/x/sys v0.13.0 // indirect
 	golang.org/x/text v0.13.0 // indirect
 	google.golang.org/appengine v1.6.8 // indirect

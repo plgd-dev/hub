@@ -32,18 +32,18 @@ func MakeConfig(t require.TestingT) service.Config {
 	return cfg
 }
 
-func SetUp(t require.TestingT, makeHandler service.MakeServiceHandler, verifyOnClose service.VerifyServiceHandler) (tearDown func()) {
-	return New(t, MakeConfig(t), makeHandler, verifyOnClose)
+func SetUp(t require.TestingT, getHandler service.GetServiceHandler, onShutdown service.OnShutdown) (tearDown func()) {
+	return New(t, MakeConfig(t), getHandler, onShutdown)
 }
 
-func New(t require.TestingT, cfg service.Config, makeHandler service.MakeServiceHandler, verifyOnClose service.VerifyServiceHandler) func() {
+func New(t require.TestingT, cfg service.Config, getHandler service.GetServiceHandler, onShutdown service.OnShutdown) func() {
 	ctx := context.Background()
 	logger := log.NewLogger(cfg.Log.Config)
 
 	fileWatcher, err := fsnotify.NewWatcher(logger)
 	require.NoError(t, err)
 
-	s, err := service.New(ctx, cfg, fileWatcher, logger, makeHandler)
+	s, err := service.New(ctx, cfg, fileWatcher, logger, getHandler)
 	require.NoError(t, err)
 
 	var wg sync.WaitGroup
@@ -55,9 +55,9 @@ func New(t require.TestingT, cfg service.Config, makeHandler service.MakeService
 	return func() {
 		_ = s.Close()
 		wg.Wait()
-		if verifyOnClose != nil {
+		if onShutdown != nil {
 			for _, c := range s.GetClients() {
-				verifyOnClose(c.GetServiceHandler())
+				onShutdown(c.GetServiceHandler())
 			}
 		}
 

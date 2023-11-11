@@ -27,16 +27,16 @@ import (
 
 // Service is a configuration of coap-gateway
 type Service struct {
-	config      Config
-	coapServer  *coapTcpServer.Server
-	listener    coapTcpServer.Listener
-	closeFn     func()
-	ctx         context.Context
-	cancel      context.CancelFunc
-	sigs        chan os.Signal
-	taskQueue   *queue.Queue
-	makeHandler MakeServiceHandler
-	clients     []*Client
+	config     Config
+	coapServer *coapTcpServer.Server
+	listener   coapTcpServer.Listener
+	closeFn    func()
+	ctx        context.Context
+	cancel     context.CancelFunc
+	sigs       chan os.Signal
+	taskQueue  *queue.Queue
+	getHandler GetServiceHandler
+	clients    []*Client
 }
 
 func newTCPListener(config COAPConfig, fileWatcher *fsnotify.Watcher, logger log.Logger) (coapTcpServer.Listener, func(), error) {
@@ -73,7 +73,7 @@ func newTCPListener(config COAPConfig, fileWatcher *fsnotify.Watcher, logger log
 }
 
 // New creates server.
-func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logger log.Logger, makeHandler MakeServiceHandler) (*Service, error) {
+func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logger log.Logger, getHandler GetServiceHandler) (*Service, error) {
 	queue, err := queue.New(config.TaskQueue)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create job queue %w", err)
@@ -89,15 +89,15 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 	ctx, cancel := context.WithCancel(ctx)
 
 	s := Service{
-		config:      config,
-		listener:    listener,
-		closeFn:     closeFn.ToFunction(),
-		ctx:         ctx,
-		cancel:      cancel,
-		sigs:        make(chan os.Signal, 1),
-		taskQueue:   queue,
-		makeHandler: makeHandler,
-		clients:     nil,
+		config:     config,
+		listener:   listener,
+		closeFn:    closeFn.ToFunction(),
+		ctx:        ctx,
+		cancel:     cancel,
+		sigs:       make(chan os.Signal, 1),
+		taskQueue:  queue,
+		getHandler: getHandler,
+		clients:    nil,
 	}
 
 	if err := s.setupCoapServer(); err != nil {
@@ -118,7 +118,7 @@ func decodeMsgToDebug(client *Client, resp *pool.Message, tag string) {
 const clientKey = "client"
 
 func (s *Service) coapConnOnNew(coapConn *coapTcpClient.Conn) {
-	client := newClient(s, coapConn, s.makeHandler(s, WithCoapConnectionOpt(coapConn)))
+	client := newClient(s, coapConn, s.getHandler(s, WithCoapConnectionOpt(coapConn)))
 	coapConn.SetContextValue(clientKey, client)
 	coapConn.AddOnClose(func() {
 		client.OnClose()
