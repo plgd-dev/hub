@@ -15,7 +15,7 @@ const RemoteClientDetailPage: FC<Props> = (props) => {
 
     return (
         <RemoteClientsPage>
-            {(clientData, reInitializationError, reInitializationLoading, initializedByAnother) => {
+            {(clientData, reInitializationError, loading, initializedByAnother) => {
                 return (
                     <DevicesListPage
                         breadcrumbs={[
@@ -32,8 +32,8 @@ const RemoteClientDetailPage: FC<Props> = (props) => {
                         defaultActiveTab={reInitializationError || initializedByAnother ? 1 : props.defaultActiveTab}
                         detailLinkPrefix={`/remote-clients/${clientData?.id}`}
                         initializedByAnother={initializedByAnother}
+                        loading={loading}
                         reInitializationError={reInitializationError}
-                        reInitializationLoading={reInitializationLoading}
                         title={clientData.clientName}
                     />
                 )

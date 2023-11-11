@@ -21,7 +21,7 @@ import { Props } from './RemoteClientsAuthProvider.types'
 import notificationId from '@/notificationId'
 
 const RemoteClientsAuthProvider: FC<Props> = (props) => {
-    const { wellKnownConfig, reInitialization, clientData, children, setAuthError, setInitialize, unauthorizedCallback } = props
+    const { wellKnownConfig, reInitialization, clientData, loading, children, setAuthError, setInitialize, unauthorizedCallback } = props
     const { clientUrl, authenticationMode, preSharedSubjectId, preSharedKey } = clientData
     const { formatMessage: _ } = useIntl()
     const [reInitializationLoading, setReInitializationLoading] = useState(false)
@@ -44,7 +44,7 @@ const RemoteClientsAuthProvider: FC<Props> = (props) => {
     }, [clientData, prevClientData, reInitializationError])
 
     useEffect(() => {
-        if (reInitialization && !reInitializationLoading && !reInitializationError) {
+        if (reInitialization && !reInitializationLoading && !reInitializationError && !loading) {
             setReInitializationLoading(true)
             reset(clientUrl, unauthorizedCallback)
                 .then(() => {
@@ -56,10 +56,10 @@ const RemoteClientsAuthProvider: FC<Props> = (props) => {
                     setReInitializationError(true)
                 })
         }
-    }, [reInitialization, clientUrl, setInitialize, reInitializationLoading, unauthorizedCallback, reInitializationError])
+    }, [reInitialization, clientUrl, setInitialize, reInitializationLoading, unauthorizedCallback, reInitializationError, loading])
 
     useEffect(() => {
-        if (wellKnownConfig && !wellKnownConfig.isInitialized && !initializationLoading && !reInitializationError) {
+        if (wellKnownConfig && !wellKnownConfig.isInitialized && !initializationLoading && !reInitializationError && !loading) {
             if (authenticationMode === DEVICE_AUTH_MODE.X509) {
                 try {
                     setInitializationLoading(true)
@@ -115,9 +115,9 @@ const RemoteClientsAuthProvider: FC<Props> = (props) => {
             }
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [wellKnownConfig, setAuthError, setInitialize])
+    }, [wellKnownConfig, setAuthError, setInitialize, loading])
 
-    if (!wellKnownConfig || !wellKnownConfig?.isInitialized || initializationLoading) {
+    if (!wellKnownConfig) {
         return (
             <AppLoader
                 i18n={{
@@ -127,7 +127,7 @@ const RemoteClientsAuthProvider: FC<Props> = (props) => {
         )
     }
 
-    return children(reInitializationLoading, reInitializationError)
+    return children(reInitializationLoading, initializationLoading, reInitializationError)
 }
 
 RemoteClientsAuthProvider.displayName = 'RemoteClientsAuthProvider'

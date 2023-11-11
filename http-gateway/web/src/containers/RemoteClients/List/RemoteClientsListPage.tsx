@@ -12,6 +12,7 @@ import Notification from '@shared-ui/components/Atomic/Notification/Toast'
 import { RemoteClientType } from '@shared-ui/app/clientApp/RemoteClients/RemoteClients.types'
 import { remoteClientStatuses } from '@shared-ui/app/clientApp/RemoteClients/constants'
 import AppContext from '@shared-ui/app/share/AppContext'
+import { hasDifferentOwner } from '@shared-ui/common/services/api-utils'
 
 import { messages as t } from '../RemoteClients.i18n'
 import { messages as g } from '../../Global.i18n'
@@ -22,7 +23,6 @@ import { addRemoteClient, deleteRemoteClients, updateRemoteClients, updateRemote
 import { CombinedStoreType } from '@/store/store'
 import RemoteClientsList from '@/containers/RemoteClients/List/RemoteClientsList'
 import notificationId from '@/notificationId'
-import { hasDifferentOwner } from '@shared-ui/common/services/api-utils'
 
 const RemoteClientsListPage: FC<any> = () => {
     const { formatMessage: _ } = useIntl()

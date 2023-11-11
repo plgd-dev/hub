@@ -19,6 +19,7 @@ import { messages as g } from '@/containers/Global.i18n'
 import { messages as t } from '../RemoteClients.i18n'
 import RemoteClientsAuthProvider from '@/containers/RemoteClients/RemoteClientsAuthProvider'
 import { updateRemoteClient } from '@/containers/RemoteClients/slice'
+import { RemoteClientType } from '@shared-ui/app/clientApp/RemoteClients/RemoteClients.types'
 
 const RemoteClientsPage: FC<Props> = (props) => {
     const { children } = props
@@ -85,38 +86,40 @@ const RemoteClientsPage: FC<Props> = (props) => {
         [wellKnownConfig, clientData]
     )
 
-    const differentOwner = useCallback((wellKnownConfig?: WellKnownConfigType) => hasDifferentOwner(wellKnownConfig, clientData), [clientData])
+    const differentOwner = useCallback(
+        (wellKnownConfig: WellKnownConfigType, clientData: RemoteClientType) => hasDifferentOwner(wellKnownConfig, clientData),
+        []
+    )
 
     useEffect(() => {
-        clientAppSettings.setUseToken(!differentOwner(wellKnownConfig) && clientData.authenticationMode === DEVICE_AUTH_MODE.X509)
-    }, [wellKnownConfig, clientData.authenticationMode, differentOwner])
+        clientAppSettings.setUseToken(!differentOwner(wellKnownConfig!, clientData) && clientData.authenticationMode === DEVICE_AUTH_MODE.X509)
+    }, [wellKnownConfig, clientData.authenticationMode, differentOwner, clientData])
 
     useEffect(() => {
-        if (wellKnownConfig && differentOwner(wellKnownConfig) && !initializedByAnother) {
-            setInitializedByAnother(true)
+        if (wellKnownConfig) {
+            const diffOwner = differentOwner(wellKnownConfig, clientData)
+
+            if (diffOwner && !initializedByAnother) {
+                setInitializedByAnother(true)
+            } else if (!diffOwner && initializedByAnother) {
+                setInitializedByAnother(false)
+            }
         }
-    }, [differentOwner, initializedByAnother, wellKnownConfig])
-
-    useEffect(() => {
-        if (initializedByAnother) {
-            setInitializedByAnother(false)
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [clientData])
+    }, [differentOwner, initializedByAnother, wellKnownConfig, clientData])
 
     const unauthorizedCallback = useCallback(() => {
         setSuspectedUnauthorized(true)
 
         reFetchConfig()
             .then((newWellKnownConfig: WellKnownConfigType) => {
-                if (differentOwner(newWellKnownConfig)) {
+                if (differentOwner(newWellKnownConfig, clientData)) {
                     setInitializedByAnother(true)
                 }
             })
             .then(() => {
                 setSuspectedUnauthorized(false)
             })
-    }, [differentOwner, reFetchConfig])
+    }, [differentOwner, reFetchConfig, clientData])
 
     const contextValue = useMemo(
         () => ({
@@ -140,7 +143,7 @@ const RemoteClientsPage: FC<Props> = (props) => {
         return <div className='client-error-message'>{wellKnownConfigError?.message}</div>
     }
 
-    if (!wellKnownConfig || !clientData || loading) {
+    if (!wellKnownConfig || !clientData) {
         return <FullPageLoader i18n={{ loading: _(g.loading) }} />
     } else {
         clientAppSettings.setWellKnowConfig(wellKnownConfig)
@@ -166,17 +169,23 @@ const RemoteClientsPage: FC<Props> = (props) => {
                 <Helmet title={`${clientData.clientName}`} />
                 <RemoteClientsAuthProvider
                     clientData={clientData}
+                    loading={loading}
                     reInitialization={reInitialization}
                     setAuthError={setAuthError}
                     setInitialize={setInitialize}
                     unauthorizedCallback={unauthorizedCallback}
                     wellKnownConfig={wellKnownConfig}
                 >
-                    {(reInitializationLoading, reInitializationError) => {
+                    {(reInitializationLoading, initializationLoading, reInitializationError) => {
                         if (suspectedUnauthorized) {
                             return <FullPageLoader i18n={{ loading: _(g.loading) }} />
                         } else {
-                            return children(clientData, reInitializationError, reInitializationLoading, initializedByAnother)
+                            return children(
+                                clientData,
+                                reInitializationError,
+                                initializationLoading || reInitializationLoading || loading,
+                                initializedByAnother && !initializationLoading && !reInitializationLoading && wellKnownConfig?.isInitialized
+                            )
                         }
                     }}
                 </RemoteClientsAuthProvider>
