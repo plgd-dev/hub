@@ -37,7 +37,7 @@ const BaseComponent = () => {
         window.addEventListener('load', function () {
             setInterval(() => {
                 if (localStorage.getItem(DEVICE_AUTH_CODE_SESSION_KEY)) {
-                    // window.close()
+                    window.close()
                 }
             }, 200)
         })
