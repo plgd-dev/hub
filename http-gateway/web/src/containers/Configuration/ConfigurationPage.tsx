@@ -33,7 +33,7 @@ const ConfigurationPage = () => {
 
     const appStore = useSelector((state: CombinedStoreType) => state.app)
 
-    const options = useMemo(() => appStore.configuration.themes.map((t) => ({ value: t, label: t })), [])
+    const options = useMemo(() => appStore.configuration.themes.map((t) => ({ value: t, label: t })), [appStore.configuration.themes])
 
     const defTheme = useMemo(() => options.find((o) => o.value === appStore.configuration?.theme) || options[0], [appStore, options])
 
