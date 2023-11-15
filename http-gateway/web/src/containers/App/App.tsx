@@ -19,15 +19,16 @@ import { messages as g } from '@/containers/Global.i18n'
 import { getAppWellKnownConfiguration, getTheme } from '@/containers/App/AppRest'
 import AppInner from '@/containers/App/AppInner/AppInner'
 import AppLayout from '@/containers/App/AppLayout/AppLayout'
-import { setTheme as setDefaultTheme, setThemes } from './slice'
+import { setTheme, setThemes } from './slice'
 import { CombinedStoreType } from '@/store/store'
+import { useAppTheme } from '@shared-ui/common/hooks/use-app-theme'
 
 const App = (props: { mockApp: boolean }) => {
     const { formatMessage: _ } = useIntl()
     const [wellKnownConfig, setWellKnownConfig] = useState<any>(null)
     const [wellKnownConfigFetched, setWellKnownConfigFetched] = useState(false)
     const [configError, setConfigError] = useState<any>(null)
-    const [theme, setTheme] = useState<null | object[]>(null)
+    // const [theme, setTheme] = useState<null | object[]>(null)
     const appStore = useSelector((state: CombinedStoreType) => state.app)
 
     const [collapsed, setCollapsed] = useLocalStorage('leftPanelCollapsed', false)
@@ -72,43 +73,17 @@ const App = (props: { mockApp: boolean }) => {
         }
     }, [wellKnownConfig, wellKnownConfigFetched])
 
-    useEffect(() => {
-        if (!theme) {
-            const getThemeData = async () => {
-                try {
-                    const { data: themeData } = await getTheme(window.location.origin)
-
-                    if (themeData) {
-                        let themeNames: string[] = []
-                        let themes: any = {}
-
-                        themeData.themes.forEach((t: any) => {
-                            themeNames = themeNames.concat(Object.keys(t))
-                            themes[Object.keys(t)[0]] = t
-                        })
-
-                        if (appStore.configuration?.theme === '') {
-                            dispatch(setDefaultTheme(themeData.defaultTheme))
-                        }
-
-                        dispatch(setThemes(themeNames))
-                        setTheme(themeData.themes)
-                    }
-                } catch (e) {
-                    console.log(e)
-                    setConfigError(new Error('Could not retrieve the theme file.'))
-                }
-            }
-
-            getThemeData().then()
-        }
-    }, [appStore.configuration?.theme, dispatch, theme])
+    const [theme, themeError] = useAppTheme({
+        getTheme,
+        setTheme,
+        setThemes,
+    })
 
     const currentTheme = useMemo(() => appStore.configuration?.theme ?? 'plgd', [appStore.configuration?.theme])
 
     const getThemeData = useCallback(() => {
         if (theme) {
-            const index = theme.findIndex((i) => Object.keys(i)[0] === currentTheme)
+            const index = theme.findIndex((i: any) => Object.keys(i)[0] === currentTheme)
             if (index >= 0) {
                 return get(theme[index], `${currentTheme}`, {})
             }
@@ -118,7 +93,7 @@ const App = (props: { mockApp: boolean }) => {
     }, [theme, currentTheme])
 
     // Render an error box with an auth error
-    if (configError) {
+    if (configError || themeError) {
         return <div className='client-error-message'>{`${_(t.authError)}: ${configError?.message}`}</div>
     }
 
