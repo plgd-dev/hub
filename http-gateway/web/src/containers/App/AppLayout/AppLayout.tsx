@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { useIntl } from 'react-intl'
 import { useDispatch, useSelector } from 'react-redux'
 import isFunction from 'lodash/isFunction'
-import { ThemeProvider } from '@emotion/react'
+import { useTheme } from '@emotion/react'
 
 import Header from '@shared-ui/components/Layout/Header'
 import NotificationCenter from '@shared-ui/components/Atomic/NotificationCenter'
@@ -17,8 +17,8 @@ import { getVersionMarkData } from '@shared-ui/components/Atomic/VersionMark/uti
 import { severities } from '@shared-ui/components/Atomic/VersionMark/constants'
 import { flushDevices } from '@shared-ui/app/clientApp/Devices/slice'
 import { reset } from '@shared-ui/app/clientApp/App/AppRest'
-import { getTheme } from '@shared-ui/components/Atomic/_theme'
 import { ToastContainer } from '@shared-ui/components/Atomic'
+import { ThemeType } from '@shared-ui/components/Atomic/_theme'
 
 import { Props } from './AppLayout.types'
 import { mather, menu, Routes } from '@/routes'
@@ -48,7 +48,8 @@ const AppLayout: FC<Props> = (props) => {
     const notifications = useSelector((state: CombinedStoreType) => state.notifications)
     const appStore = useSelector((state: CombinedStoreType) => state.app)
     const storedRemoteStore = useSelector((state: CombinedStoreType) => state.remoteClients)
-    const theme = appStore.configuration?.theme ?? 'light'
+
+    const theme: ThemeType = useTheme()
 
     const requestVersion = useCallback((now: Date) => {
         getVersionNumberFromGithub().then((ret) => {
@@ -128,10 +129,8 @@ const AppLayout: FC<Props> = (props) => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [signOutRedirect])
 
-    const themeData = useMemo(() => getTheme(theme), [theme])
-
     return (
-        <ThemeProvider theme={themeData}>
+        <>
             <ToastContainer portalTarget={document.getElementById('toast-root')} showNotifications={true} />
             <Layout
                 content={<Routes />}
@@ -170,7 +169,7 @@ const AppLayout: FC<Props> = (props) => {
                     <LeftPanelWrapper
                         activeId={activeItem}
                         collapsed={collapsed}
-                        logo={<LogoElement logo={themeData.logo} onClick={() => navigate(`/`)} />}
+                        logo={<LogoElement logo={theme.logo} onClick={() => navigate(`/`)} />}
                         menu={menu}
                         onItemClick={handleItemClick}
                         onLocationChange={handleLocationChange}
@@ -201,7 +200,7 @@ const AppLayout: FC<Props> = (props) => {
                     />
                 }
             />
-        </ThemeProvider>
+        </>
     )
 }
 

@@ -1,5 +1,4 @@
 import { createSlice } from '@reduxjs/toolkit'
-import { PlgdThemeType } from '@shared-ui/components/Atomic/_theme'
 
 export type StoreType = {
     version: {
@@ -8,16 +7,16 @@ export type StoreType = {
         requestedDatetime?: string
     }
     configuration: {
-        theme: PlgdThemeType
-        storeVersion: string
+        theme: string
+        themes: string[]
     }
 }
 
 const initialState: StoreType = {
     version: {},
     configuration: {
-        theme: 'light',
-        storeVersion: '1.1.0',
+        theme: '',
+        themes: ['plgd'],
     },
 }
 
@@ -28,6 +27,9 @@ const { reducer, actions } = createSlice({
         setVersion(state, { payload }) {
             state.version = payload
         },
+        setThemes(state, { payload }) {
+            state.configuration.themes = payload
+        },
         setTheme(state, { payload }) {
             state.configuration.theme = payload
         },
@@ -35,7 +37,7 @@ const { reducer, actions } = createSlice({
 })
 
 // Actions
-export const { setVersion, setTheme } = actions
+export const { setVersion, setThemes, setTheme } = actions
 
 // Reducer
 export default reducer
