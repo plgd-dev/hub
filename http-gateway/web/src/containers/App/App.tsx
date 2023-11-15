@@ -12,6 +12,7 @@ import { openTelemetry } from '@shared-ui/common/services/opentelemetry'
 import ConditionalWrapper from '@shared-ui/components/Atomic/ConditionalWrapper'
 import { useLocalStorage } from '@shared-ui/common/hooks'
 import AppContext from '@shared-ui/app/share/AppContext'
+import { useAppTheme } from '@shared-ui/common/hooks/use-app-theme'
 
 import './App.scss'
 import { messages as t } from './App.i18n'
@@ -21,18 +22,15 @@ import AppInner from '@/containers/App/AppInner/AppInner'
 import AppLayout from '@/containers/App/AppLayout/AppLayout'
 import { setTheme, setThemes } from './slice'
 import { CombinedStoreType } from '@/store/store'
-import { useAppTheme } from '@shared-ui/common/hooks/use-app-theme'
 
 const App = (props: { mockApp: boolean }) => {
     const { formatMessage: _ } = useIntl()
     const [wellKnownConfig, setWellKnownConfig] = useState<any>(null)
     const [wellKnownConfigFetched, setWellKnownConfigFetched] = useState(false)
     const [configError, setConfigError] = useState<any>(null)
-    // const [theme, setTheme] = useState<null | object[]>(null)
     const appStore = useSelector((state: CombinedStoreType) => state.app)
 
     const [collapsed, setCollapsed] = useLocalStorage('leftPanelCollapsed', false)
-    const dispatch = useDispatch()
 
     process.env.NODE_ENV !== 'development' && openTelemetry.init('hub')
 
