@@ -13,9 +13,9 @@
 {{- define "plgd-hub.resourceaggregate.createServiceCertByCm" }}
     {{- $serviceTls := .Values.resourceaggregate.apis.grpc.tls.certFile }}
     {{- if $serviceTls }}
-    {{- printf "false" }}
+    {{- printf "" -}}
     {{- else }}
-    {{- printf "true" }}
+    {{- printf "true" -}}
     {{- end }}
 {{- end }}
 
