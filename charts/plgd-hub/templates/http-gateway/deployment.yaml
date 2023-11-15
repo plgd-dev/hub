@@ -80,6 +80,10 @@ spec:
           volumeMounts:
             - name: {{ .Values.httpgateway.config.volume }}
               mountPath: {{ .Values.httpgateway.config.mountPath }}
+            {{- if ( include "plgd-hub.httpgateway.setCustomTheme" . ) }}
+            - name: theme-volume
+              mountPath: {{ printf "%s/theme" .Values.httpgateway.ui.directory }}
+            {{- end }}
             {{- if ( include "plgd-hub.httpgateway.createServiceCertByCm" . ) }}
             - name: service-crt
               mountPath: {{ $rdServiceCert }}
@@ -98,6 +102,11 @@ spec:
         - name: {{ .Values.httpgateway.config.volume }}
           configMap:
             name: {{ include "plgd-hub.httpgateway.configName" . }}
+        {{- if ( include "plgd-hub.httpgateway.setCustomTheme" . ) }}
+        - name: theme-volume
+          configMap:
+            name: {{ include "plgd-hub.httpgateway.configThemeName" . }}
+        {{- end }}
         {{- if ( include "plgd-hub.httpgateway.createServiceCertByCm" . ) }}
         - name: service-crt
           secret:

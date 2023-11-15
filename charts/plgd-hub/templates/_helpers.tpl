@@ -162,9 +162,9 @@ If release name contains chart name it will be used as a full name.
     {{- $raClientTls := .Values.coapgateway.clients.resourceAggregate.grpc.tls.certFile }}
     {{- $rdClientTls := .Values.coapgateway.clients.resourceDirectory.grpc.tls.certFile }}
     {{- if and $natsTls $authClientTls $raClientTls $rdClientTls }}
-    {{- printf "false" }}
+    {{- printf "" -}}
     {{- else }}
-    {{- printf "true" }}
+    {{- printf "true" -}}
     {{- end }}
 {{- end }}
 
@@ -352,7 +352,7 @@ app.kubernetes.io/instance: {{ .Release.Name }}
         {{- $externalIssuer := or ( and $nameExternal $kindExternal ) $specExternal }}
         {{- printf "%t" ( not ( and $internalIssuer $coapIssuer $externalIssuer )) }}
     {{- else }}
-        {{- printf "false" }}
+        {{- printf "" -}}
     {{- end }}
 {{- end }}
 
