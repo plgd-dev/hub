@@ -2,7 +2,7 @@ import { useContext, useState, useEffect, useCallback, useMemo } from 'react'
 import { useIntl } from 'react-intl'
 import { AuthProvider, UserManager } from 'oidc-react'
 import { BrowserRouter } from 'react-router-dom'
-import { useDispatch, useSelector } from 'react-redux'
+import { useSelector } from 'react-redux'
 import get from 'lodash/get'
 import { ThemeProvider } from '@emotion/react'
 
