@@ -10,9 +10,4 @@ export const getAppWellKnownConfiguration = (wellKnowConfigUrl: string) => {
     })
 }
 
-export const getTheme = (url: string) =>
-    fetchApi(`${url}/theme/theme.json`, {
-        useToken: false,
-    })
-
 export const getVersionNumberFromGithub = () => fetchApi(GITHUB_VERSION_URL, { useToken: false })
