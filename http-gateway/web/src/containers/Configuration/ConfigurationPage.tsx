@@ -75,7 +75,6 @@ const ConfigurationPage = () => {
     ]
 
     const onSubmit: SubmitHandler<Inputs> = (data) => {
-        console.log(data.theme.value)
         dispatch(setTheme(data.theme.value))
 
         Notification.success(
