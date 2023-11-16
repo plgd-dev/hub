@@ -14,6 +14,7 @@ import { useLocalStorage } from '@shared-ui/common/hooks'
 import AppContext from '@shared-ui/app/share/AppContext'
 import { useAppTheme } from '@shared-ui/common/hooks/use-app-theme'
 import { getTheme } from '@shared-ui/app/clientApp/App/AppRest'
+import { defaultTheme } from '@shared-ui/components/Atomic/_theme'
 
 import './App.scss'
 import { messages as t } from './App.i18n'
@@ -78,7 +79,7 @@ const App = (props: { mockApp: boolean }) => {
         setThemes,
     })
 
-    const currentTheme = useMemo(() => appStore.configuration?.theme ?? 'plgd', [appStore.configuration?.theme])
+    const currentTheme = useMemo(() => appStore.configuration?.theme ?? defaultTheme, [appStore.configuration?.theme])
 
     const getThemeData = useCallback(() => {
         if (theme) {

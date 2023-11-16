@@ -109,7 +109,7 @@
     ":lint:eslint": "eslint --ext .js,.jsx,.ts,.tsx -c .eslintrc.js --max-warnings 0 --format=pretty ./src",
     ":lint:prettier": "prettier ./src --check",
     ":clean:node:modules": "rimraf ./node_modules packages/**/node_modules",
-    ":generate:theme": "npm run :generate:theme -w @plgd/shared-ui"
+    ":generate:theme": "node ./packages/shared-ui/scripts/build.theme.js"
   },
   "scriptComments": {
     "generate-pot": "Examines all src js files and extracts the translate keys into a .pot file, to be used in a translation tool outside of this app.",

@@ -16,7 +16,7 @@ const initialState: StoreType = {
     version: {},
     configuration: {
         theme: '',
-        themes: ['plgd'],
+        themes: [],
     },
 }
 
