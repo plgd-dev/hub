@@ -12,6 +12,7 @@ import FullPageLoader from '@shared-ui/components/Atomic/FullPageLoader'
 import { DEVICE_AUTH_MODE } from '@shared-ui/app/clientApp/constants'
 import { hasDifferentOwner } from '@shared-ui/common/services/api-utils'
 import { remoteClientStatuses } from '@shared-ui/app/clientApp/RemoteClients/constants'
+import { RemoteClientType } from '@shared-ui/app/clientApp/RemoteClients/RemoteClients.types'
 
 import { Props } from './RemoteClientsPage.types'
 import * as styles from './RemoteClientsPage.styles'
@@ -19,7 +20,6 @@ import { messages as g } from '@/containers/Global.i18n'
 import { messages as t } from '../RemoteClients.i18n'
 import RemoteClientsAuthProvider from '@/containers/RemoteClients/RemoteClientsAuthProvider'
 import { updateRemoteClient } from '@/containers/RemoteClients/slice'
-import { RemoteClientType } from '@shared-ui/app/clientApp/RemoteClients/RemoteClients.types'
 
 const RemoteClientsPage: FC<Props> = (props) => {
     const { children } = props
@@ -183,7 +183,7 @@ const RemoteClientsPage: FC<Props> = (props) => {
                             return children(
                                 clientData,
                                 reInitializationError,
-                                initializationLoading || reInitializationLoading || loading,
+                                initializationLoading || reInitializationLoading || loading || !!reInitialization,
                                 initializedByAnother && !initializationLoading && !reInitializationLoading && wellKnownConfig?.isInitialized
                             )
                         }
