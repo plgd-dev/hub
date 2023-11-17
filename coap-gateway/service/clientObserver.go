@@ -11,7 +11,7 @@ import (
 // Obtain deviceObserver from the client.
 //
 // The function might block and wait for the deviceObserver to be initialized.
-func (c *session) getDeviceObserver(ctx context.Context) (*observation.DeviceObserver, error) {
+func (c *session) getDeviceObserver(ctx context.Context) (*observation.DeviceObserver, bool, error) {
 	getError := func(err error) error {
 		return fmt.Errorf("cannot get device observer: %w", err)
 	}
@@ -22,17 +22,17 @@ func (c *session) getDeviceObserver(ctx context.Context) (*observation.DeviceObs
 	c.private.mutex.Unlock()
 
 	if deviceObserverFut == nil {
-		return nil, fmt.Errorf("observer not set")
+		return nil, false, nil
 	}
 	v, err := deviceObserverFut.Get(ctx)
 	if err != nil {
-		return nil, getError(err)
+		return nil, false, getError(err)
 	}
 	deviceObserver, ok := v.(*observation.DeviceObserver)
 	if !ok {
-		return nil, getError(fmt.Errorf("invalid future value"))
+		return nil, false, getError(fmt.Errorf("invalid future value"))
 	}
-	return deviceObserver, nil
+	return deviceObserver, true, nil
 }
 
 // Replace deviceObserver instance in the client.
@@ -46,13 +46,22 @@ func (c *session) replaceDeviceObserver(deviceObserverFuture *future.Future) *fu
 
 // Replace deviceObserver instance in the client if Device Twin setting was changed for the device.
 func (c *session) replaceDeviceObserverWithDeviceTwin(ctx context.Context, twinEnabled, twinForceSynchronization bool) (bool, error) {
-	obs, err := c.getDeviceObserver(ctx)
+	obs, ok, err := c.getDeviceObserver(ctx)
 	if err != nil {
 		return false, err
 	}
-	prevTwinEnabled := obs.GetTwinEnabled()
-	deviceID := obs.GetDeviceID()
-	observationType := obs.GetObservationType()
+	deviceID := c.deviceID()
+	prevTwinEnabled := false
+	observationType := observation.ObservationType_Detect
+	if ok {
+		deviceID = obs.GetDeviceID()
+		prevTwinEnabled = obs.GetTwinEnabled()
+		observationType = obs.GetObservationType()
+	}
+	if deviceID == "" {
+		err := fmt.Errorf("cannot replace device observer: invalid device id")
+		return false, err
+	}
 	twinEnabled = twinEnabled || twinForceSynchronization
 	if !twinForceSynchronization && prevTwinEnabled == twinEnabled {
 		return prevTwinEnabled, nil

@@ -14,6 +14,9 @@ import (
 
 	"github.com/google/uuid"
 	coapCodes "github.com/plgd-dev/go-coap/v3/message/codes"
+	"github.com/plgd-dev/go-coap/v3/message/pool"
+	"github.com/plgd-dev/go-coap/v3/net/responsewriter"
+	coapTcpClient "github.com/plgd-dev/go-coap/v3/tcp/client"
 	"github.com/plgd-dev/hub/v2/coap-gateway/service"
 	coapgwTest "github.com/plgd-dev/hub/v2/coap-gateway/test"
 	"github.com/plgd-dev/hub/v2/coap-gateway/uri"
@@ -130,6 +133,53 @@ func TestSignInWithRequireBatchObserveEnabled(t *testing.T) {
 
 	// wait for connection be closed for not observation per resource enabled
 	<-co.Done()
+}
+
+func TestDontCreateObservationAfterRefreshTokenAndSignIn(t *testing.T) {
+	coapgwCfg := coapgwTest.MakeConfig(t)
+	shutdown := setUp(t, coapgwCfg)
+	defer shutdown()
+
+	h := makeTestCoapHandler(t)
+	observedPath := make(map[string]struct{})
+	co := testCoapDialWithHandler(t, "", true, true, time.Now().Add(time.Minute), func(w *responsewriter.ResponseWriter[*coapTcpClient.Conn], r *pool.Message) {
+		if r.Code() != coapCodes.GET {
+			h(w, r)
+			return
+		}
+		_, err := r.Observe()
+		if err != nil {
+			h(w, r)
+			return
+		}
+		path, err := r.Path()
+		require.NoError(t, err)
+		if _, ok := observedPath[path]; !ok {
+			observedPath[path] = struct{}{}
+			h(w, r)
+		} else {
+			require.NoError(t, fmt.Errorf("cannot observe the same resource twice"))
+		}
+	})
+	if co == nil {
+		return
+	}
+	defer func() {
+		err := co.Close()
+		require.NoError(t, err)
+	}()
+	signUpResp := testSignUp(t, CertIdentity, co)
+	testSignIn(t, CertIdentity, signUpResp, co)
+	testPublishResources(t, CertIdentity, co)
+
+	for i := 0; i < 3; i++ {
+		refresh := testRefreshToken(t, CertIdentity, signUpResp, co)
+		signUpResp.AccessToken = refresh.AccessToken
+		signUpResp.RefreshToken = refresh.RefreshToken
+		signUpResp.ExpiresIn = refresh.ExpiresIn
+		testSignIn(t, CertIdentity, signUpResp, co)
+		time.Sleep(time.Second)
+	}
 }
 
 func TestSignOutPostHandler(t *testing.T) {
