@@ -3,6 +3,7 @@ package client
 import (
 	"fmt"
 
+	"github.com/plgd-dev/hub/v2/pkg/fn"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/pkg/security/certManager/client"
@@ -16,7 +17,7 @@ import (
 // GRPC Client.
 type Client struct {
 	client    *grpc.ClientConn
-	closeFunc []func()
+	closeFunc fn.FuncList
 }
 
 func (c *Client) GRPC() *grpc.ClientConn {
@@ -26,14 +27,12 @@ func (c *Client) GRPC() *grpc.ClientConn {
 // AddCloseFunc adds a function to be called by the Close method.
 // This eliminates the need for wrapping the Client.
 func (c *Client) AddCloseFunc(f func()) {
-	c.closeFunc = append(c.closeFunc, f)
+	c.closeFunc.AddFunc(f)
 }
 
 func (c *Client) Close() error {
 	err := c.client.Close()
-	for _, f := range c.closeFunc {
-		f()
-	}
+	c.closeFunc.Execute()
 	return err
 }
 
@@ -66,7 +65,9 @@ func New(config Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tracer
 		return nil, fmt.Errorf("cannot dial: %w", err)
 	}
 
-	return &Client{
-		client: conn, closeFunc: []func(){certManager.Close},
-	}, nil
+	c := &Client{
+		client: conn,
+	}
+	c.AddCloseFunc(certManager.Close)
+	return c, nil
 }

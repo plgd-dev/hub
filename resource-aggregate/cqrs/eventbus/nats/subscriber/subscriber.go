@@ -9,6 +9,7 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 	nats "github.com/nats-io/nats.go"
+	"github.com/plgd-dev/hub/v2/pkg/fn"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	pkgTime "github.com/plgd-dev/hub/v2/pkg/time"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus"
@@ -34,7 +35,7 @@ type Subscriber struct {
 	logger          log.Logger
 	conn            *nats.Conn
 	goroutinePoolGo eventbus.GoroutinePoolGoFunc
-	closeFunc       []func()
+	closeFunc       fn.FuncList
 	pendingLimits   natsClient.PendingLimitsConfig
 
 	lock        sync.Mutex
@@ -43,7 +44,7 @@ type Subscriber struct {
 }
 
 func (s *Subscriber) AddCloseFunc(f func()) {
-	s.closeFunc = append(s.closeFunc, f)
+	s.closeFunc.AddFunc(f)
 }
 
 func (s *Subscriber) AddReconnectFunc(f func()) uint64 {
@@ -174,9 +175,7 @@ func (s *Subscriber) Subscribe(ctx context.Context, subscriptionID string, topic
 }
 
 func (s *Subscriber) Close() {
-	for _, f := range s.closeFunc {
-		f()
-	}
+	s.closeFunc.Execute()
 }
 
 func (s *Subscriber) newObservation(subscriptionID string, eh eventbus.Handler) *Observer {

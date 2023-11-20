@@ -138,7 +138,10 @@ func newRequestHandlerFromConfig(ctx context.Context, config Config, publicConfi
 		natsClient.GetConn(),
 		isClient, func(err error) {
 			log.Errorf("ownerCache error: %w", err)
-		})
+		},
+	)
+
+	closeFunc.AddFunc(ownerCache.Close)
 
 	h := NewRequestHandler(
 		config.HubID,

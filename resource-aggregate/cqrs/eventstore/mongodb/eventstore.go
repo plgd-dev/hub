@@ -11,6 +11,7 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/plgd-dev/go-coap/v3/pkg/cache"
 	"github.com/plgd-dev/go-coap/v3/pkg/runner/periodic"
+	"github.com/plgd-dev/hub/v2/pkg/fn"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	pkgMongo "github.com/plgd-dev/hub/v2/pkg/mongodb"
@@ -118,11 +119,11 @@ type EventStore struct {
 	dataMarshaler   MarshalerFunc
 	dataUnmarshaler UnmarshalerFunc
 	ensuredIndexes  *cache.Cache[string, bool]
-	closeFunc       []func()
+	closeFunc       fn.FuncList
 }
 
 func (s *EventStore) AddCloseFunc(f func()) {
-	s.closeFunc = append(s.closeFunc, f)
+	s.closeFunc.AddFunc(f)
 }
 
 func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider, opts ...Option) (*EventStore, error) {
@@ -349,9 +350,7 @@ func (s *EventStore) ClearCollections(ctx context.Context) error {
 func (s *EventStore) Close(ctx context.Context) error {
 	_ = s.ensuredIndexes.LoadAndDeleteAll()
 	err := s.client.Disconnect(ctx)
-	for _, f := range s.closeFunc {
-		f()
-	}
+	s.closeFunc.Execute()
 	return err
 }
 

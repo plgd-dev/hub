@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	nats "github.com/nats-io/nats.go"
+	"github.com/plgd-dev/hub/v2/pkg/fn"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/pkg/security/certManager/client"
@@ -11,7 +12,7 @@ import (
 
 type Client struct {
 	conn      *nats.Conn
-	closeFunc []func()
+	closeFunc fn.FuncList
 }
 
 func New(config Config, fileWatcher *fsnotify.Watcher, logger log.Logger) (*Client, error) {
@@ -36,12 +37,10 @@ func (c *Client) GetConn() *nats.Conn {
 }
 
 func (c *Client) AddCloseFunc(f func()) {
-	c.closeFunc = append(c.closeFunc, f)
+	c.closeFunc.AddFunc(f)
 }
 
 func (c *Client) Close() {
 	c.conn.Close()
-	for _, f := range c.closeFunc {
-		f()
-	}
+	c.closeFunc.Execute()
 }
