@@ -33,7 +33,6 @@ module.exports = {
       }]
     ],
   },
-
   plugins: [
     {
       plugin: CracoAliasPlugin,

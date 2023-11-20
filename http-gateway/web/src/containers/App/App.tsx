@@ -1,31 +1,47 @@
-import { useContext, useState, useEffect } from 'react'
+import { useContext, useState, useEffect, useCallback, useMemo } from 'react'
 import { useIntl } from 'react-intl'
 import { AuthProvider, UserManager } from 'oidc-react'
+import { BrowserRouter } from 'react-router-dom'
+import { useSelector } from 'react-redux'
+import get from 'lodash/get'
+import { ThemeProvider } from '@emotion/react'
 
 import PageLoader from '@shared-ui/components/Atomic/PageLoader'
 import { security } from '@shared-ui/common/services/security'
 import { openTelemetry } from '@shared-ui/common/services/opentelemetry'
+import ConditionalWrapper from '@shared-ui/components/Atomic/ConditionalWrapper'
+import { useLocalStorage } from '@shared-ui/common/hooks'
+import AppContext from '@shared-ui/app/share/AppContext'
+import { useAppTheme } from '@shared-ui/common/hooks/use-app-theme'
+import { getTheme } from '@shared-ui/app/clientApp/App/AppRest'
+import { defaultTheme } from '@shared-ui/components/Atomic/_theme'
 
 import './App.scss'
 import { messages as t } from './App.i18n'
-import { AppContext } from './AppContext'
+import { messages as g } from '@/containers/Global.i18n'
 import { getAppWellKnownConfiguration } from '@/containers/App/AppRest'
 import AppInner from '@/containers/App/AppInner/AppInner'
+import AppLayout from '@/containers/App/AppLayout/AppLayout'
+import { setTheme, setThemes } from './slice'
+import { CombinedStoreType } from '@/store/store'
 
-const App = () => {
+const App = (props: { mockApp: boolean }) => {
     const { formatMessage: _ } = useIntl()
     const [wellKnownConfig, setWellKnownConfig] = useState<any>(null)
     const [wellKnownConfigFetched, setWellKnownConfigFetched] = useState(false)
     const [configError, setConfigError] = useState<any>(null)
+    const appStore = useSelector((state: CombinedStoreType) => state.app)
 
-    openTelemetry.init('hub')
+    const [collapsed, setCollapsed] = useLocalStorage('leftPanelCollapsed', false)
+
+    process.env.NODE_ENV !== 'development' && openTelemetry.init('hub')
 
     useEffect(() => {
         if (!wellKnownConfig && !wellKnownConfigFetched) {
             const fetchWellKnownConfig = async () => {
                 try {
                     const { data: wellKnown } = await openTelemetry.withTelemetry(
-                        () => getAppWellKnownConfiguration(process.env.REACT_APP_HTTP_WELL_NOW_CONFIGURATION_ADDRESS || window.location.origin),
+                        () => getAppWellKnownConfiguration(process.env.REACT_APP_HTTP_WELL_KNOW_CONFIGURATION_ADDRESS || window.location.origin),
                         'get-hub-configuration'
                     )
 
@@ -57,17 +73,36 @@ const App = () => {
         }
     }, [wellKnownConfig, wellKnownConfigFetched])
 
+    const [theme, themeError] = useAppTheme({
+        getTheme,
+        setTheme,
+        setThemes,
+    })
+
+    const currentTheme = useMemo(() => appStore.configuration?.theme ?? defaultTheme, [appStore.configuration?.theme])
+
+    const getThemeData = useCallback(() => {
+        if (theme) {
+            const index = theme.findIndex((i: any) => Object.keys(i)[0] === currentTheme)
+            if (index >= 0) {
+                return get(theme[index], `${currentTheme}`, {})
+            }
+        }
+
+        return {}
+    }, [theme, currentTheme])
+
     // Render an error box with an auth error
-    if (configError) {
+    if (configError || themeError) {
         return <div className='client-error-message'>{`${_(t.authError)}: ${configError?.message}`}</div>
     }
 
     // Placeholder loader while waiting for the auth status
-    if (!wellKnownConfig) {
+    if (!wellKnownConfig || !theme) {
         return (
             <>
                 <PageLoader loading className='auth-loader' />
-                <div className='page-loading-text'>{`${_(t.loading)}...`}</div>
+                <div className='page-loading-text'>{`${_(g.loading)}...`}</div>
             </>
         )
     }
@@ -81,7 +116,7 @@ const App = () => {
         window.location.href = window.location.href.split('?')[0]
     }
 
-    return (
+    const Wrapper = (child: any) => (
         <AuthProvider
             {...oidcCommonSettings}
             automaticSilentRenew={true}
@@ -99,8 +134,26 @@ const App = () => {
                 })
             }
         >
-            <AppInner openTelemetry={openTelemetry} wellKnownConfig={wellKnownConfig} />
+            {child}
         </AuthProvider>
+    )
+
+    if (props.mockApp) {
+        return (
+            <ThemeProvider theme={getThemeData()}>
+                <BrowserRouter>
+                    <AppLayout buildInformation={wellKnownConfig?.buildInfo} collapsed={collapsed} mockApp={true} setCollapsed={setCollapsed} />
+                </BrowserRouter>
+            </ThemeProvider>
+        )
+    }
+
+    return (
+        <ThemeProvider theme={getThemeData()}>
+            <ConditionalWrapper condition={!props.mockApp} wrapper={Wrapper}>
+                <AppInner collapsed={collapsed} openTelemetry={openTelemetry} setCollapsed={setCollapsed} wellKnownConfig={wellKnownConfig} />
+            </ConditionalWrapper>
+        </ThemeProvider>
     )
 }
 

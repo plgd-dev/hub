@@ -5,11 +5,12 @@ import { useDispatch, useSelector } from 'react-redux'
 import TileToggleRow from '@shared-ui/components/Atomic/TileToggle/TileToggleRow'
 import TileToggle from '@shared-ui/components/Atomic/TileToggle'
 import SimpleStripTable from '@shared-ui/components/Atomic/SimpleStripTable'
-import TagGroup from '@shared-ui/components/Atomic/TagGroup'
+import TagGroup, { justifyContent } from '@shared-ui/components/Atomic/TagGroup'
 import Tag from '@shared-ui/components/Atomic/Tag'
 import Tooltip from '@shared-ui/components/Atomic/Tooltip'
 import { convertSize, IconCloudSuccess, IconCloudWarning } from '@shared-ui/components/Atomic/Icon'
 import { eventFilters, WebSocketEventClient } from '@shared-ui/common/services'
+import { messages as app } from '@shared-ui/app/clientApp/App/App.i18n'
 
 import { Props } from './Tab1.types'
 import { messages as t } from '@/containers/Devices/Devices.i18n'
@@ -17,6 +18,7 @@ import { getDeviceNotificationKey, getResourceRegistrationNotificationKey } from
 import { isNotificationActive, toggleActiveNotification } from '@/containers/Devices/slice'
 import { deviceResourceRegistrationListener } from '@/containers/Devices/websockets'
 import DateFormat from '@/containers/PendingCommands/DateFormat'
+import testId from '@/testId'
 
 const Tab1: FC<Props> = (props) => {
     const { isTwinEnabled, setTwinSynchronization, twinSyncLoading, deviceId, types, deviceName, model, pendingCommandsData, firmware, softwareUpdateData } =
@@ -95,13 +97,19 @@ const Tab1: FC<Props> = (props) => {
             <div style={{ paddingTop: 16 }}>
                 <SimpleStripTable
                     rows={[
-                        { attribute: _(t.id), value: deviceId },
+                        { attribute: _(t.id), value: deviceId, dataTestId: testId.devices.detail.informationTableId },
                         { attribute: _(t.model), value: model || '-' },
                         {
                             attribute: _(t.types),
                             value: types ? (
-                                <TagGroup>
-                                    {types.map((t, key) => (
+                                <TagGroup
+                                    i18n={{
+                                        more: _(app.more),
+                                        types: _(app.types),
+                                    }}
+                                    justifyContent={justifyContent.END}
+                                >
+                                    {types.map((t) => (
                                         <Tag key={t}>{t}</Tag>
                                     ))}
                                 </TagGroup>

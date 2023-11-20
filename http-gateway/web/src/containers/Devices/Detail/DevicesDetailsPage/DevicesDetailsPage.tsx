@@ -12,7 +12,7 @@ import Tabs from '@shared-ui/components/Atomic/Tabs'
 import Breadcrumbs from '@shared-ui/components/Layout/Header/Breadcrumbs'
 import StatusTag from '@shared-ui/components/Atomic/StatusTag'
 import { getApiErrorMessage } from '@shared-ui/common/utils'
-import { security } from '@shared-ui/common/services'
+import { clientAppSettings, security } from '@shared-ui/common/services'
 import Footer from '@shared-ui/components/Layout/Footer'
 import EditDeviceNameModal from '@shared-ui/components/Organisms/EditDeviceNameModal'
 import Notification from '@shared-ui/components/Atomic/Notification/Toast'
@@ -27,8 +27,10 @@ import './DevicesDetailsPage.scss'
 import Tab1 from './Tabs/Tab1'
 import Tab2 from './Tabs/Tab2'
 import { PendingCommandsExpandableList } from '@/containers/PendingCommands'
-import { AppContext } from '@/containers/App/AppContext'
+import AppContext from '@shared-ui/app/share/AppContext'
 import { Props } from './DevicesDetailsPage.types'
+import notificationId from '@/notificationId'
+import testId from '@/testId'
 
 const DevicesDetailsPage: FC<Props> = (props) => {
     const { defaultActiveTab } = props
@@ -57,6 +59,8 @@ const DevicesDetailsPage: FC<Props> = (props) => {
     const [deviceNameLoading, setDeviceNameLoading] = useState(false)
 
     const { footerExpanded, setFooterExpanded } = useContext(AppContext)
+
+    clientAppSettings.reset()
 
     useEffect(() => {
         setDomReady(true)
@@ -160,7 +164,10 @@ const DevicesDetailsPage: FC<Props> = (props) => {
                 }
             } catch (error) {
                 if (error && isMounted.current) {
-                    Notification.error({ title: _(t.deviceNameChangeFailed), message: getApiErrorMessage(error) })
+                    Notification.error(
+                        { title: _(t.deviceNameChangeFailed), message: getApiErrorMessage(error) },
+                        { notificationId: notificationId.HUB_DEVICES_DETAILS_PAGE_UPDATE_DEVICE_NAME }
+                    )
                     setDeviceNameLoading(false)
                     setShowEditNameModal(false)
                 }
@@ -174,6 +181,7 @@ const DevicesDetailsPage: FC<Props> = (props) => {
     return (
         <PageLayout
             breadcrumbs={breadcrumbs}
+            dataTestId={testId.devices.detail.layout}
             footer={
                 <Footer
                     footerExpanded={footerExpanded}
@@ -220,6 +228,7 @@ const DevicesDetailsPage: FC<Props> = (props) => {
                     {
                         name: _(t.deviceInformation),
                         id: 0,
+                        dataTestId: testId.devices.detail.tabInformation,
                         content: (
                             <Tab1
                                 deviceId={id}
@@ -239,6 +248,7 @@ const DevicesDetailsPage: FC<Props> = (props) => {
                     {
                         name: _(t.resources),
                         id: 1,
+                        dataTestId: testId.devices.detail.tabResources,
                         content: (
                             <Tab2
                                 deviceName={deviceName}
@@ -257,6 +267,7 @@ const DevicesDetailsPage: FC<Props> = (props) => {
             />
 
             <EditDeviceNameModal
+                dataTestId={testId.devices.detail.editNameModal}
                 deviceName={deviceName}
                 deviceNameLoading={deviceNameLoading}
                 handleClose={() => setShowEditNameModal(false)}

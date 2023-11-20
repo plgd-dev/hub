@@ -10,6 +10,7 @@ import { getApiErrorMessage } from '@shared-ui/common/utils'
 
 import { getDeviceAuthCode } from '@/containers/Devices/rest'
 import { messages as t } from '@/containers/Devices/Devices.i18n'
+import notificationId from '@/notificationId'
 
 const ProvisionNewDeviceCore = () => {
     const [show, setShow] = useState(false)
@@ -27,10 +28,15 @@ const ProvisionNewDeviceCore = () => {
             setFetching(false)
             setCode(code as string)
         } catch (e: any) {
-            Notification.error({
-                title: _(t.deviceAuthCodeError),
-                message: getApiErrorMessage(e.message),
-            })
+            Notification.error(
+                {
+                    title: _(t.deviceAuthCodeError),
+                    message: getApiErrorMessage(e.message),
+                },
+                {
+                    notificationId: notificationId.HUB_PROVISION_NEW_DEVICE_CORE_HANDLE_FETCH,
+                }
+            )
 
             setFetching(false)
         }

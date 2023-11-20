@@ -15,10 +15,14 @@ const DevicesListHeader: FC<Props> = ({ loading, refresh }) => {
 
     const [numberOfChanges, setNumberOfChanges] = useState(0)
 
-    useEmitter(DEVICES_REGISTERED_UNREGISTERED_COUNT_EVENT_KEY, (numberOfNewChanges: number | string) => {
-        typeof numberOfNewChanges === 'number' && setNumberOfChanges(numberOfChanges + numberOfNewChanges)
-        numberOfNewChanges === RESET_COUNTER && setNumberOfChanges(0)
+    useEmitter(DEVICES_REGISTERED_UNREGISTERED_COUNT_EVENT_KEY, (action: string | number) => {
+        if (action === RESET_COUNTER) {
+            setNumberOfChanges(0)
+        } else if (typeof action === 'number') {
+            setNumberOfChanges((prev) => prev + action)
+        }
     })
+
     const refreshDevices = () => {
         // Re-fetch the devices list
         refresh()

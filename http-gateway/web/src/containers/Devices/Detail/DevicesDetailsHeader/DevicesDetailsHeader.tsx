@@ -14,6 +14,8 @@ import { Props } from './DevicesDetailsHeader.types'
 import { canChangeDeviceName, getResourceRegistrationNotificationKey, handleDeleteDevicesErrors, sleep } from '../../utils'
 import { deleteDevicesApi } from '../../rest'
 import { messages as t } from '../../Devices.i18n'
+import notificationId from '@/notificationId'
+import testId from '@/testId'
 
 const DevicesDetailsHeader: FC<Props> = memo((props) => {
     const { deviceId, deviceName, isUnregistered, isOnline, handleOpenEditDeviceNameModal, links } = props
@@ -56,13 +58,16 @@ const DevicesDetailsHeader: FC<Props> = memo((props) => {
             await sleep(200)
 
             if (isMounted.current) {
-                Notification.success({ title: t.deviceDeleted, message: _(t.deviceWasDeleted, { name: deviceName }) })
+                Notification.success(
+                    { title: t.deviceDeleted, message: _(t.deviceWasDeleted, { name: deviceName }) },
+                    { notificationId: notificationId.HUB_DEVICES_DETAILS_HEADER_HANDLE_DELETE_DEVICE }
+                )
 
                 // Unregister the WS when the device is deleted
                 WebSocketEventClient.unsubscribe(resourceRegistrationObservationWSKey)
 
                 // Redirect to the device page after a deletion
-                navigate(`/device`)
+                navigate(`/`)
             }
         } catch (error) {
             if (isMounted.current) {
@@ -74,28 +79,44 @@ const DevicesDetailsHeader: FC<Props> = memo((props) => {
 
     return (
         <div className={classNames('d-flex align-items-center', greyedOutClassName)}>
-            <Button disabled={isUnregistered} icon={<IconTrash />} onClick={handleOpenDeleteDeviceModal} variant='tertiary'>
+            <Button
+                dataTestId={testId.devices.detail.deleteDeviceButton}
+                disabled={isUnregistered}
+                icon={<IconTrash />}
+                onClick={handleOpenDeleteDeviceModal}
+                variant='tertiary'
+            >
                 {_(t.delete)}
             </Button>
 
             {canUpdate && (
-                <Button disabled={isUnregistered} icon={<IconEdit />} onClick={handleOpenEditDeviceNameModal} style={{ marginLeft: 8 }} variant='tertiary'>
+                <Button
+                    dataTestId={testId.devices.detail.editNameButton}
+                    disabled={isUnregistered}
+                    icon={<IconEdit />}
+                    onClick={handleOpenEditDeviceNameModal}
+                    style={{ marginLeft: 8 }}
+                    variant='tertiary'
+                >
                     {_(t.editName)}
                 </Button>
             )}
 
             <DeleteModal
+                dataTestId={testId.devices.detail.deleteDeviceModal}
                 deleteInformation={[
                     { label: _(t.deviceName), value: deviceName },
                     { label: _(t.deviceId), value: deviceId },
                 ]}
                 footerActions={[
                     {
+                        dataTestId: testId.devices.detail.deleteDeviceButtonCancel,
                         label: _(t.cancel),
                         onClick: handleCloseDeleteDeviceModal,
                         variant: 'tertiary',
                     },
                     {
+                        dataTestId: testId.devices.detail.deleteDeviceButtonDelete,
                         label: _(t.delete),
                         loading: deleting,
                         loadingText: _(t.deleting),

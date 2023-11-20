@@ -8,6 +8,7 @@
     <node-interpreter value="project" />
     <envs>
       <env name="REACT_APP_TEST_VIEW" value="true" />
+      <env name="PORT" value="3001" />
     </envs>
     <method v="2" />
   </configuration>

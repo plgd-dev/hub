@@ -1,0 +1,17 @@
+{
+  "name": "hub-playwright-test",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node ../scripts/start.js",
+    "text": "npx playwright test",
+    "testUi": "npx playwright test --ui"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@playwright/test": "^1.37.0"
+  }
+}

@@ -4,26 +4,27 @@ import debounce from 'lodash/debounce'
 
 import { useStreamApi, useEmitter } from '@shared-ui/common/hooks'
 import { security } from '@shared-ui/common/services'
+import AppContext from '@shared-ui/app/share/AppContext'
 
 import { devicesApiEndpoints, DEVICES_STATUS_WS_KEY, resourceEventTypes } from './constants'
 import { updateDevicesDataStatus, getResourceRegistrationNotificationKey } from './utils'
 import { SecurityConfig, StreamApiPropsType } from '@/containers/App/App.types'
-import { AppContext } from '@/containers/App/AppContext'
 
 const getConfig = () => security.getGeneralConfig() as SecurityConfig
 
 export const useDevicesList = () => {
     const { telemetryWebTracer } = useContext(AppContext)
-    const { data, updateData, ...rest } = useStreamApi(`${getConfig().httpGatewayAddress}${devicesApiEndpoints.DEVICES}`, {
+    const { data, updateData, setState, ...rest } = useStreamApi(`${getConfig().httpGatewayAddress}${devicesApiEndpoints.DEVICES}`, {
         telemetryWebTracer,
         telemetrySpan: 'get-devices',
     })
 
     // Update the metadata when a WS event is emitted
-    useEmitter(DEVICES_STATUS_WS_KEY, (newDeviceStatus: any) => {
+    useEmitter(DEVICES_STATUS_WS_KEY, (newDeviceData: any) => {
         if (data) {
             // Update the data with the current device status and twinSynchronization
-            updateData(updateDevicesDataStatus(data, newDeviceStatus))
+            // update data based on prevState
+            setState((prevState) => ({ ...prevState, data: updateDevicesDataStatus(prevState.data, newDeviceData) }))
         }
     })
 

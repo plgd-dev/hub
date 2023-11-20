@@ -1,7 +1,8 @@
 import React, { FC, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { useIntl } from 'react-intl'
 import isFunction from 'lodash/isFunction'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
+import ReactDOM from 'react-dom'
 
 import { getApiErrorMessage } from '@shared-ui/common/utils'
 import { useIsMounted } from '@shared-ui/common/hooks'
@@ -13,10 +14,12 @@ import Footer from '@shared-ui/components/Layout/Footer'
 import DevicesList from '@shared-ui/components/Organisms/DevicesList/DevicesList'
 import StatusPill from '@shared-ui/components/Atomic/StatusPill'
 import { states } from '@shared-ui/components/Atomic/StatusPill/constants'
-import Badge from '@shared-ui/components/Atomic/Badge'
 import TableActionButton from '@shared-ui/components/Organisms/TableActionButton'
 import Notification from '@shared-ui/components/Atomic/Notification/Toast'
-import { IconShowPassword, IconTrash } from '@shared-ui/components/Atomic'
+import { IconShowPassword, IconTrash, StatusTag } from '@shared-ui/components/Atomic'
+import Breadcrumbs from '@shared-ui/components/Layout/Header/Breadcrumbs'
+import { clientAppSettings } from '@shared-ui/common/services'
+import AppContext from '@shared-ui/app/share/AppContext'
 
 import { PendingCommandsExpandableList } from '@/containers/PendingCommands'
 import { DEVICES_REGISTERED_UNREGISTERED_COUNT_EVENT_KEY, devicesStatuses, NO_DEVICE_NAME, RESET_COUNTER } from '../../constants'
@@ -25,8 +28,9 @@ import DevicesListHeader from '../DevicesListHeader/DevicesListHeader'
 import { deleteDevicesApi } from '../../rest'
 import { handleDeleteDevicesErrors, isDeviceOnline, sleep } from '../../utils'
 import { messages as t } from '../../Devices.i18n'
-import { AppContext } from '@/containers/App/AppContext'
 import DateFormat from '@/containers/PendingCommands/DateFormat'
+import { messages as g } from '@/containers/Global.i18n'
+import notificationId from '@/notificationId'
 
 const { UNREGISTERED } = devicesStatuses
 
@@ -50,15 +54,26 @@ const DevicesListPage: FC<any> = () => {
     const [deleting, setDeleting] = useState(false)
     const [unselectRowsToken, setUnselectRowsToken] = useState(1)
     const isMounted = useIsMounted()
+    const [isDomReady, setIsDomReady] = useState(false)
     const navigate = useNavigate()
 
     const combinedSelectedDevices = singleDevice ? [singleDevice] : selectedDevices
     const { footerExpanded, setFooterExpanded, collapsed } = useContext(AppContext)
 
+    clientAppSettings.reset()
+
     useEffect(() => {
-        deviceError && Notification.error({ title: _(t.deviceError), message: getApiErrorMessage(deviceError) })
+        deviceError &&
+            Notification.error(
+                { title: _(t.deviceError), message: getApiErrorMessage(deviceError) },
+                { notificationId: notificationId.HUB_DEVICES_LIST_PAGE_DEVICE_ERROR }
+            )
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [deviceError])
+
+    useEffect(() => {
+        setIsDomReady(true)
+    }, [])
 
     const handleOpenDeleteModal = useCallback(
         (deviceId?: string) => {
@@ -95,7 +110,10 @@ const DevicesListPage: FC<any> = () => {
             await sleep(200)
 
             if (isMounted.current) {
-                Notification.success({ title: _(t.devicesDeleted), message: _(t.devicesDeletedMessage) })
+                Notification.success(
+                    { title: _(t.devicesDeleted), message: _(t.devicesDeletedMessage) },
+                    { notificationId: notificationId.HUB_DEVICES_LIST_PAGE_DELETE_DEVICES }
+                )
 
                 setDeleting(false)
                 setDeleteModalOpen(false)
@@ -123,9 +141,16 @@ const DevicesListPage: FC<any> = () => {
                         return <span>{deviceName}</span>
                     }
                     return (
-                        <Link to={`/devices/${row.original?.id}`}>
+                        <a
+                            data-test-id={`device-row-${row.id}`}
+                            href={`/devices/${row.original?.id}`}
+                            onClick={(e) => {
+                                e.preventDefault()
+                                navigate(`/devices/${row.original?.id}`)
+                            }}
+                        >
                             <span className='no-wrap-text'>{deviceName}</span>
-                        </Link>
+                        </a>
                     )
                 },
             },
@@ -144,7 +169,7 @@ const DevicesListPage: FC<any> = () => {
                     const isOnline = isDeviceOnline(row.original)
                     return (
                         <StatusPill
-                            label={isOnline ? 'Online' : 'Offline'}
+                            label={isOnline ? _(t.online) : _(t.offline)}
                             // pending={value.pending.show ? { text: `${value.pending.number} pending commands`, onClick: console.log } : undefined}
                             status={isOnline ? states.ONLINE : states.OFFLINE}
                             tooltipText={
@@ -179,7 +204,7 @@ const DevicesListPage: FC<any> = () => {
                 accessor: 'metadata.twinEnabled',
                 Cell: ({ value }: { value: string | number }) => {
                     const isTwinEnabled = value
-                    return <Badge className={isTwinEnabled ? 'green' : 'red'}>{isTwinEnabled ? _(t.enabled) : _(t.disabled)}</Badge>
+                    return <StatusTag variant={isTwinEnabled ? 'success' : 'error'}>{isTwinEnabled ? _(t.enabled) : _(t.disabled)}</StatusTag>
                 },
             },
             {
@@ -219,11 +244,6 @@ const DevicesListPage: FC<any> = () => {
 
     return (
         <PageLayout
-            breadcrumbs={[
-                {
-                    label: _(menuT.devices),
-                },
-            ]}
             footer={
                 <Footer
                     footerExpanded={footerExpanded}
@@ -246,13 +266,19 @@ const DevicesListPage: FC<any> = () => {
             loading={loading}
             title={_(menuT.devices)}
         >
+            {isDomReady &&
+                ReactDOM.createPortal(
+                    <Breadcrumbs items={[{ label: _(menuT.devices), link: '/' }]} />,
+                    document.querySelector('#breadcrumbsPortalTarget') as Element
+                )}
             <DevicesList
                 collapsed={collapsed ?? false}
                 columns={columns}
                 data={data}
                 i18n={{
-                    delete: _(t.delete),
-                    search: _(t.search),
+                    delete: _(g.delete),
+                    search: _(g.search),
+                    select: _(g.select),
                 }}
                 isAllSelected={isAllSelected}
                 loading={loadingOrDeleting}

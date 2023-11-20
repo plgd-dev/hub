@@ -17,12 +17,19 @@ import {
     IconDocs,
     IconChat,
 } from '@shared-ui/components/Atomic/Icon/'
+import { MenuGroup } from '@shared-ui/components/Layout/LeftPanel/LeftPanel.types'
+import MockApp from '@shared-ui/app/clientApp/MockApp'
 
 import DevicesListPage from '@/containers/Devices/List/DevicesListPage'
 import DevicesDetailsPage from '@/containers/Devices/Detail/DevicesDetailsPage'
 import { messages as t } from './containers/App/App.i18n'
 import TestPage from './containers/Test'
-import { MenuGroup } from '@shared-ui/components/Layout/LeftPanel/LeftPanel.types'
+import ConfigurationPage from './containers/Configuration'
+import RemoteClientsListPage from '@/containers/RemoteClients/List/RemoteClientsListPage'
+import RemoteClientDetailPage from '@/containers/RemoteClients/Detail/RemoteClientDetailPage'
+import RemoteClientDevicesDetailPage from '@/containers/RemoteClients/Device/Detail/RemoteClientDevicesDetailPage'
+import testId from '@/testId'
+import PendingCommandsListPage from '@/containers/PendingCommands/PendingCommandsListPage'
 
 const MenuTranslate = (props: { id: string }) => {
     const { id } = props
@@ -52,6 +59,7 @@ export const menu: MenuGroup[] = [
                 link: '/',
                 paths: ['/', '/devices/:id', '/devices/:id/resources', '/devices/:id/resources/:href'],
                 exact: true,
+                dataTestId: testId.menu.devices,
             },
             {
                 icon: <IconIntegrations />,
@@ -67,18 +75,23 @@ export const menu: MenuGroup[] = [
                 id: '3',
                 title: <MenuTranslate id='menuRemoteClients' />,
                 link: '/remote-clients',
-                paths: ['/remote-clients'],
+                paths: [
+                    '/remote-clients',
+                    '/remote-clients/:id',
+                    '/remote-clients/:id/devices/:deviceId',
+                    '/remote-clients/:id/devices/:deviceId/resources',
+                    '/remote-clients/:id/devices/:deviceId/resources/:href',
+                    '/remote-clients/:id/configuration',
+                ],
                 exact: true,
-                disabled: true,
             },
             {
                 icon: <IconPendingCommands />,
-                id: '3',
+                id: '4',
                 title: <MenuTranslate id='menuPendingCommands' />,
                 link: '/pending-commands',
                 paths: ['/pending-commands'],
                 exact: true,
-                disabled: true,
             },
         ],
     },
@@ -144,6 +157,14 @@ export const menu: MenuGroup[] = [
                 exact: true,
                 disabled: true,
             },
+            {
+                icon: <IconSettings />,
+                id: '15',
+                title: <MenuTranslate id='menuConfiguration' />,
+                link: '/configuration',
+                paths: ['/configuration'],
+                exact: true,
+            },
         ],
     },
     {
@@ -192,6 +213,20 @@ export const Routes = () => {
             <Route element={<DevicesDetailsPage defaultActiveTab={0} />} path='/devices/:id' />
             <Route element={<DevicesDetailsPage defaultActiveTab={1} />} path='/devices/:id/resources' />
             <Route element={<DevicesDetailsPage defaultActiveTab={1} />} path='/devices/:id/resources/*' />
+
+            <Route element={<RemoteClientsListPage />} path='/remote-clients' />
+            <Route element={<RemoteClientDetailPage />} path='/remote-clients/:id' />
+            <Route element={<RemoteClientDetailPage defaultActiveTab={1} />} path='/remote-clients/:id/configuration' />
+            <Route element={<RemoteClientDevicesDetailPage defaultActiveTab={0} />} path='/remote-clients/:id/devices/:deviceId' />
+            <Route element={<RemoteClientDevicesDetailPage defaultActiveTab={1} />} path='/remote-clients/:id/devices/:deviceId/resources' />
+            <Route element={<RemoteClientDevicesDetailPage defaultActiveTab={1} />} path='/remote-clients/:id/devices/:deviceId/resources/*' />
+
+            <Route element={<PendingCommandsListPage />} path='/pending-commands' />
+
+            <Route element={<MockApp />} path='/devices-code-redirect/*' />
+
+            <Route element={<ConfigurationPage />} path='/configuration' />
+
             {process.env?.REACT_APP_TEST_VIEW === 'true' && <Route element={<TestPage />} path='/test' />}
             <Route element={<NotFoundPage message={_(t.notFoundPageDefaultMessage)} title={_(t.pageTitle)} />} path='*' />
         </RoutesGroup>

@@ -13,6 +13,7 @@ import { Props } from './DevicesDetailsTitle.types'
 import { updateDevicesResourceApi } from '../../rest'
 import { canChangeDeviceName, getDeviceChangeResourceHref } from '../../utils'
 import { messages as t } from '../../Devices.i18n'
+import notificationId from '@/notificationId'
 
 const DevicesDetailsTitle: FC<Props> = ({ className, deviceName, deviceId, updateDeviceName, isOnline, links, ttl, ...rest }) => {
     const { formatMessage: _ } = useIntl()
@@ -56,7 +57,10 @@ const DevicesDetailsTitle: FC<Props> = ({ className, deviceName, deviceId, updat
                 }
             } catch (error) {
                 if (error && isMounted.current) {
-                    Notification.error({ title: _(t.deviceNameChangeFailed), message: getApiErrorMessage(error) })
+                    Notification.error(
+                        { title: _(t.deviceNameChangeFailed), message: getApiErrorMessage(error) },
+                        { notificationId: notificationId.HUB_DEVICES_DETAILS_TITLE_ON_SAVE }
+                    )
                     cancelSave()
                 }
             }

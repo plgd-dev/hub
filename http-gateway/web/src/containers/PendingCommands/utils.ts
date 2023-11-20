@@ -3,6 +3,7 @@ import * as converter from 'units-converter/dist/es/index'
 
 import { Emitter } from '@shared-ui/common/services/emitter'
 import Notification from '@shared-ui/components/Atomic/Notification/Toast'
+import { tagVariants } from '@shared-ui/components/Atomic/StatusTag/constants'
 
 import { commandTypes, updatedCommandTypes, pendingCommandStatuses, NEW_PENDING_COMMAND_WS_KEY, UPDATE_PENDING_COMMANDS_WS_KEY } from './constants'
 import { messages as t } from './PendingCommands.i18n'
@@ -10,6 +11,7 @@ import { messages as d } from '../Devices/Devices.i18n'
 import { isNotificationActive } from '@/containers/Devices/slice'
 import { getDeviceNotificationKey } from '@/containers/Devices/utils'
 import { store } from '@/store'
+import notificationId from '@/notificationId'
 
 const time = converter.time
 
@@ -78,17 +80,23 @@ export const handleEmitUpdatedCommandEvents = (eventData: any) => {
         setTimeout(() => {
             if (!Notification.isActive(toastId) && status) {
                 if (status === OK) {
-                    Notification.success({ title: d.resourceUpdateSuccess, message: d.resourceWasUpdated }, { variant, toastId })
+                    Notification.success(
+                        { title: d.resourceUpdateSuccess, message: d.resourceWasUpdated },
+                        { variant, toastId, notificationId: notificationId.HUB_HANDLE_EMIT_UPDATED_COMMAND_EVENTS_OK }
+                    )
                 } else {
                     if (status === BAD_REQUEST) {
-                        Notification.error({ title: d.resourceUpdateError, message: d.invalidArgument }, { variant })
+                        Notification.error(
+                            { title: d.resourceUpdateError, message: d.invalidArgument },
+                            { variant, notificationId: notificationId.HUB_HANDLE_EMIT_UPDATED_COMMAND_EVENTS_BAD_REQUEST }
+                        )
                     } else {
                         Notification.error(
                             {
                                 title: d.error,
                                 message: d.resourceUpdateError,
                             },
-                            { variant }
+                            { variant, notificationId: notificationId.HUB_HANDLE_EMIT_UPDATED_COMMAND_EVENTS }
                         )
                     }
                 }
@@ -134,7 +142,7 @@ export const hasCommandExpired = (validUntil: any, currentTime: any) => {
 export const getPendingCommandStatusColorAndLabel = (status: string, validUntil: any, currentTime: any) => {
     if (!status && hasCommandExpired(validUntil, currentTime)) {
         return {
-            color: 'red',
+            color: tagVariants.ERROR,
             label: t.expired,
         }
     }
@@ -142,24 +150,24 @@ export const getPendingCommandStatusColorAndLabel = (status: string, validUntil:
     switch (status) {
         case null:
             return {
-                color: 'orange',
+                color: tagVariants.WARNING,
                 label: t.pending,
             }
         case OK:
         case ACCEPTED:
         case CREATED:
             return {
-                color: 'green',
+                color: tagVariants.SUCCESS,
                 label: t.successful,
             }
         case CANCELED:
             return {
-                color: 'red',
+                color: tagVariants.ERROR,
                 label: t.canceled,
             }
         default:
             return {
-                color: 'red',
+                color: tagVariants.ERROR,
                 label: t.error,
             }
     }

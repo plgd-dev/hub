@@ -229,6 +229,10 @@ export const messages = defineMessages({
         id: 'devices.deviceWasUnregistered',
         defaultMessage: 'Device "{name}" was unregistered.',
     },
+    deviceWasRegistered: {
+        id: 'devices.deviceWasUnregistered',
+        defaultMessage: 'Device "{name}" was registered.',
+    },
     devicestatusChange: {
         id: 'devices.devicestatusChange',
         defaultMessage: 'Device status change',
@@ -536,5 +540,13 @@ export const messages = defineMessages({
     lastTimeOnline: {
         id: 'devices.lastTimeOnline',
         defaultMessage: 'Last time online',
+    },
+    fullView: {
+        id: 'devices.fullView',
+        defaultMessage: 'Full View',
+    },
+    compactView: {
+        id: 'devices.compactView',
+        defaultMessage: 'Compact View',
     },
 })

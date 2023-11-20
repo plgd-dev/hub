@@ -23,6 +23,7 @@ import { messages as t } from '@/containers/Devices/Devices.i18n'
 import { isNotificationActive, toggleActiveNotification } from '@/containers/Devices/slice'
 import { deviceResourceUpdateListener } from '@/containers/Devices/websockets'
 import { createResourceNotificationId } from '@/containers/PendingCommands/utils'
+import notificationId from '@/notificationId'
 
 const Tab2: FC<Props> = (props) => {
     const { deviceStatus, deviceName, isOnline, isActiveTab, isUnregistered, loading, resourcesData, loadingResources, refreshResources } = props
@@ -93,10 +94,15 @@ const Tab2: FC<Props> = (props) => {
         } catch (error) {
             if (error && isMounted.current) {
                 setLoadingResource(false)
-                Notification.error({
-                    title: _(t.resourceRetrieveError),
-                    message: getApiErrorMessage(error),
-                })
+                Notification.error(
+                    {
+                        title: _(t.resourceRetrieveError),
+                        message: getApiErrorMessage(error),
+                    },
+                    {
+                        notificationId: notificationId.HUB_DEVICES_DETAILS_PAGE_TAB2_OPEN_CREATE_MODAL,
+                    }
+                )
             }
         }
     }
@@ -144,10 +150,15 @@ const Tab2: FC<Props> = (props) => {
         } catch (error) {
             if (error && isMounted.current) {
                 setLoadingResource(false)
-                Notification.error({
-                    title: _(t.resourceRetrieveError),
-                    message: getApiErrorMessage(error),
-                })
+                Notification.error(
+                    {
+                        title: _(t.resourceRetrieveError),
+                        message: getApiErrorMessage(error),
+                    },
+                    {
+                        notificationId: notificationId.HUB_DEVICES_DETAILS_PAGE_TAB2_OPEN_UPDATE_MODAL,
+                    }
+                )
                 navigate(`/devices/${id}/resources`, { replace: true })
             }
         }
@@ -163,7 +174,10 @@ const Tab2: FC<Props> = (props) => {
             if (isMounted.current) {
                 Notification.success(
                     { title: _(t.resourceCreateSuccess), message: _(t.resourceWasCreated) },
-                    { toastId: createResourceNotificationId(id, href, auditContext?.correlationId, auditContext?.userId) }
+                    {
+                        toastId: createResourceNotificationId(id, href, auditContext?.correlationId, auditContext?.userId),
+                        notificationId: notificationId.HUB_DEVICES_DETAILS_PAGE_TAB2_CREATE_RESOURCE,
+                    }
                 )
                 setResourceModalData(undefined) // close modal
                 setSavingResource(false)
@@ -189,6 +203,7 @@ const Tab2: FC<Props> = (props) => {
                     { title: _(t.resourceUpdateSuccess), message: _(t.resourceWasUpdated) },
                     {
                         toastId: createResourceNotificationId(id, href, auditContext?.correlationId, auditContext?.userId),
+                        notificationId: notificationId.HUB_DEVICES_DETAILS_PAGE_TAB2_UPDATE_RESOURCE,
                     }
                 )
 
@@ -220,6 +235,7 @@ const Tab2: FC<Props> = (props) => {
                     { title: _(t.resourceDeleteSuccess), message: _(t.resourceWasDeleted) },
                     {
                         toastId: createResourceNotificationId(id, deleteResourceHref, auditContext?.correlationId, auditContext?.userId),
+                        notificationId: notificationId.HUB_DEVICES_DETAILS_PAGE_TAB2_DELETE_RESOURCE,
                     }
                 )
 
@@ -250,6 +266,8 @@ const Tab2: FC<Props> = (props) => {
             ref={ref}
             style={{
                 height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
             }}
         >
             <DevicesResources
@@ -287,6 +305,8 @@ const Tab2: FC<Props> = (props) => {
                     types: _(t.types),
                     update: _(t.update),
                     updating: _(t.updating),
+                    fullView: _(t.fullView),
+                    compactView: _(t.compactView),
                 }}
                 isDeviceOnline={isOnline}
                 isNotificationActive={isNotificationActive}

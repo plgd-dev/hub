@@ -7,11 +7,13 @@ import { createRootReducer } from './reducers'
 import { StoreType as NotificationStoreType } from '../containers/Notifications/slice'
 import { StoreType as DeviceStoreType } from '../containers/Devices/slice'
 import { StoreType as AppStoreType } from '../containers/App/slice'
+import { StoreType as RemoteClientType } from '../containers/RemoteClients/slice'
 
 export type CombinedStoreType = {
     notifications: NotificationStoreType
     activeNotifications: DeviceStoreType
     app: AppStoreType
+    remoteClients: RemoteClientType
 }
 
 const persistConfig = {

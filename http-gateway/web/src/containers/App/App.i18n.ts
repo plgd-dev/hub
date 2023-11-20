@@ -1,10 +1,6 @@
 import { defineMessages } from '@formatjs/intl'
 
 export const messages = defineMessages({
-    loading: {
-        id: 'app.loading',
-        defaultMessage: 'Loading',
-    },
     authError: {
         id: 'app.authError',
         defaultMessage: 'Authorization server error',
@@ -120,5 +116,13 @@ export const messages = defineMessages({
     menuChatRoom: {
         id: 'app.menuChatRoom',
         defaultMessage: 'Chat room',
+    },
+    menuConfiguration: {
+        id: 'app.menuConfiguration',
+        defaultMessage: 'Configuration',
+    },
+    logOut: {
+        id: 'app.logOut',
+        defaultMessage: 'Log out',
     },
 })

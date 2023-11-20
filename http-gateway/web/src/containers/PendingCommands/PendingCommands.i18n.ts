@@ -45,6 +45,10 @@ export const messages = defineMessages({
         id: 'pendingCommands.validUntil',
         defaultMessage: 'Valid until',
     },
+    expiresAt: {
+        id: 'pendingCommands.expiresAt',
+        defaultMessage: 'Expires at',
+    },
     created: {
         id: 'pendingCommands.created',
         defaultMessage: 'Created',
@@ -112,5 +116,9 @@ export const messages = defineMessages({
     search: {
         id: 'pendingCommands.search',
         defaultMessage: 'Search',
+    },
+    initiator: {
+        id: 'pendingCommands.initiator',
+        defaultMessage: 'Initiator',
     },
 })
