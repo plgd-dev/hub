@@ -10,12 +10,10 @@ import (
 	"github.com/plgd-dev/go-coap/v3/message/pool"
 	"github.com/plgd-dev/go-coap/v3/mux"
 	"github.com/plgd-dev/hub/v2/coap-gateway/coapconv"
-	"github.com/plgd-dev/hub/v2/coap-gateway/service/observation"
 	grpcgwClient "github.com/plgd-dev/hub/v2/grpc-gateway/client"
 	"github.com/plgd-dev/hub/v2/identity-store/events"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"github.com/plgd-dev/hub/v2/pkg/strings"
-	"github.com/plgd-dev/hub/v2/pkg/sync/task/future"
 	pkgTime "github.com/plgd-dev/hub/v2/pkg/time"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"github.com/plgd-dev/kit/v2/codec/cbor"
@@ -200,68 +198,6 @@ func signInError(err error) error {
 	return fmt.Errorf("sign in error: %w", err)
 }
 
-type asyncCreateDeviceObserverArg struct {
-	ctx                  context.Context
-	client               *session
-	deviceID             string
-	resetObservationType bool
-	oldDeviceObserverFut *future.Future
-	setDeviceObserver    future.SetFunc
-	twinEnabled          bool
-}
-
-func asyncCreateDeviceObserver(x asyncCreateDeviceObserverArg) {
-	observationType := observation.ObservationType_Detect
-	oldDeviceObserver, err := toDeviceObserver(x.ctx, x.oldDeviceObserverFut)
-	if err != nil {
-		x.client.Errorf("failed to get replaced device observer: %w", err)
-	}
-	if err == nil && oldDeviceObserver != nil {
-		// if the device didn't change we can skip detection and force the previous observation type
-		if !x.resetObservationType {
-			observationType = oldDeviceObserver.GetObservationType()
-		}
-		oldDeviceObserver.Clean(x.ctx)
-	}
-
-	deviceObserver, err := observation.NewDeviceObserver(x.client.Context(), x.deviceID, x.client, x.client, x.client,
-		observation.MakeResourcesObserverCallbacks(x.client.onObserveResource, x.client.onGetResourceContent, x.client.UpdateTwinSynchronizationStatus),
-		observation.WithObservationType(observationType),
-		observation.WithLogger(x.client.getLogger()),
-		observation.WithRequireBatchObserveEnabled(x.client.server.config.APIs.COAP.RequireBatchObserveEnabled),
-		observation.WithTwinEnabled(x.twinEnabled),
-		observation.WithMaxETagsCountInRequest(x.client.server.config.DeviceTwin.MaxETagsCountInRequest),
-		observation.WithUseETags(x.client.server.config.DeviceTwin.UseETags),
-	)
-	if err != nil {
-		x.client.Close()
-		x.client.Errorf("%w", signInError(fmt.Errorf("cannot create observer for device %v: %w", x.deviceID, err)))
-		x.setDeviceObserver(nil, err)
-		return
-	}
-	x.setDeviceObserver(deviceObserver, nil)
-}
-
-func setNewDeviceObserver(ctx context.Context, client *session, deviceID string, resetObservationType bool, twinEnabled bool) {
-	newDeviceObserverFut, setDeviceObserver := future.New()
-	oldDeviceObserverFut := client.replaceDeviceObserver(newDeviceObserverFut)
-	x := asyncCreateDeviceObserverArg{
-		ctx:                  ctx,
-		client:               client,
-		deviceID:             deviceID,
-		resetObservationType: resetObservationType,
-		oldDeviceObserverFut: oldDeviceObserverFut,
-		twinEnabled:          twinEnabled,
-		setDeviceObserver:    setDeviceObserver,
-	}
-	if err := client.server.taskQueue.Submit(func() {
-		asyncCreateDeviceObserver(x)
-	}); err != nil {
-		client.Errorf("%w", signInError(fmt.Errorf("failed to register resource observations for device %v: %w", deviceID, err)))
-		setDeviceObserver(nil, err)
-	}
-}
-
 const errFmtSignIn = "cannot handle sign in: %w"
 
 func (c *session) resolveTwinEnabled(ctx context.Context, updateDeviceMetadataResp *commands.UpdateDeviceMetadataResponse) bool {
@@ -269,8 +205,8 @@ func (c *session) resolveTwinEnabled(ctx context.Context, updateDeviceMetadataRe
 	if updateDeviceMetadataResp != nil {
 		twinEnabled = updateDeviceMetadataResp.GetTwinEnabled()
 	} else {
-		deviceObs, err := c.getDeviceObserver(ctx)
-		if err == nil {
+		deviceObs, ok, _ := c.getDeviceObserver(ctx)
+		if ok {
 			twinEnabled = deviceObs.GetTwinEnabled()
 		}
 	}
@@ -332,21 +268,22 @@ func signInPostHandler(req *mux.Message, client *session, signIn CoapSignInReq) 
 	client.refreshCache.Clear()
 
 	x := struct {
-		ctx                  context.Context
-		client               *session
-		deviceID             string
-		resetObservationType bool
-		twinEnabled          bool
+		ctx         context.Context
+		client      *session
+		deviceID    string
+		twinEnabled bool
 	}{
-		ctx:                  ctx,
-		client:               client,
-		deviceID:             deviceID,
-		resetObservationType: upd == updateTypeChanged,
-		twinEnabled:          twinEnabled,
+		ctx:         ctx,
+		client:      client,
+		deviceID:    deviceID,
+		twinEnabled: twinEnabled,
 	}
 	if err := client.server.taskQueue.Submit(func() {
-		// try to register observations to the device at the cloud.
-		setNewDeviceObserver(x.ctx, x.client, x.deviceID, x.resetObservationType, x.twinEnabled)
+		_, err := x.client.replaceDeviceObserverWithDeviceTwin(x.ctx, x.twinEnabled, false)
+		if err != nil {
+			x.client.Close()
+			x.client.Errorf("%w", signInError(fmt.Errorf("failed to register resource observations for device %v: %w", x.deviceID, err)))
+		}
 	}); err != nil {
 		return nil, statusErrorf(coapCodes.ServiceUnavailable, errFmtSignIn, fmt.Errorf("failed to register device observer: %w", err))
 	}
