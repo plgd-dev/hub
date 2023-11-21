@@ -171,7 +171,7 @@ func TestRequestHandlerDeleteResourceAfterUnpublish(t *testing.T) {
 	}()
 
 	cfg := raTest.MakeConfig(t)
-	raConn, err := client.New(config.MakeGrpcClientConfig(cfg.APIs.GRPC.Addr), fileWatcher, log.Get(), trace.NewNoopTracerProvider())
+	raConn, err := client.New(ctx, config.MakeGrpcClientConfig(cfg.APIs.GRPC.Addr), fileWatcher, log.Get(), trace.NewNoopTracerProvider())
 	require.NoError(t, err)
 	defer func() {
 		_ = raConn.Close()

@@ -137,9 +137,9 @@ var authRules = map[string][]kitNetHttp.AuthArgs{
 	},
 }
 
-func newGrpcGatewayClient(config GrpcGatewayConfig, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (pbGRPC.GrpcGatewayClient, func(), error) {
+func newGrpcGatewayClient(ctx context.Context, config GrpcGatewayConfig, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (pbGRPC.GrpcGatewayClient, func(), error) {
 	var fl fn.FuncList
-	conn, err := grpcClient.New(config.Connection, fileWatcher, logger, tracerProvider)
+	conn, err := grpcClient.New(ctx, config.Connection, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		return nil, nil, fmt.Errorf("cannot connect to grpc-gateway: %w", err)
 	}
@@ -181,9 +181,9 @@ func newResourceSubscriber(config Config, fileWatcher *fsnotify.Watcher, logger 
 	return resourceSubscriber, fl.ToFunction(), nil
 }
 
-func newResourceAggregateClient(config ResourceAggregateConfig, subscriber *subscriber.Subscriber, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (*raClient.Client, func(), error) {
+func newResourceAggregateClient(ctx context.Context, config ResourceAggregateConfig, subscriber *subscriber.Subscriber, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (*raClient.Client, func(), error) {
 	var fl fn.FuncList
-	conn, err := grpcClient.New(config.Connection, fileWatcher, logger, tracerProvider)
+	conn, err := grpcClient.New(ctx, config.Connection, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		return nil, nil, fmt.Errorf("cannot connect to resource aggregate: %w", err)
 	}
@@ -251,7 +251,7 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 	listener.AddCloseFunc(validator.Close)
 	auth := kitNetHttp.NewInterceptorWithValidator(validator, authRules)
 
-	gwClient, closeGwClient, err := newGrpcGatewayClient(config.Clients.GrpcGateway, fileWatcher, logger, tracerProvider)
+	gwClient, closeGwClient, err := newGrpcGatewayClient(ctx, config.Clients.GrpcGateway, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		closeListener()
 		return nil, fmt.Errorf("cannot create grpc client: %w", err)
@@ -265,7 +265,7 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 	}
 	listener.AddCloseFunc(closeSubscriberFn)
 
-	raClient, closeRaClient, err := newResourceAggregateClient(config.Clients.ResourceAggregate, subscriber, fileWatcher, logger, tracerProvider)
+	raClient, closeRaClient, err := newResourceAggregateClient(ctx, config.Clients.ResourceAggregate, subscriber, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		closeListener()
 		return nil, fmt.Errorf("cannot create resource-aggregate client: %w", err)

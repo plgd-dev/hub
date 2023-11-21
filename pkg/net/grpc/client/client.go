@@ -1,6 +1,7 @@
 package client
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/plgd-dev/hub/v2/pkg/fn"
@@ -36,7 +37,7 @@ func (c *Client) Close() error {
 	return err
 }
 
-func New(config Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider, opts ...grpc.DialOption) (*Client, error) {
+func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider, opts ...grpc.DialOption) (*Client, error) {
 	err := config.Validate()
 	if err != nil {
 		return nil, fmt.Errorf("invalid config: %w", err)
@@ -60,7 +61,7 @@ func New(config Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tracer
 		v = append(v, opts...)
 	}
 
-	conn, err := grpc.Dial(config.Addr, v...)
+	conn, err := grpc.DialContext(ctx, config.Addr, v...)
 	if err != nil {
 		return nil, fmt.Errorf("cannot dial: %w", err)
 	}
