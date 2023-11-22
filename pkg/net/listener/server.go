@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 
+	"github.com/plgd-dev/hub/v2/pkg/fn"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/pkg/security/certManager/server"
@@ -13,7 +14,7 @@ import (
 // Server handles gRPC requests to the service.
 type Server struct {
 	listener  net.Listener
-	closeFunc []func()
+	closeFunc fn.FuncList
 }
 
 // NewServer instantiates a listen server.
@@ -29,21 +30,20 @@ func New(config Config, fileWatcher *fsnotify.Watcher, logger log.Logger) (*Serv
 		certManager.Close()
 		return nil, fmt.Errorf("listening failed: %w", err)
 	}
-
-	return &Server{listener: lis, closeFunc: []func(){certManager.Close}}, nil
+	s := &Server{listener: lis}
+	s.AddCloseFunc(certManager.Close)
+	return s, nil
 }
 
 // AddCloseFunc adds a function to be called by the Close method.
 // This eliminates the need for wrapping the Server.
 func (s *Server) AddCloseFunc(f func()) {
-	s.closeFunc = append(s.closeFunc, f)
+	s.closeFunc.AddFunc(f)
 }
 
 func (s *Server) Close() error {
 	err := s.listener.Close()
-	for _, f := range s.closeFunc {
-		f()
-	}
+	s.closeFunc.Execute()
 	return err
 }
 

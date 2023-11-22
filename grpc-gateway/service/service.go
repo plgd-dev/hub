@@ -57,7 +57,7 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 	}
 	server.AddCloseFunc(pool.Release)
 
-	if err := addHandler(server, config, fileWatcher, logger, tracerProvider, pool.Submit); err != nil {
+	if err := addHandler(ctx, server, config, fileWatcher, logger, tracerProvider, pool.Submit); err != nil {
 		return nil, closeServerOnError(err)
 	}
 

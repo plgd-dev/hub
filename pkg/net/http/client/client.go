@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/plgd-dev/hub/v2/pkg/fn"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/pkg/security/certManager/client"
@@ -14,7 +15,7 @@ import (
 // Server handles gRPC requests to the service.
 type Client struct {
 	client    *http.Client
-	closeFunc []func()
+	closeFunc fn.FuncList
 }
 
 func (c *Client) HTTP() *http.Client {
@@ -22,14 +23,12 @@ func (c *Client) HTTP() *http.Client {
 }
 
 func (c *Client) AddCloseFunc(f func()) {
-	c.closeFunc = append(c.closeFunc, f)
+	c.closeFunc.AddFunc(f)
 }
 
 func (c *Client) Close() {
 	c.client.CloseIdleConnections()
-	for _, f := range c.closeFunc {
-		f()
-	}
+	c.closeFunc.Execute()
 }
 
 func New(config Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (*Client, error) {
@@ -43,10 +42,12 @@ func New(config Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tracer
 	t.MaxIdleConnsPerHost = config.MaxIdleConnsPerHost
 	t.IdleConnTimeout = config.IdleConnTimeout
 	t.TLSClientConfig = certManager.GetTLSConfig()
-	return &Client{
+	c := &Client{
 		client: &http.Client{
 			Transport: otelhttp.NewTransport(t, otelhttp.WithTracerProvider(tracerProvider)),
 			Timeout:   config.Timeout,
-		}, closeFunc: []func(){certManager.Close},
-	}, nil
+		},
+	}
+	c.AddCloseFunc(certManager.Close)
+	return c, nil
 }

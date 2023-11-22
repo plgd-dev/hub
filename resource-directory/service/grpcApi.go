@@ -57,10 +57,10 @@ func Register(server *grpc.Server, handler *RequestHandler) {
 	pb.RegisterGrpcGatewayServer(server, handler)
 }
 
-func newIdentityStoreClient(config IdentityStoreConfig, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (pbIS.IdentityStoreClient, func(), error) {
+func newIdentityStoreClient(ctx context.Context, config IdentityStoreConfig, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (pbIS.IdentityStoreClient, func(), error) {
 	var closeIsClient fn.FuncList
 
-	isConn, err := client.New(config.Connection, fileWatcher, logger, tracerProvider)
+	isConn, err := client.New(ctx, config.Connection, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		return nil, nil, fmt.Errorf("cannot connect to identity-store: %w", err)
 	}
@@ -85,7 +85,7 @@ func newRequestHandlerFromConfig(ctx context.Context, config Config, publicConfi
 		publicConfiguration.cloudCertificateAuthorities = string(content)
 	}
 
-	isClient, closeIsClient, err := newIdentityStoreClient(config.Clients.IdentityStore, fileWatcher, logger, tracerProvider)
+	isClient, closeIsClient, err := newIdentityStoreClient(ctx, config.Clients.IdentityStore, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create identity-store client: %w", err)
 	}
@@ -138,7 +138,10 @@ func newRequestHandlerFromConfig(ctx context.Context, config Config, publicConfi
 		natsClient.GetConn(),
 		isClient, func(err error) {
 			log.Errorf("ownerCache error: %w", err)
-		})
+		},
+	)
+
+	closeFunc.AddFunc(ownerCache.Close)
 
 	h := NewRequestHandler(
 		config.HubID,

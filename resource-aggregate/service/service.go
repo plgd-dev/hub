@@ -23,10 +23,13 @@ import (
 )
 
 func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logger log.Logger) (*service.Service, error) {
+	ctx, cancel := context.WithCancel(ctx)
 	otelClient, err := otelClient.New(ctx, config.Clients.OpenTelemetryCollector, "resource-aggregate", fileWatcher, logger)
 	if err != nil {
+		cancel()
 		return nil, fmt.Errorf("cannot create open telemetry collector client: %w", err)
 	}
+	otelClient.AddCloseFunc(cancel)
 	tracerProvider := otelClient.GetTracerProvider()
 
 	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, fileWatcher, logger, tracerProvider, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
@@ -89,8 +92,8 @@ func newGrpcServer(ctx context.Context, config GRPCConfig, fileWatcher *fsnotify
 	return grpcServer, nil
 }
 
-func newIdentityStoreClient(config IdentityStoreConfig, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (pbIS.IdentityStoreClient, func(), error) {
-	isConn, err := client.New(config.Connection, fileWatcher, logger, tracerProvider)
+func newIdentityStoreClient(ctx context.Context, config IdentityStoreConfig, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (pbIS.IdentityStoreClient, func(), error) {
+	isConn, err := client.New(ctx, config.Connection, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		return nil, nil, fmt.Errorf("cannot connect to identity-store: %w", err)
 	}
@@ -119,7 +122,7 @@ func NewService(ctx context.Context, config Config, fileWatcher *fsnotify.Watche
 		return errors.ErrorOrNil()
 	}
 
-	isClient, closeIsClient, err := newIdentityStoreClient(config.Clients.IdentityStore, fileWatcher, logger, tracerProvider)
+	isClient, closeIsClient, err := newIdentityStoreClient(ctx, config.Clients.IdentityStore, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		return nil, closeGrpcServerOnError(fmt.Errorf("cannot create identity-store client: %w", err))
 	}
@@ -139,12 +142,12 @@ func NewService(ctx context.Context, config Config, fileWatcher *fsnotify.Watche
 	serviceHeartbeat := NewServiceHeartbeat(config, eventStore, publisher, logger)
 	grpcServer.AddCloseFunc(serviceHeartbeat.Close)
 
-	requestHandler := NewRequestHandler(config, eventStore, publisher, func(ctx context.Context, owner string, deviceIDs []string) ([]string, error) {
+	requestHandler := NewRequestHandler(config, eventStore, publisher, func(getCtx context.Context, owner string, deviceIDs []string) ([]string, error) {
 		getAllDevices := len(deviceIDs) == 0
 		if !getAllDevices {
-			return ownerCache.GetSelectedDevices(ctx, deviceIDs)
+			return ownerCache.GetSelectedDevices(getCtx, deviceIDs)
 		}
-		return ownerCache.GetDevices(ctx)
+		return ownerCache.GetDevices(getCtx)
 	}, serviceHeartbeat, logger)
 	RegisterResourceAggregateServer(grpcServer.Server, requestHandler)
 

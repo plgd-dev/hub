@@ -24,10 +24,13 @@ type Service struct {
 
 // New parses configuration and creates new Server with provided store and bus
 func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logger log.Logger) (*Service, error) {
+	ctx, cancel := context.WithCancel(ctx)
 	otelClient, err := otelClient.New(ctx, config.Clients.OpenTelemetryCollector.Config, serviceName, fileWatcher, logger)
 	if err != nil {
+		cancel()
 		return nil, fmt.Errorf("cannot create open telemetry collector client: %w", err)
 	}
+	otelClient.AddCloseFunc(cancel)
 	tracerProvider := otelClient.GetTracerProvider()
 
 	listener, err := listener.New(config.APIs.HTTP.Connection, fileWatcher, logger)
