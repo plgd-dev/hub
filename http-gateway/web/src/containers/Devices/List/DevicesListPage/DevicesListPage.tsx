@@ -280,6 +280,7 @@ const DevicesListPage: FC<any> = () => {
                     search: _(g.search),
                     select: _(g.select),
                 }}
+                isActiveTab={true}
                 isAllSelected={isAllSelected}
                 loading={loadingOrDeleting}
                 onDeleteClick={handleOpenDeleteModal}
