@@ -16,7 +16,7 @@ import { useIsMounted } from '@shared-ui/common/hooks'
 
 import { Inputs } from './ConfigurationPage.types'
 import notificationId from '@/notificationId'
-import { messages as t } from './Configuration.i18n'
+import { messages as t } from './ConfigurationPage.i18n'
 import { CombinedStoreType } from '@/store/store'
 import { setTheme } from '@/containers/App/slice'
 
@@ -86,7 +86,7 @@ const ConfigurationPage = () => {
     return (
         <PageLayout
             footer={<Footer paginationComponent={<div id='paginationPortalTarget'></div>} recentTasksPortal={<div id='recentTasksPortalTarget'></div>} />}
-            title='App Configuration'
+            title={_(t.configurationPage)}
         >
             <form onSubmit={handleSubmit(onSubmit)}>
                 <SimpleStripTable rows={rows} />
