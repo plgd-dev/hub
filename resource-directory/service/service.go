@@ -9,19 +9,20 @@ import (
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
-	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"github.com/plgd-dev/hub/v2/pkg/net/grpc/server"
 	otelClient "github.com/plgd-dev/hub/v2/pkg/opentelemetry/collector/client"
-	"github.com/plgd-dev/hub/v2/pkg/security/jwt"
 	"github.com/plgd-dev/hub/v2/pkg/security/jwt/validator"
 	"github.com/plgd-dev/hub/v2/pkg/service"
 )
 
 func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logger log.Logger) (*service.Service, error) {
+	ctx, cancel := context.WithCancel(ctx)
 	otelClient, err := otelClient.New(ctx, config.Clients.OpenTelemetryCollector, "resource-directory", fileWatcher, logger)
 	if err != nil {
+		cancel()
 		return nil, fmt.Errorf("cannot create open telemetry collector client: %w", err)
 	}
+	otelClient.AddCloseFunc(cancel)
 	tracerProvider := otelClient.GetTracerProvider()
 
 	validator, err := validator.New(ctx, config.APIs.GRPC.Authorization.Config, fileWatcher, logger, tracerProvider)
@@ -65,26 +66,4 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 	}
 
 	return service.New(server), nil
-}
-
-func makeAuthFunc(validator kitNetGrpc.Validator) func(ctx context.Context, method string) (context.Context, error) {
-	interceptor := kitNetGrpc.ValidateJWTWithValidator(validator, func(ctx context.Context, method string) kitNetGrpc.Claims {
-		return jwt.NewScopeClaims()
-	})
-	return func(ctx context.Context, method string) (context.Context, error) {
-		if method == "/"+pb.GrpcGateway_ServiceDesc.ServiceName+"/GetHubConfiguration" {
-			return ctx, nil
-		}
-		token, _ := kitNetGrpc.TokenFromMD(ctx)
-		ctx, err := interceptor(ctx, method)
-		if err != nil {
-			log.Errorf("auth interceptor %v %v: %w", method, token, err)
-			return ctx, err
-		}
-		return ctx, err
-	}
-}
-
-func NewAuth(validator kitNetGrpc.Validator) kitNetGrpc.AuthInterceptors {
-	return kitNetGrpc.MakeAuthInterceptors(makeAuthFunc(validator))
 }

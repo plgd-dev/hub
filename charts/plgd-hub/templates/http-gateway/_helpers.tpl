@@ -23,12 +23,26 @@
     {{- printf "%s-cfg" $fullName }}
 {{- end -}}
 
+{{- define  "plgd-hub.httpgateway.configThemeName" -}}
+    {{- $fullName :=  include "plgd-hub.httpgateway.fullname" . -}}
+    {{- printf "%s-theme-cfg" $fullName }}
+{{- end -}}
+
+{{- define "plgd-hub.httpgateway.setCustomTheme" -}}
+    {{- $theme := .Values.httpgateway.ui.theme }}
+    {{- if and .Values.httpgateway.enabled .Values.httpgateway.ui.enabled $theme (gt (len (printf "%q" $theme)) 0) }}
+      {{- printf "true" -}}
+    {{- else }}
+      {{- printf "" -}}
+    {{- end }}
+{{- end -}}
+
 {{- define "plgd-hub.httpgateway.createServiceCertByCm" }}
     {{- $serviceTls := .Values.httpgateway.apis.http.tls.certFile }}
     {{- if $serviceTls }}
-    {{- printf "false" }}
+    {{- printf "" }}
     {{- else }}
-    {{- printf "true" }}
+    {{- printf "true" -}}
     {{- end }}
 {{- end }}
 

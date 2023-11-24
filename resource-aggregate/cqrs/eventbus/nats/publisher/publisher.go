@@ -9,6 +9,7 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 	nats "github.com/nats-io/nats.go"
+	"github.com/plgd-dev/hub/v2/pkg/fn"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/pb"
 	"google.golang.org/protobuf/proto"
@@ -21,13 +22,13 @@ type MarshalerFunc = func(v interface{}) ([]byte, error)
 type Publisher struct {
 	dataMarshaler  MarshalerFunc
 	conn           *nats.Conn
-	closeFunc      []func()
+	closeFunc      fn.FuncList
 	publish        func(subj string, data []byte) error
 	flusherTimeout time.Duration
 }
 
 func (p *Publisher) AddCloseFunc(f func()) {
-	p.closeFunc = append(p.closeFunc, f)
+	p.closeFunc.AddFunc(f)
 }
 
 type options struct {
@@ -151,7 +152,5 @@ func (p *Publisher) Flush(ctx context.Context) error {
 }
 
 func (p *Publisher) Close() {
-	for _, f := range p.closeFunc {
-		f()
-	}
+	p.closeFunc.Execute()
 }

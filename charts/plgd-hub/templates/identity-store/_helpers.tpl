@@ -13,9 +13,9 @@
 {{- define "plgd-hub.identitystore.createServiceCertByCm" }}
     {{- $serviceTls := .Values.identitystore.apis.grpc.tls.certFile }}
     {{- if $serviceTls }}
-    {{- printf "false" }}
+    {{- printf "" -}}
     {{- else }}
-    {{- printf "true" }}
+    {{- printf "true" -}}
     {{- end }}
 {{- end }}
 

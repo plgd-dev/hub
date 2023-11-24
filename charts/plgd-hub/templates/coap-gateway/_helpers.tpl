@@ -26,9 +26,9 @@
 {{- define "plgd-hub.coapgateway.createServiceCertByCm" }}
     {{- $serviceTls := .Values.coapgateway.apis.coap.tls.certFile }}
     {{- if $serviceTls }}
-    {{- printf "false" }}
+    {{- printf "" -}}
     {{- else }}
-    {{- printf "true" }}
+    {{- printf "true" -}}
     {{- end }}
 {{- end }}
 

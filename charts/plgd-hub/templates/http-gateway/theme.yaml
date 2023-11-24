@@ -1,0 +1,11 @@
+{{- if ( include "plgd-hub.httpgateway.setCustomTheme" . ) }}
+{{- $theme := .Values.httpgateway.ui.theme }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "plgd-hub.httpgateway.configThemeName" . }}
+  namespace: {{ .Release.Namespace }}
+data:
+  theme.json: |-
+    {{ $theme | fromJson | toJson }}
+{{- end -}}

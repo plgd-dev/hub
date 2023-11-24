@@ -79,8 +79,8 @@ func newAuthInterceptor(ctx context.Context, config validator.Config, fileWatche
 	return auth, fl.ToFunction(), nil
 }
 
-func newIdentityStoreClient(config IdentityStoreConfig, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (pbIS.IdentityStoreClient, func(), error) {
-	isConn, err := grpcClient.New(config.Connection, fileWatcher, logger, tracerProvider)
+func newIdentityStoreClient(ctx context.Context, config IdentityStoreConfig, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (pbIS.IdentityStoreClient, func(), error) {
+	isConn, err := grpcClient.New(ctx, config.Connection, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		return nil, nil, fmt.Errorf("cannot create connection to identity-store: %w", err)
 	}
@@ -139,9 +139,9 @@ func newStore(ctx context.Context, config pkgMongo.Config, fileWatcher *fsnotify
 	return store, fl.ToFunction(), nil
 }
 
-func newGrpcGatewayClient(config GrpcGatewayConfig, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (pbGRPC.GrpcGatewayClient, func(), error) {
+func newGrpcGatewayClient(ctx context.Context, config GrpcGatewayConfig, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (pbGRPC.GrpcGatewayClient, func(), error) {
 	var fl fn.FuncList
-	grpcConn, err := grpcClient.New(config.Connection, fileWatcher, logger, tracerProvider)
+	grpcConn, err := grpcClient.New(ctx, config.Connection, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		return nil, nil, fmt.Errorf("cannot connect to resource aggregate: %w", err)
 	}
@@ -154,9 +154,9 @@ func newGrpcGatewayClient(config GrpcGatewayConfig, fileWatcher *fsnotify.Watche
 	return grpcClient, fl.ToFunction(), nil
 }
 
-func newResourceAggregateClient(config ResourceAggregateConfig, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (raService.ResourceAggregateClient, func(), error) {
+func newResourceAggregateClient(ctx context.Context, config ResourceAggregateConfig, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (raService.ResourceAggregateClient, func(), error) {
 	var fl fn.FuncList
-	raConn, err := grpcClient.New(config.Connection, fileWatcher, logger, tracerProvider)
+	raConn, err := grpcClient.New(ctx, config.Connection, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		return nil, nil, fmt.Errorf("cannot connect to resource aggregate: %w", err)
 	}
@@ -172,7 +172,7 @@ func newResourceAggregateClient(config ResourceAggregateConfig, fileWatcher *fsn
 func newDevicesSubscription(ctx context.Context, config Config, raClient raService.ResourceAggregateClient, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (*DevicesSubscription, func(), error) {
 	var fl fn.FuncList
 
-	grpcClient, closeGrpcClient, err := newGrpcGatewayClient(config.Clients.GrpcGateway, fileWatcher, logger, tracerProvider)
+	grpcClient, closeGrpcClient, err := newGrpcGatewayClient(ctx, config.Clients.GrpcGateway, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		return nil, nil, fmt.Errorf("cannot create to grpc-gateway client: %w", err)
 	}
@@ -191,10 +191,13 @@ func newDevicesSubscription(ctx context.Context, config Config, raClient raServi
 
 // New parses configuration and creates new Server with provided store and bus
 func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logger log.Logger) (*Server, error) {
+	ctx, cancel := context.WithCancel(ctx)
 	otelClient, err := otelClient.New(ctx, config.Clients.OpenTelemetryCollector.Config, serviceName, fileWatcher, logger)
 	if err != nil {
+		cancel()
 		return nil, fmt.Errorf("cannot create open telemetry collector client: %w", err)
 	}
+	otelClient.AddCloseFunc(cancel)
 
 	tracerProvider := otelClient.GetTracerProvider()
 
@@ -211,15 +214,12 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 		}
 	})
 
-	raClient, closeRaClient, err := newResourceAggregateClient(config.Clients.ResourceAggregate, fileWatcher, logger, tracerProvider)
+	raClient, closeRaClient, err := newResourceAggregateClient(ctx, config.Clients.ResourceAggregate, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		cleanUp.Execute()
 		return nil, fmt.Errorf("cannot create to resource aggregate client: %w", err)
 	}
 	listener.AddCloseFunc(closeRaClient)
-
-	ctx, cancel := context.WithCancel(ctx)
-	cleanUp.AddFunc(cancel)
 	devicesSubscription, closeDevSub, err := newDevicesSubscription(ctx, config, raClient, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		cleanUp.Execute()
@@ -230,7 +230,7 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 	taskProcessor := NewTaskProcessor(raClient, tracerProvider, config.TaskProcessor.MaxParallel, config.TaskProcessor.CacheSize,
 		config.TaskProcessor.Timeout, config.TaskProcessor.Delay)
 
-	isClient, closeIsClient, err := newIdentityStoreClient(config.Clients.IdentityStore, fileWatcher, logger, tracerProvider)
+	isClient, closeIsClient, err := newIdentityStoreClient(ctx, config.Clients.IdentityStore, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		cleanUp.Execute()
 		return nil, fmt.Errorf("cannot create identity-store client: %w", err)

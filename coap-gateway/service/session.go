@@ -348,8 +348,8 @@ func (c *session) onGetResourceContent(ctx context.Context, deviceID, href strin
 			x.c.Errorf("%w", x.cannotGetResourceContentError(x.deviceID, x.href, err2))
 			return
 		}
-		obs, err2 := x.c.getDeviceObserver(x.c.Context())
-		if err2 == nil {
+		obs, ok, _ := x.c.getDeviceObserver(x.c.Context())
+		if ok {
 			obs.ResourceHasBeenSynchronized(x.ctx, x.href)
 		}
 	})
@@ -403,8 +403,8 @@ func (c *session) onObserveResource(ctx context.Context, deviceID, href string, 
 			x.c.Errorf("%w", x.cannotObserResourceError(err2))
 			return
 		}
-		obs, err2 := x.c.getDeviceObserver(x.c.Context())
-		if err2 == nil {
+		obs, ok, _ := x.c.getDeviceObserver(x.c.Context())
+		if ok {
 			obs.ResourceHasBeenSynchronized(x.ctx, x.href)
 		}
 	})
@@ -820,9 +820,13 @@ func (c *session) unpublishResourceLinks(ctx context.Context, hrefs []string, in
 		return nil
 	}
 
-	observer, err := c.getDeviceObserver(ctx)
+	observer, ok, err := c.getDeviceObserver(ctx)
 	if err != nil {
 		logUnpublishError(err)
+		return resp.UnpublishedHrefs
+	}
+	if !ok {
+		logUnpublishError(fmt.Errorf("device observer not found"))
 		return resp.UnpublishedHrefs
 	}
 	observer.RemovePublishedResources(ctx, resp.UnpublishedHrefs)

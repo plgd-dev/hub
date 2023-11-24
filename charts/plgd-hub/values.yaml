@@ -1379,6 +1379,7 @@ httpgateway:
   ui:
     enabled: true
     directory: "/usr/local/var/www"
+    theme: ""
     webConfiguration:
       httpGatewayAddress: ""
       webOAuthClient:

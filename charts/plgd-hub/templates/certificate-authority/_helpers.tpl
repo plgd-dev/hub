@@ -26,9 +26,9 @@
 {{- define "plgd-hub.certificateauthority.createServiceCertByCm" }}
     {{- $serviceTls := .Values.certificateauthority.apis.grpc.tls.certFile }}
     {{- if $serviceTls }}
-    {{- printf "false" }}
+    {{- printf "" -}}
     {{- else }}
-    {{- printf "true" }}
+    {{- printf "true" -}}
     {{- end }}
 {{- end }}
 

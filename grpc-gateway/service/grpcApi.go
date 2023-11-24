@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"fmt"
 
 	pbCA "github.com/plgd-dev/hub/v2/certificate-authority/pb"
@@ -37,8 +38,8 @@ type RequestHandler struct {
 	closeFunc                  func()
 }
 
-func addHandler(svr *server.Server, config Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider, goroutinePoolGo func(func()) error) error {
-	handler, err := NewRequestHandlerFromConfig(config, fileWatcher, logger, tracerProvider, goroutinePoolGo)
+func addHandler(ctx context.Context, svr *server.Server, config Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider, goroutinePoolGo func(func()) error) error {
+	handler, err := NewRequestHandlerFromConfig(ctx, config, fileWatcher, logger, tracerProvider, goroutinePoolGo)
 	if err != nil {
 		return err
 	}
@@ -52,8 +53,8 @@ func Register(server *grpc.Server, handler *RequestHandler) {
 	pb.RegisterGrpcGatewayServer(server, handler)
 }
 
-func newIdentityStoreClient(config IdentityStoreConfig, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (pbIS.IdentityStoreClient, func(), error) {
-	idConn, err := client.New(config.Connection, fileWatcher, logger, tracerProvider)
+func newIdentityStoreClient(ctx context.Context, config IdentityStoreConfig, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (pbIS.IdentityStoreClient, func(), error) {
+	idConn, err := client.New(ctx, config.Connection, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		return nil, nil, fmt.Errorf("cannot create connection to identity-store: %w", err)
 	}
@@ -66,8 +67,8 @@ func newIdentityStoreClient(config IdentityStoreConfig, fileWatcher *fsnotify.Wa
 	return idClient, closeIdConn, nil
 }
 
-func newResourceDirectoryClient(config GrpcServerConfig, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (pb.GrpcGatewayClient, func(), error) {
-	rdConn, err := client.New(config.Connection, fileWatcher, logger, tracerProvider)
+func newResourceDirectoryClient(ctx context.Context, config GrpcServerConfig, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (pb.GrpcGatewayClient, func(), error) {
+	rdConn, err := client.New(ctx, config.Connection, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		return nil, nil, fmt.Errorf("cannot connect to resource-directory: %w", err)
 	}
@@ -80,8 +81,8 @@ func newResourceDirectoryClient(config GrpcServerConfig, fileWatcher *fsnotify.W
 	return resourceDirectoryClient, closeRdConn, nil
 }
 
-func newCertificateAuthorityClient(config GrpcServerConfig, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (pbCA.CertificateAuthorityClient, func(), error) {
-	caConn, err := client.New(config.Connection, fileWatcher, logger, tracerProvider)
+func newCertificateAuthorityClient(ctx context.Context, config GrpcServerConfig, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (pbCA.CertificateAuthorityClient, func(), error) {
+	caConn, err := client.New(ctx, config.Connection, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		return nil, nil, fmt.Errorf("cannot connect to certificate-authority: %w", err)
 	}
@@ -94,8 +95,8 @@ func newCertificateAuthorityClient(config GrpcServerConfig, fileWatcher *fsnotif
 	return certificateAuthorityClient, closeCaConn, nil
 }
 
-func newResourceAggregateClient(config GrpcServerConfig, resourceSubscriber eventbus.Subscriber, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (*raClient.Client, func(), error) {
-	raConn, err := client.New(config.Connection, fileWatcher, logger, tracerProvider)
+func newResourceAggregateClient(ctx context.Context, config GrpcServerConfig, resourceSubscriber eventbus.Subscriber, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (*raClient.Client, func(), error) {
+	raConn, err := client.New(ctx, config.Connection, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		return nil, nil, fmt.Errorf("cannot connect to resource-aggregate: %w", err)
 	}
@@ -108,9 +109,9 @@ func newResourceAggregateClient(config GrpcServerConfig, resourceSubscriber even
 	return raClient, closeRaConn, nil
 }
 
-func NewRequestHandlerFromConfig(config Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider, goroutinePoolGo func(func()) error) (*RequestHandler, error) {
+func NewRequestHandlerFromConfig(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider, goroutinePoolGo func(func()) error) (*RequestHandler, error) {
 	var closeFunc fn.FuncList
-	idClient, closeIdClient, err := newIdentityStoreClient(config.Clients.IdentityStore, fileWatcher, logger, tracerProvider)
+	idClient, closeIdClient, err := newIdentityStoreClient(ctx, config.Clients.IdentityStore, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		closeFunc.Execute()
 		return nil, fmt.Errorf("cannot create identity-store client: %w", err)
@@ -129,7 +130,7 @@ func NewRequestHandlerFromConfig(config Config, fileWatcher *fsnotify.Watcher, l
 		})
 	closeFunc.AddFunc(ownerCache.Close)
 
-	resourceDirectoryClient, closeResourceDirectoryClient, err := newResourceDirectoryClient(config.Clients.ResourceDirectory, fileWatcher, logger, tracerProvider)
+	resourceDirectoryClient, closeResourceDirectoryClient, err := newResourceDirectoryClient(ctx, config.Clients.ResourceDirectory, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		closeFunc.Execute()
 		return nil, fmt.Errorf("cannot create resource-directory client: %w", err)
@@ -148,7 +149,7 @@ func NewRequestHandlerFromConfig(config Config, fileWatcher *fsnotify.Watcher, l
 	}
 	closeFunc.AddFunc(resourceSubscriber.Close)
 
-	resourceAggregateClient, closeResourceAggregateClient, err := newResourceAggregateClient(config.Clients.ResourceAggregate, resourceSubscriber,
+	resourceAggregateClient, closeResourceAggregateClient, err := newResourceAggregateClient(ctx, config.Clients.ResourceAggregate, resourceSubscriber,
 		fileWatcher, logger, tracerProvider)
 	if err != nil {
 		closeFunc.Execute()
@@ -156,7 +157,7 @@ func NewRequestHandlerFromConfig(config Config, fileWatcher *fsnotify.Watcher, l
 	}
 	closeFunc.AddFunc(closeResourceAggregateClient)
 
-	certificateAuthorityClient, closeCertificateAuthorityClient, err := newCertificateAuthorityClient(config.Clients.CertificateAuthority, fileWatcher, logger, tracerProvider)
+	certificateAuthorityClient, closeCertificateAuthorityClient, err := newCertificateAuthorityClient(ctx, config.Clients.CertificateAuthority, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		closeFunc.Execute()
 		return nil, fmt.Errorf("cannot create certificate-authority client: %w", err)

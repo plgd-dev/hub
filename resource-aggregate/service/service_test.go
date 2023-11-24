@@ -44,14 +44,14 @@ func TestPublishUnpublish(t *testing.T) {
 		require.NoError(t, errC)
 	}()
 
-	idConn, err := client.New(config.MakeGrpcClientConfig(cfg.Clients.IdentityStore.Connection.Addr), fileWatcher, log.Get(), trace.NewNoopTracerProvider())
+	idConn, err := client.New(ctx, config.MakeGrpcClientConfig(cfg.Clients.IdentityStore.Connection.Addr), fileWatcher, log.Get(), trace.NewNoopTracerProvider())
 	require.NoError(t, err)
 	defer func() {
 		_ = idConn.Close()
 	}()
 	idClient := pbIS.NewIdentityStoreClient(idConn.GRPC())
 
-	raConn, err := client.New(config.MakeGrpcClientConfig(cfg.APIs.GRPC.Addr), fileWatcher, log.Get(), trace.NewNoopTracerProvider())
+	raConn, err := client.New(ctx, config.MakeGrpcClientConfig(cfg.APIs.GRPC.Addr), fileWatcher, log.Get(), trace.NewNoopTracerProvider())
 	require.NoError(t, err)
 	defer func() {
 		_ = raConn.Close()

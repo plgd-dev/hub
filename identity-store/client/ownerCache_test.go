@@ -29,7 +29,8 @@ import (
 )
 
 func TestOwnerCacheSubscribe(t *testing.T) {
-	service.ClearDB(context.Background(), t)
+	ctx := context.Background()
+	service.ClearDB(ctx, t)
 
 	devices := []string{"device1", "device2", "device3"}
 	cfg := idService.MakeConfig(t)
@@ -50,7 +51,7 @@ func TestOwnerCacheSubscribe(t *testing.T) {
 		require.NoError(t, errC)
 	}()
 
-	conn, err := client.New(client.Config{
+	conn, err := client.New(ctx, client.Config{
 		Addr: cfg.APIs.GRPC.Addr,
 		TLS: clientCertManager.Config{
 			CAPool:   cfg.APIs.GRPC.TLS.CAPool,
@@ -72,7 +73,7 @@ func TestOwnerCacheSubscribe(t *testing.T) {
 
 	c := pb.NewIdentityStoreClient(conn.GRPC())
 
-	ctx := kitNetGrpc.CtxWithToken(context.Background(), token)
+	ctx = kitNetGrpc.CtxWithToken(ctx, token)
 	ctx = kitNetGrpc.CtxWithIncomingToken(ctx, token)
 	owner, err := kitNetGrpc.ParseOwnerFromJwtToken("sub", token)
 	require.NoError(t, err)

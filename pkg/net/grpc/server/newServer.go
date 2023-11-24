@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 
+	"github.com/plgd-dev/hub/v2/pkg/fn"
 	"google.golang.org/grpc"
 )
 
@@ -12,7 +13,7 @@ type Server struct {
 	*grpc.Server
 	listener     net.Listener
 	gracefulStop bool
-	closeFunc    []func()
+	closeFunc    fn.FuncList
 }
 
 // NewServer instantiates a gRPC server.
@@ -30,7 +31,7 @@ func NewServer(addr string, opts ...grpc.ServerOption) (*Server, error) {
 // AddCloseFunc adds a function to be called by the Close method.
 // This eliminates the need for wrapping the Server.
 func (s *Server) AddCloseFunc(f func()) {
-	s.closeFunc = append(s.closeFunc, f)
+	s.closeFunc.AddFunc(f)
 }
 
 func (s *Server) SetGracefulStop(gracefulStop bool) {
@@ -61,8 +62,6 @@ func (s *Server) Close() error {
 	} else {
 		s.Server.Stop()
 	}
-	for _, f := range s.closeFunc {
-		f()
-	}
+	s.closeFunc.Execute()
 	return nil
 }

@@ -140,9 +140,13 @@ func observeResources(ctx context.Context, client *session, w wkRd, sequenceNumb
 		publishedResources: publishedResources,
 	}
 	if err := client.server.taskQueue.Submit(func() {
-		obs, errObs := x.client.getDeviceObserver(x.ctx)
+		obs, ok, errObs := x.client.getDeviceObserver(x.ctx)
 		if errObs != nil {
 			x.client.Errorf("%w", x.observeError(x.w.DeviceID, errObs))
+			return
+		}
+		if !ok {
+			x.client.Errorf("%w", x.observeError(x.w.DeviceID, fmt.Errorf("cannot get device observer")))
 			return
 		}
 		if errObs := obs.AddPublishedResources(x.ctx, x.publishedResources); errObs != nil {

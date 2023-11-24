@@ -21,6 +21,9 @@ import (
 	"time"
 
 	"github.com/plgd-dev/device/v2/pkg/security/generateCertificate"
+	"github.com/plgd-dev/device/v2/schema"
+	"github.com/plgd-dev/device/v2/schema/interfaces"
+	"github.com/plgd-dev/device/v2/schema/resources"
 	"github.com/plgd-dev/go-coap/v3/message"
 	"github.com/plgd-dev/go-coap/v3/message/codes"
 	"github.com/plgd-dev/go-coap/v3/message/pool"
@@ -185,6 +188,44 @@ func testSignUpIn(t *testing.T, deviceID string, co *coapTcpClient.Conn) {
 	testSignIn(t, deviceID, resp, co)
 }
 
+func testRefreshTokenWithResp(t *testing.T, deviceID string, r service.CoapSignUpResponse, co *coapTcpClient.Conn) *pool.Message {
+	refreshTokenReq := service.CoapRefreshTokenReq{
+		DeviceID:              deviceID,
+		UserID:                r.UserID,
+		RefreshToken:          r.RefreshToken,
+		AuthorizationProvider: config.DEVICE_PROVIDER,
+	}
+	inputCbor, err := cbor.Encode(refreshTokenReq)
+	require.NoError(t, err)
+
+	ctx, cancel := context.WithTimeout(co.Context(), TestExchangeTimeout)
+	defer cancel()
+	req := co.AcquireMessage(ctx)
+	defer co.ReleaseMessage(req)
+	token, err := message.GetToken()
+	require.NoError(t, err)
+	req.SetCode(codes.POST)
+	req.SetToken(token)
+	err = req.SetPath(uri.RefreshToken)
+	require.NoError(t, err)
+	req.SetContentFormat(message.AppOcfCbor)
+	req.SetBody(bytes.NewReader(inputCbor))
+
+	resp, err := co.Do(req)
+	require.NoError(t, err)
+	return resp
+}
+
+func testRefreshToken(t *testing.T, deviceID string, r service.CoapSignUpResponse, co *coapTcpClient.Conn) service.CoapRefreshTokenResp {
+	resp := testRefreshTokenWithResp(t, deviceID, r, co)
+	require.Equal(t, codes.Changed, resp.Code())
+	var refreshTokenResp service.CoapRefreshTokenResp
+	err := cbor.ReadFrom(resp.Body(), &refreshTokenResp)
+	require.NoError(t, err)
+	require.NotEmpty(t, refreshTokenResp.AccessToken)
+	return refreshTokenResp
+}
+
 func testPostHandler(t *testing.T, path string, test testEl, co *coapTcpClient.Conn) {
 	var inputCbor []byte
 	var err error
@@ -225,19 +266,18 @@ func json2cbor(data string) ([]byte, error) {
 	return json.ToCBOR(data)
 }
 
-func testPrepareDevice(t *testing.T, co *coapTcpClient.Conn) {
-	testSignUpIn(t, CertIdentity, co)
+func testPublishResources(t *testing.T, deviceID string, co *coapTcpClient.Conn) {
 	publishResEl := []testEl{
 		{
 			"publishResourceA",
-			input{codes.POST, `{ "di":"` + CertIdentity + `", "links":[ { "di":"` + CertIdentity + `", "href":"` + TestAResourceHref + `", "rt":["` + TestAResourceType + `"], "type":["` + message.TextPlain.String() + `"] } ], "ttl":12345}`, nil},
+			input{codes.POST, `{ "di":"` + deviceID + `", "links":[ { "di":"` + deviceID + `", "href":"` + TestAResourceHref + `", "rt":["` + TestAResourceType + `"], "type":["` + message.TextPlain.String() + `"], "p":{"bm":3} } ], "ttl":12345}`, nil},
 			output{codes.Changed, TestWkRD{
-				DeviceID:         CertIdentity,
+				DeviceID:         deviceID,
 				TimeToLive:       12345,
 				TimeToLiveLegacy: 12345,
 				Links: []TestResource{
 					{
-						DeviceID:      CertIdentity,
+						DeviceID:      deviceID,
 						Href:          TestAResourceHref,
 						ResourceTypes: []string{TestAResourceType},
 						Type:          []string{message.TextPlain.String()},
@@ -248,14 +288,14 @@ func testPrepareDevice(t *testing.T, co *coapTcpClient.Conn) {
 		},
 		{
 			"publishResourceB",
-			input{codes.POST, `{ "di":"` + CertIdentity + `", "links":[ { "di":"` + CertIdentity + `", "href":"` + TestBResourceHref + `", "rt":["` + TestBResourceType + `"], "type":["` + message.TextPlain.String() + `"] } ], "ttl":12345}`, nil},
+			input{codes.POST, `{ "di":"` + deviceID + `", "links":[ { "di":"` + deviceID + `", "href":"` + TestBResourceHref + `", "rt":["` + TestBResourceType + `"], "type":["` + message.TextPlain.String() + `"], "p":{"bm":3} } ], "ttl":12345}`, nil},
 			output{codes.Changed, TestWkRD{
-				DeviceID:         CertIdentity,
+				DeviceID:         deviceID,
 				TimeToLive:       12345,
 				TimeToLiveLegacy: 12345,
 				Links: []TestResource{
 					{
-						DeviceID:      CertIdentity,
+						DeviceID:      deviceID,
 						Href:          TestBResourceHref,
 						ResourceTypes: []string{TestBResourceType},
 						Type:          []string{message.TextPlain.String()},
@@ -271,7 +311,88 @@ func testPrepareDevice(t *testing.T, co *coapTcpClient.Conn) {
 	time.Sleep(time.Second) // for publish content of device resources
 }
 
+func testPrepareDevice(t *testing.T, co *coapTcpClient.Conn) {
+	testSignUpIn(t, CertIdentity, co)
+	testPublishResources(t, CertIdentity, co)
+}
+
+func handleDiscoveryResource(t *testing.T, w *responsewriter.ResponseWriter[*coapTcpClient.Conn], r *pool.Message) {
+	links := schema.ResourceLinks{
+		{
+			Href:          resources.ResourceURI,
+			ResourceTypes: []string{resources.ResourceType},
+			Interfaces:    []string{interfaces.OC_IF_BASELINE, interfaces.OC_IF_LL},
+			DeviceID:      CertIdentity,
+			Policy: &schema.Policy{
+				BitMask: schema.Discoverable,
+			},
+		},
+		{
+			Href:          TestAResourceHref,
+			ResourceTypes: []string{TestAResourceType},
+			Interfaces:    []string{interfaces.OC_IF_BASELINE},
+			DeviceID:      CertIdentity,
+			Policy: &schema.Policy{
+				BitMask: schema.Discoverable | schema.Observable,
+			},
+		},
+		{
+			Href:          TestBResourceHref,
+			ResourceTypes: []string{TestAResourceType},
+			Interfaces:    []string{interfaces.OC_IF_BASELINE},
+			DeviceID:      CertIdentity,
+			Policy: &schema.Policy{
+				BitMask: schema.Discoverable | schema.Observable,
+			},
+		},
+	}
+	data, err := cbor.Encode(links)
+	require.NoError(t, err)
+	err = w.SetResponse(codes.Content, message.AppOcfCbor, bytes.NewReader(data))
+	require.NoError(t, err)
+}
+
+func makeTestCoapHandler(t *testing.T) func(w *responsewriter.ResponseWriter[*coapTcpClient.Conn], r *pool.Message) {
+	return func(w *responsewriter.ResponseWriter[*coapTcpClient.Conn], r *pool.Message) {
+		var err error
+		resp := []byte("hello world")
+		switch r.Code() {
+		case codes.POST:
+			err = w.SetResponse(codes.Changed, message.TextPlain, bytes.NewReader(resp))
+		case codes.GET:
+			path, err := r.Path()
+			if err == nil && path == uri.ResourceDiscovery {
+				handleDiscoveryResource(t, w, r)
+				return
+			}
+			respOptions := message.Options{
+				message.Option{ID: message.ETag, Value: []byte(TestETag)},
+			}
+			_, err = r.Options().Observe()
+			if err == nil {
+				respOptions, _, _ = respOptions.AddUint32(make([]byte, 10), message.Observe, 12345)
+			}
+			etag, err := r.ETag()
+			if err == nil && bytes.Equal(etag, []byte(TestETag)) {
+				err = w.SetResponse(codes.Valid, message.TextPlain, nil, respOptions...)
+			} else {
+				err = w.SetResponse(codes.Content, message.TextPlain, bytes.NewReader(resp), respOptions...)
+			}
+		case codes.PUT:
+			err = w.SetResponse(codes.Created, message.TextPlain, bytes.NewReader(resp))
+		case codes.DELETE:
+			err = w.SetResponse(codes.Deleted, message.TextPlain, bytes.NewReader(resp))
+		}
+		require.NoError(t, err)
+	}
+}
+
 func testCoapDial(t *testing.T, deviceID string, withTLS, identityCert bool, validTo time.Time) *coapTcpClient.Conn {
+	return testCoapDialWithHandler(t, deviceID, withTLS, identityCert, validTo, makeTestCoapHandler(t))
+}
+
+func testCoapDialWithHandler(t *testing.T, deviceID string, withTLS, identityCert bool, validTo time.Time, h func(w *responsewriter.ResponseWriter[*coapTcpClient.Conn], r *pool.Message)) *coapTcpClient.Conn {
+
 	var tlsConfig *tls.Config
 
 	if withTLS {
@@ -347,26 +468,7 @@ func testCoapDial(t *testing.T, deviceID string, withTLS, identityCert bool, val
 			},
 		}
 	}
-	conn, err := tcp.Dial(config.COAP_GW_HOST, options.WithTLS(tlsConfig), options.WithHandlerFunc(func(w *responsewriter.ResponseWriter[*coapTcpClient.Conn], r *pool.Message) {
-		var err error
-		resp := []byte("hello world")
-		switch r.Code() {
-		case codes.POST:
-			err = w.SetResponse(codes.Changed, message.TextPlain, bytes.NewReader(resp))
-		case codes.GET:
-			etag, err := r.ETag()
-			if err == nil && bytes.Equal(etag, []byte(TestETag)) {
-				err = w.SetResponse(codes.Valid, message.TextPlain, nil)
-			} else {
-				err = w.SetResponse(codes.Content, message.TextPlain, bytes.NewReader(resp), message.Option{ID: message.ETag, Value: []byte(TestETag)})
-			}
-		case codes.PUT:
-			err = w.SetResponse(codes.Created, message.TextPlain, bytes.NewReader(resp))
-		case codes.DELETE:
-			err = w.SetResponse(codes.Deleted, message.TextPlain, bytes.NewReader(resp))
-		}
-		require.NoError(t, err)
-	}))
+	conn, err := tcp.Dial(config.COAP_GW_HOST, options.WithTLS(tlsConfig), options.WithHandlerFunc(h))
 	require.NoError(t, err)
 	return conn
 }

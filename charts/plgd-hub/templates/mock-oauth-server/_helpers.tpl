@@ -26,9 +26,9 @@
 {{- define "plgd-hub.mockoauthserver.createServiceCertByCm" }}
     {{- $serviceTls := .Values.mockoauthserver.apis.http.tls.certFile }}
     {{- if $serviceTls }}
-    {{- printf "false" }}
+    {{- printf "" -}}
     {{- else }}
-    {{- printf "true" }}
+    {{- printf "true" -}}
     {{- end }}
 {{- end }}
 
