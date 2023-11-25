@@ -19,6 +19,7 @@ import { flushDevices } from '@shared-ui/app/clientApp/Devices/slice'
 import { reset } from '@shared-ui/app/clientApp/App/AppRest'
 import { ToastContainer } from '@shared-ui/components/Atomic'
 import { ThemeType } from '@shared-ui/components/Atomic/_theme'
+import { clientAppSettings } from '@shared-ui/common/services'
 
 import { Props } from './AppLayout.types'
 import { mather, menu, Routes } from '@/routes'
@@ -128,6 +129,9 @@ const AppLayout: FC<Props> = (props) => {
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [signOutRedirect])
+
+    // reset
+    clientAppSettings.setUseToken(true)
 
     return (
         <>
