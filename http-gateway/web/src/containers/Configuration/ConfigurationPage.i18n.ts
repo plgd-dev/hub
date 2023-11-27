@@ -1,32 +1,36 @@
 import { defineMessages } from '@formatjs/intl'
 
 export const messages = defineMessages({
+    configurationPage: {
+        id: 'configurationPage.configurationPage',
+        defaultMessage: 'Configuration Page',
+    },
     configurationUpdated: {
-        id: 'devices.configurationUpdated',
+        id: 'configurationPage.configurationUpdated',
         defaultMessage: 'Configuration Updated',
     },
     configurationUpdatedMessage: {
-        id: 'devices.configurationUpdatedMessage',
+        id: 'configurationPage.configurationUpdatedMessage',
         defaultMessage: 'The configuration was successfully updated.',
     },
     reset: {
-        id: 'remoteClients.reset',
+        id: 'configurationPage.reset',
         defaultMessage: 'Reset',
     },
     saveChanges: {
-        id: 'remoteClients.saveChanges',
+        id: 'configurationPage.saveChanges',
         defaultMessage: 'Save changes',
     },
     changesMade: {
-        id: 'remoteClients.changesMade',
+        id: 'configurationPage.changesMade',
         defaultMessage: 'Changes made',
     },
     setting: {
-        id: 'remoteClients.setting',
+        id: 'configurationPage.setting',
         defaultMessage: 'setting',
     },
     settings: {
-        id: 'remoteClients.settings',
+        id: 'configurationPage.settings',
         defaultMessage: 'settings',
     },
 })
