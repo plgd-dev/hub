@@ -515,7 +515,7 @@ export const messages = defineMessages({
     },
     pendingCommands: {
         id: 'pendingCommands.pendingCommands',
-        defaultMessage: 'Pending Commands',
+        defaultMessage: 'Pending commands',
     },
     duration: {
         id: 'devices.duration',
