@@ -7,20 +7,20 @@ import (
 	"io"
 	"os"
 	"strings"
-	"sync/atomic"
 	"time"
 
 	"github.com/pion/logging"
 	pkgX509 "github.com/plgd-dev/hub/v2/pkg/security/x509"
 	"github.com/ugorji/go/codec"
 	"go.opentelemetry.io/otel"
+	"go.uber.org/atomic"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
-var log atomic.Value
+var log atomic.Pointer[Logger]
 
 const (
 	// DebugLevel logs are typically voluminous, and are usually disabled in
@@ -268,7 +268,7 @@ func (h *otelErrorHandler) Handle(err error) {
 
 // Set logger for global log fuctions
 func Set(logger Logger) {
-	log.Store(logger)
+	log.Store(&logger)
 	otel.SetErrorHandler(&otelErrorHandler{logger: logger})
 }
 
@@ -516,7 +516,7 @@ func NewLogger(config Config) *WrapSuggarLogger {
 }
 
 func Get() Logger {
-	return log.Load().(Logger)
+	return *log.Load()
 }
 
 // Debug uses fmt.Sprint to construct and log a message.
