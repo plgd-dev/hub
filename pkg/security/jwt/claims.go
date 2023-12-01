@@ -70,7 +70,10 @@ func (c Claims) ValidateOwnerClaim(ownerClaim string, userID string) error {
 }
 
 func (c Claims) Scope() []string {
-	s := strings.ToSlice(c[ClaimScope])
+	s, err := strings.ToSlice(c[ClaimScope])
+	if err != nil {
+		return nil
+	}
 	if len(s) == 1 {
 		return gstrings.Split(s[0], " ")
 	}
@@ -103,7 +106,8 @@ func (c Claims) DeviceID(deviceIDClaim string) string {
 }
 
 func (c Claims) Audience() []string {
-	return strings.ToSlice(c[ClaimAudience])
+	aud, _ := strings.ToSlice(c[ClaimAudience])
+	return aud
 }
 
 func (c Claims) ID() string {
