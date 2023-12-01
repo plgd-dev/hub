@@ -112,7 +112,7 @@ mongodb:
   initContainers:
     # workaround for https://github.com/bitnami/charts/issues/10264, https://jira.mongodb.org/browse/MONGOSH-1240
     - name: mongo-binary
-      image: docker.io/bitnami/mongodb:5.0.10-debian-11-r3
+      image: docker.io/bitnami/mongodb:5.0.22-debian-11-r3
       imagePullPolicy: "IfNotPresent"
       volumeMounts:
         - name: mongodb-crt
