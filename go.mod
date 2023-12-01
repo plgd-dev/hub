@@ -24,7 +24,7 @@ require (
 	github.com/lestrrat-go/jwx/v2 v2.0.16
 	github.com/nats-io/nats.go v1.31.0
 	github.com/panjf2000/ants/v2 v2.8.2
-	github.com/pion/dtls/v2 v2.2.8-0.20231026152330-9cc3df9c3369
+	github.com/pion/dtls/v2 v2.2.8
 	github.com/pion/logging v0.2.2
 	github.com/plgd-dev/device/v2 v2.2.3-0.20231108134455-0959ef99dc70
 	github.com/plgd-dev/go-coap/v3 v3.1.6
