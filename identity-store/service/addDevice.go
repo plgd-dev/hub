@@ -11,7 +11,7 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"github.com/plgd-dev/hub/v2/pkg/opentelemetry/propagation"
-	"github.com/plgd-dev/hub/v2/pkg/security/jwt"
+	pkgJwt "github.com/plgd-dev/hub/v2/pkg/security/jwt"
 	pkgTime "github.com/plgd-dev/hub/v2/pkg/time"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/publisher"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/utils"
@@ -54,20 +54,26 @@ func (s *Service) publishDevicesRegistered(ctx context.Context, owner, userID, h
 	publisher.LogPublish(s.logger, &v, []string{subject}, err)
 }
 
-func (s *Service) parseTokenMD(ctx context.Context) (owner, subject string, err error) {
+func parseTokenMD(ctx context.Context, ownerClaim string) (owner, subject string, err error) {
 	token, err := grpc.TokenFromMD(ctx)
 	if err != nil {
 		return "", "", grpc.ForwardFromError(codes.InvalidArgument, err)
 	}
-	claims, err := jwt.ParseToken(token)
+	claims, err := pkgJwt.ParseToken(token)
 	if err != nil {
 		return "", "", grpc.ForwardFromError(codes.InvalidArgument, err)
 	}
-	owner = claims.Owner(s.ownerClaim)
-	if owner == "" {
-		return "", "", status.Errorf(codes.InvalidArgument, "%v", fmt.Errorf("claim '%v' was not found", s.ownerClaim))
+	owner, err = claims.GetOwner(ownerClaim)
+	if err != nil {
+		return "", "", grpc.ForwardFromError(codes.InvalidArgument, err)
 	}
-	subject = claims.Subject()
+	if owner == "" {
+		return "", "", status.Errorf(codes.InvalidArgument, "%v", fmt.Errorf("claim '%v' was not found", ownerClaim))
+	}
+	subject, err = claims.GetSubject()
+	if err != nil {
+		return "", "", grpc.ForwardFromError(codes.InvalidArgument, err)
+	}
 	if subject == "" {
 		return "", "", status.Errorf(codes.InvalidArgument, "%v", fmt.Errorf("claim '%v' was not found", "sub"))
 	}
@@ -79,7 +85,7 @@ func (s *Service) AddDevice(ctx context.Context, request *pb.AddDeviceRequest) (
 	tx := s.persistence.NewTransaction(ctx)
 	defer tx.Close()
 
-	owner, userID, err := s.parseTokenMD(ctx)
+	owner, userID, err := parseTokenMD(ctx, s.ownerClaim)
 	if err != nil {
 		return nil, log.LogAndReturnError(status.Errorf(codes.InvalidArgument, "cannot add device: %v", err))
 	}

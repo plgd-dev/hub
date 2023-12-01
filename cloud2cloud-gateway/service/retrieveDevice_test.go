@@ -155,17 +155,17 @@ func TestRequestHandlerRetrieveDevice(t *testing.T) {
 			},
 			wantCode:        http.StatusUnauthorized,
 			wantContentType: textPlain,
-			want:            "invalid token: could not parse token: token contains an invalid number of segments",
+			want:            "invalid token: could not parse token: token is malformed: token contains an invalid number of segments",
 		},
 		{
 			name: "expired token",
 			args: args{
 				uri:   c2cTest.C2CURI(uri.Devices) + "/" + deviceID,
-				token: oauthTest.GetAccessToken(t, config.OAUTH_SERVER_HOST, oauthTest.ClientTestExpired),
+				token: oauthTest.GetAccessToken(t, config.OAUTH_SERVER_HOST, oauthTest.ClientTestExpired, nil),
 			},
 			wantCode:        http.StatusUnauthorized,
 			wantContentType: textPlain,
-			want:            "invalid token: could not parse token: token is expired",
+			want:            "invalid token: could not parse token: token has invalid claims: token is expired",
 		},
 		{
 			name: "notFound",
@@ -199,7 +199,7 @@ func TestRequestHandlerRetrieveDevice(t *testing.T) {
 			},
 			wantCode:        http.StatusUnauthorized,
 			wantContentType: textPlain,
-			want:            "invalid token: could not parse token: inaccessible uri",
+			want:            "invalid token: could not parse token: token has invalid claims: inaccessible uri",
 		},
 		{
 			name: "JSON: " + uri.Devices + "/" + deviceID,

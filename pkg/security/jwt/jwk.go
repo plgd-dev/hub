@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/golang-jwt/jwt/v4"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/lestrrat-go/jwx/v2/jwk"
 )
 

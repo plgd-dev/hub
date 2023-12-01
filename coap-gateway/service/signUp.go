@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/plgd-dev/go-coap/v3/message"
@@ -68,6 +69,45 @@ func getSignUpContent(token *oauth2.Token, owner string, validUntil int64, optio
 
 const errFmtSignUP = "cannot handle sign up: %w"
 
+func getSignUpToken(ctx context.Context, client *session, signUp CoapSignUpRequest) (*oauth2.Token, error) {
+	provider, ok := client.server.providers[signUp.AuthorizationProvider]
+	if !ok {
+		return nil, statusErrorf(coapCodes.Unauthorized, errFmtSignUP, fmt.Errorf("unknown authorization provider('%v')", signUp.AuthorizationProvider))
+	}
+
+	token, err := client.exchangeCache.Execute(ctx, provider, signUp.AuthorizationCode)
+	if err != nil {
+		// When OAuth server is not accessible, then return 503 Service Unavailable. If real error occurs them http code is mapped to code.
+		return nil, statusErrorf(coapCodes.ServiceUnavailable, errFmtSignUP, err)
+	}
+	if token.RefreshToken == "" {
+		return nil, statusErrorf(coapCodes.Unauthorized, errFmtSignUP, fmt.Errorf("exchange didn't return a refresh token"))
+	}
+	return token, nil
+}
+
+func getSignUpDataFromClaims(ctx context.Context, client *session, accessToken string, signUp CoapSignUpRequest) (string, string, error) {
+	claim, err := client.ValidateToken(ctx, accessToken)
+	if err != nil {
+		return "", "", err
+	}
+
+	owner, err := claim.GetOwner(client.server.config.APIs.COAP.Authorization.OwnerClaim)
+	if err != nil {
+		return "", "", err
+	}
+	if owner == "" {
+		return "", "", fmt.Errorf("cannot determine owner")
+	}
+
+	deviceID, err := client.server.VerifyAndResolveDeviceID(client.tlsDeviceID, signUp.DeviceID, claim)
+	if err != nil {
+		return "", "", err
+	}
+
+	return deviceID, owner, nil
+}
+
 // https://github.com/openconnectivityfoundation/security/blob/master/swagger2.0/oic.sec.account.swagger.json
 func signUpPostHandler(req *mux.Message, client *session) (*pool.Message, error) {
 	var signUp CoapSignUpRequest
@@ -82,28 +122,9 @@ func signUpPostHandler(req *mux.Message, client *session) (*pool.Message, error)
 		return nil, statusErrorf(coapCodes.BadRequest, errFmtSignUP, err)
 	}
 
-	provider, ok := client.server.providers[signUp.AuthorizationProvider]
-	if !ok {
-		return nil, statusErrorf(coapCodes.Unauthorized, errFmtSignUP, fmt.Errorf("unknown authorization provider('%v')", signUp.AuthorizationProvider))
-	}
-
-	token, err := client.exchangeCache.Execute(req.Context(), provider, signUp.AuthorizationCode)
+	token, err := getSignUpToken(req.Context(), client, signUp)
 	if err != nil {
-		// When OAuth server is not accessible, then return 503 Service Unavailable. If real error occurs them http code is mapped to code.
-		return nil, statusErrorf(coapCodes.ServiceUnavailable, errFmtSignUP, err)
-	}
-	if token.RefreshToken == "" {
-		return nil, statusErrorf(coapCodes.Unauthorized, errFmtSignUP, fmt.Errorf("exchange didn't return a refresh token"))
-	}
-
-	claim, err := client.ValidateToken(req.Context(), token.AccessToken.String())
-	if err != nil {
-		return nil, statusErrorf(coapCodes.Unauthorized, errFmtSignUP, err)
-	}
-
-	err = client.server.VerifyDeviceID(client.tlsDeviceID, claim)
-	if err != nil {
-		return nil, statusErrorf(coapCodes.Unauthorized, errFmtSignUP, err)
+		return nil, err
 	}
 
 	validUntil, ok := ValidUntil(token.Expiry)
@@ -111,12 +132,10 @@ func signUpPostHandler(req *mux.Message, client *session) (*pool.Message, error)
 		return nil, statusErrorf(coapCodes.Unauthorized, errFmtSignUP, fmt.Errorf("expired access token"))
 	}
 
-	owner := claim.Owner(client.server.config.APIs.COAP.Authorization.OwnerClaim)
-	if owner == "" {
-		return nil, statusErrorf(coapCodes.Unauthorized, errFmtSignUP, fmt.Errorf("cannot determine owner"))
+	deviceID, owner, err := getSignUpDataFromClaims(req.Context(), client, token.AccessToken.String(), signUp)
+	if err != nil {
+		return nil, statusErrorf(coapCodes.Unauthorized, errFmtSignUP, err)
 	}
-
-	deviceID := client.ResolveDeviceID(claim, signUp.DeviceID)
 	setDeviceIDToTracerSpan(req.Context(), deviceID)
 
 	ctx := kitNetGrpc.CtxWithToken(req.Context(), token.AccessToken.String())

@@ -17,10 +17,10 @@ import (
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 )
 
-var (
-	queryAccessToken = "accesstoken"
-	queryDeviceID    = "di"
-	queryUserID      = "uid" // optional because it is not defined in a current specification => it must be determined from the access token
+const (
+	queryAccessTokenKey = "accesstoken"
+	queryDeviceIDKey    = "di"
+	queryUserIDKey      = "uid" // optional because it is not defined in a current specification => it must be determined from the access token
 )
 
 type signOffData struct {
@@ -38,13 +38,13 @@ func getSignOffDataFromQuery(req *mux.Message) (signOffData, error) {
 		if err != nil {
 			return signOffData{}, err
 		}
-		if deviceID := values.Get(queryDeviceID); deviceID != "" {
+		if deviceID := values.Get(queryDeviceIDKey); deviceID != "" {
 			data.deviceID = deviceID
 		}
-		if accessToken := values.Get(queryAccessToken); accessToken != "" {
+		if accessToken := values.Get(queryAccessTokenKey); accessToken != "" {
 			data.accessToken = accessToken
 		}
-		if userID := values.Get(queryUserID); userID != "" {
+		if userID := values.Get(queryUserIDKey); userID != "" {
 			data.userID = userID
 		}
 	}
@@ -85,6 +85,24 @@ func (s signOffData) validateSignOffData() error {
 	return nil
 }
 
+func getSignOffDataFromClaims(ctx context.Context, client *session, sod signOffData) (string, error) {
+	jwtClaims, err := client.ValidateToken(ctx, sod.accessToken)
+	if err != nil {
+		return "", err
+	}
+
+	if err := jwtClaims.ValidateOwnerClaim(client.server.config.APIs.COAP.Authorization.OwnerClaim, sod.userID); err != nil {
+		return "", err
+	}
+
+	deviceID, err := client.server.VerifyAndResolveDeviceID(client.tlsDeviceID, sod.deviceID, jwtClaims)
+	if err != nil {
+		return "", err
+	}
+
+	return deviceID, nil
+}
+
 const errFmtSignOff = "cannot handle sign off: %w"
 
 // Sign-off
@@ -111,21 +129,10 @@ func signOffHandler(req *mux.Message, client *session) (*pool.Message, error) {
 	}
 	defer client.blockSignOff.Release(math.MaxInt64)
 
-	jwtClaims, err := client.ValidateToken(ctx, signOffData.accessToken)
+	deviceID, err := getSignOffDataFromClaims(ctx, client, signOffData)
 	if err != nil {
 		return nil, statusErrorf(coapCodes.Unauthorized, errFmtSignOff, err)
 	}
-
-	err = client.server.VerifyDeviceID(client.tlsDeviceID, jwtClaims)
-	if err != nil {
-		return nil, statusErrorf(coapCodes.Unauthorized, errFmtSignOff, err)
-	}
-
-	if err := jwtClaims.ValidateOwnerClaim(client.server.config.APIs.COAP.Authorization.OwnerClaim, signOffData.userID); err != nil {
-		return nil, statusErrorf(coapCodes.Unauthorized, errFmtSignOff, err)
-	}
-
-	deviceID := client.ResolveDeviceID(jwtClaims, signOffData.deviceID)
 	setDeviceIDToTracerSpan(req.Context(), deviceID)
 
 	ctx = kitNetGrpc.CtxWithToken(ctx, signOffData.accessToken)

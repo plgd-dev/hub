@@ -89,7 +89,7 @@ func SetUpClouds(ctx context.Context, t *testing.T, deviceID string, supportedEv
 	data, err := json.Encode(linkedCloud)
 	require.NoError(t, err)
 
-	token := oauthTest.GetAccessToken(t, OAUTH_HOST, oauthTest.ClientTest)
+	token := oauthTest.GetAccessToken(t, OAUTH_HOST, oauthTest.ClientTest, nil)
 	req := testHttp.NewHTTPRequest(http.MethodPost, testHttp.HTTPS_SCHEME+C2C_CONNECTOR_HOST+uri.LinkedClouds, bytes.NewBuffer(data)).AuthToken(token).Build(ctx, t)
 	resp := testHttp.DoHTTPRequest(t, req)
 	require.Equal(t, http.StatusOK, resp.StatusCode)

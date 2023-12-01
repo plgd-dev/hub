@@ -198,8 +198,6 @@ func signInError(err error) error {
 	return fmt.Errorf("sign in error: %w", err)
 }
 
-const errFmtSignIn = "cannot handle sign in: %w"
-
 func (c *session) resolveTwinEnabled(ctx context.Context, updateDeviceMetadataResp *commands.UpdateDeviceMetadataResponse) bool {
 	twinEnabled := true
 	if updateDeviceMetadataResp != nil {
@@ -213,31 +211,42 @@ func (c *session) resolveTwinEnabled(ctx context.Context, updateDeviceMetadataRe
 	return twinEnabled
 }
 
+func getSignInDataFromClaims(ctx context.Context, client *session, signIn CoapSignInReq) (string, time.Time, error) {
+	jwtClaims, err := client.ValidateToken(ctx, signIn.AccessToken)
+	if err != nil {
+		return "", time.Time{}, err
+	}
+
+	if err := jwtClaims.ValidateOwnerClaim(client.server.config.APIs.COAP.Authorization.OwnerClaim, signIn.UserID); err != nil {
+		return "", time.Time{}, err
+	}
+
+	deviceID, err := client.server.VerifyAndResolveDeviceID(client.tlsDeviceID, signIn.DeviceID, jwtClaims)
+	if err != nil {
+		return "", time.Time{}, err
+	}
+
+	expTime, _ := jwtClaims.GetExpirationTime()
+	validUntil := time.Time{}
+	if expTime != nil {
+		validUntil = expTime.Time
+	}
+
+	return deviceID, validUntil, nil
+}
+
+const errFmtSignIn = "cannot handle sign in: %w"
+
 // https://github.com/openconnectivityfoundation/security/blob/master/swagger2.0/oic.sec.session.swagger.json
 func signInPostHandler(req *mux.Message, client *session, signIn CoapSignInReq) (*pool.Message, error) {
 	if err := signIn.checkOAuthRequest(); err != nil {
 		return nil, statusErrorf(coapCodes.BadRequest, errFmtSignIn, err)
 	}
 
-	jwtClaims, err := client.ValidateToken(req.Context(), signIn.AccessToken)
+	deviceID, validUntil, err := getSignInDataFromClaims(req.Context(), client, signIn)
 	if err != nil {
 		return nil, statusErrorf(coapCodes.Unauthorized, errFmtSignIn, err)
 	}
-
-	err = client.server.VerifyDeviceID(client.tlsDeviceID, jwtClaims)
-	if err != nil {
-		return nil, statusErrorf(coapCodes.Unauthorized, errFmtSignIn, err)
-	}
-
-	if err := jwtClaims.ValidateOwnerClaim(client.server.config.APIs.COAP.Authorization.OwnerClaim, signIn.UserID); err != nil {
-		return nil, statusErrorf(coapCodes.Unauthorized, errFmtSignIn, err)
-	}
-
-	validUntil, err := jwtClaims.ExpiresAt()
-	if err != nil {
-		return nil, statusErrorf(coapCodes.Unauthorized, errFmtSignIn, err)
-	}
-	deviceID := client.ResolveDeviceID(jwtClaims, signIn.DeviceID)
 	setDeviceIDToTracerSpan(req.Context(), deviceID)
 
 	upd := client.updateAuthorizationContext(deviceID, signIn.UserID, signIn.AccessToken, validUntil)
@@ -317,6 +326,19 @@ func updateDeviceMetadata(req *mux.Message, client *session) error {
 	return nil
 }
 
+func getSignOutDataFromClaims(ctx context.Context, client *session, signOut CoapSignInReq) (string, error) {
+	jwtClaims, err := client.ValidateToken(ctx, signOut.AccessToken)
+	if err != nil {
+		return "", err
+	}
+
+	if err := jwtClaims.ValidateOwnerClaim(client.server.config.APIs.COAP.Authorization.OwnerClaim, signOut.UserID); err != nil {
+		return "", err
+	}
+
+	return client.server.VerifyAndResolveDeviceID(client.tlsDeviceID, signOut.DeviceID, jwtClaims)
+}
+
 const errFmtSignOut = "cannot handle sign out: %w"
 
 func signOutPostHandler(req *mux.Message, client *session, signOut CoapSignInReq) (*pool.Message, error) {
@@ -332,21 +354,10 @@ func signOutPostHandler(req *mux.Message, client *session, signOut CoapSignInReq
 		return nil, statusErrorf(coapCodes.BadRequest, errFmtSignOut, err)
 	}
 
-	jwtClaims, err := client.ValidateToken(req.Context(), signOut.AccessToken)
+	deviceID, err := getSignOutDataFromClaims(req.Context(), client, signOut)
 	if err != nil {
 		return nil, statusErrorf(coapCodes.Unauthorized, errFmtSignOut, err)
 	}
-
-	err = client.server.VerifyDeviceID(client.tlsDeviceID, jwtClaims)
-	if err != nil {
-		return nil, statusErrorf(coapCodes.Unauthorized, errFmtSignOut, err)
-	}
-
-	if err := jwtClaims.ValidateOwnerClaim(client.server.config.APIs.COAP.Authorization.OwnerClaim, signOut.UserID); err != nil {
-		return nil, statusErrorf(coapCodes.Unauthorized, errFmtSignOut, err)
-	}
-
-	deviceID := client.ResolveDeviceID(jwtClaims, signOut.DeviceID)
 	setDeviceIDToTracerSpan(req.Context(), deviceID)
 
 	if err := updateDeviceMetadata(req, client); err != nil {

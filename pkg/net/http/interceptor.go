@@ -6,7 +6,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/plgd-dev/hub/v2/pkg/security/jwt"
+	"github.com/golang-jwt/jwt/v5"
+	pkgJwt "github.com/plgd-dev/hub/v2/pkg/security/jwt"
 )
 
 type Interceptor = func(ctx context.Context, method, uri string) (context.Context, error)
@@ -35,25 +36,26 @@ func NewInterceptorWithValidator(validator Validator, auths map[string][]AuthArg
 	}
 }
 
-func MakeClaimsFunc(methods map[string][]AuthArgs) ClaimsFunc {
-	return func(ctx context.Context, method, uri string) Claims {
-		args, ok := methods[method]
-		if !ok {
-			return &DeniedClaims{fmt.Errorf("inaccessible method: %v", method)}
-		}
-		for _, arg := range args {
-			if arg.URI.MatchString(uri) {
-				return jwt.NewRegexpScopeClaims(arg.Scopes...)
-			}
-		}
-		return &DeniedClaims{fmt.Errorf("inaccessible uri: %v %v", method, uri)}
-	}
-}
-
 type DeniedClaims struct {
+	jwt.MapClaims
 	Err error
 }
 
-func (c DeniedClaims) Valid() error {
+func (c DeniedClaims) Validate() error {
 	return c.Err
+}
+
+func MakeClaimsFunc(methods map[string][]AuthArgs) ClaimsFunc {
+	return func(ctx context.Context, method, uri string) jwt.ClaimsValidator {
+		args, ok := methods[method]
+		if !ok {
+			return &DeniedClaims{Err: fmt.Errorf("inaccessible method: %v", method)}
+		}
+		for _, arg := range args {
+			if arg.URI.MatchString(uri) {
+				return pkgJwt.NewRegexpScopeClaims(arg.Scopes...)
+			}
+		}
+		return &DeniedClaims{Err: fmt.Errorf("inaccessible uri: %v %v", method, uri)}
+	}
 }

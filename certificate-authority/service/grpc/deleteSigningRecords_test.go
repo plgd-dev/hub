@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/fullstorydev/grpchan/inprocgrpc"
-	"github.com/golang-jwt/jwt/v4"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/plgd-dev/hub/v2/certificate-authority/pb"
 	"github.com/plgd-dev/hub/v2/certificate-authority/service/grpc"
 	"github.com/plgd-dev/hub/v2/certificate-authority/store"

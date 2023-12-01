@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"time"
@@ -63,6 +64,19 @@ func validateRefreshToken(req CoapRefreshTokenReq) error {
 	return nil
 }
 
+func getProviders(client *session, authorizationProvider string) (map[string]*oauth2.PlgdProvider, error) {
+	if authorizationProvider == "" {
+		return client.server.providers, nil
+	}
+	provider, ok := client.server.providers[authorizationProvider]
+	if !ok {
+		return nil, fmt.Errorf("unknown authorization provider('%v')", authorizationProvider)
+	}
+	providers := make(map[string]*oauth2.PlgdProvider)
+	providers[authorizationProvider] = provider
+	return providers, nil
+}
+
 func validUntilToExpiresIn(validUntil time.Time) int64 {
 	if validUntil.IsZero() {
 		return -1
@@ -85,6 +99,29 @@ func updateClient(client *session, deviceID, owner, accessToken string, validUnt
 	setExpirationClientCache(client.server.expirationClientCache, deviceID, client, validUntil)
 }
 
+func getRefreshTokenDataFromClaims(ctx context.Context, client *session, accessToken string, req CoapRefreshTokenReq) (string, string, error) {
+	claim, err := client.ValidateToken(ctx, accessToken)
+	if err != nil {
+		return "", "", err
+	}
+
+	deviceID, err := client.server.VerifyAndResolveDeviceID(client.tlsDeviceID, req.DeviceID, claim)
+	if err != nil {
+		return "", "", err
+	}
+	owner, err := claim.GetOwner(client.server.config.APIs.COAP.Authorization.OwnerClaim)
+	if err != nil {
+		return "", "", err
+	}
+	if owner == "" {
+		owner = req.UserID
+	}
+	if owner == "" {
+		return "", "", fmt.Errorf("cannot determine owner")
+	}
+	return deviceID, owner, nil
+}
+
 func refreshTokenPostHandler(req *mux.Message, client *session) (*pool.Message, error) {
 	const fmtErr = "cannot handle refresh token for %v: %w"
 
@@ -100,14 +137,9 @@ func refreshTokenPostHandler(req *mux.Message, client *session) (*pool.Message, 
 	}
 
 	// use provider for request
-	providers := client.server.providers
-	if refreshToken.AuthorizationProvider != "" {
-		provider, ok := client.server.providers[refreshToken.AuthorizationProvider]
-		if !ok {
-			return nil, statusErrorf(coapCodes.Unauthorized, "%w", fmt.Errorf(fmtErr, refreshToken.DeviceID, fmt.Errorf("unknown authorization provider('%v')", refreshToken.AuthorizationProvider)))
-		}
-		providers := make(map[string]*oauth2.PlgdProvider)
-		providers[refreshToken.AuthorizationProvider] = provider
+	providers, err := getProviders(client, refreshToken.AuthorizationProvider)
+	if err != nil {
+		return nil, statusErrorf(coapCodes.Unauthorized, "%w", fmt.Errorf(fmtErr, refreshToken.DeviceID, err))
 	}
 
 	token, err := client.refreshCache.Execute(req.Context(), providers, client.server.taskQueue, refreshToken.RefreshToken, client.getLogger())
@@ -120,16 +152,11 @@ func refreshTokenPostHandler(req *mux.Message, client *session) (*pool.Message, 
 		return nil, statusErrorf(coapCodes.Unauthorized, "%w", fmt.Errorf(fmtErr, refreshToken.DeviceID, fmt.Errorf("refresh didn't return a refresh token")))
 	}
 
-	claim, err := client.ValidateToken(req.Context(), token.AccessToken.String())
+	deviceID, owner, err := getRefreshTokenDataFromClaims(req.Context(), client, token.AccessToken.String(), refreshToken)
 	if err != nil {
 		return nil, statusErrorf(coapCodes.Unauthorized, "%w", fmt.Errorf(fmtErr, refreshToken.DeviceID, err))
 	}
 
-	err = client.server.VerifyDeviceID(client.tlsDeviceID, claim)
-	if err != nil {
-		return nil, statusErrorf(coapCodes.Unauthorized, "%w", fmt.Errorf(fmtErr, refreshToken.DeviceID, err))
-	}
-	deviceID := client.ResolveDeviceID(claim, refreshToken.DeviceID)
 	ctx := kitNetGrpc.CtxWithIncomingToken(kitNetGrpc.CtxWithToken(req.Context(), token.AccessToken.String()), token.AccessToken.String())
 	ok, err := client.server.ownerCache.OwnsDevice(ctx, deviceID)
 	if err != nil {
@@ -139,22 +166,14 @@ func refreshTokenPostHandler(req *mux.Message, client *session) (*pool.Message, 
 		return nil, statusErrorf(coapCodes.Unauthorized, "%w", fmt.Errorf(fmtErr, deviceID, fmt.Errorf("device is not registered")))
 	}
 
-	owner := claim.Owner(client.server.config.APIs.COAP.Authorization.OwnerClaim)
-	if owner == "" {
-		owner = refreshToken.UserID
-	}
-	if owner == "" {
-		return nil, statusErrorf(coapCodes.Unauthorized, "%w", fmt.Errorf(fmtErr, deviceID, fmt.Errorf("cannot determine owner")))
-	}
-
 	expire, ok := ValidUntil(token.Expiry)
 	if !ok {
 		return nil, statusErrorf(coapCodes.Unauthorized, "%w", fmt.Errorf(fmtErr, deviceID, fmt.Errorf("expired access token")))
 	}
 
 	validUntil := pkgTime.Unix(0, expire)
-
 	expiresIn := validUntilToExpiresIn(validUntil)
+
 	accept, out, err := getRefreshTokenContent(token, expiresIn, req.Options())
 	if err != nil {
 		return nil, statusErrorf(coapCodes.ServiceUnavailable, "%w", fmt.Errorf(fmtErr, deviceID, err))

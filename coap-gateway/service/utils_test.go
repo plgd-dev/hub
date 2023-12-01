@@ -392,7 +392,6 @@ func testCoapDial(t *testing.T, deviceID string, withTLS, identityCert bool, val
 }
 
 func testCoapDialWithHandler(t *testing.T, deviceID string, withTLS, identityCert bool, validTo time.Time, h func(w *responsewriter.ResponseWriter[*coapTcpClient.Conn], r *pool.Message)) *coapTcpClient.Conn {
-
 	var tlsConfig *tls.Config
 
 	if withTLS {
